@@ -64,17 +64,25 @@ just during this initial planning pass.
 - **This file (PLAN.md)** is the index: mission, principles, architecture,
   the phase roadmap, and a running progress log. It does not contain
   day-by-day tasks.
-- **Each phase has its own file under `/plans`** (`plans/phase-NN-name.md`).
-  Near-term phases (00, 01, 02 so far) are broken down into day-sized
-  tasks with concrete done-conditions. Later phases are scoped at the
-  goal/deliverable level and get expanded into day-by-day tasks once the
-  prior phase completes and reality has had a chance to correct the plan
-  — but that expansion, and its commit to the repo, has to happen
-  *before* the phase's work starts, not alongside it. No phase is
-  startable while it's still at goal/deliverable level.
+- **Each phase has its own index file under `/plans`**
+  (`plans/phase-NN-name.md`): Depends-on/Goal/Definition-of-done, links to
+  that phase's day files in order, and Notes/open questions. It does not
+  contain the day tasks inline.
+- **Each day-sized task has its own file**, under
+  `plans/phase-NN-name/day-NN-slug.md`, broken into specific,
+  individually checkable sub-tasks — not one paragraph for the whole day.
+  Near-term phases (00, 01, 02 so far) are the ones expected to have
+  these; Phase 0 is written this way, Phases 1-2 still need migrating
+  (tracked as pending, not yet done). Later phases are scoped at the
+  goal/deliverable level and get expanded into day files once the prior
+  phase completes and reality has had a chance to correct the plan — but
+  that expansion, and its commit to the repo, has to happen *before* the
+  phase's work starts, not alongside it. No phase is startable while it's
+  still at goal/deliverable level, or while its days are still
+  undifferentiated paragraphs rather than files of specific sub-tasks.
 - Every task has a **Done condition** — something concrete and checkable.
   If a task can't be checked, it isn't finished.
-- Check off tasks (`[x]`) in the phase files as they complete. Don't reorder
+- Check off tasks (`[x]`) in the day files as they complete. Don't reorder
   or delete finished work — it's the project's history.
 - When a task turns out wrong-sized or based on a bad assumption, stop and
   edit the plan before continuing rather than silently drifting from it.
@@ -103,11 +111,17 @@ interpretations keep it buildable — flag any that don't match intent:
    wrapping a raw syscall, calling an OS API), that's fine. STL,
    exceptions, and RTTI remain unused regardless — the C++ language
    runtime overhead they bring isn't worth it, independent of the libc
-   question. (The Phase 0 build's `-nostdlib -ffreestanding` flags are the
-   foundation layer's own choice to prove itself dependency-free, not a
-   whole-project ban — expect this to need revisiting once Phase 1 links
-   `libwayland-client`, which itself depends on libc. Flagged as an open
-   question in Phase 0's notes.)
+   question. **Resolved:** Phase 0 links libc normally from Day 1 — no
+   `-nostdlib`/`-ffreestanding` — and its OS-interaction layer (Day 2)
+   wraps libc functions directly (`write`, `read`, `open`, `close`,
+   `mmap`, `munmap`, `mprotect`, `exit`) behind engine-named functions,
+   rather than hand-rolling raw syscalls via inline assembly. This was
+   previously left open pending Phase 1's `libwayland-client` linkage
+   forcing the question anyway; no reason to defer it that long once the
+   policy above already settled it. The wrapper layer still earns its
+   keep as the seam later OS ports (Windows/macOS) implement against with
+   their own native calls, same pattern as every other backend
+   abstraction in this plan (RHI, window, resource, scripting).
 3. **Linux window/input targets Wayland as the primary protocol, X11 as a
    fallback backend — both via their reference client libraries
    (`libwayland-client`, `libX11`/`libxcb`)**, not a hand-rolled
@@ -314,7 +328,7 @@ RHI  (Vulkan | DX12 | Metal)
 Job System (work-stealing scheduler, jobs-as-coroutines)
 Platform layer (window, input, raw threads, files, time)
 Foundation (allocators, containers, string, math, assert)
-Raw syscalls / OS ABI
+libc / raw syscalls / OS ABI
 ```
 
 ## Repository layout
@@ -342,7 +356,8 @@ Raw syscalls / OS ABI
 /game            - demo/dogfood content, grows into the first playable slice
 /tools           - offline asset cookers, custom build tooling
 /tests           - per-layer test harnesses (custom test runner, no framework)
-/plans           - per-phase detailed plans (this index links to each)
+/plans           - per-phase index files (this index links to each);
+                  phase-NN-name/day-NN-slug.md holds each day's tasks
 PLAN.md
 ```
 

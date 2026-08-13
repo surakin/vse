@@ -23,11 +23,14 @@ reveals what the plan got wrong, not just during this initial pass.
 
 **This settledness bar applies at every phase transition, not just
 Phase 0.** No phase may be started — no code, no further sub-work within
-it — until it has its own day-sized, checkable-Done-condition task list
-written out in its `plans/phase-NN-*.md` file and committed to the repo.
-A phase left at goal/deliverable level (see "How the plan is structured"
-below) is not yet startable; expanding it into that task list is itself
-planning work that has to happen, and be committed, first.
+it — until every day of that phase has its own file under
+`plans/phase-NN-name/day-NN-slug.md`, broken into specific, individually
+checkable sub-tasks with a concrete Done condition, and committed to the
+repo. A phase left at goal/deliverable level, or one whose days are still
+single undifferentiated paragraphs rather than files of specific
+sub-tasks (see "How the plan is structured" below), is not yet
+startable; doing that breakdown is itself planning work that has to
+happen, and be committed, first.
 
 ## What this project is
 
@@ -110,17 +113,32 @@ table in `PLAN.md`.
 - `PLAN.md` is the index only: mission, principles, architecture layers,
   repo layout, the phase roadmap table, and a progress log. It does not
   contain day-by-day tasks.
-- Each `plans/phase-NN-*.md` file owns one phase. Near-term phases (00,
-  01, 02) are broken into day-sized tasks, each with a concrete, checkable
-  **Done condition** — a task without one isn't finished. Later phases are
-  intentionally left at deliverable/goal level rather than speculatively
-  detailed far in advance — but that breakdown has to happen, and be
-  committed, before the phase starts, not during or after (see "Project
-  status" above). "To be expanded into day-by-day tasks when started"
-  means expand first, then start — not start and figure out the tasks
-  along the way.
-- Tasks are checked off (`[x]`) in place as completed. Completed work is
-  not reordered or deleted — it's the project's history.
+- Each `plans/phase-NN-*.md` file owns one phase and is itself an index:
+  Depends-on/Goal/Definition-of-done, a list of links to that phase's day
+  files in order, and Notes/open questions. It does not contain the tasks
+  inline.
+- **Each day-sized task gets its own file**, under
+  `plans/phase-NN-name/day-NN-slug.md` (e.g.
+  `plans/phase-00-foundation/day-04-arena-allocator.md`). A day file
+  contains that day's specific, individually checkable sub-tasks (not
+  one paragraph covering the whole day) and ends with a concrete
+  **Done condition** — a day without one isn't finished, and a day whose
+  sub-tasks aren't broken out individually isn't detailed enough to
+  start either.
+  Near-term phases (00, 01, 02) are the ones expected to have day files.
+  Phase 0 is written this way; Phases 1 and 2 still use an older,
+  single-paragraph-per-day format inline in their phase file and need to
+  be migrated to individual day files before they're startable under
+  this rule (not yet done — tracked as pending work, not a passed bar).
+  Later phases are intentionally left at deliverable/goal level rather
+  than speculatively detailed far in advance — but that breakdown
+  (writing every day file) has to happen, and be committed, before the
+  phase starts, not during or after (see "Project status" above). "To be
+  expanded into day-by-day tasks when started" means expand first, then
+  start — not start and figure out the tasks along the way.
+- Tasks are checked off (`[x]`) in place as completed, in their own day
+  file. Completed work is not reordered or deleted — it's the project's
+  history.
 - If a task turns out wrong-sized, blocked, or based on a bad assumption,
   stop and edit the relevant plan file before continuing rather than
   silently drifting from it.

@@ -37,6 +37,13 @@ Phase 3.
 - [ ] **Day 13 — Process lifecycle & argv.** Real `_start` reading
   argc/argv/envp off the stack per the System V ABI, calling engine `main`.
   **Done:** engine prints its received command-line arguments.
+  **Flagged for re-evaluation:** this task predates Phase 0's resolved
+  libc decision (see `PLAN.md` assumption #2 and
+  `plans/phase-00-foundation.md`'s notes) — Phase 0 now links libc
+  normally with a standard `main()` entry, so a hand-rolled `_start`
+  may be unnecessary duplication of what libc's own CRT startup already
+  does. Re-decide this when Phase 1 is expanded into day files, not
+  before.
 
 - [ ] **Day 14 — Wayland connection & registry.** Link `libwayland-client`;
   `wl_display_connect`, `wl_display_get_registry`, and a registry listener
