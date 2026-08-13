@@ -1,10 +1,12 @@
 #include "arena_allocator.h"
+#include "array.h"
 #include "mem.h"
 #include "os.h"
 #include "pool_allocator.h"
 #include "stack_allocator.h"
 #include "types.h"
 
+using engine_placeholder::Array;
 using engine_placeholder::ArenaAllocator;
 using engine_placeholder::PoolAllocator;
 using engine_placeholder::StackAllocator;
@@ -316,6 +318,154 @@ void TestStackAllocator() {
            "PopToMarker rewinds the offset so the freed region is reused");
 }
 
+void TestArrayStress() {
+    // 8 MiB is generous: growth 4,8,16,...,131072 abandons each prior
+    // block in the arena, totalling well under 1 MiB for usize elements.
+    ArenaAllocator arena(8 * 1024 * 1024);
+    Array<usize, ArenaAllocator> arr(arena);
+
+    constexpr usize kCount = 100000;
+    bool boundary_ok = true;
+    usize prev_capacity = arr.Capacity();
+    for (usize i = 0; i < kCount && boundary_ok; ++i) {
+        arr.Push(i);
+        if (arr.Capacity() != prev_capacity) {
+            for (usize j = 0; j <= i; ++j) {
+                if (arr[j] != j) {
+                    boundary_ok = false;
+                    break;
+                }
+            }
+            prev_capacity = arr.Capacity();
+        }
+    }
+    Expect(boundary_ok, "array contents correct at every resize boundary (100k pushes)");
+
+    bool final_ok = arr.Size() == kCount;
+    for (usize i = 0; i < kCount && final_ok; ++i) {
+        if (arr[i] != i) {
+            final_ok = false;
+        }
+    }
+    Expect(final_ok, "array contents correct after all 100k pushes");
+}
+
+struct TrackedValue {
+    static usize constructions;
+    static usize destructions;
+    static usize moves;
+
+    usize value;
+
+    explicit TrackedValue(usize v) : value(v) {
+        ++constructions;
+    }
+    TrackedValue(const TrackedValue& other) : value(other.value) {
+        ++constructions;
+    }
+    TrackedValue(TrackedValue&& other) noexcept : value(other.value) {
+        other.value = 0;
+        ++constructions;
+        ++moves;
+    }
+    TrackedValue& operator=(const TrackedValue& other) {
+        value = other.value;
+        return *this;
+    }
+    TrackedValue& operator=(TrackedValue&& other) noexcept {
+        value = other.value;
+        other.value = 0;
+        ++moves;
+        return *this;
+    }
+    ~TrackedValue() {
+        ++destructions;
+    }
+};
+
+usize TrackedValue::constructions = 0;
+usize TrackedValue::destructions = 0;
+usize TrackedValue::moves = 0;
+
+void TestArrayNonTrivialResize() {
+    TrackedValue::constructions = 0;
+    TrackedValue::destructions = 0;
+    TrackedValue::moves = 0;
+
+    {
+        ArenaAllocator arena(1024 * 1024);
+        Array<TrackedValue, ArenaAllocator> arr(arena);
+
+        // Fill the initial capacity (4) exactly.
+        for (usize i = 0; i < 4; ++i) {
+            arr.Push(TrackedValue(i));
+        }
+        usize moves_before_resize = TrackedValue::moves;
+
+        // Fifth push forces a resize (4 -> 8): Reserve() move-constructs
+        // the 4 existing elements, plus the usual one move for the push
+        // itself.
+        arr.Push(TrackedValue(4));
+        usize moves_from_resize = TrackedValue::moves - moves_before_resize;
+        Expect(moves_from_resize == 5,
+               "resize move-constructs existing elements, not just the new push");
+
+        bool contents_ok = true;
+        for (usize i = 0; i < 5; ++i) {
+            if (arr[i].value != i) {
+                contents_ok = false;
+                break;
+            }
+        }
+        Expect(contents_ok, "non-trivial array contents correct across resize");
+
+        for (usize i = 5; i < 50; ++i) {
+            arr.Push(TrackedValue(i));
+        }
+        bool final_contents_ok = true;
+        for (usize i = 0; i < 50; ++i) {
+            if (arr[i].value != i) {
+                final_contents_ok = false;
+                break;
+            }
+        }
+        Expect(final_contents_ok, "non-trivial array contents correct after further growth");
+    } // arr destructor runs here, destroying all 50 live elements.
+
+    Expect(TrackedValue::constructions == TrackedValue::destructions,
+           "no construction/destruction leak across non-trivial array resize");
+}
+
+void TestArrayInsertRemove() {
+    ArenaAllocator arena(64 * 1024);
+    Array<usize, ArenaAllocator> arr(arena);
+    for (usize i = 0; i < 5; ++i) {
+        arr.Push(i); // [0,1,2,3,4]
+    }
+
+    arr.Insert(2, 99); // [0,1,99,2,3,4]
+    const usize expected_after_insert[] = {0, 1, 99, 2, 3, 4};
+    bool insert_ok = arr.Size() == 6;
+    for (usize i = 0; i < 6 && insert_ok; ++i) {
+        insert_ok = arr[i] == expected_after_insert[i];
+    }
+    Expect(insert_ok, "insert at middle index produces expected sequence");
+
+    arr.Remove(0); // [1,99,2,3,4]
+    const usize expected_after_remove[] = {1, 99, 2, 3, 4};
+    bool remove_ok = arr.Size() == 5;
+    for (usize i = 0; i < 5 && remove_ok; ++i) {
+        remove_ok = arr[i] == expected_after_remove[i];
+    }
+    Expect(remove_ok, "remove at front index produces expected sequence");
+
+    arr.Insert(arr.Size(), 42); // [1,99,2,3,4,42]
+    Expect(arr.Size() == 6 && arr[5] == 42, "insert at end index appends correctly");
+
+    arr.Remove(arr.Size() - 1); // [1,99,2,3,4]
+    Expect(arr.Size() == 5 && arr[4] == 4, "remove at last index shrinks correctly");
+}
+
 } // namespace
 
 int main() {
@@ -326,6 +476,9 @@ int main() {
     TestArenaAllocator();
     TestPoolAllocator();
     TestStackAllocator();
+    TestArrayStress();
+    TestArrayNonTrivialResize();
+    TestArrayInsertRemove();
 
     const char ok[] = "OK\n";
     Write(1, ok, sizeof(ok) - 1);
