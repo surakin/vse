@@ -72,14 +72,14 @@ just during this initial planning pass.
   `plans/phase-NN-name/day-NN-slug.md`, broken into specific,
   individually checkable sub-tasks — not one paragraph for the whole day.
   Near-term phases (00, 01, 02 so far) are the ones expected to have
-  these; Phase 0 is written this way, Phases 1-2 still need migrating
-  (tracked as pending, not yet done). Later phases are scoped at the
-  goal/deliverable level and get expanded into day files once the prior
-  phase completes and reality has had a chance to correct the plan — but
-  that expansion, and its commit to the repo, has to happen *before* the
-  phase's work starts, not alongside it. No phase is startable while it's
-  still at goal/deliverable level, or while its days are still
-  undifferentiated paragraphs rather than files of specific sub-tasks.
+  these; Phases 0-2 are all written this way. Later phases are scoped at
+  the goal/deliverable level and get expanded into day files once the
+  prior phase completes and reality has had a chance to correct the plan
+  — but that expansion, and its commit to the repo, has to happen
+  *before* the phase's work starts, not alongside it. No phase is
+  startable while it's still at goal/deliverable level, or while its
+  days are still undifferentiated paragraphs rather than files of
+  specific sub-tasks.
 - Every task has a **Done condition** — something concrete and checkable.
   If a task can't be checked, it isn't finished.
 - Check off tasks (`[x]`) in the day files as they complete. Don't reorder
@@ -270,11 +270,12 @@ interpretations keep it buildable — flag any that don't match intent:
     parallel system scheduling, renderer command recording, physics,
     audio, asset streaming) needs a shared, portable way to fan out and
     join work rather than each hand-rolling its own thread pool. Phase 1
-    Day 20 already owns the genuinely OS-specific pieces (`clone()`-based
-    thread creation, futex mutex/condvar); the work-stealing scheduler
-    built on top of those primitives is a portable algorithm, so it gets
-    its own layer between Platform and RHI — the same relationship RHI
-    already has to Platform's raw Vulkan driver-loading (Day 22).
+    Day 20 already owns the genuinely OS-specific pieces (pthread-based
+    thread creation, `pthread_mutex_t`/`pthread_cond_t`); the
+    work-stealing scheduler built on top of those primitives is a
+    portable algorithm, so it gets its own layer between Platform and
+    RHI — the same relationship RHI already has to Platform's raw Vulkan
+    driver-loading (Day 22).
     Stackful fibers were considered for job suspension (letting a worker
     thread pick up other work while a job waits on a dependency) but
     rejected: fiber context-switching requires manipulating raw
@@ -326,7 +327,7 @@ ECS
 Renderer core
 RHI  (Vulkan | DX12 | Metal)
 Job System (work-stealing scheduler, jobs-as-coroutines)
-Platform layer (window, input, raw threads, files, time)
+Platform layer (window, input, threads, files, time)
 Foundation (allocators, containers, string, math, assert)
 libc / raw syscalls / OS ABI
 ```

@@ -125,13 +125,10 @@ table in `PLAN.md`.
   **Done condition** — a day without one isn't finished, and a day whose
   sub-tasks aren't broken out individually isn't detailed enough to
   start either.
-  Near-term phases (00, 01, 02) are the ones expected to have day files.
-  Phase 0 is written this way; Phases 1 and 2 still use an older,
-  single-paragraph-per-day format inline in their phase file and need to
-  be migrated to individual day files before they're startable under
-  this rule (not yet done — tracked as pending work, not a passed bar).
-  Later phases are intentionally left at deliverable/goal level rather
-  than speculatively detailed far in advance — but that breakdown
+  Near-term phases (00, 01, 02) are the ones expected to have day files;
+  all three are written this way. Later phases are intentionally left
+  at deliverable/goal level rather than speculatively detailed far in
+  advance — but that breakdown
   (writing every day file) has to happen, and be committed, before the
   phase starts, not during or after (see "Project status" above). "To be
   expanded into day-by-day tasks when started" means expand first, then

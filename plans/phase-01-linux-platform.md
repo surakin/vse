@@ -1,8 +1,8 @@
 # Phase 1 — Linux Platform Layer
 
 **Depends on:** Phase 0 (Foundation).
-**Goal:** window, input, time, threads, and files on Linux, built on raw
-syscalls plus the reference Wayland/X11 client libraries. **Wayland is the
+**Goal:** window, input, time, threads, and files on Linux, built on
+libc plus the reference Wayland/X11 client libraries. **Wayland is the
 primary display backend; X11 is a fallback backend** for systems/WMs that
 haven't moved to Wayland — see root `PLAN.md` assumption #3.
 **Definition of done:** the "hello window" milestone (Day 23 for Wayland,
@@ -32,98 +32,25 @@ protocol, those types are simply what the platform layer already has on
 hand; no separate spike or driver-contract exception is needed going into
 Phase 3.
 
-## Tasks
+## Days
 
-- [ ] **Day 13 — Process lifecycle & argv.** Real `_start` reading
-  argc/argv/envp off the stack per the System V ABI, calling engine `main`.
-  **Done:** engine prints its received command-line arguments.
-  **Flagged for re-evaluation:** this task predates Phase 0's resolved
-  libc decision (see `PLAN.md` assumption #2 and
-  `plans/phase-00-foundation.md`'s notes) — Phase 0 now links libc
-  normally with a standard `main()` entry, so a hand-rolled `_start`
-  may be unnecessary duplication of what libc's own CRT startup already
-  does. Re-decide this when Phase 1 is expanded into day files, not
-  before.
+Each day is its own file with a specific, checkable sub-task list and a
+Done condition — see `CLAUDE.md`'s "How the plan is structured."
 
-- [ ] **Day 14 — Wayland connection & registry.** Link `libwayland-client`;
-  `wl_display_connect`, `wl_display_get_registry`, and a registry listener
-  that binds `wl_compositor`, `xdg_wm_base` (via generated/vendored
-  xdg-shell protocol bindings — `wayland-scanner` output or a thin
-  hand-written equivalent), `wl_seat`, `wl_shm` globals.
-  **Done:** registry globals for the above are bound successfully and
-  logged.
-
-- [ ] **Day 15 — Wayland surface & xdg_shell window.** `wl_compositor_
-  create_surface`, `xdg_wm_base_get_xdg_surface`, `xdg_surface_
-  get_toplevel`, initial `configure`/`ack_configure`/`wl_surface_commit`
-  handshake via the library's request wrappers.
-  **Done:** a real window appears on screen via a Wayland compositor.
-
-- [ ] **Day 16 — Wayland event loop.** Integrate `wl_display_dispatch`/
-  `dispatch_pending` into the engine's main loop; handle `xdg_surface`
-  configure, `xdg_toplevel` configure (resize) and close callbacks.
-  **Done:** resizing logs new dimensions; the compositor's close affordance
-  exits cleanly.
-
-- [ ] **Day 17 — Wayland keyboard input.** `wl_seat_get_keyboard`; handle
-  the `keymap` event by loading it through `libxkbcommon` (the standard
-  companion library for interpreting a Wayland keymap — same "core
-  system library" category as `libwayland-client`, see root `PLAN.md`
-  assumption #1) instead of hand-parsing the XKB text format. Feed
-  keycodes through `xkb_state` for symbol translation.
-  **Done:** key presses on any real keyboard layout (not just US QWERTY)
-  produce correct engine key enum values — full XKB compliance is in
-  scope now that a real XKB library is doing the work.
-
-- [ ] **Day 18 — Wayland pointer input.** `wl_pointer` motion/button/axis
-  listener callbacks.
-  **Done:** an `InputState` struct accurately reflects live mouse
-  position/buttons/scroll.
-
-- [ ] **Day 19 — High-resolution timing.** `clock_gettime(CLOCK_MONOTONIC)`
-  wrapper and frame delta-time calculation.
-  **Done:** the main loop logs a stable delta-time under a frame limiter.
-
-- [ ] **Day 20 — Threading primitives.** `clone()`-based thread creation;
-  futex-based mutex and condition variable.
-  **Done:** a worker thread and the main thread increment a shared counter
-  under the mutex with no races across repeated stress runs.
-
-- [ ] **Day 21 — File I/O.** `open`/`read`/`write`/`close`/`lseek` wrappers;
-  a "read whole file into an arena buffer" utility.
-  **Done:** reads its own executable's ELF header and verifies the magic
-  number.
-
-- [ ] **Day 22 — GPU driver library loading.** Load `libvulkan.so` via the
-  OS dynamic loader; resolve `vkGetInstanceProcAddr`.
-  **Done:** `vkGetInstanceProcAddr` resolves and successfully fetches
-  `vkCreateInstance`.
-
-- [ ] **Day 23 — "Hello window" milestone (Wayland).** Ties the primary
-  backend together: open a window, run the event loop, respond to
-  keyboard/mouse input, exit cleanly on compositor-close.
-  **Done:** window opens, stays responsive, closes cleanly under Wayland.
-
-- [ ] **Day 24 — X11 fallback: connection & window.** Link `libX11`;
-  `XOpenDisplay`, `XCreateWindow`/`XCreateSimpleWindow`, `XSelectInput`,
-  `XMapWindow`; register `WM_DELETE_WINDOW` via `XSetWMProtocols`; handle
-  `Expose`, `ConfigureNotify`, `ClientMessage`.
-  **Done:** a window appears, resizing logs new dimensions, WM close exits
-  cleanly.
-
-- [ ] **Day 25 — X11 fallback: input.** `KeyPress`/`KeyRelease` via
-  `XLookupString`/`Xutf8LookupString` (full keysym translation, not a
-  minimal hand-rolled mapping), `ButtonPress`/`Release`/`MotionNotify` for
-  the mouse — feeding the same `InputState` struct as the Wayland backend.
-  **Done:** key/mouse state under X11 matches the Wayland backend's
-  behavior for the same interactions.
-
-- [ ] **Day 26 — Backend selection & fallback logic.** Detect
-  `$WAYLAND_DISPLAY` at startup; if unset or the connection fails, fall
-  back to `$DISPLAY`/X11. Both backends implement one internal `Window`
-  interface so upper layers are backend-agnostic.
-  **Done:** the Day-23 "hello window" milestone passes identically when
-  each backend is forced explicitly (env var override for testing).
+13. [Process lifecycle & argv](phase-01-linux-platform/day-13-process-lifecycle-argv.md)
+14. [Wayland connection & registry](phase-01-linux-platform/day-14-wayland-connection-registry.md)
+15. [Wayland surface & xdg_shell window](phase-01-linux-platform/day-15-wayland-surface-xdg-shell.md)
+16. [Wayland event loop](phase-01-linux-platform/day-16-wayland-event-loop.md)
+17. [Wayland keyboard input](phase-01-linux-platform/day-17-wayland-keyboard-input.md)
+18. [Wayland pointer input](phase-01-linux-platform/day-18-wayland-pointer-input.md)
+19. [High-resolution timing](phase-01-linux-platform/day-19-high-resolution-timing.md)
+20. [Threading primitives](phase-01-linux-platform/day-20-threading-primitives.md)
+21. [File I/O](phase-01-linux-platform/day-21-file-io.md)
+22. [GPU driver library loading](phase-01-linux-platform/day-22-gpu-driver-loading.md)
+23. ["Hello window" milestone (Wayland)](phase-01-linux-platform/day-23-hello-window-wayland.md)
+24. [X11 fallback: connection & window](phase-01-linux-platform/day-24-x11-connection-window.md)
+25. [X11 fallback: input](phase-01-linux-platform/day-25-x11-input.md)
+26. [Backend selection & fallback logic](phase-01-linux-platform/day-26-backend-selection-fallback.md)
 
 ## Notes / open questions
 
@@ -141,3 +68,7 @@ Phase 3.
   from the standard `xdg-shell.xml` protocol spec (a build-time step, not
   a new library dependency) or a small hand-written set of request/event
   wrappers for it. Decide which when Day 14 starts.
+- **Thread creation/sync (resolved).** Day 20 uses libc's `pthread` API
+  (`pthread_create`, `pthread_mutex_t`, `pthread_cond_t`) rather than raw
+  `clone()`/`futex` — same libc-preference reasoning as Phase 0's
+  Day 1/2. Phase 2's job system builds its worker pool on top of this.
