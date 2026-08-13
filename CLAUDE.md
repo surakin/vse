@@ -68,10 +68,14 @@ table in `PLAN.md`.
   have (Phases 8 and 10): loading a real, unmodified UE 5.3+ project's
   meshes/textures/materials/levels, and eventually Blueprint gameplay
   logic, directly into this engine. Targets uncooked editor-format
-  projects, not shipped/cooked games. The `.uasset` container format is
-  treated as public, reverse-engineered knowledge to implement from
-  scratch (not as a library dependency), same as implementing a protocol
-  from its spec.
+  projects, not shipped/cooked games. The offline import tool links a DLL
+  built from Unreal Engine's own source to parse `.uasset`/`.umap`
+  content via UE's real `UObject`/package-loading system, rather than a
+  from-scratch reverse-engineered parser — scoped to the import tool
+  only, never linked or shipped in the engine/game runtime (see
+  `PLAN.md` assumption #6). **Open risk, unresolved:** Epic's UE EULA
+  terms need review before Phase 8 work starts — flagged in `PLAN.md`,
+  not yet resolved.
 - **Engine core before editor.** The editor (Phase 15) is built last,
   using the engine's own renderer/ECS — not a separate GUI toolkit.
 

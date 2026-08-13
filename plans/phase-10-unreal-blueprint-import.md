@@ -1,8 +1,8 @@
 # Phase 10 — Unreal Blueprint Import
 
 **Depends on:** Phase 8 (Unreal asset & level import) for the shared
-`.uasset` container parser, and Phase 9 (Scripting VM) as the execution
-target.
+Unreal DLL embedding/package-loading setup, and Phase 9 (Scripting VM) as
+the execution target.
 **Goal:** bring in gameplay *logic* authored as Unreal Blueprints, not
 just static content — the other headline half of the Unreal import
 objective in root `PLAN.md`.
@@ -27,11 +27,13 @@ than chasing 100% coverage before anything ships.
 Two candidate approaches — pick with real sample Blueprints in hand, not
 in the abstract:
 
-- **(a) Graph-level transpilation (recommended default).** Parse the
-  Blueprint's node graph (from the same `.uasset` container Phase 8
-  already parses) and transpile it directly into Phase 9's VM bytecode,
-  node by node. Higher fidelity, produces real inspectable/editable
-  content in our own engine rather than a permanent shim.
+- **(a) Graph-level transpilation (recommended default).** Read the
+  Blueprint's node graph as live loaded `UEdGraph`/`UK2Node_*` objects
+  via the same Unreal DLL embedding Phase 8 sets up — no raw byte parsing
+  needed, UE's own reflection gives us the graph structure directly — and
+  transpile it into Phase 9's VM bytecode, node by node. Higher fidelity,
+  produces real inspectable/editable content in our own engine rather
+  than a permanent shim.
 - **(b) Reflection-driven interpretation.** Walk the graph at runtime
   against an interpreter mimicking Kismet semantics directly, skipping
   transpilation. Simpler to get started, likely slower, produces no
@@ -39,8 +41,8 @@ in the abstract:
 
 ## Sub-tracks (to be expanded into day-by-day tasks when started)
 
-1. Blueprint graph parser (built on the Phase 8 `.uasset` container
-   parser — `UEdGraph`/`UK2Node_*` export data).
+1. Blueprint graph export (built on Phase 8's Unreal DLL embedding — walk
+   the loaded `UEdGraph`/`UK2Node_*` objects via UE's own reflection).
 2. Node coverage: start with event nodes (BeginPlay, Tick), flow control
    (branch, sequence), variable get/set, function calls, casts, basic math
    — expand breadth-first from there based on real Blueprints encountered.
@@ -59,6 +61,9 @@ path is proven end to end.
 
 ## Notes / open questions
 
+- Inherits Phase 8's EULA review blocker (root `PLAN.md` assumption #6) —
+  this phase also links the Unreal DLL, so it can't start until that's
+  resolved either.
 - Full day-by-day breakdown deferred until Phase 9 is complete and real
   sample Blueprints have been inspected.
 - This phase is the most likely candidate in the entire plan to need

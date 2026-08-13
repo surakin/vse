@@ -40,7 +40,10 @@ compiler.
 3. **Unreal project import.** Able to load a real, unmodified Unreal Engine
    project's content — meshes, textures, materials, levels, and eventually
    Blueprint gameplay logic — directly into this engine, without Epic's
-   tools or source. This is a headline differentiator, not an afterthought.
+   editor tools. The offline import tool links a DLL built from Unreal's
+   own source to do the parsing (assumption #6) — scoped to that tool,
+   never shipped in the engine/game runtime. This is a headline
+   differentiator, not an afterthought.
 
 This is a solo, AI-assisted effort with no fixed calendar — progress happens
 in whatever increments of time/credits are available. The plan is written
@@ -126,11 +129,25 @@ interpretations keep it buildable — flag any that don't match intent:
    IoStore chunks — importing a project's authored content is the stated
    objective; reverse-engineering a shipped game's obfuscated runtime
    format is a different (and out of scope) problem.
-6. **Unreal's `.uasset` container format is public knowledge, not a
-   dependency.** Community projects (UAssetAPI, FModel, CUE4Parse) have
-   documented the format through reverse engineering. We build our own
-   parser from that documented knowledge without using their code — same
-   category as implementing X11 from its protocol spec.
+6. **Unreal asset parsing links Unreal Engine's own code (built as a DLL),
+   not a from-scratch reverse-engineered parser.** Superseded: the earlier
+   plan to reimplement the `.uasset`/`.umap` container format from
+   community reverse-engineering docs (UAssetAPI/FModel/CUE4Parse) as a
+   from-scratch parser. Instead, the offline Unreal-import tool (Phase
+   8/10) links a DLL built from Unreal Engine's own source and drives its
+   real `UObject`/package-loading system to load a project's content —
+   correctness comes from the source, not RE guesswork, and it's far less
+   work than reimplementing UE's serialization format by hand. This
+   dependency is scoped to the offline import tool only, the same
+   "dev-time, not runtime" category as CMake (assumption #8): the shipped
+   engine/game binary never links or ships the Unreal DLL.
+   **Open risk, not yet resolved:** Unreal Engine's source/binaries are
+   governed by Epic's UE EULA, which is source-available under specific
+   license terms, not permissively-licensed open source, and has its own
+   rules about how UE code can be used and redistributed. Given this
+   project's stated mission is to build a competing engine, the EULA
+   terms need an actual review before Phase 8 work starts — don't assume
+   this is fine by default.
 7. **First target CPU/ABI: x86-64 Linux, System V ABI.** ARM and the
    Windows x64 calling convention are handled when those platform phases
    start. **First target Unreal version: UE 5.3+** (property serialization
@@ -244,8 +261,10 @@ Raw syscalls / OS ABI
   /audio
   /asset        - resource system (pak/filesystem/network backends),
                   per-type versioned binary formats, offline tools
-  /unreal_import - uasset container parser, mesh/texture/material/level
-                   importers, blueprint importer
+  /unreal_import - Unreal DLL embedding, mesh/texture/material/level
+                   exporters, blueprint importer — builds as a separate
+                   offline tool binary; the Unreal DLL dependency and
+                   this module never link into the runtime engine library
   /scripting
   /editor
 /game            - demo/dogfood content, grows into the first playable slice
