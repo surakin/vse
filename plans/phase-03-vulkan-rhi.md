@@ -1,4 +1,4 @@
-# Phase 2 — Vulkan RHI (Linux backend)
+# Phase 3 — Vulkan RHI (Linux backend)
 
 **Depends on:** Phase 1 (Linux platform layer).
 **Goal:** the backend-agnostic Render Hardware Interface, with Vulkan as

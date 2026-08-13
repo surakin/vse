@@ -45,37 +45,46 @@ table in `PLAN.md`.
   malloc/printf/string.h/the C++ STL — for control, performance, and as a
   learning exercise, not because linking libc is banned outright. STL,
   exceptions, and RTTI remain unused.
+- **The engine is heavily multithreaded, through one job system — not ad
+  hoc thread pools per subsystem.** Phase 2 defines a portable
+  work-stealing job scheduler that every later multithreaded subsystem
+  (ECS parallel system scheduling, renderer command recording, physics,
+  audio, asset streaming) schedules work through. Jobs are C++20
+  coroutines, not stackful fibers — fiber context-switching needs
+  per-ABI code (hand-written assembly or a wrapped OS-native facility),
+  which conflicts with this layer's whole point of being portable; see
+  `PLAN.md` assumption #15.
 - **RHI abstraction is mandatory.** Renderer/gameplay code must never call
   Vulkan, DX12, or Metal directly — only through the common RHI interface
-  defined in Phase 2. Vulkan is the first backend; DX12/Metal follow later
+  defined in Phase 3. Vulkan is the first backend; DX12/Metal follow later
   behind the same interface.
 - **Data-oriented ECS**, not an OOP scene graph.
 - **Linux first, Wayland primary / X11 fallback.** Every system is built
   and proven on Linux before porting to Windows/macOS/Android/iOS/consoles
-  (Phases 9-12). On Linux, Wayland is the primary display backend, X11 is
+  (Phases 10-13). On Linux, Wayland is the primary display backend, X11 is
   a fallback backend for systems that haven't moved to Wayland — both
   built on their reference client libraries (`libwayland-client`,
   `libX11`/`libxcb`) rather than a hand-rolled wire-protocol client.
 - **Every target platform is designed in from day one — desktop, mobile,
   and console alike — even though only Linux is implemented before
-  Phase 9.** Platform-layer and engine-facing interfaces must stay
-  shaped so no later backend (Phases 9-12) ever forces a redesign of
+  Phase 10.** Platform-layer and engine-facing interfaces must stay
+  shaped so no later backend (Phases 10-13) ever forces a redesign of
   already-built engine layers — see `PLAN.md` assumption #11. Build order
   still follows the roadmap (Linux → Windows/macOS → Android/iOS →
   consoles); that's not license to design as if mobile/console don't
   exist until their phase starts.
 - **Gameplay scripting embeds real languages, not a custom bytecode VM —
-  starting with Lua via LuaJIT** (Phase 8). Deliberate, individually
+  starting with Lua via LuaJIT** (Phase 9). Deliberate, individually
   justified exception to the third-party-dependency line, ships inside
   the runtime engine/game binary — see `PLAN.md` assumption #13. Designed
   with a pluggable language-backend seam so more languages can be added
-  later without a redesign. Phase 14's Blueprint importer targets this
+  later without a redesign. Phase 15's Blueprint importer targets this
   (transpiling to Lua) instead of a custom VM.
 - **Unreal Engine project import is a headline objective**, not a nice-to-
-  have (Phases 13 and 14): loading a real, unmodified UE 5.3+ project's
+  have (Phases 14 and 15): loading a real, unmodified UE 5.3+ project's
   meshes/textures/materials/levels, and eventually Blueprint gameplay
   logic, directly into this engine. Deliberately sequenced *after*
-  multiplatform support (Phases 9-12) rather than right after the asset
+  multiplatform support (Phases 10-13) rather than right after the asset
   pipeline — see `PLAN.md` assumption #14. Targets uncooked editor-format
   projects, not shipped/cooked games. The offline import tool links a DLL
   built from Unreal Engine's own source to parse `.uasset`/`.umap`
@@ -83,9 +92,9 @@ table in `PLAN.md`.
   from-scratch reverse-engineered parser — scoped to the import tool
   only, never linked or shipped in the engine/game runtime (see
   `PLAN.md` assumption #6). **Open risk, unresolved:** Epic's UE EULA
-  terms need review before Phase 13 work starts — flagged in `PLAN.md`,
+  terms need review before Phase 14 work starts — flagged in `PLAN.md`,
   not yet resolved.
-- **Engine core before editor.** The editor (Phase 15) is built last,
+- **Engine core before editor.** The editor (Phase 16) is built last,
   using the engine's own renderer/ECS — not a separate GUI toolkit.
 
 ## How the plan is structured — follow this when doing planning work
@@ -94,7 +103,7 @@ table in `PLAN.md`.
   repo layout, the phase roadmap table, and a progress log. It does not
   contain day-by-day tasks.
 - Each `plans/phase-NN-*.md` file owns one phase. Near-term phases (00,
-  01) are broken into day-sized tasks, each with a concrete, checkable
+  01, 02) are broken into day-sized tasks, each with a concrete, checkable
   **Done condition** — a task without one isn't finished. Later phases are
   intentionally left at deliverable/goal level ("to be expanded into
   day-by-day tasks when started") rather than speculatively detailed far

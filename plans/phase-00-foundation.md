@@ -92,7 +92,7 @@ See root `PLAN.md` for guiding principles and scope assumptions.
   no-recompile control over channel verbosity/enable state, but Phase 0
   has no config-file parser yet (Day 8 only gives a string type, not a
   parser, and the asset pipeline with its own format conventions doesn't
-  land until Phase 7). Leading candidate is a minimal hand-rolled
+  land until Phase 8). Leading candidate is a minimal hand-rolled
   `key=value` text format read via the Day 2 syscalls, kept intentionally
   dumb — revisit if that proves too limited once real usage shows up.
 - **`-nostdlib -ffreestanding` vs. later libc-linked libraries.** PLAN.md

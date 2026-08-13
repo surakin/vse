@@ -1,9 +1,9 @@
-# Phase 7 — Asset Pipeline & Resource System
+# Phase 8 — Asset Pipeline & Resource System
 
-**Depends on:** Phase 4 (ECS), Phase 3 (Renderer core).
+**Depends on:** Phase 5 (ECS), Phase 4 (Renderer core).
 **Goal:** a resource system with pluggable storage backends, versioned
 per-type binary formats, offline tooling to produce them, and a runtime
-loader — the foundation Phase 13 (Unreal import) targets when converting
+loader — the foundation Phase 14 (Unreal import) targets when converting
 external content into engine-native form. See root `PLAN.md` assumption
 #12 for the settled design decisions this phase implements.
 **Definition of done:** an offline cooker converts source assets (in our
@@ -36,7 +36,7 @@ editor/tool code linked into the game binary.
   offline re-cook step vs. both) is a day-level design decision when this
   phase starts.
   - Custom mesh format (vertex/index buffers, LODs, material slot
-    references) — also the target format Phase 13's Unreal mesh importer
+    references) — also the target format Phase 14's Unreal mesh importer
     writes into.
   - Custom texture format (wraps GPU-native compressed payloads —
     BCn/ASTC — per assumption #4).
@@ -58,7 +58,7 @@ editor/tool code linked into the game binary.
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 4 is complete.
+- Full day-by-day breakdown deferred until Phase 5 is complete.
 - Network backend scope (auth, caching, offline/retry behavior) is
   intentionally undecided until this phase starts.
 - Exact version-migration mechanism (loader-side upgrade vs. offline

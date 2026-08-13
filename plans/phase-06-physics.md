@@ -1,6 +1,6 @@
-# Phase 5 — Physics
+# Phase 6 — Physics
 
-**Depends on:** Phase 4 (ECS).
+**Depends on:** Phase 5 (ECS).
 **Goal:** rigid body simulation integrated as ECS components/systems.
 **Definition of done:** gravity, collision detection, and collision
 resolution work correctly for boxes, spheres, and capsules.
@@ -18,6 +18,6 @@ resolution work correctly for boxes, spheres, and capsules.
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 4 is complete.
+- Full day-by-day breakdown deferred until Phase 5 is complete.
 - Fixed vs. variable timestep for simulation stability — decide with real
-  frame-time data from Phase 3/4, not speculatively.
+  frame-time data from Phase 4/5, not speculatively.
