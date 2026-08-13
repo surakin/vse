@@ -1,14 +1,15 @@
 # Phase 10 — Unreal Blueprint Import
 
 **Depends on:** Phase 8 (Unreal asset & level import) for the shared
-Unreal DLL embedding/package-loading setup, and Phase 9 (Scripting VM) as
-the execution target.
+Unreal DLL embedding/package-loading setup, and Phase 9 (Scripting:
+Lua/LuaJIT) as the execution target.
 **Goal:** bring in gameplay *logic* authored as Unreal Blueprints, not
 just static content — the other headline half of the Unreal import
 objective in root `PLAN.md`.
 **Definition of done:** a simple real Blueprint (a few event nodes, a
 branch, a non-timeline actor move/rotate) imported from a real Unreal
-project runs correctly in this engine via the Phase 9 scripting VM.
+project runs correctly in this engine, transpiled to Lua and executed via
+Phase 9's scripting subsystem.
 
 ## Why this is the hardest sub-project in the whole plan
 
@@ -31,13 +32,14 @@ in the abstract:
   Blueprint's node graph as live loaded `UEdGraph`/`UK2Node_*` objects
   via the same Unreal DLL embedding Phase 8 sets up — no raw byte parsing
   needed, UE's own reflection gives us the graph structure directly — and
-  transpile it into Phase 9's VM bytecode, node by node. Higher fidelity,
+  transpile it into Lua source (or precompiled LuaJIT bytecode), node by
+  node, run through Phase 9's scripting subsystem. Higher fidelity,
   produces real inspectable/editable content in our own engine rather
   than a permanent shim.
 - **(b) Reflection-driven interpretation.** Walk the graph at runtime
   against an interpreter mimicking Kismet semantics directly, skipping
   transpilation. Simpler to get started, likely slower, produces no
-  native/editable output.
+  native/editable output, and sidesteps Phase 9's Lua backend entirely.
 
 ## Sub-tracks (to be expanded into day-by-day tasks when started)
 
@@ -47,7 +49,7 @@ in the abstract:
    (branch, sequence), variable get/set, function calls, casts, basic math
    — expand breadth-first from there based on real Blueprints encountered.
 3. Transpiler (or interpreter, per the strategy decision) targeting Phase
-   9's VM/bytecode.
+   9's Lua/LuaJIT scripting subsystem.
 4. Unsupported-node reporting: a Blueprint that uses an unimplemented node
    should import with a clear, visible marker on the failure point, not
    silently produce wrong behavior.

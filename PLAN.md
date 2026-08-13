@@ -211,6 +211,31 @@ interpretations keep it buildable — flag any that don't match intent:
     where it earns its keep (chiefly where hand-editing or VCS-friendly
     merging matters, e.g. levels/scenes) — the offline cooker converts
     between the two, and the binary form stays what ships.
+13. **Gameplay scripting embeds real, well-known languages instead of a
+    custom bytecode VM — starting with Lua via LuaJIT.** Deliberate
+    exception to the "no third-party convenience dependencies" line
+    (assumption #1): reimplementing a competitive language runtime plus
+    JIT compiler from scratch is a categorically different, highly
+    specialized undertaking from the OS-facing plumbing (windowing, RHI)
+    this project otherwise reimplements — it's decades of compiler
+    engineering with no engine-differentiating value in redoing it,
+    unlike SDL/GLFW (thin convenience wrappers over things we're already
+    building ourselves, where reimplementing *is* the point). LuaJIT
+    ships inside the runtime engine/game binary — unlike CMake or the
+    Unreal DLL, which are dev-time/import-tool-only — but its license
+    (MIT) imposes no meaningful restriction, unlike the Unreal EULA
+    question in assumption #6. Phase 9's scripting subsystem is designed
+    with a pluggable language-backend seam (matching the pattern already
+    used for the RHI, resource, and window backends) so more "well-known
+    languages" can be added later as additive backends, not a redesign.
+    Phase 10's Blueprint importer targets this scripting subsystem
+    (transpiling Blueprint graphs into Lua) instead of a custom VM.
+    **Open note, not yet resolved:** LuaJIT's JIT (runtime code
+    generation) is disallowed on iOS App Store builds and typically on
+    console certification; LuaJIT has an interpreter-only fallback mode
+    for those. Phase 9's embedding should keep JIT-vs-interpreter a
+    platform-config choice, not an API change (ties to assumption #11) —
+    exact handling is deferred to Phases 12/14.
 
 ## Guiding principles
 
@@ -236,8 +261,8 @@ interpretations keep it buildable — flag any that don't match intent:
 ```
 Game / Demo content
 Editor tooling
-Unreal Blueprint import        --> targets Scripting VM
-Scripting VM
+Unreal Blueprint import        --> targets Scripting (Lua/LuaJIT)
+Scripting (Lua/LuaJIT first, pluggable language backends)
 Unreal asset & level import    --> targets Asset pipeline / ECS / Renderer
 Physics | Audio | Asset Pipeline
 ECS
@@ -265,7 +290,8 @@ Raw syscalls / OS ABI
                    exporters, blueprint importer — builds as a separate
                    offline tool binary; the Unreal DLL dependency and
                    this module never link into the runtime engine library
-  /scripting
+  /scripting    - language-backend interface + lua/ (LuaJIT embedding,
+                  first backend), engine API bindings
   /editor
 /game            - demo/dogfood content, grows into the first playable slice
 /tools           - offline asset cookers, custom build tooling
@@ -287,8 +313,8 @@ PLAN.md
 | 6 | Audio | Linux | [plans/phase-06-audio.md](plans/phase-06-audio.md) | Custom mixer plays hand-decoded WAV, positional 3D audio |
 | 7 | Asset pipeline & resource system | Linux | [plans/phase-07-asset-pipeline.md](plans/phase-07-asset-pipeline.md) | Offline cooker → versioned per-type binary formats, loaded at runtime through pak/filesystem resource backends |
 | 8 | **Unreal asset & level import** | Linux | [plans/phase-08-unreal-asset-import.md](plans/phase-08-unreal-asset-import.md) | A real UE5 project's meshes/textures/materials/one level import and render in-engine |
-| 9 | Scripting VM | Linux | [plans/phase-09-scripting-vm.md](plans/phase-09-scripting-vm.md) | Custom bytecode VM runs a gameplay script that spawns/moves an entity |
-| 10 | **Unreal Blueprint import** | Linux | [plans/phase-10-unreal-blueprint-import.md](plans/phase-10-unreal-blueprint-import.md) | A simple real Blueprint's logic runs correctly via our scripting VM |
+| 9 | Scripting (Lua/LuaJIT) | Linux | [plans/phase-09-scripting.md](plans/phase-09-scripting.md) | LuaJIT runs a gameplay script that spawns/moves an entity via engine API bindings |
+| 10 | **Unreal Blueprint import** | Linux | [plans/phase-10-unreal-blueprint-import.md](plans/phase-10-unreal-blueprint-import.md) | A simple real Blueprint's logic runs correctly, transpiled to Lua and executed via Phase 9's scripting subsystem |
 | 11 | Windows port + DX12 backend | Windows | [plans/phase-11-windows-dx12.md](plans/phase-11-windows-dx12.md) | Phases 1-10 running on Windows through the DX12 RHI backend |
 | 12 | macOS/iOS port + Metal backend | macOS, iOS | [plans/phase-12-macos-ios-metal.md](plans/phase-12-macos-ios-metal.md) | Phases 1-10 running through the Metal RHI backend |
 | 13 | Android port | Android | [plans/phase-13-android.md](plans/phase-13-android.md) | Vulkan backend reused; touch input platform layer |

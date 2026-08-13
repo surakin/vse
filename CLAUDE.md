@@ -76,6 +76,13 @@ table in `PLAN.md`.
   `PLAN.md` assumption #6). **Open risk, unresolved:** Epic's UE EULA
   terms need review before Phase 8 work starts — flagged in `PLAN.md`,
   not yet resolved.
+- **Gameplay scripting embeds real languages, not a custom bytecode VM —
+  starting with Lua via LuaJIT** (Phase 9). Deliberate, individually
+  justified exception to the third-party-dependency line, ships inside
+  the runtime engine/game binary — see `PLAN.md` assumption #13. Designed
+  with a pluggable language-backend seam so more languages can be added
+  later without a redesign. Phase 10's Blueprint importer targets this
+  (transpiling to Lua) instead of a custom VM.
 - **Engine core before editor.** The editor (Phase 15) is built last,
   using the engine's own renderer/ECS — not a separate GUI toolkit.
 

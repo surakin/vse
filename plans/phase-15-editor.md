@@ -1,8 +1,8 @@
 # Phase 15 — Editor Tooling
 
 **Depends on:** Phase 4 (ECS), Phase 7 (Asset pipeline), Phase 9
-(Scripting VM) — the editor is built using the engine's own renderer/ECS,
-not a separate GUI toolkit.
+(Scripting: Lua/LuaJIT) — the editor is built using the engine's own
+renderer/ECS, not a separate GUI toolkit.
 **Goal:** an in-engine editor for building content without hand-writing
 asset files.
 **Definition of done:** a scene view, entity inspector, and asset browser
