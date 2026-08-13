@@ -119,6 +119,11 @@ interpretations keep it buildable — flag any that don't match intent:
    well understood, replace it with our own build tool under `/tools` —
    this is a stated goal, not just an option, tracked as a task once a
    phase for it is scoped.
+9. **The engine name is undecided.** A placeholder name is used everywhere
+   a name is currently needed (CMake `project()`, namespace, repo-internal
+   references) so early work isn't blocked on branding. Keep the
+   placeholder isolated to as few, easy-to-grep spots as possible so
+   renaming later is a find-and-replace, not a refactor.
 
 ## Guiding principles
 

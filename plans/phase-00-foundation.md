@@ -18,6 +18,9 @@ See root `PLAN.md` for guiding principles and scope assumptions.
   syscall. CMake is a placeholder: once build needs (cross-compiling to
   later platform targets, asset cooking steps, custom toolchain flags) are
   well understood, it gets replaced by our own build tool under `/tools`.
+  The engine name is still undecided (see PLAN.md assumption 9), so use a
+  single placeholder name for the CMake `project()` and top-level
+  namespace, kept to as few spots as possible so it's easy to rename later.
   **Done:** `cmake --build` produces an ELF binary; running it exits with
   code 0 (verified via `echo $?`).
 
