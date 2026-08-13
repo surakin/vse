@@ -1,4 +1,4 @@
-#include "os.h"
+#include "../os.h"
 
 #include <cstdlib>
 #include <fcntl.h>
@@ -27,16 +27,13 @@ int Close(int fd) {
     return ::close(fd);
 }
 
-void* MMap(void* addr, usize len, int prot, int flags, int fd, long offset) {
-    return ::mmap(addr, len, prot, flags, fd, offset);
+void* ReserveMemory(usize size) {
+    void* mem = ::mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    return mem == MAP_FAILED ? nullptr : mem;
 }
 
-int MUnmap(void* addr, usize len) {
-    return ::munmap(addr, len);
-}
-
-int MProtect(void* addr, usize len, int prot) {
-    return ::mprotect(addr, len, prot);
+void ReleaseMemory(void* addr, usize size) {
+    ::munmap(addr, size);
 }
 
 } // namespace engine_placeholder::os

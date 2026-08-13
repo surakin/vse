@@ -1,15 +1,12 @@
 #include "stack_allocator.h"
 
-#include <sys/mman.h>
-
 #include "os.h"
 
 namespace engine_placeholder {
 
 StackAllocator::StackAllocator(usize capacity) : capacity_(capacity) {
-    void* mem = os::MMap(nullptr, capacity, PROT_READ | PROT_WRITE,
-                          MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (mem == MAP_FAILED) {
+    void* mem = os::ReserveMemory(capacity);
+    if (mem == nullptr) {
         base_ = nullptr;
         capacity_ = 0;
         return;
@@ -19,7 +16,7 @@ StackAllocator::StackAllocator(usize capacity) : capacity_(capacity) {
 
 StackAllocator::~StackAllocator() {
     if (base_ != nullptr) {
-        os::MUnmap(base_, capacity_);
+        os::ReleaseMemory(base_, capacity_);
     }
 }
 

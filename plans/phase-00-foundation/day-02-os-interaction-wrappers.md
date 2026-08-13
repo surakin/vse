@@ -18,6 +18,24 @@ use the standard `std::size_t` (`<cstddef>`) for now; Day 3 introduces
 that, updates `os.h`/`os.cpp` to use `usize` instead of `std::size_t`
 for consistency (a one-line signature edit, not a redesign).
 
+**Note on portability (added later, alongside Day 9):** `os::MMap`/
+`os::MUnmap`/`os::MProtect` as originally implemented here were a thin
+1:1 pass-through of POSIX `mmap`'s full signature (address hint, `prot`,
+`flags`, `fd`, `offset`) — but every actual call site (Days 4/5's
+allocators) only ever wanted anonymous, read+write memory, and Windows'
+`VirtualAlloc` has no equivalent shape for the unused parameters
+(`fd`/`offset` especially). This was corrected: `MMap`/`MUnmap` were
+replaced with `os::ReserveMemory(size)`/`os::ReleaseMemory(addr, size)`
+— exactly what callers need, portable to both `mmap` and `VirtualAlloc`
+without either side emulating the other — and unused `MProtect` was
+dropped (YAGNI; a real page-protection API can be designed properly
+when something actually needs it). `os.cpp` also moved to
+`linux/os.cpp`, with `CMakeLists.txt` selecting the platform source
+conditionally, so a later `windows/os.cpp` is additive, not a redesign.
+`Exit`/`Write`/`Read`/`Open`/`Close` were left as-is — their libc/POSIX
+shapes are already satisfied by Windows' CRT (`_write`/`_read`/`_open`/
+`_close`, `ExitProcess`), so no equivalent problem exists there.
+
 ## Tasks
 
 - [x] Create `/engine/foundation/os.h` declaring: `os::Exit(int code)`,

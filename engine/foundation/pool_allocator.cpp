@@ -1,7 +1,5 @@
 #include "pool_allocator.h"
 
-#include <sys/mman.h>
-
 #include "os.h"
 
 namespace engine_placeholder {
@@ -19,9 +17,8 @@ usize RoundUpSlotSize(usize slot_size) {
 PoolAllocator::PoolAllocator(usize slot_size, usize slot_count)
     : slot_size_(RoundUpSlotSize(slot_size)), slot_count_(slot_count) {
     usize total = slot_size_ * slot_count_;
-    void* mem = os::MMap(nullptr, total, PROT_READ | PROT_WRITE,
-                          MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (mem == MAP_FAILED) {
+    void* mem = os::ReserveMemory(total);
+    if (mem == nullptr) {
         base_ = nullptr;
         slot_count_ = 0;
         return;
@@ -39,7 +36,7 @@ PoolAllocator::PoolAllocator(usize slot_size, usize slot_count)
 
 PoolAllocator::~PoolAllocator() {
     if (base_ != nullptr) {
-        os::MUnmap(base_, slot_size_ * slot_count_);
+        os::ReleaseMemory(base_, slot_size_ * slot_count_);
     }
 }
 

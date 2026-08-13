@@ -3,6 +3,11 @@
 **Phase:** [Phase 0 — Foundation Layer](../phase-00-foundation.md)
 **Depends on:** Day 3 (base types & mem primitives).
 
+**Note (added later, alongside Day 9):** `os::MMap`/`os::MUnmap`
+mentioned below were renamed to `os::ReserveMemory`/`os::ReleaseMemory`
+for portability — see Day 2's note for why. `ArenaAllocator`'s own
+behavior is unaffected, just the OS call it makes internally.
+
 ## Tasks
 
 - [x] Define `ArenaAllocator` in

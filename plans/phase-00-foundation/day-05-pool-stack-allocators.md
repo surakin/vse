@@ -3,6 +3,10 @@
 **Phase:** [Phase 0 — Foundation Layer](../phase-00-foundation.md)
 **Depends on:** Day 4 (arena allocator).
 
+**Note (added later, alongside Day 9):** `os::MMap` mentioned below was
+renamed to `os::ReserveMemory` for portability — see Day 2's note for
+why. Both allocators' own behavior is unaffected.
+
 ## Tasks
 
 - [x] Implement `PoolAllocator` (fixed-size free-list) in
