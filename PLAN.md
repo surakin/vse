@@ -178,6 +178,22 @@ interpretations keep it buildable — flag any that don't match intent:
     constraints (a specific console SDK, an NDA'd requirement) genuinely
     couldn't have been anticipated, that's a real exception to flag and
     fix explicitly — not something to design around casually.
+12. **The resource system (Phase 7) has pluggable storage backends and
+    versioned per-type binary formats.** Resources are loaded through a
+    backend abstraction — pak-file (packed archive), filesystem (loose
+    files, for fast dev iteration without repacking), and network
+    (streamed from a remote source) — so upper layers never know which
+    one served a given resource, same pattern as the RHI and the
+    Wayland/X11 window backends. Every resource type (mesh, texture,
+    material, level, ...) owns its own binary format with an explicit
+    version header; the runtime loader supports old versions rather than
+    breaking previously-cooked content when a format changes — this is
+    the resolution to the versioning/migration question Phase 7 already
+    flagged as open. Binary is the default and required format
+    engine-wide; a parallel text format is optional per type, added only
+    where it earns its keep (chiefly where hand-editing or VCS-friendly
+    merging matters, e.g. levels/scenes) — the offline cooker converts
+    between the two, and the binary form stays what ships.
 
 ## Guiding principles
 
@@ -226,7 +242,8 @@ Raw syscalls / OS ABI
   /ecs          - entity/component/system core
   /physics
   /audio
-  /asset        - custom formats, offline tools
+  /asset        - resource system (pak/filesystem/network backends),
+                  per-type versioned binary formats, offline tools
   /unreal_import - uasset container parser, mesh/texture/material/level
                    importers, blueprint importer
   /scripting
@@ -249,7 +266,7 @@ PLAN.md
 | 4 | ECS | Linux | [plans/phase-04-ecs.md](plans/phase-04-ecs.md) | Thousands of entities updated per frame, benchmarked vs. naive OOP baseline |
 | 5 | Physics | Linux | [plans/phase-05-physics.md](plans/phase-05-physics.md) | Rigid body sim: gravity, collision, resolution for boxes/spheres/capsules |
 | 6 | Audio | Linux | [plans/phase-06-audio.md](plans/phase-06-audio.md) | Custom mixer plays hand-decoded WAV, positional 3D audio |
-| 7 | Asset pipeline | Linux | [plans/phase-07-asset-pipeline.md](plans/phase-07-asset-pipeline.md) | Offline cooker → engine binary formats, loaded at runtime |
+| 7 | Asset pipeline & resource system | Linux | [plans/phase-07-asset-pipeline.md](plans/phase-07-asset-pipeline.md) | Offline cooker → versioned per-type binary formats, loaded at runtime through pak/filesystem resource backends |
 | 8 | **Unreal asset & level import** | Linux | [plans/phase-08-unreal-asset-import.md](plans/phase-08-unreal-asset-import.md) | A real UE5 project's meshes/textures/materials/one level import and render in-engine |
 | 9 | Scripting VM | Linux | [plans/phase-09-scripting-vm.md](plans/phase-09-scripting-vm.md) | Custom bytecode VM runs a gameplay script that spawns/moves an entity |
 | 10 | **Unreal Blueprint import** | Linux | [plans/phase-10-unreal-blueprint-import.md](plans/phase-10-unreal-blueprint-import.md) | A simple real Blueprint's logic runs correctly via our scripting VM |
