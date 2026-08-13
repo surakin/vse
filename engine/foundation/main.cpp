@@ -1,5 +1,6 @@
 #include "arena_allocator.h"
 #include "array.h"
+#include "hash_map.h"
 #include "mem.h"
 #include "os.h"
 #include "pool_allocator.h"
@@ -8,6 +9,7 @@
 
 using engine_placeholder::Array;
 using engine_placeholder::ArenaAllocator;
+using engine_placeholder::HashMap;
 using engine_placeholder::PoolAllocator;
 using engine_placeholder::StackAllocator;
 using engine_placeholder::u8;
@@ -466,6 +468,51 @@ void TestArrayInsertRemove() {
     Expect(arr.Size() == 5 && arr[4] == 4, "remove at last index shrinks correctly");
 }
 
+void TestHashMap() {
+    // 32 MiB is generous: across ~8 rehash-doubling generations (8 ->
+    // ~2048 slots) both the slot array and the temporary rehash
+    // snapshot abandon their old blocks in the arena (Day 6 behavior),
+    // which adds up to a few hundred KiB at most for 1000 entries.
+    ArenaAllocator arena(32 * 1024 * 1024);
+    HashMap<usize, usize, ArenaAllocator> map(arena);
+
+    constexpr usize kCount = 1000;
+    for (usize key = 0; key < kCount; ++key) {
+        map.Insert(key, key * 7 + 3);
+    }
+    Expect(map.Size() == kCount, "hash map size matches insert count");
+
+    bool all_present_ok = true;
+    for (usize key = 0; key < kCount && all_present_ok; ++key) {
+        const usize* value = map.Find(key);
+        all_present_ok = value != nullptr && *value == key * 7 + 3;
+    }
+    Expect(all_present_ok, "every inserted key looks up to the right value");
+
+    // Remove the even-valued keys.
+    usize removed = 0;
+    for (usize key = 0; key < kCount; key += 2) {
+        if (map.Remove(key)) {
+            ++removed;
+        }
+    }
+    Expect(removed == kCount / 2, "removed exactly the even-keyed half");
+    Expect(map.Size() == kCount / 2, "hash map size reflects the removals");
+
+    bool removed_are_absent = true;
+    for (usize key = 0; key < kCount && removed_are_absent; key += 2) {
+        removed_are_absent = map.Find(key) == nullptr;
+    }
+    Expect(removed_are_absent, "removed keys report absent");
+
+    bool survivors_ok = true;
+    for (usize key = 1; key < kCount && survivors_ok; key += 2) {
+        const usize* value = map.Find(key);
+        survivors_ok = value != nullptr && *value == key * 7 + 3;
+    }
+    Expect(survivors_ok, "surviving (odd-keyed) half still resolves correctly");
+}
+
 } // namespace
 
 int main() {
@@ -479,6 +526,7 @@ int main() {
     TestArrayStress();
     TestArrayNonTrivialResize();
     TestArrayInsertRemove();
+    TestHashMap();
 
     const char ok[] = "OK\n";
     Write(1, ok, sizeof(ok) - 1);
