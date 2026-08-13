@@ -55,11 +55,22 @@ See root `PLAN.md` for guiding principles and scope assumptions.
   **Done:** formatted output written via the raw `write` syscall matches
   expected text exactly.
 
-- [ ] **Day 9 — Logging & assertions.** Log levels on top of the formatter;
-  an assert macro that prints file/line/message and calls raw `exit(1)` (no
+- [ ] **Day 9 — Logging & assertions.** Log system on top of the Day 8
+  formatter, designed against Unreal's log-spam problem from the start
+  (see PLAN.md assumption 10): named channels/categories (e.g. `LogCore`,
+  `LogRender`), each with its own verbosity level (Error/Warn/Info/
+  Debug/Trace) and independent enable/disable; a global default verbosity
+  with per-channel overrides. Channels default to a conservative verbosity
+  (Warning+), not "log everything." Settings are overridable at startup
+  without recompiling — per-user configuration — via a simple config
+  source (exact format TBD, see open question below); the log API is
+  built to support that from day one rather than bolting it on later. An
+  assert macro on top prints file/line/message and calls raw `exit(1)` (no
   libc `abort`).
   **Done:** an intentionally-failing assert prints the right message and
-  process exit code.
+  process exit code; toggling a test channel's enable flag and verbosity
+  via config changes what reaches the `write` syscall, verified for both a
+  suppressed and an emitted message.
 
 - [ ] **Day 10 — Math: vectors & matrices.** Vec2/Vec3/Vec4, Mat3/Mat4: dot,
   cross, normalize, multiply.
@@ -77,4 +88,10 @@ See root `PLAN.md` for guiding principles and scope assumptions.
 
 ## Notes / open questions
 
-- None yet — revisit at Phase 0 completion before expanding Phase 1.
+- **Log config format/source is undecided.** Day 9 needs per-user,
+  no-recompile control over channel verbosity/enable state, but Phase 0
+  has no config-file parser yet (Day 8 only gives a string type, not a
+  parser, and the asset pipeline with its own format conventions doesn't
+  land until Phase 7). Leading candidate is a minimal hand-rolled
+  `key=value` text format read via the Day 2 syscalls, kept intentionally
+  dumb — revisit if that proves too limited once real usage shows up.

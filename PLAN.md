@@ -124,6 +124,13 @@ interpretations keep it buildable — flag any that don't match intent:
    references) so early work isn't blocked on branding. Keep the
    placeholder isolated to as few, easy-to-grep spots as possible so
    renaming later is a find-and-replace, not a refactor.
+10. **Logging must not repeat Unreal's log-spam problem.** The Phase 0
+    logging system (Day 9) is designed from the start with named
+    channels/categories, independent per-channel verbosity and
+    enable/disable, and per-user configuration (overridable at startup
+    without recompiling) — not bolted on after the fact once every
+    subsystem is already logging unconditionally. Channels default to a
+    conservative verbosity rather than "log everything."
 
 ## Guiding principles
 
@@ -138,6 +145,8 @@ interpretations keep it buildable — flag any that don't match intent:
 - **Breadth before depth on Unreal import.** Cover the common cases (common
   material nodes, common Blueprint nodes) and flag unsupported long-tail
   cases explicitly, rather than blocking on 100% fidelity.
+- **Quiet by default.** Logging is channel-based with per-channel verbosity
+  and per-user configuration from day one — no Unreal-style log spam.
 
 ## Architecture layers (dependency flows downward only)
 
