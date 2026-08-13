@@ -21,6 +21,14 @@ is a living document: expect scope, architecture calls, and even phase
 boundaries to keep changing throughout the project as implementation
 reveals what the plan got wrong, not just during this initial pass.
 
+**This settledness bar applies at every phase transition, not just
+Phase 0.** No phase may be started — no code, no further sub-work within
+it — until it has its own day-sized, checkable-Done-condition task list
+written out in its `plans/phase-NN-*.md` file and committed to the repo.
+A phase left at goal/deliverable level (see "How the plan is structured"
+below) is not yet startable; expanding it into that task list is itself
+planning work that has to happen, and be committed, first.
+
 ## What this project is
 
 A from-scratch, AAA-capable game engine. Read `PLAN.md` first — it is the
@@ -105,9 +113,12 @@ table in `PLAN.md`.
 - Each `plans/phase-NN-*.md` file owns one phase. Near-term phases (00,
   01, 02) are broken into day-sized tasks, each with a concrete, checkable
   **Done condition** — a task without one isn't finished. Later phases are
-  intentionally left at deliverable/goal level ("to be expanded into
-  day-by-day tasks when started") rather than speculatively detailed far
-  in advance.
+  intentionally left at deliverable/goal level rather than speculatively
+  detailed far in advance — but that breakdown has to happen, and be
+  committed, before the phase starts, not during or after (see "Project
+  status" above). "To be expanded into day-by-day tasks when started"
+  means expand first, then start — not start and figure out the tasks
+  along the way.
 - Tasks are checked off (`[x]`) in place as completed. Completed work is
   not reordered or deleted — it's the project's history.
 - If a task turns out wrong-sized, blocked, or based on a bad assumption,

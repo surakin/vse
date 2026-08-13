@@ -67,8 +67,11 @@ just during this initial planning pass.
 - **Each phase has its own file under `/plans`** (`plans/phase-NN-name.md`).
   Near-term phases (00, 01, 02 so far) are broken down into day-sized
   tasks with concrete done-conditions. Later phases are scoped at the
-  goal/deliverable level and get expanded into day-by-day tasks when the
-  prior phase completes and reality has had a chance to correct the plan.
+  goal/deliverable level and get expanded into day-by-day tasks once the
+  prior phase completes and reality has had a chance to correct the plan
+  — but that expansion, and its commit to the repo, has to happen
+  *before* the phase's work starts, not alongside it. No phase is
+  startable while it's still at goal/deliverable level.
 - Every task has a **Done condition** — something concrete and checkable.
   If a task can't be checked, it isn't finished.
 - Check off tasks (`[x]`) in the phase files as they complete. Don't reorder
