@@ -1,4 +1,4 @@
-# Phase 1 / Day 22 — GPU Driver Library Loading
+# Phase 1 / Day 17 — GPU Driver Library Loading
 
 **Phase:** [Phase 1 — Linux Platform Layer](../phase-01-linux-platform.md)
 **Depends on:** Day 2 (OS interaction wrappers).

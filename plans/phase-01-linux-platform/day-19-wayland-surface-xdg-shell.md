@@ -1,7 +1,7 @@
-# Phase 1 / Day 15 — Wayland Surface & xdg_shell Window
+# Phase 1 / Day 19 — Wayland Surface & xdg_shell Window
 
 **Phase:** [Phase 1 — Linux Platform Layer](../phase-01-linux-platform.md)
-**Depends on:** Day 14 (Wayland connection & registry).
+**Depends on:** Day 18 (Wayland connection & registry).
 
 ## Tasks
 

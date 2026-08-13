@@ -6,7 +6,7 @@
 ## Tasks
 
 - [ ] Implement a `co_await`-able `ReadFileAsync(path)` in
-  `/engine/jobs/async_io.h`, built on Phase 1 Day 21's file I/O.
+  `/engine/jobs/async_io.h`, built on Phase 1 Day 16's file I/O.
 - [ ] Dispatch the actual (synchronous) read onto a dedicated I/O job
   rather than running it on a calling compute worker, so a slow read
   doesn't block other jobs on that worker.

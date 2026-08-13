@@ -1,7 +1,10 @@
-# Phase 1 / Day 14 — Wayland Connection & Registry
+# Phase 1 / Day 18 — Wayland Connection & Registry
 
 **Phase:** [Phase 1 — Linux Platform Layer](../phase-01-linux-platform.md)
-**Depends on:** Day 13 (process lifecycle & argv).
+**Depends on:** Days 14-17 (timing, threading, file I/O, GPU driver
+loading) — not a hard technical dependency, but this is where the
+Wayland/X11 windowing work begins, sequenced after the rest of the
+platform layer's non-windowing primitives are done.
 
 ## Tasks
 

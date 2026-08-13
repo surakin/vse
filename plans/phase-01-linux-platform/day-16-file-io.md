@@ -1,7 +1,7 @@
-# Phase 1 / Day 21 — File I/O
+# Phase 1 / Day 16 — File I/O
 
 **Phase:** [Phase 1 — Linux Platform Layer](../phase-01-linux-platform.md)
-**Depends on:** Day 13 (process lifecycle).
+**Depends on:** Day 13 (process lifecycle & argv).
 
 ## Tasks
 

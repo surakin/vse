@@ -1,7 +1,7 @@
-# Phase 1 / Day 20 — Threading Primitives
+# Phase 1 / Day 15 — Threading Primitives
 
 **Phase:** [Phase 1 — Linux Platform Layer](../phase-01-linux-platform.md)
-**Depends on:** Day 13 (process lifecycle).
+**Depends on:** Day 13 (process lifecycle & argv).
 
 **Resolved consistent with `PLAN.md` assumption #2:** thread creation
 and synchronization primitives use libc's `pthread` API (`pthread_create`,

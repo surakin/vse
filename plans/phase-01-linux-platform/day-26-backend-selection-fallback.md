@@ -14,7 +14,7 @@ keyboard/mouse and desktop lifecycle are wired up here.
 - [ ] Define the internal `Window` interface (open/close/resize/input
   callbacks or polling, per the design note above) that both backends
   implement.
-- [ ] Refactor Day 14-23's Wayland code and Day 24-25's X11 code to
+- [ ] Refactor Day 18-23's Wayland code and Day 24-25's X11 code to
   each implement this one interface, so upper layers are
   backend-agnostic.
 - [ ] Detect `$WAYLAND_DISPLAY` at startup; if unset or the connection

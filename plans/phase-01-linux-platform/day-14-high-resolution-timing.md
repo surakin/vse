@@ -1,8 +1,7 @@
-# Phase 1 / Day 19 — High-Resolution Timing
+# Phase 1 / Day 14 — High-Resolution Timing
 
 **Phase:** [Phase 1 — Linux Platform Layer](../phase-01-linux-platform.md)
-**Depends on:** Day 13 (process lifecycle) — not on Wayland specifically;
-sequenced here to unblock Day 23's milestone.
+**Depends on:** Day 13 (process lifecycle & argv).
 
 ## Tasks
 

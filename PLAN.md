@@ -270,12 +270,12 @@ interpretations keep it buildable — flag any that don't match intent:
     parallel system scheduling, renderer command recording, physics,
     audio, asset streaming) needs a shared, portable way to fan out and
     join work rather than each hand-rolling its own thread pool. Phase 1
-    Day 20 already owns the genuinely OS-specific pieces (pthread-based
+    Day 15 already owns the genuinely OS-specific pieces (pthread-based
     thread creation, `pthread_mutex_t`/`pthread_cond_t`); the
     work-stealing scheduler built on top of those primitives is a
     portable algorithm, so it gets its own layer between Platform and
     RHI — the same relationship RHI already has to Platform's raw Vulkan
-    driver-loading (Day 22).
+    driver-loading (Day 17).
     Stackful fibers were considered for job suspension (letting a worker
     thread pick up other work while a job waits on a dependency) but
     rejected: fiber context-switching requires manipulating raw

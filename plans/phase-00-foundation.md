@@ -41,8 +41,6 @@ Done condition — see `CLAUDE.md`'s "How the plan is structured."
 - **libc linkage (resolved).** Phase 0 links libc normally from Day 1 —
   no `-nostdlib`/`-ffreestanding` — and Day 2's OS-interaction layer
   wraps libc functions directly rather than hand-rolling raw syscalls.
-  See `PLAN.md` assumption #2. This also means Phase 1 Day 13's
-  previously-planned hand-rolled `_start` needs re-evaluating when
-  Phase 1 is expanded into day files — a standard `main()` entry via
-  libc's own startup may be sufficient instead; flagged there, not
-  resolved here.
+  See `PLAN.md` assumption #2. Phase 1 Day 13 (now written) resolved
+  this the same way: a standard `main()` entry via libc's own startup,
+  not a hand-rolled `_start`.

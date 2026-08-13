@@ -1,7 +1,7 @@
-# Phase 1 / Day 16 — Wayland Event Loop
+# Phase 1 / Day 20 — Wayland Event Loop
 
 **Phase:** [Phase 1 — Linux Platform Layer](../phase-01-linux-platform.md)
-**Depends on:** Day 15 (Wayland surface & xdg_shell window).
+**Depends on:** Day 19 (Wayland surface & xdg_shell window).
 
 ## Tasks
 

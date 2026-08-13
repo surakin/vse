@@ -1,7 +1,7 @@
-# Phase 1 / Day 17 — Wayland Keyboard Input
+# Phase 1 / Day 21 — Wayland Keyboard Input
 
 **Phase:** [Phase 1 — Linux Platform Layer](../phase-01-linux-platform.md)
-**Depends on:** Day 16 (Wayland event loop).
+**Depends on:** Day 20 (Wayland event loop).
 
 Uses `libxkbcommon` for keymap interpretation instead of hand-parsing
 the XKB text format — see this phase's Notes section for why that's a

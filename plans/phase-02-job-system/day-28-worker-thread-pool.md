@@ -8,7 +8,7 @@
 - [ ] Query physical core count via `sched_getaffinity` (or
   `/proc/cpuinfo` parsing as a fallback) — not libc
   `std::thread::hardware_concurrency`.
-- [ ] Spawn one worker thread per physical core using Phase 1 Day 20's
+- [ ] Spawn one worker thread per physical core using Phase 1 Day 15's
   `Thread` type (pthread-based).
 - [ ] Pin each worker to a distinct core via `sched_setaffinity` where
   available.
