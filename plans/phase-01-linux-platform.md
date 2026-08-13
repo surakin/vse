@@ -9,12 +9,18 @@ haven't moved to Wayland — see root `PLAN.md` assumption #3.
 Day 26 for X11 fallback) passes identically under both backends.
 
 **Design note (root `PLAN.md` assumption #11):** the internal `Window`/
-input interface this phase defines (Day 26) is the seam Windows/macOS
-backends plug into later (Phases 11-12) — keep its shape generic
-(open/close/resize/focus, key/mouse/scroll events, frame timing) rather
-than mirroring Wayland/X11-specific concepts upward, so those later ports
-are additive backends, not a redesign. Mobile/console backends (Phases
-13-14) aren't held to that bar and may need real interface changes.
+input interface this phase defines (Day 26) is the seam *every* later
+platform backend plugs into (Phases 11-14, desktop and mobile/console
+alike) — keep its shape generic rather than mirroring Wayland/X11-specific
+concepts upward, so those later ports are additive backends, never a
+redesign. Concretely: the window model should have room for
+lifecycle events beyond open/resize/close/focus (suspend/resume/
+low-memory, relevant to mobile even though Linux desktop never fires
+them), and the input model should have room for touch and gamepad
+alongside key/mouse/scroll, even though only keyboard/mouse are wired up
+in this phase. Unused event/input variants on desktop are fine; a missing
+seam that forces a later interface change is what this note exists to
+prevent.
 
 ## Vulkan WSI surface creation (previously an open risk — now resolved)
 

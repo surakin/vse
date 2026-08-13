@@ -56,12 +56,14 @@ table in `PLAN.md`.
   a fallback backend for systems that haven't moved to Wayland — both
   built on their reference client libraries (`libwayland-client`,
   `libX11`/`libxcb`) rather than a hand-rolled wire-protocol client.
-- **Desktop portability (Windows/macOS/Linux) is designed in from day
-  one; mobile/console is not.** Platform-layer and engine-facing
-  interfaces should stay shaped so Windows/macOS backends (Phases 11-12)
-  are additive, not invasive redesigns — see `PLAN.md` assumption #11.
-  Mobile (Android/iOS) and console interfaces are allowed to force real
-  changes when their phases (13-14) are reached.
+- **Every target platform is designed in from day one — desktop, mobile,
+  and console alike — even though only Linux is implemented before
+  Phase 11.** Platform-layer and engine-facing interfaces must stay
+  shaped so no later backend (Phases 11-14) ever forces a redesign of
+  already-built engine layers — see `PLAN.md` assumption #11. Build order
+  still follows the roadmap (Linux → Windows/macOS → Android/iOS →
+  consoles); that's not license to design as if mobile/console don't
+  exist until their phase starts.
 - **Unreal Engine project import is a headline objective**, not a nice-to-
   have (Phases 8 and 10): loading a real, unmodified UE 5.3+ project's
   meshes/textures/materials/levels, and eventually Blueprint gameplay
