@@ -4,7 +4,7 @@
 **Goal:** the language-level building blocks every later layer needs —
 memory, containers, strings, math, logging/assert — with no CRT/stdlib.
 **Definition of done:** custom allocators/containers/string/math all pass
-the custom test harness (`make test`, all green).
+the custom test harness (`ctest`, all green).
 
 See root `PLAN.md` for guiding principles and scope assumptions.
 
@@ -84,7 +84,7 @@ See root `PLAN.md` for guiding principles and scope assumptions.
 
 - [ ] **Day 12 — Foundation test harness.** A minimal custom test runner
   (no external framework) that runs and reports every foundation test.
-  **Done:** `make test` builds and runs the suite, all green.
+  **Done:** `ctest` builds and runs the suite, all green.
 
 ## Notes / open questions
 
