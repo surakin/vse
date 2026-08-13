@@ -146,7 +146,7 @@ interpretations keep it buildable — flag any that don't match intent:
    license terms, not permissively-licensed open source, and has its own
    rules about how UE code can be used and redistributed. Given this
    project's stated mission is to build a competing engine, the EULA
-   terms need an actual review before Phase 8 work starts — don't assume
+   terms need an actual review before Phase 13 work starts — don't assume
    this is fine by default.
 7. **First target CPU/ABI: x86-64 Linux, System V ABI.** ARM and the
    Windows x64 calling convention are handled when those platform phases
@@ -176,12 +176,12 @@ interpretations keep it buildable — flag any that don't match intent:
     conservative verbosity rather than "log everything."
 11. **Every target platform — desktop, mobile, and console — is considered
     in interface design from day one, even though only Linux is
-    implemented before Phase 11.** Implementation still follows the
+    implemented before Phase 9.** Implementation still follows the
     roadmap order (Linux → Windows/macOS → Android/iOS → consoles), but
     that's a build-order decision, not a design-scope one: the
     platform-layer and engine-facing interfaces (window, input, threads,
     files, time — see architecture layers below) must be shaped so that
-    *no* later platform backend (Phases 11-14) ever forces a redesign of
+    *no* later platform backend (Phases 9-12) ever forces a redesign of
     already-built engine layers, mobile/console included. Concretely,
     this means anticipating things Linux/desktop alone wouldn't surface
     even before those backends are implemented: touch/gamepad input
@@ -224,18 +224,29 @@ interpretations keep it buildable — flag any that don't match intent:
     ships inside the runtime engine/game binary — unlike CMake or the
     Unreal DLL, which are dev-time/import-tool-only — but its license
     (MIT) imposes no meaningful restriction, unlike the Unreal EULA
-    question in assumption #6. Phase 9's scripting subsystem is designed
+    question in assumption #6. Phase 8's scripting subsystem is designed
     with a pluggable language-backend seam (matching the pattern already
     used for the RHI, resource, and window backends) so more "well-known
     languages" can be added later as additive backends, not a redesign.
-    Phase 10's Blueprint importer targets this scripting subsystem
+    Phase 14's Blueprint importer targets this scripting subsystem
     (transpiling Blueprint graphs into Lua) instead of a custom VM.
     **Open note, not yet resolved:** LuaJIT's JIT (runtime code
     generation) is disallowed on iOS App Store builds and typically on
     console certification; LuaJIT has an interpreter-only fallback mode
-    for those. Phase 9's embedding should keep JIT-vs-interpreter a
+    for those. Phase 8's embedding should keep JIT-vs-interpreter a
     platform-config choice, not an API change (ties to assumption #11) —
-    exact handling is deferred to Phases 12/14.
+    exact handling is deferred to Phases 10/12.
+14. **Unreal import (Phases 13-14) is sequenced after multiplatform
+    support (Phases 9-12), not immediately after the asset pipeline
+    (Phase 7).** Originally Phases 8 and 10; moved so the engine reaches
+    Linux+Windows+macOS/iOS+Android+console viability first, with Unreal
+    import — the largest, most self-contained body of work in the plan —
+    layered on afterward rather than gating or getting entangled with
+    porting work. Assumption #11's "no platform ever forces a redesign"
+    guarantee already meant this reordering needed no interface changes
+    to Phases 0-8; it's a pure roadmap-order change. Scripting (Phase 8)
+    stays ahead of multiplatform since it doesn't depend on porting being
+    done first.
 
 ## Guiding principles
 
@@ -312,13 +323,13 @@ PLAN.md
 | 5 | Physics | Linux | [plans/phase-05-physics.md](plans/phase-05-physics.md) | Rigid body sim: gravity, collision, resolution for boxes/spheres/capsules |
 | 6 | Audio | Linux | [plans/phase-06-audio.md](plans/phase-06-audio.md) | Custom mixer plays hand-decoded WAV, positional 3D audio |
 | 7 | Asset pipeline & resource system | Linux | [plans/phase-07-asset-pipeline.md](plans/phase-07-asset-pipeline.md) | Offline cooker → versioned per-type binary formats, loaded at runtime through pak/filesystem resource backends |
-| 8 | **Unreal asset & level import** | Linux | [plans/phase-08-unreal-asset-import.md](plans/phase-08-unreal-asset-import.md) | A real UE5 project's meshes/textures/materials/one level import and render in-engine |
-| 9 | Scripting (Lua/LuaJIT) | Linux | [plans/phase-09-scripting.md](plans/phase-09-scripting.md) | LuaJIT runs a gameplay script that spawns/moves an entity via engine API bindings |
-| 10 | **Unreal Blueprint import** | Linux | [plans/phase-10-unreal-blueprint-import.md](plans/phase-10-unreal-blueprint-import.md) | A simple real Blueprint's logic runs correctly, transpiled to Lua and executed via Phase 9's scripting subsystem |
-| 11 | Windows port + DX12 backend | Windows | [plans/phase-11-windows-dx12.md](plans/phase-11-windows-dx12.md) | Phases 1-10 running on Windows through the DX12 RHI backend |
-| 12 | macOS/iOS port + Metal backend | macOS, iOS | [plans/phase-12-macos-ios-metal.md](plans/phase-12-macos-ios-metal.md) | Phases 1-10 running through the Metal RHI backend |
-| 13 | Android port | Android | [plans/phase-13-android.md](plans/phase-13-android.md) | Vulkan backend reused; touch input platform layer |
-| 14 | Console ports | Xbox, PS5 | [plans/phase-14-consoles.md](plans/phase-14-consoles.md) | Gated on dev kit/NDA access; same RHI, new platform layer |
+| 8 | Scripting (Lua/LuaJIT) | Linux | [plans/phase-08-scripting.md](plans/phase-08-scripting.md) | LuaJIT runs a gameplay script that spawns/moves an entity via engine API bindings |
+| 9 | Windows port + DX12 backend | Windows | [plans/phase-09-windows-dx12.md](plans/phase-09-windows-dx12.md) | Phases 1-8 running on Windows through the DX12 RHI backend |
+| 10 | macOS/iOS port + Metal backend | macOS, iOS | [plans/phase-10-macos-ios-metal.md](plans/phase-10-macos-ios-metal.md) | Phases 1-8 running through the Metal RHI backend |
+| 11 | Android port | Android | [plans/phase-11-android.md](plans/phase-11-android.md) | Vulkan backend reused; touch input platform layer |
+| 12 | Console ports | Xbox, PS5 | [plans/phase-12-consoles.md](plans/phase-12-consoles.md) | Gated on dev kit/NDA access; same RHI, new platform layer |
+| 13 | **Unreal asset & level import** | Linux | [plans/phase-13-unreal-asset-import.md](plans/phase-13-unreal-asset-import.md) | A real UE5 project's meshes/textures/materials/one level import and render in-engine |
+| 14 | **Unreal Blueprint import** | Linux | [plans/phase-14-unreal-blueprint-import.md](plans/phase-14-unreal-blueprint-import.md) | A simple real Blueprint's logic runs correctly, transpiled to Lua and executed via Phase 8's scripting subsystem |
 | 15 | Editor tooling | Linux first | [plans/phase-15-editor.md](plans/phase-15-editor.md) | In-engine editor: scene view, entity inspector, asset browser |
 | 16 | First playable demo | Linux, Windows | [plans/phase-16-first-playable-demo.md](plans/phase-16-first-playable-demo.md) | A small real game built with the engine, dogfooding every system |
 | 17+ | Feature-parity push | all | [plans/phase-17-feature-parity.md](plans/phase-17-feature-parity.md) | Ongoing: advanced rendering, world streaming, networking — scoped when reached |

@@ -1,7 +1,7 @@
-# Phase 13 — Android Port
+# Phase 11 — Android Port
 
 **Depends on:** Phase 2 (Vulkan RHI) — reuses the Vulkan backend directly;
-doesn't need DX12/Metal work from Phases 11-12.
+doesn't need DX12/Metal work from Phases 9-10.
 **Goal:** the engine running on Android.
 **Definition of done:** the Vulkan RHI backend runs unmodified on Android;
 a new platform layer handles Android's app lifecycle and touch input.

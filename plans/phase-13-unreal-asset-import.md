@@ -1,9 +1,12 @@
-# Phase 8 — Unreal Asset & Level Import
+# Phase 13 — Unreal Asset & Level Import
 
 **Depends on:** Phase 7 (Asset pipeline) — this importer's job is to
 produce Phase 7's engine-native formats from Unreal source data. Also
 benefits from Phase 3 (Renderer) and Phase 4 (ECS) being real, since the
 definition of done requires an imported level to actually render.
+Deliberately sequenced after Phases 9-12 (Windows/macOS/iOS/Android/
+console ports) rather than right after Phase 7 — Unreal import starts
+once the engine has viable multiplatform support, not before.
 **Goal:** load geometry, textures, materials, and level layout authored in
 a real Unreal Engine project directly into this engine — no Epic editor
 tools, no cooked/shipped-game formats. The offline import tool links a
@@ -84,7 +87,7 @@ kind:
 
 ## Explicitly out of scope for this phase
 
-Blueprint gameplay logic (Phase 10), Landscape/terrain, foliage systems,
+Blueprint gameplay logic (Phase 14), Landscape/terrain, foliage systems,
 Niagara/particle systems, Sequencer/cinematics, and cooked/shipped-game
 formats. Each of these would be its own follow-on import track, scoped
 against real demand once the core import path works.

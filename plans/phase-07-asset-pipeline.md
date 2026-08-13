@@ -3,7 +3,7 @@
 **Depends on:** Phase 4 (ECS), Phase 3 (Renderer core).
 **Goal:** a resource system with pluggable storage backends, versioned
 per-type binary formats, offline tooling to produce them, and a runtime
-loader — the foundation Phase 8 (Unreal import) targets when converting
+loader — the foundation Phase 13 (Unreal import) targets when converting
 external content into engine-native form. See root `PLAN.md` assumption
 #12 for the settled design decisions this phase implements.
 **Definition of done:** an offline cooker converts source assets (in our
@@ -36,7 +36,7 @@ editor/tool code linked into the game binary.
   offline re-cook step vs. both) is a day-level design decision when this
   phase starts.
   - Custom mesh format (vertex/index buffers, LODs, material slot
-    references) — also the target format Phase 8's Unreal mesh importer
+    references) — also the target format Phase 13's Unreal mesh importer
     writes into.
   - Custom texture format (wraps GPU-native compressed payloads —
     BCn/ASTC — per assumption #4).

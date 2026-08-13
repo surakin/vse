@@ -1,6 +1,6 @@
 # Phase 15 — Editor Tooling
 
-**Depends on:** Phase 4 (ECS), Phase 7 (Asset pipeline), Phase 9
+**Depends on:** Phase 4 (ECS), Phase 7 (Asset pipeline), Phase 8
 (Scripting: Lua/LuaJIT) — the editor is built using the engine's own
 renderer/ECS, not a separate GUI toolkit.
 **Goal:** an in-engine editor for building content without hand-writing
@@ -20,7 +20,7 @@ exist and can build/modify a level that the runtime can load.
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 9 is complete.
+- Full day-by-day breakdown deferred until Phase 8 is complete.
 - Whether the editor needs its own UI framework or can reuse a minimal
   subset built for in-game HUD/UI needs (if any exist by this point) —
   decide against what actually exists at the time.

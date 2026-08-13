@@ -52,37 +52,39 @@ table in `PLAN.md`.
 - **Data-oriented ECS**, not an OOP scene graph.
 - **Linux first, Wayland primary / X11 fallback.** Every system is built
   and proven on Linux before porting to Windows/macOS/Android/iOS/consoles
-  (Phases 11-14). On Linux, Wayland is the primary display backend, X11 is
+  (Phases 9-12). On Linux, Wayland is the primary display backend, X11 is
   a fallback backend for systems that haven't moved to Wayland — both
   built on their reference client libraries (`libwayland-client`,
   `libX11`/`libxcb`) rather than a hand-rolled wire-protocol client.
 - **Every target platform is designed in from day one — desktop, mobile,
   and console alike — even though only Linux is implemented before
-  Phase 11.** Platform-layer and engine-facing interfaces must stay
-  shaped so no later backend (Phases 11-14) ever forces a redesign of
+  Phase 9.** Platform-layer and engine-facing interfaces must stay
+  shaped so no later backend (Phases 9-12) ever forces a redesign of
   already-built engine layers — see `PLAN.md` assumption #11. Build order
   still follows the roadmap (Linux → Windows/macOS → Android/iOS →
   consoles); that's not license to design as if mobile/console don't
   exist until their phase starts.
+- **Gameplay scripting embeds real languages, not a custom bytecode VM —
+  starting with Lua via LuaJIT** (Phase 8). Deliberate, individually
+  justified exception to the third-party-dependency line, ships inside
+  the runtime engine/game binary — see `PLAN.md` assumption #13. Designed
+  with a pluggable language-backend seam so more languages can be added
+  later without a redesign. Phase 14's Blueprint importer targets this
+  (transpiling to Lua) instead of a custom VM.
 - **Unreal Engine project import is a headline objective**, not a nice-to-
-  have (Phases 8 and 10): loading a real, unmodified UE 5.3+ project's
+  have (Phases 13 and 14): loading a real, unmodified UE 5.3+ project's
   meshes/textures/materials/levels, and eventually Blueprint gameplay
-  logic, directly into this engine. Targets uncooked editor-format
+  logic, directly into this engine. Deliberately sequenced *after*
+  multiplatform support (Phases 9-12) rather than right after the asset
+  pipeline — see `PLAN.md` assumption #14. Targets uncooked editor-format
   projects, not shipped/cooked games. The offline import tool links a DLL
   built from Unreal Engine's own source to parse `.uasset`/`.umap`
   content via UE's real `UObject`/package-loading system, rather than a
   from-scratch reverse-engineered parser — scoped to the import tool
   only, never linked or shipped in the engine/game runtime (see
   `PLAN.md` assumption #6). **Open risk, unresolved:** Epic's UE EULA
-  terms need review before Phase 8 work starts — flagged in `PLAN.md`,
+  terms need review before Phase 13 work starts — flagged in `PLAN.md`,
   not yet resolved.
-- **Gameplay scripting embeds real languages, not a custom bytecode VM —
-  starting with Lua via LuaJIT** (Phase 9). Deliberate, individually
-  justified exception to the third-party-dependency line, ships inside
-  the runtime engine/game binary — see `PLAN.md` assumption #13. Designed
-  with a pluggable language-backend seam so more languages can be added
-  later without a redesign. Phase 10's Blueprint importer targets this
-  (transpiling to Lua) instead of a custom VM.
 - **Engine core before editor.** The editor (Phase 15) is built last,
   using the engine's own renderer/ECS — not a separate GUI toolkit.
 

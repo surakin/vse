@@ -1,13 +1,15 @@
-# Phase 11 — Windows Port + DX12 Backend
+# Phase 9 — Windows Port + DX12 Backend
 
-**Depends on:** Phases 0-10 all working on Linux — this phase ports the
-whole stack, it doesn't build new engine features.
+**Depends on:** Phases 0-8 all working on Linux — this phase ports the
+whole stack built so far, it doesn't build new engine features. Unreal
+import (Phases 13-14) is deliberately sequenced *after* multiplatform
+support, so it isn't part of what this phase ports.
 **Goal:** everything built so far running on Windows, with DX12 as the
 RHI backend (Vulkan also available on Windows if useful, but DX12 is the
 native target).
-**Definition of done:** Phases 1-10's functionality (window/input, RHI,
-renderer, ECS, physics, audio, asset pipeline, Unreal import, scripting)
-all working on Windows through the DX12 RHI backend.
+**Definition of done:** Phases 1-8's functionality (window/input, RHI,
+renderer, ECS, physics, audio, asset pipeline, scripting) all working on
+Windows through the DX12 RHI backend.
 
 ## Key deliverables (to be expanded into day-by-day tasks when started)
 
@@ -25,7 +27,7 @@ all working on Windows through the DX12 RHI backend.
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 10 is complete.
+- Full day-by-day breakdown deferred until Phase 8 is complete.
 - Windows' lack of a raw "syscall" layer the way Linux has one means the
   no-CRT boundary is drawn differently here — Win32 itself is the
   platform contract. Document the precise boundary when this phase starts.

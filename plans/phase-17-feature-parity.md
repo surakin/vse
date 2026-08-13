@@ -14,9 +14,9 @@ detail only once reached, against real priorities at that time.
   (Nanite/Lumen-class features), advanced shadowing.
 - World streaming / world partition for large open worlds.
 - Networking/replication.
-- Animation systems (blend trees, IK, state machines) beyond Phase 8's
+- Animation systems (blend trees, IK, state machines) beyond Phase 13's
   basic skeletal mesh import.
-- Landscape/terrain and foliage systems (deferred out of Phase 8).
+- Landscape/terrain and foliage systems (deferred out of Phase 13).
 - Niagara-equivalent particle/VFX system.
 - Further Unreal import coverage: latent Blueprint nodes, Sequencer/
   cinematics, cooked-game import if ever justified.
