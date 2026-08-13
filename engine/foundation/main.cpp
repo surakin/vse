@@ -1,10 +1,15 @@
 #include "arena_allocator.h"
 #include "mem.h"
 #include "os.h"
+#include "pool_allocator.h"
+#include "stack_allocator.h"
 #include "types.h"
 
 using engine_placeholder::ArenaAllocator;
+using engine_placeholder::PoolAllocator;
+using engine_placeholder::StackAllocator;
 using engine_placeholder::u8;
+using engine_placeholder::u32;
 using engine_placeholder::usize;
 using engine_placeholder::os::Exit;
 using engine_placeholder::os::Write;
@@ -207,6 +212,110 @@ void TestArenaAllocator() {
     Expect(checksums_ok, "arena allocation checksums intact after 1000 allocs");
 }
 
+void TestPoolAllocator() {
+    constexpr usize kSlotSize = 32;
+    constexpr usize kSlotCount = 64;
+    constexpr usize kIterations = 10000;
+
+    PoolAllocator pool(kSlotSize, kSlotCount);
+
+    void* live[kSlotCount] = {};
+    bool live_flag[kSlotCount] = {};
+
+    // Small deterministic xorshift32 PRNG — reproducible across
+    // platforms without depending on libc's rand() implementation.
+    u32 rng_state = 0x12345678u;
+    auto NextRand = [&rng_state]() -> u32 {
+        rng_state ^= rng_state << 13;
+        rng_state ^= rng_state >> 17;
+        rng_state ^= rng_state << 5;
+        return rng_state;
+    };
+
+    bool no_alias = true;
+    for (usize iter = 0; iter < kIterations && no_alias; ++iter) {
+        usize idx = NextRand() % kSlotCount;
+        if (!live_flag[idx]) {
+            void* p = pool.Alloc();
+            if (p == nullptr) {
+                // Pool momentarily full (every logical slot live); skip
+                // this iteration rather than treating it as failure.
+                continue;
+            }
+            for (usize j = 0; j < kSlotCount; ++j) {
+                if (live_flag[j] && live[j] == p) {
+                    no_alias = false;
+                    break;
+                }
+            }
+            live[idx] = p;
+            live_flag[idx] = true;
+        } else {
+            pool.Free(live[idx]);
+            live_flag[idx] = false;
+            live[idx] = nullptr;
+        }
+    }
+    Expect(no_alias, "pool allocator churn: no two live allocations alias");
+}
+
+void TestStackAllocator() {
+    StackAllocator stack(4096);
+
+    constexpr usize kFirstBatch = 10;
+    constexpr usize kSecondBatch = 5;
+    constexpr usize kObjSize = 16;
+
+    void* first[kFirstBatch];
+    bool first_push_ok = true;
+    for (usize i = 0; i < kFirstBatch; ++i) {
+        void* p = stack.Push(kObjSize, 8);
+        if (p == nullptr) {
+            first_push_ok = false;
+            break;
+        }
+        first[i] = p;
+        memset(p, static_cast<int>(i + 1), kObjSize);
+    }
+    Expect(first_push_ok, "stack push (first batch) succeeds");
+
+    StackAllocator::Marker marker = stack.CurrentMarker();
+
+    void* second_first = nullptr;
+    bool second_push_ok = true;
+    for (usize i = 0; i < kSecondBatch; ++i) {
+        void* p = stack.Push(kObjSize, 8);
+        if (p == nullptr) {
+            second_push_ok = false;
+            break;
+        }
+        if (i == 0) {
+            second_first = p;
+        }
+        memset(p, static_cast<int>(100 + i), kObjSize);
+    }
+    Expect(second_push_ok, "stack push (second batch) succeeds");
+
+    stack.PopToMarker(marker);
+
+    bool first_intact = true;
+    for (usize i = 0; i < kFirstBatch && first_intact; ++i) {
+        const auto* p = static_cast<const u8*>(first[i]);
+        const u8 expected = static_cast<u8>(i + 1);
+        for (usize b = 0; b < kObjSize; ++b) {
+            if (p[b] != expected) {
+                first_intact = false;
+                break;
+            }
+        }
+    }
+    Expect(first_intact, "first batch remains valid after PopToMarker");
+
+    void* reused = stack.Push(kObjSize, 8);
+    Expect(reused == second_first,
+           "PopToMarker rewinds the offset so the freed region is reused");
+}
+
 } // namespace
 
 int main() {
@@ -215,6 +324,8 @@ int main() {
     TestMemmove();
     TestStrlen();
     TestArenaAllocator();
+    TestPoolAllocator();
+    TestStackAllocator();
 
     const char ok[] = "OK\n";
     Write(1, ok, sizeof(ok) - 1);

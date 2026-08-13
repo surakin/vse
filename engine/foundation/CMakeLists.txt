@@ -3,6 +3,8 @@ add_library(foundation STATIC
   os.cpp
   mem.cpp
   arena_allocator.cpp
+  pool_allocator.cpp
+  stack_allocator.cpp
 )
 target_include_directories(foundation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
