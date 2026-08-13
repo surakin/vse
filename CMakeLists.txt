@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(reengine CXX)
+project(engine_placeholder CXX)
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   message(FATAL_ERROR "Only x86-64 Linux is supported (Phase 0)")

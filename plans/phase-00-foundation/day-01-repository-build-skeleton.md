@@ -28,8 +28,11 @@
 - [x] Choose the placeholder engine name (`PLAN.md` assumption #9) and
   record it in exactly one place: the CMake `project()` name and the
   top-level C++ namespace, so renaming later is a find-and-replace.
-  Chose `reengine` for the CMake project name and `re` for the
-  top-level C++ namespace.
+  Chose `engine_placeholder` for both the CMake project name and the
+  top-level C++ namespace — deliberately unmistakable as a placeholder
+  (not `re`/`reengine`, which would have coincidentally matched this
+  repo's directory name and could be misread as an actual naming
+  decision) and a single unique token to grep for when renaming later.
 - [x] Build: `cmake -B build && cmake --build build`.
 - [x] Run the resulting binary and confirm `echo $?` prints `0`.
 - [x] Commit the skeleton.
