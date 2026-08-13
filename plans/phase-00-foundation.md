@@ -95,3 +95,12 @@ See root `PLAN.md` for guiding principles and scope assumptions.
   land until Phase 7). Leading candidate is a minimal hand-rolled
   `key=value` text format read via the Day 2 syscalls, kept intentionally
   dumb — revisit if that proves too limited once real usage shows up.
+- **`-nostdlib -ffreestanding` vs. later libc-linked libraries.** PLAN.md
+  assumption #2 allows linking libc project-wide, but Day 1's build flags
+  are freestanding so the foundation layer can prove itself
+  dependency-free. Phase 1 plans to link `libwayland-client`/`libX11`
+  (assumption #3), which themselves depend on libc — meaning the final
+  executable can't stay `-nostdlib` once that lands. Decide at that point
+  whether freestanding stays scoped to a `foundation` static
+  library/object set (linked into a normally-linked final executable) or
+  whether Day 1's flags change project-wide. Doesn't block Phase 0 itself.

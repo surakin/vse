@@ -8,14 +8,13 @@ etc.) only ever calls the RHI, never Vulkan directly.
 Vulkan on Linux; grepping the codebase outside `/engine/rhi/vulkan` turns
 up zero direct Vulkan API calls.
 
-## Immediate first step
+## WSI surface creation (no longer an open risk)
 
-Resolve the open risk carried over from Phase 1: does
-`VK_KHR_wayland_surface`/`VK_KHR_xcb_surface` require linking
-`libwayland-client`/`libxcb`, or can a valid surface be constructed from
-our raw-protocol connection state? Spike this before designing the
-swapchain module — it affects how "zero dependency" is scoped for display
-integration going forward (see root `PLAN.md` assumption #3).
+`VK_KHR_wayland_surface`/`VK_KHR_xcb_surface` take `struct wl_display*`/
+`struct wl_surface*` or `xcb_connection_t*`/`Window` — types the Phase 1
+platform layer already owns, since it links `libwayland-client`/`libX11`
+directly (root `PLAN.md` assumption #3). No spike needed; the swapchain
+module just takes the Phase 1 window's native handles.
 
 ## Key deliverables (to be expanded into day-by-day tasks when started)
 

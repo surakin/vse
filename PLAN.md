@@ -26,10 +26,14 @@ compiler.
 
 ## Headline objectives
 
-1. **Truly from scratch.** Zero third-party dependencies. Only the OS/vendor
-   boundary (syscalls, X11/Wayland/Win32/Cocoa wire protocols, GPU driver
-   entry points) and the compiler itself are external to this project. No
-   CRT/stdlib — custom allocators, containers, string, math.
+1. **From scratch, on core system libraries.** Zero third-party
+   *convenience* dependencies — no SDL/GLFW/Boost/C++ STL/etc. What's
+   external to this project is the compiler, and the OS/vendor boundary:
+   raw syscalls, libc, the reference Wayland/X11 client libraries
+   (`libwayland-client`, `libX11`/`libxcb`), Win32, Cocoa, and GPU driver
+   entry points. Foundation-layer code (allocators, containers, string,
+   math) is still hand-written rather than reached for from libc, for
+   control/performance/learning — but linking libc itself is not banned.
 2. **Multi-platform, multi-API.** Windows, Linux, macOS, Android, iOS, Xbox,
    PS5. RHI abstraction over Vulkan, DX12, and Metal as first-class backends.
    Linux + Vulkan is the lead platform during core development.
@@ -65,30 +69,42 @@ Taken to an absolute literal extreme, "zero dependencies" is an infinite
 regress (you'd have to fabricate your own transistors). These
 interpretations keep it buildable — flag any that don't match intent:
 
-1. **The OS/vendor contract is not a dependency.** Raw syscalls, the ELF/PE
-   dynamic loader, X11/Wayland wire protocols, Win32, Cocoa, and the
-   Vulkan/DX12/Metal driver entry points are the unavoidable boundary
-   between "our code" and "the machine." Using them directly (not through a
-   convenience library like SDL/GLFW/Xlib/libxcb) is in scope and required.
-2. **No CRT/stdlib means no libc conveniences** (malloc, printf, string.h,
-   the C++ STL, exceptions, RTTI). It does **not** mean refusing to let the
-   OS's dynamic loader map `libvulkan.so` / `d3d12.dll` / `Metal.framework`
-   into our process — that's the same category as a syscall.
+1. **The OS/vendor contract, including core system libraries, is not a
+   dependency.** Raw syscalls, the ELF/PE dynamic loader, libc, the
+   reference Wayland client library (`libwayland-client`) and X11 client
+   library (`libX11`/`libxcb`), Win32, Cocoa, and the Vulkan/DX12/Metal
+   driver entry points are all in scope — they ship with the OS/distro
+   itself, the same unavoidable boundary as a syscall. What's still out of
+   scope is third-party *convenience/abstraction* libraries built on top
+   of that boundary for game-dev ergonomics — SDL, GLFW, Boost, the C++
+   STL, etc. The line: "part of the base OS/distro" is fine, "a library
+   that wraps a core system library for convenience" is not.
+2. **libc is allowed, but the foundation layer still hand-rolls its own
+   allocators, containers, string handling, and math** — for control,
+   performance, and as a learning/portability exercise, not because
+   linking libc is forbidden. Where calling libc directly is simpler and
+   doesn't duplicate something the foundation layer already owns (e.g.
+   wrapping a raw syscall, calling an OS API), that's fine. STL,
+   exceptions, and RTTI remain unused regardless — the C++ language
+   runtime overhead they bring isn't worth it, independent of the libc
+   question. (The Phase 0 build's `-nostdlib -ffreestanding` flags are the
+   foundation layer's own choice to prove itself dependency-free, not a
+   whole-project ban — expect this to need revisiting once Phase 1 links
+   `libwayland-client`, which itself depends on libc. Flagged as an open
+   question in Phase 0's notes.)
 3. **Linux window/input targets Wayland as the primary protocol, X11 as a
-   fallback backend** — both spoken directly over their Unix domain sockets
-   (no libwayland-client, no libX11/libxcb). Wayland is where the Linux
-   desktop is heading and X11 is progressively being phased out by
-   distributions, so Wayland gets built first; the X11 backend exists so
-   the engine still runs on systems/WMs that haven't moved. Both backends
-   conform to one internal window/input interface so upper layers never
-   know which one is active. Open risk noted in Phase 1/2 plans: Vulkan's
-   WSI surface-creation extensions (`VK_KHR_wayland_surface`,
-   `VK_KHR_xcb_surface`) are specified against `libwayland-client`/`libxcb`
-   object types, since GPU driver WSI implementations call back into those
-   libraries internally — a from-scratch client may need to link those
-   libraries narrowly just for the surface handle, as a driver-contract
-   exception rather than a general convenience dependency. To be resolved
-   with a spike at the start of Phase 2.
+   fallback backend — both via their reference client libraries
+   (`libwayland-client`, `libX11`/`libxcb`)**, not a hand-rolled
+   wire-protocol client. Wayland is where the Linux desktop is heading and
+   X11 is progressively being phased out by distributions, so Wayland gets
+   built first; the X11 backend exists so the engine still runs on
+   systems/WMs that haven't moved. Both backends conform to one internal
+   window/input interface so upper layers never know which one is active.
+   This resolves what was previously an open risk: Vulkan's WSI
+   surface-creation extensions (`VK_KHR_wayland_surface`,
+   `VK_KHR_xcb_surface`) take `libwayland-client`/`libxcb` object types
+   directly, which is now simply "the type we already have," not a
+   narrow driver-contract exception.
 4. **Shaders/images/assets start custom.** A full GLSL/HLSL compiler or a
    general PNG/JPEG importer is its own large project. Early phases use
    hand-authored SPIR-V and custom binary asset formats from our own
@@ -193,7 +209,7 @@ PLAN.md
 | # | Phase | Platforms | Plan file | Definition of done |
 |---|-------|-----------|-----------|---------------------|
 | 0 | Foundation layer | none (freestanding) | [plans/phase-00-foundation.md](plans/phase-00-foundation.md) | Custom allocators/containers/string/math pass the custom test harness |
-| 1 | Linux platform layer | Linux | [plans/phase-01-linux-platform.md](plans/phase-01-linux-platform.md) | Window opens via raw Wayland protocol (X11 fallback backend also working), handles input/resize/close, stable frame timing |
+| 1 | Linux platform layer | Linux | [plans/phase-01-linux-platform.md](plans/phase-01-linux-platform.md) | Window opens via libwayland-client (X11 fallback backend also working), handles input/resize/close, stable frame timing |
 | 2 | Vulkan RHI | Linux | [plans/phase-02-vulkan-rhi.md](plans/phase-02-vulkan-rhi.md) | RHI renders a lit, textured cube through Vulkan; no Vulkan calls leak outside `/engine/rhi/vulkan` |
 | 3 | Renderer core | Linux | [plans/phase-03-renderer-core.md](plans/phase-03-renderer-core.md) | Render graph draws multiple objects, basic materials/lighting, depth buffering |
 | 4 | ECS | Linux | [plans/phase-04-ecs.md](plans/phase-04-ecs.md) | Thousands of entities updated per frame, benchmarked vs. naive OOP baseline |

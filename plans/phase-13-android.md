@@ -10,15 +10,12 @@ a new platform layer handles Android's app lifecycle and touch input.
 
 - Android NDK platform layer: native activity lifecycle, `ANativeWindow`
   surface for Vulkan, touch input events.
-- Packaging (APK) without pulling in the standard NDK C runtime, if
-  feasible — needs a concrete feasibility spike, since Android's
-  native-activity glue traditionally assumes a libc (Bionic) is present;
-  may require a scoped exception similar to the Win32 boundary discussion
-  in Phase 11.
+- APK packaging via the NDK's native-activity glue, which assumes Bionic
+  (Android's libc) is present — no longer a concern to route around, since
+  linking the OS/distro's own libc is in scope (see root `PLAN.md`
+  assumption #2). Foundation-layer code still avoids relying on it for its
+  own allocators/containers/etc., same as on Linux desktop.
 
 ## Notes / open questions
 
 - Full day-by-day breakdown deferred until reached.
-- Bionic libc's role on Android may force a narrower interpretation of
-  "no CRT" than Linux desktop gets — decide explicitly when this phase
-  starts rather than assuming it carries over unchanged.

@@ -26,16 +26,20 @@ table in `PLAN.md`.
 
 ## Hard architectural constraints (from PLAN.md — do not violate casually)
 
-- **Zero third-party dependencies.** No SDL/GLFW/Xlib/libxcb/libwayland-
-  client/STL/Boost/etc. The only things outside this project's own code
-  are the compiler and the OS/vendor boundary: raw syscalls, X11/Wayland
-  wire protocols spoken directly, Win32, Cocoa, and GPU driver entry
-  points (Vulkan/DX12/Metal). See `PLAN.md`'s "Assumptions & scope notes"
-  for the precise reasoning on each boundary — several of these (Vulkan
-  WSI surface creation, Wayland XKB keymaps, Android's Bionic libc) have
-  open risks flagged that may force narrow, documented exceptions.
-- **No CRT/stdlib.** Custom allocators, containers, string handling, and
-  math — no malloc/printf/string.h/C++ STL/exceptions/RTTI.
+- **Zero third-party *convenience* dependencies.** No SDL/GLFW/STL/Boost/
+  etc. Core OS/distro-provided system libraries are allowed, alongside the
+  compiler and the OS/vendor boundary: raw syscalls, libc, the reference
+  Wayland client library (`libwayland-client`) and X11 client library
+  (`libX11`/`libxcb`), Win32, Cocoa, and GPU driver entry points
+  (Vulkan/DX12/Metal). The dividing line is "ships with the OS/distro
+  itself" vs. "third-party convenience/abstraction library built on top of
+  one" — see `PLAN.md`'s "Assumptions & scope notes" for the precise
+  reasoning on each boundary.
+- **Foundation layer still hand-rolls its own core.** Custom allocators,
+  containers, string handling, and math instead of reaching for
+  malloc/printf/string.h/the C++ STL — for control, performance, and as a
+  learning exercise, not because linking libc is banned outright. STL,
+  exceptions, and RTTI remain unused.
 - **RHI abstraction is mandatory.** Renderer/gameplay code must never call
   Vulkan, DX12, or Metal directly — only through the common RHI interface
   defined in Phase 2. Vulkan is the first backend; DX12/Metal follow later
@@ -43,9 +47,10 @@ table in `PLAN.md`.
 - **Data-oriented ECS**, not an OOP scene graph.
 - **Linux first, Wayland primary / X11 fallback.** Every system is built
   and proven on Linux before porting to Windows/macOS/Android/iOS/consoles
-  (Phases 11-14). On Linux, Wayland is the primary display backend (raw
-  wire protocol, no libwayland-client); X11 is a fallback backend (raw
-  protocol, no libX11/libxcb) for systems that haven't moved to Wayland.
+  (Phases 11-14). On Linux, Wayland is the primary display backend, X11 is
+  a fallback backend for systems that haven't moved to Wayland — both
+  built on their reference client libraries (`libwayland-client`,
+  `libX11`/`libxcb`) rather than a hand-rolled wire-protocol client.
 - **Unreal Engine project import is a headline objective**, not a nice-to-
   have (Phases 8 and 10): loading a real, unmodified UE 5.3+ project's
   meshes/textures/materials/levels, and eventually Blueprint gameplay
