@@ -1,7 +1,7 @@
 # Phase 2 / Day 34 — Stress & Throughput Test Suite
 
 **Phase:** [Phase 2 — Job System & Coroutines](../phase-02-job-system.md)
-**Depends on:** Days 27-33 (the whole job system) and Phase 0 Day 12
+**Depends on:** Days 27-33 (the whole job system) and Phase 0 Day 15
 (test harness).
 
 ## Tasks
@@ -16,7 +16,7 @@
 - [ ] Write the nested `co_await` ordering test: a chain of 5 dependent
   async steps (each depending on the previous one's result), run 10,000
   times, confirming strict resolution order every time.
-- [ ] Register all three with Phase 0 Day 12's test harness and wire
+- [ ] Register all three with Phase 0 Day 15's test harness and wire
   them into `ctest`.
 - [ ] Run `ctest`; confirm all three are green, and that the throughput
   test's log shows measured speedup scaling with core count (not just

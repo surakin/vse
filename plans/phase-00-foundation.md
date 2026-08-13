@@ -24,9 +24,12 @@ Done condition — see `CLAUDE.md`'s "How the plan is structured."
 7. [Hash map container](phase-00-foundation/day-07-hash-map.md)
 8. [String type & builder](phase-00-foundation/day-08-string-type-builder.md)
 9. [Logging & assertions](phase-00-foundation/day-09-logging-assertions.md)
-10. [Math: vectors & matrices](phase-00-foundation/day-10-math-vectors-matrices.md)
-11. [Math: quaternions & transforms](phase-00-foundation/day-11-math-quaternions-transforms.md)
-12. [Foundation test harness](phase-00-foundation/day-12-test-harness.md)
+10. [UTF-8 core](phase-00-foundation/day-10-utf8-core.md)
+11. [Grapheme clusters](phase-00-foundation/day-11-grapheme-clusters.md)
+12. [Normalization (NFC/NFD)](phase-00-foundation/day-12-normalization.md)
+13. [Math: vectors & matrices](phase-00-foundation/day-13-math-vectors-matrices.md)
+14. [Math: quaternions & transforms](phase-00-foundation/day-14-math-quaternions-transforms.md)
+15. [Foundation test harness](phase-00-foundation/day-15-test-harness.md)
 
 ## Notes / open questions
 
@@ -44,3 +47,14 @@ Done condition — see `CLAUDE.md`'s "How the plan is structured."
   See `PLAN.md` assumption #2. Phase 1 Day 13 (now written) resolved
   this the same way: a standard `main()` entry via libc's own startup,
   not a hand-rolled `_start`.
+- **Unicode string support (resolved, being implemented).** Days 10-12
+  extend Day 8's byte-oriented `String`/`StringView`/`StringBuilder`
+  with full UTF-8 codepoint/grapheme-cluster support and NFC/NFD
+  normalization — see
+  `docs/superpowers/specs/2026-08-14-unicode-string-support-design.md`
+  for the design (one canonical UTF-8 representation with byte/
+  codepoint/grapheme views, not a second narrow/wide string type;
+  table-driven grapheme-break and normalization data generated offline
+  from Unicode's published files, not a shipped third-party library;
+  collation explicitly out of scope). Inserted after Day 9, pushing the
+  original Days 10-12 (math, test harness) to 13-15.

@@ -1,7 +1,7 @@
-# Phase 0 / Day 12 — Foundation Test Harness
+# Phase 0 / Day 15 — Foundation Test Harness
 
 **Phase:** [Phase 0 — Foundation Layer](../phase-00-foundation.md)
-**Depends on:** Days 1-11 (everything this harness runs).
+**Depends on:** Days 1-14 (everything this harness runs).
 
 Uses Catch2 v3, vendored into the repo — see `PLAN.md` assumption #16
 for why this supersedes the originally-planned hand-rolled runner.
@@ -26,15 +26,15 @@ for why this supersedes the originally-planned hand-rolled runner.
 - [ ] Wire `catch_discover_tests(foundation_tests)` (from Catch2's
   CMake integration module, `Catch.cmake`) so `ctest` finds and runs
   each `TEST_CASE` as its own individual CTest entry.
-- [ ] Migrate Days 3-11's ad hoc `Expect()`-based verification code
+- [ ] Migrate Days 3-14's ad hoc `Expect()`-based verification code
   (currently inline in `engine/foundation/main.cpp`) into Catch2
   `TEST_CASE`/`SECTION`s, one test file per subsystem under
   `/tests/foundation` (e.g. `mem_test.cpp`, `arena_allocator_test.cpp`)
   — no test logic left in `main.cpp`, which reverts to being just the
   engine's real entry point (drops the `Expect()` helper and all
   `Test*()` functions it currently calls).
-- [ ] Run `ctest`; confirm every migrated test — Days 3-11's, plus
-  whatever Day 12 itself adds — reports green individually.
+- [ ] Run `ctest`; confirm every migrated test — Days 3-14's, plus
+  whatever Day 15 itself adds — reports green individually.
 - [ ] Commit.
 
 **Done:** `ctest` builds and runs the full suite through Catch2, all

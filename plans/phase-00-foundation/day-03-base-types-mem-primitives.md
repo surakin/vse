@@ -28,7 +28,7 @@ keeps that codepath under our control.
   backward overlap), `strlen` over known-length strings including the
   empty string.
 - [x] Run the cases (ad hoc via Day 2's `os::Write` for pass/fail
-  output — Day 12's formal harness doesn't exist yet) and confirm every
+  output — Day 15's formal harness doesn't exist yet) and confirm every
   case matches the hand-computed expected result. All 13 cases pass.
 - [x] Commit.
 

@@ -295,8 +295,10 @@ interpretations keep it buildable — flag any that don't match intent:
     new/delete`) rather than the global default `new`, keeping the
     no-malloc-by-default rule intact.
 16. **Test tooling is a dev-time dependency, not a runtime one — Catch2
-    v3 for the test harness.** Superseded: Phase 0 Day 12 originally
-    planned a hand-rolled, framework-free test runner, on the theory
+    v3 for the test harness.** Superseded: Phase 0's test harness day
+    (Day 15 as of the Unicode string support insertion; Day 12 when this
+    assumption was first written) originally planned a hand-rolled,
+    framework-free test runner, on the theory
     that "zero third-party dependencies" applied to test tooling the
     same as everything else. Reconsidered: test binaries are dev/CI
     artifacts that never link into the shipped engine/game binary — the
@@ -319,7 +321,7 @@ interpretations keep it buildable — flag any that don't match intent:
     for the test executable target(s), not the `foundation` (or any
     later engine) library target itself — production code under test
     still compiles and runs exception-free. Whether `-fno-rtti` also
-    needs a test-target carve-out is unverified until Day 12 actually
+    needs a test-target carve-out is unverified until Day 15 actually
     builds against Catch2 — flagged there, not assumed here.
 
 ## Guiding principles

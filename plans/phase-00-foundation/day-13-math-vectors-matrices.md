@@ -1,4 +1,4 @@
-# Phase 0 / Day 10 — Math: Vectors & Matrices
+# Phase 0 / Day 13 — Math: Vectors & Matrices
 
 **Phase:** [Phase 0 — Foundation Layer](../phase-00-foundation.md)
 **Depends on:** Day 9 (logging & assertions) — uses the assert macro for

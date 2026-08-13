@@ -1,7 +1,7 @@
-# Phase 0 / Day 11 — Math: Quaternions & Transforms
+# Phase 0 / Day 14 — Math: Quaternions & Transforms
 
 **Phase:** [Phase 0 — Foundation Layer](../phase-00-foundation.md)
-**Depends on:** Day 10 (math: vectors & matrices).
+**Depends on:** Day 13 (math: vectors & matrices).
 
 ## Tasks
 
