@@ -294,6 +294,33 @@ interpretations keep it buildable — flag any that don't match intent:
     through a Foundation pool allocator (via `promise_type::operator
     new/delete`) rather than the global default `new`, keeping the
     no-malloc-by-default rule intact.
+16. **Test tooling is a dev-time dependency, not a runtime one — Catch2
+    v3 for the test harness.** Superseded: Phase 0 Day 12 originally
+    planned a hand-rolled, framework-free test runner, on the theory
+    that "zero third-party dependencies" applied to test tooling the
+    same as everything else. Reconsidered: test binaries are dev/CI
+    artifacts that never link into the shipped engine/game binary — the
+    same "dev-time, not runtime" category as CMake (assumption #8), and
+    an even cleaner case than Lua/LuaJIT (assumption #13, which does
+    ship at runtime). Reimplementing a test framework's discovery/
+    assertion/reporting machinery has no engine-differentiating value,
+    unlike the OS-facing systems (allocators, containers, RHI) this
+    project exists to hand-roll. Catch2 is vendored into the repo under
+    `third_party/catch2` (a pinned release's source tree, not a
+    submodule) rather than fetched via CMake `FetchContent`, for fully
+    offline/reproducible builds — the tradeoff being repo size and
+    manual updates instead of a floating/network dependency at
+    configure time. v3 (compiled library, actively developed) was
+    chosen over v2 (single-header, maintenance-mode) despite v3 being
+    the more involved vendoring story.
+    **Technical note:** Catch2's `REQUIRE`/`CHECK` macros are
+    exception-based; since the engine/game runtime libraries build with
+    `-fno-exceptions` project-wide (Day 1), exceptions are enabled only
+    for the test executable target(s), not the `foundation` (or any
+    later engine) library target itself — production code under test
+    still compiles and runs exception-free. Whether `-fno-rtti` also
+    needs a test-target carve-out is unverified until Day 12 actually
+    builds against Catch2 — flagged there, not assumed here.
 
 ## Guiding principles
 
@@ -356,7 +383,9 @@ libc / raw syscalls / OS ABI
   /editor
 /game            - demo/dogfood content, grows into the first playable slice
 /tools           - offline asset cookers, custom build tooling
-/tests           - per-layer test harnesses (custom test runner, no framework)
+/tests           - per-layer test harnesses using Catch2 v3 (vendored,
+                  see assumption #16), discovered via CTest
+/third_party     - vendored third-party source (Catch2 v3 under catch2/)
 /plans           - per-phase index files (this index links to each);
                   phase-NN-name/day-NN-slug.md holds each day's tasks
 PLAN.md
