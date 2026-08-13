@@ -109,6 +109,16 @@ interpretations keep it buildable — flag any that don't match intent:
    Windows x64 calling convention are handled when those platform phases
    start. **First target Unreal version: UE 5.3+** (property serialization
    has been relatively stable since unversioned properties landed in 4.25).
+8. **Build tooling is a dev-time dependency, not a runtime one — CMake now,
+   custom later.** "Zero third-party dependencies" governs what ships
+   inside the engine/game binaries, not the tool that invokes the compiler
+   to produce them (same boundary category as the compiler itself). Phase
+   0 starts on CMake so early work isn't blocked reinventing a build
+   system. Once the project's build needs (custom toolchain flags,
+   cross-compiling to the later platform targets, asset cooking steps) are
+   well understood, replace it with our own build tool under `/tools` —
+   this is a stated goal, not just an option, tracked as a task once a
+   phase for it is scoped.
 
 ## Guiding principles
 

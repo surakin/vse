@@ -11,12 +11,15 @@ See root `PLAN.md` for guiding principles and scope assumptions.
 ## Tasks
 
 - [ ] **Day 1 — Repository & build skeleton.** Set up `/engine` directory
-  structure. Minimal build script (Make or shell) for Linux x86-64 using
+  structure. Build system starts on CMake (a dev-time dependency, not a
+  runtime one — see PLAN.md assumption 8) for Linux x86-64 using
   `-nostdlib -ffreestanding -fno-exceptions -fno-rtti -fno-stack-protector
   -fno-builtin`. A custom entry stub that does nothing but exit(0) via raw
-  syscall.
-  **Done:** `make` produces an ELF binary; running it exits with code 0
-  (verified via `echo $?`).
+  syscall. CMake is a placeholder: once build needs (cross-compiling to
+  later platform targets, asset cooking steps, custom toolchain flags) are
+  well understood, it gets replaced by our own build tool under `/tools`.
+  **Done:** `cmake --build` produces an ELF binary; running it exits with
+  code 0 (verified via `echo $?`).
 
 - [ ] **Day 2 — Raw syscall layer (x86-64 Linux).** Inline-assembly wrappers
   for `exit`, `write`, `read`, `open`, `close`, `mmap`, `munmap`, `mprotect`.
