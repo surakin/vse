@@ -5,6 +5,7 @@
 #include "os.h"
 #include "pool_allocator.h"
 #include "stack_allocator.h"
+#include "string.h"
 #include "types.h"
 
 using engine_placeholder::Array;
@@ -12,6 +13,9 @@ using engine_placeholder::ArenaAllocator;
 using engine_placeholder::HashMap;
 using engine_placeholder::PoolAllocator;
 using engine_placeholder::StackAllocator;
+using engine_placeholder::String;
+using engine_placeholder::StringBuilder;
+using engine_placeholder::StringView;
 using engine_placeholder::u8;
 using engine_placeholder::u32;
 using engine_placeholder::usize;
@@ -513,6 +517,59 @@ void TestHashMap() {
     Expect(survivors_ok, "surviving (odd-keyed) half still resolves correctly");
 }
 
+void TestStringView() {
+    StringView a("hello");
+    StringView b("hello");
+    StringView c("world");
+    Expect(a == b, "StringView equality for identical content");
+    Expect(a != c, "StringView inequality for different content");
+    Expect(a.Compare(c) < 0, "StringView lexicographic comparison ('hello' < 'world')");
+    Expect(c.Compare(a) > 0, "StringView lexicographic comparison ('world' > 'hello')");
+
+    StringView sub = a.Substring(1, 3); // "ell"
+    StringView expected_sub("ell");
+    Expect(sub == expected_sub, "StringView substring extracts expected range");
+}
+
+void TestStringType() {
+    ArenaAllocator arena(4096);
+    String<ArenaAllocator> s(arena);
+    Expect(s.Length() == 0, "default-constructed String is empty");
+
+    s.Append(StringView("hello"));
+    s.Append(' ');
+    s.Append(StringView("world"));
+    StringView expected("hello world");
+    Expect(s.View() == expected, "String::Append builds expected content");
+    Expect(s.CStr()[s.Length()] == '\0', "String maintains a null terminator");
+}
+
+void TestStringBuilder() {
+    ArenaAllocator arena(1024 * 1024);
+    StringBuilder<ArenaAllocator> sb(arena);
+    sb.Append("answer=");
+    sb.AppendInt(-42);
+    sb.Append(" count=");
+    sb.AppendUInt(7);
+    sb.Append(" pi=");
+    sb.AppendFloat(3.25, 2);
+    sb.Append(" name=");
+    sb.Append("engine");
+
+    const char expected[] = "answer=-42 count=7 pi=3.25 name=engine";
+    StringView actual = sb.View();
+    bool matches = actual.Length() == sizeof(expected) - 1 &&
+                   BytesEqual(reinterpret_cast<const u8*>(actual.Data()),
+                              reinterpret_cast<const u8*>(expected), actual.Length());
+    Expect(matches, "StringBuilder formats ints/floats/strings byte-for-byte correctly");
+
+    // Write the formatted result via os::Write, demonstrating the same
+    // buffer already verified above going out through the Day 2 wrapper.
+    Write(1, actual.Data(), actual.Length());
+    const char newline[] = "\n";
+    Write(1, newline, 1);
+}
+
 } // namespace
 
 int main() {
@@ -527,6 +584,9 @@ int main() {
     TestArrayNonTrivialResize();
     TestArrayInsertRemove();
     TestHashMap();
+    TestStringView();
+    TestStringType();
+    TestStringBuilder();
 
     const char ok[] = "OK\n";
     Write(1, ok, sizeof(ok) - 1);
