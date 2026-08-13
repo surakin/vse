@@ -14,6 +14,9 @@ keeps that codepath under our control.
 - [ ] Define fixed-width integer typedefs (`i8/i16/i32/i64`,
   `u8/u16/u32/u64`, `usize`, `f32/f64`) in
   `/engine/foundation/types.h`; confirm native `bool` is usable as-is.
+- [ ] Update `/engine/foundation/os.h`/`os.cpp` (Day 2) to use `usize`
+  in place of the `std::size_t` placeholder they were written with —
+  see Day 2's note on why `usize` couldn't be used from the start.
 - [ ] Implement hand-written `memcpy`, `memset`, `memmove`, `strlen` in
   `/engine/foundation/mem.cpp`.
 - [ ] Write hand-computed test cases: `memcpy`/`memset` over several
