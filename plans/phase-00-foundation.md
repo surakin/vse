@@ -30,14 +30,14 @@ Done condition — see `CLAUDE.md`'s "How the plan is structured."
 
 ## Notes / open questions
 
-- **Log config format/source.** Day 9 needs per-user, no-recompile
-  control over channel verbosity/enable state, but Phase 0 has no
-  general config-file parser (Day 8 only gives a string type, not a
-  parser, and the asset pipeline with its own format conventions doesn't
-  land until Phase 8). Day 9 implements a minimal hand-rolled
-  `key=value` text format directly as the leading candidate, kept
-  intentionally dumb — revisit if that proves too limited once real
-  usage shows up.
+- **Log config format/source (resolved, implemented).** Day 9
+  implements a minimal hand-rolled `key=value` text format
+  (`ChannelName.verbosity=Level` / `ChannelName.enabled=true|false`),
+  read via Day 2's `os::Open`/`os::Read` and parsed with Day 8's
+  `StringView` (extended with `IndexOf`/`Find`/`Contains`) — no general
+  config-file parser needed since this format is deliberately dumb.
+  Revisit if it proves too limited once real usage shows up (e.g. once
+  the asset pipeline's own format conventions land in Phase 8).
 - **libc linkage (resolved).** Phase 0 links libc normally from Day 1 —
   no `-nostdlib`/`-ffreestanding` — and Day 2's OS-interaction layer
   wraps libc functions directly rather than hand-rolling raw syscalls.

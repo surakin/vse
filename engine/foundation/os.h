@@ -13,7 +13,9 @@ namespace engine_placeholder::os {
 long Write(int fd, const void* buf, usize len);
 long Read(int fd, void* buf, usize len);
 
-int Open(const char* path, int flags);
+// `mode` only matters when `flags` includes O_CREAT; harmless to pass
+// otherwise (the OS ignores it).
+int Open(const char* path, int flags, int mode = 0644);
 int Close(int fd);
 
 void* MMap(void* addr, usize len, int prot, int flags, int fd, long offset);

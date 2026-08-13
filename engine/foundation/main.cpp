@@ -1,6 +1,10 @@
+#include <csetjmp>
+#include <fcntl.h>
+
 #include "arena_allocator.h"
 #include "array.h"
 #include "hash_map.h"
+#include "log.h"
 #include "mem.h"
 #include "os.h"
 #include "pool_allocator.h"
@@ -11,7 +15,13 @@
 using engine_placeholder::Array;
 using engine_placeholder::ArenaAllocator;
 using engine_placeholder::HashMap;
+using engine_placeholder::Log;
+using engine_placeholder::LogChannel;
+using engine_placeholder::LogCore;
+using engine_placeholder::LogVerbosity;
 using engine_placeholder::PoolAllocator;
+using engine_placeholder::SetExitSinkForTesting;
+using engine_placeholder::SetWriteSinkForTesting;
 using engine_placeholder::StackAllocator;
 using engine_placeholder::String;
 using engine_placeholder::StringBuilder;
@@ -19,7 +29,10 @@ using engine_placeholder::StringView;
 using engine_placeholder::u8;
 using engine_placeholder::u32;
 using engine_placeholder::usize;
+using engine_placeholder::LoadConfig;
+using engine_placeholder::os::Close;
 using engine_placeholder::os::Exit;
+using engine_placeholder::os::Open;
 using engine_placeholder::os::Write;
 
 namespace {
@@ -570,6 +583,107 @@ void TestStringBuilder() {
     Write(1, newline, 1);
 }
 
+char g_capture_buffer[1024];
+usize g_capture_len = 0;
+
+long CapturingWriteSink(int fd, const void* buf, usize len) {
+    (void)fd;
+    usize copy_len = len;
+    if (g_capture_len + copy_len > sizeof(g_capture_buffer)) {
+        copy_len = sizeof(g_capture_buffer) - g_capture_len;
+    }
+    memcpy(g_capture_buffer + g_capture_len, buf, copy_len);
+    g_capture_len += copy_len;
+    return static_cast<long>(len);
+}
+
+std::jmp_buf g_test_exit_jmp;
+int g_test_exit_code = 0;
+
+[[noreturn]] void TestExitSink(int code) {
+    g_test_exit_code = code;
+    std::longjmp(g_test_exit_jmp, 1);
+}
+
+void TestDefaultChannelVerbosity() {
+    g_capture_len = 0;
+    SetWriteSinkForTesting(&CapturingWriteSink);
+
+    Log(LogCore, LogVerbosity::Error, "error visible by default");
+    Log(LogCore, LogVerbosity::Info, "info hidden by default");
+
+    SetWriteSinkForTesting(&Write);
+
+    StringView captured(g_capture_buffer, g_capture_len);
+    Expect(captured.Contains(StringView("error visible by default")),
+           "Error-level messages emit by default");
+    Expect(!captured.Contains(StringView("info hidden by default")),
+           "Info-level messages are suppressed by default (Warning+ default)");
+}
+
+void TestAssertFailure() {
+    g_capture_len = 0;
+    SetWriteSinkForTesting(&CapturingWriteSink);
+    SetExitSinkForTesting(&TestExitSink);
+
+    bool reached_after_assert = false;
+    if (setjmp(g_test_exit_jmp) == 0) {
+        ENGINE_ASSERT(false, "intentional test failure");
+        reached_after_assert = true; // should never execute
+    }
+
+    SetWriteSinkForTesting(&Write);
+    SetExitSinkForTesting(&Exit);
+
+    Expect(!reached_after_assert, "code after a failing ENGINE_ASSERT is not reached");
+    Expect(g_test_exit_code == 1, "intentionally-failing assert exits with code 1");
+
+    StringView captured(g_capture_buffer, g_capture_len);
+    Expect(captured.Contains(StringView("intentional test failure")),
+           "assert failure output contains the given message");
+    Expect(captured.Contains(StringView("ASSERT FAILED")),
+           "assert failure output is clearly labeled");
+}
+
+void TestConfigChannelToggle() {
+    static LogChannel test_channel("TestChannel", LogVerbosity::Warn);
+    test_channel.SetVerbosity(LogVerbosity::Warn);
+    test_channel.SetEnabled(true);
+
+    const char* config_path = "/tmp/engine_test_log_config.txt";
+    int fd = Open(config_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    const char content[] = "TestChannel.verbosity=Info\nTestChannel.enabled=true\n";
+    Write(fd, content, sizeof(content) - 1);
+    Close(fd);
+
+    bool loaded = LoadConfig(config_path);
+    Expect(loaded, "config file loads successfully");
+    Expect(test_channel.Verbosity() == LogVerbosity::Info, "config overrides channel verbosity");
+    Expect(test_channel.Enabled(), "config confirms channel enabled");
+
+    g_capture_len = 0;
+    SetWriteSinkForTesting(&CapturingWriteSink);
+    Log(test_channel, LogVerbosity::Info, "emitted message");
+    Log(test_channel, LogVerbosity::Debug, "suppressed message");
+    SetWriteSinkForTesting(&Write);
+
+    StringView captured(g_capture_buffer, g_capture_len);
+    Expect(captured.Contains(StringView("emitted message")),
+           "emitted (Info<=Info) message reaches the write sink");
+    Expect(!captured.Contains(StringView("suppressed message")),
+           "suppressed (Debug>Info) message does not reach the write sink");
+
+    // Disable the channel entirely; even Error-level must be suppressed.
+    test_channel.SetEnabled(false);
+    g_capture_len = 0;
+    SetWriteSinkForTesting(&CapturingWriteSink);
+    Log(test_channel, LogVerbosity::Error, "should not appear when disabled");
+    SetWriteSinkForTesting(&Write);
+
+    StringView captured2(g_capture_buffer, g_capture_len);
+    Expect(captured2.Length() == 0, "disabled channel suppresses even Error-level messages");
+}
+
 } // namespace
 
 int main() {
@@ -587,6 +701,9 @@ int main() {
     TestStringView();
     TestStringType();
     TestStringBuilder();
+    TestDefaultChannelVerbosity();
+    TestAssertFailure();
+    TestConfigChannelToggle();
 
     const char ok[] = "OK\n";
     Write(1, ok, sizeof(ok) - 1);

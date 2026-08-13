@@ -57,6 +57,41 @@ public:
         return StringView(data_ + start, count);
     }
 
+    // Returns the index of the first occurrence of `c`, or Length() if
+    // not found.
+    usize IndexOf(char c) const {
+        for (usize i = 0; i < length_; ++i) {
+            if (data_[i] == c) {
+                return i;
+            }
+        }
+        return length_;
+    }
+
+    // Returns the index of the first occurrence of `pattern`, or
+    // Length() if not found (or `pattern` is empty).
+    usize Find(StringView pattern) const {
+        if (pattern.length_ == 0 || pattern.length_ > length_) {
+            return length_;
+        }
+        usize last_start = length_ - pattern.length_;
+        for (usize start = 0; start <= last_start; ++start) {
+            bool match = true;
+            for (usize i = 0; i < pattern.length_; ++i) {
+                if (data_[start + i] != pattern.data_[i]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) {
+                return start;
+            }
+        }
+        return length_;
+    }
+
+    bool Contains(StringView pattern) const { return Find(pattern) != length_; }
+
 private:
     const char* data_ = nullptr;
     usize length_ = 0;

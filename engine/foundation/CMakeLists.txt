@@ -5,6 +5,7 @@ add_library(foundation STATIC
   arena_allocator.cpp
   pool_allocator.cpp
   stack_allocator.cpp
+  log.cpp
 )
 target_include_directories(foundation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

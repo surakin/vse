@@ -19,8 +19,8 @@ long Read(int fd, void* buf, usize len) {
     return ::read(fd, buf, len);
 }
 
-int Open(const char* path, int flags) {
-    return ::open(path, flags);
+int Open(const char* path, int flags, int mode) {
+    return ::open(path, flags, mode);
 }
 
 int Close(int fd) {
