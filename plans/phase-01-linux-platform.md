@@ -8,6 +8,14 @@ haven't moved to Wayland — see root `PLAN.md` assumption #3.
 **Definition of done:** the "hello window" milestone (Day 23 for Wayland,
 Day 26 for X11 fallback) passes identically under both backends.
 
+**Design note (root `PLAN.md` assumption #11):** the internal `Window`/
+input interface this phase defines (Day 26) is the seam Windows/macOS
+backends plug into later (Phases 11-12) — keep its shape generic
+(open/close/resize/focus, key/mouse/scroll events, frame timing) rather
+than mirroring Wayland/X11-specific concepts upward, so those later ports
+are additive backends, not a redesign. Mobile/console backends (Phases
+13-14) aren't held to that bar and may need real interface changes.
+
 ## Vulkan WSI surface creation (previously an open risk — now resolved)
 
 Vulkan's WSI extensions (`VK_KHR_wayland_surface`, `VK_KHR_xcb_surface`)

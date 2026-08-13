@@ -157,13 +157,33 @@ interpretations keep it buildable — flag any that don't match intent:
     without recompiling) — not bolted on after the fact once every
     subsystem is already logging unconditionally. Channels default to a
     conservative verbosity rather than "log everything."
+11. **Desktop portability (Windows/macOS/Linux) is a from-day-one design
+    constraint; mobile/console portability is deferred.** Even though
+    Linux ships first and is the only platform implemented through
+    Phase 10, the platform-layer and engine-facing interfaces (window,
+    input, threads, files, time — see architecture layers below) are
+    designed so Windows/macOS backends (Phases 11-12) are additive
+    implementations of an already-general interface, not a redesign.
+    Concretely: interface shapes shouldn't bake in Linux/Wayland-only
+    concepts (e.g. compositor-specific semantics) where a Windows/macOS
+    equivalent obviously needs to fit the same seam. Mobile (Android/iOS)
+    and console portability get no such guarantee yet — touch input,
+    app-lifecycle sandboxing, and dev-kit-specific constraints (Phases
+    13-14) are allowed to force real interface changes when reached,
+    rather than being anticipated now. This mirrors the existing phase
+    order (11-12 before 13-14); it just makes explicit that desktop's
+    priority is a design-time concern starting now, not only a
+    build-order concern later.
 
 ## Guiding principles
 
 - **RHI-first rendering.** Gameplay/renderer code never calls Vulkan, DX12,
   or Metal directly — always through a common Render Hardware Interface.
 - **Data-oriented ECS**, not an OOP scene graph.
-- **Linux first.** Every system is built and proven on Linux before porting.
+- **Linux first, desktop-portable by design.** Every system is built and
+  proven on Linux before porting, but interfaces are shaped to keep
+  Windows/macOS ports additive rather than invasive (see assumption #11).
+  Mobile/console portability is not held to the same bar this early.
 - **Engine core before editor.** A game running from hand-written code is a
   real milestone; a WYSIWYG editor is a separate, later project.
 - **Small, testable subsystems.** Each layer only depends on layers below it
