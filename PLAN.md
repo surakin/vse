@@ -46,6 +46,16 @@ This is a solo, AI-assisted effort with no fixed calendar — progress happens
 in whatever increments of time/credits are available. The plan is written
 as small, resumable, independently-verifiable units of work.
 
+**This plan is a living document, not a spec to freeze.** A project this
+size cannot be fully planned up front — scope, architecture decisions
+(e.g. the dependency policy in assumption #1), even phase boundaries will
+keep changing as implementation reveals what the earlier planning got
+wrong. "Settled," as used in `CLAUDE.md`'s "don't write code until the
+plan is settled" rule, means *Phase 0 is detailed enough to start* — not
+that every later phase is final or that the plan stops changing once
+coding begins. Expect ongoing edits throughout the project's life, not
+just during this initial planning pass.
+
 ## How this plan is organized
 
 - **This file (PLAN.md)** is the index: mission, principles, architecture,

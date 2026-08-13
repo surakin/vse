@@ -15,6 +15,11 @@ The user has explicitly stated: **do not write code until the plan is
 settled.** Treat `PLAN.md` and the `plans/` directory as the current
 source of truth for what "settled" means, and check with the user before
 starting implementation if it's ambiguous whether planning is done.
+"Settled" means Phase 0 is detailed enough to start — it does not mean
+the plan is finished or will stop changing. PLAN.md is explicit that this
+is a living document: expect scope, architecture calls, and even phase
+boundaries to keep changing throughout the project as implementation
+reveals what the plan got wrong, not just during this initial pass.
 
 ## What this project is
 
