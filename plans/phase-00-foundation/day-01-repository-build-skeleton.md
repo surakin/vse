@@ -3,6 +3,17 @@
 **Phase:** [Phase 0 — Foundation Layer](../phase-00-foundation.md)
 **Depends on:** nothing.
 
+**Note (added later, alongside the Day 9-adjacent MMap portability
+fix):** `engine/foundation/CMakeLists.txt` grew two more targets not
+mentioned below — `foundation_asan`/`engine_main_asan`, the same
+sources built with AddressSanitizer/UndefinedBehaviorSanitizer via
+`target_compile_options`/`target_link_options` (not a build-wide flag,
+so both the normal and sanitized binaries exist side by side from one
+configure). Run via `cmake --build build --target engine_main_asan`
+then `build/engine/foundation/engine_main_asan`. Used to verify every
+day's tests from Day 4 onward; not itself tied to any one day's task
+list, so noted here where the rest of the CMake setup lives.
+
 ## Tasks
 
 - [x] Create the `/engine` directory tree matching `PLAN.md`'s repo
