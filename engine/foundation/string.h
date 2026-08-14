@@ -3,6 +3,7 @@
 #include "array.h"
 #include "mem.h"
 #include "types.h"
+#include "utf8_codec.h"
 
 // StringView (non-owning), String<Allocator> (owning, allocator-backed
 // via Day 6's Array<char, Allocator>), and StringBuilder<Allocator>
@@ -123,9 +124,24 @@ public:
         chars_.Push('\0');
     }
 
+    // Precondition: c must be ASCII (< 0x80) — a lone non-ASCII byte would
+    // break the well-formed-UTF-8 invariant. Use AppendCodepoint (via
+    // StringBuilder) for non-ASCII codepoints.
     void Append(char c) {
         chars_.Pop();
         chars_.Push(c);
+        chars_.Push('\0');
+    }
+
+    // Appends already-encoded bytes verbatim, trusting the caller (used
+    // internally by StringBuilder::AppendCodepoint for correct multi-byte
+    // UTF-8 sequences) — unlike Append(char), no single-byte ASCII
+    // expectation.
+    void AppendRawBytes(const char* bytes, usize count) {
+        chars_.Pop();
+        for (usize i = 0; i < count; ++i) {
+            chars_.Push(bytes[i]);
+        }
         chars_.Push('\0');
     }
 
@@ -150,6 +166,13 @@ public:
 
     StringBuilder& Append(char c) {
         str_.Append(c);
+        return *this;
+    }
+
+    StringBuilder& AppendCodepoint(u32 codepoint) {
+        char buf[4];
+        usize len = EncodeUtf8(codepoint, buf);
+        str_.AppendRawBytes(buf, len);
         return *this;
     }
 

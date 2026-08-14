@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-**Phase 0 (Foundation layer) is in progress — Days 1-9 of 15 are complete
+**Phase 0 (Foundation layer) is in progress — Days 1-10 of 15 are complete
 and committed.** Real code exists under `/engine/foundation`, built via
 CMake: `cmake -B build && cmake --build build` produces `engine_main`
 (`build/engine/foundation/engine_main`), which runs the current ad hoc
@@ -14,10 +14,9 @@ success. A sanitized build exists as a separate target:
 `build/engine/foundation/engine_main_asan`. There is no `ctest`/Catch2
 yet — Day 15 (not yet started) migrates the ad hoc tests to Catch2 v3
 (`PLAN.md` assumption #16) and wires up real `ctest` integration; don't
-invent or assume `ctest` commands before that lands. Days 10-12 (UTF-8
-core, grapheme clusters, normalization) and Days 13-14 (math) are also
-not yet started — see
-`docs/superpowers/specs/2026-08-14-unicode-string-support-design.md`
+invent or assume `ctest` commands before that lands. Days 11-12 (grapheme
+clusters, normalization) and Days 13-14 (math) are also not yet started —
+see `docs/superpowers/specs/2026-08-14-unicode-string-support-design.md`
 for the former. Every phase after Phase 0 is still unimplemented —
 check the relevant `plans/phase-NN-name/day-NN-*.md` files for what's
 actually done before assuming a subsystem exists.

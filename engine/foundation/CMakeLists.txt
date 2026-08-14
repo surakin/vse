@@ -15,6 +15,7 @@ set(FOUNDATION_SOURCES
   pool_allocator.cpp
   stack_allocator.cpp
   log.cpp
+  utf8_codec.cpp
   ${FOUNDATION_PLATFORM_SOURCES}
 )
 

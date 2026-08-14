@@ -11,6 +11,8 @@
 #include "stack_allocator.h"
 #include "string.h"
 #include "types.h"
+#include "utf8.h"
+#include "utf8_codec.h"
 
 using engine_placeholder::Array;
 using engine_placeholder::ArenaAllocator;
@@ -26,6 +28,12 @@ using engine_placeholder::StackAllocator;
 using engine_placeholder::String;
 using engine_placeholder::StringBuilder;
 using engine_placeholder::StringView;
+using engine_placeholder::DecodedCodepoint;
+using engine_placeholder::DecodeUtf8At;
+using engine_placeholder::EncodeUtf8;
+using engine_placeholder::CodepointCount;
+using engine_placeholder::IsValidUtf8;
+using engine_placeholder::Utf8Codepoints;
 using engine_placeholder::u8;
 using engine_placeholder::u32;
 using engine_placeholder::usize;
@@ -530,6 +538,72 @@ void TestHashMap() {
     Expect(survivors_ok, "surviving (odd-keyed) half still resolves correctly");
 }
 
+void TestUtf8CodecRoundTrip() {
+    // Boundary-value round trips at every UTF-8 length transition.
+    const u32 kBoundaries[] = {
+        0x007F, 0x0080, // 1 <-> 2 byte
+        0x07FF, 0x0800, // 2 <-> 3 byte
+        0xFFFF, 0x10000, // 3 <-> 4 byte
+        0x10FFFF, // max valid codepoint
+    };
+    bool all_round_trip_ok = true;
+    for (u32 cp : kBoundaries) {
+        char buf[4] = {};
+        usize encoded_len = EncodeUtf8(cp, buf);
+        bool valid = false;
+        DecodedCodepoint decoded = DecodeUtf8At(buf, encoded_len, 0, &valid);
+        if (!valid || decoded.codepoint != cp || decoded.byte_length != encoded_len) {
+            all_round_trip_ok = false;
+            break;
+        }
+    }
+    Expect(all_round_trip_ok, "EncodeUtf8/DecodeUtf8At round-trip at every length-transition boundary");
+}
+
+void TestUtf8MixedContent() {
+    ArenaAllocator arena(4096);
+    StringBuilder<ArenaAllocator> sb(arena);
+    sb.Append("A"); // ASCII, 1 byte
+    sb.AppendCodepoint(0x00E9); // 'é', 2 bytes
+    sb.AppendCodepoint(0x4E2D); // '中', 3 bytes
+    sb.AppendCodepoint(0x1F600); // '😀', 4 bytes
+    sb.Append("Z"); // ASCII, 1 byte
+
+    StringView sv = sb.View();
+    Expect(CodepointCount(sv) == 5, "CodepointCount counts codepoints, not bytes, for mixed content");
+
+    const u32 expected[] = {'A', 0x00E9, 0x4E2D, 0x1F600, 'Z'};
+    usize i = 0;
+    bool sequence_ok = true;
+    for (u32 cp : Utf8Codepoints(sv)) {
+        if (i >= 5 || cp != expected[i]) {
+            sequence_ok = false;
+            break;
+        }
+        ++i;
+    }
+    Expect(sequence_ok && i == 5, "Utf8Codepoints iterates mixed ASCII/2/3/4-byte content in order");
+}
+
+void TestUtf8IsValidRejectsMalformed() {
+    // Truncated multi-byte lead byte at end-of-buffer (a 2-byte lead with
+    // no continuation byte following).
+    const char truncated[] = {static_cast<char>(0xC2)};
+    Expect(!IsValidUtf8(StringView(truncated, 1)), "IsValidUtf8 rejects a truncated lead byte at end-of-buffer");
+
+    // Lone continuation byte with no lead byte.
+    const char lone_continuation[] = {static_cast<char>(0x80)};
+    Expect(!IsValidUtf8(StringView(lone_continuation, 1)), "IsValidUtf8 rejects a lone continuation byte");
+
+    // Overlong encoding of 'A' (0x41) as a 2-byte sequence.
+    const char overlong[] = {static_cast<char>(0xC1), static_cast<char>(0x81)};
+    Expect(!IsValidUtf8(StringView(overlong, 2)), "IsValidUtf8 rejects an overlong encoding of 'A'");
+
+    // UTF-8-encoded surrogate (an attempt to encode U+D800).
+    const char surrogate[] = {static_cast<char>(0xED), static_cast<char>(0xA0), static_cast<char>(0x80)};
+    Expect(!IsValidUtf8(StringView(surrogate, 3)), "IsValidUtf8 rejects a UTF-8-encoded surrogate");
+}
+
 void TestStringView() {
     StringView a("hello");
     StringView b("hello");
@@ -698,6 +772,9 @@ int main() {
     TestArrayNonTrivialResize();
     TestArrayInsertRemove();
     TestHashMap();
+    TestUtf8CodecRoundTrip();
+    TestUtf8MixedContent();
+    TestUtf8IsValidRejectsMalformed();
     TestStringView();
     TestStringType();
     TestStringBuilder();

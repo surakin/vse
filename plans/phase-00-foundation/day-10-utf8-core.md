@@ -32,7 +32,7 @@ any non-ASCII codepoint, and internal call sites never pass one to
 
 ## Tasks
 
-- [ ] Create `/engine/foundation/utf8_codec.h`/`.cpp`:
+- [x] Create `/engine/foundation/utf8_codec.h`/`.cpp`:
   - `struct DecodedCodepoint { u32 codepoint; usize byte_length; };`
   - `DecodedCodepoint DecodeUtf8At(const char* data, usize length, usize
     offset, bool* out_valid = nullptr)` — decodes the codepoint starting
@@ -51,13 +51,13 @@ any non-ASCII codepoint, and internal call sites never pass one to
     above `0x10FFFF` encodes as U+FFFD instead (defensive; should not
     happen for codepoints obtained from `DecodeUtf8At` or ordinary
     literals).
-- [ ] Create `/engine/foundation/utf8.h` (header-only): `usize
+- [x] Create `/engine/foundation/utf8.h` (header-only): `usize
   CodepointCount(StringView)`; `bool IsValidUtf8(StringView)` (loops
   `DecodeUtf8At` with `out_valid`, returns false on the first invalid
   step); a `Utf8CodepointIterator`/`Utf8CodepointRange` pair with a
   `Utf8Codepoints(StringView)` factory function, supporting
   `for (u32 cp : Utf8Codepoints(sv))`.
-- [ ] Extend `/engine/foundation/string.h`:
+- [x] Extend `/engine/foundation/string.h`:
   - `#include "utf8_codec.h"`.
   - Add `String<Allocator>::AppendRawBytes(const char* bytes, usize
     count)` — appends already-encoded bytes verbatim, trusting the
@@ -72,20 +72,20 @@ any non-ASCII codepoint, and internal call sites never pass one to
   - Add `StringBuilder<Allocator>::AppendCodepoint(u32 codepoint)`:
     encodes via `EncodeUtf8` into a 4-byte stack buffer, appends via
     `AppendRawBytes`.
-- [ ] Write boundary-value round-trip tests (`EncodeUtf8` then
+- [x] Write boundary-value round-trip tests (`EncodeUtf8` then
   `DecodeUtf8At` recovers the original codepoint) at every UTF-8 length
   transition: U+007F/U+0080 (1↔2 byte), U+07FF/U+0800 (2↔3 byte),
   U+FFFF/U+10000 (3↔4 byte), and U+10FFFF (max valid codepoint).
-- [ ] Write a mixed-content test: a string built from `Append`(ASCII) +
+- [x] Write a mixed-content test: a string built from `Append`(ASCII) +
   `AppendCodepoint`(2-byte "é" U+00E9, 3-byte "中" U+4E2D, 4-byte "😀"
   U+1F600) — verify `CodepointCount()` and that `Utf8Codepoints`
   iteration yields exactly those codepoint values in order.
-- [ ] Write `IsValidUtf8` rejection tests against known-malformed
+- [x] Write `IsValidUtf8` rejection tests against known-malformed
   sequences: a truncated multi-byte lead byte at end-of-buffer, a lone
   continuation byte (`0x80`-`0xBF`) with no lead byte, an overlong
   encoding of `'A'` (`0xC1 0x81` instead of `0x41`), and a UTF-8-encoded
   surrogate (`0xED 0xA0 0x80`, an attempt to encode U+D800).
-- [ ] Commit.
+- [x] Commit.
 
 **Done:** boundary round-trips recover the original codepoint at every
 length transition; mixed ASCII/2/3/4-byte content counts and iterates
