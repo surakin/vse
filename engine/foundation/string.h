@@ -116,6 +116,9 @@ public:
     String(const String&) = delete;
     String& operator=(const String&) = delete;
 
+    String(String&&) noexcept = default;
+    String& operator=(String&&) noexcept = default;
+
     void Append(StringView sv) {
         chars_.Pop(); // drop the trailing '\0'
         for (usize i = 0; i < sv.Length(); ++i) {

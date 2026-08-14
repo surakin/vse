@@ -18,6 +18,10 @@ set(FOUNDATION_SOURCES
   utf8_codec.cpp
   grapheme.cpp
   generated/grapheme_break_table.cpp
+  normalize.cpp
+  generated/decomposition_table.cpp
+  generated/combining_class_table.cpp
+  generated/composition_exclusions_table.cpp
   ${FOUNDATION_PLATFORM_SOURCES}
 )
 

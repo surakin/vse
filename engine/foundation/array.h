@@ -32,6 +32,27 @@ public:
     Array(const Array&) = delete;
     Array& operator=(const Array&) = delete;
 
+    Array(Array&& other) noexcept
+        : allocator_(other.allocator_), data_(other.data_), size_(other.size_), capacity_(other.capacity_) {
+        other.data_ = nullptr;
+        other.size_ = 0;
+        other.capacity_ = 0;
+    }
+
+    Array& operator=(Array&& other) noexcept {
+        if (this != &other) {
+            DestroyRange(0, size_);
+            allocator_ = other.allocator_;
+            data_ = other.data_;
+            size_ = other.size_;
+            capacity_ = other.capacity_;
+            other.data_ = nullptr;
+            other.size_ = 0;
+            other.capacity_ = 0;
+        }
+        return *this;
+    }
+
     void Reserve(usize new_capacity) {
         if (new_capacity <= capacity_) {
             return;

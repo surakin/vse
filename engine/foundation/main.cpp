@@ -10,6 +10,7 @@
 #include "pool_allocator.h"
 #include "stack_allocator.h"
 #include "grapheme.h"
+#include "normalize.h"
 #include "string.h"
 #include "types.h"
 #include "utf8.h"
@@ -37,6 +38,8 @@ using engine_placeholder::IsValidUtf8;
 using engine_placeholder::Utf8Codepoints;
 using engine_placeholder::GraphemeClusterCount;
 using engine_placeholder::GraphemeClusters;
+using engine_placeholder::NormalizeNFC;
+using engine_placeholder::NormalizeNFD;
 using engine_placeholder::u8;
 using engine_placeholder::u32;
 using engine_placeholder::usize;
@@ -677,6 +680,103 @@ void TestGraphemeRegionalIndicatorTriple() {
            "three regional indicators split into a pair + a singleton, not one cluster of three");
 }
 
+u32 NthCodepoint(StringView sv, usize n) {
+    usize i = 0;
+    for (u32 cp : Utf8Codepoints(sv)) {
+        if (i == n) {
+            return cp;
+        }
+        ++i;
+    }
+    return 0;
+}
+
+void TestNormalizeNfdDecomposesPrecomposed() {
+    ArenaAllocator src_arena(4096);
+    StringBuilder<ArenaAllocator> sb(src_arena);
+    sb.AppendCodepoint(0x00E9); // precomposed 'é'
+    StringView source = sb.View();
+
+    ArenaAllocator out_arena(4096);
+    String<ArenaAllocator> nfd = NormalizeNFD(out_arena, source);
+
+    Expect(CodepointCount(nfd.View()) == 2, "NFD decomposes precomposed 'é' into 2 codepoints");
+    Expect(NthCodepoint(nfd.View(), 0) == 0x0065 && NthCodepoint(nfd.View(), 1) == 0x0301,
+           "NFD('é') == 'e' + combining acute, in that order");
+}
+
+void TestNormalizeNfcComposesDecomposed() {
+    ArenaAllocator src_arena(4096);
+    StringBuilder<ArenaAllocator> sb(src_arena);
+    sb.AppendCodepoint(0x0065); // 'e'
+    sb.AppendCodepoint(0x0301); // combining acute
+    StringView source = sb.View();
+
+    ArenaAllocator out_arena(4096);
+    String<ArenaAllocator> nfc = NormalizeNFC(out_arena, source);
+
+    Expect(CodepointCount(nfc.View()) == 1 && NthCodepoint(nfc.View(), 0) == 0x00E9,
+           "NFC('e' + combining acute) == precomposed 'é'");
+}
+
+void TestNormalizeRoundTripAndIdempotency() {
+    ArenaAllocator src_arena(4096);
+    StringBuilder<ArenaAllocator> sb(src_arena);
+    sb.Append("caf");
+    sb.AppendCodepoint(0x00E9); // precomposed 'é'
+    sb.Append(" ");
+    sb.AppendCodepoint(0x0065); // already-decomposed 'e' + combining acute
+    sb.AppendCodepoint(0x0301);
+    StringView source = sb.View();
+
+    ArenaAllocator out_arena(1024 * 1024);
+    String<ArenaAllocator> nfc1 = NormalizeNFC(out_arena, source);
+    String<ArenaAllocator> nfd1 = NormalizeNFD(out_arena, source);
+    String<ArenaAllocator> nfd_of_nfc1 = NormalizeNFD(out_arena, nfc1.View());
+    String<ArenaAllocator> nfc_of_nfc1 = NormalizeNFC(out_arena, nfc1.View());
+    String<ArenaAllocator> nfd_of_nfd1 = NormalizeNFD(out_arena, nfd1.View());
+
+    Expect(nfd_of_nfc1.View() == nfd1.View(), "NFD(NFC(s)) == NFD(s)");
+    Expect(nfc_of_nfc1.View() == nfc1.View(), "NFC(NFC(s)) == NFC(s)");
+    Expect(nfd_of_nfd1.View() == nfd1.View(), "NFD(NFD(s)) == NFD(s)");
+}
+
+void TestNormalizeHangulRoundTrip() {
+    ArenaAllocator src_arena(4096);
+    StringBuilder<ArenaAllocator> sb(src_arena);
+    sb.AppendCodepoint(0xAC00); // precomposed Hangul syllable GA
+    StringView source = sb.View();
+
+    ArenaAllocator out_arena(4096);
+    String<ArenaAllocator> nfd = NormalizeNFD(out_arena, source);
+    Expect(CodepointCount(nfd.View()) == 2 && NthCodepoint(nfd.View(), 0) == 0x1100 &&
+               NthCodepoint(nfd.View(), 1) == 0x1161,
+           "NFD(U+AC00) decomposes into L+V jamo via the algorithmic Hangul path");
+
+    String<ArenaAllocator> nfc = NormalizeNFC(out_arena, nfd.View());
+    Expect(nfc.View() == source, "NFC of the decomposed jamo recomposes back to U+AC00");
+}
+
+void TestNormalizeCompositionExclusion() {
+    // U+0958 (DEVANAGARI LETTER QA) canonically decomposes to U+0915 +
+    // U+093C but is on the composition-exclusions list, so NFC must not
+    // recompose it back.
+    ArenaAllocator src_arena(4096);
+    StringBuilder<ArenaAllocator> sb(src_arena);
+    sb.AppendCodepoint(0x0958);
+    StringView source = sb.View();
+
+    ArenaAllocator out_arena(4096);
+    String<ArenaAllocator> nfd = NormalizeNFD(out_arena, source);
+    Expect(CodepointCount(nfd.View()) == 2 && NthCodepoint(nfd.View(), 0) == 0x0915 &&
+               NthCodepoint(nfd.View(), 1) == 0x093C,
+           "NFD(U+0958) decomposes into U+0915 + U+093C");
+
+    String<ArenaAllocator> nfc = NormalizeNFC(out_arena, nfd.View());
+    Expect(nfc.View() == nfd.View() && nfc.View() != source,
+           "composition-excluded U+0958 does not recompose from its decomposition");
+}
+
 void TestStringView() {
     StringView a("hello");
     StringView b("hello");
@@ -855,6 +955,11 @@ int main() {
     TestGraphemeEmojiZwjSequence();
     TestGraphemeRegionalIndicatorPair();
     TestGraphemeRegionalIndicatorTriple();
+    TestNormalizeNfdDecomposesPrecomposed();
+    TestNormalizeNfcComposesDecomposed();
+    TestNormalizeRoundTripAndIdempotency();
+    TestNormalizeHangulRoundTrip();
+    TestNormalizeCompositionExclusion();
     TestStringView();
     TestStringType();
     TestStringBuilder();
