@@ -8,7 +8,7 @@ with progress.
 
 ## Phase 0 (Foundation layer)
 
-**In progress — Days 1-12 of 15 are complete and committed.** Real code
+**In progress — Days 1-13 of 15 are complete and committed.** Real code
 exists under `/engine/foundation`, built via CMake:
 `cmake -B build && cmake --build build` produces `engine_main`
 (`build/engine/foundation/engine_main`), which runs the current ad hoc
@@ -27,9 +27,15 @@ combining-class, composition-exclusions). `Array<T, Allocator>` and
 `String<Allocator>` also gained move construction/assignment as part of
 Day 12 — needed to return `String<Allocator>` by value from
 `NormalizeNFC`/`NormalizeNFD`, previously missing since only copy had
-been (deliberately) disabled. Days 13-14 (math) are not yet started —
-see `docs/superpowers/specs/2026-08-14-unicode-string-support-design.md`
-for the Unicode design.
+been (deliberately) disabled. Day 13 added `Vec2`/`Vec3`/`Vec4`
+(`/engine/foundation/vector.h`) and `Mat3`/`Mat4`
+(`/engine/foundation/matrix.h`), plus a hand-rolled `Sqrt`
+(`/engine/foundation/math_util.h`, Newton-Raphson, not `<cmath>`) —
+column-major storage, column-vector convention (`v' = M * v`), documented
+in `matrix.h` since it's load-bearing for later renderer/transform code.
+Day 14 (quaternions & transforms) is not yet started — see
+`docs/superpowers/specs/2026-08-14-unicode-string-support-design.md` for
+the Days 10-12 Unicode design.
 
 Every phase after Phase 0 is still unimplemented — check the relevant
 `plans/phase-NN-name/day-NN-*.md` files for what's actually done before

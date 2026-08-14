@@ -10,11 +10,13 @@
 #include "pool_allocator.h"
 #include "stack_allocator.h"
 #include "grapheme.h"
+#include "matrix.h"
 #include "normalize.h"
 #include "string.h"
 #include "types.h"
 #include "utf8.h"
 #include "utf8_codec.h"
+#include "vector.h"
 
 using engine_placeholder::Array;
 using engine_placeholder::ArenaAllocator;
@@ -40,6 +42,12 @@ using engine_placeholder::GraphemeClusterCount;
 using engine_placeholder::GraphemeClusters;
 using engine_placeholder::NormalizeNFC;
 using engine_placeholder::NormalizeNFD;
+using engine_placeholder::Mat3;
+using engine_placeholder::Mat4;
+using engine_placeholder::Vec2;
+using engine_placeholder::Vec3;
+using engine_placeholder::Vec4;
+using engine_placeholder::f32;
 using engine_placeholder::u8;
 using engine_placeholder::u32;
 using engine_placeholder::usize;
@@ -777,6 +785,81 @@ void TestNormalizeCompositionExclusion() {
            "composition-excluded U+0958 does not recompose from its decomposition");
 }
 
+bool NearlyEqual(f32 a, f32 b, f32 epsilon = 1e-4f) {
+    f32 diff = a - b;
+    return (diff < 0 ? -diff : diff) <= epsilon;
+}
+
+bool Vec2NearlyEqual(const Vec2& a, const Vec2& b) { return NearlyEqual(a.x, b.x) && NearlyEqual(a.y, b.y); }
+bool Vec3NearlyEqual(const Vec3& a, const Vec3& b) {
+    return NearlyEqual(a.x, b.x) && NearlyEqual(a.y, b.y) && NearlyEqual(a.z, b.z);
+}
+
+void TestVecDot() {
+    Expect(NearlyEqual(Vec3(1, 2, 3).Dot(Vec3(4, 5, 6)), 32.0f), "Vec3(1,2,3).Dot(Vec3(4,5,6)) == 32");
+    Expect(NearlyEqual(Vec3(1, 0, 0).Dot(Vec3(0, 1, 0)), 0.0f), "orthogonal Vec3s dot to 0");
+    Expect(NearlyEqual(Vec2(3, 4).Dot(Vec2(3, 4)), 25.0f), "Vec2(3,4).Dot(Vec2(3,4)) == 25 (== |v|^2)");
+}
+
+void TestVecCross() {
+    Expect(Vec3NearlyEqual(Vec3(1, 0, 0).Cross(Vec3(0, 1, 0)), Vec3(0, 0, 1)), "x-axis cross y-axis == z-axis");
+    Expect(Vec3NearlyEqual(Vec3(0, 1, 0).Cross(Vec3(1, 0, 0)), Vec3(0, 0, -1)),
+           "y-axis cross x-axis == -z-axis (anti-commutative, right-handed)");
+    Expect(Vec3NearlyEqual(Vec3(2, 3, 4).Cross(Vec3(5, 6, 7)), Vec3(-3, 6, -3)),
+           "Vec3(2,3,4).Cross(Vec3(5,6,7)) == (-3,6,-3)");
+}
+
+void TestVecNormalize() {
+    Expect(Vec3NearlyEqual(Vec3(3, 4, 0).Normalized(), Vec3(0.6f, 0.8f, 0.0f)), "Vec3(3,4,0) normalizes to (0.6,0.8,0)");
+    Expect(NearlyEqual(Vec3(3, 4, 0).Normalized().Length(), 1.0f), "normalized Vec3 has unit length");
+    Expect(Vec2NearlyEqual(Vec2(3, 4).Normalized(), Vec2(0.6f, 0.8f)), "Vec2(3,4) normalizes to (0.6,0.8)");
+}
+
+void TestMatMultiply() {
+    // A: columns (1,4,7),(2,5,8),(3,6,10) == rows (1,2,3),(4,5,6),(7,8,10)
+    Mat3 a = Mat3::FromBasis(Vec3(1, 4, 7), Vec3(2, 5, 8), Vec3(3, 6, 10));
+    // B: columns (1,0,1),(0,1,0),(2,1,1) == rows (1,0,2),(0,1,1),(1,0,1)
+    Mat3 b = Mat3::FromBasis(Vec3(1, 0, 1), Vec3(0, 1, 0), Vec3(2, 1, 1));
+
+    // Hand-computed A*B (standard row-times-column):
+    //   row0=(1,2,3): (1*1+2*0+3*1, 1*0+2*1+3*0, 1*2+2*1+3*1) = (4, 2, 7)
+    //   row1=(4,5,6): (4*1+5*0+6*1, 4*0+5*1+6*0, 4*2+5*1+6*1) = (10, 5, 19)
+    //   row2=(7,8,10): (7*1+8*0+10*1, 7*0+8*1+10*0, 7*2+8*1+10*1) = (17, 8, 32)
+    // i.e. columns (4,10,17), (2,5,8), (7,19,32).
+    Mat3 product = a * b;
+    Expect(Vec3NearlyEqual(product.col[0], Vec3(4, 10, 17)) && Vec3NearlyEqual(product.col[1], Vec3(2, 5, 8)) &&
+               Vec3NearlyEqual(product.col[2], Vec3(7, 19, 32)),
+           "Mat3 multiply matches a hand-calculated reference product");
+
+    Expect(Vec3NearlyEqual(Mat3::Identity() * a.col[0], a.col[0]) &&
+               Vec3NearlyEqual((Mat3::Identity() * a).col[1], a.col[1]),
+           "Mat3::Identity() is a multiplicative identity");
+
+    // A * v with v=(1,2,3): (1*1+2*2+3*3, 4*1+5*2+6*3, 7*1+8*2+10*3) = (14,32,53)
+    Expect(Vec3NearlyEqual(a * Vec3(1, 2, 3), Vec3(14, 32, 53)), "Mat3-vector multiply matches hand calculation");
+}
+
+void TestMatTranspose() {
+    Mat3 a = Mat3::FromBasis(Vec3(1, 4, 7), Vec3(2, 5, 8), Vec3(3, 6, 10));
+    Mat3 at = a.Transpose();
+    // Transpose's columns are A's rows: (1,2,3), (4,5,6), (7,8,10).
+    Expect(Vec3NearlyEqual(at.col[0], Vec3(1, 2, 3)) && Vec3NearlyEqual(at.col[1], Vec3(4, 5, 6)) &&
+               Vec3NearlyEqual(at.col[2], Vec3(7, 8, 10)),
+           "Mat3::Transpose swaps rows and columns as hand-calculated");
+}
+
+void TestMat4FromBasisAndMultiply() {
+    Mat4 translate_a = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(1, 2, 3));
+    Mat4 translate_b = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1), Vec3(10, 20, 30));
+
+    // Composing two pure translations should add their offsets.
+    Mat4 combined = translate_a * translate_b;
+    Vec4 origin_translated = combined * Vec4(0, 0, 0, 1);
+    Expect(NearlyEqual(origin_translated.x, 11) && NearlyEqual(origin_translated.y, 22) &&
+               NearlyEqual(origin_translated.z, 33),
+           "composing two Mat4 translations adds their offsets");
+}
+
 void TestStringView() {
     StringView a("hello");
     StringView b("hello");
@@ -960,6 +1043,12 @@ int main() {
     TestNormalizeRoundTripAndIdempotency();
     TestNormalizeHangulRoundTrip();
     TestNormalizeCompositionExclusion();
+    TestVecDot();
+    TestVecCross();
+    TestVecNormalize();
+    TestMatMultiply();
+    TestMatTranspose();
+    TestMat4FromBasisAndMultiply();
     TestStringView();
     TestStringType();
     TestStringBuilder();
