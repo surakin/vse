@@ -16,6 +16,8 @@ set(FOUNDATION_SOURCES
   stack_allocator.cpp
   log.cpp
   utf8_codec.cpp
+  grapheme.cpp
+  generated/grapheme_break_table.cpp
   ${FOUNDATION_PLATFORM_SOURCES}
 )
 

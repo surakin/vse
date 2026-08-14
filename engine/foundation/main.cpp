@@ -9,6 +9,7 @@
 #include "os.h"
 #include "pool_allocator.h"
 #include "stack_allocator.h"
+#include "grapheme.h"
 #include "string.h"
 #include "types.h"
 #include "utf8.h"
@@ -34,6 +35,8 @@ using engine_placeholder::EncodeUtf8;
 using engine_placeholder::CodepointCount;
 using engine_placeholder::IsValidUtf8;
 using engine_placeholder::Utf8Codepoints;
+using engine_placeholder::GraphemeClusterCount;
+using engine_placeholder::GraphemeClusters;
 using engine_placeholder::u8;
 using engine_placeholder::u32;
 using engine_placeholder::usize;
@@ -604,6 +607,76 @@ void TestUtf8IsValidRejectsMalformed() {
     Expect(!IsValidUtf8(StringView(surrogate, 3)), "IsValidUtf8 rejects a UTF-8-encoded surrogate");
 }
 
+void TestGraphemePlainAscii() {
+    StringView sv("Hello!");
+    Expect(GraphemeClusterCount(sv) == CodepointCount(sv) && GraphemeClusterCount(sv) == sv.Length(),
+           "plain ASCII: grapheme count == codepoint count == byte count");
+}
+
+void TestGraphemeCombiningCharacter() {
+    ArenaAllocator arena(4096);
+    StringBuilder<ArenaAllocator> sb(arena);
+    sb.AppendCodepoint(0x0065); // 'e'
+    sb.AppendCodepoint(0x0301); // combining acute accent
+    StringView sv = sb.View();
+
+    Expect(GraphemeClusterCount(sv) == 1, "'e' + combining acute is one grapheme cluster");
+    for (StringView cluster : GraphemeClusters(sv)) {
+        Expect(cluster.Length() == sv.Length(), "combining-character cluster spans both codepoints' bytes");
+    }
+}
+
+void TestGraphemeDecomposedHangul() {
+    ArenaAllocator arena(4096);
+    StringBuilder<ArenaAllocator> sb(arena);
+    sb.AppendCodepoint(0x1100); // Hangul choseong (L) jamo
+    sb.AppendCodepoint(0x1161); // Hangul jungseong (V) jamo
+    StringView sv = sb.View();
+
+    Expect(GraphemeClusterCount(sv) == 1, "decomposed Hangul L+V jamo is one grapheme cluster");
+    for (StringView cluster : GraphemeClusters(sv)) {
+        Expect(cluster.Length() == sv.Length(), "decomposed-Hangul cluster spans both codepoints' bytes");
+    }
+}
+
+void TestGraphemeCrLf() {
+    StringView sv("\r\n");
+    Expect(GraphemeClusterCount(sv) == 1, "\"\\r\\n\" is one grapheme cluster, not two");
+}
+
+void TestGraphemeEmojiZwjSequence() {
+    ArenaAllocator arena(4096);
+    StringBuilder<ArenaAllocator> sb(arena);
+    sb.AppendCodepoint(0x1F468); // MAN
+    sb.AppendCodepoint(0x200D); // ZERO WIDTH JOINER
+    sb.AppendCodepoint(0x1F469); // WOMAN
+    StringView sv = sb.View();
+
+    Expect(GraphemeClusterCount(sv) == 1, "emoji ZWJ sequence (man-ZWJ-woman) is one grapheme cluster");
+}
+
+void TestGraphemeRegionalIndicatorPair() {
+    ArenaAllocator arena(4096);
+    StringBuilder<ArenaAllocator> sb(arena);
+    sb.AppendCodepoint(0x1F1FA); // REGIONAL INDICATOR SYMBOL LETTER U
+    sb.AppendCodepoint(0x1F1F8); // REGIONAL INDICATOR SYMBOL LETTER S
+    StringView sv = sb.View();
+
+    Expect(GraphemeClusterCount(sv) == 1, "regional-indicator pair (US flag) is one grapheme cluster");
+}
+
+void TestGraphemeRegionalIndicatorTriple() {
+    ArenaAllocator arena(4096);
+    StringBuilder<ArenaAllocator> sb(arena);
+    sb.AppendCodepoint(0x1F1FA); // U
+    sb.AppendCodepoint(0x1F1F8); // S
+    sb.AppendCodepoint(0x1F1EB); // F
+    StringView sv = sb.View();
+
+    Expect(GraphemeClusterCount(sv) == 2,
+           "three regional indicators split into a pair + a singleton, not one cluster of three");
+}
+
 void TestStringView() {
     StringView a("hello");
     StringView b("hello");
@@ -775,6 +848,13 @@ int main() {
     TestUtf8CodecRoundTrip();
     TestUtf8MixedContent();
     TestUtf8IsValidRejectsMalformed();
+    TestGraphemePlainAscii();
+    TestGraphemeCombiningCharacter();
+    TestGraphemeDecomposedHangul();
+    TestGraphemeCrLf();
+    TestGraphemeEmojiZwjSequence();
+    TestGraphemeRegionalIndicatorPair();
+    TestGraphemeRegionalIndicatorTriple();
     TestStringView();
     TestStringType();
     TestStringBuilder();
