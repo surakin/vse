@@ -1,7 +1,7 @@
 #pragma once
 
 #include "types.h"
-#include "vector.h"
+#include "math/vector.h"
 
 // Mat3/Mat4: column-major storage (each matrix holds its columns
 // directly, so FromBasis is a trivial store), column-vector convention

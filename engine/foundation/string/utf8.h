@@ -1,8 +1,8 @@
 #pragma once
 
-#include "string.h"
+#include "string/string.h"
 #include "types.h"
-#include "utf8_codec.h"
+#include "string/utf8_codec.h"
 
 // StringView-level UTF-8 helpers. Depends on both utf8_codec.h and
 // string.h — string.h depends only on utf8_codec.h, never on this header,

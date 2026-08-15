@@ -1,6 +1,6 @@
 #pragma once
 
-#include "array.h"
+#include "containers/array.h"
 #include "types.h"
 
 // Open-addressing hash map (linear probing + tombstones for deletion),

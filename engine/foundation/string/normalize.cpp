@@ -1,4 +1,4 @@
-#include "normalize.h"
+#include "string/normalize.h"
 
 // Hangul syllable arithmetic (UAX #15 / Unicode 3.12), used instead of a
 // table lookup for the whole precomposed-syllable block — a shortcut here

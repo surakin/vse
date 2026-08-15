@@ -2,7 +2,7 @@
 // — do not edit by hand; re-run the generator to regenerate.
 // Source: Unicode 17.0.0 (GraphemeBreakProperty.txt, emoji-data.txt).
 
-#include "grapheme.h"
+#include "string/grapheme.h"
 
 namespace engine_placeholder {
 

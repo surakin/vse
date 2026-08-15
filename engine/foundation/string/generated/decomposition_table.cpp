@@ -3,7 +3,7 @@
 // Source: Unicode 17.0.0 UnicodeData.txt canonical decompositions.
 // Hangul syllables are deliberately excluded — see normalize.cpp's algorithmic path.
 
-#include "normalize.h"
+#include "string/normalize.h"
 
 namespace engine_placeholder {
 

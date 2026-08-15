@@ -2,7 +2,7 @@
 
 Dev-time only tool (never linked or shipped in the engine/game binary —
 same category as CMake itself, `PLAN.md` assumption #8). Generates
-`engine/foundation/generated/grapheme_break_table.cpp` from Unicode's
+`engine/foundation/string/generated/grapheme_break_table.cpp` from Unicode's
 published `GraphemeBreakProperty.txt` and `emoji-data.txt` data files.
 
 The generated output is checked into the repo and is what Foundation code
@@ -29,7 +29,7 @@ curl -s https://www.unicode.org/Public/<version>/ucd/emoji/emoji-data.txt \
 
 python3 generate_grapheme_table.py \
   downloads/GraphemeBreakProperty.txt downloads/emoji-data.txt \
-  <version> ../../engine/foundation/generated/grapheme_break_table.cpp
+  <version> ../../engine/foundation/string/generated/grapheme_break_table.cpp
 ```
 
 Then update `/UNICODE_VERSION` to match and commit both the vendored

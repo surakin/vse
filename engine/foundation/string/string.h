@@ -1,9 +1,9 @@
 #pragma once
 
-#include "array.h"
-#include "mem.h"
+#include "containers/array.h"
+#include "mem/mem.h"
 #include "types.h"
-#include "utf8_codec.h"
+#include "string/utf8_codec.h"
 
 // StringView (non-owning), String<Allocator> (owning, allocator-backed
 // via Day 6's Array<char, Allocator>), and StringBuilder<Allocator>

@@ -1,27 +1,27 @@
-# Per-platform implementation of os.h — only linux/ exists so far
+# Per-platform implementation of os/os.h — only os/linux/ exists so far
 # (PLAN.md assumption #11: implementation stays Linux-only until its
-# phase; this selection is where a later windows/os.cpp or macos/os.cpp
-# plugs in additively, no other CMakeLists change needed).
+# phase; this selection is where a later os/windows/os.cpp or
+# os/macos/os.cpp plugs in additively, no other CMakeLists change needed).
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  set(FOUNDATION_PLATFORM_SOURCES linux/os.cpp)
+  set(FOUNDATION_PLATFORM_SOURCES os/linux/os.cpp)
 else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
 endif()
 
 set(FOUNDATION_SOURCES
   foundation.cpp
-  mem.cpp
-  arena_allocator.cpp
-  pool_allocator.cpp
-  stack_allocator.cpp
-  log.cpp
-  utf8_codec.cpp
-  grapheme.cpp
-  generated/grapheme_break_table.cpp
-  normalize.cpp
-  generated/decomposition_table.cpp
-  generated/combining_class_table.cpp
-  generated/composition_exclusions_table.cpp
+  mem/mem.cpp
+  mem/arena_allocator.cpp
+  mem/pool_allocator.cpp
+  mem/stack_allocator.cpp
+  log/log.cpp
+  string/utf8_codec.cpp
+  string/grapheme.cpp
+  string/generated/grapheme_break_table.cpp
+  string/normalize.cpp
+  string/generated/decomposition_table.cpp
+  string/generated/combining_class_table.cpp
+  string/generated/composition_exclusions_table.cpp
   ${FOUNDATION_PLATFORM_SOURCES}
 )
 

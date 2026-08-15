@@ -1,6 +1,6 @@
-#include "grapheme.h"
+#include "string/grapheme.h"
 
-#include "utf8_codec.h"
+#include "string/utf8_codec.h"
 
 // UAX #29 grapheme cluster boundary rules (GB1-GB999), applied pairwise
 // while walking codepoints left to right. Two bits of extra running state

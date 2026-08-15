@@ -2,7 +2,7 @@
 // — do not edit by hand; re-run the generator to regenerate.
 // Source: Unicode 17.0.0 CompositionExclusions.txt.
 
-#include "normalize.h"
+#include "string/normalize.h"
 
 namespace engine_placeholder {
 

@@ -1,6 +1,6 @@
-#include "arena_allocator.h"
+#include "mem/arena_allocator.h"
 
-#include "os.h"
+#include "os/os.h"
 
 namespace engine_placeholder {
 

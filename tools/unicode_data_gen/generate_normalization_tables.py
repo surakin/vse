@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generates the three normalization data tables under
-engine/foundation/generated/ from a pinned Unicode version's
+engine/foundation/string/generated/ from a pinned Unicode version's
 UnicodeData.txt and CompositionExclusions.txt:
 
   - decomposition_table.cpp: canonical decompositions (field 5 of

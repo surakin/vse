@@ -1,11 +1,11 @@
 #pragma once
 
-#include "arena_allocator.h"
-#include "array.h"
-#include "string.h"
+#include "mem/arena_allocator.h"
+#include "containers/array.h"
+#include "string/string.h"
 #include "types.h"
-#include "utf8.h"
-#include "utf8_codec.h"
+#include "string/utf8.h"
+#include "string/utf8_codec.h"
 
 // Canonical Unicode normalization (NFC/NFD), per UAX #15. Depends on
 // Day 10's utf8.h/utf8_codec.h (codepoint iteration/encoding) and Day 4's

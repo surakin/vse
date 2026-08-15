@@ -1,8 +1,8 @@
 #pragma once
 
-#include "string.h"
+#include "string/string.h"
 #include "types.h"
-#include "utf8.h"
+#include "string/utf8.h"
 
 // UAX #29 grapheme cluster segmentation. Depends on Day 10's utf8.h
 // (Utf8Codepoints) and, through it, string.h/utf8_codec.h.

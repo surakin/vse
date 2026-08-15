@@ -1,6 +1,6 @@
 #pragma once
 
-#include "string.h"
+#include "string/string.h"
 #include "types.h"
 
 // Channel-based logging, designed against Unreal's log-spam problem

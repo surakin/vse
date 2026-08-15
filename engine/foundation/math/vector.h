@@ -1,7 +1,7 @@
 #pragma once
 
-#include "log.h"
-#include "math_util.h"
+#include "log/log.h"
+#include "math/math_util.h"
 #include "types.h"
 
 // Vec2/Vec3/Vec4: plain component structs, no SIMD/alignment tricks yet

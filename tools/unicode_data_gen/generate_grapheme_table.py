@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generates engine/foundation/generated/grapheme_break_table.cpp from a
+"""Generates engine/foundation/string/generated/grapheme_break_table.cpp from a
 pinned Unicode version's GraphemeBreakProperty.txt and emoji-data.txt
 (Extended_Pictographic lines only).
 
@@ -17,7 +17,7 @@ Usage:
 import sys
 
 # Unicode data file property name -> GraphemeBreakProperty enumerator name
-# (engine/foundation/grapheme.h). "Other" is the @missing default and never
+# (engine/foundation/string/grapheme.h). "Other" is the @missing default and never
 # appears as an explicit table entry.
 GCB_PROPERTY_MAP = {
     "CR": "CR",

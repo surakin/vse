@@ -1,9 +1,9 @@
 #pragma once
 
-#include "log.h"
-#include "math_util.h"
-#include "matrix.h"
-#include "vector.h"
+#include "log/log.h"
+#include "math/math_util.h"
+#include "math/matrix.h"
+#include "math/vector.h"
 
 // Quaternion: Hamilton convention, right-handed, (x,y,z,w) with w the
 // scalar part. Represents rotations as unit quaternions. Consistent with

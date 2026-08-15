@@ -1,8 +1,8 @@
 #pragma once
 
-#include "matrix.h"
-#include "quaternion.h"
-#include "vector.h"
+#include "math/matrix.h"
+#include "math/quaternion.h"
+#include "math/vector.h"
 
 // Transform: position/rotation/scale, the standard TRS representation.
 // Compose(parent, child) follows the same column-vector convention as

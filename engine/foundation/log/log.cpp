@@ -1,9 +1,9 @@
-#include "log.h"
+#include "log/log.h"
 
 #include <fcntl.h>
 
-#include "mem.h"
-#include "os.h"
+#include "mem/mem.h"
+#include "os/os.h"
 
 namespace engine_placeholder {
 
