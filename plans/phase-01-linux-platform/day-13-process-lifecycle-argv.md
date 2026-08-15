@@ -23,25 +23,33 @@ the full design (class shape, parsing rules, per-platform sourcing via
 
 ## Tasks
 
-- [ ] Confirm the engine's entry point is a standard `int main(int argc,
+- [x] Confirm the engine's entry point is a standard `int main(int argc,
   char** argv)` (Linux/glibc also exposes `envp` via `extern char**
   environ` if needed later — not required for this day).
-- [ ] Implement `os::CommandLine` per the design spec:
+- [x] Implement `os::CommandLine` per the design spec:
   `engine/foundation/os/command_line.h` (class + portable
   `(Allocator&, int argc, char** argv)` parsing constructor,
-  `ProgramName`/`ArgCount`/`Arg`/`HasFlag`/`TryGetOption`) and
-  `engine/foundation/os/linux/command_line.cpp` (`StashNativeCommandLine`
-  + `FromNative`).
-- [ ] Wire `main.cpp`: call `os::StashNativeCommandLine(argc, argv)`,
+  `ProgramName`/`ArgCount`/`Arg`/`HasFlag`/`TryGetOption`, plus
+  `FlagCount`/`FlagName`/`FlagHasValue`/`FlagValue` enumeration added
+  during implementation — needed so a caller that doesn't know flag
+  names ahead of time, e.g. this day's own startup log, can walk every
+  flag/option passed) and `engine/foundation/os/linux/command_line.cpp`
+  (`StashNativeCommandLine` + `Detail_NativeCommandLineArgs`). TDD:
+  `tests/foundation/command_line_test.cpp` written first against the
+  not-yet-existing header (confirmed RED via a CMake configure failure
+  — the implementation files were moved aside first), then the
+  implementation brought back in for GREEN — 9 tests, all passing.
+- [x] Wire `main.cpp`: call `os::StashNativeCommandLine(argc, argv)`,
   construct via `os::CommandLine::FromNative(allocator)`.
-- [ ] Log the program name, each positional arg, and each recognized
+- [x] Log the program name, each positional arg, and each recognized
   flag/option via Day 8's formatter and Day 2's `os::Write`.
-- [ ] Build and run with varied inputs: zero extra args, several
+- [x] Build and run with varied inputs: zero extra args, several
   positional args, an arg containing a space (shell-quoted), a boolean
   `--flag`, and a `--key=value` option — confirm each is categorized
   (positional vs. flag vs. option) and logged correctly, including the
-  space-containing arg not being split.
-- [ ] Commit.
+  space-containing arg not being split. Verified manually with
+  `engine_main` — see commit for output.
+- [x] Commit.
 
 **Done:** `os::CommandLine::FromNative()` correctly parses the engine's
 received command-line arguments — positional args (including one

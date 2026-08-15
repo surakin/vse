@@ -20,6 +20,7 @@ set(FOUNDATION_TEST_SOURCES
   quaternion_test.cpp
   transform_test.cpp
   log_test.cpp
+  command_line_test.cpp
 )
 
 add_executable(foundation_tests ${FOUNDATION_TEST_SOURCES})

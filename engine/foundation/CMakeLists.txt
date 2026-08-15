@@ -3,7 +3,7 @@
 # phase; this selection is where a later os/windows/os.cpp or
 # os/macos/os.cpp plugs in additively, no other CMakeLists change needed).
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  set(FOUNDATION_PLATFORM_SOURCES os/linux/os.cpp)
+  set(FOUNDATION_PLATFORM_SOURCES os/linux/os.cpp os/linux/command_line.cpp)
 else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
 endif()

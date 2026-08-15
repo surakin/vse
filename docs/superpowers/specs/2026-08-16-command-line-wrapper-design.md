@@ -53,6 +53,15 @@ public:
 
     bool HasFlag(StringView name) const;                             // --name
     bool TryGetOption(StringView name, StringView& out_value) const; // --name=value
+
+    // Enumeration by index (added during implementation): callers that
+    // don't know flag names ahead of time — e.g. Day 13's startup log,
+    // which must print whatever flags were actually passed — need to
+    // walk every flag/option rather than look one up by name.
+    usize FlagCount() const;
+    StringView FlagName(usize index) const;
+    bool FlagHasValue(usize index) const;
+    StringView FlagValue(usize index) const;
 };
 
 // Called unconditionally by each platform's real entry point, right

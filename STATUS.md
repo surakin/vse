@@ -80,3 +80,18 @@ the Days 10-12 Unicode design.
 **Phase 0 is complete.** Every phase after it is still unimplemented — check the relevant
 `plans/phase-NN-name/day-NN-*.md` files for what's actually done before
 assuming a subsystem exists.
+
+## Phase 1 (Linux Platform Layer)
+
+**In progress.** Day 13 done: `os::CommandLine<Allocator>`
+(`engine/foundation/os/command_line.h` + per-platform
+`os/linux/command_line.cpp`) replaces raw `argc`/`argv` handling —
+portable parsing (positional args, `--flag`, `--key=value`), sourced via
+`CommandLine::FromNative()`/`StashNativeCommandLine()` so future
+platforms (Windows/macOS/Android/iOS/consoles) plug in without changing
+the class itself, mirroring `os.h`'s interface-header/per-platform-impl
+split. Design: `docs/superpowers/specs/2026-08-16-command-line-wrapper-design.md`.
+`main.cpp` now stashes argv, builds a `CommandLine`, and logs program
+name/args/flags. 9 new tests in `tests/foundation/command_line_test.cpp`
+(68 total, all green). Days 14-16 (timing, threading primitives, file
+I/O) not yet started.
