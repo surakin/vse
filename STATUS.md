@@ -99,5 +99,15 @@ Day 14 done: `os::MonotonicTimeNanos()`/`os::SleepNanos()` added to
 wrappers). `main.cpp` runs a ~60Hz-targeted, ~3-second-bounded main loop
 computing/logging frame delta-time under a sleep-based limiter (settles
 to ~16.7-16.8ms/frame). 2 new tests in
-`tests/foundation/os_timing_test.cpp` (61 total, all green). Days 15-16
-(threading primitives, file I/O) not yet started.
+`tests/foundation/os_timing_test.cpp`.
+
+Day 15 done: no production code (per the day's already-resolved decision
+not to add an engine `Thread`/`Mutex`/`ConditionVariable` wrapper type —
+`std::thread`/`std::mutex`/`std::atomic`/`std::condition_variable` are
+used directly). 3 new tests in
+`tests/foundation/concurrency_primitives_test.cpp` (mutex-guarded
+counter, atomic counter, condition-variable producer/consumer handoff;
+500k increments/thread for the first two) — `Threads::Threads` linked
+into `foundation_tests` via `find_package(Threads REQUIRED)`. Verified
+with 30x randomized-order stress runs, 0 failures (64 total tests, all
+green). Day 16 (file I/O) not yet started.

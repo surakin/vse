@@ -22,10 +22,13 @@ set(FOUNDATION_TEST_SOURCES
   log_test.cpp
   command_line_test.cpp
   os_timing_test.cpp
+  concurrency_primitives_test.cpp
 )
 
+find_package(Threads REQUIRED)
+
 add_executable(foundation_tests ${FOUNDATION_TEST_SOURCES})
-target_link_libraries(foundation_tests PRIVATE foundation Catch2::Catch2WithMain)
+target_link_libraries(foundation_tests PRIVATE foundation Catch2::Catch2WithMain Threads::Threads)
 target_include_directories(foundation_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 include(Catch)
