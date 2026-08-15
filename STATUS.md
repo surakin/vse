@@ -92,6 +92,12 @@ platforms (Windows/macOS/Android/iOS/consoles) plug in without changing
 the class itself, mirroring `os.h`'s interface-header/per-platform-impl
 split. Design: `docs/superpowers/specs/2026-08-16-command-line-wrapper-design.md`.
 `main.cpp` now stashes argv, builds a `CommandLine`, and logs program
-name/args/flags. 9 new tests in `tests/foundation/command_line_test.cpp`
-(68 total, all green). Days 14-16 (timing, threading primitives, file
-I/O) not yet started.
+name/args/flags. 9 new tests in `tests/foundation/command_line_test.cpp`.
+
+Day 14 done: `os::MonotonicTimeNanos()`/`os::SleepNanos()` added to
+`os.h`/`os/linux/os.cpp` (`clock_gettime(CLOCK_MONOTONIC)`/`nanosleep`
+wrappers). `main.cpp` runs a ~60Hz-targeted, ~3-second-bounded main loop
+computing/logging frame delta-time under a sleep-based limiter (settles
+to ~16.7-16.8ms/frame). 2 new tests in
+`tests/foundation/os_timing_test.cpp` (61 total, all green). Days 15-16
+(threading primitives, file I/O) not yet started.

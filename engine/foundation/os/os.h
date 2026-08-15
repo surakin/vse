@@ -33,4 +33,12 @@ int Close(int fd);
 void* ReserveMemory(usize size);
 void ReleaseMemory(void* addr, usize size);
 
+// Nanoseconds on a monotonic clock (no defined epoch — only valid for
+// computing deltas between two calls, never as a wall-clock timestamp).
+u64 MonotonicTimeNanos();
+
+// Blocks the calling thread for at least `nanos` (may run long under
+// scheduler contention; never returns early).
+void SleepNanos(u64 nanos);
+
 } // namespace engine_placeholder::os

@@ -40,5 +40,30 @@ int main(int argc, char** argv) {
         os::Write(1, line.CStr(), line.View().Length());
     }
 
+    // Day 14: frame-timed main loop. Target ~60Hz; bounded to a few
+    // seconds so `engine_main` still exits on its own — Day 20 replaces
+    // this bound with "exit when the window's close event fires" once
+    // there's a window to close.
+    constexpr u64 kTargetFrameNanos = 16'666'667;
+    constexpr u64 kRunDurationNanos = 3'000'000'000;
+
+    u64 run_start = os::MonotonicTimeNanos();
+    u64 last = run_start;
+    while (os::MonotonicTimeNanos() - run_start < kRunDurationNanos) {
+        u64 now = os::MonotonicTimeNanos();
+        u64 delta_nanos = now - last;
+        last = now;
+
+        ArenaAllocator scratch(256);
+        StringBuilder<ArenaAllocator> line(scratch);
+        line.Append("delta_ms: ").AppendFloat(static_cast<f64>(delta_nanos) / 1'000'000.0, 3).Append('\n');
+        os::Write(1, line.CStr(), line.View().Length());
+
+        u64 elapsed = os::MonotonicTimeNanos() - now;
+        if (elapsed < kTargetFrameNanos) {
+            os::SleepNanos(kTargetFrameNanos - elapsed);
+        }
+    }
+
     return 0;
 }
