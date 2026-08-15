@@ -81,30 +81,43 @@ table in `PLAN.md`.
 - **Data-oriented ECS**, not an OOP scene graph.
 - **Linux first, Wayland primary / X11 fallback.** Every system is built
   and proven on Linux before porting to Windows/macOS/Android/iOS/consoles
-  (Phases 10-13). On Linux, Wayland is the primary display backend, X11 is
+  (Phases 11-14). On Linux, Wayland is the primary display backend, X11 is
   a fallback backend for systems that haven't moved to Wayland — both
   built on their reference client libraries (`libwayland-client`,
   `libX11`/`libxcb`) rather than a hand-rolled wire-protocol client.
 - **Every target platform is designed in from day one — desktop, mobile,
   and console alike — even though only Linux is implemented before
-  Phase 10.** Platform-layer and engine-facing interfaces must stay
-  shaped so no later backend (Phases 10-13) ever forces a redesign of
+  Phase 11.** Platform-layer and engine-facing interfaces must stay
+  shaped so no later backend (Phases 11-14) ever forces a redesign of
   already-built engine layers — see `PLAN.md` assumption #11. Build order
   still follows the roadmap (Linux → Windows/macOS → Android/iOS →
   consoles); that's not license to design as if mobile/console don't
   exist until their phase starts.
+- **Font rendering is backed by FreeType** (Phase 5), not a hand-rolled
+  rasterizer. Deliberate, individually justified exception to the
+  third-party-dependency line — the same category as Lua/LuaJIT below,
+  ships inside the runtime engine/game binary — see `PLAN.md` assumption
+  #17. Vendored as source under `third_party/freetype/` (built from
+  source, same pattern as Catch2) rather than linked against a
+  distro-provided `libfreetype.so`, since unlike `libwayland-client`/
+  `libX11` it isn't guaranteed present on every target platform
+  (Android/iOS/consoles). FreeType handles font parsing and glyph
+  rasterization only — text shaping for complex scripts (HarfBuzz's
+  domain) is explicitly out of scope until a real need shows up; cursor/
+  line-break positions instead reuse the foundation string module's
+  existing grapheme clustering.
 - **Gameplay scripting embeds real languages, not a custom bytecode VM —
-  starting with Lua via LuaJIT** (Phase 9). Deliberate, individually
+  starting with Lua via LuaJIT** (Phase 10). Deliberate, individually
   justified exception to the third-party-dependency line, ships inside
   the runtime engine/game binary — see `PLAN.md` assumption #13. Designed
   with a pluggable language-backend seam so more languages can be added
-  later without a redesign. Phase 15's Blueprint importer targets this
+  later without a redesign. Phase 16's Blueprint importer targets this
   (transpiling to Lua) instead of a custom VM.
 - **Unreal Engine project import is a headline objective**, not a nice-to-
-  have (Phases 14 and 15): loading a real, unmodified UE 5.3+ project's
+  have (Phases 15 and 16): loading a real, unmodified UE 5.3+ project's
   meshes/textures/materials/levels, and eventually Blueprint gameplay
   logic, directly into this engine. Deliberately sequenced *after*
-  multiplatform support (Phases 10-13) rather than right after the asset
+  multiplatform support (Phases 11-14) rather than right after the asset
   pipeline — see `PLAN.md` assumption #14. Targets uncooked editor-format
   projects, not shipped/cooked games. The offline import tool links a DLL
   built from Unreal Engine's own source to parse `.uasset`/`.umap`
@@ -112,9 +125,9 @@ table in `PLAN.md`.
   from-scratch reverse-engineered parser — scoped to the import tool
   only, never linked or shipped in the engine/game runtime (see
   `PLAN.md` assumption #6). **Open risk, unresolved:** Epic's UE EULA
-  terms need review before Phase 14 work starts — flagged in `PLAN.md`,
+  terms need review before Phase 15 work starts — flagged in `PLAN.md`,
   not yet resolved.
-- **Engine core before editor.** The editor (Phase 16) is built last,
+- **Engine core before editor.** The editor (Phase 17) is built last,
   using the engine's own renderer/ECS — not a separate GUI toolkit.
 
 ## How the plan is structured — follow this when doing planning work

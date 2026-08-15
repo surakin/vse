@@ -37,10 +37,10 @@ Done condition — see `CLAUDE.md`'s "How the plan is structured."
 - Coroutine frame sizes vary by job complexity (capture list size, local
   variables across suspension points); the Day 27 pool allocator's size
   class(es) may need tuning once Day 34's real workloads exist — not a
-  blocker for this phase, flagged for revisit once ECS (Phase 5) and
-  asset streaming (Phase 8) are real consumers.
+  blocker for this phase, flagged for revisit once ECS (Phase 6) and
+  asset streaming (Phase 9) are real consumers.
 - `parallel_for`'s chunk-size heuristic (Day 32) is a fixed constant for
   now; adaptive chunking based on measured per-job cost is deferred until
-  a real workload (Phase 5's ECS system scheduling) shows it's needed.
+  a real workload (Phase 6's ECS system scheduling) shows it's needed.
 - Stackful fibers were considered and explicitly rejected for this phase
   — see root `PLAN.md` assumption #15 for the portability reasoning.

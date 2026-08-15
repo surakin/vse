@@ -17,7 +17,7 @@ with basic materials and lighting, with correct depth buffering.
   lights) sufficient to prove the pipeline, not a final lighting model.
 - Camera/view/projection handling decoupled from any one scene format
   (ECS doesn't exist yet — this phase uses a minimal hard-coded scene list,
-  replaced by ECS in Phase 5).
+  replaced by ECS in Phase 6).
 
 ## Notes / open questions
 

@@ -1,4 +1,4 @@
-# Phase 5 — ECS
+# Phase 6 — ECS
 
 **Depends on:** Phase 4 (Renderer core).
 **Goal:** the data-oriented entity/component/system core that everything
