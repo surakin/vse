@@ -22,7 +22,10 @@ StackAllocator::~StackAllocator() {
 
 void* StackAllocator::Push(usize size, usize align) {
     usize aligned = (offset_ + align - 1) & ~(align - 1);
-    if (aligned + size > capacity_) {
+    // Split into two comparisons (rather than `aligned + size >
+    // capacity_`) so a huge `size` can't integer-overflow the sum and
+    // wrap past the bounds check.
+    if (aligned > capacity_ || size > capacity_ - aligned) {
         return nullptr;
     }
     offset_ = aligned + size;

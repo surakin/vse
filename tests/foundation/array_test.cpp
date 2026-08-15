@@ -1,12 +1,17 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "containers/array.h"
+#include "log/log.h"
 #include "mem/arena_allocator.h"
+#include "os/os.h"
 #include "types.h"
 
 using engine_placeholder::ArenaAllocator;
 using engine_placeholder::Array;
+using engine_placeholder::SetExitSinkForTesting;
+using engine_placeholder::SetWriteSinkForTesting;
 using engine_placeholder::usize;
+using engine_placeholder::os::Write;
 
 TEST_CASE("Array: 100k pushes stay correct at every resize boundary and at the end", "[containers][array]") {
     // 8 MiB is generous: growth 4,8,16,...,131072 abandons each prior
@@ -156,4 +161,67 @@ TEST_CASE("Array: Insert/Remove at front/middle/end produce expected sequences",
 
     arr.Remove(arr.Size() - 1); // [1,99,2,3,4]
     REQUIRE((arr.Size() == 5 && arr[4] == 4));
+}
+
+namespace {
+
+// Exceptions are enabled for this test target (unlike the `foundation`
+// production library — see /tests/foundation/CMakeLists.txt), so the
+// exit sink can unwind the stack by throwing when an ENGINE_ASSERT
+// fires, instead of aborting the whole test process.
+struct AssertTriggered {
+    int code;
+};
+
+[[noreturn]] void ThrowOnExit(int code) {
+    throw AssertTriggered{code};
+}
+
+long DiscardWrites(int fd, const void* buf, usize len) {
+    (void)fd;
+    (void)buf;
+    return static_cast<long>(len);
+}
+
+// Runs `fn` with the assert-failure exit path redirected to a throw;
+// returns true if `fn` triggered an ENGINE_ASSERT failure.
+template <typename Fn>
+bool TriggersAssert(Fn&& fn) {
+    SetWriteSinkForTesting(&DiscardWrites);
+    SetExitSinkForTesting(&ThrowOnExit);
+    bool triggered = false;
+    try {
+        fn();
+    } catch (const AssertTriggered&) {
+        triggered = true;
+    }
+    SetWriteSinkForTesting(&Write);
+    SetExitSinkForTesting(&engine_placeholder::os::Exit);
+    return triggered;
+}
+
+} // namespace
+
+TEST_CASE("Array::Push asserts instead of placement-new'ing into a null pointer on allocator OOM",
+          "[containers][array][assert]") {
+    // 32-byte arena fits exactly the first Reserve() (capacity 4 *
+    // sizeof(usize) == 32 bytes) but not the next doubling (capacity 8,
+    // 64 bytes) — the 5th push's growth must hit the OOM path.
+    ArenaAllocator arena(32);
+    Array<usize, ArenaAllocator> arr(arena);
+
+    bool asserted = TriggersAssert([&] {
+        for (usize i = 0; i < 5; ++i) {
+            arr.Push(i);
+        }
+    });
+    REQUIRE(asserted);
+}
+
+TEST_CASE("Array::Pop asserts on an empty array instead of underflowing size_", "[containers][array][assert]") {
+    ArenaAllocator arena(4096);
+    Array<usize, ArenaAllocator> arr(arena);
+
+    bool asserted = TriggersAssert([&] { arr.Pop(); });
+    REQUIRE(asserted);
 }

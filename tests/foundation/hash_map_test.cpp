@@ -52,3 +52,22 @@ TEST_CASE("HashMap: insert/find/remove stays correct across a 1000-entry churn",
     }
     REQUIRE(survivors_ok);
 }
+
+TEST_CASE("HashMap: tombstone accumulation from insert/remove churn still triggers a rehash",
+          "[containers][hash_map]") {
+    // Insert-then-immediately-remove a distinct key each iteration:
+    // Size() (== count_) stays at 0 throughout, so a NeedsGrow() that
+    // only counted occupied slots would never see a reason to rehash,
+    // even as every iteration leaves behind one more tombstone.
+    ArenaAllocator arena(1024 * 1024);
+    HashMap<usize, usize, ArenaAllocator> map(arena, 8);
+    usize initial_capacity = map.SlotCapacity();
+
+    for (usize i = 0; i < 100; ++i) {
+        map.Insert(i, i);
+        map.Remove(i);
+    }
+
+    REQUIRE(map.Size() == 0);
+    REQUIRE(map.SlotCapacity() > initial_capacity);
+}

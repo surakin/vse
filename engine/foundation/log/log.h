@@ -1,5 +1,6 @@
 #pragma once
 
+#include "log/assert.h"
 #include "string/string.h"
 #include "types.h"
 
@@ -44,18 +45,7 @@ private:
 extern LogChannel LogCore;
 extern LogChannel LogRender;
 
-// Indirection so tests can capture/intercept output without real fd
-// redirection (dup2/pipe/fork) — see main.cpp's Day 9 tests. Default
-// targets are the real os:: functions; production code never touches
-// these setters.
-using WriteSinkFn = long (*)(int fd, const void* buf, usize len);
-using ExitSinkFn = void (*)(int code);
-void SetWriteSinkForTesting(WriteSinkFn sink);
-void SetExitSinkForTesting(ExitSinkFn sink);
-
 void Log(LogChannel& channel, LogVerbosity level, StringView message);
-
-[[noreturn]] void AssertFail(const char* file, int line, const char* message);
 
 // Minimal hand-rolled `key=value` config reader: lines of the form
 // `ChannelName.verbosity=Level` or `ChannelName.enabled=true|false`.
@@ -65,10 +55,3 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message);
 bool LoadConfig(const char* path);
 
 } // namespace engine_placeholder
-
-#define ENGINE_ASSERT(cond, msg)                                            \
-    do {                                                                     \
-        if (!(cond)) {                                                        \
-            ::engine_placeholder::AssertFail(__FILE__, __LINE__, msg);         \
-        }                                                                       \
-    } while (false)

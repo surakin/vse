@@ -3,6 +3,7 @@
 #include <new>
 #include <utility>
 
+#include "log/assert.h"
 #include "types.h"
 
 // Growable array over storage obtained from an `Allocator`, which must
@@ -58,6 +59,7 @@ public:
             return;
         }
         void* mem = allocator_->Alloc(new_capacity * sizeof(T), alignof(T));
+        ENGINE_ASSERT(mem != nullptr, "Array::Reserve: allocator out of memory");
         T* new_data = static_cast<T*>(mem);
         for (usize i = 0; i < size_; ++i) {
             new (new_data + i) T(std::move(data_[i]));
@@ -80,6 +82,7 @@ public:
     }
 
     void Pop() {
+        ENGINE_ASSERT(size_ > 0, "Array::Pop: called on an empty array");
         --size_;
         data_[size_].~T();
     }

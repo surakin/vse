@@ -113,10 +113,15 @@ public:
         }
         slots_[index].state = SlotState::Tombstone;
         --count_;
+        ++tombstone_count_;
         return true;
     }
 
     usize Size() const { return count_; }
+
+    // Exposed for tests observing NeedsGrow()/Rehash() behavior, not
+    // needed by any production caller.
+    usize SlotCapacity() const { return slots_.Capacity(); }
 
 private:
     enum class SlotState : u8 { Empty, Occupied, Tombstone };
@@ -128,8 +133,14 @@ private:
     };
 
     bool NeedsGrow() const {
-        // Load factor >= 0.7 triggers growth.
-        return (count_ + 1) * 10 >= slots_.Capacity() * 7;
+        // Load factor >= 0.7 triggers growth, counting tombstones along
+        // with occupied slots: a tombstone still costs a probe step (it
+        // isn't Empty, so lookups/inserts keep scanning past it) and is
+        // only reclaimed by a rehash, so insert/remove churn that never
+        // grows `count_` must still eventually trigger one — otherwise
+        // repeated insert-then-remove cycles fill the table with
+        // tombstones forever without ever rehashing them away.
+        return (count_ + tombstone_count_ + 1) * 10 >= slots_.Capacity() * 7;
     }
 
     usize FindSlotForInsert(const K& key) const {
@@ -149,8 +160,10 @@ private:
                 first_tombstone = i;
             }
         }
-        // Unreachable in practice — NeedsGrow() keeps the table from
-        // ever filling completely — but fall back safely if it happens.
+        // Not expected to run — NeedsGrow() (which now counts
+        // tombstones, not just occupied slots) keeps every Insert() from
+        // letting the table fill completely — but fall back safely
+        // rather than assume it can never happen.
         return first_tombstone != cap ? first_tombstone : 0;
     }
 
@@ -205,6 +218,7 @@ private:
         }
 
         count_ = 0;
+        tombstone_count_ = 0;
         for (usize i = 0; i < occupied.Size(); ++i) {
             InsertNoRehashCheck(occupied[i].key, occupied[i].value);
         }
@@ -213,6 +227,7 @@ private:
     Allocator* allocator_ = nullptr;
     Array<Slot, Allocator> slots_;
     usize count_ = 0;
+    usize tombstone_count_ = 0;
 };
 
 } // namespace engine_placeholder

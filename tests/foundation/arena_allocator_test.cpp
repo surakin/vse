@@ -64,3 +64,19 @@ TEST_CASE("ArenaAllocator: 1000 varying-size allocations are non-overlapping and
     }
     REQUIRE(checksums_ok);
 }
+
+TEST_CASE("ArenaAllocator::Alloc rejects a size that would overflow the bounds check, rather than wrapping",
+          "[mem][arena]") {
+    ArenaAllocator arena(64);
+    // Near-SIZE_MAX: `aligned + size` would wrap past `capacity_` under
+    // the old unguarded `aligned + size > capacity_` check, making an
+    // absurdly oversized request look like it fits a 64-byte arena.
+    constexpr usize kHuge = ~usize(0) - 8;
+    void* p = arena.Alloc(kHuge, 8);
+    REQUIRE(p == nullptr);
+
+    // The arena must still be fully usable afterwards — a rejected huge
+    // request shouldn't have corrupted `offset_`.
+    void* ok = arena.Alloc(16, 8);
+    REQUIRE(ok != nullptr);
+}

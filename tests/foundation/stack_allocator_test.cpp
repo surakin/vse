@@ -63,3 +63,19 @@ TEST_CASE("StackAllocator: Push/PopToMarker rewinds and preserves earlier conten
     void* reused = stack.Push(kObjSize, 8);
     REQUIRE(reused == second_first);
 }
+
+TEST_CASE("StackAllocator::Push rejects a size that would overflow the bounds check, rather than wrapping",
+          "[mem][stack]") {
+    StackAllocator stack(64);
+    // Near-SIZE_MAX: `aligned + size` would wrap past `capacity_` under
+    // the old unguarded `aligned + size > capacity_` check, making an
+    // absurdly oversized request look like it fits a 64-byte stack.
+    constexpr usize kHuge = ~usize(0) - 8;
+    void* p = stack.Push(kHuge, 8);
+    REQUIRE(p == nullptr);
+
+    // The stack must still be fully usable afterwards — a rejected huge
+    // request shouldn't have corrupted `offset_`.
+    void* ok = stack.Push(16, 8);
+    REQUIRE(ok != nullptr);
+}
