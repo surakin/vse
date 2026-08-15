@@ -8,7 +8,7 @@ with progress.
 
 ## Phase 0 (Foundation layer)
 
-**In progress — Days 1-13 of 15 are complete and committed.** Real code
+**In progress — Days 1-14 of 15 are complete and committed.** Real code
 exists under `/engine/foundation`, built via CMake:
 `cmake -B build && cmake --build build` produces `engine_main`
 (`build/engine/foundation/engine_main`), which runs the current ad hoc
@@ -27,13 +27,22 @@ combining-class, composition-exclusions). `Array<T, Allocator>` and
 `String<Allocator>` also gained move construction/assignment as part of
 Day 12 — needed to return `String<Allocator>` by value from
 `NormalizeNFC`/`NormalizeNFD`, previously missing since only copy had
-been (deliberately) disabled. Day 13 added `Vec2`/`Vec3`/`Vec4`
-(`/engine/foundation/vector.h`) and `Mat3`/`Mat4`
-(`/engine/foundation/matrix.h`), plus a hand-rolled `Sqrt`
-(`/engine/foundation/math_util.h`, Newton-Raphson, not `<cmath>`) —
-column-major storage, column-vector convention (`v' = M * v`), documented
-in `matrix.h` since it's load-bearing for later renderer/transform code.
-Day 14 (quaternions & transforms) is not yet started — see
+been (deliberately) disabled. Day 13 added `Vec2`/`Vec3`/`Vec4` (`/engine/foundation/vector.h`) and
+`Mat3`/`Mat4` (`/engine/foundation/matrix.h`) — column-major storage,
+column-vector convention (`v' = M * v`), documented in `matrix.h` since
+it's load-bearing for later renderer/transform code. Day 14 added
+`Quaternion` (`/engine/foundation/quaternion.h`: construction, Hamilton
+product, conjugate/inverse, normalize, slerp, and both directions of
+quaternion<->`Mat3` conversion) and `Transform`
+(`/engine/foundation/transform.h`: position/rotation/scale, `Compose`,
+`ToMatrix`). **Scope amendment made during Day 14** (PLAN.md assumption
+#2, `CLAUDE.md`): scalar math functions (`sqrt`/`sin`/`cos`/`acos`/etc.)
+now call `<cmath>` directly instead of being hand-rolled — solved
+problems with no control/performance/learning upside to reimplementing.
+`math_util.h`'s `Sqrt` was accordingly changed from Day 13's hand-rolled
+Newton-Raphson to a thin `<cmath>` wrapper; the vector/matrix/quaternion
+*types* themselves remain hand-rolled. Day 15 (not yet started) migrates
+the ad hoc tests to Catch2 v3 — see
 `docs/superpowers/specs/2026-08-14-unicode-string-support-design.md` for
 the Days 10-12 Unicode design.
 

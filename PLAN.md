@@ -104,12 +104,20 @@ interpretations keep it buildable — flag any that don't match intent:
    STL, etc. The line: "part of the base OS/distro" is fine, "a library
    that wraps a core system library for convenience" is not.
 2. **libc is allowed, but the foundation layer still hand-rolls its own
-   allocators, containers, string handling, and math** — for control,
+   allocators, containers, and string handling** — for control,
    performance, and as a learning/portability exercise, not because
    linking libc is forbidden. Where calling libc directly is simpler and
    doesn't duplicate something the foundation layer already owns (e.g.
-   wrapping a raw syscall, calling an OS API), that's fine. STL,
-   exceptions, and RTTI remain unused regardless — the C++ language
+   wrapping a raw syscall, calling an OS API), that's fine. **Scalar math
+   functions** (`sqrt`/`sin`/`cos`/`acos`/`atan2`/etc.) call `<cmath>`
+   directly rather than being hand-rolled — these are well-understood,
+   already-optimal solved problems where a from-scratch version buys none
+   of the control/performance/learning upside that justifies hand-rolling
+   allocators or containers, and a subtly-wrong hand-rolled version is a
+   correctness risk with no offsetting benefit. Vector/matrix/quaternion
+   *types* (`Vec3`, `Mat4`, `Quaternion`, etc.) are still hand-rolled —
+   it's their scalar building blocks that come from `<cmath>`, not the
+   types themselves. STL, exceptions, and RTTI remain unused regardless — the C++ language
    runtime overhead they bring isn't worth it, independent of the libc
    question. **Resolved:** Phase 0 links libc normally from Day 1 — no
    `-nostdlib`/`-ffreestanding` — and its OS-interaction layer (Day 2)

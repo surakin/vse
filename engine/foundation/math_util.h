@@ -1,30 +1,21 @@
 #pragma once
 
-#include "log.h"
+#include <cmath>
+
 #include "types.h"
 
-// Hand-rolled scalar math helpers (PLAN.md assumption #2: foundation math
-// is hand-rolled, not reached for from <cmath>).
+// Scalar math helpers. These wrap <cmath> rather than hand-rolling —
+// PLAN.md assumption #2: sqrt/trig are solved problems with no
+// control/performance/learning upside to reimplementing; the foundation
+// layer hand-rolls its allocators, containers, string handling, and the
+// vector/matrix/quaternion types built on top of these scalars instead.
 namespace engine_placeholder {
 
-// Newton-Raphson (Babylonian method): x_{n+1} = 0.5*(x_n + value/x_n),
-// which converges quadratically to sqrt(value) from any positive
-// starting guess — using `value` itself as the initial guess is
-// deliberately simple, not tuned for iteration count.
-inline f32 Sqrt(f32 value) {
-    ENGINE_ASSERT(value >= 0.0f, "Sqrt of a negative number");
-    if (value == 0.0f) {
-        return 0.0f;
-    }
-    f32 guess = value;
-    for (int i = 0; i < 20; ++i) {
-        f32 next = 0.5f * (guess + value / guess);
-        if (next == guess) {
-            break;
-        }
-        guess = next;
-    }
-    return guess;
-}
+inline f32 Sqrt(f32 value) { return std::sqrt(value); }
+inline f32 Sin(f32 radians) { return std::sin(radians); }
+inline f32 Cos(f32 radians) { return std::cos(radians); }
+inline f32 Acos(f32 value) { return std::acos(value); }
+
+constexpr f32 kPi = 3.14159265358979323846f;
 
 } // namespace engine_placeholder

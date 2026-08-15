@@ -12,7 +12,9 @@
 #include "grapheme.h"
 #include "matrix.h"
 #include "normalize.h"
+#include "quaternion.h"
 #include "string.h"
+#include "transform.h"
 #include "types.h"
 #include "utf8.h"
 #include "utf8_codec.h"
@@ -47,6 +49,11 @@ using engine_placeholder::Mat4;
 using engine_placeholder::Vec2;
 using engine_placeholder::Vec3;
 using engine_placeholder::Vec4;
+using engine_placeholder::Compose;
+using engine_placeholder::Quaternion;
+using engine_placeholder::Slerp;
+using engine_placeholder::Transform;
+using engine_placeholder::kPi;
 using engine_placeholder::f32;
 using engine_placeholder::u8;
 using engine_placeholder::u32;
@@ -860,6 +867,85 @@ void TestMat4FromBasisAndMultiply() {
            "composing two Mat4 translations adds their offsets");
 }
 
+bool QuaternionNearlyEqual(const Quaternion& a, const Quaternion& b) {
+    return NearlyEqual(a.x, b.x) && NearlyEqual(a.y, b.y) && NearlyEqual(a.z, b.z) && NearlyEqual(a.w, b.w);
+}
+
+void TestQuaternionMultiplyMatchesHamiltonProduct() {
+    // Unit quaternions i=(1,0,0,0), j=(0,1,0,0), k=(0,0,1,0): i*j == k,
+    // j*i == -k (anti-commutative), matching quaternion-algebra identities.
+    Quaternion i(1, 0, 0, 0);
+    Quaternion j(0, 1, 0, 0);
+    Quaternion k(0, 0, 1, 0);
+    Expect(QuaternionNearlyEqual(i * j, k), "i*j == k");
+    Expect(QuaternionNearlyEqual(j * i, Quaternion(-k.x, -k.y, -k.z, -k.w)), "j*i == -k (anti-commutative)");
+}
+
+void TestQuaternionRotatesKnownVector() {
+    // +90 degrees about +Z rotates +X to +Y (right-handed).
+    Quaternion rot = Quaternion::FromAxisAngle(Vec3(0, 0, 1), kPi * 0.5f);
+    Vec3 rotated = rot.RotateVector(Vec3(1, 0, 0));
+    Expect(Vec3NearlyEqual(rotated, Vec3(0, 1, 0)), "90-degree rotation about +Z sends +X to +Y");
+}
+
+void TestQuaternionToMat3MatchesRotateVector() {
+    Quaternion rot = Quaternion::FromAxisAngle(Vec3(0, 0, 1), kPi * 0.5f);
+    Vec3 v(1, 0, 0);
+    Expect(Vec3NearlyEqual(rot.ToMat3() * v, rot.RotateVector(v)),
+           "Quaternion::ToMat3() applied to a vector matches RotateVector() on the same vector");
+}
+
+void TestQuaternionMatrixRoundTrip() {
+    // Axis (1,2,2)/3 (unit length), angle 1.0 rad keeps trace(ToMat3()) >
+    // 0 so FromMat3 takes the same branch FromAxisAngle's w-sign implies,
+    // giving an exact (not just up-to-sign) round trip.
+    Quaternion original = Quaternion::FromAxisAngle(Vec3(1.0f / 3.0f, 2.0f / 3.0f, 2.0f / 3.0f), 1.0f);
+    Quaternion recovered = Quaternion::FromMat3(original.ToMat3());
+    Expect(QuaternionNearlyEqual(original, recovered), "Quaternion -> Mat3 -> Quaternion recovers the original");
+}
+
+void TestQuaternionSlerp() {
+    Quaternion identity = Quaternion::Identity();
+    Quaternion ninety = Quaternion::FromAxisAngle(Vec3(0, 0, 1), kPi * 0.5f);
+    Quaternion forty_five = Quaternion::FromAxisAngle(Vec3(0, 0, 1), kPi * 0.25f);
+
+    Expect(QuaternionNearlyEqual(Slerp(identity, ninety, 0.0f), identity), "Slerp(a,b,0) == a");
+    Expect(QuaternionNearlyEqual(Slerp(identity, ninety, 1.0f), ninety), "Slerp(a,b,1) == b");
+    Expect(QuaternionNearlyEqual(Slerp(identity, ninety, 0.5f), forty_five),
+           "Slerp halfway between 0 and 90 degrees about the same axis == 45 degrees about that axis");
+}
+
+void TestTransformCompose() {
+    Transform parent;
+    parent.position = Vec3(1, 0, 0);
+    parent.rotation = Quaternion::FromAxisAngle(Vec3(0, 0, 1), kPi * 0.5f);
+
+    Transform child;
+    child.position = Vec3(1, 0, 0);
+
+    Transform composed = Compose(parent, child);
+    // child's local (1,0,0) offset gets rotated 90 degrees about Z by the
+    // parent (-> (0,1,0)) then added to the parent's own position (1,0,0).
+    Expect(Vec3NearlyEqual(composed.position, Vec3(1, 1, 0)),
+           "Compose(parent, child) rotates the child's local offset into parent space before adding it");
+    Expect(QuaternionNearlyEqual(composed.rotation, parent.rotation),
+           "Compose(parent, child) with identity child rotation keeps the parent's rotation");
+}
+
+void TestTransformToMatrix() {
+    Transform t;
+    t.position = Vec3(2, 3, 4);
+    t.scale = Vec3(2, 3, 4);
+
+    Vec4 transformed = t.ToMatrix() * Vec4(1, 1, 1, 1);
+    Expect(NearlyEqual(transformed.x, 4) && NearlyEqual(transformed.y, 6) && NearlyEqual(transformed.z, 8),
+           "Transform::ToMatrix() applies scale before translation");
+    Vec4 origin_transformed = t.ToMatrix() * Vec4(0, 0, 0, 1);
+    Expect(NearlyEqual(origin_transformed.x, 2) && NearlyEqual(origin_transformed.y, 3) &&
+               NearlyEqual(origin_transformed.z, 4),
+           "Transform::ToMatrix() translates the origin to the transform's position");
+}
+
 void TestStringView() {
     StringView a("hello");
     StringView b("hello");
@@ -1049,6 +1135,13 @@ int main() {
     TestMatMultiply();
     TestMatTranspose();
     TestMat4FromBasisAndMultiply();
+    TestQuaternionMultiplyMatchesHamiltonProduct();
+    TestQuaternionRotatesKnownVector();
+    TestQuaternionToMat3MatchesRotateVector();
+    TestQuaternionMatrixRoundTrip();
+    TestQuaternionSlerp();
+    TestTransformCompose();
+    TestTransformToMatrix();
     TestStringView();
     TestStringType();
     TestStringBuilder();

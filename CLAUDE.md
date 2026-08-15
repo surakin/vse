@@ -53,10 +53,15 @@ table in `PLAN.md`.
   one" — see `PLAN.md`'s "Assumptions & scope notes" for the precise
   reasoning on each boundary.
 - **Foundation layer still hand-rolls its own core.** Custom allocators,
-  containers, string handling, and math instead of reaching for
+  containers, and string handling instead of reaching for
   malloc/printf/string.h/the C++ STL — for control, performance, and as a
-  learning exercise, not because linking libc is banned outright. STL,
-  exceptions, and RTTI remain unused.
+  learning exercise, not because linking libc is banned outright. Scalar
+  math functions (`sqrt`/`sin`/`cos`/`acos`/`atan2`/etc.) call `<cmath>`
+  directly rather than being hand-rolled — solved problems with no
+  control/performance/learning upside to reinventing them; the
+  vector/matrix/quaternion *types* built on top of them are still
+  hand-rolled. See `PLAN.md` assumption #2. STL, exceptions, and RTTI
+  remain unused.
 - **The engine is heavily multithreaded, through one job system — not ad
   hoc thread pools per subsystem.** Phase 2 defines a portable
   work-stealing job scheduler that every later multithreaded subsystem
