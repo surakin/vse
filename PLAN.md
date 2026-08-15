@@ -117,9 +117,26 @@ interpretations keep it buildable — flag any that don't match intent:
    correctness risk with no offsetting benefit. Vector/matrix/quaternion
    *types* (`Vec3`, `Mat4`, `Quaternion`, etc.) are still hand-rolled —
    it's their scalar building blocks that come from `<cmath>`, not the
-   types themselves. STL, exceptions, and RTTI remain unused regardless — the C++ language
-   runtime overhead they bring isn't worth it, independent of the libc
-   question. **Resolved:** Phase 0 links libc normally from Day 1 — no
+   types themselves. **Concurrency primitives are the same category as
+   scalar math, used directly rather than hand-rolled or wrapped in a
+   custom engine type:** `std::thread`, `std::mutex`,
+   `std::condition_variable`, `std::atomic`, and C++20 coroutines
+   (`std::coroutine_handle`, `co_await`/`co_yield`) come straight from
+   the standard library. Unlike Vulkan/DX12/Metal or Wayland/X11 —
+   genuinely different platform-native APIs an RHI/window seam has to
+   paper over — `std::thread`'s family is already the portable
+   abstraction across every target platform this engine ships to, so a
+   custom wrapper layer would just be re-solving a problem the standard
+   library already solves correctly, the same trap as hand-rolled trig.
+   `std::thread`'s constructor can throw `std::system_error` on failed
+   thread creation; under this project's `-fno-exceptions`, that
+   surfaces as `std::terminate` (an abort) rather than a catchable
+   error — acceptable, since failed thread creation is an unrecoverable
+   resource-exhaustion condition regardless of who calls into the OS
+   for it. STL containers/algorithms remain unused regardless — this
+   carve-out is for `<thread>`/`<mutex>`/`<atomic>`/`<coroutine>`
+   specifically, not blanket STL approval. Exceptions and RTTI remain
+   unused/disabled project-wide, independent of the libc question. **Resolved:** Phase 0 links libc normally from Day 1 — no
    `-nostdlib`/`-ffreestanding` — and its OS-interaction layer (Day 2)
    wraps libc functions directly (`write`, `read`, `open`, `close`,
    `mmap`, `munmap`, `mprotect`, `exit`) behind engine-named functions,
@@ -278,12 +295,14 @@ interpretations keep it buildable — flag any that don't match intent:
     parallel system scheduling, renderer command recording, physics,
     audio, asset streaming) needs a shared, portable way to fan out and
     join work rather than each hand-rolling its own thread pool. Phase 1
-    Day 15 already owns the genuinely OS-specific pieces (pthread-based
-    thread creation, `pthread_mutex_t`/`pthread_cond_t`); the
-    work-stealing scheduler built on top of those primitives is a
-    portable algorithm, so it gets its own layer between Platform and
-    RHI — the same relationship RHI already has to Platform's raw Vulkan
-    driver-loading (Day 17).
+    Day 15 owns worker-thread creation using `std::thread`/`std::mutex`/
+    `std::condition_variable` directly (assumption #2 — these are
+    already portable, not OS-specific, so there's no per-platform piece
+    to isolate here the way Vulkan/Wayland need one); the work-stealing
+    scheduler built on top of those primitives is a portable algorithm,
+    so it gets its own layer between Platform and RHI — the same
+    relationship RHI already has to Platform's raw Vulkan driver-loading
+    (Day 17).
     Stackful fibers were considered for job suspension (letting a worker
     thread pick up other work while a job waits on a dependency) but
     rejected: fiber context-switching requires manipulating raw

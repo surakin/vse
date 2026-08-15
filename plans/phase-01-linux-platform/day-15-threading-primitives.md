@@ -4,31 +4,33 @@
 **Depends on:** Day 13 (process lifecycle & argv).
 
 **Resolved consistent with `PLAN.md` assumption #2:** thread creation
-and synchronization primitives use libc's `pthread` API (`pthread_create`,
-`pthread_mutex_t`, `pthread_cond_t`), not a hand-rolled raw `clone()`
-call and raw `futex` syscalls. Thread creation/sync isn't something
-Foundation deliberately hand-rolls (unlike allocators/containers/
-string/math), so per the same reasoning that resolved Phase 0's Day 1/2,
-wrapping libc's pthread API directly is simpler and avoids re-solving
-problems (stack setup, TLS registration) libc already handles correctly.
+and synchronization use `std::thread`/`std::mutex`/`std::condition_variable`/
+`std::atomic` directly, not a hand-rolled raw `clone()`/`futex` wrapper
+and not a custom `Thread`/`Mutex`/`ConditionVariable` engine type either.
+Unlike Vulkan/Wayland, these standard-library facilities are already the
+portable abstraction across every target platform this engine ships to
+— there's no per-platform difference here for a wrapper to paper over,
+so wrapping them would just add an indirection layer with no seam left
+to justify it. `std::thread`'s constructor can throw `std::system_error`
+on failed thread creation; under this project's `-fno-exceptions` that
+surfaces as `std::terminate` rather than a catchable error, which is
+accepted as fine — failed thread creation is an unrecoverable
+resource-exhaustion condition regardless.
 
 ## Tasks
 
-- [ ] Implement `Thread` in `/engine/platform/linux/thread.h`/`.cpp`
-  wrapping `pthread_create`/`pthread_join`, with an engine-facing API
-  (`Thread::Spawn(fn, arg)`, `Thread::Join()`) that hides the pthread
-  types — this is the seam later OS ports (Windows/macOS) implement
-  against with their own native thread APIs.
-- [ ] Implement `Mutex` wrapping `pthread_mutex_t`
-  (init/lock/unlock/destroy) and `ConditionVariable` wrapping
-  `pthread_cond_t` (wait/signal/broadcast), same engine-facing-wrapper
-  pattern.
-- [ ] Write a test: a worker thread and the main thread each increment
-  a shared counter a large number of times under the mutex.
-- [ ] Run the test repeatedly (ideally under ThreadSanitizer, or a high
-  repeat count otherwise) and confirm the final counter value is exact
-  every run, with no lost updates.
+- [ ] Write a test: spawn a `std::thread` that, together with the main
+  thread, increments a shared counter a large number of times under a
+  `std::mutex`.
+- [ ] Write a second test using `std::atomic<int>` for the same
+  shared-counter increment, without a mutex, to confirm atomics work
+  correctly under this toolchain/build flags too.
+- [ ] Write a third test using `std::condition_variable` to hand off
+  work between the main thread and a worker thread (e.g. producer signals
+  "data ready", consumer waits on the condition variable before reading).
+- [ ] Run all three tests repeatedly (ideally under ThreadSanitizer, or
+  a high repeat count otherwise) and confirm no races/lost updates.
 - [ ] Commit.
 
-**Done:** a worker thread and the main thread increment a shared
-counter under the mutex with no races across repeated stress runs.
+**Done:** all three tests (mutex, atomic, condition-variable handoff)
+pass repeatedly with no races across stress runs.

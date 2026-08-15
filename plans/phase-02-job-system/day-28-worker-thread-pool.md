@@ -8,10 +8,12 @@
 - [ ] Query physical core count via `sched_getaffinity` (or
   `/proc/cpuinfo` parsing as a fallback) — not libc
   `std::thread::hardware_concurrency`.
-- [ ] Spawn one worker thread per physical core using Phase 1 Day 15's
-  `Thread` type (pthread-based).
-- [ ] Pin each worker to a distinct core via `sched_setaffinity` where
-  available.
+- [ ] Spawn one worker thread per physical core using `std::thread`
+  directly (Phase 1 Day 15, `PLAN.md` assumption #2).
+- [ ] Pin each worker to a distinct core via `sched_setaffinity` (Linux-
+  specific; no portable `std::thread` API for affinity) using the
+  native handle (`std::thread::native_handle()`, a `pthread_t` on
+  Linux) where available.
 - [ ] Register the calling (main) thread as a worker too, rather than
   leaving it idle while worker threads run jobs.
 - [ ] Verify each worker's affinity via `/proc/self/status`'s

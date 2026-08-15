@@ -1,8 +1,8 @@
 # Phase 2 — Job System & Coroutines
 
-**Depends on:** Phase 1 (Linux platform layer) — uses its pthread-based
-thread creation and `pthread_mutex_t`/`pthread_cond_t` as the underlying
-OS primitives the worker pool is built on.
+**Depends on:** Phase 1 (Linux platform layer) — uses `std::thread`,
+`std::mutex`, and `std::condition_variable` (Day 15, `PLAN.md`
+assumption #2) as the underlying primitives the worker pool is built on.
 **Goal:** a portable, work-stealing job scheduler with C++20 coroutines
 as the sole suspension mechanism — no hand-written per-ABI
 context-switching code anywhere. This is the layer every later

@@ -56,12 +56,15 @@ table in `PLAN.md`.
   containers, and string handling instead of reaching for
   malloc/printf/string.h/the C++ STL — for control, performance, and as a
   learning exercise, not because linking libc is banned outright. Scalar
-  math functions (`sqrt`/`sin`/`cos`/`acos`/`atan2`/etc.) call `<cmath>`
-  directly rather than being hand-rolled — solved problems with no
-  control/performance/learning upside to reinventing them; the
-  vector/matrix/quaternion *types* built on top of them are still
-  hand-rolled. See `PLAN.md` assumption #2. STL, exceptions, and RTTI
-  remain unused.
+  math functions (`sqrt`/`sin`/`cos`/`acos`/`atan2`/etc.) and concurrency
+  primitives (`std::thread`, `std::mutex`, `std::condition_variable`,
+  `std::atomic`, C++20 coroutines) are used directly rather than being
+  hand-rolled or wrapped in a custom engine type — solved problems, and
+  (for concurrency) already-portable across every target platform, with
+  no control/performance/learning upside to reinventing or re-wrapping
+  them; the vector/matrix/quaternion *types* built on top of `<cmath>`
+  are still hand-rolled. See `PLAN.md` assumption #2. STL containers/
+  algorithms, exceptions, and RTTI remain unused/disabled.
 - **The engine is heavily multithreaded, through one job system — not ad
   hoc thread pools per subsystem.** Phase 2 defines a portable
   work-stealing job scheduler that every later multithreaded subsystem

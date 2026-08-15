@@ -68,10 +68,12 @@ Done condition — see `CLAUDE.md`'s "How the plan is structured."
   from the standard `xdg-shell.xml` protocol spec (a build-time step, not
   a new library dependency) or a small hand-written set of request/event
   wrappers for it. Decide which when Day 18 starts.
-- **Thread creation/sync (resolved).** Day 15 uses libc's `pthread` API
-  (`pthread_create`, `pthread_mutex_t`, `pthread_cond_t`) rather than raw
-  `clone()`/`futex` — same libc-preference reasoning as Phase 0's
-  Day 1/2. Phase 2's job system builds its worker pool on top of this.
+- **Thread creation/sync (resolved).** Day 15 uses `std::thread`/
+  `std::mutex`/`std::condition_variable` directly (`PLAN.md` assumption
+  #2) rather than wrapping `pthread` or raw `clone()`/`futex` — these are
+  already portable across every target platform, so there's no
+  per-platform piece to isolate here the way Vulkan/Wayland need one.
+  Phase 2's job system builds its worker pool on top of this.
 - **Windowing sequenced last within this phase.** Wayland (Days 18-22)
   and X11 (Days 24-25) come after the non-windowing platform primitives
   (timing, threading, file I/O, GPU driver loading — Days 14-17), not
