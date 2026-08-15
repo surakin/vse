@@ -9,7 +9,7 @@ Day 3's mem primitives.
 
 ## Tasks
 
-- [x] Implement `StringView` in `/engine/foundation/string.h`:
+- [x] Implement `StringView` in `/engine/foundation/string/string.h`:
   non-owning length-prefixed pointer+length pair, with
   equality/comparison/substring operations.
 - [x] Implement `String<Allocator>` (owning, allocator-backed) built on

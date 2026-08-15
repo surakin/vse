@@ -5,7 +5,7 @@
 
 ## Tasks
 
-- [x] Implement `Array<T, Allocator>` in `/engine/foundation/array.h`
+- [x] Implement `Array<T, Allocator>` in `/engine/foundation/containers/array.h`
   (header-only, templated), requiring only `void* Alloc(usize size,
   usize align)` from `Allocator` — Day 4's `ArenaAllocator` satisfies
   this. `Push`, `Pop`, `Insert(index)`, `Remove(index)`,

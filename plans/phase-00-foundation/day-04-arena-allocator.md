@@ -11,7 +11,7 @@ behavior is unaffected, just the OS call it makes internally.
 ## Tasks
 
 - [x] Define `ArenaAllocator` in
-  `/engine/foundation/arena_allocator.h`/`.cpp`: a backing block
+  `/engine/foundation/mem/arena_allocator.h`/`.cpp`: a backing block
   obtained via Day 2's `os::MMap`, a bump pointer, `Alloc(size, align)`,
   `Reset()`, `FreeAll()` (unmaps the block via `os::MUnmap`).
 - [x] Implement alignment handling: round the bump pointer up to the

@@ -6,7 +6,7 @@
 ## Tasks
 
 - [x] Implement `HashMap<K, V, Allocator>` in
-  `/engine/foundation/hash_map.h` using open addressing (linear probing
+  `/engine/foundation/containers/hash_map.h` using open addressing (linear probing
   with tombstones for deletion), built over Day 6's `Array<T,
   Allocator>` for backing storage.
 - [x] Implement a `Hash<K>` trait/function with specializations for

@@ -10,7 +10,7 @@ verbosity, per-user config overridable without recompiling.
 ## Tasks
 
 - [x] Define `LogChannel` and a static registry of named channels
-  (e.g. `LogCore`, `LogRender`) in `/engine/foundation/log.h`, each
+  (e.g. `LogCore`, `LogRender`) in `/engine/foundation/log/log.h`, each
   carrying its own verbosity level (Error/Warn/Info/Debug/Trace) and
   enable flag, defaulting to Warning+ enabled. Registry is an intrusive
   singly-linked list (each `LogChannel` links itself in at construction

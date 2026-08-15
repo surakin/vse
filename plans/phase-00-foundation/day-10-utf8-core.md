@@ -32,7 +32,7 @@ any non-ASCII codepoint, and internal call sites never pass one to
 
 ## Tasks
 
-- [x] Create `/engine/foundation/utf8_codec.h`/`.cpp`:
+- [x] Create `/engine/foundation/string/utf8_codec.h`/`.cpp`:
   - `struct DecodedCodepoint { u32 codepoint; usize byte_length; };`
   - `DecodedCodepoint DecodeUtf8At(const char* data, usize length, usize
     offset, bool* out_valid = nullptr)` — decodes the codepoint starting
@@ -51,13 +51,13 @@ any non-ASCII codepoint, and internal call sites never pass one to
     above `0x10FFFF` encodes as U+FFFD instead (defensive; should not
     happen for codepoints obtained from `DecodeUtf8At` or ordinary
     literals).
-- [x] Create `/engine/foundation/utf8.h` (header-only): `usize
+- [x] Create `/engine/foundation/string/utf8.h` (header-only): `usize
   CodepointCount(StringView)`; `bool IsValidUtf8(StringView)` (loops
   `DecodeUtf8At` with `out_valid`, returns false on the first invalid
   step); a `Utf8CodepointIterator`/`Utf8CodepointRange` pair with a
   `Utf8Codepoints(StringView)` factory function, supporting
   `for (u32 cp : Utf8Codepoints(sv))`.
-- [x] Extend `/engine/foundation/string.h`:
+- [x] Extend `/engine/foundation/string/string.h`:
   - `#include "utf8_codec.h"`.
   - Add `String<Allocator>::AppendRawBytes(const char* bytes, usize
     count)` — appends already-encoded bytes verbatim, trusting the

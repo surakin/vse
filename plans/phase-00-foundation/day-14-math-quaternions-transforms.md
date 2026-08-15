@@ -5,11 +5,11 @@
 
 ## Tasks
 
-- [x] Implement `Quaternion` in `/engine/foundation/quaternion.h`:
+- [x] Implement `Quaternion` in `/engine/foundation/math/quaternion.h`:
   construction, multiply, conjugate/inverse, normalize, slerp.
 - [x] Implement quaternion↔matrix conversion (both directions).
 - [x] Implement `Transform` (position/rotation/scale) in
-  `/engine/foundation/transform.h`: compose (parent * child), to-matrix
+  `/engine/foundation/math/transform.h`: compose (parent * child), to-matrix
   conversion.
 - [x] Write a test rotating a known vector by a known quaternion and
   comparing against the hand-calculated expected result.

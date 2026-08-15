@@ -38,12 +38,12 @@ shapes are already satisfied by Windows' CRT (`_write`/`_read`/`_open`/
 
 ## Tasks
 
-- [x] Create `/engine/foundation/os.h` declaring: `os::Exit(int code)`,
+- [x] Create `/engine/foundation/os/os.h` declaring: `os::Exit(int code)`,
   `os::Write(int fd, const void* buf, std::size_t len)`, `os::Read(int
   fd, void* buf, std::size_t len)`, `os::Open(const char* path, int
   flags)`, `os::Close(int fd)`, `os::MMap(...)`, `os::MUnmap(...)`,
   `os::MProtect(...)`.
-- [x] Implement each in `/engine/foundation/os.cpp` as a direct call
+- [x] Implement each in `/engine/foundation/os/linux/os.cpp` as a direct call
   through to the equivalent libc function (`::exit`/`::_exit`,
   `::write`, `::read`, `::open`, `::close`, `::mmap`, `::munmap`,
   `::mprotect`) — no inline assembly, no raw syscall numbers. Used

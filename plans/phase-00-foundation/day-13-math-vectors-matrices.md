@@ -6,10 +6,10 @@ internal invariants; not a hard data dependency.
 
 ## Tasks
 
-- [x] Implement `Vec2`/`Vec3`/`Vec4` in `/engine/foundation/vector.h`:
+- [x] Implement `Vec2`/`Vec3`/`Vec4` in `/engine/foundation/math/vector.h`:
   component access, add/sub/scale, dot product, cross product (Vec3),
   normalize.
-- [x] Implement `Mat3`/`Mat4` in `/engine/foundation/matrix.h`:
+- [x] Implement `Mat3`/`Mat4` in `/engine/foundation/math/matrix.h`:
   multiply, transpose, construction helpers (identity, from basis
   vectors).
 - [x] Write tests cross-checking dot, cross, normalize, and multiply

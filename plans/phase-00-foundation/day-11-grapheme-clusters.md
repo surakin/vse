@@ -23,7 +23,7 @@ The offline table generator built here is reused as-is by Day 12
   number in the generator's output (a comment header) and in this repo
   (e.g. a `UNICODE_VERSION` file alongside the generated sources).
 - [x] Define `GraphemeBreakProperty` enum in
-  `/engine/foundation/grapheme.h`: `Other`, `CR`, `LF`, `Control`,
+  `/engine/foundation/string/grapheme.h`: `Other`, `CR`, `LF`, `Control`,
   `Extend`, `ZWJ`, `RegionalIndicator`, `Prepend`, `SpacingMark`, `L`,
   `V`, `T`, `LV`, `LVT`, `ExtendedPictographic` (this last one from
   `emoji-data.txt`'s `Extended_Pictographic` property, not
@@ -31,13 +31,13 @@ The offline table generator built here is reused as-is by Day 12
   files, tagging table entries with which property they represent).
 - [x] Run the generator against Unicode's published data for the pinned
   version; commit the generated
-  `/engine/foundation/generated/grapheme_break_table.cpp` (checked in,
+  `/engine/foundation/string/generated/grapheme_break_table.cpp` (checked in,
   not regenerated at build time) plus a `LookupGraphemeBreakProperty(u32
   codepoint) -> GraphemeBreakProperty` function (binary search over the
   generated table; codepoints outside any listed range default to
   `Other`).
 - [x] Implement the UAX #29 boundary rules in
-  `/engine/foundation/grapheme.cpp` as an ordered sequence of
+  `/engine/foundation/string/grapheme.cpp` as an ordered sequence of
   before/after-property checks between consecutive codepoints (walked
   via Day 10's `Utf8Codepoints`): never break `CR`×`LF`; always break
   around other `Control`/`CR`/`LF`; Hangul composition (`L`×`(L|V|LV|LVT)`,

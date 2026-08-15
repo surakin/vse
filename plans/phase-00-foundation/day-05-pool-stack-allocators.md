@@ -10,12 +10,12 @@ why. Both allocators' own behavior is unaffected.
 ## Tasks
 
 - [x] Implement `PoolAllocator` (fixed-size free-list) in
-  `/engine/foundation/pool_allocator.h`/`.cpp`: backing block via
+  `/engine/foundation/mem/pool_allocator.h`/`.cpp`: backing block via
   `os::MMap`, a free-list threaded through unused slots, `Alloc()`,
   `Free(ptr)`. Slot size is rounded up to at least `sizeof(void*)` so
   every free slot can store the intrusive next-pointer in place.
 - [x] Implement `StackAllocator` in
-  `/engine/foundation/stack_allocator.h`/`.cpp`: bump pointer over
+  `/engine/foundation/mem/stack_allocator.h`/`.cpp`: bump pointer over
   arena-style backing memory with `Push()`/`PopToMarker(marker)`
   semantics. Same alignment math as Day 4's `ArenaAllocator::Alloc`;
   `Marker` is just the saved offset.

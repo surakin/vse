@@ -52,11 +52,12 @@ split into subdirectories by subsystem: `os/` (`os.h` + `linux/`),
 `matrix.h`, `quaternion.h`, `transform.h`), `log/` (`log.h`/`log.cpp`).
 `types.h`, `foundation.cpp`, `main.cpp`, and `CMakeLists.txt` stay at the
 `foundation/` root since they're cross-cutting. All `#include`s and
-`CMakeLists.txt` source paths were updated accordingly; the day files
-under `plans/phase-00-foundation/` were deliberately left referencing
-their original (now-stale) paths since they're a historical record of
-what was true when each day was done — trust this file and the actual
-tree over those paths.
+`CMakeLists.txt` source paths were updated accordingly; the completed
+day files under `plans/phase-00-foundation/` had their file-path
+references updated to match too (at the user's request, overriding this
+file's earlier note that they'd be left stale as a historical record —
+the checked-off tasks themselves were left untouched, only the paths
+inside their descriptions changed).
 
 Day 15 (not yet started) migrates the ad hoc tests to Catch2 v3 — see
 `docs/superpowers/specs/2026-08-14-unicode-string-support-design.md` for

@@ -18,7 +18,7 @@ here or anywhere else in this plan.
   `CompositionExclusions.txt`, against the same pinned Unicode version
   as Day 11.
 - [x] Emit three generated C++ tables under
-  `/engine/foundation/generated/`: `decomposition_table.cpp` (sorted
+  `/engine/foundation/string/generated/`: `decomposition_table.cpp` (sorted
   `{codepoint, decomposed[1..2], decomposed_length}` entries, binary
   search by codepoint — Hangul syllables are deliberately excluded, see
   below), `combining_class_table.cpp` (sorted `{codepoint,
@@ -27,14 +27,14 @@ here or anywhere else in this plan.
   `composition_exclusions_table.cpp` (sorted list of excluded
   codepoints, binary-search membership test).
 - [x] Implement Hangul syllable decomposition/composition in
-  `/engine/foundation/normalize.cpp` as the documented arithmetic
+  `/engine/foundation/string/normalize.cpp` as the documented arithmetic
   formula (syllable index arithmetic over the `L`/`V`/`T` jamo ranges),
   not a table lookup — this is why Hangul is excluded from the
   generated decomposition table above. A shortcut here would silently
   produce wrong output for all Hangul text, so this path is implemented
   in full, not approximated.
-- [x] Implement canonical decomposition in `/engine/foundation/
-  normalize.h`/`.cpp`: for each codepoint, look up (or algorithmically
+- [x] Implement canonical decomposition in
+  `/engine/foundation/string/normalize.h`/`.cpp`: for each codepoint, look up (or algorithmically
   compute, for Hangul) its decomposition; recursively decompose the
   result codepoints too, since some decompositions are multi-step, until
   every codepoint has no further canonical decomposition.
