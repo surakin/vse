@@ -22,6 +22,16 @@ in this phase. Unused event/input variants on desktop are fine; a missing
 seam that forces a later interface change is what this note exists to
 prevent.
 
+**Design note, `os::CommandLine` (Day 13, added 2026-08-16):** same seam
+treatment as the `Window`/input interface above, for the same reason —
+raw `argc`/`argv` isn't portable (GUI-subsystem Windows gets one command
+string, Android gets launch args from an `Intent`, not process `argv` at
+all). Parsing (flags/options/positional args) is one portable
+implementation; only *sourcing* the initial argument list
+(`CommandLine::FromNative()`) is per-platform, mirroring `os.h`'s
+existing interface-header/per-platform-impl split. See
+`docs/superpowers/specs/2026-08-16-command-line-wrapper-design.md`.
+
 ## Vulkan WSI surface creation (previously an open risk — now resolved)
 
 Vulkan's WSI extensions (`VK_KHR_wayland_surface`, `VK_KHR_xcb_surface`)

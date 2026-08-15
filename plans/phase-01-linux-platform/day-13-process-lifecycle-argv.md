@@ -12,17 +12,38 @@ stdio buffering, etc.) for no benefit — argc/argv/envp arrive at `main()`
 already parsed correctly per the System V ABI, no reason to re-parse the
 raw stack ourselves.
 
+**Scope amendment (2026-08-16):** engine code must not handle raw
+`argc`/`argv` directly — it goes through an `os::CommandLine` wrapper
+that also has to extend cleanly to future platforms (Windows/macOS/
+Android/iOS/consoles, Phases 11-14), the same seam treatment Day 26 gives
+the `Window`/input interface. See
+`docs/superpowers/specs/2026-08-16-command-line-wrapper-design.md` for
+the full design (class shape, parsing rules, per-platform sourcing via
+`FromNative()`/`StashNativeCommandLine()`).
+
 ## Tasks
 
 - [ ] Confirm the engine's entry point is a standard `int main(int argc,
   char** argv)` (Linux/glibc also exposes `envp` via `extern char**
   environ` if needed later — not required for this day).
-- [ ] Implement logging of argc and each argv element via Day 8's
-  formatter and Day 2's `os::Write`.
-- [ ] Build and run with varied inputs: zero extra args, several args,
-  and an arg containing a space (shell-quoted) — confirm each is logged
-  correctly and individually (not split on internal spaces).
+- [ ] Implement `os::CommandLine` per the design spec:
+  `engine/foundation/os/command_line.h` (class + portable
+  `(Allocator&, int argc, char** argv)` parsing constructor,
+  `ProgramName`/`ArgCount`/`Arg`/`HasFlag`/`TryGetOption`) and
+  `engine/foundation/os/linux/command_line.cpp` (`StashNativeCommandLine`
+  + `FromNative`).
+- [ ] Wire `main.cpp`: call `os::StashNativeCommandLine(argc, argv)`,
+  construct via `os::CommandLine::FromNative(allocator)`.
+- [ ] Log the program name, each positional arg, and each recognized
+  flag/option via Day 8's formatter and Day 2's `os::Write`.
+- [ ] Build and run with varied inputs: zero extra args, several
+  positional args, an arg containing a space (shell-quoted), a boolean
+  `--flag`, and a `--key=value` option — confirm each is categorized
+  (positional vs. flag vs. option) and logged correctly, including the
+  space-containing arg not being split.
 - [ ] Commit.
 
-**Done:** engine prints its received command-line arguments correctly
-for zero, one, and multiple arguments, including one containing a space.
+**Done:** `os::CommandLine::FromNative()` correctly parses the engine's
+received command-line arguments — positional args (including one
+containing a space), a boolean flag, and a key/value option — for zero,
+one, and multiple arguments, and the engine logs them correctly.
