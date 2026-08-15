@@ -23,6 +23,7 @@ set(FOUNDATION_TEST_SOURCES
   command_line_test.cpp
   os_timing_test.cpp
   concurrency_primitives_test.cpp
+  file_io_test.cpp
 )
 
 find_package(Threads REQUIRED)

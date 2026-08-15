@@ -29,6 +29,10 @@ int Close(int fd) {
     return ::close(fd);
 }
 
+long Lseek(int fd, long offset, int whence) {
+    return ::lseek(fd, offset, whence);
+}
+
 void* ReserveMemory(usize size) {
     void* mem = ::mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     return mem == MAP_FAILED ? nullptr : mem;

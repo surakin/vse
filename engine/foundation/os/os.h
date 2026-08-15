@@ -29,6 +29,11 @@ long Read(int fd, void* buf, usize len);
 int Open(const char* path, int flags, int mode = 0644);
 int Close(int fd);
 
+// `whence` is one of the standard C `SEEK_SET`/`SEEK_CUR`/`SEEK_END`
+// (portable — defined by ISO C's <cstdio>, not POSIX-specific). Returns
+// the resulting offset from the start of the file, or -1 on failure.
+long Lseek(int fd, long offset, int whence);
+
 // Anonymous, read+write memory. Returns nullptr on failure.
 void* ReserveMemory(usize size);
 void ReleaseMemory(void* addr, usize size);

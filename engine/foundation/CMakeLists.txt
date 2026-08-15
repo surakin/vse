@@ -10,6 +10,7 @@ endif()
 
 set(FOUNDATION_SOURCES
   foundation.cpp
+  os/file_util.cpp
   mem/mem.cpp
   mem/arena_allocator.cpp
   mem/pool_allocator.cpp

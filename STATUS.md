@@ -109,5 +109,14 @@ used directly). 3 new tests in
 counter, atomic counter, condition-variable producer/consumer handoff;
 500k increments/thread for the first two) — `Threads::Threads` linked
 into `foundation_tests` via `find_package(Threads REQUIRED)`. Verified
-with 30x randomized-order stress runs, 0 failures (64 total tests, all
-green). Day 16 (file I/O) not yet started.
+with 30x randomized-order stress runs, 0 failures.
+
+Day 16 done: `os::Lseek` added to `os.h`/`os/linux/os.cpp`. New portable
+`os::ReadFileToArena` (`engine/foundation/os/file_util.h`/`.cpp`, no
+per-platform split needed — built purely from `os.h`'s existing
+primitives) reads a whole file into an `ArenaAllocator`-backed buffer. 3
+new tests in `tests/foundation/file_io_test.cpp`, including reading
+`/proc/self/exe` and checking the ELF magic number (67 total tests, all
+green). **Phase 1 Days 13-16 all done** (process lifecycle/argv →
+`os::CommandLine`, timing, threading primitives, file I/O); Days 17-26
+(GPU driver loading, Wayland, X11, backend selection) not yet started.
