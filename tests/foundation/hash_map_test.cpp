@@ -1,0 +1,54 @@
+#include <catch2/catch_test_macros.hpp>
+
+#include "containers/hash_map.h"
+#include "mem/arena_allocator.h"
+#include "types.h"
+
+using engine_placeholder::ArenaAllocator;
+using engine_placeholder::HashMap;
+using engine_placeholder::usize;
+
+TEST_CASE("HashMap: insert/find/remove stays correct across a 1000-entry churn", "[containers][hash_map]") {
+    // 32 MiB is generous: across ~8 rehash-doubling generations (8 ->
+    // ~2048 slots) both the slot array and the temporary rehash
+    // snapshot abandon their old blocks in the arena (Day 6 behavior),
+    // which adds up to a few hundred KiB at most for 1000 entries.
+    ArenaAllocator arena(32 * 1024 * 1024);
+    HashMap<usize, usize, ArenaAllocator> map(arena);
+
+    constexpr usize kCount = 1000;
+    for (usize key = 0; key < kCount; ++key) {
+        map.Insert(key, key * 7 + 3);
+    }
+    REQUIRE(map.Size() == kCount);
+
+    bool all_present_ok = true;
+    for (usize key = 0; key < kCount && all_present_ok; ++key) {
+        const usize* value = map.Find(key);
+        all_present_ok = value != nullptr && *value == key * 7 + 3;
+    }
+    REQUIRE(all_present_ok);
+
+    // Remove the even-valued keys.
+    usize removed = 0;
+    for (usize key = 0; key < kCount; key += 2) {
+        if (map.Remove(key)) {
+            ++removed;
+        }
+    }
+    REQUIRE(removed == kCount / 2);
+    REQUIRE(map.Size() == kCount / 2);
+
+    bool removed_are_absent = true;
+    for (usize key = 0; key < kCount && removed_are_absent; key += 2) {
+        removed_are_absent = map.Find(key) == nullptr;
+    }
+    REQUIRE(removed_are_absent);
+
+    bool survivors_ok = true;
+    for (usize key = 1; key < kCount && survivors_ok; key += 2) {
+        const usize* value = map.Find(key);
+        survivors_ok = value != nullptr && *value == key * 7 + 3;
+    }
+    REQUIRE(survivors_ok);
+}

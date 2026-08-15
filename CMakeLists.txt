@@ -13,6 +13,16 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-add_compile_options(-fno-exceptions -fno-rtti -fno-builtin -fno-stack-protector)
+# Exceptions/RTTI/builtins/stack-protector are disabled for the engine's
+# own production code (see CLAUDE.md's hard architectural constraints).
+# Applied per-target (engine/foundation/CMakeLists.txt), not build-wide,
+# so vendored test tooling (Catch2, which needs exceptions for its
+# REQUIRE/CHECK macros) and the test executable that links it aren't
+# affected.
+set(ENGINE_PRODUCTION_COMPILE_OPTIONS -fno-exceptions -fno-rtti -fno-builtin -fno-stack-protector)
+
+enable_testing()
+add_subdirectory(third_party/catch2)
 
 add_subdirectory(engine/foundation)
+add_subdirectory(tests/foundation)

@@ -8,17 +8,17 @@ with progress.
 
 ## Phase 0 (Foundation layer)
 
-**In progress — Days 1-14 of 15 are complete and committed.** Real code
-exists under `/engine/foundation`, built via CMake:
+**Complete — all 15 days are done and committed.** Real code exists
+under `/engine/foundation`, built via CMake:
 `cmake -B build && cmake --build build` produces `engine_main`
-(`build/engine/foundation/engine_main`), which runs the current ad hoc
-test suite (`Expect()`-style checks inline in `main.cpp`) and exits 0 on
-success. A sanitized build exists as a separate target:
-`cmake --build build --target engine_main_asan`, then run
-`build/engine/foundation/engine_main_asan`. There is no `ctest`/Catch2
-yet — Day 15 (not yet started) migrates the ad hoc tests to Catch2 v3
-(`PLAN.md` assumption #16) and wires up real `ctest` integration; don't
-invent or assume `ctest` commands before that lands. Days 11-12 (grapheme
+(`build/engine/foundation/engine_main`), now a minimal real entry point
+(`return 0`) with no test logic of its own. A sanitized build exists as
+a separate target: `cmake --build build --target engine_main_asan`,
+then run `build/engine/foundation/engine_main_asan`. Foundation-layer
+verification lives in `/tests/foundation`: `cmake --build build` also
+builds `foundation_tests`, and `ctest` (run from `build/`) discovers and
+runs each `TEST_CASE` as its own individual entry — 45 tests, all
+green. Days 11-12 (grapheme
 clusters, NFC/NFD normalization) built out an offline Unicode-data table
 generator (`/tools/unicode_data_gen/`, pinned to Unicode 17.0.0 — see
 `/UNICODE_VERSION`) that emits the committed tables under
@@ -59,10 +59,24 @@ file's earlier note that they'd be left stale as a historical record —
 the checked-off tasks themselves were left untouched, only the paths
 inside their descriptions changed).
 
-Day 15 (not yet started) migrates the ad hoc tests to Catch2 v3 — see
+**Day 15** migrated the ad hoc `Expect()`-based tests to Catch2 v3
+(`PLAN.md` assumption #16): vendored a pruned Catch2 v3.15.3 source tree
+into `third_party/catch2/` (see `third_party/catch2/VENDORED.md`), added
+a `foundation_tests` executable under `/tests/foundation` linking
+`Catch2::Catch2WithMain`, and wired `catch_discover_tests` so `ctest`
+sees each test individually. All 45 of Days 3-14's tests moved 1:1 into
+15 per-subsystem files (see the day file for the full list) — `main.cpp`
+is now just a real (empty) entry point. Fixing this up required changing
+`ENGINE_PRODUCTION_COMPILE_OPTIONS` (`-fno-exceptions`/`-fno-rtti`/etc)
+from a build-wide `add_compile_options()` to a `PRIVATE` compile option
+on `foundation`/`foundation_asan` specifically, applied explicitly to
+`engine_main`/`engine_main_asan` too — the old build-wide flag was a
+`PUBLIC` usage requirement that leaked into every consumer of
+`foundation`, including the new Catch2-based test target, which needs
+exceptions. See
 `docs/superpowers/specs/2026-08-14-unicode-string-support-design.md` for
 the Days 10-12 Unicode design.
 
-Every phase after Phase 0 is still unimplemented — check the relevant
+**Phase 0 is complete.** Every phase after it is still unimplemented — check the relevant
 `plans/phase-NN-name/day-NN-*.md` files for what's actually done before
 assuming a subsystem exists.
