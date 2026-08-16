@@ -25,6 +25,7 @@ set(FOUNDATION_TEST_SOURCES
   concurrency_primitives_test.cpp
   file_io_test.cpp
   gpu_driver_loading_test.cpp
+  wayland_connection_test.cpp
 )
 
 find_package(Threads REQUIRED)

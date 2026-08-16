@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
-project(engine_placeholder CXX)
+# C is enabled alongside CXX only to compile the generated xdg-shell
+# protocol bindings (os/linux/wayland/generated/xdg-shell-protocol.c,
+# wayland-scanner's own output format) — the engine itself is C++20
+# throughout; see PLAN.md assumption #2.
+project(engine_placeholder CXX C)
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   message(FATAL_ERROR "Only x86-64 Linux is supported (Phase 0)")

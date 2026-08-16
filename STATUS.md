@@ -139,7 +139,28 @@ channel rather than asserting — Vulkan types come from the system
 `vulkan_core.h` header (`vulkan-headers` package), a deliberately minimal
 choice deferring the real vendor-vs-system decision to Phase 3. 5 new
 tests in `tests/foundation/gpu_driver_loading_test.cpp` (72 total tests,
-all green); `engine_main_asan` still runs clean. **Phase 1 Days 13-17 all
-done** (process lifecycle/argv → `os::CommandLine`, timing, threading
-primitives, file I/O, GPU driver loading); Days 18-26 (Wayland, X11,
-backend selection) not yet started.
+all green); `engine_main_asan` still runs clean.
+
+Day 18 done: `os::wayland::WaylandConnection`
+(`engine/foundation/os/linux/wayland/wayland_connection.h`/`.cpp`)
+connects to a Wayland compositor and binds
+`wl_compositor`/`xdg_wm_base`/`wl_seat`/`wl_shm` via a registry listener
++ roundtrip, logging each bound global's interface name/version through
+a new `LogPlatform` channel; move-only, invalid-on-failure rather than
+crashing. **Resolved this day's open decision** (xdg-shell isn't part of
+core Wayland): xdg-shell protocol bindings are generated once via
+`wayland-scanner` against the system `xdg-shell.xml` and committed under
+`engine/foundation/os/linux/wayland/generated/` — same pattern as the
+Unicode tables (Days 11-12) — so `wayland-scanner`/`wayland-protocols`
+stay dev-time-only; only `libwayland-client` (linked via
+`pkg_check_modules`) is a real dependency. Compiling the generated `.c`
+file required adding `C` to the root `project()` languages and scoping
+`ENGINE_PRODUCTION_COMPILE_OPTIONS` to CXX-only translation units via
+`$<COMPILE_LANGUAGE:CXX>`. 7 new tests in
+`tests/foundation/wayland_connection_test.cpp`, run against the real
+compositor present in this dev environment (76 total tests, all green).
+**Phase 1 Days 13-18 all done** (process lifecycle/argv →
+`os::CommandLine`, timing, threading primitives, file I/O, GPU driver
+loading, Wayland connection/registry); Days 19-26 (Wayland surface/xdg
+window, event loop, keyboard/pointer input, hello-window milestone, X11
+fallback, backend selection) not yet started.
