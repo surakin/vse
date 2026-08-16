@@ -116,7 +116,30 @@ Day 16 done: `os::Lseek` added to `os.h`/`os/linux/os.cpp`. New portable
 per-platform split needed — built purely from `os.h`'s existing
 primitives) reads a whole file into an `ArenaAllocator`-backed buffer. 3
 new tests in `tests/foundation/file_io_test.cpp`, including reading
-`/proc/self/exe` and checking the ELF magic number (67 total tests, all
-green). **Phase 1 Days 13-16 all done** (process lifecycle/argv →
-`os::CommandLine`, timing, threading primitives, file I/O); Days 17-26
-(GPU driver loading, Wayland, X11, backend selection) not yet started.
+`/proc/self/exe` and checking the ELF magic number.
+
+Day 17 done: new `os::DynamicLibrary` primitive in `os.h`
+(`LoadLibrary`/`GetSymbol`/`UnloadLibrary`, per-platform impl in
+`os/linux/os.cpp` via `dlopen`/`dlsym`/`dlclose`, `CMAKE_DL_LIBS` linked
+`PUBLIC` on `foundation`/`foundation_asan`). **Design correction made
+before writing code:** filenames are UTF-8, not `const char*` — so
+`LoadLibrary` takes `StringView`, which exposed the same bug already
+present in `os::Open`/`os::ReadFileToArena`, both retrofitted to
+`StringView` in this pass. Since `StringView` isn't guaranteed
+null-terminated, each Linux impl copies into a fixed `kMaxPathBytes`
+(4096, matches `PATH_MAX`) stack buffer before calling the underlying
+POSIX call, failing (not truncating) if the path doesn't fit; existing
+string-literal call sites kept compiling via `StringView`'s existing
+implicit `const char*` constructor. New
+`engine/foundation/os/gpu_driver_probe.h`/`.cpp`
+(`os::ProbeVulkanCreateInstance`) is a thin consumer: loads
+`libvulkan.so.1`, resolves `vkGetInstanceProcAddr`, then
+`vkCreateInstance`, logging each step through a new `LogPlatform`
+channel rather than asserting — Vulkan types come from the system
+`vulkan_core.h` header (`vulkan-headers` package), a deliberately minimal
+choice deferring the real vendor-vs-system decision to Phase 3. 5 new
+tests in `tests/foundation/gpu_driver_loading_test.cpp` (72 total tests,
+all green); `engine_main_asan` still runs clean. **Phase 1 Days 13-17 all
+done** (process lifecycle/argv → `os::CommandLine`, timing, threading
+primitives, file I/O, GPU driver loading); Days 18-26 (Wayland, X11,
+backend selection) not yet started.

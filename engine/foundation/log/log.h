@@ -44,6 +44,7 @@ private:
 
 extern LogChannel LogCore;
 extern LogChannel LogRender;
+extern LogChannel LogPlatform;
 
 void Log(LogChannel& channel, LogVerbosity level, StringView message);
 

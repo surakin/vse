@@ -9,6 +9,7 @@ namespace engine_placeholder {
 
 LogChannel LogCore("LogCore");
 LogChannel LogRender("LogRender");
+LogChannel LogPlatform("LogPlatform");
 
 LogChannel::LogChannel(const char* name, LogVerbosity default_verbosity)
     : name_(name), verbosity_(default_verbosity), enabled_(true) {

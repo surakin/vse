@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mem/arena_allocator.h"
+#include "string/string.h"
 #include "types.h"
 
 // Higher-level file utilities built purely from os.h's portable
@@ -13,6 +14,6 @@ namespace engine_placeholder::os {
 // Returns nullptr on any failure (missing file, seek/read error, or the
 // arena running out of space) and leaves `out_size` untouched; on
 // success `out_size` is set to the file's byte length.
-u8* ReadFileToArena(const char* path, ArenaAllocator& arena, usize& out_size);
+u8* ReadFileToArena(StringView path, ArenaAllocator& arena, usize& out_size);
 
 } // namespace engine_placeholder::os

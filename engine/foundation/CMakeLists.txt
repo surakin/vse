@@ -11,6 +11,7 @@ endif()
 set(FOUNDATION_SOURCES
   foundation.cpp
   os/file_util.cpp
+  os/gpu_driver_probe.cpp
   mem/mem.cpp
   mem/arena_allocator.cpp
   mem/pool_allocator.cpp
@@ -35,6 +36,12 @@ set(FOUNDATION_SOURCES
 add_library(foundation STATIC ${FOUNDATION_SOURCES})
 target_include_directories(foundation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(foundation PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
+# Day 17: os::LoadLibrary wraps dlopen/dlsym/dlclose. CMAKE_DL_LIBS is
+# the portable way to link libdl where it's a separate library (older
+# glibc, other libc implementations) and empty where dlopen already
+# lives in libc (glibc >= 2.34) — a link requirement, so PUBLIC is
+# correct here (unlike the compile-options split above).
+target_link_libraries(foundation PUBLIC ${CMAKE_DL_LIBS})
 
 add_executable(engine_main main.cpp)
 target_compile_options(engine_main PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
@@ -53,6 +60,7 @@ target_include_directories(foundation_asan PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(foundation_asan PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_compile_options(foundation_asan PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer -g)
 target_link_options(foundation_asan PUBLIC -fsanitize=address,undefined)
+target_link_libraries(foundation_asan PUBLIC ${CMAKE_DL_LIBS})
 
 add_executable(engine_main_asan main.cpp)
 target_compile_options(engine_main_asan PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})

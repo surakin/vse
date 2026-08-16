@@ -7,7 +7,7 @@
 
 namespace engine_placeholder::os {
 
-u8* ReadFileToArena(const char* path, ArenaAllocator& arena, usize& out_size) {
+u8* ReadFileToArena(StringView path, ArenaAllocator& arena, usize& out_size) {
     int fd = Open(path, O_RDONLY);
     if (fd < 0) {
         return nullptr;
