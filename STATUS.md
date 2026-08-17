@@ -159,8 +159,31 @@ file required adding `C` to the root `project()` languages and scoping
 `$<COMPILE_LANGUAGE:CXX>`. 7 new tests in
 `tests/foundation/wayland_connection_test.cpp`, run against the real
 compositor present in this dev environment (76 total tests, all green).
-**Phase 1 Days 13-18 all done** (process lifecycle/argv →
+Day 19 done: new `os::wayland::WaylandWindow`
+(`engine/foundation/os/linux/wayland/wayland_window.h`/`.cpp`) wraps a
+`wl_surface` as an `xdg_toplevel` and actually maps it — **caught and
+fixed a protocol gap in the day's original task list before writing
+code**: per xdg-shell, a surface isn't visible until a buffer is
+attached+committed *after* the first configure/ack_configure
+round-trip, so `Create()` also creates a minimal memfd-backed `wl_shm`
+buffer (solid placeholder fill; real pixels are Phase 3's job) to
+complete that sequence. Sizes from the compositor's suggested
+`xdg_toplevel` size, falling back to 1280x720. Move-only,
+invalid-on-failure. `main.cpp` now connects and creates a window before
+its frame loop (non-fatally, same "log via LogPlatform, don't crash"
+pattern as Day 17), loop bumped from Day 14's 3s to 6s and now pumps
+`wl_display_dispatch_pending`/`flush` each frame as a minimal stand-in
+for Day 20's real event loop. 4 new tests, including one that creates
+and maps a real window against the compositor in this dev environment
+(80 total tests, all green); `engine_main_asan` runs clean under
+ASan/UBSan. **Human visual confirmation still pending** — this session
+ran over a remote connection with no way to look at the actual screen;
+the code/automated-verification side of the Done condition is met, the
+eyeball check is deferred to the user's next local session.
+
+**Phase 1 Days 13-19 all done** (process lifecycle/argv →
 `os::CommandLine`, timing, threading primitives, file I/O, GPU driver
-loading, Wayland connection/registry); Days 19-26 (Wayland surface/xdg
-window, event loop, keyboard/pointer input, hello-window milestone, X11
-fallback, backend selection) not yet started.
+loading, Wayland connection/registry, Wayland surface/xdg window — human
+visual check pending); Days 20-26 (event loop, keyboard/pointer input,
+hello-window milestone, X11 fallback, backend selection) not yet
+started.

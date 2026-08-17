@@ -7,6 +7,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/os.cpp
     os/linux/command_line.cpp
     os/linux/wayland/wayland_connection.cpp
+    os/linux/wayland/wayland_window.cpp
     os/linux/wayland/generated/xdg-shell-protocol.c
   )
 
