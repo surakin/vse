@@ -181,9 +181,43 @@ ran over a remote connection with no way to look at the actual screen;
 the code/automated-verification side of the Done condition is met, the
 eyeball check is deferred to the user's next local session.
 
-**Phase 1 Days 13-19 all done** (process lifecycle/argv →
+Day 20 done: the Wayland connection now has a real, persistent event
+loop instead of Day 19's stand-in. `main.cpp` gained
+`PumpWaylandEvents()`, using
+`wl_display_prepare_read`/`poll(fd, 0)`/`wl_display_read_events`/
+`wl_display_dispatch_pending` — `wl_display_dispatch_pending` alone
+never reads the socket, and a plain blocking `wl_display_dispatch`
+would hang the frame loop (and `engine_main` itself, in headless/
+automated runs) whenever the compositor has nothing queued, so this
+non-blocking poll-then-dispatch pattern is what actually keeps both
+properties. `WaylandWindow`'s `xdg_surface`/`xdg_toplevel` listeners
+moved from Day 19's stack-local `ConfigureState` (which went out of
+scope when `Create()` returned — **any configure arriving after
+`Create()` was already latent UB**, a callback writing through a
+dangling stack pointer, before this fix) to private static handlers
+keyed on `this`; since `WaylandWindow` is movable, `wl_proxy_set_user_data`
+now re-points the listeners' stored `data` at the object's current
+address from both the move ctor and move-assignment, otherwise a move
+after `Create()` (which `main.cpp` does) would leave them pointing at
+a moved-from object. Toplevel `configure` buffers pending width/height
+(spec: 0 means unspecified) applied atomically — and logged, only if
+changed — when the matching surface `configure` is acked; toplevel
+`close` sets a `should_close_` flag read via the new
+`WaylandWindow::ShouldClose()`, which `main.cpp`'s loop now checks
+each frame (breaking early) alongside its existing 6s wall-clock bound.
+2 new tests (`ShouldClose()` starts false, both on a real `Create()`d
+window and a default-constructed one); 82 total tests, all green
+against the real compositor in this dev environment; `engine_main_asan`
+runs a full 6s loop clean under ASan/UBSan. **Manual resize/close
+verification not done** — same remote-session constraint as Day 19,
+compounded here by no scriptable way to drive real WM resize/close
+interactions either; left as an explicitly unchecked box in the day
+file rather than assumed passing, pending the user's next local
+session.
+
+**Phase 1 Days 13-20 all done** (process lifecycle/argv →
 `os::CommandLine`, timing, threading primitives, file I/O, GPU driver
-loading, Wayland connection/registry, Wayland surface/xdg window — human
-visual check pending); Days 20-26 (event loop, keyboard/pointer input,
-hello-window milestone, X11 fallback, backend selection) not yet
-started.
+loading, Wayland connection/registry, Wayland surface/xdg window,
+Wayland event loop — human visual/interactive check pending on Days
+19-20); Days 21-26 (keyboard/pointer input, hello-window milestone,
+X11 fallback, backend selection) not yet started.

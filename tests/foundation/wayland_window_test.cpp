@@ -22,6 +22,21 @@ TEST_CASE("WaylandWindow::Create maps a real, visible toplevel window against a 
     REQUIRE(window.Height() > 0);
 }
 
+TEST_CASE("WaylandWindow::Create's window does not request close before any close event arrives",
+          "[wayland][os]") {
+    WaylandConnection conn = WaylandConnection::Connect();
+    REQUIRE(conn.Valid());
+
+    WaylandWindow window = WaylandWindow::Create(conn, "engine_placeholder test window", "engine_placeholder");
+    REQUIRE(window.Valid());
+    REQUIRE_FALSE(window.ShouldClose());
+}
+
+TEST_CASE("A default-constructed WaylandWindow reports ShouldClose() false", "[wayland][os]") {
+    WaylandWindow window;
+    REQUIRE_FALSE(window.ShouldClose());
+}
+
 TEST_CASE("WaylandWindow::Create fails gracefully on an invalid connection", "[wayland][os]") {
     WaylandConnection invalid_conn;
     REQUIRE_FALSE(invalid_conn.Valid());

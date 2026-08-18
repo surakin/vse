@@ -1,6 +1,8 @@
 // Real entry point for the `engine_main`/`engine_main_asan` executables.
 // Foundation-layer verification lives in /tests/foundation (Catch2,
 // discovered via `ctest`) — this file has no test logic of its own.
+#include <poll.h>
+
 #include "mem/arena_allocator.h"
 #include "os/command_line.h"
 #include "os/linux/wayland/wayland_connection.h"
@@ -17,6 +19,35 @@ void WriteLine(StringView label, StringView value) {
     StringBuilder<ArenaAllocator> line(scratch);
     line.Append(label).Append(value).Append('\n');
     os::Write(1, line.CStr(), line.View().Length());
+}
+
+// Non-blocking pump of one Wayland display's events: reads whatever's
+// already available on the socket (never blocks, per the poll(..., 0)
+// timeout) and dispatches it. Uses the prepare_read/read_events pair
+// rather than wl_display_dispatch_pending() alone, since dispatch_pending
+// only drains what a *previous* read already buffered — without this,
+// events the compositor sends after the initial connect/window-mapping
+// round-trips (resize/close among them) would never actually be read off
+// the socket, silently starving Day 20's event handling. Blocking
+// wl_display_dispatch() isn't used instead because this loop must keep
+// meeting its frame budget (and, for engine_main run with no human at
+// the compositor, terminate on its own) even when the compositor sends
+// nothing.
+void PumpWaylandEvents(wl_display* display) {
+    while (wl_display_prepare_read(display) != 0) {
+        wl_display_dispatch_pending(display);
+    }
+    wl_display_flush(display);
+
+    pollfd pfd{};
+    pfd.fd = wl_display_get_fd(display);
+    pfd.events = POLLIN;
+    if (::poll(&pfd, 1, 0) > 0 && (pfd.revents & POLLIN) != 0) {
+        wl_display_read_events(display);
+    } else {
+        wl_display_cancel_read(display);
+    }
+    wl_display_dispatch_pending(display);
 }
 
 } // namespace
@@ -52,12 +83,11 @@ int main(int argc, char** argv) {
         window = os::wayland::WaylandWindow::Create(wayland_connection, "re-engine", "re_engine");
     }
 
-    // Day 14: frame-timed main loop. Target ~60Hz; bounded to a few
-    // seconds so `engine_main` still exits on its own — Day 20 replaces
-    // this bound with "exit when the window's close event fires" once
-    // there's a window to close. Extended from Day 14's original 3s to
-    // 6s so the Day 19 window is on screen long enough to visually
-    // confirm.
+    // Day 14: frame-timed main loop, target ~60Hz. Still wall-clock
+    // bounded (so `engine_main` terminates on its own with no compositor
+    // interaction, e.g. in automated/headless runs) but Day 20 adds a
+    // second, earlier exit: the window's xdg_toplevel close event, via
+    // WaylandWindow::ShouldClose().
     constexpr u64 kTargetFrameNanos = 16'666'667;
     constexpr u64 kRunDurationNanos = 6'000'000'000;
 
@@ -73,12 +103,11 @@ int main(int argc, char** argv) {
         line.Append("delta_ms: ").AppendFloat(static_cast<f64>(delta_nanos) / 1'000'000.0, 3).Append('\n');
         os::Write(1, line.CStr(), line.View().Length());
 
-        // Minimal, non-blocking pump so the connection stays responsive
-        // (e.g. xdg_wm_base pings) across the loop's lifetime — Day 20
-        // replaces this with the real dispatch-driven event loop.
         if (wayland_connection.Valid()) {
-            wl_display_dispatch_pending(wayland_connection.Display());
-            wl_display_flush(wayland_connection.Display());
+            PumpWaylandEvents(wayland_connection.Display());
+            if (window.ShouldClose()) {
+                break;
+            }
         }
 
         u64 elapsed = os::MonotonicTimeNanos() - now;

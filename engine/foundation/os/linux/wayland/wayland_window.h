@@ -41,6 +41,14 @@ public:
 
     bool Valid() const { return surface_ != nullptr; }
 
+    // True once the compositor has sent this window's xdg_toplevel a
+    // `close` event (e.g. the user hit the titlebar's close button) —
+    // the engine's main loop checks this each iteration and exits when
+    // it flips, rather than reacting inside the listener callback
+    // itself. Requires the connection's event loop (wl_display_dispatch
+    // et al) to actually run for the underlying event to be observed.
+    bool ShouldClose() const { return should_close_; }
+
     wl_surface* Surface() const { return surface_; }
     xdg_surface* XdgSurface() const { return xdg_surface_; }
     xdg_toplevel* XdgToplevel() const { return xdg_toplevel_; }
@@ -48,6 +56,29 @@ public:
     u32 Height() const { return height_; }
 
 private:
+    // xdg_surface/xdg_toplevel listener trampolines. Private statics
+    // (not free functions in an anonymous namespace) so they can reach
+    // instance state directly via the `data` pointer without a friend
+    // declaration.
+    static void HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, uint32_t serial);
+    static void HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, int32_t width, int32_t height,
+                                         wl_array* states);
+    static void HandleToplevelClose(void* data, xdg_toplevel* toplevel);
+
+    // Listener vtables. Static members (rather than anonymous-namespace
+    // globals in the .cpp) so their initializers, which reference the
+    // private handlers above, are in class-member context.
+    static const xdg_surface_listener kXdgSurfaceListener;
+    static const xdg_toplevel_listener kXdgToplevelListener;
+
+    // Re-points the xdg_surface/xdg_toplevel proxies' stored listener
+    // user-data at `this`. Wayland listener registration captures a
+    // fixed `data` pointer at add_listener() time, but this type is
+    // movable (its address can change), so every move ctor/assignment
+    // calls this to keep the compositor's callbacks landing on the
+    // object's current address instead of a stale/moved-from one.
+    void RebindEventListenerUserData();
+
     void ReleaseAll();
 
     wl_surface* surface_ = nullptr;
@@ -58,6 +89,13 @@ private:
     usize shm_size_ = 0;
     u32 width_ = 0;
     u32 height_ = 0;
+    // Buffered xdg_toplevel configure state, applied atomically (and
+    // logged, if changed) when the matching xdg_surface configure
+    // arrives — per the xdg-shell spec, toplevel configure supplies
+    // pending state and the surface configure is what's actually acked.
+    u32 pending_width_ = 0;
+    u32 pending_height_ = 0;
+    bool should_close_ = false;
 };
 
 } // namespace engine_placeholder::os::wayland
