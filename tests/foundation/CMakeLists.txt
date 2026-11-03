@@ -28,6 +28,7 @@ set(FOUNDATION_TEST_SOURCES
   wayland_connection_test.cpp
   wayland_window_test.cpp
   keyboard_input_test.cpp
+  x11_window_test.cpp
 )
 
 find_package(Threads REQUIRED)

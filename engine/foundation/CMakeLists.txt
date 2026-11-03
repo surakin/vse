@@ -8,6 +8,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/command_line.cpp
     os/linux/xkb_keyboard.cpp
     os/linux/wayland/wayland_input.cpp
+    os/linux/x11/x11_window.cpp
     os/linux/wayland/wayland_connection.cpp
     os/linux/wayland/wayland_window.cpp
     os/linux/wayland/generated/xdg-shell-protocol.c
@@ -26,6 +27,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # user explicitly approved on 2026-11-03 (see
   # plans/phase-01-linux-platform.md Notes).
   pkg_check_modules(XkbCommon REQUIRED IMPORTED_TARGET xkbcommon)
+  # Day 24: libX11, the reference X client library, for the X11 fallback
+  # backend (PLAN.md assumption #3 — same OS-boundary category as
+  # libwayland-client).
+  pkg_check_modules(X11Client REQUIRED IMPORTED_TARGET x11)
 else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
 endif()
@@ -70,7 +75,7 @@ target_compile_options(foundation PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRO
 # correct here (unlike the compile-options split above).
 target_link_libraries(foundation PUBLIC ${CMAKE_DL_LIBS})
 # Day 18: libwayland-client (see the platform-selection block above).
-target_link_libraries(foundation PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon)
+target_link_libraries(foundation PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)
 
 add_executable(engine_main main.cpp)
 target_compile_options(engine_main PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
@@ -90,7 +95,7 @@ target_compile_options(foundation_asan PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGIN
 target_compile_options(foundation_asan PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer -g)
 target_link_options(foundation_asan PUBLIC -fsanitize=address,undefined)
 target_link_libraries(foundation_asan PUBLIC ${CMAKE_DL_LIBS})
-target_link_libraries(foundation_asan PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon)
+target_link_libraries(foundation_asan PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)
 
 add_executable(engine_main_asan main.cpp)
 target_compile_options(engine_main_asan PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})

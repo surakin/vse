@@ -246,6 +246,19 @@ compositor held ~16.7ms frames (max 16.77ms), exit 0; ASan run clean.
 **Still pending a human:** live keyboard/mouse updates and the real
 close-button exit (no input-injection tooling in this session).
 
-**Phase 1 Days 13-23 done** (...; Wayland keyboard, pointer, hello-window
-— human visual/interactive check pending on Days 19-23); Days 24-26 (X11
-fallback, backend selection) not yet started.
+Day 24 done: X11 fallback window. New `os::x11::X11Window`
+(`engine/foundation/os/linux/x11/`, libX11 via `pkg_check_modules`):
+`XOpenDisplay` (graceful failure), `XCreateWindow` with the full event
+mask, `_NET_WM_NAME`, `WM_DELETE_WINDOW` via `XSetWMProtocols`, and a
+non-blocking `PumpEvents()` handling Expose/ConfigureNotify (resize,
+logged)/ClientMessage (close). Polled, so unlike the Wayland classes it
+has no `this`-capturing callbacks and is freely movable. Temporary
+`engine_main --backend=x11` flag until Day 26's real selection. 7 new
+tests (100 total, green) run against a real X server — passing on both
+this machine's Xwayland+KWin and a bare Xvfb — including an externally
+sent `WM_DELETE_WINDOW` and `XResizeWindow`. **Visual check and real WM
+close-button click still pending a human.**
+
+**Phase 1 Days 13-24 done** (...; Wayland hello-window, X11 window —
+human visual/interactive check pending on Days 19-24); Days 25-26 (X11
+input, backend selection) not yet started.

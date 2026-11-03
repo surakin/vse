@@ -8,6 +8,7 @@
 #include "os/input.h"
 #include "os/linux/wayland/wayland_connection.h"
 #include "os/linux/wayland/wayland_input.h"
+#include "os/linux/x11/x11_window.h"
 #include "os/linux/wayland/wayland_window.h"
 #include "os/os.h"
 #include "string/string.h"
@@ -150,8 +151,25 @@ int main(int argc, char** argv) {
     // failing is fatal here (logged via LogPlatform, not crashed) — the
     // frame-timed loop below still runs either way, matching this file's
     // existing "fail clearly, don't crash" pattern (Day 17).
-    os::wayland::WaylandConnection wayland_connection = os::wayland::WaylandConnection::Connect();
+    // Day 24: until Day 26's real backend selection, `--backend=x11`
+    // runs the X11 fallback window instead of Wayland.
+    bool use_x11 = false;
+    for (usize i = 0; i < cmd_line.FlagCount(); ++i) {
+        if (cmd_line.FlagName(i) == StringView("backend") && cmd_line.FlagHasValue(i) &&
+            cmd_line.FlagValue(i) == StringView("x11")) {
+            use_x11 = true;
+        }
+    }
+    os::x11::X11Window x11_window;
+    if (use_x11) {
+        x11_window = os::x11::X11Window::Create("re-engine", 1280, 720);
+    }
+
+    os::wayland::WaylandConnection wayland_connection;
     os::wayland::WaylandWindow window;
+    if (!use_x11) {
+        wayland_connection = os::wayland::WaylandConnection::Connect();
+    }
     if (wayland_connection.Valid()) {
         window = os::wayland::WaylandWindow::Create(wayland_connection, "re-engine", "re_engine");
     }
@@ -196,6 +214,15 @@ int main(int argc, char** argv) {
         StringBuilder<ArenaAllocator> line(scratch);
         line.Append("delta_ms: ").AppendFloat(static_cast<f64>(delta_nanos) / 1'000'000.0, 3).Append('\n');
         os::Write(1, line.CStr(), line.View().Length());
+
+        if (x11_window.Valid()) {
+            input_state.BeginFrame();
+            x11_window.PumpEvents(&input_state);
+            LogInputIfChanged(input_state, prev_input);
+            if (x11_window.ShouldClose()) {
+                break;
+            }
+        }
 
         if (wayland_connection.Valid()) {
             input_state.BeginFrame();
