@@ -1,0 +1,25 @@
+variable kUrl @4 inline
+  sig: inline const char* kUrl
+variable kBlock @5 inline
+  sig: inline const char* kBlock
+variable kBrace @6 inline
+  sig: inline const char* kBrace
+variable kSlash @7 inline
+  sig: inline char kSlash
+variable kStar @8 inline
+  sig: inline char kStar
+variable kQuote @9 inline
+  sig: inline char kQuote
+variable kEscaped @10 inline
+  sig: inline const char* kEscaped
+variable kRaw @12 inline
+  sig: inline const char* kRaw
+variable kRaw2 @13 inline
+  sig: inline const char* kRaw2
+variable kBig @15 inline
+  sig: inline int kBig
+variable kHex @16 inline
+  sig: inline int kHex
+function AfterTraps @31
+  sig: void AfterTraps()
+  doc: A function after all the traps.

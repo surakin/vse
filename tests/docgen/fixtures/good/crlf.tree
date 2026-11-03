@@ -1,0 +1,9 @@
+function Crlf @4
+  sig: int Crlf(int x)
+  doc: A function in a CRLF file.
+struct CrlfStruct @7
+  sig: struct CrlfStruct
+  doc: A struct in a CRLF file.
+  variable CrlfStruct::a @8
+    sig: int a
+    trail: Member.

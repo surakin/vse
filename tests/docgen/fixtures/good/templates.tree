@@ -1,0 +1,33 @@
+class Buffer @6
+  sig: class Buffer
+  tmpl: template <typename T, int N = 4>
+  doc: A class template.
+  function Buffer::Capacity @10 constexpr const
+    sig: constexpr int Capacity() const
+    doc: Returns the capacity.
+  function Buffer::Put @12
+    sig: void Put(const T& value)
+    doc: Stores a value.
+function Twice @16
+  sig: T Twice(T value)
+  tmpl: template <typename T> requires std::integral<T>
+  doc: A function template with a requires clause.
+function Log @21
+  sig: void Log(const char* fmt, Args... args)
+  tmpl: template <typename... Args>
+  doc: A variadic function template.
+alias Ptr @25
+  sig: using Ptr = T*
+  tmpl: template <typename T>
+  doc: An alias template.
+variable is_small @29 constexpr inline
+  sig: inline constexpr bool is_small
+  tmpl: template <typename T>
+  doc: A variable template.
+class Buffer<char, 1> @33
+  sig: class Buffer<char, 1>
+  tmpl: template <>
+  doc: A specialization.
+  function Buffer<char, 1>::Capacity @37 const
+    sig: int Capacity() const
+    doc: Returns the capacity.

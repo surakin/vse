@@ -1,0 +1,9 @@
+macro ENGINE_VERSION @4
+  sig: ENGINE_VERSION
+  doc: An object-like macro.
+macro ENGINE_SQUARE @8
+  sig: ENGINE_SQUARE(x)
+  doc: A function-like macro.
+function Conditional @15
+  sig: void Conditional()
+  doc: A conditionally compiled function.

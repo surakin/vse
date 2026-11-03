@@ -1,0 +1,18 @@
+namespace outer @5
+  namespace outer::inner @6
+    function outer::inner::InInner @8
+      sig: void InInner()
+      doc: A function in a nested namespace.
+  namespace outer::v1 @21 inline-namespace
+    function outer::v1::Versioned @23
+      sig: void Versioned()
+      doc: A function in an inline namespace.
+namespace a @27
+  namespace a::b @27
+    namespace a::b::c @27
+      function a::b::c::Deep @29
+        sig: void Deep()
+        doc: A function in a C++17 nested namespace.
+function c_entry @34
+  sig: int c_entry(int value)
+  doc: A C-linkage function.

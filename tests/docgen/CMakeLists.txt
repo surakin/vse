@@ -4,6 +4,7 @@
 # exception/RTTI-free.
 set(DOCGEN_TEST_SOURCES
   scanner_test.cpp
+  extractor_test.cpp
 )
 
 find_package(Threads REQUIRED)

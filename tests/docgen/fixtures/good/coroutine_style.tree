@@ -1,0 +1,18 @@
+class Task @6
+  sig: class Task
+  doc: A coroutine-return-type style class.
+  struct Task::promise_type @9
+    sig: struct promise_type
+    doc: The promise type required by the coroutine machinery.
+    function Task::promise_type::get_return_object @11
+      sig: Task get_return_object()
+      doc: Creates the Task.
+    function Task::promise_type::initial_suspend @13 noexcept
+      sig: std::suspend_always initial_suspend() noexcept
+      doc: Starts suspended.
+    function Task::promise_type::operator new @15 static operator
+      sig: static void* operator new(unsigned long size)
+      doc: Allocates the coroutine frame.
+    function Task::promise_type::operator delete @17 static operator noexcept
+      sig: static void operator delete(void* ptr) noexcept
+      doc: Frees the coroutine frame.

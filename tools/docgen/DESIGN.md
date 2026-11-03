@@ -57,6 +57,15 @@ invocation at namespace/class scope (e.g. `DECLARE_THING(x)` outside a
 documented `#define`), unbalanced braces, unterminated comments/strings,
 and a `///` comment attached to something that is not a declaration.
 
+Also refused (as `unrecognized declaration`): several declarators in one
+statement (`int a, b;`) and declarators after a type definition
+(`struct S {...} s;`) — declare each name in its own statement.
+
+Known limit: `Widget w(args);` (direct initialization with identifier
+arguments) is indistinguishable from a function declaration without type
+information and is read as a function; `int v(5);` (a literal argument) is
+read as a variable. Prefer `=` or braces for variables in headers.
+
 ## 4. Module map (`docs/reference/modules.txt`)
 
 Line-based, `#` comments, blank lines ignored.

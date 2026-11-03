@@ -1,0 +1,34 @@
+function Add @4
+  sig: int Add(int a, int b)
+  doc: A free function.
+function TryThing @7 noexcept
+  sig: [[nodiscard]] bool TryThing(const char* name) noexcept
+  attrs: [[nodiscard]]
+  doc: A function with attributes and noexcept.
+function Trailing @10
+  sig: auto Trailing(int x) -> long
+  doc: A function with a trailing return type.
+function Square @13 constexpr
+  sig: constexpr int Square(int x, int scale = 1)
+  doc: A constexpr function with a default argument.
+function WithBody @16 inline
+  sig: inline int WithBody(int x)
+  doc: An inline function with a body containing braces.
+class Money @24
+  sig: class Money
+  doc: A class with operators and conversions.
+  function Money::operator+ @27 operator const
+    sig: Money operator+(const Money& other) const
+    doc: Adds two amounts.
+  function Money::operator== @29 operator const
+    sig: bool operator==(const Money& other) const
+    doc: Compares two amounts.
+  function Money::operator double @31 explicit conversion operator const
+    sig: explicit operator double() const
+    doc: Converts to a double.
+  function Money::operator[] @33 operator
+    sig: int& operator[](int index)
+    doc: Subscript.
+  function Money::operator() @35 operator const
+    sig: int operator()(int a) const
+    doc: Function call.

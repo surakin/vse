@@ -1,0 +1,28 @@
+enum Color @4
+  sig: enum Color
+  doc: A plain enum.
+  enumerator Red @4
+    sig: Red
+  enumerator Green @4
+    sig: Green = 5
+  enumerator Blue @4
+    sig: Blue
+enum class Mode @7
+  sig: enum class Mode : unsigned char
+  doc: A scoped enum with an underlying type.
+  enumerator Mode::Off @8
+    sig: Off
+    trail: Disabled.
+  enumerator Mode::On @9
+    sig: On = 1
+    trail: Enabled.
+  enumerator Mode::Auto @10
+    sig: Auto = 0x10
+    trail: Chosen automatically.
+enum class Flag @14
+  sig: enum class Flag
+  doc: An enum class without an underlying type.
+  enumerator Flag::A @14
+    sig: A
+  enumerator Flag::B @14
+    sig: B

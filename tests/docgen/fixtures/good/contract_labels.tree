@@ -1,0 +1,12 @@
+function Read @26
+  sig: bool Read(int handle, int* out)
+  doc: Reads a value from a handle.
+function OldRead @30
+  sig: bool OldRead(int handle)
+  doc: Old entry point.
+function ForTests @34
+  sig: void ForTests()
+  doc: A symbol visible only for technical reasons.
+function Write @37
+  sig: bool Write(int handle, int value)
+  doc: Writes a value.

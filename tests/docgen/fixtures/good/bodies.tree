@@ -1,0 +1,15 @@
+class Widget @4
+  sig: class Widget
+  doc: A class whose members have all kinds of bodies.
+  function Widget::Get @7 const
+    sig: int Get() const
+    doc: Inline getter.
+  function Widget::Run @10
+    sig: int Run(int n)
+    doc: A method with a lambda and nested braces in its body.
+  function Widget::Widget @20 explicit ctor
+    sig: explicit Widget(int v)
+    doc: A constructor with a member-initializer list using braces.
+function Configure @28
+  sig: void Configure(int options = int{3})
+  doc: A function with a brace-initialized default argument.

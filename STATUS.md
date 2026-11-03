@@ -405,7 +405,7 @@ is a goal/deliverable-level plan only — not startable until its days are
 broken out. Phase 2 (Job System) remains the active phase.
 
 
-## Phase 2.5 (Documentation tooling) — in progress (Days 36-37 done, Day 38 next)
+## Phase 2.5 (Documentation tooling) — in progress (Days 36-38 done, Day 39 next)
 
 Days 36-44 are broken out under `plans/phase-02-5-docs-tooling/` (design
 settled: own C++ `docgen` on the foundation, purpose-built scanner, `///`
@@ -415,3 +415,4 @@ still has no day files.
 
 Day 36 (design & convention) is done: `docs/DOC-CONVENTIONS.md`, `tools/docgen/DESIGN.md` and the fixture corpus in `tests/docgen/fixtures/` are the contract for Days 37-44.
 Day 37 (scanner) is done: `tools/docgen/` (`docgen_lib`, `docgen tokens FILE`) and `tests/docgen/` (`docgen_tests`, `docgen_tests_asan`; 31 test cases incl. fixtures, all of `engine/**/*.h`, truncation/junk fuzz); high-effort review recorded in the day file. Run: `build/tests/docgen/docgen_tests`.
+Day 38 (declaration extractor) is done: `tools/docgen/src/extractor.{h,cpp}`, `docgen dump [--all] [--keep-going] FILE.h`, `*.tree` goldens for every good fixture; all 43 `engine/**/*.h` headers extract with zero diagnostics (counts in the day file); 57 docgen test cases pass plain and under ASan; high-effort review (10 findings, all fixed) recorded in the day file.

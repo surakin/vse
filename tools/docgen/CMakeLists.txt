@@ -3,6 +3,7 @@
 # a game. Built with the production flags like the rest of our own code.
 set(DOCGEN_SOURCES
   src/scanner.cpp
+  src/extractor.cpp
   src/source_file.cpp
 )
 

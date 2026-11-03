@@ -1,0 +1,52 @@
+class Base @4
+  sig: class Base
+  doc: A base class with every kind of member.
+  function Base::Base @7 ctor
+    sig: Base()
+    doc: Constructs a default base.
+  function Base::~Base @9 virtual dtor
+    sig: virtual ~Base()
+    doc: Destroys the base.
+  function Base::Base @10 delete ctor
+    sig: Base(const Base&)
+  function Base::operator= @11 delete operator
+    sig: Base& operator=(const Base&)
+  function Base::Hook @14 virtual pure
+    sig: virtual void Hook()
+    doc: A pure virtual hook.
+  function Base::Compute @16 virtual const
+    sig: virtual int Compute(int x) const
+    doc: A virtual method.
+  struct Base::Nested @19
+    sig: struct Nested
+    doc: A nested public type.
+    variable Base::Nested::value @20
+      sig: int value
+      trail: A data member documented on the same line.
+class Derived @32 final
+  sig: class Derived final : public Base
+  doc: A derived class.
+  function Derived::Hook @35 override
+    sig: void Hook() override
+    doc: Implements the hook.
+  function Derived::Compute @36 override const
+    sig: int Compute(int x) const override
+  function Derived::Derived @38 default ctor
+    sig: Derived()
+    doc: Defaulted constructor.
+struct Point @42
+  sig: struct Point
+  doc: A struct: members are public by default.
+  variable Point::x @43
+    sig: float x
+    trail: X coordinate.
+  variable Point::y @44
+    sig: float y
+    trail: Y coordinate.
+union Bits @48
+  sig: union Bits
+  doc: A union.
+  variable Bits::i @49
+    sig: int i
+  variable Bits::f @50
+    sig: float f

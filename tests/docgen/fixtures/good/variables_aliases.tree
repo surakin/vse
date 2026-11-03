@@ -1,0 +1,18 @@
+variable kMaxThings @6 constexpr inline
+  sig: inline constexpr unsigned kMaxThings
+  doc: A namespace-scope constant.
+class Config @9
+  sig: class Config
+  doc: A class with static members.
+  variable Config::kLimit @12 static constexpr
+    sig: static constexpr int kLimit
+    doc: A static constexpr member.
+  variable Config::counter @14 static
+    sig: static int counter
+    doc: A static data member.
+alias Size @18
+  sig: using Size = std::size_t
+  doc: A using-alias.
+alias Handle @21
+  sig: typedef unsigned long Handle
+  doc: A typedef.

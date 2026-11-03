@@ -1,0 +1,11 @@
+class Shape @8
+  sig: class Shape
+  doc: A base with a documented virtual.
+  function Shape::Area @11 virtual const
+    sig: virtual double Area() const
+    doc: Returns the area.
+class Circle @15
+  sig: class Circle : public Shape
+  doc: A derived shape; its override inherits the base summary.
+  function Circle::Area @17 override const
+    sig: double Area() const override
