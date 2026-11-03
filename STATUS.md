@@ -405,7 +405,7 @@ is a goal/deliverable-level plan only — not startable until its days are
 broken out. Phase 2 (Job System) remains the active phase.
 
 
-## Phase 2.5 (Documentation tooling) — in progress (Days 36-40 done, Day 41 next)
+## Phase 2.5 (Documentation tooling) — in progress (Days 36-41 done, Day 42 next)
 
 Days 36-44 are broken out under `plans/phase-02-5-docs-tooling/` (design
 settled: own C++ `docgen` on the foundation, purpose-built scanner, `///`
@@ -418,3 +418,4 @@ Day 37 (scanner) is done: `tools/docgen/` (`docgen_lib`, `docgen tokens FILE`) a
 Day 38 (declaration extractor) is done: `tools/docgen/src/extractor.{h,cpp}`, `docgen dump [--all] [--keep-going] FILE.h`, `*.tree` goldens for every good fixture; all 43 `engine/**/*.h` headers extract with zero diagnostics (counts in the day file); 57 docgen test cases pass plain and under ASan; high-effort review (10 findings, all fixed) recorded in the day file.
 Day 39 (doc-comment parser) is done: `tools/docgen/src/doc_parser.{h,cpp}`, `docgen docs FILE.h`; summary/details/lists/code/labels/`[[refs]]` parsed and validated against the declaration (Param names, Returns on void, unknown/duplicate/empty labels, thread-safety categories, ...), override doc inheritance, undocumented-symbol list, normalized emit with a stable round trip; 88 docgen test cases pass plain and under ASan; high-effort review (9 findings, all fixed) recorded in the day file.
 Day 40 (symbol index + Markdown emitter) is done: `docgen reference|check` (module map `docs/reference/modules.txt`, stable symbol IDs/anchors, module pages, index page, `symbols.txt`, golden fixtures under `tests/docgen/fixtures/ref/`, stale-output detection); 113 docgen test cases pass plain and under ASan; high-effort review (9 findings, 8 fixed, 1 declined with a measurement) recorded in the day file. The engine's own reference is not committed yet (no `///` comments until Day 44).
+Day 41 (cross-references + link checker) is done: `docgen links` (file/anchor/image links, `[[Symbol]]` refs in `docs/**`, orphan pages, external links counted not fetched; scanner `md_scan.*` is shared with Day 42); 134 docgen test cases pass plain and under ASan; high-effort review (9 findings, 8 fixed, 1 declined) recorded in the day file.

@@ -72,7 +72,14 @@ enum class ResolveStatus : engine_placeholder::u8 { Ok, NotFound, Ambiguous };
 // Resolves the text of a `[[reference]]`: a full or partially qualified name,
 // optionally with an overload hint `Name(type,type)`. Among partially
 // qualified matches the one with the fewest scope components wins.
-ResolveStatus ResolveRef(const SymbolIndex& index, StringView target, const Symbol*& out);
+// When `candidates` is given it receives every symbol of the winning tier
+// (more than one on Ambiguous, empty otherwise).
+ResolveStatus ResolveRef(const SymbolIndex& index, StringView target, const Symbol*& out,
+                         Array<const Symbol*, ArenaAllocator>* candidates = nullptr);
+
+// Diagnostic text for a failed resolution, e.g.
+// "ambiguous reference 'Foo' (candidates: a::Foo, b::Foo)".
+StringView RefProblem(ArenaAllocator& arena, ResolveStatus st, StringView target, const Array<const Symbol*, ArenaAllocator>& cands);
 
 // Page file name for a module ("foundation/memory" -> "foundation-memory.md").
 StringView PageNameFor(StringView module_name, ArenaAllocator& arena);

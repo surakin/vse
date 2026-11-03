@@ -2,11 +2,15 @@
 
 End-user documentation for the engine. **Status: skeleton.** Every page
 below exists as an outline with pointers to its source of truth and the
-facts already known; none is written yet. See `DOC-CONVENTIONS.md` for how
+facts already known; none is written yet. See [DOC-CONVENTIONS.md](DOC-CONVENTIONS.md) for how
 pages are structured and when a day's work counts as documented.
 
-Internal design history lives in `docs/superpowers/specs/` and the plans in
-`plans/` — those are for contributors, not engine users.
+Internal design history is for contributors, not engine users: the specs in
+`docs/superpowers/specs/` —
+[job system](superpowers/specs/2026-08-13-job-system-design.md),
+[Unicode string support](superpowers/specs/2026-08-14-unicode-string-support-design.md),
+[command-line wrapper](superpowers/specs/2026-08-16-command-line-wrapper-design.md) —
+and the plans in `plans/`.
 
 ## Map
 

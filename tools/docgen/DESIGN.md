@@ -193,7 +193,7 @@ Diagnostic catalogue (stable message prefixes the fixtures assert):
 | `missing summary` | error |
 | `header pattern matches no files` / `header listed in two modules` | error |
 | `duplicate symbol ID` | error |
-| `unresolved reference` / `ambiguous reference` (in `///` comments; Day 41 adds guide pages) | error |
+| `unresolved reference` / `ambiguous reference` (in `///` comments and in `docs/**/*.md`; ambiguous lists the candidate IDs) | error |
 | `empty label` | error |
 | `invalid thread-safety category` | error |
 | `malformed label` (e.g. `See:` without a `[[reference]]`) | error |
@@ -201,6 +201,9 @@ Diagnostic catalogue (stable message prefixes the fixtures assert):
 | `unterminated code fence` | error |
 | `doc comment is not attached to a declaration` | error |
 | `summary too long` / `summary does not end in a period` | warning |
+| `broken link` / `missing image` / `broken anchor` / `link escapes the repository` / `empty link target` | error (`docgen links`) |
+| `orphan page` / `missing: the root page ...` (docs/README.md) | error (`docgen links`) |
+| `malformed reference` / `unterminated code fence` in Markdown | error (`docgen links`) |
 | `undocumented public symbol` | lint error |
 | `missing required label` | lint error |
 
@@ -234,3 +237,41 @@ line, the diagnostics it must produce *exactly* (no more, no fewer):
 Expectations live in a separate file so no annotation comment can disturb
 doc-comment attachment. The declaration-tree goldens (`*.tree`) for good
 fixtures are generated on Day 38 once the dump format exists.
+
+## 10. Markdown link checking (Day 41)
+
+`docgen links [--root DIR] [--modules FILE] [--external] [--quiet]` checks
+every `docs/**/*.md` and every top-level `*.md`:
+
+- `[text](target)`, `![alt](target)`, `<https://...>` autolinks and
+  `[label]: target` definitions. A target is split at `#` (and `?`),
+  percent-decoded (an encoded NUL stays literal), and resolved against the
+  file's directory (`/x` is relative to the repository root). A missing file
+  or directory is `broken link` (`missing image` for images); a path that
+  climbs out of the repository is an error. A directory target is accepted.
+- A fragment is checked against the target `.md` file's anchors: ATX heading
+  slugs (GitHub rules: lowercase, spaces to `-`, other punctuation dropped,
+  `-1`/`-2` for repeats), explicit `{#id}`s, and `<a id="...">` /
+  `<a name="...">`. Fragments on non-Markdown targets (`.h#L10`) are not
+  checked. The emitter's `symbols.txt` anchors are tested to be anchors the
+  checker finds.
+- Any `scheme:` target (`http`, `https`, `mailto`, `tel`, `data`, ...) is
+  external: counted, listed with `--external`, never fetched.
+- `[[Symbol]]` references outside code are resolved against the symbol index
+  of the module map (default `docs/reference/modules.txt`; skipped when the
+  default map does not exist). They are validated, not rewritten: the source
+  stays `[[...]]`, and the generated reference carries the links. A
+  reference may wrap across lines inside a paragraph.
+- Every `docs/**/*.md` must be reachable from `docs/README.md` through
+  Markdown links; otherwise it is an `orphan page` error, and a docs tree
+  without `docs/README.md` is an error too.
+- If the headers have documentation errors the index may be incomplete: those
+  errors are printed and fail the run.
+
+The scanner (`md_scan.*`) understands: fenced code blocks (``` and ~~~,
+longer fences nest), ATX headings only (no setext), inline code spans
+(which may wrap across the lines of a paragraph), inline links with `<...>`
+targets and titles, reference definitions (footnote definitions `[^n]:`
+are ignored). It deliberately does not validate `[text][label]` usages: an
+undefined label renders literally and `x[i][j]` is common in C++ prose.
+HTML blocks other than `<a id>` anchors are not interpreted.

@@ -1,7 +1,10 @@
 #include <cstdio>
 #include <cstring>
 
+#include <sys/stat.h>
+
 #include "doc_parser.h"
+#include "links.h"
 #include "reference.h"
 #include "extractor.h"
 #include "scanner.h"
@@ -15,7 +18,8 @@ int Usage() {
     std::fputs("usage: docgen tokens FILE.h                 (scanner testing aid: dump tokens, docs, diagnostics)\n"
                "       docgen dump [--all] [--keep-going] FILE.h  (declaration tree; --all includes hidden declarations)\n"
                "       docgen docs [--keep-going] FILE.h          (parsed doc comments, validation, undocumented symbols)\n"
-               "       docgen reference|check [--root DIR] [--modules FILE] [--out DIR] [--quiet]\n",
+               "       docgen reference|check [--root DIR] [--modules FILE] [--out DIR] [--quiet]\n"
+               "       docgen links [--root DIR] [--modules FILE] [--external] [--quiet]\n",
                stderr);
     return 2;
 }
@@ -208,6 +212,59 @@ int Reference(int argc, char** argv, bool check) {
     return 0;
 }
 
+// docgen links
+int Links(int argc, char** argv) {
+    const char* root = ".";
+    const char* modules = nullptr;
+    bool quiet = false;
+    LinkOptions options;
+    for (int i = 2; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--root") == 0 && i + 1 < argc) root = argv[++i];
+        else if (std::strcmp(argv[i], "--modules") == 0 && i + 1 < argc) modules = argv[++i];
+        else if (std::strcmp(argv[i], "--external") == 0) options.list_external = true;
+        else if (std::strcmp(argv[i], "--quiet") == 0) quiet = true;
+        else return Usage();
+    }
+    ArenaAllocator arena(usize{1} << 30);
+    StringView root_v(root, std::strlen(root));
+    StringView map_path = modules != nullptr ? StringView(modules, std::strlen(modules)) : ArenaCat(arena, root_v, StringView("/docs/reference/modules.txt"));
+    // `[[Symbol]]` references are checked against the index of the module map; a missing default map just skips them.
+    struct stat st;
+    const bool have_map = modules != nullptr || stat(map_path.Data(), &st) == 0;
+    ReferenceBuild build(arena);
+    const SymbolIndex* index = nullptr;
+    bool header_errors = false;
+    if (have_map) {
+        const bool built = BuildReference(root_v, map_path, arena, build);
+        if (build.io_failure) {
+            PrintFileDiags(build.index.diagnostics, false);
+            return 2;
+        }
+        // Header errors leave the index usable but possibly incomplete; show them (they fail this run too)
+        // so a spurious "unresolved reference" can be traced to its cause.
+        if (!built) {
+            PrintFileDiags(build.index.diagnostics, false);
+            header_errors = true;
+        }
+        index = &build.index;
+    }
+    engine_placeholder::Array<FileDiag, ArenaAllocator> problems(arena);
+    LinkStats stats;
+    if (!CheckLinks(root_v, index, arena, options, problems, stats)) {
+        std::fprintf(stderr, "docgen: cannot read the documentation tree under %s\n", root);
+        return 2;
+    }
+    bool errors = false;
+    for (usize i = 0; i < problems.Size(); ++i) errors = errors || problems[i].d.severity == Severity::Error;
+    PrintFileDiags(problems, quiet);
+    if (!quiet) {
+        std::fprintf(stderr, "docgen: %zu files, %zu links (%zu external, not fetched), %zu references%s\n", static_cast<size_t>(stats.files),
+                     static_cast<size_t>(stats.links), static_cast<size_t>(stats.external), static_cast<size_t>(stats.refs),
+                     index == nullptr ? " (not checked: no module map)" : "");
+    }
+    return errors || header_errors ? 1 : 0;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -216,5 +273,6 @@ int main(int argc, char** argv) {
     if (argc >= 3 && std::strcmp(argv[1], "docs") == 0) return Docs(argc, argv);
     if (argc >= 2 && std::strcmp(argv[1], "reference") == 0) return Reference(argc, argv, false);
     if (argc >= 2 && std::strcmp(argv[1], "check") == 0) return Reference(argc, argv, true);
+    if (argc >= 2 && std::strcmp(argv[1], "links") == 0) return Links(argc, argv);
     return Usage();
 }

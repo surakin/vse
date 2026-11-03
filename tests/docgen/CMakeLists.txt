@@ -7,6 +7,7 @@ set(DOCGEN_TEST_SOURCES
   extractor_test.cpp
   doc_parser_test.cpp
   reference_test.cpp
+  links_test.cpp
 )
 
 find_package(Threads REQUIRED)

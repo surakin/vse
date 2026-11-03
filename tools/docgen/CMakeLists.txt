@@ -9,6 +9,8 @@ set(DOCGEN_SOURCES
   src/symbol_index.cpp
   src/markdown.cpp
   src/reference.cpp
+  src/md_scan.cpp
+  src/links.cpp
   src/source_file.cpp
 )
 

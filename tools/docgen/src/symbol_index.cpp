@@ -330,13 +330,10 @@ private:
             for (usize r = 0; r < s.doc->refs.Size(); ++r) {
                 const Ref& ref = s.doc->refs[r];
                 const Symbol* hit = nullptr;
-                ResolveStatus st = ResolveRef(out_, ref.target, hit);
+                Array<const Symbol*, ArenaAllocator> cands(arena_);
+                ResolveStatus st = ResolveRef(out_, ref.target, hit, &cands);
                 if (st == ResolveStatus::Ok) continue;
-                out_.diagnostics.Push(FileDiag{
-                    s.unit->path,
-                    Diagnostic{Severity::Error, ref.line,
-                               ArenaCat(arena_, StringView(st == ResolveStatus::NotFound ? "unresolved reference '" : "ambiguous reference '"),
-                                   ref.target, StringView("'"))}});
+                out_.diagnostics.Push(FileDiag{s.unit->path, Diagnostic{Severity::Error, ref.line, RefProblem(arena_, st, ref.target, cands)}});
             }
         }
     }
@@ -405,8 +402,32 @@ void BuildIndex(StringView root, StringView map_path, const ModuleMap& map, Aren
     b.Run();
 }
 
-ResolveStatus ResolveRef(const SymbolIndex& index, StringView target, const Symbol*& out) {
+StringView RefProblem(ArenaAllocator& arena, ResolveStatus st, StringView target, const Array<const Symbol*, ArenaAllocator>& cands) {
+    engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+    sb.Append(StringView(st == ResolveStatus::NotFound ? "unresolved reference '" : "ambiguous reference '"));
+    sb.Append(target);
+    sb.Append('\'');
+    if (st == ResolveStatus::Ambiguous) {
+        sb.Append(StringView(" (candidates: "));
+        for (usize i = 0; i < cands.Size(); ++i) {
+            if (i > 0) sb.Append(StringView(", "));
+            sb.Append(cands[i]->id);
+        }
+        sb.Append(')');
+    }
+    return sb.View(); // the builder's storage lives in `arena`
+}
+
+namespace {
+void DropAll(Array<const Symbol*, ArenaAllocator>* c) {
+    if (c == nullptr) return;
+    while (c->Size() > 0) c->Pop();
+}
+} // namespace
+
+ResolveStatus ResolveRef(const SymbolIndex& index, StringView target, const Symbol*& out, Array<const Symbol*, ArenaAllocator>* candidates) {
     out = nullptr;
+    DropAll(candidates);
     // trim
     usize a = 0, e = target.Length();
     while (a < e && (target[a] == ' ' || target[a] == '\t')) ++a;
@@ -450,6 +471,7 @@ ResolveStatus ResolveRef(const SymbolIndex& index, StringView target, const Symb
             exact = true;
             best = nullptr;
             best_count = 0;
+            DropAll(candidates);
         }
         if (exact && !is_exact) continue;
         if (!exact) {
@@ -458,13 +480,16 @@ ResolveStatus ResolveRef(const SymbolIndex& index, StringView target, const Symb
                 best_comp = comp;
                 best = nullptr;
                 best_count = 0;
+                DropAll(candidates);
             }
         }
         if (best == nullptr) best = &s;
         ++best_count;
+        if (candidates != nullptr) candidates->Push(&s);
     }
     if (best_count == 0) return ResolveStatus::NotFound;
     if (best_count > 1) return ResolveStatus::Ambiguous;
+    DropAll(candidates);
     out = best;
     return ResolveStatus::Ok;
 }
