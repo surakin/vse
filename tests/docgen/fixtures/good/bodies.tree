@@ -7,12 +7,15 @@ class Widget @4
   function Widget::Run @10
     sig: int Run(int n)
     params: n
+    ptypes: int
     doc: A method with a lambda and nested braces in its body.
   function Widget::Widget @20 explicit ctor
     sig: explicit Widget(int v)
     params: v
+    ptypes: int
     doc: A constructor with a member-initializer list using braces.
 function Configure @28
   sig: void Configure(int options = int{3})
   params: options
+  ptypes: int
   doc: A function with a brace-initialized default argument.

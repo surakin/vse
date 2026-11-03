@@ -16,4 +16,5 @@ namespace a @27
 function c_entry @34
   sig: int c_entry(int value)
   params: value
+  ptypes: int
   doc: A C-linkage function.

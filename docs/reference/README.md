@@ -1,6 +1,6 @@
 # API Reference
 
-**Status:** skeleton. The reference is to be *generated* from `///`
+**Status:** skeleton. `modules.txt` (the module map `docgen reference` reads) is in place; the generated pages are committed once the headers carry `///` comments (Phase 2.5 Day 44). The reference is to be *generated* from `///`
 comments on the public headers (by our own `docgen` tool, planned in
 `plans/phase-02-5-docs-tooling.md`; no Doxygen); hand-written reference pages are not kept. This
 index lists the modules and the headers each will be generated from.

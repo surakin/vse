@@ -1,10 +1,12 @@
 function Read @26
   sig: bool Read(int handle, int* out)
   params: handle, out
+  ptypes: int,int*
   doc: Reads a value from a handle.
 function OldRead @30
   sig: bool OldRead(int handle)
   params: handle
+  ptypes: int
   doc: Old entry point.
 function ForTests @34
   sig: void ForTests()
@@ -12,4 +14,5 @@ function ForTests @34
 function Write @37
   sig: bool Write(int handle, int value)
   params: handle, value
+  ptypes: int,int
   doc: Writes a value.

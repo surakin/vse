@@ -2,6 +2,7 @@
 #include <cstring>
 
 #include "doc_parser.h"
+#include "reference.h"
 #include "extractor.h"
 #include "scanner.h"
 #include "source_file.h"
@@ -13,7 +14,8 @@ namespace {
 int Usage() {
     std::fputs("usage: docgen tokens FILE.h                 (scanner testing aid: dump tokens, docs, diagnostics)\n"
                "       docgen dump [--all] [--keep-going] FILE.h  (declaration tree; --all includes hidden declarations)\n"
-               "       docgen docs [--keep-going] FILE.h          (parsed doc comments, validation, undocumented symbols)\n",
+               "       docgen docs [--keep-going] FILE.h          (parsed doc comments, validation, undocumented symbols)\n"
+               "       docgen reference|check [--root DIR] [--modules FILE] [--out DIR] [--quiet]\n",
                stderr);
     return 2;
 }
@@ -68,15 +70,7 @@ bool PrintDiagnostics(const char* path, const DiagList* const* lists, usize list
     for (usize l = 0; l < list_count; ++l) {
         for (usize i = 0; i < lists[l]->Size(); ++i) all.Push(&(*lists[l])[i]);
     }
-    for (usize i = 1; i < all.Size(); ++i) {
-        const Diagnostic* d = all[i];
-        usize j = i;
-        while (j > 0 && all[j - 1]->line > d->line) {
-            all[j] = all[j - 1];
-            --j;
-        }
-        all[j] = d;
-    }
+    StableSort(all, [](const Diagnostic* x, const Diagnostic* y) { return x->line < y->line; });
     bool had_error = false;
     for (usize n = 0; n < all.Size(); ++n) {
         const Diagnostic& d = *all[n];
@@ -162,11 +156,65 @@ int Docs(int argc, char** argv) {
     return PrintDiagnostics(path, lists, 3, keep_going, arena) ? 1 : 0;
 }
 
+void PrintFileDiags(const engine_placeholder::Array<FileDiag, ArenaAllocator>& ds, bool quiet) {
+    for (usize i = 0; i < ds.Size(); ++i) {
+        const FileDiag& f = ds[i];
+        if (quiet && f.d.severity != Severity::Error) continue;
+        std::fprintf(stderr, "%.*s:%u: %s: %.*s\n", static_cast<int>(f.path.Length()), f.path.Data(), f.d.line, SeverityName(f.d.severity),
+                     static_cast<int>(f.d.message.Length()), f.d.message.Data());
+    }
+}
+
+// docgen reference | check
+int Reference(int argc, char** argv, bool check) {
+    const char* root = ".";
+    const char* modules = nullptr;
+    const char* out = nullptr;
+    bool quiet = false;
+    for (int i = 2; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--root") == 0 && i + 1 < argc) root = argv[++i];
+        else if (std::strcmp(argv[i], "--modules") == 0 && i + 1 < argc) modules = argv[++i];
+        else if (std::strcmp(argv[i], "--out") == 0 && i + 1 < argc) out = argv[++i];
+        else if (std::strcmp(argv[i], "--quiet") == 0) quiet = true;
+        else if (std::strcmp(argv[i], "--keep-going") == 0) {}
+        else return Usage();
+    }
+    ArenaAllocator arena(usize{1} << 30);
+    auto join = [&](const char* a, const char* b) {
+        usize la = std::strlen(a), lb = std::strlen(b);
+        char* buf = static_cast<char*>(arena.Alloc(la + lb + 2, 1));
+        CopyBytes(buf, a, la);
+        buf[la] = '/';
+        CopyBytes(buf + la + 1, b, lb + 1);
+        return StringView(buf, la + 1 + lb);
+    };
+    StringView root_v(root, std::strlen(root));
+    StringView map_path = modules != nullptr ? StringView(modules, std::strlen(modules)) : join(root, "docs/reference/modules.txt");
+    StringView out_dir = out != nullptr ? StringView(out, std::strlen(out)) : join(root, "docs/reference");
+
+    ReferenceBuild build(arena);
+    const bool built = BuildReference(root_v, map_path, arena, build);
+    PrintFileDiags(build.index.diagnostics, quiet);
+    if (!built) return build.io_failure ? 2 : 1;
+
+    engine_placeholder::Array<FileDiag, ArenaAllocator> problems(arena);
+    bool ok = check ? CheckReference(build, out_dir, arena, problems) : WriteReference(build, out_dir, arena, problems);
+    PrintFileDiags(problems, false);
+    if (!ok) return check ? 1 : 2;
+    if (!quiet && !check) {
+        std::fprintf(stderr, "docgen: wrote %zu files to %.*s\n", static_cast<size_t>(build.files.Size()), static_cast<int>(out_dir.Length()),
+                     out_dir.Data());
+    }
+    return 0;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
     if (argc == 3 && std::strcmp(argv[1], "tokens") == 0) return Tokens(argv[2]);
     if (argc >= 3 && std::strcmp(argv[1], "dump") == 0) return Dump(argc, argv);
     if (argc >= 3 && std::strcmp(argv[1], "docs") == 0) return Docs(argc, argv);
+    if (argc >= 2 && std::strcmp(argv[1], "reference") == 0) return Reference(argc, argv, false);
+    if (argc >= 2 && std::strcmp(argv[1], "check") == 0) return Reference(argc, argv, true);
     return Usage();
 }

@@ -244,7 +244,7 @@ private:
             if (At(b) == ' ') ++b;
             usize e = LineEnd(pp);
             TrimmedRange(b, e);
-            std::memcpy(buf + w, src_ + b, e - b);
+            CopyBytes(buf + w, src_ + b, e - b);
             w += e - b;
             if (i + 1 < lines) {
                 buf[w++] = '\n';
@@ -283,7 +283,7 @@ private:
 
     StringView Copy(const char* s, usize len) {
         char* buf = CopyBuf(len);
-        std::memcpy(buf, s, len);
+        CopyBytes(buf, s, len);
         return StringView(buf, len);
     }
 

@@ -111,4 +111,8 @@ void EmitDoc(const ParsedDoc& doc, StringBuilder<ArenaAllocator>& out);
 // Returns null when `fn` is not an override or nothing documented is found.
 const Decl* ResolveInherited(const Decl& fn, const ExtractResult& ex);
 
+// Same, searching for base classes in several declaration trees (the roots of
+// every parsed header), so a base declared in another header is found.
+const Decl* ResolveInherited(const Decl& fn, const Decl* const* roots, usize root_count);
+
 } // namespace docgen

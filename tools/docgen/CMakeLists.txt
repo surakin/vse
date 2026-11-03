@@ -5,6 +5,10 @@ set(DOCGEN_SOURCES
   src/scanner.cpp
   src/extractor.cpp
   src/doc_parser.cpp
+  src/module_map.cpp
+  src/symbol_index.cpp
+  src/markdown.cpp
+  src/reference.cpp
   src/source_file.cpp
 )
 

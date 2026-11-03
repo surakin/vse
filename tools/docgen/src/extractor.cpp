@@ -111,7 +111,7 @@ private:
                     if (pass == 1) buf[len] = ' ';
                     ++len;
                 }
-                if (pass == 1) std::memcpy(buf + len, t.text.Data(), t.text.Length());
+                if (pass == 1) CopyBytes(buf + len, t.text.Data(), t.text.Length());
                 len += t.text.Length();
                 prev_end = t.text.Data() + t.text.Length();
             }
@@ -125,9 +125,9 @@ private:
         const usize len = a.Length() + mid_len + b.Length();
         char* buf = static_cast<char*>(arena_.Alloc(len + 1, 1));
         ENGINE_ASSERT(buf != nullptr, "docgen: arena exhausted");
-        std::memcpy(buf, a.Data(), a.Length());
-        std::memcpy(buf + a.Length(), mid, mid_len);
-        std::memcpy(buf + a.Length() + mid_len, b.Data(), b.Length());
+        CopyBytes(buf, a.Data(), a.Length());
+        CopyBytes(buf + a.Length(), mid, mid_len);
+        CopyBytes(buf + a.Length() + mid_len, b.Data(), b.Length());
         buf[len] = '\0';
         return StringView(buf, len);
     }
@@ -747,7 +747,12 @@ private:
     }
 
     // Names the parameters of the group starting at the '(' at `open`.
-    void ExtractParams(Decl* d, usize open) {
+    void ExtractParams(Decl* d, usize open) { d->param_types = ParamTypeList(open, d); }
+
+    // Normalized parameter types of the group at `open`, joined by ','. Fills d's
+    // names and arity when `d` is not null.
+    StringView ParamTypeList(usize open, Decl* d) {
+        Array<StringView, ArenaAllocator> types(arena_);
         const usize close = SkipBalanced(open);
         const usize end = close > 0 ? close - 1 : close; // the ')'
         for (usize a = open + 1; a < end;) {
@@ -762,12 +767,79 @@ private:
                     ++b;
                 }
             }
-            AddParam(d, a, b > end ? end : b);
+            AddParam(d, a, b > end ? end : b, types);
             a = b + 1;
         }
+        usize len = 0;
+        for (usize i = 0; i < types.Size(); ++i) len += types[i].Length() + (i > 0 ? 1 : 0);
+        char* buf = static_cast<char*>(arena_.Alloc(len + 1, 1));
+        ENGINE_ASSERT(buf != nullptr, "docgen: arena exhausted");
+        usize at = 0;
+        for (usize i = 0; i < types.Size(); ++i) {
+            if (i > 0) buf[at++] = ',';
+            CopyBytes(buf + at, types[i].Data(), types[i].Length());
+            at += types[i].Length();
+        }
+        buf[len] = '\0';
+        return StringView(buf, len);
     }
 
-    void AddParam(Decl* d, usize a, usize b) {
+    static bool IsWordToken(const Token& t) {
+        return t.kind == TokenKind::Identifier || t.kind == TokenKind::Number || t.kind == TokenKind::StringLiteral ||
+               t.kind == TokenKind::CharLiteral;
+    }
+
+    struct TypePiece {
+        StringView text;
+        bool word;
+        bool star; // `*`, `&`, `&&` or `>`: a following word is separated by a space
+        bool close_paren;
+    };
+
+    // Tokens [a, e) without `skip`, spaced only where two words (or `*`/`&`/`>` and a word)
+    // meet. The parameter list that follows a declarator group, `(*)(void* user)`, is
+    // normalized recursively so its parameter names are dropped too.
+    StringView NormType(usize a, usize e, usize skip) {
+        Array<TypePiece, ArenaAllocator> pieces(arena_);
+        for (usize k = a; k < e; ++k) {
+            if (k == skip || toks_[k].kind == TokenKind::Define) continue;
+            const Token& t = toks_[k];
+            if (Is(k, "(") && pieces.Size() > 0 && pieces[pieces.Size() - 1].close_paren) {
+                usize after = SkipBalanced(k);
+                StringView inner = ParamTypeList(k, nullptr);
+                char* buf = static_cast<char*>(arena_.Alloc(inner.Length() + 3, 1));
+                ENGINE_ASSERT(buf != nullptr, "docgen: arena exhausted");
+                buf[0] = '(';
+                CopyBytes(buf + 1, inner.Data(), inner.Length());
+                buf[inner.Length() + 1] = ')';
+                buf[inner.Length() + 2] = '\0';
+                pieces.Push(TypePiece{StringView(buf, inner.Length() + 2), false, false, false});
+                k = after - 1;
+                continue;
+            }
+            pieces.Push(TypePiece{t.text, IsWordToken(t),
+                                  t.text == StringView("*") || t.text == StringView("&") || t.text == StringView("&&") ||
+                                      t.text == StringView(">"),
+                                  t.text == StringView(")")});
+        }
+        usize len = 0;
+        for (usize i = 0; i < pieces.Size(); ++i) {
+            if (i > 0 && pieces[i].word && (pieces[i - 1].word || pieces[i - 1].star)) ++len;
+            len += pieces[i].text.Length();
+        }
+        char* buf = static_cast<char*>(arena_.Alloc(len + 1, 1));
+        ENGINE_ASSERT(buf != nullptr, "docgen: arena exhausted");
+        usize at = 0;
+        for (usize i = 0; i < pieces.Size(); ++i) {
+            if (i > 0 && pieces[i].word && (pieces[i - 1].word || pieces[i - 1].star)) buf[at++] = ' ';
+            CopyBytes(buf + at, pieces[i].text.Data(), pieces[i].text.Length());
+            at += pieces[i].text.Length();
+        }
+        buf[len] = '\0';
+        return StringView(buf, len);
+    }
+
+    void AddParam(Decl* d, usize a, usize b, Array<StringView, ArenaAllocator>& types) {
         while (Is(a, "[") && Is(a + 1, "[") && a < b) a = SkipBalanced(a); // leading attributes
         usize e = a;
         while (e < b && !Is(e, "=")) {
@@ -780,8 +852,11 @@ private:
         if (e > b) e = b;
         if (e == a) return;
         if (e - a == 1 && Is(a, "void")) return;
-        ++d->param_count; // `...` counts toward the arity too
-        if (e - a == 1 && Is(a, "...")) return;
+        if (d != nullptr) ++d->param_count; // `...` counts toward the arity too
+        if (e - a == 1 && Is(a, "...")) {
+            types.Push(StringView("..."));
+            return;
+        }
         usize last = kNone;
         usize fp_name = kNone;
         for (usize k = a; k < e;) {
@@ -821,7 +896,8 @@ private:
                             Is(last - 1, "typename") || Is(last - 1, "::") || Is(last - 1, "<");
             if (!type_ctx) name = last;
         }
-        if (name != kNone) d->params.Push(toks_[name].text);
+        if (name != kNone && d != nullptr) d->params.Push(toks_[name].text);
+        types.Push(NormType(a, e, name));
     }
 
     // True for functions declared `void`, and for constructors/destructors.
@@ -1264,6 +1340,12 @@ void DumpNode(const Decl& d, int depth, bool include_hidden, const ScanResult& s
             if (i > 0) sb.Append(StringView(", "));
             sb.Append(d.params[i]);
         }
+        sb.Append('\n');
+    }
+    if (!d.param_types.Empty()) {
+        Indent(sb, depth + 1);
+        sb.Append(StringView("ptypes: "));
+        sb.Append(d.param_types);
         sb.Append('\n');
     }
     if (d.bases.Size() > 0) {

@@ -1,0 +1,13 @@
+# Module map for the reference-generation fixtures (paths relative to tests/docgen/fixtures).
+module demo "Demo Module"
+  header ref/headers/*.h
+  exclude ref/headers/skipped.h
+  strict thread-safety
+
+module extras "Fixture Corpus"          # a second page, to test cross-module links
+  header good/classes.h
+  header good/contract_labels.h
+  header good/enums.h
+  header good/functions.h
+  header good/templates.h
+  header good/variables_aliases.h

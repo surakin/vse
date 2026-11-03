@@ -76,6 +76,7 @@ struct Decl {
     Array<Decl*, ArenaAllocator> children;
     Array<StringView, ArenaAllocator> params; // function/macro parameter names (unnamed parameters are omitted)
     usize param_count = 0;                    // real arity, including unnamed parameters
+    StringView param_types;                   // normalized parameter types joined by ',' (names and defaults dropped)
     Array<StringView, ArenaAllocator> bases;  // class base names, unqualified and without template arguments
 
     bool Is(engine_placeholder::u32 f) const { return (flags & f) != 0; }

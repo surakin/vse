@@ -9,14 +9,17 @@ class Base @4
     doc: Destroys the base.
   function Base::Base @10 delete ctor
     sig: Base(const Base&)
+    ptypes: const Base&
   function Base::operator= @11 delete operator
     sig: Base& operator=(const Base&)
+    ptypes: const Base&
   function Base::Hook @14 virtual pure
     sig: virtual void Hook()
     doc: A pure virtual hook.
   function Base::Compute @16 virtual const
     sig: virtual int Compute(int x) const
     params: x
+    ptypes: int
     doc: A virtual method.
   struct Base::Nested @19
     sig: struct Nested
@@ -34,6 +37,7 @@ class Derived @32 final
   function Derived::Compute @36 override const
     sig: int Compute(int x) const override
     params: x
+    ptypes: int
   function Derived::Derived @38 default ctor
     sig: Derived()
     doc: Defaulted constructor.

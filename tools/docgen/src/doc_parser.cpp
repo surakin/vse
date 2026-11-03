@@ -144,10 +144,10 @@ private:
         const usize len = pl + 2 + detail.Length() + 1;
         char* buf = static_cast<char*>(arena_.Alloc(len + 1, 1));
         ENGINE_ASSERT(buf != nullptr, "docgen: arena exhausted");
-        std::memcpy(buf, prefix, pl);
+        CopyBytes(buf, prefix, pl);
         buf[pl] = ' ';
         buf[pl + 1] = '\'';
-        std::memcpy(buf + pl + 2, detail.Data(), detail.Length());
+        CopyBytes(buf + pl + 2, detail.Data(), detail.Length());
         buf[pl + 2 + detail.Length()] = '\'';
         buf[len] = '\0';
         return StringView(buf, len);
@@ -163,7 +163,7 @@ private:
         usize at = 0;
         for (usize i = from; i < to; ++i) {
             if (i > from) buf[at++] = sep;
-            std::memcpy(buf + at, pieces_[i].Data(), pieces_[i].Length());
+            CopyBytes(buf + at, pieces_[i].Data(), pieces_[i].Length());
             at += pieces_[i].Length();
         }
         buf[len] = '\0';
@@ -504,10 +504,10 @@ void Validate(const Decl& d, const ParsedDoc& doc, Array<Diagnostic, ArenaAlloca
             const usize pl = std::strlen(prefix);
             char* buf = static_cast<char*>(arena.Alloc(pl + l.name.Length() + 4, 1));
             ENGINE_ASSERT(buf != nullptr, "docgen: arena exhausted");
-            std::memcpy(buf, prefix, pl);
+            CopyBytes(buf, prefix, pl);
             buf[pl] = ' ';
             buf[pl + 1] = '\'';
-            std::memcpy(buf + pl + 2, l.name.Data(), l.name.Length());
+            CopyBytes(buf + pl + 2, l.name.Data(), l.name.Length());
             buf[pl + 2 + l.name.Length()] = '\'';
             diags.Push(Diagnostic{Severity::Error, l.line, StringView(buf, pl + 3 + l.name.Length())});
         }
@@ -559,10 +559,17 @@ const Decl* FindClass(const Decl* scope, StringView name) {
     return nullptr;
 }
 
-const Decl* ResolveIn(const Decl& fn, const Decl& cls, const ExtractResult& ex, int depth) {
+const Decl* FindClassIn(const Decl* const* roots, usize count, StringView name) {
+    for (usize i = 0; i < count; ++i) {
+        if (const Decl* r = FindClass(roots[i], name)) return r;
+    }
+    return nullptr;
+}
+
+const Decl* ResolveIn(const Decl& fn, const Decl& cls, const Decl* const* roots, usize count, int depth) {
     if (depth > 16) return nullptr;
     for (usize b = 0; b < cls.bases.Size(); ++b) {
-        const Decl* base = FindClass(ex.root, cls.bases[b]);
+        const Decl* base = FindClassIn(roots, count, cls.bases[b]);
         if (base == nullptr || base == &cls) continue;
         for (usize i = 0; i < base->children.Size(); ++i) {
             const Decl* m = base->children[i];
@@ -572,21 +579,13 @@ const Decl* ResolveIn(const Decl& fn, const Decl& cls, const ExtractResult& ex, 
             }
             if (m->doc >= 0) return m;
         }
-        if (const Decl* up = ResolveIn(fn, *base, ex, depth + 1)) return up;
+        if (const Decl* up = ResolveIn(fn, *base, roots, count, depth + 1)) return up;
     }
     return nullptr;
 }
 
 void SortByLine(Array<Diagnostic, ArenaAllocator>& d) {
-    for (usize i = 1; i < d.Size(); ++i) {
-        Diagnostic x = d[i];
-        usize j = i;
-        while (j > 0 && d[j - 1].line > x.line) {
-            d[j] = d[j - 1];
-            --j;
-        }
-        d[j] = x;
-    }
+    StableSort(d, [](const Diagnostic& x, const Diagnostic& y) { return x.line < y.line; });
 }
 
 } // namespace
@@ -603,7 +602,15 @@ const Decl* ResolveInherited(const Decl& fn, const ExtractResult& ex) {
         ex.root == nullptr) {
         return nullptr;
     }
-    return ResolveIn(fn, *fn.parent, ex, 0);
+    const Decl* roots[] = {ex.root};
+    return ResolveIn(fn, *fn.parent, roots, 1, 0);
+}
+
+const Decl* ResolveInherited(const Decl& fn, const Decl* const* roots, usize root_count) {
+    if (fn.kind != DeclKind::Function || !fn.Is(kFlagOverride) || fn.parent == nullptr || fn.parent->kind != DeclKind::Class) {
+        return nullptr;
+    }
+    return ResolveIn(fn, *fn.parent, roots, root_count, 0);
 }
 
 void ParseDocs(const ScanResult& scan, const ExtractResult& ex, ArenaAllocator& arena, DocResult& out) {

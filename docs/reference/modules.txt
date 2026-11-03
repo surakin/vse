@@ -1,0 +1,38 @@
+# Module map for the generated API reference (tools/docgen/DESIGN.md section 4).
+# Paths are relative to the repository root. Pages are written to docs/reference/.
+
+module foundation/memory "Foundation: Memory"
+  header engine/foundation/mem/*.h
+
+module foundation/containers "Foundation: Containers"
+  header engine/foundation/containers/*.h
+
+module foundation/strings "Foundation: Strings"
+  header engine/foundation/string/*.h
+
+module foundation/math "Foundation: Math"
+  header engine/foundation/math/*.h
+
+module foundation/log "Foundation: Logging and Assertions"
+  header engine/foundation/log/*.h
+
+module foundation/types "Foundation: Fundamental Types"
+  header engine/foundation/types.h
+
+module platform/os "Platform: OS Services"
+  header engine/foundation/os/os.h
+  header engine/foundation/os/file_util.h
+  header engine/foundation/os/command_line.h
+  header engine/foundation/os/gpu_driver_probe.h
+
+module platform/window-input "Platform: Windowing and Input"
+  header engine/foundation/os/window.h
+  header engine/foundation/os/input.h
+  header engine/foundation/os/linux/**/*.h
+  exclude engine/foundation/os/linux/wayland/generated/*.h   # wayland-scanner output, not our API
+
+module jobs "The Job System"
+  header engine/jobs/*.h
+  strict thread-safety
+  strict ownership
+  strict failure

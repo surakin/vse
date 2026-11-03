@@ -1,0 +1,80 @@
+# docgen symbols v1
+demo::WakeMode	enum	demo	demo-wakemode	demo.md	ref/headers/counter.h:11
+demo::WakeMode::Inline	enumerator	demo	demo-wakemode-inline	demo.md	ref/headers/counter.h:12
+demo::WakeMode::Requeue	enumerator	demo	demo-wakemode-requeue	demo.md	ref/headers/counter.h:13
+demo::Counter	class	demo	demo-counter	demo.md	ref/headers/counter.h:32
+demo::Counter::Counter()	function	demo	demo-counter-counter	demo.md	ref/headers/counter.h:35
+demo::Counter::Increment(unsigned long)	function	demo	demo-counter-increment-unsigned-long	demo.md	ref/headers/counter.h:39
+demo::Counter::Decrement()	function	demo	demo-counter-decrement	demo.md	ref/headers/counter.h:43
+demo::Counter::Count() const	function	demo	demo-counter-count-const	demo.md	ref/headers/counter.h:47
+demo::Counter::Peek(unsigned long) const	function	demo	demo-counter-peek-unsigned-long-const	demo.md	ref/headers/counter.h:52
+demo::Counter::Stats	struct	demo	demo-counter-stats	demo.md	ref/headers/counter.h:55
+demo::Counter::Stats::resumes	variable	demo	demo-counter-stats-resumes	demo.md	ref/headers/counter.h:56
+demo::MakeCounter(unsigned long)	function	demo	demo-makecounter-unsigned-long	demo.md	ref/headers/counter.h:67
+DEMO_SQUARE	macro	demo	demo-square	demo.md	ref/headers/counter.h:71
+demo::Count	alias	demo	demo-count	demo.md	ref/headers/counter.h:74
+demo::Shape	class	demo	demo-shape	demo.md	ref/headers/shapes.h:7
+demo::Shape::Area() const	function	demo	demo-shape-area-const	demo.md	ref/headers/shapes.h:11
+demo::Shape::Draw()	function	demo	demo-shape-draw	demo.md	ref/headers/shapes.h:13
+demo::Circle	class	demo	demo-circle	demo.md	ref/headers/shapes.h:17
+demo::Circle::Area() const	function	demo	demo-circle-area-const	demo.md	ref/headers/shapes.h:19
+demo::Circle::Draw()	function	demo	demo-circle-draw	demo.md	ref/headers/shapes.h:21
+Base	class	extras	base	extras.md	good/classes.h:4
+Base::Base()	function	extras	base-base	extras.md	good/classes.h:7
+Base::~Base()	function	extras	base-tilde-base	extras.md	good/classes.h:9
+Base::Base(const Base&)	function	extras	base-base-const-base-amp	extras.md	good/classes.h:10
+Base::operator=(const Base&)	function	extras	base-operator-eq-const-base-amp	extras.md	good/classes.h:11
+Base::Hook()	function	extras	base-hook	extras.md	good/classes.h:14
+Base::Compute(int) const	function	extras	base-compute-int-const	extras.md	good/classes.h:16
+Base::Nested	struct	extras	base-nested	extras.md	good/classes.h:19
+Base::Nested::value	variable	extras	base-nested-value	extras.md	good/classes.h:20
+Derived	class	extras	derived	extras.md	good/classes.h:32
+Derived::Hook()	function	extras	derived-hook	extras.md	good/classes.h:35
+Derived::Compute(int) const	function	extras	derived-compute-int-const	extras.md	good/classes.h:36
+Derived::Derived()	function	extras	derived-derived	extras.md	good/classes.h:38
+Point	struct	extras	point	extras.md	good/classes.h:42
+Point::x	variable	extras	point-x	extras.md	good/classes.h:43
+Point::y	variable	extras	point-y	extras.md	good/classes.h:44
+Bits	union	extras	bits	extras.md	good/classes.h:48
+Bits::i	variable	extras	bits-i	extras.md	good/classes.h:49
+Bits::f	variable	extras	bits-f	extras.md	good/classes.h:50
+Read(int,int*)	function	extras	read-int-int-star	extras.md	good/contract_labels.h:26
+OldRead(int)	function	extras	oldread-int	extras.md	good/contract_labels.h:30
+Write(int,int)	function	extras	write-int-int	extras.md	good/contract_labels.h:37
+Color	enum	extras	color	extras.md	good/enums.h:4
+Red	enumerator	extras	red	extras.md	good/enums.h:4
+Green	enumerator	extras	green	extras.md	good/enums.h:4
+Blue	enumerator	extras	blue	extras.md	good/enums.h:4
+Mode	enum	extras	mode	extras.md	good/enums.h:7
+Mode::Off	enumerator	extras	mode-off	extras.md	good/enums.h:8
+Mode::On	enumerator	extras	mode-on	extras.md	good/enums.h:9
+Mode::Auto	enumerator	extras	mode-auto	extras.md	good/enums.h:10
+Flag	enum	extras	flag	extras.md	good/enums.h:14
+Flag::A	enumerator	extras	flag-a	extras.md	good/enums.h:14
+Flag::B	enumerator	extras	flag-b	extras.md	good/enums.h:14
+Add(int,int)	function	extras	add-int-int	extras.md	good/functions.h:4
+TryThing(const char*) noexcept	function	extras	trything-const-char-star-noexcept	extras.md	good/functions.h:7
+Trailing(int)	function	extras	trailing-int	extras.md	good/functions.h:10
+Square(int,int)	function	extras	square-int-int	extras.md	good/functions.h:13
+WithBody(int)	function	extras	withbody-int	extras.md	good/functions.h:16
+Money	class	extras	money	extras.md	good/functions.h:24
+Money::operator+(const Money&) const	function	extras	money-operator-plus-const-money-amp-const	extras.md	good/functions.h:27
+Money::operator==(const Money&) const	function	extras	money-operator-eq-eq-const-money-amp-const	extras.md	good/functions.h:29
+Money::operator double() const	function	extras	money-operator-double-const	extras.md	good/functions.h:31
+Money::operator[](int)	function	extras	money-operator-index-int	extras.md	good/functions.h:33
+Money::operator()(int) const	function	extras	money-operator-call-int-const	extras.md	good/functions.h:35
+Buffer	class	extras	buffer	extras.md	good/templates.h:6
+Buffer::Capacity() const	function	extras	buffer-capacity-const	extras.md	good/templates.h:10
+Buffer::Put(const T&)	function	extras	buffer-put-const-t-amp	extras.md	good/templates.h:12
+Twice(T)	function	extras	twice-t	extras.md	good/templates.h:16
+Log(const char*,Args...)	function	extras	log-const-char-star-args	extras.md	good/templates.h:21
+Ptr	alias	extras	ptr	extras.md	good/templates.h:25
+is_small	variable	extras	is-small	extras.md	good/templates.h:29
+Buffer<char, 1>	class	extras	buffer-lt-char-1-gt	extras.md	good/templates.h:33
+Buffer<char, 1>::Capacity() const	function	extras	buffer-lt-char-1-gt-capacity-const	extras.md	good/templates.h:37
+kMaxThings	variable	extras	kmaxthings	extras.md	good/variables_aliases.h:6
+Config	class	extras	config	extras.md	good/variables_aliases.h:9
+Config::kLimit	variable	extras	config-klimit	extras.md	good/variables_aliases.h:12
+Config::counter	variable	extras	config-counter	extras.md	good/variables_aliases.h:14
+Size	alias	extras	size	extras.md	good/variables_aliases.h:18
+Handle	alias	extras	handle	extras.md	good/variables_aliases.h:21
