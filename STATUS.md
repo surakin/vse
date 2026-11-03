@@ -371,8 +371,7 @@ global instance, 16-byte block headers, a counted libc-`malloc` fallback
 runs the TSan set, including `tsan_canary_detects_race`, an
 expected-failure test that goes red if TSan stops detecting races. 137
 tests total, all green. Run: `cmake --build build && cd build && ctest`
-(add `-L tsan` for just the TSan set). Day 28 (Job coroutine type) is DONE (high-effort review recorded in its day file); Day 29 is
-next.
+(add `-L tsan` for just the TSan set). Day 28 (Job coroutine type) is DONE (high-effort review recorded in its day file); Day 29 (worker pool) is DONE (review recorded in its day file); Day 30 is next.
 
 **Code-review fixes (2026-11-03, `/code-review high a134e2c..HEAD`, 9
 findings):** (1) `WaylandPlatformWindow::PumpEvents` now checks every

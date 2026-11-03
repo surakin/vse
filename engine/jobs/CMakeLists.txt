@@ -6,6 +6,8 @@
 set(JOBS_SOURCES
   frame_pool.cpp
   job.cpp
+  topology.cpp
+  worker_pool.cpp
 )
 
 # Headers are included as "jobs/<name>.h", rooted at engine/.
