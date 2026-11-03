@@ -352,13 +352,24 @@ buttons, wheel, modifiers, keys, `W`. Phase 1's manual verification is
 complete; the only soft spot is that no live X11 check under a known
 non-US layout was recorded (`fr`/`de` covered by xkbcommon tests only).
 
-## Phase 2 (Job System) — planned, not started
+## Phase 2 (Job System) — in progress
 
 Plan verified and revised 2026-11-03: nine day files (Days 27-35) under
-`plans/phase-02-job-system/`, with design decisions D1-D9 settled in
+`plans/phase-02-job-system/`, design decisions D1-D9 settled in
 `plans/phase-02-job-system.md` (worker model A: main helps while
 waiting; logical-CPU participants, `ENGINE_JOB_THREADS` override;
-dedicated I/O thread; separate TSan build). Nothing implemented yet. The
-gate in `CLAUDE.md` is met (every day has its own committed file of
-specific sub-tasks with a Done condition).
+dedicated I/O thread; separate TSan build).
 
+Day 27 done: `engine/jobs/` static library (`jobs`, `jobs_asan`,
+`jobs_tsan`; headers included as `"jobs/<name>.h"`), `foundation_tsan`
+(a separate ThreadSanitizer build — TSan can't combine with ASan), and
+`FramePool` (`jobs/frame_pool.h`): size classes 128-2048 backed by
+foundation `PoolAllocator` behind a mutex, per-thread caches for the
+global instance, 16-byte block headers, a counted libc-`malloc` fallback
+(never null), and `Stats()`. Tests in `tests/jobs/` build three ways
+(`jobs_tests`, `jobs_tests_asan`, `jobs_tests_tsan`); `ctest -L tsan`
+runs the TSan set, including `tsan_canary_detects_race`, an
+expected-failure test that goes red if TSan stops detecting races. 137
+tests total, all green. Run: `cmake --build build && cd build && ctest`
+(add `-L tsan` for just the TSan set). Day 28 (Job coroutine type) is
+next.

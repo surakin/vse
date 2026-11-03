@@ -29,4 +29,6 @@ enable_testing()
 add_subdirectory(third_party/catch2)
 
 add_subdirectory(engine/foundation)
+add_subdirectory(engine/jobs)
 add_subdirectory(tests/foundation)
+add_subdirectory(tests/jobs)

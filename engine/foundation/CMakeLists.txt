@@ -103,3 +103,16 @@ target_link_libraries(foundation_asan PUBLIC PkgConfig::WaylandClient PkgConfig:
 add_executable(engine_main_asan main.cpp)
 target_compile_options(engine_main_asan PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_link_libraries(engine_main_asan PRIVATE foundation_asan)
+
+# Phase 2 Day 27: ThreadSanitizer variant. A separate build from the
+# ASan/UBSan one above because TSan cannot be combined with ASan. The
+# job system's lock-free code (Days 30-32) must be proven race-free under
+# this, and TSan only gives trustworthy answers when every library that
+# touches shared memory (including foundation) is instrumented too.
+add_library(foundation_tsan STATIC ${FOUNDATION_SOURCES})
+target_include_directories(foundation_tsan PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(foundation_tsan PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
+target_compile_options(foundation_tsan PUBLIC -fsanitize=thread -fno-omit-frame-pointer -g)
+target_link_options(foundation_tsan PUBLIC -fsanitize=thread)
+target_link_libraries(foundation_tsan PUBLIC ${CMAKE_DL_LIBS})
+target_link_libraries(foundation_tsan PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)
