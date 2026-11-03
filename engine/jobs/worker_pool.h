@@ -44,6 +44,8 @@ public:
     WorkerPool(const WorkerPool&) = delete;
     WorkerPool& operator=(const WorkerPool&) = delete;
 
+    void* User() const { return config_.user; }
+    WorkerFn WorkerFunction() const { return config_.worker_fn; }
     usize ParticipantCount() const { return count_; }
     usize SpawnedWorkerCount() const { return count_ - 1; }
     const Participant& GetParticipant(usize i) const;
