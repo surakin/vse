@@ -288,8 +288,7 @@ live keyboard/mouse and real close-button checks (Days 19-26), and
 `fr`/`de` through a live X server.
 
 **Phase 1 Days 13-26 done — Phase 1's planned days are complete**
-(modulo the human-verification items above). Phase 2 has not started;
-per CLAUDE.md it needs every day broken into committed day files first.
+(modulo the human-verification items above). Phase 2 has since been planned and implemented (see below).
 
 **Day 19 follow-up (found at the desk, 2026-11-03):** the Wayland window
 had no titlebar/title/close button on Plasma — KWin only draws
@@ -352,7 +351,7 @@ buttons, wheel, modifiers, keys, `W`. Phase 1's manual verification is
 complete; the only soft spot is that no live X11 check under a known
 non-US layout was recorded (`fr`/`de` covered by xkbcommon tests only).
 
-## Phase 2 (Job System) — in progress
+## Phase 2 (Job System) — COMPLETE (Days 27-35, 2026-11-03)
 
 Plan verified and revised 2026-11-03: nine day files (Days 27-35) under
 `plans/phase-02-job-system/`, design decisions D1-D9 settled in
@@ -371,7 +370,7 @@ global instance, 16-byte block headers, a counted libc-`malloc` fallback
 runs the TSan set, including `tsan_canary_detects_race`, an
 expected-failure test that goes red if TSan stops detecting races. 137
 tests total, all green. Run: `cmake --build build && cd build && ctest`
-(add `-L tsan` for just the TSan set). Day 28 (Job coroutine type) is DONE (high-effort review recorded in its day file); Day 29 (worker pool) is DONE (review recorded in its day file); Day 30 (work-stealing deque) is DONE (review recorded in its day file); Day 31 (scheduler) is DONE (review recorded in its day file); Day 32 (counter/await) is DONE (review recorded in its day file); Day 33 (fan-out/join) is DONE (review recorded in its day file); Day 34 (async I/O) is DONE (review recorded in its day file); Day 35 is next.
+(add `-L tsan` for just the TSan set). Day 28 (Job coroutine type) is DONE (high-effort review recorded in its day file); Day 29 (worker pool) is DONE (review recorded in its day file); Day 30 (work-stealing deque) is DONE (review recorded in its day file); Day 31 (scheduler) is DONE (review recorded in its day file); Day 32 (counter/await) is DONE (review recorded in its day file); Day 33 (fan-out/join) is DONE (review recorded in its day file); Day 34 (async I/O) is DONE (review recorded in its day file); Day 35 (stress & throughput) is DONE (review recorded in its day file). **Phase 2 is complete:** `Scheduler`, `Counter`, `parallel_for`, async file I/O, the Chase-Lev deque and frame pool pass the randomized-graph stress, skewed-load stealing (other participants verifiably execute stolen work), a scaling table (1.96x at N=2, 3.87x at N=4 here) and 10,000-run nested `co_await` ordering tests, clean under ASan and TSan. Phase 3 (RHI / Vulkan) has no day files yet, so it is not startable until they are written and committed (CLAUDE.md).
 
 **Code-review fixes (2026-11-03, `/code-review high a134e2c..HEAD`, 9
 findings):** (1) `WaylandPlatformWindow::PumpEvents` now checks every

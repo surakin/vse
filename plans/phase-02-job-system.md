@@ -15,6 +15,8 @@ thread/address sanitizers), work-stealing measurably improves throughput
 on skewed load, and a chained `co_await` async-I/O-style job resolves in
 the correct order.
 
+**Status: COMPLETE (2026-11-03)** — all of Days 27-35 implemented and reviewed.
+
 **Plan status:** revised 2026-11-03 after a verification pass (Day 27
 added; former Days 27-34 are now 28-35; design decisions below settled).
 

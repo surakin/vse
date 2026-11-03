@@ -515,6 +515,15 @@ that changed from the plan and why.)_
   thread design — see `plans/phase-02-job-system.md` "Design decisions".
   Also this day: removed the hand-rolled libc `mem*`/`strlen` overrides
   (assumption #2 amendment).
+- **2026-11-03 — Phase 2 (Job System) implemented, Days 27-35.** Worker
+  model A as planned (N-1 pinned workers + main helping in `HelpUntil`).
+  One deviation from the day files, recorded in Day 32: `Counter` uses a
+  single packed atomic word (waiter bit + count) instead of a separate
+  slot exchanged on both sides — the original sketch let the awaiter
+  destroy the Counter while a decrementer still touched it. Each day ended
+  with a `/code-review high` whose findings are recorded in the day files.
+  `FramePool` size classes were confirmed with real frame sizes (all fit
+  <=240 B). Phase 3 needs its day files before it can start.
 
 - **2026-11-03 — UI system added as a new Phase 6.** Found at the desk:
   no phase owned a GUI (only one bullet inside the last-but-one Editor
