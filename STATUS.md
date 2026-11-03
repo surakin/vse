@@ -333,3 +333,11 @@ and commits a matching buffer on every size change (also used for the
 initial map). New test drives a real compositor-initiated resize via
 `xdg_toplevel_set_maximized`. 115 tests green. Needs your re-check.
 
+**Desk check 2026-11-03 (cont.):** confirmed live — Wayland: pointer,
+buttons, scroll, keys, modifiers, close button; X11 backend: window,
+resize (fast), close. Wayland resize was functionally broken then slow;
+fixed by buffer re-allocation (`8aae284`) plus resize coalescing
+(`CommitPendingResize`, once per event pump) and a doubling-memcpy fill.
+**Still unconfirmed live:** Wayland resize after the fix, a second
+keyboard layout, X11 keyboard/mouse specifics.
+

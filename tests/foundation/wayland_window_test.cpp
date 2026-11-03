@@ -114,6 +114,7 @@ TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the
     for (int i = 0; i < 10 && window.Width() == original_width; ++i) {
         wl_display_roundtrip(conn.Display());
     }
+    REQUIRE(window.CommitPendingResize()); // size changed -> new buffer
     if (window.Width() == original_width) {
         SKIP("compositor did not resize the window on set_maximized");
     }
@@ -121,6 +122,8 @@ TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the
     for (int i = 0; i < 5; ++i) {
         wl_display_roundtrip(conn.Display());
     }
+    window.CommitPendingResize();
+    wl_display_roundtrip(conn.Display());
     REQUIRE(window.Valid());
     // The new buffer was attached and the compositor kept the connection.
     REQUIRE(wl_display_get_error(conn.Display()) == 0);

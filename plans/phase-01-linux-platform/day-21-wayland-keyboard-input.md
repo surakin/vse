@@ -14,7 +14,7 @@ new named dependency to flag/confirm explicitly.
   `PUBLIC` on `foundation`/`foundation_asan`.
 - [x] Call `wl_seat_get_keyboard` and install its listener (`keymap`,
   `enter`, `leave`, `key`, `modifiers`).
-- [ ] In the `keymap` callback, build an `xkb_context`
+- [x] In the `keymap` callback, build an `xkb_context`
   (`xkb_context_new`) and `xkb_keymap`
   (`xkb_keymap_new_from_string`/`_from_fd`) from the compositor-provided
   keymap, then an `xkb_state` from it. Wrapped in

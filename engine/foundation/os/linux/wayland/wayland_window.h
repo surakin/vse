@@ -49,6 +49,13 @@ public:
     // et al) to actually run for the underlying event to be observed.
     bool ShouldClose() const { return should_close_; }
 
+    // If a configure changed the size since the last call, allocates and
+    // commits a buffer of the new size (the window doesn't actually resize
+    // until this happens). Coalesces a burst of configures — e.g. an
+    // interactive drag — into one buffer. Returns true if it committed.
+    // The event pump calls this after dispatching.
+    bool CommitPendingResize();
+
     wl_surface* Surface() const { return surface_; }
     xdg_surface* XdgSurface() const { return xdg_surface_; }
     xdg_toplevel* XdgToplevel() const { return xdg_toplevel_; }
@@ -105,6 +112,7 @@ private:
     // pending state and the surface configure is what's actually acked.
     u32 pending_width_ = 0;
     u32 pending_height_ = 0;
+    bool buffer_stale_ = false;
     bool should_close_ = false;
 };
 

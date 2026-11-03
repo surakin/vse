@@ -16,13 +16,14 @@
   `WaylandInput::Init` now takes an `InputState*`.
 - [x] Update `InputState` from the `motion` (position), `button`
   (bitmask), and `axis` (scroll delta) callbacks.
-- [ ] Manually move the mouse, click each button, and scroll over the
+- [x] Manually move the mouse, click each button, and scroll over the
   window; verify `InputState` reflects each accurately via a debug log
   or on-screen readout. **Not done** — no way to drive a real pointer in
   this remote session. The debug readout lands in Day 23's `main.cpp`
   wiring; left unchecked until confirmed live. Automated coverage:
   `InputState` defaults/`BeginFrame` and `WaylandInput::Init` against
   the real compositor (93 tests green).
+  **Confirmed live at the desk 2026-11-03** (position, enter/leave, buttons, scroll all read correctly in the `input:` readout; Wayland/Plasma).
 - [x] Commit.
 
 **Done:** an `InputState` struct accurately reflects live mouse

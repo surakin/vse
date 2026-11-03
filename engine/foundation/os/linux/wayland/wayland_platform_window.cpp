@@ -62,6 +62,7 @@ void WaylandPlatformWindow::PumpEvents() {
         wl_display_cancel_read(display);
     }
     wl_display_dispatch_pending(display);
+    window_.CommitPendingResize();
 }
 
 } // namespace engine_placeholder::os::wayland

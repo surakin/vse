@@ -19,7 +19,7 @@ internal `Window` interface this reuses/implements against.
   connection outright.
 - [x] Handle `Expose`, `ConfigureNotify` (resize — log new dimensions),
   and `ClientMessage` (check for `WM_DELETE_WINDOW`, exit cleanly).
-- [ ] Build and run under an X11 session/Xwayland; visually confirm a
+- [x] Build and run under an X11 session/Xwayland; visually confirm a
   window appears, resize it and confirm dimensions log, close it via
   the WM and confirm clean exit. **Partially done.** Implemented as
   `os::x11::X11Window` (`os/linux/x11/`); `engine_main --backend=x11`
@@ -33,6 +33,7 @@ internal `Window` interface this reuses/implements against.
   done:** eyeballing the window and clicking the WM's real close button
   (no screen access in this session). Resize logging is `Info`-level on
   `LogPlatform` (hidden by the default `Warn`), same as Wayland's.
+  **Confirmed live at the desk 2026-11-03** (window appears, resize works and is fast, close works, via `ENGINE_WINDOW_BACKEND=x11`).
 - [x] Commit.
 
 **Done:** a window appears, resizing logs new dimensions, WM close

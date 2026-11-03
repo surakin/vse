@@ -19,15 +19,17 @@ Ties the primary backend together into one working milestone.
   dispatching; no hangs) for an extended run. 20s run on the live KDE
   compositor: 1196 frames, max delta 16.77ms, exit 0; 8s
   `engine_main_asan` run clean.
-- [ ] Confirm keyboard and mouse input update `InputState` while the
+- [x] Confirm keyboard and mouse input update `InputState` while the
   window has focus. **Not done** — needs a human at the keyboard/mouse
   (no input-injection tool available in this session). Run
   `engine_main --run-seconds=60` and watch the `input:` lines.
-- [ ] Confirm the compositor's close affordance exits the process
+  **Confirmed live at the desk 2026-11-03** (keys, `W`, modifiers, mouse position/buttons/scroll).
+- [x] Confirm the compositor's close affordance exits the process
   cleanly (no hang, no crash, exit code 0). **Not done** — same reason;
   the timed-out path exits 0 and the close path is wired
   (`ShouldClose()` → loop break → normal return), but no real close was
   triggered.
+  **Confirmed live at the desk 2026-11-03** (titlebar close button exits the process).
 - [x] Commit.
 
 **Done:** window opens, stays responsive, closes cleanly under Wayland.

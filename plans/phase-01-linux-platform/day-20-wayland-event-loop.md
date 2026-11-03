@@ -45,7 +45,11 @@
   and a full 6s `engine_main_asan` run against the live compositor
   (clean, no ASan errors, steady ~16.7ms frame deltas) — neither
   exercises an actual resize or a real close-button click. Leaving
-  this unchecked until confirmed live.
+  this unchecked until confirmed live. **2026-11-03 desk check:** close
+  confirmed working; resize initially did *not* take effect (no buffer
+  re-allocation, fixed in `8aae284`) and was then slow (per-configure
+  realloc, coalesced + faster fill in the next commit). Resize stays
+  unchecked until the user re-confirms on Wayland.
 - [x] Commit.
 
 **Done:** resizing logs new dimensions; the compositor's close

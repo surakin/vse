@@ -1,6 +1,7 @@
 #include "os/linux/wayland/wayland_window.h"
 
 #include <sys/mman.h>
+#include <cstring>
 #include <unistd.h>
 
 #include "log/log.h"
@@ -82,10 +83,20 @@ bool MakeFilledBuffer(wl_shm* shm, u32 width, u32 height, wl_buffer*& out_buffer
     if (region.data == nullptr) {
         return false;
     }
+    // Fill by doubling: write one pixel, then copy the filled prefix over
+    // the rest in growing chunks (a few big memcpys instead of a per-
+    // pixel loop, which is painfully slow in unoptimized builds and ran
+    // on every resize configure).
     auto* pixels = static_cast<u32*>(region.data);
     usize pixel_count = static_cast<usize>(width) * height;
-    for (usize i = 0; i < pixel_count; ++i) {
-        pixels[i] = kPlaceholderFillColor;
+    if (pixel_count > 0) {
+        pixels[0] = kPlaceholderFillColor;
+        usize filled = 1;
+        while (filled < pixel_count) {
+            usize chunk = filled < pixel_count - filled ? filled : pixel_count - filled;
+            std::memcpy(pixels + filled, pixels, chunk * sizeof(u32));
+            filled += chunk;
+        }
     }
 
     wl_shm_pool* pool = wl_shm_create_pool(shm, region.fd, static_cast<int32_t>(shm_size));
@@ -223,6 +234,14 @@ bool WaylandWindow::ReplaceBuffer() {
     return true;
 }
 
+bool WaylandWindow::CommitPendingResize() {
+    if (!buffer_stale_) {
+        return false;
+    }
+    buffer_stale_ = false;
+    return ReplaceBuffer();
+}
+
 WaylandWindow::~WaylandWindow() {
     ReleaseAll();
 }
@@ -235,6 +254,7 @@ WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
       server_side_decorated_(other.server_side_decorated_),
       buffer_(other.buffer_),
       shm_(other.shm_),
+      buffer_stale_(other.buffer_stale_),
       shm_data_(other.shm_data_),
       shm_size_(other.shm_size_),
       width_(other.width_),
@@ -248,6 +268,7 @@ WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
     other.decoration_ = nullptr;
     other.server_side_decorated_ = false;
     other.buffer_ = nullptr;
+    other.buffer_stale_ = false;
     other.shm_data_ = nullptr;
     other.shm_size_ = 0;
     other.width_ = 0;
@@ -268,6 +289,7 @@ WaylandWindow& WaylandWindow::operator=(WaylandWindow&& other) noexcept {
         server_side_decorated_ = other.server_side_decorated_;
         buffer_ = other.buffer_;
         shm_ = other.shm_;
+        buffer_stale_ = other.buffer_stale_;
         shm_data_ = other.shm_data_;
         shm_size_ = other.shm_size_;
         width_ = other.width_;
@@ -281,6 +303,7 @@ WaylandWindow& WaylandWindow::operator=(WaylandWindow&& other) noexcept {
         other.decoration_ = nullptr;
         other.server_side_decorated_ = false;
         other.buffer_ = nullptr;
+        other.buffer_stale_ = false;
         other.shm_data_ = nullptr;
         other.shm_size_ = 0;
         other.width_ = 0;
@@ -341,8 +364,11 @@ void WaylandWindow::HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, 
         LogResize(new_width, new_height);
         // Once mapped, a size change needs a matching buffer (the initial
         // configure inside Create() has no buffer yet; Create() makes it).
+        // Deferred (CommitPendingResize) rather than done here: an
+        // interactive drag delivers a configure per pointer motion, and
+        // only the latest size is worth a new buffer.
         if (window->buffer_ != nullptr) {
-            window->ReplaceBuffer();
+            window->buffer_stale_ = true;
         }
     }
 }
@@ -394,6 +420,7 @@ void WaylandWindow::ReleaseAll() {
     }
     pending_width_ = 0;
     pending_height_ = 0;
+    buffer_stale_ = false;
     should_close_ = false;
 }
 
