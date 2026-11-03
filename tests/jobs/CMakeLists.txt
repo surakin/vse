@@ -5,6 +5,7 @@
 set(JOBS_TEST_SOURCES
   smoke_test.cpp
   frame_pool_test.cpp
+  job_test.cpp
 )
 
 find_package(Threads REQUIRED)

@@ -5,6 +5,7 @@
 # foundation variant so instrumentation is consistent end to end.
 set(JOBS_SOURCES
   frame_pool.cpp
+  job.cpp
 )
 
 # Headers are included as "jobs/<name>.h", rooted at engine/.

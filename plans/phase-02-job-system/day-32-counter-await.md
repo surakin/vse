@@ -49,3 +49,5 @@ that works from any thread without a "fixed dispatch worker".
 children have completed — 10,000 runs per configuration, no reordering
 — and the await/decrement race test shows exactly-once resumption over
 100,000 iterations, clean under TSan.
+
+- [ ] (from Day 28 review) The completion hook must not resume the waiting parent inline on the finishing job's stack: requeue it or use symmetric transfer, and test a deep continuation chain for stack growth.
