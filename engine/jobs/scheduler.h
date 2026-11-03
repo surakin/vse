@@ -65,6 +65,7 @@
 namespace engine_placeholder::jobs {
 
 class Counter;
+class IoThread;
 
 class Scheduler {
 public:
@@ -100,6 +101,10 @@ public:
     // also run by the destructor. Returns the number of queued handles
     // that were destroyed without running.
     usize Shutdown();
+
+    // The dedicated (non-participant) I/O thread, started with the
+    // scheduler and stopped by Shutdown() before the workers (Day 34).
+    IoThread& Io() { return *io_; }
 
     usize ParticipantCount() const { return pool_->ParticipantCount(); }
     const WorkerPool& Pool() const { return *pool_; }
@@ -151,6 +156,7 @@ private:
     usize count_ = 1;
     Lane* lanes_ = nullptr;
     WorkerPool* pool_ = nullptr;
+    IoThread* io_ = nullptr;
 
     // Injection queue (ring), guarded by injection_mutex_.
     std::mutex injection_mutex_;

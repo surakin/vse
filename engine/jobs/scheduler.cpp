@@ -2,6 +2,7 @@
 
 #include <thread>
 
+#include "jobs/async_io.h"
 #include "jobs/counter.h"
 #include "jobs/jobs_log.h"
 #include "log/assert.h"
@@ -29,10 +30,12 @@ Scheduler::Scheduler(const Config& config) {
     // The workers start running immediately and use lanes_/queues, which
     // are fully built above.
     pool_ = new WorkerPool(pc);
+    io_ = new IoThread();
 }
 
 Scheduler::~Scheduler() {
     Shutdown();
+    delete io_;
     delete pool_;
     delete[] lanes_;
 }
@@ -265,6 +268,9 @@ void Scheduler::WorkerLoop(Participant& self) {
 usize Scheduler::Shutdown() {
     if (shut_down_) return 0;
     shut_down_ = true;
+    // Drain the I/O thread first: in-flight reads finish and their
+    // continuations are scheduled while the workers still run.
+    io_->Shutdown();
     {
         std::lock_guard<std::mutex> lock(park_mutex_);
         shutdown_.store(true, std::memory_order_seq_cst);

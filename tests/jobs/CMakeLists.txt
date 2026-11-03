@@ -6,6 +6,7 @@ set(JOBS_TEST_SOURCES
   smoke_test.cpp
   frame_pool_test.cpp
   job_test.cpp
+  async_io_test.cpp
   parallel_for_test.cpp
   counter_test.cpp
   scheduler_test.cpp

@@ -9,6 +9,7 @@ set(JOBS_SOURCES
   topology.cpp
   worker_pool.cpp
   scheduler.cpp
+  async_io.cpp
 )
 
 # Headers are included as "jobs/<name>.h", rooted at engine/.

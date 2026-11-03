@@ -56,8 +56,9 @@ said who destroys the frame.
 pooled and that every frame (started, never-started, oversize) is freed
 exactly once; the completion hook fires exactly once per completed job.
 
-Compiler: GCC 16.2.1 (the build also emits clang-style diagnostics);
-`engine/jobs/job.cpp` compiles `job.h` with `-fno-exceptions -fno-rtti`
+Compiler: **clang++ 23.1.4** (`/usr/bin/clang++`, what CMake actually
+uses; an earlier version of this note wrongly said GCC 16.2.1 because
+`g++` happens to be installed too). `engine/jobs/job.cpp` compiles `job.h` with `-fno-exceptions -fno-rtti`
 and the coroutine machinery is accepted.
 
 ## Post-implementation code review (2026-11-03, `/code-review high`)
