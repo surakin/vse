@@ -352,3 +352,13 @@ buttons, wheel, modifiers, keys, `W`. Phase 1's manual verification is
 complete; the only soft spot is that no live X11 check under a known
 non-US layout was recorded (`fr`/`de` covered by xkbcommon tests only).
 
+## Phase 2 (Job System) — planned, not started
+
+Plan verified and revised 2026-11-03: nine day files (Days 27-35) under
+`plans/phase-02-job-system/`, with design decisions D1-D9 settled in
+`plans/phase-02-job-system.md` (worker model A: main helps while
+waiting; logical-CPU participants, `ENGINE_JOB_THREADS` override;
+dedicated I/O thread; separate TSan build). Nothing implemented yet. The
+gate in `CLAUDE.md` is met (every day has its own committed file of
+specific sub-tasks with a Done condition).
+

@@ -499,3 +499,12 @@ PLAN.md
 
 _(Append dated entries here as phases/milestones complete, noting anything
 that changed from the plan and why.)_
+
+- **2026-11-03 — Phase 2 plan revised after verification.** Added Day 27
+  (jobs library, TSan target, thread-safe frame pool); former Days 27-34
+  are now 28-35. Settled worker model A (main helps while waiting),
+  logical-CPU participant count with `ENGINE_JOB_THREADS` override, job
+  ownership/completion rules, injection queue, counter protocol, and I/O
+  thread design — see `plans/phase-02-job-system.md` "Design decisions".
+  Also this day: removed the hand-rolled libc `mem*`/`strlen` overrides
+  (assumption #2 amendment).
