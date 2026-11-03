@@ -62,10 +62,13 @@ here first if implementation proves one wrong.
   `Counter`. Coroutine bodies take state by value/pointer; never
   capture-by-reference lambdas.
 - **D3 — Frame allocation.** Foundation's `PoolAllocator` is
-  single-threaded, fixed-size, and returns `nullptr` when full, so jobs
-  use a dedicated `FramePool`: a few size classes, a mutex-guarded
-  central pool, per-thread caches, and a counted libc-`malloc` fallback
-  for oversize/exhausted cases (never `nullptr`).
+  single-threaded, fixed-size, returns `nullptr` when full, and commits
+  its whole slab on construction, so jobs use a dedicated `FramePool`: a
+  few size classes, each an up-front *reserved* (uncommitted) slab handed
+  out by bump pointer + an intrusive free list behind a central mutex,
+  per-thread caches (late frees after a thread's cache is destroyed fall
+  back to the central pool), and a counted libc-`malloc` fallback for
+  oversize/exhausted cases (never `nullptr`).
 - **D4 — Idle strategy.** Workers try own deque → injection queue →
   bounded random steals, back off with `yield()` for a bounded number of
   rounds, then park on a condition variable; `Submit` wakes a parked

@@ -187,6 +187,16 @@ public:
         Send(window, reinterpret_cast<XEvent&>(e), press ? ButtonPressMask : ButtonReleaseMask);
     }
 
+    void SendFocusOut(unsigned long window, int mode, int detail) {
+        XFocusChangeEvent e = {};
+        e.type = FocusOut;
+        e.display = display_;
+        e.window = window;
+        e.mode = mode;
+        e.detail = detail;
+        Send(window, reinterpret_cast<XEvent&>(e), FocusChangeMask);
+    }
+
     void Motion(unsigned long window, int x, int y) {
         XMotionEvent e = {};
         e.type = MotionNotify;
@@ -214,10 +224,34 @@ void PumpFor(X11Window& window, InputState* input, int iterations = 20) {
     }
 }
 
+// Creates a window and lets the desktop's own focus churn finish before a
+// test injects input. A real window manager sends FocusIn/FocusOut around
+// window creation (and when a previous test's window disappears); a real
+// FocusOut legitimately clears held keys and modifiers, so injecting
+// before it lands makes input tests flaky. Wait until the window is
+// viewable, then drain events for a quiet period.
+X11Window CreateSettled(const char* title, engine_placeholder::u32 w, engine_placeholder::u32 h) {
+    X11Window window = X11Window::Create(title, w, h);
+    if (!window.Valid()) {
+        return window;
+    }
+    Display* display = static_cast<Display*>(window.NativeDisplay());
+    PumpUntil(window, [&] {
+        XWindowAttributes attrs;
+        return XGetWindowAttributes(display, window.NativeWindow(), &attrs) != 0 && attrs.map_state == IsViewable;
+    });
+    InputState discard;
+    for (int i = 0; i < 40; ++i) { // ~200ms of quiet
+        window.PumpEvents(&discard);
+        engine_placeholder::os::SleepNanos(5'000'000);
+    }
+    return window;
+}
+
 } // namespace
 
 TEST_CASE("X11Window translates key press/release into Key via the server's keymap", "[x11][input][os]") {
-    X11Window window = X11Window::Create("key test", 320, 240);
+    X11Window window = CreateSettled("key test", 320, 240);
     REQUIRE(window.Valid());
     Injector inj;
     REQUIRE(inj.Valid());
@@ -249,7 +283,7 @@ TEST_CASE("X11Window translates key press/release into Key via the server's keym
 }
 
 TEST_CASE("X11Window releases the Key a code was pressed as even if modifiers changed", "[x11][input][os]") {
-    X11Window window = X11Window::Create("held key test", 320, 240);
+    X11Window window = CreateSettled("held key test", 320, 240);
     REQUIRE(window.Valid());
     Injector inj;
     REQUIRE(inj.Valid());
@@ -269,7 +303,7 @@ TEST_CASE("X11Window releases the Key a code was pressed as even if modifiers ch
 }
 
 TEST_CASE("X11Window maps event state bits to engine modifiers", "[x11][input][os]") {
-    X11Window window = X11Window::Create("mods test", 320, 240);
+    X11Window window = CreateSettled("mods test", 320, 240);
     REQUIRE(window.Valid());
     Injector inj;
     REQUIRE(inj.Valid());
@@ -285,7 +319,7 @@ TEST_CASE("X11Window maps event state bits to engine modifiers", "[x11][input][o
 
 TEST_CASE("X11Window mirrors pointer position, buttons and scroll into InputState", "[x11][input][os]") {
     using namespace engine_placeholder::os;
-    X11Window window = X11Window::Create("pointer test", 320, 240);
+    X11Window window = CreateSettled("pointer test", 320, 240);
     REQUIRE(window.Valid());
     Injector inj;
     REQUIRE(inj.Valid());
@@ -330,7 +364,7 @@ TEST_CASE("X11Window mirrors pointer position, buttons and scroll into InputStat
 }
 
 TEST_CASE("X11Window input events are ignored (no crash) when no InputState is supplied", "[x11][input][os]") {
-    X11Window window = X11Window::Create("no input state", 320, 240);
+    X11Window window = CreateSettled("no input state", 320, 240);
     REQUIRE(window.Valid());
     Injector inj;
     REQUIRE(inj.Valid());
@@ -352,7 +386,7 @@ TEST_CASE("X11Window yields layout-correct Keys for physical keycodes (needs ENG
     if (layout == nullptr) {
         SKIP("ENGINE_X11_TEST_LAYOUT not set");
     }
-    X11Window window = X11Window::Create("layout test", 320, 240);
+    X11Window window = CreateSettled("layout test", 320, 240);
     REQUIRE(window.Valid());
     Injector inj;
     REQUIRE(inj.Valid());
@@ -378,4 +412,35 @@ TEST_CASE("X11Window yields layout-correct Keys for physical keycodes (needs ENG
         PumpFor(window, &input);
         CHECK_FALSE(input.keyboard.IsDown(expected));
     }
+}
+
+TEST_CASE("X11Window releases keys and modifiers on a real focus loss but not during WM grabs",
+          "[x11][input][os]") {
+    using namespace engine_placeholder::os;
+    X11Window window = CreateSettled("focus test", 320, 240);
+    REQUIRE(window.Valid());
+    Injector inj;
+    REQUIRE(inj.Valid());
+    InputState input;
+
+    unsigned int code = XKeysymToKeycode(inj.Dpy(), XK_w);
+    REQUIRE(code != 0);
+    inj.Key(window.NativeWindow(), code, ControlMask, true);
+    PumpFor(window, &input);
+    REQUIRE(input.keyboard.IsDown(Key::W));
+    REQUIRE((input.keyboard.modifiers & kModCtrl) != 0);
+
+    // Alt-Tab style transient grab: keys are still physically held.
+    inj.SendFocusOut(window.NativeWindow(), NotifyGrab, NotifyAncestor);
+    inj.SendFocusOut(window.NativeWindow(), NotifyWhileGrabbed, NotifyAncestor);
+    inj.SendFocusOut(window.NativeWindow(), NotifyNormal, NotifyInferior);
+    PumpFor(window, &input);
+    REQUIRE(input.keyboard.IsDown(Key::W));
+    REQUIRE((input.keyboard.modifiers & kModCtrl) != 0);
+
+    // Genuine focus loss: releases would be missed, so clear everything.
+    inj.SendFocusOut(window.NativeWindow(), NotifyNormal, NotifyNonlinear);
+    PumpFor(window, &input);
+    REQUIRE_FALSE(input.keyboard.IsDown(Key::W));
+    REQUIRE(input.keyboard.modifiers == 0);
 }

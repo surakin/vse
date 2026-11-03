@@ -1,6 +1,8 @@
 #include <atomic>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
+#include <unistd.h>
 #include <thread>
 #include <vector>
 
@@ -232,4 +234,62 @@ TEST_CASE("FramePool survives 8-thread cross-thread alloc/free churn with no ove
     REQUIRE(after.Live() == before.Live());
     REQUIRE(after.TotalPooledAllocs() > before.TotalPooledAllocs());
     REQUIRE(after.fallback_allocs > before.fallback_allocs); // 3000-byte requests exercised the fallback
+}
+
+TEST_CASE("FramePool does not commit slab memory until blocks are used", "[jobs][framepool]") {
+    // Reserve a pool with a large slab and allocate one block: resident
+    // set size must stay far below the slab size. (The old PoolAllocator-
+    // backed design wrote a link into every slot on first use, committing
+    // the whole slab under the central lock.)
+    auto resident_kb = [] {
+        FILE* f = std::fopen("/proc/self/statm", "r");
+        long total = 0, resident = 0;
+        if (f != nullptr) {
+            if (std::fscanf(f, "%ld %ld", &total, &resident) != 2) resident = 0;
+            std::fclose(f);
+        }
+        return resident * (sysconf(_SC_PAGESIZE) / 1024);
+    };
+    FramePool::Config c;
+    for (usize i = 0; i < FramePool::kClassCount; ++i) c.slots_per_class[i] = 0;
+    c.slots_per_class[4] = 65536; // 128 MiB of 2 KiB blocks
+    long before = resident_kb();
+    FramePool pool(c);
+    void* p = pool.Allocate(1500);
+    long after = resident_kb();
+    REQUIRE(p != nullptr);
+    REQUIRE(pool.GetStats().pooled_allocs[4] == 1);
+    REQUIRE(after - before < 8 * 1024); // < 8 MiB of the 128 MiB slab
+    pool.Deallocate(p);
+}
+
+TEST_CASE("FramePool: a free after the thread's cache was destroyed still reaches the central pool",
+          "[jobs][framepool]") {
+    FramePool& pool = FramePool::Global();
+    const usize cls = 1; // 256-byte blocks
+    // Quiesce: other tests' threads have exited and flushed their caches.
+    const usize available_before = pool.CentralAvailableForTesting(cls);
+    const FramePool::Stats before = pool.GetStats();
+
+    std::thread t([&] {
+        // Constructed first => destroyed LAST. Its destructor runs after
+        // the FramePool's per-thread cache has already been destroyed.
+        struct LateFree {
+            FramePool* pool;
+            void* block = nullptr;
+            ~LateFree() {
+                if (block != nullptr) pool->Deallocate(block); // late free
+                void* again = pool->Allocate(200);              // late alloc
+                pool->Deallocate(again);
+            }
+        };
+        thread_local LateFree late{&pool};
+        late.block = pool.Allocate(200); // first pool use => cache constructed after `late`
+    });
+    t.join();
+
+    const FramePool::Stats after = pool.GetStats();
+    REQUIRE(after.Live() == before.Live());
+    // Nothing stranded: every block that left the central pool came back.
+    REQUIRE(pool.CentralAvailableForTesting(cls) == available_before);
 }

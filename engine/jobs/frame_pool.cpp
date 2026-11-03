@@ -3,6 +3,7 @@
 #include <cstdlib>
 
 #include "log/assert.h"
+#include "os/os.h"
 
 namespace engine_placeholder::jobs {
 
@@ -42,6 +43,18 @@ FramePool::FramePool(const Config& config) : config_(config) {
         ENGINE_ASSERT(g_thread_cached_pool_exists.compare_exchange_strong(expected, true),
                       "FramePool: only one pool per process may use thread caches");
     }
+    // Reserve every slab now: it only claims address space, so there is
+    // nothing to stall on later. A failed reservation leaves that class
+    // with zero slots and every request falls back to malloc.
+    for (usize c = 0; c < kClassCount; ++c) {
+        usize slots = config_.slots_per_class[c];
+        if (slots == 0) continue;
+        void* mem = os::ReserveMemory(slots * kBlockSizes[c]);
+        if (mem != nullptr) {
+            classes_[c].base = static_cast<unsigned char*>(mem);
+            classes_[c].slots = slots;
+        }
+    }
 }
 
 FramePool::~FramePool() {
@@ -51,9 +64,9 @@ FramePool::~FramePool() {
         FlushCache(t_cache);
         t_cache.owner = nullptr;
     }
-    for (usize i = 0; i < kClassCount; ++i) {
-        if (pool_constructed_[i]) {
-            reinterpret_cast<PoolAllocator*>(pool_storage_[i])->~PoolAllocator();
+    for (usize c = 0; c < kClassCount; ++c) {
+        if (classes_[c].base != nullptr) {
+            os::ReleaseMemory(classes_[c].base, classes_[c].slots * kBlockSizes[c]);
         }
     }
     if (config_.thread_caches) {
@@ -79,22 +92,33 @@ int FramePool::ClassForRequest(usize size) {
     return -1;
 }
 
-PoolAllocator& FramePool::PoolForLocked(usize class_index) {
-    if (!pool_constructed_[class_index]) {
-        new (pool_storage_[class_index]) PoolAllocator(kBlockSizes[class_index], config_.slots_per_class[class_index]);
-        pool_constructed_[class_index] = true;
+void* FramePool::CentralPopLocked(usize class_index) {
+    ClassState& cs = classes_[class_index];
+    if (cs.free_list != nullptr) {
+        void* block = cs.free_list;
+        cs.free_list = *static_cast<void**>(block);
+        return block;
     }
-    return *reinterpret_cast<PoolAllocator*>(pool_storage_[class_index]);
+    if (cs.next_unused < cs.slots) {
+        return cs.base + (cs.next_unused++) * kBlockSizes[class_index];
+    }
+    return nullptr;
 }
 
-void* FramePool::CentralAlloc(usize class_index) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    return PoolForLocked(class_index).Alloc();
+void FramePool::CentralPushLocked(usize class_index, void* block) {
+    ClassState& cs = classes_[class_index];
+    *static_cast<void**>(block) = cs.free_list;
+    cs.free_list = block;
 }
 
-void FramePool::CentralFree(usize class_index, void* block) {
+usize FramePool::CentralAvailableForTesting(usize class_index) {
     std::lock_guard<std::mutex> lock(mutex_);
-    PoolForLocked(class_index).Free(block);
+    ClassState& cs = classes_[class_index];
+    usize n = cs.slots - cs.next_unused;
+    for (void* b = cs.free_list; b != nullptr; b = *static_cast<void**>(b)) {
+        ++n;
+    }
+    return n;
 }
 
 void* FramePool::AllocateFallback(usize size) {
@@ -116,16 +140,15 @@ void* FramePool::Allocate(usize size) {
     usize c = static_cast<usize>(cls);
 
     void* block = nullptr;
-    if (config_.thread_caches) {
-        ThreadCache& cache = t_cache;
+    ThreadCache& cache = t_cache;
+    if (config_.thread_caches && !cache.destroyed) {
         ENGINE_ASSERT(cache.owner == nullptr || cache.owner == this, "FramePool: thread cache belongs to another pool");
         cache.owner = this;
         if (cache.head[c] == nullptr) {
             // Refill a batch from the central pool under one lock.
             std::lock_guard<std::mutex> lock(mutex_);
-            PoolAllocator& pool = PoolForLocked(c);
             for (u32 i = 0; i < kRefillBatch; ++i) {
-                void* b = pool.Alloc();
+                void* b = CentralPopLocked(c);
                 if (b == nullptr) break;
                 *static_cast<void**>(b) = cache.head[c];
                 cache.head[c] = b;
@@ -138,7 +161,10 @@ void* FramePool::Allocate(usize size) {
             --cache.count[c];
         }
     } else {
-        block = CentralAlloc(c);
+        // Uncached pool, or a late allocation after this thread's cache
+        // was destroyed: straight to the central pool.
+        std::lock_guard<std::mutex> lock(mutex_);
+        block = CentralPopLocked(c);
     }
 
     if (block == nullptr) {
@@ -168,11 +194,12 @@ void FramePool::Deallocate(void* ptr) {
     ENGINE_ASSERT(cls < kClassCount, "FramePool::Deallocate: corrupt header");
     pooled_frees_[cls].fetch_add(1, std::memory_order_relaxed);
 
-    if (!config_.thread_caches) {
-        CentralFree(cls, block);
+    ThreadCache& cache = t_cache;
+    if (!config_.thread_caches || cache.destroyed) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        CentralPushLocked(cls, block);
         return;
     }
-    ThreadCache& cache = t_cache;
     ENGINE_ASSERT(cache.owner == nullptr || cache.owner == this, "FramePool: thread cache belongs to another pool");
     cache.owner = this;
     *static_cast<void**>(block) = cache.head[cls];
@@ -180,12 +207,11 @@ void FramePool::Deallocate(void* ptr) {
     ++cache.count[cls];
     if (cache.count[cls] > kSpillThreshold) {
         std::lock_guard<std::mutex> lock(mutex_);
-        PoolAllocator& pool = PoolForLocked(cls);
         for (u32 i = 0; i < kSpillThreshold / 2; ++i) {
             void* b = cache.head[cls];
             cache.head[cls] = *static_cast<void**>(b);
             --cache.count[cls];
-            pool.Free(b);
+            CentralPushLocked(cls, b);
         }
     }
 }
@@ -197,7 +223,7 @@ void FramePool::FlushCache(ThreadCache& cache) {
             void* b = cache.head[c];
             cache.head[c] = *static_cast<void**>(b);
             --cache.count[c];
-            PoolForLocked(c).Free(b);
+            CentralPushLocked(c, b);
         }
     }
 }
@@ -209,6 +235,7 @@ FramePool::ThreadCache::~ThreadCache() {
         owner->FlushCache(*this);
         owner = nullptr;
     }
+    destroyed = true;
 }
 
 FramePool::Stats FramePool::GetStats() const {

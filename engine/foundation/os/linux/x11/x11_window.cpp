@@ -294,8 +294,16 @@ void X11Window::PumpEvents(InputState* input) {
             }
             break;
         case FocusOut:
-            // Releases won't be seen while unfocused; don't stick keys.
-            ReleaseAllKeys(input);
+            // Only a real loss of keyboard focus means we will miss the
+            // releases. WMs also generate FocusOut with mode
+            // NotifyGrab/NotifyWhileGrabbed for transient keyboard grabs
+            // (Alt-Tab, menus), followed by a FocusIn when the grab ends —
+            // the keys are still physically held then — and
+            // NotifyInferior is focus moving between our own windows.
+            if (event.xfocus.mode != NotifyGrab && event.xfocus.mode != NotifyWhileGrabbed &&
+                event.xfocus.detail != NotifyInferior) {
+                ReleaseAllKeys(input);
+            }
             break;
         default:
             break;
@@ -309,6 +317,9 @@ void X11Window::ReleaseAllKeys(InputState* input) {
     }
     if (input != nullptr) {
         input->keyboard.ReleaseAll();
+        // Modifier releases happen elsewhere too; don't leave Ctrl etc.
+        // latched in the mask until the next input event rewrites it.
+        input->keyboard.modifiers = 0;
     }
 }
 

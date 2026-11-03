@@ -39,8 +39,11 @@ freed on another). See the phase file's "Design decisions" **D3**.
   process exits 66.
 - [x] Implement `FramePool` in `/engine/jobs/frame_pool.h`/`.cpp`:
   fixed size classes (128, 256, 512, 1024, 2048 bytes — revisit in Day 35
-  with real frame sizes) each backed by foundation `PoolAllocator`
-  slabs behind a central `std::mutex`, plus a **per-thread cache** (an
+  with real frame sizes) each an up-front **reserved** slab (bump
+  pointer + intrusive free list of returned blocks) behind a central
+  `std::mutex` — *revised after code review*: the first version used
+  foundation's `PoolAllocator`, whose constructor touches every slot and
+  so committed ~10 MB under the lock on first use, plus a **per-thread cache** (an
   intrusive free list per class, no synchronization; **only the
   process-wide `FramePool::Global()` uses them** — a thread cache is keyed
   to one pool, asserted — local pools used by tests are central-only) that refills from /
@@ -73,3 +76,17 @@ freed on another). See the phase file's "Design decisions" **D3**.
 canary is confirmed to fail under TSan; and `FramePool` survives the
 8-thread cross-thread alloc/free churn clean under both sanitizers, with
 its stats showing pooled allocations and exercised fallbacks.
+
+## Post-implementation code review (2026-11-03, `/code-review high`)
+
+Two findings landed on this day's code and were fixed: (a) lazy
+`PoolAllocator` construction committed the whole slab under the central
+lock on the job hot path — slabs are now reserved eagerly without being
+touched (test checks RSS stays low after one allocation); (b) a free or
+alloc running after the thread's `ThreadCache` was destroyed (unspecified
+thread_local destructor order) stranded the block in a dead cache — the
+cache now has a `destroyed` flag and late operations go straight to the
+central pool (test uses a `thread_local` constructed before the pool's
+cache so it is destroyed after it; verified the test fails without the
+fix). Also: the TSan canary now requires TSan's data-race report instead
+of a bare `WILL_FAIL`.

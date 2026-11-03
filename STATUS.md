@@ -386,7 +386,14 @@ tracked maximized/fullscreen/tiled states, and a failed resize-buffer
 allocation is retried; (5) a failed `WaylandPlatformWindow::Open` now
 tears everything down (`Close()`, `WaylandInput::Shutdown()`); (8) the
 `buttons=`/`mods=` readout is real hex (`StringBuilder::AppendHex`).
-Findings 6, 7 (FramePool lazy-commit stall, late free after TLS
-destructor) and 9 (X11 FocusOut during grabs) are in the following
-commits.
+(9) X11 `FocusOut` now ignores the spurious grab-mode events WMs send
+during Alt-Tab/menus (`NotifyGrab`/`NotifyWhileGrabbed`/`NotifyInferior`)
+and a real focus loss also resets the modifier mask; (6) `FramePool`
+slabs are reserved up front and handed out by bump pointer + free list
+(no more committing ~10 MB under the lock on first use; foundation
+`PoolAllocator` no longer used); (7) `ThreadCache::destroyed` makes late
+frees/allocs after a thread's cache is gone go straight to the central
+pool (test verified to fail without the fix). X11 input tests now wait
+for the WM's own focus churn to settle before injecting (40/40 clean
+runs). 148 tests green.
 

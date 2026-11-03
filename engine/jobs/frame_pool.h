@@ -2,9 +2,7 @@
 
 #include <atomic>
 #include <mutex>
-#include <new>
 
-#include "mem/pool_allocator.h"
 #include "types.h"
 
 // Phase 2 Day 27 (design decision D3): the allocator behind coroutine
@@ -13,8 +11,13 @@
 // one thread and freed on another, vary in size, and `operator new` must
 // not return null. So:
 //
-//   * a few size classes, each backed lazily by a foundation
-//     PoolAllocator behind one central mutex;
+//   * a few size classes, each a slab reserved up front (address space
+//     only — pages are committed as they are first touched) and handed
+//     out by a bump pointer plus an intrusive free list of returned
+//     blocks, behind one central mutex. (Foundation's PoolAllocator is
+//     not used: its constructor writes a free-list link into every slot,
+//     committing the whole slab at first use, on the hot path, while
+//     holding the central lock.)
 //   * an optional per-thread cache (intrusive free list per class, no
 //     synchronization) that refills from / spills to the central pool in
 //     batches — a block freed on a different thread than it was
@@ -64,6 +67,13 @@ public:
         FramePool* owner = nullptr;
         void* head[kClassCount] = {};
         u32 count[kClassCount] = {};
+        // Set by the destructor at thread exit. Thread-local destructors
+        // run in unspecified order, so another one (or a static
+        // destructor on the main thread) may still free a frame after
+        // this cache is gone; such late allocations/frees must bypass
+        // the cache and go straight to the central pool, or the block
+        // would sit in a dead cache forever.
+        bool destroyed = false;
         ~ThreadCache();
     };
 
@@ -81,6 +91,12 @@ public:
     void Deallocate(void* ptr);
 
     Stats GetStats() const;
+
+    // Blocks the central pool could still hand out for `class_index`
+    // (returned blocks plus never-used slab slots). Testing aid: after all
+    // frames are freed and all caches flushed this equals the class's slot
+    // count, so a shortfall is a leaked block.
+    usize CentralAvailableForTesting(usize class_index);
 
     // The process-wide pool used by Job frames: default Config with
     // thread caches on. Created on first use and intentionally never
@@ -105,16 +121,23 @@ private:
 
     static int ClassForRequest(usize size);
 
-    PoolAllocator& PoolForLocked(usize class_index); // central mutex held
+    // Central pool operations; the first two require mutex_ held.
+    void* CentralPopLocked(usize class_index);
+    void CentralPushLocked(usize class_index, void* block);
     void* AllocateFallback(usize size);
-    void* CentralAlloc(usize class_index);
-    void CentralFree(usize class_index, void* block);
     void FlushCache(ThreadCache& cache);
 
     Config config_;
     std::mutex mutex_;
-    alignas(PoolAllocator) unsigned char pool_storage_[kClassCount][sizeof(PoolAllocator)];
-    bool pool_constructed_[kClassCount] = {};
+
+    // Per-class central state, guarded by mutex_.
+    struct ClassState {
+        unsigned char* base = nullptr; // slab start (nullptr = reservation failed)
+        usize slots = 0;
+        usize next_unused = 0; // bump index into the slab
+        void* free_list = nullptr; // returned blocks
+    };
+    ClassState classes_[kClassCount];
 
     std::atomic<u64> pooled_allocs_[kClassCount] = {};
     std::atomic<u64> pooled_frees_[kClassCount] = {};
