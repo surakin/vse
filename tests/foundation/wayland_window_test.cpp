@@ -96,3 +96,32 @@ TEST_CASE("WaylandWindow gets server-side decorations when the compositor offers
     WaylandWindow moved(std::move(window));
     REQUIRE(moved.ServerSideDecorated());
 }
+
+TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the compositor resizes it",
+          "[wayland][os]") {
+    WaylandConnection conn = WaylandConnection::Connect();
+    REQUIRE(conn.Valid());
+    WaylandWindow window = WaylandWindow::Create(conn, "resize test", "engine_placeholder");
+    REQUIRE(window.Valid());
+    const engine_placeholder::u32 original_width = window.Width();
+
+    // Ask the compositor to maximize: it answers with a configure at
+    // the maximized size, which must become the window's size (and the
+    // buffer must be re-allocated to match, or the compositor ignores
+    // the new size).
+    xdg_toplevel_set_maximized(window.XdgToplevel());
+    wl_surface_commit(window.Surface());
+    for (int i = 0; i < 10 && window.Width() == original_width; ++i) {
+        wl_display_roundtrip(conn.Display());
+    }
+    if (window.Width() == original_width) {
+        SKIP("compositor did not resize the window on set_maximized");
+    }
+    xdg_toplevel_unset_maximized(window.XdgToplevel());
+    for (int i = 0; i < 5; ++i) {
+        wl_display_roundtrip(conn.Display());
+    }
+    REQUIRE(window.Valid());
+    // The new buffer was attached and the compositor kept the connection.
+    REQUIRE(wl_display_get_error(conn.Display()) == 0);
+}

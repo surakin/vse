@@ -324,3 +324,12 @@ a specific key (`W=1`), a second keyboard layout, the close button,
 resize, and the X11 backend — Day 20-23 manual boxes stay unchecked
 until those are reported.
 
+**Desk fix 2026-11-03 (resize):** user confirmed buttons, scroll,
+modifiers, keys and `W` work live on Wayland; **resize did not.** Cause:
+the configure handler only logged the new size — per xdg-shell the
+window doesn't change size until a buffer of that size is attached, so
+KWin kept it at 1280x720. `WaylandWindow::ReplaceBuffer()` now allocates
+and commits a matching buffer on every size change (also used for the
+initial map). New test drives a real compositor-initiated resize via
+`xdg_toplevel_set_maximized`. 115 tests green. Needs your re-check.
+

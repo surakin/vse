@@ -85,6 +85,7 @@ private:
     // object's current address instead of a stale/moved-from one.
     void RebindEventListenerUserData();
 
+    bool ReplaceBuffer();
     void ReleaseAll();
 
     wl_surface* surface_ = nullptr;
@@ -93,6 +94,7 @@ private:
     zxdg_toplevel_decoration_v1* decoration_ = nullptr;
     bool server_side_decorated_ = false;
     wl_buffer* buffer_ = nullptr;
+    wl_shm* shm_ = nullptr; // not owned; the connection's
     void* shm_data_ = nullptr;
     usize shm_size_ = 0;
     u32 width_ = 0;
