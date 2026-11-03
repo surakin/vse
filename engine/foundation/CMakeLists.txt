@@ -14,6 +14,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/wayland/wayland_connection.cpp
     os/linux/wayland/wayland_window.cpp
     os/linux/wayland/generated/xdg-shell-protocol.c
+    os/linux/wayland/generated/xdg-decoration-protocol.c
   )
 
   # Day 18: libwayland-client, the reference Wayland client library

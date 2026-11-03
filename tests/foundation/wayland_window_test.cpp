@@ -80,3 +80,19 @@ TEST_CASE("WaylandWindow move construction/assignment transfers ownership withou
     REQUIRE(c.Valid());
     REQUIRE(c.Surface() == surface);
 }
+
+TEST_CASE("WaylandWindow gets server-side decorations when the compositor offers xdg-decoration",
+          "[wayland][os]") {
+    WaylandConnection conn = WaylandConnection::Connect();
+    REQUIRE(conn.Valid());
+    if (conn.DecorationManager() == nullptr) {
+        SKIP("compositor does not offer zxdg_decoration_manager_v1");
+    }
+    WaylandWindow window = WaylandWindow::Create(conn, "decoration test", "engine_placeholder");
+    REQUIRE(window.Valid());
+    REQUIRE(window.ServerSideDecorated());
+
+    // Survives a move (listener user data re-pointed).
+    WaylandWindow moved(std::move(window));
+    REQUIRE(moved.ServerSideDecorated());
+}

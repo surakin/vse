@@ -28,3 +28,18 @@ wayland-scanner private-code  /usr/share/wayland-protocols/stable/xdg-shell/xdg-
 
 Unmodified wayland-scanner output — no hand edits to either generated
 file.
+
+## xdg-decoration-unstable-v1 (added Day 19 follow-up)
+
+`xdg-decoration-client-protocol.h` / `xdg-decoration-protocol.c`,
+generated the same way from
+`/usr/share/wayland-protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml`
+(wayland-protocols 1.49, wayland-scanner 1.26.0), unmodified. Needed
+because KWin (Plasma) only draws a titlebar/close button/resize edges
+for clients that request server-side decorations through this
+protocol; without it the window is completely undecorated.
+
+```sh
+wayland-scanner client-header /usr/share/wayland-protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml xdg-decoration-client-protocol.h
+wayland-scanner private-code  /usr/share/wayland-protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml xdg-decoration-protocol.c
+```

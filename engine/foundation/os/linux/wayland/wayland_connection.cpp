@@ -36,6 +36,7 @@ struct RegistryState {
     xdg_wm_base* shell = nullptr;
     wl_seat* seat = nullptr;
     wl_shm* shm = nullptr;
+    zxdg_decoration_manager_v1* decoration_manager = nullptr; // optional
 };
 
 void HandleGlobal(void* data, wl_registry* registry, uint32_t name, const char* interface, uint32_t version) {
@@ -55,6 +56,10 @@ void HandleGlobal(void* data, wl_registry* registry, uint32_t name, const char* 
         LogBoundGlobal(interface, version);
     } else if (iface == StringView(wl_shm_interface.name)) {
         state->shm = static_cast<wl_shm*>(wl_registry_bind(registry, name, &wl_shm_interface, 1));
+        LogBoundGlobal(interface, version);
+    } else if (iface == StringView(zxdg_decoration_manager_v1_interface.name)) {
+        state->decoration_manager = static_cast<zxdg_decoration_manager_v1*>(
+            wl_registry_bind(registry, name, &zxdg_decoration_manager_v1_interface, 1));
         LogBoundGlobal(interface, version);
     }
     // Anything else advertised by the compositor isn't a global this
@@ -109,6 +114,9 @@ WaylandConnection WaylandConnection::Connect() {
         if (state.shm != nullptr) {
             wl_shm_destroy(state.shm);
         }
+        if (state.decoration_manager != nullptr) {
+            zxdg_decoration_manager_v1_destroy(state.decoration_manager);
+        }
         wl_registry_destroy(registry);
         wl_display_disconnect(display);
         return WaylandConnection();
@@ -121,6 +129,7 @@ WaylandConnection WaylandConnection::Connect() {
     conn.xdg_wm_base_ = state.shell;
     conn.seat_ = state.seat;
     conn.shm_ = state.shm;
+    conn.decoration_manager_ = state.decoration_manager;
     return conn;
 }
 
@@ -134,13 +143,15 @@ WaylandConnection::WaylandConnection(WaylandConnection&& other) noexcept
       compositor_(other.compositor_),
       xdg_wm_base_(other.xdg_wm_base_),
       seat_(other.seat_),
-      shm_(other.shm_) {
+      shm_(other.shm_),
+      decoration_manager_(other.decoration_manager_) {
     other.display_ = nullptr;
     other.registry_ = nullptr;
     other.compositor_ = nullptr;
     other.xdg_wm_base_ = nullptr;
     other.seat_ = nullptr;
     other.shm_ = nullptr;
+    other.decoration_manager_ = nullptr;
 }
 
 WaylandConnection& WaylandConnection::operator=(WaylandConnection&& other) noexcept {
@@ -152,12 +163,14 @@ WaylandConnection& WaylandConnection::operator=(WaylandConnection&& other) noexc
         xdg_wm_base_ = other.xdg_wm_base_;
         seat_ = other.seat_;
         shm_ = other.shm_;
+        decoration_manager_ = other.decoration_manager_;
         other.display_ = nullptr;
         other.registry_ = nullptr;
         other.compositor_ = nullptr;
         other.xdg_wm_base_ = nullptr;
         other.seat_ = nullptr;
         other.shm_ = nullptr;
+        other.decoration_manager_ = nullptr;
     }
     return *this;
 }
@@ -178,6 +191,10 @@ void WaylandConnection::ReleaseAll() {
     if (shm_ != nullptr) {
         wl_shm_destroy(shm_);
         shm_ = nullptr;
+    }
+    if (decoration_manager_ != nullptr) {
+        zxdg_decoration_manager_v1_destroy(decoration_manager_);
+        decoration_manager_ = nullptr;
     }
     if (registry_ != nullptr) {
         wl_registry_destroy(registry_);

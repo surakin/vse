@@ -111,6 +111,20 @@ WaylandWindow WaylandWindow::Create(WaylandConnection& connection, StringView ti
     window.xdg_toplevel_ = toplevel;
     xdg_toplevel_add_listener(toplevel, &kXdgToplevelListener, &window);
 
+    // Ask for server-side decorations. Without this KWin draws no
+    // titlebar/close button/resize edges at all (the window is a bare
+    // surface). Optional: compositors without the protocol leave the
+    // window undecorated, and the mode actually granted is reported via
+    // the decoration's configure event (handled during the roundtrip
+    // below).
+    if (connection.DecorationManager() != nullptr) {
+        window.decoration_ = zxdg_decoration_manager_v1_get_toplevel_decoration(connection.DecorationManager(), toplevel);
+        if (window.decoration_ != nullptr) {
+            zxdg_toplevel_decoration_v1_add_listener(window.decoration_, &kDecorationListener, &window);
+            zxdg_toplevel_decoration_v1_set_mode(window.decoration_, ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+        }
+    }
+
     char title_buf[kMaxTitleBytes];
     ToCString(title, title_buf);
     xdg_toplevel_set_title(toplevel, title_buf);
@@ -185,6 +199,8 @@ WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
     : surface_(other.surface_),
       xdg_surface_(other.xdg_surface_),
       xdg_toplevel_(other.xdg_toplevel_),
+      decoration_(other.decoration_),
+      server_side_decorated_(other.server_side_decorated_),
       buffer_(other.buffer_),
       shm_data_(other.shm_data_),
       shm_size_(other.shm_size_),
@@ -196,6 +212,8 @@ WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
     other.surface_ = nullptr;
     other.xdg_surface_ = nullptr;
     other.xdg_toplevel_ = nullptr;
+    other.decoration_ = nullptr;
+    other.server_side_decorated_ = false;
     other.buffer_ = nullptr;
     other.shm_data_ = nullptr;
     other.shm_size_ = 0;
@@ -213,6 +231,8 @@ WaylandWindow& WaylandWindow::operator=(WaylandWindow&& other) noexcept {
         surface_ = other.surface_;
         xdg_surface_ = other.xdg_surface_;
         xdg_toplevel_ = other.xdg_toplevel_;
+        decoration_ = other.decoration_;
+        server_side_decorated_ = other.server_side_decorated_;
         buffer_ = other.buffer_;
         shm_data_ = other.shm_data_;
         shm_size_ = other.shm_size_;
@@ -224,6 +244,8 @@ WaylandWindow& WaylandWindow::operator=(WaylandWindow&& other) noexcept {
         other.surface_ = nullptr;
         other.xdg_surface_ = nullptr;
         other.xdg_toplevel_ = nullptr;
+        other.decoration_ = nullptr;
+        other.server_side_decorated_ = false;
         other.buffer_ = nullptr;
         other.shm_data_ = nullptr;
         other.shm_size_ = 0;
@@ -244,6 +266,9 @@ void WaylandWindow::RebindEventListenerUserData() {
     if (xdg_toplevel_ != nullptr) {
         wl_proxy_set_user_data(reinterpret_cast<wl_proxy*>(xdg_toplevel_), this);
     }
+    if (decoration_ != nullptr) {
+        wl_proxy_set_user_data(reinterpret_cast<wl_proxy*>(decoration_), this);
+    }
 }
 
 const xdg_surface_listener WaylandWindow::kXdgSurfaceListener = {
@@ -254,6 +279,19 @@ const xdg_toplevel_listener WaylandWindow::kXdgToplevelListener = {
     .configure = WaylandWindow::HandleToplevelConfigure,
     .close = WaylandWindow::HandleToplevelClose,
 };
+
+const zxdg_toplevel_decoration_v1_listener WaylandWindow::kDecorationListener = {
+    .configure = WaylandWindow::HandleDecorationConfigure,
+};
+
+void WaylandWindow::HandleDecorationConfigure(void* data, zxdg_toplevel_decoration_v1* decoration, uint32_t mode) {
+    (void)decoration;
+    auto* window = static_cast<WaylandWindow*>(data);
+    window->server_side_decorated_ = mode == ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE;
+    Log(LogPlatform, LogVerbosity::Info,
+        window->server_side_decorated_ ? "Wayland: server-side decorations granted"
+                                       : "Wayland: client-side decorations (window is undecorated)");
+}
 
 void WaylandWindow::HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, uint32_t serial) {
     auto* window = static_cast<WaylandWindow*>(data);
@@ -297,6 +335,11 @@ void WaylandWindow::ReleaseAll() {
     if (buffer_ != nullptr) {
         wl_buffer_destroy(buffer_);
         buffer_ = nullptr;
+    }
+    if (decoration_ != nullptr) {
+        zxdg_toplevel_decoration_v1_destroy(decoration_);
+        decoration_ = nullptr;
+        server_side_decorated_ = false;
     }
     if (xdg_toplevel_ != nullptr) {
         xdg_toplevel_destroy(xdg_toplevel_);

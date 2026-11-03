@@ -290,3 +290,14 @@ live keyboard/mouse and real close-button checks (Days 19-26), and
 **Phase 1 Days 13-26 done — Phase 1's planned days are complete**
 (modulo the human-verification items above). Phase 2 has not started;
 per CLAUDE.md it needs every day broken into committed day files first.
+
+**Day 19 follow-up (found at the desk, 2026-11-03):** the Wayland window
+had no titlebar/title/close button on Plasma — KWin only draws
+decorations for clients that request them via `xdg-decoration`. Added
+`zxdg_decoration_manager_v1` bindings (generated + committed under
+`os/linux/wayland/generated/`, see `VENDORED.md`), an optional bind in
+`WaylandConnection`, and `WaylandWindow` now requests server-side mode
+(`ServerSideDecorated()` reports what the compositor granted). New test
+confirms KWin grants it (113 tests green). Needs your eyeball: titlebar
+with "re-engine" + working close/resize.
+

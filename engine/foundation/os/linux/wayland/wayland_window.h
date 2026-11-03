@@ -52,6 +52,10 @@ public:
     wl_surface* Surface() const { return surface_; }
     xdg_surface* XdgSurface() const { return xdg_surface_; }
     xdg_toplevel* XdgToplevel() const { return xdg_toplevel_; }
+    // True if the compositor agreed to draw the window's decorations
+    // (titlebar, close button, resize edges). False means undecorated
+    // (compositor lacks xdg-decoration, or chose client-side).
+    bool ServerSideDecorated() const { return server_side_decorated_; }
     u32 Width() const { return width_; }
     u32 Height() const { return height_; }
 
@@ -64,12 +68,14 @@ private:
     static void HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, int32_t width, int32_t height,
                                          wl_array* states);
     static void HandleToplevelClose(void* data, xdg_toplevel* toplevel);
+    static void HandleDecorationConfigure(void* data, zxdg_toplevel_decoration_v1* decoration, uint32_t mode);
 
     // Listener vtables. Static members (rather than anonymous-namespace
     // globals in the .cpp) so their initializers, which reference the
     // private handlers above, are in class-member context.
     static const xdg_surface_listener kXdgSurfaceListener;
     static const xdg_toplevel_listener kXdgToplevelListener;
+    static const zxdg_toplevel_decoration_v1_listener kDecorationListener;
 
     // Re-points the xdg_surface/xdg_toplevel proxies' stored listener
     // user-data at `this`. Wayland listener registration captures a
@@ -84,6 +90,8 @@ private:
     wl_surface* surface_ = nullptr;
     xdg_surface* xdg_surface_ = nullptr;
     xdg_toplevel* xdg_toplevel_ = nullptr;
+    zxdg_toplevel_decoration_v1* decoration_ = nullptr;
+    bool server_side_decorated_ = false;
     wl_buffer* buffer_ = nullptr;
     void* shm_data_ = nullptr;
     usize shm_size_ = 0;
