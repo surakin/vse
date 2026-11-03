@@ -30,5 +30,7 @@ add_subdirectory(third_party/catch2)
 
 add_subdirectory(engine/foundation)
 add_subdirectory(engine/jobs)
+add_subdirectory(tools/docgen)
 add_subdirectory(tests/foundation)
 add_subdirectory(tests/jobs)
+add_subdirectory(tests/docgen)
