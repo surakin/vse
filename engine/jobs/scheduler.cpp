@@ -2,6 +2,7 @@
 
 #include <thread>
 
+#include "jobs/counter.h"
 #include "jobs/jobs_log.h"
 #include "log/assert.h"
 
@@ -205,6 +206,10 @@ void Scheduler::HelpUntil(bool (*done)(void* user), void* user) {
             std::this_thread::yield();
         }
     }
+}
+
+void Scheduler::HelpUntil(Counter& counter) {
+    HelpUntil([](void* c) { return static_cast<Counter*>(c)->IsZero(); }, &counter);
 }
 
 void Scheduler::HelpUntil(const std::atomic<int>& value, int target) {

@@ -54,12 +54,17 @@
 // then notifies). A submission racing a worker deciding to park therefore
 // cannot be stranded.
 //
-// SHUTDOWN. Submitting concurrently with or after Shutdown() is a caller
+// SHUTDOWN. Coroutines suspended in a Counter await are in no queue, so
+// Shutdown cannot free them: callers must join (HelpUntil / await) all
+// outstanding work before destroying the Scheduler, or those frames leak.
+// Submitting concurrently with or after Shutdown() is a caller
 // bug (asserted once shutdown has completed). Sets a flag, wakes everyone, joins. A job running at that
 // moment finishes; jobs still queued are never run — their frames are
 // destroyed (so the frame pool balances) and counted in the return value
 // of Shutdown(). Callers join their work (HelpUntil) before destroying.
 namespace engine_placeholder::jobs {
+
+class Counter;
 
 class Scheduler {
 public:
@@ -86,6 +91,8 @@ public:
     // runs jobs (same acquire order as a worker) until `done(user)` is
     // true, then returns.
     void HelpUntil(bool (*done)(void* user), void* user);
+    // Until the counter reaches zero (main waits by helping).
+    void HelpUntil(Counter& counter);
     // Convenience: until `value >= target`.
     void HelpUntil(const std::atomic<int>& value, int target);
 

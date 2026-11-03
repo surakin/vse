@@ -46,6 +46,8 @@
 // reference parameter.
 namespace engine_placeholder::jobs {
 
+class Counter;
+
 using CompletionFn = void (*)(void* user);
 
 class Job {
@@ -133,6 +135,11 @@ public:
         handle_.promise().on_complete = fn;
         handle_.promise().on_complete_user = user;
     }
+
+    // Binds the job to a Counter: when the job completes, the Counter is
+    // decremented (after the frame is freed). Defined in counter.h —
+    // include it to use this overload.
+    void SetCompletion(Counter& counter);
 
     // Transfers ownership of the frame to the caller (the scheduler): the
     // returned handle destroys itself on completion; this Job becomes
