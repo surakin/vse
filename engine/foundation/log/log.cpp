@@ -2,7 +2,7 @@
 
 #include <fcntl.h>
 
-#include "mem/mem.h"
+#include <cstring>
 #include "os/os.h"
 
 namespace engine_placeholder {

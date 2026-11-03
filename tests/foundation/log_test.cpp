@@ -3,7 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "log/log.h"
-#include "mem/mem.h"
+#include <cstring>
 #include "os/os.h"
 #include "string/string.h"
 #include "types.h"

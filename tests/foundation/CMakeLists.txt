@@ -5,7 +5,6 @@
 # under test still builds exception/RTTI-free — this target only
 # consumes it.
 set(FOUNDATION_TEST_SOURCES
-  mem_primitives_test.cpp
   arena_allocator_test.cpp
   pool_allocator_test.cpp
   stack_allocator_test.cpp

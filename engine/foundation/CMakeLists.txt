@@ -40,7 +40,6 @@ set(FOUNDATION_SOURCES
   os/key_translate.cpp
   os/file_util.cpp
   os/gpu_driver_probe.cpp
-  mem/mem.cpp
   mem/arena_allocator.cpp
   mem/pool_allocator.cpp
   mem/stack_allocator.cpp

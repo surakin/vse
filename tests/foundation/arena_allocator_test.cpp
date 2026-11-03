@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "mem/arena_allocator.h"
-#include "mem/mem.h"
+#include <cstring>
 #include "types.h"
 
 using engine_placeholder::ArenaAllocator;

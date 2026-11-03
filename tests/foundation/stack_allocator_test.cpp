@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "mem/mem.h"
+#include <cstring>
 #include "mem/stack_allocator.h"
 #include "types.h"
 

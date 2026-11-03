@@ -1,7 +1,8 @@
 #pragma once
 
+#include <cstring>
+
 #include "containers/array.h"
-#include "mem/mem.h"
 #include "types.h"
 #include "string/utf8_codec.h"
 

@@ -259,6 +259,11 @@ this machine's Xwayland+KWin and a bare Xvfb — including an externally
 sent `WM_DELETE_WINDOW` and `XResizeWindow`. **Visual check and real WM
 close-button click still pending a human.**
 
+**libc cleanup (2026-11-03):** removed `mem/mem.h`/`mem.cpp` (hand-rolled
+`memcpy`/`memset`/`memmove`/`strlen` overriding libc's symbols), their
+tests, and `-fno-builtin`; code uses `<cstring>`. See PLAN.md assumption
+#2 amendment. `StringView`/`StringBuilder` remain hand-rolled.
+
 **Phase 1 Days 13-24 done** (...; Wayland hello-window, X11 window —
 human visual/interactive check pending on Days 19-24); Days 25-26 (X11
 input, backend selection) not yet started.

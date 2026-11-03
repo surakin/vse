@@ -1,3 +1,7 @@
+> **Superseded 2026-11-03:** the hand-written `memcpy`/`memset`/`memmove`/`strlen`
+> below (and their tests) were removed; the engine uses libc's via
+> `<cstring>`. Checked-off tasks kept as history. See PLAN.md assumption #2.
+
 # Phase 0 / Day 3 — Base Types & Mem Primitives
 
 **Phase:** [Phase 0 — Foundation Layer](../phase-00-foundation.md)

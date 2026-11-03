@@ -108,7 +108,12 @@ interpretations keep it buildable — flag any that don't match intent:
    performance, and as a learning/portability exercise, not because
    linking libc is forbidden. Where calling libc directly is simpler and
    doesn't duplicate something the foundation layer already owns (e.g.
-   wrapping a raw syscall, calling an OS API), that's fine. **Scalar math
+   wrapping a raw syscall, calling an OS API), that's fine. **Amendment 2026-11-03:** `memcpy`/`memset`/`memmove`/`strlen`
+   are no longer hand-rolled — the Phase 0 Day 3 `mem/mem.cpp` overrides of
+   libc's own symbols were removed in favor of `<cstring>`, since they
+   silently replaced libc's optimized versions for every linked library
+   (libwayland/libX11/libxkbcommon) and conflicted with standard headers.
+   `-fno-builtin` was dropped with them. **Scalar math
    functions** (`sqrt`/`sin`/`cos`/`acos`/`atan2`/etc.) call `<cmath>`
    directly rather than being hand-rolled — these are well-understood,
    already-optimal solved problems where a from-scratch version buys none
