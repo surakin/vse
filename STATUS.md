@@ -316,3 +316,11 @@ called `WaylandInput::Init` straight after `Connect`.) Also: per-frame
 `--log-level=error|warn|info|debug|trace` sets all channels (e.g. to see
 resize lines). 114 tests green.
 
+**Desk check 2026-11-03, Wayland input:** user confirmed live pointer
+motion (position tracks, enter/leave flips `inside`) and key
+press/release (`keys_down` rises and returns to 0, nothing stuck) in the
+`input:` readout. **Not yet seen live:** mouse buttons, scroll, modifiers,
+a specific key (`W=1`), a second keyboard layout, the close button,
+resize, and the X11 backend — Day 20-23 manual boxes stay unchecked
+until those are reported.
+
