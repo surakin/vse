@@ -74,4 +74,43 @@ private:
     u64 down_bits_[2] = {0, 0};
 };
 
+enum MouseButtonBit : u32 {
+    kMouseLeft = 1u << 0,
+    kMouseRight = 1u << 1,
+    kMouseMiddle = 1u << 2,
+    kMouseBack = 1u << 3,    // "side" button
+    kMouseForward = 1u << 4, // "extra" button
+};
+
+// Phase 1 Day 22: everything the platform layer knows about input right
+// now, written by whichever backend is active (Wayland Days 21-22, X11
+// Day 25) and polled by upper layers. Room for touch/gamepad state is
+// left to later phases (PLAN.md assumption #11) — add members, don't
+// reshape these.
+struct InputState {
+    KeyboardState keyboard;
+
+    // Pointer position in window-local surface coordinates, valid while
+    // `pointer_inside` (last known position otherwise).
+    f64 mouse_x = 0.0;
+    f64 mouse_y = 0.0;
+    bool pointer_inside = false;
+    u32 mouse_buttons = 0; // MouseButtonBit mask
+
+    // Scroll accumulated since the last BeginFrame(); positive y is
+    // scrolling down, positive x is scrolling right (Wayland's sign
+    // convention, X11 backend normalizes to match).
+    f64 scroll_dx = 0.0;
+    f64 scroll_dy = 0.0;
+
+    bool IsMouseDown(u32 button_bit) const { return (mouse_buttons & button_bit) != 0; }
+
+    // Call once per frame before pumping platform events so per-frame
+    // deltas (scroll) don't accumulate forever.
+    void BeginFrame() {
+        scroll_dx = 0.0;
+        scroll_dy = 0.0;
+    }
+};
+
 } // namespace engine_placeholder::os

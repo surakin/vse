@@ -7,10 +7,11 @@
 #include "os/linux/xkb_keyboard.h"
 #include "types.h"
 
-// Phase 1 Day 21: wl_seat keyboard input. Listens for the seat's
+// Phase 1 Days 21-22: wl_seat keyboard and pointer input. Listens for the seat's
 // capabilities, gets a wl_keyboard when one is present, interprets the
 // compositor-provided keymap through libxkbcommon (XkbKeyboard), and
-// maintains a KeyboardState. Pointer input joins this class in Day 22.
+// maintains the keyboard half of an InputState; Day 22 adds the
+// wl_pointer half (position, button mask, scroll).
 //
 // Not movable/copyable: the wl_seat/wl_keyboard listeners capture `this`
 // at registration time. Use Init() on an in-place object.
@@ -27,13 +28,15 @@ public:
     WaylandInput& operator=(WaylandInput&&) = delete;
 
     // Hooks `connection`'s seat and blocks (two roundtrips) until the
-    // capabilities and keymap have arrived. `keyboard_state` must outlive
+    // capabilities and keymap have arrived. `input_state` must outlive
     // this object. Returns false (logged) if the connection is invalid;
-    // a seat with no keyboard is not a failure (HasKeyboard() == false).
-    bool Init(WaylandConnection& connection, KeyboardState* keyboard_state);
+    // a seat lacking a keyboard or pointer is not a failure
+    // (HasKeyboard()/HasPointer() == false).
+    bool Init(WaylandConnection& connection, InputState* input_state);
 
     bool Valid() const { return seat_ != nullptr; }
     bool HasKeyboard() const { return keyboard_ != nullptr; }
+    bool HasPointer() const { return pointer_ != nullptr; }
     // True once a keymap has been received and compiled.
     bool HasKeymap() const { return xkb_.Valid(); }
 
@@ -50,6 +53,15 @@ private:
                                         uint32_t mods_latched, uint32_t mods_locked, uint32_t group);
     static void HandleKeyboardRepeatInfo(void* data, wl_keyboard* keyboard, int32_t rate, int32_t delay);
 
+    static void HandlePointerEnter(void* data, wl_pointer* pointer, uint32_t serial, wl_surface* surface,
+                                   wl_fixed_t x, wl_fixed_t y);
+    static void HandlePointerLeave(void* data, wl_pointer* pointer, uint32_t serial, wl_surface* surface);
+    static void HandlePointerMotion(void* data, wl_pointer* pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y);
+    static void HandlePointerButton(void* data, wl_pointer* pointer, uint32_t serial, uint32_t time,
+                                    uint32_t button, uint32_t state);
+    static void HandlePointerAxis(void* data, wl_pointer* pointer, uint32_t time, uint32_t axis, wl_fixed_t value);
+
+    static const wl_pointer_listener kPointerListener;
     static const wl_seat_listener kSeatListener;
     static const wl_keyboard_listener kKeyboardListener;
 
@@ -61,7 +73,8 @@ private:
 
     wl_seat* seat_ = nullptr;
     wl_keyboard* keyboard_ = nullptr;
-    KeyboardState* keyboard_state_ = nullptr;
+    wl_pointer* pointer_ = nullptr;
+    InputState* input_state_ = nullptr;
     XkbKeyboard xkb_;
     // The engine Key each held evdev code was *pressed* as. A release
     // clears that Key rather than re-translating, since layout/modifier

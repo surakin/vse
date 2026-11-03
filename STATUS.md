@@ -228,7 +228,17 @@ clear the Key a code was *pressed* as; focus loss releases all. 9 new
 tests (91 total, green). **Live keypress check on real keyboards not
 done** (remote session); layouts verified via compiled named keymaps.
 
-**Phase 1 Days 13-21 done** (...; Wayland event loop, Wayland keyboard
-— human visual/interactive check pending on Days 19-21); Days 22-26
-(pointer input, hello-window milestone, X11 fallback, backend selection)
-not yet started.
+Day 22 done: Wayland pointer input. `os::InputState` (`os/input.h`)
+now wraps `KeyboardState` plus mouse position/inside flag, a
+`MouseButtonBit` mask (evdev BTN_LEFT..EXTRA), and scroll deltas
+accumulated until `BeginFrame()`. `WaylandInput` (renamed scope: seat
+keyboard + pointer) takes an `InputState*` and installs the
+`wl_pointer` enter/leave/motion/button/axis listeners; held buttons
+survive pointer-leave (implicit grab). 2 new tests (93 total, green).
+**Live mouse move/click/scroll check not done** (remote session) — the
+readout is wired in Day 23.
+
+**Phase 1 Days 13-22 done** (...; Wayland keyboard, Wayland pointer —
+human visual/interactive check pending on Days 19-22); Days 23-26
+(hello-window milestone, X11 fallback, backend selection) not yet
+started.

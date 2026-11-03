@@ -112,20 +112,58 @@ TEST_CASE("WaylandInput::Init hooks the real seat and loads its keymap", "[wayla
     wayland::WaylandConnection conn = wayland::WaylandConnection::Connect();
     REQUIRE(conn.Valid());
 
-    KeyboardState state;
+    InputState state;
     wayland::WaylandInput input;
     REQUIRE(input.Init(conn, &state));
     REQUIRE(input.Valid());
     if (input.HasKeyboard()) {
         REQUIRE(input.HasKeymap());
     }
-    REQUIRE_FALSE(state.IsDown(Key::A));
+    REQUIRE_FALSE(state.keyboard.IsDown(Key::A));
 }
 
 TEST_CASE("WaylandInput::Init fails gracefully on an invalid connection", "[wayland][input][os]") {
     wayland::WaylandConnection invalid;
-    KeyboardState state;
+    InputState state;
     wayland::WaylandInput input;
     REQUIRE_FALSE(input.Init(invalid, &state));
     REQUIRE_FALSE(input.Valid());
+}
+
+TEST_CASE("InputState defaults to idle and BeginFrame clears only scroll deltas", "[input][os]") {
+    InputState state;
+    REQUIRE(state.mouse_buttons == 0);
+    REQUIRE_FALSE(state.pointer_inside);
+    REQUIRE(state.scroll_dx == 0.0);
+    REQUIRE(state.scroll_dy == 0.0);
+
+    state.mouse_x = 12.5;
+    state.mouse_y = 40.0;
+    state.mouse_buttons = kMouseLeft | kMouseMiddle;
+    state.scroll_dx = 1.0;
+    state.scroll_dy = -3.0;
+    state.keyboard.SetDown(Key::W, true);
+    REQUIRE(state.IsMouseDown(kMouseLeft));
+    REQUIRE(state.IsMouseDown(kMouseMiddle));
+    REQUIRE_FALSE(state.IsMouseDown(kMouseRight));
+
+    state.BeginFrame();
+    REQUIRE(state.scroll_dx == 0.0);
+    REQUIRE(state.scroll_dy == 0.0);
+    REQUIRE(state.mouse_x == 12.5);
+    REQUIRE(state.mouse_buttons == (kMouseLeft | kMouseMiddle));
+    REQUIRE(state.keyboard.IsDown(Key::W));
+}
+
+TEST_CASE("WaylandInput::Init creates a pointer iff the seat advertises one", "[wayland][input][os]") {
+    wayland::WaylandConnection conn = wayland::WaylandConnection::Connect();
+    REQUIRE(conn.Valid());
+
+    InputState state;
+    wayland::WaylandInput input;
+    REQUIRE(input.Init(conn, &state));
+    // Without real pointer motion, nothing may have been recorded.
+    REQUIRE(state.mouse_buttons == 0);
+    REQUIRE(state.scroll_dx == 0.0);
+    REQUIRE(state.scroll_dy == 0.0);
 }
