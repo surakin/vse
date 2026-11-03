@@ -6,6 +6,7 @@ set(JOBS_TEST_SOURCES
   smoke_test.cpp
   frame_pool_test.cpp
   job_test.cpp
+  deque_test.cpp
   worker_pool_test.cpp
 )
 

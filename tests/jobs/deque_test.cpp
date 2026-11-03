@@ -1,0 +1,193 @@
+#include <atomic>
+#include <thread>
+#include <vector>
+
+#include <catch2/catch_test_macros.hpp>
+
+#include "jobs/deque.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::jobs;
+
+namespace {
+
+// Sentinel handles: non-null addresses that encode an id. They are never
+// resumed, only compared.
+std::coroutine_handle<> MakeHandle(u64 id) {
+    return std::coroutine_handle<>::from_address(reinterpret_cast<void*>((id + 1) * 16));
+}
+u64 IdOf(std::coroutine_handle<> h) { return (reinterpret_cast<u64>(h.address()) / 16) - 1; }
+
+// Thief threads must not use Catch macros (not thread-safe); they record
+// into the tally and the main thread asserts afterwards.
+std::atomic<u64> g_bad_ids{0}; // out-of-range / garbage handles seen
+
+void RecordRaw(std::vector<std::atomic<u32>>& counts, std::coroutine_handle<> h) {
+    u64 id = IdOf(h);
+    if (id < counts.size()) counts[id].fetch_add(1, std::memory_order_relaxed);
+    else g_bad_ids.fetch_add(1, std::memory_order_relaxed);
+}
+
+// Runs `total` pushes with `thieves` stealing concurrently; the owner
+// interleaves pops. Returns the number of ids consumed zero times and
+// more than once.
+struct Outcome {
+    usize missing = 0;
+    usize duplicated = 0;
+    u64 stolen = 0;
+};
+
+Outcome RunSession(usize total, usize thieves, u32 pop_every) {
+    WorkStealingDeque dq;
+    std::vector<std::atomic<u32>> counts(total);
+    for (auto& c : counts) c.store(0, std::memory_order_relaxed);
+    std::atomic<bool> producer_done{false};
+    std::atomic<u64> stolen{0};
+
+    std::vector<std::thread> ts;
+    for (usize i = 0; i < thieves; ++i) {
+        ts.emplace_back([&] {
+            for (;;) {
+                std::coroutine_handle<> h;
+                StealStatus st = dq.StealTop(h);
+                if (st == StealStatus::Success) {
+                    RecordRaw(counts, h);
+                    stolen.fetch_add(1, std::memory_order_relaxed);
+                } else if (st == StealStatus::Empty) {
+                    if (producer_done.load(std::memory_order_acquire)) {
+                        // The owner finished and drained: nothing more arrives.
+                        return;
+                    }
+                    std::this_thread::yield();
+                }
+                // Lost: retry immediately.
+            }
+        });
+    }
+
+    u64 rng = 0x9E3779B97F4A7C15ull;
+    for (usize id = 0; id < total; ++id) {
+        while (!dq.PushBottom(MakeHandle(id))) {
+            auto h = dq.PopBottom(); // full: make room
+            if (h) RecordRaw(counts, h);
+        }
+        rng ^= rng << 13; rng ^= rng >> 7; rng ^= rng << 17;
+        if (pop_every != 0 && (rng % pop_every) == 0) {
+            auto h = dq.PopBottom();
+            if (h) RecordRaw(counts, h);
+        }
+    }
+    // Drain as owner.
+    for (;;) {
+        auto h = dq.PopBottom();
+        if (!h) break;
+        RecordRaw(counts, h);
+    }
+    producer_done.store(true, std::memory_order_release);
+    for (auto& t : ts) t.join();
+
+    Outcome out;
+    out.stolen = stolen.load();
+    for (auto& c : counts) {
+        u32 v = c.load();
+        if (v == 0) ++out.missing;
+        if (v > 1) ++out.duplicated;
+    }
+    return out;
+}
+
+} // namespace
+
+TEST_CASE("Deque single-threaded LIFO from the owner, FIFO for thieves", "[jobs][deque]") {
+    WorkStealingDeque dq;
+    REQUIRE_FALSE(dq.PopBottom());
+    std::coroutine_handle<> out;
+    REQUIRE(dq.StealTop(out) == StealStatus::Empty);
+
+    for (u64 i = 0; i < 4; ++i) REQUIRE(dq.PushBottom(MakeHandle(i)));
+    REQUIRE(dq.StealTop(out) == StealStatus::Success);
+    REQUIRE(IdOf(out) == 0); // oldest
+    REQUIRE(IdOf(dq.PopBottom()) == 3); // newest
+    REQUIRE(IdOf(dq.PopBottom()) == 2);
+    REQUIRE(IdOf(dq.PopBottom()) == 1);
+    REQUIRE_FALSE(dq.PopBottom());
+    REQUIRE(dq.StealTop(out) == StealStatus::Empty);
+}
+
+TEST_CASE("Deque reports full at capacity without losing or overwriting anything", "[jobs][deque]") {
+    WorkStealingDeque dq;
+    const usize cap = WorkStealingDeque::Capacity();
+    for (usize i = 0; i < cap; ++i) REQUIRE(dq.PushBottom(MakeHandle(i)));
+    REQUIRE_FALSE(dq.PushBottom(MakeHandle(cap)));
+    REQUIRE_FALSE(dq.PushBottom(MakeHandle(cap + 1)));
+
+    // Steal one: frees a slot, push succeeds again (wraps the ring).
+    std::coroutine_handle<> out;
+    REQUIRE(dq.StealTop(out) == StealStatus::Success);
+    REQUIRE(IdOf(out) == 0);
+    REQUIRE(dq.PushBottom(MakeHandle(cap)));
+    REQUIRE_FALSE(dq.PushBottom(MakeHandle(cap + 1)));
+
+    // Drain: ids cap down to 1, every one exactly once, in LIFO order.
+    for (usize expect = cap; expect >= 1; --expect) {
+        auto h = dq.PopBottom();
+        REQUIRE(h);
+        REQUIRE(IdOf(h) == expect);
+    }
+    REQUIRE_FALSE(dq.PopBottom());
+}
+
+TEST_CASE("Deque: owner plus one thief, 1M ops, each handle consumed exactly once", "[jobs][deque]") {
+    Outcome o = RunSession(1'000'000, 1, 3);
+    REQUIRE(o.missing == 0);
+    REQUIRE(o.duplicated == 0);
+    REQUIRE(g_bad_ids.load() == 0);
+    REQUIRE(o.stolen > 0); // the thief paths really ran
+}
+
+TEST_CASE("Deque: owner plus four thieves, 1M ops, each handle consumed exactly once", "[jobs][deque]") {
+    Outcome o = RunSession(1'000'000, 4, 3);
+    REQUIRE(o.missing == 0);
+    REQUIRE(o.duplicated == 0);
+    REQUIRE(g_bad_ids.load() == 0);
+    REQUIRE(o.stolen > 0); // the thief paths really ran
+}
+
+TEST_CASE("Deque: single-element contention between PopBottom and four thieves", "[jobs][deque]") {
+    // The queue never holds more than one element: every push is raced by
+    // the owner's pop and four thieves (the last-element race).
+    constexpr usize kRounds = 300'000;
+    WorkStealingDeque dq;
+    std::vector<std::atomic<u32>> counts(kRounds);
+    for (auto& c : counts) c.store(0, std::memory_order_relaxed);
+    std::atomic<bool> done{false};
+    std::atomic<u64> steals{0};
+    std::vector<std::thread> ts;
+    for (int i = 0; i < 4; ++i) {
+        ts.emplace_back([&] {
+            while (!done.load(std::memory_order_acquire)) {
+                std::coroutine_handle<> h;
+                if (dq.StealTop(h) == StealStatus::Success) {
+                    RecordRaw(counts, h);
+                    steals.fetch_add(1, std::memory_order_relaxed);
+                }
+            }
+        });
+    }
+    for (usize id = 0; id < kRounds; ++id) {
+        REQUIRE(dq.PushBottom(MakeHandle(id)));
+        auto h = dq.PopBottom();
+        if (h) RecordRaw(counts, h);
+    }
+    // Anything still sitting in the deque after the loop is taken here.
+    for (auto h = dq.PopBottom(); h; h = dq.PopBottom()) RecordRaw(counts, h);
+    done.store(true, std::memory_order_release);
+    for (auto& t : ts) t.join();
+    // A thief may have stolen the final element between our last pop and
+    // the stop flag; either way every id must be consumed exactly once.
+    usize bad = 0;
+    for (auto& c : counts) bad += c.load() != 1;
+    REQUIRE(bad == 0);
+    REQUIRE(g_bad_ids.load() == 0);
+    REQUIRE(steals.load() > 0);
+}
