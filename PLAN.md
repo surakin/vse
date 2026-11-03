@@ -483,6 +483,7 @@ PLAN.md
 | 0 | Foundation layer | none (freestanding) | [plans/phase-00-foundation.md](plans/phase-00-foundation.md) | Custom allocators/containers/string/math pass the custom test harness |
 | 1 | Linux platform layer | Linux | [plans/phase-01-linux-platform.md](plans/phase-01-linux-platform.md) | Window opens via libwayland-client (X11 fallback backend also working), handles input/resize/close, stable frame timing |
 | 2 | Job System & Coroutines | none (portable) | [plans/phase-02-job-system.md](plans/phase-02-job-system.md) | Work-stealing scheduler runs thousands of dependency-chained jobs race-free under sanitizers; throughput scales with core count |
+| 2.5 | **Documentation tooling (`docgen`)** | none (dev tool) | [plans/phase-02-5-docs-tooling.md](plans/phase-02-5-docs-tooling.md) | Own C++ tool generates the API reference from `///` comments, checks links, compiles doc samples and lints coverage; wired into ctest |
 | 3 | Vulkan RHI | Linux | [plans/phase-03-vulkan-rhi.md](plans/phase-03-vulkan-rhi.md) | RHI renders a lit, textured cube through Vulkan; no Vulkan calls leak outside `/engine/rhi/vulkan` |
 | 4 | Renderer core | Linux | [plans/phase-04-renderer-core.md](plans/phase-04-renderer-core.md) | Render graph draws multiple objects, basic materials/lighting, depth buffering |
 | 5 | **Font & text rendering** | Linux | [plans/phase-05-font-text-rendering.md](plans/phase-05-font-text-rendering.md) | Arbitrary UTF-8 text (via FreeType-rasterized glyphs, Day 10-12 grapheme clustering for cursor/line-break correctness) renders on screen through the RHI at an interactive frame rate |
@@ -524,6 +525,9 @@ that changed from the plan and why.)_
   with a `/code-review high` whose findings are recorded in the day files.
   `FramePool` size classes were confirmed with real frame sizes (all fit
   <=240 B). Phase 3 needs its day files before it can start.
+- **2026-11-03 — Phase 2.5 (documentation tooling) added.** Own docs tool
+  in C++ on the foundation (no Doxygen/libclang), planned as Days 36-44
+  between Phase 2 and Phase 3; skeleton end-user docs exist under `docs/`.
 
 - **2026-11-03 — UI system added as a new Phase 6.** Found at the desk:
   no phase owned a GUI (only one bullet inside the last-but-one Editor
