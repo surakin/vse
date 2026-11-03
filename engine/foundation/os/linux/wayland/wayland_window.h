@@ -29,7 +29,14 @@ public:
     // window (Valid() == false) on any failure — logged via
     // LogPlatform, never crashes. `connection` must outlive the
     // returned window.
-    static WaylandWindow Create(WaylandConnection& connection, StringView title, StringView app_id);
+    //
+    // `width_hint`/`height_hint` (0 = use the built-in 1280x720 default)
+    // are the size the window takes when the compositor doesn't suggest
+    // one (the usual case for a new window), and the size a window
+    // returns to when the compositor sends a 0x0 configure ("pick your
+    // own size", e.g. leaving maximized) and nothing better is known.
+    static WaylandWindow Create(WaylandConnection& connection, StringView title, StringView app_id,
+                                u32 width_hint = 0, u32 height_hint = 0);
 
     WaylandWindow() = default;
     ~WaylandWindow();
@@ -112,6 +119,15 @@ private:
     // pending state and the surface configure is what's actually acked.
     u32 pending_width_ = 0;
     u32 pending_height_ = 0;
+    // True if the latest toplevel configure said maximized/fullscreen/
+    // tiled: its size must not become the size we restore to later.
+    bool pending_constrained_ = false;
+    u32 default_width_ = 0;
+    u32 default_height_ = 0;
+    // Last size the window had while unconstrained — what a 0x0
+    // ("client chooses") configure restores. 0 = not yet known.
+    u32 floating_width_ = 0;
+    u32 floating_height_ = 0;
     bool buffer_stale_ = false;
     bool should_close_ = false;
 };

@@ -104,6 +104,7 @@ TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the
     WaylandWindow window = WaylandWindow::Create(conn, "resize test", "engine_placeholder");
     REQUIRE(window.Valid());
     const engine_placeholder::u32 original_width = window.Width();
+    const engine_placeholder::u32 original_height = window.Height();
 
     // Ask the compositor to maximize: it answers with a configure at
     // the maximized size, which must become the window's size (and the
@@ -124,7 +125,20 @@ TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the
     }
     window.CommitPendingResize();
     wl_display_roundtrip(conn.Display());
+    // Leaving maximized must restore the pre-maximize size, not keep the
+    // maximized (screen) size pending.
+    REQUIRE(window.Width() == original_width);
+    REQUIRE(window.Height() == original_height);
     REQUIRE(window.Valid());
     // The new buffer was attached and the compositor kept the connection.
     REQUIRE(wl_display_get_error(conn.Display()) == 0);
+}
+
+TEST_CASE("WaylandWindow::Create uses the size hint when the compositor suggests none", "[wayland][os]") {
+    WaylandConnection conn = WaylandConnection::Connect();
+    REQUIRE(conn.Valid());
+    WaylandWindow window = WaylandWindow::Create(conn, "hinted", "engine_placeholder", 500, 300);
+    REQUIRE(window.Valid());
+    REQUIRE(window.Width() == 500);
+    REQUIRE(window.Height() == 300);
 }

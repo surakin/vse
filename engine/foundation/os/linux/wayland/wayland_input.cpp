@@ -46,6 +46,10 @@ bool WaylandInput::Init(WaylandConnection& connection, InputState* input_state) 
 }
 
 WaylandInput::~WaylandInput() {
+    Shutdown();
+}
+
+void WaylandInput::Shutdown() {
     if (keyboard_ != nullptr) {
         // wl_keyboard.release is a v3 request; the seat is bound at v1,
         // so plain proxy destroy is the only option here.
@@ -63,6 +67,7 @@ WaylandInput::~WaylandInput() {
         wl_proxy_set_user_data(reinterpret_cast<wl_proxy*>(seat_), nullptr);
         seat_ = nullptr;
     }
+    input_state_ = nullptr;
 }
 
 void WaylandInput::HandleSeatName(void* data, wl_seat* seat, const char* name) {

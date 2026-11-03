@@ -1,3 +1,5 @@
+#include <sys/socket.h>
+
 #include <cstdlib>
 #include <string>
 
@@ -101,7 +103,11 @@ TEST_CASE("PlatformWindowHost opens the Wayland backend when forced", "[window][
     REQUIRE(w != nullptr);
     REQUIRE(w->Valid());
     REQUIRE(StringView(w->BackendName()) == StringView("wayland"));
-    REQUIRE(w->Width() > 0);
+    // The requested size is honored when the compositor doesn't suggest
+    // one (as with X11). If this fails on some compositor that always
+    // suggests its own size, relax it to > 0 for that case.
+    REQUIRE(w->Width() == 640);
+    REQUIRE(w->Height() == 480);
     REQUIRE_FALSE(w->ShouldClose());
     w->PumpEvents();
 }
@@ -204,4 +210,53 @@ TEST_CASE("The Wayland backend ends up with a keyboard and keymap (seat capabili
     REQUIRE(window.Input().HasKeyboard());
     REQUIRE(window.Input().HasKeymap());
     REQUIRE(window.Input().HasPointer());
+}
+
+TEST_CASE("WaylandPlatformWindow reports a dead compositor connection as ShouldClose", "[window][wayland][os]") {
+    if (!HaveEnv("WAYLAND_DISPLAY")) {
+        SKIP("no Wayland session");
+    }
+    InputState input;
+    wayland::WaylandPlatformWindow window;
+    REQUIRE(window.Open("connection loss", 320, 240, &input));
+    window.PumpEvents();
+    REQUIRE_FALSE(window.ShouldClose());
+    REQUIRE_FALSE(window.ConnectionLost());
+
+    // Sever the socket underneath libwayland, as a crashed compositor
+    // would. Pumping must notice and flip ShouldClose instead of running
+    // on a dead window forever.
+    REQUIRE(::shutdown(wl_display_get_fd(window.NativeDisplay()), SHUT_RDWR) == 0);
+    for (int i = 0; i < 20 && !window.ShouldClose(); ++i) {
+        window.PumpEvents();
+        engine_placeholder::os::SleepNanos(5'000'000);
+    }
+    REQUIRE(window.ConnectionLost());
+    REQUIRE(window.ShouldClose());
+    REQUIRE_FALSE(window.Valid());
+    window.PumpEvents(); // further pumps are harmless no-ops
+}
+
+TEST_CASE("WaylandPlatformWindow::Close tears everything down and is idempotent", "[window][wayland][os]") {
+    if (!HaveEnv("WAYLAND_DISPLAY")) {
+        SKIP("no Wayland session");
+    }
+    InputState input;
+    wayland::WaylandPlatformWindow window;
+    REQUIRE(window.Open("close me", 320, 240, &input));
+    REQUIRE(window.Valid());
+    REQUIRE(window.Input().HasKeyboard());
+
+    window.Close();
+    REQUIRE_FALSE(window.Valid());
+    REQUIRE_FALSE(window.Input().Valid());
+    REQUIRE_FALSE(window.Input().HasKeyboard());
+    REQUIRE(window.NativeDisplay() == nullptr);
+    window.Close(); // idempotent
+    window.PumpEvents();
+
+    // A fresh Open on the same object works (new connection, new seat).
+    REQUIRE(window.Open("reopened", 320, 240, &input));
+    REQUIRE(window.Valid());
+    REQUIRE(window.Input().HasKeyboard());
 }

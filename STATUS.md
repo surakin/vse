@@ -373,3 +373,20 @@ expected-failure test that goes red if TSan stops detecting races. 137
 tests total, all green. Run: `cmake --build build && cd build && ctest`
 (add `-L tsan` for just the TSan set). Day 28 (Job coroutine type) is
 next.
+
+**Code-review fixes (2026-11-03, `/code-review high a134e2c..HEAD`, 9
+findings):** (1) `WaylandPlatformWindow::PumpEvents` now checks every
+libwayland return value and flips `ShouldClose()` when the compositor
+connection dies (tested by severing the socket); (2) the TSan canary now
+requires the data-race report (`PASS_REGULAR_EXPRESSION`) instead of a
+bare `WILL_FAIL`; (3) Wayland honors the requested window size (new
+`width_hint`/`height_hint` on `WaylandWindow::Create`); (4) `0x0`
+("client chooses") configures restore the last unconstrained size, via
+tracked maximized/fullscreen/tiled states, and a failed resize-buffer
+allocation is retried; (5) a failed `WaylandPlatformWindow::Open` now
+tears everything down (`Close()`, `WaylandInput::Shutdown()`); (8) the
+`buttons=`/`mods=` readout is real hex (`StringBuilder::AppendHex`).
+Findings 6, 7 (FramePool lazy-commit stall, late free after TLS
+destructor) and 9 (X11 FocusOut during grabs) are in the following
+commits.
+

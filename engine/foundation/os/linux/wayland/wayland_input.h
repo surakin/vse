@@ -34,6 +34,13 @@ public:
     // (HasKeyboard()/HasPointer() == false).
     bool Init(WaylandConnection& connection, InputState* input_state);
 
+    // Destroys the keyboard/pointer proxies and detaches from the seat
+    // (the seat itself belongs to the connection). Must run while the
+    // display is still connected. Idempotent. The destructor calls it.
+    // (A wl_seat accepts only one listener, so re-Init() on the same
+    // seat isn't possible; reconnect for a fresh seat.)
+    void Shutdown();
+
     bool Valid() const { return seat_ != nullptr; }
     bool HasKeyboard() const { return keyboard_ != nullptr; }
     bool HasPointer() const { return pointer_ != nullptr; }

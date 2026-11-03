@@ -1,14 +1,33 @@
 #include "os/linux/wayland/wayland_platform_window.h"
 
+#include <cerrno>
 #include <poll.h>
 
 #include "log/log.h"
 
 namespace engine_placeholder::os::wayland {
 
+void WaylandPlatformWindow::Close() {
+    // Order matters: the input proxies belong to the connection's
+    // display and must be destroyed while it is still connected.
+    input_.Shutdown();
+    window_ = WaylandWindow();
+    connection_ = WaylandConnection();
+    connection_lost_ = false;
+}
+
+void WaylandPlatformWindow::MarkConnectionLost(const char* why) {
+    if (!connection_lost_) {
+        connection_lost_ = true;
+        Log(LogPlatform, LogVerbosity::Error, why);
+    }
+}
+
 bool WaylandPlatformWindow::Open(StringView title, u32 width, u32 height, InputState* input) {
-    (void)width;
-    (void)height;
+    if (connection_.Valid()) {
+        Log(LogPlatform, LogVerbosity::Error, "Wayland: WaylandPlatformWindow::Open called while already open");
+        return false;
+    }
     if (input == nullptr) {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: WaylandPlatformWindow::Open needs an InputState");
         return false;
@@ -24,10 +43,9 @@ bool WaylandPlatformWindow::Open(StringView title, u32 width, u32 height, InputS
     // window first lost the capabilities (no keyboard/pointer, no input
     // lines) — caught at the desk, 2026-11-03.
     input_.Init(connection_, input);
-    window_ = WaylandWindow::Create(connection_, title, "re_engine");
+    window_ = WaylandWindow::Create(connection_, title, "re_engine", width, height);
     if (!window_.Valid()) {
-        // Leave connection_/input_ in place: input_ holds proxies that
-        // must be destroyed while the display is still connected.
+        Close();
         return false;
     }
     return true;
@@ -45,23 +63,45 @@ bool WaylandPlatformWindow::Open(StringView title, u32 width, u32 height, InputS
 // when the compositor sends nothing.
 void WaylandPlatformWindow::PumpEvents() {
     wl_display* display = connection_.Display();
-    if (display == nullptr) {
+    if (display == nullptr || connection_lost_) {
         return;
     }
+    // Every libwayland call below can report a dead connection or a
+    // protocol error; none of them may be ignored, or a vanished
+    // compositor would leave the frame loop running on a dead window.
     while (wl_display_prepare_read(display) != 0) {
-        wl_display_dispatch_pending(display);
+        if (wl_display_dispatch_pending(display) < 0) {
+            MarkConnectionLost("Wayland: dispatch failed (protocol error or lost connection)");
+            return;
+        }
     }
-    wl_display_flush(display);
+    if (wl_display_flush(display) < 0 && errno != EAGAIN) {
+        wl_display_cancel_read(display);
+        MarkConnectionLost("Wayland: flush failed (compositor connection lost)");
+        return;
+    }
 
     pollfd pfd{};
     pfd.fd = wl_display_get_fd(display);
     pfd.events = POLLIN;
-    if (::poll(&pfd, 1, 0) > 0 && (pfd.revents & POLLIN) != 0) {
-        wl_display_read_events(display);
+    int ready = ::poll(&pfd, 1, 0);
+    if (ready > 0 && (pfd.revents & (POLLIN | POLLHUP | POLLERR)) != 0) {
+        // POLLHUP/POLLERR: read_events reports the EOF/error as -1.
+        if (wl_display_read_events(display) < 0) {
+            MarkConnectionLost("Wayland: read failed (compositor connection lost)");
+            return;
+        }
     } else {
         wl_display_cancel_read(display);
     }
-    wl_display_dispatch_pending(display);
+    if (wl_display_dispatch_pending(display) < 0) {
+        MarkConnectionLost("Wayland: dispatch failed (protocol error or lost connection)");
+        return;
+    }
+    if (wl_display_get_error(display) != 0) {
+        MarkConnectionLost("Wayland: display reported an error");
+        return;
+    }
     window_.CommitPendingResize();
 }
 

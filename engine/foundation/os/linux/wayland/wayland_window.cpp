@@ -125,7 +125,8 @@ bool MakeFilledBuffer(wl_shm* shm, u32 width, u32 height, wl_buffer*& out_buffer
 
 } // namespace
 
-WaylandWindow WaylandWindow::Create(WaylandConnection& connection, StringView title, StringView app_id) {
+WaylandWindow WaylandWindow::Create(WaylandConnection& connection, StringView title, StringView app_id,
+                                    u32 width_hint, u32 height_hint) {
     if (!connection.Valid()) {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: WaylandWindow::Create called with an invalid connection");
         return WaylandWindow();
@@ -152,6 +153,8 @@ WaylandWindow WaylandWindow::Create(WaylandConnection& connection, StringView ti
     // still cleans up correctly since `window`'s destructor runs
     // regardless of what's returned.
     WaylandWindow window;
+    window.default_width_ = width_hint != 0 ? width_hint : kDefaultWidth;
+    window.default_height_ = height_hint != 0 ? height_hint : kDefaultHeight;
     window.surface_ = surface;
     window.xdg_surface_ = xdg_surf;
     xdg_surface_add_listener(xdg_surf, &kXdgSurfaceListener, &window);
@@ -238,8 +241,14 @@ bool WaylandWindow::CommitPendingResize() {
     if (!buffer_stale_) {
         return false;
     }
+    // Only clear the flag on success, so a failed allocation is retried
+    // on the next pump instead of leaving the window stuck at the old
+    // size forever.
+    if (!ReplaceBuffer()) {
+        return false;
+    }
     buffer_stale_ = false;
-    return ReplaceBuffer();
+    return true;
 }
 
 WaylandWindow::~WaylandWindow() {
@@ -261,6 +270,11 @@ WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
       height_(other.height_),
       pending_width_(other.pending_width_),
       pending_height_(other.pending_height_),
+      pending_constrained_(other.pending_constrained_),
+      default_width_(other.default_width_),
+      default_height_(other.default_height_),
+      floating_width_(other.floating_width_),
+      floating_height_(other.floating_height_),
       should_close_(other.should_close_) {
     other.surface_ = nullptr;
     other.xdg_surface_ = nullptr;
@@ -275,6 +289,11 @@ WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
     other.height_ = 0;
     other.pending_width_ = 0;
     other.pending_height_ = 0;
+    other.pending_constrained_ = false;
+    other.default_width_ = 0;
+    other.default_height_ = 0;
+    other.floating_width_ = 0;
+    other.floating_height_ = 0;
     other.should_close_ = false;
     RebindEventListenerUserData();
 }
@@ -296,6 +315,11 @@ WaylandWindow& WaylandWindow::operator=(WaylandWindow&& other) noexcept {
         height_ = other.height_;
         pending_width_ = other.pending_width_;
         pending_height_ = other.pending_height_;
+        pending_constrained_ = other.pending_constrained_;
+        default_width_ = other.default_width_;
+        default_height_ = other.default_height_;
+        floating_width_ = other.floating_width_;
+        floating_height_ = other.floating_height_;
         should_close_ = other.should_close_;
         other.surface_ = nullptr;
         other.xdg_surface_ = nullptr;
@@ -310,6 +334,11 @@ WaylandWindow& WaylandWindow::operator=(WaylandWindow&& other) noexcept {
         other.height_ = 0;
         other.pending_width_ = 0;
         other.pending_height_ = 0;
+        other.pending_constrained_ = false;
+        other.default_width_ = 0;
+        other.default_height_ = 0;
+        other.floating_width_ = 0;
+        other.floating_height_ = 0;
         other.should_close_ = false;
         RebindEventListenerUserData();
     }
@@ -354,10 +383,18 @@ void WaylandWindow::HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, 
     auto* window = static_cast<WaylandWindow*>(data);
     xdg_surface_ack_configure(surface, serial);
 
-    u32 new_width = window->pending_width_ != 0 ? window->pending_width_
-                                                 : (window->width_ != 0 ? window->width_ : kDefaultWidth);
-    u32 new_height = window->pending_height_ != 0 ? window->pending_height_
-                                                   : (window->height_ != 0 ? window->height_ : kDefaultHeight);
+    // The latest toplevel configure's size, where 0 means "unspecified —
+    // you choose". "You choose" restores the last unconstrained size, not
+    // the current one: after leaving maximized the current size is the
+    // screen size, which is exactly what must not stick.
+    u32 fallback_width = window->floating_width_ != 0 ? window->floating_width_ : window->default_width_;
+    u32 fallback_height = window->floating_height_ != 0 ? window->floating_height_ : window->default_height_;
+    u32 new_width = window->pending_width_ != 0 ? window->pending_width_ : fallback_width;
+    u32 new_height = window->pending_height_ != 0 ? window->pending_height_ : fallback_height;
+    if (!window->pending_constrained_) {
+        window->floating_width_ = new_width;
+        window->floating_height_ = new_height;
+    }
     if (new_width != window->width_ || new_height != window->height_) {
         window->width_ = new_width;
         window->height_ = new_height;
@@ -376,14 +413,24 @@ void WaylandWindow::HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, 
 void WaylandWindow::HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, int32_t width, int32_t height,
                                              wl_array* states) {
     (void)toplevel;
-    (void)states;
     auto* window = static_cast<WaylandWindow*>(data);
-    if (width > 0) {
-        window->pending_width_ = static_cast<u32>(width);
+    // Always overwrite, including with 0: a 0 dimension means "client
+    // chooses", and must not leave an earlier (e.g. maximized) size
+    // pending.
+    window->pending_width_ = width > 0 ? static_cast<u32>(width) : 0;
+    window->pending_height_ = height > 0 ? static_cast<u32>(height) : 0;
+
+    bool constrained = false;
+    auto* begin = static_cast<uint32_t*>(states->data);
+    auto* end = begin + states->size / sizeof(uint32_t);
+    for (uint32_t* it = begin; it < end; ++it) {
+        if (*it == XDG_TOPLEVEL_STATE_MAXIMIZED || *it == XDG_TOPLEVEL_STATE_FULLSCREEN ||
+            *it == XDG_TOPLEVEL_STATE_TILED_LEFT || *it == XDG_TOPLEVEL_STATE_TILED_RIGHT ||
+            *it == XDG_TOPLEVEL_STATE_TILED_TOP || *it == XDG_TOPLEVEL_STATE_TILED_BOTTOM) {
+            constrained = true;
+        }
     }
-    if (height > 0) {
-        window->pending_height_ = static_cast<u32>(height);
-    }
+    window->pending_constrained_ = constrained;
 }
 
 void WaylandWindow::HandleToplevelClose(void* data, xdg_toplevel* toplevel) {
@@ -420,6 +467,9 @@ void WaylandWindow::ReleaseAll() {
     }
     pending_width_ = 0;
     pending_height_ = 0;
+    pending_constrained_ = false;
+    floating_width_ = 0;
+    floating_height_ = 0;
     buffer_stale_ = false;
     should_close_ = false;
 }
