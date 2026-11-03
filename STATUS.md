@@ -301,3 +301,6 @@ decorations for clients that request them via `xdg-decoration`. Added
 confirms KWin grants it (113 tests green). Needs your eyeball: titlebar
 with "re-engine" + working close/resize.
 
+**Desk check 2026-11-03:** Day 19 visual confirmation passed (window appears
+on Plasma/Wayland). Remaining desk checks: keyboard, mouse, close button,
+resize, X11 backend.

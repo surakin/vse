@@ -16,15 +16,15 @@
 - [x] Build and run against a real Wayland compositor (automated: 4 new
   tests create/map a real window against the compositor present in this
   dev environment; `engine_main`/`engine_main_asan` wired to create one
-  too, ran clean under ASan/UBSan). **Human visual confirmation still
-  pending** — this session ran over a remote connection with no way to
-  look at the actual screen; see Resolution.
+  too, ran clean under ASan/UBSan). **Human visual confirmation done
+  2026-11-03** (user at the desk on Plasma/Wayland: window appears;
+  the first look showed no titlebar, fixed by requesting server-side
+  decorations via xdg-decoration — see STATUS.md).
 - [x] Commit.
 
 **Done:** a real window appears on screen via a Wayland compositor.
 Protocol-level/automated done condition met (see Resolution); the human
-eyeball check is deferred to whenever the user is next at the physical
-machine.
+eyeball check was done 2026-11-03.
 
 ## Resolution
 
