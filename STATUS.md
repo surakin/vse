@@ -347,3 +347,8 @@ layout `W` still registers (layout-aware keys work live; which layout
 wasn't recorded). Remaining unconfirmed live: X11 under a non-US layout,
 X11 keyboard/mouse specifics. Phase 1's manual checks are otherwise done.
 
+**Desk check 2026-11-03 (X11):** user confirmed all X11 input live —
+buttons, wheel, modifiers, keys, `W`. Phase 1's manual verification is
+complete; the only soft spot is that no live X11 check under a known
+non-US layout was recorded (`fr`/`de` covered by xkbcommon tests only).
+

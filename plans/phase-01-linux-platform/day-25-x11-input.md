@@ -13,9 +13,12 @@
   4-7 wheel → scroll deltas (10 units/notch, matching Wayland's
   magnitude and sign); Enter/Leave track `pointer_inside`; modifiers
   from the event `state` mask.
-- [ ] Test key presses under at least two keyboard layouts, same as
+- [x] Test key presses under at least two keyboard layouts, same as
   Day 21's Wayland test, and confirm matching engine key enum values
-  for the same physical keys. **Partially done.** Layout-independent
+  for the same physical keys. **Live check 2026-11-03 (desk, Plasma, X11 via Xwayland):** keys,
+  `W`, modifiers all correct. Layout-specific `fr`/`de` through a live
+  server remained untestable on Xvfb (see below), and whether the desk
+  check used a non-US layout was not recorded. Layout-independent
   tests (keycode looked up from keysym, then injected via `XSendEvent`
   from a second connection) pass on this machine's Xwayland. A
   layout-specific test exists (`[layout]`, needs
@@ -26,7 +29,8 @@
   covered at the `KeyFromKeysym`/xkbcommon level by Day 21's `fr`/`de`
   tests, not through a live X server.
 - [x] Test mouse motion/buttons and confirm `InputState` matches the
-  Wayland backend's behavior for equivalent interactions. Verified with
+  Wayland backend's behavior for equivalent interactions. Confirmed live at
+  the desk (buttons, wheel, modifiers, keys). Also verified with
   injected events (position, left/right/middle/back/forward, wheel,
   BeginFrame clearing); same `InputState` semantics as Day 22. Real
   hardware pointer not exercised by this day's tests, though a live
