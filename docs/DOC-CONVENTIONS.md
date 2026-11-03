@@ -96,11 +96,22 @@ are errors. The same syntax works in guide/tutorial Markdown.
 
 ## Samples
 
-A fenced code block in a guide or tutorial is compiled when its info string
-carries tags: ` ```cpp compile ` (compile only, inside the standard prelude),
-` ```cpp compile standalone ` (a whole translation unit),
-` ```cpp compile run ` (also run; an adjacent ` ```output ` block must match
-stdout). Untagged blocks are illustrative and never built.
+A fenced code block in a guide or tutorial is built when its info string
+starts with `cpp` and carries tags; `docgen samples` does it.
+
+| Info string | What happens |
+|---|---|
+| ` ```cpp ` (no tags) | illustrative: never built, never run |
+| ` ```cpp compile ` | the body is compiled inside `static void DocSample() { ... }`, after the standard prelude (`docs/samples-prelude.h`: the commonly used engine headers and `using namespace engine_placeholder;`) |
+| ` ```cpp compile standalone ` | compiled verbatim as a whole translation unit (use for free functions, classes, `#include`s) |
+| ` ```cpp compile run ` | the body becomes `int main() { ... return 0; }` after the prelude, is linked with the engine libraries and run; an immediately following ` ```output ` block (at most blank lines in between) must equal stdout (trailing whitespace ignored) |
+| ` ```cpp compile run standalone ` | whole translation unit with its own `main` |
+
+`run` and `standalone` need `compile`; any other word after `cpp` is an
+error (so a typo like `complie` cannot silently disable a sample). A failing
+sample is reported at its fence in the Markdown file, compiler diagnostics
+already name `file.md:LINE`, a sample that runs longer than the timeout
+(10 s) is killed, and the exit code must be 0.
 
 ## Rules
 

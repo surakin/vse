@@ -1,10 +1,13 @@
 #include <cstdio>
 #include <cstring>
 
+#include <climits>
+#include <cstdlib>
 #include <sys/stat.h>
 
 #include "doc_parser.h"
 #include "links.h"
+#include "samples.h"
 #include "reference.h"
 #include "extractor.h"
 #include "scanner.h"
@@ -19,7 +22,9 @@ int Usage() {
                "       docgen dump [--all] [--keep-going] FILE.h  (declaration tree; --all includes hidden declarations)\n"
                "       docgen docs [--keep-going] FILE.h          (parsed doc comments, validation, undocumented symbols)\n"
                "       docgen reference|check [--root DIR] [--modules FILE] [--out DIR] [--quiet]\n"
-               "       docgen links [--root DIR] [--modules FILE] [--external] [--quiet]\n",
+               "       docgen links [--root DIR] [--modules FILE] [--external] [--quiet]\n"
+               "       docgen samples --compiler CXX [--root DIR] [--build-dir DIR] [--jobs N] [-I DIR]... [--flag F]... [--link ARG]...\n"
+               "                      [--prelude FILE] [--timeout SEC] [--compile-timeout SEC] [--keep] [--quiet] [FILE.md...]\n",
                stderr);
     return 2;
 }
@@ -265,6 +270,79 @@ int Links(int argc, char** argv) {
     return errors || header_errors ? 1 : 0;
 }
 
+// An absolute path for `p` if it exists (the compiler runs in a scratch directory), otherwise `p` unchanged.
+StringView Absolute(const char* p, ArenaAllocator& arena) {
+    char buf[PATH_MAX];
+    if (realpath(p, buf) != nullptr) return ArenaCat(arena, StringView(buf, std::strlen(buf)), StringView());
+    return ArenaCat(arena, StringView(p, std::strlen(p)), StringView());
+}
+
+// docgen samples
+int Samples(int argc, char** argv) {
+    ArenaAllocator arena(usize{1} << 30);
+    SampleOptions opt(arena);
+    const char* root = ".";
+    bool quiet = false;
+    engine_placeholder::Array<StringView, ArenaAllocator> only(arena);
+    for (int i = 2; i < argc; ++i) {
+        const bool more = i + 1 < argc;
+        if (std::strcmp(argv[i], "--root") == 0 && more) root = argv[++i];
+        else if (std::strcmp(argv[i], "--compiler") == 0 && more) opt.compiler = std::strchr(argv[i + 1], '/') != nullptr ? Absolute(argv[i + 1], arena) : ArenaCat(arena, StringView(argv[i + 1], std::strlen(argv[i + 1])), StringView()), ++i;
+        else if (std::strcmp(argv[i], "--build-dir") == 0 && more) opt.scratch_base = Absolute(argv[++i], arena);
+        else if (std::strcmp(argv[i], "--jobs") == 0 && more) opt.jobs = static_cast<u32>(std::strtoul(argv[++i], nullptr, 10));
+        else if (std::strcmp(argv[i], "--timeout") == 0 && more) opt.run_timeout_s = static_cast<u32>(std::strtoul(argv[++i], nullptr, 10));
+        else if (std::strcmp(argv[i], "--compile-timeout") == 0 && more) opt.compile_timeout_s = static_cast<u32>(std::strtoul(argv[++i], nullptr, 10));
+        else if (std::strcmp(argv[i], "-I") == 0 && more) opt.includes.Push(Absolute(argv[++i], arena));
+        else if (std::strcmp(argv[i], "--flag") == 0 && more) opt.flags.Push(ArenaCat(arena, StringView(argv[i + 1], std::strlen(argv[i + 1])), StringView())), ++i;
+        else if (std::strcmp(argv[i], "--link") == 0 && more) opt.links.Push(Absolute(argv[++i], arena));
+        else if (std::strcmp(argv[i], "--prelude") == 0 && more) opt.prelude = Absolute(argv[++i], arena);
+        else if (std::strcmp(argv[i], "--keep") == 0) opt.keep_scratch = true;
+        else if (std::strcmp(argv[i], "--quiet") == 0) quiet = true;
+        else if (argv[i][0] != '-') only.Push(ArenaCat(arena, StringView(argv[i], std::strlen(argv[i])), StringView()));
+        else return Usage();
+    }
+    if (opt.compiler.Empty()) return Usage();
+    if (opt.jobs == 0) opt.jobs = 1;
+    StringView root_v(root, std::strlen(root));
+    opt.root = root_v;
+
+    engine_placeholder::Array<StringView, ArenaAllocator> files(arena);
+    if (only.Size() > 0) {
+        for (usize i = 0; i < only.Size(); ++i) files.Push(only[i]);
+    } else if (!CollectMarkdownFiles(root_v, arena, files)) {
+        std::fprintf(stderr, "docgen: cannot read the documentation tree under %s\n", root);
+        return 2;
+    }
+    engine_placeholder::Array<FileDiag, ArenaAllocator> problems(arena);
+    engine_placeholder::Array<Sample, ArenaAllocator> samples(arena);
+    for (usize i = 0; i < files.Size(); ++i) {
+        StringView text;
+        if (!LoadSourceFile(root_v.Empty() ? files[i] : ArenaCat(arena, root_v, StringView("/"), files[i]), arena, text)) {
+            problems.Push(FileDiag{files[i], Diagnostic{Severity::Error, 1, StringView("cannot read file")}});
+            continue;
+        }
+        MdDoc doc(arena);
+        ScanMarkdown(text, arena, doc);
+        for (usize d = 0; d < doc.diagnostics.Size(); ++d) problems.Push(FileDiag{files[i], doc.diagnostics[d]});
+        ExtractSamples(files[i], text, doc, arena, samples, problems);
+    }
+    // run from the repo root so a sample's #line path matches what the user sees
+    SampleStats stats;
+    if (!RunSamples(opt, samples, arena, problems, stats)) {
+        PrintFileDiags(problems, quiet);
+        std::fprintf(stderr, "docgen: cannot set up the sample build (scratch directory or compiler)\n");
+        return 2;
+    }
+    bool errors = false;
+    for (usize i = 0; i < problems.Size(); ++i) errors = errors || problems[i].d.severity == Severity::Error;
+    PrintFileDiags(problems, quiet);
+    if (!quiet) {
+        std::fprintf(stderr, "docgen: %zu samples, %zu compiled, %zu run, %zu failed\n", static_cast<size_t>(stats.found),
+                     static_cast<size_t>(stats.compiled), static_cast<size_t>(stats.ran), static_cast<size_t>(stats.failed));
+    }
+    return errors ? 1 : 0;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -274,5 +352,6 @@ int main(int argc, char** argv) {
     if (argc >= 2 && std::strcmp(argv[1], "reference") == 0) return Reference(argc, argv, false);
     if (argc >= 2 && std::strcmp(argv[1], "check") == 0) return Reference(argc, argv, true);
     if (argc >= 2 && std::strcmp(argv[1], "links") == 0) return Links(argc, argv);
+    if (argc >= 2 && std::strcmp(argv[1], "samples") == 0) return Samples(argc, argv);
     return Usage();
 }

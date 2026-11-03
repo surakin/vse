@@ -201,6 +201,7 @@ Diagnostic catalogue (stable message prefixes the fixtures assert):
 | `unterminated code fence` | error |
 | `doc comment is not attached to a declaration` | error |
 | `summary too long` / `summary does not end in a period` | warning |
+| `sample failed to compile` / `sample output does not match ...` / `sample exited with status N` / `sample timed out` / `unknown sample tag` | error (`docgen samples`) |
 | `broken link` / `missing image` / `broken anchor` / `link escapes the repository` / `empty link target` | error (`docgen links`) |
 | `orphan page` / `missing: the root page ...` (docs/README.md) | error (`docgen links`) |
 | `malformed reference` / `unterminated code fence` in Markdown | error (`docgen links`) |
@@ -275,3 +276,35 @@ targets and titles, reference definitions (footnote definitions `[^n]:`
 are ignored). It deliberately does not validate `[text][label]` usages: an
 undefined label renders literally and `x[i][j]` is common in C++ prose.
 HTML blocks other than `<a id>` anchors are not interpreted.
+
+## 11. Sample compilation (Day 42)
+
+`docgen samples --compiler CXX [--root DIR] [--build-dir DIR] [--jobs N]
+[-I DIR]... [--flag F]... [--link ARG]... [--prelude FILE] [--timeout S]
+[--compile-timeout S] [--keep] [FILE.md...]` extracts the samples of every
+checked Markdown file (same file set as `links`, or just the named files).
+The tag semantics are in `docs/DOC-CONVENTIONS.md`; this section is the
+mechanism.
+
+- Each sample becomes `SCRATCH/sN.cpp`: the prelude `#include` (absolute
+  path), the wrapper, and `#line BODY_LINE "docs/x.md"` before the body, so
+  the compiler's own diagnostics point into the Markdown. Lines of an
+  indented fence (a list item) lose the fence's indentation.
+- The compiler is started with `posix_spawn` (no shell) from the caller's
+  working directory with `--flag`s and `-I`s verbatim (the build passes the
+  engine's production flags and include roots), `-c` for compile-only
+  samples, and for `run` samples a link line ending in the `--link`
+  arguments (the engine libraries). Programs run in the scratch directory
+  with stdin from /dev/null.
+- Compilation and execution are scheduled over at most `--jobs` concurrent
+  child processes from a single thread (no thread pool, no shell); each child
+  is in its own process group and is killed with its group on timeout.
+  Results are reported in document order, so serial and parallel runs print
+  the same diagnostics. Failures are collected, not fatal.
+- Hygiene: the scratch directory (`mkdtemp` under `--build-dir`, default
+  /tmp) and its files are removed on every path, including SIGINT/SIGTERM
+  (which kill the running children first); `--keep` leaves them for
+  debugging. Only tagged blocks are ever compiled or run.
+- Not covered: the sample runs with docgen's own environment and privileges,
+  exactly like a developer running it by hand; documentation samples are
+  trusted repository content, not untrusted input.

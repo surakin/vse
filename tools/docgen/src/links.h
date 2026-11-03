@@ -25,6 +25,10 @@ struct LinkOptions {
     bool list_external = false; // add a note per external link
 };
 
+// Repo-relative paths of the Markdown files docgen checks: `docs/**/*.md`
+// and the top-level `*.md`, sorted. False if the tree cannot be read.
+bool CollectMarkdownFiles(StringView root, ArenaAllocator& arena, Array<StringView, ArenaAllocator>& out);
+
 // `index` may be null (then `[[refs]]` are not checked). `root` is the repo
 // root. Appends diagnostics (sorted by path, then line) to `out`. Returns
 // false only if the file tree cannot be read; check `out` for errors.

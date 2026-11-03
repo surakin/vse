@@ -55,6 +55,7 @@ public:
                 if (IsClosingFence(line, fence_char, fence_len)) {
                     MdFence& f = out_.fences[fence_index];
                     f.closed = true;
+                    f.end_line = line_no;
                     f.body = BodyView(text, body_start, last_body_end, f.body_line, line_no);
                     in_fence = false;
                 } else {
@@ -96,6 +97,7 @@ public:
         flush();
         if (in_fence) {
             MdFence& f = out_.fences[fence_index];
+            f.end_line = line_no;
             f.body = BodyView(text, body_start, last_body_end, f.body_line, line_no + 1);
             out_.diagnostics.Push(Diagnostic{Severity::Error, f.line, StringView("unterminated code fence")});
         }

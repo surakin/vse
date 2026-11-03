@@ -16,7 +16,8 @@ namespace docgen {
 struct MdFence {
     u32 line = 0;      // line of the opening fence (1-based)
     u32 body_line = 0; // first line of the body
-    u32 indent = 0;    // columns the opening fence was indented (list items)
+    u32 end_line = 0;  // line of the closing fence (the last line of the file if unterminated)
+    u32 indent = 0;    // blank characters before the opening fence (list items)
     StringView info;   // text after the backticks, trimmed ("cpp compile run")
     StringView body;   // the lines between the fences, '\n'-joined, no trailing newline; indent not stripped
     bool closed = false;

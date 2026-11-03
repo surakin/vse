@@ -11,6 +11,7 @@ set(DOCGEN_SOURCES
   src/reference.cpp
   src/md_scan.cpp
   src/links.cpp
+  src/samples.cpp
   src/source_file.cpp
 )
 

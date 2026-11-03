@@ -73,11 +73,8 @@ public:
 
     bool Run() {
         Array<StringView, ArenaAllocator> files(arena_);
-        if (!CollectFiles(root_, StringView("docs"), arena_, files)) return false;
-        if (!TopLevel(files)) return false;
-        StableSort(files, [](StringView a, StringView b) { return a.Compare(b) < 0; });
+        if (!CollectMarkdownFiles(root_, arena_, files)) return false;
         for (usize i = 0; i < files.Size(); ++i) {
-            if (!EndsWith(files[i], ".md")) continue;
             Page* p = Get(files[i]);
             if (p == nullptr) {
                 Add(files[i], 1, Severity::Error, StringView("cannot read file"));
@@ -101,23 +98,6 @@ public:
     }
 
 private:
-    bool TopLevel(Array<StringView, ArenaAllocator>& files) {
-        engine_placeholder::StringBuilder<ArenaAllocator> sb(arena_);
-        sb.Append(root_);
-        DIR* d = opendir(sb.CStr()[0] == '\0' ? "." : sb.CStr());
-        if (d == nullptr) return false;
-        while (const dirent* e = readdir(d)) {
-            StringView name(e->d_name, std::strlen(e->d_name));
-            if (name.Empty() || name[0] == '.' || !EndsWith(name, ".md")) continue;
-            StringView path = ArenaCat(arena_, name, StringView());
-            struct stat st;
-            StringView full = Full(path);
-            if (stat(full.Data(), &st) == 0 && S_ISREG(st.st_mode)) files.Push(path);
-        }
-        closedir(d);
-        return true;
-    }
-
     StringView Full(StringView rel) { return root_.Empty() ? ArenaCat(arena_, rel, StringView()) : ArenaCat(arena_, root_, StringView("/"), rel); }
 
     Page* Get(StringView path) {
@@ -315,6 +295,28 @@ private:
 };
 
 } // namespace
+
+bool CollectMarkdownFiles(StringView root, ArenaAllocator& arena, Array<StringView, ArenaAllocator>& out) {
+    Array<StringView, ArenaAllocator> files(arena);
+    if (!CollectFiles(root, StringView("docs"), arena, files)) return false;
+    // top-level *.md
+    DIR* d = opendir(root.Empty() ? "." : ArenaCat(arena, root, StringView()).Data());
+    if (d == nullptr) return false;
+    while (const dirent* e = readdir(d)) {
+        StringView name(e->d_name, std::strlen(e->d_name));
+        if (name.Empty() || name[0] == '.' || !EndsWith(name, ".md")) continue;
+        StringView path = ArenaCat(arena, name, StringView());
+        struct stat st;
+        StringView full = root.Empty() ? path : ArenaCat(arena, root, StringView("/"), path);
+        if (stat(full.Data(), &st) == 0 && S_ISREG(st.st_mode)) files.Push(path);
+    }
+    closedir(d);
+    StableSort(files, [](StringView a, StringView b) { return a.Compare(b) < 0; });
+    for (usize i = 0; i < files.Size(); ++i) {
+        if (EndsWith(files[i], ".md")) out.Push(files[i]);
+    }
+    return true;
+}
 
 bool CheckLinks(StringView root, const SymbolIndex* index, ArenaAllocator& arena, const LinkOptions& options,
                 Array<FileDiag, ArenaAllocator>& out, LinkStats& stats) {
