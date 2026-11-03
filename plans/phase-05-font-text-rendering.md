@@ -7,7 +7,8 @@ pass/material machinery, not a separate rendering path.
 `PLAN.md` assumption #17) for font parsing/glyph rasterization, reusing
 the foundation string module's grapheme clustering (Days 10-12) for
 correct cursor/line-break behavior — the shared text layer every later
-UI need (in-game HUD, debug overlays, the Phase 17 editor's own widgets)
+UI need (in-game HUD, debug overlays, the Phase 6 UI system and through it
+the Phase 18 editor's widgets)
 builds on instead of each hand-rolling its own.
 **Definition of done:** arbitrary UTF-8 text renders on screen through
 the RHI at an interactive frame rate, with correct glyph shapes,
@@ -50,8 +51,7 @@ marks, emoji ZWJ sequences) each treated as one cursor-movement unit.
 - Subpixel/LCD-optimized rendering (FreeType supports it) is not a
   Phase 5 goal — this engine targets modern displays where grayscale
   antialiasing is standard; revisit only if a real quality gap shows up.
-- Whether the Phase 17 editor ends up needing anything beyond this
-  phase's text layer for its own widget UI (layout containers, styling)
-  is an open question for Phase 17, not this one — this phase only
-  commits to glyph rasterization/atlasing/basic layout, not a full UI
-  framework.
+- Widget UI (layout containers, styling, menus, buttons, the viewport
+  widget, input routing) is **Phase 6's** job, built on this phase's text
+  layer; this phase only commits to glyph rasterization/atlasing/basic
+  layout, not a UI framework.

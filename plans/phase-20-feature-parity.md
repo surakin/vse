@@ -1,4 +1,4 @@
-# Phase 19+ — Feature-Parity Push
+# Phase 20+ — Feature-Parity Push
 
 **Depends on:** a working engine core and at least one real demo (Phase
 18) to ground priorities against real usage rather than a feature
@@ -14,15 +14,15 @@ detail only once reached, against real priorities at that time.
   (Nanite/Lumen-class features), advanced shadowing.
 - World streaming / world partition for large open worlds.
 - Networking/replication.
-- Animation systems (blend trees, IK, state machines) beyond Phase 15's
+- Animation systems (blend trees, IK, state machines) beyond Phase 16's
   basic skeletal mesh import.
-- Landscape/terrain and foliage systems (deferred out of Phase 15).
+- Landscape/terrain and foliage systems (deferred out of Phase 16).
 - Niagara-equivalent particle/VFX system.
 - Further Unreal import coverage: latent Blueprint nodes, Sequencer/
   cinematics, cooked-game import if ever justified.
 
 ## Notes / open questions
 
-- Deliberately left unscoped. Break this into real phase-NN files (20,
-  21, ...) once Phase 18 is complete and it's clear what the engine
+- Deliberately left unscoped. Break this into real phase-NN files (21,
+  22, ...) once Phase 19 is complete and it's clear what the engine
   actually needs next.

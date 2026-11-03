@@ -193,7 +193,7 @@ interpretations keep it buildable — flag any that don't match intent:
    license terms, not permissively-licensed open source, and has its own
    rules about how UE code can be used and redistributed. Given this
    project's stated mission is to build a competing engine, the EULA
-   terms need an actual review before Phase 15 work starts — don't assume
+   terms need an actual review before Phase 16 work starts — don't assume
    this is fine by default.
 7. **First target CPU/ABI: x86-64 Linux, System V ABI.** ARM and the
    Windows x64 calling convention are handled when those platform phases
@@ -223,12 +223,12 @@ interpretations keep it buildable — flag any that don't match intent:
     conservative verbosity rather than "log everything."
 11. **Every target platform — desktop, mobile, and console — is considered
     in interface design from day one, even though only Linux is
-    implemented before Phase 11.** Implementation still follows the
+    implemented before Phase 12.** Implementation still follows the
     roadmap order (Linux → Windows/macOS → Android/iOS → consoles), but
     that's a build-order decision, not a design-scope one: the
     platform-layer and engine-facing interfaces (window, input, threads,
     files, time — see architecture layers below) must be shaped so that
-    *no* later platform backend (Phases 11-14) ever forces a redesign of
+    *no* later platform backend (Phases 12-15) ever forces a redesign of
     already-built engine layers, mobile/console included. Concretely,
     this means anticipating things Linux/desktop alone wouldn't surface
     even before those backends are implemented: touch/gamepad input
@@ -242,7 +242,7 @@ interpretations keep it buildable — flag any that don't match intent:
     constraints (a specific console SDK, an NDA'd requirement) genuinely
     couldn't have been anticipated, that's a real exception to flag and
     fix explicitly — not something to design around casually.
-12. **The resource system (Phase 9) has pluggable storage backends and
+12. **The resource system (Phase 10) has pluggable storage backends and
     versioned per-type binary formats.** Resources are loaded through a
     backend abstraction — pak-file (packed archive), filesystem (loose
     files, for fast dev iteration without repacking), and network
@@ -252,7 +252,7 @@ interpretations keep it buildable — flag any that don't match intent:
     material, level, ...) owns its own binary format with an explicit
     version header; the runtime loader supports old versions rather than
     breaking previously-cooked content when a format changes — this is
-    the resolution to the versioning/migration question Phase 9 already
+    the resolution to the versioning/migration question Phase 10 already
     flagged as open. Binary is the default and required format
     engine-wide; a parallel text format is optional per type, added only
     where it earns its keep (chiefly where hand-editing or VCS-friendly
@@ -271,21 +271,21 @@ interpretations keep it buildable — flag any that don't match intent:
     ships inside the runtime engine/game binary — unlike CMake or the
     Unreal DLL, which are dev-time/import-tool-only — but its license
     (MIT) imposes no meaningful restriction, unlike the Unreal EULA
-    question in assumption #6. Phase 10's scripting subsystem is designed
+    question in assumption #6. Phase 11's scripting subsystem is designed
     with a pluggable language-backend seam (matching the pattern already
     used for the RHI, resource, and window backends) so more "well-known
     languages" can be added later as additive backends, not a redesign.
-    Phase 16's Blueprint importer targets this scripting subsystem
+    Phase 17's Blueprint importer targets this scripting subsystem
     (transpiling Blueprint graphs into Lua) instead of a custom VM.
     **Open note, not yet resolved:** LuaJIT's JIT (runtime code
     generation) is disallowed on iOS App Store builds and typically on
     console certification; LuaJIT has an interpreter-only fallback mode
-    for those. Phase 10's embedding should keep JIT-vs-interpreter a
+    for those. Phase 11's embedding should keep JIT-vs-interpreter a
     platform-config choice, not an API change (ties to assumption #11) —
-    exact handling is deferred to Phases 12/14.
-14. **Unreal import (Phases 15-16) is sequenced after multiplatform
-    support (Phases 11-14), not immediately after the asset pipeline
-    (Phase 9).** Originally Phases 8 and 10 in an earlier draft's
+    exact handling is deferred to Phases 13/15.
+14. **Unreal import (Phases 16-17) is sequenced after multiplatform
+    support (Phases 12-15), not immediately after the asset pipeline
+    (Phase 10).** Originally Phases 9 and 11 in an earlier draft's
     numbering (superseded by this reordering itself, not part of the
     current roadmap); moved so the engine reaches
     Linux+Windows+macOS/iOS+Android+console viability first, with Unreal
@@ -293,7 +293,7 @@ interpretations keep it buildable — flag any that don't match intent:
     layered on afterward rather than gating or getting entangled with
     porting work. Assumption #11's "no platform ever forces a redesign"
     guarantee already meant this reordering needed no interface changes
-    to Phases 0-10; it's a pure roadmap-order change. Scripting (Phase
+    to Phases 0-11; it's a pure roadmap-order change. Scripting (Phase
     10) stays ahead of multiplatform since it doesn't depend on porting
     being done first.
 15. **The job system (Phase 2) is its own layer above Platform, and jobs
@@ -323,7 +323,7 @@ interpretations keep it buildable — flag any that don't match intent:
     returns control to the scheduler without blocking the OS thread. This
     is pure standard C++ — nothing OS- or ABI-specific anywhere in this
     phase — and the same mechanism doubles as the async-I/O primitive
-    (Phase 9's asset streaming), rather than needing a second suspension
+    (Phase 10's asset streaming), rather than needing a second suspension
     mechanism alongside fibers. Coroutine-frame allocation is routed
     through a Foundation pool allocator (via `promise_type::operator
     new/delete`) rather than the global default `new`, keeping the
@@ -378,7 +378,7 @@ interpretations keep it buildable — flag any that don't match intent:
     targets), FreeType is a portable third-party library that happens
     to often be preinstalled on desktop Linux, but isn't guaranteed
     present the same way on every platform in this project's roadmap
-    (Android, iOS, consoles — Phases 13-14) — the same reasoning that
+    (Android, iOS, consoles — Phases 14-15) — the same reasoning that
     put LuaJIT under vendored/embedded rather than system-linked.
     **Scope for Phase 5:** font parsing, glyph rasterization/hinting,
     and glyph-atlas packing (uploaded through the Phase 3 RHI as a
@@ -419,12 +419,14 @@ interpretations keep it buildable — flag any that don't match intent:
 
 ```
 Game / Demo content
-Editor tooling                 --> also consumes Text (its own UI's text/labels)
+Editor tooling                 --> built on the UI system (and Viewport widget)
 Unreal Blueprint import        --> targets Scripting (Lua/LuaJIT)
 Scripting (Lua/LuaJIT first, pluggable language backends)
 Unreal asset & level import    --> targets Asset pipeline / ECS / Renderer
 Physics | Audio | Asset Pipeline
 ECS
+UI system (retained widgets, layout, input routing, Viewport widget
+          hosting a rendered 3D world) --> consumes Text + Renderer render targets
 Text (FreeType-backed glyph rasterization/atlasing, built on Renderer/RHI)
 Renderer core
 RHI  (Vulkan | DX12 | Metal)
@@ -448,6 +450,10 @@ libc / raw syscalls / OS ABI
                   glyph atlas packing, text layout (line breaking,
                   cursor/selection positions) built on the foundation
                   string module's grapheme clustering (Days 10-12)
+  /ui           - retained widget toolkit built on rhi/renderer/text:
+                  layout, input routing, theming, menus/buttons/
+                  comboboxes/scrollbars/labels/text fields, and the
+                  Viewport widget that hosts a rendered 3D world
   /ecs          - entity/component/system core
   /physics
   /audio
@@ -480,20 +486,21 @@ PLAN.md
 | 3 | Vulkan RHI | Linux | [plans/phase-03-vulkan-rhi.md](plans/phase-03-vulkan-rhi.md) | RHI renders a lit, textured cube through Vulkan; no Vulkan calls leak outside `/engine/rhi/vulkan` |
 | 4 | Renderer core | Linux | [plans/phase-04-renderer-core.md](plans/phase-04-renderer-core.md) | Render graph draws multiple objects, basic materials/lighting, depth buffering |
 | 5 | **Font & text rendering** | Linux | [plans/phase-05-font-text-rendering.md](plans/phase-05-font-text-rendering.md) | Arbitrary UTF-8 text (via FreeType-rasterized glyphs, Day 10-12 grapheme clustering for cursor/line-break correctness) renders on screen through the RHI at an interactive frame rate |
-| 6 | ECS | Linux | [plans/phase-06-ecs.md](plans/phase-06-ecs.md) | Thousands of entities updated per frame, benchmarked vs. naive OOP baseline |
-| 7 | Physics | Linux | [plans/phase-07-physics.md](plans/phase-07-physics.md) | Rigid body sim: gravity, collision, resolution for boxes/spheres/capsules |
-| 8 | Audio | Linux | [plans/phase-08-audio.md](plans/phase-08-audio.md) | Custom mixer plays hand-decoded WAV, positional 3D audio |
-| 9 | Asset pipeline & resource system | Linux | [plans/phase-09-asset-pipeline.md](plans/phase-09-asset-pipeline.md) | Offline cooker → versioned per-type binary formats, loaded at runtime through pak/filesystem resource backends |
-| 10 | Scripting (Lua/LuaJIT) | Linux | [plans/phase-10-scripting.md](plans/phase-10-scripting.md) | LuaJIT runs a gameplay script that spawns/moves an entity via engine API bindings |
-| 11 | Windows port + DX12 backend | Windows | [plans/phase-11-windows-dx12.md](plans/phase-11-windows-dx12.md) | Phases 1-10 running on Windows through the DX12 RHI backend |
-| 12 | macOS/iOS port + Metal backend | macOS, iOS | [plans/phase-12-macos-ios-metal.md](plans/phase-12-macos-ios-metal.md) | Phases 1-10 running through the Metal RHI backend |
-| 13 | Android port | Android | [plans/phase-13-android.md](plans/phase-13-android.md) | Vulkan backend reused; touch input platform layer |
-| 14 | Console ports | Xbox, PS5 | [plans/phase-14-consoles.md](plans/phase-14-consoles.md) | Gated on dev kit/NDA access; same RHI, new platform layer |
-| 15 | **Unreal asset & level import** | Linux | [plans/phase-15-unreal-asset-import.md](plans/phase-15-unreal-asset-import.md) | A real UE5 project's meshes/textures/materials/one level import and render in-engine |
-| 16 | **Unreal Blueprint import** | Linux | [plans/phase-16-unreal-blueprint-import.md](plans/phase-16-unreal-blueprint-import.md) | A simple real Blueprint's logic runs correctly, transpiled to Lua and executed via Phase 10's scripting subsystem |
-| 17 | Editor tooling | Linux first | [plans/phase-17-editor.md](plans/phase-17-editor.md) | In-engine editor: scene view, entity inspector, asset browser |
-| 18 | First playable demo | Linux, Windows | [plans/phase-18-first-playable-demo.md](plans/phase-18-first-playable-demo.md) | A small real game built with the engine, dogfooding every system |
-| 19+ | Feature-parity push | all | [plans/phase-19-feature-parity.md](plans/phase-19-feature-parity.md) | Ongoing: advanced rendering, world streaming, networking — scoped when reached |
+| 6 | **UI system (widgets & viewport)** | Linux | [plans/phase-06-ui-system.md](plans/phase-06-ui-system.md) | Retained widget toolkit (menus, buttons, comboboxes, scrollbars, labels, text fields...) on the RHI and Phase 5 text, with a viewport widget that renders the 3D world inside a resizable panel and routes input correctly |
+| 7 | ECS | Linux | [plans/phase-07-ecs.md](plans/phase-07-ecs.md) | Thousands of entities updated per frame, benchmarked vs. naive OOP baseline |
+| 8 | Physics | Linux | [plans/phase-08-physics.md](plans/phase-08-physics.md) | Rigid body sim: gravity, collision, resolution for boxes/spheres/capsules |
+| 9 | Audio | Linux | [plans/phase-09-audio.md](plans/phase-09-audio.md) | Custom mixer plays hand-decoded WAV, positional 3D audio |
+| 10 | Asset pipeline & resource system | Linux | [plans/phase-10-asset-pipeline.md](plans/phase-10-asset-pipeline.md) | Offline cooker → versioned per-type binary formats, loaded at runtime through pak/filesystem resource backends |
+| 11 | Scripting (Lua/LuaJIT) | Linux | [plans/phase-11-scripting.md](plans/phase-11-scripting.md) | LuaJIT runs a gameplay script that spawns/moves an entity via engine API bindings |
+| 12 | Windows port + DX12 backend | Windows | [plans/phase-12-windows-dx12.md](plans/phase-12-windows-dx12.md) | Phases 1-11 running on Windows through the DX12 RHI backend |
+| 13 | macOS/iOS port + Metal backend | macOS, iOS | [plans/phase-13-macos-ios-metal.md](plans/phase-13-macos-ios-metal.md) | Phases 1-11 running through the Metal RHI backend |
+| 14 | Android port | Android | [plans/phase-14-android.md](plans/phase-14-android.md) | Vulkan backend reused; touch input platform layer |
+| 15 | Console ports | Xbox, PS5 | [plans/phase-15-consoles.md](plans/phase-15-consoles.md) | Gated on dev kit/NDA access; same RHI, new platform layer |
+| 16 | **Unreal asset & level import** | Linux | [plans/phase-16-unreal-asset-import.md](plans/phase-16-unreal-asset-import.md) | A real UE5 project's meshes/textures/materials/one level import and render in-engine |
+| 17 | **Unreal Blueprint import** | Linux | [plans/phase-17-unreal-blueprint-import.md](plans/phase-17-unreal-blueprint-import.md) | A simple real Blueprint's logic runs correctly, transpiled to Lua and executed via Phase 11's scripting subsystem |
+| 18 | Editor tooling | Linux first | [plans/phase-18-editor.md](plans/phase-18-editor.md) | In-engine editor: scene view, entity inspector, asset browser |
+| 19 | First playable demo | Linux, Windows | [plans/phase-19-first-playable-demo.md](plans/phase-19-first-playable-demo.md) | A small real game built with the engine, dogfooding every system |
+| 20+ | Feature-parity push | all | [plans/phase-20-feature-parity.md](plans/phase-20-feature-parity.md) | Ongoing: advanced rendering, world streaming, networking — scoped when reached |
 
 ## Progress log
 
@@ -508,3 +515,13 @@ that changed from the plan and why.)_
   thread design — see `plans/phase-02-job-system.md` "Design decisions".
   Also this day: removed the hand-rolled libc `mem*`/`strlen` overrides
   (assumption #2 amendment).
+
+- **2026-11-03 — UI system added as a new Phase 6.** Found at the desk:
+  no phase owned a GUI (only one bullet inside the last-but-one Editor
+  phase). Inserted "UI system (widgets & viewport)" after Font & Text —
+  retained widget toolkit (menus, buttons, comboboxes, scrollbars, labels,
+  ...) plus a viewport widget hosting the rendered 3D world — and
+  renumbered the old Phases 6-19 to 7-20 (files renamed, all cross-
+  references updated; historical dated design docs under
+  `docs/superpowers/specs/` keep their original numbers). The Editor is
+  now Phase 18 and builds on Phase 6.

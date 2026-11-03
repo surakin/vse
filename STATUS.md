@@ -397,3 +397,12 @@ pool (test verified to fail without the fix). X11 input tests now wait
 for the WM's own focus churn to settle before injecting (40/40 clean
 runs). 148 tests green.
 
+**Roadmap change (2026-11-03):** a dedicated **Phase 6 — UI System
+(Widgets & Viewport)** was inserted after Font & Text (retained widget
+toolkit with menus/buttons/comboboxes/scrollbars/labels/text fields and a
+viewport widget hosting the rendered 3D world). The old Phases 6-19 are
+now 7-20 (plan files renamed, cross-references updated; the dated design
+docs under `docs/superpowers/specs/` keep their original numbering). It
+is a goal/deliverable-level plan only — not startable until its days are
+broken out. Phase 2 (Job System) remains the active phase.
+
