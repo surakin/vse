@@ -1,8 +1,11 @@
 #include "os/linux/x11/x11_window.h"
 
 #include <X11/Xlib.h>
+#include <X11/XKBlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
+
+#include <cstring>
 
 #include "log/log.h"
 #include "mem/arena_allocator.h"
@@ -24,6 +27,54 @@ void LogResize(u32 width, u32 height) {
     StringBuilder<ArenaAllocator> line(scratch);
     line.Append("X11: window resized to ").AppendUInt(width).Append('x').AppendUInt(height);
     Log(LogPlatform, LogVerbosity::Info, line.View());
+}
+
+u32 ModifiersFromState(unsigned int state) {
+    u32 mods = 0;
+    if ((state & ShiftMask) != 0) mods |= kModShift;
+    if ((state & ControlMask) != 0) mods |= kModCtrl;
+    if ((state & Mod1Mask) != 0) mods |= kModAlt;
+    if ((state & Mod4Mask) != 0) mods |= kModSuper;
+    if ((state & LockMask) != 0) mods |= kModCapsLock;
+    if ((state & Mod2Mask) != 0) mods |= kModNumLock;
+    return mods;
+}
+
+// X reports the wheel as buttons 4-7. Wayland reports ~10 units per
+// wheel notch, so use the same magnitude to keep InputState's scroll
+// values comparable across backends.
+constexpr f64 kScrollUnitsPerNotch = 10.0;
+
+void HandleButton(const XButtonEvent& e, bool pressed, InputState& input) {
+    input.mouse_x = e.x;
+    input.mouse_y = e.y;
+    input.keyboard.modifiers = ModifiersFromState(e.state);
+    u32 bit = 0;
+    switch (e.button) {
+    case Button1: bit = kMouseLeft; break;
+    case Button2: bit = kMouseMiddle; break;
+    case Button3: bit = kMouseRight; break;
+    case 8: bit = kMouseBack; break;
+    case 9: bit = kMouseForward; break;
+    case Button4:
+        if (pressed) input.scroll_dy -= kScrollUnitsPerNotch; // up
+        return;
+    case Button5:
+        if (pressed) input.scroll_dy += kScrollUnitsPerNotch; // down
+        return;
+    case 6:
+        if (pressed) input.scroll_dx -= kScrollUnitsPerNotch; // left
+        return;
+    case 7:
+        if (pressed) input.scroll_dx += kScrollUnitsPerNotch; // right
+        return;
+    default: return;
+    }
+    if (pressed) {
+        input.mouse_buttons |= bit;
+    } else {
+        input.mouse_buttons &= ~bit;
+    }
 }
 
 } // namespace
@@ -83,6 +134,10 @@ X11Window X11Window::Create(StringView title, u32 width, u32 height) {
                         XNFocusWindow, window, nullptr);
     }
 
+    // Without this, X synthesizes a KeyRelease+KeyPress pair for every
+    // autorepeat tick, which would flicker keys up/down across frames.
+    XkbSetDetectableAutoRepeat(display, True, nullptr);
+
     XMapWindow(display, window);
     XSync(display, False);
 
@@ -110,6 +165,7 @@ X11Window::X11Window(X11Window&& other) noexcept
       width_(other.width_),
       height_(other.height_),
       should_close_(other.should_close_) {
+    std::memcpy(held_, other.held_, sizeof(held_));
     other.display_ = nullptr;
     other.window_ = 0;
     other.wm_delete_window_ = 0;
@@ -131,6 +187,7 @@ X11Window& X11Window::operator=(X11Window&& other) noexcept {
         width_ = other.width_;
         height_ = other.height_;
         should_close_ = other.should_close_;
+        std::memcpy(held_, other.held_, sizeof(held_));
         other.display_ = nullptr;
         other.window_ = 0;
         other.wm_delete_window_ = 0;
@@ -203,17 +260,99 @@ void X11Window::PumpEvents(InputState* input) {
         case KeyRelease:
             HandleKey(&event.xkey, false, input);
             break;
+        case ButtonPress:
+        case ButtonRelease:
+            if (input != nullptr) {
+                HandleButton(event.xbutton, event.type == ButtonPress, *input);
+            }
+            break;
+        case MotionNotify:
+            if (input != nullptr) {
+                input->mouse_x = event.xmotion.x;
+                input->mouse_y = event.xmotion.y;
+                input->pointer_inside = true;
+                input->keyboard.modifiers = ModifiersFromState(event.xmotion.state);
+            }
+            break;
+        case EnterNotify:
+            if (input != nullptr) {
+                input->pointer_inside = true;
+                input->mouse_x = event.xcrossing.x;
+                input->mouse_y = event.xcrossing.y;
+            }
+            break;
+        case LeaveNotify:
+            if (input != nullptr) {
+                // Held buttons survive leaving (X grabs deliver the
+                // release), matching the Wayland backend.
+                input->pointer_inside = false;
+            }
+            break;
+        case FocusOut:
+            // Releases won't be seen while unfocused; don't stick keys.
+            ReleaseAllKeys(input);
+            break;
         default:
             break;
         }
     }
 }
 
+void X11Window::ReleaseAllKeys(InputState* input) {
+    for (Key& k : held_) {
+        k = Key::Unknown;
+    }
+    if (input != nullptr) {
+        input->keyboard.ReleaseAll();
+    }
+}
+
 void X11Window::HandleKey(const void* xkey_event, bool pressed, InputState* input) {
-    (void)xkey_event;
-    (void)pressed;
-    (void)input;
-    // Day 25.
+    if (input == nullptr) {
+        return;
+    }
+    // Copy: the XKeyEvent API takes a mutable pointer.
+    XKeyEvent xkey = *static_cast<const XKeyEvent*>(xkey_event);
+    input->keyboard.modifiers = ModifiersFromState(xkey.state);
+    unsigned int code = xkey.keycode;
+    if (code >= 256) {
+        return;
+    }
+
+    if (!pressed) {
+        Key key = held_[code];
+        if (key == Key::Unknown) {
+            // Press predates us (e.g. focus arrived mid-hold): translate.
+            KeySym sym = XLookupKeysym(&xkey, 0);
+            key = KeyFromKeysym(static_cast<u32>(sym));
+        }
+        input->keyboard.SetDown(key, false);
+        held_[code] = Key::Unknown;
+        return;
+    }
+
+    // Full keysym translation through the input context when there is
+    // one (honors layout group, modifiers and compose), else the plain
+    // XLookupString path. The UTF-8 text itself is not consumed yet —
+    // text input events are a later input-layer feature — but it is the
+    // reason the IC exists and is validated by the lookup status.
+    KeySym sym = NoSymbol;
+    char text[32];
+    if (input_context_ != nullptr) {
+        Status status = 0;
+        Xutf8LookupString(reinterpret_cast<XIC>(input_context_), &xkey, text, sizeof(text), &sym, &status);
+        if (status != XLookupKeySym && status != XLookupBoth) {
+            sym = NoSymbol;
+        }
+    } else {
+        XLookupString(&xkey, text, sizeof(text), &sym, nullptr);
+    }
+    if (sym == NoSymbol) {
+        sym = XLookupKeysym(&xkey, 0);
+    }
+    Key key = KeyFromKeysym(static_cast<u32>(sym));
+    held_[code] = key;
+    input->keyboard.SetDown(key, true);
 }
 
 } // namespace engine_placeholder::os::x11

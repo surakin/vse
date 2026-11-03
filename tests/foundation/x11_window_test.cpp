@@ -132,3 +132,250 @@ TEST_CASE("X11Window move transfers ownership without double-close", "[x11][os]"
     REQUIRE(c.Valid());
     REQUIRE(c.NativeWindow() == native);
 }
+
+// ---- Day 25: input ----------------------------------------------------
+
+#include <X11/keysym.h>
+
+#include <cstdlib>
+#include <string_view>
+
+#include "os/input.h"
+
+using engine_placeholder::os::InputState;
+using engine_placeholder::os::Key;
+using engine_placeholder::os::KeyFromKeysym;
+
+namespace {
+
+// A second client connection that injects synthetic input events into a
+// window, the way a real server would deliver them.
+class Injector {
+public:
+    Injector() : display_(XOpenDisplay(nullptr)) {}
+    ~Injector() {
+        if (display_ != nullptr) {
+            XCloseDisplay(display_);
+        }
+    }
+    bool Valid() const { return display_ != nullptr; }
+    Display* Dpy() const { return display_; }
+
+    void Key(unsigned long window, unsigned int keycode, unsigned int state, bool press) {
+        XKeyEvent e = {};
+        e.type = press ? KeyPress : KeyRelease;
+        e.display = display_;
+        e.window = window;
+        e.root = DefaultRootWindow(display_);
+        e.keycode = keycode;
+        e.state = state;
+        e.same_screen = True;
+        Send(window, reinterpret_cast<XEvent&>(e), press ? KeyPressMask : KeyReleaseMask);
+    }
+
+    void Button(unsigned long window, unsigned int button, int x, int y, unsigned int state, bool press) {
+        XButtonEvent e = {};
+        e.type = press ? ButtonPress : ButtonRelease;
+        e.display = display_;
+        e.window = window;
+        e.root = DefaultRootWindow(display_);
+        e.button = button;
+        e.x = x;
+        e.y = y;
+        e.state = state;
+        e.same_screen = True;
+        Send(window, reinterpret_cast<XEvent&>(e), press ? ButtonPressMask : ButtonReleaseMask);
+    }
+
+    void Motion(unsigned long window, int x, int y) {
+        XMotionEvent e = {};
+        e.type = MotionNotify;
+        e.display = display_;
+        e.window = window;
+        e.root = DefaultRootWindow(display_);
+        e.x = x;
+        e.y = y;
+        e.same_screen = True;
+        Send(window, reinterpret_cast<XEvent&>(e), PointerMotionMask);
+    }
+
+private:
+    void Send(unsigned long window, XEvent& e, long mask) {
+        XSendEvent(display_, window, False, mask, &e);
+        XSync(display_, False);
+    }
+    Display* display_;
+};
+
+void PumpFor(X11Window& window, InputState* input, int iterations = 20) {
+    for (int i = 0; i < iterations; ++i) {
+        window.PumpEvents(input);
+        engine_placeholder::os::SleepNanos(5'000'000);
+    }
+}
+
+} // namespace
+
+TEST_CASE("X11Window translates key press/release into Key via the server's keymap", "[x11][input][os]") {
+    X11Window window = X11Window::Create("key test", 320, 240);
+    REQUIRE(window.Valid());
+    Injector inj;
+    REQUIRE(inj.Valid());
+    InputState input;
+
+    struct Case {
+        KeySym sym;
+        Key expected;
+    };
+    // Layout-independent: keycode is looked up *from* the keysym, so this
+    // holds under whatever layout the server currently uses.
+    const Case cases[] = {
+        {XK_a, Key::A}, {XK_m, Key::M}, {XK_space, Key::Space}, {XK_Escape, Key::Escape},
+        {XK_F1, Key::F1}, {XK_Left, Key::Left}, {XK_Return, Key::Enter}, {XK_1, Key::Num1},
+    };
+    for (const Case& c : cases) {
+        unsigned int code = XKeysymToKeycode(inj.Dpy(), c.sym);
+        if (code == 0) {
+            continue; // not on this layout
+        }
+        inj.Key(window.NativeWindow(), code, 0, true);
+        PumpFor(window, &input);
+        INFO("keysym " << c.sym);
+        CHECK(input.keyboard.IsDown(c.expected));
+        inj.Key(window.NativeWindow(), code, 0, false);
+        PumpFor(window, &input);
+        CHECK_FALSE(input.keyboard.IsDown(c.expected));
+    }
+}
+
+TEST_CASE("X11Window releases the Key a code was pressed as even if modifiers changed", "[x11][input][os]") {
+    X11Window window = X11Window::Create("held key test", 320, 240);
+    REQUIRE(window.Valid());
+    Injector inj;
+    REQUIRE(inj.Valid());
+    InputState input;
+
+    unsigned int code = XKeysymToKeycode(inj.Dpy(), XK_a);
+    REQUIRE(code != 0);
+    inj.Key(window.NativeWindow(), code, 0, true);
+    PumpFor(window, &input);
+    REQUIRE(input.keyboard.IsDown(Key::A));
+    // Release arrives with Shift now active (would translate to 'A' too,
+    // but the contract is: clear what was pressed).
+    inj.Key(window.NativeWindow(), code, ShiftMask, false);
+    PumpFor(window, &input);
+    REQUIRE_FALSE(input.keyboard.IsDown(Key::A));
+    REQUIRE((input.keyboard.modifiers & engine_placeholder::os::kModShift) != 0);
+}
+
+TEST_CASE("X11Window maps event state bits to engine modifiers", "[x11][input][os]") {
+    X11Window window = X11Window::Create("mods test", 320, 240);
+    REQUIRE(window.Valid());
+    Injector inj;
+    REQUIRE(inj.Valid());
+    InputState input;
+
+    unsigned int code = XKeysymToKeycode(inj.Dpy(), XK_a);
+    REQUIRE(code != 0);
+    inj.Key(window.NativeWindow(), code, ShiftMask | ControlMask | Mod1Mask | Mod4Mask, true);
+    PumpFor(window, &input);
+    using namespace engine_placeholder::os;
+    REQUIRE(input.keyboard.modifiers == (kModShift | kModCtrl | kModAlt | kModSuper));
+}
+
+TEST_CASE("X11Window mirrors pointer position, buttons and scroll into InputState", "[x11][input][os]") {
+    using namespace engine_placeholder::os;
+    X11Window window = X11Window::Create("pointer test", 320, 240);
+    REQUIRE(window.Valid());
+    Injector inj;
+    REQUIRE(inj.Valid());
+    InputState input;
+
+    inj.Motion(window.NativeWindow(), 37, 52);
+    PumpFor(window, &input);
+    REQUIRE(input.mouse_x == 37.0);
+    REQUIRE(input.mouse_y == 52.0);
+    REQUIRE(input.pointer_inside);
+
+    inj.Button(window.NativeWindow(), Button1, 40, 50, 0, true);
+    inj.Button(window.NativeWindow(), Button3, 40, 50, Button1Mask, true);
+    PumpFor(window, &input);
+    REQUIRE(input.mouse_buttons == (kMouseLeft | kMouseRight));
+    REQUIRE(input.mouse_x == 40.0);
+
+    inj.Button(window.NativeWindow(), Button1, 40, 50, 0, false);
+    PumpFor(window, &input);
+    REQUIRE(input.mouse_buttons == kMouseRight);
+    inj.Button(window.NativeWindow(), Button3, 40, 50, 0, false);
+    inj.Button(window.NativeWindow(), Button2, 40, 50, 0, true);
+    inj.Button(window.NativeWindow(), 8, 40, 50, 0, true);
+    inj.Button(window.NativeWindow(), 9, 40, 50, 0, true);
+    PumpFor(window, &input);
+    REQUIRE(input.mouse_buttons == (kMouseMiddle | kMouseBack | kMouseForward));
+
+    // Wheel: buttons 4/5 vertical, 6/7 horizontal; only presses count and
+    // BeginFrame() clears the accumulation.
+    input.BeginFrame();
+    inj.Button(window.NativeWindow(), Button5, 40, 50, 0, true);
+    inj.Button(window.NativeWindow(), Button5, 40, 50, 0, false);
+    inj.Button(window.NativeWindow(), Button5, 40, 50, 0, true);
+    inj.Button(window.NativeWindow(), Button4, 40, 50, 0, true);
+    inj.Button(window.NativeWindow(), 7, 40, 50, 0, true);
+    PumpFor(window, &input);
+    REQUIRE(input.scroll_dy == 10.0); // down, down, up = +10 +10 -10
+    REQUIRE(input.scroll_dx == 10.0);
+    REQUIRE(input.mouse_buttons == (kMouseMiddle | kMouseBack | kMouseForward)); // wheel isn't a held button
+    input.BeginFrame();
+    REQUIRE(input.scroll_dy == 0.0);
+}
+
+TEST_CASE("X11Window input events are ignored (no crash) when no InputState is supplied", "[x11][input][os]") {
+    X11Window window = X11Window::Create("no input state", 320, 240);
+    REQUIRE(window.Valid());
+    Injector inj;
+    REQUIRE(inj.Valid());
+    unsigned int code = XKeysymToKeycode(inj.Dpy(), XK_a);
+    inj.Key(window.NativeWindow(), code, 0, true);
+    inj.Motion(window.NativeWindow(), 5, 5);
+    inj.Button(window.NativeWindow(), Button1, 5, 5, 0, true);
+    PumpFor(window, nullptr);
+    REQUIRE_FALSE(window.ShouldClose());
+}
+
+// Manual/CI-configurable cross-layout check: run the server with a given
+// layout (e.g. `Xvfb :97 & DISPLAY=:97 setxkbmap fr`) and set
+// ENGINE_X11_TEST_LAYOUT=us|fr|de. Skipped when unset, because this
+// machine's own layout isn't known to the test.
+TEST_CASE("X11Window yields layout-correct Keys for physical keycodes (needs ENGINE_X11_TEST_LAYOUT)",
+          "[x11][input][os][layout]") {
+    const char* layout = std::getenv("ENGINE_X11_TEST_LAYOUT");
+    if (layout == nullptr) {
+        SKIP("ENGINE_X11_TEST_LAYOUT not set");
+    }
+    X11Window window = X11Window::Create("layout test", 320, 240);
+    REQUIRE(window.Valid());
+    Injector inj;
+    REQUIRE(inj.Valid());
+    InputState input;
+
+    // X keycodes = evdev + 8: Q position 24, Z position 52, M position 58.
+    struct Phys {
+        unsigned int keycode;
+        Key us, fr, de;
+    };
+    const Phys phys[] = {
+        {24, Key::Q, Key::A, Key::Q}, // top-left letter
+        {52, Key::Z, Key::W, Key::Y}, // bottom-left letter
+        {58, Key::M, Key::Comma, Key::M},
+    };
+    for (const Phys& p : phys) {
+        Key expected = std::string_view(layout) == "fr" ? p.fr : std::string_view(layout) == "de" ? p.de : p.us;
+        inj.Key(window.NativeWindow(), p.keycode, 0, true);
+        PumpFor(window, &input);
+        INFO("layout " << layout << " keycode " << p.keycode);
+        CHECK(input.keyboard.IsDown(expected));
+        inj.Key(window.NativeWindow(), p.keycode, 0, false);
+        PumpFor(window, &input);
+        CHECK_FALSE(input.keyboard.IsDown(expected));
+    }
+}

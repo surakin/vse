@@ -264,6 +264,17 @@ close-button click still pending a human.**
 tests, and `-fno-builtin`; code uses `<cstring>`. See PLAN.md assumption
 #2 amendment. `StringView`/`StringBuilder` remain hand-rolled.
 
-**Phase 1 Days 13-24 done** (...; Wayland hello-window, X11 window —
-human visual/interactive check pending on Days 19-24); Days 25-26 (X11
-input, backend selection) not yet started.
+Day 25 done: X11 input. `X11Window::PumpEvents(InputState*)` now
+translates KeyPress/Release (XIC + `Xutf8LookupString`, fallback
+`XLookupString`, same `KeyFromKeysym` as Wayland; releases clear the Key
+pressed; FocusOut releases all; detectable autorepeat), Button 1/2/3/8/9,
+wheel 4-7 (10 units/notch like Wayland), Motion/Enter/Leave, and
+modifier masks. 6 new X11 tests via `XSendEvent` injection (102 total,
+green; one layout test skips unless `ENGINE_X11_TEST_LAYOUT` is set).
+**Gap:** the `fr`/`de` live-X11 layout check could not run — Xvfb here
+ignored every keymap change, so only `us` was verified through X11;
+multi-layout correctness is covered by Day 21's xkbcommon tests.
+
+**Phase 1 Days 13-25 done** (...; X11 window + input — human
+visual/interactive check pending on Days 19-25); Day 26 (backend
+selection) not yet started.

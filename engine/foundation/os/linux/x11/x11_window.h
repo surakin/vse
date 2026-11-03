@@ -54,6 +54,7 @@ public:
 private:
     void ReleaseAll();
     void HandleKey(const void* xkey_event, bool pressed, InputState* input);
+    void ReleaseAllKeys(InputState* input);
 
     _XDisplay* display_ = nullptr;
     unsigned long window_ = 0;
@@ -63,6 +64,10 @@ private:
     u32 width_ = 0;
     u32 height_ = 0;
     bool should_close_ = false;
+    // The Key each held X keycode was *pressed* as, so a release clears
+    // that Key even if modifiers changed in between (same rationale as
+    // WaylandInput::held_). X keycodes are 8-bit.
+    Key held_[256] = {};
 };
 
 } // namespace engine_placeholder::os::x11
