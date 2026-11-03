@@ -215,9 +215,20 @@ interactions either; left as an explicitly unchecked box in the day
 file rather than assumed passing, pending the user's next local
 session.
 
-**Phase 1 Days 13-20 all done** (process lifecycle/argv →
-`os::CommandLine`, timing, threading primitives, file I/O, GPU driver
-loading, Wayland connection/registry, Wayland surface/xdg window,
-Wayland event loop — human visual/interactive check pending on Days
-19-20); Days 21-26 (keyboard/pointer input, hello-window milestone,
-X11 fallback, backend selection) not yet started.
+Day 21 done: Wayland keyboard input via **libxkbcommon** (new named
+dependency, explicitly approved by the user 2026-11-03; linked via
+`pkg_check_modules`). New `os/input.h` (engine `Key` enum — layout-aware,
+so physical Q on AZERTY is `Key::A` — plus `KeyboardState`/modifier
+bits), `os/key_translate.cpp` (`KeyFromKeysym`, shared with the future
+X11 backend), `os/linux/xkb_keyboard.h/.cpp` (`XkbKeyboard`, compositor-
+free so it's testable against `us`/`fr`/`de` keymaps), and
+`os/linux/wayland/wayland_input.h/.cpp` (`WaylandInput`: seat
+capabilities → `wl_keyboard`, keymap/enter/leave/key/modifiers). Releases
+clear the Key a code was *pressed* as; focus loss releases all. 9 new
+tests (91 total, green). **Live keypress check on real keyboards not
+done** (remote session); layouts verified via compiled named keymaps.
+
+**Phase 1 Days 13-21 done** (...; Wayland event loop, Wayland keyboard
+— human visual/interactive check pending on Days 19-21); Days 22-26
+(pointer input, hello-window milestone, X11 fallback, backend selection)
+not yet started.

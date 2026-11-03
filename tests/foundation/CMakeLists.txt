@@ -27,6 +27,7 @@ set(FOUNDATION_TEST_SOURCES
   gpu_driver_loading_test.cpp
   wayland_connection_test.cpp
   wayland_window_test.cpp
+  keyboard_input_test.cpp
 )
 
 find_package(Threads REQUIRED)

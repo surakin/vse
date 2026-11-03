@@ -6,6 +6,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(FOUNDATION_PLATFORM_SOURCES
     os/linux/os.cpp
     os/linux/command_line.cpp
+    os/linux/xkb_keyboard.cpp
+    os/linux/wayland/wayland_input.cpp
     os/linux/wayland/wayland_connection.cpp
     os/linux/wayland/wayland_window.cpp
     os/linux/wayland/generated/xdg-shell-protocol.c
@@ -19,12 +21,18 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # wayland-protocols are dev-time-only, not linked here.
   find_package(PkgConfig REQUIRED)
   pkg_check_modules(WaylandClient REQUIRED IMPORTED_TARGET wayland-client)
+  # Day 21: libxkbcommon, the reference keymap-interpretation library
+  # Wayland compositors expect clients to use. A named dependency the
+  # user explicitly approved on 2026-11-03 (see
+  # plans/phase-01-linux-platform.md Notes).
+  pkg_check_modules(XkbCommon REQUIRED IMPORTED_TARGET xkbcommon)
 else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
 endif()
 
 set(FOUNDATION_SOURCES
   foundation.cpp
+  os/key_translate.cpp
   os/file_util.cpp
   os/gpu_driver_probe.cpp
   mem/mem.cpp
@@ -62,7 +70,7 @@ target_compile_options(foundation PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRO
 # correct here (unlike the compile-options split above).
 target_link_libraries(foundation PUBLIC ${CMAKE_DL_LIBS})
 # Day 18: libwayland-client (see the platform-selection block above).
-target_link_libraries(foundation PUBLIC PkgConfig::WaylandClient)
+target_link_libraries(foundation PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon)
 
 add_executable(engine_main main.cpp)
 target_compile_options(engine_main PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
@@ -82,7 +90,7 @@ target_compile_options(foundation_asan PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGIN
 target_compile_options(foundation_asan PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer -g)
 target_link_options(foundation_asan PUBLIC -fsanitize=address,undefined)
 target_link_libraries(foundation_asan PUBLIC ${CMAKE_DL_LIBS})
-target_link_libraries(foundation_asan PUBLIC PkgConfig::WaylandClient)
+target_link_libraries(foundation_asan PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon)
 
 add_executable(engine_main_asan main.cpp)
 target_compile_options(engine_main_asan PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
