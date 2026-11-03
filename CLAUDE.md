@@ -33,6 +33,36 @@ sub-tasks (see "How the plan is structured" below), is not yet
 startable; doing that breakdown is itself planning work that has to
 happen, and be committed, first.
 
+## End-of-day code review (required)
+
+**Every implementation day ends with a high-effort code review before it
+is considered done.** After a day's code and tests are written and
+passing, and before the final commit for that day:
+
+1. Run `/code-review high` on the day's diff (the uncommitted changes,
+   or the day's commit range if it was already committed in pieces).
+   Never use the `max` or `ultra` levels unless the user asks for one.
+2. Treat every finding seriously: verify it, fix it, and add a
+   regression test where one is practical (confirm the new test actually
+   fails without the fix). A finding that is declined must be recorded
+   with the reason, not dropped silently.
+3. Record the outcome in the day file under a "Post-implementation code
+   review" section — what was found, what was fixed, what was declined
+   and why — and mention it in `STATUS.md`.
+4. Only then commit the day as complete. If the review's fixes land in
+   follow-up commits, the day is not done until they do.
+
+This applies to every implementation day in every phase, including days
+that look low-risk. It does not apply to planning-only commits (plan
+files, `STATUS.md`-only edits). Concurrency, lifetime/ownership and
+memory-management code deserves extra scrutiny during the review — the
+reviews so far found real bugs in exactly those areas that the
+sanitizers and stress tests had not (dropped Wayland seat capabilities,
+a dead-connection hang, a thread-local destructor-order leak, a
+sanitizer canary that could pass for the wrong reason). Sanitizer and
+stress-test runs in a day file are verification of behavior, not a
+substitute for this review.
+
 ## What this project is
 
 A from-scratch, AAA-capable game engine. Read `PLAN.md` first — it is the
