@@ -190,3 +190,18 @@ TEST_CASE("PlatformWindowHost rejects opening twice and a null InputState for Wa
         REQUIRE_FALSE(w.Open(WindowBackend::Wayland, "no input", 320, 240, nullptr));
     }
 }
+
+TEST_CASE("The Wayland backend ends up with a keyboard and keymap (seat capabilities not lost to window setup)",
+          "[window][wayland][os]") {
+    if (!HaveEnv("WAYLAND_DISPLAY")) {
+        SKIP("no Wayland session");
+    }
+    InputState input;
+    wayland::WaylandPlatformWindow window;
+    REQUIRE(window.Open("input after window", 320, 240, &input));
+    // A desktop seat has a keyboard and pointer; if this fails the
+    // capabilities event was delivered before the listener existed.
+    REQUIRE(window.Input().HasKeyboard());
+    REQUIRE(window.Input().HasKeymap());
+    REQUIRE(window.Input().HasPointer());
+}

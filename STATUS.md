@@ -304,3 +304,15 @@ with "re-engine" + working close/resize.
 **Desk check 2026-11-03:** Day 19 visual confirmation passed (window appears
 on Plasma/Wayland). Remaining desk checks: keyboard, mouse, close button,
 resize, X11 backend.
+
+**Desk fix 2026-11-03 (no `input:` lines):** `WaylandPlatformWindow::Open`
+created the window (which roundtrips) *before* hooking the seat, and a
+`wl_seat.capabilities` event with no listener is silently dropped — so no
+keyboard/pointer was ever created. Input now hooks the seat first; a
+regression test (`window_backend_test.cpp`) asserts keyboard, keymap and
+pointer exist after `Open`. (The Day 21/22 tests missed this because they
+called `WaylandInput::Init` straight after `Connect`.) Also: per-frame
+`delta_ms` lines are now opt-in (`--frame-times`), and
+`--log-level=error|warn|info|debug|trace` sets all channels (e.g. to see
+resize lines). 114 tests green.
+

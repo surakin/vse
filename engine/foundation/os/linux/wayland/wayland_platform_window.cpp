@@ -17,12 +17,19 @@ bool WaylandPlatformWindow::Open(StringView title, u32 width, u32 height, InputS
     if (!connection_.Valid()) {
         return false;
     }
+    // Input must hook the seat *before* any further roundtrip: wl_seat's
+    // capabilities event is delivered once, shortly after the bind, and
+    // an event arriving while the proxy has no listener is silently
+    // discarded. WaylandWindow::Create() roundtrips, so creating the
+    // window first lost the capabilities (no keyboard/pointer, no input
+    // lines) — caught at the desk, 2026-11-03.
+    input_.Init(connection_, input);
     window_ = WaylandWindow::Create(connection_, title, "re_engine");
     if (!window_.Valid()) {
-        connection_ = WaylandConnection();
+        // Leave connection_/input_ in place: input_ holds proxies that
+        // must be destroyed while the display is still connected.
         return false;
     }
-    input_.Init(connection_, input);
     return true;
 }
 

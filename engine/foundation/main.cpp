@@ -114,6 +114,27 @@ int main(int argc, char** argv) {
         os::Write(1, line.CStr(), line.View().Length());
     }
 
+    // `--log-level=error|warn|info|debug|trace` sets every channel's
+    // verbosity (default Warn hides e.g. resize and decoration lines).
+    for (usize i = 0; i < cmd_line.FlagCount(); ++i) {
+        if (cmd_line.FlagName(i) == StringView("log-level") && cmd_line.FlagHasValue(i)) {
+            StringView v = cmd_line.FlagValue(i);
+            LogVerbosity level = LogVerbosity::Warn;
+            bool known = true;
+            if (v == StringView("error")) level = LogVerbosity::Error;
+            else if (v == StringView("warn")) level = LogVerbosity::Warn;
+            else if (v == StringView("info")) level = LogVerbosity::Info;
+            else if (v == StringView("debug")) level = LogVerbosity::Debug;
+            else if (v == StringView("trace")) level = LogVerbosity::Trace;
+            else known = false;
+            if (known) {
+                LogCore.SetVerbosity(level);
+                LogRender.SetVerbosity(level);
+                LogPlatform.SetVerbosity(level);
+            }
+        }
+    }
+
     // Day 26: backend selection. Precedence: `--backend=` flag, then the
     // ENGINE_WINDOW_BACKEND env var, then auto-detection ($WAYLAND_DISPLAY
     // -> Wayland, falling back to $DISPLAY -> X11). Failing to open a
@@ -149,6 +170,9 @@ int main(int argc, char** argv) {
     // Day 23: `--run-seconds=N` extends (or shortens) the wall-clock
     // bound so the window can be exercised for as long as a manual
     // check needs; default stays 6s so automated runs still terminate.
+    // Per-frame delta-time lines are noise by default; `--frame-times`
+    // turns them back on (Day 14's original readout).
+    bool print_frame_times = cmd_line.HasFlag("frame-times");
     u64 run_seconds = 6;
     for (usize i = 0; i < cmd_line.FlagCount(); ++i) {
         if (cmd_line.FlagName(i) == StringView("run-seconds") && cmd_line.FlagHasValue(i)) {
@@ -167,10 +191,12 @@ int main(int argc, char** argv) {
         u64 delta_nanos = now - last;
         last = now;
 
-        ArenaAllocator scratch(256);
-        StringBuilder<ArenaAllocator> line(scratch);
-        line.Append("delta_ms: ").AppendFloat(static_cast<f64>(delta_nanos) / 1'000'000.0, 3).Append('\n');
-        os::Write(1, line.CStr(), line.View().Length());
+        if (print_frame_times) {
+            ArenaAllocator scratch(256);
+            StringBuilder<ArenaAllocator> line(scratch);
+            line.Append("delta_ms: ").AppendFloat(static_cast<f64>(delta_nanos) / 1'000'000.0, 3).Append('\n');
+            os::Write(1, line.CStr(), line.View().Length());
+        }
 
         if (os::Window* active = window_host.Get()) {
             input_state.BeginFrame();

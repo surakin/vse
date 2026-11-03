@@ -28,6 +28,8 @@ public:
     u32 Height() const override { return window_.Height(); }
     const char* BackendName() const override { return "wayland"; }
 
+    const WaylandInput& Input() const { return input_; }
+
 private:
     WaylandConnection connection_;
     WaylandWindow window_;
