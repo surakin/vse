@@ -217,13 +217,39 @@ the declaration's first line.
 
 ## 8. Lint rules (Day 43)
 
-- Every public symbol has a doc comment with a summary.
-- Per-module `strict` rules: `thread-safety` (public class/struct needs
-  `Thread-safety:`), `ownership` (functions returning/taking raw owning
-  pointers, or classes owning resources, need `Ownership:`), `failure`
-  (functions returning `bool`/pointer or marked `[[nodiscard]]` need
-  `Returns:`/`Fails:`).
-- Coverage must not drop below the committed baseline.
+`docgen lint [--root DIR] [--modules FILE] [--baseline FILE
+[--update-baseline [--allow-growth]]] [--quiet]` prints the coverage table
+(documented/total public symbols per module and overall) and then the
+findings. Exit 0 clean, 1 on any error, 2 on I/O or a malformed baseline.
+
+- **Documented** = a doc comment with a summary, or an `override` inheriting
+  one. `= delete` and `= default` declarations are exempt (neither counted
+  nor required): the class comment and its `Ownership:`/`Thread-safety:`
+  labels carry copyability. `Internal:` symbols are not in the index at all.
+- `undocumented public symbol: ID` for every symbol that is not documented.
+- Per-module `strict` rules, checked only on documented symbols (an
+  undocumented one has one finding, not three):
+  - `thread-safety`: every `class`/`struct`/`union` needs `Thread-safety:`.
+  - `ownership`: a class with a user-provided destructor, or a function that
+    returns a raw pointer or takes a non-const raw pointer (`T*`,
+    `T* const`; not `const T*`, not function pointers), needs `Ownership:`.
+  - `failure`: a function returning `bool` or a pointer, or marked
+    `[[nodiscard]]`, needs `Returns:`, `Fails:` or `Aborts:`. Constructors,
+    destructors, conversions and operators are exempt. The return type is
+    read from the normalized signature; if the name cannot be located the
+    function is not judged.
+  Messages: `missing required label (RULE): ID`.
+- **Baseline** (`docs/reference/lint-baseline.txt`, line-based: `module`
+  lines with documented/total, `known RULE ID` lines): findings listed there
+  are tolerated; any other finding is an error. It only shrinks: an entry that
+  no longer applies, a module missing from or only in the baseline, and a
+  documented/total ratio below the baseline (per module or overall) are errors
+  too. `--update-baseline` rewrites it (via a temporary file and rename) and
+  refuses when the new state would record a new finding or lower a ratio,
+  unless `--allow-growth` is given; the diff of the committed file is the
+  review. Without `--baseline` every finding is an error.
+- The lint needs an error-free index: documentation errors are reported
+  first and the run stops with exit 1.
 
 ## 9. Fixture expectations
 

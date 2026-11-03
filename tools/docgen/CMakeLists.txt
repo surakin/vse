@@ -12,6 +12,7 @@ set(DOCGEN_SOURCES
   src/md_scan.cpp
   src/links.cpp
   src/samples.cpp
+  src/lint.cpp
   src/source_file.cpp
 )
 
@@ -30,3 +31,49 @@ target_link_libraries(docgen_lib_asan PUBLIC foundation_asan)
 add_executable(docgen src/main.cpp)
 target_compile_options(docgen PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_link_libraries(docgen PRIVATE docgen_lib)
+
+# Phase 2.5 Day 43: the documentation checks. `cmake --build build --target
+# docs` regenerates docs/reference and then runs every check; ctest runs the
+# four checks (no regeneration) as docs_check, docs_links, docs_samples and
+# docs_lint. Samples are compiled with the engine's own production flags,
+# include roots and libraries.
+set(DOCGEN_FLAGS_ARGS --flag -std=c++20)
+foreach(opt ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
+  list(APPEND DOCGEN_FLAGS_ARGS --flag ${opt})
+endforeach()
+set(DOCGEN_LINK_ARGS --link $<TARGET_FILE:jobs> --link $<TARGET_FILE:foundation> --link -pthread --link -ldl)
+# The system libraries `foundation` links (see engine/foundation/CMakeLists.txt), asked of pkg-config
+# here instead of borrowed from variables set in another directory's scope.
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(DocsSampleLibs REQUIRED wayland-client xkbcommon x11)
+foreach(flag ${DocsSampleLibs_LDFLAGS})
+  list(APPEND DOCGEN_LINK_ARGS --link ${flag})
+endforeach()
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/docs-samples)
+set(DOCGEN_SAMPLES_ARGS
+  --root ${CMAKE_SOURCE_DIR}
+  --compiler ${CMAKE_CXX_COMPILER}
+  ${DOCGEN_FLAGS_ARGS}
+  -I ${CMAKE_SOURCE_DIR}/engine/foundation
+  -I ${CMAKE_SOURCE_DIR}/engine
+  --prelude ${CMAKE_SOURCE_DIR}/docs/samples-prelude.h
+  --build-dir ${CMAKE_BINARY_DIR}/docs-samples
+  --jobs 4
+  ${DOCGEN_LINK_ARGS})
+set(DOCGEN_LINT_ARGS --root ${CMAKE_SOURCE_DIR} --baseline ${CMAKE_SOURCE_DIR}/docs/reference/lint-baseline.txt)
+
+add_test(NAME docs_check COMMAND docgen check --root ${CMAKE_SOURCE_DIR})
+add_test(NAME docs_links COMMAND docgen links --root ${CMAKE_SOURCE_DIR})
+add_test(NAME docs_samples COMMAND docgen samples ${DOCGEN_SAMPLES_ARGS})
+add_test(NAME docs_lint COMMAND docgen lint ${DOCGEN_LINT_ARGS} --quiet)
+set_tests_properties(docs_check docs_links docs_samples docs_lint PROPERTIES LABELS "docs" TIMEOUT 300)
+
+add_custom_target(docs
+  COMMAND docgen reference --root ${CMAKE_SOURCE_DIR}
+  COMMAND docgen check --root ${CMAKE_SOURCE_DIR}
+  COMMAND docgen links --root ${CMAKE_SOURCE_DIR}
+  COMMAND docgen samples ${DOCGEN_SAMPLES_ARGS}
+  COMMAND docgen lint ${DOCGEN_LINT_ARGS}
+  DEPENDS docgen jobs foundation
+  COMMENT "Regenerating docs/reference and running the documentation checks"
+  USES_TERMINAL)

@@ -1,0 +1,757 @@
+# docgen symbols v1
+ArenaAllocator	class	foundation/memory	arenaallocator	foundation-memory.md	engine/foundation/mem/arena_allocator.h:11
+ArenaAllocator::ArenaAllocator(usize)	function	foundation/memory	arenaallocator-arenaallocator-usize	foundation-memory.md	engine/foundation/mem/arena_allocator.h:13
+ArenaAllocator::~ArenaAllocator()	function	foundation/memory	arenaallocator-tilde-arenaallocator	foundation-memory.md	engine/foundation/mem/arena_allocator.h:14
+ArenaAllocator::ArenaAllocator(const ArenaAllocator&)	function	foundation/memory	arenaallocator-arenaallocator-const-arenaallocator-amp	foundation-memory.md	engine/foundation/mem/arena_allocator.h:16
+ArenaAllocator::operator=(const ArenaAllocator&)	function	foundation/memory	arenaallocator-operator-eq-const-arenaallocator-amp	foundation-memory.md	engine/foundation/mem/arena_allocator.h:17
+ArenaAllocator::Alloc(usize,usize)	function	foundation/memory	arenaallocator-alloc-usize-usize	foundation-memory.md	engine/foundation/mem/arena_allocator.h:21
+ArenaAllocator::Reset()	function	foundation/memory	arenaallocator-reset	foundation-memory.md	engine/foundation/mem/arena_allocator.h:24
+ArenaAllocator::FreeAll()	function	foundation/memory	arenaallocator-freeall	foundation-memory.md	engine/foundation/mem/arena_allocator.h:27
+PoolAllocator	class	foundation/memory	poolallocator	foundation-memory.md	engine/foundation/mem/pool_allocator.h:13
+PoolAllocator::PoolAllocator(usize,usize)	function	foundation/memory	poolallocator-poolallocator-usize-usize	foundation-memory.md	engine/foundation/mem/pool_allocator.h:15
+PoolAllocator::~PoolAllocator()	function	foundation/memory	poolallocator-tilde-poolallocator	foundation-memory.md	engine/foundation/mem/pool_allocator.h:16
+PoolAllocator::PoolAllocator(const PoolAllocator&)	function	foundation/memory	poolallocator-poolallocator-const-poolallocator-amp	foundation-memory.md	engine/foundation/mem/pool_allocator.h:18
+PoolAllocator::operator=(const PoolAllocator&)	function	foundation/memory	poolallocator-operator-eq-const-poolallocator-amp	foundation-memory.md	engine/foundation/mem/pool_allocator.h:19
+PoolAllocator::Alloc()	function	foundation/memory	poolallocator-alloc	foundation-memory.md	engine/foundation/mem/pool_allocator.h:22
+PoolAllocator::Free(void*)	function	foundation/memory	poolallocator-free-void-star	foundation-memory.md	engine/foundation/mem/pool_allocator.h:26
+StackAllocator	class	foundation/memory	stackallocator	foundation-memory.md	engine/foundation/mem/stack_allocator.h:13
+StackAllocator::Marker	alias	foundation/memory	stackallocator-marker	foundation-memory.md	engine/foundation/mem/stack_allocator.h:15
+StackAllocator::StackAllocator(usize)	function	foundation/memory	stackallocator-stackallocator-usize	foundation-memory.md	engine/foundation/mem/stack_allocator.h:17
+StackAllocator::~StackAllocator()	function	foundation/memory	stackallocator-tilde-stackallocator	foundation-memory.md	engine/foundation/mem/stack_allocator.h:18
+StackAllocator::StackAllocator(const StackAllocator&)	function	foundation/memory	stackallocator-stackallocator-const-stackallocator-amp	foundation-memory.md	engine/foundation/mem/stack_allocator.h:20
+StackAllocator::operator=(const StackAllocator&)	function	foundation/memory	stackallocator-operator-eq-const-stackallocator-amp	foundation-memory.md	engine/foundation/mem/stack_allocator.h:21
+StackAllocator::Push(usize,usize)	function	foundation/memory	stackallocator-push-usize-usize	foundation-memory.md	engine/foundation/mem/stack_allocator.h:25
+StackAllocator::CurrentMarker() const	function	foundation/memory	stackallocator-currentmarker-const	foundation-memory.md	engine/foundation/mem/stack_allocator.h:27
+StackAllocator::PopToMarker(Marker)	function	foundation/memory	stackallocator-poptomarker-marker	foundation-memory.md	engine/foundation/mem/stack_allocator.h:31
+Array	class	foundation/containers	array	foundation-containers.md	engine/foundation/containers/array.h:24
+Array::Array(Allocator&)	function	foundation/containers	array-array-allocator-amp	foundation-containers.md	engine/foundation/containers/array.h:27
+Array::~Array()	function	foundation/containers	array-tilde-array	foundation-containers.md	engine/foundation/containers/array.h:29
+Array::Array(const Array&)	function	foundation/containers	array-array-const-array-amp	foundation-containers.md	engine/foundation/containers/array.h:33
+Array::operator=(const Array&)	function	foundation/containers	array-operator-eq-const-array-amp	foundation-containers.md	engine/foundation/containers/array.h:34
+Array::Array(Array&&) noexcept	function	foundation/containers	array-array-array-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/array.h:36
+Array::operator=(Array&&) noexcept	function	foundation/containers	array-operator-eq-array-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/array.h:43
+Array::Reserve(usize)	function	foundation/containers	array-reserve-usize	foundation-containers.md	engine/foundation/containers/array.h:57
+Array::Push(const T&)	function	foundation/containers	array-push-const-t-amp	foundation-containers.md	engine/foundation/containers/array.h:72
+Array::Push(T&&)	function	foundation/containers	array-push-t-amp-amp	foundation-containers.md	engine/foundation/containers/array.h:78
+Array::Pop()	function	foundation/containers	array-pop	foundation-containers.md	engine/foundation/containers/array.h:84
+Array::Insert(usize,const T&)	function	foundation/containers	array-insert-usize-const-t-amp	foundation-containers.md	engine/foundation/containers/array.h:91
+Array::Remove(usize)	function	foundation/containers	array-remove-usize	foundation-containers.md	engine/foundation/containers/array.h:106
+Array::operator[](usize)	function	foundation/containers	array-operator-index-usize	foundation-containers.md	engine/foundation/containers/array.h:114
+Array::operator[](usize) const	function	foundation/containers	array-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/array.h:115
+Array::Size() const	function	foundation/containers	array-size-const	foundation-containers.md	engine/foundation/containers/array.h:117
+Array::Capacity() const	function	foundation/containers	array-capacity-const	foundation-containers.md	engine/foundation/containers/array.h:118
+Hash<i8>	struct	foundation/containers	hash-lt-i8-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:33
+Hash<i8>::operator()(i8) const	function	foundation/containers	hash-lt-i8-gt-operator-call-i8-const	foundation-containers.md	engine/foundation/containers/hash_map.h:35
+Hash<i16>	struct	foundation/containers	hash-lt-i16-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:37
+Hash<i16>::operator()(i16) const	function	foundation/containers	hash-lt-i16-gt-operator-call-i16-const	foundation-containers.md	engine/foundation/containers/hash_map.h:39
+Hash<i32>	struct	foundation/containers	hash-lt-i32-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:41
+Hash<i32>::operator()(i32) const	function	foundation/containers	hash-lt-i32-gt-operator-call-i32-const	foundation-containers.md	engine/foundation/containers/hash_map.h:43
+Hash<i64>	struct	foundation/containers	hash-lt-i64-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:45
+Hash<i64>::operator()(i64) const	function	foundation/containers	hash-lt-i64-gt-operator-call-i64-const	foundation-containers.md	engine/foundation/containers/hash_map.h:47
+Hash<u8>	struct	foundation/containers	hash-lt-u8-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:49
+Hash<u8>::operator()(u8) const	function	foundation/containers	hash-lt-u8-gt-operator-call-u8-const	foundation-containers.md	engine/foundation/containers/hash_map.h:51
+Hash<u16>	struct	foundation/containers	hash-lt-u16-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:53
+Hash<u16>::operator()(u16) const	function	foundation/containers	hash-lt-u16-gt-operator-call-u16-const	foundation-containers.md	engine/foundation/containers/hash_map.h:55
+Hash<u32>	struct	foundation/containers	hash-lt-u32-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:57
+Hash<u32>::operator()(u32) const	function	foundation/containers	hash-lt-u32-gt-operator-call-u32-const	foundation-containers.md	engine/foundation/containers/hash_map.h:59
+Hash<u64>	struct	foundation/containers	hash-lt-u64-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:61
+Hash<u64>::operator()(u64) const	function	foundation/containers	hash-lt-u64-gt-operator-call-u64-const	foundation-containers.md	engine/foundation/containers/hash_map.h:63
+Hash<T*>	struct	foundation/containers	hash-lt-t-star-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:66
+Hash<T*>::operator()(T*) const	function	foundation/containers	hash-lt-t-star-gt-operator-call-t-star-const	foundation-containers.md	engine/foundation/containers/hash_map.h:68
+HashMap	class	foundation/containers	hashmap	foundation-containers.md	engine/foundation/containers/hash_map.h:73
+HashMap::HashMap(Allocator&,usize)	function	foundation/containers	hashmap-hashmap-allocator-amp-usize	foundation-containers.md	engine/foundation/containers/hash_map.h:76
+HashMap::HashMap(const HashMap&)	function	foundation/containers	hashmap-hashmap-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:81
+HashMap::operator=(const HashMap&)	function	foundation/containers	hashmap-operator-eq-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:82
+HashMap::Insert(const K&,const V&)	function	foundation/containers	hashmap-insert-const-k-amp-const-v-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:84
+HashMap::Find(const K&)	function	foundation/containers	hashmap-find-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:92
+HashMap::Find(const K&) const	function	foundation/containers	hashmap-find-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:100
+HashMap::Remove(const K&)	function	foundation/containers	hashmap-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:109
+HashMap::Size() const	function	foundation/containers	hashmap-size-const	foundation-containers.md	engine/foundation/containers/hash_map.h:120
+HashMap::SlotCapacity() const	function	foundation/containers	hashmap-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_map.h:124
+GraphemeBreakProperty	enum	foundation/strings	graphemebreakproperty	foundation-strings.md	engine/foundation/string/grapheme.h:16
+GraphemeBreakProperty::Other	enumerator	foundation/strings	graphemebreakproperty-other	foundation-strings.md	engine/foundation/string/grapheme.h:17
+GraphemeBreakProperty::CR	enumerator	foundation/strings	graphemebreakproperty-cr	foundation-strings.md	engine/foundation/string/grapheme.h:18
+GraphemeBreakProperty::LF	enumerator	foundation/strings	graphemebreakproperty-lf	foundation-strings.md	engine/foundation/string/grapheme.h:19
+GraphemeBreakProperty::Control	enumerator	foundation/strings	graphemebreakproperty-control	foundation-strings.md	engine/foundation/string/grapheme.h:20
+GraphemeBreakProperty::Extend	enumerator	foundation/strings	graphemebreakproperty-extend	foundation-strings.md	engine/foundation/string/grapheme.h:21
+GraphemeBreakProperty::ZWJ	enumerator	foundation/strings	graphemebreakproperty-zwj	foundation-strings.md	engine/foundation/string/grapheme.h:22
+GraphemeBreakProperty::RegionalIndicator	enumerator	foundation/strings	graphemebreakproperty-regionalindicator	foundation-strings.md	engine/foundation/string/grapheme.h:23
+GraphemeBreakProperty::Prepend	enumerator	foundation/strings	graphemebreakproperty-prepend	foundation-strings.md	engine/foundation/string/grapheme.h:24
+GraphemeBreakProperty::SpacingMark	enumerator	foundation/strings	graphemebreakproperty-spacingmark	foundation-strings.md	engine/foundation/string/grapheme.h:25
+GraphemeBreakProperty::L	enumerator	foundation/strings	graphemebreakproperty-l	foundation-strings.md	engine/foundation/string/grapheme.h:26
+GraphemeBreakProperty::V	enumerator	foundation/strings	graphemebreakproperty-v	foundation-strings.md	engine/foundation/string/grapheme.h:27
+GraphemeBreakProperty::T	enumerator	foundation/strings	graphemebreakproperty-t	foundation-strings.md	engine/foundation/string/grapheme.h:28
+GraphemeBreakProperty::LV	enumerator	foundation/strings	graphemebreakproperty-lv	foundation-strings.md	engine/foundation/string/grapheme.h:29
+GraphemeBreakProperty::LVT	enumerator	foundation/strings	graphemebreakproperty-lvt	foundation-strings.md	engine/foundation/string/grapheme.h:30
+GraphemeBreakProperty::ExtendedPictographic	enumerator	foundation/strings	graphemebreakproperty-extendedpictographic	foundation-strings.md	engine/foundation/string/grapheme.h:31
+LookupGraphemeBreakProperty(u32)	function	foundation/strings	lookupgraphemebreakproperty-u32	foundation-strings.md	engine/foundation/string/grapheme.h:36
+GraphemeClusterIterator	class	foundation/strings	graphemeclusteriterator	foundation-strings.md	engine/foundation/string/grapheme.h:38
+GraphemeClusterIterator::GraphemeClusterIterator(StringView,usize)	function	foundation/strings	graphemeclusteriterator-graphemeclusteriterator-stringview-usize	foundation-strings.md	engine/foundation/string/grapheme.h:40
+GraphemeClusterIterator::operator*() const	function	foundation/strings	graphemeclusteriterator-operator-star-const	foundation-strings.md	engine/foundation/string/grapheme.h:46
+GraphemeClusterIterator::operator++()	function	foundation/strings	graphemeclusteriterator-operator-plus-plus	foundation-strings.md	engine/foundation/string/grapheme.h:48
+GraphemeClusterIterator::operator!=(const GraphemeClusterIterator&) const	function	foundation/strings	graphemeclusteriterator-operator-not-eq-const-graphemeclusteriterator-amp-const	foundation-strings.md	engine/foundation/string/grapheme.h:56
+GraphemeClusterRange	class	foundation/strings	graphemeclusterrange	foundation-strings.md	engine/foundation/string/grapheme.h:68
+GraphemeClusterRange::GraphemeClusterRange(StringView)	function	foundation/strings	graphemeclusterrange-graphemeclusterrange-stringview	foundation-strings.md	engine/foundation/string/grapheme.h:70
+GraphemeClusterRange::begin() const	function	foundation/strings	graphemeclusterrange-begin-const	foundation-strings.md	engine/foundation/string/grapheme.h:72
+GraphemeClusterRange::end() const	function	foundation/strings	graphemeclusterrange-end-const	foundation-strings.md	engine/foundation/string/grapheme.h:73
+GraphemeClusters(StringView)	function	foundation/strings	graphemeclusters-stringview	foundation-strings.md	engine/foundation/string/grapheme.h:79
+GraphemeClusterCount(StringView)	function	foundation/strings	graphemeclustercount-stringview	foundation-strings.md	engine/foundation/string/grapheme.h:83
+LookupCanonicalDecomposition(u32,u32[2],u8*)	function	foundation/strings	lookupcanonicaldecomposition-u32-u32-2-u8-star	foundation-strings.md	engine/foundation/string/normalize.h:20
+LookupCanonicalComposition(u32,u32,u32*)	function	foundation/strings	lookupcanonicalcomposition-u32-u32-u32-star	foundation-strings.md	engine/foundation/string/normalize.h:21
+CombiningClass(u32)	function	foundation/strings	combiningclass-u32	foundation-strings.md	engine/foundation/string/normalize.h:22
+IsCompositionExcluded(u32)	function	foundation/strings	iscompositionexcluded-u32	foundation-strings.md	engine/foundation/string/normalize.h:23
+Detail_FullyDecomposeAppend(u32,Array<u32,ArenaAllocator>&)	function	foundation/strings	detail-fullydecomposeappend-u32-array-lt-u32-arenaallocator-gt-amp	foundation-strings.md	engine/foundation/string/normalize.h:29
+Detail_CanonicalOrder(Array<u32,ArenaAllocator>&)	function	foundation/strings	detail-canonicalorder-array-lt-u32-arenaallocator-gt-amp	foundation-strings.md	engine/foundation/string/normalize.h:30
+Detail_ComposeInPlace(Array<u32,ArenaAllocator>&)	function	foundation/strings	detail-composeinplace-array-lt-u32-arenaallocator-gt-amp	foundation-strings.md	engine/foundation/string/normalize.h:31
+NormalizeNFD(Allocator&,StringView)	function	foundation/strings	normalizenfd-allocator-amp-stringview	foundation-strings.md	engine/foundation/string/normalize.h:45
+NormalizeNFC(Allocator&,StringView)	function	foundation/strings	normalizenfc-allocator-amp-stringview	foundation-strings.md	engine/foundation/string/normalize.h:63
+StringView	class	foundation/strings	stringview	foundation-strings.md	engine/foundation/string/string.h:15
+StringView::StringView()	function	foundation/strings	stringview-stringview	foundation-strings.md	engine/foundation/string/string.h:17
+StringView::StringView(const char*,usize)	function	foundation/strings	stringview-stringview-const-char-star-usize	foundation-strings.md	engine/foundation/string/string.h:18
+StringView::StringView(const char*)	function	foundation/strings	stringview-stringview-const-char-star	foundation-strings.md	engine/foundation/string/string.h:19
+StringView::Data() const	function	foundation/strings	stringview-data-const	foundation-strings.md	engine/foundation/string/string.h:21
+StringView::Length() const	function	foundation/strings	stringview-length-const	foundation-strings.md	engine/foundation/string/string.h:22
+StringView::Empty() const	function	foundation/strings	stringview-empty-const	foundation-strings.md	engine/foundation/string/string.h:23
+StringView::operator[](usize) const	function	foundation/strings	stringview-operator-index-usize-const	foundation-strings.md	engine/foundation/string/string.h:25
+StringView::operator==(const StringView&) const	function	foundation/strings	stringview-operator-eq-eq-const-stringview-amp-const	foundation-strings.md	engine/foundation/string/string.h:27
+StringView::operator!=(const StringView&) const	function	foundation/strings	stringview-operator-not-eq-const-stringview-amp-const	foundation-strings.md	engine/foundation/string/string.h:38
+StringView::Compare(const StringView&) const	function	foundation/strings	stringview-compare-const-stringview-amp-const	foundation-strings.md	engine/foundation/string/string.h:41
+StringView::operator<(const StringView&) const	function	foundation/strings	stringview-operator-lt-const-stringview-amp-const	foundation-strings.md	engine/foundation/string/string.h:55
+StringView::Substring(usize,usize) const	function	foundation/strings	stringview-substring-usize-usize-const	foundation-strings.md	engine/foundation/string/string.h:58
+StringView::IndexOf(char) const	function	foundation/strings	stringview-indexof-char-const	foundation-strings.md	engine/foundation/string/string.h:64
+StringView::Find(StringView) const	function	foundation/strings	stringview-find-stringview-const	foundation-strings.md	engine/foundation/string/string.h:75
+StringView::Contains(StringView) const	function	foundation/strings	stringview-contains-stringview-const	foundation-strings.md	engine/foundation/string/string.h:95
+String	class	foundation/strings	string	foundation-strings.md	engine/foundation/string/string.h:102
+String::String(Allocator&)	function	foundation/strings	string-string-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:105
+String::String(Allocator&,StringView)	function	foundation/strings	string-string-allocator-amp-stringview	foundation-strings.md	engine/foundation/string/string.h:109
+String::String(const String&)	function	foundation/strings	string-string-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:117
+String::operator=(const String&)	function	foundation/strings	string-operator-eq-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:118
+String::String(String&&) noexcept	function	foundation/strings	string-string-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:120
+String::operator=(String&&) noexcept	function	foundation/strings	string-operator-eq-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:121
+String::Append(StringView)	function	foundation/strings	string-append-stringview	foundation-strings.md	engine/foundation/string/string.h:123
+String::Append(char)	function	foundation/strings	string-append-char	foundation-strings.md	engine/foundation/string/string.h:134
+String::AppendRawBytes(const char*,usize)	function	foundation/strings	string-appendrawbytes-const-char-star-usize	foundation-strings.md	engine/foundation/string/string.h:144
+String::CStr() const	function	foundation/strings	string-cstr-const	foundation-strings.md	engine/foundation/string/string.h:152
+String::Length() const	function	foundation/strings	string-length-const	foundation-strings.md	engine/foundation/string/string.h:153
+String::View() const	function	foundation/strings	string-view-const	foundation-strings.md	engine/foundation/string/string.h:155
+StringBuilder	class	foundation/strings	stringbuilder	foundation-strings.md	engine/foundation/string/string.h:161
+StringBuilder::StringBuilder(Allocator&)	function	foundation/strings	stringbuilder-stringbuilder-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:164
+StringBuilder::Append(StringView)	function	foundation/strings	stringbuilder-append-stringview	foundation-strings.md	engine/foundation/string/string.h:166
+StringBuilder::Append(char)	function	foundation/strings	stringbuilder-append-char	foundation-strings.md	engine/foundation/string/string.h:171
+StringBuilder::AppendCodepoint(u32)	function	foundation/strings	stringbuilder-appendcodepoint-u32	foundation-strings.md	engine/foundation/string/string.h:176
+StringBuilder::AppendInt(i64)	function	foundation/strings	stringbuilder-appendint-i64	foundation-strings.md	engine/foundation/string/string.h:183
+StringBuilder::AppendUInt(u64)	function	foundation/strings	stringbuilder-appenduint-u64	foundation-strings.md	engine/foundation/string/string.h:197
+StringBuilder::AppendHex(u64,int)	function	foundation/strings	stringbuilder-appendhex-u64-int	foundation-strings.md	engine/foundation/string/string.h:207
+StringBuilder::AppendFloat(f64,int)	function	foundation/strings	stringbuilder-appendfloat-f64-int	foundation-strings.md	engine/foundation/string/string.h:231
+StringBuilder::View() const	function	foundation/strings	stringbuilder-view-const	foundation-strings.md	engine/foundation/string/string.h:253
+StringBuilder::CStr() const	function	foundation/strings	stringbuilder-cstr-const	foundation-strings.md	engine/foundation/string/string.h:254
+CodepointCount(StringView)	function	foundation/strings	codepointcount-stringview	foundation-strings.md	engine/foundation/string/utf8.h:13
+IsValidUtf8(StringView)	function	foundation/strings	isvalidutf8-stringview	foundation-strings.md	engine/foundation/string/utf8.h:25
+Utf8CodepointIterator	class	foundation/strings	utf8codepointiterator	foundation-strings.md	engine/foundation/string/utf8.h:38
+Utf8CodepointIterator::Utf8CodepointIterator(StringView,usize)	function	foundation/strings	utf8codepointiterator-utf8codepointiterator-stringview-usize	foundation-strings.md	engine/foundation/string/utf8.h:40
+Utf8CodepointIterator::operator*() const	function	foundation/strings	utf8codepointiterator-operator-star-const	foundation-strings.md	engine/foundation/string/utf8.h:42
+Utf8CodepointIterator::operator++()	function	foundation/strings	utf8codepointiterator-operator-plus-plus	foundation-strings.md	engine/foundation/string/utf8.h:47
+Utf8CodepointIterator::operator!=(const Utf8CodepointIterator&) const	function	foundation/strings	utf8codepointiterator-operator-not-eq-const-utf8codepointiterator-amp-const	foundation-strings.md	engine/foundation/string/utf8.h:53
+Utf8CodepointRange	class	foundation/strings	utf8codepointrange	foundation-strings.md	engine/foundation/string/utf8.h:60
+Utf8CodepointRange::Utf8CodepointRange(StringView)	function	foundation/strings	utf8codepointrange-utf8codepointrange-stringview	foundation-strings.md	engine/foundation/string/utf8.h:62
+Utf8CodepointRange::begin() const	function	foundation/strings	utf8codepointrange-begin-const	foundation-strings.md	engine/foundation/string/utf8.h:64
+Utf8CodepointRange::end() const	function	foundation/strings	utf8codepointrange-end-const	foundation-strings.md	engine/foundation/string/utf8.h:65
+Utf8Codepoints(StringView)	function	foundation/strings	utf8codepoints-stringview	foundation-strings.md	engine/foundation/string/utf8.h:71
+DecodedCodepoint	struct	foundation/strings	decodedcodepoint	foundation-strings.md	engine/foundation/string/utf8_codec.h:10
+DecodedCodepoint::codepoint	variable	foundation/strings	decodedcodepoint-codepoint	foundation-strings.md	engine/foundation/string/utf8_codec.h:11
+DecodedCodepoint::byte_length	variable	foundation/strings	decodedcodepoint-byte-length	foundation-strings.md	engine/foundation/string/utf8_codec.h:12
+DecodeUtf8At(const char*,usize,usize,bool*)	function	foundation/strings	decodeutf8at-const-char-star-usize-usize-bool-star	foundation-strings.md	engine/foundation/string/utf8_codec.h:19
+EncodeUtf8(u32,char[4])	function	foundation/strings	encodeutf8-u32-char-4	foundation-strings.md	engine/foundation/string/utf8_codec.h:25
+Sqrt(f32)	function	foundation/math	sqrt-f32	foundation-math.md	engine/foundation/math/math_util.h:14
+Sin(f32)	function	foundation/math	sin-f32	foundation-math.md	engine/foundation/math/math_util.h:15
+Cos(f32)	function	foundation/math	cos-f32	foundation-math.md	engine/foundation/math/math_util.h:16
+Acos(f32)	function	foundation/math	acos-f32	foundation-math.md	engine/foundation/math/math_util.h:17
+kPi	variable	foundation/math	kpi	foundation-math.md	engine/foundation/math/math_util.h:19
+Mat3	struct	foundation/math	mat3	foundation-math.md	engine/foundation/math/matrix.h:14
+Mat3::col	variable	foundation/math	mat3-col	foundation-math.md	engine/foundation/math/matrix.h:15
+Mat3::Identity()	function	foundation/math	mat3-identity	foundation-math.md	engine/foundation/math/matrix.h:17
+Mat3::FromBasis(const Vec3&,const Vec3&,const Vec3&)	function	foundation/math	mat3-frombasis-const-vec3-amp-const-vec3-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/matrix.h:25
+Mat3::Transpose() const	function	foundation/math	mat3-transpose-const	foundation-math.md	engine/foundation/math/matrix.h:33
+operator*(const Mat3&,const Vec3&)	function	foundation/math	operator-star-const-mat3-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/matrix.h:44
+operator*(const Mat3&,const Mat3&)	function	foundation/math	operator-star-const-mat3-amp-const-mat3-amp	foundation-math.md	engine/foundation/math/matrix.h:46
+Mat4	struct	foundation/math	mat4	foundation-math.md	engine/foundation/math/matrix.h:50
+Mat4::col	variable	foundation/math	mat4-col	foundation-math.md	engine/foundation/math/matrix.h:51
+Mat4::Identity()	function	foundation/math	mat4-identity	foundation-math.md	engine/foundation/math/matrix.h:53
+Mat4::FromBasis(const Vec3&,const Vec3&,const Vec3&,const Vec3&)	function	foundation/math	mat4-frombasis-const-vec3-amp-const-vec3-amp-const-vec3-amp-const-vec3-amp	foundation-math.md	engine/foundation/math/matrix.h:62
+Mat4::FromColumns(const Vec4&,const Vec4&,const Vec4&,const Vec4&)	function	foundation/math	mat4-fromcolumns-const-vec4-amp-const-vec4-amp-const-vec4-amp-const-vec4-amp	foundation-math.md	engine/foundation/math/matrix.h:71
+Mat4::Transpose() const	function	foundation/math	mat4-transpose-const	foundation-math.md	engine/foundation/math/matrix.h:80
+operator*(const Mat4&,const Vec4&)	function	foundation/math	operator-star-const-mat4-amp-const-vec4-amp	foundation-math.md	engine/foundation/math/matrix.h:91
+operator*(const Mat4&,const Mat4&)	function	foundation/math	operator-star-const-mat4-amp-const-mat4-amp	foundation-math.md	engine/foundation/math/matrix.h:95
+Quaternion	struct	foundation/math	quaternion	foundation-math.md	engine/foundation/math/quaternion.h:16
+Quaternion::x	variable	foundation/math	quaternion-x	foundation-math.md	engine/foundation/math/quaternion.h:17
+Quaternion::y	variable	foundation/math	quaternion-y	foundation-math.md	engine/foundation/math/quaternion.h:18
+Quaternion::z	variable	foundation/math	quaternion-z	foundation-math.md	engine/foundation/math/quaternion.h:19
+Quaternion::w	variable	foundation/math	quaternion-w	foundation-math.md	engine/foundation/math/quaternion.h:20
+Quaternion::Quaternion()	function	foundation/math	quaternion-quaternion	foundation-math.md	engine/foundation/math/quaternion.h:22
+Quaternion::Quaternion(f32,f32,f32,f32)	function	foundation/math	quaternion-quaternion-f32-f32-f32-f32	foundation-math.md	engine/foundation/math/quaternion.h:23
+Quaternion::Identity()	function	foundation/math	quaternion-identity	foundation-math.md	engine/foundation/math/quaternion.h:25
+Quaternion::FromAxisAngle(const Vec3&,f32)	function	foundation/math	quaternion-fromaxisangle-const-vec3-amp-f32	foundation-math.md	engine/foundation/math/quaternion.h:27
+Quaternion::LengthSquared() const	function	foundation/math	quaternion-lengthsquared-const	foundation-math.md	engine/foundation/math/quaternion.h:34
+Quaternion::Length() const	function	foundation/math	quaternion-length-const	foundation-math.md	engine/foundation/math/quaternion.h:35
+Quaternion::Normalized() const	function	foundation/math	quaternion-normalized-const	foundation-math.md	engine/foundation/math/quaternion.h:37
+Quaternion::Conjugate() const	function	foundation/math	quaternion-conjugate-const	foundation-math.md	engine/foundation/math/quaternion.h:44
+Quaternion::Inverse() const	function	foundation/math	quaternion-inverse-const	foundation-math.md	engine/foundation/math/quaternion.h:46
+Quaternion::Dot(const Quaternion&) const	function	foundation/math	quaternion-dot-const-quaternion-amp-const	foundation-math.md	engine/foundation/math/quaternion.h:53
+Quaternion::RotateVector(const Vec3&) const	function	foundation/math	quaternion-rotatevector-const-vec3-amp-const	foundation-math.md	engine/foundation/math/quaternion.h:58
+Quaternion::ToMat3() const	function	foundation/math	quaternion-tomat3-const	foundation-math.md	engine/foundation/math/quaternion.h:66
+Quaternion::ToMat4() const	function	foundation/math	quaternion-tomat4-const	foundation-math.md	engine/foundation/math/quaternion.h:75
+Quaternion::FromMat3(const Mat3&)	function	foundation/math	quaternion-frommat3-const-mat3-amp	foundation-math.md	engine/foundation/math/quaternion.h:83
+operator*(const Quaternion&,const Quaternion&)	function	foundation/math	operator-star-const-quaternion-amp-const-quaternion-amp	foundation-math.md	engine/foundation/math/quaternion.h:108
+Slerp(const Quaternion&,const Quaternion&,f32)	function	foundation/math	slerp-const-quaternion-amp-const-quaternion-amp-f32	foundation-math.md	engine/foundation/math/quaternion.h:118
+Transform	struct	foundation/math	transform	foundation-math.md	engine/foundation/math/transform.h:12
+Transform::position	variable	foundation/math	transform-position	foundation-math.md	engine/foundation/math/transform.h:13
+Transform::rotation	variable	foundation/math	transform-rotation	foundation-math.md	engine/foundation/math/transform.h:14
+Transform::scale	variable	foundation/math	transform-scale	foundation-math.md	engine/foundation/math/transform.h:15
+Transform::Identity()	function	foundation/math	transform-identity	foundation-math.md	engine/foundation/math/transform.h:17
+Transform::ToMatrix() const	function	foundation/math	transform-tomatrix-const	foundation-math.md	engine/foundation/math/transform.h:19
+Compose(const Transform&,const Transform&)	function	foundation/math	compose-const-transform-amp-const-transform-amp	foundation-math.md	engine/foundation/math/transform.h:31
+Vec2	struct	foundation/math	vec2	foundation-math.md	engine/foundation/math/vector.h:13
+Vec2::x	variable	foundation/math	vec2-x	foundation-math.md	engine/foundation/math/vector.h:14
+Vec2::y	variable	foundation/math	vec2-y	foundation-math.md	engine/foundation/math/vector.h:15
+Vec2::Vec2()	function	foundation/math	vec2-vec2	foundation-math.md	engine/foundation/math/vector.h:17
+Vec2::Vec2(f32,f32)	function	foundation/math	vec2-vec2-f32-f32	foundation-math.md	engine/foundation/math/vector.h:18
+Vec2::operator[](usize)	function	foundation/math	vec2-operator-index-usize	foundation-math.md	engine/foundation/math/vector.h:20
+Vec2::operator[](usize) const	function	foundation/math	vec2-operator-index-usize-const	foundation-math.md	engine/foundation/math/vector.h:21
+Vec2::operator+(const Vec2&) const	function	foundation/math	vec2-operator-plus-const-vec2-amp-const	foundation-math.md	engine/foundation/math/vector.h:23
+Vec2::operator-(const Vec2&) const	function	foundation/math	vec2-operator-minus-const-vec2-amp-const	foundation-math.md	engine/foundation/math/vector.h:24
+Vec2::operator*(f32) const	function	foundation/math	vec2-operator-star-f32-const	foundation-math.md	engine/foundation/math/vector.h:25
+Vec2::Dot(const Vec2&) const	function	foundation/math	vec2-dot-const-vec2-amp-const	foundation-math.md	engine/foundation/math/vector.h:27
+Vec2::LengthSquared() const	function	foundation/math	vec2-lengthsquared-const	foundation-math.md	engine/foundation/math/vector.h:29
+Vec2::Length() const	function	foundation/math	vec2-length-const	foundation-math.md	engine/foundation/math/vector.h:30
+Vec2::Normalized() const	function	foundation/math	vec2-normalized-const	foundation-math.md	engine/foundation/math/vector.h:32
+Vec2::operator==(const Vec2&) const	function	foundation/math	vec2-operator-eq-eq-const-vec2-amp-const	foundation-math.md	engine/foundation/math/vector.h:38
+Vec2::operator!=(const Vec2&) const	function	foundation/math	vec2-operator-not-eq-const-vec2-amp-const	foundation-math.md	engine/foundation/math/vector.h:39
+Vec3	struct	foundation/math	vec3	foundation-math.md	engine/foundation/math/vector.h:42
+Vec3::x	variable	foundation/math	vec3-x	foundation-math.md	engine/foundation/math/vector.h:43
+Vec3::y	variable	foundation/math	vec3-y	foundation-math.md	engine/foundation/math/vector.h:44
+Vec3::z	variable	foundation/math	vec3-z	foundation-math.md	engine/foundation/math/vector.h:45
+Vec3::Vec3()	function	foundation/math	vec3-vec3	foundation-math.md	engine/foundation/math/vector.h:47
+Vec3::Vec3(f32,f32,f32)	function	foundation/math	vec3-vec3-f32-f32-f32	foundation-math.md	engine/foundation/math/vector.h:48
+Vec3::operator[](usize)	function	foundation/math	vec3-operator-index-usize	foundation-math.md	engine/foundation/math/vector.h:50
+Vec3::operator[](usize) const	function	foundation/math	vec3-operator-index-usize-const	foundation-math.md	engine/foundation/math/vector.h:60
+Vec3::operator+(const Vec3&) const	function	foundation/math	vec3-operator-plus-const-vec3-amp-const	foundation-math.md	engine/foundation/math/vector.h:71
+Vec3::operator-(const Vec3&) const	function	foundation/math	vec3-operator-minus-const-vec3-amp-const	foundation-math.md	engine/foundation/math/vector.h:72
+Vec3::operator*(f32) const	function	foundation/math	vec3-operator-star-f32-const	foundation-math.md	engine/foundation/math/vector.h:73
+Vec3::Dot(const Vec3&) const	function	foundation/math	vec3-dot-const-vec3-amp-const	foundation-math.md	engine/foundation/math/vector.h:75
+Vec3::Cross(const Vec3&) const	function	foundation/math	vec3-cross-const-vec3-amp-const	foundation-math.md	engine/foundation/math/vector.h:77
+Vec3::LengthSquared() const	function	foundation/math	vec3-lengthsquared-const	foundation-math.md	engine/foundation/math/vector.h:79
+Vec3::Length() const	function	foundation/math	vec3-length-const	foundation-math.md	engine/foundation/math/vector.h:80
+Vec3::Normalized() const	function	foundation/math	vec3-normalized-const	foundation-math.md	engine/foundation/math/vector.h:82
+Vec3::operator==(const Vec3&) const	function	foundation/math	vec3-operator-eq-eq-const-vec3-amp-const	foundation-math.md	engine/foundation/math/vector.h:88
+Vec3::operator!=(const Vec3&) const	function	foundation/math	vec3-operator-not-eq-const-vec3-amp-const	foundation-math.md	engine/foundation/math/vector.h:89
+Vec4	struct	foundation/math	vec4	foundation-math.md	engine/foundation/math/vector.h:92
+Vec4::x	variable	foundation/math	vec4-x	foundation-math.md	engine/foundation/math/vector.h:93
+Vec4::y	variable	foundation/math	vec4-y	foundation-math.md	engine/foundation/math/vector.h:94
+Vec4::z	variable	foundation/math	vec4-z	foundation-math.md	engine/foundation/math/vector.h:95
+Vec4::w	variable	foundation/math	vec4-w	foundation-math.md	engine/foundation/math/vector.h:96
+Vec4::Vec4()	function	foundation/math	vec4-vec4	foundation-math.md	engine/foundation/math/vector.h:98
+Vec4::Vec4(f32,f32,f32,f32)	function	foundation/math	vec4-vec4-f32-f32-f32-f32	foundation-math.md	engine/foundation/math/vector.h:99
+Vec4::Vec4(const Vec3&,f32)	function	foundation/math	vec4-vec4-const-vec3-amp-f32	foundation-math.md	engine/foundation/math/vector.h:100
+Vec4::operator[](usize)	function	foundation/math	vec4-operator-index-usize	foundation-math.md	engine/foundation/math/vector.h:102
+Vec4::operator[](usize) const	function	foundation/math	vec4-operator-index-usize-const	foundation-math.md	engine/foundation/math/vector.h:114
+Vec4::operator+(const Vec4&) const	function	foundation/math	vec4-operator-plus-const-vec4-amp-const	foundation-math.md	engine/foundation/math/vector.h:127
+Vec4::operator-(const Vec4&) const	function	foundation/math	vec4-operator-minus-const-vec4-amp-const	foundation-math.md	engine/foundation/math/vector.h:128
+Vec4::operator*(f32) const	function	foundation/math	vec4-operator-star-f32-const	foundation-math.md	engine/foundation/math/vector.h:129
+Vec4::Dot(const Vec4&) const	function	foundation/math	vec4-dot-const-vec4-amp-const	foundation-math.md	engine/foundation/math/vector.h:131
+Vec4::LengthSquared() const	function	foundation/math	vec4-lengthsquared-const	foundation-math.md	engine/foundation/math/vector.h:133
+Vec4::Length() const	function	foundation/math	vec4-length-const	foundation-math.md	engine/foundation/math/vector.h:134
+Vec4::Normalized() const	function	foundation/math	vec4-normalized-const	foundation-math.md	engine/foundation/math/vector.h:136
+Vec4::operator==(const Vec4&) const	function	foundation/math	vec4-operator-eq-eq-const-vec4-amp-const	foundation-math.md	engine/foundation/math/vector.h:142
+Vec4::operator!=(const Vec4&) const	function	foundation/math	vec4-operator-not-eq-const-vec4-amp-const	foundation-math.md	engine/foundation/math/vector.h:143
+WriteSinkFn	alias	foundation/log	writesinkfn	foundation-log.md	engine/foundation/log/assert.h:18
+ExitSinkFn	alias	foundation/log	exitsinkfn	foundation-log.md	engine/foundation/log/assert.h:19
+SetWriteSinkForTesting(WriteSinkFn)	function	foundation/log	setwritesinkfortesting-writesinkfn	foundation-log.md	engine/foundation/log/assert.h:20
+SetExitSinkForTesting(ExitSinkFn)	function	foundation/log	setexitsinkfortesting-exitsinkfn	foundation-log.md	engine/foundation/log/assert.h:21
+AssertFail(const char*,int,const char*)	function	foundation/log	assertfail-const-char-star-int-const-char-star	foundation-log.md	engine/foundation/log/assert.h:23
+LogVerbosity	enum	foundation/log	logverbosity	foundation-log.md	engine/foundation/log/log.h:17
+LogVerbosity::Error	enumerator	foundation/log	logverbosity-error	foundation-log.md	engine/foundation/log/log.h:17
+LogVerbosity::Warn	enumerator	foundation/log	logverbosity-warn	foundation-log.md	engine/foundation/log/log.h:17
+LogVerbosity::Info	enumerator	foundation/log	logverbosity-info	foundation-log.md	engine/foundation/log/log.h:17
+LogVerbosity::Debug	enumerator	foundation/log	logverbosity-debug	foundation-log.md	engine/foundation/log/log.h:17
+LogVerbosity::Trace	enumerator	foundation/log	logverbosity-trace	foundation-log.md	engine/foundation/log/log.h:17
+LogChannel	class	foundation/log	logchannel	foundation-log.md	engine/foundation/log/log.h:19
+LogChannel::LogChannel(const char*,LogVerbosity)	function	foundation/log	logchannel-logchannel-const-char-star-logverbosity	foundation-log.md	engine/foundation/log/log.h:21
+LogChannel::Name() const	function	foundation/log	logchannel-name-const	foundation-log.md	engine/foundation/log/log.h:23
+LogChannel::Verbosity() const	function	foundation/log	logchannel-verbosity-const	foundation-log.md	engine/foundation/log/log.h:24
+LogChannel::Enabled() const	function	foundation/log	logchannel-enabled-const	foundation-log.md	engine/foundation/log/log.h:25
+LogChannel::SetVerbosity(LogVerbosity)	function	foundation/log	logchannel-setverbosity-logverbosity	foundation-log.md	engine/foundation/log/log.h:27
+LogChannel::SetEnabled(bool)	function	foundation/log	logchannel-setenabled-bool	foundation-log.md	engine/foundation/log/log.h:28
+LogChannel::ShouldLog(LogVerbosity) const	function	foundation/log	logchannel-shouldlog-logverbosity-const	foundation-log.md	engine/foundation/log/log.h:30
+LogChannel::Find(StringView)	function	foundation/log	logchannel-find-stringview	foundation-log.md	engine/foundation/log/log.h:33
+LogCore	variable	foundation/log	logcore	foundation-log.md	engine/foundation/log/log.h:45
+LogRender	variable	foundation/log	logrender	foundation-log.md	engine/foundation/log/log.h:46
+LogPlatform	variable	foundation/log	logplatform	foundation-log.md	engine/foundation/log/log.h:47
+Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:49
+LoadConfig(const char*)	function	foundation/log	loadconfig-const-char-star	foundation-log.md	engine/foundation/log/log.h:56
+i8	alias	foundation/types	i8	foundation-types.md	engine/foundation/types.h:12
+i16	alias	foundation/types	i16	foundation-types.md	engine/foundation/types.h:13
+i32	alias	foundation/types	i32	foundation-types.md	engine/foundation/types.h:14
+i64	alias	foundation/types	i64	foundation-types.md	engine/foundation/types.h:15
+u8	alias	foundation/types	u8	foundation-types.md	engine/foundation/types.h:17
+u16	alias	foundation/types	u16	foundation-types.md	engine/foundation/types.h:18
+u32	alias	foundation/types	u32	foundation-types.md	engine/foundation/types.h:19
+u64	alias	foundation/types	u64	foundation-types.md	engine/foundation/types.h:20
+usize	alias	foundation/types	usize	foundation-types.md	engine/foundation/types.h:22
+f32	alias	foundation/types	f32	foundation-types.md	engine/foundation/types.h:24
+f64	alias	foundation/types	f64	foundation-types.md	engine/foundation/types.h:25
+os::StashNativeCommandLine(int,char**)	function	platform/os	os-stashnativecommandline-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:26
+os::Detail_NativeCommandLineArgs(int*,char***)	function	platform/os	os-detail-nativecommandlineargs-int-star-char-star-star-star	platform-os.md	engine/foundation/os/command_line.h:31
+os::CommandLine	class	platform/os	os-commandline	platform-os.md	engine/foundation/os/command_line.h:33
+os::CommandLine::CommandLine(Allocator&,int,char**)	function	platform/os	os-commandline-commandline-allocator-amp-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:40
+os::CommandLine::FromNative(Allocator&)	function	platform/os	os-commandline-fromnative-allocator-amp	platform-os.md	engine/foundation/os/command_line.h:62
+os::CommandLine::CommandLine(const CommandLine&)	function	platform/os	os-commandline-commandline-const-commandline-amp	platform-os.md	engine/foundation/os/command_line.h:69
+os::CommandLine::operator=(const CommandLine&)	function	platform/os	os-commandline-operator-eq-const-commandline-amp	platform-os.md	engine/foundation/os/command_line.h:70
+os::CommandLine::CommandLine(CommandLine&&) noexcept	function	platform/os	os-commandline-commandline-commandline-amp-amp-noexcept	platform-os.md	engine/foundation/os/command_line.h:71
+os::CommandLine::operator=(CommandLine&&) noexcept	function	platform/os	os-commandline-operator-eq-commandline-amp-amp-noexcept	platform-os.md	engine/foundation/os/command_line.h:72
+os::CommandLine::ProgramName() const	function	platform/os	os-commandline-programname-const	platform-os.md	engine/foundation/os/command_line.h:74
+os::CommandLine::ArgCount() const	function	platform/os	os-commandline-argcount-const	platform-os.md	engine/foundation/os/command_line.h:76
+os::CommandLine::Arg(usize) const	function	platform/os	os-commandline-arg-usize-const	platform-os.md	engine/foundation/os/command_line.h:78
+os::CommandLine::HasFlag(StringView) const	function	platform/os	os-commandline-hasflag-stringview-const	platform-os.md	engine/foundation/os/command_line.h:84
+os::CommandLine::TryGetOption(StringView,StringView&) const	function	platform/os	os-commandline-trygetoption-stringview-stringview-amp-const	platform-os.md	engine/foundation/os/command_line.h:89
+os::CommandLine::FlagCount() const	function	platform/os	os-commandline-flagcount-const	platform-os.md	engine/foundation/os/command_line.h:101
+os::CommandLine::FlagName(usize) const	function	platform/os	os-commandline-flagname-usize-const	platform-os.md	engine/foundation/os/command_line.h:103
+os::CommandLine::FlagHasValue(usize) const	function	platform/os	os-commandline-flaghasvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:108
+os::CommandLine::FlagValue(usize) const	function	platform/os	os-commandline-flagvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:113
+os::ReadFileToArena(StringView,ArenaAllocator&,usize&)	function	platform/os	os-readfiletoarena-stringview-arenaallocator-amp-usize-amp	platform-os.md	engine/foundation/os/file_util.h:17
+os::ProbeVulkanCreateInstance()	function	platform/os	os-probevulkancreateinstance	platform-os.md	engine/foundation/os/gpu_driver_probe.h:16
+os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/foundation/os/os.h:28
+os::Exit(int)	function	platform/os	os-exit-int	platform-os.md	engine/foundation/os/os.h:30
+os::Write(int,const void*,usize)	function	platform/os	os-write-int-const-void-star-usize	platform-os.md	engine/foundation/os/os.h:32
+os::Read(int,void*,usize)	function	platform/os	os-read-int-void-star-usize	platform-os.md	engine/foundation/os/os.h:33
+os::Open(StringView,int,int)	function	platform/os	os-open-stringview-int-int	platform-os.md	engine/foundation/os/os.h:38
+os::Close(int)	function	platform/os	os-close-int	platform-os.md	engine/foundation/os/os.h:39
+os::Lseek(int,long,int)	function	platform/os	os-lseek-int-long-int	platform-os.md	engine/foundation/os/os.h:44
+os::ReserveMemory(usize)	function	platform/os	os-reservememory-usize	platform-os.md	engine/foundation/os/os.h:47
+os::ReleaseMemory(void*,usize)	function	platform/os	os-releasememory-void-star-usize	platform-os.md	engine/foundation/os/os.h:48
+os::MonotonicTimeNanos()	function	platform/os	os-monotonictimenanos	platform-os.md	engine/foundation/os/os.h:52
+os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:56
+os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:61
+os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:66
+os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:71
+os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:74
+os::Key	enum	platform/window-input	os-key	platform-window-input.md	engine/foundation/os/input.h:14
+os::Key::Unknown	enumerator	platform/window-input	os-key-unknown	platform-window-input.md	engine/foundation/os/input.h:15
+os::Key::A	enumerator	platform/window-input	os-key-a	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::B	enumerator	platform/window-input	os-key-b	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::C	enumerator	platform/window-input	os-key-c	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::D	enumerator	platform/window-input	os-key-d	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::E	enumerator	platform/window-input	os-key-e	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::F	enumerator	platform/window-input	os-key-f	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::G	enumerator	platform/window-input	os-key-g	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::H	enumerator	platform/window-input	os-key-h	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::I	enumerator	platform/window-input	os-key-i	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::J	enumerator	platform/window-input	os-key-j	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::K	enumerator	platform/window-input	os-key-k	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::L	enumerator	platform/window-input	os-key-l	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::M	enumerator	platform/window-input	os-key-m	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::N	enumerator	platform/window-input	os-key-n	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::O	enumerator	platform/window-input	os-key-o	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::P	enumerator	platform/window-input	os-key-p	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::Q	enumerator	platform/window-input	os-key-q	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::R	enumerator	platform/window-input	os-key-r	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::S	enumerator	platform/window-input	os-key-s	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::T	enumerator	platform/window-input	os-key-t	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::U	enumerator	platform/window-input	os-key-u	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::V	enumerator	platform/window-input	os-key-v	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::W	enumerator	platform/window-input	os-key-w	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::X	enumerator	platform/window-input	os-key-x	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::Y	enumerator	platform/window-input	os-key-y	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::Z	enumerator	platform/window-input	os-key-z	platform-window-input.md	engine/foundation/os/input.h:16
+os::Key::Num0	enumerator	platform/window-input	os-key-num0	platform-window-input.md	engine/foundation/os/input.h:17
+os::Key::Num1	enumerator	platform/window-input	os-key-num1	platform-window-input.md	engine/foundation/os/input.h:17
+os::Key::Num2	enumerator	platform/window-input	os-key-num2	platform-window-input.md	engine/foundation/os/input.h:17
+os::Key::Num3	enumerator	platform/window-input	os-key-num3	platform-window-input.md	engine/foundation/os/input.h:17
+os::Key::Num4	enumerator	platform/window-input	os-key-num4	platform-window-input.md	engine/foundation/os/input.h:17
+os::Key::Num5	enumerator	platform/window-input	os-key-num5	platform-window-input.md	engine/foundation/os/input.h:17
+os::Key::Num6	enumerator	platform/window-input	os-key-num6	platform-window-input.md	engine/foundation/os/input.h:17
+os::Key::Num7	enumerator	platform/window-input	os-key-num7	platform-window-input.md	engine/foundation/os/input.h:17
+os::Key::Num8	enumerator	platform/window-input	os-key-num8	platform-window-input.md	engine/foundation/os/input.h:17
+os::Key::Num9	enumerator	platform/window-input	os-key-num9	platform-window-input.md	engine/foundation/os/input.h:17
+os::Key::F1	enumerator	platform/window-input	os-key-f1	platform-window-input.md	engine/foundation/os/input.h:18
+os::Key::F2	enumerator	platform/window-input	os-key-f2	platform-window-input.md	engine/foundation/os/input.h:18
+os::Key::F3	enumerator	platform/window-input	os-key-f3	platform-window-input.md	engine/foundation/os/input.h:18
+os::Key::F4	enumerator	platform/window-input	os-key-f4	platform-window-input.md	engine/foundation/os/input.h:18
+os::Key::F5	enumerator	platform/window-input	os-key-f5	platform-window-input.md	engine/foundation/os/input.h:18
+os::Key::F6	enumerator	platform/window-input	os-key-f6	platform-window-input.md	engine/foundation/os/input.h:18
+os::Key::F7	enumerator	platform/window-input	os-key-f7	platform-window-input.md	engine/foundation/os/input.h:18
+os::Key::F8	enumerator	platform/window-input	os-key-f8	platform-window-input.md	engine/foundation/os/input.h:18
+os::Key::F9	enumerator	platform/window-input	os-key-f9	platform-window-input.md	engine/foundation/os/input.h:18
+os::Key::F10	enumerator	platform/window-input	os-key-f10	platform-window-input.md	engine/foundation/os/input.h:18
+os::Key::F11	enumerator	platform/window-input	os-key-f11	platform-window-input.md	engine/foundation/os/input.h:18
+os::Key::F12	enumerator	platform/window-input	os-key-f12	platform-window-input.md	engine/foundation/os/input.h:18
+os::Key::Escape	enumerator	platform/window-input	os-key-escape	platform-window-input.md	engine/foundation/os/input.h:19
+os::Key::Enter	enumerator	platform/window-input	os-key-enter	platform-window-input.md	engine/foundation/os/input.h:19
+os::Key::Tab	enumerator	platform/window-input	os-key-tab	platform-window-input.md	engine/foundation/os/input.h:19
+os::Key::Backspace	enumerator	platform/window-input	os-key-backspace	platform-window-input.md	engine/foundation/os/input.h:19
+os::Key::Space	enumerator	platform/window-input	os-key-space	platform-window-input.md	engine/foundation/os/input.h:19
+os::Key::Insert	enumerator	platform/window-input	os-key-insert	platform-window-input.md	engine/foundation/os/input.h:20
+os::Key::Delete	enumerator	platform/window-input	os-key-delete	platform-window-input.md	engine/foundation/os/input.h:20
+os::Key::Home	enumerator	platform/window-input	os-key-home	platform-window-input.md	engine/foundation/os/input.h:20
+os::Key::End	enumerator	platform/window-input	os-key-end	platform-window-input.md	engine/foundation/os/input.h:20
+os::Key::PageUp	enumerator	platform/window-input	os-key-pageup	platform-window-input.md	engine/foundation/os/input.h:20
+os::Key::PageDown	enumerator	platform/window-input	os-key-pagedown	platform-window-input.md	engine/foundation/os/input.h:20
+os::Key::Left	enumerator	platform/window-input	os-key-left	platform-window-input.md	engine/foundation/os/input.h:21
+os::Key::Right	enumerator	platform/window-input	os-key-right	platform-window-input.md	engine/foundation/os/input.h:21
+os::Key::Up	enumerator	platform/window-input	os-key-up	platform-window-input.md	engine/foundation/os/input.h:21
+os::Key::Down	enumerator	platform/window-input	os-key-down	platform-window-input.md	engine/foundation/os/input.h:21
+os::Key::LeftShift	enumerator	platform/window-input	os-key-leftshift	platform-window-input.md	engine/foundation/os/input.h:22
+os::Key::RightShift	enumerator	platform/window-input	os-key-rightshift	platform-window-input.md	engine/foundation/os/input.h:22
+os::Key::LeftCtrl	enumerator	platform/window-input	os-key-leftctrl	platform-window-input.md	engine/foundation/os/input.h:22
+os::Key::RightCtrl	enumerator	platform/window-input	os-key-rightctrl	platform-window-input.md	engine/foundation/os/input.h:22
+os::Key::LeftAlt	enumerator	platform/window-input	os-key-leftalt	platform-window-input.md	engine/foundation/os/input.h:22
+os::Key::RightAlt	enumerator	platform/window-input	os-key-rightalt	platform-window-input.md	engine/foundation/os/input.h:22
+os::Key::LeftSuper	enumerator	platform/window-input	os-key-leftsuper	platform-window-input.md	engine/foundation/os/input.h:22
+os::Key::RightSuper	enumerator	platform/window-input	os-key-rightsuper	platform-window-input.md	engine/foundation/os/input.h:22
+os::Key::CapsLock	enumerator	platform/window-input	os-key-capslock	platform-window-input.md	engine/foundation/os/input.h:22
+os::Key::Minus	enumerator	platform/window-input	os-key-minus	platform-window-input.md	engine/foundation/os/input.h:23
+os::Key::Equals	enumerator	platform/window-input	os-key-equals	platform-window-input.md	engine/foundation/os/input.h:23
+os::Key::LeftBracket	enumerator	platform/window-input	os-key-leftbracket	platform-window-input.md	engine/foundation/os/input.h:23
+os::Key::RightBracket	enumerator	platform/window-input	os-key-rightbracket	platform-window-input.md	engine/foundation/os/input.h:23
+os::Key::Backslash	enumerator	platform/window-input	os-key-backslash	platform-window-input.md	engine/foundation/os/input.h:23
+os::Key::Semicolon	enumerator	platform/window-input	os-key-semicolon	platform-window-input.md	engine/foundation/os/input.h:23
+os::Key::Apostrophe	enumerator	platform/window-input	os-key-apostrophe	platform-window-input.md	engine/foundation/os/input.h:23
+os::Key::Grave	enumerator	platform/window-input	os-key-grave	platform-window-input.md	engine/foundation/os/input.h:23
+os::Key::Comma	enumerator	platform/window-input	os-key-comma	platform-window-input.md	engine/foundation/os/input.h:23
+os::Key::Period	enumerator	platform/window-input	os-key-period	platform-window-input.md	engine/foundation/os/input.h:23
+os::Key::Slash	enumerator	platform/window-input	os-key-slash	platform-window-input.md	engine/foundation/os/input.h:23
+os::Key::Count	enumerator	platform/window-input	os-key-count	platform-window-input.md	engine/foundation/os/input.h:24
+os::ModifierBit	enum	platform/window-input	os-modifierbit	platform-window-input.md	engine/foundation/os/input.h:29
+os::kModShift	enumerator	platform/window-input	os-kmodshift	platform-window-input.md	engine/foundation/os/input.h:30
+os::kModCtrl	enumerator	platform/window-input	os-kmodctrl	platform-window-input.md	engine/foundation/os/input.h:31
+os::kModAlt	enumerator	platform/window-input	os-kmodalt	platform-window-input.md	engine/foundation/os/input.h:32
+os::kModSuper	enumerator	platform/window-input	os-kmodsuper	platform-window-input.md	engine/foundation/os/input.h:33
+os::kModCapsLock	enumerator	platform/window-input	os-kmodcapslock	platform-window-input.md	engine/foundation/os/input.h:34
+os::kModNumLock	enumerator	platform/window-input	os-kmodnumlock	platform-window-input.md	engine/foundation/os/input.h:35
+os::KeyFromKeysym(u32)	function	platform/window-input	os-keyfromkeysym-u32	platform-window-input.md	engine/foundation/os/input.h:41
+os::KeyboardState	struct	platform/window-input	os-keyboardstate	platform-window-input.md	engine/foundation/os/input.h:44
+os::KeyboardState::kKeyCount	variable	platform/window-input	os-keyboardstate-kkeycount	platform-window-input.md	engine/foundation/os/input.h:45
+os::KeyboardState::IsDown(Key) const	function	platform/window-input	os-keyboardstate-isdown-key-const	platform-window-input.md	engine/foundation/os/input.h:48
+os::KeyboardState::SetDown(Key,bool)	function	platform/window-input	os-keyboardstate-setdown-key-bool	platform-window-input.md	engine/foundation/os/input.h:53
+os::KeyboardState::ReleaseAll()	function	platform/window-input	os-keyboardstate-releaseall	platform-window-input.md	engine/foundation/os/input.h:66
+os::KeyboardState::modifiers	variable	platform/window-input	os-keyboardstate-modifiers	platform-window-input.md	engine/foundation/os/input.h:71
+os::MouseButtonBit	enum	platform/window-input	os-mousebuttonbit	platform-window-input.md	engine/foundation/os/input.h:77
+os::kMouseLeft	enumerator	platform/window-input	os-kmouseleft	platform-window-input.md	engine/foundation/os/input.h:78
+os::kMouseRight	enumerator	platform/window-input	os-kmouseright	platform-window-input.md	engine/foundation/os/input.h:79
+os::kMouseMiddle	enumerator	platform/window-input	os-kmousemiddle	platform-window-input.md	engine/foundation/os/input.h:80
+os::kMouseBack	enumerator	platform/window-input	os-kmouseback	platform-window-input.md	engine/foundation/os/input.h:81
+os::kMouseForward	enumerator	platform/window-input	os-kmouseforward	platform-window-input.md	engine/foundation/os/input.h:82
+os::InputState	struct	platform/window-input	os-inputstate	platform-window-input.md	engine/foundation/os/input.h:90
+os::InputState::keyboard	variable	platform/window-input	os-inputstate-keyboard	platform-window-input.md	engine/foundation/os/input.h:91
+os::InputState::mouse_x	variable	platform/window-input	os-inputstate-mouse-x	platform-window-input.md	engine/foundation/os/input.h:95
+os::InputState::mouse_y	variable	platform/window-input	os-inputstate-mouse-y	platform-window-input.md	engine/foundation/os/input.h:96
+os::InputState::pointer_inside	variable	platform/window-input	os-inputstate-pointer-inside	platform-window-input.md	engine/foundation/os/input.h:97
+os::InputState::mouse_buttons	variable	platform/window-input	os-inputstate-mouse-buttons	platform-window-input.md	engine/foundation/os/input.h:98
+os::InputState::scroll_dx	variable	platform/window-input	os-inputstate-scroll-dx	platform-window-input.md	engine/foundation/os/input.h:103
+os::InputState::scroll_dy	variable	platform/window-input	os-inputstate-scroll-dy	platform-window-input.md	engine/foundation/os/input.h:104
+os::InputState::IsMouseDown(u32) const	function	platform/window-input	os-inputstate-ismousedown-u32-const	platform-window-input.md	engine/foundation/os/input.h:106
+os::InputState::BeginFrame()	function	platform/window-input	os-inputstate-beginframe	platform-window-input.md	engine/foundation/os/input.h:110
+os::PlatformWindowHost	class	platform/window-input	os-platformwindowhost	platform-window-input.md	engine/foundation/os/linux/platform_window_host.h:12
+os::PlatformWindowHost::PlatformWindowHost()	function	platform/window-input	os-platformwindowhost-platformwindowhost	platform-window-input.md	engine/foundation/os/linux/platform_window_host.h:14
+os::PlatformWindowHost::PlatformWindowHost(const PlatformWindowHost&)	function	platform/window-input	os-platformwindowhost-platformwindowhost-const-platformwindowhost-amp	platform-window-input.md	engine/foundation/os/linux/platform_window_host.h:15
+os::PlatformWindowHost::operator=(const PlatformWindowHost&)	function	platform/window-input	os-platformwindowhost-operator-eq-const-platformwindowhost-amp	platform-window-input.md	engine/foundation/os/linux/platform_window_host.h:16
+os::PlatformWindowHost::Open(WindowBackend,StringView,u32,u32,InputState*)	function	platform/window-input	os-platformwindowhost-open-windowbackend-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/foundation/os/linux/platform_window_host.h:21
+os::PlatformWindowHost::OpenFromEnvironment(StringView,u32,u32,InputState*)	function	platform/window-input	os-platformwindowhost-openfromenvironment-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/foundation/os/linux/platform_window_host.h:25
+os::PlatformWindowHost::Get()	function	platform/window-input	os-platformwindowhost-get	platform-window-input.md	engine/foundation/os/linux/platform_window_host.h:28
+os::wayland::WaylandConnection	class	platform/window-input	os-wayland-waylandconnection	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:15
+os::wayland::WaylandConnection::Connect()	function	platform/window-input	os-wayland-waylandconnection-connect	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:23
+os::wayland::WaylandConnection::WaylandConnection()	function	platform/window-input	os-wayland-waylandconnection-waylandconnection	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:25
+os::wayland::WaylandConnection::~WaylandConnection()	function	platform/window-input	os-wayland-waylandconnection-tilde-waylandconnection	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:26
+os::wayland::WaylandConnection::WaylandConnection(const WaylandConnection&)	function	platform/window-input	os-wayland-waylandconnection-waylandconnection-const-waylandconnection-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:28
+os::wayland::WaylandConnection::operator=(const WaylandConnection&)	function	platform/window-input	os-wayland-waylandconnection-operator-eq-const-waylandconnection-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:29
+os::wayland::WaylandConnection::WaylandConnection(WaylandConnection&&) noexcept	function	platform/window-input	os-wayland-waylandconnection-waylandconnection-waylandconnection-amp-amp-noexcept	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:30
+os::wayland::WaylandConnection::operator=(WaylandConnection&&) noexcept	function	platform/window-input	os-wayland-waylandconnection-operator-eq-waylandconnection-amp-amp-noexcept	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:31
+os::wayland::WaylandConnection::Valid() const	function	platform/window-input	os-wayland-waylandconnection-valid-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:33
+os::wayland::WaylandConnection::Display() const	function	platform/window-input	os-wayland-waylandconnection-display-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:35
+os::wayland::WaylandConnection::Compositor() const	function	platform/window-input	os-wayland-waylandconnection-compositor-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:36
+os::wayland::WaylandConnection::XdgWmBase() const	function	platform/window-input	os-wayland-waylandconnection-xdgwmbase-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:37
+os::wayland::WaylandConnection::Seat() const	function	platform/window-input	os-wayland-waylandconnection-seat-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:38
+os::wayland::WaylandConnection::Shm() const	function	platform/window-input	os-wayland-waylandconnection-shm-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:39
+os::wayland::WaylandConnection::DecorationManager() const	function	platform/window-input	os-wayland-waylandconnection-decorationmanager-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:44
+os::wayland::WaylandInput	class	platform/window-input	os-wayland-waylandinput	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:20
+os::wayland::WaylandInput::WaylandInput()	function	platform/window-input	os-wayland-waylandinput-waylandinput	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:22
+os::wayland::WaylandInput::~WaylandInput()	function	platform/window-input	os-wayland-waylandinput-tilde-waylandinput	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:23
+os::wayland::WaylandInput::WaylandInput(const WaylandInput&)	function	platform/window-input	os-wayland-waylandinput-waylandinput-const-waylandinput-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:25
+os::wayland::WaylandInput::operator=(const WaylandInput&)	function	platform/window-input	os-wayland-waylandinput-operator-eq-const-waylandinput-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:26
+os::wayland::WaylandInput::WaylandInput(WaylandInput&&)	function	platform/window-input	os-wayland-waylandinput-waylandinput-waylandinput-amp-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:27
+os::wayland::WaylandInput::operator=(WaylandInput&&)	function	platform/window-input	os-wayland-waylandinput-operator-eq-waylandinput-amp-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:28
+os::wayland::WaylandInput::Init(WaylandConnection&,InputState*)	function	platform/window-input	os-wayland-waylandinput-init-waylandconnection-amp-inputstate-star	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:35
+os::wayland::WaylandInput::Shutdown()	function	platform/window-input	os-wayland-waylandinput-shutdown	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:42
+os::wayland::WaylandInput::Valid() const	function	platform/window-input	os-wayland-waylandinput-valid-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:44
+os::wayland::WaylandInput::HasKeyboard() const	function	platform/window-input	os-wayland-waylandinput-haskeyboard-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:45
+os::wayland::WaylandInput::HasPointer() const	function	platform/window-input	os-wayland-waylandinput-haspointer-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:46
+os::wayland::WaylandInput::HasKeymap() const	function	platform/window-input	os-wayland-waylandinput-haskeymap-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:48
+os::wayland::WaylandPlatformWindow	class	platform/window-input	os-wayland-waylandplatformwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:14
+os::wayland::WaylandPlatformWindow::WaylandPlatformWindow()	function	platform/window-input	os-wayland-waylandplatformwindow-waylandplatformwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:16
+os::wayland::WaylandPlatformWindow::Open(StringView,u32,u32,InputState*)	function	platform/window-input	os-wayland-waylandplatformwindow-open-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:22
+os::wayland::WaylandPlatformWindow::Close()	function	platform/window-input	os-wayland-waylandplatformwindow-close	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:28
+os::wayland::WaylandPlatformWindow::~WaylandPlatformWindow()	function	platform/window-input	os-wayland-waylandplatformwindow-tilde-waylandplatformwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:30
+os::wayland::WaylandPlatformWindow::Valid() const	function	platform/window-input	os-wayland-waylandplatformwindow-valid-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:32
+os::wayland::WaylandPlatformWindow::PumpEvents()	function	platform/window-input	os-wayland-waylandplatformwindow-pumpevents	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:33
+os::wayland::WaylandPlatformWindow::ShouldClose() const	function	platform/window-input	os-wayland-waylandplatformwindow-shouldclose-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:37
+os::wayland::WaylandPlatformWindow::ConnectionLost() const	function	platform/window-input	os-wayland-waylandplatformwindow-connectionlost-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:38
+os::wayland::WaylandPlatformWindow::NativeDisplay() const	function	platform/window-input	os-wayland-waylandplatformwindow-nativedisplay-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:39
+os::wayland::WaylandPlatformWindow::Width() const	function	platform/window-input	os-wayland-waylandplatformwindow-width-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:40
+os::wayland::WaylandPlatformWindow::Height() const	function	platform/window-input	os-wayland-waylandplatformwindow-height-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:41
+os::wayland::WaylandPlatformWindow::BackendName() const	function	platform/window-input	os-wayland-waylandplatformwindow-backendname-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:42
+os::wayland::WaylandPlatformWindow::Input() const	function	platform/window-input	os-wayland-waylandplatformwindow-input-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:44
+os::wayland::WaylandWindow	class	platform/window-input	os-wayland-waylandwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:21
+os::wayland::WaylandWindow::Create(WaylandConnection&,StringView,StringView,u32,u32)	function	platform/window-input	os-wayland-waylandwindow-create-waylandconnection-amp-stringview-stringview-u32-u32	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:38
+os::wayland::WaylandWindow::WaylandWindow()	function	platform/window-input	os-wayland-waylandwindow-waylandwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:41
+os::wayland::WaylandWindow::~WaylandWindow()	function	platform/window-input	os-wayland-waylandwindow-tilde-waylandwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:42
+os::wayland::WaylandWindow::WaylandWindow(const WaylandWindow&)	function	platform/window-input	os-wayland-waylandwindow-waylandwindow-const-waylandwindow-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:44
+os::wayland::WaylandWindow::operator=(const WaylandWindow&)	function	platform/window-input	os-wayland-waylandwindow-operator-eq-const-waylandwindow-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:45
+os::wayland::WaylandWindow::WaylandWindow(WaylandWindow&&) noexcept	function	platform/window-input	os-wayland-waylandwindow-waylandwindow-waylandwindow-amp-amp-noexcept	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:46
+os::wayland::WaylandWindow::operator=(WaylandWindow&&) noexcept	function	platform/window-input	os-wayland-waylandwindow-operator-eq-waylandwindow-amp-amp-noexcept	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:47
+os::wayland::WaylandWindow::Valid() const	function	platform/window-input	os-wayland-waylandwindow-valid-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:49
+os::wayland::WaylandWindow::ShouldClose() const	function	platform/window-input	os-wayland-waylandwindow-shouldclose-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:57
+os::wayland::WaylandWindow::CommitPendingResize()	function	platform/window-input	os-wayland-waylandwindow-commitpendingresize	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:64
+os::wayland::WaylandWindow::Surface() const	function	platform/window-input	os-wayland-waylandwindow-surface-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:66
+os::wayland::WaylandWindow::XdgSurface() const	function	platform/window-input	os-wayland-waylandwindow-xdgsurface-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:67
+os::wayland::WaylandWindow::XdgToplevel() const	function	platform/window-input	os-wayland-waylandwindow-xdgtoplevel-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:68
+os::wayland::WaylandWindow::ServerSideDecorated() const	function	platform/window-input	os-wayland-waylandwindow-serversidedecorated-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:72
+os::wayland::WaylandWindow::Width() const	function	platform/window-input	os-wayland-waylandwindow-width-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:73
+os::wayland::WaylandWindow::Height() const	function	platform/window-input	os-wayland-waylandwindow-height-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:74
+os::x11::X11Window	class	platform/window-input	os-x11-x11window	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:25
+os::x11::X11Window::Create(StringView,u32,u32)	function	platform/window-input	os-x11-x11window-create-stringview-u32-u32	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:31
+os::x11::X11Window::X11Window()	function	platform/window-input	os-x11-x11window-x11window	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:33
+os::x11::X11Window::~X11Window()	function	platform/window-input	os-x11-x11window-tilde-x11window	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:34
+os::x11::X11Window::X11Window(const X11Window&)	function	platform/window-input	os-x11-x11window-x11window-const-x11window-amp	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:36
+os::x11::X11Window::operator=(const X11Window&)	function	platform/window-input	os-x11-x11window-operator-eq-const-x11window-amp	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:37
+os::x11::X11Window::X11Window(X11Window&&) noexcept	function	platform/window-input	os-x11-x11window-x11window-x11window-amp-amp-noexcept	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:38
+os::x11::X11Window::operator=(X11Window&&) noexcept	function	platform/window-input	os-x11-x11window-operator-eq-x11window-amp-amp-noexcept	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:39
+os::x11::X11Window::Valid() const	function	platform/window-input	os-x11-x11window-valid-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:41
+os::x11::X11Window::PumpEvents(InputState*)	function	platform/window-input	os-x11-x11window-pumpevents-inputstate-star	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:46
+os::x11::X11Window::PumpEvents()	function	platform/window-input	os-x11-x11window-pumpevents	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:50
+os::x11::X11Window::SetInputState(InputState*)	function	platform/window-input	os-x11-x11window-setinputstate-inputstate-star	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:51
+os::x11::X11Window::ShouldClose() const	function	platform/window-input	os-x11-x11window-shouldclose-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:52
+os::x11::X11Window::Width() const	function	platform/window-input	os-x11-x11window-width-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:53
+os::x11::X11Window::Height() const	function	platform/window-input	os-x11-x11window-height-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:54
+os::x11::X11Window::BackendName() const	function	platform/window-input	os-x11-x11window-backendname-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:55
+os::x11::X11Window::NativeDisplay() const	function	platform/window-input	os-x11-x11window-nativedisplay-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:57
+os::x11::X11Window::NativeWindow() const	function	platform/window-input	os-x11-x11window-nativewindow-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:58
+os::XkbKeyboard	class	platform/window-input	os-xkbkeyboard	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:17
+os::XkbKeyboard::XkbKeyboard()	function	platform/window-input	os-xkbkeyboard-xkbkeyboard	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:19
+os::XkbKeyboard::~XkbKeyboard()	function	platform/window-input	os-xkbkeyboard-tilde-xkbkeyboard	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:20
+os::XkbKeyboard::XkbKeyboard(const XkbKeyboard&)	function	platform/window-input	os-xkbkeyboard-xkbkeyboard-const-xkbkeyboard-amp	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:22
+os::XkbKeyboard::operator=(const XkbKeyboard&)	function	platform/window-input	os-xkbkeyboard-operator-eq-const-xkbkeyboard-amp	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:23
+os::XkbKeyboard::InitFromNames(const char*,const char*)	function	platform/window-input	os-xkbkeyboard-initfromnames-const-char-star-const-char-star	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:28
+os::XkbKeyboard::InitFromKeymapText(const char*,usize)	function	platform/window-input	os-xkbkeyboard-initfromkeymaptext-const-char-star-usize	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:32
+os::XkbKeyboard::Valid() const	function	platform/window-input	os-xkbkeyboard-valid-const	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:34
+os::XkbKeyboard::KeyForEvdevCode(u32) const	function	platform/window-input	os-xkbkeyboard-keyforevdevcode-u32-const	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:38
+os::XkbKeyboard::UpdateMask(u32,u32,u32,u32)	function	platform/window-input	os-xkbkeyboard-updatemask-u32-u32-u32-u32	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:41
+os::XkbKeyboard::Modifiers() const	function	platform/window-input	os-xkbkeyboard-modifiers-const	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:44
+os::Window	class	platform/window-input	os-window	platform-window-input.md	engine/foundation/os/window.h:19
+os::Window::~Window()	function	platform/window-input	os-window-tilde-window	platform-window-input.md	engine/foundation/os/window.h:21
+os::Window::Valid() const	function	platform/window-input	os-window-valid-const	platform-window-input.md	engine/foundation/os/window.h:23
+os::Window::PumpEvents()	function	platform/window-input	os-window-pumpevents	platform-window-input.md	engine/foundation/os/window.h:27
+os::Window::ShouldClose() const	function	platform/window-input	os-window-shouldclose-const	platform-window-input.md	engine/foundation/os/window.h:30
+os::Window::Width() const	function	platform/window-input	os-window-width-const	platform-window-input.md	engine/foundation/os/window.h:32
+os::Window::Height() const	function	platform/window-input	os-window-height-const	platform-window-input.md	engine/foundation/os/window.h:33
+os::Window::BackendName() const	function	platform/window-input	os-window-backendname-const	platform-window-input.md	engine/foundation/os/window.h:37
+os::WindowBackend	enum	platform/window-input	os-windowbackend	platform-window-input.md	engine/foundation/os/window.h:40
+os::WindowBackend::Auto	enumerator	platform/window-input	os-windowbackend-auto	platform-window-input.md	engine/foundation/os/window.h:40
+os::WindowBackend::Wayland	enumerator	platform/window-input	os-windowbackend-wayland	platform-window-input.md	engine/foundation/os/window.h:40
+os::WindowBackend::X11	enumerator	platform/window-input	os-windowbackend-x11	platform-window-input.md	engine/foundation/os/window.h:40
+os::WindowBackend::Invalid	enumerator	platform/window-input	os-windowbackend-invalid	platform-window-input.md	engine/foundation/os/window.h:40
+os::ParseWindowBackend(StringView)	function	platform/window-input	os-parsewindowbackend-stringview	platform-window-input.md	engine/foundation/os/window.h:44
+os::BackendPlan	struct	platform/window-input	os-backendplan	platform-window-input.md	engine/foundation/os/window.h:51
+os::BackendPlan::candidates	variable	platform/window-input	os-backendplan-candidates	platform-window-input.md	engine/foundation/os/window.h:52
+os::BackendPlan::count	variable	platform/window-input	os-backendplan-count	platform-window-input.md	engine/foundation/os/window.h:53
+os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	os-planwindowbackends-windowbackend-bool-bool	platform-window-input.md	engine/foundation/os/window.h:55
+jobs::IoRequest	struct	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:44
+jobs::IoRequest::next	variable	jobs	jobs-iorequest-next	jobs.md	engine/jobs/async_io.h:45
+jobs::IoRequest::run	variable	jobs	jobs-iorequest-run	jobs.md	engine/jobs/async_io.h:46
+jobs::IoThread	class	jobs	jobs-iothread	jobs.md	engine/jobs/async_io.h:49
+jobs::IoThread::IoThread()	function	jobs	jobs-iothread-iothread	jobs.md	engine/jobs/async_io.h:51
+jobs::IoThread::~IoThread()	function	jobs	jobs-iothread-tilde-iothread	jobs.md	engine/jobs/async_io.h:52
+jobs::IoThread::IoThread(const IoThread&)	function	jobs	jobs-iothread-iothread-const-iothread-amp	jobs.md	engine/jobs/async_io.h:54
+jobs::IoThread::operator=(const IoThread&)	function	jobs	jobs-iothread-operator-eq-const-iothread-amp	jobs.md	engine/jobs/async_io.h:55
+jobs::IoThread::Enqueue(IoRequest*)	function	jobs	jobs-iothread-enqueue-iorequest-star	jobs.md	engine/jobs/async_io.h:61
+jobs::IoThread::Shutdown()	function	jobs	jobs-iothread-shutdown	jobs.md	engine/jobs/async_io.h:66
+jobs::IoThread::ThreadId() const	function	jobs	jobs-iothread-threadid-const	jobs.md	engine/jobs/async_io.h:68
+jobs::FileReadResult	class	jobs	jobs-filereadresult	jobs.md	engine/jobs/async_io.h:87
+jobs::FileReadResult::FileReadResult()	function	jobs	jobs-filereadresult-filereadresult	jobs.md	engine/jobs/async_io.h:89
+jobs::FileReadResult::~FileReadResult()	function	jobs	jobs-filereadresult-tilde-filereadresult	jobs.md	engine/jobs/async_io.h:90
+jobs::FileReadResult::FileReadResult(FileReadResult&&) noexcept	function	jobs	jobs-filereadresult-filereadresult-filereadresult-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:91
+jobs::FileReadResult::operator=(FileReadResult&&) noexcept	function	jobs	jobs-filereadresult-operator-eq-filereadresult-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:92
+jobs::FileReadResult::FileReadResult(const FileReadResult&)	function	jobs	jobs-filereadresult-filereadresult-const-filereadresult-amp	jobs.md	engine/jobs/async_io.h:93
+jobs::FileReadResult::operator=(const FileReadResult&)	function	jobs	jobs-filereadresult-operator-eq-const-filereadresult-amp	jobs.md	engine/jobs/async_io.h:94
+jobs::FileReadResult::ok	variable	jobs	jobs-filereadresult-ok	jobs.md	engine/jobs/async_io.h:96
+jobs::FileReadResult::data	variable	jobs	jobs-filereadresult-data	jobs.md	engine/jobs/async_io.h:97
+jobs::FileReadResult::size	variable	jobs	jobs-filereadresult-size	jobs.md	engine/jobs/async_io.h:98
+jobs::ReadFileAwaitable	class	jobs	jobs-readfileawaitable	jobs.md	engine/jobs/async_io.h:105
+jobs::ReadFileAwaitable::ReadFileAwaitable(ReadFileAwaitable&&) noexcept	function	jobs	jobs-readfileawaitable-readfileawaitable-readfileawaitable-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:107
+jobs::ReadFileAwaitable::ReadFileAwaitable(const ReadFileAwaitable&)	function	jobs	jobs-readfileawaitable-readfileawaitable-const-readfileawaitable-amp	jobs.md	engine/jobs/async_io.h:108
+jobs::ReadFileAwaitable::operator=(const ReadFileAwaitable&)	function	jobs	jobs-readfileawaitable-operator-eq-const-readfileawaitable-amp	jobs.md	engine/jobs/async_io.h:109
+jobs::ReadFileAwaitable::~ReadFileAwaitable()	function	jobs	jobs-readfileawaitable-tilde-readfileawaitable	jobs.md	engine/jobs/async_io.h:110
+jobs::ReadFileAwaitable::await_ready() const noexcept	function	jobs	jobs-readfileawaitable-await-ready-const-noexcept	jobs.md	engine/jobs/async_io.h:112
+jobs::ReadFileAwaitable::await_suspend(std::coroutine_handle<>) noexcept	function	jobs	jobs-readfileawaitable-await-suspend-std-coroutine-handle-lt-gt-noexcept	jobs.md	engine/jobs/async_io.h:113
+jobs::ReadFileAwaitable::await_resume() noexcept	function	jobs	jobs-readfileawaitable-await-resume-noexcept	jobs.md	engine/jobs/async_io.h:114
+jobs::kDefaultMaxReadBytes	variable	jobs	jobs-kdefaultmaxreadbytes	jobs.md	engine/jobs/async_io.h:123
+jobs::kMaxAsyncPathBytes	variable	jobs	jobs-kmaxasyncpathbytes	jobs.md	engine/jobs/async_io.h:124
+jobs::ReadFileAsync(Scheduler&,StringView,usize)	function	jobs	jobs-readfileasync-scheduler-amp-stringview-usize	jobs.md	engine/jobs/async_io.h:129
+jobs::Counter	class	jobs	jobs-counter	jobs.md	engine/jobs/counter.h:51
+jobs::Counter::Counter(Scheduler&)	function	jobs	jobs-counter-counter-scheduler-amp	jobs.md	engine/jobs/counter.h:53
+jobs::Counter::Counter()	function	jobs	jobs-counter-counter	jobs.md	engine/jobs/counter.h:55
+jobs::Counter::Counter(const Counter&)	function	jobs	jobs-counter-counter-const-counter-amp	jobs.md	engine/jobs/counter.h:59
+jobs::Counter::operator=(const Counter&)	function	jobs	jobs-counter-operator-eq-const-counter-amp	jobs.md	engine/jobs/counter.h:60
+jobs::Counter::GetScheduler() const	function	jobs	jobs-counter-getscheduler-const	jobs.md	engine/jobs/counter.h:62
+jobs::Counter::Increment(u64)	function	jobs	jobs-counter-increment-u64	jobs.md	engine/jobs/counter.h:64
+jobs::Counter::Decrement()	function	jobs	jobs-counter-decrement	jobs.md	engine/jobs/counter.h:66
+jobs::Counter::IsZero() const	function	jobs	jobs-counter-iszero-const	jobs.md	engine/jobs/counter.h:80
+jobs::Counter::Value() const	function	jobs	jobs-counter-value-const	jobs.md	engine/jobs/counter.h:81
+jobs::Counter::PathCounters	struct	jobs	jobs-counter-pathcounters	jobs.md	engine/jobs/counter.h:85
+jobs::Counter::PathCounters::inline_continues	variable	jobs	jobs-counter-pathcounters-inline-continues	jobs.md	engine/jobs/counter.h:86
+jobs::Counter::PathCounters::parked	variable	jobs	jobs-counter-pathcounters-parked	jobs.md	engine/jobs/counter.h:87
+jobs::Counter::PathStats()	function	jobs	jobs-counter-pathstats	jobs.md	engine/jobs/counter.h:89
+jobs::Counter::DecrementThunk(void*)	function	jobs	jobs-counter-decrementthunk-void-star	jobs.md	engine/jobs/counter.h:95
+jobs::Counter::Awaitable	struct	jobs	jobs-counter-awaitable	jobs.md	engine/jobs/counter.h:97
+jobs::Counter::Awaitable::counter	variable	jobs	jobs-counter-awaitable-counter	jobs.md	engine/jobs/counter.h:98
+jobs::Counter::Awaitable::await_ready() const noexcept	function	jobs	jobs-counter-awaitable-await-ready-const-noexcept	jobs.md	engine/jobs/counter.h:100
+jobs::Counter::Awaitable::await_suspend(std::coroutine_handle<>) noexcept	function	jobs	jobs-counter-awaitable-await-suspend-std-coroutine-handle-lt-gt-noexcept	jobs.md	engine/jobs/counter.h:102
+jobs::Counter::Awaitable::await_resume() noexcept	function	jobs	jobs-counter-awaitable-await-resume-noexcept	jobs.md	engine/jobs/counter.h:120
+jobs::Counter::operator co_await()	function	jobs	jobs-counter-operator-co-await	jobs.md	engine/jobs/counter.h:127
+jobs::Spawn(Counter&,Job&&)	function	jobs	jobs-spawn-counter-amp-job-amp-amp	jobs.md	engine/jobs/counter.h:141
+jobs::StealStatus	enum	jobs	jobs-stealstatus	jobs.md	engine/jobs/deque.h:38
+jobs::StealStatus::Success	enumerator	jobs	jobs-stealstatus-success	jobs.md	engine/jobs/deque.h:39
+jobs::StealStatus::Empty	enumerator	jobs	jobs-stealstatus-empty	jobs.md	engine/jobs/deque.h:40
+jobs::StealStatus::Lost	enumerator	jobs	jobs-stealstatus-lost	jobs.md	engine/jobs/deque.h:41
+jobs::WorkStealingDeque	class	jobs	jobs-workstealingdeque	jobs.md	engine/jobs/deque.h:44
+jobs::WorkStealingDeque::kDefaultCapacity	variable	jobs	jobs-workstealingdeque-kdefaultcapacity	jobs.md	engine/jobs/deque.h:46
+jobs::WorkStealingDeque::WorkStealingDeque()	function	jobs	jobs-workstealingdeque-workstealingdeque	jobs.md	engine/jobs/deque.h:51
+jobs::WorkStealingDeque::WorkStealingDeque(const WorkStealingDeque&)	function	jobs	jobs-workstealingdeque-workstealingdeque-const-workstealingdeque-amp	jobs.md	engine/jobs/deque.h:53
+jobs::WorkStealingDeque::operator=(const WorkStealingDeque&)	function	jobs	jobs-workstealingdeque-operator-eq-const-workstealingdeque-amp	jobs.md	engine/jobs/deque.h:54
+jobs::WorkStealingDeque::Capacity()	function	jobs	jobs-workstealingdeque-capacity	jobs.md	engine/jobs/deque.h:56
+jobs::WorkStealingDeque::PushBottom(std::coroutine_handle<>)	function	jobs	jobs-workstealingdeque-pushbottom-std-coroutine-handle-lt-gt	jobs.md	engine/jobs/deque.h:59
+jobs::WorkStealingDeque::PopBottom()	function	jobs	jobs-workstealingdeque-popbottom	jobs.md	engine/jobs/deque.h:76
+jobs::WorkStealingDeque::StealTop(std::coroutine_handle<>&)	function	jobs	jobs-workstealingdeque-stealtop-std-coroutine-handle-lt-gt-amp	jobs.md	engine/jobs/deque.h:103
+jobs::WorkStealingDeque::ApproxSize() const	function	jobs	jobs-workstealingdeque-approxsize-const	jobs.md	engine/jobs/deque.h:120
+jobs::FramePool	class	jobs	jobs-framepool	jobs.md	engine/jobs/frame_pool.h:34
+jobs::FramePool::kClassCount	variable	jobs	jobs-framepool-kclasscount	jobs.md	engine/jobs/frame_pool.h:36
+jobs::FramePool::kBlockSizes	variable	jobs	jobs-framepool-kblocksizes	jobs.md	engine/jobs/frame_pool.h:39
+jobs::FramePool::kHeaderBytes	variable	jobs	jobs-framepool-kheaderbytes	jobs.md	engine/jobs/frame_pool.h:40
+jobs::FramePool::kMaxPooledRequest	variable	jobs	jobs-framepool-kmaxpooledrequest	jobs.md	engine/jobs/frame_pool.h:41
+jobs::FramePool::Config	struct	jobs	jobs-framepool-config	jobs.md	engine/jobs/frame_pool.h:43
+jobs::FramePool::Config::slots_per_class	variable	jobs	jobs-framepool-config-slots-per-class	jobs.md	engine/jobs/frame_pool.h:44
+jobs::FramePool::Config::thread_caches	variable	jobs	jobs-framepool-config-thread-caches	jobs.md	engine/jobs/frame_pool.h:47
+jobs::FramePool::Stats	struct	jobs	jobs-framepool-stats	jobs.md	engine/jobs/frame_pool.h:52
+jobs::FramePool::Stats::pooled_allocs	variable	jobs	jobs-framepool-stats-pooled-allocs	jobs.md	engine/jobs/frame_pool.h:53
+jobs::FramePool::Stats::pooled_frees	variable	jobs	jobs-framepool-stats-pooled-frees	jobs.md	engine/jobs/frame_pool.h:54
+jobs::FramePool::Stats::fallback_allocs	variable	jobs	jobs-framepool-stats-fallback-allocs	jobs.md	engine/jobs/frame_pool.h:55
+jobs::FramePool::Stats::fallback_frees	variable	jobs	jobs-framepool-stats-fallback-frees	jobs.md	engine/jobs/frame_pool.h:56
+jobs::FramePool::Stats::TotalPooledAllocs() const	function	jobs	jobs-framepool-stats-totalpooledallocs-const	jobs.md	engine/jobs/frame_pool.h:58
+jobs::FramePool::Stats::TotalPooledFrees() const	function	jobs	jobs-framepool-stats-totalpooledfrees-const	jobs.md	engine/jobs/frame_pool.h:59
+jobs::FramePool::Stats::Live() const	function	jobs	jobs-framepool-stats-live-const	jobs.md	engine/jobs/frame_pool.h:61
+jobs::FramePool::ThreadCache	struct	jobs	jobs-framepool-threadcache	jobs.md	engine/jobs/frame_pool.h:66
+jobs::FramePool::ThreadCache::owner	variable	jobs	jobs-framepool-threadcache-owner	jobs.md	engine/jobs/frame_pool.h:67
+jobs::FramePool::ThreadCache::head	variable	jobs	jobs-framepool-threadcache-head	jobs.md	engine/jobs/frame_pool.h:68
+jobs::FramePool::ThreadCache::count	variable	jobs	jobs-framepool-threadcache-count	jobs.md	engine/jobs/frame_pool.h:69
+jobs::FramePool::ThreadCache::destroyed	variable	jobs	jobs-framepool-threadcache-destroyed	jobs.md	engine/jobs/frame_pool.h:76
+jobs::FramePool::ThreadCache::~ThreadCache()	function	jobs	jobs-framepool-threadcache-tilde-threadcache	jobs.md	engine/jobs/frame_pool.h:77
+jobs::FramePool::FramePool(const Config&)	function	jobs	jobs-framepool-framepool-const-config-amp	jobs.md	engine/jobs/frame_pool.h:80
+jobs::FramePool::~FramePool()	function	jobs	jobs-framepool-tilde-framepool	jobs.md	engine/jobs/frame_pool.h:81
+jobs::FramePool::FramePool(const FramePool&)	function	jobs	jobs-framepool-framepool-const-framepool-amp	jobs.md	engine/jobs/frame_pool.h:83
+jobs::FramePool::operator=(const FramePool&)	function	jobs	jobs-framepool-operator-eq-const-framepool-amp	jobs.md	engine/jobs/frame_pool.h:84
+jobs::FramePool::Allocate(usize)	function	jobs	jobs-framepool-allocate-usize	jobs.md	engine/jobs/frame_pool.h:88
+jobs::FramePool::Deallocate(void*)	function	jobs	jobs-framepool-deallocate-void-star	jobs.md	engine/jobs/frame_pool.h:91
+jobs::FramePool::GetStats() const	function	jobs	jobs-framepool-getstats-const	jobs.md	engine/jobs/frame_pool.h:93
+jobs::FramePool::CentralAvailableForTesting(usize)	function	jobs	jobs-framepool-centralavailablefortesting-usize	jobs.md	engine/jobs/frame_pool.h:99
+jobs::FramePool::Global()	function	jobs	jobs-framepool-global	jobs.md	engine/jobs/frame_pool.h:105
+jobs::CompletionFn	alias	jobs	jobs-completionfn	jobs.md	engine/jobs/job.h:51
+jobs::Job	class	jobs	jobs-job	jobs.md	engine/jobs/job.h:53
+jobs::Job::Handle	alias	jobs	jobs-job-handle	jobs.md	engine/jobs/job.h:56
+jobs::Job::promise_type	struct	jobs	jobs-job-promise-type	jobs.md	engine/jobs/job.h:58
+jobs::Job::promise_type::on_complete	variable	jobs	jobs-job-promise-type-on-complete	jobs.md	engine/jobs/job.h:59
+jobs::Job::promise_type::on_complete_user	variable	jobs	jobs-job-promise-type-on-complete-user	jobs.md	engine/jobs/job.h:60
+jobs::Job::promise_type::get_return_object()	function	jobs	jobs-job-promise-type-get-return-object	jobs.md	engine/jobs/job.h:62
+jobs::Job::promise_type::initial_suspend() noexcept	function	jobs	jobs-job-promise-type-initial-suspend-noexcept	jobs.md	engine/jobs/job.h:65
+jobs::Job::promise_type::FinalAwaiter	struct	jobs	jobs-job-promise-type-finalawaiter	jobs.md	engine/jobs/job.h:68
+jobs::Job::promise_type::FinalAwaiter::await_ready() noexcept	function	jobs	jobs-job-promise-type-finalawaiter-await-ready-noexcept	jobs.md	engine/jobs/job.h:69
+jobs::Job::promise_type::FinalAwaiter::await_suspend(Handle) noexcept	function	jobs	jobs-job-promise-type-finalawaiter-await-suspend-handle-noexcept	jobs.md	engine/jobs/job.h:70
+jobs::Job::promise_type::FinalAwaiter::await_resume() noexcept	function	jobs	jobs-job-promise-type-finalawaiter-await-resume-noexcept	jobs.md	engine/jobs/job.h:80
+jobs::Job::promise_type::final_suspend() noexcept	function	jobs	jobs-job-promise-type-final-suspend-noexcept	jobs.md	engine/jobs/job.h:82
+jobs::Job::promise_type::return_void() noexcept	function	jobs	jobs-job-promise-type-return-void-noexcept	jobs.md	engine/jobs/job.h:84
+jobs::Job::promise_type::unhandled_exception() noexcept	function	jobs	jobs-job-promise-type-unhandled-exception-noexcept	jobs.md	engine/jobs/job.h:89
+jobs::Job::promise_type::operator new(usize)	function	jobs	jobs-job-promise-type-operator-new-usize	jobs.md	engine/jobs/job.h:91
+jobs::Job::promise_type::operator new(usize,std::align_val_t)	function	jobs	jobs-job-promise-type-operator-new-usize-std-align-val-t	jobs.md	engine/jobs/job.h:94
+jobs::Job::promise_type::operator delete(void*,usize) noexcept	function	jobs	jobs-job-promise-type-operator-delete-void-star-usize-noexcept	jobs.md	engine/jobs/job.h:98
+jobs::Job::Job()	function	jobs	jobs-job-job	jobs.md	engine/jobs/job.h:101
+jobs::Job::~Job()	function	jobs	jobs-job-tilde-job	jobs.md	engine/jobs/job.h:102
+jobs::Job::Job(const Job&)	function	jobs	jobs-job-job-const-job-amp	jobs.md	engine/jobs/job.h:109
+jobs::Job::operator=(const Job&)	function	jobs	jobs-job-operator-eq-const-job-amp	jobs.md	engine/jobs/job.h:110
+jobs::Job::Job(Job&&) noexcept	function	jobs	jobs-job-job-job-amp-amp-noexcept	jobs.md	engine/jobs/job.h:111
+jobs::Job::operator=(Job&&) noexcept	function	jobs	jobs-job-operator-eq-job-amp-amp-noexcept	jobs.md	engine/jobs/job.h:112
+jobs::Job::Valid() const	function	jobs	jobs-job-valid-const	jobs.md	engine/jobs/job.h:124
+jobs::Job::SetCompletion(CompletionFn,void*)	function	jobs	jobs-job-setcompletion-completionfn-void-star	jobs.md	engine/jobs/job.h:132
+jobs::Job::SetCompletion(Counter&)	function	jobs	jobs-job-setcompletion-counter-amp	jobs.md	engine/jobs/job.h:142
+jobs::Job::Release()	function	jobs	jobs-job-release	jobs.md	engine/jobs/job.h:147
+jobs::LogJobs	variable	jobs	jobs-logjobs	jobs.md	engine/jobs/jobs_log.h:10
+jobs::JobsLogV(LogVerbosity,const char*,...)	function	jobs	jobs-jobslogv-logverbosity-const-char-star	jobs.md	engine/jobs/jobs_log.h:14
+jobs::ParallelForFn	alias	jobs	jobs-parallelforfn	jobs.md	engine/jobs/parallel_for.h:30
+jobs::kDefaultChunkSize	variable	jobs	jobs-kdefaultchunksize	jobs.md	engine/jobs/parallel_for.h:32
+jobs::kMaxChunks	variable	jobs	jobs-kmaxchunks	jobs.md	engine/jobs/parallel_for.h:37
+jobs::EffectiveChunkSize(usize,usize)	function	jobs	jobs-effectivechunksize-usize-usize	jobs.md	engine/jobs/parallel_for.h:42
+jobs::ParallelFor(usize,usize,ParallelForFn,void*)	function	jobs	jobs-parallelfor-usize-usize-parallelforfn-void-star	jobs.md	engine/jobs/parallel_for.h:80
+jobs::ParallelForBlocking(Scheduler&,usize,usize,ParallelForFn,void*)	function	jobs	jobs-parallelforblocking-scheduler-amp-usize-usize-parallelforfn-void-star	jobs.md	engine/jobs/parallel_for.h:90
+jobs::ParallelForBlocking(Scheduler&,usize,usize,F&)	function	jobs	jobs-parallelforblocking-scheduler-amp-usize-usize-f-amp	jobs.md	engine/jobs/parallel_for.h:102
+jobs::Scheduler	class	jobs	jobs-scheduler	jobs.md	engine/jobs/scheduler.h:70
+jobs::Scheduler::Config	struct	jobs	jobs-scheduler-config	jobs.md	engine/jobs/scheduler.h:72
+jobs::Scheduler::Config::participants	variable	jobs	jobs-scheduler-config-participants	jobs.md	engine/jobs/scheduler.h:73
+jobs::Scheduler::Config::pin	variable	jobs	jobs-scheduler-config-pin	jobs.md	engine/jobs/scheduler.h:74
+jobs::Scheduler::Scheduler(const Config&)	function	jobs	jobs-scheduler-scheduler-const-config-amp	jobs.md	engine/jobs/scheduler.h:77
+jobs::Scheduler::~Scheduler()	function	jobs	jobs-scheduler-tilde-scheduler	jobs.md	engine/jobs/scheduler.h:78
+jobs::Scheduler::Scheduler(const Scheduler&)	function	jobs	jobs-scheduler-scheduler-const-scheduler-amp	jobs.md	engine/jobs/scheduler.h:80
+jobs::Scheduler::operator=(const Scheduler&)	function	jobs	jobs-scheduler-operator-eq-const-scheduler-amp	jobs.md	engine/jobs/scheduler.h:81
+jobs::Scheduler::Submit(Job&&)	function	jobs	jobs-scheduler-submit-job-amp-amp	jobs.md	engine/jobs/scheduler.h:84
+jobs::Scheduler::Schedule(std::coroutine_handle<>)	function	jobs	jobs-scheduler-schedule-std-coroutine-handle-lt-gt	jobs.md	engine/jobs/scheduler.h:89
+jobs::Scheduler::HelpUntil(bool(*)(void*),void*)	function	jobs	jobs-scheduler-helpuntil-bool-star-void-star-void-star	jobs.md	engine/jobs/scheduler.h:94
+jobs::Scheduler::HelpUntil(Counter&)	function	jobs	jobs-scheduler-helpuntil-counter-amp	jobs.md	engine/jobs/scheduler.h:96
+jobs::Scheduler::HelpUntil(const std::atomic<int>&,int)	function	jobs	jobs-scheduler-helpuntil-const-std-atomic-lt-int-gt-amp-int	jobs.md	engine/jobs/scheduler.h:98
+jobs::Scheduler::Shutdown()	function	jobs	jobs-scheduler-shutdown	jobs.md	engine/jobs/scheduler.h:103
+jobs::Scheduler::Io()	function	jobs	jobs-scheduler-io	jobs.md	engine/jobs/scheduler.h:107
+jobs::Scheduler::ParticipantCount() const	function	jobs	jobs-scheduler-participantcount-const	jobs.md	engine/jobs/scheduler.h:109
+jobs::Scheduler::Pool() const	function	jobs	jobs-scheduler-pool-const	jobs.md	engine/jobs/scheduler.h:110
+jobs::Scheduler::Current()	function	jobs	jobs-scheduler-current	jobs.md	engine/jobs/scheduler.h:113
+jobs::Scheduler::InsideJob()	function	jobs	jobs-scheduler-insidejob	jobs.md	engine/jobs/scheduler.h:115
+jobs::Scheduler::ResumesBy(usize) const	function	jobs	jobs-scheduler-resumesby-usize-const	jobs.md	engine/jobs/scheduler.h:118
+jobs::Scheduler::StealsBy(usize) const	function	jobs	jobs-scheduler-stealsby-usize-const	jobs.md	engine/jobs/scheduler.h:119
+jobs::Scheduler::TotalResumes() const	function	jobs	jobs-scheduler-totalresumes-const	jobs.md	engine/jobs/scheduler.h:120
+jobs::Scheduler::ParkedWorkersForTesting() const	function	jobs	jobs-scheduler-parkedworkersfortesting-const	jobs.md	engine/jobs/scheduler.h:123
+jobs::Scheduler::InjectionQueueSizeForTesting()	function	jobs	jobs-scheduler-injectionqueuesizefortesting	jobs.md	engine/jobs/scheduler.h:124
+jobs::Scheduler::InjectionCapacity()	function	jobs	jobs-scheduler-injectioncapacity	jobs.md	engine/jobs/scheduler.h:125
+jobs::kMaxParticipants	variable	jobs	jobs-kmaxparticipants	jobs.md	engine/jobs/topology.h:11
+jobs::GetAllowedCpus(u32*,usize)	function	jobs	jobs-getallowedcpus-u32-star-usize	jobs.md	engine/jobs/topology.h:17
+jobs::ParseParticipantOverride(const char*,usize,bool*)	function	jobs	jobs-parseparticipantoverride-const-char-star-usize-bool-star	jobs.md	engine/jobs/topology.h:24
+jobs::DefaultParticipantCount()	function	jobs	jobs-defaultparticipantcount	jobs.md	engine/jobs/topology.h:29
+jobs::Participant	struct	jobs	jobs-participant	jobs.md	engine/jobs/worker_pool.h:19
+jobs::Participant::index	variable	jobs	jobs-participant-index	jobs.md	engine/jobs/worker_pool.h:20
+jobs::Participant::cpu	variable	jobs	jobs-participant-cpu	jobs.md	engine/jobs/worker_pool.h:21
+jobs::Participant::tid	variable	jobs	jobs-participant-tid	jobs.md	engine/jobs/worker_pool.h:22
+jobs::Participant::owner	variable	jobs	jobs-participant-owner	jobs.md	engine/jobs/worker_pool.h:23
+jobs::WorkerPool	class	jobs	jobs-workerpool	jobs.md	engine/jobs/worker_pool.h:26
+jobs::WorkerPool::WorkerFn	alias	jobs	jobs-workerpool-workerfn	jobs.md	engine/jobs/worker_pool.h:31
+jobs::WorkerPool::Config	struct	jobs	jobs-workerpool-config	jobs.md	engine/jobs/worker_pool.h:33
+jobs::WorkerPool::Config::participants	variable	jobs	jobs-workerpool-config-participants	jobs.md	engine/jobs/worker_pool.h:34
+jobs::WorkerPool::Config::pin	variable	jobs	jobs-workerpool-config-pin	jobs.md	engine/jobs/worker_pool.h:35
+jobs::WorkerPool::Config::worker_fn	variable	jobs	jobs-workerpool-config-worker-fn	jobs.md	engine/jobs/worker_pool.h:36
+jobs::WorkerPool::Config::user	variable	jobs	jobs-workerpool-config-user	jobs.md	engine/jobs/worker_pool.h:37
+jobs::WorkerPool::WorkerPool(const Config&)	function	jobs	jobs-workerpool-workerpool-const-config-amp	jobs.md	engine/jobs/worker_pool.h:40
+jobs::WorkerPool::~WorkerPool()	function	jobs	jobs-workerpool-tilde-workerpool	jobs.md	engine/jobs/worker_pool.h:42
+jobs::WorkerPool::WorkerPool(const WorkerPool&)	function	jobs	jobs-workerpool-workerpool-const-workerpool-amp	jobs.md	engine/jobs/worker_pool.h:44
+jobs::WorkerPool::operator=(const WorkerPool&)	function	jobs	jobs-workerpool-operator-eq-const-workerpool-amp	jobs.md	engine/jobs/worker_pool.h:45
+jobs::WorkerPool::User() const	function	jobs	jobs-workerpool-user-const	jobs.md	engine/jobs/worker_pool.h:47
+jobs::WorkerPool::WorkerFunction() const	function	jobs	jobs-workerpool-workerfunction-const	jobs.md	engine/jobs/worker_pool.h:48
+jobs::WorkerPool::ParticipantCount() const	function	jobs	jobs-workerpool-participantcount-const	jobs.md	engine/jobs/worker_pool.h:49
+jobs::WorkerPool::SpawnedWorkerCount() const	function	jobs	jobs-workerpool-spawnedworkercount-const	jobs.md	engine/jobs/worker_pool.h:50
+jobs::WorkerPool::GetParticipant(usize) const	function	jobs	jobs-workerpool-getparticipant-usize-const	jobs.md	engine/jobs/worker_pool.h:51
+jobs::WorkerPool::RequestStop()	function	jobs	jobs-workerpool-requeststop	jobs.md	engine/jobs/worker_pool.h:56
+jobs::WorkerPool::StopRequested() const	function	jobs	jobs-workerpool-stoprequested-const	jobs.md	engine/jobs/worker_pool.h:57
+jobs::WorkerPool::Join()	function	jobs	jobs-workerpool-join	jobs.md	engine/jobs/worker_pool.h:68
+jobs::WorkerPool::Current()	function	jobs	jobs-workerpool-current	jobs.md	engine/jobs/worker_pool.h:71
+jobs::WorkerPool::IsParticipantThread()	function	jobs	jobs-workerpool-isparticipantthread	jobs.md	engine/jobs/worker_pool.h:72
+jobs::WorkerPool::CurrentParticipantIndex()	function	jobs	jobs-workerpool-currentparticipantindex	jobs.md	engine/jobs/worker_pool.h:73

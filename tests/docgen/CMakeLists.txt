@@ -9,6 +9,7 @@ set(DOCGEN_TEST_SOURCES
   reference_test.cpp
   links_test.cpp
   samples_test.cpp
+  lint_test.cpp
 )
 
 find_package(Threads REQUIRED)

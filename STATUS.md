@@ -405,7 +405,7 @@ is a goal/deliverable-level plan only — not startable until its days are
 broken out. Phase 2 (Job System) remains the active phase.
 
 
-## Phase 2.5 (Documentation tooling) — in progress (Days 36-42 done, Day 43 next)
+## Phase 2.5 (Documentation tooling) — in progress (Days 36-43 done, Day 44 next)
 
 Days 36-44 are broken out under `plans/phase-02-5-docs-tooling/` (design
 settled: own C++ `docgen` on the foundation, purpose-built scanner, `///`
@@ -420,3 +420,4 @@ Day 39 (doc-comment parser) is done: `tools/docgen/src/doc_parser.{h,cpp}`, `doc
 Day 40 (symbol index + Markdown emitter) is done: `docgen reference|check` (module map `docs/reference/modules.txt`, stable symbol IDs/anchors, module pages, index page, `symbols.txt`, golden fixtures under `tests/docgen/fixtures/ref/`, stale-output detection); 113 docgen test cases pass plain and under ASan; high-effort review (9 findings, 8 fixed, 1 declined with a measurement) recorded in the day file. The engine's own reference is not committed yet (no `///` comments until Day 44).
 Day 41 (cross-references + link checker) is done: `docgen links` (file/anchor/image links, `[[Symbol]]` refs in `docs/**`, orphan pages, external links counted not fetched; scanner `md_scan.*` is shared with Day 42); 134 docgen test cases pass plain and under ASan; high-effort review (9 findings, 8 fixed, 1 declined) recorded in the day file.
 Day 42 (sample compiler) is done: `docgen samples` (tags `cpp compile [standalone] [run]` + adjacent `output` block, `#line`-mapped diagnostics, posix_spawn with timeouts, parallel `--jobs`, scratch cleanup incl. on signals); 152 docgen test cases pass plain and under ASan; high-effort review (8 findings, all fixed) recorded in the day file. Wiring the real flags/libraries and the prelude is Day 43.
+Day 43 (lint, coverage, build integration) is done: `docgen lint` (coverage table, strict-module label rules, ratcheting baseline `docs/reference/lint-baseline.txt`), the `docs` CMake target and ctest entries `docs_check`/`docs_links`/`docs_samples`/`docs_lint` (`ctest -L docs`), `docs/samples-prelude.h`, the generated `docs/reference/` committed (0% documented; Day 44 retrofits the headers); 166 docgen test cases pass plain and under ASan; high-effort review (9 findings, 7 fixed, 2 declined) recorded in the day file. Regenerate with `cmake --build build --target docs` after any header change.

@@ -1,0 +1,702 @@
+# docgen lint baseline v1
+# Written by `docgen lint --baseline FILE --update-baseline`. The lint tolerates exactly these findings and fails on
+# any other, or if a module's documented/total ratio drops below its line here. Delete entries as symbols get documented.
+module	foundation/memory	0	18
+module	foundation/containers	0	41
+module	foundation/strings	0	89
+module	foundation/math	0	97
+module	foundation/log	0	25
+module	foundation/types	0	11
+module	platform/os	0	31
+module	platform/window-input	0	207
+module	jobs	0	171
+known	undocumented	ArenaAllocator
+known	undocumented	ArenaAllocator::ArenaAllocator(usize)
+known	undocumented	ArenaAllocator::~ArenaAllocator()
+known	undocumented	ArenaAllocator::Alloc(usize,usize)
+known	undocumented	ArenaAllocator::Reset()
+known	undocumented	ArenaAllocator::FreeAll()
+known	undocumented	PoolAllocator
+known	undocumented	PoolAllocator::PoolAllocator(usize,usize)
+known	undocumented	PoolAllocator::~PoolAllocator()
+known	undocumented	PoolAllocator::Alloc()
+known	undocumented	PoolAllocator::Free(void*)
+known	undocumented	StackAllocator
+known	undocumented	StackAllocator::Marker
+known	undocumented	StackAllocator::StackAllocator(usize)
+known	undocumented	StackAllocator::~StackAllocator()
+known	undocumented	StackAllocator::Push(usize,usize)
+known	undocumented	StackAllocator::CurrentMarker() const
+known	undocumented	StackAllocator::PopToMarker(Marker)
+known	undocumented	Array
+known	undocumented	Array::Array(Allocator&)
+known	undocumented	Array::~Array()
+known	undocumented	Array::Array(Array&&) noexcept
+known	undocumented	Array::operator=(Array&&) noexcept
+known	undocumented	Array::Reserve(usize)
+known	undocumented	Array::Push(const T&)
+known	undocumented	Array::Push(T&&)
+known	undocumented	Array::Pop()
+known	undocumented	Array::Insert(usize,const T&)
+known	undocumented	Array::Remove(usize)
+known	undocumented	Array::operator[](usize)
+known	undocumented	Array::operator[](usize) const
+known	undocumented	Array::Size() const
+known	undocumented	Array::Capacity() const
+known	undocumented	Hash<i8>
+known	undocumented	Hash<i8>::operator()(i8) const
+known	undocumented	Hash<i16>
+known	undocumented	Hash<i16>::operator()(i16) const
+known	undocumented	Hash<i32>
+known	undocumented	Hash<i32>::operator()(i32) const
+known	undocumented	Hash<i64>
+known	undocumented	Hash<i64>::operator()(i64) const
+known	undocumented	Hash<u8>
+known	undocumented	Hash<u8>::operator()(u8) const
+known	undocumented	Hash<u16>
+known	undocumented	Hash<u16>::operator()(u16) const
+known	undocumented	Hash<u32>
+known	undocumented	Hash<u32>::operator()(u32) const
+known	undocumented	Hash<u64>
+known	undocumented	Hash<u64>::operator()(u64) const
+known	undocumented	Hash<T*>
+known	undocumented	Hash<T*>::operator()(T*) const
+known	undocumented	HashMap
+known	undocumented	HashMap::HashMap(Allocator&,usize)
+known	undocumented	HashMap::Insert(const K&,const V&)
+known	undocumented	HashMap::Find(const K&)
+known	undocumented	HashMap::Find(const K&) const
+known	undocumented	HashMap::Remove(const K&)
+known	undocumented	HashMap::Size() const
+known	undocumented	HashMap::SlotCapacity() const
+known	undocumented	GraphemeBreakProperty
+known	undocumented	GraphemeBreakProperty::Other
+known	undocumented	GraphemeBreakProperty::CR
+known	undocumented	GraphemeBreakProperty::LF
+known	undocumented	GraphemeBreakProperty::Control
+known	undocumented	GraphemeBreakProperty::Extend
+known	undocumented	GraphemeBreakProperty::ZWJ
+known	undocumented	GraphemeBreakProperty::RegionalIndicator
+known	undocumented	GraphemeBreakProperty::Prepend
+known	undocumented	GraphemeBreakProperty::SpacingMark
+known	undocumented	GraphemeBreakProperty::L
+known	undocumented	GraphemeBreakProperty::V
+known	undocumented	GraphemeBreakProperty::T
+known	undocumented	GraphemeBreakProperty::LV
+known	undocumented	GraphemeBreakProperty::LVT
+known	undocumented	GraphemeBreakProperty::ExtendedPictographic
+known	undocumented	LookupGraphemeBreakProperty(u32)
+known	undocumented	GraphemeClusterIterator
+known	undocumented	GraphemeClusterIterator::GraphemeClusterIterator(StringView,usize)
+known	undocumented	GraphemeClusterIterator::operator*() const
+known	undocumented	GraphemeClusterIterator::operator++()
+known	undocumented	GraphemeClusterIterator::operator!=(const GraphemeClusterIterator&) const
+known	undocumented	GraphemeClusterRange
+known	undocumented	GraphemeClusterRange::GraphemeClusterRange(StringView)
+known	undocumented	GraphemeClusterRange::begin() const
+known	undocumented	GraphemeClusterRange::end() const
+known	undocumented	GraphemeClusters(StringView)
+known	undocumented	GraphemeClusterCount(StringView)
+known	undocumented	LookupCanonicalDecomposition(u32,u32[2],u8*)
+known	undocumented	LookupCanonicalComposition(u32,u32,u32*)
+known	undocumented	CombiningClass(u32)
+known	undocumented	IsCompositionExcluded(u32)
+known	undocumented	Detail_FullyDecomposeAppend(u32,Array<u32,ArenaAllocator>&)
+known	undocumented	Detail_CanonicalOrder(Array<u32,ArenaAllocator>&)
+known	undocumented	Detail_ComposeInPlace(Array<u32,ArenaAllocator>&)
+known	undocumented	NormalizeNFD(Allocator&,StringView)
+known	undocumented	NormalizeNFC(Allocator&,StringView)
+known	undocumented	StringView
+known	undocumented	StringView::StringView(const char*,usize)
+known	undocumented	StringView::StringView(const char*)
+known	undocumented	StringView::Data() const
+known	undocumented	StringView::Length() const
+known	undocumented	StringView::Empty() const
+known	undocumented	StringView::operator[](usize) const
+known	undocumented	StringView::operator==(const StringView&) const
+known	undocumented	StringView::operator!=(const StringView&) const
+known	undocumented	StringView::Compare(const StringView&) const
+known	undocumented	StringView::operator<(const StringView&) const
+known	undocumented	StringView::Substring(usize,usize) const
+known	undocumented	StringView::IndexOf(char) const
+known	undocumented	StringView::Find(StringView) const
+known	undocumented	StringView::Contains(StringView) const
+known	undocumented	String
+known	undocumented	String::String(Allocator&)
+known	undocumented	String::String(Allocator&,StringView)
+known	undocumented	String::Append(StringView)
+known	undocumented	String::Append(char)
+known	undocumented	String::AppendRawBytes(const char*,usize)
+known	undocumented	String::CStr() const
+known	undocumented	String::Length() const
+known	undocumented	String::View() const
+known	undocumented	StringBuilder
+known	undocumented	StringBuilder::StringBuilder(Allocator&)
+known	undocumented	StringBuilder::Append(StringView)
+known	undocumented	StringBuilder::Append(char)
+known	undocumented	StringBuilder::AppendCodepoint(u32)
+known	undocumented	StringBuilder::AppendInt(i64)
+known	undocumented	StringBuilder::AppendUInt(u64)
+known	undocumented	StringBuilder::AppendHex(u64,int)
+known	undocumented	StringBuilder::AppendFloat(f64,int)
+known	undocumented	StringBuilder::View() const
+known	undocumented	StringBuilder::CStr() const
+known	undocumented	CodepointCount(StringView)
+known	undocumented	IsValidUtf8(StringView)
+known	undocumented	Utf8CodepointIterator
+known	undocumented	Utf8CodepointIterator::Utf8CodepointIterator(StringView,usize)
+known	undocumented	Utf8CodepointIterator::operator*() const
+known	undocumented	Utf8CodepointIterator::operator++()
+known	undocumented	Utf8CodepointIterator::operator!=(const Utf8CodepointIterator&) const
+known	undocumented	Utf8CodepointRange
+known	undocumented	Utf8CodepointRange::Utf8CodepointRange(StringView)
+known	undocumented	Utf8CodepointRange::begin() const
+known	undocumented	Utf8CodepointRange::end() const
+known	undocumented	Utf8Codepoints(StringView)
+known	undocumented	DecodedCodepoint
+known	undocumented	DecodedCodepoint::codepoint
+known	undocumented	DecodedCodepoint::byte_length
+known	undocumented	DecodeUtf8At(const char*,usize,usize,bool*)
+known	undocumented	EncodeUtf8(u32,char[4])
+known	undocumented	Sqrt(f32)
+known	undocumented	Sin(f32)
+known	undocumented	Cos(f32)
+known	undocumented	Acos(f32)
+known	undocumented	kPi
+known	undocumented	Mat3
+known	undocumented	Mat3::col
+known	undocumented	Mat3::Identity()
+known	undocumented	Mat3::FromBasis(const Vec3&,const Vec3&,const Vec3&)
+known	undocumented	Mat3::Transpose() const
+known	undocumented	operator*(const Mat3&,const Vec3&)
+known	undocumented	operator*(const Mat3&,const Mat3&)
+known	undocumented	Mat4
+known	undocumented	Mat4::col
+known	undocumented	Mat4::Identity()
+known	undocumented	Mat4::FromBasis(const Vec3&,const Vec3&,const Vec3&,const Vec3&)
+known	undocumented	Mat4::FromColumns(const Vec4&,const Vec4&,const Vec4&,const Vec4&)
+known	undocumented	Mat4::Transpose() const
+known	undocumented	operator*(const Mat4&,const Vec4&)
+known	undocumented	operator*(const Mat4&,const Mat4&)
+known	undocumented	Quaternion
+known	undocumented	Quaternion::x
+known	undocumented	Quaternion::y
+known	undocumented	Quaternion::z
+known	undocumented	Quaternion::w
+known	undocumented	Quaternion::Quaternion(f32,f32,f32,f32)
+known	undocumented	Quaternion::Identity()
+known	undocumented	Quaternion::FromAxisAngle(const Vec3&,f32)
+known	undocumented	Quaternion::LengthSquared() const
+known	undocumented	Quaternion::Length() const
+known	undocumented	Quaternion::Normalized() const
+known	undocumented	Quaternion::Conjugate() const
+known	undocumented	Quaternion::Inverse() const
+known	undocumented	Quaternion::Dot(const Quaternion&) const
+known	undocumented	Quaternion::RotateVector(const Vec3&) const
+known	undocumented	Quaternion::ToMat3() const
+known	undocumented	Quaternion::ToMat4() const
+known	undocumented	Quaternion::FromMat3(const Mat3&)
+known	undocumented	operator*(const Quaternion&,const Quaternion&)
+known	undocumented	Slerp(const Quaternion&,const Quaternion&,f32)
+known	undocumented	Transform
+known	undocumented	Transform::position
+known	undocumented	Transform::rotation
+known	undocumented	Transform::scale
+known	undocumented	Transform::Identity()
+known	undocumented	Transform::ToMatrix() const
+known	undocumented	Compose(const Transform&,const Transform&)
+known	undocumented	Vec2
+known	undocumented	Vec2::x
+known	undocumented	Vec2::y
+known	undocumented	Vec2::Vec2(f32,f32)
+known	undocumented	Vec2::operator[](usize)
+known	undocumented	Vec2::operator[](usize) const
+known	undocumented	Vec2::operator+(const Vec2&) const
+known	undocumented	Vec2::operator-(const Vec2&) const
+known	undocumented	Vec2::operator*(f32) const
+known	undocumented	Vec2::Dot(const Vec2&) const
+known	undocumented	Vec2::LengthSquared() const
+known	undocumented	Vec2::Length() const
+known	undocumented	Vec2::Normalized() const
+known	undocumented	Vec2::operator==(const Vec2&) const
+known	undocumented	Vec2::operator!=(const Vec2&) const
+known	undocumented	Vec3
+known	undocumented	Vec3::x
+known	undocumented	Vec3::y
+known	undocumented	Vec3::z
+known	undocumented	Vec3::Vec3(f32,f32,f32)
+known	undocumented	Vec3::operator[](usize)
+known	undocumented	Vec3::operator[](usize) const
+known	undocumented	Vec3::operator+(const Vec3&) const
+known	undocumented	Vec3::operator-(const Vec3&) const
+known	undocumented	Vec3::operator*(f32) const
+known	undocumented	Vec3::Dot(const Vec3&) const
+known	undocumented	Vec3::Cross(const Vec3&) const
+known	undocumented	Vec3::LengthSquared() const
+known	undocumented	Vec3::Length() const
+known	undocumented	Vec3::Normalized() const
+known	undocumented	Vec3::operator==(const Vec3&) const
+known	undocumented	Vec3::operator!=(const Vec3&) const
+known	undocumented	Vec4
+known	undocumented	Vec4::x
+known	undocumented	Vec4::y
+known	undocumented	Vec4::z
+known	undocumented	Vec4::w
+known	undocumented	Vec4::Vec4(f32,f32,f32,f32)
+known	undocumented	Vec4::Vec4(const Vec3&,f32)
+known	undocumented	Vec4::operator[](usize)
+known	undocumented	Vec4::operator[](usize) const
+known	undocumented	Vec4::operator+(const Vec4&) const
+known	undocumented	Vec4::operator-(const Vec4&) const
+known	undocumented	Vec4::operator*(f32) const
+known	undocumented	Vec4::Dot(const Vec4&) const
+known	undocumented	Vec4::LengthSquared() const
+known	undocumented	Vec4::Length() const
+known	undocumented	Vec4::Normalized() const
+known	undocumented	Vec4::operator==(const Vec4&) const
+known	undocumented	Vec4::operator!=(const Vec4&) const
+known	undocumented	WriteSinkFn
+known	undocumented	ExitSinkFn
+known	undocumented	SetWriteSinkForTesting(WriteSinkFn)
+known	undocumented	SetExitSinkForTesting(ExitSinkFn)
+known	undocumented	AssertFail(const char*,int,const char*)
+known	undocumented	LogVerbosity
+known	undocumented	LogVerbosity::Error
+known	undocumented	LogVerbosity::Warn
+known	undocumented	LogVerbosity::Info
+known	undocumented	LogVerbosity::Debug
+known	undocumented	LogVerbosity::Trace
+known	undocumented	LogChannel
+known	undocumented	LogChannel::LogChannel(const char*,LogVerbosity)
+known	undocumented	LogChannel::Name() const
+known	undocumented	LogChannel::Verbosity() const
+known	undocumented	LogChannel::Enabled() const
+known	undocumented	LogChannel::SetVerbosity(LogVerbosity)
+known	undocumented	LogChannel::SetEnabled(bool)
+known	undocumented	LogChannel::ShouldLog(LogVerbosity) const
+known	undocumented	LogChannel::Find(StringView)
+known	undocumented	LogCore
+known	undocumented	LogRender
+known	undocumented	LogPlatform
+known	undocumented	Log(LogChannel&,LogVerbosity,StringView)
+known	undocumented	LoadConfig(const char*)
+known	undocumented	i8
+known	undocumented	i16
+known	undocumented	i32
+known	undocumented	i64
+known	undocumented	u8
+known	undocumented	u16
+known	undocumented	u32
+known	undocumented	u64
+known	undocumented	usize
+known	undocumented	f32
+known	undocumented	f64
+known	undocumented	os::StashNativeCommandLine(int,char**)
+known	undocumented	os::Detail_NativeCommandLineArgs(int*,char***)
+known	undocumented	os::CommandLine
+known	undocumented	os::CommandLine::CommandLine(Allocator&,int,char**)
+known	undocumented	os::CommandLine::FromNative(Allocator&)
+known	undocumented	os::CommandLine::ProgramName() const
+known	undocumented	os::CommandLine::ArgCount() const
+known	undocumented	os::CommandLine::Arg(usize) const
+known	undocumented	os::CommandLine::HasFlag(StringView) const
+known	undocumented	os::CommandLine::TryGetOption(StringView,StringView&) const
+known	undocumented	os::CommandLine::FlagCount() const
+known	undocumented	os::CommandLine::FlagName(usize) const
+known	undocumented	os::CommandLine::FlagHasValue(usize) const
+known	undocumented	os::CommandLine::FlagValue(usize) const
+known	undocumented	os::ReadFileToArena(StringView,ArenaAllocator&,usize&)
+known	undocumented	os::ProbeVulkanCreateInstance()
+known	undocumented	os::kMaxPathBytes
+known	undocumented	os::Exit(int)
+known	undocumented	os::Write(int,const void*,usize)
+known	undocumented	os::Read(int,void*,usize)
+known	undocumented	os::Open(StringView,int,int)
+known	undocumented	os::Close(int)
+known	undocumented	os::Lseek(int,long,int)
+known	undocumented	os::ReserveMemory(usize)
+known	undocumented	os::ReleaseMemory(void*,usize)
+known	undocumented	os::MonotonicTimeNanos()
+known	undocumented	os::SleepNanos(u64)
+known	undocumented	os::DynamicLibraryHandle
+known	undocumented	os::LoadLibrary(StringView)
+known	undocumented	os::GetSymbol(DynamicLibraryHandle,const char*)
+known	undocumented	os::UnloadLibrary(DynamicLibraryHandle)
+known	undocumented	os::Key
+known	undocumented	os::Key::Unknown
+known	undocumented	os::Key::A
+known	undocumented	os::Key::B
+known	undocumented	os::Key::C
+known	undocumented	os::Key::D
+known	undocumented	os::Key::E
+known	undocumented	os::Key::F
+known	undocumented	os::Key::G
+known	undocumented	os::Key::H
+known	undocumented	os::Key::I
+known	undocumented	os::Key::J
+known	undocumented	os::Key::K
+known	undocumented	os::Key::L
+known	undocumented	os::Key::M
+known	undocumented	os::Key::N
+known	undocumented	os::Key::O
+known	undocumented	os::Key::P
+known	undocumented	os::Key::Q
+known	undocumented	os::Key::R
+known	undocumented	os::Key::S
+known	undocumented	os::Key::T
+known	undocumented	os::Key::U
+known	undocumented	os::Key::V
+known	undocumented	os::Key::W
+known	undocumented	os::Key::X
+known	undocumented	os::Key::Y
+known	undocumented	os::Key::Z
+known	undocumented	os::Key::Num0
+known	undocumented	os::Key::Num1
+known	undocumented	os::Key::Num2
+known	undocumented	os::Key::Num3
+known	undocumented	os::Key::Num4
+known	undocumented	os::Key::Num5
+known	undocumented	os::Key::Num6
+known	undocumented	os::Key::Num7
+known	undocumented	os::Key::Num8
+known	undocumented	os::Key::Num9
+known	undocumented	os::Key::F1
+known	undocumented	os::Key::F2
+known	undocumented	os::Key::F3
+known	undocumented	os::Key::F4
+known	undocumented	os::Key::F5
+known	undocumented	os::Key::F6
+known	undocumented	os::Key::F7
+known	undocumented	os::Key::F8
+known	undocumented	os::Key::F9
+known	undocumented	os::Key::F10
+known	undocumented	os::Key::F11
+known	undocumented	os::Key::F12
+known	undocumented	os::Key::Escape
+known	undocumented	os::Key::Enter
+known	undocumented	os::Key::Tab
+known	undocumented	os::Key::Backspace
+known	undocumented	os::Key::Space
+known	undocumented	os::Key::Insert
+known	undocumented	os::Key::Delete
+known	undocumented	os::Key::Home
+known	undocumented	os::Key::End
+known	undocumented	os::Key::PageUp
+known	undocumented	os::Key::PageDown
+known	undocumented	os::Key::Left
+known	undocumented	os::Key::Right
+known	undocumented	os::Key::Up
+known	undocumented	os::Key::Down
+known	undocumented	os::Key::LeftShift
+known	undocumented	os::Key::RightShift
+known	undocumented	os::Key::LeftCtrl
+known	undocumented	os::Key::RightCtrl
+known	undocumented	os::Key::LeftAlt
+known	undocumented	os::Key::RightAlt
+known	undocumented	os::Key::LeftSuper
+known	undocumented	os::Key::RightSuper
+known	undocumented	os::Key::CapsLock
+known	undocumented	os::Key::Minus
+known	undocumented	os::Key::Equals
+known	undocumented	os::Key::LeftBracket
+known	undocumented	os::Key::RightBracket
+known	undocumented	os::Key::Backslash
+known	undocumented	os::Key::Semicolon
+known	undocumented	os::Key::Apostrophe
+known	undocumented	os::Key::Grave
+known	undocumented	os::Key::Comma
+known	undocumented	os::Key::Period
+known	undocumented	os::Key::Slash
+known	undocumented	os::Key::Count
+known	undocumented	os::ModifierBit
+known	undocumented	os::kModShift
+known	undocumented	os::kModCtrl
+known	undocumented	os::kModAlt
+known	undocumented	os::kModSuper
+known	undocumented	os::kModCapsLock
+known	undocumented	os::kModNumLock
+known	undocumented	os::KeyFromKeysym(u32)
+known	undocumented	os::KeyboardState
+known	undocumented	os::KeyboardState::kKeyCount
+known	undocumented	os::KeyboardState::IsDown(Key) const
+known	undocumented	os::KeyboardState::SetDown(Key,bool)
+known	undocumented	os::KeyboardState::ReleaseAll()
+known	undocumented	os::KeyboardState::modifiers
+known	undocumented	os::MouseButtonBit
+known	undocumented	os::kMouseLeft
+known	undocumented	os::kMouseRight
+known	undocumented	os::kMouseMiddle
+known	undocumented	os::kMouseBack
+known	undocumented	os::kMouseForward
+known	undocumented	os::InputState
+known	undocumented	os::InputState::keyboard
+known	undocumented	os::InputState::mouse_x
+known	undocumented	os::InputState::mouse_y
+known	undocumented	os::InputState::pointer_inside
+known	undocumented	os::InputState::mouse_buttons
+known	undocumented	os::InputState::scroll_dx
+known	undocumented	os::InputState::scroll_dy
+known	undocumented	os::InputState::IsMouseDown(u32) const
+known	undocumented	os::InputState::BeginFrame()
+known	undocumented	os::PlatformWindowHost
+known	undocumented	os::PlatformWindowHost::Open(WindowBackend,StringView,u32,u32,InputState*)
+known	undocumented	os::PlatformWindowHost::OpenFromEnvironment(StringView,u32,u32,InputState*)
+known	undocumented	os::PlatformWindowHost::Get()
+known	undocumented	os::wayland::WaylandConnection
+known	undocumented	os::wayland::WaylandConnection::Connect()
+known	undocumented	os::wayland::WaylandConnection::~WaylandConnection()
+known	undocumented	os::wayland::WaylandConnection::WaylandConnection(WaylandConnection&&) noexcept
+known	undocumented	os::wayland::WaylandConnection::operator=(WaylandConnection&&) noexcept
+known	undocumented	os::wayland::WaylandConnection::Valid() const
+known	undocumented	os::wayland::WaylandConnection::Display() const
+known	undocumented	os::wayland::WaylandConnection::Compositor() const
+known	undocumented	os::wayland::WaylandConnection::XdgWmBase() const
+known	undocumented	os::wayland::WaylandConnection::Seat() const
+known	undocumented	os::wayland::WaylandConnection::Shm() const
+known	undocumented	os::wayland::WaylandConnection::DecorationManager() const
+known	undocumented	os::wayland::WaylandInput
+known	undocumented	os::wayland::WaylandInput::~WaylandInput()
+known	undocumented	os::wayland::WaylandInput::Init(WaylandConnection&,InputState*)
+known	undocumented	os::wayland::WaylandInput::Shutdown()
+known	undocumented	os::wayland::WaylandInput::Valid() const
+known	undocumented	os::wayland::WaylandInput::HasKeyboard() const
+known	undocumented	os::wayland::WaylandInput::HasPointer() const
+known	undocumented	os::wayland::WaylandInput::HasKeymap() const
+known	undocumented	os::wayland::WaylandPlatformWindow
+known	undocumented	os::wayland::WaylandPlatformWindow::Open(StringView,u32,u32,InputState*)
+known	undocumented	os::wayland::WaylandPlatformWindow::Close()
+known	undocumented	os::wayland::WaylandPlatformWindow::~WaylandPlatformWindow()
+known	undocumented	os::wayland::WaylandPlatformWindow::Valid() const
+known	undocumented	os::wayland::WaylandPlatformWindow::PumpEvents()
+known	undocumented	os::wayland::WaylandPlatformWindow::ShouldClose() const
+known	undocumented	os::wayland::WaylandPlatformWindow::ConnectionLost() const
+known	undocumented	os::wayland::WaylandPlatformWindow::NativeDisplay() const
+known	undocumented	os::wayland::WaylandPlatformWindow::Width() const
+known	undocumented	os::wayland::WaylandPlatformWindow::Height() const
+known	undocumented	os::wayland::WaylandPlatformWindow::BackendName() const
+known	undocumented	os::wayland::WaylandPlatformWindow::Input() const
+known	undocumented	os::wayland::WaylandWindow
+known	undocumented	os::wayland::WaylandWindow::Create(WaylandConnection&,StringView,StringView,u32,u32)
+known	undocumented	os::wayland::WaylandWindow::~WaylandWindow()
+known	undocumented	os::wayland::WaylandWindow::WaylandWindow(WaylandWindow&&) noexcept
+known	undocumented	os::wayland::WaylandWindow::operator=(WaylandWindow&&) noexcept
+known	undocumented	os::wayland::WaylandWindow::Valid() const
+known	undocumented	os::wayland::WaylandWindow::ShouldClose() const
+known	undocumented	os::wayland::WaylandWindow::CommitPendingResize()
+known	undocumented	os::wayland::WaylandWindow::Surface() const
+known	undocumented	os::wayland::WaylandWindow::XdgSurface() const
+known	undocumented	os::wayland::WaylandWindow::XdgToplevel() const
+known	undocumented	os::wayland::WaylandWindow::ServerSideDecorated() const
+known	undocumented	os::wayland::WaylandWindow::Width() const
+known	undocumented	os::wayland::WaylandWindow::Height() const
+known	undocumented	os::x11::X11Window
+known	undocumented	os::x11::X11Window::Create(StringView,u32,u32)
+known	undocumented	os::x11::X11Window::~X11Window()
+known	undocumented	os::x11::X11Window::X11Window(X11Window&&) noexcept
+known	undocumented	os::x11::X11Window::operator=(X11Window&&) noexcept
+known	undocumented	os::x11::X11Window::Valid() const
+known	undocumented	os::x11::X11Window::PumpEvents(InputState*)
+known	undocumented	os::x11::X11Window::PumpEvents()
+known	undocumented	os::x11::X11Window::SetInputState(InputState*)
+known	undocumented	os::x11::X11Window::ShouldClose() const
+known	undocumented	os::x11::X11Window::Width() const
+known	undocumented	os::x11::X11Window::Height() const
+known	undocumented	os::x11::X11Window::BackendName() const
+known	undocumented	os::x11::X11Window::NativeDisplay() const
+known	undocumented	os::x11::X11Window::NativeWindow() const
+known	undocumented	os::XkbKeyboard
+known	undocumented	os::XkbKeyboard::~XkbKeyboard()
+known	undocumented	os::XkbKeyboard::InitFromNames(const char*,const char*)
+known	undocumented	os::XkbKeyboard::InitFromKeymapText(const char*,usize)
+known	undocumented	os::XkbKeyboard::Valid() const
+known	undocumented	os::XkbKeyboard::KeyForEvdevCode(u32) const
+known	undocumented	os::XkbKeyboard::UpdateMask(u32,u32,u32,u32)
+known	undocumented	os::XkbKeyboard::Modifiers() const
+known	undocumented	os::Window
+known	undocumented	os::Window::Valid() const
+known	undocumented	os::Window::PumpEvents()
+known	undocumented	os::Window::ShouldClose() const
+known	undocumented	os::Window::Width() const
+known	undocumented	os::Window::Height() const
+known	undocumented	os::Window::BackendName() const
+known	undocumented	os::WindowBackend
+known	undocumented	os::WindowBackend::Auto
+known	undocumented	os::WindowBackend::Wayland
+known	undocumented	os::WindowBackend::X11
+known	undocumented	os::WindowBackend::Invalid
+known	undocumented	os::ParseWindowBackend(StringView)
+known	undocumented	os::BackendPlan
+known	undocumented	os::BackendPlan::candidates
+known	undocumented	os::BackendPlan::count
+known	undocumented	os::PlanWindowBackends(WindowBackend,bool,bool)
+known	undocumented	jobs::IoRequest
+known	undocumented	jobs::IoRequest::next
+known	undocumented	jobs::IoRequest::run
+known	undocumented	jobs::IoThread
+known	undocumented	jobs::IoThread::IoThread()
+known	undocumented	jobs::IoThread::~IoThread()
+known	undocumented	jobs::IoThread::Enqueue(IoRequest*)
+known	undocumented	jobs::IoThread::Shutdown()
+known	undocumented	jobs::IoThread::ThreadId() const
+known	undocumented	jobs::FileReadResult
+known	undocumented	jobs::FileReadResult::~FileReadResult()
+known	undocumented	jobs::FileReadResult::FileReadResult(FileReadResult&&) noexcept
+known	undocumented	jobs::FileReadResult::operator=(FileReadResult&&) noexcept
+known	undocumented	jobs::FileReadResult::ok
+known	undocumented	jobs::FileReadResult::data
+known	undocumented	jobs::FileReadResult::size
+known	undocumented	jobs::ReadFileAwaitable
+known	undocumented	jobs::ReadFileAwaitable::ReadFileAwaitable(ReadFileAwaitable&&) noexcept
+known	undocumented	jobs::ReadFileAwaitable::~ReadFileAwaitable()
+known	undocumented	jobs::ReadFileAwaitable::await_ready() const noexcept
+known	undocumented	jobs::ReadFileAwaitable::await_suspend(std::coroutine_handle<>) noexcept
+known	undocumented	jobs::ReadFileAwaitable::await_resume() noexcept
+known	undocumented	jobs::kDefaultMaxReadBytes
+known	undocumented	jobs::kMaxAsyncPathBytes
+known	undocumented	jobs::ReadFileAsync(Scheduler&,StringView,usize)
+known	undocumented	jobs::Counter
+known	undocumented	jobs::Counter::Counter(Scheduler&)
+known	undocumented	jobs::Counter::Counter()
+known	undocumented	jobs::Counter::GetScheduler() const
+known	undocumented	jobs::Counter::Increment(u64)
+known	undocumented	jobs::Counter::Decrement()
+known	undocumented	jobs::Counter::IsZero() const
+known	undocumented	jobs::Counter::Value() const
+known	undocumented	jobs::Counter::PathCounters
+known	undocumented	jobs::Counter::PathCounters::inline_continues
+known	undocumented	jobs::Counter::PathCounters::parked
+known	undocumented	jobs::Counter::PathStats()
+known	undocumented	jobs::Counter::DecrementThunk(void*)
+known	undocumented	jobs::Counter::Awaitable
+known	undocumented	jobs::Counter::Awaitable::counter
+known	undocumented	jobs::Counter::Awaitable::await_ready() const noexcept
+known	undocumented	jobs::Counter::Awaitable::await_suspend(std::coroutine_handle<>) noexcept
+known	undocumented	jobs::Counter::Awaitable::await_resume() noexcept
+known	undocumented	jobs::Counter::operator co_await()
+known	undocumented	jobs::Spawn(Counter&,Job&&)
+known	undocumented	jobs::StealStatus
+known	undocumented	jobs::StealStatus::Success
+known	undocumented	jobs::StealStatus::Empty
+known	undocumented	jobs::StealStatus::Lost
+known	undocumented	jobs::WorkStealingDeque
+known	undocumented	jobs::WorkStealingDeque::kDefaultCapacity
+known	undocumented	jobs::WorkStealingDeque::Capacity()
+known	undocumented	jobs::WorkStealingDeque::PushBottom(std::coroutine_handle<>)
+known	undocumented	jobs::WorkStealingDeque::PopBottom()
+known	undocumented	jobs::WorkStealingDeque::StealTop(std::coroutine_handle<>&)
+known	undocumented	jobs::WorkStealingDeque::ApproxSize() const
+known	undocumented	jobs::FramePool
+known	undocumented	jobs::FramePool::kClassCount
+known	undocumented	jobs::FramePool::kBlockSizes
+known	undocumented	jobs::FramePool::kHeaderBytes
+known	undocumented	jobs::FramePool::kMaxPooledRequest
+known	undocumented	jobs::FramePool::Config
+known	undocumented	jobs::FramePool::Config::slots_per_class
+known	undocumented	jobs::FramePool::Config::thread_caches
+known	undocumented	jobs::FramePool::Stats
+known	undocumented	jobs::FramePool::Stats::pooled_allocs
+known	undocumented	jobs::FramePool::Stats::pooled_frees
+known	undocumented	jobs::FramePool::Stats::fallback_allocs
+known	undocumented	jobs::FramePool::Stats::fallback_frees
+known	undocumented	jobs::FramePool::Stats::TotalPooledAllocs() const
+known	undocumented	jobs::FramePool::Stats::TotalPooledFrees() const
+known	undocumented	jobs::FramePool::Stats::Live() const
+known	undocumented	jobs::FramePool::ThreadCache
+known	undocumented	jobs::FramePool::ThreadCache::owner
+known	undocumented	jobs::FramePool::ThreadCache::head
+known	undocumented	jobs::FramePool::ThreadCache::count
+known	undocumented	jobs::FramePool::ThreadCache::destroyed
+known	undocumented	jobs::FramePool::ThreadCache::~ThreadCache()
+known	undocumented	jobs::FramePool::FramePool(const Config&)
+known	undocumented	jobs::FramePool::~FramePool()
+known	undocumented	jobs::FramePool::Allocate(usize)
+known	undocumented	jobs::FramePool::Deallocate(void*)
+known	undocumented	jobs::FramePool::GetStats() const
+known	undocumented	jobs::FramePool::CentralAvailableForTesting(usize)
+known	undocumented	jobs::FramePool::Global()
+known	undocumented	jobs::CompletionFn
+known	undocumented	jobs::Job
+known	undocumented	jobs::Job::Handle
+known	undocumented	jobs::Job::promise_type
+known	undocumented	jobs::Job::promise_type::on_complete
+known	undocumented	jobs::Job::promise_type::on_complete_user
+known	undocumented	jobs::Job::promise_type::get_return_object()
+known	undocumented	jobs::Job::promise_type::initial_suspend() noexcept
+known	undocumented	jobs::Job::promise_type::FinalAwaiter
+known	undocumented	jobs::Job::promise_type::FinalAwaiter::await_ready() noexcept
+known	undocumented	jobs::Job::promise_type::FinalAwaiter::await_suspend(Handle) noexcept
+known	undocumented	jobs::Job::promise_type::FinalAwaiter::await_resume() noexcept
+known	undocumented	jobs::Job::promise_type::final_suspend() noexcept
+known	undocumented	jobs::Job::promise_type::return_void() noexcept
+known	undocumented	jobs::Job::promise_type::unhandled_exception() noexcept
+known	undocumented	jobs::Job::promise_type::operator new(usize)
+known	undocumented	jobs::Job::promise_type::operator new(usize,std::align_val_t)
+known	undocumented	jobs::Job::promise_type::operator delete(void*,usize) noexcept
+known	undocumented	jobs::Job::~Job()
+known	undocumented	jobs::Job::Job(Job&&) noexcept
+known	undocumented	jobs::Job::operator=(Job&&) noexcept
+known	undocumented	jobs::Job::Valid() const
+known	undocumented	jobs::Job::SetCompletion(CompletionFn,void*)
+known	undocumented	jobs::Job::SetCompletion(Counter&)
+known	undocumented	jobs::Job::Release()
+known	undocumented	jobs::LogJobs
+known	undocumented	jobs::JobsLogV(LogVerbosity,const char*,...)
+known	undocumented	jobs::ParallelForFn
+known	undocumented	jobs::kDefaultChunkSize
+known	undocumented	jobs::kMaxChunks
+known	undocumented	jobs::EffectiveChunkSize(usize,usize)
+known	undocumented	jobs::ParallelFor(usize,usize,ParallelForFn,void*)
+known	undocumented	jobs::ParallelForBlocking(Scheduler&,usize,usize,ParallelForFn,void*)
+known	undocumented	jobs::ParallelForBlocking(Scheduler&,usize,usize,F&)
+known	undocumented	jobs::Scheduler
+known	undocumented	jobs::Scheduler::Config
+known	undocumented	jobs::Scheduler::Config::participants
+known	undocumented	jobs::Scheduler::Config::pin
+known	undocumented	jobs::Scheduler::Scheduler(const Config&)
+known	undocumented	jobs::Scheduler::~Scheduler()
+known	undocumented	jobs::Scheduler::Submit(Job&&)
+known	undocumented	jobs::Scheduler::Schedule(std::coroutine_handle<>)
+known	undocumented	jobs::Scheduler::HelpUntil(bool(*)(void*),void*)
+known	undocumented	jobs::Scheduler::HelpUntil(Counter&)
+known	undocumented	jobs::Scheduler::HelpUntil(const std::atomic<int>&,int)
+known	undocumented	jobs::Scheduler::Shutdown()
+known	undocumented	jobs::Scheduler::Io()
+known	undocumented	jobs::Scheduler::ParticipantCount() const
+known	undocumented	jobs::Scheduler::Pool() const
+known	undocumented	jobs::Scheduler::Current()
+known	undocumented	jobs::Scheduler::InsideJob()
+known	undocumented	jobs::Scheduler::ResumesBy(usize) const
+known	undocumented	jobs::Scheduler::StealsBy(usize) const
+known	undocumented	jobs::Scheduler::TotalResumes() const
+known	undocumented	jobs::Scheduler::ParkedWorkersForTesting() const
+known	undocumented	jobs::Scheduler::InjectionQueueSizeForTesting()
+known	undocumented	jobs::Scheduler::InjectionCapacity()
+known	undocumented	jobs::kMaxParticipants
+known	undocumented	jobs::GetAllowedCpus(u32*,usize)
+known	undocumented	jobs::ParseParticipantOverride(const char*,usize,bool*)
+known	undocumented	jobs::DefaultParticipantCount()
+known	undocumented	jobs::Participant
+known	undocumented	jobs::Participant::index
+known	undocumented	jobs::Participant::cpu
+known	undocumented	jobs::Participant::tid
+known	undocumented	jobs::Participant::owner
+known	undocumented	jobs::WorkerPool
+known	undocumented	jobs::WorkerPool::WorkerFn
+known	undocumented	jobs::WorkerPool::Config
+known	undocumented	jobs::WorkerPool::Config::participants
+known	undocumented	jobs::WorkerPool::Config::pin
+known	undocumented	jobs::WorkerPool::Config::worker_fn
+known	undocumented	jobs::WorkerPool::Config::user
+known	undocumented	jobs::WorkerPool::WorkerPool(const Config&)
+known	undocumented	jobs::WorkerPool::~WorkerPool()
+known	undocumented	jobs::WorkerPool::User() const
+known	undocumented	jobs::WorkerPool::WorkerFunction() const
+known	undocumented	jobs::WorkerPool::ParticipantCount() const
+known	undocumented	jobs::WorkerPool::SpawnedWorkerCount() const
+known	undocumented	jobs::WorkerPool::GetParticipant(usize) const
+known	undocumented	jobs::WorkerPool::RequestStop()
+known	undocumented	jobs::WorkerPool::StopRequested() const
+known	undocumented	jobs::WorkerPool::Join()
+known	undocumented	jobs::WorkerPool::Current()
+known	undocumented	jobs::WorkerPool::IsParticipantThread()
+known	undocumented	jobs::WorkerPool::CurrentParticipantIndex()

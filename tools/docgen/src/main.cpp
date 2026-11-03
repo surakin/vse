@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 
 #include "doc_parser.h"
+#include "lint.h"
 #include "links.h"
 #include "samples.h"
 #include "reference.h"
@@ -23,6 +24,7 @@ int Usage() {
                "       docgen docs [--keep-going] FILE.h          (parsed doc comments, validation, undocumented symbols)\n"
                "       docgen reference|check [--root DIR] [--modules FILE] [--out DIR] [--quiet]\n"
                "       docgen links [--root DIR] [--modules FILE] [--external] [--quiet]\n"
+               "       docgen lint [--root DIR] [--modules FILE] [--baseline FILE [--update-baseline [--allow-growth]]] [--quiet]\n"
                "       docgen samples --compiler CXX [--root DIR] [--build-dir DIR] [--jobs N] [-I DIR]... [--flag F]... [--link ARG]...\n"
                "                      [--prelude FILE] [--timeout SEC] [--compile-timeout SEC] [--keep] [--quiet] [FILE.md...]\n",
                stderr);
@@ -270,6 +272,99 @@ int Links(int argc, char** argv) {
     return errors || header_errors ? 1 : 0;
 }
 
+// docgen lint
+int Lint(int argc, char** argv) {
+    const char* root = ".";
+    const char* modules = nullptr;
+    const char* baseline_path = nullptr;
+    bool update = false;
+    bool allow_growth = false;
+    bool quiet = false;
+    for (int i = 2; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--root") == 0 && i + 1 < argc) root = argv[++i];
+        else if (std::strcmp(argv[i], "--modules") == 0 && i + 1 < argc) modules = argv[++i];
+        else if (std::strcmp(argv[i], "--allow-growth") == 0) allow_growth = true;
+        else if (std::strcmp(argv[i], "--baseline") == 0 && i + 1 < argc) baseline_path = argv[++i];
+        else if (std::strcmp(argv[i], "--update-baseline") == 0) update = true;
+        else if (std::strcmp(argv[i], "--quiet") == 0) quiet = true;
+        else return Usage();
+    }
+    if (update && baseline_path == nullptr) return Usage();
+    ArenaAllocator arena(usize{1} << 30);
+    StringView root_v(root, std::strlen(root));
+    StringView map_path = modules != nullptr ? StringView(modules, std::strlen(modules)) : ArenaCat(arena, root_v, StringView("/docs/reference/modules.txt"));
+    ReferenceBuild build(arena);
+    BuildReference(root_v, map_path, arena, build);
+    PrintFileDiags(build.index.diagnostics, quiet);
+    if (build.io_failure) return 2;
+    if (build.index.HasErrors()) return 1; // fix the documentation errors first: coverage of a broken index is meaningless
+
+    LintResult result(arena);
+    RunLint(build.index, arena, result);
+    engine_placeholder::StringBuilder<ArenaAllocator> table(arena);
+    RenderCoverage(result, table);
+    if (!quiet) std::fwrite(table.View().Data(), 1, table.View().Length(), stdout);
+
+    Baseline baseline(arena);
+    Baseline* use = nullptr;
+    struct stat bst;
+    const bool first_baseline = update && baseline_path != nullptr && stat(baseline_path, &bst) != 0; // nothing to compare with yet
+    if (baseline_path != nullptr && !first_baseline) {
+        StringView text;
+        if (!LoadSourceFile(StringView(baseline_path, std::strlen(baseline_path)), arena, text)) {
+            std::fprintf(stderr, "%s: error: cannot read the baseline\n", baseline_path);
+            return 2;
+        }
+        StringView error;
+        if (!ParseBaseline(text, arena, baseline, error)) {
+            std::fprintf(stderr, "%s:%.*s\n", baseline_path, static_cast<int>(error.Length()), error.Data());
+            return 2;
+        }
+        use = &baseline;
+    }
+    if (update) {
+        // The baseline may only shrink: an update that would record a new finding or a lower ratio needs --allow-growth.
+        if (use != nullptr && !allow_growth) {
+            engine_placeholder::Array<FileDiag, ArenaAllocator> growth(arena);
+            CompareToBaseline(result, use, arena, growth);
+            bool grew = false;
+            for (usize i = 0; i < growth.Size(); ++i) {
+                const StringView m = growth[i].d.message;
+                if (growth[i].d.severity == Severity::Error && !m.Contains(StringView("no longer applies")) && !m.Contains(StringView("no baseline entry")) &&
+                    !m.Contains(StringView("no longer exists"))) {
+                    grew = true;
+                    PrintFileDiags(growth, true);
+                    break;
+                }
+            }
+            if (grew) {
+                std::fputs("docgen: refusing to update the baseline: it would record new findings or lower coverage (pass --allow-growth to override)\n", stderr);
+                return 1;
+            }
+        }
+        engine_placeholder::StringBuilder<ArenaAllocator> text(arena);
+        RenderBaseline(result, text);
+        // write to a temporary file and rename, so a failed write cannot leave a truncated baseline behind
+        StringView tmp = ArenaCat(arena, StringView(baseline_path, std::strlen(baseline_path)), StringView(".tmp"));
+        FILE* f = std::fopen(tmp.Data(), "wb");
+        const bool wrote = f != nullptr && std::fwrite(text.View().Data(), 1, text.View().Length(), f) == text.View().Length();
+        const bool closed = f != nullptr && std::fclose(f) == 0;
+        if (!wrote || !closed || std::rename(tmp.Data(), baseline_path) != 0) {
+            if (f != nullptr) std::remove(tmp.Data());
+            std::fprintf(stderr, "%s: error: cannot write the baseline\n", baseline_path);
+            return 2;
+        }
+        if (!quiet) std::fprintf(stderr, "docgen: baseline written to %s (%zu known findings)\n", baseline_path, static_cast<size_t>(result.findings.Size()));
+        return 0;
+    }
+    engine_placeholder::Array<FileDiag, ArenaAllocator> problems(arena);
+    CompareToBaseline(result, use, arena, problems);
+    bool errors = false;
+    for (usize i = 0; i < problems.Size(); ++i) errors = errors || problems[i].d.severity == Severity::Error;
+    PrintFileDiags(problems, quiet);
+    return errors ? 1 : 0;
+}
+
 // An absolute path for `p` if it exists (the compiler runs in a scratch directory), otherwise `p` unchanged.
 StringView Absolute(const char* p, ArenaAllocator& arena) {
     char buf[PATH_MAX];
@@ -352,6 +447,7 @@ int main(int argc, char** argv) {
     if (argc >= 2 && std::strcmp(argv[1], "reference") == 0) return Reference(argc, argv, false);
     if (argc >= 2 && std::strcmp(argv[1], "check") == 0) return Reference(argc, argv, true);
     if (argc >= 2 && std::strcmp(argv[1], "links") == 0) return Links(argc, argv);
+    if (argc >= 2 && std::strcmp(argv[1], "lint") == 0) return Lint(argc, argv);
     if (argc >= 2 && std::strcmp(argv[1], "samples") == 0) return Samples(argc, argv);
     return Usage();
 }
