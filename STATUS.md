@@ -405,10 +405,12 @@ is a goal/deliverable-level plan only — not startable until its days are
 broken out. Phase 2 (Job System) remains the active phase.
 
 
-## Phase 2.5 (Documentation tooling) — planned, not started
+## Phase 2.5 (Documentation tooling) — in progress (Day 36 done, Day 37 next)
 
 Days 36-44 are broken out under `plans/phase-02-5-docs-tooling/` (design
 settled: own C++ `docgen` on the foundation, purpose-built scanner, `///`
 comments, committed generated reference, link/sample/lint checks). The
 end-user docs skeleton lives in `docs/` (all pages are outlines). Phase 3
 still has no day files.
+
+Day 36 (design & convention) is done: `docs/DOC-CONVENTIONS.md`, `tools/docgen/DESIGN.md` and the fixture corpus in `tests/docgen/fixtures/` are the contract for Days 37-44.
