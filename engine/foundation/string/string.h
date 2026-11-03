@@ -202,6 +202,28 @@ public:
         return *this;
     }
 
+    // Lowercase hexadecimal, no "0x" prefix, zero-padded on the left to at
+    // least `min_digits` digits (always at least one digit, so 0 -> "0").
+    StringBuilder& AppendHex(u64 value, int min_digits = 1) {
+        char digits[16];
+        int n = 0;
+        while (value > 0) {
+            u64 nibble = value & 0xF;
+            digits[n++] = static_cast<char>(nibble < 10 ? '0' + nibble : 'a' + (nibble - 10));
+            value >>= 4;
+        }
+        while (n < min_digits && n < 16) {
+            digits[n++] = '0';
+        }
+        if (n == 0) {
+            digits[n++] = '0';
+        }
+        while (n > 0) {
+            Append(digits[--n]);
+        }
+        return *this;
+    }
+
     // Fixed-point formatting with `precision` digits after the decimal
     // point, round-half-up. Intended for values that are exactly (or
     // near-exactly) representable at that precision — not a general

@@ -80,9 +80,9 @@ void LogInputIfChanged(const os::InputState& in, InputSnapshot& prev) {
         StringBuilder<ArenaAllocator> line(scratch);
         line.Append("input: mouse=(").AppendFloat(cur.mouse_x, 1).Append(',').AppendFloat(cur.mouse_y, 1);
         line.Append(") inside=").AppendUInt(cur.inside ? 1 : 0);
-        line.Append(" buttons=0x").AppendUInt(cur.buttons);
+        line.Append(" buttons=0x").AppendHex(cur.buttons);
         line.Append(" scroll=(").AppendFloat(cur.scroll_dx, 1).Append(',').AppendFloat(cur.scroll_dy, 1);
-        line.Append(") mods=0x").AppendUInt(cur.modifiers);
+        line.Append(") mods=0x").AppendHex(cur.modifiers);
         line.Append(" keys_down=").AppendUInt(cur.keys_down);
         line.Append(" W=").AppendUInt(in.keyboard.IsDown(os::Key::W) ? 1 : 0);
         line.Append('\n');

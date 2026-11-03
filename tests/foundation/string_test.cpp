@@ -66,3 +66,23 @@ TEST_CASE("StringBuilder: formats ints/floats/strings byte-for-byte correctly", 
     const char newline[] = "\n";
     Write(1, newline, 1);
 }
+
+TEST_CASE("StringBuilder::AppendHex formats lowercase hex with optional zero padding", "[string]") {
+    using namespace engine_placeholder;
+    // Each call gets its own arena; the result is compared by value.
+    auto hex = [](u64 v, int digits) {
+        static ArenaAllocator arena(1 << 16);
+        StringBuilder<ArenaAllocator> sb(arena);
+        sb.AppendHex(v, digits);
+        return sb.View();
+    };
+    REQUIRE(hex(0, 1) == StringView("0"));
+    REQUIRE(hex(9, 1) == StringView("9"));
+    REQUIRE(hex(10, 1) == StringView("a"));
+    REQUIRE(hex(16, 1) == StringView("10"));   // mouse mask 16 is 0x10, not "16"
+    REQUIRE(hex(0x1f, 1) == StringView("1f"));
+    REQUIRE(hex(0xdeadbeefULL, 1) == StringView("deadbeef"));
+    REQUIRE(hex(0xffffffffffffffffULL, 1) == StringView("ffffffffffffffff"));
+    REQUIRE(hex(5, 4) == StringView("0005"));
+    REQUIRE(hex(0, 3) == StringView("000"));
+}
