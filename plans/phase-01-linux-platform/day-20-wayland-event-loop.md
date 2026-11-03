@@ -36,7 +36,7 @@
   6s wall-clock bound is kept as a second, later exit so `engine_main`
   still terminates on its own with no compositor interaction (e.g.
   headless/automated runs).
-- [ ] Manually resize the window via the compositor/WM and confirm
+- [x] Manually resize the window via the compositor/WM and confirm
   dimensions log correctly; trigger the window's close affordance and
   confirm the process exits cleanly. **Not yet done** — implemented
   and code-reviewed in a remote session without a way to drive real WM
@@ -48,8 +48,8 @@
   this unchecked until confirmed live. **2026-11-03 desk check:** close
   confirmed working; resize initially did *not* take effect (no buffer
   re-allocation, fixed in `8aae284`) and was then slow (per-configure
-  realloc, coalesced + faster fill in the next commit). Resize stays
-  unchecked until the user re-confirms on Wayland.
+  realloc, coalesced + faster fill in the next commit). **Later same day: resize confirmed
+  working and fast on Wayland** (after the coalescing fix).
 - [x] Commit.
 
 **Done:** resizing logs new dimensions; the compositor's close

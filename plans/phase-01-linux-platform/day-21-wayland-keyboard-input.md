@@ -33,9 +33,9 @@ new named dependency to flag/confirm explicitly.
   engine key enum values for both. Verified by compiling real `us`,
   `fr` (AZERTY) and `de` (QWERTZ) keymaps via libxkbcommon and checking
   the same physical evdev keys yield the right `Key` per layout
-  (`tests/foundation/keyboard_input_test.cpp`). **Not done:** live
-  keypresses on physical keyboards through the compositor — no way to
-  type at the screen in this session. Non-Latin layouts (e.g. `ru`)
+  (`tests/foundation/keyboard_input_test.cpp`). **Live check 2026-11-03:** after switching the Plasma keyboard layout,
+  the key that types `w` still reports `W` (layout-aware translation
+  works through the real compositor; the layout used wasn't recorded). Non-Latin layouts (e.g. `ru`)
   yield `Key::Unknown` by design (layout-aware keys; physical
   scancodes are a later input-layer concern).
 - [x] Commit.

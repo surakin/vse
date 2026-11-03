@@ -341,3 +341,9 @@ fixed by buffer re-allocation (`8aae284`) plus resize coalescing
 **Still unconfirmed live:** Wayland resize after the fix, a second
 keyboard layout, X11 keyboard/mouse specifics.
 
+**Desk check 2026-11-03 (final):** Wayland resize confirmed working and
+fast after the coalescing fix; after switching the Plasma keyboard
+layout `W` still registers (layout-aware keys work live; which layout
+wasn't recorded). Remaining unconfirmed live: X11 under a non-US layout,
+X11 keyboard/mouse specifics. Phase 1's manual checks are otherwise done.
+
