@@ -7,13 +7,16 @@ class Buffer @6
     doc: Returns the capacity.
   function Buffer::Put @12
     sig: void Put(const T& value)
+    params: value
     doc: Stores a value.
 function Twice @16
   sig: T Twice(T value)
+  params: value
   tmpl: template <typename T> requires std::integral<T>
   doc: A function template with a requires clause.
 function Log @21
   sig: void Log(const char* fmt, Args... args)
+  params: fmt, args
   tmpl: template <typename... Args>
   doc: A variadic function template.
 alias Ptr @25

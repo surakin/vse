@@ -15,4 +15,5 @@ namespace a @27
         doc: A function in a C++17 nested namespace.
 function c_entry @34
   sig: int c_entry(int value)
+  params: value
   doc: A C-linkage function.

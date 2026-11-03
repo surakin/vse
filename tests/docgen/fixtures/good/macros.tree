@@ -3,6 +3,7 @@ macro ENGINE_VERSION @4
   doc: An object-like macro.
 macro ENGINE_SQUARE @8
   sig: ENGINE_SQUARE(x)
+  params: x
   doc: A function-like macro.
 function Conditional @15
   sig: void Conditional()

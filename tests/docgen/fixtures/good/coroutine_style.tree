@@ -12,7 +12,9 @@ class Task @6
       doc: Starts suspended.
     function Task::promise_type::operator new @15 static operator
       sig: static void* operator new(unsigned long size)
+      params: size
       doc: Allocates the coroutine frame.
     function Task::promise_type::operator delete @17 static operator noexcept
       sig: static void operator delete(void* ptr) noexcept
+      params: ptr
       doc: Frees the coroutine frame.

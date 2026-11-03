@@ -21,7 +21,7 @@ public:
     };
 
 protected:
-    /// Protected: excluded from the reference.
+    /// Excluded from the reference because it is protected.
     void Helper();
 
 private:

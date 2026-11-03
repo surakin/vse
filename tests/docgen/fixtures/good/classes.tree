@@ -16,6 +16,7 @@ class Base @4
     doc: A pure virtual hook.
   function Base::Compute @16 virtual const
     sig: virtual int Compute(int x) const
+    params: x
     doc: A virtual method.
   struct Base::Nested @19
     sig: struct Nested
@@ -25,12 +26,14 @@ class Base @4
       trail: A data member documented on the same line.
 class Derived @32 final
   sig: class Derived final : public Base
+  bases: Base
   doc: A derived class.
   function Derived::Hook @35 override
     sig: void Hook() override
     doc: Implements the hook.
   function Derived::Compute @36 override const
     sig: int Compute(int x) const override
+    params: x
   function Derived::Derived @38 default ctor
     sig: Derived()
     doc: Defaulted constructor.

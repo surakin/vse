@@ -151,6 +151,7 @@ docgen links     [--root DIR]
 docgen samples   [--root DIR] [--build-dir DIR] [--jobs N]
 docgen lint      [--baseline FILE] [--root DIR]
 docgen dump      FILE.h        # declaration tree (testing aid)
+docgen docs      FILE.h        # parsed doc comments + validation (testing aid)
 common: --keep-going  --quiet
 ```
 
@@ -174,6 +175,13 @@ Diagnostic catalogue (stable message prefixes the fixtures assert):
 | `Returns on a void function` | warning |
 | `missing summary` | error |
 | `unresolved reference` / `ambiguous reference` | error |
+| `empty label` | error |
+| `invalid thread-safety category` | error |
+| `malformed label` (e.g. `See:` without a `[[reference]]`) | error |
+| `malformed reference` (missing `]]`, empty `[[]]`) | error |
+| `unterminated code fence` | error |
+| `doc comment is not attached to a declaration` | error |
+| `summary too long` / `summary does not end in a period` | warning |
 | `undocumented public symbol` | lint error |
 | `missing required label` | lint error |
 

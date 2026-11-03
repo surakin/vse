@@ -5,6 +5,7 @@
 set(DOCGEN_TEST_SOURCES
   scanner_test.cpp
   extractor_test.cpp
+  doc_parser_test.cpp
 )
 
 find_package(Threads REQUIRED)

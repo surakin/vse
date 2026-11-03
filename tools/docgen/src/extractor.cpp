@@ -37,6 +37,7 @@ public:
                 trailing_[static_cast<usize>(d.token)] = static_cast<i32>(i);
             }
         }
+        for (usize i = 0; i < scan_.docs.Size(); ++i) out_.doc_claimed.Push(0);
         ScopeState top{out_.root, Access::Public, StringView(), false};
         while (p_ < n_) {
             if (Is(p_, "}")) {
@@ -48,9 +49,23 @@ public:
             ParseStatement(top);
             if (p_ == p0) ++p_;
         }
+        Claim(out_.root);
     }
 
 private:
+    // A comment on a statement that is a declaration but adds nothing to the tree
+    // (forward declaration, out-of-line definition, friend) is accepted and dropped.
+    void ClaimDocOf(usize first) {
+        if (first < n_ && toks_[first].doc >= 0) out_.doc_claimed[static_cast<usize>(toks_[first].doc)] = 1;
+    }
+
+    // Marks every doc comment a declaration owns.
+    void Claim(const Decl* d) {
+        if (d->doc >= 0) out_.doc_claimed[static_cast<usize>(d->doc)] = 1;
+        if (d->trailing_doc >= 0) out_.doc_claimed[static_cast<usize>(d->trailing_doc)] = 1;
+        for (usize i = 0; i < d->children.Size(); ++i) Claim(d->children[i]);
+    }
+
     // ---- token helpers --------------------------------------------------
 
     bool Is(usize i, const char* s) const {
@@ -336,7 +351,10 @@ private:
             ParseUsing(sc, first, hdr);
         } else if (Is(p_, "typedef")) {
             ParseTypedef(sc, first);
-        } else if (Is(p_, "static_assert") || Is(p_, "friend")) {
+        } else if (Is(p_, "static_assert")) {
+            SkipStatement();
+        } else if (Is(p_, "friend")) {
+            ClaimDocOf(first); // a friend declaration may carry a comment; it documents nothing new
             SkipStatement();
         } else if (Is(p_, "enum") && ParseEnum(sc, first, hdr)) {
             // parsed
@@ -360,6 +378,22 @@ private:
         d->head_keyword = StringView("define");
         d->signature = StringView(txt.Data(), sig);
         d->trailing_doc = TrailingAt(i);
+        if (sig > len) { // function-like: split the parameter list at commas
+            usize a = len + 1;
+            const usize end = txt[sig - 1] == ')' ? sig - 1 : sig; // the ')' (absent when the directive is cut off)
+            while (a <= end) {
+                usize b = a;
+                while (b < end && txt[b] != ',') ++b;
+                usize x = a, y = b;
+                while (x < y && (txt[x] == ' ' || txt[x] == '\t')) ++x;
+                while (y > x && (txt[y - 1] == ' ' || txt[y - 1] == '\t')) --y;
+                if (y > x) ++d->param_count; // every non-empty entry counts, `...` included
+                if (y - x >= 3 && txt[y - 1] == '.' && txt[y - 2] == '.' && txt[y - 3] == '.') y -= 3; // `args...` or `...`
+                while (y > x && (txt[y - 1] == ' ' || txt[y - 1] == '\t')) --y;
+                if (y > x) d->params.Push(StringView(txt.Data() + x, y - x));
+                a = b + 1;
+            }
+        }
     }
 
     Decl* GetNamespace(Decl* parent, StringView name, bool anonymous, usize first_tok, u32 line) {
@@ -419,6 +453,7 @@ private:
             }
         }
         if (cur->doc < 0 && first < n_) cur->doc = toks_[first].doc;
+        if (first < n_ && toks_[first].doc >= 0) out_.doc_claimed[static_cast<usize>(toks_[first].doc)] = 1; // reopened namespace
         if (inline_ns) cur->flags |= kFlagInlineNamespace;
         ScopeState inner{cur, Access::Public, StringView(), false};
         ParseBlock(inner, open_line);
@@ -509,6 +544,7 @@ private:
             }
         }
         if (Is(q, ";")) { // opaque declaration: nothing to document
+            ClaimDocOf(first);
             p_ = q + 1;
             return true;
         }
@@ -615,7 +651,9 @@ private:
             is_final = true;
             ++q;
         }
+        usize colon = kNone;
         if (Is(q, ":")) {
+            colon = q;
             ++q;
             while (q < n_ && !Is(q, "{") && !Is(q, ";")) {
                 if (Is(q, "(") || Is(q, "=") || Is(q, ")") || Is(q, "}")) return false;
@@ -629,6 +667,7 @@ private:
             }
         }
         if (Is(q, ";")) { // forward declaration
+            ClaimDocOf(first);
             p_ = q + 1;
             return true;
         }
@@ -658,6 +697,7 @@ private:
         d->signature = Join(p_, q);
         d->attributes = CollectAttributes(p_, q);
         if (is_final) d->flags |= kFlagFinal;
+        if (colon != kNone) ExtractBases(d, colon + 1, q);
 
         ScopeState inner{d, default_access, toks_[simple].text, true};
         p_ = q + 1;
@@ -667,6 +707,150 @@ private:
         d->trailing_doc = TrailingAt(close);
         if (d->trailing_doc < 0 && close != kNone && Is(p_ - 1, ";")) d->trailing_doc = TrailingAt(p_ - 1);
         return true;
+    }
+
+    void ExtractBases(Decl* d, usize from, usize to) {
+        for (usize a = from; a < to;) {
+            usize b = a;
+            usize last = kNone;
+            while (b < to && !Is(b, ",")) {
+                if (Is(b, "<") && b > a && IsIdentTok(b - 1)) {
+                    usize r = SkipAngles(b);
+                    b = r == kNone ? b + 1 : r;
+                    continue;
+                }
+                if (IsIdentTok(b) && !Is(b, "public") && !Is(b, "protected") && !Is(b, "private") && !Is(b, "virtual")) last = b;
+                ++b;
+            }
+            if (last != kNone) d->bases.Push(toks_[last].text);
+            a = b + 1;
+        }
+    }
+
+    // The '(' at `open` (closing at `after - 1`) holds a function/member-function pointer
+    // declarator such as `(*name)`, `(&name)` or `(S::*name)`, followed by its parameter list.
+    bool IsDeclaratorGroup(usize open, usize after) const {
+        if (!Is(after, "(") && !Is(after, "[")) return false;
+        for (usize j = open + 1; j + 1 < after; ++j) {
+            if (Is(j, "*") || Is(j, "&")) return true;
+        }
+        return false;
+    }
+
+    static bool IsBuiltinTypeWord(StringView s) {
+        static const char* words[] = {"int",   "char",     "short",    "long",     "unsigned", "signed", "float",
+                                      "double", "bool",     "void",     "auto",     "wchar_t",  "char8_t", "char16_t",
+                                      "char32_t"};
+        for (const char* w : words)
+            if (s == StringView(w)) return true;
+        return false;
+    }
+
+    // Names the parameters of the group starting at the '(' at `open`.
+    void ExtractParams(Decl* d, usize open) {
+        const usize close = SkipBalanced(open);
+        const usize end = close > 0 ? close - 1 : close; // the ')'
+        for (usize a = open + 1; a < end;) {
+            usize b = a;
+            while (b < end && !Is(b, ",")) {
+                if (Is(b, "(") || Is(b, "[") || Is(b, "{")) {
+                    b = SkipBalanced(b);
+                } else if (Is(b, "<") && b > a && IsIdentTok(b - 1)) {
+                    usize r = SkipAngles(b);
+                    b = r == kNone ? b + 1 : r;
+                } else {
+                    ++b;
+                }
+            }
+            AddParam(d, a, b > end ? end : b);
+            a = b + 1;
+        }
+    }
+
+    void AddParam(Decl* d, usize a, usize b) {
+        while (Is(a, "[") && Is(a + 1, "[") && a < b) a = SkipBalanced(a); // leading attributes
+        usize e = a;
+        while (e < b && !Is(e, "=")) {
+            if (Is(e, "(") || Is(e, "[") || Is(e, "{")) {
+                e = SkipBalanced(e);
+            } else {
+                ++e;
+            }
+        }
+        if (e > b) e = b;
+        if (e == a) return;
+        if (e - a == 1 && Is(a, "void")) return;
+        ++d->param_count; // `...` counts toward the arity too
+        if (e - a == 1 && Is(a, "...")) return;
+        usize last = kNone;
+        usize fp_name = kNone;
+        for (usize k = a; k < e;) {
+            if (Is(k, "[")) {
+                k = SkipBalanced(k);
+                continue;
+            }
+            if (Is(k, "(")) {
+                usize cl = SkipBalanced(k);
+                if (IsDeclaratorGroup(k, cl)) {
+                    for (usize j = k + 1; j + 1 < cl; ++j) {
+                        if (IsIdentTok(j)) fp_name = j;
+                    }
+                }
+                k = cl;
+                continue;
+            }
+            if (Is(k, "<") && k > a && IsIdentTok(k - 1)) {
+                usize r = SkipAngles(k);
+                if (r != kNone) {
+                    k = r;
+                    continue;
+                }
+            }
+            if (IsIdentTok(k)) last = k;
+            ++k;
+        }
+        usize name = kNone;
+        if (fp_name != kNone) {
+            name = fp_name;
+        } else if (last != kNone && last > a && !IsBuiltinTypeWord(toks_[last].text) && !Is(last, "const") &&
+                   !Is(last, "volatile")) {
+            // `const T` names a type, `int const x` names a parameter.
+            bool cv_before = (Is(last - 1, "const") || Is(last - 1, "volatile")) &&
+                             (last - 1 == a || Is(last - 2, "const") || Is(last - 2, "volatile"));
+            bool type_ctx = cv_before || Is(last - 1, "struct") || Is(last - 1, "class") || Is(last - 1, "enum") ||
+                            Is(last - 1, "typename") || Is(last - 1, "::") || Is(last - 1, "<");
+            if (!type_ctx) name = last;
+        }
+        if (name != kNone) d->params.Push(toks_[name].text);
+    }
+
+    // True for functions declared `void`, and for constructors/destructors.
+    bool DeclaredVoid(usize start, usize head_end, usize paren_open, usize sig_end, u32 flags) {
+        if ((flags & (kFlagConstructor | kFlagDestructor)) != 0) return true;
+        usize count = 0;
+        usize only = kNone;
+        for (usize k = start; k < head_end;) {
+            if (Is(k, "[") && Is(k + 1, "[")) {
+                k = SkipBalanced(k);
+                continue;
+            }
+            if (Is(k, "static") || Is(k, "virtual") || Is(k, "inline") || Is(k, "constexpr") || Is(k, "consteval") ||
+                Is(k, "explicit") || Is(k, "friend") || Is(k, "extern")) {
+                ++k;
+                continue;
+            }
+            ++count;
+            only = k;
+            ++k;
+        }
+        if (count != 1) return false;
+        if (Is(only, "void")) return true;
+        if (Is(only, "auto")) {
+            for (usize k = SkipBalanced(paren_open); k < sig_end; ++k) {
+                if (Is(k, "->")) return Is(k + 1, "void") && !Is(k + 2, "*") && !Is(k + 2, "&");
+            }
+        }
+        return false;
     }
 
     StringView CollectAttributes(usize from, usize to) {
@@ -742,7 +926,7 @@ private:
                         continue;
                     }
                     const usize after = SkipBalanced(i);
-                    if ((Is(i + 1, "*") || Is(i + 1, "&")) && Is(after, "(")) {
+                    if (IsDeclaratorGroup(i, after)) {
                         // function-pointer variable: T (*name)(args)
                         for (usize j = i + 1; j + 1 < after; ++j) {
                             if (IsIdentTok(j)) fp_name = j;
@@ -923,6 +1107,7 @@ private:
                 Error(toks_[first].line, "unrecognized declaration");
             } else if (Is(name_tok - 1, "::")) {
                 // definition of a previously declared static member/variable
+                ClaimDocOf(first);
             } else {
                 Decl* d = NewDecl(sc.decl, sc.access, DeclKind::Variable, toks_[name_tok].text, first, toks_[first].line);
                 d->flags = flags;
@@ -965,7 +1150,10 @@ private:
 
         // Out-of-line definition (`T Foo::Bar() {}`): the declaration lives in
         // the class, so there is nothing to add here.
-        if (qual_check > start && Is(qual_check - 1, "::")) return;
+        if (qual_check > start && Is(qual_check - 1, "::")) {
+            ClaimDocOf(first);
+            return;
+        }
 
         if (op_idx == kNone && (flags & kFlagDestructor) == 0 && sc.is_class && name == sc.class_name) {
             flags |= kFlagConstructor;
@@ -979,6 +1167,8 @@ private:
         }
 
         Decl* d = NewDecl(sc.decl, sc.access, DeclKind::Function, name, first, toks_[first].line);
+        if (DeclaredVoid(start, qual_check, paren_open, sig_end, flags)) flags |= kFlagReturnsVoid;
+        ExtractParams(d, paren_open);
         d->flags = flags;
         d->template_header = hdr;
         d->signature = Join(start, sig_end);
@@ -1065,6 +1255,24 @@ void DumpNode(const Decl& d, int depth, bool include_hidden, const ScanResult& s
         Indent(sb, depth + 1);
         sb.Append(StringView("sig: "));
         sb.Append(d.signature);
+        sb.Append('\n');
+    }
+    if (d.params.Size() > 0) {
+        Indent(sb, depth + 1);
+        sb.Append(StringView("params: "));
+        for (usize i = 0; i < d.params.Size(); ++i) {
+            if (i > 0) sb.Append(StringView(", "));
+            sb.Append(d.params[i]);
+        }
+        sb.Append('\n');
+    }
+    if (d.bases.Size() > 0) {
+        Indent(sb, depth + 1);
+        sb.Append(StringView("bases: "));
+        for (usize i = 0; i < d.bases.Size(); ++i) {
+            if (i > 0) sb.Append(StringView(", "));
+            sb.Append(d.bases[i]);
+        }
         sb.Append('\n');
     }
     if (!d.template_header.Empty()) {

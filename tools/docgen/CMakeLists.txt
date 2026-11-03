@@ -4,6 +4,7 @@
 set(DOCGEN_SOURCES
   src/scanner.cpp
   src/extractor.cpp
+  src/doc_parser.cpp
   src/source_file.cpp
 )
 

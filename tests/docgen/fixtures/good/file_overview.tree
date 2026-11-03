@@ -6,6 +6,7 @@ class Shape @8
     doc: Returns the area.
 class Circle @15
   sig: class Circle : public Shape
+  bases: Shape
   doc: A derived shape; its override inherits the base summary.
   function Circle::Area @17 override const
     sig: double Area() const override

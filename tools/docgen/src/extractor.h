@@ -53,10 +53,11 @@ enum DeclFlags : engine_placeholder::u32 {
     kFlagConsteval = 1u << 16,
     kFlagInlineNamespace = 1u << 17,
     kFlagAnonymous = 1u << 18,
+    kFlagReturnsVoid = 1u << 19, // functions: declared `void`, plus constructors and destructors
 };
 
 struct Decl {
-    explicit Decl(ArenaAllocator& arena) : children(arena) {}
+    explicit Decl(ArenaAllocator& arena) : children(arena), params(arena), bases(arena) {}
 
     DeclKind kind = DeclKind::Namespace;
     StringView head_keyword; // "class", "struct", "union", "enum", "enum class", "using", "typedef", "define"
@@ -73,6 +74,9 @@ struct Decl {
     u32 line = 0;
     Decl* parent = nullptr;
     Array<Decl*, ArenaAllocator> children;
+    Array<StringView, ArenaAllocator> params; // function/macro parameter names (unnamed parameters are omitted)
+    usize param_count = 0;                    // real arity, including unnamed parameters
+    Array<StringView, ArenaAllocator> bases;  // class base names, unqualified and without template arguments
 
     bool Is(engine_placeholder::u32 f) const { return (flags & f) != 0; }
     // Part of the documented public surface (DOC-CONVENTIONS "Visibility").
@@ -80,10 +84,12 @@ struct Decl {
 };
 
 struct ExtractResult {
-    explicit ExtractResult(ArenaAllocator& arena) : diagnostics(arena) {}
+    explicit ExtractResult(ArenaAllocator& arena) : diagnostics(arena), doc_claimed(arena) {}
 
     Decl* root = nullptr; // the (unnamed) global namespace
     Array<Diagnostic, ArenaAllocator> diagnostics;
+    // One entry per ScanResult::docs: nonzero when some declaration owns the comment.
+    Array<engine_placeholder::u8, ArenaAllocator> doc_claimed;
 
     bool HasErrors() const {
         for (usize i = 0; i < diagnostics.Size(); ++i) {
