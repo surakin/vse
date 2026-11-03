@@ -1,15 +1,11 @@
 // Real entry point for the `engine_main`/`engine_main_asan` executables.
 // Foundation-layer verification lives in /tests/foundation (Catch2,
 // discovered via `ctest`) — this file has no test logic of its own.
-#include <poll.h>
-
+#include "log/log.h"
 #include "mem/arena_allocator.h"
 #include "os/command_line.h"
 #include "os/input.h"
-#include "os/linux/wayland/wayland_connection.h"
-#include "os/linux/wayland/wayland_input.h"
-#include "os/linux/x11/x11_window.h"
-#include "os/linux/wayland/wayland_window.h"
+#include "os/linux/platform_window_host.h"
 #include "os/os.h"
 #include "string/string.h"
 
@@ -22,35 +18,6 @@ void WriteLine(StringView label, StringView value) {
     StringBuilder<ArenaAllocator> line(scratch);
     line.Append(label).Append(value).Append('\n');
     os::Write(1, line.CStr(), line.View().Length());
-}
-
-// Non-blocking pump of one Wayland display's events: reads whatever's
-// already available on the socket (never blocks, per the poll(..., 0)
-// timeout) and dispatches it. Uses the prepare_read/read_events pair
-// rather than wl_display_dispatch_pending() alone, since dispatch_pending
-// only drains what a *previous* read already buffered — without this,
-// events the compositor sends after the initial connect/window-mapping
-// round-trips (resize/close among them) would never actually be read off
-// the socket, silently starving Day 20's event handling. Blocking
-// wl_display_dispatch() isn't used instead because this loop must keep
-// meeting its frame budget (and, for engine_main run with no human at
-// the compositor, terminate on its own) even when the compositor sends
-// nothing.
-void PumpWaylandEvents(wl_display* display) {
-    while (wl_display_prepare_read(display) != 0) {
-        wl_display_dispatch_pending(display);
-    }
-    wl_display_flush(display);
-
-    pollfd pfd{};
-    pfd.fd = wl_display_get_fd(display);
-    pfd.events = POLLIN;
-    if (::poll(&pfd, 1, 0) > 0 && (pfd.revents & POLLIN) != 0) {
-        wl_display_read_events(display);
-    } else {
-        wl_display_cancel_read(display);
-    }
-    wl_display_dispatch_pending(display);
 }
 
 // Parses a non-negative decimal integer; false on empty/non-digit/overflow-ish input.
@@ -147,39 +114,29 @@ int main(int argc, char** argv) {
         os::Write(1, line.CStr(), line.View().Length());
     }
 
-    // Day 18-19: connect to the compositor and map a window. Neither
-    // failing is fatal here (logged via LogPlatform, not crashed) — the
-    // frame-timed loop below still runs either way, matching this file's
-    // existing "fail clearly, don't crash" pattern (Day 17).
-    // Day 24: until Day 26's real backend selection, `--backend=x11`
-    // runs the X11 fallback window instead of Wayland.
-    bool use_x11 = false;
-    for (usize i = 0; i < cmd_line.FlagCount(); ++i) {
-        if (cmd_line.FlagName(i) == StringView("backend") && cmd_line.FlagHasValue(i) &&
-            cmd_line.FlagValue(i) == StringView("x11")) {
-            use_x11 = true;
-        }
-    }
-    os::x11::X11Window x11_window;
-    if (use_x11) {
-        x11_window = os::x11::X11Window::Create("re-engine", 1280, 720);
-    }
-
-    os::wayland::WaylandConnection wayland_connection;
-    os::wayland::WaylandWindow window;
-    if (!use_x11) {
-        wayland_connection = os::wayland::WaylandConnection::Connect();
-    }
-    if (wayland_connection.Valid()) {
-        window = os::wayland::WaylandWindow::Create(wayland_connection, "re-engine", "re_engine");
-    }
-
-    // Day 21-22: keyboard + pointer on the connection's seat. Also
-    // non-fatal if it fails.
+    // Day 26: backend selection. Precedence: `--backend=` flag, then the
+    // ENGINE_WINDOW_BACKEND env var, then auto-detection ($WAYLAND_DISPLAY
+    // -> Wayland, falling back to $DISPLAY -> X11). Failing to open a
+    // window is non-fatal (logged via LogPlatform, the frame loop still
+    // runs) — same "fail clearly, don't crash" pattern as Day 17.
     os::InputState input_state;
-    os::wayland::WaylandInput wayland_input;
-    if (wayland_connection.Valid()) {
-        wayland_input.Init(wayland_connection, &input_state);
+    os::PlatformWindowHost window_host;
+    {
+        os::WindowBackend requested = os::WindowBackend::Invalid;
+        bool have_flag = false;
+        for (usize i = 0; i < cmd_line.FlagCount(); ++i) {
+            if (cmd_line.FlagName(i) == StringView("backend") && cmd_line.FlagHasValue(i)) {
+                requested = os::ParseWindowBackend(cmd_line.FlagValue(i));
+                have_flag = true;
+            }
+        }
+        if (!have_flag) {
+            window_host.OpenFromEnvironment("re-engine", 1280, 720, &input_state);
+        } else if (requested == os::WindowBackend::Invalid) {
+            Log(LogPlatform, LogVerbosity::Error, "Window: unrecognized --backend (want auto|wayland|x11)");
+        } else {
+            window_host.Open(requested, "re-engine", 1280, 720, &input_state);
+        }
     }
     InputSnapshot prev_input;
 
@@ -215,20 +172,11 @@ int main(int argc, char** argv) {
         line.Append("delta_ms: ").AppendFloat(static_cast<f64>(delta_nanos) / 1'000'000.0, 3).Append('\n');
         os::Write(1, line.CStr(), line.View().Length());
 
-        if (x11_window.Valid()) {
+        if (os::Window* active = window_host.Get()) {
             input_state.BeginFrame();
-            x11_window.PumpEvents(&input_state);
+            active->PumpEvents();
             LogInputIfChanged(input_state, prev_input);
-            if (x11_window.ShouldClose()) {
-                break;
-            }
-        }
-
-        if (wayland_connection.Valid()) {
-            input_state.BeginFrame();
-            PumpWaylandEvents(wayland_connection.Display());
-            LogInputIfChanged(input_state, prev_input);
-            if (window.ShouldClose()) {
+            if (active->ShouldClose()) {
                 break;
             }
         }

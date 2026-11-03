@@ -275,6 +275,18 @@ green; one layout test skips unless `ENGINE_X11_TEST_LAYOUT` is set).
 ignored every keymap change, so only `us` was verified through X11;
 multi-layout correctness is covered by Day 21's xkbcommon tests.
 
-**Phase 1 Days 13-25 done** (...; X11 window + input — human
-visual/interactive check pending on Days 19-25); Day 26 (backend
-selection) not yet started.
+Day 26 done: backend selection. `os/window.h` defines the polled
+`os::Window` interface; `WaylandPlatformWindow` (new; owns connection,
+window, input and the event pump formerly in `main.cpp`) and `X11Window`
+implement it; `PlatformWindowHost` (`os/linux/`) picks one: `--backend=`
+flag > `ENGINE_WINDOW_BACKEND` env > auto (`$WAYLAND_DISPLAY` → Wayland,
+falling back to X11 if unset or the connection fails; a forced backend
+never falls back). `main.cpp` is backend-agnostic. 10 new tests (112
+total, green). The hello-window run is identical under wayland/x11/auto
+(10s, 598 frames, exit 0, also under ASan). **Still pending a human:**
+live keyboard/mouse and real close-button checks (Days 19-26), and
+`fr`/`de` through a live X server.
+
+**Phase 1 Days 13-26 done — Phase 1's planned days are complete**
+(modulo the human-verification items above). Phase 2 has not started;
+per CLAUDE.md it needs every day broken into committed day files first.

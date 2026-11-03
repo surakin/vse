@@ -1,6 +1,7 @@
 #pragma once
 
 #include "os/input.h"
+#include "os/window.h"
 #include "string/string.h"
 #include "types.h"
 
@@ -21,7 +22,7 @@ struct _XIM;
 // movable.
 namespace engine_placeholder::os::x11 {
 
-class X11Window {
+class X11Window final : public Window {
 public:
     // Opens the display named by $DISPLAY, creates and maps a toplevel
     // window, and registers WM_DELETE_WINDOW. Returns an invalid window
@@ -30,23 +31,28 @@ public:
     static X11Window Create(StringView title, u32 width, u32 height);
 
     X11Window() = default;
-    ~X11Window();
+    ~X11Window() override;
 
     X11Window(const X11Window&) = delete;
     X11Window& operator=(const X11Window&) = delete;
     X11Window(X11Window&& other) noexcept;
     X11Window& operator=(X11Window&& other) noexcept;
 
-    bool Valid() const { return display_ != nullptr; }
+    bool Valid() const override { return display_ != nullptr; }
 
     // Drains every event already available (never blocks), handling
     // Expose/ConfigureNotify/ClientMessage (Day 24) and, when `input`
     // is non-null, key/button/motion events into it (Day 25).
     void PumpEvents(InputState* input);
 
-    bool ShouldClose() const { return should_close_; }
-    u32 Width() const { return width_; }
-    u32 Height() const { return height_; }
+    // os::Window interface: pumps into the InputState set via
+    // SetInputState() (none = events handled but input ignored).
+    void PumpEvents() override { PumpEvents(input_); }
+    void SetInputState(InputState* input) { input_ = input; }
+    bool ShouldClose() const override { return should_close_; }
+    u32 Width() const override { return width_; }
+    u32 Height() const override { return height_; }
+    const char* BackendName() const override { return "x11"; }
 
     _XDisplay* NativeDisplay() const { return display_; }
     unsigned long NativeWindow() const { return window_; }
@@ -61,6 +67,7 @@ private:
     unsigned long wm_delete_window_ = 0;
     _XIM* input_method_ = nullptr;
     _XIC* input_context_ = nullptr;
+    InputState* input_ = nullptr;
     u32 width_ = 0;
     u32 height_ = 0;
     bool should_close_ = false;

@@ -9,6 +9,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/xkb_keyboard.cpp
     os/linux/wayland/wayland_input.cpp
     os/linux/x11/x11_window.cpp
+    os/linux/wayland/wayland_platform_window.cpp
+    os/linux/platform_window_host.cpp
     os/linux/wayland/wayland_connection.cpp
     os/linux/wayland/wayland_window.cpp
     os/linux/wayland/generated/xdg-shell-protocol.c
@@ -38,6 +40,7 @@ endif()
 set(FOUNDATION_SOURCES
   foundation.cpp
   os/key_translate.cpp
+  os/window.cpp
   os/file_util.cpp
   os/gpu_driver_probe.cpp
   mem/arena_allocator.cpp

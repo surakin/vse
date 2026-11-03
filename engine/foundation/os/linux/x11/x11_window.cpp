@@ -162,6 +162,7 @@ X11Window::X11Window(X11Window&& other) noexcept
       wm_delete_window_(other.wm_delete_window_),
       input_method_(other.input_method_),
       input_context_(other.input_context_),
+      input_(other.input_),
       width_(other.width_),
       height_(other.height_),
       should_close_(other.should_close_) {
@@ -171,6 +172,7 @@ X11Window::X11Window(X11Window&& other) noexcept
     other.wm_delete_window_ = 0;
     other.input_method_ = nullptr;
     other.input_context_ = nullptr;
+    other.input_ = nullptr;
     other.width_ = 0;
     other.height_ = 0;
     other.should_close_ = false;
@@ -184,6 +186,7 @@ X11Window& X11Window::operator=(X11Window&& other) noexcept {
         wm_delete_window_ = other.wm_delete_window_;
         input_method_ = other.input_method_;
         input_context_ = other.input_context_;
+        input_ = other.input_;
         width_ = other.width_;
         height_ = other.height_;
         should_close_ = other.should_close_;
@@ -193,6 +196,7 @@ X11Window& X11Window::operator=(X11Window&& other) noexcept {
         other.wm_delete_window_ = 0;
         other.input_method_ = nullptr;
         other.input_context_ = nullptr;
+        other.input_ = nullptr;
         other.width_ = 0;
         other.height_ = 0;
         other.should_close_ = false;
@@ -217,6 +221,7 @@ void X11Window::ReleaseAll() {
         XCloseDisplay(display_);
         display_ = nullptr;
     }
+    input_ = nullptr;
     should_close_ = false;
 }
 
