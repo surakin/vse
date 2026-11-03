@@ -238,7 +238,14 @@ survive pointer-leave (implicit grab). 2 new tests (93 total, green).
 **Live mouse move/click/scroll check not done** (remote session) — the
 readout is wired in Day 23.
 
-**Phase 1 Days 13-22 done** (...; Wayland keyboard, Wayland pointer —
-human visual/interactive check pending on Days 19-22); Days 23-26
-(hello-window milestone, X11 fallback, backend selection) not yet
-started.
+Day 23 done: Wayland "hello window" milestone wired in `main.cpp` —
+connection, window, event loop, `WaylandInput`, per-frame
+`InputState::BeginFrame()`, and a change-driven `input:` debug readout.
+New `--run-seconds=N` flag (default 6). A 20s run on the live KDE
+compositor held ~16.7ms frames (max 16.77ms), exit 0; ASan run clean.
+**Still pending a human:** live keyboard/mouse updates and the real
+close-button exit (no input-injection tooling in this session).
+
+**Phase 1 Days 13-23 done** (...; Wayland keyboard, pointer, hello-window
+— human visual/interactive check pending on Days 19-23); Days 24-26 (X11
+fallback, backend selection) not yet started.

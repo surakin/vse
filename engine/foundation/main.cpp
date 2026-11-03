@@ -5,7 +5,9 @@
 
 #include "mem/arena_allocator.h"
 #include "os/command_line.h"
+#include "os/input.h"
 #include "os/linux/wayland/wayland_connection.h"
+#include "os/linux/wayland/wayland_input.h"
 #include "os/linux/wayland/wayland_window.h"
 #include "os/os.h"
 #include "string/string.h"
@@ -50,6 +52,77 @@ void PumpWaylandEvents(wl_display* display) {
     wl_display_dispatch_pending(display);
 }
 
+// Parses a non-negative decimal integer; false on empty/non-digit/overflow-ish input.
+bool ParseSeconds(StringView text, u64& out) {
+    if (text.Length() == 0 || text.Length() > 6) {
+        return false;
+    }
+    u64 value = 0;
+    for (usize i = 0; i < text.Length(); ++i) {
+        if (text[i] < '0' || text[i] > '9') {
+            return false;
+        }
+        value = value * 10 + static_cast<u64>(text[i] - '0');
+    }
+    out = value;
+    return true;
+}
+
+// Day 22/23 debug readout: logs InputState whenever something in it
+// changed since the last frame (so a human at the keyboard/mouse can
+// confirm each interaction lands, without a per-frame log flood).
+struct InputSnapshot {
+    f64 mouse_x = 0.0;
+    f64 mouse_y = 0.0;
+    bool inside = false;
+    u32 buttons = 0;
+    u32 modifiers = 0;
+    f64 scroll_dx = 0.0;
+    f64 scroll_dy = 0.0;
+    u32 keys_down = 0;
+};
+
+u32 CountKeysDown(const os::KeyboardState& kb) {
+    u32 n = 0;
+    for (usize i = 1; i < os::KeyboardState::kKeyCount; ++i) {
+        if (kb.IsDown(static_cast<os::Key>(i))) {
+            ++n;
+        }
+    }
+    return n;
+}
+
+void LogInputIfChanged(const os::InputState& in, InputSnapshot& prev) {
+    InputSnapshot cur;
+    cur.mouse_x = in.mouse_x;
+    cur.mouse_y = in.mouse_y;
+    cur.inside = in.pointer_inside;
+    cur.buttons = in.mouse_buttons;
+    cur.modifiers = in.keyboard.modifiers;
+    cur.scroll_dx = in.scroll_dx;
+    cur.scroll_dy = in.scroll_dy;
+    cur.keys_down = CountKeysDown(in.keyboard);
+
+    bool changed = cur.mouse_x != prev.mouse_x || cur.mouse_y != prev.mouse_y || cur.inside != prev.inside ||
+                   cur.buttons != prev.buttons || cur.modifiers != prev.modifiers ||
+                   cur.scroll_dx != prev.scroll_dx || cur.scroll_dy != prev.scroll_dy ||
+                   cur.keys_down != prev.keys_down;
+    if (changed) {
+        ArenaAllocator scratch(512);
+        StringBuilder<ArenaAllocator> line(scratch);
+        line.Append("input: mouse=(").AppendFloat(cur.mouse_x, 1).Append(',').AppendFloat(cur.mouse_y, 1);
+        line.Append(") inside=").AppendUInt(cur.inside ? 1 : 0);
+        line.Append(" buttons=0x").AppendUInt(cur.buttons);
+        line.Append(" scroll=(").AppendFloat(cur.scroll_dx, 1).Append(',').AppendFloat(cur.scroll_dy, 1);
+        line.Append(") mods=0x").AppendUInt(cur.modifiers);
+        line.Append(" keys_down=").AppendUInt(cur.keys_down);
+        line.Append(" W=").AppendUInt(in.keyboard.IsDown(os::Key::W) ? 1 : 0);
+        line.Append('\n');
+        os::Write(1, line.CStr(), line.View().Length());
+    }
+    prev = cur;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -83,13 +156,34 @@ int main(int argc, char** argv) {
         window = os::wayland::WaylandWindow::Create(wayland_connection, "re-engine", "re_engine");
     }
 
+    // Day 21-22: keyboard + pointer on the connection's seat. Also
+    // non-fatal if it fails.
+    os::InputState input_state;
+    os::wayland::WaylandInput wayland_input;
+    if (wayland_connection.Valid()) {
+        wayland_input.Init(wayland_connection, &input_state);
+    }
+    InputSnapshot prev_input;
+
     // Day 14: frame-timed main loop, target ~60Hz. Still wall-clock
     // bounded (so `engine_main` terminates on its own with no compositor
     // interaction, e.g. in automated/headless runs) but Day 20 adds a
     // second, earlier exit: the window's xdg_toplevel close event, via
     // WaylandWindow::ShouldClose().
     constexpr u64 kTargetFrameNanos = 16'666'667;
-    constexpr u64 kRunDurationNanos = 6'000'000'000;
+    // Day 23: `--run-seconds=N` extends (or shortens) the wall-clock
+    // bound so the window can be exercised for as long as a manual
+    // check needs; default stays 6s so automated runs still terminate.
+    u64 run_seconds = 6;
+    for (usize i = 0; i < cmd_line.FlagCount(); ++i) {
+        if (cmd_line.FlagName(i) == StringView("run-seconds") && cmd_line.FlagHasValue(i)) {
+            u64 parsed = 0;
+            if (ParseSeconds(cmd_line.FlagValue(i), parsed)) {
+                run_seconds = parsed;
+            }
+        }
+    }
+    const u64 kRunDurationNanos = run_seconds * 1'000'000'000ull;
 
     u64 run_start = os::MonotonicTimeNanos();
     u64 last = run_start;
@@ -104,7 +198,9 @@ int main(int argc, char** argv) {
         os::Write(1, line.CStr(), line.View().Length());
 
         if (wayland_connection.Valid()) {
+            input_state.BeginFrame();
             PumpWaylandEvents(wayland_connection.Display());
+            LogInputIfChanged(input_state, prev_input);
             if (window.ShouldClose()) {
                 break;
             }
