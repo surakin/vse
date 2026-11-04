@@ -405,13 +405,14 @@ is a goal/deliverable-level plan only — not startable until its days are
 broken out. Phase 2 (Job System) remains the active phase.
 
 
-## Phase 2.5 (Documentation tooling) — complete (Days 36-44); Phase 3 day files still needed before Phase 3 starts
+## Phase 2.5 (Documentation tooling) — complete (Days 36-44); Phase 3 plan written (Days 45-67), not started
 
 Days 36-44 are broken out under `plans/phase-02-5-docs-tooling/` (design
 settled: own C++ `docgen` on the foundation, purpose-built scanner, `///`
 comments, committed generated reference, link/sample/lint checks). The
 end-user docs skeleton lives in `docs/` (all pages are outlines). Phase 3
-still has no day files.
+is broken out into Days 45-67 under `plans/phase-03-vulkan-rhi/` (planning
+only; no code yet).
 
 Day 36 (design & convention) is done: `docs/DOC-CONVENTIONS.md`, `tools/docgen/DESIGN.md` and the fixture corpus in `tests/docgen/fixtures/` are the contract for Days 37-44.
 Day 37 (scanner) is done: `tools/docgen/` (`docgen_lib`, `docgen tokens FILE`) and `tests/docgen/` (`docgen_tests`, `docgen_tests_asan`; 31 test cases incl. fixtures, all of `engine/**/*.h`, truncation/junk fuzz); high-effort review recorded in the day file. Run: `build/tests/docgen/docgen_tests`.
@@ -422,3 +423,5 @@ Day 41 (cross-references + link checker) is done: `docgen links` (file/anchor/im
 Day 42 (sample compiler) is done: `docgen samples` (tags `cpp compile [standalone] [run]` + adjacent `output` block, `#line`-mapped diagnostics, posix_spawn with timeouts, parallel `--jobs`, scratch cleanup incl. on signals); 152 docgen test cases pass plain and under ASan; high-effort review (8 findings, all fixed) recorded in the day file. Wiring the real flags/libraries and the prelude is Day 43.
 Day 43 (lint, coverage, build integration) is done: `docgen lint` (coverage table, strict-module label rules, ratcheting baseline `docs/reference/lint-baseline.txt`), the `docs` CMake target and ctest entries `docs_check`/`docs_links`/`docs_samples`/`docs_lint` (`ctest -L docs`), `docs/samples-prelude.h`, the generated `docs/reference/` committed (0% documented; Day 44 retrofits the headers); 166 docgen test cases pass plain and under ASan; high-effort review (9 findings, 7 fixed, 2 declined) recorded in the day file. Regenerate with `cmake --build build --target docs` after any header change.
 Day 44 (header retrofit) is done: every public header of Phases 0-2 documented (667/667 symbols, 100% in all modules, lint baseline empty), `docs/reference/` regenerated and committed, guide pages carry `[[ref]]` API sections, all four docs checks green; high-effort review (7 findings, all fixed) and the observations list recorded in the day file. The "documented before done" rule was approved and added to CLAUDE.md and PLAN.md. Known unrelated failure: `X11Window::Create opens a mapped window on the real X server` fails here, also on unmodified HEAD.
+
+Phase 3 (Vulkan RHI) is planned: 23 day files (Days 45-67) under `plans/phase-03-vulkan-rhi/`, indexed by `plans/phase-03-vulkan-rhi.md` with the settled design decisions. Phase 3 is startable (Day 45 next); Phase 4+ still need their day files before they start.

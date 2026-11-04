@@ -543,3 +543,12 @@ that changed from the plan and why.)_
   references updated; historical dated design docs under
   `docs/superpowers/specs/` keep their original numbers). The Editor is
   now Phase 18 and builds on Phase 6.
+
+- **2026-11-04 — Phase 3 (Vulkan RHI) broken into Days 45-67.** 23 day
+  files under `plans/phase-03-vulkan-rhi/`: design spec and build
+  skeleton, core types, null backend, native-window seam, Vulkan
+  loader/instance/device/allocator, buffers/textures/swapchain, frame loop,
+  SPIR-V workflow, pipelines, bind groups, triangle/compute/cube/lit-cube
+  milestones, boundary gate, portability review. Settled calls: Vulkan 1.3
+  loaded at runtime, explicit resource-state barriers, dynamic rendering,
+  hand-authored SPIR-V, GPU tests skip without a device.
