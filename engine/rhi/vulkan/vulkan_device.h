@@ -7,6 +7,8 @@
 #include "rhi/vulkan/vk_device_select.h"
 #include "rhi/vulkan/vk_functions.h"
 #include "rhi/vulkan/vk_instance.h"
+#include "rhi/vulkan/vk_memory.h"
+#include "rhi/vulkan/vk_memory_backend.h"
 
 //! The Vulkan implementation of [[rhi::Device]].
 
@@ -87,6 +89,22 @@ public:
     /// Returns the physical device's properties and limits.
     const VkPhysicalDeviceProperties& Properties() const { return properties_; }
 
+    /// Returns the GPU memory suballocator.
+    /// Ownership: borrowed; valid for the life of the device.
+    MemoryAllocator& Memory() { return *memory_; }
+
+    /// Returns how many times `vkAllocateMemory` has succeeded, for tests of the suballocator.
+    u64 MemoryObjectsAllocated() const { return memory_backend_->AllocateCalls(); }
+
+    /// Reads the driver's budget and current usage of a memory heap, if `VK_EXT_memory_budget` is available.
+    ///
+    /// Param heap: the heap index.
+    /// Param budget: receives the bytes this process may use; must not be null.
+    /// Param usage: receives the bytes this process currently uses; must not be null.
+    /// Returns: true if the extension is enabled and `heap` exists.
+    /// Fails: returns false if `VK_EXT_memory_budget` is not enabled or `heap` is out of range.
+    bool HeapBudget(u32 heap, u64* budget, u64* usage) const;
+
 private:
     VulkanDevice() = default;
     bool Initialize(const DeviceCreateInfo& info);
@@ -105,6 +123,9 @@ private:
     VkPhysicalDeviceMemoryProperties memory_properties_{};
     DeviceCaps caps_;
     bool anisotropy_enabled_ = false;
+    bool memory_budget_enabled_ = false;
+    VulkanMemoryBackend* memory_backend_ = nullptr;
+    MemoryAllocator* memory_ = nullptr;
     std::atomic<bool> device_lost_{false};
     u64 frame_number_ = 0;
 };

@@ -29,6 +29,7 @@ Full reference: [The Render Hardware Interface](../reference/rhi.md).
 - [[rhi::CreateDevice]] and [[rhi::DeviceCreateInfo]] — creating a device for a backend
 - [[rhi::vulkan::VulkanDevice]] — the Vulkan device
 - [[rhi::vulkan::SelectPhysicalDevice]] and [[rhi::vulkan::PlanQueues]] — GPU choice and queue planning
+- [[rhi::vulkan::MemoryAllocator]] — the GPU memory suballocator, with [[rhi::vulkan::MemoryStats]]
 - [[rhi::vulkan::LoadVulkanLoader]] — opens the Vulkan loader at runtime
 - [[rhi::vulkan::VkGlobalFns]], [[rhi::vulkan::VkInstanceFns]], [[rhi::vulkan::VkDeviceFns]] — the function-pointer tables
 - [[rhi::vulkan::VulkanInstance]] and [[rhi::vulkan::VulkanInstanceDesc]] — the instance, its extensions and validation
@@ -189,6 +190,32 @@ where an asynchronous transfer path would go later. `Submit`, `BeginFrame`, `End
 one submission thread (the queue is not externally synchronized beyond that rule). The device enables only the
 features it uses: dynamic rendering, synchronization2, timeline semaphores and, where available, anisotropic
 filtering. [[rhi::Device::Caps]] reports the limits it found.
+
+### GPU memory
+
+`vkAllocateMemory` is limited (commonly 4096 live objects) and slow, so the Vulkan backend never allocates one
+memory object per resource. [[rhi::vulkan::MemoryAllocator]] allocates large blocks (64 MiB, or 256 MiB in a
+device-local heap of 8 GiB or more, but never more than an eighth of a small heap) and carves resources out of them
+with a best-fit free list that merges neighbors when ranges are freed. Alignment is honored per request. Buffers and
+linear images live in different blocks from optimally-tiled images, which satisfies `bufferImageGranularity`
+without tracking it per neighbor. A request larger than half a block, or one the driver wants dedicated, gets its own
+memory object. A block that becomes empty is released, except that each pool keeps one empty block as a spare so
+a steady allocate/free pattern does not thrash the driver. Host-visible blocks are mapped once, when they are created.
+
+The memory type for a resource comes from [[rhi::vulkan::SelectMemoryType]]: `GpuOnly` prefers device-local memory
+that is not host-visible; `CpuToGpu` prefers coherent host-visible memory that is not device-local, falling back to
+device-local host-visible memory (resizable BAR, unified memory); `GpuToCpu` prefers cached coherent host memory.
+
+**Failure policy.** Allocation never aborts. If the device or host runs out of memory, the allocation-count limit
+(minus a headroom left for objects allocated outside the allocator, such as swapchain images) is reached, or no memory type fits, the allocator
+returns an empty [[rhi::vulkan::MemoryAllocation]] and a [[rhi::vulkan::MemoryResult]] saying which, and logs the
+per-heap breakdown on `LogRhi`; the resource creation above it then fails with an invalid handle and a log line.
+Freeing a range twice, or a range that is not the allocator's, is a programming error and aborts.
+
+[[rhi::vulkan::MemoryAllocator::Stats]] reports per heap the bytes allocated and used, block and dedicated-object
+counts, the free bytes and the largest free range, and a fragmentation estimate (`1 - largest free / total free`).
+With `VK_EXT_memory_budget`, [[rhi::vulkan::VulkanDevice::HeapBudget]] adds the driver's own budget and usage; it
+is informational and never makes an allocation fail.
 
 ### Vulkan backend notes
 

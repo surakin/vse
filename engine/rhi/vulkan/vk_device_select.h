@@ -58,6 +58,8 @@ struct PhysicalDeviceInfo {
     bool sampler_anisotropy = false;
     /// Whether the device supports the swapchain extension.
     bool swapchain_extension = false;
+    /// Whether the device supports `VK_EXT_memory_budget`.
+    bool memory_budget_extension = false;
     /// The queue families; only the first `queue_family_count` are valid.
     QueueFamilyInfo families[kMaxQueueFamilies];
     /// Number of valid entries in `families`.

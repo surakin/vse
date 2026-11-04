@@ -16,6 +16,8 @@ set(RHI_VULKAN_SOURCES
   vulkan/vk_result.cpp
   vulkan/vk_instance.cpp
   vulkan/vk_format.cpp
+  vulkan/vk_memory.cpp
+  vulkan/vk_memory_backend.cpp
   vulkan/vk_device_select.cpp
   vulkan/vulkan_device.cpp
   vulkan/create_device.cpp

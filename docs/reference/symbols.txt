@@ -1316,14 +1316,15 @@ rhi::vulkan::PhysicalDeviceInfo::synchronization2	variable	rhi-vulkan	rhi-vulkan
 rhi::vulkan::PhysicalDeviceInfo::timeline_semaphore	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-timeline-semaphore	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:56
 rhi::vulkan::PhysicalDeviceInfo::sampler_anisotropy	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-sampler-anisotropy	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:58
 rhi::vulkan::PhysicalDeviceInfo::swapchain_extension	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-swapchain-extension	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:60
-rhi::vulkan::PhysicalDeviceInfo::families	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-families	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:62
-rhi::vulkan::PhysicalDeviceInfo::queue_family_count	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-queue-family-count	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:64
-rhi::vulkan::RejectionReason(const PhysicalDeviceInfo&,bool)	function	rhi-vulkan	rhi-vulkan-rejectionreason-const-physicaldeviceinfo-amp-bool	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:77
-rhi::vulkan::SelectPhysicalDevice(const PhysicalDeviceInfo*,usize,bool,const char*)	function	rhi-vulkan	rhi-vulkan-selectphysicaldevice-const-physicaldeviceinfo-star-usize-bool-const-char-star	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:93
-rhi::vulkan::QueuePlan	struct	rhi-vulkan	rhi-vulkan-queueplan	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:98
-rhi::vulkan::QueuePlan::graphics_family	variable	rhi-vulkan	rhi-vulkan-queueplan-graphics-family	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:100
-rhi::vulkan::QueuePlan::transfer_family	variable	rhi-vulkan	rhi-vulkan-queueplan-transfer-family	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:105
-rhi::vulkan::PlanQueues(const PhysicalDeviceInfo&,bool)	function	rhi-vulkan	rhi-vulkan-planqueues-const-physicaldeviceinfo-amp-bool	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:114
+rhi::vulkan::PhysicalDeviceInfo::memory_budget_extension	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-memory-budget-extension	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:62
+rhi::vulkan::PhysicalDeviceInfo::families	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-families	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:64
+rhi::vulkan::PhysicalDeviceInfo::queue_family_count	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-queue-family-count	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:66
+rhi::vulkan::RejectionReason(const PhysicalDeviceInfo&,bool)	function	rhi-vulkan	rhi-vulkan-rejectionreason-const-physicaldeviceinfo-amp-bool	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:79
+rhi::vulkan::SelectPhysicalDevice(const PhysicalDeviceInfo*,usize,bool,const char*)	function	rhi-vulkan	rhi-vulkan-selectphysicaldevice-const-physicaldeviceinfo-star-usize-bool-const-char-star	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:95
+rhi::vulkan::QueuePlan	struct	rhi-vulkan	rhi-vulkan-queueplan	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:100
+rhi::vulkan::QueuePlan::graphics_family	variable	rhi-vulkan	rhi-vulkan-queueplan-graphics-family	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:102
+rhi::vulkan::QueuePlan::transfer_family	variable	rhi-vulkan	rhi-vulkan-queueplan-transfer-family	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:107
+rhi::vulkan::PlanQueues(const PhysicalDeviceInfo&,bool)	function	rhi-vulkan	rhi-vulkan-planqueues-const-physicaldeviceinfo-amp-bool	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:116
 rhi::vulkan::ToVkFormat(Format)	function	rhi-vulkan	rhi-vulkan-tovkformat-format	rhi-vulkan.md	engine/rhi/vulkan/vk_format.h:11
 rhi::vulkan::FromVkFormat(VkFormat)	function	rhi-vulkan	rhi-vulkan-fromvkformat-vkformat	rhi-vulkan.md	engine/rhi/vulkan/vk_format.h:14
 rhi::vulkan::AspectsOf(Format)	function	rhi-vulkan	rhi-vulkan-aspectsof-format	rhi-vulkan.md	engine/rhi/vulkan/vk_format.h:17
@@ -1383,6 +1384,103 @@ rhi::vulkan::VulkanLoader	struct	rhi-vulkan	rhi-vulkan-vulkanloader	rhi-vulkan.m
 rhi::vulkan::VulkanLoader::library	variable	rhi-vulkan	rhi-vulkan-vulkanloader-library	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:48
 rhi::vulkan::VulkanLoader::get_instance_proc_addr	variable	rhi-vulkan	rhi-vulkan-vulkanloader-get-instance-proc-addr	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:50
 rhi::vulkan::LoadVulkanLoader(VulkanLoader*)	function	rhi-vulkan	rhi-vulkan-loadvulkanloader-vulkanloader-star	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:64
+rhi::vulkan::kMaxMemoryTypes	variable	rhi-vulkan	rhi-vulkan-kmaxmemorytypes	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:17
+rhi::vulkan::kMaxMemoryHeaps	variable	rhi-vulkan	rhi-vulkan-kmaxmemoryheaps	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:19
+rhi::vulkan::MemoryTypeInfo	struct	rhi-vulkan	rhi-vulkan-memorytypeinfo	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:24
+rhi::vulkan::MemoryTypeInfo::heap_index	variable	rhi-vulkan	rhi-vulkan-memorytypeinfo-heap-index	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:26
+rhi::vulkan::MemoryTypeInfo::device_local	variable	rhi-vulkan	rhi-vulkan-memorytypeinfo-device-local	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:28
+rhi::vulkan::MemoryTypeInfo::host_visible	variable	rhi-vulkan	rhi-vulkan-memorytypeinfo-host-visible	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:30
+rhi::vulkan::MemoryTypeInfo::host_coherent	variable	rhi-vulkan	rhi-vulkan-memorytypeinfo-host-coherent	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:32
+rhi::vulkan::MemoryTypeInfo::host_cached	variable	rhi-vulkan	rhi-vulkan-memorytypeinfo-host-cached	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:34
+rhi::vulkan::MemoryHeapInfo	struct	rhi-vulkan	rhi-vulkan-memoryheapinfo	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:40
+rhi::vulkan::MemoryHeapInfo::size	variable	rhi-vulkan	rhi-vulkan-memoryheapinfo-size	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:42
+rhi::vulkan::MemoryHeapInfo::device_local	variable	rhi-vulkan	rhi-vulkan-memoryheapinfo-device-local	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:44
+rhi::vulkan::MemoryLayout	struct	rhi-vulkan	rhi-vulkan-memorylayout	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:50
+rhi::vulkan::MemoryLayout::types	variable	rhi-vulkan	rhi-vulkan-memorylayout-types	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:52
+rhi::vulkan::MemoryLayout::type_count	variable	rhi-vulkan	rhi-vulkan-memorylayout-type-count	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:54
+rhi::vulkan::MemoryLayout::heaps	variable	rhi-vulkan	rhi-vulkan-memorylayout-heaps	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:56
+rhi::vulkan::MemoryLayout::heap_count	variable	rhi-vulkan	rhi-vulkan-memorylayout-heap-count	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:58
+rhi::vulkan::SelectMemoryType(const MemoryLayout&,MemoryLocation,u32)	function	rhi-vulkan	rhi-vulkan-selectmemorytype-const-memorylayout-amp-memorylocation-u32	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:73
+rhi::vulkan::MemoryResult	enum	rhi-vulkan	rhi-vulkan-memoryresult	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:76
+rhi::vulkan::MemoryResult::Ok	enumerator	rhi-vulkan	rhi-vulkan-memoryresult-ok	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:77
+rhi::vulkan::MemoryResult::OutOfDeviceMemory	enumerator	rhi-vulkan	rhi-vulkan-memoryresult-outofdevicememory	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:78
+rhi::vulkan::MemoryResult::OutOfHostMemory	enumerator	rhi-vulkan	rhi-vulkan-memoryresult-outofhostmemory	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:79
+rhi::vulkan::MemoryResult::Failed	enumerator	rhi-vulkan	rhi-vulkan-memoryresult-failed	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:80
+rhi::vulkan::BackendAllocation	struct	rhi-vulkan	rhi-vulkan-backendallocation	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:86
+rhi::vulkan::BackendAllocation::handle	variable	rhi-vulkan	rhi-vulkan-backendallocation-handle	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:88
+rhi::vulkan::BackendAllocation::mapped	variable	rhi-vulkan	rhi-vulkan-backendallocation-mapped	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:90
+rhi::vulkan::MemoryBackend	class	rhi-vulkan	rhi-vulkan-memorybackend	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:96
+rhi::vulkan::MemoryBackend::~MemoryBackend()	function	rhi-vulkan	rhi-vulkan-memorybackend-tilde-memorybackend	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:98
+rhi::vulkan::MemoryBackend::Allocate(u32,u64,bool,u64,u64,BackendAllocation*)	function	rhi-vulkan	rhi-vulkan-memorybackend-allocate-u32-u64-bool-u64-u64-backendallocation-star	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:109
+rhi::vulkan::MemoryBackend::Free(const BackendAllocation&)	function	rhi-vulkan	rhi-vulkan-memorybackend-free-const-backendallocation-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:115
+rhi::vulkan::MemoryAllocation	struct	rhi-vulkan	rhi-vulkan-memoryallocation	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:121
+rhi::vulkan::MemoryAllocation::memory	variable	rhi-vulkan	rhi-vulkan-memoryallocation-memory	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:123
+rhi::vulkan::MemoryAllocation::offset	variable	rhi-vulkan	rhi-vulkan-memoryallocation-offset	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:125
+rhi::vulkan::MemoryAllocation::size	variable	rhi-vulkan	rhi-vulkan-memoryallocation-size	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:127
+rhi::vulkan::MemoryAllocation::mapped	variable	rhi-vulkan	rhi-vulkan-memoryallocation-mapped	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:129
+rhi::vulkan::MemoryAllocation::memory_type	variable	rhi-vulkan	rhi-vulkan-memoryallocation-memory-type	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:131
+rhi::vulkan::MemoryAllocation::coherent	variable	rhi-vulkan	rhi-vulkan-memoryallocation-coherent	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:133
+rhi::vulkan::MemoryAllocation::dedicated	variable	rhi-vulkan	rhi-vulkan-memoryallocation-dedicated	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:135
+rhi::vulkan::MemoryAllocation::pool	variable	rhi-vulkan	rhi-vulkan-memoryallocation-pool	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:137
+rhi::vulkan::MemoryAllocation::block	variable	rhi-vulkan	rhi-vulkan-memoryallocation-block	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:139
+rhi::vulkan::MemoryAllocation::Valid() const	function	rhi-vulkan	rhi-vulkan-memoryallocation-valid-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:142
+rhi::vulkan::MemoryRequest	struct	rhi-vulkan	rhi-vulkan-memoryrequest	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:148
+rhi::vulkan::MemoryRequest::size	variable	rhi-vulkan	rhi-vulkan-memoryrequest-size	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:150
+rhi::vulkan::MemoryRequest::alignment	variable	rhi-vulkan	rhi-vulkan-memoryrequest-alignment	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:152
+rhi::vulkan::MemoryRequest::memory_type_bits	variable	rhi-vulkan	rhi-vulkan-memoryrequest-memory-type-bits	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:154
+rhi::vulkan::MemoryRequest::location	variable	rhi-vulkan	rhi-vulkan-memoryrequest-location	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:156
+rhi::vulkan::MemoryRequest::linear	variable	rhi-vulkan	rhi-vulkan-memoryrequest-linear	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:159
+rhi::vulkan::MemoryRequest::dedicated	variable	rhi-vulkan	rhi-vulkan-memoryrequest-dedicated	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:161
+rhi::vulkan::MemoryRequest::dedicated_buffer	variable	rhi-vulkan	rhi-vulkan-memoryrequest-dedicated-buffer	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:163
+rhi::vulkan::MemoryRequest::dedicated_image	variable	rhi-vulkan	rhi-vulkan-memoryrequest-dedicated-image	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:165
+rhi::vulkan::MemoryAllocatorConfig	struct	rhi-vulkan	rhi-vulkan-memoryallocatorconfig	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:171
+rhi::vulkan::MemoryAllocatorConfig::block_size	variable	rhi-vulkan	rhi-vulkan-memoryallocatorconfig-block-size	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:173
+rhi::vulkan::MemoryAllocatorConfig::large_block_size	variable	rhi-vulkan	rhi-vulkan-memoryallocatorconfig-large-block-size	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:175
+rhi::vulkan::MemoryAllocatorConfig::large_heap_bytes	variable	rhi-vulkan	rhi-vulkan-memoryallocatorconfig-large-heap-bytes	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:177
+rhi::vulkan::MemoryAllocatorConfig::dedicated_divisor	variable	rhi-vulkan	rhi-vulkan-memoryallocatorconfig-dedicated-divisor	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:179
+rhi::vulkan::MemoryAllocatorConfig::max_allocation_count	variable	rhi-vulkan	rhi-vulkan-memoryallocatorconfig-max-allocation-count	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:181
+rhi::vulkan::MemoryAllocatorConfig::allocation_headroom	variable	rhi-vulkan	rhi-vulkan-memoryallocatorconfig-allocation-headroom	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:184
+rhi::vulkan::MemoryAllocatorConfig::non_coherent_atom_size	variable	rhi-vulkan	rhi-vulkan-memoryallocatorconfig-non-coherent-atom-size	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:187
+rhi::vulkan::HeapStats	struct	rhi-vulkan	rhi-vulkan-heapstats	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:193
+rhi::vulkan::HeapStats::allocated_bytes	variable	rhi-vulkan	rhi-vulkan-heapstats-allocated-bytes	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:195
+rhi::vulkan::HeapStats::used_bytes	variable	rhi-vulkan	rhi-vulkan-heapstats-used-bytes	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:197
+rhi::vulkan::HeapStats::block_count	variable	rhi-vulkan	rhi-vulkan-heapstats-block-count	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:199
+rhi::vulkan::HeapStats::dedicated_count	variable	rhi-vulkan	rhi-vulkan-heapstats-dedicated-count	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:201
+rhi::vulkan::HeapStats::free_bytes	variable	rhi-vulkan	rhi-vulkan-heapstats-free-bytes	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:203
+rhi::vulkan::HeapStats::largest_free_bytes	variable	rhi-vulkan	rhi-vulkan-heapstats-largest-free-bytes	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:205
+rhi::vulkan::HeapStats::fragmentation	variable	rhi-vulkan	rhi-vulkan-heapstats-fragmentation	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:207
+rhi::vulkan::MemoryStats	struct	rhi-vulkan	rhi-vulkan-memorystats	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:213
+rhi::vulkan::MemoryStats::heaps	variable	rhi-vulkan	rhi-vulkan-memorystats-heaps	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:215
+rhi::vulkan::MemoryStats::heap_count	variable	rhi-vulkan	rhi-vulkan-memorystats-heap-count	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:217
+rhi::vulkan::MemoryStats::live_memory_objects	variable	rhi-vulkan	rhi-vulkan-memorystats-live-memory-objects	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:219
+rhi::vulkan::MemoryStats::total_memory_objects_made	variable	rhi-vulkan	rhi-vulkan-memorystats-total-memory-objects-made	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:221
+rhi::vulkan::FreeList	class	rhi-vulkan	rhi-vulkan-freelist	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:227
+rhi::vulkan::FreeList::FreeList(u64)	function	rhi-vulkan	rhi-vulkan-freelist-freelist-u64	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:230
+rhi::vulkan::FreeList::Allocate(u64,u64,u64*)	function	rhi-vulkan	rhi-vulkan-freelist-allocate-u64-u64-u64-star	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:239
+rhi::vulkan::FreeList::Free(u64,u64)	function	rhi-vulkan	rhi-vulkan-freelist-free-u64-u64	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:248
+rhi::vulkan::FreeList::Capacity() const	function	rhi-vulkan	rhi-vulkan-freelist-capacity-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:251
+rhi::vulkan::FreeList::FreeBytes() const	function	rhi-vulkan	rhi-vulkan-freelist-freebytes-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:253
+rhi::vulkan::FreeList::LargestFree() const	function	rhi-vulkan	rhi-vulkan-freelist-largestfree-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:255
+rhi::vulkan::FreeList::RangeCount() const	function	rhi-vulkan	rhi-vulkan-freelist-rangecount-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:257
+rhi::vulkan::FreeList::RangeOffset(usize) const	function	rhi-vulkan	rhi-vulkan-freelist-rangeoffset-usize-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:259
+rhi::vulkan::FreeList::RangeSize(usize) const	function	rhi-vulkan	rhi-vulkan-freelist-rangesize-usize-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:261
+rhi::vulkan::MemoryAllocator	class	rhi-vulkan	rhi-vulkan-memoryallocator	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:286
+rhi::vulkan::MemoryAllocator::MemoryAllocator(const MemoryLayout&,const MemoryAllocatorConfig&,MemoryBackend*)	function	rhi-vulkan	rhi-vulkan-memoryallocator-memoryallocator-const-memorylayout-amp-const-memoryallocatorconfig-amp-memorybackend-star	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:293
+rhi::vulkan::MemoryAllocator::~MemoryAllocator()	function	rhi-vulkan	rhi-vulkan-memoryallocator-tilde-memoryallocator	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:295
+rhi::vulkan::MemoryAllocator::MemoryAllocator(const MemoryAllocator&)	function	rhi-vulkan	rhi-vulkan-memoryallocator-memoryallocator-const-memoryallocator-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:296
+rhi::vulkan::MemoryAllocator::operator=(const MemoryAllocator&)	function	rhi-vulkan	rhi-vulkan-memoryallocator-operator-eq-const-memoryallocator-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:297
+rhi::vulkan::MemoryAllocator::Allocate(const MemoryRequest&,MemoryResult*)	function	rhi-vulkan	rhi-vulkan-memoryallocator-allocate-const-memoryrequest-amp-memoryresult-star	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:306
+rhi::vulkan::MemoryAllocator::Free(const MemoryAllocation&)	function	rhi-vulkan	rhi-vulkan-memoryallocator-free-const-memoryallocation-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:312
+rhi::vulkan::MemoryAllocator::Stats() const	function	rhi-vulkan	rhi-vulkan-memoryallocator-stats-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:315
+rhi::vulkan::MemoryAllocator::LogStats() const	function	rhi-vulkan	rhi-vulkan-memoryallocator-logstats-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:318
+rhi::vulkan::HandleToU64(H)	function	rhi-vulkan	rhi-vulkan-handletou64-h	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:15
+rhi::vulkan::HandleFromU64(u64)	function	rhi-vulkan	rhi-vulkan-handlefromu64-u64	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:25
+rhi::vulkan::VulkanMemoryBackend	class	rhi-vulkan	rhi-vulkan-vulkanmemorybackend	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:38
+rhi::vulkan::VulkanMemoryBackend::VulkanMemoryBackend(const VkDeviceFns*,VkDevice,std::atomic<bool>*)	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-vulkanmemorybackend-const-vkdevicefns-star-vkdevice-std-atomic-lt-bool-gt-star	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:45
+rhi::vulkan::VulkanMemoryBackend::Allocate(u32,u64,bool,u64,u64,BackendAllocation*)	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-allocate-u32-u64-bool-u64-u64-backendallocation-star	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:47
+rhi::vulkan::VulkanMemoryBackend::Free(const BackendAllocation&)	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-free-const-backendallocation-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:49
+rhi::vulkan::VulkanMemoryBackend::AllocateCalls() const	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-allocatecalls-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:52
+rhi::vulkan::VulkanMemoryBackend::LiveObjects() const	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-liveobjects-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:54
 rhi::vulkan::VkResultClass	enum	rhi-vulkan	rhi-vulkan-vkresultclass	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:10
 rhi::vulkan::VkResultClass::Success	enumerator	rhi-vulkan	rhi-vulkan-vkresultclass-success	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:11
 rhi::vulkan::VkResultClass::Suboptimal	enumerator	rhi-vulkan	rhi-vulkan-vkresultclass-suboptimal	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:12
@@ -1393,42 +1491,45 @@ rhi::vulkan::VkResultName(VkResult)	function	rhi-vulkan	rhi-vulkan-vkresultname-
 rhi::vulkan::ClassifyVkResult(VkResult)	function	rhi-vulkan	rhi-vulkan-classifyvkresult-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:26
 rhi::vulkan::CheckVkResult(VkResult,const char*,const char*,int)	function	rhi-vulkan	rhi-vulkan-checkvkresult-vkresult-const-char-star-const-char-star-int	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:38
 ENGINE_VK_CHECK	macro	rhi-vulkan	engine-vk-check	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:43
-rhi::vulkan::VulkanDevice	class	rhi-vulkan	rhi-vulkan-vulkandevice	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:23
-rhi::vulkan::VulkanDevice::Create(const DeviceCreateInfo&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-create-const-devicecreateinfo-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:31
-rhi::vulkan::VulkanDevice::~VulkanDevice()	function	rhi-vulkan	rhi-vulkan-vulkandevice-tilde-vulkandevice	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:34
-rhi::vulkan::VulkanDevice::BackendName() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-backendname-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:36
-rhi::vulkan::VulkanDevice::Caps() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-caps-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:37
-rhi::vulkan::VulkanDevice::CreateBuffer(const BufferDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbuffer-const-bufferdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:38
-rhi::vulkan::VulkanDevice::DestroyBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:39
-rhi::vulkan::VulkanDevice::CreateTexture(const TextureDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createtexture-const-texturedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:40
-rhi::vulkan::VulkanDevice::DestroyTexture(TextureHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroytexture-texturehandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:41
-rhi::vulkan::VulkanDevice::CreateSampler(const SamplerDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createsampler-const-samplerdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:42
-rhi::vulkan::VulkanDevice::DestroySampler(SamplerHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroysampler-samplerhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:43
-rhi::vulkan::VulkanDevice::CreateShader(const ShaderDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createshader-const-shaderdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:44
-rhi::vulkan::VulkanDevice::DestroyShader(ShaderHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroyshader-shaderhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:45
-rhi::vulkan::VulkanDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:46
-rhi::vulkan::VulkanDevice::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybindgrouplayout-bindgrouplayouthandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:47
-rhi::vulkan::VulkanDevice::CreateBindGroup(const BindGroupDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbindgroup-const-bindgroupdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:48
-rhi::vulkan::VulkanDevice::DestroyBindGroup(BindGroupHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybindgroup-bindgrouphandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:49
-rhi::vulkan::VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:50
-rhi::vulkan::VulkanDevice::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createcomputepipeline-const-computepipelinedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:51
-rhi::vulkan::VulkanDevice::DestroyPipeline(PipelineHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroypipeline-pipelinehandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:52
-rhi::vulkan::VulkanDevice::MapBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-mapbuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:53
-rhi::vulkan::VulkanDevice::UnmapBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-unmapbuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:54
-rhi::vulkan::VulkanDevice::CreateCommandList()	function	rhi-vulkan	rhi-vulkan-vulkandevice-createcommandlist	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:55
-rhi::vulkan::VulkanDevice::Submit(CommandList* const*,usize)	function	rhi-vulkan	rhi-vulkan-vulkandevice-submit-commandlist-star-const-star-usize	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:56
-rhi::vulkan::VulkanDevice::WaitFence(FenceValue,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-waitfence-fencevalue-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:57
-rhi::vulkan::VulkanDevice::CompletedFence() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-completedfence-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:58
-rhi::vulkan::VulkanDevice::BeginFrame()	function	rhi-vulkan	rhi-vulkan-vulkandevice-beginframe	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:59
-rhi::vulkan::VulkanDevice::EndFrame()	function	rhi-vulkan	rhi-vulkan-vulkandevice-endframe	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:60
-rhi::vulkan::VulkanDevice::FrameNumber() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-framenumber-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:61
-rhi::vulkan::VulkanDevice::WaitIdle()	function	rhi-vulkan	rhi-vulkan-vulkandevice-waitidle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:62
-rhi::vulkan::VulkanDevice::DeviceLost() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-devicelost-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:63
-rhi::vulkan::VulkanDevice::GpuName() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-gpuname-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:67
-rhi::vulkan::VulkanDevice::GpuInfo() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-gpuinfo-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:70
-rhi::vulkan::VulkanDevice::Queues() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-queues-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:73
-rhi::vulkan::VulkanDevice::Instance() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-instance-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:76
-rhi::vulkan::VulkanDevice::Handle() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-handle-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:79
-rhi::vulkan::VulkanDevice::Fns() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-fns-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:82
-rhi::vulkan::VulkanDevice::MemoryProperties() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-memoryproperties-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:85
-rhi::vulkan::VulkanDevice::Properties() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-properties-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:88
+rhi::vulkan::VulkanDevice	class	rhi-vulkan	rhi-vulkan-vulkandevice	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:25
+rhi::vulkan::VulkanDevice::Create(const DeviceCreateInfo&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-create-const-devicecreateinfo-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:33
+rhi::vulkan::VulkanDevice::~VulkanDevice()	function	rhi-vulkan	rhi-vulkan-vulkandevice-tilde-vulkandevice	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:36
+rhi::vulkan::VulkanDevice::BackendName() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-backendname-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:38
+rhi::vulkan::VulkanDevice::Caps() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-caps-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:39
+rhi::vulkan::VulkanDevice::CreateBuffer(const BufferDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbuffer-const-bufferdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:40
+rhi::vulkan::VulkanDevice::DestroyBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:41
+rhi::vulkan::VulkanDevice::CreateTexture(const TextureDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createtexture-const-texturedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:42
+rhi::vulkan::VulkanDevice::DestroyTexture(TextureHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroytexture-texturehandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:43
+rhi::vulkan::VulkanDevice::CreateSampler(const SamplerDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createsampler-const-samplerdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:44
+rhi::vulkan::VulkanDevice::DestroySampler(SamplerHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroysampler-samplerhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:45
+rhi::vulkan::VulkanDevice::CreateShader(const ShaderDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createshader-const-shaderdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:46
+rhi::vulkan::VulkanDevice::DestroyShader(ShaderHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroyshader-shaderhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:47
+rhi::vulkan::VulkanDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:48
+rhi::vulkan::VulkanDevice::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybindgrouplayout-bindgrouplayouthandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:49
+rhi::vulkan::VulkanDevice::CreateBindGroup(const BindGroupDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbindgroup-const-bindgroupdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:50
+rhi::vulkan::VulkanDevice::DestroyBindGroup(BindGroupHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybindgroup-bindgrouphandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:51
+rhi::vulkan::VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:52
+rhi::vulkan::VulkanDevice::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createcomputepipeline-const-computepipelinedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:53
+rhi::vulkan::VulkanDevice::DestroyPipeline(PipelineHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroypipeline-pipelinehandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:54
+rhi::vulkan::VulkanDevice::MapBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-mapbuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:55
+rhi::vulkan::VulkanDevice::UnmapBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-unmapbuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:56
+rhi::vulkan::VulkanDevice::CreateCommandList()	function	rhi-vulkan	rhi-vulkan-vulkandevice-createcommandlist	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:57
+rhi::vulkan::VulkanDevice::Submit(CommandList* const*,usize)	function	rhi-vulkan	rhi-vulkan-vulkandevice-submit-commandlist-star-const-star-usize	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:58
+rhi::vulkan::VulkanDevice::WaitFence(FenceValue,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-waitfence-fencevalue-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:59
+rhi::vulkan::VulkanDevice::CompletedFence() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-completedfence-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:60
+rhi::vulkan::VulkanDevice::BeginFrame()	function	rhi-vulkan	rhi-vulkan-vulkandevice-beginframe	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:61
+rhi::vulkan::VulkanDevice::EndFrame()	function	rhi-vulkan	rhi-vulkan-vulkandevice-endframe	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:62
+rhi::vulkan::VulkanDevice::FrameNumber() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-framenumber-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:63
+rhi::vulkan::VulkanDevice::WaitIdle()	function	rhi-vulkan	rhi-vulkan-vulkandevice-waitidle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:64
+rhi::vulkan::VulkanDevice::DeviceLost() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-devicelost-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:65
+rhi::vulkan::VulkanDevice::GpuName() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-gpuname-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:69
+rhi::vulkan::VulkanDevice::GpuInfo() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-gpuinfo-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:72
+rhi::vulkan::VulkanDevice::Queues() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-queues-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:75
+rhi::vulkan::VulkanDevice::Instance() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-instance-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:78
+rhi::vulkan::VulkanDevice::Handle() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-handle-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:81
+rhi::vulkan::VulkanDevice::Fns() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-fns-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:84
+rhi::vulkan::VulkanDevice::MemoryProperties() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-memoryproperties-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:87
+rhi::vulkan::VulkanDevice::Properties() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-properties-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:90
+rhi::vulkan::VulkanDevice::Memory()	function	rhi-vulkan	rhi-vulkan-vulkandevice-memory	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:94
+rhi::vulkan::VulkanDevice::MemoryObjectsAllocated() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-memoryobjectsallocated-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:97
+rhi::vulkan::VulkanDevice::HeapBudget(u32,u64*,u64*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-heapbudget-u32-u64-star-u64-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:106

@@ -70,6 +70,9 @@ void DescribeDevice(const VkInstanceFns& fns, VkPhysicalDevice device, PhysicalD
                 if (std::strcmp(exts[i].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
                     out->swapchain_extension = true;
                 }
+                if (std::strcmp(exts[i].extensionName, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME) == 0) {
+                    out->memory_budget_extension = true;
+                }
             }
         }
         delete[] exts;
@@ -153,8 +156,17 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     queue_info.queueCount = 1;
     queue_info.pQueuePriorities = &priority;
 
+    const char* extensions[2];
+    u32 extension_count = 0;
+    memory_budget_enabled_ = gpu_info_.memory_budget_extension;
+    if (memory_budget_enabled_) {
+        extensions[extension_count++] = VK_EXT_MEMORY_BUDGET_EXTENSION_NAME;
+    }
+
     VkDeviceCreateInfo device_info{};
     device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_info.enabledExtensionCount = extension_count;
+    device_info.ppEnabledExtensionNames = extensions;
     device_info.pNext = &f2;
     device_info.queueCreateInfoCount = 1;
     device_info.pQueueCreateInfos = &queue_info;
@@ -174,6 +186,29 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     fns_.GetDeviceQueue(device_, static_cast<u32>(queues_.graphics_family), 0, &queue_);
 
     FillCaps();
+
+    // The suballocator, over the device's real memory layout.
+    MemoryLayout layout;
+    layout.type_count = memory_properties_.memoryTypeCount;
+    for (u32 i = 0; i < layout.type_count; ++i) {
+        const VkMemoryType& t = memory_properties_.memoryTypes[i];
+        layout.types[i].heap_index = t.heapIndex;
+        layout.types[i].device_local = (t.propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0;
+        layout.types[i].host_visible = (t.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0;
+        layout.types[i].host_coherent = (t.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
+        layout.types[i].host_cached = (t.propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) != 0;
+    }
+    layout.heap_count = memory_properties_.memoryHeapCount;
+    for (u32 i = 0; i < layout.heap_count; ++i) {
+        layout.heaps[i].size = memory_properties_.memoryHeaps[i].size;
+        layout.heaps[i].device_local = (memory_properties_.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) != 0;
+    }
+    MemoryAllocatorConfig memory_config;
+    memory_config.max_allocation_count = properties_.limits.maxMemoryAllocationCount;
+    memory_config.non_coherent_atom_size = properties_.limits.nonCoherentAtomSize;
+    memory_backend_ = new VulkanMemoryBackend(&fns_, device_, &device_lost_);
+    memory_ = new MemoryAllocator(layout, memory_config, memory_backend_);
+
     RhiLog(LogVerbosity::Info, "Vulkan: device created on '%s' (queue family %d)", gpu_info_.name, queues_.graphics_family);
     return true;
 }
@@ -224,9 +259,30 @@ void VulkanDevice::FillCaps() {
            static_cast<double>(caps_.timestamp_period_ns));
 }
 
+bool VulkanDevice::HeapBudget(u32 heap, u64* budget, u64* usage) const {
+    if (!memory_budget_enabled_ || heap >= memory_properties_.memoryHeapCount) {
+        return false;
+    }
+    VkPhysicalDeviceMemoryBudgetPropertiesEXT budget_props{};
+    budget_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
+    VkPhysicalDeviceMemoryProperties2 props2{};
+    props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
+    props2.pNext = &budget_props;
+    instance_.Fns().GetPhysicalDeviceMemoryProperties2(physical_, &props2);
+    *budget = budget_props.heapBudget[heap];
+    *usage = budget_props.heapUsage[heap];
+    return true;
+}
+
 VulkanDevice::~VulkanDevice() {
     if (device_ != nullptr) {
         fns_.DeviceWaitIdle(device_);
+    }
+    delete memory_; // frees every block, so the GPU must be idle first
+    delete memory_backend_;
+    memory_ = nullptr;
+    memory_backend_ = nullptr;
+    if (device_ != nullptr) {
         fns_.DestroyDevice(device_, nullptr);
         device_ = nullptr;
     }
