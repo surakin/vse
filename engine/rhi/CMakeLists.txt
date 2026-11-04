@@ -8,6 +8,7 @@ set(RHI_SOURCES
   rhi.cpp
   desc.cpp
   spirv.cpp
+  uniform_ring.cpp
   null/null_device.cpp
 )
 
@@ -30,6 +31,7 @@ set(RHI_VULKAN_SOURCES
   vulkan/vk_swapchain_policy.cpp
   vulkan/vk_pipeline_policy.cpp
   vulkan/vulkan_device_pipelines.cpp
+  vulkan/vulkan_device_bindings.cpp
   vulkan/vk_xlib_surface.cpp
   vulkan/vk_barrier.cpp
   vulkan/vk_command_list.cpp

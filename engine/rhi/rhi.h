@@ -48,6 +48,9 @@ struct DeviceCreateInfo {
     /// The file name carries the vendor, device and driver identity; a file that does not match or is damaged is
     /// ignored with a log line. The null backend ignores it.
     bool pipeline_cache = true;
+    /// How many bind groups one descriptor pool holds, 16 to 65536 (clamped). The Vulkan backend adds a pool whenever
+    /// one runs out, so this sets the granularity of growth, not a limit. The null backend ignores it.
+    u32 descriptor_sets_per_pool = 1024;
     /// The directory for the pipeline cache file, or null to use `ENGINE_RHI_CACHE_DIR`, then
     /// `$XDG_CACHE_HOME/<application_name>`, then `$HOME/.cache/<application_name>`. Borrowed for the call.
     const char* pipeline_cache_dir = nullptr;

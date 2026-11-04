@@ -102,6 +102,12 @@ private:
     ShaderStage push_stages_ = ShaderStage::None;
     u32 pipeline_layout_count_ = 0;
     u64 pipeline_layout_ids_[kMaxBindGroups] = {};
+    // Bind groups set on the list; they are bound with the pipeline's layout at the next draw, because Vulkan needs the
+    // layout of the pipeline that uses them.
+    VkDescriptorSet group_sets_[kMaxBindGroups] = {};
+    u64 group_layout_ids_[kMaxBindGroups] = {};
+    u32 groups_dirty_ = 0;
+    void FlushBindGroups(const char* what);
 };
 
 } // namespace engine_placeholder::rhi::vulkan

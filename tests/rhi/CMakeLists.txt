@@ -17,6 +17,7 @@ set(RHI_TEST_SOURCES
   vulkan_swapchain_test.cpp
   vulkan_frame_test.cpp
   vulkan_pipeline_test.cpp
+  vulkan_bindings_test.cpp
   shader_test.cpp
 )
 

@@ -210,6 +210,7 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     InitializePipelineCache(info);
 
     frames_in_flight_ = info.frames_in_flight < 1 ? 1 : (info.frames_in_flight > 3 ? 3 : info.frames_in_flight);
+    descriptor_sets_per_pool_ = info.descriptor_sets_per_pool < 16 ? 16 : (info.descriptor_sets_per_pool > 65536 ? 65536 : info.descriptor_sets_per_pool);
     FillCaps();
     InitializeFormats();
 
@@ -331,6 +332,7 @@ VulkanDevice::~VulkanDevice() {
             DestroySwapchain(swapchain_); // takes its textures with it
         }
         user_leaks += buffers_.LiveCount() + textures_.LiveCount() + samplers_.LiveCount() + shaders_.LiveCount() + bind_group_layouts_.LiveCount() + pipelines_.LiveCount();
+        bind_groups_.ForEachLive([&](BindGroupHandle, BindGroupRes& g) { user_leaks += g.transient ? 0 : 1; }); // transient ones end with their frame
         g_leaked_user_objects.fetch_add(user_leaks, std::memory_order_relaxed);
         // Buffers the application never destroyed are released here, with a warning.
         if (buffers_.LiveCount() > 0) {
@@ -351,12 +353,14 @@ VulkanDevice::~VulkanDevice() {
             RhiLog(LogVerbosity::Warn, "Vulkan: %zu bind group layout(s) and %zu pipeline(s) were still alive when the device was destroyed",
                    bind_group_layouts_.LiveCount(), pipelines_.LiveCount());
         }
+        bind_groups_.ForEachLive([&](BindGroupHandle, BindGroupRes& g) { delete[] g.refs; g.refs = nullptr; });
         pipelines_.ForEachLive([&](PipelineHandle, PipelineRes& p) {
             fns_.DestroyPipeline(device_, p.pipeline, nullptr);
             ReleasePipelineLayoutLocked(p.layout_slot);
         });
         bind_group_layouts_.ForEachLive([&](BindGroupLayoutHandle, BindGroupLayoutRes& l) { ReleaseSetLayoutLocked(l.set_slot); });
         CollectRetired(true);
+        ShutdownDescriptors();
         ShutdownPipelines();
         ShutdownCommands();
         ShutdownUpload();
@@ -452,8 +456,6 @@ bool VulkanDevice::LookupShader(ShaderHandle shader, ShaderInfo* out) const {
     out->entry = s->entry;
     return true;
 }
-BindGroupHandle VulkanDevice::CreateBindGroup(const BindGroupDesc&) { NotImplemented("CreateBindGroup"); return {}; }
-void VulkanDevice::DestroyBindGroup(BindGroupHandle) {}
 
 bool VulkanDevice::DeviceLost() const { return device_lost_.load(std::memory_order_relaxed); }
 

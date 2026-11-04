@@ -67,6 +67,7 @@ public:
     void DestroyPipeline(PipelineHandle pipeline) override;
     void* MapBuffer(BufferHandle buffer) override;
     void UnmapBuffer(BufferHandle buffer) override;
+    void FlushMappedBuffer(BufferHandle buffer, u64 offset, u64 size) override;
     UploadTicket UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) override;
     bool ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) override;
     Swapchain* CreateSwapchain(const SwapchainDesc& desc) override;
@@ -154,6 +155,10 @@ public:
         usize descriptor_set_layouts = 0;
         /// Distinct `VkPipelineLayout` objects alive; equal layouts share one.
         usize pipeline_layouts = 0;
+        /// Live bind groups, persistent and transient.
+        usize bind_groups = 0;
+        /// Descriptor pools alive (persistent and per-frame).
+        usize descriptor_pools = 0;
     };
 
     /// Returns the current object counts.
@@ -230,6 +235,15 @@ public:
         const char* entry = nullptr;
     };
 
+    /// Looks up a sampler by handle.
+    ///
+    /// Param sampler: the handle.
+    /// Param vk_sampler: receives the `VkSampler` when the handle is live.
+    /// Returns: true if the handle is live.
+    /// Fails: returns false for an invalid or stale handle.
+    /// Thread-safety: thread-safe.
+    bool LookupSampler(SamplerHandle sampler, VkSampler* vk_sampler) const;
+
     /// Looks up a shader by handle.
     ///
     /// Param shader: the handle.
@@ -265,6 +279,33 @@ public:
         /// The depth attachment format, or `Undefined`.
         Format depth_format = Format::Undefined;
     };
+
+    /// A snapshot of a live bind group, for the command list.
+    ///
+    /// Thread-safety: thread-compatible plain data (a snapshot).
+    /// Ownership: `set` is borrowed from the device; it stays valid until the group is destroyed (persistent) or its frame
+    ///   has finished (transient).
+    struct BindGroupInfo {
+        /// The descriptor set.
+        VkDescriptorSet set = nullptr;
+        /// Identity of the group's bind group layout; equal ids mean equal layouts.
+        u64 layout_id = 0;
+        /// True for a transient group.
+        bool transient = false;
+        /// For a transient group, the frame it was created in.
+        u64 frame = 0;
+        /// False if a resource the group was built from has since been destroyed.
+        bool resources_live = true;
+    };
+
+    /// Looks up a bind group by handle and checks that the resources it refers to are still alive.
+    ///
+    /// Param group: the handle.
+    /// Param info: receives the snapshot when the handle is live.
+    /// Returns: true if the handle is live.
+    /// Fails: returns false for an invalid or stale handle.
+    /// Thread-safety: thread-safe.
+    bool LookupBindGroup(BindGroupHandle group, BindGroupInfo* info) const;
 
     /// Looks up a pipeline by handle.
     ///
@@ -390,6 +431,32 @@ private:
         Format color_formats[kMaxColorAttachments] = {};
         Format depth_format = Format::Undefined;
     };
+    struct GroupRef {
+        BindingType type = BindingType::UniformBuffer;
+        BufferHandle buffer;
+        TextureHandle texture;
+        SamplerHandle sampler;
+    };
+    struct BindGroupRes {
+        VkDescriptorSet set = nullptr;
+        VkDescriptorPool pool = nullptr; // the pool a persistent set is freed to
+        u64 layout_id = 0;
+        bool transient = false;
+        u64 frame = 0;
+        GroupRef* refs = nullptr; // owned; released when the group is collected
+        u32 ref_count = 0;
+    };
+    // A growing list of descriptor pools; the per-frame ones are filled in order and reset together.
+    // A pool made for one set of a layout too large for the default sizing; `counts` is what it can hold per type.
+    struct ExactPool {
+        VkDescriptorPool pool;
+        u32 counts[5];
+    };
+    struct DescriptorPools {
+        detail::GrowArray<VkDescriptorPool> pools;
+        detail::GrowArray<ExactPool> exact; // reused when they fit, so large layouts do not make a pool per group
+        usize current = 0;
+    };
     static constexpr usize kMaxSetLayouts = 512;
     static constexpr usize kMaxPipelineLayouts = 512;
     struct CommandBufferSlot {
@@ -406,6 +473,13 @@ private:
     VkPipelineLayout PipelineLayoutLocked(const u32* set_slots, const u64* set_ids, u32 count, u32 push_bytes, ShaderStage push_stages,
                                           u32* slot);
     void ReleasePipelineLayoutLocked(u32 slot);
+    // Descriptor pools and bind groups (vulkan_device_bindings.cpp).
+    VkDescriptorPool MakeDescriptorPoolLocked(u32 max_sets, u32 per_type, bool free_individual, const BindingDesc* exact, u32 exact_count);
+    bool AllocateSetLocked(DescriptorPools& pools, bool persistent, VkDescriptorSetLayout layout, const BindingDesc* bindings,
+                           u32 binding_count, VkDescriptorSet* set, VkDescriptorPool* pool);
+    void ResetFrameDescriptorsLocked(usize frame_slot);
+    void ReleaseBindGroupLocked(BindGroupRes* group);
+    void ShutdownDescriptors();
     void DestroyTextureRes(TextureRes* t);
     // Submits `fill` after staging chunks; shared by the texture upload and readback paths.
     bool StageChunkLocked(u64 alloc_bytes, u64 align, u64* ring_offset);
@@ -474,6 +548,11 @@ private:
     HandlePool<ShaderRes, ShaderTag> shaders_;
     HandlePool<BindGroupLayoutRes, BindGroupLayoutTag> bind_group_layouts_;
     HandlePool<PipelineRes, PipelineTag> pipelines_;
+    HandlePool<BindGroupRes, BindGroupTag> bind_groups_;
+    DescriptorPools persistent_pools_;
+    DescriptorPools frame_pools_[kFramePools];
+    detail::GrowArray<BindGroupHandle> frame_groups_[kFramePools];
+    u32 descriptor_sets_per_pool_ = 1024;
     SetLayoutEntry set_layouts_[kMaxSetLayouts];
     u64 next_set_layout_id_ = 1;
     PipelineLayoutEntry pipeline_layouts_[kMaxPipelineLayouts];

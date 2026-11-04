@@ -206,12 +206,18 @@ struct BindGroupEntry {
 
 /// Describes a bind group: concrete resources for every binding of a layout.
 ///
+/// A group is either persistent (the default: it lives until `DestroyBindGroup`) or transient (it is released by the
+/// device when the frame it was created in has finished on the GPU, so a per-draw group needs no bookkeeping).
+///
 /// Thread-safety: thread-compatible plain data.
 /// Ownership: `entries` and `debug_name` are borrowed for the duration of the call. The group does not
 ///   keep the bound resources alive; destroying one invalidates the group.
 struct BindGroupDesc {
     /// The layout this group follows; required.
     BindGroupLayoutHandle layout;
+    /// Whether the group is transient: valid for the frame it is created in and released by the device afterwards.
+    /// Do not pass a transient group to `DestroyBindGroup`.
+    bool transient = false;
     /// One entry per binding element of the layout.
     Span<BindGroupEntry> entries;
     /// Optional name shown in debuggers and logs; null for none.

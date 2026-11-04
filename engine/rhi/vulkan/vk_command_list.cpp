@@ -27,6 +27,11 @@ void VulkanCommandList::Recycle(u64 frame) {
     push_bytes_ = 0;
     push_stages_ = ShaderStage::None;
     pipeline_layout_count_ = 0;
+    for (u32 i = 0; i < kMaxBindGroups; ++i) {
+        group_sets_[i] = nullptr;
+        group_layout_ids_[i] = 0;
+    }
+    groups_dirty_ = 0;
 }
 
 bool VulkanCommandList::Recording(const char* what) const {
@@ -364,6 +369,7 @@ void VulkanCommandList::SetPipeline(PipelineHandle pipeline) {
     }
     graphics_bound_ = !info.compute;
     compute_bound_ = info.compute;
+    groups_dirty_ = (1u << kMaxBindGroups) - 1; // a new pipeline layout: bind every group again before the next draw
     pipeline_layout_ = info.layout;
     push_bytes_ = info.push_bytes;
     push_stages_ = info.push_stages;
@@ -376,8 +382,41 @@ void VulkanCommandList::SetPipeline(PipelineHandle pipeline) {
     }
 }
 
-void VulkanCommandList::SetBindGroup(u32, BindGroupHandle) { Unsupported("SetBindGroup"); }
-void VulkanCommandList::SetPushConstants(u32, const void*, u32) { Unsupported("SetPushConstants"); }
+void VulkanCommandList::SetBindGroup(u32 slot, BindGroupHandle group) {
+    Recording("CommandList::SetBindGroup: the list is not recording");
+    ENGINE_ASSERT(slot < device_->Caps().max_bind_groups, "CommandList::SetBindGroup: slot is outside the device limit");
+    VulkanDevice::BindGroupInfo info;
+    ENGINE_ASSERT(device_->LookupBindGroup(group, &info), "CommandList::SetBindGroup: stale or invalid bind group handle");
+    ENGINE_ASSERT(info.resources_live, "CommandList::SetBindGroup: a resource the bind group refers to was destroyed");
+    ENGINE_ASSERT(!info.transient || info.frame == frame_, "CommandList::SetBindGroup: a transient bind group is only valid in the frame it was created in");
+    group_sets_[slot] = info.set;
+    group_layout_ids_[slot] = info.layout_id;
+    groups_dirty_ |= 1u << slot;
+}
+
+void VulkanCommandList::FlushBindGroups(const char* what) {
+    for (u32 slot = 0; slot < pipeline_layout_count_; ++slot) {
+        ENGINE_ASSERT(group_sets_[slot] != nullptr, what);
+        if ((groups_dirty_ & (1u << slot)) != 0) { // SetPipeline marks every slot dirty, so a clean slot was checked already
+            ENGINE_ASSERT(group_layout_ids_[slot] == pipeline_layout_ids_[slot], "the bind group's layout differs from the pipeline's layout for that slot");
+            device_->Fns().CmdBindDescriptorSets(buffer_, compute_bound_ ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                 pipeline_layout_, slot, 1, &group_sets_[slot], 0, nullptr);
+        }
+    }
+    groups_dirty_ = 0;
+}
+
+void VulkanCommandList::SetPushConstants(u32 offset, const void* data, u32 size) {
+    const bool usable = Recording("CommandList::SetPushConstants: the list is not recording");
+    ENGINE_ASSERT(pipeline_layout_ != nullptr, "CommandList::SetPushConstants: no pipeline is bound");
+    ENGINE_ASSERT(data != nullptr && offset % 4 == 0 && size % 4 == 0 && size > 0,
+                  "CommandList::SetPushConstants: offset and size must be non-zero multiples of 4 and data must not be null");
+    ENGINE_ASSERT(offset <= push_bytes_ && size <= push_bytes_ - offset, "CommandList::SetPushConstants: the range exceeds the pipeline's push-constant range");
+    if (usable) {
+        device_->Fns().CmdPushConstants(buffer_, pipeline_layout_, ToVkShaderStages(push_stages_), offset, size, data);
+    }
+}
+
 void VulkanCommandList::SetViewport(const Viewport& viewport) {
     const bool usable = Recording("CommandList::SetViewport: the list is not recording");
     ENGINE_ASSERT(viewport.width > 0.0f && viewport.height > 0.0f, "CommandList::SetViewport: the viewport must have a positive size");
@@ -427,6 +466,7 @@ void VulkanCommandList::Draw(u32 vertex_count, u32 instance_count, u32 first_ver
     const bool usable = Recording("CommandList::Draw: the list is not recording");
     ENGINE_ASSERT(in_rendering_ && graphics_bound_, "CommandList::Draw: needs a rendering pass with a graphics pipeline bound");
     if (usable) {
+        FlushBindGroups("CommandList::Draw: the pipeline declares a bind group for a slot that has none");
         device_->Fns().CmdDraw(buffer_, vertex_count, instance_count, first_vertex, first_instance);
     }
 }
@@ -436,6 +476,7 @@ void VulkanCommandList::DrawIndexed(u32 index_count, u32 instance_count, u32 fir
     ENGINE_ASSERT(in_rendering_ && graphics_bound_, "CommandList::DrawIndexed: needs a rendering pass with a graphics pipeline bound");
     ENGINE_ASSERT(index_bound_, "CommandList::DrawIndexed: no index buffer is bound");
     if (usable) {
+        FlushBindGroups("CommandList::DrawIndexed: the pipeline declares a bind group for a slot that has none");
         device_->Fns().CmdDrawIndexed(buffer_, index_count, instance_count, first_index, vertex_offset, first_instance);
     }
 }

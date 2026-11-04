@@ -5,6 +5,8 @@
 set(ENGINE_SHADERS
   triangle.vert
   triangle.frag
+  fullscreen.vert
+  bindings_test.frag
 )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/names.cmake)

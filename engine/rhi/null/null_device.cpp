@@ -11,6 +11,7 @@
 #include "log/assert.h"
 #include "rhi/spirv.h"
 #include "rhi/handle_pool.h"
+#include "rhi/vulkan/vk_array.h"
 #include "rhi/rhi_log.h"
 
 namespace engine_placeholder::rhi {
@@ -89,6 +90,7 @@ struct GroupRef {
 
 struct GroupRes {
     BindGroupLayoutHandle layout;
+    bool transient = false;
     u32 count = 0;
     GroupRef refs[kMaxGroupElements];
 };
@@ -199,6 +201,7 @@ struct NullDeviceState {
     HandlePool<ShaderRes, ShaderTag> shaders;
     HandlePool<LayoutRes, BindGroupLayoutTag> layouts;
     HandlePool<GroupRes, BindGroupTag> groups;
+    vulkan::detail::GrowArray<BindGroupHandle> transient_groups; // created in the open frame, retired by EndFrame
     HandlePool<PipelineRes, PipelineTag> pipelines;
 
     u64 frame = 0;
@@ -1189,6 +1192,7 @@ BindGroupHandle NullDevice::CreateBindGroup(const BindGroupDesc& desc) {
     }
     GroupRes res;
     res.layout = desc.layout;
+    res.transient = desc.transient;
     u32 expected = 0;
     for (u32 b = 0; b < layout->count; ++b) {
         const BindingDesc& bd = layout->entries[b];
@@ -1266,6 +1270,9 @@ BindGroupHandle NullDevice::CreateBindGroup(const BindGroupDesc& desc) {
         return BindGroupHandle{};
     }
     BindGroupHandle h = s.groups.Allocate(std::move(res));
+    if (h.IsValid() && desc.transient) {
+        s.transient_groups.Push(h);
+    }
     if (!h.IsValid()) {
         s.Error("CreateBindGroup: out of bind group slots");
     }
@@ -1275,6 +1282,11 @@ BindGroupHandle NullDevice::CreateBindGroup(const BindGroupDesc& desc) {
 void NullDevice::DestroyBindGroup(BindGroupHandle group) {
     State& s = *state_;
     std::lock_guard<std::mutex> lock(s.mu);
+    const GroupRes* g = s.groups.Get(group);
+    if (g != nullptr && g->transient) {
+        s.Error("DestroyBindGroup: a transient group is released by the device, not destroyed by the application");
+        return;
+    }
     if (!s.groups.Retire(group, s.frame)) {
         s.Error("DestroyBindGroup: handle is invalid or already destroyed");
     }
@@ -1809,6 +1821,13 @@ void NullDevice::EndFrame() {
         return;
     }
     s.in_frame = false;
+    // Transient groups end with the frame they were created in.
+    for (usize i = 0; i < s.transient_groups.Size(); ++i) {
+        s.groups.Retire(s.transient_groups[i], s.frame);
+    }
+    while (!s.transient_groups.Empty()) {
+        s.transient_groups.Erase(s.transient_groups.Size() - 1);
+    }
 }
 
 u64 NullDevice::FrameNumber() const {

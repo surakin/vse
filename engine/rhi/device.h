@@ -125,10 +125,11 @@ public:
     /// Fails: an invalid description, a stale resource, or entries that do not match the layout are logged and
     ///   return the invalid handle.
     virtual BindGroupHandle CreateBindGroup(const BindGroupDesc& desc) = 0;
-    /// Destroys a bind group.
+    /// Destroys a persistent bind group; the descriptors are recycled once the GPU has finished the frames that could
+    /// have used it. A transient group is never destroyed by the application: the device releases it.
     ///
-    /// Param group: a live group handle.
-    /// Aborts: `group` is invalid or stale.
+    /// Param group: a live group handle made without `BindGroupDesc::transient`.
+    /// Aborts: `group` is invalid or stale, or is transient.
     virtual void DestroyBindGroup(BindGroupHandle group) = 0;
 
     /// Creates a graphics pipeline.
@@ -235,6 +236,20 @@ public:
     /// Param buffer: a buffer returned mapped by `MapBuffer`.
     /// Aborts: `buffer` is invalid, stale or not mapped.
     virtual void UnmapBuffer(BufferHandle buffer) = 0;
+    /// Makes CPU writes to a mapped `CpuToGpu` buffer visible to the GPU without unmapping it.
+    ///
+    /// Needed only on devices whose host-visible memory is not coherent; elsewhere it does nothing. Call it before
+    /// submitting work that reads the range.
+    ///
+    /// Param buffer: a `CpuToGpu` buffer.
+    /// Param offset: first byte of the written range.
+    /// Param size: bytes written; the range must lie inside the buffer.
+    /// Aborts: `buffer` is invalid or stale, or the range lies outside the buffer.
+    virtual void FlushMappedBuffer(BufferHandle buffer, u64 offset, u64 size) {
+        (void)buffer;
+        (void)offset;
+        (void)size;
+    }
 
     /// Copies bytes from the CPU into a buffer, outside the frame's command lists.
     ///

@@ -110,6 +110,7 @@ VK_DEVICE_FN(GetPipelineCacheData)
 VK_DEVICE_FN(CreateDescriptorPool)
 VK_DEVICE_FN(DestroyDescriptorPool)
 VK_DEVICE_FN(ResetDescriptorPool)
+VK_DEVICE_FN(FreeDescriptorSets)
 VK_DEVICE_FN(AllocateDescriptorSets)
 VK_DEVICE_FN(UpdateDescriptorSets)
 // Command buffers

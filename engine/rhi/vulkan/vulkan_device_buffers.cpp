@@ -374,6 +374,19 @@ void VulkanDevice::UnmapBuffer(BufferHandle buffer) {
     b->mapped = false;
 }
 
+void VulkanDevice::FlushMappedBuffer(BufferHandle buffer, u64 offset, u64 size) {
+    std::lock_guard<std::mutex> lock(resource_mutex_);
+    BufferRes* b = buffers_.Get(buffer);
+    ENGINE_ASSERT(b != nullptr, "FlushMappedBuffer: handle is invalid or already destroyed");
+    if (b == nullptr) {
+        return;
+    }
+    ENGINE_ASSERT(offset <= b->desc.size && size <= b->desc.size - offset, "FlushMappedBuffer: the range lies outside the buffer");
+    if (b->desc.location == MemoryLocation::CpuToGpu && b->mapped) {
+        FlushRange(b->raw.memory, offset, size);
+    }
+}
+
 UploadTicket VulkanDevice::UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) {
     VkBuffer vk_buffer = nullptr;
     BufferRes snapshot;
@@ -570,6 +583,7 @@ void VulkanDevice::CollectRetired(bool all) {
     textures_.CollectRetired(completed, [&](TextureRes& t) { DestroyTextureRes(&t); });
     samplers_.CollectRetired(completed, [&](SamplerRes& s) { fns_.DestroySampler(device_, s.sampler, nullptr); });
     shaders_.CollectRetired(completed, [&](ShaderRes& s) { fns_.DestroyShaderModule(device_, s.module, nullptr); });
+    bind_groups_.CollectRetired(completed, [&](BindGroupRes& g) { ReleaseBindGroupLocked(&g); });
     pipelines_.CollectRetired(completed, [&](PipelineRes& p) {
         fns_.DestroyPipeline(device_, p.pipeline, nullptr);
         ReleasePipelineLayoutLocked(p.layout_slot);
@@ -595,6 +609,11 @@ VulkanDevice::ObjectCounts VulkanDevice::Counts() const {
     counts.shaders = shaders_.LiveCount();
     counts.bind_group_layouts = bind_group_layouts_.LiveCount();
     counts.pipelines = pipelines_.LiveCount();
+    counts.bind_groups = bind_groups_.LiveCount();
+    counts.descriptor_pools = persistent_pools_.pools.Size() + persistent_pools_.exact.Size();
+    for (const DescriptorPools& frame : frame_pools_) {
+        counts.descriptor_pools += frame.pools.Size() + frame.exact.Size();
+    }
     for (const SetLayoutEntry& e : set_layouts_) {
         counts.descriptor_set_layouts += e.layout != nullptr ? 1 : 0;
     }
@@ -638,6 +657,9 @@ void VulkanDevice::BeginFrame() {
         frame = frame_number_.load(std::memory_order_relaxed) + 1;
         frame_number_.store(frame, std::memory_order_relaxed);
         frame_open_ = true;
+        if (waited && !device_lost_.load(std::memory_order_relaxed)) {
+            ResetFrameDescriptorsLocked(frame % kFramePools); // the frame that last used these pools has finished
+        }
         CollectRetired(false);
     }
     // The frame that last used these pools has finished (waited for above), so they can be reset. This is outside the

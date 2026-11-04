@@ -28,6 +28,7 @@ Full reference: [The Render Hardware Interface](../reference/rhi.md).
 - [[rhi::NullDevice]] and [[rhi::CreateNullDevice]] — the validating no-GPU backend
 - [[rhi::CreateDevice]] and [[rhi::DeviceCreateInfo]] — creating a device for a backend
 - [[rhi::ValidateSpirv]] — the shader module sanity check; see [Shaders](rhi-shaders.md)
+- [[rhi::UniformRing]] — per-frame uniform data
 - [[rhi::vulkan::VulkanDevice]] — the Vulkan device
 - [[rhi::vulkan::SelectPhysicalDevice]] and [[rhi::vulkan::PlanQueues]] — GPU choice and queue planning
 - [[rhi::vulkan::MemoryAllocator]] — the GPU memory suballocator, with [[rhi::vulkan::MemoryStats]]
@@ -401,6 +402,69 @@ whose header does not match, or that the driver rejects, is ignored with a log l
 directory is, in order: `DeviceCreateInfo::pipeline_cache_dir`, `$ENGINE_RHI_CACHE_DIR`, `$XDG_CACHE_HOME/<application
 name>`, `$HOME/.cache/<application name>`. Set `DeviceCreateInfo::pipeline_cache` to false to turn it off. The test
 runner points `ENGINE_RHI_CACHE_DIR` into the build tree so tests never write to your home directory.
+
+### Binding resources
+
+Shaders read buffers, textures and samplers through bind groups. The shape is a **layout** ([[rhi::BindGroupLayoutDesc]]:
+a binding index, a type, the stages that use it and an array size for each entry), the contents are a **bind group**
+([[rhi::BindGroupDesc]]: one entry per binding element, naming the buffer range, texture or sampler), and a pipeline
+declares which layouts it uses at group slots 0, 1, ... In GLSL a layout is `set = slot, binding = n`.
+
+```
+BindingDesc entries[3] = {{0, BindingType::UniformBuffer,  ShaderStage::Fragment, 1},
+                          {1, BindingType::SampledTexture, ShaderStage::Fragment, 1},
+                          {2, BindingType::Sampler,        ShaderStage::Fragment, 1}};
+BindGroupLayoutHandle layout = device->CreateBindGroupLayout({.entries = Span<BindingDesc>(entries, 3)});
+// ... a pipeline created with desc.bind_group_layouts[0] = layout ...
+BindGroupHandle group = device->CreateBindGroup(group_desc);   // entries name the buffer, texture and sampler
+list->SetPipeline(pipeline);
+list->SetBindGroup(0, group);
+list->SetPushConstants(0, &tint, sizeof(tint));
+list->Draw(3, 1, 0, 0);
+```
+
+A sampled texture must be in `ShaderRead` and a storage texture in `ShaderWrite` when the draw executes; the device
+cannot see states inside your command list, so the validation layers (and the null backend) are what catch a mistake.
+`SetBindGroup` may come before or after `SetPipeline`: the groups are bound when the draw happens, against that pipeline's
+layouts, and a group whose layout differs from the pipeline's for that slot is an error.
+
+**Lifetimes.** Choose per group:
+
+| | Persistent (default) | Transient (`BindGroupDesc::transient`) |
+|---|---|---|
+| Valid | until `DestroyBindGroup` | in the frame it is created in |
+| Destroyed by | you | the device, once the GPU has finished that frame |
+| Cost | descriptors from a pool that frees sets one by one | descriptors from a per-frame pool that is reset in one call |
+| Use for | materials, long-lived resources | per-draw or per-frame data |
+
+Both kinds grow instead of failing: when a descriptor pool is full the device adds another (`DeviceCreateInfo::
+descriptor_sets_per_pool` sets the size of each, 1024 by default), and a layout with an array too large for the
+default size gets a pool of its own. Ten thousand transient groups in one frame are fine.
+
+A group does not keep what it names alive: destroy a buffer, texture or sampler a group uses and the group cannot be
+bound any more (`SetBindGroup` reports it). Equal layouts share one Vulkan object, and pipelines with equal layouts share one
+pipeline layout (see Pipelines).
+
+**Push constants** are the cheapest way to send a few bytes per draw: declare `push_constant_bytes` (a multiple of 4, at
+most `DeviceCaps::max_push_constant_bytes`, 128 on every device) and `push_constant_stages` in the pipeline, then call
+`SetPushConstants(offset, data, size)` after `SetPipeline`. The data is copied during the call.
+
+**Per-frame uniform data.** [[rhi::UniformRing]] hands out aligned slices of one mapped buffer, a fresh region each frame
+(`BeginFrame` after `Device::BeginFrame`). Write into `Allocate(size).data` and bind that `buffer`, `offset` and `size` in a
+bind group entry (transient groups pair well with it):
+
+```
+ring.BeginFrame();
+UniformAllocation u = ring.Allocate(sizeof(Params));
+std::memcpy(u.data, &params, sizeof(Params));
+entry.buffer = u.buffer; entry.offset = u.offset; entry.size = u.size;
+// ... all the frame's Allocate calls done ...
+ring.Flush();   // before Submit: makes the writes visible on devices without coherent host memory
+```
+
+A bind group entry with `size` 0 binds the buffer from `offset` to its end, and the range must not exceed the device's
+uniform (or storage) buffer range limit, 64 KiB on many GPUs: bind each allocation with its own `offset` and `size`
+rather than the whole ring buffer.
 
 ### GPU memory
 

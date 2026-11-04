@@ -3619,7 +3619,7 @@ _Inherited from [`rhi::Device::CreateBindGroup(const BindGroupDesc&)`](rhi.md#rh
 void DestroyBindGroup(BindGroupHandle group) override;
 ```
 
-Destroys a bind group.
+Destroys a persistent bind group; the descriptors are recycled once the GPU has finished the frames that could have used it. A transient group is never destroyed by the application: the device releases it.
 
 _Inherited from [`rhi::Device::DestroyBindGroup(BindGroupHandle)`](rhi.md#rhi-device-destroybindgroup-bindgrouphandle)._
 
@@ -3682,6 +3682,18 @@ void UnmapBuffer(BufferHandle buffer) override;
 Ends a mapping.
 
 _Inherited from [`rhi::Device::UnmapBuffer(BufferHandle)`](rhi.md#rhi-device-unmapbuffer-bufferhandle)._
+
+### `FlushMappedBuffer(BufferHandle,u64,u64)` {#rhi-vulkan-vulkandevice-flushmappedbuffer-bufferhandle-u64-u64}
+
+`method rhi::vulkan::VulkanDevice::FlushMappedBuffer` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+void FlushMappedBuffer(BufferHandle buffer, u64 offset, u64 size) override;
+```
+
+Makes CPU writes to a mapped `CpuToGpu` buffer visible to the GPU without unmapping it.
+
+_Inherited from [`rhi::Device::FlushMappedBuffer(BufferHandle,u64,u64)`](rhi.md#rhi-device-flushmappedbuffer-bufferhandle-u64-u64)._
 
 ### `UploadBuffer(BufferHandle,u64,const void*,u64)` {#rhi-vulkan-vulkandevice-uploadbuffer-bufferhandle-u64-const-void-star-u64}
 
@@ -4147,6 +4159,26 @@ usize pipeline_layouts;
 
 Distinct `VkPipelineLayout` objects alive; equal layouts share one.
 
+#### `bind_groups` {#rhi-vulkan-vulkandevice-objectcounts-bind-groups}
+
+`variable rhi::vulkan::VulkanDevice::ObjectCounts::bind_groups` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+usize bind_groups;
+```
+
+Live bind groups, persistent and transient.
+
+#### `descriptor_pools` {#rhi-vulkan-vulkandevice-objectcounts-descriptor-pools}
+
+`variable rhi::vulkan::VulkanDevice::ObjectCounts::descriptor_pools` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+usize descriptor_pools;
+```
+
+Descriptor pools alive (persistent and per-frame).
+
 ### `Counts()` {#rhi-vulkan-vulkandevice-counts-const}
 
 `method rhi::vulkan::VulkanDevice::Counts` — defined in `engine/rhi/vulkan/vulkan_device.h`
@@ -4379,6 +4411,24 @@ const char* entry;
 
 The entry point name, nul-terminated.
 
+### `LookupSampler(SamplerHandle,VkSampler*)` {#rhi-vulkan-vulkandevice-lookupsampler-samplerhandle-vksampler-star-const}
+
+`method rhi::vulkan::VulkanDevice::LookupSampler` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+bool LookupSampler(SamplerHandle sampler, VkSampler* vk_sampler) const;
+```
+
+Looks up a sampler by handle.
+
+| Field | Value |
+|---|---|
+| Parameter `sampler` | the handle. |
+| Parameter `vk_sampler` | receives the `VkSampler` when the handle is live. |
+| Returns | true if the handle is live. |
+| Fails | returns false for an invalid or stale handle. |
+| Thread-safety | thread-safe. |
+
 ### `LookupShader(ShaderHandle,ShaderInfo*)` {#rhi-vulkan-vulkandevice-lookupshader-shaderhandle-shaderinfo-star-const}
 
 `method rhi::vulkan::VulkanDevice::LookupShader` — defined in `engine/rhi/vulkan/vulkan_device.h`
@@ -4511,6 +4561,89 @@ Format depth_format;
 ```
 
 The depth attachment format, or `Undefined`.
+
+### `BindGroupInfo` {#rhi-vulkan-vulkandevice-bindgroupinfo}
+
+`struct rhi::vulkan::VulkanDevice::BindGroupInfo` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+struct BindGroupInfo { ... }
+```
+
+A snapshot of a live bind group, for the command list.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data (a snapshot). |
+| Ownership | `set` is borrowed from the device; it stays valid until the group is destroyed (persistent) or its frame has finished (transient). |
+
+#### `set` {#rhi-vulkan-vulkandevice-bindgroupinfo-set}
+
+`variable rhi::vulkan::VulkanDevice::BindGroupInfo::set` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+VkDescriptorSet set;
+```
+
+The descriptor set.
+
+#### `layout_id` {#rhi-vulkan-vulkandevice-bindgroupinfo-layout-id}
+
+`variable rhi::vulkan::VulkanDevice::BindGroupInfo::layout_id` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+u64 layout_id;
+```
+
+Identity of the group's bind group layout; equal ids mean equal layouts.
+
+#### `transient` {#rhi-vulkan-vulkandevice-bindgroupinfo-transient}
+
+`variable rhi::vulkan::VulkanDevice::BindGroupInfo::transient` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+bool transient;
+```
+
+True for a transient group.
+
+#### `frame` {#rhi-vulkan-vulkandevice-bindgroupinfo-frame}
+
+`variable rhi::vulkan::VulkanDevice::BindGroupInfo::frame` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+u64 frame;
+```
+
+For a transient group, the frame it was created in.
+
+#### `resources_live` {#rhi-vulkan-vulkandevice-bindgroupinfo-resources-live}
+
+`variable rhi::vulkan::VulkanDevice::BindGroupInfo::resources_live` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+bool resources_live;
+```
+
+False if a resource the group was built from has since been destroyed.
+
+### `LookupBindGroup(BindGroupHandle,BindGroupInfo*)` {#rhi-vulkan-vulkandevice-lookupbindgroup-bindgrouphandle-bindgroupinfo-star-const}
+
+`method rhi::vulkan::VulkanDevice::LookupBindGroup` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+bool LookupBindGroup(BindGroupHandle group, BindGroupInfo* info) const;
+```
+
+Looks up a bind group by handle and checks that the resources it refers to are still alive.
+
+| Field | Value |
+|---|---|
+| Parameter `group` | the handle. |
+| Parameter `info` | receives the snapshot when the handle is live. |
+| Returns | true if the handle is live. |
+| Fails | returns false for an invalid or stale handle. |
+| Thread-safety | thread-safe. |
 
 ### `LookupPipeline(PipelineHandle,PipelineInfo*)` {#rhi-vulkan-vulkandevice-lookuppipeline-pipelinehandle-pipelineinfo-star-const}
 
