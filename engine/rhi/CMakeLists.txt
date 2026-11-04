@@ -6,6 +6,7 @@
 # Day 54, when multithreaded recording exists).
 set(RHI_SOURCES
   rhi.cpp
+  desc.cpp
 )
 
 set(RHI_VULKAN_SOURCES

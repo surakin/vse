@@ -1,0 +1,329 @@
+#pragma once
+
+#include "types.h"
+
+//! Enumerations and type-safe flag sets shared by every RHI descriptor and command.
+//!
+//! Flag enums are `u32` scoped enums whose `|`, `&` and `Has` operators are enabled by specializing
+//! [[rhi::EnableFlagOperators]]; there are no raw integer masks in the interface.
+
+namespace engine_placeholder::rhi {
+
+/// Opt-in trait: specialize with `value = true` to give a `u32` scoped enum the flag operators.
+///
+/// Thread-safety: immutable. A compile-time trait.
+template <typename E>
+struct EnableFlagOperators {
+    /// Whether `E` is a flag enum.
+    static constexpr bool value = false;
+};
+
+/// Returns the union of two flag values.
+///
+/// Param a: first flag set.
+/// Param b: second flag set.
+template <typename E>
+    requires(EnableFlagOperators<E>::value)
+constexpr E operator|(E a, E b) {
+    return static_cast<E>(static_cast<u32>(a) | static_cast<u32>(b));
+}
+
+/// Returns the flags set in both operands.
+///
+/// Param a: first flag set.
+/// Param b: second flag set.
+template <typename E>
+    requires(EnableFlagOperators<E>::value)
+constexpr E operator&(E a, E b) {
+    return static_cast<E>(static_cast<u32>(a) & static_cast<u32>(b));
+}
+
+/// Returns whether every flag in `flags` is also set in `value`.
+///
+/// Param value: the flag set to test.
+/// Param flags: the flags that must all be present; an empty `flags` is trivially contained.
+/// Returns: true when every bit of `flags` is set in `value`.
+template <typename E>
+    requires(EnableFlagOperators<E>::value)
+constexpr bool Has(E value, E flags) {
+    return (static_cast<u32>(value) & static_cast<u32>(flags)) == static_cast<u32>(flags);
+}
+
+/// Returns whether any bit is set in `value`.
+///
+/// Param value: the flag set to test.
+/// Returns: true when `value` is non-zero.
+template <typename E>
+    requires(EnableFlagOperators<E>::value)
+constexpr bool Any(E value) {
+    return static_cast<u32>(value) != 0;
+}
+
+/// What a buffer may be used for. Combine with `|`; at least one flag is required.
+enum class BufferUsage : u32 {
+    None = 0,         ///< No usage; invalid for a buffer.
+    Vertex = 1u << 0,   ///< Bound as a vertex buffer.
+    Index = 1u << 1,    ///< Bound as an index buffer.
+    Uniform = 1u << 2,  ///< Bound as a uniform (constant) buffer.
+    Storage = 1u << 3,  ///< Bound as a read/write storage buffer.
+    CopySrc = 1u << 4,  ///< Source of a copy.
+    CopyDst = 1u << 5,  ///< Destination of a copy.
+    Indirect = 1u << 6, ///< Source of indirect draw/dispatch arguments. Reserved.
+};
+/// Enables the flag operators for [[rhi::BufferUsage]].
+///
+/// Thread-safety: immutable. A compile-time trait.
+template <>
+struct EnableFlagOperators<BufferUsage> {
+    /// Always true.
+    static constexpr bool value = true;
+};
+
+/// What a texture may be used for. Combine with `|`; at least one flag is required.
+enum class TextureUsage : u32 {
+    None = 0,                ///< No usage; invalid for a texture.
+    Sampled = 1u << 0,         ///< Read by shaders through a sampler.
+    Storage = 1u << 1,         ///< Read/written by shaders as a storage image.
+    ColorAttachment = 1u << 2, ///< Rendered to as a color attachment.
+    DepthAttachment = 1u << 3, ///< Rendered to as a depth(-stencil) attachment.
+    CopySrc = 1u << 4,         ///< Source of a copy.
+    CopyDst = 1u << 5,         ///< Destination of a copy.
+};
+/// Enables the flag operators for [[rhi::TextureUsage]].
+///
+/// Thread-safety: immutable. A compile-time trait.
+template <>
+struct EnableFlagOperators<TextureUsage> {
+    /// Always true.
+    static constexpr bool value = true;
+};
+
+/// The shader stages a binding or push-constant range is visible to. Combine with `|`.
+enum class ShaderStage : u32 {
+    None = 0,            ///< No stage.
+    Vertex = 1u << 0,    ///< Vertex shader.
+    Fragment = 1u << 1,  ///< Fragment (pixel) shader.
+    Compute = 1u << 2,   ///< Compute shader.
+    AllGraphics = (1u << 0) | (1u << 1), ///< Vertex and fragment.
+    All = (1u << 0) | (1u << 1) | (1u << 2), ///< Every stage.
+};
+/// Enables the flag operators for [[rhi::ShaderStage]].
+///
+/// Thread-safety: immutable. A compile-time trait.
+template <>
+struct EnableFlagOperators<ShaderStage> {
+    /// Always true.
+    static constexpr bool value = true;
+};
+
+/// Which color channels a render target write updates. Combine with `|`.
+enum class ColorWriteMask : u32 {
+    None = 0,       ///< Write nothing.
+    R = 1u << 0,    ///< Red.
+    G = 1u << 1,    ///< Green.
+    B = 1u << 2,    ///< Blue.
+    A = 1u << 3,    ///< Alpha.
+    All = 0xF,      ///< All four channels.
+};
+/// Enables the flag operators for [[rhi::ColorWriteMask]].
+///
+/// Thread-safety: immutable. A compile-time trait.
+template <>
+struct EnableFlagOperators<ColorWriteMask> {
+    /// Always true.
+    static constexpr bool value = true;
+};
+
+/// Where a buffer's memory lives and who can access it.
+enum class MemoryLocation : u8 {
+    GpuOnly = 0, ///< Device-local; not CPU-visible. Fill it by upload.
+    CpuToGpu,    ///< CPU-writable and GPU-readable (uploads, per-frame uniforms); mappable.
+    GpuToCpu,    ///< GPU-writable and CPU-readable (readback); mappable, copy destination only.
+};
+
+/// The state a buffer or texture is in between commands.
+///
+/// The portable common denominator of Vulkan layouts and access masks, Direct3D 12 resource states and
+/// Metal's implicit tracking. Callers state the `before` and `after` states of every transition.
+enum class ResourceState : u8 {
+    Undefined = 0,    ///< Contents unknown; the initial state of a texture. Transitions from here discard contents.
+    VertexBuffer,     ///< Read as vertex data.
+    IndexBuffer,      ///< Read as index data.
+    UniformBuffer,    ///< Read as a uniform buffer.
+    ShaderRead,       ///< Read by shaders (sampled texture or read-only storage).
+    ShaderWrite,      ///< Written (or read-written) by shaders as storage.
+    CopySrc,          ///< Source of a copy.
+    CopyDst,          ///< Destination of a copy.
+    ColorAttachment,  ///< Rendered to as a color attachment.
+    DepthAttachment,  ///< Rendered to as a depth(-stencil) attachment, writes allowed.
+    DepthRead,        ///< Depth(-stencil) read-only: depth test without writes, or sampled.
+    Present,          ///< Ready to be presented to a window.
+    Count,            ///< Number of states; not a state.
+};
+
+/// How vertices are assembled into primitives.
+enum class PrimitiveTopology : u8 {
+    TriangleList = 0, ///< Every three vertices form a triangle.
+    TriangleStrip,    ///< Each vertex after the first two forms a triangle with the previous two.
+    LineList,         ///< Every two vertices form a line.
+    LineStrip,        ///< Connected line segments.
+    PointList,        ///< Each vertex is a point.
+};
+
+/// Which triangle faces are discarded.
+enum class CullMode : u8 {
+    None = 0, ///< Draw both faces.
+    Front,    ///< Discard front-facing triangles.
+    Back,     ///< Discard back-facing triangles.
+};
+
+/// Which winding order is the front face.
+enum class FrontFace : u8 {
+    CounterClockwise = 0, ///< Counter-clockwise in framebuffer space is front-facing.
+    Clockwise,            ///< Clockwise in framebuffer space is front-facing.
+};
+
+/// A comparison used by depth tests and comparison samplers.
+enum class CompareOp : u8 {
+    Never = 0,    ///< Never passes.
+    Less,         ///< Passes if the new value is less than the stored one.
+    Equal,        ///< Passes if equal.
+    LessEqual,    ///< Passes if less than or equal.
+    Greater,      ///< Passes if greater.
+    NotEqual,     ///< Passes if not equal.
+    GreaterEqual, ///< Passes if greater than or equal.
+    Always,       ///< Always passes.
+};
+
+/// A blend factor applied to the source or destination color or alpha.
+enum class BlendFactor : u8 {
+    Zero = 0,          ///< 0.
+    One,               ///< 1.
+    SrcColor,          ///< Source color.
+    OneMinusSrcColor,  ///< 1 - source color.
+    DstColor,          ///< Destination color.
+    OneMinusDstColor,  ///< 1 - destination color.
+    SrcAlpha,          ///< Source alpha.
+    OneMinusSrcAlpha,  ///< 1 - source alpha.
+    DstAlpha,          ///< Destination alpha.
+    OneMinusDstAlpha,  ///< 1 - destination alpha.
+};
+
+/// How blended source and destination terms are combined.
+enum class BlendOp : u8 {
+    Add = 0,         ///< src + dst.
+    Subtract,        ///< src - dst.
+    ReverseSubtract, ///< dst - src.
+    Min,             ///< Component-wise minimum (factors ignored).
+    Max,             ///< Component-wise maximum (factors ignored).
+};
+
+/// Texture filtering.
+enum class FilterMode : u8 {
+    Nearest = 0, ///< Nearest texel.
+    Linear,      ///< Linear interpolation.
+};
+
+/// Behavior of texture coordinates outside [0, 1].
+enum class AddressMode : u8 {
+    Repeat = 0,     ///< Tile the texture.
+    MirrorRepeat,   ///< Tile, mirroring every other repeat.
+    ClampToEdge,    ///< Clamp to the edge texel.
+    ClampToBorder,  ///< Use the sampler's border color.
+};
+
+/// Border color used by [[rhi::AddressMode]] `ClampToBorder`.
+enum class BorderColor : u8 {
+    TransparentBlack = 0, ///< (0, 0, 0, 0).
+    OpaqueBlack,          ///< (0, 0, 0, 1).
+    OpaqueWhite,          ///< (1, 1, 1, 1).
+};
+
+/// The width of indices in an index buffer.
+enum class IndexType : u8 {
+    UInt16 = 0, ///< 16-bit unsigned indices.
+    UInt32,     ///< 32-bit unsigned indices.
+};
+
+/// The shape of a texture.
+enum class TextureDimension : u8 {
+    Tex2D = 0, ///< A 2D image, optionally an array.
+    Tex3D,     ///< A volume.
+    Cube,      ///< A cube map; reserved, rejected until a backend supports it.
+};
+
+/// The data type and width of one vertex attribute.
+enum class VertexFormat : u8 {
+    Float1 = 0, ///< One 32-bit float.
+    Float2,     ///< Two 32-bit floats.
+    Float3,     ///< Three 32-bit floats.
+    Float4,     ///< Four 32-bit floats.
+    UInt1,      ///< One 32-bit unsigned integer.
+    UInt2,      ///< Two 32-bit unsigned integers.
+    UInt3,      ///< Three 32-bit unsigned integers.
+    UInt4,      ///< Four 32-bit unsigned integers.
+    UNorm8x4,   ///< Four 8-bit unsigned normalized values (for example packed colors).
+    Count,      ///< Number of vertex formats; not a format.
+};
+
+/// Returns the size in bytes of one attribute of `format`.
+///
+/// Param format: a value below `VertexFormat::Count`; any other value returns 0.
+constexpr u32 VertexFormatSize(VertexFormat format) {
+    switch (format) {
+    case VertexFormat::Float1:
+    case VertexFormat::UInt1:
+    case VertexFormat::UNorm8x4:
+        return 4;
+    case VertexFormat::Float2:
+    case VertexFormat::UInt2:
+        return 8;
+    case VertexFormat::Float3:
+    case VertexFormat::UInt3:
+        return 12;
+    case VertexFormat::Float4:
+    case VertexFormat::UInt4:
+        return 16;
+    case VertexFormat::Count:
+        break;
+    }
+    return 0;
+}
+
+/// The kind of resource a binding refers to.
+enum class BindingType : u8 {
+    UniformBuffer = 0, ///< A uniform buffer range.
+    StorageBuffer,     ///< A storage buffer range.
+    SampledTexture,    ///< A texture read through a sampler.
+    Sampler,           ///< A sampler.
+    StorageTexture,    ///< A texture read/written as a storage image.
+    Count,             ///< Number of binding types; not a type.
+};
+
+/// A read-only view of `count` consecutive `T` owned by the caller.
+///
+/// Used in descriptors so they need no allocation. The memory must stay valid for the duration of the
+/// call the descriptor is passed to; backends copy what they keep.
+///
+/// Thread-safety: thread-compatible plain data.
+/// Ownership: does not own the elements.
+template <typename T>
+struct Span {
+    /// Pointer to the first element, or null when empty.
+    const T* data = nullptr;
+    /// Number of elements.
+    usize count = 0;
+
+    /// Creates an empty span.
+    constexpr Span() = default;
+    /// Creates a span over `n` elements starting at `p`.
+    constexpr Span(const T* p, usize n) : data(p), count(n) {}
+    /// Creates a span over a C array of fixed size.
+    template <usize N>
+    constexpr Span(const T (&arr)[N]) : data(arr), count(N) {}
+
+    /// Returns the element at `i` (not bounds-checked).
+    constexpr const T& operator[](usize i) const { return data[i]; }
+};
+
+} // namespace engine_placeholder::rhi
