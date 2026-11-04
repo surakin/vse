@@ -176,7 +176,7 @@ int main() {
 draws: ok, errors: 0
 ```
 
-`rhi_demo` started with this triangle and now draws a spinning, depth-tested cube the same way (see
+`rhi_demo` started with this triangle and now draws a textured, lit, depth-tested cube the same way (see
 [The RHI guide](../guide/rhi.md#depth-indexed-draws-and-the-3d-conventions)); `rhi_demo --screenshot out.ppm [--frames N]` renders its scene offscreen at
 256x256 without a window and writes a PPM, which is how the golden-image test in
 [Building and Testing](../guide/building-and-testing.md#golden-image-rendering-tests) is exercised by hand.
@@ -263,10 +263,21 @@ mips: 4, group: ok, errors: 0
 ```
 
 `rhi_demo` does this with a checkerboard stored in `game/rhi_demo/assets/checker.rtex` (all mip levels in the file;
-`game/common/textures.h` reads it) and draws it on the spinning cube. `rhi_demo --screenshot out.ppm` writes the scene
+`game/common/textures.h` reads it) and draws it on the cube. `rhi_demo --screenshot out.ppm` writes the scene
 offscreen; the offscreen target is linear, so it looks darker than the window.
+
+## Light it
+
+The last step is shading. The vertex shader sends the normal (turned by the normal matrix) and the uv on; the
+fragment shader computes, in linear light, `albedo * (ambient + light_color * max(dot(N, L), 0))` for one directional
+light. Both shaders read the same uniform block (model-view-projection, model, normal matrix, the light), which the
+application rewrites every frame in a `UniformRing` slice and binds through a transient bind group - so moving the
+light is just writing different numbers. `rhi_demo` orbits the light around the cube and the camera with the arrow
+keys; `shaders/lit.frag` has the math in its header, and `tests/rhi/vulkan_lit_cube_test.cpp` checks it against pixels.
+Run it: `./build/game/rhi_demo/rhi_demo --validation`; see `game/rhi_demo/README.md` for the options.
 
 ## Where next
 
 - [The RHI guide](../guide/rhi.md): the frame loop, resource states and the swapchain's resize and minimize rules.
+- [rhi_demo](../../game/rhi_demo/README.md): the finished demo and its options.
 - [Open a Window](hello-window.md): the platform layer under the swapchain.

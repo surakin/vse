@@ -1,10 +1,6 @@
-// rhi_demo: opens a window, creates a Vulkan device and swapchain, and draws a spinning, depth-tested, textured cube over a
-// background color that animates with time. Closes when the window does; logs the average frame time once a second.
-//
-// Options: --frames N stops after N frames (RHI_DEMO_FRAMES=N does the same); --screenshot out.ppm renders offscreen
-// without a window, N frames (at least one), writes the last one as a binary PPM and exits.
-// Environment: ENGINE_WINDOW_BACKEND picks the display backend (see the platform layer); the ENGINE_RHI_VALIDATION*
-// variables control the validation layer.
+// rhi_demo: opens a window, creates a Vulkan device and swapchain, and draws a textured, depth-tested cube lit by a
+// light that orbits it. Arrow keys or dragging with the left mouse button orbit the camera, the wheel zooms. Closes
+// when the window does; logs the average frame time once a second. See README.md for the options.
 
 #include <cmath>
 #include <cstdio>
@@ -15,19 +11,39 @@
 #include <string>
 #include <vector>
 
+#include <unistd.h>
+
+#include "cube_scene.h"
 #include "os/input.h"
 #include "os/linux/platform_window_host.h"
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
-#include "rhi/vulkan/vulkan_device.h"
-#include "cube_scene.h"
-#include "textures.h"
 #include "rhi/uniform_ring.h"
+#include "rhi/vulkan/vulkan_device.h"
+#include "textures.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 
 namespace {
+
+constexpr int kExitOk = 0;
+constexpr int kExitFailure = 1; // the device, window, swapchain or a draw failed, or memory grew
+constexpr int kExitUsage = 2;
+
+// If memory grows by more than this between frame 100 and the last frame of a run of at least kMemoryCheckFrames
+// frames, the run fails: it points at a per-frame leak.
+constexpr long kMemoryCheckStart = 100;
+constexpr long kMemoryCheckFrames = 200;
+constexpr long kMemoryGrowthLimitKiB = 8 * 1024;
+
+struct Options {
+    long frames = 0;                 // 0: until the window closes
+    const char* screenshot = nullptr; // render offscreen to this PPM and exit
+    const char* backend = nullptr;   // wayland, x11 or null for automatic
+    bool no_vsync = false;
+    bool validation = false;
+};
 
 double NowSeconds() {
     timespec ts{};
@@ -35,12 +51,55 @@ double NowSeconds() {
     return static_cast<double>(ts.tv_sec) + static_cast<double>(ts.tv_nsec) * 1e-9;
 }
 
-// The clear color at time `t`: three out-of-phase sine waves.
-void ColorAt(double t, f32 out[4]) {
-    out[0] = static_cast<f32>(0.5 + 0.5 * std::sin(t * 1.0));
-    out[1] = static_cast<f32>(0.5 + 0.5 * std::sin(t * 1.3 + 2.0));
-    out[2] = static_cast<f32>(0.5 + 0.5 * std::sin(t * 0.7 + 4.0));
+// The resident set size of this process in KiB, or 0 if it cannot be read.
+long ResidentKiB() {
+    std::FILE* f = std::fopen("/proc/self/statm", "r");
+    if (f == nullptr) {
+        return 0;
+    }
+    long size = 0;
+    long resident = 0;
+    const int read = std::fscanf(f, "%ld %ld", &size, &resident);
+    std::fclose(f);
+    return read == 2 ? resident * (sysconf(_SC_PAGESIZE) / 1024) : 0;
+}
+
+// The clear color at time `t`: three out-of-phase sine waves, darkened so the cube stands out.
+void BackgroundAt(double t, f32 out[4]) {
+    out[0] = static_cast<f32>(0.5 + 0.5 * std::sin(t * 1.0)) * 0.3f;
+    out[1] = static_cast<f32>(0.5 + 0.5 * std::sin(t * 1.3 + 2.0)) * 0.3f;
+    out[2] = static_cast<f32>(0.5 + 0.5 * std::sin(t * 0.7 + 4.0)) * 0.3f;
     out[3] = 1.0f;
+}
+
+// An orbit camera around the origin.
+struct OrbitCamera {
+    f32 yaw = 0.6f;
+    f32 pitch = 0.35f;
+    f32 distance = 3.2f;
+
+    void Rotate(f32 dyaw, f32 dpitch) {
+        yaw += dyaw;
+        pitch += dpitch;
+        pitch = pitch < -1.4f ? -1.4f : (pitch > 1.4f ? 1.4f : pitch); // stay off the poles
+    }
+    void Zoom(f32 delta) {
+        distance += delta;
+        distance = distance < 1.6f ? 1.6f : (distance > 8.0f ? 8.0f : distance);
+    }
+    Mat4 View() const {
+        const Vec3 eye(distance * std::cos(pitch) * std::sin(yaw), distance * std::sin(pitch), distance * std::cos(pitch) * std::cos(yaw));
+        return demo::LookAt(eye, Vec3(0, 0, 0), Vec3(0, 1, 0));
+    }
+};
+
+// The light circles the cube once every 8 seconds, above the equator.
+demo::Lighting LightAt(double t) {
+    demo::Lighting lighting;
+    lighting.to_light = Vec3(static_cast<f32>(std::cos(t * 0.8)), 0.6f, static_cast<f32>(std::sin(t * 0.8)));
+    lighting.intensity = 0.9f;
+    lighting.ambient = Vec3(0.12f, 0.12f, 0.14f);
+    return lighting;
 }
 
 // The cube's texture and sampler: the checkerboard from assets/checker.rtex (every mip level stored in the file), or
@@ -109,24 +168,51 @@ private:
     u32 height_ = 0;
 };
 
-// Records the whole frame into `color`: clear, one cube, and `final_state` for the color image. `yaw` spins the cube.
-bool RecordFrame(CommandList* list, demo::CubeRenderer* cube, UniformRing* ring, TextureHandle color, TextureHandle depth, u32 width,
-                 u32 height, const f32 background[4], f32 yaw, ResourceState final_state) {
-    cube->Prepare(list);
+// Everything the demo creates besides the device and the swapchain.
+struct Scene {
+    demo::CubeRenderer cube;
+    CubeTexture texture;
+    DepthBuffer depth;
+    std::unique_ptr<UniformRing> ring;
+
+    bool Create(Device* device, Format color_format) {
+        demo::CubeOptions options;
+        options.color_format = color_format;
+        options.depth_format = device->Caps().depth_format;
+        options.lit = true;
+        ring = std::make_unique<UniformRing>(device, 4096);
+        if (!ring->Valid() || !texture.Create(device) || !cube.Create(device, options)) {
+            return false;
+        }
+        cube.SetTexture(texture.texture, texture.sampler);
+        return true;
+    }
+    // Idle the GPU first.
+    void Destroy(Device* device) {
+        cube.Destroy();
+        texture.Destroy(device);
+        depth.Destroy(device);
+        ring.reset(); // the ring owns a buffer: it goes before the device
+    }
+};
+
+// Records the whole frame into `color`: clear, the lit cube, and `final_state` for the color image.
+bool RecordFrame(CommandList* list, Scene* scene, TextureHandle color, u32 width, u32 height, const f32 background[4], const OrbitCamera& camera,
+                 const demo::Lighting& lighting, ResourceState final_state) {
+    scene->cube.Prepare(list);
     list->Barrier(color, ResourceState::Undefined, ResourceState::ColorAttachment);
-    list->Barrier(depth, ResourceState::Undefined, ResourceState::DepthAttachment);
+    list->Barrier(scene->depth.Texture(), ResourceState::Undefined, ResourceState::DepthAttachment);
     RenderingDesc pass;
     pass.color_count = 1;
     pass.color[0].texture = color;
     for (int i = 0; i < 4; ++i) {
         pass.color[0].clear_color[i] = background[i];
     }
-    pass.depth.texture = depth;
+    pass.depth.texture = scene->depth.Texture();
     pass.depth.store = StoreOp::DontCare; // read by nothing after the pass
     list->BeginRendering(pass);
-    const Mat4 projection = demo::PerspectiveVulkan(0.7853982f, static_cast<f32>(width) / static_cast<f32>(height), 0.1f, 10.0f);
-    const Mat4 view = demo::LookAt(Vec3(0.0f, 1.2f, 3.0f), Vec3(0, 0, 0), Vec3(0, 1, 0));
-    const bool drawn = cube->Draw(list, ring, projection * view * demo::ModelMatrix(Vec3(0, 0, 0), 1.0f, yaw), width, height);
+    const Mat4 projection = demo::PerspectiveVulkan(0.7853982f, static_cast<f32>(width) / static_cast<f32>(height), 0.1f, 20.0f);
+    const bool drawn = scene->cube.DrawLit(list, scene->ring.get(), projection * camera.View(), Mat4::Identity(), lighting, width, height);
     list->EndRendering();
     if (final_state != ResourceState::ColorAttachment) {
         list->Barrier(color, ResourceState::ColorAttachment, final_state);
@@ -147,14 +233,22 @@ bool WritePpm(const char* path, u32 width, u32 height, const std::vector<unsigne
     return std::fclose(f) == 0 && ok;
 }
 
-// Renders `frames` frames offscreen (no window) and saves the last one.
-int RunScreenshot(const char* path, long frames) {
-    constexpr u32 kSize = 256;
+DeviceCreateInfo DeviceInfo(const Options& options) {
     DeviceCreateInfo info;
-    vulkan::VulkanDevice* device = vulkan::VulkanDevice::Create(info);
+    if (options.validation) {
+        info.validation = ValidationSetting::On;
+        info.sync_validation = true;
+    }
+    return info;
+}
+
+// Renders `frames` frames offscreen (no window) and saves the last one, with a fixed camera and light.
+int RunScreenshot(const Options& options) {
+    constexpr u32 kSize = 256;
+    vulkan::VulkanDevice* device = vulkan::VulkanDevice::Create(DeviceInfo(options));
     if (device == nullptr) {
         RhiLogV(LogVerbosity::Error, "rhi_demo: no Vulkan device");
-        return 1;
+        return kExitFailure;
     }
     TextureDesc td;
     td.width = kSize;
@@ -162,131 +256,124 @@ int RunScreenshot(const char* path, long frames) {
     td.format = Format::RGBA8_UNorm;
     td.usage = TextureUsage::ColorAttachment | TextureUsage::CopySrc;
     const TextureHandle target = device->CreateTexture(td);
-    DepthBuffer depth;
-    demo::CubeRenderer cube;
-    CubeTexture cube_texture;
-    std::unique_ptr<UniformRing> ring = std::make_unique<UniformRing>(device, 4096);
-    int exit_code = 1;
-    demo::CubeOptions options;
-    options.color_format = td.format;
-    options.depth_format = device->Caps().depth_format;
-    options.textured = true;
-    if (target.IsValid() && depth.Ensure(device, kSize, kSize) && ring->Valid() && cube_texture.Create(device) && cube.Create(device, options)) {
-        cube.SetTexture(cube_texture.texture, cube_texture.sampler);
-        const f32 background[4] = {0.2f, 0.2f, 0.2f, 1.0f};
-        for (long i = 0; i < (frames > 0 ? frames : 1); ++i) {
+    Scene scene;
+    int exit_code = kExitFailure;
+    if (target.IsValid() && scene.depth.Ensure(device, kSize, kSize) && scene.Create(device, td.format)) {
+        const f32 background[4] = {0.05f, 0.05f, 0.05f, 1.0f};
+        const OrbitCamera camera;
+        const demo::Lighting lighting = LightAt(0.5);
+        bool drawn = true;
+        for (long i = 0; i < (options.frames > 0 ? options.frames : 1); ++i) {
             device->BeginFrame();
-            ring->BeginFrame();
+            scene.ring->BeginFrame();
             CommandList* list = device->CreateCommandList();
             list->Begin();
-            if (!RecordFrame(list, &cube, ring.get(), target, depth.Texture(), kSize, kSize, background, 0.6f, ResourceState::ColorAttachment)) {
-                RhiLogV(LogVerbosity::Error, "rhi_demo: the cube could not be drawn");
-                exit_code = 1;
-            }
+            drawn = RecordFrame(list, &scene, target, kSize, kSize, background, camera, lighting, ResourceState::ColorAttachment) && drawn;
             list->End();
-            ring->Flush();
+            scene.ring->Flush();
             CommandList* lists[] = {list};
             if (device->Submit(lists, 1) != 0) {
-                cube.Submitted();
+                scene.cube.Submitted();
             }
             device->EndFrame();
         }
         std::vector<unsigned char> pixels(static_cast<usize>(kSize) * kSize * 4);
-        if (!device->ReadbackTexture(target, 0, 0, pixels.data(), pixels.size(), ResourceState::ColorAttachment)) {
+        if (!drawn) {
+            RhiLogV(LogVerbosity::Error, "rhi_demo: the cube could not be drawn");
+        } else if (!device->ReadbackTexture(target, 0, 0, pixels.data(), pixels.size(), ResourceState::ColorAttachment)) {
             RhiLogV(LogVerbosity::Error, "rhi_demo: could not read the image back");
-        } else if (!WritePpm(path, kSize, kSize, pixels)) {
-            RhiLogV(LogVerbosity::Error, "rhi_demo: could not write %s", path);
+        } else if (!WritePpm(options.screenshot, kSize, kSize, pixels)) {
+            RhiLogV(LogVerbosity::Error, "rhi_demo: could not write %s", options.screenshot);
         } else {
-            RhiLogV(LogVerbosity::Info, "rhi_demo: wrote %s", path);
-            exit_code = 0;
+            RhiLogV(LogVerbosity::Info, "rhi_demo: wrote %s", options.screenshot);
+            exit_code = kExitOk;
         }
     } else {
         RhiLogV(LogVerbosity::Error, "rhi_demo: could not create the target or the cube");
     }
     device->WaitIdle();
-    cube.Destroy(); // does nothing if Create failed
-    cube_texture.Destroy(device);
-    depth.Destroy(device);
+    scene.Destroy(device);
     if (target.IsValid()) {
         device->DestroyTexture(target);
     }
-    ring.reset(); // the ring owns a buffer: it goes before the device
     DestroyDevice(device);
     return exit_code;
 }
 
-} // namespace
-
-int main(int argc, char** argv) {
-    LogRhi.SetVerbosity(LogVerbosity::Info); // the frame-time line is Info
-    const char* limit_text = std::getenv("RHI_DEMO_FRAMES");
-    long frame_limit = limit_text != nullptr ? std::atol(limit_text) : 0;
-    const char* screenshot = nullptr;
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--frames") == 0 && i + 1 < argc) {
-            frame_limit = std::atol(argv[++i]);
-        } else if (std::strcmp(argv[i], "--screenshot") == 0 && i + 1 < argc) {
-            screenshot = argv[++i];
-        } else {
-            std::fprintf(stderr, "usage: rhi_demo [--frames N] [--screenshot out.ppm]\n");
-            return 2;
-        }
-    }
-    if (screenshot != nullptr) {
-        return RunScreenshot(screenshot, frame_limit);
-    }
+int RunWindow(const Options& options) {
     os::InputState input;
     os::PlatformWindowHost host;
     if (!host.OpenFromEnvironment("rhi_demo", 960, 540, &input)) {
         RhiLogV(LogVerbosity::Error, "rhi_demo: could not open a window");
-        return 1;
+        return kExitFailure;
     }
     os::Window* window = host.Get();
 
-    DeviceCreateInfo info;
+    DeviceCreateInfo info = DeviceInfo(options);
     info.window = window;
     vulkan::VulkanDevice* device = vulkan::VulkanDevice::Create(info);
     if (device == nullptr) {
         RhiLogV(LogVerbosity::Error, "rhi_demo: no Vulkan device can present to this window");
-        return 1;
+        return kExitFailure;
     }
-    Swapchain* swapchain = device->CreateSwapchain(SwapchainDesc{});
+    SwapchainDesc swapchain_desc;
+    if (options.no_vsync) {
+        swapchain_desc.present_mode = PresentMode::Immediate;
+    }
+    Swapchain* swapchain = device->CreateSwapchain(swapchain_desc);
     if (swapchain == nullptr) {
         RhiLogV(LogVerbosity::Error, "rhi_demo: could not create a swapchain");
         DestroyDevice(device);
-        return 1;
+        return kExitFailure;
     }
-
-    demo::CubeRenderer cube;
-    demo::CubeOptions options;
-    options.color_format = swapchain->ImageFormat();
-    options.depth_format = device->Caps().depth_format;
-    options.textured = true;
-    std::unique_ptr<UniformRing> ring = std::make_unique<UniformRing>(device, 4096);
-    DepthBuffer depth;
-    CubeTexture cube_texture;
-    if (!ring->Valid() || !cube_texture.Create(device) || !cube.Create(device, options)) {
+    Scene scene;
+    if (!scene.Create(device, swapchain->ImageFormat())) {
         RhiLogV(LogVerbosity::Error, "rhi_demo: could not create the cube");
         device->WaitIdle();
-        cube.Destroy();
-        cube_texture.Destroy(device);
-        ring.reset();
+        scene.Destroy(device);
         device->DestroySwapchain(swapchain);
         DestroyDevice(device);
-        return 1;
+        return kExitFailure;
     }
 
-    cube.SetTexture(cube_texture.texture, cube_texture.sampler);
-
+    OrbitCamera camera;
     const double start = NowSeconds();
     double window_start = start;
+    double previous = start;
+    double drag_x = 0.0;
+    double drag_y = 0.0;
+    bool dragging = false;
     u64 window_frames = 0;
     long frames = 0;
-    int exit_code = 0;
-    while (!window->ShouldClose() && (frame_limit <= 0 || frames < frame_limit)) {
+    long rss_at_start = 0;
+    int exit_code = kExitOk;
+    while (!window->ShouldClose() && (options.frames <= 0 || frames < options.frames)) {
+        input.BeginFrame();
         window->PumpEvents();
+        const double now_time = NowSeconds();
+        const f32 dt = static_cast<f32>(now_time - previous < 0.1 ? now_time - previous : 0.1); // a stall must not fling the camera
+        previous = now_time;
+
+        // The camera: arrow keys, left-button drag and the wheel.
+        const os::KeyboardState& keys = input.keyboard;
+        camera.Rotate(((keys.IsDown(os::Key::Right) ? 1.0f : 0.0f) - (keys.IsDown(os::Key::Left) ? 1.0f : 0.0f)) * 1.5f * dt,
+                      ((keys.IsDown(os::Key::Up) ? 1.0f : 0.0f) - (keys.IsDown(os::Key::Down) ? 1.0f : 0.0f)) * 1.0f * dt);
+        if (input.IsMouseDown(os::kMouseLeft)) {
+            if (dragging) {
+                camera.Rotate(static_cast<f32>(input.mouse_x - drag_x) * -0.01f, static_cast<f32>(input.mouse_y - drag_y) * 0.01f);
+            }
+            dragging = true;
+            drag_x = input.mouse_x;
+            drag_y = input.mouse_y;
+        } else {
+            dragging = false;
+        }
+        camera.Zoom(static_cast<f32>(input.scroll_dy) * 0.3f);
+
         if (window->IsMinimized()) {
-            // Nothing to draw to; wait for the window to come back without spinning.
+            // Nothing to draw to; wait for the window to come back without spinning. It still counts toward --frames,
+            // so a bounded run on a minimized window terminates.
+            ++frames;
             timespec nap{0, 10 * 1000 * 1000};
             nanosleep(&nap, nullptr);
             continue;
@@ -296,51 +383,49 @@ int main(int argc, char** argv) {
         if (acquired == SwapchainStatus::Lost) {
             RhiLogV(LogVerbosity::Error, "rhi_demo: the swapchain was lost");
             device->EndFrame();
-            exit_code = 1;
+            exit_code = kExitFailure;
             break;
         }
         if (acquired == SwapchainStatus::Minimized) {
             device->EndFrame();
-            ++frames; // an unpresentable surface still counts toward RHI_DEMO_FRAMES, so automation terminates
+            ++frames; // an unpresentable surface still counts toward --frames, so automation terminates
             timespec nap{0, 10 * 1000 * 1000};
             nanosleep(&nap, nullptr);
             continue;
         }
-        const TextureHandle image = swapchain->CurrentTexture();
-        if (!depth.Ensure(device, swapchain->Width(), swapchain->Height())) { // follows a resize
+        if (!scene.depth.Ensure(device, swapchain->Width(), swapchain->Height())) { // follows a resize
             RhiLogV(LogVerbosity::Error, "rhi_demo: could not create the depth buffer");
             device->EndFrame();
-            exit_code = 1;
+            exit_code = kExitFailure;
             break;
         }
-        ring->BeginFrame();
+        scene.ring->BeginFrame();
         CommandList* list = device->CreateCommandList();
         list->Begin();
         f32 background[4];
-        ColorAt(NowSeconds() - start, background);
-        for (f32& c : background) {
-            c *= 0.4f; // darker, so the cube stands out
-        }
-        background[3] = 1.0f;
-        if (!RecordFrame(list, &cube, ring.get(), image, depth.Texture(), swapchain->Width(), swapchain->Height(), background,
-                         static_cast<f32>(NowSeconds() - start), ResourceState::Present)) {
+        BackgroundAt(now_time - start, background);
+        if (!RecordFrame(list, &scene, swapchain->CurrentTexture(), swapchain->Width(), swapchain->Height(), background, camera, LightAt(now_time - start),
+                         ResourceState::Present)) {
             RhiLogV(LogVerbosity::Error, "rhi_demo: the cube could not be drawn");
-            exit_code = 1;
+            exit_code = kExitFailure;
         }
         list->End();
-        ring->Flush();
+        scene.ring->Flush();
         CommandList* lists[] = {list};
         if (device->Submit(lists, 1) != 0) {
-            cube.Submitted();
+            scene.cube.Submitted();
         }
         device->EndFrame();
         if (swapchain->Present() == SwapchainStatus::Lost) {
             RhiLogV(LogVerbosity::Error, "rhi_demo: the swapchain was lost while presenting");
-            exit_code = 1;
+            exit_code = kExitFailure;
             break;
         }
         ++frames;
         ++window_frames;
+        if (rss_at_start == 0 && frames >= kMemoryCheckStart) {
+            rss_at_start = ResidentKiB();
+        }
         const double now = NowSeconds();
         if (now - window_start >= 1.0) {
             RhiLogV(LogVerbosity::Info, "rhi_demo: %llu frames, %.3f ms/frame", static_cast<unsigned long long>(window_frames),
@@ -350,13 +435,70 @@ int main(int argc, char** argv) {
         }
     }
 
-    // Shutdown order: idle the GPU, then the swapchain, then the device.
+    // A run of a few hundred frames or more must not grow in memory (a leak per frame would).
+    if (exit_code == kExitOk && options.frames >= kMemoryCheckFrames && rss_at_start == 0) {
+        RhiLogV(LogVerbosity::Warn, "rhi_demo: the memory check did not run (fewer than %ld frames were drawn)", kMemoryCheckStart);
+    }
+    if (exit_code == kExitOk && options.frames >= kMemoryCheckFrames && rss_at_start > 0) {
+        const long rss_at_end = ResidentKiB();
+        RhiLogV(LogVerbosity::Info, "rhi_demo: resident memory %ld KiB at frame %ld, %ld KiB at frame %ld", rss_at_start, kMemoryCheckStart, rss_at_end, frames);
+        if (rss_at_end - rss_at_start > kMemoryGrowthLimitKiB) {
+            RhiLogV(LogVerbosity::Error, "rhi_demo: memory grew by %ld KiB over the run", rss_at_end - rss_at_start);
+            exit_code = kExitFailure;
+        }
+    }
+
+    // Shutdown order: idle the GPU, then the scene, the swapchain and the device.
     device->WaitIdle();
-    cube.Destroy();
-    cube_texture.Destroy(device);
-    depth.Destroy(device);
-    ring.reset();
+    scene.Destroy(device);
     device->DestroySwapchain(swapchain);
     DestroyDevice(device);
     return exit_code;
+}
+
+int Usage(const char* program, int code) {
+    std::fprintf(code == kExitOk ? stdout : stderr,
+                 "usage: %s [--backend wayland|x11] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
+                 "  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)\n"
+                 "  --frames N        stop after N frames (also RHI_DEMO_FRAMES=N)\n"
+                 "  --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM)\n"
+                 "  --no-vsync        present without waiting for the display\n"
+                 "  --validation      enable the validation layer with synchronization validation\n",
+                 program);
+    return code;
+}
+
+} // namespace
+
+int main(int argc, char** argv) {
+    LogRhi.SetVerbosity(LogVerbosity::Info); // the frame-time line is Info
+    Options options;
+    const char* frames_env = std::getenv("RHI_DEMO_FRAMES");
+    options.frames = frames_env != nullptr ? std::atol(frames_env) : 0;
+    for (int i = 1; i < argc; ++i) {
+        const bool has_value = i + 1 < argc;
+        if (std::strcmp(argv[i], "--frames") == 0 && has_value) {
+            options.frames = std::atol(argv[++i]);
+        } else if (std::strcmp(argv[i], "--screenshot") == 0 && has_value) {
+            options.screenshot = argv[++i];
+        } else if (std::strcmp(argv[i], "--backend") == 0 && has_value) {
+            options.backend = argv[++i];
+        } else if (std::strcmp(argv[i], "--no-vsync") == 0) {
+            options.no_vsync = true;
+        } else if (std::strcmp(argv[i], "--validation") == 0) {
+            options.validation = true;
+        } else if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
+            return Usage(argv[0], kExitOk);
+        } else {
+            return Usage(argv[0], kExitUsage);
+        }
+    }
+    if (options.backend != nullptr) {
+        if (std::strcmp(options.backend, "wayland") != 0 && std::strcmp(options.backend, "x11") != 0) {
+            std::fprintf(stderr, "rhi_demo: unknown backend '%s'\n", options.backend);
+            return kExitUsage;
+        }
+        setenv("ENGINE_WINDOW_BACKEND", options.backend, 1);
+    }
+    return options.screenshot != nullptr ? RunScreenshot(options) : RunWindow(options);
 }

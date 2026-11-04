@@ -598,3 +598,15 @@ that changed from the plan and why.)_
   cross-compilation path (GLSL+SPIRV-Cross, HLSL+dxc, Slang or our own)
   is recorded as an open decision to settle before Phase 4's material
   system and no later than Phase 12.
+- **2026-11-04 - Phase 3 visual milestone (Day 65).** A lit, textured, depth-tested
+  cube renders through the Vulkan RHI on Wayland and on X11 (`game/rhi_demo`), with the
+  validation layer and synchronization validation reporting nothing over 1000 frames on
+  each backend. Measured on an NVIDIA GeForce RTX 3060 (driver 615.78.08) on a 240 Hz
+  display: 4.1-4.2 ms/frame (vsync-bound), resident memory +0.4 MiB between frame 100
+  and frame 1000. The offscreen golden-image tests (`tests/rhi/golden/`) cover the
+  triangle, cube, textured cube and lit cube, each with analytic pixel checks that do not
+  depend on the goldens. Changes from the plan along the way: shaders are GLSL compiled by
+  `glslc` (assumption #18, decided Day 58); front faces are `CounterClockwise` with the
+  Y-flipped projection (found by test on Day 63). The grep gate, hardening and the
+  portability review remain (Days 66-67).
+

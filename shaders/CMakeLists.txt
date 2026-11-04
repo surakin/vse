@@ -14,6 +14,8 @@ set(ENGINE_SHADERS
   cube.frag
   textured.vert
   textured.frag
+  lit.vert
+  lit.frag
 )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/names.cmake)

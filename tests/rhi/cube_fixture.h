@@ -26,6 +26,7 @@ using gpu_test::Image;
 struct Draw {
     demo::CubeRenderer* cube;
     Mat4 model;
+    const demo::Lighting* lighting = nullptr; // set for a lit renderer
 };
 
 // A device with a 128x128 color target and a depth buffer, and a way to render cubes into them.
@@ -101,7 +102,11 @@ struct CubeScene {
         pass.depth.store = StoreOp::DontCare;
         list->BeginRendering(pass);
         for (const Draw& d : draws) {
-            REQUIRE(d.cube->Draw(list, ring.get(), view_projection * d.model, size, size));
+            if (d.lighting != nullptr) {
+                REQUIRE(d.cube->DrawLit(list, ring.get(), view_projection, d.model, *d.lighting, size, size));
+            } else {
+                REQUIRE(d.cube->Draw(list, ring.get(), view_projection * d.model, size, size));
+            }
         }
         list->EndRendering();
         list->End();

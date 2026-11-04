@@ -55,7 +55,23 @@ Full reference: [The Render Hardware Interface](../reference/rhi.md).
 
 ### Overview
 
-_TODO_
+The RHI is the only way the engine talks to the GPU. Code above it - the renderer, the demo, tools - holds
+`Device`, `CommandList` and `Swapchain` objects and opaque, generation-checked handles; it never includes Vulkan
+(DX12 and Metal backends will sit behind the same interface). Where to read next:
+
+| To do this | Read |
+|---|---|
+| make a device, resources, upload data | Creating a device, Uploading data, Textures and samplers |
+| draw into a window | Presenting to a window, The frame loop |
+| write and load shaders | [Shaders](rhi-shaders.md), Pipelines |
+| give shaders buffers, textures, sampler | Binding resources, Textures in draws |
+| 3D: depth, indices, projection | Depth, indexed draws and the 3D conventions |
+| compute | Compute |
+| see it all working | the [hello-rhi tutorial](../tutorials/hello-rhi.md) and `game/rhi_demo/README.md` |
+
+The demo (`game/rhi_demo`) is the reference client: a textured, lit, depth-tested cube with an orbit camera, written
+only against `rhi/*.h` plus the one backend header needed to create the device. Everything it builds on - the
+projection, the cube mesh, the textures, the `UniformRing` - is renderer-side code, not part of the RHI.
 
 ### Handles and descriptors
 

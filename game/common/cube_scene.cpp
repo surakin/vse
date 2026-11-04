@@ -1,12 +1,16 @@
 #include "cube_scene.h"
 
 #include <cmath>
+#include <cstddef>
 #include <cstring>
 
 #include "cube.frag.spv.inc"
 #include "cube.vert.spv.inc"
+#include "lit.frag.spv.inc"
+#include "lit.vert.spv.inc"
 #include "textured.frag.spv.inc"
 #include "textured.vert.spv.inc"
+#include "log/assert.h"
 #include "math/quaternion.h"
 #include "rhi/rhi_log.h"
 
@@ -27,6 +31,14 @@ Mat4 LookAt(const Vec3& eye, const Vec3& target, const Vec3& up) {
     const Vec3 u = s.Cross(f);
     return Mat4::FromColumns(Vec4(s.x, u.x, -f.x, 0), Vec4(s.y, u.y, -f.y, 0), Vec4(s.z, u.z, -f.z, 0),
                              Vec4(-s.Dot(eye), -u.Dot(eye), f.Dot(eye), 1));
+}
+
+Mat4 NormalMatrix(const Mat4& model) {
+    const Vec3 a(model.col[0].x, model.col[0].y, model.col[0].z);
+    const Vec3 b(model.col[1].x, model.col[1].y, model.col[1].z);
+    const Vec3 c(model.col[2].x, model.col[2].y, model.col[2].z);
+    const f32 sign = a.Dot(b.Cross(c)) < 0.0f ? -1.0f : 1.0f; // a mirroring model would flip every normal
+    return Mat4::FromBasis(b.Cross(c) * sign, c.Cross(a) * sign, a.Cross(b) * sign, Vec3(0, 0, 0));
 }
 
 Mat4 ModelMatrix(const Vec3& position, f32 scale, f32 yaw_radians) {
@@ -86,17 +98,18 @@ bool CubeRenderer::Create(Device* device, const CubeOptions& options) {
     device_ = device;
     indexed_ = options.indexed;
     ShaderDesc sd;
-    textured_ = options.textured;
+    lit_ = options.lit;
+    textured_ = options.textured || options.lit;
     sd.stage = ShaderStage::Vertex;
-    sd.words = textured_ ? shaders::kTexturedVertSpv : shaders::kCubeVertSpv;
-    sd.word_count = textured_ ? shaders::kTexturedVertSpvWordCount : shaders::kCubeVertSpvWordCount;
+    sd.words = lit_ ? shaders::kLitVertSpv : textured_ ? shaders::kTexturedVertSpv : shaders::kCubeVertSpv;
+    sd.word_count = lit_ ? shaders::kLitVertSpvWordCount : textured_ ? shaders::kTexturedVertSpvWordCount : shaders::kCubeVertSpvWordCount;
     vs_ = device->CreateShader(sd);
     sd.stage = ShaderStage::Fragment;
-    sd.words = textured_ ? shaders::kTexturedFragSpv : shaders::kCubeFragSpv;
-    sd.word_count = textured_ ? shaders::kTexturedFragSpvWordCount : shaders::kCubeFragSpvWordCount;
+    sd.words = lit_ ? shaders::kLitFragSpv : textured_ ? shaders::kTexturedFragSpv : shaders::kCubeFragSpv;
+    sd.word_count = lit_ ? shaders::kLitFragSpvWordCount : textured_ ? shaders::kTexturedFragSpvWordCount : shaders::kCubeFragSpvWordCount;
     fs_ = device->CreateShader(sd);
 
-    BindingDesc bindings[3] = {{0, BindingType::UniformBuffer, ShaderStage::Vertex, 1},
+    BindingDesc bindings[3] = {{0, BindingType::UniformBuffer, lit_ ? ShaderStage::Vertex | ShaderStage::Fragment : ShaderStage::Vertex, 1},
                                {1, BindingType::SampledTexture, ShaderStage::Fragment, 1},
                                {2, BindingType::Sampler, ShaderStage::Fragment, 1}};
     BindGroupLayoutDesc ld;
@@ -187,11 +200,51 @@ void CubeRenderer::Prepare(CommandList* list) {
 }
 
 bool CubeRenderer::Draw(CommandList* list, UniformRing* ring, const Mat4& mvp, u32 width, u32 height) {
+    ENGINE_ASSERT(!lit_, "CubeRenderer::Draw: a lit renderer is drawn with DrawLit");
     const UniformAllocation u = ring->Allocate(sizeof(Mat4));
     if (!u.Valid()) {
         return false;
     }
     std::memcpy(u.data, &mvp, sizeof(Mat4));
+    return DrawWith(list, u, width, height);
+}
+
+namespace {
+
+// The uniform block of shaders/lit.vert and lit.frag (std140: every member is a vec4 or a mat4).
+struct LitUniforms {
+    Mat4 mvp;
+    Mat4 normal_matrix;
+    Vec4 to_light;
+    Vec4 light_color;
+    Vec4 ambient;
+};
+static_assert(sizeof(LitUniforms) == 176 && offsetof(LitUniforms, normal_matrix) == 64 && offsetof(LitUniforms, to_light) == 128 &&
+                  offsetof(LitUniforms, light_color) == 144 && offsetof(LitUniforms, ambient) == 160,
+              "LitUniforms must match the std140 block in shaders/lit.vert and lit.frag");
+
+} // namespace
+
+bool CubeRenderer::DrawLit(CommandList* list, UniformRing* ring, const Mat4& view_projection, const Mat4& model, const Lighting& lighting, u32 width,
+                           u32 height) {
+    ENGINE_ASSERT(lit_, "CubeRenderer::DrawLit: the renderer was not created with `lit`");
+    const UniformAllocation u = ring->Allocate(sizeof(LitUniforms));
+    if (!u.Valid()) {
+        return false;
+    }
+    LitUniforms block;
+    block.mvp = view_projection * model;
+    block.normal_matrix = NormalMatrix(model);
+    const Vec3& direction = lighting.to_light;
+    const Vec3 l = direction.LengthSquared() > 1e-12f ? direction.Normalized() : Vec3(0, 0, 0); // zero: no direct light
+    block.to_light = Vec4(l.x, l.y, l.z, 0.0f);
+    block.light_color = Vec4(lighting.color.x * lighting.intensity, lighting.color.y * lighting.intensity, lighting.color.z * lighting.intensity, 0.0f);
+    block.ambient = Vec4(lighting.ambient.x, lighting.ambient.y, lighting.ambient.z, 0.0f);
+    std::memcpy(u.data, &block, sizeof(block));
+    return DrawWith(list, u, width, height);
+}
+
+bool CubeRenderer::DrawWith(CommandList* list, const UniformAllocation& u, u32 width, u32 height) {
     BindGroupEntry entries[3];
     entries[0].binding = 0;
     entries[0].buffer = u.buffer;

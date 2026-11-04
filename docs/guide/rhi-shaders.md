@@ -127,6 +127,17 @@ constants. The rules the next days rely on:
   instructions, so nothing special is written by hand.
 - **Colors**: do lighting math in linear space; an sRGB texture or swapchain format converts on sample and on write.
 
+## The lit pipeline
+
+The demo's shaders show how the rules combine. `lit.vert` and `lit.frag` share one uniform block (`Params`, bound at
+set 0, binding 0 for both stages: the layout entry names `Vertex | Fragment`) holding the model-view-projection
+matrix, the normal matrix, the direction to the light, the light color (intensity folded in) and the
+ambient color - every member a `mat4` or `vec4`, so the C++ struct matches std140 without padding. The texture and
+sampler are bindings 1 and 2 of the same group. The math, in linear light, is
+`color = albedo * (ambient + light_color * max(dot(N, L), 0))`; its derivation and the interface are in the header
+comment of each file, and the tests check the result against that formula pixel by pixel. The normal matrix is the
+cofactor matrix of the model's upper 3x3, so normals stay perpendicular to surfaces under non-uniform scale.
+
 ## Common mistakes
 
 - Editing a `.spv.inc` by hand: it is overwritten the next time the `shaders` target runs.

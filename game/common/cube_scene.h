@@ -37,6 +37,18 @@ Mat4 LookAt(const Vec3& eye, const Vec3& target, const Vec3& up);
 // Translation, uniform scale and rotation about Y, applied in the order scale, rotate, translate.
 Mat4 ModelMatrix(const Vec3& position, f32 scale, f32 yaw_radians);
 
+// One directional light with Lambert diffuse, plus a constant ambient term (the math is in shaders/lit.frag).
+struct Lighting {
+    Vec3 to_light = Vec3(0, 1, 0); // direction from the surface toward the light; need not be normalized; zero means no direct light
+    Vec3 color = Vec3(1, 1, 1);
+    f32 intensity = 1.0f;          // scales `color`
+    Vec3 ambient = Vec3(0.1f, 0.1f, 0.1f);
+};
+
+// The matrix that carries normals with `model`: the inverse transpose of its upper 3x3 up to a positive scale (the cofactor
+// matrix divided by the sign of the determinant, so a mirroring model does not turn normals inside out), in a Mat4.
+Mat4 NormalMatrix(const Mat4& model);
+
 struct CubeVertex {
     f32 position[3];
     f32 normal[3];
@@ -57,6 +69,7 @@ struct CubeOptions {
     bool indexed = true;                               // false draws 36 expanded vertices
     rhi::CullMode cull = rhi::CullMode::Back;
     bool textured = false; // multiply the face color by a texture (see `SetTexture`)
+    bool lit = false;      // a textured cube lit by one directional light; draw it with `DrawLit`
 };
 
 // Draws the cube. Thread-compatible: use from one thread.
@@ -90,7 +103,14 @@ public:
     // bind group, the pipeline and the draw. Returns false (drawing nothing) if the ring is full.
     bool Draw(rhi::CommandList* list, rhi::UniformRing* ring, const Mat4& mvp, u32 width, u32 height);
 
+    // Like `Draw` for a renderer created with `lit` (a mismatch is a programming error): `view_projection * model` and
+    // the normal matrix of `model` go to the vertex shader, the lighting to the fragment shader. Needs `SetTexture`.
+    bool DrawLit(rhi::CommandList* list, rhi::UniformRing* ring, const Mat4& view_projection, const Mat4& model, const Lighting& lighting, u32 width,
+                 u32 height);
+
 private:
+    bool DrawWith(rhi::CommandList* list, const rhi::UniformAllocation& u, u32 width, u32 height);
+
     rhi::Device* device_ = nullptr;
     rhi::ShaderHandle vs_;
     rhi::ShaderHandle fs_;
@@ -100,6 +120,7 @@ private:
     rhi::BufferHandle indices_;
     bool indexed_ = true;
     bool textured_ = false;
+    bool lit_ = false;
     bool geometry_ready_ = false;
     rhi::TextureHandle texture_;
     rhi::SamplerHandle sampler_;
