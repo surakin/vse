@@ -25,3 +25,18 @@ with basic materials and lighting, with correct depth buffering.
 - Whether to build the render graph generically now (multi-backend-ready)
   or Vulkan-specific first and generalize later — decide against actual
   Phase 3 output, not in the abstract.
+
+## Deferred from Phase 3 (decide here, before the day files are written)
+
+Phase 3 deliberately left these RHI features out (see
+`plans/phase-03-vulkan-rhi.md`). Each needs an explicit in/out decision
+when this phase's days are written; if "in", the RHI interface changes
+and the Phase 3 portability review (Day 67) should be consulted for the
+D3D12/Metal impact.
+
+| Feature | Decide when | Already reserved in the Phase 3 RHI |
+|---|---|---|
+| **MSAA** (sample counts, resolve attachments, pipeline sample count) | With the forward-vs-deferred choice; MSAA is awkward with deferred and may be replaced by post-process AA | `samples` field in `TextureDesc` and the pipeline description, fixed at 1 |
+| **Bindless / descriptor indexing** | With the material system design (per-material bind groups vs a global texture table) | `supports_bindless` flag in `DeviceCaps`, always false |
+| **Indirect draws** (`DrawIndirect`, count buffers) | Only if GPU-driven culling is wanted | `indirect` buffer-usage flag; no draw command |
+| **Async compute / dedicated transfer queue overlap** | Only if profiling shows a need | Compute runs on the graphics queue; uploads use the transfer queue where one exists |
