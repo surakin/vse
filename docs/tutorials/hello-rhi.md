@@ -78,6 +78,108 @@ frames: 6, errors: 0
 `rhi_demo` logs its average frame time once a second, for example `rhi_demo: 59 frames, 17.0 ms/frame` on a 60 Hz
 display. It leaves the loop when you close the window.
 
+## Draw a triangle
+
+The clear needs no shaders. A triangle needs two (GLSL in `shaders/`, compiled to SPIR-V and committed as
+`*.spv.inc`, see [Shaders](../guide/rhi-shaders.md)), a pipeline that describes the vertex layout and the target
+format, and a vertex buffer.
+
+1. Create the two shader modules from `shaders::kTriangleVertSpv` and `shaders::kTriangleFragSpv`.
+2. Describe the vertices: one binding of 20 bytes (two floats of position, three of color), attributes at offsets 0
+   and 8. Create the pipeline with the target's format (`swapchain->ImageFormat()`, or the offscreen format).
+3. Create a `GpuOnly` vertex buffer with `BufferUsage::Vertex | CopyDst` and fill it with `UploadBuffer`; the buffer
+   is left in `CopyDst`, so the first command list moves it to `VertexBuffer` with a barrier (outside a pass).
+4. In the pass: `SetPipeline`, `SetViewport`, `SetScissor`, `SetVertexBuffer`, `Draw(3, 1, 0, 0)`.
+
+The same steps run on the null device, which checks the draw against the pipeline and the pass:
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "rhi/null/null_device.h"
+#include "triangle.frag.spv.inc"
+#include "triangle.vert.spv.inc"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::rhi;
+
+int main() {
+    NullDevice* device = CreateNullDevice();
+
+    ShaderDesc sd;
+    sd.stage = ShaderStage::Vertex;
+    sd.words = shaders::kTriangleVertSpv;
+    sd.word_count = shaders::kTriangleVertSpvWordCount;
+    const ShaderHandle vs = device->CreateShader(sd);
+    sd.stage = ShaderStage::Fragment;
+    sd.words = shaders::kTriangleFragSpv;
+    sd.word_count = shaders::kTriangleFragSpvWordCount;
+    const ShaderHandle fs = device->CreateShader(sd);
+
+    VertexBindingDesc binding = {20, false};
+    VertexAttributeDesc attributes[2] = {{0, 0, VertexFormat::Float2, 0}, {1, 0, VertexFormat::Float3, 8}};
+    GraphicsPipelineDesc gp;
+    gp.vertex_shader = vs;
+    gp.fragment_shader = fs;
+    gp.vertex_bindings = Span<VertexBindingDesc>(&binding, 1);
+    gp.vertex_attributes = Span<VertexAttributeDesc>(attributes, 2);
+    gp.cull_mode = CullMode::None;
+    gp.color_targets[0].format = Format::RGBA8_UNorm;
+    gp.color_target_count = 1;
+    const PipelineHandle pipeline = device->CreateGraphicsPipeline(gp);
+
+    const f32 vertices[3 * 5] = {
+        0.0f,  -0.8f, 1.0f, 0.0f, 0.0f, // top, red
+        0.8f,  0.8f,  0.0f, 1.0f, 0.0f, // bottom right, green
+        -0.8f, 0.8f,  0.0f, 0.0f, 1.0f, // bottom left, blue
+    };
+    BufferDesc bd;
+    bd.size = sizeof(vertices);
+    bd.usage = BufferUsage::Vertex | BufferUsage::CopyDst;
+    bd.location = MemoryLocation::GpuOnly;
+    const BufferHandle vb = device->CreateBuffer(bd);
+    device->UploadBuffer(vb, 0, vertices, sizeof(vertices));
+
+    TextureDesc td;
+    td.width = 64;
+    td.height = 64;
+    td.format = Format::RGBA8_UNorm;
+    td.usage = TextureUsage::ColorAttachment | TextureUsage::CopySrc;
+    const TextureHandle target = device->CreateTexture(td);
+
+    device->BeginFrame();
+    CommandList* list = device->CreateCommandList();
+    list->Begin();
+    list->Barrier(vb, ResourceState::CopyDst, ResourceState::VertexBuffer);
+    list->Barrier(target, ResourceState::Undefined, ResourceState::ColorAttachment);
+    RenderingDesc pass;
+    pass.color_count = 1;
+    pass.color[0].texture = target;
+    list->BeginRendering(pass);
+    list->SetPipeline(pipeline);
+    list->SetViewport(Viewport{0, 0, 64, 64, 0.0f, 1.0f});
+    list->SetScissor(ScissorRect{0, 0, 64, 64});
+    list->SetVertexBuffer(0, vb, 0);
+    list->Draw(3, 1, 0, 0);
+    list->EndRendering();
+    list->End();
+    device->Submit(&list, 1);
+    device->EndFrame();
+
+    device->WaitIdle();
+    std::printf("draws: ok, errors: %u\n", device->ErrorCount());
+    DestroyDevice(device);
+}
+```
+
+```output
+draws: ok, errors: 0
+```
+
+`rhi_demo` does this in its window; `rhi_demo --screenshot out.ppm [--frames N]` renders the triangle offscreen at
+256x256 without a window and writes a PPM, which is how the golden-image test in
+[Building and Testing](../guide/building-and-testing.md#golden-image-rendering-tests) is exercised by hand.
+
 ## Where next
 
 - [The RHI guide](../guide/rhi.md): the frame loop, resource states and the swapchain's resize and minimize rules.

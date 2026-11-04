@@ -45,6 +45,30 @@ validation and fails the test on any validation error. `ENGINE_RHI_VALIDATION_FA
 instead, for debugging a single test, and `ENGINE_RHI_VALIDATION=0` turns validation off for `Auto` instances. See
 the validation section of the [RHI guide](rhi.md).
 
+### Golden-image rendering tests
+
+Rendering tests draw offscreen, read the pixels back and compare them with a golden image, so no window or
+person is needed. `tests/rhi/render_target.h` is the offscreen target (RGBA8 color texture with `Readback`);
+`tests/rhi/image_compare.{h,cpp}` compares and reads and writes the goldens, which are binary PPM files in
+`tests/rhi/golden/` (64x64 for the triangle).
+
+- **Tolerance.** An interior pixel may differ from the golden by `tolerance` (2) per channel: GPUs agree on
+  interpolated colors to within rounding. A pixel is an *edge pixel* when the golden steps by more than `edge_step`
+  (16) to a neighbour (a smooth gradient ramps by about 5 per pixel, so it is not an edge); edge pixels are compared
+  with `edge_tolerance` (64), and up to `max_edge_miss` (25%) of them may exceed even that, because vendors differ in
+  the rasterization rules for pixel centers on an edge. Nothing else may differ.
+- **A golden alone is not trusted.** Each golden test also asserts pixels analytically (the background is the clear
+  color; interior pixels have the barycentric blend of the vertex colors), so a wrong golden cannot hide a broken
+  pipeline.
+- **On failure** the test writes the amplified difference to `$TMPDIR/rhi_diff_<name>.ppm` (`/tmp` when unset) and
+  prints its path.
+- **Regenerating.** Run the test with `ENGINE_RHI_UPDATE_GOLDEN=1` (for example
+  `ENGINE_RHI_UPDATE_GOLDEN=1 ./build/tests/rhi/rhi_tests "[golden]"`). It rewrites the golden instead of comparing and
+  warns. Regeneration is deliberate: open the PPM and look at it, check the analytic assertions passed, and only then
+  commit it. Never regenerate to make a failing run pass without understanding the difference.
+- **Validation.** GPU tests fail on any validation error. With `ENGINE_RHI_VALIDATION_FATAL=1` the whole suite is clean
+  except the validation-capture tests in `vulkan_instance_test.cpp`, which provoke errors on purpose and so abort.
+
 ### Stress tests and replaying a failing seed (`ENGINE_STRESS_SEED`)
 
 _TODO_
