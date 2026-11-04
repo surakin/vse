@@ -36,6 +36,15 @@ _TODO_
 
 _TODO_
 
+### GPU tests and validation layers
+
+Tests tagged `[gpu]` (CTest label `gpu`) need a Vulkan driver. Without one they skip; set
+`ENGINE_RHI_REQUIRE_GPU=1` (do this on a development machine) to make a skip a failure so a broken driver cannot
+hide. They run under `gpu_test::GpuFixture`, which enables the Khronos validation layer with synchronization
+validation and fails the test on any validation error. `ENGINE_RHI_VALIDATION_FATAL=1` aborts on the first error
+instead, for debugging a single test, and `ENGINE_RHI_VALIDATION=0` turns validation off for `Auto` instances. See
+the validation section of the [RHI guide](rhi.md).
+
 ### Stress tests and replaying a failing seed (`ENGINE_STRESS_SEED`)
 
 _TODO_

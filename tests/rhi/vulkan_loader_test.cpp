@@ -4,6 +4,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "gpu_fixture.h"
 #include "rhi/vulkan/vk_functions.h"
 #include "rhi/vulkan/vk_loader.h"
 #include "rhi/vulkan/vk_result.h"
@@ -13,17 +14,15 @@ using namespace engine_placeholder::rhi::vulkan;
 
 // A real Vulkan driver (and the libraries it pulls in, e.g. libdbus via the NVIDIA ICD) leaves process-lifetime
 // allocations that LeakSanitizer would report against this test binary. They are not ours, so suppress those
-// libraries only; leaks in engine code are still reported.
+// libraries only; leaks in engine code are still reported. The last entry is the one messenger that
+// vulkan_instance_test.cpp leaks on purpose to prove destroy-time validation errors are counted.
 extern "C" const char* __lsan_default_suppressions() {
-    return "leak:libdbus-1.so\nleak:libnvidia\nleak:libGLX\nleak:libX11\nleak:libxcb\n";
+    return "leak:libdbus-1.so\nleak:libnvidia\nleak:libGLX\nleak:libX11\nleak:libxcb\nleak:terminator_CreateDebugUtilsMessengerEXT\n";
 }
 
 namespace {
 
-bool GpuRequired() {
-    const char* v = std::getenv("ENGINE_RHI_REQUIRE_GPU");
-    return v != nullptr && v[0] == '1';
-}
+using gpu_test::GpuRequired;
 
 // Skips (or, with ENGINE_RHI_REQUIRE_GPU=1, fails) when this machine has no Vulkan loader.
 #define REQUIRE_LOADER(loader)                                                \
@@ -108,24 +107,15 @@ TEST_CASE("Vulkan loader resolves the global and instance tables", "[rhi][vulkan
 }
 
 TEST_CASE("Vulkan device table loads every mandatory function on a real device", "[rhi][vulkan][gpu]") {
-    REQUIRE_LOADER(loader);
-    VkGlobalFns global;
-    REQUIRE(LoadGlobalFns(loader, &global));
-    if (!CheckInstanceVersion(global, nullptr)) {
-        if (GpuRequired()) {
-            FAIL("ENGINE_RHI_REQUIRE_GPU=1 but the Vulkan loader is older than 1.3");
-        }
-        SKIP("Vulkan loader older than 1.3");
-    }
-    VkInstance instance = MakeInstance(global);
-    VkInstanceFns fns;
-    REQUIRE(LoadInstanceFns(loader, instance, &fns));
+    gpu_test::GpuFixture fx;
+    fx.Require();
+    VkInstance instance = fx.Instance().Handle();
+    const VkInstanceFns& fns = fx.Instance().Fns();
 
     u32 count = 1;
     VkPhysicalDevice physical = nullptr;
     VkResult enumerated = fns.EnumeratePhysicalDevices(instance, &count, &physical);
     if (physical == nullptr || (enumerated != VK_SUCCESS && enumerated != VK_INCOMPLETE)) {
-        fns.DestroyInstance(instance, nullptr);
         if (GpuRequired()) {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan physical device was found");
         }
@@ -135,7 +125,6 @@ TEST_CASE("Vulkan device table loads every mandatory function on a real device",
     VkPhysicalDeviceProperties props{};
     fns.GetPhysicalDeviceProperties(physical, &props);
     if (props.apiVersion < VK_API_VERSION_1_3) {
-        fns.DestroyInstance(instance, nullptr);
         if (GpuRequired()) {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but the first Vulkan device is older than 1.3");
         }
@@ -186,7 +175,6 @@ TEST_CASE("Vulkan device table loads every mandatory function on a real device",
     CHECK(dev.CmdPipelineBarrier2 != nullptr);
     CHECK(dev.WaitSemaphores != nullptr);
     dev.DestroyDevice(device, nullptr);
-    fns.DestroyInstance(instance, nullptr);
 }
 
 namespace {

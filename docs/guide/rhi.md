@@ -28,6 +28,8 @@ Full reference: [The Render Hardware Interface](../reference/rhi.md).
 - [[rhi::NullDevice]] and [[rhi::CreateNullDevice]] — the validating no-GPU backend
 - [[rhi::vulkan::LoadVulkanLoader]] — opens the Vulkan loader at runtime
 - [[rhi::vulkan::VkGlobalFns]], [[rhi::vulkan::VkInstanceFns]], [[rhi::vulkan::VkDeviceFns]] — the function-pointer tables
+- [[rhi::vulkan::VulkanInstance]] and [[rhi::vulkan::VulkanInstanceDesc]] — the instance, its extensions and validation
+- [[rhi::vulkan::GetValidationCounts]] and [[rhi::vulkan::SetValidationCapture]] — validation message counters and capture hook
 - [[rhi::vulkan::VkResultName]], [[rhi::vulkan::ClassifyVkResult]] — readable and classified `VkResult`s
 
 ## Already known — seed material (verify against the code when writing)
@@ -184,3 +186,29 @@ for null before calling those.
 `ENGINE_VK_CHECK(call)` evaluates a call, logs a failing `VkResult` by name with file and line, and returns a
 [[rhi::vulkan::VkResultClass]] so callers can branch on `Recoverable` (out-of-date swapchain), `DeviceLost`
 and `Fatal`.
+
+### Validation layers
+
+`VK_LAYER_KHRONOS_validation` is a development tool, never a requirement. [[rhi::vulkan::VulkanInstance::Create]]
+enables it when the descriptor says `ValidationMode::On`, or when it says `Auto` and either
+`ENGINE_RHI_VALIDATION=1` is set or the build is a Debug build (`ENGINE_RHI_VALIDATION=0` turns it off).
+If the layer is not installed, one warning is logged and the instance is created without it.
+
+| Variable | Effect |
+| --- | --- |
+| `ENGINE_RHI_VALIDATION` | `1` / `0` forces validation on / off for `Auto` instances. |
+| `ENGINE_RHI_VALIDATION_SYNC` | `1` / `0` overrides synchronization validation (barrier and hazard checks). |
+| `ENGINE_RHI_VALIDATION_BEST_PRACTICES` | `1` / `0` overrides best-practices validation. |
+| `ENGINE_RHI_VALIDATION_FATAL` | `1` aborts the process on the first validation error — for interactive runs. |
+| `ENGINE_VULKAN_LIBRARY` | Path of the Vulkan loader library to use instead of `libvulkan.so.1`. |
+
+Every validation message is logged on `LogRhi` with its severity (`ERROR` becomes `Error`, `WARNING` `Warn`,
+`INFO` `Debug`, `VERBOSE` `Trace`) and its message id, and errors and warnings are counted:
+[[rhi::vulkan::GetValidationCounts]] reads the process-wide totals and [[rhi::vulkan::SetValidationCapture]]
+installs a hook that sees each message. Log lines are truncated at 512 bytes; the capture hook gets the full text.
+
+Tests do not read the counters by hand. Every `[gpu]` test constructs `gpu_test::GpuFixture`
+(`tests/rhi/gpu_fixture.h`) and calls `Require()`: it skips the test when there is no Vulkan (or fails it under
+`ENGINE_RHI_REQUIRE_GPU=1`), owns a validation-enabled instance with synchronization validation on, and fails the
+test at teardown if any validation error was reported. A test that provokes an error on purpose declares it with
+`ExpectErrors(n)`.
