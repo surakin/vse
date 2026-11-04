@@ -1,6 +1,6 @@
 # RHI boundary gate (Phase 3 Day 66). Run as:
 #   cmake -DROOT=<tree> -DALLOWLIST=<file> -P check.cmake
-# Rule 1: no file under engine/, game/, tools/ outside engine/rhi/vulkan/ names a
+# Rule 1: no file under engine/, game/, tools/, tests/renderer/ outside engine/rhi/vulkan/ names a
 #         Vulkan API identifier (vk*, Vk*, VK_*, PFN_vk*) or includes a vulkan header.
 # Rule 2: backend-agnostic engine/rhi/*.h must not include Vulkan/Wayland/X11 headers.
 # Exceptions live in the allow-list as `path|reason`; stale or reasonless entries fail.
@@ -60,7 +60,7 @@ set(inc_vk_re "^[ \t]*#[ \t]*include[ \t]*[<\"][^>\"]*[Vv]ulkan[^>\"]*[>\"]")
 set(inc_back_re "^[ \t]*#[ \t]*include[ \t]*[<\"][^>\"]*(wayland|[Xx]11|xcb|rhi/(null|dx12|metal)/)[^>\"]*[>\"]")
 
 set(files "")
-foreach(dir engine game tools)
+foreach(dir engine game tools tests/renderer)
   file(GLOB_RECURSE found RELATIVE "${ROOT}" "${ROOT}/${dir}/*.h" "${ROOT}/${dir}/*.hpp"
        "${ROOT}/${dir}/*.cpp" "${ROOT}/${dir}/*.cc" "${ROOT}/${dir}/*.c" "${ROOT}/${dir}/*.inl" "${ROOT}/${dir}/*.mm")
   list(APPEND files ${found})

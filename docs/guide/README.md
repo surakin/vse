@@ -14,3 +14,4 @@ Concept pages, one per subsystem. All are currently skeletons.
 - [jobs](jobs.md)
 - [rhi](rhi.md)
 - [rhi-shaders](rhi-shaders.md)
+- [renderer](renderer.md)

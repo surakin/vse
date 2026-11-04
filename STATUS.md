@@ -474,3 +474,5 @@ Phase 3 Day 67 (portability review, performance baseline, phase wrap-up) is done
 
 Phase 4 (Renderer core) is planned, not started: 16 day files (Days 68-83) under `plans/phase-04-renderer-core/`, indexed by `plans/phase-04-renderer-core.md`. Decisions (2026-11-04): Slang as the shader language (offline `slangc`; GLSL ported on Days 69-70), deferred lighting without MSAA, a generic render graph on the RHI, no bindless/indirect/async compute. `slangc` is not installed on the dev machine yet; Day 69 starts with installing it. Phase 4 can start.
 
+Phase 4 Day 68 (renderer design spec and build skeleton) is done: `docs/superpowers/specs/2026-11-04-renderer-design.md` (R1-R11, including the G-buffer formats and the GGX lighting model), `engine/renderer/` + `tests/renderer/` (plain/ASan/TSan; `RenderLog` on `LogRender`), module `renderer` and a guide skeleton, the boundary gate extended to `tests/renderer/` (seven planted reports); docs 1694/1694; high-effort review (6 findings, 5 fixed, 1 declined) in the day file. Next: Day 69 (install `slangc`, first shader ports).
+

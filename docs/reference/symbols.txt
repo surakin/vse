@@ -1357,6 +1357,9 @@ rhi::UniformRing::Flush()	function	rhi	rhi-uniformring-flush	rhi.md	engine/rhi/u
 rhi::UniformRing::BytesPerFrame() const	function	rhi	rhi-uniformring-bytesperframe-const	rhi.md	engine/rhi/uniform_ring.h:80
 rhi::UniformRing::BytesUsed() const	function	rhi	rhi-uniformring-bytesused-const	rhi.md	engine/rhi/uniform_ring.h:82
 rhi::UniformRing::Buffer() const	function	rhi	rhi-uniformring-buffer-const	rhi.md	engine/rhi/uniform_ring.h:84
+renderer::RendererName()	function	renderer	renderer-renderername	renderer.md	engine/renderer/renderer_info.h:12
+renderer::RenderLogV(LogVerbosity,const char*,...)	function	renderer	renderer-renderlogv-logverbosity-const-char-star	renderer.md	engine/renderer/renderer_log.h:21
+RenderLog	macro	renderer	renderlog	renderer.md	engine/renderer/renderer_log.h:41
 rhi::vulkan::StateScope	struct	rhi-vulkan	rhi-vulkan-statescope	rhi-vulkan.md	engine/rhi/vulkan/vk_barrier.h:13
 rhi::vulkan::StateScope::stage	variable	rhi-vulkan	rhi-vulkan-statescope-stage	rhi-vulkan.md	engine/rhi/vulkan/vk_barrier.h:15
 rhi::vulkan::StateScope::access	variable	rhi-vulkan	rhi-vulkan-statescope-access	rhi-vulkan.md	engine/rhi/vulkan/vk_barrier.h:17

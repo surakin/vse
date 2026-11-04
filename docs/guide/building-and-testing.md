@@ -49,7 +49,7 @@ the validation section of the [RHI guide](rhi.md).
 
 `rhi_boundary_check` (label `boundary`, no GPU needed) enforces the rule that only `engine/rhi/vulkan/` may name the
 Vulkan API. It is a CMake script, `tools/rhi_boundary_check/check.cmake`, that scans every `.h`, `.hpp`, `.cpp`, `.cc`,
-`.c`, `.inl` and `.mm` file under `engine/`, `game/` and `tools/` for `vk*`/`Vk*`/`VK_*`/`PFN_vk*` identifiers and
+`.c`, `.inl` and `.mm` file under `engine/`, `game/`, `tools/` and `tests/renderer/` for `vk*`/`Vk*`/`VK_*`/`PFN_vk*` identifiers and
 `vulkan` includes (comments do not count), and checks that the backend-agnostic `engine/rhi/*.h` headers include
 no Vulkan, Wayland, X11 or backend-directory header. To run it by hand:
 
@@ -59,8 +59,8 @@ cmake -DROOT=$PWD -DALLOWLIST=tools/rhi_boundary_check/allowlist.txt -P tools/rh
 
 A file that genuinely needs the exemption goes in `tools/rhi_boundary_check/allowlist.txt` as `path|reason`. An entry
 without a reason fails, and so does an entry whose file no longer needs it or no longer exists, so the list cannot rot.
-The gate tests itself: `rhi_boundary_check_planted*` run it over `tools/rhi_boundary_check/fixtures/bad` (an include, identifiers, one after a block comment, and a backend include in an agnostic header) and expect exactly
-those five reports; the `_clean` case (block, trailing and inline comments naming Vulkan types) and the `_stale` and
+The gate tests itself: `rhi_boundary_check_planted*` run it over `tools/rhi_boundary_check/fixtures/bad` (an include, identifiers, one after a block comment, a backend include in an agnostic header, a Vulkan include in `engine/renderer/` and an identifier in `tests/renderer/`) and expect exactly
+those seven reports; the `_clean` case (block, trailing and inline comments naming Vulkan types) and the `_stale` and
 `_noreason` cases cover the passing tree and the allow-list rules. Names inside string literals still count, because
 `dlsym("vkFoo")` is Vulkan API use too.
 
