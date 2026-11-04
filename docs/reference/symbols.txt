@@ -732,3 +732,6 @@ jobs::WorkerPool::Join()	function	jobs	jobs-workerpool-join	jobs.md	engine/jobs/
 jobs::WorkerPool::Current()	function	jobs	jobs-workerpool-current	jobs.md	engine/jobs/worker_pool.h:138
 jobs::WorkerPool::IsParticipantThread()	function	jobs	jobs-workerpool-isparticipantthread	jobs.md	engine/jobs/worker_pool.h:143
 jobs::WorkerPool::CurrentParticipantIndex()	function	jobs	jobs-workerpool-currentparticipantindex	jobs.md	engine/jobs/worker_pool.h:147
+rhi::LogRhi	variable	rhi	rhi-logrhi	rhi.md	engine/rhi/rhi_log.h:13
+rhi::RhiLogV(LogVerbosity,const char*,...)	function	rhi	rhi-rhilogv-logverbosity-const-char-star	rhi.md	engine/rhi/rhi_log.h:24
+RhiLog	macro	rhi	rhilog	rhi.md	engine/rhi/rhi_log.h:44

@@ -12,3 +12,4 @@ Concept pages, one per subsystem. All are currently skeletons.
 - [platform-os](platform-os.md)
 - [platform-windowing-and-input](platform-windowing-and-input.md)
 - [jobs](jobs.md)
+- [rhi](rhi.md)

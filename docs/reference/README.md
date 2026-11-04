@@ -15,3 +15,4 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Platform: OS Services](platform-os.md) | 4 | 34 |
 | [Platform: Windowing and Input](platform-window-input.md) | 9 | 229 |
 | [The Job System](jobs.md) | 10 | 172 |
+| [The Render Hardware Interface](rhi.md) | 1 | 3 |

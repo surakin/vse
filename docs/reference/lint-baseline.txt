@@ -10,3 +10,4 @@ module	foundation/types	11	11
 module	platform/os	30	30
 module	platform/window-input	207	207
 module	jobs	151	151
+module	rhi	3	3
