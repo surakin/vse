@@ -12,6 +12,7 @@ set(RHI_TEST_SOURCES
   vulkan_device_test.cpp
   vulkan_memory_test.cpp
   vulkan_buffer_test.cpp
+  vulkan_commands_test.cpp
 )
 
 # Header self-containment: one generated translation unit per public RHI
@@ -34,12 +35,18 @@ include(Catch)
 # One executable per sanitizer flavor; ctest names get a suffix so the
 # flavors don't collide. GPU tests (tag [gpu], label `gpu`) are added from
 # Day 49 and skip when no Vulkan device exists.
-function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib suffix label)
+#
+# `spec` is a Catch2 test spec limiting what ctest registers. The TSan flavor excludes [gpu]: the proprietary
+# NVIDIA driver starts threads that ThreadSanitizer cannot track and crashes inside its allocator interceptor, so
+# GPU threading is covered by the ASan flavor plus validation layers, and TSan covers the GPU-free
+# multithreaded tests (null device) and the pure logic. With a Mesa software driver, run the whole binary by hand.
+function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib suffix label spec)
   add_executable(${target} ${RHI_TEST_SOURCES} ${RHI_HEADER_CHECK_SOURCES})
   target_link_libraries(${target} PRIVATE ${rhi_lib} ${rhi_vulkan_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-  catch_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
+  catch_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "${spec}" PROPERTIES LABELS "${label}")
 endfunction()
 
-engine_add_rhi_tests(rhi_tests rhi rhi_vulkan "" "rhi")
-engine_add_rhi_tests(rhi_tests_asan rhi_asan rhi_vulkan_asan " [asan]" "asan")
+engine_add_rhi_tests(rhi_tests rhi rhi_vulkan "" "rhi" "")
+engine_add_rhi_tests(rhi_tests_asan rhi_asan rhi_vulkan_asan " [asan]" "asan" "")
+engine_add_rhi_tests(rhi_tests_tsan rhi_tsan rhi_vulkan_tsan " [tsan]" "tsan" "~[gpu]")

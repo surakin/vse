@@ -1429,6 +1429,10 @@ void NullDevice::UnmapBuffer(BufferHandle buffer) {
 CommandList* NullDevice::CreateCommandList() {
     State& s = *state_;
     std::lock_guard<std::mutex> lock(s.mu);
+    if (!s.in_frame) {
+        s.Error("CreateCommandList: no frame is open (call BeginFrame first)");
+        return nullptr;
+    }
     if (s.lost) {
         return nullptr;
     }

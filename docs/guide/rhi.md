@@ -224,6 +224,42 @@ frame it was destroyed in has completed on the GPU (a buffer destroyed between f
 a buffer used by work already submitted this frame is never freed under it. `BeginFrame` releases what has
 completed; `WaitIdle` releases everything. Destroying the device frees any buffers still alive, with a warning.
 
+### Recording and submitting
+
+Work reaches the GPU as command lists. [[rhi::Device::CreateCommandList]] hands the calling thread a list that is
+valid for the current frame; record it with `Begin` ... `End`, then pass the ended lists to [[rhi::Device::Submit]]
+in the order they must run. Lists record on any thread at the same time: the Vulkan backend keeps one
+`VkCommandPool` per (thread, frame in flight), so recording takes no lock, and the pools of a frame are reset only
+after the GPU has finished the frame that used them (three frames deep). A job-system participant uses its
+participant index as its pool slot; other threads take one of 64 fallback slots and give it back when they exit.
+
+```
+device->BeginFrame();
+CommandList* a = device->CreateCommandList();   // on any thread, in parallel with others
+a->Begin();
+a->Barrier(dst, ResourceState::Undefined, ResourceState::CopyDst);
+a->CopyBuffer(src, dst, 0, 0, size);
+a->End();
+FenceValue done = device->Submit(lists, count);  // one thread, lists in order
+device->EndFrame();
+device->WaitFence(done, timeout_ns);             // optional: wait on the CPU
+```
+
+**Barriers.** A resource is always in one explicit `ResourceState`, and `Barrier(resource, before, after)` moves
+it. In Vulkan every state maps to pipeline stages, memory accesses and (for textures) an image layout through one
+table, `GetBarrierScopes` in `vk_barrier.h`; moving from `Undefined` waits on all earlier work and discards a
+texture's contents. Buffers in `CpuToGpu` and `GpuToCpu` memory take no barriers.
+
+**Fences.** `Submit` returns a `FenceValue` on the device's timeline semaphore. The values only increase; wait with
+`WaitFence(value, timeout_ns)` (0 polls) or poll `CompletedFence`. Submissions are serialized by a mutex, and every
+submission runs on the single graphics queue in call order, so a later submission never needs an explicit wait on
+an earlier one; the wait/signal lists of a multi-queue submit arrive with a second queue.
+
+**A lost device.** `VK_ERROR_DEVICE_LOST` from any call sets a sticky state, `DeviceLost()`, and logs once.
+After that `Submit`, `UploadBuffer` and `ReadbackBuffer` fail and `CreateCommandList` returns null, and frames still
+begin and end, so the application can shut down cleanly. Tests exercise this with
+`VulkanDevice::InjectSubmitFailure`.
+
 ### GPU memory
 
 `vkAllocateMemory` is limited (commonly 4096 live objects) and slow, so the Vulkan backend never allocates one

@@ -6,6 +6,8 @@
 #include "rhi/device.h"
 #include "rhi/handle_pool.h"
 #include "rhi/rhi.h"
+#include "jobs/topology.h"
+#include "rhi/vulkan/vk_command_list.h"
 #include "rhi/vulkan/vk_device_select.h"
 #include "rhi/vulkan/vk_functions.h"
 #include "rhi/vulkan/vk_instance.h"
@@ -34,6 +36,11 @@ public:
     /// Fails: as for [[rhi::CreateDevice]].
     /// Ownership: the caller owns the result.
     static VulkanDevice* Create(const DeviceCreateInfo& info);
+
+    /// How many frames of command pools exist; a pool is reset only after the frame that used it has finished.
+    static constexpr usize kFramePools = 3;
+    /// How many threads can hold a command-pool slot at once; a thread releases its slot when it exits.
+    static constexpr usize kThreadSlots = jobs::kMaxParticipants + 64;
 
     /// Waits for the GPU to go idle, then destroys every resource, the device and the instance.
     ~VulkanDevice() override;
@@ -128,6 +135,30 @@ public:
     /// Returns the highest frame number whose GPU work has finished.
     u64 CompletedFrame() const;
 
+    /// Looks up a live buffer for command recording.
+    ///
+    /// Param buffer: the handle.
+    /// Param vk_buffer: receives the `VkBuffer`; must not be null.
+    /// Param desc: receives the creation descriptor; must not be null.
+    /// Returns: true if the handle is live.
+    /// Fails: returns false for an invalid or stale handle.
+    bool LookupBuffer(BufferHandle buffer, VkBuffer* vk_buffer, BufferDesc* desc) const;
+
+    /// Notes the result of a Vulkan call made while recording: a lost device sets the sticky lost state, and any
+    /// other failure is logged.
+    ///
+    /// Param result: the `VkResult` to examine.
+    void ReportResult(VkResult result);
+
+    /// Makes the next `Submit` fail with `result` instead of reaching the driver, once; for testing the
+    /// device-lost and error paths. Pass `VK_SUCCESS` to clear a pending fault.
+    ///
+    /// Param result: the result the next submission reports, such as `VK_ERROR_DEVICE_LOST`.
+    void InjectSubmitFailure(VkResult result) { inject_submit_result_.store(static_cast<i32>(result), std::memory_order_relaxed); }
+
+    /// Returns how many command pools exist, for tests of the per-thread pool policy.
+    usize CommandPoolCount() const;
+
 private:
     VulkanDevice() = default;
     bool Initialize(const DeviceCreateInfo& info);
@@ -168,6 +199,15 @@ private:
     // Releases buffers whose frames have completed (or all of them when `all`).
     void CollectRetired(bool all);
     void UpdateCompletedFrames();
+    // Command pools: one per (frame slot, thread slot), made by the thread that owns the slot.
+    struct ThreadPool {
+        VkCommandPool pool = nullptr;
+        detail::GrowArray<VulkanCommandList*> lists;
+        usize used = 0;
+    };
+    ThreadPool* PoolForCurrentThread(usize frame_slot);
+    void ResetFramePools(usize frame_slot);
+    void ShutdownCommands();
     void SyncRange(const MemoryAllocation& allocation, u64 rel_offset, u64 length, bool flush);
     void FlushRange(const MemoryAllocation& allocation, u64 rel_offset, u64 length);
     void InvalidateRange(const MemoryAllocation& allocation, u64 rel_offset, u64 length);
@@ -187,12 +227,12 @@ private:
     VulkanMemoryBackend* memory_backend_ = nullptr;
     MemoryAllocator* memory_ = nullptr;
     std::atomic<bool> device_lost_{false};
-    u64 frame_number_ = 0;
+    std::atomic<u64> frame_number_{0};
 
     // Resources and deferred destruction (guarded by resource_mutex_).
     mutable std::mutex resource_mutex_;
     HandlePool<BufferRes, BufferTag> buffers_;
-    bool frame_open_ = false;
+    std::atomic<bool> frame_open_{false};
     u64 ended_frames_ = 0;
     u64 completed_frames_ = 0;
     static constexpr u64 kTrackedFrames = 64;
@@ -207,6 +247,11 @@ private:
     detail::GrowArray<CommandBufferSlot> upload_buffers_;
     RingAllocator* staging_ring_ = nullptr;
     RawBuffer staging_;
+    detail::GrowArray<VkCommandBufferSubmitInfo> submit_scratch_;
+    std::atomic<i32> inject_submit_result_{0};
+
+    // Per-thread command pools, a ring of kFramePools frames deep, indexed by the thread's slot.
+    std::atomic<ThreadPool*> thread_pools_[kFramePools][kThreadSlots] = {};
 };
 
 } // namespace engine_placeholder::rhi::vulkan

@@ -332,7 +332,8 @@ void VulkanDevice::DestroyBuffer(BufferHandle buffer) {
     }
     ENGINE_ASSERT(!b->mapped, "DestroyBuffer: the buffer is still mapped");
     // Work in the open frame may still use it; outside a frame, the next frame is the earliest that can have used it.
-    const u64 stamp = frame_open_ ? frame_number_ : frame_number_ + 1;
+    const u64 current = frame_number_.load(std::memory_order_relaxed);
+    const u64 stamp = frame_open_ ? current : current + 1;
     buffers_.Retire(buffer, stamp);
 }
 
@@ -577,8 +578,9 @@ VulkanDevice::ObjectCounts VulkanDevice::Counts() const {
 }
 
 void VulkanDevice::BeginFrame() {
-    // Never let the unfinished frames outrun the fence ring. The wait happens outside the lock, so other threads can
-    // keep creating and destroying resources meanwhile.
+    // Never let the unfinished frames outrun the fence ring, and never reuse a command pool the GPU may still be
+    // reading. The wait happens outside the lock, so other threads can keep creating and destroying resources meanwhile.
+    bool waited = true;
     for (;;) {
         u64 wait_for = 0;
         {
@@ -587,17 +589,35 @@ void VulkanDevice::BeginFrame() {
             if (ended_frames_ - completed_frames_ >= kTrackedFrames - 2) {
                 wait_for = frame_fences_[(completed_frames_ + 1) % kTrackedFrames];
             }
+            const u64 pool_frame = frame_number_ + 1 > kFramePools ? frame_number_ + 1 - kFramePools : 0;
+            if (pool_frame > completed_frames_ && pool_frame <= ended_frames_) {
+                const u64 fence = frame_fences_[pool_frame % kTrackedFrames];
+                wait_for = wait_for > fence ? wait_for : fence;
+            }
         }
-        if (wait_for == 0 || !WaitTimeline(wait_for, ~0ull)) {
+        if (wait_for == 0) {
+            break;
+        }
+        if (!WaitTimeline(wait_for, ~0ull)) {
+            waited = false; // the device is lost; the GPU may still be reading, so no pool is reset below
             break;
         }
     }
-    std::lock_guard<std::mutex> lock(resource_mutex_);
-    ENGINE_ASSERT(!frame_open_, "BeginFrame: the previous frame was not ended");
-    UpdateCompletedFrames();
-    ++frame_number_;
-    frame_open_ = true;
-    CollectRetired(false);
+    u64 frame = 0;
+    {
+        std::lock_guard<std::mutex> lock(resource_mutex_);
+        ENGINE_ASSERT(!frame_open_, "BeginFrame: the previous frame was not ended");
+        UpdateCompletedFrames();
+        frame = frame_number_.load(std::memory_order_relaxed) + 1;
+        frame_number_.store(frame, std::memory_order_relaxed);
+        frame_open_ = true;
+        CollectRetired(false);
+    }
+    // The frame that last used these pools has finished (waited for above), so they can be reset. This is outside the
+    // lock: it makes a driver call per pool, and no list of this frame exists yet.
+    if (waited && !device_lost_.load(std::memory_order_relaxed)) {
+        ResetFramePools(frame % kFramePools);
+    }
 }
 
 void VulkanDevice::EndFrame() {

@@ -2570,10 +2570,13 @@ virtual CommandList* CreateCommandList() = 0;
 
 Returns a command list for the calling thread to record, valid until the next `BeginFrame`.
 
+Call it between `BeginFrame` and `EndFrame`. Keep the pointer only for that frame: lists are recycled later.
+
 | Field | Value |
 |---|---|
 | Returns | a list ready for `Begin`. |
 | Fails | returns null when the device is lost or out of memory. |
+| Aborts | no frame is open. |
 | Ownership | the device owns the list; do not delete it. |
 
 ### `Submit(CommandList* const*,usize)` {#rhi-device-submit-commandlist-star-const-star-usize}
@@ -2586,10 +2589,12 @@ virtual FenceValue Submit(CommandList* const* lists, usize count) = 0;
 
 Submits recorded lists for execution in the given order.
 
+Submissions are serialized and run on one queue in call order, so a later `Submit` needs no explicit wait on an earlier one. Call it from one thread at a time (it takes a mutex, but the order of calls is the order of execution).
+
 | Field | Value |
 |---|---|
 | Parameter `lists` | lists obtained this frame and ended; none may repeat. |
-| Parameter `count` | number of lists. |
+| Parameter `count` | number of lists; 0 submits nothing and returns the latest fence value. |
 | Returns | the fence value that is reached when all the work has finished, or 0 on failure. |
 | Fails | returns 0 when the device is lost. |
 | Aborts | no frame is open, `lists` is null with a non-zero count, or a list was not ended, belongs to another device, is from an earlier frame, or was already submitted. |

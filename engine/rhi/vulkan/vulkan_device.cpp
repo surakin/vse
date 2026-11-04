@@ -288,6 +288,7 @@ VulkanDevice::~VulkanDevice() {
         }
         buffers_.ForEachLive([&](BufferHandle, BufferRes& b) { DestroyRawBuffer(&b.raw); });
         CollectRetired(true);
+        ShutdownCommands();
         ShutdownUpload();
     }
     delete memory_; // frees every block, so the GPU must be idle first
@@ -321,8 +322,6 @@ void VulkanDevice::DestroyBindGroup(BindGroupHandle) {}
 PipelineHandle VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&) { NotImplemented("CreateGraphicsPipeline"); return {}; }
 PipelineHandle VulkanDevice::CreateComputePipeline(const ComputePipelineDesc&) { NotImplemented("CreateComputePipeline"); return {}; }
 void VulkanDevice::DestroyPipeline(PipelineHandle) {}
-CommandList* VulkanDevice::CreateCommandList() { NotImplemented("CreateCommandList"); return nullptr; }
-FenceValue VulkanDevice::Submit(CommandList* const*, usize) { NotImplemented("Submit"); return 0; }
 
 bool VulkanDevice::DeviceLost() const { return device_lost_.load(std::memory_order_relaxed); }
 

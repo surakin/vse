@@ -2,8 +2,8 @@
 # 2026-11-04-rhi-design.md). `rhi` holds the backend-agnostic interface and
 # the validating null backend; `rhi_vulkan` is the only place Vulkan is
 # named. Built plain and under ASan/UBSan from one source list, each linked
-# against the matching foundation/jobs variant (a TSan flavor is added on
-# Day 54, when multithreaded recording exists).
+# against the matching foundation/jobs variant (the TSan flavor arrived on
+# Day 54, with multithreaded command recording).
 set(RHI_SOURCES
   rhi.cpp
   desc.cpp
@@ -22,6 +22,9 @@ set(RHI_VULKAN_SOURCES
   vulkan/vk_ring.cpp
   vulkan/vulkan_device.cpp
   vulkan/vulkan_device_buffers.cpp
+  vulkan/vulkan_device_commands.cpp
+  vulkan/vk_barrier.cpp
+  vulkan/vk_command_list.cpp
   vulkan/create_device.cpp
 )
 
@@ -42,3 +45,4 @@ endfunction()
 
 engine_add_rhi_libs("" foundation jobs)
 engine_add_rhi_libs("_asan" foundation_asan jobs_asan)
+engine_add_rhi_libs("_tsan" foundation_tsan jobs_tsan)
