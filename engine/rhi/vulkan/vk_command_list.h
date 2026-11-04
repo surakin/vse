@@ -11,8 +11,8 @@ class VulkanDevice;
 
 /// Records into one primary `VkCommandBuffer` taken from the creating thread's command pool.
 ///
-/// Copies, buffer barriers and debug labels are recorded today; the commands that need textures, pipelines or bind
-/// groups log an error and record nothing until those resources exist (Days 55 and later).
+/// Copies, barriers, rendering passes, graphics pipelines and draws are recorded today; the commands that need bind
+/// groups, push constants or compute pipelines log an error and record nothing until those exist (Days 60 and 62).
 ///
 /// Thread-safety: thread-compatible; record from one thread, different lists on different threads at once.
 /// Ownership: owned by the [[rhi::vulkan::VulkanDevice]] that made it; use it only within the frame it was created in.
@@ -90,6 +90,18 @@ private:
     u32 label_depth_ = 0;
     bool failed_ = false;
     bool in_rendering_ = false;
+    // State of the pass and the bound pipeline, for the checks the draw commands make.
+    u32 pass_color_count_ = 0;
+    Format pass_color_formats_[kMaxColorAttachments] = {};
+    Format pass_depth_format_ = Format::Undefined;
+    bool graphics_bound_ = false;
+    bool compute_bound_ = false;
+    bool index_bound_ = false;
+    VkPipelineLayout pipeline_layout_ = nullptr;
+    u32 push_bytes_ = 0;
+    ShaderStage push_stages_ = ShaderStage::None;
+    u32 pipeline_layout_count_ = 0;
+    u64 pipeline_layout_ids_[kMaxBindGroups] = {};
 };
 
 } // namespace engine_placeholder::rhi::vulkan

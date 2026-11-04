@@ -362,6 +362,46 @@ object types are covered by the validation layer's own leak report; the frame-lo
 The `rhi_demo` app (`game/rhi_demo/main.cpp`) is the smallest complete loop, and
 [Hello RHI](../tutorials/hello-rhi.md) walks through it.
 
+### Pipelines
+
+A graphics pipeline is created from a [[rhi::GraphicsPipelineDesc]]: the two shaders, the vertex layout, the fixed-function
+state, the attachment formats (there are no render pass objects; the formats stand in for them), the bind group layouts
+and the push-constant range. Viewport and scissor are dynamic: set them on the command list inside every pass.
+
+```
+GraphicsPipelineDesc desc;
+desc.vertex_shader = vs;
+desc.fragment_shader = fs;
+desc.vertex_bindings = Span<VertexBindingDesc>(&binding, 1);
+desc.vertex_attributes = Span<VertexAttributeDesc>(attributes, 2);
+desc.color_targets[0].format = swapchain->ImageFormat();
+desc.color_target_count = 1;
+PipelineHandle pipeline = device->CreateGraphicsPipeline(desc);   // invalid handle + a logged reason on failure
+
+// in a command list, inside BeginRendering/EndRendering:
+list->SetPipeline(pipeline);
+list->SetViewport(...); list->SetScissor(...);
+list->SetVertexBuffer(0, vertices, 0);
+list->Draw(3, 1, 0, 0);
+```
+
+A pipeline works only in a pass whose attachment formats equal its own, and binding it ends with the pass, so bind
+it again in the next one. Creation fails (returns an invalid handle, logs why, and never reaches the driver for
+these) when a shader is missing, destroyed or of the wrong stage, a bind group layout is stale, a limit is exceeded, or a
+format cannot be rendered to on this device. Wireframe needs the device feature and fails without it.
+
+**Sharing.** Two bind group layouts with the same bindings share one `VkDescriptorSetLayout`, and pipelines with
+equal bind group layouts and push-constant range share one `VkPipelineLayout`. The handles stay distinct; the sharing is
+internal and shows in `VulkanDevice::Counts()`. Pipeline layouts live as long as the device (there are few).
+
+**The pipeline cache.** The Vulkan device keeps a `VkPipelineCache` and stores it on disk so later runs compile
+faster. It is read when the device is created and written, atomically (a temporary file then a rename), when the device is
+destroyed. The file is named from the vendor, device and driver UUID, so a driver update starts a new file. A file
+whose header does not match, or that the driver rejects, is ignored with a log line; it is never an error. The
+directory is, in order: `DeviceCreateInfo::pipeline_cache_dir`, `$ENGINE_RHI_CACHE_DIR`, `$XDG_CACHE_HOME/<application
+name>`, `$HOME/.cache/<application name>`. Set `DeviceCreateInfo::pipeline_cache` to false to turn it off. The test
+runner points `ENGINE_RHI_CACHE_DIR` into the build tree so tests never write to your home directory.
+
 ### GPU memory
 
 `vkAllocateMemory` is limited (commonly 4096 live objects) and slow, so the Vulkan backend never allocates one

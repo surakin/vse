@@ -16,6 +16,7 @@ set(RHI_TEST_SOURCES
   vulkan_texture_test.cpp
   vulkan_swapchain_test.cpp
   vulkan_frame_test.cpp
+  vulkan_pipeline_test.cpp
   shader_test.cpp
 )
 
@@ -48,7 +49,9 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib suffix label spec)
   add_executable(${target} ${RHI_TEST_SOURCES} ${RHI_HEADER_CHECK_SOURCES})
   target_link_libraries(${target} PRIVATE ${rhi_lib} ${rhi_vulkan_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders)
-  catch_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "${spec}" PROPERTIES LABELS "${label}")
+  # Tests that do not pass a cache directory must not write to the user's ~/.cache.
+  catch_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "${spec}"
+    PROPERTIES LABELS "${label}" ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${label}")
 endfunction()
 
 engine_add_rhi_tests(rhi_tests rhi rhi_vulkan "" "rhi" "")

@@ -49,6 +49,7 @@ void DescribeDevice(const VkInstanceFns& fns, VkPhysicalDevice device, VkSurface
         out->synchronization2 = f13.synchronization2 == VK_TRUE;
         out->timeline_semaphore = f12.timelineSemaphore == VK_TRUE;
         out->sampler_anisotropy = f2.features.samplerAnisotropy == VK_TRUE;
+        out->fill_mode_non_solid = f2.features.fillModeNonSolid == VK_TRUE;
     }
 
     VkQueueFamilyProperties families[kMaxQueueFamilies];
@@ -164,6 +165,8 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     f2.pNext = &f12;
     anisotropy_enabled_ = gpu_info_.sampler_anisotropy;
     f2.features.samplerAnisotropy = anisotropy_enabled_ ? VK_TRUE : VK_FALSE;
+    fill_mode_non_solid_ = gpu_info_.fill_mode_non_solid;
+    f2.features.fillModeNonSolid = fill_mode_non_solid_ ? VK_TRUE : VK_FALSE;
 
     float priority = 1.0f;
     VkDeviceQueueCreateInfo queue_info{};
@@ -204,6 +207,7 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     }
     fns_.GetDeviceQueue(device_, static_cast<u32>(queues_.graphics_family), 0, &queue_);
     InitializeTimeline();
+    InitializePipelineCache(info);
 
     frames_in_flight_ = info.frames_in_flight < 1 ? 1 : (info.frames_in_flight > 3 ? 3 : info.frames_in_flight);
     FillCaps();
@@ -326,7 +330,7 @@ VulkanDevice::~VulkanDevice() {
             ++user_leaks;
             DestroySwapchain(swapchain_); // takes its textures with it
         }
-        user_leaks += buffers_.LiveCount() + textures_.LiveCount() + samplers_.LiveCount() + shaders_.LiveCount();
+        user_leaks += buffers_.LiveCount() + textures_.LiveCount() + samplers_.LiveCount() + shaders_.LiveCount() + bind_group_layouts_.LiveCount() + pipelines_.LiveCount();
         g_leaked_user_objects.fetch_add(user_leaks, std::memory_order_relaxed);
         // Buffers the application never destroyed are released here, with a warning.
         if (buffers_.LiveCount() > 0) {
@@ -343,7 +347,17 @@ VulkanDevice::~VulkanDevice() {
             RhiLog(LogVerbosity::Warn, "Vulkan: %zu shader module(s) were still alive when the device was destroyed", shaders_.LiveCount());
         }
         shaders_.ForEachLive([&](ShaderHandle, ShaderRes& s) { fns_.DestroyShaderModule(device_, s.module, nullptr); });
+        if (bind_group_layouts_.LiveCount() > 0 || pipelines_.LiveCount() > 0) {
+            RhiLog(LogVerbosity::Warn, "Vulkan: %zu bind group layout(s) and %zu pipeline(s) were still alive when the device was destroyed",
+                   bind_group_layouts_.LiveCount(), pipelines_.LiveCount());
+        }
+        pipelines_.ForEachLive([&](PipelineHandle, PipelineRes& p) {
+            fns_.DestroyPipeline(device_, p.pipeline, nullptr);
+            ReleasePipelineLayoutLocked(p.layout_slot);
+        });
+        bind_group_layouts_.ForEachLive([&](BindGroupLayoutHandle, BindGroupLayoutRes& l) { ReleaseSetLayoutLocked(l.set_slot); });
         CollectRetired(true);
+        ShutdownPipelines();
         ShutdownCommands();
         ShutdownUpload();
         // Everything is released now: any raw Vulkan object still counted is the backend's own leak.
@@ -438,13 +452,8 @@ bool VulkanDevice::LookupShader(ShaderHandle shader, ShaderInfo* out) const {
     out->entry = s->entry;
     return true;
 }
-BindGroupLayoutHandle VulkanDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&) { NotImplemented("CreateBindGroupLayout"); return {}; }
-void VulkanDevice::DestroyBindGroupLayout(BindGroupLayoutHandle) {}
 BindGroupHandle VulkanDevice::CreateBindGroup(const BindGroupDesc&) { NotImplemented("CreateBindGroup"); return {}; }
 void VulkanDevice::DestroyBindGroup(BindGroupHandle) {}
-PipelineHandle VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&) { NotImplemented("CreateGraphicsPipeline"); return {}; }
-PipelineHandle VulkanDevice::CreateComputePipeline(const ComputePipelineDesc&) { NotImplemented("CreateComputePipeline"); return {}; }
-void VulkanDevice::DestroyPipeline(PipelineHandle) {}
 
 bool VulkanDevice::DeviceLost() const { return device_lost_.load(std::memory_order_relaxed); }
 

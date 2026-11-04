@@ -43,6 +43,14 @@ struct DeviceCreateInfo {
     /// How many frames the CPU may get ahead of the GPU, 1 to 3 (values outside are clamped). `BeginFrame` waits for the
     /// frame this many back to finish. 1 trades throughput for latency; 3 the other way. The null backend ignores it.
     u32 frames_in_flight = 2;
+    /// Whether the Vulkan backend keeps a pipeline cache on disk, so pipelines compile faster on later runs.
+    ///
+    /// The file name carries the vendor, device and driver identity; a file that does not match or is damaged is
+    /// ignored with a log line. The null backend ignores it.
+    bool pipeline_cache = true;
+    /// The directory for the pipeline cache file, or null to use `ENGINE_RHI_CACHE_DIR`, then
+    /// `$XDG_CACHE_HOME/<application_name>`, then `$HOME/.cache/<application_name>`. Borrowed for the call.
+    const char* pipeline_cache_dir = nullptr;
 };
 
 /// Creates a device for the requested backend.

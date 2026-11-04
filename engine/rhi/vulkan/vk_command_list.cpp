@@ -6,6 +6,7 @@
 #include "rhi/vulkan/vk_format.h"
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vulkan_device.h"
+#include "rhi/vulkan/vk_pipeline_policy.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
@@ -17,6 +18,15 @@ void VulkanCommandList::Recycle(u64 frame) {
     label_depth_ = 0;
     failed_ = false;
     in_rendering_ = false;
+    pass_color_count_ = 0;
+    pass_depth_format_ = Format::Undefined;
+    graphics_bound_ = false;
+    compute_bound_ = false;
+    index_bound_ = false;
+    pipeline_layout_ = nullptr;
+    push_bytes_ = 0;
+    push_stages_ = ShaderStage::None;
+    pipeline_layout_count_ = 0;
 }
 
 bool VulkanCommandList::Recording(const char* what) const {
@@ -253,6 +263,7 @@ void VulkanCommandList::BeginRendering(const RenderingDesc& desc) {
         ENGINE_ASSERT(Has(tex.desc.usage, TextureUsage::ColorAttachment) && tex.attachment_view != nullptr,
                       "CommandList::BeginRendering: a color attachment lacks ColorAttachment usage");
         note_extent(tex);
+        pass_color_formats_[i] = tex.desc.format;
         VkRenderingAttachmentInfo& a = colors[i];
         a.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
         a.imageView = tex.attachment_view;
@@ -269,6 +280,7 @@ void VulkanCommandList::BeginRendering(const RenderingDesc& desc) {
         ENGINE_ASSERT(Has(tex.desc.usage, TextureUsage::DepthAttachment) && tex.attachment_view != nullptr,
                       "CommandList::BeginRendering: the depth attachment lacks DepthAttachment usage");
         note_extent(tex);
+        pass_depth_format_ = tex.desc.format;
         depth.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
         depth.imageView = tex.attachment_view;
         depth.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -279,6 +291,12 @@ void VulkanCommandList::BeginRendering(const RenderingDesc& desc) {
         stencil = depth; // the stencil aspect follows the depth load/store ops and clears to 0
     }
     in_rendering_ = true;
+    pass_color_count_ = desc.color_count;
+    if (!desc.depth.texture.IsValid()) {
+        pass_depth_format_ = Format::Undefined;
+    }
+    graphics_bound_ = false; // a graphics pipeline binding ends with the pass
+    index_bound_ = false;
     if (!usable) {
         return;
     }
@@ -302,6 +320,7 @@ void VulkanCommandList::EndRendering() {
     const bool usable = Recording("CommandList::EndRendering: the list is not recording");
     ENGINE_ASSERT(in_rendering_, "CommandList::EndRendering: no rendering pass is open");
     in_rendering_ = false;
+    graphics_bound_ = false;
     if (usable) {
         device_->Fns().CmdEndRendering(buffer_);
     }
@@ -328,16 +347,99 @@ void VulkanCommandList::PopDebugLabel() {
     }
 }
 
-// Commands that need textures, pipelines or bind groups arrive with those resources.
-void VulkanCommandList::SetPipeline(PipelineHandle) { Unsupported("SetPipeline"); }
+// Bind groups, push constants and compute dispatch arrive with Days 60 and 62.
+void VulkanCommandList::SetPipeline(PipelineHandle pipeline) {
+    const bool usable = Recording("CommandList::SetPipeline: the list is not recording");
+    VulkanDevice::PipelineInfo info;
+    ENGINE_ASSERT(device_->LookupPipeline(pipeline, &info), "CommandList::SetPipeline: stale or invalid pipeline handle");
+    if (info.compute) {
+        ENGINE_ASSERT(!in_rendering_, "CommandList::SetPipeline: a compute pipeline cannot be bound inside a rendering pass");
+    } else {
+        ENGINE_ASSERT(in_rendering_, "CommandList::SetPipeline: a graphics pipeline can only be bound inside a rendering pass");
+        bool formats_match = info.color_count == pass_color_count_ && info.depth_format == pass_depth_format_;
+        for (u32 i = 0; formats_match && i < info.color_count; ++i) {
+            formats_match = info.color_formats[i] == pass_color_formats_[i];
+        }
+        ENGINE_ASSERT(formats_match, "CommandList::SetPipeline: the pipeline's attachment formats differ from the rendering pass's");
+    }
+    graphics_bound_ = !info.compute;
+    compute_bound_ = info.compute;
+    pipeline_layout_ = info.layout;
+    push_bytes_ = info.push_bytes;
+    push_stages_ = info.push_stages;
+    pipeline_layout_count_ = info.layout_count;
+    for (u32 i = 0; i < kMaxBindGroups; ++i) {
+        pipeline_layout_ids_[i] = info.layout_ids[i];
+    }
+    if (usable) {
+        device_->Fns().CmdBindPipeline(buffer_, info.compute ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS, info.pipeline);
+    }
+}
+
 void VulkanCommandList::SetBindGroup(u32, BindGroupHandle) { Unsupported("SetBindGroup"); }
 void VulkanCommandList::SetPushConstants(u32, const void*, u32) { Unsupported("SetPushConstants"); }
-void VulkanCommandList::SetViewport(const Viewport&) { Unsupported("SetViewport"); }
-void VulkanCommandList::SetScissor(const ScissorRect&) { Unsupported("SetScissor"); }
-void VulkanCommandList::SetVertexBuffer(u32, BufferHandle, u64) { Unsupported("SetVertexBuffer"); }
-void VulkanCommandList::SetIndexBuffer(BufferHandle, u64, IndexType) { Unsupported("SetIndexBuffer"); }
-void VulkanCommandList::Draw(u32, u32, u32, u32) { Unsupported("Draw"); }
-void VulkanCommandList::DrawIndexed(u32, u32, u32, i32, u32) { Unsupported("DrawIndexed"); }
+void VulkanCommandList::SetViewport(const Viewport& viewport) {
+    const bool usable = Recording("CommandList::SetViewport: the list is not recording");
+    ENGINE_ASSERT(viewport.width > 0.0f && viewport.height > 0.0f, "CommandList::SetViewport: the viewport must have a positive size");
+    if (usable) {
+        const VkViewport vk{viewport.x, viewport.y, viewport.width, viewport.height, viewport.min_depth, viewport.max_depth};
+        device_->Fns().CmdSetViewport(buffer_, 0, 1, &vk);
+    }
+}
+
+void VulkanCommandList::SetScissor(const ScissorRect& scissor) {
+    const bool usable = Recording("CommandList::SetScissor: the list is not recording");
+    if (usable) {
+        const VkRect2D vk{{scissor.x, scissor.y}, {scissor.width, scissor.height}};
+        device_->Fns().CmdSetScissor(buffer_, 0, 1, &vk);
+    }
+}
+
+void VulkanCommandList::SetVertexBuffer(u32 slot, BufferHandle buffer, u64 offset) {
+    const bool usable = Recording("CommandList::SetVertexBuffer: the list is not recording");
+    ENGINE_ASSERT(slot < kMaxVertexBindings, "CommandList::SetVertexBuffer: slot out of range");
+    VkBuffer vk_buffer = nullptr;
+    BufferDesc desc;
+    ENGINE_ASSERT(device_->LookupBuffer(buffer, &vk_buffer, &desc), "CommandList::SetVertexBuffer: stale or invalid buffer handle");
+    ENGINE_ASSERT(Has(desc.usage, BufferUsage::Vertex), "CommandList::SetVertexBuffer: the buffer lacks Vertex usage");
+    ENGINE_ASSERT(offset < desc.size, "CommandList::SetVertexBuffer: the offset is past the end of the buffer");
+    if (usable) {
+        const VkDeviceSize vk_offset = offset;
+        device_->Fns().CmdBindVertexBuffers(buffer_, slot, 1, &vk_buffer, &vk_offset);
+    }
+}
+
+void VulkanCommandList::SetIndexBuffer(BufferHandle buffer, u64 offset, IndexType type) {
+    const bool usable = Recording("CommandList::SetIndexBuffer: the list is not recording");
+    VkBuffer vk_buffer = nullptr;
+    BufferDesc desc;
+    ENGINE_ASSERT(device_->LookupBuffer(buffer, &vk_buffer, &desc), "CommandList::SetIndexBuffer: stale or invalid buffer handle");
+    ENGINE_ASSERT(Has(desc.usage, BufferUsage::Index), "CommandList::SetIndexBuffer: the buffer lacks Index usage");
+    const u64 index_size = type == IndexType::UInt16 ? 2 : 4;
+    ENGINE_ASSERT(offset % index_size == 0 && offset < desc.size, "CommandList::SetIndexBuffer: misaligned offset or past the end");
+    index_bound_ = true;
+    if (usable) {
+        device_->Fns().CmdBindIndexBuffer(buffer_, vk_buffer, offset, ToVkIndexType(type));
+    }
+}
+
+void VulkanCommandList::Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) {
+    const bool usable = Recording("CommandList::Draw: the list is not recording");
+    ENGINE_ASSERT(in_rendering_ && graphics_bound_, "CommandList::Draw: needs a rendering pass with a graphics pipeline bound");
+    if (usable) {
+        device_->Fns().CmdDraw(buffer_, vertex_count, instance_count, first_vertex, first_instance);
+    }
+}
+
+void VulkanCommandList::DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) {
+    const bool usable = Recording("CommandList::DrawIndexed: the list is not recording");
+    ENGINE_ASSERT(in_rendering_ && graphics_bound_, "CommandList::DrawIndexed: needs a rendering pass with a graphics pipeline bound");
+    ENGINE_ASSERT(index_bound_, "CommandList::DrawIndexed: no index buffer is bound");
+    if (usable) {
+        device_->Fns().CmdDrawIndexed(buffer_, index_count, instance_count, first_index, vertex_offset, first_instance);
+    }
+}
+
 void VulkanCommandList::Dispatch(u32, u32, u32) { Unsupported("Dispatch"); }
 
 } // namespace engine_placeholder::rhi::vulkan

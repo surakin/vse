@@ -56,6 +56,8 @@ struct PhysicalDeviceInfo {
     bool timeline_semaphore = false;
     /// Whether anisotropic filtering is supported.
     bool sampler_anisotropy = false;
+    /// Whether `fillModeNonSolid` is supported (wireframe pipelines).
+    bool fill_mode_non_solid = false;
     /// Whether the device supports the swapchain extension.
     bool swapchain_extension = false;
     /// Whether the device supports `VK_EXT_memory_budget`.

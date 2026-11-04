@@ -5134,6 +5134,28 @@ u32 frames_in_flight;
 
 How many frames the CPU may get ahead of the GPU, 1 to 3 (values outside are clamped). `BeginFrame` waits for the frame this many back to finish. 1 trades throughput for latency; 3 the other way. The null backend ignores it.
 
+### `pipeline_cache` {#rhi-devicecreateinfo-pipeline-cache}
+
+`variable rhi::DeviceCreateInfo::pipeline_cache` — defined in `engine/rhi/rhi.h`
+
+```cpp
+bool pipeline_cache;
+```
+
+Whether the Vulkan backend keeps a pipeline cache on disk, so pipelines compile faster on later runs.
+
+The file name carries the vendor, device and driver identity; a file that does not match or is damaged is ignored with a log line. The null backend ignores it.
+
+### `pipeline_cache_dir` {#rhi-devicecreateinfo-pipeline-cache-dir}
+
+`variable rhi::DeviceCreateInfo::pipeline_cache_dir` — defined in `engine/rhi/rhi.h`
+
+```cpp
+const char* pipeline_cache_dir;
+```
+
+The directory for the pipeline cache file, or null to use `ENGINE_RHI_CACHE_DIR`, then `$XDG_CACHE_HOME/<application_name>`, then `$HOME/.cache/<application_name>`. Borrowed for the call.
+
 ## `CreateDevice(const DeviceCreateInfo&)` {#rhi-createdevice-const-devicecreateinfo-amp}
 
 `function rhi::CreateDevice` — defined in `engine/rhi/rhi.h`

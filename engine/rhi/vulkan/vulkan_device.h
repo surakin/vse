@@ -14,6 +14,7 @@
 #include "rhi/vulkan/vk_instance.h"
 #include "rhi/vulkan/vk_memory.h"
 #include "rhi/vulkan/vk_memory_backend.h"
+#include "rhi/vulkan/vk_pipeline_policy.h"
 #include "rhi/vulkan/vk_ring.h"
 #include "os/window.h"
 
@@ -145,6 +146,14 @@ public:
         usize raw_images = 0;
         /// Live shader modules owned by the user.
         usize shaders = 0;
+        /// Live bind group layouts owned by the user.
+        usize bind_group_layouts = 0;
+        /// Live pipelines owned by the user.
+        usize pipelines = 0;
+        /// Distinct `VkDescriptorSetLayout` objects alive; equal layouts share one.
+        usize descriptor_set_layouts = 0;
+        /// Distinct `VkPipelineLayout` objects alive; equal layouts share one.
+        usize pipeline_layouts = 0;
     };
 
     /// Returns the current object counts.
@@ -230,6 +239,70 @@ public:
     /// Thread-safety: thread-safe.
     bool LookupShader(ShaderHandle shader, ShaderInfo* info) const;
 
+    /// A snapshot of a live pipeline, for the command list.
+    ///
+    /// Thread-safety: thread-compatible plain data (a snapshot).
+    /// Ownership: the Vulkan handles are borrowed; the pipeline layout lives as long as the device.
+    struct PipelineInfo {
+        /// The pipeline.
+        VkPipeline pipeline = nullptr;
+        /// Its layout.
+        VkPipelineLayout layout = nullptr;
+        /// True for a compute pipeline.
+        bool compute = false;
+        /// Number of bind group layouts the pipeline declares.
+        u32 layout_count = 0;
+        /// Identity of each declared bind group layout; equal ids mean equal layouts.
+        u64 layout_ids[kMaxBindGroups] = {};
+        /// Size of the push-constant range in bytes.
+        u32 push_bytes = 0;
+        /// Stages that see the push constants.
+        ShaderStage push_stages = ShaderStage::None;
+        /// Number of color attachments the pipeline writes.
+        u32 color_count = 0;
+        /// Their formats.
+        Format color_formats[kMaxColorAttachments] = {};
+        /// The depth attachment format, or `Undefined`.
+        Format depth_format = Format::Undefined;
+    };
+
+    /// Looks up a pipeline by handle.
+    ///
+    /// Param pipeline: the handle.
+    /// Param info: receives the snapshot when the handle is live.
+    /// Returns: true if the handle is live.
+    /// Fails: returns false for an invalid or stale handle.
+    /// Thread-safety: thread-safe.
+    bool LookupPipeline(PipelineHandle pipeline, PipelineInfo* info) const;
+
+    /// What the on-disk pipeline cache did for this device.
+    ///
+    /// Thread-safety: thread-compatible plain data (a snapshot).
+    struct PipelineCacheStats {
+        /// Whether a cache is in use (it is not when disabled or when no directory could be chosen).
+        bool enabled = false;
+        /// Bytes of an existing file given to the driver at start; 0 if there was none or it was ignored.
+        u64 loaded_bytes = 0;
+        /// True if a file existed but was ignored (damaged, or for another device or driver).
+        bool rejected = false;
+        /// Bytes written by the last save; 0 until the device is destroyed.
+        u64 saved_bytes = 0;
+    };
+
+    /// Returns what the pipeline cache did so far.
+    PipelineCacheStats PipelineCache() const;
+
+    /// Writes the pipeline cache to disk now, as the destructor does, so a long session or one that may crash does not
+    /// lose what it compiled.
+    ///
+    /// Returns: true if a file was written.
+    /// Fails: returns false if the cache is disabled, empty, or the file cannot be written (logged).
+    /// Thread-safety: thread-safe; concurrent calls in one process write one after the other.
+    bool SavePipelineCache();
+
+    /// Returns the pipeline cache file path, or an empty string if no cache is in use.
+    const char* PipelineCachePath() const { return cache_path_; }
+
     /// Notes the result of a Vulkan call made while recording: a lost device sets the sticky lost state, and any
     /// other failure is logged.
     ///
@@ -282,12 +355,57 @@ private:
         ShaderStage stage = ShaderStage::None;
         char entry[kMaxShaderEntryNameLength + 1] = {};
     };
+    // One cached VkDescriptorSetLayout, shared by every bind group layout with the same bindings.
+    struct SetLayoutEntry {
+        VkDescriptorSetLayout layout = nullptr;
+        u64 id = 0; // never reused, so a pipeline layout key can name it safely
+        BindingDesc bindings[kMaxBindingsPerLayout];
+        u32 binding_count = 0;
+        u32 refs = 0;
+    };
+    struct BindGroupLayoutRes {
+        u32 set_slot = 0;
+        u64 id = 0;
+        BindingDesc bindings[kMaxBindingsPerLayout];
+        u32 binding_count = 0;
+    };
+    struct PipelineLayoutEntry {
+        VkPipelineLayout layout = nullptr;
+        u64 set_ids[kMaxBindGroups] = {};
+        u32 set_count = 0;
+        u32 push_bytes = 0;
+        ShaderStage push_stages = ShaderStage::None;
+        u32 refs = 0; // pipelines using it; it is destroyed when the last one has been collected
+    };
+    struct PipelineRes {
+        VkPipeline pipeline = nullptr;
+        VkPipelineLayout layout = nullptr;
+        u32 layout_slot = 0;
+        bool compute = false;
+        u32 layout_count = 0;
+        u64 layout_ids[kMaxBindGroups] = {};
+        u32 push_bytes = 0;
+        ShaderStage push_stages = ShaderStage::None;
+        u32 color_count = 0;
+        Format color_formats[kMaxColorAttachments] = {};
+        Format depth_format = Format::Undefined;
+    };
+    static constexpr usize kMaxSetLayouts = 512;
+    static constexpr usize kMaxPipelineLayouts = 512;
     struct CommandBufferSlot {
         VkCommandBuffer buffer;
         u64 fence; // the timeline value that frees it; 0 when free
     };
 
     void InitializeFormats();
+    // Pipeline cache and layout caches (vulkan_device_pipelines.cpp).
+    void InitializePipelineCache(const DeviceCreateInfo& info);
+    void ShutdownPipelines();
+    void ReleaseSetLayoutLocked(u32 slot);
+    // Finds or makes the pipeline layout and takes a reference on it; null if it cannot be made.
+    VkPipelineLayout PipelineLayoutLocked(const u32* set_slots, const u64* set_ids, u32 count, u32 push_bytes, ShaderStage push_stages,
+                                          u32* slot);
+    void ReleasePipelineLayoutLocked(u32 slot);
     void DestroyTextureRes(TextureRes* t);
     // Submits `fill` after staging chunks; shared by the texture upload and readback paths.
     bool StageChunkLocked(u64 alloc_bytes, u64 align, u64* ring_offset);
@@ -354,6 +472,16 @@ private:
     HandlePool<TextureRes, TextureTag> textures_;
     HandlePool<SamplerRes, SamplerTag> samplers_;
     HandlePool<ShaderRes, ShaderTag> shaders_;
+    HandlePool<BindGroupLayoutRes, BindGroupLayoutTag> bind_group_layouts_;
+    HandlePool<PipelineRes, PipelineTag> pipelines_;
+    SetLayoutEntry set_layouts_[kMaxSetLayouts];
+    u64 next_set_layout_id_ = 1;
+    PipelineLayoutEntry pipeline_layouts_[kMaxPipelineLayouts];
+    VkPipelineCache pipeline_cache_ = nullptr;
+    char cache_path_[512] = {};
+    PipelineCacheStats cache_stats_;
+    std::mutex cache_save_mutex_;
+    bool fill_mode_non_solid_ = false;
     VkFormatFeatureFlags format_features_[static_cast<usize>(Format::Count)] = {};
     std::atomic<usize> raw_image_count_{0};
     u32 frames_in_flight_ = 2;

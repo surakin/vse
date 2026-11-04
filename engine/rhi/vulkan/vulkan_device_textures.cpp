@@ -5,6 +5,7 @@
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_barrier.h"
 #include "rhi/vulkan/vk_format.h"
+#include "rhi/vulkan/vk_pipeline_policy.h"
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vulkan_device.h"
 
@@ -61,20 +62,6 @@ VkBorderColor ToVkBorder(BorderColor c) {
     case BorderColor::OpaqueWhite: return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
     }
     return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-}
-
-VkCompareOp ToVkCompare(CompareOp op) {
-    switch (op) {
-    case CompareOp::Never: return VK_COMPARE_OP_NEVER;
-    case CompareOp::Less: return VK_COMPARE_OP_LESS;
-    case CompareOp::Equal: return VK_COMPARE_OP_EQUAL;
-    case CompareOp::LessEqual: return VK_COMPARE_OP_LESS_OR_EQUAL;
-    case CompareOp::Greater: return VK_COMPARE_OP_GREATER;
-    case CompareOp::NotEqual: return VK_COMPARE_OP_NOT_EQUAL;
-    case CompareOp::GreaterEqual: return VK_COMPARE_OP_GREATER_OR_EQUAL;
-    case CompareOp::Always: return VK_COMPARE_OP_ALWAYS;
-    }
-    return VK_COMPARE_OP_ALWAYS;
 }
 
 bool SameSampler(const SamplerDesc& a, const SamplerDesc& b) {
@@ -335,7 +322,7 @@ SamplerHandle VulkanDevice::CreateSampler(const SamplerDesc& desc) {
     info.anisotropyEnable = normalized.max_anisotropy > 1.0f ? VK_TRUE : VK_FALSE;
     info.maxAnisotropy = normalized.max_anisotropy;
     info.compareEnable = normalized.compare_enable ? VK_TRUE : VK_FALSE;
-    info.compareOp = ToVkCompare(normalized.compare_op);
+    info.compareOp = ToVkCompareOp(normalized.compare_op);
     info.minLod = normalized.min_lod;
     info.maxLod = normalized.max_lod;
     info.borderColor = ToVkBorder(normalized.border_color);

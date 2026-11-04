@@ -570,6 +570,11 @@ void VulkanDevice::CollectRetired(bool all) {
     textures_.CollectRetired(completed, [&](TextureRes& t) { DestroyTextureRes(&t); });
     samplers_.CollectRetired(completed, [&](SamplerRes& s) { fns_.DestroySampler(device_, s.sampler, nullptr); });
     shaders_.CollectRetired(completed, [&](ShaderRes& s) { fns_.DestroyShaderModule(device_, s.module, nullptr); });
+    pipelines_.CollectRetired(completed, [&](PipelineRes& p) {
+        fns_.DestroyPipeline(device_, p.pipeline, nullptr);
+        ReleasePipelineLayoutLocked(p.layout_slot);
+    });
+    bind_group_layouts_.CollectRetired(completed, [&](BindGroupLayoutRes& l) { ReleaseSetLayoutLocked(l.set_slot); });
 }
 
 u64 VulkanDevice::CompletedFrame() const {
@@ -588,6 +593,14 @@ VulkanDevice::ObjectCounts VulkanDevice::Counts() const {
     counts.pending_image_destruction = textures_.RetiredCount() + samplers_.RetiredCount();
     counts.raw_images = raw_image_count_.load(std::memory_order_relaxed);
     counts.shaders = shaders_.LiveCount();
+    counts.bind_group_layouts = bind_group_layouts_.LiveCount();
+    counts.pipelines = pipelines_.LiveCount();
+    for (const SetLayoutEntry& e : set_layouts_) {
+        counts.descriptor_set_layouts += e.layout != nullptr ? 1 : 0;
+    }
+    for (const PipelineLayoutEntry& e : pipeline_layouts_) {
+        counts.pipeline_layouts += e.layout != nullptr ? 1 : 0;
+    }
     return counts;
 }
 
