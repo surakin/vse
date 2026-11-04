@@ -211,6 +211,7 @@ struct NullDeviceState {
 
     // Command lists are pooled and recycled at BeginFrame, never freed before the device: a pointer kept
     // across frames therefore stays dereferenceable (it reports "not ended" if submitted) instead of dangling.
+    Swapchain* swapchain = nullptr;
     NullCommandList** lists = nullptr;
     usize list_count = 0;     // lists allocated
     usize list_capacity = 0;
@@ -977,6 +978,10 @@ using detail::NullCommandList;
 NullDevice::NullDevice(State* state) : state_(state) {}
 
 NullDevice::~NullDevice() {
+    if (state_->swapchain != nullptr) {
+        state_->Error("NullDevice: the swapchain was still alive when the device was destroyed");
+        DestroySwapchain(state_->swapchain);
+    }
     delete state_;
 }
 
@@ -1405,6 +1410,103 @@ UploadTicket NullDevice::UploadBuffer(BufferHandle dst, u64 offset, const void* 
     std::memcpy(b->data + offset, data, static_cast<usize>(size));
     b->state = ResourceState::CopyDst;
     return {};
+}
+
+namespace {
+
+// A swapchain with no window: three textures that rotate, for testing the frame loop without a GPU. A size of 0
+// in the description means 640x480.
+class NullSwapchain final : public Swapchain {
+public:
+    NullSwapchain(NullDevice* device, const SwapchainDesc& desc)
+        : device_(device), width_(desc.width != 0 ? desc.width : 640), height_(desc.height != 0 ? desc.height : 480) {
+        Make();
+    }
+    ~NullSwapchain() override { Drop(); }
+
+    SwapchainStatus Acquire() override {
+        ENGINE_ASSERT(!acquired_, "Swapchain::Acquire: the previous image was not presented");
+        if (width_ == 0 || height_ == 0) {
+            return SwapchainStatus::Minimized;
+        }
+        current_ = (current_ + 1) % kImages;
+        acquired_ = true;
+        return SwapchainStatus::Ok;
+    }
+    SwapchainStatus Present() override {
+        ENGINE_ASSERT(acquired_, "Swapchain::Present: no image has been acquired");
+        acquired_ = false;
+        return device_->DeviceLost() ? SwapchainStatus::Lost : SwapchainStatus::Ok;
+    }
+    SwapchainStatus Resize(u32 width, u32 height) override {
+        Drop();
+        width_ = width;
+        height_ = height;
+        if (width == 0 || height == 0) {
+            return SwapchainStatus::Minimized;
+        }
+        Make();
+        return SwapchainStatus::Ok;
+    }
+    Format ImageFormat() const override { return Format::BGRA8_SRGB; }
+    u32 Width() const override { return width_; }
+    u32 Height() const override { return height_; }
+    TextureHandle CurrentTexture() const override { return acquired_ ? images_[current_] : TextureHandle{}; }
+
+private:
+    static constexpr u32 kImages = 3;
+    void Make() {
+        TextureDesc desc;
+        desc.width = width_;
+        desc.height = height_;
+        desc.format = Format::BGRA8_SRGB;
+        desc.usage = TextureUsage::ColorAttachment | TextureUsage::CopySrc;
+        for (u32 i = 0; i < kImages; ++i) {
+            images_[i] = device_->CreateTexture(desc);
+        }
+        current_ = kImages - 1;
+    }
+    void Drop() {
+        for (u32 i = 0; i < kImages; ++i) {
+            if (images_[i].IsValid()) {
+                device_->DestroyTexture(images_[i]);
+                images_[i] = TextureHandle{};
+            }
+        }
+        acquired_ = false;
+    }
+
+    NullDevice* device_;
+    u32 width_;
+    u32 height_;
+    TextureHandle images_[kImages];
+    u32 current_ = 0;
+    bool acquired_ = false;
+};
+
+} // namespace
+
+Swapchain* NullDevice::CreateSwapchain(const SwapchainDesc& desc) {
+    State& s = *state_;
+    if (s.swapchain != nullptr) {
+        s.Error("CreateSwapchain: the device already has a swapchain");
+        return nullptr;
+    }
+    s.swapchain = new NullSwapchain(this, desc);
+    return s.swapchain;
+}
+
+void NullDevice::DestroySwapchain(Swapchain* swapchain) {
+    State& s = *state_;
+    if (swapchain == nullptr) {
+        return;
+    }
+    if (swapchain != s.swapchain) {
+        s.Error("DestroySwapchain: not this device's swapchain");
+        return;
+    }
+    delete s.swapchain;
+    s.swapchain = nullptr;
 }
 
 bool NullDevice::FormatSupport(Format format, TextureUsage usage) const {

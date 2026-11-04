@@ -6,6 +6,8 @@
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_format.h"
 #include "rhi/vulkan/vk_result.h"
+#include "rhi/vulkan/vk_swapchain.h"
+#include "rhi/vulkan/vk_xlib_surface.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
@@ -22,7 +24,7 @@ GpuKind ToGpuKind(VkPhysicalDeviceType type) {
 }
 
 // Reads everything the selection policy needs about one physical device.
-void DescribeDevice(const VkInstanceFns& fns, VkPhysicalDevice device, PhysicalDeviceInfo* out) {
+void DescribeDevice(const VkInstanceFns& fns, VkPhysicalDevice device, VkSurfaceKHR surface, PhysicalDeviceInfo* out) {
     *out = PhysicalDeviceInfo{};
 
     VkPhysicalDeviceProperties props{};
@@ -59,6 +61,12 @@ void DescribeDevice(const VkInstanceFns& fns, VkPhysicalDevice device, PhysicalD
         f.compute = (families[i].queueFlags & VK_QUEUE_COMPUTE_BIT) != 0;
         f.transfer = (families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) != 0;
         f.timestamp_valid_bits = families[i].timestampValidBits;
+        if (surface != nullptr && fns.GetPhysicalDeviceSurfaceSupportKHR != nullptr) {
+            VkBool32 supported = VK_FALSE;
+            if (fns.GetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &supported) == VK_SUCCESS) {
+                f.present = supported == VK_TRUE;
+            }
+        }
     }
 
     u32 ext_count = 0;
@@ -102,9 +110,17 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
                                : info.validation == ValidationSetting::On ? ValidationMode::On
                                                                            : ValidationMode::Auto;
     instance_desc.sync_validation = info.sync_validation;
+    const bool presentable = info.window != nullptr;
+    instance_desc.presentable = presentable;
     instance_ = VulkanInstance::Create(loader, instance_desc);
     if (!instance_.Valid()) {
         return false;
+    }
+    if (presentable) {
+        window_ = info.window;
+        if (!CreateSurface(info.window->GetNativeInfo())) {
+            return false;
+        }
     }
     const VkInstanceFns& ifns = instance_.Fns();
     VkInstance instance = instance_.Handle();
@@ -119,10 +135,9 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     }
     PhysicalDeviceInfo infos[kMaxPhysicalDevices];
     for (u32 i = 0; i < physical_count; ++i) {
-        DescribeDevice(ifns, physicals[i], &infos[i]);
+        DescribeDevice(ifns, physicals[i], surface_, &infos[i]);
     }
 
-    const bool presentable = false;
     int chosen = SelectPhysicalDevice(infos, physical_count, presentable, std::getenv("ENGINE_RHI_GPU"));
     if (chosen < 0) {
         return false;
@@ -156,8 +171,11 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     queue_info.queueCount = 1;
     queue_info.pQueuePriorities = &priority;
 
-    const char* extensions[2];
+    const char* extensions[3];
     u32 extension_count = 0;
+    if (presentable) {
+        extensions[extension_count++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+    }
     memory_budget_enabled_ = gpu_info_.memory_budget_extension;
     if (memory_budget_enabled_) {
         extensions[extension_count++] = VK_EXT_MEMORY_BUDGET_EXTENSION_NAME;
@@ -283,6 +301,10 @@ bool VulkanDevice::HeapBudget(u32 heap, u64* budget, u64* usage) const {
 VulkanDevice::~VulkanDevice() {
     if (device_ != nullptr) {
         fns_.DeviceWaitIdle(device_);
+        if (swapchain_ != nullptr) {
+            RhiLog(LogVerbosity::Warn, "Vulkan: the swapchain was still alive when the device was destroyed");
+            DestroySwapchain(swapchain_);
+        }
         // Buffers the application never destroyed are released here, with a warning.
         if (buffers_.LiveCount() > 0) {
             RhiLog(LogVerbosity::Warn, "Vulkan: %zu buffer(s) were still alive when the device was destroyed", buffers_.LiveCount());
@@ -305,6 +327,10 @@ VulkanDevice::~VulkanDevice() {
     if (device_ != nullptr) {
         fns_.DestroyDevice(device_, nullptr);
         device_ = nullptr;
+    }
+    if (surface_ != nullptr) {
+        instance_.Fns().DestroySurfaceKHR(instance_.Handle(), surface_, nullptr);
+        surface_ = nullptr;
     }
     // instance_ is destroyed after the device, as a member.
 }

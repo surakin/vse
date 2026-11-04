@@ -1,5 +1,6 @@
 #pragma once
 
+#include "os/window.h"
 #include "rhi/device.h"
 #include "types.h"
 
@@ -34,6 +35,11 @@ struct DeviceCreateInfo {
     ValidationSetting validation = ValidationSetting::Auto;
     /// Also enable synchronization validation (barrier and hazard checks) when validation is on.
     bool sync_validation = false;
+    /// The window the device will present to, or null for a device that only computes and renders offscreen.
+    ///
+    /// The Vulkan backend creates the presentation surface from the window's native handles and picks a GPU that can
+    /// present to it. The window must outlive the device. The null backend ignores it.
+    const os::Window* window = nullptr;
 };
 
 /// Creates a device for the requested backend.

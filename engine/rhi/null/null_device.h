@@ -92,6 +92,8 @@ public:
     void UnmapBuffer(BufferHandle buffer) override;
     UploadTicket UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) override;
     bool ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) override;
+    Swapchain* CreateSwapchain(const SwapchainDesc& desc) override;
+    void DestroySwapchain(Swapchain* swapchain) override;
     bool FormatSupport(Format format, TextureUsage usage) const override;
     bool CanGenerateMips(Format format) const override;
     UploadTicket UploadTexture(TextureHandle dst, u32 mip, u32 layer, const void* data, u32 row_pitch) override;

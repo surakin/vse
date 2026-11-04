@@ -16,27 +16,53 @@ enum class SwapchainStatus : u8 {
     Lost,      ///< The surface or device is lost; the swapchain cannot be used again.
 };
 
+/// How finished images reach the screen.
+enum class PresentMode : u8 {
+    Fifo = 0,  ///< Wait for the display's refresh (vertical sync); always available.
+    Mailbox,   ///< Replace the queued image with the newest one, no tearing, if the system supports it; otherwise `Fifo`.
+    Immediate, ///< Present at once, possibly tearing, if the system supports it; otherwise `Fifo`.
+};
+
+/// What to create a [[rhi::Swapchain]] for.
+///
+/// Thread-safety: thread-compatible plain data.
+struct SwapchainDesc {
+    /// The preferred presentation mode; falls back to `Fifo` when the system does not offer it.
+    PresentMode present_mode = PresentMode::Fifo;
+    /// Initial image width in pixels; 0 uses the window's current width.
+    u32 width = 0;
+    /// Initial image height in pixels; 0 uses the window's current height.
+    u32 height = 0;
+};
+
 /// The images of one window's swapchain, acquired and presented once per frame.
 ///
-/// The backend-specific creation function is declared with the window integration (Phase 3 Day 56), where
-/// the native window handle from the platform layer is available.
+/// A device is created for one window (`DeviceCreateInfo::window`) and makes the swapchain for it with
+/// [[rhi::Device::CreateSwapchain]]. Render into `CurrentTexture()` after moving it to `ColorAttachment` with a
+/// barrier, move it to `Present`, submit, then `Present`.
 ///
 /// Thread-safety: owner-thread-only. Use one swapchain from the thread that owns its window.
-/// Ownership: created by and owned by a device; the device destroys it, and the textures it exposes are
-///   valid only until the next `Acquire` or `Resize`.
+/// Ownership: created by a device; destroy it with [[rhi::Device::DestroySwapchain]] before the device is destroyed.
+///   The textures it exposes are valid only until the next `Acquire` or `Resize`.
 class Swapchain {
 public:
     virtual ~Swapchain() = default;
 
     /// Acquires the next image to render to and makes it the current texture.
     ///
+    /// Never blocks for long: a window the compositor has stopped drawing (which Wayland does not report as
+    /// minimized) times out after half a second and counts as `Minimized`. If the window changed size, or the
+    /// surface is out of date, the swapchain is recreated first and the call still acquires an image.
+    ///
     /// Returns: `Ok`, or `Recreated`, `Minimized` or `Lost` as described for [[rhi::SwapchainStatus]].
     /// Fails: a status other than `Ok` means no image was acquired, except `Recreated`, after which an image is acquired.
+    /// Aborts: the previously acquired image was not presented.
     virtual SwapchainStatus Acquire() = 0;
 
     /// Presents the current image to the window.
     ///
-    /// Returns: `Ok`, `Recreated` (presented, but the swapchain was recreated for next frame), or `Lost`.
+    /// Returns: `Ok`, `Recreated` (the surface changed: the image may not have been shown, and the swapchain is rebuilt by
+    ///   the next `Acquire`), or `Lost`.
     /// Fails: `Lost` means the image was not presented.
     /// Aborts: no image has been acquired.
     virtual SwapchainStatus Present() = 0;

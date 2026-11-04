@@ -2497,6 +2497,38 @@ Destroys a pipeline of either kind.
 | Parameter `pipeline` | a live pipeline handle. |
 | Aborts | `pipeline` is invalid or stale. |
 
+### `CreateSwapchain(const SwapchainDesc&)` {#rhi-device-createswapchain-const-swapchaindesc-amp}
+
+`method rhi::Device::CreateSwapchain` — defined in `engine/rhi/device.h`
+
+```cpp
+virtual Swapchain* CreateSwapchain(const SwapchainDesc& desc) = 0;
+```
+
+Creates the swapchain for the window the device was created with.
+
+| Field | Value |
+|---|---|
+| Parameter `desc` | the presentation mode and initial size. |
+| Returns | the swapchain, or null. |
+| Fails | returns null, logging the reason, if the device was created without a window, already has a swapchain, or the surface cannot be presented to. |
+| Ownership | the device owns the swapchain; give it back with `DestroySwapchain`. |
+
+### `DestroySwapchain(Swapchain*)` {#rhi-device-destroyswapchain-swapchain-star}
+
+`method rhi::Device::DestroySwapchain` — defined in `engine/rhi/device.h`
+
+```cpp
+virtual void DestroySwapchain(Swapchain* swapchain) = 0;
+```
+
+Destroys a swapchain after the GPU is done with its images.
+
+| Field | Value |
+|---|---|
+| Parameter `swapchain` | a swapchain from `CreateSwapchain`, or null for no effect. |
+| Ownership | takes back the swapchain; it and its textures are invalid afterwards. |
+
 ### `FormatSupport(Format,TextureUsage)` {#rhi-device-formatsupport-format-textureusage-const}
 
 `method rhi::Device::FormatSupport` — defined in `engine/rhi/device.h`
@@ -4684,6 +4716,30 @@ Copies bytes from a buffer back to the CPU and waits for them (a synchronous hel
 
 _Inherited from [`rhi::Device::ReadbackBuffer(BufferHandle,u64,void*,u64)`](#rhi-device-readbackbuffer-bufferhandle-u64-void-star-u64)._
 
+### `CreateSwapchain(const SwapchainDesc&)` {#rhi-nulldevice-createswapchain-const-swapchaindesc-amp}
+
+`method rhi::NullDevice::CreateSwapchain` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+Swapchain* CreateSwapchain(const SwapchainDesc& desc) override;
+```
+
+Creates the swapchain for the window the device was created with.
+
+_Inherited from [`rhi::Device::CreateSwapchain(const SwapchainDesc&)`](#rhi-device-createswapchain-const-swapchaindesc-amp)._
+
+### `DestroySwapchain(Swapchain*)` {#rhi-nulldevice-destroyswapchain-swapchain-star}
+
+`method rhi::NullDevice::DestroySwapchain` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+void DestroySwapchain(Swapchain* swapchain) override;
+```
+
+Destroys a swapchain after the GPU is done with its images.
+
+_Inherited from [`rhi::Device::DestroySwapchain(Swapchain*)`](#rhi-device-destroyswapchain-swapchain-star)._
+
 ### `FormatSupport(Format,TextureUsage)` {#rhi-nulldevice-formatsupport-format-textureusage-const}
 
 `method rhi::NullDevice::FormatSupport` — defined in `engine/rhi/null/null_device.h`
@@ -5050,6 +5106,18 @@ bool sync_validation;
 
 Also enable synchronization validation (barrier and hazard checks) when validation is on.
 
+### `window` {#rhi-devicecreateinfo-window}
+
+`variable rhi::DeviceCreateInfo::window` — defined in `engine/rhi/rhi.h`
+
+```cpp
+const os::Window* window;
+```
+
+The window the device will present to, or null for a device that only computes and renders offscreen.
+
+The Vulkan backend creates the presentation surface from the window's native handles and picks a GPU that can present to it. The window must outlive the device. The null backend ignores it.
+
 ## `CreateDevice(const DeviceCreateInfo&)` {#rhi-createdevice-const-devicecreateinfo-amp}
 
 `function rhi::CreateDevice` — defined in `engine/rhi/rhi.h`
@@ -5129,6 +5197,66 @@ The outcome of acquiring or presenting a swapchain image.
 | <a id="rhi-swapchainstatus-minimized"></a>`Minimized` |  | The window has no drawable area; skip rendering this frame. |
 | <a id="rhi-swapchainstatus-lost"></a>`Lost` |  | The surface or device is lost; the swapchain cannot be used again. |
 
+## `PresentMode` {#rhi-presentmode}
+
+`enum rhi::PresentMode` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+enum class PresentMode : u8 { ... }
+```
+
+How finished images reach the screen.
+
+| Enumerator | Value | Description |
+|---|---|---|
+| <a id="rhi-presentmode-fifo"></a>`Fifo` | `0` | Wait for the display's refresh (vertical sync); always available. |
+| <a id="rhi-presentmode-mailbox"></a>`Mailbox` |  | Replace the queued image with the newest one, no tearing, if the system supports it; otherwise `Fifo`. |
+| <a id="rhi-presentmode-immediate"></a>`Immediate` |  | Present at once, possibly tearing, if the system supports it; otherwise `Fifo`. |
+
+## `SwapchainDesc` {#rhi-swapchaindesc}
+
+`struct rhi::SwapchainDesc` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+struct SwapchainDesc { ... }
+```
+
+What to create a [`rhi::Swapchain`](#rhi-swapchain) for.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `present_mode` {#rhi-swapchaindesc-present-mode}
+
+`variable rhi::SwapchainDesc::present_mode` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+PresentMode present_mode;
+```
+
+The preferred presentation mode; falls back to `Fifo` when the system does not offer it.
+
+### `width` {#rhi-swapchaindesc-width}
+
+`variable rhi::SwapchainDesc::width` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+u32 width;
+```
+
+Initial image width in pixels; 0 uses the window's current width.
+
+### `height` {#rhi-swapchaindesc-height}
+
+`variable rhi::SwapchainDesc::height` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+u32 height;
+```
+
+Initial image height in pixels; 0 uses the window's current height.
+
 ## `Swapchain` {#rhi-swapchain}
 
 `class rhi::Swapchain` — defined in `engine/rhi/swapchain.h`
@@ -5139,12 +5267,12 @@ class Swapchain { ... }
 
 The images of one window's swapchain, acquired and presented once per frame.
 
-The backend-specific creation function is declared with the window integration (Phase 3 Day 56), where the native window handle from the platform layer is available.
+A device is created for one window (`DeviceCreateInfo::window`) and makes the swapchain for it with [`rhi::Device::CreateSwapchain`](#rhi-device-createswapchain-const-swapchaindesc-amp). Render into `CurrentTexture()` after moving it to `ColorAttachment` with a barrier, move it to `Present`, submit, then `Present`.
 
 | Field | Value |
 |---|---|
 | Thread-safety | owner-thread-only. Use one swapchain from the thread that owns its window. |
-| Ownership | created by and owned by a device; the device destroys it, and the textures it exposes are valid only until the next `Acquire` or `Resize`. |
+| Ownership | created by a device; destroy it with [`rhi::Device::DestroySwapchain`](#rhi-device-destroyswapchain-swapchain-star) before the device is destroyed. The textures it exposes are valid only until the next `Acquire` or `Resize`. |
 
 ### `~Swapchain()` {#rhi-swapchain-tilde-swapchain}
 
@@ -5166,10 +5294,13 @@ virtual SwapchainStatus Acquire() = 0;
 
 Acquires the next image to render to and makes it the current texture.
 
+Never blocks for long: a window the compositor has stopped drawing (which Wayland does not report as minimized) times out after half a second and counts as `Minimized`. If the window changed size, or the surface is out of date, the swapchain is recreated first and the call still acquires an image.
+
 | Field | Value |
 |---|---|
 | Returns | `Ok`, or `Recreated`, `Minimized` or `Lost` as described for [`rhi::SwapchainStatus`](#rhi-swapchainstatus). |
 | Fails | a status other than `Ok` means no image was acquired, except `Recreated`, after which an image is acquired. |
+| Aborts | the previously acquired image was not presented. |
 
 ### `Present()` {#rhi-swapchain-present}
 
@@ -5183,7 +5314,7 @@ Presents the current image to the window.
 
 | Field | Value |
 |---|---|
-| Returns | `Ok`, `Recreated` (presented, but the swapchain was recreated for next frame), or `Lost`. |
+| Returns | `Ok`, `Recreated` (the surface changed: the image may not have been shown, and the swapchain is rebuilt by the next `Acquire`), or `Lost`. |
 | Fails | `Lost` means the image was not presented. |
 | Aborts | no image has been acquired. |
 

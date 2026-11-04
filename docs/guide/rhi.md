@@ -293,6 +293,36 @@ After that `Submit`, `UploadBuffer` and `ReadbackBuffer` fail and `CreateCommand
 begin and end, so the application can shut down cleanly. Tests exercise this with
 `VulkanDevice::InjectSubmitFailure`.
 
+### Presenting to a window
+
+A device that presents is created for one window: set `DeviceCreateInfo::window` and the Vulkan backend makes a
+presentation surface from the window's native handles (a Wayland surface, or an Xlib window through an isolated
+translation unit that keeps the X11 headers away from the rest of the backend), and only considers GPUs that can
+present to it. Then `CreateSwapchain` gives the [[rhi::Swapchain]]. The choices behind it are plain functions in
+`vk_swapchain_policy.h`: an sRGB BGRA (then RGBA) surface format with a logged fallback, FIFO unless you ask for
+`Mailbox` or `Immediate` and the system offers it, one image more than the minimum, and, where the surface leaves
+the size open (Wayland), the window's size clamped to the limits.
+
+A frame renders into `CurrentTexture()`:
+
+```
+SwapchainStatus s = swapchain->Acquire();         // Ok, Recreated, Minimized or Lost
+if (s == SwapchainStatus::Ok || s == SwapchainStatus::Recreated) {
+    // list: Barrier(image, Undefined, ColorAttachment) ... draw ... Barrier(image, ColorAttachment, Present)
+    device->Submit(lists, count);
+    swapchain->Present();                          // Ok, Recreated or Lost
+}
+```
+
+**Resize and minimize.** `Acquire` compares the window's `ResizeSerial()` with the one the swapchain was built
+for and rebuilds when it changed (the call then returns `Recreated` and still delivers an image); the same happens
+when the driver reports the surface out of date or suboptimal. A window with no area, or one the window system
+reports hidden, makes `Acquire` return `Minimized` at once, and a swapchain made for it later is built as soon as
+the window has an area again. `Resize(0, 0)` is the explicit form. Wayland has no minimized or occluded state a client
+can see, and a surface the compositor stopped drawing stops handing out images, so `Acquire` waits at most half a
+second for one and then also answers `Minimized`; render again next frame. Recreating a swapchain waits for the
+device to go idle, so avoid doing it every frame (a window being dragged larger rebuilds once per size change).
+
 ### GPU memory
 
 `vkAllocateMemory` is limited (commonly 4096 live objects) and slow, so the Vulkan backend never allocates one

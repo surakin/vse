@@ -239,7 +239,8 @@ VkCommandBuffer VulkanDevice::AcquireUploadCommandBufferLocked() {
     return buffer;
 }
 
-u64 VulkanDevice::SubmitRawLocked(void (*fill_fn)(void*, VkCommandBuffer), void* fill_context) {
+u64 VulkanDevice::SubmitRawLocked(void (*fill_fn)(void*, VkCommandBuffer), void* fill_context, const VkSemaphoreSubmitInfo* waits,
+                                  u32 wait_count, const VkSemaphoreSubmitInfo* extra_signals, u32 extra_signal_count) {
     if (device_lost_.load(std::memory_order_relaxed)) {
         return 0;
     }
@@ -271,17 +272,23 @@ u64 VulkanDevice::SubmitRawLocked(void (*fill_fn)(void*, VkCommandBuffer), void*
     VkCommandBufferSubmitInfo cb_info{};
     cb_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
     cb_info.commandBuffer = cb;
-    VkSemaphoreSubmitInfo signal{};
-    signal.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-    signal.semaphore = timeline_;
-    signal.value = value;
-    signal.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    VkSemaphoreSubmitInfo signals[3]{};
+    ENGINE_ASSERT(extra_signal_count <= 2, "SubmitRawLocked: too many extra signals");
+    signals[0].sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+    signals[0].semaphore = timeline_;
+    signals[0].value = value;
+    signals[0].stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    for (u32 i = 0; i < extra_signal_count; ++i) {
+        signals[1 + i] = extra_signals[i];
+    }
     VkSubmitInfo2 submit{};
     submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+    submit.waitSemaphoreInfoCount = wait_count;
+    submit.pWaitSemaphoreInfos = waits;
     submit.commandBufferInfoCount = 1;
     submit.pCommandBufferInfos = &cb_info;
-    submit.signalSemaphoreInfoCount = 1;
-    submit.pSignalSemaphoreInfos = &signal;
+    submit.signalSemaphoreInfoCount = 1 + extra_signal_count;
+    submit.pSignalSemaphoreInfos = signals;
     VkResult r = fns_.QueueSubmit2(queue_, 1, &submit, nullptr);
     if (r != VK_SUCCESS) {
         NoteDeviceLost(r);

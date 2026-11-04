@@ -4,6 +4,7 @@
 #include "rhi/command_list.h"
 #include "rhi/desc.h"
 #include "rhi/handle.h"
+#include "rhi/swapchain.h"
 #include "types.h"
 
 //! The device: creates and destroys GPU resources and submits recorded work.
@@ -147,6 +148,21 @@ public:
     /// Param pipeline: a live pipeline handle.
     /// Aborts: `pipeline` is invalid or stale.
     virtual void DestroyPipeline(PipelineHandle pipeline) = 0;
+
+    /// Creates the swapchain for the window the device was created with.
+    ///
+    /// Param desc: the presentation mode and initial size.
+    /// Returns: the swapchain, or null.
+    /// Fails: returns null, logging the reason, if the device was created without a window, already has a swapchain,
+    ///   or the surface cannot be presented to.
+    /// Ownership: the device owns the swapchain; give it back with `DestroySwapchain`.
+    virtual Swapchain* CreateSwapchain(const SwapchainDesc& desc) = 0;
+
+    /// Destroys a swapchain after the GPU is done with its images.
+    ///
+    /// Param swapchain: a swapchain from `CreateSwapchain`, or null for no effect.
+    /// Ownership: takes back the swapchain; it and its textures are invalid afterwards.
+    virtual void DestroySwapchain(Swapchain* swapchain) = 0;
 
     /// Tells whether textures of a format can be created with the given usages on this device.
     ///

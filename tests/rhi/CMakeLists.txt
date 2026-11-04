@@ -14,6 +14,7 @@ set(RHI_TEST_SOURCES
   vulkan_buffer_test.cpp
   vulkan_commands_test.cpp
   vulkan_texture_test.cpp
+  vulkan_swapchain_test.cpp
 )
 
 # Header self-containment: one generated translation unit per public RHI
@@ -49,5 +50,8 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib suffix label spec)
 endfunction()
 
 engine_add_rhi_tests(rhi_tests rhi rhi_vulkan "" "rhi" "")
-engine_add_rhi_tests(rhi_tests_asan rhi_asan rhi_vulkan_asan " [asan]" "asan" "")
+# The X11 presentation test is left out of the ASan flavor: the NVIDIA driver's Xlib WSI path leaks inside a library
+# it unloads before exit (every frame of the report is an anonymous module, so no suppression can name it), and the
+# Wayland presentation test, which runs the same code of ours, is clean.
+engine_add_rhi_tests(rhi_tests_asan rhi_asan rhi_vulkan_asan " [asan]" "asan" "~[x11]")
 engine_add_rhi_tests(rhi_tests_tsan rhi_tsan rhi_vulkan_tsan " [tsan]" "tsan" "~[gpu]")

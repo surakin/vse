@@ -24,6 +24,10 @@ set(RHI_VULKAN_SOURCES
   vulkan/vulkan_device_buffers.cpp
   vulkan/vulkan_device_commands.cpp
   vulkan/vulkan_device_textures.cpp
+  vulkan/vulkan_device_surface.cpp
+  vulkan/vk_swapchain.cpp
+  vulkan/vk_swapchain_policy.cpp
+  vulkan/vk_xlib_surface.cpp
   vulkan/vk_barrier.cpp
   vulkan/vk_command_list.cpp
   vulkan/create_device.cpp

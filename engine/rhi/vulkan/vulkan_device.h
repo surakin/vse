@@ -14,6 +14,7 @@
 #include "rhi/vulkan/vk_memory.h"
 #include "rhi/vulkan/vk_memory_backend.h"
 #include "rhi/vulkan/vk_ring.h"
+#include "os/window.h"
 
 //! The Vulkan implementation of [[rhi::Device]].
 
@@ -66,6 +67,8 @@ public:
     void UnmapBuffer(BufferHandle buffer) override;
     UploadTicket UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) override;
     bool ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) override;
+    Swapchain* CreateSwapchain(const SwapchainDesc& desc) override;
+    void DestroySwapchain(Swapchain* swapchain) override;
     bool FormatSupport(Format format, TextureUsage usage) const override;
     bool CanGenerateMips(Format format) const override;
     UploadTicket UploadTexture(TextureHandle dst, u32 mip, u32 layer, const void* data, u32 row_pitch) override;
@@ -218,6 +221,7 @@ private:
         VkImageView view = nullptr;
         VkImageView attachment_view = nullptr;
         MemoryAllocation memory;
+        bool external = false; // a swapchain image: the swapchain owns the VkImage
         TextureDesc desc;
         ResourceState state = ResourceState::Undefined; // as left by UploadTexture; barriers in lists are the caller's
     };
@@ -246,9 +250,13 @@ private:
     // Records `fill` into a one-time command buffer and submits it, signalling a new timeline value. Holds submit_mutex_.
     template <typename Fill>
     u64 SubmitInternalLocked(Fill&& fill) {
-        return SubmitRawLocked([](void* context, VkCommandBuffer cb) { (*static_cast<Fill*>(context))(cb); }, &fill);
+        return SubmitRawLocked([](void* context, VkCommandBuffer cb) { (*static_cast<Fill*>(context))(cb); }, &fill, nullptr, 0, nullptr, 0);
     }
-    u64 SubmitRawLocked(void (*fill)(void*, VkCommandBuffer), void* context);
+    // `waits` and `extra_signals` are binary semaphores for presentation; the timeline is always signalled too.
+    u64 SubmitRawLocked(void (*fill)(void*, VkCommandBuffer), void* context, const VkSemaphoreSubmitInfo* waits, u32 wait_count,
+                        const VkSemaphoreSubmitInfo* extra_signals, u32 extra_signal_count);
+    bool CreateSurface(const os::NativeWindowInfo& native);
+    friend class VulkanSwapchain;
     VkCommandBuffer AcquireUploadCommandBufferLocked();
     void NoteDeviceLost(VkResult result);
     void SetDebugName(u64 handle, VkObjectType type, const char* name);
@@ -268,6 +276,9 @@ private:
     void FlushRange(const MemoryAllocation& allocation, u64 rel_offset, u64 length);
     void InvalidateRange(const MemoryAllocation& allocation, u64 rel_offset, u64 length);
 
+    const os::Window* window_ = nullptr;
+    VkSurfaceKHR surface_ = nullptr;
+    class VulkanSwapchain* swapchain_ = nullptr;
     VulkanInstance instance_;
     VkPhysicalDevice physical_ = nullptr;
     VkDevice device_ = nullptr;

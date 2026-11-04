@@ -250,6 +250,13 @@ TextureHandle VulkanDevice::CreateTexture(const TextureDesc& desc) {
 }
 
 void VulkanDevice::DestroyTextureRes(TextureRes* t) {
+    if (t->external) {
+        if (t->attachment_view != nullptr) {
+            fns_.DestroyImageView(device_, t->attachment_view, nullptr);
+        }
+        *t = TextureRes{};
+        return;
+    }
     if (t->attachment_view != nullptr) {
         fns_.DestroyImageView(device_, t->attachment_view, nullptr);
     }
