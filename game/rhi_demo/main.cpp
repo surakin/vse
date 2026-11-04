@@ -1,4 +1,4 @@
-// rhi_demo: opens a window, creates a Vulkan device and swapchain, and draws a spinning, depth-tested cube over a
+// rhi_demo: opens a window, creates a Vulkan device and swapchain, and draws a spinning, depth-tested, textured cube over a
 // background color that animates with time. Closes when the window does; logs the average frame time once a second.
 //
 // Options: --frames N stops after N frames (RHI_DEMO_FRAMES=N does the same); --screenshot out.ppm renders offscreen
@@ -12,6 +12,7 @@
 #include <cstring>
 #include <ctime>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "os/input.h"
@@ -20,6 +21,7 @@
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vulkan_device.h"
 #include "cube_scene.h"
+#include "textures.h"
 #include "rhi/uniform_ring.h"
 
 using namespace engine_placeholder;
@@ -40,6 +42,37 @@ void ColorAt(double t, f32 out[4]) {
     out[2] = static_cast<f32>(0.5 + 0.5 * std::sin(t * 0.7 + 4.0));
     out[3] = 1.0f;
 }
+
+// The cube's texture and sampler: the checkerboard from assets/checker.rtex (every mip level stored in the file), or
+// a procedural one with GPU-generated mips if the file is missing or unusable.
+struct CubeTexture {
+    TextureHandle texture;
+    SamplerHandle sampler;
+
+    bool Create(Device* device) {
+        const std::string path = std::string(RHI_DEMO_ASSET_DIR) + "/checker.rtex";
+        demo::RtexImage image;
+        if (demo::ReadRtex(path.c_str(), &image)) {
+            texture = demo::CreateTextureFromRtex(device, image, "checker.rtex");
+        }
+        if (!texture.IsValid()) {
+            RhiLogV(LogVerbosity::Warn, "rhi_demo: %s could not be loaded; using a procedural checkerboard", path.c_str());
+            texture = demo::CreateSampledTexture(device, demo::Checkerboard(256, 32, {235, 200, 90, 255}, {40, 60, 120, 255}), Format::RGBA8_SRGB, true,
+                                                 "checker");
+        }
+        SamplerDesc sd; // trilinear, repeat
+        sd.max_anisotropy = 16.0f;
+        sd.debug_name = "cube sampler";
+        sampler = device->CreateSampler(sd);
+        return texture.IsValid() && sampler.IsValid();
+    }
+    void Destroy(Device* device) {
+        if (sampler.IsValid()) device->DestroySampler(sampler);
+        if (texture.IsValid()) device->DestroyTexture(texture);
+        sampler = {};
+        texture = {};
+    }
+};
 
 // A depth texture that follows the size of what it is used with.
 class DepthBuffer {
@@ -131,12 +164,15 @@ int RunScreenshot(const char* path, long frames) {
     const TextureHandle target = device->CreateTexture(td);
     DepthBuffer depth;
     demo::CubeRenderer cube;
+    CubeTexture cube_texture;
     std::unique_ptr<UniformRing> ring = std::make_unique<UniformRing>(device, 4096);
     int exit_code = 1;
     demo::CubeOptions options;
     options.color_format = td.format;
     options.depth_format = device->Caps().depth_format;
-    if (target.IsValid() && depth.Ensure(device, kSize, kSize) && ring->Valid() && cube.Create(device, options)) {
+    options.textured = true;
+    if (target.IsValid() && depth.Ensure(device, kSize, kSize) && ring->Valid() && cube_texture.Create(device) && cube.Create(device, options)) {
+        cube.SetTexture(cube_texture.texture, cube_texture.sampler);
         const f32 background[4] = {0.2f, 0.2f, 0.2f, 1.0f};
         for (long i = 0; i < (frames > 0 ? frames : 1); ++i) {
             device->BeginFrame();
@@ -169,6 +205,7 @@ int RunScreenshot(const char* path, long frames) {
     }
     device->WaitIdle();
     cube.Destroy(); // does nothing if Create failed
+    cube_texture.Destroy(device);
     depth.Destroy(device);
     if (target.IsValid()) {
         device->DestroyTexture(target);
@@ -224,16 +261,22 @@ int main(int argc, char** argv) {
     demo::CubeOptions options;
     options.color_format = swapchain->ImageFormat();
     options.depth_format = device->Caps().depth_format;
+    options.textured = true;
     std::unique_ptr<UniformRing> ring = std::make_unique<UniformRing>(device, 4096);
     DepthBuffer depth;
-    if (!ring->Valid() || !cube.Create(device, options)) {
+    CubeTexture cube_texture;
+    if (!ring->Valid() || !cube_texture.Create(device) || !cube.Create(device, options)) {
         RhiLogV(LogVerbosity::Error, "rhi_demo: could not create the cube");
         device->WaitIdle();
+        cube.Destroy();
+        cube_texture.Destroy(device);
         ring.reset();
         device->DestroySwapchain(swapchain);
         DestroyDevice(device);
         return 1;
     }
+
+    cube.SetTexture(cube_texture.texture, cube_texture.sampler);
 
     const double start = NowSeconds();
     double window_start = start;
@@ -310,6 +353,7 @@ int main(int argc, char** argv) {
     // Shutdown order: idle the GPU, then the swapchain, then the device.
     device->WaitIdle();
     cube.Destroy();
+    cube_texture.Destroy(device);
     depth.Destroy(device);
     ring.reset();
     device->DestroySwapchain(swapchain);

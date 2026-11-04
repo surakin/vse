@@ -240,18 +240,18 @@ TEST_CASE("Image comparison applies the interior and edge tolerances",
 TEST_CASE("PPM files round-trip and malformed ones are refused",
           "[rhi][golden][image]") {
   const Image img = Split(8, 4, 10, 240);
-  REQUIRE(gpu_test::WritePpm("/tmp/rhi_ppm_roundtrip.ppm", img));
+  REQUIRE(gpu_test::WritePpm(gpu_test::TempPath("rhi_ppm_roundtrip.ppm").c_str(), img));
   Image back;
-  REQUIRE(gpu_test::ReadPpm("/tmp/rhi_ppm_roundtrip.ppm", &back));
+  REQUIRE(gpu_test::ReadPpm(gpu_test::TempPath("rhi_ppm_roundtrip.ppm").c_str(), &back));
   CHECK(back.width == 8);
   CHECK(back.height == 4);
   CHECK(back.rgba == img.rgba);
-  CHECK_FALSE(gpu_test::ReadPpm("/tmp/rhi_no_such_file.ppm", &back));
-  std::FILE *f = std::fopen("/tmp/rhi_ppm_bad.ppm", "wb");
+  CHECK_FALSE(gpu_test::ReadPpm(gpu_test::TempPath("rhi_no_such_file.ppm").c_str(), &back));
+  std::FILE *f = std::fopen(gpu_test::TempPath("rhi_ppm_bad.ppm").c_str(), "wb");
   REQUIRE(f != nullptr);
   std::fputs("P6\n4 4\n255\nshort", f);
   std::fclose(f);
-  CHECK_FALSE(gpu_test::ReadPpm("/tmp/rhi_ppm_bad.ppm", &back));
+  CHECK_FALSE(gpu_test::ReadPpm(gpu_test::TempPath("rhi_ppm_bad.ppm").c_str(), &back));
 }
 
 TEST_CASE("The triangle renders offscreen and matches its golden image",

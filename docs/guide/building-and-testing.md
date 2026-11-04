@@ -60,7 +60,7 @@ person is needed. `tests/rhi/render_target.h` is the offscreen target (RGBA8 col
 - **A golden alone is not trusted.** Each golden test also asserts pixels analytically (the background is the clear
   color; interior pixels have the barycentric blend of the vertex colors), so a wrong golden cannot hide a broken
   pipeline.
-- **On failure** the test writes the amplified difference to `$TMPDIR/rhi_diff_<name>.ppm` (`/tmp` when unset) and
+- **On failure** the test writes the amplified difference to `$TMPDIR/rhi_<pid>_diff_<name>.ppm` (`/tmp` when unset; the process id keeps parallel test runs apart) and
   prints its path.
 - **Regenerating.** Run the test with `ENGINE_RHI_UPDATE_GOLDEN=1` (for example
   `ENGINE_RHI_UPDATE_GOLDEN=1 ./build/tests/rhi/rhi_tests "[golden]"`). It rewrites the golden instead of comparing and

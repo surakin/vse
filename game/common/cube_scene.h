@@ -56,6 +56,7 @@ struct CubeOptions {
     bool depth_test = true;                            // ignored without a depth format
     bool indexed = true;                               // false draws 36 expanded vertices
     rhi::CullMode cull = rhi::CullMode::Back;
+    bool textured = false; // multiply the face color by a texture (see `SetTexture`)
 };
 
 // Draws the cube. Thread-compatible: use from one thread.
@@ -79,6 +80,12 @@ public:
     void Prepare(rhi::CommandList* list);
     void Submitted() { geometry_ready_ = true; }
 
+    // For a textured renderer: the texture (in `ShaderRead`) and sampler the next draws use. Both must outlive the draws.
+    void SetTexture(rhi::TextureHandle texture, rhi::SamplerHandle sampler) {
+        texture_ = texture;
+        sampler_ = sampler;
+    }
+
     // Records one cube inside an open pass of `width` x `height`: a uniform-ring slice holding `mvp`, a transient
     // bind group, the pipeline and the draw. Returns false (drawing nothing) if the ring is full.
     bool Draw(rhi::CommandList* list, rhi::UniformRing* ring, const Mat4& mvp, u32 width, u32 height);
@@ -92,7 +99,10 @@ private:
     rhi::BufferHandle vertices_;
     rhi::BufferHandle indices_;
     bool indexed_ = true;
+    bool textured_ = false;
     bool geometry_ready_ = false;
+    rhi::TextureHandle texture_;
+    rhi::SamplerHandle sampler_;
 };
 
 } // namespace demo

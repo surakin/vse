@@ -12,6 +12,8 @@ set(ENGINE_SHADERS
   gradient.comp
   cube.vert
   cube.frag
+  textured.vert
+  textured.frag
 )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/names.cmake)

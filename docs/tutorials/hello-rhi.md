@@ -181,6 +181,91 @@ draws: ok, errors: 0
 256x256 without a window and writes a PPM, which is how the golden-image test in
 [Building and Testing](../guide/building-and-testing.md#golden-image-rendering-tests) is exercised by hand.
 
+## Add a texture
+
+A texture needs its pixels on the GPU, optionally a chain of smaller copies (mips) so that it looks right when
+drawn small, and a sampler that says how to read it.
+
+1. Create the texture with `Sampled | CopyDst | CopySrc` usage and a full mip chain (`MaxMipLevels`).
+2. `UploadTexture` level 0. The texture is then in `ShaderRead`.
+3. Record `GenerateMips` in a command list and submit it (check `CanGenerateMips` first).
+4. Create a sampler (trilinear, anisotropy 16) and put the texture and sampler in a bind group together with the
+   uniform buffer the shader reads; the fragment shader samples with `texture(sampler2D(tex, smp), uv)`.
+
+The null device accepts the same calls and checks them:
+
+```cpp compile standalone run
+#include <cstdio>
+#include <vector>
+
+#include "rhi/null/null_device.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::rhi;
+
+int main() {
+    NullDevice* device = CreateNullDevice();
+
+    // An 8x8 checkerboard, 4 bytes per texel.
+    std::vector<unsigned char> pixels(8 * 8 * 4);
+    for (u32 y = 0; y < 8; ++y) {
+        for (u32 x = 0; x < 8; ++x) {
+            const unsigned char v = ((x + y) & 1) != 0 ? 255 : 0;
+            unsigned char* p = &pixels[(y * 8 + x) * 4];
+            p[0] = p[1] = p[2] = v;
+            p[3] = 255;
+        }
+    }
+
+    TextureDesc td;
+    td.width = 8;
+    td.height = 8;
+    td.format = Format::RGBA8_SRGB;
+    td.mip_levels = MaxMipLevels(8, 8);
+    td.usage = TextureUsage::Sampled | TextureUsage::CopyDst | TextureUsage::CopySrc;
+    const TextureHandle texture = device->CreateTexture(td);
+    device->UploadTexture(texture, 0, 0, pixels.data(), 0);
+
+    device->BeginFrame();
+    CommandList* list = device->CreateCommandList();
+    list->Begin();
+    list->GenerateMips(texture);
+    list->End();
+    device->Submit(&list, 1);
+    device->EndFrame();
+
+    SamplerDesc sd;
+    sd.max_anisotropy = 16.0f;
+    const SamplerHandle sampler = device->CreateSampler(sd);
+
+    BindingDesc bindings[2] = {{1, BindingType::SampledTexture, ShaderStage::Fragment, 1}, {2, BindingType::Sampler, ShaderStage::Fragment, 1}};
+    BindGroupLayoutDesc ld;
+    ld.entries = Span<BindingDesc>(bindings, 2);
+    const BindGroupLayoutHandle layout = device->CreateBindGroupLayout(ld);
+    BindGroupEntry entries[2];
+    entries[0].binding = 1;
+    entries[0].texture = texture;
+    entries[1].binding = 2;
+    entries[1].sampler = sampler;
+    BindGroupDesc gd;
+    gd.layout = layout;
+    gd.entries = Span<BindGroupEntry>(entries, 2);
+    const BindGroupHandle group = device->CreateBindGroup(gd);
+
+    device->WaitIdle();
+    std::printf("mips: %u, group: %s, errors: %u\n", td.mip_levels, group.IsValid() ? "ok" : "invalid", device->ErrorCount());
+    DestroyDevice(device);
+}
+```
+
+```output
+mips: 4, group: ok, errors: 0
+```
+
+`rhi_demo` does this with a checkerboard stored in `game/rhi_demo/assets/checker.rtex` (all mip levels in the file;
+`game/common/textures.h` reads it) and draws it on the spinning cube. `rhi_demo --screenshot out.ppm` writes the scene
+offscreen; the offscreen target is linear, so it looks darker than the window.
+
 ## Where next
 
 - [The RHI guide](../guide/rhi.md): the frame loop, resource states and the swapchain's resize and minimize rules.

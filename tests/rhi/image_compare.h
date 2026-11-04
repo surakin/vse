@@ -44,7 +44,7 @@ struct CompareResult {
 // temp directory and names it in the result; `name` becomes part of the file name.
 CompareResult Compare(const Image& golden, const Image& actual, const CompareOptions& options, const char* name);
 
-// The path the diff image of `Compare(..., name)` is written to: $TMPDIR (or /tmp) / rhi_diff_<name>.ppm.
+// The path the diff image of `Compare(..., name)` is written to: `TempPath("diff_<name>.ppm")`.
 std::string DiffPath(const char* name);
 
 bool WritePpm(const char* path, const Image& image);
@@ -52,6 +52,10 @@ bool ReadPpm(const char* path, Image* image);
 
 // True when ENGINE_RHI_UPDATE_GOLDEN=1: tests then write their output over the golden instead of comparing.
 bool UpdatingGoldens();
+
+// A path for a scratch file that is unique to this process (several test executables may run at once):
+// $TMPDIR (or /tmp) / rhi_<pid>_<name>.
+std::string TempPath(const char* name);
 
 // The golden directory (the source tree's tests/rhi/golden).
 std::string GoldenPath(const char* file);

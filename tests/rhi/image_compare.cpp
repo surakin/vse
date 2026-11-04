@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <unistd.h>
+
 #ifndef ENGINE_RHI_GOLDEN_DIR
 #define ENGINE_RHI_GOLDEN_DIR "tests/rhi/golden"
 #endif
@@ -33,14 +35,7 @@ bool IsEdge(const Image& g, unsigned x, unsigned y, int step) {
 
 } // namespace
 
-std::string DiffPath(const char* name) {
-    const char* dir = std::getenv("TMPDIR");
-    std::string path = dir != nullptr && dir[0] != '\0' ? dir : "/tmp";
-    path += "/rhi_diff_";
-    path += name;
-    path += ".ppm";
-    return path;
-}
+std::string DiffPath(const char* name) { return TempPath((std::string("diff_") + name + ".ppm").c_str()); }
 
 CompareResult Compare(const Image& golden, const Image& actual, const CompareOptions& options, const char* name) {
     CompareResult r;
@@ -158,6 +153,13 @@ bool ReadPpm(const char* path, Image* image) {
 bool UpdatingGoldens() {
     const char* v = std::getenv("ENGINE_RHI_UPDATE_GOLDEN");
     return v != nullptr && v[0] == '1';
+}
+
+std::string TempPath(const char* name) {
+    const char* dir = std::getenv("TMPDIR");
+    std::string path = dir != nullptr && dir[0] != '\0' ? dir : "/tmp";
+    path += "/rhi_" + std::to_string(static_cast<long>(getpid())) + "_" + name;
+    return path;
 }
 
 std::string GoldenPath(const char* file) { return std::string(ENGINE_RHI_GOLDEN_DIR) + "/" + file; }

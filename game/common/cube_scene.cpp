@@ -5,6 +5,8 @@
 
 #include "cube.frag.spv.inc"
 #include "cube.vert.spv.inc"
+#include "textured.frag.spv.inc"
+#include "textured.vert.spv.inc"
 #include "math/quaternion.h"
 #include "rhi/rhi_log.h"
 
@@ -84,18 +86,21 @@ bool CubeRenderer::Create(Device* device, const CubeOptions& options) {
     device_ = device;
     indexed_ = options.indexed;
     ShaderDesc sd;
+    textured_ = options.textured;
     sd.stage = ShaderStage::Vertex;
-    sd.words = shaders::kCubeVertSpv;
-    sd.word_count = shaders::kCubeVertSpvWordCount;
+    sd.words = textured_ ? shaders::kTexturedVertSpv : shaders::kCubeVertSpv;
+    sd.word_count = textured_ ? shaders::kTexturedVertSpvWordCount : shaders::kCubeVertSpvWordCount;
     vs_ = device->CreateShader(sd);
     sd.stage = ShaderStage::Fragment;
-    sd.words = shaders::kCubeFragSpv;
-    sd.word_count = shaders::kCubeFragSpvWordCount;
+    sd.words = textured_ ? shaders::kTexturedFragSpv : shaders::kCubeFragSpv;
+    sd.word_count = textured_ ? shaders::kTexturedFragSpvWordCount : shaders::kCubeFragSpvWordCount;
     fs_ = device->CreateShader(sd);
 
-    BindingDesc binding = {0, BindingType::UniformBuffer, ShaderStage::Vertex, 1};
+    BindingDesc bindings[3] = {{0, BindingType::UniformBuffer, ShaderStage::Vertex, 1},
+                               {1, BindingType::SampledTexture, ShaderStage::Fragment, 1},
+                               {2, BindingType::Sampler, ShaderStage::Fragment, 1}};
     BindGroupLayoutDesc ld;
-    ld.entries = Span<BindingDesc>(&binding, 1);
+    ld.entries = Span<BindingDesc>(bindings, textured_ ? 3 : 1);
     layout_ = device->CreateBindGroupLayout(ld);
 
     VertexBindingDesc vertex_binding = {sizeof(CubeVertex), false};
@@ -187,14 +192,18 @@ bool CubeRenderer::Draw(CommandList* list, UniformRing* ring, const Mat4& mvp, u
         return false;
     }
     std::memcpy(u.data, &mvp, sizeof(Mat4));
-    BindGroupEntry entry;
-    entry.binding = 0;
-    entry.buffer = u.buffer;
-    entry.offset = u.offset;
-    entry.size = u.size;
+    BindGroupEntry entries[3];
+    entries[0].binding = 0;
+    entries[0].buffer = u.buffer;
+    entries[0].offset = u.offset;
+    entries[0].size = u.size;
+    entries[1].binding = 1;
+    entries[1].texture = texture_;
+    entries[2].binding = 2;
+    entries[2].sampler = sampler_;
     BindGroupDesc gd;
     gd.layout = layout_;
-    gd.entries = Span<BindGroupEntry>(&entry, 1);
+    gd.entries = Span<BindGroupEntry>(entries, textured_ ? 3 : 1);
     gd.transient = true;
     const BindGroupHandle group = device_->CreateBindGroup(gd);
     if (!group.IsValid()) {

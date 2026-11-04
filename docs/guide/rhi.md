@@ -493,6 +493,29 @@ vertex_offset, first_instance)`. An indexed and a non-indexed draw of the same t
 
 See also the [math conventions](foundation-math.md#conventions-handedness-rowcolumn-units-angle-units).
 
+### Textures in draws
+
+To sample a texture in a draw: create it with `Sampled` and `CopyDst` usage (plus `CopySrc` if you will generate
+mips), upload level 0 with `UploadTexture` (the texture ends up in `ShaderRead`, the state a sampled texture must be
+in while the draw runs), and call `GenerateMips` once in a command list when `CanGenerateMips(format)` says the format
+allows it - or upload every level yourself with `UploadTexture(texture, mip, ...)`, as `.rtex` files do. Bind the
+texture and a sampler in a bind group (`SampledTexture` and `Sampler` entries) and declare them in GLSL as
+`texture2D` and `sampler`, combined at the sample: `texture(sampler2D(tex, smp), uv)`.
+
+- **Mips.** With `mip_filter = Linear` the sampler blends two levels (trilinear), so a texture drawn smaller than its
+  size is averaged instead of aliased. A texture with one mip level, drawn the same way, shows the aliasing; the tests
+  compare the two.
+- **Anisotropy.** `SamplerDesc::max_anisotropy` up to 16 (clamped to the device limit) sharpens textures seen at a
+  grazing angle.
+- **Color spaces.** Shader math is linear. Create color textures (albedo, photographs) in an `_SRGB` format: the
+  hardware decodes them to linear when sampled. Data that is not a color (normals, masks, lookup tables) uses a `UNORM`
+  format and is read as stored. The color target decides how the shader output is stored: an `_SRGB` target (the usual
+  swapchain format) encodes on write, a `UNORM` target stores the linear value as it is - so an offscreen `UNORM`
+  image of an sRGB-textured scene looks darker than the window does.
+- **Files.** `game/common/textures.h` (shared by the demo and tests, not part of the RHI) has procedural textures and
+  the throwaway `.rtex` container the demo's checkerboard is stored in; real image formats arrive with the asset
+  pipeline.
+
 ### Compute
 
 A compute pipeline is a compute shader plus the layouts of its bind groups and a push-constant size; its push
