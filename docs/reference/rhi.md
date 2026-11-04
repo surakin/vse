@@ -2153,6 +2153,40 @@ using FenceValue = u64;
 
 A point on the device's timeline; later submissions have larger values. 0 means none.
 
+## `UploadTicket` {#rhi-uploadticket}
+
+`struct rhi::UploadTicket` — defined in `engine/rhi/device.h`
+
+```cpp
+struct UploadTicket { ... }
+```
+
+Identifies an upload so the caller can wait for it to finish on the GPU.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `fence` {#rhi-uploadticket-fence}
+
+`variable rhi::UploadTicket::fence` — defined in `engine/rhi/device.h`
+
+```cpp
+FenceValue fence;
+```
+
+The device fence value reached when the upload has finished; 0 means it had already finished when the call returned. If `ok` is false, it is the fence of the last part that was submitted before the failure (or 0).
+
+### `ok` {#rhi-uploadticket-ok}
+
+`variable rhi::UploadTicket::ok` — defined in `engine/rhi/device.h`
+
+```cpp
+bool ok;
+```
+
+False if the upload failed (lost device, staging memory that never freed up); the destination then holds only the parts that were submitted, and the failure was logged.
+
 ## `Device` {#rhi-device}
 
 `class rhi::Device` — defined in `engine/rhi/device.h`
@@ -2477,6 +2511,54 @@ Ends a mapping.
 |---|---|
 | Parameter `buffer` | a buffer returned mapped by `MapBuffer`. |
 | Aborts | `buffer` is invalid, stale or not mapped. |
+
+### `UploadBuffer(BufferHandle,u64,const void*,u64)` {#rhi-device-uploadbuffer-bufferhandle-u64-const-void-star-u64}
+
+`method rhi::Device::UploadBuffer` — defined in `engine/rhi/device.h`
+
+```cpp
+virtual UploadTicket UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) = 0;
+```
+
+Copies bytes from the CPU into a buffer, outside the frame's command lists.
+
+The data is staged and copied on the GPU; it has been read from `data` when the call returns. The copy is ordered after all work submitted earlier and before all work submitted later, so a later `Submit` can use the new contents after a barrier from `CopyDst`. The buffer is in state `CopyDst` afterwards. Large uploads are split to fit the staging ring. Uploads from several threads are serialized.
+
+A buffer in `CpuToGpu` memory is the exception: it is written at once through its mapping, with no GPU copy and no ordering against work already submitted, and it keeps its fixed state. Do not overwrite data the GPU may still be reading (use a buffer per frame in flight).
+
+| Field | Value |
+|---|---|
+| Parameter `dst` | a buffer created with `CopyDst` usage. |
+| Parameter `offset` | byte offset in `dst`. |
+| Parameter `data` | the bytes to copy; must not be null. |
+| Parameter `size` | number of bytes; the range must lie inside `dst`. |
+| Returns | a ticket; pass its `fence` to `WaitFence` to know when the GPU has finished, and check its `ok`. A failed upload logs the reason and returns `ok` false. |
+| Fails | a lost device, or staging memory running out, logs and copies nothing. |
+| Aborts | `dst` is invalid or stale, lacks `CopyDst` usage, `data` is null, or the range is outside the buffer. |
+| Ownership | `data` is borrowed for the call only. |
+
+### `ReadbackBuffer(BufferHandle,u64,void*,u64)` {#rhi-device-readbackbuffer-bufferhandle-u64-void-star-u64}
+
+`method rhi::Device::ReadbackBuffer` — defined in `engine/rhi/device.h`
+
+```cpp
+virtual bool ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) = 0;
+```
+
+Copies bytes from a buffer back to the CPU and waits for them (a synchronous helper for tests and tools).
+
+It waits for the GPU, so it stalls the frame; use it only for tests, tools and one-off captures. Work submitted earlier is complete and visible when it reads.
+
+| Field | Value |
+|---|---|
+| Parameter `src` | a buffer created with `CopySrc` usage (or any `GpuToCpu` buffer). |
+| Parameter `offset` | byte offset in `src`. |
+| Parameter `dst` | where to write `size` bytes; must not be null. |
+| Parameter `size` | number of bytes; the range must lie inside `src`. |
+| Returns | true on success. |
+| Fails | returns false, logging the reason, if the device is lost or staging memory is exhausted. |
+| Aborts | `src` is invalid or stale, lacks `CopySrc` usage, `dst` is null, or the range is outside the buffer. |
+| Ownership | `dst` is borrowed for the call only. |
 
 ### `CreateCommandList()` {#rhi-device-createcommandlist}
 
@@ -4472,6 +4554,30 @@ void UnmapBuffer(BufferHandle buffer) override;
 Ends a mapping.
 
 _Inherited from [`rhi::Device::UnmapBuffer(BufferHandle)`](#rhi-device-unmapbuffer-bufferhandle)._
+
+### `UploadBuffer(BufferHandle,u64,const void*,u64)` {#rhi-nulldevice-uploadbuffer-bufferhandle-u64-const-void-star-u64}
+
+`method rhi::NullDevice::UploadBuffer` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+UploadTicket UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) override;
+```
+
+Copies bytes from the CPU into a buffer, outside the frame's command lists.
+
+_Inherited from [`rhi::Device::UploadBuffer(BufferHandle,u64,const void*,u64)`](#rhi-device-uploadbuffer-bufferhandle-u64-const-void-star-u64)._
+
+### `ReadbackBuffer(BufferHandle,u64,void*,u64)` {#rhi-nulldevice-readbackbuffer-bufferhandle-u64-void-star-u64}
+
+`method rhi::NullDevice::ReadbackBuffer` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+bool ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) override;
+```
+
+Copies bytes from a buffer back to the CPU and waits for them (a synchronous helper for tests and tools).
+
+_Inherited from [`rhi::Device::ReadbackBuffer(BufferHandle,u64,void*,u64)`](#rhi-device-readbackbuffer-bufferhandle-u64-void-star-u64)._
 
 ### `CreateCommandList()` {#rhi-nulldevice-createcommandlist}
 

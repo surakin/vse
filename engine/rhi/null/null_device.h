@@ -90,6 +90,8 @@ public:
     void DestroyPipeline(PipelineHandle pipeline) override;
     void* MapBuffer(BufferHandle buffer) override;
     void UnmapBuffer(BufferHandle buffer) override;
+    UploadTicket UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) override;
+    bool ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) override;
     CommandList* CreateCommandList() override;
     FenceValue Submit(CommandList* const* lists, usize count) override;
     bool WaitFence(FenceValue value, u64 timeout_ns) override;

@@ -61,6 +61,15 @@ public:
         --size_;
     }
 
+    // Removes the first `count` elements.
+    void EraseFront(usize count) {
+        ENGINE_ASSERT(count <= size_, "GrowArray: erase count out of range");
+        if (count > 0 && count < size_) {
+            std::memmove(data_, data_ + count, (size_ - count) * sizeof(T));
+        }
+        size_ -= count;
+    }
+
     void Clear() { size_ = 0; }
 
 private:

@@ -184,6 +184,7 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
         return false;
     }
     fns_.GetDeviceQueue(device_, static_cast<u32>(queues_.graphics_family), 0, &queue_);
+    InitializeTimeline();
 
     FillCaps();
 
@@ -208,6 +209,10 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     memory_config.non_coherent_atom_size = properties_.limits.nonCoherentAtomSize;
     memory_backend_ = new VulkanMemoryBackend(&fns_, device_, &device_lost_);
     memory_ = new MemoryAllocator(layout, memory_config, memory_backend_);
+    if (!InitializeUpload()) {
+        RhiLog(LogVerbosity::Error, "Vulkan: cannot set up the staging ring");
+        return false; // the destructor releases what was created
+    }
 
     RhiLog(LogVerbosity::Info, "Vulkan: device created on '%s' (queue family %d)", gpu_info_.name, queues_.graphics_family);
     return true;
@@ -277,6 +282,13 @@ bool VulkanDevice::HeapBudget(u32 heap, u64* budget, u64* usage) const {
 VulkanDevice::~VulkanDevice() {
     if (device_ != nullptr) {
         fns_.DeviceWaitIdle(device_);
+        // Buffers the application never destroyed are released here, with a warning.
+        if (buffers_.LiveCount() > 0) {
+            RhiLog(LogVerbosity::Warn, "Vulkan: %zu buffer(s) were still alive when the device was destroyed", buffers_.LiveCount());
+        }
+        buffers_.ForEachLive([&](BufferHandle, BufferRes& b) { DestroyRawBuffer(&b.raw); });
+        CollectRetired(true);
+        ShutdownUpload();
     }
     delete memory_; // frees every block, so the GPU must be idle first
     delete memory_backend_;
@@ -296,8 +308,6 @@ void VulkanDevice::NotImplemented(const char* what) {
 const char* VulkanDevice::BackendName() const { return "vulkan"; }
 const DeviceCaps& VulkanDevice::Caps() const { return caps_; }
 
-BufferHandle VulkanDevice::CreateBuffer(const BufferDesc&) { NotImplemented("CreateBuffer"); return {}; }
-void VulkanDevice::DestroyBuffer(BufferHandle) {}
 TextureHandle VulkanDevice::CreateTexture(const TextureDesc&) { NotImplemented("CreateTexture"); return {}; }
 void VulkanDevice::DestroyTexture(TextureHandle) {}
 SamplerHandle VulkanDevice::CreateSampler(const SamplerDesc&) { NotImplemented("CreateSampler"); return {}; }
@@ -311,22 +321,8 @@ void VulkanDevice::DestroyBindGroup(BindGroupHandle) {}
 PipelineHandle VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&) { NotImplemented("CreateGraphicsPipeline"); return {}; }
 PipelineHandle VulkanDevice::CreateComputePipeline(const ComputePipelineDesc&) { NotImplemented("CreateComputePipeline"); return {}; }
 void VulkanDevice::DestroyPipeline(PipelineHandle) {}
-void* VulkanDevice::MapBuffer(BufferHandle) { NotImplemented("MapBuffer"); return nullptr; }
-void VulkanDevice::UnmapBuffer(BufferHandle) {}
 CommandList* VulkanDevice::CreateCommandList() { NotImplemented("CreateCommandList"); return nullptr; }
 FenceValue VulkanDevice::Submit(CommandList* const*, usize) { NotImplemented("Submit"); return 0; }
-bool VulkanDevice::WaitFence(FenceValue value, u64) { return value == 0; } // 0 means "no work": already complete
-FenceValue VulkanDevice::CompletedFence() const { return 0; }
-void VulkanDevice::BeginFrame() { ++frame_number_; }
-void VulkanDevice::EndFrame() {}
-u64 VulkanDevice::FrameNumber() const { return frame_number_; }
-
-void VulkanDevice::WaitIdle() {
-    VkResult r = fns_.DeviceWaitIdle(device_);
-    if (ENGINE_VK_CHECK(r) == VkResultClass::DeviceLost) {
-        device_lost_.store(true, std::memory_order_relaxed);
-    }
-}
 
 bool VulkanDevice::DeviceLost() const { return device_lost_.load(std::memory_order_relaxed); }
 

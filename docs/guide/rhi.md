@@ -30,6 +30,8 @@ Full reference: [The Render Hardware Interface](../reference/rhi.md).
 - [[rhi::vulkan::VulkanDevice]] — the Vulkan device
 - [[rhi::vulkan::SelectPhysicalDevice]] and [[rhi::vulkan::PlanQueues]] — GPU choice and queue planning
 - [[rhi::vulkan::MemoryAllocator]] — the GPU memory suballocator, with [[rhi::vulkan::MemoryStats]]
+- [[rhi::Device::UploadBuffer]], [[rhi::UploadTicket]] and [[rhi::Device::ReadbackBuffer]] — moving bytes to and from buffers
+- [[rhi::vulkan::RingAllocator]] — the staging ring behind uploads
 - [[rhi::vulkan::LoadVulkanLoader]] — opens the Vulkan loader at runtime
 - [[rhi::vulkan::VkGlobalFns]], [[rhi::vulkan::VkInstanceFns]], [[rhi::vulkan::VkDeviceFns]] — the function-pointer tables
 - [[rhi::vulkan::VulkanInstance]] and [[rhi::vulkan::VulkanInstanceDesc]] — the instance, its extensions and validation
@@ -190,6 +192,37 @@ where an asynchronous transfer path would go later. `Submit`, `BeginFrame`, `End
 one submission thread (the queue is not externally synchronized beyond that rule). The device enables only the
 features it uses: dynamic rendering, synchronization2, timeline semaphores and, where available, anisotropic
 filtering. [[rhi::Device::Caps]] reports the limits it found.
+
+### Uploading data
+
+Buffers in `GpuOnly` memory cannot be written by the CPU. [[rhi::Device::UploadBuffer]] copies bytes into one: it
+stages them in a persistently mapped 16 MiB ring, records a copy on an internal command buffer, and submits it on
+the graphics queue. The bytes have been read from your pointer when the call returns, so you may reuse it at once.
+The returned [[rhi::UploadTicket]] holds a fence value; pass it to [[rhi::Device::WaitFence]] to wait for the GPU, or
+ignore it, since the copy is ordered after everything submitted earlier and before everything submitted later. A
+ticket with fence 0 means no wait is needed (the destination was CPU-visible and was written through its mapping).
+
+An upload larger than a quarter of the ring is split into chunks, and when the ring is full the call waits for the
+oldest chunk to finish and reuses its space. Uploads from several threads are serialized by the device. The buffer is
+in state `CopyDst` afterwards; move it to the state its first use needs with `Barrier` in a command list, as for
+any other write. A typical first use of a vertex buffer is:
+
+1. create it with `Vertex | CopyDst` usage in `GpuOnly` memory;
+2. `UploadBuffer` the vertex bytes;
+3. record `Barrier(buffer, CopyDst, VertexBuffer)` before the first draw that reads it.
+
+Because everything runs on one queue family, buffers are created with exclusive sharing and no queue-family
+ownership transfers exist anywhere in the RHI.
+
+[[rhi::Device::ReadbackBuffer]] is the opposite, for tests and tools: it waits for all earlier work, copies the range
+through a temporary `GpuToCpu` buffer and returns the bytes. It stalls the GPU, so keep it out of frame loops.
+`CpuToGpu` and `GpuToCpu` buffers can instead be mapped with `MapBuffer`; the mapping is persistent, so mapping costs
+only bookkeeping, and non-coherent memory is flushed or invalidated for you.
+
+**Deferred destruction.** `DestroyBuffer` makes the handle invalid at once but releases the memory only after the
+frame it was destroyed in has completed on the GPU (a buffer destroyed between frames belongs to the next frame), so
+a buffer used by work already submitted this frame is never freed under it. `BeginFrame` releases what has
+completed; `WaitIdle` releases everything. Destroying the device frees any buffers still alive, with a warning.
 
 ### GPU memory
 

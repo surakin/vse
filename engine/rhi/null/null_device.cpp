@@ -1364,6 +1364,53 @@ void* NullDevice::MapBuffer(BufferHandle buffer) {
     return b->data;
 }
 
+UploadTicket NullDevice::UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) {
+    State& s = *state_;
+    std::lock_guard<std::mutex> lock(s.mu);
+    BufferRes* b = s.Buf(dst);
+    if (b == nullptr) {
+        s.Error("UploadBuffer: handle is invalid or already destroyed");
+        return UploadTicket{0, false};
+    }
+    if (!Has(b->desc.usage, BufferUsage::CopyDst)) {
+        s.Error("UploadBuffer: the buffer was not created with CopyDst usage");
+        return UploadTicket{0, false};
+    }
+    if (data == nullptr || size > b->desc.size || offset > b->desc.size - size) {
+        s.Error("UploadBuffer: null data or a range outside the buffer");
+        return UploadTicket{0, false};
+    }
+    if (s.lost) {
+        return UploadTicket{0, false};
+    }
+    std::memcpy(b->data + offset, data, static_cast<usize>(size));
+    b->state = ResourceState::CopyDst;
+    return {};
+}
+
+bool NullDevice::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) {
+    State& s = *state_;
+    std::lock_guard<std::mutex> lock(s.mu);
+    BufferRes* b = s.Buf(src);
+    if (b == nullptr) {
+        s.Error("ReadbackBuffer: handle is invalid or already destroyed");
+        return false;
+    }
+    if (!Has(b->desc.usage, BufferUsage::CopySrc) && b->desc.location != MemoryLocation::GpuToCpu) {
+        s.Error("ReadbackBuffer: the buffer was not created with CopySrc usage");
+        return false;
+    }
+    if (dst == nullptr || size > b->desc.size || offset > b->desc.size - size) {
+        s.Error("ReadbackBuffer: null destination or a range outside the buffer");
+        return false;
+    }
+    if (s.lost) {
+        return false;
+    }
+    std::memcpy(dst, b->data + offset, static_cast<usize>(size));
+    return true;
+}
+
 void NullDevice::UnmapBuffer(BufferHandle buffer) {
     State& s = *state_;
     std::lock_guard<std::mutex> lock(s.mu);

@@ -1,14 +1,17 @@
 #pragma once
 
 #include <atomic>
+#include <mutex>
 
 #include "rhi/device.h"
+#include "rhi/handle_pool.h"
 #include "rhi/rhi.h"
 #include "rhi/vulkan/vk_device_select.h"
 #include "rhi/vulkan/vk_functions.h"
 #include "rhi/vulkan/vk_instance.h"
 #include "rhi/vulkan/vk_memory.h"
 #include "rhi/vulkan/vk_memory_backend.h"
+#include "rhi/vulkan/vk_ring.h"
 
 //! The Vulkan implementation of [[rhi::Device]].
 
@@ -54,6 +57,8 @@ public:
     void DestroyPipeline(PipelineHandle pipeline) override;
     void* MapBuffer(BufferHandle buffer) override;
     void UnmapBuffer(BufferHandle buffer) override;
+    UploadTicket UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) override;
+    bool ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) override;
     CommandList* CreateCommandList() override;
     FenceValue Submit(CommandList* const* lists, usize count) override;
     bool WaitFence(FenceValue value, u64 timeout_ns) override;
@@ -105,12 +110,67 @@ public:
     /// Fails: returns false if `VK_EXT_memory_budget` is not enabled or `heap` is out of range.
     bool HeapBudget(u32 heap, u64* budget, u64* usage) const;
 
+    /// Counts of the device's live Vulkan objects, for leak checks in tests.
+    ///
+    /// Thread-safety: thread-compatible plain data (a snapshot).
+    struct ObjectCounts {
+        /// Live buffers owned by the user (not internal staging).
+        usize buffers = 0;
+        /// Buffers destroyed but waiting for the GPU to finish with them.
+        usize pending_destruction = 0;
+        /// Raw `VkBuffer` objects alive, including internal staging.
+        usize raw_buffers = 0;
+    };
+
+    /// Returns the current object counts.
+    ObjectCounts Counts() const;
+
+    /// Returns the highest frame number whose GPU work has finished.
+    u64 CompletedFrame() const;
+
 private:
     VulkanDevice() = default;
     bool Initialize(const DeviceCreateInfo& info);
     void FillCaps();
     // Logs that `what` is not implemented yet in this build of the backend (resource kinds arrive on later days).
     static void NotImplemented(const char* what);
+
+    // A VkBuffer with its memory; used for user buffers and for internal staging.
+    struct RawBuffer {
+        VkBuffer buffer = nullptr;
+        MemoryAllocation memory;
+        u64 size = 0;
+    };
+    struct BufferRes {
+        RawBuffer raw;
+        BufferDesc desc;
+        bool mapped = false;
+    };
+    struct CommandBufferSlot {
+        VkCommandBuffer buffer;
+        u64 fence; // the timeline value that frees it; 0 when free
+    };
+
+    bool CreateRawBuffer(u64 size, VkBufferUsageFlags usage, MemoryLocation location, const char* what, RawBuffer* out);
+    void DestroyRawBuffer(RawBuffer* raw);
+    void InitializeTimeline();
+    bool InitializeUpload();
+    void ShutdownUpload();
+    // Waits for `value` on the timeline, marking the device lost on VK_ERROR_DEVICE_LOST.
+    bool WaitTimeline(u64 value, u64 timeout_ns);
+    u64 CompletedTimeline() const;
+    // Records `fill` into a one-time command buffer and submits it, signalling a new timeline value. Holds submit_mutex_.
+    template <typename Fill>
+    u64 SubmitInternalLocked(Fill&& fill);
+    VkCommandBuffer AcquireUploadCommandBufferLocked();
+    void NoteDeviceLost(VkResult result);
+    void SetDebugName(u64 handle, VkObjectType type, const char* name);
+    // Releases buffers whose frames have completed (or all of them when `all`).
+    void CollectRetired(bool all);
+    void UpdateCompletedFrames();
+    void SyncRange(const MemoryAllocation& allocation, u64 rel_offset, u64 length, bool flush);
+    void FlushRange(const MemoryAllocation& allocation, u64 rel_offset, u64 length);
+    void InvalidateRange(const MemoryAllocation& allocation, u64 rel_offset, u64 length);
 
     VulkanInstance instance_;
     VkPhysicalDevice physical_ = nullptr;
@@ -128,6 +188,25 @@ private:
     MemoryAllocator* memory_ = nullptr;
     std::atomic<bool> device_lost_{false};
     u64 frame_number_ = 0;
+
+    // Resources and deferred destruction (guarded by resource_mutex_).
+    mutable std::mutex resource_mutex_;
+    HandlePool<BufferRes, BufferTag> buffers_;
+    bool frame_open_ = false;
+    u64 ended_frames_ = 0;
+    u64 completed_frames_ = 0;
+    static constexpr u64 kTrackedFrames = 64;
+    u64 frame_fences_[kTrackedFrames] = {};
+    std::atomic<usize> raw_buffer_count_{0};
+
+    // Timeline and submission (guarded by submit_mutex_).
+    std::mutex submit_mutex_;
+    VkSemaphore timeline_ = nullptr;
+    u64 last_submit_value_ = 0;
+    VkCommandPool upload_pool_ = nullptr;
+    detail::GrowArray<CommandBufferSlot> upload_buffers_;
+    RingAllocator* staging_ring_ = nullptr;
+    RawBuffer staging_;
 };
 
 } // namespace engine_placeholder::rhi::vulkan
