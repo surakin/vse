@@ -256,6 +256,10 @@ void VulkanDevice::FillCaps() {
     caps_.max_push_constant_bytes = limits.maxPushConstantsSize < kMaxPushConstantBytes ? limits.maxPushConstantsSize : kMaxPushConstantBytes;
     caps_.min_uniform_buffer_offset_alignment = static_cast<u32>(limits.minUniformBufferOffsetAlignment);
     caps_.min_storage_buffer_offset_alignment = static_cast<u32>(limits.minStorageBufferOffsetAlignment);
+    // Vulkan itself needs only the texel-size multiple the copy already requires. It reports the strict portable values
+    // (the DeviceCaps defaults, Direct3D 12's) on purpose: code tested on the one real backend then works on the next.
+    caps_.buffer_texture_copy_offset_alignment = 512;
+    caps_.buffer_texture_copy_row_pitch_alignment = 256;
     caps_.max_sampler_anisotropy = anisotropy_enabled_ ? limits.maxSamplerAnisotropy : 1.0f;
     for (int i = 0; i < 3; ++i) {
         caps_.max_compute_work_group_count[i] = limits.maxComputeWorkGroupCount[i];

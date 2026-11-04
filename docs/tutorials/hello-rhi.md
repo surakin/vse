@@ -1,7 +1,8 @@
-# Tutorial: Clear a Window with the RHI
+# Tutorial: From a Cleared Window to a Lit Cube with the RHI
 
-**Goal:** Run a frame loop that clears the window to an animated color, first on the null device (no GPU) and then
-on a real one with the `rhi_demo` app.
+**Goal:** Run a frame loop that clears the window to an animated color, then draw a triangle, make it a depth-tested
+cube, put a texture on it and light it - first on the null device (no GPU) and then on a real one with the `rhi_demo`
+app.
 
 **You need:** a built tree (see getting-started). A GPU and a display are needed only for step 5.
 
@@ -180,6 +181,123 @@ draws: ok, errors: 0
 [The RHI guide](../guide/rhi.md#depth-indexed-draws-and-the-3d-conventions)); `rhi_demo --screenshot out.ppm [--frames N]` renders its scene offscreen at
 256x256 without a window and writes a PPM, which is how the golden-image test in
 [Building and Testing](../guide/building-and-testing.md#golden-image-rendering-tests) is exercised by hand.
+
+## Make it a cube
+
+A triangle needs no depth; a cube does, or the far faces paint over the near ones. Three things change.
+
+1. **A depth texture.** Create one with `device->Caps().depth_format` and `DepthAttachment` usage, move it to
+   `DepthAttachment` before the pass, and name it in `RenderingDesc::depth`. The pipeline says the same format in
+   `depth_format` and turns on `depth_test` and `depth_write`.
+2. **An index buffer.** A cube has 24 vertices (four per face, so each face has its own normal and uv) and 36 indices.
+   Upload the indices like the vertices, create the buffer with `Index | CopyDst`, and draw with `SetIndexBuffer` and
+   `DrawIndexed`.
+3. **The conventions.** World space is right-handed with Y up; the projection (`PerspectiveVulkan` in
+   `game/common/cube_scene.h`) flips Y and maps depth to 0..1; front faces are counter-clockwise on screen, so the
+   pipeline uses `CullMode::Back`. The matrix reaches the shader through a uniform buffer (see "Light it").
+
+The null device accepts and validates the same calls, here with the triangle's shaders standing in for a cube's:
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "rhi/null/null_device.h"
+#include "triangle.frag.spv.inc"
+#include "triangle.vert.spv.inc"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::rhi;
+
+int main() {
+    NullDevice* device = CreateNullDevice();
+    ShaderDesc sd;
+    sd.stage = ShaderStage::Vertex;
+    sd.words = shaders::kTriangleVertSpv;
+    sd.word_count = shaders::kTriangleVertSpvWordCount;
+    const ShaderHandle vs = device->CreateShader(sd);
+    sd.stage = ShaderStage::Fragment;
+    sd.words = shaders::kTriangleFragSpv;
+    sd.word_count = shaders::kTriangleFragSpvWordCount;
+    const ShaderHandle fs = device->CreateShader(sd);
+
+    VertexBindingDesc binding = {20, false};
+    VertexAttributeDesc attributes[2] = {{0, 0, VertexFormat::Float2, 0}, {1, 0, VertexFormat::Float3, 8}};
+    GraphicsPipelineDesc gp;
+    gp.vertex_shader = vs;
+    gp.fragment_shader = fs;
+    gp.vertex_bindings = Span<VertexBindingDesc>(&binding, 1);
+    gp.vertex_attributes = Span<VertexAttributeDesc>(attributes, 2);
+    gp.cull_mode = CullMode::Back;
+    gp.front_face = FrontFace::CounterClockwise;
+    gp.color_targets[0].format = Format::RGBA8_UNorm;
+    gp.color_target_count = 1;
+    gp.depth_format = device->Caps().depth_format;
+    gp.depth_test = true;
+    gp.depth_write = true;
+    const PipelineHandle pipeline = device->CreateGraphicsPipeline(gp);
+
+    const f32 quad[4 * 5] = {
+        -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+        0.5f,  0.5f,  0.0f, 0.0f, 1.0f, -0.5f, 0.5f,  1.0f, 1.0f, 0.0f,
+    };
+    const u16 indices[6] = {0, 1, 2, 0, 2, 3};
+    BufferDesc bd;
+    bd.size = sizeof(quad);
+    bd.usage = BufferUsage::Vertex | BufferUsage::CopyDst;
+    bd.location = MemoryLocation::GpuOnly;
+    const BufferHandle vb = device->CreateBuffer(bd);
+    device->UploadBuffer(vb, 0, quad, sizeof(quad));
+    bd.size = sizeof(indices);
+    bd.usage = BufferUsage::Index | BufferUsage::CopyDst;
+    const BufferHandle ib = device->CreateBuffer(bd);
+    device->UploadBuffer(ib, 0, indices, sizeof(indices));
+
+    TextureDesc td;
+    td.width = 64;
+    td.height = 64;
+    td.format = Format::RGBA8_UNorm;
+    td.usage = TextureUsage::ColorAttachment | TextureUsage::CopySrc;
+    const TextureHandle color = device->CreateTexture(td);
+    td.format = device->Caps().depth_format;
+    td.usage = TextureUsage::DepthAttachment;
+    const TextureHandle depth = device->CreateTexture(td);
+
+    device->BeginFrame();
+    CommandList* list = device->CreateCommandList();
+    list->Begin();
+    list->Barrier(vb, ResourceState::CopyDst, ResourceState::VertexBuffer);
+    list->Barrier(ib, ResourceState::CopyDst, ResourceState::IndexBuffer);
+    list->Barrier(color, ResourceState::Undefined, ResourceState::ColorAttachment);
+    list->Barrier(depth, ResourceState::Undefined, ResourceState::DepthAttachment);
+    RenderingDesc pass;
+    pass.color_count = 1;
+    pass.color[0].texture = color;
+    pass.depth.texture = depth;
+    pass.depth.store = StoreOp::DontCare; // nothing reads the depth after the pass
+    list->BeginRendering(pass);
+    list->SetPipeline(pipeline);
+    list->SetViewport(Viewport{0, 0, 64, 64, 0.0f, 1.0f});
+    list->SetScissor(ScissorRect{0, 0, 64, 64});
+    list->SetVertexBuffer(0, vb, 0);
+    list->SetIndexBuffer(ib, 0, IndexType::UInt16);
+    list->DrawIndexed(6, 1, 0, 0, 0);
+    list->EndRendering();
+    list->End();
+    device->Submit(&list, 1);
+    device->EndFrame();
+
+    device->WaitIdle();
+    std::printf("indexed draw: ok, errors: %u\n", device->ErrorCount());
+    DestroyDevice(device);
+}
+```
+
+```output
+indexed draw: ok, errors: 0
+```
+
+`rhi_demo` does this with the real cube (`game/common/cube_scene.cpp`) and spins it; the matrices are written into a
+`UniformRing` slice each frame.
 
 ## Add a texture
 

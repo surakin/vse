@@ -90,9 +90,13 @@ struct RenderingDesc {
 ///
 /// Thread-safety: thread-compatible plain data.
 struct BufferTextureCopy {
-    /// Byte offset of the first texel row in the buffer.
+    /// Byte offset of the first texel row in the buffer; a multiple of the texel size and of
+    /// `DeviceCaps::buffer_texture_copy_offset_alignment`.
     u64 buffer_offset = 0;
     /// Bytes between consecutive texel rows (block rows for compressed formats) in the buffer; 0 means tightly packed.
+    /// The resulting pitch must be a multiple of the texel size and of `DeviceCaps::buffer_texture_copy_row_pitch_alignment`,
+    /// so a portable caller pads its rows (Direct3D 12 requires 256-byte aligned rows). 0 is therefore legal only when
+    /// the tight row size already meets the alignment (a 64-texel RGBA8 row does; a 16-texel one does not).
     u32 buffer_row_pitch = 0;
     /// The mip level of the texture.
     u32 mip_level = 0;
@@ -142,8 +146,9 @@ public:
     /// Param dst: destination texture, in state `CopyDst`.
     /// Param region: where in the buffer the texel rows are and which mip level and layer to write.
     /// Aborts: outside `Begin`/`End`, inside a rendering pass, a stale handle, a wrong state or usage, a mip level or
-    ///   layer out of range, a buffer range too small for the level, or a `buffer_offset` or `buffer_row_pitch` that
-    ///   is not a multiple of the texel (block) size.
+    ///   layer out of range, a buffer range too small for the level, a `buffer_offset` or `buffer_row_pitch` that
+    ///   is not a multiple of the texel (block) size, or an offset or resolved pitch that breaks
+    ///   `DeviceCaps::buffer_texture_copy_offset_alignment` or `buffer_texture_copy_row_pitch_alignment`.
     virtual void CopyBufferToTexture(BufferHandle src, TextureHandle dst, const BufferTextureCopy& region) = 0;
 
     /// Copies the whole of one mip level of one layer from a texture into a buffer.

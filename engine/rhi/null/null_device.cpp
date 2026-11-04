@@ -838,6 +838,14 @@ private:
             s_->Error("%s: buffer_row_pitch is smaller than one row of the level", what);
             return false;
         }
+        const DeviceCaps& caps = s_->options.caps;
+        const u32 offset_alignment = caps.buffer_texture_copy_offset_alignment == 0 ? 1 : caps.buffer_texture_copy_offset_alignment; // 0 = none
+        const u32 pitch_alignment = caps.buffer_texture_copy_row_pitch_alignment == 0 ? 1 : caps.buffer_texture_copy_row_pitch_alignment;
+        if (r.buffer_offset % offset_alignment != 0 || pitch % pitch_alignment != 0) {
+            s_->Error("%s: buffer_offset must be a multiple of %u and the row pitch a multiple of %u on this device", what, offset_alignment,
+                      pitch_alignment);
+            return false;
+        }
         u64 rows = (static_cast<u64>(mh) + fp.block_height - 1) / fp.block_height;
         u64 needed = (static_cast<u64>(md) * rows - 1) * pitch + row_bytes;
         if (r.buffer_offset > b.desc.size || needed > b.desc.size - r.buffer_offset) {

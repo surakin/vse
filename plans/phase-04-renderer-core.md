@@ -46,3 +46,36 @@ D3D12/Metal impact.
 | **Bindless / descriptor indexing** | With the material system design (per-material bind groups vs a global texture table) | `supports_bindless` flag in `DeviceCaps`, always false |
 | **Indirect draws** (`DrawIndirect`, count buffers) | Only if GPU-driven culling is wanted | `indirect` buffer-usage flag; no draw command |
 | **Async compute / dedicated transfer queue overlap** | Only if profiling shows a need | Compute runs on the graphics queue; uploads use the transfer queue where one exists |
+
+## Facts Phase 3 produced (inputs for this phase's day files)
+
+- **State tracking.** The RHI tracks no resource state: `Barrier(resource, before, after)` makes the caller state
+  `before`, and the Vulkan backend turns each state pair into one barrier from a single table. A render graph therefore
+  owns all transitions, which is what the RHI was shaped for. Cost of one recorded `Barrier`: about 0.15-0.2 us
+  (`rhi_bench`, Release); a frame with a few hundred transitions costs well under 0.1 ms to record.
+- **Descriptor model.** Bind group layouts, bind groups created ahead of time (persistent) or per frame (transient,
+  freed at the next `BeginFrame` of the slot), and 128 bytes of push constants. Per-draw transient groups work
+  (about 0.5-0.6 us per draw including the uniform-ring slice) but the 10000-draw profile shows the device's resource
+  mutex (about 11%) and `CreateBindGroup` (about 8%) on the path: the material system should bind per material or per
+  pass and keep per-object data in one buffer, not make a bind group per object per frame.
+- **Performance baseline** (`rhi_bench`, RTX 3060, Release, validation off): 1000 cubes record in 0.5 ms and 10000 in
+  6.3 ms; 14-18 GiB/s uploads; cube pipeline 3.6-5.8 ms depending on the pipeline cache. Full table in
+  `docs/guide/rhi.md`, "Performance notes", and in the Day 67 file.
+- **Threading.** Command lists record on any thread (one thread per list), submission is serialized, resource creation
+  is behind one mutex. Parallel recording by pass or by slice of the draw list needs no RHI change; the mutex is the
+  first thing to look at if recording does not scale.
+- **Conventions the renderer inherits.** Right-handed, Y up; `PerspectiveVulkan` flips Y and maps depth 0..1; meshes
+  counter-clockwise with `FrontFace::CounterClockwise`; `Mat4` is column-major and equals std140.
+- **Copy alignment** is now a device cap (`buffer_texture_copy_*_alignment`, defaults 512 and 256); asset upload code
+  pads rows to it.
+- **Shader format.** `ShaderDesc` carries SPIR-V; the portability review (section 3) lays out the two outcomes of the
+  shader-toolchain decision for it, and requires that any translator flip clip-space Y for D3D12 and Metal.
+- **Deferred-feature impact on D3D12/Metal** (fills the "Deferred from Phase 3" table above):
+
+| Feature | Direct3D 12 | Metal |
+|---|---|---|
+| MSAA | resolve with `ResolveSubresource` / render-pass resolve; typeless formats for depth resolve | resolve store action; programmable sample positions differ |
+| Bindless | SM 6.6 `ResourceDescriptorHeap`: fits the shader-visible heap model directly | argument buffers tier 2; needs `useResource` residency calls |
+| Indirect draws | `ExecuteIndirect` with a command signature | indirect command buffers or `drawIndexedPrimitives` with an indirect buffer |
+| Async compute | a second `COMPUTE` queue, fences already timeline-shaped | a second `MTLCommandQueue`, shared events |
+

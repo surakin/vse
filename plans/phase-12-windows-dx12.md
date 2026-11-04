@@ -38,3 +38,11 @@ The backend needs DXIL shaders. The toolchain that produces them from the
 engine's shader source was to be settled before Phase 4; confirm that
 decision here and that the cooker emits DXIL blobs for `ShaderDesc`
 before this phase's day files are written.
+
+- **From the Phase 3 portability review** (`docs/superpowers/specs/2026-11-04-rhi-portability-review.md`, section 5):
+  typeless formats for sampled depth; compute-shader `GenerateMips`; bind-group descriptors copied into per-frame
+  shader-visible heaps at `SetBindGroup` (measure it against the Vulkan number in the Day 67 baseline); uniform buffers
+  and CBV ranges rounded to 256 bytes; CPU repacking in `UploadTexture`/`ReadbackTexture` for 256-byte pitches;
+  `ResizeBuffers` after idling; sRGB render-target views over UNorm flip-model buffers; the clip-space Y flip lives in
+  the shader translation path; `Mailbox` falls back to `Fifo`. Copy alignment (512 / 256) is already in
+  `DeviceCaps::buffer_texture_copy_*_alignment`.

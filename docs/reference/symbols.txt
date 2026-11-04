@@ -763,11 +763,13 @@ rhi::DeviceCaps::max_color_attachments	variable	rhi	rhi-devicecaps-max-color-att
 rhi::DeviceCaps::max_push_constant_bytes	variable	rhi	rhi-devicecaps-max-push-constant-bytes	rhi.md	engine/rhi/caps.h:29
 rhi::DeviceCaps::min_uniform_buffer_offset_alignment	variable	rhi	rhi-devicecaps-min-uniform-buffer-offset-alignment	rhi.md	engine/rhi/caps.h:31
 rhi::DeviceCaps::min_storage_buffer_offset_alignment	variable	rhi	rhi-devicecaps-min-storage-buffer-offset-alignment	rhi.md	engine/rhi/caps.h:33
-rhi::DeviceCaps::max_sampler_anisotropy	variable	rhi	rhi-devicecaps-max-sampler-anisotropy	rhi.md	engine/rhi/caps.h:35
-rhi::DeviceCaps::max_compute_work_group_count	variable	rhi	rhi-devicecaps-max-compute-work-group-count	rhi.md	engine/rhi/caps.h:37
-rhi::DeviceCaps::depth_format	variable	rhi	rhi-devicecaps-depth-format	rhi.md	engine/rhi/caps.h:39
-rhi::DeviceCaps::timestamp_period_ns	variable	rhi	rhi-devicecaps-timestamp-period-ns	rhi.md	engine/rhi/caps.h:41
-rhi::DeviceCaps::supports_bindless	variable	rhi	rhi-devicecaps-supports-bindless	rhi.md	engine/rhi/caps.h:43
+rhi::DeviceCaps::buffer_texture_copy_offset_alignment	variable	rhi	rhi-devicecaps-buffer-texture-copy-offset-alignment	rhi.md	engine/rhi/caps.h:37
+rhi::DeviceCaps::buffer_texture_copy_row_pitch_alignment	variable	rhi	rhi-devicecaps-buffer-texture-copy-row-pitch-alignment	rhi.md	engine/rhi/caps.h:41
+rhi::DeviceCaps::max_sampler_anisotropy	variable	rhi	rhi-devicecaps-max-sampler-anisotropy	rhi.md	engine/rhi/caps.h:43
+rhi::DeviceCaps::max_compute_work_group_count	variable	rhi	rhi-devicecaps-max-compute-work-group-count	rhi.md	engine/rhi/caps.h:45
+rhi::DeviceCaps::depth_format	variable	rhi	rhi-devicecaps-depth-format	rhi.md	engine/rhi/caps.h:47
+rhi::DeviceCaps::timestamp_period_ns	variable	rhi	rhi-devicecaps-timestamp-period-ns	rhi.md	engine/rhi/caps.h:49
+rhi::DeviceCaps::supports_bindless	variable	rhi	rhi-devicecaps-supports-bindless	rhi.md	engine/rhi/caps.h:51
 rhi::Viewport	struct	rhi	rhi-viewport	rhi.md	engine/rhi/command_list.h:15
 rhi::Viewport::x	variable	rhi	rhi-viewport-x	rhi.md	engine/rhi/command_list.h:17
 rhi::Viewport::y	variable	rhi	rhi-viewport-y	rhi.md	engine/rhi/command_list.h:19
@@ -795,34 +797,34 @@ rhi::RenderingDesc::color	variable	rhi	rhi-renderingdesc-color	rhi.md	engine/rhi
 rhi::RenderingDesc::color_count	variable	rhi	rhi-renderingdesc-color-count	rhi.md	engine/rhi/command_list.h:84
 rhi::RenderingDesc::depth	variable	rhi	rhi-renderingdesc-depth	rhi.md	engine/rhi/command_list.h:86
 rhi::BufferTextureCopy	struct	rhi	rhi-buffertexturecopy	rhi.md	engine/rhi/command_list.h:92
-rhi::BufferTextureCopy::buffer_offset	variable	rhi	rhi-buffertexturecopy-buffer-offset	rhi.md	engine/rhi/command_list.h:94
-rhi::BufferTextureCopy::buffer_row_pitch	variable	rhi	rhi-buffertexturecopy-buffer-row-pitch	rhi.md	engine/rhi/command_list.h:96
-rhi::BufferTextureCopy::mip_level	variable	rhi	rhi-buffertexturecopy-mip-level	rhi.md	engine/rhi/command_list.h:98
-rhi::BufferTextureCopy::array_layer	variable	rhi	rhi-buffertexturecopy-array-layer	rhi.md	engine/rhi/command_list.h:100
-rhi::CommandList	class	rhi	rhi-commandlist	rhi.md	engine/rhi/command_list.h:117
-rhi::CommandList::~CommandList()	function	rhi	rhi-commandlist-tilde-commandlist	rhi.md	engine/rhi/command_list.h:119
-rhi::CommandList::Begin()	function	rhi	rhi-commandlist-begin	rhi.md	engine/rhi/command_list.h:123
-rhi::CommandList::End()	function	rhi	rhi-commandlist-end	rhi.md	engine/rhi/command_list.h:127
-rhi::CommandList::CopyBuffer(BufferHandle,BufferHandle,u64,u64,u64)	function	rhi	rhi-commandlist-copybuffer-bufferhandle-bufferhandle-u64-u64-u64	rhi.md	engine/rhi/command_list.h:137
-rhi::CommandList::CopyBufferToTexture(BufferHandle,TextureHandle,const BufferTextureCopy&)	function	rhi	rhi-commandlist-copybuffertotexture-bufferhandle-texturehandle-const-buffertexturecopy-amp	rhi.md	engine/rhi/command_list.h:147
-rhi::CommandList::CopyTextureToBuffer(TextureHandle,BufferHandle,const BufferTextureCopy&)	function	rhi	rhi-commandlist-copytexturetobuffer-texturehandle-bufferhandle-const-buffertexturecopy-amp	rhi.md	engine/rhi/command_list.h:155
-rhi::CommandList::Barrier(BufferHandle,ResourceState,ResourceState)	function	rhi	rhi-commandlist-barrier-bufferhandle-resourcestate-resourcestate	rhi.md	engine/rhi/command_list.h:166
-rhi::CommandList::Barrier(TextureHandle,ResourceState,ResourceState)	function	rhi	rhi-commandlist-barrier-texturehandle-resourcestate-resourcestate	rhi.md	engine/rhi/command_list.h:177
-rhi::CommandList::GenerateMips(TextureHandle)	function	rhi	rhi-commandlist-generatemips-texturehandle	rhi.md	engine/rhi/command_list.h:189
-rhi::CommandList::BeginRendering(const RenderingDesc&)	function	rhi	rhi-commandlist-beginrendering-const-renderingdesc-amp	rhi.md	engine/rhi/command_list.h:196
-rhi::CommandList::EndRendering()	function	rhi	rhi-commandlist-endrendering	rhi.md	engine/rhi/command_list.h:200
-rhi::CommandList::SetPipeline(PipelineHandle)	function	rhi	rhi-commandlist-setpipeline-pipelinehandle	rhi.md	engine/rhi/command_list.h:210
-rhi::CommandList::SetBindGroup(u32,BindGroupHandle)	function	rhi	rhi-commandlist-setbindgroup-u32-bindgrouphandle	rhi.md	engine/rhi/command_list.h:217
-rhi::CommandList::SetPushConstants(u32,const void*,u32)	function	rhi	rhi-commandlist-setpushconstants-u32-const-void-star-u32	rhi.md	engine/rhi/command_list.h:225
-rhi::CommandList::SetViewport(const Viewport&)	function	rhi	rhi-commandlist-setviewport-const-viewport-amp	rhi.md	engine/rhi/command_list.h:231
-rhi::CommandList::SetScissor(const ScissorRect&)	function	rhi	rhi-commandlist-setscissor-const-scissorrect-amp	rhi.md	engine/rhi/command_list.h:237
-rhi::CommandList::SetVertexBuffer(u32,BufferHandle,u64)	function	rhi	rhi-commandlist-setvertexbuffer-u32-bufferhandle-u64	rhi.md	engine/rhi/command_list.h:245
-rhi::CommandList::SetIndexBuffer(BufferHandle,u64,IndexType)	function	rhi	rhi-commandlist-setindexbuffer-bufferhandle-u64-indextype	rhi.md	engine/rhi/command_list.h:253
-rhi::CommandList::Draw(u32,u32,u32,u32)	function	rhi	rhi-commandlist-draw-u32-u32-u32-u32	rhi.md	engine/rhi/command_list.h:263
-rhi::CommandList::DrawIndexed(u32,u32,u32,i32,u32)	function	rhi	rhi-commandlist-drawindexed-u32-u32-u32-i32-u32	rhi.md	engine/rhi/command_list.h:273
-rhi::CommandList::Dispatch(u32,u32,u32)	function	rhi	rhi-commandlist-dispatch-u32-u32-u32	rhi.md	engine/rhi/command_list.h:284
-rhi::CommandList::PushDebugLabel(const char*)	function	rhi	rhi-commandlist-pushdebuglabel-const-char-star	rhi.md	engine/rhi/command_list.h:290
-rhi::CommandList::PopDebugLabel()	function	rhi	rhi-commandlist-popdebuglabel	rhi.md	engine/rhi/command_list.h:294
+rhi::BufferTextureCopy::buffer_offset	variable	rhi	rhi-buffertexturecopy-buffer-offset	rhi.md	engine/rhi/command_list.h:95
+rhi::BufferTextureCopy::buffer_row_pitch	variable	rhi	rhi-buffertexturecopy-buffer-row-pitch	rhi.md	engine/rhi/command_list.h:100
+rhi::BufferTextureCopy::mip_level	variable	rhi	rhi-buffertexturecopy-mip-level	rhi.md	engine/rhi/command_list.h:102
+rhi::BufferTextureCopy::array_layer	variable	rhi	rhi-buffertexturecopy-array-layer	rhi.md	engine/rhi/command_list.h:104
+rhi::CommandList	class	rhi	rhi-commandlist	rhi.md	engine/rhi/command_list.h:121
+rhi::CommandList::~CommandList()	function	rhi	rhi-commandlist-tilde-commandlist	rhi.md	engine/rhi/command_list.h:123
+rhi::CommandList::Begin()	function	rhi	rhi-commandlist-begin	rhi.md	engine/rhi/command_list.h:127
+rhi::CommandList::End()	function	rhi	rhi-commandlist-end	rhi.md	engine/rhi/command_list.h:131
+rhi::CommandList::CopyBuffer(BufferHandle,BufferHandle,u64,u64,u64)	function	rhi	rhi-commandlist-copybuffer-bufferhandle-bufferhandle-u64-u64-u64	rhi.md	engine/rhi/command_list.h:141
+rhi::CommandList::CopyBufferToTexture(BufferHandle,TextureHandle,const BufferTextureCopy&)	function	rhi	rhi-commandlist-copybuffertotexture-bufferhandle-texturehandle-const-buffertexturecopy-amp	rhi.md	engine/rhi/command_list.h:152
+rhi::CommandList::CopyTextureToBuffer(TextureHandle,BufferHandle,const BufferTextureCopy&)	function	rhi	rhi-commandlist-copytexturetobuffer-texturehandle-bufferhandle-const-buffertexturecopy-amp	rhi.md	engine/rhi/command_list.h:160
+rhi::CommandList::Barrier(BufferHandle,ResourceState,ResourceState)	function	rhi	rhi-commandlist-barrier-bufferhandle-resourcestate-resourcestate	rhi.md	engine/rhi/command_list.h:171
+rhi::CommandList::Barrier(TextureHandle,ResourceState,ResourceState)	function	rhi	rhi-commandlist-barrier-texturehandle-resourcestate-resourcestate	rhi.md	engine/rhi/command_list.h:182
+rhi::CommandList::GenerateMips(TextureHandle)	function	rhi	rhi-commandlist-generatemips-texturehandle	rhi.md	engine/rhi/command_list.h:194
+rhi::CommandList::BeginRendering(const RenderingDesc&)	function	rhi	rhi-commandlist-beginrendering-const-renderingdesc-amp	rhi.md	engine/rhi/command_list.h:201
+rhi::CommandList::EndRendering()	function	rhi	rhi-commandlist-endrendering	rhi.md	engine/rhi/command_list.h:205
+rhi::CommandList::SetPipeline(PipelineHandle)	function	rhi	rhi-commandlist-setpipeline-pipelinehandle	rhi.md	engine/rhi/command_list.h:215
+rhi::CommandList::SetBindGroup(u32,BindGroupHandle)	function	rhi	rhi-commandlist-setbindgroup-u32-bindgrouphandle	rhi.md	engine/rhi/command_list.h:222
+rhi::CommandList::SetPushConstants(u32,const void*,u32)	function	rhi	rhi-commandlist-setpushconstants-u32-const-void-star-u32	rhi.md	engine/rhi/command_list.h:230
+rhi::CommandList::SetViewport(const Viewport&)	function	rhi	rhi-commandlist-setviewport-const-viewport-amp	rhi.md	engine/rhi/command_list.h:236
+rhi::CommandList::SetScissor(const ScissorRect&)	function	rhi	rhi-commandlist-setscissor-const-scissorrect-amp	rhi.md	engine/rhi/command_list.h:242
+rhi::CommandList::SetVertexBuffer(u32,BufferHandle,u64)	function	rhi	rhi-commandlist-setvertexbuffer-u32-bufferhandle-u64	rhi.md	engine/rhi/command_list.h:250
+rhi::CommandList::SetIndexBuffer(BufferHandle,u64,IndexType)	function	rhi	rhi-commandlist-setindexbuffer-bufferhandle-u64-indextype	rhi.md	engine/rhi/command_list.h:258
+rhi::CommandList::Draw(u32,u32,u32,u32)	function	rhi	rhi-commandlist-draw-u32-u32-u32-u32	rhi.md	engine/rhi/command_list.h:268
+rhi::CommandList::DrawIndexed(u32,u32,u32,i32,u32)	function	rhi	rhi-commandlist-drawindexed-u32-u32-u32-i32-u32	rhi.md	engine/rhi/command_list.h:278
+rhi::CommandList::Dispatch(u32,u32,u32)	function	rhi	rhi-commandlist-dispatch-u32-u32-u32	rhi.md	engine/rhi/command_list.h:289
+rhi::CommandList::PushDebugLabel(const char*)	function	rhi	rhi-commandlist-pushdebuglabel-const-char-star	rhi.md	engine/rhi/command_list.h:295
+rhi::CommandList::PopDebugLabel()	function	rhi	rhi-commandlist-popdebuglabel	rhi.md	engine/rhi/command_list.h:299
 rhi::MaxMipLevels(u32,u32,u32)	function	rhi	rhi-maxmiplevels-u32-u32-u32	rhi.md	engine/rhi/desc.h:24
 rhi::BufferDesc	struct	rhi	rhi-bufferdesc	rhi.md	engine/rhi/desc.h:30
 rhi::BufferDesc::size	variable	rhi	rhi-bufferdesc-size	rhi.md	engine/rhi/desc.h:32

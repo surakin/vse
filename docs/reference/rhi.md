@@ -146,6 +146,26 @@ u32 min_storage_buffer_offset_alignment;
 
 Required alignment in bytes of a storage buffer binding offset.
 
+### `buffer_texture_copy_offset_alignment` {#rhi-devicecaps-buffer-texture-copy-offset-alignment}
+
+`variable rhi::DeviceCaps::buffer_texture_copy_offset_alignment` — defined in `engine/rhi/caps.h`
+
+```cpp
+u32 buffer_texture_copy_offset_alignment;
+```
+
+Required alignment in bytes of `BufferTextureCopy::buffer_offset`, on top of being a multiple of the texel size; at least 1. Direct3D 12 needs 512, Metal nothing extra. The default is the strictest, and the Vulkan backend reports it too although Vulkan itself needs nothing extra, so that code tested on Vulkan works on Direct3D 12 later.
+
+### `buffer_texture_copy_row_pitch_alignment` {#rhi-devicecaps-buffer-texture-copy-row-pitch-alignment}
+
+`variable rhi::DeviceCaps::buffer_texture_copy_row_pitch_alignment` — defined in `engine/rhi/caps.h`
+
+```cpp
+u32 buffer_texture_copy_row_pitch_alignment;
+```
+
+Required alignment in bytes of the row pitch of a buffer-texture copy (after `0` is resolved to the tight row size), on top of being a multiple of the texel size; at least 1. Direct3D 12 needs 256, Metal nothing extra. Like the offset alignment, the default and the Vulkan backend report the strict value.
+
 ### `max_sampler_anisotropy` {#rhi-devicecaps-max-sampler-anisotropy}
 
 `variable rhi::DeviceCaps::max_sampler_anisotropy` — defined in `engine/rhi/caps.h`
@@ -502,7 +522,7 @@ Describes how a buffer and one mip level of one array layer of a texture are cop
 u64 buffer_offset;
 ```
 
-Byte offset of the first texel row in the buffer.
+Byte offset of the first texel row in the buffer; a multiple of the texel size and of `DeviceCaps::buffer_texture_copy_offset_alignment`.
 
 ### `buffer_row_pitch` {#rhi-buffertexturecopy-buffer-row-pitch}
 
@@ -512,7 +532,7 @@ Byte offset of the first texel row in the buffer.
 u32 buffer_row_pitch;
 ```
 
-Bytes between consecutive texel rows (block rows for compressed formats) in the buffer; 0 means tightly packed.
+Bytes between consecutive texel rows (block rows for compressed formats) in the buffer; 0 means tightly packed. The resulting pitch must be a multiple of the texel size and of `DeviceCaps::buffer_texture_copy_row_pitch_alignment`, so a portable caller pads its rows (Direct3D 12 requires 256-byte aligned rows). 0 is therefore legal only when the tight row size already meets the alignment (a 64-texel RGBA8 row does; a 16-texel one does not).
 
 ### `mip_level` {#rhi-buffertexturecopy-mip-level}
 
@@ -625,7 +645,7 @@ Copies the whole of one mip level of one layer from a buffer into a texture.
 | Parameter `src` | source buffer, in state `CopySrc`. |
 | Parameter `dst` | destination texture, in state `CopyDst`. |
 | Parameter `region` | where in the buffer the texel rows are and which mip level and layer to write. |
-| Aborts | outside `Begin`/`End`, inside a rendering pass, a stale handle, a wrong state or usage, a mip level or layer out of range, a buffer range too small for the level, or a `buffer_offset` or `buffer_row_pitch` that is not a multiple of the texel (block) size. |
+| Aborts | outside `Begin`/`End`, inside a rendering pass, a stale handle, a wrong state or usage, a mip level or layer out of range, a buffer range too small for the level, a `buffer_offset` or `buffer_row_pitch` that is not a multiple of the texel (block) size, or an offset or resolved pitch that breaks `DeviceCaps::buffer_texture_copy_offset_alignment` or `buffer_texture_copy_row_pitch_alignment`. |
 
 ### `CopyTextureToBuffer(TextureHandle,BufferHandle,const BufferTextureCopy&)` {#rhi-commandlist-copytexturetobuffer-texturehandle-bufferhandle-const-buffertexturecopy-amp}
 

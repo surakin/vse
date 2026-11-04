@@ -45,7 +45,9 @@ The array is named from the file: `triangle.vert` becomes `kTriangleVertSpv`, in
 `engine_placeholder::shaders`.
 
 The long-term plan for shader languages and for the DX12 and Metal backends is an open decision (`PLAN.md`
-assumption #18); the RHI takes precompiled bytecode in [[rhi::ShaderDesc]], so the choice does not change it.
+assumption #18); the RHI takes precompiled bytecode in [[rhi::ShaderDesc]]. If the decision is per-backend blobs,
+`ShaderDesc` gains a format tag, and nothing else in the RHI changes; whichever is chosen must flip clip-space Y for
+Direct3D 12 and Metal (the RHI follows Vulkan's convention). See the portability review, sections 2 and 3.
 
 ## Creating a shader module
 

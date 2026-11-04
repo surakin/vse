@@ -609,4 +609,15 @@ that changed from the plan and why.)_
   `glslc` (assumption #18, decided Day 58); front faces are `CounterClockwise` with the
   Y-flipped projection (found by test on Day 63). The grep gate, hardening and the
   portability review remain (Days 66-67).
+- **2026-11-04 - Phase 3 complete (Days 66-67).** The Vulkan boundary is enforced
+  by the `rhi_boundary_check` ctest (comment-aware scan, reasoned allow-list, planted-
+  violation fixtures); it found two real leaks of the boundary on its first run. Failure
+  injection (`FaultInjection`: device loss at a frame, allocation failure) and a 200-resize
+  storm are tested; sanitizers are green with a reasoned `lsan.supp`. The portability review
+  walked every RHI concept against Direct3D 12 and Metal: one interface change (buffer-to-
+  texture copy alignment is now a device cap, 512/256 by default), the rest are backend
+  shims filed in the Phase 12/13 notes; the shader format and a mandatory clip-space Y flip in
+  any shader translator are recorded as inputs to the open shader-toolchain decision.
+  Baseline (RTX 3060, Release): ~0.5-0.6 us per draw recorded, 0.15-0.2 us per barrier,
+  14-18 GiB/s uploads, cube pipeline 3.6-5.8 ms. Phase 4 still needs its day files.
 

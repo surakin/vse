@@ -10,7 +10,8 @@ Internal design history is for contributors, not engine users: the specs in
 [job system](superpowers/specs/2026-08-13-job-system-design.md),
 [Unicode string support](superpowers/specs/2026-08-14-unicode-string-support-design.md),
 [command-line wrapper](superpowers/specs/2026-08-16-command-line-wrapper-design.md),
-[RHI design](superpowers/specs/2026-11-04-rhi-design.md) —
+[RHI design](superpowers/specs/2026-11-04-rhi-design.md),
+[RHI portability review](superpowers/specs/2026-11-04-rhi-portability-review.md) —
 and the plans in `plans/`.
 
 ## Map

@@ -1,6 +1,6 @@
 # The Render Hardware Interface (RHI)
 
-> **Status:** skeleton — not yet written  
+> **Status:** draft  
 > **Audience:** engine and renderer programmers  
 > **Covers:** Phase 3
 
@@ -40,18 +40,7 @@ Full reference: [The Render Hardware Interface](../reference/rhi.md).
 - [[rhi::vulkan::GetValidationCounts]] and [[rhi::vulkan::SetValidationCapture]] — validation message counters and capture hook
 - [[rhi::vulkan::VkResultName]], [[rhi::vulkan::ClassifyVkResult]] — readable and classified `VkResult`s
 
-## Already known — seed material (verify against the code when writing)
-
-- All GPU resources are opaque generation-checked handles owned by the device; a stale handle is detected, never dereferenced
-- Creation failure returns an invalid handle and logs on `LogRhi`; programming errors are `ENGINE_ASSERT`; device loss is a sticky queryable state
-- `Destroy*` is deferred until the GPU finishes the frames that could use the resource
-- Synchronization is explicit: `Barrier(resource, before, after)` in portable `ResourceState`s; fences are monotonically increasing timeline values
-- Binding model: bind group layouts, bind groups and push constants; pipelines use dynamic rendering (no render-pass objects)
-- Command lists record on any thread; submission is serialized on the device
-- Vulkan 1.3 baseline, loaded at runtime from `libvulkan.so.1`; validation layers are dev-time only (`ENGINE_RHI_VALIDATION`)
-- GPU tests are tagged `[gpu]` and skip without a device (`ENGINE_RHI_REQUIRE_GPU=1` turns a skip into a failure)
-
-## Outline
+## Guide
 
 ### Overview
 
@@ -206,15 +195,70 @@ demo with exit code 3 and a message, a failed allocation with exit code 1.
 
 ### Common mistakes
 
-_TODO_
+- **Using a handle after `Destroy*` and expecting the old object.** The handle is invalid the moment `Destroy*` returns,
+  although the memory lives until the GPU is done with it. Asserts catch a second `Destroy`; a stale handle passed to a
+  `Create*` description is logged and the call returns an invalid handle.
+- **Forgetting that `Create*` can fail.** `CreateTexture`, `CreateBuffer` and the rest return an invalid handle when
+  memory is short or the description is wrong (`IsValid()` tells). Operations on an invalid handle abort.
+- **Stating the wrong `before` in a `Barrier`.** The RHI does not track states for you. `Undefined` is for "I do not
+  care what was there"; using it for a resource whose contents you need discards them.
+- **Barriers inside a render pass, or draws outside one.** Copies, barriers and dispatches go between passes; draws go
+  inside. This is a Metal rule as much as a Vulkan one.
+- **Padding.** A buffer-to-texture copy needs `DeviceCaps::buffer_texture_copy_*_alignment`; the default device
+  (and Direct3D 12) wants 512-byte offsets and 256-byte rows, so pad rows to that rather than packing them tightly.
+- **Writing the uniform ring after recording.** Write into a `UniformRing` slice, `Flush()` the ring before `Submit`,
+  and never reuse a slice across frames.
+- **Calling `BeginFrame`/`EndFrame` unbalanced.** `Submit` and `CreateCommandList` need an open frame; a second
+  `BeginFrame` without `EndFrame` aborts.
+- **Assuming the swapchain image lives on.** `CurrentTexture()` is valid until the next `Acquire` or `Resize`.
+- **Tuning on a Debug build with validation on.** The numbers in "Performance notes" are Release without validation;
+  validation costs more than the engine does.
+- **Naming Vulkan outside `engine/rhi/vulkan/`.** The `rhi_boundary_check` ctest will fail the build.
 
 ### Platform notes
 
-_TODO_
+The Vulkan backend is the only one built. It needs Vulkan 1.3 with dynamic rendering, synchronization2 and timeline
+semaphores, and presents through `VK_KHR_wayland_surface` or `VK_KHR_xlib_surface` depending on the window
+([[os::Window]]). With the NVIDIA proprietary driver, ThreadSanitizer cannot run GPU tests (the driver's threads crash
+inside its interceptors), and the X11 presentation path leaks inside a library the driver unloads; see "Building and
+Testing" for how the sanitizer flavors cover this.
+
+Direct3D 12 (Phase 12) and Metal (Phase 13) are planned behind the same interface. The Phase 3 portability review,
+`docs/superpowers/specs/2026-11-04-rhi-portability-review.md`, lists for every concept how each backend implements it
+and which shims they need; the points that shape how you write code today are the clip-space convention (Y down,
+depth 0..1, with the flip in the projection), the copy alignment above, explicit resource states, and bind groups
+created ahead of time rather than per draw call.
+
+### Performance notes
+
+Recorded by `rhi_bench` on 2026-11-04: NVIDIA GeForce RTX 3060, driver 615.78.08, AMD Ryzen 9 7950X3D, Linux, a Release
+build, validation off, 512x512 offscreen target. Numbers vary a few percent run to run; they are a baseline for
+comparing later work, not a promise, and are never asserted in CI.
+
+| Measurement | Result |
+|---|---|
+| Draw recording, 1000 cubes (uniform-ring slice + transient bind group + pipeline + draw each) | 0.50-0.52 ms per frame (about 0.5 us per draw) |
+| Draw recording, 10000 cubes | 6.2-6.4 ms per frame (about 0.63 us per draw); the GPU keeps up, wall time is within 5% of recording time |
+| `Barrier`, recording cost | about 0.15-0.17 us (buffer), 0.17-0.21 us (texture) |
+| Upload through the staging ring, 1 MiB x 256 and 64 MiB x 8 | 14-18 GiB/s (a memcpy plus one GPU copy; bound by host memory bandwidth) |
+| Cube pipeline creation (shaders, pipeline, buffers) | 5.6-5.8 ms with the cache off, 4.9-5.0 ms on a cold cache, 3.6 ms on a warm one |
+
+Use it with the design rules in mind. `Submit` of a whole frame costs microseconds, so the cost of a frame is recording.
+Recording is thread-compatible per list, so scale by recording lists on several jobs. A profile of the 10000-draw case
+(`perf record`) put the NVIDIA driver at about 12%, the device's resource mutex (`pthread_mutex_lock`, from
+`CreateBindGroup` and the handle lookups behind `SetPipeline`/`SetVertexBuffer`) at about 11%, `CreateBindGroup`
+itself at 8%, and the rest spread across the list's own methods. Per-draw transient bind groups are therefore the
+first thing to drop when draw counts grow: put per-object data in one buffer and index it, or bind it once per group of
+draws. See the Phase 4 notes in `plans/phase-04-renderer-core.md`.
 
 ### See also
 
-_TODO_
+- [Shaders: from GLSL to a shader module](rhi-shaders.md) - writing and building shaders.
+- [Tutorial: From a Cleared Window to a Lit Cube](../tutorials/hello-rhi.md).
+- [Building and Testing](building-and-testing.md) - GPU tests, golden images, sanitizers and the boundary gate.
+- [Open a Window](../tutorials/hello-window.md) and [Windowing and input](platform-windowing-and-input.md) - the platform
+  layer under the swapchain.
+- `docs/superpowers/specs/2026-11-04-rhi-design.md` and `2026-11-04-rhi-portability-review.md` - why it is shaped this way.
 
 ### Creating a device
 

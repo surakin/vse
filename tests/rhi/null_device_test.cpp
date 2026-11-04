@@ -479,8 +479,16 @@ TEST_CASE("Copy misuse", "[rhi][null][misuse]") {
     f.ExpectOneError();
 }
 
+// A device whose copies need only texel alignment (Vulkan, Metal), so these tests exercise the texel rules alone.
+NullDeviceOptions UnitCopyAlignment() {
+    NullDeviceOptions options;
+    options.caps.buffer_texture_copy_offset_alignment = 1;
+    options.caps.buffer_texture_copy_row_pitch_alignment = 1;
+    return options;
+}
+
 TEST_CASE("Texture copies need texel-aligned offsets and pitches", "[rhi][null][misuse]") {
-    Fixture f;
+    Fixture f(UnitCopyAlignment());
     TextureHandle t = f.Texture(16, 16, Format::RGBA8_UNorm, TextureUsage::CopyDst);
     BufferHandle b = f.Buffer(4096, BufferUsage::CopySrc);
     CommandList* l = f.List();
@@ -498,7 +506,7 @@ TEST_CASE("Texture copies need texel-aligned offsets and pitches", "[rhi][null][
 }
 
 TEST_CASE("Texture copy range checks", "[rhi][null][misuse]") {
-    Fixture f;
+    Fixture f(UnitCopyAlignment());
     TextureHandle t = f.Texture(16, 16, Format::RGBA8_UNorm, TextureUsage::CopyDst | TextureUsage::CopySrc);
     BufferHandle small = f.Buffer(100, BufferUsage::CopySrc | BufferUsage::CopyDst);
     BufferHandle big = f.Buffer(16 * 16 * 4, BufferUsage::CopySrc | BufferUsage::CopyDst);
@@ -1048,4 +1056,24 @@ TEST_CASE("The null device honors an injected device loss", "[rhi][null][fault]"
     CHECK(device->DeviceLost());
     device->EndFrame();
     DestroyDevice(device);
+}
+
+TEST_CASE("The default device enforces Direct3D 12's copy alignment, so portable code pads its rows", "[rhi][null][misuse]") {
+    Fixture f; // default caps: offset 512, row pitch 256
+    TextureHandle t = f.Texture(16, 16, Format::RGBA8_UNorm, TextureUsage::CopyDst | TextureUsage::CopySrc);
+    BufferHandle b = f.Buffer(16 * 256 + 1024, BufferUsage::CopySrc | BufferUsage::CopyDst);
+    CommandList* l = f.List();
+    l->Barrier(t, ResourceState::Undefined, ResourceState::CopyDst);
+    l->Barrier(b, ResourceState::Undefined, ResourceState::CopySrc);
+    BufferTextureCopy r; // tightly packed rows of 64 bytes
+    l->CopyBufferToTexture(b, t, r);
+    f.ExpectOneError();
+    r.buffer_row_pitch = 256;
+    r.buffer_offset = 4; // texel-aligned, but not 512-aligned
+    l->CopyBufferToTexture(b, t, r);
+    f.ExpectOneError();
+    r.buffer_offset = 512;
+    l->CopyBufferToTexture(b, t, r); // legal
+    f.Submit(l);
+    CHECK(f.Errors() == 0);
 }

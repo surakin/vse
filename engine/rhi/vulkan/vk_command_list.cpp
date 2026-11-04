@@ -150,6 +150,9 @@ void VulkanCommandList::CopyLevel(BufferHandle buffer, TextureHandle texture, co
     const u64 pitch = region.buffer_row_pitch != 0 ? region.buffer_row_pitch : row_bytes;
     ENGINE_ASSERT(pitch >= row_bytes && pitch % fp.bytes_per_block == 0 && region.buffer_offset % fp.bytes_per_block == 0,
                   "CommandList copy: buffer_offset or buffer_row_pitch is not a multiple of the texel size, or the pitch is below a row");
+    ENGINE_ASSERT(region.buffer_offset % device_->Caps().buffer_texture_copy_offset_alignment == 0 &&
+                      pitch % device_->Caps().buffer_texture_copy_row_pitch_alignment == 0,
+                  "CommandList copy: buffer_offset or the row pitch breaks the device's copy alignment (DeviceCaps)");
     const u64 block_rows = (static_cast<u64>(height) + fp.block_height - 1) / fp.block_height;
     const u64 needed = (depth * block_rows - 1) * pitch + row_bytes;
     ENGINE_ASSERT(region.buffer_offset <= buffer_desc.size && needed <= buffer_desc.size - region.buffer_offset,

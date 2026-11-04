@@ -222,7 +222,8 @@ TEST_CASE("Vulkan copies between buffers and textures in a command list", "[rhi]
     fx.Require();
     VulkanDevice* device = MakeDevice();
 
-    constexpr u32 kSide = 32;
+    // 64 texels of RGBA8 make a 256-byte row, so the tightly packed default already meets the portable pitch alignment.
+    constexpr u32 kSide = 64;
     BufferDesc bd;
     bd.size = kSide * kSide * 4;
     bd.usage = BufferUsage::CopySrc | BufferUsage::CopyDst;

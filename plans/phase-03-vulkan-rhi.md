@@ -1,5 +1,7 @@
 # Phase 3 — Vulkan RHI (Linux backend)
 
+**Status: complete (2026-11-04).** All 23 days (45-67) are done; the portability review, performance baseline and wrap-up are in [Day 67](phase-03-vulkan-rhi/day-67-portability-review-perf-wrapup.md). Phase 4 still needs its day files before it can start.
+
 **Depends on:** Phase 1 (Linux platform layer), Phase 2 (job system, for
 multithreaded command recording), Phase 2.5 (docs tooling: public API is
 documented before a day is done).

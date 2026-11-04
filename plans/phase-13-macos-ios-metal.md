@@ -33,3 +33,10 @@ The backend needs MSL shaders. The toolchain that produces them from the
 engine's shader source was to be settled before Phase 4; confirm that
 decision here and that the cooker emits MSL blobs for `ShaderDesc`
 before this phase's day files are written.
+
+- **From the Phase 3 portability review** (`docs/superpowers/specs/2026-11-04-rhi-portability-review.md`, section 5):
+  split encoders around render passes, copies and dispatches; barriers become no-ops, `memoryBarrier` or an encoder split
+  depending on resource tracking mode; threadgroup size comes from shader reflection at pipeline creation; `Managed`
+  storage on discrete Macs maps `FlushMappedBuffer` to `didModifyRange`; `ClampToBorder` is unavailable on iOS (the
+  backend rejects it with a log); `nextDrawable()` is `Acquire`; the clip-space Y flip lives in the shader translation
+  path.

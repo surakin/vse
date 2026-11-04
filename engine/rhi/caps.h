@@ -31,6 +31,14 @@ struct DeviceCaps {
     u32 min_uniform_buffer_offset_alignment = 256;
     /// Required alignment in bytes of a storage buffer binding offset.
     u32 min_storage_buffer_offset_alignment = 256;
+    /// Required alignment in bytes of `BufferTextureCopy::buffer_offset`, on top of being a multiple of the texel size;
+    /// at least 1. Direct3D 12 needs 512, Metal nothing extra. The default is the strictest, and the Vulkan backend reports
+    /// it too although Vulkan itself needs nothing extra, so that code tested on Vulkan works on Direct3D 12 later.
+    u32 buffer_texture_copy_offset_alignment = 512;
+    /// Required alignment in bytes of the row pitch of a buffer-texture copy (after `0` is resolved to the tight row
+    /// size), on top of being a multiple of the texel size; at least 1. Direct3D 12 needs 256, Metal nothing extra. Like
+    /// the offset alignment, the default and the Vulkan backend report the strict value.
+    u32 buffer_texture_copy_row_pitch_alignment = 256;
     /// Largest sampler anisotropy.
     f32 max_sampler_anisotropy = 1.0f;
     /// Largest number of workgroups per compute dispatch dimension.
