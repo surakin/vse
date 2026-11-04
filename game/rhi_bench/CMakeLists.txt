@@ -2,5 +2,5 @@
 # run by ctest -- the numbers are recorded in plans/phase-03-vulkan-rhi/day-67-*.md, never asserted.
 add_executable(rhi_bench main.cpp ../common/cube_scene.cpp)
 target_compile_options(rhi_bench PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-target_include_directories(rhi_bench PRIVATE ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common)
+target_include_directories(rhi_bench PRIVATE ${ENGINE_SHADER_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/game/common)
 target_link_libraries(rhi_bench PRIVATE rhi_vulkan rhi foundation)

@@ -29,6 +29,7 @@ set(RHI_TEST_SOURCES
   ${CMAKE_SOURCE_DIR}/game/common/textures.cpp
   image_compare.cpp
   shader_test.cpp
+  slang_shader_test.cpp
 )
 
 # Header self-containment: one generated translation unit per public RHI
@@ -59,7 +60,7 @@ include(Catch)
 function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib suffix label spec)
   add_executable(${target} ${RHI_TEST_SOURCES} ${RHI_HEADER_CHECK_SOURCES})
   target_link_libraries(${target} PRIVATE ${rhi_lib} ${rhi_vulkan_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common)
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR} ${ENGINE_SHADER_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/game/common)
   target_compile_definitions(${target} PRIVATE ENGINE_RHI_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
     ENGINE_RHI_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/rhi_demo/assets"
     ENGINE_RHI_LSAN_SUPP="${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp")

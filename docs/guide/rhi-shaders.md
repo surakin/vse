@@ -1,11 +1,12 @@
 # Shaders: from GLSL to a shader module
 
 > **Audience:** engine and renderer programmers writing shaders  
-> **Covers:** Phase 3, Day 58
+> **Covers:** Phase 3, Day 58; Phase 4, Day 69 (Slang)
 
 ## Source of truth
 
 - `shaders/` (GLSL sources, the generated `*.spv.inc` files, the build and check scripts)
+- `shaders/slang/` (the Slang sources and their generated files) and `shaders/README.md` (flags and pitfalls)
 - `tools/spv_embed/` (the tool that turns a SPIR-V binary into an include file)
 - `engine/rhi/spirv.h` (the sanity check every `CreateShader` runs)
 - `PLAN.md` assumption #18 (the shader toolchain decision)
@@ -37,12 +38,35 @@ cmake --build build --target shaders
 That runs `glslc --target-env=vulkan1.3 -O`, then `spirv-val` if it is installed, then `spv_embed`, and rewrites the
 `.inc` file. Commit the source and the `.inc` together. The `shaders_check` ctest recompiles every shader and
 compares it with the committed file; it skips, with a message, when the installed `glslc` is not the version that
-generated the files (the version is recorded in each file's second line), and it is not registered at all when
-`glslc` is missing.
+generated the files (the compiler and version are recorded in each file's `// compiler:` line), and it is not
+registered at all when no shader compiler is installed.
 
 To add a shader, put the source in `shaders/` and add its name to `ENGINE_SHADERS` in `shaders/CMakeLists.txt`.
 The array is named from the file: `triangle.vert` becomes `kTriangleVertSpv`, in namespace
 `engine_placeholder::shaders`.
+
+## The Slang workflow (Phase 4)
+
+Phase 4 moves the engine's shaders from GLSL to Slang, compiled by `slangc` to the same SPIR-V (PLAN.md assumption
+#18). During the migration both languages are built side by side, and the GLSL workflow above stays valid until
+Day 70 removes it.
+
+```
+shaders/slang/triangle.vert.slang      Slang source (the interface is documented in its header comment)
+shaders/slang/triangle.vert.spv.inc    generated: same symbol names as the GLSL output, committed
+```
+
+`cmake --build build --target shaders` runs `slangc` (with the arguments from `slang_compile_args()` in
+`shaders/names.cmake`), `spirv-val`, then `spv_embed`. `shaders_check` covers both languages and skips a language
+whose compiler is not the recorded version. Configure with `-DENGINE_SHADER_LANG=slang` to make the engine, tests
+and demos include the Slang outputs (shaders not ported yet fall back to GLSL); the default stays `glsl` until Day
+70. To add a Slang shader, put `<name>.slang` in `shaders/slang/` and add its name to `ENGINE_SLANG_SHADERS`.
+
+Pitfalls that cost time and how the sources avoid them (each is explained in `shaders/README.md`): write
+`[[vk::binding(binding, set)]]` explicitly; use `SV_VulkanVertexID`, not `SV_VertexID` (which needs the
+`shaderDrawParameters` device feature); give storage images an `[[vk::image_format]]`; keep `-fvk-invert-y` off
+because `PerspectiveVulkan` already flips Y; keep `-matrix-layout-column-major` so a `Mat4` copied into a uniform
+block is not transposed.
 
 The long-term plan for shader languages and for the DX12 and Metal backends is an open decision (`PLAN.md`
 assumption #18); the RHI takes precompiled bytecode in [[rhi::ShaderDesc]]. If the decision is per-backend blobs,
