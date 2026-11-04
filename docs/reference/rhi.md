@@ -890,7 +890,7 @@ Dispatches compute work.
 | Parameter `x` | workgroup count in X. |
 | Parameter `y` | workgroup count in Y. |
 | Parameter `z` | workgroup count in Z. |
-| Aborts | inside a rendering pass, no compute pipeline bound, a bind group the pipeline needs is not set, a bound resource is not in the state the pipeline needs, or a count exceeds the device limit. |
+| Aborts | inside a rendering pass, no compute pipeline bound, a bind group the pipeline needs is not set, or a count exceeds the device limit. The null backend also aborts on a bound resource that is not in the state the pipeline needs; the Vulkan backend cannot see states and leaves that to the validation layer. |
 
 ### `PushDebugLabel(const char*)` {#rhi-commandlist-pushdebuglabel-const-char-star}
 

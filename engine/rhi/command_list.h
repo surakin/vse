@@ -279,7 +279,8 @@ public:
     /// Param y: workgroup count in Y.
     /// Param z: workgroup count in Z.
     /// Aborts: inside a rendering pass, no compute pipeline bound, a bind group the pipeline needs is not
-    ///   set, a bound resource is not in the state the pipeline needs, or a count exceeds the device limit.
+    ///   set, or a count exceeds the device limit. The null backend also aborts on a bound resource that is not in
+    ///   the state the pipeline needs; the Vulkan backend cannot see states and leaves that to the validation layer.
     virtual void Dispatch(u32 x, u32 y, u32 z) = 0;
 
     /// Opens a named debug region shown in GPU debuggers.

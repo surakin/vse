@@ -7,6 +7,9 @@ set(ENGINE_SHADERS
   triangle.frag
   fullscreen.vert
   bindings_test.frag
+  fill.comp
+  saxpy.comp
+  gradient.comp
 )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/names.cmake)

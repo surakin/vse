@@ -820,9 +820,9 @@ rhi::CommandList::SetVertexBuffer(u32,BufferHandle,u64)	function	rhi	rhi-command
 rhi::CommandList::SetIndexBuffer(BufferHandle,u64,IndexType)	function	rhi	rhi-commandlist-setindexbuffer-bufferhandle-u64-indextype	rhi.md	engine/rhi/command_list.h:253
 rhi::CommandList::Draw(u32,u32,u32,u32)	function	rhi	rhi-commandlist-draw-u32-u32-u32-u32	rhi.md	engine/rhi/command_list.h:263
 rhi::CommandList::DrawIndexed(u32,u32,u32,i32,u32)	function	rhi	rhi-commandlist-drawindexed-u32-u32-u32-i32-u32	rhi.md	engine/rhi/command_list.h:273
-rhi::CommandList::Dispatch(u32,u32,u32)	function	rhi	rhi-commandlist-dispatch-u32-u32-u32	rhi.md	engine/rhi/command_list.h:283
-rhi::CommandList::PushDebugLabel(const char*)	function	rhi	rhi-commandlist-pushdebuglabel-const-char-star	rhi.md	engine/rhi/command_list.h:289
-rhi::CommandList::PopDebugLabel()	function	rhi	rhi-commandlist-popdebuglabel	rhi.md	engine/rhi/command_list.h:293
+rhi::CommandList::Dispatch(u32,u32,u32)	function	rhi	rhi-commandlist-dispatch-u32-u32-u32	rhi.md	engine/rhi/command_list.h:284
+rhi::CommandList::PushDebugLabel(const char*)	function	rhi	rhi-commandlist-pushdebuglabel-const-char-star	rhi.md	engine/rhi/command_list.h:290
+rhi::CommandList::PopDebugLabel()	function	rhi	rhi-commandlist-popdebuglabel	rhi.md	engine/rhi/command_list.h:294
 rhi::MaxMipLevels(u32,u32,u32)	function	rhi	rhi-maxmiplevels-u32-u32-u32	rhi.md	engine/rhi/desc.h:24
 rhi::BufferDesc	struct	rhi	rhi-bufferdesc	rhi.md	engine/rhi/desc.h:30
 rhi::BufferDesc::size	variable	rhi	rhi-bufferdesc-size	rhi.md	engine/rhi/desc.h:32

@@ -591,9 +591,76 @@ PipelineHandle VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& 
     return handle;
 }
 
-PipelineHandle VulkanDevice::CreateComputePipeline(const ComputePipelineDesc&) {
-    NotImplemented("CreateComputePipeline");
-    return {};
+PipelineHandle VulkanDevice::CreateComputePipeline(const ComputePipelineDesc& desc) {
+    const char* why = desc.Validate();
+    if (why != nullptr) {
+        RhiLog(LogVerbosity::Error, "CreateComputePipeline: %s", why);
+        return {};
+    }
+    if (desc.bind_group_layout_count > caps_.max_bind_groups || desc.push_constant_bytes > caps_.max_push_constant_bytes) {
+        RhiLog(LogVerbosity::Error, "CreateComputePipeline: exceeds a device limit (bind groups or push constants)");
+        return {};
+    }
+    ShaderInfo cs;
+    if (!LookupShader(desc.shader, &cs) || cs.stage != ShaderStage::Compute) {
+        RhiLog(LogVerbosity::Error, "CreateComputePipeline: shader is invalid, destroyed or not a compute stage");
+        return {};
+    }
+
+    PipelineRes res;
+    res.compute = true;
+    {
+        std::lock_guard<std::mutex> lock(resource_mutex_);
+        u32 slots[kMaxBindGroups];
+        for (u32 i = 0; i < desc.bind_group_layout_count; ++i) {
+            const BindGroupLayoutRes* l = bind_group_layouts_.Get(desc.bind_group_layouts[i]);
+            if (l == nullptr) {
+                RhiLog(LogVerbosity::Error, "CreateComputePipeline: bind group layout %u is invalid or destroyed", i);
+                return {};
+            }
+            slots[i] = l->set_slot;
+            res.layout_ids[i] = l->id;
+        }
+        res.layout_count = desc.bind_group_layout_count;
+        res.push_bytes = desc.push_constant_bytes;
+        res.push_stages = desc.push_constant_bytes != 0 ? ShaderStage::Compute : ShaderStage::None;
+        res.layout = PipelineLayoutLocked(slots, res.layout_ids, res.layout_count, res.push_bytes, res.push_stages, &res.layout_slot);
+        if (res.layout == nullptr) {
+            return {};
+        }
+    }
+
+    VkComputePipelineCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    info.stage.module = cs.module;
+    info.stage.pName = cs.entry;
+    info.layout = res.layout;
+    info.basePipelineIndex = -1;
+    const VkResult result = fns_.CreateComputePipelines(device_, pipeline_cache_, 1, &info, nullptr, &res.pipeline);
+    if (result != VK_SUCCESS) {
+        NoteDeviceLost(result);
+        RhiLog(LogVerbosity::Error, "Vulkan: cannot create the compute pipeline '%s' (%s)", desc.debug_name != nullptr ? desc.debug_name : "",
+               VkResultName(result));
+        std::lock_guard<std::mutex> lock(resource_mutex_);
+        ReleasePipelineLayoutLocked(res.layout_slot);
+        return {};
+    }
+    SetDebugName(HandleToU64(res.pipeline), VK_OBJECT_TYPE_PIPELINE, desc.debug_name);
+
+    PipelineHandle handle;
+    {
+        std::lock_guard<std::mutex> lock(resource_mutex_);
+        handle = pipelines_.Allocate(PipelineRes(res));
+    }
+    if (!handle.IsValid()) {
+        RhiLog(LogVerbosity::Error, "CreateComputePipeline: out of pipeline handles");
+        fns_.DestroyPipeline(device_, res.pipeline, nullptr);
+        std::lock_guard<std::mutex> lock(resource_mutex_);
+        ReleasePipelineLayoutLocked(res.layout_slot);
+    }
+    return handle;
 }
 
 void VulkanDevice::DestroyPipeline(PipelineHandle pipeline) {

@@ -352,7 +352,6 @@ void VulkanCommandList::PopDebugLabel() {
     }
 }
 
-// Bind groups, push constants and compute dispatch arrive with Days 60 and 62.
 void VulkanCommandList::SetPipeline(PipelineHandle pipeline) {
     const bool usable = Recording("CommandList::SetPipeline: the list is not recording");
     VulkanDevice::PipelineInfo info;
@@ -481,6 +480,17 @@ void VulkanCommandList::DrawIndexed(u32 index_count, u32 instance_count, u32 fir
     }
 }
 
-void VulkanCommandList::Dispatch(u32, u32, u32) { Unsupported("Dispatch"); }
+void VulkanCommandList::Dispatch(u32 x, u32 y, u32 z) {
+    const bool usable = Recording("CommandList::Dispatch: the list is not recording");
+    ENGINE_ASSERT(!in_rendering_, "CommandList::Dispatch: not allowed inside a rendering pass");
+    ENGINE_ASSERT(compute_bound_, "CommandList::Dispatch: no compute pipeline is bound");
+    const DeviceCaps& caps = device_->Caps();
+    ENGINE_ASSERT(x <= caps.max_compute_work_group_count[0] && y <= caps.max_compute_work_group_count[1] && z <= caps.max_compute_work_group_count[2],
+                  "CommandList::Dispatch: a workgroup count exceeds the device limit");
+    if (usable) {
+        FlushBindGroups("CommandList::Dispatch: the pipeline declares a bind group for a slot that has none");
+        device_->Fns().CmdDispatch(buffer_, x, y, z);
+    }
+}
 
 } // namespace engine_placeholder::rhi::vulkan

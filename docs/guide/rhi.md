@@ -466,6 +466,42 @@ A bind group entry with `size` 0 binds the buffer from `offset` to its end, and 
 uniform (or storage) buffer range limit, 64 KiB on many GPUs: bind each allocation with its own `offset` and `size`
 rather than the whole ring buffer.
 
+### Compute
+
+A compute pipeline is a compute shader plus the layouts of its bind groups and a push-constant size; its push
+constants are visible to the compute stage. Record it outside a rendering pass:
+
+```
+ComputePipelineDesc cp;
+cp.shader = shader;                       // a ShaderStage::Compute module
+cp.bind_group_layouts[0] = layout;        // storage buffers and storage textures bind like any resource
+cp.bind_group_layout_count = 1;
+cp.push_constant_bytes = 4;
+PipelineHandle pipeline = device->CreateComputePipeline(cp);
+
+list->SetPipeline(pipeline);
+list->SetBindGroup(0, group);
+list->SetPushConstants(0, &k, sizeof(k));
+list->Dispatch((element_count + 63) / 64, 1, 1); // workgroup counts (the shader ignores the extra invocations), each at most
+                                                  // DeviceCaps::max_compute_work_group_count
+```
+
+Compute runs on the graphics+compute queue; there is no async compute yet.
+
+**Barriers.** The device cannot see what a shader does, so you order shader work with `Barrier`:
+
+| Hazard | Barrier |
+|---|---|
+| a dispatch writes, a later dispatch or draw reads | `ShaderWrite` -> `ShaderRead` |
+| a dispatch writes, a later dispatch writes the same data | `ShaderWrite` -> `ShaderWrite` |
+| a dispatch writes, a copy or readback reads | `ShaderWrite` -> `CopySrc` |
+| a copy or upload wrote, a dispatch reads or writes | `CopyDst` -> `ShaderRead` / `ShaderWrite` |
+
+A storage texture must be in `ShaderWrite` (layout `GENERAL`) while a dispatch uses it. Two dispatches in a row with
+no hazard between them need no barrier. A missing barrier is not an error the RHI can see on Vulkan; the validation
+layer's synchronization validation reports it, which is why the tests run with it on. The null device tracks the states
+and reports a resource in the wrong one.
+
 ### GPU memory
 
 `vkAllocateMemory` is limited (commonly 4096 live objects) and slow, so the Vulkan backend never allocates one

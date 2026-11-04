@@ -19,6 +19,7 @@ set(RHI_TEST_SOURCES
   vulkan_pipeline_test.cpp
   vulkan_bindings_test.cpp
   vulkan_golden_test.cpp
+  vulkan_compute_test.cpp
   image_compare.cpp
   shader_test.cpp
 )
