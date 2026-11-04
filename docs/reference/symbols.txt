@@ -1262,6 +1262,19 @@ rhi::NullDevice::StateOf(BufferHandle) const	function	rhi	rhi-nulldevice-stateof
 rhi::NullDevice::StateOf(TextureHandle) const	function	rhi	rhi-nulldevice-stateof-texturehandle-const	rhi.md	engine/rhi/null/null_device.h:141
 rhi::NullDevice::SimulateDeviceLoss()	function	rhi	rhi-nulldevice-simulatedeviceloss	rhi.md	engine/rhi/null/null_device.h:144
 rhi::CreateNullDevice(const NullDeviceOptions&)	function	rhi	rhi-createnulldevice-const-nulldeviceoptions-amp	rhi.md	engine/rhi/null/null_device.h:157
+rhi::Backend	enum	rhi	rhi-backend	rhi.md	engine/rhi/rhi.h:11
+rhi::Backend::Null	enumerator	rhi	rhi-backend-null	rhi.md	engine/rhi/rhi.h:12
+rhi::Backend::Vulkan	enumerator	rhi	rhi-backend-vulkan	rhi.md	engine/rhi/rhi.h:13
+rhi::ValidationSetting	enum	rhi	rhi-validationsetting	rhi.md	engine/rhi/rhi.h:17
+rhi::ValidationSetting::Auto	enumerator	rhi	rhi-validationsetting-auto	rhi.md	engine/rhi/rhi.h:18
+rhi::ValidationSetting::Off	enumerator	rhi	rhi-validationsetting-off	rhi.md	engine/rhi/rhi.h:19
+rhi::ValidationSetting::On	enumerator	rhi	rhi-validationsetting-on	rhi.md	engine/rhi/rhi.h:20
+rhi::DeviceCreateInfo	struct	rhi	rhi-devicecreateinfo	rhi.md	engine/rhi/rhi.h:28
+rhi::DeviceCreateInfo::backend	variable	rhi	rhi-devicecreateinfo-backend	rhi.md	engine/rhi/rhi.h:30
+rhi::DeviceCreateInfo::application_name	variable	rhi	rhi-devicecreateinfo-application-name	rhi.md	engine/rhi/rhi.h:32
+rhi::DeviceCreateInfo::validation	variable	rhi	rhi-devicecreateinfo-validation	rhi.md	engine/rhi/rhi.h:34
+rhi::DeviceCreateInfo::sync_validation	variable	rhi	rhi-devicecreateinfo-sync-validation	rhi.md	engine/rhi/rhi.h:36
+rhi::CreateDevice(const DeviceCreateInfo&)	function	rhi	rhi-createdevice-const-devicecreateinfo-amp	rhi.md	engine/rhi/rhi.h:52
 rhi::LogRhi	variable	rhi	rhi-logrhi	rhi.md	engine/rhi/rhi_log.h:13
 rhi::RhiLogV(LogVerbosity,const char*,...)	function	rhi	rhi-rhilogv-logverbosity-const-char-star	rhi.md	engine/rhi/rhi_log.h:24
 RhiLog	macro	rhi	rhilog	rhi.md	engine/rhi/rhi_log.h:44
@@ -1279,6 +1292,41 @@ rhi::Swapchain::ImageFormat() const	function	rhi	rhi-swapchain-imageformat-const
 rhi::Swapchain::Width() const	function	rhi	rhi-swapchain-width-const	rhi.md	engine/rhi/swapchain.h:56
 rhi::Swapchain::Height() const	function	rhi	rhi-swapchain-height-const	rhi.md	engine/rhi/swapchain.h:59
 rhi::Swapchain::CurrentTexture() const	function	rhi	rhi-swapchain-currenttexture-const	rhi.md	engine/rhi/swapchain.h:65
+rhi::vulkan::kMaxPhysicalDevices	variable	rhi-vulkan	rhi-vulkan-kmaxphysicaldevices	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:10
+rhi::vulkan::kMaxQueueFamilies	variable	rhi-vulkan	rhi-vulkan-kmaxqueuefamilies	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:12
+rhi::vulkan::GpuKind	enum	rhi-vulkan	rhi-vulkan-gpukind	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:15
+rhi::vulkan::GpuKind::Other	enumerator	rhi-vulkan	rhi-vulkan-gpukind-other	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:16
+rhi::vulkan::GpuKind::Cpu	enumerator	rhi-vulkan	rhi-vulkan-gpukind-cpu	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:17
+rhi::vulkan::GpuKind::Virtual	enumerator	rhi-vulkan	rhi-vulkan-gpukind-virtual	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:18
+rhi::vulkan::GpuKind::Integrated	enumerator	rhi-vulkan	rhi-vulkan-gpukind-integrated	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:19
+rhi::vulkan::GpuKind::Discrete	enumerator	rhi-vulkan	rhi-vulkan-gpukind-discrete	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:20
+rhi::vulkan::QueueFamilyInfo	struct	rhi-vulkan	rhi-vulkan-queuefamilyinfo	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:26
+rhi::vulkan::QueueFamilyInfo::queue_count	variable	rhi-vulkan	rhi-vulkan-queuefamilyinfo-queue-count	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:28
+rhi::vulkan::QueueFamilyInfo::graphics	variable	rhi-vulkan	rhi-vulkan-queuefamilyinfo-graphics	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:30
+rhi::vulkan::QueueFamilyInfo::compute	variable	rhi-vulkan	rhi-vulkan-queuefamilyinfo-compute	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:32
+rhi::vulkan::QueueFamilyInfo::transfer	variable	rhi-vulkan	rhi-vulkan-queuefamilyinfo-transfer	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:34
+rhi::vulkan::QueueFamilyInfo::timestamp_valid_bits	variable	rhi-vulkan	rhi-vulkan-queuefamilyinfo-timestamp-valid-bits	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:36
+rhi::vulkan::QueueFamilyInfo::present	variable	rhi-vulkan	rhi-vulkan-queuefamilyinfo-present	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:38
+rhi::vulkan::PhysicalDeviceInfo	struct	rhi-vulkan	rhi-vulkan-physicaldeviceinfo	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:44
+rhi::vulkan::PhysicalDeviceInfo::name	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-name	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:46
+rhi::vulkan::PhysicalDeviceInfo::kind	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-kind	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:48
+rhi::vulkan::PhysicalDeviceInfo::api_version	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-api-version	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:50
+rhi::vulkan::PhysicalDeviceInfo::dynamic_rendering	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-dynamic-rendering	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:52
+rhi::vulkan::PhysicalDeviceInfo::synchronization2	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-synchronization2	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:54
+rhi::vulkan::PhysicalDeviceInfo::timeline_semaphore	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-timeline-semaphore	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:56
+rhi::vulkan::PhysicalDeviceInfo::sampler_anisotropy	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-sampler-anisotropy	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:58
+rhi::vulkan::PhysicalDeviceInfo::swapchain_extension	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-swapchain-extension	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:60
+rhi::vulkan::PhysicalDeviceInfo::families	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-families	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:62
+rhi::vulkan::PhysicalDeviceInfo::queue_family_count	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-queue-family-count	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:64
+rhi::vulkan::RejectionReason(const PhysicalDeviceInfo&,bool)	function	rhi-vulkan	rhi-vulkan-rejectionreason-const-physicaldeviceinfo-amp-bool	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:77
+rhi::vulkan::SelectPhysicalDevice(const PhysicalDeviceInfo*,usize,bool,const char*)	function	rhi-vulkan	rhi-vulkan-selectphysicaldevice-const-physicaldeviceinfo-star-usize-bool-const-char-star	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:93
+rhi::vulkan::QueuePlan	struct	rhi-vulkan	rhi-vulkan-queueplan	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:98
+rhi::vulkan::QueuePlan::graphics_family	variable	rhi-vulkan	rhi-vulkan-queueplan-graphics-family	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:100
+rhi::vulkan::QueuePlan::transfer_family	variable	rhi-vulkan	rhi-vulkan-queueplan-transfer-family	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:105
+rhi::vulkan::PlanQueues(const PhysicalDeviceInfo&,bool)	function	rhi-vulkan	rhi-vulkan-planqueues-const-physicaldeviceinfo-amp-bool	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:114
+rhi::vulkan::ToVkFormat(Format)	function	rhi-vulkan	rhi-vulkan-tovkformat-format	rhi-vulkan.md	engine/rhi/vulkan/vk_format.h:11
+rhi::vulkan::FromVkFormat(VkFormat)	function	rhi-vulkan	rhi-vulkan-fromvkformat-vkformat	rhi-vulkan.md	engine/rhi/vulkan/vk_format.h:14
+rhi::vulkan::AspectsOf(Format)	function	rhi-vulkan	rhi-vulkan-aspectsof-format	rhi-vulkan.md	engine/rhi/vulkan/vk_format.h:17
 rhi::vulkan::VkGlobalFns	struct	rhi-vulkan	rhi-vulkan-vkglobalfns	rhi-vulkan.md	engine/rhi/vulkan/vk_functions.h:15
 rhi::vulkan::VkInstanceFns	struct	rhi-vulkan	rhi-vulkan-vkinstancefns	rhi-vulkan.md	engine/rhi/vulkan/vk_functions.h:26
 rhi::vulkan::VkDeviceFns	struct	rhi-vulkan	rhi-vulkan-vkdevicefns	rhi-vulkan.md	engine/rhi/vulkan/vk_functions.h:37
@@ -1345,3 +1393,42 @@ rhi::vulkan::VkResultName(VkResult)	function	rhi-vulkan	rhi-vulkan-vkresultname-
 rhi::vulkan::ClassifyVkResult(VkResult)	function	rhi-vulkan	rhi-vulkan-classifyvkresult-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:26
 rhi::vulkan::CheckVkResult(VkResult,const char*,const char*,int)	function	rhi-vulkan	rhi-vulkan-checkvkresult-vkresult-const-char-star-const-char-star-int	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:38
 ENGINE_VK_CHECK	macro	rhi-vulkan	engine-vk-check	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:43
+rhi::vulkan::VulkanDevice	class	rhi-vulkan	rhi-vulkan-vulkandevice	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:23
+rhi::vulkan::VulkanDevice::Create(const DeviceCreateInfo&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-create-const-devicecreateinfo-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:31
+rhi::vulkan::VulkanDevice::~VulkanDevice()	function	rhi-vulkan	rhi-vulkan-vulkandevice-tilde-vulkandevice	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:34
+rhi::vulkan::VulkanDevice::BackendName() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-backendname-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:36
+rhi::vulkan::VulkanDevice::Caps() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-caps-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:37
+rhi::vulkan::VulkanDevice::CreateBuffer(const BufferDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbuffer-const-bufferdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:38
+rhi::vulkan::VulkanDevice::DestroyBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:39
+rhi::vulkan::VulkanDevice::CreateTexture(const TextureDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createtexture-const-texturedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:40
+rhi::vulkan::VulkanDevice::DestroyTexture(TextureHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroytexture-texturehandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:41
+rhi::vulkan::VulkanDevice::CreateSampler(const SamplerDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createsampler-const-samplerdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:42
+rhi::vulkan::VulkanDevice::DestroySampler(SamplerHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroysampler-samplerhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:43
+rhi::vulkan::VulkanDevice::CreateShader(const ShaderDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createshader-const-shaderdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:44
+rhi::vulkan::VulkanDevice::DestroyShader(ShaderHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroyshader-shaderhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:45
+rhi::vulkan::VulkanDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:46
+rhi::vulkan::VulkanDevice::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybindgrouplayout-bindgrouplayouthandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:47
+rhi::vulkan::VulkanDevice::CreateBindGroup(const BindGroupDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbindgroup-const-bindgroupdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:48
+rhi::vulkan::VulkanDevice::DestroyBindGroup(BindGroupHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybindgroup-bindgrouphandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:49
+rhi::vulkan::VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:50
+rhi::vulkan::VulkanDevice::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createcomputepipeline-const-computepipelinedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:51
+rhi::vulkan::VulkanDevice::DestroyPipeline(PipelineHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroypipeline-pipelinehandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:52
+rhi::vulkan::VulkanDevice::MapBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-mapbuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:53
+rhi::vulkan::VulkanDevice::UnmapBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-unmapbuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:54
+rhi::vulkan::VulkanDevice::CreateCommandList()	function	rhi-vulkan	rhi-vulkan-vulkandevice-createcommandlist	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:55
+rhi::vulkan::VulkanDevice::Submit(CommandList* const*,usize)	function	rhi-vulkan	rhi-vulkan-vulkandevice-submit-commandlist-star-const-star-usize	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:56
+rhi::vulkan::VulkanDevice::WaitFence(FenceValue,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-waitfence-fencevalue-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:57
+rhi::vulkan::VulkanDevice::CompletedFence() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-completedfence-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:58
+rhi::vulkan::VulkanDevice::BeginFrame()	function	rhi-vulkan	rhi-vulkan-vulkandevice-beginframe	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:59
+rhi::vulkan::VulkanDevice::EndFrame()	function	rhi-vulkan	rhi-vulkan-vulkandevice-endframe	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:60
+rhi::vulkan::VulkanDevice::FrameNumber() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-framenumber-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:61
+rhi::vulkan::VulkanDevice::WaitIdle()	function	rhi-vulkan	rhi-vulkan-vulkandevice-waitidle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:62
+rhi::vulkan::VulkanDevice::DeviceLost() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-devicelost-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:63
+rhi::vulkan::VulkanDevice::GpuName() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-gpuname-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:67
+rhi::vulkan::VulkanDevice::GpuInfo() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-gpuinfo-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:70
+rhi::vulkan::VulkanDevice::Queues() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-queues-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:73
+rhi::vulkan::VulkanDevice::Instance() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-instance-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:76
+rhi::vulkan::VulkanDevice::Handle() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-handle-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:79
+rhi::vulkan::VulkanDevice::Fns() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-fns-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:82
+rhi::vulkan::VulkanDevice::MemoryProperties() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-memoryproperties-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:85
+rhi::vulkan::VulkanDevice::Properties() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-properties-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:88

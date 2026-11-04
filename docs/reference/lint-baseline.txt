@@ -10,5 +10,5 @@ module	foundation/types	11	11
 module	platform/os	30	30
 module	platform/window-input	229	229
 module	jobs	151	151
-module	rhi	518	518
-module	rhi-vulkan	63	63
+module	rhi	531	531
+module	rhi-vulkan	137	137

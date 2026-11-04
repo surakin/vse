@@ -26,6 +26,9 @@ Full reference: [The Render Hardware Interface](../reference/rhi.md).
 - [[rhi::Swapchain]] — the presentable images of a window
 - [[rhi::HandlePool]] — slot storage with generation checks and deferred release
 - [[rhi::NullDevice]] and [[rhi::CreateNullDevice]] — the validating no-GPU backend
+- [[rhi::CreateDevice]] and [[rhi::DeviceCreateInfo]] — creating a device for a backend
+- [[rhi::vulkan::VulkanDevice]] — the Vulkan device
+- [[rhi::vulkan::SelectPhysicalDevice]] and [[rhi::vulkan::PlanQueues]] — GPU choice and queue planning
 - [[rhi::vulkan::LoadVulkanLoader]] — opens the Vulkan loader at runtime
 - [[rhi::vulkan::VkGlobalFns]], [[rhi::vulkan::VkInstanceFns]], [[rhi::vulkan::VkDeviceFns]] — the function-pointer tables
 - [[rhi::vulkan::VulkanInstance]] and [[rhi::vulkan::VulkanInstanceDesc]] — the instance, its extensions and validation
@@ -167,6 +170,26 @@ _TODO_
 
 _TODO_
 
+### Creating a device
+
+[[rhi::CreateDevice]] takes a [[rhi::DeviceCreateInfo]] and returns a device for the requested [[rhi::Backend]]
+(`Null` or `Vulkan`), or null with the reason logged. The device is headless; a presentation window is added
+with the swapchain.
+
+For Vulkan, the GPU is chosen by [[rhi::vulkan::SelectPhysicalDevice]]. A GPU qualifies if it supports Vulkan 1.3,
+dynamic rendering, synchronization2, timeline semaphores and has a graphics+compute queue family; qualifying GPUs
+rank discrete, integrated, virtual, software, the earlier one winning a tie. The full ranking, with the reason
+for each rejection, is logged on `LogRhi` at `Info`. Set `ENGINE_RHI_GPU` to a GPU index (`1`) or a part of its
+name (`radeon`, case-insensitive) to choose another one; an override that matches nothing suitable fails device
+creation rather than silently picking a different GPU.
+
+The device uses one graphics+compute queue for everything, uploads included, so no queue-family ownership
+transfers exist. [[rhi::vulkan::PlanQueues]] also records a dedicated transfer-only family when the GPU has one,
+where an asynchronous transfer path would go later. `Submit`, `BeginFrame`, `EndFrame` and `WaitIdle` belong to
+one submission thread (the queue is not externally synchronized beyond that rule). The device enables only the
+features it uses: dynamic rendering, synchronization2, timeline semaphores and, where available, anisotropic
+filtering. [[rhi::Device::Caps]] reports the limits it found.
+
 ### Vulkan backend notes
 
 The backend never links against Vulkan. [[rhi::vulkan::LoadVulkanLoader]] opens `libvulkan.so.1` at runtime
@@ -200,6 +223,7 @@ If the layer is not installed, one warning is logged and the instance is created
 | `ENGINE_RHI_VALIDATION_SYNC` | `1` / `0` overrides synchronization validation (barrier and hazard checks). |
 | `ENGINE_RHI_VALIDATION_BEST_PRACTICES` | `1` / `0` overrides best-practices validation. |
 | `ENGINE_RHI_VALIDATION_FATAL` | `1` aborts the process on the first validation error — for interactive runs. |
+| `ENGINE_RHI_GPU` | GPU index or name substring to use instead of the highest-ranked suitable GPU. |
 | `ENGINE_VULKAN_LIBRARY` | Path of the Vulkan loader library to use instead of `libvulkan.so.1`. |
 
 Every validation message is logged on `LogRhi` with its severity (`ERROR` becomes `Error`, `WARNING` `Warn`,

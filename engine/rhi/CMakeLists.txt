@@ -15,6 +15,10 @@ set(RHI_VULKAN_SOURCES
   vulkan/vk_functions.cpp
   vulkan/vk_result.cpp
   vulkan/vk_instance.cpp
+  vulkan/vk_format.cpp
+  vulkan/vk_device_select.cpp
+  vulkan/vulkan_device.cpp
+  vulkan/create_device.cpp
 )
 
 # Headers are included as "rhi/<name>.h", rooted at engine/.
