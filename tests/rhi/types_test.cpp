@@ -333,6 +333,11 @@ TEST_CASE("ShaderDesc validation", "[rhi][desc]") {
     CHECK(Rejects(noentry.Validate(), "ShaderDesc: entry"));
     noentry.entry = nullptr;
     CHECK(Rejects(noentry.Validate(), "ShaderDesc: entry"));
+    ShaderDesc longname = d;
+    longname.entry = "0123456789012345678901234567890123456789012345678901234567890123"; // 64 bytes
+    CHECK(Rejects(longname.Validate(), "ShaderDesc: entry point name is longer"));
+    longname.entry = "012345678901234567890123456789012345678901234567890123456789012"; // 63 bytes
+    CHECK(longname.Validate() == nullptr);
 }
 
 TEST_CASE("BindGroupLayoutDesc validation", "[rhi][desc]") {

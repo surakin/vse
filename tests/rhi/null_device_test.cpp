@@ -5,6 +5,7 @@
 
 #include "rhi/null/null_device.h"
 #include "rhi/rhi_log.h"
+#include "spirv_builder.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -18,8 +19,6 @@ struct QuietLog {
     QuietLog() { LogRhi.SetEnabled(false); }
     ~QuietLog() { LogRhi.SetEnabled(saved); }
 };
-
-const u32 kSpirv[8] = {0x07230203, 0x00010000, 0, 1, 0, 0, 0, 0};
 
 struct Fixture {
     QuietLog quiet;
@@ -48,8 +47,9 @@ struct Fixture {
     ShaderHandle Shader(ShaderStage stage) {
         ShaderDesc d;
         d.stage = stage;
-        d.words = kSpirv;
-        d.word_count = 8;
+        const std::vector<u32> words = spirv_test::MinimalModule(stage);
+        d.words = words.data();
+        d.word_count = words.size();
         return dev->CreateShader(d);
     }
     CommandList* List() {

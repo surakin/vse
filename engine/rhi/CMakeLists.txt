@@ -7,6 +7,7 @@
 set(RHI_SOURCES
   rhi.cpp
   desc.cpp
+  spirv.cpp
   null/null_device.cpp
 )
 

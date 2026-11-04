@@ -27,6 +27,7 @@ Full reference: [The Render Hardware Interface](../reference/rhi.md).
 - [[rhi::HandlePool]] — slot storage with generation checks and deferred release
 - [[rhi::NullDevice]] and [[rhi::CreateNullDevice]] — the validating no-GPU backend
 - [[rhi::CreateDevice]] and [[rhi::DeviceCreateInfo]] — creating a device for a backend
+- [[rhi::ValidateSpirv]] — the shader module sanity check; see [Shaders](rhi-shaders.md)
 - [[rhi::vulkan::VulkanDevice]] — the Vulkan device
 - [[rhi::vulkan::SelectPhysicalDevice]] and [[rhi::vulkan::PlanQueues]] — GPU choice and queue planning
 - [[rhi::vulkan::MemoryAllocator]] — the GPU memory suballocator, with [[rhi::vulkan::MemoryStats]]

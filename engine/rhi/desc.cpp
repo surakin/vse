@@ -1,5 +1,7 @@
 #include "rhi/desc.h"
 
+#include "rhi/spirv.h"
+
 namespace engine_placeholder::rhi {
 
 namespace {
@@ -179,6 +181,9 @@ const char* ShaderDesc::Validate() const {
     }
     if (entry == nullptr || entry[0] == '\0') {
         return "ShaderDesc: entry point name is empty";
+    }
+    if (ShaderEntryNameTooLong(entry)) {
+        return "ShaderDesc: entry point name is longer than 63 bytes";
     }
     return nullptr;
 }

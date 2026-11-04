@@ -3814,6 +3814,16 @@ usize raw_images;
 
 Raw `VkImage` objects alive.
 
+#### `shaders` {#rhi-vulkan-vulkandevice-objectcounts-shaders}
+
+`variable rhi::vulkan::VulkanDevice::ObjectCounts::shaders` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+usize shaders;
+```
+
+Live shader modules owned by the user.
+
 ### `Counts()` {#rhi-vulkan-vulkandevice-counts-const}
 
 `method rhi::vulkan::VulkanDevice::Counts` — defined in `engine/rhi/vulkan/vulkan_device.h`
@@ -4000,6 +4010,69 @@ Looks up a live texture for command recording.
 | Parameter `info` | receives the snapshot; must not be null. |
 | Returns | true if the handle is live. |
 | Fails | returns false for an invalid or stale handle. |
+
+### `ShaderInfo` {#rhi-vulkan-vulkandevice-shaderinfo}
+
+`struct rhi::vulkan::VulkanDevice::ShaderInfo` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+struct ShaderInfo { ... }
+```
+
+A snapshot of a live shader module, for pipeline creation.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data (a snapshot). |
+| Ownership | `module` and `entry` are borrowed from the device and stay valid until the shader is destroyed and its frame has completed. |
+
+#### `module` {#rhi-vulkan-vulkandevice-shaderinfo-module}
+
+`variable rhi::vulkan::VulkanDevice::ShaderInfo::module` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+VkShaderModule module;
+```
+
+The `VkShaderModule`.
+
+#### `stage` {#rhi-vulkan-vulkandevice-shaderinfo-stage}
+
+`variable rhi::vulkan::VulkanDevice::ShaderInfo::stage` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+ShaderStage stage;
+```
+
+The stage the module implements.
+
+#### `entry` {#rhi-vulkan-vulkandevice-shaderinfo-entry}
+
+`variable rhi::vulkan::VulkanDevice::ShaderInfo::entry` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+const char* entry;
+```
+
+The entry point name, nul-terminated.
+
+### `LookupShader(ShaderHandle,ShaderInfo*)` {#rhi-vulkan-vulkandevice-lookupshader-shaderhandle-shaderinfo-star-const}
+
+`method rhi::vulkan::VulkanDevice::LookupShader` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+bool LookupShader(ShaderHandle shader, ShaderInfo* info) const;
+```
+
+Looks up a shader by handle.
+
+| Field | Value |
+|---|---|
+| Parameter `shader` | the handle. |
+| Parameter `info` | receives the snapshot when the handle is live. |
+| Returns | true if the handle is live. |
+| Fails | returns false for an invalid or stale handle. |
+| Thread-safety | thread-safe. |
 
 ### `ReportResult(VkResult)` {#rhi-vulkan-vulkandevice-reportresult-vkresult}
 

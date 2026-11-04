@@ -13,3 +13,4 @@ Concept pages, one per subsystem. All are currently skeletons.
 - [platform-windowing-and-input](platform-windowing-and-input.md)
 - [jobs](jobs.md)
 - [rhi](rhi.md)
+- [rhi-shaders](rhi-shaders.md)

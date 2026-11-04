@@ -569,6 +569,7 @@ void VulkanDevice::CollectRetired(bool all) {
     buffers_.CollectRetired(completed, [&](BufferRes& b) { DestroyRawBuffer(&b.raw); });
     textures_.CollectRetired(completed, [&](TextureRes& t) { DestroyTextureRes(&t); });
     samplers_.CollectRetired(completed, [&](SamplerRes& s) { fns_.DestroySampler(device_, s.sampler, nullptr); });
+    shaders_.CollectRetired(completed, [&](ShaderRes& s) { fns_.DestroyShaderModule(device_, s.module, nullptr); });
 }
 
 u64 VulkanDevice::CompletedFrame() const {
@@ -586,6 +587,7 @@ VulkanDevice::ObjectCounts VulkanDevice::Counts() const {
     counts.samplers = samplers_.LiveCount();
     counts.pending_image_destruction = textures_.RetiredCount() + samplers_.RetiredCount();
     counts.raw_images = raw_image_count_.load(std::memory_order_relaxed);
+    counts.shaders = shaders_.LiveCount();
     return counts;
 }
 

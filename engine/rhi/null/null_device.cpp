@@ -9,6 +9,7 @@
 #include <new>
 
 #include "log/assert.h"
+#include "rhi/spirv.h"
 #include "rhi/handle_pool.h"
 #include "rhi/rhi_log.h"
 
@@ -1114,6 +1115,11 @@ ShaderHandle NullDevice::CreateShader(const ShaderDesc& desc) {
     const char* why = desc.Validate();
     if (why != nullptr) {
         s.Error("CreateShader: %s", why);
+        return ShaderHandle{};
+    }
+    const char* bad = ValidateSpirv(desc.words, desc.word_count, desc.stage, desc.entry);
+    if (bad != nullptr) {
+        s.Error("CreateShader: %s", bad);
         return ShaderHandle{};
     }
     ShaderRes res;

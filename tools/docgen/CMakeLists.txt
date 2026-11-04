@@ -56,6 +56,7 @@ set(DOCGEN_SAMPLES_ARGS
   ${DOCGEN_FLAGS_ARGS}
   -I ${CMAKE_SOURCE_DIR}/engine/foundation
   -I ${CMAKE_SOURCE_DIR}/engine
+  -I ${CMAKE_SOURCE_DIR}/shaders
   --prelude ${CMAKE_SOURCE_DIR}/docs/samples-prelude.h
   --build-dir ${CMAKE_BINARY_DIR}/docs-samples
   --jobs 4

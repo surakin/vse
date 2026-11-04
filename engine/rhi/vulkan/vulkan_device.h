@@ -6,6 +6,7 @@
 #include "rhi/device.h"
 #include "rhi/handle_pool.h"
 #include "rhi/rhi.h"
+#include "rhi/spirv.h"
 #include "jobs/topology.h"
 #include "rhi/vulkan/vk_command_list.h"
 #include "rhi/vulkan/vk_device_select.h"
@@ -142,6 +143,8 @@ public:
         usize pending_image_destruction = 0;
         /// Raw `VkImage` objects alive.
         usize raw_images = 0;
+        /// Live shader modules owned by the user.
+        usize shaders = 0;
     };
 
     /// Returns the current object counts.
@@ -204,6 +207,29 @@ public:
     /// Fails: returns false for an invalid or stale handle.
     bool LookupTexture(TextureHandle texture, TextureInfo* info) const;
 
+    /// A snapshot of a live shader module, for pipeline creation.
+    ///
+    /// Thread-safety: thread-compatible plain data (a snapshot).
+    /// Ownership: `module` and `entry` are borrowed from the device and stay valid until the shader is destroyed and
+    ///   its frame has completed.
+    struct ShaderInfo {
+        /// The `VkShaderModule`.
+        VkShaderModule module = nullptr;
+        /// The stage the module implements.
+        ShaderStage stage = ShaderStage::None;
+        /// The entry point name, nul-terminated.
+        const char* entry = nullptr;
+    };
+
+    /// Looks up a shader by handle.
+    ///
+    /// Param shader: the handle.
+    /// Param info: receives the snapshot when the handle is live.
+    /// Returns: true if the handle is live.
+    /// Fails: returns false for an invalid or stale handle.
+    /// Thread-safety: thread-safe.
+    bool LookupShader(ShaderHandle shader, ShaderInfo* info) const;
+
     /// Notes the result of a Vulkan call made while recording: a lost device sets the sticky lost state, and any
     /// other failure is logged.
     ///
@@ -250,6 +276,11 @@ private:
         VkSampler sampler = nullptr;
         SamplerDesc desc; // normalized: anisotropy clamped, name dropped
         u32 refs = 0;
+    };
+    struct ShaderRes {
+        VkShaderModule module = nullptr;
+        ShaderStage stage = ShaderStage::None;
+        char entry[kMaxShaderEntryNameLength + 1] = {};
     };
     struct CommandBufferSlot {
         VkCommandBuffer buffer;
@@ -322,6 +353,7 @@ private:
     HandlePool<BufferRes, BufferTag> buffers_;
     HandlePool<TextureRes, TextureTag> textures_;
     HandlePool<SamplerRes, SamplerTag> samplers_;
+    HandlePool<ShaderRes, ShaderTag> shaders_;
     VkFormatFeatureFlags format_features_[static_cast<usize>(Format::Count)] = {};
     std::atomic<usize> raw_image_count_{0};
     u32 frames_in_flight_ = 2;

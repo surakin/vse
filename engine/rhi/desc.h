@@ -122,7 +122,10 @@ struct SamplerDesc {
     const char* Validate() const;
 };
 
-/// Describes a shader module to create from SPIR-V words.
+/// Describes a shader module to create from precompiled bytecode (SPIR-V words for the Vulkan backend).
+///
+/// The engine compiles shaders offline and never at runtime (`PLAN.md` assumption #18); other backends will take
+/// their own bytecode in this descriptor.
 ///
 /// Thread-safety: thread-compatible plain data.
 /// Ownership: `words` and `entry` are borrowed for the duration of the call; the device copies what it keeps.
@@ -144,8 +147,8 @@ struct ShaderDesc {
     /// Fails: reported through the return value, never by aborting.
     /// Ownership: the returned string is static and is never freed by the caller.
     ///
-    /// Checks the stage, the entry name and that the module is at least as large as a SPIR-V header; the
-    /// module's contents are checked when the shader is created.
+    /// Checks the stage, the entry name (at most 63 bytes) and that the module is at least as large as a SPIR-V
+    /// header; the module's contents are checked by [[rhi::ValidateSpirv]] when the shader is created.
     const char* Validate() const;
 };
 

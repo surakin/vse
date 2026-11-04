@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "rhi/rhi_log.h"
+#include "rhi/spirv.h"
 #include "rhi/vulkan/vk_format.h"
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vk_swapchain.h"
@@ -325,7 +326,7 @@ VulkanDevice::~VulkanDevice() {
             ++user_leaks;
             DestroySwapchain(swapchain_); // takes its textures with it
         }
-        user_leaks += buffers_.LiveCount() + textures_.LiveCount() + samplers_.LiveCount();
+        user_leaks += buffers_.LiveCount() + textures_.LiveCount() + samplers_.LiveCount() + shaders_.LiveCount();
         g_leaked_user_objects.fetch_add(user_leaks, std::memory_order_relaxed);
         // Buffers the application never destroyed are released here, with a warning.
         if (buffers_.LiveCount() > 0) {
@@ -338,6 +339,10 @@ VulkanDevice::~VulkanDevice() {
         }
         textures_.ForEachLive([&](TextureHandle, TextureRes& t) { DestroyTextureRes(&t); });
         samplers_.ForEachLive([&](SamplerHandle, SamplerRes& s) { fns_.DestroySampler(device_, s.sampler, nullptr); });
+        if (shaders_.LiveCount() > 0) {
+            RhiLog(LogVerbosity::Warn, "Vulkan: %zu shader module(s) were still alive when the device was destroyed", shaders_.LiveCount());
+        }
+        shaders_.ForEachLive([&](ShaderHandle, ShaderRes& s) { fns_.DestroyShaderModule(device_, s.module, nullptr); });
         CollectRetired(true);
         ShutdownCommands();
         ShutdownUpload();
@@ -371,8 +376,68 @@ void VulkanDevice::NotImplemented(const char* what) {
 const char* VulkanDevice::BackendName() const { return "vulkan"; }
 const DeviceCaps& VulkanDevice::Caps() const { return caps_; }
 
-ShaderHandle VulkanDevice::CreateShader(const ShaderDesc&) { NotImplemented("CreateShader"); return {}; }
-void VulkanDevice::DestroyShader(ShaderHandle) {}
+ShaderHandle VulkanDevice::CreateShader(const ShaderDesc& desc) {
+    const char* why = desc.Validate();
+    if (why == nullptr) {
+        why = ValidateSpirv(desc.words, desc.word_count, desc.stage, desc.entry);
+    }
+    if (why != nullptr) {
+        RhiLog(LogVerbosity::Error, "CreateShader: %s", why);
+        return {};
+    }
+    ShaderRes res;
+    res.stage = desc.stage;
+    usize n = 0;
+    for (; desc.entry[n] != '\0'; ++n) {
+        res.entry[n] = desc.entry[n];
+    }
+    res.entry[n] = '\0';
+
+    VkShaderModuleCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    info.codeSize = desc.word_count * sizeof(u32);
+    info.pCode = desc.words;
+    const VkResult result = fns_.CreateShaderModule(device_, &info, nullptr, &res.module);
+    if (result != VK_SUCCESS) {
+        NoteDeviceLost(result);
+        RhiLog(LogVerbosity::Error, "Vulkan: cannot create a shader module (%s)", VkResultName(result));
+        return {};
+    }
+    SetDebugName(HandleToU64(res.module), VK_OBJECT_TYPE_SHADER_MODULE, desc.debug_name);
+    ShaderHandle handle;
+    {
+        std::lock_guard<std::mutex> lock(resource_mutex_);
+        handle = shaders_.Allocate(ShaderRes(res));
+    }
+    if (!handle.IsValid()) {
+        RhiLog(LogVerbosity::Error, "CreateShader: out of shader handles");
+        fns_.DestroyShaderModule(device_, res.module, nullptr);
+    }
+    return handle;
+}
+
+void VulkanDevice::DestroyShader(ShaderHandle shader) {
+    std::lock_guard<std::mutex> lock(resource_mutex_);
+    ENGINE_ASSERT(shaders_.Get(shader) != nullptr, "DestroyShader: handle is invalid or already destroyed");
+    if (shaders_.Get(shader) == nullptr) {
+        return;
+    }
+    // A module is only read while a pipeline is created from it, but the handle follows the same deferred rule as every other resource.
+    const u64 current = frame_number_.load(std::memory_order_relaxed);
+    shaders_.Retire(shader, frame_open_ ? current : current + 1);
+}
+
+bool VulkanDevice::LookupShader(ShaderHandle shader, ShaderInfo* out) const {
+    std::lock_guard<std::mutex> lock(resource_mutex_);
+    const ShaderRes* s = shaders_.Get(shader);
+    if (s == nullptr) {
+        return false;
+    }
+    out->module = s->module;
+    out->stage = s->stage;
+    out->entry = s->entry;
+    return true;
+}
 BindGroupLayoutHandle VulkanDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&) { NotImplemented("CreateBindGroupLayout"); return {}; }
 void VulkanDevice::DestroyBindGroupLayout(BindGroupLayoutHandle) {}
 BindGroupHandle VulkanDevice::CreateBindGroup(const BindGroupDesc&) { NotImplemented("CreateBindGroup"); return {}; }

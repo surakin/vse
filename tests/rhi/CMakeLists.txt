@@ -16,6 +16,7 @@ set(RHI_TEST_SOURCES
   vulkan_texture_test.cpp
   vulkan_swapchain_test.cpp
   vulkan_frame_test.cpp
+  shader_test.cpp
 )
 
 # Header self-containment: one generated translation unit per public RHI
@@ -46,7 +47,7 @@ include(Catch)
 function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib suffix label spec)
   add_executable(${target} ${RHI_TEST_SOURCES} ${RHI_HEADER_CHECK_SOURCES})
   target_link_libraries(${target} PRIVATE ${rhi_lib} ${rhi_vulkan_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders)
   catch_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "${spec}" PROPERTIES LABELS "${label}")
 endfunction()
 
