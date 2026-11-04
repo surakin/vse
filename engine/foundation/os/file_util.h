@@ -4,16 +4,17 @@
 #include "string/string.h"
 #include "types.h"
 
-// Higher-level file utilities built purely from os.h's portable
-// primitives (Open/Lseek/Read/Close) — unlike os.h/os/linux/, this file
-// needs no per-platform implementation, so it's declared and defined
-// once (Phase 1 Day 16).
+//! File utilities built only on the portable primitives of `os/os.h`.
+
 namespace engine_placeholder::os {
 
-// Reads the whole file at `path` into a buffer allocated from `arena`.
-// Returns nullptr on any failure (missing file, seek/read error, or the
-// arena running out of space) and leaves `out_size` untouched; on
-// success `out_size` is set to the file's byte length.
+/// Reads the whole file at `path` into a buffer allocated from `arena`.
+/// Param path: UTF-8 file path.
+/// Param arena: arena the buffer is allocated from.
+/// Param out_size: set to the file's byte length on success; untouched on failure.
+/// Returns: the buffer holding the file contents, or `nullptr` on failure.
+/// Fails: returns `nullptr` if the file cannot be opened, a seek or read fails, or the arena is full.
+/// Ownership: the buffer belongs to `arena` and lives until the arena is reset or destroyed.
 u8* ReadFileToArena(StringView path, ArenaAllocator& arena, usize& out_size);
 
 } // namespace engine_placeholder::os

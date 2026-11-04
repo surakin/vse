@@ -6,56 +6,73 @@
 #include "log/assert.h"
 #include "types.h"
 
-// Phase 2 Day 30: a fixed-capacity Chase-Lev work-stealing deque of
-// coroutine handles, one per participant. The OWNER pushes and pops at
-// the bottom (LIFO — hot, cache-friendly); THIEVES take from the top
-// (FIFO — oldest, likely the biggest subtree of work).
-//
-// Based on Chase & Lev, "Dynamic Circular Work-Stealing Deque" (2005)
-// with the C11 formulation of Lê et al. (2013), with ONE deliberate
-// change: wherever the published algorithm places a standalone
-// atomic_thread_fence(seq_cst), the ordering is instead put on the
-// neighbouring atomic operations (seq_cst loads/stores/CAS). That is
-// slightly stronger than strictly necessary, but ThreadSanitizer does
-// not model standalone fences (it would report false races), and
-// correctness comes first; Day 35 measures whether it matters.
-//
-// Capacity is a power of two and fixed: no resize. PushBottom returns
-// false when full and never overwrites; the caller (Scheduler::Submit)
-// spills to the injection queue.
-//
-// Index discipline: `top_` only ever increases (CAS in PopBottom's
-// last-element case and in StealTop); `bottom_` is written only by the
-// owner. Indices are 64-bit and never wrap in practice. Slot reuse
-// (index & mask) is safe: PushBottom only writes slot b when b - top <
-// capacity, so the slot's previous occupant (index b - capacity) has
-// already been consumed, and a thief that read a slot before losing its
-// CAS discards the value.
-//
-// Handles are stored as raw addresses. A null handle is never stored.
+//! A fixed-capacity Chase-Lev work-stealing deque of coroutine handles.
+//!
+//! There is one deque per scheduler participant. The owner pushes and pops at
+//! the bottom (LIFO: hot and cache-friendly); thieves take from the top (FIFO:
+//! the oldest entry, likely the biggest subtree of work).
+//!
+//! The algorithm is Chase and Lev, "Dynamic Circular Work-Stealing Deque"
+//! (2005), in the C11 formulation of Le et al. (2013), with one deliberate
+//! change: wherever the published algorithm places a standalone
+//! `atomic_thread_fence(seq_cst)`, the ordering is put on the neighbouring
+//! atomic operations instead (seq_cst loads, stores and CAS). That is slightly
+//! stronger than strictly necessary, but ThreadSanitizer does not model
+//! standalone fences and would report false races.
+//!
+//! Capacity is a power of two and fixed: there is no resize. A push on a full
+//! deque fails and never overwrites; the scheduler then spills to its
+//! injection queue. The top index only ever increases and the bottom index is
+//! written only by the owner; both are 64-bit and never wrap in practice.
+//! Slot reuse (index & mask) is safe: a push writes slot b only when
+//! b - top < capacity, so the slot's previous occupant (index b - capacity)
+//! has already been consumed, and a thief that read a slot before losing its
+//! CAS discards the value. Changing the capacity or the full check must keep
+//! that argument true.
+//! Handles are stored as raw addresses and a null handle is never stored.
 namespace engine_placeholder::jobs {
 
+/// Outcome of one steal attempt on a [[jobs::WorkStealingDeque]].
 enum class StealStatus : u8 {
-    Success, // `out` holds a handle
-    Empty,   // nothing to steal
-    Lost,    // raced with another thief or the owner; worth retrying
+    Success, ///< The output handle holds a stolen entry.
+    Empty,   ///< There was nothing to steal.
+    Lost,    ///< Raced with another thief or the owner; worth retrying.
 };
 
+/// Fixed-capacity work-stealing deque of coroutine handles: one owner at the bottom, any number of thieves at the top.
+///
+/// The object is about 34 KB: allocate it on the heap or inside the
+/// scheduler, not on a thread stack. It cannot be copied.
+///
+/// Thread-safety: thread-safe under a role split. One owner thread calls
+///   [[jobs::WorkStealingDeque::PushBottom]] and [[jobs::WorkStealingDeque::PopBottom]];
+///   any thread may call [[jobs::WorkStealingDeque::StealTop]] concurrently
+///   with them. Calling the owner operations from two threads is a bug.
+/// Ownership: stores handles without owning them; whoever pops or steals one
+///   becomes responsible for resuming or destroying it.
+/// See: [[jobs::Scheduler]]
 class WorkStealingDeque {
 public:
+    /// Number of handles the deque holds; a power of two.
     static constexpr usize kDefaultCapacity = 4096;
 
-    // (C++20: the atomics are value-initialized; slots start null.)
-    // ~34 KB: allocate on the heap / inside the scheduler, not on a
-    // thread stack.
     WorkStealingDeque() = default;
 
     WorkStealingDeque(const WorkStealingDeque&) = delete;
     WorkStealingDeque& operator=(const WorkStealingDeque&) = delete;
 
+    /// Gives the fixed capacity.
+    ///
+    /// Returns: the maximum number of handles held at once.
     static constexpr usize Capacity() { return kDefaultCapacity; }
 
-    // OWNER ONLY. Returns false (and stores nothing) if full.
+    /// Pushes a handle at the bottom.
+    ///
+    /// Param h: the handle to store; must not be null.
+    /// Returns: `true` if stored.
+    /// Fails: returns `false` and stores nothing if the deque is full.
+    /// Aborts: `h` is a null handle.
+    /// Thread-safety: owner-thread-only.
     bool PushBottom(std::coroutine_handle<> h) {
         ENGINE_ASSERT(h.address() != nullptr, "WorkStealingDeque: null handle");
         const i64 b = bottom_.load(std::memory_order_relaxed);
@@ -72,7 +89,10 @@ public:
         return true;
     }
 
-    // OWNER ONLY. Returns a null handle if empty.
+    /// Pops the most recently pushed handle from the bottom.
+    ///
+    /// Returns: the handle, or a null handle if the deque is empty or a thief won the race for the last entry.
+    /// Thread-safety: owner-thread-only.
     std::coroutine_handle<> PopBottom() {
         const i64 b = bottom_.load(std::memory_order_relaxed) - 1;
         // seq_cst store then seq_cst load of top_: the Dekker-style pair
@@ -99,7 +119,11 @@ public:
         return std::coroutine_handle<>::from_address(addr);
     }
 
-    // ANY THREAD. On Success `out` is set; otherwise left untouched.
+    /// Tries to take the oldest handle from the top.
+    ///
+    /// Param out: receives the handle on `Success`; left untouched otherwise.
+    /// Returns: `Success`, `Empty` (nothing to steal) or `Lost` (raced with another thief or the owner; worth retrying).
+    /// Thread-safety: thread-safe. Any thread.
     StealStatus StealTop(std::coroutine_handle<>& out) {
         i64 t = top_.load(std::memory_order_seq_cst);
         const i64 b = bottom_.load(std::memory_order_seq_cst);
@@ -116,7 +140,12 @@ public:
         return StealStatus::Success;
     }
 
-    // Approximate (racy) size, for heuristics and tests only.
+    /// Estimates how many handles are stored.
+    ///
+    /// The value is racy and meant for heuristics and tests only.
+    ///
+    /// Returns: an approximate entry count, never negative.
+    /// Thread-safety: thread-safe.
     i64 ApproxSize() const {
         const i64 b = bottom_.load(std::memory_order_relaxed);
         const i64 t = top_.load(std::memory_order_relaxed);

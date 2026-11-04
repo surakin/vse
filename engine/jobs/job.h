@@ -7,54 +7,61 @@
 #include "log/assert.h"
 #include "types.h"
 
-// Phase 2 Day 28: the job coroutine type. A job is a C++20 coroutine
-// returning `Job`; the scheduler (Day 31) resumes its handle on whichever
-// worker picks it up. Design decisions D2/D3 (see
-// plans/phase-02-job-system.md):
-//
-//  * Jobs start SUSPENDED (initial_suspend = suspend_always): creating a
-//    Job runs no user code. Nothing happens until it is scheduled.
-//  * OWNERSHIP. A `Job` is a move-only handle to a not-yet-started frame.
-//    Submitting it to the scheduler calls Release(), which hands the raw
-//    handle over and leaves the Job empty; from then on the frame owns
-//    itself and destroys itself when the body finishes. A Job destroyed
-//    without having been released destroys its never-started frame. There
-//    is no other ownership mode — `co_await`-ing a Job directly is out of
-//    scope (join with a Counter, Day 32).
-//  * COMPLETION. When the body finishes, final_suspend frees the frame
-//    FIRST and only then runs the optional completion hook, so anything
-//    that wakes up in response (a parent resumed by a Counter reaching
-//    zero) observes the frame already gone. The hook is a plain function
-//    pointer + user pointer (exactly once, from whichever thread ran the
-//    job's last resume); Day 32 adds a Counter overload that points it at
-//    Counter::Decrement.
-//  * FRAMES come from FramePool::Global() via promise operator new/delete
-//    (never the global heap), so `operator new` never returns nullptr and
-//    no get_return_object_on_allocation_failure is needed.
-//  * Jobs return void. Results travel through pointers to data that
-//    outlives the join.
-//
-// PARAMETER-LIFETIME RULE (read before writing a job): the compiler copies
-// coroutine *parameters* into the frame, but a reference parameter stays a
-// reference to the caller's object, and a lambda coroutine's captures live
-// in the closure object, not in the frame — both dangle once the creating
-// function returns, which for a job is almost always before it runs. So
-// job bodies are free functions (or static members) that take everything
-// BY VALUE or as a POINTER to data that provably outlives the job's
-// completion (e.g. data the spawner keeps alive until it has joined). Never
-// write a job as a capture-by-reference lambda, and never pass a
-// reference parameter.
+//! The job coroutine type.
+//!
+//! A job is a C++20 coroutine returning [[jobs::Job]]; the scheduler resumes
+//! its handle on whichever worker picks it up. Jobs start suspended, so
+//! creating one runs no user code until it is submitted. Jobs return void:
+//! results travel through pointers to data that outlives the join.
+//!
+//! Parameter lifetime. The compiler copies coroutine parameters into the
+//! frame, but a reference parameter stays a reference to the caller's object,
+//! and a lambda coroutine's captures live in the closure object, not in the
+//! frame. Both dangle once the creating function returns, which for a job is
+//! almost always before it runs. Write job bodies as free functions (or
+//! static members) that take everything by value or as a pointer to data that
+//! outlives the job's completion, for example data the spawner keeps alive
+//! until it has joined. Never write a job as a capture-by-reference lambda
+//! and never pass it a reference parameter.
+//!
+//! Frame memory comes from [[jobs::FramePool::Global]], never the global
+//! heap, so frame allocation does not return null.
 namespace engine_placeholder::jobs {
 
 class Counter;
 
+/// Completion hook: a plain function pointer called with the `user` pointer registered next to it.
+///
+/// It runs exactly once per job, after the job's frame has been freed.
 using CompletionFn = void (*)(void* user);
 
+/// Move-only handle to a not-yet-started job coroutine frame.
+///
+/// Jobs start suspended: creating a `Job` runs no user code. Submitting it
+/// (see [[jobs::Scheduler::Submit]]) calls [[jobs::Job::Release]], which hands
+/// the raw handle over and leaves the `Job` empty. From then on the frame
+/// owns itself and destroys itself when the body finishes. When the body
+/// finishes, the frame is freed first and only then does the completion hook
+/// run, so anything woken in response observes the frame already gone.
+/// Awaiting a `Job` directly is not supported; join with a [[jobs::Counter]].
+///
+/// Thread-safety: not-thread-safe. A `Job` object is owned by one thread at a
+///   time; the frame it hands off is resumed by whichever worker runs it.
+/// Ownership: owns its frame until [[jobs::Job::Release]] transfers it; a
+///   `Job` destroyed without being released destroys its never-started frame
+///   (and never runs its completion hook).
+/// See: [[jobs::Spawn]], [[jobs::Scheduler::Submit]]
 class Job {
 public:
     struct promise_type;
+
+    /// Typed coroutine handle to a job frame.
     using Handle = std::coroutine_handle<promise_type>;
 
+    /// Coroutine promise for [[jobs::Job]].
+    ///
+    /// Thread-safety: not-thread-safe. Only the compiler-generated coroutine machinery touches it.
+    /// Internal: must be visible to the compiler as the coroutine promise type.
     struct promise_type {
         CompletionFn on_complete = nullptr;
         void* on_complete_user = nullptr;
@@ -99,6 +106,10 @@ public:
     };
 
     Job() = default;
+
+    /// Destroys the frame if it was never released.
+    ///
+    /// Ownership: frees a still-owned, never-started frame; a released job is untouched.
     ~Job() {
         // Still owned => never released, never started: free its frame.
         if (handle_) {
@@ -108,7 +119,11 @@ public:
 
     Job(const Job&) = delete;
     Job& operator=(const Job&) = delete;
+    /// Takes over the frame of `other`, which becomes empty.
+    /// Param other: the job to move from.
     Job(Job&& other) noexcept : handle_(other.handle_) { other.handle_ = nullptr; }
+    /// Replaces this job with the frame of `other`, destroying any frame this job still owned.
+    /// Param other: the job to move from; becomes empty.
     Job& operator=(Job&& other) noexcept {
         if (this != &other) {
             if (handle_) {
@@ -120,15 +135,24 @@ public:
         return *this;
     }
 
-    // True while this object still owns an unreleased frame.
+    /// Tells whether this object still owns an unreleased frame.
+    ///
+    /// Returns: `true` while a frame is owned; `false` for an empty, moved-from or released job.
     bool Valid() const { return static_cast<bool>(handle_); }
 
-    // Registers the completion hook. Must be called before the job is
-    // released/started, and at most once. NOTE: a Job destroyed without
-    // being released never runs its hook, so a Counter that already
-    // counted it must be handled by the spawner (Day 32 only counts at
-    // submit time). `fn` runs exactly once, after the frame has been
-    // freed, on the thread that executed the job's final resume.
+    /// Registers a completion hook to run when the job finishes.
+    ///
+    /// Call it before the job is released, at most once. `fn` runs exactly
+    /// once, after the frame has been freed, on the thread that executed the
+    /// job's final resume. A job destroyed without being released never runs
+    /// its hook, so a [[jobs::Counter]] that already counted it must be
+    /// corrected by whoever counted it; [[jobs::Spawn]] counts only at
+    /// submit time.
+    ///
+    /// Param fn: the hook; may be null to register nothing.
+    /// Param user: passed to `fn` unchanged; must stay valid until the hook has run.
+    /// Aborts: the job is empty (moved-from or released), or a completion hook was already set.
+    /// Ownership: `user` is borrowed, not owned; the job never frees it.
     void SetCompletion(CompletionFn fn, void* user) {
         ENGINE_ASSERT(handle_, "Job::SetCompletion on an empty Job");
         ENGINE_ASSERT(handle_.promise().on_complete == nullptr, "Job::SetCompletion called twice");
@@ -136,14 +160,24 @@ public:
         handle_.promise().on_complete_user = user;
     }
 
-    // Binds the job to a Counter: when the job completes, the Counter is
-    // decremented (after the frame is freed). Defined in counter.h —
-    // include it to use this overload.
+    /// Binds the job to a counter so that completing the job decrements it.
+    ///
+    /// The decrement happens after the frame has been freed. Defined in
+    /// `jobs/counter.h`; include that header to use this overload. Same
+    /// preconditions as the hook overload.
+    ///
+    /// Param counter: the counter to decrement; must outlive the job's completion.
+    /// Aborts: the job is empty (moved-from or released), or a completion hook was already set.
     void SetCompletion(Counter& counter);
 
-    // Transfers ownership of the frame to the caller (the scheduler): the
-    // returned handle destroys itself on completion; this Job becomes
-    // empty. The caller must eventually resume it to completion.
+    /// Transfers ownership of the frame to the caller, normally the scheduler.
+    ///
+    /// The returned handle destroys itself on completion and this job becomes
+    /// empty. The caller must eventually resume the handle to completion.
+    ///
+    /// Returns: the owning handle to the not-yet-started frame.
+    /// Aborts: the job is empty.
+    /// Ownership: the caller takes over the frame; it is freed when the body finishes.
     std::coroutine_handle<> Release() {
         ENGINE_ASSERT(handle_, "Job::Release on an empty Job");
         std::coroutine_handle<> h = handle_;

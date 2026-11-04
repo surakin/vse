@@ -11,6 +11,15 @@
 - `command_line.h`
 - `gpu_driver_probe.h`
 
+## API reference
+
+Full reference: [Platform: OS Services](../reference/platform-os.md).
+
+- [[os::CommandLine]] — command-line access
+- [[os::ReadFileToArena]] — whole-file reads
+- [[os::MonotonicTimeNanos]] — the monotonic clock
+- [[os::LoadLibrary]] — dynamic libraries
+
 ## Already known — seed material (verify against the code when writing)
 
 - os.h exposes libc/POSIX-shaped Open/Close/Read/Write/Lseek and Reserve/ReleaseMemory

@@ -12,6 +12,18 @@
 - `grapheme.h`
 - `normalize.h`
 
+## API reference
+
+Full reference: [Foundation: Strings](../reference/foundation-strings.md).
+
+- [[StringView]] — non-owning text
+- [[String]] — owning, allocator-backed text
+- [[StringBuilder]] — formatting without printf
+- [[Utf8Codepoints]] — UTF-8 iteration
+- [[GraphemeClusters]] — grapheme-cluster iteration
+- [[NormalizeNFC]] — canonical composition
+- [[NormalizeNFD]] — canonical decomposition
+
 ## Already known — seed material (verify against the code when writing)
 
 - StringView (non-owning), String, StringBuilder are hand-rolled

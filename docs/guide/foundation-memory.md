@@ -11,6 +11,15 @@
 - `engine/foundation/mem/stack_allocator.h`
 - `engine/foundation/os/os.h (ReserveMemory/ReleaseMemory)`
 
+## API reference
+
+Full reference: [Foundation: Memory](../reference/foundation-memory.md).
+
+- [[ArenaAllocator]] — bump allocation over reserved address space
+- [[PoolAllocator]] — fixed-size blocks, single-threaded
+- [[StackAllocator]] — LIFO allocation with markers
+- [[os::ReserveMemory]] — the reserve/commit primitive underneath
+
 ## Already known — seed material (verify against the code when writing)
 
 - Custom allocators replace malloc in engine code; libc remains allowed and is used directly

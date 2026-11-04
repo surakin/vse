@@ -3,74 +3,103 @@
 #include "string/string.h"
 #include "types.h"
 
-// Thin wrappers around OS-interaction calls (PLAN.md assumption #2),
-// implemented per-platform under linux/, windows/, macos/ (only linux/
-// exists so far — PLAN.md assumption #11: implementation stays
-// Linux-only until its phase, but this interface is the seam later
-// ports implement against without changing any caller).
-//
-// Exit/Write/Read/Open/Close keep libc/POSIX-shaped signatures
-// deliberately — Windows' CRT accepts the same shapes (_write/_read/
-// _open/_close, ExitProcess), so no emulation is needed on either side.
-// Memory reservation does NOT get this treatment: raw POSIX `mmap`
-// (address hint, fd, offset, protection bits) has no equivalent on
-// Windows (VirtualAlloc's shape is entirely different), and every
-// caller in this codebase only ever wants anonymous, read+write memory
-// anyway — so ReserveMemory/ReleaseMemory expose exactly that, not
-// POSIX mmap's full generality.
+//! Thin wrappers around OS calls: file descriptors, memory reservation, clocks, dynamic libraries.
+//!
+//! Exit/Write/Read/Open/Close/Lseek keep POSIX-shaped signatures; the implementation lives per platform.
+
 namespace engine_placeholder::os {
 
-// Matches Linux's PATH_MAX; used as a portable cap on path buffers
-// passed into OS calls that require a null-terminated C string
-// (StringView isn't guaranteed null-terminated — it can be an arbitrary
-// substring). Open()/LoadLibrary() return failure rather than truncate
-// a path that doesn't fit.
+/// Maximum path length in bytes that [[os::Open]] and [[os::LoadLibrary]] accept.
+///
+/// Paths are copied into a null-terminated buffer of this size before being passed to the OS; a path
+/// that does not fit makes the call fail instead of being truncated.
 constexpr usize kMaxPathBytes = 4096;
 
+/// Terminates the process with the given exit code; never returns.
+/// Param code: process exit status.
 [[noreturn]] void Exit(int code);
 
+/// Writes up to `len` bytes from `buf` to file descriptor `fd`.
+/// Param fd: an open file descriptor.
+/// Param buf: bytes to write; borrowed for the call.
+/// Param len: number of bytes to write.
+/// Returns: the number of bytes written, which may be less than `len`, or -1 on error.
 long Write(int fd, const void* buf, usize len);
+
+/// Reads up to `len` bytes from file descriptor `fd` into `buf`.
+/// Param fd: an open file descriptor.
+/// Param buf: destination buffer of at least `len` bytes; borrowed for the call.
+/// Param len: maximum number of bytes to read.
+/// Returns: the number of bytes read, 0 at end of file, or -1 on error.
 long Read(int fd, void* buf, usize len);
 
-// `mode` only matters when `flags` includes O_CREAT; harmless to pass
-// otherwise (the OS ignores it). `path` is UTF-8 (StringView), not
-// const char* — filenames aren't guaranteed ASCII.
+/// Opens the file at the UTF-8 `path` and returns a file descriptor.
+/// Param path: UTF-8 file path, at most [[os::kMaxPathBytes]] - 1 bytes.
+/// Param flags: POSIX `open` flags such as `O_RDONLY`.
+/// Param mode: permission bits; only used when `flags` includes `O_CREAT`.
+/// Returns: the file descriptor, or -1 on failure.
+/// Fails: returns -1 if the OS rejects the open or the path is too long for [[os::kMaxPathBytes]].
+/// Ownership: the caller owns the descriptor and must release it with [[os::Close]].
 int Open(StringView path, int flags, int mode = 0644);
+
+/// Closes a file descriptor.
+/// Param fd: a descriptor from [[os::Open]].
+/// Returns: 0 on success, -1 on error.
 int Close(int fd);
 
-// `whence` is one of the standard C `SEEK_SET`/`SEEK_CUR`/`SEEK_END`
-// (portable — defined by ISO C's <cstdio>, not POSIX-specific). Returns
-// the resulting offset from the start of the file, or -1 on failure.
+/// Repositions the file offset of `fd`.
+/// Param fd: an open file descriptor.
+/// Param offset: byte offset relative to `whence`.
+/// Param whence: one of the standard C `SEEK_SET`, `SEEK_CUR` or `SEEK_END`.
+/// Returns: the resulting offset from the start of the file, or -1 on failure.
 long Lseek(int fd, long offset, int whence);
 
-// Anonymous, read+write memory. Returns nullptr on failure.
+/// Reserves `size` bytes of anonymous, zero-initialised, read+write memory from the OS.
+/// Param size: number of bytes to reserve.
+/// Returns: the base address, or `nullptr` on failure.
+/// Fails: returns `nullptr` if the OS cannot satisfy the request.
+/// Ownership: the caller owns the mapping and releases it with [[os::ReleaseMemory]] using the same size.
 void* ReserveMemory(usize size);
+
+/// Returns memory obtained from [[os::ReserveMemory]] to the OS.
+/// Param addr: base address returned by [[os::ReserveMemory]].
+/// Param size: the size passed to [[os::ReserveMemory]].
 void ReleaseMemory(void* addr, usize size);
 
-// Nanoseconds on a monotonic clock (no defined epoch — only valid for
-// computing deltas between two calls, never as a wall-clock timestamp).
+/// Returns the current time of a monotonic clock in nanoseconds.
+///
+/// The clock has no defined epoch, so differences between two calls are meaningful but the value is not
+/// a wall-clock timestamp.
+///
+/// Thread-safety: thread-safe.
 u64 MonotonicTimeNanos();
 
-// Blocks the calling thread for at least `nanos` (may run long under
-// scheduler contention; never returns early).
+/// Blocks the calling thread for at least `nanos` nanoseconds.
+///
+/// May sleep longer under scheduler contention; interrupted sleeps are resumed, so it never returns early.
+/// Param nanos: minimum duration to sleep.
 void SleepNanos(u64 nanos);
 
-// Opaque per-platform dynamic-library handle (a dlopen'd .so on Linux;
-// an HMODULE on Windows once that backend exists). nullptr means "not
-// loaded" on every platform this will ever run on.
+/// Opaque per-platform dynamic-library handle; `nullptr` means not loaded.
 using DynamicLibraryHandle = void*;
 
-// Loads a shared library at `path` (e.g. "libvulkan.so.1"). Returns
-// nullptr on failure: file not found, unresolved dependencies, or a
-// path too long to pass to the OS loader (see kMaxPathBytes).
+/// Loads the shared library at `path` (for example `"libvulkan.so.1"`).
+/// Param path: library name or path, at most [[os::kMaxPathBytes]] - 1 bytes.
+/// Returns: the library handle, or `nullptr` on failure.
+/// Fails: returns `nullptr` if the file is not found, has unresolved dependencies, or the path is too long.
+/// Ownership: the caller owns the handle and releases it with [[os::UnloadLibrary]].
 DynamicLibraryHandle LoadLibrary(StringView path);
 
-// Resolves `symbol_name` within `handle`. Symbol names are ASCII C
-// identifiers, not filenames, so this takes const char* directly rather
-// than StringView. Returns nullptr if the symbol isn't found.
+/// Resolves the exported symbol `symbol_name` within a loaded library.
+/// Param handle: a handle from [[os::LoadLibrary]].
+/// Param symbol_name: null-terminated ASCII C identifier.
+/// Returns: the symbol address, or `nullptr` if it is not found.
+/// Fails: returns `nullptr` if the symbol is not found.
+/// Ownership: the address is borrowed and is valid only until the library is unloaded.
 void* GetSymbol(DynamicLibraryHandle handle, const char* symbol_name);
 
-// No-op if `handle` is nullptr.
+/// Unloads a library loaded with [[os::LoadLibrary]]; does nothing if `handle` is `nullptr`.
+/// Param handle: the handle to release; invalid afterwards.
 void UnloadLibrary(DynamicLibraryHandle handle);
 
 } // namespace engine_placeholder::os

@@ -17,6 +17,19 @@
 - `frame_pool.h`
 - `plans/phase-02-job-system.md (design decisions D1-D9)`
 
+## API reference
+
+Full reference: [The Job System](../reference/jobs.md).
+
+- [[jobs::Job]] — the coroutine job type
+- [[jobs::Scheduler]] — submission, workers and helping
+- [[jobs::Counter]] — the join primitive
+- [[jobs::ParallelFor]] — chunked fan-out
+- [[jobs::ReadFileAsync]] — asynchronous file reads
+- [[jobs::FramePool]] — coroutine frame allocation
+- [[jobs::WorkerPool]] — pinned worker threads
+- [[jobs::WorkStealingDeque]] — the per-participant queue
+
 ## Already known — seed material (verify against the code when writing)
 
 - Jobs are C++20 coroutines returning `Job`; they start suspended; submitting transfers ownership; jobs return void

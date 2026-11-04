@@ -13,6 +13,15 @@
 - `linux/x11/*`
 - `linux/xkb_keyboard.h`
 
+## API reference
+
+Full reference: [Platform: Windowing and Input](../reference/platform-window-input.md).
+
+- [[os::Window]] — the window interface
+- [[os::WindowBackend]] — backend selection (Wayland, X11)
+- [[os::InputState]] — per-window input state
+- [[os::Key]] — keyboard keys
+
 ## Already known — seed material (verify against the code when writing)
 
 - `os::Window` interface; backend chosen by `--backend=` > `ENGINE_WINDOW_BACKEND` > auto (Wayland if WAYLAND_DISPLAY, else X11); a forced backend never falls back

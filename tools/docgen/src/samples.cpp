@@ -136,6 +136,7 @@ struct Task {
     double deadline = 0;
     bool ok = false;
     StringView src, exe, obj, cc_out, run_out, run_err;
+    StringView failure; // set when the sample failed; reported in document order after the run
 };
 
 volatile sig_atomic_t g_stop = 0;
@@ -177,6 +178,10 @@ public:
             tasks_.Push(t);
         }
         Drive();
+        for (usize i = 0; i < tasks_.Size(); ++i) { // completion order varies with --jobs; the report must not
+            const Task& t = *tasks_[i];
+            if (!t.failure.Empty()) out_.Push(FileDiag{t.sample->path, Diagnostic{Severity::Error, t.sample->line, t.failure}});
+        }
         sigaction(SIGINT, &old_int, nullptr);
         sigaction(SIGTERM, &old_term, nullptr);
         Cleanup();
@@ -201,8 +206,8 @@ private:
         rmdir(scratch_.Data());
     }
 
-    void Fail(const Task& t, StringView msg) {
-        out_.Push(FileDiag{t.sample->path, Diagnostic{Severity::Error, t.sample->line, msg}});
+    void Fail(Task& t, StringView msg) {
+        t.failure = msg;
         ++stats_.failed;
     }
 

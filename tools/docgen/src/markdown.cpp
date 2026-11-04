@@ -294,7 +294,10 @@ public:
             Link(*s.inherited, s.inherited->id);
             sb_.Append(StringView("._\n\n"));
         } else if (doc == nullptr) {
-            Line(sb_, "_Undocumented._\n");
+            // `= delete` / `= default` members need no comment (the lint exempts them): say what they are instead.
+            if (d.kind == DeclKind::Function && d.Is(kFlagDeleted)) Line(sb_, "_Deleted._\n");
+            else if (d.kind == DeclKind::Function && d.Is(kFlagDefaulted)) Line(sb_, "_Defaulted._\n");
+            else Line(sb_, "_Undocumented._\n");
         }
         if (doc != nullptr) {
             Blocks(*doc);

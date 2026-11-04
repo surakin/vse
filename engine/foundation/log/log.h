@@ -4,32 +4,66 @@
 #include "string/string.h"
 #include "types.h"
 
-// Channel-based logging, designed against Unreal's log-spam problem
-// from the start (PLAN.md assumption #10): named channels, independent
-// per-channel verbosity/enable state, conservative defaults, and
-// per-user config overridable without recompiling (LoadConfig).
-//
-// No allocator dependency anywhere in this file — log lines and config
-// parsing both work off fixed-size stack buffers, deliberately, so
-// logging/assert never need a heap/arena to be set up first.
+//! Channel-based logging with per-channel verbosity, overridable from a config file.
+//!
+//! Needs no allocator; log lines and config parsing use fixed-size stack buffers.
 namespace engine_placeholder {
 
-enum class LogVerbosity : u8 { Error = 0, Warn = 1, Info = 2, Debug = 3, Trace = 4 };
+/// Severity of a log message and the threshold a channel filters by.
+///
+/// Lower values are more severe; a channel logs a message when its level is
+/// less than or equal to the channel's verbosity.
+enum class LogVerbosity : u8 {
+    Error = 0, ///< Failures the program cannot ignore.
+    Warn = 1,  ///< Suspicious conditions; the default channel threshold.
+    Info = 2,  ///< Normal progress messages.
+    Debug = 3, ///< Developer diagnostics.
+    Trace = 4  ///< Very fine-grained, high-volume tracing.
+};
 
+/// A named source of log messages with its own verbosity threshold and enable flag.
+///
+/// Every constructed channel links itself into a global registry (used by
+/// [[LogChannel::Find]]), so channels are meant to be long-lived globals and
+/// must never be destroyed while the program can still look them up.
+///
+/// Thread-safety: not-thread-safe. Construct channels during static
+///   initialization; the verbosity and enable setters are unsynchronized.
+/// Ownership: does not own `name`; the string must outlive the channel.
 class LogChannel {
 public:
+    /// Creates a channel, enabled, and adds it to the global registry.
+    ///
+    /// Param name: channel name used in output and config files; must be a
+    ///   string that outlives the channel (typically a literal).
+    /// Param default_verbosity: initial threshold.
     explicit LogChannel(const char* name, LogVerbosity default_verbosity = LogVerbosity::Warn);
 
+    /// Returns the channel name as passed to the constructor.
     const char* Name() const { return name_; }
+    /// Returns the current verbosity threshold.
     LogVerbosity Verbosity() const { return verbosity_; }
+    /// Returns whether the channel is enabled.
     bool Enabled() const { return enabled_; }
 
+    /// Sets the verbosity threshold.
     void SetVerbosity(LogVerbosity v) { verbosity_ = v; }
+    /// Enables or disables the channel; a disabled channel logs nothing.
     void SetEnabled(bool e) { enabled_ = e; }
 
+    /// Reports whether a message of severity `level` would be emitted.
+    ///
+    /// Param level: severity of the candidate message.
+    /// Returns: true if the channel is enabled and `level` is at most the
+    ///   channel's verbosity.
     bool ShouldLog(LogVerbosity level) const { return enabled_ && level <= verbosity_; }
 
-    // Registry lookup by name, for config-file overrides.
+    /// Looks up a registered channel by name, for config-file overrides.
+    ///
+    /// Param name: exact, case-sensitive channel name.
+    /// Returns: the channel, or nullptr if none has that name.
+    /// Fails: reports an unknown name by returning nullptr.
+    /// Ownership: the channel is owned by whoever constructed it.
     static LogChannel* Find(StringView name);
 
 private:
@@ -42,17 +76,38 @@ private:
     static inline LogChannel* head_ = nullptr;
 };
 
+/// Channel for core engine and foundation messages.
 extern LogChannel LogCore;
+/// Channel for rendering messages.
 extern LogChannel LogRender;
+/// Channel for platform and windowing messages.
 extern LogChannel LogPlatform;
 
+/// Writes `[Channel] LEVEL: message` plus a newline to the write sink (standard
+/// output by default) if the channel allows `level`.
+///
+/// Param channel: channel to log on.
+/// Param level: severity of this message.
+/// Param message: text to print. The whole line is formatted into a 512-byte
+///   buffer, so overlong messages are truncated (and lose the trailing newline).
+/// Thread-safety: thread-compatible. Formatting uses a stack buffer, but the
+///   channel state it reads is unsynchronized.
 void Log(LogChannel& channel, LogVerbosity level, StringView message);
 
-// Minimal hand-rolled `key=value` config reader: lines of the form
-// `ChannelName.verbosity=Level` or `ChannelName.enabled=true|false`.
-// Unknown channels/attributes/values are silently skipped — kept
-// intentionally dumb (see this day's plan notes). Returns false if the
-// file couldn't be opened; a missing config file is not an error.
+/// Applies per-channel overrides from a `key=value` config file.
+///
+/// Lines have the form `ChannelName.verbosity=Level` (`Error`, `Warn`, `Info`,
+/// `Debug` or `Trace`) or `ChannelName.enabled=true|false` (`1` also means
+/// true). Unknown channels, attributes and malformed lines are skipped
+/// silently. An unrecognized verbosity name is not skipped: it sets the
+/// channel to `Warn`. Only the first 4096 bytes of the file are read.
+///
+/// Param path: path of the config file, NUL-terminated.
+/// Returns: true if the file was opened and had content; false otherwise.
+/// Fails: returns false if the file cannot be opened or is empty. A missing
+///   config file is not an error for the caller.
+/// Thread-safety: not-thread-safe. Modifies channel state without
+///   synchronization.
 bool LoadConfig(const char* path);
 
 } // namespace engine_placeholder

@@ -3,44 +3,65 @@
 #include "os/input.h"
 #include "types.h"
 
+//! XKB keyboard: libxkbcommon keymap and state used to translate evdev keycodes into engine keys.
+
 struct xkb_context;
 struct xkb_keymap;
 struct xkb_state;
 
-// Phase 1 Day 21: thin owner of the libxkbcommon context/keymap/state
-// triple used to interpret keycodes, kept separate from any Wayland
-// types so it can be tested against named layouts (us/de/fr) without a
-// compositor. libxkbcommon is the user-approved named dependency for
-// keymap interpretation (see plans/phase-01-linux-platform.md Notes).
 namespace engine_placeholder::os {
 
+/// Owns a libxkbcommon context, keymap and state used to interpret keycodes.
+///
+/// Independent of any Wayland types, so it can be driven from named layouts
+/// without a compositor.
+///
+/// Thread-safety: not-thread-safe. Const methods may run concurrently with each other only.
+/// Ownership: owns the xkb context, keymap and state and releases them on destruction or re-init.
 class XkbKeyboard {
 public:
     XkbKeyboard() = default;
+
+    /// Releases the xkb context, keymap and state.
     ~XkbKeyboard();
 
     XkbKeyboard(const XkbKeyboard&) = delete;
     XkbKeyboard& operator=(const XkbKeyboard&) = delete;
 
-    // Builds a keymap from RMLVO names (e.g. layout "de", variant
-    // nullptr), using the system xkeyboard-config data. Replaces any
-    // existing keymap. False (logged) on failure.
+    /// Builds a keymap from RMLVO names using the system xkeyboard-config data, replacing any existing keymap.
+    /// Param layout: XKB layout name, for example `"de"`.
+    /// Param variant: XKB variant name, or null for the layout default.
+    /// Returns: `true` on success.
+    /// Fails: returns `false` (logged) if the keymap cannot be built.
     bool InitFromNames(const char* layout, const char* variant = nullptr);
 
-    // Builds a keymap from compositor-provided XKB text (wl_keyboard's
-    // keymap fd, mmapped). `text`/`length` need not be NUL-terminated.
+    /// Builds a keymap from XKB keymap text, such as the mapped `wl_keyboard` keymap fd.
+    /// Param text: keymap text; it need not be NUL-terminated and is not retained.
+    /// Param length: size of `text` in bytes.
+    /// Returns: `true` on success.
+    /// Fails: returns `false` (logged) if the text cannot be compiled.
     bool InitFromKeymapText(const char* text, usize length);
 
+    /// Returns whether a keymap has been compiled and the keyboard is usable.
     bool Valid() const { return state_ != nullptr; }
 
-    // Translates a Linux evdev keycode (what wl_keyboard sends; the XKB
-    // keycode is evdev + 8) to an engine Key under the current state.
+    /// Translates a Linux evdev keycode to an engine `Key` under the current modifier state.
+    ///
+    /// The XKB keycode is the evdev code plus 8, which this function applies.
+    /// Param evdev_code: evdev keycode as sent by `wl_keyboard`.
+    /// Returns: the translated key, or `Key::Unknown` if not [[os::XkbKeyboard::Valid]] or unmapped.
     Key KeyForEvdevCode(u32 evdev_code) const;
 
-    // Applies wl_keyboard.modifiers; returns false if not Valid().
+    /// Applies a `wl_keyboard.modifiers` event to the keyboard state; does nothing if not valid.
+    /// Param depressed: depressed modifier mask.
+    /// Param latched: latched modifier mask.
+    /// Param locked: locked modifier mask.
+    /// Param group: effective layout group.
     void UpdateMask(u32 depressed, u32 latched, u32 locked, u32 group);
 
-    // Effective modifier bitmask (ModifierBit) under the current state.
+    /// Returns the effective modifier bitmask (`ModifierBit` values) under the current state.
+    ///
+    /// Returns: the mask, or 0 if not valid.
     u32 Modifiers() const;
 
 private:

@@ -9,6 +9,13 @@
 - `engine/foundation/containers/array.h`
 - `engine/foundation/containers/hash_map.h`
 
+## API reference
+
+Full reference: [Foundation: Containers](../reference/foundation-containers.md).
+
+- [[Array]] — growable array
+- [[HashMap]] — open-addressing hash map
+
 ## Already known — seed material (verify against the code when writing)
 
 - STL containers are not used

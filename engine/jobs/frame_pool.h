@@ -5,64 +5,104 @@
 
 #include "types.h"
 
-// Phase 2 Day 27 (design decision D3): the allocator behind coroutine
-// frames. Foundation's PoolAllocator is single-threaded, has one fixed
-// slot size and returns nullptr when full; job frames are allocated on
-// one thread and freed on another, vary in size, and `operator new` must
-// not return null. So:
-//
-//   * a few size classes, each a slab reserved up front (address space
-//     only — pages are committed as they are first touched) and handed
-//     out by a bump pointer plus an intrusive free list of returned
-//     blocks, behind one central mutex. (Foundation's PoolAllocator is
-//     not used: its constructor writes a free-list link into every slot,
-//     committing the whole slab at first use, on the hot path, while
-//     holding the central lock.)
-//   * an optional per-thread cache (intrusive free list per class, no
-//     synchronization) that refills from / spills to the central pool in
-//     batches — a block freed on a different thread than it was
-//     allocated on just joins the freeing thread's cache (blocks of one
-//     class are interchangeable);
-//   * a counted libc malloc fallback for oversize requests or an
-//     exhausted pool, so Allocate() never returns nullptr.
-//
-// Every block carries a 16-byte header (class index + magic) so
-// Deallocate() routes pooled vs. fallback blocks without address-range
-// checks and keeps the returned pointer 16-byte aligned.
+//! The allocator behind coroutine frames.
+//!
+//! Foundation's `PoolAllocator` is single-threaded, has one fixed slot size
+//! and returns null when full; job frames are allocated on one thread and
+//! freed on another, vary in size, and `operator new` must not return null.
+//! This pool therefore has:
+//! - a few size classes, each a slab reserved up front (address space only;
+//!   pages are committed as they are first touched), handed out by a bump
+//!   pointer plus an intrusive free list of returned blocks, behind one
+//!   central mutex;
+//! - an optional per-thread cache (an intrusive free list per class, no
+//!   synchronization) that refills from and spills to the central pool in
+//!   batches. A block freed on a different thread than it was allocated on
+//!   simply joins the freeing thread's cache, since blocks of one class are
+//!   interchangeable;
+//! - a counted libc `malloc` fallback for oversize requests or an exhausted
+//!   class, so [[jobs::FramePool::Allocate]] never returns null.
+//!
+//! Every block carries a 16-byte header (class index and magic) so
+//! deallocation routes pooled and fallback blocks without address-range
+//! checks and the returned pointer stays 16-byte aligned.
 namespace engine_placeholder::jobs {
 
+/// Thread-safe, size-classed allocator for coroutine frames, with an optional per-thread cache.
+///
+/// Requests up to [[jobs::FramePool::kMaxPooledRequest]] bytes come from a
+/// size class; larger ones, or ones that find their class exhausted, fall
+/// back to `malloc` and are counted separately. Blocks may be freed on any
+/// thread. A pool cannot be copied. Destroying a pool releases its slabs, so
+/// every pooled block must be freed before then; the global pool is never
+/// destroyed.
+///
+/// Thread-safety: thread-safe. Allocation and deallocation may run on any
+///   thread concurrently; the central pool is guarded by one mutex.
+/// Ownership: owns the reserved slabs of every size class and releases them
+///   in the destructor. Blocks returned by allocation belong to the caller
+///   until passed back to [[jobs::FramePool::Deallocate]].
+/// See: [[jobs::Job]]
 class FramePool {
 public:
+    /// Number of size classes.
     static constexpr usize kClassCount = 5;
-    // Whole-block sizes, header included. Starting guess — Day 35 logs
-    // the real frame-size histogram and retunes.
+    /// Whole-block size of each class in bytes, header included.
     static constexpr usize kBlockSizes[kClassCount] = {128, 256, 512, 1024, 2048};
+    /// Bytes of per-block header; also the alignment guarantee of returned pointers.
     static constexpr usize kHeaderBytes = 16;
+    /// Largest request in bytes that a size class can serve; bigger ones use the fallback.
     static constexpr usize kMaxPooledRequest = kBlockSizes[kClassCount - 1] - kHeaderBytes;
 
+    /// Pool construction parameters.
+    ///
+    /// Thread-safety: not-thread-safe. A plain value type.
     struct Config {
+        /// Number of blocks reserved for each size class.
         usize slots_per_class[kClassCount] = {16384, 8192, 4096, 2048, 1024};
-        // Per-thread caches are valid for exactly one pool per process
-        // (the Global() one); local pools used by tests leave this off.
+        /// Enables per-thread caches.
+        ///
+        /// Valid for exactly one pool per process (the global one); local
+        /// pools such as those in tests leave it off. Constructing a second
+        /// pool with caches aborts.
         bool thread_caches = false;
     };
 
-    // Snapshot of the counters. "pooled" blocks came from a size class;
-    // "fallback" blocks came from libc malloc.
+    /// Snapshot of the allocation counters.
+    ///
+    /// Pooled blocks came from a size class; fallback blocks came from libc `malloc`.
+    ///
+    /// Thread-safety: not-thread-safe. A plain value copy; each counter was read atomically but the set is not a consistent cut.
     struct Stats {
+        /// Pooled allocations per size class.
         u64 pooled_allocs[kClassCount] = {};
+        /// Pooled deallocations per size class.
         u64 pooled_frees[kClassCount] = {};
+        /// Allocations served by `malloc`.
         u64 fallback_allocs = 0;
+        /// Deallocations of `malloc` blocks.
         u64 fallback_frees = 0;
 
+        /// Sums pooled allocations over all classes.
+        ///
+        /// Returns: the total pooled allocation count.
         u64 TotalPooledAllocs() const;
+
+        /// Sums pooled deallocations over all classes.
+        ///
+        /// Returns: the total pooled deallocation count.
         u64 TotalPooledFrees() const;
-        // Live = allocated and not yet freed, pooled + fallback.
+
+        /// Counts blocks allocated and not yet freed, pooled and fallback together.
+        ///
+        /// Returns: allocations minus deallocations.
         u64 Live() const;
     };
 
-    // Per-thread free-list heads/counts. Public only so the .cpp's
-    // thread_local can name the type; not part of the API.
+    /// Per-thread free-list heads and counts.
+    ///
+    /// Thread-safety: owner-thread-only. Each instance belongs to one thread.
+    /// Internal: public only so the implementation's `thread_local` can name the type.
     struct ThreadCache {
         FramePool* owner = nullptr;
         void* head[kClassCount] = {};
@@ -77,31 +117,67 @@ public:
         ~ThreadCache();
     };
 
+    /// Creates a pool and reserves one slab of address space per size class.
+    ///
+    /// A class whose reservation fails gets zero slots, and its requests use the fallback.
+    ///
+    /// Param config: slots per class and the thread-cache switch.
+    /// Aborts: `config.thread_caches` is set while another pool already uses thread caches.
     explicit FramePool(const Config& config);
+
+    /// Releases every slab, after flushing the calling thread's cache.
+    ///
+    /// Ownership: frees the reserved slabs; pooled blocks still outstanding become dangling.
     ~FramePool();
 
     FramePool(const FramePool&) = delete;
     FramePool& operator=(const FramePool&) = delete;
 
-    // Never returns nullptr (asserts if even malloc fails). The result is
-    // 16-byte aligned.
+    /// Allocates a block for a coroutine frame.
+    ///
+    /// Param size: requested size in bytes.
+    /// Returns: a 16-byte-aligned block of at least `size` bytes; never null.
+    /// Aborts: even the `malloc` fallback fails.
+    /// Ownership: the caller owns the block and must give it back with [[jobs::FramePool::Deallocate]] on this pool.
+    /// Thread-safety: thread-safe.
     void* Allocate(usize size);
 
-    // `ptr` must come from Allocate() on this pool. Safe from any thread.
+    /// Returns a block to the pool.
+    ///
+    /// The block may be freed on a different thread than the one that
+    /// allocated it.
+    ///
+    /// Param ptr: a pointer obtained from [[jobs::FramePool::Allocate]] on this pool and not freed since.
+    /// Aborts: `ptr` is null, or it does not carry a valid block header (not from a pool, or a double free).
+    /// Ownership: takes back ownership of the block; it must not be used afterwards.
+    /// Thread-safety: thread-safe.
     void Deallocate(void* ptr);
 
+    /// Reads the allocation counters.
+    ///
+    /// Returns: a snapshot of the counters, exact once the pool is quiescent.
+    /// Thread-safety: thread-safe.
     Stats GetStats() const;
 
-    // Blocks the central pool could still hand out for `class_index`
-    // (returned blocks plus never-used slab slots). Testing aid: after all
-    // frames are freed and all caches flushed this equals the class's slot
-    // count, so a shortfall is a leaked block.
+    /// Counts the blocks the central pool could still hand out for a class.
+    ///
+    /// That is returned blocks plus never-used slab slots. Testing aid: after
+    /// all frames are freed and all caches flushed this equals the class's
+    /// slot count, so a shortfall is a leaked block.
+    ///
+    /// Param class_index: size class in `[0, kClassCount)`.
+    /// Returns: the number of available blocks in the central pool.
+    /// Thread-safety: thread-safe.
     usize CentralAvailableForTesting(usize class_index);
 
-    // The process-wide pool used by Job frames: default Config with
-    // thread caches on. Created on first use and intentionally never
-    // destroyed (thread-exit cache flushes and late frees must always
-    // find it alive).
+    /// Gives the process-wide pool used by job frames.
+    ///
+    /// It uses the default [[jobs::FramePool::Config]] with thread caches on.
+    /// Created on first use and intentionally never destroyed, so thread-exit
+    /// cache flushes and late frees always find it alive.
+    ///
+    /// Returns: a reference valid for the rest of the process.
+    /// Thread-safety: thread-safe.
     static FramePool& Global();
 
 private:

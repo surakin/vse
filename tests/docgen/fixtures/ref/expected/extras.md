@@ -42,7 +42,7 @@ Destroys the base.
 Base(const Base&) = delete;
 ```
 
-_Undocumented._
+_Deleted._
 
 ### `operator=(const Base&)` {#base-operator-eq-const-base-amp}
 
@@ -52,7 +52,7 @@ _Undocumented._
 Base& operator=(const Base&) = delete;
 ```
 
-_Undocumented._
+_Deleted._
 
 ### `Hook()` {#base-hook}
 

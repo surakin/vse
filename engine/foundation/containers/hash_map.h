@@ -3,9 +3,8 @@
 #include "containers/array.h"
 #include "types.h"
 
-// Open-addressing hash map (linear probing + tombstones for deletion),
-// backed by Day 6's `Array<T, Allocator>` for slot storage. PLAN.md
-// assumption #2: hand-rolled rather than std::unordered_map.
+//! Open-addressing hash map (linear probing, tombstone deletion) whose slot
+//! storage is an [[Array]], plus the `Hash` function-object templates it uses.
 namespace engine_placeholder {
 
 namespace detail {
@@ -23,56 +22,96 @@ inline usize MixHash64(u64 x) {
 
 } // namespace detail
 
-// Primary template intentionally undefined — specialize for each key
-// type actually used. Integer and pointer keys are covered here;
-// string keys are added once Day 8's string type exists (not needed
-// yet, see this day's plan notes).
+/// Hash function object used by [[HashMap]]: `Hash<K>{}(key)` returns a `usize` hash.
+///
+/// The primary template is intentionally undefined; specialize it for each key
+/// type used. Specializations exist for the fixed-width integer types and for
+/// pointers.
 template <typename K>
 struct Hash;
 
+/// Hash function for `i8` keys.
 template <>
 struct Hash<i8> {
+    /// Returns a well-mixed hash of the integer value.
     usize operator()(i8 k) const { return detail::MixHash64(static_cast<u64>(static_cast<u8>(k))); }
 };
+/// Hash function for `i16` keys.
 template <>
 struct Hash<i16> {
+    /// Returns a well-mixed hash of the integer value.
     usize operator()(i16 k) const { return detail::MixHash64(static_cast<u64>(static_cast<u16>(k))); }
 };
+/// Hash function for `i32` keys.
 template <>
 struct Hash<i32> {
+    /// Returns a well-mixed hash of the integer value.
     usize operator()(i32 k) const { return detail::MixHash64(static_cast<u64>(static_cast<u32>(k))); }
 };
+/// Hash function for `i64` keys.
 template <>
 struct Hash<i64> {
+    /// Returns a well-mixed hash of the integer value.
     usize operator()(i64 k) const { return detail::MixHash64(static_cast<u64>(k)); }
 };
+/// Hash function for `u8` keys.
 template <>
 struct Hash<u8> {
+    /// Returns a well-mixed hash of the integer value.
     usize operator()(u8 k) const { return detail::MixHash64(static_cast<u64>(k)); }
 };
+/// Hash function for `u16` keys.
 template <>
 struct Hash<u16> {
+    /// Returns a well-mixed hash of the integer value.
     usize operator()(u16 k) const { return detail::MixHash64(static_cast<u64>(k)); }
 };
+/// Hash function for `u32` keys.
 template <>
 struct Hash<u32> {
+    /// Returns a well-mixed hash of the integer value.
     usize operator()(u32 k) const { return detail::MixHash64(static_cast<u64>(k)); }
 };
+/// Hash function for `u64` keys.
 template <>
 struct Hash<u64> {
+    /// Returns a well-mixed hash of the integer value.
     usize operator()(u64 k) const { return detail::MixHash64(k); }
 };
 
+/// Hash function for pointer keys; hashes the address, not the pointee.
 template <typename T>
 struct Hash<T*> {
+    /// Returns a well-mixed hash of the pointer's address.
     usize operator()(T* k) const {
         return detail::MixHash64(reinterpret_cast<u64>(k));
     }
 };
 
+/// Hash map from `K` to `V` using open addressing with linear probing.
+///
+/// `K` needs `operator==`, a `Hash<K>` specialization, and a default
+/// constructor; `V` needs a default constructor. Keys and values are copied in
+/// and stored by value. The table starts with at least 8 slots and doubles when
+/// the load factor, counting tombstones, reaches 0.7. Growth rehashes into a new
+/// block and abandons the old one inside the allocator, as with [[Array]].
+/// Growth invalidates pointers returned by `Find`. There is no iteration
+/// support.
+///
+/// Thread-safety: not-thread-safe. Synchronize externally if shared, including
+///   concurrent `Find` calls with a writer.
+/// Ownership: the allocator owns all storage and must outlive the map; the map
+///   never frees memory.
 template <typename K, typename V, typename Allocator>
 class HashMap {
 public:
+    /// Creates an empty map and allocates its initial table.
+    ///
+    /// Param allocator: allocator for table storage; held by pointer and must
+    ///   outlive the map.
+    /// Param initial_capacity: initial slot count; values below 8 are raised
+    ///   to 8.
+    /// Aborts: the allocator is out of memory.
     explicit HashMap(Allocator& allocator, usize initial_capacity = 16)
         : allocator_(&allocator), slots_(allocator) {
         Rehash(initial_capacity < 8 ? 8 : initial_capacity);
@@ -81,6 +120,14 @@ public:
     HashMap(const HashMap&) = delete;
     HashMap& operator=(const HashMap&) = delete;
 
+    /// Inserts `key` mapped to `value`, replacing the value if the key is
+    /// already present.
+    ///
+    /// May rehash, which invalidates pointers returned by `Find`.
+    ///
+    /// Param key: key to copy in.
+    /// Param value: value to copy in.
+    /// Aborts: growth is needed and the allocator is out of memory.
     void Insert(const K& key, const V& value) {
         if (NeedsGrow()) {
             Rehash(slots_.Capacity() * 2);
@@ -88,7 +135,12 @@ public:
         InsertNoRehashCheck(key, value);
     }
 
-    // Returns nullptr if `key` isn't present.
+    /// Looks up the value stored for `key`.
+    ///
+    /// Param key: key to search for.
+    /// Returns: a pointer to the stored value, valid until the next `Insert`,
+    ///   or nullptr if `key` is absent.
+    /// Fails: reports an absent key by returning nullptr.
     V* Find(const K& key) {
         usize index;
         if (!FindSlotForLookup(key, index)) {
@@ -97,6 +149,12 @@ public:
         return &slots_[index].value;
     }
 
+    /// Looks up the value stored for `key` in a const map.
+    ///
+    /// Param key: key to search for.
+    /// Returns: a pointer to the stored value, valid until the next `Insert`,
+    ///   or nullptr if `key` is absent.
+    /// Fails: reports an absent key by returning nullptr.
     const V* Find(const K& key) const {
         usize index;
         if (!FindSlotForLookup(key, index)) {
@@ -105,7 +163,11 @@ public:
         return &slots_[index].value;
     }
 
-    // Returns true if `key` was present and is now removed.
+    /// Removes `key` if present, leaving a tombstone until the next rehash.
+    ///
+    /// Param key: key to remove.
+    /// Returns: true if the key was present and has been removed, false if it
+    ///   was absent.
     bool Remove(const K& key) {
         usize index;
         if (!FindSlotForLookup(key, index)) {
@@ -117,10 +179,12 @@ public:
         return true;
     }
 
+    /// Returns the number of keys currently stored.
     usize Size() const { return count_; }
 
-    // Exposed for tests observing NeedsGrow()/Rehash() behavior, not
-    // needed by any production caller.
+    /// Returns the number of slots in the table (capacity, not element count).
+    ///
+    /// Exposed so tests can observe growth; production code should not need it.
     usize SlotCapacity() const { return slots_.Capacity(); }
 
 private:

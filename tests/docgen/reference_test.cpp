@@ -699,3 +699,15 @@ TEST_CASE("[review] file collection does not follow directory symlinks and repor
     std::remove((dir.path + "/real/a.h").c_str());
     rmdir((dir.path + "/real").c_str());
 }
+
+TEST_CASE("Reference: [review] deleted and defaulted members render as such, not as undocumented", "[docgen][reference]") {
+    Project p({{"h/a.h", "#pragma once\nnamespace engine_placeholder {\n/// A thing.\nstruct T {\n  T() = default;\n  T(const T&) = delete;\n  /// Doc.\n  void F();\n  void G();\n};\n}\n"}},
+              "module m \"M\"\n  header h/*.h\n");
+    std::string map = p.dir.path + "/modules.txt";
+    Built b(p.dir.path, map);
+    REQUIRE(b.ok);
+    std::string page = b.File("m.md");
+    CHECK(page.find("_Defaulted._") != std::string::npos);
+    CHECK(page.find("_Deleted._") != std::string::npos);
+    CHECK(page.find("_Undocumented._") != std::string::npos); // G()
+}

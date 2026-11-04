@@ -5,42 +5,67 @@
 #include "os/linux/wayland/wayland_window.h"
 #include "os/window.h"
 
-// Phase 1 Day 26: the Wayland backend as an os::Window — owns the
-// connection, xdg window and seat input together and moves the event
-// pump that used to live in main.cpp behind PumpEvents(). Not movable
-// (WaylandInput isn't).
+//! Wayland platform window: the Wayland backend packaged as an `os::Window`.
+
 namespace engine_placeholder::os::wayland {
 
+/// Wayland backend as an [[os::Window]]: owns the connection, xdg toplevel window and seat input together.
+///
+/// Not movable or copyable, because the input listeners capture addresses.
+///
+/// Thread-safety: owner-thread-only. Open, pump and close on one thread; listener callbacks run inside `PumpEvents` on that thread.
+/// Ownership: owns the connection, window and input; the `InputState` passed to
+///   `Open` is borrowed and must outlive this object.
 class WaylandPlatformWindow final : public Window {
 public:
+    /// Constructs a closed window; call [[os::wayland::WaylandPlatformWindow::Open]] to connect.
     WaylandPlatformWindow() = default;
 
-    // Connects, maps a window and hooks input into `input`, which must
-    // outlive this object. `width`/`height` are hints the compositor may
-    // override (the window takes its suggested size). False (logged) on
-    // any failure, leaving the object invalid.
+    /// Connects to the compositor, maps a window and hooks input into `input`.
+    /// Param title: window title.
+    /// Param width: requested width in pixels; a hint the compositor may override with its suggested size.
+    /// Param height: requested height in pixels; a hint the compositor may override.
+    /// Param input: receives keyboard and pointer state; must outlive this object.
+    /// Returns: `true` if the window is open.
+    /// Fails: returns `false` (logged) on any failure, leaving the object invalid with nothing open.
     bool Open(StringView title, u32 width, u32 height, InputState* input);
 
-    // Tears everything down in the safe order (input proxies, window,
-    // then the connection). Idempotent; Open() calls it on failure so a
-    // failed open leaves no half-open connection or live listeners
-    // pointing at the caller's InputState. The destructor calls it too.
+    /// Tears everything down in the safe order: input proxies, window, then the connection.
+    ///
+    /// Idempotent. `Open` calls it on failure, so a failed open leaves no half-open
+    /// connection or live listeners pointing at the caller's `InputState`.
     void Close();
 
+    /// Closes the window; see [[os::wayland::WaylandPlatformWindow::Close]].
     ~WaylandPlatformWindow() override { Close(); }
 
+    /// Returns whether the window is open and the compositor connection is still alive.
     bool Valid() const override { return window_.Valid() && !connection_lost_; }
+    /// Reads and dispatches pending compositor events without blocking, then commits any pending resize.
+    ///
+    /// Listener callbacks run inside this call. A failed read, flush or dispatch, or a
+    /// protocol error, marks the connection lost; later calls then do nothing.
     void PumpEvents() override;
-    // Also true once the connection to the compositor has died (it
-    // exited, crashed, or raised a protocol error): there is no window
-    // left to wait on, so the frame loop must be able to exit.
+
+    /// Returns whether the user closed the window or the compositor connection was lost.
+    ///
+    /// Also true once the compositor has exited, crashed or raised a protocol error:
+    /// no window is left to wait on, so the frame loop must be able to exit.
     bool ShouldClose() const override { return window_.ShouldClose() || connection_lost_; }
+    /// Returns whether the compositor connection died (exit, crash or protocol error).
     bool ConnectionLost() const { return connection_lost_; }
+    /// Returns the underlying `wl_display`, or null if not open.
+    ///
+    /// Ownership: borrowed; owned by this window's connection and valid until [[os::wayland::WaylandPlatformWindow::Close]].
     wl_display* NativeDisplay() const { return connection_.Display(); }
+    /// Returns the current window width in pixels.
     u32 Width() const override { return window_.Width(); }
+    /// Returns the current window height in pixels.
     u32 Height() const override { return window_.Height(); }
+    /// Returns the backend id, `"wayland"`.
     const char* BackendName() const override { return "wayland"; }
 
+    /// Returns the seat input handler, for querying keyboard, pointer and keymap availability.
     const WaylandInput& Input() const { return input_; }
 
 private:

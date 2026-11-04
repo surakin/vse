@@ -9,49 +9,53 @@
 #include "log/assert.h"
 #include "types.h"
 
-// Phase 2 Day 32 (design decision D7): the join primitive. A Counter
-// tracks outstanding work; a coroutine `co_await`s it and is resumed once
-// the count reaches zero.
-//
-// USAGE CONTRACT
-//   * All Increment()s for a wait happen BEFORE the co_await (the spawner
-//     increments, then submits work that Decrement()s — Spawn() below).
-//   * At most ONE coroutine awaits a Counter at a time (asserted).
-//   * The Counter must outlive every Decrement() call and the await.
-//     Typical placement: a local in the awaiting coroutine's frame.
-//
-// STATE. One atomic word: bit 0 = "a waiter has parked its handle",
-// bits 1.. = outstanding count. `slot_` holds the waiter's handle and is
-// written BEFORE bit 0 is set (acq_rel RMW), read only by the Decrement
-// that observes (count == 1 && bit 0) — which therefore has exclusive
-// access to the handle.
-//
-// EXACTLY-ONE-RESUMER INVARIANT. Whether the awaiter or a decrementer
-// resumes the coroutine is decided by a SINGLE atomic read-modify-write
-// on `state_`:
-//   * await_suspend does fetch_or(1). If the count it observes is 0 the
-//     work already finished: it returns false and the coroutine continues
-//     inline (no decrementer ever sees the waiter bit set at count 1->0).
-//     Otherwise it returns true and the decrementer that takes the count
-//     to zero (fetch_sub observes count 1 with bit 0) owns the wake-up.
-//   * Decrement does fetch_sub(2); only the one call that observes
-//     (count 1, bit 0) resumes the waiter.
-// Because both sides decide with one RMW on the same word and neither
-// touches the Counter after its RMW unless it owns the wake-up, there is
-// no window in which the awaiter can run to completion and destroy the
-// Counter while a decrementer still reads it.
-//
-// RESUMPTION. The waiter is never resumed inline on the decrementer's
-// stack: Decrement hands it to Scheduler::Schedule, which pushes onto the
-// current participant's deque, or onto the injection queue when called
-// from a non-participant (e.g. the I/O thread). That bounds native stack
-// depth no matter how deep a chain of dependent jobs is.
+//! The join primitive of the job system.
+//!
+//! A [[jobs::Counter]] tracks outstanding work; a coroutine `co_await`s it and
+//! is resumed once the count reaches zero.
+//!
+//! The usage contract is as follows.
+//! - All increments for a wait happen before the `co_await`: the spawner
+//!   increments, then submits work that decrements (see [[jobs::Spawn]]).
+//! - At most one coroutine awaits a counter at a time (asserted).
+//! - The counter must outlive every decrement and the await. A typical
+//!   placement is a local in the awaiting coroutine's frame.
+//!
+//! The waiter is never resumed inline on the decrementer's stack:
+//! [[jobs::Counter::Decrement]] hands it to [[jobs::Scheduler::Schedule]],
+//! which pushes onto the current participant's deque, or onto the injection
+//! queue when called from a non-participant such as the I/O thread. That
+//! bounds native stack depth however deep a chain of dependent jobs is.
+//!
+//! Whether the awaiter or a decrementer resumes the coroutine is decided by a
+//! single atomic read-modify-write on one state word, so exactly one of them
+//! resumes it, and neither touches the counter afterwards unless it owns the
+//! wake-up. The awaiter therefore cannot finish and destroy the counter while
+//! a decrementer still reads it.
 namespace engine_placeholder::jobs {
 
+/// Counts outstanding work and lets one coroutine wait for it to reach zero.
+///
+/// Increment before submitting the work, decrement when it completes, and
+/// `co_await` the counter to resume once the count is zero. After the await
+/// completes the counter may be reused for another round. It cannot be
+/// copied.
+///
+/// Thread-safety: thread-safe. Any thread may call [[jobs::Counter::Increment]],
+///   [[jobs::Counter::Decrement]], [[jobs::Counter::IsZero]] and
+///   [[jobs::Counter::Value]]; at most one coroutine may await it at a time.
+///   Increments for a wait must happen before the await begins.
+/// Ownership: the counter does not own the scheduler it is bound to, which
+///   must outlive it. The counter itself must outlive every decrement and the await.
+/// See: [[jobs::Spawn]], [[jobs::Job::SetCompletion(Counter&)]]
 class Counter {
 public:
+    /// Creates a zeroed counter bound to an explicit scheduler.
+    /// Param scheduler: the scheduler that resumes the waiter; must outlive the counter.
     explicit Counter(Scheduler& scheduler) : scheduler_(&scheduler) {}
-    // Binds to the scheduler of the calling participant thread.
+    /// Creates a zeroed counter bound to the scheduler of the calling participant thread.
+    ///
+    /// Aborts: called on a thread that is not a scheduler participant.
     Counter() : scheduler_(Scheduler::Current()) {
         ENGINE_ASSERT(scheduler_ != nullptr, "Counter() default-constructed on a non-participant thread");
     }
@@ -59,10 +63,26 @@ public:
     Counter(const Counter&) = delete;
     Counter& operator=(const Counter&) = delete;
 
+    /// Gives the scheduler this counter resumes its waiter on.
+    ///
+    /// Returns: the bound scheduler.
     Scheduler& GetScheduler() const { return *scheduler_; }
 
+    /// Adds outstanding units of work.
+    ///
+    /// Do it before submitting the work that will decrement.
+    ///
+    /// Param n: how many units to add.
+    /// Thread-safety: thread-safe.
     void Increment(u64 n = 1) { state_.fetch_add(n << 1, std::memory_order_acq_rel); }
 
+    /// Marks one unit of work done and, if it was the last one and a waiter is parked, schedules the waiter.
+    ///
+    /// The waiter is scheduled, never resumed inline. The counter is not
+    /// touched after the waiter has been handed over.
+    ///
+    /// Aborts: the count is already zero.
+    /// Thread-safety: thread-safe. Callable from any thread, including non-participants such as the I/O thread.
     void Decrement() {
         const u64 old = state_.fetch_sub(2, std::memory_order_acq_rel);
         ENGINE_ASSERT((old >> 1) >= 1, "Counter::Decrement below zero");
@@ -77,28 +97,61 @@ public:
         }
     }
 
+    /// Tells whether no work is outstanding.
+    ///
+    /// Returns: `true` if the count is zero at the moment of the call.
+    /// Thread-safety: thread-safe.
     bool IsZero() const { return (state_.load(std::memory_order_acquire) >> 1) == 0; }
+    /// Reads the number of outstanding units of work.
+    ///
+    /// Returns: the current count; may be stale by the time the caller uses it.
+    /// Thread-safety: thread-safe.
     u64 Value() const { return state_.load(std::memory_order_acquire) >> 1; }
 
-    // Process-wide counts of which await_suspend path was taken, so tests
-    // can prove both halves of the race were exercised.
+    /// Process-wide tallies of which await path was taken, so tests can show both halves of the race ran.
+    ///
+    /// Thread-safety: thread-safe. Relaxed atomic counters.
     struct PathCounters {
-        std::atomic<u64> inline_continues{0}; // finished before suspend; resumed inline
-        std::atomic<u64> parked{0};           // suspended; a decrementer woke it
+        /// Awaits that found the count already zero and continued inline.
+        std::atomic<u64> inline_continues{0};
+        /// Awaits that suspended and were woken by a decrementer.
+        std::atomic<u64> parked{0};
     };
+
+    /// Gives the process-wide await-path tallies.
+    ///
+    /// Returns: a reference to a function-local static that lives for the whole process.
     static PathCounters& PathStats() {
         static PathCounters counters;
         return counters;
     }
 
-    // Hook for Job::SetCompletion(Counter&).
+    /// Completion-hook adapter that decrements the [[jobs::Counter]] passed as `counter`.
+    ///
+    /// This is what [[jobs::Job::SetCompletion(Counter&)]] registers.
+    ///
+    /// Param counter: a `Counter*` that must outlive the call.
+    /// Aborts: the counter's count is already zero.
+    /// Ownership: borrows the counter; ownership is not transferred.
     static void DecrementThunk(void* counter) { static_cast<Counter*>(counter)->Decrement(); }
 
+    /// Awaiter produced by `co_await` on a counter.
+    ///
+    /// Thread-safety: not-thread-safe. It belongs to the one coroutine awaiting the counter.
     struct Awaitable {
+        /// The awaited counter.
         Counter* counter;
 
+        /// Tells the coroutine machinery whether suspension can be skipped.
+        ///
+        /// Returns: `true` if the count is already zero.
         bool await_ready() const noexcept { return counter->IsZero(); }
 
+        /// Parks the awaiting coroutine unless the work finished in the meantime.
+        ///
+        /// Param h: the awaiting coroutine's handle.
+        /// Returns: `false` if the count reached zero first and the coroutine continues inline; `true` if it was parked and the decrementer that reaches zero will schedule it.
+        /// Aborts: another coroutine is already awaiting this counter.
         bool await_suspend(std::coroutine_handle<> h) noexcept {
             // Check BEFORE touching slot_: a second awaiter must not
             // clobber the first one's handle (ENGINE_ASSERT is always on).
@@ -117,6 +170,7 @@ public:
             return true; // the decrementer that reaches zero resumes us
         }
 
+        /// Clears the waiter mark so the counter can be reused for another round.
         void await_resume() noexcept {
             // Single awaiter, count is zero: clear the waiter bit so the
             // Counter can be reused for another round.
@@ -124,20 +178,41 @@ public:
         }
     };
 
+    /// Makes the counter awaitable; the coroutine resumes once the count is zero.
+    ///
+    /// Returns: an awaiter bound to this counter.
     Awaitable operator co_await() { return Awaitable{this}; }
 
 private:
     friend struct Awaitable;
 
     Scheduler* scheduler_;
+    // One atomic word: bit 0 = "a waiter has parked its handle", bits 1.. =
+    // outstanding count. `slot_` holds the waiter's handle; it is written
+    // BEFORE bit 0 is set (acq_rel RMW) and read only by the Decrement that
+    // observes (count == 1 && bit 0), which therefore has exclusive access.
+    //
+    // Whether the awaiter or a decrementer resumes the coroutine is decided by
+    // a SINGLE read-modify-write on `state_`: await_suspend does fetch_or(1)
+    // (a count of 0 means the work already finished: continue inline), and
+    // Decrement does fetch_sub(2); only the call that observes (count 1,
+    // bit 0) resumes the waiter. Neither side touches the Counter after its
+    // RMW unless it owns the wake-up, so the awaiter can never destroy the
+    // Counter while a decrementer still reads it. Any edit to Increment,
+    // Decrement or await_suspend must preserve this.
     std::atomic<u64> state_{0};
     void* slot_ = nullptr;
 };
 
 inline void Job::SetCompletion(Counter& counter) { SetCompletion(&Counter::DecrementThunk, &counter); }
 
-// Counts `job` against `counter` and submits it: the job's completion
-// decrements the counter.
+/// Counts a job against a counter and submits it; the job's completion decrements the counter.
+///
+/// Param counter: the counter to increment now and decrement on completion; must outlive the job.
+/// Param job: the job to submit; its completion hook must not be set yet. It is moved from.
+/// Aborts: `job` is empty or already has a completion hook.
+/// Thread-safety: thread-safe. Callable from any thread; the submit follows the rules of [[jobs::Scheduler::Submit]].
+/// Ownership: the scheduler takes the job's frame via [[jobs::Job::Release]].
 inline void Spawn(Counter& counter, Job&& job) {
     counter.Increment();
     job.SetCompletion(counter);

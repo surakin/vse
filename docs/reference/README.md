@@ -8,10 +8,10 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 |---|---|---|
 | [Foundation: Memory](foundation-memory.md) | 3 | 24 |
 | [Foundation: Containers](foundation-containers.md) | 2 | 45 |
-| [Foundation: Strings](foundation-strings.md) | 5 | 94 |
+| [Foundation: Strings](foundation-strings.md) | 5 | 91 |
 | [Foundation: Math](foundation-math.md) | 5 | 101 |
-| [Foundation: Logging and Assertions](foundation-log.md) | 2 | 25 |
+| [Foundation: Logging and Assertions](foundation-log.md) | 2 | 26 |
 | [Foundation: Fundamental Types](foundation-types.md) | 1 | 11 |
-| [Platform: OS Services](platform-os.md) | 4 | 35 |
+| [Platform: OS Services](platform-os.md) | 4 | 34 |
 | [Platform: Windowing and Input](platform-window-input.md) | 9 | 229 |
-| [The Job System](jobs.md) | 10 | 192 |
+| [The Job System](jobs.md) | 10 | 172 |

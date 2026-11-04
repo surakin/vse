@@ -5,42 +5,59 @@
 #include "os/linux/wayland/generated/xdg-decoration-client-protocol.h"
 #include "os/linux/wayland/generated/xdg-shell-client-protocol.h"
 
-// Phase 1 Day 18: connects to a Wayland compositor and binds the
-// globals this engine needs (wl_compositor, xdg_wm_base, wl_seat,
-// wl_shm) via the registry. Surface/window creation is Day 19; the
-// event loop that dispatches these globals' events is Day 20 — this
-// type only owns the connection and the bound globals themselves.
+//! Wayland connection: the compositor connection and the globals the engine binds.
+
 namespace engine_placeholder::os::wayland {
 
+/// Connection to a Wayland compositor plus the bound `wl_compositor`, `xdg_wm_base`, `wl_seat` and `wl_shm` globals.
+///
+/// Only owns the connection and the globals; surfaces, input and the event
+/// loop live in other types. Movable, not copyable.
+///
+/// Thread-safety: not-thread-safe. libwayland objects here are used from one thread.
+/// Ownership: owns the `wl_display` and every bound global and releases them on
+///   destruction. The accessors return borrowed pointers valid until then.
 class WaylandConnection {
 public:
-    // Connects to the compositor (wl_display_connect(nullptr) — uses
-    // $WAYLAND_DISPLAY, defaulting to "wayland-0") and binds
-    // compositor/xdg_wm_base/seat/shm via a registry roundtrip. Returns
-    // an invalid connection (Valid() == false) on any failure — no
-    // compositor running, or a required global not advertised — logged
-    // via LogPlatform, never crashes.
+    /// Connects to the compositor named by `$WAYLAND_DISPLAY` (default `wayland-0`) and binds the required globals.
+    ///
+    /// Binds `wl_compositor`, `xdg_wm_base`, `wl_seat` and `wl_shm` with a registry
+    /// roundtrip, plus `zxdg_decoration_manager_v1` when offered.
+    /// Returns: the connection; check [[os::wayland::WaylandConnection::Valid]].
+    /// Fails: returns an invalid connection (logged via `LogPlatform`) if no compositor is running or a required global is missing.
     static WaylandConnection Connect();
 
+    /// Constructs an invalid connection that owns nothing.
     WaylandConnection() = default;
+
+    /// Releases the bound globals and disconnects from the compositor.
     ~WaylandConnection();
 
     WaylandConnection(const WaylandConnection&) = delete;
     WaylandConnection& operator=(const WaylandConnection&) = delete;
+    /// Takes over the connection and globals of `other`, leaving it invalid.
     WaylandConnection(WaylandConnection&& other) noexcept;
+
+    /// Releases this connection, then takes over that of `other`, leaving it invalid.
     WaylandConnection& operator=(WaylandConnection&& other) noexcept;
 
+    /// Returns whether the connection to the compositor is open.
     bool Valid() const { return display_ != nullptr; }
 
+    /// Returns the `wl_display`, or null if invalid.
     wl_display* Display() const { return display_; }
+    /// Returns the bound `wl_compositor`, or null if invalid.
     wl_compositor* Compositor() const { return compositor_; }
+    /// Returns the bound `xdg_wm_base`, or null if invalid.
     xdg_wm_base* XdgWmBase() const { return xdg_wm_base_; }
+    /// Returns the bound `wl_seat`, or null if invalid.
     wl_seat* Seat() const { return seat_; }
+    /// Returns the bound `wl_shm`, or null if invalid.
     wl_shm* Shm() const { return shm_; }
-    // Optional: null when the compositor doesn't offer
-    // zxdg_decoration_manager_v1 (e.g. GNOME, which only does client-side
-    // decorations). KWin/wlroots offer it and draw the titlebar only if
-    // the client asks for server-side mode through it.
+    /// Returns the bound `zxdg_decoration_manager_v1`, or null when the compositor does not offer it.
+    ///
+    /// GNOME only does client-side decorations and does not offer it. KWin and
+    /// wlroots offer it and draw the titlebar only if the client asks for server-side mode.
     zxdg_decoration_manager_v1* DecorationManager() const { return decoration_manager_; }
 
 private:

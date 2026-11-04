@@ -5,38 +5,47 @@
 #include "string/string.h"
 #include "types.h"
 
-// Portable command-line wrapper (Phase 1 Day 13 — see
-// docs/superpowers/specs/2026-08-16-command-line-wrapper-design.md).
-// Engine code never touches raw argc/argv directly.
-//
-// Parsing (this file) is identical on every platform and lives entirely
-// in this header since CommandLine is Allocator-templated, like
-// Array<T, Allocator>/String<Allocator>. Sourcing the initial argument
-// list is genuinely platform-specific (GUI-subsystem Windows gets one
-// command string, Android gets launch args from an Intent, not argv at
-// all) — StashNativeCommandLine/Detail_NativeCommandLineArgs are the
-// only pieces implemented per platform (os/linux/command_line.cpp is
-// the only implementation so far, PLAN.md assumption #11), matching
-// os.h's own interface-header/per-platform-impl split. Every other
-// platform's entry point calls StashNativeCommandLine the same way
-// Linux's main.cpp does; it's a no-op wherever FromNative() sources
-// args another way instead.
+//! Portable command-line parsing: positional arguments plus `--name` and `--name=value` flags.
+//! Engine code never touches raw `argc`/`argv` directly.
 namespace engine_placeholder::os {
 
+/// Records the process `argc`/`argv` so [[os::CommandLine::FromNative]] can read them later.
+///
+/// Call once from the program entry point before `FromNative`. On platforms that source arguments another
+/// way this is a no-op.
+/// Param argc: argument count passed to `main`.
+/// Param argv: argument vector passed to `main`; stored by pointer, not copied.
+/// Thread-safety: not-thread-safe. Call before any other thread reads the command line.
+/// Ownership: `argv` stays owned by the caller and must outlive every later `FromNative` call.
 void StashNativeCommandLine(int argc, char** argv);
 
-// Not for direct use — called by CommandLine<Allocator>::FromNative().
-// Declared here (not file-local to a .cpp) because FromNative() is a
-// template and therefore must be defined in this header.
+/// Returns the stashed native `argc`/`argv` for [[os::CommandLine::FromNative]].
+/// Param out_argc: receives the stashed argument count.
+/// Param out_argv: receives the stashed argument vector (borrowed).
+/// Aborts: `StashNativeCommandLine` was never called (Linux backend).
+/// Internal: visible only because `FromNative` is a template defined in this header.
 void Detail_NativeCommandLineArgs(int* out_argc, char*** out_argv);
 
+/// Parsed command line: program name, positional arguments and `--name[=value]` flags.
+///
+/// Tokens starting with `--` and longer than two characters are flags; a flag with `=` carries a value.
+/// All other tokens are positional arguments. Repeating a flag keeps the last occurrence. All strings are
+/// copied, so the original `argv` need not outlive the object.
+///
+/// Thread-safety: thread-compatible. Concurrent const access is safe; construction is not synchronized.
+/// Ownership: owns copies of all strings, allocated from the allocator passed at construction, which must
+///   outlive this object.
 template <typename Allocator>
 class CommandLine {
 public:
-    // Portable parser: any platform whose entry point already has an
-    // argc/argv-shaped list can call this directly. Also usable by
-    // tests to construct a CommandLine from synthetic argv with no
-    // real process launch involved.
+    /// Parses an `argc`/`argv` pair into a command line.
+    ///
+    /// Usable on any platform whose entry point already has an `argv`-shaped list, and in tests with
+    /// synthetic arguments.
+    /// Param allocator: allocator for the stored strings; must outlive the object.
+    /// Param argc: argument count, including the program name.
+    /// Param argv: argument vector; `argv[0]` is the program name. Borrowed for the call.
+    /// Aborts: `argc` is less than 1.
     CommandLine(Allocator& allocator, int argc, char** argv)
         : allocator_(&allocator), program_name_(allocator), args_(allocator), flags_(allocator) {
         ENGINE_ASSERT(argc >= 1, "CommandLine: argc must include argv[0]");
@@ -57,8 +66,11 @@ public:
         }
     }
 
-    // Per-platform sourcing (implemented once per platform — see file
-    // comment above).
+    /// Builds a command line from the platform's native argument source.
+    ///
+    /// On Linux this is the `argc`/`argv` recorded by [[os::StashNativeCommandLine]].
+    /// Param allocator: allocator for the stored strings; must outlive the object.
+    /// Aborts: no native command line was stashed (Linux backend).
     static CommandLine FromNative(Allocator& allocator) {
         int argc;
         char** argv;
@@ -71,21 +83,32 @@ public:
     CommandLine(CommandLine&&) noexcept = default;
     CommandLine& operator=(CommandLine&&) noexcept = default;
 
+    /// Returns `argv[0]`.
+    /// Ownership: the view is borrowed from this object and valid for its lifetime.
     StringView ProgramName() const { return program_name_.View(); }
 
+    /// Returns the number of positional arguments, excluding the program name and flags.
     usize ArgCount() const { return args_.Size(); }
 
+    /// Returns the positional argument at `index`, in command-line order.
+    /// Param index: zero-based index below `ArgCount()`.
+    /// Aborts: `index` is out of range.
+    /// Ownership: the view is borrowed from this object and valid for its lifetime.
     StringView Arg(usize index) const {
         ENGINE_ASSERT(index < args_.Size(), "CommandLine::Arg: index out of range");
         return args_[index].View();
     }
 
-    // True if `--name` (with or without a `=value`) was present.
+    /// Returns true if `--name` was present, with or without a `=value`.
+    /// Param name: flag name without the leading `--`.
     bool HasFlag(StringView name) const { return FindFlag(name) != nullptr; }
 
-    // True and sets out_value if `--name=value` was present. False (and
-    // out_value untouched) if `name` is absent or was a bare boolean
-    // flag with no `=`.
+    /// Looks up the value of `--name=value`.
+    /// Param name: flag name without the leading `--`.
+    /// Param out_value: set to the value on success; untouched on failure.
+    /// Returns: true if the flag was present with a value.
+    /// Fails: returns false if `name` is absent or was a bare flag without `=`.
+    /// Ownership: the value view is borrowed from this object and valid for its lifetime.
     bool TryGetOption(StringView name, StringView& out_value) const {
         const FlagEntry* entry = FindFlag(name);
         if (entry == nullptr || !entry->has_value) {
@@ -95,21 +118,30 @@ public:
         return true;
     }
 
-    // Enumeration by index, for callers that need to walk every
-    // flag/option passed without knowing names ahead of time (e.g.
-    // Day 13's startup log).
+    /// Returns the number of distinct flags, for callers that walk every flag without knowing names.
     usize FlagCount() const { return flags_.Size(); }
 
+    /// Returns the name of the flag at `index`, without the leading `--`.
+    /// Param index: zero-based index below `FlagCount()`.
+    /// Aborts: `index` is out of range.
+    /// Ownership: the view is borrowed from this object and valid for its lifetime.
     StringView FlagName(usize index) const {
         ENGINE_ASSERT(index < flags_.Size(), "CommandLine::FlagName: index out of range");
         return flags_[index].name.View();
     }
 
+    /// Returns whether the flag at `index` was given as `--name=value`.
+    /// Param index: zero-based index below `FlagCount()`.
+    /// Aborts: `index` is out of range.
     bool FlagHasValue(usize index) const {
         ENGINE_ASSERT(index < flags_.Size(), "CommandLine::FlagHasValue: index out of range");
         return flags_[index].has_value;
     }
 
+    /// Returns the value of the flag at `index`.
+    /// Param index: zero-based index below `FlagCount()`.
+    /// Aborts: `index` is out of range, or the flag has no value.
+    /// Ownership: the view is borrowed from this object and valid for its lifetime.
     StringView FlagValue(usize index) const {
         ENGINE_ASSERT(index < flags_.Size(), "CommandLine::FlagValue: index out of range");
         ENGINE_ASSERT(flags_[index].has_value, "CommandLine::FlagValue: flag has no value");

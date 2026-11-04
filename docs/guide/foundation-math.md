@@ -12,6 +12,18 @@
 - `transform.h`
 - `math_util.h`
 
+## API reference
+
+Full reference: [Foundation: Math](../reference/foundation-math.md).
+
+- [[Vec2]] — 2-component vector
+- [[Vec3]] — 3-component vector
+- [[Vec4]] — 4-component vector
+- [[Mat3]] — 3x3 column-major matrix
+- [[Mat4]] — 4x4 column-major matrix
+- [[Quaternion]] — rotation quaternion
+- [[Transform]] — position, rotation, scale
+
 ## Already known — seed material (verify against the code when writing)
 
 - Vector/matrix/quaternion types are hand-rolled; scalar functions (sqrt/sin/cos/...) come from `<cmath>`

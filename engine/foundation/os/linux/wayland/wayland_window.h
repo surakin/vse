@@ -7,70 +7,89 @@
 #include "string/string.h"
 #include "types.h"
 
-// Phase 1 Day 19: wraps a wl_surface as an xdg_shell toplevel window and
-// gets it actually mapped/visible. Per the xdg-shell spec, a surface
-// isn't mapped until a buffer is attached and committed *after* the
-// first configure/ack_configure round-trip — so this also creates a
-// minimal solid-fill wl_shm buffer to complete that sequence. Real pixel
-// content comes from Vulkan's swapchain once Phase 3 exists; this fill
-// exists only to satisfy "a window appears on screen" for this day's
-// milestone. Input (Days 21-22) and the event loop (Day 20) are separate
-// — this type only owns the surface/xdg_surface/xdg_toplevel/buffer.
+//! Wayland window: a `wl_surface` wrapped as a mapped xdg-shell toplevel.
+
 namespace engine_placeholder::os::wayland {
 
+/// A `wl_surface` wrapped as an xdg-shell toplevel window with a solid-fill `wl_shm` buffer so it maps.
+///
+/// Per xdg-shell a surface is not mapped until a buffer is committed after the first
+/// configure and ack, so the window creates a minimal solid-fill buffer to complete that
+/// sequence; real pixel content is expected to come from a swapchain. It owns the
+/// surface, xdg surface, toplevel, optional decoration object and buffer, but not the event loop.
+/// Movable, not copyable.
+///
+/// Thread-safety: owner-thread-only. Listener callbacks run on the thread that dispatches the connection's events, which must also call its methods.
+/// Ownership: owns the surface, xdg objects and buffer; the connection is borrowed and must outlive the window.
 class WaylandWindow {
 public:
-    // Creates a surface on `connection`, wraps it via xdg_wm_base into
-    // an xdg_toplevel, sets `title`/`app_id`, blocks (via
-    // wl_display_roundtrip) until the compositor's initial configure is
-    // received and acknowledged, then attaches a solid-fill buffer sized
-    // to the compositor's suggested size (or a default if none was
-    // suggested) and commits to map the window. Returns an invalid
-    // window (Valid() == false) on any failure — logged via
-    // LogPlatform, never crashes. `connection` must outlive the
-    // returned window.
-    //
-    // `width_hint`/`height_hint` (0 = use the built-in 1280x720 default)
-    // are the size the window takes when the compositor doesn't suggest
-    // one (the usual case for a new window), and the size a window
-    // returns to when the compositor sends a 0x0 configure ("pick your
-    // own size", e.g. leaving maximized) and nothing better is known.
+    /// Creates a toplevel on `connection`, blocks until the compositor's initial configure is acknowledged, then maps it.
+    ///
+    /// Sets `title` and `app_id`, waits with `wl_display_roundtrip`, then attaches a solid-fill
+    /// buffer sized to the compositor's suggested size (or the hint, or a default) and commits.
+    /// `width_hint` and `height_hint` give the size used when the compositor suggests none,
+    /// and the size restored when it sends a 0x0 configure (for example on leaving maximized)
+    /// with nothing better known.
+    /// Param connection: valid connection; must outlive the returned window.
+    /// Param title: window title.
+    /// Param app_id: application id the compositor uses to group and identify the window.
+    /// Param width_hint: fallback width in pixels; 0 means the built-in 1280x720 default.
+    /// Param height_hint: fallback height in pixels; 0 means the built-in 1280x720 default.
+    /// Returns: the window; check [[os::wayland::WaylandWindow::Valid]].
+    /// Fails: returns an invalid window (logged via `LogPlatform`) on any failure.
     static WaylandWindow Create(WaylandConnection& connection, StringView title, StringView app_id,
                                 u32 width_hint = 0, u32 height_hint = 0);
 
+    /// Constructs an invalid window that owns nothing.
     WaylandWindow() = default;
+
+    /// Destroys the buffer and the xdg and surface objects.
     ~WaylandWindow();
 
     WaylandWindow(const WaylandWindow&) = delete;
     WaylandWindow& operator=(const WaylandWindow&) = delete;
+    /// Takes over the objects of `other`, re-pointing the listeners at this object and leaving `other` invalid.
     WaylandWindow(WaylandWindow&& other) noexcept;
+
+    /// Releases this window, then takes over the objects of `other`, leaving it invalid.
     WaylandWindow& operator=(WaylandWindow&& other) noexcept;
 
+    /// Returns whether the window has a surface.
     bool Valid() const { return surface_ != nullptr; }
 
-    // True once the compositor has sent this window's xdg_toplevel a
-    // `close` event (e.g. the user hit the titlebar's close button) —
-    // the engine's main loop checks this each iteration and exits when
-    // it flips, rather than reacting inside the listener callback
-    // itself. Requires the connection's event loop (wl_display_dispatch
-    // et al) to actually run for the underlying event to be observed.
+    /// Returns whether the compositor has sent a `close` event to the toplevel, such as from the titlebar close button.
+    ///
+    /// The main loop polls this instead of reacting inside the listener callback. The
+    /// connection's event loop (`wl_display_dispatch` or similar) must run for the event to be seen.
     bool ShouldClose() const { return should_close_; }
 
-    // If a configure changed the size since the last call, allocates and
-    // commits a buffer of the new size (the window doesn't actually resize
-    // until this happens). Coalesces a burst of configures — e.g. an
-    // interactive drag — into one buffer. Returns true if it committed.
-    // The event pump calls this after dispatching.
+    /// Allocates and commits a buffer of the new size if a configure changed it since the last call.
+    ///
+    /// The window does not actually resize until this happens. A burst of configures,
+    /// such as an interactive drag, is coalesced into one buffer. The event pump calls
+    /// this after dispatching.
+    /// Returns: `true` if a new buffer was committed.
     bool CommitPendingResize();
 
+    /// Returns the `wl_surface`, or null if invalid.
+    ///
+    /// Ownership: borrowed; owned by this window.
     wl_surface* Surface() const { return surface_; }
+    /// Returns the `xdg_surface`, or null if invalid.
+    ///
+    /// Ownership: borrowed; owned by this window.
     xdg_surface* XdgSurface() const { return xdg_surface_; }
+    /// Returns the `xdg_toplevel`, or null if invalid.
+    ///
+    /// Ownership: borrowed; owned by this window.
     xdg_toplevel* XdgToplevel() const { return xdg_toplevel_; }
-    // True if the compositor agreed to draw the window's decorations
-    // (titlebar, close button, resize edges). False means undecorated
-    // (compositor lacks xdg-decoration, or chose client-side).
+    /// Returns whether the compositor agreed to draw the window decorations (titlebar, close button, resize edges).
+    ///
+    /// False means undecorated: the compositor lacks xdg-decoration or chose client-side mode.
     bool ServerSideDecorated() const { return server_side_decorated_; }
+    /// Returns the current window width in pixels.
     u32 Width() const { return width_; }
+    /// Returns the current window height in pixels.
     u32 Height() const { return height_; }
 
 private:

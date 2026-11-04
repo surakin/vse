@@ -7,19 +7,25 @@
 #include "os/linux/xkb_keyboard.h"
 #include "types.h"
 
-// Phase 1 Days 21-22: wl_seat keyboard and pointer input. Listens for the seat's
-// capabilities, gets a wl_keyboard when one is present, interprets the
-// compositor-provided keymap through libxkbcommon (XkbKeyboard), and
-// maintains the keyboard half of an InputState; Day 22 adds the
-// wl_pointer half (position, button mask, scroll).
-//
-// Not movable/copyable: the wl_seat/wl_keyboard listeners capture `this`
-// at registration time. Use Init() on an in-place object.
+//! Wayland seat input: keyboard and pointer events from a `wl_seat` into an `InputState`.
+
 namespace engine_placeholder::os::wayland {
 
+/// Listens to a `wl_seat` and maintains the keyboard and pointer state of an `InputState`.
+///
+/// Gets a `wl_keyboard` and `wl_pointer` when the seat has them, interprets the compositor
+/// keymap through [[os::XkbKeyboard]], and tracks pointer position, button mask and scroll.
+/// Not movable or copyable, because the listeners capture `this`; call `Init` on an in-place object.
+///
+/// Thread-safety: owner-thread-only. Listener callbacks run on the thread that dispatches the connection's events, which must be the one that calls `Init` and `Shutdown`.
+/// Ownership: owns the keyboard and pointer proxies; the seat belongs to the connection and
+///   the `InputState` is borrowed from the caller.
 class WaylandInput {
 public:
+    /// Constructs an uninitialized input handler.
     WaylandInput() = default;
+
+    /// Calls [[os::wayland::WaylandInput::Shutdown]].
     ~WaylandInput();
 
     WaylandInput(const WaylandInput&) = delete;
@@ -27,24 +33,29 @@ public:
     WaylandInput(WaylandInput&&) = delete;
     WaylandInput& operator=(WaylandInput&&) = delete;
 
-    // Hooks `connection`'s seat and blocks (two roundtrips) until the
-    // capabilities and keymap have arrived. `input_state` must outlive
-    // this object. Returns false (logged) if the connection is invalid;
-    // a seat lacking a keyboard or pointer is not a failure
-    // (HasKeyboard()/HasPointer() == false).
+    /// Hooks the connection's seat and blocks, with two roundtrips, until the capabilities and keymap have arrived.
+    ///
+    /// A seat lacking a keyboard or pointer is not a failure; check
+    /// [[os::wayland::WaylandInput::HasKeyboard]] and [[os::wayland::WaylandInput::HasPointer]].
+    /// Param connection: connection whose seat to listen to; must stay valid until `Shutdown`.
+    /// Param input_state: state to fill; must outlive this object.
+    /// Returns: `true` if the seat was hooked.
+    /// Fails: returns `false` (logged) if the connection is invalid.
     bool Init(WaylandConnection& connection, InputState* input_state);
 
-    // Destroys the keyboard/pointer proxies and detaches from the seat
-    // (the seat itself belongs to the connection). Must run while the
-    // display is still connected. Idempotent. The destructor calls it.
-    // (A wl_seat accepts only one listener, so re-Init() on the same
-    // seat isn't possible; reconnect for a fresh seat.)
+    /// Destroys the keyboard and pointer proxies and detaches from the seat.
+    ///
+    /// Must run while the display is still connected. Idempotent. A `wl_seat` accepts
+    /// only one listener, so `Init` cannot be repeated on the same seat; reconnect for a fresh one.
     void Shutdown();
 
+    /// Returns whether the handler is attached to a seat.
     bool Valid() const { return seat_ != nullptr; }
+    /// Returns whether the seat offered a keyboard.
     bool HasKeyboard() const { return keyboard_ != nullptr; }
+    /// Returns whether the seat offered a pointer.
     bool HasPointer() const { return pointer_ != nullptr; }
-    // True once a keymap has been received and compiled.
+    /// Returns whether a keymap has been received and compiled.
     bool HasKeymap() const { return xkb_.Valid(); }
 
 private:
