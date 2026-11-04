@@ -176,7 +176,8 @@ int main() {
 draws: ok, errors: 0
 ```
 
-`rhi_demo` does this in its window; `rhi_demo --screenshot out.ppm [--frames N]` renders the triangle offscreen at
+`rhi_demo` started with this triangle and now draws a spinning, depth-tested cube the same way (see
+[The RHI guide](../guide/rhi.md#depth-indexed-draws-and-the-3d-conventions)); `rhi_demo --screenshot out.ppm [--frames N]` renders its scene offscreen at
 256x256 without a window and writes a PPM, which is how the golden-image test in
 [Building and Testing](../guide/building-and-testing.md#golden-image-rendering-tests) is exercised by hand.
 

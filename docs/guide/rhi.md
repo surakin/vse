@@ -466,6 +466,33 @@ A bind group entry with `size` 0 binds the buffer from `offset` to its end, and 
 uniform (or storage) buffer range limit, 64 KiB on many GPUs: bind each allocation with its own `offset` and `size`
 rather than the whole ring buffer.
 
+### Depth, indexed draws and the 3D conventions
+
+**Depth.** Create a texture with `TextureUsage::DepthAttachment` in `DeviceCaps::depth_format` (the best supported
+depth format on this device), move it to `ResourceState::DepthAttachment`, and put it in the pass:
+`RenderingDesc::depth.texture` with a load op and `clear_depth` (1.0 clears to the far plane). A pipeline that tests
+depth sets `depth_format` to the same format, `depth_test`, `depth_write` and a `depth_compare` (`Less` by default).
+`SetPipeline` checks that the pipeline's color and depth formats match the pass. A depth texture is as large as the
+color target it goes with: when a swapchain is resized, create a new depth texture of the new size (the device destroys
+the old one once the GPU is done with it); `rhi_demo` does this every frame it notices a different size.
+
+**Indexed draws.** Put 16- or 32-bit indices in a buffer with `BufferUsage::Index`, bind it with
+`SetIndexBuffer(buffer, offset, IndexType)` and call `DrawIndexed(index_count, instance_count, first_index,
+vertex_offset, first_instance)`. An indexed and a non-indexed draw of the same triangles render identical pixels.
+
+**Conventions.** The RHI follows Vulkan: framebuffer and clip-space Y point down and depth runs 0 (near) to 1
+(far). The RHI does not hide this; the *renderer side* builds matrices for it. The helpers in `game/common/cube_scene.h`
+(used by `rhi_demo` and the tests; not part of the RHI) do that:
+
+- World and view space are right-handed, Y up; the camera looks down -Z. `Mat4` is column-major, which is also
+  std140's layout for a `mat4`, so it can be copied into a uniform buffer unchanged.
+- `PerspectiveVulkan(fov_y, aspect, near, far)` flips Y and maps depth to 0..1; `SetViewport` always takes a positive
+  height.
+- Meshes are authored counter-clockwise when seen from outside; with that projection they are front faces under
+  `FrontFace::CounterClockwise`, and `CullMode::Back` removes the faces that point away.
+
+See also the [math conventions](foundation-math.md#conventions-handedness-rowcolumn-units-angle-units).
+
 ### Compute
 
 A compute pipeline is a compute shader plus the layouts of its bind groups and a push-constant size; its push

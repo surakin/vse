@@ -10,6 +10,8 @@ set(ENGINE_SHADERS
   fill.comp
   saxpy.comp
   gradient.comp
+  cube.vert
+  cube.frag
 )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/names.cmake)

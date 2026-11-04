@@ -33,7 +33,9 @@ Full reference: [Foundation: Math](../reference/foundation-math.md).
 
 ### Conventions (handedness, row/column, units, angle units)
 
-_TODO_
+_TODO_ (the full text). The 3D rendering conventions the engine uses with these types - right-handed Y-up, column-major
+`Mat4`, the Vulkan clip-space projection and triangle winding - are written down in
+[Depth, indexed draws and the 3D conventions](rhi.md#depth-indexed-draws-and-the-3d-conventions).
 
 ### Vectors
 

@@ -1,4 +1,4 @@
-// rhi_demo: opens a window, creates a Vulkan device and swapchain, and draws a red-green-blue triangle over a
+// rhi_demo: opens a window, creates a Vulkan device and swapchain, and draws a spinning, depth-tested cube over a
 // background color that animates with time. Closes when the window does; logs the average frame time once a second.
 //
 // Options: --frames N stops after N frames (RHI_DEMO_FRAMES=N does the same); --screenshot out.ppm renders offscreen
@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <memory>
 #include <vector>
 
 #include "os/input.h"
@@ -18,8 +19,8 @@
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vulkan_device.h"
-#include "triangle.frag.spv.inc"
-#include "triangle.vert.spv.inc"
+#include "cube_scene.h"
+#include "rhi/uniform_ring.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -40,93 +41,65 @@ void ColorAt(double t, f32 out[4]) {
     out[3] = 1.0f;
 }
 
-// The triangle: shaders, pipeline and a device-local vertex buffer filled through the staging path.
-class Triangle {
+// A depth texture that follows the size of what it is used with.
+class DepthBuffer {
 public:
-    bool Create(Device* device, Format target_format) {
-        device_ = device;
-        ShaderDesc sd;
-        sd.stage = ShaderStage::Vertex;
-        sd.words = shaders::kTriangleVertSpv;
-        sd.word_count = shaders::kTriangleVertSpvWordCount;
-        vs_ = device->CreateShader(sd);
-        sd.stage = ShaderStage::Fragment;
-        sd.words = shaders::kTriangleFragSpv;
-        sd.word_count = shaders::kTriangleFragSpvWordCount;
-        fs_ = device->CreateShader(sd);
-
-        VertexBindingDesc binding = {20, false}; // 2 floats of position, 3 of color
-        VertexAttributeDesc attributes[2] = {{0, 0, VertexFormat::Float2, 0}, {1, 0, VertexFormat::Float3, 8}};
-        GraphicsPipelineDesc gp;
-        gp.vertex_shader = vs_;
-        gp.fragment_shader = fs_;
-        gp.vertex_bindings = Span<VertexBindingDesc>(&binding, 1);
-        gp.vertex_attributes = Span<VertexAttributeDesc>(attributes, 2);
-        gp.cull_mode = CullMode::None;
-        gp.color_targets[0].format = target_format;
-        gp.color_target_count = 1;
-        gp.debug_name = "triangle";
-        pipeline_ = device->CreateGraphicsPipeline(gp);
-
-        const f32 vertices[3 * 5] = {
-            0.0f,  -0.8f, 1.0f, 0.0f, 0.0f, // top, red
-            0.8f,  0.8f,  0.0f, 1.0f, 0.0f, // bottom right, green
-            -0.8f, 0.8f,  0.0f, 0.0f, 1.0f, // bottom left, blue
-        };
-        BufferDesc bd;
-        bd.size = sizeof(vertices);
-        bd.usage = BufferUsage::Vertex | BufferUsage::CopyDst;
-        bd.location = MemoryLocation::GpuOnly;
-        bd.debug_name = "triangle vertices";
-        vb_ = device->CreateBuffer(bd);
-        if (vs_.IsValid() && fs_.IsValid() && pipeline_.IsValid() && vb_.IsValid() && device->UploadBuffer(vb_, 0, vertices, sizeof(vertices)).ok) {
+    // Makes sure a depth texture of `width` x `height` exists, replacing a differently sized one (the old one is
+    // destroyed by the device once the GPU has finished with it). Returns false if it could not be created.
+    bool Ensure(Device* device, u32 width, u32 height) {
+        if (texture_.IsValid() && width == width_ && height == height_) {
             return true;
         }
-        Destroy(); // a partial setup cleans up after itself
-        return false;
+        Destroy(device);
+        TextureDesc td;
+        td.width = width;
+        td.height = height;
+        td.format = device->Caps().depth_format;
+        td.usage = TextureUsage::DepthAttachment;
+        td.debug_name = "depth";
+        texture_ = device->CreateTexture(td);
+        width_ = width;
+        height_ = height;
+        return texture_.IsValid();
     }
-
-    // Destroys whatever exists; safe on a triangle that was never created or only half created. Idle the GPU first.
-    void Destroy() {
-        if (device_ == nullptr) {
-            return;
-        }
-        if (vb_.IsValid()) device_->DestroyBuffer(vb_);
-        if (pipeline_.IsValid()) device_->DestroyPipeline(pipeline_);
-        if (vs_.IsValid()) device_->DestroyShader(vs_);
-        if (fs_.IsValid()) device_->DestroyShader(fs_);
-        vb_ = {};
-        pipeline_ = {};
-        vs_ = {};
-        fs_ = {};
-        device_ = nullptr;
-    }
-
-    // Until a frame carrying it has been submitted, the vertex buffer is still in the upload's `CopyDst` state: record
-    // the move to `VertexBuffer` in every frame's list before `BeginRendering`, and call `Submitted` once a list that
-    // holds it was handed to the device.
-    void PrepareFrame(CommandList* list) {
-        if (!vertex_ready_) {
-            list->Barrier(vb_, ResourceState::CopyDst, ResourceState::VertexBuffer);
+    void Destroy(Device* device) {
+        if (texture_.IsValid()) {
+            device->DestroyTexture(texture_);
+            texture_ = {};
         }
     }
-    void Submitted() { vertex_ready_ = true; }
-    void Draw(CommandList* list, u32 width, u32 height) {
-        list->SetPipeline(pipeline_);
-        list->SetViewport(Viewport{0, 0, static_cast<f32>(width), static_cast<f32>(height), 0.0f, 1.0f});
-        list->SetScissor(ScissorRect{0, 0, width, height});
-        list->SetVertexBuffer(0, vb_, 0);
-        list->Draw(3, 1, 0, 0);
-    }
+    TextureHandle Texture() const { return texture_; }
 
 private:
-    Device* device_ = nullptr;
-    ShaderHandle vs_;
-    ShaderHandle fs_;
-    PipelineHandle pipeline_;
-    BufferHandle vb_;
-    bool vertex_ready_ = false;
+    TextureHandle texture_;
+    u32 width_ = 0;
+    u32 height_ = 0;
 };
+
+// Records the whole frame into `color`: clear, one cube, and `final_state` for the color image. `yaw` spins the cube.
+bool RecordFrame(CommandList* list, demo::CubeRenderer* cube, UniformRing* ring, TextureHandle color, TextureHandle depth, u32 width,
+                 u32 height, const f32 background[4], f32 yaw, ResourceState final_state) {
+    cube->Prepare(list);
+    list->Barrier(color, ResourceState::Undefined, ResourceState::ColorAttachment);
+    list->Barrier(depth, ResourceState::Undefined, ResourceState::DepthAttachment);
+    RenderingDesc pass;
+    pass.color_count = 1;
+    pass.color[0].texture = color;
+    for (int i = 0; i < 4; ++i) {
+        pass.color[0].clear_color[i] = background[i];
+    }
+    pass.depth.texture = depth;
+    pass.depth.store = StoreOp::DontCare; // read by nothing after the pass
+    list->BeginRendering(pass);
+    const Mat4 projection = demo::PerspectiveVulkan(0.7853982f, static_cast<f32>(width) / static_cast<f32>(height), 0.1f, 10.0f);
+    const Mat4 view = demo::LookAt(Vec3(0.0f, 1.2f, 3.0f), Vec3(0, 0, 0), Vec3(0, 1, 0));
+    const bool drawn = cube->Draw(list, ring, projection * view * demo::ModelMatrix(Vec3(0, 0, 0), 1.0f, yaw), width, height);
+    list->EndRendering();
+    if (final_state != ResourceState::ColorAttachment) {
+        list->Barrier(color, ResourceState::ColorAttachment, final_state);
+    }
+    return drawn;
+}
 
 bool WritePpm(const char* path, u32 width, u32 height, const std::vector<unsigned char>& rgba) {
     std::FILE* f = std::fopen(path, "wb");
@@ -156,26 +129,29 @@ int RunScreenshot(const char* path, long frames) {
     td.format = Format::RGBA8_UNorm;
     td.usage = TextureUsage::ColorAttachment | TextureUsage::CopySrc;
     const TextureHandle target = device->CreateTexture(td);
-    Triangle triangle;
+    DepthBuffer depth;
+    demo::CubeRenderer cube;
+    std::unique_ptr<UniformRing> ring = std::make_unique<UniformRing>(device, 4096);
     int exit_code = 1;
-    if (target.IsValid() && triangle.Create(device, td.format)) {
+    demo::CubeOptions options;
+    options.color_format = td.format;
+    options.depth_format = device->Caps().depth_format;
+    if (target.IsValid() && depth.Ensure(device, kSize, kSize) && ring->Valid() && cube.Create(device, options)) {
+        const f32 background[4] = {0.2f, 0.2f, 0.2f, 1.0f};
         for (long i = 0; i < (frames > 0 ? frames : 1); ++i) {
             device->BeginFrame();
+            ring->BeginFrame();
             CommandList* list = device->CreateCommandList();
             list->Begin();
-            triangle.PrepareFrame(list);
-            list->Barrier(target, ResourceState::Undefined, ResourceState::ColorAttachment);
-            RenderingDesc pass;
-            pass.color_count = 1;
-            pass.color[0].texture = target;
-            pass.color[0].clear_color[0] = pass.color[0].clear_color[1] = pass.color[0].clear_color[2] = 0.2f;
-            list->BeginRendering(pass);
-            triangle.Draw(list, kSize, kSize);
-            list->EndRendering();
+            if (!RecordFrame(list, &cube, ring.get(), target, depth.Texture(), kSize, kSize, background, 0.6f, ResourceState::ColorAttachment)) {
+                RhiLogV(LogVerbosity::Error, "rhi_demo: the cube could not be drawn");
+                exit_code = 1;
+            }
             list->End();
+            ring->Flush();
             CommandList* lists[] = {list};
             if (device->Submit(lists, 1) != 0) {
-                triangle.Submitted();
+                cube.Submitted();
             }
             device->EndFrame();
         }
@@ -189,13 +165,15 @@ int RunScreenshot(const char* path, long frames) {
             exit_code = 0;
         }
     } else {
-        RhiLogV(LogVerbosity::Error, "rhi_demo: could not create the target or the triangle");
+        RhiLogV(LogVerbosity::Error, "rhi_demo: could not create the target or the cube");
     }
     device->WaitIdle();
-    triangle.Destroy(); // does nothing if Create failed
+    cube.Destroy(); // does nothing if Create failed
+    depth.Destroy(device);
     if (target.IsValid()) {
         device->DestroyTexture(target);
     }
+    ring.reset(); // the ring owns a buffer: it goes before the device
     DestroyDevice(device);
     return exit_code;
 }
@@ -242,10 +220,16 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    Triangle triangle;
-    if (!triangle.Create(device, swapchain->ImageFormat())) {
-        RhiLogV(LogVerbosity::Error, "rhi_demo: could not create the triangle");
+    demo::CubeRenderer cube;
+    demo::CubeOptions options;
+    options.color_format = swapchain->ImageFormat();
+    options.depth_format = device->Caps().depth_format;
+    std::unique_ptr<UniformRing> ring = std::make_unique<UniformRing>(device, 4096);
+    DepthBuffer depth;
+    if (!ring->Valid() || !cube.Create(device, options)) {
+        RhiLogV(LogVerbosity::Error, "rhi_demo: could not create the cube");
         device->WaitIdle();
+        ring.reset();
         device->DestroySwapchain(swapchain);
         DestroyDevice(device);
         return 1;
@@ -280,23 +264,31 @@ int main(int argc, char** argv) {
             continue;
         }
         const TextureHandle image = swapchain->CurrentTexture();
+        if (!depth.Ensure(device, swapchain->Width(), swapchain->Height())) { // follows a resize
+            RhiLogV(LogVerbosity::Error, "rhi_demo: could not create the depth buffer");
+            device->EndFrame();
+            exit_code = 1;
+            break;
+        }
+        ring->BeginFrame();
         CommandList* list = device->CreateCommandList();
         list->Begin();
-        triangle.PrepareFrame(list);
-        list->Barrier(image, ResourceState::Undefined, ResourceState::ColorAttachment);
-        RenderingDesc pass;
-        pass.color_count = 1;
-        pass.color[0].texture = image;
-        pass.color[0].load = LoadOp::Clear;
-        ColorAt(NowSeconds() - start, pass.color[0].clear_color);
-        list->BeginRendering(pass);
-        triangle.Draw(list, swapchain->Width(), swapchain->Height());
-        list->EndRendering();
-        list->Barrier(image, ResourceState::ColorAttachment, ResourceState::Present);
+        f32 background[4];
+        ColorAt(NowSeconds() - start, background);
+        for (f32& c : background) {
+            c *= 0.4f; // darker, so the cube stands out
+        }
+        background[3] = 1.0f;
+        if (!RecordFrame(list, &cube, ring.get(), image, depth.Texture(), swapchain->Width(), swapchain->Height(), background,
+                         static_cast<f32>(NowSeconds() - start), ResourceState::Present)) {
+            RhiLogV(LogVerbosity::Error, "rhi_demo: the cube could not be drawn");
+            exit_code = 1;
+        }
         list->End();
+        ring->Flush();
         CommandList* lists[] = {list};
         if (device->Submit(lists, 1) != 0) {
-            triangle.Submitted();
+            cube.Submitted();
         }
         device->EndFrame();
         if (swapchain->Present() == SwapchainStatus::Lost) {
@@ -317,7 +309,9 @@ int main(int argc, char** argv) {
 
     // Shutdown order: idle the GPU, then the swapchain, then the device.
     device->WaitIdle();
-    triangle.Destroy();
+    cube.Destroy();
+    depth.Destroy(device);
+    ring.reset();
     device->DestroySwapchain(swapchain);
     DestroyDevice(device);
     return exit_code;
