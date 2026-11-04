@@ -6,31 +6,56 @@ lighting, depth — not just a single hard-coded draw call.
 **Definition of done:** a render graph/pass system draws multiple objects
 with basic materials and lighting, with correct depth buffering.
 
-## Key deliverables (to be expanded into day-by-day tasks when started)
+## Decisions (settled 2026-11-04)
+
+- **Shader toolchain: Slang** (`slangc`, offline), chosen for platform portability; GLSL ported on Days 69-70 and removed. Recorded in `PLAN.md` assumption #18.
+- **Lighting: deferred** (G-buffer, lighting pass, tonemap). MSAA is not added to the RHI (awkward with deferred; post-process AA is a later add-on).
+- **Render graph: generic**, built only on the RHI; it owns every barrier.
+- **Deferred RHI features (bindless, indirect draws, async compute): all out** for this phase; revisit with profiling data.
+
+## Days
+
+Each day has its own file of individually checkable sub-tasks, a docs task, an end-of-day `/code-review high` task and a concrete Done condition.
+
+68. [Renderer Design Spec & Build Skeleton](phase-04-renderer-core/day-68-renderer-design-spec.md)
+69. [Slang Toolchain & First Shader Ports](phase-04-renderer-core/day-69-slang-toolchain.md)
+70. [Port the Remaining Shaders & Retire GLSL](phase-04-renderer-core/day-70-slang-port-complete.md)
+71. [Shader Reflection & the Cook Tool](phase-04-renderer-core/day-71-shader-reflection-cook.md)
+72. [Shader Permutations](phase-04-renderer-core/day-72-shader-permutations.md)
+73. [Renderer Foundation: Camera, Meshes & the Scene List](phase-04-renderer-core/day-73-renderer-foundation.md)
+74. [The Material System](phase-04-renderer-core/day-74-material-system.md)
+75. [Render Graph I: Declaration & Compilation](phase-04-renderer-core/day-75-render-graph-declare-compile.md)
+76. [Render Graph II: Automatic Barriers & Transient Resources](phase-04-renderer-core/day-76-render-graph-barriers-resources.md)
+77. [Render Graph III: Execution, Parallel Recording & the Swapchain](phase-04-renderer-core/day-77-render-graph-execute.md)
+78. [The G-buffer Geometry Pass](phase-04-renderer-core/day-78-gbuffer-pass.md)
+79. [Deferred Lighting: Directional & Ambient](phase-04-renderer-core/day-79-deferred-lighting.md)
+80. [Point Lights & Light Volumes](phase-04-renderer-core/day-80-point-lights.md)
+81. [The Renderer Demo & Depth Correctness](phase-04-renderer-core/day-81-renderer-demo.md)
+82. [Hardening, Sanitizers & Performance](phase-04-renderer-core/day-82-renderer-hardening-perf.md)
+83. [Portability Proof & Phase 4 Wrap-up](phase-04-renderer-core/day-83-renderer-portability-wrapup.md)
+
+## Key deliverables
 
 - Render graph / frame graph: pass declaration, resource dependency
   tracking, automatic barrier/transition insertion.
-- Depth pre-pass or forward depth testing.
+- Deferred shading: a G-buffer geometry pass with depth testing, then a lighting pass.
 - A minimal material system (shader + parameters + textures) sitting on
   top of the RHI's pipeline objects.
-- Basic lighting model (at least one of: forward-lit directional + point
-  lights) sufficient to prove the pipeline, not a final lighting model.
+- Basic lighting model (directional + ambient + point lights in the deferred
+  lighting pass, then a tonemap) sufficient to prove the pipeline, not a
+  final lighting model.
 - Camera/view/projection handling decoupled from any one scene format
   (ECS doesn't exist yet — this phase uses a minimal hard-coded scene list,
   replaced by ECS in Phase 7).
 
 ## Notes / open questions
 
-- **Shader toolchain decision (blocking).** `PLAN.md` assumption #18
+- **Shader toolchain decision (settled: Slang, see Decisions).** `PLAN.md` assumption #18
   leaves the long-term shader language and the DX12/Metal path open
   (GLSL+SPIRV-Cross, HLSL+dxc, Slang, or our own). The material system
   needs reflection data, permutations and a cooker step, so this must
   be settled, and the answer recorded in a plan file, before this
   phase's day files are written.
-- Full day-by-day breakdown deferred until Phase 3 is complete.
-- Whether to build the render graph generically now (multi-backend-ready)
-  or Vulkan-specific first and generalize later — decide against actual
-  Phase 3 output, not in the abstract.
 
 ## Deferred from Phase 3 (decide here, before the day files are written)
 

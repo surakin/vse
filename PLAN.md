@@ -399,9 +399,8 @@ interpretations keep it buildable — flag any that don't match intent:
     real complex-script requirement shows up (flagged, not assumed
     needed).
 
-18. **Shader toolchain: authored in GLSL, compiled offline to SPIR-V by
-    `glslc` for Phase 3; the long-term toolchain is an open decision with
-    a deadline.** Shaders are never compiled at runtime in a shipped
+18. **Shader toolchain: GLSL via `glslc` in Phase 3; Slang from Phase 4
+    (decided 2026-11-04).** Shaders are never compiled at runtime in a shipped
     build: the engine loads precompiled bytecode (SPIR-V now; DXIL/MSL
     later), so no shader compiler is linked into the engine/game binary.
     The compiler is a dev-time tool in the same boundary category as
@@ -414,25 +413,30 @@ interpretations keep it buildable — flag any that don't match intent:
       them builds from the committed arrays, and a ctest recompiles and
       compares only when they are present. Hand-written SPIR-V assembly
       is not used.
-    - **Open decision, must be settled before Phase 4's material system
-      starts and no later than Phase 12:** what the source language is and
-      how one source reaches Vulkan (SPIR-V), DX12 (DXIL) and Metal (MSL).
-      Candidates: (A) keep GLSL, compile with `glslc`, cross-compile
-      SPIR-V to HLSL/MSL with SPIRV-Cross; (B) HLSL, compile with `dxc`
-      to both SPIR-V and DXIL, SPIRV-Cross for MSL; (C) Slang, which
-      targets SPIR-V, DXIL and MSL from one source and has built-in
-      reflection and permutations; (D) our own front-end. Criteria:
-      one source for all backends, reflection data for the material
-      system and bind-group layouts, shader permutations, build-time
-      cost, license, and the cost of tool availability on Windows/macOS.
-      Whatever is chosen stays an offline tool (an asset-cooker step from
-      Phase 10), so the runtime dependency rule is unaffected. Because
-      Phase 3 shaders are few and small, a switch costs rewriting a
-      handful of files, not an architecture change.
-    - The RHI already takes bytecode (`ShaderDesc` holds SPIR-V words),
-      so the decision does not change the RHI interface; the Day 67
-      portability review should confirm that `ShaderDesc` can carry
-      DXIL/MSL blobs.
+    - **Settled 2026-11-04 (for Phase 4 on): Slang.** The long-term source
+      language is Slang, compiled offline by `slangc` to SPIR-V now and to
+      DXIL/HLSL and MSL when Phases 12-13 need them, with Slang's reflection
+      and specialization feeding the material system. Chosen for
+      platform portability: one source for Vulkan, D3D12/Xbox, Metal and
+      Android, with HLSL/GLSL output for console vendor compilers, built-in
+      reflection and permutations. Rejected: GLSL + SPIRV-Cross (weakest
+      source language on every non-Vulkan target, lossy cross-compilation),
+      HLSL + dxc (runner-up; safest on consoles but no built-in
+      permutations and MSL still goes through SPIRV-Cross), a custom
+      front-end (a compiler is its own project). Slang stays an offline dev
+      tool in the same boundary category as CMake and `glslc` were (#8,
+      #16): nothing is linked into the runtime, and compiled outputs
+      (`*.spv.inc` plus reflection) stay committed so a checkout without
+      `slangc` still builds. The Phase 3 GLSL shaders are ported on Phase 4
+      Days 69-70 and kept as the fallback until the Slang output reproduces
+      the golden images; then the GLSL sources and the `glslc` path are
+      removed. Phase 4 Day 69 confirms the exact `slangc` version and the
+      flags that make it match the engine's conventions (column-major
+      matrices, Vulkan clip space, std140 layout).
+    - The RHI already takes bytecode (`ShaderDesc` holds SPIR-V words); the
+      Day 67 portability review (section 3) found that a per-backend blob
+      would add a format tag to `ShaderDesc`, and that any translator must
+      flip clip-space Y for D3D12/Metal. Neither blocks Phase 4.
 
 ## Guiding principles
 
@@ -620,4 +624,9 @@ that changed from the plan and why.)_
   any shader translator are recorded as inputs to the open shader-toolchain decision.
   Baseline (RTX 3060, Release): ~0.5-0.6 us per draw recorded, 0.15-0.2 us per barrier,
   14-18 GiB/s uploads, cube pipeline 3.6-5.8 ms. Phase 4 still needs its day files.
+- **2026-11-04 - Phase 4 shader toolchain decided: Slang.** Chosen for platform
+  portability over GLSL+SPIRV-Cross and HLSL+dxc (assumption #18). Phase 4 is split
+  into Days 68-83 under `plans/phase-04-renderer-core/`: deferred lighting (no
+  MSAA in the RHI), a generic render graph on top of the RHI, and none of the
+  deferred RHI extras (bindless, indirect draws, async compute).
 
