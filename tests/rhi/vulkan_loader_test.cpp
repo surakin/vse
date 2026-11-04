@@ -12,14 +12,6 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi::vulkan;
 
-// A real Vulkan driver (and the libraries it pulls in, e.g. libdbus via the NVIDIA ICD) leaves process-lifetime
-// allocations that LeakSanitizer would report against this test binary. They are not ours, so suppress those
-// libraries only; leaks in engine code are still reported. The last entry is the one messenger that
-// vulkan_instance_test.cpp leaks on purpose to prove destroy-time validation errors are counted.
-extern "C" const char* __lsan_default_suppressions() {
-    return "leak:libdbus-1.so\nleak:libnvidia\nleak:libGLX\nleak:libX11\nleak:libxcb\nleak:terminator_CreateDebugUtilsMessengerEXT\n";
-}
-
 namespace {
 
 using gpu_test::GpuRequired;

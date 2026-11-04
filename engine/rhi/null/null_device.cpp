@@ -11,7 +11,7 @@
 #include "log/assert.h"
 #include "rhi/spirv.h"
 #include "rhi/handle_pool.h"
-#include "rhi/vulkan/vk_array.h"
+#include "rhi/grow_array.h"
 #include "rhi/rhi_log.h"
 
 namespace engine_placeholder::rhi {
@@ -201,7 +201,7 @@ struct NullDeviceState {
     HandlePool<ShaderRes, ShaderTag> shaders;
     HandlePool<LayoutRes, BindGroupLayoutTag> layouts;
     HandlePool<GroupRes, BindGroupTag> groups;
-    vulkan::detail::GrowArray<BindGroupHandle> transient_groups; // created in the open frame, retired by EndFrame
+    detail::GrowArray<BindGroupHandle> transient_groups; // created in the open frame, retired by EndFrame
     HandlePool<PipelineRes, PipelineTag> pipelines;
 
     u64 frame = 0;
@@ -1806,6 +1806,10 @@ void NullDevice::BeginFrame() {
     }
     ++s.frame;
     s.in_frame = true;
+    if (s.options.lose_device_at_frame != 0 && s.frame == s.options.lose_device_at_frame && !s.lost) {
+        s.lost = true;
+        RhiLog(LogVerbosity::Error, "NullDevice: device lost (injected at frame %llu)", static_cast<unsigned long long>(s.frame));
+    }
     for (usize i = 0; i < s.lists_in_use; ++i) {
         s.lists[i]->Recycle(s.frame);
     }

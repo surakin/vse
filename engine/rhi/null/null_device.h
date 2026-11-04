@@ -30,6 +30,9 @@ struct NullDeviceOptions {
     u32 simulated_latency_frames = 0;
     /// Largest buffer the device will allocate, in bytes; larger requests fail like an out-of-memory condition.
     u64 max_buffer_bytes = 256ull << 20;
+    /// Reports the device lost at the start of this frame (1 is the first `BeginFrame`), as [[rhi::FaultInjection]] does
+    /// for the Vulkan backend; 0 never does.
+    u32 lose_device_at_frame = 0;
 };
 
 /// Counts of the null device's resources, for tests and leak checks.

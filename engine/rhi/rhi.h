@@ -21,6 +21,22 @@ enum class ValidationSetting : u8 {
     On,       ///< Enable validation if the layer is installed.
 };
 
+/// Faults a device injects on purpose, to exercise the error paths that real hardware rarely reaches.
+///
+/// A development and test aid; the defaults inject nothing. The Vulkan backend honors both faults; the null backend
+/// honors `lose_device_at_frame` (it also has `SimulateDeviceLoss`) and ignores `fail_allocations_from`, since it has no
+/// device memory.
+///
+/// Thread-safety: thread-compatible plain data.
+struct FaultInjection {
+    /// Report the device lost at the start of this frame (1 is the first `BeginFrame`), as if the driver returned
+    /// `VK_ERROR_DEVICE_LOST`; 0 never does. From then on submissions are ignored and `Device::DeviceLost` is true.
+    u32 lose_device_at_frame = 0;
+    /// Make the Nth device-memory allocation, counted from device creation (1 is the first), and every one after it
+    /// fail as if the device ran out of memory; 0 never does. Resource creation then returns an invalid handle.
+    u32 fail_allocations_from = 0;
+};
+
 /// What [[rhi::CreateDevice]] needs to know.
 ///
 /// The device is headless unless a presentation window is supplied (added with the swapchain on Day 56).
@@ -54,6 +70,8 @@ struct DeviceCreateInfo {
     /// The directory for the pipeline cache file, or null to use `ENGINE_RHI_CACHE_DIR`, then
     /// `$XDG_CACHE_HOME/<application_name>`, then `$HOME/.cache/<application_name>`. Borrowed for the call.
     const char* pipeline_cache_dir = nullptr;
+    /// Faults to inject on purpose; see [[rhi::FaultInjection]]. Nothing by default.
+    FaultInjection faults;
 };
 
 /// Creates a device for the requested backend.

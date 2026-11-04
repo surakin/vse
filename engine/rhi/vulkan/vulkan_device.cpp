@@ -234,7 +234,9 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     memory_config.max_allocation_count = properties_.limits.maxMemoryAllocationCount;
     memory_config.non_coherent_atom_size = properties_.limits.nonCoherentAtomSize;
     memory_backend_ = new VulkanMemoryBackend(&fns_, device_, &device_lost_);
+    memory_backend_->FailAllocationsFrom(info.faults.fail_allocations_from);
     memory_ = new MemoryAllocator(layout, memory_config, memory_backend_);
+    lose_device_at_frame_ = info.faults.lose_device_at_frame;
     if (!InitializeUpload()) {
         RhiLog(LogVerbosity::Error, "Vulkan: cannot set up the staging ring");
         return false; // the destructor releases what was created

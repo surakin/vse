@@ -45,6 +45,45 @@ validation and fails the test on any validation error. `ENGINE_RHI_VALIDATION_FA
 instead, for debugging a single test, and `ENGINE_RHI_VALIDATION=0` turns validation off for `Auto` instances. See
 the validation section of the [RHI guide](rhi.md).
 
+### The RHI boundary gate
+
+`rhi_boundary_check` (label `boundary`, no GPU needed) enforces the rule that only `engine/rhi/vulkan/` may name the
+Vulkan API. It is a CMake script, `tools/rhi_boundary_check/check.cmake`, that scans every `.h`, `.hpp`, `.cpp`, `.cc`,
+`.c`, `.inl` and `.mm` file under `engine/`, `game/` and `tools/` for `vk*`/`Vk*`/`VK_*`/`PFN_vk*` identifiers and
+`vulkan` includes (comments do not count), and checks that the backend-agnostic `engine/rhi/*.h` headers include
+no Vulkan, Wayland, X11 or backend-directory header. To run it by hand:
+
+```
+cmake -DROOT=$PWD -DALLOWLIST=tools/rhi_boundary_check/allowlist.txt -P tools/rhi_boundary_check/check.cmake
+```
+
+A file that genuinely needs the exemption goes in `tools/rhi_boundary_check/allowlist.txt` as `path|reason`. An entry
+without a reason fails, and so does an entry whose file no longer needs it or no longer exists, so the list cannot rot.
+The gate tests itself: `rhi_boundary_check_planted*` run it over `tools/rhi_boundary_check/fixtures/bad` (an include, identifiers, one after a block comment, and a backend include in an agnostic header) and expect exactly
+those five reports; the `_clean` case (block, trailing and inline comments naming Vulkan types) and the `_stale` and
+`_noreason` cases cover the passing tree and the allow-list rules. Names inside string literals still count, because
+`dlsym("vkFoo")` is Vulkan API use too.
+
+### Failure injection, sanitizers and the time budget
+
+`tests/rhi/vulkan_fault_test.cpp` (tag `[fault]`) drives the error paths with `rhi::FaultInjection`: a device lost at a
+chosen frame, device creation and later resource creation failing for lack of memory, and a 200-step resize storm with
+zero and one-pixel sizes on both Wayland and X11. Each ends with the device destroyed, the live-object counts at zero
+and the validation layer silent. `rhi_demo_*` ctests (label `demo`) run the demo itself with `--inject-device-loss` and
+`--inject-oom`, and with `ENGINE_VULKAN_LIBRARY=/nonexistent`, and check the exit code and message; those that need a GPU
+skip without one.
+
+`rhi_tests_asan` (label `asan`) includes the GPU tests when a device exists, except the X11 presentation test; the NVIDIA
+driver's Xlib path leaks inside a library it unloads before exit. `rhi_tests_tsan` (label `tsan`) covers the GPU-free
+multithreaded tests, since the NVIDIA driver's own threads crash inside ThreadSanitizer. Leaks that belong to the driver
+or to a test that leaks on purpose are suppressed in `tests/rhi/lsan.supp`, which gives a reason for every entry; the test
+binaries load it through `__lsan_default_options`, so direct runs honour it too. A leak in engine code is never covered:
+add a suppression only with a reason and a reviewer.
+
+Time budget for the RHI suite (`ctest -L rhi -j4`): about 15 seconds with a GPU, about one second on a machine without
+Vulkan, where every `[gpu]` test skips (check with `ENGINE_VULKAN_LIBRARY=/nonexistent ctest -L rhi`). A GPU test that takes
+more than a few seconds belongs in a stress label, not in the default run.
+
 ### Golden-image rendering tests
 
 Rendering tests draw offscreen, read the pixels back and compare them with a golden image, so no window or

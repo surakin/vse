@@ -1,0 +1,4 @@
+# path|reason — files outside engine/rhi/vulkan/ allowed to name Vulkan.
+# An entry that no longer needs its exemption fails the gate (remove it).
+engine/foundation/os/gpu_driver_probe.cpp|Phase 1 GPU driver probe: loads libvulkan to enumerate devices before any RHI exists.
+engine/foundation/os/gpu_driver_probe.h|Phase 1 GPU driver probe interface.

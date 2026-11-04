@@ -1,0 +1,17 @@
+# LeakSanitizer suppressions for the RHI test binaries. One reason per entry; add nothing without one.
+# The tests are linked with __lsan_default_options (lsan_options.cpp), so these apply to direct runs as well as ctest.
+# Anything not named here -- every leak in engine code -- is still reported.
+
+# The Vulkan loader's driver (the NVIDIA ICD) pulls in libdbus, which keeps process-lifetime allocations alive.
+leak:libdbus-1.so
+# The proprietary driver's own process-lifetime allocations (ICD state, shader compiler caches).
+leak:libnvidia
+# CAVEAT: libX11/libxcb entries also cover leaks the engine's own X11 window code would make through those libraries;
+# the NVIDIA frames are anonymous, so they cannot be narrowed. X11 window code is covered by the X11 tests in the plain
+# and TSan flavors, and by review. Revisit if a driver update names its module.
+# The driver's GLX/X11 WSI path allocates inside libraries it unloads before exit; the frames have no module to name.
+leak:libGLX
+leak:libX11
+leak:libxcb
+# vulkan_instance_test.cpp leaks one debug messenger on purpose to prove destroy-time validation errors are counted.
+leak:terminator_CreateDebugUtilsMessengerEXT

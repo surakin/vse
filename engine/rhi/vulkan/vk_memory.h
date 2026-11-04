@@ -3,7 +3,7 @@
 #include <mutex>
 
 #include "rhi/enums.h"
-#include "rhi/vulkan/vk_array.h"
+#include "rhi/grow_array.h"
 #include "types.h"
 
 //! GPU memory suballocation: large blocks carved by a free list, so `vkAllocateMemory` is called rarely.
@@ -265,7 +265,7 @@ private:
         u64 offset;
         u64 size;
     };
-    detail::GrowArray<Range> ranges_;
+    rhi::detail::GrowArray<Range> ranges_;
     u64 capacity_;
     u64 free_bytes_;
 };
@@ -327,7 +327,7 @@ private:
         bool alive;
     };
     struct Pool {
-        detail::GrowArray<Block*> blocks;
+        rhi::detail::GrowArray<Block*> blocks;
     };
 
     MemoryAllocation AllocateLocked(const MemoryRequest& request, MemoryResult* result);
@@ -348,7 +348,7 @@ private:
         u64 size;
         u32 heap;
     };
-    detail::GrowArray<Dedicated> dedicated_; // every live dedicated object, so teardown frees them and a double free is caught
+    rhi::detail::GrowArray<Dedicated> dedicated_; // every live dedicated object, so teardown frees them and a double free is caught
     u64 dedicated_bytes_[kMaxMemoryHeaps] = {};
     u32 dedicated_count_[kMaxMemoryHeaps] = {};
     u32 live_objects_ = 0;

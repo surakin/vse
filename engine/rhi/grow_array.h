@@ -12,7 +12,7 @@
 //! The foundation's `Array` takes its storage from an arena and never frees on growth; the backend needs
 //! arrays that grow and shrink for the life of the device (free lists, block lists), so it has this one.
 
-namespace engine_placeholder::rhi::vulkan::detail {
+namespace engine_placeholder::rhi::detail {
 
 template <typename T>
 class GrowArray {
@@ -95,4 +95,4 @@ private:
     usize capacity_ = 0;
 };
 
-} // namespace engine_placeholder::rhi::vulkan::detail
+} // namespace engine_placeholder::rhi::detail

@@ -177,7 +177,32 @@ errors: 1
 
 ### Rules & contracts
 
-_TODO_
+**The Vulkan boundary.** Nothing outside `engine/rhi/vulkan/` may name the Vulkan API: no `vk*`, `Vk*`, `VK_*` or
+`PFN_vk*` identifier and no `vulkan` include. Gameplay, renderer and tool code create a device with
+[[rhi::CreateDevice]] and talk to [[rhi::Device]] and [[rhi::CommandList]] only. The reverse holds too: the
+backend-agnostic headers directly under `engine/rhi/` never include a Vulkan, Wayland, X11 or backend-directory
+header. Both rules are checked by the `rhi_boundary_check` ctest (see "Building and Testing"); the one allowed
+exception is the Phase 1 GPU driver probe, listed with its reason in `tools/rhi_boundary_check/allowlist.txt`.
+
+**Programming errors abort; bad descriptions and the environment fail softly.** The RHI sorts every problem into one of
+three kinds, and the headers say which with `Aborts:` and `Fails:` labels.
+
+| Kind | Examples | What happens |
+| --- | --- | --- |
+| Programming error — a call the contract forbids | a destroyed or invalid handle passed to `DestroyBuffer`, `MapBuffer`, `UploadBuffer`, `Submit`; a range outside the buffer; `Submit` outside a frame; a list submitted twice; `Acquire` twice without `Present` | `ENGINE_ASSERT` aborts. The null backend counts it instead (`ErrorCount()`), so tests can provoke it. |
+| Bad description — data that may come from an asset | an unsupported format or usage, a size beyond the device limits, a shader of the wrong stage, a layout that does not match its bind group | The `Create*` call logs the reason on `LogRhi` and returns an invalid handle. |
+| Environment — the machine, not the code | no Vulkan loader or GPU, out of GPU memory, out of handles, a full staging ring, a lost device, a lost swapchain | Logged; the call returns an invalid handle, `false`, `0` or a `SwapchainStatus`. The application decides. |
+
+The rule of thumb: operations *on an existing handle* assert, because a bad handle can only be a bug; operations that
+*create* something return an invalid handle, because the description or the machine may be at fault and the caller
+can recover. After a lost device, submissions are ignored, `Device::DeviceLost` reports it and destroying resources
+and the device still works.
+
+**Failure injection.** [[rhi::FaultInjection]] in [[rhi::DeviceCreateInfo]] makes the Vulkan backend fail on purpose, so
+the paths above are exercised without a broken machine: `lose_device_at_frame` reports the device lost at a chosen
+frame, and `fail_allocations_from` makes the Nth device-memory allocation and every later one fail as if the GPU were
+out of memory. `rhi_demo` exposes them as `--inject-device-loss FRAME` and `--inject-oom N`; a lost device ends the
+demo with exit code 3 and a message, a failed allocation with exit code 1.
 
 ### Common mistakes
 

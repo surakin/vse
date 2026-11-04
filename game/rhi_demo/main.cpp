@@ -19,7 +19,6 @@
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 #include "rhi/uniform_ring.h"
-#include "rhi/vulkan/vulkan_device.h"
 #include "textures.h"
 
 using namespace engine_placeholder;
@@ -30,6 +29,7 @@ namespace {
 constexpr int kExitOk = 0;
 constexpr int kExitFailure = 1; // the device, window, swapchain or a draw failed, or memory grew
 constexpr int kExitUsage = 2;
+constexpr int kExitDeviceLost = 3; // the GPU device was lost; the demo stopped cleanly
 
 // If memory grows by more than this between frame 100 and the last frame of a run of at least kMemoryCheckFrames
 // frames, the run fails: it points at a per-frame leak.
@@ -43,6 +43,8 @@ struct Options {
     const char* backend = nullptr;   // wayland, x11 or null for automatic
     bool no_vsync = false;
     bool validation = false;
+    long inject_device_loss = 0;     // lose the device at this frame (fault injection), 0 = never
+    long inject_oom = 0;             // fail device-memory allocations from the Nth on (fault injection), 0 = never
 };
 
 double NowSeconds() {
@@ -239,13 +241,15 @@ DeviceCreateInfo DeviceInfo(const Options& options) {
         info.validation = ValidationSetting::On;
         info.sync_validation = true;
     }
+    info.faults.lose_device_at_frame = static_cast<u32>(options.inject_device_loss);
+    info.faults.fail_allocations_from = static_cast<u32>(options.inject_oom);
     return info;
 }
 
 // Renders `frames` frames offscreen (no window) and saves the last one, with a fixed camera and light.
 int RunScreenshot(const Options& options) {
     constexpr u32 kSize = 256;
-    vulkan::VulkanDevice* device = vulkan::VulkanDevice::Create(DeviceInfo(options));
+    Device* device = CreateDevice(DeviceInfo(options));
     if (device == nullptr) {
         RhiLogV(LogVerbosity::Error, "rhi_demo: no Vulkan device");
         return kExitFailure;
@@ -263,8 +267,15 @@ int RunScreenshot(const Options& options) {
         const OrbitCamera camera;
         const demo::Lighting lighting = LightAt(0.5);
         bool drawn = true;
+        bool lost = false;
         for (long i = 0; i < (options.frames > 0 ? options.frames : 1); ++i) {
             device->BeginFrame();
+            if (device->DeviceLost()) {
+                RhiLogV(LogVerbosity::Error, "rhi_demo: the GPU device was lost; stopping");
+                device->EndFrame();
+                lost = true;
+                break;
+            }
             scene.ring->BeginFrame();
             CommandList* list = device->CreateCommandList();
             list->Begin();
@@ -278,7 +289,13 @@ int RunScreenshot(const Options& options) {
             device->EndFrame();
         }
         std::vector<unsigned char> pixels(static_cast<usize>(kSize) * kSize * 4);
-        if (!drawn) {
+        if (!lost && device->DeviceLost()) { // lost during the last frame's submit: no further BeginFrame to notice
+            RhiLogV(LogVerbosity::Error, "rhi_demo: the GPU device was lost; stopping");
+            lost = true;
+        }
+        if (lost) {
+            exit_code = kExitDeviceLost;
+        } else if (!drawn) {
             RhiLogV(LogVerbosity::Error, "rhi_demo: the cube could not be drawn");
         } else if (!device->ReadbackTexture(target, 0, 0, pixels.data(), pixels.size(), ResourceState::ColorAttachment)) {
             RhiLogV(LogVerbosity::Error, "rhi_demo: could not read the image back");
@@ -311,7 +328,7 @@ int RunWindow(const Options& options) {
 
     DeviceCreateInfo info = DeviceInfo(options);
     info.window = window;
-    vulkan::VulkanDevice* device = vulkan::VulkanDevice::Create(info);
+    Device* device = CreateDevice(info);
     if (device == nullptr) {
         RhiLogV(LogVerbosity::Error, "rhi_demo: no Vulkan device can present to this window");
         return kExitFailure;
@@ -379,6 +396,12 @@ int RunWindow(const Options& options) {
             continue;
         }
         device->BeginFrame();
+        if (device->DeviceLost()) {
+            RhiLogV(LogVerbosity::Error, "rhi_demo: the GPU device was lost; stopping");
+            device->EndFrame();
+            exit_code = kExitDeviceLost;
+            break;
+        }
         const SwapchainStatus acquired = swapchain->Acquire();
         if (acquired == SwapchainStatus::Lost) {
             RhiLogV(LogVerbosity::Error, "rhi_demo: the swapchain was lost");
@@ -456,14 +479,28 @@ int RunWindow(const Options& options) {
     return exit_code;
 }
 
+// Parses a whole non-negative number that fits in u32 (so a mistyped fault is a usage error, not "inject nothing").
+bool ParseCount(const char* text, long* out) {
+    char* end = nullptr;
+    const long value = std::strtol(text, &end, 10);
+    if (end == text || *end != '\0' || value < 0 || value > 0x7fffffffL) {
+        return false;
+    }
+    *out = value;
+    return true;
+}
+
 int Usage(const char* program, int code) {
     std::fprintf(code == kExitOk ? stdout : stderr,
                  "usage: %s [--backend wayland|x11] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
+                 "       [--inject-device-loss FRAME] [--inject-oom N]\n"
                  "  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)\n"
                  "  --frames N        stop after N frames (also RHI_DEMO_FRAMES=N)\n"
                  "  --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM)\n"
                  "  --no-vsync        present without waiting for the display\n"
-                 "  --validation      enable the validation layer with synchronization validation\n",
+                 "  --validation      enable the validation layer with synchronization validation\n"
+                 "  --inject-device-loss F  fault injection: lose the GPU device at frame F (exit code 3)\n"
+                 "  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it\n",
                  program);
     return code;
 }
@@ -487,6 +524,14 @@ int main(int argc, char** argv) {
             options.no_vsync = true;
         } else if (std::strcmp(argv[i], "--validation") == 0) {
             options.validation = true;
+        } else if (std::strcmp(argv[i], "--inject-device-loss") == 0 && has_value) {
+            if (!ParseCount(argv[++i], &options.inject_device_loss)) {
+                return Usage(argv[0], kExitUsage);
+            }
+        } else if (std::strcmp(argv[i], "--inject-oom") == 0 && has_value) {
+            if (!ParseCount(argv[++i], &options.inject_oom)) {
+                return Usage(argv[0], kExitUsage);
+            }
         } else if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
             return Usage(argv[0], kExitOk);
         } else {

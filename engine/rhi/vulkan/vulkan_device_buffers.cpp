@@ -657,6 +657,10 @@ void VulkanDevice::BeginFrame() {
         frame = frame_number_.load(std::memory_order_relaxed) + 1;
         frame_number_.store(frame, std::memory_order_relaxed);
         frame_open_ = true;
+        if (lose_device_at_frame_ != 0 && frame == lose_device_at_frame_ && !device_lost_.exchange(true, std::memory_order_relaxed)) {
+            RhiLog(LogVerbosity::Error, "Vulkan: the device was lost (injected at frame %llu); further submissions are ignored",
+                   static_cast<unsigned long long>(frame));
+        }
         if (waited && !device_lost_.load(std::memory_order_relaxed)) {
             ResetFrameDescriptorsLocked(frame % kFramePools); // the frame that last used these pools has finished
         }

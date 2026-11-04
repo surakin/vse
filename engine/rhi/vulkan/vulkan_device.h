@@ -453,8 +453,8 @@ private:
         u32 counts[5];
     };
     struct DescriptorPools {
-        detail::GrowArray<VkDescriptorPool> pools;
-        detail::GrowArray<ExactPool> exact; // reused when they fit, so large layouts do not make a pool per group
+        rhi::detail::GrowArray<VkDescriptorPool> pools;
+        rhi::detail::GrowArray<ExactPool> exact; // reused when they fit, so large layouts do not make a pool per group
         usize current = 0;
     };
     static constexpr usize kMaxSetLayouts = 512;
@@ -510,7 +510,7 @@ private:
     // Command pools: one per (frame slot, thread slot), made by the thread that owns the slot.
     struct ThreadPool {
         VkCommandPool pool = nullptr;
-        detail::GrowArray<VulkanCommandList*> lists;
+        rhi::detail::GrowArray<VulkanCommandList*> lists;
         usize used = 0;
     };
     ThreadPool* PoolForCurrentThread(usize frame_slot);
@@ -538,6 +538,7 @@ private:
     VulkanMemoryBackend* memory_backend_ = nullptr;
     MemoryAllocator* memory_ = nullptr;
     std::atomic<bool> device_lost_{false};
+    u32 lose_device_at_frame_ = 0; // fault injection: the frame at which to report the device lost, 0 = never
     std::atomic<u64> frame_number_{0};
 
     // Resources and deferred destruction (guarded by resource_mutex_).
@@ -551,7 +552,7 @@ private:
     HandlePool<BindGroupRes, BindGroupTag> bind_groups_;
     DescriptorPools persistent_pools_;
     DescriptorPools frame_pools_[kFramePools];
-    detail::GrowArray<BindGroupHandle> frame_groups_[kFramePools];
+    rhi::detail::GrowArray<BindGroupHandle> frame_groups_[kFramePools];
     u32 descriptor_sets_per_pool_ = 1024;
     SetLayoutEntry set_layouts_[kMaxSetLayouts];
     u64 next_set_layout_id_ = 1;
@@ -576,10 +577,10 @@ private:
     VkSemaphore timeline_ = nullptr;
     u64 last_submit_value_ = 0;
     VkCommandPool upload_pool_ = nullptr;
-    detail::GrowArray<CommandBufferSlot> upload_buffers_;
+    rhi::detail::GrowArray<CommandBufferSlot> upload_buffers_;
     RingAllocator* staging_ring_ = nullptr;
     RawBuffer staging_;
-    detail::GrowArray<VkCommandBufferSubmitInfo> submit_scratch_;
+    rhi::detail::GrowArray<VkCommandBufferSubmitInfo> submit_scratch_;
     std::atomic<i32> inject_submit_result_{0};
 
     // Per-thread command pools, a ring of kFramePools frames deep, indexed by the thread's slot.

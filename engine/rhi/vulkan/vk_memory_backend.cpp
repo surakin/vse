@@ -9,6 +9,11 @@ VulkanMemoryBackend::VulkanMemoryBackend(const VkDeviceFns* fns, VkDevice device
 
 MemoryResult VulkanMemoryBackend::Allocate(u32 memory_type, u64 size, bool map, u64 dedicated_buffer, u64 dedicated_image,
                                            BackendAllocation* out) {
+    const u64 attempt = attempts_.fetch_add(1, std::memory_order_relaxed) + 1;
+    const u32 fail_from = fail_from_.load(std::memory_order_relaxed);
+    if (fail_from != 0 && attempt >= fail_from) {
+        return MemoryResult::OutOfDeviceMemory; // injected
+    }
     VkMemoryDedicatedAllocateInfo dedicated{};
     dedicated.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
     dedicated.buffer = HandleFromU64<VkBuffer>(dedicated_buffer);

@@ -48,6 +48,10 @@ public:
                           BackendAllocation* out) override;
     void Free(const BackendAllocation& allocation) override;
 
+    /// Makes the `n`th call to `Allocate` (1-based, counting every attempt) and all later ones fail with
+    /// `MemoryResult::OutOfDeviceMemory` without calling the driver; 0 turns it off. For failure-injection tests.
+    void FailAllocationsFrom(u32 n) { fail_from_.store(n, std::memory_order_relaxed); }
+
     /// Returns how many times `vkAllocateMemory` succeeded.
     u64 AllocateCalls() const { return allocate_calls_.load(std::memory_order_relaxed); }
     /// Returns how many memory objects are currently allocated.
@@ -57,6 +61,8 @@ private:
     const VkDeviceFns* fns_;
     VkDevice device_;
     std::atomic<bool>* device_lost_;
+    std::atomic<u32> fail_from_{0};
+    std::atomic<u64> attempts_{0};
     std::atomic<u64> allocate_calls_{0};
     std::atomic<u64> live_{0};
 };

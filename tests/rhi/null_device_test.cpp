@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "rhi/null/null_device.h"
+#include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 #include "spirv_builder.h"
 
@@ -1032,4 +1033,19 @@ TEST_CASE("Concurrent creation, destruction and recording is safe", "[rhi][null]
     FenceValue v = f.dev->Submit(lists, kThreads);
     CHECK(v == 1);
     CHECK(f.Errors() == 0);
+}
+
+TEST_CASE("The null device honors an injected device loss", "[rhi][null][fault]") {
+    DeviceCreateInfo info;
+    info.backend = Backend::Null;
+    info.faults.lose_device_at_frame = 2;
+    Device* device = CreateDevice(info);
+    REQUIRE(device != nullptr);
+    device->BeginFrame();
+    CHECK_FALSE(device->DeviceLost());
+    device->EndFrame();
+    device->BeginFrame();
+    CHECK(device->DeviceLost());
+    device->EndFrame();
+    DestroyDevice(device);
 }

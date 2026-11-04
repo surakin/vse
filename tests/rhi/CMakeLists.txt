@@ -14,6 +14,8 @@ set(RHI_TEST_SOURCES
   vulkan_buffer_test.cpp
   vulkan_commands_test.cpp
   vulkan_texture_test.cpp
+  vulkan_fault_test.cpp
+  lsan_options.cpp
   vulkan_swapchain_test.cpp
   vulkan_frame_test.cpp
   vulkan_pipeline_test.cpp
@@ -59,7 +61,8 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib suffix label spec)
   target_link_libraries(${target} PRIVATE ${rhi_lib} ${rhi_vulkan_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common)
   target_compile_definitions(${target} PRIVATE ENGINE_RHI_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
-    ENGINE_RHI_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/rhi_demo/assets")
+    ENGINE_RHI_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/rhi_demo/assets"
+    ENGINE_RHI_LSAN_SUPP="${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp")
   # Tests that do not pass a cache directory must not write to the user's ~/.cache.
   catch_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "${spec}"
     PROPERTIES LABELS "${label}" ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${label}")

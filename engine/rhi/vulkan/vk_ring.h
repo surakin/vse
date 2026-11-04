@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rhi/vulkan/vk_array.h"
+#include "rhi/grow_array.h"
 #include "types.h"
 
 //! A ring of staging space whose parts are reclaimed when the GPU's timeline passes them.
@@ -51,7 +51,7 @@ private:
         u64 end;   // head position when the group was retired
         u64 bytes; // bytes the group holds
     };
-    detail::GrowArray<Group> groups_;
+    rhi::detail::GrowArray<Group> groups_;
     u64 capacity_;
     u64 head_ = 0;
     u64 tail_ = 0;

@@ -257,7 +257,8 @@ TEST_CASE("PPM files round-trip and malformed ones are refused",
 TEST_CASE("The triangle renders offscreen and matches its golden image",
           "[rhi][vulkan][gpu][golden]") {
   Image rendered;
-  REQUIRE(RenderTriangle(&rendered));
+  const bool rendered_ok = RenderTriangle(&rendered); // a SKIP inside must not be nested in an assertion
+  REQUIRE(rendered_ok);
   REQUIRE(rendered.width == kSize);
 
   // Independent of the golden: the background is the clear color, and interior
