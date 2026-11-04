@@ -128,12 +128,9 @@ already name `file.md:LINE`, a sample that runs longer than the timeout
 `skeleton` (outline only) → `draft` (written, unreviewed) → `reviewed`
 (checked against the code at a named commit).
 
-## Proposed definition of "documented" for an implementation day
-*(not yet in CLAUDE.md — decided on Day 44 with the user)*
+## Definition of "documented" for an implementation day
 
-A day that adds or changes public API is done only when its headers have
-`///` comments that pass `docgen lint` and the relevant guide page is
-updated or created; the day file's Done condition lists the pages.
+A day that adds or changes public API is done only when its headers pass `docgen lint` (baseline at zero), `docs/reference/` is regenerated and committed, and the guide page is updated; see `CLAUDE.md`, "Public API is documented before a day is done".
 
 ## Worked example
 

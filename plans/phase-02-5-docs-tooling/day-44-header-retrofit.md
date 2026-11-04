@@ -87,9 +87,9 @@ Fixed:
 - No test covered `_Defaulted._` → added.
 - (STATUS.md and this file were updated in this commit.)
 
-## Rule proposal for CLAUDE.md / PLAN.md — awaiting the user's decision
+## Rule for CLAUDE.md / PLAN.md — approved by the user and applied
 
-Not applied. Proposed addition to CLAUDE.md under "End-of-day code review":
+Applied as the CLAUDE.md section "Public API is documented before a day is done" and a PLAN.md guiding principle. Original proposal to CLAUDE.md under "End-of-day code review":
 
 > **Public API is documented before a day is done.** A day that adds or
 > changes public API (anything in a header named by `docs/reference/modules.txt`)

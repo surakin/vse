@@ -412,6 +412,11 @@ interpretations keep it buildable — flag any that don't match intent:
 - **Breadth before depth on Unreal import.** Cover the common cases (common
   material nodes, common Blueprint nodes) and flag unsupported long-tail
   cases explicitly, rather than blocking on 100% fidelity.
+- **Documented before done.** A day that adds or changes public API
+  (headers named by `docs/reference/modules.txt`) ships its `///` comments,
+  the regenerated `docs/reference/`, and the updated guide page in the same
+  commit; `docgen lint`, link, sample and staleness checks (`ctest -L docs`)
+  enforce it. Rule text: `CLAUDE.md`; tooling: Phase 2.5.
 - **Quiet by default.** Logging is channel-based with per-channel verbosity
   and per-user configuration from day one — no Unreal-style log spam.
 

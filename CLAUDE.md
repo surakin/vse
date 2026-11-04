@@ -63,6 +63,26 @@ sanitizer canary that could pass for the wrong reason). Sanitizer and
 stress-test runs in a day file are verification of behavior, not a
 substitute for this review.
 
+## Public API is documented before a day is done (required)
+
+**A day that adds or changes public API is not complete until it is
+documented.** "Public API" is anything in a header named by
+`docs/reference/modules.txt`. Before the final commit for such a day:
+
+1. The header carries `///` comments per `docs/DOC-CONVENTIONS.md`
+   (summary, plus the contract labels the module's `strict` rules demand),
+   and `docgen lint` passes with the baseline at zero known findings —
+   no new undocumented symbol is parked in the baseline.
+2. `cmake --build build --target docs` has been run and its output
+   (`docs/reference/`) is committed with the code.
+3. The relevant guide page under `docs/guide/` is updated or created, and
+   any tagged code samples in it compile and run.
+4. The day file's Done condition names the pages touched, and
+   `ctest -L docs` passes.
+
+New modules are added to `docs/reference/modules.txt` in the same day.
+Planning-only commits are exempt, as are days that change no public header.
+
 ## What this project is
 
 A from-scratch, AAA-capable game engine. Read `PLAN.md` first — it is the
