@@ -21,6 +21,12 @@ with basic materials and lighting, with correct depth buffering.
 
 ## Notes / open questions
 
+- **Shader toolchain decision (blocking).** `PLAN.md` assumption #18
+  leaves the long-term shader language and the DX12/Metal path open
+  (GLSL+SPIRV-Cross, HLSL+dxc, Slang, or our own). The material system
+  needs reflection data, permutations and a cooker step, so this must
+  be settled, and the answer recorded in a plan file, before this
+  phase's day files are written.
 - Full day-by-day breakdown deferred until Phase 3 is complete.
 - Whether to build the render graph generically now (multi-backend-ready)
   or Vulkan-specific first and generalize later — decide against actual

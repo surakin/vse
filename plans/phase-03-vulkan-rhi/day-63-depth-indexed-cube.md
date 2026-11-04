@@ -10,7 +10,7 @@
 - [ ] Depth texture creation per `DeviceCaps::depth_format`, `ResourceState::DepthAttachment`, depth clear/load ops in `BeginRendering`, depth state in the pipeline (compare op, write enable); depth texture recreated with the swapchain on resize.
 - [ ] Cube geometry in the demo: 24 vertices (position, normal, uv) + 36 indices uploaded through staging; vertex layout in the pipeline.
 - [ ] Per-frame uniform data (model-view-projection from `Mat4`/`Transform` of Phase 0: perspective matrix with the Vulkan clip-space conventions — Y flip and 0..1 depth — implemented as a documented `Mat4::PerspectiveVulkan`-style helper in the demo/renderer-side code, **not** in the RHI) via `UniformRing` + a bind group.
-- [ ] Shaders `cube.vert.spvasm` (MVP transform, pass normal/uv/color) and `cube.frag.spvasm` (flat vertex color for now).
+- [ ] Shaders `cube.vert` (MVP transform, pass normal/uv/color) and `cube.frag` (flat vertex color for now).
 - [ ] Demo draws the rotating cube with depth testing; resize keeps the aspect correct.
 - [ ] Tests `[gpu]` offscreen: render the cube from a fixed angle at 128×128 and compare with a golden; analytic assertions — the near face covers the center pixel with its color, a second cube drawn behind is occluded (depth test) and appears when depth test is disabled; indexed vs non-indexed draws of the same geometry produce identical images; winding/cull: back faces culled.
 - [ ] **Documentation (CLAUDE.md "Public API is documented before a day is done"):** depth/indexed APIs documented; the conventions (clip space, handedness, winding) are written down in `docs/guide/rhi.md` with a pointer from `docs/guide/foundation-math.md`.

@@ -26,3 +26,10 @@ differences touch/mobile bring).
 - Objective-C/Swift runtime interop from a C++-rooted, no-CRT codebase
   needs a concrete decision on calling convention/bridging approach —
   scope this with real Metal headers in hand, not speculatively.
+
+## Shader toolchain (from PLAN.md assumption #18)
+
+The backend needs MSL shaders. The toolchain that produces them from the
+engine's shader source was to be settled before Phase 4; confirm that
+decision here and that the cooker emits MSL blobs for `ShaderDesc`
+before this phase's day files are written.

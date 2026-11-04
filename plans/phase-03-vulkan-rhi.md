@@ -68,9 +68,10 @@ includes Wayland/X11 headers.
   `libvulkan.so.1` via `os::LoadLibrary`, no link-time dependency.
 - **Validation layers:** dev-time only, `ENGINE_RHI_VALIDATION`, never
   required; messages are counted and any unexpected one fails a test.
-- **Shaders:** hand-authored SPIR-V assembly (`*.spvasm`), assembled
-  offline into committed `*.spv.inc`; `spirv-as`/`spirv-val` are optional
-  dev tools, never shipped.
+- **Shaders:** GLSL 4.50 sources (`*.vert`/`*.frag`/`*.comp`) compiled
+  offline by `glslc` into SPIR-V and embedded as committed `*.spv.inc`;
+  `glslc`/`spirv-val` are optional dev tools, never shipped. The
+  long-term toolchain is an open decision (`PLAN.md` assumption #18).
 - **GPU tests:** label `gpu`, tag `[gpu]`, skip (not fail) without a
   device; `ENGINE_RHI_REQUIRE_GPU=1` makes a skip a failure. Offscreen
   golden-image tests with analytic pixel assertions are preferred over

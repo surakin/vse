@@ -170,14 +170,16 @@ error for interactive runs.
 
 ## 11. Shader policy
 
-Shaders are **hand-written SPIR-V assembly** (`*.spvasm`, `PLAN.md`
-assumption #4), assembled offline into committed `*.spv.inc` word arrays
-(generated files, same pattern as the Unicode tables) and checked with
-`spirv-val`. `spirv-as`/`spirv-val` are optional dev-time tools — the
+Shaders are **GLSL 4.50** sources (`*.vert`, `*.frag`, `*.comp`) compiled
+offline by `glslc` into SPIR-V, embedded as committed `*.spv.inc` word
+arrays (generated files, same pattern as the Unicode tables) and checked
+with `spirv-val`. `glslc`/`spirv-val` are optional dev-time tools — the
 committed arrays build without them — and are never linked or shipped.
-There is no GLSL or HLSL compiler in Phase 3. The RHI performs its own
-cheap SPIR-V sanity check (magic, version, entry point for the declared
-stage) before a module reaches a driver.
+The engine contains no shader compiler. (This revises the original
+hand-written SPIR-V assembly policy; the long-term toolchain for DX12 and
+Metal is an open decision, `PLAN.md` assumption #18.) The RHI performs its
+own cheap SPIR-V sanity check (magic, version, entry point for the
+declared stage) before a module reaches a driver.
 
 ## 12. GPU-test policy
 
@@ -212,7 +214,7 @@ engine/rhi/vulkan/          the only place Vulkan is named (rhi_vulkan library)
 engine/rhi/{dx12,metal}/    reserved for Phases 12-13
 tests/rhi/                  rhi_tests (+ _asan, + _tsan from Day 54)
 game/rhi_demo/              dogfood app (Day 57 onward)
-shaders/                    *.spvasm sources and generated *.spv.inc
+shaders/                    GLSL sources and generated *.spv.inc
 ```
 
 Namespace `engine_placeholder::rhi`; headers are included as `"rhi/<name>.h"`

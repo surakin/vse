@@ -31,3 +31,10 @@ Windows through the DX12 RHI backend.
 - Windows' lack of a raw "syscall" layer the way Linux has one means the
   no-CRT boundary is drawn differently here — Win32 itself is the
   platform contract. Document the precise boundary when this phase starts.
+
+## Shader toolchain (from PLAN.md assumption #18)
+
+The backend needs DXIL shaders. The toolchain that produces them from the
+engine's shader source was to be settled before Phase 4; confirm that
+decision here and that the cooker emits DXIL blobs for `ShaderDesc`
+before this phase's day files are written.

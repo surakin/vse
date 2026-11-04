@@ -7,7 +7,7 @@ The Definition of done: a lit, textured cube through Vulkan on Linux, with nothi
 
 ## Tasks
 
-- [ ] Lighting in hand-authored SPIR-V: `lit.vert.spvasm` (world position, normal via the normal matrix passed in the UBO) and `lit.frag.spvasm` (one directional light, Lambert diffuse + ambient, light direction/color/intensity from a second UBO range or the same block, texture albedo); the maths documented in the shader header.
+- [ ] Lighting in GLSL: `lit.vert` (world position, normal via the normal matrix passed in the UBO) and `lit.frag` (one directional light, Lambert diffuse + ambient, light direction/color/intensity from a second UBO range or the same block, texture albedo); the maths documented in the shader header.
 - [ ] Light parameters changed per frame from the demo (light orbits the cube); camera is a simple orbit controlled by keyboard/mouse via the Phase 1 `InputState` (arrow keys / drag) — exercising the input path with the renderer.
 - [ ] `rhi_demo` finalized: command-line options (`--backend`, `--frames`, `--screenshot`, `--no-vsync`, `--validation`), clean exit codes, and a README at `game/rhi_demo/README.md` with the run commands.
 - [ ] Tests `[gpu]` offscreen: golden for a fixed light/camera; analytic: a face whose normal points at the light is brighter than a face pointing away by the expected Lambert ratio (±tolerance); with light intensity 0 the image equals the ambient-only expectation.

@@ -165,10 +165,13 @@ interpretations keep it buildable — flag any that don't match intent:
    `VK_KHR_xcb_surface`) take `libwayland-client`/`libxcb` object types
    directly, which is now simply "the type we already have," not a
    narrow driver-contract exception.
-4. **Shaders/images/assets start custom.** A full GLSL/HLSL compiler or a
-   general PNG/JPEG importer is its own large project. Early phases use
-   hand-authored SPIR-V and custom binary asset formats from our own
-   offline tools. GPU-native compressed texture formats (BCn/ASTC) are
+4. **Images/assets start custom; shaders use an existing offline
+   compiler (see #18).** A general PNG/JPEG importer is its own large
+   project, so early phases use custom binary asset formats from our own
+   offline tools. Writing our own GLSL/HLSL compiler is likewise out of
+   scope for now, but that does not mean hand-writing SPIR-V: shaders are
+   authored in a high-level language and compiled offline by an existing
+   dev-time tool (assumption #18). GPU-native compressed texture formats (BCn/ASTC) are
    treated as hardware formats (same boundary as the GPU driver), so
    decoding them ourselves is in scope without counting as "a library."
 5. **Unreal import targets uncooked editor-format projects**, i.e. a real
@@ -396,6 +399,41 @@ interpretations keep it buildable — flag any that don't match intent:
     real complex-script requirement shows up (flagged, not assumed
     needed).
 
+18. **Shader toolchain: authored in GLSL, compiled offline to SPIR-V by
+    `glslc` for Phase 3; the long-term toolchain is an open decision with
+    a deadline.** Shaders are never compiled at runtime in a shipped
+    build: the engine loads precompiled bytecode (SPIR-V now; DXIL/MSL
+    later), so no shader compiler is linked into the engine/game binary.
+    The compiler is a dev-time tool in the same boundary category as
+    CMake and the C++ compiler (assumption #8) and Catch2 (#16).
+    - **Phase 3 (settled):** shaders are GLSL 4.50 sources
+      (`*.vert`, `*.frag`, `*.comp`) under `shaders/`, compiled by
+      `glslc` (Vulkan SDK / distro `shaderc`) and checked with `spirv-val`,
+      then embedded by our own `spv_embed` tool into committed
+      `*.spv.inc` word arrays. The tools are optional: a checkout without
+      them builds from the committed arrays, and a ctest recompiles and
+      compares only when they are present. Hand-written SPIR-V assembly
+      is not used.
+    - **Open decision, must be settled before Phase 4's material system
+      starts and no later than Phase 12:** what the source language is and
+      how one source reaches Vulkan (SPIR-V), DX12 (DXIL) and Metal (MSL).
+      Candidates: (A) keep GLSL, compile with `glslc`, cross-compile
+      SPIR-V to HLSL/MSL with SPIRV-Cross; (B) HLSL, compile with `dxc`
+      to both SPIR-V and DXIL, SPIRV-Cross for MSL; (C) Slang, which
+      targets SPIR-V, DXIL and MSL from one source and has built-in
+      reflection and permutations; (D) our own front-end. Criteria:
+      one source for all backends, reflection data for the material
+      system and bind-group layouts, shader permutations, build-time
+      cost, license, and the cost of tool availability on Windows/macOS.
+      Whatever is chosen stays an offline tool (an asset-cooker step from
+      Phase 10), so the runtime dependency rule is unaffected. Because
+      Phase 3 shaders are few and small, a switch costs rewriting a
+      handful of files, not an architecture change.
+    - The RHI already takes bytecode (`ShaderDesc` holds SPIR-V words),
+      so the decision does not change the RHI interface; the Day 67
+      portability review should confirm that `ShaderDesc` can carry
+      DXIL/MSL blobs.
+
 ## Guiding principles
 
 - **RHI-first rendering.** Gameplay/renderer code never calls Vulkan, DX12,
@@ -551,4 +589,12 @@ that changed from the plan and why.)_
   SPIR-V workflow, pipelines, bind groups, triangle/compute/cube/lit-cube
   milestones, boundary gate, portability review. Settled calls: Vulkan 1.3
   loaded at runtime, explicit resource-state barriers, dynamic rendering,
-  hand-authored SPIR-V, GPU tests skip without a device.
+  GLSL shaders compiled offline by glslc (assumption #18), GPU tests
+  skip without a device.
+
+- **2026-11-04 — Shader toolchain decision.** Hand-written SPIR-V assembly
+  dropped: Phase 3 shaders are GLSL compiled offline by `glslc`
+  (assumption #18). The long-term source language and DX12/Metal
+  cross-compilation path (GLSL+SPIRV-Cross, HLSL+dxc, Slang or our own)
+  is recorded as an open decision to settle before Phase 4's material
+  system and no later than Phase 12.

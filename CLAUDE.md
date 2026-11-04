@@ -184,6 +184,14 @@ table in `PLAN.md`.
   world. No Qt/GTK/Dear ImGui-style dependency — that would breach the
   zero-third-party-convenience-dependencies rule. In-game UI, debug
   tooling and the editor all share it.
+- **Shaders are authored in a high-level language and compiled offline,
+  never at runtime** (`PLAN.md` assumption #18). Phase 3 uses GLSL
+  compiled by `glslc` (dev-time, optional; compiled output is committed
+  as `*.spv.inc`), not hand-written SPIR-V. The long-term source
+  language and DX12/Metal path (GLSL+SPIRV-Cross, HLSL+dxc, Slang, or
+  our own) is an **open decision** to be settled before Phase 4's
+  material system and no later than Phase 12 — don't pick one
+  implicitly in code.
 - **Engine core before editor.** The editor (Phase 18) is built last,
   using the engine's own renderer/ECS and Phase 6 UI system — not a
   separate GUI toolkit.
