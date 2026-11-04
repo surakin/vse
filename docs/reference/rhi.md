@@ -368,7 +368,7 @@ What happens to the contents at the end of the pass.
 f32 clear_color[4];
 ```
 
-The clear color (red, green, blue, alpha) used when `load` is `Clear`.
+The clear color (red, green, blue, alpha) used when `load` is `Clear`. Floats: clear integer-format targets by other means. The pass renders to mip 0, layer 0.
 
 ## `DepthAttachmentDesc` {#rhi-depthattachmentdesc}
 
@@ -379,6 +379,8 @@ struct DepthAttachmentDesc { ... }
 ```
 
 The depth attachment of a rendering pass.
+
+A combined depth-stencil texture's stencil aspect follows the depth load and store ops, and a clear sets it to 0.
 
 | Field | Value |
 |---|---|
@@ -5117,6 +5119,16 @@ const os::Window* window;
 The window the device will present to, or null for a device that only computes and renders offscreen.
 
 The Vulkan backend creates the presentation surface from the window's native handles and picks a GPU that can present to it. The window must outlive the device. The null backend ignores it.
+
+### `frames_in_flight` {#rhi-devicecreateinfo-frames-in-flight}
+
+`variable rhi::DeviceCreateInfo::frames_in_flight` — defined in `engine/rhi/rhi.h`
+
+```cpp
+u32 frames_in_flight;
+```
+
+How many frames the CPU may get ahead of the GPU, 1 to 3 (values outside are clamped). `BeginFrame` waits for the frame this many back to finish. 1 trades throughput for latency; 3 the other way. The null backend ignores it.
 
 ## `CreateDevice(const DeviceCreateInfo&)` {#rhi-createdevice-const-devicecreateinfo-amp}
 

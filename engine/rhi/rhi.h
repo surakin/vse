@@ -40,6 +40,9 @@ struct DeviceCreateInfo {
     /// The Vulkan backend creates the presentation surface from the window's native handles and picks a GPU that can
     /// present to it. The window must outlive the device. The null backend ignores it.
     const os::Window* window = nullptr;
+    /// How many frames the CPU may get ahead of the GPU, 1 to 3 (values outside are clamped). `BeginFrame` waits for the
+    /// frame this many back to finish. 1 trades throughput for latency; 3 the other way. The null backend ignores it.
+    u32 frames_in_flight = 2;
 };
 
 /// Creates a device for the requested backend.

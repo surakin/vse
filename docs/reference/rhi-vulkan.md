@@ -3834,6 +3834,74 @@ u64 CompletedFrame() const;
 
 Returns the highest frame number whose GPU work has finished.
 
+### `FramesInFlight()` {#rhi-vulkan-vulkandevice-framesinflight-const}
+
+`method rhi::vulkan::VulkanDevice::FramesInFlight` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+u32 FramesInFlight() const;
+```
+
+Returns how many frames the CPU may be ahead of the GPU (1 to 3).
+
+### `LeakCounts` {#rhi-vulkan-vulkandevice-leakcounts}
+
+`struct rhi::vulkan::VulkanDevice::LeakCounts` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+struct LeakCounts { ... }
+```
+
+Objects that were still alive, or were never released, when devices were destroyed.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data (a snapshot). |
+
+#### `user_objects` {#rhi-vulkan-vulkandevice-leakcounts-user-objects}
+
+`variable rhi::vulkan::VulkanDevice::LeakCounts::user_objects` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+u64 user_objects;
+```
+
+Buffers, textures, samplers and swapchains the application did not destroy before the device (they are freed, with a warning).
+
+#### `internal_objects` {#rhi-vulkan-vulkandevice-leakcounts-internal-objects}
+
+`variable rhi::vulkan::VulkanDevice::LeakCounts::internal_objects` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+u64 internal_objects;
+```
+
+Vulkan objects the backend itself failed to release; any is a bug in the backend.
+
+### `GetLeakCounts()` {#rhi-vulkan-vulkandevice-getleakcounts}
+
+`method rhi::vulkan::VulkanDevice::GetLeakCounts` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+static LeakCounts GetLeakCounts();
+```
+
+Returns the process-wide totals of objects found leaked by destroyed devices since the last reset.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe. |
+
+### `ResetLeakCounts()` {#rhi-vulkan-vulkandevice-resetleakcounts}
+
+`method rhi::vulkan::VulkanDevice::ResetLeakCounts` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+static void ResetLeakCounts();
+```
+
+Sets both leak totals to zero. Thread-safe.
+
 ### `LookupBuffer(BufferHandle,VkBuffer*,BufferDesc*)` {#rhi-vulkan-vulkandevice-lookupbuffer-bufferhandle-vkbuffer-star-bufferdesc-star-const}
 
 `method rhi::vulkan::VulkanDevice::LookupBuffer` — defined in `engine/rhi/vulkan/vulkan_device.h`

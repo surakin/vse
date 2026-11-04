@@ -51,11 +51,14 @@ struct ColorAttachmentDesc {
     LoadOp load = LoadOp::Clear;
     /// What happens to the contents at the end of the pass.
     StoreOp store = StoreOp::Store;
-    /// The clear color (red, green, blue, alpha) used when `load` is `Clear`.
+    /// The clear color (red, green, blue, alpha) used when `load` is `Clear`. Floats: clear integer-format targets
+    /// by other means. The pass renders to mip 0, layer 0.
     f32 clear_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 };
 
 /// The depth attachment of a rendering pass.
+///
+/// A combined depth-stencil texture's stencil aspect follows the depth load and store ops, and a clear sets it to 0.
 ///
 /// Thread-safety: thread-compatible plain data.
 struct DepthAttachmentDesc {

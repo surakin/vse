@@ -16,6 +16,7 @@ void VulkanCommandList::Recycle(u64 frame) {
     frame_ = frame;
     label_depth_ = 0;
     failed_ = false;
+    in_rendering_ = false;
 }
 
 bool VulkanCommandList::Recording(const char* what) const {
@@ -40,6 +41,7 @@ void VulkanCommandList::Begin() {
 
 void VulkanCommandList::End() {
     const bool usable = Recording("CommandList::End: the list is not recording");
+    ENGINE_ASSERT(!in_rendering_, "CommandList::End: a rendering pass is still open");
     ENGINE_ASSERT(label_depth_ == 0, "CommandList::End: debug labels are unbalanced");
     if (usable) {
         const VkResult r = device_->Fns().EndCommandBuffer(buffer_);
@@ -51,6 +53,7 @@ void VulkanCommandList::End() {
 
 void VulkanCommandList::CopyBuffer(BufferHandle src, BufferHandle dst, u64 src_offset, u64 dst_offset, u64 size) {
     const bool usable = Recording("CommandList::CopyBuffer: the list is not recording");
+    ENGINE_ASSERT(!in_rendering_, "CommandList::CopyBuffer: not allowed inside a rendering pass");
     VkBuffer vk_src = nullptr;
     VkBuffer vk_dst = nullptr;
     BufferDesc src_desc;
@@ -72,6 +75,7 @@ void VulkanCommandList::CopyBuffer(BufferHandle src, BufferHandle dst, u64 src_o
 
 void VulkanCommandList::Barrier(BufferHandle buffer, ResourceState before, ResourceState after) {
     const bool usable = Recording("CommandList::Barrier: the list is not recording");
+    ENGINE_ASSERT(!in_rendering_, "CommandList::Barrier: not allowed inside a rendering pass");
     VkBuffer vk_buffer = nullptr;
     BufferDesc desc;
     ENGINE_ASSERT(device_->LookupBuffer(buffer, &vk_buffer, &desc), "CommandList::Barrier: stale or invalid buffer handle");
@@ -113,6 +117,7 @@ u32 MipExtent(u32 base, u32 mip) {
 void VulkanCommandList::CopyLevel(BufferHandle buffer, TextureHandle texture, const BufferTextureCopy& region, bool to_texture) {
     const char* what = to_texture ? "CommandList::CopyBufferToTexture" : "CommandList::CopyTextureToBuffer";
     const bool usable = Recording(what);
+    ENGINE_ASSERT(!in_rendering_, "CommandList copy: not allowed inside a rendering pass");
     VkBuffer vk_buffer = nullptr;
     BufferDesc buffer_desc;
     VulkanDevice::TextureInfo tex;
@@ -161,6 +166,7 @@ void VulkanCommandList::CopyTextureToBuffer(TextureHandle src, BufferHandle dst,
 
 void VulkanCommandList::Barrier(TextureHandle texture, ResourceState before, ResourceState after) {
     const bool usable = Recording("CommandList::Barrier: the list is not recording");
+    ENGINE_ASSERT(!in_rendering_, "CommandList::Barrier: not allowed inside a rendering pass");
     VulkanDevice::TextureInfo tex;
     ENGINE_ASSERT(device_->LookupTexture(texture, &tex), "CommandList::Barrier: stale or invalid texture handle");
     BarrierScopes scopes;
@@ -173,6 +179,7 @@ void VulkanCommandList::Barrier(TextureHandle texture, ResourceState before, Res
 
 void VulkanCommandList::GenerateMips(TextureHandle texture) {
     const bool usable = Recording("CommandList::GenerateMips: the list is not recording");
+    ENGINE_ASSERT(!in_rendering_, "CommandList::GenerateMips: not allowed inside a rendering pass");
     VulkanDevice::TextureInfo tex;
     ENGINE_ASSERT(device_->LookupTexture(texture, &tex), "CommandList::GenerateMips: stale or invalid texture handle");
     ENGINE_ASSERT(Has(tex.desc.usage, TextureUsage::Sampled) && Has(tex.desc.usage, TextureUsage::CopySrc) && Has(tex.desc.usage, TextureUsage::CopyDst),
@@ -206,6 +213,100 @@ void VulkanCommandList::GenerateMips(TextureHandle texture) {
     CmdImageBarrier(fns, buffer_, tex.image, tex.aspects, levels - 1, 1, 0, layers, ResourceState::CopyDst, ResourceState::ShaderRead);
 }
 
+namespace {
+
+VkAttachmentLoadOp ToVkLoadOp(LoadOp op) {
+    switch (op) {
+    case LoadOp::Load: return VK_ATTACHMENT_LOAD_OP_LOAD;
+    case LoadOp::Clear: return VK_ATTACHMENT_LOAD_OP_CLEAR;
+    case LoadOp::DontCare: return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    }
+    return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+}
+
+VkAttachmentStoreOp ToVkStoreOp(StoreOp op) { return op == StoreOp::Store ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE; }
+
+} // namespace
+
+void VulkanCommandList::BeginRendering(const RenderingDesc& desc) {
+    const bool usable = Recording("CommandList::BeginRendering: the list is not recording");
+    ENGINE_ASSERT(!in_rendering_, "CommandList::BeginRendering: a rendering pass is already open");
+    ENGINE_ASSERT(desc.color_count <= kMaxColorAttachments, "CommandList::BeginRendering: too many color attachments");
+    ENGINE_ASSERT(desc.color_count > 0 || desc.depth.texture.IsValid(), "CommandList::BeginRendering: no attachments");
+
+    VkRenderingAttachmentInfo colors[kMaxColorAttachments]{};
+    VkRenderingAttachmentInfo depth{};
+    VkRenderingAttachmentInfo stencil{};
+    bool has_stencil = false;
+    u32 width = 0;
+    u32 height = 0;
+    auto note_extent = [&](const VulkanDevice::TextureInfo& tex) {
+        if (width == 0) {
+            width = tex.desc.width;
+            height = tex.desc.height;
+        }
+        ENGINE_ASSERT(tex.desc.width == width && tex.desc.height == height, "CommandList::BeginRendering: attachment extents differ");
+    };
+    for (u32 i = 0; i < desc.color_count; ++i) {
+        VulkanDevice::TextureInfo tex;
+        ENGINE_ASSERT(device_->LookupTexture(desc.color[i].texture, &tex), "CommandList::BeginRendering: stale or invalid color attachment");
+        ENGINE_ASSERT(Has(tex.desc.usage, TextureUsage::ColorAttachment) && tex.attachment_view != nullptr,
+                      "CommandList::BeginRendering: a color attachment lacks ColorAttachment usage");
+        note_extent(tex);
+        VkRenderingAttachmentInfo& a = colors[i];
+        a.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        a.imageView = tex.attachment_view;
+        a.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        a.loadOp = ToVkLoadOp(desc.color[i].load);
+        a.storeOp = ToVkStoreOp(desc.color[i].store);
+        for (u32 c = 0; c < 4; ++c) {
+            a.clearValue.color.float32[c] = desc.color[i].clear_color[c];
+        }
+    }
+    if (desc.depth.texture.IsValid()) {
+        VulkanDevice::TextureInfo tex;
+        ENGINE_ASSERT(device_->LookupTexture(desc.depth.texture, &tex), "CommandList::BeginRendering: stale or invalid depth attachment");
+        ENGINE_ASSERT(Has(tex.desc.usage, TextureUsage::DepthAttachment) && tex.attachment_view != nullptr,
+                      "CommandList::BeginRendering: the depth attachment lacks DepthAttachment usage");
+        note_extent(tex);
+        depth.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        depth.imageView = tex.attachment_view;
+        depth.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depth.loadOp = ToVkLoadOp(desc.depth.load);
+        depth.storeOp = ToVkStoreOp(desc.depth.store);
+        depth.clearValue.depthStencil = {desc.depth.clear_depth, 0};
+        has_stencil = FormatInfo(tex.desc.format).has_stencil;
+        stencil = depth; // the stencil aspect follows the depth load/store ops and clears to 0
+    }
+    in_rendering_ = true;
+    if (!usable) {
+        return;
+    }
+    VkRenderingInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+    info.renderArea = {{0, 0}, {width, height}};
+    info.layerCount = 1;
+    info.colorAttachmentCount = desc.color_count;
+    info.pColorAttachments = colors;
+    info.pDepthAttachment = desc.depth.texture.IsValid() ? &depth : nullptr;
+    info.pStencilAttachment = has_stencil ? &stencil : nullptr;
+    device_->Fns().CmdBeginRendering(buffer_, &info);
+    // The pass's extent is the default viewport and scissor.
+    const VkViewport viewport{0.0f, 0.0f, static_cast<f32>(width), static_cast<f32>(height), 0.0f, 1.0f};
+    const VkRect2D scissor{{0, 0}, {width, height}};
+    device_->Fns().CmdSetViewport(buffer_, 0, 1, &viewport);
+    device_->Fns().CmdSetScissor(buffer_, 0, 1, &scissor);
+}
+
+void VulkanCommandList::EndRendering() {
+    const bool usable = Recording("CommandList::EndRendering: the list is not recording");
+    ENGINE_ASSERT(in_rendering_, "CommandList::EndRendering: no rendering pass is open");
+    in_rendering_ = false;
+    if (usable) {
+        device_->Fns().CmdEndRendering(buffer_);
+    }
+}
+
 void VulkanCommandList::PushDebugLabel(const char* name) {
     const bool usable = Recording("CommandList::PushDebugLabel: the list is not recording");
     ENGINE_ASSERT(name != nullptr, "CommandList::PushDebugLabel: name is null");
@@ -228,8 +329,6 @@ void VulkanCommandList::PopDebugLabel() {
 }
 
 // Commands that need textures, pipelines or bind groups arrive with those resources.
-void VulkanCommandList::BeginRendering(const RenderingDesc&) { Unsupported("BeginRendering"); }
-void VulkanCommandList::EndRendering() { Unsupported("EndRendering"); }
 void VulkanCommandList::SetPipeline(PipelineHandle) { Unsupported("SetPipeline"); }
 void VulkanCommandList::SetBindGroup(u32, BindGroupHandle) { Unsupported("SetBindGroup"); }
 void VulkanCommandList::SetPushConstants(u32, const void*, u32) { Unsupported("SetPushConstants"); }

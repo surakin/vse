@@ -204,6 +204,7 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     fns_.GetDeviceQueue(device_, static_cast<u32>(queues_.graphics_family), 0, &queue_);
     InitializeTimeline();
 
+    frames_in_flight_ = info.frames_in_flight < 1 ? 1 : (info.frames_in_flight > 3 ? 3 : info.frames_in_flight);
     FillCaps();
     InitializeFormats();
 
@@ -298,13 +299,34 @@ bool VulkanDevice::HeapBudget(u32 heap, u64* budget, u64* usage) const {
     return true;
 }
 
+namespace {
+std::atomic<u64> g_leaked_user_objects{0};
+std::atomic<u64> g_leaked_internal_objects{0};
+} // namespace
+
+VulkanDevice::LeakCounts VulkanDevice::GetLeakCounts() {
+    LeakCounts counts;
+    counts.user_objects = g_leaked_user_objects.load(std::memory_order_relaxed);
+    counts.internal_objects = g_leaked_internal_objects.load(std::memory_order_relaxed);
+    return counts;
+}
+
+void VulkanDevice::ResetLeakCounts() {
+    g_leaked_user_objects.store(0, std::memory_order_relaxed);
+    g_leaked_internal_objects.store(0, std::memory_order_relaxed);
+}
+
 VulkanDevice::~VulkanDevice() {
     if (device_ != nullptr) {
         fns_.DeviceWaitIdle(device_);
+        u64 user_leaks = 0;
         if (swapchain_ != nullptr) {
             RhiLog(LogVerbosity::Warn, "Vulkan: the swapchain was still alive when the device was destroyed");
-            DestroySwapchain(swapchain_);
+            ++user_leaks;
+            DestroySwapchain(swapchain_); // takes its textures with it
         }
+        user_leaks += buffers_.LiveCount() + textures_.LiveCount() + samplers_.LiveCount();
+        g_leaked_user_objects.fetch_add(user_leaks, std::memory_order_relaxed);
         // Buffers the application never destroyed are released here, with a warning.
         if (buffers_.LiveCount() > 0) {
             RhiLog(LogVerbosity::Warn, "Vulkan: %zu buffer(s) were still alive when the device was destroyed", buffers_.LiveCount());
@@ -319,6 +341,13 @@ VulkanDevice::~VulkanDevice() {
         CollectRetired(true);
         ShutdownCommands();
         ShutdownUpload();
+        // Everything is released now: any raw Vulkan object still counted is the backend's own leak.
+        const u64 internal = raw_buffer_count_.load(std::memory_order_relaxed) + raw_image_count_.load(std::memory_order_relaxed);
+        if (internal != 0) {
+            RhiLog(LogVerbosity::Error, "Vulkan: %llu internal object(s) were not released at shutdown (%zu buffers, %zu images)",
+                   static_cast<unsigned long long>(internal), raw_buffer_count_.load(), raw_image_count_.load());
+            g_leaked_internal_objects.fetch_add(internal, std::memory_order_relaxed);
+        }
     }
     delete memory_; // frees every block, so the GPU must be idle first
     delete memory_backend_;

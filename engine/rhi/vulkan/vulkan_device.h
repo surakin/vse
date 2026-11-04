@@ -150,6 +150,27 @@ public:
     /// Returns the highest frame number whose GPU work has finished.
     u64 CompletedFrame() const;
 
+    /// Returns how many frames the CPU may be ahead of the GPU (1 to 3).
+    u32 FramesInFlight() const { return frames_in_flight_; }
+
+    /// Objects that were still alive, or were never released, when devices were destroyed.
+    ///
+    /// Thread-safety: thread-compatible plain data (a snapshot).
+    struct LeakCounts {
+        /// Buffers, textures, samplers and swapchains the application did not destroy before the device (they are freed,
+        /// with a warning).
+        u64 user_objects = 0;
+        /// Vulkan objects the backend itself failed to release; any is a bug in the backend.
+        u64 internal_objects = 0;
+    };
+
+    /// Returns the process-wide totals of objects found leaked by destroyed devices since the last reset.
+    /// Thread-safety: thread-safe.
+    static LeakCounts GetLeakCounts();
+
+    /// Sets both leak totals to zero. Thread-safe.
+    static void ResetLeakCounts();
+
     /// Looks up a live buffer for command recording.
     ///
     /// Param buffer: the handle.
@@ -303,6 +324,7 @@ private:
     HandlePool<SamplerRes, SamplerTag> samplers_;
     VkFormatFeatureFlags format_features_[static_cast<usize>(Format::Count)] = {};
     std::atomic<usize> raw_image_count_{0};
+    u32 frames_in_flight_ = 2;
     std::atomic<bool> frame_open_{false};
     u64 ended_frames_ = 0;
     u64 completed_frames_ = 0;

@@ -601,7 +601,7 @@ void VulkanDevice::BeginFrame() {
             if (ended_frames_ - completed_frames_ >= kTrackedFrames - 2) {
                 wait_for = frame_fences_[(completed_frames_ + 1) % kTrackedFrames];
             }
-            const u64 pool_frame = frame_number_ + 1 > kFramePools ? frame_number_ + 1 - kFramePools : 0;
+            const u64 pool_frame = frame_number_ + 1 > frames_in_flight_ ? frame_number_ + 1 - frames_in_flight_ : 0;
             if (pool_frame > completed_frames_ && pool_frame <= ended_frames_) {
                 const u64 fence = frame_fences_[pool_frame % kTrackedFrames];
                 wait_for = wait_for > fence ? wait_for : fence;

@@ -89,6 +89,7 @@ private:
     u64 frame_ = 0;
     u32 label_depth_ = 0;
     bool failed_ = false;
+    bool in_rendering_ = false;
 };
 
 } // namespace engine_placeholder::rhi::vulkan

@@ -323,6 +323,44 @@ can see, and a surface the compositor stopped drawing stops handing out images, 
 second for one and then also answers `Minimized`; render again next frame. Recreating a swapchain waits for the
 device to go idle, so avoid doing it every frame (a window being dragged larger rebuilds once per size change).
 
+### The frame loop
+
+Everything the device does is paced by frames. A frame is the span from `BeginFrame` to `EndFrame`:
+
+```
+device->BeginFrame();
+    // acquire, record, Submit
+device->EndFrame();
+swapchain->Present();     // presentation follows the frame's submit
+```
+
+**Frames in flight.** `DeviceCreateInfo::frames_in_flight` (1 to 3, default 2) is how many frames the CPU may run
+ahead of the GPU. `BeginFrame` waits for the frame that many back to finish, then resets that frame's command pools,
+frees every resource destroyed in a frame the GPU has completed, and advances `FrameNumber()`. After it returns,
+`FrameNumber() - CompletedFrame() <= frames_in_flight` holds. One in flight is the lowest latency and stalls the CPU
+on every frame; three smooths out a variable frame time at the cost of one more frame of input latency. The
+program renders the same pixels with any setting.
+
+**What may be touched between `BeginFrame` and `EndFrame`.**
+
+- Command lists from `CreateCommandList` belong to the calling thread and to this frame; they are invalid after the
+  next `BeginFrame`. Record them on any thread, then `Submit` from one thread.
+- Resources may be created and destroyed at any time. A destroyed resource stays alive until the GPU has finished
+  every frame that could have used it, so a command list recorded this frame may still name it.
+- `UploadBuffer`, `UploadTexture` and the readbacks may be called in the frame; they use the shared staging ring and,
+  for readbacks, wait for the GPU.
+- Contents of a buffer that the GPU reads are not versioned per frame: a buffer the CPU rewrites every frame needs one
+  copy per frame in flight.
+- `Acquire` and `Present` belong to the frame's thread, like `Submit`.
+
+**Ownership at shutdown.** Destroy what you created, call `WaitIdle`, destroy the swapchain, then the device. The
+Vulkan device counts anything still alive at that point (`VulkanDevice::GetLeakCounts`: your buffers, textures,
+samplers and swapchain, and the backend's own raw buffers and images), logs it as an error and frees it; other Vulkan
+object types are covered by the validation layer's own leak report; the frame-loop tests assert the counts are zero.
+
+The `rhi_demo` app (`game/rhi_demo/main.cpp`) is the smallest complete loop, and
+[Hello RHI](../tutorials/hello-rhi.md) walks through it.
+
 ### GPU memory
 
 `vkAllocateMemory` is limited (commonly 4096 live objects) and slow, so the Vulkan backend never allocates one

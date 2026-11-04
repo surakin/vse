@@ -784,45 +784,45 @@ rhi::ColorAttachmentDesc	struct	rhi	rhi-colorattachmentdesc	rhi.md	engine/rhi/co
 rhi::ColorAttachmentDesc::texture	variable	rhi	rhi-colorattachmentdesc-texture	rhi.md	engine/rhi/command_list.h:49
 rhi::ColorAttachmentDesc::load	variable	rhi	rhi-colorattachmentdesc-load	rhi.md	engine/rhi/command_list.h:51
 rhi::ColorAttachmentDesc::store	variable	rhi	rhi-colorattachmentdesc-store	rhi.md	engine/rhi/command_list.h:53
-rhi::ColorAttachmentDesc::clear_color	variable	rhi	rhi-colorattachmentdesc-clear-color	rhi.md	engine/rhi/command_list.h:55
-rhi::DepthAttachmentDesc	struct	rhi	rhi-depthattachmentdesc	rhi.md	engine/rhi/command_list.h:61
-rhi::DepthAttachmentDesc::texture	variable	rhi	rhi-depthattachmentdesc-texture	rhi.md	engine/rhi/command_list.h:63
-rhi::DepthAttachmentDesc::load	variable	rhi	rhi-depthattachmentdesc-load	rhi.md	engine/rhi/command_list.h:65
-rhi::DepthAttachmentDesc::store	variable	rhi	rhi-depthattachmentdesc-store	rhi.md	engine/rhi/command_list.h:67
-rhi::DepthAttachmentDesc::clear_depth	variable	rhi	rhi-depthattachmentdesc-clear-depth	rhi.md	engine/rhi/command_list.h:69
-rhi::RenderingDesc	struct	rhi	rhi-renderingdesc	rhi.md	engine/rhi/command_list.h:77
-rhi::RenderingDesc::color	variable	rhi	rhi-renderingdesc-color	rhi.md	engine/rhi/command_list.h:79
-rhi::RenderingDesc::color_count	variable	rhi	rhi-renderingdesc-color-count	rhi.md	engine/rhi/command_list.h:81
-rhi::RenderingDesc::depth	variable	rhi	rhi-renderingdesc-depth	rhi.md	engine/rhi/command_list.h:83
-rhi::BufferTextureCopy	struct	rhi	rhi-buffertexturecopy	rhi.md	engine/rhi/command_list.h:89
-rhi::BufferTextureCopy::buffer_offset	variable	rhi	rhi-buffertexturecopy-buffer-offset	rhi.md	engine/rhi/command_list.h:91
-rhi::BufferTextureCopy::buffer_row_pitch	variable	rhi	rhi-buffertexturecopy-buffer-row-pitch	rhi.md	engine/rhi/command_list.h:93
-rhi::BufferTextureCopy::mip_level	variable	rhi	rhi-buffertexturecopy-mip-level	rhi.md	engine/rhi/command_list.h:95
-rhi::BufferTextureCopy::array_layer	variable	rhi	rhi-buffertexturecopy-array-layer	rhi.md	engine/rhi/command_list.h:97
-rhi::CommandList	class	rhi	rhi-commandlist	rhi.md	engine/rhi/command_list.h:114
-rhi::CommandList::~CommandList()	function	rhi	rhi-commandlist-tilde-commandlist	rhi.md	engine/rhi/command_list.h:116
-rhi::CommandList::Begin()	function	rhi	rhi-commandlist-begin	rhi.md	engine/rhi/command_list.h:120
-rhi::CommandList::End()	function	rhi	rhi-commandlist-end	rhi.md	engine/rhi/command_list.h:124
-rhi::CommandList::CopyBuffer(BufferHandle,BufferHandle,u64,u64,u64)	function	rhi	rhi-commandlist-copybuffer-bufferhandle-bufferhandle-u64-u64-u64	rhi.md	engine/rhi/command_list.h:134
-rhi::CommandList::CopyBufferToTexture(BufferHandle,TextureHandle,const BufferTextureCopy&)	function	rhi	rhi-commandlist-copybuffertotexture-bufferhandle-texturehandle-const-buffertexturecopy-amp	rhi.md	engine/rhi/command_list.h:144
-rhi::CommandList::CopyTextureToBuffer(TextureHandle,BufferHandle,const BufferTextureCopy&)	function	rhi	rhi-commandlist-copytexturetobuffer-texturehandle-bufferhandle-const-buffertexturecopy-amp	rhi.md	engine/rhi/command_list.h:152
-rhi::CommandList::Barrier(BufferHandle,ResourceState,ResourceState)	function	rhi	rhi-commandlist-barrier-bufferhandle-resourcestate-resourcestate	rhi.md	engine/rhi/command_list.h:163
-rhi::CommandList::Barrier(TextureHandle,ResourceState,ResourceState)	function	rhi	rhi-commandlist-barrier-texturehandle-resourcestate-resourcestate	rhi.md	engine/rhi/command_list.h:174
-rhi::CommandList::GenerateMips(TextureHandle)	function	rhi	rhi-commandlist-generatemips-texturehandle	rhi.md	engine/rhi/command_list.h:186
-rhi::CommandList::BeginRendering(const RenderingDesc&)	function	rhi	rhi-commandlist-beginrendering-const-renderingdesc-amp	rhi.md	engine/rhi/command_list.h:193
-rhi::CommandList::EndRendering()	function	rhi	rhi-commandlist-endrendering	rhi.md	engine/rhi/command_list.h:197
-rhi::CommandList::SetPipeline(PipelineHandle)	function	rhi	rhi-commandlist-setpipeline-pipelinehandle	rhi.md	engine/rhi/command_list.h:207
-rhi::CommandList::SetBindGroup(u32,BindGroupHandle)	function	rhi	rhi-commandlist-setbindgroup-u32-bindgrouphandle	rhi.md	engine/rhi/command_list.h:214
-rhi::CommandList::SetPushConstants(u32,const void*,u32)	function	rhi	rhi-commandlist-setpushconstants-u32-const-void-star-u32	rhi.md	engine/rhi/command_list.h:222
-rhi::CommandList::SetViewport(const Viewport&)	function	rhi	rhi-commandlist-setviewport-const-viewport-amp	rhi.md	engine/rhi/command_list.h:228
-rhi::CommandList::SetScissor(const ScissorRect&)	function	rhi	rhi-commandlist-setscissor-const-scissorrect-amp	rhi.md	engine/rhi/command_list.h:234
-rhi::CommandList::SetVertexBuffer(u32,BufferHandle,u64)	function	rhi	rhi-commandlist-setvertexbuffer-u32-bufferhandle-u64	rhi.md	engine/rhi/command_list.h:242
-rhi::CommandList::SetIndexBuffer(BufferHandle,u64,IndexType)	function	rhi	rhi-commandlist-setindexbuffer-bufferhandle-u64-indextype	rhi.md	engine/rhi/command_list.h:250
-rhi::CommandList::Draw(u32,u32,u32,u32)	function	rhi	rhi-commandlist-draw-u32-u32-u32-u32	rhi.md	engine/rhi/command_list.h:260
-rhi::CommandList::DrawIndexed(u32,u32,u32,i32,u32)	function	rhi	rhi-commandlist-drawindexed-u32-u32-u32-i32-u32	rhi.md	engine/rhi/command_list.h:270
-rhi::CommandList::Dispatch(u32,u32,u32)	function	rhi	rhi-commandlist-dispatch-u32-u32-u32	rhi.md	engine/rhi/command_list.h:280
-rhi::CommandList::PushDebugLabel(const char*)	function	rhi	rhi-commandlist-pushdebuglabel-const-char-star	rhi.md	engine/rhi/command_list.h:286
-rhi::CommandList::PopDebugLabel()	function	rhi	rhi-commandlist-popdebuglabel	rhi.md	engine/rhi/command_list.h:290
+rhi::ColorAttachmentDesc::clear_color	variable	rhi	rhi-colorattachmentdesc-clear-color	rhi.md	engine/rhi/command_list.h:56
+rhi::DepthAttachmentDesc	struct	rhi	rhi-depthattachmentdesc	rhi.md	engine/rhi/command_list.h:64
+rhi::DepthAttachmentDesc::texture	variable	rhi	rhi-depthattachmentdesc-texture	rhi.md	engine/rhi/command_list.h:66
+rhi::DepthAttachmentDesc::load	variable	rhi	rhi-depthattachmentdesc-load	rhi.md	engine/rhi/command_list.h:68
+rhi::DepthAttachmentDesc::store	variable	rhi	rhi-depthattachmentdesc-store	rhi.md	engine/rhi/command_list.h:70
+rhi::DepthAttachmentDesc::clear_depth	variable	rhi	rhi-depthattachmentdesc-clear-depth	rhi.md	engine/rhi/command_list.h:72
+rhi::RenderingDesc	struct	rhi	rhi-renderingdesc	rhi.md	engine/rhi/command_list.h:80
+rhi::RenderingDesc::color	variable	rhi	rhi-renderingdesc-color	rhi.md	engine/rhi/command_list.h:82
+rhi::RenderingDesc::color_count	variable	rhi	rhi-renderingdesc-color-count	rhi.md	engine/rhi/command_list.h:84
+rhi::RenderingDesc::depth	variable	rhi	rhi-renderingdesc-depth	rhi.md	engine/rhi/command_list.h:86
+rhi::BufferTextureCopy	struct	rhi	rhi-buffertexturecopy	rhi.md	engine/rhi/command_list.h:92
+rhi::BufferTextureCopy::buffer_offset	variable	rhi	rhi-buffertexturecopy-buffer-offset	rhi.md	engine/rhi/command_list.h:94
+rhi::BufferTextureCopy::buffer_row_pitch	variable	rhi	rhi-buffertexturecopy-buffer-row-pitch	rhi.md	engine/rhi/command_list.h:96
+rhi::BufferTextureCopy::mip_level	variable	rhi	rhi-buffertexturecopy-mip-level	rhi.md	engine/rhi/command_list.h:98
+rhi::BufferTextureCopy::array_layer	variable	rhi	rhi-buffertexturecopy-array-layer	rhi.md	engine/rhi/command_list.h:100
+rhi::CommandList	class	rhi	rhi-commandlist	rhi.md	engine/rhi/command_list.h:117
+rhi::CommandList::~CommandList()	function	rhi	rhi-commandlist-tilde-commandlist	rhi.md	engine/rhi/command_list.h:119
+rhi::CommandList::Begin()	function	rhi	rhi-commandlist-begin	rhi.md	engine/rhi/command_list.h:123
+rhi::CommandList::End()	function	rhi	rhi-commandlist-end	rhi.md	engine/rhi/command_list.h:127
+rhi::CommandList::CopyBuffer(BufferHandle,BufferHandle,u64,u64,u64)	function	rhi	rhi-commandlist-copybuffer-bufferhandle-bufferhandle-u64-u64-u64	rhi.md	engine/rhi/command_list.h:137
+rhi::CommandList::CopyBufferToTexture(BufferHandle,TextureHandle,const BufferTextureCopy&)	function	rhi	rhi-commandlist-copybuffertotexture-bufferhandle-texturehandle-const-buffertexturecopy-amp	rhi.md	engine/rhi/command_list.h:147
+rhi::CommandList::CopyTextureToBuffer(TextureHandle,BufferHandle,const BufferTextureCopy&)	function	rhi	rhi-commandlist-copytexturetobuffer-texturehandle-bufferhandle-const-buffertexturecopy-amp	rhi.md	engine/rhi/command_list.h:155
+rhi::CommandList::Barrier(BufferHandle,ResourceState,ResourceState)	function	rhi	rhi-commandlist-barrier-bufferhandle-resourcestate-resourcestate	rhi.md	engine/rhi/command_list.h:166
+rhi::CommandList::Barrier(TextureHandle,ResourceState,ResourceState)	function	rhi	rhi-commandlist-barrier-texturehandle-resourcestate-resourcestate	rhi.md	engine/rhi/command_list.h:177
+rhi::CommandList::GenerateMips(TextureHandle)	function	rhi	rhi-commandlist-generatemips-texturehandle	rhi.md	engine/rhi/command_list.h:189
+rhi::CommandList::BeginRendering(const RenderingDesc&)	function	rhi	rhi-commandlist-beginrendering-const-renderingdesc-amp	rhi.md	engine/rhi/command_list.h:196
+rhi::CommandList::EndRendering()	function	rhi	rhi-commandlist-endrendering	rhi.md	engine/rhi/command_list.h:200
+rhi::CommandList::SetPipeline(PipelineHandle)	function	rhi	rhi-commandlist-setpipeline-pipelinehandle	rhi.md	engine/rhi/command_list.h:210
+rhi::CommandList::SetBindGroup(u32,BindGroupHandle)	function	rhi	rhi-commandlist-setbindgroup-u32-bindgrouphandle	rhi.md	engine/rhi/command_list.h:217
+rhi::CommandList::SetPushConstants(u32,const void*,u32)	function	rhi	rhi-commandlist-setpushconstants-u32-const-void-star-u32	rhi.md	engine/rhi/command_list.h:225
+rhi::CommandList::SetViewport(const Viewport&)	function	rhi	rhi-commandlist-setviewport-const-viewport-amp	rhi.md	engine/rhi/command_list.h:231
+rhi::CommandList::SetScissor(const ScissorRect&)	function	rhi	rhi-commandlist-setscissor-const-scissorrect-amp	rhi.md	engine/rhi/command_list.h:237
+rhi::CommandList::SetVertexBuffer(u32,BufferHandle,u64)	function	rhi	rhi-commandlist-setvertexbuffer-u32-bufferhandle-u64	rhi.md	engine/rhi/command_list.h:245
+rhi::CommandList::SetIndexBuffer(BufferHandle,u64,IndexType)	function	rhi	rhi-commandlist-setindexbuffer-bufferhandle-u64-indextype	rhi.md	engine/rhi/command_list.h:253
+rhi::CommandList::Draw(u32,u32,u32,u32)	function	rhi	rhi-commandlist-draw-u32-u32-u32-u32	rhi.md	engine/rhi/command_list.h:263
+rhi::CommandList::DrawIndexed(u32,u32,u32,i32,u32)	function	rhi	rhi-commandlist-drawindexed-u32-u32-u32-i32-u32	rhi.md	engine/rhi/command_list.h:273
+rhi::CommandList::Dispatch(u32,u32,u32)	function	rhi	rhi-commandlist-dispatch-u32-u32-u32	rhi.md	engine/rhi/command_list.h:283
+rhi::CommandList::PushDebugLabel(const char*)	function	rhi	rhi-commandlist-pushdebuglabel-const-char-star	rhi.md	engine/rhi/command_list.h:289
+rhi::CommandList::PopDebugLabel()	function	rhi	rhi-commandlist-popdebuglabel	rhi.md	engine/rhi/command_list.h:293
 rhi::MaxMipLevels(u32,u32,u32)	function	rhi	rhi-maxmiplevels-u32-u32-u32	rhi.md	engine/rhi/desc.h:24
 rhi::BufferDesc	struct	rhi	rhi-bufferdesc	rhi.md	engine/rhi/desc.h:30
 rhi::BufferDesc::size	variable	rhi	rhi-bufferdesc-size	rhi.md	engine/rhi/desc.h:32
@@ -1295,7 +1295,8 @@ rhi::DeviceCreateInfo::application_name	variable	rhi	rhi-devicecreateinfo-applic
 rhi::DeviceCreateInfo::validation	variable	rhi	rhi-devicecreateinfo-validation	rhi.md	engine/rhi/rhi.h:35
 rhi::DeviceCreateInfo::sync_validation	variable	rhi	rhi-devicecreateinfo-sync-validation	rhi.md	engine/rhi/rhi.h:37
 rhi::DeviceCreateInfo::window	variable	rhi	rhi-devicecreateinfo-window	rhi.md	engine/rhi/rhi.h:42
-rhi::CreateDevice(const DeviceCreateInfo&)	function	rhi	rhi-createdevice-const-devicecreateinfo-amp	rhi.md	engine/rhi/rhi.h:58
+rhi::DeviceCreateInfo::frames_in_flight	variable	rhi	rhi-devicecreateinfo-frames-in-flight	rhi.md	engine/rhi/rhi.h:45
+rhi::CreateDevice(const DeviceCreateInfo&)	function	rhi	rhi-createdevice-const-devicecreateinfo-amp	rhi.md	engine/rhi/rhi.h:61
 rhi::LogRhi	variable	rhi	rhi-logrhi	rhi.md	engine/rhi/rhi_log.h:13
 rhi::RhiLogV(LogVerbosity,const char*,...)	function	rhi	rhi-rhilogv-logverbosity-const-char-star	rhi.md	engine/rhi/rhi_log.h:24
 RhiLog	macro	rhi	rhilog	rhi.md	engine/rhi/rhi_log.h:44
@@ -1658,14 +1659,20 @@ rhi::vulkan::VulkanDevice::ObjectCounts::pending_image_destruction	variable	rhi-
 rhi::vulkan::VulkanDevice::ObjectCounts::raw_images	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-raw-images	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:144
 rhi::vulkan::VulkanDevice::Counts() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-counts-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:148
 rhi::vulkan::VulkanDevice::CompletedFrame() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-completedframe-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:151
-rhi::vulkan::VulkanDevice::LookupBuffer(BufferHandle,VkBuffer*,BufferDesc*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupbuffer-bufferhandle-vkbuffer-star-bufferdesc-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:160
-rhi::vulkan::VulkanDevice::TextureInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:165
-rhi::vulkan::VulkanDevice::TextureInfo::image	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-image	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:167
-rhi::vulkan::VulkanDevice::TextureInfo::view	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-view	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:169
-rhi::vulkan::VulkanDevice::TextureInfo::attachment_view	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-attachment-view	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:171
-rhi::vulkan::VulkanDevice::TextureInfo::desc	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-desc	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:173
-rhi::vulkan::VulkanDevice::TextureInfo::aspects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-aspects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:175
-rhi::vulkan::VulkanDevice::LookupTexture(TextureHandle,TextureInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookuptexture-texturehandle-textureinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:184
-rhi::vulkan::VulkanDevice::ReportResult(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-reportresult-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:190
-rhi::vulkan::VulkanDevice::InjectSubmitFailure(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-injectsubmitfailure-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:196
-rhi::vulkan::VulkanDevice::CommandPoolCount() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-commandpoolcount-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:199
+rhi::vulkan::VulkanDevice::FramesInFlight() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-framesinflight-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:154
+rhi::vulkan::VulkanDevice::LeakCounts	struct	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:159
+rhi::vulkan::VulkanDevice::LeakCounts::user_objects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts-user-objects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:162
+rhi::vulkan::VulkanDevice::LeakCounts::internal_objects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts-internal-objects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:164
+rhi::vulkan::VulkanDevice::GetLeakCounts()	function	rhi-vulkan	rhi-vulkan-vulkandevice-getleakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:169
+rhi::vulkan::VulkanDevice::ResetLeakCounts()	function	rhi-vulkan	rhi-vulkan-vulkandevice-resetleakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:172
+rhi::vulkan::VulkanDevice::LookupBuffer(BufferHandle,VkBuffer*,BufferDesc*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupbuffer-bufferhandle-vkbuffer-star-bufferdesc-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:181
+rhi::vulkan::VulkanDevice::TextureInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:186
+rhi::vulkan::VulkanDevice::TextureInfo::image	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-image	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:188
+rhi::vulkan::VulkanDevice::TextureInfo::view	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-view	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:190
+rhi::vulkan::VulkanDevice::TextureInfo::attachment_view	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-attachment-view	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:192
+rhi::vulkan::VulkanDevice::TextureInfo::desc	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-desc	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:194
+rhi::vulkan::VulkanDevice::TextureInfo::aspects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-aspects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:196
+rhi::vulkan::VulkanDevice::LookupTexture(TextureHandle,TextureInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookuptexture-texturehandle-textureinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:205
+rhi::vulkan::VulkanDevice::ReportResult(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-reportresult-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:211
+rhi::vulkan::VulkanDevice::InjectSubmitFailure(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-injectsubmitfailure-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:217
+rhi::vulkan::VulkanDevice::CommandPoolCount() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-commandpoolcount-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:220
