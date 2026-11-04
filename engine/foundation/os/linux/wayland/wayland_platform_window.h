@@ -64,6 +64,20 @@ public:
     u32 Height() const override { return window_.Height(); }
     /// Returns the backend id, `"wayland"`.
     const char* BackendName() const override { return "wayland"; }
+    /// Returns the `wl_display*` and `wl_surface*`, with kind `Wayland`; `Invalid` if the window is not open.
+    NativeWindowInfo GetNativeInfo() const override {
+        NativeWindowInfo info;
+        if (Valid()) {
+            info.kind = NativeWindowKind::Wayland;
+            info.display = connection_.Display();
+            info.surface = window_.Surface();
+        }
+        return info;
+    }
+    /// Returns whether the window is closed, the connection was lost, or it has zero area; Wayland exposes no minimized state to clients.
+    bool IsMinimized() const override { return !Valid() || window_.Width() == 0 || window_.Height() == 0; }
+    /// Returns a counter that changes each time a configure changes the window size; 0 when not open.
+    u64 ResizeSerial() const override { return Valid() ? window_.ResizeSerial() : 0; }
 
     /// Returns the seat input handler, for querying keyboard, pointer and keymap availability.
     const WaylandInput& Input() const { return input_; }

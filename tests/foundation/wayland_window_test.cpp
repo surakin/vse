@@ -105,6 +105,7 @@ TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the
     REQUIRE(window.Valid());
     const engine_placeholder::u32 original_width = window.Width();
     const engine_placeholder::u32 original_height = window.Height();
+    const engine_placeholder::u64 serial_before = window.ResizeSerial();
 
     // Ask the compositor to maximize: it answers with a configure at
     // the maximized size, which must become the window's size (and the
@@ -119,6 +120,8 @@ TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the
     if (window.Width() == original_width) {
         SKIP("compositor did not resize the window on set_maximized");
     }
+    const engine_placeholder::u64 serial_maximized = window.ResizeSerial();
+    REQUIRE(serial_maximized != serial_before);  // a swapchain can tell its images are stale
     xdg_toplevel_unset_maximized(window.XdgToplevel());
     for (int i = 0; i < 5; ++i) {
         wl_display_roundtrip(conn.Display());
@@ -129,6 +132,7 @@ TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the
     // maximized (screen) size pending.
     REQUIRE(window.Width() == original_width);
     REQUIRE(window.Height() == original_height);
+    REQUIRE(window.ResizeSerial() != serial_maximized);  // changing back is a change too
     REQUIRE(window.Valid());
     // The new buffer was attached and the compositor kept the connection.
     REQUIRE(wl_display_get_error(conn.Display()) == 0);
@@ -141,4 +145,21 @@ TEST_CASE("WaylandWindow::Create uses the size hint when the compositor suggests
     REQUIRE(window.Valid());
     REQUIRE(window.Width() == 500);
     REQUIRE(window.Height() == 300);
+}
+
+TEST_CASE("WaylandWindow's resize serial survives a move and is non-zero once sized", "[wayland][os]") {
+    WaylandConnection conn = WaylandConnection::Connect();
+    REQUIRE(conn.Valid());
+    WaylandWindow window = WaylandWindow::Create(conn, "serial test", "engine_placeholder");
+    REQUIRE(window.Valid());
+    const engine_placeholder::u64 serial = window.ResizeSerial();
+    REQUIRE(serial != 0);  // the initial configure sized it
+    WaylandWindow moved(std::move(window));
+    REQUIRE(moved.ResizeSerial() == serial);
+    REQUIRE(window.ResizeSerial() == 0);
+
+    // Serials are process-wide: a second window never reports the same value.
+    WaylandWindow other = WaylandWindow::Create(conn, "serial test 2", "engine_placeholder");
+    REQUIRE(other.Valid());
+    REQUIRE(other.ResizeSerial() != serial);
 }

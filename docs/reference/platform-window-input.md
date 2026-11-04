@@ -942,6 +942,36 @@ const char* BackendName() const override;
 
 Returns the backend id, `"wayland"`.
 
+### `GetNativeInfo()` {#os-wayland-waylandplatformwindow-getnativeinfo-const}
+
+`method os::wayland::WaylandPlatformWindow::GetNativeInfo` — defined in `engine/foundation/os/linux/wayland/wayland_platform_window.h`
+
+```cpp
+NativeWindowInfo GetNativeInfo() const override;
+```
+
+Returns the `wl_display*` and `wl_surface*`, with kind `Wayland`; `Invalid` if the window is not open.
+
+### `IsMinimized()` {#os-wayland-waylandplatformwindow-isminimized-const}
+
+`method os::wayland::WaylandPlatformWindow::IsMinimized` — defined in `engine/foundation/os/linux/wayland/wayland_platform_window.h`
+
+```cpp
+bool IsMinimized() const override;
+```
+
+Returns whether the window is closed, the connection was lost, or it has zero area; Wayland exposes no minimized state to clients.
+
+### `ResizeSerial()` {#os-wayland-waylandplatformwindow-resizeserial-const}
+
+`method os::wayland::WaylandPlatformWindow::ResizeSerial` — defined in `engine/foundation/os/linux/wayland/wayland_platform_window.h`
+
+```cpp
+u64 ResizeSerial() const override;
+```
+
+Returns a counter that changes each time a configure changes the window size; 0 when not open.
+
 ### `Input()` {#os-wayland-waylandplatformwindow-input-const}
 
 `method os::wayland::WaylandPlatformWindow::Input` — defined in `engine/foundation/os/linux/wayland/wayland_platform_window.h`
@@ -1163,6 +1193,16 @@ u32 Height() const;
 
 Returns the current window height in pixels.
 
+### `ResizeSerial()` {#os-wayland-waylandwindow-resizeserial-const}
+
+`method os::wayland::WaylandWindow::ResizeSerial` — defined in `engine/foundation/os/linux/wayland/wayland_window.h`
+
+```cpp
+u64 ResizeSerial() const;
+```
+
+Returns a counter that changes each time a configure changes the window size.
+
 ## `X11Window` {#os-x11-x11window}
 
 `class os::x11::X11Window` — defined in `engine/foundation/os/linux/x11/x11_window.h`
@@ -1348,6 +1388,36 @@ const char* BackendName() const override;
 
 Returns the backend id, `"x11"`.
 
+### `GetNativeInfo()` {#os-x11-x11window-getnativeinfo-const}
+
+`method os::x11::X11Window::GetNativeInfo` — defined in `engine/foundation/os/linux/x11/x11_window.h`
+
+```cpp
+NativeWindowInfo GetNativeInfo() const override;
+```
+
+Returns the `Display*` and window id, with kind `Xlib`; `Invalid` if the window is invalid.
+
+### `IsMinimized()` {#os-x11-x11window-isminimized-const}
+
+`method os::x11::X11Window::IsMinimized` — defined in `engine/foundation/os/linux/x11/x11_window.h`
+
+```cpp
+bool IsMinimized() const override;
+```
+
+Returns whether the window is closed, has zero area, or the window manager has unmapped or iconified it.
+
+### `ResizeSerial()` {#os-x11-x11window-resizeserial-const}
+
+`method os::x11::X11Window::ResizeSerial` — defined in `engine/foundation/os/linux/x11/x11_window.h`
+
+```cpp
+u64 ResizeSerial() const override;
+```
+
+Returns a counter that changes each time the size changes; 0 for an invalid window.
+
 ### `NativeDisplay()` {#os-x11-x11window-nativedisplay-const}
 
 `method os::x11::X11Window::NativeDisplay` — defined in `engine/foundation/os/linux/x11/x11_window.h`
@@ -1525,6 +1595,82 @@ Returns the effective modifier bitmask (`ModifierBit` values) under the current 
 |---|---|
 | Returns | the mask, or 0 if not valid. |
 
+## `NativeWindowKind` {#os-nativewindowkind}
+
+`enum os::NativeWindowKind` — defined in `engine/foundation/os/window.h`
+
+```cpp
+enum class NativeWindowKind : u8 { ... }
+```
+
+Which native windowing system a window belongs to, so a graphics layer knows how to read [`os::NativeWindowInfo`](#os-nativewindowinfo).
+
+| Enumerator | Value | Description |
+|---|---|---|
+| <a id="os-nativewindowkind-invalid"></a>`Invalid` | `0` | No native window (an invalid or closed window); named to avoid the X11 `None` macro. |
+| <a id="os-nativewindowkind-wayland"></a>`Wayland` |  | A Wayland surface: `display` is a `wl_display*`, `surface` is a `wl_surface*`. |
+| <a id="os-nativewindowkind-xlib"></a>`Xlib` |  | An X11 window: `display` is a `Display*`, `window_id` is the `Window` (XID). |
+| <a id="os-nativewindowkind-win32"></a>`Win32` |  | Reserved for the Windows port: `display` is the `HINSTANCE`, `surface` the `HWND`. |
+| <a id="os-nativewindowkind-cocoa"></a>`Cocoa` |  | Reserved for the macOS port: `surface` is the `NSView*` (or `CAMetalLayer*`). |
+| <a id="os-nativewindowkind-android"></a>`Android` |  | Reserved for the Android port: `surface` is the `ANativeWindow*`. |
+
+## `NativeWindowInfo` {#os-nativewindowinfo}
+
+`struct os::NativeWindowInfo` — defined in `engine/foundation/os/window.h`
+
+```cpp
+struct NativeWindowInfo { ... }
+```
+
+The native handles of a window, as a plain value a graphics layer can create a presentation surface from.
+
+This is how the RHI's swapchain gets at the window without including any platform header: the `kind` says which fields are meaningful, and the pointers are opaque here. Unused fields are null or 0.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+| Ownership | every pointer is borrowed from the window that returned it and is valid until that window is destroyed (or, for Wayland, closed); a graphics surface made from it must be destroyed first. |
+
+### `kind` {#os-nativewindowinfo-kind}
+
+`variable os::NativeWindowInfo::kind` — defined in `engine/foundation/os/window.h`
+
+```cpp
+NativeWindowKind kind;
+```
+
+The windowing system; decides which of the other fields are meaningful.
+
+### `display` {#os-nativewindowinfo-display}
+
+`variable os::NativeWindowInfo::display` — defined in `engine/foundation/os/window.h`
+
+```cpp
+void* display;
+```
+
+The display or connection handle (`wl_display*`, `Display*`, `HINSTANCE`), or null.
+
+### `surface` {#os-nativewindowinfo-surface}
+
+`variable os::NativeWindowInfo::surface` — defined in `engine/foundation/os/window.h`
+
+```cpp
+void* surface;
+```
+
+The surface or window handle (`wl_surface*`, `HWND`, `NSView*`, `ANativeWindow*`), or null.
+
+### `window_id` {#os-nativewindowinfo-window-id}
+
+`variable os::NativeWindowInfo::window_id` — defined in `engine/foundation/os/window.h`
+
+```cpp
+u64 window_id;
+```
+
+An integer window identifier, for systems whose windows are not pointers (the X11 `Window`); otherwise 0.
+
 ## `Window` {#os-window}
 
 `class os::Window` — defined in `engine/foundation/os/window.h`
@@ -1615,6 +1761,45 @@ Returns the stable lowercase backend id (`"wayland"`, `"x11"`), for logs and tes
 | Field | Value |
 |---|---|
 | Ownership | the string is static and is never freed by the caller. |
+
+### `GetNativeInfo()` {#os-window-getnativeinfo-const}
+
+`method os::Window::GetNativeInfo` — defined in `engine/foundation/os/window.h`
+
+```cpp
+virtual NativeWindowInfo GetNativeInfo() const = 0;
+```
+
+Returns the native handles a graphics layer needs to create a presentation surface for this window.
+
+| Field | Value |
+|---|---|
+| Returns | the handles; `kind` is `Invalid` and the rest empty if the window is invalid or closed. |
+| Ownership | the pointers are borrowed from this window; see [`os::NativeWindowInfo`](#os-nativewindowinfo). |
+
+### `IsMinimized()` {#os-window-isminimized-const}
+
+`method os::Window::IsMinimized` — defined in `engine/foundation/os/window.h`
+
+```cpp
+virtual bool IsMinimized() const = 0;
+```
+
+Returns whether there is nothing to draw to: the window is not open, has no area, or is reported hidden.
+
+A window that is invalid, closed or has lost its connection counts, as does one with zero width or height. X11 also reports a window the window manager has unmapped or iconified (which includes a window on a hidden desktop). Wayland has no client-visible minimized or occluded state, so there only the first two cases apply.
+
+### `ResizeSerial()` {#os-window-resizeserial-const}
+
+`method os::Window::ResizeSerial` — defined in `engine/foundation/os/window.h`
+
+```cpp
+virtual u64 ResizeSerial() const = 0;
+```
+
+Returns a counter that changes every time the window size changes, so a swapchain can cheaply tell that it is stale.
+
+The value is opaque: compare it for equality with a value read earlier. Values come from one process-wide counter, so an open window never reports 0, and a value never repeats across size changes, windows, or closing and reopening. An invalid or closed window reports 0.
 
 ## `WindowBackend` {#os-windowbackend}
 

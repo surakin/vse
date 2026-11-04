@@ -73,6 +73,20 @@ public:
     u32 Height() const override { return height_; }
     /// Returns the backend id, `"x11"`.
     const char* BackendName() const override { return "x11"; }
+    /// Returns the `Display*` and window id, with kind `Xlib`; `Invalid` if the window is invalid.
+    NativeWindowInfo GetNativeInfo() const override {
+        NativeWindowInfo info;
+        if (display_ != nullptr) {
+            info.kind = NativeWindowKind::Xlib;
+            info.display = display_;
+            info.window_id = window_;
+        }
+        return info;
+    }
+    /// Returns whether the window is closed, has zero area, or the window manager has unmapped or iconified it.
+    bool IsMinimized() const override { return display_ == nullptr || width_ == 0 || height_ == 0 || unmapped_; }
+    /// Returns a counter that changes each time the size changes; 0 for an invalid window.
+    u64 ResizeSerial() const override { return resize_serial_; }
 
     /// Returns the underlying Xlib `Display*`, or null if invalid.
     ///
@@ -97,6 +111,9 @@ private:
     u32 width_ = 0;
     u32 height_ = 0;
     bool should_close_ = false;
+    // Set by UnmapNotify (iconified or hidden), cleared by MapNotify.
+    bool unmapped_ = false;
+    u64 resize_serial_ = 0;
     // The Key each held X keycode was *pressed* as, so a release clears
     // that Key even if modifiers changed in between (same rationale as
     // WaylandInput::held_). X keycodes are 8-bit.

@@ -149,6 +149,7 @@ X11Window X11Window::Create(StringView title, u32 width, u32 height) {
     result.input_context_ = reinterpret_cast<_XIC*>(xic);
     result.width_ = width;
     result.height_ = height;
+    result.resize_serial_ = detail::NextResizeSerial();
     return result;
 }
 
@@ -165,7 +166,9 @@ X11Window::X11Window(X11Window&& other) noexcept
       input_(other.input_),
       width_(other.width_),
       height_(other.height_),
-      should_close_(other.should_close_) {
+      should_close_(other.should_close_),
+      unmapped_(other.unmapped_),
+      resize_serial_(other.resize_serial_) {
     std::memcpy(held_, other.held_, sizeof(held_));
     other.display_ = nullptr;
     other.window_ = 0;
@@ -176,6 +179,8 @@ X11Window::X11Window(X11Window&& other) noexcept
     other.width_ = 0;
     other.height_ = 0;
     other.should_close_ = false;
+    other.unmapped_ = false;
+    other.resize_serial_ = 0;
 }
 
 X11Window& X11Window::operator=(X11Window&& other) noexcept {
@@ -190,6 +195,8 @@ X11Window& X11Window::operator=(X11Window&& other) noexcept {
         width_ = other.width_;
         height_ = other.height_;
         should_close_ = other.should_close_;
+        unmapped_ = other.unmapped_;
+        resize_serial_ = other.resize_serial_;
         std::memcpy(held_, other.held_, sizeof(held_));
         other.display_ = nullptr;
         other.window_ = 0;
@@ -200,6 +207,8 @@ X11Window& X11Window::operator=(X11Window&& other) noexcept {
         other.width_ = 0;
         other.height_ = 0;
         other.should_close_ = false;
+        other.unmapped_ = false;
+        other.resize_serial_ = 0;
     }
     return *this;
 }
@@ -223,6 +232,10 @@ void X11Window::ReleaseAll() {
     }
     input_ = nullptr;
     should_close_ = false;
+    unmapped_ = false;
+    width_ = 0;
+    height_ = 0;
+    resize_serial_ = 0;
 }
 
 void X11Window::PumpEvents(InputState* input) {
@@ -245,10 +258,21 @@ void X11Window::PumpEvents(InputState* input) {
             if (w != width_ || h != height_) {
                 width_ = w;
                 height_ = h;
+                resize_serial_ = detail::NextResizeSerial();
                 LogResize(w, h);
             }
             break;
         }
+        case UnmapNotify:
+            if (event.xunmap.window == window_) {
+                unmapped_ = true;
+            }
+            break;
+        case MapNotify:
+            if (event.xmap.window == window_) {
+                unmapped_ = false;
+            }
+            break;
         case ClientMessage:
             if (static_cast<unsigned long>(event.xclient.data.l[0]) == wm_delete_window_ &&
                 event.xclient.message_type == XInternAtom(display_, "WM_PROTOCOLS", False)) {

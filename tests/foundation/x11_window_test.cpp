@@ -444,3 +444,110 @@ TEST_CASE("X11Window releases keys and modifiers on a real focus loss but not du
     REQUIRE_FALSE(input.keyboard.IsDown(Key::W));
     REQUIRE(input.keyboard.modifiers == 0);
 }
+
+TEST_CASE("X11Window reports native info, and none once invalid or moved from", "[x11][os]") {
+    using engine_placeholder::os::NativeWindowKind;
+    X11Window none;
+    REQUIRE(none.GetNativeInfo().kind == NativeWindowKind::Invalid);
+    REQUIRE(none.GetNativeInfo().display == nullptr);
+    REQUIRE(none.IsMinimized());  // zero area
+    REQUIRE(none.ResizeSerial() == 0);
+
+    X11Window window = X11Window::Create("native info", 320, 240);
+    REQUIRE(window.Valid());
+    auto info = window.GetNativeInfo();
+    REQUIRE(info.kind == NativeWindowKind::Xlib);
+    REQUIRE(info.display == static_cast<void*>(window.NativeDisplay()));
+    REQUIRE(info.window_id == window.NativeWindow());
+    REQUIRE(info.surface == nullptr);
+    REQUIRE_FALSE(window.IsMinimized());
+
+    X11Window moved(std::move(window));
+    REQUIRE(moved.GetNativeInfo().window_id == info.window_id);
+    REQUIRE(window.GetNativeInfo().kind == NativeWindowKind::Invalid);
+}
+
+TEST_CASE("X11Window's resize serial changes on every size change and never repeats", "[x11][os]") {
+    X11Window window = X11Window::Create("serial test", 300, 200);
+    REQUIRE(window.Valid());
+    REQUIRE(window.ResizeSerial() != 0);
+
+    // Let the window manager's initial configure burst finish: wait until the serial has been stable for a
+    // while, rather than assuming a fixed number of pumps is enough.
+    engine_placeholder::u64 settled = window.ResizeSerial();
+    int stable = 0;
+    for (int i = 0; i < 300 && stable < 20; ++i) {
+        window.PumpEvents(nullptr);
+        engine_placeholder::os::SleepNanos(5'000'000);
+        if (window.ResizeSerial() == settled) {
+            ++stable;
+        } else {
+            settled = window.ResizeSerial();
+            stable = 0;
+        }
+    }
+    const engine_placeholder::u32 start_w = window.Width();
+    const engine_placeholder::u32 start_h = window.Height();
+
+    Display* other = XOpenDisplay(nullptr);
+    REQUIRE(other != nullptr);
+    XResizeWindow(other, window.NativeWindow(), 411, 273);
+    XSync(other, False);
+    REQUIRE(PumpUntil(window, [&] { return window.Width() == 411 && window.Height() == 273; }));
+    const engine_placeholder::u64 resized = window.ResizeSerial();
+    REQUIRE(resized != settled);
+
+    XResizeWindow(other, window.NativeWindow(), start_w, start_h);  // back to the size it started at
+    XSync(other, False);
+    XCloseDisplay(other);
+    REQUIRE(PumpUntil(window, [&] { return window.Width() == start_w && window.Height() == start_h; }));
+    REQUIRE(window.ResizeSerial() != resized);
+    REQUIRE(window.ResizeSerial() != settled);  // a serial never repeats, even for a size seen before
+
+    // Serials are process-wide: two windows never report the same value.
+    X11Window second = X11Window::Create("serial test 2", 300, 200);
+    REQUIRE(second.Valid());
+    REQUIRE(second.ResizeSerial() != window.ResizeSerial());
+
+    X11Window moved(std::move(window));
+    REQUIRE(moved.ResizeSerial() != 0);
+    REQUIRE(window.ResizeSerial() == 0);
+    REQUIRE(window.IsMinimized());
+}
+
+TEST_CASE("X11Window reports itself minimized while its window is unmapped", "[x11][os]") {
+    X11Window window = X11Window::Create("unmap test", 300, 200);
+    REQUIRE(window.Valid());
+    PumpUntil(window, [] { return false; });
+    REQUIRE_FALSE(window.IsMinimized());
+
+    // A window manager iconifies a window by unmapping it. Synthetic UnmapNotify/MapNotify events deliver the
+    // same notifications without depending on the window manager or on the window having become viewable.
+    auto send = [&](int type) {
+        XEvent e = {};
+        e.type = type;
+        if (type == UnmapNotify) {
+            e.xunmap.event = window.NativeWindow();
+            e.xunmap.window = window.NativeWindow();
+        } else {
+            e.xmap.event = window.NativeWindow();
+            e.xmap.window = window.NativeWindow();
+        }
+        XSendEvent(window.NativeDisplay(), window.NativeWindow(), False, StructureNotifyMask, &e);
+        XFlush(window.NativeDisplay());
+    };
+    send(UnmapNotify);
+    REQUIRE(PumpUntil(window, [&] { return window.IsMinimized(); }));
+    send(MapNotify);
+    REQUIRE(PumpUntil(window, [&] { return !window.IsMinimized(); }));
+
+    // An unmap of some other window does not count.
+    XEvent other = {};
+    other.type = UnmapNotify;
+    other.xunmap.event = window.NativeWindow();
+    other.xunmap.window = window.NativeWindow() + 1;
+    XSendEvent(window.NativeDisplay(), window.NativeWindow(), False, StructureNotifyMask, &other);
+    XFlush(window.NativeDisplay());
+    PumpUntil(window, [] { return false; });
+    REQUIRE_FALSE(window.IsMinimized());
+}

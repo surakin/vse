@@ -91,6 +91,8 @@ public:
     u32 Width() const { return width_; }
     /// Returns the current window height in pixels.
     u32 Height() const { return height_; }
+    /// Returns a counter that changes each time a configure changes the window size.
+    u64 ResizeSerial() const { return resize_serial_; }
 
 private:
     // xdg_surface/xdg_toplevel listener trampolines. Private statics
@@ -132,6 +134,7 @@ private:
     usize shm_size_ = 0;
     u32 width_ = 0;
     u32 height_ = 0;
+    u64 resize_serial_ = 0;
     // Buffered xdg_toplevel configure state, applied atomically (and
     // logged, if changed) when the matching xdg_surface configure
     // arrives — per the xdg-shell spec, toplevel configure supplies

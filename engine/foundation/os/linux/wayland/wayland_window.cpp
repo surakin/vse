@@ -6,6 +6,7 @@
 
 #include "log/log.h"
 #include "mem/arena_allocator.h"
+#include "os/window.h"
 
 namespace engine_placeholder::os::wayland {
 
@@ -268,6 +269,7 @@ WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
       shm_size_(other.shm_size_),
       width_(other.width_),
       height_(other.height_),
+      resize_serial_(other.resize_serial_),
       pending_width_(other.pending_width_),
       pending_height_(other.pending_height_),
       pending_constrained_(other.pending_constrained_),
@@ -287,6 +289,7 @@ WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
     other.shm_size_ = 0;
     other.width_ = 0;
     other.height_ = 0;
+    other.resize_serial_ = 0;
     other.pending_width_ = 0;
     other.pending_height_ = 0;
     other.pending_constrained_ = false;
@@ -313,6 +316,7 @@ WaylandWindow& WaylandWindow::operator=(WaylandWindow&& other) noexcept {
         shm_size_ = other.shm_size_;
         width_ = other.width_;
         height_ = other.height_;
+        resize_serial_ = other.resize_serial_;
         pending_width_ = other.pending_width_;
         pending_height_ = other.pending_height_;
         pending_constrained_ = other.pending_constrained_;
@@ -332,6 +336,7 @@ WaylandWindow& WaylandWindow::operator=(WaylandWindow&& other) noexcept {
         other.shm_size_ = 0;
         other.width_ = 0;
         other.height_ = 0;
+        other.resize_serial_ = 0;
         other.pending_width_ = 0;
         other.pending_height_ = 0;
         other.pending_constrained_ = false;
@@ -398,6 +403,7 @@ void WaylandWindow::HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, 
     if (new_width != window->width_ || new_height != window->height_) {
         window->width_ = new_width;
         window->height_ = new_height;
+        window->resize_serial_ = detail::NextResizeSerial();
         LogResize(new_width, new_height);
         // Once mapped, a size change needs a matching buffer (the initial
         // configure inside Create() has no buffer yet; Create() makes it).

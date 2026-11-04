@@ -10,6 +10,35 @@
 
 namespace engine_placeholder::os {
 
+/// Which native windowing system a window belongs to, so a graphics layer knows how to read [[os::NativeWindowInfo]].
+enum class NativeWindowKind : u8 {
+    Invalid = 0, ///< No native window (an invalid or closed window); named to avoid the X11 `None` macro.
+    Wayland,  ///< A Wayland surface: `display` is a `wl_display*`, `surface` is a `wl_surface*`.
+    Xlib,     ///< An X11 window: `display` is a `Display*`, `window_id` is the `Window` (XID).
+    Win32,    ///< Reserved for the Windows port: `display` is the `HINSTANCE`, `surface` the `HWND`.
+    Cocoa,    ///< Reserved for the macOS port: `surface` is the `NSView*` (or `CAMetalLayer*`).
+    Android,  ///< Reserved for the Android port: `surface` is the `ANativeWindow*`.
+};
+
+/// The native handles of a window, as a plain value a graphics layer can create a presentation surface from.
+///
+/// This is how the RHI's swapchain gets at the window without including any platform header: the
+/// `kind` says which fields are meaningful, and the pointers are opaque here. Unused fields are null or 0.
+///
+/// Thread-safety: thread-compatible plain data.
+/// Ownership: every pointer is borrowed from the window that returned it and is valid until that window is
+///   destroyed (or, for Wayland, closed); a graphics surface made from it must be destroyed first.
+struct NativeWindowInfo {
+    /// The windowing system; decides which of the other fields are meaningful.
+    NativeWindowKind kind = NativeWindowKind::Invalid;
+    /// The display or connection handle (`wl_display*`, `Display*`, `HINSTANCE`), or null.
+    void* display = nullptr;
+    /// The surface or window handle (`wl_surface*`, `HWND`, `NSView*`, `ANativeWindow*`), or null.
+    void* surface = nullptr;
+    /// An integer window identifier, for systems whose windows are not pointers (the X11 `Window`); otherwise 0.
+    u64 window_id = 0;
+};
+
 /// Abstract window implemented by each platform backend, so upper layers never name a backend.
 ///
 /// Input is delivered into the `InputState` the backend was bound to when the window was opened.
@@ -38,7 +67,33 @@ public:
     /// Returns the stable lowercase backend id (`"wayland"`, `"x11"`), for logs and tests.
     /// Ownership: the string is static and is never freed by the caller.
     virtual const char* BackendName() const = 0;
+
+    /// Returns the native handles a graphics layer needs to create a presentation surface for this window.
+    ///
+    /// Returns: the handles; `kind` is `Invalid` and the rest empty if the window is invalid or closed.
+    /// Ownership: the pointers are borrowed from this window; see [[os::NativeWindowInfo]].
+    virtual NativeWindowInfo GetNativeInfo() const = 0;
+
+    /// Returns whether there is nothing to draw to: the window is not open, has no area, or is reported hidden.
+    ///
+    /// A window that is invalid, closed or has lost its connection counts, as does one with zero width or
+    /// height. X11 also reports a window the window manager has unmapped or iconified (which includes a window
+    /// on a hidden desktop). Wayland has no client-visible minimized or occluded state, so there only the
+    /// first two cases apply.
+    virtual bool IsMinimized() const = 0;
+
+    /// Returns a counter that changes every time the window size changes, so a swapchain can cheaply tell that it is stale.
+    ///
+    /// The value is opaque: compare it for equality with a value read earlier. Values come from one
+    /// process-wide counter, so an open window never reports 0, and a value never repeats across size changes,
+    /// windows, or closing and reopening. An invalid or closed window reports 0.
+    virtual u64 ResizeSerial() const = 0;
 };
+
+namespace detail {
+/// Returns the next value of the process-wide resize counter shared by all windows; never 0.
+u64 NextResizeSerial();
+} // namespace detail
 
 /// Selects which display backend to use for a window.
 enum class WindowBackend : u8 {

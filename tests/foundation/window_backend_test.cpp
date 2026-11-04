@@ -234,6 +234,10 @@ TEST_CASE("WaylandPlatformWindow reports a dead compositor connection as ShouldC
     REQUIRE(window.ConnectionLost());
     REQUIRE(window.ShouldClose());
     REQUIRE_FALSE(window.Valid());
+    // The three native-surface accessors agree that the window is gone.
+    REQUIRE(window.GetNativeInfo().kind == NativeWindowKind::Invalid);
+    REQUIRE(window.IsMinimized());
+    REQUIRE(window.ResizeSerial() == 0);
     window.PumpEvents(); // further pumps are harmless no-ops
 }
 
@@ -246,9 +250,13 @@ TEST_CASE("WaylandPlatformWindow::Close tears everything down and is idempotent"
     REQUIRE(window.Open("close me", 320, 240, &input));
     REQUIRE(window.Valid());
     REQUIRE(window.Input().HasKeyboard());
+    const u64 serial_before_close = window.ResizeSerial();
+    REQUIRE(serial_before_close != 0);
 
     window.Close();
     REQUIRE_FALSE(window.Valid());
+    REQUIRE(window.ResizeSerial() == 0);
+    REQUIRE(window.IsMinimized());
     REQUIRE_FALSE(window.Input().Valid());
     REQUIRE_FALSE(window.Input().HasKeyboard());
     REQUIRE(window.NativeDisplay() == nullptr);
@@ -256,7 +264,72 @@ TEST_CASE("WaylandPlatformWindow::Close tears everything down and is idempotent"
     window.PumpEvents();
 
     // A fresh Open on the same object works (new connection, new seat).
+    const u64 before_close = serial_before_close;
     REQUIRE(window.Open("reopened", 320, 240, &input));
     REQUIRE(window.Valid());
     REQUIRE(window.Input().HasKeyboard());
+    // A swapchain remembering the old window's serial must see the reopened window as changed.
+    REQUIRE(window.ResizeSerial() != before_close);
+}
+
+TEST_CASE("A Wayland window exposes its native display and surface", "[window][wayland][os]") {
+    if (!HaveEnv("WAYLAND_DISPLAY")) {
+        SKIP("no Wayland session");
+    }
+    InputState input;
+    PlatformWindowHost host;
+    REQUIRE(host.Open(WindowBackend::Wayland, "native info", 320, 240, &input));
+    Window* w = host.Get();
+    REQUIRE(w != nullptr);
+
+    NativeWindowInfo info = w->GetNativeInfo();
+    REQUIRE(info.kind == NativeWindowKind::Wayland);
+    REQUIRE(info.display != nullptr);
+    REQUIRE(info.surface != nullptr);
+    REQUIRE(info.window_id == 0);
+    REQUIRE_FALSE(w->IsMinimized());
+    REQUIRE(w->ResizeSerial() != 0);
+    // Stable across calls and pumps (the handles belong to the window, not to the call).
+    w->PumpEvents();
+    NativeWindowInfo again = w->GetNativeInfo();
+    REQUIRE(again.display == info.display);
+    REQUIRE(again.surface == info.surface);
+}
+
+TEST_CASE("A closed or never-opened Wayland window has no native info and counts as minimized", "[window][wayland][os]") {
+    engine_placeholder::os::wayland::WaylandPlatformWindow closed;
+    NativeWindowInfo info = closed.GetNativeInfo();
+    REQUIRE(info.kind == NativeWindowKind::Invalid);
+    REQUIRE(info.display == nullptr);
+    REQUIRE(info.surface == nullptr);
+    REQUIRE(closed.IsMinimized());  // zero area
+    REQUIRE(closed.ResizeSerial() == 0);
+
+    if (!HaveEnv("WAYLAND_DISPLAY")) {
+        SKIP("no Wayland session");
+    }
+    InputState input;
+    engine_placeholder::os::wayland::WaylandPlatformWindow opened;
+    REQUIRE(opened.Open("native info close", 200, 200, &input));
+    REQUIRE(opened.GetNativeInfo().kind == NativeWindowKind::Wayland);
+    opened.Close();
+    REQUIRE(opened.GetNativeInfo().kind == NativeWindowKind::Invalid);
+}
+
+TEST_CASE("An X11 window exposes its native display and window id", "[window][x11][os]") {
+    if (!HaveEnv("DISPLAY")) {
+        SKIP("no X11 display");
+    }
+    InputState input;
+    PlatformWindowHost host;
+    REQUIRE(host.Open(WindowBackend::X11, "native info x11", 320, 240, &input));
+    Window* w = host.Get();
+    REQUIRE(w != nullptr);
+
+    NativeWindowInfo info = w->GetNativeInfo();
+    REQUIRE(info.kind == NativeWindowKind::Xlib);
+    REQUIRE(info.display != nullptr);
+    REQUIRE(info.window_id != 0);
+    REQUIRE(info.surface == nullptr);
+    REQUIRE_FALSE(w->IsMinimized());
 }

@@ -1,6 +1,15 @@
 #include "os/window.h"
 
+#include <atomic>
+
 namespace engine_placeholder::os {
+
+namespace detail {
+u64 NextResizeSerial() {
+    static std::atomic<u64> counter{0};
+    return counter.fetch_add(1, std::memory_order_relaxed) + 1;
+}
+} // namespace detail
 
 WindowBackend ParseWindowBackend(StringView name) {
     if (name == StringView("auto")) return WindowBackend::Auto;

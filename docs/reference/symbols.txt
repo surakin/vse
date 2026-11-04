@@ -495,7 +495,10 @@ os::wayland::WaylandPlatformWindow::NativeDisplay() const	function	platform/wind
 os::wayland::WaylandPlatformWindow::Width() const	function	platform/window-input	os-wayland-waylandplatformwindow-width-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:62
 os::wayland::WaylandPlatformWindow::Height() const	function	platform/window-input	os-wayland-waylandplatformwindow-height-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:64
 os::wayland::WaylandPlatformWindow::BackendName() const	function	platform/window-input	os-wayland-waylandplatformwindow-backendname-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:66
-os::wayland::WaylandPlatformWindow::Input() const	function	platform/window-input	os-wayland-waylandplatformwindow-input-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:69
+os::wayland::WaylandPlatformWindow::GetNativeInfo() const	function	platform/window-input	os-wayland-waylandplatformwindow-getnativeinfo-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:68
+os::wayland::WaylandPlatformWindow::IsMinimized() const	function	platform/window-input	os-wayland-waylandplatformwindow-isminimized-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:78
+os::wayland::WaylandPlatformWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandplatformwindow-resizeserial-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:80
+os::wayland::WaylandPlatformWindow::Input() const	function	platform/window-input	os-wayland-waylandplatformwindow-input-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:83
 os::wayland::WaylandWindow	class	platform/window-input	os-wayland-waylandwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:24
 os::wayland::WaylandWindow::Create(WaylandConnection&,StringView,StringView,u32,u32)	function	platform/window-input	os-wayland-waylandwindow-create-waylandconnection-amp-stringview-stringview-u32-u32	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:40
 os::wayland::WaylandWindow::WaylandWindow()	function	platform/window-input	os-wayland-waylandwindow-waylandwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:44
@@ -513,6 +516,7 @@ os::wayland::WaylandWindow::XdgToplevel() const	function	platform/window-input	o
 os::wayland::WaylandWindow::ServerSideDecorated() const	function	platform/window-input	os-wayland-waylandwindow-serversidedecorated-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:89
 os::wayland::WaylandWindow::Width() const	function	platform/window-input	os-wayland-waylandwindow-width-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:91
 os::wayland::WaylandWindow::Height() const	function	platform/window-input	os-wayland-waylandwindow-height-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:93
+os::wayland::WaylandWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandwindow-resizeserial-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:95
 os::x11::X11Window	class	platform/window-input	os-x11-x11window	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:28
 os::x11::X11Window::Create(StringView,u32,u32)	function	platform/window-input	os-x11-x11window-create-stringview-u32-u32	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:36
 os::x11::X11Window::X11Window()	function	platform/window-input	os-x11-x11window-x11window	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:39
@@ -529,8 +533,11 @@ os::x11::X11Window::ShouldClose() const	function	platform/window-input	os-x11-x1
 os::x11::X11Window::Width() const	function	platform/window-input	os-x11-x11window-width-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:71
 os::x11::X11Window::Height() const	function	platform/window-input	os-x11-x11window-height-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:73
 os::x11::X11Window::BackendName() const	function	platform/window-input	os-x11-x11window-backendname-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:75
-os::x11::X11Window::NativeDisplay() const	function	platform/window-input	os-x11-x11window-nativedisplay-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:80
-os::x11::X11Window::NativeWindow() const	function	platform/window-input	os-x11-x11window-nativewindow-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:84
+os::x11::X11Window::GetNativeInfo() const	function	platform/window-input	os-x11-x11window-getnativeinfo-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:77
+os::x11::X11Window::IsMinimized() const	function	platform/window-input	os-x11-x11window-isminimized-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:87
+os::x11::X11Window::ResizeSerial() const	function	platform/window-input	os-x11-x11window-resizeserial-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:89
+os::x11::X11Window::NativeDisplay() const	function	platform/window-input	os-x11-x11window-nativedisplay-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:94
+os::x11::X11Window::NativeWindow() const	function	platform/window-input	os-x11-x11window-nativewindow-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:98
 os::XkbKeyboard	class	platform/window-input	os-xkbkeyboard	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:21
 os::XkbKeyboard::XkbKeyboard()	function	platform/window-input	os-xkbkeyboard-xkbkeyboard	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:23
 os::XkbKeyboard::~XkbKeyboard()	function	platform/window-input	os-xkbkeyboard-tilde-xkbkeyboard	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:26
@@ -542,24 +549,39 @@ os::XkbKeyboard::Valid() const	function	platform/window-input	os-xkbkeyboard-val
 os::XkbKeyboard::KeyForEvdevCode(u32) const	function	platform/window-input	os-xkbkeyboard-keyforevdevcode-u32-const	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:53
 os::XkbKeyboard::UpdateMask(u32,u32,u32,u32)	function	platform/window-input	os-xkbkeyboard-updatemask-u32-u32-u32-u32	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:60
 os::XkbKeyboard::Modifiers() const	function	platform/window-input	os-xkbkeyboard-modifiers-const	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:65
-os::Window	class	platform/window-input	os-window	platform-window-input.md	engine/foundation/os/window.h:19
-os::Window::~Window()	function	platform/window-input	os-window-tilde-window	platform-window-input.md	engine/foundation/os/window.h:21
-os::Window::Valid() const	function	platform/window-input	os-window-valid-const	platform-window-input.md	engine/foundation/os/window.h:24
-os::Window::PumpEvents()	function	platform/window-input	os-window-pumpevents	platform-window-input.md	engine/foundation/os/window.h:27
-os::Window::ShouldClose() const	function	platform/window-input	os-window-shouldclose-const	platform-window-input.md	engine/foundation/os/window.h:30
-os::Window::Width() const	function	platform/window-input	os-window-width-const	platform-window-input.md	engine/foundation/os/window.h:33
-os::Window::Height() const	function	platform/window-input	os-window-height-const	platform-window-input.md	engine/foundation/os/window.h:36
-os::Window::BackendName() const	function	platform/window-input	os-window-backendname-const	platform-window-input.md	engine/foundation/os/window.h:40
-os::WindowBackend	enum	platform/window-input	os-windowbackend	platform-window-input.md	engine/foundation/os/window.h:44
-os::WindowBackend::Auto	enumerator	platform/window-input	os-windowbackend-auto	platform-window-input.md	engine/foundation/os/window.h:45
-os::WindowBackend::Wayland	enumerator	platform/window-input	os-windowbackend-wayland	platform-window-input.md	engine/foundation/os/window.h:46
-os::WindowBackend::X11	enumerator	platform/window-input	os-windowbackend-x11	platform-window-input.md	engine/foundation/os/window.h:47
-os::WindowBackend::Invalid	enumerator	platform/window-input	os-windowbackend-invalid	platform-window-input.md	engine/foundation/os/window.h:48
-os::ParseWindowBackend(StringView)	function	platform/window-input	os-parsewindowbackend-stringview	platform-window-input.md	engine/foundation/os/window.h:56
-os::BackendPlan	struct	platform/window-input	os-backendplan	platform-window-input.md	engine/foundation/os/window.h:61
-os::BackendPlan::candidates	variable	platform/window-input	os-backendplan-candidates	platform-window-input.md	engine/foundation/os/window.h:63
-os::BackendPlan::count	variable	platform/window-input	os-backendplan-count	platform-window-input.md	engine/foundation/os/window.h:65
-os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	os-planwindowbackends-windowbackend-bool-bool	platform-window-input.md	engine/foundation/os/window.h:77
+os::NativeWindowKind	enum	platform/window-input	os-nativewindowkind	platform-window-input.md	engine/foundation/os/window.h:14
+os::NativeWindowKind::Invalid	enumerator	platform/window-input	os-nativewindowkind-invalid	platform-window-input.md	engine/foundation/os/window.h:15
+os::NativeWindowKind::Wayland	enumerator	platform/window-input	os-nativewindowkind-wayland	platform-window-input.md	engine/foundation/os/window.h:16
+os::NativeWindowKind::Xlib	enumerator	platform/window-input	os-nativewindowkind-xlib	platform-window-input.md	engine/foundation/os/window.h:17
+os::NativeWindowKind::Win32	enumerator	platform/window-input	os-nativewindowkind-win32	platform-window-input.md	engine/foundation/os/window.h:18
+os::NativeWindowKind::Cocoa	enumerator	platform/window-input	os-nativewindowkind-cocoa	platform-window-input.md	engine/foundation/os/window.h:19
+os::NativeWindowKind::Android	enumerator	platform/window-input	os-nativewindowkind-android	platform-window-input.md	engine/foundation/os/window.h:20
+os::NativeWindowInfo	struct	platform/window-input	os-nativewindowinfo	platform-window-input.md	engine/foundation/os/window.h:31
+os::NativeWindowInfo::kind	variable	platform/window-input	os-nativewindowinfo-kind	platform-window-input.md	engine/foundation/os/window.h:33
+os::NativeWindowInfo::display	variable	platform/window-input	os-nativewindowinfo-display	platform-window-input.md	engine/foundation/os/window.h:35
+os::NativeWindowInfo::surface	variable	platform/window-input	os-nativewindowinfo-surface	platform-window-input.md	engine/foundation/os/window.h:37
+os::NativeWindowInfo::window_id	variable	platform/window-input	os-nativewindowinfo-window-id	platform-window-input.md	engine/foundation/os/window.h:39
+os::Window	class	platform/window-input	os-window	platform-window-input.md	engine/foundation/os/window.h:48
+os::Window::~Window()	function	platform/window-input	os-window-tilde-window	platform-window-input.md	engine/foundation/os/window.h:50
+os::Window::Valid() const	function	platform/window-input	os-window-valid-const	platform-window-input.md	engine/foundation/os/window.h:53
+os::Window::PumpEvents()	function	platform/window-input	os-window-pumpevents	platform-window-input.md	engine/foundation/os/window.h:56
+os::Window::ShouldClose() const	function	platform/window-input	os-window-shouldclose-const	platform-window-input.md	engine/foundation/os/window.h:59
+os::Window::Width() const	function	platform/window-input	os-window-width-const	platform-window-input.md	engine/foundation/os/window.h:62
+os::Window::Height() const	function	platform/window-input	os-window-height-const	platform-window-input.md	engine/foundation/os/window.h:65
+os::Window::BackendName() const	function	platform/window-input	os-window-backendname-const	platform-window-input.md	engine/foundation/os/window.h:69
+os::Window::GetNativeInfo() const	function	platform/window-input	os-window-getnativeinfo-const	platform-window-input.md	engine/foundation/os/window.h:75
+os::Window::IsMinimized() const	function	platform/window-input	os-window-isminimized-const	platform-window-input.md	engine/foundation/os/window.h:83
+os::Window::ResizeSerial() const	function	platform/window-input	os-window-resizeserial-const	platform-window-input.md	engine/foundation/os/window.h:90
+os::WindowBackend	enum	platform/window-input	os-windowbackend	platform-window-input.md	engine/foundation/os/window.h:99
+os::WindowBackend::Auto	enumerator	platform/window-input	os-windowbackend-auto	platform-window-input.md	engine/foundation/os/window.h:100
+os::WindowBackend::Wayland	enumerator	platform/window-input	os-windowbackend-wayland	platform-window-input.md	engine/foundation/os/window.h:101
+os::WindowBackend::X11	enumerator	platform/window-input	os-windowbackend-x11	platform-window-input.md	engine/foundation/os/window.h:102
+os::WindowBackend::Invalid	enumerator	platform/window-input	os-windowbackend-invalid	platform-window-input.md	engine/foundation/os/window.h:103
+os::ParseWindowBackend(StringView)	function	platform/window-input	os-parsewindowbackend-stringview	platform-window-input.md	engine/foundation/os/window.h:111
+os::BackendPlan	struct	platform/window-input	os-backendplan	platform-window-input.md	engine/foundation/os/window.h:116
+os::BackendPlan::candidates	variable	platform/window-input	os-backendplan-candidates	platform-window-input.md	engine/foundation/os/window.h:118
+os::BackendPlan::count	variable	platform/window-input	os-backendplan-count	platform-window-input.md	engine/foundation/os/window.h:120
+os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	os-planwindowbackends-windowbackend-bool-bool	platform-window-input.md	engine/foundation/os/window.h:132
 jobs::IoRequest	struct	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:51
 jobs::IoRequest::next	variable	jobs	jobs-iorequest-next	jobs.md	engine/jobs/async_io.h:53
 jobs::IoRequest::run	variable	jobs	jobs-iorequest-run	jobs.md	engine/jobs/async_io.h:55
