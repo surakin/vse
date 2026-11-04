@@ -43,3 +43,6 @@ module rhi "The Render Hardware Interface"
   strict thread-safety
   strict ownership
   strict failure
+
+module rhi-vulkan "The Vulkan backend (loader, function tables, result helpers)"
+  header engine/rhi/vulkan/*.h

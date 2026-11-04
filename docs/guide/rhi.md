@@ -26,6 +26,9 @@ Full reference: [The Render Hardware Interface](../reference/rhi.md).
 - [[rhi::Swapchain]] — the presentable images of a window
 - [[rhi::HandlePool]] — slot storage with generation checks and deferred release
 - [[rhi::NullDevice]] and [[rhi::CreateNullDevice]] — the validating no-GPU backend
+- [[rhi::vulkan::LoadVulkanLoader]] — opens the Vulkan loader at runtime
+- [[rhi::vulkan::VkGlobalFns]], [[rhi::vulkan::VkInstanceFns]], [[rhi::vulkan::VkDeviceFns]] — the function-pointer tables
+- [[rhi::vulkan::VkResultName]], [[rhi::vulkan::ClassifyVkResult]] — readable and classified `VkResult`s
 
 ## Already known — seed material (verify against the code when writing)
 
@@ -161,3 +164,23 @@ _TODO_
 ### See also
 
 _TODO_
+
+### Vulkan backend notes
+
+The backend never links against Vulkan. [[rhi::vulkan::LoadVulkanLoader]] opens `libvulkan.so.1` at runtime
+(or the path in `ENGINE_VULKAN_LIBRARY`, which tests use to simulate a machine without Vulkan) and
+resolves `vkGetInstanceProcAddr`. A missing library is reported as `NoLoader` and logged; it is not a crash,
+so an engine built with this backend still starts on a machine without a driver. The library handle is
+deliberately never unloaded: drivers and layers keep threads and global state alive past `vkDestroyInstance`.
+
+Every other entry point is resolved into plain tables — [[rhi::vulkan::VkGlobalFns]] before an instance
+exists, [[rhi::vulkan::VkInstanceFns]] per instance and [[rhi::vulkan::VkDeviceFns]] per device (through
+`vkGetDeviceProcAddr`, skipping the loader trampoline). The functions are listed once in
+`engine/rhi/vulkan/vk_functions.inc`; adding one is a single line. A missing mandatory function fails the
+load and the log names it; a missing optional one (swapchain, surfaces, debug utils) is left null, so test
+for null before calling those.
+
+[[rhi::vulkan::CheckInstanceVersion]] requires Vulkan 1.3 and logs "driver too old" otherwise.
+`ENGINE_VK_CHECK(call)` evaluates a call, logs a failing `VkResult` by name with file and line, and returns a
+[[rhi::vulkan::VkResultClass]] so callers can branch on `Recoverable` (out-of-date swapchain), `DeviceLost`
+and `Fatal`.

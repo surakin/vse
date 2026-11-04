@@ -7,6 +7,7 @@ A Vulkan instance with the right extensions, and — crucially for every later d
 
 ## Tasks
 
+- [ ] Day 49 review carry-over: `CheckInstanceVersion` only checks the loader's instance version. Physical-device selection (Day 51) must also require `VkPhysicalDeviceProperties::apiVersion >= 1.3` and reject older devices with a clear message; add the check wherever devices are first enumerated.
 - [ ] `VulkanInstance` class: create with application/engine info, API version 1.3, required extensions chosen by purpose (`VK_EXT_debug_utils` when validating; surface extensions `VK_KHR_surface` + `VK_KHR_wayland_surface`/`VK_KHR_xlib_surface` only when a presentable device is requested), refuse with a clear message if a required extension is missing.
 - [ ] Validation policy from the spec: enable `VK_LAYER_KHRONOS_validation` when `ENGINE_RHI_VALIDATION` is set (or Debug default) **and** the layer is present; otherwise log a warning once and continue. Enable the synchronization-validation and best-practices features behind separate env switches (default: sync validation on in tests).
 - [ ] Debug messenger: callback maps severity to `LogVerbosity` (`ERROR`→Error, `WARNING`→Warn, `INFO`→Debug, `VERBOSE`→Trace), prefixes the message id, **counts** errors/warnings in an atomic counter exposed as `ValidationCounts()`; a test hook can capture messages.

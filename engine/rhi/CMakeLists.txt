@@ -11,7 +11,9 @@ set(RHI_SOURCES
 )
 
 set(RHI_VULKAN_SOURCES
-  vulkan/vulkan_backend.cpp
+  vulkan/vk_loader.cpp
+  vulkan/vk_functions.cpp
+  vulkan/vk_result.cpp
 )
 
 # Headers are included as "rhi/<name>.h", rooted at engine/.

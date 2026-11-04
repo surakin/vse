@@ -1279,3 +1279,32 @@ rhi::Swapchain::ImageFormat() const	function	rhi	rhi-swapchain-imageformat-const
 rhi::Swapchain::Width() const	function	rhi	rhi-swapchain-width-const	rhi.md	engine/rhi/swapchain.h:56
 rhi::Swapchain::Height() const	function	rhi	rhi-swapchain-height-const	rhi.md	engine/rhi/swapchain.h:59
 rhi::Swapchain::CurrentTexture() const	function	rhi	rhi-swapchain-currenttexture-const	rhi.md	engine/rhi/swapchain.h:65
+rhi::vulkan::VkGlobalFns	struct	rhi-vulkan	rhi-vulkan-vkglobalfns	rhi-vulkan.md	engine/rhi/vulkan/vk_functions.h:15
+rhi::vulkan::VkInstanceFns	struct	rhi-vulkan	rhi-vulkan-vkinstancefns	rhi-vulkan.md	engine/rhi/vulkan/vk_functions.h:26
+rhi::vulkan::VkDeviceFns	struct	rhi-vulkan	rhi-vulkan-vkdevicefns	rhi-vulkan.md	engine/rhi/vulkan/vk_functions.h:37
+rhi::vulkan::LoadGlobalFns(const VulkanLoader&,VkGlobalFns*)	function	rhi-vulkan	rhi-vulkan-loadglobalfns-const-vulkanloader-amp-vkglobalfns-star	rhi-vulkan.md	engine/rhi/vulkan/vk_functions.h:50
+rhi::vulkan::LoadInstanceFns(const VulkanLoader&,VkInstance,VkInstanceFns*)	function	rhi-vulkan	rhi-vulkan-loadinstancefns-const-vulkanloader-amp-vkinstance-vkinstancefns-star	rhi-vulkan.md	engine/rhi/vulkan/vk_functions.h:60
+rhi::vulkan::LoadDeviceFns(const VkInstanceFns&,VkDevice,VkDeviceFns*)	function	rhi-vulkan	rhi-vulkan-loaddevicefns-const-vkinstancefns-amp-vkdevice-vkdevicefns-star	rhi-vulkan.md	engine/rhi/vulkan/vk_functions.h:70
+rhi::vulkan::kRequiredVulkanVersion	variable	rhi-vulkan	rhi-vulkan-krequiredvulkanversion	rhi-vulkan.md	engine/rhi/vulkan/vk_functions.h:73
+rhi::vulkan::CheckInstanceVersion(const VkGlobalFns&,u32*)	function	rhi-vulkan	rhi-vulkan-checkinstanceversion-const-vkglobalfns-amp-u32-star	rhi-vulkan.md	engine/rhi/vulkan/vk_functions.h:87
+rhi::vulkan::LogInstanceCapabilities(const VkGlobalFns&)	function	rhi-vulkan	rhi-vulkan-loginstancecapabilities-const-vkglobalfns-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_functions.h:95
+rhi::vulkan::kVulkanLibraryEnvVar	variable	rhi-vulkan	rhi-vulkan-kvulkanlibraryenvvar	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:24
+rhi::vulkan::LoaderStatus	enum	rhi-vulkan	rhi-vulkan-loaderstatus	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:27
+rhi::vulkan::LoaderStatus::Ok	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-ok	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:28
+rhi::vulkan::LoaderStatus::NoLoader	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-noloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:29
+rhi::vulkan::LoaderStatus::BadLoader	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-badloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:30
+rhi::vulkan::LoaderStatusName(LoaderStatus)	function	rhi-vulkan	rhi-vulkan-loaderstatusname-loaderstatus	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:35
+rhi::vulkan::VulkanLoader	struct	rhi-vulkan	rhi-vulkan-vulkanloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:46
+rhi::vulkan::VulkanLoader::library	variable	rhi-vulkan	rhi-vulkan-vulkanloader-library	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:48
+rhi::vulkan::VulkanLoader::get_instance_proc_addr	variable	rhi-vulkan	rhi-vulkan-vulkanloader-get-instance-proc-addr	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:50
+rhi::vulkan::LoadVulkanLoader(VulkanLoader*)	function	rhi-vulkan	rhi-vulkan-loadvulkanloader-vulkanloader-star	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:64
+rhi::vulkan::VkResultClass	enum	rhi-vulkan	rhi-vulkan-vkresultclass	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:10
+rhi::vulkan::VkResultClass::Success	enumerator	rhi-vulkan	rhi-vulkan-vkresultclass-success	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:11
+rhi::vulkan::VkResultClass::Suboptimal	enumerator	rhi-vulkan	rhi-vulkan-vkresultclass-suboptimal	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:12
+rhi::vulkan::VkResultClass::Recoverable	enumerator	rhi-vulkan	rhi-vulkan-vkresultclass-recoverable	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:13
+rhi::vulkan::VkResultClass::DeviceLost	enumerator	rhi-vulkan	rhi-vulkan-vkresultclass-devicelost	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:14
+rhi::vulkan::VkResultClass::Fatal	enumerator	rhi-vulkan	rhi-vulkan-vkresultclass-fatal	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:15
+rhi::vulkan::VkResultName(VkResult)	function	rhi-vulkan	rhi-vulkan-vkresultname-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:20
+rhi::vulkan::ClassifyVkResult(VkResult)	function	rhi-vulkan	rhi-vulkan-classifyvkresult-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:26
+rhi::vulkan::CheckVkResult(VkResult,const char*,const char*,int)	function	rhi-vulkan	rhi-vulkan-checkvkresult-vkresult-const-char-star-const-char-star-int	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:38
+ENGINE_VK_CHECK	macro	rhi-vulkan	engine-vk-check	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:43
