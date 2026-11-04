@@ -187,6 +187,7 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     InitializeTimeline();
 
     FillCaps();
+    InitializeFormats();
 
     // The suballocator, over the device's real memory layout.
     MemoryLayout layout;
@@ -287,6 +288,12 @@ VulkanDevice::~VulkanDevice() {
             RhiLog(LogVerbosity::Warn, "Vulkan: %zu buffer(s) were still alive when the device was destroyed", buffers_.LiveCount());
         }
         buffers_.ForEachLive([&](BufferHandle, BufferRes& b) { DestroyRawBuffer(&b.raw); });
+        if (textures_.LiveCount() > 0 || samplers_.LiveCount() > 0) {
+            RhiLog(LogVerbosity::Warn, "Vulkan: %zu texture(s) and %zu sampler(s) were still alive when the device was destroyed",
+                   textures_.LiveCount(), samplers_.LiveCount());
+        }
+        textures_.ForEachLive([&](TextureHandle, TextureRes& t) { DestroyTextureRes(&t); });
+        samplers_.ForEachLive([&](SamplerHandle, SamplerRes& s) { fns_.DestroySampler(device_, s.sampler, nullptr); });
         CollectRetired(true);
         ShutdownCommands();
         ShutdownUpload();
@@ -309,10 +316,6 @@ void VulkanDevice::NotImplemented(const char* what) {
 const char* VulkanDevice::BackendName() const { return "vulkan"; }
 const DeviceCaps& VulkanDevice::Caps() const { return caps_; }
 
-TextureHandle VulkanDevice::CreateTexture(const TextureDesc&) { NotImplemented("CreateTexture"); return {}; }
-void VulkanDevice::DestroyTexture(TextureHandle) {}
-SamplerHandle VulkanDevice::CreateSampler(const SamplerDesc&) { NotImplemented("CreateSampler"); return {}; }
-void VulkanDevice::DestroySampler(SamplerHandle) {}
 ShaderHandle VulkanDevice::CreateShader(const ShaderDesc&) { NotImplemented("CreateShader"); return {}; }
 void VulkanDevice::DestroyShader(ShaderHandle) {}
 BindGroupLayoutHandle VulkanDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&) { NotImplemented("CreateBindGroupLayout"); return {}; }

@@ -13,6 +13,7 @@ set(RHI_TEST_SOURCES
   vulkan_memory_test.cpp
   vulkan_buffer_test.cpp
   vulkan_commands_test.cpp
+  vulkan_texture_test.cpp
 )
 
 # Header self-containment: one generated translation unit per public RHI

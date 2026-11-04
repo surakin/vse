@@ -440,6 +440,25 @@ public:
         ops_.Push(op);
     }
 
+    void GenerateMips(TextureHandle texture) override {
+        std::lock_guard<std::mutex> lock(s_->mu);
+        if (!Recording("GenerateMips") || !OutsidePass("GenerateMips")) {
+            return;
+        }
+        TextureRes* t = s_->Tex(texture);
+        if (t == nullptr) {
+            s_->Error("GenerateMips: texture handle is invalid or destroyed");
+            return;
+        }
+        const FormatProperties& f = FormatInfo(t->desc.format);
+        if (!Has(t->desc.usage, TextureUsage::Sampled) || !Has(t->desc.usage, TextureUsage::CopySrc) ||
+            !Has(t->desc.usage, TextureUsage::CopyDst) || t->desc.mip_levels < 2 || f.is_depth || f.is_compressed) {
+            s_->Error("GenerateMips: needs Sampled, CopySrc and CopyDst usage, more than one mip level and a color format that blits");
+            return;
+        }
+        RequireTexture(texture, Bit(ResourceState::ShaderRead), "GenerateMips");
+    }
+
     void BeginRendering(const RenderingDesc& desc) override {
         std::lock_guard<std::mutex> lock(s_->mu);
         if (!Recording("BeginRendering")) {
@@ -1386,6 +1405,100 @@ UploadTicket NullDevice::UploadBuffer(BufferHandle dst, u64 offset, const void* 
     std::memcpy(b->data + offset, data, static_cast<usize>(size));
     b->state = ResourceState::CopyDst;
     return {};
+}
+
+bool NullDevice::FormatSupport(Format format, TextureUsage usage) const {
+    if (format == Format::Undefined || static_cast<usize>(format) >= static_cast<usize>(Format::Count)) {
+        return false;
+    }
+    const FormatProperties& f = FormatInfo(format);
+    if (f.is_depth && (Has(usage, TextureUsage::ColorAttachment) || Has(usage, TextureUsage::Storage))) {
+        return false;
+    }
+    if (!f.is_depth && Has(usage, TextureUsage::DepthAttachment)) {
+        return false;
+    }
+    if (f.is_compressed && (Has(usage, TextureUsage::ColorAttachment) || Has(usage, TextureUsage::Storage))) {
+        return false;
+    }
+    return true;
+}
+
+bool NullDevice::CanGenerateMips(Format format) const {
+    if (format == Format::Undefined || static_cast<usize>(format) >= static_cast<usize>(Format::Count)) {
+        return false;
+    }
+    const FormatProperties& f = FormatInfo(format);
+    return !f.is_depth && !f.is_compressed;
+}
+
+UploadTicket NullDevice::UploadTexture(TextureHandle dst, u32 mip, u32 layer, const void* data, u32 row_pitch) {
+    State& s = *state_;
+    std::lock_guard<std::mutex> lock(s.mu);
+    TextureRes* t = s.Tex(dst);
+    if (t == nullptr) {
+        s.Error("UploadTexture: handle is invalid or already destroyed");
+        return UploadTicket{0, false};
+    }
+    if (!Has(t->desc.usage, TextureUsage::CopyDst) || !Has(t->desc.usage, TextureUsage::Sampled)) {
+        s.Error("UploadTexture: the texture needs Sampled and CopyDst usage");
+        return UploadTicket{0, false};
+    }
+    if (mip >= t->desc.mip_levels || layer >= t->desc.array_layers || data == nullptr) {
+        s.Error("UploadTexture: mip or layer out of range, or data is null");
+        return UploadTicket{0, false};
+    }
+    const FormatProperties& f = FormatInfo(t->desc.format);
+    const u32 width = t->desc.width >> mip > 0 ? t->desc.width >> mip : 1;
+    const u64 row_bytes = FormatRowBytes(t->desc.format, width);
+    if (row_pitch != 0 && (row_pitch < row_bytes || row_pitch % f.bytes_per_block != 0)) {
+        s.Error("UploadTexture: row_pitch is smaller than a row or not a multiple of the texel size");
+        return UploadTicket{0, false};
+    }
+    if (t->state != ResourceState::Undefined && t->state != ResourceState::ShaderRead) {
+        s.Error("UploadTexture: the texture is in state %s; it must be Undefined or ShaderRead", StateName(t->state));
+        return UploadTicket{0, false};
+    }
+    if (s.lost) {
+        return UploadTicket{0, false};
+    }
+    t->state = ResourceState::ShaderRead;
+    return {};
+}
+
+bool NullDevice::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* dst, u64 dst_size, ResourceState state) {
+    State& s = *state_;
+    std::lock_guard<std::mutex> lock(s.mu);
+    TextureRes* t = s.Tex(src);
+    if (t == nullptr) {
+        s.Error("ReadbackTexture: handle is invalid or already destroyed");
+        return false;
+    }
+    if (!Has(t->desc.usage, TextureUsage::CopySrc)) {
+        s.Error("ReadbackTexture: the texture was not created with CopySrc usage");
+        return false;
+    }
+    if (mip >= t->desc.mip_levels || layer >= t->desc.array_layers || dst == nullptr) {
+        s.Error("ReadbackTexture: mip or layer out of range, or dst is null");
+        return false;
+    }
+    const u32 width = t->desc.width >> mip > 0 ? t->desc.width >> mip : 1;
+    const u32 height = t->desc.height >> mip > 0 ? t->desc.height >> mip : 1;
+    const u32 depth = t->desc.depth >> mip > 0 ? t->desc.depth >> mip : 1;
+    const u64 bytes = FormatSliceBytes(t->desc.format, width, height) * depth;
+    if (dst_size < bytes) {
+        s.Error("ReadbackTexture: dst is smaller than the level");
+        return false;
+    }
+    if (state == ResourceState::Undefined || t->state != state) {
+        s.Error("ReadbackTexture: the texture is in state %s but the call says %s", StateName(t->state), StateName(state));
+        return false;
+    }
+    if (s.lost) {
+        return false;
+    }
+    std::memset(dst, 0, static_cast<usize>(bytes)); // the null device keeps no texel data
+    return true;
 }
 
 bool NullDevice::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) {

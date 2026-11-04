@@ -239,8 +239,7 @@ VkCommandBuffer VulkanDevice::AcquireUploadCommandBufferLocked() {
     return buffer;
 }
 
-template <typename Fill>
-u64 VulkanDevice::SubmitInternalLocked(Fill&& fill) {
+u64 VulkanDevice::SubmitRawLocked(void (*fill_fn)(void*, VkCommandBuffer), void* fill_context) {
     if (device_lost_.load(std::memory_order_relaxed)) {
         return 0;
     }
@@ -262,7 +261,7 @@ u64 VulkanDevice::SubmitInternalLocked(Fill&& fill) {
         release();
         return 0;
     }
-    fill(cb);
+    fill_fn(fill_context, cb);
     if (ENGINE_VK_CHECK(fns_.EndCommandBuffer(cb)) != VkResultClass::Success) {
         release();
         return 0;
@@ -561,6 +560,8 @@ void VulkanDevice::UpdateCompletedFrames() {
 void VulkanDevice::CollectRetired(bool all) {
     const u64 completed = all ? ~0ull : completed_frames_;
     buffers_.CollectRetired(completed, [&](BufferRes& b) { DestroyRawBuffer(&b.raw); });
+    textures_.CollectRetired(completed, [&](TextureRes& t) { DestroyTextureRes(&t); });
+    samplers_.CollectRetired(completed, [&](SamplerRes& s) { fns_.DestroySampler(device_, s.sampler, nullptr); });
 }
 
 u64 VulkanDevice::CompletedFrame() const {
@@ -574,6 +575,10 @@ VulkanDevice::ObjectCounts VulkanDevice::Counts() const {
     counts.buffers = buffers_.LiveCount();
     counts.pending_destruction = buffers_.RetiredCount();
     counts.raw_buffers = raw_buffer_count_.load(std::memory_order_relaxed);
+    counts.textures = textures_.LiveCount();
+    counts.samplers = samplers_.LiveCount();
+    counts.pending_image_destruction = textures_.RetiredCount() + samplers_.RetiredCount();
+    counts.raw_images = raw_image_count_.load(std::memory_order_relaxed);
     return counts;
 }
 

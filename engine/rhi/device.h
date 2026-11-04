@@ -79,6 +79,10 @@ public:
 
     /// Creates a sampler.
     ///
+    /// Equal descriptors may share one handle: a backend can return the handle it made for an earlier equal request
+    /// and count the references, so destroy a sampler once for every time you created it. The anisotropy is clamped
+    /// to the device limit.
+    ///
     /// Param desc: the description; must pass `Validate()`.
     /// Returns: the sampler handle, or the invalid handle on failure.
     /// Fails: an invalid description is logged and returns the invalid handle.
@@ -143,6 +147,62 @@ public:
     /// Param pipeline: a live pipeline handle.
     /// Aborts: `pipeline` is invalid or stale.
     virtual void DestroyPipeline(PipelineHandle pipeline) = 0;
+
+    /// Tells whether textures of a format can be created with the given usages on this device.
+    ///
+    /// Param format: the texel format.
+    /// Param usage: the usage flags wanted together; `None` asks whether the format exists at all.
+    /// Returns: true if `CreateTexture` accepts the combination.
+    /// Fails: returns false for `Format::Undefined` or an unsupported combination.
+    virtual bool FormatSupport(Format format, TextureUsage usage) const = 0;
+
+    /// Tells whether [[rhi::CommandList::GenerateMips]] works for a format: the device must blit it with linear filtering.
+    ///
+    /// Param format: the texel format.
+    /// Returns: true if mips can be generated; otherwise upload precomputed mips with `UploadTexture`.
+    virtual bool CanGenerateMips(Format format) const = 0;
+
+    /// Copies one mip level of one layer from the CPU into a texture, outside the frame's command lists.
+    ///
+    /// The data is staged and copied on the GPU; it has been read from `data` when the call returns, and the copy is
+    /// ordered after earlier submitted work. The whole texture moves to `ShaderRead`: it must be in state `Undefined`
+    /// (the first upload) or `ShaderRead` (uploading another level or layer), and the other levels keep their contents.
+    /// The device remembers only what its own upload and readback calls did: if you moved the texture elsewhere with
+    /// `Barrier` in a command list, move it back to `ShaderRead` before uploading again, because the device cannot see
+    /// the list's barriers. Large levels are split to fit the staging ring. Uploads to one texture must not overlap in
+    /// time (use one thread per texture). Depth-stencil formats with a stencil aspect cannot be uploaded.
+    ///
+    /// Param dst: a texture created with `Sampled` and `CopyDst` usage.
+    /// Param mip: the mip level.
+    /// Param layer: the array layer.
+    /// Param data: the texel rows of the level; must not be null.
+    /// Param row_pitch: bytes between rows (block rows for compressed formats); 0 means tightly packed. Otherwise at
+    ///   least the row size and a multiple of the texel (block) size.
+    /// Returns: a ticket; see [[rhi::Device::UploadBuffer]].
+    /// Fails: a lost device or staging memory running out logs and returns a ticket with `ok` false; the texture is
+    ///   then left in `ShaderRead` with the level only partly written.
+    /// Aborts: `dst` is invalid or stale, lacks usage, `mip` or `layer` is out of range, `data` is null, `row_pitch` is
+    ///   invalid, or the texture is in another state.
+    /// Ownership: `data` is borrowed for the call only; it must hold the level's rows at `row_pitch`.
+    virtual UploadTicket UploadTexture(TextureHandle dst, u32 mip, u32 layer, const void* data, u32 row_pitch) = 0;
+
+    /// Copies one mip level of one layer of a texture back to the CPU and waits (a synchronous helper for tests and tools).
+    ///
+    /// You say which state the texture is in (the device cannot see barriers recorded in command lists); it is moved to
+    /// `CopySrc` for the copy and back, so it is left in the same state. Rows are tightly packed in `dst`.
+    ///
+    /// Param src: a texture created with `CopySrc` usage.
+    /// Param mip: the mip level.
+    /// Param layer: the array layer.
+    /// Param dst: where to write the level; must not be null.
+    /// Param dst_size: bytes available in `dst`; at least the level's size.
+    /// Param state: the state the texture is in now; not `Undefined`.
+    /// Returns: true on success.
+    /// Fails: returns false, logging the reason, if the device is lost or memory is exhausted.
+    /// Aborts: `src` is invalid or stale, lacks `CopySrc`, `mip` or `layer` is out of range, `dst` is null or too small,
+    ///   `state` is `Undefined` or not a texture state, or (on the null backend) the texture is not in `state`.
+    /// Ownership: `dst` is borrowed for the call only.
+    virtual bool ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* dst, u64 dst_size, ResourceState state) = 0;
 
     /// Maps a CPU-visible buffer and returns a pointer to its first byte.
     ///

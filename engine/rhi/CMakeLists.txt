@@ -23,6 +23,7 @@ set(RHI_VULKAN_SOURCES
   vulkan/vulkan_device.cpp
   vulkan/vulkan_device_buffers.cpp
   vulkan/vulkan_device_commands.cpp
+  vulkan/vulkan_device_textures.cpp
   vulkan/vk_barrier.cpp
   vulkan/vk_command_list.cpp
   vulkan/create_device.cpp

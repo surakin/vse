@@ -43,4 +43,21 @@ struct BarrierScopes {
 /// Fails: returns false, leaving `out` unchanged, for an unsupported state or an `Undefined` destination.
 bool GetBarrierScopes(ResourceState before, ResourceState after, bool is_image, BarrierScopes* out);
 
+/// Records an image memory barrier for a state transition on a range of subresources.
+///
+/// Param fns: the device function table.
+/// Param cb: a command buffer in the recording state.
+/// Param image: the image.
+/// Param aspects: the aspects the barrier covers.
+/// Param base_mip: first mip level.
+/// Param mip_count: number of mip levels.
+/// Param base_layer: first array layer.
+/// Param layer_count: number of array layers.
+/// Param before: the state the range is in (`Undefined` discards its contents).
+/// Param after: the state it moves to.
+/// Returns: true if the barrier was recorded.
+/// Fails: returns false, recording nothing, if [[rhi::vulkan::GetBarrierScopes]] rejects the transition for an image.
+bool CmdImageBarrier(const VkDeviceFns& fns, VkCommandBuffer cb, VkImage image, VkImageAspectFlags aspects, u32 base_mip, u32 mip_count,
+                     u32 base_layer, u32 layer_count, ResourceState before, ResourceState after);
+
 } // namespace engine_placeholder::rhi::vulkan

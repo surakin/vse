@@ -133,6 +133,31 @@ A transition from `Undefined` waits on all earlier work and, for an image, disca
 | Returns | true if the transition is valid for that kind of resource. |
 | Fails | returns false, leaving `out` unchanged, for an unsupported state or an `Undefined` destination. |
 
+## `CmdImageBarrier(const VkDeviceFns&,VkCommandBuffer,VkImage,VkImageAspectFlags,u32,u32,u32,u32,ResourceState,ResourceState)` {#rhi-vulkan-cmdimagebarrier-const-vkdevicefns-amp-vkcommandbuffer-vkimage-vkimageaspectflags-u32-u32-u32-u32-resourcestate-resourcestate}
+
+`function rhi::vulkan::CmdImageBarrier` — defined in `engine/rhi/vulkan/vk_barrier.h`
+
+```cpp
+bool CmdImageBarrier(const VkDeviceFns& fns, VkCommandBuffer cb, VkImage image, VkImageAspectFlags aspects, u32 base_mip, u32 mip_count, u32 base_layer, u32 layer_count, ResourceState before, ResourceState after);
+```
+
+Records an image memory barrier for a state transition on a range of subresources.
+
+| Field | Value |
+|---|---|
+| Parameter `fns` | the device function table. |
+| Parameter `cb` | a command buffer in the recording state. |
+| Parameter `image` | the image. |
+| Parameter `aspects` | the aspects the barrier covers. |
+| Parameter `base_mip` | first mip level. |
+| Parameter `mip_count` | number of mip levels. |
+| Parameter `base_layer` | first array layer. |
+| Parameter `layer_count` | number of array layers. |
+| Parameter `before` | the state the range is in (`Undefined` discards its contents). |
+| Parameter `after` | the state it moves to. |
+| Returns | true if the barrier was recorded. |
+| Fails | returns false, recording nothing, if [`rhi::vulkan::GetBarrierScopes`](#rhi-vulkan-getbarrierscopes-resourcestate-resourcestate-bool-barrierscopes-star) rejects the transition for an image. |
+
 ## `VulkanCommandList` {#rhi-vulkan-vulkancommandlist}
 
 `class rhi::vulkan::VulkanCommandList` — defined in `engine/rhi/vulkan/vk_command_list.h`
@@ -354,6 +379,18 @@ void Barrier(TextureHandle texture, ResourceState before, ResourceState after) o
 Moves a buffer from state `before` to state `after`, making earlier writes visible to later uses.
 
 _Inherited from [`rhi::CommandList::Barrier(BufferHandle,ResourceState,ResourceState)`](rhi.md#rhi-commandlist-barrier-bufferhandle-resourcestate-resourcestate)._
+
+### `GenerateMips(TextureHandle)` {#rhi-vulkan-vulkancommandlist-generatemips-texturehandle}
+
+`method rhi::vulkan::VulkanCommandList::GenerateMips` — defined in `engine/rhi/vulkan/vk_command_list.h`
+
+```cpp
+void GenerateMips(TextureHandle texture) override;
+```
+
+Fills mip levels 1 and up of a texture by repeatedly halving mip level 0 with a linear filter.
+
+_Inherited from [`rhi::CommandList::GenerateMips(TextureHandle)`](rhi.md#rhi-commandlist-generatemips-texturehandle)._
 
 ### `BeginRendering(const RenderingDesc&)` {#rhi-vulkan-vulkancommandlist-beginrendering-const-renderingdesc-amp}
 
@@ -880,6 +917,21 @@ VkImageAspectFlags AspectsOf(Format format);
 ```
 
 Returns the image aspects a format has: color, or depth and (if present) stencil.
+
+## `CopyAspectOf(Format)` {#rhi-vulkan-copyaspectof-format}
+
+`function rhi::vulkan::CopyAspectOf` — defined in `engine/rhi/vulkan/vk_format.h`
+
+```cpp
+VkImageAspectFlags CopyAspectOf(Format format);
+```
+
+Returns the single aspect a buffer/image copy of a format uses.
+
+| Field | Value |
+|---|---|
+| Parameter `format` | the texel format. |
+| Returns | color, or depth for a depth-only format; 0 for a format with a stencil aspect, which copies would have to split. |
 
 ## `VkGlobalFns` {#rhi-vulkan-vkglobalfns}
 
@@ -3079,6 +3131,54 @@ Copies bytes from a buffer back to the CPU and waits for them (a synchronous hel
 
 _Inherited from [`rhi::Device::ReadbackBuffer(BufferHandle,u64,void*,u64)`](rhi.md#rhi-device-readbackbuffer-bufferhandle-u64-void-star-u64)._
 
+### `FormatSupport(Format,TextureUsage)` {#rhi-vulkan-vulkandevice-formatsupport-format-textureusage-const}
+
+`method rhi::vulkan::VulkanDevice::FormatSupport` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+bool FormatSupport(Format format, TextureUsage usage) const override;
+```
+
+Tells whether textures of a format can be created with the given usages on this device.
+
+_Inherited from [`rhi::Device::FormatSupport(Format,TextureUsage) const`](rhi.md#rhi-device-formatsupport-format-textureusage-const)._
+
+### `CanGenerateMips(Format)` {#rhi-vulkan-vulkandevice-cangeneratemips-format-const}
+
+`method rhi::vulkan::VulkanDevice::CanGenerateMips` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+bool CanGenerateMips(Format format) const override;
+```
+
+Tells whether [`rhi::CommandList::GenerateMips`](rhi.md#rhi-commandlist-generatemips-texturehandle) works for a format: the device must blit it with linear filtering.
+
+_Inherited from [`rhi::Device::CanGenerateMips(Format) const`](rhi.md#rhi-device-cangeneratemips-format-const)._
+
+### `UploadTexture(TextureHandle,u32,u32,const void*,u32)` {#rhi-vulkan-vulkandevice-uploadtexture-texturehandle-u32-u32-const-void-star-u32}
+
+`method rhi::vulkan::VulkanDevice::UploadTexture` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+UploadTicket UploadTexture(TextureHandle dst, u32 mip, u32 layer, const void* data, u32 row_pitch) override;
+```
+
+Copies one mip level of one layer from the CPU into a texture, outside the frame's command lists.
+
+_Inherited from [`rhi::Device::UploadTexture(TextureHandle,u32,u32,const void*,u32)`](rhi.md#rhi-device-uploadtexture-texturehandle-u32-u32-const-void-star-u32)._
+
+### `ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)` {#rhi-vulkan-vulkandevice-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate}
+
+`method rhi::vulkan::VulkanDevice::ReadbackTexture` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+bool ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* dst, u64 dst_size, ResourceState state) override;
+```
+
+Copies one mip level of one layer of a texture back to the CPU and waits (a synchronous helper for tests and tools).
+
+_Inherited from [`rhi::Device::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)`](rhi.md#rhi-device-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate)._
+
 ### `CreateCommandList()` {#rhi-vulkan-vulkandevice-createcommandlist}
 
 `method rhi::vulkan::VulkanDevice::CreateCommandList` — defined in `engine/rhi/vulkan/vulkan_device.h`
@@ -3357,6 +3457,46 @@ usize raw_buffers;
 
 Raw `VkBuffer` objects alive, including internal staging.
 
+#### `textures` {#rhi-vulkan-vulkandevice-objectcounts-textures}
+
+`variable rhi::vulkan::VulkanDevice::ObjectCounts::textures` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+usize textures;
+```
+
+Live textures owned by the user.
+
+#### `samplers` {#rhi-vulkan-vulkandevice-objectcounts-samplers}
+
+`variable rhi::vulkan::VulkanDevice::ObjectCounts::samplers` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+usize samplers;
+```
+
+Live samplers (each distinct sampler counted once).
+
+#### `pending_image_destruction` {#rhi-vulkan-vulkandevice-objectcounts-pending-image-destruction}
+
+`variable rhi::vulkan::VulkanDevice::ObjectCounts::pending_image_destruction` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+usize pending_image_destruction;
+```
+
+Textures and samplers destroyed but waiting for the GPU to finish with them.
+
+#### `raw_images` {#rhi-vulkan-vulkandevice-objectcounts-raw-images}
+
+`variable rhi::vulkan::VulkanDevice::ObjectCounts::raw_images` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+usize raw_images;
+```
+
+Raw `VkImage` objects alive.
+
 ### `Counts()` {#rhi-vulkan-vulkandevice-counts-const}
 
 `method rhi::vulkan::VulkanDevice::Counts` — defined in `engine/rhi/vulkan/vulkan_device.h`
@@ -3392,6 +3532,87 @@ Looks up a live buffer for command recording.
 | Parameter `buffer` | the handle. |
 | Parameter `vk_buffer` | receives the `VkBuffer`; must not be null. |
 | Parameter `desc` | receives the creation descriptor; must not be null. |
+| Returns | true if the handle is live. |
+| Fails | returns false for an invalid or stale handle. |
+
+### `TextureInfo` {#rhi-vulkan-vulkandevice-textureinfo}
+
+`struct rhi::vulkan::VulkanDevice::TextureInfo` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+struct TextureInfo { ... }
+```
+
+What command recording needs to know about a texture.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data (a snapshot). |
+
+#### `image` {#rhi-vulkan-vulkandevice-textureinfo-image}
+
+`variable rhi::vulkan::VulkanDevice::TextureInfo::image` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+VkImage image;
+```
+
+The image.
+
+#### `view` {#rhi-vulkan-vulkandevice-textureinfo-view}
+
+`variable rhi::vulkan::VulkanDevice::TextureInfo::view` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+VkImageView view;
+```
+
+The view over all mips and layers, for sampling.
+
+#### `attachment_view` {#rhi-vulkan-vulkandevice-textureinfo-attachment-view}
+
+`variable rhi::vulkan::VulkanDevice::TextureInfo::attachment_view` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+VkImageView attachment_view;
+```
+
+The view of mip 0, layer 0, for rendering; null unless the texture has an attachment usage.
+
+#### `desc` {#rhi-vulkan-vulkandevice-textureinfo-desc}
+
+`variable rhi::vulkan::VulkanDevice::TextureInfo::desc` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+TextureDesc desc;
+```
+
+The creation descriptor (without the debug name).
+
+#### `aspects` {#rhi-vulkan-vulkandevice-textureinfo-aspects}
+
+`variable rhi::vulkan::VulkanDevice::TextureInfo::aspects` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+VkImageAspectFlags aspects;
+```
+
+All aspects of the format.
+
+### `LookupTexture(TextureHandle,TextureInfo*)` {#rhi-vulkan-vulkandevice-lookuptexture-texturehandle-textureinfo-star-const}
+
+`method rhi::vulkan::VulkanDevice::LookupTexture` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+bool LookupTexture(TextureHandle texture, TextureInfo* info) const;
+```
+
+Looks up a live texture for command recording.
+
+| Field | Value |
+|---|---|
+| Parameter `texture` | the handle. |
+| Parameter `info` | receives the snapshot; must not be null. |
 | Returns | true if the handle is live. |
 | Fails | returns false for an invalid or stale handle. |
 

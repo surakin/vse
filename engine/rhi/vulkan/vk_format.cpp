@@ -71,4 +71,12 @@ VkImageAspectFlags AspectsOf(Format format) {
     return props.has_stencil ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_DEPTH_BIT;
 }
 
+VkImageAspectFlags CopyAspectOf(Format format) {
+    const FormatProperties& props = FormatInfo(format);
+    if (!props.is_depth) {
+        return VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+    return props.has_stencil ? 0 : VK_IMAGE_ASPECT_DEPTH_BIT;
+}
+
 } // namespace engine_placeholder::rhi::vulkan

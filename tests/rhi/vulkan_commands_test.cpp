@@ -71,9 +71,9 @@ TEST_CASE("GetBarrierScopes: the state table matches hand-derived stages, access
 
     SECTION("upload then read as a copy source (buffer)") {
         REQUIRE(GetBarrierScopes(ResourceState::CopyDst, ResourceState::CopySrc, false, &s));
-        CHECK(s.src.stage == VK_PIPELINE_STAGE_2_COPY_BIT);
+        CHECK(s.src.stage == VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
         CHECK(s.src.access == VK_ACCESS_2_TRANSFER_WRITE_BIT);
-        CHECK(s.dst.stage == VK_PIPELINE_STAGE_2_COPY_BIT);
+        CHECK(s.dst.stage == VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
         CHECK(s.dst.access == VK_ACCESS_2_TRANSFER_READ_BIT);
         CHECK(s.src.layout == VK_IMAGE_LAYOUT_UNDEFINED); // buffers carry no layout
         CHECK(s.dst.layout == VK_IMAGE_LAYOUT_UNDEFINED);

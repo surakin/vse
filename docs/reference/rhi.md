@@ -672,6 +672,23 @@ Moves a texture (all mips and layers) from state `before` to state `after`.
 | Parameter `after` | the state it is in afterwards. |
 | Aborts | outside `Begin`/`End`, inside a rendering pass, a stale handle, or (at submit on the null backend) `before` is not the texture's actual state. |
 
+### `GenerateMips(TextureHandle)` {#rhi-commandlist-generatemips-texturehandle}
+
+`method rhi::CommandList::GenerateMips` — defined in `engine/rhi/command_list.h`
+
+```cpp
+virtual void GenerateMips(TextureHandle texture) = 0;
+```
+
+Fills mip levels 1 and up of a texture by repeatedly halving mip level 0 with a linear filter.
+
+The texture must be in `ShaderRead`, with level 0 (of every layer) holding the picture; it is in `ShaderRead` afterwards and the previous contents of the other levels are replaced. The null backend checks the state when the list is submitted; the Vulkan backend trusts you and relies on its validation layers to catch a mistake. Check [`rhi::Device::CanGenerateMips`](#rhi-device-cangeneratemips-format-const) for the format first.
+
+| Field | Value |
+|---|---|
+| Parameter `texture` | a texture created with `Sampled`, `CopySrc` and `CopyDst` usage and more than one mip level. |
+| Aborts | outside `Begin`/`End`, inside a rendering pass, a stale handle, missing usage, a single mip level, a format that cannot be blitted, a depth format, or (on the null backend, at submit) the wrong state. |
+
 ### `BeginRendering(const RenderingDesc&)` {#rhi-commandlist-beginrendering-const-renderingdesc-amp}
 
 `method rhi::CommandList::BeginRendering` — defined in `engine/rhi/command_list.h`
@@ -2317,6 +2334,8 @@ virtual SamplerHandle CreateSampler(const SamplerDesc& desc) = 0;
 
 Creates a sampler.
 
+Equal descriptors may share one handle: a backend can return the handle it made for an earlier equal request and count the references, so destroy a sampler once for every time you created it. The anisotropy is clamped to the device limit.
+
 | Field | Value |
 |---|---|
 | Parameter `desc` | the description; must pass `Validate()`. |
@@ -2477,6 +2496,87 @@ Destroys a pipeline of either kind.
 |---|---|
 | Parameter `pipeline` | a live pipeline handle. |
 | Aborts | `pipeline` is invalid or stale. |
+
+### `FormatSupport(Format,TextureUsage)` {#rhi-device-formatsupport-format-textureusage-const}
+
+`method rhi::Device::FormatSupport` — defined in `engine/rhi/device.h`
+
+```cpp
+virtual bool FormatSupport(Format format, TextureUsage usage) const = 0;
+```
+
+Tells whether textures of a format can be created with the given usages on this device.
+
+| Field | Value |
+|---|---|
+| Parameter `format` | the texel format. |
+| Parameter `usage` | the usage flags wanted together; `None` asks whether the format exists at all. |
+| Returns | true if `CreateTexture` accepts the combination. |
+| Fails | returns false for `Format::Undefined` or an unsupported combination. |
+
+### `CanGenerateMips(Format)` {#rhi-device-cangeneratemips-format-const}
+
+`method rhi::Device::CanGenerateMips` — defined in `engine/rhi/device.h`
+
+```cpp
+virtual bool CanGenerateMips(Format format) const = 0;
+```
+
+Tells whether [`rhi::CommandList::GenerateMips`](#rhi-commandlist-generatemips-texturehandle) works for a format: the device must blit it with linear filtering.
+
+| Field | Value |
+|---|---|
+| Parameter `format` | the texel format. |
+| Returns | true if mips can be generated; otherwise upload precomputed mips with `UploadTexture`. |
+
+### `UploadTexture(TextureHandle,u32,u32,const void*,u32)` {#rhi-device-uploadtexture-texturehandle-u32-u32-const-void-star-u32}
+
+`method rhi::Device::UploadTexture` — defined in `engine/rhi/device.h`
+
+```cpp
+virtual UploadTicket UploadTexture(TextureHandle dst, u32 mip, u32 layer, const void* data, u32 row_pitch) = 0;
+```
+
+Copies one mip level of one layer from the CPU into a texture, outside the frame's command lists.
+
+The data is staged and copied on the GPU; it has been read from `data` when the call returns, and the copy is ordered after earlier submitted work. The whole texture moves to `ShaderRead`: it must be in state `Undefined` (the first upload) or `ShaderRead` (uploading another level or layer), and the other levels keep their contents. The device remembers only what its own upload and readback calls did: if you moved the texture elsewhere with `Barrier` in a command list, move it back to `ShaderRead` before uploading again, because the device cannot see the list's barriers. Large levels are split to fit the staging ring. Uploads to one texture must not overlap in time (use one thread per texture). Depth-stencil formats with a stencil aspect cannot be uploaded.
+
+| Field | Value |
+|---|---|
+| Parameter `dst` | a texture created with `Sampled` and `CopyDst` usage. |
+| Parameter `mip` | the mip level. |
+| Parameter `layer` | the array layer. |
+| Parameter `data` | the texel rows of the level; must not be null. |
+| Parameter `row_pitch` | bytes between rows (block rows for compressed formats); 0 means tightly packed. Otherwise at least the row size and a multiple of the texel (block) size. |
+| Returns | a ticket; see [`rhi::Device::UploadBuffer`](#rhi-device-uploadbuffer-bufferhandle-u64-const-void-star-u64). |
+| Fails | a lost device or staging memory running out logs and returns a ticket with `ok` false; the texture is then left in `ShaderRead` with the level only partly written. |
+| Aborts | `dst` is invalid or stale, lacks usage, `mip` or `layer` is out of range, `data` is null, `row_pitch` is invalid, or the texture is in another state. |
+| Ownership | `data` is borrowed for the call only; it must hold the level's rows at `row_pitch`. |
+
+### `ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)` {#rhi-device-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate}
+
+`method rhi::Device::ReadbackTexture` — defined in `engine/rhi/device.h`
+
+```cpp
+virtual bool ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* dst, u64 dst_size, ResourceState state) = 0;
+```
+
+Copies one mip level of one layer of a texture back to the CPU and waits (a synchronous helper for tests and tools).
+
+You say which state the texture is in (the device cannot see barriers recorded in command lists); it is moved to `CopySrc` for the copy and back, so it is left in the same state. Rows are tightly packed in `dst`.
+
+| Field | Value |
+|---|---|
+| Parameter `src` | a texture created with `CopySrc` usage. |
+| Parameter `mip` | the mip level. |
+| Parameter `layer` | the array layer. |
+| Parameter `dst` | where to write the level; must not be null. |
+| Parameter `dst_size` | bytes available in `dst`; at least the level's size. |
+| Parameter `state` | the state the texture is in now; not `Undefined`. |
+| Returns | true on success. |
+| Fails | returns false, logging the reason, if the device is lost or memory is exhausted. |
+| Aborts | `src` is invalid or stale, lacks `CopySrc`, `mip` or `layer` is out of range, `dst` is null or too small, `state` is `Undefined` or not a texture state, or (on the null backend) the texture is not in `state`. |
+| Ownership | `dst` is borrowed for the call only. |
 
 ### `MapBuffer(BufferHandle)` {#rhi-device-mapbuffer-bufferhandle}
 
@@ -4583,6 +4683,54 @@ bool ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) override;
 Copies bytes from a buffer back to the CPU and waits for them (a synchronous helper for tests and tools).
 
 _Inherited from [`rhi::Device::ReadbackBuffer(BufferHandle,u64,void*,u64)`](#rhi-device-readbackbuffer-bufferhandle-u64-void-star-u64)._
+
+### `FormatSupport(Format,TextureUsage)` {#rhi-nulldevice-formatsupport-format-textureusage-const}
+
+`method rhi::NullDevice::FormatSupport` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+bool FormatSupport(Format format, TextureUsage usage) const override;
+```
+
+Tells whether textures of a format can be created with the given usages on this device.
+
+_Inherited from [`rhi::Device::FormatSupport(Format,TextureUsage) const`](#rhi-device-formatsupport-format-textureusage-const)._
+
+### `CanGenerateMips(Format)` {#rhi-nulldevice-cangeneratemips-format-const}
+
+`method rhi::NullDevice::CanGenerateMips` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+bool CanGenerateMips(Format format) const override;
+```
+
+Tells whether [`rhi::CommandList::GenerateMips`](#rhi-commandlist-generatemips-texturehandle) works for a format: the device must blit it with linear filtering.
+
+_Inherited from [`rhi::Device::CanGenerateMips(Format) const`](#rhi-device-cangeneratemips-format-const)._
+
+### `UploadTexture(TextureHandle,u32,u32,const void*,u32)` {#rhi-nulldevice-uploadtexture-texturehandle-u32-u32-const-void-star-u32}
+
+`method rhi::NullDevice::UploadTexture` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+UploadTicket UploadTexture(TextureHandle dst, u32 mip, u32 layer, const void* data, u32 row_pitch) override;
+```
+
+Copies one mip level of one layer from the CPU into a texture, outside the frame's command lists.
+
+_Inherited from [`rhi::Device::UploadTexture(TextureHandle,u32,u32,const void*,u32)`](#rhi-device-uploadtexture-texturehandle-u32-u32-const-void-star-u32)._
+
+### `ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)` {#rhi-nulldevice-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate}
+
+`method rhi::NullDevice::ReadbackTexture` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+bool ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* dst, u64 dst_size, ResourceState state) override;
+```
+
+Copies one mip level of one layer of a texture back to the CPU and waits (a synchronous helper for tests and tools).
+
+_Inherited from [`rhi::Device::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)`](#rhi-device-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate)._
 
 ### `CreateCommandList()` {#rhi-nulldevice-createcommandlist}
 

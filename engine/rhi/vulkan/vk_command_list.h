@@ -61,6 +61,7 @@ public:
     void CopyTextureToBuffer(TextureHandle src, BufferHandle dst, const BufferTextureCopy& region) override;
     void Barrier(BufferHandle buffer, ResourceState before, ResourceState after) override;
     void Barrier(TextureHandle texture, ResourceState before, ResourceState after) override;
+    void GenerateMips(TextureHandle texture) override;
     void BeginRendering(const RenderingDesc& desc) override;
     void EndRendering() override;
     void SetPipeline(PipelineHandle pipeline) override;
@@ -80,6 +81,7 @@ private:
     // Aborts unless recording; returns false if `Begin` failed, in which case the command is skipped.
     bool Recording(const char* what) const;
     void Unsupported(const char* what) const;
+    void CopyLevel(BufferHandle buffer, TextureHandle texture, const BufferTextureCopy& region, bool to_texture);
 
     VulkanDevice* device_;
     VkCommandBuffer buffer_;

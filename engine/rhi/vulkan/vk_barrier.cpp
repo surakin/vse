@@ -29,10 +29,10 @@ const Row* TableRow(ResourceState state) {
         {{kShaderStages, VK_ACCESS_2_SHADER_READ_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL}, true, true},
         // ShaderWrite
         {{kShaderStages, VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL}, true, true},
-        // CopySrc
-        {{VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL}, true, true},
+        // CopySrc (copies and blits are both transfer-stage work)
+        {{VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL}, true, true},
         // CopyDst
-        {{VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL}, true, true},
+        {{VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL}, true, true},
         // ColorAttachment
         {{VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}, false, true},
@@ -67,6 +67,32 @@ bool GetBarrierScopes(ResourceState before, ResourceState after, bool is_image, 
         out->src.layout = VK_IMAGE_LAYOUT_UNDEFINED;
         out->dst.layout = VK_IMAGE_LAYOUT_UNDEFINED;
     }
+    return true;
+}
+
+bool CmdImageBarrier(const VkDeviceFns& fns, VkCommandBuffer cb, VkImage image, VkImageAspectFlags aspects, u32 base_mip, u32 mip_count,
+                     u32 base_layer, u32 layer_count, ResourceState before, ResourceState after) {
+    BarrierScopes scopes;
+    if (!GetBarrierScopes(before, after, true, &scopes)) {
+        return false;
+    }
+    VkImageMemoryBarrier2 barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+    barrier.srcStageMask = scopes.src.stage;
+    barrier.srcAccessMask = scopes.src.access;
+    barrier.dstStageMask = scopes.dst.stage;
+    barrier.dstAccessMask = scopes.dst.access;
+    barrier.oldLayout = scopes.src.layout;
+    barrier.newLayout = scopes.dst.layout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image;
+    barrier.subresourceRange = {aspects, base_mip, mip_count, base_layer, layer_count};
+    VkDependencyInfo dep{};
+    dep.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    dep.imageMemoryBarrierCount = 1;
+    dep.pImageMemoryBarriers = &barrier;
+    fns.CmdPipelineBarrier2(cb, &dep);
     return true;
 }
 

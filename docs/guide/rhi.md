@@ -224,6 +224,39 @@ frame it was destroyed in has completed on the GPU (a buffer destroyed between f
 a buffer used by work already submitted this frame is never freed under it. `BeginFrame` releases what has
 completed; `WaitIdle` releases everything. Destroying the device frees any buffers still alive, with a warning.
 
+### Textures and samplers
+
+A texture is created in state `Undefined`; its contents are unknown until something writes them. The RHI does not
+hide image layouts: you move a texture between [[rhi::ResourceState]]s with `Barrier`, and the Vulkan backend turns
+each state into stages, accesses and a layout through one table (`GetBarrierScopes`). Ask
+[[rhi::Device::FormatSupport]] whether a format works with the usages you want before relying on it; the device
+answers from its format table, and `CreateTexture` refuses a combination it cannot do.
+
+The easy path for static data is [[rhi::Device::UploadTexture]]. It writes one mip level of one array layer from
+CPU memory, with an optional row pitch for data that is not tightly packed, and leaves the whole texture in
+`ShaderRead`. The first upload requires the texture to be `Undefined` (or already `ShaderRead` for the next level
+or layer), so upload every level you have, then use the texture. Block-compressed formats count rows in block rows.
+The texture needs `Sampled` and `CopyDst` usage. A level bigger than the staging chunk is uploaded in row bands.
+
+```
+TextureDesc desc;
+desc.width = 64; desc.height = 64; desc.mip_levels = 7;
+desc.format = Format::RGBA8_UNorm;
+desc.usage = TextureUsage::Sampled | TextureUsage::CopyDst | TextureUsage::CopySrc;
+TextureHandle tex = device->CreateTexture(desc);
+device->UploadTexture(tex, 0, 0, pixels, 0);      // level 0, tightly packed
+// in a command list: fill the other levels with 2x2 averages
+list->GenerateMips(tex);                           // ShaderRead -> ShaderRead
+```
+
+[[rhi::CommandList::GenerateMips]] halves level 0 into the rest with linear blits. It needs the usages above and a
+format the device can blit (check [[rhi::Device::CanGenerateMips]]); for other formats upload precomputed mips.
+[[rhi::Device::ReadbackTexture]] copies one level back for tests and tools and, like `ReadbackBuffer`, stalls.
+
+Samplers are cheap to describe and are shared: `CreateSampler` returns the same handle for equal descriptors and
+counts references, so call `DestroySampler` once per `CreateSampler`. The anisotropy is clamped to what the device
+supports, and the debug name does not take part in the comparison.
+
 ### Recording and submitting
 
 Work reaches the GPU as command lists. [[rhi::Device::CreateCommandList]] hands the calling thread a list that is

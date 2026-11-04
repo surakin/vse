@@ -173,6 +173,18 @@ public:
     ///   `before` is not the texture's actual state.
     virtual void Barrier(TextureHandle texture, ResourceState before, ResourceState after) = 0;
 
+    /// Fills mip levels 1 and up of a texture by repeatedly halving mip level 0 with a linear filter.
+    ///
+    /// The texture must be in `ShaderRead`, with level 0 (of every layer) holding the picture; it is in `ShaderRead`
+    /// afterwards and the previous contents of the other levels are replaced. The null backend checks the state when
+    /// the list is submitted; the Vulkan backend trusts you and relies on its validation layers to catch a mistake. Check
+    /// [[rhi::Device::CanGenerateMips]] for the format first.
+    ///
+    /// Param texture: a texture created with `Sampled`, `CopySrc` and `CopyDst` usage and more than one mip level.
+    /// Aborts: outside `Begin`/`End`, inside a rendering pass, a stale handle, missing usage, a single mip level, a
+    ///   format that cannot be blitted, a depth format, or (on the null backend, at submit) the wrong state.
+    virtual void GenerateMips(TextureHandle texture) = 0;
+
     /// Begins a rendering pass on the given attachments.
     ///
     /// Param desc: the attachments; at least one is required, extents must match.

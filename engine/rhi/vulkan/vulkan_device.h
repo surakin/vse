@@ -66,6 +66,10 @@ public:
     void UnmapBuffer(BufferHandle buffer) override;
     UploadTicket UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) override;
     bool ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) override;
+    bool FormatSupport(Format format, TextureUsage usage) const override;
+    bool CanGenerateMips(Format format) const override;
+    UploadTicket UploadTexture(TextureHandle dst, u32 mip, u32 layer, const void* data, u32 row_pitch) override;
+    bool ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* dst, u64 dst_size, ResourceState state) override;
     CommandList* CreateCommandList() override;
     FenceValue Submit(CommandList* const* lists, usize count) override;
     bool WaitFence(FenceValue value, u64 timeout_ns) override;
@@ -127,6 +131,14 @@ public:
         usize pending_destruction = 0;
         /// Raw `VkBuffer` objects alive, including internal staging.
         usize raw_buffers = 0;
+        /// Live textures owned by the user.
+        usize textures = 0;
+        /// Live samplers (each distinct sampler counted once).
+        usize samplers = 0;
+        /// Textures and samplers destroyed but waiting for the GPU to finish with them.
+        usize pending_image_destruction = 0;
+        /// Raw `VkImage` objects alive.
+        usize raw_images = 0;
     };
 
     /// Returns the current object counts.
@@ -143,6 +155,30 @@ public:
     /// Returns: true if the handle is live.
     /// Fails: returns false for an invalid or stale handle.
     bool LookupBuffer(BufferHandle buffer, VkBuffer* vk_buffer, BufferDesc* desc) const;
+
+    /// What command recording needs to know about a texture.
+    ///
+    /// Thread-safety: thread-compatible plain data (a snapshot).
+    struct TextureInfo {
+        /// The image.
+        VkImage image = nullptr;
+        /// The view over all mips and layers, for sampling.
+        VkImageView view = nullptr;
+        /// The view of mip 0, layer 0, for rendering; null unless the texture has an attachment usage.
+        VkImageView attachment_view = nullptr;
+        /// The creation descriptor (without the debug name).
+        TextureDesc desc;
+        /// All aspects of the format.
+        VkImageAspectFlags aspects = 0;
+    };
+
+    /// Looks up a live texture for command recording.
+    ///
+    /// Param texture: the handle.
+    /// Param info: receives the snapshot; must not be null.
+    /// Returns: true if the handle is live.
+    /// Fails: returns false for an invalid or stale handle.
+    bool LookupTexture(TextureHandle texture, TextureInfo* info) const;
 
     /// Notes the result of a Vulkan call made while recording: a lost device sets the sticky lost state, and any
     /// other failure is logged.
@@ -177,11 +213,28 @@ private:
         BufferDesc desc;
         bool mapped = false;
     };
+    struct TextureRes {
+        VkImage image = nullptr;
+        VkImageView view = nullptr;
+        VkImageView attachment_view = nullptr;
+        MemoryAllocation memory;
+        TextureDesc desc;
+        ResourceState state = ResourceState::Undefined; // as left by UploadTexture; barriers in lists are the caller's
+    };
+    struct SamplerRes {
+        VkSampler sampler = nullptr;
+        SamplerDesc desc; // normalized: anisotropy clamped, name dropped
+        u32 refs = 0;
+    };
     struct CommandBufferSlot {
         VkCommandBuffer buffer;
         u64 fence; // the timeline value that frees it; 0 when free
     };
 
+    void InitializeFormats();
+    void DestroyTextureRes(TextureRes* t);
+    // Submits `fill` after staging chunks; shared by the texture upload and readback paths.
+    bool StageChunkLocked(u64 alloc_bytes, u64 align, u64* ring_offset);
     bool CreateRawBuffer(u64 size, VkBufferUsageFlags usage, MemoryLocation location, const char* what, RawBuffer* out);
     void DestroyRawBuffer(RawBuffer* raw);
     void InitializeTimeline();
@@ -192,7 +245,10 @@ private:
     u64 CompletedTimeline() const;
     // Records `fill` into a one-time command buffer and submits it, signalling a new timeline value. Holds submit_mutex_.
     template <typename Fill>
-    u64 SubmitInternalLocked(Fill&& fill);
+    u64 SubmitInternalLocked(Fill&& fill) {
+        return SubmitRawLocked([](void* context, VkCommandBuffer cb) { (*static_cast<Fill*>(context))(cb); }, &fill);
+    }
+    u64 SubmitRawLocked(void (*fill)(void*, VkCommandBuffer), void* context);
     VkCommandBuffer AcquireUploadCommandBufferLocked();
     void NoteDeviceLost(VkResult result);
     void SetDebugName(u64 handle, VkObjectType type, const char* name);
@@ -232,6 +288,10 @@ private:
     // Resources and deferred destruction (guarded by resource_mutex_).
     mutable std::mutex resource_mutex_;
     HandlePool<BufferRes, BufferTag> buffers_;
+    HandlePool<TextureRes, TextureTag> textures_;
+    HandlePool<SamplerRes, SamplerTag> samplers_;
+    VkFormatFeatureFlags format_features_[static_cast<usize>(Format::Count)] = {};
+    std::atomic<usize> raw_image_count_{0};
     std::atomic<bool> frame_open_{false};
     u64 ended_frames_ = 0;
     u64 completed_frames_ = 0;
