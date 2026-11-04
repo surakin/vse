@@ -382,7 +382,7 @@ int Samples(int argc, char** argv) {
     for (int i = 2; i < argc; ++i) {
         const bool more = i + 1 < argc;
         if (std::strcmp(argv[i], "--root") == 0 && more) root = argv[++i];
-        else if (std::strcmp(argv[i], "--compiler") == 0 && more) opt.compiler = std::strchr(argv[i + 1], '/') != nullptr ? Absolute(argv[i + 1], arena) : ArenaCat(arena, StringView(argv[i + 1], std::strlen(argv[i + 1])), StringView()), ++i;
+        else if (std::strcmp(argv[i], "--compiler") == 0 && more) opt.compiler = std::strchr(argv[i + 1], '/') != nullptr ? AbsoluteKeepingLinks(StringView(argv[i + 1], std::strlen(argv[i + 1])), arena) : ArenaCat(arena, StringView(argv[i + 1], std::strlen(argv[i + 1])), StringView()), ++i;
         else if (std::strcmp(argv[i], "--build-dir") == 0 && more) opt.scratch_base = Absolute(argv[++i], arena);
         else if (std::strcmp(argv[i], "--jobs") == 0 && more) opt.jobs = static_cast<u32>(std::strtoul(argv[++i], nullptr, 10));
         else if (std::strcmp(argv[i], "--timeout") == 0 && more) opt.run_timeout_s = static_cast<u32>(std::strtoul(argv[++i], nullptr, 10));

@@ -239,6 +239,19 @@ enum class BorderColor : u8 {
     OpaqueWhite,          ///< (1, 1, 1, 1).
 };
 
+/// What happens to an attachment's contents when a rendering pass begins.
+enum class LoadOp : u8 {
+    Load = 0, ///< Keep the existing contents.
+    Clear,    ///< Clear to the attachment's clear value.
+    DontCare, ///< Contents are undefined; the pass will overwrite everything it reads.
+};
+
+/// What happens to an attachment's contents when a rendering pass ends.
+enum class StoreOp : u8 {
+    Store = 0, ///< Keep the results.
+    DontCare,  ///< The results may be discarded (for example a depth buffer used only inside the pass).
+};
+
 /// The width of indices in an index buffer.
 enum class IndexType : u8 {
     UInt16 = 0, ///< 16-bit unsigned indices.

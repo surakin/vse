@@ -21,6 +21,11 @@ Full reference: [The Render Hardware Interface](../reference/rhi.md).
 - [[rhi::BufferDesc]], [[rhi::TextureDesc]], [[rhi::SamplerDesc]], [[rhi::ShaderDesc]],
   [[rhi::BindGroupLayoutDesc]], [[rhi::GraphicsPipelineDesc]], [[rhi::ComputePipelineDesc]] — creation descriptors
 - [[rhi::DeviceCaps]] — device limits
+- [[rhi::Device]] — resource creation, mapping, submission and frames
+- [[rhi::CommandList]] — recording commands
+- [[rhi::Swapchain]] — the presentable images of a window
+- [[rhi::HandlePool]] — slot storage with generation checks and deferred release
+- [[rhi::NullDevice]] and [[rhi::CreateNullDevice]] — the validating no-GPU backend
 
 ## Already known — seed material (verify against the code when writing)
 
@@ -89,7 +94,57 @@ bc1 5x5 = 32 bytes, rgba8 64 wide = 256 bytes per row
 
 ### Devices, command lists and lifetimes
 
-_TODO_
+A [[rhi::Device]] creates every resource and returns handles. A creation function that cannot succeed
+(a bad descriptor, an unsupported format, out of memory) logs the reason on `LogRhi` and returns the
+invalid handle; it never aborts. `Destroy*` makes the handle invalid at once, but the memory is released
+only when the GPU has finished the frames that could have used it.
+
+Work is recorded into a [[rhi::CommandList]] obtained from `Device::CreateCommandList()`. Lists can be
+recorded on different threads at the same time; one list belongs to one thread. A list is valid until the
+next `Device::BeginFrame()`, and is submitted with `Device::Submit()` after `End()`.
+
+Resource states are explicit. A texture starts in `ResourceState::Undefined`; before using it the way a
+command needs, record `Barrier(texture, before, after)`. The same applies to `GpuOnly` buffers.
+`CpuToGpu` and `GpuToCpu` buffers have a fixed state and take no barriers.
+
+The null backend checks all of this without a GPU. It logs and counts each violation instead of
+aborting, so a test can assert that a bad sequence is caught:
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "rhi/null/null_device.h"
+#include "rhi/rhi_log.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::rhi;
+
+int main() {
+    LogRhi.SetEnabled(false);  // keep the expected error out of the output
+    NullDevice* device = CreateNullDevice();
+    device->BeginFrame();
+
+    BufferDesc desc;
+    desc.size = 64;
+    desc.usage = BufferUsage::CopySrc | BufferUsage::CopyDst;
+    BufferHandle a = device->CreateBuffer(desc);
+    BufferHandle b = device->CreateBuffer(desc);
+
+    CommandList* list = device->CreateCommandList();
+    list->Begin();
+    list->Barrier(a, ResourceState::Undefined, ResourceState::CopySrc);
+    list->CopyBuffer(a, b, 0, 0, 64);  // b was never moved to CopyDst
+    list->End();
+    device->Submit(&list, 1);
+
+    std::printf("errors: %u\n", device->ErrorCount());
+    DestroyDevice(device);
+}
+```
+
+```output
+errors: 1
+```
 
 ### Rules & contracts
 

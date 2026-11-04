@@ -198,6 +198,9 @@ const char* BindGroupLayoutDesc::Validate() const {
         if (e.count == 0) {
             return "BindGroupLayoutDesc: binding count is zero";
         }
+        if (e.count > kMaxBindingArraySize) {
+            return "BindGroupLayoutDesc: binding array is too large";
+        }
         if (!Any(e.stages) || Any(static_cast<ShaderStage>(static_cast<u32>(e.stages) & ~static_cast<u32>(ShaderStage::All)))) {
             return "BindGroupLayoutDesc: binding stages are empty or unknown";
         }
@@ -211,6 +214,26 @@ const char* BindGroupLayoutDesc::Validate() const {
         for (usize j = 0; j < i; ++j) {
             if (entries[j].binding == e.binding) {
                 return "BindGroupLayoutDesc: duplicate binding index";
+            }
+        }
+    }
+    return nullptr;
+}
+
+const char* BindGroupDesc::Validate() const {
+    if (!layout.IsValid()) {
+        return "BindGroupDesc: layout handle is invalid";
+    }
+    if (entries.count > kMaxBindingsPerLayout * 8) {
+        return "BindGroupDesc: too many entries";
+    }
+    if (entries.count > 0 && entries.data == nullptr) {
+        return "BindGroupDesc: entries is null";
+    }
+    for (usize i = 0; i < entries.count; ++i) {
+        for (usize j = 0; j < i; ++j) {
+            if (entries[j].binding == entries[i].binding && entries[j].array_element == entries[i].array_element) {
+                return "BindGroupDesc: duplicate entry";
             }
         }
     }

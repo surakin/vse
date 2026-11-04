@@ -7,6 +7,7 @@
 set(RHI_SOURCES
   rhi.cpp
   desc.cpp
+  null/null_device.cpp
 )
 
 set(RHI_VULKAN_SOURCES

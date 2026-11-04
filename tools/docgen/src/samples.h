@@ -55,6 +55,12 @@ struct SampleStats {
     usize failed = 0;
 };
 
+// An absolute form of `path` that does not resolve symlinks. The compiler path must keep the name it was given:
+// a driver picks its mode from the name it is run as, so `/usr/bin/clang++` (a symlink chain ending in `clang-23`)
+// has to stay `clang++` or it compiles C++ in C mode and does not link the C++ runtime. An absolute path is returned
+// unchanged; a relative one gets the current directory prepended (a leading "./" is dropped).
+StringView AbsoluteKeepingLinks(StringView path, ArenaAllocator& arena);
+
 // Makes a RunSamples in progress kill its children and return (what SIGINT/SIGTERM do). Async-signal-safe.
 void RequestStop();
 

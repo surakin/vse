@@ -181,6 +181,47 @@ struct BindGroupLayoutDesc {
     const char* Validate() const;
 };
 
+/// One resource bound at a binding of a bind group; set the field that matches the binding's type.
+///
+/// Thread-safety: thread-compatible plain data.
+struct BindGroupEntry {
+    /// The binding index in the layout.
+    u32 binding = 0;
+    /// The element index for array bindings; 0 otherwise.
+    u32 array_element = 0;
+    /// The buffer, for uniform and storage buffer bindings.
+    BufferHandle buffer;
+    /// Byte offset of the bound range in `buffer`; a multiple of the device's offset alignment.
+    u64 offset = 0;
+    /// Byte size of the bound range; 0 binds from `offset` to the end of the buffer.
+    u64 size = 0;
+    /// The texture, for sampled and storage texture bindings.
+    TextureHandle texture;
+    /// The sampler, for sampler bindings.
+    SamplerHandle sampler;
+};
+
+/// Describes a bind group: concrete resources for every binding of a layout.
+///
+/// Thread-safety: thread-compatible plain data.
+/// Ownership: `entries` and `debug_name` are borrowed for the duration of the call. The group does not
+///   keep the bound resources alive; destroying one invalidates the group.
+struct BindGroupDesc {
+    /// The layout this group follows; required.
+    BindGroupLayoutHandle layout;
+    /// One entry per binding element of the layout.
+    Span<BindGroupEntry> entries;
+    /// Optional name shown in debuggers and logs; null for none.
+    const char* debug_name = nullptr;
+
+    /// Checks the descriptor without a device; whether the entries match the layout is checked at creation.
+    ///
+    /// Returns: null if the descriptor is acceptable, else the first problem.
+    /// Fails: reported through the return value, never by aborting.
+    /// Ownership: the returned string is static and is never freed by the caller.
+    const char* Validate() const;
+};
+
 /// One vertex buffer binding: how fast the buffer advances.
 ///
 /// Thread-safety: thread-compatible plain data.

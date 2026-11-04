@@ -42,6 +42,18 @@ Three classes of failure, each with one policy:
 Resource creation never throws (no exceptions in the engine) and never
 returns a half-built object.
 
+The **null backend** (`engine/rhi/null/`, Day 47) validates the same
+contract without a GPU. To make programming errors testable it *logs and
+counts* each violation (and skips the offending command) instead of
+aborting, unless `NullDeviceOptions::abort_on_error` is set. Its error
+count is what tests assert on; the real backends assert.
+
+State tracking: buffers in CPU-visible memory (`CpuToGpu`, `GpuToCpu`) have
+a fixed state and take no barriers (the Direct3D 12 upload/readback heap
+rule); `GpuOnly` buffers and all textures are tracked and start in
+`Undefined`. The null backend checks states when work is *submitted*,
+because only then is the order of recorded lists known.
+
 ## 3. Lifetime (D3)
 
 `Destroy*(handle)` never frees immediately. The device records the

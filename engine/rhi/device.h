@@ -1,0 +1,204 @@
+#pragma once
+
+#include "rhi/caps.h"
+#include "rhi/command_list.h"
+#include "rhi/desc.h"
+#include "rhi/handle.h"
+#include "types.h"
+
+//! The device: creates and destroys GPU resources and submits recorded work.
+
+namespace engine_placeholder::rhi {
+
+/// A point on the device's timeline; later submissions have larger values. 0 means none.
+using FenceValue = u64;
+
+/// The GPU device: owner of every resource, factory of command lists, and the submission point.
+///
+/// Creation functions never abort on an environment problem: they log the reason on [[rhi::LogRhi]] and
+/// return the invalid handle. Passing a stale or foreign handle, or violating a documented precondition, is
+/// a programming error (`Aborts:`); the null backend counts such errors instead of aborting.
+///
+/// `Destroy*` makes the handle invalid at once but defers the actual release until the GPU has finished
+/// the frames that could use the resource.
+///
+/// Thread-safety: thread-safe for resource creation, destruction, mapping and `CreateCommandList`
+///   (serialized internally). `Submit`, `BeginFrame`, `EndFrame` and `WaitIdle` must be called from one
+///   thread at a time (the submission thread).
+/// Ownership: the caller owns the device and releases it with [[rhi::DestroyDevice]], after `WaitIdle`
+///   and after dropping every command list.
+class Device {
+public:
+    virtual ~Device() = default;
+
+    /// Returns the stable lowercase backend id, for logs and tests.
+    ///
+    /// Returns: `"null"` or `"vulkan"`.
+    /// Ownership: the string is static and is never freed by the caller.
+    virtual const char* BackendName() const = 0;
+
+    /// Returns the device limits.
+    /// Ownership: the reference is valid for the life of the device.
+    virtual const DeviceCaps& Caps() const = 0;
+
+    /// Creates a buffer.
+    ///
+    /// Param desc: the description; must pass `Validate()` and fit the device limits.
+    /// Returns: the buffer handle, or the invalid handle on failure.
+    /// Fails: an invalid description or an out-of-memory condition is logged and returns the invalid handle.
+    virtual BufferHandle CreateBuffer(const BufferDesc& desc) = 0;
+    /// Destroys a buffer; the handle is invalid immediately and the memory is released after the GPU is done.
+    ///
+    /// Param buffer: a live buffer handle.
+    /// Aborts: `buffer` is invalid, stale, or still mapped.
+    virtual void DestroyBuffer(BufferHandle buffer) = 0;
+
+    /// Creates a texture in state `Undefined`.
+    ///
+    /// Param desc: the description; must pass `Validate()` and fit the device limits.
+    /// Returns: the texture handle, or the invalid handle on failure.
+    /// Fails: an invalid description, an unsupported format or an out-of-memory condition is logged and returns the invalid handle.
+    virtual TextureHandle CreateTexture(const TextureDesc& desc) = 0;
+    /// Destroys a texture; the handle is invalid immediately and the memory is released after the GPU is done.
+    ///
+    /// Param texture: a live texture handle.
+    /// Aborts: `texture` is invalid or stale.
+    virtual void DestroyTexture(TextureHandle texture) = 0;
+
+    /// Creates a sampler.
+    ///
+    /// Param desc: the description; must pass `Validate()`.
+    /// Returns: the sampler handle, or the invalid handle on failure.
+    /// Fails: an invalid description is logged and returns the invalid handle.
+    virtual SamplerHandle CreateSampler(const SamplerDesc& desc) = 0;
+    /// Destroys a sampler.
+    ///
+    /// Param sampler: a live sampler handle.
+    /// Aborts: `sampler` is invalid or stale.
+    virtual void DestroySampler(SamplerHandle sampler) = 0;
+
+    /// Creates a shader module from SPIR-V.
+    ///
+    /// Param desc: the description; the words are copied before the call returns.
+    /// Returns: the shader handle, or the invalid handle on failure.
+    /// Fails: an invalid description or a rejected module is logged and returns the invalid handle.
+    virtual ShaderHandle CreateShader(const ShaderDesc& desc) = 0;
+    /// Destroys a shader module; pipelines created from it stay valid.
+    ///
+    /// Param shader: a live shader handle.
+    /// Aborts: `shader` is invalid or stale.
+    virtual void DestroyShader(ShaderHandle shader) = 0;
+
+    /// Creates a bind group layout.
+    ///
+    /// Param desc: the description; entries are copied before the call returns.
+    /// Returns: the layout handle, or the invalid handle on failure.
+    /// Fails: an invalid description is logged and returns the invalid handle.
+    virtual BindGroupLayoutHandle CreateBindGroupLayout(const BindGroupLayoutDesc& desc) = 0;
+    /// Destroys a bind group layout; pipelines and groups created from it stay valid.
+    ///
+    /// Param layout: a live layout handle.
+    /// Aborts: `layout` is invalid or stale.
+    virtual void DestroyBindGroupLayout(BindGroupLayoutHandle layout) = 0;
+
+    /// Creates a bind group.
+    ///
+    /// Param desc: the layout and one entry per binding element; entries are copied before the call returns.
+    /// Returns: the group handle, or the invalid handle on failure.
+    /// Fails: an invalid description, a stale resource, or entries that do not match the layout are logged and
+    ///   return the invalid handle.
+    virtual BindGroupHandle CreateBindGroup(const BindGroupDesc& desc) = 0;
+    /// Destroys a bind group.
+    ///
+    /// Param group: a live group handle.
+    /// Aborts: `group` is invalid or stale.
+    virtual void DestroyBindGroup(BindGroupHandle group) = 0;
+
+    /// Creates a graphics pipeline.
+    ///
+    /// Param desc: the description; arrays are copied before the call returns.
+    /// Returns: the pipeline handle, or the invalid handle on failure.
+    /// Fails: an invalid description, a stale shader or layout, or a driver rejection is logged and returns the invalid handle.
+    virtual PipelineHandle CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) = 0;
+    /// Creates a compute pipeline.
+    ///
+    /// Param desc: the description.
+    /// Returns: the pipeline handle, or the invalid handle on failure.
+    /// Fails: an invalid description, a stale shader or layout, or a driver rejection is logged and returns the invalid handle.
+    virtual PipelineHandle CreateComputePipeline(const ComputePipelineDesc& desc) = 0;
+    /// Destroys a pipeline of either kind.
+    ///
+    /// Param pipeline: a live pipeline handle.
+    /// Aborts: `pipeline` is invalid or stale.
+    virtual void DestroyPipeline(PipelineHandle pipeline) = 0;
+
+    /// Maps a CPU-visible buffer and returns a pointer to its first byte.
+    ///
+    /// The mapping stays valid until `UnmapBuffer`. CPU writes to a `CpuToGpu` buffer are visible to work
+    /// submitted afterwards.
+    ///
+    /// Param buffer: a buffer in `CpuToGpu` or `GpuToCpu` memory that is not already mapped.
+    /// Returns: the pointer.
+    /// Aborts: `buffer` is invalid or stale, not CPU-visible, or already mapped.
+    /// Ownership: the memory belongs to the buffer; the pointer is valid until `UnmapBuffer` or `DestroyBuffer`.
+    virtual void* MapBuffer(BufferHandle buffer) = 0;
+    /// Ends a mapping.
+    ///
+    /// Param buffer: a buffer returned mapped by `MapBuffer`.
+    /// Aborts: `buffer` is invalid, stale or not mapped.
+    virtual void UnmapBuffer(BufferHandle buffer) = 0;
+
+    /// Returns a command list for the calling thread to record, valid until the next `BeginFrame`.
+    ///
+    /// Returns: a list ready for `Begin`.
+    /// Fails: returns null when the device is lost or out of memory.
+    /// Ownership: the device owns the list; do not delete it.
+    virtual CommandList* CreateCommandList() = 0;
+
+    /// Submits recorded lists for execution in the given order.
+    ///
+    /// Param lists: lists obtained this frame and ended; none may repeat.
+    /// Param count: number of lists.
+    /// Ownership: the array is borrowed for the call; the device keeps ownership of the lists.
+    /// Returns: the fence value that is reached when all the work has finished, or 0 on failure.
+    /// Fails: returns 0 when the device is lost.
+    /// Aborts: no frame is open, `lists` is null with a non-zero count, or a list was not ended, belongs to another
+    ///   device, is from an earlier frame, or was already submitted.
+    virtual FenceValue Submit(CommandList* const* lists, usize count) = 0;
+
+    /// Waits until the device timeline has reached `value`.
+    ///
+    /// Param value: a value returned by `Submit`.
+    /// Param timeout_ns: how long to wait; 0 polls.
+    /// Returns: true if the value was reached.
+    /// Fails: returns false on timeout or device loss.
+    virtual bool WaitFence(FenceValue value, u64 timeout_ns) = 0;
+
+    /// Returns the largest fence value the GPU has reached.
+    virtual FenceValue CompletedFence() const = 0;
+
+    /// Starts a frame: advances the frame number, recycles command lists and releases resources whose frames completed.
+    ///
+    /// Invalidates every command list from earlier frames.
+    virtual void BeginFrame() = 0;
+    /// Ends the current frame, marking it as submitted for deferred-destruction purposes.
+    virtual void EndFrame() = 0;
+    /// Returns the current frame number; the first frame is 1, and 0 means no frame has begun.
+    virtual u64 FrameNumber() const = 0;
+
+    /// Blocks until all submitted work has finished, then releases every deferred destruction.
+    virtual void WaitIdle() = 0;
+
+    /// Returns whether the device was lost; once true it stays true.
+    ///
+    /// Returns: true after a device-lost error.
+    virtual bool DeviceLost() const = 0;
+};
+
+/// Destroys a device created by a backend's factory function, after waiting for it to go idle.
+///
+/// Param device: the device, or null for no effect.
+/// Ownership: takes ownership of `device`; the pointer, its command lists and every handle are invalid afterwards.
+void DestroyDevice(Device* device);
+
+} // namespace engine_placeholder::rhi

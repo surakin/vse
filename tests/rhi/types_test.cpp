@@ -371,6 +371,13 @@ TEST_CASE("BindGroupLayoutDesc validation", "[rhi][desc]") {
     bad.type = BindingType::SampledTexture;
     CHECK(arr.Validate() == nullptr);
 
+    BindingDesc huge = {0, BindingType::Sampler, ShaderStage::Fragment, kMaxBindingArraySize + 1};
+    BindGroupLayoutDesc huge_desc;
+    huge_desc.entries = Span<BindingDesc>(&huge, 1);
+    CHECK(Rejects(huge_desc.Validate(), "BindGroupLayoutDesc: binding array is too large"));
+    huge.count = kMaxBindingArraySize;
+    CHECK(huge_desc.Validate() == nullptr);
+
     BindingDesc many[kMaxBindingsPerLayout + 1];
     for (u32 i = 0; i < kMaxBindingsPerLayout + 1; ++i) {
         many[i] = {i, BindingType::UniformBuffer, ShaderStage::Vertex, 1};

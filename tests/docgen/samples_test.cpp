@@ -315,3 +315,19 @@ TEST_CASE("Samples: [review] a standalone sample finds headers through -I", "[do
     REQUIRE(RunSamples(opt, samples, arena, diags, stats));
     CHECK(diags.Size() == 0);
 }
+
+TEST_CASE("Samples: the compiler path keeps its name when made absolute (no symlink resolution)", "[docgen][samples]") {
+    ArenaAllocator arena(1 << 16);
+    Tree t;
+    // clang++ is usually a symlink to clang, itself a symlink to clang-NN; resolving it would change the driver mode.
+    std::string link = t.root + "/fake-clang++";
+    REQUIRE(symlink("/bin/true", link.c_str()) == 0);
+
+    CHECK(Str(AbsoluteKeepingLinks(Sv(link), arena)) == link);  // absolute: unchanged, still the link name
+
+    char cwd[4096];
+    REQUIRE(getcwd(cwd, sizeof(cwd)) != nullptr);
+    CHECK(Str(AbsoluteKeepingLinks(StringView("tools/clang++"), arena)) == std::string(cwd) + "/tools/clang++");
+    CHECK(Str(AbsoluteKeepingLinks(StringView("./clang++"), arena)) == std::string(cwd) + "/clang++");
+    unlink(link.c_str());
+}

@@ -515,4 +515,19 @@ bool RunSamples(const SampleOptions& options, const Array<Sample, ArenaAllocator
     return r.Run(samples);
 }
 
+StringView AbsoluteKeepingLinks(StringView path, ArenaAllocator& arena) {
+    if (path.Length() > 0 && path.Data()[0] == '/') {
+        return ArenaCat(arena, path, StringView());
+    }
+    char cwd[4096];
+    if (getcwd(cwd, sizeof(cwd)) == nullptr) {
+        return ArenaCat(arena, path, StringView());
+    }
+    StringView rel = path;
+    while (rel.Length() >= 2 && rel.Data()[0] == '.' && rel.Data()[1] == '/') {
+        rel = StringView(rel.Data() + 2, rel.Length() - 2);
+    }
+    return ArenaCat(arena, StringView(cwd, std::strlen(cwd)), StringView("/"), rel);
+}
+
 } // namespace docgen

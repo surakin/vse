@@ -11,6 +11,8 @@ namespace engine_placeholder::rhi {
 
 /// Largest number of bindings in one bind group layout.
 inline constexpr u32 kMaxBindingsPerLayout = 32;
+/// Largest array size of one binding (for sampled textures and samplers).
+inline constexpr u32 kMaxBindingArraySize = 256;
 /// Largest number of bind groups one pipeline may use (the RHI-wide ceiling; devices may allow fewer).
 inline constexpr u32 kMaxBindGroups = 4;
 /// Largest number of color attachments one pipeline may write (the RHI-wide ceiling).
