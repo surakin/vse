@@ -7,7 +7,7 @@ Make shaders describe themselves so materials and bind group layouts are generat
 
 ## Tasks
 
-- [ ] Add `tools/shader_cook/` (a C++ tool using the foundation): runs `slangc` with `-reflection-json`, parses the JSON with a small hand-written reader (no third-party JSON), writes the SPIR-V words as `*.spv.inc` and a compact reflection blob as `*.refl.inc`. `spv_embed` is folded into it.
+- [ ] Add `tools/shader_cook/` (a C++ tool using the foundation): runs `slangc` with `-reflection-json`, parses the JSON with nlohmann/json (vendored under `third_party/nlohmann_json/`, tool-only, `PLAN.md` assumption #19; decided 2026-11-05 instead of a hand-written reader), writes the SPIR-V words as `*.spv.inc` and a compact reflection blob as `*.refl.inc`. `spv_embed` is folded into it.
 - [ ] Define `renderer::ShaderReflection` (`engine/renderer/shader_reflection.h`): entry/stage, bindings (set, binding, `rhi::BindingType`, array size, stages, name), uniform block layouts (member names, offsets, sizes, types), push-constant range, vertex inputs (location, `VertexFormat`, name), compute local size. Plain data.
 - [ ] Round-trip tests: reflect each existing shader and compare with hand-written expectations (the lit shader's block: 176 bytes and member offsets; its three bindings; the cube vertex layout); a C++ struct whose size disagrees with the reflected block fails a generated size check.
 - [ ] Builders `MakeBindGroupLayoutDesc(const ShaderReflection&, set)` and vertex attribute builders, tested on the null and real devices; merging a vertex+fragment pair into one layout (stage masks OR-ed, conflicting types reported with names).

@@ -438,6 +438,26 @@ interpretations keep it buildable — flag any that don't match intent:
       would add a format tag to `ShaderDesc`, and that any translator must
       flip clip-space Y for D3D12/Metal. Neither blocks Phase 4.
 
+19. **Offline tools may use a vetted third-party library where the job is
+    solved and has no engine-differentiating value - starting with
+    nlohmann/json in `tools/shader_cook` (decided 2026-11-05).** The Day 71
+    shader cook tool must read `slangc -reflection-json` output. Writing a
+    JSON parser is not what this project exists to hand-roll, so the tool
+    uses nlohmann/json v3.12.0 (MIT, single header), vendored as source under
+    `third_party/nlohmann_json/` (same pattern as Catch2, #16: pinned
+    release, no submodule, no `FetchContent`). Scope, which is what makes
+    this an exception and not a loophole: the library is linked into
+    **offline tools only** (today `shader_cook`), never into the engine, a
+    game, the renderer or any test target, and the tool's output (the
+    committed `*.spv.inc` / `*.refl.inc`) is what the engine consumes, so
+    a checkout still builds without `slangc` and the engine binary
+    contains no JSON code. The tool is built exception-free like the rest
+    (`-fno-exceptions`; the library then aborts only on programmer errors,
+    which the tool avoids by checking types and using `value()`/`contains()`
+    accessors and `parse(..., allow_exceptions=false)`). Any further
+    third-party library in a tool or in the engine still needs its own
+    justified entry here.
+
 ## Guiding principles
 
 - **RHI-first rendering.** Gameplay/renderer code never calls Vulkan, DX12,

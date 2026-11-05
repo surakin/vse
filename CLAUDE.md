@@ -191,6 +191,12 @@ table in `PLAN.md`.
   the committed outputs. Don't add GLSL or hand-written SPIR-V. DX12 and
   Metal output comes from the same Slang sources in Phases 12-13 (note
   the clip-space Y flip and Metal's `main` rename in `shaders/README.md`).
+- **Offline tools may use a vetted third-party library** where the job is
+  solved and not engine-differentiating - today only nlohmann/json
+  (vendored under `third_party/nlohmann_json/`) in `tools/shader_cook`,
+  to read `slangc` reflection (`PLAN.md` assumption #19). Never linked
+  into the engine, a game, the renderer or a test target; anything else
+  needs its own entry in `PLAN.md`.
 - **Engine core before editor.** The editor (Phase 18) is built last,
   using the engine's own renderer/ECS and Phase 6 UI system — not a
   separate GUI toolkit.
