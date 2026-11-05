@@ -325,6 +325,90 @@ not match as an error, so a graph that executes with `ErrorCount() == 0` has a c
 test (`tests/rhi/vulkan_render_graph_test.cpp`) runs a clear, a sampling draw, a compute write and a combining draw with
 validation and synchronization validation on and expects no messages.
 
+### Frames, parallel recording and the swapchain
+
+`Renderer` is the frame loop. It owns what lives across frames (the transient pool and the per-frame arena) and borrows the
+device, an optional swapchain and an optional `jobs::Scheduler`. You give it a build callback; each `RenderFrame` then
+opens a device frame, acquires the swapchain image (or imports the `FrameTarget` you pass when there is no swapchain), calls
+the callback with a fresh graph that already holds the imported target, compiles, records, submits once and presents.
+
+The status says how the frame ended: `Ok`; `Skipped` when the window is minimized (nothing was submitted, try again);
+`DeviceLost` when the device or surface is gone (the renderer stays destroyable, it just cannot render again); `Failed` for
+anything else, such as a callback that gave up, a bad graph or a transient the device could not create (`LastError` names
+it). A failed frame never leaves the swapchain stuck: an acquired image is moved to `Present` and shown as it is, and the
+transients the frame had taken go back to the pool in the state they were taken in. A resize needs no handling by
+the caller: the graph is rebuilt every frame from the new `width`/`height` in the `FrameContext`, so targets sized from
+it get new pool entries and the old ones are destroyed once they age out.
+
+Recording is parallel. `RenderGraph::ExecuteParallel` resolves the transients first (serially), then records every
+scheduled pass into its own command list. With a scheduler the passes record concurrently, each list created on the thread
+that records it; without one they record in order on the calling thread. All lists go to a single `Submit` in schedule
+order, so the GPU sees exactly what serial recording would have produced. Pass callbacks run concurrently with each other,
+so they must not share mutable state without synchronization; the graph only reads its own tables meanwhile. A
+pass records into its one list: splitting one pass's draw list over several lists needs the RHI to suspend and resume a
+rendering pass, which it cannot do yet (see `KNOWN-ISSUES.md`).
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "renderer/renderer.h"
+#include "rhi/null/null_device.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::renderer;
+
+namespace {
+
+void Clear(const PassExecuteContext& pass, void* user) {
+    rhi::RenderingDesc rd;
+    rd.color[0].texture = pass.graph->ResolvedTexture(*static_cast<GraphResource*>(user));
+    rd.color_count = 1;
+    pass.list->BeginRendering(rd);
+    pass.list->EndRendering();
+}
+
+GraphResource g_target;
+
+bool Build(const FrameContext& context, void*) {
+    g_target = context.target;
+    context.graph->AddPass("clear", &Clear, &g_target).Write(context.target, GraphUsage::ColorAttachment);
+    return true;
+}
+
+} // namespace
+
+int main() {
+    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::SwapchainDesc sd;
+    sd.width = 64;
+    sd.height = 48;
+    rhi::Swapchain* swapchain = device->CreateSwapchain(sd);
+    {
+        RendererDesc rd;
+        rd.device = device;
+        rd.swapchain = swapchain;
+        rd.build = &Build;
+        Renderer renderer(rd);
+        for (int i = 0; i < 3; ++i) std::printf("frame %d: %s\n", i, FrameStatusName(renderer.RenderFrame(nullptr, nullptr, nullptr)));
+        swapchain->Resize(0, 0); // minimized
+        std::printf("minimized: %s\n", FrameStatusName(renderer.RenderFrame(nullptr, nullptr, nullptr)));
+        std::printf("rendered %llu, skipped %llu\n", static_cast<unsigned long long>(renderer.Stats().frames_rendered),
+                    static_cast<unsigned long long>(renderer.Stats().frames_skipped));
+    }
+    device->DestroySwapchain(swapchain);
+    rhi::DestroyDevice(device);
+    return 0;
+}
+```
+
+```output
+frame 0: ok
+frame 1: ok
+frame 2: ok
+minimized: skipped
+rendered 3, skipped 1
+```
+
 ### Rules & contracts
 
 - A `GpuMesh` must be destroyed (or go out of scope) before the device that created it; a scene holds meshes by pointer and

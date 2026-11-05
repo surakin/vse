@@ -18,6 +18,10 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
+namespace engine_placeholder::jobs {
+class Scheduler;
+} // namespace engine_placeholder::jobs
+
 namespace engine_placeholder::renderer {
 
 /// Most compile errors the graph keeps; later ones are counted but not stored.
@@ -470,10 +474,37 @@ public:
     ///   before `Execute` returns.
     bool Execute(TransientPool* pool, rhi::CommandList* list);
 
+    /// Records the compiled graph like `Execute`, but one command list per pass, in parallel, and submits them in order.
+    ///
+    /// Transients are resolved first (serially), then every scheduled pass records into its own list: with a scheduler the
+    /// passes record concurrently on its participants (each list is created on the thread that records it), without one
+    /// they record in order on the calling thread. A pass with no callback and no barriers records no list at all. A
+    /// last list holds the exit barriers of the imports. All lists go to
+    /// one `Submit` in schedule order, so the result is the same as a serial `Execute`: a pass sees the state the plan
+    /// gives it, whichever thread recorded it.
+    ///
+    /// Pass callbacks run concurrently with each other and must not share mutable state without synchronization; the
+    /// graph itself is only read while they run.
+    ///
+    /// Param pool: where transient resources come from; may be null if the graph declares none.
+    /// Param device: the device; a frame must be open (`BeginFrame`).
+    /// Param scheduler: runs the recording, or null to record on the calling thread. Must be called from participant 0
+    ///   outside any job when set.
+    /// Param fence: receives the fence value of the submission; may be null.
+    /// Returns: true if everything was recorded and submitted.
+    /// Fails: as for `Execute`, and when the device cannot give out a command list or refuses the submission (lost);
+    ///   `ExecuteError` names the cause. Nothing is submitted then and the pool is put back as it was, but pass callbacks
+    ///   may already have run (some or all of them, and on several threads at once), so any state they changed outside
+    ///   the command list stays changed.
+    /// Aborts: `device` is null, or no frame is open.
+    /// Thread-safety: owner-thread-only (a scheduler's participant 0).
+    /// Ownership: `pool`, `device` and `scheduler` are borrowed for the call.
+    bool ExecuteParallel(TransientPool* pool, rhi::Device* device, jobs::Scheduler* scheduler, rhi::FenceValue* fence);
+
     /// Returns the texture a resource is bound to: an import's texture, or the pooled texture while `Execute` runs.
     ///
     /// Param resource: a texture of this graph.
-    /// Returns: the texture; for a transient resource an invalid handle outside the span of its use in `Execute`.
+    /// Returns: the texture; for a transient resource an invalid handle except while an execution is recording.
     /// Aborts: `resource` is invalid or not a texture.
     rhi::TextureHandle ResolvedTexture(GraphResource resource) const;
     /// Returns the buffer a resource is bound to while `Execute` runs; see [[renderer::RenderGraph::ResolvedTexture]].
@@ -519,6 +550,15 @@ private:
     struct BarrierRec;
 
     bool PlanBarriers();
+    bool ResolveTransients(TransientPool* pool);
+    void RollbackTransients(TransientPool* pool);
+    void ReleaseResource(TransientPool* pool, u32 resource, rhi::ResourceState state);
+    void ClearResolved();
+    void RecordBarriers(u32 position, rhi::CommandList* list) const;
+    void RecordPass(u32 position, rhi::CommandList* list) const;
+    bool PassHasWork(u32 position) const;
+    struct ParallelRecord;
+    static void RecordRange(void* user, usize begin, usize end);
     void SetExecuteError(const char* fmt, ...) __attribute__((format(printf, 2, 3)));
     void AddError(const char* fmt, ...) __attribute__((format(printf, 2, 3)));
     bool AddAccess(PassId pass, GraphResource resource, GraphUsage usage, GraphAccess access);
@@ -537,6 +577,8 @@ private:
     BarrierRec* barriers_ = nullptr;
     u32 barrier_count_ = 0;
     u32* acq_order_ = nullptr;
+    u32* barrier_start_ = nullptr;
+    rhi::CommandList** list_scratch_ = nullptr;
     u32 acq_count_ = 0;
     char exec_error_[kGraphErrorLength] = {};
     u32 pass_count_ = 0;

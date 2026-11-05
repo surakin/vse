@@ -1,10 +1,12 @@
 #include "renderer/render_graph.h"
 
+#include <atomic>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
 #include <new>
 
+#include "jobs/parallel_for.h"
 #include "log/assert.h"
 #include "renderer/transient_pool.h"
 
@@ -182,10 +184,9 @@ struct RenderGraph::ResourceRec {
     rhi::ResourceState end_state = rhi::ResourceState::Undefined;
     rhi::TextureHandle resolved_texture;
     rhi::BufferHandle resolved_buffer;
-    // Execute's bookkeeping: the pooled handle (kept after the release, for a rollback) and the state it was taken in.
-    rhi::TextureHandle exec_texture;
-    rhi::BufferHandle exec_buffer;
+    // Execution's bookkeeping: the state the pooled resource was taken in, and whether it is out of the pool right now.
     rhi::ResourceState pooled_state = rhi::ResourceState::Undefined;
+    bool held = false;
 };
 
 struct RenderGraph::BarrierRec {
@@ -788,7 +789,9 @@ bool RenderGraph::PlanBarriers() {
     rhi::ResourceState* current = AllocArray<rhi::ResourceState>(arena_, R);
     bool* wrote = AllocArray<bool>(arena_, R);
     acq_order_ = AllocArray<u32>(arena_, R);
-    if (barriers_ == nullptr || current == nullptr || wrote == nullptr || acq_order_ == nullptr) {
+    barrier_start_ = AllocArray<u32>(arena_, schedule_count_ + 2);
+    list_scratch_ = AllocArray<rhi::CommandList*>(arena_, schedule_count_ + 1);
+    if (barriers_ == nullptr || current == nullptr || wrote == nullptr || acq_order_ == nullptr || barrier_start_ == nullptr || list_scratch_ == nullptr) {
         AddError("the render graph ran out of arena space planning barriers");
         return false;
     }
@@ -824,6 +827,13 @@ bool RenderGraph::PlanBarriers() {
             b.after = res.final_state;
         }
     }
+    // Barriers are ordered by position (the exit barriers last), so each position owns a contiguous run.
+    u32 next = 0;
+    for (u32 pos = 0; pos <= schedule_count_; ++pos) {
+        barrier_start_[pos] = next;
+        while (next < barrier_count_ && barriers_[next].position == pos) ++next;
+    }
+    barrier_start_[schedule_count_ + 1] = barrier_count_;
     return true;
 }
 
@@ -876,6 +886,113 @@ void RenderGraph::SetExecuteError(const char* fmt, ...) {
     va_end(ap);
 }
 
+void RenderGraph::ReleaseResource(TransientPool* pool, u32 r, rhi::ResourceState state) {
+    ResourceRec& res = resources_[r];
+    if (res.kind == GraphResourceKind::Texture) pool->ReleaseTexture(res.resolved_texture, state);
+    else pool->ReleaseBuffer(res.resolved_buffer, state);
+    res.held = false;
+}
+
+void RenderGraph::ClearResolved() {
+    for (u32 r = 0; r < resource_count_; ++r) {
+        resources_[r].resolved_texture = rhi::TextureHandle{};
+        resources_[r].resolved_buffer = rhi::BufferHandle{};
+        resources_[r].held = false;
+    }
+}
+
+// Nothing was submitted, so none of the barriers will run: every transient goes back to the pool in the state it was taken
+// in. A handle can serve several resources in turn; undoing in reverse acquisition order leaves the earliest, original state.
+void RenderGraph::RollbackTransients(TransientPool* pool) {
+    for (u32 r = 0; r < resource_count_; ++r) {
+        if (resources_[r].held) ReleaseResource(pool, r, rhi::ResourceState::Undefined);
+    }
+    for (u32 i = acq_count_; i > 0; --i) {
+        const ResourceRec& res = resources_[acq_order_[i - 1]];
+        if (res.kind == GraphResourceKind::Texture) pool->SetTextureState(res.resolved_texture, res.pooled_state);
+        else pool->SetBufferState(res.resolved_buffer, res.pooled_state);
+    }
+    ClearResolved();
+}
+
+// Assigns a pooled resource to every transient, walking the schedule: taken at the first use, given back after the last, so
+// a later resource in the same frame can reuse it. Done before any recording so the passes can record in any order.
+bool RenderGraph::ResolveTransients(TransientPool* pool) {
+    acq_count_ = 0;
+    ClearResolved();
+    for (u32 r = 0; r < resource_count_; ++r) resources_[r].pooled_state = rhi::ResourceState::Undefined;
+    for (u32 pos = 0; pos < schedule_count_; ++pos) {
+        const PassRec& pass = passes_[schedule_[pos]];
+        for (u32 i = 0; i < pass.access_count; ++i) {
+            const u32 r = accesses_[pass.first_access + i].resource;
+            ResourceRec& res = resources_[r];
+            if (res.import || res.first_use != pos) continue;
+            if (pool == nullptr) {
+                SetExecuteError("pass '%s' needs transient resource '%s' but Execute was given no pool", pass.name, res.name);
+                RollbackTransients(pool);
+                return false;
+            }
+            if (res.kind == GraphResourceKind::Texture) {
+                PooledTexture t;
+                if (!pool->AcquireTexture(res.texture_desc, &t)) {
+                    SetExecuteError("transient texture '%s' could not be allocated", res.name);
+                    RollbackTransients(pool);
+                    return false;
+                }
+                res.resolved_texture = t.handle;
+                res.pooled_state = t.state;
+            } else {
+                PooledBuffer b;
+                if (!pool->AcquireBuffer(res.buffer_desc, &b)) {
+                    SetExecuteError("transient buffer '%s' could not be allocated", res.name);
+                    RollbackTransients(pool);
+                    return false;
+                }
+                res.resolved_buffer = b.handle;
+                res.pooled_state = b.state;
+            }
+            res.held = true;
+            acq_order_[acq_count_++] = r;
+        }
+        for (u32 i = 0; i < pass.access_count; ++i) {
+            const u32 r = accesses_[pass.first_access + i].resource;
+            const ResourceRec& res = resources_[r];
+            if (!res.import && res.last_use == pos && res.held) ReleaseResource(pool, r, res.end_state);
+        }
+    }
+    return true;
+}
+
+void RenderGraph::RecordBarriers(u32 position, rhi::CommandList* list) const {
+    for (u32 k = barrier_start_[position]; k < barrier_start_[position + 1]; ++k) {
+        const BarrierRec& b = barriers_[k];
+        const ResourceRec& res = resources_[b.resource];
+        // A transient's first barrier starts from the state the pooled resource was left in, so the new use is also ordered
+        // after the old one; a fresh resource is Undefined.
+        const bool first = !res.import && res.first_use == position;
+        const rhi::ResourceState before = (first && b.before == rhi::ResourceState::Undefined) ? res.pooled_state : b.before;
+        if (res.kind == GraphResourceKind::Texture) list->Barrier(ResolvedTexture(GraphResource{b.resource}), before, b.after);
+        else list->Barrier(ResolvedBuffer(GraphResource{b.resource}), before, b.after);
+    }
+}
+
+bool RenderGraph::PassHasWork(u32 position) const {
+    return passes_[schedule_[position]].execute != nullptr || barrier_start_[position + 1] > barrier_start_[position];
+}
+
+void RenderGraph::RecordPass(u32 position, rhi::CommandList* list) const {
+    RecordBarriers(position, list);
+    const u32 pass_index = schedule_[position];
+    const PassRec& pass = passes_[pass_index];
+    if (pass.execute != nullptr) {
+        PassExecuteContext context;
+        context.list = list;
+        context.pass_index = pass_index;
+        context.graph = this;
+        pass.execute(context, pass.user);
+    }
+}
+
 bool RenderGraph::Execute(TransientPool* pool, rhi::CommandList* list) {
     ENGINE_ASSERT(list != nullptr, "RenderGraph::Execute: the command list is null");
     exec_error_[0] = 0;
@@ -883,102 +1000,83 @@ bool RenderGraph::Execute(TransientPool* pool, rhi::CommandList* list) {
         SetExecuteError("the graph did not compile");
         return false;
     }
-    const u32 R = resource_count_;
-    acq_count_ = 0;
-    for (u32 r = 0; r < R; ++r) {
-        resources_[r].resolved_texture = rhi::TextureHandle{};
-        resources_[r].resolved_buffer = rhi::BufferHandle{};
-        resources_[r].exec_texture = rhi::TextureHandle{};
-        resources_[r].exec_buffer = rhi::BufferHandle{};
-        resources_[r].pooled_state = rhi::ResourceState::Undefined;
-    }
+    if (!ResolveTransients(pool)) return false;
+    for (u32 pos = 0; pos < schedule_count_; ++pos) RecordPass(pos, list);
+    RecordBarriers(schedule_count_, list);
+    ClearResolved();
+    return true;
+}
 
-    auto release = [&](u32 r, rhi::ResourceState state) {
-        ResourceRec& res = resources_[r];
-        if (res.kind == GraphResourceKind::Texture) {
-            pool->ReleaseTexture(res.resolved_texture, state);
-            res.resolved_texture = rhi::TextureHandle{};
+struct RenderGraph::ParallelRecord {
+    const RenderGraph* graph;
+    rhi::Device* device;
+    rhi::CommandList** lists;
+    std::atomic<bool> failed;
+};
+
+void RenderGraph::RecordRange(void* user, usize begin, usize end) {
+    ParallelRecord* job = static_cast<ParallelRecord*>(user);
+    for (usize i = begin; i < end; ++i) {
+        job->lists[i] = nullptr;
+        if (!job->graph->PassHasWork(static_cast<u32>(i))) continue; // a pure ordering marker: nothing to record
+        // The list is created here, on the thread that records it: command pools are per thread.
+        rhi::CommandList* list = job->device->CreateCommandList();
+        job->lists[i] = list;
+        if (list == nullptr) {
+            job->failed.store(true, std::memory_order_relaxed);
+            continue;
+        }
+        list->Begin();
+        job->graph->RecordPass(static_cast<u32>(i), list);
+        list->End();
+    }
+}
+
+bool RenderGraph::ExecuteParallel(TransientPool* pool, rhi::Device* device, jobs::Scheduler* scheduler, rhi::FenceValue* fence) {
+    ENGINE_ASSERT(device != nullptr, "RenderGraph::ExecuteParallel: the device is null");
+    exec_error_[0] = 0;
+    if (!Compile()) {
+        SetExecuteError("the graph did not compile");
+        return false;
+    }
+    if (!ResolveTransients(pool)) return false;
+    const u32 passes = schedule_count_;
+    const bool exit_list = barrier_start_[passes + 1] > barrier_start_[passes];
+    for (u32 i = 0; i <= passes; ++i) list_scratch_[i] = nullptr;
+
+    ParallelRecord job{this, device, list_scratch_, {false}};
+    if (scheduler != nullptr && passes > 1) jobs::ParallelForBlocking(*scheduler, passes, 1, &RenderGraph::RecordRange, &job);
+    else RecordRange(&job, 0, passes);
+    list_scratch_[passes] = nullptr;
+    if (!job.failed.load(std::memory_order_relaxed) && exit_list) {
+        rhi::CommandList* list = device->CreateCommandList();
+        if (list == nullptr) {
+            job.failed.store(true, std::memory_order_relaxed);
         } else {
-            pool->ReleaseBuffer(res.resolved_buffer, state);
-            res.resolved_buffer = rhi::BufferHandle{};
-        }
-    };
-    // The list is abandoned, so none of its barriers will run: every transient goes back to the pool in the state it was
-    // taken in. A handle can serve several resources in turn; undoing in reverse order leaves the earliest, original state.
-    auto rollback = [&]() {
-        for (u32 r = 0; r < R; ++r) {
-            const ResourceRec& res = resources_[r];
-            if (!res.import && (res.resolved_texture.IsValid() || res.resolved_buffer.IsValid())) release(r, rhi::ResourceState::Undefined);
-        }
-        for (u32 i = acq_count_; i > 0; --i) {
-            const ResourceRec& res = resources_[acq_order_[i - 1]];
-            if (res.kind == GraphResourceKind::Texture) pool->SetTextureState(res.exec_texture, res.pooled_state);
-            else pool->SetBufferState(res.exec_buffer, res.pooled_state);
-        }
-    };
-
-    u32 next_barrier = 0;
-    for (u32 pos = 0; pos < schedule_count_; ++pos) {
-        const u32 pass_index = schedule_[pos];
-        const PassRec& pass = passes_[pass_index];
-        for (u32 i = 0; i < pass.access_count; ++i) {
-            const u32 r = accesses_[pass.first_access + i].resource;
-            ResourceRec& res = resources_[r];
-            if (res.import || res.first_use != pos) continue;
-            if (pool == nullptr) {
-                SetExecuteError("pass '%s' needs transient resource '%s' but Execute was given no pool", pass.name, res.name);
-                rollback();
-                return false;
-            }
-            if (res.kind == GraphResourceKind::Texture) {
-                PooledTexture t;
-                if (!pool->AcquireTexture(res.texture_desc, &t)) {
-                    SetExecuteError("transient texture '%s' could not be allocated", res.name);
-                    rollback();
-                    return false;
-                }
-                res.resolved_texture = res.exec_texture = t.handle;
-                res.pooled_state = t.state;
-            } else {
-                PooledBuffer b;
-                if (!pool->AcquireBuffer(res.buffer_desc, &b)) {
-                    SetExecuteError("transient buffer '%s' could not be allocated", res.name);
-                    rollback();
-                    return false;
-                }
-                res.resolved_buffer = res.exec_buffer = b.handle;
-                res.pooled_state = b.state;
-            }
-            acq_order_[acq_count_++] = r;
-        }
-        for (; next_barrier < barrier_count_ && barriers_[next_barrier].position == pos; ++next_barrier) {
-            const BarrierRec& b = barriers_[next_barrier];
-            const ResourceRec& res = resources_[b.resource];
-            // A transient's first barrier starts from the state the pooled resource was left in, so the new use is also
-            // ordered after the old one; a fresh resource is Undefined.
-            const rhi::ResourceState before = (!res.import && res.first_use == pos && b.before == rhi::ResourceState::Undefined) ? res.pooled_state : b.before;
-            if (res.kind == GraphResourceKind::Texture) list->Barrier(ResolvedTexture(GraphResource{b.resource}), before, b.after);
-            else list->Barrier(ResolvedBuffer(GraphResource{b.resource}), before, b.after);
-        }
-        if (pass.execute != nullptr) {
-            PassExecuteContext context;
-            context.list = list;
-            context.pass_index = pass_index;
-            context.graph = this;
-            pass.execute(context, pass.user);
-        }
-        for (u32 i = 0; i < pass.access_count; ++i) {
-            const u32 r = accesses_[pass.first_access + i].resource;
-            const ResourceRec& res = resources_[r];
-            if (!res.import && res.last_use == pos) release(r, res.end_state);
+            list->Begin();
+            RecordBarriers(passes, list);
+            list->End();
+            list_scratch_[passes] = list;
         }
     }
-    for (; next_barrier < barrier_count_; ++next_barrier) {
-        const BarrierRec& b = barriers_[next_barrier];
-        const ResourceRec& res = resources_[b.resource];
-        if (res.kind == GraphResourceKind::Texture) list->Barrier(ResolvedTexture(GraphResource{b.resource}), b.before, b.after);
-        else list->Barrier(ResolvedBuffer(GraphResource{b.resource}), b.before, b.after);
+    // Pure ordering markers recorded nothing: close the gaps so Submit sees only real lists, still in schedule order.
+    u32 count = 0;
+    for (u32 i = 0; i <= passes; ++i) {
+        if (list_scratch_[i] != nullptr) list_scratch_[count++] = list_scratch_[i];
     }
+    if (job.failed.load(std::memory_order_relaxed)) {
+        SetExecuteError("a command list could not be created (the device is lost or out of memory)");
+        RollbackTransients(pool);
+        return false;
+    }
+    const rhi::FenceValue value = device->Submit(list_scratch_, count);
+    if (value == 0 && count > 0) {
+        SetExecuteError("the device refused the submission (it is lost)");
+        RollbackTransients(pool);
+        return false;
+    }
+    ClearResolved();
+    if (fence != nullptr) *fence = value;
     return true;
 }
 

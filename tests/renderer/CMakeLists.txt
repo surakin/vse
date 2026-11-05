@@ -9,6 +9,7 @@ set(RENDERER_TEST_SOURCES
   material_test.cpp
   render_graph_test.cpp
   render_graph_barrier_test.cpp
+  renderer_test.cpp
   lsan_options.cpp
 )
 
