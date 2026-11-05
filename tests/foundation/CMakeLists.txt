@@ -38,4 +38,9 @@ target_link_libraries(foundation_tests PRIVATE foundation Catch2::Catch2WithMain
 target_include_directories(foundation_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 include(Catch)
-catch_discover_tests(foundation_tests)
+# Tests that open a window share one desktop and its input focus. A window another test opens or closes moves the real
+# focus, and a real FocusOut legitimately releases held keys, so run concurrently they fail at random (seen: the 17 X11
+# tests under `ctest -j6` failed in 3 runs out of 4, and one in most full runs; each passes alone). The window tests hold
+# the ctest resource `display` (shared with tests/rhi), so ctest runs them one at a time while the rest stays parallel.
+catch_discover_tests(foundation_tests TEST_SPEC "~[window]~[x11]~[wayland]")
+catch_discover_tests(foundation_tests TEST_SPEC "[window],[x11],[wayland]" PROPERTIES RESOURCE_LOCK display)

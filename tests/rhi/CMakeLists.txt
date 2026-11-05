@@ -67,8 +67,13 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib suffix label spec)
     ENGINE_RHI_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/rhi_demo/assets"
     ENGINE_RHI_LSAN_SUPP="${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp")
   # Tests that do not pass a cache directory must not write to the user's ~/.cache.
-  catch_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "${spec}"
+  # Tests that open a window share the desktop's input focus, so they hold the `display` resource and run one at a time
+  # (see tests/foundation/CMakeLists.txt); the rest run in parallel. `spec` is ANDed onto each half.
+  catch_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "~[window]~[x11]~[wayland]${spec}"
     PROPERTIES LABELS "${label}" ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${label}")
+  catch_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "[window]${spec},[x11]${spec},[wayland]${spec}"
+    PROPERTIES LABELS "${label}" RESOURCE_LOCK display
+    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${label}")
 endfunction()
 
 engine_add_rhi_tests(rhi_tests rhi rhi_vulkan "" "rhi" "")

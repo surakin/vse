@@ -8,15 +8,14 @@ whenever a day leaves something broken, unmeasured or deferred. Entries state fa
 
 | Test | Since | Cause | Status |
 |---|---|---|---|
-| `X11Window::Create opens a mapped window on the real X server` | Phase 4 Day 69 session | Environmental: the session's Xwayland never maps windows. Reproduced with a plain Xlib program, so it is not engine code. | Fails on every run. Owner will fix the environment in a later pass over failing tests. |
+| (none) | | | |
 
 ## Flaky tests
 
 Seen failing once or intermittently, passing on rerun. Cause not investigated.
 
-- X11 key-translation tests.
-- Wayland resize-storm test (once, under load).
-- `A swapchain survives 200 resize requests including zero sizes on Wayland [asan]`: failed once in a full `ctest -j6` run on Phase 4 Day 74, passed on rerun.
+- (none). The window tests (X11, Wayland, and the RHI presentation tests) used to fail at random under `ctest -j6`; they now hold the ctest resource `display` and run one at a time (5 full runs in a row passed, 2026-11-05).
+
 
 ## Unverified by a human
 
