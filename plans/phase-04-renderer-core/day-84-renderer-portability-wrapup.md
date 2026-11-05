@@ -1,7 +1,7 @@
-# Phase 4 / Day 83 — Portability Proof & Phase 4 Wrap-up
+# Phase 4 / Day 84 — Portability Proof & Phase 4 Wrap-up
 
 **Phase:** [Phase 4 — Renderer Core](../phase-04-renderer-core.md)
-**Depends on:** Day 82.
+**Depends on:** Day 83.
 
 Show the renderer and its shaders are not Vulkan in disguise, finish the docs, and close the phase.
 

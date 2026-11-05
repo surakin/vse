@@ -672,7 +672,7 @@ that changed from the plan and why.)_
   14-18 GiB/s uploads, cube pipeline 3.6-5.8 ms. Phase 4 still needs its day files.
 - **2026-11-04 - Phase 4 shader toolchain decided: Slang.** Chosen for platform
   portability over GLSL+SPIRV-Cross and HLSL+dxc (assumption #18). Phase 4 is split
-  into Days 68-83 under `plans/phase-04-renderer-core/`: deferred lighting (no
+  into Days 68-84 under `plans/phase-04-renderer-core/`: deferred lighting (no
   MSAA in the RHI), a generic render graph on top of the RHI, and none of the
   deferred RHI extras (bindless, indirect draws, async compute).
 

@@ -1,7 +1,7 @@
-# Phase 4 / Day 81 — The Renderer Demo & Depth Correctness
+# Phase 4 / Day 82 — The Renderer Demo & Depth Correctness
 
 **Phase:** [Phase 4 — Renderer Core](../phase-04-renderer-core.md)
-**Depends on:** Day 80.
+**Depends on:** Day 81.
 
 The Phase 4 milestone: a scene with many objects, materials and lights and correct depth, running live on Wayland and X11.
 

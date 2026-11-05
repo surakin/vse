@@ -1,7 +1,7 @@
-# Phase 4 / Day 80 — Point Lights & Light Volumes
+# Phase 4 / Day 81 — Point Lights & Light Volumes
 
 **Phase:** [Phase 4 — Renderer Core](../phase-04-renderer-core.md)
-**Depends on:** Day 79.
+**Depends on:** Day 80.
 
 Many local lights without a fullscreen pass per light.
 

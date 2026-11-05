@@ -1,7 +1,7 @@
-# Phase 4 / Day 79 — Deferred Lighting: Directional & Ambient
+# Phase 4 / Day 80 — Deferred Lighting: Directional & Ambient
 
 **Phase:** [Phase 4 — Renderer Core](../phase-04-renderer-core.md)
-**Depends on:** Day 78.
+**Depends on:** Day 79.
 
 Turn the G-buffer into lit pixels in linear HDR.
 

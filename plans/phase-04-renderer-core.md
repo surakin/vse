@@ -13,7 +13,7 @@ with basic materials and lighting, with correct depth buffering.
 - **Render graph: generic**, built only on the RHI; it owns every barrier.
 - **Deferred RHI features (bindless, indirect draws, async compute): all out** for this phase; revisit with profiling data.
 
-- **Vertex colors (added 2026-11-05, from Phase 7's colored 3D text):** meshes may carry an optional RGBA8 per-vertex color in a second vertex stream; `StandardVertex` is unchanged. Built on Day 78 with a `VERTEX_COLOR` material permutation.
+- **Vertex colors (added 2026-11-05, from Phase 7's colored 3D text):** meshes may carry an optional RGBA8 per-vertex color in a second vertex stream; `StandardVertex` is unchanged. Mesh side on Day 78, `VERTEX_COLOR` material permutation on Day 79.
 - **Triangle strips and primitive restart (added 2026-11-05):** the RHI already has `TriangleStrip` but no restart and no test; the renderer has no topology. Built on Day 78 (RHI restart + GPU test, mesh/material/cache-key topology, strip/list helpers). Needed by Phase 7's 3D text meshes and generally for vertex-efficient geometry.
 
 ## Days
@@ -30,12 +30,13 @@ Each day has its own file of individually checkable sub-tasks, a docs task, an e
 75. [Render Graph I: Declaration & Compilation](phase-04-renderer-core/day-75-render-graph-declare-compile.md)
 76. [Render Graph II: Automatic Barriers & Transient Resources](phase-04-renderer-core/day-76-render-graph-barriers-resources.md)
 77. [Render Graph III: Execution, Parallel Recording & the Swapchain](phase-04-renderer-core/day-77-render-graph-execute.md)
-78. [The G-buffer Geometry Pass](phase-04-renderer-core/day-78-gbuffer-pass.md)
-79. [Deferred Lighting: Directional & Ambient](phase-04-renderer-core/day-79-deferred-lighting.md)
-80. [Point Lights & Light Volumes](phase-04-renderer-core/day-80-point-lights.md)
-81. [The Renderer Demo & Depth Correctness](phase-04-renderer-core/day-81-renderer-demo.md)
-82. [Hardening, Sanitizers & Performance](phase-04-renderer-core/day-82-renderer-hardening-perf.md)
-83. [Portability Proof & Phase 4 Wrap-up](phase-04-renderer-core/day-83-renderer-portability-wrapup.md)
+78. [Mesh Vertex Colors & Primitive Topology](phase-04-renderer-core/day-78-mesh-colors-topology.md)
+79. [The G-buffer Geometry Pass](phase-04-renderer-core/day-79-gbuffer-pass.md)
+80. [Deferred Lighting: Directional & Ambient](phase-04-renderer-core/day-80-deferred-lighting.md)
+81. [Point Lights & Light Volumes](phase-04-renderer-core/day-81-point-lights.md)
+82. [The Renderer Demo & Depth Correctness](phase-04-renderer-core/day-82-renderer-demo.md)
+83. [Hardening, Sanitizers & Performance](phase-04-renderer-core/day-83-renderer-hardening-perf.md)
+84. [Portability Proof & Phase 4 Wrap-up](phase-04-renderer-core/day-84-renderer-portability-wrapup.md)
 
 ## Key deliverables
 

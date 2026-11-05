@@ -1,7 +1,7 @@
-# Phase 4 / Day 82 — Hardening, Sanitizers & Performance
+# Phase 4 / Day 83 — Hardening, Sanitizers & Performance
 
 **Phase:** [Phase 4 — Renderer Core](../phase-04-renderer-core.md)
-**Depends on:** Day 81.
+**Depends on:** Day 82.
 
 Make the renderer robust and know what it costs.
 
