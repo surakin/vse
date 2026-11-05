@@ -7,6 +7,7 @@ set(RENDERER_TEST_SOURCES
   geometry_test.cpp
   scene_test.cpp
   material_test.cpp
+  render_graph_test.cpp
   lsan_options.cpp
 )
 

@@ -1574,6 +1574,95 @@ renderer::GpuMesh::RecordPrepare(rhi::CommandList*)	function	renderer	renderer-g
 renderer::GpuMesh::MarkReady()	function	renderer	renderer-gpumesh-markready	renderer.md	engine/renderer/mesh.h:222
 renderer::GpuMesh::Ready() const	function	renderer	renderer-gpumesh-ready-const	renderer.md	engine/renderer/mesh.h:226
 renderer::GpuMesh::Draw(rhi::CommandList*,u32,u32) const	function	renderer	renderer-gpumesh-draw-rhi-commandlist-star-u32-u32-const	renderer.md	engine/renderer/mesh.h:237
+renderer::kMaxGraphErrors	variable	renderer	renderer-kmaxgrapherrors	renderer.md	engine/renderer/render_graph.h:24
+renderer::kGraphErrorLength	variable	renderer	renderer-kgrapherrorlength	renderer.md	engine/renderer/render_graph.h:26
+renderer::kNeverUsed	variable	renderer	renderer-kneverused	renderer.md	engine/renderer/render_graph.h:28
+renderer::PassId	struct	renderer	renderer-passid	renderer.md	engine/renderer/render_graph.h:33
+renderer::PassId::index	variable	renderer	renderer-passid-index	renderer.md	engine/renderer/render_graph.h:35
+renderer::PassId::kInvalid	variable	renderer	renderer-passid-kinvalid	renderer.md	engine/renderer/render_graph.h:38
+renderer::PassId::IsValid() const	function	renderer	renderer-passid-isvalid-const	renderer.md	engine/renderer/render_graph.h:41
+renderer::GraphResource	struct	renderer	renderer-graphresource	renderer.md	engine/renderer/render_graph.h:47
+renderer::GraphResource::index	variable	renderer	renderer-graphresource-index	renderer.md	engine/renderer/render_graph.h:49
+renderer::GraphResource::kInvalid	variable	renderer	renderer-graphresource-kinvalid	renderer.md	engine/renderer/render_graph.h:52
+renderer::GraphResource::IsValid() const	function	renderer	renderer-graphresource-isvalid-const	renderer.md	engine/renderer/render_graph.h:55
+renderer::GraphResourceKind	enum	renderer	renderer-graphresourcekind	renderer.md	engine/renderer/render_graph.h:59
+renderer::GraphResourceKind::Texture	enumerator	renderer	renderer-graphresourcekind-texture	renderer.md	engine/renderer/render_graph.h:60
+renderer::GraphResourceKind::Buffer	enumerator	renderer	renderer-graphresourcekind-buffer	renderer.md	engine/renderer/render_graph.h:61
+renderer::GraphUsage	enum	renderer	renderer-graphusage	renderer.md	engine/renderer/render_graph.h:65
+renderer::GraphUsage::ColorAttachment	enumerator	renderer	renderer-graphusage-colorattachment	renderer.md	engine/renderer/render_graph.h:66
+renderer::GraphUsage::DepthAttachment	enumerator	renderer	renderer-graphusage-depthattachment	renderer.md	engine/renderer/render_graph.h:67
+renderer::GraphUsage::DepthRead	enumerator	renderer	renderer-graphusage-depthread	renderer.md	engine/renderer/render_graph.h:68
+renderer::GraphUsage::Sampled	enumerator	renderer	renderer-graphusage-sampled	renderer.md	engine/renderer/render_graph.h:69
+renderer::GraphUsage::StorageRead	enumerator	renderer	renderer-graphusage-storageread	renderer.md	engine/renderer/render_graph.h:70
+renderer::GraphUsage::StorageWrite	enumerator	renderer	renderer-graphusage-storagewrite	renderer.md	engine/renderer/render_graph.h:71
+renderer::GraphUsage::CopySrc	enumerator	renderer	renderer-graphusage-copysrc	renderer.md	engine/renderer/render_graph.h:72
+renderer::GraphUsage::CopyDst	enumerator	renderer	renderer-graphusage-copydst	renderer.md	engine/renderer/render_graph.h:73
+renderer::GraphUsage::UniformBuffer	enumerator	renderer	renderer-graphusage-uniformbuffer	renderer.md	engine/renderer/render_graph.h:74
+renderer::GraphUsage::VertexBuffer	enumerator	renderer	renderer-graphusage-vertexbuffer	renderer.md	engine/renderer/render_graph.h:75
+renderer::GraphUsage::IndexBuffer	enumerator	renderer	renderer-graphusage-indexbuffer	renderer.md	engine/renderer/render_graph.h:76
+renderer::GraphUsage::Count	enumerator	renderer	renderer-graphusage-count	renderer.md	engine/renderer/render_graph.h:77
+renderer::GraphAccess	enum	renderer	renderer-graphaccess	renderer.md	engine/renderer/render_graph.h:81
+renderer::GraphAccess::Read	enumerator	renderer	renderer-graphaccess-read	renderer.md	engine/renderer/render_graph.h:82
+renderer::GraphAccess::Write	enumerator	renderer	renderer-graphaccess-write	renderer.md	engine/renderer/render_graph.h:83
+renderer::GraphAccess::ReadWrite	enumerator	renderer	renderer-graphaccess-readwrite	renderer.md	engine/renderer/render_graph.h:84
+renderer::PassFlags	enum	renderer	renderer-passflags	renderer.md	engine/renderer/render_graph.h:88
+renderer::PassFlags::None	enumerator	renderer	renderer-passflags-none	renderer.md	engine/renderer/render_graph.h:89
+renderer::PassFlags::SideEffects	enumerator	renderer	renderer-passflags-sideeffects	renderer.md	engine/renderer/render_graph.h:90
+renderer::operator|(PassFlags,PassFlags)	function	renderer	renderer-operator-pipe-passflags-passflags	renderer.md	engine/renderer/render_graph.h:94
+renderer::operator&(PassFlags,PassFlags)	function	renderer	renderer-operator-amp-passflags-passflags	renderer.md	engine/renderer/render_graph.h:96
+renderer::StateForUsage(GraphUsage)	function	renderer	renderer-stateforusage-graphusage	renderer.md	engine/renderer/render_graph.h:103
+renderer::UsageWrites(GraphUsage)	function	renderer	renderer-usagewrites-graphusage	renderer.md	engine/renderer/render_graph.h:109
+renderer::UsageName(GraphUsage)	function	renderer	renderer-usagename-graphusage	renderer.md	engine/renderer/render_graph.h:117
+renderer::PassExecuteContext	struct	renderer	renderer-passexecutecontext	renderer.md	engine/renderer/render_graph.h:122
+renderer::PassExecuteContext::list	variable	renderer	renderer-passexecutecontext-list	renderer.md	engine/renderer/render_graph.h:124
+renderer::PassExecuteContext::pass_index	variable	renderer	renderer-passexecutecontext-pass-index	renderer.md	engine/renderer/render_graph.h:126
+renderer::PassExecuteFn	alias	renderer	renderer-passexecutefn	renderer.md	engine/renderer/render_graph.h:130
+renderer::RenderGraphDesc	struct	renderer	renderer-rendergraphdesc	renderer.md	engine/renderer/render_graph.h:135
+renderer::RenderGraphDesc::max_passes	variable	renderer	renderer-rendergraphdesc-max-passes	renderer.md	engine/renderer/render_graph.h:137
+renderer::RenderGraphDesc::max_resources	variable	renderer	renderer-rendergraphdesc-max-resources	renderer.md	engine/renderer/render_graph.h:139
+renderer::RenderGraphDesc::max_accesses	variable	renderer	renderer-rendergraphdesc-max-accesses	renderer.md	engine/renderer/render_graph.h:141
+renderer::RenderGraphDesc::max_dependencies	variable	renderer	renderer-rendergraphdesc-max-dependencies	renderer.md	engine/renderer/render_graph.h:143
+renderer::PassBuilder	class	renderer	renderer-passbuilder	renderer.md	engine/renderer/render_graph.h:151
+renderer::PassBuilder::Read(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-read-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:160
+renderer::PassBuilder::Write(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-write-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:167
+renderer::PassBuilder::ReadWrite(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-readwrite-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:174
+renderer::PassBuilder::Id() const	function	renderer	renderer-passbuilder-id-const	renderer.md	engine/renderer/render_graph.h:177
+renderer::RenderGraph	class	renderer	renderer-rendergraph	renderer.md	engine/renderer/render_graph.h:196
+renderer::RenderGraph::RenderGraph(ArenaAllocator*,const RenderGraphDesc&)	function	renderer	renderer-rendergraph-rendergraph-arenaallocator-star-const-rendergraphdesc-amp	renderer.md	engine/renderer/render_graph.h:206
+renderer::RenderGraph::RenderGraph(const RenderGraph&)	function	renderer	renderer-rendergraph-rendergraph-const-rendergraph-amp	renderer.md	engine/renderer/render_graph.h:207
+renderer::RenderGraph::operator=(const RenderGraph&)	function	renderer	renderer-rendergraph-operator-eq-const-rendergraph-amp	renderer.md	engine/renderer/render_graph.h:208
+renderer::RenderGraph::Valid() const	function	renderer	renderer-rendergraph-valid-const	renderer.md	engine/renderer/render_graph.h:212
+renderer::RenderGraph::CreateTexture(const char*,const rhi::TextureDesc&)	function	renderer	renderer-rendergraph-createtexture-const-char-star-const-rhi-texturedesc-amp	renderer.md	engine/renderer/render_graph.h:220
+renderer::RenderGraph::CreateBuffer(const char*,const rhi::BufferDesc&)	function	renderer	renderer-rendergraph-createbuffer-const-char-star-const-rhi-bufferdesc-amp	renderer.md	engine/renderer/render_graph.h:227
+renderer::RenderGraph::ImportTexture(const char*,rhi::TextureHandle,rhi::ResourceState,rhi::ResourceState,bool)	function	renderer	renderer-rendergraph-importtexture-const-char-star-rhi-texturehandle-rhi-resourcestate-rhi-resourcestate-bool	renderer.md	engine/renderer/render_graph.h:237
+renderer::RenderGraph::ImportBuffer(const char*,rhi::BufferHandle,rhi::ResourceState,rhi::ResourceState,bool)	function	renderer	renderer-rendergraph-importbuffer-const-char-star-rhi-bufferhandle-rhi-resourcestate-rhi-resourcestate-bool	renderer.md	engine/renderer/render_graph.h:247
+renderer::RenderGraph::AddPass(const char*,PassExecuteFn,void*,PassFlags)	function	renderer	renderer-rendergraph-addpass-const-char-star-passexecutefn-void-star-passflags	renderer.md	engine/renderer/render_graph.h:258
+renderer::RenderGraph::AddDependency(PassId,PassId)	function	renderer	renderer-rendergraph-adddependency-passid-passid	renderer.md	engine/renderer/render_graph.h:266
+renderer::RenderGraph::Compile()	function	renderer	renderer-rendergraph-compile	renderer.md	engine/renderer/render_graph.h:275
+renderer::RenderGraph::KindOf(GraphResource) const	function	renderer	renderer-rendergraph-kindof-graphresource-const	renderer.md	engine/renderer/render_graph.h:281
+renderer::RenderGraph::IsImport(GraphResource) const	function	renderer	renderer-rendergraph-isimport-graphresource-const	renderer.md	engine/renderer/render_graph.h:286
+renderer::RenderGraph::TextureDescOf(GraphResource) const	function	renderer	renderer-rendergraph-texturedescof-graphresource-const	renderer.md	engine/renderer/render_graph.h:292
+renderer::RenderGraph::BufferDescOf(GraphResource) const	function	renderer	renderer-rendergraph-bufferdescof-graphresource-const	renderer.md	engine/renderer/render_graph.h:298
+renderer::RenderGraph::ImportedTexture(GraphResource) const	function	renderer	renderer-rendergraph-importedtexture-graphresource-const	renderer.md	engine/renderer/render_graph.h:303
+renderer::RenderGraph::ImportedBuffer(GraphResource) const	function	renderer	renderer-rendergraph-importedbuffer-graphresource-const	renderer.md	engine/renderer/render_graph.h:308
+renderer::RenderGraph::InitialState(GraphResource) const	function	renderer	renderer-rendergraph-initialstate-graphresource-const	renderer.md	engine/renderer/render_graph.h:313
+renderer::RenderGraph::FinalState(GraphResource) const	function	renderer	renderer-rendergraph-finalstate-graphresource-const	renderer.md	engine/renderer/render_graph.h:318
+renderer::RenderGraph::ErrorCount() const	function	renderer	renderer-rendergraph-errorcount-const	renderer.md	engine/renderer/render_graph.h:322
+renderer::RenderGraph::DroppedErrors() const	function	renderer	renderer-rendergraph-droppederrors-const	renderer.md	engine/renderer/render_graph.h:325
+renderer::RenderGraph::Error(u32) const	function	renderer	renderer-rendergraph-error-u32-const	renderer.md	engine/renderer/render_graph.h:332
+renderer::RenderGraph::PassCount() const	function	renderer	renderer-rendergraph-passcount-const	renderer.md	engine/renderer/render_graph.h:336
+renderer::RenderGraph::ResourceCount() const	function	renderer	renderer-rendergraph-resourcecount-const	renderer.md	engine/renderer/render_graph.h:339
+renderer::RenderGraph::ScheduleCount() const	function	renderer	renderer-rendergraph-schedulecount-const	renderer.md	engine/renderer/render_graph.h:342
+renderer::RenderGraph::Scheduled(u32) const	function	renderer	renderer-rendergraph-scheduled-u32-const	renderer.md	engine/renderer/render_graph.h:347
+renderer::RenderGraph::IsCulled(PassId) const	function	renderer	renderer-rendergraph-isculled-passid-const	renderer.md	engine/renderer/render_graph.h:352
+renderer::RenderGraph::PassName(PassId) const	function	renderer	renderer-rendergraph-passname-passid-const	renderer.md	engine/renderer/render_graph.h:358
+renderer::RenderGraph::PassCallback(PassId) const	function	renderer	renderer-rendergraph-passcallback-passid-const	renderer.md	engine/renderer/render_graph.h:363
+renderer::RenderGraph::PassUser(PassId) const	function	renderer	renderer-rendergraph-passuser-passid-const	renderer.md	engine/renderer/render_graph.h:369
+renderer::RenderGraph::ResourceName(GraphResource) const	function	renderer	renderer-rendergraph-resourcename-graphresource-const	renderer.md	engine/renderer/render_graph.h:375
+renderer::RenderGraph::FirstUse(GraphResource) const	function	renderer	renderer-rendergraph-firstuse-graphresource-const	renderer.md	engine/renderer/render_graph.h:381
+renderer::RenderGraph::LastUse(GraphResource) const	function	renderer	renderer-rendergraph-lastuse-graphresource-const	renderer.md	engine/renderer/render_graph.h:387
+renderer::RenderGraph::Dump(char*,usize) const	function	renderer	renderer-rendergraph-dump-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:404
+renderer::RenderGraph::WriteDot(char*,usize) const	function	renderer	renderer-rendergraph-writedot-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:413
 renderer::ObjectId	struct	renderer	renderer-objectid	renderer.md	engine/renderer/render_scene.h:18
 renderer::ObjectId::index	variable	renderer	renderer-objectid-index	renderer.md	engine/renderer/render_scene.h:20
 renderer::ObjectId::generation	variable	renderer	renderer-objectid-generation	renderer.md	engine/renderer/render_scene.h:22

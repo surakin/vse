@@ -30,6 +30,8 @@ Full reference: [The renderer](../reference/renderer.md).
 - [[renderer::MaterialSystem]] — templates, materials, bind groups and the pipeline cache
 - [[renderer::MaterialTemplateDesc]] — the shaders and fixed-function state of a template
 - [[renderer::MakeDrawSortKey]] — the draw order: pipeline, then material, then mesh
+- [[renderer::RenderGraph]] — passes and virtual resources, compiled into an ordered, culled schedule
+- [[renderer::PassBuilder]] — declares what one pass reads and writes
 
 ## Outline
 
@@ -167,6 +169,89 @@ int main() {
 typo accepted: no
 one pipeline shared: yes (hits 1, misses 1)
 ```
+
+### The render graph
+
+A frame is described as passes that declare what they read and write, and compiled into an ordered schedule. Resources
+are virtual: `CreateTexture`/`CreateBuffer` give a transient one (a descriptor, allocated later), and `ImportTexture`/
+`ImportBuffer` wrap something that outlives the frame, with the state it starts in and the state it must end in
+(`Present` for the swapchain image). A pass is a name, a callback (function pointer plus context pointer) and its
+accesses: `Read`, `Write` (the old contents are not needed) or `ReadWrite`, each with a usage that fixes the resource
+state it needs (`GraphUsage`, mapped by `StateForUsage`).
+
+Meaning follows declaration order: a read sees the latest earlier write. From that, `Compile` derives edges (raw =
+read-after-write, waw, war, and `after` for `AddDependency`), orders the passes with the smallest declaration index first
+among those ready (so the schedule is stable), and culls passes whose results nothing needs. A pass is a root, and stays,
+if it has `PassFlags::SideEffects` or writes an import; a live pass keeps the passes it reads from. Every mistake
+(a read of something nobody wrote, a write to a read-only import, a usage that does not fit, a cycle) is stored as a named
+message and `Compile` returns false; nothing is checked while executing. All graph storage comes from the arena you pass
+in, so a frame's graph allocates nothing from the heap; reset the arena after the frame.
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "mem/arena_allocator.h"
+#include "renderer/render_graph.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::renderer;
+
+int main() {
+    ArenaAllocator arena(1u << 20);
+    RenderGraph graph(&arena, RenderGraphDesc{});
+
+    rhi::TextureHandle swapchain_image;
+    swapchain_image.index = 1;
+    swapchain_image.generation = 1;
+    const GraphResource backbuffer =
+        graph.ImportTexture("backbuffer", swapchain_image, rhi::ResourceState::Undefined, rhi::ResourceState::Present, false);
+    const GraphResource shadow = graph.CreateTexture("shadow_map", rhi::TextureDesc{});
+    const GraphResource hdr = graph.CreateTexture("hdr", rhi::TextureDesc{});
+    const GraphResource unused = graph.CreateTexture("debug_view", rhi::TextureDesc{});
+
+    graph.AddPass("shadow", nullptr, nullptr).Write(shadow, GraphUsage::DepthAttachment);
+    graph.AddPass("lighting", nullptr, nullptr).Read(shadow, GraphUsage::Sampled).Write(hdr, GraphUsage::ColorAttachment);
+    graph.AddPass("debug", nullptr, nullptr).Read(hdr, GraphUsage::Sampled).Write(unused, GraphUsage::ColorAttachment);
+    graph.AddPass("tonemap", nullptr, nullptr).Read(hdr, GraphUsage::Sampled).Write(backbuffer, GraphUsage::ColorAttachment);
+
+    if (!graph.Compile()) {
+        for (u32 i = 0; i < graph.ErrorCount(); ++i) std::printf("%s\n", graph.Error(i));
+        return 1;
+    }
+    char text[2048];
+    graph.Dump(text, sizeof(text));
+    std::printf("%s", text);
+    return 0;
+}
+```
+
+```output
+graph passes=4 resources=4 scheduled=3 culled=1
+schedule: shadow, lighting, tonemap
+culled: debug
+pass 0 "shadow" at 0
+  write "shadow_map" depth
+pass 1 "lighting" at 1
+  read "shadow_map" sampled
+  write "hdr" color
+pass 2 "debug" culled
+  read "hdr" sampled
+  write "debug_view" color
+pass 3 "tonemap" at 2
+  read "hdr" sampled
+  write "backbuffer" color
+resource 0 "backbuffer" texture import use=2..2
+resource 1 "shadow_map" texture transient use=0..1
+resource 2 "hdr" texture transient use=1..2
+resource 3 "debug_view" texture transient unused
+edge "shadow" -> "lighting" raw "shadow_map"
+edge "lighting" -> "debug" raw "hdr"
+edge "lighting" -> "tonemap" raw "hdr"
+```
+
+The first line of `Dump` gives the counts, `schedule:` and `culled:` list the passes, each `pass` block lists its
+accesses, each `resource` line shows its first and last use as schedule positions (`unused` if every user was culled), and
+each `edge` line names its kind and resource. `WriteDot` writes the same graph for Graphviz, with culled passes dashed.
 
 ### Rules & contracts
 
