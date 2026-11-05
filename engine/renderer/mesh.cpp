@@ -1,6 +1,7 @@
 #include "renderer/mesh.h"
 
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <new>
 
@@ -21,6 +22,14 @@ VertexLayoutData StandardVertexLayout() {
     return layout;
 }
 
+VertexLayoutData ColorVertexLayout() {
+    VertexLayoutData layout = StandardVertexLayout();
+    layout.attributes[4] = {4, 0, rhi::VertexFormat::UNorm8x4, 48};
+    layout.attribute_count = 5;
+    layout.stride = sizeof(ColorVertex);
+    return layout;
+}
+
 // ---- MeshData ----
 
 MeshData::~MeshData() { Release(); }
@@ -37,6 +46,8 @@ MeshData& MeshData::operator=(MeshData&& other) {
         indices_ = other.indices_;
         index_count_ = other.index_count_;
         index_type_ = other.index_type_;
+        topology_ = other.topology_;
+        has_restart_ = other.has_restart_;
         bounds_ = other.bounds_;
         other.vertices_ = nullptr;
         other.indices_ = nullptr;
@@ -53,12 +64,34 @@ void MeshData::Release() {
     indices_ = nullptr;
     vertex_count_ = 0;
     index_count_ = 0;
+    topology_ = rhi::PrimitiveTopology::TriangleList;
+    has_restart_ = false;
     layout_ = VertexLayoutData();
     bounds_ = Bounds();
 }
 
+namespace {
+
+// Whether `count` indices make whole primitives of `topology` (a strip needs at least one primitive).
+bool IndexCountFits(rhi::PrimitiveTopology topology, u32 count) {
+    switch (topology) {
+    case rhi::PrimitiveTopology::TriangleList: return count % 3 == 0;
+    case rhi::PrimitiveTopology::TriangleStrip: return count >= 3;
+    case rhi::PrimitiveTopology::LineList: return count % 2 == 0;
+    case rhi::PrimitiveTopology::LineStrip: return count >= 2;
+    case rhi::PrimitiveTopology::PointList: return count >= 1;
+    }
+    return false;
+}
+
+bool IsStrip(rhi::PrimitiveTopology topology) {
+    return topology == rhi::PrimitiveTopology::TriangleStrip || topology == rhi::PrimitiveTopology::LineStrip;
+}
+
+} // namespace
+
 const char* MeshData::Set(const VertexLayoutData& layout, u32 position_offset, const void* vertices, u32 vertex_count,
-                          rhi::IndexType index_type, const void* indices, u32 index_count) {
+                          rhi::IndexType index_type, const void* indices, u32 index_count, rhi::PrimitiveTopology topology) {
     Release();
     if (layout.stride == 0 || layout.stride > 512 || layout.attribute_count > rhi::kMaxVertexAttributes) {
         return "mesh: the vertex stride must be 1 to 512 bytes and the attribute count within the RHI limit";
@@ -72,11 +105,15 @@ const char* MeshData::Set(const VertexLayoutData& layout, u32 position_offset, c
     if (vertices == nullptr || vertex_count == 0 || indices == nullptr || index_count == 0) {
         return "mesh: a mesh needs vertices and indices";
     }
-    if (index_count % 3 != 0) {
-        return "mesh: the index count must be a multiple of 3 (triangle list)";
+    if (static_cast<u32>(topology) > static_cast<u32>(rhi::PrimitiveTopology::PointList)) {
+        return "mesh: unknown primitive topology";
     }
-    if (index_type == rhi::IndexType::UInt16 && vertex_count > 65536) {
-        return "mesh: 16-bit indices address at most 65536 vertices";
+    if (!IndexCountFits(topology, index_count)) {
+        return "mesh: the index count does not make whole primitives of the topology";
+    }
+    if (index_type == rhi::IndexType::UInt16 && vertex_count > (IsStrip(topology) ? 65535u : 65536u)) {
+        return IsStrip(topology) ? "mesh: a strip with 16-bit indices addresses at most 65535 vertices (0xFFFF restarts the strip)"
+                                 : "mesh: 16-bit indices address at most 65536 vertices";
     }
     const u64 vertex_bytes = static_cast<u64>(vertex_count) * layout.stride;
     const u64 index_bytes = static_cast<u64>(index_count) * (index_type == rhi::IndexType::UInt16 ? 2 : 4);
@@ -84,7 +121,9 @@ const char* MeshData::Set(const VertexLayoutData& layout, u32 position_offset, c
         return "mesh: more than 1 GiB of vertex or index data";
     }
 
-    // Validate before copying: every index in range, every position finite.
+    // Validate before copying: every index in range (a strip's all-ones index is a restart marker), every position finite.
+    const bool strip = IsStrip(topology);
+    bool has_restart = false;
     for (u32 i = 0; i < index_count; ++i) {
         u32 index;
         if (index_type == rhi::IndexType::UInt16) {
@@ -93,6 +132,10 @@ const char* MeshData::Set(const VertexLayoutData& layout, u32 position_offset, c
             index = v;
         } else {
             std::memcpy(&index, static_cast<const unsigned char*>(indices) + static_cast<usize>(i) * 4, 4);
+        }
+        if (strip && index == (index_type == rhi::IndexType::UInt16 ? 0xFFFFu : 0xFFFFFFFFu)) {
+            has_restart = true;
+            continue;
         }
         if (index >= vertex_count) {
             return "mesh: an index points past the last vertex";
@@ -122,6 +165,8 @@ const char* MeshData::Set(const VertexLayoutData& layout, u32 position_offset, c
     index_type_ = index_type;
     layout_ = layout;
     position_offset_ = position_offset;
+    topology_ = topology;
+    has_restart_ = has_restart;
     bounds_ = ComputeBounds(vertices_ + position_offset, vertex_count, layout.stride);
     return nullptr;
 }
@@ -317,6 +362,225 @@ const char* MakePlaneMesh(f32 width, f32 depth, u32 x_segments, u32 z_segments, 
     return b.Finish(out);
 }
 
+const char* MakePlaneStripMesh(f32 width, f32 depth, u32 x_segments, u32 z_segments, MeshData* out) {
+    ENGINE_ASSERT(out != nullptr, "MakePlaneStripMesh: out is null");
+    MeshData grid;
+    if (const char* error = MakePlaneMesh(width, depth, x_segments, z_segments, &grid)) return error;
+    if (grid.VertexCount() > 65535) return "plane: a strip grid addresses at most 65535 vertices";
+    const u32 columns = x_segments + 1;
+    // One strip per row of cells: top0 bottom0 top1 bottom1 ... then the restart marker (except after the last row).
+    const u32 per_row = 2 * columns + 1;
+    const u32 count = per_row * z_segments - 1;
+    u16* indices = new (std::nothrow) u16[count];
+    if (indices == nullptr) return "plane: out of memory";
+    u32 n = 0;
+    for (u32 z = 0; z < z_segments; ++z) {
+        for (u32 x = 0; x < columns; ++x) {
+            indices[n++] = static_cast<u16>(z * columns + x);
+            indices[n++] = static_cast<u16>((z + 1) * columns + x);
+        }
+        if (z + 1 < z_segments) indices[n++] = 0xFFFF;
+    }
+    const char* error = out->Set(grid.Layout(), 0, grid.Vertices(), grid.VertexCount(), rhi::IndexType::UInt16, indices, n, rhi::PrimitiveTopology::TriangleStrip);
+    delete[] indices;
+    return error;
+}
+
+const char* MakeColoredMesh(const MeshData& source, const u8* colors, u32 color_count, MeshData* out) {
+    ENGINE_ASSERT(out != nullptr && out != &source, "MakeColoredMesh: out is null or the source");
+    if (!source.Valid()) return "colored mesh: the source mesh is empty";
+    const VertexLayoutData standard = StandardVertexLayout();
+    const VertexLayoutData& have = source.Layout();
+    bool same = have.stride == standard.stride && have.attribute_count == standard.attribute_count;
+    for (u32 i = 0; same && i < standard.attribute_count; ++i) {
+        same = have.attributes[i].location == standard.attributes[i].location && have.attributes[i].format == standard.attributes[i].format &&
+               have.attributes[i].offset == standard.attributes[i].offset;
+    }
+    if (!same) return "colored mesh: the source mesh is not in the standard vertex layout";
+    if (colors == nullptr || color_count != source.VertexCount()) return "colored mesh: the number of colors must equal the number of vertices";
+    ColorVertex* vertices = new (std::nothrow) ColorVertex[source.VertexCount()];
+    if (vertices == nullptr) return "colored mesh: out of memory";
+    const StandardVertex* in = static_cast<const StandardVertex*>(source.Vertices());
+    for (u32 i = 0; i < source.VertexCount(); ++i) {
+        vertices[i].base = in[i];
+        for (u32 c = 0; c < 4; ++c) vertices[i].color[c] = colors[i * 4 + c];
+    }
+    const char* error = out->Set(ColorVertexLayout(), 0, vertices, source.VertexCount(), source.IndexFormat(), source.Indices(), source.IndexCount(), source.Topology());
+    delete[] vertices;
+    return error;
+}
+
+const char* MakeUniformColoredMesh(const MeshData& source, const u8 rgba[4], MeshData* out) {
+    ENGINE_ASSERT(out != nullptr && out != &source, "MakeUniformColoredMesh: out is null or the source");
+    if (!source.Valid()) return "colored mesh: the source mesh is empty";
+    if (rgba == nullptr) return "colored mesh: the color is null";
+    u8* colors = new (std::nothrow) u8[static_cast<usize>(source.VertexCount()) * 4];
+    if (colors == nullptr) return "colored mesh: out of memory";
+    for (u32 i = 0; i < source.VertexCount(); ++i) {
+        for (u32 c = 0; c < 4; ++c) colors[i * 4 + c] = rgba[c];
+    }
+    const char* error = MakeColoredMesh(source, colors, source.VertexCount(), out);
+    delete[] colors;
+    return error;
+}
+
+// ---- strips and lists ----
+
+namespace {
+
+// A narrow or wide index array being built, handed to MeshData::Set with the source's vertices.
+const char* SetIndices(const MeshData& source, const u32* indices, u32 count, rhi::PrimitiveTopology topology, MeshData* out) {
+    const bool narrow = source.IndexFormat() == rhi::IndexType::UInt16;
+    if (narrow) {
+        u16* small = new (std::nothrow) u16[count];
+        if (small == nullptr) return "mesh: out of memory";
+        for (u32 i = 0; i < count; ++i) small[i] = static_cast<u16>(indices[i]);
+        const char* error = out->Set(source.Layout(), source.PositionOffset(), source.Vertices(), source.VertexCount(), rhi::IndexType::UInt16, small, count, topology);
+        delete[] small;
+        return error;
+    }
+    return out->Set(source.Layout(), source.PositionOffset(), source.Vertices(), source.VertexCount(), rhi::IndexType::UInt32, indices, count, topology);
+}
+
+struct DirectedEdge {
+    u64 key; // (from << 32) | to
+    u32 triangle;
+    u32 third; // the triangle's third vertex
+};
+
+int CompareEdges(const void* a, const void* b) {
+    const u64 ka = static_cast<const DirectedEdge*>(a)->key;
+    const u64 kb = static_cast<const DirectedEdge*>(b)->key;
+    return ka < kb ? -1 : (ka > kb ? 1 : 0);
+}
+
+} // namespace
+
+const char* StripToList(const MeshData& strip, MeshData* out) {
+    ENGINE_ASSERT(out != nullptr && out != &strip, "StripToList: out is null or the source");
+    if (!strip.Valid() || strip.Topology() != rhi::PrimitiveTopology::TriangleStrip) return "strip to list: the mesh is not a triangle strip";
+    const u32 restart = strip.IndexFormat() == rhi::IndexType::UInt16 ? 0xFFFFu : 0xFFFFFFFFu;
+    u32* list = new (std::nothrow) u32[static_cast<usize>(strip.IndexCount()) * 3];
+    if (list == nullptr) return "strip to list: out of memory";
+    u32 n = 0;
+    u32 position = 0; // position inside the current strip
+    u32 window[3] = {0, 0, 0};
+    for (u32 i = 0; i < strip.IndexCount(); ++i) {
+        const u32 index = strip.IndexAt(i);
+        if (index == restart) {
+            position = 0;
+            continue;
+        }
+        window[position % 3] = index;
+        ++position;
+        if (position < 3) continue;
+        const u32 k = position - 3; // triangle number inside the strip
+        const u32 a = window[k % 3];
+        const u32 b = window[(k + 1) % 3];
+        const u32 c = window[(k + 2) % 3];
+        if (a == b || b == c || a == c) continue; // a degenerate join
+        if (k % 2 == 0) {
+            list[n++] = a;
+            list[n++] = b;
+        } else {
+            list[n++] = b;
+            list[n++] = a;
+        }
+        list[n++] = c;
+    }
+    const char* error = n == 0 ? "strip to list: the strip holds no triangle" : SetIndices(strip, list, n, rhi::PrimitiveTopology::TriangleList, out);
+    delete[] list;
+    return error;
+}
+
+const char* ListToStrip(const MeshData& list, StripJoin join, MeshData* out) {
+    ENGINE_ASSERT(out != nullptr && out != &list, "ListToStrip: out is null or the source");
+    if (!list.Valid() || list.Topology() != rhi::PrimitiveTopology::TriangleList) return "list to strip: the mesh is not a triangle list";
+    const u32 triangles = list.IndexCount() / 3;
+    DirectedEdge* edges = new (std::nothrow) DirectedEdge[static_cast<usize>(triangles) * 3];
+    bool* used = new (std::nothrow) bool[triangles];
+    // A lone triangle costs at most 3 indices plus a 3-index join.
+    u32* result = new (std::nothrow) u32[static_cast<usize>(triangles) * 6 + 4];
+    u32* strip = new (std::nothrow) u32[static_cast<usize>(triangles) + 2];
+    if (edges == nullptr || used == nullptr || result == nullptr || strip == nullptr) {
+        delete[] edges;
+        delete[] used;
+        delete[] result;
+        delete[] strip;
+        return "list to strip: out of memory";
+    }
+    for (u32 t = 0; t < triangles; ++t) {
+        used[t] = false;
+        const u32 v[3] = {list.IndexAt(t * 3), list.IndexAt(t * 3 + 1), list.IndexAt(t * 3 + 2)};
+        for (u32 e = 0; e < 3; ++e) {
+            edges[t * 3 + e] = {(static_cast<u64>(v[e]) << 32) | v[(e + 1) % 3], t, v[(e + 2) % 3]};
+        }
+    }
+    std::qsort(edges, static_cast<usize>(triangles) * 3, sizeof(DirectedEdge), &CompareEdges);
+
+    auto find = [&](u32 from, u32 to) -> const DirectedEdge* {
+        const u64 key = (static_cast<u64>(from) << 32) | to;
+        usize lo = 0;
+        usize hi = static_cast<usize>(triangles) * 3;
+        while (lo < hi) {
+            const usize mid = (lo + hi) / 2;
+            if (edges[mid].key < key) lo = mid + 1;
+            else hi = mid;
+        }
+        // Equal keys (a non-manifold mesh) are tried in order until an unused triangle is found.
+        for (; lo < static_cast<usize>(triangles) * 3 && edges[lo].key == key; ++lo) {
+            if (!used[edges[lo].triangle]) return &edges[lo];
+        }
+        return nullptr;
+    };
+
+    u32 n = 0;
+    // A list that used all 65536 16-bit values comes out in 32-bit indices (see below), so the marker has the output's width.
+    const bool widen = list.IndexFormat() == rhi::IndexType::UInt16 && list.VertexCount() > 65535;
+    const u32 restart = (list.IndexFormat() == rhi::IndexType::UInt16 && !widen) ? 0xFFFFu : 0xFFFFFFFFu;
+    for (u32 t = 0; t < triangles; ++t) {
+        if (used[t]) continue;
+        used[t] = true;
+        u32 length = 0;
+        strip[length++] = list.IndexAt(t * 3);
+        strip[length++] = list.IndexAt(t * 3 + 1);
+        strip[length++] = list.IndexAt(t * 3 + 2);
+        for (;;) {
+            // The next triangle (number length - 2) is drawn as (p, q, r) when that number is even and (q, p, r) when odd.
+            const u32 p = strip[length - 2];
+            const u32 q = strip[length - 1];
+            const u32 number = length - 2;
+            const DirectedEdge* next = (number % 2 == 0) ? find(p, q) : find(q, p);
+            if (next == nullptr) break;
+            used[next->triangle] = true;
+            strip[length++] = next->third;
+        }
+        if (n != 0) {
+            if (join == StripJoin::Restart) {
+                result[n++] = restart;
+            } else {
+                const u32 last = result[n - 1];
+                result[n++] = last;
+                result[n++] = strip[0];
+                if (n % 2 != 0) result[n++] = strip[0]; // the next real triangle must start at an even position
+            }
+        }
+        for (u32 i = 0; i < length; ++i) result[n++] = strip[i];
+    }
+    const char* error = nullptr;
+    if (widen) {
+        // The list used all 65536 16-bit values; a strip cannot (0xFFFF restarts), so the result uses 32-bit indices.
+        error = out->Set(list.Layout(), list.PositionOffset(), list.Vertices(), list.VertexCount(), rhi::IndexType::UInt32, result, n, rhi::PrimitiveTopology::TriangleStrip);
+    } else {
+        error = SetIndices(list, result, n, rhi::PrimitiveTopology::TriangleStrip, out);
+    }
+    delete[] edges;
+    delete[] used;
+    delete[] result;
+    delete[] strip;
+    return error;
+}
+
 // ---- GpuMesh ----
 
 GpuMesh::GpuMesh(GpuMesh&& other) { *this = static_cast<GpuMesh&&>(other); }
@@ -330,6 +594,8 @@ GpuMesh& GpuMesh::operator=(GpuMesh&& other) {
         vertex_count_ = other.vertex_count_;
         index_count_ = other.index_count_;
         index_type_ = other.index_type_;
+        topology_ = other.topology_;
+        has_restart_ = other.has_restart_;
         layout_ = other.layout_;
         bounds_ = other.bounds_;
         ready_ = other.ready_;
@@ -377,6 +643,8 @@ bool GpuMesh::Create(rhi::Device* device, const MeshData& data, const char* debu
     vertex_count_ = data.VertexCount();
     index_count_ = data.IndexCount();
     index_type_ = data.IndexFormat();
+    topology_ = data.Topology();
+    has_restart_ = data.HasPrimitiveRestart();
     layout_ = data.Layout();
     bounds_ = data.GetBounds();
     ready_ = false;

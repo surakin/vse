@@ -403,28 +403,34 @@ public:
 
     /// Returns the pipeline a material draws with into a target and with a vertex layout, creating it on a miss.
     ///
-    /// Pipelines are keyed by (template, permutation, target, vertex layout), so materials of one template and key share
-    /// one. Creation happens here, never while recording: call this (or [[renderer::MaterialSystem::Warmup]]) before the
+    /// Pipelines are keyed by (template, permutation, target, vertex layout, topology, restart), so materials of one
+    /// template and key share one; a strip mesh and a list mesh with the same material get separate pipelines. Creation happens here, never while recording: call this (or [[renderer::MaterialSystem::Warmup]]) before the
     /// frame's recording starts.
     ///
     /// Param id: a live material.
     /// Param target: the attachment formats.
     /// Param vertex_layout: the mesh layout; every vertex input of the vertex shader must be present with the same format.
+    /// Param topology: the mesh's topology ([[renderer::MeshData::Topology]]); a triangle list by default.
+    /// Param primitive_restart: whether the mesh has restart markers ([[renderer::MeshData::HasPrimitiveRestart]]).
     /// Returns: the pipeline and its cache index, or an invalid pipeline after logging.
-    /// Fails: the layout lacks or mismatches a vertex shader input, the target is invalid, the cache is full, or the
-    ///   device cannot create the pipeline.
+    /// Fails: the layout lacks or mismatches a vertex shader input, the target is invalid, restart is asked for with a
+    ///   topology that is not a strip, the cache is full, or the device cannot create the pipeline.
     /// Aborts: `id` is invalid or stale.
-    PipelineLookup GetPipeline(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout);
+    PipelineLookup GetPipeline(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout,
+                               rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList, bool primitive_restart = false);
 
     /// Creates the pipeline for a material ahead of use; the same as `GetPipeline` without the result.
     ///
     /// Param id: a live material.
     /// Param target: the attachment formats.
     /// Param vertex_layout: the mesh layout.
+    /// Param topology: the mesh's topology.
+    /// Param primitive_restart: whether the mesh has restart markers.
     /// Returns: whether the pipeline exists afterwards.
     /// Fails: as for [[renderer::MaterialSystem::GetPipeline]].
     /// Aborts: `id` is invalid or stale.
-    bool Warmup(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout);
+    bool Warmup(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout,
+                rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList, bool primitive_restart = false);
 
     /// Returns how many times this material's bind groups were rebuilt after creation.
     ///

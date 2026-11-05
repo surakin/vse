@@ -6,6 +6,7 @@ set(RENDERER_TEST_SOURCES
   shader_permutation_test.cpp
   geometry_test.cpp
   scene_test.cpp
+  mesh_topology_test.cpp
   material_test.cpp
   render_graph_test.cpp
   render_graph_barrier_test.cpp

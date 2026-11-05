@@ -24,6 +24,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - Visual confirmation of the Phase 1 windows, live keyboard and mouse updates, and the real close-button exit on Wayland and X11 (Days 19-26).
 - `fr`/`de` keyboard layouts through a live X server (xkbcommon tests cover them).
 - Phase 4 Day 70: vsync-paced `rhi_demo` frame time was 50 ms on Wayland and 17 ms on X11 against 4.1 ms in Phase 3 in that session. The cause is believed to be compositor pacing (negligible shader cost with `--no-vsync`) but it was not re-measured after a session restart.
+- Phase 4 Day 78 (2026-11-05): in repeated full `ctest -j8` runs, one run had 1 failure and two had X11Window tests fail (`translates key press/release into Key via the server's keymap`, `releases keys and modifiers on a real focus loss but not during WM grabs`, `releases the Key a code was pressed as even if modifiers changed`); other runs passed 1643/1643 and 1649/1649. No code those tests exercise changed that day; not investigated.
 
 ## Deferred items
 
@@ -34,6 +35,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 | Clip-space Y flip in the shader path (Slang does not apply it) | Phases 5-6 | `shaders/README.md`, RHI portability review |
 | Metal renames an entry point called `main` | Phase 6 | `shaders/README.md` |
 | `MaterialSystem::GetPipeline` scans the pipeline cache linearly and `FlushMaterials` walks every material slot up to the highest used; neither was measured with a real scene | Day 80-81 (when a frame's real call counts are known) | Day 74 day file |
+| `ListToStrip` looks up shared edges by binary search over equal keys without removing used triangles, so heavily non-manifold input (many triangles on one directed edge) can take quadratic time; it is a load-time helper | Only if a real mesh shows it | Day 78 review |
 | The failure path of a bind-group rebuild in `FlushMaterials` (slots revert to what the groups show) has no test: it needs RHI fault injection | Day 77 | Day 74 day file |
 | The per-object index comes from `SV_VulkanInstanceID` (`gl_InstanceIndex`); D3D12 and Metal shaders cannot see a draw's base instance that way, so those backends need another delivery (root constant, per-draw vertex stream, or `SV_StartInstanceLocation` where it exists) | Phases 5-6 | `shaders/README.md` "Material shaders" |
 | Transient resources are pooled by description but their memory is not aliased (two non-overlapping resources of different sizes or formats each keep their own allocation); the plan marks aliasing optional | Only if frame memory becomes a problem (Phase 4 Days 80-83 will show) | Day 76 day file |

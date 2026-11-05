@@ -174,6 +174,8 @@ struct MaterialSystem::PipelineEntry {
     u32 key_bits = 0;
     PipelineTarget target;
     VertexLayoutData layout;
+    rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList;
+    bool restart = false;
     rhi::PipelineHandle pipeline;
 };
 
@@ -815,7 +817,8 @@ u32 MaterialSystem::BindGroupRebuilds(MaterialId id) const { return Get(id).rebu
 
 // ---- pipelines ----
 
-PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout) {
+PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout,
+                                           rhi::PrimitiveTopology topology, bool primitive_restart) {
     const MaterialSlot& m = Get(id);
     TemplateSlot& t = templates_[m.template_index];
     const Variant& v = t.variants[m.variant_index];
@@ -823,7 +826,7 @@ PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& 
     for (u32 i = 0; i < pipeline_count_; ++i) {
         const PipelineEntry& p = pipelines_[i];
         if (p.used && p.template_index == m.template_index && p.template_generation == t.generation && p.key_bits == v.key_bits &&
-            SameTarget(p.target, target) && SameLayout(p.layout, vertex_layout)) {
+            SameTarget(p.target, target) && SameLayout(p.layout, vertex_layout) && p.topology == topology && p.restart == primitive_restart) {
             ++stats_.pipeline_hits;
             return PipelineLookup{p.pipeline, i};
         }
@@ -875,9 +878,15 @@ PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& 
         return PipelineLookup{};
     }
 
+    if (primitive_restart && topology != rhi::PrimitiveTopology::TriangleStrip && topology != rhi::PrimitiveTopology::LineStrip) {
+        RenderLog(LogVerbosity::Error, "MaterialSystem: pipeline for '%s': primitive restart needs a strip topology", tname);
+        return PipelineLookup{};
+    }
     rhi::VertexBindingDesc binding;
     binding.stride = vertex_layout.stride;
     rhi::GraphicsPipelineDesc pd;
+    pd.topology = topology;
+    pd.primitive_restart = primitive_restart;
     pd.vertex_shader = t.vertex;
     pd.fragment_shader = v.fragment;
     pd.vertex_bindings = rhi::Span<rhi::VertexBindingDesc>(&binding, 1);
@@ -916,14 +925,17 @@ PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& 
     e.key_bits = v.key_bits;
     e.target = target;
     e.layout = vertex_layout;
+    e.topology = topology;
+    e.restart = primitive_restart;
     e.pipeline = pipeline;
     if (slot == pipeline_count_) ++pipeline_count_;
     ++stats_.pipelines;
     return PipelineLookup{pipeline, slot};
 }
 
-bool MaterialSystem::Warmup(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout) {
-    return GetPipeline(id, target, vertex_layout).pipeline.IsValid();
+bool MaterialSystem::Warmup(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout, rhi::PrimitiveTopology topology,
+                            bool primitive_restart) {
+    return GetPipeline(id, target, vertex_layout, topology, primitive_restart).pipeline.IsValid();
 }
 
 } // namespace engine_placeholder::renderer

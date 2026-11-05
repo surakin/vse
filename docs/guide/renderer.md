@@ -409,6 +409,49 @@ minimized: skipped
 rendered 3, skipped 1
 ```
 
+### Vertex colors and primitive topology
+
+A mesh is a list of triangles by default; `MeshData::Set` takes a [[rhi::PrimitiveTopology]] to make it a strip, a line
+list or a point list instead, and the index count must then make whole primitives of that topology. In a strip the
+all-ones index (`0xFFFF` for 16-bit indices, `0xFFFFFFFF` for 32-bit) ends the current strip and starts the next one;
+`MeshData::HasPrimitiveRestart` says whether the indices contain one. A 16-bit strip addresses at most 65535 vertices,
+because `0xFFFF` is taken. `GpuMesh` carries both facts, and `MaterialSystem::GetPipeline` and `Warmup` take them as
+arguments, so a strip and a list of the same material get different pipelines (restart is part of the pipeline in Vulkan).
+A pipeline asks for restart only on a strip topology; `rhi::PipelineDesc` rejects it otherwise.
+
+Per-vertex colors are a fifth attribute in a separate layout, `ColorVertexLayout` (location 4, `UNorm8x4`, 52 bytes per
+vertex), so a mesh without colors pays nothing. `MakeColoredMesh` adds a color array to a standard-layout mesh and
+`MakeUniformColoredMesh` gives every vertex one color; the colors are 8-bit sRGB-encoded values and the shader
+converts them to linear (Day 79). The color is interleaved with the other attributes rather than in a second stream, which
+keeps one vertex buffer per mesh.
+
+`MakePlaneStripMesh` builds the same grid as `MakePlaneMesh` as one strip with a restart between rows, which needs about
+two thirds of the indices. `ListToStrip` turns any triangle list into a strip (greedy walk over shared edges, joined by a
+restart or by degenerate triangles, as you choose) and `StripToList` reverses it; both keep every triangle and its winding.
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "renderer/mesh.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::renderer;
+
+int main() {
+    MeshData list, strip, back;
+    if (MakePlaneMesh(2.0f, 2.0f, 8, 8, &list) != nullptr) return 1;
+    if (ListToStrip(list, StripJoin::Restart, &strip) != nullptr) return 1;
+    if (StripToList(strip, &back) != nullptr) return 1;
+    std::printf("list %u indices, strip %u indices, back %u indices, restart %s\n", list.IndexCount(), strip.IndexCount(),
+                back.IndexCount(), strip.HasPrimitiveRestart() ? "yes" : "no");
+    return 0;
+}
+```
+
+```output
+list 384 indices, strip 151 indices, back 384 indices, restart yes
+```
+
 ### Rules & contracts
 
 - A `GpuMesh` must be destroyed (or go out of scope) before the device that created it; a scene holds meshes by pointer and

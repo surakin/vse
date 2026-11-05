@@ -15,6 +15,6 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Platform: OS Services](platform-os.md) | 4 | 34 |
 | [Platform: Windowing and Input](platform-window-input.md) | 9 | 251 |
 | [The Job System](jobs.md) | 10 | 172 |
-| [The Render Hardware Interface](rhi.md) | 16 | 603 |
-| [The renderer](renderer.md) | 14 | 573 |
+| [The Render Hardware Interface](rhi.md) | 16 | 604 |
+| [The renderer](renderer.md) | 14 | 590 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 16 | 415 |

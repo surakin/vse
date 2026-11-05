@@ -305,6 +305,11 @@ struct GraphicsPipelineDesc {
     Span<VertexAttributeDesc> vertex_attributes;
     /// How vertices form primitives.
     PrimitiveTopology topology = PrimitiveTopology::TriangleList;
+    /// Whether the all-ones index ends the current strip and starts a new one.
+    ///
+    /// The all-ones index is 0xFFFF or 0xFFFFFFFF by index type, so one indexed draw can hold several strips. Only for the
+    /// strip topologies (`TriangleStrip`, `LineStrip`); without it that index is an ordinary vertex index.
+    bool primitive_restart = false;
     /// Which faces are culled.
     CullMode cull_mode = CullMode::Back;
     /// Which winding is the front face.

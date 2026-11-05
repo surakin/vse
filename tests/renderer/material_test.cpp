@@ -272,6 +272,32 @@ TEST_CASE("Unset texture slots show a default chosen by name or by the template"
     f.device->DestroyTexture(mine);
 }
 
+TEST_CASE("The pipeline cache keys on topology and primitive restart", "[renderer][material][topology]") {
+    Fixture f;
+    MaterialSystem sys(f.device, MaterialSystemDesc{});
+    const TemplateId t = sys.CreateTemplate(TestTemplate());
+    const MaterialId a = sys.CreateMaterial(t, Key({}), "a");
+    REQUIRE(a.IsValid());
+    const VertexLayoutData layout = StandardVertexLayout();
+    const rhi::PipelineHandle list = sys.GetPipeline(a, ColorTarget(), layout).pipeline;
+    REQUIRE(list.IsValid());
+    const PipelineLookup strip = sys.GetPipeline(a, ColorTarget(), layout, rhi::PrimitiveTopology::TriangleStrip, false);
+    const PipelineLookup restart = sys.GetPipeline(a, ColorTarget(), layout, rhi::PrimitiveTopology::TriangleStrip, true);
+    REQUIRE(strip.pipeline.IsValid());
+    REQUIRE(restart.pipeline.IsValid());
+    CHECK(strip.pipeline != list);
+    CHECK(restart.pipeline != strip.pipeline);
+    CHECK(sys.Stats().pipelines == 3);
+    // The same request again is a hit.
+    CHECK(sys.GetPipeline(a, ColorTarget(), layout, rhi::PrimitiveTopology::TriangleStrip, true).pipeline == restart.pipeline);
+    CHECK(sys.Stats().pipelines == 3);
+    // Restart only makes sense for a strip.
+    f.device->ResetErrors();
+    CHECK_FALSE(sys.GetPipeline(a, ColorTarget(), layout, rhi::PrimitiveTopology::TriangleList, true).pipeline.IsValid());
+    CHECK(sys.Warmup(a, ColorTarget(), layout, rhi::PrimitiveTopology::LineList, false));
+    CHECK(sys.Stats().pipelines == 4);
+}
+
 TEST_CASE("Materials of one template and key share a pipeline", "[renderer][material]") {
     Fixture f;
     MaterialSystem sys(f.device, MaterialSystemDesc{});

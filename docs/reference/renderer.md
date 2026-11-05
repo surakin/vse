@@ -1473,7 +1473,7 @@ Depth format, or `Undefined` for no depth attachment.
 struct PipelineLookup { ... }
 ```
 
-A pipeline found or created by [`renderer::MaterialSystem::GetPipeline`](#renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp).
+A pipeline found or created by [`renderer::MaterialSystem::GetPipeline`](#renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool).
 
 | Field | Value |
 |---|---|
@@ -2103,33 +2103,35 @@ Returns a default texture.
 | Fails | never. |
 | Ownership | borrowed from the system. |
 
-### `GetPipeline(MaterialId,const PipelineTarget&,const VertexLayoutData&)` {#renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp}
+### `GetPipeline(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)` {#renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool}
 
 `method renderer::MaterialSystem::GetPipeline` — defined in `engine/renderer/material.h`
 
 ```cpp
-PipelineLookup GetPipeline(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout);
+PipelineLookup GetPipeline(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout, rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList, bool primitive_restart = false);
 ```
 
 Returns the pipeline a material draws with into a target and with a vertex layout, creating it on a miss.
 
-Pipelines are keyed by (template, permutation, target, vertex layout), so materials of one template and key share one. Creation happens here, never while recording: call this (or [`renderer::MaterialSystem::Warmup`](#renderer-materialsystem-warmup-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp)) before the frame's recording starts.
+Pipelines are keyed by (template, permutation, target, vertex layout, topology, restart), so materials of one template and key share one; a strip mesh and a list mesh with the same material get separate pipelines. Creation happens here, never while recording: call this (or [`renderer::MaterialSystem::Warmup`](#renderer-materialsystem-warmup-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool)) before the frame's recording starts.
 
 | Field | Value |
 |---|---|
 | Parameter `id` | a live material. |
 | Parameter `target` | the attachment formats. |
 | Parameter `vertex_layout` | the mesh layout; every vertex input of the vertex shader must be present with the same format. |
+| Parameter `topology` | the mesh's topology ([`renderer::MeshData::Topology`](#renderer-meshdata-topology-const)); a triangle list by default. |
+| Parameter `primitive_restart` | whether the mesh has restart markers ([`renderer::MeshData::HasPrimitiveRestart`](#renderer-meshdata-hasprimitiverestart-const)). |
 | Returns | the pipeline and its cache index, or an invalid pipeline after logging. |
-| Fails | the layout lacks or mismatches a vertex shader input, the target is invalid, the cache is full, or the device cannot create the pipeline. |
+| Fails | the layout lacks or mismatches a vertex shader input, the target is invalid, restart is asked for with a topology that is not a strip, the cache is full, or the device cannot create the pipeline. |
 | Aborts | `id` is invalid or stale. |
 
-### `Warmup(MaterialId,const PipelineTarget&,const VertexLayoutData&)` {#renderer-materialsystem-warmup-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp}
+### `Warmup(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)` {#renderer-materialsystem-warmup-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool}
 
 `method renderer::MaterialSystem::Warmup` — defined in `engine/renderer/material.h`
 
 ```cpp
-bool Warmup(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout);
+bool Warmup(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout, rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList, bool primitive_restart = false);
 ```
 
 Creates the pipeline for a material ahead of use; the same as `GetPipeline` without the result.
@@ -2139,8 +2141,10 @@ Creates the pipeline for a material ahead of use; the same as `GetPipeline` with
 | Parameter `id` | a live material. |
 | Parameter `target` | the attachment formats. |
 | Parameter `vertex_layout` | the mesh layout. |
+| Parameter `topology` | the mesh's topology. |
+| Parameter `primitive_restart` | whether the mesh has restart markers. |
 | Returns | whether the pipeline exists afterwards. |
-| Fails | as for [`renderer::MaterialSystem::GetPipeline`](#renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp). |
+| Fails | as for [`renderer::MaterialSystem::GetPipeline`](#renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool). |
 | Aborts | `id` is invalid or stale. |
 
 ### `BindGroupRebuilds(MaterialId)` {#renderer-materialsystem-bindgrouprebuilds-materialid-const}
@@ -2244,6 +2248,58 @@ The layout of [`renderer::StandardVertex`](#renderer-standardvertex) as the shad
 | Fails | never. |
 | Thread-safety | thread-safe. A pure function. |
 
+## `ColorVertex` {#renderer-colorvertex}
+
+`struct renderer::ColorVertex` — defined in `engine/renderer/mesh.h`
+
+```cpp
+struct ColorVertex { ... }
+```
+
+A [`renderer::StandardVertex`](#renderer-standardvertex) with a per-vertex color: the same fields plus four bytes of RGBA, 52 bytes, in the same interleaved stream.
+
+The color is stored as authored sRGB bytes (not linear): the geometry shader converts it to linear light, so a color picked in an image editor reads as expected. Alpha is linear coverage. A material that does not declare the vertex-color permutation ignores the attribute; a shader that reads it needs a mesh that has it (the material system reports a mismatch when it builds the pipeline).
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `base` {#renderer-colorvertex-base}
+
+`variable renderer::ColorVertex::base` — defined in `engine/renderer/mesh.h`
+
+```cpp
+StandardVertex base;
+```
+
+The standard attributes.
+
+### `color` {#renderer-colorvertex-color}
+
+`variable renderer::ColorVertex::color` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u8 color[4];
+```
+
+Red, green, blue, alpha, 0 to 255.
+
+## `ColorVertexLayout()` {#renderer-colorvertexlayout}
+
+`function renderer::ColorVertexLayout` — defined in `engine/renderer/mesh.h`
+
+```cpp
+VertexLayoutData ColorVertexLayout();
+```
+
+The layout of [`renderer::ColorVertex`](#renderer-colorvertex): the four standard attributes of [`renderer::StandardVertexLayout`](#renderer-standardvertexlayout) plus the color at location 4 (`UNorm8x4`, offset 48), all in vertex binding 0.
+
+| Field | Value |
+|---|---|
+| Returns | the layout. |
+| Fails | never. |
+| Thread-safety | thread-safe. A pure function. |
+
 ## `MeshData` {#renderer-meshdata}
 
 `class renderer::MeshData` — defined in `engine/renderer/mesh.h`
@@ -2254,7 +2310,7 @@ class MeshData { ... }
 
 Geometry on the CPU: interleaved vertex bytes, indices and bounds. Owns its memory.
 
-A mesh is built once with [`renderer::MeshData::Set`](#renderer-meshdata-set-const-vertexlayoutdata-amp-u32-const-void-star-u32-rhi-indextype-const-void-star-u32) (or by one of the `Make...Mesh` functions) and is read-only afterwards.
+A mesh is built once with [`renderer::MeshData::Set`](#renderer-meshdata-set-const-vertexlayoutdata-amp-u32-const-void-star-u32-rhi-indextype-const-void-star-u32-rhi-primitivetopology) (or by one of the `Make...Mesh` functions) and is read-only afterwards.
 
 | Field | Value |
 |---|---|
@@ -2321,12 +2377,12 @@ MeshData& operator=(const MeshData&) = delete;
 
 _Deleted._
 
-### `Set(const VertexLayoutData&,u32,const void*,u32,rhi::IndexType,const void*,u32)` {#renderer-meshdata-set-const-vertexlayoutdata-amp-u32-const-void-star-u32-rhi-indextype-const-void-star-u32}
+### `Set(const VertexLayoutData&,u32,const void*,u32,rhi::IndexType,const void*,u32,rhi::PrimitiveTopology)` {#renderer-meshdata-set-const-vertexlayoutdata-amp-u32-const-void-star-u32-rhi-indextype-const-void-star-u32-rhi-primitivetopology}
 
 `method renderer::MeshData::Set` — defined in `engine/renderer/mesh.h`
 
 ```cpp
-const char* Set(const VertexLayoutData& layout, u32 position_offset, const void* vertices, u32 vertex_count, rhi::IndexType index_type, const void* indices, u32 index_count);
+const char* Set(const VertexLayoutData& layout, u32 position_offset, const void* vertices, u32 vertex_count, rhi::IndexType index_type, const void* indices, u32 index_count, rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList);
 ```
 
 Replaces the contents with copies of the given geometry and computes its bounds.
@@ -2339,9 +2395,10 @@ Replaces the contents with copies of the given geometry and computes its bounds.
 | Parameter `vertex_count` | number of vertices, at least 1. |
 | Parameter `index_type` | 16-bit or 32-bit indices. |
 | Parameter `indices` | `index_count` indices of `index_type`. |
-| Parameter `index_count` | number of indices; a positive multiple of 3 (triangle list). |
+| Parameter `index_count` | number of indices; for a list topology a positive multiple of the primitive size (3 for `TriangleList`, 2 for `LineList`), for a strip at least 3 (`TriangleStrip`) or 2 (`LineStrip`). |
+| Parameter `topology` | how the indices form primitives; defaults to a triangle list. In the strip topologies an index with every bit set (0xFFFF or 0xFFFFFFFF) is a restart marker, not a vertex: it ends the strip and starts the next one (see [`renderer::MeshData::HasPrimitiveRestart`](#renderer-meshdata-hasprimitiverestart-const)). |
 | Returns | null on success, otherwise a static message naming the problem (this mesh is then empty). |
-| Fails | a zero or oversized stride, a stride or position offset that is not a multiple of 4, a position outside the vertex, no vertices or indices, an index count that is not a multiple of 3, 16-bit indices with more than 65536 vertices, an index at or past `vertex_count`, or a non-finite position. |
+| Fails | a zero or oversized stride, a stride or position offset that is not a multiple of 4, a position outside the vertex, no vertices or indices, an index count that does not fit the topology, 16-bit indices with more than 65536 vertices (65535 for a strip, whose last index value is the restart marker), an index at or past `vertex_count`, or a non-finite position. |
 | Ownership | `vertices` and `indices` are borrowed for the call and copied. |
 
 ### `Valid()` {#renderer-meshdata-valid-const}
@@ -2458,6 +2515,48 @@ const Bounds& GetBounds() const;
 
 Returns the object-space bounds.
 
+### `Topology()` {#renderer-meshdata-topology-const}
+
+`method renderer::MeshData::Topology` — defined in `engine/renderer/mesh.h`
+
+```cpp
+rhi::PrimitiveTopology Topology() const;
+```
+
+Returns how the indices form primitives.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `HasPrimitiveRestart()` {#renderer-meshdata-hasprimitiverestart-const}
+
+`method renderer::MeshData::HasPrimitiveRestart` — defined in `engine/renderer/mesh.h`
+
+```cpp
+bool HasPrimitiveRestart() const;
+```
+
+Returns whether a strip mesh contains restart markers; a pipeline that draws it must enable `GraphicsPipelineDesc::primitive_restart`. Always false for a non-strip topology.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `PositionOffset()` {#renderer-meshdata-positionoffset-const}
+
+`method renderer::MeshData::PositionOffset` — defined in `engine/renderer/mesh.h`
+
+```cpp
+u32 PositionOffset() const;
+```
+
+Returns the byte offset of the three-float position inside a vertex, as given to `Set`.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ### `IndexAt(u32)` {#renderer-meshdata-indexat-u32-const}
 
 `method renderer::MeshData::IndexAt` — defined in `engine/renderer/mesh.h`
@@ -2548,6 +2647,123 @@ Builds a flat grid in the XZ plane centered on the origin, normal +Y, tangent +X
 | Fails | an argument out of range. |
 | Thread-safety | thread-safe. |
 | Ownership | `out` is borrowed for the call; the message is static. |
+
+## `MakePlaneStripMesh(f32,f32,u32,u32,MeshData*)` {#renderer-makeplanestripmesh-f32-f32-u32-u32-meshdata-star}
+
+`function renderer::MakePlaneStripMesh` — defined in `engine/renderer/mesh.h`
+
+```cpp
+const char* MakePlaneStripMesh(f32 width, f32 depth, u32 x_segments, u32 z_segments, MeshData* out);
+```
+
+Builds the same grid as [`renderer::MakePlaneMesh`](#renderer-makeplanemesh-f32-f32-u32-u32-meshdata-star) with the same vertices, but as triangle strips: one strip per row of cells, ended by a restart index, so the index count is about two thirds of the list version's. The triangles are the same set with the same winding (counter-clockwise seen from above), so the mesh draws identically; its topology is `TriangleStrip` and it has restart markers, so it needs a pipeline with `primitive_restart`.
+
+| Field | Value |
+|---|---|
+| Parameter `width` | size along X, greater than zero. |
+| Parameter `depth` | size along Z, greater than zero. |
+| Parameter `x_segments` | cells along X, at least 1. |
+| Parameter `z_segments` | cells along Z, at least 1. |
+| Parameter `out` | receives the mesh; must not be null. |
+| Returns | null on success, otherwise a static message. |
+| Fails | an argument out of range, or more than 65535 vertices (16-bit strip indices reserve the last value). |
+| Thread-safety | thread-safe. |
+| Ownership | `out` is borrowed for the call; the message is static. |
+
+## `MakeColoredMesh(const MeshData&,const u8*,u32,MeshData*)` {#renderer-makecoloredmesh-const-meshdata-amp-const-u8-star-u32-meshdata-star}
+
+`function renderer::MakeColoredMesh` — defined in `engine/renderer/mesh.h`
+
+```cpp
+const char* MakeColoredMesh(const MeshData& source, const u8* colors, u32 color_count, MeshData* out);
+```
+
+Copies a mesh built with [`renderer::StandardVertexLayout`](#renderer-standardvertexlayout) into one with [`renderer::ColorVertexLayout`](#renderer-colorvertexlayout), giving each vertex its own color.
+
+| Field | Value |
+|---|---|
+| Parameter `source` | a valid mesh whose layout is the standard one. |
+| Parameter `colors` | `color_count` RGBA colors, four bytes each (sRGB bytes, see [`renderer::ColorVertex`](#renderer-colorvertex)). |
+| Parameter `color_count` | must equal the source's vertex count. |
+| Parameter `out` | receives the colored mesh, which keeps the source's indices, topology and bounds; must not be null and not be `source`. |
+| Returns | null on success, otherwise a static message. |
+| Fails | the source is empty or not in the standard layout, or `color_count` differs from its vertex count. |
+| Thread-safety | thread-safe. |
+| Ownership | `colors` is borrowed for the call and copied; `out` is borrowed for the call. |
+
+## `MakeUniformColoredMesh(const MeshData&,const u8[4],MeshData*)` {#renderer-makeuniformcoloredmesh-const-meshdata-amp-const-u8-4-meshdata-star}
+
+`function renderer::MakeUniformColoredMesh` — defined in `engine/renderer/mesh.h`
+
+```cpp
+const char* MakeUniformColoredMesh(const MeshData& source, const u8 rgba[4], MeshData* out);
+```
+
+Like [`renderer::MakeColoredMesh`](#renderer-makecoloredmesh-const-meshdata-amp-const-u8-star-u32-meshdata-star) with one color for every vertex.
+
+| Field | Value |
+|---|---|
+| Parameter `source` | a valid mesh whose layout is the standard one. |
+| Parameter `rgba` | the color, four bytes. |
+| Parameter `out` | receives the colored mesh. |
+| Returns | null on success, otherwise a static message. |
+| Fails | as for [`renderer::MakeColoredMesh`](#renderer-makecoloredmesh-const-meshdata-amp-const-u8-star-u32-meshdata-star). |
+| Thread-safety | thread-safe. |
+| Ownership | `rgba` is borrowed for the call. |
+
+## `StripJoin` {#renderer-stripjoin}
+
+`enum renderer::StripJoin` — defined in `engine/renderer/mesh.h`
+
+```cpp
+enum class StripJoin : u8 { ... }
+```
+
+How [`renderer::ListToStrip`](#renderer-listtostrip-const-meshdata-amp-stripjoin-meshdata-star) joins strips that cannot be continued.
+
+| Enumerator | Value | Description |
+|---|---|---|
+| <a id="renderer-stripjoin-restart"></a>`Restart` | `0` | Put a restart index between strips; the result needs a pipeline with `primitive_restart`. |
+| <a id="renderer-stripjoin-degenerate"></a>`Degenerate` |  | Join with repeated vertices (degenerate triangles); works on a plain strip pipeline. |
+
+## `StripToList(const MeshData&,MeshData*)` {#renderer-striptolist-const-meshdata-amp-meshdata-star}
+
+`function renderer::StripToList` — defined in `engine/renderer/mesh.h`
+
+```cpp
+const char* StripToList(const MeshData& strip, MeshData* out);
+```
+
+Converts a triangle-strip mesh to a triangle list: the same vertices, one triangle per strip position, restart markers honored, degenerate triangles (two equal indices) dropped, winding alternation undone so every triangle keeps the orientation it is drawn with.
+
+| Field | Value |
+|---|---|
+| Parameter `strip` | a valid mesh with topology `TriangleStrip`. |
+| Parameter `out` | receives the list mesh; must not be null and not be `strip`. |
+| Returns | null on success, otherwise a static message. |
+| Fails | the mesh is empty or not a triangle strip, or the strip holds no triangle. |
+| Thread-safety | thread-safe. |
+| Ownership | `out` is borrowed for the call. |
+
+## `ListToStrip(const MeshData&,StripJoin,MeshData*)` {#renderer-listtostrip-const-meshdata-amp-stripjoin-meshdata-star}
+
+`function renderer::ListToStrip` — defined in `engine/renderer/mesh.h`
+
+```cpp
+const char* ListToStrip(const MeshData& list, StripJoin join, MeshData* out);
+```
+
+Converts a triangle-list mesh to triangle strips by greedy edge walking: each strip is extended through the edge shared with an unused neighbor of the right orientation until none is left, then the next strip starts, joined as `join` says. The set of triangles, and every triangle's winding, is preserved; the number of indices is usually well below the list's (three per triangle) and never above six per triangle (a lone triangle joined by degenerate vertices).
+
+| Field | Value |
+|---|---|
+| Parameter `list` | a valid mesh with topology `TriangleList`. |
+| Parameter `join` | how to join the strips. |
+| Parameter `out` | receives the strip mesh (topology `TriangleStrip`); must not be null and not be `list`. |
+| Returns | null on success, otherwise a static message. |
+| Fails | the mesh is empty or not a triangle list. A list with exactly 65536 vertices gets 32-bit strip indices, because 0xFFFF is the restart marker. |
+| Thread-safety | thread-safe. |
+| Ownership | `out` is borrowed for the call. |
 
 ## `GpuMesh` {#renderer-gpumesh}
 
@@ -2729,6 +2945,34 @@ const VertexLayoutData& Layout() const;
 ```
 
 Returns the vertex layout the buffer was filled with.
+
+### `Topology()` {#renderer-gpumesh-topology-const}
+
+`method renderer::GpuMesh::Topology` — defined in `engine/renderer/mesh.h`
+
+```cpp
+rhi::PrimitiveTopology Topology() const;
+```
+
+Returns how the indices form primitives; the pipeline that draws this mesh must use the same topology.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `HasPrimitiveRestart()` {#renderer-gpumesh-hasprimitiverestart-const}
+
+`method renderer::GpuMesh::HasPrimitiveRestart` — defined in `engine/renderer/mesh.h`
+
+```cpp
+bool HasPrimitiveRestart() const;
+```
+
+Returns whether the indices contain restart markers (see [`renderer::MeshData::HasPrimitiveRestart`](#renderer-meshdata-hasprimitiverestart-const)).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `GetBounds()` {#renderer-gpumesh-getbounds-const}
 

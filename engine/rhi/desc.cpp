@@ -276,6 +276,9 @@ const char* GraphicsPipelineDesc::Validate() const {
         !AtMost(front_face, FrontFace::Clockwise) || !AtMost(depth_compare, CompareOp::Always)) {
         return "GraphicsPipelineDesc: unknown fixed-function enum value";
     }
+    if (primitive_restart && topology != PrimitiveTopology::TriangleStrip && topology != PrimitiveTopology::LineStrip) {
+        return "GraphicsPipelineDesc: primitive_restart is only valid for the strip topologies";
+    }
     for (u32 i = 0; i < color_target_count; ++i) {
         const ColorTargetDesc& t = color_targets[i];
         if (!AtMost(t.blend.src_color, BlendFactor::OneMinusDstAlpha) ||

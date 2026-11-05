@@ -1957,6 +1957,18 @@ PrimitiveTopology topology;
 
 How vertices form primitives.
 
+### `primitive_restart` {#rhi-graphicspipelinedesc-primitive-restart}
+
+`variable rhi::GraphicsPipelineDesc::primitive_restart` — defined in `engine/rhi/desc.h`
+
+```cpp
+bool primitive_restart;
+```
+
+Whether the all-ones index ends the current strip and starts a new one.
+
+The all-ones index is 0xFFFF or 0xFFFFFFFF by index type, so one indexed draw can hold several strips. Only for the strip topologies (`TriangleStrip`, `LineStrip`); without it that index is an ordinary vertex index.
+
 ### `cull_mode` {#rhi-graphicspipelinedesc-cull-mode}
 
 `variable rhi::GraphicsPipelineDesc::cull_mode` — defined in `engine/rhi/desc.h`

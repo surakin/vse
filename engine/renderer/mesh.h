@@ -36,6 +36,30 @@ static_assert(sizeof(StandardVertex) == 48, "StandardVertex is 48 bytes");
 /// Thread-safety: thread-safe. A pure function.
 VertexLayoutData StandardVertexLayout();
 
+/// A [[renderer::StandardVertex]] with a per-vertex color: the same fields plus four bytes of RGBA, 52 bytes, in the same
+/// interleaved stream.
+///
+/// The color is stored as authored sRGB bytes (not linear): the geometry shader converts it to linear light, so a color
+/// picked in an image editor reads as expected. Alpha is linear coverage. A material that does not declare the vertex-color
+/// permutation ignores the attribute; a shader that reads it needs a mesh that has it (the material system reports a
+/// mismatch when it builds the pipeline).
+///
+/// Thread-safety: thread-compatible plain data.
+struct ColorVertex {
+    /// The standard attributes.
+    StandardVertex base;
+    /// Red, green, blue, alpha, 0 to 255.
+    u8 color[4];
+};
+static_assert(sizeof(ColorVertex) == 52, "ColorVertex is 52 bytes");
+
+/// The layout of [[renderer::ColorVertex]]: the four standard attributes of [[renderer::StandardVertexLayout]] plus the
+/// color at location 4 (`UNorm8x4`, offset 48), all in vertex binding 0.
+/// Returns: the layout.
+/// Fails: never.
+/// Thread-safety: thread-safe. A pure function.
+VertexLayoutData ColorVertexLayout();
+
 /// Geometry on the CPU: interleaved vertex bytes, indices and bounds. Owns its memory.
 ///
 /// A mesh is built once with [[renderer::MeshData::Set]] (or by one of the `Make...Mesh` functions) and is read-only
@@ -63,14 +87,18 @@ public:
     /// Param vertex_count: number of vertices, at least 1.
     /// Param index_type: 16-bit or 32-bit indices.
     /// Param indices: `index_count` indices of `index_type`.
-    /// Param index_count: number of indices; a positive multiple of 3 (triangle list).
+    /// Param index_count: number of indices; for a list topology a positive multiple of the primitive size (3 for
+    ///   `TriangleList`, 2 for `LineList`), for a strip at least 3 (`TriangleStrip`) or 2 (`LineStrip`).
+    /// Param topology: how the indices form primitives; defaults to a triangle list. In the strip topologies an index with
+    ///   every bit set (0xFFFF or 0xFFFFFFFF) is a restart marker, not a vertex: it ends the strip and starts the next one
+    ///   (see [[renderer::MeshData::HasPrimitiveRestart]]).
     /// Returns: null on success, otherwise a static message naming the problem (this mesh is then empty).
-    /// Fails: a zero or oversized stride, a stride or position offset that is not a multiple of 4, a position outside the vertex, no vertices or indices, an index count that is
-    ///   not a multiple of 3, 16-bit indices with more than 65536 vertices, an index at or past `vertex_count`, or a
-    ///   non-finite position.
+    /// Fails: a zero or oversized stride, a stride or position offset that is not a multiple of 4, a position outside the vertex, no vertices or indices, an index count that does not fit the
+    ///   topology, 16-bit indices with more than 65536 vertices (65535 for a strip, whose last index value is the restart
+    ///   marker), an index at or past `vertex_count`, or a non-finite position.
     /// Ownership: `vertices` and `indices` are borrowed for the call and copied.
     const char* Set(const VertexLayoutData& layout, u32 position_offset, const void* vertices, u32 vertex_count, rhi::IndexType index_type,
-                    const void* indices, u32 index_count);
+                    const void* indices, u32 index_count, rhi::PrimitiveTopology topology = rhi::PrimitiveTopology::TriangleList);
 
     /// Returns whether the mesh holds geometry.
     /// Fails: never.
@@ -97,6 +125,17 @@ public:
     u64 IndexBytes() const { return static_cast<u64>(index_count_) * (index_type_ == rhi::IndexType::UInt16 ? 2 : 4); }
     /// Returns the object-space bounds.
     const Bounds& GetBounds() const { return bounds_; }
+    /// Returns how the indices form primitives.
+    /// Fails: never.
+    rhi::PrimitiveTopology Topology() const { return topology_; }
+    /// Returns whether a strip mesh contains restart markers; a pipeline that draws it must enable
+    /// `GraphicsPipelineDesc::primitive_restart`. Always false for a non-strip topology.
+    /// Fails: never.
+    bool HasPrimitiveRestart() const { return has_restart_; }
+
+    /// Returns the byte offset of the three-float position inside a vertex, as given to `Set`.
+    /// Fails: never.
+    u32 PositionOffset() const { return position_offset_; }
     /// Returns the index of triangle corner `i` (0 to `IndexCount() - 1`), whatever the index width.
     /// Aborts: `i` is out of range.
     u32 IndexAt(u32 i) const;
@@ -115,6 +154,8 @@ private:
     unsigned char* indices_ = nullptr;
     u32 index_count_ = 0;
     rhi::IndexType index_type_ = rhi::IndexType::UInt16;
+    rhi::PrimitiveTopology topology_ = rhi::PrimitiveTopology::TriangleList;
+    bool has_restart_ = false;
     Bounds bounds_;
 };
 
@@ -156,6 +197,75 @@ const char* MakeSphereMesh(f32 radius, u32 segments, u32 rings, MeshData* out);
 /// Fails: an argument out of range.
 /// Thread-safety: thread-safe.
 const char* MakePlaneMesh(f32 width, f32 depth, u32 x_segments, u32 z_segments, MeshData* out);
+
+/// Builds the same grid as [[renderer::MakePlaneMesh]] with the same vertices, but as triangle strips: one strip per row of
+/// cells, ended by a restart index, so the index count is about two thirds of the list version's. The triangles are the
+/// same set with the same winding (counter-clockwise seen from above), so the mesh draws identically; its topology is
+/// `TriangleStrip` and it has restart markers, so it needs a pipeline with `primitive_restart`.
+/// Param width: size along X, greater than zero.
+/// Param depth: size along Z, greater than zero.
+/// Param x_segments: cells along X, at least 1.
+/// Param z_segments: cells along Z, at least 1.
+/// Param out: receives the mesh; must not be null.
+/// Returns: null on success, otherwise a static message.
+/// Ownership: `out` is borrowed for the call; the message is static.
+/// Fails: an argument out of range, or more than 65535 vertices (16-bit strip indices reserve the last value).
+/// Thread-safety: thread-safe.
+const char* MakePlaneStripMesh(f32 width, f32 depth, u32 x_segments, u32 z_segments, MeshData* out);
+
+/// Copies a mesh built with [[renderer::StandardVertexLayout]] into one with [[renderer::ColorVertexLayout]], giving each
+/// vertex its own color.
+/// Param source: a valid mesh whose layout is the standard one.
+/// Param colors: `color_count` RGBA colors, four bytes each (sRGB bytes, see [[renderer::ColorVertex]]).
+/// Param color_count: must equal the source's vertex count.
+/// Param out: receives the colored mesh, which keeps the source's indices, topology and bounds; must not be null and not
+///   be `source`.
+/// Returns: null on success, otherwise a static message.
+/// Fails: the source is empty or not in the standard layout, or `color_count` differs from its vertex count.
+/// Ownership: `colors` is borrowed for the call and copied; `out` is borrowed for the call.
+/// Thread-safety: thread-safe.
+const char* MakeColoredMesh(const MeshData& source, const u8* colors, u32 color_count, MeshData* out);
+
+/// Like [[renderer::MakeColoredMesh]] with one color for every vertex.
+/// Param source: a valid mesh whose layout is the standard one.
+/// Param rgba: the color, four bytes.
+/// Param out: receives the colored mesh.
+/// Returns: null on success, otherwise a static message.
+/// Fails: as for [[renderer::MakeColoredMesh]].
+/// Ownership: `rgba` is borrowed for the call.
+/// Thread-safety: thread-safe.
+const char* MakeUniformColoredMesh(const MeshData& source, const u8 rgba[4], MeshData* out);
+
+/// How [[renderer::ListToStrip]] joins strips that cannot be continued.
+enum class StripJoin : u8 {
+    Restart = 0, ///< Put a restart index between strips; the result needs a pipeline with `primitive_restart`.
+    Degenerate,  ///< Join with repeated vertices (degenerate triangles); works on a plain strip pipeline.
+};
+
+/// Converts a triangle-strip mesh to a triangle list: the same vertices, one triangle per strip position, restart markers
+/// honored, degenerate triangles (two equal indices) dropped, winding alternation undone so every triangle keeps the
+/// orientation it is drawn with.
+/// Param strip: a valid mesh with topology `TriangleStrip`.
+/// Param out: receives the list mesh; must not be null and not be `strip`.
+/// Returns: null on success, otherwise a static message.
+/// Fails: the mesh is empty or not a triangle strip, or the strip holds no triangle.
+/// Ownership: `out` is borrowed for the call.
+/// Thread-safety: thread-safe.
+const char* StripToList(const MeshData& strip, MeshData* out);
+
+/// Converts a triangle-list mesh to triangle strips by greedy edge walking: each strip is extended through the edge shared
+/// with an unused neighbor of the right orientation until none is left, then the next strip starts, joined as `join` says.
+/// The set of triangles, and every triangle's winding, is preserved; the number of indices is usually well below the list's
+/// (three per triangle) and never above six per triangle (a lone triangle joined by degenerate vertices).
+/// Param list: a valid mesh with topology `TriangleList`.
+/// Param join: how to join the strips.
+/// Param out: receives the strip mesh (topology `TriangleStrip`); must not be null and not be `list`.
+/// Returns: null on success, otherwise a static message.
+/// Fails: the mesh is empty or not a triangle list. A list with exactly 65536 vertices gets 32-bit strip indices, because
+///   0xFFFF is the restart marker.
+/// Ownership: `out` is borrowed for the call.
+/// Thread-safety: thread-safe.
+const char* ListToStrip(const MeshData& list, StripJoin join, MeshData* out);
 
 /// A mesh on the GPU: a vertex buffer and an index buffer with the draw information.
 ///
@@ -207,6 +317,12 @@ public:
     rhi::IndexType IndexFormat() const { return index_type_; }
     /// Returns the vertex layout the buffer was filled with.
     const VertexLayoutData& Layout() const { return layout_; }
+    /// Returns how the indices form primitives; the pipeline that draws this mesh must use the same topology.
+    /// Fails: never.
+    rhi::PrimitiveTopology Topology() const { return topology_; }
+    /// Returns whether the indices contain restart markers (see [[renderer::MeshData::HasPrimitiveRestart]]).
+    /// Fails: never.
+    bool HasPrimitiveRestart() const { return has_restart_; }
     /// Returns the object-space bounds.
     const Bounds& GetBounds() const { return bounds_; }
 
@@ -243,6 +359,8 @@ private:
     u32 vertex_count_ = 0;
     u32 index_count_ = 0;
     rhi::IndexType index_type_ = rhi::IndexType::UInt16;
+    rhi::PrimitiveTopology topology_ = rhi::PrimitiveTopology::TriangleList;
+    bool has_restart_ = false;
     VertexLayoutData layout_;
     Bounds bounds_;
     bool prepared_ = false; // RecordPrepare was called, in a list that may not be submitted yet

@@ -489,6 +489,16 @@ TEST_CASE("GraphicsPipelineDesc validation", "[rhi][desc]") {
         d.depth_format = static_cast<Format>(200);
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: depth_format"));
     }
+    SECTION("primitive restart needs a strip topology") {
+        d.primitive_restart = true;
+        CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: primitive_restart"));
+        d.topology = PrimitiveTopology::LineList;
+        CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: primitive_restart"));
+        d.topology = PrimitiveTopology::TriangleStrip;
+        CHECK(d.Validate() == nullptr);
+        d.topology = PrimitiveTopology::LineStrip;
+        CHECK(d.Validate() == nullptr);
+    }
     SECTION("garbage enum values are rejected") {
         d.depth_compare = static_cast<CompareOp>(99);
         CHECK(Rejects(d.Validate(), "GraphicsPipelineDesc: unknown fixed-function"));
