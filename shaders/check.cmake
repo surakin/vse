@@ -1,5 +1,5 @@
 # Recompiles every shader and compares the result with the committed .spv.inc file. Run through ctest as
-# `shaders_check`; arguments: SLANGC, SPIRV_VAL (optional), SPV_EMBED, SHADER_DIR, WORK_DIR, SHADERS (a ;-list).
+# `shaders_check`; arguments: SLANGC, SPIRV_VAL (optional), SHADER_COOK, SHADER_DIR, WORK_DIR, SHADERS (a ;-list).
 # A shader whose recorded compiler version differs from the installed one is reported as a note and not compared; the
 # test prints "SKIP:" (its SKIP_REGULAR_EXPRESSION) only if no shader could be compared at all.
 include(${SHADER_DIR}/names.cmake)
@@ -10,6 +10,7 @@ file(MAKE_DIRECTORY ${WORK_DIR})
 set(checked 0)
 foreach(shader ${SHADERS})
   set(committed ${SHADER_DIR}/${shader}.spv.inc)
+  set(committed_refl ${SHADER_DIR}/${shader}.refl.inc)
   file(STRINGS ${committed} recorded REGEX "^// compiler: ")
   if(NOT recorded)
     message(FATAL_ERROR "${shader}.spv.inc has no '// compiler: <name> <version>' line: regenerate it with the `shaders` target")
@@ -21,7 +22,7 @@ foreach(shader ${SHADERS})
   shader_stage(${shader} stage)
   slang_compile_args(${stage} slang_args)
   execute_process(COMMAND ${SLANGC} ${SHADER_DIR}/${shader}.slang ${slang_args} -o ${WORK_DIR}/${shader}.spv
-                  RESULT_VARIABLE rc ERROR_VARIABLE err)
+                          -reflection-json ${WORK_DIR}/${shader}.json RESULT_VARIABLE rc ERROR_VARIABLE err)
   if(NOT rc EQUAL 0)
     message(FATAL_ERROR "slangc failed on ${shader}: ${err}")
   endif()
@@ -31,15 +32,24 @@ foreach(shader ${SHADERS})
       message(FATAL_ERROR "spirv-val rejected ${shader}: ${err}")
     endif()
   endif()
-  shader_symbol(${shader} symbol)
-  execute_process(COMMAND ${SPV_EMBED} --name ${symbol} --source ${shader}.slang --compiler "slangc ${slangc_version}"
-                          --out ${WORK_DIR}/${shader}.spv.inc ${WORK_DIR}/${shader}.spv RESULT_VARIABLE rc)
+  shader_base_symbol(${shader} symbol)
+  execute_process(COMMAND ${SHADER_COOK} --name ${symbol} --source ${shader}.slang --compiler "slangc ${slangc_version}"
+                          --spv ${WORK_DIR}/${shader}.spv --reflection ${WORK_DIR}/${shader}.json
+                          --spv-out ${WORK_DIR}/${shader}.spv.inc --refl-out ${WORK_DIR}/${shader}.refl.inc
+                  RESULT_VARIABLE rc ERROR_VARIABLE err)
   if(NOT rc EQUAL 0)
-    message(FATAL_ERROR "spv_embed failed on ${shader}")
+    message(FATAL_ERROR "shader_cook failed on ${shader}: ${err}")
   endif()
   execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${committed} ${WORK_DIR}/${shader}.spv.inc RESULT_VARIABLE same)
   if(NOT same EQUAL 0)
     message(FATAL_ERROR "${shader}.spv.inc is out of date: run `cmake --build build --target shaders`")
+  endif()
+  if(NOT EXISTS ${committed_refl})
+    message(FATAL_ERROR "${shader}.refl.inc is missing: run `cmake --build build --target shaders`")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${committed_refl} ${WORK_DIR}/${shader}.refl.inc RESULT_VARIABLE same)
+  if(NOT same EQUAL 0)
+    message(FATAL_ERROR "${shader}.refl.inc is out of date: run `cmake --build build --target shaders`")
   endif()
   math(EXPR checked "${checked} + 1")
 endforeach()

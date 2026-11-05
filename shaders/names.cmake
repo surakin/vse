@@ -1,8 +1,9 @@
-# shader_symbol(<file name like triangle.vert> <out var>) -> kTriangleVertSpv, the array name spv_embed is given.
-function(shader_symbol shader out)
+# shader_base_symbol(<file name like triangle.vert> <out var>) -> kTriangleVert, the name shader_cook is given; it
+# appends Spv, SpvWordCount, Refl and ReflByteCount for the arrays in the two generated files.
+function(shader_base_symbol shader out)
   string(REGEX REPLACE "[._]" ";" parts "${shader}")
   set(symbol "k")
-  foreach(part ${parts} spv)
+  foreach(part ${parts})
     string(SUBSTRING "${part}" 0 1 first)
     string(SUBSTRING "${part}" 1 -1 rest)
     string(TOUPPER "${first}" first)

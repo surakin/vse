@@ -195,8 +195,9 @@ table in `PLAN.md`.
   solved and not engine-differentiating - today only nlohmann/json
   (vendored under `third_party/nlohmann_json/`) in `tools/shader_cook`,
   to read `slangc` reflection (`PLAN.md` assumption #19). Never linked
-  into the engine, a game, the renderer or a test target; anything else
-  needs its own entry in `PLAN.md`.
+  into the engine, a game, the renderer or an engine test target (the tool's own tests link it); anything else
+  needs its own entry in `PLAN.md`. That tool and its tests may use `std::string`/`std::vector` (the library
+  requires them); the engine's runtime libraries still do not.
 - **Engine core before editor.** The editor (Phase 18) is built last,
   using the engine's own renderer/ECS and Phase 6 UI system — not a
   separate GUI toolkit.

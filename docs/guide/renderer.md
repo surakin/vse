@@ -16,12 +16,17 @@ Full reference: [The renderer](../reference/renderer.md).
 
 - [[renderer::RenderLogV]] — logging on the render channel
 - [[renderer::RendererName]] — identification of the library
+- [[renderer::ShaderReflection]] — what a compiled shader says about itself (stage, bindings, block layouts, vertex inputs)
+- [[renderer::BuildBindGroupLayout]] — a bind group layout from reflection
+- [[renderer::BuildVertexLayout]] — a vertex layout from reflection
 
 ## Outline
 
 ### Overview
 
 _TODO_
+
+Shader reflection (Phase 4 Day 71) is described in [Shaders](rhi-shaders.md#reflection-shaders-describe-themselves).
 
 ### Rules & contracts
 

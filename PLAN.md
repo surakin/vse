@@ -407,7 +407,7 @@ interpretations keep it buildable — flag any that don't match intent:
     - **Phase 3 (historical, retired):** shaders were GLSL 4.50 sources
       (`*.vert`, `*.frag`, `*.comp`) under `shaders/`, compiled by
       `glslc` (distro `shaderc`) and checked with `spirv-val`,
-      then embedded by our own `spv_embed` tool into committed
+      then embedded by our own `spv_embed` tool (folded into `shader_cook` on Phase 4 Day 71) into committed
       `*.spv.inc` word arrays. The tools are optional: a checkout without
       them builds from the committed arrays, and a ctest recompiles and
       compares only when they are present. Hand-written SPIR-V assembly
@@ -448,13 +448,17 @@ interpretations keep it buildable — flag any that don't match intent:
     release, no submodule, no `FetchContent`). Scope, which is what makes
     this an exception and not a loophole: the library is linked into
     **offline tools only** (today `shader_cook`), never into the engine, a
-    game, the renderer or any test target, and the tool's output (the
+    game, the renderer or any engine test target (the tool's own tests link it), and the tool's output (the
     committed `*.spv.inc` / `*.refl.inc`) is what the engine consumes, so
     a checkout still builds without `slangc` and the engine binary
     contains no JSON code. The tool is built exception-free like the rest
     (`-fno-exceptions`; the library then aborts only on programmer errors,
     which the tool avoids by checking types and using `value()`/`contains()`
-    accessors and `parse(..., allow_exceptions=false)`). Any further
+    accessors and `parse(..., allow_exceptions=false)`). Because that library
+    is built on `std::string` and the standard containers, the offline tool
+    (and only the tool and its tests) also uses `std::string`, `std::vector`
+    and `<algorithm>`; the rule against the STL applies to the engine's
+    runtime libraries, which stay on the foundation containers. Any further
     third-party library in a tool or in the engine still needs its own
     justified entry here.
 

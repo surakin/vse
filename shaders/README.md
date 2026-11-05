@@ -3,7 +3,7 @@
 Shaders are compiled offline to SPIR-V and embedded as committed `*.spv.inc` files (PLAN.md assumption #18). Building
 the engine never needs a shader compiler: a checkout without one uses the committed outputs as they are.
 
-Sources are Slang: `shaders/<name>.vert|frag|comp.slang`, output `shaders/<name>.spv.inc`, compiled by `slangc`. The
+Sources are Slang: `shaders/<name>.vert|frag|comp.slang`, outputs `shaders/<name>.spv.inc` (the SPIR-V words) and `shaders/<name>.refl.inc` (the reflection blob and block constants), compiled by `slangc` and turned into includes by `tools/shader_cook`. The
 symbol names (`kTriangleVertSpv`, ...) come from the file name. The GLSL path (`glslc`, Phase 3) was retired on
 Phase 4 Day 70 after the Slang outputs reproduced every golden image unchanged.
 
@@ -18,6 +18,8 @@ fails the suite.
 |---|---|---|---|
 | `slangc` | v2026.18.2 | `pacman -S shader-slang` | release archive from github.com/shader-slang/slang (Windows `slangc.exe`, macOS via the release archive or `brew install shader-slang`) |
 | `spirv-val` | any recent | `pacman -S spirv-tools` | Vulkan SDK |
+
+Per shader, the `shaders` target runs `slangc ... -o x.spv -reflection-json x.json`, `spirv-val`, then `shader_cook`, which reads the JSON with nlohmann/json (vendored, `PLAN.md` assumption #19, this tool only), cross-checks the reflection against the SPIR-V (descriptor set/binding pairs, compute local size, vertex input locations) and writes both includes. `-reflection-json` omits `space` for set 0, lists unused parameters (only those the entry point uses are reflected), and reports a vertex input's location as `index`.
 
 Regenerate: `cmake --build build --target shaders`. Changing a shader requires `slangc`: without it neither this target nor `shaders_check` exists and the build silently keeps using the committed outputs. Check: `ctest --test-dir build -R shaders_check`.
 

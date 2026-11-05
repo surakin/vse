@@ -2,6 +2,8 @@
 # exception-based. The `renderer` library under test is still built exception/RTTI-free.
 set(RENDERER_TEST_SOURCES
   smoke_test.cpp
+  shader_reflection_test.cpp
+  lsan_options.cpp
 )
 
 # Header self-containment: one generated translation unit per public renderer header that includes only that header.
@@ -26,6 +28,7 @@ function(engine_add_renderer_tests target suffix label spec)
   # library itself does not depend on it, and tests/renderer is scanned by rhi_boundary_check, so a test cannot name Vulkan.
   target_link_libraries(${target} PRIVATE renderer${flavor} rhi_vulkan${flavor} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders)
+  target_compile_definitions(${target} PRIVATE ENGINE_RHI_LSAN_SUPP="${CMAKE_SOURCE_DIR}/tests/rhi/lsan.supp")
   catch_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "${spec}"
     PROPERTIES LABELS "${label}" ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${label}")
 endfunction()

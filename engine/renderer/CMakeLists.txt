@@ -3,6 +3,7 @@
 # linked against the matching rhi/jobs/foundation variant.
 set(RENDERER_SOURCES
   renderer_info.cpp
+  shader_reflection.cpp
 )
 
 # Headers are included as "renderer/<name>.h", rooted at engine/.

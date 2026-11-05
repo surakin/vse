@@ -5,8 +5,11 @@
 #include <cstring>
 
 #include "cube.frag.spv.inc"
+#include "cube.vert.refl.inc"
 #include "cube.vert.spv.inc"
+#include "lit.frag.refl.inc"
 #include "lit.frag.spv.inc"
+#include "lit.vert.refl.inc"
 #include "lit.vert.spv.inc"
 #include "textured.frag.spv.inc"
 #include "textured.vert.spv.inc"
@@ -219,9 +222,17 @@ struct LitUniforms {
     Vec4 light_color;
     Vec4 ambient;
 };
-static_assert(sizeof(LitUniforms) == 176 && offsetof(LitUniforms, normal_matrix) == 64 && offsetof(LitUniforms, to_light) == 128 &&
-                  offsetof(LitUniforms, light_color) == 144 && offsetof(LitUniforms, ambient) == 160,
-              "LitUniforms must match the std140 block in shaders/lit.vert and lit.frag");
+// The expected values are generated from the shaders' reflection (shaders/*.refl.inc), not typed here, so changing a
+// block in a .slang file without changing this struct fails the build.
+static_assert(sizeof(LitUniforms) == shaders::kLitVertParamsSize && offsetof(LitUniforms, mvp) == shaders::kLitVertParamsMvpOffset &&
+                  offsetof(LitUniforms, normal_matrix) == shaders::kLitVertParamsNormalMatrixOffset &&
+                  offsetof(LitUniforms, to_light) == shaders::kLitVertParamsToLightOffset &&
+                  offsetof(LitUniforms, light_color) == shaders::kLitVertParamsLightColorOffset &&
+                  offsetof(LitUniforms, ambient) == shaders::kLitVertParamsAmbientOffset,
+              "LitUniforms must match the std140 block in shaders/lit.vert.slang");
+static_assert(shaders::kLitFragParamsSize == shaders::kLitVertParamsSize, "lit.vert and lit.frag share one block");
+static_assert(sizeof(Mat4) == shaders::kCubeVertParamsSize && shaders::kCubeVertParamsMvpOffset == 0,
+              "the cube shaders' block is one Mat4");
 
 } // namespace
 

@@ -8,7 +8,7 @@ License: `LICENSE.MIT` (MIT), unmodified.
 
 Per `PLAN.md` assumption #19 this is used by offline tools only (`tools/shader_cook`,
 to read `slangc -reflection-json`), never linked into the engine, a game, the renderer
-or a test target. Source vendor, not a submodule or `FetchContent`, so builds stay
+or an engine test target (the tool's own tests, `tests/shader_cook`, link it). Source vendor, not a submodule or `FetchContent`, so builds stay
 offline and reproducible (same pattern as Catch2, assumption #16).
 
 To update the pin: replace the two files from the new release tag and update the
