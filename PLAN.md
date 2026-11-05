@@ -735,7 +735,7 @@ that changed from the plan and why.)_
   layer left the macOS phase and joined Android in Phase 14 ("Android and
   iOS ports"). Phases 14-20 keep their numbers. Hardware: a Windows PC and
   a 2019 Intel MacBook Pro (Intel/AMD GPU; Apple Silicon behavior stays
-  unverified, see `plans/phase-06-macos-metal.md`). Open: how Phases 7-13
+  unverified, see `plans/phase-09-macos-metal.md`). Open: how Phases 7-13
   keep the Windows/macOS builds working (assumption #11). Plan-only
   change; Phases 5 and 6 still need day files before they can start.
 
