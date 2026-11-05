@@ -13,6 +13,7 @@
 #include "gbuffer_rig.h"
 #include "gpu_fixture.h"
 #include "image_compare.h"
+#include "rhi/vulkan/vulkan_device.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -337,4 +338,124 @@ TEST_CASE("The demo scene is the same on every compiler: fixed positions for giv
         CHECK(other.Scene().ObjectAt(49).transform.col[3].x != shape.transform.col[3].x);
     }
     device.Reset();
+}
+
+namespace {
+
+// Runs the demo frame on a real device that loses itself at the start of frame `lose_at` (0: never), up to `frames` frames. Returns
+// how many frames ended Ok and whether any ended DeviceLost; false if the scene could not be created (the loss came first).
+struct LossRun {
+    bool created = false;
+    u32 ok = 0;
+    u32 lost = 0;
+    u32 other = 0;
+    bool lost_stays_lost = true;
+    TransientPoolStats pool;
+};
+
+LossRun RunWithLoss(u32 lose_at, u32 frames) {
+    LossRun run;
+    rhi::DeviceCreateInfo info;
+    info.validation = rhi::ValidationSetting::On;
+    info.sync_validation = true;
+    info.pipeline_cache = false;
+    info.faults.lose_device_at_frame = lose_at;
+    rhi::DevicePtr device = rhi::CreateDevice(info);
+    if (device == nullptr) return run;
+    rhi::TextureDesc td;
+    td.width = kShotW;
+    td.height = kShotH;
+    td.format = rhi::Format::RGBA8_SRGB;
+    td.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
+    const rhi::TextureHandle target = device->CreateTexture(td);
+    {
+        renderer_demo::DemoFrame frame;
+        renderer_demo::DemoScene scene;
+        renderer_demo::FrameSetup fs;
+        fs.device = device.Get();
+        fs.max_objects = 200;
+        fs.max_lights = 64;
+        renderer_demo::SceneOptions so = DefaultOptions();
+        so.objects = 100;
+        so.lights = 20;
+        if (target.IsValid() && frame.Create(fs) && scene.Create(device.Get(), frame.Materials(), frame.Templates(), so)) {
+            run.created = true;
+            scene.Animate(0.5f);
+            Camera camera = scene.OverviewCamera(static_cast<f32>(kShotW) / static_cast<f32>(kShotH));
+            FitCameraDepthRange(scene.Scene(), &camera, 0.1f);
+            FrameTarget ft;
+            ft.texture = target;
+            ft.width = kShotW;
+            ft.height = kShotH;
+            ft.format = rhi::Format::RGBA8_SRGB;
+            ft.initial = rhi::ResourceState::Undefined;
+            ft.final_state = rhi::ResourceState::CopySrc;
+            bool seen_lost = false;
+            for (u32 i = 0; i < frames; ++i) {
+                const FrameStatus status = frame.Render(&scene.Scene(), &camera, &ft);
+                if (status == FrameStatus::Ok) ++run.ok;
+                else if (status == FrameStatus::DeviceLost) ++run.lost;
+                else ++run.other;
+                if (status == FrameStatus::DeviceLost) seen_lost = true;
+                else if (seen_lost) run.lost_stays_lost = false;
+            }
+            run.pool = frame.PoolStats();
+        }
+        device->WaitIdle();
+    }
+    if (target.IsValid()) device->DestroyTexture(target);
+    return run;
+}
+
+} // namespace
+
+TEST_CASE("Losing the real device in the deferred pipeline ends frames as DeviceLost and tears down clean", "[rhi][vulkan][gpu][demo][fault]") {
+    gpu_test::GpuFixture fx;
+    fx.RequireValidation();
+    rhi::DevicePtr probe = gbuffer_rig::MakeDevice();
+    if (probe == nullptr) SKIP("no suitable Vulkan device");
+    probe.Reset();
+    fx.ExpectErrors(0);
+    rhi::vulkan::VulkanDevice::ResetLeakCounts();
+    u32 lost_runs = 0;
+    u32 refused_runs = 0;
+    for (u32 lose_at = 1; lose_at <= 10; ++lose_at) {
+        const LossRun run = RunWithLoss(lose_at, 6);
+        INFO("device lost at frame " << lose_at);
+        if (!run.created) {
+            ++refused_runs; // lost while the scene's meshes and textures were uploading: creation failed cleanly
+            continue;
+        }
+        CHECK(run.other == 0);
+        CHECK(run.lost_stays_lost);
+        if (run.lost > 0) ++lost_runs;
+    }
+    // How many frames the scene's uploads take decides which runs are refused and which are lost mid-run; some run must have been hit.
+    CHECK(lost_runs + refused_runs > 0);
+    const rhi::vulkan::VulkanDevice::LeakCounts leaks = rhi::vulkan::VulkanDevice::GetLeakCounts();
+    CHECK(leaks.user_objects == 0);
+    CHECK(leaks.internal_objects == 0);
+}
+
+TEST_CASE("A long run of the deferred frame neither grows the transient pool nor leaks", "[rhi][vulkan][gpu][demo][fault]") {
+    gpu_test::GpuFixture fx;
+    fx.RequireValidation();
+    rhi::DevicePtr probe = gbuffer_rig::MakeDevice();
+    if (probe == nullptr) SKIP("no suitable Vulkan device");
+    probe.Reset();
+    fx.ExpectErrors(0);
+    rhi::vulkan::VulkanDevice::ResetLeakCounts();
+    const LossRun warm = RunWithLoss(0, 10);
+    const LossRun long_run = RunWithLoss(0, 300);
+    REQUIRE(warm.created);
+    REQUIRE(long_run.created);
+    CHECK(long_run.ok == 300);
+    CHECK(long_run.lost == 0);
+    // After the first frames the pool makes nothing new: the same five targets are reused for the rest.
+    CHECK(long_run.pool.textures_created == warm.pool.textures_created);
+    CHECK(long_run.pool.textures_live == warm.pool.textures_live);
+    CHECK(long_run.pool.textures_destroyed == 0);
+    const rhi::vulkan::VulkanDevice::LeakCounts leaks = rhi::vulkan::VulkanDevice::GetLeakCounts();
+    CHECK(leaks.user_objects == 0);
+    CHECK(leaks.internal_objects == 0);
 }

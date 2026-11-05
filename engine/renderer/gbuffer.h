@@ -99,8 +99,8 @@ f32 LinearizeDepth(f32 depth, f32 near_plane, f32 far_plane);
 /// Param scene: the scene.
 /// Param camera: the camera to change; its position and rotation must be set.
 /// Param min_near: the smallest near distance allowed, positive.
-/// Fails: never.
 /// Ownership: `camera` is borrowed for the call.
+/// Aborts: `camera` is null or `min_near` is not positive.
 void FitCameraDepthRange(const RenderScene& scene, Camera* camera, f32 min_near);
 
 /// Options of a G-buffer material, which select the shader modules.
@@ -131,6 +131,7 @@ struct GBufferTemplates {
 /// Returns: both template ids; invalid ids when the shaders did not match the material conventions (logged).
 /// Fails: reported through invalid ids.
 /// Ownership: the templates belong to `materials`.
+/// Aborts: `materials` is null.
 GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials);
 
 /// Creates a G-buffer material with the options' shader modules and sensible parameters.
@@ -146,6 +147,7 @@ GBufferTemplates CreateGBufferTemplates(MaterialSystem* materials);
 /// Returns: the material, or an invalid id when the template is invalid or the permutation does not exist (logged).
 /// Fails: reported through the invalid id.
 /// Ownership: the material belongs to `materials`.
+/// Aborts: `materials` is null.
 MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplates& templates, const GBufferOptions& options, const char* name);
 
 /// The graph resources of the G-buffer targets.
@@ -193,6 +195,7 @@ public:
     /// Param materials: the material system the scene's materials live in.
     /// Param frame: the frame resources the per-frame and per-object data are written to.
     /// Ownership: all three are borrowed.
+    /// Aborts: `device`, `materials` or `frame` is null.
     GBufferPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame);
     /// Frees the draw list.
     ~GBufferPass();
@@ -285,6 +288,7 @@ public:
     ///
     /// Param device: the device.
     /// Ownership: borrowed.
+    /// Aborts: `device` is null.
     explicit GBufferDebugView(rhi::Device* device);
     /// Destroys the pipelines, shaders and sampler.
     ~GBufferDebugView();

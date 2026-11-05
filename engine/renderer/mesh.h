@@ -168,6 +168,7 @@ private:
 /// Returns: null on success, otherwise a static message.
 /// Ownership: `out` is borrowed for the call; the message is static.
 /// Fails: `edge` is not positive and finite.
+/// Aborts: `out` is null.
 /// Thread-safety: thread-safe.
 const char* MakeCubeMesh(f32 edge, MeshData* out);
 
@@ -182,6 +183,7 @@ const char* MakeCubeMesh(f32 edge, MeshData* out);
 /// Ownership: `out` is borrowed for the call; the message is static.
 /// Fails: an argument out of range, or more vertices than 16-bit indices can address (then 32-bit indices are used, so
 ///   this only fails for absurd sizes).
+/// Aborts: `out` is null.
 /// Thread-safety: thread-safe.
 const char* MakeSphereMesh(f32 radius, u32 segments, u32 rings, MeshData* out);
 
@@ -196,6 +198,7 @@ const char* MakeSphereMesh(f32 radius, u32 segments, u32 rings, MeshData* out);
 /// Returns: null on success, otherwise a static message.
 /// Ownership: `out` is borrowed for the call; the message is static.
 /// Fails: an argument out of range.
+/// Aborts: `out` is null.
 /// Thread-safety: thread-safe.
 const char* MakePlaneMesh(f32 width, f32 depth, u32 x_segments, u32 z_segments, MeshData* out);
 
@@ -211,6 +214,7 @@ const char* MakePlaneMesh(f32 width, f32 depth, u32 x_segments, u32 z_segments, 
 /// Returns: null on success, otherwise a static message.
 /// Ownership: `out` is borrowed for the call; the message is static.
 /// Fails: an argument out of range, or more than 65535 vertices (16-bit strip indices reserve the last value).
+/// Aborts: `out` is null.
 /// Thread-safety: thread-safe.
 const char* MakePlaneStripMesh(f32 width, f32 depth, u32 x_segments, u32 z_segments, MeshData* out);
 
@@ -224,6 +228,7 @@ const char* MakePlaneStripMesh(f32 width, f32 depth, u32 x_segments, u32 z_segme
 /// Returns: null on success, otherwise a static message.
 /// Fails: the source is empty or not in the standard layout, or `color_count` differs from its vertex count.
 /// Ownership: `colors` is borrowed for the call and copied; `out` is borrowed for the call.
+/// Aborts: `out` is null or is `source`.
 /// Thread-safety: thread-safe.
 const char* MakeColoredMesh(const MeshData& source, const u8* colors, u32 color_count, MeshData* out);
 
@@ -234,6 +239,7 @@ const char* MakeColoredMesh(const MeshData& source, const u8* colors, u32 color_
 /// Returns: null on success, otherwise a static message.
 /// Fails: as for [[renderer::MakeColoredMesh]].
 /// Ownership: `rgba` is borrowed for the call.
+/// Aborts: `out` is null or is `source`.
 /// Thread-safety: thread-safe.
 const char* MakeUniformColoredMesh(const MeshData& source, const u8 rgba[4], MeshData* out);
 
@@ -251,6 +257,7 @@ enum class StripJoin : u8 {
 /// Returns: null on success, otherwise a static message.
 /// Fails: the mesh is empty or not a triangle strip, or the strip holds no triangle.
 /// Ownership: `out` is borrowed for the call.
+/// Aborts: `out` is null or is `strip`.
 /// Thread-safety: thread-safe.
 const char* StripToList(const MeshData& strip, MeshData* out);
 
@@ -265,6 +272,7 @@ const char* StripToList(const MeshData& strip, MeshData* out);
 /// Fails: the mesh is empty or not a triangle list. A list with exactly 65536 vertices gets 32-bit strip indices, because
 ///   0xFFFF is the restart marker.
 /// Ownership: `out` is borrowed for the call.
+/// Aborts: `out` is null or is the source list.
 /// Thread-safety: thread-safe.
 const char* ListToStrip(const MeshData& list, StripJoin join, MeshData* out);
 

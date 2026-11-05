@@ -146,6 +146,7 @@ Vec3 LightVolumeVertex(u32 index);
 /// Returns: false when the rectangle is empty (the light cannot touch any pixel), true otherwise.
 /// Fails: reported through the return value.
 /// Ownership: `out` is borrowed for the call.
+/// Aborts: `out` is null, the target size is zero or `radius` is not positive.
 bool LightScreenRect(const FrameData& view, const Vec3& center, f32 radius, u32 width, u32 height, rhi::ScissorRect* out);
 
 /// Lights the G-buffer with the scene's ambient, directional and point lights.
@@ -161,6 +162,7 @@ public:
     /// Param materials: the material system whose frame layout (set 0) the pipeline uses.
     /// Param frame: the frame resources the lights are written to.
     /// Ownership: all three are borrowed.
+    /// Aborts: `device`, `materials` or `frame` is null.
     LightingPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame);
     /// Destroys the pipeline, shaders and layout.
     ~LightingPass();
@@ -249,6 +251,7 @@ public:
     ///
     /// Param device: the device; must outlive this object.
     /// Ownership: `device` is borrowed.
+    /// Aborts: `device` is null.
     explicit TonemapPass(rhi::Device* device);
     /// Destroys the pipeline, shaders and layout.
     ~TonemapPass();

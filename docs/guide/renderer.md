@@ -662,6 +662,59 @@ walks through the same steps on the null device. Depth correctness is tested in
 `tests/rhi/vulkan_renderer_demo_test.cpp`: the demo scene rendered with the objects added in three shuffled orders gives the
 same pixels as the natural order, and two planes crossing at a line show the nearer one on each side of it, in either draw order.
 
+### Failure behavior
+
+Every function in `engine/renderer` either aborts or reports. An `ENGINE_ASSERT` marks a **programming error**: a null or
+out-of-range argument, a stale id, a call made out of order (`FrameResources::WriteObjects` before `BeginFrame`). It is documented
+as `Aborts:` and never fires because of what the machine does. Everything that can go wrong at run time because of the **environment**
+(a lost device, memory the device refuses, a shader that does not match the conventions, a full list) is logged through the
+`LogRender` channel, reported through a return value, and leaves the object usable or cleanly destroyable. Each row is exercised by a test: `tests/renderer/renderer_fault_test.cpp` and `renderer_test.cpp` (null device, so a loss can land in the callback or in either pass),
+`gbuffer_test.cpp` and `lighting_test.cpp` (rejected objects, dropped lights), and `tests/rhi/vulkan_renderer_demo_test.cpp` (the real
+device, where the injected loss fires only at the start of a frame).
+
+| What goes wrong | What you get | Afterwards |
+|---|---|---|
+| The device is lost before, during or after the frame callback, or while a pass records | `RenderFrame` returns `DeviceLost`; `frames_lost` counts it | Every later frame returns `DeviceLost` at once; destroy the renderer and the device |
+| The device is lost while the scene is being created | `DemoScene::Create` / `GpuMesh::Create` return false, logging why | The partly built scene frees what it made |
+| `CreateCommandList` returns null (device lost, out of memory) | `RenderFrame` returns `DeviceLost` or `Failed`; a caller of `RenderGraph::Execute` must check for null first, as a null list aborts | Nothing is submitted |
+| A transient texture or buffer cannot be created | `RenderFrame` returns `Failed`; `LastError` names the resource | Pooled resources go back to the pool; the next frame is tried normally |
+| The frame callback returns false | `RenderFrame` returns `Failed`; `LastError` says the callback abandoned the frame | The swapchain image is presented; the next frame is tried normally |
+| A material's texture file is missing | The demo logs a warning and uses the procedural texture | The scene renders normally |
+| An object has no pipeline (a mesh layout the material cannot read, an unprepared mesh, an unknown material) | The object is left out; `GBufferPass::Prepare` returns false, `LastError` names the first one, `Stats().rejected` counts them | The frame is `Ok` and draws everything else |
+| A pass's pipeline could not be built | The pass logs an error and records nothing (`TonemapPass`/`LightingPass` `Valid()` is false at creation) | The frame is `Ok` but that pass draws nothing |
+| More point lights than the buffer holds | The farthest are dropped and counted (`LightSummary::dropped`), logged once | The nearest are kept |
+| The swapchain is minimized | `Skipped` | The next visible frame renders |
+
+The tests also leave nothing behind: after each loss, failure and teardown the device holds no buffers, textures, bind groups or
+pipelines, and `VulkanDevice::GetLeakCounts()` stays at zero.
+
+### Performance notes
+
+Recorded by `renderer_bench` on 2026-11-05: NVIDIA GeForce RTX 3060, AMD Ryzen 9 7950X3D, Linux, a **Release** build, validation
+off, a 1280x720 offscreen target, the demo scene with 300 point lights (except where the light count varies), the device idled
+after each frame outside the timer so the numbers are CPU time. Two runs agree within a few percent. They are a baseline, not
+a promise, and are never asserted in CI. Do not tune on a Debug build: it is five to seven times slower here.
+
+| Measurement | Result |
+|---|---|
+| Render graph, build + compile, a chain of 10 / 100 / 1000 passes | 0.6 / 5.4 / 54 microseconds (about 0.05 us per pass) |
+| Whole frame, 1000 objects | 0.11 ms |
+| Whole frame, 10000 objects | 0.78 ms (0.08 us per object) |
+| Whole frame, 50000 objects | 3.9 ms (0.08 us per object) |
+| The same frames with a job scheduler | no faster (0.15 / 0.8 / 3.9 ms): the cost is scene preparation on one thread, and the three passes depend on each other |
+| What the 10000-object frame draws | 9312 visible objects in 16 draw calls, 3 pipeline binds and 9 material binds |
+| Point lights: 100 / 1000 / 4000 / 16000 | +0.01 / +0.15 / +0.9 / +3.1 ms; about 0.1-0.2 us of CPU per light |
+| Transient pool, 100 frames | 5 textures created, 520 reuses (99% hit rate), none destroyed |
+
+The renderer instances objects that share a mesh and material, so 10000 objects cost 16 draws and the per-draw figure in
+the [RHI performance notes](rhi.md#performance-notes) (about 0.5 us per draw, unique data for each draw) does not apply
+to it; per object it is 0.08 us, which is culling, sorting, and writing the object's matrices. A scene in which no two objects
+share a mesh and material loses the instancing and approaches one `rhi_bench` draw per object. A `perf` profile of the 10000-object
+frame put the draw sort's comparator at 18%, `WriteObjects` at 8%, the per-object pipeline lookup (`ReadsVertexInput` and
+`GetPipeline`) at 10%, the frustum test at 5% and the normal matrix at 3%; nothing else is above 2%. Caching the pipeline
+per (mesh, material) pair rather than per object, and sorting by a precomputed key, are the first things to try when scenes grow
+past 100000 objects.
+
 ### Rules & contracts
 
 - A `GpuMesh` must be destroyed (or go out of scope) before the device that created it; a scene holds meshes by pointer and

@@ -55,6 +55,7 @@ bool DemoFrame::Create(const FrameSetup& setup) {
     RendererDesc rd;
     rd.device = setup.device;
     rd.swapchain = setup.swapchain;
+    rd.scheduler = setup.scheduler;
     rd.build = &DemoFrame::Build;
     rd.build_user = this;
     renderer_ = MakeUnique<Renderer>(rd);

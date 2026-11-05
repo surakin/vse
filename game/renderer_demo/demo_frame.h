@@ -12,6 +12,10 @@
 #include "rhi/rhi.h"
 #include "types.h"
 
+namespace engine_placeholder::jobs {
+class Scheduler;
+}
+
 namespace renderer_demo {
 
 using namespace engine_placeholder;
@@ -27,6 +31,8 @@ struct FrameSetup {
     int gbuffer_layer = -1;
     // The tonemap exposure.
     f32 exposure = 1.0f;
+    // The job scheduler the frame's passes record on, or null to record on the calling thread.
+    jobs::Scheduler* scheduler = nullptr;
 };
 
 class DemoFrame {
@@ -55,6 +61,8 @@ public:
 
     const char* LastError() const { return renderer_ ? renderer_->LastError() : "not created"; }
     renderer::RendererStats Stats() const { return renderer_ ? renderer_->Stats() : renderer::RendererStats{}; }
+    // The transient pool's counters.
+    renderer::TransientPoolStats PoolStats() const { return renderer_ ? renderer_->Pool().Stats() : renderer::TransientPoolStats{}; }
     // What the last frame drew.
     const renderer::GBufferStats& GBufferStatistics() const { return gbuffer_stats_; }
     const renderer::LightSummary& Lights() const { return light_summary_; }

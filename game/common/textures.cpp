@@ -120,12 +120,15 @@ TextureHandle CreateSampledTexture(Device* device, const Pixels& pixels, Format 
     }
     if (mips) {
         device->BeginFrame();
-        CommandList* list = device->CreateCommandList();
-        list->Begin();
-        list->GenerateMips(texture);
-        list->End();
-        CommandList* lists[] = {list};
-        const bool submitted = device->Submit(lists, 1) != 0;
+        CommandList* list = device->CreateCommandList(); // null when the device is lost
+        bool submitted = false;
+        if (list != nullptr) {
+            list->Begin();
+            list->GenerateMips(texture);
+            list->End();
+            CommandList* lists[] = {list};
+            submitted = device->Submit(lists, 1) != 0;
+        }
         device->EndFrame();
         device->WaitIdle();
         if (!submitted) {

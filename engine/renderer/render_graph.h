@@ -469,7 +469,8 @@ public:
     /// Fails: `Compile` fails, a transient resource could not be allocated, or `pool` is null while a transient is used;
     ///   `ExecuteError` then names the cause. The list is incomplete and must not be submitted; every transient taken
     ///   goes back to the pool in the state it was taken in, as if the call had not happened.
-    /// Aborts: `list` is null.
+    /// Aborts: `list` is null. `Device::CreateCommandList` returns null when the device is lost, so check it first; a null list
+    ///   is an environment failure for the caller to handle, not something this function reports.
     /// Ownership: `pool` and `list` are borrowed for the call; transient resources taken from the pool go back to it
     ///   before `Execute` returns.
     bool Execute(TransientPool* pool, rhi::CommandList* list);

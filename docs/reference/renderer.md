@@ -1432,7 +1432,7 @@ The planes come from the world-space bounding spheres projected on the camera's 
 | Parameter `scene` | the scene. |
 | Parameter `camera` | the camera to change; its position and rotation must be set. |
 | Parameter `min_near` | the smallest near distance allowed, positive. |
-| Fails | never. |
+| Aborts | `camera` is null or `min_near` is not positive. |
 | Ownership | `camera` is borrowed for the call. |
 
 ## `GBufferOptions` {#renderer-gbufferoptions}
@@ -1528,6 +1528,7 @@ Creates the G-buffer material templates.
 | Parameter `materials` | the system to create them in; must be valid. |
 | Returns | both template ids; invalid ids when the shaders did not match the material conventions (logged). |
 | Fails | reported through invalid ids. |
+| Aborts | `materials` is null. |
 | Ownership | the templates belong to `materials`. |
 
 ## `CreateGBufferMaterial(MaterialSystem*,const GBufferTemplates&,const GBufferOptions&,const char*)` {#renderer-creategbuffermaterial-materialsystem-star-const-gbuffertemplates-amp-const-gbufferoptions-amp-const-char-star}
@@ -1550,6 +1551,7 @@ The parameters start as base color white, roughness 0.5, metallic 0, emissive sc
 | Parameter `name` | a debug name; may be null. |
 | Returns | the material, or an invalid id when the template is invalid or the permutation does not exist (logged). |
 | Fails | reported through the invalid id. |
+| Aborts | `materials` is null. |
 | Ownership | the material belongs to `materials`. |
 
 ## `GBufferTargets` {#renderer-gbuffertargets}
@@ -1712,6 +1714,7 @@ Creates the pass.
 | Parameter `device` | the device. |
 | Parameter `materials` | the material system the scene's materials live in. |
 | Parameter `frame` | the frame resources the per-frame and per-object data are written to. |
+| Aborts | `device`, `materials` or `frame` is null. |
 | Ownership | all three are borrowed. |
 
 ### `~GBufferPass()` {#renderer-gbufferpass-tilde-gbufferpass}
@@ -1859,6 +1862,7 @@ Creates the view's shaders and sampler.
 | Field | Value |
 |---|---|
 | Parameter `device` | the device. |
+| Aborts | `device` is null. |
 | Ownership | borrowed. |
 
 ### `~GBufferDebugView()` {#renderer-gbufferdebugview-tilde-gbufferdebugview}
@@ -2209,6 +2213,7 @@ A sphere that reaches the camera's plane (any corner of its bounding box is not 
 | Parameter `out` | receives the rectangle (origin top-left, as the framebuffer); must not be null. |
 | Returns | false when the rectangle is empty (the light cannot touch any pixel), true otherwise. |
 | Fails | reported through the return value. |
+| Aborts | `out` is null, the target size is zero or `radius` is not positive. |
 | Ownership | `out` is borrowed for the call. |
 
 ## `LightingPass` {#renderer-lightingpass}
@@ -2241,6 +2246,7 @@ Creates the shaders, the bind group layout and the pipeline.
 | Parameter `device` | the device. |
 | Parameter `materials` | the material system whose frame layout (set 0) the pipeline uses. |
 | Parameter `frame` | the frame resources the lights are written to. |
+| Aborts | `device`, `materials` or `frame` is null. |
 | Ownership | all three are borrowed. |
 
 ### `~LightingPass()` {#renderer-lightingpass-tilde-lightingpass}
@@ -2383,6 +2389,7 @@ Creates the shaders and the bind group layout.
 | Field | Value |
 |---|---|
 | Parameter `device` | the device; must outlive this object. |
+| Aborts | `device` is null. |
 | Ownership | `device` is borrowed. |
 
 ### `~TonemapPass()` {#renderer-tonemappass-tilde-tonemappass}
@@ -3109,6 +3116,7 @@ Creates a template.
 | Parameter `desc` | the shaders and state. |
 | Returns | the template, or an invalid id after logging the reason. |
 | Fails | the reflection blobs do not parse or are for the wrong stage, the vertex shader uses a descriptor set other than 0 to 2, set 0 is not one uniform buffer at binding 0, set 2 is not one storage buffer at binding 0, more `texture_defaults` are listed than there are slots, or the template list is full. |
+| Aborts | the system is not valid (see [`renderer::MaterialSystem::Valid`](#renderer-materialsystem-valid-const)). |
 
 ### `DestroyTemplate(TemplateId)` {#renderer-materialsystem-destroytemplate-templateid}
 
@@ -4058,6 +4066,7 @@ Builds an axis-aligned cube centered on the origin: 24 vertices (4 per face) and
 | Parameter `out` | receives the mesh; must not be null. |
 | Returns | null on success, otherwise a static message. |
 | Fails | `edge` is not positive and finite. |
+| Aborts | `out` is null. |
 | Thread-safety | thread-safe. |
 | Ownership | `out` is borrowed for the call; the message is static. |
 
@@ -4079,6 +4088,7 @@ Builds a UV sphere centered on the origin, Y up: `(rings + 1) * (segments + 1)` 
 | Parameter `out` | receives the mesh; must not be null. |
 | Returns | null on success, otherwise a static message. |
 | Fails | an argument out of range, or more vertices than 16-bit indices can address (then 32-bit indices are used, so this only fails for absurd sizes). |
+| Aborts | `out` is null. |
 | Thread-safety | thread-safe. |
 | Ownership | `out` is borrowed for the call; the message is static. |
 
@@ -4101,6 +4111,7 @@ Builds a flat grid in the XZ plane centered on the origin, normal +Y, tangent +X
 | Parameter `out` | receives the mesh; must not be null. |
 | Returns | null on success, otherwise a static message. |
 | Fails | an argument out of range. |
+| Aborts | `out` is null. |
 | Thread-safety | thread-safe. |
 | Ownership | `out` is borrowed for the call; the message is static. |
 
@@ -4123,6 +4134,7 @@ Builds the same grid as [`renderer::MakePlaneMesh`](#renderer-makeplanemesh-f32-
 | Parameter `out` | receives the mesh; must not be null. |
 | Returns | null on success, otherwise a static message. |
 | Fails | an argument out of range, or more than 65535 vertices (16-bit strip indices reserve the last value). |
+| Aborts | `out` is null. |
 | Thread-safety | thread-safe. |
 | Ownership | `out` is borrowed for the call; the message is static. |
 
@@ -4144,6 +4156,7 @@ Copies a mesh built with [`renderer::StandardVertexLayout`](#renderer-standardve
 | Parameter `out` | receives the colored mesh, which keeps the source's indices, topology and bounds; must not be null and not be `source`. |
 | Returns | null on success, otherwise a static message. |
 | Fails | the source is empty or not in the standard layout, or `color_count` differs from its vertex count. |
+| Aborts | `out` is null or is `source`. |
 | Thread-safety | thread-safe. |
 | Ownership | `colors` is borrowed for the call and copied; `out` is borrowed for the call. |
 
@@ -4164,6 +4177,7 @@ Like [`renderer::MakeColoredMesh`](#renderer-makecoloredmesh-const-meshdata-amp-
 | Parameter `out` | receives the colored mesh. |
 | Returns | null on success, otherwise a static message. |
 | Fails | as for [`renderer::MakeColoredMesh`](#renderer-makecoloredmesh-const-meshdata-amp-const-u8-star-u32-meshdata-star). |
+| Aborts | `out` is null or is `source`. |
 | Thread-safety | thread-safe. |
 | Ownership | `rgba` is borrowed for the call. |
 
@@ -4198,6 +4212,7 @@ Converts a triangle-strip mesh to a triangle list: the same vertices, one triang
 | Parameter `out` | receives the list mesh; must not be null and not be `strip`. |
 | Returns | null on success, otherwise a static message. |
 | Fails | the mesh is empty or not a triangle strip, or the strip holds no triangle. |
+| Aborts | `out` is null or is `strip`. |
 | Thread-safety | thread-safe. |
 | Ownership | `out` is borrowed for the call. |
 
@@ -4218,6 +4233,7 @@ Converts a triangle-list mesh to triangle strips by greedy edge walking: each st
 | Parameter `out` | receives the strip mesh (topology `TriangleStrip`); must not be null and not be `list`. |
 | Returns | null on success, otherwise a static message. |
 | Fails | the mesh is empty or not a triangle list. A list with exactly 65536 vertices gets 32-bit strip indices, because 0xFFFF is the restart marker. |
+| Aborts | `out` is null or is the source list. |
 | Thread-safety | thread-safe. |
 | Ownership | `out` is borrowed for the call. |
 
@@ -5660,7 +5676,7 @@ A transient resource is taken from the pool at its first use and given back afte
 | Parameter `list` | the open command list. |
 | Returns | true if everything was recorded. |
 | Fails | `Compile` fails, a transient resource could not be allocated, or `pool` is null while a transient is used; `ExecuteError` then names the cause. The list is incomplete and must not be submitted; every transient taken goes back to the pool in the state it was taken in, as if the call had not happened. |
-| Aborts | `list` is null. |
+| Aborts | `list` is null. `Device::CreateCommandList` returns null when the device is lost, so check it first; a null list is an environment failure for the caller to handle, not something this function reports. |
 | Ownership | `pool` and `list` are borrowed for the call; transient resources taken from the pool go back to it before `Execute` returns. |
 
 ### `ExecuteParallel(TransientPool*,rhi::Device*,jobs::Scheduler*,rhi::FenceValue*)` {#renderer-rendergraph-executeparallel-transientpool-star-rhi-device-star-jobs-scheduler-star-rhi-fencevalue-star}

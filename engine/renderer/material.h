@@ -225,6 +225,7 @@ public:
     /// Fails: the reflection blobs do not parse or are for the wrong stage, the vertex shader uses a descriptor set other
     ///   than 0 to 2, set 0 is not one uniform buffer at binding 0, set 2 is not one storage buffer at binding 0, more
     ///   `texture_defaults` are listed than there are slots, or the template list is full.
+    /// Aborts: the system is not valid (see [[renderer::MaterialSystem::Valid]]).
     TemplateId CreateTemplate(const MaterialTemplateDesc& desc);
 
     /// Destroys a template and its pipelines.
