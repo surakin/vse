@@ -13,6 +13,7 @@ set(RENDERER_SOURCES
   frame_data.cpp
   material.cpp
   render_graph.cpp
+  transient_pool.cpp
 )
 
 # Headers are included as "renderer/<name>.h", rooted at engine/.

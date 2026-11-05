@@ -6,6 +6,7 @@
 #include <new>
 
 #include "log/assert.h"
+#include "renderer/transient_pool.h"
 
 namespace engine_placeholder::renderer {
 
@@ -134,6 +135,24 @@ const char* UsageName(GraphUsage usage) {
     }
 }
 
+const char* StateName(rhi::ResourceState state) {
+    switch (state) {
+    case rhi::ResourceState::Undefined: return "undefined";
+    case rhi::ResourceState::VertexBuffer: return "vertex";
+    case rhi::ResourceState::IndexBuffer: return "index";
+    case rhi::ResourceState::UniformBuffer: return "uniform";
+    case rhi::ResourceState::ShaderRead: return "shader-read";
+    case rhi::ResourceState::ShaderWrite: return "shader-write";
+    case rhi::ResourceState::CopySrc: return "copy-src";
+    case rhi::ResourceState::CopyDst: return "copy-dst";
+    case rhi::ResourceState::ColorAttachment: return "color";
+    case rhi::ResourceState::DepthAttachment: return "depth";
+    case rhi::ResourceState::DepthRead: return "depth-read";
+    case rhi::ResourceState::Present: return "present";
+    default: return "?";
+    }
+}
+
 // ---- records ----
 
 struct RenderGraph::PassRec {
@@ -160,6 +179,20 @@ struct RenderGraph::ResourceRec {
     rhi::ResourceState final_state = rhi::ResourceState::Undefined;
     u32 first_use = kNone;
     u32 last_use = kNone;
+    rhi::ResourceState end_state = rhi::ResourceState::Undefined;
+    rhi::TextureHandle resolved_texture;
+    rhi::BufferHandle resolved_buffer;
+    // Execute's bookkeeping: the pooled handle (kept after the release, for a rollback) and the state it was taken in.
+    rhi::TextureHandle exec_texture;
+    rhi::BufferHandle exec_buffer;
+    rhi::ResourceState pooled_state = rhi::ResourceState::Undefined;
+};
+
+struct RenderGraph::BarrierRec {
+    u32 resource = 0;
+    u32 position = 0;
+    rhi::ResourceState before = rhi::ResourceState::Undefined;
+    rhi::ResourceState after = rhi::ResourceState::Undefined;
 };
 
 struct RenderGraph::AccessRec {
@@ -689,7 +722,263 @@ bool RenderGraph::Compile() {
             res.last_use = pos;
         }
     }
+    if (!PlanBarriers()) return false;
     compiled_ = true;
+    return true;
+}
+
+namespace {
+
+bool TextureUsageFlag(GraphUsage u, rhi::TextureUsage have) {
+    switch (u) {
+    case GraphUsage::ColorAttachment: return rhi::Has(have, rhi::TextureUsage::ColorAttachment);
+    case GraphUsage::DepthAttachment: return rhi::Has(have, rhi::TextureUsage::DepthAttachment);
+    // Depth read-only is both the depth test without writes and sampling the depth, so either flag allows it.
+    case GraphUsage::DepthRead: return rhi::Has(have, rhi::TextureUsage::DepthAttachment) || rhi::Has(have, rhi::TextureUsage::Sampled);
+    case GraphUsage::Sampled: return rhi::Has(have, rhi::TextureUsage::Sampled);
+    case GraphUsage::StorageRead:
+    case GraphUsage::StorageWrite: return rhi::Has(have, rhi::TextureUsage::Storage);
+    case GraphUsage::CopySrc: return rhi::Has(have, rhi::TextureUsage::CopySrc);
+    case GraphUsage::CopyDst: return rhi::Has(have, rhi::TextureUsage::CopyDst);
+    default: return false;
+    }
+}
+
+bool BufferUsageFlag(GraphUsage u, rhi::BufferUsage have) {
+    switch (u) {
+    case GraphUsage::UniformBuffer: return rhi::Has(have, rhi::BufferUsage::Uniform);
+    case GraphUsage::VertexBuffer: return rhi::Has(have, rhi::BufferUsage::Vertex);
+    case GraphUsage::IndexBuffer: return rhi::Has(have, rhi::BufferUsage::Index);
+    case GraphUsage::StorageRead:
+    case GraphUsage::StorageWrite: return rhi::Has(have, rhi::BufferUsage::Storage);
+    case GraphUsage::CopySrc: return rhi::Has(have, rhi::BufferUsage::CopySrc);
+    case GraphUsage::CopyDst: return rhi::Has(have, rhi::BufferUsage::CopyDst);
+    default: return false;
+    }
+}
+
+} // namespace
+
+bool RenderGraph::PlanBarriers() {
+    const u32 R = resource_count_;
+    barrier_count_ = 0;
+    // Transient resources must have been declared with the usage flags every scheduled use needs.
+    bool ok = true;
+    for (u32 pos = 0; pos < schedule_count_; ++pos) {
+        const PassRec& pass = passes_[schedule_[pos]];
+        for (u32 i = 0; i < pass.access_count; ++i) {
+            const AccessRec& a = accesses_[pass.first_access + i];
+            const ResourceRec& res = resources_[a.resource];
+            if (res.import) continue;
+            const bool fits = res.kind == GraphResourceKind::Texture ? TextureUsageFlag(a.usage, res.texture_desc.usage)
+                                                                     : BufferUsageFlag(a.usage, res.buffer_desc.usage);
+            if (!fits) {
+                AddError("pass '%s' uses transient %s '%s' as %s, but its description lacks the matching usage flag", pass.name,
+                         res.kind == GraphResourceKind::Texture ? "texture" : "buffer", res.name, UsageName(a.usage));
+                ok = false;
+            }
+        }
+    }
+    if (!ok) return false;
+
+    u32 capacity = 0;
+    for (u32 pos = 0; pos < schedule_count_; ++pos) capacity += passes_[schedule_[pos]].access_count;
+    capacity += R;
+    barriers_ = AllocArray<BarrierRec>(arena_, capacity);
+    rhi::ResourceState* current = AllocArray<rhi::ResourceState>(arena_, R);
+    bool* wrote = AllocArray<bool>(arena_, R);
+    acq_order_ = AllocArray<u32>(arena_, R);
+    if (barriers_ == nullptr || current == nullptr || wrote == nullptr || acq_order_ == nullptr) {
+        AddError("the render graph ran out of arena space planning barriers");
+        return false;
+    }
+    for (u32 r = 0; r < R; ++r) {
+        current[r] = resources_[r].import ? resources_[r].initial : rhi::ResourceState::Undefined;
+        wrote[r] = false;
+        resources_[r].end_state = rhi::ResourceState::Undefined;
+    }
+    for (u32 pos = 0; pos < schedule_count_; ++pos) {
+        const PassRec& pass = passes_[schedule_[pos]];
+        for (u32 i = 0; i < pass.access_count; ++i) {
+            const AccessRec& a = accesses_[pass.first_access + i];
+            const rhi::ResourceState want = StateForUsage(a.usage);
+            if (current[a.resource] != want || wrote[a.resource]) {
+                BarrierRec& b = barriers_[barrier_count_++];
+                b.resource = a.resource;
+                b.position = pos;
+                b.before = current[a.resource];
+                b.after = want;
+            }
+            current[a.resource] = want;
+            wrote[a.resource] = UsageWrites(a.usage);
+        }
+    }
+    for (u32 r = 0; r < R; ++r) {
+        ResourceRec& res = resources_[r];
+        res.end_state = current[r];
+        if (res.import && current[r] != res.final_state) {
+            BarrierRec& b = barriers_[barrier_count_++];
+            b.resource = r;
+            b.position = schedule_count_;
+            b.before = current[r];
+            b.after = res.final_state;
+        }
+    }
+    return true;
+}
+
+GraphBarrier RenderGraph::BarrierAt(u32 index) const {
+    ENGINE_ASSERT(index < barrier_count_, "RenderGraph::BarrierAt: index out of range");
+    const BarrierRec& b = barriers_[index];
+    GraphBarrier out;
+    out.resource.index = b.resource;
+    out.position = b.position;
+    out.before = b.before;
+    out.after = b.after;
+    return out;
+}
+
+rhi::ResourceState RenderGraph::StateAfterLastUse(GraphResource resource) const {
+    ENGINE_ASSERT(compiled_, "RenderGraph::StateAfterLastUse: Compile has not succeeded");
+    ENGINE_ASSERT(resource.index < resource_count_, "RenderGraph::StateAfterLastUse: bad resource");
+    return resources_[resource.index].end_state;
+}
+
+usize RenderGraph::DumpBarriers(char* out, usize capacity) const {
+    Writer w{out, capacity};
+    if (compiled_) {
+        for (u32 i = 0; i < barrier_count_; ++i) {
+            const BarrierRec& b = barriers_[i];
+            if (b.position == schedule_count_) w.Add("barrier at exit \"%s\" %s -> %s\n", resources_[b.resource].name, StateName(b.before), StateName(b.after));
+            else w.Add("barrier at %u \"%s\" %s -> %s\n", b.position, resources_[b.resource].name, StateName(b.before), StateName(b.after));
+        }
+    }
+    w.Finish();
+    return w.length;
+}
+
+rhi::TextureHandle RenderGraph::ResolvedTexture(GraphResource resource) const {
+    ENGINE_ASSERT(resource.index < resource_count_ && resources_[resource.index].kind == GraphResourceKind::Texture, "RenderGraph::ResolvedTexture: not a texture of this graph");
+    const ResourceRec& res = resources_[resource.index];
+    return res.import ? res.texture : res.resolved_texture;
+}
+
+rhi::BufferHandle RenderGraph::ResolvedBuffer(GraphResource resource) const {
+    ENGINE_ASSERT(resource.index < resource_count_ && resources_[resource.index].kind == GraphResourceKind::Buffer, "RenderGraph::ResolvedBuffer: not a buffer of this graph");
+    const ResourceRec& res = resources_[resource.index];
+    return res.import ? res.buffer : res.resolved_buffer;
+}
+
+void RenderGraph::SetExecuteError(const char* fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    std::vsnprintf(exec_error_, sizeof(exec_error_), fmt, ap);
+    va_end(ap);
+}
+
+bool RenderGraph::Execute(TransientPool* pool, rhi::CommandList* list) {
+    ENGINE_ASSERT(list != nullptr, "RenderGraph::Execute: the command list is null");
+    exec_error_[0] = 0;
+    if (!Compile()) {
+        SetExecuteError("the graph did not compile");
+        return false;
+    }
+    const u32 R = resource_count_;
+    acq_count_ = 0;
+    for (u32 r = 0; r < R; ++r) {
+        resources_[r].resolved_texture = rhi::TextureHandle{};
+        resources_[r].resolved_buffer = rhi::BufferHandle{};
+        resources_[r].exec_texture = rhi::TextureHandle{};
+        resources_[r].exec_buffer = rhi::BufferHandle{};
+        resources_[r].pooled_state = rhi::ResourceState::Undefined;
+    }
+
+    auto release = [&](u32 r, rhi::ResourceState state) {
+        ResourceRec& res = resources_[r];
+        if (res.kind == GraphResourceKind::Texture) {
+            pool->ReleaseTexture(res.resolved_texture, state);
+            res.resolved_texture = rhi::TextureHandle{};
+        } else {
+            pool->ReleaseBuffer(res.resolved_buffer, state);
+            res.resolved_buffer = rhi::BufferHandle{};
+        }
+    };
+    // The list is abandoned, so none of its barriers will run: every transient goes back to the pool in the state it was
+    // taken in. A handle can serve several resources in turn; undoing in reverse order leaves the earliest, original state.
+    auto rollback = [&]() {
+        for (u32 r = 0; r < R; ++r) {
+            const ResourceRec& res = resources_[r];
+            if (!res.import && (res.resolved_texture.IsValid() || res.resolved_buffer.IsValid())) release(r, rhi::ResourceState::Undefined);
+        }
+        for (u32 i = acq_count_; i > 0; --i) {
+            const ResourceRec& res = resources_[acq_order_[i - 1]];
+            if (res.kind == GraphResourceKind::Texture) pool->SetTextureState(res.exec_texture, res.pooled_state);
+            else pool->SetBufferState(res.exec_buffer, res.pooled_state);
+        }
+    };
+
+    u32 next_barrier = 0;
+    for (u32 pos = 0; pos < schedule_count_; ++pos) {
+        const u32 pass_index = schedule_[pos];
+        const PassRec& pass = passes_[pass_index];
+        for (u32 i = 0; i < pass.access_count; ++i) {
+            const u32 r = accesses_[pass.first_access + i].resource;
+            ResourceRec& res = resources_[r];
+            if (res.import || res.first_use != pos) continue;
+            if (pool == nullptr) {
+                SetExecuteError("pass '%s' needs transient resource '%s' but Execute was given no pool", pass.name, res.name);
+                rollback();
+                return false;
+            }
+            if (res.kind == GraphResourceKind::Texture) {
+                PooledTexture t;
+                if (!pool->AcquireTexture(res.texture_desc, &t)) {
+                    SetExecuteError("transient texture '%s' could not be allocated", res.name);
+                    rollback();
+                    return false;
+                }
+                res.resolved_texture = res.exec_texture = t.handle;
+                res.pooled_state = t.state;
+            } else {
+                PooledBuffer b;
+                if (!pool->AcquireBuffer(res.buffer_desc, &b)) {
+                    SetExecuteError("transient buffer '%s' could not be allocated", res.name);
+                    rollback();
+                    return false;
+                }
+                res.resolved_buffer = res.exec_buffer = b.handle;
+                res.pooled_state = b.state;
+            }
+            acq_order_[acq_count_++] = r;
+        }
+        for (; next_barrier < barrier_count_ && barriers_[next_barrier].position == pos; ++next_barrier) {
+            const BarrierRec& b = barriers_[next_barrier];
+            const ResourceRec& res = resources_[b.resource];
+            // A transient's first barrier starts from the state the pooled resource was left in, so the new use is also
+            // ordered after the old one; a fresh resource is Undefined.
+            const rhi::ResourceState before = (!res.import && res.first_use == pos && b.before == rhi::ResourceState::Undefined) ? res.pooled_state : b.before;
+            if (res.kind == GraphResourceKind::Texture) list->Barrier(ResolvedTexture(GraphResource{b.resource}), before, b.after);
+            else list->Barrier(ResolvedBuffer(GraphResource{b.resource}), before, b.after);
+        }
+        if (pass.execute != nullptr) {
+            PassExecuteContext context;
+            context.list = list;
+            context.pass_index = pass_index;
+            context.graph = this;
+            pass.execute(context, pass.user);
+        }
+        for (u32 i = 0; i < pass.access_count; ++i) {
+            const u32 r = accesses_[pass.first_access + i].resource;
+            const ResourceRec& res = resources_[r];
+            if (!res.import && res.last_use == pos) release(r, res.end_state);
+        }
+    }
+    for (; next_barrier < barrier_count_; ++next_barrier) {
+        const BarrierRec& b = barriers_[next_barrier];
+        const ResourceRec& res = resources_[b.resource];
+        if (res.kind == GraphResourceKind::Texture) list->Barrier(ResolvedTexture(GraphResource{b.resource}), b.before, b.after);
+        else list->Barrier(ResolvedBuffer(GraphResource{b.resource}), b.before, b.after);
+    }
     return true;
 }
 

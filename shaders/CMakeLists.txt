@@ -24,6 +24,7 @@ set(ENGINE_SHADERS
   permute_test.frag
   material_test.vert
   material_test.frag
+  graph_sample.frag
 )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/names.cmake)

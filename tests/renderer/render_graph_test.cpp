@@ -71,13 +71,29 @@ namespace {
 
 constexpr usize kArenaBytes = 8u << 20;
 
+// Transient resources must be declared with the usage flags their uses need (Day 76); these tests care about the schedule,
+// so they allow every use.
+rhi::TextureDesc AnyTexture() {
+    rhi::TextureDesc d;
+    d.usage = rhi::TextureUsage::Sampled | rhi::TextureUsage::Storage | rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::DepthAttachment |
+              rhi::TextureUsage::CopySrc | rhi::TextureUsage::CopyDst;
+    return d;
+}
+
+rhi::BufferDesc AnyBuffer() {
+    rhi::BufferDesc d;
+    d.usage = rhi::BufferUsage::Vertex | rhi::BufferUsage::Index | rhi::BufferUsage::Uniform | rhi::BufferUsage::Storage | rhi::BufferUsage::CopySrc |
+              rhi::BufferUsage::CopyDst;
+    return d;
+}
+
 struct Fixture {
     ArenaAllocator arena{kArenaBytes};
     RenderGraph graph;
     explicit Fixture(const RenderGraphDesc& desc = RenderGraphDesc{}) : graph(&arena, desc) {}
 
-    GraphResource Tex(const char* name) { return graph.CreateTexture(name, rhi::TextureDesc{}); }
-    GraphResource Buf(const char* name) { return graph.CreateBuffer(name, rhi::BufferDesc{}); }
+    GraphResource Tex(const char* name) { return graph.CreateTexture(name, AnyTexture()); }
+    GraphResource Buf(const char* name) { return graph.CreateBuffer(name, AnyBuffer()); }
     GraphResource Backbuffer(bool read_only = false) {
         rhi::TextureHandle handle;
         handle.index = 1;
@@ -333,7 +349,7 @@ TEST_CASE("Mistakes in a graph are reported by Compile with names", "[renderer][
         PassBuilder p = f.Pass("p");
         p.Write(t, GraphUsage::ColorAttachment);
         f.Pass("q");
-        const GraphResource v = f.graph.CreateTexture("v", rhi::TextureDesc{});
+        const GraphResource v = f.graph.CreateTexture("v", AnyTexture());
         (void)v;
         CHECK_FALSE(f.graph.Compile());
         CHECK(f.graph.ErrorCount() == 3);
@@ -427,10 +443,10 @@ TEST_CASE("Building and compiling a graph allocates nothing from the heap", "[re
     desc.max_accesses = 4000;
     const unsigned long before = g_heap_allocations.load();
     RenderGraph graph(&arena, desc);
-    GraphResource previous = graph.CreateTexture("t0", rhi::TextureDesc{});
+    GraphResource previous = graph.CreateTexture("t0", AnyTexture());
     graph.AddPass("p0", nullptr, nullptr, PassFlags::SideEffects).Write(previous, GraphUsage::ColorAttachment);
     for (int i = 1; i < 500; ++i) {
-        const GraphResource next = graph.CreateTexture("t", rhi::TextureDesc{});
+        const GraphResource next = graph.CreateTexture("t", AnyTexture());
         graph.AddPass("p", nullptr, nullptr, PassFlags::SideEffects).Read(previous, GraphUsage::Sampled).Write(next, GraphUsage::ColorAttachment);
         previous = next;
     }
@@ -486,7 +502,7 @@ TEST_CASE("A 1000-pass random DAG matches an independent reference", "[renderer]
     std::vector<GraphResource> res(kPasses);
     for (u32 i = 0; i < kPasses; ++i) {
         names[i] = "r" + std::to_string(i);
-        res[i] = graph.CreateTexture(names[i].c_str(), rhi::TextureDesc{});
+        res[i] = graph.CreateTexture(names[i].c_str(), AnyTexture());
     }
     std::vector<std::string> pnames(kPasses);
     for (u32 i = 0; i < kPasses; ++i) {
@@ -562,6 +578,7 @@ TEST_CASE("A graph keeps its descriptors and imports; recompiling after a change
     td.width = 64;
     td.height = 32;
     td.format = rhi::Format::RGBA8_UNorm;
+    td.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled;
     const GraphResource t = f.graph.CreateTexture("t", td);
     const GraphResource out = f.Backbuffer();
     CHECK(f.graph.TextureDescOf(t).width == 64);

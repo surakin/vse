@@ -1613,56 +1613,71 @@ renderer::operator&(PassFlags,PassFlags)	function	renderer	renderer-operator-amp
 renderer::StateForUsage(GraphUsage)	function	renderer	renderer-stateforusage-graphusage	renderer.md	engine/renderer/render_graph.h:103
 renderer::UsageWrites(GraphUsage)	function	renderer	renderer-usagewrites-graphusage	renderer.md	engine/renderer/render_graph.h:109
 renderer::UsageName(GraphUsage)	function	renderer	renderer-usagename-graphusage	renderer.md	engine/renderer/render_graph.h:117
-renderer::PassExecuteContext	struct	renderer	renderer-passexecutecontext	renderer.md	engine/renderer/render_graph.h:122
-renderer::PassExecuteContext::list	variable	renderer	renderer-passexecutecontext-list	renderer.md	engine/renderer/render_graph.h:124
-renderer::PassExecuteContext::pass_index	variable	renderer	renderer-passexecutecontext-pass-index	renderer.md	engine/renderer/render_graph.h:126
-renderer::PassExecuteFn	alias	renderer	renderer-passexecutefn	renderer.md	engine/renderer/render_graph.h:130
-renderer::RenderGraphDesc	struct	renderer	renderer-rendergraphdesc	renderer.md	engine/renderer/render_graph.h:135
-renderer::RenderGraphDesc::max_passes	variable	renderer	renderer-rendergraphdesc-max-passes	renderer.md	engine/renderer/render_graph.h:137
-renderer::RenderGraphDesc::max_resources	variable	renderer	renderer-rendergraphdesc-max-resources	renderer.md	engine/renderer/render_graph.h:139
-renderer::RenderGraphDesc::max_accesses	variable	renderer	renderer-rendergraphdesc-max-accesses	renderer.md	engine/renderer/render_graph.h:141
-renderer::RenderGraphDesc::max_dependencies	variable	renderer	renderer-rendergraphdesc-max-dependencies	renderer.md	engine/renderer/render_graph.h:143
-renderer::PassBuilder	class	renderer	renderer-passbuilder	renderer.md	engine/renderer/render_graph.h:151
-renderer::PassBuilder::Read(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-read-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:160
-renderer::PassBuilder::Write(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-write-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:167
-renderer::PassBuilder::ReadWrite(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-readwrite-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:174
-renderer::PassBuilder::Id() const	function	renderer	renderer-passbuilder-id-const	renderer.md	engine/renderer/render_graph.h:177
-renderer::RenderGraph	class	renderer	renderer-rendergraph	renderer.md	engine/renderer/render_graph.h:196
-renderer::RenderGraph::RenderGraph(ArenaAllocator*,const RenderGraphDesc&)	function	renderer	renderer-rendergraph-rendergraph-arenaallocator-star-const-rendergraphdesc-amp	renderer.md	engine/renderer/render_graph.h:206
-renderer::RenderGraph::RenderGraph(const RenderGraph&)	function	renderer	renderer-rendergraph-rendergraph-const-rendergraph-amp	renderer.md	engine/renderer/render_graph.h:207
-renderer::RenderGraph::operator=(const RenderGraph&)	function	renderer	renderer-rendergraph-operator-eq-const-rendergraph-amp	renderer.md	engine/renderer/render_graph.h:208
-renderer::RenderGraph::Valid() const	function	renderer	renderer-rendergraph-valid-const	renderer.md	engine/renderer/render_graph.h:212
-renderer::RenderGraph::CreateTexture(const char*,const rhi::TextureDesc&)	function	renderer	renderer-rendergraph-createtexture-const-char-star-const-rhi-texturedesc-amp	renderer.md	engine/renderer/render_graph.h:220
-renderer::RenderGraph::CreateBuffer(const char*,const rhi::BufferDesc&)	function	renderer	renderer-rendergraph-createbuffer-const-char-star-const-rhi-bufferdesc-amp	renderer.md	engine/renderer/render_graph.h:227
-renderer::RenderGraph::ImportTexture(const char*,rhi::TextureHandle,rhi::ResourceState,rhi::ResourceState,bool)	function	renderer	renderer-rendergraph-importtexture-const-char-star-rhi-texturehandle-rhi-resourcestate-rhi-resourcestate-bool	renderer.md	engine/renderer/render_graph.h:237
-renderer::RenderGraph::ImportBuffer(const char*,rhi::BufferHandle,rhi::ResourceState,rhi::ResourceState,bool)	function	renderer	renderer-rendergraph-importbuffer-const-char-star-rhi-bufferhandle-rhi-resourcestate-rhi-resourcestate-bool	renderer.md	engine/renderer/render_graph.h:247
-renderer::RenderGraph::AddPass(const char*,PassExecuteFn,void*,PassFlags)	function	renderer	renderer-rendergraph-addpass-const-char-star-passexecutefn-void-star-passflags	renderer.md	engine/renderer/render_graph.h:258
-renderer::RenderGraph::AddDependency(PassId,PassId)	function	renderer	renderer-rendergraph-adddependency-passid-passid	renderer.md	engine/renderer/render_graph.h:266
-renderer::RenderGraph::Compile()	function	renderer	renderer-rendergraph-compile	renderer.md	engine/renderer/render_graph.h:275
-renderer::RenderGraph::KindOf(GraphResource) const	function	renderer	renderer-rendergraph-kindof-graphresource-const	renderer.md	engine/renderer/render_graph.h:281
-renderer::RenderGraph::IsImport(GraphResource) const	function	renderer	renderer-rendergraph-isimport-graphresource-const	renderer.md	engine/renderer/render_graph.h:286
-renderer::RenderGraph::TextureDescOf(GraphResource) const	function	renderer	renderer-rendergraph-texturedescof-graphresource-const	renderer.md	engine/renderer/render_graph.h:292
-renderer::RenderGraph::BufferDescOf(GraphResource) const	function	renderer	renderer-rendergraph-bufferdescof-graphresource-const	renderer.md	engine/renderer/render_graph.h:298
-renderer::RenderGraph::ImportedTexture(GraphResource) const	function	renderer	renderer-rendergraph-importedtexture-graphresource-const	renderer.md	engine/renderer/render_graph.h:303
-renderer::RenderGraph::ImportedBuffer(GraphResource) const	function	renderer	renderer-rendergraph-importedbuffer-graphresource-const	renderer.md	engine/renderer/render_graph.h:308
-renderer::RenderGraph::InitialState(GraphResource) const	function	renderer	renderer-rendergraph-initialstate-graphresource-const	renderer.md	engine/renderer/render_graph.h:313
-renderer::RenderGraph::FinalState(GraphResource) const	function	renderer	renderer-rendergraph-finalstate-graphresource-const	renderer.md	engine/renderer/render_graph.h:318
-renderer::RenderGraph::ErrorCount() const	function	renderer	renderer-rendergraph-errorcount-const	renderer.md	engine/renderer/render_graph.h:322
-renderer::RenderGraph::DroppedErrors() const	function	renderer	renderer-rendergraph-droppederrors-const	renderer.md	engine/renderer/render_graph.h:325
-renderer::RenderGraph::Error(u32) const	function	renderer	renderer-rendergraph-error-u32-const	renderer.md	engine/renderer/render_graph.h:332
-renderer::RenderGraph::PassCount() const	function	renderer	renderer-rendergraph-passcount-const	renderer.md	engine/renderer/render_graph.h:336
-renderer::RenderGraph::ResourceCount() const	function	renderer	renderer-rendergraph-resourcecount-const	renderer.md	engine/renderer/render_graph.h:339
-renderer::RenderGraph::ScheduleCount() const	function	renderer	renderer-rendergraph-schedulecount-const	renderer.md	engine/renderer/render_graph.h:342
-renderer::RenderGraph::Scheduled(u32) const	function	renderer	renderer-rendergraph-scheduled-u32-const	renderer.md	engine/renderer/render_graph.h:347
-renderer::RenderGraph::IsCulled(PassId) const	function	renderer	renderer-rendergraph-isculled-passid-const	renderer.md	engine/renderer/render_graph.h:352
-renderer::RenderGraph::PassName(PassId) const	function	renderer	renderer-rendergraph-passname-passid-const	renderer.md	engine/renderer/render_graph.h:358
-renderer::RenderGraph::PassCallback(PassId) const	function	renderer	renderer-rendergraph-passcallback-passid-const	renderer.md	engine/renderer/render_graph.h:363
-renderer::RenderGraph::PassUser(PassId) const	function	renderer	renderer-rendergraph-passuser-passid-const	renderer.md	engine/renderer/render_graph.h:369
-renderer::RenderGraph::ResourceName(GraphResource) const	function	renderer	renderer-rendergraph-resourcename-graphresource-const	renderer.md	engine/renderer/render_graph.h:375
-renderer::RenderGraph::FirstUse(GraphResource) const	function	renderer	renderer-rendergraph-firstuse-graphresource-const	renderer.md	engine/renderer/render_graph.h:381
-renderer::RenderGraph::LastUse(GraphResource) const	function	renderer	renderer-rendergraph-lastuse-graphresource-const	renderer.md	engine/renderer/render_graph.h:387
-renderer::RenderGraph::Dump(char*,usize) const	function	renderer	renderer-rendergraph-dump-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:404
-renderer::RenderGraph::WriteDot(char*,usize) const	function	renderer	renderer-rendergraph-writedot-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:413
+renderer::StateName(rhi::ResourceState)	function	renderer	renderer-statename-rhi-resourcestate	renderer.md	engine/renderer/render_graph.h:125
+renderer::PassExecuteContext	struct	renderer	renderer-passexecutecontext	renderer.md	engine/renderer/render_graph.h:132
+renderer::PassExecuteContext::list	variable	renderer	renderer-passexecutecontext-list	renderer.md	engine/renderer/render_graph.h:134
+renderer::PassExecuteContext::pass_index	variable	renderer	renderer-passexecutecontext-pass-index	renderer.md	engine/renderer/render_graph.h:136
+renderer::PassExecuteContext::graph	variable	renderer	renderer-passexecutecontext-graph	renderer.md	engine/renderer/render_graph.h:138
+renderer::PassExecuteFn	alias	renderer	renderer-passexecutefn	renderer.md	engine/renderer/render_graph.h:142
+renderer::RenderGraphDesc	struct	renderer	renderer-rendergraphdesc	renderer.md	engine/renderer/render_graph.h:147
+renderer::RenderGraphDesc::max_passes	variable	renderer	renderer-rendergraphdesc-max-passes	renderer.md	engine/renderer/render_graph.h:149
+renderer::RenderGraphDesc::max_resources	variable	renderer	renderer-rendergraphdesc-max-resources	renderer.md	engine/renderer/render_graph.h:151
+renderer::RenderGraphDesc::max_accesses	variable	renderer	renderer-rendergraphdesc-max-accesses	renderer.md	engine/renderer/render_graph.h:153
+renderer::RenderGraphDesc::max_dependencies	variable	renderer	renderer-rendergraphdesc-max-dependencies	renderer.md	engine/renderer/render_graph.h:155
+renderer::GraphBarrier	struct	renderer	renderer-graphbarrier	renderer.md	engine/renderer/render_graph.h:163
+renderer::GraphBarrier::resource	variable	renderer	renderer-graphbarrier-resource	renderer.md	engine/renderer/render_graph.h:165
+renderer::GraphBarrier::position	variable	renderer	renderer-graphbarrier-position	renderer.md	engine/renderer/render_graph.h:167
+renderer::GraphBarrier::before	variable	renderer	renderer-graphbarrier-before	renderer.md	engine/renderer/render_graph.h:170
+renderer::GraphBarrier::after	variable	renderer	renderer-graphbarrier-after	renderer.md	engine/renderer/render_graph.h:172
+renderer::PassBuilder	class	renderer	renderer-passbuilder	renderer.md	engine/renderer/render_graph.h:178
+renderer::PassBuilder::Read(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-read-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:187
+renderer::PassBuilder::Write(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-write-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:194
+renderer::PassBuilder::ReadWrite(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-readwrite-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:201
+renderer::PassBuilder::Id() const	function	renderer	renderer-passbuilder-id-const	renderer.md	engine/renderer/render_graph.h:204
+renderer::RenderGraph	class	renderer	renderer-rendergraph	renderer.md	engine/renderer/render_graph.h:223
+renderer::RenderGraph::RenderGraph(ArenaAllocator*,const RenderGraphDesc&)	function	renderer	renderer-rendergraph-rendergraph-arenaallocator-star-const-rendergraphdesc-amp	renderer.md	engine/renderer/render_graph.h:233
+renderer::RenderGraph::RenderGraph(const RenderGraph&)	function	renderer	renderer-rendergraph-rendergraph-const-rendergraph-amp	renderer.md	engine/renderer/render_graph.h:234
+renderer::RenderGraph::operator=(const RenderGraph&)	function	renderer	renderer-rendergraph-operator-eq-const-rendergraph-amp	renderer.md	engine/renderer/render_graph.h:235
+renderer::RenderGraph::Valid() const	function	renderer	renderer-rendergraph-valid-const	renderer.md	engine/renderer/render_graph.h:239
+renderer::RenderGraph::CreateTexture(const char*,const rhi::TextureDesc&)	function	renderer	renderer-rendergraph-createtexture-const-char-star-const-rhi-texturedesc-amp	renderer.md	engine/renderer/render_graph.h:247
+renderer::RenderGraph::CreateBuffer(const char*,const rhi::BufferDesc&)	function	renderer	renderer-rendergraph-createbuffer-const-char-star-const-rhi-bufferdesc-amp	renderer.md	engine/renderer/render_graph.h:254
+renderer::RenderGraph::ImportTexture(const char*,rhi::TextureHandle,rhi::ResourceState,rhi::ResourceState,bool)	function	renderer	renderer-rendergraph-importtexture-const-char-star-rhi-texturehandle-rhi-resourcestate-rhi-resourcestate-bool	renderer.md	engine/renderer/render_graph.h:264
+renderer::RenderGraph::ImportBuffer(const char*,rhi::BufferHandle,rhi::ResourceState,rhi::ResourceState,bool)	function	renderer	renderer-rendergraph-importbuffer-const-char-star-rhi-bufferhandle-rhi-resourcestate-rhi-resourcestate-bool	renderer.md	engine/renderer/render_graph.h:274
+renderer::RenderGraph::AddPass(const char*,PassExecuteFn,void*,PassFlags)	function	renderer	renderer-rendergraph-addpass-const-char-star-passexecutefn-void-star-passflags	renderer.md	engine/renderer/render_graph.h:285
+renderer::RenderGraph::AddDependency(PassId,PassId)	function	renderer	renderer-rendergraph-adddependency-passid-passid	renderer.md	engine/renderer/render_graph.h:293
+renderer::RenderGraph::Compile()	function	renderer	renderer-rendergraph-compile	renderer.md	engine/renderer/render_graph.h:303
+renderer::RenderGraph::KindOf(GraphResource) const	function	renderer	renderer-rendergraph-kindof-graphresource-const	renderer.md	engine/renderer/render_graph.h:309
+renderer::RenderGraph::IsImport(GraphResource) const	function	renderer	renderer-rendergraph-isimport-graphresource-const	renderer.md	engine/renderer/render_graph.h:314
+renderer::RenderGraph::TextureDescOf(GraphResource) const	function	renderer	renderer-rendergraph-texturedescof-graphresource-const	renderer.md	engine/renderer/render_graph.h:320
+renderer::RenderGraph::BufferDescOf(GraphResource) const	function	renderer	renderer-rendergraph-bufferdescof-graphresource-const	renderer.md	engine/renderer/render_graph.h:326
+renderer::RenderGraph::ImportedTexture(GraphResource) const	function	renderer	renderer-rendergraph-importedtexture-graphresource-const	renderer.md	engine/renderer/render_graph.h:331
+renderer::RenderGraph::ImportedBuffer(GraphResource) const	function	renderer	renderer-rendergraph-importedbuffer-graphresource-const	renderer.md	engine/renderer/render_graph.h:336
+renderer::RenderGraph::InitialState(GraphResource) const	function	renderer	renderer-rendergraph-initialstate-graphresource-const	renderer.md	engine/renderer/render_graph.h:341
+renderer::RenderGraph::FinalState(GraphResource) const	function	renderer	renderer-rendergraph-finalstate-graphresource-const	renderer.md	engine/renderer/render_graph.h:346
+renderer::RenderGraph::ErrorCount() const	function	renderer	renderer-rendergraph-errorcount-const	renderer.md	engine/renderer/render_graph.h:350
+renderer::RenderGraph::DroppedErrors() const	function	renderer	renderer-rendergraph-droppederrors-const	renderer.md	engine/renderer/render_graph.h:353
+renderer::RenderGraph::ExecuteError() const	function	renderer	renderer-rendergraph-executeerror-const	renderer.md	engine/renderer/render_graph.h:358
+renderer::RenderGraph::Error(u32) const	function	renderer	renderer-rendergraph-error-u32-const	renderer.md	engine/renderer/render_graph.h:365
+renderer::RenderGraph::PassCount() const	function	renderer	renderer-rendergraph-passcount-const	renderer.md	engine/renderer/render_graph.h:369
+renderer::RenderGraph::ResourceCount() const	function	renderer	renderer-rendergraph-resourcecount-const	renderer.md	engine/renderer/render_graph.h:372
+renderer::RenderGraph::ScheduleCount() const	function	renderer	renderer-rendergraph-schedulecount-const	renderer.md	engine/renderer/render_graph.h:375
+renderer::RenderGraph::Scheduled(u32) const	function	renderer	renderer-rendergraph-scheduled-u32-const	renderer.md	engine/renderer/render_graph.h:380
+renderer::RenderGraph::IsCulled(PassId) const	function	renderer	renderer-rendergraph-isculled-passid-const	renderer.md	engine/renderer/render_graph.h:385
+renderer::RenderGraph::PassName(PassId) const	function	renderer	renderer-rendergraph-passname-passid-const	renderer.md	engine/renderer/render_graph.h:391
+renderer::RenderGraph::PassCallback(PassId) const	function	renderer	renderer-rendergraph-passcallback-passid-const	renderer.md	engine/renderer/render_graph.h:396
+renderer::RenderGraph::PassUser(PassId) const	function	renderer	renderer-rendergraph-passuser-passid-const	renderer.md	engine/renderer/render_graph.h:402
+renderer::RenderGraph::ResourceName(GraphResource) const	function	renderer	renderer-rendergraph-resourcename-graphresource-const	renderer.md	engine/renderer/render_graph.h:408
+renderer::RenderGraph::FirstUse(GraphResource) const	function	renderer	renderer-rendergraph-firstuse-graphresource-const	renderer.md	engine/renderer/render_graph.h:414
+renderer::RenderGraph::LastUse(GraphResource) const	function	renderer	renderer-rendergraph-lastuse-graphresource-const	renderer.md	engine/renderer/render_graph.h:420
+renderer::RenderGraph::BarrierCount() const	function	renderer	renderer-rendergraph-barriercount-const	renderer.md	engine/renderer/render_graph.h:433
+renderer::RenderGraph::BarrierAt(u32) const	function	renderer	renderer-rendergraph-barrierat-u32-const	renderer.md	engine/renderer/render_graph.h:438
+renderer::RenderGraph::StateAfterLastUse(GraphResource) const	function	renderer	renderer-rendergraph-stateafterlastuse-graphresource-const	renderer.md	engine/renderer/render_graph.h:443
+renderer::RenderGraph::DumpBarriers(char*,usize) const	function	renderer	renderer-rendergraph-dumpbarriers-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:453
+renderer::RenderGraph::Execute(TransientPool*,rhi::CommandList*)	function	renderer	renderer-rendergraph-execute-transientpool-star-rhi-commandlist-star	renderer.md	engine/renderer/render_graph.h:471
+renderer::RenderGraph::ResolvedTexture(GraphResource) const	function	renderer	renderer-rendergraph-resolvedtexture-graphresource-const	renderer.md	engine/renderer/render_graph.h:478
+renderer::RenderGraph::ResolvedBuffer(GraphResource) const	function	renderer	renderer-rendergraph-resolvedbuffer-graphresource-const	renderer.md	engine/renderer/render_graph.h:484
+renderer::RenderGraph::Dump(char*,usize) const	function	renderer	renderer-rendergraph-dump-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:501
+renderer::RenderGraph::WriteDot(char*,usize) const	function	renderer	renderer-rendergraph-writedot-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:510
 renderer::ObjectId	struct	renderer	renderer-objectid	renderer.md	engine/renderer/render_scene.h:18
 renderer::ObjectId::index	variable	renderer	renderer-objectid-index	renderer.md	engine/renderer/render_scene.h:20
 renderer::ObjectId::generation	variable	renderer	renderer-objectid-generation	renderer.md	engine/renderer/render_scene.h:22
@@ -1830,6 +1845,41 @@ renderer::VertexLayoutData::attributes	variable	renderer	renderer-vertexlayoutda
 renderer::VertexLayoutData::attribute_count	variable	renderer	renderer-vertexlayoutdata-attribute-count	renderer.md	engine/renderer/shader_reflection.h:272
 renderer::VertexLayoutData::stride	variable	renderer	renderer-vertexlayoutdata-stride	renderer.md	engine/renderer/shader_reflection.h:274
 renderer::BuildVertexLayout(const ShaderReflection&,u32,VertexLayoutData*,ReflectionError*)	function	renderer	renderer-buildvertexlayout-const-shaderreflection-amp-u32-vertexlayoutdata-star-reflectionerror-star	renderer.md	engine/renderer/shader_reflection.h:290
+renderer::TransientPoolDesc	struct	renderer	renderer-transientpooldesc	renderer.md	engine/renderer/transient_pool.h:18
+renderer::TransientPoolDesc::max_textures	variable	renderer	renderer-transientpooldesc-max-textures	renderer.md	engine/renderer/transient_pool.h:20
+renderer::TransientPoolDesc::max_buffers	variable	renderer	renderer-transientpooldesc-max-buffers	renderer.md	engine/renderer/transient_pool.h:22
+renderer::TransientPoolDesc::max_idle_frames	variable	renderer	renderer-transientpooldesc-max-idle-frames	renderer.md	engine/renderer/transient_pool.h:24
+renderer::PooledTexture	struct	renderer	renderer-pooledtexture	renderer.md	engine/renderer/transient_pool.h:30
+renderer::PooledTexture::handle	variable	renderer	renderer-pooledtexture-handle	renderer.md	engine/renderer/transient_pool.h:32
+renderer::PooledTexture::state	variable	renderer	renderer-pooledtexture-state	renderer.md	engine/renderer/transient_pool.h:34
+renderer::PooledBuffer	struct	renderer	renderer-pooledbuffer	renderer.md	engine/renderer/transient_pool.h:40
+renderer::PooledBuffer::handle	variable	renderer	renderer-pooledbuffer-handle	renderer.md	engine/renderer/transient_pool.h:42
+renderer::PooledBuffer::state	variable	renderer	renderer-pooledbuffer-state	renderer.md	engine/renderer/transient_pool.h:44
+renderer::TransientPoolStats	struct	renderer	renderer-transientpoolstats	renderer.md	engine/renderer/transient_pool.h:50
+renderer::TransientPoolStats::textures_created	variable	renderer	renderer-transientpoolstats-textures-created	renderer.md	engine/renderer/transient_pool.h:52
+renderer::TransientPoolStats::texture_reuses	variable	renderer	renderer-transientpoolstats-texture-reuses	renderer.md	engine/renderer/transient_pool.h:54
+renderer::TransientPoolStats::textures_destroyed	variable	renderer	renderer-transientpoolstats-textures-destroyed	renderer.md	engine/renderer/transient_pool.h:56
+renderer::TransientPoolStats::textures_live	variable	renderer	renderer-transientpoolstats-textures-live	renderer.md	engine/renderer/transient_pool.h:58
+renderer::TransientPoolStats::textures_idle	variable	renderer	renderer-transientpoolstats-textures-idle	renderer.md	engine/renderer/transient_pool.h:60
+renderer::TransientPoolStats::buffers_created	variable	renderer	renderer-transientpoolstats-buffers-created	renderer.md	engine/renderer/transient_pool.h:62
+renderer::TransientPoolStats::buffer_reuses	variable	renderer	renderer-transientpoolstats-buffer-reuses	renderer.md	engine/renderer/transient_pool.h:64
+renderer::TransientPoolStats::buffers_destroyed	variable	renderer	renderer-transientpoolstats-buffers-destroyed	renderer.md	engine/renderer/transient_pool.h:66
+renderer::TransientPoolStats::buffers_live	variable	renderer	renderer-transientpoolstats-buffers-live	renderer.md	engine/renderer/transient_pool.h:68
+renderer::TransientPoolStats::buffers_idle	variable	renderer	renderer-transientpoolstats-buffers-idle	renderer.md	engine/renderer/transient_pool.h:70
+renderer::TransientPool	class	renderer	renderer-transientpool	renderer.md	engine/renderer/transient_pool.h:81
+renderer::TransientPool::TransientPool(rhi::Device*,const TransientPoolDesc&)	function	renderer	renderer-transientpool-transientpool-rhi-device-star-const-transientpooldesc-amp	renderer.md	engine/renderer/transient_pool.h:89
+renderer::TransientPool::~TransientPool()	function	renderer	renderer-transientpool-tilde-transientpool	renderer.md	engine/renderer/transient_pool.h:91
+renderer::TransientPool::TransientPool(const TransientPool&)	function	renderer	renderer-transientpool-transientpool-const-transientpool-amp	renderer.md	engine/renderer/transient_pool.h:92
+renderer::TransientPool::operator=(const TransientPool&)	function	renderer	renderer-transientpool-operator-eq-const-transientpool-amp	renderer.md	engine/renderer/transient_pool.h:93
+renderer::TransientPool::BeginFrame(u64)	function	renderer	renderer-transientpool-beginframe-u64	renderer.md	engine/renderer/transient_pool.h:98
+renderer::TransientPool::EndFrame()	function	renderer	renderer-transientpool-endframe	renderer.md	engine/renderer/transient_pool.h:101
+renderer::TransientPool::AcquireTexture(const rhi::TextureDesc&,PooledTexture*)	function	renderer	renderer-transientpool-acquiretexture-const-rhi-texturedesc-amp-pooledtexture-star	renderer.md	engine/renderer/transient_pool.h:113
+renderer::TransientPool::ReleaseTexture(rhi::TextureHandle,rhi::ResourceState)	function	renderer	renderer-transientpool-releasetexture-rhi-texturehandle-rhi-resourcestate	renderer.md	engine/renderer/transient_pool.h:120
+renderer::TransientPool::AcquireBuffer(const rhi::BufferDesc&,PooledBuffer*)	function	renderer	renderer-transientpool-acquirebuffer-const-rhi-bufferdesc-amp-pooledbuffer-star	renderer.md	engine/renderer/transient_pool.h:130
+renderer::TransientPool::ReleaseBuffer(rhi::BufferHandle,rhi::ResourceState)	function	renderer	renderer-transientpool-releasebuffer-rhi-bufferhandle-rhi-resourcestate	renderer.md	engine/renderer/transient_pool.h:137
+renderer::TransientPool::SetTextureState(rhi::TextureHandle,rhi::ResourceState)	function	renderer	renderer-transientpool-settexturestate-rhi-texturehandle-rhi-resourcestate	renderer.md	engine/renderer/transient_pool.h:144
+renderer::TransientPool::SetBufferState(rhi::BufferHandle,rhi::ResourceState)	function	renderer	renderer-transientpool-setbufferstate-rhi-bufferhandle-rhi-resourcestate	renderer.md	engine/renderer/transient_pool.h:150
+renderer::TransientPool::Stats() const	function	renderer	renderer-transientpool-stats-const	renderer.md	engine/renderer/transient_pool.h:154
 rhi::vulkan::StateScope	struct	rhi-vulkan	rhi-vulkan-statescope	rhi-vulkan.md	engine/rhi/vulkan/vk_barrier.h:13
 rhi::vulkan::StateScope::stage	variable	rhi-vulkan	rhi-vulkan-statescope-stage	rhi-vulkan.md	engine/rhi/vulkan/vk_barrier.h:15
 rhi::vulkan::StateScope::access	variable	rhi-vulkan	rhi-vulkan-statescope-access	rhi-vulkan.md	engine/rhi/vulkan/vk_barrier.h:17

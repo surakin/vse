@@ -205,9 +205,13 @@ int main() {
     swapchain_image.generation = 1;
     const GraphResource backbuffer =
         graph.ImportTexture("backbuffer", swapchain_image, rhi::ResourceState::Undefined, rhi::ResourceState::Present, false);
-    const GraphResource shadow = graph.CreateTexture("shadow_map", rhi::TextureDesc{});
-    const GraphResource hdr = graph.CreateTexture("hdr", rhi::TextureDesc{});
-    const GraphResource unused = graph.CreateTexture("debug_view", rhi::TextureDesc{});
+    rhi::TextureDesc shadow_desc;
+    shadow_desc.usage = rhi::TextureUsage::DepthAttachment | rhi::TextureUsage::Sampled;
+    rhi::TextureDesc color_desc;
+    color_desc.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled;
+    const GraphResource shadow = graph.CreateTexture("shadow_map", shadow_desc);
+    const GraphResource hdr = graph.CreateTexture("hdr", color_desc);
+    const GraphResource unused = graph.CreateTexture("debug_view", color_desc);
 
     graph.AddPass("shadow", nullptr, nullptr).Write(shadow, GraphUsage::DepthAttachment);
     graph.AddPass("lighting", nullptr, nullptr).Read(shadow, GraphUsage::Sampled).Write(hdr, GraphUsage::ColorAttachment);
@@ -252,6 +256,74 @@ edge "lighting" -> "tonemap" raw "hdr"
 The first line of `Dump` gives the counts, `schedule:` and `culled:` list the passes, each `pass` block lists its
 accesses, each `resource` line shows its first and last use as schedule positions (`unused` if every user was culled), and
 each `edge` line names its kind and resource. `WriteDot` writes the same graph for Graphviz, with culled passes dashed.
+
+#### Barriers, imports and transient resources
+
+The graph owns every state transition, so a pass callback records no `Barrier` for a resource it declared. `Compile`
+walks the scheduled passes and, per resource, tracks its state: an import starts in the state you gave it, a transient
+resource in `Undefined`. A use needs the state of its usage; a barrier `before -> after` is recorded when that differs
+from the current state, or when the previous use wrote the resource (a same-state barrier then orders the write against
+what follows, as a compute pass writing a storage image twice needs). Consecutive reads in one state, such as `Sampled`
+followed by `StorageRead`, share it and need nothing. All barriers a pass needs precede it, in the order of its accesses,
+so its color and depth attachments change state together and always before its rendering pass begins. After the last pass
+an import not in its final state gets an exit barrier, which is how the swapchain image ends in `Present`. `BarrierCount`,
+`BarrierAt` and `DumpBarriers` expose the plan, so a test can compare it as text.
+
+A transient texture must be declared with the usage flags every use needs (a sampled use needs `Sampled`, a storage write
+`Storage`, and so on); `Compile` reports a missing flag by pass and resource name.
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "mem/arena_allocator.h"
+#include "renderer/render_graph.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::renderer;
+
+int main() {
+    ArenaAllocator arena(1u << 20);
+    RenderGraph graph(&arena, RenderGraphDesc{});
+    rhi::TextureHandle swapchain_image;
+    swapchain_image.index = 1;
+    swapchain_image.generation = 1;
+    const GraphResource backbuffer =
+        graph.ImportTexture("backbuffer", swapchain_image, rhi::ResourceState::Undefined, rhi::ResourceState::Present, false);
+    rhi::TextureDesc scene_desc;
+    scene_desc.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled;
+    const GraphResource scene = graph.CreateTexture("scene", scene_desc);
+
+    graph.AddPass("draw", nullptr, nullptr).Write(scene, GraphUsage::ColorAttachment);
+    graph.AddPass("present", nullptr, nullptr).Read(scene, GraphUsage::Sampled).Write(backbuffer, GraphUsage::ColorAttachment);
+
+    if (!graph.Compile()) return 1;
+    char text[512];
+    graph.DumpBarriers(text, sizeof(text));
+    std::printf("%s", text);
+    return 0;
+}
+```
+
+```output
+barrier at 0 "scene" undefined -> color
+barrier at 1 "scene" color -> shader-read
+barrier at 1 "backbuffer" undefined -> color
+barrier at exit "backbuffer" color -> present
+```
+
+`RenderGraph::Execute(pool, list)` runs a compiled graph: for each scheduled pass it takes the transient resources whose
+first use is that pass from a `TransientPool`, records the pass's barriers, calls its callback (which finds its textures
+with `context.graph->ResolvedTexture(resource)`) and gives back each transient resource after its last use. The pool
+matches by description, so a steady-state frame creates nothing, and two transient resources whose lifetimes do not
+overlap share one texture even inside a frame (pooling by description, not memory aliasing). The pool remembers the
+state a texture was left in and the graph starts the next user's first barrier from it, which also orders the new
+writes after the old user's. A pooled resource unused for more than `max_idle_frames` frames is destroyed at
+`EndFrame`; `Stats` reports created, reused, destroyed, live and idle counts.
+
+The null device is the oracle for all of this: it tracks every resource's state and counts a barrier whose `before` does
+not match as an error, so a graph that executes with `ErrorCount() == 0` has a consistent state machine. The real-device
+test (`tests/rhi/vulkan_render_graph_test.cpp`) runs a clear, a sampling draw, a compute write and a combining draw with
+validation and synchronization validation on and expects no messages.
 
 ### Rules & contracts
 

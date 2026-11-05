@@ -116,14 +116,26 @@ bool UsageWrites(GraphUsage usage);
 /// Ownership: the string is static and never freed.
 const char* UsageName(GraphUsage usage);
 
-/// What a pass callback is given. Later days add the command list and resolved resources.
+/// Returns a resource state's name as the dumps print it (`undefined`, `shader-read`, `color`, `present`, ...).
+///
+/// Param state: any state.
+/// Returns: a static string.
+/// Fails: never.
+/// Ownership: the string is static and never freed.
+const char* StateName(rhi::ResourceState state);
+
+class RenderGraph;
+
+/// What a pass callback is given while [[renderer::RenderGraph::Execute]] runs.
 ///
 /// Thread-safety: thread-compatible plain data.
 struct PassExecuteContext {
-    /// The command list the pass records into; null until execution exists.
+    /// The command list the pass records into. Every barrier the pass needs is already recorded.
     rhi::CommandList* list = nullptr;
     /// The pass's declaration index.
     u32 pass_index = 0;
+    /// The graph being executed; use it to resolve resources with `ResolvedTexture` and `ResolvedBuffer`.
+    const RenderGraph* graph = nullptr;
 };
 
 /// A pass callback: it is given a [[renderer::PassExecuteContext]] and the pointer the pass was declared with.
@@ -143,7 +155,22 @@ struct RenderGraphDesc {
     u32 max_dependencies = 64;
 };
 
-class RenderGraph;
+class TransientPool;
+
+/// One state transition the compiled graph records: `Barrier(resource, before, after)` just before a pass.
+///
+/// Thread-safety: thread-compatible plain data.
+struct GraphBarrier {
+    /// The resource.
+    GraphResource resource;
+    /// Schedule position of the pass the barrier precedes; `ScheduleCount()` for an exit barrier after the last pass.
+    u32 position = 0;
+    /// The state the resource is in. A transient resource's first barrier says `Undefined`; `Execute` replaces that with
+    /// the state the pooled resource was left in.
+    rhi::ResourceState before = rhi::ResourceState::Undefined;
+    /// The state the pass needs, or the import's final state for an exit barrier.
+    rhi::ResourceState after = rhi::ResourceState::Undefined;
+};
 
 /// Declares the accesses of one pass. Valid until the next pass is added.
 ///
@@ -271,7 +298,8 @@ public:
     ///   second call with nothing declared in between returns true at once, and any declaration after a call makes the
     ///   next one run again (and take more scratch space from the arena).
     /// Fails: any error described at the declaring calls, a read of a transient resource no earlier pass writes, a
-    ///   cycle through explicit dependencies, or the arena running out.
+    ///   cycle through explicit dependencies, a transient resource used in a way its description's usage flags do not
+    ///   allow (a description with no usage fits no use), or the arena running out.
     bool Compile();
 
     /// Returns whether a resource is a texture or a buffer.
@@ -323,6 +351,11 @@ public:
     /// Returns the number of errors that did not fit.
     /// Fails: never.
     u32 DroppedErrors() const { return dropped_errors_; }
+    /// Returns why the last `Execute` failed (empty if it did not). Kept apart from the declaration errors above, which
+    /// `Compile` reports, so a failed frame does not make the next compile fail.
+    /// Fails: never.
+    /// Ownership: borrowed from the graph; valid until the next `Execute`.
+    const char* ExecuteError() const { return exec_error_; }
     /// Returns a stored error message.
     ///
     /// Param index: below `ErrorCount()`.
@@ -386,6 +419,70 @@ public:
     /// Aborts: `resource` is invalid, or `Compile` has not succeeded.
     u32 LastUse(GraphResource resource) const;
 
+    /// Returns the number of barriers the compiled graph records. Valid after a successful `Compile`.
+    ///
+    /// The rules, per resource, walking the scheduled passes in order: a resource starts in its import's initial state, or
+    /// `Undefined` for a transient one. Each use needs the state of its usage (see [[renderer::StateForUsage]]). A barrier
+    /// is recorded when that state differs from the current one, or when the previous use wrote the resource (a
+    /// same-state barrier then orders the two writes, or the write and the read). Consecutive reads in one state share the
+    /// state and need nothing. Barriers for all of a pass's resources precede it, in access order, so a pass's color and
+    /// depth attachments change state together and always outside a rendering pass. After the last pass, an import not in
+    /// its final state gets an exit barrier. A transient resource has no exit barrier; the pool remembers its state.
+    ///
+    /// Fails: never.
+    u32 BarrierCount() const { return barrier_count_; }
+    /// Returns one barrier; barriers are ordered by position.
+    ///
+    /// Param index: below `BarrierCount()`.
+    /// Aborts: `index` is out of range.
+    GraphBarrier BarrierAt(u32 index) const;
+    /// Returns the state a resource is in after its last scheduled use, before any exit barrier (`Undefined` if unused).
+    ///
+    /// Param resource: a resource of this graph.
+    /// Aborts: `resource` is invalid, or `Compile` has not succeeded.
+    rhi::ResourceState StateAfterLastUse(GraphResource resource) const;
+
+    /// Writes the barrier list, one line per barrier: `barrier at K "resource" before -> after`, where `K` is the
+    /// schedule position (`exit` for an exit barrier).
+    ///
+    /// Param out: the destination, or null to only measure.
+    /// Param capacity: size of `out` in bytes.
+    /// Returns: the length the full text needs, excluding the terminator; truncated as for `Dump`.
+    /// Fails: never.
+    /// Ownership: `out` is borrowed for the call.
+    usize DumpBarriers(char* out, usize capacity) const;
+
+    /// Records the compiled graph into a command list: transients from the pool, barriers, then each pass's callback.
+    ///
+    /// A transient resource is taken from the pool at its first use and given back after its last, so a later one in the
+    /// same frame can reuse it. Passes record into `list`, which must be open and outside a rendering pass. The graph transitions every resource
+    /// itself, so a pass callback records no barrier for a resource it declared. An import is assumed to be in its
+    /// declared initial state and is left in its final state.
+    ///
+    /// Param pool: where transient resources come from; may be null if the graph declares none.
+    /// Param list: the open command list.
+    /// Returns: true if everything was recorded.
+    /// Fails: `Compile` fails, a transient resource could not be allocated, or `pool` is null while a transient is used;
+    ///   `ExecuteError` then names the cause. The list is incomplete and must not be submitted; every transient taken
+    ///   goes back to the pool in the state it was taken in, as if the call had not happened.
+    /// Aborts: `list` is null.
+    /// Ownership: `pool` and `list` are borrowed for the call; transient resources taken from the pool go back to it
+    ///   before `Execute` returns.
+    bool Execute(TransientPool* pool, rhi::CommandList* list);
+
+    /// Returns the texture a resource is bound to: an import's texture, or the pooled texture while `Execute` runs.
+    ///
+    /// Param resource: a texture of this graph.
+    /// Returns: the texture; for a transient resource an invalid handle outside the span of its use in `Execute`.
+    /// Aborts: `resource` is invalid or not a texture.
+    rhi::TextureHandle ResolvedTexture(GraphResource resource) const;
+    /// Returns the buffer a resource is bound to while `Execute` runs; see [[renderer::RenderGraph::ResolvedTexture]].
+    ///
+    /// Param resource: a buffer of this graph.
+    /// Returns: the buffer, or an invalid handle.
+    /// Aborts: `resource` is invalid or not a buffer.
+    rhi::BufferHandle ResolvedBuffer(GraphResource resource) const;
+
     /// Writes a text description of the graph: passes, accesses, resources and edges.
     ///
     /// The format is line oriented. After a header line (`graph passes=P resources=R scheduled=S culled=C`) come
@@ -419,7 +516,10 @@ private:
     struct AccessRec;
     struct EdgeRec;
     struct DependencyRec;
+    struct BarrierRec;
 
+    bool PlanBarriers();
+    void SetExecuteError(const char* fmt, ...) __attribute__((format(printf, 2, 3)));
     void AddError(const char* fmt, ...) __attribute__((format(printf, 2, 3)));
     bool AddAccess(PassId pass, GraphResource resource, GraphUsage usage, GraphAccess access);
     GraphResource AddResource(const char* name, GraphResourceKind kind, bool import, bool read_only);
@@ -434,6 +534,11 @@ private:
     DependencyRec* dependencies_ = nullptr;
     EdgeRec* edges_ = nullptr;
     u32* schedule_ = nullptr;
+    BarrierRec* barriers_ = nullptr;
+    u32 barrier_count_ = 0;
+    u32* acq_order_ = nullptr;
+    u32 acq_count_ = 0;
+    char exec_error_[kGraphErrorLength] = {};
     u32 pass_count_ = 0;
     u32 resource_count_ = 0;
     u32 access_count_ = 0;
