@@ -27,6 +27,9 @@ Full reference: [The renderer](../reference/renderer.md).
 - [[renderer::GpuMesh]] — a mesh's vertex and index buffers
 - [[renderer::RenderScene]] — objects and lights with generation-checked ids, and [[renderer::RenderScene::Cull]]
 - [[renderer::FrameResources]] — the per-frame and per-object buffers shaders read
+- [[renderer::MaterialSystem]] — templates, materials, bind groups and the pipeline cache
+- [[renderer::MaterialTemplateDesc]] — the shaders and fixed-function state of a template
+- [[renderer::MakeDrawSortKey]] — the draw order: pipeline, then material, then mesh
 
 ## Outline
 
@@ -87,6 +90,82 @@ int main() {
 
 ```output
 1 of 2 objects visible
+```
+
+### Materials
+
+A material is a shader permutation plus a parameter block and textures. A `MaterialSystem` holds templates (a vertex
+module, a fragment module or permuted fragment shader, and render state) and materials made from them. Descriptor sets
+follow one convention, which creation checks against the shaders' reflection:
+
+| Set | Contents | Bound |
+|---|---|---|
+| 0 | `FrameData` uniform, binding 0 | once per pass |
+| 1 | the material: one uniform block, sampled textures, samplers | when the material changes |
+| 2 | the per-object storage buffer, binding 0 | once per pass |
+
+Parameter names are the members of the set-1 uniform block; texture and sampler names are the shader's variable names. A
+setter whose type or size does not match the reflected member returns false and logs, so a typo fails at the call and
+not as a wrong color. Writes go to a CPU copy and reach the GPU once per frame in `FlushMaterials`; the buffer has three
+frame regions, so a change is copied three times and then costs nothing. Changing a texture rebuilds only that
+material's bind groups, at the next flush. A texture slot left unset shows a default: the one the template lists in
+`texture_defaults`, otherwise one chosen by name (`normal...` flat normal, `emissive...` and `black...` black, anything
+else white), so name slots to match or list them. A shader with nothing in set 1 is also a valid material.
+
+Pipelines are cached by (template, permutation, target formats, vertex layout): two materials of one template and key
+share one. `GetPipeline` creates on a miss, so call it (or `Warmup`) before recording starts; the counters in `Stats()`
+show hits and misses. `MakeDrawSortKey` packs pipeline, material and mesh into one integer: sorting by it keeps pipeline
+changes rarest and material changes next.
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "material_test.frag.perm.inc"
+#include "material_test.vert.refl.inc"
+#include "material_test.vert.spv.inc"
+#include "renderer/material.h"
+#include "rhi/null/null_device.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::renderer;
+
+int main() {
+    rhi::NullDevice* device = rhi::CreateNullDevice();
+    {
+        MaterialSystem system(device, MaterialSystemDesc{});
+
+        MaterialTemplateDesc desc;
+        desc.name = "material_test";
+        desc.vertex.words = shaders::kMaterialTestVertSpv;
+        desc.vertex.word_count = shaders::kMaterialTestVertSpvWordCount;
+        desc.vertex.reflection = shaders::kMaterialTestVertRefl;
+        desc.vertex.reflection_size = shaders::kMaterialTestVertReflByteCount;
+        desc.fragment_permutations = &shaders::kMaterialTestFragPermutations;
+        const TemplateId tmpl = system.CreateTemplate(desc);
+
+        const MaterialId red = system.CreateMaterial(tmpl, PermutationKey{}, "red");
+        const MaterialId blue = system.CreateMaterial(tmpl, PermutationKey{}, "blue");
+        system.SetVec4(red, "base_color", Vec4(1, 0, 0, 1));
+        system.SetVec4(blue, "base_color", Vec4(0, 0, 1, 1));
+        const bool typo = system.SetVec4(blue, "base_colour", Vec4(0, 0, 1, 1));
+
+        PipelineTarget target;
+        target.color_formats[0] = rhi::Format::RGBA8_UNorm;
+        const PipelineLookup a = system.GetPipeline(red, target, StandardVertexLayout());
+        const PipelineLookup b = system.GetPipeline(blue, target, StandardVertexLayout());
+        std::printf("typo accepted: %s\n", typo ? "yes" : "no");
+        std::printf("one pipeline shared: %s (hits %u, misses %u)\n", a.pipeline == b.pipeline ? "yes" : "no", system.Stats().pipeline_hits,
+                    system.Stats().pipeline_misses);
+    }
+    rhi::DestroyDevice(device);
+    return 0;
+}
+```
+
+```output
+[LogRender] ERROR: material 'blue': the parameter block has no member 'base_colour'
+typo accepted: no
+one pipeline shared: yes (hits 1, misses 1)
 ```
 
 ### Rules & contracts

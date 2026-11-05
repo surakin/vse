@@ -95,3 +95,19 @@ identical ones and writes `<name>.perm.inc` beside the usual pair. Limits: 16 op
 - `shader_mint` starts `slangc` itself in this mode (`posix_spawn`, so Linux only for now; Phase 5 revisits it for
   Windows).
 
+
+## Material shaders (Day 74)
+
+Shaders drawn through `renderer::MaterialSystem` follow one descriptor-set convention: set 0 is the frame uniform
+(`renderer::FrameData`, binding 0), set 1 the material (one uniform block, sampled textures, samplers), set 2 the
+per-object storage buffer (`renderer::ObjectData`, binding 0). `material_test.vert/.frag` are the reference.
+
+- **Read the object index from `SV_VulkanInstanceID`, not `SV_InstanceID`.** The renderer draws object `i` with
+  `first_instance = i`. Slang's `SV_InstanceID` subtracts the base instance (`gl_InstanceIndex - gl_BaseInstance`), so
+  it is 0 for every one-instance draw and every object would read entry 0; `SV_StartInstanceLocation` would add the base
+  back but needs the `shaderDrawParameters` device feature, which the RHI does not enable. `SV_VulkanInstanceID` is
+  `gl_InstanceIndex` and needs nothing. D3D12 has no equivalent of a base instance in shaders, so Phase 5 must deliver
+  the object index another way (a root constant or a per-draw vertex stream); this is recorded in `KNOWN-ISSUES.md`.
+- A vertex input the shader does not use is removed from the SPIR-V while the reflection still lists it, which
+  `shader_mint` rejects as a location mismatch. Pass unused attributes through to an output (the test shader forwards
+  the tangent to a varying the fragment shader declares).

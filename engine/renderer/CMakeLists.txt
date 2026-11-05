@@ -11,6 +11,7 @@ set(RENDERER_SOURCES
   mesh.cpp
   render_scene.cpp
   frame_data.cpp
+  material.cpp
 )
 
 # Headers are included as "renderer/<name>.h", rooted at engine/.

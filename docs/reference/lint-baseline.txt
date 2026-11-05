@@ -11,5 +11,5 @@ module	platform/os	30	30
 module	platform/window-input	229	229
 module	jobs	151	151
 module	rhi	594	594
-module	renderer	288	288
+module	renderer	372	372
 module	rhi-vulkan	408	408

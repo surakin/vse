@@ -333,12 +333,14 @@ GpuMesh& GpuMesh::operator=(GpuMesh&& other) {
         layout_ = other.layout_;
         bounds_ = other.bounds_;
         ready_ = other.ready_;
+        prepared_ = other.prepared_;
         other.device_ = nullptr;
         other.vertex_buffer_ = {};
         other.index_buffer_ = {};
         other.vertex_count_ = 0;
         other.index_count_ = 0;
         other.ready_ = false;
+        other.prepared_ = false;
     }
     return *this;
 }
@@ -378,6 +380,7 @@ bool GpuMesh::Create(rhi::Device* device, const MeshData& data, const char* debu
     layout_ = data.Layout();
     bounds_ = data.GetBounds();
     ready_ = false;
+    prepared_ = false;
     return true;
 }
 
@@ -392,6 +395,7 @@ void GpuMesh::Destroy() {
     vertex_count_ = 0;
     index_count_ = 0;
     ready_ = false;
+    prepared_ = false;
     device_ = nullptr;
 }
 
@@ -402,10 +406,11 @@ void GpuMesh::RecordPrepare(rhi::CommandList* list) {
     }
     list->Barrier(vertex_buffer_, rhi::ResourceState::CopyDst, rhi::ResourceState::VertexBuffer);
     list->Barrier(index_buffer_, rhi::ResourceState::CopyDst, rhi::ResourceState::IndexBuffer);
+    prepared_ = true;
 }
 
 void GpuMesh::Draw(rhi::CommandList* list, u32 instance_count, u32 first_instance) const {
-    ENGINE_ASSERT(Valid() && ready_, "GpuMesh::Draw: the mesh is empty or its prepare barriers were not submitted");
+    ENGINE_ASSERT(Valid() && (prepared_ || ready_), "GpuMesh::Draw: the mesh is empty or RecordPrepare was never called");
     list->SetVertexBuffer(0, vertex_buffer_, 0);
     list->SetIndexBuffer(index_buffer_, 0, index_type_);
     list->DrawIndexed(index_count_, instance_count, 0, 0, first_instance);

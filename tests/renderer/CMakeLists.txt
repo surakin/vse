@@ -6,6 +6,7 @@ set(RENDERER_TEST_SOURCES
   shader_permutation_test.cpp
   geometry_test.cpp
   scene_test.cpp
+  material_test.cpp
   lsan_options.cpp
 )
 

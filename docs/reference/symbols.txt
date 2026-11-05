@@ -1438,6 +1438,92 @@ renderer::Frustum::FromViewProjection(const Mat4&)	function	renderer	renderer-fr
 renderer::Frustum::TestSphere(const BoundingSphere&) const	function	renderer	renderer-frustum-testsphere-const-boundingsphere-amp-const	renderer.md	engine/renderer/frustum.h:53
 renderer::Frustum::TestAabb(const Aabb&) const	function	renderer	renderer-frustum-testaabb-const-aabb-amp-const	renderer.md	engine/renderer/frustum.h:60
 renderer::Frustum::Visible(const Bounds&) const	function	renderer	renderer-frustum-visible-const-bounds-amp-const	renderer.md	engine/renderer/frustum.h:68
+renderer::kFrameSet	variable	renderer	renderer-kframeset	renderer.md	engine/renderer/material.h:21
+renderer::kMaterialSet	variable	renderer	renderer-kmaterialset	renderer.md	engine/renderer/material.h:23
+renderer::kObjectSet	variable	renderer	renderer-kobjectset	renderer.md	engine/renderer/material.h:25
+renderer::kMaxMaterialParamBytes	variable	renderer	renderer-kmaxmaterialparambytes	renderer.md	engine/renderer/material.h:27
+renderer::kMaxMaterialTextures	variable	renderer	renderer-kmaxmaterialtextures	renderer.md	engine/renderer/material.h:29
+renderer::kMaxMaterialSamplers	variable	renderer	renderer-kmaxmaterialsamplers	renderer.md	engine/renderer/material.h:31
+renderer::TemplateId	struct	renderer	renderer-templateid	renderer.md	engine/renderer/material.h:36
+renderer::TemplateId::index	variable	renderer	renderer-templateid-index	renderer.md	engine/renderer/material.h:38
+renderer::TemplateId::generation	variable	renderer	renderer-templateid-generation	renderer.md	engine/renderer/material.h:40
+renderer::TemplateId::IsValid() const	function	renderer	renderer-templateid-isvalid-const	renderer.md	engine/renderer/material.h:44
+renderer::MaterialId	struct	renderer	renderer-materialid	renderer.md	engine/renderer/material.h:50
+renderer::MaterialId::index	variable	renderer	renderer-materialid-index	renderer.md	engine/renderer/material.h:52
+renderer::MaterialId::generation	variable	renderer	renderer-materialid-generation	renderer.md	engine/renderer/material.h:54
+renderer::MaterialId::IsValid() const	function	renderer	renderer-materialid-isvalid-const	renderer.md	engine/renderer/material.h:58
+renderer::MaterialRenderState	struct	renderer	renderer-materialrenderstate	renderer.md	engine/renderer/material.h:64
+renderer::MaterialRenderState::cull	variable	renderer	renderer-materialrenderstate-cull	renderer.md	engine/renderer/material.h:66
+renderer::MaterialRenderState::depth_test	variable	renderer	renderer-materialrenderstate-depth-test	renderer.md	engine/renderer/material.h:68
+renderer::MaterialRenderState::depth_write	variable	renderer	renderer-materialrenderstate-depth-write	renderer.md	engine/renderer/material.h:70
+renderer::MaterialRenderState::depth_compare	variable	renderer	renderer-materialrenderstate-depth-compare	renderer.md	engine/renderer/material.h:72
+renderer::MaterialRenderState::alpha_blend	variable	renderer	renderer-materialrenderstate-alpha-blend	renderer.md	engine/renderer/material.h:74
+renderer::DefaultTexture	enum	renderer	renderer-defaulttexture	renderer.md	engine/renderer/material.h:78
+renderer::DefaultTexture::White	enumerator	renderer	renderer-defaulttexture-white	renderer.md	engine/renderer/material.h:79
+renderer::DefaultTexture::Black	enumerator	renderer	renderer-defaulttexture-black	renderer.md	engine/renderer/material.h:80
+renderer::DefaultTexture::FlatNormal	enumerator	renderer	renderer-defaulttexture-flatnormal	renderer.md	engine/renderer/material.h:81
+renderer::TextureDefault	struct	renderer	renderer-texturedefault	renderer.md	engine/renderer/material.h:88
+renderer::TextureDefault::slot	variable	renderer	renderer-texturedefault-slot	renderer.md	engine/renderer/material.h:90
+renderer::TextureDefault::texture	variable	renderer	renderer-texturedefault-texture	renderer.md	engine/renderer/material.h:92
+renderer::MaterialTemplateDesc	struct	renderer	renderer-materialtemplatedesc	renderer.md	engine/renderer/material.h:103
+renderer::MaterialTemplateDesc::name	variable	renderer	renderer-materialtemplatedesc-name	renderer.md	engine/renderer/material.h:105
+renderer::MaterialTemplateDesc::vertex	variable	renderer	renderer-materialtemplatedesc-vertex	renderer.md	engine/renderer/material.h:107
+renderer::MaterialTemplateDesc::fragment	variable	renderer	renderer-materialtemplatedesc-fragment	renderer.md	engine/renderer/material.h:109
+renderer::MaterialTemplateDesc::fragment_permutations	variable	renderer	renderer-materialtemplatedesc-fragment-permutations	renderer.md	engine/renderer/material.h:111
+renderer::MaterialTemplateDesc::state	variable	renderer	renderer-materialtemplatedesc-state	renderer.md	engine/renderer/material.h:113
+renderer::MaterialTemplateDesc::texture_defaults	variable	renderer	renderer-materialtemplatedesc-texture-defaults	renderer.md	engine/renderer/material.h:116
+renderer::MaterialTemplateDesc::texture_default_count	variable	renderer	renderer-materialtemplatedesc-texture-default-count	renderer.md	engine/renderer/material.h:118
+renderer::PipelineTarget	struct	renderer	renderer-pipelinetarget	renderer.md	engine/renderer/material.h:124
+renderer::PipelineTarget::color_formats	variable	renderer	renderer-pipelinetarget-color-formats	renderer.md	engine/renderer/material.h:126
+renderer::PipelineTarget::color_count	variable	renderer	renderer-pipelinetarget-color-count	renderer.md	engine/renderer/material.h:128
+renderer::PipelineTarget::depth_format	variable	renderer	renderer-pipelinetarget-depth-format	renderer.md	engine/renderer/material.h:130
+renderer::PipelineLookup	struct	renderer	renderer-pipelinelookup	renderer.md	engine/renderer/material.h:136
+renderer::PipelineLookup::pipeline	variable	renderer	renderer-pipelinelookup-pipeline	renderer.md	engine/renderer/material.h:138
+renderer::PipelineLookup::index	variable	renderer	renderer-pipelinelookup-index	renderer.md	engine/renderer/material.h:140
+renderer::MaterialStats	struct	renderer	renderer-materialstats	renderer.md	engine/renderer/material.h:146
+renderer::MaterialStats::pipeline_hits	variable	renderer	renderer-materialstats-pipeline-hits	renderer.md	engine/renderer/material.h:148
+renderer::MaterialStats::pipeline_misses	variable	renderer	renderer-materialstats-pipeline-misses	renderer.md	engine/renderer/material.h:150
+renderer::MaterialStats::pipelines	variable	renderer	renderer-materialstats-pipelines	renderer.md	engine/renderer/material.h:152
+renderer::MaterialStats::bind_group_rebuilds	variable	renderer	renderer-materialstats-bind-group-rebuilds	renderer.md	engine/renderer/material.h:154
+renderer::MaterialStats::parameter_flushes	variable	renderer	renderer-materialstats-parameter-flushes	renderer.md	engine/renderer/material.h:156
+renderer::MaterialSystemDesc	struct	renderer	renderer-materialsystemdesc	renderer.md	engine/renderer/material.h:162
+renderer::MaterialSystemDesc::max_templates	variable	renderer	renderer-materialsystemdesc-max-templates	renderer.md	engine/renderer/material.h:164
+renderer::MaterialSystemDesc::max_materials	variable	renderer	renderer-materialsystemdesc-max-materials	renderer.md	engine/renderer/material.h:166
+renderer::MaterialSystemDesc::max_pipelines	variable	renderer	renderer-materialsystemdesc-max-pipelines	renderer.md	engine/renderer/material.h:168
+renderer::MakeDrawSortKey(u32,u32,u32)	function	renderer	renderer-makedrawsortkey-u32-u32-u32	renderer.md	engine/renderer/material.h:181
+renderer::MaterialSystem	class	renderer	renderer-materialsystem	renderer.md	engine/renderer/material.h:200
+renderer::MaterialSystem::MaterialSystem(rhi::Device*,const MaterialSystemDesc&)	function	renderer	renderer-materialsystem-materialsystem-rhi-device-star-const-materialsystemdesc-amp	renderer.md	engine/renderer/material.h:209
+renderer::MaterialSystem::~MaterialSystem()	function	renderer	renderer-materialsystem-tilde-materialsystem	renderer.md	engine/renderer/material.h:212
+renderer::MaterialSystem::MaterialSystem(const MaterialSystem&)	function	renderer	renderer-materialsystem-materialsystem-const-materialsystem-amp	renderer.md	engine/renderer/material.h:213
+renderer::MaterialSystem::operator=(const MaterialSystem&)	function	renderer	renderer-materialsystem-operator-eq-const-materialsystem-amp	renderer.md	engine/renderer/material.h:214
+renderer::MaterialSystem::Valid() const	function	renderer	renderer-materialsystem-valid-const	renderer.md	engine/renderer/material.h:218
+renderer::MaterialSystem::CreateTemplate(const MaterialTemplateDesc&)	function	renderer	renderer-materialsystem-createtemplate-const-materialtemplatedesc-amp	renderer.md	engine/renderer/material.h:227
+renderer::MaterialSystem::DestroyTemplate(TemplateId)	function	renderer	renderer-materialsystem-destroytemplate-templateid	renderer.md	engine/renderer/material.h:233
+renderer::MaterialSystem::CreateMaterial(TemplateId,PermutationKey,const char*)	function	renderer	renderer-materialsystem-creatematerial-templateid-permutationkey-const-char-star	renderer.md	engine/renderer/material.h:250
+renderer::MaterialSystem::DestroyMaterial(MaterialId)	function	renderer	renderer-materialsystem-destroymaterial-materialid	renderer.md	engine/renderer/material.h:256
+renderer::MaterialSystem::IsAlive(MaterialId) const	function	renderer	renderer-materialsystem-isalive-materialid-const	renderer.md	engine/renderer/material.h:260
+renderer::MaterialSystem::SetFloat(MaterialId,const char*,f32)	function	renderer	renderer-materialsystem-setfloat-materialid-const-char-star-f32	renderer.md	engine/renderer/material.h:270
+renderer::MaterialSystem::SetInt(MaterialId,const char*,i32)	function	renderer	renderer-materialsystem-setint-materialid-const-char-star-i32	renderer.md	engine/renderer/material.h:279
+renderer::MaterialSystem::SetUInt(MaterialId,const char*,u32)	function	renderer	renderer-materialsystem-setuint-materialid-const-char-star-u32	renderer.md	engine/renderer/material.h:288
+renderer::MaterialSystem::SetVec2(MaterialId,const char*,const Vec2&)	function	renderer	renderer-materialsystem-setvec2-materialid-const-char-star-const-vec2-amp	renderer.md	engine/renderer/material.h:297
+renderer::MaterialSystem::SetVec3(MaterialId,const char*,const Vec3&)	function	renderer	renderer-materialsystem-setvec3-materialid-const-char-star-const-vec3-amp	renderer.md	engine/renderer/material.h:306
+renderer::MaterialSystem::SetVec4(MaterialId,const char*,const Vec4&)	function	renderer	renderer-materialsystem-setvec4-materialid-const-char-star-const-vec4-amp	renderer.md	engine/renderer/material.h:315
+renderer::MaterialSystem::SetMat4(MaterialId,const char*,const Mat4&)	function	renderer	renderer-materialsystem-setmat4-materialid-const-char-star-const-mat4-amp	renderer.md	engine/renderer/material.h:324
+renderer::MaterialSystem::SetTexture(MaterialId,const char*,rhi::TextureHandle)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-rhi-texturehandle	renderer.md	engine/renderer/material.h:335
+renderer::MaterialSystem::SetSampler(MaterialId,const char*,rhi::SamplerHandle)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-rhi-samplerhandle	renderer.md	engine/renderer/material.h:346
+renderer::MaterialSystem::BeginFrame(u64)	function	renderer	renderer-materialsystem-beginframe-u64	renderer.md	engine/renderer/material.h:351
+renderer::MaterialSystem::FlushMaterials()	function	renderer	renderer-materialsystem-flushmaterials	renderer.md	engine/renderer/material.h:357
+renderer::MaterialSystem::MaterialBindGroup(MaterialId) const	function	renderer	renderer-materialsystem-materialbindgroup-materialid-const	renderer.md	engine/renderer/material.h:365
+renderer::MaterialSystem::ParameterRegion(MaterialId) const	function	renderer	renderer-materialsystem-parameterregion-materialid-const	renderer.md	engine/renderer/material.h:372
+renderer::MaterialSystem::FrameLayout() const	function	renderer	renderer-materialsystem-framelayout-const	renderer.md	engine/renderer/material.h:376
+renderer::MaterialSystem::ObjectLayout() const	function	renderer	renderer-materialsystem-objectlayout-const	renderer.md	engine/renderer/material.h:379
+renderer::MaterialSystem::MaterialLayout(MaterialId) const	function	renderer	renderer-materialsystem-materiallayout-materialid-const	renderer.md	engine/renderer/material.h:384
+renderer::MaterialSystem::EffectiveTexture(MaterialId,const char*) const	function	renderer	renderer-materialsystem-effectivetexture-materialid-const-char-star-const	renderer.md	engine/renderer/material.h:394
+renderer::MaterialSystem::GetDefaultTexture(DefaultTexture) const	function	renderer	renderer-materialsystem-getdefaulttexture-defaulttexture-const	renderer.md	engine/renderer/material.h:402
+renderer::MaterialSystem::GetPipeline(MaterialId,const PipelineTarget&,const VertexLayoutData&)	function	renderer	renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp	renderer.md	engine/renderer/material.h:417
+renderer::MaterialSystem::Warmup(MaterialId,const PipelineTarget&,const VertexLayoutData&)	function	renderer	renderer-materialsystem-warmup-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp	renderer.md	engine/renderer/material.h:427
+renderer::MaterialSystem::BindGroupRebuilds(MaterialId) const	function	renderer	renderer-materialsystem-bindgrouprebuilds-materialid-const	renderer.md	engine/renderer/material.h:433
+renderer::MaterialSystem::Stats() const	function	renderer	renderer-materialsystem-stats-const	renderer.md	engine/renderer/material.h:437
 renderer::StandardVertex	struct	renderer	renderer-standardvertex	renderer.md	engine/renderer/mesh.h:19
 renderer::StandardVertex::position	variable	renderer	renderer-standardvertex-position	renderer.md	engine/renderer/mesh.h:21
 renderer::StandardVertex::normal	variable	renderer	renderer-standardvertex-normal	renderer.md	engine/renderer/mesh.h:23
@@ -1487,7 +1573,7 @@ renderer::GpuMesh::GetBounds() const	function	renderer	renderer-gpumesh-getbound
 renderer::GpuMesh::RecordPrepare(rhi::CommandList*)	function	renderer	renderer-gpumesh-recordprepare-rhi-commandlist-star	renderer.md	engine/renderer/mesh.h:219
 renderer::GpuMesh::MarkReady()	function	renderer	renderer-gpumesh-markready	renderer.md	engine/renderer/mesh.h:222
 renderer::GpuMesh::Ready() const	function	renderer	renderer-gpumesh-ready-const	renderer.md	engine/renderer/mesh.h:226
-renderer::GpuMesh::Draw(rhi::CommandList*,u32,u32) const	function	renderer	renderer-gpumesh-draw-rhi-commandlist-star-u32-u32-const	renderer.md	engine/renderer/mesh.h:236
+renderer::GpuMesh::Draw(rhi::CommandList*,u32,u32) const	function	renderer	renderer-gpumesh-draw-rhi-commandlist-star-u32-u32-const	renderer.md	engine/renderer/mesh.h:237
 renderer::ObjectId	struct	renderer	renderer-objectid	renderer.md	engine/renderer/render_scene.h:18
 renderer::ObjectId::index	variable	renderer	renderer-objectid-index	renderer.md	engine/renderer/render_scene.h:20
 renderer::ObjectId::generation	variable	renderer	renderer-objectid-generation	renderer.md	engine/renderer/render_scene.h:22

@@ -226,13 +226,14 @@ public:
     bool Ready() const { return ready_; }
 
     /// Binds the buffers and draws all indices for `instance_count` instances starting at `first_instance`. Call inside a
-    /// pass, with a pipeline whose vertex layout matches [[renderer::GpuMesh::Layout]] bound.
+    /// pass, with a pipeline whose vertex layout matches [[renderer::GpuMesh::Layout]] bound. The prepare barriers must
+    /// have been recorded, in this list before the pass or in an earlier submitted one.
     ///
     /// Param list: the command list being recorded.
     /// Param instance_count: number of instances, at least 1.
     /// Param first_instance: the first instance index (the per-object data index, see [[renderer::FrameResources]]).
     /// Ownership: `list` is borrowed for the call.
-    /// Aborts: this mesh is empty or not ready, or as for [[rhi::CommandList::DrawIndexed]].
+    /// Aborts: this mesh is empty, or as for [[rhi::CommandList::DrawIndexed]].
     void Draw(rhi::CommandList* list, u32 instance_count, u32 first_instance) const;
 
 private:
@@ -244,6 +245,7 @@ private:
     rhi::IndexType index_type_ = rhi::IndexType::UInt16;
     VertexLayoutData layout_;
     Bounds bounds_;
+    bool prepared_ = false; // RecordPrepare was called, in a list that may not be submitted yet
     bool ready_ = false;
 };
 

@@ -16,6 +16,7 @@ Seen failing once or intermittently, passing on rerun. Cause not investigated.
 
 - X11 key-translation tests.
 - Wayland resize-storm test (once, under load).
+- `A swapchain survives 200 resize requests including zero sizes on Wayland [asan]`: failed once in a full `ctest -j6` run on Phase 4 Day 74, passed on rerun.
 
 ## Unverified by a human
 
@@ -33,6 +34,9 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 | `shader_mint --permute` starts `slangc` with `posix_spawnp` (Linux only) | Phase 5 (Windows) | `shaders/README.md`, Day 72 day file |
 | Clip-space Y flip in the shader path (Slang does not apply it) | Phases 5-6 | `shaders/README.md`, RHI portability review |
 | Metal renames an entry point called `main` | Phase 6 | `shaders/README.md` |
+| `MaterialSystem::GetPipeline` scans the pipeline cache linearly and `FlushMaterials` walks every material slot up to the highest used; neither was measured with a real scene | Day 79-80 (when a frame's real call counts are known) | Day 74 day file |
+| The failure path of a bind-group rebuild in `FlushMaterials` (slots revert to what the groups show) has no test: it needs RHI fault injection | Day 77 | Day 74 day file |
+| The per-object index comes from `SV_VulkanInstanceID` (`gl_InstanceIndex`); D3D12 and Metal shaders cannot see a draw's base instance that way, so those backends need another delivery (root constant, per-draw vertex stream, or `SV_StartInstanceLocation` where it exists) | Phases 5-6 | `shaders/README.md` "Material shaders" |
 | Other items filed per backend (typeless depth, descriptor copies, `ClampToBorder`, ...) | Phases 5-6 | RHI portability review, section 5 |
 | Metal backend behavior on Apple Silicon (unified memory, tile-based rendering, memoryless attachments) cannot be verified on the developer's 2019 Intel MacBook Pro | Phase 6 (record), Phase 14 (iOS device) | `plans/phase-06-macos-metal.md` |
 | How Phases 7-13 keep the Windows/macOS builds working (per-phase closing day vs periodic catch-up) | Decide when Phase 6 completes | `PLAN.md` assumption #11 |
