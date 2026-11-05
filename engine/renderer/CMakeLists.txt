@@ -17,6 +17,12 @@ set(RENDERER_SOURCES
   renderer.cpp
 )
 
+# The passes embed the committed shader includes (<name>.spv.inc), which `shader_mint` generates and which itself links the
+# core renderer library, so they live in a second library to keep the build graph acyclic.
+set(RENDERER_PASS_SOURCES
+  gbuffer.cpp
+)
+
 # Headers are included as "renderer/<name>.h", rooted at engine/.
 set(RENDERER_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -25,6 +31,10 @@ function(engine_add_renderer_lib suffix)
   target_include_directories(renderer${suffix} PUBLIC ${RENDERER_INCLUDE_ROOT})
   target_compile_options(renderer${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   target_link_libraries(renderer${suffix} PUBLIC rhi${suffix} jobs${suffix} foundation${suffix})
+  add_library(renderer_passes${suffix} STATIC ${RENDERER_PASS_SOURCES})
+  target_include_directories(renderer_passes${suffix} PRIVATE ${CMAKE_SOURCE_DIR}/shaders)
+  target_compile_options(renderer_passes${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
+  target_link_libraries(renderer_passes${suffix} PUBLIC renderer${suffix})
 endfunction()
 
 engine_add_renderer_lib("")

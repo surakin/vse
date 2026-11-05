@@ -258,6 +258,39 @@ public:
     /// Returns whether `id` names a live material.
     /// Fails: never.
     bool IsAlive(MaterialId id) const;
+    /// Returns the live material that has slot `index`, or an invalid id when the slot is free or out of range.
+    ///
+    /// A scene object stores only the slot index (`RenderObject::material`); this recovers the id with its generation.
+    /// Fails: never.
+    /// Thread-safety: thread-compatible; concurrent calls are fine while nothing creates or destroys materials.
+    MaterialId MaterialAtIndex(u32 index) const;
+    /// Returns the bind group that binds `region` of a buffer as the set-0 frame uniform ([[renderer::FrameData]]).
+    ///
+    /// The group is created on first use and cached by buffer, offset and size, so the three regions of a
+    /// [[renderer::FrameResources]] cost three creations in total. The system holds up to 8 such groups; past that the
+    /// oldest is destroyed (through the device's deferred destruction), so recreating the frame resources does not exhaust it.
+    ///
+    /// Param region: the frame region from [[renderer::FrameResources::FrameRegion]].
+    /// Returns: the group, or an invalid handle when the device cannot create it (logged).
+    /// Ownership: the system owns the group; it lives until it is evicted or the system is destroyed, which is fine after
+    ///   the buffer itself was destroyed.
+    /// Thread-safety: thread-compatible; call from one thread (the one preparing the frame).
+    rhi::BindGroupHandle FrameBindGroup(const BufferRegion& region);
+    /// Returns the bind group that binds `region` of a buffer as the set-2 per-object storage buffer; cached like
+    /// [[renderer::MaterialSystem::FrameBindGroup]].
+    ///
+    /// Param region: the object region from [[renderer::FrameResources::ObjectRegion]].
+    /// Returns: the group, or an invalid handle when the device cannot create it (logged).
+    /// Ownership: as for [[renderer::MaterialSystem::FrameBindGroup]].
+    /// Thread-safety: thread-compatible; call from one thread (the one preparing the frame).
+    rhi::BindGroupHandle ObjectBindGroup(const BufferRegion& region);
+    /// Returns whether the material's vertex shader reads the vertex attribute at `location`.
+    ///
+    /// Param id: a live material.
+    /// Param location: a vertex input location.
+    /// Aborts: `id` is invalid or stale.
+    /// Thread-safety: thread-compatible; concurrent calls are fine while nothing creates or destroys materials.
+    bool ReadsVertexInput(MaterialId id, u32 location) const;
 
     /// Sets a scalar float member of the parameter block.
     ///
@@ -471,6 +504,18 @@ private:
     bool begun_ = false;
     bool valid_ = false;
     MaterialStats stats_;
+    struct CachedGroup {
+        rhi::BufferHandle buffer;
+        u64 offset = 0;
+        u64 size = 0;
+        rhi::BindGroupHandle group;
+    };
+    static constexpr u32 kMaxCachedGroups = 8;
+    rhi::BindGroupHandle CachedBindGroup(CachedGroup* cache, u32* count, rhi::BindGroupLayoutHandle layout, const BufferRegion& region);
+    CachedGroup frame_groups_[kMaxCachedGroups];
+    CachedGroup object_groups_[kMaxCachedGroups];
+    u32 frame_group_count_ = 0;
+    u32 object_group_count_ = 0;
 };
 
 } // namespace engine_placeholder::renderer

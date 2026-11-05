@@ -25,9 +25,15 @@ set(ENGINE_SHADERS
   material_test.vert
   material_test.frag
   graph_sample.frag
+  gbuffer.vert
+  gbuffer.frag
+  gbuffer_debug.frag
 )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/names.cmake)
+
+# Slang sources that shaders include (not compiled alone); a change to one rebuilds every shader.
+file(GLOB SHADER_COMMON_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*_common.slang)
 
 find_program(SLANGC slangc)
 find_program(SPIRV_VAL spirv-val)
@@ -68,7 +74,7 @@ if(SLANGC)
         COMMAND shader_mint --permute --name ${symbol} --source ${shader}.slang --source-path ${source}
                 --manifest ${manifest} --compiler "slangc ${SLANGC_VERSION}" --slangc ${SLANGC} ${perm_args}
                 --work-dir ${SHADER_WORK_DIR} --spv-out ${inc} --refl-out ${refl_inc} --perm-out ${perm_inc}
-        DEPENDS ${source} ${manifest} ${CMAKE_CURRENT_SOURCE_DIR}/names.cmake shader_mint
+        DEPENDS ${source} ${SHADER_COMMON_SOURCES} ${manifest} ${CMAKE_CURRENT_SOURCE_DIR}/names.cmake shader_mint
         COMMENT "Compiling ${shader}.slang (permuted)"
         VERBATIM)
       list(APPEND SHADER_INCS ${inc} ${refl_inc} ${perm_inc})

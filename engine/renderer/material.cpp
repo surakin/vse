@@ -248,6 +248,8 @@ MaterialSystem::~MaterialSystem() {
         }
         if (t.vertex.IsValid()) device_->DestroyShader(t.vertex);
     }
+    for (u32 i = 0; i < frame_group_count_; ++i) device_->DestroyBindGroup(frame_groups_[i].group);
+    for (u32 i = 0; i < object_group_count_; ++i) device_->DestroyBindGroup(object_groups_[i].group);
     for (rhi::TextureHandle& tex : defaults_) {
         if (tex.IsValid()) device_->DestroyTexture(tex);
     }
@@ -526,6 +528,57 @@ MaterialSystem::MaterialSlot& MaterialSystem::Get(MaterialId id) {
 
 bool MaterialSystem::IsAlive(MaterialId id) const {
     return id.IsValid() && id.index < desc_.max_materials && materials_[id.index].alive && materials_[id.index].generation == id.generation;
+}
+
+rhi::BindGroupHandle MaterialSystem::CachedBindGroup(CachedGroup* cache, u32* count, rhi::BindGroupLayoutHandle layout, const BufferRegion& region) {
+    for (u32 i = 0; i < *count; ++i) {
+        if (cache[i].buffer == region.buffer && cache[i].offset == region.offset && cache[i].size == region.size) return cache[i].group;
+    }
+    if (*count == kMaxCachedGroups) {
+        // The oldest entry goes: a recreated FrameResources leaves groups for dead buffers behind, and the device
+        // releases a destroyed group only after the frames that used it have finished.
+        device_->DestroyBindGroup(cache[0].group);
+        for (u32 i = 1; i < kMaxCachedGroups; ++i) cache[i - 1] = cache[i];
+        --*count;
+    }
+    rhi::BindGroupEntry entry;
+    entry.binding = 0;
+    entry.buffer = region.buffer;
+    entry.offset = region.offset;
+    entry.size = region.size;
+    rhi::BindGroupDesc bd;
+    bd.layout = layout;
+    bd.entries = rhi::Span<rhi::BindGroupEntry>(&entry, 1);
+    const rhi::BindGroupHandle group = device_->CreateBindGroup(bd);
+    if (!group.IsValid()) {
+        RenderLog(LogVerbosity::Error, "MaterialSystem: the device could not create a frame/object bind group");
+        return rhi::BindGroupHandle{};
+    }
+    cache[*count] = CachedGroup{region.buffer, region.offset, region.size, group};
+    ++*count;
+    return group;
+}
+
+rhi::BindGroupHandle MaterialSystem::FrameBindGroup(const BufferRegion& region) {
+    return CachedBindGroup(frame_groups_, &frame_group_count_, frame_layout_, region);
+}
+
+rhi::BindGroupHandle MaterialSystem::ObjectBindGroup(const BufferRegion& region) {
+    return CachedBindGroup(object_groups_, &object_group_count_, object_layout_, region);
+}
+
+MaterialId MaterialSystem::MaterialAtIndex(u32 index) const {
+    if (index >= desc_.max_materials || !materials_[index].alive) return MaterialId{};
+    return MaterialId{index, materials_[index].generation};
+}
+
+bool MaterialSystem::ReadsVertexInput(MaterialId id, u32 location) const {
+    const MaterialSlot& m = Get(id);
+    const ShaderReflection& r = templates_[m.template_index].vertex_reflection;
+    for (u32 i = 0; i < r.vertex_input_count; ++i) {
+        if (r.vertex_inputs[i].location == location) return true;
+    }
+    return false;
 }
 
 MaterialId MaterialSystem::CreateMaterial(TemplateId tmpl, PermutationKey key, const char* name) {
@@ -854,7 +907,10 @@ PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& 
         for (u32 a = 0; a < vertex_layout.attribute_count; ++a) {
             if (vertex_layout.attributes[a].location == in.location) {
                 found = true;
-                if (vertex_layout.attributes[a].format != in.format) {
+                const rhi::VertexFormat have = vertex_layout.attributes[a].format;
+                // A normalized 8-bit attribute reaches the shader as a float4, so a float4 input reads it.
+                const bool compatible = have == in.format || (have == rhi::VertexFormat::UNorm8x4 && in.format == rhi::VertexFormat::Float4);
+                if (!compatible) {
                     RenderLog(LogVerbosity::Error, "MaterialSystem: pipeline for '%s': vertex input '%s' (location %u) has a different format in the mesh layout", tname, in.name, in.location);
                     return PipelineLookup{};
                 }

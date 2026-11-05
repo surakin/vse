@@ -1,0 +1,9 @@
+# Keys to build for gbuffer.frag: every combination of the three options (8 modules; identical ones are shared).
+key -
+key NORMAL_MAP
+key ALPHA_TEST
+key VERTEX_COLOR
+key NORMAL_MAP ALPHA_TEST
+key NORMAL_MAP VERTEX_COLOR
+key ALPHA_TEST VERTEX_COLOR
+key NORMAL_MAP ALPHA_TEST VERTEX_COLOR

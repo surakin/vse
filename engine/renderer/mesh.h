@@ -325,6 +325,10 @@ public:
     bool HasPrimitiveRestart() const { return has_restart_; }
     /// Returns the object-space bounds.
     const Bounds& GetBounds() const { return bounds_; }
+    /// Returns a number from 1 to 2^24 - 1 that differs between meshes created one after another, for [[renderer::MakeDrawSortKey]].
+    /// It repeats only after 16 million meshes were created. 0 for an empty mesh.
+    /// Fails: never.
+    u32 SortId() const { return sort_id_; }
 
     /// Records the barriers that move the buffers out of their upload state; does nothing once [[renderer::GpuMesh::MarkReady]]
     /// was called. Call outside a render pass.
@@ -363,6 +367,7 @@ private:
     bool has_restart_ = false;
     VertexLayoutData layout_;
     Bounds bounds_;
+    u32 sort_id_ = 0;
     bool prepared_ = false; // RecordPrepare was called, in a list that may not be submitted yet
     bool ready_ = false;
 };

@@ -1,5 +1,6 @@
 #include "renderer/mesh.h"
 
+#include <atomic>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -598,6 +599,8 @@ GpuMesh& GpuMesh::operator=(GpuMesh&& other) {
         has_restart_ = other.has_restart_;
         layout_ = other.layout_;
         bounds_ = other.bounds_;
+        sort_id_ = other.sort_id_;
+        other.sort_id_ = 0;
         ready_ = other.ready_;
         prepared_ = other.prepared_;
         other.device_ = nullptr;
@@ -647,6 +650,8 @@ bool GpuMesh::Create(rhi::Device* device, const MeshData& data, const char* debu
     has_restart_ = data.HasPrimitiveRestart();
     layout_ = data.Layout();
     bounds_ = data.GetBounds();
+    static std::atomic<u32> next_sort_id{1};
+    sort_id_ = next_sort_id.fetch_add(1, std::memory_order_relaxed) % 0xffffffu + 1; // 1 to 2^24 - 1, never 0
     ready_ = false;
     prepared_ = false;
     return true;
@@ -662,6 +667,7 @@ void GpuMesh::Destroy() {
     vertex_buffer_ = {};
     vertex_count_ = 0;
     index_count_ = 0;
+    sort_id_ = 0;
     ready_ = false;
     prepared_ = false;
     device_ = nullptr;

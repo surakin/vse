@@ -32,6 +32,7 @@ Full reference: [The renderer](../reference/renderer.md).
 - [[renderer::MakeDrawSortKey]] — the draw order: pipeline, then material, then mesh
 - [[renderer::RenderGraph]] — passes and virtual resources, compiled into an ordered, culled schedule
 - [[renderer::PassBuilder]] — declares what one pass reads and writes
+- [[renderer::GBufferPass]] — culls, sorts and draws the scene into the G-buffer; [[renderer::GBufferDebugView]] shows a layer
 
 ## Outline
 
@@ -450,6 +451,83 @@ int main() {
 
 ```output
 list 384 indices, strip 151 indices, back 384 indices, restart yes
+```
+
+### The G-buffer geometry pass
+
+`GBufferPass` is the first real pass of the deferred renderer. It draws every visible object once, with its material, into
+four targets (the library is `renderer_passes`; the shaders are `gbuffer.vert` and `gbuffer.frag`):
+
+| Target | Format | Contents |
+|---|---|---|
+| albedo | `RGBA8_SRGB` | rgb linear albedo (the attachment encodes sRGB on write), a = baked occlusion |
+| normal | `RG16_Float` | world-space normal, octahedral (`OctEncode` / `OctDecode`) |
+| material | `RGBA8_UNorm` | r roughness, g metallic, b emissive scale, a flags / 255 |
+| depth | `D32_Float` | 0 at the near plane, 1 at the far plane, no reverse-Z |
+
+`CheckGBufferFormats` asks the device for every format with the usage the pass needs and names the first one it lacks; call
+it when the renderer is created. `FitCameraDepthRange` sets a camera's near and far planes from the scene's bounding spheres.
+
+A frame uses the pass in two steps. `Prepare(scene, frustum)` runs on the frame's thread, after `FrameResources::BeginFrame`
+and before `Flush`: it culls the scene, sorts the visible objects by `MakeDrawSortKey` (pipeline, then material, then mesh,
+with the scene slot breaking ties, so the order objects were added never matters), writes the per-object data in that order
+and builds the draw list. Runs of the same mesh and material become one instanced draw. `AddToGraph(graph, width, height)`
+declares the four targets as transients and the pass that renders them. Recording binds the pipeline and the material group
+only when they change and creates nothing; the frame and object bind groups are cached by the material system
+(`FrameBindGroup`, `ObjectBindGroup`).
+
+Materials come from `CreateGBufferMaterial(materials, templates, options, name)`. The options (`normal_map`, `alpha_test`,
+`vertex_color`) pick the fragment permutation, and `vertex_color` also picks the vertex shader that reads the mesh's color, so
+the two stages cannot disagree. Per-vertex colors are authored in sRGB; the shader converts them to linear and multiplies
+the albedo. The parameters are `base_color`, `roughness`, `metallic`, `emissive_scale`, `alpha_cutoff`, `occlusion` and `flags`,
+and the textures `albedo_tex` and `normal_tex`. `Prepare` leaves an object out and names it in `LastError` when its mesh was
+never prepared (`GpuMesh::RecordPrepare`, then `MarkReady` after the submit), its material does not exist, no pipeline fits
+the mesh, or the mesh and the material disagree about vertex colors (a colored mesh through a material that ignores them is
+refused, not drawn plain). The rest of the frame is still drawn and `Prepare` returns false.
+
+The later passes read the targets as `Sampled`: a depth texture read through a sampler is `Sampled`, while `DepthRead` is for
+the depth test without writes (the two need different image layouts). `GBufferDebugView` draws one layer (albedo, normal,
+material or linear depth) into a color target for debugging; it creates one bind group per frame and is not part of the
+per-frame cost budget.
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "renderer/gbuffer.h"
+#include "rhi/null/null_device.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::renderer;
+
+int main() {
+    rhi::NullDevice* device = rhi::CreateNullDevice();
+    int rc = 0;
+    {
+        char error[128];
+        if (!CheckGBufferFormats(device, error, sizeof(error))) return 1;
+
+        // A direction survives the trip through two octahedral coordinates.
+        const Vec3 n(0.36f, -0.48f, -0.8f);
+        const Vec2 e = OctEncode(n);
+        const Vec3 d = OctDecode(e);
+        std::printf("octahedral (%.3f, %.3f) -> (%.3f, %.3f, %.3f)\n", e.x, e.y, d.x, d.y, d.z);
+
+        MaterialSystem materials(device, MaterialSystemDesc{});
+        const GBufferTemplates templates = CreateGBufferTemplates(&materials);
+        GBufferOptions options;
+        options.vertex_color = true;
+        const MaterialId material = CreateGBufferMaterial(&materials, templates, options, "painted");
+        std::printf("a vertex color material reads the color attribute: %s\n", materials.ReadsVertexInput(material, 4) ? "yes" : "no");
+        rc = material.IsValid() ? 0 : 1;
+    }
+    rhi::DestroyDevice(device);
+    return rc;
+}
+```
+
+```output
+octahedral (0.707, -0.780) -> (0.360, -0.480, -0.800)
+a vertex color material reads the color attribute: yes
 ```
 
 ### Rules & contracts
