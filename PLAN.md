@@ -503,14 +503,16 @@ interpretations keep it buildable — flag any that don't match intent:
   the regenerated `docs/reference/`, and the updated guide page in the same
   commit; `docgen lint`, link, sample and staleness checks (`ctest -L docs`)
   enforce it. Rule text: `CLAUDE.md`; tooling: Phase 2.5.
-- **Owning arrays are foundation `Array`s, never raw `new[]`/`delete[]`.**
+- **Owning arrays are foundation containers, never raw `new[]`/`delete[]`.**
   Hand-paired `new T[n]` / `delete[] p` is correct but error-prone (leaks
-  on early-return paths, mismatched delete forms). Any engine code that
-  owns a run of elements uses the foundation `Array` (with a `HeapAllocator`
-  where nothing else owns the memory, an arena where it does), so the
-  storage is released by a destructor on every path. Raw array `new` is
-  allowed only inside the foundation allocators themselves. Enforced by a
-  `ctest` source scan (Phase 4 Day 80a); applies to every later phase.
+  on early-return paths, mismatched delete forms). The foundation has two
+  owning types: `Array<T>`, a constant-size memory block (size fixed at
+  construction), and `Vector<T>`, the growable container (what Phase 0 Day
+  6 called `Array`, renamed in Phase 4 Day 80a). Engine code that owns a
+  run of elements uses one of them, so the storage is released by a
+  destructor on every path. Raw array `new` is allowed only inside the
+  foundation allocators themselves. Enforced by a `ctest` source scan
+  (Day 80a); applies to every later phase.
 - **Quiet by default.** Logging is channel-based with per-channel verbosity
   and per-user configuration from day one — no Unreal-style log spam.
 
