@@ -33,6 +33,17 @@ sub-tasks (see "How the plan is structured" below), is not yet
 startable; doing that breakdown is itself planning work that has to
 happen, and be committed, first.
 
+## Known issues are tracked (required)
+
+`KNOWN-ISSUES.md` lists failing tests, flaky tests, checks no human has done
+yet, and items deferred to a later phase. **Update it in the same commit
+whenever a day leaves something in one of those states, and remove the
+entry in the commit that fixes it.** That covers a test you saw fail or
+flake (even if unrelated to the day's work), a measurement you chose not to
+take, and a limitation filed for a later phase. Record observed facts and
+where they were seen; do not guess at causes. Do not leave such an item only
+in a day file or in `STATUS.md` prose.
+
 ## End-of-day code review (required)
 
 **Every implementation day ends with a high-effort code review before it

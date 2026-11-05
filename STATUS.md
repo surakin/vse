@@ -6,6 +6,8 @@ file's tasks get checked off, a phase starts or completes, a build/test
 command changes). See `CLAUDE.md` for the durable rules that don't change
 with progress.
 
+Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
+
 ## Phase 0 (Foundation layer)
 
 **Complete — all 15 days are done and committed.** Real code exists
