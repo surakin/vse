@@ -13,7 +13,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Logging and Assertions](foundation-log.md) | 2 | 26 |
 | [Foundation: Fundamental Types](foundation-types.md) | 1 | 11 |
 | [Platform: OS Services](platform-os.md) | 4 | 34 |
-| [Platform: Windowing and Input](platform-window-input.md) | 9 | 251 |
+| [Platform: Windowing and Input](platform-window-input.md) | 9 | 252 |
 | [The Job System](jobs.md) | 10 | 172 |
 | [The Render Hardware Interface](rhi.md) | 16 | 608 |
 | [The renderer](renderer.md) | 16 | 704 |

@@ -576,9 +576,9 @@ os::wayland::WaylandPlatformWindow::Width() const	function	platform/window-input
 os::wayland::WaylandPlatformWindow::Height() const	function	platform/window-input	os-wayland-waylandplatformwindow-height-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:64
 os::wayland::WaylandPlatformWindow::BackendName() const	function	platform/window-input	os-wayland-waylandplatformwindow-backendname-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:66
 os::wayland::WaylandPlatformWindow::GetNativeInfo() const	function	platform/window-input	os-wayland-waylandplatformwindow-getnativeinfo-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:68
-os::wayland::WaylandPlatformWindow::IsMinimized() const	function	platform/window-input	os-wayland-waylandplatformwindow-isminimized-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:78
-os::wayland::WaylandPlatformWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandplatformwindow-resizeserial-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:80
-os::wayland::WaylandPlatformWindow::Input() const	function	platform/window-input	os-wayland-waylandplatformwindow-input-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:83
+os::wayland::WaylandPlatformWindow::IsMinimized() const	function	platform/window-input	os-wayland-waylandplatformwindow-isminimized-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:79
+os::wayland::WaylandPlatformWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandplatformwindow-resizeserial-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:81
+os::wayland::WaylandPlatformWindow::Input() const	function	platform/window-input	os-wayland-waylandplatformwindow-input-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:84
 os::wayland::WaylandWindow	class	platform/window-input	os-wayland-waylandwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:24
 os::wayland::WaylandWindow::Create(WaylandConnection&,StringView,StringView,u32,u32)	function	platform/window-input	os-wayland-waylandwindow-create-waylandconnection-amp-stringview-stringview-u32-u32	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:40
 os::wayland::WaylandWindow::WaylandWindow()	function	platform/window-input	os-wayland-waylandwindow-waylandwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:44
@@ -590,13 +590,14 @@ os::wayland::WaylandWindow::operator=(WaylandWindow&&) noexcept	function	platfor
 os::wayland::WaylandWindow::Valid() const	function	platform/window-input	os-wayland-waylandwindow-valid-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:58
 os::wayland::WaylandWindow::ShouldClose() const	function	platform/window-input	os-wayland-waylandwindow-shouldclose-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:64
 os::wayland::WaylandWindow::CommitPendingResize()	function	platform/window-input	os-wayland-waylandwindow-commitpendingresize	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:72
-os::wayland::WaylandWindow::Surface() const	function	platform/window-input	os-wayland-waylandwindow-surface-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:77
-os::wayland::WaylandWindow::XdgSurface() const	function	platform/window-input	os-wayland-waylandwindow-xdgsurface-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:81
-os::wayland::WaylandWindow::XdgToplevel() const	function	platform/window-input	os-wayland-waylandwindow-xdgtoplevel-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:85
-os::wayland::WaylandWindow::ServerSideDecorated() const	function	platform/window-input	os-wayland-waylandwindow-serversidedecorated-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:89
-os::wayland::WaylandWindow::Width() const	function	platform/window-input	os-wayland-waylandwindow-width-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:91
-os::wayland::WaylandWindow::Height() const	function	platform/window-input	os-wayland-waylandwindow-height-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:93
-os::wayland::WaylandWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandwindow-resizeserial-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:95
+os::wayland::WaylandWindow::MarkSurfaceExported() const	function	platform/window-input	os-wayland-waylandwindow-marksurfaceexported-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:78
+os::wayland::WaylandWindow::Surface() const	function	platform/window-input	os-wayland-waylandwindow-surface-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:83
+os::wayland::WaylandWindow::XdgSurface() const	function	platform/window-input	os-wayland-waylandwindow-xdgsurface-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:87
+os::wayland::WaylandWindow::XdgToplevel() const	function	platform/window-input	os-wayland-waylandwindow-xdgtoplevel-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:91
+os::wayland::WaylandWindow::ServerSideDecorated() const	function	platform/window-input	os-wayland-waylandwindow-serversidedecorated-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:95
+os::wayland::WaylandWindow::Width() const	function	platform/window-input	os-wayland-waylandwindow-width-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:97
+os::wayland::WaylandWindow::Height() const	function	platform/window-input	os-wayland-waylandwindow-height-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:99
+os::wayland::WaylandWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandwindow-resizeserial-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:101
 os::x11::X11Window	class	platform/window-input	os-x11-x11window	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:28
 os::x11::X11Window::Create(StringView,u32,u32)	function	platform/window-input	os-x11-x11window-create-stringview-u32-u32	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:36
 os::x11::X11Window::X11Window()	function	platform/window-input	os-x11-x11window-x11window	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:39

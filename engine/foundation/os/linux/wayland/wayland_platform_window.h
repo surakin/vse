@@ -71,6 +71,7 @@ public:
             info.kind = NativeWindowKind::Wayland;
             info.display = connection_.Display();
             info.surface = window_.Surface();
+            window_.MarkSurfaceExported();
         }
         return info;
     }

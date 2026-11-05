@@ -1119,6 +1119,18 @@ The window does not actually resize until this happens. A burst of configures, s
 |---|---|
 | Returns | `true` if a new buffer was committed. |
 
+### `MarkSurfaceExported()` {#os-wayland-waylandwindow-marksurfaceexported-const}
+
+`method os::wayland::WaylandWindow::MarkSurfaceExported` — defined in `engine/foundation/os/linux/wayland/wayland_window.h`
+
+```cpp
+void MarkSurfaceExported() const;
+```
+
+Records that the surface was given to a graphics layer (a Vulkan swapchain), which then owns the surface's buffers.
+
+After this, a resize only updates the size and the resize serial; attaching this window's own shared-memory buffer would race the driver's buffers (with explicit sync the compositor kills the connection).
+
 ### `Surface()` {#os-wayland-waylandwindow-surface-const}
 
 `method os::wayland::WaylandWindow::Surface` — defined in `engine/foundation/os/linux/wayland/wayland_window.h`

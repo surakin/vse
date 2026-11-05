@@ -242,6 +242,11 @@ bool WaylandWindow::CommitPendingResize() {
     if (!buffer_stale_) {
         return false;
     }
+    if (surface_exported_) {
+        // A graphics layer presents to this surface: its swapchain is recreated on the resize serial and supplies the buffers.
+        buffer_stale_ = false;
+        return false;
+    }
     // Only clear the flag on success, so a failed allocation is retried
     // on the next pump instead of leaving the window stuck at the old
     // size forever.
@@ -265,6 +270,7 @@ WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
       buffer_(other.buffer_),
       shm_(other.shm_),
       buffer_stale_(other.buffer_stale_),
+      surface_exported_(other.surface_exported_),
       shm_data_(other.shm_data_),
       shm_size_(other.shm_size_),
       width_(other.width_),
@@ -312,6 +318,7 @@ WaylandWindow& WaylandWindow::operator=(WaylandWindow&& other) noexcept {
         buffer_ = other.buffer_;
         shm_ = other.shm_;
         buffer_stale_ = other.buffer_stale_;
+        surface_exported_ = other.surface_exported_;
         shm_data_ = other.shm_data_;
         shm_size_ = other.shm_size_;
         width_ = other.width_;

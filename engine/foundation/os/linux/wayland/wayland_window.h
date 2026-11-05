@@ -71,6 +71,12 @@ public:
     /// Returns: `true` if a new buffer was committed.
     bool CommitPendingResize();
 
+    /// Records that the surface was given to a graphics layer (a Vulkan swapchain), which then owns the surface's buffers.
+    ///
+    /// After this, a resize only updates the size and the resize serial; attaching this window's own shared-memory buffer
+    /// would race the driver's buffers (with explicit sync the compositor kills the connection).
+    void MarkSurfaceExported() const { surface_exported_ = true; }
+
     /// Returns the `wl_surface`, or null if invalid.
     ///
     /// Ownership: borrowed; owned by this window.
@@ -151,6 +157,8 @@ private:
     u32 floating_width_ = 0;
     u32 floating_height_ = 0;
     bool buffer_stale_ = false;
+    // Set once the surface was handed to a graphics layer: from then on that layer attaches the buffers, and this window must not.
+    mutable bool surface_exported_ = false;
     bool should_close_ = false;
 };
 
