@@ -1,0 +1,34 @@
+# Phase 4 / Day 80b — `UniquePtr` & no raw `new`/`delete`
+
+**Phase:** [Phase 4 — Renderer Core](../phase-04-renderer-core.md)
+**Depends on:** Day 80a. Inserted before Day 81.
+
+Day 80a removed raw array allocation. The same hand-paired ownership remains for single objects: ~60 `new T` / `delete p` sites in `jobs`, `rhi`, `rhi_vulkan` and `renderer` (a `delete` on every error path and in every destructor). Policy (user, 2026-11-05): **ban every raw `new`/`delete`** in `engine/` and `game/`; the foundation allocators and placement `new (ptr) T` into storage a container owns are the only exceptions.
+
+## Design (user answers 2026-11-05: deleter parameter yes; standalone Day 80b; ban all raw new/delete)
+
+- `UniquePtr<T, Deleter = DefaultDelete<T>>` in `engine/foundation/containers/unique_ptr.h`: owns one object, move-only, `operator->`, `operator*`, `Get()`, `Release()`, `Reset(p)`, `explicit operator bool`, converting move from `UniquePtr<Derived>` to `UniquePtr<Base>` (needed for `Device`/`NullDevice`, command lists).
+- `DefaultDelete<T>` destroys and frees through `HeapAllocator`; a custom deleter is any callable `void(T*)` (Vulkan handles, `munmap`, an arena that only runs the destructor). Empty deleters cost nothing (`[[no_unique_address]]`).
+- `MakeUnique<T>(args...)` allocates from the heap and constructs; returns an empty pointer on allocation failure (the engine is exception-free).
+
+## Sites to convert (from a scan of `engine/` and `game/`)
+
+- **Owned members, straightforward:** `Scheduler::pool_`/`io_`; `VulkanDevice::memory_`, `memory_backend_`, `staging_ring_`; `vk_memory` blocks and free lists; command-list pools (`vulkan_device_commands.cpp`, `null_device.cpp`); `NullDevice`'s `State`; `VulkanDevice::swapchain_`; the `ShaderReflection` temporary in `material.cpp` (becomes a plain local or `UniquePtr`).
+- **Decisions needed from the user before implementation (do not guess):**
+  1. *Public API that hands out raw owning pointers:* `rhi::CreateDevice` / `rhi::CreateNullDevice` return `Device*` / `NullDevice*` released by `rhi::DestroyDevice`; `FramePool::Create`; `VulkanSwapchain::Create`. Options: (a) return `UniquePtr<Device>` and drop `DestroyDevice` (changes the public RHI API and every caller, ~100 test and demo uses); (b) keep the raw-pointer API and confine the `new`/`delete` to one allowlisted factory/destroy function per type; (c) another shape.
+  2. *The never-destroyed function-local singleton* `static FallbackSlots* slots = new FallbackSlots();` (`vulkan_device_commands.cpp`): replace with a function-local static object (destroyed at exit), or keep leaked-by-design via an allowlisted exception?
+  3. *`jobs/async_io.cpp`'s `ReadState`*, shared by an awaitable and a result object across a coroutine suspension and freed by whichever dies last: `UniquePtr` moved between them, or reference counting (not planned)?
+  4. *Command lists:* `Device::CreateCommandList`-style pools hand out `new`-ed lists owned by per-thread pools; convert the pool storage to `Vector<UniquePtr<...>>` if the lists are never freed individually.
+
+## Tasks
+
+- [ ] Settle decisions 1-4 above with the user and record the answers here.
+- [ ] `UniquePtr`, `DefaultDelete`, `MakeUnique` with `///` docs; foundation tests (destroys once, move leaves the source empty, `Release`/`Reset`, converting move to a base, custom deleter called with the pointer, empty deleter adds no size, `MakeUnique` failure on an absurd size, ASan leak-free).
+- [ ] Convert the owned-member sites listed above; each keeps its existing behavior and error paths.
+- [ ] Apply the answers to decisions 1-4.
+- [ ] Extend the gate: `raw_array_check` becomes `raw_new_check` (rename the tool, CMake and ctest names, fixtures) and also bans `new T` / `new T(...)` / `new (std::nothrow) T` and `delete p`; placement `new (ptr) T` and `operator new`/`operator delete` definitions stay allowed; `engine/foundation/mem/` stays exempt; any allowlisted exception carries a reason, as in `rhi_boundary_check`. Fixtures for each form and for the allowed placement `new`.
+- [ ] Update PLAN.md's guiding principle and `docs/guide/foundation-containers.md` (UniquePtr section with a compiled sample); `docgen lint` at zero, `docs/reference/` regenerated, `ctest -L docs` passes.
+- [ ] **End-of-day review (CLAUDE.md):** `/code-review high` (extra scrutiny: ownership and lifetime, destructor order in `VulkanDevice`, the async-read state), record under "Post-implementation code review", mention in `STATUS.md`.
+- [ ] Update `STATUS.md` and `KNOWN-ISSUES.md` (remove the Day 80a entries this day resolves); commit and push.
+
+**Done:** `grep` finds no raw `new`/`delete` in `engine/` or `game/` outside the allowlist, `raw_new_check` enforces it with planted-violation fixtures, the full ctest (plain, ASan, TSan) passes, and the docs pages are named in the commit.

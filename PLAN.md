@@ -513,6 +513,10 @@ interpretations keep it buildable — flag any that don't match intent:
   is what Phase 0 Day 6 called `Array`, renamed in Phase 4 Day 80a. Raw
   array `new` is allowed only inside the foundation allocators themselves.
   Enforced by a `ctest` source scan (Day 80a); applies to every later phase.
+  Single objects follow the same rule (decided 2026-11-05, Phase 4 Day 80b):
+  `UniquePtr<T, Deleter>` owns them, and raw `new`/`delete` is banned in
+  `engine/` and `game/` outside the foundation allocators (placement `new`
+  into container-owned storage is the only other form).
 - **Quiet by default.** Logging is channel-based with per-channel verbosity
   and per-user configuration from day one — no Unreal-style log spam.
 

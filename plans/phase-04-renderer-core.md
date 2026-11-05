@@ -34,6 +34,7 @@ Each day has its own file of individually checkable sub-tasks, a docs task, an e
 79. [The G-buffer Geometry Pass](phase-04-renderer-core/day-79-gbuffer-pass.md)
 80. [Deferred Lighting: Directional & Ambient](phase-04-renderer-core/day-80-deferred-lighting.md)
 80a. [Foundation Owning Arrays (replace raw `new[]`/`delete[]`)](phase-04-renderer-core/day-80a-foundation-owning-arrays.md)
+80b. [`UniquePtr` & No Raw `new`/`delete`](phase-04-renderer-core/day-80b-unique-ptr.md)
 81. [Point Lights & Light Volumes](phase-04-renderer-core/day-81-point-lights.md)
 82. [The Renderer Demo & Depth Correctness](phase-04-renderer-core/day-82-renderer-demo.md)
 83. [Hardening, Sanitizers & Performance](phase-04-renderer-core/day-83-renderer-hardening-perf.md)
