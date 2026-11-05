@@ -14,15 +14,16 @@ Day 80a removed raw array allocation. The same hand-paired ownership remains for
 ## Sites to convert (from a scan of `engine/` and `game/`)
 
 - **Owned members, straightforward:** `Scheduler::pool_`/`io_`; `VulkanDevice::memory_`, `memory_backend_`, `staging_ring_`; `vk_memory` blocks and free lists; command-list pools (`vulkan_device_commands.cpp`, `null_device.cpp`); `NullDevice`'s `State`; `VulkanDevice::swapchain_`; the `ShaderReflection` temporary in `material.cpp` (becomes a plain local or `UniquePtr`).
-- **Decisions needed from the user before implementation (do not guess):**
-  1. *Public API that hands out raw owning pointers:* `rhi::CreateDevice` / `rhi::CreateNullDevice` return `Device*` / `NullDevice*` released by `rhi::DestroyDevice`; `FramePool::Create`; `VulkanSwapchain::Create`. Options: (a) return `UniquePtr<Device>` and drop `DestroyDevice` (changes the public RHI API and every caller, ~100 test and demo uses); (b) keep the raw-pointer API and confine the `new`/`delete` to one allowlisted factory/destroy function per type; (c) another shape.
-  2. *The never-destroyed function-local singleton* `static FallbackSlots* slots = new FallbackSlots();` (`vulkan_device_commands.cpp`): replace with a function-local static object (destroyed at exit), or keep leaked-by-design via an allowlisted exception?
-  3. *`jobs/async_io.cpp`'s `ReadState`*, shared by an awaitable and a result object across a coroutine suspension and freed by whichever dies last: `UniquePtr` moved between them, or reference counting (not planned)?
-  4. *Command lists:* `Device::CreateCommandList`-style pools hand out `new`-ed lists owned by per-thread pools; convert the pool storage to `Vector<UniquePtr<...>>` if the lists are never freed individually.
+- **Decisions (user, 2026-11-05):**
+  1. *Public API that hands out raw owning pointers:* **(a)** — `rhi::CreateDevice`, `rhi::CreateNullDevice` and `FramePool::Create` return `UniquePtr`; `VulkanSwapchain::Create` likewise. `rhi::DestroyDevice` is removed: the pointer type's deleter performs the idle wait and teardown (`DevicePtr = UniquePtr<Device, DeviceDeleter>`; the deleter parameter exists for this). Every caller (tests, demos, tools) changes.
+  2. *`FallbackSlots` (`vulkan_device_commands.cpp`):* the leak is not kept. It exists because a thread's exit handler (the `thread_local` `FallbackSlotHolder` destructor) can run after static destructors, and a destroyed `std::mutex` must not be touched then. Replace it with constant-initialized, trivially destructible storage: an array of `std::atomic<u64>` bitmasks claimed by compare-and-swap (`kThreadSlots` bits), so there is no `new`, no mutex and no destruction order problem.
+  3. *`jobs/async_io.cpp`'s `ReadState`:* ownership is single (awaitable, then the result object; the I/O thread only borrows the pointer until its last `Decrement`), so `UniquePtr` moved from the awaitable into the result is enough. The user wants a `SharedPtr<T>` with optional thread safety as well: **open question — add it this day (no site needs it yet) or when the first shared-ownership site appears?**
+  4. *Command-list pools:* yes — pool storage becomes `Vector<UniquePtr<...>>`.
 
 ## Tasks
 
-- [ ] Settle decisions 1-4 above with the user and record the answers here.
+- [x] Settle decisions 1-4 above with the user and record the answers here (3's `SharedPtr` timing still open).
+- [ ] (If decided for this day) `SharedPtr<T>` with a thread-safety policy parameter (atomic or plain reference count), `MakeShared`, `WeakPtr` only if a site needs it; tests including a TSan stress run for the atomic policy.
 - [ ] `UniquePtr`, `DefaultDelete`, `MakeUnique` with `///` docs; foundation tests (destroys once, move leaves the source empty, `Release`/`Reset`, converting move to a base, custom deleter called with the pointer, empty deleter adds no size, `MakeUnique` failure on an absurd size, ASan leak-free).
 - [ ] Convert the owned-member sites listed above; each keeps its existing behavior and error paths.
 - [ ] Apply the answers to decisions 1-4.
