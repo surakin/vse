@@ -92,3 +92,15 @@ renderer like any other mesh.
   widget, input routing) is **Phase 8's** job, built on this phase's text
   layer; this phase only commits to glyph rasterization/atlasing/basic
   layout, not a UI framework.
+
+## What Phase 4 gives this phase (Phase 4 Day 84)
+
+- **Glyph atlases are textures in the material system**: a text material is a template whose fragment shader samples an atlas
+  (`texture slot` + sampler, a parameter block for color/outline) and the atlas upload goes through the RHI staging ring
+  (`UploadTexture`). The atlas texture is replaced in place with `MaterialSystem::SetTexture`, which rebuilds only that material's bind
+  groups.
+- **Text is drawn after the tonemap, not in the deferred pipeline.** The main pipeline is deferred (G-buffer, lighting, tonemap) and has
+  no blending of transparent geometry; text and UI need an **overlay/forward pass** that runs after the tonemap pass on the final
+  target (alpha blending, no depth, sorted in draw order). This phase adds that pass as a render graph pass reading the tonemap output
+  and writing the target; the graph orders it after `TonemapPass` by the resource it writes.
+- Glyph quads are one draw per atlas page; the per-object storage buffer (set 2) and instancing carry per-glyph data.

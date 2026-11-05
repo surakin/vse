@@ -1,7 +1,7 @@
 # Shaders: from Slang to a shader module
 
 > **Audience:** engine and renderer programmers writing shaders  
-> **Covers:** Phase 3, Day 58; Phase 4, Days 69-72 (Slang, reflection, permutations)
+> **Covers:** Phase 3, Day 58; Phase 4, Days 69-84 (Slang, reflection, permutations, material and deferred shaders, portability)
 
 ## Source of truth
 
@@ -65,9 +65,12 @@ Pitfalls that cost time and how the sources avoid them (each is explained in `sh
 `-matrix-layout-column-major` so a `Mat4` copied into a uniform block is not transposed.
 
 The RHI takes precompiled bytecode in [[rhi::ShaderDesc]]. Slang also produces HLSL and Metal from the same
-sources, which is how the DX12 and Metal backends will get their shaders; two things to handle then, both
-recorded in `shaders/README.md`: the clip-space Y flip (the RHI follows Vulkan's convention) and Metal's renaming of
-an entry point called `main`. See the portability review, sections 2 and 3.
+sources, which is how the DX12 and Metal backends will get their shaders, and `ctest -R shaders_portability` proves it
+today: every shader and every permutation key compiles to both. Four things to handle then, all recorded in
+`shaders/README.md`: the clip-space Y flip (the RHI follows Vulkan's convention, and the flip lives in the projection),
+Metal's renaming of an entry point called `main`, Metal's flattening of descriptor sets to buffer slots, and the missing
+base instance in D3D12 shaders. See the RHI portability review, sections 2 and 3, and the
+[renderer portability review](../superpowers/specs/2026-11-04-renderer-portability-review.md).
 
 ## Reflection: shaders describe themselves
 
@@ -284,7 +287,8 @@ the next days rely on:
   `float4x4` is four `float4` columns. Prefer `float4` members and explicit padding so the C++ struct and the block
   agree.
 - **Storage buffers** are `RWStructuredBuffer<T>` (written) or `StructuredBuffer<T>` (read only) and come out as
-  std430; `GetDimensions` gives the element count.
+  std430; `GetDimensions` gives the element count, but Metal cannot answer it (`fill.comp` and `saxpy.comp` do not compile to
+  Metal for that reason), so a shader meant for every backend takes the count as a constant.
 - **Descriptor sets** are bind groups: the second argument of `[[vk::binding(binding, set)]]` is the group index, the
   first is the entry's `binding` in the bind group layout, and the stages named in the layout must include the
   stage that uses it.
@@ -294,6 +298,15 @@ the next days rely on:
 - **Math** (`normalize`, `dot`, `pow`, `lerp`, ...) is the HLSL-style library of Slang; `slangc` turns it into
   `GLSL.std.450` extended instructions, so nothing special is written by hand.
 - **Colors**: do lighting math in linear space; an sRGB texture or swapchain format converts on sample and on write.
+
+## Shaders drawn through the material system
+
+Shaders drawn through [[renderer::MaterialSystem]] (the `material_test`, `gbuffer`, `lighting`, `point_light` and `tonemap` shaders)
+follow one more convention: set 0 is the frame block ([[renderer::FrameData]]), set 1 the material (one uniform block, sampled
+textures, samplers), set 2 the per-object storage buffer ([[renderer::ObjectData]]). The object index is
+`SV_VulkanInstanceID`, because the renderer draws object `i` with `first_instance = i`. The G-buffer shaders are permuted
+(`NORMAL_MAP`, `ALPHA_TEST`, `VERTEX_COLOR`); the pass picks the module from the material's options. The full rules, with the
+reasons, are in `shaders/README.md` ("Material shaders"), and the renderer guide shows the passes working together.
 
 ## The lit pipeline
 

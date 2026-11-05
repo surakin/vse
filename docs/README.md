@@ -12,7 +12,8 @@ Internal design history is for contributors, not engine users: the specs in
 [command-line wrapper](superpowers/specs/2026-08-16-command-line-wrapper-design.md),
 [RHI design](superpowers/specs/2026-11-04-rhi-design.md),
 [RHI portability review](superpowers/specs/2026-11-04-rhi-portability-review.md),
-[renderer design](superpowers/specs/2026-11-04-renderer-design.md) —
+[renderer design](superpowers/specs/2026-11-04-renderer-design.md),
+[renderer portability review](superpowers/specs/2026-11-04-renderer-portability-review.md) —
 and the plans in `plans/`.
 
 ## Map
@@ -30,5 +31,6 @@ and the plans in `plans/`.
 | 0 — Foundation | implemented, docs skeleton | guide: memory, containers, strings, math, logging |
 | 1 — Linux platform | implemented, docs skeleton | guide: platform-os, windowing-input |
 | 2 — Job system | implemented, docs skeleton | guide: jobs; tutorials: parallel-jobs, async-file-io |
-| 3 — Vulkan RHI | in progress | guide: rhi (skeleton) |
-| 4+ | not started | sections are added when each phase ships |
+| 3 — Vulkan RHI | implemented, guide drafted | guide: rhi, rhi-shaders; tutorial: hello-rhi |
+| 4 — Renderer core | implemented, guide drafted | guide: renderer, rhi-shaders; tutorial: hello-renderer; reviews: RHI and renderer portability |
+| 5+ | not started | sections are added when each phase ships |

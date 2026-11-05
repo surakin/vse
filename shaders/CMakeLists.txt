@@ -103,6 +103,14 @@ if(SLANGC)
       -DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR} -DWORK_DIR=${SHADER_WORK_DIR}/check
       "-DSHADERS=${ENGINE_SHADERS}" -P ${CMAKE_CURRENT_SOURCE_DIR}/check.cmake)
   set_tests_properties(shaders_check PROPERTIES LABELS "shaders" SKIP_REGULAR_EXPRESSION "SKIP:")
+
+  # Every shader (and permutation key) must also compile to HLSL and Metal Shading Language; `dxc` adds a DXIL check if installed.
+  find_program(DXC dxc)
+  add_test(NAME shaders_portability
+    COMMAND ${CMAKE_COMMAND}
+      -DSLANGC=${SLANGC} -DDXC=${DXC} -DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR} -DWORK_DIR=${SHADER_WORK_DIR}/portability
+      "-DSHADERS=${ENGINE_SHADERS}" -P ${CMAKE_CURRENT_SOURCE_DIR}/portability.cmake)
+  set_tests_properties(shaders_portability PROPERTIES LABELS "shaders")
 else()
   message(STATUS "slangc not found: using the committed shaders/*.spv.inc and *.refl.inc files (the `shaders` target is unavailable)")
 endif()

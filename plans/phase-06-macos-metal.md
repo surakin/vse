@@ -47,3 +47,15 @@ before this phase's day files are written.
   storage on discrete Macs maps `FlushMappedBuffer` to `didModifyRange`; `ClampToBorder` is unavailable on iOS (the
   backend rejects it with a log; that matters for Phase 14, not here); `nextDrawable()` is `Acquire`; the clip-space Y flip lives in the shader translation
   path.
+
+## What Phase 4 gives this phase (Phase 4 Day 84)
+
+From the renderer (see `docs/superpowers/specs/2026-11-04-renderer-portability-review.md`):
+
+- `shaders_portability` compiles every shader to Metal Shading Language today. Known gaps to close here: `fill.comp` and `saxpy.comp`
+  call `GetDimensions` on a buffer, which Metal cannot do (pass the element count); Metal renames `main` to `main_0`; slangc flattens
+  descriptor sets to `[[buffer(n)]]` slots, so the backend reads slots from the compiled reflection; the per-object index comes from
+  `[[instance_id]]` plus `[[base_instance]]`.
+- Graph barriers become no-ops on tracked resources; the golden images are the oracle.
+- The deferred G-buffer is memory-bound on Apple-silicon tilers; merging the geometry and lighting passes into one render pass with
+  memoryless attachments is a Phase 14 graph feature, not needed on macOS GPUs here.

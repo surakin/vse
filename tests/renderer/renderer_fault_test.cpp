@@ -306,7 +306,7 @@ TEST_CASE("An object whose pipeline cannot be built is named and left out; the r
 
 TEST_CASE("A device that cannot build the G-buffer pipelines leaves every object out and the frame still ends Ok", "[renderer][fault]") {
     rhi::NullDeviceOptions options;
-    options.caps.max_color_attachments = 2; // the G-buffer pipelines write three colors
+    options.caps.max_bind_groups = 2; // the material pipelines use sets 0, 1 and 2; the lighting pass needs two groups
     DeferredRig rig;
     REQUIRE(rig.Create(0, nullptr, &options));
     rig.device->ResetErrors();
@@ -324,5 +324,13 @@ TEST_CASE("A device that cannot build the lighting pipeline refuses the frame se
     options.caps.max_bind_groups = 1; // the lighting pass binds the frame block and the G-buffer inputs: two groups
     DeferredRig rig;
     CHECK_FALSE(rig.Create(0, nullptr, &options)); // DemoFrame::Create reports the pass that is not valid
+    CHECK(rig.TearDown());
+}
+
+TEST_CASE("A device with too few color attachments is refused before any pass is built", "[renderer][fault]") {
+    rhi::NullDeviceOptions options;
+    options.caps.max_color_attachments = 2;
+    DeferredRig rig;
+    CHECK_FALSE(rig.Create(0, nullptr, &options));
     CHECK(rig.TearDown());
 }

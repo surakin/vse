@@ -64,18 +64,31 @@ compute local size, descriptor (set, binding) pairs, interface locations, std140
 is 176 bytes, matching the C++ struct), `NonReadable`, push-constant blocks and that no capability beyond
 Matrix/Shader/ImageQuery is used; it also runs `rhi::ValidateSpirv`.
 
-## Other targets (checked on Day 70, for Phases 5-6)
+## Other targets (checked by `shaders_portability`, for Phases 5-6)
 
-`slangc -target hlsl` and `-target metal` produce `lit.vert` and `lit.frag` without errors. Two things to settle then:
+`ctest -R shaders_portability` (skipped without `slangc`; `portability.cmake`) compiles every shader and every permutation
+key with `-target hlsl` and `-target metal`, using the same entry, stage and `-matrix-layout-column-major` flags as the SPIR-V
+build, and fails on any error. If `dxc` is installed it also compiles the HLSL to DXIL (not run on the development machine).
+Two compute test shaders, `fill.comp` and `saxpy.comp`, do not compile to Metal because they call
+`RWStructuredBuffer.GetDimensions`, which Metal cannot do; they are listed with the reason in `portability.cmake` and the
+test fails if one of them starts to compile. Per target:
 
 - **Clip-space Y is not flipped.** The emitted HLSL and Metal write `SV_Position`/`[[position]]` unchanged. Vulkan's
   clip space has Y down, D3D12 and Metal have Y up, and `-fvk-invert-y` only applies to SPIR-V. The engine's
   `PerspectiveVulkan` bakes the flip into the matrix, so those backends need the un-flipped projection (or a flip in a
-  shader epilogue behind a define). The shaders themselves are correct as written.
+  shader epilogue behind a define). The shaders themselves are correct as written. Depth is 0..1 on all three.
+- **Matrix layout is the same bytes on all three.** With `-matrix-layout-column-major` the HLSL starts with
+  `#pragma pack_matrix(column_major)` and keeps `mul(M, v)`; the Metal output declares column-major storage structs
+  (`_MatrixStorage_float4x4_ColMajor...`). `row-major` flips both (`#pragma pack_matrix(row_major)`) and would transpose every
+  matrix, so never drop the flag.
 - **Metal renames `main`** (`warning E40100: entry point 'main' has been renamed to 'main_0'`), because `main` is
   reserved in Metal Shading Language. A Metal pipeline cannot look the entry up as `main`: when that backend is built,
   either give the entry points real names and pass them through (the RHI already takes an entry name) or look up the
-  renamed one. `-fvk-use-entrypoint-name` is the matching flag on the SPIR-V side.
+  renamed one. `-fvk-use-entrypoint-name` is the matching flag on the SPIR-V side. The test accepts this warning and prints any
+  other.
+- **Metal flattens descriptor sets to buffer slots.** In `gbuffer.vert` the frame block is `[[buffer(0)]]` and the object
+  buffer `[[buffer(1)]]`, not set numbers. The Metal backend reads slots from the compiled output's reflection.
+- **No base instance in D3D12 shaders.** See "Material shaders" below and the renderer portability review.
 
 ## Permuted shaders (Day 72)
 

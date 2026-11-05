@@ -1,6 +1,6 @@
 # The Renderer
 
-> **Status:** skeleton — not yet written  
+> **Status:** draft  
 > **Audience:** engine and game programmers  
 > **Covers:** Phase 4
 
@@ -39,7 +39,14 @@ Full reference: [The renderer](../reference/renderer.md).
 
 ### Overview
 
-_TODO_
+The renderer turns a [[renderer::RenderScene]] (objects with a mesh, a material and a transform, plus lights) and a
+[[renderer::Camera]] into a picture on the RHI. Each frame, [[renderer::Renderer]] begins the device frame, calls your frame
+callback to declare passes on a [[renderer::RenderGraph]], compiles the graph (which orders the passes, culls the unused ones and
+inserts the barriers), records every pass, submits once and presents. The shipped pipeline is **deferred**: a geometry pass fills a
+G-buffer (albedo, normal, material parameters, depth), a lighting pass shades it from the lights (a full-screen pass for ambient and
+directional light, one scissored sphere per point light), and a tonemap pass maps the HDR result to the target. Materials come from
+Slang shaders described by reflection, so a material is a template plus parameters and textures, and its pipelines are built on
+demand and cached. Nothing here names Vulkan; a D3D12 or Metal backend plugs in under the RHI.
 
 Shader reflection (Phase 4 Day 71) is described in [Shaders](rhi-shaders.md#reflection-shaders-describe-themselves), and shader variants (Day 72) in [Shaders](rhi-shaders.md#permutations-one-source-several-modules).
 
@@ -717,19 +724,46 @@ past 100000 objects.
 
 ### Rules & contracts
 
-- A `GpuMesh` must be destroyed (or go out of scope) before the device that created it; a scene holds meshes by pointer and
-  does not own them, so a mesh must also outlive every object that uses it.
-
-_TODO_
+- **Order inside a frame.** `Device::BeginFrame`, then `MaterialSystem::BeginFrame` and `FlushMaterials`, `FrameResources::BeginFrame`, the
+  frame block and objects/lights (`WriteFrameData`, each pass's `Prepare`), `FrameResources::Flush`, then each pass's `AddToGraph`, then
+  `Compile`/`Execute`, then submit. `Renderer::RenderFrame` does the device and graph steps; your frame callback does the rest.
+  Calling out of order aborts (`Aborts:` in the reference).
+- **One pass object serves one view per frame.** `Prepare` then one `AddToGraph`; a second `AddToGraph`, or a different size from the
+  one given to `Prepare`, aborts.
+- **Ownership and order of destruction.** A `GpuMesh` must be destroyed (or go out of scope) before the device that created it; a
+  scene holds meshes by pointer and does not own them, so a mesh must also outlive every object that uses it. Tear down in reverse
+  order of creation: the renderer, the passes, the frame resources and material system, the meshes and textures, the device.
+  Idle the device first (`WaitIdle`); `rhi::DevicePtr` does it when it releases the device.
+- **Threads.** Everything is owner-thread-only except what the reference marks otherwise; pass `Prepare` and `AddToGraph` run on the
+  frame's thread, and the recorded callbacks may run on scheduler participants, reading only what `Prepare` left.
+- **Contract violations abort; environment failures report.** See "Failure behavior".
+- **Shaders follow the set convention** (set 0 frame, set 1 material, set 2 objects) and read the object index from
+  `SV_VulkanInstanceID`; see `shaders/README.md`.
 
 ### Common mistakes
 
-_TODO_
+- **Ignoring what `Prepare` returns.** `GBufferPass::Prepare` returns false when it left objects out; `LastError` names the first and
+  `Stats().rejected` counts them. The frame still renders, so nothing else tells you an object is missing.
+- **Adding a pass twice or out of order** (see the rules above). The abort message names the call.
+- **Drawing a mesh before it is prepared.** `GpuMesh::Create` only creates buffers; record `RecordPrepare` into a submitted list and call
+  `MarkReady` once the upload completed.
+- **Passing a null list to `RenderGraph::Execute`.** `CreateCommandList` returns null when the device is lost; check it.
+- **Tuning on a Debug build or with validation on.** The numbers in "Performance notes" are Release without validation.
+- **Naming Vulkan outside `engine/rhi/vulkan/`.** The `rhi_boundary_check` ctest fails the build.
+- **Lights past the buffer.** More than `max_lights` point lights keep the nearest and count the rest in `LightSummary::dropped`.
 
 ### Platform notes
 
-_TODO_
+The renderer is written and tested on Linux with the Vulkan backend (and the null device, which every non-GPU test uses). Windows
+(D3D12, Phase 5) and macOS (Metal, Phase 6) are planned behind the same RHI; every shader already compiles to HLSL and Metal
+(`ctest -R shaders_portability`). The points that shape code today are in the [renderer portability
+review](../superpowers/specs/2026-11-04-renderer-portability-review.md): the Y flip lives in the projection function, the per-object
+index needs another delivery on D3D12, and a deferred G-buffer is a poor fit for tile-based mobile GPUs unless the passes are
+merged (Phase 14). Sanitizers: the TSan flavor excludes the `[gpu]` tests (the proprietary NVIDIA driver's threads crash it), the ASan
+flavor runs them; see [the RHI guide](rhi.md#platform-notes).
 
 ### See also
 
 - [The RHI](rhi.md) and the [renderer design](../superpowers/specs/2026-11-04-renderer-design.md).
+- [Renderer portability review](../superpowers/specs/2026-11-04-renderer-portability-review.md): what Phases 5-6 and 14 add.
+- [Shaders: from Slang to a shader module](rhi-shaders.md) and [Tutorial: From a Scene to a Lit Frame](../tutorials/hello-renderer.md).

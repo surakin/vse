@@ -1,5 +1,7 @@
 # Phase 4 — Renderer Core
 
+**Status: complete (2026-11-05).** All days (68-84, including 80a and 80b) are done; the portability proof, the portability review and the wrap-up are in [Day 84](phase-04-renderer-core/day-84-renderer-portability-wrapup.md). Phase 5 (Windows + DX12) needs its own day files before it starts.
+
 **Depends on:** Phase 3 (Vulkan RHI).
 **Goal:** a real renderer built on the RHI — multiple objects, materials,
 lighting, depth — not just a single hard-coded draw call.

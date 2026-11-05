@@ -187,3 +187,15 @@ a monitor, a wrist display).
   system (Phase 2) may be used for off-thread asset/font work, not for
   widget mutation.
 - Full day-by-day breakdown deferred until Phase 7 is complete.
+
+## What Phase 4 gives this phase (Phase 4 Day 84)
+
+- **Pass ordering.** UI is an overlay pass after the tonemap (see Phase 7's notes): the graph orders passes by the resources they read
+  and write, so the UI pass declares the tonemap target as its write and runs last; in-game UI, debug tooling and the editor share it.
+- **The viewport widget** renders a 3D world with `Renderer::RenderFrame` into an offscreen `FrameTarget` (a texture the widget then
+  samples as an image), using the same frame callback as a window. Resizing the widget is a new target size: the graph and the transient
+  pool follow it with no other change (the swapchain resize test in `tests/renderer/renderer_test.cpp` covers that path for the swapchain).
+- **UI surfaces and render-to-texture** use the same offscreen target path; a UI surface in the world is a material whose texture is
+  that target.
+- The overlay pass is forward (blended), so it needs a pipeline target without the G-buffer attachments: `MaterialSystem::GetPipeline`
+  takes the `PipelineTarget`, so UI materials just ask for it.

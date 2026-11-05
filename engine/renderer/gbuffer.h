@@ -46,10 +46,12 @@ enum class GBufferLayer : u8 {
     WorldPosition, ///< The world position rebuilt from depth, shown as `position * 0.05 + 0.5` (background black); needs `SetInverseViewProjection`.
 };
 
-/// Checks that the device supports every G-buffer format for the usage the pass needs.
+/// Checks that the device supports every G-buffer format for the usage the pass needs, and enough simultaneous color
+/// attachments (the geometry pass writes three). Call it once at start-up, before creating templates and passes: the passes
+/// themselves do not repeat it, and on a device that fails it every object would be left out with a log line per pipeline.
 ///
 /// Param device: the device to ask.
-/// Param error: receives a message naming the first unsupported format and usage; may be null.
+/// Param error: receives a message naming the first unsupported format and usage, or the attachment limit; may be null.
 /// Param error_capacity: size of `error` in bytes.
 /// Returns: true when all formats are supported.
 /// Fails: returns false and fills `error`; nothing is logged or aborted.

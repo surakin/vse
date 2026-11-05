@@ -592,7 +592,7 @@ PLAN.md
 | 2 | Job System & Coroutines | none (portable) | [plans/phase-02-job-system.md](plans/phase-02-job-system.md) | Work-stealing scheduler runs thousands of dependency-chained jobs race-free under sanitizers; throughput scales with core count |
 | 2.5 | **Documentation tooling (`docgen`)** | none (dev tool) | [plans/phase-02-5-docs-tooling.md](plans/phase-02-5-docs-tooling.md) | Own C++ tool generates the API reference from `///` comments, checks links, compiles doc samples and lints coverage; wired into ctest |
 | 3 | Vulkan RHI | Linux | [plans/phase-03-vulkan-rhi.md](plans/phase-03-vulkan-rhi.md) | RHI renders a lit, textured cube through Vulkan; no Vulkan calls leak outside `/engine/rhi/vulkan` |
-| 4 | Renderer core | Linux | [plans/phase-04-renderer-core.md](plans/phase-04-renderer-core.md) | Render graph draws multiple objects, basic materials/lighting, depth buffering |
+| 4 | Renderer core (complete) | Linux | [plans/phase-04-renderer-core.md](plans/phase-04-renderer-core.md) | Render graph draws multiple objects, basic materials/lighting, depth buffering |
 | 5 | Windows port + DX12 backend | Windows | [plans/phase-05-windows-dx12.md](plans/phase-05-windows-dx12.md) | Phases 1-4's functionality (window/input, RHI, renderer) running on Windows through the DX12 RHI backend; the Phase 3 golden images and Phase 4 scene tests pass |
 | 6 | macOS port + Metal backend | macOS | [plans/phase-06-macos-metal.md](plans/phase-06-macos-metal.md) | Phases 1-4's functionality running on macOS through the Metal RHI backend; the same golden images and scene tests pass |
 | 7 | **Font & text rendering** | Linux | [plans/phase-07-font-text-rendering.md](plans/phase-07-font-text-rendering.md) | Arbitrary UTF-8 text (via FreeType-rasterized glyphs, Day 10-12 grapheme clustering for cursor/line-break correctness) renders on screen through the RHI at an interactive frame rate, and the same layout can be built as an extruded 3D mesh from the vector outlines (color emoji via `COLR` v0 and bitmap glyphs) |
@@ -689,6 +689,15 @@ that changed from the plan and why.)_
   into Days 68-84 under `plans/phase-04-renderer-core/`: deferred lighting (no
   MSAA in the RHI), a generic render graph on top of the RHI, and none of the
   deferred RHI extras (bindless, indirect draws, async compute).
+
+- **2026-11-05 - Phase 4 complete (Days 68-84).** A render graph that owns every barrier and
+  records passes in parallel, a material system on Slang reflection and permutations, a deferred
+  pipeline (G-buffer, directional/ambient and point-light-volume lighting, ACES tonemap), the
+  `renderer_demo` (540 objects, 300 lights, golden image, depth tests), failure injection at every
+  stage of a frame, and `renderer_bench` (0.08 us per object, 16 draws for 10000 objects, 99% transient
+  pool hit rate). Every shader compiles to HLSL and Metal (`shaders_portability`); the portability
+  review lists 4 shims and no interface redesign. Windows (DX12) is next as Phase 5 and needs its day
+  files first.
 
 - **2026-11-05 — UI phase scope (then Phase 6, now Phase 8): theming and UI render-to-texture.**
   Theming is a required deliverable (run-time-swappable themes, per

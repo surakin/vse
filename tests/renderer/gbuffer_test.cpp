@@ -118,6 +118,19 @@ TEST_CASE("The device check names the first unsupported G-buffer format", "[rend
     CHECK(t.depth_format == rhi::Format::D32_Float);
 }
 
+TEST_CASE("The device check refuses a device with too few color attachments, naming the limit", "[renderer][gbuffer]") {
+    rhi::NullDeviceOptions options;
+    options.caps.max_color_attachments = 2;
+    rhi::NullDevicePtr device = rhi::CreateNullDevice(options);
+    char error[160] = "";
+    CHECK_FALSE(CheckGBufferFormats(device.Get(), error, sizeof(error)));
+    CHECK(std::string(error).find("2 color attachments") != std::string::npos);
+    CHECK(std::string(error).find("writes 3") != std::string::npos);
+    options.caps.max_color_attachments = 3;
+    rhi::NullDevicePtr enough = rhi::CreateNullDevice(options);
+    CHECK(CheckGBufferFormats(enough.Get(), error, sizeof(error)));
+}
+
 TEST_CASE("The camera depth range encloses the scene", "[renderer][gbuffer]") {
     Rig rig;
     MeshData d;

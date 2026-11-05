@@ -59,6 +59,15 @@ bool CheckGBufferFormats(const rhi::Device* device, char* error, usize error_cap
         {kGBufferMaterialFormat, rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled, "color attachment and sampled"},
         {kGBufferDepthFormat, rhi::TextureUsage::DepthAttachment | rhi::TextureUsage::Sampled, "depth attachment and sampled"},
     };
+    // The geometry pass writes three colors at once; D3D12 and Metal allow 8 (4 on some older mobile GPUs), so this only fails on those.
+    const PipelineTarget target = GBufferPipelineTarget();
+    if (device->Caps().max_color_attachments < target.color_count) {
+        if (error != nullptr && error_capacity > 0) {
+            std::snprintf(error, error_capacity, "G-buffer: the device allows %u color attachments and the geometry pass writes %u",
+                          device->Caps().max_color_attachments, target.color_count);
+        }
+        return false;
+    }
     for (const Need& need : needs) {
         if (!device->FormatSupport(need.format, need.usage)) {
             if (error != nullptr && error_capacity > 0) {

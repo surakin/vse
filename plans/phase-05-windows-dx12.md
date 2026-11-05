@@ -56,3 +56,16 @@ before this phase's day files are written.
   `ResizeBuffers` after idling; sRGB render-target views over UNorm flip-model buffers; the clip-space Y flip lives in
   the shader translation path; `Mailbox` falls back to `Fifo`. Copy alignment (512 / 256) is already in
   `DeviceCaps::buffer_texture_copy_*_alignment`.
+
+## What Phase 4 gives this phase (Phase 4 Day 84)
+
+From the renderer (see `docs/superpowers/specs/2026-11-04-renderer-portability-review.md`; every row there was a prediction this phase tests):
+
+- A render graph whose barriers are explicit `ResourceState` transitions: D3D12 consumes them directly (legacy `ResourceBarrier` or
+  enhanced barriers); the golden images (`tests/rhi/golden/`, including `renderer_demo.ppm`) are the oracle.
+- The shader path: `ctest -R shaders_portability` already compiles every shader to HLSL; this phase adds the DXIL step (`dxc`, optional in
+  the test, not yet run anywhere), the `PerspectiveD3D` (Y up) projection, and the **object index delivery**: the renderer draws object
+  `i` with `first_instance = i` and the shaders read `SV_VulkanInstanceID`, which D3D12 has no equivalent of; use a root constant or a
+  per-draw vertex stream, behind a shader define (touches every material shader's vertex stage and `GBufferPass` recording).
+- The depth sampling shim (typeless `R32_TYPELESS` resource) is an RHI-backend item, not a renderer one.
+- `rhi_bench` and `renderer_bench` are the performance baselines to compare descriptor copy cost and instanced-draw cost against.

@@ -29,3 +29,14 @@ data-oriented layout actually wins.
   an open question here (whether Phase 1's raw threading primitives
   alone would be sufficient) — they aren't meant to be used directly by
   engine-level code at all; Phase 2 is the intended seam.
+
+## What Phase 4 gives this phase (Phase 4 Day 84)
+
+- **The scene list is replaced, not wrapped.** `renderer::RenderScene` is a fixed-capacity list of objects (mesh pointer, material index,
+  transform) and lights, with generation-checked ids; the renderer reads it through `ObjectAt(slot)`/`SlotAlive`. With an ECS, a
+  system that owns the transform, mesh and material components fills a `RenderScene` each frame (or the scene is replaced by a
+  component query that yields the same `RenderObject` records), keeping the renderer unchanged: `GBufferPass::Prepare` and
+  `FrameResources::WriteLights` take the scene by const reference only.
+- Culling and sorting run per frame over the scene list on one thread (0.08 us per object in `renderer_bench`); an ECS can move culling
+  into a parallel system that produces the visible list, which is the first thing the Phase 4 profile suggests.
+- `GpuMesh` is held by pointer and must outlive the objects that use it; the ECS mesh component owns or shares the `GpuMesh`.
