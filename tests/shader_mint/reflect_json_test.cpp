@@ -6,7 +6,7 @@
 #include "reflect_json.h"
 
 using namespace engine_placeholder;
-using namespace engine_placeholder::shader_cook;
+using namespace engine_placeholder::shader_mint;
 using renderer::ShaderReflection;
 
 namespace {
@@ -47,7 +47,7 @@ bool Fails(const std::string& json, const char* expected_in_message) {
 
 } // namespace
 
-TEST_CASE("A well-formed reflection file converts", "[shader_cook]") {
+TEST_CASE("A well-formed reflection file converts", "[shader_mint]") {
     ShaderReflection r;
     std::string error;
     REQUIRE(ReflectionFromJson(kGoodJson, &r, &error));
@@ -60,14 +60,14 @@ TEST_CASE("A well-formed reflection file converts", "[shader_cook]") {
     CHECK(r.bindings[1].type == rhi::BindingType::Sampler);
 }
 
-TEST_CASE("A binding the entry point does not use is left out", "[shader_cook]") {
+TEST_CASE("A binding the entry point does not use is left out", "[shader_mint]") {
     ShaderReflection r;
     std::string error;
     REQUIRE(ReflectionFromJson(Edit(kGoodJson, "\"index\": 4, \"used\": 1", "\"index\": 4, \"used\": 0"), &r, &error));
     CHECK(r.binding_count == 1);
 }
 
-TEST_CASE("Bad input is rejected with a message", "[shader_cook]") {
+TEST_CASE("Bad input is rejected with a message", "[shader_mint]") {
     CHECK(Fails("not json at all", "not valid JSON"));
     CHECK(Fails("[1, 2, 3]", "not valid JSON"));
     CHECK(Fails("{}", "exactly one entry point"));
@@ -82,11 +82,11 @@ TEST_CASE("Bad input is rejected with a message", "[shader_cook]") {
                 "unsupported slot kind"));
 }
 
-TEST_CASE("Two bindings at the same (set, binding) are rejected", "[shader_cook]") {
+TEST_CASE("Two bindings at the same (set, binding) are rejected", "[shader_mint]") {
     CHECK(Fails(Edit(Edit(kGoodJson, "\"index\": 4}", "\"index\": 3}"), "\"index\": 4, \"used\"", "\"index\": 3, \"used\""), "share a set and binding"));
 }
 
-TEST_CASE("The SPIR-V cross-check catches a disagreement", "[shader_cook]") {
+TEST_CASE("The SPIR-V cross-check catches a disagreement", "[shader_mint]") {
     ShaderReflection r;
     std::string error;
     REQUIRE(ReflectionFromJson(kGoodJson, &r, &error));
@@ -114,7 +114,7 @@ TEST_CASE("The SPIR-V cross-check catches a disagreement", "[shader_cook]") {
     CHECK_FALSE(CrossCheckSpirv(r, broken.data(), broken.size(), &error));
 }
 
-TEST_CASE("Missing or mistyped layout facts are errors, not zeros", "[shader_cook]") {
+TEST_CASE("Missing or mistyped layout facts are errors, not zeros", "[shader_mint]") {
     CHECK(Fails(Edit(kGoodJson, "\"offset\": 0, ", ""), "missing or invalid 'offset'"));
     CHECK(Fails(Edit(kGoodJson, "\"size\": 16}}]", "\"size\": \"16\"}}]"), "missing or invalid 'size'"));
     CHECK(Fails(Edit(kGoodJson, "\"sizes\": [{\"kind\": \"uniform\", \"value\": 16, \"alignment\": 16}]", "\"sizes\": []"), "no uniform size"));
@@ -122,14 +122,14 @@ TEST_CASE("Missing or mistyped layout facts are errors, not zeros", "[shader_coo
     CHECK(Fails(Edit(kGoodJson, "\"space\": 1, \"index\": 3, \"used\"", "\"space\": 1, \"used\""), "missing or invalid 'index'"));
 }
 
-TEST_CASE("A stale error message is cleared by a successful call", "[shader_cook]") {
+TEST_CASE("A stale error message is cleared by a successful call", "[shader_mint]") {
     ShaderReflection r;
     std::string error = "left over";
     REQUIRE(ReflectionFromJson(kGoodJson, &r, &error));
     CHECK(error.empty());
 }
 
-TEST_CASE("A compute group size that does not fit 32 bits is rejected", "[shader_cook]") {
+TEST_CASE("A compute group size that does not fit 32 bits is rejected", "[shader_mint]") {
     const std::string compute = Edit(kGoodJson, "\"stage\": \"fragment\"", "\"stage\": \"compute\", \"threadGroupSize\": [4294967297, 1, 1]");
     CHECK(Fails(compute, "32-bit"));
     ShaderReflection r;
@@ -138,7 +138,7 @@ TEST_CASE("A compute group size that does not fit 32 bits is rejected", "[shader
     CHECK(r.local_size[0] == 64);
 }
 
-TEST_CASE("Vertex input locations are checked against the SPIR-V Input variables only", "[shader_cook]") {
+TEST_CASE("Vertex input locations are checked against the SPIR-V Input variables only", "[shader_mint]") {
     // A vertex shader with one float3 input at location 2.
     const char* json = R"({"parameters": [], "entryPoints": [{"name": "main", "stage": "vertex", "bindings": [],
         "parameters": [{"name": "pos", "binding": {"kind": "varyingInput", "index": 2},

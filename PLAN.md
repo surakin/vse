@@ -208,7 +208,7 @@ interpretations keep it buildable — flag any that don't match intent:
    to produce them (same boundary category as the compiler itself). Phase
    0 starts on CMake so early work isn't blocked reinventing a build
    system. Once the project's build needs (custom toolchain flags,
-   cross-compiling to the later platform targets, asset cooking steps) are
+   cross-compiling to the later platform targets, asset minting steps) are
    well understood, replace it with our own build tool under `/tools` —
    this is a stated goal, not just an option, tracked as a task once a
    phase for it is scoped.
@@ -254,12 +254,12 @@ interpretations keep it buildable — flag any that don't match intent:
     Wayland/X11 window backends. Every resource type (mesh, texture,
     material, level, ...) owns its own binary format with an explicit
     version header; the runtime loader supports old versions rather than
-    breaking previously-cooked content when a format changes — this is
+    breaking previously-minted content when a format changes — this is
     the resolution to the versioning/migration question Phase 10 already
     flagged as open. Binary is the default and required format
     engine-wide; a parallel text format is optional per type, added only
     where it earns its keep (chiefly where hand-editing or VCS-friendly
-    merging matters, e.g. levels/scenes) — the offline cooker converts
+    merging matters, e.g. levels/scenes) — the offline mint converts
     between the two, and the binary form stays what ships.
 13. **Gameplay scripting embeds real, well-known languages instead of a
     custom bytecode VM — starting with Lua via LuaJIT.** Deliberate
@@ -407,7 +407,7 @@ interpretations keep it buildable — flag any that don't match intent:
     - **Phase 3 (historical, retired):** shaders were GLSL 4.50 sources
       (`*.vert`, `*.frag`, `*.comp`) under `shaders/`, compiled by
       `glslc` (distro `shaderc`) and checked with `spirv-val`,
-      then embedded by our own `spv_embed` tool (folded into `shader_cook` on Phase 4 Day 71) into committed
+      then embedded by our own `spv_embed` tool (folded into `shader_mint` on Phase 4 Day 71) into committed
       `*.spv.inc` word arrays. The tools are optional: a checkout without
       them builds from the committed arrays, and a ctest recompiles and
       compares only when they are present. Hand-written SPIR-V assembly
@@ -440,14 +440,14 @@ interpretations keep it buildable — flag any that don't match intent:
 
 19. **Offline tools may use a vetted third-party library where the job is
     solved and has no engine-differentiating value - starting with
-    nlohmann/json in `tools/shader_cook` (decided 2026-11-05).** The Day 71
-    shader cook tool must read `slangc -reflection-json` output. Writing a
+    nlohmann/json in `tools/shader_mint` (decided 2026-11-05).** The Day 71
+    shader mint tool must read `slangc -reflection-json` output. Writing a
     JSON parser is not what this project exists to hand-roll, so the tool
     uses nlohmann/json v3.12.0 (MIT, single header), vendored as source under
     `third_party/nlohmann_json/` (same pattern as Catch2, #16: pinned
     release, no submodule, no `FetchContent`). Scope, which is what makes
     this an exception and not a loophole: the library is linked into
-    **offline tools only** (today `shader_cook`), never into the engine, a
+    **offline tools only** (today `shader_mint`), never into the engine, a
     game, the renderer or any engine test target (the tool's own tests link it), and the tool's output (the
     committed `*.spv.inc` / `*.refl.inc`) is what the engine consumes, so
     a checkout still builds without `slangc` and the engine binary
@@ -478,7 +478,17 @@ interpretations keep it buildable — flag any that don't match intent:
 - **Breadth before depth on Unreal import.** Cover the common cases (common
   material nodes, common Blueprint nodes) and flag unsupported long-tail
   cases explicitly, rather than blocking on 100% fidelity.
-- **Documented before done.** A day that adds or changes public API
+- **Minting, not cooking, and minting is deterministic.** Our offline asset
+  and shader processing is called *minting* (tools are "mints" or
+  "minters", outputs are "minted"); "cook" is used only to describe
+  Unreal's own pipeline (uncooked projects, cooked games). The name is the
+  requirement: a mint stamps out identical coins, so the same inputs and
+  the same tool version must produce byte-identical outputs, with no
+  timestamps, absolute paths, hash-map iteration order or thread-timing
+  dependence in the result. `shaders_check` already enforces this for
+  shaders by recompiling and comparing bytes; every Phase 10 minter gets
+  an equivalent determinism test.
+ A day that adds or changes public API
   (headers named by `docs/reference/modules.txt`) ships its `///` comments,
   the regenerated `docs/reference/`, and the updated guide page in the same
   commit; `docgen lint`, link, sample and staleness checks (`ctest -L docs`)
@@ -538,7 +548,7 @@ libc / raw syscalls / OS ABI
                   first backend), engine API bindings
   /editor
 /game            - demo/dogfood content, grows into the first playable slice
-/tools           - offline asset cookers, custom build tooling
+/tools           - offline asset minters, custom build tooling
 /tests           - per-layer test harnesses using Catch2 v3 (vendored,
                   see assumption #16), discovered via CTest
 /third_party     - vendored third-party source (Catch2 v3 under catch2/)
@@ -562,7 +572,7 @@ PLAN.md
 | 7 | ECS | Linux | [plans/phase-07-ecs.md](plans/phase-07-ecs.md) | Thousands of entities updated per frame, benchmarked vs. naive OOP baseline |
 | 8 | Physics | Linux | [plans/phase-08-physics.md](plans/phase-08-physics.md) | Rigid body sim: gravity, collision, resolution for boxes/spheres/capsules |
 | 9 | Audio | Linux | [plans/phase-09-audio.md](plans/phase-09-audio.md) | Custom mixer plays hand-decoded WAV, positional 3D audio |
-| 10 | Asset pipeline & resource system | Linux | [plans/phase-10-asset-pipeline.md](plans/phase-10-asset-pipeline.md) | Offline cooker → versioned per-type binary formats, loaded at runtime through pak/filesystem resource backends |
+| 10 | Asset pipeline & resource system | Linux | [plans/phase-10-asset-pipeline.md](plans/phase-10-asset-pipeline.md) | Offline mint → versioned per-type binary formats, loaded at runtime through pak/filesystem resource backends |
 | 11 | Scripting (Lua/LuaJIT) | Linux | [plans/phase-11-scripting.md](plans/phase-11-scripting.md) | LuaJIT runs a gameplay script that spawns/moves an entity via engine API bindings |
 | 12 | Windows port + DX12 backend | Windows | [plans/phase-12-windows-dx12.md](plans/phase-12-windows-dx12.md) | Phases 1-11 running on Windows through the DX12 RHI backend |
 | 13 | macOS/iOS port + Metal backend | macOS, iOS | [plans/phase-13-macos-ios-metal.md](plans/phase-13-macos-ios-metal.md) | Phases 1-11 running through the Metal RHI backend |

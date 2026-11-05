@@ -8,7 +8,7 @@
 #include "renderer/shader_reflection.h"
 #include "types.h"
 
-namespace engine_placeholder::shader_cook {
+namespace engine_placeholder::shader_mint {
 
 // Parses `json_text` (the whole file) and fills `out`. Returns true on success; on failure `error` says why.
 bool ReflectionFromJson(const std::string& json_text, renderer::ShaderReflection* out, std::string* error);
@@ -17,4 +17,4 @@ bool ReflectionFromJson(const std::string& json_text, renderer::ShaderReflection
 // against the decorations and execution modes in the SPIR-V words.
 bool CrossCheckSpirv(const renderer::ShaderReflection& reflection, const u32* words, usize word_count, std::string* error);
 
-} // namespace engine_placeholder::shader_cook
+} // namespace engine_placeholder::shader_mint

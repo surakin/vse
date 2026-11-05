@@ -113,9 +113,9 @@ Resource creation goes through the device's mutex and happens outside recording.
 
 Shaders are Slang sources compiled offline by `slangc` (PLAN.md assumption #18, decided 2026-11-04 for platform
 portability). One `.slang` source per shader; SPIR-V is the output now and HLSL/DXIL and MSL later. Reflection (bindings,
-uniform block layouts, vertex inputs, push constants, compute local size) comes from `slangc` and is cooked into committed
+uniform block layouts, vertex inputs, push constants, compute local size) comes from `slangc` and is minted into committed
 `*.refl.inc` files next to the `*.spv.inc` words, so a checkout without `slangc` still builds and the material system never
-hand-writes a layout twice (Day 71). Permutations are cooked offline from a manifest (Day 72). The Phase 3 GLSL shaders
+hand-writes a layout twice (Day 71). Permutations are minted offline from a manifest (Day 72). The Phase 3 GLSL shaders
 are ported on Days 69-70 and deleted once the Slang output reproduces the golden images unchanged. Any translation to
 D3D12 or Metal must flip clip-space Y (portability review, section 2).
 

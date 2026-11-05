@@ -7,7 +7,7 @@ A material is a shader permutation plus parameters and textures; the system owns
 
 ## Tasks
 
-- [ ] `MaterialTemplate` (cooked shader permutation + reflection: parameter block layout, texture/sampler slots, render state: cull, depth, blend) and `Material` (an instance: parameter values, texture handles); creation validates values against the reflected block (names, types, sizes) and logs/returns invalid on mismatch.
+- [ ] `MaterialTemplate` (minted shader permutation + reflection: parameter block layout, texture/sampler slots, render state: cull, depth, blend) and `Material` (an instance: parameter values, texture handles); creation validates values against the reflected block (names, types, sizes) and logs/returns invalid on mismatch.
 - [ ] Material bind group (set 1 by convention: set 0 is `FrameData`, set 2 the object buffer): one parameter uniform buffer + textures + samplers per material, rebuilt only when a texture changes; parameter writes go to a CPU shadow and are flushed once per frame in one batch.
 - [ ] Pipeline cache keyed by (template, permutation, target formats, vertex layout): lazily created, deduplicated, never created inside a frame's recording (a warm-up call creates what a scene needs); hit/miss counters exposed for tests.
 - [ ] Default textures (white, black, flat normal) created by the system; missing texture slots use them.

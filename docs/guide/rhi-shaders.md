@@ -6,7 +6,7 @@
 ## Source of truth
 
 - `shaders/` (Slang sources, the generated `*.spv.inc` and `*.refl.inc` files, the build and check scripts) and `shaders/README.md` (flags and pitfalls)
-- `tools/shader_cook/` (turns `slangc` output into the two include files) and `third_party/nlohmann_json/` (the JSON reader it uses)
+- `tools/shader_mint/` (turns `slangc` output into the two include files) and `third_party/nlohmann_json/` (the JSON reader it uses)
 - `engine/renderer/shader_reflection.h` (the reflection data, its blob format and the layout builders)
 - `engine/rhi/spirv.h` (the sanity check every `CreateShader` runs)
 - `PLAN.md` assumption #18 (the shader toolchain decision)
@@ -41,7 +41,7 @@ cmake --build build --target shaders
 ```
 
 That runs `slangc` (with the arguments from `slang_compile_args()` in `shaders/names.cmake`, plus
-`-reflection-json`), then `spirv-val` if it is installed, then `shader_cook`, and rewrites both `.inc` files. Commit
+`-reflection-json`), then `spirv-val` if it is installed, then `shader_mint`, and rewrites both `.inc` files. Commit
 the source and both `.inc` files together. The
 `shaders_check` ctest recompiles every shader and compares it with the committed file; it notes and skips a shader
 when the installed `slangc` is not the version that generated the file (the compiler and version are recorded in
@@ -67,7 +67,7 @@ an entry point called `main`. See the portability review, sections 2 and 3.
 ## Reflection: shaders describe themselves
 
 A shader's bindings, block layouts, vertex inputs and compute local size are written once, in the `.slang` file.
-`shader_cook` reads them from `slangc`'s reflection output and commits them as `shaders/<name>.refl.inc`: a compact
+`shader_mint` reads them from `slangc`'s reflection output and commits them as `shaders/<name>.refl.inc`: a compact
 blob (`k<Name>Refl`, parsed by [[renderer::ParseShaderReflection]]) plus constants for every uniform and push-constant
 block (`k<Name><Block>Size`, `k<Name><Block><Member>Offset`). The tool also cross-checks the reflection against the
 SPIR-V it just compiled, so a reflection that disagrees with the module fails the build.
@@ -123,7 +123,7 @@ bindings: 3, valid: 1, block: 176 bytes
 
 The blob is untrusted input to the parser: wrong magic or version, truncation, unknown types, names without room for a
 terminator, counts above the fixed capacities and trailing bytes are all rejected with a message, and nothing is read
-outside the given bytes. The JSON reader in `shader_cook` is a vendored third-party library (nlohmann/json, `PLAN.md`
+outside the given bytes. The JSON reader in `shader_mint` is a vendored third-party library (nlohmann/json, `PLAN.md`
 assumption #19) used by that offline tool only; the engine and the renderer contain no JSON code.
 
 ## Creating a shader module

@@ -7,7 +7,7 @@
 
 #include <nlohmann/json.hpp>
 
-namespace engine_placeholder::shader_cook {
+namespace engine_placeholder::shader_mint {
 
 namespace {
 
@@ -534,4 +534,4 @@ bool CrossCheckSpirv(const renderer::ShaderReflection& reflection, const u32* wo
     return true;
 }
 
-} // namespace engine_placeholder::shader_cook
+} // namespace engine_placeholder::shader_mint

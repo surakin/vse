@@ -20,7 +20,7 @@ Each day has its own file of individually checkable sub-tasks, a docs task, an e
 68. [Renderer Design Spec & Build Skeleton](phase-04-renderer-core/day-68-renderer-design-spec.md)
 69. [Slang Toolchain & First Shader Ports](phase-04-renderer-core/day-69-slang-toolchain.md)
 70. [Port the Remaining Shaders & Retire GLSL](phase-04-renderer-core/day-70-slang-port-complete.md)
-71. [Shader Reflection & the Cook Tool](phase-04-renderer-core/day-71-shader-reflection-cook.md)
+71. [Shader Reflection & the Mint Tool](phase-04-renderer-core/day-71-shader-reflection-mint.md)
 72. [Shader Permutations](phase-04-renderer-core/day-72-shader-permutations.md)
 73. [Renderer Foundation: Camera, Meshes & the Scene List](phase-04-renderer-core/day-73-renderer-foundation.md)
 74. [The Material System](phase-04-renderer-core/day-74-material-system.md)
@@ -53,7 +53,7 @@ Each day has its own file of individually checkable sub-tasks, a docs task, an e
 - **Shader toolchain decision (settled: Slang, see Decisions).** `PLAN.md` assumption #18
   leaves the long-term shader language and the DX12/Metal path open
   (GLSL+SPIRV-Cross, HLSL+dxc, Slang, or our own). The material system
-  needs reflection data, permutations and a cooker step, so this must
+  needs reflection data, permutations and a mint step, so this must
   be settled, and the answer recorded in a plan file, before this
   phase's day files are written.
 

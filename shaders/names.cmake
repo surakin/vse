@@ -1,4 +1,4 @@
-# shader_base_symbol(<file name like triangle.vert> <out var>) -> kTriangleVert, the name shader_cook is given; it
+# shader_base_symbol(<file name like triangle.vert> <out var>) -> kTriangleVert, the name shader_mint is given; it
 # appends Spv, SpvWordCount, Refl and ReflByteCount for the arrays in the two generated files.
 function(shader_base_symbol shader out)
   string(REGEX REPLACE "[._]" ";" parts "${shader}")

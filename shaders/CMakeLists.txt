@@ -3,7 +3,7 @@
 # `cmake --build build --target shaders` recompiles and regenerates them; the `shaders_check` ctest recompiles and
 # compares when `slangc` is installed. See README.md.
 #
-# Per shader: slangc writes SPIR-V and its reflection JSON, spirv-val checks the SPIR-V, and tools/shader_cook turns both
+# Per shader: slangc writes SPIR-V and its reflection JSON, spirv-val checks the SPIR-V, and tools/shader_mint turns both
 # into the committed <name>.spv.inc (the words) and <name>.refl.inc (the reflection blob).
 set(ENGINE_SHADERS
   triangle.vert
@@ -51,9 +51,9 @@ if(SLANGC)
       OUTPUT ${inc} ${refl_inc}
       COMMAND ${SLANGC} ${source} ${slang_args} -o ${spv} -reflection-json ${json}
       COMMAND ${validate_cmd}
-      COMMAND shader_cook --name ${symbol} --source ${shader}.slang --compiler "slangc ${SLANGC_VERSION}" --spv ${spv}
+      COMMAND shader_mint --name ${symbol} --source ${shader}.slang --compiler "slangc ${SLANGC_VERSION}" --spv ${spv}
               --reflection ${json} --spv-out ${inc} --refl-out ${refl_inc}
-      DEPENDS ${source} ${CMAKE_CURRENT_SOURCE_DIR}/names.cmake shader_cook
+      DEPENDS ${source} ${CMAKE_CURRENT_SOURCE_DIR}/names.cmake shader_mint
       COMMENT "Compiling ${shader}.slang"
       VERBATIM)
     list(APPEND SHADER_INCS ${inc} ${refl_inc})
@@ -62,7 +62,7 @@ if(SLANGC)
 
   add_test(NAME shaders_check
     COMMAND ${CMAKE_COMMAND}
-      -DSLANGC=${SLANGC} -DSPIRV_VAL=${SPIRV_VAL} -DSHADER_COOK=$<TARGET_FILE:shader_cook>
+      -DSLANGC=${SLANGC} -DSPIRV_VAL=${SPIRV_VAL} -DSHADER_MINT=$<TARGET_FILE:shader_mint>
       -DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR} -DWORK_DIR=${SHADER_WORK_DIR}/check
       "-DSHADERS=${ENGINE_SHADERS}" -P ${CMAKE_CURRENT_SOURCE_DIR}/check.cmake)
   set_tests_properties(shaders_check PROPERTIES LABELS "shaders" SKIP_REGULAR_EXPRESSION "SKIP:")

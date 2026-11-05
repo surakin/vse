@@ -1,7 +1,7 @@
 #pragma once
 
 //! What a compiled shader says about itself: its stage, bindings, uniform and push-constant block layouts, vertex
-//! inputs and compute local size. The offline `shader_cook` tool extracts it from `slangc` output into a compact blob
+//! inputs and compute local size. The offline `shader_mint` tool extracts it from `slangc` output into a compact blob
 //! committed as `shaders/<name>.refl.inc`; the renderer parses the blob and builds bind group layouts and vertex
 //! layouts from it instead of writing them a second time by hand.
 

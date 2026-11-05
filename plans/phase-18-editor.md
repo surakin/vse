@@ -17,7 +17,7 @@ exist and can build/modify a level that the runtime can load.
 - Scene view built on Phase 6's **viewport widget**, with gizmos
   (translate/rotate/scale) drawn as viewport overlays.
 - Entity inspector reflecting ECS component data.
-- Asset browser over the Phase 10 asset pipeline's cooked output.
+- Asset browser over the Phase 10 asset pipeline's minted output.
 - Save/load round-trip through the Phase 10 level format.
 
 ## Notes / open questions

@@ -36,7 +36,7 @@ Windows through the DX12 RHI backend.
 
 The backend needs DXIL shaders. The toolchain that produces them from the
 engine's shader source was to be settled before Phase 4; confirm that
-decision here and that the cooker emits DXIL blobs for `ShaderDesc`
+decision here and that the mint emits DXIL blobs for `ShaderDesc`
 before this phase's day files are written.
 
 - **From the Phase 3 portability review** (`docs/superpowers/specs/2026-11-04-rhi-portability-review.md`, section 5):

@@ -1,5 +1,5 @@
 # Recompiles every shader and compares the result with the committed .spv.inc file. Run through ctest as
-# `shaders_check`; arguments: SLANGC, SPIRV_VAL (optional), SHADER_COOK, SHADER_DIR, WORK_DIR, SHADERS (a ;-list).
+# `shaders_check`; arguments: SLANGC, SPIRV_VAL (optional), SHADER_MINT, SHADER_DIR, WORK_DIR, SHADERS (a ;-list).
 # A shader whose recorded compiler version differs from the installed one is reported as a note and not compared; the
 # test prints "SKIP:" (its SKIP_REGULAR_EXPRESSION) only if no shader could be compared at all.
 include(${SHADER_DIR}/names.cmake)
@@ -33,12 +33,12 @@ foreach(shader ${SHADERS})
     endif()
   endif()
   shader_base_symbol(${shader} symbol)
-  execute_process(COMMAND ${SHADER_COOK} --name ${symbol} --source ${shader}.slang --compiler "slangc ${slangc_version}"
+  execute_process(COMMAND ${SHADER_MINT} --name ${symbol} --source ${shader}.slang --compiler "slangc ${slangc_version}"
                           --spv ${WORK_DIR}/${shader}.spv --reflection ${WORK_DIR}/${shader}.json
                           --spv-out ${WORK_DIR}/${shader}.spv.inc --refl-out ${WORK_DIR}/${shader}.refl.inc
                   RESULT_VARIABLE rc ERROR_VARIABLE err)
   if(NOT rc EQUAL 0)
-    message(FATAL_ERROR "shader_cook failed on ${shader}: ${err}")
+    message(FATAL_ERROR "shader_mint failed on ${shader}: ${err}")
   endif()
   execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${committed} ${WORK_DIR}/${shader}.spv.inc RESULT_VARIABLE same)
   if(NOT same EQUAL 0)

@@ -193,11 +193,17 @@ table in `PLAN.md`.
   the clip-space Y flip and Metal's `main` rename in `shaders/README.md`).
 - **Offline tools may use a vetted third-party library** where the job is
   solved and not engine-differentiating - today only nlohmann/json
-  (vendored under `third_party/nlohmann_json/`) in `tools/shader_cook`,
+  (vendored under `third_party/nlohmann_json/`) in `tools/shader_mint`,
   to read `slangc` reflection (`PLAN.md` assumption #19). Never linked
   into the engine, a game, the renderer or an engine test target (the tool's own tests link it); anything else
   needs its own entry in `PLAN.md`. That tool and its tests may use `std::string`/`std::vector` (the library
   requires them); the engine's runtime libraries still do not.
+- **Terminology: we mint assets, we do not cook them.** Offline
+  asset/shader processing tools are "mints"/"minters" (`tools/shader_mint`,
+  the Phase 10 asset minter) and their outputs are "minted". "Cook" appears
+  only when describing Unreal's pipeline. Minting must be deterministic:
+  same inputs and tool version give byte-identical outputs, tested for
+  every minter (see `PLAN.md`, guiding principles).
 - **Engine core before editor.** The editor (Phase 18) is built last,
   using the engine's own renderer/ECS and Phase 6 UI system — not a
   separate GUI toolkit.

@@ -114,8 +114,8 @@ with an interface addition, not a change to what exists.
 `ShaderDesc` carries SPIR-V words. The design already says other backends "take their own bytecode in this
 descriptor". Which form that takes depends on the open shader-toolchain decision:
 
-1. **Translate at cook time** (SPIRV-Cross or a compiler producing DXIL/MSL offline): `ShaderDesc` becomes a
-   format-tagged byte blob (`format`, `bytes`, `size`), and the cooker produces one blob per backend. Cheapest at run
+1. **Translate at mint time** (SPIRV-Cross or a compiler producing DXIL/MSL offline): `ShaderDesc` becomes a
+   format-tagged byte blob (`format`, `bytes`, `size`), and the mint produces one blob per backend. Cheapest at run
    time, most files to ship.
 2. **Translate at load time**: `ShaderDesc` keeps SPIR-V and the D3D12/Metal backend links a translator. Runtime
    dependency, but no interface change.
