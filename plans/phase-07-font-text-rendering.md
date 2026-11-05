@@ -13,7 +13,10 @@ builds on instead of each hand-rolling its own.
 **Definition of done:** arbitrary UTF-8 text renders on screen through
 the RHI at an interactive frame rate, with correct glyph shapes,
 kerning/advance widths, and multi-codepoint grapheme clusters (combining
-marks, emoji ZWJ sequences) each treated as one cursor-movement unit.
+marks, emoji ZWJ sequences) each treated as one cursor-movement unit; and
+the same text layout can be turned into a 3D mesh (extruded, optionally
+beveled outlines of the vector glyphs) that draws through the Phase 4
+renderer like any other mesh.
 
 ## Key deliverables (to be expanded into day-by-day tasks when started)
 
@@ -37,6 +40,20 @@ marks, emoji ZWJ sequences) each treated as one cursor-movement unit.
 - Cursor placement / hit-testing (byte offset <-> screen position) built
   on grapheme cluster boundaries, not raw codepoints or bytes — needed
   by any future text-input UI (editor, in-game chat/console, etc.).
+- 3D text: generate a mesh from vectorized glyphs. FreeType's outline
+  API supplies each glyph's contours (quadratic/cubic Bezier curves),
+  which are flattened to polylines at a caller-chosen tolerance,
+  triangulated into front and back faces (contours with holes, e.g. `o`
+  and `B`, must come out right), and extruded to a given depth with side
+  walls, with optional bevel and smooth/flat normals. The result is a
+  Phase 4 `MeshData` (positions, normals, UVs), laid out by the same text
+  layout as the 2D path (advances, kerning, line breaks), so 3D text
+  uploads through `GpuMesh` and draws through the material system.
+  Triangulation and extrusion are our own code (no third-party
+  tessellator); the flatten/triangulate/extrude steps are pure CPU
+  functions and are tested without a GPU (watertightness, triangle
+  winding, area against the contour area, holes). Meshes for a string are
+  built on demand and cached per glyph so repeated characters share work.
 
 ## Notes / open questions
 
@@ -45,6 +62,12 @@ marks, emoji ZWJ sequences) each treated as one cursor-movement unit.
   normal/full autohint, or the font's own bytecode hints) is a
   visual-quality tradeoff to decide empirically against real rendered
   text once this phase starts, not speculatively here.
+- 3D text open questions, decided once this phase starts: bevel quality
+  versus triangle count; whether glyph meshes are instanced per
+  character or merged per string; curve-flattening tolerance units
+  (font units vs world units); contour winding rules for fonts that mix
+  conventions. Hinting is irrelevant to the 3D path (outlines are loaded
+  unhinted).
 - Colored glyphs (emoji, via `CBDT`/`COLR`/`SVG` font tables) are out of
   scope for Phase 7 — monochrome/grayscale glyph rasterization only.
   Revisit if a real use case needs emoji rendering.
