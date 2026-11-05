@@ -1,10 +1,10 @@
-# Phase 19 — First Playable Demo
+# Phase 22 — First Playable Demo
 
-**Depends on:** Phases 0-13 at minimum (core engine, physics, audio,
-scripting), plus Phase 5 (Windows port) since the definition of done below
-requires running on Windows too; Phase 18 (editor) helps but isn't
+**Depends on:** Phases 0-16 at minimum (core engine, physics, audio,
+scripting), plus Phase 8 (Windows port) since the definition of done below
+requires running on Windows too; Phase 21 (editor) helps but isn't
 strictly required if content is still hand-authored via the asset
-pipeline. Doesn't need Unreal import (Phases 16-17) — this demo is
+pipeline. Doesn't need Unreal import (Phases 19-20) — this demo is
 hand-authored content, not an Unreal-sourced one.
 **Goal:** a small real game built with the engine — the first genuine
 dogfooding of every system, surfacing real bugs and API ergonomics
@@ -24,7 +24,7 @@ Windows.
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 13 (and ideally 18) are
+- Full day-by-day breakdown deferred until Phase 16 (and ideally 18) are
   complete.
 - This phase is expected to feed back into earlier phases' plans (bug
   fixes, API changes) — that's the point of it existing.

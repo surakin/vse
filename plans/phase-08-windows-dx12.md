@@ -1,11 +1,11 @@
-# Phase 5 — Windows Port + DX12 Backend
+# Phase 8 — Windows Port + DX12 Backend
 
-**Depends on:** Phase 4 (Renderer core) complete on Linux — this phase ports
+**Depends on:** Phase 4 (Renderer core) complete on Linux, and Phases 5-7 (test scoping, debugging facilities, RHI reset) complete — the reset lifecycle is part of the RHI interface this backend implements, and the crash/minidump work gets its Windows backend here — this phase ports
 the stack built so far (platform layer, RHI, renderer, shaders, job system,
 foundation); it doesn't build new engine features. Unreal import (Phases
-16-17) is deliberately sequenced after multiplatform support, so it isn't
+19-20) is deliberately sequenced after multiplatform support, so it isn't
 part of what this phase ports. Before it starts, every day of this phase
-needs its own file under `plans/phase-05-windows-dx12/` (see `CLAUDE.md`,
+needs its own file under `plans/phase-08-windows-dx12/` (see `CLAUDE.md`,
 planning policy).
 **Goal:** Phases 1-4 running on Windows, with DX12 as the RHI backend
 (Vulkan also available on Windows if useful, but DX12 is the native
@@ -37,7 +37,7 @@ recorded here when the phase is broken into days).
 ## Notes / open questions
 
 - Full day-by-day breakdown deferred until Phase 4 is complete.
-- **Open, decided at Phase 6 completion:** how Phases 7-13 keep the Windows build working (see `PLAN.md` assumption #11). Until then those phases are developed on Linux first.
+- **Open, decided at Phase 9 completion:** how Phases 10-16 keep the Windows build working (see `PLAN.md` assumption #11). Until then those phases are developed on Linux first.
 - Windows' lack of a raw "syscall" layer the way Linux has one means the
   no-CRT boundary is drawn differently here — Win32 itself is the
   platform contract. Document the precise boundary when this phase starts.

@@ -151,23 +151,28 @@ table in `PLAN.md`.
 - **Data-oriented ECS**, not an OOP scene graph.
 - **Linux first, Wayland primary / X11 fallback.** Every system is built
   and proven on Linux before porting to Windows/macOS/Android/iOS/consoles.
-  Windows and macOS are Phases 5 and 6, right after the renderer core
+  Windows and macOS are Phases 8 and 9, right after the renderer core
   (Phase 4), and port what exists by then (platform layer, RHI, renderer,
-  shaders); Android/iOS and consoles are Phases 14-15. How the later
+  shaders); Android/iOS and consoles are Phases 17-18. How the later
   Linux-first phases (7-13) keep the Windows/macOS builds working is an
   open decision, see `PLAN.md` assumption #11. On Linux, Wayland is the primary display backend, X11 is
   a fallback backend for systems that haven't moved to Wayland — both
   built on their reference client libraries (`libwayland-client`,
   `libX11`/`libxcb`) rather than a hand-rolled wire-protocol client.
+- **The RHI can be reset at run time (Phase 7).** Users must be able to change any rendering setting without restarting
+  the app, so re-initializing the device, swapchain and every device-dependent resource is a supported operation, not
+  a recovery hack. Anything that owns GPU resources must therefore be able to rebuild them (keep its CPU-side source
+  or a reload path), and a lost device recovers through the same path. Do not add a GPU-owning type that cannot be
+  recreated.
 - **Every target platform is designed in from day one — desktop, mobile,
   and console alike — even though only Linux is implemented before
-  Phase 5 (Windows).** Platform-layer and engine-facing interfaces must stay
-  shaped so no later backend (Phases 5-6 and 14-15) ever forces a redesign of
+  Phase 8 (Windows).** Platform-layer and engine-facing interfaces must stay
+  shaped so no later backend (Phases 8-9 and 17-18) ever forces a redesign of
   already-built engine layers — see `PLAN.md` assumption #11. Build order
   still follows the roadmap (Linux → Windows/macOS → Android/iOS →
   consoles); that's not license to design as if mobile/console don't
   exist until their phase starts.
-- **Font rendering is backed by FreeType** (Phase 7), not a hand-rolled
+- **Font rendering is backed by FreeType** (Phase 10), not a hand-rolled
   rasterizer. Deliberate, individually justified exception to the
   third-party-dependency line — the same category as Lua/LuaJIT below,
   ships inside the runtime engine/game binary — see `PLAN.md` assumption
@@ -181,29 +186,29 @@ table in `PLAN.md`.
   line-break positions instead reuse the foundation string module's
   existing grapheme clustering.
 - **Gameplay scripting embeds real languages, not a custom bytecode VM —
-  starting with Lua via LuaJIT** (Phase 13). Deliberate, individually
+  starting with Lua via LuaJIT** (Phase 16). Deliberate, individually
   justified exception to the third-party-dependency line, ships inside
   the runtime engine/game binary — see `PLAN.md` assumption #13. Designed
   with a pluggable language-backend seam so more languages can be added
-  later without a redesign. Phase 17's Blueprint importer targets this
+  later without a redesign. Phase 20's Blueprint importer targets this
   (transpiling to Lua) instead of a custom VM.
 - **Unreal Engine project import is a headline objective**, not a nice-to-
-  have (Phases 16 and 17): loading a real, unmodified UE 5.3+ project's
+  have (Phases 19 and 20): loading a real, unmodified UE 5.3+ project's
   meshes/textures/materials/levels, and eventually Blueprint gameplay
   logic, directly into this engine. Deliberately sequenced *after*
-  multiplatform support (Phases 5-6 and 14-15) rather than right after the asset
-  pipeline (Phase 12) — see `PLAN.md` assumption #14. Targets uncooked editor-format
+  multiplatform support (Phases 8-9 and 17-18) rather than right after the asset
+  pipeline (Phase 15) — see `PLAN.md` assumption #14. Targets uncooked editor-format
   projects, not shipped/cooked games. The offline import tool links a DLL
   built from Unreal Engine's own source to parse `.uasset`/`.umap`
   content via UE's real `UObject`/package-loading system, rather than a
   from-scratch reverse-engineered parser — scoped to the import tool
   only, never linked or shipped in the engine/game runtime (see
   `PLAN.md` assumption #6). **Open risk, unresolved:** Epic's UE EULA
-  terms need review before Phase 16 work starts — flagged in `PLAN.md`,
+  terms need review before Phase 19 work starts — flagged in `PLAN.md`,
   not yet resolved.
 - **The GUI is the engine's own widget toolkit, not a third-party one**
-  (Phase 8): a retained-mode widget set (menus, buttons, comboboxes,
-  scrollbars, labels, text fields, ...) built on the RHI and the Phase 7
+  (Phase 11): a retained-mode widget set (menus, buttons, comboboxes,
+  scrollbars, labels, text fields, ...) built on the RHI and the Phase 10
   text layer, including a **viewport widget** that hosts a rendered 3D
   world. No Qt/GTK/Dear ImGui-style dependency — that would breach the
   zero-third-party-convenience-dependencies rule. In-game UI, debug
@@ -213,7 +218,7 @@ table in `PLAN.md`.
   compiled by `slangc` (dev-time, optional) to SPIR-V and embedded as
   committed `*.spv.inc` files; a checkout without `slangc` builds from
   the committed outputs. Don't add GLSL or hand-written SPIR-V. DX12 and
-  Metal output comes from the same Slang sources in Phases 5-6 (note
+  Metal output comes from the same Slang sources in Phases 8-9 (note
   the clip-space Y flip and Metal's `main` rename in `shaders/README.md`).
 - **Offline tools may use a vetted third-party library** where the job is
   solved and not engine-differentiating - today only nlohmann/json
@@ -224,12 +229,12 @@ table in `PLAN.md`.
   requires them); the engine's runtime libraries still do not.
 - **Terminology: we mint assets, we do not cook them.** Offline
   asset/shader processing tools are "mints"/"minters" (`tools/shader_mint`,
-  the Phase 12 asset minter) and their outputs are "minted". "Cook" appears
+  the Phase 15 asset minter) and their outputs are "minted". "Cook" appears
   only when describing Unreal's pipeline. Minting must be deterministic:
   same inputs and tool version give byte-identical outputs, tested for
   every minter (see `PLAN.md`, guiding principles).
-- **Engine core before editor.** The editor (Phase 18) is built last,
-  using the engine's own renderer/ECS and Phase 8 UI system — not a
+- **Engine core before editor.** The editor (Phase 21) is built last,
+  using the engine's own renderer/ECS and Phase 11 UI system — not a
   separate GUI toolkit.
 
 ## How the plan is structured — follow this when doing planning work

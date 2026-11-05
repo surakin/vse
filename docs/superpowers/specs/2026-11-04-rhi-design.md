@@ -136,7 +136,7 @@ above the backend. Viewport and scissor are dynamic state.
 semaphores are core features, so the backend has exactly one code path. A
 device that lacks them is rejected at selection with the reasons logged.
 
-> **Risk (Phase 14 — Android):** many Android devices ship Vulkan 1.1 or
+> **Risk (Phase 17 — Android):** many Android devices ship Vulkan 1.1 or
 > 1.2 drivers. Reaching them means mapping each of the three features to
 > its `KHR`/`EXT` extension form (`VK_KHR_dynamic_rendering`,
 > `VK_KHR_synchronization2`, `VK_KHR_timeline_semaphore`) in the backend.
@@ -211,7 +211,7 @@ against D3D12 and Metal.
 engine/rhi/                 backend-agnostic headers + null backend + rhi library
 engine/rhi/null/            validating no-GPU backend (Day 47)
 engine/rhi/vulkan/          the only place Vulkan is named (rhi_vulkan library)
-engine/rhi/{dx12,metal}/    reserved for Phases 5-6
+engine/rhi/{dx12,metal}/    reserved for Phases 8-9
 tests/rhi/                  rhi_tests (+ _asan, + _tsan from Day 54)
 game/rhi_demo/              dogfood app (Day 57 onward)
 shaders/                    GLSL sources and generated *.spv.inc

@@ -4,7 +4,7 @@ Status: done at the end of Phase 3. Companion to `2026-11-04-rhi-design.md` sect
 
 The question this review answers: **is the RHI Vulkan in disguise?** Every type and call in `engine/rhi/*.h` was walked
 against Direct3D 12 (D3D12) and Metal, from knowledge of those APIs; no D3D12 or Metal code exists yet, so each verdict
-is a prediction that the Phase 5 and Phase 6 backends will test. The golden images (`tests/rhi/golden/`) and the
+is a prediction that the Phase 8 and Phase 9 backends will test. The golden images (`tests/rhi/golden/`) and the
 analytic probes next to them are the portability oracle: a new backend must reproduce them.
 
 Each row ends in one of three verdicts:
@@ -33,7 +33,7 @@ Each row ends in one of three verdicts:
 | `FormatSupport(format, usage)`, `CanGenerateMips(format)` | queried from the physical device | `CheckFeatureSupport(FORMAT_SUPPORT)` | family tables | Fits |
 | `GenerateMips` | blit chain | **no built-in**: a compute shader per level | `generateMipmaps` on a blit encoder | Shim (D3D12 uses a compute pass; `CanGenerateMips` already lets a caller ask) |
 | `SamplerDesc` (filters, address modes, compare, anisotropy, LOD range) | `VkSampler` | sampler descriptor in a sampler heap | `MTLSamplerState` | Fits |
-| `AddressMode::ClampToBorder`, `BorderColor` | native | static or dynamic border colors | **not available on iOS family GPUs** (macOS only) | Shim/limit: iOS backend rejects `ClampToBorder` with an invalid handle and a log; recorded as a Phase 6 note, no interface change (a caps flag would add nothing the log does not) |
+| `AddressMode::ClampToBorder`, `BorderColor` | native | static or dynamic border colors | **not available on iOS family GPUs** (macOS only) | Shim/limit: iOS backend rejects `ClampToBorder` with an invalid handle and a log; recorded as a Phase 9 note, no interface change (a caps flag would add nothing the log does not) |
 | `ShaderDesc` (SPIR-V words, stage, entry) | `VkShaderModule` | DXIL bytecode | MSL source or a metallib | **Open** — see section 3 |
 | `BindGroupLayout` | `VkDescriptorSetLayout` | a root-signature descriptor table (one CBV/SRV/UAV table and one sampler table per group) | argument-buffer layout | Fits |
 | `BindGroup` | `VkDescriptorSet` | descriptor-heap ranges copied (`CopyDescriptors`) into the shader-visible heaps at bind time | argument buffer | Shim (D3D12 may bind only one shader-visible CBV/SRV/UAV heap and one sampler heap per list: the backend keeps bind groups in a CPU-only heap and copies into a per-frame ring at `SetBindGroup`; a transient group is that ring slot) |
@@ -137,11 +137,11 @@ made, so it is recorded here and in `plans/phase-04-renderer-core.md` as an inpu
 
 ## 5. Filed for later phases
 
-For `plans/phase-05-windows-dx12.md`: typeless formats for sampled depth; compute `GenerateMips`; bind-group descriptor
+For `plans/phase-08-windows-dx12.md`: typeless formats for sampled depth; compute `GenerateMips`; bind-group descriptor
 copies into per-frame shader-visible heaps (measure `SetBindGroup`); 256-rounded uniform buffers and CBV ranges;
 CPU repacking in `UploadTexture`/`ReadbackTexture`; `ResizeBuffers` after idling; sRGB views on UNorm flip-model
 buffers; the clip-space Y flip in the shader path; `Mailbox` falling back to `Fifo`.
 
-For `plans/phase-06-macos-metal.md`: encoder splitting around passes; barriers as no-ops or `memoryBarrier` by
+For `plans/phase-09-macos-metal.md`: encoder splitting around passes; barriers as no-ops or `memoryBarrier` by
 tracking mode; threadgroup size from shader reflection at pipeline creation; `Managed` storage and `FlushMappedBuffer`;
 `ClampToBorder` unavailable on iOS; `nextDrawable()` as `Acquire`; the clip-space Y flip.

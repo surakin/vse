@@ -223,7 +223,7 @@ semaphores, and presents through `VK_KHR_wayland_surface` or `VK_KHR_xlib_surfac
 inside its interceptors), and the X11 presentation path leaks inside a library the driver unloads; see "Building and
 Testing" for how the sanitizer flavors cover this.
 
-Direct3D 12 (Phase 5) and Metal (Phase 6) are planned behind the same interface. The Phase 3 portability review,
+Direct3D 12 (Phase 8) and Metal (Phase 9) are planned behind the same interface. The Phase 3 portability review,
 `docs/superpowers/specs/2026-11-04-rhi-portability-review.md`, lists for every concept how each backend implements it
 and which shims they need; the points that shape how you write code today are the clip-space convention (Y down,
 depth 0..1, with the flip in the projection), the copy alignment above, explicit resource states, and bind groups

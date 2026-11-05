@@ -1,14 +1,14 @@
-# Phase 6 — macOS Port + Metal Backend
+# Phase 9 — macOS Port + Metal Backend
 
-**Depends on:** Phase 4 (Renderer core); benefits from Phase 5 having
+**Depends on:** Phase 4 (Renderer core) and Phases 5-7 (test scoping, debugging facilities, RHI reset); benefits from Phase 8 having
 already worked through the "porting an already-working stack" process once.
 Before it starts, every day of this phase needs its own file under
-`plans/phase-06-macos-metal/`.
+`plans/phase-09-macos-metal/`.
 **Goal:** Phases 1-4 running on macOS, with Metal as the RHI backend.
 **Definition of done:** the Phase 3 golden images and the Phase 4 scene
 tests pass on macOS through the Metal RHI backend with the Metal API
 validation layer silent; the job system and foundation tests pass on macOS.
-iOS is Phase 14 and reuses this phase's Metal backend.
+iOS is Phase 17 and reuses this phase's Metal backend.
 **Hardware:** the developer's 2019 MacBook Pro, an **Intel** Mac with an
 Intel or AMD GPU (x86-64 macOS). That exercises the discrete-GPU path
 (`Managed` storage, explicit CPU/GPU synchronization) and the Metal
@@ -28,8 +28,8 @@ Metal feature level.
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 5 is complete.
-- The iOS platform layer (UIKit, touch) and the LuaJIT interpreter-only build for iOS moved to Phase 14.
+- Full day-by-day breakdown deferred until Phase 8 is complete.
+- The iOS platform layer (UIKit, touch) and the LuaJIT interpreter-only build for iOS moved to Phase 17.
 - Objective-C/Swift runtime interop from a C++-rooted, no-CRT codebase
   needs a concrete decision on calling convention/bridging approach —
   scope this with real Metal headers in hand, not speculatively.
@@ -45,7 +45,7 @@ before this phase's day files are written.
   split encoders around render passes, copies and dispatches; barriers become no-ops, `memoryBarrier` or an encoder split
   depending on resource tracking mode; threadgroup size comes from shader reflection at pipeline creation; `Managed`
   storage on discrete Macs maps `FlushMappedBuffer` to `didModifyRange`; `ClampToBorder` is unavailable on iOS (the
-  backend rejects it with a log; that matters for Phase 14, not here); `nextDrawable()` is `Acquire`; the clip-space Y flip lives in the shader translation
+  backend rejects it with a log; that matters for Phase 17, not here); `nextDrawable()` is `Acquire`; the clip-space Y flip lives in the shader translation
   path.
 
 ## What Phase 4 gives this phase (Phase 4 Day 84)
@@ -58,4 +58,4 @@ From the renderer (see `docs/superpowers/specs/2026-11-04-renderer-portability-r
   `[[instance_id]]` plus `[[base_instance]]`.
 - Graph barriers become no-ops on tracked resources; the golden images are the oracle.
 - The deferred G-buffer is memory-bound on Apple-silicon tilers; merging the geometry and lighting passes into one render pass with
-  memoryless attachments is a Phase 14 graph feature, not needed on macOS GPUs here.
+  memoryless attachments is a Phase 17 graph feature, not needed on macOS GPUs here.
