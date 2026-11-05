@@ -21,24 +21,52 @@ foreach(shader ${SHADERS})
   endif()
   shader_stage(${shader} stage)
   slang_compile_args(${stage} slang_args)
-  execute_process(COMMAND ${SLANGC} ${SHADER_DIR}/${shader}.slang ${slang_args} -o ${WORK_DIR}/${shader}.spv
-                          -reflection-json ${WORK_DIR}/${shader}.json RESULT_VARIABLE rc ERROR_VARIABLE err)
-  if(NOT rc EQUAL 0)
-    message(FATAL_ERROR "slangc failed on ${shader}: ${err}")
-  endif()
-  if(SPIRV_VAL)
-    execute_process(COMMAND ${SPIRV_VAL} --target-env vulkan1.3 ${WORK_DIR}/${shader}.spv RESULT_VARIABLE rc ERROR_VARIABLE err)
-    if(NOT rc EQUAL 0)
-      message(FATAL_ERROR "spirv-val rejected ${shader}: ${err}")
-    endif()
-  endif()
   shader_base_symbol(${shader} symbol)
-  execute_process(COMMAND ${SHADER_MINT} --name ${symbol} --source ${shader}.slang --compiler "slangc ${slangc_version}"
-                          --spv ${WORK_DIR}/${shader}.spv --reflection ${WORK_DIR}/${shader}.json
-                          --spv-out ${WORK_DIR}/${shader}.spv.inc --refl-out ${WORK_DIR}/${shader}.refl.inc
-                  RESULT_VARIABLE rc ERROR_VARIABLE err)
-  if(NOT rc EQUAL 0)
-    message(FATAL_ERROR "shader_mint failed on ${shader}: ${err}")
+  set(manifest ${SHADER_DIR}/${shader}.perm)
+  if(EXISTS ${manifest})
+    set(perm_args "")
+    foreach(arg ${slang_args})
+      list(APPEND perm_args --slang-arg ${arg})
+    endforeach()
+    if(SPIRV_VAL)
+      list(APPEND perm_args --spirv-val ${SPIRV_VAL})
+    endif()
+    execute_process(COMMAND ${SHADER_MINT} --permute --name ${symbol} --source ${shader}.slang
+                            --source-path ${SHADER_DIR}/${shader}.slang --manifest ${manifest}
+                            --compiler "slangc ${slangc_version}" --slangc ${SLANGC} ${perm_args} --work-dir ${WORK_DIR}
+                            --spv-out ${WORK_DIR}/${shader}.spv.inc --refl-out ${WORK_DIR}/${shader}.refl.inc
+                            --perm-out ${WORK_DIR}/${shader}.perm.inc
+                    RESULT_VARIABLE rc ERROR_VARIABLE err)
+    if(NOT rc EQUAL 0)
+      message(FATAL_ERROR "shader_mint failed on ${shader}: ${err}")
+    endif()
+    if(NOT EXISTS ${SHADER_DIR}/${shader}.perm.inc)
+      message(FATAL_ERROR "${shader}.perm.inc is missing: run `cmake --build build --target shaders`")
+    endif()
+    execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${SHADER_DIR}/${shader}.perm.inc ${WORK_DIR}/${shader}.perm.inc
+                    RESULT_VARIABLE same)
+    if(NOT same EQUAL 0)
+      message(FATAL_ERROR "${shader}.perm.inc is out of date: run `cmake --build build --target shaders`")
+    endif()
+  else()
+    execute_process(COMMAND ${SLANGC} ${SHADER_DIR}/${shader}.slang ${slang_args} -o ${WORK_DIR}/${shader}.spv
+                            -reflection-json ${WORK_DIR}/${shader}.json RESULT_VARIABLE rc ERROR_VARIABLE err)
+    if(NOT rc EQUAL 0)
+      message(FATAL_ERROR "slangc failed on ${shader}: ${err}")
+    endif()
+    if(SPIRV_VAL)
+      execute_process(COMMAND ${SPIRV_VAL} --target-env vulkan1.3 ${WORK_DIR}/${shader}.spv RESULT_VARIABLE rc ERROR_VARIABLE err)
+      if(NOT rc EQUAL 0)
+        message(FATAL_ERROR "spirv-val rejected ${shader}: ${err}")
+      endif()
+    endif()
+    execute_process(COMMAND ${SHADER_MINT} --name ${symbol} --source ${shader}.slang --compiler "slangc ${slangc_version}"
+                            --spv ${WORK_DIR}/${shader}.spv --reflection ${WORK_DIR}/${shader}.json
+                            --spv-out ${WORK_DIR}/${shader}.spv.inc --refl-out ${WORK_DIR}/${shader}.refl.inc
+                    RESULT_VARIABLE rc ERROR_VARIABLE err)
+    if(NOT rc EQUAL 0)
+      message(FATAL_ERROR "shader_mint failed on ${shader}: ${err}")
+    endif()
   endif()
   execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${committed} ${WORK_DIR}/${shader}.spv.inc RESULT_VARIABLE same)
   if(NOT same EQUAL 0)

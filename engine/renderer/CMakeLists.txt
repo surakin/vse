@@ -4,6 +4,7 @@
 set(RENDERER_SOURCES
   renderer_info.cpp
   shader_reflection.cpp
+  shader_permutation.cpp
 )
 
 # Headers are included as "renderer/<name>.h", rooted at engine/.

@@ -1,0 +1,11 @@
+# Keys to build for permute_test.frag. `key -` is the base module (always required); `key A B` turns those options on.
+# Every line costs one slangc run at mint time and, unless it produces the same SPIR-V as another key, one module in
+# the binary.
+key -
+key INVERT
+key HALF
+key INVERT HALF
+key TINT
+key DEBUG
+# TINT is not applied together with DEBUG, so this key builds the very same module as `key DEBUG` and shares it.
+key DEBUG TINT

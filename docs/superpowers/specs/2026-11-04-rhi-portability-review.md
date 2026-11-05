@@ -107,7 +107,12 @@ a D3D12 backend can build the descriptors in a CPU heap and copy them at bind ti
 cost of the same call so the comparison can be made when D3D12 exists.
 
 **Specialization constants, subgroup operations, ray tracing, mesh shaders.** Not in the RHI; each is a Phase 4+ decision
-with an interface addition, not a change to what exists.
+with an interface addition, not a change to what exists. Specialization constants were evaluated on Phase 4 Day 72 and
+not adopted: shader permutations are compile-time defines minted into separate modules (renderer spec R10.1), so the
+RHI gained nothing. The portability reasons: Direct3D 12 has no specialization constants (Slang's HLSL output for a
+`[SpecializationConstant]` is an ordinary constant-buffer field read by a runtime branch, so the variant is not
+specialized at all), while Metal has function constants that a later Metal backend could map from a constants array if
+a measured need appears.
 
 ## 3. The shader boundary (open, and deliberately not changed)
 

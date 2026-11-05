@@ -115,7 +115,7 @@ Shaders are Slang sources compiled offline by `slangc` (PLAN.md assumption #18, 
 portability). One `.slang` source per shader; SPIR-V is the output now and HLSL/DXIL and MSL later. Reflection (bindings,
 uniform block layouts, vertex inputs, push constants, compute local size) comes from `slangc` and is minted into committed
 `*.refl.inc` files next to the `*.spv.inc` words, so a checkout without `slangc` still builds and the material system never
-hand-writes a layout twice (Day 71). Permutations are minted offline from a manifest (Day 72). The Phase 3 GLSL shaders
+hand-writes a layout twice (Day 71). Permutations are minted offline from a manifest (Day 72, R10.1). The Phase 3 GLSL shaders
 are ported on Days 69-70 and deleted once the Slang output reproduces the golden images unchanged. Any translation to
 D3D12 or Metal must flip clip-space Y (portability review, section 2).
 
@@ -134,3 +134,38 @@ for its usage at renderer creation; a missing one is a logged failure naming the
 needs a typeless resource for (a backend shim, portability review). The lighting model is Lambert diffuse plus GGX specular
 (Trowbridge-Reitz distribution, Smith visibility, Schlick Fresnel) in a metallic-roughness workflow, kept in one shader
 function so a later phase can replace it. Point-light attenuation is smooth and reaches exactly zero at the light's radius.
+
+### R10.1 Permutations: compile-time defines (decided Day 72)
+
+A material variant (normal map, alpha test, unlit, ...) is the same Slang source compiled with `-DOPTION=1` for each
+option that is on, one SPIR-V module per distinct key. The alternative was a single module with Slang
+`[SpecializationConstant]` values chosen at pipeline creation. Both were built from the real `lit.frag` (two options,
+UNLIT and NORMALS) and compared:
+
+| | compile-time defines | specialization constants |
+|---|---|---|
+| SPIR-V size (4 keys of lit.frag: none, UNLIT, NORMALS, both) | 1820, 796, 552, 552 bytes: each variant contains only its own code | 2248 bytes: one module holding every variant's code, shared by all keys |
+| Total shipped | 3720 bytes for 4 modules (3168 when the two identical NORMALS modules are shared) | 2248 bytes |
+| Unused code in a variant | removed by the compiler (the NORMALS variant, which only shows normals, uses neither the texture nor the uniform block) | present until the driver specializes it |
+| Reflection per variant | exact: each module reports only the resources it uses | one reflection for the union |
+| HLSL (Direct3D 12) | the same defines work unchanged | Slang emits a constant-buffer field and `if (globalParams.kUnlit)`: a runtime branch, not specialization |
+| MSL (Metal) | the same defines work unchanged | maps to function constants |
+| RHI change | none | `ShaderDesc`/pipeline descriptors gain a constants array, in the null and Vulkan backends, tests and docs |
+
+Decision: defines. The deciding facts are portability (Direct3D 12 would silently lose the optimization, so the
+mechanism only works on one backend), exact per-variant reflection (the material system builds each variant's bind
+group layout from its own module, and a variant that does not sample a texture really has no texture binding), and no
+RHI change. The cost is more modules in the binary when many keys are listed, which the manifest limits (16 options,
+32 keys per shader) and the dedupe softens (keys that compile to the same SPIR-V share one module).
+
+Not measured: pipeline creation time. Specialization constants are cheaper to ship but make the driver specialize a
+larger module at pipeline creation; the numbers would need the RHI plumbing this decision avoids. If profiling later
+shows pipeline creation dominated by large permuted modules, specialization constants are the escape hatch for
+Vulkan only, behind a per-shader opt-in.
+
+The model: a shader declares `// permutation-options: A B C` in its first 60 lines; a manifest `<name>.perm` lists the
+keys (`key -` for the base module, `key A B` for combinations); `shader_mint --permute` compiles each key, rejects
+options that are declared but never used in the source or manifest lines that name undeclared options, dedupes
+identical modules and commits `<name>.perm.inc`, a `renderer::ShaderPermutations` table. At run time a key is built
+from option names and looked up with `FindPermutation`; a key that was not built is an error naming the shader and the
+key, never a fallback to the base module.

@@ -76,3 +76,22 @@ Matrix/Shader/ImageQuery is used; it also runs `rhi::ValidateSpirv`.
   reserved in Metal Shading Language. A Metal pipeline cannot look the entry up as `main`: when that backend is built,
   either give the entry points real names and pass them through (the RHI already takes an entry name) or look up the
   renamed one. `-fvk-use-entrypoint-name` is the matching flag on the SPIR-V side.
+
+## Permuted shaders (Day 72)
+
+A `<name>.perm` manifest next to `<name>.slang` makes the shader permuted (see the guide, `docs/guide/rhi-shaders.md`,
+and the renderer spec R10). The source declares its options on a `// permutation-options: A B C` line in the first 60
+lines and uses them as `#ifdef A` / `#if defined(A)`; the manifest lists the keys: `key -` (required, the base module)
+and `key A B`. `shader_mint --permute` runs `slangc` once per key with `-DA=1 -DB=1`, mints each module, dedupes
+identical ones and writes `<name>.perm.inc` beside the usual pair. Limits: 16 options, 32 keys per shader.
+
+- **Each module has its own reflection**: a resource a variant does not use is reported as unused and left out of that
+  module's layout (verified for a plain `#ifdef` and for a branch on a constant derived from the option), so layouts
+  must be built per module.
+- Every option must appear in the source outside the declaration line, or `shader_mint` rejects the shader (a typo would
+  otherwise build identical modules silently).
+- Compiler version: the recorded `// compiler:` line is checked like any shader's; `shaders_check` regenerates the
+  whole table and compares it.
+- `shader_mint` starts `slangc` itself in this mode (`posix_spawn`, so Linux only for now; Phase 12 revisits it for
+  Windows).
+

@@ -1,13 +1,14 @@
 # Shaders: from Slang to a shader module
 
 > **Audience:** engine and renderer programmers writing shaders  
-> **Covers:** Phase 3, Day 58; Phase 4, Days 69-71 (Slang, reflection)
+> **Covers:** Phase 3, Day 58; Phase 4, Days 69-72 (Slang, reflection, permutations)
 
 ## Source of truth
 
 - `shaders/` (Slang sources, the generated `*.spv.inc` and `*.refl.inc` files, the build and check scripts) and `shaders/README.md` (flags and pitfalls)
 - `tools/shader_mint/` (turns `slangc` output into the two include files) and `third_party/nlohmann_json/` (the JSON reader it uses)
 - `engine/renderer/shader_reflection.h` (the reflection data, its blob format and the layout builders)
+- `engine/renderer/shader_permutation.h` and `tools/shader_mint/permutations.*` (permutation tables and how they are minted)
 - `engine/rhi/spirv.h` (the sanity check every `CreateShader` runs)
 - `PLAN.md` assumption #18 (the shader toolchain decision)
 
@@ -21,6 +22,10 @@
 - [[renderer::ParseShaderReflection]] — decode a reflection blob
 - [[renderer::BuildBindGroupLayout]] — a bind group layout from one or more shaders
 - [[renderer::BuildVertexLayout]] — a vertex layout from a vertex shader
+- [[renderer::ShaderPermutations]] — the committed key-to-module table of a permuted shader
+- [[renderer::PermutationKey]] — a set of options, as bits
+- [[renderer::MakePermutationKey]] — build a key from option names
+- [[renderer::FindPermutation]] — the module for a key, or an error naming the missing key
 
 ## How shaders get into the engine
 
@@ -125,6 +130,89 @@ The blob is untrusted input to the parser: wrong magic or version, truncation, u
 terminator, counts above the fixed capacities and trailing bytes are all rejected with a message, and nothing is read
 outside the given bytes. The JSON reader in `shader_mint` is a vendored third-party library (nlohmann/json, `PLAN.md`
 assumption #19) used by that offline tool only; the engine and the renderer contain no JSON code.
+
+## Permutations: one source, several modules
+
+A material system needs variants of one shader (with or without a normal map, alpha test, ...). The engine builds them
+all offline and chooses at run time by key; nothing is compiled while the game runs and nothing falls back silently.
+The mechanism is **compile-time defines**: each variant is the same Slang source compiled with `-DOPTION=1` for the
+options that are on. (Specialization constants were evaluated and not chosen; the evidence is in the renderer spec,
+section R10.)
+
+A permuted shader has three parts:
+
+1. **Declare the options** in the first 60 lines of the `.slang` file, upper-case, at most
+   [[renderer::kMaxPermutationOptions]] (16), and use each one with `#ifdef` / `#if defined(...)`:
+
+   ```
+   // permutation-options: INVERT HALF TINT DEBUG
+   #ifdef INVERT
+       color.rgb = 1.0 - color.rgb;
+   #endif
+   ```
+
+2. **List the keys to build** in `<name>.perm` next to the source: `key -` is the base module (always required), and
+   `key INVERT HALF` turns those options on. At most [[renderer::kMaxPermutationKeys]] (32) keys. Only listed
+   combinations exist; adding an option does not build every combination.
+3. **Add the shader to `ENGINE_SHADERS`** like any other. The presence of the `.perm` file is what makes it permuted.
+
+`cmake --build build --target shaders` then runs `slangc` once per listed key (the cost of the manifest is one compiler
+run per line: the 7-key test shader takes about a second), mints each result like a plain shader, drops modules whose SPIR-V and
+reflection are identical to an earlier key's, and commits four files: `<name>.spv.inc` and `<name>.refl.inc` (the base
+module, as for any shader) and `<name>.perm.inc` (the other modules and the table). The output is deterministic, and
+`shaders_check` regenerates and compares the table too.
+
+At run time, build a key from names and look it up:
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "permute_test.frag.perm.inc"
+#include "renderer/shader_permutation.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::renderer;
+
+int main() {
+    const ShaderPermutations& table = shaders::kPermuteTestFragPermutations;
+
+    const char* names[] = {"INVERT", "HALF"};
+    PermutationKey key;
+    ReflectionError error;
+    if (!MakePermutationKey(table, names, 2, &key, &error)) {
+        std::printf("%s\n", error.message);
+        return 1;
+    }
+    const PermutationModule* module = FindPermutation(table, key, &error);
+    std::printf("INVERT HALF: %s, %zu words\n", module != nullptr ? "found" : "missing", module != nullptr ? module->word_count : 0);
+
+    // TINT with INVERT was not listed in the manifest, so it was not built: an error, never a fallback.
+    const char* unbuilt[] = {"INVERT", "TINT"};
+    MakePermutationKey(table, unbuilt, 2, &key, &error);
+    if (FindPermutation(table, key, &error) == nullptr) {
+        std::printf("%s\n", error.message);
+    }
+}
+```
+
+```output
+INVERT HALF: found, 93 words
+shader 'permute_test.frag' has no permutation {INVERT, TINT} (add the key to its .perm manifest)
+```
+
+The module's `words` go into [[rhi::ShaderDesc]] and its `reflection` blob into [[renderer::ParseShaderReflection]],
+exactly as for a plain shader; each module has its own reflection, because a variant can use different resources.
+Keys that build identical SPIR-V share one module (`key DEBUG` and `key DEBUG TINT` in the test shader), so the
+binary pays for distinct code only.
+
+Two things to know when writing the shader:
+
+- **Each module has the reflection of its own variant.** Slang reports a resource a variant never uses as unused, and
+  the layout builders leave it out, so a texture declared once and used only under `#ifdef TEX` appears in the TEX
+  module's layout and not in the base module's. (Checked with a plain `#ifdef` and with a branch on a constant derived
+  from the option; both mint.) Build one layout per module, not one per shader.
+- **Keep the key space small.** Options multiply: eight independent options would be 256 combinations, which the
+  manifest limit refuses on purpose. List the combinations the material system actually uses.
 
 ## Creating a shader module
 

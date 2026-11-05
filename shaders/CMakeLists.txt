@@ -4,7 +4,9 @@
 # compares when `slangc` is installed. See README.md.
 #
 # Per shader: slangc writes SPIR-V and its reflection JSON, spirv-val checks the SPIR-V, and tools/shader_mint turns both
-# into the committed <name>.spv.inc (the words) and <name>.refl.inc (the reflection blob).
+# into the committed <name>.spv.inc (the words) and <name>.refl.inc (the reflection blob). A shader with a
+# <name>.perm manifest next to it is a permuted shader: shader_mint runs slangc itself once per manifest key and also
+# writes <name>.perm.inc (the key -> module table); the plain pair is the key with no option on.
 set(ENGINE_SHADERS
   triangle.vert
   triangle.frag
@@ -19,6 +21,7 @@ set(ENGINE_SHADERS
   textured.frag
   lit.vert
   lit.frag
+  permute_test.frag
 )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/names.cmake)
@@ -46,6 +49,27 @@ if(SLANGC)
     set(validate_cmd ${CMAKE_COMMAND} -E true)
     if(SPIRV_VAL)
       set(validate_cmd ${SPIRV_VAL} --target-env vulkan1.3 ${spv})
+    endif()
+    set(manifest ${CMAKE_CURRENT_SOURCE_DIR}/${shader}.perm)
+    if(EXISTS ${manifest})
+      set(perm_inc ${CMAKE_CURRENT_SOURCE_DIR}/${shader}.perm.inc)
+      set(perm_args "")
+      foreach(arg ${slang_args})
+        list(APPEND perm_args --slang-arg ${arg})
+      endforeach()
+      if(SPIRV_VAL)
+        list(APPEND perm_args --spirv-val ${SPIRV_VAL})
+      endif()
+      add_custom_command(
+        OUTPUT ${inc} ${refl_inc} ${perm_inc}
+        COMMAND shader_mint --permute --name ${symbol} --source ${shader}.slang --source-path ${source}
+                --manifest ${manifest} --compiler "slangc ${SLANGC_VERSION}" --slangc ${SLANGC} ${perm_args}
+                --work-dir ${SHADER_WORK_DIR} --spv-out ${inc} --refl-out ${refl_inc} --perm-out ${perm_inc}
+        DEPENDS ${source} ${manifest} ${CMAKE_CURRENT_SOURCE_DIR}/names.cmake shader_mint
+        COMMENT "Compiling ${shader}.slang (permuted)"
+        VERBATIM)
+      list(APPEND SHADER_INCS ${inc} ${refl_inc} ${perm_inc})
+      continue()
     endif()
     add_custom_command(
       OUTPUT ${inc} ${refl_inc}

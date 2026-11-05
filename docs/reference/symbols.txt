@@ -1360,6 +1360,33 @@ rhi::UniformRing::Buffer() const	function	rhi	rhi-uniformring-buffer-const	rhi.m
 renderer::RendererName()	function	renderer	renderer-renderername	renderer.md	engine/renderer/renderer_info.h:12
 renderer::RenderLogV(LogVerbosity,const char*,...)	function	renderer	renderer-renderlogv-logverbosity-const-char-star	renderer.md	engine/renderer/renderer_log.h:21
 RenderLog	macro	renderer	renderlog	renderer.md	engine/renderer/renderer_log.h:41
+renderer::kMaxPermutationOptions	variable	renderer	renderer-kmaxpermutationoptions	renderer.md	engine/renderer/shader_permutation.h:17
+renderer::kMaxPermutationKeys	variable	renderer	renderer-kmaxpermutationkeys	renderer.md	engine/renderer/shader_permutation.h:19
+renderer::PermutationKey	struct	renderer	renderer-permutationkey	renderer.md	engine/renderer/shader_permutation.h:24
+renderer::PermutationKey::bits	variable	renderer	renderer-permutationkey-bits	renderer.md	engine/renderer/shader_permutation.h:26
+renderer::PermutationKey::Has(u32) const	function	renderer	renderer-permutationkey-has-u32-const	renderer.md	engine/renderer/shader_permutation.h:33
+renderer::PermutationKey::With(u32) const	function	renderer	renderer-permutationkey-with-u32-const	renderer.md	engine/renderer/shader_permutation.h:40
+renderer::PermutationKey::operator==(const PermutationKey&) const	function	renderer	renderer-permutationkey-operator-eq-eq-const-permutationkey-amp-const	renderer.md	engine/renderer/shader_permutation.h:53
+renderer::PermutationModule	struct	renderer	renderer-permutationmodule	renderer.md	engine/renderer/shader_permutation.h:60
+renderer::PermutationModule::words	variable	renderer	renderer-permutationmodule-words	renderer.md	engine/renderer/shader_permutation.h:62
+renderer::PermutationModule::word_count	variable	renderer	renderer-permutationmodule-word-count	renderer.md	engine/renderer/shader_permutation.h:64
+renderer::PermutationModule::reflection	variable	renderer	renderer-permutationmodule-reflection	renderer.md	engine/renderer/shader_permutation.h:66
+renderer::PermutationModule::reflection_size	variable	renderer	renderer-permutationmodule-reflection-size	renderer.md	engine/renderer/shader_permutation.h:68
+renderer::PermutationEntry	struct	renderer	renderer-permutationentry	renderer.md	engine/renderer/shader_permutation.h:74
+renderer::PermutationEntry::key_bits	variable	renderer	renderer-permutationentry-key-bits	renderer.md	engine/renderer/shader_permutation.h:76
+renderer::PermutationEntry::module	variable	renderer	renderer-permutationentry-module	renderer.md	engine/renderer/shader_permutation.h:78
+renderer::ShaderPermutations	struct	renderer	renderer-shaderpermutations	renderer.md	engine/renderer/shader_permutation.h:87
+renderer::ShaderPermutations::shader	variable	renderer	renderer-shaderpermutations-shader	renderer.md	engine/renderer/shader_permutation.h:89
+renderer::ShaderPermutations::options	variable	renderer	renderer-shaderpermutations-options	renderer.md	engine/renderer/shader_permutation.h:91
+renderer::ShaderPermutations::option_count	variable	renderer	renderer-shaderpermutations-option-count	renderer.md	engine/renderer/shader_permutation.h:93
+renderer::ShaderPermutations::modules	variable	renderer	renderer-shaderpermutations-modules	renderer.md	engine/renderer/shader_permutation.h:95
+renderer::ShaderPermutations::module_count	variable	renderer	renderer-shaderpermutations-module-count	renderer.md	engine/renderer/shader_permutation.h:97
+renderer::ShaderPermutations::entries	variable	renderer	renderer-shaderpermutations-entries	renderer.md	engine/renderer/shader_permutation.h:99
+renderer::ShaderPermutations::entry_count	variable	renderer	renderer-shaderpermutations-entry-count	renderer.md	engine/renderer/shader_permutation.h:101
+renderer::ValidateShaderPermutations(const ShaderPermutations&)	function	renderer	renderer-validateshaderpermutations-const-shaderpermutations-amp	renderer.md	engine/renderer/shader_permutation.h:115
+renderer::MakePermutationKey(const ShaderPermutations&,const char* const*,u32,PermutationKey*,ReflectionError*)	function	renderer	renderer-makepermutationkey-const-shaderpermutations-amp-const-char-star-const-star-u32-permutationkey-star-reflectionerror-star	renderer.md	engine/renderer/shader_permutation.h:128
+renderer::FindPermutation(const ShaderPermutations&,PermutationKey,ReflectionError*)	function	renderer	renderer-findpermutation-const-shaderpermutations-amp-permutationkey-reflectionerror-star	renderer.md	engine/renderer/shader_permutation.h:141
+renderer::DescribePermutationKey(const ShaderPermutations&,PermutationKey,char*,usize)	function	renderer	renderer-describepermutationkey-const-shaderpermutations-amp-permutationkey-char-star-usize	renderer.md	engine/renderer/shader_permutation.h:151
 renderer::kReflectionVersion	variable	renderer	renderer-kreflectionversion	renderer.md	engine/renderer/shader_reflection.h:16
 renderer::kMaxReflectionName	variable	renderer	renderer-kmaxreflectionname	renderer.md	engine/renderer/shader_reflection.h:18
 renderer::kMaxReflectedBindings	variable	renderer	renderer-kmaxreflectedbindings	renderer.md	engine/renderer/shader_reflection.h:20

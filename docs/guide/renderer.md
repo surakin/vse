@@ -19,6 +19,8 @@ Full reference: [The renderer](../reference/renderer.md).
 - [[renderer::ShaderReflection]] — what a compiled shader says about itself (stage, bindings, block layouts, vertex inputs)
 - [[renderer::BuildBindGroupLayout]] — a bind group layout from reflection
 - [[renderer::BuildVertexLayout]] — a vertex layout from reflection
+- [[renderer::ShaderPermutations]] — the key-to-module table of a permuted shader
+- [[renderer::FindPermutation]] — choose a shader variant by key
 
 ## Outline
 
@@ -26,7 +28,7 @@ Full reference: [The renderer](../reference/renderer.md).
 
 _TODO_
 
-Shader reflection (Phase 4 Day 71) is described in [Shaders](rhi-shaders.md#reflection-shaders-describe-themselves).
+Shader reflection (Phase 4 Day 71) is described in [Shaders](rhi-shaders.md#reflection-shaders-describe-themselves), and shader variants (Day 72) in [Shaders](rhi-shaders.md#permutations-one-source-several-modules).
 
 ### Rules & contracts
 
