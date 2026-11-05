@@ -491,6 +491,25 @@ void GBufferDebugView::AddToGraph(RenderGraph* graph, const GBufferTargets& targ
     targets_ = targets;
     output_ = output;
     output_format_ = output_format;
+    if (layer == GBufferLayer::WorldPosition) ENGINE_ASSERT(has_inverse_view_projection_, "GBufferDebugView::AddToGraph: the WorldPosition layer needs SetInverseViewProjection first");
+    has_inverse_view_projection_ = false;
+    // The pipeline is built here, on the frame's thread, not inside the recording callback.
+    if (pipeline_format_ != output_format_) {
+        if (pipeline_.IsValid()) device_->DestroyPipeline(pipeline_);
+        rhi::GraphicsPipelineDesc gp;
+        gp.vertex_shader = vertex_;
+        gp.fragment_shader = fragment_;
+        gp.cull_mode = rhi::CullMode::None;
+        gp.color_targets[0].format = output_format_;
+        gp.color_target_count = 1;
+        gp.bind_group_layouts[0] = layout_;
+        gp.bind_group_layout_count = 1;
+        gp.push_constant_bytes = sizeof(Params);
+        gp.push_constant_stages = rhi::ShaderStage::Fragment;
+        gp.debug_name = "gbuffer_debug";
+        pipeline_ = device_->CreateGraphicsPipeline(gp);
+        pipeline_format_ = pipeline_.IsValid() ? output_format_ : rhi::Format::Undefined;
+    }
     params_.layer = static_cast<u32>(layer);
     params_.near_plane = near_plane;
     params_.far_plane = far_plane;
@@ -507,22 +526,6 @@ void GBufferDebugView::Record(const PassExecuteContext& context, void* user) {
     rhi::Device* device = self->device_;
     const rhi::TextureHandle out = context.graph->ResolvedTexture(self->output_);
     const rhi::TextureDesc& gd0 = context.graph->TextureDescOf(self->targets_.albedo);
-    if (self->pipeline_format_ != self->output_format_) {
-        if (self->pipeline_.IsValid()) device->DestroyPipeline(self->pipeline_);
-        rhi::GraphicsPipelineDesc gp;
-        gp.vertex_shader = self->vertex_;
-        gp.fragment_shader = self->fragment_;
-        gp.cull_mode = rhi::CullMode::None;
-        gp.color_targets[0].format = self->output_format_;
-        gp.color_target_count = 1;
-        gp.bind_group_layouts[0] = self->layout_;
-        gp.bind_group_layout_count = 1;
-        gp.push_constant_bytes = sizeof(Params);
-        gp.push_constant_stages = rhi::ShaderStage::Fragment;
-        gp.debug_name = "gbuffer_debug";
-        self->pipeline_ = device->CreateGraphicsPipeline(gp);
-        self->pipeline_format_ = self->pipeline_.IsValid() ? self->output_format_ : rhi::Format::Undefined;
-    }
     if (!self->pipeline_.IsValid()) {
         RenderLog(LogVerbosity::Error, "GBufferDebugView: the pipeline for the output format could not be created; nothing is drawn");
         return;

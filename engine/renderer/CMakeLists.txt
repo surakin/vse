@@ -21,6 +21,7 @@ set(RENDERER_SOURCES
 # core renderer library, so they live in a second library to keep the build graph acyclic.
 set(RENDERER_PASS_SOURCES
   gbuffer.cpp
+  lighting.cpp
 )
 
 # Headers are included as "renderer/<name>.h", rooted at engine/.

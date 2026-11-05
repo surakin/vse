@@ -12,6 +12,7 @@ set(RENDERER_TEST_SOURCES
   render_graph_barrier_test.cpp
   renderer_test.cpp
   gbuffer_test.cpp
+  lighting_test.cpp
   lsan_options.cpp
 )
 

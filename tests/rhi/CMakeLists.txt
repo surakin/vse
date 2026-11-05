@@ -28,6 +28,7 @@ set(RHI_TEST_SOURCES
   vulkan_render_graph_test.cpp
   vulkan_strip_test.cpp
   vulkan_gbuffer_test.cpp
+  vulkan_lighting_test.cpp
   ${CMAKE_SOURCE_DIR}/game/common/cube_scene.cpp
   ${CMAKE_SOURCE_DIR}/game/common/textures.cpp
   image_compare.cpp

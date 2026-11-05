@@ -1,0 +1,431 @@
+// Phase 4 Day 80: deferred lighting and tonemapping on a real device with validation and synchronization validation on.
+// A G-buffer frame is lit by LightingPass and tonemapped by TonemapPass; the HDR accumulation target and the display
+// target are read back and compared with the CPU twins of the shader code at probe pixels.
+#include <cmath>
+#include <vector>
+
+#include <catch2/catch_test_macros.hpp>
+
+#include "gbuffer_rig.h"
+#include "gpu_fixture.h"
+#include "renderer/lighting.h"
+#include "rhi/vulkan/vulkan_device.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::renderer;
+using namespace gbuffer_rig;
+
+namespace {
+
+struct LitFrame {
+    std::vector<u16> accum; // RGBA16_Float
+    std::vector<u8> display; // RGBA8_SRGB
+    std::vector<u8> debug;   // RGBA8_UNorm, the debug layer when one was asked for
+    bool ok = false;
+    LightSummary summary;
+    std::string error;
+
+    f32 Accum(u32 x, u32 y, u32 c) const { return HalfToFloat(accum[(y * kW + x) * 4 + c]); }
+    int Display(u32 x, u32 y, u32 c) const { return display[(y * kW + x) * 4 + c]; }
+};
+
+struct CopyAccum {
+    GraphResource accum;
+    GraphResource buffer;
+};
+
+void CopyAccumPass(const PassExecuteContext& ctx, void* user) {
+    const CopyAccum* job = static_cast<const CopyAccum*>(user);
+    ctx.list->CopyTextureToBuffer(ctx.graph->ResolvedTexture(job->accum), ctx.graph->ImportedBuffer(job->buffer), rhi::BufferTextureCopy{});
+}
+
+// Renders the scene through the G-buffer, lighting and tonemap passes. `debug_layer` >= 0 also shows that G-buffer layer.
+LitFrame RenderLit(Rig& rig, const RenderScene& scene, const Camera& camera, f32 exposure, int debug_layer = -1) {
+    LitFrame out;
+    GBufferPass gbuffer(rig.device, rig.sys, rig.frame);
+    LightingPass lighting(rig.device, rig.sys, rig.frame);
+    TonemapPass tonemap(rig.device);
+    GBufferDebugView view(rig.device);
+    REQUIRE(lighting.Valid());
+    REQUIRE(tonemap.Valid());
+    const u64 f = rig.frame_index++;
+    rig.device->BeginFrame();
+    rig.sys->BeginFrame(f);
+    rig.sys->FlushMaterials();
+    rig.frame->BeginFrame(f);
+    const FrameData frame_data = MakeFrameData(camera, kW, kH, 0, 0, f);
+    rig.frame->WriteFrameData(frame_data);
+    out.ok = gbuffer.Prepare(scene, Frustum::FromViewProjection(camera.ViewProjection()));
+    out.error = gbuffer.LastError();
+    out.summary = lighting.Prepare(scene);
+    rig.frame->Flush();
+
+    rhi::BufferDesc bd;
+    bd.size = kW * kH * 8;
+    bd.location = rhi::MemoryLocation::GpuOnly;
+    bd.usage = rhi::BufferUsage::CopyDst | rhi::BufferUsage::CopySrc;
+    const rhi::BufferHandle accum_buf = rig.device->CreateBuffer(bd);
+    REQUIRE(accum_buf.IsValid());
+    rhi::TextureDesc td;
+    td.width = kW;
+    td.height = kH;
+    td.format = rhi::Format::RGBA8_SRGB;
+    td.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
+    const rhi::TextureHandle display = rig.device->CreateTexture(td);
+    td.format = rhi::Format::RGBA8_UNorm;
+    const rhi::TextureHandle debug = rig.device->CreateTexture(td);
+    REQUIRE(display.IsValid());
+    REQUIRE(debug.IsValid());
+
+    ArenaAllocator arena(1 << 20);
+    {
+        RenderGraph graph(&arena, RenderGraphDesc{});
+        rig.pool->BeginFrame(f);
+        const GBufferTargets targets = gbuffer.AddToGraph(&graph, kW, kH);
+        const GraphResource accum = lighting.AddToGraph(&graph, targets, kW, kH);
+        const GraphResource display_res = graph.ImportTexture("display", display, rhi::ResourceState::Undefined, rhi::ResourceState::CopySrc, false);
+        tonemap.AddToGraph(&graph, accum, display_res, rhi::Format::RGBA8_SRGB, exposure);
+        CopyAccum job;
+        job.accum = accum;
+        job.buffer = graph.ImportBuffer("accum host", accum_buf, rhi::ResourceState::Undefined, rhi::ResourceState::CopySrc, false);
+        graph.AddPass("readback accum", &CopyAccumPass, &job, PassFlags::SideEffects).Read(accum, GraphUsage::CopySrc).Write(job.buffer, GraphUsage::CopyDst);
+        if (debug_layer >= 0) {
+            const GraphResource debug_res = graph.ImportTexture("debug", debug, rhi::ResourceState::Undefined, rhi::ResourceState::CopySrc, false);
+            view.SetInverseViewProjection(frame_data.inverse_view_projection);
+            view.AddToGraph(&graph, targets, static_cast<GBufferLayer>(debug_layer), debug_res, rhi::Format::RGBA8_UNorm, camera.near_plane, camera.far_plane);
+        }
+        REQUIRE(graph.Compile());
+        rhi::CommandList* list = rig.device->CreateCommandList();
+        list->Begin();
+        const bool executed = graph.Execute(rig.pool, list);
+        if (!executed) FAIL(graph.ExecuteError());
+        list->End();
+        rhi::CommandList* lists[] = {list};
+        REQUIRE(rig.device->Submit(lists, 1) != 0);
+    }
+    rig.device->EndFrame();
+    rig.device->WaitIdle();
+    out.accum.resize(kW * kH * 4);
+    out.display.resize(kW * kH * 4);
+    REQUIRE(rig.device->ReadbackBuffer(accum_buf, 0, out.accum.data(), kW * kH * 8));
+    REQUIRE(rig.device->ReadbackTexture(display, 0, 0, out.display.data(), out.display.size(), rhi::ResourceState::CopySrc));
+    if (debug_layer >= 0) {
+        out.debug.resize(kW * kH * 4);
+        REQUIRE(rig.device->ReadbackTexture(debug, 0, 0, out.debug.data(), out.debug.size(), rhi::ResourceState::CopySrc));
+    }
+    rig.device->DestroyTexture(debug);
+    rig.device->DestroyTexture(display);
+    rig.device->DestroyBuffer(accum_buf);
+    return out;
+}
+
+// The color the CPU model gives for a flat surface at a world position.
+Vec3 Expected(const SurfacePoint& s, const Vec3& eye, const Vec3& world, const std::vector<Light>& lights) {
+    const Vec3 to_eye = eye - world;
+    const f32 len = std::sqrt(to_eye.x * to_eye.x + to_eye.y * to_eye.y + to_eye.z * to_eye.z);
+    const Vec3 v(to_eye.x / len, to_eye.y / len, to_eye.z / len);
+    Vec3 ambient(0, 0, 0);
+    for (const Light& l : lights) {
+        if (l.type == LightType::Ambient) ambient = ambient + l.color * l.intensity;
+    }
+    Vec3 color = ShadeAmbient(s, ambient);
+    for (const Light& l : lights) {
+        if (l.type == LightType::Directional) color = color + ShadeLight(s, v, l.direction, l.color * l.intensity);
+    }
+    return color;
+}
+
+bool Close(f32 got, f32 want, f32 relative = 0.02f) { return std::fabs(got - want) <= 0.004f + relative * std::fabs(want); }
+
+int Srgb8(f32 linear) { return static_cast<int>(LinearToSrgb(linear < 0.0f ? 0.0f : (linear > 1.0f ? 1.0f : linear)) * 255.0f + 0.5f); }
+
+} // namespace
+
+TEST_CASE("A lit plane matches the CPU lighting model, and background pixels stay black", "[rhi][vulkan][gpu][lighting]") {
+    gpu_test::GpuFixture fx;
+    fx.RequireValidation();
+    rhi::Device* device = MakeDevice();
+    if (device == nullptr) SKIP("no suitable Vulkan device");
+    fx.ExpectErrors(0);
+    {
+        Rig rig;
+        REQUIRE(rig.Create(device));
+        MeshData d;
+        REQUIRE(MakePlaneMesh(6.0f, 6.0f, 1, 1, &d) == nullptr); // smaller than the view: the corners are background
+        GpuMesh plane;
+        REQUIRE(plane.Create(device, d, "plane"));
+        rig.Prepare(&plane);
+        const MaterialId m = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m");
+        rig.sys->SetVec4(m, "base_color", Vec4(0.6f, 0.5f, 0.4f, 1.0f));
+        rig.sys->SetFloat(m, "roughness", 0.6f);
+        rig.sys->SetFloat(m, "metallic", 0.0f);
+        rig.sys->SetFloat(m, "occlusion", 0.75f);
+        rig.sys->SetFloat(m, "emissive_scale", 0.05f);
+        RenderScene scene(RenderSceneDesc{});
+        RenderObjectDesc od;
+        od.mesh = &plane;
+        od.material = m.index;
+        scene.AddObject(od);
+        std::vector<Light> lights;
+        Light sun;
+        sun.type = LightType::Directional;
+        sun.direction = Vec3(0.3f, 0.8f, 0.5f);
+        {
+            const Vec3& v = sun.direction;
+            const f32 len = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+            sun.direction = Vec3(v.x / len, v.y / len, v.z / len);
+        }
+        sun.color = Vec3(1.0f, 0.9f, 0.8f);
+        sun.intensity = 2.0f;
+        Light fill;
+        fill.type = LightType::Directional;
+        fill.direction = Vec3(-0.6f, 0.2f, -0.77f);
+        {
+            const Vec3& v = fill.direction;
+            const f32 len = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+            fill.direction = Vec3(v.x / len, v.y / len, v.z / len);
+        }
+        fill.color = Vec3(0.3f, 0.4f, 1.0f);
+        fill.intensity = 0.5f;
+        Light ambient;
+        ambient.type = LightType::Ambient;
+        ambient.color = Vec3(0.2f, 0.25f, 0.3f);
+        ambient.intensity = 0.5f;
+        lights = {sun, fill, ambient};
+        for (const Light& l : lights) scene.AddLight(l);
+
+        const Camera cam = TopDownCamera();
+        const LitFrame L = RenderLit(rig, scene, cam, 1.0f);
+        INFO(L.error);
+        REQUIRE(L.ok);
+        CHECK(L.summary.directional_count == 2);
+        CHECK(std::fabs(L.summary.ambient.x - 0.1f) < 1e-6f);
+        CHECK(std::fabs(L.summary.ambient.y - 0.125f) < 1e-6f);
+        CHECK(std::fabs(L.summary.ambient.z - 0.15f) < 1e-6f);
+
+        SurfacePoint surface;
+        surface.albedo = Vec3(0.6f, 0.5f, 0.4f);
+        surface.roughness = 0.6f;
+        surface.metallic = 0.0f;
+        surface.occlusion = 0.75f;
+        surface.emissive_scale = 0.05f;
+        surface.normal = Vec3(0, 1, 0);
+        const FrameData fd = MakeFrameData(cam, kW, kH, 0, 0, 0);
+        for (const Vec3& probe : {Vec3(0, 0, 0), Vec3(1.5f, 0, -1.0f), Vec3(-2.0f, 0, 2.0f)}) {
+            const Pixel p = Project(cam, probe);
+            const Vec3 world = ReconstructWorldPosition(p.x, p.y, p.depth, kW, kH, fd.inverse_view_projection);
+            const Vec3 want = Expected(surface, cam.position, world, lights);
+            INFO("probe " << probe.x << " " << probe.z << " want " << want.x << " " << want.y << " " << want.z << " got " << L.Accum(p.x, p.y, 0) << " " << L.Accum(p.x, p.y, 1) << " " << L.Accum(p.x, p.y, 2));
+            CHECK(Close(L.Accum(p.x, p.y, 0), want.x));
+            CHECK(Close(L.Accum(p.x, p.y, 1), want.y));
+            CHECK(Close(L.Accum(p.x, p.y, 2), want.z));
+            // The tonemap: the display value is the ACES curve of the HDR value, sRGB-encoded by the target format.
+            for (u32 c = 0; c < 3; ++c) {
+                CHECK(Near(L.Display(p.x, p.y, c), Srgb8(TonemapAces(L.Accum(p.x, p.y, c))), 2));
+            }
+        }
+        // The plane is 6 wide and the view 11.5: the corners are background, skipped by the lighting pass and left black.
+        for (u32 c = 0; c < 4; ++c) CHECK(L.accum[(2 * kW + 2) * 4 + c] == 0);
+        CHECK(L.Display(2, 2, 0) == 0);
+
+        // Exposure scales the HDR value before the operator.
+        const LitFrame H = RenderLit(rig, scene, cam, 0.5f);
+        REQUIRE(H.ok);
+        const Pixel c = Project(cam, Vec3(0, 0, 0));
+        for (u32 ch = 0; ch < 3; ++ch) {
+            CHECK(Near(H.Display(c.x, c.y, ch), Srgb8(TonemapAces(0.5f * H.Accum(c.x, c.y, ch))), 2));
+        }
+        device->WaitIdle();
+    }
+    device->WaitIdle();
+    rhi::DestroyDevice(device);
+}
+
+TEST_CASE("Sweeping the light direction follows max(dot(N, L), 0) and the GGX lobe, metals have no diffuse", "[rhi][vulkan][gpu][lighting]") {
+    gpu_test::GpuFixture fx;
+    fx.RequireValidation();
+    rhi::Device* device = MakeDevice();
+    if (device == nullptr) SKIP("no suitable Vulkan device");
+    fx.ExpectErrors(0);
+    {
+        Rig rig;
+        REQUIRE(rig.Create(device));
+        MeshData d;
+        REQUIRE(MakePlaneMesh(16.0f, 16.0f, 1, 1, &d) == nullptr);
+        GpuMesh plane;
+        REQUIRE(plane.Create(device, d, "plane"));
+        rig.Prepare(&plane);
+        const MaterialId rough = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "rough");
+        rig.sys->SetVec4(rough, "base_color", Vec4(0.5f, 0.5f, 0.5f, 1.0f));
+        rig.sys->SetFloat(rough, "roughness", 1.0f);
+        const MaterialId metal = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "metal");
+        rig.sys->SetVec4(metal, "base_color", Vec4(1.0f, 0.8f, 0.2f, 1.0f));
+        rig.sys->SetFloat(metal, "roughness", 0.3f);
+        rig.sys->SetFloat(metal, "metallic", 1.0f);
+        const Camera cam = TopDownCamera();
+        const Pixel c = Project(cam, Vec3(0, 0, 0));
+        const FrameData fd = MakeFrameData(cam, kW, kH, 0, 0, 0);
+        const Vec3 world = ReconstructWorldPosition(c.x, c.y, c.depth, kW, kH, fd.inverse_view_projection);
+
+        for (int which = 0; which < 2; ++which) {
+            RenderScene scene(RenderSceneDesc{});
+            RenderObjectDesc od;
+            od.mesh = &plane;
+            od.material = (which == 0 ? rough : metal).index;
+            scene.AddObject(od);
+            Light sun;
+            sun.type = LightType::Directional;
+            sun.intensity = 1.5f;
+            const LightId id = scene.AddLight(sun);
+            SurfacePoint surface;
+            surface.albedo = which == 0 ? Vec3(0.5f, 0.5f, 0.5f) : Vec3(1.0f, 0.8f, 0.2f);
+            surface.roughness = which == 0 ? 1.0f : 0.3f;
+            surface.metallic = which == 0 ? 0.0f : 1.0f;
+            f32 previous = -1.0f;
+            for (int degrees : {0, 30, 60, 85, 95, 120}) {
+                const f32 theta = static_cast<f32>(degrees) * 3.14159265f / 180.0f;
+                sun.direction = Vec3(std::sin(theta), std::cos(theta), 0.0f);
+                scene.SetLight(id, sun);
+                // The scene may hold a direction that is not a unit vector; the light buffer holds it normalized, so the
+                // image must equal the unit-vector model below.
+                Light stored = sun;
+                stored.direction = Vec3(sun.direction.x * 2.5f, sun.direction.y * 2.5f, 0.0f);
+                scene.SetLight(id, stored);
+                const LitFrame L = RenderLit(rig, scene, cam, 1.0f);
+                REQUIRE(L.ok);
+                const Vec3 want = Expected(surface, cam.position, world, {sun});
+                INFO((which == 0 ? "rough " : "metal ") << degrees << " degrees, want " << want.x << " got " << L.Accum(c.x, c.y, 0));
+                // The GGX peak (a smooth metal seen along its mirror direction) changes by several percent for a tenth of a
+                // pixel of position error, so that one probe gets a wider tolerance.
+                const f32 tolerance = (which == 1 && degrees == 0) ? 0.06f : 0.02f;
+                CHECK(Close(L.Accum(c.x, c.y, 0), want.x, tolerance));
+                CHECK(Close(L.Accum(c.x, c.y, 1), want.y, tolerance));
+                CHECK(Close(L.Accum(c.x, c.y, 2), want.z, tolerance));
+                if (degrees >= 95) CHECK(L.Accum(c.x, c.y, 0) == 0.0f); // facing away: nothing, with no ambient
+                if (which == 0) {
+                    // Rough dielectric: the Lambert term dominates. diffuse = albedo * radiance * N.L, specular adds a little.
+                    const f32 lambert = 0.5f * 1.5f * std::fmax(std::cos(theta), 0.0f);
+                    CHECK(L.Accum(c.x, c.y, 0) >= lambert - 0.004f);
+                    CHECK(L.Accum(c.x, c.y, 0) <= lambert * 1.3f + 0.004f);
+                    if (degrees <= 85) {
+                        CHECK(L.Accum(c.x, c.y, 0) < previous + 1e-6f + (previous < 0.0f ? 10.0f : 0.0f)); // dimmer as the light tilts away
+                        previous = L.Accum(c.x, c.y, 0);
+                    }
+                } else if (degrees == 0) {
+                    // A metal has no diffuse: red/green/blue follow the albedo (F0), not the albedo times N.L alone.
+                    CHECK(L.Accum(c.x, c.y, 0) > L.Accum(c.x, c.y, 2) * 3.0f);
+                }
+            }
+        }
+        device->WaitIdle();
+    }
+    device->WaitIdle();
+    rhi::DestroyDevice(device);
+}
+
+TEST_CASE("The reconstructed world position matches the geometry, including the projection's Y flip", "[rhi][vulkan][gpu][lighting]") {
+    gpu_test::GpuFixture fx;
+    fx.RequireValidation();
+    rhi::Device* device = MakeDevice();
+    if (device == nullptr) SKIP("no suitable Vulkan device");
+    fx.ExpectErrors(0);
+    {
+        Rig rig;
+        REQUIRE(rig.Create(device));
+        MeshData d;
+        REQUIRE(MakePlaneMesh(16.0f, 16.0f, 1, 1, &d) == nullptr);
+        GpuMesh plane;
+        REQUIRE(plane.Create(device, d, "plane"));
+        REQUIRE(MakeCubeMesh(2.0f, &d) == nullptr);
+        GpuMesh cube;
+        REQUIRE(cube.Create(device, d, "cube"));
+        rig.Prepare(&plane);
+        rig.Prepare(&cube);
+        const MaterialId m = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m");
+        RenderScene scene(RenderSceneDesc{});
+        RenderObjectDesc od;
+        od.mesh = &plane;
+        od.material = m.index;
+        scene.AddObject(od);
+        od.mesh = &cube;
+        od.transform = ModelMatrix(Vec3(-3, 1, 0), 1.0f, 0.0f);
+        scene.AddObject(od);
+        // An off-center camera so that neither the X nor the Z axis of the picture is symmetric.
+        Camera cam = MakeLookAtCamera(Vec3(2, 10, 3), Vec3(0, 0, 0), Vec3(0, 0, -1));
+        cam.aspect = 1.0f;
+        cam.near_plane = 1.0f;
+        cam.far_plane = 30.0f;
+        const LitFrame L = RenderLit(rig, scene, cam, 1.0f, static_cast<int>(GBufferLayer::WorldPosition));
+        REQUIRE(L.ok);
+        auto decode = [&](const Pixel& p, int c) { return (static_cast<f32>(L.debug[(p.y * kW + p.x) * 4 + c]) / 255.0f - 0.5f) / 0.05f; };
+        for (const Vec3& truth : {Vec3(3, 0, 3), Vec3(-4, 0, -3), Vec3(1, 0, -2), Vec3(-3, 2, 0), Vec3(-3.5f, 2, 0.5f)}) {
+            const Pixel p = Project(cam, truth);
+            INFO("truth " << truth.x << " " << truth.y << " " << truth.z << " got " << decode(p, 0) << " " << decode(p, 1) << " " << decode(p, 2));
+            CHECK(std::fabs(decode(p, 0) - truth.x) < 0.3f);
+            CHECK(std::fabs(decode(p, 1) - truth.y) < 0.2f);
+            CHECK(std::fabs(decode(p, 2) - truth.z) < 0.3f);
+        }
+        device->WaitIdle();
+    }
+    device->WaitIdle();
+    rhi::DestroyDevice(device);
+}
+
+TEST_CASE("A cube lit through the deferred path is close to the Phase 3 forward Lambert result", "[rhi][vulkan][gpu][lighting]") {
+    gpu_test::GpuFixture fx;
+    fx.RequireValidation();
+    rhi::Device* device = MakeDevice();
+    if (device == nullptr) SKIP("no suitable Vulkan device");
+    fx.ExpectErrors(0);
+    {
+        Rig rig;
+        REQUIRE(rig.Create(device));
+        MeshData d;
+        REQUIRE(MakeCubeMesh(1.0f, &d) == nullptr);
+        GpuMesh cube;
+        REQUIRE(cube.Create(device, d, "cube"));
+        rig.Prepare(&cube);
+        // The Phase 3 test "Visible faces are lit by the Lambert ratio of their normals to the light": white albedo, light
+        // (0.3, 0.9, 0.5) at 0.8, ambient 0.1, eye (1.8, 1.5, 3.0). The forward result is 0.1 + 0.8 * max(N.L, 0); the
+        // deferred model adds a GGX lobe, small for roughness 1, so the tolerance is 0.035.
+        const MaterialId m = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "white");
+        rig.sys->SetFloat(m, "roughness", 1.0f);
+        RenderScene scene(RenderSceneDesc{});
+        RenderObjectDesc od;
+        od.mesh = &cube;
+        od.material = m.index;
+        scene.AddObject(od);
+        Light sun;
+        sun.type = LightType::Directional;
+        const Vec3 raw(0.3f, 0.9f, 0.5f);
+        const f32 len = std::sqrt(raw.x * raw.x + raw.y * raw.y + raw.z * raw.z);
+        sun.direction = Vec3(raw.x / len, raw.y / len, raw.z / len);
+        sun.intensity = 0.8f;
+        scene.AddLight(sun);
+        Light amb;
+        amb.type = LightType::Ambient;
+        amb.intensity = 0.1f;
+        scene.AddLight(amb);
+        Camera cam = MakeLookAtCamera(Vec3(1.8f, 1.5f, 3.0f), Vec3(0, 0, 0), Vec3(0, 1, 0));
+        cam.aspect = 1.0f;
+        cam.near_plane = 0.5f;
+        cam.far_plane = 20.0f;
+        const LitFrame L = RenderLit(rig, scene, cam, 1.0f);
+        REQUIRE(L.ok);
+        struct Face {
+            Vec3 center;
+            Vec3 normal;
+        };
+        for (const Face& f : {Face{Vec3(0, 0, 0.5f), Vec3(0, 0, 1)}, Face{Vec3(0.5f, 0, 0), Vec3(1, 0, 0)}, Face{Vec3(0, 0.5f, 0), Vec3(0, 1, 0)}}) {
+            const f32 lambert = f.normal.x * sun.direction.x + f.normal.y * sun.direction.y + f.normal.z * sun.direction.z;
+            const f32 forward = 0.1f + 0.8f * (lambert > 0.0f ? lambert : 0.0f);
+            const Pixel p = Project(cam, f.center);
+            INFO("face normal " << f.normal.x << " " << f.normal.y << " " << f.normal.z << " forward " << forward << " deferred " << L.Accum(p.x, p.y, 0));
+            for (u32 c = 0; c < 3; ++c) CHECK(std::fabs(L.Accum(p.x, p.y, c) - forward) < 0.035f);
+            CHECK(L.Accum(p.x, p.y, 0) >= forward - 0.002f); // the GGX lobe only adds
+        }
+        device->WaitIdle();
+    }
+    device->WaitIdle();
+    rhi::DestroyDevice(device);
+}

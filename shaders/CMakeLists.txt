@@ -28,6 +28,8 @@ set(ENGINE_SHADERS
   gbuffer.vert
   gbuffer.frag
   gbuffer_debug.frag
+  lighting.frag
+  tonemap.frag
 )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/names.cmake)

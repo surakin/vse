@@ -90,15 +90,16 @@ struct RenderObject {
 enum class LightType : u8 {
     Directional = 0, ///< Infinitely far away; only `direction` matters.
     Point,           ///< A point with a radius of influence.
+    Ambient,         ///< A uniform light from every direction; only `color` and `intensity` matter.
 };
 
-/// A light. Declared now; the lighting passes use it from Day 79.
+/// A light: directional and ambient lights are lit by the deferred lighting pass; point lights follow.
 ///
 /// Thread-safety: thread-compatible plain data.
 struct Light {
-    /// Directional or point.
+    /// Directional, point or ambient.
     LightType type = LightType::Directional;
-    /// Linear RGB color; `intensity` scales it.
+    /// Linear RGB color; `intensity` scales it. For an ambient light this is the whole light.
     Vec3 color = Vec3(1, 1, 1);
     /// Scale applied to `color`; not negative.
     f32 intensity = 1.0f;

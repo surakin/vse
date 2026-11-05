@@ -68,14 +68,39 @@ struct BufferRegion {
     u64 size = 0;
 };
 
-/// The two per-frame buffers, in `kSlots` rotating regions so the CPU never writes data the GPU is still reading.
+/// One light as the lighting shaders read it (std430, 48 bytes).
 ///
-/// Call [[renderer::FrameResources::BeginFrame]] after `Device::BeginFrame`, write the frame block and the objects,
-/// then bind the two regions. The buffers are persistently mapped `CpuToGpu` memory; they are flushed for devices
+/// Thread-safety: thread-compatible plain data.
+struct LightData {
+    /// xyz: for a directional light the unit vector from the surface toward the light; w: the type (0 directional, 1 point).
+    Vec4 direction;
+    /// rgb: the light's color times its intensity (linear); w unused.
+    Vec4 color;
+    /// xyz: a point light's position; w: its radius. Unused (zero) for a directional light.
+    Vec4 position_radius;
+};
+static_assert(sizeof(LightData) == 48, "LightData is 3 vec4");
+
+/// What [[renderer::FrameResources::WriteLights]] found in the scene.
+///
+/// Thread-safety: thread-compatible plain data.
+struct LightSummary {
+    /// The sum of every ambient light's color times its intensity (linear).
+    Vec3 ambient = Vec3(0, 0, 0);
+    /// Directional lights written to the buffer (they come first).
+    u32 directional_count = 0;
+    /// Point lights written to the buffer after the directional ones.
+    u32 point_count = 0;
+};
+
+/// The per-frame buffers, in `kSlots` rotating regions so the CPU never writes data the GPU is still reading.
+///
+/// Call [[renderer::FrameResources::BeginFrame]] after `Device::BeginFrame`, write the frame block, the objects and the
+/// lights, then bind the regions. The buffers are persistently mapped `CpuToGpu` memory; they are flushed for devices
 /// whose memory is not coherent by [[renderer::FrameResources::Flush]].
 ///
 /// Thread-safety: thread-compatible. Not copyable.
-/// Ownership: owns both buffers; the device must outlive it.
+/// Ownership: owns its buffers; the device must outlive it.
 class FrameResources {
 public:
     /// The number of rotating regions; the largest frames in flight a device allows.
@@ -85,9 +110,10 @@ public:
     ///
     /// Param device: the device; must outlive this object.
     /// Param max_objects: the most objects one frame writes, at least 1.
+    /// Param max_lights: the most lights one frame writes, at least 1.
     /// Ownership: check [[renderer::FrameResources::Valid]].
-    /// Aborts: `device` is null or `max_objects` is 0.
-    FrameResources(rhi::Device* device, u32 max_objects);
+    /// Aborts: `device` is null, or `max_objects` or `max_lights` is 0.
+    FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights = 64);
     /// Unmaps and destroys the buffers.
     ~FrameResources();
     FrameResources(const FrameResources&) = delete;
@@ -95,7 +121,7 @@ public:
 
     /// Returns whether both buffers were created and mapped.
     /// Fails: never; false means creation failed (logged) and every write will fail.
-    bool Valid() const { return frame_mapped_ != nullptr && object_mapped_ != nullptr; }
+    bool Valid() const { return frame_mapped_ != nullptr && object_mapped_ != nullptr && light_mapped_ != nullptr; }
 
     /// Selects the region for this frame: `frame_index % kSlots`.
     ///
@@ -119,6 +145,17 @@ public:
     /// Ownership: `slots` is borrowed for the call.
     u32 WriteObjects(const RenderScene& scene, const u32* slots, u32 count);
 
+    /// Writes the scene's lights into this frame's region: directional lights first, then point lights, and sums the ambient lights.
+    ///
+    /// Directional light directions are normalized (a zero direction lights nothing). Lights beyond the capacity are
+    /// dropped, with a warning logged once per object; the capacity (`max_lights`) should be at least the scene's
+    /// `RenderSceneDesc::max_lights`. The summary counts only what was written.
+    ///
+    /// Param scene: the scene.
+    /// Returns: the ambient sum and the counts of each kind written.
+    /// Aborts: [[renderer::FrameResources::BeginFrame]] was not called.
+    LightSummary WriteLights(const RenderScene& scene);
+
     /// Makes this frame's writes visible to the GPU on devices without coherent host memory; call before submitting.
     ///
     /// Aborts: `BeginFrame` was not called.
@@ -130,6 +167,11 @@ public:
     /// Returns the region of the object storage buffer for this frame (a storage binding): all `max_objects` entries.
     /// Aborts: `BeginFrame` was not called.
     BufferRegion ObjectRegion() const;
+    /// Returns the region of the light storage buffer for this frame: all `max_lights` entries.
+    /// Aborts: `BeginFrame` was not called.
+    BufferRegion LightRegion() const;
+    /// Returns the capacity in lights.
+    u32 MaxLights() const { return max_lights_; }
     /// Returns the capacity in objects.
     u32 MaxObjects() const { return max_objects_; }
 
@@ -137,6 +179,12 @@ private:
     rhi::Device* device_ = nullptr;
     rhi::BufferHandle frame_buffer_;
     rhi::BufferHandle object_buffer_;
+    rhi::BufferHandle light_buffer_;
+    unsigned char* light_mapped_ = nullptr;
+    u64 light_stride_ = 0;
+    u32 max_lights_ = 0;
+    u32 lights_written_ = 0;
+    bool warned_lights_ = false;
     unsigned char* frame_mapped_ = nullptr;
     unsigned char* object_mapped_ = nullptr;
     u64 frame_stride_ = 0;  // bytes between the frame regions: sizeof(FrameData) rounded to the offset alignment

@@ -5,11 +5,13 @@
 //   layer 1 normal:   out = OctDecode(normal.rg) * 0.5 + 0.5
 //   layer 2 material: out = material.rgb
 //   layer 3 depth:    d = depth in [0, 1]; z = near * far / (far - d * (far - near)); out = z / far, as grey
+//   layer 4 world position: ndc = (2 * (pixel + 0.5) / size - 1, d), world = inverse_view_projection * (ndc, 1) / w;
+//                     out = world * 0.05 + 0.5 (background pixels, d = 1, show black)
 //
 // Interface
 //   fragment input location 0: float2 uv
 //   set 0, binding 0: albedo; 1: normal; 2: material; 3: depth (sampled textures); 4: sampler (nearest)
-//   push constants: uint layer; float near_plane; float far_plane; uint pad  (16 bytes)
+//   push constants (80 bytes): float4x4 inverse_view_projection; uint layer; float near_plane; float far_plane; uint pad
 
 #include "gbuffer_common.slang"
 
@@ -20,6 +22,7 @@
 [[vk::binding(4, 0)]] SamplerState point_sampler;
 
 struct Push {
+    float4x4 inverse_view_projection;
     uint layer;
     float near_plane;
     float far_plane;
@@ -45,6 +48,12 @@ FragmentOutput main(FragmentInput input) {
         rgb = OctDecode(normal_tex.Sample(point_sampler, input.uv).rg) * 0.5 + 0.5;
     } else if (push.layer == 2u) {
         rgb = material_tex.Sample(point_sampler, input.uv).rgb;
+    } else if (push.layer == 4u) {
+        float d = depth_tex.Sample(point_sampler, input.uv).r;
+        if (d < 1.0) {
+            float4 clip = mul(push.inverse_view_projection, float4(input.uv * 2.0 - 1.0, d, 1.0));
+            rgb = clip.xyz / clip.w * 0.05 + 0.5;
+        }
     } else {
         float d = depth_tex.Sample(point_sampler, input.uv).r;
         float z = push.near_plane * push.far_plane / (push.far_plane - d * (push.far_plane - push.near_plane));

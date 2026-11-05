@@ -14,6 +14,7 @@
 //! `AddToGraph` declares the pass whose callback records it. The record step creates no object and issues a handful of RHI
 //! calls per draw: bind the pipeline and material group only when they change, one instanced draw per run of the same mesh
 //! and material.
+#include "math/matrix.h"
 #include "math/vector.h"
 #include "renderer/camera.h"
 #include "renderer/frame_data.h"
@@ -41,6 +42,7 @@ enum class GBufferLayer : u8 {
     Normal,     ///< The decoded normal shown as `n * 0.5 + 0.5`.
     Material,   ///< The material target's rgb (roughness, metallic, emissive scale).
     Depth,      ///< Linear view-space depth divided by the far plane, as grey.
+    WorldPosition, ///< The world position rebuilt from depth, shown as `position * 0.05 + 0.5` (background black); needs `SetInverseViewProjection`.
 };
 
 /// Checks that the device supports every G-buffer format for the usage the pass needs.
@@ -291,6 +293,15 @@ public:
     /// Fails: never.
     bool Valid() const;
 
+    /// Sets the matrix the `WorldPosition` layer uses to rebuild positions: [[renderer::FrameData::inverse_view_projection]].
+    ///
+    /// Param inverse_view_projection: the inverse of the camera's view-projection (including the projection's Y flip).
+    /// Fails: never.
+    void SetInverseViewProjection(const Mat4& inverse_view_projection) {
+        params_.inverse_view_projection = inverse_view_projection;
+        has_inverse_view_projection_ = true;
+    }
+
     /// Declares a pass that shows `layer` in `output`.
     ///
     /// Param graph: the frame's graph.
@@ -302,12 +313,15 @@ public:
     /// Param output_format: the format of `output` (an import carries no description, so the pass cannot read it).
     /// Param near_plane: the camera's near plane, for `GBufferLayer::Depth`.
     /// Param far_plane: the camera's far plane, for `GBufferLayer::Depth`.
-    /// Fails: an invalid resource is reported by `RenderGraph::Compile`.
+    /// Fails: an invalid resource is reported by `RenderGraph::Compile`; a pipeline the device cannot create is logged and the
+    ///   pass then draws nothing.
+    /// Aborts: `layer` is `WorldPosition` and `SetInverseViewProjection` was not called since the last `AddToGraph`.
     /// Ownership: the pass keeps a pointer to this object until the graph is executed.
     void AddToGraph(RenderGraph* graph, const GBufferTargets& targets, GBufferLayer layer, GraphResource output, rhi::Format output_format, f32 near_plane, f32 far_plane);
 
 private:
     struct Params {
+        Mat4 inverse_view_projection = Mat4::Identity();
         u32 layer = 0;
         f32 near_plane = 0.1f;
         f32 far_plane = 100.0f;
@@ -325,6 +339,7 @@ private:
     GBufferTargets targets_;
     GraphResource output_;
     rhi::Format output_format_ = rhi::Format::Undefined;
+    bool has_inverse_view_projection_ = false;
     Params params_;
 };
 

@@ -6,7 +6,7 @@
 
 namespace engine_placeholder::shaders {
 
-inline constexpr usize kGbufferDebugFragReflByteCount = 334;
+inline constexpr usize kGbufferDebugFragReflByteCount = 378;
 
 inline constexpr u8 kGbufferDebugFragRefl[kGbufferDebugFragReflByteCount] = {
     83, 82, 70, 76, 1, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
@@ -21,22 +21,26 @@ inline constexpr u8 kGbufferDebugFragRefl[kGbufferDebugFragReflByteCount] = {
     0, 3, 0, 0, 0, 2, 1, 0, 0, 0, 2, 0, 0, 0, 255, 255,
     255, 255, 13, 112, 111, 105, 110, 116, 95, 115, 97, 109, 112, 108, 101, 114,
     0, 0, 0, 0, 4, 0, 0, 0, 3, 1, 0, 0, 0, 2, 0, 0,
-    0, 255, 255, 255, 255, 1, 0, 0, 0, 4, 80, 117, 115, 104, 16, 0,
-    0, 0, 4, 0, 0, 0, 5, 108, 97, 121, 101, 114, 0, 0, 0, 0,
-    4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
-    10, 110, 101, 97, 114, 95, 112, 108, 97, 110, 101, 4, 0, 0, 0, 4,
-    0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 9,
-    102, 97, 114, 95, 112, 108, 97, 110, 101, 8, 0, 0, 0, 4, 0, 0,
-    0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 112, 97,
-    100, 12, 0, 0, 0, 4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0,
-    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 255, 255, 255, 255, 1, 0, 0, 0, 4, 80, 117, 115, 104, 80, 0,
+    0, 0, 5, 0, 0, 0, 23, 105, 110, 118, 101, 114, 115, 101, 95, 118,
+    105, 101, 119, 95, 112, 114, 111, 106, 101, 99, 116, 105, 111, 110, 0, 0,
+    0, 0, 64, 0, 0, 0, 2, 0, 4, 4, 0, 0, 0, 0, 0, 0,
+    0, 0, 5, 108, 97, 121, 101, 114, 64, 0, 0, 0, 4, 0, 0, 0,
+    0, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 10, 110, 101, 97,
+    114, 95, 112, 108, 97, 110, 101, 68, 0, 0, 0, 4, 0, 0, 0, 0,
+    0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 9, 102, 97, 114, 95,
+    112, 108, 97, 110, 101, 72, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 112, 97, 100, 76, 0, 0,
+    0, 4, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
 // Block sizes and member offsets, for static_asserts on the C++ structs copied into these blocks.
-inline constexpr u32 kGbufferDebugFragPushSize = 16;
-inline constexpr u32 kGbufferDebugFragPushLayerOffset = 0;
-inline constexpr u32 kGbufferDebugFragPushNearPlaneOffset = 4;
-inline constexpr u32 kGbufferDebugFragPushFarPlaneOffset = 8;
-inline constexpr u32 kGbufferDebugFragPushPadOffset = 12;
+inline constexpr u32 kGbufferDebugFragPushSize = 80;
+inline constexpr u32 kGbufferDebugFragPushInverseViewProjectionOffset = 0;
+inline constexpr u32 kGbufferDebugFragPushLayerOffset = 64;
+inline constexpr u32 kGbufferDebugFragPushNearPlaneOffset = 68;
+inline constexpr u32 kGbufferDebugFragPushFarPlaneOffset = 72;
+inline constexpr u32 kGbufferDebugFragPushPadOffset = 76;
 
 } // namespace engine_placeholder::shaders

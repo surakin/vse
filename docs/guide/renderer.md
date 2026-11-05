@@ -32,6 +32,7 @@ Full reference: [The renderer](../reference/renderer.md).
 - [[renderer::MakeDrawSortKey]] — the draw order: pipeline, then material, then mesh
 - [[renderer::RenderGraph]] — passes and virtual resources, compiled into an ordered, culled schedule
 - [[renderer::PassBuilder]] — declares what one pass reads and writes
+- [[renderer::LightingPass]] — directional and ambient deferred lighting into an HDR target; [[renderer::TonemapPass]] brings it to the display
 - [[renderer::GBufferPass]] — culls, sorts and draws the scene into the G-buffer; [[renderer::GBufferDebugView]] shows a layer
 
 ## Outline
@@ -528,6 +529,69 @@ int main() {
 ```output
 octahedral (0.707, -0.780) -> (0.360, -0.480, -0.800)
 a vertex color material reads the color attribute: yes
+```
+
+### Deferred lighting and the tonemap
+
+`LightingPass` turns the G-buffer into linear HDR light. `Prepare(scene)` writes the scene's lights through
+`FrameResources::WriteLights` (directional lights first, then point lights, ambient lights summed; the buffer holds
+`MaxLights()` entries and drops the rest with a warning). `AddToGraph(graph, targets, width, height)` declares the
+`RGBA16_Float` accumulation target and a pass that reads the four G-buffer layers as `Sampled` and draws one fullscreen
+triangle. Light types are `Directional` (the unit vector `direction` points from the surface toward the light), `Ambient`
+(`color * intensity` from everywhere) and `Point` (lit from Day 81). A light's radiance is `color * intensity`.
+
+Per pixel the shader reads the depth; a value of 1.0 is background and is discarded, leaving the cleared black. Otherwise it
+rebuilds the world position from the pixel and the depth: `ndc = (2 (pixel + 0.5) / size - 1, depth)`, then
+`world = inverse_view_projection * (ndc, 1)` divided by `w`. The projection's Y flip (clip Y points down) is already inside
+that inverse, so the pixel row is used as it is: row 0 is the top of the picture, as in Vulkan's framebuffer. Using the
+OpenGL convention here would mirror the picture, which the world-position debug layer (`GBufferLayer::WorldPosition`) and a
+test against known geometry catch. `ReconstructWorldPosition` is the CPU twin.
+
+The lighting model lives in one function, `ShadeLight` in `lighting_common.slang` (CPU twin `renderer::ShadeLight`), so a later
+phase can change it. For a unit normal `N`, view vector `V` and light vector `L`:
+
+- `a = max(roughness, 0.045)^2`, `H = normalize(V + L)`;
+- `D = a^2 / (pi (dot(N,H)^2 (a^2 - 1) + 1)^2)` (Trowbridge-Reitz GGX);
+- `Vis = 0.5 / (NL sqrt(NV^2 (1 - a^2) + a^2) + NV sqrt(NL^2 (1 - a^2) + a^2))` (height-correlated Smith, with the `1 / (4 NL NV)`);
+- `F = F0 + (1 - F0) (1 - dot(V,H))^5` with `F0 = lerp(0.04, albedo, metallic)` (Schlick);
+- one light adds `(albedo (1 - metallic) + pi D Vis F) * radiance * max(dot(N, L), 0)`;
+- the ambient light adds `albedo (1 - metallic) * ambient * occlusion`, and emission adds `albedo * emissive_scale`.
+
+The diffuse BRDF is the albedo itself: the `1/pi` of a Lambertian surface is folded into the intensity, so a white surface
+facing a light of intensity 1 comes out at 1 (the same convention as the Phase 3 forward shader), and the specular lobe carries
+a factor `pi` to match.
+
+`TonemapPass` reads the accumulation target and writes a display target: `x = hdr * exposure`, then Narkowicz's ACES fit
+`clamp(x (2.51 x + 0.03) / (x (2.43 x + 0.59) + 0.14), 0, 1)` (`TonemapAces`). It does not encode sRGB itself; the target
+must be an `*_SRGB` format, which is what the swapchain format is chosen to be, so the hardware does the encoding.
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "renderer/lighting.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::renderer;
+
+int main() {
+    SurfacePoint surface;
+    surface.albedo = Vec3(0.5f, 0.5f, 0.5f);
+    surface.roughness = 1.0f;
+    const Vec3 up(0, 1, 0);
+    // A light straight overhead at intensity 2, seen from above: diffuse 0.5 * 2 = 1 plus a small GGX lobe.
+    const Vec3 lit = ShadeLight(surface, up, up, Vec3(2, 2, 2));
+    std::printf("lit %.3f, tonemapped %.3f\n", lit.x, TonemapAces(lit.x));
+    // Away from the light only the ambient term remains.
+    const Vec3 away = ShadeLight(surface, up, Vec3(0, -1, 0), Vec3(2, 2, 2));
+    const Vec3 ambient = ShadeAmbient(surface, Vec3(0.1f, 0.1f, 0.1f));
+    std::printf("away %.3f, ambient %.3f\n", away.x, ambient.x);
+    return 0;
+}
+```
+
+```output
+lit 1.020, tonemapped 0.808
+away 0.000, ambient 0.050
 ```
 
 ### Rules & contracts
