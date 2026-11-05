@@ -32,7 +32,7 @@ Full reference: [The renderer](../reference/renderer.md).
 - [[renderer::MakeDrawSortKey]] — the draw order: pipeline, then material, then mesh
 - [[renderer::RenderGraph]] — passes and virtual resources, compiled into an ordered, culled schedule
 - [[renderer::PassBuilder]] — declares what one pass reads and writes
-- [[renderer::LightingPass]] — directional and ambient deferred lighting into an HDR target; [[renderer::TonemapPass]] brings it to the display
+- [[renderer::LightingPass]] — directional, ambient and point deferred lighting into an HDR target; [[renderer::TonemapPass]] brings it to the display
 - [[renderer::GBufferPass]] — culls, sorts and draws the scene into the G-buffer; [[renderer::GBufferDebugView]] shows a layer
 
 ## Outline
@@ -533,12 +533,13 @@ a vertex color material reads the color attribute: yes
 
 ### Deferred lighting and the tonemap
 
-`LightingPass` turns the G-buffer into linear HDR light. `Prepare(scene)` writes the scene's lights through
-`FrameResources::WriteLights` (directional lights first, then point lights, ambient lights summed; the buffer holds
-`MaxLights()` entries and drops the rest with a warning). `AddToGraph(graph, targets, width, height)` declares the
-`RGBA16_Float` accumulation target and a pass that reads the four G-buffer layers as `Sampled` and draws one fullscreen
-triangle. Light types are `Directional` (the unit vector `direction` points from the surface toward the light), `Ambient`
-(`color * intensity` from everywhere) and `Point` (lit from Day 81). A light's radiance is `color * intensity`.
+`LightingPass` turns the G-buffer into linear HDR light. `Prepare(scene, frame_data)` writes the scene's lights through
+`FrameResources::WriteLights` (directional lights first, then the visible point lights, ambient lights summed) and plans the
+point light draws. `AddToGraph(graph, targets, width, height)` declares the `RGBA16_Float` accumulation target and a pass that
+reads the four G-buffer layers as `Sampled`, draws one fullscreen triangle for the ambient and directional light, and then
+draws the point light volumes (see "Point lights" below). Light types are `Directional` (the unit vector `direction` points
+from the surface toward the light), `Ambient` (`color * intensity` from everywhere) and `Point`. A light's radiance is
+`color * intensity`.
 
 Per pixel the shader reads the depth; a value of 1.0 is background and is discarded, leaving the cleared black. Otherwise it
 rebuilds the world position from the pixel and the depth: `ndc = (2 (pixel + 0.5) / size - 1, depth)`, then
@@ -592,6 +593,64 @@ int main() {
 ```output
 lit 1.020, tonemapped 0.808
 away 0.000, ambient 0.050
+```
+
+#### Point lights
+
+A point light has a `position`, a `radius`, a `color` and an `intensity`. Its radiance at a surface point at distance `d` is
+`color * intensity * PointLightAttenuation(d, radius)`, shaded by `ShadeLight` with the light vector pointing at the position:
+
+`attenuation(d, R) = saturate(1 - (d / R)^4)^2 / (d^2 + 1)`
+
+It is 1 at the light, behaves like an inverse square over most of its range (the `+ 1` keeps it finite), and the window makes it
+reach exactly 0 at `d = R` with zero slope, staying 0 beyond. So the sphere of radius `R` is a true bound: a pixel outside it
+receives exactly nothing, which is what lets the renderer light only the pixels the sphere covers.
+
+Per frame, `WriteLights` leaves out every point light whose sphere is entirely outside the view frustum (the Day 73 sphere test,
+`LightSummary::point_culled`) and sorts the rest nearest-first by squared distance from the camera, ties broken by the light's
+slot, so the order is the same on every run. The lights go into one storage buffer, directional lights first. There is no
+per-light bind group or pipeline: the volume pass binds one pipeline and the G-buffer group once and draws one light volume per
+light, selecting the light by the instance index (`first_instance`). Each light volume is a sphere of triangles, generated in the
+vertex shader from the vertex index (`kLightVolumeVertexCount` = 768 vertices; `LightVolumeVertex` is the CPU twin), enlarged by
+`LightVolumeScale()` so its faces stay outside the light's sphere. The pipeline blends additively into the accumulation target,
+culls front faces, so a camera inside a light's sphere still draws the far side and lights everything it sees, and has no depth
+test. Each draw is scissored to the light's screen rectangle (`LightScreenRect`: the projection of the sphere's bounding box,
+the whole target when the box reaches the camera plane); a light whose rectangle is empty gets no draw. `PointDrawsPlanned()`
+and `PointDrawsRecorded()` report the draw counts.
+
+Limits are enforced, not silent. A scene and a `FrameResources` hold at most `kMaxLights` (16384) lights; asking for more
+aborts. If the visible lights do not fit in the buffer's `max_lights`, directional lights are written first, then the nearest
+point lights; the rest are counted in `LightSummary::dropped` and an error is logged. Size the buffer to the scene's capacity
+and the count is always zero.
+
+Measured on the development machine (an NVIDIA GPU, release build, 1920x1080 G-buffer + lighting + tonemap, mean wall time per
+frame from submit to idle, lights of radius 2.5 spread over a 24 x 24 plane): 1 light 0.6 ms, 100 lights 1.1 ms, 1000 lights
+6.0 ms, with one draw per light. The numbers are recorded, not asserted.
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "renderer/lighting.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::renderer;
+
+int main() {
+    // A light of radius 10: full strength at the light, a quarter of the way out already much less, and nothing at the radius.
+    for (f32 d : {0.0f, 2.5f, 5.0f, 9.0f, 10.0f, 12.0f}) {
+        std::printf("d = %4.1f  attenuation %.5f\n", d, PointLightAttenuation(d, 10.0f));
+    }
+    return 0;
+}
+```
+
+```output
+d =  0.0  attenuation 1.00000
+d =  2.5  attenuation 0.13686
+d =  5.0  attenuation 0.03380
+d =  9.0  attenuation 0.00144
+d = 10.0  attenuation 0.00000
+d = 12.0  attenuation 0.00000
 ```
 
 ### Rules & contracts

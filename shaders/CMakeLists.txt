@@ -29,6 +29,8 @@ set(ENGINE_SHADERS
   gbuffer.frag
   gbuffer_debug.frag
   lighting.frag
+  point_light.vert
+  point_light.frag
   tonemap.frag
 )
 

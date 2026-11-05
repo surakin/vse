@@ -11,6 +11,9 @@ namespace {
 
 void CheckLight(const Light& light) {
     ENGINE_ASSERT(std::isfinite(light.intensity) && light.intensity >= 0.0f, "light: intensity must be finite and not negative");
+    ENGINE_ASSERT(std::isfinite(light.color.x) && std::isfinite(light.color.y) && std::isfinite(light.color.z), "light: the color must be finite");
+    ENGINE_ASSERT(std::isfinite(light.position.x) && std::isfinite(light.position.y) && std::isfinite(light.position.z), "light: the position must be finite");
+    ENGINE_ASSERT(std::isfinite(light.direction.x) && std::isfinite(light.direction.y) && std::isfinite(light.direction.z), "light: the direction must be finite");
     ENGINE_ASSERT(light.type != LightType::Point || (std::isfinite(light.radius) && light.radius > 0.0f), "light: a point light needs a positive radius");
 }
 
@@ -20,7 +23,7 @@ u32 NextGeneration(u32 g) { return g + 1 == 0 ? 1 : g + 1; }
 } // namespace
 
 RenderScene::RenderScene(const RenderSceneDesc& desc) {
-    ENGINE_ASSERT(desc.max_objects > 0 && desc.max_lights > 0, "RenderScene: capacities must be at least 1");
+    ENGINE_ASSERT(desc.max_objects > 0 && desc.max_lights > 0 && desc.max_lights <= kMaxLights, "RenderScene: capacities must be at least 1 and the light capacity at most kMaxLights");
     object_capacity_ = desc.max_objects;
     light_capacity_ = desc.max_lights;
     objects_.Resize(object_capacity_);

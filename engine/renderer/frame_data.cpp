@@ -1,6 +1,7 @@
 #include "renderer/frame_data.h"
 
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 
 #include "log/assert.h"
@@ -28,7 +29,8 @@ FrameData MakeFrameData(const Camera& camera, u32 width, u32 height, f32 time_se
 }
 
 FrameResources::FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights) : device_(device), max_objects_(max_objects), max_lights_(max_lights) {
-    ENGINE_ASSERT(device != nullptr && max_objects > 0 && max_lights > 0, "FrameResources: need a device, at least one object and at least one light");
+    ENGINE_ASSERT(device != nullptr && max_objects > 0 && max_lights > 0 && max_lights <= kMaxLights,
+                  "FrameResources: need a device, at least one object, and from one to kMaxLights lights");
     const rhi::DeviceCaps& caps = device->Caps();
     frame_stride_ = AlignUp(sizeof(FrameData), caps.min_uniform_buffer_offset_alignment);
     object_stride_ = AlignUp(static_cast<u64>(max_objects) * sizeof(ObjectData), caps.min_storage_buffer_offset_alignment);
@@ -48,7 +50,7 @@ FrameResources::FrameResources(rhi::Device* device, u32 max_objects, u32 max_lig
     bd.debug_name = "light data";
     light_buffer_ = device->CreateBuffer(bd);
 
-    if (frame_buffer_.IsValid() && object_buffer_.IsValid() && light_buffer_.IsValid()) {
+    if (frame_buffer_.IsValid() && object_buffer_.IsValid() && light_buffer_.IsValid() && staged_.TryResize(max_lights) && point_scratch_.TryReserve(max_lights)) {
         frame_mapped_ = static_cast<unsigned char*>(device->MapBuffer(frame_buffer_));
         object_mapped_ = static_cast<unsigned char*>(device->MapBuffer(object_buffer_));
         light_mapped_ = static_cast<unsigned char*>(device->MapBuffer(light_buffer_));
@@ -107,44 +109,82 @@ u32 FrameResources::WriteObjects(const RenderScene& scene, const u32* slots, u32
     return count;
 }
 
-LightSummary FrameResources::WriteLights(const RenderScene& scene) {
+int FrameResources::ComparePoints(const void* a, const void* b) {
+    const PointEntry* x = static_cast<const PointEntry*>(a);
+    const PointEntry* y = static_cast<const PointEntry*>(b);
+    if (x->distance_squared != y->distance_squared) return x->distance_squared < y->distance_squared ? -1 : 1;
+    return x->slot < y->slot ? -1 : (x->slot > y->slot ? 1 : 0);
+}
+
+LightSummary FrameResources::WriteLights(const RenderScene& scene, const FrameData& view) {
     ENGINE_ASSERT(begun_, "FrameResources::WriteLights: BeginFrame was not called");
     LightSummary summary;
-    LightData* out = reinterpret_cast<LightData*>(light_mapped_ + light_stride_ * slot_);
+    LightData* out = staged_.Data();
     u32 n = 0;
-    bool dropped = false;
     // Directional lights first, then point lights, so the shader's loops are contiguous ranges.
-    for (int pass = 0; pass < 2; ++pass) {
-        const LightType wanted = pass == 0 ? LightType::Directional : LightType::Point;
-        for (u32 slot = 0; slot < scene.LightSlotCount(); ++slot) {
-            if (!scene.LightSlotAlive(slot)) continue;
-            const Light& light = scene.LightAt(slot);
-            if (light.type == LightType::Ambient) {
-                if (pass == 0) summary.ambient = summary.ambient + light.color * light.intensity;
-                continue;
-            }
-            if (light.type != wanted) continue;
-            if (n == max_lights_) {
-                dropped = true;
-                continue;
-            }
-            LightData d;
-            Vec3 dir = light.direction;
-            const f32 len = std::sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
-            // The shader assumes a unit vector; a zero direction stays zero and lights nothing.
-            if (wanted == LightType::Directional) dir = len > 1e-6f ? Vec3(dir.x / len, dir.y / len, dir.z / len) : Vec3(0, 0, 0);
-            d.direction = Vec4(dir, wanted == LightType::Directional ? 0.0f : 1.0f);
-            d.color = Vec4(light.color * light.intensity, 0.0f);
-            d.position_radius = wanted == LightType::Point ? Vec4(light.position, light.radius) : Vec4(0, 0, 0, 0);
-            out[n++] = d;
-            if (wanted == LightType::Directional) ++summary.directional_count;
-            else ++summary.point_count;
+    for (u32 slot = 0; slot < scene.LightSlotCount(); ++slot) {
+        if (!scene.LightSlotAlive(slot)) continue;
+        const Light& light = scene.LightAt(slot);
+        if (light.type == LightType::Ambient) {
+            summary.ambient = summary.ambient + light.color * light.intensity;
+            continue;
         }
+        if (light.type != LightType::Directional) continue;
+        if (n == max_lights_) {
+            ++summary.dropped;
+            continue;
+        }
+        LightData d;
+        Vec3 dir = light.direction;
+        const f32 len = std::sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+        // The shader assumes a unit vector; a zero direction stays zero and lights nothing.
+        dir = len > 1e-6f ? Vec3(dir.x / len, dir.y / len, dir.z / len) : Vec3(0, 0, 0);
+        d.direction = Vec4(dir, 0.0f);
+        d.color = Vec4(light.color * light.intensity, 0.0f);
+        d.position_radius = Vec4(0, 0, 0, 0);
+        out[n++] = d;
+        ++summary.directional_count;
     }
-    if (dropped && !warned_lights_) {
+    // Point lights: cull against the frustum, sort the rest by distance (nearest first) and write what fits.
+    const Frustum frustum = Frustum::FromViewProjection(view.view_projection);
+    const Vec3 eye(view.camera_position.x, view.camera_position.y, view.camera_position.z);
+    point_scratch_.Clear();
+    for (u32 slot = 0; slot < scene.LightSlotCount(); ++slot) {
+        if (!scene.LightSlotAlive(slot)) continue;
+        const Light& light = scene.LightAt(slot);
+        if (light.type != LightType::Point) continue;
+        BoundingSphere sphere;
+        sphere.center = light.position;
+        sphere.radius = light.radius;
+        if (frustum.TestSphere(sphere) == Containment::Outside) {
+            ++summary.point_culled;
+            continue;
+        }
+        const Vec3 to = light.position - eye;
+        point_scratch_.Push(PointEntry{to.x * to.x + to.y * to.y + to.z * to.z, slot});
+    }
+    if (point_scratch_.Size() > 1) {
+        std::qsort(point_scratch_.Data(), point_scratch_.Size(), sizeof(PointEntry), &FrameResources::ComparePoints);
+    }
+    for (usize i = 0; i < point_scratch_.Size(); ++i) {
+        if (n == max_lights_) {
+            summary.dropped += static_cast<u32>(point_scratch_.Size() - i);
+            break;
+        }
+        const Light& light = scene.LightAt(point_scratch_[i].slot);
+        LightData d;
+        d.direction = Vec4(0, 0, 0, 1.0f);
+        d.color = Vec4(light.color * light.intensity, 0.0f);
+        d.position_radius = Vec4(light.position, light.radius);
+        out[n++] = d;
+        ++summary.point_count;
+    }
+    if (summary.dropped > 0 && !warned_lights_) {
         warned_lights_ = true;
-        RenderLog(LogVerbosity::Warn, "FrameResources: more lights than the %u the buffer holds; the extra ones are dropped (logged once)", max_lights_);
+        RenderLog(LogVerbosity::Error, "FrameResources: %u lights do not fit in the %u the light buffer holds and were left out (logged once)", summary.dropped,
+                  max_lights_);
     }
+    std::memcpy(light_mapped_ + light_stride_ * slot_, out, static_cast<usize>(n) * sizeof(LightData));
     lights_written_ = n;
     return summary;
 }

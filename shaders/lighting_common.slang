@@ -20,6 +20,13 @@
 //   specular = pi * D * Vis * F
 // The ambient term is albedo * (1 - metallic) * ambient * occlusion; an emissive scale adds albedo * scale.
 // The CPU twin is renderer::ShadeLight (engine/renderer/lighting.cpp); a test checks them against each other.
+//
+// Point lights (renderer spec R11)
+//   attenuation(d, R) = saturate(1 - (d / R)^4)^2 / (d^2 + 1)        d = distance to the light, R = its radius
+// It falls like an inverse square close to the light (the +1 keeps it finite at d = 0, where it is 1), is smoothly windowed to
+// exactly 0 at d = R with zero slope there, and is 0 beyond, so the light's sphere of radius R is a correct bound.
+// The radiance of a point light at a surface is color * intensity * attenuation; the direction is toward the light position.
+// The CPU twin is renderer::PointLightAttenuation.
 
 static const float kPi = 3.14159265358979323846;
 
@@ -58,4 +65,10 @@ float3 ShadeLight(Surface s, float3 V, float3 L, float3 radiance) {
 
 float3 ShadeAmbient(Surface s, float3 ambient) {
     return s.albedo * (1.0 - s.metallic) * ambient * s.occlusion + s.albedo * s.emissive_scale;
+}
+
+float PointAttenuation(float distance_to_light, float radius) {
+    float r = distance_to_light / radius;
+    float window = saturate(1.0 - r * r * r * r);
+    return window * window / (distance_to_light * distance_to_light + 1.0);
 }

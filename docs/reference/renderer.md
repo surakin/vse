@@ -20,9 +20,11 @@ The G-buffer holds three color targets and a depth target (renderer spec R11): a
 
 A frame uses [`renderer::GBufferPass`](#renderer-gbufferpass) in two steps: `Prepare` (on the frame's thread) culls the scene, sorts the visible objects by [`renderer::MakeDrawSortKey`](#renderer-makedrawsortkey-u32-u32-u32), writes their per-object data in that order and builds the draw list; `AddToGraph` declares the pass whose callback records it. The record step creates no object and issues a handful of RHI calls per draw: bind the pipeline and material group only when they change, one instanced draw per run of the same mesh and material.
 
-Deferred lighting for directional and ambient light, and the tonemap that brings the result to the display.
+Deferred lighting for directional, ambient and point light, and the tonemap that brings the result to the display.
 
-[`renderer::LightingPass`](#renderer-lightingpass) reads the G-buffer ([`renderer::GBufferPass`](#renderer-gbufferpass)) and writes linear HDR light into an `RGBA16_Float` accumulation target with one fullscreen triangle: per pixel it rebuilds the world position from depth and the inverse view-projection, decodes the surface, and sums the ambient term and every directional light with the lighting model in `lighting_common.slang` (Lambert diffuse, GGX specular, metallic-roughness). Background pixels (depth 1.0) are skipped. [`renderer::TonemapPass`](#renderer-tonemappass) then applies an exposure and Narkowicz's ACES fit and writes the target, whose sRGB format does the final encoding.
+[`renderer::LightingPass`](#renderer-lightingpass) reads the G-buffer ([`renderer::GBufferPass`](#renderer-gbufferpass)) and writes linear HDR light into an `RGBA16_Float` accumulation target. One fullscreen triangle sums the ambient term and every directional light: per pixel it rebuilds the world position from depth and the inverse view-projection, decodes the surface, and applies the lighting model in `lighting_common.slang` (Lambert diffuse, GGX specular, metallic-roughness). Background pixels (depth 1.0) are skipped. Then every visible point light is drawn as a light volume (see below), adding to the same target. [`renderer::TonemapPass`](#renderer-tonemappass) then applies an exposure and Narkowicz's ACES fit and writes the target, whose sRGB format does the final encoding.
+
+Point lights. A point light has a position and a radius; its contribution is `color * intensity * PointLightAttenuation(distance, radius)` shaded by the same model with the light vector pointing at the position. The attenuation reaches exactly zero at the radius, so the sphere of that radius bounds the light. The light volume pass draws, for each point light that survives frustum culling, a sphere of triangles (generated in the vertex shader from the vertex index, [`renderer::kLightVolumeVertexCount`](#renderer-klightvolumevertexcount) vertices) with additive blending, front faces culled so that a camera inside the sphere still draws its far side, no depth test, and the scissor set to the light's screen bounds. Every draw uses one pipeline and one bind group; the light is picked by the instance index into the light storage buffer.
 
 The functions below are the CPU twins of the shader code, used by tests and tools; the real-device tests compare them with the GPU output.
 
@@ -790,7 +792,7 @@ xyz: a point light's position; w: its radius. Unused (zero) for a directional li
 struct LightSummary { ... }
 ```
 
-What [`renderer::FrameResources::WriteLights`](#renderer-frameresources-writelights-const-renderscene-amp) found in the scene.
+What [`renderer::FrameResources::WriteLights`](#renderer-frameresources-writelights-const-renderscene-amp-const-framedata-amp) found in the scene.
 
 | Field | Value |
 |---|---|
@@ -824,7 +826,29 @@ Directional lights written to the buffer (they come first).
 u32 point_count;
 ```
 
-Point lights written to the buffer after the directional ones.
+Point lights written to the buffer after the directional ones: the visible ones, nearest the camera first.
+
+### `point_culled` {#renderer-lightsummary-point-culled}
+
+`variable renderer::LightSummary::point_culled` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+u32 point_culled;
+```
+
+Point lights left out because their sphere is entirely outside the view frustum.
+
+### `dropped` {#renderer-lightsummary-dropped}
+
+`variable renderer::LightSummary::dropped` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+u32 dropped;
+```
+
+Lights that did not fit in the buffer and were not written (directional, or visible point lights).
+
+Not zero is an error: the picture is missing light. It is also logged once per [`renderer::FrameResources`](#renderer-frameresources).
 
 ## `FrameResources` {#renderer-frameresources}
 
@@ -867,8 +891,8 @@ Creates the buffers.
 |---|---|
 | Parameter `device` | the device; must outlive this object. |
 | Parameter `max_objects` | the most objects one frame writes, at least 1. |
-| Parameter `max_lights` | the most lights one frame writes, at least 1. |
-| Aborts | `device` is null, or `max_objects` or `max_lights` is 0. |
+| Parameter `max_lights` | the most lights one frame writes, from 1 to [`renderer::kMaxLights`](#renderer-kmaxlights). |
+| Aborts | `device` is null, `max_objects` is 0, or `max_lights` is 0 or above [`renderer::kMaxLights`](#renderer-kmaxlights). |
 | Ownership | check [`renderer::FrameResources::Valid`](#renderer-frameresources-valid-const). |
 
 ### `~FrameResources()` {#renderer-frameresources-tilde-frameresources}
@@ -964,23 +988,51 @@ Writes one [`renderer::ObjectData`](#renderer-objectdata) per listed object, in 
 | Aborts | `BeginFrame` was not called, `count` exceeds the capacity, or a slot is dead. |
 | Ownership | `slots` is borrowed for the call. |
 
-### `WriteLights(const RenderScene&)` {#renderer-frameresources-writelights-const-renderscene-amp}
+### `WriteLights(const RenderScene&,const FrameData&)` {#renderer-frameresources-writelights-const-renderscene-amp-const-framedata-amp}
 
 `method renderer::FrameResources::WriteLights` — defined in `engine/renderer/frame_data.h`
 
 ```cpp
-LightSummary WriteLights(const RenderScene& scene);
+LightSummary WriteLights(const RenderScene& scene, const FrameData& view);
 ```
 
-Writes the scene's lights into this frame's region: directional lights first, then point lights, and sums the ambient lights.
+Writes the scene's lights into this frame's region: directional lights first, then the visible point lights, and sums the ambient lights.
 
-Directional light directions are normalized (a zero direction lights nothing). Lights beyond the capacity are dropped, with a warning logged once per object; the capacity (`max_lights`) should be at least the scene's `RenderSceneDesc::max_lights`. The summary counts only what was written.
+Directional light directions are normalized (a zero direction lights nothing). A point light whose sphere (position, radius) is entirely outside the view frustum is left out ([`renderer::LightSummary::point_culled`](#renderer-lightsummary-point-culled)); the rest are sorted by squared distance from the camera to the light position, nearest first, ties broken by the light's slot, so the order is the same on every run. If the lights do not fit in `max_lights`, directional lights are written first and the farthest point lights are left out; the number left out is [`renderer::LightSummary::dropped`](#renderer-lightsummary-dropped) and an error is logged (once per object). The capacity should be at least the scene's `RenderSceneDesc::max_lights`, which makes that impossible.
 
 | Field | Value |
 |---|---|
 | Parameter `scene` | the scene. |
-| Returns | the ambient sum and the counts of each kind written. |
+| Parameter `view` | the frame block of the view being lit; its `view_projection` and `camera_position` are used. |
+| Returns | the ambient sum, the counts written and the counts left out. |
 | Aborts | [`renderer::FrameResources::BeginFrame`](#renderer-frameresources-beginframe-u64) was not called. |
+
+### `WrittenLights()` {#renderer-frameresources-writtenlights-const}
+
+`method renderer::FrameResources::WrittenLights` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+const LightData* WrittenLights() const;
+```
+
+Returns the lights written by the last `WriteLights`, in buffer order.
+
+It is a CPU copy, because the mapped buffer is write-only memory. Valid until the next `BeginFrame`.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+| Ownership | borrowed. |
+
+### `WrittenLightCount()` {#renderer-frameresources-writtenlightcount-const}
+
+`method renderer::FrameResources::WrittenLightCount` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+u32 WrittenLightCount() const;
+```
+
+Returns the number of lights written by the last `WriteLights`.
 
 ### `Flush()` {#renderer-frameresources-flush}
 
@@ -2052,6 +2104,113 @@ Rebuilds a world position from a depth-buffer value, as the lighting shader does
 | Returns | the world-space position. |
 | Fails | never. |
 
+## `PointLightAttenuation(f32,f32)` {#renderer-pointlightattenuation-f32-f32}
+
+`function renderer::PointLightAttenuation` — defined in `engine/renderer/lighting.h`
+
+```cpp
+f32 PointLightAttenuation(f32 distance, f32 radius);
+```
+
+Returns a point light's attenuation at a distance: `saturate(1 - (d / R)^4)^2 / (d^2 + 1)` with `d` the distance and `R` the radius.
+
+It is 1 at the light, falls like an inverse square (the `+ 1` keeps it finite) over most of the range, and is smoothly windowed to exactly 0 at `d = R` with zero slope there, staying 0 beyond. The shader multiplies the light's radiance by it. The CPU twin of `PointAttenuation` in `lighting_common.slang`.
+
+| Field | Value |
+|---|---|
+| Parameter `distance` | the distance from the light, not negative. |
+| Parameter `radius` | the light's radius, greater than zero. |
+| Returns | a factor in [0, 1]. |
+| Fails | never. |
+
+## `kLightVolumeSegments` {#renderer-klightvolumesegments}
+
+`variable renderer::kLightVolumeSegments` — defined in `engine/renderer/lighting.h`
+
+```cpp
+inline constexpr u32 kLightVolumeSegments;
+```
+
+Slices of the light volume sphere around the Y axis.
+
+## `kLightVolumeRings` {#renderer-klightvolumerings}
+
+`variable renderer::kLightVolumeRings` — defined in `engine/renderer/lighting.h`
+
+```cpp
+inline constexpr u32 kLightVolumeRings;
+```
+
+Bands of the light volume sphere from pole to pole.
+
+## `kLightVolumeVertexCount` {#renderer-klightvolumevertexcount}
+
+`variable renderer::kLightVolumeVertexCount` — defined in `engine/renderer/lighting.h`
+
+```cpp
+inline constexpr u32 kLightVolumeVertexCount;
+```
+
+Vertices of one light volume: two triangles per quad, `kLightVolumeSegments * kLightVolumeRings` quads.
+
+## `LightVolumeScale()` {#renderer-lightvolumescale}
+
+`function renderer::LightVolumeScale` — defined in `engine/renderer/lighting.h`
+
+```cpp
+f32 LightVolumeScale();
+```
+
+Returns the factor that enlarges the light volume's unit sphere so it contains the light's sphere.
+
+Every face then lies at least one radius from the center: the factor is `1 / (cos(pi / segments) cos(pi / rings))`.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+## `LightVolumeVertex(u32)` {#renderer-lightvolumevertex-u32}
+
+`function renderer::LightVolumeVertex` — defined in `engine/renderer/lighting.h`
+
+```cpp
+Vec3 LightVolumeVertex(u32 index);
+```
+
+Returns vertex `index` of the light volume, relative to the light's position, in units of its radius, scale included.
+
+The CPU twin of the vertex generation in `point_light.vert`. Triangles are counter-clockwise seen from outside.
+
+| Field | Value |
+|---|---|
+| Parameter `index` | from 0 to `kLightVolumeVertexCount - 1`. |
+| Returns | the offset from the light's position divided by its radius. |
+| Aborts | `index` is out of range. |
+
+## `LightScreenRect(const FrameData&,const Vec3&,f32,u32,u32,rhi::ScissorRect*)` {#renderer-lightscreenrect-const-framedata-amp-const-vec3-amp-f32-u32-u32-rhi-scissorrect-star}
+
+`function renderer::LightScreenRect` — defined in `engine/renderer/lighting.h`
+
+```cpp
+bool LightScreenRect(const FrameData& view, const Vec3& center, f32 radius, u32 width, u32 height, rhi::ScissorRect* out);
+```
+
+Computes the pixel rectangle that bounds a point light's sphere on screen, for the scissor.
+
+A sphere that reaches the camera's plane (any corner of its bounding box is not in front of the camera) gets the whole target; otherwise the rectangle is the projection of the box, clamped to the target.
+
+| Field | Value |
+|---|---|
+| Parameter `view` | the frame block ([`renderer::FrameData::view_projection`](#renderer-framedata-view-projection) is used). |
+| Parameter `center` | the light's position. |
+| Parameter `radius` | the light's radius, greater than zero. |
+| Parameter `width` | the target width in pixels. |
+| Parameter `height` | the target height in pixels. |
+| Parameter `out` | receives the rectangle (origin top-left, as the framebuffer); must not be null. |
+| Returns | false when the rectangle is empty (the light cannot touch any pixel), true otherwise. |
+| Fails | reported through the return value. |
+| Ownership | `out` is borrowed for the call. |
+
 ## `LightingPass` {#renderer-lightingpass}
 
 `class renderer::LightingPass` — defined in `engine/renderer/lighting.h`
@@ -2060,12 +2219,12 @@ Rebuilds a world position from a depth-buffer value, as the lighting shader does
 class LightingPass { ... }
 ```
 
-Lights the G-buffer with the scene's directional and ambient lights.
+Lights the G-buffer with the scene's ambient, directional and point lights.
 
 | Field | Value |
 |---|---|
 | Thread-safety | thread-compatible; `Prepare` and `AddToGraph` run on the frame's thread. |
-| Ownership | borrows the device, the material system (for the frame bind group) and the frame resources, which must outlive it; owns its shaders and pipeline. |
+| Ownership | borrows the device, the material system (for the frame bind group) and the frame resources, which must outlive it; owns its shaders and pipelines. |
 
 ### `LightingPass(rhi::Device*,MaterialSystem*,FrameResources*)` {#renderer-lightingpass-lightingpass-rhi-device-star-materialsystem-star-frameresources-star}
 
@@ -2128,22 +2287,53 @@ Returns whether the pipeline and shaders were created.
 |---|---|
 | Fails | never. |
 
-### `Prepare(const RenderScene&)` {#renderer-lightingpass-prepare-const-renderscene-amp}
+### `Prepare(const RenderScene&,const FrameData&)` {#renderer-lightingpass-prepare-const-renderscene-amp-const-framedata-amp}
 
 `method renderer::LightingPass::Prepare` — defined in `engine/renderer/lighting.h`
 
 ```cpp
-LightSummary Prepare(const RenderScene& scene);
+LightSummary Prepare(const RenderScene& scene, const FrameData& view);
 ```
 
-Writes the scene's lights for this frame. Call after `FrameResources::BeginFrame`, before `Flush`.
+Writes the scene's lights for this frame and plans the light volume draws. Call after `FrameResources::BeginFrame`, before `Flush`.
+
+Point lights outside the frustum, or whose screen rectangle is empty, get no draw.
 
 | Field | Value |
 |---|---|
 | Parameter `scene` | the scene. |
-| Returns | what was written (ambient sum and counts). |
-| Fails | never; lights beyond the buffer's capacity are dropped (logged). |
-| Ownership | `scene` is borrowed for the call. |
+| Parameter `view` | the frame block of the view being lit (the one given to `FrameResources::WriteFrameData`); its viewport size is the target size and must match the size given to `AddToGraph`. |
+| Returns | what was written (ambient sum and counts); see [`renderer::FrameResources::WriteLights`](#renderer-frameresources-writelights-const-renderscene-amp-const-framedata-amp) for lights that did not fit. |
+| Aborts | `view`'s viewport size is below 1 pixel. |
+| Ownership | `scene` and `view` are borrowed for the call. |
+
+### `PointDrawsPlanned()` {#renderer-lightingpass-pointdrawsplanned-const}
+
+`method renderer::LightingPass::PointDrawsPlanned` — defined in `engine/renderer/lighting.h`
+
+```cpp
+u32 PointDrawsPlanned() const;
+```
+
+Returns the number of light volume draws planned by the last `Prepare`.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `PointDrawsRecorded()` {#renderer-lightingpass-pointdrawsrecorded-const}
+
+`method renderer::LightingPass::PointDrawsRecorded` — defined in `engine/renderer/lighting.h`
+
+```cpp
+u32 PointDrawsRecorded() const;
+```
+
+Returns the number of light volume draws the last executed graph recorded (0 before the first execution).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `AddToGraph(RenderGraph*,const GBufferTargets&,u32,u32)` {#renderer-lightingpass-addtograph-rendergraph-star-const-gbuffertargets-amp-u32-u32}
 
@@ -2162,7 +2352,7 @@ Declares the accumulation target and the lighting pass.
 | Parameter `width` | the target width in pixels (the G-buffer's). |
 | Parameter `height` | the target height in pixels. |
 | Returns | the `RGBA16_Float` accumulation resource, written as a color attachment. |
-| Aborts | called twice since the last `Prepare`, or `graph` is null. |
+| Aborts | called twice since the last `Prepare`, `graph` is null, or the size differs from the viewport given to `Prepare`. |
 | Ownership | `graph` is borrowed; the pass keeps a pointer to this object until the graph is executed. |
 
 ## `TonemapPass` {#renderer-tonemappass}
@@ -5859,7 +6049,7 @@ The kind of a light.
 struct Light { ... }
 ```
 
-A light: directional and ambient lights are lit by the deferred lighting pass; point lights follow.
+A light. Directional and ambient lights are lit by the fullscreen part of the deferred lighting pass, point lights by light volumes (see [`renderer::LightingPass`](#renderer-lightingpass)).
 
 | Field | Value |
 |---|---|
@@ -5923,7 +6113,19 @@ For a point light, the world position.
 f32 radius;
 ```
 
-For a point light, the distance at which its contribution reaches zero; greater than zero.
+For a point light, the distance at which its contribution reaches exactly zero (see [`renderer::PointLightAttenuation`](#renderer-pointlightattenuation-f32-f32)); greater than zero.
+
+## `kMaxLights` {#renderer-kmaxlights}
+
+`variable renderer::kMaxLights` — defined in `engine/renderer/render_scene.h`
+
+```cpp
+inline constexpr u32 kMaxLights;
+```
+
+The most lights a scene or a [`renderer::FrameResources`](#renderer-frameresources) can hold: 16384.
+
+A light is 48 bytes in the light buffer, so that is 768 KiB per frame slot. Asking for more aborts; a frame with more visible lights than the buffer holds reports the excess in [`renderer::LightSummary::dropped`](#renderer-lightsummary-dropped) and logs an error.
 
 ## `RenderSceneDesc` {#renderer-renderscenedesc}
 
@@ -5957,7 +6159,7 @@ Capacity for objects, at least 1.
 u32 max_lights;
 ```
 
-Capacity for lights, at least 1.
+Capacity for lights, from 1 to [`renderer::kMaxLights`](#renderer-kmaxlights).
 
 ## `RenderScene` {#renderer-renderscene}
 
@@ -6175,7 +6377,7 @@ Adds a light.
 | Parameter `light` | the light; a point light needs a positive radius. |
 | Returns | its id, or the invalid id if the scene is full. |
 | Fails | reported through the return value. |
-| Aborts | a point light has a radius that is not positive, or an intensity below zero. |
+| Aborts | a point light has a radius that is not positive, or an intensity below zero, or any value of the light is not finite. |
 
 ### `RemoveLight(LightId)` {#renderer-renderscene-removelight-lightid}
 

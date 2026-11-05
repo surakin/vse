@@ -1,7 +1,9 @@
 // Phase 4 Day 80: deferred lighting and tonemapping on a real device with validation and synchronization validation on.
 // A G-buffer frame is lit by LightingPass and tonemapped by TonemapPass; the HDR accumulation target and the display
 // target are read back and compared with the CPU twins of the shader code at probe pixels.
+#include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -23,6 +25,8 @@ struct LitFrame {
     std::vector<u8> debug;   // RGBA8_UNorm, the debug layer when one was asked for
     bool ok = false;
     LightSummary summary;
+    u32 point_draws_planned = 0;
+    u32 point_draws_recorded = 0;
     std::string error;
 
     f32 Accum(u32 x, u32 y, u32 c) const { return HalfToFloat(accum[(y * kW + x) * 4 + c]); }
@@ -57,7 +61,7 @@ LitFrame RenderLit(Rig& rig, const RenderScene& scene, const Camera& camera, f32
     rig.frame->WriteFrameData(frame_data);
     out.ok = gbuffer.Prepare(scene, Frustum::FromViewProjection(camera.ViewProjection()));
     out.error = gbuffer.LastError();
-    out.summary = lighting.Prepare(scene);
+    out.summary = lighting.Prepare(scene, frame_data);
     rig.frame->Flush();
 
     rhi::BufferDesc bd;
@@ -103,6 +107,8 @@ LitFrame RenderLit(Rig& rig, const RenderScene& scene, const Camera& camera, f32
         rhi::CommandList* lists[] = {list};
         REQUIRE(rig.device->Submit(lists, 1) != 0);
     }
+    out.point_draws_planned = lighting.PointDrawsPlanned();
+    out.point_draws_recorded = lighting.PointDrawsRecorded();
     rig.device->EndFrame();
     rig.device->WaitIdle();
     out.accum.resize(kW * kH * 4);
@@ -131,6 +137,11 @@ Vec3 Expected(const SurfacePoint& s, const Vec3& eye, const Vec3& world, const s
     Vec3 color = ShadeAmbient(s, ambient);
     for (const Light& l : lights) {
         if (l.type == LightType::Directional) color = color + ShadeLight(s, v, l.direction, l.color * l.intensity);
+        if (l.type == LightType::Point) {
+            const Vec3 to = l.position - world;
+            const f32 d = std::sqrt(to.x * to.x + to.y * to.y + to.z * to.z);
+            if (d > 0.0f) color = color + ShadeLight(s, v, Vec3(to.x / d, to.y / d, to.z / d), l.color * (l.intensity * PointLightAttenuation(d, l.radius)));
+        }
     }
     return color;
 }
@@ -423,6 +434,333 @@ TEST_CASE("A cube lit through the deferred path is close to the Phase 3 forward 
             INFO("face normal " << f.normal.x << " " << f.normal.y << " " << f.normal.z << " forward " << forward << " deferred " << L.Accum(p.x, p.y, 0));
             for (u32 c = 0; c < 3; ++c) CHECK(std::fabs(L.Accum(p.x, p.y, c) - forward) < 0.035f);
             CHECK(L.Accum(p.x, p.y, 0) >= forward - 0.002f); // the GGX lobe only adds
+        }
+        device->WaitIdle();
+    }
+    device->WaitIdle();
+    device.Reset();
+}
+
+namespace {
+
+// A flat plane at y = 0 seen from above, lit by whatever lights the test adds.
+struct PlaneRig {
+    Rig rig;
+    GpuMesh plane;
+    RenderScene scene{RenderSceneDesc{4, 2048}};
+    SurfacePoint surface;
+    bool Create(rhi::Device* device) {
+        if (!rig.Create(device)) return false;
+        MeshData d;
+        if (MakePlaneMesh(12.0f, 12.0f, 1, 1, &d) != nullptr) return false; // covers the whole view: no background
+        if (!plane.Create(device, d, "plane")) return false;
+        rig.Prepare(&plane);
+        const MaterialId m = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m");
+        rig.sys->SetVec4(m, "base_color", Vec4(0.6f, 0.5f, 0.4f, 1.0f));
+        rig.sys->SetFloat(m, "roughness", 0.6f);
+        rig.sys->SetFloat(m, "metallic", 0.0f);
+        RenderObjectDesc od;
+        od.mesh = &plane;
+        od.material = m.index;
+        scene.AddObject(od);
+        surface.albedo = Vec3(0.6f, 0.5f, 0.4f);
+        surface.roughness = 0.6f;
+        surface.normal = Vec3(0, 1, 0);
+        return true;
+    }
+    // World position of the plane point under a probe.
+    Vec3 WorldAt(const Camera& cam, const Vec3& probe, Pixel* pixel) const {
+        const Pixel p = Project(cam, probe);
+        const FrameData fd = MakeFrameData(cam, kW, kH, 0, 0, 0);
+        *pixel = p;
+        return ReconstructWorldPosition(p.x, p.y, p.depth, kW, kH, fd.inverse_view_projection);
+    }
+};
+
+Light Point(const Vec3& position, f32 radius, f32 intensity, const Vec3& color = Vec3(1, 1, 1)) {
+    Light l;
+    l.type = LightType::Point;
+    l.position = position;
+    l.radius = radius;
+    l.intensity = intensity;
+    l.color = color;
+    return l;
+}
+
+} // namespace
+
+TEST_CASE("A point light on a plane matches the analytic falloff, and is exactly zero outside its radius", "[rhi][vulkan][gpu][lighting][point]") {
+    gpu_test::GpuFixture fx;
+    fx.RequireValidation();
+    rhi::DevicePtr device = MakeDevice();
+    if (device == nullptr) SKIP("no suitable Vulkan device");
+    fx.ExpectErrors(0);
+    {
+        PlaneRig pr;
+        REQUIRE(pr.Create(device.Get()));
+        const Camera cam = TopDownCamera();
+        const Light light = Point(Vec3(1.0f, 2.0f, -0.5f), 4.0f, 6.0f, Vec3(1.0f, 0.8f, 0.6f));
+        pr.scene.AddLight(light);
+        const LitFrame L = RenderLit(pr.rig, pr.scene, cam, 1.0f);
+        INFO(L.error);
+        REQUIRE(L.ok);
+        CHECK(L.summary.point_count == 1);
+        CHECK(L.point_draws_recorded == 1);
+        int inside = 0, outside = 0;
+        for (const Vec3& probe : {Vec3(1.0f, 0, -0.5f), Vec3(2.0f, 0, 0.0f), Vec3(0.0f, 0, 1.0f), Vec3(-1.5f, 0, -1.5f), Vec3(3.0f, 0, 1.5f), Vec3(-4.0f, 0, 3.0f),
+                                  Vec3(4.5f, 0, -4.0f), Vec3(-5.0f, 0, -5.0f)}) {
+            Pixel p;
+            const Vec3 world = pr.WorldAt(cam, probe, &p);
+            const Vec3 want = Expected(pr.surface, cam.position, world, {light});
+            const Vec3 to = light.position - world;
+            const f32 dist = std::sqrt(to.x * to.x + to.y * to.y + to.z * to.z);
+            INFO("probe " << probe.x << " " << probe.z << " distance " << dist << " want " << want.x << " got " << L.Accum(p.x, p.y, 0));
+            for (u32 c = 0; c < 3; ++c) CHECK(Close(L.Accum(p.x, p.y, c), c == 0 ? want.x : (c == 1 ? want.y : want.z)));
+            if (dist < light.radius - 0.2f) {
+                CHECK(L.Accum(p.x, p.y, 0) > 0.001f);
+                ++inside;
+            } else if (dist > light.radius + 0.2f) {
+                // Outside the radius: exactly nothing, not just small.
+                CHECK(L.Accum(p.x, p.y, 0) == 0.0f);
+                CHECK(L.Accum(p.x, p.y, 1) == 0.0f);
+                CHECK(L.Accum(p.x, p.y, 2) == 0.0f);
+                ++outside;
+            }
+        }
+        CHECK(inside >= 4);
+        CHECK(outside >= 2);
+        device->WaitIdle();
+    }
+    device->WaitIdle();
+    device.Reset();
+}
+
+TEST_CASE("A camera inside a light volume is still lit", "[rhi][vulkan][gpu][lighting][point]") {
+    gpu_test::GpuFixture fx;
+    fx.RequireValidation();
+    rhi::DevicePtr device = MakeDevice();
+    if (device == nullptr) SKIP("no suitable Vulkan device");
+    fx.ExpectErrors(0);
+    {
+        PlaneRig pr;
+        REQUIRE(pr.Create(device.Get()));
+        const Camera cam = TopDownCamera(); // at (0, 10, 0)
+        const Light light = Point(Vec3(0.5f, 10.5f, 0.0f), 16.0f, 40.0f); // the camera and the whole view are inside the sphere
+        pr.scene.AddLight(light);
+        const LitFrame L = RenderLit(pr.rig, pr.scene, cam, 1.0f);
+        REQUIRE(L.ok);
+        CHECK(L.point_draws_recorded == 1);
+        for (const Vec3& probe : {Vec3(0, 0, 0), Vec3(3.0f, 0, 2.0f), Vec3(-4.0f, 0, -3.0f), Vec3(5.0f, 0, 5.0f)}) {
+            Pixel p;
+            const Vec3 world = pr.WorldAt(cam, probe, &p);
+            const Vec3 want = Expected(pr.surface, cam.position, world, {light});
+            INFO("probe " << probe.x << " " << probe.z << " want " << want.x << " got " << L.Accum(p.x, p.y, 0));
+            REQUIRE(want.x > 0.01f);
+            CHECK(Close(L.Accum(p.x, p.y, 0), want.x));
+        }
+        // Every pixel of the view is lit: the volume's back faces covered the whole target.
+        int dark = 0;
+        for (u32 y = 0; y < kH; ++y) {
+            for (u32 x = 0; x < kW; ++x) {
+                if (L.Accum(x, y, 0) <= 0.0f) ++dark;
+            }
+        }
+        CHECK(dark == 0);
+        device->WaitIdle();
+    }
+    device->WaitIdle();
+    device.Reset();
+}
+
+TEST_CASE("A light much larger than the view distance still lights everything inside it", "[rhi][vulkan][gpu][lighting][point]") {
+    gpu_test::GpuFixture fx;
+    fx.RequireValidation();
+    rhi::DevicePtr device = MakeDevice();
+    if (device == nullptr) SKIP("no suitable Vulkan device");
+    fx.ExpectErrors(0);
+    {
+        PlaneRig pr;
+        REQUIRE(pr.Create(device.Get()));
+        const Camera cam = TopDownCamera(); // far plane at 30
+        // The far side of the volume is 55+ units below the light, beyond the far plane: without clamping the clip depth, the
+        // rasterizer would clip it away and the plane would stay dark.
+        const Light light = Point(Vec3(0.0f, 10.5f, 0.0f), 50.0f, 800.0f);
+        pr.scene.AddLight(light);
+        const LitFrame L = RenderLit(pr.rig, pr.scene, cam, 1.0f);
+        REQUIRE(L.ok);
+        for (const Vec3& probe : {Vec3(0, 0, 0), Vec3(3.0f, 0, 2.0f), Vec3(-5.0f, 0, -4.0f)}) {
+            Pixel p;
+            const Vec3 world = pr.WorldAt(cam, probe, &p);
+            const Vec3 want = Expected(pr.surface, cam.position, world, {light});
+            INFO("probe " << probe.x << " " << probe.z << " want " << want.x << " got " << L.Accum(p.x, p.y, 0));
+            REQUIRE(want.x > 0.1f);
+            CHECK(Close(L.Accum(p.x, p.y, 0), want.x));
+        }
+        device->WaitIdle();
+    }
+    device->WaitIdle();
+    device.Reset();
+}
+
+TEST_CASE("Overlapping point lights sum linearly, and a culled light issues no draw", "[rhi][vulkan][gpu][lighting][point]") {
+    gpu_test::GpuFixture fx;
+    fx.RequireValidation();
+    rhi::DevicePtr device = MakeDevice();
+    if (device == nullptr) SKIP("no suitable Vulkan device");
+    fx.ExpectErrors(0);
+    {
+        PlaneRig pr;
+        REQUIRE(pr.Create(device.Get()));
+        const Camera cam = TopDownCamera();
+        std::vector<Light> lights;
+        for (int i = 0; i < 12; ++i) {
+            const f32 a = static_cast<f32>(i) * 0.9f;
+            lights.push_back(Point(Vec3(2.0f * std::cos(a), 1.0f + 0.2f * static_cast<f32>(i % 3), 2.0f * std::sin(a)), 5.0f, 1.5f,
+                                   Vec3(0.5f + 0.5f * std::cos(a), 0.7f, 0.5f + 0.5f * std::sin(a))));
+        }
+        for (const Light& l : lights) pr.scene.AddLight(l);
+        // Lights the view cannot see: behind the camera, far to the side and beyond the far plane. They must cost no draw.
+        pr.scene.AddLight(Point(Vec3(0, 40, 0), 3.0f, 5.0f));
+        pr.scene.AddLight(Point(Vec3(200, 0, 0), 3.0f, 5.0f));
+        pr.scene.AddLight(Point(Vec3(0, -100, 0), 3.0f, 5.0f));
+        const LitFrame L = RenderLit(pr.rig, pr.scene, cam, 1.0f);
+        REQUIRE(L.ok);
+        CHECK(L.summary.point_count == 12);
+        CHECK(L.summary.point_culled == 3);
+        CHECK(L.point_draws_planned == 12);
+        CHECK(L.point_draws_recorded == 12);
+        for (const Vec3& probe : {Vec3(0, 0, 0), Vec3(2.0f, 0, 1.0f), Vec3(-2.0f, 0, -1.5f), Vec3(1.0f, 0, -2.5f), Vec3(-3.0f, 0, 2.0f)}) {
+            Pixel p;
+            const Vec3 world = pr.WorldAt(cam, probe, &p);
+            const Vec3 want = Expected(pr.surface, cam.position, world, lights);
+            INFO("probe " << probe.x << " " << probe.z << " want " << want.x << " got " << L.Accum(p.x, p.y, 0));
+            REQUIRE(want.x > 0.03f);
+            for (u32 c = 0; c < 3; ++c) CHECK(Close(L.Accum(p.x, p.y, c), c == 0 ? want.x : (c == 1 ? want.y : want.z)));
+        }
+        // All lights culled: no draw at all, and the target is black.
+        RenderScene none(RenderSceneDesc{4, 8});
+        none.AddLight(Point(Vec3(0, 40, 0), 3.0f, 5.0f));
+        const LitFrame N = RenderLit(pr.rig, none, cam, 1.0f);
+        REQUIRE(N.ok);
+        CHECK(N.point_draws_planned == 0);
+        CHECK(N.point_draws_recorded == 0);
+        CHECK(N.Accum(32, 32, 0) == 0.0f);
+        device->WaitIdle();
+    }
+    device->WaitIdle();
+    device.Reset();
+}
+
+namespace {
+
+struct ScaleResult {
+    double ms_per_frame = 0.0;
+    u32 draws = 0;
+    u32 culled = 0;
+    u32 dropped = 0;
+};
+
+// Renders `frames` frames of the G-buffer and lighting at 1920x1080 with `count` point lights spread over the plane and returns
+// the mean wall time per frame (submit to idle) and the draw counts.
+ScaleResult MeasureLights(Rig& rig, const RenderScene& scene, const Camera& camera, u32 frames) {
+    constexpr u32 w = 1920, h = 1080;
+    ScaleResult result;
+    GBufferPass gbuffer(rig.device, rig.sys, rig.frame);
+    LightingPass lighting(rig.device, rig.sys, rig.frame);
+    TonemapPass tonemap(rig.device);
+    rhi::TextureDesc td;
+    td.width = w;
+    td.height = h;
+    td.format = rhi::Format::RGBA8_SRGB;
+    td.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
+    const rhi::TextureHandle display = rig.device->CreateTexture(td);
+    REQUIRE(display.IsValid());
+    double total = 0.0;
+    // One warm-up frame, then `frames` timed ones.
+    for (u32 i = 0; i <= frames; ++i) {
+        const auto start = std::chrono::steady_clock::now();
+        const u64 f = rig.frame_index++;
+        rig.device->BeginFrame();
+        rig.sys->BeginFrame(f);
+        rig.sys->FlushMaterials();
+        rig.frame->BeginFrame(f);
+        const FrameData fd = MakeFrameData(camera, w, h, 0, 0, f);
+        rig.frame->WriteFrameData(fd);
+        REQUIRE(gbuffer.Prepare(scene, Frustum::FromViewProjection(camera.ViewProjection())));
+        const LightSummary summary = lighting.Prepare(scene, fd);
+        rig.frame->Flush();
+        ArenaAllocator arena(1 << 20);
+        {
+            RenderGraph graph(&arena, RenderGraphDesc{});
+            rig.pool->BeginFrame(f);
+            const GBufferTargets targets = gbuffer.AddToGraph(&graph, w, h);
+            const GraphResource accum = lighting.AddToGraph(&graph, targets, w, h);
+            const GraphResource out = graph.ImportTexture("display", display, rhi::ResourceState::Undefined, rhi::ResourceState::CopySrc, false);
+            tonemap.AddToGraph(&graph, accum, out, rhi::Format::RGBA8_SRGB, 1.0f);
+            REQUIRE(graph.Compile());
+            rhi::CommandList* list = rig.device->CreateCommandList();
+            list->Begin();
+            REQUIRE(graph.Execute(rig.pool, list));
+            list->End();
+            rhi::CommandList* lists[] = {list};
+            REQUIRE(rig.device->Submit(lists, 1) != 0);
+        }
+        rig.device->EndFrame();
+        rig.device->WaitIdle();
+        const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
+        if (i > 0) total += ms;
+        result.draws = lighting.PointDrawsRecorded();
+        result.culled = summary.point_culled;
+        result.dropped = summary.dropped;
+    }
+    rig.device->DestroyTexture(display);
+    result.ms_per_frame = total / static_cast<double>(frames);
+    return result;
+}
+
+} // namespace
+
+TEST_CASE("Point light scale: 1, 100 and 1000 lights at 1080p (measured, not asserted)", "[rhi][vulkan][gpu][lighting][point][measure]") {
+    gpu_test::GpuFixture fx;
+    fx.RequireValidation();
+    rhi::DevicePtr device = MakeDevice();
+    if (device == nullptr) SKIP("no suitable Vulkan device");
+    fx.ExpectErrors(0);
+    {
+        Rig rig;
+        REQUIRE(rig.Create(device.Get()));
+        delete rig.frame;
+        rig.frame = new FrameResources(device.Get(), 64, 2048);
+        REQUIRE(rig.frame->Valid());
+        MeshData d;
+        REQUIRE(MakePlaneMesh(24.0f, 24.0f, 1, 1, &d) == nullptr);
+        GpuMesh plane;
+        REQUIRE(plane.Create(device.Get(), d, "plane"));
+        rig.Prepare(&plane);
+        const MaterialId m = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m");
+        Camera cam = MakeLookAtCamera(Vec3(0, 20, 0), Vec3(0, 0, 0), Vec3(0, 0, -1));
+        cam.aspect = 1920.0f / 1080.0f;
+        cam.near_plane = 1.0f;
+        cam.far_plane = 40.0f;
+        u32 seed = 12345;
+        auto rnd = [&seed]() {
+            seed = seed * 1664525u + 1013904223u;
+            return static_cast<f32>(seed >> 8) / static_cast<f32>(1u << 24);
+        };
+        for (u32 count : {1u, 100u, 1000u}) {
+            RenderScene scene(RenderSceneDesc{4, 2048});
+            RenderObjectDesc od;
+            od.mesh = &plane;
+            od.material = m.index;
+            scene.AddObject(od);
+            for (u32 i = 0; i < count; ++i) {
+                scene.AddLight(Point(Vec3((rnd() - 0.5f) * 20.0f, 0.5f + rnd() * 2.0f, (rnd() - 0.5f) * 11.0f), 2.5f, 1.0f, Vec3(rnd(), rnd(), rnd())));
+            }
+            const ScaleResult r = MeasureLights(rig, scene, cam, 10);
+            CHECK(r.draws == count); // none culled: all lights are over the visible plane
+            CHECK(r.dropped == 0);
+            std::printf("MEASURE point lights %4u at 1920x1080: %8.3f ms/frame (wall, submit to idle), %u light volume draws, %u culled\n", count, r.ms_per_frame, r.draws,
+                        r.culled);
         }
         device->WaitIdle();
     }

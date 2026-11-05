@@ -1479,47 +1479,51 @@ renderer::Camera::InverseProjection() const	function	renderer	renderer-camera-in
 renderer::Camera::ViewProjection() const	function	renderer	renderer-camera-viewprojection-const	renderer.md	engine/renderer/camera.h:117
 renderer::Camera::InverseViewProjection() const	function	renderer	renderer-camera-inverseviewprojection-const	renderer.md	engine/renderer/camera.h:120
 renderer::MakeLookAtCamera(const Vec3&,const Vec3&,const Vec3&)	function	renderer	renderer-makelookatcamera-const-vec3-amp-const-vec3-amp-const-vec3-amp	renderer.md	engine/renderer/camera.h:131
-renderer::FrameData	struct	renderer	renderer-framedata	renderer.md	engine/renderer/frame_data.h:17
-renderer::FrameData::view	variable	renderer	renderer-framedata-view	renderer.md	engine/renderer/frame_data.h:19
-renderer::FrameData::projection	variable	renderer	renderer-framedata-projection	renderer.md	engine/renderer/frame_data.h:21
-renderer::FrameData::view_projection	variable	renderer	renderer-framedata-view-projection	renderer.md	engine/renderer/frame_data.h:23
-renderer::FrameData::inverse_view_projection	variable	renderer	renderer-framedata-inverse-view-projection	renderer.md	engine/renderer/frame_data.h:25
-renderer::FrameData::camera_position	variable	renderer	renderer-framedata-camera-position	renderer.md	engine/renderer/frame_data.h:27
-renderer::FrameData::viewport	variable	renderer	renderer-framedata-viewport	renderer.md	engine/renderer/frame_data.h:29
-renderer::FrameData::time	variable	renderer	renderer-framedata-time	renderer.md	engine/renderer/frame_data.h:31
-renderer::ObjectData	struct	renderer	renderer-objectdata	renderer.md	engine/renderer/frame_data.h:38
-renderer::ObjectData::world	variable	renderer	renderer-objectdata-world	renderer.md	engine/renderer/frame_data.h:40
-renderer::ObjectData::normal	variable	renderer	renderer-objectdata-normal	renderer.md	engine/renderer/frame_data.h:42
-renderer::MakeFrameData(const Camera&,u32,u32,f32,f32,u64)	function	renderer	renderer-makeframedata-const-camera-amp-u32-u32-f32-f32-u64	renderer.md	engine/renderer/frame_data.h:57
-renderer::BufferRegion	struct	renderer	renderer-bufferregion	renderer.md	engine/renderer/frame_data.h:62
-renderer::BufferRegion::buffer	variable	renderer	renderer-bufferregion-buffer	renderer.md	engine/renderer/frame_data.h:64
-renderer::BufferRegion::offset	variable	renderer	renderer-bufferregion-offset	renderer.md	engine/renderer/frame_data.h:66
-renderer::BufferRegion::size	variable	renderer	renderer-bufferregion-size	renderer.md	engine/renderer/frame_data.h:68
-renderer::LightData	struct	renderer	renderer-lightdata	renderer.md	engine/renderer/frame_data.h:74
-renderer::LightData::direction	variable	renderer	renderer-lightdata-direction	renderer.md	engine/renderer/frame_data.h:76
-renderer::LightData::color	variable	renderer	renderer-lightdata-color	renderer.md	engine/renderer/frame_data.h:78
-renderer::LightData::position_radius	variable	renderer	renderer-lightdata-position-radius	renderer.md	engine/renderer/frame_data.h:80
-renderer::LightSummary	struct	renderer	renderer-lightsummary	renderer.md	engine/renderer/frame_data.h:87
-renderer::LightSummary::ambient	variable	renderer	renderer-lightsummary-ambient	renderer.md	engine/renderer/frame_data.h:89
-renderer::LightSummary::directional_count	variable	renderer	renderer-lightsummary-directional-count	renderer.md	engine/renderer/frame_data.h:91
-renderer::LightSummary::point_count	variable	renderer	renderer-lightsummary-point-count	renderer.md	engine/renderer/frame_data.h:93
-renderer::FrameResources	class	renderer	renderer-frameresources	renderer.md	engine/renderer/frame_data.h:104
-renderer::FrameResources::kSlots	variable	renderer	renderer-frameresources-kslots	renderer.md	engine/renderer/frame_data.h:107
-renderer::FrameResources::FrameResources(rhi::Device*,u32,u32)	function	renderer	renderer-frameresources-frameresources-rhi-device-star-u32-u32	renderer.md	engine/renderer/frame_data.h:116
-renderer::FrameResources::~FrameResources()	function	renderer	renderer-frameresources-tilde-frameresources	renderer.md	engine/renderer/frame_data.h:118
-renderer::FrameResources::FrameResources(const FrameResources&)	function	renderer	renderer-frameresources-frameresources-const-frameresources-amp	renderer.md	engine/renderer/frame_data.h:119
-renderer::FrameResources::operator=(const FrameResources&)	function	renderer	renderer-frameresources-operator-eq-const-frameresources-amp	renderer.md	engine/renderer/frame_data.h:120
-renderer::FrameResources::Valid() const	function	renderer	renderer-frameresources-valid-const	renderer.md	engine/renderer/frame_data.h:124
-renderer::FrameResources::BeginFrame(u64)	function	renderer	renderer-frameresources-beginframe-u64	renderer.md	engine/renderer/frame_data.h:130
-renderer::FrameResources::WriteFrameData(const FrameData&)	function	renderer	renderer-frameresources-writeframedata-const-framedata-amp	renderer.md	engine/renderer/frame_data.h:136
-renderer::FrameResources::WriteObjects(const RenderScene&,const u32*,u32)	function	renderer	renderer-frameresources-writeobjects-const-renderscene-amp-const-u32-star-u32	renderer.md	engine/renderer/frame_data.h:146
-renderer::FrameResources::WriteLights(const RenderScene&)	function	renderer	renderer-frameresources-writelights-const-renderscene-amp	renderer.md	engine/renderer/frame_data.h:157
-renderer::FrameResources::Flush()	function	renderer	renderer-frameresources-flush	renderer.md	engine/renderer/frame_data.h:162
-renderer::FrameResources::FrameRegion() const	function	renderer	renderer-frameresources-frameregion-const	renderer.md	engine/renderer/frame_data.h:166
-renderer::FrameResources::ObjectRegion() const	function	renderer	renderer-frameresources-objectregion-const	renderer.md	engine/renderer/frame_data.h:169
-renderer::FrameResources::LightRegion() const	function	renderer	renderer-frameresources-lightregion-const	renderer.md	engine/renderer/frame_data.h:172
-renderer::FrameResources::MaxLights() const	function	renderer	renderer-frameresources-maxlights-const	renderer.md	engine/renderer/frame_data.h:174
-renderer::FrameResources::MaxObjects() const	function	renderer	renderer-frameresources-maxobjects-const	renderer.md	engine/renderer/frame_data.h:176
+renderer::FrameData	struct	renderer	renderer-framedata	renderer.md	engine/renderer/frame_data.h:18
+renderer::FrameData::view	variable	renderer	renderer-framedata-view	renderer.md	engine/renderer/frame_data.h:20
+renderer::FrameData::projection	variable	renderer	renderer-framedata-projection	renderer.md	engine/renderer/frame_data.h:22
+renderer::FrameData::view_projection	variable	renderer	renderer-framedata-view-projection	renderer.md	engine/renderer/frame_data.h:24
+renderer::FrameData::inverse_view_projection	variable	renderer	renderer-framedata-inverse-view-projection	renderer.md	engine/renderer/frame_data.h:26
+renderer::FrameData::camera_position	variable	renderer	renderer-framedata-camera-position	renderer.md	engine/renderer/frame_data.h:28
+renderer::FrameData::viewport	variable	renderer	renderer-framedata-viewport	renderer.md	engine/renderer/frame_data.h:30
+renderer::FrameData::time	variable	renderer	renderer-framedata-time	renderer.md	engine/renderer/frame_data.h:32
+renderer::ObjectData	struct	renderer	renderer-objectdata	renderer.md	engine/renderer/frame_data.h:39
+renderer::ObjectData::world	variable	renderer	renderer-objectdata-world	renderer.md	engine/renderer/frame_data.h:41
+renderer::ObjectData::normal	variable	renderer	renderer-objectdata-normal	renderer.md	engine/renderer/frame_data.h:43
+renderer::MakeFrameData(const Camera&,u32,u32,f32,f32,u64)	function	renderer	renderer-makeframedata-const-camera-amp-u32-u32-f32-f32-u64	renderer.md	engine/renderer/frame_data.h:58
+renderer::BufferRegion	struct	renderer	renderer-bufferregion	renderer.md	engine/renderer/frame_data.h:63
+renderer::BufferRegion::buffer	variable	renderer	renderer-bufferregion-buffer	renderer.md	engine/renderer/frame_data.h:65
+renderer::BufferRegion::offset	variable	renderer	renderer-bufferregion-offset	renderer.md	engine/renderer/frame_data.h:67
+renderer::BufferRegion::size	variable	renderer	renderer-bufferregion-size	renderer.md	engine/renderer/frame_data.h:69
+renderer::LightData	struct	renderer	renderer-lightdata	renderer.md	engine/renderer/frame_data.h:75
+renderer::LightData::direction	variable	renderer	renderer-lightdata-direction	renderer.md	engine/renderer/frame_data.h:77
+renderer::LightData::color	variable	renderer	renderer-lightdata-color	renderer.md	engine/renderer/frame_data.h:79
+renderer::LightData::position_radius	variable	renderer	renderer-lightdata-position-radius	renderer.md	engine/renderer/frame_data.h:81
+renderer::LightSummary	struct	renderer	renderer-lightsummary	renderer.md	engine/renderer/frame_data.h:88
+renderer::LightSummary::ambient	variable	renderer	renderer-lightsummary-ambient	renderer.md	engine/renderer/frame_data.h:90
+renderer::LightSummary::directional_count	variable	renderer	renderer-lightsummary-directional-count	renderer.md	engine/renderer/frame_data.h:92
+renderer::LightSummary::point_count	variable	renderer	renderer-lightsummary-point-count	renderer.md	engine/renderer/frame_data.h:94
+renderer::LightSummary::point_culled	variable	renderer	renderer-lightsummary-point-culled	renderer.md	engine/renderer/frame_data.h:96
+renderer::LightSummary::dropped	variable	renderer	renderer-lightsummary-dropped	renderer.md	engine/renderer/frame_data.h:100
+renderer::FrameResources	class	renderer	renderer-frameresources	renderer.md	engine/renderer/frame_data.h:111
+renderer::FrameResources::kSlots	variable	renderer	renderer-frameresources-kslots	renderer.md	engine/renderer/frame_data.h:114
+renderer::FrameResources::FrameResources(rhi::Device*,u32,u32)	function	renderer	renderer-frameresources-frameresources-rhi-device-star-u32-u32	renderer.md	engine/renderer/frame_data.h:123
+renderer::FrameResources::~FrameResources()	function	renderer	renderer-frameresources-tilde-frameresources	renderer.md	engine/renderer/frame_data.h:125
+renderer::FrameResources::FrameResources(const FrameResources&)	function	renderer	renderer-frameresources-frameresources-const-frameresources-amp	renderer.md	engine/renderer/frame_data.h:126
+renderer::FrameResources::operator=(const FrameResources&)	function	renderer	renderer-frameresources-operator-eq-const-frameresources-amp	renderer.md	engine/renderer/frame_data.h:127
+renderer::FrameResources::Valid() const	function	renderer	renderer-frameresources-valid-const	renderer.md	engine/renderer/frame_data.h:131
+renderer::FrameResources::BeginFrame(u64)	function	renderer	renderer-frameresources-beginframe-u64	renderer.md	engine/renderer/frame_data.h:137
+renderer::FrameResources::WriteFrameData(const FrameData&)	function	renderer	renderer-frameresources-writeframedata-const-framedata-amp	renderer.md	engine/renderer/frame_data.h:143
+renderer::FrameResources::WriteObjects(const RenderScene&,const u32*,u32)	function	renderer	renderer-frameresources-writeobjects-const-renderscene-amp-const-u32-star-u32	renderer.md	engine/renderer/frame_data.h:153
+renderer::FrameResources::WriteLights(const RenderScene&,const FrameData&)	function	renderer	renderer-frameresources-writelights-const-renderscene-amp-const-framedata-amp	renderer.md	engine/renderer/frame_data.h:170
+renderer::FrameResources::WrittenLights() const	function	renderer	renderer-frameresources-writtenlights-const	renderer.md	engine/renderer/frame_data.h:177
+renderer::FrameResources::WrittenLightCount() const	function	renderer	renderer-frameresources-writtenlightcount-const	renderer.md	engine/renderer/frame_data.h:179
+renderer::FrameResources::Flush()	function	renderer	renderer-frameresources-flush	renderer.md	engine/renderer/frame_data.h:184
+renderer::FrameResources::FrameRegion() const	function	renderer	renderer-frameresources-frameregion-const	renderer.md	engine/renderer/frame_data.h:188
+renderer::FrameResources::ObjectRegion() const	function	renderer	renderer-frameresources-objectregion-const	renderer.md	engine/renderer/frame_data.h:191
+renderer::FrameResources::LightRegion() const	function	renderer	renderer-frameresources-lightregion-const	renderer.md	engine/renderer/frame_data.h:194
+renderer::FrameResources::MaxLights() const	function	renderer	renderer-frameresources-maxlights-const	renderer.md	engine/renderer/frame_data.h:196
+renderer::FrameResources::MaxObjects() const	function	renderer	renderer-frameresources-maxobjects-const	renderer.md	engine/renderer/frame_data.h:198
 renderer::Plane	struct	renderer	renderer-plane	renderer.md	engine/renderer/frustum.h:15
 renderer::Plane::normal	variable	renderer	renderer-plane-normal	renderer.md	engine/renderer/frustum.h:17
 renderer::Plane::d	variable	renderer	renderer-plane-d	renderer.md	engine/renderer/frustum.h:19
@@ -1590,33 +1594,42 @@ renderer::GBufferDebugView::operator=(const GBufferDebugView&)	function	renderer
 renderer::GBufferDebugView::Valid() const	function	renderer	renderer-gbufferdebugview-valid-const	renderer.md	engine/renderer/gbuffer.h:296
 renderer::GBufferDebugView::SetInverseViewProjection(const Mat4&)	function	renderer	renderer-gbufferdebugview-setinverseviewprojection-const-mat4-amp	renderer.md	engine/renderer/gbuffer.h:302
 renderer::GBufferDebugView::AddToGraph(RenderGraph*,const GBufferTargets&,GBufferLayer,GraphResource,rhi::Format,f32,f32)	function	renderer	renderer-gbufferdebugview-addtograph-rendergraph-star-const-gbuffertargets-amp-gbufferlayer-graphresource-rhi-format-f32-f32	renderer.md	engine/renderer/gbuffer.h:322
-renderer::kLightAccumFormat	variable	renderer	renderer-klightaccumformat	renderer.md	engine/renderer/lighting.h:27
-renderer::SurfacePoint	struct	renderer	renderer-surfacepoint	renderer.md	engine/renderer/lighting.h:32
-renderer::SurfacePoint::albedo	variable	renderer	renderer-surfacepoint-albedo	renderer.md	engine/renderer/lighting.h:34
-renderer::SurfacePoint::roughness	variable	renderer	renderer-surfacepoint-roughness	renderer.md	engine/renderer/lighting.h:36
-renderer::SurfacePoint::metallic	variable	renderer	renderer-surfacepoint-metallic	renderer.md	engine/renderer/lighting.h:38
-renderer::SurfacePoint::occlusion	variable	renderer	renderer-surfacepoint-occlusion	renderer.md	engine/renderer/lighting.h:40
-renderer::SurfacePoint::emissive_scale	variable	renderer	renderer-surfacepoint-emissive-scale	renderer.md	engine/renderer/lighting.h:42
-renderer::SurfacePoint::normal	variable	renderer	renderer-surfacepoint-normal	renderer.md	engine/renderer/lighting.h:44
-renderer::ShadeLight(const SurfacePoint&,const Vec3&,const Vec3&,const Vec3&)	function	renderer	renderer-shadelight-const-surfacepoint-amp-const-vec3-amp-const-vec3-amp-const-vec3-amp	renderer.md	engine/renderer/lighting.h:59
-renderer::ShadeAmbient(const SurfacePoint&,const Vec3&)	function	renderer	renderer-shadeambient-const-surfacepoint-amp-const-vec3-amp	renderer.md	engine/renderer/lighting.h:67
-renderer::TonemapAces(f32)	function	renderer	renderer-tonemapaces-f32	renderer.md	engine/renderer/lighting.h:74
-renderer::ReconstructWorldPosition(u32,u32,f32,u32,u32,const Mat4&)	function	renderer	renderer-reconstructworldposition-u32-u32-f32-u32-u32-const-mat4-amp	renderer.md	engine/renderer/lighting.h:86
-renderer::LightingPass	class	renderer	renderer-lightingpass	renderer.md	engine/renderer/lighting.h:93
-renderer::LightingPass::LightingPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-lightingpass-lightingpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/lighting.h:101
-renderer::LightingPass::~LightingPass()	function	renderer	renderer-lightingpass-tilde-lightingpass	renderer.md	engine/renderer/lighting.h:103
-renderer::LightingPass::LightingPass(const LightingPass&)	function	renderer	renderer-lightingpass-lightingpass-const-lightingpass-amp	renderer.md	engine/renderer/lighting.h:104
-renderer::LightingPass::operator=(const LightingPass&)	function	renderer	renderer-lightingpass-operator-eq-const-lightingpass-amp	renderer.md	engine/renderer/lighting.h:105
-renderer::LightingPass::Valid() const	function	renderer	renderer-lightingpass-valid-const	renderer.md	engine/renderer/lighting.h:109
-renderer::LightingPass::Prepare(const RenderScene&)	function	renderer	renderer-lightingpass-prepare-const-renderscene-amp	renderer.md	engine/renderer/lighting.h:117
-renderer::LightingPass::AddToGraph(RenderGraph*,const GBufferTargets&,u32,u32)	function	renderer	renderer-lightingpass-addtograph-rendergraph-star-const-gbuffertargets-amp-u32-u32	renderer.md	engine/renderer/lighting.h:128
-renderer::TonemapPass	class	renderer	renderer-tonemappass	renderer.md	engine/renderer/lighting.h:159
-renderer::TonemapPass::TonemapPass(rhi::Device*)	function	renderer	renderer-tonemappass-tonemappass-rhi-device-star	renderer.md	engine/renderer/lighting.h:165
-renderer::TonemapPass::~TonemapPass()	function	renderer	renderer-tonemappass-tilde-tonemappass	renderer.md	engine/renderer/lighting.h:167
-renderer::TonemapPass::TonemapPass(const TonemapPass&)	function	renderer	renderer-tonemappass-tonemappass-const-tonemappass-amp	renderer.md	engine/renderer/lighting.h:168
-renderer::TonemapPass::operator=(const TonemapPass&)	function	renderer	renderer-tonemappass-operator-eq-const-tonemappass-amp	renderer.md	engine/renderer/lighting.h:169
-renderer::TonemapPass::Valid() const	function	renderer	renderer-tonemappass-valid-const	renderer.md	engine/renderer/lighting.h:173
-renderer::TonemapPass::AddToGraph(RenderGraph*,GraphResource,GraphResource,rhi::Format,f32)	function	renderer	renderer-tonemappass-addtograph-rendergraph-star-graphresource-graphresource-rhi-format-f32	renderer.md	engine/renderer/lighting.h:185
+renderer::kLightAccumFormat	variable	renderer	renderer-klightaccumformat	renderer.md	engine/renderer/lighting.h:39
+renderer::SurfacePoint	struct	renderer	renderer-surfacepoint	renderer.md	engine/renderer/lighting.h:44
+renderer::SurfacePoint::albedo	variable	renderer	renderer-surfacepoint-albedo	renderer.md	engine/renderer/lighting.h:46
+renderer::SurfacePoint::roughness	variable	renderer	renderer-surfacepoint-roughness	renderer.md	engine/renderer/lighting.h:48
+renderer::SurfacePoint::metallic	variable	renderer	renderer-surfacepoint-metallic	renderer.md	engine/renderer/lighting.h:50
+renderer::SurfacePoint::occlusion	variable	renderer	renderer-surfacepoint-occlusion	renderer.md	engine/renderer/lighting.h:52
+renderer::SurfacePoint::emissive_scale	variable	renderer	renderer-surfacepoint-emissive-scale	renderer.md	engine/renderer/lighting.h:54
+renderer::SurfacePoint::normal	variable	renderer	renderer-surfacepoint-normal	renderer.md	engine/renderer/lighting.h:56
+renderer::ShadeLight(const SurfacePoint&,const Vec3&,const Vec3&,const Vec3&)	function	renderer	renderer-shadelight-const-surfacepoint-amp-const-vec3-amp-const-vec3-amp-const-vec3-amp	renderer.md	engine/renderer/lighting.h:71
+renderer::ShadeAmbient(const SurfacePoint&,const Vec3&)	function	renderer	renderer-shadeambient-const-surfacepoint-amp-const-vec3-amp	renderer.md	engine/renderer/lighting.h:79
+renderer::TonemapAces(f32)	function	renderer	renderer-tonemapaces-f32	renderer.md	engine/renderer/lighting.h:86
+renderer::ReconstructWorldPosition(u32,u32,f32,u32,u32,const Mat4&)	function	renderer	renderer-reconstructworldposition-u32-u32-f32-u32-u32-const-mat4-amp	renderer.md	engine/renderer/lighting.h:98
+renderer::PointLightAttenuation(f32,f32)	function	renderer	renderer-pointlightattenuation-f32-f32	renderer.md	engine/renderer/lighting.h:111
+renderer::kLightVolumeSegments	variable	renderer	renderer-klightvolumesegments	renderer.md	engine/renderer/lighting.h:114
+renderer::kLightVolumeRings	variable	renderer	renderer-klightvolumerings	renderer.md	engine/renderer/lighting.h:116
+renderer::kLightVolumeVertexCount	variable	renderer	renderer-klightvolumevertexcount	renderer.md	engine/renderer/lighting.h:118
+renderer::LightVolumeScale()	function	renderer	renderer-lightvolumescale	renderer.md	engine/renderer/lighting.h:124
+renderer::LightVolumeVertex(u32)	function	renderer	renderer-lightvolumevertex-u32	renderer.md	engine/renderer/lighting.h:133
+renderer::LightScreenRect(const FrameData&,const Vec3&,f32,u32,u32,rhi::ScissorRect*)	function	renderer	renderer-lightscreenrect-const-framedata-amp-const-vec3-amp-f32-u32-u32-rhi-scissorrect-star	renderer.md	engine/renderer/lighting.h:149
+renderer::LightingPass	class	renderer	renderer-lightingpass	renderer.md	engine/renderer/lighting.h:156
+renderer::LightingPass::LightingPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-lightingpass-lightingpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/lighting.h:164
+renderer::LightingPass::~LightingPass()	function	renderer	renderer-lightingpass-tilde-lightingpass	renderer.md	engine/renderer/lighting.h:166
+renderer::LightingPass::LightingPass(const LightingPass&)	function	renderer	renderer-lightingpass-lightingpass-const-lightingpass-amp	renderer.md	engine/renderer/lighting.h:167
+renderer::LightingPass::operator=(const LightingPass&)	function	renderer	renderer-lightingpass-operator-eq-const-lightingpass-amp	renderer.md	engine/renderer/lighting.h:168
+renderer::LightingPass::Valid() const	function	renderer	renderer-lightingpass-valid-const	renderer.md	engine/renderer/lighting.h:172
+renderer::LightingPass::Prepare(const RenderScene&,const FrameData&)	function	renderer	renderer-lightingpass-prepare-const-renderscene-amp-const-framedata-amp	renderer.md	engine/renderer/lighting.h:186
+renderer::LightingPass::PointDrawsPlanned() const	function	renderer	renderer-lightingpass-pointdrawsplanned-const	renderer.md	engine/renderer/lighting.h:190
+renderer::LightingPass::PointDrawsRecorded() const	function	renderer	renderer-lightingpass-pointdrawsrecorded-const	renderer.md	engine/renderer/lighting.h:193
+renderer::LightingPass::AddToGraph(RenderGraph*,const GBufferTargets&,u32,u32)	function	renderer	renderer-lightingpass-addtograph-rendergraph-star-const-gbuffertargets-amp-u32-u32	renderer.md	engine/renderer/lighting.h:204
+renderer::TonemapPass	class	renderer	renderer-tonemappass	renderer.md	engine/renderer/lighting.h:246
+renderer::TonemapPass::TonemapPass(rhi::Device*)	function	renderer	renderer-tonemappass-tonemappass-rhi-device-star	renderer.md	engine/renderer/lighting.h:252
+renderer::TonemapPass::~TonemapPass()	function	renderer	renderer-tonemappass-tilde-tonemappass	renderer.md	engine/renderer/lighting.h:254
+renderer::TonemapPass::TonemapPass(const TonemapPass&)	function	renderer	renderer-tonemappass-tonemappass-const-tonemappass-amp	renderer.md	engine/renderer/lighting.h:255
+renderer::TonemapPass::operator=(const TonemapPass&)	function	renderer	renderer-tonemappass-operator-eq-const-tonemappass-amp	renderer.md	engine/renderer/lighting.h:256
+renderer::TonemapPass::Valid() const	function	renderer	renderer-tonemappass-valid-const	renderer.md	engine/renderer/lighting.h:260
+renderer::TonemapPass::AddToGraph(RenderGraph*,GraphResource,GraphResource,rhi::Format,f32)	function	renderer	renderer-tonemappass-addtograph-rendergraph-star-graphresource-graphresource-rhi-format-f32	renderer.md	engine/renderer/lighting.h:272
 renderer::kFrameSet	variable	renderer	renderer-kframeset	renderer.md	engine/renderer/material.h:22
 renderer::kMaterialSet	variable	renderer	renderer-kmaterialset	renderer.md	engine/renderer/material.h:24
 renderer::kObjectSet	variable	renderer	renderer-kobjectset	renderer.md	engine/renderer/material.h:26
@@ -1908,40 +1921,41 @@ renderer::LightType	enum	renderer	renderer-lighttype	renderer.md	engine/renderer
 renderer::LightType::Directional	enumerator	renderer	renderer-lighttype-directional	renderer.md	engine/renderer/render_scene.h:92
 renderer::LightType::Point	enumerator	renderer	renderer-lighttype-point	renderer.md	engine/renderer/render_scene.h:93
 renderer::LightType::Ambient	enumerator	renderer	renderer-lighttype-ambient	renderer.md	engine/renderer/render_scene.h:94
-renderer::Light	struct	renderer	renderer-light	renderer.md	engine/renderer/render_scene.h:100
-renderer::Light::type	variable	renderer	renderer-light-type	renderer.md	engine/renderer/render_scene.h:102
-renderer::Light::color	variable	renderer	renderer-light-color	renderer.md	engine/renderer/render_scene.h:104
-renderer::Light::intensity	variable	renderer	renderer-light-intensity	renderer.md	engine/renderer/render_scene.h:106
-renderer::Light::direction	variable	renderer	renderer-light-direction	renderer.md	engine/renderer/render_scene.h:108
-renderer::Light::position	variable	renderer	renderer-light-position	renderer.md	engine/renderer/render_scene.h:110
-renderer::Light::radius	variable	renderer	renderer-light-radius	renderer.md	engine/renderer/render_scene.h:112
-renderer::RenderSceneDesc	struct	renderer	renderer-renderscenedesc	renderer.md	engine/renderer/render_scene.h:118
-renderer::RenderSceneDesc::max_objects	variable	renderer	renderer-renderscenedesc-max-objects	renderer.md	engine/renderer/render_scene.h:120
-renderer::RenderSceneDesc::max_lights	variable	renderer	renderer-renderscenedesc-max-lights	renderer.md	engine/renderer/render_scene.h:122
-renderer::RenderScene	class	renderer	renderer-renderscene	renderer.md	engine/renderer/render_scene.h:133
-renderer::RenderScene::RenderScene(const RenderSceneDesc&)	function	renderer	renderer-renderscene-renderscene-const-renderscenedesc-amp	renderer.md	engine/renderer/render_scene.h:139
-renderer::RenderScene::~RenderScene()	function	renderer	renderer-renderscene-tilde-renderscene	renderer.md	engine/renderer/render_scene.h:141
-renderer::RenderScene::RenderScene(const RenderScene&)	function	renderer	renderer-renderscene-renderscene-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:142
-renderer::RenderScene::operator=(const RenderScene&)	function	renderer	renderer-renderscene-operator-eq-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:143
-renderer::RenderScene::AddObject(const RenderObjectDesc&)	function	renderer	renderer-renderscene-addobject-const-renderobjectdesc-amp	renderer.md	engine/renderer/render_scene.h:151
-renderer::RenderScene::RemoveObject(ObjectId)	function	renderer	renderer-renderscene-removeobject-objectid	renderer.md	engine/renderer/render_scene.h:157
-renderer::RenderScene::SetTransform(ObjectId,const Mat4&)	function	renderer	renderer-renderscene-settransform-objectid-const-mat4-amp	renderer.md	engine/renderer/render_scene.h:164
-renderer::RenderScene::SetFlags(ObjectId,u32)	function	renderer	renderer-renderscene-setflags-objectid-u32	renderer.md	engine/renderer/render_scene.h:171
-renderer::RenderScene::FindObject(ObjectId) const	function	renderer	renderer-renderscene-findobject-objectid-const	renderer.md	engine/renderer/render_scene.h:179
-renderer::RenderScene::ObjectCount() const	function	renderer	renderer-renderscene-objectcount-const	renderer.md	engine/renderer/render_scene.h:182
-renderer::RenderScene::ObjectCapacity() const	function	renderer	renderer-renderscene-objectcapacity-const	renderer.md	engine/renderer/render_scene.h:184
-renderer::RenderScene::SlotCount() const	function	renderer	renderer-renderscene-slotcount-const	renderer.md	engine/renderer/render_scene.h:187
-renderer::RenderScene::SlotAlive(u32) const	function	renderer	renderer-renderscene-slotalive-u32-const	renderer.md	engine/renderer/render_scene.h:190
-renderer::RenderScene::ObjectAt(u32) const	function	renderer	renderer-renderscene-objectat-u32-const	renderer.md	engine/renderer/render_scene.h:193
-renderer::RenderScene::AddLight(const Light&)	function	renderer	renderer-renderscene-addlight-const-light-amp	renderer.md	engine/renderer/render_scene.h:201
-renderer::RenderScene::RemoveLight(LightId)	function	renderer	renderer-renderscene-removelight-lightid	renderer.md	engine/renderer/render_scene.h:207
-renderer::RenderScene::SetLight(LightId,const Light&)	function	renderer	renderer-renderscene-setlight-lightid-const-light-amp	renderer.md	engine/renderer/render_scene.h:214
-renderer::RenderScene::FindLight(LightId) const	function	renderer	renderer-renderscene-findlight-lightid-const	renderer.md	engine/renderer/render_scene.h:222
-renderer::RenderScene::LightCount() const	function	renderer	renderer-renderscene-lightcount-const	renderer.md	engine/renderer/render_scene.h:225
-renderer::RenderScene::LightSlotCount() const	function	renderer	renderer-renderscene-lightslotcount-const	renderer.md	engine/renderer/render_scene.h:227
-renderer::RenderScene::LightSlotAlive(u32) const	function	renderer	renderer-renderscene-lightslotalive-u32-const	renderer.md	engine/renderer/render_scene.h:230
-renderer::RenderScene::LightAt(u32) const	function	renderer	renderer-renderscene-lightat-u32-const	renderer.md	engine/renderer/render_scene.h:233
-renderer::RenderScene::Cull(const Frustum&,u32*,u32) const	function	renderer	renderer-renderscene-cull-const-frustum-amp-u32-star-u32-const	renderer.md	engine/renderer/render_scene.h:243
+renderer::Light	struct	renderer	renderer-light	renderer.md	engine/renderer/render_scene.h:101
+renderer::Light::type	variable	renderer	renderer-light-type	renderer.md	engine/renderer/render_scene.h:103
+renderer::Light::color	variable	renderer	renderer-light-color	renderer.md	engine/renderer/render_scene.h:105
+renderer::Light::intensity	variable	renderer	renderer-light-intensity	renderer.md	engine/renderer/render_scene.h:107
+renderer::Light::direction	variable	renderer	renderer-light-direction	renderer.md	engine/renderer/render_scene.h:109
+renderer::Light::position	variable	renderer	renderer-light-position	renderer.md	engine/renderer/render_scene.h:111
+renderer::Light::radius	variable	renderer	renderer-light-radius	renderer.md	engine/renderer/render_scene.h:113
+renderer::kMaxLights	variable	renderer	renderer-kmaxlights	renderer.md	engine/renderer/render_scene.h:120
+renderer::RenderSceneDesc	struct	renderer	renderer-renderscenedesc	renderer.md	engine/renderer/render_scene.h:125
+renderer::RenderSceneDesc::max_objects	variable	renderer	renderer-renderscenedesc-max-objects	renderer.md	engine/renderer/render_scene.h:127
+renderer::RenderSceneDesc::max_lights	variable	renderer	renderer-renderscenedesc-max-lights	renderer.md	engine/renderer/render_scene.h:129
+renderer::RenderScene	class	renderer	renderer-renderscene	renderer.md	engine/renderer/render_scene.h:140
+renderer::RenderScene::RenderScene(const RenderSceneDesc&)	function	renderer	renderer-renderscene-renderscene-const-renderscenedesc-amp	renderer.md	engine/renderer/render_scene.h:146
+renderer::RenderScene::~RenderScene()	function	renderer	renderer-renderscene-tilde-renderscene	renderer.md	engine/renderer/render_scene.h:148
+renderer::RenderScene::RenderScene(const RenderScene&)	function	renderer	renderer-renderscene-renderscene-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:149
+renderer::RenderScene::operator=(const RenderScene&)	function	renderer	renderer-renderscene-operator-eq-const-renderscene-amp	renderer.md	engine/renderer/render_scene.h:150
+renderer::RenderScene::AddObject(const RenderObjectDesc&)	function	renderer	renderer-renderscene-addobject-const-renderobjectdesc-amp	renderer.md	engine/renderer/render_scene.h:158
+renderer::RenderScene::RemoveObject(ObjectId)	function	renderer	renderer-renderscene-removeobject-objectid	renderer.md	engine/renderer/render_scene.h:164
+renderer::RenderScene::SetTransform(ObjectId,const Mat4&)	function	renderer	renderer-renderscene-settransform-objectid-const-mat4-amp	renderer.md	engine/renderer/render_scene.h:171
+renderer::RenderScene::SetFlags(ObjectId,u32)	function	renderer	renderer-renderscene-setflags-objectid-u32	renderer.md	engine/renderer/render_scene.h:178
+renderer::RenderScene::FindObject(ObjectId) const	function	renderer	renderer-renderscene-findobject-objectid-const	renderer.md	engine/renderer/render_scene.h:186
+renderer::RenderScene::ObjectCount() const	function	renderer	renderer-renderscene-objectcount-const	renderer.md	engine/renderer/render_scene.h:189
+renderer::RenderScene::ObjectCapacity() const	function	renderer	renderer-renderscene-objectcapacity-const	renderer.md	engine/renderer/render_scene.h:191
+renderer::RenderScene::SlotCount() const	function	renderer	renderer-renderscene-slotcount-const	renderer.md	engine/renderer/render_scene.h:194
+renderer::RenderScene::SlotAlive(u32) const	function	renderer	renderer-renderscene-slotalive-u32-const	renderer.md	engine/renderer/render_scene.h:197
+renderer::RenderScene::ObjectAt(u32) const	function	renderer	renderer-renderscene-objectat-u32-const	renderer.md	engine/renderer/render_scene.h:200
+renderer::RenderScene::AddLight(const Light&)	function	renderer	renderer-renderscene-addlight-const-light-amp	renderer.md	engine/renderer/render_scene.h:208
+renderer::RenderScene::RemoveLight(LightId)	function	renderer	renderer-renderscene-removelight-lightid	renderer.md	engine/renderer/render_scene.h:214
+renderer::RenderScene::SetLight(LightId,const Light&)	function	renderer	renderer-renderscene-setlight-lightid-const-light-amp	renderer.md	engine/renderer/render_scene.h:221
+renderer::RenderScene::FindLight(LightId) const	function	renderer	renderer-renderscene-findlight-lightid-const	renderer.md	engine/renderer/render_scene.h:229
+renderer::RenderScene::LightCount() const	function	renderer	renderer-renderscene-lightcount-const	renderer.md	engine/renderer/render_scene.h:232
+renderer::RenderScene::LightSlotCount() const	function	renderer	renderer-renderscene-lightslotcount-const	renderer.md	engine/renderer/render_scene.h:234
+renderer::RenderScene::LightSlotAlive(u32) const	function	renderer	renderer-renderscene-lightslotalive-u32-const	renderer.md	engine/renderer/render_scene.h:237
+renderer::RenderScene::LightAt(u32) const	function	renderer	renderer-renderscene-lightat-u32-const	renderer.md	engine/renderer/render_scene.h:240
+renderer::RenderScene::Cull(const Frustum&,u32*,u32) const	function	renderer	renderer-renderscene-cull-const-frustum-amp-u32-star-u32-const	renderer.md	engine/renderer/render_scene.h:250
 renderer::FrameStatus	enum	renderer	renderer-framestatus	renderer.md	engine/renderer/renderer.h:27
 renderer::FrameStatus::Ok	enumerator	renderer	renderer-framestatus-ok	renderer.md	engine/renderer/renderer.h:28
 renderer::FrameStatus::Skipped	enumerator	renderer	renderer-framestatus-skipped	renderer.md	engine/renderer/renderer.h:29

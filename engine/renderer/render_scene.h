@@ -94,7 +94,8 @@ enum class LightType : u8 {
     Ambient,         ///< A uniform light from every direction; only `color` and `intensity` matter.
 };
 
-/// A light: directional and ambient lights are lit by the deferred lighting pass; point lights follow.
+/// A light. Directional and ambient lights are lit by the fullscreen part of the deferred lighting pass, point lights by
+/// light volumes (see [[renderer::LightingPass]]).
 ///
 /// Thread-safety: thread-compatible plain data.
 struct Light {
@@ -108,9 +109,15 @@ struct Light {
     Vec3 direction = Vec3(0, 1, 0);
     /// For a point light, the world position.
     Vec3 position = Vec3(0, 0, 0);
-    /// For a point light, the distance at which its contribution reaches zero; greater than zero.
+    /// For a point light, the distance at which its contribution reaches exactly zero (see [[renderer::PointLightAttenuation]]); greater than zero.
     f32 radius = 1.0f;
 };
+
+/// The most lights a scene or a [[renderer::FrameResources]] can hold: 16384.
+///
+/// A light is 48 bytes in the light buffer, so that is 768 KiB per frame slot. Asking for more aborts; a frame with more visible lights than the buffer holds reports
+/// the excess in [[renderer::LightSummary::dropped]] and logs an error.
+inline constexpr u32 kMaxLights = 16384;
 
 /// How many objects and lights a scene can hold.
 ///
@@ -118,7 +125,7 @@ struct Light {
 struct RenderSceneDesc {
     /// Capacity for objects, at least 1.
     u32 max_objects = 1024;
-    /// Capacity for lights, at least 1.
+    /// Capacity for lights, from 1 to [[renderer::kMaxLights]].
     u32 max_lights = 64;
 };
 
@@ -197,7 +204,7 @@ public:
     /// Param light: the light; a point light needs a positive radius.
     /// Returns: its id, or the invalid id if the scene is full.
     /// Fails: reported through the return value.
-    /// Aborts: a point light has a radius that is not positive, or an intensity below zero.
+    /// Aborts: a point light has a radius that is not positive, or an intensity below zero, or any value of the light is not finite.
     LightId AddLight(const Light& light);
 
     /// Removes a light; its id becomes stale.

@@ -3,6 +3,7 @@
 //! The data every frame feeds to the shaders: one `FrameData` uniform and one storage buffer of per-object data, both
 //! rewritten each frame. A draw picks its object by instance index, so no bind group is created per draw.
 
+#include "containers/vector.h"
 #include "renderer/camera.h"
 #include "renderer/render_scene.h"
 #include "rhi/rhi.h"
@@ -89,8 +90,14 @@ struct LightSummary {
     Vec3 ambient = Vec3(0, 0, 0);
     /// Directional lights written to the buffer (they come first).
     u32 directional_count = 0;
-    /// Point lights written to the buffer after the directional ones.
+    /// Point lights written to the buffer after the directional ones: the visible ones, nearest the camera first.
     u32 point_count = 0;
+    /// Point lights left out because their sphere is entirely outside the view frustum.
+    u32 point_culled = 0;
+    /// Lights that did not fit in the buffer and were not written (directional, or visible point lights).
+    ///
+    /// Not zero is an error: the picture is missing light. It is also logged once per [[renderer::FrameResources]].
+    u32 dropped = 0;
 };
 
 /// The per-frame buffers, in `kSlots` rotating regions so the CPU never writes data the GPU is still reading.
@@ -110,9 +117,9 @@ public:
     ///
     /// Param device: the device; must outlive this object.
     /// Param max_objects: the most objects one frame writes, at least 1.
-    /// Param max_lights: the most lights one frame writes, at least 1.
+    /// Param max_lights: the most lights one frame writes, from 1 to [[renderer::kMaxLights]].
     /// Ownership: check [[renderer::FrameResources::Valid]].
-    /// Aborts: `device` is null, or `max_objects` or `max_lights` is 0.
+    /// Aborts: `device` is null, `max_objects` is 0, or `max_lights` is 0 or above [[renderer::kMaxLights]].
     FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights = 64);
     /// Unmaps and destroys the buffers.
     ~FrameResources();
@@ -145,16 +152,31 @@ public:
     /// Ownership: `slots` is borrowed for the call.
     u32 WriteObjects(const RenderScene& scene, const u32* slots, u32 count);
 
-    /// Writes the scene's lights into this frame's region: directional lights first, then point lights, and sums the ambient lights.
+    /// Writes the scene's lights into this frame's region: directional lights first, then the visible point lights, and sums
+    /// the ambient lights.
     ///
-    /// Directional light directions are normalized (a zero direction lights nothing). Lights beyond the capacity are
-    /// dropped, with a warning logged once per object; the capacity (`max_lights`) should be at least the scene's
-    /// `RenderSceneDesc::max_lights`. The summary counts only what was written.
+    /// Directional light directions are normalized (a zero direction lights nothing). A point light whose sphere (position,
+    /// radius) is entirely outside the view frustum is left out ([[renderer::LightSummary::point_culled]]); the rest are
+    /// sorted by squared distance from the camera to the light position, nearest first, ties broken by the light's slot, so
+    /// the order is the same on every run. If the lights do not fit in `max_lights`, directional lights are written first
+    /// and the farthest point lights are left out; the number left out is [[renderer::LightSummary::dropped]] and an error
+    /// is logged (once per object). The capacity should be at least the scene's `RenderSceneDesc::max_lights`, which makes
+    /// that impossible.
     ///
     /// Param scene: the scene.
-    /// Returns: the ambient sum and the counts of each kind written.
+    /// Param view: the frame block of the view being lit; its `view_projection` and `camera_position` are used.
+    /// Returns: the ambient sum, the counts written and the counts left out.
     /// Aborts: [[renderer::FrameResources::BeginFrame]] was not called.
-    LightSummary WriteLights(const RenderScene& scene);
+    LightSummary WriteLights(const RenderScene& scene, const FrameData& view);
+
+    /// Returns the lights written by the last `WriteLights`, in buffer order.
+    ///
+    /// It is a CPU copy, because the mapped buffer is write-only memory. Valid until the next `BeginFrame`.
+    /// Fails: never.
+    /// Ownership: borrowed.
+    const LightData* WrittenLights() const { return staged_.Data(); }
+    /// Returns the number of lights written by the last `WriteLights`.
+    u32 WrittenLightCount() const { return lights_written_; }
 
     /// Makes this frame's writes visible to the GPU on devices without coherent host memory; call before submitting.
     ///
@@ -181,6 +203,13 @@ private:
     rhi::BufferHandle object_buffer_;
     rhi::BufferHandle light_buffer_;
     unsigned char* light_mapped_ = nullptr;
+    struct PointEntry {
+        f32 distance_squared;
+        u32 slot;
+    };
+    static int ComparePoints(const void* a, const void* b);
+    Vector<LightData> staged_;       // the written lights, in buffer order (the mapped memory is write-only)
+    Vector<PointEntry> point_scratch_; // visible point lights while sorting; keeps its capacity between frames
     u64 light_stride_ = 0;
     u32 max_lights_ = 0;
     u32 lights_written_ = 0;
