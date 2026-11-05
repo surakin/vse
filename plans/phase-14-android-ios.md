@@ -23,6 +23,10 @@ handle each OS's app lifecycle and touch input.
 - iOS build config for Phase 13's LuaJIT backend: JIT mode is disallowed
   on iOS App Store builds, so this is where the interpreter-only fallback
   (root `PLAN.md` assumption #13) actually gets wired up.
+- Audio output backends for the Phase 11 mixer: AAudio on Android and
+  CoreAudio on iOS (shared with the macOS backend where the API matches),
+  plus audio session handling (interruptions, route changes, pausing in the
+  background). The mixer itself is unchanged.
 - Apple Silicon / tile-based-GPU behavior in the Metal backend
   (memoryless attachments, shared storage) that the Intel Mac used for
   Phase 6 could not verify; `AddressMode::ClampToBorder` is unavailable

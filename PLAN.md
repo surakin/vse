@@ -599,7 +599,7 @@ PLAN.md
 | 8 | **UI system (widgets & viewport)** | Linux | [plans/phase-08-ui-system.md](plans/phase-08-ui-system.md) | Retained widget toolkit (menus, buttons, comboboxes, scrollbars, labels, text fields...) on the RHI and Phase 7 text, with run-time-swappable themes, a viewport widget that renders the 3D world inside a resizable panel and routes input correctly, and UI surfaces that render into a texture (in-world screens) |
 | 9 | ECS | Linux | [plans/phase-09-ecs.md](plans/phase-09-ecs.md) | Thousands of entities updated per frame, benchmarked vs. naive OOP baseline |
 | 10 | Physics | Linux | [plans/phase-10-physics.md](plans/phase-10-physics.md) | Rigid body sim: gravity, collision, resolution for boxes/spheres/capsules |
-| 11 | Audio | Linux | [plans/phase-11-audio.md](plans/phase-11-audio.md) | Custom mixer plays hand-decoded WAV, positional 3D audio |
+| 11 | Audio | Linux, Windows, macOS (mobile in Phase 14) | [plans/phase-11-audio.md](plans/phase-11-audio.md) | Custom mixer plays hand-decoded WAV, positional 3D audio, on Linux, Windows and macOS through one device interface |
 | 12 | Asset pipeline & resource system | Linux | [plans/phase-12-asset-pipeline.md](plans/phase-12-asset-pipeline.md) | Offline mint → versioned per-type binary formats, loaded at runtime through pak/filesystem resource backends |
 | 13 | Scripting (Lua/LuaJIT) | Linux | [plans/phase-13-scripting.md](plans/phase-13-scripting.md) | LuaJIT runs a gameplay script that spawns/moves an entity via engine API bindings |
 | 14 | Android + iOS ports | Android, iOS | [plans/phase-14-android-ios.md](plans/phase-14-android-ios.md) | Android reuses the Vulkan backend, iOS the Metal backend from Phase 6; touch input and app-lifecycle platform layers |
