@@ -30,8 +30,10 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 | Item | Needed by | Where recorded |
 |---|---|---|
 | Pipeline creation time for permuted shaders was not measured; specialization constants are the Vulkan-only escape hatch if profiling asks for it | Only if profiling shows a problem | `docs/superpowers/specs/2026-11-04-renderer-design.md` R10.1 |
-| `shader_mint --permute` starts `slangc` with `posix_spawnp` (Linux only) | Phase 12 (Windows) | `shaders/README.md`, Day 72 day file |
-| Clip-space Y flip in the shader path (Slang does not apply it) | Phases 12-13 | `shaders/README.md`, RHI portability review |
-| Metal renames an entry point called `main` | Phase 13 | `shaders/README.md` |
-| Other items filed per backend (typeless depth, descriptor copies, `ClampToBorder`, ...) | Phases 12-13 | RHI portability review, section 5 |
+| `shader_mint --permute` starts `slangc` with `posix_spawnp` (Linux only) | Phase 5 (Windows) | `shaders/README.md`, Day 72 day file |
+| Clip-space Y flip in the shader path (Slang does not apply it) | Phases 5-6 | `shaders/README.md`, RHI portability review |
+| Metal renames an entry point called `main` | Phase 6 | `shaders/README.md` |
+| Other items filed per backend (typeless depth, descriptor copies, `ClampToBorder`, ...) | Phases 5-6 | RHI portability review, section 5 |
+| Metal backend behavior on Apple Silicon (unified memory, tile-based rendering, memoryless attachments) cannot be verified on the developer's 2019 Intel MacBook Pro | Phase 6 (record), Phase 14 (iOS device) | `plans/phase-06-macos-metal.md` |
+| How Phases 7-13 keep the Windows/macOS builds working (per-phase closing day vs periodic catch-up) | Decide when Phase 6 completes | `PLAN.md` assumption #11 |
 | Epic's UE EULA terms need review | Before Phase 16 starts | `PLAN.md` (open risk) |

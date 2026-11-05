@@ -1,6 +1,6 @@
-# Phase 10 — Asset Pipeline & Resource System
+# Phase 12 — Asset Pipeline & Resource System
 
-**Depends on:** Phase 7 (ECS), Phase 4 (Renderer core).
+**Depends on:** Phase 9 (ECS), Phase 4 (Renderer core).
 **Goal:** a resource system with pluggable storage backends, versioned
 per-type binary formats, offline tooling to produce them, and a runtime
 loader — the foundation Phase 16 (Unreal import) targets when converting
@@ -60,7 +60,7 @@ editor/tool code linked into the game binary. Minting is deterministic
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 7 is complete.
+- Full day-by-day breakdown deferred until Phase 9 is complete.
 - Network backend scope (auth, caching, offline/retry behavior) is
   intentionally undecided until this phase starts.
 - Exact version-migration mechanism (loader-side upgrade vs. offline

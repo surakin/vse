@@ -1,4 +1,4 @@
-# Phase 5 — Font & Text Rendering
+# Phase 7 — Font & Text Rendering
 
 **Depends on:** Phase 3 (Vulkan RHI), Phase 4 (Renderer core) — glyph
 bitmaps upload as RHI textures and draw through the renderer's existing
@@ -7,7 +7,7 @@ pass/material machinery, not a separate rendering path.
 `PLAN.md` assumption #17) for font parsing/glyph rasterization, reusing
 the foundation string module's grapheme clustering (Days 10-12) for
 correct cursor/line-break behavior — the shared text layer every later
-UI need (in-game HUD, debug overlays, the Phase 6 UI system and through it
+UI need (in-game HUD, debug overlays, the Phase 8 UI system and through it
 the Phase 18 editor's widgets)
 builds on instead of each hand-rolling its own.
 **Definition of done:** arbitrary UTF-8 text renders on screen through
@@ -25,7 +25,7 @@ marks, emoji ZWJ sequences) each treated as one cursor-movement unit.
   (ascent/descent/line height), enumerate/rasterize glyphs on demand.
 - Glyph atlas: pack rasterized glyph bitmaps into a texture atlas,
   uploaded through the Phase 3 RHI; atlas growth/eviction policy for
-  large character sets (CJK) is a stretch goal, not a Phase 5 blocker —
+  large character sets (CJK) is a stretch goal, not a Phase 7 blocker —
   a single generously-sized atlas per font/size is an acceptable v1.
 - Text layout: turn a `StringView` into a sequence of positioned glyph
   quads — advance widths from FreeType, line breaking at whitespace/
@@ -46,12 +46,12 @@ marks, emoji ZWJ sequences) each treated as one cursor-movement unit.
   visual-quality tradeoff to decide empirically against real rendered
   text once this phase starts, not speculatively here.
 - Colored glyphs (emoji, via `CBDT`/`COLR`/`SVG` font tables) are out of
-  scope for Phase 5 — monochrome/grayscale glyph rasterization only.
+  scope for Phase 7 — monochrome/grayscale glyph rasterization only.
   Revisit if a real use case needs emoji rendering.
 - Subpixel/LCD-optimized rendering (FreeType supports it) is not a
-  Phase 5 goal — this engine targets modern displays where grayscale
+  Phase 7 goal — this engine targets modern displays where grayscale
   antialiasing is standard; revisit only if a real quality gap shows up.
 - Widget UI (layout containers, styling, menus, buttons, the viewport
-  widget, input routing) is **Phase 6's** job, built on this phase's text
+  widget, input routing) is **Phase 8's** job, built on this phase's text
   layer; this phase only commits to glyph rasterization/atlasing/basic
   layout, not a UI framework.

@@ -1,7 +1,7 @@
-# Phase 9 — Audio
+# Phase 11 — Audio
 
 **Depends on:** Phase 1 (Linux platform layer) for the audio device
-output path; can proceed in parallel with Phases 3-8 once that exists.
+output path; can proceed in parallel with Phases 3-4 and 7-10 once that exists.
 **Goal:** a custom audio mixer with positional 3D sound, no codec/mixing
 libraries.
 **Definition of done:** the custom mixer plays a hand-decoded WAV file

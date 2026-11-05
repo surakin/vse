@@ -46,7 +46,7 @@ Each day has its own file of individually checkable sub-tasks, a docs task, an e
   final lighting model.
 - Camera/view/projection handling decoupled from any one scene format
   (ECS doesn't exist yet — this phase uses a minimal hard-coded scene list,
-  replaced by ECS in Phase 7).
+  replaced by ECS in Phase 9).
 
 ## Notes / open questions
 

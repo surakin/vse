@@ -64,7 +64,7 @@ compute local size, descriptor (set, binding) pairs, interface locations, std140
 is 176 bytes, matching the C++ struct), `NonReadable`, push-constant blocks and that no capability beyond
 Matrix/Shader/ImageQuery is used; it also runs `rhi::ValidateSpirv`.
 
-## Other targets (checked on Day 70, for Phases 12-13)
+## Other targets (checked on Day 70, for Phases 5-6)
 
 `slangc -target hlsl` and `-target metal` produce `lit.vert` and `lit.frag` without errors. Two things to settle then:
 
@@ -92,6 +92,6 @@ identical ones and writes `<name>.perm.inc` beside the usual pair. Limits: 16 op
   otherwise build identical modules silently).
 - Compiler version: the recorded `// compiler:` line is checked like any shader's; `shaders_check` regenerates the
   whole table and compares it.
-- `shader_mint` starts `slangc` itself in this mode (`posix_spawn`, so Linux only for now; Phase 12 revisits it for
+- `shader_mint` starts `slangc` itself in this mode (`posix_spawn`, so Linux only for now; Phase 5 revisits it for
   Windows).
 

@@ -183,8 +183,8 @@ interpretations keep it buildable — flag any that don't match intent:
    not a from-scratch reverse-engineered parser.** Superseded: the earlier
    plan to reimplement the `.uasset`/`.umap` container format from
    community reverse-engineering docs (UAssetAPI/FModel/CUE4Parse) as a
-   from-scratch parser. Instead, the offline Unreal-import tool (Phase
-   15/16) links a DLL built from Unreal Engine's own source and drives its
+   from-scratch parser. Instead, the offline Unreal-import tool (Phases
+   16-17) links a DLL built from Unreal Engine's own source and drives its
    real `UObject`/package-loading system to load a project's content —
    correctness comes from the source, not RE guesswork, and it's far less
    work than reimplementing UE's serialization format by hand. This
@@ -226,12 +226,12 @@ interpretations keep it buildable — flag any that don't match intent:
     conservative verbosity rather than "log everything."
 11. **Every target platform — desktop, mobile, and console — is considered
     in interface design from day one, even though only Linux is
-    implemented before Phase 12.** Implementation still follows the
+    implemented before Phase 5.** Implementation still follows the
     roadmap order (Linux → Windows/macOS → Android/iOS → consoles), but
     that's a build-order decision, not a design-scope one: the
     platform-layer and engine-facing interfaces (window, input, threads,
     files, time — see architecture layers below) must be shaped so that
-    *no* later platform backend (Phases 12-15) ever forces a redesign of
+    *no* later platform backend (Phases 5-6 and 14-15) ever forces a redesign of
     already-built engine layers, mobile/console included. Concretely,
     this means anticipating things Linux/desktop alone wouldn't surface
     even before those backends are implemented: touch/gamepad input
@@ -245,7 +245,15 @@ interpretations keep it buildable — flag any that don't match intent:
     constraints (a specific console SDK, an NDA'd requirement) genuinely
     couldn't have been anticipated, that's a real exception to flag and
     fix explicitly — not something to design around casually.
-12. **The resource system (Phase 10) has pluggable storage backends and
+    **Order (changed 2026-11-05):** the Windows and macOS ports (Phases
+    5 and 6) now come right after the renderer core, so the RHI and the
+    platform seams are tested against a second and third backend while
+    they are still small. **Open, not decided:** how Phases 7-13 (text,
+    UI, ECS, physics, audio, assets, scripting) keep the Windows and
+    macOS builds working — a closing day in each phase that ports its
+    platform-dependent parts, or a periodic catch-up phase. Decide when
+    Phase 6 completes; record the answer here.
+12. **The resource system (Phase 12) has pluggable storage backends and
     versioned per-type binary formats.** Resources are loaded through a
     backend abstraction — pak-file (packed archive), filesystem (loose
     files, for fast dev iteration without repacking), and network
@@ -255,7 +263,7 @@ interpretations keep it buildable — flag any that don't match intent:
     material, level, ...) owns its own binary format with an explicit
     version header; the runtime loader supports old versions rather than
     breaking previously-minted content when a format changes — this is
-    the resolution to the versioning/migration question Phase 10 already
+    the resolution to the versioning/migration question Phase 12 already
     flagged as open. Binary is the default and required format
     engine-wide; a parallel text format is optional per type, added only
     where it earns its keep (chiefly where hand-editing or VCS-friendly
@@ -274,7 +282,7 @@ interpretations keep it buildable — flag any that don't match intent:
     ships inside the runtime engine/game binary — unlike CMake or the
     Unreal DLL, which are dev-time/import-tool-only — but its license
     (MIT) imposes no meaningful restriction, unlike the Unreal EULA
-    question in assumption #6. Phase 11's scripting subsystem is designed
+    question in assumption #6. Phase 13's scripting subsystem is designed
     with a pluggable language-backend seam (matching the pattern already
     used for the RHI, resource, and window backends) so more "well-known
     languages" can be added later as additive backends, not a redesign.
@@ -283,12 +291,12 @@ interpretations keep it buildable — flag any that don't match intent:
     **Open note, not yet resolved:** LuaJIT's JIT (runtime code
     generation) is disallowed on iOS App Store builds and typically on
     console certification; LuaJIT has an interpreter-only fallback mode
-    for those. Phase 11's embedding should keep JIT-vs-interpreter a
+    for those. Phase 13's embedding should keep JIT-vs-interpreter a
     platform-config choice, not an API change (ties to assumption #11) —
-    exact handling is deferred to Phases 13/15.
+    exact handling is deferred to Phases 14/15.
 14. **Unreal import (Phases 16-17) is sequenced after multiplatform
-    support (Phases 12-15), not immediately after the asset pipeline
-    (Phase 10).** Originally Phases 9 and 11 in an earlier draft's
+    support (Phases 5-6 and 14-15), not immediately after the asset pipeline
+    (Phase 12).** Originally Phases 9 and 11 in an earlier draft's
     numbering (superseded by this reordering itself, not part of the
     current roadmap); moved so the engine reaches
     Linux+Windows+macOS/iOS+Android+console viability first, with Unreal
@@ -296,9 +304,11 @@ interpretations keep it buildable — flag any that don't match intent:
     layered on afterward rather than gating or getting entangled with
     porting work. Assumption #11's "no platform ever forces a redesign"
     guarantee already meant this reordering needed no interface changes
-    to Phases 0-11; it's a pure roadmap-order change. Scripting (Phase
-    10) stays ahead of multiplatform since it doesn't depend on porting
-    being done first.
+    to the phases that existed then; it's a pure roadmap-order change.
+    (The Windows and macOS ports were later pulled forward to Phases 5-6,
+    right after the renderer core — see the 2026-11-05 progress-log
+    entry; Android, iOS and consoles stay after Scripting, with Unreal
+    import after them.)
 15. **The job system (Phase 2) is its own layer above Platform, and jobs
     are C++20 coroutines — not stackful fibers.** The engine is heavily
     multithreaded by design, so every later multithreaded subsystem (ECS
@@ -326,7 +336,7 @@ interpretations keep it buildable — flag any that don't match intent:
     returns control to the scheduler without blocking the OS thread. This
     is pure standard C++ — nothing OS- or ABI-specific anywhere in this
     phase — and the same mechanism doubles as the async-I/O primitive
-    (Phase 10's asset streaming), rather than needing a second suspension
+    (Phase 12's asset streaming), rather than needing a second suspension
     mechanism alongside fibers. Coroutine-frame allocation is routed
     through a Foundation pool allocator (via `promise_type::operator
     new/delete`) rather than the global default `new`, keeping the
@@ -360,7 +370,7 @@ interpretations keep it buildable — flag any that don't match intent:
     still compiles and runs exception-free. Whether `-fno-rtti` also
     needs a test-target carve-out is unverified until Day 15 actually
     builds against Catch2 — flagged there, not assumed here.
-17. **Font rendering (Phase 5) is backed by FreeType — a deliberate,
+17. **Font rendering (Phase 7) is backed by FreeType — a deliberate,
     individually-justified third-party dependency exception, the same
     category as Lua/LuaJIT (assumption #13), not Catch2 (assumption
     #16, dev-time only).** FreeType ships inside the runtime engine/
@@ -383,13 +393,13 @@ interpretations keep it buildable — flag any that don't match intent:
     present the same way on every platform in this project's roadmap
     (Android, iOS, consoles — Phases 14-15) — the same reasoning that
     put LuaJIT under vendored/embedded rather than system-linked.
-    **Scope for Phase 5:** font parsing, glyph rasterization/hinting,
+    **Scope for Phase 7:** font parsing, glyph rasterization/hinting,
     and glyph-atlas packing (uploaded through the Phase 3 RHI as a
     texture) are FreeType's job. Text *shaping* for complex scripts
     (Arabic/Indic joining and reordering, contextual ligatures) is
-    explicitly out of scope for Phase 5 — that's HarfBuzz's problem
+    explicitly out of scope for Phase 7 — that's HarfBuzz's problem
     domain, a separate library this plan does not commit to yet.
-    Phase 5 targets Latin-script-family text correctly (the common
+    Phase 7 targets Latin-script-family text correctly (the common
     case for this project's near-term game/editor UI needs) using
     FreeType's per-glyph advance-width metrics directly; cursor
     placement, line-break candidates, and multi-codepoint clusters
@@ -414,7 +424,7 @@ interpretations keep it buildable — flag any that don't match intent:
       was never used.
     - **Settled 2026-11-04 (for Phase 4 on): Slang.** The long-term source
       language is Slang, compiled offline by `slangc` to SPIR-V now and to
-      DXIL/HLSL and MSL when Phases 12-13 need them, with Slang's reflection
+      DXIL/HLSL and MSL when Phases 5-6 need them, with Slang's reflection
       and specialization feeding the material system. Chosen for
       platform portability: one source for Vulkan, D3D12/Xbox, Metal and
       Android, with HLSL/GLSL output for console vendor compilers, built-in
@@ -430,7 +440,7 @@ interpretations keep it buildable — flag any that don't match intent:
       Phase 4 Days 69-70 (`slangc` v2026.18.2, flags and pitfalls in
       `shaders/README.md`); the Slang output reproduced every golden image
       unchanged, and the GLSL sources and the `glslc` path were removed on
-      Day 70. Open items for Phases 12-13: Metal renames an entry point
+      Day 70. Open items for Phases 5-6: Metal renames an entry point
       called `main`, and no Slang flag flips clip-space Y for HLSL/Metal
       (see `shaders/README.md`, "Other targets").
     - The RHI already takes bytecode (`ShaderDesc` holds SPIR-V words); the
@@ -486,7 +496,7 @@ interpretations keep it buildable — flag any that don't match intent:
   the same tool version must produce byte-identical outputs, with no
   timestamps, absolute paths, hash-map iteration order or thread-timing
   dependence in the result. `shaders_check` already enforces this for
-  shaders by recompiling and comparing bytes; every Phase 10 minter gets
+  shaders by recompiling and comparing bytes; every Phase 12 minter gets
   an equivalent determinism test.
  A day that adds or changes public API
   (headers named by `docs/reference/modules.txt`) ships its `///` comments,
@@ -569,19 +579,19 @@ PLAN.md
 | 2.5 | **Documentation tooling (`docgen`)** | none (dev tool) | [plans/phase-02-5-docs-tooling.md](plans/phase-02-5-docs-tooling.md) | Own C++ tool generates the API reference from `///` comments, checks links, compiles doc samples and lints coverage; wired into ctest |
 | 3 | Vulkan RHI | Linux | [plans/phase-03-vulkan-rhi.md](plans/phase-03-vulkan-rhi.md) | RHI renders a lit, textured cube through Vulkan; no Vulkan calls leak outside `/engine/rhi/vulkan` |
 | 4 | Renderer core | Linux | [plans/phase-04-renderer-core.md](plans/phase-04-renderer-core.md) | Render graph draws multiple objects, basic materials/lighting, depth buffering |
-| 5 | **Font & text rendering** | Linux | [plans/phase-05-font-text-rendering.md](plans/phase-05-font-text-rendering.md) | Arbitrary UTF-8 text (via FreeType-rasterized glyphs, Day 10-12 grapheme clustering for cursor/line-break correctness) renders on screen through the RHI at an interactive frame rate |
-| 6 | **UI system (widgets & viewport)** | Linux | [plans/phase-06-ui-system.md](plans/phase-06-ui-system.md) | Retained widget toolkit (menus, buttons, comboboxes, scrollbars, labels, text fields...) on the RHI and Phase 5 text, with a viewport widget that renders the 3D world inside a resizable panel and routes input correctly |
-| 7 | ECS | Linux | [plans/phase-07-ecs.md](plans/phase-07-ecs.md) | Thousands of entities updated per frame, benchmarked vs. naive OOP baseline |
-| 8 | Physics | Linux | [plans/phase-08-physics.md](plans/phase-08-physics.md) | Rigid body sim: gravity, collision, resolution for boxes/spheres/capsules |
-| 9 | Audio | Linux | [plans/phase-09-audio.md](plans/phase-09-audio.md) | Custom mixer plays hand-decoded WAV, positional 3D audio |
-| 10 | Asset pipeline & resource system | Linux | [plans/phase-10-asset-pipeline.md](plans/phase-10-asset-pipeline.md) | Offline mint → versioned per-type binary formats, loaded at runtime through pak/filesystem resource backends |
-| 11 | Scripting (Lua/LuaJIT) | Linux | [plans/phase-11-scripting.md](plans/phase-11-scripting.md) | LuaJIT runs a gameplay script that spawns/moves an entity via engine API bindings |
-| 12 | Windows port + DX12 backend | Windows | [plans/phase-12-windows-dx12.md](plans/phase-12-windows-dx12.md) | Phases 1-11 running on Windows through the DX12 RHI backend |
-| 13 | macOS/iOS port + Metal backend | macOS, iOS | [plans/phase-13-macos-ios-metal.md](plans/phase-13-macos-ios-metal.md) | Phases 1-11 running through the Metal RHI backend |
-| 14 | Android port | Android | [plans/phase-14-android.md](plans/phase-14-android.md) | Vulkan backend reused; touch input platform layer |
+| 5 | Windows port + DX12 backend | Windows | [plans/phase-05-windows-dx12.md](plans/phase-05-windows-dx12.md) | Phases 1-4's functionality (window/input, RHI, renderer) running on Windows through the DX12 RHI backend; the Phase 3 golden images and Phase 4 scene tests pass |
+| 6 | macOS port + Metal backend | macOS | [plans/phase-06-macos-metal.md](plans/phase-06-macos-metal.md) | Phases 1-4's functionality running on macOS through the Metal RHI backend; the same golden images and scene tests pass |
+| 7 | **Font & text rendering** | Linux | [plans/phase-07-font-text-rendering.md](plans/phase-07-font-text-rendering.md) | Arbitrary UTF-8 text (via FreeType-rasterized glyphs, Day 10-12 grapheme clustering for cursor/line-break correctness) renders on screen through the RHI at an interactive frame rate |
+| 8 | **UI system (widgets & viewport)** | Linux | [plans/phase-08-ui-system.md](plans/phase-08-ui-system.md) | Retained widget toolkit (menus, buttons, comboboxes, scrollbars, labels, text fields...) on the RHI and Phase 7 text, with run-time-swappable themes, a viewport widget that renders the 3D world inside a resizable panel and routes input correctly, and UI surfaces that render into a texture (in-world screens) |
+| 9 | ECS | Linux | [plans/phase-09-ecs.md](plans/phase-09-ecs.md) | Thousands of entities updated per frame, benchmarked vs. naive OOP baseline |
+| 10 | Physics | Linux | [plans/phase-10-physics.md](plans/phase-10-physics.md) | Rigid body sim: gravity, collision, resolution for boxes/spheres/capsules |
+| 11 | Audio | Linux | [plans/phase-11-audio.md](plans/phase-11-audio.md) | Custom mixer plays hand-decoded WAV, positional 3D audio |
+| 12 | Asset pipeline & resource system | Linux | [plans/phase-12-asset-pipeline.md](plans/phase-12-asset-pipeline.md) | Offline mint → versioned per-type binary formats, loaded at runtime through pak/filesystem resource backends |
+| 13 | Scripting (Lua/LuaJIT) | Linux | [plans/phase-13-scripting.md](plans/phase-13-scripting.md) | LuaJIT runs a gameplay script that spawns/moves an entity via engine API bindings |
+| 14 | Android + iOS ports | Android, iOS | [plans/phase-14-android-ios.md](plans/phase-14-android-ios.md) | Android reuses the Vulkan backend, iOS the Metal backend from Phase 6; touch input and app-lifecycle platform layers |
 | 15 | Console ports | Xbox, PS5 | [plans/phase-15-consoles.md](plans/phase-15-consoles.md) | Gated on dev kit/NDA access; same RHI, new platform layer |
 | 16 | **Unreal asset & level import** | Linux | [plans/phase-16-unreal-asset-import.md](plans/phase-16-unreal-asset-import.md) | A real UE5 project's meshes/textures/materials/one level import and render in-engine |
-| 17 | **Unreal Blueprint import** | Linux | [plans/phase-17-unreal-blueprint-import.md](plans/phase-17-unreal-blueprint-import.md) | A simple real Blueprint's logic runs correctly, transpiled to Lua and executed via Phase 11's scripting subsystem |
+| 17 | **Unreal Blueprint import** | Linux | [plans/phase-17-unreal-blueprint-import.md](plans/phase-17-unreal-blueprint-import.md) | A simple real Blueprint's logic runs correctly, transpiled to Lua and executed via Phase 13's scripting subsystem |
 | 18 | Editor tooling | Linux first | [plans/phase-18-editor.md](plans/phase-18-editor.md) | In-engine editor: scene view, entity inspector, asset browser |
 | 19 | First playable demo | Linux, Windows | [plans/phase-19-first-playable-demo.md](plans/phase-19-first-playable-demo.md) | A small real game built with the engine, dogfooding every system |
 | 20+ | Feature-parity push | all | [plans/phase-20-feature-parity.md](plans/phase-20-feature-parity.md) | Ongoing: advanced rendering, world streaming, networking — scoped when reached |
@@ -666,13 +676,27 @@ that changed from the plan and why.)_
   MSAA in the RHI), a generic render graph on top of the RHI, and none of the
   deferred RHI extras (bindless, indirect draws, async compute).
 
-- **2026-11-05 — Phase 6 scope: theming and UI render-to-texture.**
+- **2026-11-05 — UI phase scope (then Phase 6, now Phase 8): theming and UI render-to-texture.**
   Theming is a required deliverable (run-time-swappable themes, per
   subtree and per surface, named widget variants), not a stretch. A new
   "UI surfaces" section adds rendering a widget tree into an offscreen
   texture so UIs can appear on world objects such as screens: widgets
   must not assume a window target, and input arrives as an abstract
   event stream a surface can be fed (from a window, or from a ray hit on
-  a mesh). The Phase 6 definition of done now includes both. Plan-only
-  change; Phase 6 still needs its day files before it can start.
+  a mesh). The UI phase's definition of done now includes both. Plan-only
+  change; that phase still needs its day files before it can start.
+
+- **2026-11-05 — Windows and macOS ports moved up to Phases 5 and 6.**
+  The user wants both desktop ports right after the renderer core instead
+  of after Scripting. Phases were reordered and renumbered (files renamed,
+  cross-references updated; dated design docs from before 2026-11-04 and
+  earlier log entries keep the numbers they were written with):
+  old 5→7 Font, 6→8 UI, 7→9 ECS, 8→10 Physics, 9→11 Audio, 10→12 Assets,
+  11→13 Scripting, 12→5 Windows+DX12, 13→6 macOS+Metal. The iOS platform
+  layer left the macOS phase and joined Android in Phase 14 ("Android and
+  iOS ports"). Phases 14-20 keep their numbers. Hardware: a Windows PC and
+  a 2019 Intel MacBook Pro (Intel/AMD GPU; Apple Silicon behavior stays
+  unverified, see `plans/phase-06-macos-metal.md`). Open: how Phases 7-13
+  keep the Windows/macOS builds working (assumption #11). Plan-only
+  change; Phases 5 and 6 still need day files before they can start.
 

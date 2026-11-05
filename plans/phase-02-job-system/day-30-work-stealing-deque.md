@@ -51,7 +51,7 @@ tests now assert thieves really stole (`stolen > 0`, `steals > 0`),
 count spurious/out-of-range handles (`g_bad_ids == 0`), and thieves
 yield while empty instead of spinning.
 Declined: a shared `kCacheLine` constant (no such constant exists yet;
-revisit at the Apple-silicon port, Phase 13). `.vscode/` gitignore left
+revisit at the Apple-silicon port, Phase 6). `.vscode/` gitignore left
 alone (not part of this change).
 Verified: 1M ops with 1 and 4 thieves + 300k single-element rounds clean
 under plain, ASan and TSan, 15 repeated plain runs and 5 TSan runs.
