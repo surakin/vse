@@ -11,10 +11,20 @@ flavors; the phase of the day's work is recorded in one place and read by the sc
 the tests of any earlier-phase module a diff modifies; `CLAUDE.md`, `STATUS.md` and the docs say when each run is
 required; every phase-complete day in the plan ends with the full run.
 
-Before it starts, every day of this phase needs its own file under `plans/phase-05-test-scoping/` (see `CLAUDE.md`,
-planning policy).
+Every day of this phase has its own file under `plans/phase-05-test-scoping/` (see `CLAUDE.md`, planning policy).
 
-## Key deliverables (to be expanded into day-by-day tasks when started)
+## Days
+
+Each day has its own file of individually checkable sub-tasks, a docs task, an end-of-day `/code-review high` task where code changes, and a concrete Done condition. Day numbers continue from Phase 4 (which ended at Day 84).
+
+85. [Test Inventory & Scoping Design](phase-05-test-scoping/day-85-test-inventory-design.md)
+86. [Phase Labels for Every Test](phase-05-test-scoping/day-86-phase-labels.md)
+87. [Phase Labels for the RHI and Renderer Tests](phase-05-test-scoping/day-87-rhi-renderer-labels.md)
+88. [The Runner & Touched-Module Selection](phase-05-test-scoping/day-88-runner-and-affected.md)
+89. [Workflow, Policy & Docs](phase-05-test-scoping/day-89-workflow-policy-docs.md)
+90. [Measurement, Full Run & Phase Wrap-up](phase-05-test-scoping/day-90-measure-wrapup.md)
+
+## Key deliverables
 
 - **A phase for every test.** ctest labels `phase0` ... `phaseN` (and `phase2.5`) assigned by CMake from one table
   that maps a test source file or directory to its phase. A test with no phase fails a `test_phase_labels` ctest, so a
