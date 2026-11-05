@@ -506,13 +506,13 @@ interpretations keep it buildable — flag any that don't match intent:
 - **Owning arrays are foundation containers, never raw `new[]`/`delete[]`.**
   Hand-paired `new T[n]` / `delete[] p` is correct but error-prone (leaks
   on early-return paths, mismatched delete forms). The foundation has two
-  owning types: `Array<T>`, a constant-size memory block (size fixed at
-  construction), and `Vector<T>`, the growable container (what Phase 0 Day
-  6 called `Array`, renamed in Phase 4 Day 80a). Engine code that owns a
-  run of elements uses one of them, so the storage is released by a
-  destructor on every path. Raw array `new` is allowed only inside the
-  foundation allocators themselves. Enforced by a `ctest` source scan
-  (Day 80a); applies to every later phase.
+  array types and nothing else is needed: `Array<T, N>` is `std::array`-like
+  (compile-time size, inline storage, so an object holding one is its
+  members plus the array), and `Vector<T>` is every other case (runtime
+  size or growth; it owns heap storage by default and frees it). `Vector`
+  is what Phase 0 Day 6 called `Array`, renamed in Phase 4 Day 80a. Raw
+  array `new` is allowed only inside the foundation allocators themselves.
+  Enforced by a `ctest` source scan (Day 80a); applies to every later phase.
 - **Quiet by default.** Logging is channel-based with per-channel verbosity
   and per-user configuration from day one — no Unreal-style log spam.
 
