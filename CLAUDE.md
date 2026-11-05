@@ -33,6 +33,15 @@ sub-tasks (see "How the plan is structured" below), is not yet
 startable; doing that breakdown is itself planning work that has to
 happen, and be committed, first.
 
+## Claude memory lives in the repo
+
+The auto-memory files are `claude-memory/` in this repo, so they move with
+the checkout between machines. Claude Code looks for them under
+`~/.claude/projects/<project path>/memory`, which is a symlink to that
+directory; on a new machine run `scripts/link-claude-memory.sh` once. Memory
+edits show up as ordinary changes under `claude-memory/` and are committed
+and pushed with the work that prompted them.
+
 ## Known issues are tracked (required)
 
 `KNOWN-ISSUES.md` lists failing tests, flaky tests, checks no human has done
