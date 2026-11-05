@@ -14,6 +14,7 @@ with basic materials and lighting, with correct depth buffering.
 - **Deferred RHI features (bindless, indirect draws, async compute): all out** for this phase; revisit with profiling data.
 
 - **Vertex colors (added 2026-11-05, from Phase 7's colored 3D text):** meshes may carry an optional RGBA8 per-vertex color in a second vertex stream; `StandardVertex` is unchanged. Built on Day 78 with a `VERTEX_COLOR` material permutation.
+- **Triangle strips and primitive restart (added 2026-11-05):** the RHI already has `TriangleStrip` but no restart and no test; the renderer has no topology. Built on Day 78 (RHI restart + GPU test, mesh/material/cache-key topology, strip/list helpers). Needed by Phase 7's 3D text meshes and generally for vertex-efficient geometry.
 
 ## Days
 

@@ -54,7 +54,9 @@ renderer like any other mesh.
   functions and are tested without a GPU (watertightness, triangle
   winding, area against the contour area, holes). Meshes for a string are
   built on demand and cached per glyph so repeated characters share work.
-  Colored glyphs use the per-vertex colors added in Phase 4 Day 78 (see
+  Where it shrinks the vertex count (side walls, bevels, caps of convex
+  runs), glyph meshes may use triangle strips with restart indices
+  (Phase 4 Day 78 topology support). Colored glyphs use the per-vertex colors added in Phase 4 Day 78 (see
   the colored-glyphs note below).
 
 ## Notes / open questions
