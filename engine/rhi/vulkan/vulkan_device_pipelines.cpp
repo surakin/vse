@@ -53,30 +53,33 @@ bool MakeDirectories(const char* path) {
     return true;
 }
 
-// Reads a whole file into a new[] buffer; null if it does not exist or cannot be read.
-unsigned char* ReadFile(const char* path, usize* size) {
+// Reads a whole file into `out`; false if it does not exist or cannot be read.
+bool ReadFile(const char* path, Vector<unsigned char>* out) {
     struct stat info;
     if (stat(path, &info) != 0 || !S_ISREG(info.st_mode)) {
-        return nullptr; // missing, or not a regular file (a directory or a pipe must not stall start-up)
+        return false; // missing, or not a regular file (a directory or a pipe must not stall start-up)
     }
     std::FILE* f = std::fopen(path, "rb");
     if (f == nullptr) {
-        return nullptr;
+        return false;
     }
     const long end = static_cast<long>(info.st_size);
     if (end <= 0 || end > (256l << 20)) {
         std::fclose(f);
-        return nullptr;
+        return false;
     }
-    unsigned char* data = new unsigned char[static_cast<usize>(end)];
-    const usize got = std::fread(data, 1, static_cast<usize>(end), f);
+    Vector<unsigned char> data;
+    if (!data.TryResizeUninitialized(static_cast<usize>(end))) {
+        std::fclose(f);
+        return false;
+    }
+    const usize got = std::fread(data.Data(), 1, static_cast<usize>(end), f);
     std::fclose(f);
     if (got != static_cast<usize>(end)) {
-        delete[] data;
-        return nullptr;
+        return false;
     }
-    *size = got;
-    return data;
+    *out = static_cast<Vector<unsigned char>&&>(data);
+    return true;
 }
 
 bool WriteFileAtomically(const char* path, const void* data, usize size) {
@@ -106,22 +109,20 @@ void VulkanDevice::InitializePipelineCache(const DeviceCreateInfo& info) {
     identity.device_id = properties_.deviceID;
     std::memcpy(identity.uuid, properties_.pipelineCacheUUID, 16);
 
-    unsigned char* blob = nullptr;
-    usize blob_size = 0;
+    Vector<unsigned char> blob;
     if (info.pipeline_cache) {
         char dir[400];
         if (ChoosePipelineCacheDir(info.pipeline_cache_dir, std::getenv("ENGINE_RHI_CACHE_DIR"), std::getenv("XDG_CACHE_HOME"),
                                    std::getenv("HOME"), info.application_name, dir, sizeof(dir)) &&
             BuildPipelineCachePath(dir, identity, cache_path_, sizeof(cache_path_))) {
             cache_stats_.enabled = true;
-            blob = ReadFile(cache_path_, &blob_size);
-            if (blob != nullptr) {
-                const char* why = CheckPipelineCacheHeader(blob, blob_size, identity);
+            ReadFile(cache_path_, &blob);
+            if (blob.Size() != 0) {
+                const char* why = CheckPipelineCacheHeader(blob.Data(), blob.Size(), identity);
                 if (why != nullptr) {
                     RhiLog(LogVerbosity::Warn, "Vulkan: ignoring %s: %s", cache_path_, why);
                     cache_stats_.rejected = true;
-                    delete[] blob;
-                    blob = nullptr;
+                    blob.Reset();
                 }
             }
         } else {
@@ -132,19 +133,18 @@ void VulkanDevice::InitializePipelineCache(const DeviceCreateInfo& info) {
 
     VkPipelineCacheCreateInfo cache_info{};
     cache_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-    cache_info.initialDataSize = blob != nullptr ? blob_size : 0;
-    cache_info.pInitialData = blob;
+    cache_info.initialDataSize = blob.Size();
+    cache_info.pInitialData = blob.Data();
     VkResult result = fns_.CreatePipelineCache(device_, &cache_info, nullptr, &pipeline_cache_);
-    if (result != VK_SUCCESS && blob != nullptr) {
+    if (result != VK_SUCCESS && blob.Size() != 0) {
         // The driver refused the blob (its own validation is stricter than ours): start empty.
         RhiLog(LogVerbosity::Warn, "Vulkan: the driver rejected %s; starting with an empty pipeline cache", cache_path_);
         cache_stats_.rejected = true;
-        blob_size = 0;
         cache_info.initialDataSize = 0;
         cache_info.pInitialData = nullptr;
         result = fns_.CreatePipelineCache(device_, &cache_info, nullptr, &pipeline_cache_);
     }
-    delete[] blob;
+    blob.Reset();
     if (result != VK_SUCCESS) {
         RhiLog(LogVerbosity::Warn, "Vulkan: cannot create a pipeline cache (%s); pipelines compile without one", VkResultName(result));
         pipeline_cache_ = nullptr;
@@ -173,9 +173,12 @@ bool VulkanDevice::SavePipelineCache() {
     if (fns_.GetPipelineCacheData(device_, pipeline_cache_, &size, nullptr) != VK_SUCCESS || size == 0) {
         return false;
     }
-    unsigned char* data = new unsigned char[size];
+    Vector<unsigned char> data;
+    if (!data.TryResizeUninitialized(size)) {
+        return false;
+    }
     bool saved = false;
-    if (fns_.GetPipelineCacheData(device_, pipeline_cache_, &size, data) == VK_SUCCESS) {
+    if (fns_.GetPipelineCacheData(device_, pipeline_cache_, &size, data.Data()) == VK_SUCCESS) {
         char dir[512];
         std::strncpy(dir, cache_path_, sizeof(dir) - 1);
         dir[sizeof(dir) - 1] = '\0';
@@ -183,7 +186,7 @@ bool VulkanDevice::SavePipelineCache() {
         if (slash != nullptr) {
             *slash = '\0';
         }
-        if (MakeDirectories(dir) && WriteFileAtomically(cache_path_, data, size)) {
+        if (MakeDirectories(dir) && WriteFileAtomically(cache_path_, data.Data(), size)) {
             std::lock_guard<std::mutex> lock(resource_mutex_);
             cache_stats_.saved_bytes = size;
             saved = true;
@@ -191,7 +194,6 @@ bool VulkanDevice::SavePipelineCache() {
             RhiLog(LogVerbosity::Warn, "Vulkan: cannot save the pipeline cache to %s", cache_path_);
         }
     }
-    delete[] data;
     return saved;
 }
 

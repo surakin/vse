@@ -78,22 +78,20 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessengerCallback(VkDebugUtilsMessageSeverit
     return VK_FALSE; // never abort the Vulkan call itself
 }
 
-// A heap array of the properties of one extension list, freed on scope exit.
+// The properties of one extension list.
 struct ExtensionList {
-    VkExtensionProperties* items = nullptr;
+    Vector<VkExtensionProperties> items;
     u32 count = 0;
-    ~ExtensionList() { delete[] items; }
-    ExtensionList() = default;
-    ExtensionList(const ExtensionList&) = delete;
-    ExtensionList& operator=(const ExtensionList&) = delete;
 
     bool Load(const VkGlobalFns& fns, const char* layer_name) {
         VkResult r = fns.EnumerateInstanceExtensionProperties(layer_name, &count, nullptr);
         if (r != VK_SUCCESS) {
             return false;
         }
-        items = new VkExtensionProperties[count > 0 ? count : 1];
-        r = fns.EnumerateInstanceExtensionProperties(layer_name, &count, items);
+        if (!items.TryResize(count > 0 ? count : 1)) {
+            return false;
+        }
+        r = fns.EnumerateInstanceExtensionProperties(layer_name, &count, items.Data());
         return r == VK_SUCCESS || r == VK_INCOMPLETE;
     }
     bool Has(const char* name) const {
@@ -111,15 +109,17 @@ bool HasLayer(const VkGlobalFns& fns, const char* name) {
     if (fns.EnumerateInstanceLayerProperties(&count, nullptr) != VK_SUCCESS || count == 0) {
         return false;
     }
-    VkLayerProperties* layers = new VkLayerProperties[count];
-    VkResult r = fns.EnumerateInstanceLayerProperties(&count, layers);
+    Vector<VkLayerProperties> layers;
+    if (!layers.TryResize(count)) {
+        return false;
+    }
+    VkResult r = fns.EnumerateInstanceLayerProperties(&count, layers.Data());
     bool found = false;
     if (r == VK_SUCCESS || r == VK_INCOMPLETE) {
         for (u32 i = 0; i < count && !found; ++i) {
             found = std::strcmp(layers[i].layerName, name) == 0;
         }
     }
-    delete[] layers;
     return found;
 }
 

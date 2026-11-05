@@ -45,23 +45,6 @@ bool HasColor(const VertexLayoutData& layout) {
     return false;
 }
 
-// One visible object on its way into the draw list.
-struct Entry {
-    u64 key = 0;
-    u32 slot = 0;
-    rhi::PipelineHandle pipeline;
-    rhi::BindGroupHandle material_group;
-    const GpuMesh* mesh = nullptr;
-};
-
-int CompareEntries(const void* a, const void* b) {
-    const Entry* x = static_cast<const Entry*>(a);
-    const Entry* y = static_cast<const Entry*>(b);
-    if (x->key != y->key) return x->key < y->key ? -1 : 1;
-    if (x->slot != y->slot) return x->slot < y->slot ? -1 : 1;
-    return 0;
-}
-
 } // namespace
 
 bool CheckGBufferFormats(const rhi::Device* device, char* error, usize error_capacity) {
@@ -222,29 +205,28 @@ MaterialId CreateGBufferMaterial(MaterialSystem* materials, const GBufferTemplat
 
 // ---- GBufferPass ----
 
+struct GBufferPass::SortEntry {
+    u64 key = 0;
+    u32 slot = 0;
+    rhi::PipelineHandle pipeline;
+    rhi::BindGroupHandle material_group;
+    const GpuMesh* mesh = nullptr;
+};
+
 GBufferPass::GBufferPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame) : device_(device), materials_(materials), frame_(frame) {
     ENGINE_ASSERT(device != nullptr && materials != nullptr && frame != nullptr, "GBufferPass: device, materials or frame is null");
     const u32 cap = frame->MaxObjects();
-    draws_ = new (std::nothrow) Draw[cap];
-    slots_ = new (std::nothrow) u32[cap];
-    sort_scratch_ = new (std::nothrow) Entry[cap];
-    if (draws_ == nullptr || slots_ == nullptr || sort_scratch_ == nullptr) {
+    if (!draws_.TryResize(cap) || !slots_.TryResize(cap) || !sort_scratch_.TryResize(cap)) {
         RenderLog(LogVerbosity::Error, "GBufferPass: out of memory for %u objects", cap);
-        delete[] draws_;
-        delete[] slots_;
-        delete[] static_cast<Entry*>(sort_scratch_);
-        draws_ = nullptr;
-        slots_ = nullptr;
-        sort_scratch_ = nullptr;
+        draws_.Reset();
+        slots_.Reset();
+        sort_scratch_.Reset();
+    } else {
+        storage_ok_ = true;
     }
 }
 
-GBufferPass::~GBufferPass() {
-    delete[] draws_;
-    delete[] slots_;
-    delete[] cull_slots_;
-    delete[] static_cast<Entry*>(sort_scratch_);
-}
+GBufferPass::~GBufferPass() = default;
 
 void GBufferPass::Reject(const char* fmt, ...) {
     ++stats_.rejected;
@@ -260,7 +242,7 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
     error_[0] = '\0';
     draw_count_ = 0;
     added_ = false;
-    if (draws_ == nullptr) {
+    if (!storage_ok_) {
         std::snprintf(error_, sizeof(error_), "G-buffer: the pass could not allocate its draw list");
         return false;
     }
@@ -276,23 +258,18 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
 
     // Cull into a scratch array sized for the scene; the pass's own arrays hold at most FrameResources::MaxObjects().
     const u32 scene_slots = scene.SlotCount();
-    u32* visible_slots = slots_;
+    u32* visible_slots = slots_.Data();
     if (scene_slots > cap) {
-        if (cull_capacity_ < scene_slots) {
-            delete[] cull_slots_;
-            cull_slots_ = new (std::nothrow) u32[scene_slots];
-            cull_capacity_ = cull_slots_ != nullptr ? scene_slots : 0;
-        }
-        if (cull_slots_ == nullptr) {
+        if (cull_slots_.Size() < scene_slots && !cull_slots_.TryResize(scene_slots)) {
             std::snprintf(error_, sizeof(error_), "G-buffer: out of memory for the cull list");
             return false;
         }
-        visible_slots = cull_slots_;
+        visible_slots = cull_slots_.Data();
     }
     const u32 visible = scene.Cull(frustum, visible_slots, scene_slots);
     stats_.visible = visible;
 
-    Entry* entries = static_cast<Entry*>(sort_scratch_);
+    SortEntry* entries = sort_scratch_.Data();
     u32 entry_count = 0;
     const PipelineTarget target = GBufferPipelineTarget();
     for (u32 i = 0; i < visible; ++i) {
@@ -331,7 +308,7 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
             Reject("G-buffer: no pipeline could be built for the object in slot %u with material %u", slot, object.material);
             continue;
         }
-        Entry& e = entries[entry_count++];
+        SortEntry& e = entries[entry_count++];
         e.key = MakeDrawSortKey(pipeline.index, material.index, mesh->SortId());
         e.slot = slot;
         e.pipeline = pipeline.pipeline;
@@ -339,16 +316,23 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
         e.mesh = mesh;
     }
 
-    std::qsort(entries, entry_count, sizeof(Entry), CompareEntries);
+    auto compare = [](const void* a, const void* b) {
+        const SortEntry* x = static_cast<const SortEntry*>(a);
+        const SortEntry* y = static_cast<const SortEntry*>(b);
+        if (x->key != y->key) return x->key < y->key ? -1 : 1;
+        if (x->slot != y->slot) return x->slot < y->slot ? -1 : 1;
+        return 0;
+    };
+    std::qsort(entries, entry_count, sizeof(SortEntry), compare);
     for (u32 i = 0; i < entry_count; ++i) slots_[i] = entries[i].slot;
-    frame_->WriteObjects(scene, slots_, entry_count);
+    frame_->WriteObjects(scene, slots_.Data(), entry_count);
 
     // Runs of the same material and mesh become one instanced draw; the object data is in the same order, so the
     // instances of a run are consecutive entries.
     rhi::PipelineHandle last_pipeline;
     rhi::BindGroupHandle last_group;
     for (u32 i = 0; i < entry_count; ++i) {
-        const Entry& e = entries[i];
+        const SortEntry& e = entries[i];
         if (draw_count_ > 0) {
             Draw& prev = draws_[draw_count_ - 1];
             if (prev.mesh == e.mesh && prev.material_group == e.material_group && prev.pipeline == e.pipeline) {

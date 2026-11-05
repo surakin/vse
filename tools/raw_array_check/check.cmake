@@ -1,0 +1,83 @@
+# Raw-array gate (Phase 4 Day 80a). Run as:
+#   cmake -DROOT=<tree> -P check.cmake
+# No file under engine/ or game/ may use `new T[n]`, `new (std::nothrow) T[n]` or `delete[]`: owning arrays are
+# `Array<T, N>` (compile-time size, inline) or `Vector<T>` (everything else). The foundation allocators
+# (engine/foundation/mem/) are exempt. Comments are ignored.
+cmake_minimum_required(VERSION 3.20)
+
+if(NOT ROOT)
+  message(FATAL_ERROR "usage: -DROOT=<tree>")
+endif()
+get_filename_component(ROOT "${ROOT}" ABSOLUTE)
+
+function(read_lines path out)
+  file(READ "${path}" content)
+  string(REPLACE ";" "<SEMI>" content "${content}")
+  string(REPLACE "[" "<LB>" content "${content}")
+  string(REPLACE "]" "<RB>" content "${content}")
+  string(REPLACE "\n" ";" content "${content}")
+  set(${out} "${content}" PARENT_SCOPE)
+endfunction()
+
+# `[` and `]` are escaped to <LB>/<RB> by read_lines.
+set(new_re "(^|[^A-Za-z0-9_])new[ \t]+(\\(std::nothrow\\)[ \t]*)?[A-Za-z_][A-Za-z0-9_:<>, \t*]*<LB>")
+set(delete_re "(^|[^A-Za-z0-9_])delete[ \t]*<LB><RB>")
+
+set(files "")
+foreach(dir engine game)
+  file(GLOB_RECURSE found RELATIVE "${ROOT}" "${ROOT}/${dir}/*.h" "${ROOT}/${dir}/*.hpp" "${ROOT}/${dir}/*.cpp"
+       "${ROOT}/${dir}/*.cc" "${ROOT}/${dir}/*.inl" "${ROOT}/${dir}/*.mm")
+  list(APPEND files ${found})
+endforeach()
+
+set(errors 0)
+foreach(f IN LISTS files)
+  if(f MATCHES "^engine/foundation/mem/")
+    continue()
+  endif()
+  read_lines("${ROOT}/${f}" lines)
+  set(n 0)
+  set(in_block FALSE)
+  foreach(l IN LISTS lines)
+    math(EXPR n "${n}+1")
+    set(code "${l}")
+    # String literals can hold `//`, `/*` or the words themselves; blank them before looking at comments.
+    string(REGEX REPLACE "\"([^\"\\\\]|\\\\.)*\"" "\"\"" code "${code}")
+    if(in_block)
+      string(FIND "${code}" "*/" close)
+      if(close LESS 0)
+        continue()
+      endif()
+      math(EXPR after "${close}+2")
+      string(SUBSTRING "${code}" ${after} -1 code)
+      set(in_block FALSE)
+    endif()
+    string(REGEX REPLACE "/\\*[^*]*\\*+([^/*][^*]*\\*+)*/" " " code "${code}") # a complete /* ... */ on one line
+    string(FIND "${code}" "//" slashes)
+    if(NOT slashes LESS 0)
+      string(SUBSTRING "${code}" 0 ${slashes} code)
+    endif()
+    string(FIND "${code}" "/*" open)
+    if(NOT open LESS 0)
+      string(FIND "${code}" "*/" close)
+      if(close LESS 0)
+        string(SUBSTRING "${code}" 0 ${open} code)
+        set(in_block TRUE)
+      endif()
+    endif()
+    if(code MATCHES "${new_re}" OR code MATCHES "${delete_re}")
+      string(REPLACE "<LB>" "[" shown "${l}")
+      string(REPLACE "<RB>" "]" shown "${shown}")
+      string(REPLACE "<SEMI>" ";" shown "${shown}")
+      string(STRIP "${shown}" shown)
+      message(SEND_ERROR "${f}:${n}: raw array allocation; use Array<T, N> or Vector<T>: ${shown}")
+      math(EXPR errors "${errors}+1")
+    endif()
+  endforeach()
+endforeach()
+
+if(errors GREATER 0)
+  message(FATAL_ERROR "raw_array_check: ${errors} violation(s)")
+endif()
+list(LENGTH files total)
+message(STATUS "raw_array_check: ${total} files clean")

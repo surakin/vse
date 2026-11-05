@@ -152,7 +152,7 @@ struct MaterialSystem::MaterialSlot {
     char name[kNameBytes] = {};
     u32 template_index = 0;
     u32 variant_index = 0;
-    unsigned char* shadow = nullptr;
+    Vector<unsigned char> shadow;
     u32 shadow_size = 0;
     rhi::BufferHandle params;
     unsigned char* mapped = nullptr;
@@ -185,9 +185,9 @@ MaterialSystem::MaterialSystem(rhi::Device* device, const MaterialSystemDesc& de
     ENGINE_ASSERT(device != nullptr, "MaterialSystem: the device is null");
     ENGINE_ASSERT(desc.max_templates > 0 && desc.max_materials > 0 && desc.max_pipelines > 0, "MaterialSystem: a capacity is 0");
     ENGINE_ASSERT(desc.max_materials <= (1u << 24) && desc.max_pipelines <= (1u << 16), "MaterialSystem: a capacity exceeds what the draw sort key can hold");
-    templates_ = new TemplateSlot[desc.max_templates];
-    materials_ = new MaterialSlot[desc.max_materials];
-    pipelines_ = new PipelineEntry[desc.max_pipelines];
+    templates_.Resize(desc.max_templates);
+    materials_.Resize(desc.max_materials);
+    pipelines_.Resize(desc.max_pipelines);
 
     rhi::BindingDesc frame_binding;
     frame_binding.binding = 0;
@@ -256,9 +256,6 @@ MaterialSystem::~MaterialSystem() {
     if (default_sampler_.IsValid()) device_->DestroySampler(default_sampler_);
     if (frame_layout_.IsValid()) device_->DestroyBindGroupLayout(frame_layout_);
     if (object_layout_.IsValid()) device_->DestroyBindGroupLayout(object_layout_);
-    delete[] templates_;
-    delete[] materials_;
-    delete[] pipelines_;
 }
 
 bool MaterialSystem::Valid() const { return valid_; }
@@ -611,8 +608,8 @@ MaterialId MaterialSystem::CreateMaterial(TemplateId tmpl, PermutationKey key, c
 
     if (variant->has_block) {
         const u32 size = variant->block.size;
-        m.shadow = new (std::nothrow) unsigned char[size]();
-        m.shadow_size = size;
+        const bool shadow_ok = m.shadow.TryResize(size);
+        m.shadow_size = shadow_ok ? size : 0;
         m.stride = AlignUp(size, device_->Caps().min_uniform_buffer_offset_alignment);
         rhi::BufferDesc bd;
         bd.size = m.stride * kSlots;
@@ -623,7 +620,7 @@ MaterialId MaterialSystem::CreateMaterial(TemplateId tmpl, PermutationKey key, c
         if (m.params.IsValid()) {
             m.mapped = static_cast<unsigned char*>(device_->MapBuffer(m.params));
         }
-        if (m.shadow == nullptr || m.mapped == nullptr) {
+        if (!shadow_ok || m.mapped == nullptr) {
             RenderLog(LogVerbosity::Error, "MaterialSystem: material '%s' not created: its parameter buffer could not be made", m.name);
             DestroyMaterialObjects(m);
             return MaterialId{};
@@ -695,10 +692,9 @@ void MaterialSystem::DestroyMaterialObjects(MaterialSlot& m) {
     }
     if (m.mapped != nullptr) device_->UnmapBuffer(m.params);
     if (m.params.IsValid()) device_->DestroyBuffer(m.params);
-    delete[] m.shadow;
     m.mapped = nullptr;
     m.params = {};
-    m.shadow = nullptr;
+    m.shadow.Reset();
     m.alive = false;
 }
 
@@ -734,8 +730,8 @@ bool MaterialSystem::SetValue(MaterialId id, const char* name, MemberKind kind, 
                   member->size, static_cast<u32>(member->kind), static_cast<u32>(member->rows), static_cast<u32>(member->columns));
         return false;
     }
-    if (std::memcmp(m.shadow + member->offset, data, size) != 0) {
-        std::memcpy(m.shadow + member->offset, data, size);
+    if (std::memcmp(m.shadow.Data() + member->offset, data, size) != 0) {
+        std::memcpy(m.shadow.Data() + member->offset, data, size);
         m.dirty_slots = (1u << kSlots) - 1;
     }
     return true;
@@ -829,7 +825,7 @@ void MaterialSystem::FlushMaterials() {
             }
         }
         if ((m.dirty_slots & (1u << slot_)) != 0) {
-            std::memcpy(m.mapped + m.stride * slot_, m.shadow, m.shadow_size);
+            std::memcpy(m.mapped + m.stride * slot_, m.shadow.Data(), m.shadow_size);
             device_->FlushMappedBuffer(m.params, m.stride * slot_, m.shadow_size);
             m.dirty_slots &= ~(1u << slot_);
             ++stats_.parameter_flushes;

@@ -23,14 +23,11 @@ RenderScene::RenderScene(const RenderSceneDesc& desc) {
     ENGINE_ASSERT(desc.max_objects > 0 && desc.max_lights > 0, "RenderScene: capacities must be at least 1");
     object_capacity_ = desc.max_objects;
     light_capacity_ = desc.max_lights;
-    objects_ = new ObjectSlot[object_capacity_];
-    lights_ = new LightSlot[light_capacity_];
+    objects_.Resize(object_capacity_);
+    lights_.Resize(light_capacity_);
 }
 
-RenderScene::~RenderScene() {
-    delete[] objects_;
-    delete[] lights_;
-}
+RenderScene::~RenderScene() = default;
 
 ObjectId RenderScene::AddObject(const RenderObjectDesc& desc) {
     ENGINE_ASSERT(desc.mesh != nullptr && desc.mesh->Valid(), "AddObject: the mesh is null or empty");

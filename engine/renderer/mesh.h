@@ -2,6 +2,7 @@
 
 //! CPU-side geometry ([[renderer::MeshData]]), its GPU copy ([[renderer::GpuMesh]]) and procedural shapes.
 
+#include "containers/vector.h"
 #include "renderer/bounds.h"
 #include "renderer/shader_reflection.h"
 #include "rhi/rhi.h"
@@ -108,7 +109,7 @@ public:
     /// Returns the vertex bytes (`VertexBytes()` of them), or null if empty.
     /// Fails: never.
     /// Ownership: borrowed; valid until the mesh is changed, moved from or destroyed.
-    const void* Vertices() const { return vertices_; }
+    const void* Vertices() const { return vertices_.Data(); }
     /// Returns the number of vertices.
     u32 VertexCount() const { return vertex_count_; }
     /// Returns the size of the vertex data in bytes.
@@ -116,7 +117,7 @@ public:
     /// Returns the index bytes (`IndexBytes()` of them), or null if empty.
     /// Fails: never.
     /// Ownership: borrowed; valid until the mesh is changed, moved from or destroyed.
-    const void* Indices() const { return indices_; }
+    const void* Indices() const { return indices_.Data(); }
     /// Returns the number of indices.
     u32 IndexCount() const { return index_count_; }
     /// Returns the width of the indices.
@@ -149,9 +150,9 @@ private:
 
     VertexLayoutData layout_;
     u32 position_offset_ = 0;
-    unsigned char* vertices_ = nullptr;
+    Vector<unsigned char> vertices_;
     u32 vertex_count_ = 0;
-    unsigned char* indices_ = nullptr;
+    Vector<unsigned char> indices_;
     u32 index_count_ = 0;
     rhi::IndexType index_type_ = rhi::IndexType::UInt16;
     rhi::PrimitiveTopology topology_ = rhi::PrimitiveTopology::TriangleList;

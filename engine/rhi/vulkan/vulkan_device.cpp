@@ -73,8 +73,9 @@ void DescribeDevice(const VkInstanceFns& fns, VkPhysicalDevice device, VkSurface
 
     u32 ext_count = 0;
     if (fns.EnumerateDeviceExtensionProperties(device, nullptr, &ext_count, nullptr) == VK_SUCCESS && ext_count > 0) {
-        VkExtensionProperties* exts = new VkExtensionProperties[ext_count];
-        VkResult listed = fns.EnumerateDeviceExtensionProperties(device, nullptr, &ext_count, exts);
+        Vector<VkExtensionProperties> exts;
+        exts.Resize(ext_count);
+        VkResult listed = fns.EnumerateDeviceExtensionProperties(device, nullptr, &ext_count, exts.Data());
         if (listed == VK_SUCCESS || listed == VK_INCOMPLETE) {
             for (u32 i = 0; i < ext_count; ++i) {
                 if (std::strcmp(exts[i].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
@@ -85,7 +86,6 @@ void DescribeDevice(const VkInstanceFns& fns, VkPhysicalDevice device, VkSurface
                 }
             }
         }
-        delete[] exts;
     }
 }
 
@@ -359,7 +359,7 @@ VulkanDevice::~VulkanDevice() {
             RhiLog(LogVerbosity::Warn, "Vulkan: %zu bind group layout(s) and %zu pipeline(s) were still alive when the device was destroyed",
                    bind_group_layouts_.LiveCount(), pipelines_.LiveCount());
         }
-        bind_groups_.ForEachLive([&](BindGroupHandle, BindGroupRes& g) { delete[] g.refs; g.refs = nullptr; });
+        bind_groups_.ForEachLive([&](BindGroupHandle, BindGroupRes& g) { g.refs.Reset(); });
         pipelines_.ForEachLive([&](PipelineHandle, PipelineRes& p) {
             fns_.DestroyPipeline(device_, p.pipeline, nullptr);
             ReleasePipelineLayoutLocked(p.layout_slot);

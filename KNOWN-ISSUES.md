@@ -45,3 +45,6 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 | Metal backend behavior on Apple Silicon (unified memory, tile-based rendering, memoryless attachments) cannot be verified on the developer's 2019 Intel MacBook Pro | Phase 6 (record), Phase 14 (iOS device) | `plans/phase-06-macos-metal.md` |
 | How Phases 7-13 keep the Windows/macOS builds working (per-phase closing day vs periodic catch-up) | Decide when Phase 6 completes | `PLAN.md` assumption #11 |
 | Epic's UE EULA terms need review | Before Phase 16 starts | `PLAN.md` (open risk) |
+- `rhi::detail::GrowArray` (`engine/rhi/grow_array.h`, 12 uses in `vk_memory`, `vk_ring`, `null_device`) is a private heap-backed growable array that duplicates `Vector`, which now owns heap storage. Not replaced in Phase 4 Day 80a (it holds trivially copyable values and has `EraseFront`/`Erase` with `memmove`). Seen in the Day 80a review.
+- Single-object `new`/`delete` of non-trivial types (`new WorkerPool`, `new IoThread`, `new ShaderReflection` in `material.cpp`) are not covered by the raw-array policy or the `raw_array_check` gate. Seen in Day 80a.
+- `raw_array_check` is line-based and walks only `engine/` and `game/`: a `new` separated from its `[` across lines is missed, and `tests/` and `tools/` (which may use the STL) are not scanned. Seen in the Day 80a review.

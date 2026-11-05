@@ -5,6 +5,7 @@
 #include <coroutine>
 #include <mutex>
 
+#include "containers/vector.h"
 #include "jobs/deque.h"
 #include "jobs/job.h"
 #include "jobs/worker_pool.h"
@@ -268,7 +269,7 @@ private:
     int OwnIndex() const; // participant index on this scheduler, or -1
 
     usize count_ = 1;
-    Lane* lanes_ = nullptr;
+    Vector<Lane> lanes_;
     WorkerPool* pool_ = nullptr;
     IoThread* io_ = nullptr;
 

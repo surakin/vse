@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "containers/array.h"
 #include "containers/vector.h"
 #include "containers/hash_map.h"
 #include "jobs/async_io.h"

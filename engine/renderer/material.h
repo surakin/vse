@@ -7,6 +7,7 @@
 //! owns every bind group and pipeline, so a draw creates no object. Descriptor sets follow one convention: set 0 is the
 //! frame uniform ([[renderer::FrameData]]), set 1 the material, set 2 the per-object storage buffer.
 
+#include "containers/vector.h"
 #include "math/matrix.h"
 #include "math/vector.h"
 #include "renderer/frame_data.h"
@@ -491,9 +492,9 @@ private:
 
     rhi::Device* device_ = nullptr;
     MaterialSystemDesc desc_;
-    TemplateSlot* templates_ = nullptr;
-    MaterialSlot* materials_ = nullptr;
-    PipelineEntry* pipelines_ = nullptr;
+    Vector<TemplateSlot> templates_;
+    Vector<MaterialSlot> materials_;
+    Vector<PipelineEntry> pipelines_;
     u32 pipeline_count_ = 0;
     u32 material_high_ = 0; // one past the highest material slot ever used
     rhi::BindGroupLayoutHandle frame_layout_;

@@ -39,15 +39,13 @@ struct TransientPool::BufferEntry {
 TransientPool::TransientPool(rhi::Device* device, const TransientPoolDesc& desc) : device_(device), desc_(desc) {
     ENGINE_ASSERT(device != nullptr, "TransientPool: the device is null");
     ENGINE_ASSERT(desc.max_textures > 0 && desc.max_buffers > 0, "TransientPool: a capacity is 0");
-    textures_ = new TextureEntry[desc.max_textures];
-    buffers_ = new BufferEntry[desc.max_buffers];
+    textures_.Resize(desc.max_textures);
+    buffers_.Resize(desc.max_buffers);
 }
 
 TransientPool::~TransientPool() {
     for (u32 i = 0; i < texture_count_; ++i) device_->DestroyTexture(textures_[i].handle);
     for (u32 i = 0; i < buffer_count_; ++i) device_->DestroyBuffer(buffers_[i].handle);
-    delete[] textures_;
-    delete[] buffers_;
 }
 
 void TransientPool::BeginFrame(u64 frame_index) { frame_ = frame_index; }

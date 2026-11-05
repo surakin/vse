@@ -9,6 +9,7 @@ set(FOUNDATION_TEST_SOURCES
   pool_allocator_test.cpp
   stack_allocator_test.cpp
   container_vector_test.cpp
+  array_test.cpp
   hash_map_test.cpp
   utf8_test.cpp
   grapheme_test.cpp

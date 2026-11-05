@@ -7,6 +7,7 @@
 //! nothing. A pooled resource also remembers the state it was left in, because the next user starts from there. One that
 //! nobody asks for during a number of frames is destroyed.
 
+#include "containers/vector.h"
 #include "rhi/rhi.h"
 #include "types.h"
 
@@ -159,8 +160,8 @@ private:
 
     rhi::Device* device_ = nullptr;
     TransientPoolDesc desc_;
-    TextureEntry* textures_ = nullptr;
-    BufferEntry* buffers_ = nullptr;
+    Vector<TextureEntry> textures_;
+    Vector<BufferEntry> buffers_;
     u32 texture_count_ = 0;
     u32 buffer_count_ = 0;
     u64 frame_ = 0;

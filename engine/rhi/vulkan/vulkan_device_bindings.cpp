@@ -180,8 +180,7 @@ void VulkanDevice::ReleaseBindGroupLocked(BindGroupRes* group) {
     if (!group->transient && group->set != nullptr && group->pool != nullptr) {
         fns_.FreeDescriptorSets(device_, group->pool, 1, &group->set);
     }
-    delete[] group->refs;
-    group->refs = nullptr;
+    group->refs.Reset();
     group->set = nullptr;
 }
 
@@ -229,17 +228,18 @@ BindGroupHandle VulkanDevice::CreateBindGroup(const BindGroupDesc& desc) {
     res.layout_id = layout->id;
     res.transient = desc.transient;
     res.frame = frame_number_.load(std::memory_order_relaxed);
-    res.refs = new GroupRef[total == 0 ? 1 : total];
-    VkWriteDescriptorSet* writes = new VkWriteDescriptorSet[total == 0 ? 1 : total];
-    VkDescriptorBufferInfo* buffer_infos = new VkDescriptorBufferInfo[total == 0 ? 1 : total];
-    VkDescriptorImageInfo* image_infos = new VkDescriptorImageInfo[total == 0 ? 1 : total];
-    auto fail = [&]() {
-        delete[] res.refs;
-        delete[] writes;
-        delete[] buffer_infos;
-        delete[] image_infos;
-        return BindGroupHandle{};
-    };
+    const usize slots = total == 0 ? 1 : total;
+    Vector<VkWriteDescriptorSet> write_storage;
+    Vector<VkDescriptorBufferInfo> buffer_info_storage;
+    Vector<VkDescriptorImageInfo> image_info_storage;
+    if (!res.refs.TryResize(slots) || !write_storage.TryResize(slots) || !buffer_info_storage.TryResize(slots) || !image_info_storage.TryResize(slots)) {
+        RhiLog(LogVerbosity::Error, "CreateBindGroup: out of memory");
+        return {};
+    }
+    VkWriteDescriptorSet* writes = write_storage.Data();
+    VkDescriptorBufferInfo* buffer_infos = buffer_info_storage.Data();
+    VkDescriptorImageInfo* image_infos = image_info_storage.Data();
+    auto fail = [&]() { return BindGroupHandle{}; };
 
     const VkDescriptorSetLayout set_layout = set_layouts_[layout->set_slot].layout;
     for (u32 b = 0; b < layout->binding_count; ++b) {
@@ -361,17 +361,12 @@ BindGroupHandle VulkanDevice::CreateBindGroup(const BindGroupDesc& desc) {
     }
     SetDebugName(HandleToU64(res.set), VK_OBJECT_TYPE_DESCRIPTOR_SET, desc.debug_name);
 
-    GroupRef* refs = res.refs;
-    BindGroupHandle handle = bind_groups_.Allocate(BindGroupRes(res));
-    delete[] writes;
-    delete[] buffer_infos;
-    delete[] image_infos;
+    BindGroupHandle handle = bind_groups_.Allocate(static_cast<BindGroupRes&&>(res));
     if (!handle.IsValid()) {
         RhiLog(LogVerbosity::Error, "CreateBindGroup: out of bind group handles");
         if (!res.transient) {
             fns_.FreeDescriptorSets(device_, res.pool, 1, &res.set);
         }
-        delete[] refs;
         return {};
     }
     if (desc.transient) {

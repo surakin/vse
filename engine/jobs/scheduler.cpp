@@ -17,7 +17,7 @@ Scheduler::Scheduler(const Config& config) {
     usize n = config.participants != 0 ? config.participants : DefaultParticipantCount();
     if (n > kMaxParticipants) n = kMaxParticipants;
     count_ = n;
-    lanes_ = new Lane[count_];
+    lanes_.Resize(count_);
     for (usize i = 0; i < count_; ++i) {
         lanes_[i].rng = 0x9E3779B9u * static_cast<u32>(i + 1);
         if (lanes_[i].rng == 0) lanes_[i].rng = 1;
@@ -37,7 +37,6 @@ Scheduler::~Scheduler() {
     Shutdown();
     delete io_;
     delete pool_;
-    delete[] lanes_;
 }
 
 Scheduler* Scheduler::Current() {

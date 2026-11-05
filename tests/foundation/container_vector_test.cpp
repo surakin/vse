@@ -3,6 +3,7 @@
 #include "containers/vector.h"
 #include "log/log.h"
 #include "mem/arena_allocator.h"
+#include "mem/heap_allocator.h"
 #include "os/os.h"
 #include "types.h"
 
@@ -224,4 +225,130 @@ TEST_CASE("Vector::Pop asserts on an empty array instead of underflowing size_",
 
     bool asserted = TriggersAssert([&] { arr.Pop(); });
     REQUIRE(asserted);
+}
+
+TEST_CASE("Vector::Resize asserts when the heap cannot supply the size, TryResize does not", "[containers][vector_container][assert]") {
+    Vector<usize> v;
+    REQUIRE(TriggersAssert([&] { v.Resize(static_cast<usize>(1) << 56); }));
+    REQUIRE_FALSE(v.TryResize(static_cast<usize>(1) << 56));
+}
+
+namespace {
+
+// Counts blocks handed out and returned, to prove the vector frees what it allocates.
+struct CountingHeap {
+    usize allocs = 0;
+    usize frees = 0;
+    usize live_bytes = 0;
+    void* Alloc(usize size, usize align) {
+        ++allocs;
+        live_bytes += size;
+        return engine_placeholder::HeapAllocator::Default().Alloc(size, align);
+    }
+    void Free(void* ptr, usize size, usize align) {
+        ++frees;
+        live_bytes -= size;
+        engine_placeholder::HeapAllocator::Default().Free(ptr, size, align);
+    }
+};
+
+struct NonMovable {
+    NonMovable() = default;
+    NonMovable(const NonMovable&) = delete;
+    NonMovable& operator=(const NonMovable&) = delete;
+    int value = 7;
+};
+
+} // namespace
+
+TEST_CASE("Vector: a Free-capable allocator gets every block back on growth, move-assign and destruction", "[containers][vector_container]") {
+    CountingHeap heap;
+    {
+        Vector<usize, CountingHeap> v(heap);
+        for (usize i = 0; i < 1000; ++i) {
+            v.Push(i);
+        }
+        REQUIRE(heap.allocs == heap.frees + 1); // only the live block is outstanding
+        REQUIRE(heap.live_bytes == v.Capacity() * sizeof(usize));
+
+        Vector<usize, CountingHeap> other(heap);
+        other.Push(1);
+        v = std::move(other); // the old 1000-element block must be released here
+        REQUIRE(heap.allocs == heap.frees + 1);
+        REQUIRE(v.Size() == 1);
+    }
+    REQUIRE(heap.allocs == heap.frees);
+    REQUIRE(heap.live_bytes == 0);
+}
+
+TEST_CASE("Vector: the default vector owns heap storage; Resize zero-initializes, shrinks and Clear keeps storage", "[containers][vector_container]") {
+    Vector<engine_placeholder::u32> v;
+    REQUIRE(v.Data() == nullptr);
+    REQUIRE(v.TryResize(10));
+    REQUIRE(v.Size() == 10);
+    for (usize i = 0; i < 10; ++i) {
+        REQUIRE(v[i] == 0u);
+        v[i] = static_cast<engine_placeholder::u32>(i + 1);
+    }
+    v.Resize(12); // keeps old values, zeroes new ones
+    REQUIRE(v[9] == 10u);
+    REQUIRE(v[11] == 0u);
+    v.Resize(3);
+    v.Resize(5); // regrowing after a shrink re-zeroes the revived slots
+    REQUIRE(v[3] == 0u);
+    const usize capacity = v.Capacity();
+    v.Clear();
+    REQUIRE(v.Size() == 0);
+    REQUIRE(v.Capacity() == capacity);
+    v.Reset();
+    REQUIRE(v.Capacity() == 0);
+    REQUIRE(v.Data() == nullptr);
+}
+
+TEST_CASE("Vector: TryResize and TryReserve report an impossible size without changing the vector", "[containers][vector_container]") {
+    Vector<engine_placeholder::u64> v;
+    v.Resize(4);
+    v[0] = 99;
+    REQUIRE_FALSE(v.TryResize(static_cast<usize>(-1) / 2));
+    REQUIRE_FALSE(v.TryReserve(static_cast<usize>(-1) / sizeof(engine_placeholder::u64) + 1));
+    REQUIRE_FALSE(v.TryResize(static_cast<usize>(1) << 56)); // the heap refuses
+    REQUIRE(v.Size() == 4);
+    REQUIRE(v[0] == 99u);
+}
+
+TEST_CASE("Vector: element types that cannot move are supported by a single Resize", "[containers][vector_container]") {
+    Vector<NonMovable> v;
+    v.Resize(5);
+    REQUIRE(v.Size() == 5);
+    REQUIRE(v[4].value == 7);
+    v.Resize(2);
+    REQUIRE(v.Size() == 2);
+    REQUIRE(v.TryResize(5)); // within the capacity: fine
+    REQUIRE_FALSE(v.TryResize(6)); // would need a new block, and the elements cannot move: reported, not aborted
+    REQUIRE(v.Size() == 5);
+}
+
+TEST_CASE("Vector: Resize on a vector holding elements grows geometrically", "[containers][vector_container]") {
+    Vector<usize> v;
+    v.Resize(10);
+    usize reallocations = 0;
+    usize capacity = v.Capacity();
+    for (usize n = 11; n <= 1000; ++n) {
+        v.Resize(n);
+        if (v.Capacity() != capacity) {
+            ++reallocations;
+            capacity = v.Capacity();
+        }
+    }
+    REQUIRE(reallocations <= 8); // doubling from 10 reaches 1000 in 7 steps; exact growth would reallocate 990 times
+}
+
+TEST_CASE("Vector: TryResizeUninitialized sizes a byte buffer without touching it", "[containers][vector_container]") {
+    Vector<unsigned char> v;
+    REQUIRE(v.TryResizeUninitialized(64));
+    REQUIRE(v.Size() == 64);
+    v[63] = 9;
+    REQUIRE(v.TryResizeUninitialized(8));
+    REQUIRE(v.Size() == 8);
+    REQUIRE_FALSE(v.TryResizeUninitialized(static_cast<usize>(1) << 56));
 }

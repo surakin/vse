@@ -2,6 +2,7 @@
 
 //! The scene a frame is built from: a fixed-capacity list of objects and lights with stable ids; the ECS replaces it in Phase 9.
 
+#include "containers/vector.h"
 #include "math/matrix.h"
 #include "math/vector.h"
 #include "renderer/bounds.h"
@@ -256,8 +257,8 @@ private:
     };
     static constexpr u32 kNoSlot = 0xffffffffu;
 
-    ObjectSlot* objects_ = nullptr;
-    LightSlot* lights_ = nullptr;
+    Vector<ObjectSlot> objects_;
+    Vector<LightSlot> lights_;
     u32 object_capacity_ = 0;
     u32 light_capacity_ = 0;
     u32 object_count_ = 0;

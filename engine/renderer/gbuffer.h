@@ -14,6 +14,7 @@
 //! `AddToGraph` declares the pass whose callback records it. The record step creates no object and issues a handful of RHI
 //! calls per draw: bind the pipeline and material group only when they change, one instanced draw per run of the same mesh
 //! and material.
+#include "containers/vector.h"
 #include "math/matrix.h"
 #include "math/vector.h"
 #include "renderer/camera.h"
@@ -241,6 +242,7 @@ public:
     GBufferStats Stats() const { return stats_; }
 
 private:
+    struct SortEntry; // one visible object on its way into the draw list; defined in gbuffer.cpp
     struct Draw {
         rhi::PipelineHandle pipeline;
         rhi::BindGroupHandle material_group;
@@ -254,13 +256,13 @@ private:
     rhi::Device* device_ = nullptr;
     MaterialSystem* materials_ = nullptr;
     FrameResources* frame_ = nullptr;
-    Draw* draws_ = nullptr;
+    Vector<Draw> draws_;
     u32 draw_count_ = 0;
-    u32* slots_ = nullptr;
-    u32* cull_slots_ = nullptr; // grown when the scene has more slots than the frame resources hold objects
-    u32 cull_capacity_ = 0;
+    Vector<u32> slots_;
+    Vector<u32> cull_slots_; // grown when the scene has more slots than the frame resources hold objects
     bool added_ = false;
-    void* sort_scratch_ = nullptr;
+    bool storage_ok_ = false; // the draw, slot and sort arrays were allocated
+    Vector<SortEntry> sort_scratch_;
     rhi::BindGroupHandle frame_group_;
     rhi::BindGroupHandle object_group_;
     GBufferTargets targets_;

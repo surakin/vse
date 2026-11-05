@@ -3,6 +3,7 @@
 #include <atomic>
 #include <mutex>
 
+#include "containers/vector.h"
 #include "rhi/device.h"
 #include "rhi/handle_pool.h"
 #include "rhi/rhi.h"
@@ -443,7 +444,7 @@ private:
         u64 layout_id = 0;
         bool transient = false;
         u64 frame = 0;
-        GroupRef* refs = nullptr; // owned; released when the group is collected
+        Vector<GroupRef> refs; // owned; released when the group is collected
         u32 ref_count = 0;
     };
     // A growing list of descriptor pools; the per-frame ones are filled in order and reset together.
