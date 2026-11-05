@@ -20,7 +20,10 @@ textured cube from a camera inside a resizable panel. Mouse and keyboard
 input reach the right widget (a click in the viewport goes to the
 viewport, menu popups overlay it), resizing the window re-lays-out the UI
 and resizes the viewport's render target, and the UI holds an interactive
-frame rate on Linux under both display backends.
+frame rate on Linux under both display backends. Theming and render-to-
+texture are demonstrated: the same widget tree draws with two different
+themes switched at run time, and a UI tree rendered into an offscreen
+texture is shown on a quad in a 3D scene (an in-world screen).
 
 ## Key deliverables (to be expanded into day-by-day tasks when started)
 
@@ -46,8 +49,24 @@ frame rate on Linux under both display backends.
   click, modal dialogs. Needs an **input event stream** from the
   platform layer (press/release, text, wheel, enter/leave) in addition
   to Phase 1's polled `InputState`; see Notes.
-- **Theming.** A style/theme struct (colors, metrics, per-state skins,
-  fonts) so widgets don't hard-code appearance; light/dark is a stretch.
+- **Theming (required, not a stretch).** Widgets never hard-code
+  appearance: every color, metric (padding, border, corner radius,
+  spacing), font and per-state skin (normal/hover/pressed/focused/
+  disabled) comes from a **theme** object resolved when a widget draws.
+  Requirements to design in from the first widget:
+  - A theme is plain data and can be **swapped at run time** (the whole
+    tree restyles without being rebuilt); light and dark are just two
+    themes, not a special mode.
+  - A theme can be set **per subtree and per UI surface** (an in-world
+    screen can look different from the editor), with unset values
+    falling back to the parent, then to a default theme.
+  - Widget **variants** (e.g. primary/danger button, heading label) are
+    named style entries in the theme, not subclasses.
+  - Themes load from an engine data file (the format belongs to the
+    Phase 10 asset pipeline; until then a theme is built in code), and
+    scale with the surface's DPI/scale factor.
+  - Custom widgets read the same theme, so game UIs and the editor
+    share one styling mechanism.
 
 ### Widget set
 
@@ -90,6 +109,48 @@ frame rate on Linux under both display backends.
   (HUD text, gizmo handles in the editor) goes through the same 2D draw
   layer with the viewport's clip rect.
 
+### UI surfaces and render-to-texture (in-world UIs)
+
+The viewport widget puts a 3D world *inside* the UI; this is the
+opposite direction, and must be possible without redesign: a widget
+tree can be rendered **into a texture** that the renderer then uses
+like any other (for example on a screen mesh in the world, a hologram,
+a monitor, a wrist display).
+
+- **UI surface.** A surface is a widget-tree root plus a target: either
+  an OS window's swapchain image or an offscreen RHI color texture of a
+  chosen size. Nothing in the widget, layout, theme or draw code may
+  assume the target is a window, which means no reaching for
+  `os::Window` from inside widgets: size, DPI/scale, focus and time are
+  properties of the surface.
+- **Offscreen rendering.** Each offscreen surface renders through the
+  same 2D draw layer and render graph as the window UI, as a pass
+  scheduled before the passes that sample its texture. Update policy per
+  surface: every frame, on demand (only when the tree is dirty), or
+  at a fixed rate, so a dozen idle screens cost nothing. The texture is
+  exposed to the renderer/material system as an ordinary sampled
+  texture; no UI types leak into the renderer.
+- **Input without a window.** The UI consumes an abstract input event
+  stream (pointer position and buttons, wheel, keys, text) fed to a
+  surface by whoever owns it. A window feeds its surface from the
+  platform event stream; the game feeds an in-world surface from a ray
+  cast against the screen mesh (hit point mapped to surface pixels),
+  or leaves it display-only. Mapping a ray hit to UI input is the
+  application's job (it needs the scene), the surface just accepts
+  events, including pointer capture and focus per surface.
+- **Per-surface settings:** its own size and scale factor, theme,
+  clear/background (opaque or transparent for overlays), and sRGB
+  handling, so the same tree looks right in a window and on a lit
+  surface (an emissive material is the expected way to show it).
+- **Resize and lifetime:** surface size changes are coalesced to once
+  per frame like the viewport's; offscreen textures are created and
+  destroyed through the device's deferred destruction.
+- Out of scope here: curved or tessellated screens beyond what a normal
+  UV-mapped mesh gives, VR/world-space interaction rays, and mipmapping
+  or filtering policy beyond what the renderer already offers for any
+  texture. Placing a surface on an entity needs Phase 7 (ECS); this
+  phase demonstrates it on a hand-placed quad.
+
 ## Notes / open questions
 
 - **Platform-layer additions this phase needs (Phase 1 gaps).**
@@ -116,6 +177,12 @@ frame rate on Linux under both display backends.
 - **Retained vs. immediate** is decided above (retained) but the
   debug-overlay milestone is immediate-mode-style on purpose; if that
   split causes duplicated code, fold the overlay into retained widgets.
+- **Design constraint from the surface requirement:** because a window
+  is just one kind of target, decide early (Day-level design in this
+  phase) how a surface receives size/scale/time/input, and test the
+  widget code against an offscreen surface from the first widget, not
+  as a late add-on. Same for themes: the first widget is written against
+  the theme API.
 - **Threading:** UI is built and ticked on the main thread; the job
   system (Phase 2) may be used for off-thread asset/font work, not for
   widget mutation.

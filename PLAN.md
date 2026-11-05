@@ -532,9 +532,11 @@ libc / raw syscalls / OS ABI
                   cursor/selection positions) built on the foundation
                   string module's grapheme clustering (Days 10-12)
   /ui           - retained widget toolkit built on rhi/renderer/text:
-                  layout, input routing, theming, menus/buttons/
-                  comboboxes/scrollbars/labels/text fields, and the
-                  Viewport widget that hosts a rendered 3D world
+                  layout, input routing, run-time-swappable theming,
+                  menus/buttons/comboboxes/scrollbars/labels/text
+                  fields, the Viewport widget that hosts a rendered 3D
+                  world, and UI surfaces that render a widget tree into
+                  a texture (in-world screens)
   /ecs          - entity/component/system core
   /physics
   /audio
@@ -663,4 +665,14 @@ that changed from the plan and why.)_
   into Days 68-83 under `plans/phase-04-renderer-core/`: deferred lighting (no
   MSAA in the RHI), a generic render graph on top of the RHI, and none of the
   deferred RHI extras (bindless, indirect draws, async compute).
+
+- **2026-11-05 — Phase 6 scope: theming and UI render-to-texture.**
+  Theming is a required deliverable (run-time-swappable themes, per
+  subtree and per surface, named widget variants), not a stretch. A new
+  "UI surfaces" section adds rendering a widget tree into an offscreen
+  texture so UIs can appear on world objects such as screens: widgets
+  must not assume a window target, and input arrives as an abstract
+  event stream a surface can be fed (from a window, or from a ray hit on
+  a mesh). The Phase 6 definition of done now includes both. Plan-only
+  change; Phase 6 still needs its day files before it can start.
 
