@@ -229,7 +229,7 @@ double TimePipeline(bool cache, const char* dir) {
     info.validation = ValidationSetting::Off; // a baseline measures the engine, not the layer
     info.pipeline_cache = cache;
     info.pipeline_cache_dir = dir;
-    Device* device = CreateDevice(info);
+    DevicePtr device = CreateDevice(info);
     if (device == nullptr) {
         return -1.0;
     }
@@ -237,11 +237,11 @@ double TimePipeline(bool cache, const char* dir) {
     demo::CubeOptions options;
     options.depth_format = device->Caps().depth_format;
     const double start = Now();
-    const bool ok = cube.Create(device, options);
+    const bool ok = cube.Create(device.Get(), options);
     const double elapsed = Now() - start;
     device->WaitIdle();
     cube.Destroy();
-    DestroyDevice(device);
+    device.Reset();
     return ok ? elapsed : -1.0;
 }
 
@@ -292,23 +292,23 @@ int main(int argc, char** argv) {
     }
     DeviceCreateInfo info;
     info.validation = ValidationSetting::Off; // a baseline measures the engine, not the layer
-    Device* device = CreateDevice(info);
+    DevicePtr device = CreateDevice(info);
     if (device == nullptr) {
         std::fprintf(stderr, "rhi_bench: no Vulkan device\n");
         return 1;
     }
     std::printf("backend %s, %ux%u target, %ld frames per draw measurement\n", device->BackendName(), kSize, kSize, frames);
     if (draws > 0) {
-        BenchDraws(device, static_cast<u32>(draws), frames);
+        BenchDraws(device.Get(), static_cast<u32>(draws), frames);
     } else {
-        BenchDraws(device, 1000, frames);
-        BenchDraws(device, 10000, frames);
+        BenchDraws(device.Get(), 1000, frames);
+        BenchDraws(device.Get(), 10000, frames);
     }
-    BenchBarriers(device);
+    BenchBarriers(device.Get());
     if (uploads) {
-        BenchUploads(device);
+        BenchUploads(device.Get());
     }
-    DestroyDevice(device);
+    device.Reset();
     if (pipelines) {
         BenchPipelines();
     }

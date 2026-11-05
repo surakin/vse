@@ -14,11 +14,11 @@ using namespace engine_placeholder::rhi::vulkan;
 
 namespace {
 
-VulkanDevice* MakeDevice() {
+VulkanDevicePtr MakeDevice() {
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
     info.sync_validation = true;
-    VulkanDevice* device = VulkanDevice::Create(info);
+    VulkanDevicePtr device = VulkanDevice::Create(info);
     if (device == nullptr) {
         if (gpu_test::GpuRequired()) {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
@@ -67,7 +67,7 @@ std::vector<unsigned char> Padded(const std::vector<unsigned char>& tight, usize
 TEST_CASE("Vulkan FormatSupport and CanGenerateMips answer from the device's format table", "[rhi][vulkan][gpu][texture]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
     CHECK(device->FormatSupport(Format::RGBA8_UNorm, TextureUsage::Sampled | TextureUsage::CopyDst | TextureUsage::CopySrc));
     CHECK(device->FormatSupport(Format::RGBA8_UNorm, TextureUsage::None));
     CHECK_FALSE(device->FormatSupport(Format::Undefined, TextureUsage::Sampled));
@@ -77,16 +77,16 @@ TEST_CASE("Vulkan FormatSupport and CanGenerateMips answer from the device's for
     CHECK_FALSE(device->CanGenerateMips(Format::D32_Float));
     CHECK_FALSE(device->CanGenerateMips(Format::BC1_UNorm));
     CHECK_FALSE(device->CanGenerateMips(Format::Undefined));
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan texture upload and readback are bit-exact", "[rhi][vulkan][gpu][texture]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
 
     SECTION("64x64 RGBA8, tightly packed") {
-        TextureHandle tex = MakeTexture(device, 64, 64, Format::RGBA8_UNorm);
+        TextureHandle tex = MakeTexture(device.Get(), 64, 64, Format::RGBA8_UNorm);
         REQUIRE(tex.IsValid());
         const std::vector<unsigned char> data = Pattern(64 * 64 * 4, 1);
         const UploadTicket ticket = device->UploadTexture(tex, 0, 0, data.data(), 0);
@@ -97,7 +97,7 @@ TEST_CASE("Vulkan texture upload and readback are bit-exact", "[rhi][vulkan][gpu
         device->DestroyTexture(tex);
     }
     SECTION("non-power-of-two 37x23 with a row pitch wider than the row") {
-        TextureHandle tex = MakeTexture(device, 37, 23, Format::RGBA8_UNorm);
+        TextureHandle tex = MakeTexture(device.Get(), 37, 23, Format::RGBA8_UNorm);
         REQUIRE(tex.IsValid());
         const std::vector<unsigned char> tight = Pattern(37 * 23 * 4, 2);
         const std::vector<unsigned char> padded = Padded(tight, 23, 37 * 4, 37 * 4 + 12);
@@ -108,7 +108,7 @@ TEST_CASE("Vulkan texture upload and readback are bit-exact", "[rhi][vulkan][gpu
         device->DestroyTexture(tex);
     }
     SECTION("several mip levels and array layers uploaded one by one") {
-        TextureHandle tex = MakeTexture(device, 16, 16, Format::RGBA8_UNorm, 3, 2);
+        TextureHandle tex = MakeTexture(device.Get(), 16, 16, Format::RGBA8_UNorm, 3, 2);
         REQUIRE(tex.IsValid());
         std::vector<unsigned char> expected[3][2];
         for (u32 mip = 0; mip < 3; ++mip) {
@@ -128,7 +128,7 @@ TEST_CASE("Vulkan texture upload and readback are bit-exact", "[rhi][vulkan][gpu
         device->DestroyTexture(tex);
     }
     SECTION("a level larger than one staging chunk (2048x1024 RGBA8, 8 MiB)") {
-        TextureHandle tex = MakeTexture(device, 2048, 1024, Format::RGBA8_UNorm);
+        TextureHandle tex = MakeTexture(device.Get(), 2048, 1024, Format::RGBA8_UNorm);
         REQUIRE(tex.IsValid());
         const std::vector<unsigned char> data = Pattern(2048u * 1024u * 4u, 3);
         REQUIRE(device->UploadTexture(tex, 0, 0, data.data(), 0).ok);
@@ -138,7 +138,7 @@ TEST_CASE("Vulkan texture upload and readback are bit-exact", "[rhi][vulkan][gpu
         device->DestroyTexture(tex);
     }
     SECTION("a 3D texture") {
-        TextureHandle tex = MakeTexture(device, 8, 8, Format::R8_UNorm, 1, 1, 4);
+        TextureHandle tex = MakeTexture(device.Get(), 8, 8, Format::R8_UNorm, 1, 1, 4);
         REQUIRE(tex.IsValid());
         const std::vector<unsigned char> data = Pattern(8 * 8 * 4, 4);
         REQUIRE(device->UploadTexture(tex, 0, 0, data.data(), 0).ok);
@@ -151,7 +151,7 @@ TEST_CASE("Vulkan texture upload and readback are bit-exact", "[rhi][vulkan][gpu
         if (!device->FormatSupport(Format::BC1_UNorm, kUploadable)) {
             SKIP("BC1 is not supported for copies on this device");
         }
-        TextureHandle tex = MakeTexture(device, 16, 16, Format::BC1_UNorm);
+        TextureHandle tex = MakeTexture(device.Get(), 16, 16, Format::BC1_UNorm);
         REQUIRE(tex.IsValid());
         const std::vector<unsigned char> data = Pattern(4 * 4 * 8, 5); // 4x4 blocks of 8 bytes
         REQUIRE(device->UploadTexture(tex, 0, 0, data.data(), 0).ok);
@@ -160,17 +160,17 @@ TEST_CASE("Vulkan texture upload and readback are bit-exact", "[rhi][vulkan][gpu
         CHECK(back == data);
         device->DestroyTexture(tex);
     }
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan GenerateMips averages a checkerboard", "[rhi][vulkan][gpu][texture]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
 
     constexpr u32 kSide = 64;
     constexpr u32 kLevels = 7;
-    TextureHandle tex = MakeTexture(device, kSide, kSide, Format::RGBA8_UNorm, kLevels);
+    TextureHandle tex = MakeTexture(device.Get(), kSide, kSide, Format::RGBA8_UNorm, kLevels);
     REQUIRE(tex.IsValid());
     std::vector<unsigned char> board(kSide * kSide * 4);
     for (u32 y = 0; y < kSide; ++y) {
@@ -214,13 +214,13 @@ TEST_CASE("Vulkan GenerateMips averages a checkerboard", "[rhi][vulkan][gpu][tex
     REQUIRE(device->ReadbackTexture(tex, 0, 0, base.data(), base.size(), ResourceState::ShaderRead));
     CHECK(base == board);
     device->DestroyTexture(tex);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan copies between buffers and textures in a command list", "[rhi][vulkan][gpu][texture]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
 
     // 64 texels of RGBA8 make a 256-byte row, so the tightly packed default already meets the portable pitch alignment.
     constexpr u32 kSide = 64;
@@ -231,7 +231,7 @@ TEST_CASE("Vulkan copies between buffers and textures in a command list", "[rhi]
     BufferHandle out = device->CreateBuffer(bd);
     const std::vector<unsigned char> data = Pattern(bd.size, 6);
     REQUIRE(device->UploadBuffer(in, 0, data.data(), data.size()).ok);
-    TextureHandle tex = MakeTexture(device, kSide, kSide, Format::RGBA8_UNorm);
+    TextureHandle tex = MakeTexture(device.Get(), kSide, kSide, Format::RGBA8_UNorm);
 
     device->BeginFrame();
     CommandList* list = device->CreateCommandList();
@@ -253,13 +253,13 @@ TEST_CASE("Vulkan copies between buffers and textures in a command list", "[rhi]
     device->DestroyTexture(tex);
     device->DestroyBuffer(in);
     device->DestroyBuffer(out);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan samplers are shared between equal descriptors and reference counted", "[rhi][vulkan][gpu][sampler]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
 
     SamplerDesc a;
     SamplerDesc b = a;
@@ -294,17 +294,17 @@ TEST_CASE("Vulkan samplers are shared between equal descriptors and reference co
     bad.max_anisotropy = 0.5f;
     fx.ExpectErrors(0);
     CHECK_FALSE(device->CreateSampler(bad).IsValid());
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan textures are released after their frame completes, and counted", "[rhi][vulkan][gpu][texture][frames]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
     CHECK(device->Counts().raw_images == 0);
 
     device->BeginFrame();
-    TextureHandle tex = MakeTexture(device, 16, 16, Format::RGBA8_UNorm);
+    TextureHandle tex = MakeTexture(device.Get(), 16, 16, Format::RGBA8_UNorm);
     CHECK(device->Counts().textures == 1);
     CHECK(device->Counts().raw_images == 1);
     device->DestroyTexture(tex);
@@ -316,15 +316,15 @@ TEST_CASE("Vulkan textures are released after their frame completes, and counted
     CHECK(device->Counts().raw_images == 0);
 
     // A texture the application forgot is released with the device (with a warning), leaving nothing for validation to report.
-    TextureHandle forgotten = MakeTexture(device, 8, 8, Format::RGBA8_UNorm);
+    TextureHandle forgotten = MakeTexture(device.Get(), 8, 8, Format::RGBA8_UNorm);
     (void)forgotten;
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan CreateTexture rejects what the device cannot do", "[rhi][vulkan][gpu][texture]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
 
     TextureDesc cube;
     cube.dimension = TextureDimension::Cube;
@@ -344,12 +344,12 @@ TEST_CASE("Vulkan CreateTexture rejects what the device cannot do", "[rhi][vulka
     huge.format = Format::RGBA8_UNorm;
     huge.usage = TextureUsage::Sampled;
     CHECK_FALSE(device->CreateTexture(huge).IsValid());
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Null device: texture upload follows the state rules", "[rhi][null][texture]") {
-    NullDevice* device = CreateNullDevice();
-    TextureHandle tex = MakeTexture(device, 8, 8, Format::RGBA8_UNorm, 3);
+    NullDevicePtr device = CreateNullDevice();
+    TextureHandle tex = MakeTexture(device.Get(), 8, 8, Format::RGBA8_UNorm, 3);
     const std::vector<unsigned char> data(8 * 8 * 4, 7);
 
     CHECK(device->UploadTexture(tex, 0, 0, data.data(), 0).ok);
@@ -387,13 +387,13 @@ TEST_CASE("Null device: texture upload follows the state rules", "[rhi][null][te
     CHECK_FALSE(device->FormatSupport(Format::D32_Float, TextureUsage::ColorAttachment));
     CHECK(device->CanGenerateMips(Format::RGBA8_UNorm));
     CHECK_FALSE(device->CanGenerateMips(Format::BC7_UNorm));
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Null device: GenerateMips needs usage, levels and the ShaderRead state", "[rhi][null][texture]") {
-    NullDevice* device = CreateNullDevice();
-    TextureHandle tex = MakeTexture(device, 8, 8, Format::RGBA8_UNorm, 4);
-    TextureHandle single = MakeTexture(device, 8, 8, Format::RGBA8_UNorm, 1);
+    NullDevicePtr device = CreateNullDevice();
+    TextureHandle tex = MakeTexture(device.Get(), 8, 8, Format::RGBA8_UNorm, 4);
+    TextureHandle single = MakeTexture(device.Get(), 8, 8, Format::RGBA8_UNorm, 1);
     const std::vector<unsigned char> data(8 * 8 * 4, 7);
     device->UploadTexture(tex, 0, 0, data.data(), 0);
     device->UploadTexture(single, 0, 0, data.data(), 0);
@@ -420,5 +420,5 @@ TEST_CASE("Null device: GenerateMips needs usage, levels and the ShaderRead stat
     device->Submit(more, 1);
     CHECK(device->ErrorCount() == 2);
     device->EndFrame();
-    DestroyDevice(device);
+    device.Reset();
 }

@@ -212,9 +212,9 @@ void RunDraw(const PassExecuteContext& context, void* user) {
 } // namespace
 
 TEST_CASE("A deferred-shaped graph executes on the null device with zero errors, frame after frame", "[renderer][graph][barrier]") {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
-        TransientPool pool(device, TransientPoolDesc{});
+        TransientPool pool(device.Get(), TransientPoolDesc{});
         const u32 w = 128;
         const u32 h = 96;
         rhi::TextureDesc out_desc = Tex(w, h, rhi::Format::RGBA8_UNorm, rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc);
@@ -284,13 +284,13 @@ TEST_CASE("A deferred-shaped graph executes on the null device with zero errors,
         CHECK(stats.textures_idle == 5);
         device->DestroyTexture(backbuffer);
     }
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Non-overlapping transient lifetimes in one frame share a texture", "[renderer][graph][pool]") {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
-        TransientPool pool(device, TransientPoolDesc{});
+        TransientPool pool(device.Get(), TransientPoolDesc{});
         ArenaAllocator arena(kArenaBytes);
         RenderGraph graph(&arena, RenderGraphDesc{});
         pool.BeginFrame(0);
@@ -328,13 +328,13 @@ TEST_CASE("Non-overlapping transient lifetimes in one frame share a texture", "[
         CHECK(device->ErrorCount() == 0);
         device->DestroyTexture(target);
     }
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Execute reports a transient it cannot allocate and puts the pool back as it was", "[renderer][graph][pool]") {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
-        TransientPool pool(device, TransientPoolDesc{});
+        TransientPool pool(device.Get(), TransientPoolDesc{});
         ArenaAllocator arena(kArenaBytes);
         RenderGraph graph(&arena, RenderGraphDesc{});
         pool.BeginFrame(0);
@@ -385,15 +385,15 @@ TEST_CASE("Execute reports a transient it cannot allocate and puts the pool back
         CHECK(pool.Stats().texture_reuses == 1); // `a` was handed out again
         device->DestroyTexture(target);
     }
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("The pool reuses by description and destroys what stays idle too long", "[renderer][pool]") {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         TransientPoolDesc pd;
         pd.max_idle_frames = 2;
-        TransientPool pool(device, pd);
+        TransientPool pool(device.Get(), pd);
         const rhi::TextureDesc d = Tex(16, 16, rhi::Format::RGBA8_UNorm, rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled);
         rhi::TextureDesc other = d;
         other.width = 17;
@@ -451,13 +451,13 @@ TEST_CASE("The pool reuses by description and destroys what stays idle too long"
         CHECK(device->Statistics().textures == 0);
         CHECK(device->Statistics().buffers == 0);
     }
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("A destroyed pool leaves no device resources behind", "[renderer][pool]") {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
-        TransientPool pool(device, TransientPoolDesc{});
+        TransientPool pool(device.Get(), TransientPoolDesc{});
         pool.BeginFrame(0);
         PooledTexture t;
         REQUIRE(pool.AcquireTexture(Tex(4, 4, rhi::Format::RGBA8_UNorm, rhi::TextureUsage::Sampled), &t));
@@ -465,16 +465,16 @@ TEST_CASE("A destroyed pool leaves no device resources behind", "[renderer][pool
         CHECK(device->Statistics().textures == 1);
     }
     CHECK(device->Statistics().textures == 0);
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("A full pool destroys its longest-idle texture to make room", "[renderer][pool]") {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         TransientPoolDesc pd;
         pd.max_textures = 2;
         pd.max_buffers = 1;
-        TransientPool pool(device, pd);
+        TransientPool pool(device.Get(), pd);
         const rhi::TextureUsage usage = rhi::TextureUsage::Sampled;
         PooledTexture t[3];
         pool.BeginFrame(0);
@@ -495,13 +495,13 @@ TEST_CASE("A full pool destroys its longest-idle texture to make room", "[render
         pool.ReleaseTexture(t[2].handle, rhi::ResourceState::ShaderRead);
         pool.ReleaseTexture(extra.handle, rhi::ResourceState::ShaderRead);
     }
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("A transient buffer goes through the same barriers and the pool across frames", "[renderer][graph][pool]") {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
-        TransientPool pool(device, TransientPoolDesc{});
+        TransientPool pool(device.Get(), TransientPoolDesc{});
         rhi::BufferDesc bd;
         bd.size = 1024;
         bd.usage = rhi::BufferUsage::Storage | rhi::BufferUsage::CopySrc | rhi::BufferUsage::CopyDst;
@@ -535,5 +535,5 @@ TEST_CASE("A transient buffer goes through the same barriers and the pool across
         CHECK(pool.Stats().buffer_reuses == 2);
         device->DestroyBuffer(out_buffer);
     }
-    rhi::DestroyDevice(device);
+    device.Reset();
 }

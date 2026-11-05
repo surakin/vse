@@ -162,12 +162,10 @@ MemoryAllocator::~MemoryAllocator() {
     }
     for (Pool& pool : pools_) {
         for (usize i = 0; i < pool.blocks.Size(); ++i) {
-            Block* block = pool.blocks[i];
+            Block* block = pool.blocks[i].Get();
             if (block->alive) {
                 backend_->Free({block->memory, block->mapped});
             }
-            delete block->free_list;
-            delete block;
         }
     }
 }
@@ -269,7 +267,7 @@ MemoryAllocation MemoryAllocator::AllocateLocked(const MemoryRequest& request_in
     Pool& pool = pools_[PoolIndex(type, request.linear)];
     // Try the existing blocks, newest first (they are likelier to have room).
     for (usize i = pool.blocks.Size(); i-- > 0;) {
-        Block* block = pool.blocks[i];
+        Block* block = pool.blocks[i].Get();
         if (!block->alive) {
             continue;
         }
@@ -302,19 +300,26 @@ MemoryAllocation MemoryAllocator::AllocateLocked(const MemoryRequest& request_in
     }
     ++live_objects_;
     ++objects_made_;
-    Block* block = new Block{mem.handle, mem.mapped, block_size, 0, new FreeList(block_size), true};
+    UniquePtr<Block> owned = MakeUnique<Block>(mem.handle, mem.mapped, block_size, u64{0}, MakeUnique<FreeList>(block_size), true);
+    if (!owned || !owned->free_list) {
+        RhiLog(LogVerbosity::Error, "GPU memory: out of host memory for a block record");
+        backend_->Free({mem.handle, mem.mapped});
+        --live_objects_;
+        --objects_made_;
+        *result = MemoryResult::OutOfHostMemory;
+        return {};
+    }
+    Block* block = owned.Get();
     usize slot = pool.blocks.Size();
     for (usize i = 0; i < pool.blocks.Size(); ++i) {
         if (!pool.blocks[i]->alive) {
-            delete pool.blocks[i]->free_list;
-            delete pool.blocks[i];
-            pool.blocks[i] = block;
+            pool.blocks[i] = std::move(owned); // the dead block's record is destroyed here
             slot = i;
             break;
         }
     }
     if (slot == pool.blocks.Size()) {
-        pool.blocks.Push(block);
+        pool.blocks.Push(std::move(owned));
     }
     u64 offset = 0;
     if (!block->free_list->Allocate(request.size, request.alignment, &offset)) {
@@ -367,7 +372,7 @@ void MemoryAllocator::FreeLocked(const MemoryAllocation& allocation) {
     ENGINE_ASSERT(allocation.pool < kMaxMemoryTypes * 2, "MemoryAllocator::Free: allocation is not from this allocator");
     Pool& pool = pools_[allocation.pool];
     ENGINE_ASSERT(allocation.block < pool.blocks.Size(), "MemoryAllocator::Free: allocation is not from this allocator");
-    Block* block = pool.blocks[allocation.block];
+    Block* block = pool.blocks[allocation.block].Get();
     ENGINE_ASSERT(block->alive && block->memory == allocation.memory, "MemoryAllocator::Free: allocation is not from this allocator");
     bool ok = block->free_list->Free(allocation.offset, allocation.size);
     ENGINE_ASSERT(ok, "MemoryAllocator::Free: double free or range outside the block");
@@ -412,7 +417,7 @@ MemoryStats MemoryAllocator::StatsLocked() const {
         for (u32 linear = 0; linear < 2; ++linear) {
             const Pool& pool = pools_[type * 2 + linear];
             for (usize i = 0; i < pool.blocks.Size(); ++i) {
-                const Block* block = pool.blocks[i];
+                const Block* block = pool.blocks[i].Get();
                 if (!block->alive) {
                     continue;
                 }

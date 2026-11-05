@@ -29,11 +29,11 @@ std::vector<unsigned char> Pattern(usize size, unsigned seed) {
     return bytes;
 }
 
-VulkanDevice* MakeDevice() {
+VulkanDevicePtr MakeDevice() {
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
     info.sync_validation = true;
-    VulkanDevice* device = VulkanDevice::Create(info);
+    VulkanDevicePtr device = VulkanDevice::Create(info);
     if (device == nullptr) {
         if (gpu_test::GpuRequired()) {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
@@ -140,11 +140,11 @@ TEST_CASE("GetBarrierScopes: the state table matches hand-derived stages, access
 TEST_CASE("Vulkan: record, submit and verify a buffer copy", "[rhi][vulkan][gpu][commands]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
 
     constexpr u64 kSize = 64 * 1024;
-    BufferHandle src = MakeBuffer(device, kSize);
-    BufferHandle dst = MakeBuffer(device, kSize);
+    BufferHandle src = MakeBuffer(device.Get(), kSize);
+    BufferHandle dst = MakeBuffer(device.Get(), kSize);
     const std::vector<unsigned char> data = Pattern(kSize, 1);
     REQUIRE(device->UploadBuffer(src, 0, data.data(), kSize).ok);
 
@@ -165,16 +165,16 @@ TEST_CASE("Vulkan: record, submit and verify a buffer copy", "[rhi][vulkan][gpu]
 
     device->DestroyBuffer(src);
     device->DestroyBuffer(dst);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan fences: values increase, waiting times out when never signaled", "[rhi][vulkan][gpu][commands][fence]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
 
-    BufferHandle a = MakeBuffer(device, 4096);
-    BufferHandle b = MakeBuffer(device, 4096);
+    BufferHandle a = MakeBuffer(device.Get(), 4096);
+    BufferHandle b = MakeBuffer(device.Get(), 4096);
     const std::vector<unsigned char> data = Pattern(4096, 2);
     device->UploadBuffer(a, 0, data.data(), data.size());
 
@@ -202,16 +202,16 @@ TEST_CASE("Vulkan fences: values increase, waiting times out when never signaled
 
     device->DestroyBuffer(a);
     device->DestroyBuffer(b);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan: many frames reuse the per-thread pools", "[rhi][vulkan][gpu][commands][frames]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
 
-    BufferHandle src = MakeBuffer(device, 1024);
-    BufferHandle dst = MakeBuffer(device, 1024);
+    BufferHandle src = MakeBuffer(device.Get(), 1024);
+    BufferHandle dst = MakeBuffer(device.Get(), 1024);
     const std::vector<unsigned char> data = Pattern(1024, 3);
     device->UploadBuffer(src, 0, data.data(), data.size());
 
@@ -241,13 +241,13 @@ TEST_CASE("Vulkan: many frames reuse the per-thread pools", "[rhi][vulkan][gpu][
     CHECK(back == data);
     device->DestroyBuffer(src);
     device->DestroyBuffer(dst);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan: command lists are recorded on many job threads and submitted in order", "[rhi][vulkan][gpu][commands][mt]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
 
     constexpr usize kLists = 64;
     constexpr u64 kSize = 16 * 1024;
@@ -255,8 +255,8 @@ TEST_CASE("Vulkan: command lists are recorded on many job threads and submitted 
     BufferHandle dst[kLists];
     std::vector<unsigned char> data[kLists];
     for (usize i = 0; i < kLists; ++i) {
-        src[i] = MakeBuffer(device, kSize);
-        dst[i] = MakeBuffer(device, kSize);
+        src[i] = MakeBuffer(device.Get(), kSize);
+        dst[i] = MakeBuffer(device.Get(), kSize);
         data[i] = Pattern(kSize, static_cast<unsigned>(10 + i));
         REQUIRE(device->UploadBuffer(src[i], 0, data[i].data(), kSize).ok);
     }
@@ -298,21 +298,21 @@ TEST_CASE("Vulkan: command lists are recorded on many job threads and submitted 
         device->DestroyBuffer(src[i]);
         device->DestroyBuffer(dst[i]);
     }
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan: plain threads can record, and thread slots are recycled", "[rhi][vulkan][gpu][commands][mt]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
 
-    BufferHandle src = MakeBuffer(device, 1024);
+    BufferHandle src = MakeBuffer(device.Get(), 1024);
     const std::vector<unsigned char> data = Pattern(1024, 4);
     device->UploadBuffer(src, 0, data.data(), data.size());
     constexpr int kThreads = 3;
     BufferHandle dst[kThreads];
     for (int t = 0; t < kThreads; ++t) {
-        dst[t] = MakeBuffer(device, 1024);
+        dst[t] = MakeBuffer(device.Get(), 1024);
     }
 
     device->BeginFrame();
@@ -351,16 +351,16 @@ TEST_CASE("Vulkan: plain threads can record, and thread slots are recycled", "[r
     for (int t = 0; t < kThreads; ++t) {
         device->DestroyBuffer(dst[t]);
     }
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan: a lost device makes submission and list creation fail without crashing", "[rhi][vulkan][gpu][commands][lost]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
 
-    BufferHandle a = MakeBuffer(device, 1024);
-    BufferHandle b = MakeBuffer(device, 1024);
+    BufferHandle a = MakeBuffer(device.Get(), 1024);
+    BufferHandle b = MakeBuffer(device.Get(), 1024);
     const std::vector<unsigned char> data = Pattern(1024, 5);
     device->UploadBuffer(a, 0, data.data(), data.size());
 
@@ -385,33 +385,33 @@ TEST_CASE("Vulkan: a lost device makes submission and list creation fail without
 
     device->DestroyBuffer(a);
     device->DestroyBuffer(b);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan: an empty submit returns the latest fence", "[rhi][vulkan][gpu][commands]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
     device->BeginFrame();
     CHECK(device->Submit(nullptr, 0) == 0); // nothing was ever submitted
-    BufferHandle a = MakeBuffer(device, 64);
+    BufferHandle a = MakeBuffer(device.Get(), 64);
     const UploadTicket ticket = device->UploadBuffer(a, 0, "0123456789abcdef", 16);
     CHECK(device->Submit(nullptr, 0) == ticket.fence);
     device->EndFrame();
     device->DestroyBuffer(a);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Null device: command lists recorded on job threads submit in order (runs under TSan)", "[rhi][null][commands][mt]") {
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
     constexpr usize kLists = 64;
     constexpr u64 kSize = 256;
     BufferHandle src[kLists];
     BufferHandle dst[kLists];
     std::vector<unsigned char> data[kLists];
     for (usize i = 0; i < kLists; ++i) {
-        src[i] = MakeBuffer(device, kSize);
-        dst[i] = MakeBuffer(device, kSize);
+        src[i] = MakeBuffer(device.Get(), kSize);
+        dst[i] = MakeBuffer(device.Get(), kSize);
         data[i] = Pattern(kSize, static_cast<unsigned>(50 + i));
         REQUIRE(device->UploadBuffer(src[i], 0, data[i].data(), kSize).ok);
     }
@@ -443,11 +443,11 @@ TEST_CASE("Null device: command lists recorded on job threads submit in order (r
         REQUIRE(device->PeekBuffer(dst[i], 0, back, kSize));
         CHECK(std::memcmp(back, data[i].data(), kSize) == 0);
     }
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Null device: a command list cannot be created outside a frame", "[rhi][null][commands]") {
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
     CHECK(device->CreateCommandList() == nullptr);
     CHECK(device->ErrorCount() == 1);
     device->BeginFrame();
@@ -456,5 +456,5 @@ TEST_CASE("Null device: a command list cannot be created outside a frame", "[rhi
     device->EndFrame();
     CHECK(device->CreateCommandList() == nullptr);
     CHECK(device->ErrorCount() == 2);
-    DestroyDevice(device);
+    device.Reset();
 }

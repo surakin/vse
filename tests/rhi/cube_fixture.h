@@ -33,7 +33,7 @@ struct Draw {
 struct CubeScene {
     u32 size;
     gpu_test::GpuFixture fx;
-    VulkanDevice* device = nullptr;
+    VulkanDevicePtr device;
     std::unique_ptr<gpu_test::RenderTarget> target;
     TextureHandle depth;
     std::unique_ptr<UniformRing> ring;
@@ -49,14 +49,14 @@ struct CubeScene {
         if (device == nullptr) {
             SKIP("no suitable Vulkan device");
         }
-        target = std::make_unique<gpu_test::RenderTarget>(device, size, size);
+        target = std::make_unique<gpu_test::RenderTarget>(device.Get(), size, size);
         TextureDesc td;
         td.width = size;
         td.height = size;
         td.format = device->Caps().depth_format;
         td.usage = TextureUsage::DepthAttachment;
         depth = device->CreateTexture(td);
-        ring = std::make_unique<UniformRing>(device, 4096);
+        ring = std::make_unique<UniformRing>(device.Get(), 4096);
         SetCamera(eye);
     }
     ~CubeScene() {
@@ -67,7 +67,7 @@ struct CubeScene {
         ring.reset();
         if (depth.IsValid()) device->DestroyTexture(depth);
         target.reset();
-        DestroyDevice(device);
+        device.Reset();
     }
 
     void SetCamera(const Vec3& eye) {

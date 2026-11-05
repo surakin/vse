@@ -23,19 +23,19 @@ namespace {
 
 // A null device, a material system with the G-buffer templates, and frame resources.
 struct Rig {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     MaterialSystem* sys = nullptr;
     FrameResources* frame = nullptr;
     GBufferTemplates templates;
     Rig() {
-        sys = new MaterialSystem(device, MaterialSystemDesc{});
-        frame = new FrameResources(device, 32);
+        sys = new MaterialSystem(device.Get(), MaterialSystemDesc{});
+        frame = new FrameResources(device.Get(), 32);
         templates = CreateGBufferTemplates(sys);
     }
     ~Rig() {
         delete frame;
         delete sys;
-        rhi::DestroyDevice(device);
+        device.Reset();
     }
     void MakeReady(GpuMesh* mesh) {
         device->BeginFrame();
@@ -108,7 +108,7 @@ TEST_CASE("The sRGB conversion matches the standard curve and depth linearizes t
 TEST_CASE("The device check names the first unsupported G-buffer format", "[renderer][gbuffer]") {
     Rig rig;
     char error[128] = "x";
-    CHECK(CheckGBufferFormats(rig.device, error, sizeof(error)));
+    CHECK(CheckGBufferFormats(rig.device.Get(), error, sizeof(error)));
     CHECK(error[0] == '\0');
     const PipelineTarget t = GBufferPipelineTarget();
     CHECK(t.color_count == 3);
@@ -123,7 +123,7 @@ TEST_CASE("The camera depth range encloses the scene", "[renderer][gbuffer]") {
     MeshData d;
     REQUIRE(MakeSphereMesh(1.0f, 16, 8, &d) == nullptr);
     GpuMesh sphere;
-    REQUIRE(sphere.Create(rig.device, d, "sphere"));
+    REQUIRE(sphere.Create(rig.device.Get(), d, "sphere"));
     RenderScene scene(RenderSceneDesc{});
     Camera cam = MakeLookAtCamera(Vec3(0, 0, 0), Vec3(0, 0, -1), Vec3(0, 1, 0));
     cam.near_plane = 0.123f;
@@ -191,10 +191,10 @@ TEST_CASE("Prepare sorts, instances and counts what it draws", "[renderer][gbuff
     MeshData d;
     REQUIRE(MakeCubeMesh(1.0f, &d) == nullptr);
     GpuMesh cube;
-    REQUIRE(cube.Create(rig.device, d, "cube"));
+    REQUIRE(cube.Create(rig.device.Get(), d, "cube"));
     REQUIRE(MakeSphereMesh(1.0f, 12, 6, &d) == nullptr);
     GpuMesh sphere;
-    REQUIRE(sphere.Create(rig.device, d, "sphere"));
+    REQUIRE(sphere.Create(rig.device.Get(), d, "sphere"));
     rig.MakeReady(&cube);
     rig.MakeReady(&sphere);
     const MaterialId m0 = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m0");
@@ -216,7 +216,7 @@ TEST_CASE("Prepare sorts, instances and counts what it draws", "[renderer][gbuff
             od.transform = ModelMatrix(Vec3(static_cast<f32>(i) - 3.0f, 0, 0), 1.0f, 0.0f);
             scene.AddObject(od);
         }
-        GBufferPass pass(rig.device, rig.sys, rig.frame);
+        GBufferPass pass(rig.device.Get(), rig.sys, rig.frame);
         rig.BeginFrame(static_cast<u64>(order));
         CHECK(pass.Prepare(scene, WideFrustum()));
         rig.frame->Flush();
@@ -242,9 +242,9 @@ TEST_CASE("Prepare names every object it has to leave out", "[renderer][gbuffer]
     const u8 grey[4] = {128, 128, 128, 255};
     REQUIRE(MakeUniformColoredMesh(d, grey, &colored) == nullptr);
     GpuMesh cube, colored_cube, unprepared;
-    REQUIRE(cube.Create(rig.device, d, "cube"));
-    REQUIRE(colored_cube.Create(rig.device, colored, "colored cube"));
-    REQUIRE(unprepared.Create(rig.device, d, "unprepared"));
+    REQUIRE(cube.Create(rig.device.Get(), d, "cube"));
+    REQUIRE(colored_cube.Create(rig.device.Get(), colored, "colored cube"));
+    REQUIRE(unprepared.Create(rig.device.Get(), d, "unprepared"));
     rig.MakeReady(&cube);
     rig.MakeReady(&colored_cube);
     const MaterialId plain = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "plain");
@@ -258,7 +258,7 @@ TEST_CASE("Prepare names every object it has to leave out", "[renderer][gbuffer]
         od.mesh = mesh;
         od.material = material;
         scene.AddObject(od);
-        GBufferPass pass(rig.device, rig.sys, rig.frame);
+        GBufferPass pass(rig.device.Get(), rig.sys, rig.frame);
         static u64 frame = 100;
         rig.BeginFrame(frame++);
         const bool ok = pass.Prepare(scene, WideFrustum());
@@ -340,8 +340,8 @@ TEST_CASE("Mesh sort ids are never zero for a live mesh and a moved-from mesh ha
     REQUIRE(MakeCubeMesh(1.0f, &d) == nullptr);
     GpuMesh a, b;
     CHECK(a.SortId() == 0);
-    REQUIRE(a.Create(rig.device, d, "a"));
-    REQUIRE(b.Create(rig.device, d, "b"));
+    REQUIRE(a.Create(rig.device.Get(), d, "a"));
+    REQUIRE(b.Create(rig.device.Get(), d, "b"));
     CHECK(a.SortId() != 0);
     CHECK(a.SortId() != b.SortId());
     CHECK(a.SortId() < (1u << 24));
@@ -377,7 +377,7 @@ TEST_CASE("Only a UNorm8x4 attribute at location 4 counts as a vertex color", "[
     MeshData wide;
     REQUIRE(wide.Set(layout, 0, vertices.data(), plane.VertexCount(), rhi::IndexType::UInt32, indices.data(), plane.IndexCount()) == nullptr);
     GpuMesh mesh;
-    REQUIRE(mesh.Create(rig.device, wide, "wide"));
+    REQUIRE(mesh.Create(rig.device.Get(), wide, "wide"));
     rig.MakeReady(&mesh);
     const MaterialId m = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m");
     RenderScene scene(RenderSceneDesc{});
@@ -385,7 +385,7 @@ TEST_CASE("Only a UNorm8x4 attribute at location 4 counts as a vertex color", "[
     od.mesh = &mesh;
     od.material = m.index;
     scene.AddObject(od);
-    GBufferPass pass(rig.device, rig.sys, rig.frame);
+    GBufferPass pass(rig.device.Get(), rig.sys, rig.frame);
     rig.BeginFrame(0);
     CHECK(pass.Prepare(scene, WideFrustum()));
     rig.frame->Flush();

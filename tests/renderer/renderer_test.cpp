@@ -65,7 +65,7 @@ bool BuildThreePass(const FrameContext& context, void* user) {
 }
 
 struct NullRenderer {
-    rhi::NullDevice* device;
+    rhi::NullDevicePtr device;
     rhi::Swapchain* swapchain = nullptr;
     ThreePass scene;
     Renderer* renderer = nullptr;
@@ -81,7 +81,7 @@ struct NullRenderer {
             swapchain = device->CreateSwapchain(sd);
         }
         RendererDesc rd;
-        rd.device = device;
+        rd.device = device.Get();
         rd.swapchain = swapchain;
         rd.scheduler = scheduler;
         rd.build = &BuildThreePass;
@@ -91,7 +91,7 @@ struct NullRenderer {
     ~NullRenderer() {
         delete renderer;
         if (swapchain != nullptr) device->DestroySwapchain(swapchain);
-        rhi::DestroyDevice(device);
+        device.Reset();
     }
 };
 
@@ -223,9 +223,9 @@ TEST_CASE("Independent passes record on several threads, their lists submitted i
     config.participants = 4;
     config.pin = false;
     jobs::Scheduler scheduler(config);
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
-        TransientPool pool(device, TransientPoolDesc{});
+        TransientPool pool(device.Get(), TransientPoolDesc{});
         ArenaAllocator arena(8u << 20);
         RenderGraph graph(&arena, RenderGraphDesc{});
         ThreadLog log;
@@ -247,7 +247,7 @@ TEST_CASE("Independent passes record on several threads, their lists submitted i
         }
         device->BeginFrame();
         rhi::FenceValue fence = 0;
-        REQUIRE(graph.ExecuteParallel(&pool, device, &scheduler, &fence));
+        REQUIRE(graph.ExecuteParallel(&pool, device.Get(), &scheduler, &fence));
         device->EndFrame();
         CHECK(fence != 0);
         CHECK(log.counts.load() == kIndependent);
@@ -260,13 +260,13 @@ TEST_CASE("Independent passes record on several threads, their lists submitted i
         }
         CHECK(distinct.size() >= 2); // 48 passes of 0.3 ms on 4 participants cannot all land on one thread
     }
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("ExecuteParallel without a scheduler records the same lists in order", "[renderer][frame][parallel]") {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
-        TransientPool pool(device, TransientPoolDesc{});
+        TransientPool pool(device.Get(), TransientPoolDesc{});
         ArenaAllocator arena(8u << 20);
         RenderGraph graph(&arena, RenderGraphDesc{});
         rhi::BufferDesc bd;
@@ -279,19 +279,19 @@ TEST_CASE("ExecuteParallel without a scheduler records the same lists in order",
             else b.Read(buffer, GraphUsage::CopySrc);
         }
         device->BeginFrame();
-        REQUIRE(graph.ExecuteParallel(&pool, device, nullptr, nullptr));
+        REQUIRE(graph.ExecuteParallel(&pool, device.Get(), nullptr, nullptr));
         device->EndFrame();
         CHECK(device->ErrorCount() == 0);
     }
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("A lost device during ExecuteParallel fails it and puts the pool back", "[renderer][frame][fault]") {
     rhi::NullDeviceOptions options;
     options.lose_device_at_frame = 1;
-    rhi::NullDevice* device = rhi::CreateNullDevice(options);
+    rhi::NullDevicePtr device = rhi::CreateNullDevice(options);
     {
-        TransientPool pool(device, TransientPoolDesc{});
+        TransientPool pool(device.Get(), TransientPoolDesc{});
         ArenaAllocator arena(8u << 20);
         RenderGraph graph(&arena, RenderGraphDesc{});
         const GraphResource t = graph.CreateTexture("t", ColorTex(8, 8));
@@ -300,13 +300,13 @@ TEST_CASE("A lost device during ExecuteParallel fails it and puts the pool back"
         graph.AddPass("a", nullptr, nullptr).Write(t, GraphUsage::ColorAttachment);
         graph.AddPass("b", nullptr, nullptr).Read(t, GraphUsage::Sampled).Write(out, GraphUsage::ColorAttachment);
         device->BeginFrame(); // the device is lost from here
-        CHECK_FALSE(graph.ExecuteParallel(&pool, device, nullptr, nullptr));
+        CHECK_FALSE(graph.ExecuteParallel(&pool, device.Get(), nullptr, nullptr));
         CHECK(std::string(graph.ExecuteError()) == "a command list could not be created (the device is lost or out of memory)");
         CHECK(pool.Stats().textures_idle == pool.Stats().textures_live); // nothing stays out of the pool
         device->EndFrame();
         device->DestroyTexture(imported);
     }
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 namespace {
@@ -432,7 +432,7 @@ bool BuildSample(const FrameContext& context, void* user) {
     return true;
 }
 
-rhi::Device* MakeGpuDevice(u32 fail_allocations_from = 0) {
+rhi::DevicePtr MakeGpuDevice(u32 fail_allocations_from = 0) {
     rhi::DeviceCreateInfo info;
     info.validation = rhi::ValidationSetting::On;
     info.sync_validation = true;
@@ -487,14 +487,14 @@ GpuRun RenderSample(rhi::Device* device, jobs::Scheduler* scheduler) {
 } // namespace
 
 TEST_CASE("Parallel recording gives the same pixels as serial recording", "[renderer][frame][parallel][gpu]") {
-    rhi::Device* device = MakeGpuDevice();
-    if (!GpuAvailable(device)) SKIP("no Vulkan device on this machine");
+    rhi::DevicePtr device = MakeGpuDevice();
+    if (!GpuAvailable(device.Get())) SKIP("no Vulkan device on this machine");
     jobs::Scheduler::Config config;
     config.participants = 4;
     config.pin = false;
     jobs::Scheduler scheduler(config);
-    const GpuRun serial = RenderSample(device, nullptr);
-    const GpuRun parallel = RenderSample(device, &scheduler);
+    const GpuRun serial = RenderSample(device.Get(), nullptr);
+    const GpuRun parallel = RenderSample(device.Get(), &scheduler);
     REQUIRE(serial.status == FrameStatus::Ok);
     REQUIRE(parallel.status == FrameStatus::Ok);
     CHECK(serial.pixels == parallel.pixels);
@@ -503,7 +503,7 @@ TEST_CASE("Parallel recording gives the same pixels as serial recording", "[rend
     CHECK(std::abs(static_cast<int>(px[0]) - 204) <= 2);
     CHECK(std::abs(static_cast<int>(px[1]) - 153) <= 2);
     CHECK(std::abs(static_cast<int>(px[2]) - 128) <= 2);
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 constexpr u32 kSweep = 24;
@@ -511,31 +511,31 @@ constexpr u32 kSweep = 24;
 TEST_CASE("Device allocation failures at any point end frames cleanly", "[renderer][frame][fault][gpu]") {
     // fail_allocations_from = N makes the Nth device-memory allocation and every later one fail. Whatever the scene was
     // creating at that moment (a texture, the target, a pooled transient), nothing may crash and the teardown must be clean.
-    rhi::Device* probe = MakeGpuDevice();
-    if (!GpuAvailable(probe)) SKIP("no Vulkan device on this machine");
-    rhi::DestroyDevice(probe);
+    rhi::DevicePtr probe = MakeGpuDevice();
+    if (!GpuAvailable(probe.Get())) SKIP("no Vulkan device on this machine");
+    probe.Reset();
     u32 failed_frames = 0;
     u32 ok_frames = 0;
     u32 refused = 0;
     for (u32 from = 1; from <= kSweep; ++from) {
-        rhi::Device* device = MakeGpuDevice(from);
+        rhi::DevicePtr device = MakeGpuDevice(from);
         if (device == nullptr) { // the device's own setup (staging memory) hit the failure: creation is refused cleanly
             ++refused;
             continue;
         }
-        const GpuRun run = RenderSample(device, nullptr);
+        const GpuRun run = RenderSample(device.Get(), nullptr);
         if (run.status == FrameStatus::Ok) ++ok_frames;
         else ++failed_frames;
-        rhi::DestroyDevice(device);
+        device.Reset();
     }
     CHECK(failed_frames > 0); // some allocation index must have hit a texture the frame needed
     CHECK(ok_frames + failed_frames + refused == kSweep);
 }
 
 TEST_CASE("Passes that are only ordering markers record no command list", "[renderer][frame][parallel]") {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
-        TransientPool pool(device, TransientPoolDesc{});
+        TransientPool pool(device.Get(), TransientPoolDesc{});
         ArenaAllocator arena(8u << 20);
         RenderGraph graph(&arena, RenderGraphDesc{});
         u32 ran = 0;
@@ -544,12 +544,12 @@ TEST_CASE("Passes that are only ordering markers record no command list", "[rend
         graph.AddPass("real", count, &ran, PassFlags::SideEffects);
         graph.AddPass("marker 2", nullptr, nullptr, PassFlags::SideEffects);
         device->BeginFrame();
-        REQUIRE(graph.ExecuteParallel(&pool, device, nullptr, nullptr));
+        REQUIRE(graph.ExecuteParallel(&pool, device.Get(), nullptr, nullptr));
         CHECK(ran == 1);
         CHECK(device->Statistics().command_lists == 1); // only "real" got a list
         device->EndFrame();
     }
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("The frame counters add up to the frames begun", "[renderer][frame]") {

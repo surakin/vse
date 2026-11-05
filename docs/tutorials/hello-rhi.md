@@ -33,7 +33,7 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 
 int main() {
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
     Swapchain* swapchain = device->CreateSwapchain(SwapchainDesc{});
 
     for (int frame = 0; frame < 6; ++frame) {
@@ -66,7 +66,7 @@ int main() {
     device->WaitIdle();
     device->DestroySwapchain(swapchain);
     std::printf("frames: %llu, errors: %u\n", static_cast<unsigned long long>(device->FrameNumber()), device->ErrorCount());
-    DestroyDevice(device);
+    device.Reset();
 }
 ```
 
@@ -105,7 +105,7 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 
 int main() {
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
 
     ShaderDesc sd;
     sd.stage = ShaderStage::Vertex;
@@ -169,7 +169,7 @@ int main() {
 
     device->WaitIdle();
     std::printf("draws: ok, errors: %u\n", device->ErrorCount());
-    DestroyDevice(device);
+    device.Reset();
 }
 ```
 
@@ -209,7 +209,7 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 
 int main() {
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
     ShaderDesc sd;
     sd.stage = ShaderStage::Vertex;
     sd.words = shaders::kTriangleVertSpv;
@@ -288,7 +288,7 @@ int main() {
 
     device->WaitIdle();
     std::printf("indexed draw: ok, errors: %u\n", device->ErrorCount());
-    DestroyDevice(device);
+    device.Reset();
 }
 ```
 
@@ -322,7 +322,7 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 
 int main() {
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
 
     // An 8x8 checkerboard, 4 bytes per texel.
     std::vector<unsigned char> pixels(8 * 8 * 4);
@@ -372,7 +372,7 @@ int main() {
 
     device->WaitIdle();
     std::printf("mips: %u, group: %s, errors: %u\n", td.mip_levels, group.IsValid() ? "ok" : "invalid", device->ErrorCount());
-    DestroyDevice(device);
+    device.Reset();
 }
 ```
 

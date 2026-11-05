@@ -23,6 +23,11 @@
 
 namespace engine_placeholder::rhi::vulkan {
 
+class VulkanDevice;
+
+/// Owning pointer to a Vulkan device; destroying it waits for the GPU first (see [[rhi::DeviceDeleter]]).
+using VulkanDevicePtr = UniquePtr<VulkanDevice, DeviceDeleter>;
+
 /// The Vulkan 1.3 device: one physical GPU, one logical device and one graphics+compute queue.
 ///
 /// Created by [[rhi::CreateDevice]] (or [[rhi::vulkan::VulkanDevice::Create]]). All work, including uploads, runs
@@ -30,16 +35,19 @@ namespace engine_placeholder::rhi::vulkan {
 ///
 /// Thread-safety: thread-safe for creation, destruction and mapping, as for [[rhi::Device]]; `Submit`, `BeginFrame`,
 ///   `EndFrame` and `WaitIdle` belong to one submission thread.
-/// Ownership: the caller owns the device and releases it with [[rhi::DestroyDevice]]; it owns the Vulkan instance.
+/// Ownership: the caller owns the device through a [[rhi::vulkan::VulkanDevicePtr]]; it owns the Vulkan instance.
 class VulkanDevice final : public Device {
 public:
+    /// Constructs an uninitialized device; use [[rhi::vulkan::VulkanDevice::Create]] or [[rhi::CreateDevice]].
+    VulkanDevice() = default;
+
     /// Creates a Vulkan device.
     ///
     /// Param info: what to create; the backend field is ignored.
-    /// Returns: the device, or null.
+    /// Returns: the device, or an empty pointer.
     /// Fails: as for [[rhi::CreateDevice]].
-    /// Ownership: the caller owns the result.
-    static VulkanDevice* Create(const DeviceCreateInfo& info);
+    /// Ownership: the caller owns the result through the returned pointer.
+    static VulkanDevicePtr Create(const DeviceCreateInfo& info);
 
     /// How many frames of command pools exist; a pool is reset only after the frame that used it has finished.
     static constexpr usize kFramePools = 3;
@@ -361,7 +369,6 @@ public:
     usize CommandPoolCount() const;
 
 private:
-    VulkanDevice() = default;
     bool Initialize(const DeviceCreateInfo& info);
     void FillCaps();
     // Logs that `what` is not implemented yet in this build of the backend (resource kinds arrive on later days).
@@ -511,7 +518,7 @@ private:
     // Command pools: one per (frame slot, thread slot), made by the thread that owns the slot.
     struct ThreadPool {
         VkCommandPool pool = nullptr;
-        rhi::detail::GrowArray<VulkanCommandList*> lists;
+        Vector<UniquePtr<VulkanCommandList>> lists;
         usize used = 0;
     };
     ThreadPool* PoolForCurrentThread(usize frame_slot);
@@ -523,7 +530,7 @@ private:
 
     const os::Window* window_ = nullptr;
     VkSurfaceKHR surface_ = nullptr;
-    class VulkanSwapchain* swapchain_ = nullptr;
+    UniquePtr<class VulkanSwapchain> swapchain_;
     VulkanInstance instance_;
     VkPhysicalDevice physical_ = nullptr;
     VkDevice device_ = nullptr;
@@ -536,8 +543,8 @@ private:
     DeviceCaps caps_;
     bool anisotropy_enabled_ = false;
     bool memory_budget_enabled_ = false;
-    VulkanMemoryBackend* memory_backend_ = nullptr;
-    MemoryAllocator* memory_ = nullptr;
+    UniquePtr<VulkanMemoryBackend> memory_backend_;
+    UniquePtr<MemoryAllocator> memory_;
     std::atomic<bool> device_lost_{false};
     u32 lose_device_at_frame_ = 0; // fault injection: the frame at which to report the device lost, 0 = never
     std::atomic<u64> frame_number_{0};
@@ -579,12 +586,15 @@ private:
     u64 last_submit_value_ = 0;
     VkCommandPool upload_pool_ = nullptr;
     rhi::detail::GrowArray<CommandBufferSlot> upload_buffers_;
-    RingAllocator* staging_ring_ = nullptr;
+    UniquePtr<RingAllocator> staging_ring_;
     RawBuffer staging_;
     rhi::detail::GrowArray<VkCommandBufferSubmitInfo> submit_scratch_;
     std::atomic<i32> inject_submit_result_{0};
 
     // Per-thread command pools, a ring of kFramePools frames deep, indexed by the thread's slot.
+    // The pools are owned here; the atomic slots publish them to other threads without a lock (a null slot is
+    // "not made yet"). Only the thread holding a slot makes or fills its pool.
+    UniquePtr<ThreadPool> owned_pools_[kFramePools][kThreadSlots];
     std::atomic<ThreadPool*> thread_pools_[kFramePools][kThreadSlots] = {};
 };
 

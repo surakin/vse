@@ -82,11 +82,11 @@ struct DeviceCreateInfo {
 /// is logged on [[rhi::LogRhi]].
 ///
 /// Param info: what to create.
-/// Returns: the device, or null.
-/// Fails: returns null, logging the reason, if there is no Vulkan loader, no suitable GPU, the override matches
+/// Returns: the device, or an empty pointer.
+/// Fails: returns an empty pointer, logging the reason, if there is no Vulkan loader, no suitable GPU, the override matches
 ///   nothing suitable, or device creation fails.
-/// Ownership: the caller owns the device and releases it with [[rhi::DestroyDevice]].
+/// Ownership: the caller owns the device through the returned [[rhi::DevicePtr]].
 /// Thread-safety: thread-safe.
-Device* CreateDevice(const DeviceCreateInfo& info);
+DevicePtr CreateDevice(const DeviceCreateInfo& info);
 
 } // namespace engine_placeholder::rhi

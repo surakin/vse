@@ -491,7 +491,7 @@ TEST_CASE("Real driver: allocations of each location kind", "[rhi][memory][gpu]"
     fx.Require();
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
-    VulkanDevice* device = VulkanDevice::Create(info);
+    VulkanDevicePtr device = VulkanDevice::Create(info);
     if (device == nullptr) {
         if (gpu_test::GpuRequired()) {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
@@ -527,7 +527,7 @@ TEST_CASE("Real driver: allocations of each location kind", "[rhi][memory][gpu]"
     if (device->HeapBudget(0, &budget, &usage)) {
         CHECK(budget > 0);
     }
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Real driver: a flood of small allocations needs only a few memory objects", "[rhi][memory][gpu]") {
@@ -535,7 +535,7 @@ TEST_CASE("Real driver: a flood of small allocations needs only a few memory obj
     fx.Require();
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
-    VulkanDevice* device = VulkanDevice::Create(info);
+    VulkanDevicePtr device = VulkanDevice::Create(info);
     if (device == nullptr) {
         SKIP("no suitable Vulkan device");
     }
@@ -561,5 +561,5 @@ TEST_CASE("Real driver: a flood of small allocations needs only a few memory obj
     for (const MemoryAllocation& a : held) {
         memory.Free(a);
     }
-    DestroyDevice(device);
+    device.Reset();
 }

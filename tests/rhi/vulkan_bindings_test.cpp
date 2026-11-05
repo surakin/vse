@@ -38,10 +38,10 @@ BindGroupLayoutHandle UniformLayout(Device* device) {
 // ---- the uniform ring (null device: no GPU needed) ----
 
 TEST_CASE("UniformRing offsets respect the alignment and never overlap", "[rhi][null][uniform-ring]") {
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
     const u64 alignment = device->Caps().min_uniform_buffer_offset_alignment;
     REQUIRE(alignment > 1);
-    auto ring_owner = std::make_unique<UniformRing>(device, 64 * 1024);
+    auto ring_owner = std::make_unique<UniformRing>(device.Get(), 64 * 1024);
     UniformRing& ring = *ring_owner;
     REQUIRE(ring.Valid());
     device->BeginFrame();
@@ -74,14 +74,14 @@ TEST_CASE("UniformRing offsets respect the alignment and never overlap", "[rhi][
     }
     device->EndFrame();
     ring_owner.reset(); // before the device it uses
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("UniformRing is full at its capacity, resets each frame and rotates regions", "[rhi][null][uniform-ring]") {
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
     QuietLog quiet;
     const u64 alignment = device->Caps().min_uniform_buffer_offset_alignment;
-    auto ring_owner = std::make_unique<UniformRing>(device, alignment * 4);
+    auto ring_owner = std::make_unique<UniformRing>(device.Get(), alignment * 4);
     UniformRing& ring = *ring_owner;
     REQUIRE(ring.Valid());
     CHECK(ring.BytesPerFrame() == alignment * 4);
@@ -105,12 +105,12 @@ TEST_CASE("UniformRing is full at its capacity, resets each frame and rotates re
     CHECK(first_offset[1] != first_offset[2]);
     CHECK(first_offset[0] == first_offset[3]);
     ring_owner.reset(); // before the device it uses
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("UniformRing allocations from several threads are disjoint", "[rhi][null][uniform-ring]") {
-    NullDevice* device = CreateNullDevice();
-    auto ring_owner = std::make_unique<UniformRing>(device, 512 * 1024);
+    NullDevicePtr device = CreateNullDevice();
+    auto ring_owner = std::make_unique<UniformRing>(device.Get(), 512 * 1024);
     UniformRing& ring = *ring_owner;
     device->BeginFrame();
     ring.BeginFrame();
@@ -136,11 +136,11 @@ TEST_CASE("UniformRing allocations from several threads are disjoint", "[rhi][nu
     }
     device->EndFrame();
     ring_owner.reset(); // before the device it uses
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Transient bind groups end with their frame on the null device", "[rhi][null][bindings]") {
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
     QuietLog quiet;
     BindingDesc entry = {0, BindingType::UniformBuffer, ShaderStage::Vertex, 1};
     BindGroupLayoutDesc ld;
@@ -183,7 +183,7 @@ TEST_CASE("Transient bind groups end with their frame on the null device", "[rhi
     device->EndFrame();
     device->DestroyBuffer(buffer);
     device->DestroyBindGroupLayout(layout);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 // ---- bind groups and push constants on a real device ----
@@ -192,7 +192,7 @@ namespace {
 
 struct BindDevice {
     gpu_test::GpuFixture fx;
-    VulkanDevice* device = nullptr;
+    VulkanDevicePtr device;
 
     explicit BindDevice(u32 sets_per_pool = 1024) {
         fx.RequireValidation();
@@ -209,7 +209,7 @@ struct BindDevice {
     ~BindDevice() {
         if (device != nullptr) {
             device->WaitIdle();
-            DestroyDevice(device);
+            device.Reset();
         }
     }
     void Cycle(int frames) {
@@ -225,7 +225,7 @@ struct BindDevice {
 
 TEST_CASE("A uniform, texture and sampler bind group and a push constant reach the shader", "[rhi][vulkan][gpu][bindings]") {
     BindDevice t;
-    Device* device = t.device;
+    Device* device = t.device.Get();
     t.fx.ExpectErrors(0);
     constexpr u32 kSize = 8;
 
@@ -383,7 +383,7 @@ TEST_CASE("A uniform, texture and sampler bind group and a push constant reach t
 TEST_CASE("Heavy transient descriptor use grows pools instead of failing", "[rhi][vulkan][gpu][bindings]") {
     BindDevice t(/*sets_per_pool=*/64);
     t.fx.ExpectErrors(0);
-    Device* device = t.device;
+    Device* device = t.device.Get();
     const BindGroupLayoutHandle layout = UniformLayout(device);
     BufferDesc bd;
     bd.size = 256;
@@ -426,7 +426,7 @@ TEST_CASE("Heavy transient descriptor use grows pools instead of failing", "[rhi
 TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of its own", "[rhi][vulkan][gpu][bindings]") {
     BindDevice t(/*sets_per_pool=*/16);
     t.fx.ExpectErrors(0);
-    Device* device = t.device;
+    Device* device = t.device.Get();
     const BindGroupLayoutHandle layout = UniformLayout(device);
     BufferDesc bd;
     bd.size = 256;
@@ -504,7 +504,7 @@ TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of 
 TEST_CASE("Bind group misuse is refused before the driver sees it", "[rhi][vulkan][gpu][bindings]") {
     BindDevice t;
     t.fx.ExpectErrors(0);
-    Device* device = t.device;
+    Device* device = t.device.Get();
     QuietLog quiet;
     const BindGroupLayoutHandle layout = UniformLayout(device);
     BufferDesc bd;

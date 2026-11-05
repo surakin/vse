@@ -260,7 +260,7 @@ TEST_CASE("List to strip handles a shuffled mesh and a lone triangle", "[rendere
 }
 
 TEST_CASE("A GPU strip mesh carries its topology and is culled by its vertices", "[renderer][mesh][topology][scene]") {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         MeshData list = PlaneList(2, 2);
         MeshData strip;
@@ -268,7 +268,7 @@ TEST_CASE("A GPU strip mesh carries its topology and is culled by its vertices",
         CHECK(strip.GetBounds().box.min.x == list.GetBounds().box.min.x);
         CHECK(strip.GetBounds().box.max.x == list.GetBounds().box.max.x);
         GpuMesh gpu;
-        REQUIRE(gpu.Create(device, strip, "strip"));
+        REQUIRE(gpu.Create(device.Get(), strip, "strip"));
         CHECK(gpu.Topology() == rhi::PrimitiveTopology::TriangleStrip);
         CHECK(gpu.HasPrimitiveRestart());
         GpuMesh moved = static_cast<GpuMesh&&>(gpu);
@@ -289,7 +289,7 @@ TEST_CASE("A GPU strip mesh carries its topology and is culled by its vertices",
         CHECK(scene.Cull(Frustum::FromViewProjection(cam.ViewProjection()), out.data(), static_cast<u32>(out.size())) == 1);
     }
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Conversions keep the position offset, and a widened strip uses the 32-bit marker", "[renderer][mesh][topology]") {

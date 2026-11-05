@@ -266,7 +266,7 @@ TEST_CASE("The cube vertex layout is built from the vertex shader", "[renderer][
 }
 
 TEST_CASE("Built layouts are accepted by the null device", "[renderer][reflection][null]") {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     ShaderReflection vs = LOAD(kLitVert);
     ShaderReflection fs = LOAD(kLitFrag);
     const ShaderReflection* pair[2] = {&vs, &fs};
@@ -277,7 +277,7 @@ TEST_CASE("Built layouts are accepted by the null device", "[renderer][reflectio
     CHECK(handle.IsValid());
     device->DestroyBindGroupLayout(handle);
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Built layouts are accepted by a real device", "[renderer][reflection][gpu]") {
@@ -285,7 +285,7 @@ TEST_CASE("Built layouts are accepted by a real device", "[renderer][reflection]
     info.validation = rhi::ValidationSetting::On;
     info.sync_validation = true;
     info.pipeline_cache = false;
-    rhi::Device* device = rhi::CreateDevice(info);
+    rhi::DevicePtr device = rhi::CreateDevice(info);
     if (device == nullptr) {
         const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
         if (required != nullptr && required[0] == '1') {
@@ -303,7 +303,7 @@ TEST_CASE("Built layouts are accepted by a real device", "[renderer][reflection]
     CHECK(handle.IsValid());
     device->DestroyBindGroupLayout(handle);
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Malformed blobs are rejected with a message", "[renderer][reflection]") {

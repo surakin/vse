@@ -38,7 +38,7 @@ TEST_CASE("A device lost at a chosen frame ignores submissions and tears down cl
     fx.Require();
     FaultInjection faults;
     faults.lose_device_at_frame = 3;
-    Device* device = CreateDevice(Info(faults));
+    DevicePtr device = CreateDevice(Info(faults));
     if (device == nullptr) {
         SKIP("no suitable Vulkan device");
     }
@@ -73,8 +73,8 @@ TEST_CASE("A device lost at a chosen frame ignores submissions and tears down cl
     device->DestroyBuffer(buffer);
     device->EndFrame();
     device->WaitIdle();
-    CHECK(Vk(device)->Counts().buffers == 0);
-    DestroyDevice(device);
+    CHECK(Vk(device.Get())->Counts().buffers == 0);
+    device.Reset();
 }
 
 TEST_CASE("Device creation fails cleanly when the first allocation fails", "[rhi][vulkan][gpu][fault]") {
@@ -95,11 +95,11 @@ TEST_CASE("Out-of-memory returns invalid handles and the device keeps working", 
     for (u32 n = 1; n <= 16 && !found; ++n) {
         FaultInjection faults;
         faults.fail_allocations_from = n;
-        Device* probe = CreateDevice(Info(faults));
+        DevicePtr probe = CreateDevice(Info(faults));
         if (probe != nullptr) {
             found = true;
             creation_allocations = n - 1;
-            DestroyDevice(probe);
+            probe.Reset();
         }
     }
     REQUIRE(found);
@@ -107,7 +107,7 @@ TEST_CASE("Out-of-memory returns invalid handles and the device keeps working", 
 
     FaultInjection faults;
     faults.fail_allocations_from = creation_allocations + 1;
-    Device* device = CreateDevice(Info(faults));
+    DevicePtr device = CreateDevice(Info(faults));
     REQUIRE(device != nullptr);
 
     TextureDesc td;
@@ -131,10 +131,10 @@ TEST_CASE("Out-of-memory returns invalid handles and the device keeps working", 
     CHECK(device->Submit(lists, 1) != 0);
     device->EndFrame();
     device->WaitIdle();
-    CHECK(Vk(device)->Counts().textures == 0);
-    CHECK(Vk(device)->Counts().buffers == 0);
+    CHECK(Vk(device.Get())->Counts().textures == 0);
+    CHECK(Vk(device.Get())->Counts().buffers == 0);
     CHECK_FALSE(device->DeviceLost());
-    DestroyDevice(device);
+    device.Reset();
 }
 
 namespace {
@@ -151,7 +151,7 @@ void RunResizeStorm(os::WindowBackend backend) {
     fx.Require();
     DeviceCreateInfo info = Info(FaultInjection{});
     info.window = window;
-    Device* device = CreateDevice(info);
+    DevicePtr device = CreateDevice(info);
     if (device == nullptr) {
         if (gpu_test::GpuRequired()) {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could present to the window");
@@ -204,8 +204,8 @@ void RunResizeStorm(os::WindowBackend backend) {
     fx.ExpectErrors(0);
     device->DestroySwapchain(sc);
     device->WaitIdle();
-    CHECK(Vk(device)->Counts().textures == 0);
-    DestroyDevice(device);
+    CHECK(Vk(device.Get())->Counts().textures == 0);
+    device.Reset();
 }
 
 } // namespace

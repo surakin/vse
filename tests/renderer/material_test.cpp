@@ -64,8 +64,7 @@ PermutationKey Key(std::initializer_list<const char*> names) {
 }
 
 struct Fixture {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
-    ~Fixture() { rhi::DestroyDevice(device); }
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
 };
 
 PipelineTarget ColorTarget(rhi::Format f = rhi::Format::RGBA8_UNorm) {
@@ -91,7 +90,7 @@ rhi::TextureHandle MakeTexture(rhi::Device* device) {
 
 TEST_CASE("A template and a material are built from reflection", "[renderer][material]") {
     Fixture f;
-    MaterialSystem sys(f.device, MaterialSystemDesc{});
+    MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     REQUIRE(sys.Valid());
     const TemplateId t = sys.CreateTemplate(TestTemplate());
     REQUIRE(t.IsValid());
@@ -108,7 +107,7 @@ TEST_CASE("A template and a material are built from reflection", "[renderer][mat
 
 TEST_CASE("Parameter writes land at the shader's std140 offsets", "[renderer][material]") {
     Fixture f;
-    MaterialSystem sys(f.device, MaterialSystemDesc{});
+    MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId t = sys.CreateTemplate(TestTemplate());
     const MaterialId m = sys.CreateMaterial(t, Key({}), "params");
     REQUIRE(m.IsValid());
@@ -151,7 +150,7 @@ TEST_CASE("Parameter writes land at the shader's std140 offsets", "[renderer][ma
 
 TEST_CASE("Values that do not match the reflected block are rejected", "[renderer][material]") {
     Fixture f;
-    MaterialSystem sys(f.device, MaterialSystemDesc{});
+    MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId t = sys.CreateTemplate(TestTemplate());
     const MaterialId m = sys.CreateMaterial(t, Key({}), "bad");
     CHECK_FALSE(sys.SetFloat(m, "base_color", 1.0f));                 // a float4 is not a float
@@ -168,7 +167,7 @@ TEST_CASE("Values that do not match the reflected block are rejected", "[rendere
 
 TEST_CASE("Templates and materials that break the conventions are rejected", "[renderer][material]") {
     Fixture f;
-    MaterialSystem sys(f.device, MaterialSystemDesc{});
+    MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
 
     SECTION("a fragment reflection given as the vertex stage") {
         MaterialTemplateDesc d = TestTemplate();
@@ -214,7 +213,7 @@ TEST_CASE("Templates and materials that break the conventions are rejected", "[r
         MaterialSystemDesc small;
         small.max_templates = 1;
         small.max_materials = 1;
-        MaterialSystem tiny(f.device, small);
+        MaterialSystem tiny(f.device.Get(), small);
         const TemplateId t = tiny.CreateTemplate(TestTemplate());
         REQUIRE(t.IsValid());
         CHECK_FALSE(tiny.CreateTemplate(TestTemplate()).IsValid());
@@ -225,7 +224,7 @@ TEST_CASE("Templates and materials that break the conventions are rejected", "[r
 
 TEST_CASE("A fragment shader without material resources still makes a material", "[renderer][material]") {
     Fixture f;
-    MaterialSystem sys(f.device, MaterialSystemDesc{});
+    MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     MaterialTemplateDesc d = TestTemplate();
     d.fragment_permutations = nullptr;
     d.fragment.words = shaders::kPermuteTestFragSpv;
@@ -246,7 +245,7 @@ TEST_CASE("A fragment shader without material resources still makes a material",
 
 TEST_CASE("Unset texture slots show a default chosen by name or by the template", "[renderer][material]") {
     Fixture f;
-    MaterialSystem sys(f.device, MaterialSystemDesc{});
+    MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId plain = sys.CreateTemplate(TestTemplate());
     const MaterialId a = sys.CreateMaterial(plain, Key({}), "a");
     CHECK(sys.EffectiveTexture(a, "albedo_tex") == sys.GetDefaultTexture(DefaultTexture::White));
@@ -264,7 +263,7 @@ TEST_CASE("Unset texture slots show a default chosen by name or by the template"
     CHECK(sys.EffectiveTexture(b, "albedo_tex") == sys.GetDefaultTexture(DefaultTexture::Black));
     CHECK(sys.EffectiveTexture(b, "normal_tex") == sys.GetDefaultTexture(DefaultTexture::FlatNormal));
 
-    const rhi::TextureHandle mine = MakeTexture(f.device);
+    const rhi::TextureHandle mine = MakeTexture(f.device.Get());
     sys.SetTexture(b, "albedo_tex", mine);
     CHECK(sys.EffectiveTexture(b, "albedo_tex") == mine);
     sys.SetTexture(b, "albedo_tex", rhi::TextureHandle{});
@@ -274,7 +273,7 @@ TEST_CASE("Unset texture slots show a default chosen by name or by the template"
 
 TEST_CASE("The pipeline cache keys on topology and primitive restart", "[renderer][material][topology]") {
     Fixture f;
-    MaterialSystem sys(f.device, MaterialSystemDesc{});
+    MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId t = sys.CreateTemplate(TestTemplate());
     const MaterialId a = sys.CreateMaterial(t, Key({}), "a");
     REQUIRE(a.IsValid());
@@ -300,7 +299,7 @@ TEST_CASE("The pipeline cache keys on topology and primitive restart", "[rendere
 
 TEST_CASE("Materials of one template and key share a pipeline", "[renderer][material]") {
     Fixture f;
-    MaterialSystem sys(f.device, MaterialSystemDesc{});
+    MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId t = sys.CreateTemplate(TestTemplate());
     const MaterialId a = sys.CreateMaterial(t, Key({}), "a");
     const MaterialId b = sys.CreateMaterial(t, Key({}), "b");
@@ -335,7 +334,7 @@ TEST_CASE("Materials of one template and key share a pipeline", "[renderer][mate
 
 TEST_CASE("A pipeline is refused for a mesh layout the vertex shader cannot read", "[renderer][material]") {
     Fixture f;
-    MaterialSystem sys(f.device, MaterialSystemDesc{});
+    MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId t = sys.CreateTemplate(TestTemplate());
     const MaterialId m = sys.CreateMaterial(t, Key({}), "m");
     VertexLayoutData missing = StandardVertexLayout();
@@ -353,11 +352,11 @@ TEST_CASE("A pipeline is refused for a mesh layout the vertex shader cannot read
 
 TEST_CASE("Changing a texture rebuilds only that material's bind groups", "[renderer][material]") {
     Fixture f;
-    MaterialSystem sys(f.device, MaterialSystemDesc{});
+    MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId t = sys.CreateTemplate(TestTemplate());
     const MaterialId a = sys.CreateMaterial(t, Key({}), "a");
     const MaterialId b = sys.CreateMaterial(t, Key({}), "b");
-    const rhi::TextureHandle tex = MakeTexture(f.device);
+    const rhi::TextureHandle tex = MakeTexture(f.device.Get());
 
     sys.BeginFrame(0);
     sys.FlushMaterials();
@@ -393,7 +392,7 @@ TEST_CASE("Changing a texture rebuilds only that material's bind groups", "[rend
 
 TEST_CASE("Parameter blocks are copied once per changed frame region", "[renderer][material]") {
     Fixture f;
-    MaterialSystem sys(f.device, MaterialSystemDesc{});
+    MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const TemplateId t = sys.CreateTemplate(TestTemplate());
     const MaterialId m = sys.CreateMaterial(t, Key({}), "m");
     u32 flushes = 0;
@@ -425,7 +424,7 @@ TEST_CASE("The draw sort key orders by pipeline, then material, then mesh", "[re
 
 TEST_CASE("Default textures exist and differ", "[renderer][material]") {
     Fixture f;
-    MaterialSystem sys(f.device, MaterialSystemDesc{});
+    MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
     const rhi::TextureHandle white = sys.GetDefaultTexture(DefaultTexture::White);
     const rhi::TextureHandle black = sys.GetDefaultTexture(DefaultTexture::Black);
     const rhi::TextureHandle flat = sys.GetDefaultTexture(DefaultTexture::FlatNormal);
@@ -437,7 +436,7 @@ TEST_CASE("Default textures exist and differ", "[renderer][material]") {
 TEST_CASE("Everything the system created is released in order", "[renderer][material]") {
     Fixture f;
     {
-        MaterialSystem sys(f.device, MaterialSystemDesc{});
+        MaterialSystem sys(f.device.Get(), MaterialSystemDesc{});
         const TemplateId t = sys.CreateTemplate(TestTemplate());
         const MaterialId a = sys.CreateMaterial(t, Key({}), "a");
         const MaterialId b = sys.CreateMaterial(t, Key({"TINT"}), "b");
@@ -465,14 +464,14 @@ TEST_CASE("Two objects drawn through two materials show their own transform and 
     info.validation = rhi::ValidationSetting::On;
     info.sync_validation = true;
     info.pipeline_cache = false;
-    rhi::Device* device = rhi::CreateDevice(info);
+    rhi::DevicePtr device = rhi::CreateDevice(info);
     if (device == nullptr) {
         const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
         if (required != nullptr && required[0] == '1') FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
         SKIP("no Vulkan device on this machine");
     }
     {
-        MaterialSystem sys(device, MaterialSystemDesc{});
+        MaterialSystem sys(device.Get(), MaterialSystemDesc{});
         REQUIRE(sys.Valid());
         const TemplateId tmpl = sys.CreateTemplate(TestTemplate());
         REQUIRE(tmpl.IsValid());
@@ -498,7 +497,7 @@ TEST_CASE("Two objects drawn through two materials show their own transform and 
         MeshData data;
         REQUIRE(MakePlaneMesh(2.0f, 2.0f, 1, 1, &data) == nullptr);
         GpuMesh mesh;
-        REQUIRE(mesh.Create(device, data, "plane"));
+        REQUIRE(mesh.Create(device.Get(), data, "plane"));
         RenderScene scene(RenderSceneDesc{});
         RenderObjectDesc od;
         od.mesh = &mesh;
@@ -513,7 +512,7 @@ TEST_CASE("Two objects drawn through two materials show their own transform and 
 
         Camera camera = MakeLookAtCamera(Vec3(0, 5, 0), Vec3(0, 0, 0), Vec3(0, 0, -1));
         camera.aspect = 2.0f;
-        FrameResources frame(device, 16);
+        FrameResources frame(device.Get(), 16);
         REQUIRE(frame.Valid());
 
         rhi::TextureDesc rt;
@@ -622,5 +621,5 @@ TEST_CASE("Two objects drawn through two materials show their own transform and 
         device->DestroyTexture(target);
     }
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }

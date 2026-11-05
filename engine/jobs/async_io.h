@@ -2,9 +2,11 @@
 
 #include <condition_variable>
 #include <coroutine>
+#include <utility>
 #include <mutex>
 #include <thread>
 
+#include "containers/unique_ptr.h"
 #include "jobs/counter.h"
 #include "mem/arena_allocator.h"
 #include "string/string.h"
@@ -154,7 +156,7 @@ public:
 
 private:
     friend class ReadFileAwaitable;
-    ReadState* state_ = nullptr;
+    UniquePtr<ReadState> state_;
 };
 
 /// Awaitable returned by [[jobs::ReadFileAsync]]; awaiting it yields a [[jobs::FileReadResult]].
@@ -169,7 +171,7 @@ class ReadFileAwaitable {
 public:
     /// Takes over the pending request of `other`, which becomes empty.
     /// Param other: the awaitable to move from.
-    ReadFileAwaitable(ReadFileAwaitable&& other) noexcept : state_(other.state_) { other.state_ = nullptr; }
+    ReadFileAwaitable(ReadFileAwaitable&& other) noexcept;
     ReadFileAwaitable(const ReadFileAwaitable&) = delete;
     ReadFileAwaitable& operator=(const ReadFileAwaitable&) = delete;
 
@@ -198,9 +200,9 @@ public:
 
 private:
     friend ReadFileAwaitable ReadFileAsync(Scheduler&, StringView, usize);
-    explicit ReadFileAwaitable(ReadState* state) : state_(state) {}
+    explicit ReadFileAwaitable(UniquePtr<ReadState> state);
 
-    ReadState* state_;
+    UniquePtr<ReadState> state_;
 };
 
 /// Default limit, in bytes, on the size of a file [[jobs::ReadFileAsync]] will read (64 MiB).

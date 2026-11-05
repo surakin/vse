@@ -31,7 +31,7 @@ struct TexturedScene : CubeScene {
         demo::CubeOptions options;
         options.depth_format = DepthFormat();
         options.textured = true;
-        REQUIRE(cube.Create(device, options));
+        REQUIRE(cube.Create(device.Get(), options));
     }
     ~TexturedScene() {
         if (device != nullptr) device->WaitIdle();
@@ -62,9 +62,9 @@ TEST_CASE("A 2x2 texture with nearest filtering shows its four colors on a face"
     px.width = px.height = 2;
     const demo::Rgba colors[4] = {{255, 0, 0, 255}, {0, 255, 0, 255}, {0, 0, 255, 255}, {255, 255, 0, 255}};
     for (const demo::Rgba& c : colors) px.rgba.insert(px.rgba.end(), {c.r, c.g, c.b, c.a});
-    const TextureHandle texture = demo::CreateSampledTexture(scene.device, px, Format::RGBA8_UNorm, false, "quadrants");
+    const TextureHandle texture = demo::CreateSampledTexture(scene.device.Get(), px, Format::RGBA8_UNorm, false, "quadrants");
     REQUIRE(texture.IsValid());
-    const SamplerHandle sampler = NearestSampler(scene.device);
+    const SamplerHandle sampler = NearestSampler(scene.device.Get());
     REQUIRE(sampler.IsValid());
     const Image image = scene.RenderWith(texture, sampler);
     for (u32 i = 0; i < 4; ++i) {
@@ -81,11 +81,11 @@ TEST_CASE("A 2x2 texture with nearest filtering shows its four colors on a face"
 TEST_CASE("An sRGB texture is decoded to linear when sampled and a UNORM one is not", "[rhi][vulkan][gpu][textured]") {
     TexturedScene scene;
     const demo::Pixels gray = demo::Solid(4, 4, {128, 128, 128, 255});
-    const TextureHandle linear = demo::CreateSampledTexture(scene.device, gray, Format::RGBA8_UNorm, false, "gray unorm");
-    const TextureHandle srgb = demo::CreateSampledTexture(scene.device, gray, Format::RGBA8_SRGB, false, "gray srgb");
+    const TextureHandle linear = demo::CreateSampledTexture(scene.device.Get(), gray, Format::RGBA8_UNorm, false, "gray unorm");
+    const TextureHandle srgb = demo::CreateSampledTexture(scene.device.Get(), gray, Format::RGBA8_SRGB, false, "gray srgb");
     REQUIRE(linear.IsValid());
     REQUIRE(srgb.IsValid());
-    const SamplerHandle sampler = NearestSampler(scene.device);
+    const SamplerHandle sampler = NearestSampler(scene.device.Get());
     // The color target is UNORM, so what the shader computes is what is stored. Mid-gray 128/255 is 0.502 as UNORM
     // and 0.2158 once sRGB-decoded; times the +Z face tint (0.5, 0.5, 1).
     const Image a = scene.RenderWith(linear, sampler);
@@ -101,8 +101,8 @@ TEST_CASE("An sRGB texture is decoded to linear when sampled and a UNORM one is 
 TEST_CASE("Generated mips average a minified checkerboard and a single level does not", "[rhi][vulkan][gpu][textured]") {
     TexturedScene scene;
     const demo::Pixels checker = demo::Checkerboard(256, 1, {0, 0, 0, 255}, {255, 255, 255, 255});
-    const TextureHandle mipped = demo::CreateSampledTexture(scene.device, checker, Format::RGBA8_UNorm, true, "checker mips");
-    const TextureHandle single = demo::CreateSampledTexture(scene.device, checker, Format::RGBA8_UNorm, false, "checker single");
+    const TextureHandle mipped = demo::CreateSampledTexture(scene.device.Get(), checker, Format::RGBA8_UNorm, true, "checker mips");
+    const TextureHandle single = demo::CreateSampledTexture(scene.device.Get(), checker, Format::RGBA8_UNorm, false, "checker single");
     REQUIRE(mipped.IsValid());
     REQUIRE(single.IsValid());
     SamplerDesc sd; // trilinear, repeat
@@ -138,7 +138,7 @@ TEST_CASE("Generated mips average a minified checkerboard and a single level doe
 TEST_CASE("The textured cube renders from a fixed angle and matches its golden image", "[rhi][vulkan][gpu][textured][golden]") {
     TexturedScene scene(Vec3(1.8f, 1.5f, 3.0f));
     const demo::Pixels checker = demo::Checkerboard(64, 8, {230, 60, 60, 255}, {60, 60, 230, 255});
-    const TextureHandle texture = demo::CreateSampledTexture(scene.device, checker, Format::RGBA8_SRGB, true, "checker");
+    const TextureHandle texture = demo::CreateSampledTexture(scene.device.Get(), checker, Format::RGBA8_SRGB, true, "checker");
     REQUIRE(texture.IsValid());
     SamplerDesc sd; // trilinear with anisotropy
     sd.max_anisotropy = 16.0f;
@@ -205,13 +205,13 @@ TEST_CASE("sRGB mips are averaged as linear light and one-level images need no m
     CHECK(linear.data[4 * 4 * 4] == 128);
 
     // A 1x1 image has no mips to generate: asking for them must not abort.
-    NullDevice* device = CreateNullDevice();
-    const TextureHandle one = demo::CreateSampledTexture(device, demo::Solid(1, 1, {10, 20, 30, 255}), Format::RGBA8_UNorm, true, "1x1");
+    NullDevicePtr device = CreateNullDevice();
+    const TextureHandle one = demo::CreateSampledTexture(device.Get(), demo::Solid(1, 1, {10, 20, 30, 255}), Format::RGBA8_UNorm, true, "1x1");
     CHECK(one.IsValid());
     // Formats the helpers cannot treat as four 8-bit channels are refused.
-    CHECK_FALSE(demo::CreateSampledTexture(device, demo::Solid(1, 1, {0, 0, 0, 0}), Format::R32_Float, false, "float").IsValid());
+    CHECK_FALSE(demo::CreateSampledTexture(device.Get(), demo::Solid(1, 1, {0, 0, 0, 0}), Format::R32_Float, false, "float").IsValid());
     CHECK(device->ErrorCount() == 0);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("An rtex file round-trips and damaged ones are refused", "[rhi][textured][image]") {

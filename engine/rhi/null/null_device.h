@@ -59,6 +59,11 @@ struct NullDeviceStats {
     usize command_lists = 0;
 };
 
+class NullDevice;
+
+/// Owning pointer to a null device; destroying it waits for the device first (see [[rhi::DeviceDeleter]]).
+using NullDevicePtr = UniquePtr<NullDevice, DeviceDeleter>;
+
 /// The validating, GPU-less device.
 ///
 /// Every contract violation is logged on [[rhi::LogRhi]] at error level, counted, and otherwise ignored
@@ -68,9 +73,14 @@ struct NullDeviceStats {
 ///
 /// Thread-safety: thread-safe for creation, destruction, mapping and inspection; `Submit`, `BeginFrame`,
 ///   `EndFrame` and `WaitIdle` belong to one submission thread, as for [[rhi::Device]].
-/// Ownership: created by [[rhi::CreateNullDevice]] and destroyed with [[rhi::DestroyDevice]].
+/// Ownership: created by [[rhi::CreateNullDevice]], which returns a [[rhi::NullDevicePtr]].
 class NullDevice final : public Device {
 public:
+    /// Creates the device; use [[rhi::CreateNullDevice]].
+    ///
+    /// Param options: limits and behavior.
+    explicit NullDevice(const NullDeviceOptions& options);
+
     /// Releases every resource, including those still waiting for deferred destruction.
     ~NullDevice() override;
 
@@ -155,16 +165,15 @@ public:
     void SimulateDeviceLoss();
 
 private:
-    friend NullDevice* CreateNullDevice(const NullDeviceOptions& options);
-    explicit NullDevice(detail::NullDeviceState* state);
-    detail::NullDeviceState* state_;
+    UniquePtr<detail::NullDeviceState> state_;
 };
 
 /// Creates a null device.
 ///
 /// Param options: limits and behavior; the defaults are the RHI-guaranteed minimums.
-/// Returns: the device; never null.
-/// Ownership: the caller owns the device and releases it with [[rhi::DestroyDevice]].
-NullDevice* CreateNullDevice(const NullDeviceOptions& options = NullDeviceOptions());
+/// Returns: the device; never empty.
+/// Aborts: the host is out of memory.
+/// Ownership: the caller owns the device through the returned pointer.
+NullDevicePtr CreateNullDevice(const NullDeviceOptions& options = NullDeviceOptions());
 
 } // namespace engine_placeholder::rhi

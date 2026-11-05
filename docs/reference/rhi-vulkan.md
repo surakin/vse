@@ -3129,6 +3129,16 @@ The images are registered as device textures (state tracked by the application w
 | Thread-safety | owner-thread-only, and not to be used while another thread submits to the same device. |
 | Ownership | created by [`rhi::Device::CreateSwapchain`](rhi.md#rhi-device-createswapchain-const-swapchaindesc-amp), destroyed with [`rhi::Device::DestroySwapchain`](rhi.md#rhi-device-destroyswapchain-swapchain-star). |
 
+### `VulkanSwapchain(VulkanDevice*)` {#rhi-vulkan-vulkanswapchain-vulkanswapchain-vulkandevice-star}
+
+`constructor rhi::vulkan::VulkanSwapchain::VulkanSwapchain` — defined in `engine/rhi/vulkan/vk_swapchain.h`
+
+```cpp
+explicit VulkanSwapchain(VulkanDevice* device);
+```
+
+Constructs an empty swapchain; use [`rhi::vulkan::VulkanSwapchain::Create`](#rhi-vulkan-vulkanswapchain-create-vulkandevice-star-const-swapchaindesc-amp).
+
 ### `~VulkanSwapchain()` {#rhi-vulkan-vulkanswapchain-tilde-vulkanswapchain}
 
 `destructor rhi::vulkan::VulkanSwapchain::~VulkanSwapchain` — defined in `engine/rhi/vulkan/vk_swapchain.h`
@@ -3228,7 +3238,7 @@ _Inherited from [`rhi::Swapchain::CurrentTexture() const`](rhi.md#rhi-swapchain-
 `method rhi::vulkan::VulkanSwapchain::Create` — defined in `engine/rhi/vulkan/vk_swapchain.h`
 
 ```cpp
-static VulkanSwapchain* Create(VulkanDevice* device, const SwapchainDesc& desc);
+static UniquePtr<VulkanSwapchain> Create(VulkanDevice* device, const SwapchainDesc& desc);
 ```
 
 Creates a swapchain for the device's window.
@@ -3237,8 +3247,8 @@ Creates a swapchain for the device's window.
 |---|---|
 | Parameter `device` | the device; must have been created with a window. |
 | Parameter `desc` | the presentation mode and initial size. |
-| Returns | the swapchain, or null. |
-| Fails | returns null, logging the reason, if the surface offers no usable format or cannot be rendered to. |
+| Returns | the swapchain, or an empty pointer. |
+| Fails | returns an empty pointer, logging the reason, if the surface offers no usable format or cannot be rendered to. |
 | Ownership | the caller owns the result. |
 
 ## `SurfaceFormatChoice` {#rhi-vulkan-surfaceformatchoice}
@@ -3397,6 +3407,16 @@ Creates a `VkSurfaceKHR` for an X11 window with `vkCreateXlibSurfaceKHR`.
 | Returns | the `VkResult` as an integer; 0 is `VK_SUCCESS`. |
 | Fails | returns `VK_ERROR_EXTENSION_NOT_PRESENT` (-7) if the entry point cannot be resolved, or the driver's error. |
 
+## `VulkanDevicePtr` {#rhi-vulkan-vulkandeviceptr}
+
+`alias rhi::vulkan::VulkanDevicePtr` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+using VulkanDevicePtr = UniquePtr<VulkanDevice, DeviceDeleter>;
+```
+
+Owning pointer to a Vulkan device; destroying it waits for the GPU first (see [`rhi::DeviceDeleter`](rhi.md#rhi-devicedeleter)).
+
 ## `VulkanDevice` {#rhi-vulkan-vulkandevice}
 
 `class rhi::vulkan::VulkanDevice` — defined in `engine/rhi/vulkan/vulkan_device.h`
@@ -3412,14 +3432,24 @@ Created by [`rhi::CreateDevice`](rhi.md#rhi-createdevice-const-devicecreateinfo-
 | Field | Value |
 |---|---|
 | Thread-safety | thread-safe for creation, destruction and mapping, as for [`rhi::Device`](rhi.md#rhi-device); `Submit`, `BeginFrame`, `EndFrame` and `WaitIdle` belong to one submission thread. |
-| Ownership | the caller owns the device and releases it with [`rhi::DestroyDevice`](rhi.md#rhi-destroydevice-device-star); it owns the Vulkan instance. |
+| Ownership | the caller owns the device through a [`rhi::vulkan::VulkanDevicePtr`](#rhi-vulkan-vulkandeviceptr); it owns the Vulkan instance. |
+
+### `VulkanDevice()` {#rhi-vulkan-vulkandevice-vulkandevice}
+
+`constructor rhi::vulkan::VulkanDevice::VulkanDevice` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+VulkanDevice() = default;
+```
+
+Constructs an uninitialized device; use [`rhi::vulkan::VulkanDevice::Create`](#rhi-vulkan-vulkandevice-create-const-devicecreateinfo-amp) or [`rhi::CreateDevice`](rhi.md#rhi-createdevice-const-devicecreateinfo-amp).
 
 ### `Create(const DeviceCreateInfo&)` {#rhi-vulkan-vulkandevice-create-const-devicecreateinfo-amp}
 
 `method rhi::vulkan::VulkanDevice::Create` — defined in `engine/rhi/vulkan/vulkan_device.h`
 
 ```cpp
-static VulkanDevice* Create(const DeviceCreateInfo& info);
+static VulkanDevicePtr Create(const DeviceCreateInfo& info);
 ```
 
 Creates a Vulkan device.
@@ -3427,9 +3457,9 @@ Creates a Vulkan device.
 | Field | Value |
 |---|---|
 | Parameter `info` | what to create; the backend field is ignored. |
-| Returns | the device, or null. |
+| Returns | the device, or an empty pointer. |
 | Fails | as for [`rhi::CreateDevice`](rhi.md#rhi-createdevice-const-devicecreateinfo-amp). |
-| Ownership | the caller owns the result. |
+| Ownership | the caller owns the result through the returned pointer. |
 
 ### `kFramePools` {#rhi-vulkan-vulkandevice-kframepools}
 

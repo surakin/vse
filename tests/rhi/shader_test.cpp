@@ -170,7 +170,7 @@ TEST_CASE("ValidateSpirv checks the declared stage, entry name and the supported
 
 TEST_CASE("The null device checks shader contents", "[rhi][null][spirv]") {
     QuietLog quiet;
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
     ShaderDesc desc;
     desc.stage = ShaderStage::Vertex;
     desc.words = shaders::kTriangleVertSpv;
@@ -191,7 +191,7 @@ TEST_CASE("The null device checks shader contents", "[rhi][null][spirv]") {
     CHECK(device->ErrorCount() == 2);
 
     device->DestroyShader(ok);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan creates shader modules from the committed triangle shaders", "[rhi][vulkan][gpu][spirv]") {
@@ -199,7 +199,7 @@ TEST_CASE("Vulkan creates shader modules from the committed triangle shaders", "
     fx.RequireValidation();
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
-    vulkan::VulkanDevice* device = vulkan::VulkanDevice::Create(info);
+    vulkan::VulkanDevicePtr device = vulkan::VulkanDevice::Create(info);
     if (device == nullptr) {
         SKIP("no suitable Vulkan device");
     }
@@ -252,7 +252,7 @@ TEST_CASE("Vulkan creates shader modules from the committed triangle shaders", "
     CHECK(device->Counts().shaders == 0);
     device->EndFrame();
     vulkan::VulkanDevice::ResetLeakCounts();
-    DestroyDevice(device);
+    device.Reset();
     CHECK(vulkan::VulkanDevice::GetLeakCounts().user_objects == 0);
 }
 
@@ -261,7 +261,7 @@ TEST_CASE("Vulkan frees a shader the application forgot", "[rhi][vulkan][gpu][sp
     fx.RequireValidation();
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
-    vulkan::VulkanDevice* device = vulkan::VulkanDevice::Create(info);
+    vulkan::VulkanDevicePtr device = vulkan::VulkanDevice::Create(info);
     if (device == nullptr) {
         SKIP("no suitable Vulkan device");
     }
@@ -273,7 +273,7 @@ TEST_CASE("Vulkan frees a shader the application forgot", "[rhi][vulkan][gpu][sp
     vulkan::VulkanDevice::ResetLeakCounts();
     {
         QuietLog quiet;
-        DestroyDevice(device); // frees the module (the validation layer would report a leak otherwise)
+        device.Reset(); // frees the module (the validation layer would report a leak otherwise)
     }
     CHECK(vulkan::VulkanDevice::GetLeakCounts().user_objects == 1);
     vulkan::VulkanDevice::ResetLeakCounts();

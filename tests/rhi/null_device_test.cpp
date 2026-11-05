@@ -23,12 +23,11 @@ struct QuietLog {
 
 struct Fixture {
     QuietLog quiet;
-    NullDevice* dev = nullptr;
+    NullDevicePtr dev;
     Fixture(const NullDeviceOptions& options = NullDeviceOptions()) {
         dev = CreateNullDevice(options);
         dev->BeginFrame();
     }
-    ~Fixture() { DestroyDevice(dev); }
 
     BufferHandle Buffer(u64 size, BufferUsage usage, MemoryLocation loc = MemoryLocation::GpuOnly) {
         BufferDesc d;
@@ -890,14 +889,14 @@ TEST_CASE("Submit needs an open frame and a real array", "[rhi][null][misuse]") 
 
 TEST_CASE("Frames must be begun and ended in pairs", "[rhi][null][misuse]") {
     QuietLog quiet;
-    NullDevice* dev = CreateNullDevice();
+    NullDevicePtr dev = CreateNullDevice();
     dev->EndFrame();  // no frame
     CHECK(dev->ErrorCount() == 1);
     dev->BeginFrame();
     dev->BeginFrame();  // previous not ended
     CHECK(dev->ErrorCount() == 2);
     CHECK(dev->FrameNumber() == 2);
-    DestroyDevice(dev);
+    dev.Reset();
 }
 
 TEST_CASE("Destruction is deferred until the GPU has finished the frame", "[rhi][null][lifetime]") {
@@ -1047,7 +1046,7 @@ TEST_CASE("The null device honors an injected device loss", "[rhi][null][fault]"
     DeviceCreateInfo info;
     info.backend = Backend::Null;
     info.faults.lose_device_at_frame = 2;
-    Device* device = CreateDevice(info);
+    DevicePtr device = CreateDevice(info);
     REQUIRE(device != nullptr);
     device->BeginFrame();
     CHECK_FALSE(device->DeviceLost());
@@ -1055,7 +1054,7 @@ TEST_CASE("The null device honors an injected device loss", "[rhi][null][fault]"
     device->BeginFrame();
     CHECK(device->DeviceLost());
     device->EndFrame();
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("The default device enforces Direct3D 12's copy alignment, so portable code pads its rows", "[rhi][null][misuse]") {

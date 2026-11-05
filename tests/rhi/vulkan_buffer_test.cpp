@@ -27,11 +27,11 @@ std::vector<unsigned char> Pattern(usize size, unsigned seed) {
 }
 
 // Creates the device under the validation fixture, or skips/fails as the fixture's policy says.
-VulkanDevice* MakeDevice() {
+VulkanDevicePtr MakeDevice() {
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
     info.sync_validation = true;
-    VulkanDevice* device = VulkanDevice::Create(info);
+    VulkanDevicePtr device = VulkanDevice::Create(info);
     if (device == nullptr) {
         if (gpu_test::GpuRequired()) {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
@@ -132,7 +132,7 @@ TEST_CASE("RingAllocator never hands out space still held, over 100k random oper
 }
 
 TEST_CASE("NullDevice upload and readback round-trip and leave the buffer in CopyDst", "[rhi][null][upload]") {
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
     BufferDesc desc;
     desc.size = 1024;
     desc.usage = BufferUsage::CopyDst | BufferUsage::CopySrc | BufferUsage::Vertex;
@@ -152,13 +152,13 @@ TEST_CASE("NullDevice upload and readback round-trip and leave the buffer in Cop
     UploadTicket bad = device->UploadBuffer(buffer, 900, data.data(), data.size()); // past the end
     CHECK_FALSE(bad.ok);
     CHECK(device->ErrorCount() == 1);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan buffers: create, map, write and destroy, validation-clean", "[rhi][vulkan][gpu][buffer]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
 
     BufferDesc desc;
     desc.size = 4096;
@@ -185,13 +185,13 @@ TEST_CASE("Vulkan buffers: create, map, write and destroy, validation-clean", "[
     device->WaitIdle();
     CHECK(device->Counts().pending_destruction == 0);
     CHECK(device->Counts().raw_buffers == 1); // only the staging ring remains
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan buffer uploads round-trip at every size, including larger than the staging ring", "[rhi][vulkan][gpu][buffer]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
 
     for (usize size : {usize(1), usize(4096), usize(1) << 20, usize(40) << 20}) {
         INFO("size " << size);
@@ -213,13 +213,13 @@ TEST_CASE("Vulkan buffer uploads round-trip at every size, including larger than
     }
     device->WaitIdle();
     CHECK(device->Counts().raw_buffers == 1);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan partial uploads leave the rest of the buffer alone", "[rhi][vulkan][gpu][buffer]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
     BufferDesc desc;
     desc.size = 1024;
     desc.usage = BufferUsage::CopyDst | BufferUsage::CopySrc;
@@ -233,13 +233,13 @@ TEST_CASE("Vulkan partial uploads leave the rest of the buffer alone", "[rhi][vu
     REQUIRE(device->ReadbackBuffer(buffer, 0, back.data(), back.size()));
     CHECK(back == base); // the second upload is ordered after the first
     device->DestroyBuffer(buffer);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan CPU-visible buffers upload and read back through their mapping", "[rhi][vulkan][gpu][buffer]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
     BufferDesc up;
     up.size = 256;
     up.usage = BufferUsage::CopyDst | BufferUsage::CopySrc;
@@ -256,13 +256,13 @@ TEST_CASE("Vulkan CPU-visible buffers upload and read back through their mapping
     REQUIRE(device->ReadbackBuffer(buffer, 0, back.data(), back.size()));
     CHECK(back == data);
     device->DestroyBuffer(buffer);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan uploads from two threads serialize correctly", "[rhi][vulkan][gpu][buffer][threads]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
     constexpr int kBuffers = 8;
     constexpr usize kSize = 3 << 20; // several uploads exceed the ring together
     BufferHandle buffers[2][kBuffers];
@@ -296,13 +296,13 @@ TEST_CASE("Vulkan uploads from two threads serialize correctly", "[rhi][vulkan][
             device->DestroyBuffer(buffers[t][i]);
         }
     }
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan retired buffers are released only after their frame completes", "[rhi][vulkan][gpu][buffer][frames]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
 
     BufferDesc desc;
     desc.size = 4096;
@@ -328,19 +328,19 @@ TEST_CASE("Vulkan retired buffers are released only after their frame completes"
     CHECK(device->Counts().pending_destruction == 0);
     CHECK(device->Counts().raw_buffers == 1);
     device->EndFrame();
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vulkan device destruction releases buffers the application forgot", "[rhi][vulkan][gpu][buffer]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevice* device = MakeDevice();
+    VulkanDevicePtr device = MakeDevice();
     BufferDesc desc;
     desc.size = 1 << 16;
     desc.usage = BufferUsage::Vertex | BufferUsage::CopyDst;
     device->CreateBuffer(desc);
     device->CreateBuffer(desc);
-    DestroyDevice(device); // logs a warning; validation must stay clean (no leaked VkBuffer)
+    device.Reset(); // logs a warning; validation must stay clean (no leaked VkBuffer)
 }
 
 TEST_CASE("RingAllocator reclaims many groups at once", "[rhi][ring]") {

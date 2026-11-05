@@ -178,15 +178,15 @@ TEST_CASE("A four-pass render graph runs on a real device with no validation or 
     info.validation = ValidationSetting::On;
     info.sync_validation = true;
     info.pipeline_cache = false;
-    VulkanDevice* device = VulkanDevice::Create(info);
+    VulkanDevicePtr device = VulkanDevice::Create(info);
     if (device == nullptr) {
         SKIP("no suitable Vulkan device");
     }
     fx.ExpectErrors(0);
     {
         GraphScene scene;
-        REQUIRE(scene.Create(device));
-        TransientPool pool(device, TransientPoolDesc{});
+        REQUIRE(scene.Create(device.Get()));
+        TransientPool pool(device.Get(), TransientPoolDesc{});
 
         TextureDesc target_desc;
         target_desc.width = target_desc.height = kSize;
@@ -256,5 +256,5 @@ TEST_CASE("A four-pass render graph runs on a real device with no validation or 
     for (const gpu_test::CapturedMessage& m : fx.Messages()) {
         if (m.severity == LogVerbosity::Error || m.severity == LogVerbosity::Warn) FAIL_CHECK(m.id << ": " << m.text);
     }
-    DestroyDevice(device);
+    device.Reset();
 }

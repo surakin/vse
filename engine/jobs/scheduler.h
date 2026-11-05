@@ -5,6 +5,7 @@
 #include <coroutine>
 #include <mutex>
 
+#include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "jobs/deque.h"
 #include "jobs/job.h"
@@ -270,8 +271,8 @@ private:
 
     usize count_ = 1;
     Vector<Lane> lanes_;
-    WorkerPool* pool_ = nullptr;
-    IoThread* io_ = nullptr;
+    UniquePtr<WorkerPool> pool_;
+    UniquePtr<IoThread> io_;
 
     // Injection queue (ring), guarded by injection_mutex_.
     std::mutex injection_mutex_;

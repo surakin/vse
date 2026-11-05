@@ -6,7 +6,7 @@
 
 namespace engine_placeholder::rhi {
 
-Device* CreateDevice(const DeviceCreateInfo& info) {
+DevicePtr CreateDevice(const DeviceCreateInfo& info) {
     switch (info.backend) {
     case Backend::Null: {
         NullDeviceOptions options;
@@ -16,7 +16,7 @@ Device* CreateDevice(const DeviceCreateInfo& info) {
     case Backend::Vulkan: return vulkan::VulkanDevice::Create(info);
     }
     RhiLog(LogVerbosity::Error, "CreateDevice: unknown backend %d", static_cast<int>(info.backend));
-    return nullptr;
+    return DevicePtr();
 }
 
 } // namespace engine_placeholder::rhi

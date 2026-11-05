@@ -125,7 +125,8 @@ struct ReadState : IoRequest {
 // ---- awaitable --------------------------------------------------------------
 
 ReadFileAwaitable ReadFileAsync(Scheduler& scheduler, StringView path, usize max_bytes) {
-    auto* st = new ReadState(scheduler, max_bytes);
+    UniquePtr<ReadState> st = MakeUnique<ReadState>(scheduler, max_bytes);
+    ENGINE_ASSERT(st, "ReadFileAsync: out of host memory for the request");
     if (path.Length() > kMaxAsyncPathBytes) {
         st->path_too_long = true;
         st->path[0] = '\0';
@@ -134,13 +135,17 @@ ReadFileAwaitable ReadFileAsync(Scheduler& scheduler, StringView path, usize max
         st->path[path.Length()] = '\0';
         st->path_len = path.Length();
     }
-    return ReadFileAwaitable(st);
+    return ReadFileAwaitable(std::move(st));
 }
 
-ReadFileAwaitable::~ReadFileAwaitable() { delete state_; }
+ReadFileAwaitable::ReadFileAwaitable(UniquePtr<ReadState> state) : state_(std::move(state)) {}
+
+ReadFileAwaitable::ReadFileAwaitable(ReadFileAwaitable&& other) noexcept : state_(std::move(other.state_)) {}
+
+ReadFileAwaitable::~ReadFileAwaitable() = default;
 
 bool ReadFileAwaitable::await_suspend(std::coroutine_handle<> h) noexcept {
-    ReadState* st = state_;
+    ReadState* st = state_.Get();
     if (st->path_too_long) {
         return false; // fail inline: ok stays false
     }
@@ -159,7 +164,7 @@ bool ReadFileAwaitable::await_suspend(std::coroutine_handle<> h) noexcept {
 }
 
 FileReadResult ReadFileAwaitable::await_resume() noexcept {
-    ReadState* st = state_;
+    ReadState* st = state_.Get();
     if (!st->path_too_long) {
         st->counter.operator co_await().await_resume();
         // D8 contract: continuations never run on the I/O thread, always
@@ -172,18 +177,16 @@ FileReadResult ReadFileAwaitable::await_resume() noexcept {
     r.ok = st->ok;
     r.data = st->data;
     r.size = st->size;
-    r.state_ = st;
-    state_ = nullptr; // ownership of the state moves into the result
+    r.state_ = std::move(state_); // ownership of the state moves into the result
     return r;
 }
 
 // ---- result -----------------------------------------------------------------
 
-FileReadResult::~FileReadResult() { delete state_; }
+FileReadResult::~FileReadResult() = default;
 
 FileReadResult::FileReadResult(FileReadResult&& o) noexcept
-    : ok(o.ok), data(o.data), size(o.size), state_(o.state_) {
-    o.state_ = nullptr;
+    : ok(o.ok), data(o.data), size(o.size), state_(std::move(o.state_)) {
     o.data = nullptr;
     o.ok = false;
     o.size = 0;
@@ -191,12 +194,10 @@ FileReadResult::FileReadResult(FileReadResult&& o) noexcept
 
 FileReadResult& FileReadResult::operator=(FileReadResult&& o) noexcept {
     if (this != &o) {
-        delete state_;
         ok = o.ok;
         data = o.data;
         size = o.size;
-        state_ = o.state_;
-        o.state_ = nullptr;
+        state_ = std::move(o.state_);
         o.data = nullptr;
         o.ok = false;
         o.size = 0;

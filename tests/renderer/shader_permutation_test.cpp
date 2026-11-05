@@ -333,7 +333,7 @@ TEST_CASE("The module a key selects draws the colour its options describe", "[re
     info.validation = rhi::ValidationSetting::On;
     info.sync_validation = true;
     info.pipeline_cache = false;
-    rhi::Device* device = rhi::CreateDevice(info);
+    rhi::DevicePtr device = rhi::CreateDevice(info);
     if (device == nullptr) {
         const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
         if (required != nullptr && required[0] == '1') {
@@ -343,15 +343,15 @@ TEST_CASE("The module a key selects draws the colour its options describe", "[re
     }
 
     // The shader's flat colour is (0.8, 0.4, 0.2); each option changes it analytically (see permute_test.frag.slang).
-    CHECK(Near(DrawWithKey(device, {}), 204, 102, 51));
-    CHECK(Near(DrawWithKey(device, {"INVERT"}), 51, 153, 204));
-    CHECK(Near(DrawWithKey(device, {"HALF"}), 102, 51, 26));
-    CHECK(Near(DrawWithKey(device, {"INVERT", "HALF"}), 26, 77, 102));
-    CHECK(Near(DrawWithKey(device, {"TINT"}), 204, 102, 26));
+    CHECK(Near(DrawWithKey(device.Get(), {}), 204, 102, 51));
+    CHECK(Near(DrawWithKey(device.Get(), {"INVERT"}), 51, 153, 204));
+    CHECK(Near(DrawWithKey(device.Get(), {"HALF"}), 102, 51, 26));
+    CHECK(Near(DrawWithKey(device.Get(), {"INVERT", "HALF"}), 26, 77, 102));
+    CHECK(Near(DrawWithKey(device.Get(), {"TINT"}), 204, 102, 26));
     // DEBUG paints (u, v, 0): pixel (6, 2) of 8x8 is at uv (6.5/8, 2.5/8). The shared DEBUG TINT key draws the same.
-    CHECK(Near(DrawWithKey(device, {"DEBUG"}), 207, 80, 0));
-    CHECK(Near(DrawWithKey(device, {"DEBUG", "TINT"}), 207, 80, 0));
+    CHECK(Near(DrawWithKey(device.Get(), {"DEBUG"}), 207, 80, 0));
+    CHECK(Near(DrawWithKey(device.Get(), {"DEBUG", "TINT"}), 207, 80, 0));
 
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }

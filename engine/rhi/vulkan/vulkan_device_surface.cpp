@@ -52,20 +52,20 @@ Swapchain* VulkanDevice::CreateSwapchain(const SwapchainDesc& desc) {
         RhiLog(LogVerbosity::Error, "CreateSwapchain: the device was created without a window");
         return nullptr;
     }
-    if (swapchain_ != nullptr) {
+    if (swapchain_) {
         RhiLog(LogVerbosity::Error, "CreateSwapchain: the device already has a swapchain");
         return nullptr;
     }
     swapchain_ = VulkanSwapchain::Create(this, desc);
-    return swapchain_;
+    return swapchain_.Get();
 }
 
 void VulkanDevice::DestroySwapchain(Swapchain* swapchain) {
     if (swapchain == nullptr) {
         return;
     }
-    ENGINE_ASSERT(swapchain == swapchain_, "DestroySwapchain: not this device's swapchain");
-    delete swapchain_; // its destructor clears swapchain_
+    ENGINE_ASSERT(swapchain == swapchain_.Get(), "DestroySwapchain: not this device's swapchain");
+    swapchain_.Reset();
 }
 
 } // namespace engine_placeholder::rhi::vulkan

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "containers/unique_ptr.h"
+#include "mem/heap_allocator.h"
 #include "rhi/caps.h"
 #include "rhi/command_list.h"
 #include "rhi/desc.h"
@@ -38,8 +40,8 @@ struct UploadTicket {
 /// Thread-safety: thread-safe for resource creation, destruction, mapping and `CreateCommandList`
 ///   (serialized internally). `Submit`, `BeginFrame`, `EndFrame` and `WaitIdle` must be called from one
 ///   thread at a time (the submission thread).
-/// Ownership: the caller owns the device and releases it with [[rhi::DestroyDevice]], after `WaitIdle`
-///   and after dropping every command list.
+/// Ownership: the caller owns the device through a [[rhi::DevicePtr]], which waits for the GPU to go
+///   idle and destroys it; drop every command list first.
 class Device {
 public:
     virtual ~Device() = default;
@@ -341,10 +343,27 @@ public:
     virtual bool DeviceLost() const = 0;
 };
 
-/// Destroys a device created by a backend's factory function, after waiting for it to go idle.
+/// Deleter of [[rhi::DevicePtr]]: waits for the device to go idle, then destroys it.
 ///
-/// Param device: the device, or null for no effect.
-/// Ownership: takes ownership of `device`; the pointer, its command lists and every handle are invalid afterwards.
-void DestroyDevice(Device* device);
+/// Used for devices made by a backend's factory function (heap storage, the `Device` base first).
+///
+/// Thread-safety: not-thread-safe; the thread that submits to the device must call it.
+/// Ownership: takes the device; it, its command lists and every handle are invalid afterwards.
+struct DeviceDeleter {
+    /// Waits for `device` to go idle and destroys it.
+    ///
+    /// Param device: the device, or null for no effect.
+    /// Ownership: takes the device; it is destroyed and its storage freed.
+    void operator()(Device* device) const {
+        if (device != nullptr) {
+            device->WaitIdle();
+            device->~Device();
+            HeapAllocator::Default().Free(static_cast<void*>(device), sizeof(Device), alignof(Device));
+        }
+    }
+};
+
+/// Owning pointer to a device; destroying or resetting it waits for the GPU and releases the device.
+using DevicePtr = UniquePtr<Device, DeviceDeleter>;
 
 } // namespace engine_placeholder::rhi

@@ -140,7 +140,7 @@ namespace {
 
 struct TriangleDevice {
     gpu_test::GpuFixture fx;
-    VulkanDevice* device = nullptr;
+    VulkanDevicePtr device;
     ShaderHandle vs;
     ShaderHandle fs;
 
@@ -170,7 +170,7 @@ struct TriangleDevice {
             device->DestroyShader(vs);
             device->DestroyShader(fs);
             device->WaitIdle();
-            DestroyDevice(device);
+            device.Reset();
         }
     }
 

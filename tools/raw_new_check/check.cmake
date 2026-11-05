@@ -1,8 +1,9 @@
-# Raw-array gate (Phase 4 Day 80a). Run as:
+# Raw new/delete gate (Phase 4 Days 80a-80b). Run as:
 #   cmake -DROOT=<tree> -P check.cmake
-# No file under engine/ or game/ may use `new T[n]`, `new (std::nothrow) T[n]` or `delete[]`: owning arrays are
-# `Array<T, N>` (compile-time size, inline) or `Vector<T>` (everything else). The foundation allocators
-# (engine/foundation/mem/) are exempt. Comments are ignored.
+# No file under engine/ or game/ may use `new T`, `new T[n]`, `new (std::nothrow) T`, `delete p` or `delete[] p`:
+# owning arrays are `Array<T, N>` (compile-time size, inline) or `Vector<T>`; single objects are `UniquePtr<T>` or
+# `SharedPtr<T>`. Exempt: the foundation allocators (engine/foundation/mem/), placement `new (ptr) T` into storage
+# a container owns, `operator new`/`operator delete` definitions, and `= delete`. Comments and strings are ignored.
 cmake_minimum_required(VERSION 3.20)
 
 if(NOT ROOT)
@@ -19,9 +20,12 @@ function(read_lines path out)
   set(${out} "${content}" PARENT_SCOPE)
 endfunction()
 
-# `[` and `]` are escaped to <LB>/<RB> by read_lines.
-set(new_re "(^|[^A-Za-z0-9_])new[ \t]+(\\(std::nothrow\\)[ \t]*)?[A-Za-z_][A-Za-z0-9_:<>, \t*]*<LB>")
-set(delete_re "(^|[^A-Za-z0-9_])delete[ \t]*<LB><RB>")
+# Heap `new` (a type name follows, or the nothrow tag then a type); placement `new (ptr) T` does not match.
+set(new_re "(^|[^A-Za-z0-9_])new([ \t]+[A-Za-z_:]|[ \t]*\\(std::nothrow\\)[ \t]*[A-Za-z_:])")
+# `delete p`, `delete (p)`, `delete(p)`, `delete[] p`; `= delete;` does not match.
+set(delete_re "(^|[^A-Za-z0-9_])delete[ \t]*(<LB><RB>|\\(|[ \t][A-Za-z_(*:])")
+# `operator new` / `operator delete` (definitions, declarations) are removed from the line before matching.
+set(operator_re "operator[ \t]+(new|delete)(<LB><RB>)?")
 
 set(files "")
 foreach(dir engine game)
@@ -65,19 +69,20 @@ foreach(f IN LISTS files)
         set(in_block TRUE)
       endif()
     endif()
+    string(REGEX REPLACE "${operator_re}" "" code "${code}")
     if(code MATCHES "${new_re}" OR code MATCHES "${delete_re}")
       string(REPLACE "<LB>" "[" shown "${l}")
       string(REPLACE "<RB>" "]" shown "${shown}")
       string(REPLACE "<SEMI>" ";" shown "${shown}")
       string(STRIP "${shown}" shown)
-      message(SEND_ERROR "${f}:${n}: raw array allocation; use Array<T, N> or Vector<T>: ${shown}")
+      message(SEND_ERROR "${f}:${n}: raw new/delete; use Array<T, N>, Vector<T>, UniquePtr<T> or SharedPtr<T>: ${shown}")
       math(EXPR errors "${errors}+1")
     endif()
   endforeach()
 endforeach()
 
 if(errors GREATER 0)
-  message(FATAL_ERROR "raw_array_check: ${errors} violation(s)")
+  message(FATAL_ERROR "raw_new_check: ${errors} violation(s)")
 endif()
 list(LENGTH files total)
-message(STATUS "raw_array_check: ${total} files clean")
+message(STATUS "raw_new_check: ${total} files clean")

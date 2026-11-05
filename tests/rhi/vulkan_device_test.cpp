@@ -175,10 +175,10 @@ TEST_CASE("Every portable Format maps to a VkFormat and back, with matching flag
 TEST_CASE("CreateDevice(Null) returns the null device", "[rhi][device]") {
     DeviceCreateInfo info;
     info.backend = Backend::Null;
-    Device* device = CreateDevice(info);
+    DevicePtr device = CreateDevice(info);
     REQUIRE(device != nullptr);
     CHECK(std::strcmp(device->BackendName(), "null") == 0);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("A headless Vulkan device is created through the factory with plausible caps", "[rhi][vulkan][gpu]") {
@@ -189,7 +189,7 @@ TEST_CASE("A headless Vulkan device is created through the factory with plausibl
     info.application_name = "device-test";
     info.validation = ValidationSetting::On;
     info.sync_validation = true;
-    Device* device = CreateDevice(info);
+    DevicePtr device = CreateDevice(info);
     if (device == nullptr) {
         if (gpu_test::GpuRequired()) {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
@@ -218,7 +218,7 @@ TEST_CASE("A headless Vulkan device is created through the factory with plausibl
 
     device->WaitIdle();
     CHECK_FALSE(device->DeviceLost());
-    DestroyDevice(device); // destruction is validation-clean: the fixture fails the test otherwise
+    device.Reset(); // destruction is validation-clean: the fixture fails the test otherwise
 }
 
 TEST_CASE("VulkanDevice exposes its GPU, queues and function table", "[rhi][vulkan][gpu]") {
@@ -226,7 +226,7 @@ TEST_CASE("VulkanDevice exposes its GPU, queues and function table", "[rhi][vulk
     fx.Require();
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
-    VulkanDevice* device = VulkanDevice::Create(info);
+    VulkanDevicePtr device = VulkanDevice::Create(info);
     if (device == nullptr) {
         if (gpu_test::GpuRequired()) {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
@@ -239,5 +239,5 @@ TEST_CASE("VulkanDevice exposes its GPU, queues and function table", "[rhi][vulk
     CHECK(device->Handle() != nullptr);
     CHECK(device->Fns().QueueSubmit2 != nullptr);
     CHECK(device->Properties().apiVersion >= VK_API_VERSION_1_3);
-    DestroyDevice(device);
+    device.Reset();
 }

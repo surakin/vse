@@ -9,3 +9,13 @@ void Leaky() {
 void AfterString() {
     const char* url = "http://example"; int* p = new int[2]; /* done */ delete[] p;
 }
+void Singles() {
+    Widget* w = new Widget(1);
+    Widget* n = new (std::nothrow) Widget;
+    delete w;
+}
+void NoSpace() {
+    Widget* a = new(std::nothrow) Widget;
+    delete(a);
+    void* operator_decl; Widget* b = new ::Widget; /* operator new is not what this line does */
+}

@@ -3,6 +3,8 @@
 #include <cstring>
 #include <new>
 
+#include "containers/unique_ptr.h"
+
 #include "log/assert.h"
 #include "renderer/frame_data.h"
 #include "renderer/renderer_log.h"
@@ -397,15 +399,12 @@ MaterialSystem::Variant* MaterialSystem::BuildVariant(TemplateSlot& t, Permutati
             return nullptr;
         }
     }
-    ShaderReflection* fs = new (std::nothrow) ShaderReflection;
-    if (fs == nullptr) {
+    UniquePtr<ShaderReflection> fs_owner = MakeUnique<ShaderReflection>();
+    if (!fs_owner) {
         RenderLog(LogVerbosity::Error, "MaterialSystem: out of memory");
         return nullptr;
     }
-    struct Guard {
-        ShaderReflection* p;
-        ~Guard() { delete p; }
-    } guard{fs};
+    ShaderReflection* fs = fs_owner.Get();
     if (const char* problem = ParseShaderReflection(module->reflection, module->reflection_size, fs)) {
         RenderLog(LogVerbosity::Error, "MaterialSystem: template '%s': fragment reflection: %s", tname, problem);
         return nullptr;

@@ -113,12 +113,12 @@ int main() {
         return 1;
     }
 
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     rhi::BindGroupLayoutHandle handle = device->CreateBindGroupLayout(layout.Desc("lit"));
     std::printf("bindings: %u, valid: %d, block: %u bytes\n", layout.entry_count, handle.IsValid() ? 1 : 0,
                 vs.blocks[0].size);
     device->DestroyBindGroupLayout(handle);
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 ```
 
@@ -227,7 +227,7 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
 
 int main() {
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
 
     ShaderDesc vs;
     vs.stage = ShaderStage::Vertex;
@@ -245,7 +245,7 @@ int main() {
 
     device->DestroyShader(vertex);
     device->DestroyShader(fragment);
-    DestroyDevice(device);
+    device.Reset();
 }
 ```
 

@@ -47,5 +47,5 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 | Epic's UE EULA terms need review | Before Phase 16 starts | `PLAN.md` (open risk) |
 
 - `rhi::detail::GrowArray` (`engine/rhi/grow_array.h`, 12 uses in `vk_memory`, `vk_ring`, `null_device`) is a private heap-backed growable array that duplicates `Vector`, which now owns heap storage. Not replaced in Phase 4 Day 80a (it holds trivially copyable values and has `EraseFront`/`Erase` with `memmove`). Seen in the Day 80a review.
-- Single-object `new`/`delete` of non-trivial types (`new WorkerPool`, `new IoThread`, `new ShaderReflection` in `material.cpp`) are not covered by the raw-array policy or the `raw_array_check` gate. Seen in Day 80a.
-- `raw_array_check` is line-based and walks only `engine/` and `game/`: a `new` separated from its `[` across lines is missed, and `tests/` and `tools/` (which may use the STL) are not scanned. Seen in the Day 80a review.
+- `raw_new_check` is line-based and walks only `engine/` and `game/`: a `new` separated from its type across lines is missed, and `tests/` and `tools/` (which may use the STL) are not scanned. Seen in the Day 80a and 80b reviews.
+- `SharedPtr` with `AtomicRefCount` was checked under ThreadSanitizer only by a standalone program (8 threads, 20000 copy/release rounds, clean; the `PlainRefCount` variant is reported as a race, as expected). The foundation test executable has no TSan flavor, so `ctest` does not run that check. Seen in Day 80b.

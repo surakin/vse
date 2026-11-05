@@ -25,7 +25,7 @@ struct QuietLog {
 
 struct ComputeDevice {
     gpu_test::GpuFixture fx;
-    VulkanDevice* device = nullptr;
+    VulkanDevicePtr device;
 
     ComputeDevice() {
         fx.RequireValidation();
@@ -41,7 +41,7 @@ struct ComputeDevice {
     ~ComputeDevice() {
         if (device != nullptr) {
             device->WaitIdle();
-            DestroyDevice(device);
+            device.Reset();
         }
     }
 

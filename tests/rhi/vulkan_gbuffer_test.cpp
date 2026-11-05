@@ -24,25 +24,25 @@ using namespace gbuffer_rig;
 TEST_CASE("The G-buffer holds albedo, normal, material and depth of a known scene", "[rhi][vulkan][gpu][gbuffer]") {
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
-    rhi::Device* device = MakeDevice();
+    rhi::DevicePtr device = MakeDevice();
     if (device == nullptr) SKIP("no suitable Vulkan device");
     fx.ExpectErrors(0);
     {
         Rig rig;
-        REQUIRE(rig.Create(device));
+        REQUIRE(rig.Create(device.Get()));
         char error[128];
-        REQUIRE(CheckGBufferFormats(device, error, sizeof(error)));
+        REQUIRE(CheckGBufferFormats(device.Get(), error, sizeof(error)));
 
         MeshData d;
         REQUIRE(MakePlaneMesh(16.0f, 16.0f, 1, 1, &d) == nullptr);
         GpuMesh plane;
-        REQUIRE(plane.Create(device, d, "plane"));
+        REQUIRE(plane.Create(device.Get(), d, "plane"));
         REQUIRE(MakeCubeMesh(2.0f, &d) == nullptr);
         GpuMesh cube;
-        REQUIRE(cube.Create(device, d, "cube"));
+        REQUIRE(cube.Create(device.Get(), d, "cube"));
         REQUIRE(MakeSphereMesh(1.0f, 32, 16, &d) == nullptr);
         GpuMesh sphere;
-        REQUIRE(sphere.Create(device, d, "sphere"));
+        REQUIRE(sphere.Create(device.Get(), d, "sphere"));
         rig.Prepare(&plane);
         rig.Prepare(&cube);
         rig.Prepare(&sphere);
@@ -135,28 +135,28 @@ TEST_CASE("The G-buffer holds albedo, normal, material and depth of a known scen
         device->WaitIdle();
     }
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("The G-buffer does not depend on the order objects were added", "[rhi][vulkan][gpu][gbuffer]") {
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
-    rhi::Device* device = MakeDevice();
+    rhi::DevicePtr device = MakeDevice();
     if (device == nullptr) SKIP("no suitable Vulkan device");
     fx.ExpectErrors(0);
     {
         Rig rig;
-        REQUIRE(rig.Create(device));
+        REQUIRE(rig.Create(device.Get()));
         MeshData d;
         REQUIRE(MakeCubeMesh(2.0f, &d) == nullptr);
         GpuMesh cube;
-        REQUIRE(cube.Create(device, d, "cube"));
+        REQUIRE(cube.Create(device.Get(), d, "cube"));
         REQUIRE(MakeSphereMesh(1.0f, 24, 12, &d) == nullptr);
         GpuMesh sphere;
-        REQUIRE(sphere.Create(device, d, "sphere"));
+        REQUIRE(sphere.Create(device.Get(), d, "sphere"));
         REQUIRE(MakePlaneMesh(16.0f, 16.0f, 1, 1, &d) == nullptr);
         GpuMesh plane;
-        REQUIRE(plane.Create(device, d, "plane"));
+        REQUIRE(plane.Create(device.Get(), d, "plane"));
         rig.Prepare(&cube);
         rig.Prepare(&sphere);
         rig.Prepare(&plane);
@@ -197,18 +197,18 @@ TEST_CASE("The G-buffer does not depend on the order objects were added", "[rhi]
         device->WaitIdle();
     }
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Vertex colors blend across a mesh, authored in sRGB and landing in the albedo layer", "[rhi][vulkan][gpu][gbuffer]") {
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
-    rhi::Device* device = MakeDevice();
+    rhi::DevicePtr device = MakeDevice();
     if (device == nullptr) SKIP("no suitable Vulkan device");
     fx.ExpectErrors(0);
     {
         Rig rig;
-        REQUIRE(rig.Create(device));
+        REQUIRE(rig.Create(device.Get()));
         MeshData plain;
         REQUIRE(MakePlaneMesh(16.0f, 16.0f, 1, 1, &plain) == nullptr);
         // Left vertices red, right vertices blue (x < 0 is the left edge).
@@ -223,9 +223,9 @@ TEST_CASE("Vertex colors blend across a mesh, authored in sRGB and landing in th
         MeshData colored;
         REQUIRE(MakeColoredMesh(plain, colors.data(), plain.VertexCount(), &colored) == nullptr);
         GpuMesh mesh;
-        REQUIRE(mesh.Create(device, colored, "colored plane"));
+        REQUIRE(mesh.Create(device.Get(), colored, "colored plane"));
         GpuMesh bare;
-        REQUIRE(bare.Create(device, plain, "plane"));
+        REQUIRE(bare.Create(device.Get(), plain, "plane"));
         rig.Prepare(&mesh);
         rig.Prepare(&bare);
         GBufferOptions opt;
@@ -279,22 +279,22 @@ TEST_CASE("Vertex colors blend across a mesh, authored in sRGB and landing in th
         device->WaitIdle();
     }
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("The normal map and alpha test permutations change the layers they should", "[rhi][vulkan][gpu][gbuffer]") {
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
-    rhi::Device* device = MakeDevice();
+    rhi::DevicePtr device = MakeDevice();
     if (device == nullptr) SKIP("no suitable Vulkan device");
     fx.ExpectErrors(0);
     {
         Rig rig;
-        REQUIRE(rig.Create(device));
+        REQUIRE(rig.Create(device.Get()));
         MeshData d;
         REQUIRE(MakePlaneMesh(16.0f, 16.0f, 1, 1, &d) == nullptr);
         GpuMesh plane;
-        REQUIRE(plane.Create(device, d, "plane"));
+        REQUIRE(plane.Create(device.Get(), d, "plane"));
         rig.Prepare(&plane);
 
         // A tangent-space normal (0.6, 0, 0.8) as a 1x1 texture: (0.8, 0.5, 0.9).
@@ -351,24 +351,24 @@ TEST_CASE("The normal map and alpha test permutations change the layers they sho
         device->DestroyTexture(normal_tex);
     }
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("The debug view shows the albedo, normal, material and depth layers", "[rhi][vulkan][gpu][gbuffer]") {
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
-    rhi::Device* device = MakeDevice();
+    rhi::DevicePtr device = MakeDevice();
     if (device == nullptr) SKIP("no suitable Vulkan device");
     fx.ExpectErrors(0);
     {
         Rig rig;
-        REQUIRE(rig.Create(device));
-        GBufferDebugView view(device);
+        REQUIRE(rig.Create(device.Get()));
+        GBufferDebugView view(device.Get());
         REQUIRE(view.Valid());
         MeshData d;
         REQUIRE(MakePlaneMesh(16.0f, 16.0f, 1, 1, &d) == nullptr);
         GpuMesh plane;
-        REQUIRE(plane.Create(device, d, "plane"));
+        REQUIRE(plane.Create(device.Get(), d, "plane"));
         rig.Prepare(&plane);
         const MaterialId m = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m");
         rig.sys->SetVec4(m, "base_color", Vec4(0.5f, 0.25f, 1.0f, 1.0f));
@@ -402,5 +402,5 @@ TEST_CASE("The debug view shows the albedo, normal, material and depth layers", 
         device->WaitIdle();
     }
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }

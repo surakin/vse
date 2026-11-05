@@ -1,5 +1,7 @@
 #include "jobs/frame_pool.h"
 
+#include <new>
+
 #include <cstdlib>
 
 #include "log/assert.h"
@@ -75,10 +77,13 @@ FramePool::~FramePool() {
 }
 
 FramePool& FramePool::Global() {
+    // Immortal by design: built once in static storage and never destroyed (no heap), so thread-exit cache
+    // flushes and late frees always find it alive.
+    alignas(FramePool) static unsigned char storage[sizeof(FramePool)];
     static FramePool* instance = [] {
         Config config;
         config.thread_caches = true;
-        return new FramePool(config);
+        return new (storage) FramePool(config);
     }();
     return *instance;
 }

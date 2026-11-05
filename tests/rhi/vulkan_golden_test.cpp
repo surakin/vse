@@ -85,7 +85,7 @@ bool ExpectedColor(u32 x, u32 y, float out[3]) {
 // idled first, then the resources are destroyed, then the device).
 struct TriangleScene {
     gpu_test::GpuFixture fx;
-    VulkanDevice* device = nullptr;
+    VulkanDevicePtr device;
     ShaderHandle vs;
     ShaderHandle fs;
     PipelineHandle pipeline;
@@ -110,14 +110,14 @@ struct TriangleScene {
         device->DestroyPipeline(pipeline);
         device->DestroyShader(vs);
         device->DestroyShader(fs);
-        DestroyDevice(device);
+        device.Reset();
     }
 };
 
 // Renders the red-green-blue triangle on a dark gray background into `image`.
 bool RenderTriangle(Image* image) {
     TriangleScene scene;
-    VulkanDevice* device = scene.device;
+    VulkanDevice* device = scene.device.Get();
     ShaderDesc sd;
     sd.stage = ShaderStage::Vertex;
     sd.words = shaders::kTriangleVertSpv;

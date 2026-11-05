@@ -2277,7 +2277,7 @@ Creation functions never abort on an environment problem: they log the reason on
 | Field | Value |
 |---|---|
 | Thread-safety | thread-safe for resource creation, destruction, mapping and `CreateCommandList` (serialized internally). `Submit`, `BeginFrame`, `EndFrame` and `WaitIdle` must be called from one thread at a time (the submission thread). |
-| Ownership | the caller owns the device and releases it with [`rhi::DestroyDevice`](#rhi-destroydevice-device-star), after `WaitIdle` and after dropping every command list. |
+| Ownership | the caller owns the device through a [`rhi::DevicePtr`](#rhi-deviceptr), which waits for the GPU to go idle and destroys it; drop every command list first. |
 
 ### `~Device()` {#rhi-device-tilde-device}
 
@@ -2890,20 +2890,47 @@ Returns whether the device was lost; once true it stays true.
 |---|---|
 | Returns | true after a device-lost error. |
 
-## `DestroyDevice(Device*)` {#rhi-destroydevice-device-star}
+## `DeviceDeleter` {#rhi-devicedeleter}
 
-`function rhi::DestroyDevice` — defined in `engine/rhi/device.h`
+`struct rhi::DeviceDeleter` — defined in `engine/rhi/device.h`
 
 ```cpp
-void DestroyDevice(Device* device);
+struct DeviceDeleter { ... }
 ```
 
-Destroys a device created by a backend's factory function, after waiting for it to go idle.
+Deleter of [`rhi::DevicePtr`](#rhi-deviceptr): waits for the device to go idle, then destroys it.
+
+Used for devices made by a backend's factory function (heap storage, the `Device` base first).
+
+| Field | Value |
+|---|---|
+| Thread-safety | not-thread-safe; the thread that submits to the device must call it. |
+| Ownership | takes the device; it, its command lists and every handle are invalid afterwards. |
+
+### `operator()(Device*)` {#rhi-devicedeleter-operator-call-device-star-const}
+
+`operator rhi::DeviceDeleter::operator()` — defined in `engine/rhi/device.h`
+
+```cpp
+void operator()(Device* device) const;
+```
+
+Waits for `device` to go idle and destroys it.
 
 | Field | Value |
 |---|---|
 | Parameter `device` | the device, or null for no effect. |
-| Ownership | takes ownership of `device`; the pointer, its command lists and every handle are invalid afterwards. |
+| Ownership | takes the device; it is destroyed and its storage freed. |
+
+## `DevicePtr` {#rhi-deviceptr}
+
+`alias rhi::DevicePtr` — defined in `engine/rhi/device.h`
+
+```cpp
+using DevicePtr = UniquePtr<Device, DeviceDeleter>;
+```
+
+Owning pointer to a device; destroying or resetting it waits for the GPU and releases the device.
 
 ## `EnableFlagOperators` {#rhi-enableflagoperators}
 
@@ -4522,6 +4549,16 @@ usize command_lists;
 
 Command lists handed out and not yet recycled.
 
+## `NullDevicePtr` {#rhi-nulldeviceptr}
+
+`alias rhi::NullDevicePtr` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+using NullDevicePtr = UniquePtr<NullDevice, DeviceDeleter>;
+```
+
+Owning pointer to a null device; destroying it waits for the device first (see [`rhi::DeviceDeleter`](#rhi-devicedeleter)).
+
 ## `NullDevice` {#rhi-nulldevice}
 
 `class rhi::NullDevice` — defined in `engine/rhi/null/null_device.h`
@@ -4537,7 +4574,21 @@ Every contract violation is logged on [`rhi::LogRhi`](#rhi-logrhi) at error leve
 | Field | Value |
 |---|---|
 | Thread-safety | thread-safe for creation, destruction, mapping and inspection; `Submit`, `BeginFrame`, `EndFrame` and `WaitIdle` belong to one submission thread, as for [`rhi::Device`](#rhi-device). |
-| Ownership | created by [`rhi::CreateNullDevice`](#rhi-createnulldevice-const-nulldeviceoptions-amp) and destroyed with [`rhi::DestroyDevice`](#rhi-destroydevice-device-star). |
+| Ownership | created by [`rhi::CreateNullDevice`](#rhi-createnulldevice-const-nulldeviceoptions-amp), which returns a [`rhi::NullDevicePtr`](#rhi-nulldeviceptr). |
+
+### `NullDevice(const NullDeviceOptions&)` {#rhi-nulldevice-nulldevice-const-nulldeviceoptions-amp}
+
+`constructor rhi::NullDevice::NullDevice` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+explicit NullDevice(const NullDeviceOptions& options);
+```
+
+Creates the device; use [`rhi::CreateNullDevice`](#rhi-createnulldevice-const-nulldeviceoptions-amp).
+
+| Field | Value |
+|---|---|
+| Parameter `options` | limits and behavior. |
 
 ### `~NullDevice()` {#rhi-nulldevice-tilde-nulldevice}
 
@@ -5093,7 +5144,7 @@ Makes the device behave as lost: later submits fail and `DeviceLost()` reports t
 `function rhi::CreateNullDevice` — defined in `engine/rhi/null/null_device.h`
 
 ```cpp
-NullDevice* CreateNullDevice(const NullDeviceOptions& options = NullDeviceOptions());
+NullDevicePtr CreateNullDevice(const NullDeviceOptions& options = NullDeviceOptions());
 ```
 
 Creates a null device.
@@ -5101,8 +5152,9 @@ Creates a null device.
 | Field | Value |
 |---|---|
 | Parameter `options` | limits and behavior; the defaults are the RHI-guaranteed minimums. |
-| Returns | the device; never null. |
-| Ownership | the caller owns the device and releases it with [`rhi::DestroyDevice`](#rhi-destroydevice-device-star). |
+| Returns | the device; never empty. |
+| Aborts | the host is out of memory. |
+| Ownership | the caller owns the device through the returned pointer. |
 
 ## `Backend` {#rhi-backend}
 
@@ -5296,7 +5348,7 @@ Faults to inject on purpose; see [`rhi::FaultInjection`](#rhi-faultinjection). N
 `function rhi::CreateDevice` — defined in `engine/rhi/rhi.h`
 
 ```cpp
-Device* CreateDevice(const DeviceCreateInfo& info);
+DevicePtr CreateDevice(const DeviceCreateInfo& info);
 ```
 
 Creates a device for the requested backend.
@@ -5306,10 +5358,10 @@ For the Vulkan backend the physical device is chosen by a ranking (discrete befo
 | Field | Value |
 |---|---|
 | Parameter `info` | what to create. |
-| Returns | the device, or null. |
-| Fails | returns null, logging the reason, if there is no Vulkan loader, no suitable GPU, the override matches nothing suitable, or device creation fails. |
+| Returns | the device, or an empty pointer. |
+| Fails | returns an empty pointer, logging the reason, if there is no Vulkan loader, no suitable GPU, the override matches nothing suitable, or device creation fails. |
 | Thread-safety | thread-safe. |
-| Ownership | the caller owns the device and releases it with [`rhi::DestroyDevice`](#rhi-destroydevice-device-star). |
+| Ownership | the caller owns the device through the returned [`rhi::DevicePtr`](#rhi-deviceptr). |
 
 ## `LogRhi` {#rhi-logrhi}
 

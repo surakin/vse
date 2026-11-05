@@ -60,7 +60,7 @@ TEST_CASE("The cube renders from a fixed angle and matches its golden image", "[
     demo::CubeOptions options;
     options.depth_format = scene.DepthFormat();
     demo::CubeRenderer cube;
-    REQUIRE(cube.Create(scene.device, options));
+    REQUIRE(cube.Create(scene.device.Get(), options));
     const Mat4 model = Mat4::Identity();
     const Image image = scene.Render({{&cube, model}});
 
@@ -100,8 +100,8 @@ TEST_CASE("The depth test hides a cube behind another and its absence does not",
     no_depth.depth_test = false;
     demo::CubeRenderer tested;
     demo::CubeRenderer untested;
-    REQUIRE(tested.Create(scene.device, with_depth));
-    REQUIRE(untested.Create(scene.device, no_depth));
+    REQUIRE(tested.Create(scene.device.Get(), with_depth));
+    REQUIRE(untested.Create(scene.device.Get(), no_depth));
 
     // A is the unit cube facing the camera (+Z face, 128,128,255). B is a larger cube behind it, turned around so
     // that its -Z face (128,128,0) faces the camera; it fills the whole view around A.
@@ -126,9 +126,9 @@ TEST_CASE("Indexed and non-indexed draws of the same cube give identical images"
     demo::CubeRenderer indexed;
     demo::CubeRenderer expanded;
     options.indexed = true;
-    REQUIRE(indexed.Create(scene.device, options));
+    REQUIRE(indexed.Create(scene.device.Get(), options));
     options.indexed = false;
-    REQUIRE(expanded.Create(scene.device, options));
+    REQUIRE(expanded.Create(scene.device.Get(), options));
     const Mat4 model = demo::ModelMatrix(Vec3(0, 0, 0), 1.0f, 0.4f);
     const Image a = scene.Render({{&indexed, model}});
     const Image b = scene.Render({{&expanded, model}});
@@ -145,11 +145,11 @@ TEST_CASE("Back faces are culled and the winding follows the documented conventi
     demo::CubeRenderer front;
     demo::CubeRenderer none;
     options.cull = CullMode::Back;
-    REQUIRE(back.Create(scene.device, options));
+    REQUIRE(back.Create(scene.device.Get(), options));
     options.cull = CullMode::Front;
-    REQUIRE(front.Create(scene.device, options));
+    REQUIRE(front.Create(scene.device.Get(), options));
     options.cull = CullMode::None;
-    REQUIRE(none.Create(scene.device, options));
+    REQUIRE(none.Create(scene.device.Get(), options));
     const Mat4 model = Mat4::Identity();
     // Culling back faces leaves the near face; culling front faces leaves only the inside of the far face; with
     // no culling the depth test still shows the near face.

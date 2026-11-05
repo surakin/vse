@@ -64,13 +64,13 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
 int main() {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
 
     {
         MeshData data;
         if (MakeCubeMesh(1.0f, &data) != nullptr) return 1;
         GpuMesh mesh;
-        if (!mesh.Create(device, data, "cube")) return 1;
+        if (!mesh.Create(device.Get(), data, "cube")) return 1;
 
         RenderScene scene(RenderSceneDesc{});
         RenderObjectDesc front;
@@ -87,7 +87,7 @@ int main() {
         std::printf("%u of %u objects visible\n", count, scene.ObjectCount());
     } // the mesh and scene go before the device
 
-    rhi::DestroyDevice(device);
+    device.Reset();
     return 0;
 }
 ```
@@ -134,9 +134,9 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
 int main() {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
-        MaterialSystem system(device, MaterialSystemDesc{});
+        MaterialSystem system(device.Get(), MaterialSystemDesc{});
 
         MaterialTemplateDesc desc;
         desc.name = "material_test";
@@ -161,7 +161,7 @@ int main() {
         std::printf("one pipeline shared: %s (hits %u, misses %u)\n", a.pipeline == b.pipeline ? "yes" : "no", system.Stats().pipeline_hits,
                     system.Stats().pipeline_misses);
     }
-    rhi::DestroyDevice(device);
+    device.Reset();
     return 0;
 }
 ```
@@ -380,14 +380,14 @@ bool Build(const FrameContext& context, void*) {
 } // namespace
 
 int main() {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     rhi::SwapchainDesc sd;
     sd.width = 64;
     sd.height = 48;
     rhi::Swapchain* swapchain = device->CreateSwapchain(sd);
     {
         RendererDesc rd;
-        rd.device = device;
+        rd.device = device.Get();
         rd.swapchain = swapchain;
         rd.build = &Build;
         Renderer renderer(rd);
@@ -398,7 +398,7 @@ int main() {
                     static_cast<unsigned long long>(renderer.Stats().frames_skipped));
     }
     device->DestroySwapchain(swapchain);
-    rhi::DestroyDevice(device);
+    device.Reset();
     return 0;
 }
 ```
@@ -501,11 +501,11 @@ using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
 int main() {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     int rc = 0;
     {
         char error[128];
-        if (!CheckGBufferFormats(device, error, sizeof(error))) return 1;
+        if (!CheckGBufferFormats(device.Get(), error, sizeof(error))) return 1;
 
         // A direction survives the trip through two octahedral coordinates.
         const Vec3 n(0.36f, -0.48f, -0.8f);
@@ -513,7 +513,7 @@ int main() {
         const Vec3 d = OctDecode(e);
         std::printf("octahedral (%.3f, %.3f) -> (%.3f, %.3f, %.3f)\n", e.x, e.y, d.x, d.y, d.z);
 
-        MaterialSystem materials(device, MaterialSystemDesc{});
+        MaterialSystem materials(device.Get(), MaterialSystemDesc{});
         const GBufferTemplates templates = CreateGBufferTemplates(&materials);
         GBufferOptions options;
         options.vertex_color = true;
@@ -521,7 +521,7 @@ int main() {
         std::printf("a vertex color material reads the color attribute: %s\n", materials.ReadsVertexInput(material, 4) ? "yes" : "no");
         rc = material.IsValid() ? 0 : 1;
     }
-    rhi::DestroyDevice(device);
+    device.Reset();
     return rc;
 }
 ```

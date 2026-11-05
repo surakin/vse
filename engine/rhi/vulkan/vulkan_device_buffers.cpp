@@ -165,13 +165,12 @@ bool VulkanDevice::InitializeUpload() {
         return false;
     }
     SetDebugName(HandleToU64(staging_.buffer), VK_OBJECT_TYPE_BUFFER, "rhi staging ring");
-    staging_ring_ = new RingAllocator(kStagingRingBytes);
-    return true;
+    staging_ring_ = MakeUnique<RingAllocator>(kStagingRingBytes);
+    return static_cast<bool>(staging_ring_);
 }
 
 void VulkanDevice::ShutdownUpload() {
-    delete staging_ring_;
-    staging_ring_ = nullptr;
+    staging_ring_.Reset();
     DestroyRawBuffer(&staging_);
     if (upload_pool_ != nullptr) {
         fns_.DestroyCommandPool(device_, upload_pool_, nullptr); // frees its command buffers

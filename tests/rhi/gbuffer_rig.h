@@ -209,7 +209,7 @@ inline Camera TopDownCamera() {
     return cam;
 }
 
-inline rhi::Device* MakeDevice() {
+inline rhi::DevicePtr MakeDevice() {
     rhi::DeviceCreateInfo info;
     info.validation = rhi::ValidationSetting::On;
     info.sync_validation = true;

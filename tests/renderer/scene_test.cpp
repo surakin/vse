@@ -18,8 +18,7 @@ using namespace engine_placeholder::renderer;
 namespace {
 
 struct NullFixture {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
-    ~NullFixture() { rhi::DestroyDevice(device); }
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
 };
 
 Frustum FrontFrustum() {
@@ -37,7 +36,7 @@ TEST_CASE("GpuMesh uploads vertices and indices and releases them", "[renderer][
     REQUIRE(MakeSphereMesh(1.0f, 12, 6, &data) == nullptr);
     {
         GpuMesh mesh;
-        REQUIRE(mesh.Create(f.device, data, "sphere"));
+        REQUIRE(mesh.Create(f.device.Get(), data, "sphere"));
         CHECK(mesh.Valid());
         CHECK(mesh.IndexCount() == data.IndexCount());
         CHECK(mesh.VertexCount() == data.VertexCount());
@@ -62,7 +61,7 @@ TEST_CASE("Scene ids are generational and slots are reused", "[renderer][scene]"
     MeshData data;
     REQUIRE(MakeCubeMesh(1.0f, &data) == nullptr);
     GpuMesh mesh;
-    REQUIRE(mesh.Create(f.device, data, "cube"));
+    REQUIRE(mesh.Create(f.device.Get(), data, "cube"));
     RenderSceneDesc desc;
     desc.max_objects = 4;
     RenderScene scene(desc);
@@ -116,7 +115,7 @@ TEST_CASE("Culling keeps visible objects and drops hidden, removed and off-scree
     MeshData data;
     REQUIRE(MakeCubeMesh(1.0f, &data) == nullptr);
     GpuMesh mesh;
-    REQUIRE(mesh.Create(f.device, data, "cube"));
+    REQUIRE(mesh.Create(f.device.Get(), data, "cube"));
 
     RenderScene scene(RenderSceneDesc{});
     auto add = [&](Vec3 p) {
@@ -169,7 +168,7 @@ TEST_CASE("FrameResources writes per-object data into the current frame's region
     MeshData data;
     REQUIRE(MakeCubeMesh(1.0f, &data) == nullptr);
     GpuMesh mesh;
-    REQUIRE(mesh.Create(f.device, data, "cube"));
+    REQUIRE(mesh.Create(f.device.Get(), data, "cube"));
     RenderScene scene(RenderSceneDesc{});
     RenderObjectDesc d;
     d.mesh = &mesh;
@@ -179,7 +178,7 @@ TEST_CASE("FrameResources writes per-object data into the current frame's region
     ObjectId id2 = scene.AddObject(d);
     u32 slots[2] = {id2.index, id.index};
 
-    FrameResources res(f.device, 16);
+    FrameResources res(f.device.Get(), 16);
     REQUIRE(res.Valid());
     const u64 align = f.device->Caps().min_uniform_buffer_offset_alignment;
 
@@ -215,7 +214,7 @@ TEST_CASE("Culling and packing 100k objects (timing only)", "[renderer][scene][p
     // Bounds come from the mesh; a null device is enough for a GpuMesh that is never drawn.
     NullFixture f;
     GpuMesh mesh;
-    REQUIRE(mesh.Create(f.device, data, "cube"));
+    REQUIRE(mesh.Create(f.device.Get(), data, "cube"));
     for (u32 i = 0; i < 100000; ++i) {
         RenderObjectDesc d;
         d.mesh = &mesh;
@@ -236,7 +235,7 @@ TEST_CASE("Creating and destroying 1000 meshes on a GPU leaks nothing", "[render
     rhi::DeviceCreateInfo info;
     info.validation = rhi::ValidationSetting::On;
     info.pipeline_cache = false;
-    rhi::Device* device = rhi::CreateDevice(info);
+    rhi::DevicePtr device = rhi::CreateDevice(info);
     if (device == nullptr) {
         const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
         if (required != nullptr && required[0] == '1') FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
@@ -246,7 +245,7 @@ TEST_CASE("Creating and destroying 1000 meshes on a GPU leaks nothing", "[render
     REQUIRE(MakeSphereMesh(1.0f, 16, 8, &data) == nullptr);
     for (int i = 0; i < 1000; ++i) {
         GpuMesh mesh;
-        REQUIRE(mesh.Create(device, data, "leak-test"));
+        REQUIRE(mesh.Create(device.Get(), data, "leak-test"));
         if (i % 100 == 99) {
             device->BeginFrame();
             device->EndFrame();
@@ -256,5 +255,5 @@ TEST_CASE("Creating and destroying 1000 meshes on a GPU leaks nothing", "[render
     device->BeginFrame();
     device->EndFrame();
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }

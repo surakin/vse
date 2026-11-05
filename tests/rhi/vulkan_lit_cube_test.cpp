@@ -26,9 +26,9 @@ struct LitScene : CubeScene {
         demo::CubeOptions options;
         options.depth_format = DepthFormat();
         options.lit = true;
-        REQUIRE(cube.Create(device, options));
+        REQUIRE(cube.Create(device.Get(), options));
         // A white albedo makes the lit color equal the lighting term itself.
-        white = demo::CreateSampledTexture(device, demo::Solid(4, 4, {255, 255, 255, 255}), Format::RGBA8_UNorm, false, "white");
+        white = demo::CreateSampledTexture(device.Get(), demo::Solid(4, 4, {255, 255, 255, 255}), Format::RGBA8_UNorm, false, "white");
         REQUIRE(white.IsValid());
         sampler = device->CreateSampler(SamplerDesc{});
         REQUIRE(sampler.IsValid());
@@ -158,7 +158,7 @@ TEST_CASE("The lit cube renders from a fixed angle and matches its golden image"
     const demo::Pixels checker = demo::Checkerboard(64, 8, {235, 200, 90, 255}, {40, 60, 120, 255});
     SamplerDesc sd;
     sd.max_anisotropy = 16.0f;
-    scene.UseAlbedo(demo::CreateSampledTexture(scene.device, checker, Format::RGBA8_SRGB, true, "checker"), scene.device->CreateSampler(sd));
+    scene.UseAlbedo(demo::CreateSampledTexture(scene.device.Get(), checker, Format::RGBA8_SRGB, true, "checker"), scene.device->CreateSampler(sd));
     demo::Lighting lighting;
     lighting.to_light = Vec3(0.3f, 0.9f, 0.5f);
     lighting.intensity = 0.9f;

@@ -29,14 +29,14 @@ Scheduler::Scheduler(const Config& config) {
     pc.user = this;
     // The workers start running immediately and use lanes_/queues, which
     // are fully built above.
-    pool_ = new WorkerPool(pc);
-    io_ = new IoThread();
+    pool_ = MakeUnique<WorkerPool>(pc);
+    io_ = MakeUnique<IoThread>();
 }
 
 Scheduler::~Scheduler() {
     Shutdown();
-    delete io_;
-    delete pool_;
+    io_.Reset(); // the I/O thread first, then the workers it feeds
+    pool_.Reset();
 }
 
 Scheduler* Scheduler::Current() {
@@ -52,7 +52,7 @@ bool Scheduler::InsideJob() { return tls_job_depth > 0; }
 
 int Scheduler::OwnIndex() const {
     const Participant* p = WorkerPool::Current();
-    if (p != nullptr && p->owner == pool_) return static_cast<int>(p->index);
+    if (p != nullptr && p->owner == pool_.Get()) return static_cast<int>(p->index);
     return -1;
 }
 

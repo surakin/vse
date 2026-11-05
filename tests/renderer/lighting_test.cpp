@@ -129,9 +129,9 @@ TEST_CASE("World positions rebuilt from depth match the geometry in both pixel a
 }
 
 TEST_CASE("The light buffer holds directional lights first and sums the ambient ones", "[renderer][lighting]") {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
-        FrameResources frame(device, 4, 3);
+        FrameResources frame(device.Get(), 4, 3);
         REQUIRE(frame.Valid());
         CHECK(frame.MaxLights() == 3);
         RenderScene scene(RenderSceneDesc{});
@@ -172,20 +172,20 @@ TEST_CASE("The light buffer holds directional lights first and sums the ambient 
         CHECK(capped.directional_count == 3);
         device->EndFrame();
     }
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("The lighting and tonemap passes build their pipelines on the null device", "[renderer][lighting]") {
-    rhi::NullDevice* device = rhi::CreateNullDevice();
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
-        MaterialSystem sys(device, MaterialSystemDesc{});
-        FrameResources frame(device, 4);
-        LightingPass lighting(device, &sys, &frame);
-        TonemapPass tonemap(device);
+        MaterialSystem sys(device.Get(), MaterialSystemDesc{});
+        FrameResources frame(device.Get(), 4);
+        LightingPass lighting(device.Get(), &sys, &frame);
+        TonemapPass tonemap(device.Get());
         CHECK(lighting.Valid());
         CHECK(tonemap.Valid());
     }
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Opposite view and light vectors do not produce NaN", "[renderer][lighting]") {

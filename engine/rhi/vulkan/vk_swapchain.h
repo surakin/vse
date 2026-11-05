@@ -1,5 +1,6 @@
 #pragma once
 
+#include "containers/unique_ptr.h"
 #include "rhi/swapchain.h"
 #include "rhi/vulkan/vk_functions.h"
 
@@ -19,6 +20,8 @@ class VulkanDevice;
 /// Ownership: created by [[rhi::Device::CreateSwapchain]], destroyed with [[rhi::Device::DestroySwapchain]].
 class VulkanSwapchain final : public Swapchain {
 public:
+    /// Constructs an empty swapchain; use [[rhi::vulkan::VulkanSwapchain::Create]].
+    explicit VulkanSwapchain(VulkanDevice* device) : device_(device) {}
     /// Waits for the device to go idle and releases the swapchain, its images and semaphores.
     ~VulkanSwapchain() override;
 
@@ -34,13 +37,12 @@ public:
     ///
     /// Param device: the device; must have been created with a window.
     /// Param desc: the presentation mode and initial size.
-    /// Returns: the swapchain, or null.
-    /// Fails: returns null, logging the reason, if the surface offers no usable format or cannot be rendered to.
+    /// Returns: the swapchain, or an empty pointer.
+    /// Fails: returns an empty pointer, logging the reason, if the surface offers no usable format or cannot be rendered to.
     /// Ownership: the caller owns the result.
-    static VulkanSwapchain* Create(VulkanDevice* device, const SwapchainDesc& desc);
+    static UniquePtr<VulkanSwapchain> Create(VulkanDevice* device, const SwapchainDesc& desc);
 
 private:
-    explicit VulkanSwapchain(VulkanDevice* device) : device_(device) {}
     // (Re)builds the swapchain for the given size; keeps the old one if the new extent is empty.
     SwapchainStatus Build(u32 width, u32 height);
     void ReleaseImages();

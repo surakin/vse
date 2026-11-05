@@ -17,8 +17,11 @@ constexpr u64 kSemaphoreWaitNs = 5ull * 1000 * 1000 * 1000;
 
 } // namespace
 
-VulkanSwapchain* VulkanSwapchain::Create(VulkanDevice* device, const SwapchainDesc& desc) {
-    VulkanSwapchain* swapchain = new VulkanSwapchain(device);
+UniquePtr<VulkanSwapchain> VulkanSwapchain::Create(VulkanDevice* device, const SwapchainDesc& desc) {
+    UniquePtr<VulkanSwapchain> swapchain = MakeUnique<VulkanSwapchain>(device);
+    if (!swapchain) {
+        return UniquePtr<VulkanSwapchain>();
+    }
     swapchain->mode_ = desc.present_mode;
     const u32 width = desc.width != 0 ? desc.width : device->window_->Width();
     const u32 height = desc.height != 0 ? desc.height : device->window_->Height();
@@ -27,8 +30,7 @@ VulkanSwapchain* VulkanSwapchain::Create(VulkanDevice* device, const SwapchainDe
         // A window that is minimized right now cannot get a swapchain yet; that is not an error for the caller, who
         // will see Minimized from Acquire, but there is nothing to present to without one.
         if (status != SwapchainStatus::Minimized) {
-            delete swapchain;
-            return nullptr;
+            return UniquePtr<VulkanSwapchain>();
         }
     }
     return swapchain;
@@ -42,7 +44,6 @@ VulkanSwapchain::~VulkanSwapchain() {
         swapchain_ = nullptr;
     }
     DestroySemaphores();
-    device_->swapchain_ = nullptr;
 }
 
 void VulkanSwapchain::DestroySemaphores() {

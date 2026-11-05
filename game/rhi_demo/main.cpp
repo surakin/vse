@@ -249,7 +249,7 @@ DeviceCreateInfo DeviceInfo(const Options& options) {
 // Renders `frames` frames offscreen (no window) and saves the last one, with a fixed camera and light.
 int RunScreenshot(const Options& options) {
     constexpr u32 kSize = 256;
-    Device* device = CreateDevice(DeviceInfo(options));
+    DevicePtr device = CreateDevice(DeviceInfo(options));
     if (device == nullptr) {
         RhiLogV(LogVerbosity::Error, "rhi_demo: no Vulkan device");
         return kExitFailure;
@@ -262,7 +262,7 @@ int RunScreenshot(const Options& options) {
     const TextureHandle target = device->CreateTexture(td);
     Scene scene;
     int exit_code = kExitFailure;
-    if (target.IsValid() && scene.depth.Ensure(device, kSize, kSize) && scene.Create(device, td.format)) {
+    if (target.IsValid() && scene.depth.Ensure(device.Get(), kSize, kSize) && scene.Create(device.Get(), td.format)) {
         const f32 background[4] = {0.05f, 0.05f, 0.05f, 1.0f};
         const OrbitCamera camera;
         const demo::Lighting lighting = LightAt(0.5);
@@ -309,11 +309,11 @@ int RunScreenshot(const Options& options) {
         RhiLogV(LogVerbosity::Error, "rhi_demo: could not create the target or the cube");
     }
     device->WaitIdle();
-    scene.Destroy(device);
+    scene.Destroy(device.Get());
     if (target.IsValid()) {
         device->DestroyTexture(target);
     }
-    DestroyDevice(device);
+    device.Reset();
     return exit_code;
 }
 
@@ -328,7 +328,7 @@ int RunWindow(const Options& options) {
 
     DeviceCreateInfo info = DeviceInfo(options);
     info.window = window;
-    Device* device = CreateDevice(info);
+    DevicePtr device = CreateDevice(info);
     if (device == nullptr) {
         RhiLogV(LogVerbosity::Error, "rhi_demo: no Vulkan device can present to this window");
         return kExitFailure;
@@ -340,16 +340,16 @@ int RunWindow(const Options& options) {
     Swapchain* swapchain = device->CreateSwapchain(swapchain_desc);
     if (swapchain == nullptr) {
         RhiLogV(LogVerbosity::Error, "rhi_demo: could not create a swapchain");
-        DestroyDevice(device);
+        device.Reset();
         return kExitFailure;
     }
     Scene scene;
-    if (!scene.Create(device, swapchain->ImageFormat())) {
+    if (!scene.Create(device.Get(), swapchain->ImageFormat())) {
         RhiLogV(LogVerbosity::Error, "rhi_demo: could not create the cube");
         device->WaitIdle();
-        scene.Destroy(device);
+        scene.Destroy(device.Get());
         device->DestroySwapchain(swapchain);
-        DestroyDevice(device);
+        device.Reset();
         return kExitFailure;
     }
 
@@ -416,7 +416,7 @@ int RunWindow(const Options& options) {
             nanosleep(&nap, nullptr);
             continue;
         }
-        if (!scene.depth.Ensure(device, swapchain->Width(), swapchain->Height())) { // follows a resize
+        if (!scene.depth.Ensure(device.Get(), swapchain->Width(), swapchain->Height())) { // follows a resize
             RhiLogV(LogVerbosity::Error, "rhi_demo: could not create the depth buffer");
             device->EndFrame();
             exit_code = kExitFailure;
@@ -473,9 +473,9 @@ int RunWindow(const Options& options) {
 
     // Shutdown order: idle the GPU, then the scene, the swapchain and the device.
     device->WaitIdle();
-    scene.Destroy(device);
+    scene.Destroy(device.Get());
     device->DestroySwapchain(swapchain);
-    DestroyDevice(device);
+    device.Reset();
     return exit_code;
 }
 

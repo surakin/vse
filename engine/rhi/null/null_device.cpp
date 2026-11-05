@@ -8,6 +8,8 @@
 #include <mutex>
 #include <new>
 
+#include "containers/unique_ptr.h"
+#include "containers/vector.h"
 #include "log/assert.h"
 #include "rhi/spirv.h"
 #include "rhi/handle_pool.h"
@@ -215,11 +217,9 @@ struct NullDeviceState {
 
     // Command lists are pooled and recycled at BeginFrame, never freed before the device: a pointer kept
     // across frames therefore stays dereferenceable (it reports "not ended" if submitted) instead of dangling.
-    Swapchain* swapchain = nullptr;
-    NullCommandList** lists = nullptr;
-    usize list_count = 0;     // lists allocated
-    usize list_capacity = 0;
-    usize lists_in_use = 0;   // handed out this frame
+    UniquePtr<Swapchain> swapchain;
+    Vector<UniquePtr<NullCommandList>> lists; // allocated
+    usize lists_in_use = 0;                   // handed out this frame
 
     explicit NullDeviceState(const NullDeviceOptions& o) : options(o) {}
     ~NullDeviceState();
@@ -972,12 +972,7 @@ private:
     Format render_depth_format_ = Format::Undefined;
 };
 
-NullDeviceState::~NullDeviceState() {
-    for (usize i = 0; i < list_count; ++i) {
-        delete lists[i];
-    }
-    std::free(lists);
-}
+NullDeviceState::~NullDeviceState() = default;
 
 } // namespace detail
 
@@ -987,26 +982,19 @@ using detail::NullCommandList;
 // ---------------------------------------------------------------------------------------------------------
 // Device
 
-NullDevice::NullDevice(State* state) : state_(state) {}
+NullDevice::NullDevice(const NullDeviceOptions& options) : state_(MakeUnique<State>(options)) {
+    ENGINE_ASSERT(state_, "NullDevice: out of host memory for the device state");
+}
 
 NullDevice::~NullDevice() {
-    if (state_->swapchain != nullptr) {
+    if (state_->swapchain) {
         state_->Error("NullDevice: the swapchain was still alive when the device was destroyed");
-        DestroySwapchain(state_->swapchain);
+        DestroySwapchain(state_->swapchain.Get());
     }
-    delete state_;
 }
 
-NullDevice* CreateNullDevice(const NullDeviceOptions& options) {
-    return new NullDevice(new State(options));
-}
-
-void DestroyDevice(Device* device) {
-    if (device == nullptr) {
-        return;
-    }
-    device->WaitIdle();
-    delete device;
+NullDevicePtr CreateNullDevice(const NullDeviceOptions& options) {
+    return MakeUnique<NullDevice, DeviceDeleter>(options);
 }
 
 const char* NullDevice::BackendName() const {
@@ -1514,12 +1502,12 @@ private:
 
 Swapchain* NullDevice::CreateSwapchain(const SwapchainDesc& desc) {
     State& s = *state_;
-    if (s.swapchain != nullptr) {
+    if (s.swapchain) {
         s.Error("CreateSwapchain: the device already has a swapchain");
         return nullptr;
     }
-    s.swapchain = new NullSwapchain(this, desc);
-    return s.swapchain;
+    s.swapchain = MakeUnique<NullSwapchain>(this, desc);
+    return s.swapchain.Get();
 }
 
 void NullDevice::DestroySwapchain(Swapchain* swapchain) {
@@ -1527,12 +1515,11 @@ void NullDevice::DestroySwapchain(Swapchain* swapchain) {
     if (swapchain == nullptr) {
         return;
     }
-    if (swapchain != s.swapchain) {
+    if (swapchain != s.swapchain.Get()) {
         s.Error("DestroySwapchain: not this device's swapchain");
         return;
     }
-    delete s.swapchain;
-    s.swapchain = nullptr;
+    s.swapchain.Reset();
 }
 
 bool NullDevice::FormatSupport(Format format, TextureUsage usage) const {
@@ -1677,17 +1664,12 @@ CommandList* NullDevice::CreateCommandList() {
     if (s.lost) {
         return nullptr;
     }
-    if (s.lists_in_use == s.list_count) {
-        if (s.list_count == s.list_capacity) {
-            usize ncap = s.list_capacity == 0 ? 8 : s.list_capacity * 2;
-            void* p = std::realloc(s.lists, ncap * sizeof(NullCommandList*));
-            ENGINE_ASSERT(p != nullptr, "NullDevice: out of host memory for command lists");
-            s.lists = static_cast<NullCommandList**>(p);
-            s.list_capacity = ncap;
-        }
-        s.lists[s.list_count++] = new NullCommandList(&s);
+    if (s.lists_in_use == s.lists.Size()) {
+        UniquePtr<NullCommandList> fresh = MakeUnique<NullCommandList>(&s);
+        ENGINE_ASSERT(fresh, "NullDevice: out of host memory for command lists");
+        s.lists.Push(std::move(fresh));
     }
-    NullCommandList* list = s.lists[s.lists_in_use++];
+    NullCommandList* list = s.lists[s.lists_in_use++].Get();
     list->Recycle(s.frame);
     return list;
 }
@@ -1710,7 +1692,7 @@ FenceValue NullDevice::Submit(CommandList* const* lists, usize count) {
     bool ok = true;
     for (usize i = 0; i < count; ++i) {
         auto* l = static_cast<NullCommandList*>(lists[i]);
-        if (l == nullptr || l->Owner() != state_) {
+        if (l == nullptr || l->Owner() != state_.Get()) {
             s.Error("Submit: list %u is null or belongs to another device", static_cast<u32>(i));
             ok = false;
             continue;

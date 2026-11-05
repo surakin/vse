@@ -2,6 +2,8 @@
 
 #include <mutex>
 
+#include "containers/unique_ptr.h"
+#include "containers/vector.h"
 #include "rhi/enums.h"
 #include "rhi/grow_array.h"
 #include "types.h"
@@ -323,11 +325,11 @@ private:
         void* mapped;
         u64 size;
         u64 used;
-        FreeList* free_list;
+        UniquePtr<FreeList> free_list;
         bool alive;
     };
     struct Pool {
-        rhi::detail::GrowArray<Block*> blocks;
+        Vector<UniquePtr<Block>> blocks;
     };
 
     MemoryAllocation AllocateLocked(const MemoryRequest& request, MemoryResult* result);

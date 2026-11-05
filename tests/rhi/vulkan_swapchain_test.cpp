@@ -126,7 +126,7 @@ TEST_CASE("ChooseCompositeAlpha and ChooseImageUsage", "[rhi][swapchain][policy]
 }
 
 TEST_CASE("Null device swapchain rotates images and reports minimize", "[rhi][null][swapchain]") {
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
     Swapchain* sc = device->CreateSwapchain(SwapchainDesc{});
     REQUIRE(sc != nullptr);
     CHECK(sc->Width() == 640);
@@ -153,14 +153,14 @@ TEST_CASE("Null device swapchain rotates images and reports minimize", "[rhi][nu
     device->ResetErrors();
     device->DestroySwapchain(sc);
     CHECK(device->ErrorCount() == 0);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Null device destroys a swapchain the application forgot", "[rhi][null][swapchain]") {
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
     Swapchain* sc = device->CreateSwapchain(SwapchainDesc{});
     REQUIRE(sc != nullptr);
-    DestroyDevice(device); // logs an error, frees the swapchain and its textures (checked by ASan)
+    device.Reset(); // logs an error, frees the swapchain and its textures (checked by ASan)
 }
 
 namespace {
@@ -181,7 +181,7 @@ void RunPresentationChecks(os::WindowBackend backend) {
     info.validation = ValidationSetting::On;
     info.sync_validation = true;
     info.window = window;
-    VulkanDevice* device = VulkanDevice::Create(info);
+    VulkanDevicePtr device = VulkanDevice::Create(info);
     if (device == nullptr) {
         if (gpu_test::GpuRequired()) {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could present to the window");
@@ -241,7 +241,7 @@ void RunPresentationChecks(os::WindowBackend backend) {
     device->DestroySwapchain(sc);
     device->WaitIdle();
     CHECK(device->Counts().textures == 0);
-    DestroyDevice(device);
+    device.Reset();
 }
 
 } // namespace
@@ -265,11 +265,11 @@ TEST_CASE("Vulkan device without a window refuses a swapchain", "[rhi][vulkan][g
     fx.Require();
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
-    VulkanDevice* device = VulkanDevice::Create(info);
+    VulkanDevicePtr device = VulkanDevice::Create(info);
     if (device == nullptr) {
         SKIP("no suitable Vulkan device");
     }
     CHECK(device->CreateSwapchain(SwapchainDesc{}) == nullptr);
     device->DestroySwapchain(nullptr); // no effect
-    DestroyDevice(device);
+    device.Reset();
 }

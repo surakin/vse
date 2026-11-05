@@ -144,16 +144,16 @@ int Srgb8(f32 linear) { return static_cast<int>(LinearToSrgb(linear < 0.0f ? 0.0
 TEST_CASE("A lit plane matches the CPU lighting model, and background pixels stay black", "[rhi][vulkan][gpu][lighting]") {
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
-    rhi::Device* device = MakeDevice();
+    rhi::DevicePtr device = MakeDevice();
     if (device == nullptr) SKIP("no suitable Vulkan device");
     fx.ExpectErrors(0);
     {
         Rig rig;
-        REQUIRE(rig.Create(device));
+        REQUIRE(rig.Create(device.Get()));
         MeshData d;
         REQUIRE(MakePlaneMesh(6.0f, 6.0f, 1, 1, &d) == nullptr); // smaller than the view: the corners are background
         GpuMesh plane;
-        REQUIRE(plane.Create(device, d, "plane"));
+        REQUIRE(plane.Create(device.Get(), d, "plane"));
         rig.Prepare(&plane);
         const MaterialId m = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m");
         rig.sys->SetVec4(m, "base_color", Vec4(0.6f, 0.5f, 0.4f, 1.0f));
@@ -238,22 +238,22 @@ TEST_CASE("A lit plane matches the CPU lighting model, and background pixels sta
         device->WaitIdle();
     }
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("Sweeping the light direction follows max(dot(N, L), 0) and the GGX lobe, metals have no diffuse", "[rhi][vulkan][gpu][lighting]") {
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
-    rhi::Device* device = MakeDevice();
+    rhi::DevicePtr device = MakeDevice();
     if (device == nullptr) SKIP("no suitable Vulkan device");
     fx.ExpectErrors(0);
     {
         Rig rig;
-        REQUIRE(rig.Create(device));
+        REQUIRE(rig.Create(device.Get()));
         MeshData d;
         REQUIRE(MakePlaneMesh(16.0f, 16.0f, 1, 1, &d) == nullptr);
         GpuMesh plane;
-        REQUIRE(plane.Create(device, d, "plane"));
+        REQUIRE(plane.Create(device.Get(), d, "plane"));
         rig.Prepare(&plane);
         const MaterialId rough = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "rough");
         rig.sys->SetVec4(rough, "base_color", Vec4(0.5f, 0.5f, 0.5f, 1.0f));
@@ -320,25 +320,25 @@ TEST_CASE("Sweeping the light direction follows max(dot(N, L), 0) and the GGX lo
         device->WaitIdle();
     }
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("The reconstructed world position matches the geometry, including the projection's Y flip", "[rhi][vulkan][gpu][lighting]") {
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
-    rhi::Device* device = MakeDevice();
+    rhi::DevicePtr device = MakeDevice();
     if (device == nullptr) SKIP("no suitable Vulkan device");
     fx.ExpectErrors(0);
     {
         Rig rig;
-        REQUIRE(rig.Create(device));
+        REQUIRE(rig.Create(device.Get()));
         MeshData d;
         REQUIRE(MakePlaneMesh(16.0f, 16.0f, 1, 1, &d) == nullptr);
         GpuMesh plane;
-        REQUIRE(plane.Create(device, d, "plane"));
+        REQUIRE(plane.Create(device.Get(), d, "plane"));
         REQUIRE(MakeCubeMesh(2.0f, &d) == nullptr);
         GpuMesh cube;
-        REQUIRE(cube.Create(device, d, "cube"));
+        REQUIRE(cube.Create(device.Get(), d, "cube"));
         rig.Prepare(&plane);
         rig.Prepare(&cube);
         const MaterialId m = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m");
@@ -368,22 +368,22 @@ TEST_CASE("The reconstructed world position matches the geometry, including the 
         device->WaitIdle();
     }
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }
 
 TEST_CASE("A cube lit through the deferred path is close to the Phase 3 forward Lambert result", "[rhi][vulkan][gpu][lighting]") {
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
-    rhi::Device* device = MakeDevice();
+    rhi::DevicePtr device = MakeDevice();
     if (device == nullptr) SKIP("no suitable Vulkan device");
     fx.ExpectErrors(0);
     {
         Rig rig;
-        REQUIRE(rig.Create(device));
+        REQUIRE(rig.Create(device.Get()));
         MeshData d;
         REQUIRE(MakeCubeMesh(1.0f, &d) == nullptr);
         GpuMesh cube;
-        REQUIRE(cube.Create(device, d, "cube"));
+        REQUIRE(cube.Create(device.Get(), d, "cube"));
         rig.Prepare(&cube);
         // The Phase 3 test "Visible faces are lit by the Lambert ratio of their normals to the light": white albedo, light
         // (0.3, 0.9, 0.5) at 0.8, ambient 0.1, eye (1.8, 1.5, 3.0). The forward result is 0.1 + 0.8 * max(N.L, 0); the
@@ -427,5 +427,5 @@ TEST_CASE("A cube lit through the deferred path is close to the Phase 3 forward 
         device->WaitIdle();
     }
     device->WaitIdle();
-    rhi::DestroyDevice(device);
+    device.Reset();
 }

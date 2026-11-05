@@ -139,7 +139,7 @@ using namespace engine_placeholder::rhi;
 
 int main() {
     LogRhi.SetEnabled(false);  // keep the expected error out of the output
-    NullDevice* device = CreateNullDevice();
+    NullDevicePtr device = CreateNullDevice();
     device->BeginFrame();
 
     BufferDesc desc;
@@ -156,7 +156,7 @@ int main() {
     device->Submit(&list, 1);
 
     std::printf("errors: %u\n", device->ErrorCount());
-    DestroyDevice(device);
+    device.Reset();
 }
 ```
 

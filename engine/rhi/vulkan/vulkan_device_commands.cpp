@@ -1,5 +1,6 @@
 // VulkanDevice: per-thread command pools, command list creation and submission.
 
+#include <atomic>
 #include <mutex>
 
 #include "rhi/rhi_log.h"
@@ -12,45 +13,45 @@ namespace {
 
 // Every thread that records gets a slot from a process-wide table and gives it back when it exits, so a program
 // that starts and stops threads does not run out. (A job participant index would not do: indices are only unique
-// within one worker pool, and pools may coexist.) The table is leaked on purpose: a thread's exit handler can run
-// after static destructors.
-struct FallbackSlots {
-    std::mutex mutex;
-    bool used[VulkanDevice::kThreadSlots] = {};
-};
-
-FallbackSlots& Slots() {
-    static FallbackSlots* slots = new FallbackSlots();
-    return *slots;
-}
+// within one worker pool, and pools may coexist.) The table is a constant-initialized array of atomic bitmasks with
+// no destructor, so a thread's exit handler can run after static destructors and still find it intact.
+constexpr usize kSlotWords = (VulkanDevice::kThreadSlots + 63) / 64;
+std::atomic<u64> g_slot_words[kSlotWords];
 
 struct FallbackSlotHolder {
     i32 id = -1;
     ~FallbackSlotHolder() {
         if (id >= 0) {
-            FallbackSlots& slots = Slots();
-            std::lock_guard<std::mutex> lock(slots.mutex);
-            slots.used[id] = false;
+            g_slot_words[static_cast<usize>(id) / 64].fetch_and(~(u64{1} << (static_cast<usize>(id) % 64)), std::memory_order_release);
         }
     }
 };
+
+// Claims a free bit in the table; returns its index, or -1 if all are taken.
+i32 ClaimSlot() {
+    for (usize w = 0; w < kSlotWords; ++w) {
+        u64 bits = g_slot_words[w].load(std::memory_order_relaxed);
+        for (;;) {
+            usize bit = 0;
+            while (bit < 64 && (w * 64 + bit) < VulkanDevice::kThreadSlots && ((bits >> bit) & 1) != 0) {
+                ++bit;
+            }
+            if (bit == 64 || (w * 64 + bit) >= VulkanDevice::kThreadSlots) {
+                break; // this word is full
+            }
+            if (g_slot_words[w].compare_exchange_weak(bits, bits | (u64{1} << bit), std::memory_order_acquire, std::memory_order_relaxed)) {
+                return static_cast<i32>(w * 64 + bit);
+            }
+        }
+    }
+    return -1;
+}
 
 // Returns the calling thread's pool slot, or -1 if all are taken.
 i32 CurrentPoolSlot() {
     thread_local FallbackSlotHolder holder;
     if (holder.id < 0) {
-        FallbackSlots& slots = Slots();
-        std::lock_guard<std::mutex> lock(slots.mutex);
-        for (usize i = 0; i < VulkanDevice::kThreadSlots; ++i) {
-            if (!slots.used[i]) {
-                slots.used[i] = true;
-                holder.id = static_cast<i32>(i);
-                break;
-            }
-        }
-        if (holder.id < 0) {
-            return -1;
-        }
+        holder.id = ClaimSlot();
     }
     return holder.id;
 }
@@ -106,8 +107,14 @@ VulkanDevice::ThreadPool* VulkanDevice::PoolForCurrentThread(usize frame_slot) {
         ReportResult(r);
         return nullptr;
     }
-    pool = new ThreadPool();
-    pool->pool = vk_pool;
+    UniquePtr<ThreadPool> made = MakeUnique<ThreadPool>();
+    if (!made) {
+        fns_.DestroyCommandPool(device_, vk_pool, nullptr);
+        return nullptr;
+    }
+    made->pool = vk_pool;
+    pool = made.Get();
+    owned_pools_[frame_slot][slot] = std::move(made);
     entry.store(pool, std::memory_order_release);
     return pool;
 }
@@ -130,11 +137,9 @@ void VulkanDevice::ShutdownCommands() {
             if (pool == nullptr) {
                 continue;
             }
-            for (usize i = 0; i < pool->lists.Size(); ++i) {
-                delete pool->lists[i];
-            }
+            pool->lists.Reset();
             fns_.DestroyCommandPool(device_, pool->pool, nullptr); // frees its command buffers
-            delete pool;
+            owned_pools_[f][s].Reset();
         }
     }
 }
@@ -161,9 +166,13 @@ CommandList* VulkanDevice::CreateCommandList() {
             ReportResult(r);
             return nullptr;
         }
-        pool->lists.Push(new VulkanCommandList(this, cb));
+        UniquePtr<VulkanCommandList> fresh = MakeUnique<VulkanCommandList>(this, cb);
+        if (!fresh) {
+            return nullptr; // the buffer goes back to the pool with the pool
+        }
+        pool->lists.Push(std::move(fresh));
     }
-    VulkanCommandList* list = pool->lists[pool->used++];
+    VulkanCommandList* list = pool->lists[pool->used++].Get();
     list->Recycle(frame);
     return list;
 }

@@ -39,7 +39,7 @@ void Quad(float x0, float x1, std::vector<Vertex>* out) {
 
 struct StripScene {
     gpu_test::GpuFixture fx;
-    VulkanDevice* device = nullptr;
+    VulkanDevicePtr device;
     ShaderHandle vs, fs;
     PipelineHandle plain, restart;
     BufferHandle vb, ib;
@@ -85,7 +85,7 @@ struct StripScene {
         device->DestroyPipeline(restart);
         device->DestroyShader(vs);
         device->DestroyShader(fs);
-        DestroyDevice(device);
+        device.Reset();
     }
 
     void Upload(const std::vector<Vertex>& vertices, const u16* indices, u32 index_count) {
@@ -107,7 +107,7 @@ struct StripScene {
 
     // Draws with `pipeline`, indexed when `index_count` is non-zero, and reads the target back.
     Image Draw(PipelineHandle pipeline, u32 vertex_count, u32 index_count) {
-        gpu_test::RenderTarget target(device, kSize, kSize);
+        gpu_test::RenderTarget target(device.Get(), kSize, kSize);
         REQUIRE(target.Valid());
         device->BeginFrame();
         CommandList* list = device->CreateCommandList();

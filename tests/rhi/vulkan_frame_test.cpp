@@ -28,7 +28,7 @@ TEST_CASE("BeginRendering clears an offscreen color attachment", "[rhi][vulkan][
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
     info.sync_validation = true;
-    VulkanDevice* device = VulkanDevice::Create(info);
+    VulkanDevicePtr device = VulkanDevice::Create(info);
     if (device == nullptr) {
         SKIP("no suitable Vulkan device");
     }
@@ -68,7 +68,7 @@ TEST_CASE("BeginRendering clears an offscreen color attachment", "[rhi][vulkan][
     CHECK(all_red);
     device->DestroyTexture(tex);
     device->WaitIdle();
-    DestroyDevice(device);
+    device.Reset();
 }
 
 struct LoopResult {
@@ -91,7 +91,7 @@ LoopResult RunLoop(os::WindowBackend backend, u32 frames_in_flight, u32 frames) 
     info.sync_validation = true;
     info.window = window;
     info.frames_in_flight = frames_in_flight;
-    VulkanDevice* device = VulkanDevice::Create(info);
+    VulkanDevicePtr device = VulkanDevice::Create(info);
     if (device == nullptr) {
         if (gpu_test::GpuRequired()) {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could present to the window");
@@ -134,7 +134,7 @@ LoopResult RunLoop(os::WindowBackend backend, u32 frames_in_flight, u32 frames) 
     device->WaitIdle();
     result.final_completed = device->CompletedFrame();
     device->DestroySwapchain(sc);
-    DestroyDevice(device);
+    device.Reset();
     return result;
 }
 

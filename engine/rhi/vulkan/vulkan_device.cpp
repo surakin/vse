@@ -91,13 +91,13 @@ void DescribeDevice(const VkInstanceFns& fns, VkPhysicalDevice device, VkSurface
 
 } // namespace
 
-VulkanDevice* VulkanDevice::Create(const DeviceCreateInfo& info) {
-    VulkanDevice* device = new VulkanDevice();
-    if (!device->Initialize(info)) {
-        delete device;
-        return nullptr;
+VulkanDevicePtr VulkanDevice::Create(const DeviceCreateInfo& info) {
+    // Held with the plain deleter until initialization succeeds: a half-built device must not be waited on.
+    UniquePtr<VulkanDevice> device = MakeUnique<VulkanDevice>();
+    if (!device || !device->Initialize(info)) {
+        return VulkanDevicePtr();
     }
-    return device;
+    return VulkanDevicePtr(device.Release());
 }
 
 bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
@@ -233,9 +233,13 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     MemoryAllocatorConfig memory_config;
     memory_config.max_allocation_count = properties_.limits.maxMemoryAllocationCount;
     memory_config.non_coherent_atom_size = properties_.limits.nonCoherentAtomSize;
-    memory_backend_ = new VulkanMemoryBackend(&fns_, device_, &device_lost_);
+    memory_backend_ = MakeUnique<VulkanMemoryBackend>(&fns_, device_, &device_lost_);
+    memory_ = MakeUnique<MemoryAllocator>(layout, memory_config, memory_backend_.Get());
+    if (!memory_backend_ || !memory_) {
+        RhiLog(LogVerbosity::Error, "Vulkan: out of host memory for the GPU memory allocator");
+        return false;
+    }
     memory_backend_->FailAllocationsFrom(info.faults.fail_allocations_from);
-    memory_ = new MemoryAllocator(layout, memory_config, memory_backend_);
     lose_device_at_frame_ = info.faults.lose_device_at_frame;
     if (!InitializeUpload()) {
         RhiLog(LogVerbosity::Error, "Vulkan: cannot set up the staging ring");
@@ -332,10 +336,10 @@ VulkanDevice::~VulkanDevice() {
     if (device_ != nullptr) {
         fns_.DeviceWaitIdle(device_);
         u64 user_leaks = 0;
-        if (swapchain_ != nullptr) {
+        if (swapchain_) {
             RhiLog(LogVerbosity::Warn, "Vulkan: the swapchain was still alive when the device was destroyed");
             ++user_leaks;
-            DestroySwapchain(swapchain_); // takes its textures with it
+            DestroySwapchain(swapchain_.Get()); // takes its textures with it
         }
         user_leaks += buffers_.LiveCount() + textures_.LiveCount() + samplers_.LiveCount() + shaders_.LiveCount() + bind_group_layouts_.LiveCount() + pipelines_.LiveCount();
         bind_groups_.ForEachLive([&](BindGroupHandle, BindGroupRes& g) { user_leaks += g.transient ? 0 : 1; }); // transient ones end with their frame
@@ -378,10 +382,8 @@ VulkanDevice::~VulkanDevice() {
             g_leaked_internal_objects.fetch_add(internal, std::memory_order_relaxed);
         }
     }
-    delete memory_; // frees every block, so the GPU must be idle first
-    delete memory_backend_;
-    memory_ = nullptr;
-    memory_backend_ = nullptr;
+    memory_.Reset(); // frees every block, so the GPU must be idle first
+    memory_backend_.Reset();
     if (device_ != nullptr) {
         fns_.DestroyDevice(device_, nullptr);
         device_ = nullptr;
