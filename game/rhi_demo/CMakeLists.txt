@@ -4,7 +4,7 @@
 add_executable(rhi_demo main.cpp ../common/cube_scene.cpp ../common/textures.cpp)
 target_compile_options(rhi_demo PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_compile_definitions(rhi_demo PRIVATE RHI_DEMO_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
-target_include_directories(rhi_demo PRIVATE ${ENGINE_SHADER_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/game/common)
+target_include_directories(rhi_demo PRIVATE ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common)
 target_link_libraries(rhi_demo PRIVATE rhi_vulkan rhi foundation)
 
 # Failure injection and missing-Vulkan behaviour of the demo (Phase 3 Day 66). The shell is the process boundary, so

@@ -253,7 +253,7 @@ draws. See the Phase 4 notes in `plans/phase-04-renderer-core.md`.
 
 ### See also
 
-- [Shaders: from GLSL to a shader module](rhi-shaders.md) - writing and building shaders.
+- [Shaders: from Slang to a shader module](rhi-shaders.md) - writing and building shaders.
 - [Tutorial: From a Cleared Window to a Lit Cube](../tutorials/hello-rhi.md).
 - [Building and Testing](building-and-testing.md) - GPU tests, golden images, sanitizers and the boundary gate.
 - [Open a Window](../tutorials/hello-window.md) and [Windowing and input](platform-windowing-and-input.md) - the platform
@@ -493,7 +493,7 @@ runner points `ENGINE_RHI_CACHE_DIR` into the build tree so tests never write to
 Shaders read buffers, textures and samplers through bind groups. The shape is a **layout** ([[rhi::BindGroupLayoutDesc]]:
 a binding index, a type, the stages that use it and an array size for each entry), the contents are a **bind group**
 ([[rhi::BindGroupDesc]]: one entry per binding element, naming the buffer range, texture or sampler), and a pipeline
-declares which layouts it uses at group slots 0, 1, ... In GLSL a layout is `set = slot, binding = n`.
+declares which layouts it uses at group slots 0, 1, ... In Slang a layout is `[[vk::binding(n, slot)]]`.
 
 ```
 BindingDesc entries[3] = {{0, BindingType::UniformBuffer,  ShaderStage::Fragment, 1},
@@ -584,8 +584,8 @@ To sample a texture in a draw: create it with `Sampled` and `CopyDst` usage (plu
 mips), upload level 0 with `UploadTexture` (the texture ends up in `ShaderRead`, the state a sampled texture must be
 in while the draw runs), and call `GenerateMips` once in a command list when `CanGenerateMips(format)` says the format
 allows it - or upload every level yourself with `UploadTexture(texture, mip, ...)`, as `.rtex` files do. Bind the
-texture and a sampler in a bind group (`SampledTexture` and `Sampler` entries) and declare them in GLSL as
-`texture2D` and `sampler`, combined at the sample: `texture(sampler2D(tex, smp), uv)`.
+texture and a sampler in a bind group (`SampledTexture` and `Sampler` entries) and declare them in Slang as
+`Texture2D` and `SamplerState` and sample with `tex.Sample(smp, uv)`.
 
 - **Mips.** With `mip_filter = Linear` the sampler blends two levels (trilinear), so a texture drawn smaller than its
   size is averaged instead of aliased. A texture with one mip level, drawn the same way, shows the aliasing; the tests

@@ -1,6 +1,6 @@
 // spv_embed: turns a compiled SPIR-V binary into a C++ include file holding its words.
 //
-//   spv_embed --name kTriangleVertSpv --source triangle.vert --compiler "shaderc v2026.4" --out triangle.vert.spv.inc in.spv
+//   spv_embed --name kTriangleVertSpv --source triangle.vert.slang --compiler "slangc v2026.18.2" --out triangle.vert.spv.inc in.spv
 //
 // The output declares `inline constexpr u32 <name>[]` and `inline constexpr usize <name>WordCount` in namespace
 // engine_placeholder::shaders. It is a dev-time tool (see PLAN.md assumption #18): the generated file is committed,

@@ -399,20 +399,19 @@ interpretations keep it buildable — flag any that don't match intent:
     real complex-script requirement shows up (flagged, not assumed
     needed).
 
-18. **Shader toolchain: GLSL via `glslc` in Phase 3; Slang from Phase 4
-    (decided 2026-11-04).** Shaders are never compiled at runtime in a shipped
+18. **Shader toolchain: Slang via `slangc` (GLSL retired on Phase 4 Day 70).** Shaders are never compiled at runtime in a shipped
     build: the engine loads precompiled bytecode (SPIR-V now; DXIL/MSL
     later), so no shader compiler is linked into the engine/game binary.
     The compiler is a dev-time tool in the same boundary category as
     CMake and the C++ compiler (assumption #8) and Catch2 (#16).
-    - **Phase 3 (settled):** shaders are GLSL 4.50 sources
+    - **Phase 3 (historical, retired):** shaders were GLSL 4.50 sources
       (`*.vert`, `*.frag`, `*.comp`) under `shaders/`, compiled by
-      `glslc` (Vulkan SDK / distro `shaderc`) and checked with `spirv-val`,
+      `glslc` (distro `shaderc`) and checked with `spirv-val`,
       then embedded by our own `spv_embed` tool into committed
       `*.spv.inc` word arrays. The tools are optional: a checkout without
       them builds from the committed arrays, and a ctest recompiles and
       compares only when they are present. Hand-written SPIR-V assembly
-      is not used.
+      was never used.
     - **Settled 2026-11-04 (for Phase 4 on): Slang.** The long-term source
       language is Slang, compiled offline by `slangc` to SPIR-V now and to
       DXIL/HLSL and MSL when Phases 12-13 need them, with Slang's reflection
@@ -427,12 +426,13 @@ interpretations keep it buildable — flag any that don't match intent:
       tool in the same boundary category as CMake and `glslc` were (#8,
       #16): nothing is linked into the runtime, and compiled outputs
       (`*.spv.inc` plus reflection) stay committed so a checkout without
-      `slangc` still builds. The Phase 3 GLSL shaders are ported on Phase 4
-      Days 69-70 and kept as the fallback until the Slang output reproduces
-      the golden images; then the GLSL sources and the `glslc` path are
-      removed. Phase 4 Day 69 confirms the exact `slangc` version and the
-      flags that make it match the engine's conventions (column-major
-      matrices, Vulkan clip space, std140 layout).
+      `slangc` still builds. **Done:** the Phase 3 GLSL shaders were ported on
+      Phase 4 Days 69-70 (`slangc` v2026.18.2, flags and pitfalls in
+      `shaders/README.md`); the Slang output reproduced every golden image
+      unchanged, and the GLSL sources and the `glslc` path were removed on
+      Day 70. Open items for Phases 12-13: Metal renames an entry point
+      called `main`, and no Slang flag flips clip-space Y for HLSL/Metal
+      (see `shaders/README.md`, "Other targets").
     - The RHI already takes bytecode (`ShaderDesc` holds SPIR-V words); the
       Day 67 portability review (section 3) found that a per-backend blob
       would add a format tag to `ShaderDesc`, and that any translator must

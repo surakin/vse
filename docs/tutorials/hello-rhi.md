@@ -81,7 +81,7 @@ display. It leaves the loop when you close the window.
 
 ## Draw a triangle
 
-The clear needs no shaders. A triangle needs two (GLSL in `shaders/`, compiled to SPIR-V and committed as
+The clear needs no shaders. A triangle needs two (Slang in `shaders/`, compiled to SPIR-V and committed as
 `*.spv.inc`, see [Shaders](../guide/rhi-shaders.md)), a pipeline that describes the vertex layout and the target
 format, and a vertex buffer.
 

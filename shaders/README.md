@@ -3,31 +3,23 @@
 Shaders are compiled offline to SPIR-V and embedded as committed `*.spv.inc` files (PLAN.md assumption #18). Building
 the engine never needs a shader compiler: a checkout without one uses the committed outputs as they are.
 
-Two source languages coexist while Phase 4 migrates from GLSL to Slang (Days 69-70; the GLSL sources are deleted on
-Day 70):
+Sources are Slang: `shaders/<name>.vert|frag|comp.slang`, output `shaders/<name>.spv.inc`, compiled by `slangc`. The
+symbol names (`kTriangleVertSpv`, ...) come from the file name. The GLSL path (`glslc`, Phase 3) was retired on
+Phase 4 Day 70 after the Slang outputs reproduced every golden image unchanged.
 
-| Language | Sources | Committed output | Compiler |
-|---|---|---|---|
-| GLSL  | `shaders/<name>.vert\|frag\|comp` | `shaders/<name>.spv.inc` | `glslc` |
-| Slang | `shaders/slang/<name>.vert\|frag\|comp.slang` | `shaders/slang/<name>.spv.inc` | `slangc` |
-
-`-DENGINE_SHADER_LANG=glsl|slang` (default `glsl` until Day 70) chooses which outputs the engine, tests and demos
-include. With `slang`, a shader that has no Slang port yet falls back to its GLSL output. The symbol names
-(`kTriangleVertSpv`, ...) are the same in both, so no C++ changes between the two.
-
-The first line after the banner of every generated file records the compiler: `// compiler: slangc v2026.18.2`,
-`// compiler: glslc 2026.4`. `shaders_check` recompiles with the installed compiler and byte-compares, and **skips**
-(prints `SKIP:`) when the installed version differs from the recorded one, so a newer compiler never fails the suite.
+The second line of every generated file records the compiler: `// compiler: slangc v2026.18.2`. `shaders_check`
+recompiles with the installed compiler and byte-compares; a shader whose recorded version differs from the installed
+one is noted and not compared, and the test reports SKIP only if nothing could be compared, so a newer compiler never
+fails the suite.
 
 ## Tools (optional, dev-time)
 
 | Tool | Version pinned | Arch | Windows / macOS |
 |---|---|---|---|
 | `slangc` | v2026.18.2 | `pacman -S shader-slang` | release archive from github.com/shader-slang/slang (Windows `slangc.exe`, macOS via the release archive or `brew install shader-slang`) |
-| `glslc` | 2026.4 | `pacman -S shaderc` | Vulkan SDK |
 | `spirv-val` | any recent | `pacman -S spirv-tools` | Vulkan SDK |
 
-Regenerate: `cmake --build build --target shaders`. Check: `ctest --test-dir build -R shaders_check`.
+Regenerate: `cmake --build build --target shaders`. Changing a shader requires `slangc`: without it neither this target nor `shaders_check` exists and the build silently keeps using the committed outputs. Check: `ctest --test-dir build -R shaders_check`.
 
 ## How Slang is invoked
 
@@ -65,5 +57,20 @@ shader is one file with one entry point named `main`; the stage comes from the f
 - **Entry point name** is `main` in the source and in the SPIR-V (`-entry main`); `rhi::ValidateSpirv` looks for it.
 - **`[[vk::location(n)]]`** pins stage inputs/outputs; without it Slang numbers them by semantic order.
 
-`tests/rhi/slang_shader_test.cpp` compares every ported shader against its GLSL original: entry point count, stage,
-compute local size, descriptor (set, binding) pairs and interface locations, and runs `rhi::ValidateSpirv`.
+`tests/rhi/shader_interface_test.cpp` checks every committed shader without the compiler: entry point count, stage,
+compute local size, descriptor (set, binding) pairs, interface locations, std140/std430 member offsets (the lit block
+is 176 bytes, matching the C++ struct), `NonReadable`, push-constant blocks and that no capability beyond
+Matrix/Shader/ImageQuery is used; it also runs `rhi::ValidateSpirv`.
+
+## Other targets (checked on Day 70, for Phases 12-13)
+
+`slangc -target hlsl` and `-target metal` produce `lit.vert` and `lit.frag` without errors. Two things to settle then:
+
+- **Clip-space Y is not flipped.** The emitted HLSL and Metal write `SV_Position`/`[[position]]` unchanged. Vulkan's
+  clip space has Y down, D3D12 and Metal have Y up, and `-fvk-invert-y` only applies to SPIR-V. The engine's
+  `PerspectiveVulkan` bakes the flip into the matrix, so those backends need the un-flipped projection (or a flip in a
+  shader epilogue behind a define). The shaders themselves are correct as written.
+- **Metal renames `main`** (`warning E40100: entry point 'main' has been renamed to 'main_0'`), because `main` is
+  reserved in Metal Shading Language. A Metal pipeline cannot look the entry up as `main`: when that backend is built,
+  either give the entry points real names and pass them through (the RHI already takes an entry name) or look up the
+  renamed one. `-fvk-use-entrypoint-name` is the matching flag on the SPIR-V side.
