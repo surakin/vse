@@ -1,0 +1,250 @@
+#pragma once
+
+//! CPU-side geometry ([[renderer::MeshData]]), its GPU copy ([[renderer::GpuMesh]]) and procedural shapes.
+
+#include "renderer/bounds.h"
+#include "renderer/shader_reflection.h"
+#include "rhi/rhi.h"
+#include "types.h"
+
+namespace engine_placeholder::renderer {
+
+/// The vertex the procedural meshes use: position, normal, tangent (xyz plus handedness in w) and one UV set. 48 bytes,
+/// interleaved in one stream.
+///
+/// The bitangent is `cross(normal, tangent.xyz) * tangent.w`. UV (0, 0) is the corner where the texture starts, and V
+/// grows along the bitangent.
+///
+/// Thread-safety: thread-compatible plain data.
+struct StandardVertex {
+    /// Object-space position.
+    f32 position[3];
+    /// Unit normal.
+    f32 normal[3];
+    /// Unit tangent in xyz, handedness (+1 or -1) in w.
+    f32 tangent[4];
+    /// Texture coordinates.
+    f32 uv[2];
+};
+static_assert(sizeof(StandardVertex) == 48, "StandardVertex is 48 bytes");
+
+/// The layout of [[renderer::StandardVertex]] as the shaders read it: locations 0 to 3 (position, normal, tangent, uv)
+/// in vertex binding 0.
+///
+/// Returns: the layout.
+/// Fails: never.
+/// Thread-safety: thread-safe. A pure function.
+VertexLayoutData StandardVertexLayout();
+
+/// Geometry on the CPU: interleaved vertex bytes, indices and bounds. Owns its memory.
+///
+/// A mesh is built once with [[renderer::MeshData::Set]] (or by one of the `Make...Mesh` functions) and is read-only
+/// afterwards.
+///
+/// Thread-safety: thread-compatible. Move-only.
+/// Ownership: owns copies of the vertex and index data it was given.
+class MeshData {
+public:
+    MeshData() = default;
+    /// Frees the copied geometry.
+    ~MeshData();
+    /// Takes the geometry from `other`, which is left empty.
+    MeshData(MeshData&& other);
+    /// Frees this mesh's geometry, then takes it from `other`, which is left empty.
+    MeshData& operator=(MeshData&& other);
+    MeshData(const MeshData&) = delete;
+    MeshData& operator=(const MeshData&) = delete;
+
+    /// Replaces the contents with copies of the given geometry and computes its bounds.
+    ///
+    /// Param layout: the vertex attributes; `layout.stride` is the byte size of one vertex.
+    /// Param position_offset: byte offset of the three-float position inside a vertex, used for the bounds.
+    /// Param vertices: `vertex_count * layout.stride` bytes.
+    /// Param vertex_count: number of vertices, at least 1.
+    /// Param index_type: 16-bit or 32-bit indices.
+    /// Param indices: `index_count` indices of `index_type`.
+    /// Param index_count: number of indices; a positive multiple of 3 (triangle list).
+    /// Returns: null on success, otherwise a static message naming the problem (this mesh is then empty).
+    /// Fails: a zero or oversized stride, a stride or position offset that is not a multiple of 4, a position outside the vertex, no vertices or indices, an index count that is
+    ///   not a multiple of 3, 16-bit indices with more than 65536 vertices, an index at or past `vertex_count`, or a
+    ///   non-finite position.
+    /// Ownership: `vertices` and `indices` are borrowed for the call and copied.
+    const char* Set(const VertexLayoutData& layout, u32 position_offset, const void* vertices, u32 vertex_count, rhi::IndexType index_type,
+                    const void* indices, u32 index_count);
+
+    /// Returns whether the mesh holds geometry.
+    /// Fails: never.
+    bool Valid() const { return vertex_count_ != 0; }
+    /// Returns the vertex layout.
+    const VertexLayoutData& Layout() const { return layout_; }
+    /// Returns the vertex bytes (`VertexBytes()` of them), or null if empty.
+    /// Fails: never.
+    /// Ownership: borrowed; valid until the mesh is changed, moved from or destroyed.
+    const void* Vertices() const { return vertices_; }
+    /// Returns the number of vertices.
+    u32 VertexCount() const { return vertex_count_; }
+    /// Returns the size of the vertex data in bytes.
+    u64 VertexBytes() const { return static_cast<u64>(vertex_count_) * layout_.stride; }
+    /// Returns the index bytes (`IndexBytes()` of them), or null if empty.
+    /// Fails: never.
+    /// Ownership: borrowed; valid until the mesh is changed, moved from or destroyed.
+    const void* Indices() const { return indices_; }
+    /// Returns the number of indices.
+    u32 IndexCount() const { return index_count_; }
+    /// Returns the width of the indices.
+    rhi::IndexType IndexFormat() const { return index_type_; }
+    /// Returns the size of the index data in bytes.
+    u64 IndexBytes() const { return static_cast<u64>(index_count_) * (index_type_ == rhi::IndexType::UInt16 ? 2 : 4); }
+    /// Returns the object-space bounds.
+    const Bounds& GetBounds() const { return bounds_; }
+    /// Returns the index of triangle corner `i` (0 to `IndexCount() - 1`), whatever the index width.
+    /// Aborts: `i` is out of range.
+    u32 IndexAt(u32 i) const;
+    /// Returns a pointer to the position of vertex `i`.
+    /// Aborts: `i` is out of range.
+    /// Ownership: borrowed; valid until the mesh is changed, moved from or destroyed.
+    const f32* PositionAt(u32 i) const;
+
+private:
+    void Release();
+
+    VertexLayoutData layout_;
+    u32 position_offset_ = 0;
+    unsigned char* vertices_ = nullptr;
+    u32 vertex_count_ = 0;
+    unsigned char* indices_ = nullptr;
+    u32 index_count_ = 0;
+    rhi::IndexType index_type_ = rhi::IndexType::UInt16;
+    Bounds bounds_;
+};
+
+/// Builds an axis-aligned cube centered on the origin: 24 vertices (4 per face) and 36 16-bit indices, outward normals,
+/// counter-clockwise faces, UV (0, 0) to (1, 1) on every face.
+///
+/// Param edge: edge length, greater than zero.
+/// Param out: receives the mesh; must not be null.
+/// Returns: null on success, otherwise a static message.
+/// Ownership: `out` is borrowed for the call; the message is static.
+/// Fails: `edge` is not positive and finite.
+/// Thread-safety: thread-safe.
+const char* MakeCubeMesh(f32 edge, MeshData* out);
+
+/// Builds a UV sphere centered on the origin, Y up: `(rings + 1) * (segments + 1)` vertices (the seam and the poles are
+/// duplicated for UVs), outward normals, counter-clockwise triangles, no degenerate triangles at the poles.
+///
+/// Param radius: greater than zero.
+/// Param segments: slices around the Y axis, at least 3.
+/// Param rings: bands from pole to pole, at least 2.
+/// Param out: receives the mesh; must not be null.
+/// Returns: null on success, otherwise a static message.
+/// Ownership: `out` is borrowed for the call; the message is static.
+/// Fails: an argument out of range, or more vertices than 16-bit indices can address (then 32-bit indices are used, so
+///   this only fails for absurd sizes).
+/// Thread-safety: thread-safe.
+const char* MakeSphereMesh(f32 radius, u32 segments, u32 rings, MeshData* out);
+
+/// Builds a flat grid in the XZ plane centered on the origin, normal +Y, tangent +X, UV (0, 0) at (-x, -z) to (1, 1) at
+/// (+x, +z); counter-clockwise seen from above.
+///
+/// Param width: size along X, greater than zero.
+/// Param depth: size along Z, greater than zero.
+/// Param x_segments: cells along X, at least 1.
+/// Param z_segments: cells along Z, at least 1.
+/// Param out: receives the mesh; must not be null.
+/// Returns: null on success, otherwise a static message.
+/// Ownership: `out` is borrowed for the call; the message is static.
+/// Fails: an argument out of range.
+/// Thread-safety: thread-safe.
+const char* MakePlaneMesh(f32 width, f32 depth, u32 x_segments, u32 z_segments, MeshData* out);
+
+/// A mesh on the GPU: a vertex buffer and an index buffer with the draw information.
+///
+/// `Create` uploads through the device's staging ring and leaves the buffers in the `CopyDst` state; record
+/// [[renderer::GpuMesh::RecordPrepare]] in every command list that draws it until a list containing it has been submitted
+/// and [[renderer::GpuMesh::MarkReady]] was called, so the buffers move to their read states once.
+///
+/// Thread-safety: thread-compatible. Move-only.
+/// Ownership: owns its two buffers; the device must outlive it and be idle (or at least done with the buffers' frames)
+///   for a clean exit. Destruction goes through the device's deferred destruction.
+class GpuMesh {
+public:
+    GpuMesh() = default;
+    /// Destroys the buffers, as [[renderer::GpuMesh::Destroy]] does.
+    ~GpuMesh() { Destroy(); }
+    /// Takes the buffers from `other`, which is left empty.
+    GpuMesh(GpuMesh&& other);
+    /// Destroys this mesh's buffers, then takes them from `other`, which is left empty.
+    GpuMesh& operator=(GpuMesh&& other);
+    GpuMesh(const GpuMesh&) = delete;
+    GpuMesh& operator=(const GpuMesh&) = delete;
+
+    /// Creates the buffers and uploads the geometry.
+    ///
+    /// Param device: the device; must outlive this object.
+    /// Param data: the geometry; must be valid ([[renderer::MeshData::Valid]]).
+    /// Param debug_name: a label for the buffers; may be null.
+    /// Returns: true on success; on failure nothing stays allocated and the failure was logged.
+    /// Fails: the device cannot allocate or upload (out of memory, lost device).
+    /// Aborts: this mesh already holds buffers, or `data` is empty.
+    /// Ownership: `data` is read during the call only.
+    bool Create(rhi::Device* device, const MeshData& data, const char* debug_name);
+
+    /// Destroys the buffers through the device. Safe on an empty mesh and called by the destructor.
+    void Destroy();
+
+    /// Returns whether the buffers exist.
+    /// Fails: never.
+    bool Valid() const { return vertex_buffer_.IsValid(); }
+    /// Returns the vertex buffer (binding 0).
+    rhi::BufferHandle VertexBuffer() const { return vertex_buffer_; }
+    /// Returns the index buffer.
+    rhi::BufferHandle IndexBuffer() const { return index_buffer_; }
+    /// Returns the number of indices.
+    u32 IndexCount() const { return index_count_; }
+    /// Returns the number of vertices.
+    u32 VertexCount() const { return vertex_count_; }
+    /// Returns the width of the indices.
+    rhi::IndexType IndexFormat() const { return index_type_; }
+    /// Returns the vertex layout the buffer was filled with.
+    const VertexLayoutData& Layout() const { return layout_; }
+    /// Returns the object-space bounds.
+    const Bounds& GetBounds() const { return bounds_; }
+
+    /// Records the barriers that move the buffers out of their upload state; does nothing once [[renderer::GpuMesh::MarkReady]]
+    /// was called. Call outside a render pass.
+    ///
+    /// Param list: the command list being recorded.
+    /// Ownership: `list` is borrowed for the call.
+    /// Aborts: this mesh is empty, or `list` is not recording.
+    void RecordPrepare(rhi::CommandList* list);
+
+    /// Says that a command list containing the prepare barriers has been submitted.
+    void MarkReady() { ready_ = true; }
+
+    /// Returns whether [[renderer::GpuMesh::MarkReady]] was called.
+    /// Fails: never.
+    bool Ready() const { return ready_; }
+
+    /// Binds the buffers and draws all indices for `instance_count` instances starting at `first_instance`. Call inside a
+    /// pass, with a pipeline whose vertex layout matches [[renderer::GpuMesh::Layout]] bound.
+    ///
+    /// Param list: the command list being recorded.
+    /// Param instance_count: number of instances, at least 1.
+    /// Param first_instance: the first instance index (the per-object data index, see [[renderer::FrameResources]]).
+    /// Ownership: `list` is borrowed for the call.
+    /// Aborts: this mesh is empty or not ready, or as for [[rhi::CommandList::DrawIndexed]].
+    void Draw(rhi::CommandList* list, u32 instance_count, u32 first_instance) const;
+
+private:
+    rhi::Device* device_ = nullptr;
+    rhi::BufferHandle vertex_buffer_;
+    rhi::BufferHandle index_buffer_;
+    u32 vertex_count_ = 0;
+    u32 index_count_ = 0;
+    rhi::IndexType index_type_ = rhi::IndexType::UInt16;
+    VertexLayoutData layout_;
+    Bounds bounds_;
+    bool ready_ = false;
+};
+
+} // namespace engine_placeholder::renderer

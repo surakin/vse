@@ -4,6 +4,8 @@ set(RENDERER_TEST_SOURCES
   smoke_test.cpp
   shader_reflection_test.cpp
   shader_permutation_test.cpp
+  geometry_test.cpp
+  scene_test.cpp
   lsan_options.cpp
 )
 

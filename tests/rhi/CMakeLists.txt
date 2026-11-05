@@ -59,7 +59,9 @@ include(Catch)
 # multithreaded tests (null device) and the pure logic. With a Mesa software driver, run the whole binary by hand.
 function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib suffix label spec)
   add_executable(${target} ${RHI_TEST_SOURCES} ${RHI_HEADER_CHECK_SOURCES})
-  target_link_libraries(${target} PRIVATE ${rhi_lib} ${rhi_vulkan_lib} Catch2::Catch2WithMain Threads::Threads)
+  # cube_scene.cpp (compiled into this executable) uses the renderer's camera helpers; same sanitizer flavor as rhi_lib.
+  string(REGEX REPLACE "^rhi" "renderer" renderer_lib "${rhi_lib}")
+  target_link_libraries(${target} PRIVATE ${renderer_lib} ${rhi_lib} ${rhi_vulkan_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common)
   target_compile_definitions(${target} PRIVATE ENGINE_RHI_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
     ENGINE_RHI_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/rhi_demo/assets"

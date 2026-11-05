@@ -1,7 +1,7 @@
 #pragma once
 
-// Renderer-side helpers shared by rhi_demo and the RHI tests: the Vulkan-convention projection, a look-at view, the
-// cube mesh and a `CubeRenderer` that draws it. None of this belongs to the RHI itself.
+// Helpers shared by rhi_demo and the RHI tests: the cube mesh and a `CubeRenderer` that draws it. The projection and view
+// helpers live in engine/renderer/camera.h. None of this belongs to the RHI itself.
 //
 // Conventions
 //   * World and view space are right-handed with Y up; the camera looks down -Z in view space.
@@ -16,6 +16,7 @@
 
 #include "math/matrix.h"
 #include "math/vector.h"
+#include "renderer/camera.h"
 #include "rhi/rhi.h"
 #include "rhi/uniform_ring.h"
 
@@ -23,19 +24,11 @@ namespace demo {
 
 using namespace engine_placeholder;
 
-// A perspective projection for a right-handed view space and Vulkan clip space (Y down, depth 0..1).
-//
-// Param fov_y: vertical field of view in radians, in (0, pi).
-// Param aspect: width / height, greater than zero.
-// Param near_plane: distance to the near plane, greater than zero.
-// Param far_plane: distance to the far plane, greater than `near_plane`.
-Mat4 PerspectiveVulkan(f32 fov_y, f32 aspect, f32 near_plane, f32 far_plane);
-
-// A view matrix for a camera at `eye` looking at `target`, with `up` as the approximate up direction.
-Mat4 LookAt(const Vec3& eye, const Vec3& target, const Vec3& up);
-
-// Translation, uniform scale and rotation about Y, applied in the order scale, rotate, translate.
-Mat4 ModelMatrix(const Vec3& position, f32 scale, f32 yaw_radians);
+// The camera helpers moved to the renderer (Phase 4 Day 73); these names keep the demo and the RHI tests unchanged.
+using renderer::LookAt;
+using renderer::ModelMatrix;
+using renderer::NormalMatrix;
+using renderer::PerspectiveVulkan;
 
 // One directional light with Lambert diffuse, plus a constant ambient term (the math is in shaders/lit.frag).
 struct Lighting {
@@ -44,10 +37,6 @@ struct Lighting {
     f32 intensity = 1.0f;          // scales `color`
     Vec3 ambient = Vec3(0.1f, 0.1f, 0.1f);
 };
-
-// The matrix that carries normals with `model`: the inverse transpose of its upper 3x3 up to a positive scale (the cofactor
-// matrix divided by the sign of the determinant, so a mirroring model does not turn normals inside out), in a Mat4.
-Mat4 NormalMatrix(const Mat4& model);
 
 struct CubeVertex {
     f32 position[3];

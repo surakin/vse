@@ -14,40 +14,11 @@
 #include "textured.frag.spv.inc"
 #include "textured.vert.spv.inc"
 #include "log/assert.h"
-#include "math/quaternion.h"
 #include "rhi/rhi_log.h"
 
 namespace demo {
 
 using namespace engine_placeholder::rhi;
-
-Mat4 PerspectiveVulkan(f32 fov_y, f32 aspect, f32 near_plane, f32 far_plane) {
-    const f32 f = 1.0f / std::tan(fov_y * 0.5f);
-    const f32 range = near_plane - far_plane;
-    return Mat4::FromColumns(Vec4(f / aspect, 0, 0, 0), Vec4(0, -f, 0, 0), Vec4(0, 0, far_plane / range, -1),
-                             Vec4(0, 0, near_plane * far_plane / range, 0));
-}
-
-Mat4 LookAt(const Vec3& eye, const Vec3& target, const Vec3& up) {
-    const Vec3 f = (target - eye).Normalized();
-    const Vec3 s = f.Cross(up).Normalized();
-    const Vec3 u = s.Cross(f);
-    return Mat4::FromColumns(Vec4(s.x, u.x, -f.x, 0), Vec4(s.y, u.y, -f.y, 0), Vec4(s.z, u.z, -f.z, 0),
-                             Vec4(-s.Dot(eye), -u.Dot(eye), f.Dot(eye), 1));
-}
-
-Mat4 NormalMatrix(const Mat4& model) {
-    const Vec3 a(model.col[0].x, model.col[0].y, model.col[0].z);
-    const Vec3 b(model.col[1].x, model.col[1].y, model.col[1].z);
-    const Vec3 c(model.col[2].x, model.col[2].y, model.col[2].z);
-    const f32 sign = a.Dot(b.Cross(c)) < 0.0f ? -1.0f : 1.0f; // a mirroring model would flip every normal
-    return Mat4::FromBasis(b.Cross(c) * sign, c.Cross(a) * sign, a.Cross(b) * sign, Vec3(0, 0, 0));
-}
-
-Mat4 ModelMatrix(const Vec3& position, f32 scale, f32 yaw_radians) {
-    const Mat3 r = Quaternion::FromAxisAngle(Vec3(0, 1, 0), yaw_radians).ToMat3();
-    return Mat4::FromBasis(r.col[0] * scale, r.col[1] * scale, r.col[2] * scale, position);
-}
 
 namespace {
 

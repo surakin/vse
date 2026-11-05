@@ -5,6 +5,12 @@ set(RENDERER_SOURCES
   renderer_info.cpp
   shader_reflection.cpp
   shader_permutation.cpp
+  bounds.cpp
+  camera.cpp
+  frustum.cpp
+  mesh.cpp
+  render_scene.cpp
+  frame_data.cpp
 )
 
 # Headers are included as "renderer/<name>.h", rooted at engine/.
