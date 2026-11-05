@@ -54,6 +54,8 @@ renderer like any other mesh.
   functions and are tested without a GPU (watertightness, triangle
   winding, area against the contour area, holes). Meshes for a string are
   built on demand and cached per glyph so repeated characters share work.
+  Colored glyphs use the per-vertex colors added in Phase 4 Day 78 (see
+  the colored-glyphs note below).
 
 ## Notes / open questions
 
@@ -68,9 +70,19 @@ renderer like any other mesh.
   (font units vs world units); contour winding rules for fonts that mix
   conventions. Hinting is irrelevant to the 3D path (outlines are loaded
   unhinted).
-- Colored glyphs (emoji, via `CBDT`/`COLR`/`SVG` font tables) are out of
-  scope for Phase 7 — monochrome/grayscale glyph rasterization only.
-  Revisit if a real use case needs emoji rendering.
+- Colored glyphs (emoji) are in scope **for the 3D text path and the 2D
+  path alike, in two formats only**: layered-outline `COLR` v0 (each
+  color layer is a vector outline plus a palette color: 3D text builds
+  one extruded mesh per layer carrying the color as a per-vertex color,
+  the Phase 4 Day 78 vertex-color support; the 2D path draws the layers
+  as tinted atlas glyphs) and bitmap `CBDT`/`sbix` (raster only, nothing
+  to extrude: the 2D path samples an RGBA atlas, the 3D path draws a
+  textured quad or thin slab through the existing UV path). `COLR` v1
+  (gradients, transforms, compositing) and the `SVG` table are out of
+  scope; a glyph in one of those formats falls back to its monochrome
+  outline or the font's `.notdef`, and the fallback is a logged, tested
+  behavior, not a crash. Plain grayscale rasterization stays the default
+  and the only path that needs no color support.
 - Subpixel/LCD-optimized rendering (FreeType supports it) is not a
   Phase 7 goal — this engine targets modern displays where grayscale
   antialiasing is standard; revisit only if a real quality gap shows up.

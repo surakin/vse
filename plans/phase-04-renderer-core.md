@@ -13,6 +13,8 @@ with basic materials and lighting, with correct depth buffering.
 - **Render graph: generic**, built only on the RHI; it owns every barrier.
 - **Deferred RHI features (bindless, indirect draws, async compute): all out** for this phase; revisit with profiling data.
 
+- **Vertex colors (added 2026-11-05, from Phase 7's colored 3D text):** meshes may carry an optional RGBA8 per-vertex color in a second vertex stream; `StandardVertex` is unchanged. Built on Day 78 with a `VERTEX_COLOR` material permutation.
+
 ## Days
 
 Each day has its own file of individually checkable sub-tasks, a docs task, an end-of-day `/code-review high` task and a concrete Done condition.
