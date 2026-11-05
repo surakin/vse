@@ -653,6 +653,15 @@ d = 10.0  attenuation 0.00000
 d = 12.0  attenuation 0.00000
 ```
 
+### The renderer demo
+
+`game/renderer_demo` puts the pieces together: a scene of 540 objects in eight materials, 300 point lights, a sun and ambient
+light, drawn by `Renderer::RenderFrame` through the G-buffer, lighting (with light volumes) and tonemap passes, in a window or
+offscreen. Its README lists the options and controls and the tutorial [From a Scene to a Lit Frame](../tutorials/hello-renderer.md)
+walks through the same steps on the null device. Depth correctness is tested in
+`tests/rhi/vulkan_renderer_demo_test.cpp`: the demo scene rendered with the objects added in three shuffled orders gives the
+same pixels as the natural order, and two planes crossing at a line show the nearer one on each side of it, in either draw order.
+
 ### Rules & contracts
 
 - A `GpuMesh` must be destroyed (or go out of scope) before the device that created it; a scene holds meshes by pointer and

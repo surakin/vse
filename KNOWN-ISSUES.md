@@ -24,6 +24,8 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - Visual confirmation of the Phase 1 windows, live keyboard and mouse updates, and the real close-button exit on Wayland and X11 (Days 19-26).
 - `fr`/`de` keyboard layouts through a live X server (xkbcommon tests cover them).
 - Phase 4 Day 70: vsync-paced `rhi_demo` frame time was 50 ms on Wayland and 17 ms on X11 against 4.1 ms in Phase 3 in that session. The cause is believed to be compositor pacing (negligible shader cost with `--no-vsync`) but it was not re-measured after a session restart.
+- Phase 4 Day 82 (2026-11-05): the demo's interactive controls (orbit, fly with Tab and WASD, mouse drag, wheel) were not exercised with real input; only the offscreen screenshot, the bounded runs (`--frames 1000`, `--validation`) and the 16 `demo` ctests were run.
+- Phase 4 Day 82: the demo golden (`tests/rhi/golden/renderer_demo.ppm`) was blessed on an NVIDIA GeForce RTX 3060 only; the tolerance (6 levels, wider on edges) is untested on other GPUs and drivers, and so is the exact draw-order independence.
 - Phase 4 Day 78 (2026-11-05): in repeated full `ctest -j8` runs, one run had 1 failure and two had X11Window tests fail (`translates key press/release into Key via the server's keymap`, `releases keys and modifiers on a real focus loss but not during WM grabs`, `releases the Key a code was pressed as even if modifiers changed`); other runs passed 1643/1643 and 1649/1649. No code those tests exercise changed that day; not investigated.
 
 ## Deferred items
@@ -47,6 +49,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 | Epic's UE EULA terms need review | Before Phase 16 starts | `PLAN.md` (open risk) |
 
 - Phase 4 Day 81: the point-light scale numbers (1 / 100 / 1000 lights at 1080p) are CPU wall time from submit to idle; GPU-only time was not measured because the RHI has no timestamp queries yet.
+- Phase 4 Day 82: the demo has no roughness map: the G-buffer fragment shader has no roughness texture input (permutations: normal map, alpha test, vertex color). Roughness and metallic come from material parameters only. Adding a texture input means a shader permutation and a material-layout change.
 - `rhi::detail::GrowArray` (`engine/rhi/grow_array.h`, 12 uses in `vk_memory`, `vk_ring`, `null_device`) is a private heap-backed growable array that duplicates `Vector`, which now owns heap storage. Not replaced in Phase 4 Day 80a (it holds trivially copyable values and has `EraseFront`/`Erase` with `memmove`). Seen in the Day 80a review.
 - `raw_new_check` is line-based and walks only `engine/` and `game/`: a `new` separated from its type across lines is missed, and `tests/` and `tools/` (which may use the STL) are not scanned. Seen in the Day 80a and 80b reviews.
 - `SharedPtr` with `AtomicRefCount` was checked under ThreadSanitizer only by a standalone program (8 threads, 20000 copy/release rounds, clean; the `PlainRefCount` variant is reported as a race, as expected). The foundation test executable has no TSan flavor, so `ctest` does not run that check. Seen in Day 80b.

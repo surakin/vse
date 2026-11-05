@@ -29,6 +29,10 @@ set(RHI_TEST_SOURCES
   vulkan_strip_test.cpp
   vulkan_gbuffer_test.cpp
   vulkan_lighting_test.cpp
+  vulkan_renderer_demo_test.cpp
+  ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_scene.cpp
+  ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_frame.cpp
+  ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_assets.cpp
   ${CMAKE_SOURCE_DIR}/game/common/cube_scene.cpp
   ${CMAKE_SOURCE_DIR}/game/common/textures.cpp
   image_compare.cpp
@@ -67,9 +71,10 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib suffix label spec)
   string(REGEX REPLACE "^rhi" "renderer" renderer_lib "${rhi_lib}")
   string(REGEX REPLACE "^rhi" "renderer_passes" passes_lib "${rhi_lib}")
   target_link_libraries(${target} PRIVATE ${passes_lib} ${renderer_lib} ${rhi_lib} ${rhi_vulkan_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common)
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common ${CMAKE_SOURCE_DIR}/game/renderer_demo)
   target_compile_definitions(${target} PRIVATE ENGINE_RHI_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
     ENGINE_RHI_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/rhi_demo/assets"
+    ENGINE_RENDERER_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/renderer_demo/assets"
     ENGINE_RHI_LSAN_SUPP="${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp")
   # Tests that do not pass a cache directory must not write to the user's ~/.cache.
   # Tests that open a window share the desktop's input focus, so they hold the `display` resource and run one at a time
