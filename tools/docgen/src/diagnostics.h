@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "containers/array.h"
+#include "containers/vector.h"
 #include "mem/arena_allocator.h"
 #include "string/string.h"
 #include "types.h"
@@ -12,7 +12,7 @@
 namespace docgen {
 
 using engine_placeholder::ArenaAllocator;
-using engine_placeholder::Array;
+using engine_placeholder::Vector;
 using engine_placeholder::StringView;
 using engine_placeholder::u32;
 using engine_placeholder::usize;
@@ -38,7 +38,7 @@ inline StringView ArenaCat(ArenaAllocator& arena, StringView a, StringView b, St
 
 // Stable insertion sort; cheap for the nearly ordered lists docgen sorts.
 template <typename T, typename Less>
-void StableSort(Array<T, ArenaAllocator>& a, Less less) {
+void StableSort(Vector<T, ArenaAllocator>& a, Less less) {
     for (usize i = 1; i < a.Size(); ++i) {
         T x = a[i];
         usize j = i;

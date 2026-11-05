@@ -23,23 +23,6 @@ StackAllocator::operator=(const StackAllocator&)	function	foundation/memory	stac
 StackAllocator::Push(usize,usize)	function	foundation/memory	stackallocator-push-usize-usize	foundation-memory.md	engine/foundation/mem/stack_allocator.h:45
 StackAllocator::CurrentMarker() const	function	foundation/memory	stackallocator-currentmarker-const	foundation-memory.md	engine/foundation/mem/stack_allocator.h:48
 StackAllocator::PopToMarker(Marker)	function	foundation/memory	stackallocator-poptomarker-marker	foundation-memory.md	engine/foundation/mem/stack_allocator.h:54
-Array	class	foundation/containers	array	foundation-containers.md	engine/foundation/containers/array.h:28
-Array::Array(Allocator&)	function	foundation/containers	array-array-allocator-amp	foundation-containers.md	engine/foundation/containers/array.h:35
-Array::~Array()	function	foundation/containers	array-tilde-array	foundation-containers.md	engine/foundation/containers/array.h:38
-Array::Array(const Array&)	function	foundation/containers	array-array-const-array-amp	foundation-containers.md	engine/foundation/containers/array.h:42
-Array::operator=(const Array&)	function	foundation/containers	array-operator-eq-const-array-amp	foundation-containers.md	engine/foundation/containers/array.h:43
-Array::Array(Array&&) noexcept	function	foundation/containers	array-array-array-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/array.h:46
-Array::operator=(Array&&) noexcept	function	foundation/containers	array-operator-eq-array-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/array.h:57
-Array::Reserve(usize)	function	foundation/containers	array-reserve-usize	foundation-containers.md	engine/foundation/containers/array.h:79
-Array::Push(const T&)	function	foundation/containers	array-push-const-t-amp	foundation-containers.md	engine/foundation/containers/array.h:99
-Array::Push(T&&)	function	foundation/containers	array-push-t-amp-amp	foundation-containers.md	engine/foundation/containers/array.h:110
-Array::Pop()	function	foundation/containers	array-pop	foundation-containers.md	engine/foundation/containers/array.h:119
-Array::Insert(usize,const T&)	function	foundation/containers	array-insert-usize-const-t-amp	foundation-containers.md	engine/foundation/containers/array.h:132
-Array::Remove(usize)	function	foundation/containers	array-remove-usize	foundation-containers.md	engine/foundation/containers/array.h:149
-Array::operator[](usize)	function	foundation/containers	array-operator-index-usize	foundation-containers.md	engine/foundation/containers/array.h:160
-Array::operator[](usize) const	function	foundation/containers	array-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/array.h:164
-Array::Size() const	function	foundation/containers	array-size-const	foundation-containers.md	engine/foundation/containers/array.h:167
-Array::Capacity() const	function	foundation/containers	array-capacity-const	foundation-containers.md	engine/foundation/containers/array.h:169
 Hash<i8>	struct	foundation/containers	hash-lt-i8-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:34
 Hash<i8>::operator()(i8) const	function	foundation/containers	hash-lt-i8-gt-operator-call-i8-const	foundation-containers.md	engine/foundation/containers/hash_map.h:37
 Hash<i16>	struct	foundation/containers	hash-lt-i16-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:40
@@ -68,6 +51,23 @@ HashMap::Find(const K&) const	function	foundation/containers	hashmap-find-const-
 HashMap::Remove(const K&)	function	foundation/containers	hashmap-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:171
 HashMap::Size() const	function	foundation/containers	hashmap-size-const	foundation-containers.md	engine/foundation/containers/hash_map.h:183
 HashMap::SlotCapacity() const	function	foundation/containers	hashmap-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_map.h:188
+Vector	class	foundation/containers	vector	foundation-containers.md	engine/foundation/containers/vector.h:28
+Vector::Vector(Allocator&)	function	foundation/containers	vector-vector-allocator-amp	foundation-containers.md	engine/foundation/containers/vector.h:35
+Vector::~Vector()	function	foundation/containers	vector-tilde-vector	foundation-containers.md	engine/foundation/containers/vector.h:38
+Vector::Vector(const Vector&)	function	foundation/containers	vector-vector-const-vector-amp	foundation-containers.md	engine/foundation/containers/vector.h:42
+Vector::operator=(const Vector&)	function	foundation/containers	vector-operator-eq-const-vector-amp	foundation-containers.md	engine/foundation/containers/vector.h:43
+Vector::Vector(Vector&&) noexcept	function	foundation/containers	vector-vector-vector-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/vector.h:46
+Vector::operator=(Vector&&) noexcept	function	foundation/containers	vector-operator-eq-vector-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/vector.h:57
+Vector::Reserve(usize)	function	foundation/containers	vector-reserve-usize	foundation-containers.md	engine/foundation/containers/vector.h:79
+Vector::Push(const T&)	function	foundation/containers	vector-push-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:99
+Vector::Push(T&&)	function	foundation/containers	vector-push-t-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:110
+Vector::Pop()	function	foundation/containers	vector-pop	foundation-containers.md	engine/foundation/containers/vector.h:119
+Vector::Insert(usize,const T&)	function	foundation/containers	vector-insert-usize-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:132
+Vector::Remove(usize)	function	foundation/containers	vector-remove-usize	foundation-containers.md	engine/foundation/containers/vector.h:149
+Vector::operator[](usize)	function	foundation/containers	vector-operator-index-usize	foundation-containers.md	engine/foundation/containers/vector.h:160
+Vector::operator[](usize) const	function	foundation/containers	vector-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/vector.h:164
+Vector::Size() const	function	foundation/containers	vector-size-const	foundation-containers.md	engine/foundation/containers/vector.h:167
+Vector::Capacity() const	function	foundation/containers	vector-capacity-const	foundation-containers.md	engine/foundation/containers/vector.h:169
 GraphemeBreakProperty	enum	foundation/strings	graphemebreakproperty	foundation-strings.md	engine/foundation/string/grapheme.h:13
 GraphemeBreakProperty::Other	enumerator	foundation/strings	graphemebreakproperty-other	foundation-strings.md	engine/foundation/string/grapheme.h:14
 GraphemeBreakProperty::CR	enumerator	foundation/strings	graphemebreakproperty-cr	foundation-strings.md	engine/foundation/string/grapheme.h:15

@@ -8,7 +8,7 @@ set(FOUNDATION_TEST_SOURCES
   arena_allocator_test.cpp
   pool_allocator_test.cpp
   stack_allocator_test.cpp
-  array_test.cpp
+  container_vector_test.cpp
   hash_map_test.cpp
   utf8_test.cpp
   grapheme_test.cpp

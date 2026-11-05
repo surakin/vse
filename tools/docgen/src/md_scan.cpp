@@ -379,7 +379,7 @@ private:
 
     ArenaAllocator& arena_;
     MdDoc& out_;
-    Array<StringView, ArenaAllocator> slugs_;
+    Vector<StringView, ArenaAllocator> slugs_;
 };
 
 } // namespace

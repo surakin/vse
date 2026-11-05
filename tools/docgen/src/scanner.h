@@ -57,9 +57,9 @@ struct Token {
 struct ScanResult {
     explicit ScanResult(ArenaAllocator& arena) : tokens(arena), docs(arena), diagnostics(arena) {}
 
-    Array<Token, ArenaAllocator> tokens;
-    Array<DocComment, ArenaAllocator> docs;
-    Array<Diagnostic, ArenaAllocator> diagnostics;
+    Vector<Token, ArenaAllocator> tokens;
+    Vector<DocComment, ArenaAllocator> docs;
+    Vector<Diagnostic, ArenaAllocator> diagnostics;
 
     bool HasErrors() const {
         for (usize i = 0; i < diagnostics.Size(); ++i) {

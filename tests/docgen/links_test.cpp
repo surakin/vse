@@ -44,7 +44,7 @@ struct Tree {
 struct Checked {
     ArenaAllocator arena{usize{1} << 28};
     ReferenceBuild build{arena};
-    Array<FileDiag, ArenaAllocator> diags{arena};
+    Vector<FileDiag, ArenaAllocator> diags{arena};
     LinkStats stats;
     bool read_ok = false;
     std::vector<std::string> lines;
@@ -320,7 +320,7 @@ TEST_CASE("Links: the repository's own docs tree is clean", "[docgen][links][rep
     ReferenceBuild build(arena);
     std::string map = repo + "/docs/reference/modules.txt";
     BuildReference(Sv(repo), Sv(map), arena, build);
-    Array<FileDiag, ArenaAllocator> diags(arena);
+    Vector<FileDiag, ArenaAllocator> diags(arena);
     LinkStats stats;
     REQUIRE(CheckLinks(Sv(repo), &build.index, arena, LinkOptions(), diags, stats));
     for (usize i = 0; i < diags.Size(); ++i) {

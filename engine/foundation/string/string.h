@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "containers/array.h"
+#include "containers/vector.h"
 #include "types.h"
 #include "string/utf8_codec.h"
 
@@ -142,7 +142,7 @@ private:
 
 /// Owning, growable, always NUL-terminated string whose bytes come from an allocator.
 ///
-/// Backed by an [[Array]] of `char`, so it inherits that class's allocation
+/// Backed by a [[Vector]] of `char`, so it inherits that class's allocation
 /// behavior: growth abandons old blocks inside the allocator rather than freeing
 /// them. Contents are expected to be well-formed UTF-8. A moved-from string is
 /// left with no storage and must not be used except for assignment or
@@ -235,7 +235,7 @@ public:
     StringView View() const { return StringView(CStr(), Length()); }
 
 private:
-    Array<char, Allocator> chars_;
+    Vector<char, Allocator> chars_;
 };
 
 /// Accumulates text and formatted numbers into a [[String]]; each `Append` returns

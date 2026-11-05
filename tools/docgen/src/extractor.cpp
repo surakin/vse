@@ -752,7 +752,7 @@ private:
     // Normalized parameter types of the group at `open`, joined by ','. Fills d's
     // names and arity when `d` is not null.
     StringView ParamTypeList(usize open, Decl* d) {
-        Array<StringView, ArenaAllocator> types(arena_);
+        Vector<StringView, ArenaAllocator> types(arena_);
         const usize close = SkipBalanced(open);
         const usize end = close > 0 ? close - 1 : close; // the ')'
         for (usize a = open + 1; a < end;) {
@@ -800,7 +800,7 @@ private:
     // meet. The parameter list that follows a declarator group, `(*)(void* user)`, is
     // normalized recursively so its parameter names are dropped too.
     StringView NormType(usize a, usize e, usize skip) {
-        Array<TypePiece, ArenaAllocator> pieces(arena_);
+        Vector<TypePiece, ArenaAllocator> pieces(arena_);
         for (usize k = a; k < e; ++k) {
             if (k == skip || toks_[k].kind == TokenKind::Define) continue;
             const Token& t = toks_[k];
@@ -839,7 +839,7 @@ private:
         return StringView(buf, len);
     }
 
-    void AddParam(Decl* d, usize a, usize b, Array<StringView, ArenaAllocator>& types) {
+    void AddParam(Decl* d, usize a, usize b, Vector<StringView, ArenaAllocator>& types) {
         while (Is(a, "[") && Is(a + 1, "[") && a < b) a = SkipBalanced(a); // leading attributes
         usize e = a;
         while (e < b && !Is(e, "=")) {
@@ -1255,9 +1255,9 @@ private:
     const ScanResult& scan_;
     ArenaAllocator& arena_;
     ExtractResult& out_;
-    const Array<Token, ArenaAllocator>& toks_;
+    const Vector<Token, ArenaAllocator>& toks_;
     const usize n_;
-    Array<i32, ArenaAllocator> trailing_;
+    Vector<i32, ArenaAllocator> trailing_;
     usize p_ = 0;
     bool unbalanced_reported_ = false;
 };

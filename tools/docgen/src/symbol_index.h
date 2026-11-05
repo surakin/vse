@@ -36,7 +36,7 @@ struct Symbol {
     usize module = 0;
     const ParsedDoc* doc = nullptr;           // the comment that documents it, if any
     const Symbol* inherited = nullptr;        // an undocumented override's documented base member
-    Array<Symbol*, ArenaAllocator> members;   // public members, in source order (not enumerators' own members)
+    Vector<Symbol*, ArenaAllocator> members;   // public members, in source order (not enumerators' own members)
 };
 
 struct FileDiag {
@@ -48,11 +48,11 @@ struct SymbolIndex {
     explicit SymbolIndex(ArenaAllocator& arena) : units(arena), symbols(arena), top(arena), page_names(arena), diagnostics(arena) {}
 
     const ModuleMap* map = nullptr;
-    Array<SourceUnit*, ArenaAllocator> units;   // module order, then path order
-    Array<Symbol*, ArenaAllocator> symbols;     // every symbol, in module/unit/source order
-    Array<Symbol*, ArenaAllocator> top;         // namespace-scope symbols, same order
-    Array<StringView, ArenaAllocator> page_names; // per module: "foundation-memory.md"
-    Array<FileDiag, ArenaAllocator> diagnostics;  // sorted by path, then line
+    Vector<SourceUnit*, ArenaAllocator> units;   // module order, then path order
+    Vector<Symbol*, ArenaAllocator> symbols;     // every symbol, in module/unit/source order
+    Vector<Symbol*, ArenaAllocator> top;         // namespace-scope symbols, same order
+    Vector<StringView, ArenaAllocator> page_names; // per module: "foundation-memory.md"
+    Vector<FileDiag, ArenaAllocator> diagnostics;  // sorted by path, then line
 
     bool HasErrors() const {
         for (usize i = 0; i < diagnostics.Size(); ++i) {
@@ -75,11 +75,11 @@ enum class ResolveStatus : engine_placeholder::u8 { Ok, NotFound, Ambiguous };
 // When `candidates` is given it receives every symbol of the winning tier
 // (more than one on Ambiguous, empty otherwise).
 ResolveStatus ResolveRef(const SymbolIndex& index, StringView target, const Symbol*& out,
-                         Array<const Symbol*, ArenaAllocator>* candidates = nullptr);
+                         Vector<const Symbol*, ArenaAllocator>* candidates = nullptr);
 
 // Diagnostic text for a failed resolution, e.g.
 // "ambiguous reference 'Foo' (candidates: a::Foo, b::Foo)".
-StringView RefProblem(ArenaAllocator& arena, ResolveStatus st, StringView target, const Array<const Symbol*, ArenaAllocator>& cands);
+StringView RefProblem(ArenaAllocator& arena, ResolveStatus st, StringView target, const Vector<const Symbol*, ArenaAllocator>& cands);
 
 // Page file name for a module ("foundation/memory" -> "foundation-memory.md").
 StringView PageNameFor(StringView module_name, ArenaAllocator& arena);

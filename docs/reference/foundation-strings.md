@@ -521,7 +521,7 @@ class String { ... }
 
 Owning, growable, always NUL-terminated string whose bytes come from an allocator.
 
-Backed by an [`Array`](foundation-containers.md#array) of `char`, so it inherits that class's allocation behavior: growth abandons old blocks inside the allocator rather than freeing them. Contents are expected to be well-formed UTF-8. A moved-from string is left with no storage and must not be used except for assignment or destruction.
+Backed by a [`Vector`](foundation-containers.md#vector) of `char`, so it inherits that class's allocation behavior: growth abandons old blocks inside the allocator rather than freeing them. Contents are expected to be well-formed UTF-8. A moved-from string is left with no storage and must not be used except for assignment or destruction.
 
 | Field | Value |
 |---|---|

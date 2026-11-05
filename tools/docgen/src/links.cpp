@@ -67,12 +67,12 @@ struct Edge {
 
 class Checker {
 public:
-    Checker(StringView root, const SymbolIndex* index, ArenaAllocator& arena, const LinkOptions& opt, Array<FileDiag, ArenaAllocator>& out,
+    Checker(StringView root, const SymbolIndex* index, ArenaAllocator& arena, const LinkOptions& opt, Vector<FileDiag, ArenaAllocator>& out,
             LinkStats& stats)
         : root_(root), index_(index), arena_(arena), opt_(opt), out_(out), stats_(stats), pages_(arena) {}
 
     bool Run() {
-        Array<StringView, ArenaAllocator> files(arena_);
+        Vector<StringView, ArenaAllocator> files(arena_);
         if (!CollectMarkdownFiles(root_, arena_, files)) return false;
         for (usize i = 0; i < files.Size(); ++i) {
             Page* p = Get(files[i]);
@@ -133,7 +133,7 @@ private:
                 const MdRef& r = doc.refs[i];
                 ++stats_.refs;
                 const Symbol* hit = nullptr;
-                Array<const Symbol*, ArenaAllocator> cands(arena_);
+                Vector<const Symbol*, ArenaAllocator> cands(arena_);
                 ResolveStatus st = ResolveRef(*index_, r.target, hit, &cands);
                 if (st != ResolveStatus::Ok) Add(page.path, r.line, Severity::Error, RefProblem(arena_, st, r.target, cands));
             }
@@ -149,7 +149,7 @@ private:
 
     // Resolves `rel` against `dir`; false if it climbs out of the repository.
     bool Normalize(StringView dir, StringView rel, StringView& out) {
-        Array<StringView, ArenaAllocator> segs(arena_);
+        Vector<StringView, ArenaAllocator> segs(arena_);
         auto push_path = [&](StringView p) -> bool {
             usize i = 0;
             while (i <= p.Length()) {
@@ -288,16 +288,16 @@ private:
     const SymbolIndex* index_;
     ArenaAllocator& arena_;
     const LinkOptions& opt_;
-    Array<FileDiag, ArenaAllocator>& out_;
+    Vector<FileDiag, ArenaAllocator>& out_;
     LinkStats& stats_;
-    Array<Page*, ArenaAllocator> pages_;
-    Array<Edge, ArenaAllocator> edges_{arena_};
+    Vector<Page*, ArenaAllocator> pages_;
+    Vector<Edge, ArenaAllocator> edges_{arena_};
 };
 
 } // namespace
 
-bool CollectMarkdownFiles(StringView root, ArenaAllocator& arena, Array<StringView, ArenaAllocator>& out) {
-    Array<StringView, ArenaAllocator> files(arena);
+bool CollectMarkdownFiles(StringView root, ArenaAllocator& arena, Vector<StringView, ArenaAllocator>& out) {
+    Vector<StringView, ArenaAllocator> files(arena);
     if (!CollectFiles(root, StringView("docs"), arena, files)) return false;
     // top-level *.md
     DIR* d = opendir(root.Empty() ? "." : ArenaCat(arena, root, StringView()).Data());
@@ -319,7 +319,7 @@ bool CollectMarkdownFiles(StringView root, ArenaAllocator& arena, Array<StringVi
 }
 
 bool CheckLinks(StringView root, const SymbolIndex* index, ArenaAllocator& arena, const LinkOptions& options,
-                Array<FileDiag, ArenaAllocator>& out, LinkStats& stats) {
+                Vector<FileDiag, ArenaAllocator>& out, LinkStats& stats) {
     Checker c(root, index, arena, options, out, stats);
     return c.Run();
 }

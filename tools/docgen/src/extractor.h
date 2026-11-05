@@ -73,11 +73,11 @@ struct Decl {
     engine_placeholder::i32 trailing_doc = -1; // index into ScanResult::docs (`///<`), or -1
     u32 line = 0;
     Decl* parent = nullptr;
-    Array<Decl*, ArenaAllocator> children;
-    Array<StringView, ArenaAllocator> params; // function/macro parameter names (unnamed parameters are omitted)
+    Vector<Decl*, ArenaAllocator> children;
+    Vector<StringView, ArenaAllocator> params; // function/macro parameter names (unnamed parameters are omitted)
     usize param_count = 0;                    // real arity, including unnamed parameters
     StringView param_types;                   // normalized parameter types joined by ',' (names and defaults dropped)
-    Array<StringView, ArenaAllocator> bases;  // class base names, unqualified and without template arguments
+    Vector<StringView, ArenaAllocator> bases;  // class base names, unqualified and without template arguments
 
     bool Is(engine_placeholder::u32 f) const { return (flags & f) != 0; }
     // Part of the documented public surface (DOC-CONVENTIONS "Visibility").
@@ -88,9 +88,9 @@ struct ExtractResult {
     explicit ExtractResult(ArenaAllocator& arena) : diagnostics(arena), doc_claimed(arena) {}
 
     Decl* root = nullptr; // the (unnamed) global namespace
-    Array<Diagnostic, ArenaAllocator> diagnostics;
+    Vector<Diagnostic, ArenaAllocator> diagnostics;
     // One entry per ScanResult::docs: nonzero when some declaration owns the comment.
-    Array<engine_placeholder::u8, ArenaAllocator> doc_claimed;
+    Vector<engine_placeholder::u8, ArenaAllocator> doc_claimed;
 
     bool HasErrors() const {
         for (usize i = 0; i < diagnostics.Size(); ++i) {

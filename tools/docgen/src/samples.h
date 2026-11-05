@@ -29,17 +29,17 @@ struct Sample {
 // string starts with `cpp` (or `c++`) and carries `compile`, `run` or
 // `standalone`; all other fences are illustrative and ignored. Malformed
 // tags (`run` or `standalone` without `compile`, any unknown word after `cpp`) are errors.
-void ExtractSamples(StringView path, StringView text, const MdDoc& doc, ArenaAllocator& arena, Array<Sample, ArenaAllocator>& samples,
-                    Array<FileDiag, ArenaAllocator>& problems);
+void ExtractSamples(StringView path, StringView text, const MdDoc& doc, ArenaAllocator& arena, Vector<Sample, ArenaAllocator>& samples,
+                    Vector<FileDiag, ArenaAllocator>& problems);
 
 struct SampleOptions {
     explicit SampleOptions(ArenaAllocator& arena) : includes(arena), flags(arena), links(arena) {}
 
     StringView root;                                 // repo root; Markdown paths are relative to it
     StringView compiler;                             // e.g. "clang++"; searched in PATH if it has no '/'
-    Array<StringView, ArenaAllocator> includes;      // -I directories
-    Array<StringView, ArenaAllocator> flags;         // verbatim compiler flags (-std=c++20, -fno-exceptions, ...)
-    Array<StringView, ArenaAllocator> links;         // objects/libraries/flags appended when linking `run` samples
+    Vector<StringView, ArenaAllocator> includes;      // -I directories
+    Vector<StringView, ArenaAllocator> flags;         // verbatim compiler flags (-std=c++20, -fno-exceptions, ...)
+    Vector<StringView, ArenaAllocator> links;         // objects/libraries/flags appended when linking `run` samples
     StringView prelude;                              // header included before every non-standalone sample (may be empty)
     StringView scratch_base;                         // directory under which the scratch directory is created ("/tmp" if empty)
     u32 jobs = 1;                                    // concurrent child processes
@@ -68,7 +68,7 @@ void RequestStop();
 // Markdown line (compiler diagnostics already name the Markdown file and line
 // via #line); failures are collected, not fatal. Returns false only if the
 // scratch directory or the compiler cannot be set up.
-bool RunSamples(const SampleOptions& options, const Array<Sample, ArenaAllocator>& samples, ArenaAllocator& arena,
-                Array<FileDiag, ArenaAllocator>& out, SampleStats& stats);
+bool RunSamples(const SampleOptions& options, const Vector<Sample, ArenaAllocator>& samples, ArenaAllocator& arena,
+                Vector<FileDiag, ArenaAllocator>& out, SampleStats& stats);
 
 } // namespace docgen

@@ -151,7 +151,7 @@ TEST_CASE("Lint baseline: render, parse, and tolerate exactly the recorded findi
     REQUIRE(ParseBaseline(text.View(), l.arena, b, err));
     CHECK(b.known.Size() == 2);
     CHECK(b.modules.Size() == 1);
-    Array<FileDiag, ArenaAllocator> out(l.arena);
+    Vector<FileDiag, ArenaAllocator> out(l.arena);
     CompareToBaseline(l.result, &b, l.arena, out);
     CHECK(out.Size() == 0);
 }
@@ -166,7 +166,7 @@ TEST_CASE("Lint baseline: a new finding, a coverage drop and no baseline at all 
 
     // one more undocumented symbol, and a formerly documented one lost its comment
     Linted now("/// A.\nstruct S {};\nvoid Done();\nvoid Undoc();\nvoid Fresh();\n");
-    Array<FileDiag, ArenaAllocator> out(now.arena);
+    Vector<FileDiag, ArenaAllocator> out(now.arena);
     CompareToBaseline(now.result, &b, now.arena, out);
     std::vector<std::string> msgs;
     for (usize i = 0; i < out.Size(); ++i) msgs.push_back(Str(out[i].d.message));
@@ -176,7 +176,7 @@ TEST_CASE("Lint baseline: a new finding, a coverage drop and no baseline at all 
     CHECK(msgs[2] == "coverage of m dropped from 2/3 to 1/4");
     CHECK(msgs[3] == "overall coverage dropped from 2/3 to 1/4");
 
-    Array<FileDiag, ArenaAllocator> none(now.arena);
+    Vector<FileDiag, ArenaAllocator> none(now.arena);
     CompareToBaseline(now.result, nullptr, now.arena, none);
     CHECK(none.Size() == 3); // Done, Undoc, Fresh
 }
@@ -189,7 +189,7 @@ TEST_CASE("Lint baseline: [review] entries that no longer apply are errors (the 
     StringView err;
     REQUIRE(ParseBaseline(text.View(), old.arena, b, err));
     Linted now("/// A.\nstruct S {};\n/// Now documented.\nvoid Undoc();\n");
-    Array<FileDiag, ArenaAllocator> out(now.arena);
+    Vector<FileDiag, ArenaAllocator> out(now.arena);
     CompareToBaseline(now.result, &b, now.arena, out);
     REQUIRE(out.Size() == 1);
     CHECK(out[0].d.severity == Severity::Error);
@@ -222,7 +222,7 @@ TEST_CASE("Lint: the committed baseline matches the repository's headers", "[doc
     Baseline baseline(arena);
     StringView err;
     REQUIRE(ParseBaseline(text, arena, baseline, err));
-    Array<FileDiag, ArenaAllocator> out(arena);
+    Vector<FileDiag, ArenaAllocator> out(arena);
     CompareToBaseline(result, &baseline, arena, out);
     for (usize i = 0; i < out.Size(); ++i) {
         INFO(Str(out[i].path) << ":" << out[i].d.line << ": " << Str(out[i].d.message));
@@ -236,7 +236,7 @@ TEST_CASE("Lint baseline: [review] renamed, removed and new modules, and an over
     Baseline b(arena);
     REQUIRE(ParseBaseline(StringView("# docgen lint baseline v1\nmodule\told\t5\t5\nmodule\tm\t1\t1\n"), arena, b, err));
     Linted now("/// A.\nstruct S {};\nvoid Undoc();\nvoid U2();\n");
-    Array<FileDiag, ArenaAllocator> out(now.arena);
+    Vector<FileDiag, ArenaAllocator> out(now.arena);
     CompareToBaseline(now.result, &b, now.arena, out);
     std::vector<std::string> msgs;
     for (usize i = 0; i < out.Size(); ++i) msgs.push_back(Str(out[i].d.message));

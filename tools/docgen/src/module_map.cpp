@@ -202,9 +202,9 @@ void ParseModuleMap(StringView text, ArenaAllocator& arena, ModuleMap& out) {
     }
 }
 
-void ExpandModule(const ModuleDef& module, const Array<StringView, ArenaAllocator>& files, ArenaAllocator& arena,
-                  Array<StringView, ArenaAllocator>& out) {
-    Array<StringView, ArenaAllocator> hits(arena);
+void ExpandModule(const ModuleDef& module, const Vector<StringView, ArenaAllocator>& files, ArenaAllocator& arena,
+                  Vector<StringView, ArenaAllocator>& out) {
+    Vector<StringView, ArenaAllocator> hits(arena);
     for (usize f = 0; f < files.Size(); ++f) {
         bool in = false;
         for (usize h = 0; h < module.headers.Size() && !in; ++h) in = GlobMatch(module.headers[h], files[f]);
@@ -225,7 +225,7 @@ namespace {
 
 constexpr int kMaxDepth = 32;
 
-bool CollectFilesRec(StringView root, StringView dir, int depth, ArenaAllocator& arena, Array<StringView, ArenaAllocator>& out) {
+bool CollectFilesRec(StringView root, StringView dir, int depth, ArenaAllocator& arena, Vector<StringView, ArenaAllocator>& out) {
     StringView abs_dir = dir.Empty() ? ArenaCat(arena, root, StringView()) : ArenaCat(arena, root, StringView("/"), dir);
     DIR* d = opendir(abs_dir.Data());
     if (d == nullptr) return false;
@@ -252,7 +252,7 @@ bool CollectFilesRec(StringView root, StringView dir, int depth, ArenaAllocator&
 
 } // namespace
 
-bool CollectFiles(StringView root, StringView dir, ArenaAllocator& arena, Array<StringView, ArenaAllocator>& out) {
+bool CollectFiles(StringView root, StringView dir, ArenaAllocator& arena, Vector<StringView, ArenaAllocator>& out) {
     return CollectFilesRec(root, dir, 0, arena, out);
 }
 

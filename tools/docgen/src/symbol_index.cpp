@@ -93,7 +93,7 @@ StringView MakeAnchor(StringView id, ArenaAllocator& arena) {
     return sb.View();
 }
 
-void SortDiags(Array<FileDiag, ArenaAllocator>& d) {
+void SortDiags(Vector<FileDiag, ArenaAllocator>& d) {
     StableSort(d, [](const FileDiag& x, const FileDiag& y) {
         const int c = x.path.Compare(y.path);
         return c < 0 || (c == 0 && x.d.line < y.d.line);
@@ -111,7 +111,7 @@ public:
         for (usize i = 0; i < map_.diagnostics.Size(); ++i) out_.diagnostics.Push(FileDiag{map_path_, map_.diagnostics[i]});
 
         // 1. headers per module
-        Array<StringView, ArenaAllocator> all(arena_);
+        Vector<StringView, ArenaAllocator> all(arena_);
         for (usize m = 0; m < map_.modules.Size(); ++m) {
             const ModuleDef& mod = *map_.modules[m];
             for (usize h = 0; h < mod.headers.Size(); ++h) {
@@ -128,7 +128,7 @@ public:
                 }
             }
         }
-        Array<StringView, ArenaAllocator> assigned(arena_); // path per unit, to detect two-module headers
+        Vector<StringView, ArenaAllocator> assigned(arena_); // path per unit, to detect two-module headers
         for (usize m = 0; m < map_.modules.Size(); ++m) {
             const ModuleDef& mod = *map_.modules[m];
             for (usize h = 0; h < mod.headers.Size(); ++h) {
@@ -139,7 +139,7 @@ public:
                                                                          ArenaCat(arena_, StringView("header pattern matches no files: "), mod.headers[h])}});
                 }
             }
-            Array<StringView, ArenaAllocator> files(arena_);
+            Vector<StringView, ArenaAllocator> files(arena_);
             ExpandModule(mod, all, arena_, files);
             for (usize f = 0; f < files.Size(); ++f) {
                 bool dup = false;
@@ -168,7 +168,7 @@ public:
     }
 
 private:
-    void AddDiags(StringView path, const Array<Diagnostic, ArenaAllocator>& ds) {
+    void AddDiags(StringView path, const Vector<Diagnostic, ArenaAllocator>& ds) {
         for (usize i = 0; i < ds.Size(); ++i) out_.diagnostics.Push(FileDiag{path, ds[i]});
     }
 
@@ -210,7 +210,7 @@ private:
 
     // Namespace-scope declarations of a unit in source order (macros live at the
     // root of the tree, so the tree order alone is not source order).
-    void CollectTop(const Decl& scope, Array<const Decl*, ArenaAllocator>& out) {
+    void CollectTop(const Decl& scope, Vector<const Decl*, ArenaAllocator>& out) {
         for (usize i = 0; i < scope.children.Size(); ++i) {
             const Decl& d = *scope.children[i];
             if (d.hidden) continue;
@@ -223,7 +223,7 @@ private:
     }
 
     void VisitUnit(SourceUnit& unit) {
-        Array<const Decl*, ArenaAllocator> tops(arena_);
+        Vector<const Decl*, ArenaAllocator> tops(arena_);
         CollectTop(*unit.ex.root, tops);
         for (usize i = 1; i < tops.Size(); ++i) { // stable insertion sort by line
             const Decl* x = tops[i];
@@ -247,7 +247,7 @@ private:
             // is reported as a duplicate in AssignAnchors().
             StringView types, qualified;
             StringView id = MakeId(d, types, qualified);
-            Array<Symbol*, ArenaAllocator>& siblings = parent == nullptr ? out_.top : parent->members;
+            Vector<Symbol*, ArenaAllocator>& siblings = parent == nullptr ? out_.top : parent->members;
             for (usize i = 0; i < siblings.Size(); ++i) {
                 Symbol* e = siblings[i];
                 if (e->unit != &unit || !(e->id == id) || e->decl->kind != DeclKind::Function) continue;
@@ -306,7 +306,7 @@ private:
     }
 
     void ResolveInheritance() {
-        Array<const Decl*, ArenaAllocator> roots(arena_);
+        Vector<const Decl*, ArenaAllocator> roots(arena_);
         for (usize u = 0; u < out_.units.Size(); ++u) roots.Push(out_.units[u]->ex.root);
         for (usize i = 0; i < out_.symbols.Size(); ++i) {
             Symbol& s = *out_.symbols[i];
@@ -330,7 +330,7 @@ private:
             for (usize r = 0; r < s.doc->refs.Size(); ++r) {
                 const Ref& ref = s.doc->refs[r];
                 const Symbol* hit = nullptr;
-                Array<const Symbol*, ArenaAllocator> cands(arena_);
+                Vector<const Symbol*, ArenaAllocator> cands(arena_);
                 ResolveStatus st = ResolveRef(out_, ref.target, hit, &cands);
                 if (st == ResolveStatus::Ok) continue;
                 out_.diagnostics.Push(FileDiag{s.unit->path, Diagnostic{Severity::Error, ref.line, RefProblem(arena_, st, ref.target, cands)}});
@@ -402,7 +402,7 @@ void BuildIndex(StringView root, StringView map_path, const ModuleMap& map, Aren
     b.Run();
 }
 
-StringView RefProblem(ArenaAllocator& arena, ResolveStatus st, StringView target, const Array<const Symbol*, ArenaAllocator>& cands) {
+StringView RefProblem(ArenaAllocator& arena, ResolveStatus st, StringView target, const Vector<const Symbol*, ArenaAllocator>& cands) {
     engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
     sb.Append(StringView(st == ResolveStatus::NotFound ? "unresolved reference '" : "ambiguous reference '"));
     sb.Append(target);
@@ -419,13 +419,13 @@ StringView RefProblem(ArenaAllocator& arena, ResolveStatus st, StringView target
 }
 
 namespace {
-void DropAll(Array<const Symbol*, ArenaAllocator>* c) {
+void DropAll(Vector<const Symbol*, ArenaAllocator>* c) {
     if (c == nullptr) return;
     while (c->Size() > 0) c->Pop();
 }
 } // namespace
 
-ResolveStatus ResolveRef(const SymbolIndex& index, StringView target, const Symbol*& out, Array<const Symbol*, ArenaAllocator>* candidates) {
+ResolveStatus ResolveRef(const SymbolIndex& index, StringView target, const Symbol*& out, Vector<const Symbol*, ArenaAllocator>* candidates) {
     out = nullptr;
     DropAll(candidates);
     // trim

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "containers/array.h"
+#include "containers/vector.h"
 #include "log/assert.h"
 #include "string/string.h"
 #include "types.h"
@@ -180,8 +180,8 @@ private:
 
     Allocator* allocator_;
     String<Allocator> program_name_;
-    Array<String<Allocator>, Allocator> args_;
-    Array<FlagEntry, Allocator> flags_;
+    Vector<String<Allocator>, Allocator> args_;
+    Vector<FlagEntry, Allocator> flags_;
 };
 
 } // namespace engine_placeholder::os

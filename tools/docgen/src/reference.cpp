@@ -14,7 +14,7 @@ namespace {
 
 StringView Persist(StringBuilder<ArenaAllocator>& sb) { return sb.View(); }
 
-void Problem(Array<FileDiag, ArenaAllocator>& out, StringView path, u32 line, StringView msg) {
+void Problem(Vector<FileDiag, ArenaAllocator>& out, StringView path, u32 line, StringView msg) {
     out.Push(FileDiag{path, Diagnostic{Severity::Error, line, msg}});
 }
 
@@ -60,10 +60,10 @@ bool IsGenerated(const ReferenceBuild& build, StringView name) {
 }
 
 // Names of `*.md` files in `dir` that carry the generated marker, sorted.
-void ListGeneratedPages(StringView dir, ArenaAllocator& arena, Array<StringView, ArenaAllocator>& out) {
+void ListGeneratedPages(StringView dir, ArenaAllocator& arena, Vector<StringView, ArenaAllocator>& out) {
     DIR* d = opendir(dir.Data());
     if (d == nullptr) return;
-    Array<StringView, ArenaAllocator> names(arena);
+    Vector<StringView, ArenaAllocator> names(arena);
     while (dirent* e = readdir(d)) {
         StringView name(e->d_name, std::strlen(e->d_name));
         if (!EndsWith(name, ".md")) continue;
@@ -112,7 +112,7 @@ bool BuildReference(StringView root, StringView map_path, ArenaAllocator& arena,
     return true;
 }
 
-bool WriteReference(const ReferenceBuild& build, StringView out_dir, ArenaAllocator& arena, Array<FileDiag, ArenaAllocator>& problems) {
+bool WriteReference(const ReferenceBuild& build, StringView out_dir, ArenaAllocator& arena, Vector<FileDiag, ArenaAllocator>& problems) {
     StringView dir = ArenaCat(arena, out_dir, StringView());
     if (!MakeDirs(dir)) {
         Problem(problems, dir, 1, StringView("cannot create output directory"));
@@ -134,7 +134,7 @@ bool WriteReference(const ReferenceBuild& build, StringView out_dir, ArenaAlloca
             ok = false;
         }
     }
-    Array<StringView, ArenaAllocator> existing(arena);
+    Vector<StringView, ArenaAllocator> existing(arena);
     ListGeneratedPages(dir, arena, existing);
     for (usize i = 0; i < existing.Size(); ++i) {
         if (IsGenerated(build, existing[i])) continue;
@@ -147,7 +147,7 @@ bool WriteReference(const ReferenceBuild& build, StringView out_dir, ArenaAlloca
     return ok;
 }
 
-bool CheckReference(const ReferenceBuild& build, StringView out_dir, ArenaAllocator& arena, Array<FileDiag, ArenaAllocator>& problems) {
+bool CheckReference(const ReferenceBuild& build, StringView out_dir, ArenaAllocator& arena, Vector<FileDiag, ArenaAllocator>& problems) {
     StringView dir = ArenaCat(arena, out_dir, StringView());
     bool ok = true;
     for (usize i = 0; i < build.files.Size(); ++i) {
@@ -178,7 +178,7 @@ bool CheckReference(const ReferenceBuild& build, StringView out_dir, ArenaAlloca
                     StringView("); run `docgen reference`")));
         ok = false;
     }
-    Array<StringView, ArenaAllocator> existing(arena);
+    Vector<StringView, ArenaAllocator> existing(arena);
     ListGeneratedPages(dir, arena, existing);
     for (usize i = 0; i < existing.Size(); ++i) {
         if (IsGenerated(build, existing[i])) continue;

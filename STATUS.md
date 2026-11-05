@@ -48,7 +48,7 @@ vector/matrix/quaternion *types* themselves remain hand-rolled.
 
 **Post-Day-14 reorg:** `/engine/foundation` was flat (20+ files) and got
 split into subdirectories by subsystem: `os/` (`os.h` + `linux/`),
-`mem/` (`mem`, arena/pool/stack allocators), `containers/` (`array.h`,
+`mem/` (`mem`, arena/pool/stack allocators), `containers/` (`vector.h`,
 `hash_map.h`), `string/` (`string.h`, `utf8*`, `grapheme*`,
 `normalize*`, `generated/`), `math/` (`math_util.h`, `vector.h`,
 `matrix.h`, `quaternion.h`, `transform.h`), `log/` (`log.h`/`log.cpp`).
@@ -504,3 +504,5 @@ Phase 4 Day 80 (deferred lighting: directional and ambient) is done: `LightType:
 
 **Roadmap change (2026-11-05):** the Windows and macOS ports moved from Phases 12-13 to **Phases 5 and 6**, right after the renderer core, and the later phases were renumbered (7 Font, 8 UI, 9 ECS, 10 Physics, 11 Audio, 12 Assets, 13 Scripting; 14 is now Android + iOS). Earlier paragraphs in this file keep the numbers they were written with. Phase 4 is still the active phase; Phases 5 and 6 need day files before they can start. See the 2026-11-05 entry in `PLAN.md`.
 
+
+Phase 4 Day 80a, step 1 (in progress): the growable foundation container `Array` is renamed `Vector` (`containers/vector.h`, tests in `container_vector_test.cpp`), no behavior change; 1727 tests pass, docs regenerated. Next: the fixed-size `Array<T, Allocator = HeapAllocator>` and converting the raw `new[]`/`delete[]` sites.

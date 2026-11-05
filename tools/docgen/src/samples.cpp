@@ -24,7 +24,7 @@ namespace {
 bool IsWordChar(char c) { return c != ' ' && c != '\t'; }
 
 // Splits an info string into words.
-void Words(StringView info, Array<StringView, ArenaAllocator>& out) {
+void Words(StringView info, Vector<StringView, ArenaAllocator>& out) {
     usize i = 0;
     while (i < info.Length()) {
         while (i < info.Length() && !IsWordChar(info[i])) ++i;
@@ -36,7 +36,7 @@ void Words(StringView info, Array<StringView, ArenaAllocator>& out) {
 }
 
 // Byte offsets of the start of every line of `text` (line n starts at starts[n-1]).
-void LineStarts(StringView text, Array<usize, ArenaAllocator>& starts) {
+void LineStarts(StringView text, Vector<usize, ArenaAllocator>& starts) {
     starts.Push(0);
     for (usize i = 0; i < text.Length(); ++i) {
         if (text[i] == '\n') starts.Push(i + 1);
@@ -44,7 +44,7 @@ void LineStarts(StringView text, Array<usize, ArenaAllocator>& starts) {
 }
 
 // Are all lines strictly between `a` and `b` (1-based) blank?
-bool BlankBetween(StringView text, const Array<usize, ArenaAllocator>& starts, u32 a, u32 b) {
+bool BlankBetween(StringView text, const Vector<usize, ArenaAllocator>& starts, u32 a, u32 b) {
     for (u32 line = a + 1; line < b && line <= starts.Size(); ++line) {
         for (usize i = starts[line - 1]; i < text.Length() && text[i] != '\n'; ++i) {
             if (text[i] != ' ' && text[i] != '\t' && text[i] != '\r') return false;
@@ -144,10 +144,10 @@ void OnSignal(int) { g_stop = 1; }
 
 class Runner {
 public:
-    Runner(const SampleOptions& o, ArenaAllocator& arena, Array<FileDiag, ArenaAllocator>& out, SampleStats& stats)
+    Runner(const SampleOptions& o, ArenaAllocator& arena, Vector<FileDiag, ArenaAllocator>& out, SampleStats& stats)
         : opt_(o), arena_(arena), out_(out), stats_(stats), tasks_(arena) {}
 
-    bool Run(const Array<Sample, ArenaAllocator>& samples) {
+    bool Run(const Vector<Sample, ArenaAllocator>& samples) {
         stats_.found += samples.Size();
         if (samples.Size() == 0) return true;
         if (opt_.compiler.Empty()) return false;
@@ -240,9 +240,9 @@ private:
         return sb.View();
     }
 
-    bool Spawn(const Array<StringView, ArenaAllocator>& args, StringView out_path, StringView err_path, bool merge_err, bool in_scratch,
+    bool Spawn(const Vector<StringView, ArenaAllocator>& args, StringView out_path, StringView err_path, bool merge_err, bool in_scratch,
                pid_t& pid) {
-        Array<char*, ArenaAllocator> argv(arena_);
+        Vector<char*, ArenaAllocator> argv(arena_);
         for (usize i = 0; i < args.Size(); ++i) argv.Push(const_cast<char*>(args[i].Data()));
         argv.Push(nullptr);
         posix_spawn_file_actions_t fa;
@@ -272,7 +272,7 @@ private:
             Fail(t, StringView("sample: cannot write the scratch source file"));
             return;
         }
-        Array<StringView, ArenaAllocator> a(arena_);
+        Vector<StringView, ArenaAllocator> a(arena_);
         a.Push(opt_.compiler);
         for (usize i = 0; i < opt_.flags.Size(); ++i) a.Push(opt_.flags[i]);
         for (usize i = 0; i < opt_.includes.Size(); ++i) a.Push(ArenaCat(arena_, StringView("-I"), opt_.includes[i]));
@@ -297,7 +297,7 @@ private:
     }
 
     void StartRun(Task& t) {
-        Array<StringView, ArenaAllocator> a(arena_);
+        Vector<StringView, ArenaAllocator> a(arena_);
         a.Push(t.exe);
         if (!Spawn(a, t.run_out, t.run_err, false, true, t.pid)) {
             t.stage = Stage::Done;
@@ -447,21 +447,21 @@ private:
 
     const SampleOptions& opt_;
     ArenaAllocator& arena_;
-    Array<FileDiag, ArenaAllocator>& out_;
+    Vector<FileDiag, ArenaAllocator>& out_;
     SampleStats& stats_;
-    Array<Task*, ArenaAllocator> tasks_;
+    Vector<Task*, ArenaAllocator> tasks_;
     StringView scratch_;
 };
 
 } // namespace
 
-void ExtractSamples(StringView path, StringView text, const MdDoc& doc, ArenaAllocator& arena, Array<Sample, ArenaAllocator>& samples,
-                    Array<FileDiag, ArenaAllocator>& problems) {
-    Array<usize, ArenaAllocator> starts(arena);
+void ExtractSamples(StringView path, StringView text, const MdDoc& doc, ArenaAllocator& arena, Vector<Sample, ArenaAllocator>& samples,
+                    Vector<FileDiag, ArenaAllocator>& problems) {
+    Vector<usize, ArenaAllocator> starts(arena);
     LineStarts(text, starts);
     for (usize i = 0; i < doc.fences.Size(); ++i) {
         const MdFence& f = doc.fences[i];
-        Array<StringView, ArenaAllocator> w(arena);
+        Vector<StringView, ArenaAllocator> w(arena);
         Words(f.info, w);
         if (w.Size() == 0 || !(w[0] == StringView("cpp") || w[0] == StringView("c++"))) continue;
         bool compile = false, run = false, standalone = false, unknown = false;
@@ -496,7 +496,7 @@ void ExtractSamples(StringView path, StringView text, const MdDoc& doc, ArenaAll
         s.code = f.body;
         if (run && i + 1 < doc.fences.Size()) {
             const MdFence& n = doc.fences[i + 1];
-            Array<StringView, ArenaAllocator> nw(arena);
+            Vector<StringView, ArenaAllocator> nw(arena);
             Words(n.info, nw);
             if (nw.Size() == 1 && nw[0] == StringView("output") && n.line > f.end_line && BlankBetween(text, starts, f.end_line, n.line)) {
                 s.has_expected = true;
@@ -509,8 +509,8 @@ void ExtractSamples(StringView path, StringView text, const MdDoc& doc, ArenaAll
 
 void RequestStop() { g_stop = 1; }
 
-bool RunSamples(const SampleOptions& options, const Array<Sample, ArenaAllocator>& samples, ArenaAllocator& arena,
-                Array<FileDiag, ArenaAllocator>& out, SampleStats& stats) {
+bool RunSamples(const SampleOptions& options, const Vector<Sample, ArenaAllocator>& samples, ArenaAllocator& arena,
+                Vector<FileDiag, ArenaAllocator>& out, SampleStats& stats) {
     Runner r(options, arena, out, stats);
     return r.Run(samples);
 }

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "containers/array.h"
+#include "containers/vector.h"
 #include "types.h"
 
 //! Open-addressing hash map (linear probing, tombstone deletion) whose slot
-//! storage is an [[Array]], plus the `Hash` function-object templates it uses.
+//! storage is a [[Vector]], plus the `Hash` function-object templates it uses.
 namespace engine_placeholder {
 
 namespace detail {
@@ -94,7 +94,7 @@ struct Hash<T*> {
 /// constructor; `V` needs a default constructor. Keys and values are copied in
 /// and stored by value. The table starts with at least 8 slots and doubles when
 /// the load factor, counting tombstones, reaches 0.7. Growth rehashes into a new
-/// block and abandons the old one inside the allocator, as with [[Array]].
+/// block and abandons the old one inside the allocator, as with [[Vector]].
 /// Growth invalidates pointers returned by `Find`. There is no iteration
 /// support.
 ///
@@ -263,7 +263,7 @@ private:
 
     void Rehash(usize new_capacity) {
         // Snapshot every currently-occupied pair.
-        Array<Slot, Allocator> occupied(*allocator_);
+        Vector<Slot, Allocator> occupied(*allocator_);
         for (usize i = 0; i < slots_.Size(); ++i) {
             if (slots_[i].state == SlotState::Occupied) {
                 occupied.Push(slots_[i]);
@@ -271,7 +271,7 @@ private:
         }
 
         // Reset slots_ to `new_capacity` fresh Empty slots, reusing
-        // Array's own Push/Pop rather than needing Array to support
+        // Vector's own Push/Pop rather than needing Vector to support
         // move-assignment (it doesn't, by Day 6 design).
         while (slots_.Size() > 0) {
             slots_.Pop();
@@ -289,7 +289,7 @@ private:
     }
 
     Allocator* allocator_ = nullptr;
-    Array<Slot, Allocator> slots_;
+    Vector<Slot, Allocator> slots_;
     usize count_ = 0;
     usize tombstone_count_ = 0;
 };

@@ -38,11 +38,11 @@ struct MdDoc {
     explicit MdDoc(ArenaAllocator& arena)
         : fences(arena), links(arena), refs(arena), anchors(arena), diagnostics(arena) {}
 
-    Array<MdFence, ArenaAllocator> fences;
-    Array<MdLink, ArenaAllocator> links;
-    Array<MdRef, ArenaAllocator> refs;
-    Array<StringView, ArenaAllocator> anchors; // heading slugs (GitHub style, -1/-2 for repeats), {#id}s, <a id/name>
-    Array<Diagnostic, ArenaAllocator> diagnostics; // unterminated fence, malformed reference, undefined link label
+    Vector<MdFence, ArenaAllocator> fences;
+    Vector<MdLink, ArenaAllocator> links;
+    Vector<MdRef, ArenaAllocator> refs;
+    Vector<StringView, ArenaAllocator> anchors; // heading slugs (GitHub style, -1/-2 for repeats), {#id}s, <a id/name>
+    Vector<Diagnostic, ArenaAllocator> diagnostics; // unterminated fence, malformed reference, undefined link label
 
     bool HasAnchor(StringView name) const;
 };

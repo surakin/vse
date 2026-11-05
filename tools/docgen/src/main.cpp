@@ -73,11 +73,11 @@ int Tokens(const char* path) {
 
 // Prints diagnostics from both phases, sorted by line. Without keep_going
 // only the first error is shown.
-using DiagList = engine_placeholder::Array<Diagnostic, ArenaAllocator>;
+using DiagList = engine_placeholder::Vector<Diagnostic, ArenaAllocator>;
 
 bool PrintDiagnostics(const char* path, const DiagList* const* lists, usize list_count, bool keep_going, ArenaAllocator& arena) {
     // Each list is already nearly ordered by line, so a stable insertion sort is cheap.
-    engine_placeholder::Array<const Diagnostic*, ArenaAllocator> all(arena);
+    engine_placeholder::Vector<const Diagnostic*, ArenaAllocator> all(arena);
     for (usize l = 0; l < list_count; ++l) {
         for (usize i = 0; i < lists[l]->Size(); ++i) all.Push(&(*lists[l])[i]);
     }
@@ -167,7 +167,7 @@ int Docs(int argc, char** argv) {
     return PrintDiagnostics(path, lists, 3, keep_going, arena) ? 1 : 0;
 }
 
-void PrintFileDiags(const engine_placeholder::Array<FileDiag, ArenaAllocator>& ds, bool quiet) {
+void PrintFileDiags(const engine_placeholder::Vector<FileDiag, ArenaAllocator>& ds, bool quiet) {
     for (usize i = 0; i < ds.Size(); ++i) {
         const FileDiag& f = ds[i];
         if (quiet && f.d.severity != Severity::Error) continue;
@@ -208,7 +208,7 @@ int Reference(int argc, char** argv, bool check) {
     PrintFileDiags(build.index.diagnostics, quiet);
     if (!built) return build.io_failure ? 2 : 1;
 
-    engine_placeholder::Array<FileDiag, ArenaAllocator> problems(arena);
+    engine_placeholder::Vector<FileDiag, ArenaAllocator> problems(arena);
     bool ok = check ? CheckReference(build, out_dir, arena, problems) : WriteReference(build, out_dir, arena, problems);
     PrintFileDiags(problems, false);
     if (!ok) return check ? 1 : 2;
@@ -255,7 +255,7 @@ int Links(int argc, char** argv) {
         }
         index = &build.index;
     }
-    engine_placeholder::Array<FileDiag, ArenaAllocator> problems(arena);
+    engine_placeholder::Vector<FileDiag, ArenaAllocator> problems(arena);
     LinkStats stats;
     if (!CheckLinks(root_v, index, arena, options, problems, stats)) {
         std::fprintf(stderr, "docgen: cannot read the documentation tree under %s\n", root);
@@ -325,7 +325,7 @@ int Lint(int argc, char** argv) {
     if (update) {
         // The baseline may only shrink: an update that would record a new finding or a lower ratio needs --allow-growth.
         if (use != nullptr && !allow_growth) {
-            engine_placeholder::Array<FileDiag, ArenaAllocator> growth(arena);
+            engine_placeholder::Vector<FileDiag, ArenaAllocator> growth(arena);
             CompareToBaseline(result, use, arena, growth);
             bool grew = false;
             for (usize i = 0; i < growth.Size(); ++i) {
@@ -357,7 +357,7 @@ int Lint(int argc, char** argv) {
         if (!quiet) std::fprintf(stderr, "docgen: baseline written to %s (%zu known findings)\n", baseline_path, static_cast<size_t>(result.findings.Size()));
         return 0;
     }
-    engine_placeholder::Array<FileDiag, ArenaAllocator> problems(arena);
+    engine_placeholder::Vector<FileDiag, ArenaAllocator> problems(arena);
     CompareToBaseline(result, use, arena, problems);
     bool errors = false;
     for (usize i = 0; i < problems.Size(); ++i) errors = errors || problems[i].d.severity == Severity::Error;
@@ -378,7 +378,7 @@ int Samples(int argc, char** argv) {
     SampleOptions opt(arena);
     const char* root = ".";
     bool quiet = false;
-    engine_placeholder::Array<StringView, ArenaAllocator> only(arena);
+    engine_placeholder::Vector<StringView, ArenaAllocator> only(arena);
     for (int i = 2; i < argc; ++i) {
         const bool more = i + 1 < argc;
         if (std::strcmp(argv[i], "--root") == 0 && more) root = argv[++i];
@@ -401,15 +401,15 @@ int Samples(int argc, char** argv) {
     StringView root_v(root, std::strlen(root));
     opt.root = root_v;
 
-    engine_placeholder::Array<StringView, ArenaAllocator> files(arena);
+    engine_placeholder::Vector<StringView, ArenaAllocator> files(arena);
     if (only.Size() > 0) {
         for (usize i = 0; i < only.Size(); ++i) files.Push(only[i]);
     } else if (!CollectMarkdownFiles(root_v, arena, files)) {
         std::fprintf(stderr, "docgen: cannot read the documentation tree under %s\n", root);
         return 2;
     }
-    engine_placeholder::Array<FileDiag, ArenaAllocator> problems(arena);
-    engine_placeholder::Array<Sample, ArenaAllocator> samples(arena);
+    engine_placeholder::Vector<FileDiag, ArenaAllocator> problems(arena);
+    engine_placeholder::Vector<Sample, ArenaAllocator> samples(arena);
     for (usize i = 0; i < files.Size(); ++i) {
         StringView text;
         if (!LoadSourceFile(root_v.Empty() ? files[i] : ArenaCat(arena, root_v, StringView("/"), files[i]), arena, text)) {

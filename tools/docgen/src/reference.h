@@ -18,7 +18,7 @@ struct ReferenceBuild {
 
     ModuleMap map;
     SymbolIndex index;
-    Array<OutFile, ArenaAllocator> files; // empty when the build failed; sorted by name
+    Vector<OutFile, ArenaAllocator> files; // empty when the build failed; sorted by name
     bool io_failure = false;              // the module map could not be read (as opposed to documentation errors)
 };
 
@@ -31,10 +31,10 @@ bool BuildReference(StringView root, StringView map_path, ArenaAllocator& arena,
 // Writes the files into `out_dir` (created if missing) and removes
 // generated pages that are no longer produced. Problems (I/O) are appended
 // to `problems`; returns true on success.
-bool WriteReference(const ReferenceBuild& build, StringView out_dir, ArenaAllocator& arena, Array<FileDiag, ArenaAllocator>& problems);
+bool WriteReference(const ReferenceBuild& build, StringView out_dir, ArenaAllocator& arena, Vector<FileDiag, ArenaAllocator>& problems);
 
 // Compares the in-memory output with `out_dir`. Appends one problem per
 // missing, differing or no-longer-generated file; true when up to date.
-bool CheckReference(const ReferenceBuild& build, StringView out_dir, ArenaAllocator& arena, Array<FileDiag, ArenaAllocator>& problems);
+bool CheckReference(const ReferenceBuild& build, StringView out_dir, ArenaAllocator& arena, Vector<FileDiag, ArenaAllocator>& problems);
 
 } // namespace docgen

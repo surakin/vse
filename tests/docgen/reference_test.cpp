@@ -191,7 +191,7 @@ TEST_CASE("Module expansion is sorted, deduplicated and independent of input ord
     std::vector<std::string> names = {"a/z.h", "a/b.h", "a/skip.h", "a/c.h", "q/other.h", "a/sub/deep.h", "a/b.h"};
     std::vector<std::string> first;
     for (int round = 0; round < 6; ++round) {
-        Array<StringView, ArenaAllocator> files(arena), out(arena);
+        Vector<StringView, ArenaAllocator> files(arena), out(arena);
         for (auto& n : names) files.Push(StringView(n.data(), n.size()));
         ExpandModule(*map.modules[0], files, arena, out);
         std::vector<std::string> got;
@@ -206,7 +206,7 @@ TEST_CASE("Module expansion is sorted, deduplicated and independent of input ord
 
 TEST_CASE("File collection walks directories deterministically after sorting", "[docgen][reference][map]") {
     ArenaAllocator arena(usize{1} << 24);
-    Array<StringView, ArenaAllocator> files(arena);
+    Vector<StringView, ArenaAllocator> files(arena);
     REQUIRE(CollectFiles(StringView(kRoot.data(), kRoot.size()), StringView("ref"), arena, files));
     std::vector<std::string> got;
     for (usize i = 0; i < files.Size(); ++i) got.push_back(Str(files[i]));
@@ -451,7 +451,7 @@ TEST_CASE("reference writes, then check passes; stale output is detected", "[doc
     Built b;
     REQUIRE(b.ok);
     {
-        Array<FileDiag, ArenaAllocator> problems(b.arena);
+        Vector<FileDiag, ArenaAllocator> problems(b.arena);
         StringView dir(out.path.data(), out.path.size());
         REQUIRE(WriteReference(b.build, dir, b.arena, problems));
         REQUIRE(problems.Size() == 0);
@@ -465,7 +465,7 @@ TEST_CASE("reference writes, then check passes; stale output is detected", "[doc
         REQUIRE(problems.Size() == 0);
     }
     auto check = [&](std::vector<std::string>& msgs) {
-        Array<FileDiag, ArenaAllocator> problems(b.arena);
+        Vector<FileDiag, ArenaAllocator> problems(b.arena);
         bool ok = CheckReference(b.build, StringView(out.path.data(), out.path.size()), b.arena, problems);
         for (usize i = 0; i < problems.Size(); ++i) msgs.push_back(Str(problems[i].path).substr(out.path.size() + 1) + ":" +
                                                                    std::to_string(problems[i].d.line) + ": " + Str(problems[i].d.message));
@@ -494,7 +494,7 @@ TEST_CASE("reference writes, then check passes; stale output is detected", "[doc
         REQUIRE(msgs[0].find("missing") != std::string::npos);
     }
     // 3. a generated page that is no longer produced; a hand-written md is left alone
-    Array<FileDiag, ArenaAllocator> problems(b.arena);
+    Vector<FileDiag, ArenaAllocator> problems(b.arena);
     REQUIRE(WriteReference(b.build, StringView(out.path.data(), out.path.size()), b.arena, problems));
     WriteWhole(out.path + "/old.md", std::string("# Old\n\n") + kGeneratedMarker + "\n");
     WriteWhole(out.path + "/notes.md", "# Hand written\n");
@@ -579,7 +579,7 @@ TEST_CASE("[review] only a real marker line makes a page 'generated'", "[docgen]
     TempDir out;
     Built b;
     REQUIRE(b.ok);
-    Array<FileDiag, ArenaAllocator> problems(b.arena);
+    Vector<FileDiag, ArenaAllocator> problems(b.arena);
     StringView dir(out.path.data(), out.path.size());
     REQUIRE(WriteReference(b.build, dir, b.arena, problems));
     // Hand-written pages that quote the marker (mid-file, or as an indented line) are not touched.
@@ -606,7 +606,7 @@ TEST_CASE("[review] reference creates a nested output directory", "[docgen][refe
     TempDir base;
     Built b;
     REQUIRE(b.ok);
-    Array<FileDiag, ArenaAllocator> problems(b.arena);
+    Vector<FileDiag, ArenaAllocator> problems(b.arena);
     std::string nested = base.path + "/a/b/c";
     REQUIRE(WriteReference(b.build, StringView(nested.data(), nested.size()), b.arena, problems));
     REQUIRE(problems.Size() == 0);
@@ -620,7 +620,7 @@ TEST_CASE("[review] reference creates a nested output directory", "[docgen][refe
     std::string bad = base.path + "/file";
     WriteWhole(bad, "x");
     std::string under_file = bad + "/sub";
-    Array<FileDiag, ArenaAllocator> problems2(b.arena);
+    Vector<FileDiag, ArenaAllocator> problems2(b.arena);
     REQUIRE_FALSE(WriteReference(b.build, StringView(under_file.data(), under_file.size()), b.arena, problems2));
     REQUIRE(problems2.Size() == 1);
 }
@@ -680,7 +680,7 @@ TEST_CASE("[review] file collection does not follow directory symlinks and repor
     REQUIRE(symlink(dir.path.c_str(), (dir.path + "/real/loop").c_str()) == 0); // a cycle
     REQUIRE(symlink("a.h", (dir.path + "/real/link.h").c_str()) == 0);         // a file symlink is still a file
     ArenaAllocator arena(usize{1} << 24);
-    Array<StringView, ArenaAllocator> files(arena);
+    Vector<StringView, ArenaAllocator> files(arena);
     REQUIRE(CollectFiles(StringView(dir.path.data(), dir.path.size()), StringView(), arena, files));
     std::vector<std::string> got;
     for (usize i = 0; i < files.Size(); ++i) got.push_back(Str(files[i]));
@@ -689,7 +689,7 @@ TEST_CASE("[review] file collection does not follow directory symlinks and repor
     // an unreadable subdirectory makes the walk report failure (running as root ignores modes)
     if (geteuid() != 0) {
         mkdir((dir.path + "/locked").c_str(), 0000);
-        Array<StringView, ArenaAllocator> files2(arena);
+        Vector<StringView, ArenaAllocator> files2(arena);
         REQUIRE_FALSE(CollectFiles(StringView(dir.path.data(), dir.path.size()), StringView(), arena, files2));
         chmod((dir.path + "/locked").c_str(), 0700);
         rmdir((dir.path + "/locked").c_str());

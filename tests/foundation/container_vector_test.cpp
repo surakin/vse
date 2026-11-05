@@ -1,23 +1,23 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "containers/array.h"
+#include "containers/vector.h"
 #include "log/log.h"
 #include "mem/arena_allocator.h"
 #include "os/os.h"
 #include "types.h"
 
 using engine_placeholder::ArenaAllocator;
-using engine_placeholder::Array;
+using engine_placeholder::Vector;
 using engine_placeholder::SetExitSinkForTesting;
 using engine_placeholder::SetWriteSinkForTesting;
 using engine_placeholder::usize;
 using engine_placeholder::os::Write;
 
-TEST_CASE("Array: 100k pushes stay correct at every resize boundary and at the end", "[containers][array]") {
+TEST_CASE("Vector: 100k pushes stay correct at every resize boundary and at the end", "[containers][vector_container]") {
     // 8 MiB is generous: growth 4,8,16,...,131072 abandons each prior
     // block in the arena, totalling well under 1 MiB for usize elements.
     ArenaAllocator arena(8 * 1024 * 1024);
-    Array<usize, ArenaAllocator> arr(arena);
+    Vector<usize, ArenaAllocator> arr(arena);
 
     constexpr usize kCount = 100000;
     bool boundary_ok = true;
@@ -86,14 +86,14 @@ usize TrackedValue::moves = 0;
 
 } // namespace
 
-TEST_CASE("Array: non-trivial element type resizes via move construction, no leaks", "[containers][array]") {
+TEST_CASE("Vector: non-trivial element type resizes via move construction, no leaks", "[containers][vector_container]") {
     TrackedValue::constructions = 0;
     TrackedValue::destructions = 0;
     TrackedValue::moves = 0;
 
     {
         ArenaAllocator arena(1024 * 1024);
-        Array<TrackedValue, ArenaAllocator> arr(arena);
+        Vector<TrackedValue, ArenaAllocator> arr(arena);
 
         // Fill the initial capacity (4) exactly.
         for (usize i = 0; i < 4; ++i) {
@@ -133,9 +133,9 @@ TEST_CASE("Array: non-trivial element type resizes via move construction, no lea
     REQUIRE(TrackedValue::constructions == TrackedValue::destructions);
 }
 
-TEST_CASE("Array: Insert/Remove at front/middle/end produce expected sequences", "[containers][array]") {
+TEST_CASE("Vector: Insert/Remove at front/middle/end produce expected sequences", "[containers][vector_container]") {
     ArenaAllocator arena(64 * 1024);
-    Array<usize, ArenaAllocator> arr(arena);
+    Vector<usize, ArenaAllocator> arr(arena);
     for (usize i = 0; i < 5; ++i) {
         arr.Push(i); // [0,1,2,3,4]
     }
@@ -202,13 +202,13 @@ bool TriggersAssert(Fn&& fn) {
 
 } // namespace
 
-TEST_CASE("Array::Push asserts instead of placement-new'ing into a null pointer on allocator OOM",
-          "[containers][array][assert]") {
+TEST_CASE("Vector::Push asserts instead of placement-new'ing into a null pointer on allocator OOM",
+          "[containers][vector_container][assert]") {
     // 32-byte arena fits exactly the first Reserve() (capacity 4 *
     // sizeof(usize) == 32 bytes) but not the next doubling (capacity 8,
     // 64 bytes) — the 5th push's growth must hit the OOM path.
     ArenaAllocator arena(32);
-    Array<usize, ArenaAllocator> arr(arena);
+    Vector<usize, ArenaAllocator> arr(arena);
 
     bool asserted = TriggersAssert([&] {
         for (usize i = 0; i < 5; ++i) {
@@ -218,9 +218,9 @@ TEST_CASE("Array::Push asserts instead of placement-new'ing into a null pointer 
     REQUIRE(asserted);
 }
 
-TEST_CASE("Array::Pop asserts on an empty array instead of underflowing size_", "[containers][array][assert]") {
+TEST_CASE("Vector::Pop asserts on an empty array instead of underflowing size_", "[containers][vector_container][assert]") {
     ArenaAllocator arena(4096);
-    Array<usize, ArenaAllocator> arr(arena);
+    Vector<usize, ArenaAllocator> arr(arena);
 
     bool asserted = TriggersAssert([&] { arr.Pop(); });
     REQUIRE(asserted);

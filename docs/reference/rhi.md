@@ -24,7 +24,7 @@ The set is the intersection of what Vulkan, Direct3D 12 and Metal can all expres
 
 A small growable array of trivially copyable values on the global heap, for backend bookkeeping.
 
-The foundation's `Array` takes its storage from an arena and never frees on growth; the backend needs arrays that grow and shrink for the life of the device (free lists, block lists), so it has this one.
+The foundation's `Vector` takes its storage from an arena and never frees on growth; the backend needs arrays that grow and shrink for the life of the device (free lists, block lists), so it has this one.
 
 Opaque, generation-checked handles to device-owned GPU resources.
 

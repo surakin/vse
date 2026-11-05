@@ -29,8 +29,8 @@ struct ModuleCoverage {
 struct LintResult {
     explicit LintResult(ArenaAllocator& arena) : findings(arena), modules(arena) {}
 
-    Array<LintFinding, ArenaAllocator> findings; // symbol order, then rule order
-    Array<ModuleCoverage, ArenaAllocator> modules; // module map order
+    Vector<LintFinding, ArenaAllocator> findings; // symbol order, then rule order
+    Vector<ModuleCoverage, ArenaAllocator> modules; // module map order
     usize total = 0;
     usize documented = 0;
 };
@@ -55,8 +55,8 @@ struct Baseline {
         StringView id;
         bool used = false;
     };
-    Array<ModuleCoverage, ArenaAllocator> modules;
-    Array<Known, ArenaAllocator> known;
+    Vector<ModuleCoverage, ArenaAllocator> modules;
+    Vector<Known, ArenaAllocator> known;
 };
 
 // Parses baseline text; returns false and sets `error` (with the line) on a malformed file.
@@ -74,6 +74,6 @@ void RenderCoverage(const LintResult& result, StringBuilder<ArenaAllocator>& out
 // (or the total) whose documented/total ratio dropped; a module missing from
 // or only in the baseline. With no baseline (`baseline` null) every finding is
 // an error.
-void CompareToBaseline(const LintResult& result, Baseline* baseline, ArenaAllocator& arena, Array<FileDiag, ArenaAllocator>& out);
+void CompareToBaseline(const LintResult& result, Baseline* baseline, ArenaAllocator& arena, Vector<FileDiag, ArenaAllocator>& out);
 
 } // namespace docgen

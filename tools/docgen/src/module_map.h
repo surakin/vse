@@ -17,16 +17,16 @@ struct ModuleDef {
     StringView name;  // "jobs", "foundation/memory"
     StringView title; // page title
     u32 line = 0;
-    Array<StringView, ArenaAllocator> headers;  // glob patterns relative to the repo root
-    Array<StringView, ArenaAllocator> excludes; // glob patterns
-    Array<StringView, ArenaAllocator> strict;   // lint rule names
+    Vector<StringView, ArenaAllocator> headers;  // glob patterns relative to the repo root
+    Vector<StringView, ArenaAllocator> excludes; // glob patterns
+    Vector<StringView, ArenaAllocator> strict;   // lint rule names
 };
 
 struct ModuleMap {
     explicit ModuleMap(ArenaAllocator& arena) : modules(arena), diagnostics(arena) {}
 
-    Array<ModuleDef*, ArenaAllocator> modules; // in file order
-    Array<Diagnostic, ArenaAllocator> diagnostics;
+    Vector<ModuleDef*, ArenaAllocator> modules; // in file order
+    Vector<Diagnostic, ArenaAllocator> diagnostics;
 
     bool HasErrors() const {
         for (usize i = 0; i < diagnostics.Size(); ++i) {
@@ -52,13 +52,13 @@ StringView GlobPrefix(StringView pattern);
 // Appends to `out`, in lexicographic path order without duplicates, every
 // path of `files` that matches one of the module's header patterns and none
 // of its excludes. The result does not depend on the order of `files`.
-void ExpandModule(const ModuleDef& module, const Array<StringView, ArenaAllocator>& files, ArenaAllocator& arena,
-                  Array<StringView, ArenaAllocator>& out);
+void ExpandModule(const ModuleDef& module, const Vector<StringView, ArenaAllocator>& files, ArenaAllocator& arena,
+                  Vector<StringView, ArenaAllocator>& out);
 
 // Collects the repo-relative paths of regular files under `root`/`dir`
 // (recursively; entries starting with '.' are skipped, symlinked directories
 // are not followed, depth is capped). `dir` may be empty. Returns false if
 // `root`/`dir` or any directory below it cannot be read.
-bool CollectFiles(StringView root, StringView dir, ArenaAllocator& arena, Array<StringView, ArenaAllocator>& out);
+bool CollectFiles(StringView root, StringView dir, ArenaAllocator& arena, Vector<StringView, ArenaAllocator>& out);
 
 } // namespace docgen

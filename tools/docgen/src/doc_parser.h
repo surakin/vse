@@ -65,10 +65,10 @@ struct ParsedDoc {
     bool has_summary = false;
     u32 summary_line = 0;
     bool internal = false; // carries an `Internal:` label
-    Array<Block, ArenaAllocator> blocks; // detail paragraphs, lists and code blocks, in order
-    Array<StringView, ArenaAllocator> items;
-    Array<Label, ArenaAllocator> labels; // in source order
-    Array<Ref, ArenaAllocator> refs;     // every [[reference]] in the comment, in order
+    Vector<Block, ArenaAllocator> blocks; // detail paragraphs, lists and code blocks, in order
+    Vector<StringView, ArenaAllocator> items;
+    Vector<Label, ArenaAllocator> labels; // in source order
+    Vector<Ref, ArenaAllocator> refs;     // every [[reference]] in the comment, in order
 
     const Label* Find(LabelKind kind) const {
         for (usize i = 0; i < labels.Size(); ++i) {
@@ -82,11 +82,11 @@ struct DocResult {
     explicit DocResult(ArenaAllocator& arena) : parsed(arena), diagnostics(arena), undocumented(arena) {}
 
     // One entry per ScanResult::docs, same index; never null after ParseDocs.
-    Array<ParsedDoc*, ArenaAllocator> parsed;
-    Array<Diagnostic, ArenaAllocator> diagnostics; // sorted by line
+    Vector<ParsedDoc*, ArenaAllocator> parsed;
+    Vector<Diagnostic, ArenaAllocator> diagnostics; // sorted by line
     // Public declarations with no doc comment (and no inherited one). Not an
     // error here; `docgen lint` (Day 43) decides.
-    Array<const Decl*, ArenaAllocator> undocumented;
+    Vector<const Decl*, ArenaAllocator> undocumented;
 
     bool HasErrors() const {
         for (usize i = 0; i < diagnostics.Size(); ++i) {

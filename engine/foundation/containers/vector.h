@@ -26,24 +26,24 @@ namespace engine_placeholder {
 /// Ownership: the array destroys its elements but never frees storage; the
 ///   allocator must outlive the array and owns the memory.
 template <typename T, typename Allocator>
-class Array {
+class Vector {
 public:
     /// Creates an empty array that allocates from `allocator`.
     ///
     /// Param allocator: allocator to draw storage from; held by pointer and
     ///   must outlive the array. No memory is allocated until the first growth.
-    explicit Array(Allocator& allocator) : allocator_(&allocator) {}
+    explicit Vector(Allocator& allocator) : allocator_(&allocator) {}
 
     /// Destroys all elements. Does not release storage.
-    ~Array() {
+    ~Vector() {
         DestroyRange(0, size_);
     }
 
-    Array(const Array&) = delete;
-    Array& operator=(const Array&) = delete;
+    Vector(const Vector&) = delete;
+    Vector& operator=(const Vector&) = delete;
 
     /// Takes over `other`'s elements and storage, leaving `other` empty with zero capacity.
-    Array(Array&& other) noexcept
+    Vector(Vector&& other) noexcept
         : allocator_(other.allocator_), data_(other.data_), size_(other.size_), capacity_(other.capacity_) {
         other.data_ = nullptr;
         other.size_ = 0;
@@ -54,7 +54,7 @@ public:
     /// storage and allocator, leaving `other` empty with zero capacity.
     ///
     /// This array's old storage is abandoned, not freed.
-    Array& operator=(Array&& other) noexcept {
+    Vector& operator=(Vector&& other) noexcept {
         if (this != &other) {
             DestroyRange(0, size_);
             allocator_ = other.allocator_;
@@ -81,7 +81,7 @@ public:
             return;
         }
         void* mem = allocator_->Alloc(new_capacity * sizeof(T), alignof(T));
-        ENGINE_ASSERT(mem != nullptr, "Array::Reserve: allocator out of memory");
+        ENGINE_ASSERT(mem != nullptr, "Vector::Reserve: allocator out of memory");
         T* new_data = static_cast<T*>(mem);
         for (usize i = 0; i < size_; ++i) {
             new (new_data + i) T(std::move(data_[i]));
@@ -117,7 +117,7 @@ public:
     ///
     /// Aborts: the array is empty.
     void Pop() {
-        ENGINE_ASSERT(size_ > 0, "Array::Pop: called on an empty array");
+        ENGINE_ASSERT(size_ > 0, "Vector::Pop: called on an empty vector");
         --size_;
         data_[size_].~T();
     }

@@ -7,7 +7,9 @@ A search for `delete[]` found ~60 hand-paired `new T[n]`/`delete[] p` sites in `
 
 **Naming decision (user, 2026-11-05):** `Array<T>` is a constant-size memory block; the growable container is `Vector<T>`. The existing growable `containers/array.h` type (Phase 0 Day 6, ~200 uses) is therefore **renamed `Vector`**, and a new fixed-size `Array` is added. Older day files keep their historical wording.
 
-**Open design points — to be settled with the user before any code (do not start this day until they are):**
+**Settled with the user (2026-11-05):** `Array<T, Allocator = HeapAllocator>` takes an allocator parameter (default: heap). The rename is a separate first commit. `Vector` keeps its allocator behavior unchanged (no free-on-growth; not needed by this day). Out-of-memory: `Array` has an aborting `Allocate(n)` and a `bool TryAllocate(n)` for sites that report errors today. Non-movable element types are supported by `Array` (it never moves elements).
+
+**Original open points (now answered above):**
 - Does `Array<T>` take an allocator, or default to the heap? (Proposal: `Array<T, Allocator = HeapAllocator>`, size given at construction, freed by the destructor.)
 - A `HeapAllocator` with `Free` is needed (no engine allocator frees a single block). Should `Vector` free old blocks on growth when its allocator has `Free`?
 - Out-of-memory: `Array` construction aborts, or offers a `bool Allocate(n)` form for the sites that return an error today (mesh creation, material parameter buffers)? (Proposal: a `bool Allocate(n)` plus an aborting constructor.)
@@ -15,8 +17,8 @@ A search for `delete[]` found ~60 hand-paired `new T[n]`/`delete[] p` sites in `
 
 ## Tasks
 
-- [ ] Settle the open design points above with the user and record the answers here.
-- [ ] Rename the growable container to `Vector` (`vector.h`, `Vector<T, Allocator>`; every user in `engine/`, `tools/`, `tests/`, `docs/guide/`; `docs/reference/modules.txt`), with no behavior change; the full ctest stays green before anything else changes.
+- [x] Settle the open design points above with the user and record the answers here.
+- [x] Rename the growable container to `Vector` (`vector.h`, `Vector<T, Allocator>`; every user in `engine/`, `tools/`, `tests/`, `docs/guide/`; `docs/reference/modules.txt`), with no behavior change; the full ctest stays green before anything else changes.
 - [ ] Add `HeapAllocator` and the fixed-size `Array<T>` (`array.h`): construction/allocation, `operator[]`, `Size()`, `Data()`, move-only, destructor frees; elements value-initialized.
 - [ ] Foundation tests: size/zero-init, destruction of non-trivial elements, move, non-movable elements, allocation failure for an absurd size, leak-free under the ASan flavor.
 - [ ] Replace every raw array in `engine/` (`mesh.cpp`, `gbuffer.cpp`, `material.cpp`, `transient_pool.cpp`, `render_scene.cpp`, `vulkan_device_bindings.cpp`, `vulkan_device_pipelines.cpp`, `vulkan_device.cpp`, `vk_instance.cpp`, `jobs/scheduler.cpp`); existing out-of-memory error paths keep their behavior.

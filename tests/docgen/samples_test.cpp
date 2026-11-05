@@ -54,8 +54,8 @@ struct Tree {
 
 struct Result {
     ArenaAllocator arena{usize{1} << 28};
-    Array<FileDiag, ArenaAllocator> diags{arena};
-    Array<Sample, ArenaAllocator> samples{arena};
+    Vector<FileDiag, ArenaAllocator> diags{arena};
+    Vector<Sample, ArenaAllocator> samples{arena};
     SampleStats stats;
     bool set_up = false;
     std::vector<std::string> lines;
@@ -232,8 +232,8 @@ TEST_CASE("Samples: a missing compiler is reported per sample, not a crash", "[d
     Tree t;
     t.Put("docs/a.md", "```cpp compile\nint x;\n```\n");
     ArenaAllocator arena{usize{1} << 26};
-    Array<FileDiag, ArenaAllocator> diags(arena);
-    Array<Sample, ArenaAllocator> samples(arena);
+    Vector<FileDiag, ArenaAllocator> diags(arena);
+    Vector<Sample, ArenaAllocator> samples(arena);
     StringView text;
     std::string p = t.root + "/docs/a.md";
     REQUIRE(LoadSourceFile(Sv(p), arena, text));
@@ -252,10 +252,10 @@ TEST_CASE("Samples: a missing compiler is reported per sample, not a crash", "[d
 TEST_CASE("Samples: the repository's own docs have no failing or malformed samples", "[docgen][samples][repo]") {
     const std::string repo = std::string(DOCGEN_ENGINE_DIR) + "/..";
     ArenaAllocator arena{usize{1} << 29};
-    Array<StringView, ArenaAllocator> files(arena);
+    Vector<StringView, ArenaAllocator> files(arena);
     REQUIRE(CollectMarkdownFiles(Sv(repo), arena, files));
-    Array<FileDiag, ArenaAllocator> problems(arena);
-    Array<Sample, ArenaAllocator> samples(arena);
+    Vector<FileDiag, ArenaAllocator> problems(arena);
+    Vector<Sample, ArenaAllocator> samples(arena);
     for (usize i = 0; i < files.Size(); ++i) {
         StringView text;
         std::string p = repo + "/" + Str(files[i]);
@@ -298,8 +298,8 @@ TEST_CASE("Samples: [review] a standalone sample finds headers through -I", "[do
     t.Put("docs/a.md", "```cpp compile standalone\n#include \"local.h\"\nint Use() { return kLocal; }\n```\n");
     t.Put("local.h", "constexpr int kLocal = 1;\n");
     ArenaAllocator arena{usize{1} << 26};
-    Array<FileDiag, ArenaAllocator> diags(arena);
-    Array<Sample, ArenaAllocator> samples(arena);
+    Vector<FileDiag, ArenaAllocator> diags(arena);
+    Vector<Sample, ArenaAllocator> samples(arena);
     StringView text;
     std::string p = t.root + "/docs/a.md";
     REQUIRE(LoadSourceFile(Sv(p), arena, text));

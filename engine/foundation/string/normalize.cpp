@@ -65,7 +65,7 @@ bool TryComposePair(u32 a, u32 b, u32* out) {
 
 } // namespace
 
-void Detail_FullyDecomposeAppend(u32 codepoint, Array<u32, ArenaAllocator>& out) {
+void Detail_FullyDecomposeAppend(u32 codepoint, Vector<u32, ArenaAllocator>& out) {
     if (IsHangulSyllable(codepoint)) {
         u32 jamo[3];
         usize count = DecomposeHangulSyllable(codepoint, jamo);
@@ -89,7 +89,7 @@ void Detail_FullyDecomposeAppend(u32 codepoint, Array<u32, ArenaAllocator>& out)
     out.Push(codepoint);
 }
 
-void Detail_CanonicalOrder(Array<u32, ArenaAllocator>& codepoints) {
+void Detail_CanonicalOrder(Vector<u32, ArenaAllocator>& codepoints) {
     usize n = codepoints.Size();
     usize i = 0;
     while (i < n) {
@@ -118,7 +118,7 @@ void Detail_CanonicalOrder(Array<u32, ArenaAllocator>& codepoints) {
     }
 }
 
-void Detail_ComposeInPlace(Array<u32, ArenaAllocator>& codepoints) {
+void Detail_ComposeInPlace(Vector<u32, ArenaAllocator>& codepoints) {
     usize n = codepoints.Size();
     if (n == 0) {
         return;

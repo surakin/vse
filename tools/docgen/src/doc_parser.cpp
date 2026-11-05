@@ -102,7 +102,7 @@ bool MatchLabel(StringView t, LabelMatch& m) {
 
 class DocParser {
 public:
-    DocParser(ArenaAllocator& arena, Array<Diagnostic, ArenaAllocator>& diags) : arena_(arena), diags_(diags), pieces_(arena) {}
+    DocParser(ArenaAllocator& arena, Vector<Diagnostic, ArenaAllocator>& diags) : arena_(arena), diags_(diags), pieces_(arena) {}
 
     ParsedDoc* Parse(const DocComment& dc) {
         void* mem = arena_.Alloc(sizeof(ParsedDoc), alignof(ParsedDoc));
@@ -461,8 +461,8 @@ private:
     }
 
     ArenaAllocator& arena_;
-    Array<Diagnostic, ArenaAllocator>& diags_;
-    Array<StringView, ArenaAllocator> pieces_; // text fragments of whatever block is open (never shrinks)
+    Vector<Diagnostic, ArenaAllocator>& diags_;
+    Vector<StringView, ArenaAllocator> pieces_; // text fragments of whatever block is open (never shrinks)
     ParsedDoc* doc_ = nullptr;
     u32 first_line_ = 0;
 
@@ -496,7 +496,7 @@ bool IsParam(const Decl& d, StringView name) {
     return false;
 }
 
-void Validate(const Decl& d, const ParsedDoc& doc, Array<Diagnostic, ArenaAllocator>& diags, ArenaAllocator& arena) {
+void Validate(const Decl& d, const ParsedDoc& doc, Vector<Diagnostic, ArenaAllocator>& diags, ArenaAllocator& arena) {
     for (usize i = 0; i < doc.labels.Size(); ++i) {
         const Label& l = doc.labels[i];
         if (l.kind == LabelKind::Param && !IsParam(d, l.name)) {
@@ -584,7 +584,7 @@ const Decl* ResolveIn(const Decl& fn, const Decl& cls, const Decl* const* roots,
     return nullptr;
 }
 
-void SortByLine(Array<Diagnostic, ArenaAllocator>& d) {
+void SortByLine(Vector<Diagnostic, ArenaAllocator>& d) {
     StableSort(d, [](const Diagnostic& x, const Diagnostic& y) { return x.line < y.line; });
 }
 

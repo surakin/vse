@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mem/arena_allocator.h"
-#include "containers/array.h"
+#include "containers/vector.h"
 #include "string/string.h"
 #include "types.h"
 #include "string/utf8.h"
@@ -42,17 +42,17 @@ bool IsCompositionExcluded(u32 codepoint);
 ///
 /// Internal: visible only because the NFD and NFC templates call it; not part
 ///   of the public API.
-void Detail_FullyDecomposeAppend(u32 codepoint, Array<u32, ArenaAllocator>& out);
+void Detail_FullyDecomposeAppend(u32 codepoint, Vector<u32, ArenaAllocator>& out);
 /// Reorders runs of combining marks in `codepoints` into canonical order.
 ///
 /// Internal: visible only because the NFD and NFC templates call it; not part
 ///   of the public API.
-void Detail_CanonicalOrder(Array<u32, ArenaAllocator>& codepoints);
+void Detail_CanonicalOrder(Vector<u32, ArenaAllocator>& codepoints);
 /// Composes canonically ordered, decomposed `codepoints` in place (the NFC step).
 ///
 /// Internal: visible only because the NFC template calls it; not part of the
 ///   public API.
-void Detail_ComposeInPlace(Array<u32, ArenaAllocator>& codepoints);
+void Detail_ComposeInPlace(Vector<u32, ArenaAllocator>& codepoints);
 
 namespace detail {
 
@@ -81,7 +81,7 @@ inline usize NormalizeScratchBytes(StringView sv) {
 template <typename Allocator>
 String<Allocator> NormalizeNFD(Allocator& allocator, StringView sv) {
     ArenaAllocator scratch(detail::NormalizeScratchBytes(sv));
-    Array<u32, ArenaAllocator> codepoints(scratch);
+    Vector<u32, ArenaAllocator> codepoints(scratch);
     for (u32 cp : Utf8Codepoints(sv)) {
         Detail_FullyDecomposeAppend(cp, codepoints);
     }
@@ -111,7 +111,7 @@ String<Allocator> NormalizeNFD(Allocator& allocator, StringView sv) {
 template <typename Allocator>
 String<Allocator> NormalizeNFC(Allocator& allocator, StringView sv) {
     ArenaAllocator scratch(detail::NormalizeScratchBytes(sv));
-    Array<u32, ArenaAllocator> codepoints(scratch);
+    Vector<u32, ArenaAllocator> codepoints(scratch);
     for (u32 cp : Utf8Codepoints(sv)) {
         Detail_FullyDecomposeAppend(cp, codepoints);
     }

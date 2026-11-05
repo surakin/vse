@@ -284,7 +284,7 @@ StringView Ratio(ArenaAllocator& arena, usize d, usize t) {
 
 } // namespace
 
-void CompareToBaseline(const LintResult& r, Baseline* baseline, ArenaAllocator& arena, Array<FileDiag, ArenaAllocator>& out) {
+void CompareToBaseline(const LintResult& r, Baseline* baseline, ArenaAllocator& arena, Vector<FileDiag, ArenaAllocator>& out) {
     for (usize i = 0; i < r.findings.Size(); ++i) {
         const LintFinding& f = r.findings[i];
         StringView rule(LintRuleName(f.rule));
