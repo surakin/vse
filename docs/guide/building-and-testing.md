@@ -251,3 +251,8 @@ _TODO_
 Their test (`The newest core of a crashed program is found by script...`) runs in the plain flavor only and skips, with the
 reason printed, when `gdb` is missing or the system keeps no core.
 
+`scripts/crash-report.sh`, `scripts/store-symbols.sh` and `scripts/split-debug.sh` turn crash dumps into traces and keep the symbols
+of release builds ("Turning a dump into a trace" and "Keeping symbols for release builds" in the same guide). Their tests
+(`crash-report.sh ...`, `A stripped program resolves through a symbol store...`) skip with a printed reason when `lldb`,
+`objcopy` or `strip` is missing. `-DENGINE_SPLIT_DEBUG_INFO=ON` builds with `-g` and splits the debug information of the demos and benches.
+

@@ -6,6 +6,7 @@ target_include_directories(renderer_demo_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} 
 target_link_libraries(renderer_demo_lib PUBLIC renderer_passes renderer rhi foundation)
 
 add_executable(renderer_demo main.cpp)
+engine_split_debug_info(renderer_demo)
 target_compile_options(renderer_demo PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_compile_definitions(renderer_demo PRIVATE RENDERER_DEMO_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
 target_link_libraries(renderer_demo PRIVATE renderer_demo_lib rhi_vulkan)

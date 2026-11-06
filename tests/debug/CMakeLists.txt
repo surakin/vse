@@ -19,6 +19,7 @@ set(DEBUG_TEST_SOURCES
   crash_end_to_end_linux_test.cpp
   core_dump_test.cpp
   core_dump_linux_test.cpp
+  crash_report_script_linux_test.cpp
   resource_guard_linux.cpp
 )
 
@@ -29,11 +30,12 @@ function(engine_add_debug_tests target foundation_lib jobs_lib suffix label)
   add_executable(${target} ${DEBUG_TEST_SOURCES})
   engine_enable_death_tests(${target})
   target_link_libraries(${target} PRIVATE ${foundation_lib} ${jobs_lib} Catch2::Catch2WithMain Threads::Threads)
-  add_dependencies(${target} debug_test_plugin)
+  add_dependencies(${target} debug_test_plugin crash_extract)
   # The envelope parser of the crash_extract tool, compiled into each flavor so the sweeps run under the sanitizers.
   target_sources(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/crash_extract/envelope.cpp)
   target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/crash_extract)
-  target_compile_definitions(${target} PRIVATE DEBUG_TEST_PLUGIN_PATH="$<TARGET_FILE:debug_test_plugin>" ENGINE_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+  target_compile_definitions(${target} PRIVATE DEBUG_TEST_PLUGIN_PATH="$<TARGET_FILE:debug_test_plugin>" ENGINE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+    ENGINE_CRASH_EXTRACT_PATH="$<TARGET_FILE:crash_extract>")
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   # The family tests exercise the checking paths, so they need debug and slow checks on whatever the configuration is.
   target_compile_definitions(${target} PRIVATE ENGINE_DEBUG_CHECKS=1 ENGINE_SLOW_CHECKS=1)

@@ -265,6 +265,47 @@ Things to know: a core can be as large as the process (the system may refuse or 
 passwords**, so do not attach one to a bug report or leave it in a shared directory; and every crashing program on a
 `systemd-coredump` machine leaves a journal entry (visible in `coredumpctl list`) even when no core is stored.
 
+## Turning a dump into a trace
+
+`scripts/crash-report.sh` (a Linux shell script) takes a minidump or the `.envelope` a crash leaves in the dump directory:
+
+```text
+scripts/crash-report.sh <dump directory>/<run>/<id>.envelope  <program>  [<symbol store>]
+```
+
+It pulls the minidump out of an envelope with `crash_extract`, then prints the faulting thread, every thread and the modules
+with their build ids using `lldb` (and, if `minidump-stackwalk` is installed, a second symbolized trace). If you give the
+program, its build id is compared with the one in the dump (with `lldb`; `minidump-stackwalk` alone cannot do it and the script warns) and a different build is
+refused with exit status 3, because the trace would be wrong. With neither tool installed it exits with status 66 and says what to install. The commands it runs
+for you are `lldb -b -c crash.dmp -o 'thread list' -o 'bt all' -o 'image list'`, with debuginfod switched off.
+
+To resolve a raw `module+offset` from a report by hand:
+
+```text
+llvm-symbolizer --obj=<module file> 0x<offset>
+addr2line -f -C -e <module file> 0x<offset>
+```
+
+## Keeping symbols for release builds
+
+A release program is stripped, so its dumps have no function names unless you kept the debug information of **that build**.
+Configure with `-DENGINE_SPLIT_DEBUG_INFO=ON` (off by default; the demos and benches are then stripped in place, so run an unstripped copy under
+valgrind) to build with `-g` and have the demos and benches split after linking
+(`scripts/split-debug.sh`: `<program>.debug` next to a stripped program that keeps its GNU build id and links to the debug file).
+For every build you ship, file the debug information in a symbol store:
+
+```text
+scripts/store-symbols.sh build/game/rhi_demo/rhi_demo.debug  symbols
+```
+
+This writes `symbols/<name>/<build-id>/<name>.debug` and a link under `symbols/.build-id/` (the layout `lldb` and `gdb` search by
+build id). Keep the store as long as you keep the releases. `scripts/crash-report.sh` takes the store as an argument and so the
+stripped program's dump is read with names and lines. The `.debug` files are as large as the unstripped program: store them
+privately, not next to the download.
+
+Breakpad `.sym` files (for `minidump-stackwalk`) are produced by `dump_syms` from the same `.debug` files; the script looks for
+them in `<store>/breakpad` (a directory you create; `store-symbols.sh` does not). That path is documented but not exercised on the development machine (see KNOWN-ISSUES).
+
 ## Testing code that crashes
 
 A crash kills the process that crashes, so a test cannot simply call code that is supposed to crash. A **death test**

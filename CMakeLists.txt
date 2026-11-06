@@ -14,6 +14,22 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_link_options(-Wl,--build-id)
 endif()
 
+# Release symbols (Phase 6 Day 99): with this on, every build keeps debug information (-g) and the demos and benches have it split
+# out after linking (scripts/split-debug.sh: <program>.debug beside a stripped program that keeps its build id and links to the
+# debug file). Put the .debug files in a symbol store with scripts/store-symbols.sh to read crash dumps from stripped builds.
+option(ENGINE_SPLIT_DEBUG_INFO "Build with -g and split the debug information out of the demos and benches (Linux)" OFF)
+if(ENGINE_SPLIT_DEBUG_INFO AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_compile_options(-g)
+endif()
+# engine_split_debug_info(<executable>): the per-program half of the option above.
+function(engine_split_debug_info target)
+  if(ENGINE_SPLIT_DEBUG_INFO AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    add_custom_command(TARGET ${target} POST_BUILD
+      COMMAND ${CMAKE_SOURCE_DIR}/scripts/split-debug.sh $<TARGET_FILE:${target}>
+      COMMENT "Splitting the debug information of ${target}")
+  endif()
+endfunction()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
