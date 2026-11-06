@@ -11,55 +11,31 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "fs_fixture.h"
+#include "links.h"
 #include "reference.h"
 
 using namespace docgen;
+namespace io = engine_placeholder::io;
 
 namespace {
 
 std::string ReferenceTestStr(StringView v) { return std::string(v.Data(), v.Length()); }
 
-std::string ReferenceTestReadWhole(const std::string& path) {
-    FILE* f = std::fopen(path.c_str(), "rb");
-    if (f == nullptr) return {};
-    std::string s;
-    char buf[4096];
-    size_t n;
-    while ((n = std::fread(buf, 1, sizeof(buf), f)) > 0) s.append(buf, n);
-    std::fclose(f);
-    return s;
-}
+std::string ReferenceTestReadWhole(const std::string& path) { return docgen_test::ReadFileText(path); }
 
-void WriteWhole(const std::string& path, const std::string& content) {
-    FILE* f = std::fopen(path.c_str(), "wb");
-    REQUIRE(f != nullptr);
-    std::fwrite(content.data(), 1, content.size(), f);
-    std::fclose(f);
-}
+void WriteWhole(const std::string& path, const std::string& content) { docgen_test::WriteFileText(path, content); }
 
-std::vector<std::string> ListDir(const std::string& dir) {
-    std::vector<std::string> v;
-    DIR* d = opendir(dir.c_str());
-    if (d == nullptr) return v;
-    while (dirent* e = readdir(d)) {
-        if (e->d_name[0] != '.') v.push_back(e->d_name);
-    }
-    closedir(d);
-    std::sort(v.begin(), v.end());
-    return v;
-}
+std::vector<std::string> ListDir(const std::string& dir) { return docgen_test::ListNamesSorted(dir); }
 
 // A scratch directory removed with its (flat) contents.
 struct TempDir {
     std::string path;
     TempDir() {
-        char tmpl[] = "/tmp/docgen_ref_XXXXXX";
-        REQUIRE(mkdtemp(tmpl) != nullptr);
-        path = tmpl;
+        path = docgen_test::MakeTempRoot("docgen_ref");
     }
     ~TempDir() {
-        for (auto& n : ListDir(path)) std::remove((path + "/" + n).c_str());
-        rmdir(path.c_str());
+        docgen_test::RemoveTreeAt(path);
     }
 };
 
@@ -103,22 +79,11 @@ struct Project {
     explicit Project(const std::vector<std::pair<std::string, std::string>>& files, const std::string& map) {
         for (auto& f : files) {
             size_t slash = f.first.rfind('/');
-            if (slash != std::string::npos) mkdir((dir.path + "/" + f.first.substr(0, slash)).c_str(), 0777);
             WriteWhole(dir.path + "/" + f.first, f.second);
         }
         WriteWhole(dir.path + "/modules.txt", map);
     }
-    ~Project() {
-        // remove nested dirs created above
-        for (auto& n : ListDir(dir.path)) {
-            struct stat st;
-            std::string p = dir.path + "/" + n;
-            if (stat(p.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
-                for (auto& m : ListDir(p)) std::remove((p + "/" + m).c_str());
-                rmdir(p.c_str());
-            }
-        }
-    }
+    // the TempDir removes the whole tree, nested directories included
     std::string Map() const { return dir.path + "/modules.txt"; }
 };
 
@@ -486,7 +451,11 @@ TEST_CASE("reference writes, then check passes; stale output is detected", "[doc
     }
     WriteWhole(out.path + "/demo.md", demo);
     // 2. a missing file
-    std::remove((out.path + "/symbols.txt").c_str());
+    {
+        io::Path symbols;
+        REQUIRE(io::Path::Parse(StringView((out.path + "/symbols.txt").c_str()), io::NativePathStyle(), &symbols));
+        REQUIRE(io::Remove(symbols).Ok());
+    }
     {
         std::vector<std::string> msgs;
         REQUIRE_FALSE(check(msgs));
@@ -611,11 +580,7 @@ TEST_CASE("[review] reference creates a nested output directory", "[docgen][refe
     REQUIRE(WriteReference(b.build, StringView(nested.data(), nested.size()), b.arena, problems));
     REQUIRE(problems.Size() == 0);
     REQUIRE(ListDir(nested).size() == 4);
-    // cleanup of the nested tree (TempDir only removes files)
-    for (auto& n : ListDir(nested)) std::remove((nested + "/" + n).c_str());
-    rmdir(nested.c_str());
-    rmdir((base.path + "/a/b").c_str());
-    rmdir((base.path + "/a").c_str());
+    // the TempDir removes the nested tree
     // a path that cannot be created is reported once, not once per file
     std::string bad = base.path + "/file";
     WriteWhole(bad, "x");
@@ -675,8 +640,8 @@ TEST_CASE("[review] references to operator() and long overload hints resolve", "
 
 TEST_CASE("[review] file collection does not follow directory symlinks and reports unreadable subdirectories", "[docgen][reference][review]") {
     TempDir dir;
-    mkdir((dir.path + "/real").c_str(), 0777);
-    WriteWhole(dir.path + "/real/a.h", "x");
+    WriteWhole(dir.path + "/real/a.h", "x"); // creates the directory
+    // The links and the unreadable directory below are raw on purpose: they build the exact file-system shapes the walk must survive.
     REQUIRE(symlink(dir.path.c_str(), (dir.path + "/real/loop").c_str()) == 0); // a cycle
     REQUIRE(symlink("a.h", (dir.path + "/real/link.h").c_str()) == 0);         // a file symlink is still a file
     ArenaAllocator arena(usize{1} << 24);
@@ -691,13 +656,8 @@ TEST_CASE("[review] file collection does not follow directory symlinks and repor
         mkdir((dir.path + "/locked").c_str(), 0000);
         Vector<StringView, ArenaAllocator> files2(arena);
         REQUIRE_FALSE(CollectFiles(StringView(dir.path.data(), dir.path.size()), StringView(), arena, files2));
-        chmod((dir.path + "/locked").c_str(), 0700);
-        rmdir((dir.path + "/locked").c_str());
+        chmod((dir.path + "/locked").c_str(), 0700); // so the TempDir can remove it
     }
-    std::remove((dir.path + "/real/loop").c_str());
-    std::remove((dir.path + "/real/link.h").c_str());
-    std::remove((dir.path + "/real/a.h").c_str());
-    rmdir((dir.path + "/real").c_str());
 }
 
 TEST_CASE("Reference: [review] deleted and defaulted members render as such, not as undocumented", "[docgen][reference]") {
@@ -710,4 +670,78 @@ TEST_CASE("Reference: [review] deleted and defaulted members render as such, not
     CHECK(page.find("_Defaulted._") != std::string::npos);
     CHECK(page.find("_Deleted._") != std::string::npos);
     CHECK(page.find("_Undocumented._") != std::string::npos); // G()
+}
+
+namespace {
+// Restores the real directory order even when a REQUIRE aborts the test case.
+struct NameOrderGuard {
+    ~NameOrderGuard() { SetNameOrderSeedForTesting(0); }
+};
+} // namespace
+
+TEST_CASE("Reference output and the collected file lists do not depend on directory iteration order", "[docgen][reference][determinism]") {
+    NameOrderGuard guard;
+    std::vector<std::pair<std::string, std::string>> files;
+    for (int d = 0; d < 6; ++d) {
+        for (int f = 0; f < 6; ++f) {
+            const std::string name = "h/d" + std::to_string(d) + "/f" + std::to_string(f) + ".h";
+            files.push_back({name, "#pragma once\nnamespace engine_placeholder {\n/// Thing " + std::to_string(d * 10 + f) + ".\nstruct T" +
+                                       std::to_string(d * 10 + f) + " {};\n}\n"});
+        }
+    }
+    for (int m = 0; m < 5; ++m) files.push_back({"docs/page" + std::to_string(m) + ".md", "# Page\n"});
+    files.push_back({"top.md", "# Top\n"});
+    Project p(files, "module m \"M\"\n  header h/*/*.h\n");
+    const std::string root = p.dir.path;
+    const std::string map = p.Map();
+    auto snapshot = [&](u32 seed, std::vector<std::string>* markdown) {
+        SetNameOrderSeedForTesting(seed);
+        Built b(root, map);
+        REQUIRE(b.ok);
+        std::vector<std::string> out;
+        for (usize i = 0; i < b.build.files.Size(); ++i) {
+            out.push_back(ReferenceTestStr(b.build.files[i].name) + "\n" + ReferenceTestStr(b.build.files[i].content));
+        }
+        Vector<StringView, ArenaAllocator> md(b.arena);
+        REQUIRE(CollectMarkdownFiles(StringView(root.data(), root.size()), b.arena, md));
+        markdown->clear();
+        for (usize i = 0; i < md.Size(); ++i) markdown->push_back(ReferenceTestStr(md[i]));
+        return out;
+    };
+    std::vector<std::string> base_markdown;
+    const std::vector<std::string> base = snapshot(0, &base_markdown);
+    REQUIRE(base.size() >= 3);
+    REQUIRE(base_markdown.size() == 6);
+    for (u32 seed : {1u, 7u, 99u, 12345u}) {
+        INFO("seed " << seed);
+        std::vector<std::string> markdown;
+        CHECK(snapshot(seed, &markdown) == base);
+        CHECK(markdown == base_markdown);
+    }
+}
+
+TEST_CASE("Reference: a directory that cannot be written keeps the previous output", "[docgen][reference][errors]") {
+    if (geteuid() == 0) {
+        SUCCEED("root writes anywhere");
+        return;
+    }
+    TempDir out;
+    Built b;
+    REQUIRE(b.ok);
+    Vector<FileDiag, ArenaAllocator> problems(b.arena);
+    REQUIRE(WriteReference(b.build, StringView(out.path.data(), out.path.size()), b.arena, problems));
+    const std::vector<std::string> before = ListDir(out.path);
+    std::vector<std::string> contents;
+    for (const std::string& n : before) contents.push_back(ReferenceTestReadWhole(out.path + "/" + n));
+    // The files are about to change, and the directory can no longer take new entries (a temporary file cannot be created).
+    REQUIRE(chmod(out.path.c_str(), 0500) == 0);
+    Built changed;
+    REQUIRE(changed.ok);
+    changed.build.files[0].content = StringView("replaced\n");
+    Vector<FileDiag, ArenaAllocator> failures(changed.arena);
+    CHECK_FALSE(WriteReference(changed.build, StringView(out.path.data(), out.path.size()), changed.arena, failures));
+    CHECK(failures.Size() >= 1);
+    REQUIRE(chmod(out.path.c_str(), 0700) == 0);
+    CHECK(ListDir(out.path) == before); // no stray temporary files
+    for (size_t i = 0; i < before.size(); ++i) CHECK(ReferenceTestReadWhole(out.path + "/" + before[i]) == contents[i]);
 }

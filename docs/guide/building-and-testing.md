@@ -259,6 +259,12 @@ docs/reference/lint-baseline.txt --update-baseline` and commit the smaller file.
 The conventions the checks enforce are in [Documentation Conventions](../DOC-CONVENTIONS.md);
 the tool's design is in `tools/docgen/DESIGN.md`.
 
+All file and directory access of the tools goes through the engine's file layer ([io](io.md)): `docgen` writes each generated page atomically (a
+failed write keeps the previous file), `shader_mint` stages every output of one minting as temporary files and renames them together, and
+`crash_extract` writes its output atomically. Output must not depend on the order the file system lists a directory in: `docgen` sorts what it
+collects, and a test (`SetNameOrderSeedForTesting` in `tools/docgen/src/source_file.h`) runs the whole reference build under shuffled
+directory orders and compares the bytes.
+
 A sample in this guide, built and run by `docs_samples` (it uses the standard
 prelude, so the engine namespace is already in scope):
 

@@ -8,7 +8,7 @@ Listing and walking directories without loading a whole tree: [`io::Directory`](
 
 Errors of the file layer, reported as values: [`io::Error`](#io-error) and [`io::Status`](#io-status).
 
-[`io::File`](#io-file): an open file as an abstract interface, so the same code reads a local file, a pak entry or a file on a server. Only the local file exists now. Also the helpers that work through any `File`, the scheme registry that picks a backend, and [`io::WriteFileAtomic`](#io-writefileatomic-const-path-amp-const-void-star-usize).
+[`io::File`](#io-file): an open file as an abstract interface, so the same code reads a local file, a pak entry or a file on a server. Only the local file exists now. Also the helpers that work through any `File`, the scheme registry that picks a backend, and [`io::WriteFileAtomic`](#io-writefileatomic-const-path-amp-const-void-star-usize-u32).
 
 Operations on paths: looking at the disk, creating, removing and renaming, resolving, and the special folders.
 
@@ -697,7 +697,7 @@ What a backend can do; test the bits of [`io::File::Capabilities`](#io-file-capa
 | <a id="io-kcapsizeknown"></a>`kCapSizeKnown` | `2` | [`io::File::Size`](#io-file-size-u64-star) succeeds. A size can be wrong for files the OS generates (`/proc`): read until 0. |
 | <a id="io-kcapwritable"></a>`kCapWritable` | `4` | The file was opened for writing. |
 | <a id="io-kcapnativelyasync"></a>`kCapNativelyAsync` | `8` | The backend completes asynchronous operations on its own (a network file), not on an executor. |
-| <a id="io-kcapatomicreplace"></a>`kCapAtomicReplace` | `16` | The backend can replace a whole file atomically (see [`io::WriteFileAtomic`](#io-writefileatomic-const-path-amp-const-void-star-usize)). |
+| <a id="io-kcapatomicreplace"></a>`kCapAtomicReplace` | `16` | The backend can replace a whole file atomically (see [`io::WriteFileAtomic`](#io-writefileatomic-const-path-amp-const-void-star-usize-u32)). |
 | <a id="io-kcapappendonly"></a>`kCapAppendOnly` | `32` | Opened with `OpenMode::Append`: writes go to the end and offset writes fail. |
 
 ## `FilePtr` {#io-fileptr}
@@ -1454,27 +1454,28 @@ Reads a whole text file into `out`. The bytes are not validated as UTF-8.
 Status WriteFile(const Path& path, const void* data, usize length);
 ```
 
-Creates or truncates `path` and writes `length` bytes. Not atomic: a failure can leave a partial file; see [`io::WriteFileAtomic`](#io-writefileatomic-const-path-amp-const-void-star-usize).
+Creates or truncates `path` and writes `length` bytes. Not atomic: a failure can leave a partial file; see [`io::WriteFileAtomic`](#io-writefileatomic-const-path-amp-const-void-star-usize-u32).
 
 | Field | Value |
 |---|---|
 | Fails | the errors of [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-fileptr-star) and [`io::File::Write(const void*,usize,u64)`](#io-file-write-const-void-star-usize-u64). |
 
-## `WriteFileAtomic(const Path&,const void*,usize)` {#io-writefileatomic-const-path-amp-const-void-star-usize}
+## `WriteFileAtomic(const Path&,const void*,usize,u32)` {#io-writefileatomic-const-path-amp-const-void-star-usize-u32}
 
 `function io::WriteFileAtomic` — defined in `engine/foundation/io/file.h`
 
 ```cpp
-Status WriteFileAtomic(const Path& path, const void* data, usize length);
+Status WriteFileAtomic(const Path& path, const void* data, usize length, u32 new_file_permissions = 0600);
 ```
 
 Replaces the contents of `path` so that a reader sees the old file or the new one, never a mix, and a crash leaves one of them.
 
-Writes a temporary file in the same directory, flushes and syncs it, then renames it over `path`. The temporary is removed on every failure path, and the directory is synced after the rename so the new entry survives a crash. A symbolic link at `path` is followed (the file it points to is replaced, the link stays). A replaced file keeps its permission bits; a new file gets mode 0600.
+Writes a temporary file in the same directory, flushes and syncs it, then renames it over `path`. The temporary is removed on every failure path, and the directory is synced after the rename so the new entry survives a crash. A symbolic link at `path` is followed (the file it points to is replaced, the link stays). A replaced file keeps its permission bits; a new file gets `new_file_permissions` (private to the owner by default: pass 0644 for ordinary generated files).
 
 | Field | Value |
 |---|---|
 | Parameter `path` | the target; its directory must exist. |
+| Parameter `new_file_permissions` | the permission bits of a file that did not exist. |
 | Fails | `NotFound` (no directory), `PermissionDenied`, `NoSpace`, `IsADirectory` (the target is a directory), `Io`; the old content is intact. |
 
 ## `FileType` {#io-filetype}

@@ -1,7 +1,6 @@
 #include "module_map.h"
+#include "source_file.h"
 
-#include <dirent.h>
-#include <sys/stat.h>
 
 #include <cstring>
 #include <new>
@@ -227,26 +226,24 @@ constexpr int kMaxDepth = 32;
 
 bool CollectFilesRec(StringView root, StringView dir, int depth, ArenaAllocator& arena, Vector<StringView, ArenaAllocator>& out) {
     StringView abs_dir = dir.Empty() ? ArenaCat(arena, root, StringView()) : ArenaCat(arena, root, StringView("/"), dir);
-    DIR* d = opendir(abs_dir.Data());
-    if (d == nullptr) return false;
+    Vector<StringView, ArenaAllocator> names(arena);
+    if (!ListNames(abs_dir, arena, names)) return false;
     bool ok = true;
-    while (dirent* e = readdir(d)) {
-        if (e->d_name[0] == '.') continue;
-        StringView name(e->d_name, std::strlen(e->d_name));
+    for (usize i = 0; i < names.Size(); ++i) {
+        const StringView name = names[i];
+        if (name[0] == '.') continue;
         StringView rel = dir.Empty() ? ArenaCat(arena, name, StringView()) : ArenaCat(arena, dir, StringView("/"), name);
         StringView abs = ArenaCat(arena, root, StringView("/"), rel);
-        struct stat lst;
-        if (lstat(abs.Data(), &lst) != 0) continue;
-        if (S_ISDIR(lst.st_mode)) { // symlinked directories are not followed (no cycles)
+        const EntryKind own = KindOf(abs, false);
+        if (own == EntryKind::Missing) continue;
+        if (own == EntryKind::Directory) { // symlinked directories are not followed (no cycles)
             if (depth >= kMaxDepth || !CollectFilesRec(root, rel, depth + 1, arena, out)) ok = false;
-        } else if (S_ISREG(lst.st_mode)) {
+        } else if (own == EntryKind::File) {
             out.Push(rel);
-        } else if (S_ISLNK(lst.st_mode)) {
-            struct stat st;
-            if (stat(abs.Data(), &st) == 0 && S_ISREG(st.st_mode)) out.Push(rel);
+        } else if (KindOf(abs, true) == EntryKind::File) { // a link to a regular file
+            out.Push(rel);
         }
     }
-    closedir(d);
     return ok;
 }
 

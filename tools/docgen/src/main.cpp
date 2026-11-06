@@ -236,8 +236,7 @@ int Links(int argc, char** argv) {
     StringView root_v(root, std::strlen(root));
     StringView map_path = modules != nullptr ? StringView(modules, std::strlen(modules)) : ArenaCat(arena, root_v, StringView("/docs/reference/modules.txt"));
     // `[[Symbol]]` references are checked against the index of the module map; a missing default map just skips them.
-    struct stat st;
-    const bool have_map = modules != nullptr || stat(map_path.Data(), &st) == 0;
+    const bool have_map = modules != nullptr || KindOf(map_path) != EntryKind::Missing;
     ReferenceBuild build(arena);
     const SymbolIndex* index = nullptr;
     bool header_errors = false;
@@ -307,8 +306,7 @@ int Lint(int argc, char** argv) {
 
     Baseline baseline(arena);
     Baseline* use = nullptr;
-    struct stat bst;
-    const bool first_baseline = update && baseline_path != nullptr && stat(baseline_path, &bst) != 0; // nothing to compare with yet
+    const bool first_baseline = update && baseline_path != nullptr && KindOf(StringView(baseline_path, std::strlen(baseline_path))) == EntryKind::Missing; // nothing to compare with yet
     if (baseline_path != nullptr && !first_baseline) {
         StringView text;
         if (!LoadSourceFile(StringView(baseline_path, std::strlen(baseline_path)), arena, text)) {
@@ -344,13 +342,8 @@ int Lint(int argc, char** argv) {
         }
         engine_placeholder::StringBuilder<ArenaAllocator> text(arena);
         RenderBaseline(result, text);
-        // write to a temporary file and rename, so a failed write cannot leave a truncated baseline behind
-        StringView tmp = ArenaCat(arena, StringView(baseline_path, std::strlen(baseline_path)), StringView(".tmp"));
-        FILE* f = std::fopen(tmp.Data(), "wb");
-        const bool wrote = f != nullptr && std::fwrite(text.View().Data(), 1, text.View().Length(), f) == text.View().Length();
-        const bool closed = f != nullptr && std::fclose(f) == 0;
-        if (!wrote || !closed || std::rename(tmp.Data(), baseline_path) != 0) {
-            if (f != nullptr) std::remove(tmp.Data());
+        // atomic: a failed write cannot leave a truncated baseline behind
+        if (!WriteTextAtomic(StringView(baseline_path, std::strlen(baseline_path)), text.View())) {
             std::fprintf(stderr, "%s: error: cannot write the baseline\n", baseline_path);
             return 2;
         }
@@ -366,11 +359,7 @@ int Lint(int argc, char** argv) {
 }
 
 // An absolute path for `p` if it exists (the compiler runs in a scratch directory), otherwise `p` unchanged.
-StringView Absolute(const char* p, ArenaAllocator& arena) {
-    char buf[PATH_MAX];
-    if (realpath(p, buf) != nullptr) return ArenaCat(arena, StringView(buf, std::strlen(buf)), StringView());
-    return ArenaCat(arena, StringView(p, std::strlen(p)), StringView());
-}
+StringView Absolute(const char* p, ArenaAllocator& arena) { return CanonicalOrSame(StringView(p, std::strlen(p)), arena); }
 
 // docgen samples
 int Samples(int argc, char** argv) {

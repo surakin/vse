@@ -9,6 +9,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "fs_fixture.h"
 #include "scanner.h"
 #include "source_file.h"
 
@@ -38,32 +39,12 @@ struct Scanned {
 
 using Strs = std::vector<std::string>;
 
-std::string ReadWhole(const std::string& path) {
-    FILE* f = std::fopen(path.c_str(), "rb");
-    if (f == nullptr) return {};
-    std::string s;
-    char buf[4096];
-    size_t n;
-    while ((n = std::fread(buf, 1, sizeof(buf), f)) > 0) s.append(buf, n);
-    std::fclose(f);
-    return s;
-}
+std::string ReadWhole(const std::string& path) { return docgen_test::ReadFileText(path); }
 
 void ListFiles(const std::string& dir, const char* suffix, std::vector<std::string>& out) {
-    DIR* d = opendir(dir.c_str());
-    if (d == nullptr) return;
-    std::vector<std::string> names;
-    while (dirent* e = readdir(d)) {
-        if (e->d_name[0] == '.') continue;
-        names.push_back(e->d_name);
-    }
-    closedir(d);
-    std::sort(names.begin(), names.end());
-    for (auto& n : names) {
+    for (const std::string& n : docgen_test::ListNamesSorted(dir)) {
         std::string p = dir + "/" + n;
-        struct stat st;
-        if (stat(p.c_str(), &st) != 0) continue;
-        if (S_ISDIR(st.st_mode)) ListFiles(p, suffix, out);
+        if (docgen_test::IsDirectoryAt(p)) ListFiles(p, suffix, out);
         else if (p.size() >= std::strlen(suffix) && p.compare(p.size() - std::strlen(suffix), std::strlen(suffix), suffix) == 0)
             out.push_back(p);
     }

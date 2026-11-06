@@ -465,7 +465,7 @@ namespace detail {
 void SetAtomicWriteFailureStep(int step) { g_atomic_failure_step.store(step, std::memory_order_relaxed); }
 } // namespace detail
 
-Status WriteFileAtomic(const Path& requested, const void* data, usize length) {
+Status WriteFileAtomic(const Path& requested, const void* data, usize length, u32 new_file_permissions) {
     if (requested.FileName().Empty()) return Status::Of(Error::Invalid);
     // Replace the file a symbolic link points to, not the link.
     Path path = requested;
@@ -496,7 +496,7 @@ Status WriteFileAtomic(const Path& requested, const void* data, usize length) {
             if (result.Ok()) result = closed;
         }
     }
-    if (result.Ok() && had_target) result = SetPermissions(temp, existing.permissions);
+    if (result.Ok() && (had_target || new_file_permissions != 0600)) result = SetPermissions(temp, had_target ? existing.permissions : new_file_permissions);
     if (result.Ok()) result = fail_at(4);
     if (result.Ok()) result = Rename(temp, path);
     if (result.Ok()) result = SyncDirectory(dir);

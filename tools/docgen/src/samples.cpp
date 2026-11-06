@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "io/file.h"
 #include "source_file.h"
 
 extern char** environ;
@@ -81,25 +82,24 @@ StringView Dedent(StringView code, u32 indent, ArenaAllocator& arena) {
     return sb.View();
 }
 
-bool WriteFile(StringView path, StringView content) {
-    FILE* f = std::fopen(path.Data(), "wb");
-    if (f == nullptr) return false;
-    const bool ok = content.Empty() || std::fwrite(content.Data(), 1, content.Length(), f) == content.Length();
-    return std::fclose(f) == 0 && ok;
-}
-
 StringView ReadSmall(StringView path, ArenaAllocator& arena) {
-    FILE* f = std::fopen(path.Data(), "rb");
-    if (f == nullptr) return StringView();
+    // Captured output can be huge (a template error cascade): the first 1 MiB is kept, the rest dropped.
+    constexpr usize kLimit = usize{1} << 20;
+    engine_placeholder::io::Path file_path;
+    engine_placeholder::io::FilePtr file;
+    if (!engine_placeholder::io::Path::Parse(path, engine_placeholder::io::NativePathStyle(), &file_path) ||
+        engine_placeholder::io::File::Open(file_path, engine_placeholder::io::OpenMode::Read, engine_placeholder::io::kOpenNone, &file).Failed()) {
+        return StringView();
+    }
     engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
     char buf[4096];
-    usize n;
     usize total = 0;
-    while ((n = std::fread(buf, 1, sizeof(buf), f)) > 0 && total < (usize{1} << 20)) {
+    while (total < kLimit) {
+        usize n = 0;
+        if (file->Read(buf, sizeof(buf), total, &n).Failed() || n == 0) break;
         sb.Append(StringView(buf, n));
         total += n;
     }
-    std::fclose(f);
     return sb.View();
 }
 
@@ -190,20 +190,12 @@ public:
 
 private:
     bool MakeScratch() {
-        StringView base = opt_.scratch_base.Empty() ? StringView("/tmp") : opt_.scratch_base;
-        StringView tmpl = ArenaCat(arena_, base, StringView("/docgen-samples-XXXXXX"));
-        if (mkdtemp(const_cast<char*>(tmpl.Data())) == nullptr) return false;
-        scratch_ = tmpl;
-        return true;
+        return MakeScratchDirectory(opt_.scratch_base, StringView("docgen-samples"), arena_, scratch_);
     }
 
     void Cleanup() {
         if (opt_.keep_scratch) return;
-        for (usize i = 0; i < tasks_.Size(); ++i) {
-            const Task& t = *tasks_[i];
-            for (StringView p : {t.src, t.obj, t.exe, t.cc_out, t.run_out, t.run_err}) unlink(p.Data());
-        }
-        rmdir(scratch_.Data());
+        RemoveTree(scratch_); // the sources, objects, executables and captured output of every task
     }
 
     void Fail(Task& t, StringView msg) {
@@ -267,7 +259,7 @@ private:
 
     void StartCompile(Task& t) {
         const Sample& s = *t.sample;
-        if (!WriteFile(t.src, Generate(s))) {
+        if (!WriteText(t.src, Generate(s))) {
             t.stage = Stage::Done;
             Fail(t, StringView("sample: cannot write the scratch source file"));
             return;
@@ -519,15 +511,15 @@ StringView AbsoluteKeepingLinks(StringView path, ArenaAllocator& arena) {
     if (path.Length() > 0 && path.Data()[0] == '/') {
         return ArenaCat(arena, path, StringView());
     }
-    char cwd[4096];
-    if (getcwd(cwd, sizeof(cwd)) == nullptr) {
+    StringView cwd;
+    if (!WorkingDirectory(arena, cwd)) {
         return ArenaCat(arena, path, StringView());
     }
     StringView rel = path;
     while (rel.Length() >= 2 && rel.Data()[0] == '.' && rel.Data()[1] == '/') {
         rel = StringView(rel.Data() + 2, rel.Length() - 2);
     }
-    return ArenaCat(arena, StringView(cwd, std::strlen(cwd)), StringView("/"), rel);
+    return ArenaCat(arena, cwd, StringView("/"), rel);
 }
 
 } // namespace docgen

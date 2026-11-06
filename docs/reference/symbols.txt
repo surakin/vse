@@ -408,7 +408,7 @@ io::ReadFile(const Path&,Vector<u8>*,u64)	function	foundation/io	io-readfile-con
 io::ReadFile(const Path&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readfile-const-path-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:304
 io::ReadTextFile(const Path&,String<HeapAllocator>*,u64)	function	foundation/io	io-readtextfile-const-path-amp-string-lt-heapallocator-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:308
 io::WriteFile(const Path&,const void*,usize)	function	foundation/io	io-writefile-const-path-amp-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:312
-io::WriteFileAtomic(const Path&,const void*,usize)	function	foundation/io	io-writefileatomic-const-path-amp-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:321
+io::WriteFileAtomic(const Path&,const void*,usize,u32)	function	foundation/io	io-writefileatomic-const-path-amp-const-void-star-usize-u32	foundation-io.md	engine/foundation/io/file.h:323
 io::FileType	enum	foundation/io	io-filetype	foundation-io.md	engine/foundation/io/file_system.h:16
 io::FileType::None	enumerator	foundation/io	io-filetype-none	foundation-io.md	engine/foundation/io/file_system.h:17
 io::FileType::Regular	enumerator	foundation/io	io-filetype-regular	foundation-io.md	engine/foundation/io/file_system.h:18

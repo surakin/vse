@@ -10,6 +10,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "fs_fixture.h"
 #include "links.h"
 #include "reference.h"
 
@@ -24,20 +25,14 @@ StringView Sv(const std::string& s) { return StringView(s.data(), s.size()); }
 struct Tree {
     std::string root;
     explicit Tree(const std::vector<std::pair<std::string, std::string>>& files) {
-        char tmpl[] = "/tmp/docgen_links_XXXXXX";
-        REQUIRE(mkdtemp(tmpl) != nullptr);
-        root = tmpl;
+        root = docgen_test::MakeTempRoot("docgen_links");
         for (auto& f : files) Put(f.first, f.second);
     }
     ~Tree() {
-        nftw(root.c_str(), [](const char* p, const struct stat*, int, struct FTW*) { return std::remove(p); }, 16, FTW_DEPTH | FTW_PHYS);
+        docgen_test::RemoveTreeAt(root);
     }
     void Put(const std::string& rel, const std::string& content) {
-        for (size_t at = rel.find('/'); at != std::string::npos; at = rel.find('/', at + 1)) mkdir((root + "/" + rel.substr(0, at)).c_str(), 0777);
-        FILE* f = std::fopen((root + "/" + rel).c_str(), "wb");
-        REQUIRE(f != nullptr);
-        std::fwrite(content.data(), 1, content.size(), f);
-        std::fclose(f);
+        docgen_test::WriteFileText(root + "/" + rel, content);
     }
 };
 

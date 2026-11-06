@@ -119,9 +119,8 @@ public:
                 if (!CollectFiles(root_, prefix, arena_, all)) {
                     // A missing prefix just means the pattern matches nothing (reported below);
                     // a directory that exists but cannot be fully read would silently drop headers.
-                    struct stat st;
                     StringView dir = prefix.Empty() ? ArenaCat(arena_, root_, StringView()) : ArenaCat(arena_, root_, StringView("/"), prefix);
-                    if (stat(dir.Data(), &st) == 0 && S_ISDIR(st.st_mode)) {
+                    if (KindOf(dir) == EntryKind::Directory) {
                         out_.diagnostics.Push(FileDiag{map_path_, Diagnostic{Severity::Error, mod.line,
                                                                              ArenaCat(arena_, StringView("cannot read all of directory "), prefix.Empty() ? StringView(".") : prefix)}});
                     }

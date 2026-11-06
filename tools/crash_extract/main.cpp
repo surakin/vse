@@ -10,52 +10,20 @@
 // read or written; 64 wrong arguments. A dev tool: never linked into the engine or a game.
 #include "envelope.h"
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
+#include "io/file.h"
+
 namespace {
 
-bool ReadWholeFile(const char* path, char** data, std::size_t* size) {
-    std::FILE* file = std::fopen(path, "rb");
-    if (file == nullptr) {
-        return false;
-    }
-    constexpr std::size_t kMaxEnvelopeBytes = 256u * 1024u * 1024u;
-    std::size_t capacity = 1 << 16;
-    char* buffer = static_cast<char*>(std::malloc(capacity));
-    std::size_t used = 0;
-    while (buffer != nullptr) {
-        if (used == capacity) {
-            if (capacity >= kMaxEnvelopeBytes) {
-                std::free(buffer);
-                std::fclose(file);
-                return false;
-            }
-            capacity *= 2;
-            char* bigger = static_cast<char*>(std::realloc(buffer, capacity));
-            if (bigger == nullptr) {
-                std::free(buffer);
-                buffer = nullptr;
-                break;
-            }
-            buffer = bigger;
-        }
-        const std::size_t n = std::fread(buffer + used, 1, capacity - used, file);
-        if (n == 0) {
-            break;
-        }
-        used += n;
-    }
-    const bool failed = std::ferror(file) != 0 || buffer == nullptr;
-    std::fclose(file);
-    if (failed) {
-        std::free(buffer);
-        return false;
-    }
-    *data = buffer;
-    *size = used;
-    return true;
+bool ReadWholeFile(const char* path, engine_placeholder::Vector<engine_placeholder::u8>* bytes) {
+    namespace io = engine_placeholder::io;
+    constexpr std::uint64_t kMaxEnvelopeBytes = 256u * 1024u * 1024u;
+    io::Path file;
+    return io::Path::Parse(engine_placeholder::StringView(path), io::NativePathStyle(), &file) && io::ReadFile(file, bytes, kMaxEnvelopeBytes).Ok();
 }
 
 } // namespace
@@ -91,12 +59,13 @@ int main(int argc, char** argv) {
         return 2;
     }
 
-    char* data = nullptr;
-    std::size_t size = 0;
-    if (!ReadWholeFile(envelope_path, &data, &size)) {
+    engine_placeholder::Vector<engine_placeholder::u8> envelope;
+    if (!ReadWholeFile(envelope_path, &envelope)) {
         std::fprintf(stderr, "crash_extract: cannot read %s\n", envelope_path);
         return 2;
     }
+    const char* data = reinterpret_cast<const char*>(envelope.Data());
+    const std::size_t size = envelope.Size();
     crash_extract::Minidump dump;
     const crash_extract::EnvelopeResult result = crash_extract::FindMinidump(data, size, &dump);
     int status = 0;
@@ -107,22 +76,11 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "crash_extract: %s holds no minidump\n", envelope_path);
         status = 1;
     } else {
-        // Written to a temporary name and renamed, so the output either is complete or does not exist.
-        char temporary[4200];
-        const int n = std::snprintf(temporary, sizeof(temporary), "%s.partial", output_path);
-        bool written = n > 0 && static_cast<std::size_t>(n) < sizeof(temporary);
-        if (written) {
-            std::FILE* out = std::fopen(temporary, "wb");
-            written = out != nullptr;
-            if (out != nullptr) {
-                written = std::fwrite(dump.data, 1, dump.size, out) == dump.size;
-                written = (std::fclose(out) == 0) && written; // always closed
-            }
-            written = written && std::rename(temporary, output_path) == 0;
-            if (!written) {
-                std::remove(temporary);
-            }
-        }
+        // Written atomically (a temporary file, then a rename), so the output either is complete or does not exist.
+        namespace io = engine_placeholder::io;
+        io::Path output;
+        const bool written = io::Path::Parse(engine_placeholder::StringView(output_path), io::NativePathStyle(), &output) &&
+                             io::WriteFileAtomic(output, dump.data, dump.size).Ok();
         if (!written) {
             std::fprintf(stderr, "crash_extract: cannot write %s\n", output_path);
             status = 2;
@@ -130,6 +88,5 @@ int main(int argc, char** argv) {
             std::printf("%s\n", output_path);
         }
     }
-    std::free(data);
     return status;
 }

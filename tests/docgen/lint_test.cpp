@@ -10,6 +10,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "fs_fixture.h"
 #include "lint.h"
 #include "reference.h"
 #include "source_file.h"
@@ -24,19 +25,14 @@ StringView LintTestSv(const std::string& s) { return StringView(s.data(), s.size
 struct LintTestTree {
     std::string root;
     LintTestTree() {
-        char tmpl[] = "/tmp/docgen_lint_XXXXXX";
-        REQUIRE(mkdtemp(tmpl) != nullptr);
-        root = tmpl;
-        mkdir((root + "/h").c_str(), 0777);
+        root = docgen_test::MakeTempRoot("docgen_lint");
+        docgen_test::MakeDirectory(root + "/h");
     }
     ~LintTestTree() {
-        nftw(root.c_str(), [](const char* p, const struct stat*, int, struct FTW*) { return std::remove(p); }, 16, FTW_DEPTH | FTW_PHYS);
+        docgen_test::RemoveTreeAt(root);
     }
     void Put(const std::string& rel, const std::string& content) {
-        FILE* f = std::fopen((root + "/" + rel).c_str(), "wb");
-        REQUIRE(f != nullptr);
-        std::fwrite(content.data(), 1, content.size(), f);
-        std::fclose(f);
+        docgen_test::WriteFileText(root + "/" + rel, content);
     }
 };
 

@@ -327,8 +327,7 @@ mechanism.
   is in its own process group and is killed with its group on timeout.
   Results are reported in document order, so serial and parallel runs print
   the same diagnostics. Failures are collected, not fatal.
-- Hygiene: the scratch directory (`mkdtemp` under `--build-dir`, default
-  /tmp) and its files are removed on every path, including SIGINT/SIGTERM
+- Hygiene: the scratch directory (`docgen-samples.XXXXXX` made with the file layer under `--build-dir`, default the system temporary directory) and its files are removed on every path, including SIGINT/SIGTERM
   (which kill the running children first); `--keep` leaves them for
   debugging. Only tagged blocks are ever compiled or run.
 - Not covered: the sample runs with docgen's own environment and privileges,

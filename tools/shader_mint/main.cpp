@@ -31,6 +31,8 @@
 #include <string>
 #include <vector>
 
+#include "io/file.h"
+#include "io/file_system.h"
 #include "permutations.h"
 #include "reflect_json.h"
 #include "renderer/shader_reflection.h"
@@ -54,22 +56,13 @@ int Usage() {
 }
 
 bool ReadAll(const char* path, std::string* out) {
-    std::FILE* f = std::fopen(path, "rb");
-    if (f == nullptr) {
+    io::Path file;
+    Vector<u8> bytes;
+    if (!io::Path::Parse(StringView(path), io::NativePathStyle(), &file) || io::ReadFile(file, &bytes).Failed()) {
         return false;
     }
-    char buffer[4096];
-    out->clear();
-    for (;;) {
-        const usize got = std::fread(buffer, 1, sizeof(buffer), f);
-        out->append(buffer, got);
-        if (got < sizeof(buffer)) {
-            break;
-        }
-    }
-    const bool ok = std::ferror(f) == 0;
-    std::fclose(f);
-    return ok;
+    out->assign(reinterpret_cast<const char*>(bytes.Data()), bytes.Size()); // std::string only at the JSON library's boundary
+    return true;
 }
 
 bool IsIdentifier(const char* s) {
@@ -100,22 +93,6 @@ std::string Pascal(const char* snake) {
     return out;
 }
 
-// Writes `text` to `path + ".tmp"`. Returns false (leaving no temporary file) on failure.
-bool WriteTemp(const std::string& path, const std::string& text) {
-    const std::string temp = path + ".tmp";
-    std::FILE* out = std::fopen(temp.c_str(), "wb");
-    if (out == nullptr) {
-        return false;
-    }
-    const bool wrote = std::fwrite(text.data(), 1, text.size(), out) == text.size() && std::ferror(out) == 0;
-    const bool closed = std::fclose(out) == 0;
-    if (!wrote || !closed) {
-        std::remove(temp.c_str());
-        return false;
-    }
-    return true;
-}
-
 struct OutputFile {
     std::string path;
     std::string text;
@@ -124,22 +101,28 @@ struct OutputFile {
 // Writes every file to a temporary first and renames them only after all were written, so a failed write never leaves
 // a truncated committed file or a new .spv.inc beside an old .refl.inc or .perm.inc.
 bool WriteFiles(const std::vector<OutputFile>& files) {
+    std::vector<io::Path> finals(files.size());
+    std::vector<io::Path> temps(files.size());
+    auto remove_temps = [&](usize count) {
+        for (usize j = 0; j < count; ++j) {
+            if (!temps[j].IsEmpty()) io::Remove(temps[j]); // only temporaries that were named
+        }
+    };
     for (usize i = 0; i < files.size(); ++i) {
-        if (!WriteTemp(files[i].path, files[i].text)) {
-            for (usize j = 0; j < i; ++j) {
-                std::remove((files[j].path + ".tmp").c_str());
-            }
+        const std::string temp_name = files[i].path + ".tmp";
+        if (!io::Path::Parse(StringView(files[i].path.c_str()), io::NativePathStyle(), &finals[i]) ||
+            !io::Path::Parse(StringView(temp_name.c_str()), io::NativePathStyle(), &temps[i]) ||
+            io::WriteFile(temps[i], files[i].text.data(), files[i].text.size()).Failed()) {
+            remove_temps(i + 1);
             return false;
         }
     }
     bool ok = true;
-    for (const OutputFile& f : files) {
-        ok = std::rename((f.path + ".tmp").c_str(), f.path.c_str()) == 0 && ok;
+    for (usize i = 0; i < files.size(); ++i) {
+        ok = io::Rename(temps[i], finals[i]).Ok() && ok;
     }
     if (!ok) {
-        for (const OutputFile& f : files) {
-            std::remove((f.path + ".tmp").c_str());
-        }
+        remove_temps(files.size());
     }
     return ok;
 }

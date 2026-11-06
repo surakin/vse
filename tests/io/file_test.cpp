@@ -280,6 +280,15 @@ TEST_CASE("io: WriteFileAtomic replaces whole files and leaves nothing behind on
     CHECK(io::SyncDirectory(dir / "nope").Is(Error::NotFound));
     CHECK(io::SyncDirectory(target).Is(Error::NotADirectory));
 
+    // A new file can be given other permissions (ordinary generated files); an existing one keeps its own.
+    REQUIRE(io::WriteFileAtomic(dir / "ordinary.txt", "x", 1, 0644).Ok());
+    REQUIRE(io::Stat(dir / "ordinary.txt", &info).Ok());
+    CHECK(info.permissions == 0644);
+    REQUIRE(io::SetPermissions(dir / "ordinary.txt", 0600).Ok());
+    REQUIRE(io::WriteFileAtomic(dir / "ordinary.txt", "y", 1, 0644).Ok());
+    REQUIRE(io::Stat(dir / "ordinary.txt", &info).Ok());
+    CHECK(info.permissions == 0600);
+    REQUIRE(io::Remove(dir / "ordinary.txt").Ok());
     // A failure at each step keeps the old content and removes the temporary.
     for (int step = 1; step <= 4; ++step) {
         INFO("failing step " << step);

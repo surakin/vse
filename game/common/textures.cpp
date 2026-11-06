@@ -207,7 +207,7 @@ io::Status WriteRtex(const io::Path& path, const RtexImage& image) {
     PutU32(bytes.data() + 16, static_cast<u32>(image.format));
     PutU32(bytes.data() + 20, image.mip_count);
     std::memcpy(bytes.data() + kHeaderBytes, image.data.data(), image.data.size());
-    return io::WriteFileAtomic(path, bytes.data(), bytes.size());
+    return io::WriteFileAtomic(path, bytes.data(), bytes.size(), 0644); // committed assets are ordinary files
 }
 
 io::Status ReadRtex(const io::Path& path, RtexImage* image) {

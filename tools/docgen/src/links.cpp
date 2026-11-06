@@ -1,7 +1,5 @@
 #include "links.h"
 
-#include <dirent.h>
-#include <sys/stat.h>
 
 #include <cstring>
 #include <new>
@@ -227,12 +225,12 @@ private:
             AddCat(page.path, link.line, Severity::Error, StringView("link escapes the repository: "), path);
             return;
         }
-        struct stat st;
-        if (stat(Full(target.Empty() ? StringView(".") : target).Data(), &st) != 0) {
+        const EntryKind kind = KindOf(Full(target.Empty() ? StringView(".") : target));
+        if (kind == EntryKind::Missing) {
             AddCat(page.path, link.line, Severity::Error, StringView(what), path, StringView(" does not exist"));
             return;
         }
-        if (!S_ISREG(st.st_mode)) return; // a directory link is fine
+        if (kind != EntryKind::File) return; // a directory link is fine
         if (!LinksEndsWith(target, ".md")) return;
         Page* other = Get(target);
         if (other == nullptr) {
@@ -300,17 +298,14 @@ bool CollectMarkdownFiles(StringView root, ArenaAllocator& arena, Vector<StringV
     Vector<StringView, ArenaAllocator> files(arena);
     if (!CollectFiles(root, StringView("docs"), arena, files)) return false;
     // top-level *.md
-    DIR* d = opendir(root.Empty() ? "." : ArenaCat(arena, root, StringView()).Data());
-    if (d == nullptr) return false;
-    while (const dirent* e = readdir(d)) {
-        StringView name(e->d_name, std::strlen(e->d_name));
+    Vector<StringView, ArenaAllocator> names(arena);
+    if (!ListNames(root, arena, names)) return false;
+    for (usize i = 0; i < names.Size(); ++i) {
+        const StringView name = names[i];
         if (name.Empty() || name[0] == '.' || !LinksEndsWith(name, ".md")) continue;
-        StringView path = ArenaCat(arena, name, StringView());
-        struct stat st;
-        StringView full = root.Empty() ? path : ArenaCat(arena, root, StringView("/"), path);
-        if (stat(full.Data(), &st) == 0 && S_ISREG(st.st_mode)) files.Push(path);
+        StringView full = root.Empty() ? name : ArenaCat(arena, root, StringView("/"), name);
+        if (KindOf(full) == EntryKind::File) files.Push(name);
     }
-    closedir(d);
     StableSort(files, [](StringView a, StringView b) { return a.Compare(b) < 0; });
     for (usize i = 0; i < files.Size(); ++i) {
         if (LinksEndsWith(files[i], ".md")) out.Push(files[i]);

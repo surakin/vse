@@ -314,11 +314,13 @@ Status WriteFile(const Path& path, const void* data, usize length);
 ///
 /// Writes a temporary file in the same directory, flushes and syncs it, then renames it over `path`. The temporary is removed on
 /// every failure path, and the directory is synced after the rename so the new entry survives a crash. A symbolic link at `path` is
-/// followed (the file it points to is replaced, the link stays). A replaced file keeps its permission bits; a new file gets mode 0600.
+/// followed (the file it points to is replaced, the link stays). A replaced file keeps its permission bits; a new file gets `new_file_permissions` (private to the owner by default: pass 0644 for
+/// ordinary generated files).
 ///
 /// Param path: the target; its directory must exist.
+/// Param new_file_permissions: the permission bits of a file that did not exist.
 /// Fails: `NotFound` (no directory), `PermissionDenied`, `NoSpace`, `IsADirectory` (the target is a directory), `Io`; the old content is intact.
-Status WriteFileAtomic(const Path& path, const void* data, usize length);
+Status WriteFileAtomic(const Path& path, const void* data, usize length, u32 new_file_permissions = 0600);
 
 namespace detail {
 /// Which step of [[io::WriteFileAtomic]] a test makes fail: 0 none, 1 write, 2 flush, 3 sync, 4 rename.

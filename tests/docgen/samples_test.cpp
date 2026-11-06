@@ -13,6 +13,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "fs_fixture.h"
 #include "links.h"
 #include "samples.h"
 #include "source_file.h"
@@ -27,28 +28,19 @@ StringView SamplesTestSv(const std::string& s) { return StringView(s.data(), s.s
 struct SamplesTestTree {
     std::string root;
     SamplesTestTree() {
-        char tmpl[] = "/tmp/docgen_samples_XXXXXX";
-        REQUIRE(mkdtemp(tmpl) != nullptr);
-        root = tmpl;
-        mkdir((root + "/docs").c_str(), 0777);
-        mkdir((root + "/scratch").c_str(), 0777);
+        root = docgen_test::MakeTempRoot("docgen_samples");
+        docgen_test::MakeDirectory(root + "/docs");
+        docgen_test::MakeDirectory(root + "/scratch");
         Put("prelude.h", "#pragma once\n#include <cstdio>\n#include <cstdlib>\nnamespace prelude { inline int Twice(int x) { return 2 * x; } }\nusing namespace prelude;\n");
     }
     ~SamplesTestTree() {
-        nftw(root.c_str(), [](const char* p, const struct stat*, int, struct FTW*) { return std::remove(p); }, 16, FTW_DEPTH | FTW_PHYS);
+        docgen_test::RemoveTreeAt(root);
     }
     void Put(const std::string& rel, const std::string& content) {
-        FILE* f = std::fopen((root + "/" + rel).c_str(), "wb");
-        REQUIRE(f != nullptr);
-        std::fwrite(content.data(), 1, content.size(), f);
-        std::fclose(f);
+        docgen_test::WriteFileText(root + "/" + rel, content);
     }
     size_t ScratchEntries() const {
-        size_t n = 0;
-        DIR* d = opendir((root + "/scratch").c_str());
-        while (dirent* e = readdir(d)) n += e->d_name[0] != '.';
-        closedir(d);
-        return n;
+        return docgen_test::ListNamesSorted(root + "/scratch").size();
     }
 };
 
