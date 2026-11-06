@@ -1,0 +1,26 @@
+# Phase 6 / Day 101 — Windows & macOS Readiness
+
+**Phase:** [Phase 6 — Debugging Facilities](../phase-06-debugging-facilities.md)
+**Depends on:** Days 91-100.
+
+Phase 6 builds and tests Linux only. Because the two libraries already support Windows and macOS, "ready" now means: the
+facade and the tests are free of Linux assumptions, the few platform-specific pieces are listed with the API to use, and
+the known gaps are written down. Phases 8 and 9 then wire up the build settings and the thin platform functions.
+Mobile and consoles are designed in (a neutral interface, `Unsupported` as an answer) and get no work here.
+
+## Tasks
+
+- [ ] Audit the facade against the Windows and macOS documentation of the chosen libraries (desk work; no code): that the pinned crash library and libbacktrace list Windows (x64, arm64) and macOS (arm64, x86-64) as supported at the pinned versions; the exact CMake options for each (handler executable name and location, `SENTRY_BACKEND` defaults per platform, code signing and entitlements for the macOS handler, a debug build on Windows); and what each platform needs that Linux does not. Record the answer per platform in the spec; where a library does not support something, say so.
+- [ ] Record the known gaps and the decision each needs, in the spec and the Phase 8/9 files: libbacktrace reads DWARF only, not PDB (Windows builds with clang and DWARF work; MSVC/PDB builds need a DbgHelp resolver behind `ResolveStackTrace`, a Phase 8 decision); libbacktrace on macOS needs the dSYM next to the binary or a debug build; the crash library's Windows and macOS minidump differences (macOS Mach exceptions, Windows exception filter) are handled by the library; the console libraries are under NDA (Phase 18).
+- [ ] The platform-specific pieces left for Phases 8 and 9, as checklists `engine/foundation/os/windows/debug/BACKEND.md` and `engine/foundation/os/macos/debug/BACKEND.md`: the build-id reader (PE CodeView GUID+age, Mach-O `LC_UUID`), `GetCrashDumpDirectory`, the death-test spawn (`CreateProcess`; `posix_spawn` shared with Linux), the child-result decode to `CrashReason` (NTSTATUS codes `0xC0000005` and the like; the signal on macOS), `InjectFault` per `FaultKind`, debugger detection (`IsDebuggerPresent`, `sysctl` `P_TRACED`), the system-info functions of the crash context, `RegisterThreadForCrashHandling`, and post-mortem dumps (WER `LocalDumps`, `/cores`). Each entry gives the neutral signature, the API, the trap (what an exception filter may call, stack overflow handling, hardened runtime), and the conformance groups that exercise it. Every neutral function a platform implements carries a `Backend:` doc label; a ctest (`debug_backend_lists`) fails if a labeled function is missing from either checklist.
+- [ ] Backend conformance list `tests/debug/BACKEND-CONFORMANCE.md`: every test group, the neutral function it exercises, the `CrashReason` each `FaultKind` must produce, which groups may skip with `Unsupported`. Confirm `tests/debug` uses only the neutral API (the Day 92 gate passes; Linux-only details live in `*_linux_*` files).
+- [ ] Cross-target checks (from the Day 91 research, or Spike G if it was kept: shim headers for `<cstdint>`/`<cstddef>`/`<atomic>`): ctests `debug_cross_syntax_windows` (`x86_64-pc-windows-msvc`), `debug_cross_syntax_macos` (`arm64-apple-macos13`) compile the neutral headers and the facade sources, with the two libraries' headers on the include path, with `-fsyntax-only`; they skip with a reason where clang is missing, and are recorded in `KNOWN-ISSUES.md` if the shim approach proved impossible. They prove the facade has no hidden Linux dependency.
+- [ ] CMake: the platform selection for the debug sources (Day 92) has Windows and macOS branches that stop with a message naming Phase 8 or 9 and the `BACKEND.md` to implement.
+- [ ] Porting guide `docs/guide/porting-debugging.md`, a Windows section and a macOS section: the API sequence for each platform-specific piece, what to reuse unchanged (the facade, assert family, report writer, ring buffer, tests, scripts), the gaps above, and where each test expectation differs by platform. Code blocks that cannot compile on Linux are plain fences.
+- [ ] Replace the bullets in `plans/phase-08-windows-dx12.md` and `plans/phase-09-macos-metal.md` with the real remaining work, copied from the two `BACKEND.md` files; keep the Phase 17 and 18 notes short ("designed in, see Phase 6; the console crash libraries are under NDA").
+- [ ] **Documentation:** the `///` comments carry `Backend:` labels; the guide page above; reference regenerated and committed; `docgen lint` at zero; `ctest -L docs` passes.
+- [ ] Run the day's scoped tests (`--affected`, asan and tsan flavors) and quote the `ran X of Y tests` lines.
+- [ ] **End-of-day review (CLAUDE.md):** `/code-review high` on the day's diff; record it here and in `STATUS.md`.
+- [ ] Update `STATUS.md`; commit.
+
+**Done:** the audit and gaps are recorded per platform; `BACKEND.md` for Windows and macOS and the conformance list exist and are kept in step with the headers by a test; the facade compiles for the Windows and macOS targets (or the reason it cannot is filed); the porting guide is written; the Phase 8 and 9 files list exactly what is left for them.

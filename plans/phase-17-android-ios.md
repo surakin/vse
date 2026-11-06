@@ -36,4 +36,4 @@ handle each OS's app lifecycle and touch input.
 
 - Full day-by-day breakdown deferred until reached.
 
-- **Debugging facilities backend (from Phase 6; designed in, no Phase 6 work):** Android: signals chained with `debuggerd`'s handler, tombstones as the core-dump equivalent, app-private dump directory, ELF build ids with symbols kept off the device; iOS: signals plus Mach exceptions, no child process (death tests skip), post-mortem dumps `Unsupported`, sandboxed dump directory, dSYM symbols. Both use the own minidump serializer with a platform snapshot. See `plans/phase-06-debugging-facilities.md` (Platform design).
+- **Debugging facilities backend (from Phase 6; designed in, no Phase 6 work):** the crash library's `inproc` backend is the Android default and the library has separate console repos under NDA; iOS is not in its supported list. Death tests skip where a process cannot be spawned; post-mortem dumps report `Unsupported` where there is none. See `plans/phase-06-debugging-facilities.md`.
