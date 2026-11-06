@@ -69,6 +69,7 @@ struct ApplyRig {
     UniquePtr<Renderer> renderer;
     RenderSettings during_frame; // what the build callback asks for, when set
     bool ask_during_frame = false;
+    u32 recovery_attempts = 0;
     ApplyResult asked_result;
     int begins = 0;
     int ends = 0;
@@ -97,6 +98,7 @@ struct ApplyRig {
         rd.create_info = info;
         rd.initial_settings = &initial;
         rd.resources = &registry;
+        rd.recovery.max_attempts = recovery_attempts; // 0: a change that cannot be undone is terminal
         rd.build = &BuildFrame;
         rd.build_user = this;
         renderer = MakeUnique<Renderer>(rd);
@@ -327,6 +329,7 @@ TEST_CASE("A swapchain that cannot be created fails the reset and the rollback",
     rd.create_info.faults.fail_swapchain_create = true;
     rd.initial_settings = &rig.initial;
     rd.resources = &rig.registry;
+    rd.recovery.max_attempts = 0;
     rd.build = &BuildFrame;
     rd.build_user = &rig;
     Renderer faulty(rd);
@@ -496,4 +499,21 @@ TEST_CASE("A broken renderer hands out no device", "[apply_settings]") {
     CHECK(rig.renderer->GetDevice() == nullptr);
     CHECK(rig.renderer->GetSwapchain() == nullptr);
     CHECK(rig.renderer->Stats().rollbacks == 0); // nothing was undone
+}
+
+TEST_CASE("With recovery on, a change that cannot be undone is recovered from", "[apply_settings]") {
+    ApplyQuietLog quiet;
+    ApplyRig rig;
+    rig.recovery_attempts = 3;
+    REQUIRE(rig.Create());
+    rig.material_owner.fail_next = 2; // the reset and the rollback fail; the first recovery attempt works
+    RenderSettings wanted = rig.renderer->Settings();
+    wanted.SetText(kAdapter, "null-integrated");
+    const ApplyResult result = rig.renderer->ApplySettings(wanted);
+    CHECK_FALSE(result.ok);
+    CHECK(result.device_lost);
+    CHECK_FALSE(rig.renderer->IsBroken());           // recovery rebuilt the previous device
+    CHECK(rig.renderer->Stats().recoveries == 1);
+    CHECK(std::strcmp(rig.host.GetDevice()->Adapter().id, "null-discrete") == 0);
+    CHECK(rig.Render() == FrameStatus::Ok);
 }

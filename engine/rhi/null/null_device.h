@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include "rhi/device.h"
 #include "types.h"
 
@@ -33,6 +35,12 @@ struct NullDeviceOptions {
     /// Reports the device lost at the start of this frame (1 is the first `BeginFrame`), as [[rhi::FaultInjection]] does
     /// for the Vulkan backend; 0 never does.
     u32 lose_device_at_frame = 0;
+    /// Reports the device lost at the Nth submit that submits something; 0 never does.
+    u32 lose_device_at_submit = 0;
+    /// Reports the device lost at the Nth swapchain present; 0 never does.
+    u32 lose_device_at_present = 0;
+    /// Limits how many injected losses strike (see [[rhi::FaultInjection::strikes_left]]); null for no limit.
+    std::atomic<u32>* strikes_left = nullptr;
     /// Makes `RecreateSurface` fail, to exercise the fallback to a full reset.
     bool fail_surface_recreate = false;
     /// Makes `CreateSwapchain` fail.
@@ -181,6 +189,10 @@ public:
 
     /// Makes the device behave as lost: later submits fail and `DeviceLost()` reports true.
     void SimulateDeviceLoss();
+
+    /// Counts a swapchain present and loses the device if the injected present number has come.
+    /// Returns: true if the device is lost now.
+    bool CountPresent();
 
     /// Makes the swapchain report `Lost` from now on, as if the window's surface had been taken away.
     ///

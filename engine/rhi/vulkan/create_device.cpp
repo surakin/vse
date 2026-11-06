@@ -43,6 +43,9 @@ DevicePtr CreateDevice(const DeviceCreateInfo& info) {
             }
         }
         options.lose_device_at_frame = info.faults.lose_device_at_frame;
+        options.lose_device_at_submit = info.faults.lose_device_at_submit;
+        options.lose_device_at_present = info.faults.lose_device_at_present;
+        options.strikes_left = info.faults.strikes_left;
         options.fail_surface_recreate = info.faults.fail_surface_recreate;
         options.fail_swapchain_create = info.faults.fail_swapchain_create;
         return CreateNullDevice(options);

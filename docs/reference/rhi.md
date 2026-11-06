@@ -5346,6 +5346,36 @@ u32 lose_device_at_frame;
 
 Reports the device lost at the start of this frame (1 is the first `BeginFrame`), as [`rhi::FaultInjection`](#rhi-faultinjection) does for the Vulkan backend; 0 never does.
 
+### `lose_device_at_submit` {#rhi-nulldeviceoptions-lose-device-at-submit}
+
+`variable rhi::NullDeviceOptions::lose_device_at_submit` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+u32 lose_device_at_submit;
+```
+
+Reports the device lost at the Nth submit that submits something; 0 never does.
+
+### `lose_device_at_present` {#rhi-nulldeviceoptions-lose-device-at-present}
+
+`variable rhi::NullDeviceOptions::lose_device_at_present` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+u32 lose_device_at_present;
+```
+
+Reports the device lost at the Nth swapchain present; 0 never does.
+
+### `strikes_left` {#rhi-nulldeviceoptions-strikes-left}
+
+`variable rhi::NullDeviceOptions::strikes_left` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+std::atomic<u32>* strikes_left;
+```
+
+Limits how many injected losses strike (see [`rhi::FaultInjection::strikes_left`](#rhi-faultinjection-strikes-left)); null for no limit.
+
 ### `fail_surface_recreate` {#rhi-nulldeviceoptions-fail-surface-recreate}
 
 `variable rhi::NullDeviceOptions::fail_surface_recreate` — defined in `engine/rhi/null/null_device.h`
@@ -6128,6 +6158,20 @@ void SimulateDeviceLoss();
 
 Makes the device behave as lost: later submits fail and `DeviceLost()` reports true.
 
+### `CountPresent()` {#rhi-nulldevice-countpresent}
+
+`method rhi::NullDevice::CountPresent` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+bool CountPresent();
+```
+
+Counts a swapchain present and loses the device if the injected present number has come.
+
+| Field | Value |
+|---|---|
+| Returns | true if the device is lost now. |
+
 ### `SimulateSurfaceLoss()` {#rhi-nulldevice-simulatesurfaceloss}
 
 `method rhi::NullDevice::SimulateSurfaceLoss` — defined in `engine/rhi/null/null_device.h`
@@ -6225,6 +6269,36 @@ u32 lose_device_at_frame;
 ```
 
 Report the device lost at the start of this frame (1 is the first `BeginFrame`), as if the driver returned `VK_ERROR_DEVICE_LOST`; 0 never does. From then on submissions are ignored and `Device::DeviceLost` is true.
+
+### `lose_device_at_submit` {#rhi-faultinjection-lose-device-at-submit}
+
+`variable rhi::FaultInjection::lose_device_at_submit` — defined in `engine/rhi/rhi.h`
+
+```cpp
+u32 lose_device_at_submit;
+```
+
+Report the device lost at the Nth `Submit` that submits something (1 is the first), as if the driver returned `VK_ERROR_DEVICE_LOST` from the queue; that submit and every later one is ignored. 0 never does.
+
+### `lose_device_at_present` {#rhi-faultinjection-lose-device-at-present}
+
+`variable rhi::FaultInjection::lose_device_at_present` — defined in `engine/rhi/rhi.h`
+
+```cpp
+u32 lose_device_at_present;
+```
+
+Report the device lost at the Nth swapchain `Present` (1 is the first); that present returns `Lost`. 0 never does.
+
+### `strikes_left` {#rhi-faultinjection-strikes-left}
+
+`variable rhi::FaultInjection::strikes_left` — defined in `engine/rhi/rhi.h`
+
+```cpp
+std::atomic<u32>* strikes_left;
+```
+
+How many devices an injected loss may strike, counted across devices that share this pointer (a recreated device is built from the same description): each injected loss decrements it, and at 0 no loss is injected any more. Null means no limit. Lets a test lose the device twice and then let a recovery succeed. Borrowed; must outlive the devices.
 
 ### `fail_allocations_from` {#rhi-faultinjection-fail-allocations-from}
 

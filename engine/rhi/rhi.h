@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include "os/window.h"
 #include "rhi/adapter.h"
 #include "rhi/device.h"
@@ -33,6 +35,15 @@ struct FaultInjection {
     /// Report the device lost at the start of this frame (1 is the first `BeginFrame`), as if the driver returned
     /// `VK_ERROR_DEVICE_LOST`; 0 never does. From then on submissions are ignored and `Device::DeviceLost` is true.
     u32 lose_device_at_frame = 0;
+    /// Report the device lost at the Nth `Submit` that submits something (1 is the first), as if the driver returned
+    /// `VK_ERROR_DEVICE_LOST` from the queue; that submit and every later one is ignored. 0 never does.
+    u32 lose_device_at_submit = 0;
+    /// Report the device lost at the Nth swapchain `Present` (1 is the first); that present returns `Lost`. 0 never does.
+    u32 lose_device_at_present = 0;
+    /// How many devices an injected loss may strike, counted across devices that share this pointer (a recreated device is
+    /// built from the same description): each injected loss decrements it, and at 0 no loss is injected any more. Null means no
+    /// limit. Lets a test lose the device twice and then let a recovery succeed. Borrowed; must outlive the devices.
+    std::atomic<u32>* strikes_left = nullptr;
     /// Make the Nth device-memory allocation, counted from device creation (1 is the first), and every one after it
     /// fail as if the device ran out of memory; 0 never does. Resource creation then returns an invalid handle.
     u32 fail_allocations_from = 0;

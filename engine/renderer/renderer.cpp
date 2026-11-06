@@ -124,7 +124,7 @@ void Renderer::RefreshCapabilities(bool adapters_too) {
 }
 
 ApplyResult Renderer::ApplySettings(const RenderSettings& requested) {
-    if (in_frame_) {
+    if (in_frame_ || recovering_) {
         pending_ = requested; // a newer request replaces an older one
         has_pending_ = true;
         ApplyResult queued;
@@ -262,9 +262,14 @@ ApplyResult Renderer::ApplyNow(const RenderSettings& requested) {
                 ++stats_.rollbacks;
             }
             if (result.device_lost) {
-                broken_ = true;
                 desc_.device = nullptr; // nothing valid to hand out
                 desc_.swapchain = nullptr;
+                if (desc_.recovery.max_attempts > 0) {
+                    force_full_recovery_ = true; // the device is not "lost" to the driver, but the owners must all be rebuilt
+                    NoteLost();                  // tries again by the recovery policy; gives up (broken) after the last attempt
+                } else {
+                    broken_ = true;
+                }
             }
         }
         if (reset_end_ != nullptr) {
@@ -333,6 +338,23 @@ FrameStatus Renderer::RenderFrame(const RenderScene* scene, const Camera* camera
         ++stats_.frames_lost;
         return FrameStatus::DeviceLost;
     }
+    if (recovering_) {
+        if (recovery_wait_ > 0) {
+            --recovery_wait_;
+            SetError("recovering from a device loss (attempt %u of %u)", recovery_attempt_ + 1, desc_.recovery.max_attempts);
+            ++stats_.frames_skipped;
+            return FrameStatus::Skipped;
+        }
+        if (!RecoveryAttempt()) {
+            SetError("recovering from a device loss failed (attempt %u of %u)", recovery_attempt_, desc_.recovery.max_attempts);
+            if (broken_) {
+                ++stats_.frames_lost;
+                return FrameStatus::DeviceLost;
+            }
+            ++stats_.frames_skipped;
+            return FrameStatus::Skipped;
+        }
+    }
     if (has_pending_) {
         // A settings change asked for during a frame is applied at the boundary, before anything of this frame exists.
         has_pending_ = false;
@@ -350,7 +372,107 @@ FrameStatus Renderer::RenderFrame(const RenderScene* scene, const Camera* camera
     in_frame_ = true;
     const FrameStatus status = RenderFrameImpl(scene, camera, offscreen);
     in_frame_ = false;
+    if (status == FrameStatus::DeviceLost) {
+        NoteLost();
+    }
     return status;
+}
+
+// A frame ended DeviceLost: start recovering (the first attempt is made now).
+void Renderer::NoteLost() {
+    if (desc_.host == nullptr || desc_.recovery.max_attempts == 0 || recovering_ || broken_) {
+        return;
+    }
+    recovering_ = true;
+    recovery_attempt_ = 0;
+    recovery_wait_ = 0;
+    RenderLog(LogVerbosity::Warn, "Renderer: the device was lost; recovering (up to %u attempts)", desc_.recovery.max_attempts);
+    debug::SetCrashStateText("rhi_recovery", "recovering");
+    RecoveryAttempt();
+}
+
+// One attempt to get a working device back. Returns true (and ends recovery) on success. On failure schedules the next attempt
+// or, after the last, gives up: the renderer stays device-lost.
+bool Renderer::RecoveryAttempt() {
+    rhi::DeviceHost* host = desc_.host;
+    ++recovery_attempt_;
+    char note[64];
+    std::snprintf(note, sizeof(note), "recovering (attempt %u)", recovery_attempt_);
+    debug::SetCrashStateText("rhi_recovery", note);
+    RenderLog(LogVerbosity::Warn, "Renderer: recovery attempt %u of %u (adapter '%s')", recovery_attempt_, desc_.recovery.max_attempts,
+              settings_.GetText(settings::kAdapter));
+    if (reset_begin_ != nullptr) {
+        reset_begin_(reset_user_, "recovery");
+    }
+    RenderSettings attempt_settings = settings_;
+    bool fell_back = false;
+    if (recovery_attempt_ >= 2 && desc_.recovery.fallback_adapter && settings_.GetText(settings::kAdapter)[0] != '\0') {
+        attempt_settings.SetText(settings::kAdapter, ""); // the saved adapter keeps failing: take the best one
+        fell_back = true;
+    }
+    bool ok = false;
+    bool surface_only = false;
+    // A lost surface on a healthy device is repaired without a device reset.
+    if (!force_full_recovery_ && host->GetDevice() != nullptr && !host->GetDevice()->DeviceLost() && host->GetSwapchain() != nullptr) {
+        const u32 epoch = host->Epoch();
+        ok = host->RecreateSurface(desc_.window, BuildSwapchainDesc(attempt_settings));
+        surface_only = ok && host->Epoch() == epoch;
+    } else {
+        char adapter[64];
+        rhi::DeviceCreateInfo info;
+        BuildCreateInfo(attempt_settings, adapter, &info);
+        ok = host->Recreate(info, BuildSwapchainDesc(attempt_settings));
+        if (ok) {
+            std::snprintf(active_adapter_, sizeof(active_adapter_), "%s", adapter);
+            active_info_ = info;
+            active_info_.adapter = active_adapter_[0] != '\0' ? active_adapter_ : nullptr;
+        }
+    }
+    desc_.device = host->GetDevice();
+    desc_.swapchain = host->GetSwapchain();
+    if (reset_end_ != nullptr) {
+        reset_end_(reset_user_, ok);
+    }
+    if (ok) {
+        if (fell_back) {
+            // A request queued meanwhile was built from the old adapter: it must not bring the abandoned adapter back.
+            if (has_pending_ && std::strcmp(pending_.GetText(settings::kAdapter), settings_.GetText(settings::kAdapter)) == 0) {
+                pending_.SetText(settings::kAdapter, "");
+            }
+            RenderSettings kept = attempt_settings;
+            kept.SetGeneration(settings_.Generation() + 1);
+            settings_ = kept;
+            static std::atomic<u64>* const generation = debug::CrashStateCounter("settings_generation");
+            if (generation != nullptr) generation->store(settings_.Generation(), std::memory_order_relaxed);
+        }
+        recovering_ = false;
+        force_full_recovery_ = false;
+        ++stats_.recoveries;
+        if (!surface_only) {
+            ++stats_.resets;
+            RefreshCapabilities(true);
+        } else {
+            RefreshCapabilities(false);
+        }
+        debug::SetCrashStateText("rhi_recovery", "none");
+        RenderLog(LogVerbosity::Warn, "Renderer: recovered after %u attempt(s)", recovery_attempt_);
+        return true;
+    }
+    ++stats_.recovery_failures;
+    if (recovery_attempt_ >= desc_.recovery.max_attempts) {
+        recovering_ = false;
+        force_full_recovery_ = false;
+        broken_ = true;
+        desc_.device = nullptr;
+        desc_.swapchain = nullptr;
+        debug::SetCrashStateText("rhi_recovery", "gave up");
+        RenderLog(LogVerbosity::Error, "Renderer: giving up after %u recovery attempt(s): %s", recovery_attempt_, host->LastError());
+        return false;
+    }
+    u32 delay = desc_.recovery.delay_frames;
+    for (u32 i = 1; i < recovery_attempt_ && delay < desc_.recovery.max_delay_frames; ++i) delay *= 2;
+    recovery_wait_ = delay < desc_.recovery.max_delay_frames ? delay : desc_.recovery.max_delay_frames;
+    return false;
 }
 
 FrameStatus Renderer::RenderFrameImpl(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen) {

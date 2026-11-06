@@ -325,6 +325,9 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     }
     memory_backend_->FailAllocationsFrom(info.faults.fail_allocations_from);
     lose_device_at_frame_ = info.faults.lose_device_at_frame;
+    lose_device_at_submit_ = info.faults.lose_device_at_submit;
+    lose_device_at_present_ = info.faults.lose_device_at_present;
+    strikes_left_ = info.faults.strikes_left;
     if (!InitializeUpload()) {
         RhiLog(LogVerbosity::Error, "Vulkan: cannot set up the staging ring");
         return false; // the destructor releases what was created

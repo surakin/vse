@@ -86,6 +86,24 @@ struct FrameContext {
 /// A frame callback: declare the passes on `context.graph`. Return false to abandon the frame.
 using FrameBuildFn = bool (*)(const FrameContext& context, void* user);
 
+/// What the renderer does when the device (or its swapchain surface) is lost.
+///
+/// Needs a [[renderer::RendererDesc::host]]; without one a loss stays terminal. Attempts and delays are counted in frames, not
+/// seconds, so tests are deterministic.
+///
+/// Thread-safety: thread-compatible plain data.
+struct RecoveryPolicy {
+    /// The most reset attempts for one loss; 0 turns recovery off (the loss is terminal, as before Phase 7).
+    u32 max_attempts = 3;
+    /// Frames to wait before the second attempt; each later attempt waits twice as long as the one before, up to `max_delay_frames`.
+    /// The first attempt is made at once, in the frame that found the loss.
+    u32 delay_frames = 1;
+    /// The longest wait between attempts, in frames.
+    u32 max_delay_frames = 8;
+    /// Whether the second and later attempts may use the best adapter instead of the saved one when the saved one keeps failing.
+    bool fallback_adapter = true;
+};
+
 /// What a [[renderer::Renderer]] is made of.
 ///
 /// Thread-safety: thread-compatible plain data.
@@ -109,6 +127,8 @@ struct RendererDesc {
     /// What every device is created with besides the settings (the window, application name, pipeline cache). Backend, adapter,
     /// validation, sync validation and frames in flight come from the settings. `window` and the strings must outlive the renderer.
     rhi::DeviceCreateInfo create_info;
+    /// What to do when the device is lost.
+    RecoveryPolicy recovery;
     /// The window the swapchain presents to, for fullscreen and the capabilities; null for none. Borrowed.
     os::Window* window = nullptr;
     /// The settings the host's device was created with. Null with a host means "derive them from `create_info`"; without a host,
@@ -143,6 +163,10 @@ struct RendererStats {
     u64 resets = 0;
     /// Resets or rebuilds that failed and were undone by restoring the previous settings.
     u64 rollbacks = 0;
+    /// Device losses that were recovered from.
+    u64 recoveries = 0;
+    /// Recovery attempts that failed.
+    u64 recovery_failures = 0;
     /// How long the last reset took, in milliseconds.
     f64 last_reset_ms = 0.0;
     /// The fence value of the latest submission.
@@ -264,6 +288,10 @@ public:
     /// Ownership: borrowed from the host.
     rhi::Swapchain* GetSwapchain() const { return desc_.swapchain; }
 
+    /// Returns whether the renderer is working to recover from a loss (frames return `Skipped` while it waits between attempts).
+    /// Fails: never.
+    bool IsRecovering() const { return recovering_; }
+
     /// Returns whether a failed change left the renderer without a device (every frame returns `DeviceLost`).
     /// Fails: never.
     bool IsBroken() const { return broken_; }
@@ -308,6 +336,8 @@ private:
     static rhi::SwapchainDesc BuildSwapchainDesc(const RenderSettings& settings);
     void RefreshCapabilities(bool adapters_too);
     bool RollbackDevice(ApplyResult* result);
+    bool RecoveryAttempt();
+    void NoteLost(); // starts recovery after a frame ended DeviceLost
     FrameStatus Abandon(FrameStatus status, bool acquired);
 
     RendererDesc desc_;
@@ -316,6 +346,10 @@ private:
     bool has_pending_ = false;
     bool in_frame_ = false;
     bool broken_ = false;
+    bool recovering_ = false;
+    bool force_full_recovery_ = false;
+    u32 recovery_attempt_ = 0;
+    u32 recovery_wait_ = 0;
     Capabilities caps_;
     ApplyResult last_apply_;
     rhi::DeviceCreateInfo active_info_;

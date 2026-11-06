@@ -219,6 +219,11 @@ FenceValue VulkanDevice::Submit(CommandList* const* lists, usize count) {
     if (count == 0) {
         return last_submit_value_; // nothing new: the fence for everything submitted so far
     }
+    if (lose_device_at_submit_ != 0 && submit_count_.fetch_add(1, std::memory_order_relaxed) + 1 == lose_device_at_submit_ &&
+        InjectLoss("submit", lose_device_at_submit_)) {
+        finish(VulkanCommandList::Phase::Submitted);
+        return 0;
+    }
     for (usize i = 0; i < count; ++i) {
         if (static_cast<VulkanCommandList*>(lists[i])->Failed()) {
             RhiLog(LogVerbosity::Error, "Submit: list %zu failed while recording and was not submitted (nothing in the batch ran)", i);

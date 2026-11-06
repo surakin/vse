@@ -109,6 +109,35 @@ void VulkanDevice::SetDebugName(u64 handle, VkObjectType type, const char* name)
     fns_.SetDebugUtilsObjectNameEXT(device_, &info);
 }
 
+bool VulkanDevice::InjectLoss(const char* where, u32 number) {
+    if (device_lost_.load(std::memory_order_relaxed)) {
+        return true;
+    }
+    if (strikes_left_ != nullptr) {
+        u32 left = strikes_left_->load(std::memory_order_relaxed);
+        bool struck = false;
+        while (left != 0 && !struck) {
+            struck = strikes_left_->compare_exchange_weak(left, left - 1, std::memory_order_relaxed);
+        }
+        if (!struck) {
+            return false;
+        }
+    }
+    if (!device_lost_.exchange(true, std::memory_order_relaxed)) {
+        RhiLog(LogVerbosity::Error, "Vulkan: the device was lost (injected at %s %u); further submissions are ignored", where, number);
+        ENGINE_ENSURE(false, "the Vulkan device was lost"); // the same report as a real loss: a trace, once
+    }
+    return true;
+}
+
+bool VulkanDevice::CountPresent() {
+    const u32 n = present_count_.fetch_add(1, std::memory_order_relaxed) + 1;
+    if (lose_device_at_present_ != 0 && n == lose_device_at_present_) {
+        InjectLoss("present", n);
+    }
+    return device_lost_.load(std::memory_order_relaxed);
+}
+
 void VulkanDevice::NoteDeviceLost(VkResult result) {
     if (result == VK_ERROR_DEVICE_LOST && !device_lost_.exchange(true, std::memory_order_relaxed)) {
         RhiLog(LogVerbosity::Error, "Vulkan: the device was lost; further submissions are ignored");
@@ -660,10 +689,8 @@ void VulkanDevice::BeginFrame() {
         frame = frame_number_.load(std::memory_order_relaxed) + 1;
         frame_number_.store(frame, std::memory_order_relaxed);
         frame_open_ = true;
-        if (lose_device_at_frame_ != 0 && frame == lose_device_at_frame_ && !device_lost_.exchange(true, std::memory_order_relaxed)) {
-            RhiLog(LogVerbosity::Error, "Vulkan: the device was lost (injected at frame %llu); further submissions are ignored",
-                   static_cast<unsigned long long>(frame));
-            ENGINE_ENSURE(false, "the Vulkan device was lost"); // the same report as a real loss: a trace, once
+        if (lose_device_at_frame_ != 0 && frame == lose_device_at_frame_) {
+            InjectLoss("frame", static_cast<u32>(frame));
         }
         if (waited && !device_lost_.load(std::memory_order_relaxed)) {
             ResetFrameDescriptorsLocked(frame % kFramePools); // the frame that last used these pools has finished
@@ -703,10 +730,12 @@ u64 VulkanDevice::FrameNumber() const {
 }
 
 void VulkanDevice::WaitIdle() {
+    // On a really lost device the driver answers VK_ERROR_DEVICE_LOST at once, so this does not hang; an injected loss leaves a
+    // healthy device that may still be running work, so the wait must happen in both cases.
     NoteDeviceLost(fns_.DeviceWaitIdle(device_));
     std::lock_guard<std::mutex> lock(resource_mutex_);
     UpdateCompletedFrames();
-    CollectRetired(true); // the device is idle, so everything retired is free to release
+    CollectRetired(true); // the device is idle (or lost), so everything retired is free to release
 }
 
 } // namespace engine_placeholder::rhi::vulkan

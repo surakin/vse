@@ -342,7 +342,7 @@ opens a device frame, acquires the swapchain image (or imports the `FrameTarget`
 the callback with a fresh graph that already holds the imported target, compiles, records, submits once and presents.
 
 The status says how the frame ended: `Ok`; `Skipped` when the window is minimized (nothing was submitted, try again);
-`DeviceLost` when the device or surface is gone (the renderer stays destroyable, it just cannot render again); `Failed` for
+`DeviceLost` for the frame in which the device or surface was found gone (the renderer then recovers, see "Device loss and recovery"; without a `DeviceHost` it stays lost and destroyable); `Failed` for
 anything else, such as a callback that gave up, a bad graph or a transient the device could not create (`LastError` names
 it). A failed frame never leaves the swapchain stuck: an acquired image is moved to `Present` and shown as it is, and the
 transients the frame had taken go back to the pool in the state they were taken in. A resize needs no handling by
@@ -809,6 +809,30 @@ int main() {
 dynamic ok=1, device-reset ok=1, adapter null-integrated
 ```
 
+### Device loss and recovery
+
+A lost device is not terminal any more. When a frame ends `DeviceLost` and the renderer has a `DeviceHost`
+([[renderer::RendererDesc::host]]), it runs the same reset as a device-reset settings change with the settings in force, following
+[[renderer::RecoveryPolicy]]:
+
+- the **first attempt** is made at once, in the frame that found the loss, which still returns `DeviceLost` (so the frame counters add up);
+- if it fails, the frames that follow return `Skipped` while the renderer waits (`delay_frames`, doubling for each further attempt, up to
+  `max_delay_frames`; counted in frames, not seconds), then it tries again, up to `max_attempts` (default 3);
+- from the **second attempt** on, with `fallback_adapter` set, a saved adapter that keeps failing is replaced by the best one (the
+  `adapter` setting is cleared and the change logged);
+- after the last attempt the renderer gives up: it is device-lost for good (`IsBroken`), every frame returns `DeviceLost`, and `GetDevice`
+  returns null. `max_attempts = 0` turns recovery off.
+
+A **lost surface** on a healthy device (the swapchain returns `Lost` but `DeviceLost` is false) is repaired first with
+`DeviceHost::RecreateSurface`, which keeps the device. Each attempt logs on `LogRenderer`, calls the reset callbacks with the stage name
+`"recovery"` (so the application can show a message and rebind its own pointers from `GetDevice` when the end callback reports
+success), counts in `RendererStats::recoveries` and `recovery_failures`, and shows `recovering (attempt N)` in the crash report. A
+settings change asked for during the lost frame is applied at the first frame boundary after the recovery, not lost.
+
+**What the application should show.** While frames return `Skipped` the window keeps its last picture; show a short "graphics device
+lost, recovering" line from the `"recovery"` callback and clear it when the end callback reports success. If the renderer gives up,
+tell the user and offer to restart the program (a driver that cannot create a device after three attempts will not on a fourth).
+
 ### The renderer demo
 
 `game/renderer_demo` puts the pieces together: a scene of 540 objects in eight materials, 300 point lights, a sun and ambient
@@ -830,7 +854,7 @@ device, where the injected loss fires only at the start of a frame).
 
 | What goes wrong | What you get | Afterwards |
 |---|---|---|
-| The device is lost before, during or after the frame callback, or while a pass records | `RenderFrame` returns `DeviceLost`; `frames_lost` counts it | Every later frame returns `DeviceLost` at once; destroy the renderer and the device |
+| The device is lost before, during or after the frame callback, or while a pass records | `RenderFrame` returns `DeviceLost`; `frames_lost` counts it | With a `DeviceHost` the renderer recovers (below); otherwise every later frame returns `DeviceLost` at once and you destroy the renderer and the device |
 | The device is lost while the scene is being created | `DemoScene::Create` / `GpuMesh::Create` return false, logging why | The partly built scene frees what it made |
 | `CreateCommandList` returns null (device lost, out of memory) | `RenderFrame` returns `DeviceLost` or `Failed`; a caller of `RenderGraph::Execute` must check for null first, as a null list aborts | Nothing is submitted |
 | A transient texture or buffer cannot be created | `RenderFrame` returns `Failed`; `LastError` names the resource | Pooled resources go back to the pool; the next frame is tried normally |

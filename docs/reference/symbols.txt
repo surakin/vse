@@ -1640,107 +1640,114 @@ rhi::kMaxColorAttachments	variable	rhi	rhi-kmaxcolorattachments	rhi.md	engine/rh
 rhi::kMaxVertexBindings	variable	rhi	rhi-kmaxvertexbindings	rhi.md	engine/rhi/limits.h:21
 rhi::kMaxVertexAttributes	variable	rhi	rhi-kmaxvertexattributes	rhi.md	engine/rhi/limits.h:23
 rhi::kMaxPushConstantBytes	variable	rhi	rhi-kmaxpushconstantbytes	rhi.md	engine/rhi/limits.h:25
-rhi::NullDeviceOptions	struct	rhi	rhi-nulldeviceoptions	rhi.md	engine/rhi/null/null_device.h:20
-rhi::NullDeviceOptions::NullDeviceOptions()	function	rhi	rhi-nulldeviceoptions-nulldeviceoptions	rhi.md	engine/rhi/null/null_device.h:22
-rhi::NullDeviceOptions::caps	variable	rhi	rhi-nulldeviceoptions-caps	rhi.md	engine/rhi/null/null_device.h:25
-rhi::NullDeviceOptions::abort_on_error	variable	rhi	rhi-nulldeviceoptions-abort-on-error	rhi.md	engine/rhi/null/null_device.h:27
-rhi::NullDeviceOptions::simulated_latency_frames	variable	rhi	rhi-nulldeviceoptions-simulated-latency-frames	rhi.md	engine/rhi/null/null_device.h:30
-rhi::NullDeviceOptions::max_buffer_bytes	variable	rhi	rhi-nulldeviceoptions-max-buffer-bytes	rhi.md	engine/rhi/null/null_device.h:32
-rhi::NullDeviceOptions::lose_device_at_frame	variable	rhi	rhi-nulldeviceoptions-lose-device-at-frame	rhi.md	engine/rhi/null/null_device.h:35
-rhi::NullDeviceOptions::fail_surface_recreate	variable	rhi	rhi-nulldeviceoptions-fail-surface-recreate	rhi.md	engine/rhi/null/null_device.h:37
-rhi::NullDeviceOptions::fail_swapchain_create	variable	rhi	rhi-nulldeviceoptions-fail-swapchain-create	rhi.md	engine/rhi/null/null_device.h:39
-rhi::NullDeviceOptions::adapter	variable	rhi	rhi-nulldeviceoptions-adapter	rhi.md	engine/rhi/null/null_device.h:42
-rhi::NullDeviceOptions::DefaultAdapter()	function	rhi	rhi-nulldeviceoptions-defaultadapter	rhi.md	engine/rhi/null/null_device.h:45
-rhi::NullDeviceStats	struct	rhi	rhi-nulldevicestats	rhi.md	engine/rhi/null/null_device.h:55
-rhi::NullDeviceStats::buffers	variable	rhi	rhi-nulldevicestats-buffers	rhi.md	engine/rhi/null/null_device.h:57
-rhi::NullDeviceStats::textures	variable	rhi	rhi-nulldevicestats-textures	rhi.md	engine/rhi/null/null_device.h:59
-rhi::NullDeviceStats::samplers	variable	rhi	rhi-nulldevicestats-samplers	rhi.md	engine/rhi/null/null_device.h:61
-rhi::NullDeviceStats::shaders	variable	rhi	rhi-nulldevicestats-shaders	rhi.md	engine/rhi/null/null_device.h:63
-rhi::NullDeviceStats::bind_group_layouts	variable	rhi	rhi-nulldevicestats-bind-group-layouts	rhi.md	engine/rhi/null/null_device.h:65
-rhi::NullDeviceStats::bind_groups	variable	rhi	rhi-nulldevicestats-bind-groups	rhi.md	engine/rhi/null/null_device.h:67
-rhi::NullDeviceStats::pipelines	variable	rhi	rhi-nulldevicestats-pipelines	rhi.md	engine/rhi/null/null_device.h:69
-rhi::NullDeviceStats::pending_destruction	variable	rhi	rhi-nulldevicestats-pending-destruction	rhi.md	engine/rhi/null/null_device.h:71
-rhi::NullDeviceStats::command_lists	variable	rhi	rhi-nulldevicestats-command-lists	rhi.md	engine/rhi/null/null_device.h:73
-rhi::NullDevicePtr	alias	rhi	rhi-nulldeviceptr	rhi.md	engine/rhi/null/null_device.h:79
-rhi::NullDevice	class	rhi	rhi-nulldevice	rhi.md	engine/rhi/null/null_device.h:91
-rhi::NullDevice::NullDevice(const NullDeviceOptions&)	function	rhi	rhi-nulldevice-nulldevice-const-nulldeviceoptions-amp	rhi.md	engine/rhi/null/null_device.h:96
-rhi::NullDevice::~NullDevice()	function	rhi	rhi-nulldevice-tilde-nulldevice	rhi.md	engine/rhi/null/null_device.h:99
-rhi::NullDevice::BackendName() const	function	rhi	rhi-nulldevice-backendname-const	rhi.md	engine/rhi/null/null_device.h:101
-rhi::NullDevice::Adapter() const	function	rhi	rhi-nulldevice-adapter-const	rhi.md	engine/rhi/null/null_device.h:102
-rhi::NullDevice::Epoch() const	function	rhi	rhi-nulldevice-epoch-const	rhi.md	engine/rhi/null/null_device.h:103
-rhi::NullDevice::Resources() const	function	rhi	rhi-nulldevice-resources-const	rhi.md	engine/rhi/null/null_device.h:104
-rhi::NullDevice::InFrame() const	function	rhi	rhi-nulldevice-inframe-const	rhi.md	engine/rhi/null/null_device.h:105
-rhi::NullDevice::Caps() const	function	rhi	rhi-nulldevice-caps-const	rhi.md	engine/rhi/null/null_device.h:106
-rhi::NullDevice::CreateBuffer(const BufferDesc&)	function	rhi	rhi-nulldevice-createbuffer-const-bufferdesc-amp	rhi.md	engine/rhi/null/null_device.h:107
-rhi::NullDevice::DestroyBuffer(BufferHandle)	function	rhi	rhi-nulldevice-destroybuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:108
-rhi::NullDevice::CreateTexture(const TextureDesc&)	function	rhi	rhi-nulldevice-createtexture-const-texturedesc-amp	rhi.md	engine/rhi/null/null_device.h:109
-rhi::NullDevice::DestroyTexture(TextureHandle)	function	rhi	rhi-nulldevice-destroytexture-texturehandle	rhi.md	engine/rhi/null/null_device.h:110
-rhi::NullDevice::CreateSampler(const SamplerDesc&)	function	rhi	rhi-nulldevice-createsampler-const-samplerdesc-amp	rhi.md	engine/rhi/null/null_device.h:111
-rhi::NullDevice::DestroySampler(SamplerHandle)	function	rhi	rhi-nulldevice-destroysampler-samplerhandle	rhi.md	engine/rhi/null/null_device.h:112
-rhi::NullDevice::CreateShader(const ShaderDesc&)	function	rhi	rhi-nulldevice-createshader-const-shaderdesc-amp	rhi.md	engine/rhi/null/null_device.h:113
-rhi::NullDevice::DestroyShader(ShaderHandle)	function	rhi	rhi-nulldevice-destroyshader-shaderhandle	rhi.md	engine/rhi/null/null_device.h:114
-rhi::NullDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi	rhi-nulldevice-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi.md	engine/rhi/null/null_device.h:115
-rhi::NullDevice::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi	rhi-nulldevice-destroybindgrouplayout-bindgrouplayouthandle	rhi.md	engine/rhi/null/null_device.h:116
-rhi::NullDevice::CreateBindGroup(const BindGroupDesc&)	function	rhi	rhi-nulldevice-createbindgroup-const-bindgroupdesc-amp	rhi.md	engine/rhi/null/null_device.h:117
-rhi::NullDevice::DestroyBindGroup(BindGroupHandle)	function	rhi	rhi-nulldevice-destroybindgroup-bindgrouphandle	rhi.md	engine/rhi/null/null_device.h:118
-rhi::NullDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi	rhi-nulldevice-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi.md	engine/rhi/null/null_device.h:119
-rhi::NullDevice::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi	rhi-nulldevice-createcomputepipeline-const-computepipelinedesc-amp	rhi.md	engine/rhi/null/null_device.h:120
-rhi::NullDevice::DestroyPipeline(PipelineHandle)	function	rhi	rhi-nulldevice-destroypipeline-pipelinehandle	rhi.md	engine/rhi/null/null_device.h:121
-rhi::NullDevice::MapBuffer(BufferHandle)	function	rhi	rhi-nulldevice-mapbuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:122
-rhi::NullDevice::UnmapBuffer(BufferHandle)	function	rhi	rhi-nulldevice-unmapbuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:123
-rhi::NullDevice::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi	rhi-nulldevice-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi.md	engine/rhi/null/null_device.h:124
-rhi::NullDevice::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi	rhi-nulldevice-readbackbuffer-bufferhandle-u64-void-star-u64	rhi.md	engine/rhi/null/null_device.h:125
-rhi::NullDevice::CreateSwapchain(const SwapchainDesc&)	function	rhi	rhi-nulldevice-createswapchain-const-swapchaindesc-amp	rhi.md	engine/rhi/null/null_device.h:126
-rhi::NullDevice::DestroySwapchain(Swapchain*)	function	rhi	rhi-nulldevice-destroyswapchain-swapchain-star	rhi.md	engine/rhi/null/null_device.h:127
-rhi::NullDevice::FormatSupport(Format,TextureUsage) const	function	rhi	rhi-nulldevice-formatsupport-format-textureusage-const	rhi.md	engine/rhi/null/null_device.h:128
-rhi::NullDevice::CanGenerateMips(Format) const	function	rhi	rhi-nulldevice-cangeneratemips-format-const	rhi.md	engine/rhi/null/null_device.h:129
-rhi::NullDevice::UploadTexture(TextureHandle,u32,u32,const void*,u32)	function	rhi	rhi-nulldevice-uploadtexture-texturehandle-u32-u32-const-void-star-u32	rhi.md	engine/rhi/null/null_device.h:130
-rhi::NullDevice::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi	rhi-nulldevice-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi.md	engine/rhi/null/null_device.h:131
-rhi::NullDevice::CreateCommandList()	function	rhi	rhi-nulldevice-createcommandlist	rhi.md	engine/rhi/null/null_device.h:132
-rhi::NullDevice::Submit(CommandList* const*,usize)	function	rhi	rhi-nulldevice-submit-commandlist-star-const-star-usize	rhi.md	engine/rhi/null/null_device.h:133
-rhi::NullDevice::WaitFence(FenceValue,u64)	function	rhi	rhi-nulldevice-waitfence-fencevalue-u64	rhi.md	engine/rhi/null/null_device.h:134
-rhi::NullDevice::CompletedFence() const	function	rhi	rhi-nulldevice-completedfence-const	rhi.md	engine/rhi/null/null_device.h:135
-rhi::NullDevice::BeginFrame()	function	rhi	rhi-nulldevice-beginframe	rhi.md	engine/rhi/null/null_device.h:136
-rhi::NullDevice::EndFrame()	function	rhi	rhi-nulldevice-endframe	rhi.md	engine/rhi/null/null_device.h:137
-rhi::NullDevice::FrameNumber() const	function	rhi	rhi-nulldevice-framenumber-const	rhi.md	engine/rhi/null/null_device.h:138
-rhi::NullDevice::WaitIdle()	function	rhi	rhi-nulldevice-waitidle	rhi.md	engine/rhi/null/null_device.h:139
-rhi::NullDevice::DeviceLost() const	function	rhi	rhi-nulldevice-devicelost-const	rhi.md	engine/rhi/null/null_device.h:140
-rhi::NullDevice::ErrorCount() const	function	rhi	rhi-nulldevice-errorcount-const	rhi.md	engine/rhi/null/null_device.h:143
-rhi::NullDevice::LastError(char*,usize) const	function	rhi	rhi-nulldevice-lasterror-char-star-usize-const	rhi.md	engine/rhi/null/null_device.h:151
-rhi::NullDevice::ResetErrors()	function	rhi	rhi-nulldevice-reseterrors	rhi.md	engine/rhi/null/null_device.h:154
-rhi::NullDevice::Statistics() const	function	rhi	rhi-nulldevice-statistics-const	rhi.md	engine/rhi/null/null_device.h:157
-rhi::NullDevice::PeekBuffer(BufferHandle,u64,void*,u64) const	function	rhi	rhi-nulldevice-peekbuffer-bufferhandle-u64-void-star-u64-const	rhi.md	engine/rhi/null/null_device.h:168
-rhi::NullDevice::StateOf(BufferHandle) const	function	rhi	rhi-nulldevice-stateof-bufferhandle-const	rhi.md	engine/rhi/null/null_device.h:174
-rhi::NullDevice::StateOf(TextureHandle) const	function	rhi	rhi-nulldevice-stateof-texturehandle-const	rhi.md	engine/rhi/null/null_device.h:180
-rhi::NullDevice::SimulateDeviceLoss()	function	rhi	rhi-nulldevice-simulatedeviceloss	rhi.md	engine/rhi/null/null_device.h:183
-rhi::NullDevice::SimulateSurfaceLoss()	function	rhi	rhi-nulldevice-simulatesurfaceloss	rhi.md	engine/rhi/null/null_device.h:188
-rhi::NullDevice::RecreateSurface(const os::Window*)	function	rhi	rhi-nulldevice-recreatesurface-const-os-window-star	rhi.md	engine/rhi/null/null_device.h:190
-rhi::CreateNullDevice(const NullDeviceOptions&)	function	rhi	rhi-createnulldevice-const-nulldeviceoptions-amp	rhi.md	engine/rhi/null/null_device.h:202
-rhi::Backend	enum	rhi	rhi-backend	rhi.md	engine/rhi/rhi.h:13
-rhi::Backend::Null	enumerator	rhi	rhi-backend-null	rhi.md	engine/rhi/rhi.h:14
-rhi::Backend::Vulkan	enumerator	rhi	rhi-backend-vulkan	rhi.md	engine/rhi/rhi.h:15
-rhi::ValidationSetting	enum	rhi	rhi-validationsetting	rhi.md	engine/rhi/rhi.h:19
-rhi::ValidationSetting::Auto	enumerator	rhi	rhi-validationsetting-auto	rhi.md	engine/rhi/rhi.h:20
-rhi::ValidationSetting::Off	enumerator	rhi	rhi-validationsetting-off	rhi.md	engine/rhi/rhi.h:21
-rhi::ValidationSetting::On	enumerator	rhi	rhi-validationsetting-on	rhi.md	engine/rhi/rhi.h:22
-rhi::FaultInjection	struct	rhi	rhi-faultinjection	rhi.md	engine/rhi/rhi.h:32
-rhi::FaultInjection::lose_device_at_frame	variable	rhi	rhi-faultinjection-lose-device-at-frame	rhi.md	engine/rhi/rhi.h:35
-rhi::FaultInjection::fail_allocations_from	variable	rhi	rhi-faultinjection-fail-allocations-from	rhi.md	engine/rhi/rhi.h:38
-rhi::FaultInjection::fail_surface_recreate	variable	rhi	rhi-faultinjection-fail-surface-recreate	rhi.md	engine/rhi/rhi.h:41
-rhi::FaultInjection::fail_swapchain_create	variable	rhi	rhi-faultinjection-fail-swapchain-create	rhi.md	engine/rhi/rhi.h:44
-rhi::DeviceCreateInfo	struct	rhi	rhi-devicecreateinfo	rhi.md	engine/rhi/rhi.h:52
-rhi::DeviceCreateInfo::backend	variable	rhi	rhi-devicecreateinfo-backend	rhi.md	engine/rhi/rhi.h:54
-rhi::DeviceCreateInfo::application_name	variable	rhi	rhi-devicecreateinfo-application-name	rhi.md	engine/rhi/rhi.h:56
-rhi::DeviceCreateInfo::validation	variable	rhi	rhi-devicecreateinfo-validation	rhi.md	engine/rhi/rhi.h:58
-rhi::DeviceCreateInfo::sync_validation	variable	rhi	rhi-devicecreateinfo-sync-validation	rhi.md	engine/rhi/rhi.h:60
-rhi::DeviceCreateInfo::adapter	variable	rhi	rhi-devicecreateinfo-adapter	rhi.md	engine/rhi/rhi.h:67
-rhi::DeviceCreateInfo::window	variable	rhi	rhi-devicecreateinfo-window	rhi.md	engine/rhi/rhi.h:72
-rhi::DeviceCreateInfo::frames_in_flight	variable	rhi	rhi-devicecreateinfo-frames-in-flight	rhi.md	engine/rhi/rhi.h:75
-rhi::DeviceCreateInfo::pipeline_cache	variable	rhi	rhi-devicecreateinfo-pipeline-cache	rhi.md	engine/rhi/rhi.h:80
-rhi::DeviceCreateInfo::descriptor_sets_per_pool	variable	rhi	rhi-devicecreateinfo-descriptor-sets-per-pool	rhi.md	engine/rhi/rhi.h:83
-rhi::DeviceCreateInfo::pipeline_cache_dir	variable	rhi	rhi-devicecreateinfo-pipeline-cache-dir	rhi.md	engine/rhi/rhi.h:86
-rhi::DeviceCreateInfo::faults	variable	rhi	rhi-devicecreateinfo-faults	rhi.md	engine/rhi/rhi.h:88
-rhi::CreateDevice(const DeviceCreateInfo&)	function	rhi	rhi-createdevice-const-devicecreateinfo-amp	rhi.md	engine/rhi/rhi.h:109
+rhi::NullDeviceOptions	struct	rhi	rhi-nulldeviceoptions	rhi.md	engine/rhi/null/null_device.h:22
+rhi::NullDeviceOptions::NullDeviceOptions()	function	rhi	rhi-nulldeviceoptions-nulldeviceoptions	rhi.md	engine/rhi/null/null_device.h:24
+rhi::NullDeviceOptions::caps	variable	rhi	rhi-nulldeviceoptions-caps	rhi.md	engine/rhi/null/null_device.h:27
+rhi::NullDeviceOptions::abort_on_error	variable	rhi	rhi-nulldeviceoptions-abort-on-error	rhi.md	engine/rhi/null/null_device.h:29
+rhi::NullDeviceOptions::simulated_latency_frames	variable	rhi	rhi-nulldeviceoptions-simulated-latency-frames	rhi.md	engine/rhi/null/null_device.h:32
+rhi::NullDeviceOptions::max_buffer_bytes	variable	rhi	rhi-nulldeviceoptions-max-buffer-bytes	rhi.md	engine/rhi/null/null_device.h:34
+rhi::NullDeviceOptions::lose_device_at_frame	variable	rhi	rhi-nulldeviceoptions-lose-device-at-frame	rhi.md	engine/rhi/null/null_device.h:37
+rhi::NullDeviceOptions::lose_device_at_submit	variable	rhi	rhi-nulldeviceoptions-lose-device-at-submit	rhi.md	engine/rhi/null/null_device.h:39
+rhi::NullDeviceOptions::lose_device_at_present	variable	rhi	rhi-nulldeviceoptions-lose-device-at-present	rhi.md	engine/rhi/null/null_device.h:41
+rhi::NullDeviceOptions::strikes_left	variable	rhi	rhi-nulldeviceoptions-strikes-left	rhi.md	engine/rhi/null/null_device.h:43
+rhi::NullDeviceOptions::fail_surface_recreate	variable	rhi	rhi-nulldeviceoptions-fail-surface-recreate	rhi.md	engine/rhi/null/null_device.h:45
+rhi::NullDeviceOptions::fail_swapchain_create	variable	rhi	rhi-nulldeviceoptions-fail-swapchain-create	rhi.md	engine/rhi/null/null_device.h:47
+rhi::NullDeviceOptions::adapter	variable	rhi	rhi-nulldeviceoptions-adapter	rhi.md	engine/rhi/null/null_device.h:50
+rhi::NullDeviceOptions::DefaultAdapter()	function	rhi	rhi-nulldeviceoptions-defaultadapter	rhi.md	engine/rhi/null/null_device.h:53
+rhi::NullDeviceStats	struct	rhi	rhi-nulldevicestats	rhi.md	engine/rhi/null/null_device.h:63
+rhi::NullDeviceStats::buffers	variable	rhi	rhi-nulldevicestats-buffers	rhi.md	engine/rhi/null/null_device.h:65
+rhi::NullDeviceStats::textures	variable	rhi	rhi-nulldevicestats-textures	rhi.md	engine/rhi/null/null_device.h:67
+rhi::NullDeviceStats::samplers	variable	rhi	rhi-nulldevicestats-samplers	rhi.md	engine/rhi/null/null_device.h:69
+rhi::NullDeviceStats::shaders	variable	rhi	rhi-nulldevicestats-shaders	rhi.md	engine/rhi/null/null_device.h:71
+rhi::NullDeviceStats::bind_group_layouts	variable	rhi	rhi-nulldevicestats-bind-group-layouts	rhi.md	engine/rhi/null/null_device.h:73
+rhi::NullDeviceStats::bind_groups	variable	rhi	rhi-nulldevicestats-bind-groups	rhi.md	engine/rhi/null/null_device.h:75
+rhi::NullDeviceStats::pipelines	variable	rhi	rhi-nulldevicestats-pipelines	rhi.md	engine/rhi/null/null_device.h:77
+rhi::NullDeviceStats::pending_destruction	variable	rhi	rhi-nulldevicestats-pending-destruction	rhi.md	engine/rhi/null/null_device.h:79
+rhi::NullDeviceStats::command_lists	variable	rhi	rhi-nulldevicestats-command-lists	rhi.md	engine/rhi/null/null_device.h:81
+rhi::NullDevicePtr	alias	rhi	rhi-nulldeviceptr	rhi.md	engine/rhi/null/null_device.h:87
+rhi::NullDevice	class	rhi	rhi-nulldevice	rhi.md	engine/rhi/null/null_device.h:99
+rhi::NullDevice::NullDevice(const NullDeviceOptions&)	function	rhi	rhi-nulldevice-nulldevice-const-nulldeviceoptions-amp	rhi.md	engine/rhi/null/null_device.h:104
+rhi::NullDevice::~NullDevice()	function	rhi	rhi-nulldevice-tilde-nulldevice	rhi.md	engine/rhi/null/null_device.h:107
+rhi::NullDevice::BackendName() const	function	rhi	rhi-nulldevice-backendname-const	rhi.md	engine/rhi/null/null_device.h:109
+rhi::NullDevice::Adapter() const	function	rhi	rhi-nulldevice-adapter-const	rhi.md	engine/rhi/null/null_device.h:110
+rhi::NullDevice::Epoch() const	function	rhi	rhi-nulldevice-epoch-const	rhi.md	engine/rhi/null/null_device.h:111
+rhi::NullDevice::Resources() const	function	rhi	rhi-nulldevice-resources-const	rhi.md	engine/rhi/null/null_device.h:112
+rhi::NullDevice::InFrame() const	function	rhi	rhi-nulldevice-inframe-const	rhi.md	engine/rhi/null/null_device.h:113
+rhi::NullDevice::Caps() const	function	rhi	rhi-nulldevice-caps-const	rhi.md	engine/rhi/null/null_device.h:114
+rhi::NullDevice::CreateBuffer(const BufferDesc&)	function	rhi	rhi-nulldevice-createbuffer-const-bufferdesc-amp	rhi.md	engine/rhi/null/null_device.h:115
+rhi::NullDevice::DestroyBuffer(BufferHandle)	function	rhi	rhi-nulldevice-destroybuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:116
+rhi::NullDevice::CreateTexture(const TextureDesc&)	function	rhi	rhi-nulldevice-createtexture-const-texturedesc-amp	rhi.md	engine/rhi/null/null_device.h:117
+rhi::NullDevice::DestroyTexture(TextureHandle)	function	rhi	rhi-nulldevice-destroytexture-texturehandle	rhi.md	engine/rhi/null/null_device.h:118
+rhi::NullDevice::CreateSampler(const SamplerDesc&)	function	rhi	rhi-nulldevice-createsampler-const-samplerdesc-amp	rhi.md	engine/rhi/null/null_device.h:119
+rhi::NullDevice::DestroySampler(SamplerHandle)	function	rhi	rhi-nulldevice-destroysampler-samplerhandle	rhi.md	engine/rhi/null/null_device.h:120
+rhi::NullDevice::CreateShader(const ShaderDesc&)	function	rhi	rhi-nulldevice-createshader-const-shaderdesc-amp	rhi.md	engine/rhi/null/null_device.h:121
+rhi::NullDevice::DestroyShader(ShaderHandle)	function	rhi	rhi-nulldevice-destroyshader-shaderhandle	rhi.md	engine/rhi/null/null_device.h:122
+rhi::NullDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi	rhi-nulldevice-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi.md	engine/rhi/null/null_device.h:123
+rhi::NullDevice::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi	rhi-nulldevice-destroybindgrouplayout-bindgrouplayouthandle	rhi.md	engine/rhi/null/null_device.h:124
+rhi::NullDevice::CreateBindGroup(const BindGroupDesc&)	function	rhi	rhi-nulldevice-createbindgroup-const-bindgroupdesc-amp	rhi.md	engine/rhi/null/null_device.h:125
+rhi::NullDevice::DestroyBindGroup(BindGroupHandle)	function	rhi	rhi-nulldevice-destroybindgroup-bindgrouphandle	rhi.md	engine/rhi/null/null_device.h:126
+rhi::NullDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi	rhi-nulldevice-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi.md	engine/rhi/null/null_device.h:127
+rhi::NullDevice::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi	rhi-nulldevice-createcomputepipeline-const-computepipelinedesc-amp	rhi.md	engine/rhi/null/null_device.h:128
+rhi::NullDevice::DestroyPipeline(PipelineHandle)	function	rhi	rhi-nulldevice-destroypipeline-pipelinehandle	rhi.md	engine/rhi/null/null_device.h:129
+rhi::NullDevice::MapBuffer(BufferHandle)	function	rhi	rhi-nulldevice-mapbuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:130
+rhi::NullDevice::UnmapBuffer(BufferHandle)	function	rhi	rhi-nulldevice-unmapbuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:131
+rhi::NullDevice::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi	rhi-nulldevice-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi.md	engine/rhi/null/null_device.h:132
+rhi::NullDevice::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi	rhi-nulldevice-readbackbuffer-bufferhandle-u64-void-star-u64	rhi.md	engine/rhi/null/null_device.h:133
+rhi::NullDevice::CreateSwapchain(const SwapchainDesc&)	function	rhi	rhi-nulldevice-createswapchain-const-swapchaindesc-amp	rhi.md	engine/rhi/null/null_device.h:134
+rhi::NullDevice::DestroySwapchain(Swapchain*)	function	rhi	rhi-nulldevice-destroyswapchain-swapchain-star	rhi.md	engine/rhi/null/null_device.h:135
+rhi::NullDevice::FormatSupport(Format,TextureUsage) const	function	rhi	rhi-nulldevice-formatsupport-format-textureusage-const	rhi.md	engine/rhi/null/null_device.h:136
+rhi::NullDevice::CanGenerateMips(Format) const	function	rhi	rhi-nulldevice-cangeneratemips-format-const	rhi.md	engine/rhi/null/null_device.h:137
+rhi::NullDevice::UploadTexture(TextureHandle,u32,u32,const void*,u32)	function	rhi	rhi-nulldevice-uploadtexture-texturehandle-u32-u32-const-void-star-u32	rhi.md	engine/rhi/null/null_device.h:138
+rhi::NullDevice::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi	rhi-nulldevice-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi.md	engine/rhi/null/null_device.h:139
+rhi::NullDevice::CreateCommandList()	function	rhi	rhi-nulldevice-createcommandlist	rhi.md	engine/rhi/null/null_device.h:140
+rhi::NullDevice::Submit(CommandList* const*,usize)	function	rhi	rhi-nulldevice-submit-commandlist-star-const-star-usize	rhi.md	engine/rhi/null/null_device.h:141
+rhi::NullDevice::WaitFence(FenceValue,u64)	function	rhi	rhi-nulldevice-waitfence-fencevalue-u64	rhi.md	engine/rhi/null/null_device.h:142
+rhi::NullDevice::CompletedFence() const	function	rhi	rhi-nulldevice-completedfence-const	rhi.md	engine/rhi/null/null_device.h:143
+rhi::NullDevice::BeginFrame()	function	rhi	rhi-nulldevice-beginframe	rhi.md	engine/rhi/null/null_device.h:144
+rhi::NullDevice::EndFrame()	function	rhi	rhi-nulldevice-endframe	rhi.md	engine/rhi/null/null_device.h:145
+rhi::NullDevice::FrameNumber() const	function	rhi	rhi-nulldevice-framenumber-const	rhi.md	engine/rhi/null/null_device.h:146
+rhi::NullDevice::WaitIdle()	function	rhi	rhi-nulldevice-waitidle	rhi.md	engine/rhi/null/null_device.h:147
+rhi::NullDevice::DeviceLost() const	function	rhi	rhi-nulldevice-devicelost-const	rhi.md	engine/rhi/null/null_device.h:148
+rhi::NullDevice::ErrorCount() const	function	rhi	rhi-nulldevice-errorcount-const	rhi.md	engine/rhi/null/null_device.h:151
+rhi::NullDevice::LastError(char*,usize) const	function	rhi	rhi-nulldevice-lasterror-char-star-usize-const	rhi.md	engine/rhi/null/null_device.h:159
+rhi::NullDevice::ResetErrors()	function	rhi	rhi-nulldevice-reseterrors	rhi.md	engine/rhi/null/null_device.h:162
+rhi::NullDevice::Statistics() const	function	rhi	rhi-nulldevice-statistics-const	rhi.md	engine/rhi/null/null_device.h:165
+rhi::NullDevice::PeekBuffer(BufferHandle,u64,void*,u64) const	function	rhi	rhi-nulldevice-peekbuffer-bufferhandle-u64-void-star-u64-const	rhi.md	engine/rhi/null/null_device.h:176
+rhi::NullDevice::StateOf(BufferHandle) const	function	rhi	rhi-nulldevice-stateof-bufferhandle-const	rhi.md	engine/rhi/null/null_device.h:182
+rhi::NullDevice::StateOf(TextureHandle) const	function	rhi	rhi-nulldevice-stateof-texturehandle-const	rhi.md	engine/rhi/null/null_device.h:188
+rhi::NullDevice::SimulateDeviceLoss()	function	rhi	rhi-nulldevice-simulatedeviceloss	rhi.md	engine/rhi/null/null_device.h:191
+rhi::NullDevice::CountPresent()	function	rhi	rhi-nulldevice-countpresent	rhi.md	engine/rhi/null/null_device.h:195
+rhi::NullDevice::SimulateSurfaceLoss()	function	rhi	rhi-nulldevice-simulatesurfaceloss	rhi.md	engine/rhi/null/null_device.h:200
+rhi::NullDevice::RecreateSurface(const os::Window*)	function	rhi	rhi-nulldevice-recreatesurface-const-os-window-star	rhi.md	engine/rhi/null/null_device.h:202
+rhi::CreateNullDevice(const NullDeviceOptions&)	function	rhi	rhi-createnulldevice-const-nulldeviceoptions-amp	rhi.md	engine/rhi/null/null_device.h:214
+rhi::Backend	enum	rhi	rhi-backend	rhi.md	engine/rhi/rhi.h:15
+rhi::Backend::Null	enumerator	rhi	rhi-backend-null	rhi.md	engine/rhi/rhi.h:16
+rhi::Backend::Vulkan	enumerator	rhi	rhi-backend-vulkan	rhi.md	engine/rhi/rhi.h:17
+rhi::ValidationSetting	enum	rhi	rhi-validationsetting	rhi.md	engine/rhi/rhi.h:21
+rhi::ValidationSetting::Auto	enumerator	rhi	rhi-validationsetting-auto	rhi.md	engine/rhi/rhi.h:22
+rhi::ValidationSetting::Off	enumerator	rhi	rhi-validationsetting-off	rhi.md	engine/rhi/rhi.h:23
+rhi::ValidationSetting::On	enumerator	rhi	rhi-validationsetting-on	rhi.md	engine/rhi/rhi.h:24
+rhi::FaultInjection	struct	rhi	rhi-faultinjection	rhi.md	engine/rhi/rhi.h:34
+rhi::FaultInjection::lose_device_at_frame	variable	rhi	rhi-faultinjection-lose-device-at-frame	rhi.md	engine/rhi/rhi.h:37
+rhi::FaultInjection::lose_device_at_submit	variable	rhi	rhi-faultinjection-lose-device-at-submit	rhi.md	engine/rhi/rhi.h:40
+rhi::FaultInjection::lose_device_at_present	variable	rhi	rhi-faultinjection-lose-device-at-present	rhi.md	engine/rhi/rhi.h:42
+rhi::FaultInjection::strikes_left	variable	rhi	rhi-faultinjection-strikes-left	rhi.md	engine/rhi/rhi.h:46
+rhi::FaultInjection::fail_allocations_from	variable	rhi	rhi-faultinjection-fail-allocations-from	rhi.md	engine/rhi/rhi.h:49
+rhi::FaultInjection::fail_surface_recreate	variable	rhi	rhi-faultinjection-fail-surface-recreate	rhi.md	engine/rhi/rhi.h:52
+rhi::FaultInjection::fail_swapchain_create	variable	rhi	rhi-faultinjection-fail-swapchain-create	rhi.md	engine/rhi/rhi.h:55
+rhi::DeviceCreateInfo	struct	rhi	rhi-devicecreateinfo	rhi.md	engine/rhi/rhi.h:63
+rhi::DeviceCreateInfo::backend	variable	rhi	rhi-devicecreateinfo-backend	rhi.md	engine/rhi/rhi.h:65
+rhi::DeviceCreateInfo::application_name	variable	rhi	rhi-devicecreateinfo-application-name	rhi.md	engine/rhi/rhi.h:67
+rhi::DeviceCreateInfo::validation	variable	rhi	rhi-devicecreateinfo-validation	rhi.md	engine/rhi/rhi.h:69
+rhi::DeviceCreateInfo::sync_validation	variable	rhi	rhi-devicecreateinfo-sync-validation	rhi.md	engine/rhi/rhi.h:71
+rhi::DeviceCreateInfo::adapter	variable	rhi	rhi-devicecreateinfo-adapter	rhi.md	engine/rhi/rhi.h:78
+rhi::DeviceCreateInfo::window	variable	rhi	rhi-devicecreateinfo-window	rhi.md	engine/rhi/rhi.h:83
+rhi::DeviceCreateInfo::frames_in_flight	variable	rhi	rhi-devicecreateinfo-frames-in-flight	rhi.md	engine/rhi/rhi.h:86
+rhi::DeviceCreateInfo::pipeline_cache	variable	rhi	rhi-devicecreateinfo-pipeline-cache	rhi.md	engine/rhi/rhi.h:91
+rhi::DeviceCreateInfo::descriptor_sets_per_pool	variable	rhi	rhi-devicecreateinfo-descriptor-sets-per-pool	rhi.md	engine/rhi/rhi.h:94
+rhi::DeviceCreateInfo::pipeline_cache_dir	variable	rhi	rhi-devicecreateinfo-pipeline-cache-dir	rhi.md	engine/rhi/rhi.h:97
+rhi::DeviceCreateInfo::faults	variable	rhi	rhi-devicecreateinfo-faults	rhi.md	engine/rhi/rhi.h:99
+rhi::CreateDevice(const DeviceCreateInfo&)	function	rhi	rhi-createdevice-const-devicecreateinfo-amp	rhi.md	engine/rhi/rhi.h:120
 rhi::LogRhi	variable	rhi	rhi-logrhi	rhi.md	engine/rhi/rhi_log.h:13
 rhi::RhiLogV(LogVerbosity,const char*,...)	function	rhi	rhi-rhilogv-logverbosity-const-char-star	rhi.md	engine/rhi/rhi_log.h:24
 RhiLog	macro	rhi	rhilog	rhi.md	engine/rhi/rhi_log.h:44
@@ -2540,64 +2547,73 @@ renderer::FrameContext::camera	variable	renderer	renderer-framecontext-camera	re
 renderer::FrameContext::device	variable	renderer	renderer-framecontext-device	renderer.md	engine/renderer/renderer.h:81
 renderer::FrameContext::frame_index	variable	renderer	renderer-framecontext-frame-index	renderer.md	engine/renderer/renderer.h:83
 renderer::FrameBuildFn	alias	renderer	renderer-framebuildfn	renderer.md	engine/renderer/renderer.h:87
-renderer::RendererDesc	struct	renderer	renderer-rendererdesc	renderer.md	engine/renderer/renderer.h:92
-renderer::RendererDesc::device	variable	renderer	renderer-rendererdesc-device	renderer.md	engine/renderer/renderer.h:94
-renderer::RendererDesc::swapchain	variable	renderer	renderer-rendererdesc-swapchain	renderer.md	engine/renderer/renderer.h:96
-renderer::RendererDesc::scheduler	variable	renderer	renderer-rendererdesc-scheduler	renderer.md	engine/renderer/renderer.h:98
-renderer::RendererDesc::arena_bytes	variable	renderer	renderer-rendererdesc-arena-bytes	renderer.md	engine/renderer/renderer.h:100
-renderer::RendererDesc::graph	variable	renderer	renderer-rendererdesc-graph	renderer.md	engine/renderer/renderer.h:102
-renderer::RendererDesc::pool	variable	renderer	renderer-rendererdesc-pool	renderer.md	engine/renderer/renderer.h:104
-renderer::RendererDesc::host	variable	renderer	renderer-rendererdesc-host	renderer.md	engine/renderer/renderer.h:108
-renderer::RendererDesc::create_info	variable	renderer	renderer-rendererdesc-create-info	renderer.md	engine/renderer/renderer.h:111
-renderer::RendererDesc::window	variable	renderer	renderer-rendererdesc-window	renderer.md	engine/renderer/renderer.h:113
-renderer::RendererDesc::initial_settings	variable	renderer	renderer-rendererdesc-initial-settings	renderer.md	engine/renderer/renderer.h:116
-renderer::RendererDesc::resources	variable	renderer	renderer-rendererdesc-resources	renderer.md	engine/renderer/renderer.h:119
-renderer::RendererDesc::build	variable	renderer	renderer-rendererdesc-build	renderer.md	engine/renderer/renderer.h:121
-renderer::RendererDesc::build_user	variable	renderer	renderer-rendererdesc-build-user	renderer.md	engine/renderer/renderer.h:123
-renderer::RendererStats	struct	renderer	renderer-rendererstats	renderer.md	engine/renderer/renderer.h:129
-renderer::RendererStats::frames_rendered	variable	renderer	renderer-rendererstats-frames-rendered	renderer.md	engine/renderer/renderer.h:131
-renderer::RendererStats::frames_skipped	variable	renderer	renderer-rendererstats-frames-skipped	renderer.md	engine/renderer/renderer.h:133
-renderer::RendererStats::frames_failed	variable	renderer	renderer-rendererstats-frames-failed	renderer.md	engine/renderer/renderer.h:135
-renderer::RendererStats::frames_lost	variable	renderer	renderer-rendererstats-frames-lost	renderer.md	engine/renderer/renderer.h:137
-renderer::RendererStats::swapchain_recreations	variable	renderer	renderer-rendererstats-swapchain-recreations	renderer.md	engine/renderer/renderer.h:139
-renderer::RendererStats::applies	variable	renderer	renderer-rendererstats-applies	renderer.md	engine/renderer/renderer.h:141
-renderer::RendererStats::resets	variable	renderer	renderer-rendererstats-resets	renderer.md	engine/renderer/renderer.h:143
-renderer::RendererStats::rollbacks	variable	renderer	renderer-rendererstats-rollbacks	renderer.md	engine/renderer/renderer.h:145
-renderer::RendererStats::last_reset_ms	variable	renderer	renderer-rendererstats-last-reset-ms	renderer.md	engine/renderer/renderer.h:147
-renderer::RendererStats::last_fence	variable	renderer	renderer-rendererstats-last-fence	renderer.md	engine/renderer/renderer.h:149
-renderer::ApplyResult	struct	renderer	renderer-applyresult	renderer.md	engine/renderer/renderer.h:155
-renderer::ApplyResult::ok	variable	renderer	renderer-applyresult-ok	renderer.md	engine/renderer/renderer.h:157
-renderer::ApplyResult::queued	variable	renderer	renderer-applyresult-queued	renderer.md	engine/renderer/renderer.h:159
-renderer::ApplyResult::rolled_back	variable	renderer	renderer-applyresult-rolled-back	renderer.md	engine/renderer/renderer.h:161
-renderer::ApplyResult::device_lost	variable	renderer	renderer-applyresult-device-lost	renderer.md	engine/renderer/renderer.h:163
-renderer::ApplyResult::performed	variable	renderer	renderer-applyresult-performed	renderer.md	engine/renderer/renderer.h:165
-renderer::ApplyResult::change	variable	renderer	renderer-applyresult-change	renderer.md	engine/renderer/renderer.h:167
-renderer::ApplyResult::reason	variable	renderer	renderer-applyresult-reason	renderer.md	engine/renderer/renderer.h:169
-renderer::ApplyResult::total_ms	variable	renderer	renderer-applyresult-total-ms	renderer.md	engine/renderer/renderer.h:171
-renderer::ApplyResult::release_ms	variable	renderer	renderer-applyresult-release-ms	renderer.md	engine/renderer/renderer.h:173
-renderer::ApplyResult::device_ms	variable	renderer	renderer-applyresult-device-ms	renderer.md	engine/renderer/renderer.h:175
-renderer::ApplyResult::swapchain_ms	variable	renderer	renderer-applyresult-swapchain-ms	renderer.md	engine/renderer/renderer.h:177
-renderer::ApplyResult::rebuild_ms	variable	renderer	renderer-applyresult-rebuild-ms	renderer.md	engine/renderer/renderer.h:179
-renderer::ResetBeginFn	alias	renderer	renderer-resetbeginfn	renderer.md	engine/renderer/renderer.h:183
-renderer::ResetEndFn	alias	renderer	renderer-resetendfn	renderer.md	engine/renderer/renderer.h:185
-renderer::Renderer	class	renderer	renderer-renderer	renderer.md	engine/renderer/renderer.h:193
-renderer::Renderer::Renderer(const RendererDesc&)	function	renderer	renderer-renderer-renderer-const-rendererdesc-amp	renderer.md	engine/renderer/renderer.h:200
-renderer::Renderer::Renderer(const Renderer&)	function	renderer	renderer-renderer-renderer-const-renderer-amp	renderer.md	engine/renderer/renderer.h:201
-renderer::Renderer::operator=(const Renderer&)	function	renderer	renderer-renderer-operator-eq-const-renderer-amp	renderer.md	engine/renderer/renderer.h:202
-renderer::Renderer::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-renderer-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/renderer.h:212
-renderer::Renderer::ApplySettings(const RenderSettings&)	function	renderer	renderer-renderer-applysettings-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:229
-renderer::Renderer::Settings() const	function	renderer	renderer-renderer-settings-const	renderer.md	engine/renderer/renderer.h:233
-renderer::Renderer::LastApply() const	function	renderer	renderer-renderer-lastapply-const	renderer.md	engine/renderer/renderer.h:237
-renderer::Renderer::GetCapabilities() const	function	renderer	renderer-renderer-getcapabilities-const	renderer.md	engine/renderer/renderer.h:241
-renderer::Renderer::SetResetCallbacks(ResetBeginFn,ResetEndFn,void*)	function	renderer	renderer-renderer-setresetcallbacks-resetbeginfn-resetendfn-void-star	renderer.md	engine/renderer/renderer.h:250
-renderer::Renderer::GetDevice() const	function	renderer	renderer-renderer-getdevice-const	renderer.md	engine/renderer/renderer.h:260
-renderer::Renderer::GetSwapchain() const	function	renderer	renderer-renderer-getswapchain-const	renderer.md	engine/renderer/renderer.h:265
-renderer::Renderer::IsBroken() const	function	renderer	renderer-renderer-isbroken-const	renderer.md	engine/renderer/renderer.h:269
-renderer::Renderer::RenderFrame(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-renderer-renderframe-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/renderer.h:284
-renderer::Renderer::LastError() const	function	renderer	renderer-renderer-lasterror-const	renderer.md	engine/renderer/renderer.h:289
-renderer::Renderer::Stats() const	function	renderer	renderer-renderer-stats-const	renderer.md	engine/renderer/renderer.h:293
-renderer::Renderer::Pool() const	function	renderer	renderer-renderer-pool-const	renderer.md	engine/renderer/renderer.h:297
-renderer::Renderer::FrameIndex() const	function	renderer	renderer-renderer-frameindex-const	renderer.md	engine/renderer/renderer.h:301
+renderer::RecoveryPolicy	struct	renderer	renderer-recoverypolicy	renderer.md	engine/renderer/renderer.h:95
+renderer::RecoveryPolicy::max_attempts	variable	renderer	renderer-recoverypolicy-max-attempts	renderer.md	engine/renderer/renderer.h:97
+renderer::RecoveryPolicy::delay_frames	variable	renderer	renderer-recoverypolicy-delay-frames	renderer.md	engine/renderer/renderer.h:100
+renderer::RecoveryPolicy::max_delay_frames	variable	renderer	renderer-recoverypolicy-max-delay-frames	renderer.md	engine/renderer/renderer.h:102
+renderer::RecoveryPolicy::fallback_adapter	variable	renderer	renderer-recoverypolicy-fallback-adapter	renderer.md	engine/renderer/renderer.h:104
+renderer::RendererDesc	struct	renderer	renderer-rendererdesc	renderer.md	engine/renderer/renderer.h:110
+renderer::RendererDesc::device	variable	renderer	renderer-rendererdesc-device	renderer.md	engine/renderer/renderer.h:112
+renderer::RendererDesc::swapchain	variable	renderer	renderer-rendererdesc-swapchain	renderer.md	engine/renderer/renderer.h:114
+renderer::RendererDesc::scheduler	variable	renderer	renderer-rendererdesc-scheduler	renderer.md	engine/renderer/renderer.h:116
+renderer::RendererDesc::arena_bytes	variable	renderer	renderer-rendererdesc-arena-bytes	renderer.md	engine/renderer/renderer.h:118
+renderer::RendererDesc::graph	variable	renderer	renderer-rendererdesc-graph	renderer.md	engine/renderer/renderer.h:120
+renderer::RendererDesc::pool	variable	renderer	renderer-rendererdesc-pool	renderer.md	engine/renderer/renderer.h:122
+renderer::RendererDesc::host	variable	renderer	renderer-rendererdesc-host	renderer.md	engine/renderer/renderer.h:126
+renderer::RendererDesc::create_info	variable	renderer	renderer-rendererdesc-create-info	renderer.md	engine/renderer/renderer.h:129
+renderer::RendererDesc::recovery	variable	renderer	renderer-rendererdesc-recovery	renderer.md	engine/renderer/renderer.h:131
+renderer::RendererDesc::window	variable	renderer	renderer-rendererdesc-window	renderer.md	engine/renderer/renderer.h:133
+renderer::RendererDesc::initial_settings	variable	renderer	renderer-rendererdesc-initial-settings	renderer.md	engine/renderer/renderer.h:136
+renderer::RendererDesc::resources	variable	renderer	renderer-rendererdesc-resources	renderer.md	engine/renderer/renderer.h:139
+renderer::RendererDesc::build	variable	renderer	renderer-rendererdesc-build	renderer.md	engine/renderer/renderer.h:141
+renderer::RendererDesc::build_user	variable	renderer	renderer-rendererdesc-build-user	renderer.md	engine/renderer/renderer.h:143
+renderer::RendererStats	struct	renderer	renderer-rendererstats	renderer.md	engine/renderer/renderer.h:149
+renderer::RendererStats::frames_rendered	variable	renderer	renderer-rendererstats-frames-rendered	renderer.md	engine/renderer/renderer.h:151
+renderer::RendererStats::frames_skipped	variable	renderer	renderer-rendererstats-frames-skipped	renderer.md	engine/renderer/renderer.h:153
+renderer::RendererStats::frames_failed	variable	renderer	renderer-rendererstats-frames-failed	renderer.md	engine/renderer/renderer.h:155
+renderer::RendererStats::frames_lost	variable	renderer	renderer-rendererstats-frames-lost	renderer.md	engine/renderer/renderer.h:157
+renderer::RendererStats::swapchain_recreations	variable	renderer	renderer-rendererstats-swapchain-recreations	renderer.md	engine/renderer/renderer.h:159
+renderer::RendererStats::applies	variable	renderer	renderer-rendererstats-applies	renderer.md	engine/renderer/renderer.h:161
+renderer::RendererStats::resets	variable	renderer	renderer-rendererstats-resets	renderer.md	engine/renderer/renderer.h:163
+renderer::RendererStats::rollbacks	variable	renderer	renderer-rendererstats-rollbacks	renderer.md	engine/renderer/renderer.h:165
+renderer::RendererStats::recoveries	variable	renderer	renderer-rendererstats-recoveries	renderer.md	engine/renderer/renderer.h:167
+renderer::RendererStats::recovery_failures	variable	renderer	renderer-rendererstats-recovery-failures	renderer.md	engine/renderer/renderer.h:169
+renderer::RendererStats::last_reset_ms	variable	renderer	renderer-rendererstats-last-reset-ms	renderer.md	engine/renderer/renderer.h:171
+renderer::RendererStats::last_fence	variable	renderer	renderer-rendererstats-last-fence	renderer.md	engine/renderer/renderer.h:173
+renderer::ApplyResult	struct	renderer	renderer-applyresult	renderer.md	engine/renderer/renderer.h:179
+renderer::ApplyResult::ok	variable	renderer	renderer-applyresult-ok	renderer.md	engine/renderer/renderer.h:181
+renderer::ApplyResult::queued	variable	renderer	renderer-applyresult-queued	renderer.md	engine/renderer/renderer.h:183
+renderer::ApplyResult::rolled_back	variable	renderer	renderer-applyresult-rolled-back	renderer.md	engine/renderer/renderer.h:185
+renderer::ApplyResult::device_lost	variable	renderer	renderer-applyresult-device-lost	renderer.md	engine/renderer/renderer.h:187
+renderer::ApplyResult::performed	variable	renderer	renderer-applyresult-performed	renderer.md	engine/renderer/renderer.h:189
+renderer::ApplyResult::change	variable	renderer	renderer-applyresult-change	renderer.md	engine/renderer/renderer.h:191
+renderer::ApplyResult::reason	variable	renderer	renderer-applyresult-reason	renderer.md	engine/renderer/renderer.h:193
+renderer::ApplyResult::total_ms	variable	renderer	renderer-applyresult-total-ms	renderer.md	engine/renderer/renderer.h:195
+renderer::ApplyResult::release_ms	variable	renderer	renderer-applyresult-release-ms	renderer.md	engine/renderer/renderer.h:197
+renderer::ApplyResult::device_ms	variable	renderer	renderer-applyresult-device-ms	renderer.md	engine/renderer/renderer.h:199
+renderer::ApplyResult::swapchain_ms	variable	renderer	renderer-applyresult-swapchain-ms	renderer.md	engine/renderer/renderer.h:201
+renderer::ApplyResult::rebuild_ms	variable	renderer	renderer-applyresult-rebuild-ms	renderer.md	engine/renderer/renderer.h:203
+renderer::ResetBeginFn	alias	renderer	renderer-resetbeginfn	renderer.md	engine/renderer/renderer.h:207
+renderer::ResetEndFn	alias	renderer	renderer-resetendfn	renderer.md	engine/renderer/renderer.h:209
+renderer::Renderer	class	renderer	renderer-renderer	renderer.md	engine/renderer/renderer.h:217
+renderer::Renderer::Renderer(const RendererDesc&)	function	renderer	renderer-renderer-renderer-const-rendererdesc-amp	renderer.md	engine/renderer/renderer.h:224
+renderer::Renderer::Renderer(const Renderer&)	function	renderer	renderer-renderer-renderer-const-renderer-amp	renderer.md	engine/renderer/renderer.h:225
+renderer::Renderer::operator=(const Renderer&)	function	renderer	renderer-renderer-operator-eq-const-renderer-amp	renderer.md	engine/renderer/renderer.h:226
+renderer::Renderer::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-renderer-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/renderer.h:236
+renderer::Renderer::ApplySettings(const RenderSettings&)	function	renderer	renderer-renderer-applysettings-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:253
+renderer::Renderer::Settings() const	function	renderer	renderer-renderer-settings-const	renderer.md	engine/renderer/renderer.h:257
+renderer::Renderer::LastApply() const	function	renderer	renderer-renderer-lastapply-const	renderer.md	engine/renderer/renderer.h:261
+renderer::Renderer::GetCapabilities() const	function	renderer	renderer-renderer-getcapabilities-const	renderer.md	engine/renderer/renderer.h:265
+renderer::Renderer::SetResetCallbacks(ResetBeginFn,ResetEndFn,void*)	function	renderer	renderer-renderer-setresetcallbacks-resetbeginfn-resetendfn-void-star	renderer.md	engine/renderer/renderer.h:274
+renderer::Renderer::GetDevice() const	function	renderer	renderer-renderer-getdevice-const	renderer.md	engine/renderer/renderer.h:284
+renderer::Renderer::GetSwapchain() const	function	renderer	renderer-renderer-getswapchain-const	renderer.md	engine/renderer/renderer.h:289
+renderer::Renderer::IsRecovering() const	function	renderer	renderer-renderer-isrecovering-const	renderer.md	engine/renderer/renderer.h:293
+renderer::Renderer::IsBroken() const	function	renderer	renderer-renderer-isbroken-const	renderer.md	engine/renderer/renderer.h:297
+renderer::Renderer::RenderFrame(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-renderer-renderframe-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/renderer.h:312
+renderer::Renderer::LastError() const	function	renderer	renderer-renderer-lasterror-const	renderer.md	engine/renderer/renderer.h:317
+renderer::Renderer::Stats() const	function	renderer	renderer-renderer-stats-const	renderer.md	engine/renderer/renderer.h:321
+renderer::Renderer::Pool() const	function	renderer	renderer-renderer-pool-const	renderer.md	engine/renderer/renderer.h:325
+renderer::Renderer::FrameIndex() const	function	renderer	renderer-renderer-frameindex-const	renderer.md	engine/renderer/renderer.h:329
 renderer::RendererName()	function	renderer	renderer-renderername	renderer.md	engine/renderer/renderer_info.h:12
 renderer::RenderLogV(LogVerbosity,const char*,...)	function	renderer	renderer-renderlogv-logverbosity-const-char-star	renderer.md	engine/renderer/renderer_log.h:21
 RenderLog	macro	renderer	renderlog	renderer.md	engine/renderer/renderer_log.h:41

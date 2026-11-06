@@ -525,6 +525,10 @@ private:
     friend class VulkanSwapchain;
     VkCommandBuffer AcquireUploadCommandBufferLocked();
     void NoteDeviceLost(VkResult result);
+    // Fault injection: loses the device now if an injected loss may still strike. Returns whether the device is lost.
+    bool InjectLoss(const char* where, u32 number);
+    // Counts a present for fault injection (the swapchain, a friend, calls it). Returns whether the device is lost now.
+    bool CountPresent();
     void SetDebugName(u64 handle, VkObjectType type, const char* name);
     // Releases buffers whose frames have completed (or all of them when `all`).
     void CollectRetired(bool all);
@@ -563,6 +567,11 @@ private:
     UniquePtr<VulkanMemoryBackend> memory_backend_;
     UniquePtr<MemoryAllocator> memory_;
     std::atomic<bool> device_lost_{false};
+    u32 lose_device_at_submit_ = 0; // fault injection: the Nth submit that submits something loses the device
+    u32 lose_device_at_present_ = 0; // fault injection: the Nth present loses the device
+    std::atomic<u32>* strikes_left_ = nullptr;    // fault injection: limit on injected losses across devices, null = none
+    std::atomic<u32> submit_count_{0};
+    std::atomic<u32> present_count_{0};
     u32 lose_device_at_frame_ = 0; // fault injection: the frame at which to report the device lost, 0 = never
     std::atomic<u64> frame_number_{0};
 

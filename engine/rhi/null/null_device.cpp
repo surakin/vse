@@ -207,6 +207,8 @@ struct NullDeviceState {
     HandlePool<PipelineRes, PipelineTag> pipelines;
 
     u64 frame = 0;
+    u32 submits = 0;
+    u32 presents = 0;
     bool in_frame = false;
     FenceValue submitted = 0;
     bool lost = false;
@@ -222,6 +224,16 @@ struct NullDeviceState {
     usize lists_in_use = 0;                   // handed out this frame
 
     u32 epoch = AllocateDeviceSerial();
+
+    // Returns whether an injected loss may strike now (and counts it against `strikes_left`).
+    bool Strike() {
+        if (options.strikes_left == nullptr) return true;
+        u32 left = options.strikes_left->load(std::memory_order_relaxed);
+        while (left != 0) {
+            if (options.strikes_left->compare_exchange_weak(left, left - 1, std::memory_order_relaxed)) return true;
+        }
+        return false;
+    }
 
     explicit NullDeviceState(const NullDeviceOptions& o) : options(o) {
         const u32 seed = GenerationSeed(epoch);
@@ -1494,7 +1506,10 @@ public:
     SwapchainStatus Present() override {
         ENGINE_ASSERT(acquired_, "Swapchain::Present: no image has been acquired");
         acquired_ = false;
-        return (lost_ || device_->DeviceLost()) ? SwapchainStatus::Lost : SwapchainStatus::Ok;
+        if (device_->CountPresent()) {
+            return SwapchainStatus::Lost;
+        }
+        return lost_ ? SwapchainStatus::Lost : SwapchainStatus::Ok;
     }
     SwapchainStatus Resize(u32 width, u32 height) override {
         if (width == 0 || height == 0) {
@@ -1794,6 +1809,11 @@ FenceValue NullDevice::Submit(CommandList* const* lists, usize count) {
         s.Error("Submit: no frame is open (call BeginFrame first)");
         return 0;
     }
+    if (count > 0 && s.options.lose_device_at_submit != 0 && ++s.submits == s.options.lose_device_at_submit && s.Strike()) {
+        s.lost = true;
+        RhiLog(LogVerbosity::Error, "NullDevice: device lost (injected at submit %u)", s.submits);
+        return 0;
+    }
     if (count > 0 && lists == nullptr) {
         s.Error("Submit: lists is null but count is %u", static_cast<u32>(count));
         return 0;
@@ -1906,7 +1926,7 @@ void NullDevice::BeginFrame() {
     }
     ++s.frame;
     s.in_frame = true;
-    if (s.options.lose_device_at_frame != 0 && s.frame == s.options.lose_device_at_frame && !s.lost) {
+    if (s.options.lose_device_at_frame != 0 && s.frame == s.options.lose_device_at_frame && !s.lost && s.Strike()) {
         s.lost = true;
         RhiLog(LogVerbosity::Error, "NullDevice: device lost (injected at frame %llu)", static_cast<unsigned long long>(s.frame));
     }
@@ -1948,6 +1968,16 @@ void NullDevice::WaitIdle() {
 bool NullDevice::DeviceLost() const {
     std::lock_guard<std::mutex> lock(state_->mu);
     return state_->lost;
+}
+
+bool NullDevice::CountPresent() {
+    State& s = *state_;
+    std::lock_guard<std::mutex> lock(s.mu);
+    if (!s.lost && s.options.lose_device_at_present != 0 && ++s.presents == s.options.lose_device_at_present && s.Strike()) {
+        s.lost = true;
+        RhiLog(LogVerbosity::Error, "NullDevice: device lost (injected at present %u)", s.presents);
+    }
+    return s.lost;
 }
 
 void NullDevice::SimulateDeviceLoss() {

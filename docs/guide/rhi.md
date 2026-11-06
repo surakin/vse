@@ -185,7 +185,8 @@ three kinds, and the headers say which with `Aborts:` and `Fails:` labels.
 The rule of thumb: operations *on an existing handle* assert, because a bad handle can only be a bug; operations that
 *create* something return an invalid handle, because the description or the machine may be at fault and the caller
 can recover. After a lost device, submissions are ignored, `Device::DeviceLost` reports it and destroying resources
-and the device still works.
+and the device still works; a lost device is also recoverable: `DeviceHost::Recreate` replaces it (see "Lifecycle and reset", and the
+renderer guide's "Device loss and recovery" for the automatic retry policy).
 
 **Failure injection.** [[rhi::FaultInjection]] in [[rhi::DeviceCreateInfo]] makes the Vulkan backend fail on purpose, so
 the paths above are exercised without a broken machine: `lose_device_at_frame` reports the device lost at a chosen
@@ -514,8 +515,10 @@ an earlier one; the wait/signal lists of a multi-queue submit arrive with a seco
 
 **A lost device.** `VK_ERROR_DEVICE_LOST` from any call sets a sticky state, `DeviceLost()`, and logs once.
 After that `Submit`, `UploadBuffer` and `ReadbackBuffer` fail and `CreateCommandList` returns null, and frames still
-begin and end, so the application can shut down cleanly. Tests exercise this with
-`VulkanDevice::InjectSubmitFailure`.
+begin and end, so the application can shut down cleanly or recover by creating a new device. `WaitIdle` and `Quiesce` on a lost device
+return as soon as the driver reports the loss and release what was retired (an injected loss leaves a healthy device, so the wait is still real). Tests exercise this with
+[[rhi::FaultInjection]] (`lose_device_at_frame`, `lose_device_at_submit`, `lose_device_at_present`, and `strikes_left` to limit how many
+devices an injected loss strikes) and `VulkanDevice::InjectSubmitFailure`.
 
 ### Presenting to a window
 

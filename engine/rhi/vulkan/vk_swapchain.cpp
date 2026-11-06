@@ -370,7 +370,7 @@ SwapchainStatus VulkanSwapchain::Present() {
     VulkanDevice& d = *device_;
     ENGINE_ASSERT(acquired_, "Swapchain::Present: no image has been acquired");
     acquired_ = false;
-    if (lost_ || d.DeviceLost()) {
+    if (lost_ || d.DeviceLost() || d.CountPresent()) {
         return SwapchainStatus::Lost;
     }
     VkResult r;

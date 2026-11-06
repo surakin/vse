@@ -9027,6 +9027,62 @@ using FrameBuildFn = bool (*)(const FrameContext& context, void* user);
 
 A frame callback: declare the passes on `context.graph`. Return false to abandon the frame.
 
+## `RecoveryPolicy` {#renderer-recoverypolicy}
+
+`struct renderer::RecoveryPolicy` — defined in `engine/renderer/renderer.h`
+
+```cpp
+struct RecoveryPolicy { ... }
+```
+
+What the renderer does when the device (or its swapchain surface) is lost.
+
+Needs a [`renderer::RendererDesc::host`](#renderer-rendererdesc-host); without one a loss stays terminal. Attempts and delays are counted in frames, not seconds, so tests are deterministic.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `max_attempts` {#renderer-recoverypolicy-max-attempts}
+
+`variable renderer::RecoveryPolicy::max_attempts` — defined in `engine/renderer/renderer.h`
+
+```cpp
+u32 max_attempts;
+```
+
+The most reset attempts for one loss; 0 turns recovery off (the loss is terminal, as before Phase 7).
+
+### `delay_frames` {#renderer-recoverypolicy-delay-frames}
+
+`variable renderer::RecoveryPolicy::delay_frames` — defined in `engine/renderer/renderer.h`
+
+```cpp
+u32 delay_frames;
+```
+
+Frames to wait before the second attempt; each later attempt waits twice as long as the one before, up to `max_delay_frames`. The first attempt is made at once, in the frame that found the loss.
+
+### `max_delay_frames` {#renderer-recoverypolicy-max-delay-frames}
+
+`variable renderer::RecoveryPolicy::max_delay_frames` — defined in `engine/renderer/renderer.h`
+
+```cpp
+u32 max_delay_frames;
+```
+
+The longest wait between attempts, in frames.
+
+### `fallback_adapter` {#renderer-recoverypolicy-fallback-adapter}
+
+`variable renderer::RecoveryPolicy::fallback_adapter` — defined in `engine/renderer/renderer.h`
+
+```cpp
+bool fallback_adapter;
+```
+
+Whether the second and later attempts may use the best adapter instead of the saved one when the saved one keeps failing.
+
 ## `RendererDesc` {#renderer-rendererdesc}
 
 `struct renderer::RendererDesc` — defined in `engine/renderer/renderer.h`
@@ -9120,6 +9176,16 @@ rhi::DeviceCreateInfo create_info;
 ```
 
 What every device is created with besides the settings (the window, application name, pipeline cache). Backend, adapter, validation, sync validation and frames in flight come from the settings. `window` and the strings must outlive the renderer.
+
+### `recovery` {#renderer-rendererdesc-recovery}
+
+`variable renderer::RendererDesc::recovery` — defined in `engine/renderer/renderer.h`
+
+```cpp
+RecoveryPolicy recovery;
+```
+
+What to do when the device is lost.
 
 ### `window` {#renderer-rendererdesc-window}
 
@@ -9264,6 +9330,26 @@ u64 rollbacks;
 ```
 
 Resets or rebuilds that failed and were undone by restoring the previous settings.
+
+### `recoveries` {#renderer-rendererstats-recoveries}
+
+`variable renderer::RendererStats::recoveries` — defined in `engine/renderer/renderer.h`
+
+```cpp
+u64 recoveries;
+```
+
+Device losses that were recovered from.
+
+### `recovery_failures` {#renderer-rendererstats-recovery-failures}
+
+`variable renderer::RendererStats::recovery_failures` — defined in `engine/renderer/renderer.h`
+
+```cpp
+u64 recovery_failures;
+```
+
+Recovery attempts that failed.
 
 ### `last_reset_ms` {#renderer-rendererstats-last-reset-ms}
 
@@ -9615,6 +9701,20 @@ Returns the swapchain the renderer presents to now, or null.
 |---|---|
 | Fails | returns null without a swapchain or once the renderer is broken. |
 | Ownership | borrowed from the host. |
+
+### `IsRecovering()` {#renderer-renderer-isrecovering-const}
+
+`method renderer::Renderer::IsRecovering` — defined in `engine/renderer/renderer.h`
+
+```cpp
+bool IsRecovering() const;
+```
+
+Returns whether the renderer is working to recover from a loss (frames return `Skipped` while it waits between attempts).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `IsBroken()` {#renderer-renderer-isbroken-const}
 
