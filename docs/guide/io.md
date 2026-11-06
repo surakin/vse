@@ -1,6 +1,6 @@
 # Paths, files and directories
 
-Status: draft (Phase 8, Days 116-118: paths, errors, file-system operations and files). Async I/O and directories arrive with Days 119-120.
+Status: draft (Phase 8, Days 116-119: paths, errors, file-system operations, files and asynchronous I/O). Directories arrive on Day 120.
 
 The file layer lives in `engine/foundation/io/` (namespace `engine_placeholder::io`). Design and reasons:
 `docs/superpowers/specs/2026-11-06-file-layer-design.md`.
@@ -119,7 +119,7 @@ if (io::UserCacheDirectory("my_game", &cache).Ok()) {
 ## Reading and writing files
 
 `io::File` (`engine/foundation/io/file.h`) is an abstract interface: the same calls read a local file now and a pak entry or a
-network file later. Open one with `File::Open(path, mode, flags, &file)` into a `UniquePtr<File>`.
+network file later. Open one with `File::Open(path, mode, flags, &file)` into a `FilePtr`.
 
 - **Modes:** `Read` (must exist), `Write` (create, truncate), `Append` (create, writes go to the end), `ReadWrite` (must exist
   unless `kOpenCreate`). `kOpenCreateNew` fails with `AlreadyExists`; `kOpenTruncate` empties an existing file.
@@ -143,7 +143,7 @@ io::Path scratch;
 io::CreateTempDirectory(dir, "guide", &scratch);
 io::Path path = scratch / "notes.txt";
 
-UniquePtr<io::File> file;
+io::FilePtr file;
 io::File::Open(path, io::OpenMode::Write, io::kOpenNone, &file);
 file->Write("hello, files", 12, 0);
 file->Close();
@@ -190,3 +190,92 @@ io::RemoveAll(scratch);
 ```output
 volume = 9
 ```
+
+## Asynchronous I/O
+
+Every `io::File` can read, write and flush asynchronously. The calls take a caller-owned `io::AsyncRequest`, so starting an operation
+allocates nothing, and a completion function that is called exactly once:
+
+```cpp
+file->ReadAsync(&request, buffer, length, offset, &OnDone, user);   // returns at once
+// void OnDone(void* user, const io::AsyncResult& result)  - result.status, result.bytes
+```
+
+- **Lifetime.** The request and the buffer must stay valid, and the request unmoved, until the completion has run. Do not reuse a
+  request before then (inside its own completion is fine).
+- **Where the completion runs.** On an unspecified thread: the executor's, the backend's own, or the caller's when the operation fails
+  before it starts. Keep it short; it may destroy the file and the request.
+- **Executors.** A backend that is not natively asynchronous (a local file) runs its synchronous operations on an `io::IoExecutor`.
+  By default that is a built-in single thread; give files the job system's I/O thread with
+  `io::SetDefaultExecutor(&scheduler.Io())`. A shut-down executor completes new requests with `Interrupted`; work it had already accepted
+  still runs.
+- **Cancel.** `file->Cancel(&request)` succeeds only while the request has not started; it still completes, once, with `Interrupted`. Call it
+  only while the request cannot have completed: the completion may free the request.
+- **Destroying a file** with requests in flight waits for them (a natively asynchronous backend completes them with `Interrupted`). A
+  completion may destroy the file only when no other request on it is in flight; otherwise the destructor would wait for work queued
+  behind the completion that is running it.
+- **In jobs.** `co_await jobs::ReadAsync(scheduler, file, buffer, length, offset)` (also `WriteAsync`, `FlushAsync`) returns the result
+  and resumes on a scheduler participant; `co_await jobs::ReadAllAsync(scheduler, file)` reads the whole file in chunks and yields the bytes.
+
+```cpp compile run standalone
+#include <cstdio>
+#include "io/file.h"
+#include "io/file_system.h"
+#include "jobs/async_io.h"
+#include "jobs/file_async.h"
+#include "jobs/job.h"
+#include "jobs/scheduler.h"
+using namespace engine_placeholder;
+
+static jobs::Job Load(jobs::Scheduler* s, io::File* f, std::atomic<int>* done) {
+    jobs::FileReadAllResult r = co_await jobs::ReadAllAsync(*s, *f);
+    std::printf("%d %zu\n", r.status.Ok() ? 1 : 0, static_cast<size_t>(r.bytes.Size()));
+    done->store(1);
+}
+
+int main() {
+    io::Path dir;
+    io::TempDirectory(&dir);
+    io::Path scratch;
+    io::CreateTempDirectory(dir, "guide", &scratch);
+    io::Path path = scratch / "blob";
+    io::WriteFile(path, "0123456789", 10);
+
+    jobs::Scheduler::Config config;
+    config.participants = 2;
+    jobs::Scheduler scheduler(config);
+    io::SetDefaultExecutor(&scheduler.Io());
+    {
+        io::FilePtr file;
+        io::File::Open(path, io::OpenMode::Read, io::kOpenNone, &file);
+        std::atomic<int> done{0};
+        scheduler.Submit(Load(&scheduler, file.Get(), &done));
+        scheduler.HelpUntil(done, 1);
+    }
+    io::SetDefaultExecutor(nullptr);
+    io::RemoveAll(scratch);
+    return 0;
+}
+```
+```output
+1 10
+```
+
+## Writing a File backend
+
+Implement `io::File` (`engine/foundation/io/file.h`) and nothing else: the helpers, the stream position, the atomic write and the coroutine
+adapters all work through the interface. The test double `tests/io/slow_file.h` is a complete example: a file whose bytes live in memory and
+whose operations complete on its own thread, after a delay, in short chunks, with an unknown size until the first read.
+
+1. **Read** returns the bytes it has (a chunk is fine, zero means the end). **Write** is all or an error.
+2. **Capabilities** are honest: report `kCapSizeKnown` only once `Size` works (it can turn on later).
+3. **Natively asynchronous?** Override `StartAsync`, queue the request, and when it finishes call `CompleteAsync` exactly once. Use
+   `ClaimAsync` when you start working on it (it returns false for a cancelled request: complete that one with `Interrupted`).
+   Complete from another thread, not from inside `StartAsync` (except to report a failure), so chains of requests cannot recurse.
+   Otherwise leave `StartAsync` alone and the base class runs your synchronous operations on the default executor.
+4. **Destructor:** call `WaitForAsyncRequests()` first (a backend that completes requests on its own thread stops that thread and
+   completes what is queued with `Interrupted`, then waits). Do not destroy a native-async file from inside its own completion unless your
+   thread can be joined from itself.
+5. **Close** is idempotent, and every operation after it fails with `Invalid`.
+6. Run the conformance suite (`tests/io/file_conformance.h`: `RunReadConformance`, `RunWriteConformance`) against your backend with a factory
+   that makes a file holding given bytes, and register a URL scheme with `io::RegisterFileScheme` if the file is opened by location.

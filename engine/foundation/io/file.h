@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "io/error.h"
@@ -43,6 +45,90 @@ enum FileCapability : u32 {
     kCapAppendOnly = 32,   ///< Opened with `OpenMode::Append`: writes go to the end and offset writes fail.
 };
 
+class File;
+
+/// An owning pointer to an open [[io::File]]; what [[io::File::Open]] hands out.
+using FilePtr = UniquePtr<File>;
+
+/// A unit of work queued on an [[io::IoExecutor]]; embed it as the first member of the request type. The queue owns `next` while
+/// the work is queued.
+///
+/// Thread-safety: thread-compatible. Ownership: owned by the submitter, which keeps it valid until `run` has returned.
+struct IoWork {
+    IoWork* next = nullptr;                 ///< Managed by the executor.
+    void (*run)(IoWork* self) = nullptr;    ///< Called once on an executor thread; it may free the work as its last action.
+};
+
+/// Something that runs [[io::IoWork]] on another thread: the seam that lets the foundation do asynchronous I/O without
+/// depending on the job system. `jobs::IoThread` implements it.
+///
+/// The executor promises that work accepted by `Submit` is always run, in submission order per executor thread, even during shutdown (drain). After
+/// shutdown `Submit` returns false and the caller completes the work itself.
+///
+/// Thread-safety: thread-safe.
+class IoExecutor {
+public:
+    virtual ~IoExecutor() = default;
+    /// Queues `work`. Returns false, without queueing, once the executor is shut down.
+    [[nodiscard]] virtual bool Submit(IoWork* work) = 0;
+};
+
+/// Sets the executor files use for asynchronous operations when the backend is not natively asynchronous. `nullptr` restores the
+/// built-in single-thread executor, which is created on first use. The executor must outlive every file with requests in flight.
+///
+/// Thread-safety: thread-safe.
+void SetDefaultExecutor(IoExecutor* executor);
+/// Clears the default executor if it is `executor` (an executor calls this before it goes away, so the process never keeps a
+/// pointer to a dead one). Does nothing when another executor is installed.
+void ClearDefaultExecutorIf(IoExecutor* executor);
+/// Returns the current default executor (the built-in one when none was set).
+IoExecutor& DefaultExecutor();
+
+/// The outcome of an asynchronous operation.
+struct AsyncResult {
+    Status status;   ///< Success or why it failed (`Interrupted` for a cancelled request or a shut-down executor).
+    usize bytes = 0; ///< Bytes transferred (reads and writes).
+};
+
+/// Called exactly once when an asynchronous operation finishes, on an unspecified thread (the executor's or the backend's own; only an
+/// operation that fails before it starts completes on the caller's thread, from inside the start call). It must not block for long. It may
+/// start further requests, and destroy the request. It may destroy the file only if no other request on that file is in flight (the destructor
+/// waits for them, and they may be queued behind this very completion).
+using Completion = void (*)(void* user, const AsyncResult& result);
+
+/// What an [[io::AsyncRequest]] does.
+enum class AsyncKind : u8 {
+    Read,  ///< Read into a buffer at an offset.
+    Write, ///< Write a buffer at an offset.
+    Flush, ///< Flush buffered data.
+};
+
+/// Progress of an [[io::AsyncRequest]], for backends.
+enum AsyncState : u8 {
+    kAsyncPending = 0,   ///< Started, not yet running.
+    kAsyncRunning = 1,   ///< A thread is performing it.
+    kAsyncCancelled = 2, ///< Cancelled before it ran; it completes with `Interrupted`.
+    kAsyncDone = 3,      ///< Completed.
+};
+
+/// Caller-owned state of one asynchronous operation, so starting one allocates nothing. Fill it with
+/// [[io::File::ReadAsync]], [[io::File::WriteAsync]] or [[io::File::FlushAsync]]; it, and the buffer it names, must stay valid and
+/// unmoved until the completion has been called. Do not reuse it before then.
+///
+/// Thread-safety: thread-compatible; the file layer owns the fields from the start call until the completion.
+struct AsyncRequest {
+    IoWork work;                    ///< First member: executors see the request as plain work.
+    File* file = nullptr;           ///< The file; set by the start call.
+    AsyncKind kind = AsyncKind::Read; ///< The operation.
+    void* buffer = nullptr;         ///< Read destination.
+    const void* data = nullptr;     ///< Write source.
+    usize length = 0;               ///< Bytes to transfer.
+    u64 offset = 0;                 ///< File offset.
+    Completion done = nullptr;      ///< Called once with `user` and the result.
+    void* user = nullptr;           ///< Passed to `done`.
+    std::atomic<u8> state{kAsyncPending}; ///< An [[io::AsyncState]], managed by the file layer.
+};
+
 /// An open file. Implemented per backend; use [[io::File::Open]] to get one.
 ///
 /// Offsets are 64-bit. `Read` and `Write` at an offset carry no shared state, so many threads may read different (or the
@@ -53,13 +139,14 @@ enum FileCapability : u32 {
 /// and logs a failed close (it cannot report it): call `Close` yourself where the result matters.
 ///
 /// Thread-safety: thread-compatible; offset reads and writes may run concurrently, everything else needs external synchronization.
-/// Ownership: owned through `UniquePtr<File>`; not copyable.
+/// Ownership: owned through `FilePtr`; not copyable.
 class File {
 public:
     File() = default;
     File(const File&) = delete;
     File& operator=(const File&) = delete;
-    virtual ~File() = default;
+    /// Reports a file destroyed with requests still in flight (a backend must call `WaitForAsyncRequests` first).
+    virtual ~File() { CheckNoRequestsInFlight(); }
 
     /// Opens the local file `path` (the path is never read as a URL; see [[io::File::OpenLocation]]).
     ///
@@ -72,14 +159,14 @@ public:
     /// Fails: `NotFound`, `PermissionDenied`, `IsADirectory` (also when the path names a directory and the mode is `Read`), `AlreadyExists`
     ///   (`kOpenCreateNew`), `Invalid` (`OpenMode::Read` with `kOpenCreate`, `kOpenCreateNew` or `kOpenTruncate`), `NotADirectory`,
     ///   `TooManyOpenFiles`, `SymlinkLoop`, `TooLong`.
-    static Status Open(const Path& path, OpenMode mode, u32 flags, UniquePtr<File>* out);
+    static Status Open(const Path& path, OpenMode mode, u32 flags, FilePtr* out);
     /// Opens `location`, which is either a local path or `scheme://rest`. `file:///abs/path` (percent escapes such as `%20` are
     /// decoded; no query or fragment) and a text without a scheme are local files;
     /// other schemes go to the backend registered with [[io::RegisterFileScheme]].
     ///
     /// Param location: path text or URL.
     /// Fails: `Unsupported` for a scheme nobody registered, plus the errors of [[io::File::Open]].
-    static Status OpenLocation(StringView location, OpenMode mode, u32 flags, UniquePtr<File>* out);
+    static Status OpenLocation(StringView location, OpenMode mode, u32 flags, FilePtr* out);
 
     /// Returns true until the file is closed.
     virtual bool IsOpen() const = 0;
@@ -130,12 +217,57 @@ public:
     /// Writes all bytes at the stream position and advances it; on an `Append`-mode file it appends.
     Status Write(const void* data, usize length);
 
+    /// Starts reading up to `length` bytes at `offset` into `buffer`; `request` completes with the bytes read (`Read` rules: fewer is
+    /// allowed, zero is the end). Returns at once. The buffer and `request` must stay valid until `done` has run. Many requests may
+    /// be in flight on one file; they may complete in any order (an in-order backend completes them in order).
+    ///
+    /// Param request: caller-owned; must not be in flight.
+    /// Param done: called exactly once with `user`; must not be null.
+    /// Aborts: `request` or `done` is null.
+    void ReadAsync(AsyncRequest* request, void* buffer, usize length, u64 offset, Completion done, void* user);
+    /// Starts writing all `length` bytes at `offset`; the data must stay valid until `done` has run. `Write` rules apply.
+    ///
+    /// Aborts: `request` or `done` is null.
+    void WriteAsync(AsyncRequest* request, const void* data, usize length, u64 offset, Completion done, void* user);
+    /// Starts a [[io::File::Flush]].
+    ///
+    /// Aborts: `request` or `done` is null.
+    void FlushAsync(AsyncRequest* request, Completion done, void* user);
+    /// Asks for `request` not to run. Best effort: it succeeds only while the request has not started, and the request still completes
+    /// (exactly once) with `Interrupted`. Returns false when the request is already running or finished. Call it only while the request is certainly not complete
+    /// (the completion may free the request, and `Cancel` reads it): for example while holding a lock the completion also takes.
+    virtual bool Cancel(AsyncRequest* request) { return CancelPending(request); }
+
+protected:
+    /// Starts a prepared request. The default runs it on [[io::DefaultExecutor]] using the synchronous operations, so every backend
+    /// gets asynchronous I/O; a natively asynchronous backend overrides this and calls [[io::File::CompleteAsync]] when done. A backend
+    /// completes a request from `StartAsync` itself only to report a failure; success is completed from another thread, so that a chain of
+    /// requests started from completions (such as `jobs::ReadAllAsync`) cannot recurse without bound.
+    virtual void StartAsync(AsyncRequest* request) { StartOnExecutor(request); }
+    /// For backends: cancels a request that has not started (the default of [[io::File::Cancel]]).
+    static bool CancelPending(AsyncRequest* request);
+    /// For backends: runs a prepared request on [[io::DefaultExecutor]] with the synchronous operations (the default of `StartAsync`).
+    void StartOnExecutor(AsyncRequest* request);
+    /// For backends: moves a pending request to running; returns false when it was cancelled (complete it with `Interrupted`).
+    static bool ClaimAsync(AsyncRequest* request);
+    /// For backends: finishes `request` and calls its completion exactly once. Touches nothing of the file afterwards, so the
+    /// completion may destroy it.
+    void CompleteAsync(AsyncRequest* request, const AsyncResult& result);
+    /// For backends: call at the start of the destructor. Waits until every started request has completed (or begun completing).
+    void WaitForAsyncRequests();
+
 private:
+    // Every virtual member is defined inline, so the class has no key function and each translation unit that derives from it
+    // (including RTTI-enabled test code, against the RTTI-free library) emits its own type information.
+    void CheckNoRequestsInFlight();
+    static void RunOnExecutor(IoWork* work);
+
     u64 position_ = 0;
+    std::atomic<u32> in_flight_{0};
 };
 
 /// Creates the backend object for a URL scheme: `location` is the whole text (`scheme://rest`).
-using FileFactory = Status (*)(StringView location, OpenMode mode, u32 flags, UniquePtr<File>* out);
+using FileFactory = Status (*)(StringView location, OpenMode mode, u32 flags, FilePtr* out);
 
 /// Registers a backend for `scheme` (lower case letters, digits, `+`, `-`, `.`; first a letter).
 ///

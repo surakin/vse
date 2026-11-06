@@ -7,6 +7,7 @@
 #include <thread>
 
 #include "containers/unique_ptr.h"
+#include "io/file.h"
 #include "jobs/counter.h"
 #include "mem/arena_allocator.h"
 #include "string/string.h"
@@ -46,16 +47,9 @@
 //! awaitable.
 namespace engine_placeholder::jobs {
 
-/// Intrusive node for work queued on the [[jobs::IoThread]]; embed it as the first base of a request type.
-///
-/// Thread-safety: thread-compatible. The queue owns `next` while the request is queued; `run` executes on the I/O thread.
-/// Ownership: the request is owned by whoever created it and must stay valid until its `run` has finished.
-struct IoRequest {
-    /// Next queued request; managed by [[jobs::IoThread]], not by the user.
-    IoRequest* next = nullptr;
-    /// Function executed on the I/O thread; it may free the request itself as its last action.
-    void (*run)(IoRequest* self) = nullptr;
-};
+/// Intrusive node for work queued on the [[jobs::IoThread]]: the foundation's [[io::IoWork]], so the thread is also an
+/// [[io::IoExecutor]]. Embed it as the first base of a request type.
+using IoRequest = io::IoWork;
 
 /// The dedicated thread that runs blocking I/O requests in FIFO order.
 ///
@@ -67,7 +61,7 @@ struct IoRequest {
 /// Ownership: owns the I/O thread and joins it on destruction; queued
 ///   requests stay owned by their creators.
 /// See: [[jobs::ReadFileAsync]]
-class IoThread {
+class IoThread final : public io::IoExecutor {
 public:
     /// Starts the I/O thread.
     IoThread();
@@ -90,6 +84,14 @@ public:
     /// Ownership: the thread borrows the request until `run` returns; ownership stays with the caller.
     /// Thread-safety: thread-safe. Any thread.
     [[nodiscard]] bool Enqueue(IoRequest* request);
+
+    /// The [[io::IoExecutor]] interface: the same as [[jobs::IoThread::Enqueue]], so files can run their asynchronous operations here
+    /// (`io::SetDefaultExecutor(&scheduler.Io())`).
+    ///
+    /// Returns: `true` if queued.
+    /// Fails: returns `false` once the thread is shutting down; the work is not queued and the caller completes it.
+    /// Ownership: borrowed until `run` returns, as for [[jobs::IoThread::Enqueue]].
+    [[nodiscard]] bool Submit(io::IoWork* work) override { return Enqueue(work); }
 
     /// Runs everything already queued, then joins the thread.
     ///

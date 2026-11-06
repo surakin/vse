@@ -100,3 +100,5 @@ a job prints its own trace, which includes the job's function, and then the cras
 show something of your own in every report (a job count, a queue depth), add a crash state entry with
 [[debug::CrashStateCounter]] or [[debug::SetCrashStateText]]; see "Adding your subsystem's state" in
 [Debugging](foundation-debugging.md). A thread you create yourself should call [[debug::RegisterThreadForCrashHandling]] with a name.
+
+Files can also be read, written and flushed with `co_await` through `jobs::ReadAsync`, `WriteAsync`, `FlushAsync` and `ReadAllAsync`; see [Asynchronous I/O](io.md#asynchronous-io).

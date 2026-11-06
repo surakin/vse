@@ -200,7 +200,7 @@ How a file is opened.
 enum OpenFlag : u32 { ... }
 ```
 
-Extra options for [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-uniqueptr-lt-file-gt-star), combined with `|`.
+Extra options for [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-fileptr-star), combined with `|`.
 
 | Enumerator | Value | Description |
 |---|---|---|
@@ -228,6 +228,307 @@ What a backend can do; test the bits of [`io::File::Capabilities`](#io-file-capa
 | <a id="io-kcapatomicreplace"></a>`kCapAtomicReplace` | `16` | The backend can replace a whole file atomically (see [`io::WriteFileAtomic`](#io-writefileatomic-const-path-amp-const-void-star-usize)). |
 | <a id="io-kcapappendonly"></a>`kCapAppendOnly` | `32` | Opened with `OpenMode::Append`: writes go to the end and offset writes fail. |
 
+## `FilePtr` {#io-fileptr}
+
+`alias io::FilePtr` — defined in `engine/foundation/io/file.h`
+
+```cpp
+using FilePtr = UniquePtr<File>;
+```
+
+An owning pointer to an open [`io::File`](#io-file); what [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-fileptr-star) hands out.
+
+## `IoWork` {#io-iowork}
+
+`struct io::IoWork` — defined in `engine/foundation/io/file.h`
+
+```cpp
+struct IoWork { ... }
+```
+
+A unit of work queued on an [`io::IoExecutor`](#io-ioexecutor); embed it as the first member of the request type. The queue owns `next` while the work is queued.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible. Ownership: owned by the submitter, which keeps it valid until `run` has returned. |
+
+### `next` {#io-iowork-next}
+
+`variable io::IoWork::next` — defined in `engine/foundation/io/file.h`
+
+```cpp
+IoWork* next;
+```
+
+Managed by the executor.
+
+### `run` {#io-iowork-run}
+
+`variable io::IoWork::run` — defined in `engine/foundation/io/file.h`
+
+```cpp
+void (*run)(IoWork* self);
+```
+
+Called once on an executor thread; it may free the work as its last action.
+
+## `IoExecutor` {#io-ioexecutor}
+
+`class io::IoExecutor` — defined in `engine/foundation/io/file.h`
+
+```cpp
+class IoExecutor { ... }
+```
+
+Something that runs [`io::IoWork`](#io-iowork) on another thread: the seam that lets the foundation do asynchronous I/O without depending on the job system. `jobs::IoThread` implements it.
+
+The executor promises that work accepted by `Submit` is always run, in submission order per executor thread, even during shutdown (drain). After shutdown `Submit` returns false and the caller completes the work itself.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe. |
+
+### `~IoExecutor()` {#io-ioexecutor-tilde-ioexecutor}
+
+`destructor io::IoExecutor::~IoExecutor` — defined in `engine/foundation/io/file.h`
+
+```cpp
+virtual ~IoExecutor() = default;
+```
+
+_Defaulted._
+
+### `Submit(IoWork*)` {#io-ioexecutor-submit-iowork-star}
+
+`method io::IoExecutor::Submit` — defined in `engine/foundation/io/file.h`
+
+```cpp
+[[nodiscard]] virtual bool Submit(IoWork* work) = 0;
+```
+
+Queues `work`. Returns false, without queueing, once the executor is shut down.
+
+## `SetDefaultExecutor(IoExecutor*)` {#io-setdefaultexecutor-ioexecutor-star}
+
+`function io::SetDefaultExecutor` — defined in `engine/foundation/io/file.h`
+
+```cpp
+void SetDefaultExecutor(IoExecutor* executor);
+```
+
+Sets the executor files use for asynchronous operations when the backend is not natively asynchronous. `nullptr` restores the built-in single-thread executor, which is created on first use. The executor must outlive every file with requests in flight.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe. |
+
+## `ClearDefaultExecutorIf(IoExecutor*)` {#io-cleardefaultexecutorif-ioexecutor-star}
+
+`function io::ClearDefaultExecutorIf` — defined in `engine/foundation/io/file.h`
+
+```cpp
+void ClearDefaultExecutorIf(IoExecutor* executor);
+```
+
+Clears the default executor if it is `executor` (an executor calls this before it goes away, so the process never keeps a pointer to a dead one). Does nothing when another executor is installed.
+
+## `DefaultExecutor()` {#io-defaultexecutor}
+
+`function io::DefaultExecutor` — defined in `engine/foundation/io/file.h`
+
+```cpp
+IoExecutor& DefaultExecutor();
+```
+
+Returns the current default executor (the built-in one when none was set).
+
+## `AsyncResult` {#io-asyncresult}
+
+`struct io::AsyncResult` — defined in `engine/foundation/io/file.h`
+
+```cpp
+struct AsyncResult { ... }
+```
+
+The outcome of an asynchronous operation.
+
+### `status` {#io-asyncresult-status}
+
+`variable io::AsyncResult::status` — defined in `engine/foundation/io/file.h`
+
+```cpp
+Status status;
+```
+
+Success or why it failed (`Interrupted` for a cancelled request or a shut-down executor).
+
+### `bytes` {#io-asyncresult-bytes}
+
+`variable io::AsyncResult::bytes` — defined in `engine/foundation/io/file.h`
+
+```cpp
+usize bytes;
+```
+
+Bytes transferred (reads and writes).
+
+## `Completion` {#io-completion}
+
+`alias io::Completion` — defined in `engine/foundation/io/file.h`
+
+```cpp
+using Completion = void (*)(void* user, const AsyncResult& result);
+```
+
+Called exactly once when an asynchronous operation finishes, on an unspecified thread (the executor's or the backend's own; only an operation that fails before it starts completes on the caller's thread, from inside the start call). It must not block for long. It may start further requests, and destroy the request. It may destroy the file only if no other request on that file is in flight (the destructor waits for them, and they may be queued behind this very completion).
+
+## `AsyncKind` {#io-asynckind}
+
+`enum io::AsyncKind` — defined in `engine/foundation/io/file.h`
+
+```cpp
+enum class AsyncKind : u8 { ... }
+```
+
+What an [`io::AsyncRequest`](#io-asyncrequest) does.
+
+| Enumerator | Value | Description |
+|---|---|---|
+| <a id="io-asynckind-read"></a>`Read` |  | Read into a buffer at an offset. |
+| <a id="io-asynckind-write"></a>`Write` |  | Write a buffer at an offset. |
+| <a id="io-asynckind-flush"></a>`Flush` |  | Flush buffered data. |
+
+## `AsyncState` {#io-asyncstate}
+
+`enum io::AsyncState` — defined in `engine/foundation/io/file.h`
+
+```cpp
+enum AsyncState : u8 { ... }
+```
+
+Progress of an [`io::AsyncRequest`](#io-asyncrequest), for backends.
+
+| Enumerator | Value | Description |
+|---|---|---|
+| <a id="io-kasyncpending"></a>`kAsyncPending` | `0` | Started, not yet running. |
+| <a id="io-kasyncrunning"></a>`kAsyncRunning` | `1` | A thread is performing it. |
+| <a id="io-kasynccancelled"></a>`kAsyncCancelled` | `2` | Cancelled before it ran; it completes with `Interrupted`. |
+| <a id="io-kasyncdone"></a>`kAsyncDone` | `3` | Completed. |
+
+## `AsyncRequest` {#io-asyncrequest}
+
+`struct io::AsyncRequest` — defined in `engine/foundation/io/file.h`
+
+```cpp
+struct AsyncRequest { ... }
+```
+
+Caller-owned state of one asynchronous operation, so starting one allocates nothing. Fill it with [`io::File::ReadAsync`](#io-file-readasync-asyncrequest-star-void-star-usize-u64-completion-void-star), [`io::File::WriteAsync`](#io-file-writeasync-asyncrequest-star-const-void-star-usize-u64-completion-void-star) or [`io::File::FlushAsync`](#io-file-flushasync-asyncrequest-star-completion-void-star); it, and the buffer it names, must stay valid and unmoved until the completion has been called. Do not reuse it before then.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible; the file layer owns the fields from the start call until the completion. |
+
+### `work` {#io-asyncrequest-work}
+
+`variable io::AsyncRequest::work` — defined in `engine/foundation/io/file.h`
+
+```cpp
+IoWork work;
+```
+
+First member: executors see the request as plain work.
+
+### `file` {#io-asyncrequest-file}
+
+`variable io::AsyncRequest::file` — defined in `engine/foundation/io/file.h`
+
+```cpp
+File* file;
+```
+
+The file; set by the start call.
+
+### `kind` {#io-asyncrequest-kind}
+
+`variable io::AsyncRequest::kind` — defined in `engine/foundation/io/file.h`
+
+```cpp
+AsyncKind kind;
+```
+
+The operation.
+
+### `buffer` {#io-asyncrequest-buffer}
+
+`variable io::AsyncRequest::buffer` — defined in `engine/foundation/io/file.h`
+
+```cpp
+void* buffer;
+```
+
+Read destination.
+
+### `data` {#io-asyncrequest-data}
+
+`variable io::AsyncRequest::data` — defined in `engine/foundation/io/file.h`
+
+```cpp
+const void* data;
+```
+
+Write source.
+
+### `length` {#io-asyncrequest-length}
+
+`variable io::AsyncRequest::length` — defined in `engine/foundation/io/file.h`
+
+```cpp
+usize length;
+```
+
+Bytes to transfer.
+
+### `offset` {#io-asyncrequest-offset}
+
+`variable io::AsyncRequest::offset` — defined in `engine/foundation/io/file.h`
+
+```cpp
+u64 offset;
+```
+
+File offset.
+
+### `done` {#io-asyncrequest-done}
+
+`variable io::AsyncRequest::done` — defined in `engine/foundation/io/file.h`
+
+```cpp
+Completion done;
+```
+
+Called once with `user` and the result.
+
+### `user` {#io-asyncrequest-user}
+
+`variable io::AsyncRequest::user` — defined in `engine/foundation/io/file.h`
+
+```cpp
+void* user;
+```
+
+Passed to `done`.
+
+### `state` {#io-asyncrequest-state}
+
+`variable io::AsyncRequest::state` — defined in `engine/foundation/io/file.h`
+
+```cpp
+std::atomic<u8> state;
+```
+
+An [`io::AsyncState`](#io-asyncstate), managed by the file layer.
+
 ## `File` {#io-file}
 
 `class io::File` — defined in `engine/foundation/io/file.h`
@@ -236,7 +537,7 @@ What a backend can do; test the bits of [`io::File::Capabilities`](#io-file-capa
 class File { ... }
 ```
 
-An open file. Implemented per backend; use [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-uniqueptr-lt-file-gt-star) to get one.
+An open file. Implemented per backend; use [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-fileptr-star) to get one.
 
 Offsets are 64-bit. `Read` and `Write` at an offset carry no shared state, so many threads may read different (or the same) offsets of one file at once. The stream operations (`Seek`, `Tell`, the offset-less `Read` and `Write`) share one position: use them from one thread. No operation exposes a descriptor or handle.
 
@@ -245,7 +546,7 @@ After `Close`, every operation except `Close` fails with `Invalid`; `Close` is i
 | Field | Value |
 |---|---|
 | Thread-safety | thread-compatible; offset reads and writes may run concurrently, everything else needs external synchronization. |
-| Ownership | owned through `UniquePtr<File>`; not copyable. |
+| Ownership | owned through `FilePtr`; not copyable. |
 
 ### `File()` {#io-file-file}
 
@@ -282,20 +583,20 @@ _Deleted._
 `destructor io::File::~File` — defined in `engine/foundation/io/file.h`
 
 ```cpp
-virtual ~File() = default;
+virtual ~File();
 ```
 
-_Defaulted._
+Reports a file destroyed with requests still in flight (a backend must call `WaitForAsyncRequests` first).
 
-### `Open(const Path&,OpenMode,u32,UniquePtr<File>*)` {#io-file-open-const-path-amp-openmode-u32-uniqueptr-lt-file-gt-star}
+### `Open(const Path&,OpenMode,u32,FilePtr*)` {#io-file-open-const-path-amp-openmode-u32-fileptr-star}
 
 `method io::File::Open` — defined in `engine/foundation/io/file.h`
 
 ```cpp
-static Status Open(const Path& path, OpenMode mode, u32 flags, UniquePtr<File>* out);
+static Status Open(const Path& path, OpenMode mode, u32 flags, FilePtr* out);
 ```
 
-Opens the local file `path` (the path is never read as a URL; see [`io::File::OpenLocation`](#io-file-openlocation-stringview-openmode-u32-uniqueptr-lt-file-gt-star)).
+Opens the local file `path` (the path is never read as a URL; see [`io::File::OpenLocation`](#io-file-openlocation-stringview-openmode-u32-fileptr-star)).
 
 A FIFO opened for reading blocks until a writer appears; a terminal device does not become the controlling terminal.
 
@@ -307,12 +608,12 @@ A FIFO opened for reading blocks until a writer appears; a terminal device does 
 | Parameter `out` | receives the file; unchanged on failure. |
 | Fails | `NotFound`, `PermissionDenied`, `IsADirectory` (also when the path names a directory and the mode is `Read`), `AlreadyExists` (`kOpenCreateNew`), `Invalid` (`OpenMode::Read` with `kOpenCreate`, `kOpenCreateNew` or `kOpenTruncate`), `NotADirectory`, `TooManyOpenFiles`, `SymlinkLoop`, `TooLong`. |
 
-### `OpenLocation(StringView,OpenMode,u32,UniquePtr<File>*)` {#io-file-openlocation-stringview-openmode-u32-uniqueptr-lt-file-gt-star}
+### `OpenLocation(StringView,OpenMode,u32,FilePtr*)` {#io-file-openlocation-stringview-openmode-u32-fileptr-star}
 
 `method io::File::OpenLocation` — defined in `engine/foundation/io/file.h`
 
 ```cpp
-static Status OpenLocation(StringView location, OpenMode mode, u32 flags, UniquePtr<File>* out);
+static Status OpenLocation(StringView location, OpenMode mode, u32 flags, FilePtr* out);
 ```
 
 Opens `location`, which is either a local path or `scheme://rest`. `file:///abs/path` (percent escapes such as `%20` are decoded; no query or fragment) and a text without a scheme are local files; other schemes go to the backend registered with [`io::RegisterFileScheme`](#io-registerfilescheme-stringview-filefactory).
@@ -320,7 +621,7 @@ Opens `location`, which is either a local path or `scheme://rest`. `file:///abs/
 | Field | Value |
 |---|---|
 | Parameter `location` | path text or URL. |
-| Fails | `Unsupported` for a scheme nobody registered, plus the errors of [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-uniqueptr-lt-file-gt-star). |
+| Fails | `Unsupported` for a scheme nobody registered, plus the errors of [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-fileptr-star). |
 
 ### `IsOpen()` {#io-file-isopen-const}
 
@@ -496,12 +797,66 @@ Status Write(const void* data, usize length);
 
 Writes all bytes at the stream position and advances it; on an `Append`-mode file it appends.
 
+### `ReadAsync(AsyncRequest*,void*,usize,u64,Completion,void*)` {#io-file-readasync-asyncrequest-star-void-star-usize-u64-completion-void-star}
+
+`method io::File::ReadAsync` — defined in `engine/foundation/io/file.h`
+
+```cpp
+void ReadAsync(AsyncRequest* request, void* buffer, usize length, u64 offset, Completion done, void* user);
+```
+
+Starts reading up to `length` bytes at `offset` into `buffer`; `request` completes with the bytes read (`Read` rules: fewer is allowed, zero is the end). Returns at once. The buffer and `request` must stay valid until `done` has run. Many requests may be in flight on one file; they may complete in any order (an in-order backend completes them in order).
+
+| Field | Value |
+|---|---|
+| Parameter `request` | caller-owned; must not be in flight. |
+| Parameter `done` | called exactly once with `user`; must not be null. |
+| Aborts | `request` or `done` is null. |
+
+### `WriteAsync(AsyncRequest*,const void*,usize,u64,Completion,void*)` {#io-file-writeasync-asyncrequest-star-const-void-star-usize-u64-completion-void-star}
+
+`method io::File::WriteAsync` — defined in `engine/foundation/io/file.h`
+
+```cpp
+void WriteAsync(AsyncRequest* request, const void* data, usize length, u64 offset, Completion done, void* user);
+```
+
+Starts writing all `length` bytes at `offset`; the data must stay valid until `done` has run. `Write` rules apply.
+
+| Field | Value |
+|---|---|
+| Aborts | `request` or `done` is null. |
+
+### `FlushAsync(AsyncRequest*,Completion,void*)` {#io-file-flushasync-asyncrequest-star-completion-void-star}
+
+`method io::File::FlushAsync` — defined in `engine/foundation/io/file.h`
+
+```cpp
+void FlushAsync(AsyncRequest* request, Completion done, void* user);
+```
+
+Starts a [`io::File::Flush`](#io-file-flush).
+
+| Field | Value |
+|---|---|
+| Aborts | `request` or `done` is null. |
+
+### `Cancel(AsyncRequest*)` {#io-file-cancel-asyncrequest-star}
+
+`method io::File::Cancel` — defined in `engine/foundation/io/file.h`
+
+```cpp
+virtual bool Cancel(AsyncRequest* request);
+```
+
+Asks for `request` not to run. Best effort: it succeeds only while the request has not started, and the request still completes (exactly once) with `Interrupted`. Returns false when the request is already running or finished. Call it only while the request is certainly not complete (the completion may free the request, and `Cancel` reads it): for example while holding a lock the completion also takes.
+
 ## `FileFactory` {#io-filefactory}
 
 `alias io::FileFactory` — defined in `engine/foundation/io/file.h`
 
 ```cpp
-using FileFactory = Status (*)(StringView location, OpenMode mode, u32 flags, UniquePtr<File>* out);
+using FileFactory = Status (*)(StringView location, OpenMode mode, u32 flags, FilePtr* out);
 ```
 
 Creates the backend object for a URL scheme: `location` is the whole text (`scheme://rest`).
@@ -589,7 +944,7 @@ Opens `path`, reads it whole into `out`, closes it.
 
 | Field | Value |
 |---|---|
-| Fails | the errors of [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-uniqueptr-lt-file-gt-star) and [`io::ReadAll(File&,Vector<u8>*,u64)`](#io-readall-file-amp-vector-lt-u8-gt-star-u64). |
+| Fails | the errors of [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-fileptr-star) and [`io::ReadAll(File&,Vector<u8>*,u64)`](#io-readall-file-amp-vector-lt-u8-gt-star-u64). |
 
 ## `ReadFile(const Path&,ArenaAllocator&,u8**,usize*,u64)` {#io-readfile-const-path-amp-arenaallocator-amp-u8-star-star-usize-star-u64}
 
@@ -631,7 +986,7 @@ Creates or truncates `path` and writes `length` bytes. Not atomic: a failure can
 
 | Field | Value |
 |---|---|
-| Fails | the errors of [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-uniqueptr-lt-file-gt-star) and [`io::File::Write(const void*,usize,u64)`](#io-file-write-const-void-star-usize-u64). |
+| Fails | the errors of [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-fileptr-star) and [`io::File::Write(const void*,usize,u64)`](#io-file-write-const-void-star-usize-u64). |
 
 ## `WriteFileAtomic(const Path&,const void*,usize)` {#io-writefileatomic-const-path-amp-const-void-star-usize}
 

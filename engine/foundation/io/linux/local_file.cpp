@@ -20,6 +20,7 @@ public:
         : fd_(fd), readable_(readable), writable_(writable), append_(append), seekable_(seekable), size_known_(size_known) {}
 
     ~LocalFile() override {
+        WaitForAsyncRequests();
         const Status s = Close();
         if (s.Failed()) {
             char text[96];
@@ -125,7 +126,7 @@ private:
 
 } // namespace
 
-Status File::Open(const Path& path, OpenMode mode, u32 flags, UniquePtr<File>* out) {
+Status File::Open(const Path& path, OpenMode mode, u32 flags, FilePtr* out) {
     char native[kMaxPathBytes + 1];
     if (!path.ToNative(native, sizeof(native))) return Status::Of(Error::TooLong);
     if (mode == OpenMode::Read && (flags & (kOpenCreate | kOpenCreateNew | kOpenTruncate)) != 0) return Status::Of(Error::Invalid);
@@ -152,13 +153,13 @@ Status File::Open(const Path& path, OpenMode mode, u32 flags, UniquePtr<File>* o
         return Status::Of(Error::IsADirectory);
     }
     const bool seekable = S_ISREG(st.st_mode) || S_ISBLK(st.st_mode);
-    UniquePtr<File> file = MakeUnique<LocalFile>(fd, mode != OpenMode::Write && mode != OpenMode::Append, mode != OpenMode::Read,
+    FilePtr file = MakeUnique<LocalFile>(fd, mode != OpenMode::Write && mode != OpenMode::Append, mode != OpenMode::Read,
                                                  mode == OpenMode::Append, seekable, S_ISREG(st.st_mode));
     if (!file) {
         ::close(fd);
         return Status::Of(Error::OutOfMemory);
     }
-    *out = static_cast<UniquePtr<File>&&>(file);
+    *out = static_cast<FilePtr&&>(file);
     return Status::Success();
 }
 

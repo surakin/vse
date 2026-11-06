@@ -276,56 +276,94 @@ io::Status::Is(Error) const	function	foundation/io	io-status-is-error-const	foun
 io::Status::Success()	function	foundation/io	io-status-success	foundation-io.md	engine/foundation/io/error.h:55
 io::Status::Of(Error)	function	foundation/io	io-status-of-error	foundation-io.md	engine/foundation/io/error.h:57
 io::Status::FromOs(i32)	function	foundation/io	io-status-fromos-i32	foundation-io.md	engine/foundation/io/error.h:59
-io::LogIo	variable	foundation/io	io-logio	foundation-io.md	engine/foundation/io/file.h:18
-io::OpenMode	enum	foundation/io	io-openmode	foundation-io.md	engine/foundation/io/file.h:21
-io::OpenMode::Read	enumerator	foundation/io	io-openmode-read	foundation-io.md	engine/foundation/io/file.h:22
-io::OpenMode::Write	enumerator	foundation/io	io-openmode-write	foundation-io.md	engine/foundation/io/file.h:23
-io::OpenMode::Append	enumerator	foundation/io	io-openmode-append	foundation-io.md	engine/foundation/io/file.h:24
-io::OpenMode::ReadWrite	enumerator	foundation/io	io-openmode-readwrite	foundation-io.md	engine/foundation/io/file.h:25
-io::OpenFlag	enum	foundation/io	io-openflag	foundation-io.md	engine/foundation/io/file.h:29
-io::kOpenNone	enumerator	foundation/io	io-kopennone	foundation-io.md	engine/foundation/io/file.h:30
-io::kOpenCreate	enumerator	foundation/io	io-kopencreate	foundation-io.md	engine/foundation/io/file.h:31
-io::kOpenCreateNew	enumerator	foundation/io	io-kopencreatenew	foundation-io.md	engine/foundation/io/file.h:32
-io::kOpenTruncate	enumerator	foundation/io	io-kopentruncate	foundation-io.md	engine/foundation/io/file.h:33
-io::FileCapability	enum	foundation/io	io-filecapability	foundation-io.md	engine/foundation/io/file.h:37
-io::kCapSeekable	enumerator	foundation/io	io-kcapseekable	foundation-io.md	engine/foundation/io/file.h:38
-io::kCapSizeKnown	enumerator	foundation/io	io-kcapsizeknown	foundation-io.md	engine/foundation/io/file.h:39
-io::kCapWritable	enumerator	foundation/io	io-kcapwritable	foundation-io.md	engine/foundation/io/file.h:40
-io::kCapNativelyAsync	enumerator	foundation/io	io-kcapnativelyasync	foundation-io.md	engine/foundation/io/file.h:41
-io::kCapAtomicReplace	enumerator	foundation/io	io-kcapatomicreplace	foundation-io.md	engine/foundation/io/file.h:42
-io::kCapAppendOnly	enumerator	foundation/io	io-kcapappendonly	foundation-io.md	engine/foundation/io/file.h:43
-io::File	class	foundation/io	io-file	foundation-io.md	engine/foundation/io/file.h:57
-io::File::File()	function	foundation/io	io-file-file	foundation-io.md	engine/foundation/io/file.h:59
-io::File::File(const File&)	function	foundation/io	io-file-file-const-file-amp	foundation-io.md	engine/foundation/io/file.h:60
-io::File::operator=(const File&)	function	foundation/io	io-file-operator-eq-const-file-amp	foundation-io.md	engine/foundation/io/file.h:61
-io::File::~File()	function	foundation/io	io-file-tilde-file	foundation-io.md	engine/foundation/io/file.h:62
-io::File::Open(const Path&,OpenMode,u32,UniquePtr<File>*)	function	foundation/io	io-file-open-const-path-amp-openmode-u32-uniqueptr-lt-file-gt-star	foundation-io.md	engine/foundation/io/file.h:75
-io::File::OpenLocation(StringView,OpenMode,u32,UniquePtr<File>*)	function	foundation/io	io-file-openlocation-stringview-openmode-u32-uniqueptr-lt-file-gt-star	foundation-io.md	engine/foundation/io/file.h:82
-io::File::IsOpen() const	function	foundation/io	io-file-isopen-const	foundation-io.md	engine/foundation/io/file.h:85
-io::File::Capabilities() const	function	foundation/io	io-file-capabilities-const	foundation-io.md	engine/foundation/io/file.h:87
-io::File::Size(u64*)	function	foundation/io	io-file-size-u64-star	foundation-io.md	engine/foundation/io/file.h:91
-io::File::Read(void*,usize,u64,usize*)	function	foundation/io	io-file-read-void-star-usize-u64-usize-star	foundation-io.md	engine/foundation/io/file.h:98
-io::File::Write(const void*,usize,u64)	function	foundation/io	io-file-write-const-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:102
-io::File::Append(const void*,usize)	function	foundation/io	io-file-append-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:106
-io::File::Flush()	function	foundation/io	io-file-flush	foundation-io.md	engine/foundation/io/file.h:108
-io::File::Sync()	function	foundation/io	io-file-sync	foundation-io.md	engine/foundation/io/file.h:112
-io::File::Truncate(u64)	function	foundation/io	io-file-truncate-u64	foundation-io.md	engine/foundation/io/file.h:116
-io::File::Close()	function	foundation/io	io-file-close	foundation-io.md	engine/foundation/io/file.h:120
-io::File::Seek(u64)	function	foundation/io	io-file-seek-u64	foundation-io.md	engine/foundation/io/file.h:125
-io::File::Tell() const	function	foundation/io	io-file-tell-const	foundation-io.md	engine/foundation/io/file.h:127
-io::File::Read(void*,usize,usize*)	function	foundation/io	io-file-read-void-star-usize-usize-star	foundation-io.md	engine/foundation/io/file.h:129
-io::File::Write(const void*,usize)	function	foundation/io	io-file-write-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:131
-io::FileFactory	alias	foundation/io	io-filefactory	foundation-io.md	engine/foundation/io/file.h:138
-io::RegisterFileScheme(StringView,FileFactory)	function	foundation/io	io-registerfilescheme-stringview-filefactory	foundation-io.md	engine/foundation/io/file.h:145
-io::UnregisterFileScheme(StringView)	function	foundation/io	io-unregisterfilescheme-stringview	foundation-io.md	engine/foundation/io/file.h:147
-io::ReadExact(File&,void*,usize,u64)	function	foundation/io	io-readexact-file-amp-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:152
-io::ReadAll(File&,Vector<u8>*,u64)	function	foundation/io	io-readall-file-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:157
-io::ReadAll(File&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readall-file-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:163
-io::ReadFile(const Path&,Vector<u8>*,u64)	function	foundation/io	io-readfile-const-path-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:168
-io::ReadFile(const Path&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readfile-const-path-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:172
-io::ReadTextFile(const Path&,String<HeapAllocator>*,u64)	function	foundation/io	io-readtextfile-const-path-amp-string-lt-heapallocator-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:176
-io::WriteFile(const Path&,const void*,usize)	function	foundation/io	io-writefile-const-path-amp-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:180
-io::WriteFileAtomic(const Path&,const void*,usize)	function	foundation/io	io-writefileatomic-const-path-amp-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:189
+io::LogIo	variable	foundation/io	io-logio	foundation-io.md	engine/foundation/io/file.h:20
+io::OpenMode	enum	foundation/io	io-openmode	foundation-io.md	engine/foundation/io/file.h:23
+io::OpenMode::Read	enumerator	foundation/io	io-openmode-read	foundation-io.md	engine/foundation/io/file.h:24
+io::OpenMode::Write	enumerator	foundation/io	io-openmode-write	foundation-io.md	engine/foundation/io/file.h:25
+io::OpenMode::Append	enumerator	foundation/io	io-openmode-append	foundation-io.md	engine/foundation/io/file.h:26
+io::OpenMode::ReadWrite	enumerator	foundation/io	io-openmode-readwrite	foundation-io.md	engine/foundation/io/file.h:27
+io::OpenFlag	enum	foundation/io	io-openflag	foundation-io.md	engine/foundation/io/file.h:31
+io::kOpenNone	enumerator	foundation/io	io-kopennone	foundation-io.md	engine/foundation/io/file.h:32
+io::kOpenCreate	enumerator	foundation/io	io-kopencreate	foundation-io.md	engine/foundation/io/file.h:33
+io::kOpenCreateNew	enumerator	foundation/io	io-kopencreatenew	foundation-io.md	engine/foundation/io/file.h:34
+io::kOpenTruncate	enumerator	foundation/io	io-kopentruncate	foundation-io.md	engine/foundation/io/file.h:35
+io::FileCapability	enum	foundation/io	io-filecapability	foundation-io.md	engine/foundation/io/file.h:39
+io::kCapSeekable	enumerator	foundation/io	io-kcapseekable	foundation-io.md	engine/foundation/io/file.h:40
+io::kCapSizeKnown	enumerator	foundation/io	io-kcapsizeknown	foundation-io.md	engine/foundation/io/file.h:41
+io::kCapWritable	enumerator	foundation/io	io-kcapwritable	foundation-io.md	engine/foundation/io/file.h:42
+io::kCapNativelyAsync	enumerator	foundation/io	io-kcapnativelyasync	foundation-io.md	engine/foundation/io/file.h:43
+io::kCapAtomicReplace	enumerator	foundation/io	io-kcapatomicreplace	foundation-io.md	engine/foundation/io/file.h:44
+io::kCapAppendOnly	enumerator	foundation/io	io-kcapappendonly	foundation-io.md	engine/foundation/io/file.h:45
+io::FilePtr	alias	foundation/io	io-fileptr	foundation-io.md	engine/foundation/io/file.h:51
+io::IoWork	struct	foundation/io	io-iowork	foundation-io.md	engine/foundation/io/file.h:57
+io::IoWork::next	variable	foundation/io	io-iowork-next	foundation-io.md	engine/foundation/io/file.h:58
+io::IoWork::run	variable	foundation/io	io-iowork-run	foundation-io.md	engine/foundation/io/file.h:59
+io::IoExecutor	class	foundation/io	io-ioexecutor	foundation-io.md	engine/foundation/io/file.h:69
+io::IoExecutor::~IoExecutor()	function	foundation/io	io-ioexecutor-tilde-ioexecutor	foundation-io.md	engine/foundation/io/file.h:71
+io::IoExecutor::Submit(IoWork*)	function	foundation/io	io-ioexecutor-submit-iowork-star	foundation-io.md	engine/foundation/io/file.h:73
+io::SetDefaultExecutor(IoExecutor*)	function	foundation/io	io-setdefaultexecutor-ioexecutor-star	foundation-io.md	engine/foundation/io/file.h:80
+io::ClearDefaultExecutorIf(IoExecutor*)	function	foundation/io	io-cleardefaultexecutorif-ioexecutor-star	foundation-io.md	engine/foundation/io/file.h:83
+io::DefaultExecutor()	function	foundation/io	io-defaultexecutor	foundation-io.md	engine/foundation/io/file.h:85
+io::AsyncResult	struct	foundation/io	io-asyncresult	foundation-io.md	engine/foundation/io/file.h:88
+io::AsyncResult::status	variable	foundation/io	io-asyncresult-status	foundation-io.md	engine/foundation/io/file.h:89
+io::AsyncResult::bytes	variable	foundation/io	io-asyncresult-bytes	foundation-io.md	engine/foundation/io/file.h:90
+io::Completion	alias	foundation/io	io-completion	foundation-io.md	engine/foundation/io/file.h:97
+io::AsyncKind	enum	foundation/io	io-asynckind	foundation-io.md	engine/foundation/io/file.h:100
+io::AsyncKind::Read	enumerator	foundation/io	io-asynckind-read	foundation-io.md	engine/foundation/io/file.h:101
+io::AsyncKind::Write	enumerator	foundation/io	io-asynckind-write	foundation-io.md	engine/foundation/io/file.h:102
+io::AsyncKind::Flush	enumerator	foundation/io	io-asynckind-flush	foundation-io.md	engine/foundation/io/file.h:103
+io::AsyncState	enum	foundation/io	io-asyncstate	foundation-io.md	engine/foundation/io/file.h:107
+io::kAsyncPending	enumerator	foundation/io	io-kasyncpending	foundation-io.md	engine/foundation/io/file.h:108
+io::kAsyncRunning	enumerator	foundation/io	io-kasyncrunning	foundation-io.md	engine/foundation/io/file.h:109
+io::kAsyncCancelled	enumerator	foundation/io	io-kasynccancelled	foundation-io.md	engine/foundation/io/file.h:110
+io::kAsyncDone	enumerator	foundation/io	io-kasyncdone	foundation-io.md	engine/foundation/io/file.h:111
+io::AsyncRequest	struct	foundation/io	io-asyncrequest	foundation-io.md	engine/foundation/io/file.h:119
+io::AsyncRequest::work	variable	foundation/io	io-asyncrequest-work	foundation-io.md	engine/foundation/io/file.h:120
+io::AsyncRequest::file	variable	foundation/io	io-asyncrequest-file	foundation-io.md	engine/foundation/io/file.h:121
+io::AsyncRequest::kind	variable	foundation/io	io-asyncrequest-kind	foundation-io.md	engine/foundation/io/file.h:122
+io::AsyncRequest::buffer	variable	foundation/io	io-asyncrequest-buffer	foundation-io.md	engine/foundation/io/file.h:123
+io::AsyncRequest::data	variable	foundation/io	io-asyncrequest-data	foundation-io.md	engine/foundation/io/file.h:124
+io::AsyncRequest::length	variable	foundation/io	io-asyncrequest-length	foundation-io.md	engine/foundation/io/file.h:125
+io::AsyncRequest::offset	variable	foundation/io	io-asyncrequest-offset	foundation-io.md	engine/foundation/io/file.h:126
+io::AsyncRequest::done	variable	foundation/io	io-asyncrequest-done	foundation-io.md	engine/foundation/io/file.h:127
+io::AsyncRequest::user	variable	foundation/io	io-asyncrequest-user	foundation-io.md	engine/foundation/io/file.h:128
+io::AsyncRequest::state	variable	foundation/io	io-asyncrequest-state	foundation-io.md	engine/foundation/io/file.h:129
+io::File	class	foundation/io	io-file	foundation-io.md	engine/foundation/io/file.h:143
+io::File::File()	function	foundation/io	io-file-file	foundation-io.md	engine/foundation/io/file.h:145
+io::File::File(const File&)	function	foundation/io	io-file-file-const-file-amp	foundation-io.md	engine/foundation/io/file.h:146
+io::File::operator=(const File&)	function	foundation/io	io-file-operator-eq-const-file-amp	foundation-io.md	engine/foundation/io/file.h:147
+io::File::~File()	function	foundation/io	io-file-tilde-file	foundation-io.md	engine/foundation/io/file.h:149
+io::File::Open(const Path&,OpenMode,u32,FilePtr*)	function	foundation/io	io-file-open-const-path-amp-openmode-u32-fileptr-star	foundation-io.md	engine/foundation/io/file.h:162
+io::File::OpenLocation(StringView,OpenMode,u32,FilePtr*)	function	foundation/io	io-file-openlocation-stringview-openmode-u32-fileptr-star	foundation-io.md	engine/foundation/io/file.h:169
+io::File::IsOpen() const	function	foundation/io	io-file-isopen-const	foundation-io.md	engine/foundation/io/file.h:172
+io::File::Capabilities() const	function	foundation/io	io-file-capabilities-const	foundation-io.md	engine/foundation/io/file.h:174
+io::File::Size(u64*)	function	foundation/io	io-file-size-u64-star	foundation-io.md	engine/foundation/io/file.h:178
+io::File::Read(void*,usize,u64,usize*)	function	foundation/io	io-file-read-void-star-usize-u64-usize-star	foundation-io.md	engine/foundation/io/file.h:185
+io::File::Write(const void*,usize,u64)	function	foundation/io	io-file-write-const-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:189
+io::File::Append(const void*,usize)	function	foundation/io	io-file-append-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:193
+io::File::Flush()	function	foundation/io	io-file-flush	foundation-io.md	engine/foundation/io/file.h:195
+io::File::Sync()	function	foundation/io	io-file-sync	foundation-io.md	engine/foundation/io/file.h:199
+io::File::Truncate(u64)	function	foundation/io	io-file-truncate-u64	foundation-io.md	engine/foundation/io/file.h:203
+io::File::Close()	function	foundation/io	io-file-close	foundation-io.md	engine/foundation/io/file.h:207
+io::File::Seek(u64)	function	foundation/io	io-file-seek-u64	foundation-io.md	engine/foundation/io/file.h:212
+io::File::Tell() const	function	foundation/io	io-file-tell-const	foundation-io.md	engine/foundation/io/file.h:214
+io::File::Read(void*,usize,usize*)	function	foundation/io	io-file-read-void-star-usize-usize-star	foundation-io.md	engine/foundation/io/file.h:216
+io::File::Write(const void*,usize)	function	foundation/io	io-file-write-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:218
+io::File::ReadAsync(AsyncRequest*,void*,usize,u64,Completion,void*)	function	foundation/io	io-file-readasync-asyncrequest-star-void-star-usize-u64-completion-void-star	foundation-io.md	engine/foundation/io/file.h:227
+io::File::WriteAsync(AsyncRequest*,const void*,usize,u64,Completion,void*)	function	foundation/io	io-file-writeasync-asyncrequest-star-const-void-star-usize-u64-completion-void-star	foundation-io.md	engine/foundation/io/file.h:231
+io::File::FlushAsync(AsyncRequest*,Completion,void*)	function	foundation/io	io-file-flushasync-asyncrequest-star-completion-void-star	foundation-io.md	engine/foundation/io/file.h:235
+io::File::Cancel(AsyncRequest*)	function	foundation/io	io-file-cancel-asyncrequest-star	foundation-io.md	engine/foundation/io/file.h:239
+io::FileFactory	alias	foundation/io	io-filefactory	foundation-io.md	engine/foundation/io/file.h:270
+io::RegisterFileScheme(StringView,FileFactory)	function	foundation/io	io-registerfilescheme-stringview-filefactory	foundation-io.md	engine/foundation/io/file.h:277
+io::UnregisterFileScheme(StringView)	function	foundation/io	io-unregisterfilescheme-stringview	foundation-io.md	engine/foundation/io/file.h:279
+io::ReadExact(File&,void*,usize,u64)	function	foundation/io	io-readexact-file-amp-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:284
+io::ReadAll(File&,Vector<u8>*,u64)	function	foundation/io	io-readall-file-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:289
+io::ReadAll(File&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readall-file-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:295
+io::ReadFile(const Path&,Vector<u8>*,u64)	function	foundation/io	io-readfile-const-path-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:300
+io::ReadFile(const Path&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readfile-const-path-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:304
+io::ReadTextFile(const Path&,String<HeapAllocator>*,u64)	function	foundation/io	io-readtextfile-const-path-amp-string-lt-heapallocator-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:308
+io::WriteFile(const Path&,const void*,usize)	function	foundation/io	io-writefile-const-path-amp-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:312
+io::WriteFileAtomic(const Path&,const void*,usize)	function	foundation/io	io-writefileatomic-const-path-amp-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:321
 io::FileType	enum	foundation/io	io-filetype	foundation-io.md	engine/foundation/io/file_system.h:16
 io::FileType::None	enumerator	foundation/io	io-filetype-none	foundation-io.md	engine/foundation/io/file_system.h:17
 io::FileType::Regular	enumerator	foundation/io	io-filetype-regular	foundation-io.md	engine/foundation/io/file_system.h:18
@@ -1104,38 +1142,37 @@ debug::kMaxThreadNameBytes	variable	foundation/debug	debug-kmaxthreadnamebytes	f
 debug::CurrentThreadId()	function	foundation/debug	debug-currentthreadid	foundation-debug.md	engine/foundation/debug/thread_info.h:14
 debug::SetCrashThreadName(const char*)	function	foundation/debug	debug-setcrashthreadname-const-char-star	foundation-debug.md	engine/foundation/debug/thread_info.h:20
 debug::CrashThreadName()	function	foundation/debug	debug-crashthreadname	foundation-debug.md	engine/foundation/debug/thread_info.h:26
-jobs::IoRequest	struct	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:53
-jobs::IoRequest::next	variable	jobs	jobs-iorequest-next	jobs.md	engine/jobs/async_io.h:55
-jobs::IoRequest::run	variable	jobs	jobs-iorequest-run	jobs.md	engine/jobs/async_io.h:57
-jobs::IoThread	class	jobs	jobs-iothread	jobs.md	engine/jobs/async_io.h:70
-jobs::IoThread::IoThread()	function	jobs	jobs-iothread-iothread	jobs.md	engine/jobs/async_io.h:73
-jobs::IoThread::~IoThread()	function	jobs	jobs-iothread-tilde-iothread	jobs.md	engine/jobs/async_io.h:78
-jobs::IoThread::IoThread(const IoThread&)	function	jobs	jobs-iothread-iothread-const-iothread-amp	jobs.md	engine/jobs/async_io.h:80
-jobs::IoThread::operator=(const IoThread&)	function	jobs	jobs-iothread-operator-eq-const-iothread-amp	jobs.md	engine/jobs/async_io.h:81
-jobs::IoThread::Enqueue(IoRequest*)	function	jobs	jobs-iothread-enqueue-iorequest-star	jobs.md	engine/jobs/async_io.h:92
-jobs::IoThread::Shutdown()	function	jobs	jobs-iothread-shutdown	jobs.md	engine/jobs/async_io.h:101
-jobs::IoThread::ThreadId() const	function	jobs	jobs-iothread-threadid-const	jobs.md	engine/jobs/async_io.h:106
-jobs::FileReadResult	class	jobs	jobs-filereadresult	jobs.md	engine/jobs/async_io.h:131
-jobs::FileReadResult::FileReadResult()	function	jobs	jobs-filereadresult-filereadresult	jobs.md	engine/jobs/async_io.h:133
-jobs::FileReadResult::~FileReadResult()	function	jobs	jobs-filereadresult-tilde-filereadresult	jobs.md	engine/jobs/async_io.h:138
-jobs::FileReadResult::FileReadResult(FileReadResult&&) noexcept	function	jobs	jobs-filereadresult-filereadresult-filereadresult-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:142
-jobs::FileReadResult::operator=(FileReadResult&&) noexcept	function	jobs	jobs-filereadresult-operator-eq-filereadresult-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:146
-jobs::FileReadResult::FileReadResult(const FileReadResult&)	function	jobs	jobs-filereadresult-filereadresult-const-filereadresult-amp	jobs.md	engine/jobs/async_io.h:147
-jobs::FileReadResult::operator=(const FileReadResult&)	function	jobs	jobs-filereadresult-operator-eq-const-filereadresult-amp	jobs.md	engine/jobs/async_io.h:148
-jobs::FileReadResult::ok	variable	jobs	jobs-filereadresult-ok	jobs.md	engine/jobs/async_io.h:151
-jobs::FileReadResult::data	variable	jobs	jobs-filereadresult-data	jobs.md	engine/jobs/async_io.h:153
-jobs::FileReadResult::size	variable	jobs	jobs-filereadresult-size	jobs.md	engine/jobs/async_io.h:155
-jobs::ReadFileAwaitable	class	jobs	jobs-readfileawaitable	jobs.md	engine/jobs/async_io.h:170
-jobs::ReadFileAwaitable::ReadFileAwaitable(ReadFileAwaitable&&) noexcept	function	jobs	jobs-readfileawaitable-readfileawaitable-readfileawaitable-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:174
-jobs::ReadFileAwaitable::ReadFileAwaitable(const ReadFileAwaitable&)	function	jobs	jobs-readfileawaitable-readfileawaitable-const-readfileawaitable-amp	jobs.md	engine/jobs/async_io.h:175
-jobs::ReadFileAwaitable::operator=(const ReadFileAwaitable&)	function	jobs	jobs-readfileawaitable-operator-eq-const-readfileawaitable-amp	jobs.md	engine/jobs/async_io.h:176
-jobs::ReadFileAwaitable::~ReadFileAwaitable()	function	jobs	jobs-readfileawaitable-tilde-readfileawaitable	jobs.md	engine/jobs/async_io.h:181
-jobs::ReadFileAwaitable::await_ready() const noexcept	function	jobs	jobs-readfileawaitable-await-ready-const-noexcept	jobs.md	engine/jobs/async_io.h:186
-jobs::ReadFileAwaitable::await_suspend(std::coroutine_handle<>) noexcept	function	jobs	jobs-readfileawaitable-await-suspend-std-coroutine-handle-lt-gt-noexcept	jobs.md	engine/jobs/async_io.h:192
-jobs::ReadFileAwaitable::await_resume() noexcept	function	jobs	jobs-readfileawaitable-await-resume-noexcept	jobs.md	engine/jobs/async_io.h:199
-jobs::kDefaultMaxReadBytes	variable	jobs	jobs-kdefaultmaxreadbytes	jobs.md	engine/jobs/async_io.h:209
-jobs::kMaxAsyncPathBytes	variable	jobs	jobs-kmaxasyncpathbytes	jobs.md	engine/jobs/async_io.h:212
-jobs::ReadFileAsync(Scheduler&,StringView,usize)	function	jobs	jobs-readfileasync-scheduler-amp-stringview-usize	jobs.md	engine/jobs/async_io.h:226
+jobs::IoRequest	alias	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:52
+jobs::IoThread	class	jobs	jobs-iothread	jobs.md	engine/jobs/async_io.h:64
+jobs::IoThread::IoThread()	function	jobs	jobs-iothread-iothread	jobs.md	engine/jobs/async_io.h:67
+jobs::IoThread::~IoThread()	function	jobs	jobs-iothread-tilde-iothread	jobs.md	engine/jobs/async_io.h:72
+jobs::IoThread::IoThread(const IoThread&)	function	jobs	jobs-iothread-iothread-const-iothread-amp	jobs.md	engine/jobs/async_io.h:74
+jobs::IoThread::operator=(const IoThread&)	function	jobs	jobs-iothread-operator-eq-const-iothread-amp	jobs.md	engine/jobs/async_io.h:75
+jobs::IoThread::Enqueue(IoRequest*)	function	jobs	jobs-iothread-enqueue-iorequest-star	jobs.md	engine/jobs/async_io.h:86
+jobs::IoThread::Submit(io::IoWork*)	function	jobs	jobs-iothread-submit-io-iowork-star	jobs.md	engine/jobs/async_io.h:94
+jobs::IoThread::Shutdown()	function	jobs	jobs-iothread-shutdown	jobs.md	engine/jobs/async_io.h:103
+jobs::IoThread::ThreadId() const	function	jobs	jobs-iothread-threadid-const	jobs.md	engine/jobs/async_io.h:108
+jobs::FileReadResult	class	jobs	jobs-filereadresult	jobs.md	engine/jobs/async_io.h:133
+jobs::FileReadResult::FileReadResult()	function	jobs	jobs-filereadresult-filereadresult	jobs.md	engine/jobs/async_io.h:135
+jobs::FileReadResult::~FileReadResult()	function	jobs	jobs-filereadresult-tilde-filereadresult	jobs.md	engine/jobs/async_io.h:140
+jobs::FileReadResult::FileReadResult(FileReadResult&&) noexcept	function	jobs	jobs-filereadresult-filereadresult-filereadresult-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:144
+jobs::FileReadResult::operator=(FileReadResult&&) noexcept	function	jobs	jobs-filereadresult-operator-eq-filereadresult-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:148
+jobs::FileReadResult::FileReadResult(const FileReadResult&)	function	jobs	jobs-filereadresult-filereadresult-const-filereadresult-amp	jobs.md	engine/jobs/async_io.h:149
+jobs::FileReadResult::operator=(const FileReadResult&)	function	jobs	jobs-filereadresult-operator-eq-const-filereadresult-amp	jobs.md	engine/jobs/async_io.h:150
+jobs::FileReadResult::ok	variable	jobs	jobs-filereadresult-ok	jobs.md	engine/jobs/async_io.h:153
+jobs::FileReadResult::data	variable	jobs	jobs-filereadresult-data	jobs.md	engine/jobs/async_io.h:155
+jobs::FileReadResult::size	variable	jobs	jobs-filereadresult-size	jobs.md	engine/jobs/async_io.h:157
+jobs::ReadFileAwaitable	class	jobs	jobs-readfileawaitable	jobs.md	engine/jobs/async_io.h:172
+jobs::ReadFileAwaitable::ReadFileAwaitable(ReadFileAwaitable&&) noexcept	function	jobs	jobs-readfileawaitable-readfileawaitable-readfileawaitable-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:176
+jobs::ReadFileAwaitable::ReadFileAwaitable(const ReadFileAwaitable&)	function	jobs	jobs-readfileawaitable-readfileawaitable-const-readfileawaitable-amp	jobs.md	engine/jobs/async_io.h:177
+jobs::ReadFileAwaitable::operator=(const ReadFileAwaitable&)	function	jobs	jobs-readfileawaitable-operator-eq-const-readfileawaitable-amp	jobs.md	engine/jobs/async_io.h:178
+jobs::ReadFileAwaitable::~ReadFileAwaitable()	function	jobs	jobs-readfileawaitable-tilde-readfileawaitable	jobs.md	engine/jobs/async_io.h:183
+jobs::ReadFileAwaitable::await_ready() const noexcept	function	jobs	jobs-readfileawaitable-await-ready-const-noexcept	jobs.md	engine/jobs/async_io.h:188
+jobs::ReadFileAwaitable::await_suspend(std::coroutine_handle<>) noexcept	function	jobs	jobs-readfileawaitable-await-suspend-std-coroutine-handle-lt-gt-noexcept	jobs.md	engine/jobs/async_io.h:194
+jobs::ReadFileAwaitable::await_resume() noexcept	function	jobs	jobs-readfileawaitable-await-resume-noexcept	jobs.md	engine/jobs/async_io.h:201
+jobs::kDefaultMaxReadBytes	variable	jobs	jobs-kdefaultmaxreadbytes	jobs.md	engine/jobs/async_io.h:211
+jobs::kMaxAsyncPathBytes	variable	jobs	jobs-kmaxasyncpathbytes	jobs.md	engine/jobs/async_io.h:214
+jobs::ReadFileAsync(Scheduler&,StringView,usize)	function	jobs	jobs-readfileasync-scheduler-amp-stringview-usize	jobs.md	engine/jobs/async_io.h:228
 jobs::Counter	class	jobs	jobs-counter	jobs.md	engine/jobs/counter.h:51
 jobs::Counter::Counter(Scheduler&)	function	jobs	jobs-counter-counter-scheduler-amp	jobs.md	engine/jobs/counter.h:55
 jobs::Counter::Counter()	function	jobs	jobs-counter-counter	jobs.md	engine/jobs/counter.h:59
@@ -1172,6 +1209,25 @@ jobs::WorkStealingDeque::PushBottom(std::coroutine_handle<>)	function	jobs	jobs-
 jobs::WorkStealingDeque::PopBottom()	function	jobs	jobs-workstealingdeque-popbottom	jobs.md	engine/jobs/deque.h:96
 jobs::WorkStealingDeque::StealTop(std::coroutine_handle<>&)	function	jobs	jobs-workstealingdeque-stealtop-std-coroutine-handle-lt-gt-amp	jobs.md	engine/jobs/deque.h:127
 jobs::WorkStealingDeque::ApproxSize() const	function	jobs	jobs-workstealingdeque-approxsize-const	jobs.md	engine/jobs/deque.h:149
+jobs::FileIoAwaitable	class	jobs	jobs-fileioawaitable	jobs.md	engine/jobs/file_async.h:25
+jobs::FileIoAwaitable::FileIoAwaitable(const FileIoAwaitable&)	function	jobs	jobs-fileioawaitable-fileioawaitable-const-fileioawaitable-amp	jobs.md	engine/jobs/file_async.h:27
+jobs::FileIoAwaitable::operator=(const FileIoAwaitable&)	function	jobs	jobs-fileioawaitable-operator-eq-const-fileioawaitable-amp	jobs.md	engine/jobs/file_async.h:28
+jobs::FileIoAwaitable::await_ready() const noexcept	function	jobs	jobs-fileioawaitable-await-ready-const-noexcept	jobs.md	engine/jobs/file_async.h:33
+jobs::FileIoAwaitable::await_suspend(std::coroutine_handle<>) noexcept	function	jobs	jobs-fileioawaitable-await-suspend-std-coroutine-handle-lt-gt-noexcept	jobs.md	engine/jobs/file_async.h:37
+jobs::FileIoAwaitable::await_resume() noexcept	function	jobs	jobs-fileioawaitable-await-resume-noexcept	jobs.md	engine/jobs/file_async.h:41
+jobs::ReadAsync(Scheduler&,io::File&,void*,usize,u64)	function	jobs	jobs-readasync-scheduler-amp-io-file-amp-void-star-usize-u64	jobs.md	engine/jobs/file_async.h:66
+jobs::WriteAsync(Scheduler&,io::File&,const void*,usize,u64)	function	jobs	jobs-writeasync-scheduler-amp-io-file-amp-const-void-star-usize-u64	jobs.md	engine/jobs/file_async.h:68
+jobs::FlushAsync(Scheduler&,io::File&)	function	jobs	jobs-flushasync-scheduler-amp-io-file-amp	jobs.md	engine/jobs/file_async.h:70
+jobs::FileReadAllResult	struct	jobs	jobs-filereadallresult	jobs.md	engine/jobs/file_async.h:76
+jobs::FileReadAllResult::status	variable	jobs	jobs-filereadallresult-status	jobs.md	engine/jobs/file_async.h:77
+jobs::FileReadAllResult::bytes	variable	jobs	jobs-filereadallresult-bytes	jobs.md	engine/jobs/file_async.h:78
+jobs::FileReadAllAwaitable	class	jobs	jobs-filereadallawaitable	jobs.md	engine/jobs/file_async.h:85
+jobs::FileReadAllAwaitable::FileReadAllAwaitable(const FileReadAllAwaitable&)	function	jobs	jobs-filereadallawaitable-filereadallawaitable-const-filereadallawaitable-amp	jobs.md	engine/jobs/file_async.h:87
+jobs::FileReadAllAwaitable::operator=(const FileReadAllAwaitable&)	function	jobs	jobs-filereadallawaitable-operator-eq-const-filereadallawaitable-amp	jobs.md	engine/jobs/file_async.h:88
+jobs::FileReadAllAwaitable::await_ready() const noexcept	function	jobs	jobs-filereadallawaitable-await-ready-const-noexcept	jobs.md	engine/jobs/file_async.h:93
+jobs::FileReadAllAwaitable::await_suspend(std::coroutine_handle<>) noexcept	function	jobs	jobs-filereadallawaitable-await-suspend-std-coroutine-handle-lt-gt-noexcept	jobs.md	engine/jobs/file_async.h:97
+jobs::FileReadAllAwaitable::await_resume() noexcept	function	jobs	jobs-filereadallawaitable-await-resume-noexcept	jobs.md	engine/jobs/file_async.h:101
+jobs::ReadAllAsync(Scheduler&,io::File&,u64)	function	jobs	jobs-readallasync-scheduler-amp-io-file-amp-u64	jobs.md	engine/jobs/file_async.h:124
 jobs::FramePool	class	jobs	jobs-framepool	jobs.md	engine/jobs/frame_pool.h:46
 jobs::FramePool::kClassCount	variable	jobs	jobs-framepool-kclasscount	jobs.md	engine/jobs/frame_pool.h:49
 jobs::FramePool::kBlockSizes	variable	jobs	jobs-framepool-kblocksizes	jobs.md	engine/jobs/frame_pool.h:51

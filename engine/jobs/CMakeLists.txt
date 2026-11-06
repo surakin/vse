@@ -10,6 +10,7 @@ set(JOBS_SOURCES
   worker_pool.cpp
   scheduler.cpp
   async_io.cpp
+  file_async.cpp
 )
 
 # Headers are included as "jobs/<name>.h", rooted at engine/.

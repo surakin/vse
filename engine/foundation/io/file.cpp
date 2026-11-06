@@ -3,9 +3,14 @@
 #include <cstdio>
 #include <atomic>
 #include <cstring>
+#include <chrono>
+#include <condition_variable>
 #include <mutex>
+#include <thread>
 
+#include "debug/crash_handler.h"
 #include "io/file_system.h"
+#include "log/assert.h"
 
 namespace engine_placeholder::io {
 
@@ -41,6 +46,179 @@ Status File::Write(const void* data, usize length) {
         position_ += length;
     }
     return s;
+}
+
+// --- asynchronous operations ------------------------------------------------------------------------------------------
+
+namespace {
+
+
+// The built-in executor: one thread, FIFO, drains on destruction.
+class ThreadExecutor final : public IoExecutor {
+public:
+    ThreadExecutor() : thread_([this] { Loop(); }) {}
+    ~ThreadExecutor() override {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            stopping_ = true;
+        }
+        cv_.notify_all();
+        thread_.join();
+    }
+    bool Submit(IoWork* work) override {
+        work->next = nullptr;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            if (stopping_) return false;
+            (tail_ != nullptr ? tail_->next : head_) = work;
+            tail_ = work;
+        }
+        cv_.notify_one();
+        return true;
+    }
+
+private:
+    void Loop() {
+        debug::RegisterThreadForCrashHandling("io");
+        for (;;) {
+            IoWork* work = nullptr;
+            {
+                std::unique_lock<std::mutex> lock(mutex_);
+                cv_.wait(lock, [&] { return head_ != nullptr || stopping_; });
+                if (head_ == nullptr) return;
+                work = head_;
+                head_ = work->next;
+                if (head_ == nullptr) tail_ = nullptr;
+            }
+            work->run(work);
+        }
+    }
+    std::mutex mutex_;
+    std::condition_variable cv_;
+    IoWork* head_ = nullptr;
+    IoWork* tail_ = nullptr;
+    bool stopping_ = false;
+    std::thread thread_;
+};
+
+std::atomic<IoExecutor*> g_executor{nullptr};
+
+} // namespace
+
+void SetDefaultExecutor(IoExecutor* executor) { g_executor.store(executor, std::memory_order_release); }
+
+void ClearDefaultExecutorIf(IoExecutor* executor) {
+    IoExecutor* expected = executor;
+    g_executor.compare_exchange_strong(expected, nullptr, std::memory_order_acq_rel);
+}
+
+IoExecutor& DefaultExecutor() {
+    if (IoExecutor* e = g_executor.load(std::memory_order_acquire)) return *e;
+    static ThreadExecutor builtin; // created on first use, drained and joined at exit
+    return builtin;
+}
+
+void File::CheckNoRequestsInFlight() {
+    ENGINE_ENSURE(in_flight_.load() == 0, "io::File destroyed with asynchronous requests in flight (the backend must call WaitForAsyncRequests)");
+}
+
+void File::WaitForAsyncRequests() {
+    // Normally short. Yield first, then back off so a long wait does not burn a core.
+    for (int spins = 0; in_flight_.load(std::memory_order_acquire) != 0; ++spins) {
+        if (spins < 100) {
+            std::this_thread::yield();
+        } else {
+            std::this_thread::sleep_for(std::chrono::microseconds(50));
+        }
+    }
+}
+
+bool File::ClaimAsync(AsyncRequest* request) {
+    u8 expected = kAsyncPending;
+    return request->state.compare_exchange_strong(expected, kAsyncRunning);
+}
+
+bool File::CancelPending(AsyncRequest* request) {
+    u8 expected = kAsyncPending;
+    return request->state.compare_exchange_strong(expected, kAsyncCancelled);
+}
+
+void File::CompleteAsync(AsyncRequest* request, const AsyncResult& result) {
+    request->state.store(kAsyncDone, std::memory_order_release);
+    const Completion done = request->done;
+    void* const user = request->user;
+    // Count the request out before the callback: the callback may destroy this file.
+    in_flight_.fetch_sub(1, std::memory_order_acq_rel);
+    done(user, result);
+}
+
+void File::RunOnExecutor(IoWork* work) {
+    AsyncRequest* r = reinterpret_cast<AsyncRequest*>(work);
+    File* file = r->file;
+    AsyncResult result;
+    if (!ClaimAsync(r)) {
+        result.status = Status::Of(Error::Interrupted); // cancelled while queued
+    } else {
+        switch (r->kind) {
+        case AsyncKind::Read: result.status = file->Read(r->buffer, r->length, r->offset, &result.bytes); break;
+        case AsyncKind::Write:
+            result.status = file->Write(r->data, r->length, r->offset);
+            if (result.status.Ok()) result.bytes = r->length;
+            break;
+        case AsyncKind::Flush: result.status = file->Flush(); break;
+        }
+    }
+    file->CompleteAsync(r, result);
+}
+
+void File::StartOnExecutor(AsyncRequest* request) {
+    request->work.run = &File::RunOnExecutor;
+    if (!DefaultExecutor().Submit(&request->work)) {
+        AsyncResult result;
+        result.status = Status::Of(Error::Interrupted);
+        CompleteAsync(request, result);
+    }
+}
+
+namespace {
+void Prepare(File* file, AsyncRequest* r, AsyncKind kind, Completion done, void* user) {
+    ENGINE_ASSERT(r != nullptr && done != nullptr, "io::File async start: null request or completion");
+    r->file = file;
+    r->kind = kind;
+    r->done = done;
+    r->user = user;
+    r->state.store(kAsyncPending, std::memory_order_relaxed);
+}
+} // namespace
+
+void File::ReadAsync(AsyncRequest* request, void* buffer, usize length, u64 offset, Completion done, void* user) {
+    Prepare(this, request, AsyncKind::Read, done, user);
+    request->buffer = buffer;
+    request->data = nullptr;
+    request->length = length;
+    request->offset = offset;
+    in_flight_.fetch_add(1, std::memory_order_acq_rel);
+    StartAsync(request);
+}
+
+void File::WriteAsync(AsyncRequest* request, const void* data, usize length, u64 offset, Completion done, void* user) {
+    Prepare(this, request, AsyncKind::Write, done, user);
+    request->buffer = nullptr;
+    request->data = data;
+    request->length = length;
+    request->offset = offset;
+    in_flight_.fetch_add(1, std::memory_order_acq_rel);
+    StartAsync(request);
+}
+
+void File::FlushAsync(AsyncRequest* request, Completion done, void* user) {
+    Prepare(this, request, AsyncKind::Flush, done, user);
+    request->buffer = nullptr;
+    request->data = nullptr;
+    request->length = 0;
+    request->offset = 0;
+    in_flight_.fetch_add(1, std::memory_order_acq_rel);
+    StartAsync(request);
 }
 
 // --- scheme registry --------------------------------------------------------------------------------------------------
@@ -116,7 +294,7 @@ void UnregisterFileScheme(StringView scheme) {
     }
 }
 
-Status File::OpenLocation(StringView location, OpenMode mode, u32 flags, UniquePtr<File>* out) {
+Status File::OpenLocation(StringView location, OpenMode mode, u32 flags, FilePtr* out) {
     const usize colon = location.Find("://");
     const StringView scheme = location.Substring(0, colon);
     if (colon != location.Length() && ValidScheme(scheme)) {
@@ -252,13 +430,13 @@ Status ReadAll(File& file, ArenaAllocator& arena, u8** data, usize* size, u64 ma
 }
 
 Status ReadFile(const Path& path, Vector<u8>* out, u64 max_bytes) {
-    UniquePtr<File> file;
+    FilePtr file;
     if (Status s = File::Open(path, OpenMode::Read, kOpenNone, &file); s.Failed()) return s;
     return ReadAll(*file, out, max_bytes);
 }
 
 Status ReadFile(const Path& path, ArenaAllocator& arena, u8** data, usize* size, u64 max_bytes) {
-    UniquePtr<File> file;
+    FilePtr file;
     if (Status s = File::Open(path, OpenMode::Read, kOpenNone, &file); s.Failed()) return s;
     return ReadAll(*file, arena, data, size, max_bytes);
 }
@@ -273,7 +451,7 @@ Status ReadTextFile(const Path& path, String<HeapAllocator>* out, u64 max_bytes)
 }
 
 Status WriteFile(const Path& path, const void* data, usize length) {
-    UniquePtr<File> file;
+    FilePtr file;
     if (Status s = File::Open(path, OpenMode::Write, kOpenNone, &file); s.Failed()) return s;
     const Status w = file->Write(data, length, 0);
     const Status c = file->Close();
@@ -305,7 +483,7 @@ Status WriteFileAtomic(const Path& requested, const void* data, usize length) {
 
     Status result;
     {
-        UniquePtr<File> file;
+        FilePtr file;
         result = File::Open(temp, OpenMode::Write, kOpenNone, &file);
         if (result.Ok()) result = fail_at(1);
         if (result.Ok()) result = file->Write(data, length, 0);

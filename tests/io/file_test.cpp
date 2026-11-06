@@ -22,12 +22,12 @@ using io_test::TempDir;
 
 namespace {
 
-UniquePtr<io::File> MakeLocal(TempDir& dir, const std::string& content, bool writable) {
+io::FilePtr MakeLocal(TempDir& dir, const std::string& content, bool writable) {
     static int counter = 0;
     const std::string name = "conf" + std::to_string(counter++);
     const Path path = dir / StringView(name.data(), name.size());
     REQUIRE(io::WriteFile(path, content.data(), content.size()).Ok());
-    UniquePtr<io::File> f;
+    io::FilePtr f;
     REQUIRE(io::File::Open(path, writable ? OpenMode::ReadWrite : OpenMode::Read, io::kOpenNone, &f).Ok());
     return f;
 }
@@ -59,7 +59,7 @@ TEST_CASE("io::File: LocalFile passes the write conformance suite", "[io][file]"
 
 TEST_CASE("io::File: open modes, flags and errors", "[io][file]") {
     TempDir dir;
-    UniquePtr<io::File> f;
+    io::FilePtr f;
     CHECK(io::File::Open(dir / "missing", OpenMode::Read, io::kOpenNone, &f).Is(Error::NotFound));
     CHECK(io::File::Open(dir / "missing", OpenMode::ReadWrite, io::kOpenNone, &f).Is(Error::NotFound));
     CHECK(io::File::Open(dir.Path(), OpenMode::Read, io::kOpenNone, &f).Is(Error::IsADirectory));
@@ -114,7 +114,7 @@ TEST_CASE("io::File: open modes, flags and errors", "[io][file]") {
 
 TEST_CASE("io::File: append mode", "[io][file]") {
     TempDir dir;
-    UniquePtr<io::File> f;
+    io::FilePtr f;
     REQUIRE(io::File::Open(dir / "log", OpenMode::Append, io::kOpenNone, &f).Ok());
     CHECK((f->Capabilities() & io::kCapAppendOnly) != 0);
     REQUIRE(f->Append("one\n", 4).Ok());
@@ -134,7 +134,7 @@ TEST_CASE("io::File: locations, schemes and the registry", "[io][file]") {
     TempDir dir;
     REQUIRE(io_test::WriteText(dir / "f.txt", "local"));
     const std::string native = dir.Native() + "/f.txt";
-    UniquePtr<io::File> f;
+    io::FilePtr f;
     char b[8];
     usize n = 0;
     REQUIRE(io::File::OpenLocation(StringView(native.data(), native.size()), OpenMode::Read, io::kOpenNone, &f).Ok());
@@ -153,7 +153,7 @@ TEST_CASE("io::File: locations, schemes and the registry", "[io][file]") {
 
     // A registered scheme gets the whole location; a directory path with a colon is still a path.
     static std::string seen;
-    io::FileFactory factory = [](StringView location, OpenMode, u32, UniquePtr<io::File>* out) -> io::Status {
+    io::FileFactory factory = [](StringView location, OpenMode, u32, io::FilePtr* out) -> io::Status {
         seen = std::string(location.Data(), location.Length());
         out->Reset();
         return io::Status::Of(Error::NotFound);
@@ -172,7 +172,7 @@ TEST_CASE("io::File: locations, schemes and the registry", "[io][file]") {
 
 TEST_CASE("io::File: files over 4 GiB and generated files", "[io][file]") {
     TempDir dir;
-    UniquePtr<io::File> f;
+    io::FilePtr f;
     REQUIRE(io::File::Open(dir / "sparse", OpenMode::ReadWrite, io::kOpenCreate, &f).Ok());
     const u64 five_gib = u64{5} << 30;
     const io::Status t = f->Truncate(five_gib);
@@ -194,7 +194,7 @@ TEST_CASE("io::File: files over 4 GiB and generated files", "[io][file]") {
 }
 
 TEST_CASE("io::File: a full device fails with NoSpace", "[io][file]") {
-    UniquePtr<io::File> f;
+    io::FilePtr f;
     if (!io::Exists(Path("/dev/full"))) {
         WARN("skipped: /dev/full does not exist here");
         return;
@@ -206,7 +206,7 @@ TEST_CASE("io::File: a full device fails with NoSpace", "[io][file]") {
 TEST_CASE("io::File: concurrent offset reads of one file", "[io][file]") {
     TempDir dir;
     const std::string content = io_test::PatternBytes(256 * 1024);
-    UniquePtr<io::File> f = MakeLocal(dir, content, false);
+    io::FilePtr f = MakeLocal(dir, content, false);
     std::atomic<int> bad{0};
     std::vector<std::thread> threads;
     for (int t = 0; t < 4; ++t) {

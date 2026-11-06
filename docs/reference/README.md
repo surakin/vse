@@ -9,14 +9,14 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Memory](foundation-memory.md) | 4 | 28 |
 | [Foundation: Containers](foundation-containers.md) | 5 | 122 |
 | [Foundation: Strings](foundation-strings.md) | 5 | 95 |
-| [Foundation: Paths and Files](foundation-io.md) | 4 | 177 |
+| [Foundation: Paths and Files](foundation-io.md) | 4 | 215 |
 | [Foundation: Math](foundation-math.md) | 5 | 101 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 2 | 69 |
 | [Foundation: Fundamental Types](foundation-types.md) | 1 | 11 |
 | [Platform: OS Services](platform-os.md) | 4 | 39 |
 | [Platform: Windowing and Input](platform-window-input.md) | 10 | 263 |
 | [Foundation: Debugging](foundation-debug.md) | 14 | 200 |
-| [The Job System](jobs.md) | 10 | 172 |
+| [The Job System](jobs.md) | 11 | 190 |
 | [The Render Hardware Interface](rhi.md) | 18 | 731 |
 | [The renderer](renderer.md) | 19 | 986 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 16 | 443 |

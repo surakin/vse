@@ -13,7 +13,7 @@ using namespace engine_placeholder;
 
 /// Makes an open file holding `content`. `writable` asks for a file that also accepts writes (a backend that cannot write
 /// is only run through the read half).
-using FileMaker = std::function<UniquePtr<io::File>(const std::string& content, bool writable)>;
+using FileMaker = std::function<io::FilePtr(const std::string& content, bool writable)>;
 
 inline std::string PatternBytes(size_t n) {
     std::string s(n, '\0');
@@ -25,7 +25,7 @@ inline std::string PatternBytes(size_t n) {
 inline void RunReadConformance(const FileMaker& make) {
     const std::string content = PatternBytes(100000); // larger than the helpers' chunk
     {
-        UniquePtr<io::File> f = make(content, false);
+        io::FilePtr f = make(content, false);
         REQUIRE(f);
         // Offset reads, in the middle and across no boundary.
         char buf[64];
@@ -74,7 +74,7 @@ inline void RunReadConformance(const FileMaker& make) {
         CHECK(f->Size(&size).Is(io::Error::Invalid));
     }
     {
-        UniquePtr<io::File> empty = make("", false);
+        io::FilePtr empty = make("", false);
         REQUIRE(empty);
         char buf[8];
         usize n = 99;
@@ -88,7 +88,7 @@ inline void RunReadConformance(const FileMaker& make) {
     {
         // A buffer larger than anything internal.
         const std::string big = PatternBytes(3 * 1024 * 1024 + 5);
-        UniquePtr<io::File> f = make(big, false);
+        io::FilePtr f = make(big, false);
         REQUIRE(f);
         std::string got(big.size(), '\0');
         REQUIRE(io::ReadExact(*f, got.data(), got.size(), 0).Ok());
@@ -98,7 +98,7 @@ inline void RunReadConformance(const FileMaker& make) {
 
 /// The checks every writable `io::File` backend must pass.
 inline void RunWriteConformance(const FileMaker& make) {
-    UniquePtr<io::File> f = make("0123456789", true);
+    io::FilePtr f = make("0123456789", true);
     REQUIRE(f);
     CHECK((f->Capabilities() & io::kCapWritable) != 0);
     // Overwrite in the middle, extend past the end.

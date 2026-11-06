@@ -23,7 +23,10 @@ IoThread::IoThread() {
     thread_id_ = thread_.get_id();
 }
 
-IoThread::~IoThread() { Shutdown(); }
+IoThread::~IoThread() {
+    io::ClearDefaultExecutorIf(this);
+    Shutdown();
+}
 
 bool IoThread::Enqueue(IoRequest* request) {
     request->next = nullptr;
@@ -42,6 +45,7 @@ bool IoThread::Enqueue(IoRequest* request) {
 }
 
 void IoThread::Shutdown() {
+    io::ClearDefaultExecutorIf(this); // files must not be handed to a stopped executor
     std::lock_guard<std::mutex> serialize(shutdown_mutex_);
     {
         std::lock_guard<std::mutex> lock(mutex_);
