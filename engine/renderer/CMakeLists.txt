@@ -16,6 +16,8 @@ set(RENDERER_SOURCES
   transient_pool.cpp
   renderer.cpp
   render_settings.cpp
+  device_resources.cpp
+  texture.cpp
 )
 
 # The passes embed the committed shader includes (<name>.spv.inc), which `shader_mint` generates and which itself links the

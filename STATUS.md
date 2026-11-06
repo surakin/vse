@@ -575,3 +575,5 @@ Phase 7 Day 106 (device lifecycle) is done: handle epochs (each device seeds its
 
 Phase 7 Day 107 (swapchain and presentation) is done: `Swapchain::Reconfigure` with format and HDR requests and truthful results, `SwapchainCaps`, `Device::RecreateSurface` and `DeviceHost::ReconfigureSwapchain/RecreateSurface` (with `OnSwapchainChanged`), `os::Window` fullscreen on Wayland and X11 with Windows/macOS checklists. Scoped runs: `ran 967 of 2555` plain, `ran 694 of 2555` asan, `ran 422 of 2555` tsan, all pass; docs 4/4. High-effort review: 10 findings, 7 fixed, 3 declined (day file). **Next: Day 108 (resource registry).**
 
+Phase 7 Day 108 (resource registry) is done: `renderer::DeviceResources` with tiers and rollback-friendly failure policy, recreatable `GpuMesh`, `GpuTexture`, `GpuSampler`, the demo's textures and meshes registered, guide "Surviving a reset". Scoped runs: `ran 980 of 2593` plain (only the known X11 window test failed), `ran 707 of 2593` asan, `ran 434 of 2593` tsan; docs 4/4. High-effort review: 9 findings, 7 fixed, 2 declined (day file). **Next: Day 109 (recreatable materials, passes, frame data, transient pool).**
+

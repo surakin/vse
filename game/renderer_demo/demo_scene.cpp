@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 
 #include "demo_assets.h"
 #include "rhi/rhi_log.h"
@@ -48,19 +49,37 @@ Mat4 Transform(const Vec3& position, f32 yaw, f32 scale) {
     return Mat4::FromBasis(Vec3(c, 0, -s), Vec3(0, scale, 0), Vec3(s, 0, c), position);
 }
 
-// The texture for one demo file: loaded from asset_dir when possible, procedural otherwise.
-rhi::TextureHandle LoadTexture(rhi::Device* device, const char* asset_dir, const DemoTexture& texture) {
-    if (asset_dir != nullptr) {
+// Produces the image of one demo file: read from asset_dir when possible, procedural otherwise. Called at creation and again
+// at every device reset, so a texture never keeps its pixels in memory.
+bool LoadTextureImage(void* user, TextureImage* out) {
+    const auto* info = static_cast<const TextureLoadInfo*>(user);
+    const DemoTexture& texture = *info->texture;
+    if (info->asset_dir != nullptr) {
         char path[1024];
-        std::snprintf(path, sizeof(path), "%s/%s", asset_dir, texture.file);
+        std::snprintf(path, sizeof(path), "%s/%s", info->asset_dir, texture.file);
         demo::RtexImage image;
         if (demo::ReadRtex(path, &image) && image.format == texture.format) {
-            const rhi::TextureHandle loaded = demo::CreateTextureFromRtex(device, image, texture.file);
-            if (loaded.IsValid()) return loaded;
+            out->desc.width = image.width;
+            out->desc.height = image.height;
+            out->desc.mip_levels = image.mip_count;
+            out->desc.format = image.format;
+            out->desc.usage = rhi::TextureUsage::Sampled;
+            out->pixels.Resize(image.data.size());
+            std::memcpy(out->pixels.Data(), image.data.data(), image.data.size());
+            return true;
         }
         rhi::RhiLogV(LogVerbosity::Warn, "renderer_demo: %s could not be loaded; using the procedural texture", path);
     }
-    return demo::CreateSampledTexture(device, texture.make(), texture.format, true, texture.file);
+    const demo::Pixels pixels = texture.make();
+    out->desc.width = pixels.width;
+    out->desc.height = pixels.height;
+    out->desc.mip_levels = demo::FullMipCount(pixels.width, pixels.height);
+    out->desc.format = texture.format;
+    out->desc.usage = rhi::TextureUsage::Sampled;
+    out->pixels.Resize(pixels.rgba.size());
+    std::memcpy(out->pixels.Data(), pixels.rgba.data(), pixels.rgba.size());
+    out->generate_mips = true;
+    return true;
 }
 
 struct Placement {
@@ -82,9 +101,8 @@ void DemoScene::Destroy() {
     colored_sphere_.Destroy();
     cube_.Destroy();
     tile_.Destroy();
-    for (rhi::TextureHandle& t : textures_) {
-        if (t.IsValid()) device_->DestroyTexture(t);
-        t = {};
+    for (renderer::GpuTexture& t : textures_) {
+        t.Destroy();
     }
     light_ids_.Reset();
     light_base_.Reset();
@@ -132,6 +150,17 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
         Destroy();
         return false;
     }
+    if (options.resources != nullptr) {
+        // Keep the geometry so the meshes can be uploaded again after a device reset.
+        if (!sphere_.AdoptSource(options.resources, static_cast<MeshData&&>(sphere), "sphere") ||
+            !colored_sphere_.AdoptSource(options.resources, static_cast<MeshData&&>(colored), "colored sphere") ||
+            !cube_.AdoptSource(options.resources, static_cast<MeshData&&>(cube), "cube") ||
+            !tile_.AdoptSource(options.resources, static_cast<MeshData&&>(tile), "ground tile")) {
+            rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: registering the meshes failed");
+            Destroy();
+            return false;
+        }
+    }
     {
         // Barriers that move the buffers out of their upload state, in one submission.
         device->BeginFrame();
@@ -166,8 +195,12 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
     u32 texture_count = 0;
     const DemoTexture* texture_table = DemoTextures(&texture_count);
     for (u32 i = 0; i < texture_count && i < 3; ++i) {
-        textures_[i] = LoadTexture(device, options.asset_dir, texture_table[i]);
-        if (!textures_[i].IsValid()) {
+        if (options.asset_dir != nullptr) {
+            std::snprintf(asset_dir_, sizeof(asset_dir_), "%s", options.asset_dir);
+        }
+        load_info_[i].asset_dir = options.asset_dir != nullptr ? asset_dir_ : nullptr;
+        load_info_[i].texture = &texture_table[i];
+        if (!textures_[i].CreateFromLoader(device, &LoadTextureImage, &load_info_[i], options.resources, texture_table[i].file)) {
             rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: could not create the texture %s", texture_table[i].file);
             Destroy();
             return false;
@@ -194,8 +227,8 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
               make(kGold, "gold", plain, Vec4(1.0f, 0.77f, 0.34f, 1), 0.2f, 1.0f, 0.0f) && make(kCopper, "copper", plain, Vec4(0.95f, 0.5f, 0.35f, 1), 0.6f, 1.0f, 0.0f) &&
               make(kEmissive, "emissive", plain, Vec4(0.1f, 0.8f, 0.7f, 1), 0.8f, 0.0f, 0.9f) && make(kVertexColor, "vertex color", vertex_colored, Vec4(1, 1, 1, 1), 0.5f, 0.0f, 0.0f);
     if (ok) {
-        ok = materials->SetTexture(ids[kGround], "albedo_tex", textures_[0]) && materials->SetTexture(ids[kChecker], "albedo_tex", textures_[0]) &&
-             materials->SetTexture(ids[kStripes], "albedo_tex", textures_[1]) && materials->SetTexture(ids[kBumps], "normal_tex", textures_[2]);
+        ok = materials->SetTexture(ids[kGround], "albedo_tex", textures_[0].Handle()) && materials->SetTexture(ids[kChecker], "albedo_tex", textures_[0].Handle()) &&
+             materials->SetTexture(ids[kStripes], "albedo_tex", textures_[1].Handle()) && materials->SetTexture(ids[kBumps], "normal_tex", textures_[2].Handle());
     }
     if (!ok) {
         rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: creating the materials failed");

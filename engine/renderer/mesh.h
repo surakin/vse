@@ -4,6 +4,7 @@
 
 #include "containers/vector.h"
 #include "renderer/bounds.h"
+#include "renderer/device_resources.h"
 #include "renderer/shader_reflection.h"
 #include "rhi/rhi.h"
 #include "types.h"
@@ -285,11 +286,11 @@ const char* ListToStrip(const MeshData& list, StripJoin join, MeshData* out);
 /// Thread-safety: thread-compatible. Move-only.
 /// Ownership: owns its two buffers; the device must outlive it and be idle (or at least done with the buffers' frames)
 ///   for a clean exit. Destruction goes through the device's deferred destruction.
-class GpuMesh {
+class GpuMesh final : public Recreatable {
 public:
     GpuMesh() = default;
     /// Destroys the buffers, as [[renderer::GpuMesh::Destroy]] does.
-    ~GpuMesh() { Destroy(); }
+    ~GpuMesh() override { Destroy(); }
     /// Takes the buffers from `other`, which is left empty.
     GpuMesh(GpuMesh&& other);
     /// Destroys this mesh's buffers, then takes them from `other`, which is left empty.
@@ -308,8 +309,64 @@ public:
     /// Ownership: `data` is read during the call only.
     bool Create(rhi::Device* device, const MeshData& data, const char* debug_name);
 
-    /// Destroys the buffers through the device. Safe on an empty mesh and called by the destructor.
+    /// Destroys the buffers through the device and forgets the source and the registration. Safe on an empty mesh and called
+    /// by the destructor.
     void Destroy();
+
+    /// How a mesh gets its geometry again after a device reset.
+    ///
+    /// Thread-safety: thread-compatible plain data.
+    /// Ownership: `borrowed` is not owned; `load` and `user` are borrowed.
+    struct Source {
+        /// Geometry the caller keeps alive for as long as the mesh is registered, or null.
+        const MeshData* borrowed = nullptr;
+        /// Or a function that loads the geometry into `*out` (called at every recreate), or null.
+        bool (*load)(void* user, MeshData* out) = nullptr;
+        /// Passed to `load`.
+        void* user = nullptr;
+    };
+
+    /// Makes this mesh survive a device reset: records where the geometry comes from and registers with `resources`.
+    ///
+    /// After this, `Release` and `Recreate` work and the registry calls them on every reset. Call after a successful `Create`.
+    ///
+    /// Param resources: the registry; null records the source but registers nothing.
+    /// Param source: where to get the geometry again; `borrowed` or `load` must be set.
+    /// Param debug_name: a label for the rebuilt buffers; copied, may be null.
+    /// Returns: true if registered (or `resources` is null).
+    /// Fails: returns false if the registry refused; the mesh is then still valid but will not survive a reset.
+    /// Aborts: the mesh is empty, or `source` names nothing.
+    /// Ownership: the registry and the source are borrowed.
+    bool MakeRecreatable(DeviceResources* resources, const Source& source, const char* debug_name);
+
+    /// As [[renderer::GpuMesh::MakeRecreatable]], keeping the geometry itself: `data` is moved into the mesh.
+    ///
+    /// Param resources: the registry; may be null.
+    /// Param data: the geometry; must be what the mesh was created from.
+    /// Param debug_name: a label for the rebuilt buffers; copied, may be null.
+    /// Returns: true if registered (or `resources` is null).
+    /// Aborts: the mesh is empty or `data` is empty.
+    /// Ownership: borrowed for the call; nothing is kept unless the description above says so.
+    bool AdoptSource(DeviceResources* resources, MeshData&& data, const char* debug_name);
+
+    /// Destroys the buffers and keeps everything else (the source, the bounds, the sort id). The mesh reads as not `Valid`
+    /// until `Recreate`. Safe on a released mesh.
+    void Release() override;
+
+    /// Uploads the geometry again on `device`; the buffer handles change, the sort id does not.
+    ///
+    /// Param device: the new device.
+    /// Returns: true on success.
+    /// Fails: returns false, logging the reason, if the mesh has no source, the loader fails, or the upload fails.
+    /// Aborts: the mesh already holds buffers.
+    /// Ownership: borrowed for the call; nothing is kept unless the description above says so.
+    bool Recreate(rhi::Device* device) override;
+
+    /// Returns the debug name for logs.
+    /// Fails: never.
+    /// Ownership: the returned pointer is borrowed from the owner.
+    bool Live() const override { return vertex_buffer_.IsValid(); }
+    const char* RecreatableName() const override { return name_; }
 
     /// Returns whether the buffers exist.
     /// Fails: never.
@@ -366,6 +423,15 @@ public:
     void Draw(rhi::CommandList* list, u32 instance_count, u32 first_instance) const;
 
 private:
+    bool Upload(rhi::Device* device, const MeshData& data, const char* debug_name, rhi::BufferHandle* vb, rhi::BufferHandle* ib);
+    void MoveFrom(GpuMesh& other);
+
+    Source source_;
+    MeshData owned_;
+    char name_[48] = "mesh";
+    bool recreatable_ = false;
+    bool was_ready_ = false; // the buffers were in their read states when released; Recreate restores that
+    ScopedRegistration registration_;
     rhi::Device* device_ = nullptr;
     rhi::BufferHandle vertex_buffer_;
     rhi::BufferHandle index_buffer_;

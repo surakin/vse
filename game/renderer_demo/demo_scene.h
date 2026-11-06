@@ -11,6 +11,7 @@
 #include "renderer/material.h"
 #include "renderer/mesh.h"
 #include "renderer/render_scene.h"
+#include "renderer/texture.h"
 #include "rhi/rhi.h"
 #include "types.h"
 
@@ -31,6 +32,16 @@ struct SceneOptions {
     u32 add_order_seed = 0;
     // The directory with the .rtex files; a texture that cannot be loaded is replaced by its procedural version.
     const char* asset_dir = nullptr;
+    // The registry the scene's meshes and textures register with so they survive a device reset; null for a scene that does not.
+    renderer::DeviceResources* resources = nullptr;
+};
+
+struct DemoTexture;
+
+// Where a demo texture comes from; kept by the scene so the texture can be loaded again after a device reset.
+struct TextureLoadInfo {
+    const char* asset_dir = nullptr; // null: procedural only
+    const DemoTexture* texture = nullptr;
 };
 
 class DemoScene {
@@ -69,7 +80,9 @@ private:
     renderer::GpuMesh colored_sphere_;
     renderer::GpuMesh cube_;
     renderer::GpuMesh tile_;
-    rhi::TextureHandle textures_[3];
+    renderer::GpuTexture textures_[3];
+    TextureLoadInfo load_info_[3]; // how each texture is loaded again after a reset
+    char asset_dir_[512] = {};
     UniquePtr<renderer::RenderScene> scene_;
     Vector<renderer::LightId> light_ids_;
     Vector<Vec3> light_base_;

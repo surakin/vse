@@ -660,6 +660,66 @@ d = 10.0  attenuation 0.00000
 d = 12.0  attenuation 0.00000
 ```
 
+### Surviving a reset
+
+The device can be destroyed and created again while the program runs (a settings change, a lost device; see the RHI guide, "Lifecycle and
+reset"). Everything in the renderer that owns device objects must therefore be able to make them again. The rule for an owner:
+
+1. **Keep the CPU-side source** (pixels, mesh data, descriptors, or a loader that produces them), never only the GPU object.
+2. **Register** with the [[renderer::DeviceResources]] registry at your tier (the `renderer::tiers` constants), with a [[renderer::ScopedRegistration]]
+   member, so a destroyed owner is never called and a moved one follows its move.
+3. **Implement** [[renderer::Recreatable]]: `Release` destroys your device objects and keeps the source; `Recreate` makes them again.
+4. **Never keep a handle past a frame** for anyone else: handles change at every reset. Hold the owner (a `GpuMesh*`, a `GpuTexture*`)
+   and read `Handle()` when you record.
+
+The registry is the device host's observer: `OnDeviceReleasing` releases owners from the highest tier down, `OnDeviceCreated` recreates
+them from the lowest up (0 textures and samplers, 1 meshes, 2 layouts and shaders, 3 materials and pipelines, 4 passes and per-frame
+buffers). A `Recreate` that fails stops the sequence, releases everything that was built and names the owner
+([[renderer::DeviceResources::FailedOwner]]); the host fails the reset and the caller rolls back.
+
+[[renderer::GpuMesh]] gets its source with `MakeRecreatable` (a borrowed [[renderer::MeshData]] or a loader) or `AdoptSource` (the mesh
+keeps the data); [[renderer::GpuTexture]] holds a [[renderer::TextureImage]] or a [[renderer::TextureLoader]] (an asset file is read again
+at every recreate, so its pixels are not kept in memory); [[renderer::GpuSampler]] keeps its description. A device with smaller limits
+(`max_texture_dimension_2d`, a missing format) makes `Recreate` fail with a log line; a texture that cannot get its mip chain
+generated falls back to the levels its source holds.
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "renderer/device_resources.h"
+#include "renderer/texture.h"
+#include "rhi/device_host.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    renderer::DeviceResources registry;
+    rhi::DeviceHost host;
+    host.AddObserver(&registry, 0);
+    rhi::DeviceCreateInfo info;
+    info.backend = rhi::Backend::Null;
+    host.Create(info, rhi::SwapchainDesc{});
+
+    renderer::TextureImage image;
+    image.desc.width = image.desc.height = 4;
+    image.desc.format = rhi::Format::RGBA8_UNorm;
+    image.desc.usage = rhi::TextureUsage::Sampled;
+    image.pixels.Resize(4 * 4 * 4);
+    renderer::GpuTexture texture;
+    texture.Create(host.GetDevice(), static_cast<renderer::TextureImage&&>(image), &registry, "checker");
+
+    const rhi::TextureHandle before = texture.Handle();
+    host.Recreate(info, rhi::SwapchainDesc{});   // the registry rebuilds the texture on the new device
+    std::printf("valid: %s, handle changed: %s\n", texture.Valid() ? "yes" : "no", texture.Handle() != before ? "yes" : "no");
+    texture.Destroy();
+    host.Destroy();
+    return 0;
+}
+```
+```output
+valid: yes, handle changed: yes
+```
+
 ### The renderer demo
 
 `game/renderer_demo` puts the pieces together: a scene of 540 objects in eight materials, 300 point lights, a sun and ambient

@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cmath>
 #include <cstdlib>
+#include <cstdio>
 #include <cstring>
 #include <new>
 
@@ -557,41 +558,53 @@ const char* ListToStrip(const MeshData& list, StripJoin join, MeshData* out) {
 
 // ---- GpuMesh ----
 
-GpuMesh::GpuMesh(GpuMesh&& other) { *this = static_cast<GpuMesh&&>(other); }
+GpuMesh::GpuMesh(GpuMesh&& other) { MoveFrom(other); }
 
 GpuMesh& GpuMesh::operator=(GpuMesh&& other) {
     if (this != &other) {
         Destroy();
-        device_ = other.device_;
-        vertex_buffer_ = other.vertex_buffer_;
-        index_buffer_ = other.index_buffer_;
-        vertex_count_ = other.vertex_count_;
-        index_count_ = other.index_count_;
-        index_type_ = other.index_type_;
-        topology_ = other.topology_;
-        has_restart_ = other.has_restart_;
-        layout_ = other.layout_;
-        bounds_ = other.bounds_;
-        sort_id_ = other.sort_id_;
-        other.sort_id_ = 0;
-        ready_ = other.ready_;
-        prepared_ = other.prepared_;
-        other.device_ = nullptr;
-        other.vertex_buffer_ = {};
-        other.index_buffer_ = {};
-        other.vertex_count_ = 0;
-        other.index_count_ = 0;
-        other.ready_ = false;
-        other.prepared_ = false;
+        MoveFrom(other);
     }
     return *this;
 }
 
-bool GpuMesh::Create(rhi::Device* device, const MeshData& data, const char* debug_name) {
-    ENGINE_ASSERT(device != nullptr, "GpuMesh::Create: device is null");
-    ENGINE_ASSERT(!Valid(), "GpuMesh::Create: this mesh already holds buffers");
-    ENGINE_ASSERT(data.Valid(), "GpuMesh::Create: the mesh data is empty");
+void GpuMesh::MoveFrom(GpuMesh& other) {
+    owned_ = static_cast<MeshData&&>(other.owned_);
+    was_ready_ = other.was_ready_;
+    other.was_ready_ = false;
+    source_ = other.source_;
+    if (source_.borrowed == &other.owned_) {
+        source_.borrowed = &owned_;
+    }
+    std::memcpy(name_, other.name_, sizeof(name_));
+    recreatable_ = other.recreatable_;
+    registration_.Adopt(&other.registration_, this);
+    device_ = other.device_;
+    vertex_buffer_ = other.vertex_buffer_;
+    index_buffer_ = other.index_buffer_;
+    vertex_count_ = other.vertex_count_;
+    index_count_ = other.index_count_;
+    index_type_ = other.index_type_;
+    topology_ = other.topology_;
+    has_restart_ = other.has_restart_;
+    layout_ = other.layout_;
+    bounds_ = other.bounds_;
+    sort_id_ = other.sort_id_;
+    ready_ = other.ready_;
+    prepared_ = other.prepared_;
+    other.source_ = Source{};
+    other.recreatable_ = false;
+    other.sort_id_ = 0;
+    other.device_ = nullptr;
+    other.vertex_buffer_ = {};
+    other.index_buffer_ = {};
+    other.vertex_count_ = 0;
+    other.index_count_ = 0;
+    other.ready_ = false;
+    other.prepared_ = false;
+}
 
+bool GpuMesh::Upload(rhi::Device* device, const MeshData& data, const char* debug_name, rhi::BufferHandle* vb, rhi::BufferHandle* ib) {
     rhi::BufferDesc bd;
     bd.location = rhi::MemoryLocation::GpuOnly;
     bd.size = data.VertexBytes();
@@ -613,6 +626,21 @@ bool GpuMesh::Create(rhi::Device* device, const MeshData& data, const char* debu
         if (index_buffer.IsValid()) device->DestroyBuffer(index_buffer);
         return false;
     }
+    *vb = vertex_buffer;
+    *ib = index_buffer;
+    return true;
+}
+
+bool GpuMesh::Create(rhi::Device* device, const MeshData& data, const char* debug_name) {
+    ENGINE_ASSERT(device != nullptr, "GpuMesh::Create: device is null");
+    ENGINE_ASSERT(!Valid(), "GpuMesh::Create: this mesh already holds buffers");
+    ENGINE_ASSERT(data.Valid(), "GpuMesh::Create: the mesh data is empty");
+
+    rhi::BufferHandle vertex_buffer;
+    rhi::BufferHandle index_buffer;
+    if (!Upload(device, data, debug_name, &vertex_buffer, &index_buffer)) {
+        return false;
+    }
     device_ = device;
     vertex_buffer_ = vertex_buffer;
     index_buffer_ = index_buffer;
@@ -630,7 +658,32 @@ bool GpuMesh::Create(rhi::Device* device, const MeshData& data, const char* debu
     return true;
 }
 
-void GpuMesh::Destroy() {
+bool GpuMesh::MakeRecreatable(DeviceResources* resources, const Source& source, const char* debug_name) {
+    ENGINE_ASSERT(Valid(), "GpuMesh::MakeRecreatable: the mesh is empty");
+    ENGINE_ASSERT(source.borrowed != nullptr || source.load != nullptr, "GpuMesh::MakeRecreatable: no source");
+    source_ = source;
+    std::snprintf(name_, sizeof(name_), "%s", debug_name != nullptr ? debug_name : "mesh");
+    recreatable_ = true;
+    if (!registration_.Attach(resources, this, tiers::kMeshes)) {
+        recreatable_ = false;
+        source_ = Source{};
+        return false;
+    }
+    return true;
+}
+
+bool GpuMesh::AdoptSource(DeviceResources* resources, MeshData&& data, const char* debug_name) {
+    ENGINE_ASSERT(Valid() && data.Valid(), "GpuMesh::AdoptSource: the mesh or the data is empty");
+    if (resources == nullptr) {
+        return true; // nothing could use the data
+    }
+    owned_ = static_cast<MeshData&&>(data);
+    Source source;
+    source.borrowed = &owned_;
+    return MakeRecreatable(resources, source, debug_name);
+}
+
+void GpuMesh::Release() {
     if (device_ == nullptr) {
         return;
     }
@@ -638,12 +691,69 @@ void GpuMesh::Destroy() {
     if (vertex_buffer_.IsValid()) device_->DestroyBuffer(vertex_buffer_);
     index_buffer_ = {};
     vertex_buffer_ = {};
-    vertex_count_ = 0;
-    index_count_ = 0;
-    sort_id_ = 0;
+    was_ready_ = was_ready_ || ready_;
     ready_ = false;
     prepared_ = false;
     device_ = nullptr;
+}
+
+bool GpuMesh::Recreate(rhi::Device* device) {
+    ENGINE_ASSERT(!Valid(), "GpuMesh::Recreate: the mesh still holds buffers");
+    if (!recreatable_) {
+        RenderLog(LogVerbosity::Error, "GpuMesh '%s': no source to recreate it from", name_);
+        return false;
+    }
+    MeshData loaded;
+    const MeshData* data = source_.borrowed;
+    if (data == nullptr) {
+        if (!source_.load(source_.user, &loaded) || !loaded.Valid()) {
+            RenderLog(LogVerbosity::Error, "GpuMesh '%s': the loader failed", name_);
+            return false;
+        }
+        data = &loaded;
+    }
+    if (!data->Valid() || data->VertexCount() != vertex_count_ || data->IndexCount() != index_count_) {
+        RenderLog(LogVerbosity::Error, "GpuMesh '%s': the source no longer matches the mesh", name_);
+        return false;
+    }
+    if (!Upload(device, *data, name_, &vertex_buffer_, &index_buffer_)) {
+        return false;
+    }
+    device_ = device;
+    if (was_ready_) {
+        // Put the buffers back into their read states, as before the reset.
+        device->BeginFrame();
+        rhi::CommandList* list = device->CreateCommandList();
+        bool submitted = false;
+        if (list != nullptr) {
+            list->Begin();
+            RecordPrepare(list);
+            list->End();
+            rhi::CommandList* lists[] = {list};
+            submitted = device->Submit(lists, 1) != 0;
+        }
+        device->EndFrame();
+        device->WaitIdle();
+        if (!submitted) {
+            RenderLog(LogVerbosity::Error, "GpuMesh '%s': preparing the rebuilt buffers failed", name_);
+            Release();
+            return false;
+        }
+        MarkReady();
+    }
+    return true;
+}
+
+void GpuMesh::Destroy() {
+    registration_.Reset();
+    Release();
+    owned_ = MeshData{};
+    source_ = Source{};
+    recreatable_ = false;
+    was_ready_ = false;
+    vertex_count_ = 0;
+    index_count_ = 0;
+    sort_id_ = 0;
 }
 
 void GpuMesh::RecordPrepare(rhi::CommandList* list) {
