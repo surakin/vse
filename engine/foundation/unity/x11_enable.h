@@ -67,3 +67,4 @@
 #pragma push_macro("BadName")
 #pragma push_macro("BadRequest")
 #pragma push_macro("ReplayPointer")
+#pragma push_macro("XkbKeyboard")

@@ -1,6 +1,6 @@
 # Paths, files and directories
 
-Status: draft (Phase 8, Day 116: paths only). The files and directories sections arrive with Days 117-120.
+Status: draft (Phase 8, Days 116-117: paths, errors and file-system operations). Files and directories arrive with Days 118-120.
 
 The file layer lives in `engine/foundation/io/` (namespace `engine_placeholder::io`). Design and reasons:
 `docs/superpowers/specs/2026-11-06-file-layer-design.md`.
@@ -71,3 +71,47 @@ C:/Users/you/Cache.TXT
 | `Normalize` | drops `.`, resolves `..` where it can, never goes above a root, empty becomes `.` |
 | `RelativeTo(base)` | fails for different roots or when `base` climbs with `..`; `.` for the same path |
 | `==`, `<`, `Hash` | by component; Windows folds ASCII case only |
+
+## Errors
+
+Nothing in the file layer throws, and nothing leaks `errno`. An operation returns an `io::Status`: an `io::Error` (`NotFound`,
+`PermissionDenied`, `AlreadyExists`, `NotADirectory`, `IsADirectory`, `NotEmpty`, `NoSpace`, `TooLong`, `Interrupted`,
+`Unsupported`, `Invalid`, `CrossDevice`, `SymlinkLoop`, `ReadOnly`, `Busy`, `TooManyOpenFiles`, `OutOfMemory`, `Io`) plus the
+operating system's own code, kept for logs only. Branch on the enum. Codes with no portable meaning (`EIO`, `ENXIO`,
+`EFAULT`, ...) collapse into `Io`. `io::ErrorName` gives a stable name for logs.
+
+```cpp compile
+io::Path p("/definitely/not/here");
+io::FileInfo info;
+io::Status s = io::Stat(p, &info);
+if (s.Is(io::Error::NotFound)) {
+    std::printf("missing (%s)\n", io::ErrorName(s.error));
+}
+```
+
+## Looking at the disk
+
+`Stat` (follows links) and `Lstat` fill an `io::FileInfo`: type, size, modification time in nanoseconds since 1970, permission bits and a
+`read_only` flag for the current process. `Exists`, `IsFile` and `IsDirectory` answer the common questions. `Remove` takes a file, a
+link or an empty directory; `RemoveAll` removes a tree without following links and refuses the empty path, roots and anything with
+fewer than two components. `Rename` replaces an existing file atomically (same file system only); `Copy` copies bytes and permission
+bits and is not atomic. `CreateDirectories` treats an existing directory as success; `CreatePrivateDirectory` makes (or tightens) a
+mode 0700 directory owned by you and refuses a symbolic link. `CreateTempFile` and `CreateTempDirectory` make uniquely named, exclusive
+entries (the building block of atomic replace).
+
+`CurrentDirectory`, `Absolute` (lexical), `Canonical` (resolves links; the file must exist) and `ReadLink` resolve names.
+`SetCurrentDirectory` changes the whole process and is best avoided.
+
+## Special folders
+
+Each takes the application name, returns a path and creates nothing: `UserConfigDirectory`, `UserCacheDirectory`,
+`UserDataDirectory`, `UserStateDirectory` (on Linux `$XDG_*_HOME` when it is an absolute path, otherwise under `$HOME`; a
+relative value is ignored), `TempDirectory` (`$TMPDIR` when absolute, else `/tmp`), `ExecutablePath` and `ExecutableDirectory`.
+Create the directory yourself, usually with `CreateDirectories` or `CreatePrivateDirectory`.
+
+```cpp compile
+io::Path cache;
+if (io::UserCacheDirectory("my_game", &cache).Ok()) {
+    io::CreateDirectories(cache);
+}
+```

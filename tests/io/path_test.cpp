@@ -3,8 +3,10 @@
 #include <string>
 
 #include "io/path.h"
+#include "temp_dir.h"
 
 using engine_placeholder::StringView;
+using io_test::Str;
 using engine_placeholder::usize;
 using engine_placeholder::io::kMaxPathBytes;
 using engine_placeholder::io::Path;
@@ -35,8 +37,6 @@ struct RelRow {
 };
 
 #include "path_table.inc"
-
-std::string Str(StringView v) { return std::string(v.Data() == nullptr ? "" : v.Data(), v.Length()); }
 
 template <usize N>
 void CheckRows(const PathRow (&rows)[N], PathStyle style) {

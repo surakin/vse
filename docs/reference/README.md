@@ -9,7 +9,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Memory](foundation-memory.md) | 4 | 28 |
 | [Foundation: Containers](foundation-containers.md) | 5 | 122 |
 | [Foundation: Strings](foundation-strings.md) | 5 | 95 |
-| [Foundation: Paths and Files](foundation-io.md) | 1 | 54 |
+| [Foundation: Paths and Files](foundation-io.md) | 3 | 124 |
 | [Foundation: Math](foundation-math.md) | 5 | 101 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 2 | 69 |
 | [Foundation: Fundamental Types](foundation-types.md) | 1 | 11 |

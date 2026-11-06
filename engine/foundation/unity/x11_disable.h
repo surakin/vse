@@ -63,3 +63,4 @@
 #pragma pop_macro("BadName")
 #pragma pop_macro("BadRequest")
 #pragma pop_macro("ReplayPointer")
+#pragma pop_macro("XkbKeyboard")

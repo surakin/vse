@@ -3,6 +3,7 @@
 # flavor, as in tests/jobs.
 set(IO_TEST_SOURCES
   path_test.cpp
+  file_system_test.cpp
 )
 
 find_package(Threads REQUIRED)
