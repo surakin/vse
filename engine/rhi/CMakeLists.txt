@@ -1,4 +1,4 @@
-# Phase 3: the Render Hardware Interface (docs/superpowers/specs/
+# Phase 4: the Render Hardware Interface (docs/superpowers/specs/
 # 2026-11-04-rhi-design.md). `rhi` holds the backend-agnostic interface and
 # the validating null backend; `rhi_vulkan` is the only place Vulkan is
 # named. Built plain and under ASan/UBSan from one source list, each linked

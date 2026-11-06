@@ -31,7 +31,7 @@ using VulkanDevicePtr = UniquePtr<VulkanDevice, DeviceDeleter>;
 /// The Vulkan 1.3 device: one physical GPU, one logical device and one graphics+compute queue.
 ///
 /// Created by [[rhi::CreateDevice]] (or [[rhi::vulkan::VulkanDevice::Create]]). All work, including uploads, runs
-/// on the single graphics queue; a dedicated transfer family is recorded in the queue plan but unused in Phase 3.
+/// on the single graphics queue; a dedicated transfer family is recorded in the queue plan but unused in Phase 4.
 ///
 /// Thread-safety: thread-safe for creation, destruction and mapping, as for [[rhi::Device]]; `Submit`, `BeginFrame`,
 ///   `EndFrame` and `WaitIdle` belong to one submission thread.

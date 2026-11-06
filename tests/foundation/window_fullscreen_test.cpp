@@ -1,4 +1,4 @@
-// Phase 7 Day 107: the fullscreen request of os::Window on the real display backends.
+// Phase 8 Day 107: the fullscreen request of os::Window on the real display backends.
 #include <catch2/catch_test_macros.hpp>
 
 #include "os/input.h"

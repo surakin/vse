@@ -42,7 +42,7 @@ Resources are virtual: a transient texture or buffer exists only as a descriptor
 
 Semantics follow declaration order: a read sees the most recent earlier write, and a write replaces it. From that the graph derives read-after-write, write-after-write and write-after-read edges, orders the passes topologically with the smallest declaration index first among those ready (so the order is stable), and drops passes whose results nothing uses. All storage comes from the arena the graph is given, so building and compiling a frame allocates nothing from the heap.
 
-The scene a frame is built from: a fixed-capacity list of objects and lights with stable ids; the ECS replaces it in Phase 15.
+The scene a frame is built from: a fixed-capacity list of objects and lights with stable ids; the ECS replaces it in Phase 16.
 
 Rendering settings the user can change at run time, what each change costs, and how two sets of settings become the cheapest sufficient action.
 
@@ -52,7 +52,7 @@ The renderer's frame loop: begins a frame, builds and executes the render graph,
 
 A [`renderer::Renderer`](#renderer-renderer) owns what lives across frames (the transient pool, the per-frame arena) and borrows the device, the optional swapchain and the optional job scheduler. A frame is built by a callback that declares the passes on a fresh [`renderer::RenderGraph`](#renderer-rendergraph); the renderer then compiles it, records the passes (in parallel when it has a scheduler), submits once and presents. Later days supply the real callback (G-buffer, lighting, tonemap); tests supply their own.
 
-Identification of the renderer library; the first real symbol of Phase 4 (the camera and scene arrive on Day 73).
+Identification of the renderer library; the first real symbol of Phase 5 (the camera and scene arrive on Day 73).
 
 The renderer: a deferred, render-graph-driven renderer built on the RHI.
 
@@ -9051,7 +9051,7 @@ Needs a [`renderer::RendererDesc::host`](#renderer-rendererdesc-host); without o
 u32 max_attempts;
 ```
 
-The most reset attempts for one loss; 0 turns recovery off (the loss is terminal, as before Phase 7).
+The most reset attempts for one loss; 0 turns recovery off (the loss is terminal, as before Phase 8).
 
 ### `delay_frames` {#renderer-recoverypolicy-delay-frames}
 

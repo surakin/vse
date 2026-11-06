@@ -1,4 +1,4 @@
-# File access gate (Phase 8 Day 124). Run as:
+# File access gate (Phase 9 Day 124). Run as:
 #   cmake -DROOT=<tree> [-DALLOWLIST=<file>] -P check.cmake
 # No C or C++ file under engine/, game/, tools/ or tests/ may call the operating system's file or directory API directly
 # (fopen, open, opendir, readdir, stat, mkdir, rename, unlink, realpath, getcwd, access, ... or std::ifstream/ofstream/filesystem):

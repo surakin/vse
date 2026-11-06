@@ -1,4 +1,4 @@
-# Platform-neutral gate (Phase 6 Day 92). Run as:
+# Platform-neutral gate (Phase 7 Day 92). Run as:
 #   cmake -DROOT=<tree> -DBOUNDARY=<file> -P check.cmake
 #
 # Rule 1: nothing under engine/foundation/debug/ and nothing under tests/debug/ names a platform type, constant or header:

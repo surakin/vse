@@ -1,2 +1,2 @@
-plans/phase-05-test-scoping.md
+plans/phase-06-test-scoping.md
 STATUS.md

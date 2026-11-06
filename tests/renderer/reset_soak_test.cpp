@@ -1,4 +1,4 @@
-// Phase 7 Day 112: the acceptance tests of the phase on the null backend: the reset loop, a reset during a frame sequence, what
+// Phase 8 Day 112: the acceptance tests of the phase on the null backend: the reset loop, a reset during a frame sequence, what
 // each cost class does not do, and a reset while the job scheduler is running.
 #include <catch2/catch_test_macros.hpp>
 

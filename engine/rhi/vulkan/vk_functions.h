@@ -31,7 +31,7 @@ struct VkInstanceFns {
 
 /// Entry points resolved against a `VkDevice` through `vkGetDeviceProcAddr`, skipping the loader trampoline.
 ///
-/// Covers everything the backend uses through the end of Phase 3. Same layout rules as [[rhi::vulkan::VkGlobalFns]].
+/// Covers everything the backend uses through the end of Phase 4. Same layout rules as [[rhi::vulkan::VkGlobalFns]].
 ///
 /// Thread-safety: thread-compatible plain data; immutable once loaded.
 struct VkDeviceFns {

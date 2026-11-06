@@ -2,7 +2,7 @@
 
 #include "diagnostics.h"
 
-// Phase 2.5 Day 37: the docgen source scanner (lexer).
+// Phase 3 Day 37: the docgen source scanner (lexer).
 //
 // Turns the text of a header into a token stream that is safe to walk:
 // comments, string/char/raw-string literals and preprocessor lines can

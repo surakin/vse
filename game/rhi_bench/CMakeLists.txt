@@ -1,5 +1,5 @@
-# The Phase 3 performance baseline: draw throughput, barrier cost, upload bandwidth and pipeline creation time. Not
-# run by ctest -- the numbers are recorded in plans/phase-03-vulkan-rhi/day-67-*.md, never asserted.
+# The Phase 4 performance baseline: draw throughput, barrier cost, upload bandwidth and pipeline creation time. Not
+# run by ctest -- the numbers are recorded in plans/phase-04-vulkan-rhi/day-67-*.md, never asserted.
 add_executable(rhi_bench main.cpp ../common/cube_scene.cpp)
 engine_split_debug_info(rhi_bench)
 target_compile_options(rhi_bench PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})

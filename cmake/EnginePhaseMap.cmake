@@ -1,4 +1,4 @@
-# Reads tests/phases.txt, the one place a test's phase is decided (Phase 5; docs/superpowers/specs/2026-11-05-test-scoping-design.md).
+# Reads tests/phases.txt, the one place a test's phase is decided (Phase 6; docs/superpowers/specs/2026-11-05-test-scoping-design.md).
 #
 # Lines are `<pattern>  <phase>`; `#` starts a comment. A pattern is
 #   - a source path relative to the repo root: `tests/foundation/log_test.cpp`; `*` matches within one path segment, and a
@@ -6,7 +6,7 @@
 #   - `test:<glob>`: the name of a test that is not a Catch2 test case (`*` matches any characters); `testopt:<glob>` for
 #     one that exists only in some configurations (the shader tests need slangc), which test_phase_labels may find unused.
 # `flavors <phase> plain,asan,tsan` states which sanitizer flavors have tests of that phase (test_phase_labels checks it).
-# A phase is 0, 1, 2, 2.5, 3, ...; its ctest label is `phase<N>` with `.` written `_` (`phase2_5`), because label
+# A phase is a whole number (0, 1, 2, 3, ...); its ctest label is `phase<N>` (`phase3`), because label
 # filters are regular expressions. A subject matching no pattern, or patterns with different phases, is an error.
 #
 # Used by the vendored CatchAddTests.cmake (via `PHASE_MAP`) and by engine_label_tests() in EngineTestPhases.cmake.
@@ -24,7 +24,7 @@ function(engine_phase_map_load map_file)
     if(line STREQUAL "" OR line MATCHES "^flavors[ \t]")
       continue()  # `flavors <phase> <list>` lines are read by tests/phase_labels/check.cmake
     endif()
-    if(NOT line MATCHES "^([^ \t]+)[ \t]+([0-9]+(\\.[0-9]+)?)$")
+    if(NOT line MATCHES "^([^ \t]+)[ \t]+([0-9]+)$")
       message(FATAL_ERROR "${map_file}: cannot read the line '${line}' (want '<pattern>  <phase>')")
     endif()
     set(pattern "${CMAKE_MATCH_1}")
@@ -82,8 +82,7 @@ function(engine_phase_lookup kind subject out found)
   endif()
 endfunction()
 
-# The ctest label for a phase: 2.5 -> phase2_5.
+# The ctest label for a phase: 3 -> phase3.
 function(engine_phase_label phase out)
-  string(REPLACE "." "_" p "${phase}")
-  set(${out} "phase${p}" PARENT_SCOPE)
+  set(${out} "phase${phase}" PARENT_SCOPE)
 endfunction()

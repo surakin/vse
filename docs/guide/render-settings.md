@@ -2,7 +2,7 @@
 
 Everything a user can change about rendering without restarting the program is a **setting**. This page covers what a
 setting is, what changing one costs, how to add one, and the file format. The header is `engine/renderer/render_settings.h`.
-(Applying settings to a running renderer arrives on Phase 7 Day 110; this page is about describing and comparing them.)
+(Applying settings to a running renderer arrives on Phase 8 Day 110; this page is about describing and comparing them.)
 
 ## Concepts
 
@@ -140,5 +140,5 @@ adapter =
 
 ## See also
 
-[renderer](renderer.md), [rhi](rhi.md), `plans/phase-07-rhi-reset.md`, the design in
+[renderer](renderer.md), [rhi](rhi.md), `plans/phase-08-rhi-reset.md`, the design in
 `docs/superpowers/specs/2026-11-06-rhi-reset-design.md`.

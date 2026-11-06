@@ -1,4 +1,4 @@
-// Phase 4 Day 76: the render graph's barrier plan, `Execute`, and the transient pool. The plan tests are pure CPU (the
+// Phase 5 Day 76: the render graph's barrier plan, `Execute`, and the transient pool. The plan tests are pure CPU (the
 // expected barrier list is compared as text); the execution tests run on the null device, which validates every
 // `before` state against the state it tracks and counts a mismatch as an error.
 #include <string>

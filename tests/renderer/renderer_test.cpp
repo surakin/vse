@@ -1,4 +1,4 @@
-// Phase 4 Day 77: the frame loop and parallel recording. The null device is the oracle for ordering (it validates every
+// Phase 5 Day 77: the frame loop and parallel recording. The null device is the oracle for ordering (it validates every
 // barrier's `before` state against the lists submitted so far, in order) and counts live objects; a GPU test compares
 // serial and parallel recording pixel for pixel and sweeps allocation failures.
 #include <atomic>

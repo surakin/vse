@@ -1,6 +1,6 @@
 # renderer_demo
 
-The Phase 4 showcase: a tiled ground, a few hundred spheres and cubes in eight materials, hundreds of point lights, a sun and
+The Phase 5 showcase: a tiled ground, a few hundred spheres and cubes in eight materials, hundreds of point lights, a sun and
 a little ambient light, drawn by the deferred renderer (G-buffer, light volumes, ACES tonemap) into a Wayland or X11 window,
 or offscreen. `rhi_demo` stays as the RHI's own reference client; this one goes through `renderer::Renderer` and the render
 graph and never names Vulkan except to create the device.
@@ -68,7 +68,7 @@ startup, and every change is logged with its cost class and the time it took):
 
 While a change runs the window keeps its last picture; the log says what is happening and, afterwards, how long the first good frame
 took. There is no progress display: a device reset takes about 40 ms here (see the Day 113 measurements in
-`plans/phase-07-rhi-reset/day-113-demo-seams-and-measurements.md`).
+`plans/phase-08-rhi-reset/day-113-demo-seams-and-measurements.md`).
 
 `--script` takes space-separated steps: `frame:N` (run until N frames were drawn), `set:key=value` (a setting by its name, for example
 `set:present_mode=immediate`), `reset`, `gpu:next`, `loss` (lose the device), `quit`. The keys are off while a script runs. Example:

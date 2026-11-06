@@ -47,7 +47,7 @@ struct DeviceCaps {
     Format depth_format = Format::D32_Float;
     /// Nanoseconds per GPU timestamp tick; 0 when timestamps are unsupported.
     f32 timestamp_period_ns = 0.0f;
-    /// Whether bindless (descriptor-indexed) resources are supported; reserved, always false in Phase 3.
+    /// Whether bindless (descriptor-indexed) resources are supported; reserved, always false in Phase 4.
     bool supports_bindless = false;
 };
 

@@ -1,4 +1,4 @@
-// Phase 4 Day 76: a render graph executed on a real device with validation and synchronization validation on. Four
+// Phase 5 Day 76: a render graph executed on a real device with validation and synchronization validation on. Four
 // passes: a clear (write), a draw that samples it, a compute dispatch that writes a storage image, and a draw that
 // samples both results into an imported target. The graph records every barrier; the test records none, and the
 // validation layers (including the synchronization checks) must stay silent.

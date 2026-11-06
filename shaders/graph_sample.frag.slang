@@ -1,5 +1,5 @@
 // graph_sample.frag: adds two sampled textures, out = sample(a, uv) + sample(b, uv), clamped by the render target.
-// Used by the render graph's real-device test (Phase 4 Day 76); not a material shader.
+// Used by the render graph's real-device test (Phase 5 Day 76); not a material shader.
 //
 // Interface
 //   fragment input location 0: float2 uv (fullscreen.vert)

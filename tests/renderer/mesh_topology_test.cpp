@@ -1,4 +1,4 @@
-// Phase 4 Day 78: per-vertex colors and primitive topology in meshes: the color vertex layout, topology and restart
+// Phase 5 Day 78: per-vertex colors and primitive topology in meshes: the color vertex layout, topology and restart
 // validation in MeshData::Set, strip/list conversions (the triangle set and every winding survive), the strip grid, and
 // that a strip mesh carries its topology to the GPU copy and is culled by its vertices like any other.
 #include <algorithm>

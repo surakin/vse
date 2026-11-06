@@ -1,4 +1,4 @@
-// Phase 4 Day 82: the renderer demo's scene rendered offscreen and compared with a golden image, and depth correctness: the
+// Phase 5 Day 82: the renderer demo's scene rendered offscreen and compared with a golden image, and depth correctness: the
 // picture must not depend on the order objects were added, and intersecting surfaces must resolve where the geometry says.
 // Validation and synchronization validation are on and must stay silent.
 #include <cmath>

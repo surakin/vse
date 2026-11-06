@@ -1,4 +1,4 @@
-// Phase 4 Day 70: the committed Slang shaders must present the interface the RHI and the C++ structs expect: entry name
+// Phase 5 Day 70: the committed Slang shaders must present the interface the RHI and the C++ structs expect: entry name
 // `main`, the right stage, compute local sizes, descriptor (set, binding) pairs, interface locations, std140 member
 // offsets, and no capability beyond what every Vulkan device guarantees. Runs without the shader compiler.
 #include <algorithm>

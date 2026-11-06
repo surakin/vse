@@ -24,7 +24,7 @@ namespace demo {
 
 using namespace engine_placeholder;
 
-// The camera helpers moved to the renderer (Phase 4 Day 73); these names keep the demo and the RHI tests unchanged.
+// The camera helpers moved to the renderer (Phase 5 Day 73); these names keep the demo and the RHI tests unchanged.
 using renderer::LookAt;
 using renderer::ModelMatrix;
 using renderer::NormalMatrix;

@@ -242,7 +242,7 @@ Old entry point.
 
 | Field | Value |
 |---|---|
-| Deprecated | use [`Read`](#read-int-int-star) instead; removal in Phase 4. |
+| Deprecated | use [`Read`](#read-int-int-star) instead; removal in Phase 5. |
 
 ## `Write(int,int)` {#write-int-int}
 

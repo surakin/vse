@@ -34,7 +34,7 @@ constexpr u32 kDefaultHeight = 720;
 
 // Placeholder fill color (XRGB8888, X ignored) so the mapped window is
 // visibly something rather than undefined/black — real content comes
-// from Vulkan's swapchain once Phase 3 exists.
+// from Vulkan's swapchain once Phase 4 exists.
 constexpr u32 kPlaceholderFillColor = 0xFF264F78;
 
 void LogResize(u32 width, u32 height) {

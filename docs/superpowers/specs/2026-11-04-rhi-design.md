@@ -1,6 +1,6 @@
-# RHI Design (Phase 3)
+# RHI Design (Phase 4)
 
-**Status:** settled for Phase 3 (Days 45-67); a living document — Day 67's
+**Status:** settled for Phase 4 (Days 45-67); a living document — Day 67's
 portability review may amend it.
 **Scope:** the backend-agnostic Render Hardware Interface in `engine/rhi/`
 and its first backend, Vulkan, in `engine/rhi/vulkan/`.
@@ -81,7 +81,7 @@ source/destination, color/depth attachment, depth read, present). The
 Vulkan backend maps each state to `(stage, access, layout)` in **one**
 table (Day 54) and emits `VkImageMemoryBarrier2` / `VkBufferMemoryBarrier2`.
 The RHI does not track states for the caller: the caller states `before`.
-That keeps the RHI thin and lets Phase 4's render graph — which knows the
+That keeps the RHI thin and lets Phase 5's render graph — which knows the
 whole frame — insert and batch barriers automatically. `Undefined → X`
 for images means "contents are discarded". The null device validates the
 state machine so misuse is caught without a GPU.
@@ -105,7 +105,7 @@ ordered list of layouts; `SetBindGroup(slot, group)` binds one.
 
 Combined image-samplers are deliberately not exposed (D3D12 and Metal
 separate textures and samplers). Bindless/descriptor indexing is out of
-scope for Phase 3 (see `plans/phase-04-renderer-core.md`).
+scope for Phase 4 (see `plans/phase-05-renderer-core.md`).
 
 ## 6. Rendering (D6)
 
@@ -136,13 +136,13 @@ above the backend. Viewport and scissor are dynamic state.
 semaphores are core features, so the backend has exactly one code path. A
 device that lacks them is rejected at selection with the reasons logged.
 
-> **Risk (Phase 20 — Android):** many Android devices ship Vulkan 1.1 or
+> **Risk (Phase 21 — Android):** many Android devices ship Vulkan 1.1 or
 > 1.2 drivers. Reaching them means mapping each of the three features to
 > its `KHR`/`EXT` extension form (`VK_KHR_dynamic_rendering`,
 > `VK_KHR_synchronization2`, `VK_KHR_timeline_semaphore`) in the backend.
 > That is a backend-internal change — nothing above the RHI depends on the
 > baseline — but it is real work, and it is recorded here so it is not a
-> surprise. Phase 3 does not pre-build it.
+> surprise. Phase 4 does not pre-build it.
 
 ## 9. Loader policy
 
@@ -211,7 +211,7 @@ against D3D12 and Metal.
 engine/rhi/                 backend-agnostic headers + null backend + rhi library
 engine/rhi/null/            validating no-GPU backend (Day 47)
 engine/rhi/vulkan/          the only place Vulkan is named (rhi_vulkan library)
-engine/rhi/{dx12,metal}/    reserved for Phases 11-12
+engine/rhi/{dx12,metal}/    reserved for Phases 12-13
 tests/rhi/                  rhi_tests (+ _asan, + _tsan from Day 54)
 game/rhi_demo/              dogfood app (Day 57 onward)
 shaders/                    GLSL sources and generated *.spv.inc
@@ -220,9 +220,9 @@ shaders/                    GLSL sources and generated *.spv.inc
 Namespace `engine_placeholder::rhi`; headers are included as `"rhi/<name>.h"`
 rooted at `engine/`. Log channel: `rhi::LogRhi` (default verbosity `Warn`).
 
-## 15. Out of scope for Phase 3
+## 15. Out of scope for Phase 4
 
 MSAA, bindless descriptors, indirect draws, async compute and a parallel
 transfer queue — recorded with their decision triggers in
-`plans/phase-04-renderer-core.md`. Fields are reserved where free
+`plans/phase-05-renderer-core.md`. Fields are reserved where free
 (`samples`, `supports_bindless`, the `indirect` buffer usage).

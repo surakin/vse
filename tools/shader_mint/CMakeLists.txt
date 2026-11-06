@@ -1,4 +1,4 @@
-# Dev-time tool (Phase 4 Day 71, folds in Phase 3's spv_embed): turns a compiled SPIR-V binary plus slangc's
+# Dev-time tool (Phase 5 Day 71, folds in Phase 4's spv_embed): turns a compiled SPIR-V binary plus slangc's
 # -reflection-json output into the committed shaders/<name>.spv.inc and shaders/<name>.refl.inc. Never linked into the
 # engine or a game. It is the one place third-party JSON code is used (nlohmann/json, PLAN.md assumption #19).
 add_library(shader_mint_lib STATIC reflect_json.cpp permutations.cpp)

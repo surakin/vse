@@ -21,7 +21,7 @@ namespace {
 constexpr usize kMaxTitleBytes = 256;
 
 // Same placeholder fill color as WaylandWindow (XRGB) so both backends
-// look alike until Phase 3's renderer draws into the window.
+// look alike until Phase 4's renderer draws into the window.
 constexpr unsigned long kPlaceholderFillColor = 0x264F78;
 
 void LogResize(u32 width, u32 height) {

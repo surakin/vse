@@ -1,4 +1,4 @@
-// Phase 7 Day 107: swapchain reconfiguration, format and HDR choice, surface re-creation.
+// Phase 8 Day 107: swapchain reconfiguration, format and HDR choice, surface re-creation.
 #include <cstring>
 #include <string>
 #include <vector>

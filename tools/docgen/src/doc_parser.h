@@ -2,7 +2,7 @@
 
 #include "extractor.h"
 
-// Phase 2.5 Day 39: doc-comment parser and validator.
+// Phase 3 Day 39: doc-comment parser and validator.
 //
 // Turns the text of each scanner DocComment into a ParsedDoc (summary,
 // detail blocks, contract labels, [[references]]) and checks it against the

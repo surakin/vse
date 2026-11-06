@@ -1,4 +1,4 @@
-// Phase 4 Day 74: the material system. Templates and materials are validated against the shaders' reflection; pipelines
+// Phase 5 Day 74: the material system. Templates and materials are validated against the shaders' reflection; pipelines
 // are cached; bind groups are rebuilt only for the material whose texture changed. A GPU test draws two objects through
 // two materials and reads the pixels back, which also proves the per-object data is indexed by first_instance.
 #include <cstddef>

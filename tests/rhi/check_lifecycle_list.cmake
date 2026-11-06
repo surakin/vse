@@ -1,4 +1,4 @@
-# Backend lifecycle list gate (Phase 7 Day 114). Run as: cmake -DROOT=<tree> -P check_lifecycle_list.cmake
+# Backend lifecycle list gate (Phase 8 Day 114). Run as: cmake -DROOT=<tree> -P check_lifecycle_list.cmake
 # Every pure virtual function of rhi::Device and rhi::Swapchain that belongs to the device lifecycle (listed below, in step with the
 # interface) must appear in engine/rhi/BACKEND-LIFECYCLE.md as a `### ` section naming it in backticks, and every section must name
 # a function the interfaces still declare, so the checklist for the DX12 and Metal backends cannot fall behind the headers.

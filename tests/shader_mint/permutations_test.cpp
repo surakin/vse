@@ -1,4 +1,4 @@
-// Phase 4 Day 72: the permutation half of shader_mint - the option declaration, the manifest, and the emitted table.
+// Phase 5 Day 72: the permutation half of shader_mint - the option declaration, the manifest, and the emitted table.
 #include <string>
 #include <vector>
 

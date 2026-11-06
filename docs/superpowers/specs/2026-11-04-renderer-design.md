@@ -1,4 +1,4 @@
-# Renderer Design (Phase 4)
+# Renderer Design (Phase 5)
 
 Status: settled on Day 68; later days implement it and amend it here when the code teaches something. Companion to
 `2026-11-04-rhi-design.md` and `2026-11-04-rhi-portability-review.md`.
@@ -52,7 +52,7 @@ Passes, in graph order:
 3. **Tonemap**: exposure and an operator, linear to sRGB through the swapchain format, written to the swapchain image.
 
 Deferred was chosen by the user. Consequences accepted: no hardware MSAA (the RHI keeps `samples = 1`; post-process AA is a
-later add-on); transparent and overlay geometry needs a forward pass after tonemap (Phases 13 and 14 add it); materials
+later add-on); transparent and overlay geometry needs a forward pass after tonemap (Phases 14 and 15 add it); materials
 are limited to what the G-buffer can carry.
 
 ## R4. The render graph
@@ -73,12 +73,12 @@ A material is a shader permutation plus a parameter block and textures. Bind gro
 | 1 | the material: parameter uniform buffer, textures, samplers | on material change |
 | 2 | the per-object storage buffer (world and normal matrices) | once per pass |
 
-Draws select their object by instance index, so the renderer creates no bind group per draw (the Phase 3 `rhi_bench`
+Draws select their object by instance index, so the renderer creates no bind group per draw (the Phase 4 `rhi_bench`
 profile put per-draw transient groups and the device mutex at about 19% of a 10000-draw frame). Pipelines are created
 lazily and cached by (template, permutation, target formats, vertex layout) and never inside a frame's recording; a warm-up
 call creates what a scene needs. Draws are sorted by pipeline, then material, then mesh.
 
-## R6. Conventions (inherited from Phase 3)
+## R6. Conventions (inherited from Phase 4)
 
 Right-handed, Y up; `PerspectiveVulkan` flips Y and maps depth to 0..1 (no reverse-Z); meshes counter-clockwise with
 `FrontFace::CounterClockwise` and `CullMode::Back`; `Mat4` column-major, equal to std140; light math in linear space; sRGB
@@ -103,10 +103,10 @@ Resource creation goes through the device's mutex and happens outside recording.
 | Feature | Decision trigger |
 |---|---|
 | MSAA | post-process AA first; revisit only if the user asks |
-| Transparency, particles, overlays | a forward pass after tonemap, added with Phase 13 (text) and Phase 14 (UI) |
+| Transparency, particles, overlays | a forward pass after tonemap, added with Phase 14 (text) and Phase 15 (UI) |
 | Shadows, IBL, ambient occlusion | a Phase after the first playable demo, or when a demo needs them |
-| Skinning, instancing of animated meshes | Phase 15 (ECS) and animation work |
-| Bindless, indirect draws, async compute | profiling data showing a need (Phase 3 showed per-draw bind groups, solved by R5) |
+| Skinning, instancing of animated meshes | Phase 16 (ECS) and animation work |
+| Bindless, indirect draws, async compute | profiling data showing a need (Phase 4 showed per-draw bind groups, solved by R5) |
 | Occlusion culling, LODs | when scenes outgrow frustum culling |
 
 ## R10. Shaders: Slang
@@ -115,7 +115,7 @@ Shaders are Slang sources compiled offline by `slangc` (PLAN.md assumption #18, 
 portability). One `.slang` source per shader; SPIR-V is the output now and HLSL/DXIL and MSL later. Reflection (bindings,
 uniform block layouts, vertex inputs, push constants, compute local size) comes from `slangc` and is minted into committed
 `*.refl.inc` files next to the `*.spv.inc` words, so a checkout without `slangc` still builds and the material system never
-hand-writes a layout twice (Day 71). Permutations are minted offline from a manifest (Day 72, R10.1). The Phase 3 GLSL shaders
+hand-writes a layout twice (Day 71). Permutations are minted offline from a manifest (Day 72, R10.1). The Phase 4 GLSL shaders
 are ported on Days 69-70 and deleted once the Slang output reproduces the golden images unchanged. Any translation to
 D3D12 or Metal must flip clip-space Y (portability review, section 2).
 

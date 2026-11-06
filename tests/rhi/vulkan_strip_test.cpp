@@ -1,4 +1,4 @@
-// Phase 4 Day 78: triangle strips on a real device with validation and synchronization validation: a quad as a plain
+// Phase 5 Day 78: triangle strips on a real device with validation and synchronization validation: a quad as a plain
 // strip, as an indexed strip, two strips in one indexed draw split by a restart index, and the same two strips joined by
 // degenerate triangles on a pipeline without restart. Back-face culling is on, so a wrong winding alternation would drop
 // the second triangle of a strip.

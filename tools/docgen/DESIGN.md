@@ -1,6 +1,6 @@
 # docgen — Design Specification
 
-Settled on Day 36 of Phase 2.5. Days 37-43 implement exactly this; change
+Settled on Day 36 of Phase 3. Days 37-43 implement exactly this; change
 it here first if implementation shows a decision was wrong. The author-facing
 rules (comment grammar, labels, visibility) are in `docs/DOC-CONVENTIONS.md`.
 

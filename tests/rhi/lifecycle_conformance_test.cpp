@@ -1,4 +1,4 @@
-// Phase 7 Day 114: the lifecycle conformance suite. Every backend must pass it; a new backend (DX12, Metal) runs it by adding one
+// Phase 8 Day 114: the lifecycle conformance suite. Every backend must pass it; a new backend (DX12, Metal) runs it by adding one
 // factory to the list at the bottom. See engine/rhi/BACKEND-LIFECYCLE.md.
 #include <cstring>
 #include <vector>

@@ -1,5 +1,5 @@
-# Phase labels for ctest (Phase 5). Every test carries exactly one `phaseN` label so a run can select a phase
-# (`ctest -L '^phase4$'`). tests/phases.txt is the only place a test's phase is decided; see
+# Phase labels for ctest (Phase 6). Every test carries exactly one `phaseN` label so a run can select a phase
+# (`ctest -L '^phase5$'`). tests/phases.txt is the only place a test's phase is decided; see
 # cmake/EnginePhaseMap.cmake for its format and docs/guide/building-and-testing.md for the workflow.
 #
 # Adding a Catch2 test file: add a line for it to tests/phases.txt. The build stops, naming the file, if it has none.

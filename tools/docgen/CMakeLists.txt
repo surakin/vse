@@ -1,4 +1,4 @@
-# Phase 2.5: docgen, our own documentation tool (tools/docgen/DESIGN.md).
+# Phase 3: docgen, our own documentation tool (tools/docgen/DESIGN.md).
 # A dev-time tool built on the foundation; never linked into the engine or
 # a game. Built with the production flags like the rest of our own code.
 set(DOCGEN_SOURCES
@@ -32,7 +32,7 @@ add_executable(docgen src/main.cpp)
 target_compile_options(docgen PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_link_libraries(docgen PRIVATE docgen_lib)
 
-# Phase 2.5 Day 43: the documentation checks. `cmake --build build --target
+# Phase 3 Day 43: the documentation checks. `cmake --build build --target
 # docs` regenerates docs/reference and then runs every check; ctest runs the
 # four checks (no regeneration) as docs_check, docs_links, docs_samples and
 # docs_lint. Samples are compiled with the engine's own production flags,

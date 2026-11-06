@@ -1,43 +1,43 @@
-# The boundary gate (phase 3) scans engine/, game/, tools/ and tests/renderer/, and the raw-new gate (phase 4) engine/ and
+# The boundary gate (phase 4) scans engine/, game/, tools/ and tests/renderer/, and the raw-new gate (phase 5) engine/ and
 # game/, so those directories select them too.
 # Which phases' tests exercise each source directory (the tests of the module itself, of everything that links it, and
-# of the docs checks when it holds public headers), for scripts/test-phase.sh --affected (Phase 5).
+# of the docs checks when it holds public headers), for scripts/test-phase.sh --affected (Phase 6).
 #
 # `<path>  <phases>`: a file or directory (longest match wins), then a comma-separated list of phases, or `-` for
 # "no test depends on it" (plans, notes). A changed file under no line makes --affected run the full suite, so a new
 # directory cannot be skipped by accident. Separately, --affected always runs everything when a CMakeLists.txt, cmake/,
 # CMakePresets.json, third_party/, a header under engine/foundation or tests/phases.txt changes (the script holds that list).
 
-engine/foundation   0,1,2,2.5,3,4,6,8
-engine/foundation/debug 2.5,6
-engine/foundation/io 0,1,2,2.5,3,4,6,8
-engine/foundation/os/linux/debug 6
-engine/jobs         2,2.5,3,4
-engine/rhi          2.5,3,4
-engine/renderer     2.5,3,4
-shaders             3,4
-tools/docgen        2.5,3
-tools/shader_mint   3,4
-tools/rhi_boundary_check 3
-tools/raw_new_check 4
-tools/file_access_check 8
-tools/platform_neutral_check 6
-tools/crash_extract 6
-game/rhi_demo       3,4
-game/renderer_demo  3,4
-game/renderer_bench 3,4
-game/common         3,4
-docs                2.5
+engine/foundation   0,1,2,3,4,5,7,9
+engine/foundation/debug 3,7
+engine/foundation/io 0,1,2,3,4,5,7,9
+engine/foundation/os/linux/debug 7
+engine/jobs         2,3,4,5
+engine/rhi          3,4,5
+engine/renderer     3,4,5
+shaders             4,5
+tools/docgen        3,4
+tools/shader_mint   4,5
+tools/rhi_boundary_check 4
+tools/raw_new_check 5
+tools/file_access_check 9
+tools/platform_neutral_check 7
+tools/crash_extract 7
+game/rhi_demo       4,5
+game/renderer_demo  4,5
+game/renderer_bench 4,5
+game/common         4,5
+docs                3
 tests/foundation    0,1
 tests/jobs          2
-tests/io            3,4,8   # temp_dir.h is shared with the rhi and renderer tests
-tests/debug         6
-tests/docgen        2.5
-tests/rhi           3,4
-tests/renderer      3,4
-tests/shader_mint   4
-tests/phase_labels  5
-tests/test_phase_script 5
+tests/io            4,5,9   # temp_dir.h is shared with the rhi and renderer tests
+tests/debug         7
+tests/docgen        3
+tests/rhi           4,5
+tests/renderer      4,5
+tests/shader_mint   5
+tests/phase_labels  6
+tests/test_phase_script 6
 
 # Nothing runs against these.
 plans               -
@@ -48,5 +48,5 @@ PLAN.md             -
 STATUS.md           -
 KNOWN-ISSUES.md     -
 UNICODE_VERSION     -
-scripts             5
+scripts             6
 CURRENT_PHASE       -

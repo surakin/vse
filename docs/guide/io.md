@@ -1,6 +1,6 @@
 # Paths, files and directories
 
-Status: draft (Phase 8 complete, Days 115-124).
+Status: draft (Phase 9 complete, Days 115-124).
 
 The file layer lives in `engine/foundation/io/` (namespace `engine_placeholder::io`). Design and reasons:
 `docs/superpowers/specs/2026-11-06-file-layer-design.md`.

@@ -1,4 +1,4 @@
-# The Phase 4 showcase: a large lit scene drawn by the deferred renderer, in a window or offscreen (--screenshot).
+# The Phase 5 showcase: a large lit scene drawn by the deferred renderer, in a window or offscreen (--screenshot).
 # The scene, the frame and the asset generator are in a small static library so the tests build the very same scene.
 add_library(renderer_demo_lib STATIC demo_assets.cpp demo_scene.cpp demo_frame.cpp ../common/textures.cpp)
 target_compile_options(renderer_demo_lib PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
@@ -67,7 +67,7 @@ endfunction()
 renderer_demo_scripted(renderer_demo_script_wayland wayland)
 renderer_demo_scripted(renderer_demo_script_x11 x11)
 
-# A crash after a device reset: the report (Phase 6) shows the device epoch and the reset count in its state section.
+# A crash after a device reset: the report (Phase 7) shows the device epoch and the reset count in its state section.
 add_test(NAME renderer_demo_crash_after_reset
   COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--backend;wayland;--frames;60;--script;frame:10 reset frame:20 crash:abort"
     "-DEXPECT_CODE=Subprocess aborted" "-DEXPECT_OUT=rhi_device: epoch [0-9]+, 1 reset\\(s\\)" "-DSKIP_IF_OUT=${RENDERER_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"

@@ -1,5 +1,5 @@
 # crash_extract: a dev tool that pulls the minidump out of a crash envelope (see main.cpp). Never linked into the engine.
-# The parser (envelope.cpp) is also compiled into the Phase 6 test executables, per sanitizer flavor.
+# The parser (envelope.cpp) is also compiled into the Phase 7 test executables, per sanitizer flavor.
 add_executable(crash_extract main.cpp envelope.cpp)
 target_compile_options(crash_extract PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 # File access goes through the engine's file layer (io::File), like every other tool; the envelope parser itself stays free of it.

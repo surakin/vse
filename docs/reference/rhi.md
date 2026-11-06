@@ -465,7 +465,7 @@ Nanoseconds per GPU timestamp tick; 0 when timestamps are unsupported.
 bool supports_bindless;
 ```
 
-Whether bindless (descriptor-indexed) resources are supported; reserved, always false in Phase 3.
+Whether bindless (descriptor-indexed) resources are supported; reserved, always false in Phase 4.
 
 ## `Viewport` {#rhi-viewport}
 
@@ -1389,7 +1389,7 @@ What the texture will be used for; at least one flag.
 u32 samples;
 ```
 
-Samples per texel; only 1 is supported in Phase 3.
+Samples per texel; only 1 is supported in Phase 4.
 
 ### `debug_name` {#rhi-texturedesc-debug-name}
 
@@ -2358,7 +2358,7 @@ Stages that read the push constants; required when `push_constant_bytes` is non-
 u32 samples;
 ```
 
-Samples per texel; only 1 is supported in Phase 3.
+Samples per texel; only 1 is supported in Phase 4.
 
 ### `debug_name` {#rhi-graphicspipelinedesc-debug-name}
 

@@ -1,0 +1,33 @@
+# Phase 8 / Day 111 — Device-Loss Recovery
+
+**Phase:** [Phase 8 — RHI Reset](../phase-08-rhi-reset.md)
+**Depends on:** Day 110.
+
+`FrameStatus::DeviceLost` is terminal today ("the renderer stays destroyable but cannot render again"). After this day it
+triggers the same reset with the saved settings.
+
+## Tasks
+
+- [x] Recovery policy: on `DeviceLost` (or `Lost` from the swapchain that the surface re-creation of Day 107 cannot fix) the renderer runs a `DeviceReset` with the current settings; options in `RenderSettings`-adjacent `RecoveryPolicy`: `max_attempts` (default 3), delay between attempts (0 on the first, doubling, capped), `fallback_adapter` (try another adapter after the saved one fails; default on), `give_up` behavior (stay `DeviceLost`). Attempts and delays are counted in frames, not wall-clock sleeps, so tests are deterministic.
+- [x] Reporting: each attempt logs on `LogRenderer` (reason, attempt number, adapter), calls the Day 110 callbacks with a `Recovery` flag, bumps `RendererStats` (`recoveries`, `recovery_failures`), and the first loss keeps its Phase 7 ensure-style trace (once per site); crash-state shows "recovering (attempt N)".
+- [x] `RenderFrame` returns `DeviceLost` for the frame that discovered the loss and `Skipped`-like (decided in Day 110) for the frames spent recovering, then `Ok`; the frame counters still add up (`frames_lost` etc., existing invariant tested).
+- [x] **Fix the Known Issue:** the Vulkan fault injection fires only at frame start; add `lose_device_at_submit` and `lose_device_at_present` (and a count, so it can strike twice) to `FaultInjection`, honored by both backends, so loss mid-frame is tested on the real device too. Remove the corresponding `KNOWN-ISSUES.md` entry in this commit.
+- [x] Real loss differs from injected loss (old objects may be in a bad state): destruction after loss must not wait forever: `WaitIdle` and fence waits on a lost device return immediately; every `Destroy*` is tolerant; a timeout guard (`device_loss_destroy_timeout`) in the Vulkan backend; tested by injecting loss and then destroying with outstanding frames.
+- [x] Surface loss (`VK_ERROR_SURFACE_LOST_KHR`) and out-of-memory during recreate are separate paths with their own tests (recreate surface only; OOM fails the attempt and counts).
+- [x] Tests (null backend, deterministic): loss at frame N recovers and the next frames render; loss during recovery uses the next attempt; retry limit reached ends `DeviceLost` with the final reason; fallback adapter used when the saved one fails; loss twice in one run; loss while a settings change is pending (the change is applied by the recovery, not lost); scene identical afterwards. GPU tests: injected loss at start, submit and present on Vulkan recover; no validation errors, counts at zero.
+- [x] **Documentation:** labels; `renderer.md` and `rhi.md` "Device loss" updated (it is no longer terminal), the `RecoveryPolicy` described, and the "what the app should show" guidance; reference regenerated; `docgen lint` zero; `ctest -L docs`.
+- [x] Run `scripts/test-phase.sh --affected` plus asan and tsan; quote the lines.
+- [x] **End-of-day review (CLAUDE.md):** `/code-review high`, extra scrutiny on destruction of a lost device and on the retry state machine; record it.
+- [x] Update `STATUS.md` and `KNOWN-ISSUES.md` (remove the mid-frame-loss entry); commit.
+
+**Done:** an injected or real device loss at any point in a frame recovers through the Day 110 reset within the retry limit or fails with a reported reason, destruction after loss never hangs, mid-frame loss is tested on Vulkan, and the guides no longer call loss terminal.
+
+## Result
+
+`RecoveryPolicy` (`max_attempts` 3, `delay_frames` 1 doubling to `max_delay_frames` 8, `fallback_adapter`), recovery in `Renderer` (first attempt at once in the frame that found the loss, `Skipped` frames while waiting, `DeviceLost` for good after the last attempt; a lost surface on a healthy device is repaired with `DeviceHost::RecreateSurface`; a settings change that cannot be undone also goes through recovery), `RendererStats::recoveries/recovery_failures`, crash-state text `rhi_recovery`, reset callbacks with the stage `"recovery"`. Fault injection on both backends: `lose_device_at_submit`, `lose_device_at_present`, and `strikes_left` (an atomic limit on how many devices a loss strikes, shared by devices built from the same description). The real-device injection no longer fires only at frame start (the Phase 5 Known Issue is removed). Tests: `tests/renderer/device_loss_recovery_test.cpp` (12 cases, 3 on a real device: loss at frame start and at submit recover, 8 losses in a row cost 268 KiB resident, no validation error). The Day 103 spike's 5.4 MiB sample after a loss was not reproduced: 8 injected losses 2-8 cost 268 KiB.
+Deviations: (1) no `device_loss_destroy_timeout` guard: `WaitIdle` still calls `vkDeviceWaitIdle`, which returns `VK_ERROR_DEVICE_LOST` at once on a real lost device in the drivers seen here (an injected loss leaves a healthy device, so the wait must be real; skipping it produced a validation error in an existing test); a driver that hangs instead has no timeout. Filed. (2) The OOM-during-recreate case is covered by the failing-owner attempt tests (the null backend has no allocation failure to inject into a recreate); `fail_allocations_from` on Vulkan during a recovery is untested. (3) Presents are injected on the null swapchain; on Vulkan the present path is only exercised by the existing window tests, not by an injected present loss.
+Scoped runs: plain `ran 1015 of 2694 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (only the known X11 window test failed), asan `ran 742 of 2694 ... flavors: asan`, tsan `ran 465 of 2694 ... flavors: tsan`; docs 4/4.
+
+## Post-implementation code review
+
+10 findings. Fixed: a request queued while recovering is rebased when the fallback adapter replaces the saved one (test added); a Swapchain, PipelineRebuild or DeviceReset change that cannot be undone now enters recovery (forced full path) instead of going straight to broken; the dead `device_recoveries` counter removed; `strikes_left` is `std::atomic<u32>*` with a compare-exchange loop; the surface repair no longer counts as a device reset or re-enumerates adapters; the fallback updates the settings-generation counter; `CountPresent` stays private. Declined: the null device's injected submit loss leaves the lists in the `Ended` phase (no caller inspects them and the batch is dropped); the destroy-timeout guard and the Vulkan OOM-during-recovery test (filed).

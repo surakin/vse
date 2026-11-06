@@ -1,4 +1,4 @@
-// Phase 7 Day 109: materials, passes, frame buffers and the transient pool across a device reset.
+// Phase 8 Day 109: materials, passes, frame buffers and the transient pool across a device reset.
 #include <algorithm>
 #include <cstring>
 #include <vector>

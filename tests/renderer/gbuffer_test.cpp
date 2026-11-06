@@ -1,4 +1,4 @@
-// Phase 4 Day 79: the G-buffer pass without a GPU. The octahedral normal and sRGB conversions have CPU twins that the
+// Phase 5 Day 79: the G-buffer pass without a GPU. The octahedral normal and sRGB conversions have CPU twins that the
 // real-device tests compare against the shaders; the pass is checked for its sorting, instancing and named errors on the
 // null device.
 #include <cmath>

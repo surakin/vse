@@ -2,7 +2,7 @@
 
 #include "scanner.h"
 
-// Phase 2.5 Day 38: the declaration extractor.
+// Phase 3 Day 38: the declaration extractor.
 //
 // Walks the scanner's token stream with a scope stack and builds a tree of
 // the declarations the C++ subset in tools/docgen/DESIGN.md section 3

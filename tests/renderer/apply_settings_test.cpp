@@ -1,4 +1,4 @@
-// Phase 7 Day 110: Renderer::ApplySettings on the null backend: the cheapest sufficient action, the frame boundary, rollback.
+// Phase 8 Day 110: Renderer::ApplySettings on the null backend: the cheapest sufficient action, the frame boundary, rollback.
 #include <cstring>
 #include <vector>
 

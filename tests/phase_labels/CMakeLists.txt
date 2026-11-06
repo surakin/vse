@@ -1,4 +1,4 @@
-# Every test must carry exactly one phase label (Phase 5, tests/phases.txt). test_phase_labels checks this build, that
+# Every test must carry exactly one phase label (Phase 6, tests/phases.txt). test_phase_labels checks this build, that
 # no line of the map is unused and that each phase has the sanitizer flavors the map lists. The planted fixtures prove
 # each check can fail, and for the right reason: a test with no phase label, one with two, a flavor the map does not
 # list and a listed flavor with no tests. ctest writes a Testing/ directory next to the build it inspects, so the

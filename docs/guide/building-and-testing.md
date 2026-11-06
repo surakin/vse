@@ -39,9 +39,9 @@ _TODO_
 ### Test phases and scoped runs
 
 Every test carries exactly one phase label: `phase0` (foundation), `phase1` (Linux platform), `phase2` (jobs),
-`phase2_5` (documentation tooling), `phase3` (RHI), `phase4` (renderer), and so on for later phases. Select a phase
-with `ctest -L '^phase4$'`; labels combine as in `ctest -L '^phase3$' -L gpu` (both), `-L 'phase3|phase4'` (either)
-and `-LE gpu` (exclude). The anchors keep `phase2` from matching `phase2_5`.
+`phase3` (documentation tooling), `phase4` (RHI), `phase5` (renderer), and so on for later phases. Select a phase
+with `ctest -L '^phase5$'`; labels combine as in `ctest -L '^phase4$' -L gpu` (both), `-L 'phase4|phase5'` (either)
+and `-LE gpu` (exclude). The anchors keep `phase2` from matching `phase3`.
 
 `tests/phases.txt` is the only place a test's phase is decided: a line per source file or directory (`tests/rhi/vulkan_cube_test.cpp  3`),
 or `test:<name>` for a test that is not a Catch2 case. Add a line when you add a test file; the build stops,
@@ -51,25 +51,25 @@ build has no phase label or more than one. Catch2 tests are registered through `
 (`cmake/EngineTestPhases.cmake`), a wrapper of `catch_discover_tests` that adds the label.
 
 Tests per phase and flavor on 2026-11-06 (`plain` is neither `asan` nor `tsan`; recount with
-`ctest -N -L ^phase4$ -L ^asan$`):
+`ctest -N -L ^phase5$ -L ^asan$`):
 
 | Phase | plain | ASan | TSan |
 |---|---|---|---|
 | 0 foundation | 87 | - | - |
 | 1 Linux platform | 63 | - | - |
 | 2 jobs | 77 | 77 | 78 |
-| 2.5 documentation tooling | 172 | 168 | - |
-| 3 RHI | 226 | 211 | 143 |
-| 4 renderer | 211 | 178 | 148 |
-| 5 test scoping | 35 | - | - |
-| 6 debugging facilities | 193 | 154 | 154 |
-| 7 RHI reset | 132 | 118 | 104 |
-| 8 file handling | 0 (started on Day 115; its first tests arrive on Day 116, with its `flavors` line) | - | - |
+| 3 documentation tooling | 172 | 168 | - |
+| 4 RHI | 226 | 211 | 143 |
+| 5 renderer | 211 | 178 | 148 |
+| 6 test scoping | 35 | - | - |
+| 7 debugging facilities | 193 | 154 | 154 |
+| 8 RHI reset | 132 | 118 | 104 |
+| 9 file handling | 0 (started on Day 115; its first tests arrive on Day 116, with its `flavors` line) | - | - |
 
 The `flavors` lines in `tests/phases.txt` state which flavors each phase has, and `test_phase_labels` fails if one
 appears or disappears.
 
-**Tests that crash on purpose.** The Phase 6 suite (`tests/debug`) makes processes fault deliberately, and the kernel hands each
+**Tests that crash on purpose.** The Phase 7 suite (`tests/debug`) makes processes fault deliberately, and the kernel hands each
 fault to `systemd-coredump`, which makes a desktop crash reporter (Plasma's systray) raise a notification. Those tests carry the
 ctest label `crash` and `scripts/test-phase.sh` leaves them out of every run but `--all` (which closes a phase), unless you pass
 `--crashes`. The summary line says so (`crash tests: excluded`), so a reduced run is never mistaken for a full one. The script also
@@ -82,7 +82,7 @@ sets a soft core limit of 0 for the tests it starts. Plain `ctest` runs them.
 ```
 scripts/test-phase.sh                  # the phase in CURRENT_PHASE, plain flavor, without the window tests
 scripts/test-phase.sh --affected       # that phase plus the phases of every module touched since the phase started
-scripts/test-phase.sh 3 --flavor asan  # all of phase 3 under AddressSanitizer
+scripts/test-phase.sh 3 --flavor asan  # all of phase 4 under AddressSanitizer
 scripts/test-phase.sh --all --flavor all   # the whole suite in every flavor: the closing run of a phase
 scripts/test-phase.sh --affected --dry-run # show the selection only
 ```
@@ -102,7 +102,7 @@ silently.
 
 Measured on 2026-11-06 (Ryzen 9 7950X3D, 16 threads, `-j16`; the suite is 1874 tests): the whole suite in plain, ASan
 and TSan takes 66 s (341 s with `-j1`). One phase, wall time, plain / all flavors: phase 0 0.1 / 0.1 s, phase 1 8.8 / 8.8 s
-(window tests), phase 2 1.8 / 9.3 s, phase 2.5 1.6 / 1.9 s, phase 3 17 / 47 s, phase 4 13 / 44 s, phase 5 1.4 / 1.4 s. A change
+(window tests), phase 2 1.8 / 9.3 s, phase 3 1.6 / 1.9 s, phase 4 17 / 47 s, phase 5 13 / 44 s, phase 6 1.4 / 1.4 s. A change
 in `engine/foundation` selects every phase, so `--affected` runs 871 tests in 38 s plain; one in `engine/rhi` and
 `engine/renderer` selects 638 tests, 26 s. The saving is large for work inside one phase and small for work in the
 foundation, which everything links.
@@ -136,7 +136,7 @@ the validation section of the [RHI guide](rhi.md).
 
 ### Testing a reset
 
-Phase 7 made replacing the device a normal operation, so a test of anything that owns device objects should survive one. Write it like
+Phase 8 made replacing the device a normal operation, so a test of anything that owns device objects should survive one. Write it like
 this:
 
 1. Use `tests/renderer/reset_rig.h`: a `Rig` holds a `DeviceHost`, a `DeviceResources` registry, an offscreen target (itself a registered

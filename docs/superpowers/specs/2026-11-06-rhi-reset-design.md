@@ -1,7 +1,7 @@
-# RHI reset — design (Phase 7, Day 103)
+# RHI reset — design (Phase 8, Day 103)
 
 Status: decided 2026-11-06 from the inventory and spikes below. Scope: Linux (Vulkan and null backends) implemented;
-DX12 and Metal left ready (Day 114). `plans/phase-07-rhi-reset.md` holds the day list; this spec holds the reasons.
+DX12 and Metal left ready (Day 114). `plans/phase-08-rhi-reset.md` holds the day list; this spec holds the reasons.
 
 ## 1. Goal
 
@@ -97,7 +97,7 @@ The seven calls made when the phase was planned, confirmed or amended:
    `GpuMesh` gets a source it keeps (an owning wrapper of `MeshData` for procedural meshes, a loader callback for assets);
    textures become `GpuTexture` objects with pixels or a loader; materials bind textures by owner reference, not by raw handle.
 4. **`backend` is a setting** (confirmed). Null to Vulkan is a tested transition. Vulkan to DX12 or Metal is deferred to
-   Phases 11-12 (no second real backend exists); filed in `KNOWN-ISSUES.md`.
+   Phases 12-13 (no second real backend exists); filed in `KNOWN-ISSUES.md`.
 5. **Fullscreen** needs a window API that does not exist (`os::Window` has a resize serial and no fullscreen call). Day 107
    adds it for Wayland and X11 and the checklists for Windows and macOS; a platform that cannot do it reports the capability
    unsupported and the setting is unavailable.
@@ -115,7 +115,7 @@ Further calls made here:
     reset returns `Ok` after it, so an app that never learns of the reset still works. The app is told through callbacks.
 11. **Resets are counted in frames, not wall-clock time**, for retry limits and delays (deterministic tests).
 12. **Tests use the null backend wherever the behavior is not GPU-specific**; GPU tests carry the `gpu` label and skip
-    without a GPU, as in Phases 3-4.
+    without a GPU, as in Phases 4-5.
 
 ## 5. Cost classes
 
@@ -180,7 +180,7 @@ ApplyResult Renderer::ApplySettings(const RenderSettings&);   // Day 110
 ## 9. Not in scope
 
 Backend switch from Vulkan to DX12 or Metal; saving GPU state across a process restart; hot-swapping shaders during a reset;
-a settings user interface (the Phase 14 widget toolkit will show them; this phase gives command line, file and demo keys).
+a settings user interface (the Phase 15 widget toolkit will show them; this phase gives command line, file and demo keys).
 
 ## 10. Risks
 

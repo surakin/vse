@@ -984,7 +984,7 @@ int transfer_family;
 
 A dedicated transfer-only family if the device has one, otherwise the same as `graphics_family`.
 
-Phase 3 submits all work, including uploads, to the graphics queue; this records where an asynchronous transfer queue would go.
+Phase 4 submits all work, including uploads, to the graphics queue; this records where an asynchronous transfer queue would go.
 
 ## `PlanQueues(const PhysicalDeviceInfo&,bool)` {#rhi-vulkan-planqueues-const-physicaldeviceinfo-amp-bool}
 
@@ -1089,7 +1089,7 @@ struct VkDeviceFns { ... }
 
 Entry points resolved against a `VkDevice` through `vkGetDeviceProcAddr`, skipping the loader trampoline.
 
-Covers everything the backend uses through the end of Phase 3. Same layout rules as [`rhi::vulkan::VkGlobalFns`](#rhi-vulkan-vkglobalfns).
+Covers everything the backend uses through the end of Phase 4. Same layout rules as [`rhi::vulkan::VkGlobalFns`](#rhi-vulkan-vkglobalfns).
 
 | Field | Value |
 |---|---|
@@ -3687,7 +3687,7 @@ class VulkanDevice final : public Device { ... }
 
 The Vulkan 1.3 device: one physical GPU, one logical device and one graphics+compute queue.
 
-Created by [`rhi::CreateDevice`](rhi.md#rhi-createdevice-const-devicecreateinfo-amp) (or [`rhi::vulkan::VulkanDevice::Create`](#rhi-vulkan-vulkandevice-create-const-devicecreateinfo-amp)). All work, including uploads, runs on the single graphics queue; a dedicated transfer family is recorded in the queue plan but unused in Phase 3.
+Created by [`rhi::CreateDevice`](rhi.md#rhi-createdevice-const-devicecreateinfo-amp) (or [`rhi::vulkan::VulkanDevice::Create`](#rhi-vulkan-vulkandevice-create-const-devicecreateinfo-amp)). All work, including uploads, runs on the single graphics queue; a dedicated transfer family is recorded in the queue plan but unused in Phase 4.
 
 | Field | Value |
 |---|---|

@@ -137,7 +137,7 @@ struct QueuePlan {
     int graphics_family = -1;
     /// A dedicated transfer-only family if the device has one, otherwise the same as `graphics_family`.
     ///
-    /// Phase 3 submits all work, including uploads, to the graphics queue; this records where an asynchronous
+    /// Phase 4 submits all work, including uploads, to the graphics queue; this records where an asynchronous
     /// transfer queue would go.
     int transfer_family = -1;
 };

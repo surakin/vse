@@ -2,7 +2,7 @@
 
 #include "diagnostics.h"
 
-// Phase 2.5 Day 41: a small Markdown scanner for the files under docs/ — just
+// Phase 3 Day 41: a small Markdown scanner for the files under docs/ — just
 // enough structure for the link checker (Day 41) and the sample compiler
 // (Day 42): fenced code blocks, ATX headings and their anchors, inline and
 // reference-style links, images, and `[[Symbol]]` references. It is not a

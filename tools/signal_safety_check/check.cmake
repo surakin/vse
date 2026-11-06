@@ -1,4 +1,4 @@
-# Signal-safety gate (Phase 6 Day 97). Run as:
+# Signal-safety gate (Phase 7 Day 97). Run as:
 #   cmake -DROOT=<tree> -P check.cmake
 # Code that runs inside a crashing process (the signal recorder, the crash report writer, the log ring reader) may call only
 # raw system calls, atomics and a few memory functions: no allocation, no stdio formatting, no locks, no engine log. Such code

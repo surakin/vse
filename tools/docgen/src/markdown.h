@@ -2,7 +2,7 @@
 
 #include "symbol_index.h"
 
-// Phase 2.5 Day 40: Markdown emitters for the reference (DESIGN.md section 6).
+// Phase 3 Day 40: Markdown emitters for the reference (DESIGN.md section 6).
 // Output is deterministic and carries no timestamps.
 //
 // Thread-safety: thread-compatible; the functions only read the index.

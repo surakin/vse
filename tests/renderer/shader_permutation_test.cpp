@@ -1,4 +1,4 @@
-// Phase 4 Day 72: shader permutations. The table for permute_test.frag is committed (permute_test.frag.perm.inc); these
+// Phase 5 Day 72: shader permutations. The table for permute_test.frag is committed (permute_test.frag.perm.inc); these
 // tests check lookup, the error for a key that was not built, module sharing, table validation, and (on a GPU) that the
 // module chosen by a key really draws the colour its options describe.
 #include <cstdlib>

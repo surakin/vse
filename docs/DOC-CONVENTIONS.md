@@ -1,7 +1,7 @@
 # Documentation Conventions
 
 Authoritative for how engine documentation is written. The tool that
-enforces it is `docgen` (Phase 2.5; design in `tools/docgen/DESIGN.md`).
+enforces it is `docgen` (Phase 3; design in `tools/docgen/DESIGN.md`).
 
 ## Three layers
 
@@ -61,7 +61,7 @@ comment text begins a labeled field; indented following lines continue it.
 | `Example:` | any | followed by a fenced code block (compiled if tagged, see *Samples*) |
 | `See:` | any | comma-separated `[[Symbol]]` references |
 | `Deprecated:` | any | replacement and removal plan |
-| `Backend:` | a function a platform backend implements (debugging facilities, Phase 6) | what the platform implements (`Windows: IsDebuggerPresent; macOS: sysctl P_TRACED`); every such function is listed in `os/<platform>/debug/BACKEND.md`, which a test checks |
+| `Backend:` | a function a platform backend implements (debugging facilities, Phase 7) | what the platform implements (`Windows: IsDebuggerPresent; macOS: sysctl P_TRACED`); every such function is listed in `os/<platform>/debug/BACKEND.md`, which a test checks |
 | `Internal:` | any | marks a declaration as not part of the public surface (excluded from the reference); text says why it is visible |
 
 Each label appears at most once per comment (except `Param`, once per

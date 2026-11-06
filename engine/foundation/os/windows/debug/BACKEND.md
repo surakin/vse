@@ -1,12 +1,12 @@
-# Windows debugging backend (Phase 11)
+# Windows debugging backend (Phase 12)
 
-What Phase 11 implements to bring up the debugging facilities on Windows. Nothing here exists yet; Linux is the reference
+What Phase 12 implements to bring up the debugging facilities on Windows. Nothing here exists yet; Linux is the reference
 (`engine/foundation/os/linux/debug/`). Everything else is shared: the facade (`debug/*.cpp`), the assert family, the report
 writer, the log ring, the crash state, the scripts' logic and the tests. See `docs/guide/porting-debugging.md` for the order of
 work and `tests/debug/BACKEND-CONFORMANCE.md` for what each test group needs.
 
 The crash library (sentry-native, Breakpad backend) and libbacktrace both list Windows as supported at the pinned versions
-(audit: `docs/superpowers/specs/2026-11-06-debugging-design.md`, "Platform audit"). **Open decision for Phase 11:** libbacktrace
+(audit: `docs/superpowers/specs/2026-11-06-debugging-design.md`, "Platform audit"). **Open decision for Phase 12:** libbacktrace
 reads DWARF only, so a clang build with DWARF works as is; an MSVC/PDB build needs a DbgHelp resolver behind
 `ResolveStackTrace`.
 

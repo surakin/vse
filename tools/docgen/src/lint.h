@@ -2,7 +2,7 @@
 
 #include "symbol_index.h"
 
-// Phase 2.5 Day 43: `docgen lint` — documentation coverage and the lint
+// Phase 3 Day 43: `docgen lint` — documentation coverage and the lint
 // rules of DESIGN.md section 8, with a committed baseline that may only
 // shrink.
 //

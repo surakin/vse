@@ -93,7 +93,7 @@ using FrameBuildFn = bool (*)(const FrameContext& context, void* user);
 ///
 /// Thread-safety: thread-compatible plain data.
 struct RecoveryPolicy {
-    /// The most reset attempts for one loss; 0 turns recovery off (the loss is terminal, as before Phase 7).
+    /// The most reset attempts for one loss; 0 turns recovery off (the loss is terminal, as before Phase 8).
     u32 max_attempts = 3;
     /// Frames to wait before the second attempt; each later attempt waits twice as long as the one before, up to `max_delay_frames`.
     /// The first attempt is made at once, in the frame that found the loss.

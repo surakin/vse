@@ -1,4 +1,4 @@
-# Death tests (Phase 6, engine/foundation/debug/death_test.h): run code that crashes in a child process.
+# Death tests (Phase 7, engine/foundation/debug/death_test.h): run code that crashes in a child process.
 #
 # The child is a fresh copy of the test executable. It finds out it is a child from the environment, and the Catch2
 # test case below (hidden: its tag starts with a dot, so only the filter `[.death-child]` runs it) hands control to the

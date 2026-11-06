@@ -1,4 +1,4 @@
-# Raw new/delete gate (Phase 4 Days 80a-80b). Run as:
+# Raw new/delete gate (Phase 5 Days 80a-80b). Run as:
 #   cmake -DROOT=<tree> -P check.cmake
 # No file under engine/ or game/ may use `new T`, `new T[n]`, `new (std::nothrow) T`, `delete p` or `delete[] p`:
 # owning arrays are `Array<T, N>` (compile-time size, inline) or `Vector<T>`; single objects are `UniquePtr<T>` or

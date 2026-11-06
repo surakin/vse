@@ -1,4 +1,4 @@
-// Phase 7 Day 111: a lost device recovers through the settings path, with a retry limit, a fallback adapter and reporting.
+// Phase 8 Day 111: a lost device recovers through the settings path, with a retry limit, a fallback adapter and reporting.
 #include <atomic>
 #include <cstring>
 #include <vector>

@@ -1,8 +1,8 @@
 # Foundation: Debugging
 
-> **Status:** complete for Phase 6 (Linux implemented; Windows and macOS are ready, see [porting](porting-debugging.md))  
+> **Status:** complete for Phase 7 (Linux implemented; Windows and macOS are ready, see [porting](porting-debugging.md))  
 > **Audience:** engine programmers  
-> **Covers:** Phase 6
+> **Covers:** Phase 7
 
 ## Debugging a crash: a checklist
 
@@ -91,7 +91,7 @@ What to know:
 - **An assertion failure prints a trace.** A failed `ENGINE_ASSERT` and the first failure of each `ENGINE_ENSURE` site print
   the trace under the message, starting at the failing function, in one write. The names are left mangled (demangling
   allocates, and an assertion can fail inside the allocator): pipe the output through `c++filt` to read them.
-- **Only DWARF.** Binaries built for Windows with PDB debug information will need a different resolver (Phase 11).
+- **Only DWARF.** Binaries built for Windows with PDB debug information will need a different resolver (Phase 12).
 
 ## Installing the crash handler
 
@@ -304,7 +304,7 @@ Where the core goes is the system's choice (`/proc/sys/kernel/core_pattern`):
 | starts with `|` and names another program | wherever that program puts it | see that program |
 
 Changing `core_pattern` needs root (`sudo sysctl kernel.core_pattern=...`); the engine never does it. Two scripts (Linux shell
-scripts; Windows has its own tooling in Phase 11) take the work out of the common case:
+scripts; Windows has its own tooling in Phase 12) take the work out of the common case:
 
 ```text
 scripts/find-core.sh  [--pid PID] [--wait SECONDS] [--output FILE] <program>
@@ -427,9 +427,9 @@ child and closes every descriptor it opened.
 
 | Platform | How the child is started | Notes |
 |---|---|---|
-| Linux | `posix_spawn` of `/proc/self/exe` | implemented (Phase 6) |
-| macOS | `posix_spawn` | Phase 12; the POSIX code is shared with Linux |
-| Windows | `CreateProcess` | Phase 11; exit statuses such as `0xC0000005` map to a [[debug::CrashReason]] |
+| Linux | `posix_spawn` of `/proc/self/exe` | implemented (Phase 7) |
+| macOS | `posix_spawn` | Phase 13; the POSIX code is shared with Linux |
+| Windows | `CreateProcess` | Phase 12; exit statuses such as `0xC0000005` map to a [[debug::CrashReason]] |
 | iOS, consoles | not possible | [[debug::DeathTestsSupported]] is false and death tests skip with a printed reason |
 
 A fault shows up as an exit status, and a stack overflow is an access violation as far as the status can tell, so a death

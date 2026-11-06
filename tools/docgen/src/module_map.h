@@ -2,7 +2,7 @@
 
 #include "diagnostics.h"
 
-// Phase 2.5 Day 40: the module map (docs/reference/modules.txt, DESIGN.md
+// Phase 3 Day 40: the module map (docs/reference/modules.txt, DESIGN.md
 // section 4) — which headers make up which reference page.
 //
 // Thread-safety: not-thread-safe per ModuleMap; the free functions keep no

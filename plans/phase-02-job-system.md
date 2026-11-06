@@ -99,15 +99,15 @@ here first if implementation proves one wrong.
 
 - The `FramePool` size classes (Day 27) are a starting guess; Day 35
   logs the real frame-size histogram and adjusts them. Revisit again
-  once ECS (Phase 15) and asset streaming (Phase 18) are real consumers.
+  once ECS (Phase 16) and asset streaming (Phase 19) are real consumers.
 - `parallel_for`'s chunk-size heuristic (Day 33) is a fixed constant for
   now; adaptive chunking based on measured per-job cost is deferred until
-  a real workload (Phase 15's ECS system scheduling) shows it's needed.
+  a real workload (Phase 16's ECS system scheduling) shows it's needed.
 - Stackful fibers were considered and explicitly rejected for this phase
   — see root `PLAN.md` assumption #15 for the portability reasoning.
 - Physical-core/SMT-aware placement is deliberately not done (logical
   CPUs only). Revisit if profiling on a hyperthreaded machine shows
   siblings contending.
-- Windows/macOS/console ports (Phases 11-12 and 20-21) will need their own
+- Windows/macOS/console ports (Phases 12-13 and 21-22) will need their own
   affinity/topology queries behind the same participant interface; the
   Linux-specific calls are confined to Day 29.

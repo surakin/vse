@@ -1,4 +1,4 @@
-// Phase 4 Day 80: deferred lighting and tonemapping on a real device with validation and synchronization validation on.
+// Phase 5 Day 80: deferred lighting and tonemapping on a real device with validation and synchronization validation on.
 // A G-buffer frame is lit by LightingPass and tonemapped by TonemapPass; the HDR accumulation target and the display
 // target are read back and compared with the CPU twins of the shader code at probe pixels.
 #include <chrono>
@@ -382,7 +382,7 @@ TEST_CASE("The reconstructed world position matches the geometry, including the 
     device.Reset();
 }
 
-TEST_CASE("A cube lit through the deferred path is close to the Phase 3 forward Lambert result", "[rhi][vulkan][gpu][lighting]") {
+TEST_CASE("A cube lit through the deferred path is close to the Phase 4 forward Lambert result", "[rhi][vulkan][gpu][lighting]") {
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
     rhi::DevicePtr device = MakeDevice();
@@ -396,7 +396,7 @@ TEST_CASE("A cube lit through the deferred path is close to the Phase 3 forward 
         GpuMesh cube;
         REQUIRE(cube.Create(device.Get(), d, "cube"));
         rig.Prepare(&cube);
-        // The Phase 3 test "Visible faces are lit by the Lambert ratio of their normals to the light": white albedo, light
+        // The Phase 4 test "Visible faces are lit by the Lambert ratio of their normals to the light": white albedo, light
         // (0.3, 0.9, 0.5) at 0.8, ambient 0.1, eye (1.8, 1.5, 3.0). The forward result is 0.1 + 0.8 * max(N.L, 0); the
         // deferred model adds a GGX lobe, small for roughness 1, so the tolerance is 0.035.
         const MaterialId m = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "white");

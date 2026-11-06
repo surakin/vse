@@ -1,4 +1,4 @@
-// Phase 7 Day 104: the settings registry, RenderSettings, DiffSettings, ResolveSettings and the text format.
+// Phase 8 Day 104: the settings registry, RenderSettings, DiffSettings, ResolveSettings and the text format.
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstdio>

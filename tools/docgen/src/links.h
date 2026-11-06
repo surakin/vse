@@ -3,7 +3,7 @@
 #include "md_scan.h"
 #include "symbol_index.h"
 
-// Phase 2.5 Day 41: `docgen links` — the Markdown link checker (DESIGN.md
+// Phase 3 Day 41: `docgen links` — the Markdown link checker (DESIGN.md
 // section 10). Checks every `docs/**/*.md` and top-level `*.md`: relative
 // file links, `#anchor` links (heading slugs, `{#id}`s, `<a id>`s), image
 // paths, `[[Symbol]]` references against the symbol index, and that every

@@ -1,4 +1,4 @@
-# Phase 4: the renderer (docs/superpowers/specs/2026-11-04-renderer-design.md). It sits on the RHI only and never names
+# Phase 5: the renderer (docs/superpowers/specs/2026-11-04-renderer-design.md). It sits on the RHI only and never names
 # Vulkan (enforced by tools/rhi_boundary_check). Built plain and under ASan/UBSan and TSan from one source list, each
 # linked against the matching rhi/jobs/foundation variant.
 set(RENDERER_SOURCES

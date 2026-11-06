@@ -1,4 +1,4 @@
-// Phase 4 Day 83: failure injection. Each case breaks one stage of a frame (the device is lost before the frame, while the frame
+// Phase 5 Day 83: failure injection. Each case breaks one stage of a frame (the device is lost before the frame, while the frame
 // callback builds the graph, while the first pass records, while the last pass records; a transient texture cannot be made; a
 // material's texture is missing; an object's pipeline cannot be built) and checks the same three things: the frame ends with a
 // defined status, the cause is in the log or in LastError, and the renderer and the device can still be destroyed with nothing left

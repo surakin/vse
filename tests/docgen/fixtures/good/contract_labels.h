@@ -26,7 +26,7 @@
 bool Read(int handle, int* out);
 
 /// Old entry point.
-/// Deprecated: use [[Read]] instead; removal in Phase 4.
+/// Deprecated: use [[Read]] instead; removal in Phase 5.
 bool OldRead(int handle);
 
 /// A symbol visible only for technical reasons.

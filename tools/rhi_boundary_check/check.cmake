@@ -1,4 +1,4 @@
-# RHI boundary gate (Phase 3 Day 66). Run as:
+# RHI boundary gate (Phase 4 Day 66). Run as:
 #   cmake -DROOT=<tree> -DALLOWLIST=<file> -P check.cmake
 # Rule 1: no file under engine/, game/, tools/, tests/renderer/ outside engine/rhi/vulkan/ names a
 #         Vulkan API identifier (vk*, Vk*, VK_*, PFN_vk*) or includes a vulkan header.

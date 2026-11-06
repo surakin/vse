@@ -1,5 +1,5 @@
-# The Phase 4 performance baseline: render graph cost, CPU frame time, draws after sorting, light volume cost and the transient
-# pool's hit rate. Not run by ctest -- the numbers are recorded in plans/phase-04-renderer-core/day-83-*.md, never asserted.
+# The Phase 5 performance baseline: render graph cost, CPU frame time, draws after sorting, light volume cost and the transient
+# pool's hit rate. Not run by ctest -- the numbers are recorded in plans/phase-05-renderer-core/day-83-*.md, never asserted.
 add_executable(renderer_bench main.cpp)
 engine_split_debug_info(renderer_bench)
 target_compile_options(renderer_bench PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})

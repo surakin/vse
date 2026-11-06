@@ -1,4 +1,4 @@
-// renderer_bench: records the Phase 4 performance baseline. Prints one line per measurement; nothing here is asserted in CI. See
+// renderer_bench: records the Phase 5 performance baseline. Prints one line per measurement; nothing here is asserted in CI. See
 // docs/guide/renderer.md ("Performance notes") for what the numbers mean.
 //
 //   renderer_bench [--section graph|frame|lights|pool|all] [--device vulkan|null] [--frames N] [--threads N]

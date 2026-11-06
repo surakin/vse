@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Runs the tests of one phase, of the current phase plus whatever a diff touched, or all of them (Phase 5).
+# Runs the tests of one phase, of the current phase plus whatever a diff touched, or all of them (Phase 6).
 #
 #   scripts/test-phase.sh [N | --current | --affected | --all] [options]
 #
-#   N          one phase: 0 1 2 2.5 3 4 ... (every test of that phase)
+#   N          one phase: 0 1 2 3 4 ... (every test of that phase)
 #   --current  the phase in CURRENT_PHASE (the default)
 #   --affected the current phase plus the phases of every module touched since that phase started (the working tree
 #              and the commits since the last commit that changed CURRENT_PHASE; --since REF picks another base).
@@ -14,7 +14,7 @@
 #              <build>/.last-full-run
 #
 #   --flavor plain|asan|tsan|all   which sanitizer flavor (default plain: neither asan nor tsan)
-#   --crashes                      include the tests labelled `crash` (the Phase 6 suite, which crashes processes on purpose and
+#   --crashes                      include the tests labelled `crash` (the Phase 7 suite, which crashes processes on purpose and
 #                                  so makes a desktop crash reporter notify); left out of every run but --all
 #   --display / --no-display       include or leave out the window tests (label `display`); by default left out of
 #                                  --current/--affected unless phase 1 is selected or engine/foundation changed
@@ -84,7 +84,7 @@ current_phase() {
     local p
     p="$(grep -v '^[[:space:]]*#' "$phase_file" | tr -d '[:space:]')"
     # A new phase has no tests yet, so it need not be in tests/phases.txt.
-    case "$p" in ''|*[!0-9.]*|.*|*.|*.*.*) die "'$p' in $phase_file is not a phase number (like 4 or 2.5)" ;; esac
+    case "$p" in ''|*[!0-9]*) die "'$p' in $phase_file is not a phase number (a whole number like 4)" ;; esac
     printf '%s' "$p"
 }
 
@@ -220,7 +220,7 @@ if [ "$dry" = 1 ]; then
 fi
 
 status=0
-# Many Phase 6 tests crash a child on purpose. With a soft core limit of 0 the kernel does not hand those crashes to
+# Many Phase 7 tests crash a child on purpose. With a soft core limit of 0 the kernel does not hand those crashes to
 # systemd-coredump, so a desktop crash reporter (Plasma's systray) does not raise a notification for each one. The hard limit
 # stays as it was: the tests that need a real core raise the soft limit themselves.
 ulimit -S -c 0 2>/dev/null || true

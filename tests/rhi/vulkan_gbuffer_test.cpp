@@ -1,4 +1,4 @@
-// Phase 4 Day 79: the G-buffer geometry pass on a real device with validation and synchronization validation on.
+// Phase 5 Day 79: the G-buffer geometry pass on a real device with validation and synchronization validation on.
 // A known scene (a ground plane, two cubes sharing a mesh and a material, a sphere, an object outside the frustum) is
 // rendered; the albedo, normal, material and depth layers are copied to host buffers by the graph and checked against
 // values computed on the CPU. Further cases cover the vertex-color, normal-map and alpha-test permutations, draw-order

@@ -1,4 +1,4 @@
-// Phase 7 Day 112: the reset on a real device: the picture before and after a reset is identical and still matches the blessed
+// Phase 8 Day 112: the reset on a real device: the picture before and after a reset is identical and still matches the blessed
 // golden image, and a loop of resets leaves nothing behind.
 #include <unistd.h>
 

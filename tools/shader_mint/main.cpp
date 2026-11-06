@@ -1,4 +1,4 @@
-// shader_mint: the offline shader "minter" (Phase 4 Day 71; folds in Phase 3's spv_embed). Given the SPIR-V that
+// shader_mint: the offline shader "minter" (Phase 5 Day 71; folds in Phase 4's spv_embed). Given the SPIR-V that
 // slangc wrote and the JSON from `slangc -reflection-json`, it writes two committed C++ include files:
 //
 //   <name>.spv.inc   `inline constexpr u32 <Base>Spv[]` and `<Base>SpvWordCount`: the SPIR-V words

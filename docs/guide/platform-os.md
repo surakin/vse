@@ -59,7 +59,7 @@ handler where the file layer may not run.
 
 ## Descriptors, not files
 
-After Phase 8 the OS layer no longer reads or lists files. `os::Read`, `os::Write`, `os::Close` and `os::WriteAllWithTimeout` are
+After Phase 9 the OS layer no longer reads or lists files. `os::Read`, `os::Write`, `os::Close` and `os::WriteAllWithTimeout` are
 **descriptor primitives for the console, pipes, sockets and the signal-safe layer**; `os::Open` and `os::CreateFileForWriting` stay only
 for two callers that cannot use the file layer: the debugger check that reads `/proc/self/status` (the assert-failure path calls it while
 the heap may be inconsistent) and the crash report, which opens its file inside the fault handler. Everything else uses

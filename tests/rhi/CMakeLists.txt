@@ -99,7 +99,7 @@ engine_add_rhi_tests(rhi_tests rhi rhi_vulkan "" "rhi" "")
 engine_add_rhi_tests(rhi_tests_asan rhi_asan rhi_vulkan_asan " [asan]" "asan" "~[x11]")
 engine_add_rhi_tests(rhi_tests_tsan rhi_tsan rhi_vulkan_tsan " [tsan]" "tsan" "~[gpu]")
 
-# Phase 7 Day 114: the lifecycle checklist for the DX12 and Metal backends stays in step with the interfaces, and the neutral RHI
+# Phase 8 Day 114: the lifecycle checklist for the DX12 and Metal backends stays in step with the interfaces, and the neutral RHI
 # headers compile for the Windows and macOS targets (needs clang++; skips without it).
 add_test(NAME rhi_lifecycle_lists COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_lifecycle_list.cmake)
 function(engine_rhi_cross_syntax_test name triple)

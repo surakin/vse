@@ -2,7 +2,7 @@
 
 #include "markdown.h"
 
-// Phase 2.5 Day 40: `docgen reference` and `docgen check`.
+// Phase 3 Day 40: `docgen reference` and `docgen check`.
 //
 // Thread-safety: not-thread-safe per ReferenceBuild.
 // Ownership: arena-allocated; the arena must outlive the ReferenceBuild.

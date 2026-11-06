@@ -1,5 +1,5 @@
 # Fails, naming the tests, if any test in a build directory lacks a `phaseN` label or has more than one
-# (Phase 5; tests/phases.txt). Run by ctest as test_phase_labels.
+# (Phase 6; tests/phases.txt). Run by ctest as test_phase_labels.
 #   cmake -DCTEST=<ctest> -DBUILD_DIR=<dir> -DMAP=<tests/phases.txt> [-DCHECK_FLAVORS=1] [-DCHECK_UNUSED=1] -P check.cmake
 # CHECK_FLAVORS also checks that each phase has tests in exactly the sanitizer flavors its `flavors` line lists;
 # CHECK_UNUSED also fails on a map line that matches no test or file. Both are for the real build, not the fixtures.

@@ -69,7 +69,7 @@ struct TextureDesc {
     Format format = Format::Undefined;
     /// What the texture will be used for; at least one flag.
     TextureUsage usage = TextureUsage::None;
-    /// Samples per texel; only 1 is supported in Phase 3.
+    /// Samples per texel; only 1 is supported in Phase 4.
     u32 samples = 1;
     /// Optional name shown in debuggers and logs; null for none.
     const char* debug_name = nullptr;
@@ -336,7 +336,7 @@ struct GraphicsPipelineDesc {
     u32 push_constant_bytes = 0;
     /// Stages that read the push constants; required when `push_constant_bytes` is non-zero.
     ShaderStage push_constant_stages = ShaderStage::None;
-    /// Samples per texel; only 1 is supported in Phase 3.
+    /// Samples per texel; only 1 is supported in Phase 4.
     u32 samples = 1;
     /// Optional name shown in debuggers and logs; null for none.
     const char* debug_name = nullptr;

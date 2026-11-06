@@ -1,10 +1,10 @@
-# RHI Portability Review (Phase 3, Day 67)
+# RHI Portability Review (Phase 4, Day 67)
 
-Status: done at the end of Phase 3. Companion to `2026-11-04-rhi-design.md` section 13.
+Status: done at the end of Phase 4. Companion to `2026-11-04-rhi-design.md` section 13.
 
 The question this review answers: **is the RHI Vulkan in disguise?** Every type and call in `engine/rhi/*.h` was walked
 against Direct3D 12 (D3D12) and Metal, from knowledge of those APIs; no D3D12 or Metal code exists yet, so each verdict
-is a prediction that the Phase 11 and Phase 12 backends will test. The golden images (`tests/rhi/golden/`) and the
+is a prediction that the Phase 12 and Phase 13 backends will test. The golden images (`tests/rhi/golden/`) and the
 analytic probes next to them are the portability oracle: a new backend must reproduce them.
 
 Each row ends in one of three verdicts:
@@ -33,7 +33,7 @@ Each row ends in one of three verdicts:
 | `FormatSupport(format, usage)`, `CanGenerateMips(format)` | queried from the physical device | `CheckFeatureSupport(FORMAT_SUPPORT)` | family tables | Fits |
 | `GenerateMips` | blit chain | **no built-in**: a compute shader per level | `generateMipmaps` on a blit encoder | Shim (D3D12 uses a compute pass; `CanGenerateMips` already lets a caller ask) |
 | `SamplerDesc` (filters, address modes, compare, anisotropy, LOD range) | `VkSampler` | sampler descriptor in a sampler heap | `MTLSamplerState` | Fits |
-| `AddressMode::ClampToBorder`, `BorderColor` | native | static or dynamic border colors | **not available on iOS family GPUs** (macOS only) | Shim/limit: iOS backend rejects `ClampToBorder` with an invalid handle and a log; recorded as a Phase 12 note, no interface change (a caps flag would add nothing the log does not) |
+| `AddressMode::ClampToBorder`, `BorderColor` | native | static or dynamic border colors | **not available on iOS family GPUs** (macOS only) | Shim/limit: iOS backend rejects `ClampToBorder` with an invalid handle and a log; recorded as a Phase 13 note, no interface change (a caps flag would add nothing the log does not) |
 | `ShaderDesc` (SPIR-V words, stage, entry) | `VkShaderModule` | DXIL bytecode | MSL source or a metallib | **Open** — see section 3 |
 | `BindGroupLayout` | `VkDescriptorSetLayout` | a root-signature descriptor table (one CBV/SRV/UAV table and one sampler table per group) | argument-buffer layout | Fits |
 | `BindGroup` | `VkDescriptorSet` | descriptor-heap ranges copied (`CopyDescriptors`) into the shader-visible heaps at bind time | argument buffer | Shim (D3D12 may bind only one shader-visible CBV/SRV/UAV heap and one sampler heap per list: the backend keeps bind groups in a CPU-only heap and copies into a per-frame ring at `SetBindGroup`; a transient group is that ring slot) |
@@ -51,7 +51,7 @@ Each row ends in one of three verdicts:
 | Vertex bindings/attributes, `VertexFormat`, `IndexType` | `VkVertexInputState` | input layout | vertex descriptor | Fits |
 | `PrimitiveTopology` (list, strip, line, point) | native | topology type + `IASetPrimitiveTopology` | `MTLPrimitiveType` | Fits (strips use no primitive restart in the RHI) |
 | Blend state (factors, ops, write mask) | native | `D3D12_RENDER_TARGET_BLEND_DESC` | color attachment blend | Fits (no dual-source blending, no logic ops, no blend constant: all deliberately absent) |
-| Depth state (`CompareOp`, write enable) | native | depth-stencil desc | `MTLDepthStencilState` | Fits (no stencil in Phase 3) |
+| Depth state (`CompareOp`, write enable) | native | depth-stencil desc | `MTLDepthStencilState` | Fits (no stencil in Phase 4) |
 | `Barrier(resource, before, after)` with `ResourceState` | one table: state to (stage, access, layout) | state to `D3D12_RESOURCE_STATES` (or enhanced-barrier layout/access/sync) | **mostly implicit**: hazards on tracked resources are tracked by the driver; untracked heaps need an explicit `memoryBarrier` / fence | Shim (Metal turns a barrier into a no-op, a `memoryBarrier`, or an encoder split, depending on resource tracking mode) |
 | `ResourceState::Undefined` as "contents discarded" | `UNDEFINED` old layout | `COMMON` (or enhanced-barrier `LAYOUT_UNDEFINED`) | nothing to do | Fits |
 | `ResourceState::Present` | `PRESENT_SRC` layout | `PRESENT` state | nothing to do | Fits |
@@ -97,17 +97,17 @@ its default caps and by the Vulkan backend. Code that pads to the caps works on 
 now catches code that does not.
 
 **Resource states are caller-stated.** `Barrier(resource, before, after)` makes the caller name `before`. D3D12's
-legacy barriers need that and the enhanced barriers use it as well; Metal ignores it. The Phase 4 render graph will
+legacy barriers need that and the enhanced barriers use it as well; Metal ignores it. The Phase 5 render graph will
 know every transition, so the cost of stating `before` falls on one component.
 
 **Bind groups and descriptor heaps.** D3D12's rule of one shader-visible heap per type is the largest structural
 difference in the model. The interface survives because a bind group is created ahead of time and bound by handle:
 a D3D12 backend can build the descriptors in a CPU heap and copy them at bind time. The cost is a copy per
-`SetBindGroup`; the Day 67 baseline (`plans/phase-03-vulkan-rhi/day-67-portability-review-perf-wrapup.md`) records the Vulkan
+`SetBindGroup`; the Day 67 baseline (`plans/phase-04-vulkan-rhi/day-67-portability-review-perf-wrapup.md`) records the Vulkan
 cost of the same call so the comparison can be made when D3D12 exists.
 
-**Specialization constants, subgroup operations, ray tracing, mesh shaders.** Not in the RHI; each is a Phase 4+ decision
-with an interface addition, not a change to what exists. Specialization constants were evaluated on Phase 4 Day 72 and
+**Specialization constants, subgroup operations, ray tracing, mesh shaders.** Not in the RHI; each is a Phase 5+ decision
+with an interface addition, not a change to what exists. Specialization constants were evaluated on Phase 5 Day 72 and
 not adopted: shader permutations are compile-time defines minted into separate modules (renderer spec R10.1), so the
 RHI gained nothing. The portability reasons: Direct3D 12 has no specialization constants (Slang's HLSL output for a
 `[SpecializationConstant]` is an ordinary constant-buffer field read by a runtime branch, so the variant is not
@@ -126,7 +126,7 @@ descriptor". Which form that takes depends on the open shader-toolchain decision
    dependency, but no interface change.
 
 Changing `ShaderDesc` now would be churn through every test, shader include and doc for a decision that has not been
-made, so it is recorded here and in `plans/phase-04-renderer-core.md` as an input. Either outcome is a local change
+made, so it is recorded here and in `plans/phase-05-renderer-core.md` as an input. Either outcome is a local change
 (`ShaderDesc`, `CreateShader`, `ValidateSpirv`'s caller); no other RHI call depends on the shader format.
 
 ## 4. Changes made now
@@ -137,18 +137,18 @@ made, so it is recorded here and in `plans/phase-04-renderer-core.md` as an inpu
 
 ## 5. Filed for later phases
 
-For `plans/phase-11-windows-dx12.md`: typeless formats for sampled depth; compute `GenerateMips`; bind-group descriptor
+For `plans/phase-12-windows-dx12.md`: typeless formats for sampled depth; compute `GenerateMips`; bind-group descriptor
 copies into per-frame shader-visible heaps (measure `SetBindGroup`); 256-rounded uniform buffers and CBV ranges;
 CPU repacking in `UploadTexture`/`ReadbackTexture`; `ResizeBuffers` after idling; sRGB views on UNorm flip-model
 buffers; the clip-space Y flip in the shader path; `Mailbox` falling back to `Fifo`.
 
-For `plans/phase-12-macos-metal.md`: encoder splitting around passes; barriers as no-ops or `memoryBarrier` by
+For `plans/phase-13-macos-metal.md`: encoder splitting around passes; barriers as no-ops or `memoryBarrier` by
 tracking mode; threadgroup size from shader reflection at pipeline creation; `Managed` storage and `FlushMappedBuffer`;
 `ClampToBorder` unavailable on iOS; `nextDrawable()` as `Acquire`; the clip-space Y flip.
 
-## 6. The device lifecycle (added in Phase 7, Day 114)
+## 6. The device lifecycle (added in Phase 8, Day 114)
 
-Phase 7 made replacing the device at run time a normal operation (`rhi::DeviceHost`, `Device::Quiesce`/`Resources`/`Epoch`/`Adapter`/
+Phase 8 made replacing the device at run time a normal operation (`rhi::DeviceHost`, `Device::Quiesce`/`Resources`/`Epoch`/`Adapter`/
 `RecreateSurface`/`InjectDeviceLoss`, `Swapchain::Reconfigure`, `rhi::EnumerateAdapters`). The checklist a backend implements is
 `engine/rhi/BACKEND-LIFECYCLE.md`; `tests/rhi/lifecycle_conformance_test.cpp` is the suite it must pass. What each new piece means
 on the next two backends:
@@ -172,7 +172,7 @@ re-creation:* a new `CAMetalLayer` for the view. *Device loss:* there is no loss
 `InjectDeviceLoss` and the null backend. *Validation:* Metal API validation is an environment setting, so the `validation` and
 `sync_validation` settings are advisory (`DeviceCreateInfo` documents it). *Fullscreen:* native fullscreen (`toggleFullScreen:`).
 
-**Inherited by Phases 11 and 12:** implement the fifteen functions of `BACKEND-LIFECYCLE.md`; add one factory to the conformance suite;
+**Inherited by Phases 12 and 13:** implement the fifteen functions of `BACKEND-LIFECYCLE.md`; add one factory to the conformance suite;
 seed handle generations from `AllocateDeviceSerial`/`GenerationSeed`; keep destruction after loss from hanging; name the pipeline
 cache file by adapter identity; implement `os::Window::SupportsFullscreen`/`SetFullscreen`/`IsFullscreen` (`FULLSCREEN.md` in
 `engine/foundation/os/windows` and `macos`); and add a backend registry to `rhi` so `CreateDevice`, `EnumerateAdapters` and `DeviceHost`

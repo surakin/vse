@@ -1,4 +1,4 @@
-# Platform-neutral gate: see check.cmake. Registered as ctest cases (phase 6).
+# Platform-neutral gate: see check.cmake. Registered as ctest cases (phase 7).
 set(PLATFORM_NEUTRAL_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/check.cmake)
 set(PLATFORM_NEUTRAL_FIXTURES ${CMAKE_CURRENT_SOURCE_DIR}/fixtures)
 set(PLATFORM_NEUTRAL_BOUNDARY ${CMAKE_CURRENT_SOURCE_DIR}/library_boundary.txt)

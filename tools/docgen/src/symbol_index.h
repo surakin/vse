@@ -3,7 +3,7 @@
 #include "doc_parser.h"
 #include "module_map.h"
 
-// Phase 2.5 Day 40: the symbol index — every documented-surface declaration
+// Phase 3 Day 40: the symbol index — every documented-surface declaration
 // of every module header with a stable ID, anchor, page and source location
 // (DESIGN.md section 5), plus reference resolution for `[[Name]]`.
 //

@@ -3,7 +3,7 @@
 #include "md_scan.h"
 #include "symbol_index.h"
 
-// Phase 2.5 Day 42: `docgen samples` — compiles (and optionally runs) the
+// Phase 3 Day 42: `docgen samples` — compiles (and optionally runs) the
 // tagged C++ code blocks of the Markdown documentation (DESIGN.md section 11).
 //
 // Thread-safety: not-thread-safe per call; child processes are driven from

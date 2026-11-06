@@ -1,4 +1,4 @@
-# Fails if a built binary links a network or TLS library or imports their functions (Phase 6, PLAN.md assumption #20: the
+# Fails if a built binary links a network or TLS library or imports their functions (Phase 7, PLAN.md assumption #20: the
 # crash handler must not be able to upload anything).
 #   cmake -DBINARY=<file> -P check_no_network.cmake
 #   cmake -DREADELF_TEXT_FILE=<file with readelf output> -P check_no_network.cmake   (to test the check itself)

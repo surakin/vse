@@ -1,4 +1,4 @@
-// Phase 4 Day 71: shader reflection. Every committed shaders/*.refl.inc must parse, say what the shader's source says,
+// Phase 5 Day 71: shader reflection. Every committed shaders/*.refl.inc must parse, say what the shader's source says,
 // round-trip byte for byte, build the layouts the hand-written code used to build, and reject every kind of damage
 // without reading outside its input (this binary also runs under ASan).
 #include <cstdlib>

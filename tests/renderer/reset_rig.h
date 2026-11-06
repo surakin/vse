@@ -1,6 +1,6 @@
 #pragma once
 
-// A deferred demo frame on a device the host can replace, for the Phase 7 acceptance tests: every device-owning part registers
+// A deferred demo frame on a device the host can replace, for the Phase 8 acceptance tests: every device-owning part registers
 // with one registry, the offscreen target is a registered owner too, and the renderer replaces the device through the host.
 
 #include <vector>

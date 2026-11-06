@@ -1,7 +1,7 @@
 # Shaders: from Slang to a shader module
 
 > **Audience:** engine and renderer programmers writing shaders  
-> **Covers:** Phase 3, Day 58; Phase 4, Days 69-84 (Slang, reflection, permutations, material and deferred shaders, portability)
+> **Covers:** Phase 4, Day 58; Phase 5, Days 69-84 (Slang, reflection, permutations, material and deferred shaders, portability)
 
 ## Source of truth
 

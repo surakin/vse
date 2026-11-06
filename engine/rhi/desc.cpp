@@ -211,7 +211,7 @@ const char* BindGroupLayoutDesc::Validate() const {
         }
         if (e.type == BindingType::UniformBuffer || e.type == BindingType::StorageBuffer ||
             e.type == BindingType::StorageTexture) {
-            // Arrays of buffers/storage images are not part of the Phase 3 contract.
+            // Arrays of buffers/storage images are not part of the Phase 4 contract.
             if (e.count != 1) {
                 return "BindGroupLayoutDesc: only sampled textures and samplers can be arrays";
             }

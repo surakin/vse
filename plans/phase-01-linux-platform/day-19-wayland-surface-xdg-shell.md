@@ -38,7 +38,7 @@ minimal `wl_shm` plumbing needed to complete the sequence (memfd-backed
 shared memory, solid placeholder fill, `wl_shm_create_pool` +
 `wl_shm_pool_create_buffer`, `wl_surface_attach` +
 `wl_surface_damage_buffer` + a second `wl_surface_commit`). Real pixel
-content is Phase 3's job (Vulkan swapchain); this fill exists only to
+content is Phase 4's job (Vulkan swapchain); this fill exists only to
 satisfy "a window appears" for this milestone.
 
 **New `WaylandWindow`**

@@ -10,7 +10,7 @@ Day 26 for X11 fallback) passes identically under both backends.
 
 **Design note (root `PLAN.md` assumption #11):** the internal `Window`/
 input interface this phase defines (Day 26) is the seam *every* later
-platform backend plugs into (Phases 11-12 and 20-21, desktop and mobile/console
+platform backend plugs into (Phases 12-13 and 21-22, desktop and mobile/console
 alike) — keep its shape generic rather than mirroring Wayland/X11-specific
 concepts upward, so those later ports are additive backends, never a
 redesign. Concretely: the window model should have room for
@@ -40,7 +40,7 @@ types owned by `libwayland-client`/`libxcb`. Since this phase links those
 libraries directly (assumption #3) rather than hand-rolling the wire
 protocol, those types are simply what the platform layer already has on
 hand; no separate spike or driver-contract exception is needed going into
-Phase 3.
+Phase 4.
 
 ## Days
 

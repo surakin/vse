@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-// Reading the minidump out of a sentry-native "envelope" file (Phase 6 Day 95).
+// Reading the minidump out of a sentry-native "envelope" file (Phase 7 Day 95).
 //
 // The crash handler leaves one envelope per crash in its dump directory: a header line of JSON, then items, each an item
 // header line of JSON followed by its payload of `length` bytes and a newline. The minidump is the item whose header has

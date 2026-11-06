@@ -4,8 +4,8 @@ Shaders are compiled offline to SPIR-V and embedded as committed `*.spv.inc` fil
 the engine never needs a shader compiler: a checkout without one uses the committed outputs as they are.
 
 Sources are Slang: `shaders/<name>.vert|frag|comp.slang`, outputs `shaders/<name>.spv.inc` (the SPIR-V words) and `shaders/<name>.refl.inc` (the reflection blob and block constants), compiled by `slangc` and turned into includes by `tools/shader_mint`. The
-symbol names (`kTriangleVertSpv`, ...) come from the file name. The GLSL path (`glslc`, Phase 3) was retired on
-Phase 4 Day 70 after the Slang outputs reproduced every golden image unchanged.
+symbol names (`kTriangleVertSpv`, ...) come from the file name. The GLSL path (`glslc`, Phase 4) was retired on
+Phase 5 Day 70 after the Slang outputs reproduced every golden image unchanged.
 
 The second line of every generated file records the compiler: `// compiler: slangc v2026.18.2`. `shaders_check`
 recompiles with the installed compiler and byte-compares; a shader whose recorded version differs from the installed
@@ -64,7 +64,7 @@ compute local size, descriptor (set, binding) pairs, interface locations, std140
 is 176 bytes, matching the C++ struct), `NonReadable`, push-constant blocks and that no capability beyond
 Matrix/Shader/ImageQuery is used; it also runs `rhi::ValidateSpirv`.
 
-## Other targets (checked by `shaders_portability`, for Phases 11-12)
+## Other targets (checked by `shaders_portability`, for Phases 12-13)
 
 `ctest -R shaders_portability` (skipped without `slangc`; `portability.cmake`) compiles every shader and every permutation
 key with `-target hlsl` and `-target metal`, using the same entry, stage and `-matrix-layout-column-major` flags as the SPIR-V
@@ -105,7 +105,7 @@ identical ones and writes `<name>.perm.inc` beside the usual pair. Limits: 16 op
   otherwise build identical modules silently).
 - Compiler version: the recorded `// compiler:` line is checked like any shader's; `shaders_check` regenerates the
   whole table and compares it.
-- `shader_mint` starts `slangc` itself in this mode (`posix_spawn`, so Linux only for now; Phase 11 revisits it for
+- `shader_mint` starts `slangc` itself in this mode (`posix_spawn`, so Linux only for now; Phase 12 revisits it for
   Windows).
 
 
@@ -119,7 +119,7 @@ per-object storage buffer (`renderer::ObjectData`, binding 0). `material_test.ve
   `first_instance = i`. Slang's `SV_InstanceID` subtracts the base instance (`gl_InstanceIndex - gl_BaseInstance`), so
   it is 0 for every one-instance draw and every object would read entry 0; `SV_StartInstanceLocation` would add the base
   back but needs the `shaderDrawParameters` device feature, which the RHI does not enable. `SV_VulkanInstanceID` is
-  `gl_InstanceIndex` and needs nothing. D3D12 has no equivalent of a base instance in shaders, so Phase 11 must deliver
+  `gl_InstanceIndex` and needs nothing. D3D12 has no equivalent of a base instance in shaders, so Phase 12 must deliver
   the object index another way (a root constant or a per-draw vertex stream); this is recorded in `KNOWN-ISSUES.md`.
 - A vertex input the shader does not use is removed from the SPIR-V while the reflection still lists it, which
   `shader_mint` rejects as a location mismatch. Pass unused attributes through to an output (the test shader forwards

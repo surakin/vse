@@ -1,4 +1,4 @@
-// Phase 7 Day 108: the device-resource registry and the recreatable owners (meshes, textures, samplers).
+// Phase 8 Day 108: the device-resource registry and the recreatable owners (meshes, textures, samplers).
 #include <cstring>
 #include <string>
 #include <vector>

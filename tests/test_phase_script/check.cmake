@@ -1,6 +1,6 @@
 # One case of scripts/test-phase.sh --dry-run: runs it, checks the phases it reports, and checks that its "X of Y"
-# equals what `ctest -N` selects with the given arguments (Phase 5).
-#   cmake -DSCRIPT=<test-phase.sh> -DBUILD=<dir> -DARGS="--affected;..." -DEXPECT_PHASES="3 4" -DCTEST_ARGS="-L;^phase3$"
+# equals what `ctest -N` selects with the given arguments (Phase 6).
+#   cmake -DSCRIPT=<test-phase.sh> -DBUILD=<dir> -DARGS="--affected;..." -DEXPECT_PHASES="3 4" -DCTEST_ARGS="-L;^phase4$"
 #         [-DEXPECT_FAIL_TEXT=<text>] -P check.cmake   (EXPECT_PHASES=ANY: only check that the run worked)
 # ARGS and CTEST_ARGS are ';'-lists. Without CTEST_ARGS the case selects every test.
 find_program(BASH bash REQUIRED)

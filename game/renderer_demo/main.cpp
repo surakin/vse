@@ -1,4 +1,4 @@
-// renderer_demo: the Phase 4 showcase. A few hundred lit objects in eight materials, hundreds of point lights and a sun,
+// renderer_demo: the Phase 5 showcase. A few hundred lit objects in eight materials, hundreds of point lights and a sun,
 // drawn by the deferred renderer (G-buffer, light volumes, ACES tonemap) into a Wayland or X11 window, or offscreen.
 // Tab switches between the orbit and fly cameras. See README.md for the options and controls.
 

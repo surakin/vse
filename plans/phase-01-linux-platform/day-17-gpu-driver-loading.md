@@ -47,7 +47,7 @@ unchanged.
 `#include <vulkan/vulkan_core.h>` (the system `vulkan-headers` package),
 not hand-declared — decided this way specifically to keep Day 17 minimal
 and defer the real "vendor Vulkan-Headers vs. rely on system headers"
-call to Phase 3, which needs the full API surface and deserves its own
+call to Phase 4, which needs the full API surface and deserves its own
 deliberate decision (the same weight FreeType's vendoring got).
 
 The actual smoke-test logic (`os::ProbeVulkanCreateInstance`,

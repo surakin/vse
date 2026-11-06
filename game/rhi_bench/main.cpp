@@ -1,4 +1,4 @@
-// rhi_bench: records the Phase 3 performance baseline through the RHI (no window, no Vulkan names). Prints one line per
+// rhi_bench: records the Phase 4 performance baseline through the RHI (no window, no Vulkan names). Prints one line per
 // measurement; nothing here is asserted in CI. See docs/guide/rhi.md ("Performance notes") for what the numbers mean.
 //
 //   rhi_bench [--draws N] [--frames N]     draw throughput for N cubes (default: 1000 and 10000)

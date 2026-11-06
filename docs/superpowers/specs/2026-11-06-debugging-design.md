@@ -1,6 +1,6 @@
-# Debugging facilities — library selection and design (Phase 6, Day 91)
+# Debugging facilities — library selection and design (Phase 7, Day 91)
 
-Status: decided 2026-11-06 from the spikes below. Scope: Linux implemented, Windows (Phase 11) and macOS (Phase 12) made
+Status: decided 2026-11-06 from the spikes below. Scope: Linux implemented, Windows (Phase 12) and macOS (Phase 13) made
 ready, mobile and consoles designed in. `PLAN.md` assumption #20 is the policy exception this spec supports.
 
 ## 1. Decision
@@ -157,7 +157,7 @@ stack overflow, a fault on a `std::thread`, and a fault with four other threads 
 | sentry-native writes more than we need (session files, breadcrumbs, event JSON) | `auto_session_tracking` off, no DSN, no scope data; the database directory is documented as owned by the library |
 | Vendored tree size (135 files / 37 kLoC for the chosen backend; 11 MB of Breakpad tree before pruning) | prune to what the build uses, record it in `VENDORED.md`; both libraries built once |
 | Vendored code's warnings under our flags | built as separate targets with their own flags, like Catch2; kept out of unity batches |
-| libbacktrace reads DWARF only | known gap for Phase 11 (clang/DWARF builds, or a DbgHelp resolver behind `ResolveStackTrace`) |
+| libbacktrace reads DWARF only | known gap for Phase 12 (clang/DWARF builds, or a DbgHelp resolver behind `ResolveStackTrace`) |
 | A sanitizer swallows the signal | handler off by default in sanitizer flavors; `AssertFail` prints its own report and aborts |
 | `on_crash` runs in a signal context | the report writer is allocation-free, lock-free and gated by `tools/signal_safety_check` |
 
@@ -177,17 +177,17 @@ examples, benchmarks, `external/crashpad`, `external/libunwindstack-ndk`, `ndk/`
 
 ## 8. Platform notes (desk research, for Windows, macOS, Android, iOS, consoles)
 
-- **Windows (Phase 11):** sentry-native supports x86/x64/arm64 (MSVC 2022+, LLVM-MinGW) with its Crashpad (default),
+- **Windows (Phase 12):** sentry-native supports x86/x64/arm64 (MSVC 2022+, LLVM-MinGW) with its Crashpad (default),
   Breakpad and inproc backends; the Breakpad backend is "desktop OSes only", which includes Windows; the Windows Crashpad
   handler uses winhttp, not libcurl. libbacktrace reads DWARF only, so MSVC/PDB builds need either clang with DWARF or a
   DbgHelp resolver behind `ResolveStackTrace`; `IsDebuggerPresent`, `CreateProcess` for death tests, NTSTATUS decode for
   `CrashReason`, WER `LocalDumps` as the core-dump equivalent.
-- **macOS (Phase 12):** supported (macOS 15+, Apple Clang or LLVM Clang 15+); Breakpad backend available; libbacktrace
+- **macOS (Phase 13):** supported (macOS 15+, Apple Clang or LLVM Clang 15+); Breakpad backend available; libbacktrace
   needs the dSYM next to the binary; code signing and entitlements for the handler apply to the Crashpad backend only;
   `sysctl` `P_TRACED` for debugger detection; `posix_spawn` death tests shared with Linux.
-- **Android / iOS (Phase 20):** Android API 21+, NDK 23+, default backend `inproc` (no minidump); iOS is not in the
+- **Android / iOS (Phase 21):** Android API 21+, NDK 23+, default backend `inproc` (no minidump); iOS is not in the
   supported list (the support matrix marks Breakpad untested there): designed in, `Unsupported` where needed.
-- **Consoles (Phase 21):** separate sentry repos for PlayStation, Xbox and Switch, under NDA.
+- **Consoles (Phase 22):** separate sentry repos for PlayStation, Xbox and Switch, under NDA.
 
 The neutral-interface design (a `CrashReason` enum plus the raw platform code, an opaque native context, `u64` thread ids,
 a sink type instead of a descriptor, `Unsupported` results) is unchanged from the plan and fits all of the above.
@@ -202,16 +202,16 @@ a sink type instead of a descriptor, `Unsupported` results) is unchanged from th
 - Day 99: `crash-report.sh` calls `crash_extract` first.
 - Day 101: the Windows/macOS audit records the above notes; `BACKEND.md` lists no handler-executable entry.
 
-## 10. Platform audit (Phase 6 Day 101; read from the vendored sources, not from memory)
+## 10. Platform audit (Phase 7 Day 101; read from the vendored sources, not from memory)
 
 Checked in `third_party/sentry_native/` (0.17.6) and `third_party/libbacktrace/` (commit `0b9b49c`).
 
-| | Linux (built and tested) | Windows (Phase 11) | macOS (Phase 12) | Android / iOS (Phase 20) | Consoles (Phase 21) |
+| | Linux (built and tested) | Windows (Phase 12) | macOS (Phase 13) | Android / iOS (Phase 21) | Consoles (Phase 22) |
 |---|---|---|---|---|---|
 | sentry-native Breakpad backend | supported | supported (README matrix) | supported (README matrix) | "(✓)": builds, untested upstream | separate repos, NDA |
 | Transport `none` | supported | supported | supported | supported | n/a |
 | Default backend upstream | Crashpad | Crashpad (Breakpad for Xbox/WINGDK) | Crashpad | `inproc` (writes no minidump) | n/a |
-| What we set | `SENTRY_BACKEND=breakpad`, `SENTRY_TRANSPORT=none`, static library | the same; no handler executable with Breakpad (Crashpad would need one and uses winhttp, not libcurl); `SENTRY_THREAD_STACK_GUARANTEE_*` exist for stack overflow | the same | `breakpad` is untested there; a Phase 20 decision | not decided |
+| What we set | `SENTRY_BACKEND=breakpad`, `SENTRY_TRANSPORT=none`, static library | the same; no handler executable with Breakpad (Crashpad would need one and uses winhttp, not libcurl); `SENTRY_THREAD_STACK_GUARANTEE_*` exist for stack overflow | the same | `breakpad` is untested there; a Phase 21 decision | not decided |
 | `on_crash` hook arguments | `uctx` is **null**, hook runs in a **helper thread** (read from `sentry_backend_breakpad.cpp` and Breakpad's `exception_handler.cc`) | `uctx` carries the `EXCEPTION_POINTERS` | `uctx` carries the user context (non-system Breakpad) | untested | n/a |
 | libbacktrace object format | ELF (`elf.c`, built) | PE/COFF (`pecoff.c` + `alloc.c`, vendored, not built) | Mach-O (`macho.c`, vendored, not built) | ELF (Android), Mach-O (iOS) | n/a |
 | Symbols | DWARF | **DWARF only**: PDB is not read | DWARF in a dSYM next to the binary | DWARF | n/a |
@@ -227,14 +227,14 @@ What each platform needs that Linux does not:
   and notarization restrict handlers; `PR_SET_PDEATHSIG` does not exist (death-test children need another way to die with the
   parent).
 - **Android / iOS:** Breakpad is untested upstream on both; Android's default backend writes no minidump; iOS has no supported
-  list entry. Both are "designed in" (`Unsupported`, skipped death tests) and decided in Phase 20.
-- **Consoles:** the crash libraries are under NDA; the neutral facade forwards to them; decided in Phase 21.
+  list entry. Both are "designed in" (`Unsupported`, skipped death tests) and decided in Phase 21.
+- **Consoles:** the crash libraries are under NDA; the neutral facade forwards to them; decided in Phase 22.
 
-Known gaps and the decision each needs: **(1)** PDB symbols on Windows (Phase 11: clang with DWARF, or a DbgHelp resolver behind
-`ResolveStackTrace`); **(2)** file and line on macOS need the dSYM (Phase 12: ship or locate it); **(3)** the Windows and macOS
+Known gaps and the decision each needs: **(1)** PDB symbols on Windows (Phase 12: clang with DWARF, or a DbgHelp resolver behind
+`ResolveStackTrace`); **(2)** file and line on macOS need the dSYM (Phase 13: ship or locate it); **(3)** the Windows and macOS
 crash report is written from `on_crash`, so the Linux recorder (`os/linux/debug/crash_signal.cpp`) has no counterpart and
-`detail::InstallCrashEventHook` is not implemented there; **(4)** Android and iOS minidumps (Phase 20); **(5)** consoles
-(Phase 21). The lists per function are `engine/foundation/os/windows/debug/BACKEND.md` and
+`detail::InstallCrashEventHook` is not implemented there; **(4)** Android and iOS minidumps (Phase 21); **(5)** consoles
+(Phase 22). The lists per function are `engine/foundation/os/windows/debug/BACKEND.md` and
 `engine/foundation/os/macos/debug/BACKEND.md`, kept in step with the headers by `debug_backend_lists`.
 
 **Correction to section 9 (as built).** Days 96 and 97 do write the report from a small signal recorder placed in front of
