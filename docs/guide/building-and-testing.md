@@ -66,6 +66,12 @@ Tests per phase and flavor on 2026-11-06 (`plain` is neither `asan` nor `tsan`; 
 The `flavors` lines in `tests/phases.txt` state which flavors each phase has, and `test_phase_labels` fails if one
 appears or disappears.
 
+**Tests that crash on purpose.** The Phase 6 suite (`tests/debug`) makes processes fault deliberately, and the kernel hands each
+fault to `systemd-coredump`, which makes a desktop crash reporter (Plasma's systray) raise a notification. Those tests carry the
+ctest label `crash` and `scripts/test-phase.sh` leaves them out of every run but `--all` (which closes a phase), unless you pass
+`--crashes`. The summary line says so (`crash tests: excluded`), so a reduced run is never mistaken for a full one. The script also
+sets a soft core limit of 0 for the tests it starts. Plain `ctest` runs them.
+
 #### The runner
 
 `scripts/test-phase.sh` builds, selects tests by label and runs them. It is how day-to-day work runs tests:

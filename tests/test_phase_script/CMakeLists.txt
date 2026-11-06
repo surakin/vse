@@ -31,16 +31,19 @@ function(phase_script_refuses name text)
   set(PHASE_SCRIPT_TESTS ${PHASE_SCRIPT_TESTS} PARENT_SCOPE)
 endfunction()
 
-set(PLAIN -LE "^(asan|tsan)$")
-set(PLAIN_NO_DISPLAY -LE "^(asan|tsan|display)$")
+# Every scoped run leaves out the tests labelled `crash` (the Phase 6 suite crashes processes on purpose); --all and --crashes keep them.
+set(PLAIN -LE "^(asan|tsan|crash)$")
+set(PLAIN_NO_DISPLAY -LE "^(asan|tsan|display|crash)$")
 
 # One explicit phase: all of its tests, in the plain flavor by default.
 phase_script_case(explicit_plain PHASES 4 DISPLAY included ARGS 4 --flavor plain CTEST -L "^(phase4)$" ${PLAIN})
-phase_script_case(explicit_asan PHASES 3 ARGS 3 --flavor asan CTEST -L "^(phase3)$" -L "^asan$")
-phase_script_case(explicit_tsan PHASES 2 ARGS 2 --flavor tsan CTEST -L "^(phase2)$" -L "^tsan$")
-phase_script_case(explicit_all_flavors PHASES 2.5 ARGS 2.5 --flavor all CTEST -L "^(phase2_5)$")
+phase_script_case(explicit_asan PHASES 3 ARGS 3 --flavor asan CTEST -L "^(phase3)$" -L "^asan$" -LE "^crash$")
+phase_script_case(explicit_tsan PHASES 2 ARGS 2 --flavor tsan CTEST -L "^(phase2)$" -L "^tsan$" -LE "^crash$")
+phase_script_case(explicit_all_flavors PHASES 2.5 ARGS 2.5 --flavor all CTEST -L "^(phase2_5)$" -LE "^crash$")
 phase_script_case(everything PHASES all ARGS --all --flavor all)
 phase_script_case(everything_without_windows PHASES all DISPLAY excluded ARGS --all --no-display CTEST -LE "^(asan|tsan|display)$")
+phase_script_case(current_with_crashes PHASES 4 DISPLAY excluded ARGS --current --crashes --current-phase-file ${FIX}/phase4.txt
+  CTEST -L "^(phase4)$" -LE "^(asan|tsan|display)$")
 # Without --diff-from-file the script asks git; any result is fine, it only has to work.
 phase_script_case(affected_from_git PHASES ANY ARGS --affected --current-phase-file ${FIX}/phase4.txt)
 # The current phase: window tests are left out, unless the phase is 1.

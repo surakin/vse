@@ -29,6 +29,9 @@ set(DEBUG_TEST_SOURCES
 find_package(Threads REQUIRED)
 include(Catch)
 
+# Every Catch2 test of this directory carries the label `crash`: the suite crashes processes on purpose (death tests, the demos'
+# --crash-test), which makes systemd-coredump and desktop crash reporters notify the user. scripts/test-phase.sh leaves the label
+# out unless it runs --all or is given --crashes; plain ctest runs it.
 function(engine_add_debug_tests target foundation_lib jobs_lib suffix label)
   add_executable(${target} ${DEBUG_TEST_SOURCES})
   engine_enable_death_tests(${target})
@@ -50,7 +53,7 @@ function(engine_add_debug_tests target foundation_lib jobs_lib suffix label)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   # The family tests exercise the checking paths, so they need debug and slow checks on whatever the configuration is.
   target_compile_definitions(${target} PRIVATE ENGINE_DEBUG_CHECKS=1 ENGINE_SLOW_CHECKS=1)
-  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
+  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label};crash")
 endfunction()
 
 # A shared library the stack-trace tests load at run time. Plain build, no sanitizer runtime of its own.
@@ -69,7 +72,7 @@ if(NOT ENGINE_FORCE_DEBUG_CHECKS AND NOT ENGINE_FORCE_SLOW_CHECKS)
   add_executable(debug_checks_off_tests assert_checks_off_test.cpp)
   target_link_libraries(debug_checks_off_tests PRIVATE foundation Catch2::Catch2WithMain Threads::Threads)
   target_compile_definitions(debug_checks_off_tests PRIVATE ENGINE_DEBUG_CHECKS=0 ENGINE_SLOW_CHECKS=0)
-  engine_discover_tests(debug_checks_off_tests TEST_SUFFIX " [checks off]" PROPERTIES LABELS "debug")
+  engine_discover_tests(debug_checks_off_tests TEST_SUFFIX " [checks off]" PROPERTIES LABELS "debug;crash")
 endif()
 
 # The trace-in-a-signal-handler test counts allocations, so these executables wrap malloc, calloc and realloc (GNU ld
@@ -81,7 +84,7 @@ function(engine_add_alloc_tests target foundation_lib suffix label)
   target_link_libraries(${target} PRIVATE ${foundation_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   target_link_options(${target} PRIVATE -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc)
-  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
+  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label};crash")
 endfunction()
 
 engine_add_alloc_tests(debug_alloc_tests foundation " [alloc count]" "debug")

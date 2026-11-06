@@ -14,6 +14,8 @@
 #              <build>/.last-full-run
 #
 #   --flavor plain|asan|tsan|all   which sanitizer flavor (default plain: neither asan nor tsan)
+#   --crashes                      include the tests labelled `crash` (the Phase 6 suite, which crashes processes on purpose and
+#                                  so makes a desktop crash reporter notify); left out of every run but --all
 #   --display / --no-display       include or leave out the window tests (label `display`); by default left out of
 #                                  --current/--affected unless phase 1 is selected or engine/foundation changed
 #   --jobs N                       parallel tests (default: the number of CPUs)
@@ -34,6 +36,7 @@ mode=current
 phase_arg=""
 flavor=plain
 display=auto
+crashes=auto
 jobs="$(nproc 2>/dev/null || echo 4)"
 dry=0
 do_build=1
@@ -50,6 +53,7 @@ while [ $# -gt 0 ]; do
         --affected) mode=affected ;;
         --all) mode=all ;;
         --flavor) flavor="${2:?--flavor needs plain, asan, tsan or all}"; shift ;;
+        --crashes) crashes=yes ;;
         --display) display=yes ;;
         --no-display) display=no ;;
         --jobs) jobs="${2:?--jobs needs a number}"; shift ;;
@@ -173,6 +177,11 @@ fi
 if [ "$show_display" = no ]; then
     exclude="${exclude:+$exclude|}display"
 fi
+show_crashes=yes
+if [ "$crashes" = auto ] && [ "$mode" != all ]; then
+    show_crashes=no
+    exclude="${exclude:+$exclude|}crash"
+fi
 [ -z "$exclude" ] || sel+=(-LE "^(${exclude})\$")
 
 # A phase and a sanitizer flavor are two -L options, which ctest combines with AND only from CMake 3.29 on; an older ctest uses
@@ -197,7 +206,7 @@ total="$(count)"
 picked="$(count ${sel[@]+"${sel[@]}"})"
 [ -n "$total" ] && [ -n "$picked" ] || die "could not count tests in $build (is it configured?)"
 
-summary="phases: ${phases}; flavors: ${flavor}; display: $([ "$show_display" = yes ] && echo included || echo excluded)"
+summary="phases: ${phases}; flavors: ${flavor}; display: $([ "$show_display" = yes ] && echo included || echo excluded); crash tests: $([ "$show_crashes" = yes ] && echo included || echo excluded)"
 if [ -n "$reasons" ] && [ "$mode" = affected ]; then
     echo "test-phase: running everything because of:$reasons"
 fi
@@ -211,6 +220,10 @@ if [ "$dry" = 1 ]; then
 fi
 
 status=0
+# Many Phase 6 tests crash a child on purpose. With a soft core limit of 0 the kernel does not hand those crashes to
+# systemd-coredump, so a desktop crash reporter (Plasma's systray) does not raise a notification for each one. The hard limit
+# stays as it was: the tests that need a real core raise the soft limit themselves.
+ulimit -S -c 0 2>/dev/null || true
 ctest --test-dir "$build" -j"$jobs" --output-on-failure ${sel[@]+"${sel[@]}"} || status=$?
 elapsed=$((SECONDS - started))
 last=""
