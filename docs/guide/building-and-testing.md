@@ -50,6 +50,22 @@ naming the file, if a Catch2 test has none. A test that is not a Catch2 case (`a
 build has no phase label or more than one. Catch2 tests are registered through `engine_discover_tests`
 (`cmake/EngineTestPhases.cmake`), a wrapper of `catch_discover_tests` that adds the label.
 
+Tests per phase and flavor on 2026-11-06 (`plain` is neither `asan` nor `tsan`; recount with
+`ctest -N -L ^phase4$ -L ^asan$`):
+
+| Phase | plain | ASan | TSan |
+|---|---|---|---|
+| 0 foundation | 87 | - | - |
+| 1 Linux platform | 63 | - | - |
+| 2 jobs | 77 | 77 | 78 |
+| 2.5 documentation tooling | 172 | 168 | - |
+| 3 RHI | 226 | 211 | 143 |
+| 4 renderer | 211 | 178 | 148 |
+| 5 test scoping | 4 | - | - |
+
+The `flavors` lines in `tests/phases.txt` state which flavors each phase has, and `test_phase_labels` fails if one
+appears or disappears.
+
 Window tests also carry the label `display` (they share the one desktop and run one at a time).
 
 ### GPU tests and validation layers

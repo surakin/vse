@@ -5,7 +5,18 @@
 # 2 jobs, 2.5 docs tooling, 3 RHI, 4 renderer. The rule is the phase that owns the behavior, not the directory.
 #
 # Adding a Catch2 test file: add a line here, or the build stops naming the file. Adding another kind of test: add a
-# `test:` line and call engine_label_tests() after add_test. Labels are `phase0` ... `phase4`, `phase2_5`.
+# `test:` line and call engine_label_tests() after add_test. Labels are `phase0` ... `phase5`, `phase2_5`.
+# `flavors <phase> plain,asan,tsan` lines (below) list the sanitizer flavors each phase has tests in; a new phase needs one.
+
+# Which flavors have tests of each phase (plain = neither asan nor tsan). test_phase_labels fails if a phase gains or
+# loses a flavor, so a sanitizer flavor cannot disappear unnoticed. Foundation (0, 1) has no sanitizer executables.
+flavors 0   plain
+flavors 1   plain
+flavors 2   plain,asan,tsan
+flavors 2.5 plain,asan
+flavors 3   plain,asan,tsan
+flavors 4   plain,asan,tsan
+flavors 5   plain
 
 # --- Phase 0: foundation (tests/foundation) ---
 tests/foundation/arena_allocator_test.cpp       0

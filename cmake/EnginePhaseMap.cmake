@@ -4,6 +4,7 @@
 #   - a source path relative to the repo root: `tests/foundation/log_test.cpp`; `*` matches within one path segment, and a
 #     trailing `/` means every file below that directory;
 #   - `test:<glob>`: the name of a test that is not a Catch2 test case (`*` matches any characters).
+# `flavors <phase> plain,asan,tsan` states which sanitizer flavors have tests of that phase (test_phase_labels checks it).
 # A phase is 0, 1, 2, 2.5, 3, ...; its ctest label is `phase<N>` with `.` written `_` (`phase2_5`), because label
 # filters are regular expressions. A subject matching no pattern, or patterns with different phases, is an error.
 #
@@ -19,8 +20,8 @@ function(engine_phase_map_load map_file)
   foreach(line IN LISTS lines)
     string(REGEX REPLACE "#.*$" "" line "${line}")
     string(STRIP "${line}" line)
-    if(line STREQUAL "")
-      continue()
+    if(line STREQUAL "" OR line MATCHES "^flavors[ \t]")
+      continue()  # `flavors <phase> <list>` lines are read by tests/phase_labels/check.cmake
     endif()
     if(NOT line MATCHES "^([^ \t]+)[ \t]+([0-9]+(\\.[0-9]+)?)$")
       message(FATAL_ERROR "${map_file}: cannot read the line '${line}' (want '<pattern>  <phase>')")

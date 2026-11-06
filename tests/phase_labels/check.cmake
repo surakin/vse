@@ -1,6 +1,8 @@
 # Fails, naming the tests, if any test in a build directory lacks a `phaseN` label or has more than one
 # (Phase 5; tests/phases.txt). Run by ctest as test_phase_labels.
-#   cmake -DCTEST=<ctest> -DBUILD_DIR=<dir> -DMAP=<tests/phases.txt> -P check.cmake
+#   cmake -DCTEST=<ctest> -DBUILD_DIR=<dir> -DMAP=<tests/phases.txt> [-DCHECK_FLAVORS=1] [-DCHECK_UNUSED=1] -P check.cmake
+# CHECK_FLAVORS also checks that each phase has tests in exactly the sanitizer flavors its `flavors` line lists;
+# CHECK_UNUSED also fails on a map line that matches no test or file. Both are for the real build, not the fixtures.
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/EnginePhaseMap.cmake)
 
 # What ctest selects with the given extra arguments, as "<number>: <name>" entries. The number is the test's index in the
@@ -12,6 +14,7 @@ function(selected_tests out)
   if(NOT rc EQUAL 0)
     message(FATAL_ERROR "ctest -N ${ARGN} failed (${rc}): ${listing}")
   endif()
+  string(REPLACE ";" "," listing "${listing}")  # a name with ';' would split into several list elements
   string(REGEX MATCHALL "\n *Test +#[0-9]+: [^\n]*" lines "${listing}")
   set(names "")
   foreach(line IN LISTS lines)
@@ -63,9 +66,51 @@ if(NOT labeled EQUAL known)
   string(APPEND problems "  ${labeled} tests carry a phase label but only ${known} carry one the map defines\n")
 endif()
 
+# Each phase has tests in exactly the flavors the map lists for it.
+if(CHECK_FLAVORS)
+  file(STRINGS "${MAP}" flavor_lines REGEX "^flavors[ \t]")
+  set(expected "")
+  foreach(line IN LISTS flavor_lines)
+    string(REGEX REPLACE "#.*$" "" line "${line}")
+    if(NOT line MATCHES "^flavors[ \t]+([0-9]+(\\.[0-9]+)?)[ \t]+((plain|asan|tsan)(,(plain|asan|tsan))*)[ \t]*$")
+      string(APPEND problems "  cannot read the map line '${line}' (want 'flavors <phase> plain,asan,tsan')\n")
+      continue()
+    endif()
+    engine_phase_label("${CMAKE_MATCH_1}" label)
+    if(label IN_LIST expected)
+      string(APPEND problems "  two 'flavors' lines for ${label}\n")
+    endif()
+    if(NOT label IN_LIST phases)
+      string(APPEND problems "  'flavors' line for ${label}, which has no lines in the map\n")
+    endif()
+    set(flavors_of_${label} "${CMAKE_MATCH_3}")
+    list(APPEND expected ${label})
+  endforeach()
+  foreach(label IN LISTS phases)
+    if(NOT label IN_LIST expected)
+      string(APPEND problems "  no 'flavors' line in the map for ${label}\n")
+      continue()
+    endif()
+    string(REPLACE "," ";" want "${flavors_of_${label}}")
+    foreach(flavor plain asan tsan)
+      if(flavor STREQUAL "plain")
+        selected_tests(here -L "^${label}$" -LE "^(asan|tsan)$")
+      else()
+        selected_tests(here -L "^${label}$" -L "^${flavor}$")
+      endif()
+      list(LENGTH here n)
+      if(flavor IN_LIST want AND n EQUAL 0)
+        string(APPEND problems "  ${label} has no ${flavor} tests, but the map lists that flavor\n")
+      elseif(NOT flavor IN_LIST want AND n GREATER 0)
+        string(APPEND problems "  ${label} has ${n} ${flavor} tests, but the map does not list that flavor\n")
+      endif()
+    endforeach()
+  endforeach()
+endif()
+
 # A line of the map that matches nothing (a renamed or deleted file or test) must go: it could later give a phase to
-# something nobody chose it for. Only for the real build; the fixtures are not the map's tests.
-if(CHECK_UNUSED_PATTERNS)
+# something nobody chose it for.
+if(CHECK_UNUSED)
   get_filename_component(root "${MAP}" DIRECTORY)
   get_filename_component(root "${root}/.." ABSOLUTE)
   list(LENGTH _EPM_REGEXES count)
