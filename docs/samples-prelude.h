@@ -13,6 +13,7 @@
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "containers/hash_map.h"
+#include "io/file.h"
 #include "io/file_system.h"
 #include "io/path.h"
 #include "jobs/async_io.h"

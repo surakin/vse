@@ -67,6 +67,8 @@ set(FOUNDATION_SOURCES
   io/path.cpp
   io/linux/error.cpp
   io/linux/file_system.cpp
+  io/linux/local_file.cpp
+  io/file.cpp
   string/utf8_codec.cpp
   string/grapheme.cpp
   string/generated/grapheme_break_table.cpp

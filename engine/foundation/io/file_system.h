@@ -75,6 +75,16 @@ Status Rename(const Path& from, const Path& to);
 /// Fails: `NotFound`, `AlreadyExists`, `IsADirectory`, `NoSpace`, `PermissionDenied`.
 Status Copy(const Path& from, const Path& to, bool overwrite);
 
+/// Sets the permission bits of `path` (following links); platforms without them map the owner-write bit to the read-only attribute.
+///
+/// Fails: `NotFound`, `PermissionDenied`, `ReadOnly`.
+Status SetPermissions(const Path& path, u32 permissions);
+/// Makes the entries of directory `path` durable (`fsync` of the directory): call it after creating, renaming or removing a file
+/// when the change must survive a crash.
+///
+/// Fails: `NotFound`, `NotADirectory`, `PermissionDenied`, `Io`; `Unsupported` on a platform that has no such operation.
+Status SyncDirectory(const Path& path);
+
 /// Creates one directory (permissions 0777 minus the umask).
 ///
 /// Fails: `AlreadyExists` (also when a file is there), `NotFound` (the parent is missing), `PermissionDenied`, `ReadOnly`.

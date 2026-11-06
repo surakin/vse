@@ -27,6 +27,7 @@ enum class Error : u8 {
     Busy,             ///< The resource is in use (`EBUSY`, `ETXTBSY`).
     TooManyOpenFiles, ///< The process or system is out of descriptors (`EMFILE`, `ENFILE`).
     OutOfMemory,      ///< Memory ran out (`ENOMEM`).
+    EndOfFile,        ///< A read ended before the requested bytes (only from the exact-read helpers; a plain `Read` returns fewer bytes instead).
     Io,               ///< Anything else: a device error (`EIO`) or a code with no portable meaning.
 };
 

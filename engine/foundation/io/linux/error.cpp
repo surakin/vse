@@ -24,6 +24,7 @@ const char* ErrorName(Error error) {
     case Error::Busy: return "busy";
     case Error::TooManyOpenFiles: return "too_many_open_files";
     case Error::OutOfMemory: return "out_of_memory";
+    case Error::EndOfFile: return "end_of_file";
     case Error::Io: return "io";
     }
     return "io";

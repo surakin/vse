@@ -256,6 +256,22 @@ Status Copy(const Path& from, const Path& to, bool overwrite) {
     return result;
 }
 
+Status SetPermissions(const Path& path, u32 permissions) {
+    NativePath p;
+    if (Status s = ToNative(path, p); s.Failed()) return s;
+    return ::chmod(p, static_cast<mode_t>(permissions & 07777)) == 0 ? Status::Success() : Errno();
+}
+
+Status SyncDirectory(const Path& path) {
+    NativePath p;
+    if (Status s = ToNative(path, p); s.Failed()) return s;
+    const int fd = ::open(p, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    if (fd < 0) return Errno();
+    const Status result = ::fsync(fd) == 0 ? Status::Success() : Errno();
+    ::close(fd);
+    return result;
+}
+
 Status CreateDirectory(const Path& path) {
     NativePath p;
     if (Status s = ToNative(path, p); s.Failed()) return s;
