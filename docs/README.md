@@ -13,7 +13,8 @@ Internal design history is for contributors, not engine users: the specs in
 [RHI design](superpowers/specs/2026-11-04-rhi-design.md),
 [RHI portability review](superpowers/specs/2026-11-04-rhi-portability-review.md),
 [renderer design](superpowers/specs/2026-11-04-renderer-design.md),
-[renderer portability review](superpowers/specs/2026-11-04-renderer-portability-review.md) —
+[renderer portability review](superpowers/specs/2026-11-04-renderer-portability-review.md),
+[test scoping](superpowers/specs/2026-11-05-test-scoping-design.md) —
 and the plans in `plans/`.
 
 ## Map

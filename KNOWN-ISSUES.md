@@ -14,7 +14,8 @@ whenever a day leaves something broken, unmeasured or deferred. Entries state fa
 
 Seen failing once or intermittently, passing on rerun. Cause not investigated.
 
-- (none). The window tests (X11, Wayland, and the RHI presentation tests) used to fail at random under `ctest -j6`; they now hold the ctest resource `display` and run one at a time (5 full runs in a row passed, 2026-11-05).
+- Phase 5 Day 85 (2026-11-06): `X11Window::Create opens a mapped window on the real X server` failed consistently (alone and under `ctest`, `foundation_tests` exit 42) while the session was in its present state; it passed in the Day 84 full run (1839/1839). Cause not investigated (an earlier note on this test: it also failed under this session's Xwayland on Phase 4 Day 69; the user's session being locked also breaks window tests).
+- The window tests (X11, Wayland, and the RHI presentation tests) used to fail at random under `ctest -j6`; they now hold the ctest resource `display` and run one at a time (5 full runs in a row passed, 2026-11-05).
 
 
 ## Unverified by a human
