@@ -842,3 +842,10 @@ that changed from the plan and why.)_
   crash tests: included)`, all passing; both demos 1000 frames with validation on Wayland and X11. Deliberately not done (filed in `KNOWN-ISSUES.md`): memory
   mapping, file watching, share modes and locks, the Windows/macOS/mobile/console backends, network and pak backends. `CURRENT_PHASE` stays 8 until Phase 9 (settings
   system) has its day files and starts.
+
+- **2026-11-07 — Phase 9 (Settings system) planned: Days 125-134.** Day files written under `plans/phase-09-settings-system/`. Eleven design calls recorded in the phase
+  file for Day 125's spec to confirm: the system lives in the foundation (`engine/foundation/settings/`); dotted keys; one shared registry with the renderer as a client;
+  `ConfigStore` as an abstract class proven by a non-file store before the file store is written; layers with provenance and a write layer; cheap reads through a published
+  snapshot; a damaged file is never overwritten by accident; a hand-written format that preserves comments and order; versioning with migrations and verbatim unknown keys;
+  listeners on the changing thread; a check that keeps ad hoc configuration from creeping back. Planning only; `CURRENT_PHASE` stays 8 until Day 125.
+
