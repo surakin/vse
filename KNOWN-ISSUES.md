@@ -2,7 +2,7 @@
 
 Failing or flaky tests and deferred items, in one place. `STATUS.md` says where the plan is; this file says what is
 known to be wrong or unfinished. Remove an entry when it is fixed (the commit that fixes it removes it), and add one
-whenever a day leaves something broken, unmeasured or deferred. Entries state facts that were observed, with where.
+whenever a day leaves something broken, unmeasured or deferred. Entries state facts that were observed, with where. A flaky or failing test names the phase it belongs to (its `phaseN` label), because a scoped run (`scripts/test-phase.sh`) of another phase does not run it.
 
 ## Failing tests
 

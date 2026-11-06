@@ -488,6 +488,10 @@ interpretations keep it buildable — flag any that don't match intent:
 - **Breadth before depth on Unreal import.** Cover the common cases (common
   material nodes, common Blueprint nodes) and flag unsupported long-tail
   cases explicitly, rather than blocking on 100% fidelity.
+- **Test by phase; close a phase with the full suite.** The suite is large (1800+ tests in three sanitizer flavors) and
+  most of it cannot be affected by today's work, so day-to-day runs cover the current phase plus the modules a change
+  touched (`scripts/test-phase.sh`), and every phase ends with the whole suite in every flavor. Every test belongs to
+  exactly one phase (`tests/phases.txt`), and a reduced run always says how much it left out.
 - **Minting, not cooking, and minting is deterministic.** Our offline asset
   and shader processing is called *minting* (tools are "mints" or
   "minters", outputs are "minted"); "cook" is used only to describe

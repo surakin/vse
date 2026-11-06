@@ -8,6 +8,17 @@ with progress.
 
 Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
 
+## Build and test commands
+
+- Configure and build: `cmake -S . -B build && cmake --build build`.
+- **Current phase** (the phase in `CURRENT_PHASE`, plain flavor): `scripts/test-phase.sh`. **Plus the modules a change
+  touched:** `scripts/test-phase.sh --affected` (add `--flavor asan` or `--flavor tsan` for a sanitizer flavor). One phase:
+  `scripts/test-phase.sh 4`. Add `--dry-run` to see what would run.
+- **Everything, every flavor** (a phase's closing run): `scripts/test-phase.sh --all --flavor all`, or plain `ctest` from `build/`.
+- Every test has one `phaseN` label (`ctest -L '^phase4$'`); `tests/phases.txt` is the only place a phase is decided, and
+  `CURRENT_PHASE` changes only in the commit that starts a phase. Docs checks: `ctest -L docs` (not scoped).
+- A reduced run is quoted with its `ran X of Y tests` line, never as "all tests pass". Guide: `docs/guide/building-and-testing.md`.
+
 ## Phase 0 (Foundation layer)
 
 **Complete — all 15 days are done and committed.** Real code exists
@@ -520,3 +531,4 @@ Phase 5 Day 85 (test inventory & scoping design) is done (planning only): `docs/
 Phase 5 Day 86 (phase labels for every test) is done: `tests/phases.txt` is the one place a test's phase is decided; Catch2 tests get a `phaseN` label (`phase2_5` for 2.5) through `engine_discover_tests` (`cmake/EngineTestPhases.cmake`, a marked patch to the vendored `CatchAddTests.cmake`; a Catch2 test file missing from the map stops the build), other tests through `engine_label_tests`; `test_phase_labels` (with planted unlabeled/doubled fixtures and an unused-line check) enforces exactly one label. Counts: phase0 87, phase1 63, phase2 232, phase2_5 340, phase3 580, phase4 537, phase5 4 = 1843; names unchanged; the patch also made the ASan docgen tests carry their `asan` label. The rhi/renderer call sites were switched on the same day. 1843/1843 pass. High-effort review (9 findings, 6 fixed, 3 declined or process) in the day file. **Next: Day 87 (no-GPU discovery check, flavor coverage, per-phase baseline times).**
 Phase 5 Day 87 (labels for the RHI and renderer, flavors) is done: discovery builds with no Vulkan driver; `flavors` lines in `tests/phases.txt` state each phase's sanitizer flavors and `test_phase_labels` enforces them (two planted fixtures); a `;`-in-test-name counting bug in the check was fixed. Baseline scoped times (wall, `-j16`): phase 3 plain 17 s / ASan 39 s, phase 4 plain 13 s / ASan 38 s, the whole suite about 65 s. 1845/1845 pass. High-effort review (9 findings, 6 fixed, 2 declined, 1 process) in the day file. **Next: Day 88 (the `scripts/test-phase.sh` runner and touched-module selection).**
 Phase 5 Day 88 (the runner) is done: `CURRENT_PHASE` (5), `tests/module_map.txt`, and `scripts/test-phase.sh [N | --current | --affected | --all] [--flavor plain|asan|tsan|all] [--jobs N] [--dry-run]`, which builds, counts, runs the selected labels and ends with `ran X of Y tests (phases ...; flavors ...; display ...)`; `--affected` adds the phases of every module touched since `CURRENT_PHASE` last changed and runs everything for CMake files, `cmake/`, `third_party/`, `engine/foundation` headers, `tests/phases.txt` or a path in no map line. 29 `test_phase_script_*` cases (counts checked against `ctest -N`, planted regression verified). **`CURRENT_PHASE` is changed in the commit that starts a phase.** 1874/1874 pass. High-effort review (10 findings, 9 fixed, 1 declined) in the day file. **Next: Day 89 (workflow policy and docs).**
+Phase 5 Day 89 (workflow, policy and docs) is done (documentation and rules only): `CLAUDE.md` has the scoped-test rule (run `--affected` before the review, quote the `ran X of Y tests` line, close a phase with `--all --flavor all`), `STATUS.md` has the build and test commands, `PLAN.md` the guiding principle, the guide "Test phases and scoped runs", and the Phase 6 and 7 plans a closing-run deliverable. **Next: Day 90 (measurements, planted regressions, the closing full run, Phase 5 complete).**

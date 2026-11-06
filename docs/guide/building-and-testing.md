@@ -36,7 +36,7 @@ _TODO_
 
 _TODO_
 
-### Test phases
+### Test phases and scoped runs
 
 Every test carries exactly one phase label: `phase0` (foundation), `phase1` (Linux platform), `phase2` (jobs),
 `phase2_5` (documentation tooling), `phase3` (RHI), `phase4` (renderer), and so on for later phases. Select a phase
@@ -65,6 +65,45 @@ Tests per phase and flavor on 2026-11-06 (`plain` is neither `asan` nor `tsan`; 
 
 The `flavors` lines in `tests/phases.txt` state which flavors each phase has, and `test_phase_labels` fails if one
 appears or disappears.
+
+#### The runner
+
+`scripts/test-phase.sh` builds, selects tests by label and runs them. It is how day-to-day work runs tests:
+
+```
+scripts/test-phase.sh                  # the phase in CURRENT_PHASE, plain flavor, without the window tests
+scripts/test-phase.sh --affected       # that phase plus the phases of every module touched since the phase started
+scripts/test-phase.sh 3 --flavor asan  # all of phase 3 under AddressSanitizer
+scripts/test-phase.sh --all --flavor all   # the whole suite in every flavor: the closing run of a phase
+scripts/test-phase.sh --affected --dry-run # show the selection only
+```
+
+Every run ends with how much it ran, for example `ran 35 of 1874 tests (phases: 5; flavors: plain; display: excluded)`,
+and says so loudly when it left tests out. Quote that line when reporting a reduced run; "all tests pass" means the
+`--all --flavor all` line. `--help` lists the options.
+
+`--affected` reads the paths changed since the last commit that changed `CURRENT_PHASE` (the commits of the phase and the
+working tree, plus new files) and adds the phases listed for each directory in `tests/module_map.txt`: `engine/rhi` selects
+the RHI and renderer tests and the docs checks, `engine/foundation` almost everything. It runs everything when a
+`CMakeLists.txt`, `cmake/`, `third_party/`, a header under `engine/foundation`, `tests/phases.txt` or
+`tests/module_map.txt` changed, or when a changed path is in no line of the module map, so a new directory is never skipped
+silently.
+
+#### What a scoped run can miss
+
+A behavior change can reach a finished phase through a dependency nobody edited (the renderer starts calling an RHI
+function differently, and only an RHI test notices). `--affected` covers the modules a change touches, and the module map
+lists everything that links a directory, but it cannot see this, so the whole suite in all three flavors closes every
+phase. The same goes for a changed build flag, which is why build files force everything. A shared test helper counts as
+touching its module's tests. The window tests (`display`) are skipped by default in `--current`/`--affected` unless phase 1
+is selected or `engine/foundation` changed; `--display` includes them.
+
+#### Adding a test
+
+Add a line for the new source file to `tests/phases.txt` (`tests/rhi/vulkan_foo_test.cpp  4`); the build stops, naming the
+file, if a Catch2 test has none. A test that is not a Catch2 case gets a `test:<name>` line and an
+`engine_label_tests(<name>)` call after its `add_test`. `ctest -R test_phase` checks the rules (labels, flavors, runner).
+Run one flavor with `--flavor asan|tsan|plain`; plain means neither sanitizer label.
 
 Window tests also carry the label `display` (they share the one desktop and run one at a time).
 

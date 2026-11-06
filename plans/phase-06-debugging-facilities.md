@@ -45,6 +45,9 @@ Before it starts, every day of this phase needs its own file under `plans/phase-
 - **Integration.** The logger stamps a build id; the RHI's device-lost and validation errors attach a trace; the job
   system's worker threads install the same handlers; `Fails:`/`Aborts:` docs (see the Day 83 classification) reference
   these macros.
+- **Closing run.** The phase's last day runs `scripts/test-phase.sh --all --flavor all` (every test in plain, ASan and
+  TSan), `ctest -L docs` and the demos on both display backends, and records the `ran X of Y tests` line in its day
+  file (Phase 5 policy; day-to-day runs are scoped to the current phase).
 
 ## Notes / open questions
 

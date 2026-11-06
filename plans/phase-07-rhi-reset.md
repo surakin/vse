@@ -42,6 +42,9 @@ planning policy).
 - **Tests.** A reset loop with leak counts and device statistics at zero; golden-image equality before and after a
   reset; a reset during a frame sequence with objects, lights and materials; recovery from injected device loss;
   ASan/TSan clean; the null device implements the same lifecycle so most tests need no GPU.
+- **Closing run.** The phase's last day runs `scripts/test-phase.sh --all --flavor all` (every test in plain, ASan and
+  TSan), `ctest -L docs` and the demos on both display backends, and records the `ran X of Y tests` line in its day
+  file (Phase 5 policy; day-to-day runs are scoped to the current phase).
 
 ## Notes / open questions
 

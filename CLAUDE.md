@@ -53,13 +53,35 @@ take, and a limitation filed for a later phase. Record observed facts and
 where they were seen; do not guess at causes. Do not leave such an item only
 in a day file or in `STATUS.md` prose.
 
+## Tests run by phase; the full suite closes a phase (required)
+
+Every test carries one phase label (`tests/phases.txt`, enforced by `test_phase_labels`), and `CURRENT_PHASE` names the
+phase in progress. Day to day, run only what the work can have affected:
+
+- `scripts/test-phase.sh --affected` (plain flavor) runs the current phase plus the phases of every module the work
+  touched; it runs everything by itself when a `CMakeLists.txt`, `cmake/`, `third_party/`, an `engine/foundation`
+  header or the phase map changed. Before the end-of-day review, also run the sanitizer flavors of the same selection
+  (`--affected --flavor asan`, then `--flavor tsan`) when the day touched concurrency, lifetime or memory code.
+- **A reduced run is reported as what it was**: the day file and `STATUS.md` quote the script's final line
+  (`ran X of Y tests (phases ...)`) and never say "all tests pass" for a run that left tests out.
+- **A phase's last day runs the whole suite in every flavor**: `scripts/test-phase.sh --all --flavor all`, plus
+  `ctest -L docs` and the demos the phase ships, and records the line in the day file. A phase is not complete without
+  it. `CURRENT_PHASE` changes only in the commit that starts the next phase.
+- A new test file needs a line in `tests/phases.txt` (the build stops without one); any other `add_test` needs a
+  `test:` line there and `engine_label_tests(<name>)`. `ctest -L docs` is not scoped: run it on every day that changes
+  a public header or a guide.
+- A flaky test is recorded in `KNOWN-ISSUES.md` with the phase it belongs to, so a scoped run that skips it is not
+  mistaken for a fix.
+
+See `docs/guide/building-and-testing.md` ("Test phases and scoped runs").
+
 ## End-of-day code review (required)
 
 **Every implementation day ends with a high-effort code review before it
 is considered done.** After a day's code and tests are written and
 passing, and before the final commit for that day:
 
-1. Run `/code-review high` on the day's diff (the uncommitted changes,
+1. Run the day's scoped tests first (previous section), then `/code-review high` on the day's diff (the uncommitted changes,
    or the day's commit range if it was already committed in pieces).
    Never use the `max` or `ultra` levels unless the user asks for one.
 2. Treat every finding seriously: verify it, fix it, and add a
