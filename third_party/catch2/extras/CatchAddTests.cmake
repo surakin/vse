@@ -194,7 +194,7 @@ function(catch_discover_tests_impl)
   cmake_parse_arguments(
     ""
     ""
-    "TEST_EXECUTABLE;TEST_WORKING_DIR;TEST_OUTPUT_DIR;TEST_OUTPUT_PREFIX;TEST_OUTPUT_SUFFIX;TEST_PREFIX;TEST_REPORTER;TEST_SPEC;TEST_SUFFIX;TEST_LIST;CTEST_FILE"
+    "TEST_EXECUTABLE;TEST_WORKING_DIR;TEST_OUTPUT_DIR;TEST_OUTPUT_PREFIX;TEST_OUTPUT_SUFFIX;TEST_PREFIX;TEST_REPORTER;TEST_SPEC;TEST_SUFFIX;TEST_LIST;CTEST_FILE;PHASE_MAP;PHASE_ROOT"
     "TEST_EXTRA_ARGS;TEST_PROPERTIES;TEST_EXECUTOR;TEST_DL_PATHS;TEST_DL_FRAMEWORK_PATHS;ADD_TAGS_AS_LABELS"
     ${ARGN}
   )
@@ -218,6 +218,11 @@ function(catch_discover_tests_impl)
   set(dl_paths ${_TEST_DL_PATHS})
   set(dl_framework_paths ${_TEST_DL_FRAMEWORK_PATHS})
   set(environment_modifications "")
+  # [engine patch] PHASE_MAP: label each test `phaseN` from the test's source file (see cmake/EnginePhaseMap.cmake)
+  if(_PHASE_MAP)
+    include("${CMAKE_CURRENT_LIST_DIR}/../../../cmake/EnginePhaseMap.cmake")
+    engine_phase_map_load("${_PHASE_MAP}")
+  endif()
   set(script)
   set(suite)
   set(tests)
@@ -372,6 +377,32 @@ function(catch_discover_tests_impl)
       set(output_dir_arg "--out ${output_dir}/${output_prefix}${escaped_name_clean}${output_suffix}")
     endif()
 
+    # [engine patch] LABELS takes every following element up to the next property name (upper case, like
+    # SKIP_RETURN_CODE), so several labels work; the phase label is added to them.
+    set(test_properties "")
+    set(test_labels "")
+    set(in_labels FALSE)
+    foreach(property IN LISTS properties)
+      if(property STREQUAL "LABELS")
+        set(in_labels TRUE)
+      elseif(in_labels AND NOT property MATCHES "^[A-Z][A-Z_0-9]*$")
+        list(APPEND test_labels "${property}")
+      else()
+        set(in_labels FALSE)
+        list(APPEND test_properties "${property}")
+      endif()
+    endforeach()
+    if(_PHASE_MAP)
+      string(JSON test_file GET "${single_test}" "source-location" "filename")
+      file(RELATIVE_PATH test_file "${_PHASE_ROOT}" "${test_file}")
+      engine_phase_lookup(file "${test_file}" test_phase phase_found)
+      if(NOT phase_found)
+        message(FATAL_ERROR "${_PHASE_MAP} has no phase for ${test_file} (test '${plain_name}'); add a line for it")
+      endif()
+      engine_phase_label("${test_phase}" phase_label)
+      list(APPEND test_labels ${phase_label})
+    endif()
+
     # ...and add to script
     prepare_command(add_test
       "${prefix}${plain_name}${suffix}"
@@ -387,7 +418,8 @@ function(catch_discover_tests_impl)
       "${prefix}${plain_name}${suffix}"
       PROPERTIES
       WORKING_DIRECTORY "${_TEST_WORKING_DIR}"
-      ${properties}
+      ${test_properties}
+      LABELS "${test_labels}"
     )
     string(APPEND script "${_Command}")
 
@@ -412,7 +444,7 @@ function(catch_discover_tests_impl)
         prepare_command(set_tests_properties
           "${prefix}${plain_name}${suffix}"
           PROPERTIES
-          LABELS "${tag_list}"
+          LABELS "${test_labels};${tag_list}"
         )
         string(APPEND script "${_Command}")
       endif()
@@ -459,5 +491,7 @@ if(CMAKE_SCRIPT_MODE_FILE AND DEFINED TEST_EXECUTABLE)
     TEST_DL_FRAMEWORK_PATHS ${TEST_DL_FRAMEWORK_PATHS}
     CTEST_FILE ${CTEST_FILE}
     ADD_TAGS_AS_LABELS ${ADD_TAGS_AS_LABELS}
+    PHASE_MAP ${PHASE_MAP}
+    PHASE_ROOT ${PHASE_ROOT}
   )
 endif()

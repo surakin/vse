@@ -25,7 +25,7 @@ function(engine_add_jobs_tests target jobs_lib suffix label)
   add_executable(${target} ${JOBS_TEST_SOURCES})
   target_link_libraries(${target} PRIVATE ${jobs_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-  catch_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
+  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
 endfunction()
 
 engine_add_jobs_tests(jobs_tests jobs "" "jobs")
@@ -47,3 +47,4 @@ add_test(NAME tsan_canary_detects_race COMMAND tsan_canary)
 set_tests_properties(tsan_canary_detects_race PROPERTIES
   PASS_REGULAR_EXPRESSION "ThreadSanitizer: data race"
   LABELS "tsan")
+engine_label_tests(tsan_canary_detects_race)

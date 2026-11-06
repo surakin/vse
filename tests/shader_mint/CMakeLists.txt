@@ -4,4 +4,4 @@
 add_executable(shader_mint_tests reflect_json_test.cpp permutations_test.cpp)
 target_link_libraries(shader_mint_tests PRIVATE shader_mint_lib Catch2::Catch2WithMain)
 include(Catch)
-catch_discover_tests(shader_mint_tests PROPERTIES LABELS "shaders")
+engine_discover_tests(shader_mint_tests PROPERTIES LABELS "shaders")

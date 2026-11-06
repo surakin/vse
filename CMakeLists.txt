@@ -27,6 +27,7 @@ set(ENGINE_PRODUCTION_COMPILE_OPTIONS -fno-exceptions -fno-rtti -fno-stack-prote
 
 enable_testing()
 add_subdirectory(third_party/catch2)
+include(cmake/EngineTestPhases.cmake)
 
 add_subdirectory(engine/foundation)
 add_subdirectory(engine/jobs)
@@ -44,3 +45,4 @@ add_subdirectory(tests/shader_mint)
 add_subdirectory(shaders)
 add_subdirectory(game)
 add_subdirectory(tests/docgen)
+add_subdirectory(tests/phase_labels)

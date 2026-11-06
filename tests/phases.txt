@@ -1,0 +1,90 @@
+# The phase that owns each test (Phase 5, docs/superpowers/specs/2026-11-05-test-scoping-design.md).
+#
+# `<pattern>  <phase>`: a source path relative to the repo root (`*` inside one segment; a trailing `/` is a whole
+# directory), or `test:<glob>` for a test that is not a Catch2 test case. Phases: 0 foundation, 1 Linux platform,
+# 2 jobs, 2.5 docs tooling, 3 RHI, 4 renderer. The rule is the phase that owns the behavior, not the directory.
+#
+# Adding a Catch2 test file: add a line here, or the build stops naming the file. Adding another kind of test: add a
+# `test:` line and call engine_label_tests() after add_test. Labels are `phase0` ... `phase4`, `phase2_5`.
+
+# --- Phase 0: foundation (tests/foundation) ---
+tests/foundation/arena_allocator_test.cpp       0
+tests/foundation/array_test.cpp                 0
+tests/foundation/command_line_test.cpp          0
+tests/foundation/concurrency_primitives_test.cpp 0   # atomics and lock wrappers, not the scheduler
+tests/foundation/container_vector_test.cpp      0
+tests/foundation/file_io_test.cpp               0
+tests/foundation/grapheme_test.cpp              0
+tests/foundation/hash_map_test.cpp              0
+tests/foundation/log_test.cpp                   0
+tests/foundation/matrix_test.cpp                0
+tests/foundation/normalize_test.cpp             0
+tests/foundation/os_timing_test.cpp             0
+tests/foundation/pool_allocator_test.cpp        0
+tests/foundation/quaternion_test.cpp            0
+tests/foundation/shared_ptr_test.cpp            0   # extended in Phase 4 Day 80b, still a foundation type
+tests/foundation/stack_allocator_test.cpp       0
+tests/foundation/string_test.cpp                0
+tests/foundation/transform_test.cpp             0
+tests/foundation/unique_ptr_test.cpp            0   # extended in Phase 4 Day 80b, still a foundation type
+tests/foundation/utf8_test.cpp                  0
+tests/foundation/vector_test.cpp                0
+
+# --- Phase 1: Linux platform ---
+tests/foundation/gpu_driver_loading_test.cpp    1   # the platform's dlopen layer, not a Vulkan device
+tests/foundation/keyboard_input_test.cpp        1
+tests/foundation/wayland_connection_test.cpp    1
+tests/foundation/wayland_window_test.cpp        1
+tests/foundation/window_backend_test.cpp        1
+tests/foundation/x11_window_test.cpp            1
+
+# --- Phase 2: jobs ---
+tests/jobs/                                     2
+test:tsan_canary_detects_race                   2
+
+# --- Phase 2.5: documentation tooling ---
+tests/docgen/                                   2.5
+test:docs_*                                     2.5
+
+# --- Phase 3: RHI ---
+tests/rhi/handle_pool_test.cpp                  3
+tests/rhi/null_device_test.cpp                  3
+tests/rhi/shader_test.cpp                       3
+tests/rhi/smoke_test.cpp                        3
+tests/rhi/types_test.cpp                        3
+tests/rhi/vulkan_bindings_test.cpp              3
+tests/rhi/vulkan_buffer_test.cpp                3
+tests/rhi/vulkan_commands_test.cpp              3
+tests/rhi/vulkan_compute_test.cpp               3
+tests/rhi/vulkan_cube_test.cpp                  3
+tests/rhi/vulkan_device_test.cpp                3
+tests/rhi/vulkan_fault_test.cpp                 3
+tests/rhi/vulkan_frame_test.cpp                 3
+tests/rhi/vulkan_golden_test.cpp                3
+tests/rhi/vulkan_instance_test.cpp              3
+tests/rhi/vulkan_lit_cube_test.cpp              3   # the Phase 3 capstone; deferred lighting is vulkan_lighting_test
+tests/rhi/vulkan_loader_test.cpp                3
+tests/rhi/vulkan_memory_test.cpp                3
+tests/rhi/vulkan_pipeline_test.cpp              3
+tests/rhi/vulkan_swapchain_test.cpp             3
+tests/rhi/vulkan_textured_cube_test.cpp         3
+tests/rhi/vulkan_texture_test.cpp               3
+test:rhi_boundary_check*                        3
+test:rhi_demo_*                                 3
+
+# --- Phase 4: renderer, shaders and the renderer demo ---
+tests/renderer/                                 4
+tests/shader_mint/                              4
+tests/rhi/shader_interface_test.cpp             4   # asserts the Slang shaders' reflected interface (Days 69-71)
+tests/rhi/vulkan_gbuffer_test.cpp               4
+tests/rhi/vulkan_lighting_test.cpp              4
+tests/rhi/vulkan_render_graph_test.cpp          4
+tests/rhi/vulkan_renderer_demo_test.cpp         4
+tests/rhi/vulkan_strip_test.cpp                 4   # an RHI field, added by the renderer's mesh work
+test:raw_new_check*                             4
+test:shaders_check                              4
+test:shaders_portability                        4
+test:renderer_demo_*                            4
+
+# --- Phase 5: test scoping ---
+test:test_phase_*                              5

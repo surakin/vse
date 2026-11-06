@@ -37,3 +37,5 @@ add_test(NAME rhi_demo_no_vulkan
     ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:rhi_demo>;--screenshot;${RHI_DEMO_SHOT}" -DEXPECT_CODE=1 "-DEXPECT_OUT=no Vulkan device"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/expect_run.cmake)
 set_tests_properties(rhi_demo_no_vulkan PROPERTIES LABELS demo)
+engine_label_tests(rhi_demo_device_loss_screenshot rhi_demo_oom_later rhi_demo_oom_device rhi_demo_bad_injection
+  rhi_demo_negative_injection rhi_demo_no_vulkan)

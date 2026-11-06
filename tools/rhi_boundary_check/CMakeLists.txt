@@ -27,3 +27,7 @@ rhi_boundary_test(rhi_boundary_check_stale ${RHI_BOUNDARY_FIXTURES}/good ${RHI_B
 set_tests_properties(rhi_boundary_check_stale PROPERTIES WILL_FAIL TRUE)
 rhi_boundary_test(rhi_boundary_check_noreason ${RHI_BOUNDARY_FIXTURES}/good ${RHI_BOUNDARY_FIXTURES}/good/allow_noreason.txt)
 set_tests_properties(rhi_boundary_check_noreason PROPERTIES WILL_FAIL TRUE)
+
+# Phase labels (tests/phases.txt).
+engine_label_tests(rhi_boundary_check rhi_boundary_check_planted rhi_boundary_check_planted_count rhi_boundary_check_clean
+  rhi_boundary_check_stale rhi_boundary_check_noreason)

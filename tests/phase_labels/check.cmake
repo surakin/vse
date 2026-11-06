@@ -1,0 +1,101 @@
+# Fails, naming the tests, if any test in a build directory lacks a `phaseN` label or has more than one
+# (Phase 5; tests/phases.txt). Run by ctest as test_phase_labels.
+#   cmake -DCTEST=<ctest> -DBUILD_DIR=<dir> -DMAP=<tests/phases.txt> -P check.cmake
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/EnginePhaseMap.cmake)
+
+# What ctest selects with the given extra arguments, as "<number>: <name>" entries. The number is the test's index in the
+# whole build, the same in every selection, so it tells apart tests whose names are equal in their first line (names can
+# span lines; only the first line is shown).
+function(selected_tests out)
+  execute_process(COMMAND ${CTEST} --test-dir ${BUILD_DIR} -N ${ARGN}
+    OUTPUT_VARIABLE listing RESULT_VARIABLE rc)
+  if(NOT rc EQUAL 0)
+    message(FATAL_ERROR "ctest -N ${ARGN} failed (${rc}): ${listing}")
+  endif()
+  string(REGEX MATCHALL "\n *Test +#[0-9]+: [^\n]*" lines "${listing}")
+  set(names "")
+  foreach(line IN LISTS lines)
+    string(REGEX REPLACE "^\n *Test +#([0-9]+): " "\\1: " name "${line}")
+    list(APPEND names "${name}")
+  endforeach()
+  set(${out} "${names}" PARENT_SCOPE)
+endfunction()
+
+engine_phase_map_load("${MAP}")
+set(phases "")
+foreach(phase IN LISTS _EPM_PHASES)
+  engine_phase_label("${phase}" label)
+  list(APPEND phases ${label})
+endforeach()
+list(REMOVE_DUPLICATES phases)
+
+selected_tests(all_tests)
+list(LENGTH all_tests total)
+if(total EQUAL 0)
+  message(FATAL_ERROR "no tests found in ${BUILD_DIR}")
+endif()
+
+set(problems "")
+selected_tests(unlabeled -LE "^phase")
+foreach(name IN LISTS unlabeled)
+  string(APPEND problems "  no phase label: ${name}\n")
+endforeach()
+
+# A test selected by two different phases carries two labels.
+set(seen "")
+foreach(label IN LISTS phases)
+  selected_tests(in_phase -L "^${label}$")
+  foreach(name IN LISTS in_phase)
+    list(FIND seen "${name}" at)
+    if(at EQUAL -1)
+      list(APPEND seen "${name}")
+    else()
+      string(APPEND problems "  more than one phase label: ${name} (also ${label})\n")
+    endif()
+  endforeach()
+endforeach()
+
+# A phase label that is not in the map (a typo, or a label set by hand).
+selected_tests(any_phase -L "^phase")
+list(LENGTH any_phase labeled)
+list(LENGTH seen known)
+if(NOT labeled EQUAL known)
+  string(APPEND problems "  ${labeled} tests carry a phase label but only ${known} carry one the map defines\n")
+endif()
+
+# A line of the map that matches nothing (a renamed or deleted file or test) must go: it could later give a phase to
+# something nobody chose it for. Only for the real build; the fixtures are not the map's tests.
+if(CHECK_UNUSED_PATTERNS)
+  get_filename_component(root "${MAP}" DIRECTORY)
+  get_filename_component(root "${root}/.." ABSOLUTE)
+  list(LENGTH _EPM_REGEXES count)
+  math(EXPR last "${count} - 1")
+  foreach(i RANGE ${last})
+    list(GET _EPM_KINDS ${i} kind)
+    list(GET _EPM_PATTERNS ${i} pattern)
+    list(GET _EPM_REGEXES ${i} re)
+    set(used FALSE)
+    if(kind STREQUAL "test")
+      foreach(name IN LISTS all_tests)
+        string(REGEX REPLACE "^[0-9]+: " "" name "${name}")
+        if(name MATCHES "${re}")
+          set(used TRUE)
+          break()
+        endif()
+      endforeach()
+    else()
+      file(GLOB found "${root}/${pattern}*")
+      if(found)
+        set(used TRUE)
+      endif()
+    endif()
+    if(NOT used)
+      string(APPEND problems "  unused line in the map: ${pattern}\n")
+    endif()
+  endforeach()
+endif()
+
+if(problems)
+  message(FATAL_ERROR "${BUILD_DIR}: every test must have exactly one phase label (tests/phases.txt):\n${problems}")
+endif()
+message(STATUS "${total} tests, each with exactly one phase label")

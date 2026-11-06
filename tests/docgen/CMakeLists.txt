@@ -22,7 +22,7 @@ target_compile_definitions(docgen_tests PRIVATE
   DOCGEN_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
   DOCGEN_ENGINE_DIR="${CMAKE_SOURCE_DIR}/engine"
   DOCGEN_CXX="${CMAKE_CXX_COMPILER}")
-catch_discover_tests(docgen_tests PROPERTIES LABELS "docgen")
+engine_discover_tests(docgen_tests PROPERTIES LABELS "docgen")
 
 add_executable(docgen_tests_asan ${DOCGEN_TEST_SOURCES})
 target_link_libraries(docgen_tests_asan PRIVATE docgen_lib_asan Catch2::Catch2WithMain Threads::Threads)
@@ -31,4 +31,4 @@ target_compile_definitions(docgen_tests_asan PRIVATE
   DOCGEN_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
   DOCGEN_ENGINE_DIR="${CMAKE_SOURCE_DIR}/engine"
   DOCGEN_CXX="${CMAKE_CXX_COMPILER}")
-catch_discover_tests(docgen_tests_asan TEST_SUFFIX " [asan]" PROPERTIES LABELS "docgen;asan")
+engine_discover_tests(docgen_tests_asan TEST_SUFFIX " [asan]" PROPERTIES LABELS "docgen;asan")

@@ -18,3 +18,6 @@ raw_new_test(raw_new_check_planted_count ${RAW_NEW_FIXTURES}/bad)
 set_tests_properties(raw_new_check_planted_count PROPERTIES
   PASS_REGULAR_EXPRESSION "engine/leak.cpp:3.*engine/leak.cpp:4.*engine/leak.cpp:5.*engine/leak.cpp:6.*engine/leak.cpp:7.*engine/leak.cpp:10.*engine/leak.cpp:13.*engine/leak.cpp:14.*engine/leak.cpp:15.*engine/leak.cpp:18.*engine/leak.cpp:19.*engine/leak.cpp:20.*12 violation")
 raw_new_test(raw_new_check_clean ${RAW_NEW_FIXTURES}/good)
+
+# Phase labels (tests/phases.txt).
+engine_label_tests(raw_new_check raw_new_check_planted raw_new_check_planted_count raw_new_check_clean)

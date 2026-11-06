@@ -166,7 +166,7 @@ function(catch_discover_tests TARGET)
   cmake_parse_arguments(
     ""
     "SKIP_IS_FAILURE;ADD_TAGS_AS_LABELS"
-    "TEST_PREFIX;TEST_SUFFIX;WORKING_DIRECTORY;TEST_LIST;REPORTER;OUTPUT_DIR;OUTPUT_PREFIX;OUTPUT_SUFFIX;DISCOVERY_MODE"
+    "TEST_PREFIX;TEST_SUFFIX;WORKING_DIRECTORY;TEST_LIST;REPORTER;OUTPUT_DIR;OUTPUT_PREFIX;OUTPUT_SUFFIX;DISCOVERY_MODE;PHASE_MAP;PHASE_ROOT"
     "TEST_SPEC;EXTRA_ARGS;PROPERTIES;DL_PATHS;DL_FRAMEWORK_PATHS"
     ${ARGN}
   )
@@ -199,6 +199,10 @@ function(catch_discover_tests TARGET)
 
   ## Generate a unique name based on the extra arguments
   string(SHA1 args_hash "${_TEST_SPEC} ${_EXTRA_ARGS} ${_REPORTER} ${_OUTPUT_DIR} ${_OUTPUT_PREFIX} ${_OUTPUT_SUFFIX}")
+  # [engine patch] a changed phase map must relink the target so the post-build step runs again
+  if(_PHASE_MAP)
+    set_property(TARGET ${TARGET} APPEND PROPERTY LINK_DEPENDS "${_PHASE_MAP}")
+  endif()
   string(SUBSTRING ${args_hash} 0 7 args_hash)
 
   # Define rule to generate test list for aforementioned test executable
@@ -237,6 +241,8 @@ function(catch_discover_tests TARGET)
               -D "TEST_DL_FRAMEWORK_PATHS=${_DL_FRAMEWORK_PATHS}"
               -D "CTEST_FILE=${ctest_tests_file}"
               -D "ADD_TAGS_AS_LABELS=${_ADD_TAGS_AS_LABELS}"
+              -D "PHASE_MAP=${_PHASE_MAP}"
+              -D "PHASE_ROOT=${_PHASE_ROOT}"
               -P "${_CATCH_DISCOVER_TESTS_SCRIPT}"
       VERBATIM
     )

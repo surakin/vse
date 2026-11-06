@@ -26,5 +26,10 @@ coverage-only `CMake/Find{codecov,Gcov,Lcov}.cmake` — none of these are
 needed to consume Catch2 as a subproject the way this repo does. No
 source file under the kept paths was modified.
 
+`extras/Catch.cmake` and `extras/CatchAddTests.cmake` carry a small engine patch (marked `[engine patch]`; Phase 5
+Day 86): `catch_discover_tests` takes `PHASE_MAP`/`PHASE_ROOT`, labels each test `phaseN` from its source file via
+`cmake/EnginePhaseMap.cmake`, and `LABELS` accepts several labels (every element up to the next upper-case property
+name). Re-apply it when updating the pin.
+
 To update the pin: repeat this pruning against a newer release tarball
 and update the version above.

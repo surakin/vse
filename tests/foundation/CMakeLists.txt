@@ -45,5 +45,5 @@ include(Catch)
 # focus, and a real FocusOut legitimately releases held keys, so run concurrently they fail at random (seen: the 17 X11
 # tests under `ctest -j6` failed in 3 runs out of 4, and one in most full runs; each passes alone). The window tests hold
 # the ctest resource `display` (shared with tests/rhi), so ctest runs them one at a time while the rest stays parallel.
-catch_discover_tests(foundation_tests TEST_SPEC "~[window]~[x11]~[wayland]")
-catch_discover_tests(foundation_tests TEST_SPEC "[window],[x11],[wayland]" PROPERTIES RESOURCE_LOCK display)
+engine_discover_tests(foundation_tests TEST_SPEC "~[window]~[x11]~[wayland]")
+engine_discover_tests(foundation_tests TEST_SPEC "[window],[x11],[wayland]" PROPERTIES LABELS display RESOURCE_LOCK display)

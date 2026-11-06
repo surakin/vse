@@ -36,6 +36,22 @@ _TODO_
 
 _TODO_
 
+### Test phases
+
+Every test carries exactly one phase label: `phase0` (foundation), `phase1` (Linux platform), `phase2` (jobs),
+`phase2_5` (documentation tooling), `phase3` (RHI), `phase4` (renderer), and so on for later phases. Select a phase
+with `ctest -L '^phase4$'`; labels combine as in `ctest -L '^phase3$' -L gpu` (both), `-L 'phase3|phase4'` (either)
+and `-LE gpu` (exclude). The anchors keep `phase2` from matching `phase2_5`.
+
+`tests/phases.txt` is the only place a test's phase is decided: a line per source file or directory (`tests/rhi/vulkan_cube_test.cpp  3`),
+or `test:<name>` for a test that is not a Catch2 case. Add a line when you add a test file; the build stops,
+naming the file, if a Catch2 test has none. A test that is not a Catch2 case (`add_test`) gets its label from
+`engine_label_tests(<name>)`, called after `add_test`. `test_phase_labels` fails, naming the tests, if any test in the
+build has no phase label or more than one. Catch2 tests are registered through `engine_discover_tests`
+(`cmake/EngineTestPhases.cmake`), a wrapper of `catch_discover_tests` that adds the label.
+
+Window tests also carry the label `display` (they share the one desktop and run one at a time).
+
 ### GPU tests and validation layers
 
 Tests tagged `[gpu]` (CTest label `gpu`) need a Vulkan driver. Without one they skip; set

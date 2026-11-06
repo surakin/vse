@@ -68,6 +68,7 @@ add_test(NAME docs_links COMMAND docgen links --root ${CMAKE_SOURCE_DIR})
 add_test(NAME docs_samples COMMAND docgen samples ${DOCGEN_SAMPLES_ARGS})
 add_test(NAME docs_lint COMMAND docgen lint ${DOCGEN_LINT_ARGS} --quiet)
 set_tests_properties(docs_check docs_links docs_samples docs_lint PROPERTIES LABELS "docs" TIMEOUT 300)
+engine_label_tests(docs_check docs_links docs_samples docs_lint)
 
 add_custom_target(docs
   COMMAND docgen reference --root ${CMAKE_SOURCE_DIR}

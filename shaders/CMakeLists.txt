@@ -111,6 +111,7 @@ if(SLANGC)
       -DSLANGC=${SLANGC} -DDXC=${DXC} -DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR} -DWORK_DIR=${SHADER_WORK_DIR}/portability
       "-DSHADERS=${ENGINE_SHADERS}" -P ${CMAKE_CURRENT_SOURCE_DIR}/portability.cmake)
   set_tests_properties(shaders_portability PROPERTIES LABELS "shaders")
+  engine_label_tests(shaders_check shaders_portability)
 else()
   message(STATUS "slangc not found: using the committed shaders/*.spv.inc and *.refl.inc files (the `shaders` target is unavailable)")
 endif()
