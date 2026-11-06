@@ -15,7 +15,7 @@ nothing is ever uploaded; all of it is documented and covered by tests in plain,
 off by default in release builds unless enabled.
 
 Every day of this phase has its own file under `plans/phase-06-debugging-facilities/` (see `CLAUDE.md`, planning
-policy). **Planned 2026-11-06, rebuilt the same day on existing libraries; not started** (`CURRENT_PHASE` is already 6, so
+policy). **Planned 2026-11-06, rebuilt the same day on existing libraries; Day 91 done (libraries chosen); Days 92-102 not started** (`CURRENT_PHASE` is already 6, so
 scoped runs select this phase's tests, of which there are none until Day 92).
 
 ## Days
@@ -23,7 +23,7 @@ scoped runs select this phase's tests, of which there are none until Day 92).
 Each day has its own file of individually checkable sub-tasks, a docs task, an end-of-day `/code-review high` task, and a
 concrete Done condition. Day numbers continue from Phase 5 (which ended at Day 90).
 
-91. [Library Selection & Spikes](phase-06-debugging-facilities/day-91-library-selection-and-spikes.md)
+91. [Library Selection & Spikes] (done)(phase-06-debugging-facilities/day-91-library-selection-and-spikes.md)
 92. [Death-Test Helper & the `tests/debug` Suite](phase-06-debugging-facilities/day-92-death-test-helper.md)
 93. [Assert, Ensure, Verify & the Handler Chain](phase-06-debugging-facilities/day-93-assert-family.md)
 94. [Vendoring libbacktrace & the Stack-Trace Facade](phase-06-debugging-facilities/day-94-libbacktrace-and-stack-traces.md)
@@ -42,7 +42,7 @@ uses it; each library is then vendored and put behind a facade on its own day; t
 path, core dumps and dump tooling build on those; integration with the existing subsystems comes when the pieces are
 stable; the Windows and macOS readiness day comes after the Linux code it mirrors is final.
 
-## Libraries (`PLAN.md` assumption #20; Day 91 confirms)
+## Libraries (`PLAN.md` assumption #20; chosen on Day 91)
 
 Decided 2026-11-06: do not hand-write what well-known libraries already do. Two libraries, vendored as source under
 `third_party/` with a pinned release, a `VENDORED.md` and the license, built from source by our CMake, used only through a
@@ -51,7 +51,7 @@ facade in `engine/foundation/debug/` (exactly one implementation file includes e
 | Job | Library | Why |
 |---|---|---|
 | Stack capture, symbol names, file and line (ELF, Mach-O, PE with DWARF) | **libbacktrace** (BSD, C) | documented async-signal-safe; unwinds through code without frame pointers; one library on every desktop platform; C interface |
-| Crash capture and minidumps (every thread, out of process) | **sentry-native** (MIT, CMake, C API) with its **Crashpad** backend and the `none` transport (proposed) | CMake build; Linux, Windows, macOS and Android with one API; console repos exist for Phase 18; the `none` transport compiles no network code. Alternatives Day 91 measures: Breakpad's client directly, sentry-native's Breakpad or `inproc` backend |
+| Crash capture and minidumps (every thread) | **sentry-native 0.17.6** (MIT, CMake, C API) with its **Breakpad** backend and the `none` transport | chosen by Day 91's spikes: CMake build; in-process, so no handler executable to ship; no network libraries linked; every thread in the dump; `on_crash` hook and attachments work. The Crashpad backend was rejected (its Linux handler needs libcurl and ~25 shared libraries); the experimental `native` backend is the fallback |
 
 **Nothing is uploaded.** Dumps stay in a directory on the developer's disk; a test fails if a network library is linked.
 
@@ -95,8 +95,8 @@ Rules applied in every day file:
 
 - **Stack traces.** `CaptureStackTrace`, `ResolveStackTrace`, `FormatStackTrace` over libbacktrace; function, file and line;
   inlined frames; async-signal-safe after a startup call; demangling outside signals.
-- **Crash capture.** `InstallCrashHandler` over the crash library: dumps with every thread, a text report with the engine
-  context, the original fault still delivered, chaining with other handlers and the sanitizers, no upload.
+- **Crash capture.** `InstallCrashHandler` over sentry-native: dumps with every thread, a text report with the engine
+  context written from the library's `on_crash` hook, the original fault still delivered, no upload.
 - **Assert, ensure and verify macros.** `ENGINE_ASSERT` (always on, fatal, ends in `abort()`), `ENGINE_ENSURE` (reports
   once per site with a trace, returns the condition, counted), `ENGINE_VERIFY`, `ENGINE_CHECK_SLOW`,
   `ENGINE_UNREACHABLE`, `ENGINE_NOT_IMPLEMENTED`, a pluggable `SetAssertHandler`, and a debugger break at the failing line.
@@ -115,10 +115,11 @@ Rules applied in every day file:
 
 ## Notes / open questions
 
-- **Which crash library** is settled by Day 91's spikes against written criteria; the proposal (sentry-native with the
-  Crashpad backend, no transport) is the only one with a CMake build, one API across Linux, Windows, macOS and Android, and
-  a console path. Its risks: the Crashpad handler is a separate executable that must ship next to the program, the vendored
-  tree is large, and the API is Sentry-shaped (hidden behind our facade). The fallback is Breakpad's client used directly.
+- **Which crash library** was settled by Day 91's spikes (`docs/superpowers/specs/2026-11-06-debugging-design.md`):
+  sentry-native's Breakpad backend. Its risks: the handler is in-process (a corrupted heap can lose the dump; Breakpad dumps
+  from a `clone`d child with its own allocator), the minidump arrives wrapped in sentry's envelope (a small tool extracts it),
+  and the API is Sentry-shaped (hidden behind our facade). Fallbacks: sentry's `native` backend, or Crashpad with a patch
+  that removes libcurl.
 - ASan/TSan install their own handlers; the crash library must cooperate (chain to the previous handler) and may be
   switchable off in sanitizer builds. Spike D settles it.
 - Wayland/X11 and the GPU driver run their own threads; a fault inside a driver should still produce a dump with every

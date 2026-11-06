@@ -473,26 +473,28 @@ interpretations keep it buildable — flag any that don't match intent:
     justified entry here.
 
 20. **Debugging facilities (Phase 6) are built on existing libraries, not hand-rolled — a deliberate, individually
-    justified exception to the zero-third-party-dependencies rule (decided 2026-11-06).** Crash handling is subtle
+    justified exception to the zero-third-party-dependencies rule (decided 2026-11-06, libraries chosen by spike on
+    Phase 6 Day 91; see `docs/superpowers/specs/2026-11-06-debugging-design.md`).** Crash handling is subtle
     (async-signal safety, unwinding through code without frame pointers, dumping every thread, surviving a corrupted
     heap) and the engine does not differentiate on it, so it uses two vetted libraries, each vendored as source under
-    `third_party/` with a pinned release, a `VENDORED.md` and its license (same pattern as Catch2, #16: no submodule, no
-    `FetchContent`, builds offline): **libbacktrace** (BSD; stack unwinding, symbol names and file:line, ELF, Mach-O and
-    PE with DWARF; documented async-signal-safe) and a **crash-reporting library for crash capture and minidumps**
-    (proposed: **sentry-native**, MIT, CMake, with its Crashpad out-of-process backend and the `none` transport, which
-    builds no network code; one library for Linux, Windows, macOS and Android, with separate console repos under NDA
-    for Phase 18). Phase 6 Day 91 confirms or replaces these two choices with measured spikes (Breakpad or Crashpad
-    directly are the alternatives) before anything is vendored. Scope, which is what makes this an exception and not a
-    loophole: both libraries link into the runtime programs that install the crash handler (the demos, the benches,
-    games) and the Phase 6 tests, behind a facade in `engine/foundation/debug/`: only the two implementation files include
-    the libraries' headers (`sentry.h`, `backtrace.h`; a gate enforces it, like the RHI boundary), both libraries have C
-    interfaces so no STL type reaches engine code, and they are built with their own flags like Catch2. **Nothing is ever
-    uploaded:** the transport is `none`, dumps stay on the developer's disk, and a test checks that no network library is
-    linked. What stays hand-written because it is engine-specific or small: the assert/ensure/verify family, the crash
-    context and recent-log ring buffer, the death-test helper (Catch2 has none), the core-dump setup and scripts.
-    Windows and macOS (Phases 8 and 9) reuse the same two libraries; the one known gap is that libbacktrace reads DWARF
-    only, not PDB (Phase 8 decides between building with DWARF and a DbgHelp resolver in the facade). Any further
-    third-party library still needs its own justified entry here.
+    `third_party/` with a pinned version, a `VENDORED.md` and its license (same pattern as Catch2, #16: no submodule, no
+    `FetchContent`, builds offline): **libbacktrace** (BSD-3-Clause, commit `0b9b49cf4a`; stack unwinding, symbol names and
+    file:line, ELF/Mach-O/PE with DWARF; documented async-signal-safe, measured at zero allocations in a handler) and
+    **sentry-native 0.17.6** (MIT; CMake, C API) used only for crash capture and minidumps, with its **Breakpad** backend
+    and the `none` transport (Breakpad: BSD-3-Clause). The Crashpad backend was rejected by the spike: on Linux it
+    requires libcurl at build time and its handler executable needs libcurl and about 25 shared libraries at run time.
+    Scope, which is what makes this an exception and not a loophole: both libraries link into the runtime programs that
+    install the crash handler (the demos, the benches, games) and the Phase 6 tests, behind a facade in
+    `engine/foundation/debug/`: only the two implementation files include the libraries' headers (`backtrace.h`,
+    `sentry.h`; a gate enforces it, like the RHI boundary), both libraries have C interfaces so no STL type reaches
+    engine code, and they are built with their own flags like Catch2. **Nothing is ever uploaded:** the transport is
+    `none`, our options have no URL or DSN field, dumps stay on the developer's disk, and a test fails if a binary links
+    libcurl, a TLS library or winhttp. What stays hand-written because it is engine-specific or small: the
+    assert/ensure/verify family, the crash context and recent-log ring buffer, the death-test helper (Catch2 has none), the
+    core-dump setup and scripts, and a small dev tool that extracts the minidump from sentry's envelope. Windows and macOS
+    (Phases 8 and 9) reuse the same two libraries; the one known gap is that libbacktrace reads DWARF only, not PDB
+    (Phase 8 decides between building with DWARF and a DbgHelp resolver in the facade). Any further third-party library
+    still needs its own justified entry here.
 
 ## Guiding principles
 
@@ -791,4 +793,8 @@ that changed from the plan and why.)_
   with the Crashpad backend, no upload) provides crash capture and minidumps. The plan drops the own stack walker, ELF
   symbol reader, minidump writer and reader, and the Mach-O/PE readers, and becomes 12 days (91-102). Day 91 selects the
   libraries by spike. Planning only.
+- **2026-11-06 — Phase 6 Day 91 done: libraries chosen by spike.** libbacktrace (commit `0b9b49cf4a`) and sentry-native 0.17.6
+  with the **Breakpad** backend and no transport. The proposed Crashpad backend was rejected: on Linux it requires libcurl and
+  its handler executable needs libcurl plus about 25 shared libraries. Assumption #20 and `CLAUDE.md` name the final choice;
+  the spec is `docs/superpowers/specs/2026-11-06-debugging-design.md`.
 

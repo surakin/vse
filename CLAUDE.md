@@ -259,12 +259,12 @@ table in `PLAN.md`.
   the committed outputs. Don't add GLSL or hand-written SPIR-V. DX12 and
   Metal output comes from the same Slang sources in Phases 8-9 (note
   the clip-space Y flip and Metal's `main` rename in `shaders/README.md`).
-- **Debugging facilities are built on existing libraries** (Phase 6): libbacktrace for stack traces and symbols, and a
-  vendored crash-reporting library (proposed sentry-native, Crashpad backend, **no upload**, `none` transport) for
-  crash capture and minidumps - a deliberate, individually justified exception (`PLAN.md` assumption #20; Day 91
-  confirms the choice). Vendored as source under `third_party/` and used only through the facade in
-  `engine/foundation/debug/`: only its two implementation files include the libraries' headers, enforced by a gate. The
-  assert family, crash context, death-test helper and core-dump scripts stay ours. Do not hand-write what these
+- **Debugging facilities are built on existing libraries** (Phase 6): libbacktrace (stack traces and symbols) and
+  sentry-native 0.17.6 with its Breakpad backend and **no upload** (`none` transport, crash capture and minidumps only) - a
+  deliberate, individually justified exception chosen by spike (`PLAN.md` assumption #20,
+  `docs/superpowers/specs/2026-11-06-debugging-design.md`). Vendored as source under `third_party/` and used only through
+  the facade in `engine/foundation/debug/`: only its two implementation files include the libraries' headers, enforced by a
+  gate. The assert family, crash context, death-test helper and core-dump scripts stay ours. Do not hand-write what these
   libraries already do, and do not add a network path.
 - **Offline tools may use a vetted third-party library** where the job is
   solved and not engine-differentiating - today only nlohmann/json
