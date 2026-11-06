@@ -171,7 +171,12 @@ TEST_CASE("The textured cube renders from a fixed angle and matches its golden i
     } else {
         Image golden;
         REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath("textured_cube.ppm").c_str(), &golden));
-        const gpu_test::CompareResult result = gpu_test::Compare(golden, image, CompareOptions{}, "textured_cube");
+        // Shading and texture filtering round differently between GPU vendors (the goldens come from NVIDIA; AMD
+        // differs by 3-10 levels on a handful of pixels), so a small fraction of interior pixels may miss `tolerance`.
+        CompareOptions options;
+        options.max_interior_miss = 0.005;
+        options.interior_miss_limit = 16; // AMD's worst was 10 levels; a real shading error is larger
+        const gpu_test::CompareResult result = gpu_test::Compare(golden, image, options, "textured_cube");
         INFO(result.message);
         CHECK(result.same);
     }

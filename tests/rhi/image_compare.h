@@ -29,6 +29,7 @@ struct CompareOptions {
     int edge_tolerance = 64;       // per-channel difference allowed on edge pixels
     double max_edge_miss = 0.25;   // fraction of edge pixels allowed to exceed `edge_tolerance`
     double max_interior_miss = 0;  // fraction of interior pixels allowed to exceed `tolerance`
+    int interior_miss_limit = 255; // no interior pixel may differ by more than this, even within the miss fraction
 };
 
 struct CompareResult {

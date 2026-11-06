@@ -4,3 +4,5 @@
 extern "C" const char* __lsan_default_options() {
     return "suppressions=" ENGINE_RHI_LSAN_SUPP;
 }
+
+#include "../rhi/lsan_keep_driver_loaded.h"

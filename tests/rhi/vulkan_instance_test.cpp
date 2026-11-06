@@ -1,3 +1,6 @@
+#if defined(__SANITIZE_ADDRESS__)
+#include <sanitizer/lsan_interface.h>
+#endif
 #include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
@@ -154,7 +157,14 @@ TEST_CASE("Errors raised while the instance is destroyed are still counted", "[r
         mci.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         mci.pfnUserCallback = &NoopMessenger;
         VkDebugUtilsMessengerEXT leaked = nullptr;
-        REQUIRE(inner.Fns().CreateDebugUtilsMessengerEXT(inner.Handle(), &mci, nullptr, &leaked) == VK_SUCCESS);
+#if defined(__SANITIZE_ADDRESS__)
+        __lsan_disable(); // the leak is the point of this test; ignore only what the loader and layer allocate for it
+#endif
+        const VkResult created = inner.Fns().CreateDebugUtilsMessengerEXT(inner.Handle(), &mci, nullptr, &leaked);
+#if defined(__SANITIZE_ADDRESS__)
+        __lsan_enable();
+#endif
+        REQUIRE(created == VK_SUCCESS);
     } // inner destroyed here with `leaked` still alive
     CHECK(GetValidationCounts().errors >= 1);
     fx.ExpectErrors(GetValidationCounts().errors); // reconcile: the count is whatever the layer reported

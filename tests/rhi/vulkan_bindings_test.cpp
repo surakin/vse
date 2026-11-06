@@ -527,7 +527,11 @@ TEST_CASE("Bind group misuse is refused before the driver sees it", "[rhi][vulka
         CHECK_FALSE(device->CreateBindGroup(gd).IsValid());
     }
     SECTION("an offset that is not a multiple of the alignment") {
-        ge.offset = 4;
+        // The alignment is the driver's (4 on AMD, 64 on NVIDIA); 1 is misaligned for any alignment above 1.
+        if (device->Caps().min_uniform_buffer_offset_alignment <= 1) {
+            SKIP("the device accepts any uniform offset");
+        }
+        ge.offset = 1;
         CHECK_FALSE(device->CreateBindGroup(gd).IsValid());
     }
     SECTION("a range outside the buffer") {

@@ -95,7 +95,11 @@ target_link_libraries(engine_main PRIVATE foundation)
 add_library(foundation_asan STATIC ${FOUNDATION_SOURCES})
 target_include_directories(foundation_asan PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(foundation_asan PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-target_compile_options(foundation_asan PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer -g)
+# -fno-sanitize=vptr: the engine libraries are built -fno-rtti, so they define no typeinfo, while the test executables
+# (Catch2 needs RTTI) are not. With the vptr check on, GCC 16 makes every virtual call through a library class reference
+# that class's typeinfo and the link fails (`undefined reference to typeinfo for ...NullDevice`). It must come after
+# -fsanitize=undefined, which turns the check back on.
+target_compile_options(foundation_asan PUBLIC -fsanitize=address,undefined -fno-sanitize=vptr -fno-omit-frame-pointer -g)
 target_link_options(foundation_asan PUBLIC -fsanitize=address,undefined)
 target_link_libraries(foundation_asan PUBLIC ${CMAKE_DL_LIBS})
 target_link_libraries(foundation_asan PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)

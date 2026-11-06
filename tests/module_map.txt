@@ -34,7 +34,6 @@ tests/test_phase_script 5
 # Nothing runs against these.
 plans               -
 claude-memory       -
-.remember           -
 .gitignore          -
 CLAUDE.md           -
 PLAN.md             -

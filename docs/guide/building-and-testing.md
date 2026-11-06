@@ -160,6 +160,11 @@ or to a test that leaks on purpose are suppressed in `tests/rhi/lsan.supp`, whic
 binaries load it through `__lsan_default_options`, so direct runs honour it too. A leak in engine code is never covered:
 add a suppression only with a reason and a reviewer.
 
+The asan flavor builds with `-fno-sanitize=vptr` (the engine libraries are `-fno-rtti`; GCC's vptr check would reference
+typeinfo they do not define), and the asan test binaries keep the Vulkan driver loaded after the instance is destroyed
+(an environment setting made in `lsan_options.cpp`), because a leak in an unloaded driver is reported without a module
+name and cannot be suppressed.
+
 Time budget for the RHI suite (`ctest -L rhi -j4`): about 15 seconds with a GPU, about one second on a machine without
 Vulkan, where every `[gpu]` test skips (check with `ENGINE_VULKAN_LIBRARY=/nonexistent ctest -L rhi`). A GPU test that takes
 more than a few seconds belongs in a stress label, not in the default run.
@@ -176,6 +181,9 @@ person is needed. `tests/rhi/render_target.h` is the offscreen target (RGBA8 col
   (16) to a neighbour (a smooth gradient ramps by about 5 per pixel, so it is not an edge); edge pixels are compared
   with `edge_tolerance` (64), and up to `max_edge_miss` (25%) of them may exceed even that, because vendors differ in
   the rasterization rules for pixel centers on an edge. Nothing else may differ.
+- **Vendor differences in shading.** The goldens come from an NVIDIA GPU. The lit and textured cube tests also let 0.5%
+  of interior pixels exceed `tolerance` (`max_interior_miss`), but never by more than 16 levels
+  (`interior_miss_limit`); AMD's radv differs by up to 10 levels on a handful of pixels.
 - **A golden alone is not trusted.** Each golden test also asserts pixels analytically (the background is the clear
   color; interior pixels have the barycentric blend of the vertex colors), so a wrong golden cannot hide a broken
   pipeline.

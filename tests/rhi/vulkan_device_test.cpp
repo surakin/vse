@@ -208,8 +208,11 @@ TEST_CASE("A headless Vulkan device is created through the factory with plausibl
     CHECK(caps.max_push_constant_bytes >= 128);
     CHECK(caps.buffer_texture_copy_offset_alignment == 512); // the strict portable contract, even though Vulkan needs less
     CHECK(caps.buffer_texture_copy_row_pitch_alignment == 256);
-    CHECK(caps.min_uniform_buffer_offset_alignment >= 16);
-    CHECK(caps.min_uniform_buffer_offset_alignment <= 1024);
+    // Vulkan only promises a power of two of at most 256; the value is the driver's own (4 on AMD, 64 on NVIDIA).
+    const u32 uniform_align = caps.min_uniform_buffer_offset_alignment;
+    CHECK(uniform_align >= 1);
+    CHECK((uniform_align & (uniform_align - 1)) == 0);
+    CHECK(uniform_align <= 256);
     CHECK(caps.max_sampler_anisotropy >= 1.0f);
     CHECK(caps.max_compute_work_group_count[0] >= 65535);
     CHECK(FormatInfo(caps.depth_format).is_depth);

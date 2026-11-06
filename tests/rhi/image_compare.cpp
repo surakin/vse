@@ -54,6 +54,7 @@ CompareResult Compare(const Image& golden, const Image& actual, const CompareOpt
     diff.height = golden.height;
     diff.rgba.assign(golden.rgba.size(), 255);
     unsigned interior = 0;
+    unsigned interior_over_limit = 0;
     for (unsigned y = 0; y < golden.height; ++y) {
         for (unsigned x = 0; x < golden.width; ++x) {
             const unsigned char* g = golden.Pixel(x, y);
@@ -71,10 +72,11 @@ CompareResult Compare(const Image& golden, const Image& actual, const CompareOpt
             } else {
                 ++interior;
                 if (d > options.tolerance) ++r.interior_misses;
+                if (d > options.interior_miss_limit) ++interior_over_limit;
             }
         }
     }
-    const bool interior_ok = r.interior_misses <= static_cast<unsigned>(options.max_interior_miss * interior);
+    const bool interior_ok = interior_over_limit == 0 && r.interior_misses <= static_cast<unsigned>(options.max_interior_miss * interior);
     const bool edge_ok = r.edge_misses <= static_cast<unsigned>(options.max_edge_miss * r.edge_pixels);
     r.same = interior_ok && edge_ok;
     if (!r.same) {
