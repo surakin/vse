@@ -757,4 +757,9 @@ that changed from the plan and why.)_
   symbolization, crash report content, the crash handler, core dumps, an own Linux minidump writer (crashing thread only)
   and reader, subsystem integration, and the closing run. Planning only; no code. Day 91 settles the open questions with
   spikes.
-
+- **2026-11-06 — Phase 6 scope: Linux implemented, Windows and macOS made ready.** The Phase 6 plan now has 13 days
+  (91-103). Linux is the only backend written; a new Day 102 does everything for the Windows (Phase 8) and macOS (Phase 9)
+  backends that can be built and tested on Linux (Mach-O and PE module readers with fixtures, a backend conformance
+  suite, cross-target syntax checks, per-backend `BACKEND.md` checklists kept in step by a test, a porting guide), so
+  those phases write only the OS-call layer. Death tests re-execute the test binary instead of calling `fork`, and a
+  gate keeps platform types out of the neutral headers. Mobile and consoles are designed in only. Planning only.

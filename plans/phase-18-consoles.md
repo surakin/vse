@@ -23,3 +23,5 @@ be treated as actionable until then.
 ## Notes / open questions
 
 - Do not expand this phase further until dev kit/NDA access is secured.
+
+- **Debugging facilities backend (from Phase 6; designed in, no Phase 6 work):** the neutral stack-walk, module, symbol, crash-handler and dump interfaces forward to the console SDK's own crash and dump system (details are under NDA); death tests are skipped. See `plans/phase-06-debugging-facilities.md` (Platform design).

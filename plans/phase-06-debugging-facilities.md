@@ -31,18 +31,20 @@ concrete Done condition. Day numbers continue from Phase 5 (which ended at Day 9
 99. [The Minidump Writer](phase-06-debugging-facilities/day-99-minidump-writer.md)
 100. [Minidump Reader & Dump Tool](phase-06-debugging-facilities/day-100-minidump-reader-and-tools.md)
 101. [Wiring the Engine In](phase-06-debugging-facilities/day-101-subsystem-integration.md)
-102. [Documentation Sweep, Closing Full Run & Wrap-up](phase-06-debugging-facilities/day-102-docs-and-closing-run.md)
+102. [Windows & macOS Readiness](phase-06-debugging-facilities/day-102-windows-macos-readiness.md)
+103. [Documentation Sweep, Closing Full Run & Wrap-up](phase-06-debugging-facilities/day-103-docs-and-closing-run.md)
 
 Order reasoning: the death-test helper comes first because every later day tests code that aborts or crashes; the assert
 family is next because it is the part of the phase every other phase uses; the capture, symbolization and report pieces
 are built and tested one at a time before the signal handler composes them; core dumps and minidumps hang off the
-handler; integration with the existing subsystems comes last, when the pieces are stable.
+handler; integration with the existing subsystems comes next, when the pieces are stable; the Windows and macOS
+readiness work (Day 102) comes after the Linux code it mirrors is final.
 
 ## Decisions made while planning (Day 91 confirms or amends them with spike results)
 
 - **Symbolization:** raw addresses and `module+offset` first, always (async-signal-safe); function names from an own ELF
   symbol reader; `file:line` offline through `tools/symbolize` (runs `addr2line`, a developer tool). An own DWARF line
-  reader is out of scope (filed in `KNOWN-ISSUES.md` on Day 102).
+  reader is out of scope (filed in `KNOWN-ISSUES.md` on Day 103).
 - **Linux minidump:** an own writer, crashing thread only; other threads are listed by id (their stacks need a ptrace
   helper process, filed as a deferral). The reason: one format and one set of readers across Linux, Windows and macOS.
   `lldb` is installed on the development machine (2026-11-06, 23.1.4, with its minidump plugin), so a dump is verified
@@ -52,6 +54,51 @@ handler; integration with the existing subsystems comes last, when the pieces ar
   tests, the crash handler and a debugger share.
 - **Where:** `engine/foundation/debug/` (interfaces), `engine/foundation/os/linux/debug/` (backends), tests in the new
   `tests/debug/` with plain, ASan and TSan flavors (`flavors 6 plain,asan,tsan` in `tests/phases.txt`).
+
+## Platform design (PLAN.md assumption #11)
+
+**Scope (decided 2026-11-06):** this phase implements **Linux only**. It leaves **Windows (Phase 8) and macOS (Phase 9)
+ready**: everything that can be built and tested on Linux for them is done (neutral interfaces, a portable minidump
+serializer and reader, Mach-O and PE module readers, a backend conformance suite, cross-target syntax checks, per-backend
+checklists and a porting guide; Day 102), so those phases write only the OS-call layer. Android, iOS and the consoles
+(Phases 17 and 18) are **designed in** (the interfaces do not preclude them and `Unsupported` is a valid answer) and get
+no work here. Every interface is shaped so that no backend ever forces a redesign. Each facility is a
+platform-neutral header in `engine/foundation/debug/` plus a per-platform implementation chosen in CMake the way
+`os.h`'s is (a `FATAL_ERROR` on a platform with none). What each platform will use, written down now so the neutral
+interfaces fit it (Day 91 verifies this against each platform's documentation and records it in the spec; Day 103
+re-checks it against what was built):
+
+| Facility | Linux (this phase) | Windows (8) | macOS (9) | Android / iOS (17) | Consoles (18) |
+|---|---|---|---|---|---|
+| Stack capture | frame pointers (x86-64 `rbp`, AArch64 `x29`) | `RtlCaptureStackBackTrace` / `RtlVirtualUnwind` (unwind tables, no frame pointers) | frame pointers (the arm64 ABI requires them) | frame pointers (arm64); `_Unwind_Backtrace` fallback | SDK unwinder |
+| Fault interception | signals on an alternate stack | vectored + unhandled exception filter, `SetThreadStackGuarantee` for stack overflow | signals plus a Mach exception port (reliable for `EXC_BAD_ACCESS`) | signals (chained with Android's `debuggerd` handler); iOS signals plus Mach | SDK crash hooks |
+| Module list and build id | `/proc/self/maps`, ELF `NT_GNU_BUILD_ID` | `EnumProcessModules`, PE CodeView GUID + age | `dyld` image list, Mach-O `LC_UUID` | as Linux (Android), as macOS (iOS) | SDK |
+| Symbols | ELF `.symtab`; offline `file:line` | PDB through DbgHelp (OS library) | Mach-O + dSYM | ELF with build id, stripped on device; dSYM | SDK |
+| Dump | own minidump writer | `MiniDumpWriteDump` (OS library), same format | own writer | own writer (in-process) | SDK dump |
+| Core-dump equivalent | cores / `systemd-coredump` | WER `LocalDumps` (full minidump) | `/cores`, crash reports | tombstones (Android); none (iOS: reports `Unsupported`) | SDK |
+| Child process for death tests | re-exec of the test binary (`posix_spawn`) | `CreateProcess` re-exec | `posix_spawn` | no spawn on iOS: tests skip with a reason; run on desktop CI | skipped |
+| Dump directory | `os::` crash-dump directory | same | same | app-private/sandbox container | SDK |
+
+Rules that follow, applied in every day file:
+
+- **Neutral headers.** No public header names `ucontext_t`, a signal number, `pid_t` or `/proc`. A crash is described by
+  a `CrashReason` enum (access violation, bus error, illegal instruction, arithmetic fault, stack overflow, abort,
+  assert, ensure) plus the raw platform code; the interrupted CPU state travels as an opaque `NativeContext`; thread ids
+  are `u64`; output goes through a small sink type, not a hard-wired descriptor. File and process access reuse the
+  `os::` seam.
+- **Two architectures from the start.** The context record, the register walker and the minidump `CONTEXT` exist for
+  x86-64 and AArch64 (Apple silicon, Android, iOS, Windows on ARM). The AArch64 code compiles in CI here by
+  cross-targeting `clang --target=aarch64-linux-gnu -fsyntax-only` where the headers allow, and is otherwise listed in
+  `KNOWN-ISSUES.md` as not run.
+- **Portable core, thin platform snapshot.** The minidump writer, reader, report formatter, ring buffer and assert
+  machinery contain no OS calls. A platform backend fills a `CrashSnapshot` (threads, contexts, modules, memory
+  ranges) and the portable writer serializes it, so it is tested here with synthetic Windows-, macOS- and
+  Android-shaped snapshots.
+- **No assumption of a process model, a filesystem layout or a command line.** Mobile has no command line and a sandbox;
+  crash options come from the engine config as well as flags; dumps go to an `os::`-provided directory; features a
+  platform cannot offer return `Unsupported` and are reported, not silently skipped.
+- **Compiler differences stay in one header** (`debug/compiler.h`: debug break, unreachable, noinline, format
+  attributes) so a Windows build with clang-cl or MSVC changes one file.
 
 ## Key deliverables
 
