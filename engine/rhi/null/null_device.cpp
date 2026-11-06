@@ -221,7 +221,18 @@ struct NullDeviceState {
     Vector<UniquePtr<NullCommandList>> lists; // allocated
     usize lists_in_use = 0;                   // handed out this frame
 
-    explicit NullDeviceState(const NullDeviceOptions& o) : options(o) {}
+    u32 epoch = AllocateDeviceSerial();
+
+    explicit NullDeviceState(const NullDeviceOptions& o) : options(o) {
+        const u32 seed = GenerationSeed(epoch);
+        buffers.SeedGeneration(seed);
+        textures.SeedGeneration(seed);
+        samplers.SeedGeneration(seed);
+        shaders.SeedGeneration(seed);
+        layouts.SeedGeneration(seed);
+        groups.SeedGeneration(seed);
+        pipelines.SeedGeneration(seed);
+    }
     ~NullDeviceState();
 
     void Error(const char* fmt, ...) __attribute__((format(printf, 2, 3)));
@@ -1003,6 +1014,32 @@ const char* NullDevice::BackendName() const {
 
 const AdapterInfo& NullDevice::Adapter() const {
     return state_->options.adapter;
+}
+
+u32 NullDevice::Epoch() const {
+    return state_->epoch;
+}
+
+ResourceCounts NullDevice::Resources() const {
+    State& s = *state_;
+    std::lock_guard<std::mutex> lock(s.mu);
+    ResourceCounts c;
+    c.buffers = s.buffers.LiveCount();
+    c.textures = s.textures.LiveCount();
+    c.samplers = s.samplers.LiveCount();
+    c.shaders = s.shaders.LiveCount();
+    c.bind_group_layouts = s.layouts.LiveCount();
+    c.bind_groups = s.groups.LiveCount();
+    c.pipelines = s.pipelines.LiveCount();
+    c.swapchains = s.swapchain ? 1 : 0;
+    c.command_lists = s.lists_in_use;
+    return c;
+}
+
+bool NullDevice::InFrame() const {
+    State& s = *state_;
+    std::lock_guard<std::mutex> lock(s.mu);
+    return s.in_frame;
 }
 
 const DeviceCaps& NullDevice::Caps() const {

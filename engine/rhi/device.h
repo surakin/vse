@@ -29,6 +29,58 @@ struct UploadTicket {
     bool ok = true;
 };
 
+/// How many objects of each kind a device holds, for leak checks.
+///
+/// Counts live objects only; resources already destroyed but waiting for the GPU (deferred destruction) are not counted,
+/// so call [[rhi::Device::Quiesce]] first for an exact answer.
+///
+/// Thread-safety: thread-compatible plain data (a snapshot).
+struct ResourceCounts {
+    /// Live buffers.
+    usize buffers = 0;
+    /// Live textures, including swapchain images.
+    usize textures = 0;
+    /// Live samplers.
+    usize samplers = 0;
+    /// Live shader modules.
+    usize shaders = 0;
+    /// Live bind group layouts.
+    usize bind_group_layouts = 0;
+    /// Live bind groups.
+    usize bind_groups = 0;
+    /// Live pipelines.
+    usize pipelines = 0;
+    /// Live swapchains (0 or 1).
+    usize swapchains = 0;
+    /// Command lists handed out and not yet recycled (null backend; the Vulkan backend recycles its lists per frame and reports 0).
+    usize command_lists = 0;
+    /// Backend-internal objects the application cannot see (staging buffers, rings); 0 on the null backend.
+    usize internal_objects = 0;
+    /// Bytes of device memory currently allocated by the device (0 on the null backend).
+    u64 device_memory_bytes = 0;
+
+    /// Returns the sum of the counts of objects an application creates (buffers to swapchains and command lists).
+    /// Fails: never.
+    usize UserObjects() const {
+        return buffers + textures + samplers + shaders + bind_group_layouts + bind_groups + pipelines + swapchains + command_lists;
+    }
+};
+
+/// Hands out a new process-wide device serial, starting at 1.
+///
+/// Thread-safety: thread-safe.
+u32 AllocateDeviceSerial();
+
+/// Returns the first handle generation for pools of the device with this serial: `(serial & 0xFFF) << 20 | 1`.
+///
+/// Handles of two devices then differ in their top 12 bits, so a handle kept across a device re-creation is detected as
+/// stale instead of aliasing a new resource. The limits: a slot reused over 2^20 times could reach another device's
+/// range, and the serial wraps after 4096 devices in one process.
+///
+/// Param serial: from [[rhi::AllocateDeviceSerial]].
+/// Returns: the seed for `HandlePool::SeedGeneration`.
+constexpr u32 GenerationSeed(u32 serial) { return ((serial & 0xFFFu) << 20) | 1u; }
+
 /// The GPU device: owner of every resource, factory of command lists, and the submission point.
 ///
 /// Creation functions never abort on an environment problem: they log the reason on [[rhi::LogRhi]] and
@@ -57,6 +109,10 @@ public:
     ///
     /// Ownership: the reference is valid for the life of the device.
     virtual const AdapterInfo& Adapter() const = 0;
+
+    /// Returns the device's serial: unique in the process, the same for the life of the device. Handle generations are
+    /// seeded from it (see [[rhi::GenerationSeed]]).
+    virtual u32 Epoch() const = 0;
 
     /// Returns the device limits.
     /// Ownership: the reference is valid for the life of the device.
@@ -342,6 +398,24 @@ public:
 
     /// Blocks until all submitted work has finished, then releases every deferred destruction.
     virtual void WaitIdle() = 0;
+
+    /// Waits for the GPU to go idle and drains the deferred-destruction queue; the device stays usable.
+    ///
+    /// Call before [[rhi::Device::Resources]] to get exact counts, and before destroying anything a reset replaces.
+    ///
+    /// Thread-safety: owner-thread-only, like `WaitIdle`: the submission thread.
+    virtual void Quiesce() { WaitIdle(); }
+
+    /// Returns the live object counts; see [[rhi::ResourceCounts]].
+    ///
+    /// Thread-safety: thread-safe.
+    virtual ResourceCounts Resources() const = 0;
+
+    /// Returns whether a frame is open (between `BeginFrame` and `EndFrame`).
+    ///
+    /// Fails: never.
+    /// Thread-safety: thread-safe.
+    virtual bool InFrame() const = 0;
 
     /// Returns whether the device was lost; once true it stays true.
     ///

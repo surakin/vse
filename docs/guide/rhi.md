@@ -327,6 +327,73 @@ created on null-integrated
 `Device::Adapter` reports the adapter a device was created on. On a machine with one GPU everything above still works; the
 list has one entry. Direct3D 12 and Metal map onto the same struct: see the portability notes in the Phase 8 and 9 plans.
 
+### Lifecycle and reset
+
+A device can be destroyed and created again while the program runs: to change the adapter, turn validation on or off, or
+recover from a lost device. [[rhi::DeviceHost]] owns the device and its swapchain and does the sequence. Everything that
+holds device objects registers as a [[rhi::DeviceObserver]] with a **tier** (0 is created first and released last: samplers
+and textures, then meshes, then layouts and shaders, then materials and pipelines, then passes), and then:
+
+1. `Recreate` calls `OnDeviceReleasing` on every observer, high tier first, so each destroys what it made and keeps its
+   CPU-side source (pixels, mesh data, descriptors);
+2. the host calls `Device::Quiesce` (wait idle, drain deferred destruction), destroys the swapchain and the device (which
+   saves the pipeline cache), and logs an error if any object is still alive (`Device::Resources` has the counts);
+3. it creates the new device and swapchain, then calls `OnDeviceCreated` on every observer, low tier first, so each
+   recreates and re-uploads.
+
+A failed creation leaves the host empty and `LastError` says why; the caller rolls back with `Create` and the old
+description. Handles of the old device are never valid on the new one: each device has a serial (`Device::Epoch`) that
+seeds its handle generations, so a stale handle is rejected instead of aliasing a new resource. (The limit: a slot reused
+more than 2^20 times, or more than 4096 devices in one process, could wrap into another device's range.)
+
+Thread rule: `Recreate` runs on the thread that called `Create`, between frames. Called inside `BeginFrame`/`EndFrame` or on
+another thread it aborts.
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "rhi/device_host.h"
+
+using namespace engine_placeholder;
+
+struct CubeOwner final : rhi::DeviceObserver {
+    rhi::Device* device = nullptr;
+    rhi::BufferHandle buffer;
+    void OnDeviceReleasing(u32) override {
+        device->DestroyBuffer(buffer);   // destroy what this owner made; its data lives on in the CPU
+        buffer = rhi::BufferHandle{};
+    }
+    bool OnDeviceCreated(rhi::Device* d, u32) override {
+        device = d;
+        rhi::BufferDesc desc;
+        desc.size = 64;
+        desc.usage = rhi::BufferUsage::Uniform;
+        desc.location = rhi::MemoryLocation::CpuToGpu;
+        buffer = d->CreateBuffer(desc);
+        return buffer.IsValid();
+    }
+    const char* ObserverName() const override { return "cube"; }
+};
+
+int main() {
+    CubeOwner owner;
+    rhi::DeviceHost host;
+    host.AddObserver(&owner, 1);
+    rhi::DeviceCreateInfo info;
+    info.backend = rhi::Backend::Null;
+    host.Create(info, rhi::SwapchainDesc{});
+    const u32 first = host.Epoch();
+    host.Recreate(info, rhi::SwapchainDesc{});
+    std::printf("new device: %s, live buffers: %zu, resets: %u\n", host.Epoch() != first ? "yes" : "no",
+                host.GetDevice()->Resources().buffers, host.ResetCount());
+    host.Destroy();
+    return 0;
+}
+```
+```output
+new device: yes, live buffers: 1, resets: 1
+```
+
 ### Uploading data
 
 Buffers in `GpuOnly` memory cannot be written by the CPU. [[rhi::Device::UploadBuffer]] copies bytes into one: it

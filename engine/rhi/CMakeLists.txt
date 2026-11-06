@@ -37,6 +37,7 @@ set(RHI_VULKAN_SOURCES
   vulkan/vk_barrier.cpp
   vulkan/vk_command_list.cpp
   vulkan/create_device.cpp
+  vulkan/device_host.cpp
 )
 
 # Headers are included as "rhi/<name>.h", rooted at engine/.

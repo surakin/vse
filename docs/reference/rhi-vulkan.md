@@ -3629,6 +3629,42 @@ Returns the adapter (GPU) the device was created on.
 
 _Inherited from [`rhi::Device::Adapter() const`](rhi.md#rhi-device-adapter-const)._
 
+### `Epoch()` {#rhi-vulkan-vulkandevice-epoch-const}
+
+`method rhi::vulkan::VulkanDevice::Epoch` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+u32 Epoch() const override;
+```
+
+Returns the device's serial: unique in the process, the same for the life of the device. Handle generations are seeded from it (see [`rhi::GenerationSeed`](rhi.md#rhi-generationseed-u32)).
+
+_Inherited from [`rhi::Device::Epoch() const`](rhi.md#rhi-device-epoch-const)._
+
+### `Resources()` {#rhi-vulkan-vulkandevice-resources-const}
+
+`method rhi::vulkan::VulkanDevice::Resources` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+ResourceCounts Resources() const override;
+```
+
+Returns the live object counts; see [`rhi::ResourceCounts`](rhi.md#rhi-resourcecounts).
+
+_Inherited from [`rhi::Device::Resources() const`](rhi.md#rhi-device-resources-const)._
+
+### `InFrame()` {#rhi-vulkan-vulkandevice-inframe-const}
+
+`method rhi::vulkan::VulkanDevice::InFrame` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+bool InFrame() const override;
+```
+
+Returns whether a frame is open (between `BeginFrame` and `EndFrame`).
+
+_Inherited from [`rhi::Device::InFrame() const`](rhi.md#rhi-device-inframe-const)._
+
 ### `Caps()` {#rhi-vulkan-vulkandevice-caps-const}
 
 `method rhi::vulkan::VulkanDevice::Caps` — defined in `engine/rhi/vulkan/vulkan_device.h`

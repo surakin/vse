@@ -119,6 +119,7 @@ test:renderer_demo_*                            4
 # --- Phase 7: RHI reset ---
 tests/renderer/render_settings_test.cpp         7
 tests/rhi/adapter_test.cpp                      7
+tests/rhi/device_host_test.cpp                  7
 
 # --- Phase 5: test scoping ---
 test:test_phase_*                              5

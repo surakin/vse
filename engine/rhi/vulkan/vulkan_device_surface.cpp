@@ -57,6 +57,7 @@ Swapchain* VulkanDevice::CreateSwapchain(const SwapchainDesc& desc) {
         return nullptr;
     }
     swapchain_ = VulkanSwapchain::Create(this, desc);
+    swapchain_live_.store(swapchain_ ? 1 : 0, std::memory_order_release);
     return swapchain_.Get();
 }
 
@@ -66,6 +67,7 @@ void VulkanDevice::DestroySwapchain(Swapchain* swapchain) {
     }
     ENGINE_ASSERT(swapchain == swapchain_.Get(), "DestroySwapchain: not this device's swapchain");
     swapchain_.Reset();
+    swapchain_live_.store(0, std::memory_order_release);
 }
 
 } // namespace engine_placeholder::rhi::vulkan

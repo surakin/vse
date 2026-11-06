@@ -207,6 +207,17 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     if (chosen < 0) {
         return false;
     }
+    epoch_ = AllocateDeviceSerial();
+    {
+        const u32 seed = GenerationSeed(epoch_);
+        buffers_.SeedGeneration(seed);
+        textures_.SeedGeneration(seed);
+        samplers_.SeedGeneration(seed);
+        shaders_.SeedGeneration(seed);
+        bind_group_layouts_.SeedGeneration(seed);
+        pipelines_.SeedGeneration(seed);
+        bind_groups_.SeedGeneration(seed);
+    }
     physical_ = physicals[chosen];
     gpu_info_ = infos[chosen];
     adapter_ = MakeAdapterInfo(gpu_info_, presentable);
@@ -474,6 +485,29 @@ void VulkanDevice::NotImplemented(const char* what) {
 
 const char* VulkanDevice::BackendName() const { return "vulkan"; }
 const DeviceCaps& VulkanDevice::Caps() const { return caps_; }
+
+ResourceCounts VulkanDevice::Resources() const {
+    ResourceCounts c;
+    {
+        std::lock_guard<std::mutex> lock(resource_mutex_);
+        c.buffers = buffers_.LiveCount();
+        c.textures = textures_.LiveCount();
+        c.samplers = samplers_.LiveCount();
+        c.shaders = shaders_.LiveCount();
+        c.bind_group_layouts = bind_group_layouts_.LiveCount();
+        bind_groups_.ForEachLive([&](BindGroupHandle, const BindGroupRes& g) { c.bind_groups += g.transient ? 0 : 1; }); // transient groups end with their frame
+        c.pipelines = pipelines_.LiveCount();
+        c.swapchains = swapchain_live_.load(std::memory_order_acquire);
+    }
+    c.internal_objects = raw_buffer_count_.load(std::memory_order_relaxed) + raw_image_count_.load(std::memory_order_relaxed);
+    if (memory_) {
+        const MemoryStats stats = memory_->Stats();
+        for (u32 i = 0; i < stats.heap_count; ++i) {
+            c.device_memory_bytes += stats.heaps[i].allocated_bytes;
+        }
+    }
+    return c;
+}
 
 ShaderHandle VulkanDevice::CreateShader(const ShaderDesc& desc) {
     const char* why = desc.Validate();

@@ -9,6 +9,7 @@ set(RHI_TEST_SOURCES
   grow_array_test.cpp
   null_device_test.cpp
   adapter_test.cpp
+  device_host_test.cpp
   vulkan_loader_test.cpp
   vulkan_instance_test.cpp
   vulkan_device_test.cpp

@@ -96,6 +96,9 @@ public:
 
     const char* BackendName() const override;
     const AdapterInfo& Adapter() const override;
+    u32 Epoch() const override;
+    ResourceCounts Resources() const override;
+    bool InFrame() const override;
     const DeviceCaps& Caps() const override;
     BufferHandle CreateBuffer(const BufferDesc& desc) override;
     void DestroyBuffer(BufferHandle buffer) override;

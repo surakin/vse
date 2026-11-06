@@ -58,6 +58,17 @@ public:
         }
     }
 
+    /// Sets the generation every new slot starts with, so handles of this pool differ from those of another pool.
+    ///
+    /// A device calls this once, right after construction, with `GenerationSeed(serial)`. Generation 0 stays invalid.
+    ///
+    /// Param generation: the first generation of new slots; 0 is replaced by 1.
+    /// Aborts: the pool already allocated a slot.
+    void SeedGeneration(u32 generation) {
+        ENGINE_ASSERT(chunk_count_ == 0, "HandlePool::SeedGeneration: the pool already allocated slots");
+        initial_generation_ = generation == 0 ? 1 : generation;
+    }
+
     /// Stores `value` in a free slot and returns its handle.
     ///
     /// Param value: moved into the pool.
@@ -203,6 +214,21 @@ public:
         }
     }
 
+    /// Const overload of `ForEachLive`; `fn(HandleType, const T&)`.
+    ///
+    /// Param fn: callable; it must not allocate, free or retire in this pool.
+    template <typename F>
+    void ForEachLive(F&& fn) const {
+        for (u32 c = 0; c < chunk_count_; ++c) {
+            for (u32 i = 0; i < kChunkSlots; ++i) {
+                const Slot& s = chunks_[c][i];
+                if (s.state == SlotState::Live) {
+                    fn(HandleType{c * kChunkSlots + i, s.generation}, *ValuePtr(s));
+                }
+            }
+        }
+    }
+
     /// Returns the number of live values.
     usize LiveCount() const { return live_count_; }
     /// Returns the number of retired values still waiting for their frame.
@@ -263,6 +289,7 @@ private:
         u32 base = chunk_count_ * kChunkSlots;
         for (u32 i = 0; i < kChunkSlots; ++i) {
             Slot* s = new (&chunk[i]) Slot();
+            s->generation = initial_generation_;
             // Chain the new slots so that low indices are handed out first.
             s->next = (i + 1 < kChunkSlots) ? base + i + 1 : free_head_;
         }
@@ -273,6 +300,7 @@ private:
 
     Slot* chunks_[kMaxChunks] = {};
     u32 chunk_count_ = 0;
+    u32 initial_generation_ = 1;
     u32 free_head_ = kNone;
     u32 retire_head_ = kNone;
     u32 retire_tail_ = kNone;
