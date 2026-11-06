@@ -2,6 +2,7 @@
 #include "io/file_system.h"
 
 #include <cerrno>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
@@ -278,8 +279,12 @@ Status CreateDirectory(const Path& path) {
     return ::mkdir(p, 0777) == 0 ? Status::Success() : Errno();
 }
 
-Status CreateDirectories(const Path& path) {
-    Status s = CreateDirectory(path);
+namespace {
+
+Status CreateDirectoriesWithMode(const Path& path, mode_t mode) {
+    NativePath p;
+    if (Status s = ToNative(path, p); s.Failed()) return s;
+    Status s = ::mkdir(p, mode) == 0 ? Status::Success() : Errno();
     if (s.Ok()) return s;
     if (s.Is(Error::AlreadyExists)) {
         return IsDirectory(path) ? Status::Success() : Status::Of(Error::NotADirectory);
@@ -287,20 +292,24 @@ Status CreateDirectories(const Path& path) {
     if (s.Is(Error::NotFound)) {
         const Path parent = path.Parent();
         if (parent.IsEmpty() || parent == path) return s;
-        if (Status p = CreateDirectories(parent); p.Failed()) return p;
-        s = CreateDirectory(path);
+        if (Status p2 = CreateDirectoriesWithMode(parent, mode); p2.Failed()) return p2;
+        s = ::mkdir(p, mode) == 0 ? Status::Success() : Errno();
         if (s.Is(Error::AlreadyExists) && IsDirectory(path)) return Status::Success(); // created by someone else meanwhile
     }
     return s;
 }
 
+} // namespace
+
+Status CreateDirectories(const Path& path) { return CreateDirectoriesWithMode(path, 0777); }
+
 Status CreatePrivateDirectory(const Path& path) {
     NativePath p;
     if (Status s = ToNative(path, p); s.Failed()) return s;
-    // Parents may be shared; only the final directory must be private.
+    // Missing parents are created private too (an existing parent is left as it is).
     const Path parent = path.Parent();
     if (!parent.IsEmpty() && parent != path) {
-        if (Status s = CreateDirectories(parent); s.Failed()) return s;
+        if (Status s = CreateDirectoriesWithMode(parent, 0700); s.Failed()) return s;
     }
     if (::mkdir(p, 0700) != 0 && errno != EEXIST) return Errno();
     // Open the final component without following a link and check the descriptor, so nothing can be swapped in between.
@@ -391,5 +400,31 @@ Status UserConfigDirectory(StringView app_name, Path* out) { return UserDirector
 Status UserCacheDirectory(StringView app_name, Path* out) { return UserDirectory("XDG_CACHE_HOME", ".cache", app_name, out); }
 Status UserDataDirectory(StringView app_name, Path* out) { return UserDirectory("XDG_DATA_HOME", ".local/share", app_name, out); }
 Status UserStateDirectory(StringView app_name, Path* out) { return UserDirectory("XDG_STATE_HOME", ".local/state", app_name, out); }
+
+Status CrashDumpDirectory(Path* out) {
+    // A crash handler must not guess a location: without $XDG_STATE_HOME or $HOME there is no directory (no password-database fallback).
+    if (AbsoluteEnv("XDG_STATE_HOME").Empty() && AbsoluteEnv("HOME").Empty()) return Status::Of(Error::NotFound);
+    char app[256];
+    const char* configured = std::getenv("ENGINE_APP_NAME");
+    if (configured != nullptr && configured[0] != '\0') {
+        const usize length = std::strlen(configured);
+        if (length > 200) return Status::Of(Error::Invalid);
+        std::memcpy(app, configured, length + 1);
+    } else {
+        Path exe(PathStyle::Posix);
+        if (Status s = ExecutablePath(&exe); s.Failed()) return s;
+        const StringView name = exe.FileName();
+        if (name.Empty() || name.Length() > 200) return Status::Of(Error::NotFound);
+        std::memcpy(app, name.Data(), name.Length());
+        app[name.Length()] = '\0';
+    }
+    Path state(PathStyle::Posix);
+    if (Status s = UserStateDirectory(StringView(app), &state); s.Failed()) return s; // validates the name too
+    Path dir(PathStyle::Posix);
+    if (!state.TryJoin(Path("crashes", PathStyle::Posix), &dir)) return Status::Of(Error::TooLong);
+    if (Status s = CreatePrivateDirectory(dir); s.Failed()) return s;
+    *out = static_cast<Path&&>(dir);
+    return Status::Success();
+}
 
 } // namespace engine_placeholder::io

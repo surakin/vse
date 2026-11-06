@@ -420,3 +420,28 @@ TEST_CASE("jobs: co_await file reads inside jobs on a scheduler", "[io][async][j
         CHECK(bad.text.size() == 9000);
     }
 }
+
+namespace {
+struct ProcOut {
+    std::atomic<int> done{0};
+    bool ok = false;
+    usize size = 0;
+};
+jobs::Job ReadProcJob(jobs::Scheduler* s, ProcOut* out) {
+    jobs::FileReadResult r = co_await jobs::ReadFileAsync(*s, "/proc/self/status");
+    out->ok = r.ok;
+    out->size = r.size;
+    out->done.fetch_add(1, std::memory_order_release);
+}
+} // namespace
+
+TEST_CASE("jobs::ReadFileAsync reads files whose reported size is wrong (/proc)", "[io][async][jobs]") {
+    jobs::Scheduler::Config cfg;
+    cfg.participants = 2;
+    jobs::Scheduler sched(cfg);
+    ProcOut out;
+    sched.Submit(ReadProcJob(&sched, &out));
+    sched.HelpUntil(out.done, 1);
+    CHECK(out.ok);
+    CHECK(out.size > 100);
+}

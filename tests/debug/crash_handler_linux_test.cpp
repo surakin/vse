@@ -4,6 +4,7 @@
 
 #include "debug/crash_context.h"
 #include "debug/crash_handler.h"
+#include "io/file_system.h"
 #include "debug/death_test.h"
 #include "debug/fault_injection.h"
 #include "envelope.h"
@@ -173,11 +174,11 @@ ENGINE_DEATH_TEST_FN(dt_crash_default_directory_then_fault) {
 }
 
 ENGINE_DEATH_TEST_FN(dt_crash_print_default_directory) {
-    char path[os::kMaxPathBytes];
-    const bool ok = os::GetCrashDumpDirectory(path, sizeof(path));
+    io::Path directory;
+    const bool ok = io::CrashDumpDirectory(&directory).Ok();
     PutLine("OK", ok ? 1 : 0);
     os::Write(1, "PATH=", 5);
-    os::Write(1, path, std::strlen(path));
+    os::Write(1, directory.View().Data(), directory.View().Length());
     os::Write(1, "\n", 1);
 }
 
@@ -299,27 +300,17 @@ TEST_CASE("The crash dump directory is created private to the user and named aft
 ENGINE_DEATH_TEST_FN(dt_crash_directory_without_home) {
     unsetenv("XDG_STATE_HOME");
     unsetenv("HOME");
-    char path[os::kMaxPathBytes] = "untouched";
-    PutLine("FOUND", os::GetCrashDumpDirectory(path, sizeof(path)) ? 1 : 0);
-    PutLine("EMPTY", path[0] == '\0' ? 1 : 0);
+    io::Path path("untouched");
+    PutLine("FOUND", io::CrashDumpDirectory(&path).Ok() ? 1 : 0);
+    PutLine("EMPTY", path == io::Path("untouched") ? 1 : 0); // unchanged on failure
 }
 
-ENGINE_DEATH_TEST_FN(dt_crash_directory_buffer_too_small) {
-    char tiny[4];
-    PutLine("TINY", os::GetCrashDumpDirectory(tiny, sizeof(tiny)) ? 1 : 0);
-    PutLine("ZERO", os::GetCrashDumpDirectory(tiny, 0) ? 1 : 0);
-}
-
-TEST_CASE("The crash dump directory is not found without a home or state directory, or without room for the path", "[crash][death][debug][linux]") {
+TEST_CASE("The crash dump directory is not found without a home or state directory", "[crash][death][debug][linux]") {
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     const ChildResult none = RunInChild("dt_crash_directory_without_home");
     REQUIRE(none.exited);
     CHECK(none.StdoutContains("FOUND=0"));
     CHECK(none.StdoutContains("EMPTY=1"));
-    const ChildResult small = RunInChild("dt_crash_directory_buffer_too_small");
-    REQUIRE(small.exited);
-    CHECK(small.StdoutContains("TINY=0"));
-    CHECK(small.StdoutContains("ZERO=0"));
 }
 
 TEST_CASE("An application name that would leave the intended directory or be cut short is refused", "[crash][death][debug][linux]") {
@@ -359,28 +350,28 @@ TEST_CASE("A private directory must be a real directory owned by the user, and i
     const std::string open_dir = root + "/open";
     REQUIRE(::mkdir(open_dir.c_str(), 0755) == 0);
     REQUIRE(::chmod(open_dir.c_str(), 0755) == 0);
-    CHECK(os::EnsurePrivateDirectory(StringView(open_dir.c_str())));
+    CHECK(io::CreatePrivateDirectory(io::Path(StringView(open_dir.c_str()))).Ok());
     struct stat info;
     REQUIRE(::stat(open_dir.c_str(), &info) == 0);
     CHECK((info.st_mode & 0777) == 0700);
     // A trailing slash makes no difference.
-    CHECK(os::EnsurePrivateDirectory(StringView((open_dir + "/").c_str())));
+    CHECK(io::CreatePrivateDirectory(io::Path(StringView((open_dir + "/").c_str()))).Ok());
     // A symbolic link is refused, even one that points at a good directory, with or without a trailing slash.
     const std::string link = root + "/link";
     REQUIRE(::symlink(open_dir.c_str(), link.c_str()) == 0);
-    CHECK_FALSE(os::EnsurePrivateDirectory(StringView(link.c_str())));
-    CHECK_FALSE(os::EnsurePrivateDirectory(StringView((link + "/").c_str())));
+    CHECK(io::CreatePrivateDirectory(io::Path(StringView(link.c_str()))).Failed());
+    CHECK(io::CreatePrivateDirectory(io::Path(StringView((link + "/").c_str()))).Failed());
     // A file is refused.
     const std::string file = root + "/file";
     std::FILE* f = std::fopen(file.c_str(), "w");
     REQUIRE(f != nullptr);
     std::fclose(f);
-    CHECK_FALSE(os::EnsurePrivateDirectory(StringView(file.c_str())));
+    CHECK(io::CreatePrivateDirectory(io::Path(StringView(file.c_str()))).Failed());
     // A directory the user cannot write to is refused (root can write anywhere, so the check is skipped for root).
     if (::geteuid() != 0) {
         const std::string read_only = root + "/readonly";
         REQUIRE(::mkdir(read_only.c_str(), 0500) == 0);
-        CHECK_FALSE(os::EnsurePrivateDirectory(StringView(read_only.c_str())));
+        CHECK(io::CreatePrivateDirectory(io::Path(StringView(read_only.c_str()))).Failed());
         ::chmod(read_only.c_str(), 0700); // so the temp directory can be removed
     }
 }
@@ -412,21 +403,26 @@ TEST_CASE("The crash handler is not installed into a symbolic link or a director
     }
 }
 
-TEST_CASE("EnsureDirectory creates missing parents, accepts an existing directory and refuses a file", "[crash][debug][linux]") {
+TEST_CASE("CreateDirectories creates missing parents, accepts an existing directory and refuses a file", "[crash][debug][linux]") {
     CrashTempDir dir;
     const std::string nested = std::string(dir.Path()) + "/a/b/c";
-    CHECK(os::EnsureDirectory(StringView(nested.c_str()), 0700));
+    CHECK(io::CreateDirectories(io::Path(StringView(nested.c_str()))).Ok());
     struct stat info;
     REQUIRE(::stat(nested.c_str(), &info) == 0);
-    CHECK((info.st_mode & 0777) == 0700);
-    CHECK(os::EnsureDirectory(StringView(nested.c_str()), 0700)); // already there
+    CHECK(S_ISDIR(info.st_mode));
+    CHECK(io::CreateDirectories(io::Path(StringView(nested.c_str()))).Ok()); // already there
     const std::string file = std::string(dir.Path()) + "/a/file";
     std::FILE* f = std::fopen(file.c_str(), "w");
     REQUIRE(f != nullptr);
     std::fclose(f);
-    CHECK_FALSE(os::EnsureDirectory(StringView(file.c_str()), 0700));
-    CHECK_FALSE(os::EnsureDirectory(StringView((file + "/below").c_str()), 0700));
-    CHECK_FALSE(os::EnsureDirectory(StringView(""), 0700));
+    CHECK(io::CreateDirectories(io::Path(StringView(file.c_str()))).Failed());
+    CHECK(io::CreateDirectories(io::Path(StringView((file + "/below").c_str()))).Failed());
+    CHECK(io::CreateDirectories(io::Path()).Failed());
+    // A private directory's missing parents are private as well.
+    const std::string private_nested = std::string(dir.Path()) + "/p/q/r";
+    REQUIRE(io::CreatePrivateDirectory(io::Path(StringView(private_nested.c_str()))).Ok());
+    REQUIRE(::stat((std::string(dir.Path()) + "/p/q").c_str(), &info) == 0);
+    CHECK((info.st_mode & 0777) == 0700);
 }
 
 // ---- a crash must survive the next start ----------------------------------------------------------------------------------

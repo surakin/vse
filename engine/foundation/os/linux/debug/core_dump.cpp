@@ -2,6 +2,7 @@
 // core goes.
 #include "debug/core_dump_linux.h"
 #include "debug/post_mortem.h"
+#include "io/file.h"
 #include "os/os.h"
 
 #include <cstdio>
@@ -90,11 +91,10 @@ PostMortemReport EnablePostMortemDumps(const PostMortemOptions& options) {
     }
 
     char pattern[kPostMortemTextBytes] = {};
-    const int fd = os::Open(StringView("/proc/sys/kernel/core_pattern"), O_RDONLY);
-    if (fd >= 0) {
-        const long n = os::Read(fd, pattern, sizeof(pattern) - 1);
-        os::Close(fd);
-        if (n > 0) {
+    io::FilePtr pattern_file;
+    if (io::File::Open(io::Path("/proc/sys/kernel/core_pattern", io::PathStyle::Posix), io::OpenMode::Read, io::kOpenNone, &pattern_file).Ok()) {
+        usize n = 0;
+        if (pattern_file->Read(pattern, sizeof(pattern) - 1, 0, &n).Ok() && n > 0) {
             pattern[n] = '\0';
             if (char* newline = std::strchr(pattern, '\n')) {
                 *newline = '\0';

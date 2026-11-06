@@ -5,7 +5,9 @@
 
 //! Thin wrappers around OS calls: file descriptors, memory reservation, clocks, dynamic libraries.
 //!
-//! Exit/Write/Read/Open/Close/Lseek keep POSIX-shaped signatures; the implementation lives per platform.
+//! Exit/Write/Read/Open/Close keep POSIX-shaped signatures; the implementation lives per platform. Files and directories belong to the
+//! file layer ([[io::File]], [[io::Directory]], [[io::Path]]); the descriptor functions here are for the console, pipes, sockets and the
+//! signal-safe code of the debugging facilities.
 
 namespace engine_placeholder::os {
 
@@ -44,7 +46,9 @@ long Read(int fd, void* buf, usize len);
 /// Thread-safety: thread-safe. Async-signal-safe.
 long WriteAllWithTimeout(int fd, const void* buf, usize len, u64 timeout_nanos);
 
-/// Opens the file at the UTF-8 `path` and returns a file descriptor.
+/// Opens the file at the UTF-8 `path` and returns a file descriptor. A descriptor primitive, kept for the places that cannot use the
+/// file layer: reads of `/proc` files in the debugger check, which the assert failure path calls while the heap may be inconsistent, and
+/// `CreateFileForWriting`. **Not for files in general: use [[io::File]]** (`engine/foundation/io/file.h`).
 /// Param path: UTF-8 file path, at most [[os::kMaxPathBytes]] - 1 bytes.
 /// Param flags: POSIX `open` flags such as `O_RDONLY`.
 /// Param mode: permission bits; only used when `flags` includes `O_CREAT`.
@@ -53,7 +57,8 @@ long WriteAllWithTimeout(int fd, const void* buf, usize len, u64 timeout_nanos);
 /// Ownership: the caller owns the descriptor and must release it with [[os::Close]].
 int Open(StringView path, int flags, int mode = 0644);
 
-/// Creates the file at the UTF-8 `path` for writing, emptying it if it exists, and returns a file descriptor.
+/// Creates the file at the UTF-8 `path` for writing, emptying it if it exists, and returns a file descriptor. Kept for the crash report, which
+/// opens its file inside the fault handler where the file layer (which allocates) may not run; other code uses [[io::File]].
 /// Param path: UTF-8 file path, at most [[os::kMaxPathBytes]] - 1 bytes.
 /// Param mode: permission bits for a new file; the default keeps it private to the user.
 /// Returns: the file descriptor, or -1 on failure.
@@ -66,13 +71,6 @@ int CreateFileForWriting(StringView path, int mode = 0600);
 /// Param fd: a descriptor from [[os::Open]].
 /// Returns: 0 on success, -1 on error.
 int Close(int fd);
-
-/// Repositions the file offset of `fd`.
-/// Param fd: an open file descriptor.
-/// Param offset: byte offset relative to `whence`.
-/// Param whence: one of the standard C `SEEK_SET`, `SEEK_CUR` or `SEEK_END`.
-/// Returns: the resulting offset from the start of the file, or -1 on failure.
-long Lseek(int fd, long offset, int whence);
 
 /// Reserves `size` bytes of anonymous, zero-initialised, read+write memory from the OS.
 /// Param size: number of bytes to reserve.
@@ -121,42 +119,5 @@ void* GetSymbol(DynamicLibraryHandle handle, const char* symbol_name);
 /// Unloads a library loaded with [[os::LoadLibrary]]; does nothing if `handle` is `nullptr`.
 /// Param handle: the handle to release; invalid afterwards.
 void UnloadLibrary(DynamicLibraryHandle handle);
-
-/// Makes sure a directory exists, creating it and any missing parents.
-///
-/// Param path: UTF-8 directory path, at most [[os::kMaxPathBytes]] - 1 bytes.
-/// Param mode: permission bits for the directories this call creates (existing ones are left alone), for example 0700.
-/// Returns: true if the directory exists afterwards and is a directory.
-/// Fails: returns false if the path is too long, a component exists but is not a directory, or the OS refuses to create it.
-bool EnsureDirectory(StringView path, int mode = 0700);
-
-/// Makes sure a directory exists and is private to the current user, creating it if needed.
-///
-/// Stricter than [[os::EnsureDirectory]], for places that hold sensitive files (crash dumps contain process memory): the
-/// final component must be a real directory, not a symbolic link, owned by the user running the program; if group or other
-/// users can access it, its permissions are tightened to 0700; and the user must be able to write to it.
-///
-/// Param path: UTF-8 directory path, at most [[os::kMaxPathBytes]] - 1 bytes.
-/// Returns: true if the directory exists, is owned by this user, is private to them, and is writable.
-/// Fails: returns false if the path is too long, the final component is a symbolic link or not a directory, it belongs to
-///   another user, its permissions cannot be tightened, or it is not writable.
-bool EnsurePrivateDirectory(StringView path);
-
-/// Finds, and creates if needed, the directory where this program writes crash dumps.
-///
-/// On Linux it is `$XDG_STATE_HOME/<app>/crashes`, or `~/.local/state/<app>/crashes` without it, created readable by the
-/// owner only (mode 0700). `<app>` is the environment variable `ENGINE_APP_NAME` or, without it, the name of the executable.
-/// It is never the working directory: a sandboxed or read-only working directory is not a place to put a dump.
-///
-/// Param out: receives the null-terminated path; borrowed for the call.
-/// Param capacity: size of `out` in bytes.
-/// Returns: true if `out` names a private directory of this user that exists.
-/// Fails: returns false, leaving `out` empty, if no base directory is known (no `XDG_STATE_HOME` and no `HOME`), the
-///   application name is unusable (`.`, `..`, empty, containing a slash, or longer than 200 bytes), the path does not fit, or
-///   the directory is not a private directory of this user (see [[os::EnsurePrivateDirectory]]).
-/// Thread-safety: thread-safe, except that it reads the environment, so another thread must not change it (`setenv`) at the
-///   same time.
-/// Backend: Windows: %LOCALAPPDATA%/<app>/crashes; macOS: ~/Library/Application Support/<app>/crashes; Android and iOS: the app-private files directory.
-bool GetCrashDumpDirectory(char* out, usize capacity);
 
 } // namespace engine_placeholder::os

@@ -43,7 +43,7 @@ Full reference: [Foundation: Debugging](../reference/foundation-debug.md) and [F
 - [[debug::WriteCrashReport]], [[debug::WriteCrashContext]], [[debug::RegisterCrashStateProvider]], [[debug::SetCrashStateText]], [[debug::CrashStateCounter]]
 - [[debug::EnablePostMortemDumps]] — core dumps
 - [[debug::CrashReason]], [[debug::FaultKind]], [[debug::InjectFault]], [[debug::RunInChild]], [[debug::ChildResult]] — testing code that crashes
-- [[os::GetCrashDumpDirectory]], [[os::EnsureDirectory]] — where dumps go
+- [[io::CrashDumpDirectory]], [[io::CreatePrivateDirectory]] — where dumps go
 
 ## Capturing and reading a stack trace
 

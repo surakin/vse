@@ -24,7 +24,6 @@ module foundation/types "Foundation: Fundamental Types"
 
 module platform/os "Platform: OS Services"
   header engine/foundation/os/os.h
-  header engine/foundation/os/file_util.h
   header engine/foundation/os/command_line.h
   header engine/foundation/os/gpu_driver_probe.h
 

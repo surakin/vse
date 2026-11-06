@@ -1,7 +1,5 @@
 #include "jobs/async_io.h"
 
-#include <fcntl.h>
-
 #include <cstdio>
 #include <cstring>
 #include <new>
@@ -11,7 +9,7 @@
 #include "jobs/scheduler.h"
 #include "jobs/worker_pool.h"
 #include "log/assert.h"
-#include "os/file_util.h"
+#include "io/file.h"
 #include "os/os.h"
 
 namespace engine_placeholder::jobs {
@@ -96,27 +94,37 @@ struct ReadState : IoRequest {
         if (arena != nullptr) arena->~ArenaAllocator();
     }
 
-    // File length via the portable os:: primitives, or -1.
-    static long LengthOf(StringView path) {
-        int fd = os::Open(path, O_RDONLY);
-        if (fd < 0) return -1;
-        long end = os::Lseek(fd, 0, SEEK_END);
-        os::Close(fd);
-        return end;
-    }
-
     static void Run(IoRequest* self) {
         ReadState* st = static_cast<ReadState*>(self);
-        StringView path(st->path, st->path_len);
-        long length = LengthOf(path);
-        if (length >= 0 && static_cast<usize>(length) <= st->max_bytes) {
-            // +1 so an empty file still gets a valid non-null buffer.
+        io::Path path;
+        io::FilePtr file;
+        u64 length = 0;
+        if (io::Path::Parse(StringView(st->path, st->path_len), io::NativePathStyle(), &path) &&
+            io::File::Open(path, io::OpenMode::Read, io::kOpenNone, &file).Ok() && file->Size(&length).Ok() && length <= st->max_bytes) {
+            // +1 so an empty file still gets a valid non-null buffer; the size is only a hint, a longer file simply fails.
             st->arena = new (st->arena_storage) ArenaAllocator(static_cast<usize>(length) + 1);
+            u8* data = nullptr;
             usize size = 0;
-            u8* data = os::ReadFileToArena(path, *st->arena, size);
-            st->ok = data != nullptr;
-            st->data = data;
-            st->size = data != nullptr ? size : 0;
+            io::Status status = io::ReadAll(*file, *st->arena, &data, &size, st->max_bytes);
+            if (status.Is(io::Error::OutOfMemory)) {
+                // The size was only a hint (a /proc file reports 0, a file may have grown): read it whole, then size the arena for it.
+                Vector<u8> bytes;
+                status = io::ReadAll(*file, &bytes, st->max_bytes);
+                if (status.Ok()) {
+                    st->arena->~ArenaAllocator();
+                    st->arena = new (st->arena_storage) ArenaAllocator(bytes.Size() + 1);
+                    data = static_cast<u8*>(st->arena->Alloc(bytes.Size() == 0 ? 1 : bytes.Size(), 1));
+                    if (data == nullptr) {
+                        status = io::Status::Of(io::Error::OutOfMemory);
+                    } else {
+                        if (bytes.Size() != 0) std::memcpy(data, bytes.Data(), bytes.Size());
+                        size = bytes.Size();
+                    }
+                }
+            }
+            st->ok = status.Ok();
+            st->data = status.Ok() ? data : nullptr;
+            st->size = status.Ok() ? size : 0;
         }
         JobsLog(LogVerbosity::Debug, "io thread: read of %s %s (%zu bytes)", st->path, st->ok ? "ok" : "failed",
                 static_cast<size_t>(st->size));

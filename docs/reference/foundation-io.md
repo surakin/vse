@@ -1751,7 +1751,7 @@ Creates a directory and any missing parents; an existing directory is success.
 Status CreatePrivateDirectory(const Path& path);
 ```
 
-Creates (or accepts) a directory that only this user can use: mode 0700, owned by the effective user, not a symbolic link, writable. Parents are created with [`io::CreateDirectories`](#io-createdirectories-const-path-amp). An existing directory with group or other access is tightened.
+Creates (or accepts) a directory that only this user can use: mode 0700, owned by the effective user, not a symbolic link, writable. Missing parents are created too, with mode 0700 as well (existing parents are left alone and are not checked). An existing directory with group or other access is tightened.
 
 | Field | Value |
 |---|---|
@@ -1948,6 +1948,23 @@ The per-user state directory: `$XDG_STATE_HOME/<app>` or `<home>/.local/state/<a
 | Field | Value |
 |---|---|
 | Fails | as [`io::UserConfigDirectory`](#io-userconfigdirectory-stringview-path-star). |
+
+## `CrashDumpDirectory(Path*)` {#io-crashdumpdirectory-path-star}
+
+`function io::CrashDumpDirectory` — defined in `engine/foundation/io/file_system.h`
+
+```cpp
+Status CrashDumpDirectory(Path* out);
+```
+
+The directory where this program writes crash dumps, created (and made private to this user) if needed: `<user state directory>/<app>/crashes` (on Linux `$XDG_STATE_HOME` or `~/.local/state`). `<app>` is the environment variable `ENGINE_APP_NAME` or, without it, the executable's file name. Never the working directory: a sandboxed or read-only working directory is not a place to put a dump.
+
+| Field | Value |
+|---|---|
+| Parameter `out` | receives the directory. |
+| Fails | `NotFound` (neither `$XDG_STATE_HOME` nor `$HOME` is set to an absolute path, or the executable cannot be found), `Invalid` (an unusable application name: `.`, `..`, empty after trimming, containing a slash or longer than 200 bytes), the errors of [`io::CreatePrivateDirectory`](#io-createprivatedirectory-const-path-amp). |
+| Thread-safety | thread-safe, except that it reads the environment, so another thread must not change it (`setenv`) at the same time. |
+| Backend | Windows: %LOCALAPPDATA%/<app>/crashes; macOS: ~/Library/Application Support/<app>/crashes; Android and iOS: the app-private files directory. |
 
 ## `PathStyle` {#io-pathstyle}
 

@@ -29,7 +29,7 @@ Order of work that keeps something testable at each step:
 1. **Build it.** Replace the stop in `engine/foundation/CMakeLists.txt` (it names this phase and the checklist) with the real
    source list under `os/<platform>/debug/`. Configure the crash library as on Linux (`SENTRY_BACKEND=breakpad`,
    `SENTRY_TRANSPORT=none`); build libbacktrace with the object-format files for the platform instead of `elf.c`.
-2. **Thin functions.** `CurrentThreadId`, `IsDebuggerAttached`, `GetCrashDumpDirectory`, the build id in `InitCrashContext`,
+2. **Thin functions.** `CurrentThreadId`, `IsDebuggerAttached`, `io::CrashDumpDirectory`, the build id in `InitCrashContext`,
    `DemangleSymbol`, the module list. Run the *crash context*, *assert* and *stack trace* groups.
 3. **Death tests.** `DeathTestsSupported` and `RunInChild`, then `FaultSupported` and `InjectFault`. The *death tests* and
    *fault injection* groups tell you, with the `CrashReason` table, when the decoding is right.

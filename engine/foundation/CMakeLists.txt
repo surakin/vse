@@ -58,7 +58,6 @@ set(FOUNDATION_SOURCES
   foundation.cpp
   os/key_translate.cpp
   os/window.cpp
-  os/file_util.cpp
   os/gpu_driver_probe.cpp
   mem/arena_allocator.cpp
   mem/pool_allocator.cpp

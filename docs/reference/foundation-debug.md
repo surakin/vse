@@ -393,7 +393,7 @@ There is deliberately no field for a server address or an account: the handler o
 const char* dump_directory;
 ```
 
-Directory the dumps go to; null means [`os::GetCrashDumpDirectory`](platform-os.md#os-getcrashdumpdirectory-char-star-usize). Created if missing. Never the working directory.
+Directory the dumps go to; null means [`io::CrashDumpDirectory`](foundation-io.md#io-crashdumpdirectory-path-star). Created if missing. Never the working directory.
 
 ### `report_file` {#debug-crashhandleroptions-report-file}
 

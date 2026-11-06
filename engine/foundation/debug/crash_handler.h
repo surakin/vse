@@ -18,7 +18,7 @@ namespace engine_placeholder::debug {
 ///
 /// Thread-safety: thread-compatible. A plain value; the strings are borrowed for the [[debug::InstallCrashHandler]] call.
 struct CrashHandlerOptions {
-    /// Directory the dumps go to; null means [[os::GetCrashDumpDirectory]]. Created if missing. Never the working directory.
+    /// Directory the dumps go to; null means [[io::CrashDumpDirectory]]. Created if missing. Never the working directory.
     const char* dump_directory = nullptr;
     /// A file attached to every dump (the crash report text written by the report hook); null for none. The file need not
     /// exist when the handler is installed.

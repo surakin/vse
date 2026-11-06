@@ -8,6 +8,8 @@
 #include "debug/post_mortem.h"
 #include "debug/stack_trace.h"
 #include "log/log.h"
+#include "io/file.h"
+#include "io/file_system.h"
 #include "os/os.h"
 
 #include <sentry.h>
@@ -143,21 +145,25 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
         return CrashHandlerResult::AlreadyInstalled;
     }
 
-    char default_directory[os::kMaxPathBytes];
-    const char* directory = options.dump_directory;
-    if (directory == nullptr || directory[0] == '\0') {
-        if (!os::GetCrashDumpDirectory(default_directory, sizeof(default_directory))) {
+    io::Path directory_path(io::PathStyle::Posix);
+    if (options.dump_directory == nullptr || options.dump_directory[0] == '\0') {
+        if (io::CrashDumpDirectory(&directory_path).Failed()) {
             Log(LogCrash, LogVerbosity::Warn, "no directory for crash dumps could be found or created; crash handler not installed");
             return CrashHandlerResult::DirectoryFailed;
         }
-        directory = default_directory;
-    } else if (!os::EnsurePrivateDirectory(StringView(directory))) {
+    } else if (!io::Path::Parse(StringView(options.dump_directory), io::PathStyle::Posix, &directory_path) ||
+               io::CreatePrivateDirectory(directory_path).Failed()) {
         Log(LogCrash, LogVerbosity::Warn, "the crash dump directory is missing, not private to this user, or not writable; crash handler not installed");
         return CrashHandlerResult::DirectoryFailed;
     }
-    const int saved_length = std::snprintf(g_saved_directory, sizeof(g_saved_directory), "%s/saved", directory);
-    if (saved_length < 0 || static_cast<usize>(saved_length) >= sizeof(g_saved_directory) ||
-        !os::EnsurePrivateDirectory(StringView(g_saved_directory))) {
+    char directory_text[io::kMaxPathBytes + 1];
+    if (!directory_path.ToNative(directory_text, sizeof(directory_text))) {
+        Log(LogCrash, LogVerbosity::Warn, "the crash dump directory path is too long; crash handler not installed");
+        return CrashHandlerResult::DirectoryFailed;
+    }
+    const char* directory = directory_text;
+    const io::Path saved_path = directory_path.Join("saved");
+    if (!saved_path.ToNative(g_saved_directory, sizeof(g_saved_directory)) || io::CreatePrivateDirectory(saved_path).Failed()) {
         Log(LogCrash, LogVerbosity::Warn, "the directory for saved crash dumps could not be created; crash handler not installed");
         return CrashHandlerResult::DirectoryFailed;
     }
@@ -196,7 +202,7 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
     }
     if (g_report_path[0] != '\0') {
         // Empty any report an earlier run left, so a crash that writes none does not attach a stale one.
-        const int stale = os::CreateFileForWriting(StringView(g_report_path));
+        const int stale = os::CreateFileForWriting(StringView(g_report_path)); // mode 0600, as the fault handler creates it
         if (stale >= 0) {
             os::Close(stale);
         }

@@ -14,17 +14,18 @@ Production code (all hits of `fopen|fread|fwrite|opendir|readdir|mkdir|rename|st
 
 | Site | What it does | API today | Signal-safe? | Port day / disposition |
 |---|---|---|---|---|
-| `foundation/os/os.h`, `os/linux/os.cpp` | `Open/Read/Write/Close/Lseek`, `CreateFileForWriting`, `EnsureDirectory`, `EnsurePrivateDirectory`, `GetCrashDumpDirectory`, `ReadFileToArena` | raw POSIX | partly (descriptor primitives) | 121: the file-system ones become wrappers over `io` or are removed; the descriptor primitives stay for console and the signal-safe layer (exception E1) |
-| `foundation/os/file_util.h` | helpers over the above | os | no | 121 |
-| `foundation/log/log.cpp` | `log::LoadConfig` reads a config file; default sink is `os::Write` (console) | `os::Open/Read/Close` | no | 121 (the read ports; the console sink is E1). Note for Phase 9: `LoadConfig` is an existing config reader |
+| `foundation/os/os.h`, `os/linux/os.cpp` | `Open/Read/Write/Close/Lseek`, `CreateFileForWriting`, `EnsureDirectory`, `EnsurePrivateDirectory`, `GetCrashDumpDirectory`, `ReadFileToArena` | raw POSIX | partly (descriptor primitives) | **Done Day 121:** `Lseek`, `EnsureDirectory`, `EnsurePrivateDirectory`, `GetCrashDumpDirectory`, `ReadFileToArena` (and `os/file_util.*`) removed; `Read/Write/Close/WriteAllWithTimeout` stay (E1); `Open` and `CreateFileForWriting` stay for the debugger check and the crash report (E1/E2) |
+| `foundation/os/file_util.h` | helpers over the above | os | no | **Done Day 121** (removed) |
+| `foundation/log/log.cpp` | `log::LoadConfig` reads a config file; default sink is `os::Write` (console) | `os::Open/Read/Close` | no | **Done Day 121** (reads through `io::File`; the console sink is E1). Note for Phase 9: `LoadConfig` is an existing config reader |
 | `foundation/main.cpp` | console output only (`os::Write(1, ...)`) | `os::Write` | no | E1: console descriptor, stays |
-| `foundation/debug/crash_handler_sentry.cpp` | report file, database directory | `os::` | partly | 121; the SIGNAL-SAFE parts stay (E1), the rest ports |
-| `os/linux/debug/crash_signal.cpp`, `crash_context.cpp` | crash-time writes and `/proc` reads | `os::` | yes | E1/E2: stay raw |
-| `os/linux/debug/debugger.cpp` | reads `/proc/self/status` (tracer detection) | `os::Open/Read/Close` | no (called normally) | 121 (ports) |
-| `os/linux/debug/core_dump.cpp` | reads `/proc/sys/kernel/core_pattern` | `os::Open/Read` | no | 121 (ports; `/proc` reads work through `LocalFile`) |
+| `foundation/debug/crash_handler_sentry.cpp` | report file, database directory | `os::` | partly | **Done Day 121:** directories and the stale-report reset use `io`; the SIGNAL-SAFE report file keeps `os::CreateFileForWriting` (E1) |
+| `os/linux/debug/crash_signal.cpp` | crash-time writes | `os::` | yes | E1: stays raw |
+| `os/linux/debug/crash_context.cpp` | `/proc/cpuinfo` and `/proc/meminfo` reads in `InitCrashContext` (startup, never in the handler) | `os::Open/Read/Close` | no | **Done Day 121** (`io::File`; checked against the `SIGNAL-SAFE` markers: none in this file) |
+| `os/linux/debug/debugger.cpp` | reads `/proc/self/status` (tracer detection) | `os::Open/Read/Close` | no, but reached from the assert-failure path | **Day 121 decision: stays raw (E2)**: the assert handler may run while the heap is inconsistent, and the file layer allocates |
+| `os/linux/debug/core_dump.cpp` | reads `/proc/sys/kernel/core_pattern` | `os::Open/Read` | no | **Done Day 121** (`io::File`) |
 | `foundation/debug/death_test.cpp` | writes a message to stderr in the child | `os::Write(2, ...)` | yes | E1: stays |
 | `os/linux/wayland/wayland_window.cpp` | `memfd_create` shared memory | memfd | no | E3: not a path, stays |
-| `jobs/async_io.{h,cpp}` | `ReadFileAsync`, `IoThread` | `os::`, `IoRequest` | no | 119 (rebased on `File::ReadAsync` + `IoExecutor`), 121 (callers) |
+| `jobs/async_io.{h,cpp}` | `ReadFileAsync`, `IoThread` | `os::`, `IoRequest` | no | **Done Days 119 (executor) and 121** (`ReadFileAsync` reads through `io::File`) |
 | `rhi/vulkan/vulkan_device_pipelines.cpp` | pipeline cache: `getenv`, `mkdir`, `stat`, `fopen`, `rename` | libc | no | 122 (`UserCacheDirectory` + `WriteFileAtomic`) |
 | `game/common/textures.cpp` | `.rtex` read/write | `fopen` | no | 122 |
 | `game/renderer_demo/main.cpp` | PPM writer, asset dir listing (`opendir`/`readdir`), `getenv` | libc | no | 122 |

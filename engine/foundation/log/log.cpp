@@ -1,4 +1,5 @@
 #include "log/log.h"
+#include "io/file.h"
 
 #include "debug/crash_context.h"
 #include "debug/crash_report.h"
@@ -426,17 +427,17 @@ void ResetEnsureStateForTesting() {
 }
 
 bool LoadConfig(const char* path) {
-    int fd = os::Open(path, O_RDONLY);
-    if (fd < 0) {
+    io::Path config_path;
+    io::FilePtr file;
+    if (!io::Path::Parse(StringView(path), io::NativePathStyle(), &config_path) ||
+        io::File::Open(config_path, io::OpenMode::Read, io::kOpenNone, &file).Failed()) {
         return false;
     }
     char buffer[4096];
-    long n = os::Read(fd, buffer, sizeof(buffer));
-    os::Close(fd);
-    if (n <= 0) {
+    usize len = 0;
+    if (file->Read(buffer, sizeof(buffer), 0, &len).Failed() || len == 0) {
         return false;
     }
-    usize len = static_cast<usize>(n);
 
     usize line_start = 0;
     for (usize i = 0; i <= len; ++i) {

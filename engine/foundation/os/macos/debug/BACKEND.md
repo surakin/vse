@@ -29,7 +29,7 @@ As Linux (same signals). Integer divide by zero does not trap on arm64: `FaultSu
 ### `IsDebuggerAttached`
 `sysctl` with `CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()` and test `kp_proc.p_flag & P_TRACED`. Groups: *assert*.
 
-### `GetCrashDumpDirectory`
+### `CrashDumpDirectory`
 `~/Library/Application Support/<app>/crashes` (from `NSSearchPathForDirectoriesInDomains` or `$HOME`), created 0700.
 Sandboxed apps: the container directory. Groups: *dump directory*.
 

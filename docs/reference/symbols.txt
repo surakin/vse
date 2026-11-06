@@ -450,6 +450,7 @@ io::UserConfigDirectory(StringView,Path*)	function	foundation/io	io-userconfigdi
 io::UserCacheDirectory(StringView,Path*)	function	foundation/io	io-usercachedirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:153
 io::UserDataDirectory(StringView,Path*)	function	foundation/io	io-userdatadirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:157
 io::UserStateDirectory(StringView,Path*)	function	foundation/io	io-userstatedirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:161
+io::CrashDumpDirectory(Path*)	function	foundation/io	io-crashdumpdirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:172
 io::PathStyle	enum	foundation/io	io-pathstyle	foundation-io.md	engine/foundation/io/path.h:18
 io::PathStyle::Posix	enumerator	foundation/io	io-pathstyle-posix	foundation-io.md	engine/foundation/io/path.h:19
 io::PathStyle::Windows	enumerator	foundation/io	io-pathstyle-windows	foundation-io.md	engine/foundation/io/path.h:20
@@ -702,28 +703,23 @@ os::CommandLine::FlagCount() const	function	platform/os	os-commandline-flagcount
 os::CommandLine::FlagName(usize) const	function	platform/os	os-commandline-flagname-usize-const	platform-os.md	engine/foundation/os/command_line.h:128
 os::CommandLine::FlagHasValue(usize) const	function	platform/os	os-commandline-flaghasvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:136
 os::CommandLine::FlagValue(usize) const	function	platform/os	os-commandline-flagvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:145
-os::ReadFileToArena(StringView,ArenaAllocator&,usize&)	function	platform/os	os-readfiletoarena-stringview-arenaallocator-amp-usize-amp	platform-os.md	engine/foundation/os/file_util.h:18
 os::ProbeVulkanCreateInstance()	function	platform/os	os-probevulkancreateinstance	platform-os.md	engine/foundation/os/gpu_driver_probe.h:15
-os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/foundation/os/os.h:16
-os::Exit(int)	function	platform/os	os-exit-int	platform-os.md	engine/foundation/os/os.h:20
-os::Write(int,const void*,usize)	function	platform/os	os-write-int-const-void-star-usize	platform-os.md	engine/foundation/os/os.h:27
-os::Read(int,void*,usize)	function	platform/os	os-read-int-void-star-usize	platform-os.md	engine/foundation/os/os.h:34
-os::WriteAllWithTimeout(int,const void*,usize,u64)	function	platform/os	os-writeallwithtimeout-int-const-void-star-usize-u64	platform-os.md	engine/foundation/os/os.h:45
-os::Open(StringView,int,int)	function	platform/os	os-open-stringview-int-int	platform-os.md	engine/foundation/os/os.h:54
-os::CreateFileForWriting(StringView,int)	function	platform/os	os-createfileforwriting-stringview-int	platform-os.md	engine/foundation/os/os.h:63
-os::Close(int)	function	platform/os	os-close-int	platform-os.md	engine/foundation/os/os.h:68
-os::Lseek(int,long,int)	function	platform/os	os-lseek-int-long-int	platform-os.md	engine/foundation/os/os.h:75
-os::ReserveMemory(usize)	function	platform/os	os-reservememory-usize	platform-os.md	engine/foundation/os/os.h:82
-os::ReleaseMemory(void*,usize)	function	platform/os	os-releasememory-void-star-usize	platform-os.md	engine/foundation/os/os.h:87
-os::MonotonicTimeNanos()	function	platform/os	os-monotonictimenanos	platform-os.md	engine/foundation/os/os.h:95
-os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:101
-os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:104
-os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:111
-os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:119
-os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:123
-os::EnsureDirectory(StringView,int)	function	platform/os	os-ensuredirectory-stringview-int	platform-os.md	engine/foundation/os/os.h:131
-os::EnsurePrivateDirectory(StringView)	function	platform/os	os-ensureprivatedirectory-stringview	platform-os.md	engine/foundation/os/os.h:143
-os::GetCrashDumpDirectory(char*,usize)	function	platform/os	os-getcrashdumpdirectory-char-star-usize	platform-os.md	engine/foundation/os/os.h:160
+os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/foundation/os/os.h:18
+os::Exit(int)	function	platform/os	os-exit-int	platform-os.md	engine/foundation/os/os.h:22
+os::Write(int,const void*,usize)	function	platform/os	os-write-int-const-void-star-usize	platform-os.md	engine/foundation/os/os.h:29
+os::Read(int,void*,usize)	function	platform/os	os-read-int-void-star-usize	platform-os.md	engine/foundation/os/os.h:36
+os::WriteAllWithTimeout(int,const void*,usize,u64)	function	platform/os	os-writeallwithtimeout-int-const-void-star-usize-u64	platform-os.md	engine/foundation/os/os.h:47
+os::Open(StringView,int,int)	function	platform/os	os-open-stringview-int-int	platform-os.md	engine/foundation/os/os.h:58
+os::CreateFileForWriting(StringView,int)	function	platform/os	os-createfileforwriting-stringview-int	platform-os.md	engine/foundation/os/os.h:68
+os::Close(int)	function	platform/os	os-close-int	platform-os.md	engine/foundation/os/os.h:73
+os::ReserveMemory(usize)	function	platform/os	os-reservememory-usize	platform-os.md	engine/foundation/os/os.h:80
+os::ReleaseMemory(void*,usize)	function	platform/os	os-releasememory-void-star-usize	platform-os.md	engine/foundation/os/os.h:85
+os::MonotonicTimeNanos()	function	platform/os	os-monotonictimenanos	platform-os.md	engine/foundation/os/os.h:93
+os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:99
+os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:102
+os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:109
+os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:117
+os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:121
 os::Key	enum	platform/window-input	os-key	platform-window-input.md	engine/foundation/os/input.h:12
 os::Key::Unknown	enumerator	platform/window-input	os-key-unknown	platform-window-input.md	engine/foundation/os/input.h:13
 os::Key::A	enumerator	platform/window-input	os-key-a	platform-window-input.md	engine/foundation/os/input.h:14

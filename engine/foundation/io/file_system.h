@@ -94,7 +94,7 @@ Status CreateDirectory(const Path& path);
 /// Fails: `NotADirectory` when a component exists and is not a directory, plus the errors of [[io::CreateDirectory]].
 Status CreateDirectories(const Path& path);
 /// Creates (or accepts) a directory that only this user can use: mode 0700, owned by the effective user, not a symbolic link,
-/// writable. Parents are created with [[io::CreateDirectories]]. An existing directory with group or other access is tightened.
+/// writable. Missing parents are created too, with mode 0700 as well (existing parents are left alone and are not checked). An existing directory with group or other access is tightened.
 ///
 /// Fails: `PermissionDenied` (another user's, or not writable), `SymlinkLoop` (the final component is a link), `NotADirectory`.
 Status CreatePrivateDirectory(const Path& path);
@@ -159,5 +159,16 @@ Status UserDataDirectory(StringView app_name, Path* out);
 ///
 /// Fails: as [[io::UserConfigDirectory]].
 Status UserStateDirectory(StringView app_name, Path* out);
+
+/// The directory where this program writes crash dumps, created (and made private to this user) if needed: `<user state directory>/<app>/crashes`
+/// (on Linux `$XDG_STATE_HOME` or `~/.local/state`). `<app>` is the environment variable `ENGINE_APP_NAME` or, without it, the executable's
+/// file name. Never the working directory: a sandboxed or read-only working directory is not a place to put a dump.
+///
+/// Param out: receives the directory.
+/// Fails: `NotFound` (neither `$XDG_STATE_HOME` nor `$HOME` is set to an absolute path, or the executable cannot be found), `Invalid` (an unusable application name: `.`, `..`,
+///   empty after trimming, containing a slash or longer than 200 bytes), the errors of [[io::CreatePrivateDirectory]].
+/// Thread-safety: thread-safe, except that it reads the environment, so another thread must not change it (`setenv`) at the same time.
+/// Backend: Windows: %LOCALAPPDATA%/<app>/crashes; macOS: ~/Library/Application Support/<app>/crashes; Android and iOS: the app-private files directory.
+Status CrashDumpDirectory(Path* out);
 
 } // namespace engine_placeholder::io

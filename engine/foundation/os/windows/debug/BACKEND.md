@@ -35,7 +35,7 @@ which values to set. Never write outside the program's own key. Groups: *post-mo
 ### `IsDebuggerAttached`
 `IsDebuggerPresent()`. Trap: it is true under any debugger, including a tracer the user did not mean. Groups: *assert*.
 
-### `GetCrashDumpDirectory`
+### `CrashDumpDirectory`
 `%LOCALAPPDATA%/<app>/crashes` through `SHGetKnownFolderPath(FOLDERID_LocalAppData)`, converted to UTF-8, created private to the
 user (an ACL granting only the user; the Linux 0700 check has no direct equivalent). Groups: *dump directory*.
 

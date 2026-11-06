@@ -13,8 +13,8 @@ shown. The platform checklists are `os/windows/debug/BACKEND.md` and `os/macos/d
 | *crash context* `[crashreport]` | `InitCrashContext`, `GetCrashContext` | build id equals the binary's, OS, CPU, memory, executable are non-empty | device model (empty on desktop) |
 | *crash report* `[crashreport]` | `WriteCrashReport`, `WriteCrashContext`, providers, the log ring | sections in order; no allocation once initialized; a faulting provider loses only the rest | none |
 | *threads* `[crash]` | `RegisterThreadForCrashHandling`, `CurrentThreadId` | a fault on another thread names that thread; two threads at once give one report | the stack-overflow case, if the platform cannot handle it (say why) |
-| *crash handler* `[crash]` | `InstallCrashHandler`, `UninstallCrashHandler`, `GetCrashDumpDirectory` | a fault leaves one envelope with a minidump of every thread, a report file, and the original signal or exception code | none |
-| *dump directory* `[crash]` | `GetCrashDumpDirectory`, `EnsurePrivateDirectory` | private to the user, named after the application | none |
+| *crash handler* `[crash]` | `InstallCrashHandler`, `UninstallCrashHandler`, `io::CrashDumpDirectory` | a fault leaves one envelope with a minidump of every thread, a report file, and the original signal or exception code | none |
+| *dump directory* `[crash]` | `io::CrashDumpDirectory`, `io::CreatePrivateDirectory` | private to the user, named after the application | none |
 | *post-mortem* `[postmortem]` | `EnablePostMortemDumps` | `Enabled` or `Limited` with a note, never silent | `Unsupported` (iOS, consoles) |
 | *programs* `[programs]` | `StartProgramDebugging`, `RunCrashTest` | `--crash-test` kinds give the reports above | none |
 
