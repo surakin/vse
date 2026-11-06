@@ -67,6 +67,14 @@ endfunction()
 renderer_demo_scripted(renderer_demo_script_wayland wayland)
 renderer_demo_scripted(renderer_demo_script_x11 x11)
 
+# A crash after a device reset: the report (Phase 6) shows the device epoch and the reset count in its state section.
+add_test(NAME renderer_demo_crash_after_reset
+  COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--backend;wayland;--frames;60;--script;frame:10 reset frame:20 crash:abort"
+    "-DEXPECT_CODE=Subprocess aborted" "-DEXPECT_OUT=rhi_device: epoch [0-9]+, 1 reset\\(s\\)" "-DSKIP_IF_OUT=${RENDERER_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
+    -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
+set_tests_properties(renderer_demo_crash_after_reset PROPERTIES LABELS "gpu;demo;display;crash" RESOURCE_LOCK display SKIP_RETURN_CODE 77
+  ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-crash_after_reset")
+
 add_test(NAME renderer_demo_no_vulkan
   COMMAND ${CMAKE_COMMAND} -E env ENGINE_VULKAN_LIBRARY=/nonexistent
     ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--screenshot;${CMAKE_CURRENT_BINARY_DIR}/renderer_demo_no_vulkan.ppm" -DEXPECT_CODE=1 "-DEXPECT_OUT=no Vulkan device"
@@ -78,6 +86,6 @@ add_test(NAME renderer_demo_assets_current
   COMMAND ${CMAKE_COMMAND} -DMINT=$<TARGET_FILE:renderer_demo_mint> -DASSETS=${CMAKE_CURRENT_SOURCE_DIR}/assets
     -DWORK=${CMAKE_CURRENT_BINARY_DIR}/assets-check -P ${CMAKE_CURRENT_SOURCE_DIR}/check_assets.cmake)
 set_tests_properties(renderer_demo_assets_current PROPERTIES LABELS demo)
-engine_label_tests(renderer_demo_list_gpus renderer_demo_unknown_gpu renderer_demo_script_wayland renderer_demo_script_x11 renderer_demo_screenshot renderer_demo_gbuffer_layers renderer_demo_device_loss_screenshot renderer_demo_device_loss_trace renderer_demo_oom_later
+engine_label_tests(renderer_demo_crash_after_reset renderer_demo_list_gpus renderer_demo_unknown_gpu renderer_demo_script_wayland renderer_demo_script_x11 renderer_demo_screenshot renderer_demo_gbuffer_layers renderer_demo_device_loss_screenshot renderer_demo_device_loss_trace renderer_demo_oom_later
   renderer_demo_oom_device renderer_demo_bad_injection renderer_demo_bad_layer renderer_demo_bad_objects renderer_demo_no_vulkan
   renderer_demo_assets_current)

@@ -1,0 +1,20 @@
+// Stand-in for the standard header (see cstddef): the thread id the device host compares, declarations only.
+#pragma once
+namespace std {
+class thread {
+public:
+    class id {
+    public:
+        id() noexcept = default;
+        friend bool operator==(id a, id b) noexcept { return a.value_ == b.value_; }
+        friend bool operator!=(id a, id b) noexcept { return a.value_ != b.value_; }
+
+    private:
+        unsigned long value_ = 0;
+        friend id get_id_impl();
+    };
+};
+namespace this_thread {
+thread::id get_id() noexcept;
+} // namespace this_thread
+} // namespace std

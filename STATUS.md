@@ -25,6 +25,13 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   `scripts/crash-report.sh`, `store-symbols.sh`, `split-debug.sh`, `find-core.sh`, `open-core.sh`. Every demo takes
   `--crash-handler=on|off` and `--crash-test=segv|abort|assert|ensure`. Release symbols: `-DENGINE_SPLIT_DEBUG_INFO=ON`.
   Guide: `docs/guide/foundation-debugging.md`, `porting-debugging.md`.
+- **RHI reset (Phase 7):** the tests are labelled `phase7` (`ctest -L phase7`, `scripts/test-phase.sh 7`): `tests/renderer/{render_settings,device_resources,recreatable_renderer,apply_settings,device_loss_recovery,reset_soak}_test.cpp`,
+  `tests/rhi/{adapter,device_host,swapchain_reconfigure,vulkan_reset_golden,lifecycle_conformance}_test.cpp`, `tests/foundation/window_fullscreen_test.cpp`
+  and the demo ctests `renderer_demo_script_wayland|x11`, `renderer_demo_crash_after_reset`, `*_demo_list_gpus`, `*_demo_unknown_gpu`. Gates:
+  `rhi_lifecycle_lists`, `rhi_cross_syntax_windows|macos`. GPU tests (tag `gpu`, they skip without a device) include the 100-reset loops and the
+  pixel-identical-after-reset test; they run in the plain and ASan flavors. The demo takes `--gpu`, `--list-gpus`, `--prewarm` and `--script`
+  and has live keys F1-F10 (`game/renderer_demo/README.md`). Guides: `docs/guide/render-settings.md`, `rhi.md` ("Lifecycle and reset",
+  "Presentation", "Choosing a GPU"), `renderer.md` ("Surviving a reset", "Changing settings at run time", "Device loss and recovery").
 
 ## Phase 0 (Foundation layer)
 

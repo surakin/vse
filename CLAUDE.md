@@ -209,7 +209,12 @@ table in `PLAN.md`.
   the app, so re-initializing the device, swapchain and every device-dependent resource is a supported operation, not
   a recovery hack. Anything that owns GPU resources must therefore be able to rebuild them (keep its CPU-side source
   or a reload path), and a lost device recovers through the same path. Do not add a GPU-owning type that cannot be
-  recreated.
+  recreated. The concrete rule (`docs/guide/renderer.md`, "Surviving a reset"): an owner of device objects **keeps its CPU-side
+  source, registers with `renderer::DeviceResources` at its tier (a `ScopedRegistration` member), implements `Release`/`Recreate`,
+  and never caches a handle past a frame** (hold the owner and read `Handle()` when recording). Materials bind textures by owner,
+  not by raw handle. A test of such an owner resets the device through `tests/renderer/reset_rig.h` and compares the counts from
+  `Device::Resources()` (`docs/guide/building-and-testing.md`, "Testing a reset"). Rendering settings change at run time through
+  `Renderer::ApplySettings` and are classified by cost (`docs/guide/render-settings.md`).
 - **Every target platform is designed in from day one — desktop, mobile,
   and console alike — even though only Linux is implemented before
   Phase 8 (Windows).** Platform-layer and engine-facing interfaces must stay

@@ -145,3 +145,35 @@ buffers; the clip-space Y flip in the shader path; `Mailbox` falling back to `Fi
 For `plans/phase-09-macos-metal.md`: encoder splitting around passes; barriers as no-ops or `memoryBarrier` by
 tracking mode; threadgroup size from shader reflection at pipeline creation; `Managed` storage and `FlushMappedBuffer`;
 `ClampToBorder` unavailable on iOS; `nextDrawable()` as `Acquire`; the clip-space Y flip.
+
+## 6. The device lifecycle (added in Phase 7, Day 114)
+
+Phase 7 made replacing the device at run time a normal operation (`rhi::DeviceHost`, `Device::Quiesce`/`Resources`/`Epoch`/`Adapter`/
+`RecreateSurface`/`InjectDeviceLoss`, `Swapchain::Reconfigure`, `rhi::EnumerateAdapters`). The checklist a backend implements is
+`engine/rhi/BACKEND-LIFECYCLE.md`; `tests/rhi/lifecycle_conformance_test.cpp` is the suite it must pass. What each new piece means
+on the next two backends:
+
+**DX12.** *Adapters:* `IDXGIFactory6::EnumAdapterByGpuPreference`; id from vendor, device, subsystem and revision (the LUID is valid
+only until reboot, and `MatchAdapter` must also accept it, so two identical cards can be told apart within a run); `Software` is
+`DXGI_ADAPTER_FLAG_SOFTWARE` (WARP); UMA decides integrated versus discrete. *Device creation* needs no separate instance: a factory
+per enumeration and per device, so the Vulkan "instance and surface per device" property holds trivially. *Swapchain:* `ResizeBuffers`
+after idling for `Reconfigure` (size and format); present mode maps to the sync interval and `DXGI_PRESENT_ALLOW_TEARING`; HDR is
+`SetColorSpace1` with `DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709` (scRGB, `R16G16B16A16_FLOAT`) or `..._G2084_NONE_P2020` (HDR10, which
+needs the RHI to gain a 10-bit format first). *Surface re-creation:* a flip-model swap chain is created for an `HWND`, so
+`RecreateSurface` is a new swap chain on the same device, always possible. *Device loss:* `DXGI_ERROR_DEVICE_REMOVED` and
+`DXGI_ERROR_DEVICE_RESET` from `Present`, fence waits and `GetDeviceRemovedReason`; fence waits must be bounded (`SetEventOnCompletion`
+with a timeout) so tolerant destruction after loss cannot hang. *Fullscreen:* borderless (the window API), never exclusive.
+
+**Metal.** *Adapters:* `MTLCopyAllDevices` on macOS (one device on iOS); id from `registryID`; `hasUnifiedMemory`, `isLowPower` and
+`isRemovable` give the kind. *Swapchain:* `CAMetalLayer` `drawableSize`, `pixelFormat`, `colorspace` and
+`wantsExtendedDynamicRangeContent` (EDR is the HDR path); `Reconfigure` sets them and the next `nextDrawable` follows. *Surface
+re-creation:* a new `CAMetalLayer` for the view. *Device loss:* there is no loss concept except an external GPU being removed
+(`MTLDeviceRemovalRequestedNotification`) and command buffer errors; the recovery path is therefore exercised on Metal mainly through
+`InjectDeviceLoss` and the null backend. *Validation:* Metal API validation is an environment setting, so the `validation` and
+`sync_validation` settings are advisory (`DeviceCreateInfo` documents it). *Fullscreen:* native fullscreen (`toggleFullScreen:`).
+
+**Inherited by Phases 8 and 9:** implement the fifteen functions of `BACKEND-LIFECYCLE.md`; add one factory to the conformance suite;
+seed handle generations from `AllocateDeviceSerial`/`GenerationSeed`; keep destruction after loss from hanging; name the pipeline
+cache file by adapter identity; implement `os::Window::SupportsFullscreen`/`SetFullscreen`/`IsFullscreen` (`FULLSCREEN.md` in
+`engine/foundation/os/windows` and `macos`); and add a backend registry to `rhi` so `CreateDevice`, `EnumerateAdapters` and `DeviceHost`
+need not live in the Vulkan library (the renderer links `rhi_vulkan` today only for that).

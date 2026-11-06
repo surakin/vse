@@ -145,6 +145,10 @@ tests/foundation/window_fullscreen_test.cpp     7
 tests/rhi/swapchain_reconfigure_test.cpp        7
 tests/rhi/vulkan_reset_golden_test.cpp          7
 test:renderer_demo_script_*                     7
+test:renderer_demo_crash_after_reset            7
+test:rhi_lifecycle_lists                        7
+test:rhi_cross_syntax_*                         7
+tests/rhi/lifecycle_conformance_test.cpp        7
 test:renderer_demo_list_gpus                    7
 test:rhi_demo_list_gpus                         7
 test:rhi_demo_unknown_gpu                       7

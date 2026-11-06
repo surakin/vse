@@ -505,6 +505,12 @@ int RunWindow(const Options& options, RenderSettings settings) {
                     } else if (std::strcmp(word, "loss") == 0) {
                         if (renderer.GetDevice() != nullptr) renderer.GetDevice()->InjectDeviceLoss();
                         else RhiLogV(LogVerbosity::Warn, "renderer_demo: script: loss skipped (no device right now)");
+                    } else if (std::strncmp(word, "crash:", 6) == 0) {
+                        // A crash in the middle of a run that already reset the device: the report must show the epoch and the reset count.
+                        const char* kind = word + 6;
+                        engine_placeholder::debug::RunCrashTest(std::strcmp(kind, "segv") == 0     ? engine_placeholder::debug::CrashTestKind::Segv
+                                                                : std::strcmp(kind, "assert") == 0 ? engine_placeholder::debug::CrashTestKind::Assert
+                                                                                                   : engine_placeholder::debug::CrashTestKind::Abort);
                     } else if (std::strcmp(word, "quit") == 0) {
                         quit = true;
                     } else {
@@ -653,7 +659,7 @@ int Usage(const char* program, int code) {
                  "  --gpu G           the GPU to use: an id from --list-gpus, an index, or part of the name\n"
                  "  --list-gpus       print the GPUs and exit\n"
                  "  --prewarm         after a device reset rebuild every pipeline at once instead of when it is first used\n"
-                 "  --script W        run steps without a keyboard: frame:N set:key=value reset gpu:next loss quit (space separated)\n"
+                 "  --script W        run steps without a keyboard: frame:N set:key=value reset gpu:next loss crash:segv|abort|assert quit (space separated)\n"
                  "  --inject-device-loss F  fault injection: lose the GPU device at frame F (exit code 3)\n"
                  "  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it\n",
                  program);

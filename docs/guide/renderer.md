@@ -2,7 +2,22 @@
 
 > **Status:** draft  
 > **Audience:** engine and game programmers  
-> **Covers:** Phase 4
+> **Covers:** Phase 4 and Phase 7 (resetting the device at run time)
+
+## Making my type survive a reset (checklist)
+
+If your type owns device objects (buffers, textures, samplers, shaders, pipelines, bind groups), it must be able to make them again
+when the device is replaced. Do these four things; "Surviving a reset" below has the details and a sample.
+
+1. **Keep the CPU-side source** (pixels, mesh data, descriptors, or a loader that makes them), never only the GPU object.
+2. **Register** with a `renderer::DeviceResources` at your tier (`renderer::tiers`), through a `renderer::ScopedRegistration` member.
+3. **Implement `renderer::Recreatable`:** `Release` destroys your device objects and keeps the source; `Recreate` makes them again;
+   `Live` says whether you hold them now.
+4. **Never keep a handle past a frame** for anyone else; hold your owner (a `GpuMesh*`, a `GpuTexture*`) and read `Handle()` when you record.
+   Bind textures to materials **by owner**, not by raw handle.
+
+Then test it: reset the device with `tests/renderer/reset_rig.h` and compare `Device::Resources()` before and after
+("Testing a reset" in the building-and-testing guide).
 
 ## Source of truth
 

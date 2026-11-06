@@ -12,6 +12,7 @@ set(RHI_TEST_SOURCES
   device_host_test.cpp
   swapchain_reconfigure_test.cpp
   vulkan_reset_golden_test.cpp
+  lifecycle_conformance_test.cpp
   vulkan_loader_test.cpp
   vulkan_instance_test.cpp
   vulkan_device_test.cpp
@@ -97,3 +98,13 @@ engine_add_rhi_tests(rhi_tests rhi rhi_vulkan "" "rhi" "")
 # Wayland presentation test, which runs the same code of ours, is clean.
 engine_add_rhi_tests(rhi_tests_asan rhi_asan rhi_vulkan_asan " [asan]" "asan" "~[x11]")
 engine_add_rhi_tests(rhi_tests_tsan rhi_tsan rhi_vulkan_tsan " [tsan]" "tsan" "~[gpu]")
+
+# Phase 7 Day 114: the lifecycle checklist for the DX12 and Metal backends stays in step with the interfaces, and the neutral RHI
+# headers compile for the Windows and macOS targets (needs clang++; skips without it).
+add_test(NAME rhi_lifecycle_lists COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_lifecycle_list.cmake)
+function(engine_rhi_cross_syntax_test name triple)
+  add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DTRIPLE=${triple} -DROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/cross_syntax/check_rhi_cross_syntax.cmake)
+endfunction()
+engine_rhi_cross_syntax_test(rhi_cross_syntax_windows x86_64-pc-windows-msvc)
+engine_rhi_cross_syntax_test(rhi_cross_syntax_macos arm64-apple-macos13)
+engine_label_tests(rhi_lifecycle_lists rhi_cross_syntax_windows rhi_cross_syntax_macos)
