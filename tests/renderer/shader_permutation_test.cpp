@@ -139,7 +139,15 @@ TEST_CASE("Lookup is bounded by the table, not by the key", "[renderer][permutat
     CHECK_FALSE(key.Has(200));
 
     // A table whose entry count claims more than the limit is not read past the limit (and fails validation).
+    // The lookup cannot know a table's real length, so the array here really holds the limit's worth of entries (the
+    // committed ones, then empties); a sentinel one past the limit matches the key, so reading past it would find it.
+    PermutationEntry padded[kMaxPermutationKeys + 1] = {};
+    for (u32 i = 0; i < Table().entry_count; ++i) {
+        padded[i] = Table().entries[i];
+    }
+    padded[kMaxPermutationKeys].key_bits = 0x10u;
     ShaderPermutations lying = Table();
+    lying.entries = padded;
     lying.entry_count = 1000;
     CHECK(ValidateShaderPermutations(lying) != nullptr);
     CHECK(FindPermutation(lying, PermutationKey{0x10u}, &error) == nullptr);
