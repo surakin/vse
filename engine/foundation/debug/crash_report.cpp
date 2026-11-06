@@ -141,6 +141,9 @@ void WriteCrashContext(const CrashReportSink& sink) {
             w.Text("device: ").Text(c.device_model).EndLine();
         }
         w.Text("cpu: ").Text(c.cpu_brand[0] != '\0' ? c.cpu_brand : "(unknown)").Text(", ").Decimal(c.cpu_count).Text(" logical").EndLine();
+        if (c.core_dumps[0] != '\0') {
+            w.Text("core dumps: ").Text(c.core_dumps).EndLine();
+        }
         w.Text("memory: ").Decimal(c.total_memory_bytes / (1024ull * 1024ull)).Text(" MiB").EndLine();
     }
     {

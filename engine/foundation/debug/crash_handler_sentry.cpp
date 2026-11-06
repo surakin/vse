@@ -5,6 +5,7 @@
 #include "debug/crash_context.h"
 #include "debug/crash_event_platform.h"
 #include "debug/crash_report.h"
+#include "debug/post_mortem.h"
 #include "debug/stack_trace.h"
 #include "log/log.h"
 #include "os/os.h"
@@ -236,6 +237,19 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
         Log(LogCrash, LogVerbosity::Warn, "the crash report hook could not be installed; crashes leave a dump but no report");
     }
     RegisterThreadForCrashHandling();
+    // Last, so a failed install leaves the process's core settings alone. The report says where a core goes, or why none will.
+    SetCoreDumpDescription("");
+    if (options.post_mortem_dumps) {
+        const PostMortemReport post_mortem = EnablePostMortemDumps(PostMortemOptions());
+        if (post_mortem.result == PostMortemResult::Enabled) {
+            SetCoreDumpDescription(post_mortem.destination);
+        } else {
+            char text[kPostMortemTextBytes];
+            std::snprintf(text, sizeof(text), "none will be written: %s", post_mortem.note[0] != '\0' ? post_mortem.note : "not supported here");
+            SetCoreDumpDescription(text);
+            Log(LogCrash, LogVerbosity::Warn, StringView(post_mortem.note));
+        }
+    }
     g_crash_handler_installed.store(true, std::memory_order_release);
     return CrashHandlerResult::Installed;
 }

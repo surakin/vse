@@ -40,6 +40,8 @@ struct CrashContext {
     char architecture[kMaxContextText] = {};
     /// Device model on phones, tablets and consoles; empty on a desktop.
     char device_model[kMaxContextText] = {};
+    /// Where a core dump goes, if [[debug::SetCoreDumpDescription]] was called; empty otherwise.
+    char core_dumps[256] = {};
     /// The CPU's marketing name; empty if unknown.
     char cpu_brand[kMaxContextText] = {};
     /// Number of logical processors that are online; 0 if unknown.
@@ -60,6 +62,12 @@ struct CrashContext {
 /// had none (the crash handler and a failed assert initialize without arguments when the program has not).
 /// Thread-safety: thread-safe. Not async-signal-safe: it reads files.
 void InitCrashContext(int argc, const char* const* argv);
+
+/// Records where a core dump will go (from [[debug::EnablePostMortemDumps]]), to be printed in every crash report.
+/// Param text: a sentence for a person; copied (and cut to fit); null or empty clears it.
+/// Thread-safety: thread-safe against other callers and [[debug::InitCrashContext]]; call during startup, because a crash report
+///   reads it without a lock.
+void SetCoreDumpDescription(const char* text);
 
 /// Reports whether [[debug::InitCrashContext]] has run.
 /// Thread-safety: thread-safe. Async-signal-safe.

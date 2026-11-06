@@ -244,3 +244,10 @@ answer = 42
 
 _TODO_
 
+## Debugging scripts (Linux)
+
+`scripts/find-core.sh` and `scripts/open-core.sh` locate the newest core dump of a program, check its build id and open it in
+`gdb`; they are Linux shell scripts and are described in the "Core dumps on Linux" section of `docs/guide/foundation-debugging.md`.
+Their test (`The newest core of a crashed program is found by script...`) runs in the plain flavor only and skips, with the
+reason printed, when `gdb` is missing or the system keeps no core.
+

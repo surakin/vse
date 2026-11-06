@@ -231,6 +231,40 @@ the debugger from going to the network to look for symbols.
 | ASan, UBSan | works when the sanitizer's own fault handling is off (`handle_segv=0:handle_abort=0`, which the death-test child sets) | otherwise the sanitizer's report replaces ours |
 | TSan | works; a fault inside the report path loses the `double fault` message and the dump | see KNOWN-ISSUES |
 
+## Core dumps on Linux
+
+The minidump the crash handler writes is small and always on. A **core dump** is the kernel's copy of the whole process
+memory: bigger, off by default, and the right thing when you want to walk the heap in `gdb`. Ask for one with
+`CrashHandlerOptions::post_mortem_dumps` (or call [[debug::EnablePostMortemDumps]] yourself). It raises this process's core size
+limit to the hard limit, makes the process dumpable, and puts a `core dumps:` line in every crash report saying where the core
+goes. If the system's hard limit is 0 the process cannot raise it; start it from a shell after `ulimit -c unlimited`.
+
+Where the core goes is the system's choice (`/proc/sys/kernel/core_pattern`):
+
+| core_pattern | Where the core is | How to open it |
+|---|---|---|
+| starts with `|` and names `systemd-coredump` (most distributions) | stored by the system | `coredumpctl list`, then `coredumpctl gdb <pid>` or `scripts/open-core.sh <program>` |
+| a file name pattern such as `core.%e.%p` | a file in the working directory of the crash | `gdb <program> <core>` or `scripts/open-core.sh <program>` |
+| starts with `|` and names another program | wherever that program puts it | see that program |
+
+Changing `core_pattern` needs root (`sudo sysctl kernel.core_pattern=...`); the engine never does it. Two scripts (Linux shell
+scripts; Windows has its own tooling in Phase 8) take the work out of the common case:
+
+```text
+scripts/find-core.sh  [--pid PID] [--wait SECONDS] [--output FILE] <program>
+scripts/open-core.sh  [--pid PID] [--wait SECONDS] <program> [<core>]
+```
+
+`find-core.sh` finds the newest core of the program (through `coredumpctl` or the pattern), and **checks that the core's recorded
+build id equals the program's** (a core from another build gives wrong symbols); it exits with 3 if they differ. `open-core.sh`
+runs `gdb` in batch mode and prints `bt` and `thread apply all bt`. They tell `gdb` not to ask a debuginfod server for
+symbols unless `ENGINE_ALLOW_DEBUGINFOD` is set.
+
+Things to know: a core can be as large as the process (the system may refuse or truncate it; `coredumpctl` keeps them under
+`/var/lib/systemd/coredump` until they age out); **a core contains everything the process had in memory, including keys and
+passwords**, so do not attach one to a bug report or leave it in a shared directory; and every crashing program on a
+`systemd-coredump` machine leaves a journal entry (visible in `coredumpctl list`) even when no core is stored.
+
 ## Testing code that crashes
 
 A crash kills the process that crashes, so a test cannot simply call code that is supposed to crash. A **death test**

@@ -48,6 +48,11 @@ void InitCrashContext(int argc, const char* const* argv) {
     g_crash_context_ready.store(true, std::memory_order_release);
 }
 
+void SetCoreDumpDescription(const char* text) {
+    std::lock_guard<std::mutex> lock(g_crash_context_mutex);
+    CopyBounded(g_crash_context.core_dumps, sizeof(g_crash_context.core_dumps), text != nullptr ? text : "");
+}
+
 bool CrashContextInitialized() {
     return g_crash_context_ready.load(std::memory_order_acquire);
 }

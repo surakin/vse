@@ -27,6 +27,9 @@ struct CrashHandlerOptions {
     const char* release = nullptr;
     /// Path of a separate handler program for backends that need one; null or empty for the Breakpad backend, which has none.
     const char* handler_path = nullptr;
+    /// True to also allow the platform's own post-mortem artifact (a core file on Linux) and to say in every crash report where
+    /// it goes; see [[debug::EnablePostMortemDumps]]. Off by default: a core holds the whole process memory.
+    bool post_mortem_dumps = false;
     /// False to leave the handler off: [[debug::InstallCrashHandler]] then does nothing and returns
     /// [[debug::CrashHandlerResult::Disabled]]. Lets a program keep one call and switch it by configuration.
     bool enabled = true;

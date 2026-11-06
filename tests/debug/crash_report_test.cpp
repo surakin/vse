@@ -13,6 +13,7 @@
 #include <atomic>
 #include <cstdio>
 #include <cstring>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -220,7 +221,10 @@ TEST_CASE("Eight threads logging while another reads: every line delivered is wh
     ResetLogRingForTesting();
     std::atomic<bool> stop{false};
     std::atomic<int> bad{0};
+    std::mutex bad_mutex;
+    std::string first_bad;
     std::atomic<long> delivered{0};
+    std::atomic<long> passes{0};
     std::thread reader([&] {
         while (!stop.load()) {
             const std::vector<std::string> lines = RecentLines();
@@ -233,17 +237,30 @@ TEST_CASE("Eight threads logging while another reads: every line delivered is wh
                 if (t == std::string::npos || std::sscanf(line.c_str() + t, "INFO: T%d-%d", &thread_id, &n) != 2 || thread_id < 0 ||
                     thread_id > 7 || line.back() != '\n') {
                     bad.fetch_add(1);
+                    std::lock_guard<std::mutex> lock(bad_mutex);
+                    if (first_bad.empty()) {
+                        first_bad = "malformed: [" + line + "]";
+                    }
                     continue;
                 }
                 if (n <= last[static_cast<usize>(thread_id)]) {
                     bad.fetch_add(1); // a thread's own lines went backwards
+                    std::lock_guard<std::mutex> lock(bad_mutex);
+                    if (first_bad.empty()) {
+                        first_bad = "backwards: thread " + std::to_string(thread_id) + " n=" + std::to_string(n) + " after " +
+                                    std::to_string(last[static_cast<usize>(thread_id)]);
+                    }
                 }
                 last[static_cast<usize>(thread_id)] = n;
                 delivered.fetch_add(1);
             }
+            passes.fetch_add(1);
             std::this_thread::yield();
         }
     });
+    while (passes.load() == 0) {
+        std::this_thread::yield(); // the writers start once the reader is running, so the two overlap
+    }
     std::thread writers[8];
     for (int t = 0; t < 8; ++t) {
         writers[t] = std::thread([t] {
@@ -259,8 +276,9 @@ TEST_CASE("Eight threads logging while another reads: every line delivered is wh
     }
     stop = true;
     reader.join();
+    INFO(first_bad);
     CHECK(bad.load() == 0);
-    CHECK(delivered.load() > 0);
+    CHECK(passes.load() > 0);
     // At rest: the ring holds the last 256 lines, all whole.
     const std::vector<std::string> lines = RecentLines();
     // A writer descheduled in the middle of its slot and then lapped by 256 newer lines leaves that one slot skipped, so

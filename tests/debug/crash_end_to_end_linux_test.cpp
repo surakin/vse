@@ -587,3 +587,22 @@ TEST_CASE("A crash report left by an earlier run is emptied when the handler is 
     CHECK(second.exited);
     CHECK(ReadWholeFile(report_path).empty());
 }
+
+ENGINE_DEATH_TEST_FN(dt_e2e_post_mortem_option) {
+    CrashHandlerOptions options;
+    options.dump_directory = argument;
+    options.post_mortem_dumps = true; // the child's hard core limit is 0, so this reports Limited and no core is written
+    InstallCrashHandler(options);
+    InjectFault(FaultKind::NullWrite);
+}
+
+TEST_CASE("With post-mortem dumps requested the crash report says where the core goes", "[crash][crashreport][postmortem][death][debug][linux]") {
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_e2e_post_mortem_option", dir.Path());
+    const std::string err = Stderr(r);
+    INFO(err);
+    CHECK(err.find("core dumps: none will be written: ") != std::string::npos);
+    CHECK(err.find("hard core size limit is 0") != std::string::npos); // the warning at install time
+    CHECK(err.find("=== END OF REPORT ===") != std::string::npos);
+}

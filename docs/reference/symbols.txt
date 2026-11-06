@@ -727,30 +727,33 @@ debug::CrashContext::os_name	variable	foundation/debug	debug-crashcontext-os-nam
 debug::CrashContext::os_version	variable	foundation/debug	debug-crashcontext-os-version	foundation-debug.md	engine/foundation/debug/crash_context.h:38
 debug::CrashContext::architecture	variable	foundation/debug	debug-crashcontext-architecture	foundation-debug.md	engine/foundation/debug/crash_context.h:40
 debug::CrashContext::device_model	variable	foundation/debug	debug-crashcontext-device-model	foundation-debug.md	engine/foundation/debug/crash_context.h:42
-debug::CrashContext::cpu_brand	variable	foundation/debug	debug-crashcontext-cpu-brand	foundation-debug.md	engine/foundation/debug/crash_context.h:44
-debug::CrashContext::cpu_count	variable	foundation/debug	debug-crashcontext-cpu-count	foundation-debug.md	engine/foundation/debug/crash_context.h:46
-debug::CrashContext::total_memory_bytes	variable	foundation/debug	debug-crashcontext-total-memory-bytes	foundation-debug.md	engine/foundation/debug/crash_context.h:48
-debug::CrashContext::start_time_unix	variable	foundation/debug	debug-crashcontext-start-time-unix	foundation-debug.md	engine/foundation/debug/crash_context.h:50
-debug::InitCrashContext(int,const char* const*)	function	foundation/debug	debug-initcrashcontext-int-const-char-star-const-star	foundation-debug.md	engine/foundation/debug/crash_context.h:62
-debug::CrashContextInitialized()	function	foundation/debug	debug-crashcontextinitialized	foundation-debug.md	engine/foundation/debug/crash_context.h:67
-debug::GetCrashContext()	function	foundation/debug	debug-getcrashcontext	foundation-debug.md	engine/foundation/debug/crash_context.h:73
+debug::CrashContext::core_dumps	variable	foundation/debug	debug-crashcontext-core-dumps	foundation-debug.md	engine/foundation/debug/crash_context.h:44
+debug::CrashContext::cpu_brand	variable	foundation/debug	debug-crashcontext-cpu-brand	foundation-debug.md	engine/foundation/debug/crash_context.h:46
+debug::CrashContext::cpu_count	variable	foundation/debug	debug-crashcontext-cpu-count	foundation-debug.md	engine/foundation/debug/crash_context.h:48
+debug::CrashContext::total_memory_bytes	variable	foundation/debug	debug-crashcontext-total-memory-bytes	foundation-debug.md	engine/foundation/debug/crash_context.h:50
+debug::CrashContext::start_time_unix	variable	foundation/debug	debug-crashcontext-start-time-unix	foundation-debug.md	engine/foundation/debug/crash_context.h:52
+debug::InitCrashContext(int,const char* const*)	function	foundation/debug	debug-initcrashcontext-int-const-char-star-const-star	foundation-debug.md	engine/foundation/debug/crash_context.h:64
+debug::SetCoreDumpDescription(const char*)	function	foundation/debug	debug-setcoredumpdescription-const-char-star	foundation-debug.md	engine/foundation/debug/crash_context.h:70
+debug::CrashContextInitialized()	function	foundation/debug	debug-crashcontextinitialized	foundation-debug.md	engine/foundation/debug/crash_context.h:75
+debug::GetCrashContext()	function	foundation/debug	debug-getcrashcontext	foundation-debug.md	engine/foundation/debug/crash_context.h:81
 debug::CrashHandlerOptions	struct	foundation/debug	debug-crashhandleroptions	foundation-debug.md	engine/foundation/debug/crash_handler.h:20
 debug::CrashHandlerOptions::dump_directory	variable	foundation/debug	debug-crashhandleroptions-dump-directory	foundation-debug.md	engine/foundation/debug/crash_handler.h:22
 debug::CrashHandlerOptions::report_file	variable	foundation/debug	debug-crashhandleroptions-report-file	foundation-debug.md	engine/foundation/debug/crash_handler.h:25
 debug::CrashHandlerOptions::release	variable	foundation/debug	debug-crashhandleroptions-release	foundation-debug.md	engine/foundation/debug/crash_handler.h:27
 debug::CrashHandlerOptions::handler_path	variable	foundation/debug	debug-crashhandleroptions-handler-path	foundation-debug.md	engine/foundation/debug/crash_handler.h:29
-debug::CrashHandlerOptions::enabled	variable	foundation/debug	debug-crashhandleroptions-enabled	foundation-debug.md	engine/foundation/debug/crash_handler.h:32
-debug::CrashHandlerResult	enum	foundation/debug	debug-crashhandlerresult	foundation-debug.md	engine/foundation/debug/crash_handler.h:36
-debug::CrashHandlerResult::Installed	enumerator	foundation/debug	debug-crashhandlerresult-installed	foundation-debug.md	engine/foundation/debug/crash_handler.h:37
-debug::CrashHandlerResult::AlreadyInstalled	enumerator	foundation/debug	debug-crashhandlerresult-alreadyinstalled	foundation-debug.md	engine/foundation/debug/crash_handler.h:38
-debug::CrashHandlerResult::Disabled	enumerator	foundation/debug	debug-crashhandlerresult-disabled	foundation-debug.md	engine/foundation/debug/crash_handler.h:39
-debug::CrashHandlerResult::DirectoryFailed	enumerator	foundation/debug	debug-crashhandlerresult-directoryfailed	foundation-debug.md	engine/foundation/debug/crash_handler.h:40
-debug::CrashHandlerResult::InitFailed	enumerator	foundation/debug	debug-crashhandlerresult-initfailed	foundation-debug.md	engine/foundation/debug/crash_handler.h:41
-debug::CrashHandlerResult::Unsupported	enumerator	foundation/debug	debug-crashhandlerresult-unsupported	foundation-debug.md	engine/foundation/debug/crash_handler.h:42
-debug::InstallCrashHandler(const CrashHandlerOptions&)	function	foundation/debug	debug-installcrashhandler-const-crashhandleroptions-amp	foundation-debug.md	engine/foundation/debug/crash_handler.h:54
-debug::UninstallCrashHandler()	function	foundation/debug	debug-uninstallcrashhandler	foundation-debug.md	engine/foundation/debug/crash_handler.h:61
-debug::RegisterThreadForCrashHandling()	function	foundation/debug	debug-registerthreadforcrashhandling	foundation-debug.md	engine/foundation/debug/crash_handler.h:72
-debug::CrashHandlerInstalled()	function	foundation/debug	debug-crashhandlerinstalled	foundation-debug.md	engine/foundation/debug/crash_handler.h:77
+debug::CrashHandlerOptions::post_mortem_dumps	variable	foundation/debug	debug-crashhandleroptions-post-mortem-dumps	foundation-debug.md	engine/foundation/debug/crash_handler.h:32
+debug::CrashHandlerOptions::enabled	variable	foundation/debug	debug-crashhandleroptions-enabled	foundation-debug.md	engine/foundation/debug/crash_handler.h:35
+debug::CrashHandlerResult	enum	foundation/debug	debug-crashhandlerresult	foundation-debug.md	engine/foundation/debug/crash_handler.h:39
+debug::CrashHandlerResult::Installed	enumerator	foundation/debug	debug-crashhandlerresult-installed	foundation-debug.md	engine/foundation/debug/crash_handler.h:40
+debug::CrashHandlerResult::AlreadyInstalled	enumerator	foundation/debug	debug-crashhandlerresult-alreadyinstalled	foundation-debug.md	engine/foundation/debug/crash_handler.h:41
+debug::CrashHandlerResult::Disabled	enumerator	foundation/debug	debug-crashhandlerresult-disabled	foundation-debug.md	engine/foundation/debug/crash_handler.h:42
+debug::CrashHandlerResult::DirectoryFailed	enumerator	foundation/debug	debug-crashhandlerresult-directoryfailed	foundation-debug.md	engine/foundation/debug/crash_handler.h:43
+debug::CrashHandlerResult::InitFailed	enumerator	foundation/debug	debug-crashhandlerresult-initfailed	foundation-debug.md	engine/foundation/debug/crash_handler.h:44
+debug::CrashHandlerResult::Unsupported	enumerator	foundation/debug	debug-crashhandlerresult-unsupported	foundation-debug.md	engine/foundation/debug/crash_handler.h:45
+debug::InstallCrashHandler(const CrashHandlerOptions&)	function	foundation/debug	debug-installcrashhandler-const-crashhandleroptions-amp	foundation-debug.md	engine/foundation/debug/crash_handler.h:57
+debug::UninstallCrashHandler()	function	foundation/debug	debug-uninstallcrashhandler	foundation-debug.md	engine/foundation/debug/crash_handler.h:64
+debug::RegisterThreadForCrashHandling()	function	foundation/debug	debug-registerthreadforcrashhandling	foundation-debug.md	engine/foundation/debug/crash_handler.h:75
+debug::CrashHandlerInstalled()	function	foundation/debug	debug-crashhandlerinstalled	foundation-debug.md	engine/foundation/debug/crash_handler.h:80
 debug::CrashReason	enum	foundation/debug	debug-crashreason	foundation-debug.md	engine/foundation/debug/crash_reason.h:16
 debug::CrashReason::None	enumerator	foundation/debug	debug-crashreason-none	foundation-debug.md	engine/foundation/debug/crash_reason.h:17
 debug::CrashReason::AccessViolation	enumerator	foundation/debug	debug-crashreason-accessviolation	foundation-debug.md	engine/foundation/debug/crash_reason.h:18
@@ -841,6 +844,20 @@ debug::LoadedModule::end	variable	foundation/debug	debug-loadedmodule-end	founda
 debug::LoadedModule::path	variable	foundation/debug	debug-loadedmodule-path	foundation-debug.md	engine/foundation/debug/module_list.h:23
 debug::RefreshLoadedModules()	function	foundation/debug	debug-refreshloadedmodules	foundation-debug.md	engine/foundation/debug/module_list.h:32
 debug::FindLoadedModule(u64,LoadedModule*)	function	foundation/debug	debug-findloadedmodule-u64-loadedmodule-star	foundation-debug.md	engine/foundation/debug/module_list.h:42
+debug::kPostMortemTextBytes	variable	foundation/debug	debug-kpostmortemtextbytes	foundation-debug.md	engine/foundation/debug/post_mortem.h:18
+debug::PostMortemResult	enum	foundation/debug	debug-postmortemresult	foundation-debug.md	engine/foundation/debug/post_mortem.h:21
+debug::PostMortemResult::Enabled	enumerator	foundation/debug	debug-postmortemresult-enabled	foundation-debug.md	engine/foundation/debug/post_mortem.h:22
+debug::PostMortemResult::Limited	enumerator	foundation/debug	debug-postmortemresult-limited	foundation-debug.md	engine/foundation/debug/post_mortem.h:23
+debug::PostMortemResult::Unsupported	enumerator	foundation/debug	debug-postmortemresult-unsupported	foundation-debug.md	engine/foundation/debug/post_mortem.h:24
+debug::PostMortemOptions	struct	foundation/debug	debug-postmortemoptions	foundation-debug.md	engine/foundation/debug/post_mortem.h:30
+debug::PostMortemOptions::size_limit_bytes	variable	foundation/debug	debug-postmortemoptions-size-limit-bytes	foundation-debug.md	engine/foundation/debug/post_mortem.h:32
+debug::PostMortemReport	struct	foundation/debug	debug-postmortemreport	foundation-debug.md	engine/foundation/debug/post_mortem.h:38
+debug::PostMortemReport::result	variable	foundation/debug	debug-postmortemreport-result	foundation-debug.md	engine/foundation/debug/post_mortem.h:40
+debug::PostMortemReport::previous_limit_bytes	variable	foundation/debug	debug-postmortemreport-previous-limit-bytes	foundation-debug.md	engine/foundation/debug/post_mortem.h:42
+debug::PostMortemReport::current_limit_bytes	variable	foundation/debug	debug-postmortemreport-current-limit-bytes	foundation-debug.md	engine/foundation/debug/post_mortem.h:44
+debug::PostMortemReport::destination	variable	foundation/debug	debug-postmortemreport-destination	foundation-debug.md	engine/foundation/debug/post_mortem.h:46
+debug::PostMortemReport::note	variable	foundation/debug	debug-postmortemreport-note	foundation-debug.md	engine/foundation/debug/post_mortem.h:48
+debug::EnablePostMortemDumps(const PostMortemOptions&)	function	foundation/debug	debug-enablepostmortemdumps-const-postmortemoptions-amp	foundation-debug.md	engine/foundation/debug/post_mortem.h:61
 debug::kMaxStackFrames	variable	foundation/debug	debug-kmaxstackframes	foundation-debug.md	engine/foundation/debug/stack_trace.h:16
 debug::kMaxSymbolBytes	variable	foundation/debug	debug-kmaxsymbolbytes	foundation-debug.md	engine/foundation/debug/stack_trace.h:20
 debug::kMaxSourcePathBytes	variable	foundation/debug	debug-kmaxsourcepathbytes	foundation-debug.md	engine/foundation/debug/stack_trace.h:22

@@ -25,6 +25,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/debug/module_list.cpp
     os/linux/debug/crash_context.cpp
     os/linux/debug/crash_signal.cpp
+    os/linux/debug/core_dump.cpp
     os/linux/debug/fault_injection.cpp
   )
 

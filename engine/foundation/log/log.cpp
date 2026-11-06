@@ -61,10 +61,16 @@ void RingAppend(const char* text, usize length) {
     }
     const u64 line = g_log_ring_head.fetch_add(1, std::memory_order_relaxed);
     RingSlot& slot = g_log_ring[line % kLogRingSlots];
-    // Odd: being written. The data stores below are release stores so the odd marker above is visible before any of the new
-    // data on weakly ordered CPUs (an acquire exchange alone does not order later stores; a fence would, but TSan does not
-    // model fences). The exchange is an acquire RMW so the reader's final check sees every earlier writer.
-    slot.sequence.exchange(2 * line + 1, std::memory_order_acquire);
+    // Odd means being written. The data stores below are release stores, so the odd mark is visible before any of the new data
+    // on weakly ordered CPUs (an acquire RMW alone does not order later stores; a fence would, but TSan does not model fences).
+    // Only one writer at a time may own a slot, or a writer that was descheduled and lapped by 256 newer lines would later
+    // overwrite the text of the newer line while the slot still says it holds that newer line. So claim the slot only if it is
+    // idle (even) and does not already hold a newer line; otherwise leave this line out of the ring (it is still logged).
+    u64 current = slot.sequence.load(std::memory_order_relaxed);
+    if ((current & 1) != 0 || current > 2 * line + 1 ||
+        !slot.sequence.compare_exchange_strong(current, 2 * line + 1, std::memory_order_acquire, std::memory_order_relaxed)) {
+        return;
+    }
     slot.length.store(static_cast<u32>(length), std::memory_order_release);
     for (usize w = 0; w < kRingWords; ++w) {
         u64 word = 0;

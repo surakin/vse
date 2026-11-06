@@ -18,6 +18,8 @@ Seen failing once or intermittently, passing on rerun. Cause not investigated.
 - The window tests (X11, Wayland, and the RHI presentation tests) used to fail at random under `ctest -j6`; they now hold the ctest resource `display` and run one at a time (5 full runs in a row passed, 2026-11-05).
 
 
+- Phase 6 Day 98 (2026-11-06): `The newest core of a crashed program is found by script, checked against the binary, and opens in gdb` failed twice in full `ctest -L phase6 -j16` runs (once in the non-unity build, once in a 15-repeat run) and passed in 25 solo repeats, 40 loaded repeats and 6 further full runs; the failure output was not captured. Phase 6.
+
 ## Unverified by a human
 
 Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`, Phases 1-2).
@@ -78,3 +80,6 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - Phase 6 Day 97: the AArch64 branch of the stack-pointer read in `os/linux/debug/crash_signal.cpp` (used to tell a stack overflow from a wild pointer) has not been compiled or run.
 - Phase 6 Day 97: the check that a crashing program under `gdb` stops at the original faulting instruction, not inside the recorder, has not been done by a human. (`lldb` opening the extracted dump is automated.)
 - Phase 6 Day 97: a signal handler the application installs before `InstallCrashHandler` is replaced by the library's and never runs (observed; the guide says to install after and chain).
+- Phase 6 Day 98: `find-core.sh` handles `systemd-coredump` and file-name patterns; cores handed to any other collector are reported as not found. The end-to-end test needs `gdb` and a core the system keeps, and skips (printing why) otherwise or in the sanitizer flavors. Each plain run of that test stores a ~1 MB core in `systemd-coredump` (it ages out by itself), and every crash test on a `systemd-coredump` machine leaves a journal entry with no core.
+- Phase 6 Day 98 (2026-11-06): an earlier version of `scripts/find-core.sh` left 17 files named `/tmp/core.XXXXXX` (about 1 MB each, from this machine's test runs); the script no longer does. They were not deleted from the shared directory by this session.
+

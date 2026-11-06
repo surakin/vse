@@ -34,6 +34,9 @@ module platform/window-input "Platform: Windowing and Input"
 module foundation/debug "Foundation: Debugging"
   header engine/foundation/debug/*.h
   exclude engine/foundation/debug/death_test_platform.h   # the per-platform half of the death-test helper, not API
+  exclude engine/foundation/debug/core_dump_linux.h       # Linux test hooks behind post_mortem.h, not API
+  exclude engine/foundation/debug/crash_event_platform.h  # the per-platform half of crash reporting, not API
+  exclude engine/foundation/debug/crash_context_platform.h # the per-platform half of the crash context, not API
   strict thread-safety
   strict ownership
   strict failure
