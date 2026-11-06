@@ -6,8 +6,8 @@
 //!
 //! This is the platform-neutral idea; each platform implements it its own way:
 //!   - Linux: a core file, or a handoff to `systemd-coredump` (`coredumpctl`); the process raises its core size limit.
-//!   - Windows (Phase 10): Windows Error Reporting `LocalDumps`.
-//!   - macOS (Phase 11): the system's core files and crash reports.
+//!   - Windows (Phase 11): Windows Error Reporting `LocalDumps`.
+//!   - macOS (Phase 12): the system's core files and crash reports.
 //!   - Android: tombstones, which the system always writes ([[debug::PostMortemResult::Enabled]] with nothing to do).
 //!   - iOS and consoles with their own crash system: [[debug::PostMortemResult::Unsupported]].
 //! The minidump the crash handler writes ([[debug::InstallCrashHandler]]) is separate and always on; a core dump is bigger and

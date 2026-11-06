@@ -40,7 +40,7 @@ Done condition — see `CLAUDE.md`'s "How the plan is structured."
   `StringView` (extended with `IndexOf`/`Find`/`Contains`) — no general
   config-file parser needed since this format is deliberately dumb.
   Revisit if it proves too limited once real usage shows up (e.g. once
-  the asset pipeline's own format conventions land in Phase 17).
+  the asset pipeline's own format conventions land in Phase 18).
 - **libc linkage (resolved).** Phase 0 links libc normally from Day 1 —
   no `-nostdlib`/`-ffreestanding` — and Day 2's OS-interaction layer
   wraps libc functions directly rather than hand-rolling raw syscalls.

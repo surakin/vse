@@ -3,7 +3,7 @@
 #
 #   scripts/find-core.sh [--pid PID] [--wait SECONDS] [--output FILE] EXECUTABLE
 #
-# Linux only (a shell script; Windows dumps are handled by the Phase 10 tooling). With systemd-coredump (a core_pattern that
+# Linux only (a shell script; Windows dumps are handled by the Phase 11 tooling). With systemd-coredump (a core_pattern that
 # starts with `|` and names it) the core is fetched with `coredumpctl dump`; otherwise it is the newest file matching the
 # core_pattern in the current directory. The core's executable build id is compared with EXECUTABLE's; a core from a
 # different build exits with status 3. On success the core's path is printed on standard output and the gdb command on

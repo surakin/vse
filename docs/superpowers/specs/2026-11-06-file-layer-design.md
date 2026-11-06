@@ -6,7 +6,7 @@ Windows, macOS, mobile, consoles and network-backed files. `plans/phase-08-file-
 ## 1. Goal
 
 One path/file/directory layer in `engine/foundation/io/` (namespace `engine_placeholder::io`) replacing scattered `fopen`/`open`/`opendir`/
-`stat`/`mkdir`/`rename` calls and string-pasted paths. Phase 9 (settings) is built on it; Phase 17's storage backends implement `io::File`.
+`stat`/`mkdir`/`rename` calls and string-pasted paths. Phase 10 (settings) is built on it; Phase 18's storage backends implement `io::File`.
 
 ## 2. Inventory (what exists today)
 
@@ -16,7 +16,7 @@ Production code (all hits of `fopen|fread|fwrite|opendir|readdir|mkdir|rename|st
 |---|---|---|---|---|
 | `foundation/os/os.h`, `os/linux/os.cpp` | `Open/Read/Write/Close/Lseek`, `CreateFileForWriting`, `EnsureDirectory`, `EnsurePrivateDirectory`, `GetCrashDumpDirectory`, `ReadFileToArena` | raw POSIX | partly (descriptor primitives) | **Done Day 121:** `Lseek`, `EnsureDirectory`, `EnsurePrivateDirectory`, `GetCrashDumpDirectory`, `ReadFileToArena` (and `os/file_util.*`) removed; `Read/Write/Close/WriteAllWithTimeout` stay (E1); `Open` and `CreateFileForWriting` stay for the debugger check and the crash report (E1/E2) |
 | `foundation/os/file_util.h` | helpers over the above | os | no | **Done Day 121** (removed) |
-| `foundation/log/log.cpp` | `log::LoadConfig` reads a config file; default sink is `os::Write` (console) | `os::Open/Read/Close` | no | **Done Day 121** (reads through `io::File`; the console sink is E1). Note for Phase 9: `LoadConfig` is an existing config reader |
+| `foundation/log/log.cpp` | `log::LoadConfig` reads a config file; default sink is `os::Write` (console) | `os::Open/Read/Close` | no | **Done Day 121** (reads through `io::File`; the console sink is E1). Note for Phase 10: `LoadConfig` is an existing config reader |
 | `foundation/main.cpp` | console output only (`os::Write(1, ...)`) | `os::Write` | no | E1: console descriptor, stays |
 | `foundation/debug/crash_handler_sentry.cpp` | report file, database directory | `os::` | partly | **Done Day 121:** directories and the stale-report reset use `io`; the SIGNAL-SAFE report file keeps `os::CreateFileForWriting` (E1) |
 | `os/linux/debug/crash_signal.cpp` | crash-time writes | `os::` | yes | E1: stays raw |
@@ -90,7 +90,7 @@ The generated tables are in Appendix A and become Day 116's test data. Decisions
 7. **Atomic replace:** confirmed. `WriteFileAtomic(path, bytes)`: temporary sibling (same directory, so `rename` is atomic), write, flush and `fsync`, rename; a failure removes the temporary. Cross-device rename is not a case (same directory).
 8. **Special folders:** confirmed: `TempDirectory`, `CurrentDirectory`, `ExecutableDirectory`, `UserConfigDirectory`, `UserCacheDirectory`, `UserDataDirectory` (XDG with `$HOME` fallbacks on Linux); a program name is passed by the caller, never guessed.
 9. **Platform designs ride along:** confirmed; `BACKEND.md` and its list test on Day 124.
-10. **Phase 17 builds on `io::File`:** confirmed; Spike B is the evidence a non-local backend fits.
+10. **Phase 18 builds on `io::File`:** confirmed; Spike B is the evidence a non-local backend fits.
 
 ## 5. Class sketches
 
@@ -139,8 +139,8 @@ directories, assets as read-only archives (`Writable` off); consoles: title stor
 
 ## 7. Open questions (filed in the phase file)
 
-Memory mapping (a `Map` capability): deferred to Phase 17 planning; file watching: Phase 9 decides whether it asks; locks/sharing modes: Phase 10; text encodings: caller's concern; `log::LoadConfig` is an existing config reader the
-Phase 9 design must absorb or replace.
+Memory mapping (a `Map` capability): deferred to Phase 18 planning; file watching: Phase 10 decides whether it asks; locks/sharing modes: Phase 11; text encodings: caller's concern; `log::LoadConfig` is an existing config reader the
+Phase 10 design must absorb or replace.
 
 ## Appendix A — Spike C tables
 

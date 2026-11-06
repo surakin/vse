@@ -26,14 +26,14 @@ Linux is implemented in `engine/foundation/io/linux/`. A new platform adds `engi
 
 ## Platform notes
 
-- **Windows (Phase 10):** UTF-8 to UTF-16 at the boundary; drive letters, UNC and `\\?\` long paths (Path's `PathStyle::Windows` parses all of them
+- **Windows (Phase 11):** UTF-8 to UTF-16 at the boundary; drive letters, UNC and `\\?\` long paths (Path's `PathStyle::Windows` parses all of them
   already); `CreateFileW`, overlapped I/O (`kCapNativelyAsync`), `MoveFileExW` for atomic replace, known folders through `SHGetKnownFolderPath`.
-  A registry-backed settings store is Phase 9/10's, not this layer's.
-- **macOS (Phase 11):** case-insensitive default volumes, `dispatch_io` for native asynchronous reads, application sandbox containers for the
+  A registry-backed settings store is Phase 10/11's, not this layer's.
+- **macOS (Phase 12):** case-insensitive default volumes, `dispatch_io` for native asynchronous reads, application sandbox containers for the
   user directories, `NSFileManager` for the locations POSIX does not give.
-- **Android and iOS (Phase 19):** app-private directories as the user directories; the asset bundle is a read-only archive opened as a `File` backend
+- **Android and iOS (Phase 20):** app-private directories as the user directories; the asset bundle is a read-only archive opened as a `File` backend
   with a scheme (`RegisterFileScheme`), not a path; no `Writable` capability there.
-- **Consoles (Phase 20):** title storage and save-data APIs behind the same `File`; the install directory is read-only; asynchronous requests map to the
+- **Consoles (Phase 21):** title storage and save-data APIs behind the same `File`; the install directory is read-only; asynchronous requests map to the
   platform's I/O queue.
 
 ## The File interface

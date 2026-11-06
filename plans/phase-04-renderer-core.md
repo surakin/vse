@@ -1,6 +1,6 @@
 # Phase 4 — Renderer Core
 
-**Status: complete (2026-11-05).** All days (68-84, including 80a and 80b) are done; the portability proof, the portability review and the wrap-up are in [Day 84](phase-04-renderer-core/day-84-renderer-portability-wrapup.md). Phase 10 (Windows + DX12) needs its own day files before it starts.
+**Status: complete (2026-11-05).** All days (68-84, including 80a and 80b) are done; the portability proof, the portability review and the wrap-up are in [Day 84](phase-04-renderer-core/day-84-renderer-portability-wrapup.md). Phase 11 (Windows + DX12) needs its own day files before it starts.
 
 **Depends on:** Phase 3 (Vulkan RHI).
 **Goal:** a real renderer built on the RHI — multiple objects, materials,
@@ -15,8 +15,8 @@ with basic materials and lighting, with correct depth buffering.
 - **Render graph: generic**, built only on the RHI; it owns every barrier.
 - **Deferred RHI features (bindless, indirect draws, async compute): all out** for this phase; revisit with profiling data.
 
-- **Vertex colors (added 2026-11-05, from Phase 12's colored 3D text):** meshes may carry an optional RGBA8 per-vertex color in a second vertex stream; `StandardVertex` is unchanged. Mesh side on Day 78, `VERTEX_COLOR` material permutation on Day 79.
-- **Triangle strips and primitive restart (added 2026-11-05):** the RHI already has `TriangleStrip` but no restart and no test; the renderer has no topology. Built on Day 78 (RHI restart + GPU test, mesh/material/cache-key topology, strip/list helpers). Needed by Phase 12's 3D text meshes and generally for vertex-efficient geometry.
+- **Vertex colors (added 2026-11-05, from Phase 13's colored 3D text):** meshes may carry an optional RGBA8 per-vertex color in a second vertex stream; `StandardVertex` is unchanged. Mesh side on Day 78, `VERTEX_COLOR` material permutation on Day 79.
+- **Triangle strips and primitive restart (added 2026-11-05):** the RHI already has `TriangleStrip` but no restart and no test; the renderer has no topology. Built on Day 78 (RHI restart + GPU test, mesh/material/cache-key topology, strip/list helpers). Needed by Phase 13's 3D text meshes and generally for vertex-efficient geometry.
 
 ## Days
 
@@ -54,7 +54,7 @@ Each day has its own file of individually checkable sub-tasks, a docs task, an e
   final lighting model.
 - Camera/view/projection handling decoupled from any one scene format
   (ECS doesn't exist yet — this phase uses a minimal hard-coded scene list,
-  replaced by ECS in Phase 14).
+  replaced by ECS in Phase 15).
 
 ## Notes / open questions
 

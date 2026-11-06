@@ -1,15 +1,15 @@
 # Compiles every engine shader (and every permutation key of the permuted ones) to HLSL and Metal Shading Language with slangc,
-# the proof that the sources are not Vulkan in disguise (Phases 10-11 take the D3D12 and Metal backends from these same sources).
+# the proof that the sources are not Vulkan in disguise (Phases 11-12 take the D3D12 and Metal backends from these same sources).
 # Run through ctest as `shaders_portability`; arguments: SLANGC, SHADER_DIR, WORK_DIR, SHADERS (a ;-list), DXC (optional).
 # A shader fails the test if slangc exits non-zero, writes an `error`, or produces an empty file. Warnings are expected and
 # listed (Metal renames `main`). `dxc`, if installed, additionally compiles the HLSL to DXIL and reports what it rejects without
-# failing (the instance-index semantic is a known Phase 10 gap); the Metal compiler needs macOS and is not run here. See README.md, "Other targets".
+# failing (the instance-index semantic is a known Phase 11 gap); the Metal compiler needs macOS and is not run here. See README.md, "Other targets".
 include(${SHADER_DIR}/names.cmake)
 # Shaders known not to compile to a target, with the reason; the test fails if one of these starts to compile (remove it from
 # the list) or if any other shader does not.
 #   fill.comp, saxpy.comp (Metal): both call `RWStructuredBuffer.GetDimensions`, and Metal Shading Language cannot ask a buffer
 #   for its length ("unavailable features in entry point"). They are RHI compute test shaders, not renderer shaders; the Metal
-#   backend (Phase 11) passes the element count in a constant and these two get that change then.
+#   backend (Phase 12) passes the element count in a constant and these two get that change then.
 set(KNOWN_UNAVAILABLE metal:fill.comp metal:saxpy.comp)
 file(MAKE_DIRECTORY ${WORK_DIR})
 set(compiled 0)
@@ -105,7 +105,7 @@ foreach(shader ${SHADERS})
         if(dxc_rc EQUAL 0)
           math(EXPR dxc_checked "${dxc_checked} + 1")
         else()
-          # Expected until Phase 10: the per-object index is read from SV_VulkanInstanceID, which D3D12 does not have (see the
+          # Expected until Phase 11: the per-object index is read from SV_VulkanInstanceID, which D3D12 does not have (see the
           # renderer portability review). Reported, not fatal, so installing dxc does not turn the test red.
           message("note: dxc rejected the HLSL of ${shader}${tag}: ${dxc_err}")
         endif()

@@ -1,7 +1,7 @@
 # Backend list gate (Phase 6 Day 101). Run as:
 #   cmake -DROOT=<tree> -P check_backend_lists.cmake
 # Every neutral function whose doc comment carries a `Backend:` label must have a `### ` section (its name in backticks on the heading) in both
-# engine/foundation/os/windows/debug/BACKEND.md and engine/foundation/os/macos/debug/BACKEND.md, so the checklists for Phases 10 and 11
+# engine/foundation/os/windows/debug/BACKEND.md and engine/foundation/os/macos/debug/BACKEND.md, so the checklists for Phases 11 and 12
 # cannot fall behind the headers. The reverse also holds: a `### ` heading that names a function must name only functions that
 # carry the label.
 cmake_minimum_required(VERSION 3.20)

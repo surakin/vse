@@ -2,7 +2,7 @@
 
 The debugging facilities (stack traces, the assert family, the crash report, crash handling, core dumps, the scripts) are
 written once and run on every platform; a port supplies a handful of thin functions. This page is for the person doing the
-Windows port (Phase 10) or the macOS port (Phase 11). Linux is the reference. Mobile and consoles are designed in (an
+Windows port (Phase 11) or the macOS port (Phase 12). Linux is the reference. Mobile and consoles are designed in (an
 `Unsupported` answer, skipped death tests) and have no work here.
 
 Read, in order: this page; the checklist for your platform (`engine/foundation/os/windows/debug/BACKEND.md` or
@@ -51,7 +51,7 @@ Child result    exit code is an NTSTATUS: 0xC0000005 AccessViolation, 0xC000001D
                 (not on arm64), 0xC00000FD StackOverflow; exit code 3 plus a marker written by the child's SIGABRT handler is Abort
 Thread          GetCurrentThreadId; SetThreadStackGuarantee for stack overflow; SetThreadDescription for the name
 Post-mortem     WER LocalDumps registry values (needs elevation: report Limited without it)
-Symbols         DWARF (clang) works with libbacktrace; PDB needs a DbgHelp resolver behind ResolveStackTrace (the Phase 10 decision)
+Symbols         DWARF (clang) works with libbacktrace; PDB needs a DbgHelp resolver behind ResolveStackTrace (the Phase 11 decision)
 ```
 
 The traps: an exception filter may call only a few APIs and must not allocate; fast-fail crashes (`__fastfail`, `/GS` failures)

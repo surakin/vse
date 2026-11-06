@@ -18,7 +18,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   )
 
   # Phase 6: the per-platform half of the debugging facilities (debug/*.h are the neutral interfaces). Windows and macOS
-  # add os/<platform>/debug/ in Phases 10 and 11 (see the BACKEND.md checklists there).
+  # add os/<platform>/debug/ in Phases 11 and 12 (see the BACKEND.md checklists there).
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES
     os/linux/debug/death_test.cpp
     os/linux/debug/debugger.cpp
@@ -47,9 +47,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # libwayland-client).
   pkg_check_modules(X11Client REQUIRED IMPORTED_TARGET x11)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  message(FATAL_ERROR "Windows is implemented in Phase 10 (the debugging backend: os/windows/debug/BACKEND.md)")
+  message(FATAL_ERROR "Windows is implemented in Phase 11 (the debugging backend: os/windows/debug/BACKEND.md)")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  message(FATAL_ERROR "macOS is implemented in Phase 11 (the debugging backend: os/macos/debug/BACKEND.md)")
+  message(FATAL_ERROR "macOS is implemented in Phase 12 (the debugging backend: os/macos/debug/BACKEND.md)")
 else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
 endif()
