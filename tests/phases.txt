@@ -2,10 +2,10 @@
 #
 # `<pattern>  <phase>`: a source path relative to the repo root (`*` inside one segment; a trailing `/` is a whole
 # directory), or `test:<glob>` for a test that is not a Catch2 test case. Phases: 0 foundation, 1 Linux platform,
-# 2 jobs, 3 docs tooling, 4 RHI, 5 renderer, 6 test scoping, 7 debugging facilities, 8 RHI reset, 9 file handling. The rule is the phase that owns the behavior, not the directory.
+# 2 jobs, 3 docs tooling, 4 RHI, 5 renderer, 6 test scoping, 7 debugging facilities, 8 RHI reset, 9 file handling, 10 standard types and containers. The rule is the phase that owns the behavior, not the directory.
 #
 # Adding a Catch2 test file: add a line here, or the build stops naming the file. Adding another kind of test: add a
-# `test:` line and call engine_label_tests() after add_test. Labels are `phase0` ... `phase9`.
+# `test:` line and call engine_label_tests() after add_test. Labels are `phase0` ... `phase10`.
 # `flavors <phase> plain,asan,tsan` lines (below) list the sanitizer flavors each phase has tests in; a new phase needs one.
 
 # Which flavors have tests of each phase (plain = neither asan nor tsan). test_phase_labels fails if a phase gains or

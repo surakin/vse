@@ -12,7 +12,7 @@ arithmetic checked against `__int128` as an oracle where the compiler has one, a
 containers; a `std_container_check` gate fails on a new `std::` container, string, smart pointer or algorithm in `engine/`, `game/` and `tools/` outside an allow list with a reason per entry (the old tests that Catch2 drives
 are listed as a deferral, not allowed silently); `CLAUDE.md` states the rule; the full suite passes in every flavor.
 
-Every day of this phase has its own file under `plans/phase-10-types-and-containers/` (see `CLAUDE.md`, planning policy). **Status: planned (2026-11-07), not started.** Days 125-129 (Phase 9 ended at Day 124; Phase 11, the settings system, follows with Days 130-139). `CURRENT_PHASE` changes to 10 in the commit that completes Day 125's first task.
+Every day of this phase has its own file under `plans/phase-10-types-and-containers/` (see `CLAUDE.md`, planning policy). **Status: started (2026-11-07); Day 125 done.** Days 125-129 (Phase 9 ended at Day 124; Phase 11, the settings system, follows with Days 130-139). `CURRENT_PHASE` changes to 10 in the commit that completes Day 125's first task.
 
 ## Days
 

@@ -64,7 +64,8 @@ Tests per phase and flavor on 2026-11-06 (`plain` is neither `asan` nor `tsan`; 
 | 6 test scoping | 35 | - | - |
 | 7 debugging facilities | 193 | 154 | 154 |
 | 8 RHI reset | 132 | 118 | 104 |
-| 9 file handling | 0 (started on Day 115; its first tests arrive on Day 116, with its `flavors` line) | - | - |
+| 9 file handling | 64 | 53 | 53 |
+| 10 standard types and containers | 0 (started on Day 125; its first tests arrive on Day 126, with its `flavors` line) | - | - |
 
 The `flavors` lines in `tests/phases.txt` state which flavors each phase has, and `test_phase_labels` fails if one
 appears or disappears.
