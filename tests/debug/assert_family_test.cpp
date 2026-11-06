@@ -198,18 +198,21 @@ TEST_CASE("The default handler truncates a long message at 512 bytes, ends the l
     SetWriteSinkForTesting(&FamilyCapturingSink);
     const AssertInfo assert_info{AssertKind::Assert, "a/file.cpp", 7, "Func", "x > 0", message};
     const AssertAction assert_action = DefaultAssertHandler(assert_info);
-    const int sink_calls = g_family_sink_calls; // the message and its stack trace are one write, so concurrent reports do not interleave
+    const int assert_sink_calls = g_family_sink_calls; // message + trace in one write, then the context sections
     const usize first_length = FamilyFirstLineLength();
     const usize first_total = g_family_text_length;
     const char first_last_byte = first_length > 0 ? g_family_text[first_length - 1] : '\0';
     const bool first_starts_right = std::strncmp(g_family_text, "ASSERT FAILED: a/file.cpp:7 Func: x > 0: mmm", 43) == 0;
     g_family_text_length = 0;
+    g_family_sink_calls = 0;
     const AssertInfo ensure_info{AssertKind::Ensure, "a/file.cpp", 8, "Func", "y > 0", "short"};
     const AssertAction ensure_action = DefaultAssertHandler(ensure_info);
+    const int ensure_sink_calls = g_family_sink_calls;
     SetWriteSinkForTesting(&os::Write);
 
     CHECK(first_length == 512);
-    CHECK(sink_calls == 1);
+    CHECK(assert_sink_calls >= 2);  // a fatal assert also prints the context sections
+    CHECK(ensure_sink_calls == 1);  // an ensure is the message and its trace in one write, so concurrent reports do not interleave
     CHECK(first_total > first_length); // the trace follows the line
     CHECK(first_last_byte == '\n'); // even a truncated line ends in a newline
     CHECK(first_starts_right);

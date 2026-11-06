@@ -9,6 +9,11 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR NOT CMAKE_SYSTEM_PROCESSOR STREQUAL
   message(FATAL_ERROR "Only x86-64 Linux is supported (Phase 0)")
 endif()
 
+# Every executable gets a GNU build id (a hash of its contents) so a crash report and a minidump name the exact binary.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_link_options(-Wl,--build-id)
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)

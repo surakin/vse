@@ -2,6 +2,7 @@
 // minidump out of it with the crash_extract parser, and checks the other results. Also the crash dump directory function.
 #include <catch2/catch_test_macros.hpp>
 
+#include "debug/crash_context.h"
 #include "debug/crash_handler.h"
 #include "debug/death_test.h"
 #include "debug/fault_injection.h"
@@ -103,6 +104,34 @@ ENGINE_DEATH_TEST_FN(dt_crash_install_then_fault) {
     options.release = "crash-test@1";
     PutLine("INSTALLED", static_cast<int>(InstallCrashHandler(options)));
     InjectFault(FaultKind::NullWrite);
+}
+
+ENGINE_DEATH_TEST_FN(dt_crash_default_release_then_fault) {
+    CrashHandlerOptions options;
+    options.dump_directory = argument;
+    InstallCrashHandler(options); // no release given: the build id is used
+    InitCrashContext(0, nullptr);
+    char line[96];
+    const int n = std::snprintf(line, sizeof(line), "BUILD_ID=%s\n", GetCrashContext().build_id);
+    os::Write(1, line, static_cast<usize>(n));
+    InjectFault(FaultKind::NullWrite);
+}
+
+TEST_CASE("Without a release string the envelope names the binary by its build id", "[crash][crashreport][death][debug][linux]") {
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    CrashTempDir dir;
+    ChildOptions options;
+    options.timeout_ms = 30000;
+    const ChildResult r = RunInChild("dt_crash_default_release_then_fault", dir.Path(), options);
+    const std::string out(r.stdout_text, r.stdout_length);
+    const usize at = out.find("BUILD_ID=");
+    REQUIRE(at != std::string::npos);
+    const std::string id = out.substr(at + 9, out.find('\n', at) - at - 9);
+    REQUIRE(id.size() >= 8);
+    std::vector<std::string> envelopes;
+    CollectEnvelopes(dir.Path(), &envelopes);
+    REQUIRE(envelopes.size() == 1);
+    CHECK(ReadFile(envelopes[0]).find(id) != std::string::npos);
 }
 
 ENGINE_DEATH_TEST_FN(dt_crash_install_twice) {

@@ -131,6 +131,47 @@ for an address or an account, and ctests (`debug_no_network_*`) fail if a test b
 imports their functions (the demos and benches that install the handler are added to that check when they are wired in). Sending a dump, if a project ever wants
 to, is its own tool that reads the file.
 
+## What a crash report contains
+
+A crash report (and the extra output of a failed `ENGINE_ASSERT`, `ENGINE_VERIFY`, or `ENGINE_UNREACHABLE`) has the same
+sections, always in this order:
+
+```text
+=== CRASH REPORT ===
+reason: AccessViolation at 0x0000000000000010
+thread: 12345 "render"
+--- stack trace ---
+#0  0x... engine::Foo(int) (file.cpp:42)
+--- build ---
+build id: 3f2a...
+--- platform ---
+os: Linux 7.2 x86_64
+cpu: <model>, 16 cores, 32768 MiB
+--- state ---
+gpu: Test GPU 9000, driver 1.2.3
+--- recent log (oldest first, last 32) ---
+...
+=== END OF REPORT ===
+```
+
+A failed `ENGINE_ENSURE` prints only its message and trace, because the program goes on.
+
+The build id names the exact binary, so a report and a minidump can be matched to its symbols. Call
+`debug::InitCrashContext(argc, argv)` once at startup (the crash handler does it for you if you have not).
+
+### Adding your subsystem's state
+
+Register a provider during startup with `debug::RegisterCrashStateProvider("gpu", &fn, context)`. The table holds 16
+entries and never shrinks. A provider runs inside a crashing process, so it may only read memory that is always valid
+(atomics or copies the subsystem keeps current), must not allocate, lock, or touch files, and must write no more than the
+`capacity` it is given. Text longer than `kCrashStateTextBytes` is cut.
+
+### The recent-log ring
+
+Every line sent through `Log` is also kept in a lock-free ring of the newest 256 lines (256 bytes each, longer lines are cut).
+Writers never wait; a reader skips a slot being overwritten. `log::ReadRecentLogLines` returns them oldest first, and the
+report shows the last 32.
+
 ## Testing code that crashes
 
 A crash kills the process that crashes, so a test cannot simply call code that is supposed to crash. A **death test**

@@ -4,6 +4,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "debug/compiler.h"
+#include "debug/crash_context.h"
+#include "debug/crash_report.h"
 #include "debug/death_test.h"
 #include "debug/stack_trace.h"
 #include "os/os.h"
@@ -83,4 +85,49 @@ TEST_CASE("Capturing, resolving and formatting a trace inside a signal handler a
     CHECK_FALSE(r.StdoutContains("FRAMES=0 "));
     // The trace taken in the handler reaches the function that raised the signal.
     CHECK(r.StdoutContains("RaiseTheSignal"));
+}
+
+namespace {
+
+void CountingWrite(void* context, const char* data, usize length) {
+    *static_cast<usize*>(context) += length;
+    (void)data;
+}
+
+void AllocProvider(void*, char* out, usize capacity) {
+    std::snprintf(out, capacity, "alloc-test-state");
+}
+
+} // namespace
+
+ENGINE_DEATH_TEST_FN(dt_alloc_crash_report) {
+    InitDebugFacilities();
+    InitCrashContext(0, nullptr);
+    RegisterCrashStateProvider("alloc", &AllocProvider, nullptr);
+    usize written = 0;
+    CrashReportSink sink;
+    sink.write = &CountingWrite;
+    sink.context = &written;
+    CrashReportInfo info;
+    info.reason = CrashReason::AccessViolation;
+    info.has_fault_address = true;
+    info.fault_address = 8;
+    StackTrace trace;
+    CaptureStackTrace(trace, 0);
+    info.trace = &trace;
+    const unsigned long before = g_allocations.load(std::memory_order_relaxed);
+    WriteCrashReport(sink, info);
+    const unsigned long after = g_allocations.load(std::memory_order_relaxed);
+    char line[64];
+    const int n = std::snprintf(line, sizeof(line), "REPORT_ALLOCS=%lu BYTES=%zu\n", after - before, static_cast<size_t>(written));
+    os::Write(1, line, static_cast<usize>(n));
+}
+
+TEST_CASE("Writing a crash report allocates nothing once the facilities are initialized", "[crashreport][debug][linux]") {
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    const ChildResult r = RunInChild("dt_alloc_crash_report");
+    REQUIRE(r.exited);
+    CHECK(r.exit_code == 0);
+    CHECK(r.StdoutContains("REPORT_ALLOCS=0 "));
+    CHECK_FALSE(r.StdoutContains("BYTES=0\n"));
 }

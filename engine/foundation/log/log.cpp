@@ -1,5 +1,7 @@
 #include "log/log.h"
 
+#include "debug/crash_context.h"
+#include "debug/crash_report.h"
 #include "debug/debugger.h"
 #include "debug/stack_trace.h"
 #include "os/os.h"
@@ -33,6 +35,47 @@ LogChannel* LogChannel::Find(StringView name) {
 namespace {
 
 WriteSinkFn g_write_sink = &os::Write;
+
+// ---- the ring of recent log lines ------------------------------------------------------------------------------------------
+//
+// Each slot is a seqlock: `sequence` is odd while a writer fills the slot and 2 * (line number + 1) once it holds that line.
+// The text is stored as relaxed atomic words, so a reader that races a writer is well-defined (and race-free for TSan); it
+// notices the race from the sequence and drops the slot. Writers never wait for each other or for readers. Two writers on
+// one slot would need the ring to wrap (256 lines) while a writer is stalled mid-copy; the reader then sees a changed
+// sequence and skips.
+constexpr usize kRingWords = kLogRingLineBytes / sizeof(u64);
+
+struct RingSlot {
+    std::atomic<u64> sequence{0};
+    std::atomic<u32> length{0};
+    std::atomic<u64> words[kRingWords];
+};
+
+RingSlot g_log_ring[kLogRingSlots];
+std::atomic<u64> g_log_ring_head{0}; // number of lines ever written
+
+void RingAppend(const char* text, usize length) {
+    if (length > kLogRingLineBytes) {
+        length = kLogRingLineBytes;
+    }
+    const u64 line = g_log_ring_head.fetch_add(1, std::memory_order_relaxed);
+    RingSlot& slot = g_log_ring[line % kLogRingSlots];
+    // Odd: being written. The data stores below are release stores so the odd marker above is visible before any of the new
+    // data on weakly ordered CPUs (an acquire exchange alone does not order later stores; a fence would, but TSan does not
+    // model fences). The exchange is an acquire RMW so the reader's final check sees every earlier writer.
+    slot.sequence.exchange(2 * line + 1, std::memory_order_acquire);
+    slot.length.store(static_cast<u32>(length), std::memory_order_release);
+    for (usize w = 0; w < kRingWords; ++w) {
+        u64 word = 0;
+        const usize offset = w * sizeof(u64);
+        if (offset < length) {
+            const usize n = length - offset < sizeof(u64) ? length - offset : sizeof(u64);
+            std::memcpy(&word, text + offset, n);
+        }
+        slot.words[w].store(word, std::memory_order_release);
+    }
+    slot.sequence.store(2 * line + 2, std::memory_order_release); // even: holds line `line`
+}
 
 const char* VerbosityName(LogVerbosity level) {
     switch (level) {
@@ -144,7 +187,45 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message) {
     offset = AppendStrToBuffer(buf, sizeof(buf), offset, ": ");
     offset = AppendStrToBuffer(buf, sizeof(buf), offset, message);
     offset = AppendStrToBuffer(buf, sizeof(buf), offset, "\n");
+    RingAppend(buf, offset);
     g_write_sink(1, buf, offset);
+}
+
+void ReadRecentLogLines(RecentLogLineFn callback, void* context, usize max_lines) {
+    // The loads of the text below are relaxed; the release read-modify-write after them keeps them from moving past the
+    // second look at the sequence.
+    const u64 head = g_log_ring_head.load(std::memory_order_acquire);
+    u64 first = head > kLogRingSlots ? head - kLogRingSlots : 0;
+    if (max_lines != 0 && head - first > max_lines) {
+        first = head - max_lines;
+    }
+    for (u64 line = first; line < head; ++line) {
+        RingSlot& slot = g_log_ring[line % kLogRingSlots];
+        const u64 before = slot.sequence.load(std::memory_order_acquire);
+        if (before != 2 * line + 2) {
+            continue; // being written, or already overwritten by a newer line
+        }
+        char text[kLogRingLineBytes + 1];
+        u64 words[kRingWords];
+        const u32 length = slot.length.load(std::memory_order_relaxed);
+        for (usize w = 0; w < kRingWords; ++w) {
+            words[w] = slot.words[w].load(std::memory_order_relaxed);
+        }
+        if (slot.sequence.fetch_add(0, std::memory_order_release) != before || length > kLogRingLineBytes) {
+            continue; // changed while we copied: torn, drop it
+        }
+        std::memcpy(text, words, kLogRingLineBytes);
+        text[length] = '\0';
+        callback(text, length, context);
+    }
+}
+
+void ResetLogRingForTesting() {
+    g_log_ring_head.store(0, std::memory_order_relaxed);
+    for (RingSlot& slot : g_log_ring) {
+        slot.sequence.store(0, std::memory_order_relaxed);
+        slot.length.store(0, std::memory_order_relaxed);
+    }
 }
 
 namespace {
@@ -166,6 +247,11 @@ std::atomic<AssertHandler> g_assert_handler{&DefaultAssertHandler};
 std::atomic<detail::EnsureSite*> g_ensure_head{nullptr};
 
 } // namespace
+
+// Sends a piece of report text to the shared write sink.
+static void AssertReportWrite(void*, const char* data, usize length) {
+    g_write_sink(1, data, length);
+}
 
 AssertAction DefaultAssertHandler(const AssertInfo& info) {
     // A null string must not crash the code that reports a failure.
@@ -206,6 +292,17 @@ AssertAction DefaultAssertHandler(const AssertInfo& info) {
         report_length += debug::FormatStackTrace(trace, report + offset, sizeof(report) - offset);
     }
     g_write_sink(1, report, report_length);
+
+    // A failed check that ends the program also says what program and machine it was, what the subsystems report and what was
+    // logged last, exactly like a crash report does. An ensure carries on, so it gets only the message and the trace.
+    if (info.kind != AssertKind::Ensure) {
+        if (!debug::CrashContextInitialized()) {
+            debug::InitCrashContext(0, nullptr); // an assert is not a signal handler, so reading /proc is fine here
+        }
+        debug::CrashReportSink sink;
+        sink.write = &AssertReportWrite;
+        debug::WriteCrashContext(sink);
+    }
 
     if (debug::IsDebuggerAttached()) {
         return AssertAction::Break;

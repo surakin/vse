@@ -76,6 +76,30 @@ private:
     static inline LogChannel* head_ = nullptr;
 };
 
+/// Slots in the ring of recent log lines.
+constexpr usize kLogRingSlots = 256;
+/// Bytes kept of each line in the ring, newline included; a longer line is cut.
+constexpr usize kLogRingLineBytes = 256;
+
+/// Receives one recent log line from [[ReadRecentLogLines]]: the text (null-terminated, with its trailing newline) and its length.
+using RecentLogLineFn = void (*)(const char* line, usize length, void* context);
+
+/// Calls `callback` for the most recent log lines, oldest first, at most [[kLogRingSlots]] of them.
+///
+/// Every line [[Log]] emits is also kept in a ring in memory, so a crash report can show what the program said last. A slot
+/// that is being overwritten while it is read is skipped, so every line delivered is whole. Reads no file and allocates
+/// nothing.
+///
+/// Param callback: called once per line.
+/// Param context: passed through to `callback`; borrowed for the call.
+/// Param max_lines: deliver at most this many of the newest lines (0 means no limit beyond the ring size).
+/// Thread-safety: thread-safe and async-signal-safe: lock-free, concurrent with any number of [[Log]] calls.
+void ReadRecentLogLines(RecentLogLineFn callback, void* context, usize max_lines = 0);
+
+/// Empties the ring of recent log lines. For tests.
+/// Thread-safety: not-thread-safe. Call only while no thread logs.
+void ResetLogRingForTesting();
+
 /// Channel for core engine and foundation messages.
 extern LogChannel LogCore;
 /// Channel for rendering messages.

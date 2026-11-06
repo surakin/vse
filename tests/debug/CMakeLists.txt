@@ -14,6 +14,8 @@ set(DEBUG_TEST_SOURCES
   crash_extract_test.cpp
   crash_handler_test.cpp
   crash_handler_linux_test.cpp
+  crash_report_test.cpp
+  crash_report_linux_test.cpp
   resource_guard_linux.cpp
 )
 

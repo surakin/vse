@@ -397,11 +397,16 @@ LogChannel::SetVerbosity(LogVerbosity)	function	foundation/log	logchannel-setver
 LogChannel::SetEnabled(bool)	function	foundation/log	logchannel-setenabled-bool	foundation-log.md	engine/foundation/log/log.h:52
 LogChannel::ShouldLog(LogVerbosity) const	function	foundation/log	logchannel-shouldlog-logverbosity-const	foundation-log.md	engine/foundation/log/log.h:59
 LogChannel::Find(StringView)	function	foundation/log	logchannel-find-stringview	foundation-log.md	engine/foundation/log/log.h:67
-LogCore	variable	foundation/log	logcore	foundation-log.md	engine/foundation/log/log.h:80
-LogRender	variable	foundation/log	logrender	foundation-log.md	engine/foundation/log/log.h:82
-LogPlatform	variable	foundation/log	logplatform	foundation-log.md	engine/foundation/log/log.h:84
-Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:95
-LoadConfig(const char*)	function	foundation/log	loadconfig-const-char-star	foundation-log.md	engine/foundation/log/log.h:111
+kLogRingSlots	variable	foundation/log	klogringslots	foundation-log.md	engine/foundation/log/log.h:80
+kLogRingLineBytes	variable	foundation/log	klogringlinebytes	foundation-log.md	engine/foundation/log/log.h:82
+RecentLogLineFn	alias	foundation/log	recentloglinefn	foundation-log.md	engine/foundation/log/log.h:85
+ReadRecentLogLines(RecentLogLineFn,void*,usize)	function	foundation/log	readrecentloglines-recentloglinefn-void-star-usize	foundation-log.md	engine/foundation/log/log.h:97
+ResetLogRingForTesting()	function	foundation/log	resetlogringfortesting	foundation-log.md	engine/foundation/log/log.h:101
+LogCore	variable	foundation/log	logcore	foundation-log.md	engine/foundation/log/log.h:104
+LogRender	variable	foundation/log	logrender	foundation-log.md	engine/foundation/log/log.h:106
+LogPlatform	variable	foundation/log	logplatform	foundation-log.md	engine/foundation/log/log.h:108
+Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:119
+LoadConfig(const char*)	function	foundation/log	loadconfig-const-char-star	foundation-log.md	engine/foundation/log/log.h:135
 i8	alias	foundation/types	i8	foundation-types.md	engine/foundation/types.h:12
 i16	alias	foundation/types	i16	foundation-types.md	engine/foundation/types.h:14
 i32	alias	foundation/types	i32	foundation-types.md	engine/foundation/types.h:16
@@ -708,6 +713,26 @@ ENGINE_COLD	macro	foundation/debug	engine-cold	foundation-debug.md	engine/founda
 ENGINE_COMPILER_BARRIER	macro	foundation/debug	engine-compiler-barrier	foundation-debug.md	engine/foundation/debug/compiler.h:44
 ENGINE_NOINLINE_LAMBDA	macro	foundation/debug	engine-noinline-lambda	foundation-debug.md	engine/foundation/debug/compiler.h:51
 ENGINE_NOINLINE	macro	foundation/debug	engine-noinline	foundation-debug.md	engine/foundation/debug/compiler.h:58
+debug::kMaxBuildIdText	variable	foundation/debug	debug-kmaxbuildidtext	foundation-debug.md	engine/foundation/debug/crash_context.h:11
+debug::kMaxContextPath	variable	foundation/debug	debug-kmaxcontextpath	foundation-debug.md	engine/foundation/debug/crash_context.h:13
+debug::kMaxContextCommandLine	variable	foundation/debug	debug-kmaxcontextcommandline	foundation-debug.md	engine/foundation/debug/crash_context.h:15
+debug::kMaxContextText	variable	foundation/debug	debug-kmaxcontexttext	foundation-debug.md	engine/foundation/debug/crash_context.h:17
+debug::CrashContext	struct	foundation/debug	debug-crashcontext	foundation-debug.md	engine/foundation/debug/crash_context.h:24
+debug::CrashContext::build_id	variable	foundation/debug	debug-crashcontext-build-id	foundation-debug.md	engine/foundation/debug/crash_context.h:27
+debug::CrashContext::engine_version	variable	foundation/debug	debug-crashcontext-engine-version	foundation-debug.md	engine/foundation/debug/crash_context.h:29
+debug::CrashContext::executable	variable	foundation/debug	debug-crashcontext-executable	foundation-debug.md	engine/foundation/debug/crash_context.h:31
+debug::CrashContext::command_line	variable	foundation/debug	debug-crashcontext-command-line	foundation-debug.md	engine/foundation/debug/crash_context.h:34
+debug::CrashContext::os_name	variable	foundation/debug	debug-crashcontext-os-name	foundation-debug.md	engine/foundation/debug/crash_context.h:36
+debug::CrashContext::os_version	variable	foundation/debug	debug-crashcontext-os-version	foundation-debug.md	engine/foundation/debug/crash_context.h:38
+debug::CrashContext::architecture	variable	foundation/debug	debug-crashcontext-architecture	foundation-debug.md	engine/foundation/debug/crash_context.h:40
+debug::CrashContext::device_model	variable	foundation/debug	debug-crashcontext-device-model	foundation-debug.md	engine/foundation/debug/crash_context.h:42
+debug::CrashContext::cpu_brand	variable	foundation/debug	debug-crashcontext-cpu-brand	foundation-debug.md	engine/foundation/debug/crash_context.h:44
+debug::CrashContext::cpu_count	variable	foundation/debug	debug-crashcontext-cpu-count	foundation-debug.md	engine/foundation/debug/crash_context.h:46
+debug::CrashContext::total_memory_bytes	variable	foundation/debug	debug-crashcontext-total-memory-bytes	foundation-debug.md	engine/foundation/debug/crash_context.h:48
+debug::CrashContext::start_time_unix	variable	foundation/debug	debug-crashcontext-start-time-unix	foundation-debug.md	engine/foundation/debug/crash_context.h:50
+debug::InitCrashContext(int,const char* const*)	function	foundation/debug	debug-initcrashcontext-int-const-char-star-const-star	foundation-debug.md	engine/foundation/debug/crash_context.h:62
+debug::CrashContextInitialized()	function	foundation/debug	debug-crashcontextinitialized	foundation-debug.md	engine/foundation/debug/crash_context.h:67
+debug::GetCrashContext()	function	foundation/debug	debug-getcrashcontext	foundation-debug.md	engine/foundation/debug/crash_context.h:73
 debug::CrashHandlerOptions	struct	foundation/debug	debug-crashhandleroptions	foundation-debug.md	engine/foundation/debug/crash_handler.h:20
 debug::CrashHandlerOptions::dump_directory	variable	foundation/debug	debug-crashhandleroptions-dump-directory	foundation-debug.md	engine/foundation/debug/crash_handler.h:22
 debug::CrashHandlerOptions::report_file	variable	foundation/debug	debug-crashhandleroptions-report-file	foundation-debug.md	engine/foundation/debug/crash_handler.h:25
@@ -735,6 +760,24 @@ debug::CrashReason::Abort	enumerator	foundation/debug	debug-crashreason-abort	fo
 debug::CrashReason::AssertFailed	enumerator	foundation/debug	debug-crashreason-assertfailed	foundation-debug.md	engine/foundation/debug/crash_reason.h:24
 debug::CrashReason::EnsureFailed	enumerator	foundation/debug	debug-crashreason-ensurefailed	foundation-debug.md	engine/foundation/debug/crash_reason.h:25
 debug::CrashReasonName(CrashReason)	function	foundation/debug	debug-crashreasonname-crashreason	foundation-debug.md	engine/foundation/debug/crash_reason.h:33
+debug::kMaxCrashStateProviders	variable	foundation/debug	debug-kmaxcrashstateproviders	foundation-debug.md	engine/foundation/debug/crash_report.h:16
+debug::kCrashStateTextBytes	variable	foundation/debug	debug-kcrashstatetextbytes	foundation-debug.md	engine/foundation/debug/crash_report.h:18
+debug::CrashStateFn	alias	foundation/debug	debug-crashstatefn	foundation-debug.md	engine/foundation/debug/crash_report.h:29
+debug::RegisterCrashStateProvider(const char*,CrashStateFn,void*)	function	foundation/debug	debug-registercrashstateprovider-const-char-star-crashstatefn-void-star	foundation-debug.md	engine/foundation/debug/crash_report.h:43
+debug::ResetCrashStateProvidersForTesting()	function	foundation/debug	debug-resetcrashstateprovidersfortesting	foundation-debug.md	engine/foundation/debug/crash_report.h:47
+debug::CrashWriteFn	alias	foundation/debug	debug-crashwritefn	foundation-debug.md	engine/foundation/debug/crash_report.h:53
+debug::CrashReportSink	struct	foundation/debug	debug-crashreportsink	foundation-debug.md	engine/foundation/debug/crash_report.h:58
+debug::CrashReportSink::write	variable	foundation/debug	debug-crashreportsink-write	foundation-debug.md	engine/foundation/debug/crash_report.h:60
+debug::CrashReportSink::context	variable	foundation/debug	debug-crashreportsink-context	foundation-debug.md	engine/foundation/debug/crash_report.h:62
+debug::CrashReportInfo	struct	foundation/debug	debug-crashreportinfo	foundation-debug.md	engine/foundation/debug/crash_report.h:68
+debug::CrashReportInfo::reason	variable	foundation/debug	debug-crashreportinfo-reason	foundation-debug.md	engine/foundation/debug/crash_report.h:70
+debug::CrashReportInfo::has_fault_address	variable	foundation/debug	debug-crashreportinfo-has-fault-address	foundation-debug.md	engine/foundation/debug/crash_report.h:72
+debug::CrashReportInfo::fault_address	variable	foundation/debug	debug-crashreportinfo-fault-address	foundation-debug.md	engine/foundation/debug/crash_report.h:74
+debug::CrashReportInfo::message	variable	foundation/debug	debug-crashreportinfo-message	foundation-debug.md	engine/foundation/debug/crash_report.h:76
+debug::CrashReportInfo::trace	variable	foundation/debug	debug-crashreportinfo-trace	foundation-debug.md	engine/foundation/debug/crash_report.h:78
+debug::WriteCrashReport(const CrashReportSink&,const CrashReportInfo&)	function	foundation/debug	debug-writecrashreport-const-crashreportsink-amp-const-crashreportinfo-amp	foundation-debug.md	engine/foundation/debug/crash_report.h:87
+debug::WriteCrashContext(const CrashReportSink&)	function	foundation/debug	debug-writecrashcontext-const-crashreportsink-amp	foundation-debug.md	engine/foundation/debug/crash_report.h:94
+debug::kCrashReportLogLines	variable	foundation/debug	debug-kcrashreportloglines	foundation-debug.md	engine/foundation/debug/crash_report.h:97
 debug::kChildCaptureBytes	variable	foundation/debug	debug-kchildcapturebytes	foundation-debug.md	engine/foundation/debug/death_test.h:15
 debug::kUnknownDeathTestExitCode	variable	foundation/debug	debug-kunknowndeathtestexitcode	foundation-debug.md	engine/foundation/debug/death_test.h:18
 debug::DeathTestFn	alias	foundation/debug	debug-deathtestfn	foundation-debug.md	engine/foundation/debug/death_test.h:21
@@ -820,6 +863,10 @@ debug::CaptureStackTrace(StackTrace&,u32)	function	foundation/debug	debug-captur
 debug::ResolveStackTrace(const StackTrace&,FrameInfo*,usize)	function	foundation/debug	debug-resolvestacktrace-const-stacktrace-amp-frameinfo-star-usize	foundation-debug.md	engine/foundation/debug/stack_trace.h:109
 debug::FormatStackTrace(const StackTrace&,char*,usize,const FormatOptions&)	function	foundation/debug	debug-formatstacktrace-const-stacktrace-amp-char-star-usize-const-formatoptions-amp	foundation-debug.md	engine/foundation/debug/stack_trace.h:126
 debug::DemangleSymbol(const char*,char*,usize)	function	foundation/debug	debug-demanglesymbol-const-char-star-char-star-usize	foundation-debug.md	engine/foundation/debug/stack_trace.h:137
+debug::kMaxThreadNameBytes	variable	foundation/debug	debug-kmaxthreadnamebytes	foundation-debug.md	engine/foundation/debug/thread_info.h:9
+debug::CurrentThreadId()	function	foundation/debug	debug-currentthreadid	foundation-debug.md	engine/foundation/debug/thread_info.h:13
+debug::SetCrashThreadName(const char*)	function	foundation/debug	debug-setcrashthreadname-const-char-star	foundation-debug.md	engine/foundation/debug/thread_info.h:19
+debug::CrashThreadName()	function	foundation/debug	debug-crashthreadname	foundation-debug.md	engine/foundation/debug/thread_info.h:25
 jobs::IoRequest	struct	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:53
 jobs::IoRequest::next	variable	jobs	jobs-iorequest-next	jobs.md	engine/jobs/async_io.h:55
 jobs::IoRequest::run	variable	jobs	jobs-iorequest-run	jobs.md	engine/jobs/async_io.h:57

@@ -2,6 +2,7 @@
 // sentry.h (enforced by tools/platform_neutral_check); the rest of the engine sees debug/crash_handler.h.
 #include "debug/crash_handler.h"
 
+#include "debug/crash_context.h"
 #include "log/log.h"
 #include "os/os.h"
 
@@ -97,8 +98,14 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
         return CrashHandlerResult::InitFailed;
     }
     sentry_options_set_database_path(sentry, directory);
+    // Every dump records which build made it: the caller's version text, or else the executable's build id.
+    if (!CrashContextInitialized()) {
+        InitCrashContext(0, nullptr);
+    }
     if (options.release != nullptr && options.release[0] != '\0') {
         sentry_options_set_release(sentry, options.release);
+    } else if (GetCrashContext().build_id[0] != '\0') {
+        sentry_options_set_release(sentry, GetCrashContext().build_id);
     }
     if (options.handler_path != nullptr && options.handler_path[0] != '\0') {
         sentry_options_set_handler_path(sentry, options.handler_path);

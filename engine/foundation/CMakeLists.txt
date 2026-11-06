@@ -23,6 +23,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/debug/death_test.cpp
     os/linux/debug/debugger.cpp
     os/linux/debug/module_list.cpp
+    os/linux/debug/crash_context.cpp
     os/linux/debug/fault_injection.cpp
   )
 
@@ -71,6 +72,9 @@ set(FOUNDATION_SOURCES
   debug/crash_reason.cpp
   debug/death_test.cpp
   debug/stack_trace_backtrace.cpp
+  debug/thread_info.cpp
+  debug/crash_context.cpp
+  debug/crash_report.cpp
   debug/crash_handler_sentry.cpp
   ${FOUNDATION_PLATFORM_SOURCES}
   ${FOUNDATION_DEBUG_PLATFORM_SOURCES}
