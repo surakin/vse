@@ -10,7 +10,7 @@ using engine_placeholder::i32;
 
 constexpr usize kNone = ~usize{0};
 
-bool IsIdentChar(char c) {
+bool ExtractorIsIdentChar(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
 }
 
@@ -368,7 +368,7 @@ private:
     void AddMacro(usize i) {
         StringView txt = toks_[i].text;
         usize len = 0;
-        while (len < txt.Length() && IsIdentChar(txt[len])) ++len;
+        while (len < txt.Length() && ExtractorIsIdentChar(txt[len])) ++len;
         usize sig = len;
         if (len < txt.Length() && txt[len] == '(') {
             while (sig < txt.Length() && txt[sig] != ')') ++sig;

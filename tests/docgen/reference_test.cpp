@@ -17,9 +17,9 @@ using namespace docgen;
 
 namespace {
 
-std::string Str(StringView v) { return std::string(v.Data(), v.Length()); }
+std::string ReferenceTestStr(StringView v) { return std::string(v.Data(), v.Length()); }
 
-std::string ReadWhole(const std::string& path) {
+std::string ReferenceTestReadWhole(const std::string& path) {
     FILE* f = std::fopen(path.c_str(), "rb");
     if (f == nullptr) return {};
     std::string s;
@@ -76,7 +76,7 @@ struct Built {
 
     std::string File(const std::string& name) const {
         for (usize i = 0; i < build.files.Size(); ++i) {
-            if (Str(build.files[i].name) == name) return Str(build.files[i].content);
+            if (ReferenceTestStr(build.files[i].name) == name) return ReferenceTestStr(build.files[i].content);
         }
         return "<none>";
     }
@@ -84,7 +84,7 @@ struct Built {
         std::vector<std::string> v;
         for (usize i = 0; i < build.index.diagnostics.Size(); ++i) {
             const FileDiag& f = build.index.diagnostics[i];
-            v.push_back(Str(f.path) + ":" + std::to_string(f.d.line) + ": " + SeverityName(f.d.severity) + ": " + Str(f.d.message));
+            v.push_back(ReferenceTestStr(f.path) + ":" + std::to_string(f.d.line) + ": " + SeverityName(f.d.severity) + ": " + ReferenceTestStr(f.d.message));
         }
         return v;
     }
@@ -141,10 +141,10 @@ TEST_CASE("Glob matching: * stays in a segment, ** spans segments", "[docgen][re
     REQUIRE_FALSE(m("a*b*c.h", "aXXbYY.h"));
     REQUIRE(m("engine/types.h", "engine/types.h"));
     REQUIRE_FALSE(m("engine/types.h", "engine/types.hh"));
-    REQUIRE(Str(GlobPrefix(StringView("engine/jobs/*.h"))) == "engine/jobs");
-    REQUIRE(Str(GlobPrefix(StringView("engine/**/*.h"))) == "engine");
-    REQUIRE(Str(GlobPrefix(StringView("*.h"))) == "");
-    REQUIRE(Str(GlobPrefix(StringView("engine/types.h"))) == "engine");
+    REQUIRE(ReferenceTestStr(GlobPrefix(StringView("engine/jobs/*.h"))) == "engine/jobs");
+    REQUIRE(ReferenceTestStr(GlobPrefix(StringView("engine/**/*.h"))) == "engine");
+    REQUIRE(ReferenceTestStr(GlobPrefix(StringView("*.h"))) == "");
+    REQUIRE(ReferenceTestStr(GlobPrefix(StringView("engine/types.h"))) == "engine");
 }
 
 TEST_CASE("Module map parsing and its errors", "[docgen][reference][map]") {
@@ -156,11 +156,11 @@ TEST_CASE("Module map parsing and its errors", "[docgen][reference][map]") {
         parse("# c\nmodule a \"Title A\"   # trailing\n  header x/*.h\n  exclude x/y.h\n  strict ownership\n\nmodule b/c \"B # C\"\n  header z.h\n", mm);
         REQUIRE_FALSE(m->HasErrors());
         REQUIRE(m->modules.Size() == 2);
-        REQUIRE(Str(m->modules[0]->title) == "Title A");
+        REQUIRE(ReferenceTestStr(m->modules[0]->title) == "Title A");
         REQUIRE(m->modules[0]->headers.Size() == 1);
         REQUIRE(m->modules[0]->excludes.Size() == 1);
-        REQUIRE(Str(m->modules[0]->strict[0]) == "ownership");
-        REQUIRE(Str(m->modules[1]->title) == "B # C"); // '#' inside quotes is part of the title
+        REQUIRE(ReferenceTestStr(m->modules[0]->strict[0]) == "ownership");
+        REQUIRE(ReferenceTestStr(m->modules[1]->title) == "B # C"); // '#' inside quotes is part of the title
     }
     auto err = [&](const char* text, const char* expect, u32 line) {
         ModuleMap mm(arena);
@@ -169,7 +169,7 @@ TEST_CASE("Module map parsing and its errors", "[docgen][reference][map]") {
         INFO(text);
         REQUIRE(m->diagnostics.Size() >= 1);
         REQUIRE(m->diagnostics[0].line == line);
-        REQUIRE(Str(m->diagnostics[0].message).find(expect) != std::string::npos);
+        REQUIRE(ReferenceTestStr(m->diagnostics[0].message).find(expect) != std::string::npos);
     };
     err("header x.h\n", "outside a module", 1);
     err("module a\n", "malformed module line", 1);
@@ -195,7 +195,7 @@ TEST_CASE("Module expansion is sorted, deduplicated and independent of input ord
         for (auto& n : names) files.Push(StringView(n.data(), n.size()));
         ExpandModule(*map.modules[0], files, arena, out);
         std::vector<std::string> got;
-        for (usize i = 0; i < out.Size(); ++i) got.push_back(Str(out[i]));
+        for (usize i = 0; i < out.Size(); ++i) got.push_back(ReferenceTestStr(out[i]));
         if (round == 0) first = got;
         REQUIRE(got == first);
         std::next_permutation(names.begin(), names.end());
@@ -209,7 +209,7 @@ TEST_CASE("File collection walks directories deterministically after sorting", "
     Vector<StringView, ArenaAllocator> files(arena);
     REQUIRE(CollectFiles(StringView(kRoot.data(), kRoot.size()), StringView("ref"), arena, files));
     std::vector<std::string> got;
-    for (usize i = 0; i < files.Size(); ++i) got.push_back(Str(files[i]));
+    for (usize i = 0; i < files.Size(); ++i) got.push_back(ReferenceTestStr(files[i]));
     REQUIRE(std::find(got.begin(), got.end(), "ref/headers/counter.h") != got.end());
     REQUIRE(std::find(got.begin(), got.end(), "ref/modules.txt") != got.end());
     REQUIRE_FALSE(CollectFiles(StringView(kRoot.data(), kRoot.size()), StringView("nonexistent"), arena, files));
@@ -231,7 +231,7 @@ TEST_CASE("Symbol IDs drop the outer namespace, normalize parameters and keep qu
     Built b(p.dir.path, p.Map());
     REQUIRE(b.ok);
     std::vector<std::string> ids;
-    for (usize i = 0; i < b.build.index.symbols.Size(); ++i) ids.push_back(Str(b.build.index.symbols[i]->id));
+    for (usize i = 0; i < b.build.index.symbols.Size(); ++i) ids.push_back(ReferenceTestStr(b.build.index.symbols[i]->id));
     REQUIRE(ids[0] == "n::K");
     REQUIRE(ids[1] == "n::K::Sum(const std::atomic<int>&,unsigned long long,char* const[],Foo<int,2>) const noexcept");
     REQUIRE(ids[2] == "n::K::Plain()");
@@ -250,7 +250,7 @@ TEST_CASE("Anchors: lowercase, punctuation words for * & operators, remaining ti
     Built b(p.dir.path, p.Map());
     REQUIRE(b.ok);
     std::vector<std::string> anchors;
-    for (usize i = 0; i < b.build.index.symbols.Size(); ++i) anchors.push_back(Str(b.build.index.symbols[i]->anchor));
+    for (usize i = 0; i < b.build.index.symbols.Size(); ++i) anchors.push_back(ReferenceTestStr(b.build.index.symbols[i]->anchor));
     REQUIRE(anchors == (std::vector<std::string>{"do-int", "do-int-star", "do-int-amp", "do-int-2"}));
 }
 
@@ -258,7 +258,7 @@ TEST_CASE("Hidden, Internal and namespace-less declarations are indexed correctl
     Built b;
     REQUIRE(b.ok);
     std::vector<std::string> ids;
-    for (usize i = 0; i < b.build.index.symbols.Size(); ++i) ids.push_back(Str(b.build.index.symbols[i]->id));
+    for (usize i = 0; i < b.build.index.symbols.Size(); ++i) ids.push_back(ReferenceTestStr(b.build.index.symbols[i]->id));
     auto has = [&](const char* id) { return std::find(ids.begin(), ids.end(), id) != ids.end(); };
     REQUIRE(has("demo::Counter::Increment(unsigned long)"));
     REQUIRE_FALSE(has("demo::Counter::count_"));      // private
@@ -289,7 +289,7 @@ TEST_CASE("Reference resolution: qualified, partial, hinted, ambiguous, missing"
         INFO(t);
         if (expect_id == nullptr) return st;
         REQUIRE(st == ResolveStatus::Ok);
-        REQUIRE(Str(s->id) == expect_id);
+        REQUIRE(ReferenceTestStr(s->id) == expect_id);
         return st;
     };
     r("jobs::Counter", "jobs::Counter");
@@ -371,7 +371,7 @@ TEST_CASE("Map problems: unmatched patterns, shared headers, duplicate IDs, bad 
 TEST_CASE("Excluded headers are never parsed", "[docgen][reference][index]") {
     Built b;
     REQUIRE(b.ok); // ref/headers/skipped.h is deliberately invalid C++
-    for (usize i = 0; i < b.build.index.units.Size(); ++i) REQUIRE(Str(b.build.index.units[i]->path) != "ref/headers/skipped.h");
+    for (usize i = 0; i < b.build.index.units.Size(); ++i) REQUIRE(ReferenceTestStr(b.build.index.units[i]->path) != "ref/headers/skipped.h");
 }
 
 // ---- rendering and goldens ---------------------------------------------------------------------
@@ -380,11 +380,11 @@ TEST_CASE("Generated pages match the committed golden output", "[docgen][referen
     Built b;
     REQUIRE(b.ok);
     std::vector<std::string> names;
-    for (usize i = 0; i < b.build.files.Size(); ++i) names.push_back(Str(b.build.files[i].name));
+    for (usize i = 0; i < b.build.files.Size(); ++i) names.push_back(ReferenceTestStr(b.build.files[i].name));
     REQUIRE(names == (std::vector<std::string>{"README.md", "demo.md", "extras.md", "symbols.txt"}));
     for (auto& n : names) {
         INFO(n);
-        REQUIRE(b.File(n) == ReadWhole(kExpected + "/" + n));
+        REQUIRE(b.File(n) == ReferenceTestReadWhole(kExpected + "/" + n));
     }
     // No stray files in the golden directory.
     REQUIRE(ListDir(kExpected) == names);
@@ -458,21 +458,21 @@ TEST_CASE("reference writes, then check passes; stale output is detected", "[doc
         REQUIRE(ListDir(out.path) == (std::vector<std::string>{"README.md", "demo.md", "extras.md", "symbols.txt"}));
 
         // idempotent: a second write changes nothing, and check is clean
-        std::string before = ReadWhole(out.path + "/demo.md");
+        std::string before = ReferenceTestReadWhole(out.path + "/demo.md");
         REQUIRE(WriteReference(b.build, dir, b.arena, problems));
-        REQUIRE(ReadWhole(out.path + "/demo.md") == before);
+        REQUIRE(ReferenceTestReadWhole(out.path + "/demo.md") == before);
         REQUIRE(CheckReference(b.build, dir, b.arena, problems));
         REQUIRE(problems.Size() == 0);
     }
     auto check = [&](std::vector<std::string>& msgs) {
         Vector<FileDiag, ArenaAllocator> problems(b.arena);
         bool ok = CheckReference(b.build, StringView(out.path.data(), out.path.size()), b.arena, problems);
-        for (usize i = 0; i < problems.Size(); ++i) msgs.push_back(Str(problems[i].path).substr(out.path.size() + 1) + ":" +
-                                                                   std::to_string(problems[i].d.line) + ": " + Str(problems[i].d.message));
+        for (usize i = 0; i < problems.Size(); ++i) msgs.push_back(ReferenceTestStr(problems[i].path).substr(out.path.size() + 1) + ":" +
+                                                                   std::to_string(problems[i].d.line) + ": " + ReferenceTestStr(problems[i].d.message));
         return ok;
     };
     // 1. a changed page
-    std::string demo = ReadWhole(out.path + "/demo.md");
+    std::string demo = ReferenceTestReadWhole(out.path + "/demo.md");
     WriteWhole(out.path + "/demo.md", demo + "extra\n");
     {
         std::vector<std::string> msgs;
@@ -520,7 +520,7 @@ TEST_CASE("The repository's own module map builds (headers and patterns all reso
     REQUIRE(b.build.index.symbols.Size() > 500);
     // The generated Wayland protocol headers are excluded.
     for (usize i = 0; i < b.build.index.units.Size(); ++i) {
-        REQUIRE(Str(b.build.index.units[i]->path).find("/generated/") == std::string::npos);
+        REQUIRE(ReferenceTestStr(b.build.index.units[i]->path).find("/generated/") == std::string::npos);
     }
 }
 
@@ -533,7 +533,7 @@ TEST_CASE("[review] operators, destructors and pointer overloads keep distinct, 
         REQUIRE(b.ok);
         std::vector<std::string> v;
         for (usize i = 0; i < b.build.index.symbols.Size(); ++i) {
-            v.push_back(Str(b.build.index.symbols[i]->id) + " => " + Str(b.build.index.symbols[i]->anchor));
+            v.push_back(ReferenceTestStr(b.build.index.symbols[i]->id) + " => " + ReferenceTestStr(b.build.index.symbols[i]->anchor));
         }
         return v;
     };
@@ -660,7 +660,7 @@ TEST_CASE("[review] references to operator() and long overload hints resolve", "
     auto id = [&](const std::string& t) {
         const Symbol* s = nullptr;
         ResolveStatus st = ResolveRef(b.build.index, StringView(t.data(), t.size()), s);
-        return st == ResolveStatus::Ok ? Str(s->id).substr(0, 40) : std::string("<") + std::to_string(static_cast<int>(st)) + ">";
+        return st == ResolveStatus::Ok ? ReferenceTestStr(s->id).substr(0, 40) : std::string("<") + std::to_string(static_cast<int>(st)) + ">";
     };
     REQUIRE(id("Hash::operator()") == "Hash::operator()(int) const");
     REQUIRE(id("Hash::operator()(int)") == "Hash::operator()(int) const");
@@ -683,7 +683,7 @@ TEST_CASE("[review] file collection does not follow directory symlinks and repor
     Vector<StringView, ArenaAllocator> files(arena);
     REQUIRE(CollectFiles(StringView(dir.path.data(), dir.path.size()), StringView(), arena, files));
     std::vector<std::string> got;
-    for (usize i = 0; i < files.Size(); ++i) got.push_back(Str(files[i]));
+    for (usize i = 0; i < files.Size(); ++i) got.push_back(ReferenceTestStr(files[i]));
     std::sort(got.begin(), got.end());
     REQUIRE(got == (std::vector<std::string>{"real/a.h", "real/link.h"}));
     // an unreadable subdirectory makes the walk report failure (running as root ignores modes)

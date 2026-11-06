@@ -13,7 +13,7 @@ namespace engine_placeholder::renderer {
 
 namespace {
 
-u64 AlignUp(u64 v, u64 a) { return (v + a - 1) / a * a; }
+u64 MaterialAlignUp(u64 v, u64 a) { return (v + a - 1) / a * a; }
 
 constexpr u32 kSlots = FrameResources::kSlots;
 constexpr u32 kNameBytes = 48;
@@ -609,7 +609,7 @@ MaterialId MaterialSystem::CreateMaterial(TemplateId tmpl, PermutationKey key, c
         const u32 size = variant->block.size;
         const bool shadow_ok = m.shadow.TryResize(size);
         m.shadow_size = shadow_ok ? size : 0;
-        m.stride = AlignUp(size, device_->Caps().min_uniform_buffer_offset_alignment);
+        m.stride = MaterialAlignUp(size, device_->Caps().min_uniform_buffer_offset_alignment);
         rhi::BufferDesc bd;
         bd.size = m.stride * kSlots;
         bd.usage = rhi::BufferUsage::Uniform;

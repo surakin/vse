@@ -23,10 +23,10 @@ using namespace engine_placeholder::rhi::vulkan;
 
 namespace {
 
-struct QuietLog {
+struct VulkanPipelineTestQuietLog {
     bool saved = LogRhi.Enabled();
-    QuietLog() { LogRhi.SetEnabled(false); }
-    ~QuietLog() { LogRhi.SetEnabled(saved); }
+    VulkanPipelineTestQuietLog() { LogRhi.SetEnabled(false); }
+    ~VulkanPipelineTestQuietLog() { LogRhi.SetEnabled(saved); }
 };
 
 bool Contains(const char* text, const char* needle) { return text != nullptr && std::strstr(text, needle) != nullptr; }
@@ -215,7 +215,7 @@ TEST_CASE("The triangle pipeline compiles for the swapchain format and an offscr
 TEST_CASE("Graphics pipeline creation refuses bad input before the driver sees it", "[rhi][vulkan][gpu][pipeline]") {
     TriangleDevice t;
     t.fx.ExpectErrors(0);
-    QuietLog quiet;
+    VulkanPipelineTestQuietLog quiet;
     const Format target = Format::RGBA8_UNorm;
     SECTION("no vertex shader") {
         GraphicsPipelineDesc g = t.Desc(target);
@@ -524,7 +524,7 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
     SECTION("a truncated file is ignored and replaced") {
         REQUIRE(truncate(file, 10) == 0);
         {
-            QuietLog quiet;
+            VulkanPipelineTestQuietLog quiet;
             TriangleDevice t(dir);
             const VulkanDevice::PipelineCacheStats s = t.device->PipelineCache();
             CHECK(s.rejected);
@@ -542,7 +542,7 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
         const unsigned char bogus[4] = {0xde, 0xad, 0xbe, 0xef};
         std::fwrite(bogus, 1, 4, f);
         std::fclose(f);
-        QuietLog quiet;
+        VulkanPipelineTestQuietLog quiet;
         TriangleDevice t(dir);
         CHECK(t.device->PipelineCache().rejected);
         CHECK(t.device->PipelineCache().loaded_bytes == 0);
@@ -554,13 +554,13 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
         const unsigned char junk[64] = {0xff};
         std::fwrite(junk, 1, sizeof(junk), f);
         std::fclose(f);
-        QuietLog quiet;
+        VulkanPipelineTestQuietLog quiet;
         TriangleDevice t(dir);
         CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
     }
     SECTION("an empty file is ignored") {
         REQUIRE(truncate(file, 0) == 0);
-        QuietLog quiet;
+        VulkanPipelineTestQuietLog quiet;
         TriangleDevice t(dir);
         CHECK(t.device->PipelineCache().loaded_bytes == 0);
     }

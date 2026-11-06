@@ -17,7 +17,7 @@ using namespace docgen;
 
 namespace {
 
-std::string Str(StringView v) { return std::string(v.Data(), v.Length()); }
+std::string LinksTestStr(StringView v) { return std::string(v.Data(), v.Length()); }
 StringView Sv(const std::string& s) { return StringView(s.data(), s.size()); }
 
 // A throwaway repository tree, removed recursively.
@@ -61,7 +61,7 @@ struct Checked {
         read_ok = CheckLinks(Sv(t.root), index, arena, opt, diags, stats);
         for (usize i = 0; i < diags.Size(); ++i) {
             const FileDiag& f = diags[i];
-            lines.push_back(Str(f.path) + ":" + std::to_string(f.d.line) + ": " + SeverityName(f.d.severity) + ": " + Str(f.d.message));
+            lines.push_back(LinksTestStr(f.path) + ":" + std::to_string(f.d.line) + ": " + SeverityName(f.d.severity) + ": " + LinksTestStr(f.d.message));
         }
     }
     bool Has(const std::string& needle) const {
@@ -79,50 +79,50 @@ struct Checked {
 
 const char kHome[] = "# Docs\n\n- [guide](guide/a.md)\n";
 
-struct Scanned {
+struct LinksTestScanned {
     std::string text; // the scanned views point into it
     ArenaAllocator arena{usize{1} << 24};
     MdDoc doc{arena};
-    explicit Scanned(std::string t) : text(std::move(t)) { ScanMarkdown(Sv(text), arena, doc); }
+    explicit LinksTestScanned(std::string t) : text(std::move(t)) { ScanMarkdown(Sv(text), arena, doc); }
 };
 
 } // namespace
 
 TEST_CASE("Markdown scan: fences carry info, body and lines", "[docgen][links][md]") {
-    Scanned s("intro\n```cpp compile run\nint x;\n[not](a.md)\n```\n~~~\nplain\n~~~\n");
+    LinksTestScanned s("intro\n```cpp compile run\nint x;\n[not](a.md)\n```\n~~~\nplain\n~~~\n");
     REQUIRE(s.doc.fences.Size() == 2);
-    CHECK(Str(s.doc.fences[0].info) == "cpp compile run");
-    CHECK(Str(s.doc.fences[0].body) == "int x;\n[not](a.md)");
+    CHECK(LinksTestStr(s.doc.fences[0].info) == "cpp compile run");
+    CHECK(LinksTestStr(s.doc.fences[0].body) == "int x;\n[not](a.md)");
     CHECK(s.doc.fences[0].line == 2);
     CHECK(s.doc.fences[0].body_line == 3);
-    CHECK(Str(s.doc.fences[1].body) == "plain");
+    CHECK(LinksTestStr(s.doc.fences[1].body) == "plain");
     CHECK(s.doc.links.Size() == 0); // link-shaped text in a fence is not a link
     CHECK(s.doc.diagnostics.Size() == 0);
 }
 
 TEST_CASE("Markdown scan: empty and unterminated fences", "[docgen][links][md]") {
-    Scanned a("```\n```\n");
+    LinksTestScanned a("```\n```\n");
     REQUIRE(a.doc.fences.Size() == 1);
     CHECK(a.doc.fences[0].body.Length() == 0);
     CHECK(a.doc.fences[0].closed);
-    Scanned b("text\n```cpp\nint x;\n");
+    LinksTestScanned b("text\n```cpp\nint x;\n");
     REQUIRE(b.doc.fences.Size() == 1);
     CHECK_FALSE(b.doc.fences[0].closed);
     REQUIRE(b.doc.diagnostics.Size() == 1);
     CHECK(b.doc.diagnostics[0].line == 2);
-    CHECK(Str(b.doc.fences[0].body) == "int x;");
+    CHECK(LinksTestStr(b.doc.fences[0].body) == "int x;");
 }
 
 TEST_CASE("Markdown scan: a longer fence is not closed by a shorter one", "[docgen][links][md]") {
-    Scanned s("````md\n```\ninner\n```\n````\nafter [x](y.md)\n");
+    LinksTestScanned s("````md\n```\ninner\n```\n````\nafter [x](y.md)\n");
     REQUIRE(s.doc.fences.Size() == 1);
-    CHECK(Str(s.doc.fences[0].body) == "```\ninner\n```");
+    CHECK(LinksTestStr(s.doc.fences[0].body) == "```\ninner\n```");
     REQUIRE(s.doc.links.Size() == 1);
     CHECK(s.doc.links[0].line == 6);
 }
 
 TEST_CASE("Markdown scan: heading anchors follow GitHub slugs", "[docgen][links][md]") {
-    Scanned s("# Hello, World!\n## `Counter::Add(u64)`\n## Hello, World!\n## Hello, World!\n### See [the guide](g.md) ###\n## `Foo` {#my-id}\n<a id=\"enum-x\"></a>\n");
+    LinksTestScanned s("# Hello, World!\n## `Counter::Add(u64)`\n## Hello, World!\n## Hello, World!\n### See [the guide](g.md) ###\n## `Foo` {#my-id}\n<a id=\"enum-x\"></a>\n");
     CHECK(s.doc.HasAnchor(StringView("hello-world")));
     CHECK(s.doc.HasAnchor(StringView("hello-world-1")));
     CHECK(s.doc.HasAnchor(StringView("hello-world-2")));
@@ -135,51 +135,51 @@ TEST_CASE("Markdown scan: heading anchors follow GitHub slugs", "[docgen][links]
 }
 
 TEST_CASE("Markdown scan: links, images, autolinks, refs; code spans are skipped", "[docgen][links][md]") {
-    Scanned s("See [a](a.md#x), ![img](pics/p.png) and `[no](code.md)` plus [[jobs::Counter]].\n"
+    LinksTestScanned s("See [a](a.md#x), ![img](pics/p.png) and `[no](code.md)` plus [[jobs::Counter]].\n"
               "<https://example.com/x> and [t](<sp ace.md> \"title\") [p](f(1).md)\n"
               "[ref]: other.md#top\n"
               "use [text][ref] here\n");
     REQUIRE(s.doc.links.Size() == 6);
     // the reference definition (line 3) is recorded as soon as it is seen, ahead of the paragraph around it
-    CHECK(Str(s.doc.links[0].target) == "other.md#top");
+    CHECK(LinksTestStr(s.doc.links[0].target) == "other.md#top");
     CHECK(s.doc.links[0].line == 3);
-    CHECK(Str(s.doc.links[1].target) == "a.md#x");
+    CHECK(LinksTestStr(s.doc.links[1].target) == "a.md#x");
     CHECK_FALSE(s.doc.links[1].image);
-    CHECK(Str(s.doc.links[2].target) == "pics/p.png");
+    CHECK(LinksTestStr(s.doc.links[2].target) == "pics/p.png");
     CHECK(s.doc.links[2].image);
-    CHECK(Str(s.doc.links[3].target) == "https://example.com/x");
-    CHECK(Str(s.doc.links[4].target) == "sp ace.md");
-    CHECK(Str(s.doc.links[5].target) == "f(1).md");
+    CHECK(LinksTestStr(s.doc.links[3].target) == "https://example.com/x");
+    CHECK(LinksTestStr(s.doc.links[4].target) == "sp ace.md");
+    CHECK(LinksTestStr(s.doc.links[5].target) == "f(1).md");
     REQUIRE(s.doc.refs.Size() == 1);
-    CHECK(Str(s.doc.refs[0].target) == "jobs::Counter");
+    CHECK(LinksTestStr(s.doc.refs[0].target) == "jobs::Counter");
     CHECK(s.doc.diagnostics.Size() == 0);
 }
 
 TEST_CASE("Markdown scan: malformed references are errors", "[docgen][links][md]") {
-    Scanned s("a [[ open\n\nb [[]] c\n");
+    LinksTestScanned s("a [[ open\n\nb [[]] c\n");
     REQUIRE(s.doc.diagnostics.Size() == 2);
     CHECK(s.doc.diagnostics[0].line == 1);
     CHECK(s.doc.diagnostics[1].line == 3);
 }
 
 TEST_CASE("Markdown scan: [review] prose that merely looks like link syntax is left alone", "[docgen][links][md]") {
-    Scanned s("Index with x[i][j] and a footnote[^1].\n\n[^1]: A footnote about things.\n");
+    LinksTestScanned s("Index with x[i][j] and a footnote[^1].\n\n[^1]: A footnote about things.\n");
     CHECK(s.doc.links.Size() == 0);
     CHECK(s.doc.diagnostics.Size() == 0);
 }
 
 TEST_CASE("Markdown scan: [review] code spans and references wrap across lines", "[docgen][links][md]") {
-    Scanned s("start `see [[Bad::Thing]] or\n[x](nope.md) wrapped` end\nthen [[Good::\nName]] and [l](ok.md)\n");
+    LinksTestScanned s("start `see [[Bad::Thing]] or\n[x](nope.md) wrapped` end\nthen [[Good::\nName]] and [l](ok.md)\n");
     REQUIRE(s.doc.refs.Size() == 1);
-    CHECK(Str(s.doc.refs[0].target) == "Good::Name");
+    CHECK(LinksTestStr(s.doc.refs[0].target) == "Good::Name");
     CHECK(s.doc.refs[0].line == 3);
     REQUIRE(s.doc.links.Size() == 1);
-    CHECK(Str(s.doc.links[0].target) == "ok.md");
+    CHECK(LinksTestStr(s.doc.links[0].target) == "ok.md");
     CHECK(s.doc.links[0].line == 4);
 }
 
 TEST_CASE("Markdown scan: [review] <a id> anchors count only outside fences and as real attributes", "[docgen][links][md]") {
-    Scanned s("```html\n<a id=\"fake\"></a>\n```\n<a data-id=\"nope\" name=\"real\"></a>\n");
+    LinksTestScanned s("```html\n<a id=\"fake\"></a>\n```\n<a data-id=\"nope\" name=\"real\"></a>\n");
     CHECK_FALSE(s.doc.HasAnchor(StringView("fake")));
     CHECK_FALSE(s.doc.HasAnchor(StringView("nope")));
     CHECK(s.doc.HasAnchor(StringView("real")));
@@ -288,9 +288,9 @@ TEST_CASE("Links: generated reference anchors match what the checker computes", 
     std::string readme = "# Reference\n\n";
     std::string syms;
     for (usize i = 0; i < build.files.Size(); ++i) {
-        const std::string name = Str(build.files[i].name);
-        t.Put("docs/reference/" + name, Str(build.files[i].content));
-        if (name == "symbols.txt") syms = Str(build.files[i].content);
+        const std::string name = LinksTestStr(build.files[i].name);
+        t.Put("docs/reference/" + name, LinksTestStr(build.files[i].content));
+        if (name == "symbols.txt") syms = LinksTestStr(build.files[i].content);
     }
     size_t linked = 0;
     size_t at = 0;
@@ -324,7 +324,7 @@ TEST_CASE("Links: the repository's own docs tree is clean", "[docgen][links][rep
     LinkStats stats;
     REQUIRE(CheckLinks(Sv(repo), &build.index, arena, LinkOptions(), diags, stats));
     for (usize i = 0; i < diags.Size(); ++i) {
-        INFO(Str(diags[i].path) << ":" << diags[i].d.line << ": " << Str(diags[i].d.message));
+        INFO(LinksTestStr(diags[i].path) << ":" << diags[i].d.line << ": " << LinksTestStr(diags[i].d.message));
         CHECK(diags[i].d.severity != Severity::Error);
     }
     CHECK(stats.files > 10);

@@ -9,23 +9,23 @@
 namespace docgen {
 namespace {
 
-bool IsSpace(char c) { return c == ' ' || c == '\t' || c == '\r'; }
+bool ModuleMapIsSpace(char c) { return c == ' ' || c == '\t' || c == '\r'; }
 
-StringView Trim(StringView s) {
+StringView ModuleMapTrim(StringView s) {
     usize a = 0, b = s.Length();
-    while (a < b && IsSpace(s[a])) ++a;
-    while (b > a && IsSpace(s[b - 1])) --b;
+    while (a < b && ModuleMapIsSpace(s[a])) ++a;
+    while (b > a && ModuleMapIsSpace(s[b - 1])) --b;
     return StringView(s.Data() + a, b - a);
 }
 
 // Splits "word rest" at the first run of blanks.
 bool NextWord(StringView& line, StringView& word) {
-    line = Trim(line);
+    line = ModuleMapTrim(line);
     if (line.Empty()) return false;
     usize i = 0;
-    while (i < line.Length() && !IsSpace(line[i])) ++i;
+    while (i < line.Length() && !ModuleMapIsSpace(line[i])) ++i;
     word = StringView(line.Data(), i);
-    line = Trim(StringView(line.Data() + i, line.Length() - i));
+    line = ModuleMapTrim(StringView(line.Data() + i, line.Length() - i));
     return true;
 }
 

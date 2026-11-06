@@ -3,6 +3,7 @@
 #include "rhi/vulkan/vk_xlib_surface.h"
 
 #define VK_USE_PLATFORM_XLIB_KHR
+#include "unity/x11_enable.h"
 #include <X11/Xlib.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_xlib.h>
@@ -29,3 +30,5 @@ i32 CreateXlibSurface(void* get_instance_proc_addr, void* instance, void* displa
 }
 
 } // namespace engine_placeholder::rhi::vulkan
+
+#include "unity/x11_disable.h"

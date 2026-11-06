@@ -29,6 +29,13 @@ enable_testing()
 add_subdirectory(third_party/catch2)
 include(cmake/EngineTestPhases.cmake)
 
+# Unity (jumbo) build: each target compiles its sources in batches merged into a few translation units, which cuts
+# full-build time. Set after the vendored Catch2 so only our own targets are batched. Turn it off
+# (-DENGINE_UNITY_BUILD=OFF) to check that every source still compiles on its own, or for clearer per-file errors.
+option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
+set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
+set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
+
 add_subdirectory(engine/foundation)
 add_subdirectory(engine/jobs)
 add_subdirectory(engine/rhi)

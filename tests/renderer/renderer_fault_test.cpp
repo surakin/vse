@@ -22,7 +22,7 @@ namespace {
 
 enum class Stage { BetweenFrames, InBuild, InFirstPass, InLastPass };
 
-rhi::TextureDesc ColorTex(u32 w, u32 h) {
+rhi::TextureDesc RendererFaultTestColorTex(u32 w, u32 h) {
     rhi::TextureDesc d;
     d.width = w;
     d.height = h;
@@ -59,7 +59,7 @@ bool BuildFaulty(const FrameContext& context, void* user) {
     f->passes_run = 0;
     if (f->lose_in_build) f->device->SimulateDeviceLoss();
     f->target = context.target;
-    f->mid = context.graph->CreateTexture("mid", ColorTex(context.width / 2, context.height / 2));
+    f->mid = context.graph->CreateTexture("mid", RendererFaultTestColorTex(context.width / 2, context.height / 2));
     context.graph->AddPass("first", &FirstPass, f).Write(f->mid, GraphUsage::ColorAttachment);
     context.graph->AddPass("last", &LastPass, f).Read(f->mid, GraphUsage::Sampled).Write(f->target, GraphUsage::ColorAttachment);
     return true;
@@ -125,13 +125,13 @@ TEST_CASE("A transient texture the device cannot make fails the frame, names it,
         rd.build = &BuildFaulty;
         rd.build_user = &faulty;
         Renderer renderer(rd);
-        rhi::TextureDesc td = ColorTex(64, 48);
+        rhi::TextureDesc td = RendererFaultTestColorTex(64, 48);
         td.format = rhi::Format::Undefined; // the device refuses a texture without a format
         const rhi::TextureHandle target = device->CreateTexture(td);
         CHECK_FALSE(target.IsValid());
         device->ResetErrors();
         // The mid texture is half the target size: a 1 x 1 target makes it 0 x 0, which the device refuses.
-        const rhi::TextureHandle one = device->CreateTexture(ColorTex(1, 1));
+        const rhi::TextureHandle one = device->CreateTexture(RendererFaultTestColorTex(1, 1));
         FrameTarget ft;
         ft.texture = one;
         ft.width = 1;

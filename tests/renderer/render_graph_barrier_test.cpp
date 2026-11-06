@@ -15,7 +15,7 @@ using namespace engine_placeholder::renderer;
 
 namespace {
 
-constexpr usize kArenaBytes = 8u << 20;
+constexpr usize kRenderGraphBarrierTestArenaBytes = 8u << 20;
 
 rhi::TextureDesc Tex(u32 w, u32 h, rhi::Format format, rhi::TextureUsage usage) {
     rhi::TextureDesc d;
@@ -29,7 +29,7 @@ rhi::TextureDesc Tex(u32 w, u32 h, rhi::Format format, rhi::TextureUsage usage) 
 constexpr rhi::TextureUsage kColorSampled = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled;
 
 struct Plan {
-    ArenaAllocator arena{kArenaBytes};
+    ArenaAllocator arena{kRenderGraphBarrierTestArenaBytes};
     RenderGraph graph{&arena, RenderGraphDesc{}};
 
     GraphResource Transient(const char* name, rhi::TextureUsage usage = kColorSampled | rhi::TextureUsage::Storage | rhi::TextureUsage::CopySrc |
@@ -223,7 +223,7 @@ TEST_CASE("A deferred-shaped graph executes on the null device with zero errors,
         REQUIRE(backbuffer.IsValid());
 
         for (u32 frame = 0; frame < 4; ++frame) {
-            ArenaAllocator arena(kArenaBytes);
+            ArenaAllocator arena(kRenderGraphBarrierTestArenaBytes);
             RenderGraph graph(&arena, RenderGraphDesc{});
             pool.BeginFrame(frame);
             const rhi::TextureUsage rt = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled;
@@ -291,7 +291,7 @@ TEST_CASE("Non-overlapping transient lifetimes in one frame share a texture", "[
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         TransientPool pool(device.Get(), TransientPoolDesc{});
-        ArenaAllocator arena(kArenaBytes);
+        ArenaAllocator arena(kRenderGraphBarrierTestArenaBytes);
         RenderGraph graph(&arena, RenderGraphDesc{});
         pool.BeginFrame(0);
         const rhi::TextureUsage rt = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled;
@@ -335,7 +335,7 @@ TEST_CASE("Execute reports a transient it cannot allocate and puts the pool back
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
     {
         TransientPool pool(device.Get(), TransientPoolDesc{});
-        ArenaAllocator arena(kArenaBytes);
+        ArenaAllocator arena(kRenderGraphBarrierTestArenaBytes);
         RenderGraph graph(&arena, RenderGraphDesc{});
         pool.BeginFrame(0);
         const rhi::TextureUsage rt = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::Sampled;
@@ -362,7 +362,7 @@ TEST_CASE("Execute reports a transient it cannot allocate and puts the pool back
 
         // The abandoned list's barriers never ran, so `a` must be back in the state it was taken in (Undefined). A second
         // frame that uses it would otherwise start a barrier from ShaderRead, which the device never saw (an error).
-        ArenaAllocator arena2(kArenaBytes);
+        ArenaAllocator arena2(kRenderGraphBarrierTestArenaBytes);
         RenderGraph graph2(&arena2, RenderGraphDesc{});
         pool.BeginFrame(1);
         const GraphResource a2 = graph2.CreateTexture("a2", Tex(8, 8, rhi::Format::RGBA8_UNorm, rt));
@@ -511,7 +511,7 @@ TEST_CASE("A transient buffer goes through the same barriers and the pool across
         const rhi::BufferHandle out_buffer = device->CreateBuffer(out_desc);
         REQUIRE(out_buffer.IsValid());
         for (u64 frame = 0; frame < 3; ++frame) {
-            ArenaAllocator arena(kArenaBytes);
+            ArenaAllocator arena(kRenderGraphBarrierTestArenaBytes);
             RenderGraph graph(&arena, RenderGraphDesc{});
             pool.BeginFrame(frame);
             const GraphResource scratch = graph.CreateBuffer("scratch", bd);

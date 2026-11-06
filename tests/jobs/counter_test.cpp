@@ -14,7 +14,7 @@ using namespace engine_placeholder::jobs;
 
 namespace {
 
-std::unique_ptr<Scheduler> MakeScheduler(usize n) {
+std::unique_ptr<Scheduler> CounterTestMakeScheduler(usize n) {
     Scheduler::Config cfg;
     cfg.participants = n;
     return std::make_unique<Scheduler>(cfg);
@@ -54,7 +54,7 @@ Job DecrementerJob(RaceCell* cell, u32 spin, std::atomic<int>* done) {
     co_return;
 }
 
-u32 NextRand(u64& s) {
+u32 CounterTestNextRand(u64& s) {
     s ^= s << 13;
     s ^= s >> 7;
     s ^= s << 17;
@@ -106,7 +106,7 @@ Job ChainJob(int depth, ChainStats* stats) {
 } // namespace
 
 TEST_CASE("Awaiting an already-zero counter does not suspend", "[jobs][counter]") {
-    auto s = MakeScheduler(1);
+    auto s = CounterTestMakeScheduler(1);
     static std::atomic<int> reached;
     reached = 0;
     struct Local {
@@ -122,7 +122,7 @@ TEST_CASE("Awaiting an already-zero counter does not suspend", "[jobs][counter]"
 }
 
 TEST_CASE("Counter counts back to zero and is reusable for a second round", "[jobs][counter]") {
-    auto s = MakeScheduler(2);
+    auto s = CounterTestMakeScheduler(2);
     static std::atomic<int> rounds;
     rounds = 0;
     struct Local {
@@ -144,7 +144,7 @@ TEST_CASE("Counter counts back to zero and is reusable for a second round", "[jo
 }
 
 TEST_CASE("Job::SetCompletion(Counter&) decrements after the frame is freed", "[jobs][counter]") {
-    auto s = MakeScheduler(1);
+    auto s = CounterTestMakeScheduler(1);
     Counter c(*s);
     const u64 live_before = Live();
     c.Increment();
@@ -160,7 +160,7 @@ TEST_CASE("Job::SetCompletion(Counter&) decrements after the frame is freed", "[
 
 TEST_CASE("Await/decrement race: exactly-once resumption over 100,000 iterations", "[jobs][counter][race]") {
     for (usize n : {usize{4}, usize{2}}) {
-        auto s = MakeScheduler(n);
+        auto s = CounterTestMakeScheduler(n);
         constexpr int kBatches = 100, kPerBatch = 1000;
         u64 rng = 0x1234567ull + n;
         int total_iterations = 0;
@@ -172,7 +172,7 @@ TEST_CASE("Await/decrement race: exactly-once resumption over 100,000 iterations
             for (int i = 0; i < kPerBatch; ++i) {
                 auto* cell = new RaceCell(*s);
                 cell->counter.Increment();
-                u32 r = NextRand(rng);
+                u32 r = CounterTestNextRand(rng);
                 Job a = AwaiterJob(cell, r % 400, &done);
                 Job d = DecrementerJob(cell, (r >> 9) % 400, &done);
                 if (r & 0x80000) {
@@ -201,7 +201,7 @@ TEST_CASE("Await/decrement race: exactly-once resumption over 100,000 iterations
 
 TEST_CASE("A parent proceeds past co_await only after all 8 children finished", "[jobs][counter]") {
     for (usize n : {usize{1}, usize{2}, usize{0}}) {
-        auto s = MakeScheduler(n);
+        auto s = CounterTestMakeScheduler(n);
         const u64 live_before = Live();
         std::atomic<int> ok{0}, finished{0};
         constexpr int kBatches = 100, kParents = 100; // 10,000 parents per configuration
@@ -217,7 +217,7 @@ TEST_CASE("A parent proceeds past co_await only after all 8 children finished", 
 }
 
 TEST_CASE("A deep chain of dependent jobs does not grow the native stack", "[jobs][counter][stack]") {
-    auto s = MakeScheduler(1); // one thread runs everything: stack marks are comparable
+    auto s = CounterTestMakeScheduler(1); // one thread runs everything: stack marks are comparable
     constexpr int kDepth = 5000;
     ChainStats stats;
     s->Submit(ChainJob(kDepth, &stats));
@@ -229,7 +229,7 @@ TEST_CASE("A deep chain of dependent jobs does not grow the native stack", "[job
 }
 
 TEST_CASE("Awaitable protocol, both orderings driven by hand", "[jobs][counter]") {
-    auto s = MakeScheduler(1);
+    auto s = CounterTestMakeScheduler(1);
 
     // (1) The count reaches zero between await_ready and await_suspend:
     // await_suspend must report "don't suspend" and nobody else resumes.

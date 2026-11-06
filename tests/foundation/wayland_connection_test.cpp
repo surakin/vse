@@ -19,17 +19,17 @@ using engine_placeholder::os::wayland::WaylandConnection;
 
 namespace {
 
-char g_capture_buffer[2048];
-usize g_capture_len = 0;
+char g_WaylandConnectionTest_capture_buffer[2048];
+usize g_WaylandConnectionTest_capture_len = 0;
 
-long CapturingWriteSink(int fd, const void* buf, usize len) {
+long WaylandConnectionTestCapturingWriteSink(int fd, const void* buf, usize len) {
     (void)fd;
     usize copy_len = len;
-    if (g_capture_len + copy_len > sizeof(g_capture_buffer)) {
-        copy_len = sizeof(g_capture_buffer) - g_capture_len;
+    if (g_WaylandConnectionTest_capture_len + copy_len > sizeof(g_WaylandConnectionTest_capture_buffer)) {
+        copy_len = sizeof(g_WaylandConnectionTest_capture_buffer) - g_WaylandConnectionTest_capture_len;
     }
-    memcpy(g_capture_buffer + g_capture_len, buf, copy_len);
-    g_capture_len += copy_len;
+    memcpy(g_WaylandConnectionTest_capture_buffer + g_WaylandConnectionTest_capture_len, buf, copy_len);
+    g_WaylandConnectionTest_capture_len += copy_len;
     return static_cast<long>(len);
 }
 
@@ -63,9 +63,9 @@ TEST_CASE("WaylandConnection::Connect fails gracefully (no crash) when no compos
 }
 
 TEST_CASE("WaylandConnection::Connect logs each bound global's interface name and version", "[wayland][os]") {
-    g_capture_len = 0;
+    g_WaylandConnectionTest_capture_len = 0;
     LogPlatform.SetVerbosity(LogVerbosity::Info);
-    SetWriteSinkForTesting(&CapturingWriteSink);
+    SetWriteSinkForTesting(&WaylandConnectionTestCapturingWriteSink);
 
     WaylandConnection conn = WaylandConnection::Connect();
 
@@ -73,7 +73,7 @@ TEST_CASE("WaylandConnection::Connect logs each bound global's interface name an
     LogPlatform.SetVerbosity(LogVerbosity::Warn);
 
     REQUIRE(conn.Valid());
-    StringView captured(g_capture_buffer, g_capture_len);
+    StringView captured(g_WaylandConnectionTest_capture_buffer, g_WaylandConnectionTest_capture_len);
     REQUIRE(captured.Contains(StringView("wl_compositor")));
     REQUIRE(captured.Contains(StringView("xdg_wm_base")));
     REQUIRE(captured.Contains(StringView("wl_seat")));

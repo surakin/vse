@@ -18,18 +18,18 @@ using namespace docgen;
 
 namespace {
 
-std::string Str(StringView v) { return std::string(v.Data(), v.Length()); }
-StringView Sv(const std::string& s) { return StringView(s.data(), s.size()); }
+std::string LintTestStr(StringView v) { return std::string(v.Data(), v.Length()); }
+StringView LintTestSv(const std::string& s) { return StringView(s.data(), s.size()); }
 
-struct Tree {
+struct LintTestTree {
     std::string root;
-    Tree() {
+    LintTestTree() {
         char tmpl[] = "/tmp/docgen_lint_XXXXXX";
         REQUIRE(mkdtemp(tmpl) != nullptr);
         root = tmpl;
         mkdir((root + "/h").c_str(), 0777);
     }
-    ~Tree() {
+    ~LintTestTree() {
         nftw(root.c_str(), [](const char* p, const struct stat*, int, struct FTW*) { return std::remove(p); }, 16, FTW_DEPTH | FTW_PHYS);
     }
     void Put(const std::string& rel, const std::string& content) {
@@ -42,7 +42,7 @@ struct Tree {
 
 // Indexes one header `h/a.h` under a module with the given `strict` lines.
 struct Linted {
-    Tree tree;
+    LintTestTree tree;
     ArenaAllocator arena{usize{1} << 28};
     ReferenceBuild build{arena};
     LintResult result{arena};
@@ -52,7 +52,7 @@ struct Linted {
         tree.Put("h/a.h", "#pragma once\nnamespace engine_placeholder {\n" + header + "\n}\n");
         tree.Put("modules.txt", "module m \"M\"\n  header h/*.h\n" + strict);
         std::string map = tree.root + "/modules.txt";
-        built = BuildReference(Sv(tree.root), Sv(map), arena, build);
+        built = BuildReference(LintTestSv(tree.root), LintTestSv(map), arena, build);
         REQUIRE(built);
         RunLint(build.index, arena, result);
     }
@@ -60,7 +60,7 @@ struct Linted {
     std::vector<std::string> Findings() const {
         std::vector<std::string> v;
         for (usize i = 0; i < result.findings.Size(); ++i) {
-            v.push_back(std::string(LintRuleName(result.findings[i].rule)) + " " + Str(result.findings[i].symbol->id));
+            v.push_back(std::string(LintRuleName(result.findings[i].rule)) + " " + LintTestStr(result.findings[i].symbol->id));
         }
         return v;
     }
@@ -169,7 +169,7 @@ TEST_CASE("Lint baseline: a new finding, a coverage drop and no baseline at all 
     Vector<FileDiag, ArenaAllocator> out(now.arena);
     CompareToBaseline(now.result, &b, now.arena, out);
     std::vector<std::string> msgs;
-    for (usize i = 0; i < out.Size(); ++i) msgs.push_back(Str(out[i].d.message));
+    for (usize i = 0; i < out.Size(); ++i) msgs.push_back(LintTestStr(out[i].d.message));
     REQUIRE(msgs.size() == 4);
     CHECK(msgs[0] == "undocumented public symbol: Done()");
     CHECK(msgs[1] == "undocumented public symbol: Fresh()");
@@ -193,7 +193,7 @@ TEST_CASE("Lint baseline: [review] entries that no longer apply are errors (the 
     CompareToBaseline(now.result, &b, now.arena, out);
     REQUIRE(out.Size() == 1);
     CHECK(out[0].d.severity == Severity::Error);
-    CHECK(Str(out[0].d.message).find("no longer applies: undocumented Undoc()") != std::string::npos);
+    CHECK(LintTestStr(out[0].d.message).find("no longer applies: undocumented Undoc()") != std::string::npos);
 }
 
 TEST_CASE("Lint baseline: malformed files are rejected with a line number", "[docgen][lint][baseline]") {
@@ -202,7 +202,7 @@ TEST_CASE("Lint baseline: malformed files are rejected with a line number", "[do
     StringView err;
     CHECK_FALSE(ParseBaseline(StringView("module\tm\t1\t2\n"), arena, b, err));          // no header
     CHECK_FALSE(ParseBaseline(StringView("# docgen lint baseline v1\nbogus\n"), arena, b, err));
-    CHECK(Str(err).rfind("2:", 0) == 0);
+    CHECK(LintTestStr(err).rfind("2:", 0) == 0);
     CHECK_FALSE(ParseBaseline(StringView("# docgen lint baseline v1\nmodule\tm\tx\t2\n"), arena, b, err));
     CHECK(ParseBaseline(StringView("# docgen lint baseline v1\n# comment\n\nknown\tundocumented\tA::B(int)\n"), arena, b, err));
 }
@@ -212,20 +212,20 @@ TEST_CASE("Lint: the committed baseline matches the repository's headers", "[doc
     ArenaAllocator arena{usize{1} << 29};
     ReferenceBuild build(arena);
     std::string map = repo + "/docs/reference/modules.txt";
-    BuildReference(Sv(repo), Sv(map), arena, build);
+    BuildReference(LintTestSv(repo), LintTestSv(map), arena, build);
     REQUIRE_FALSE(build.index.HasErrors());
     LintResult result(arena);
     RunLint(build.index, arena, result);
     StringView text;
     std::string bp = repo + "/docs/reference/lint-baseline.txt";
-    REQUIRE(LoadSourceFile(Sv(bp), arena, text));
+    REQUIRE(LoadSourceFile(LintTestSv(bp), arena, text));
     Baseline baseline(arena);
     StringView err;
     REQUIRE(ParseBaseline(text, arena, baseline, err));
     Vector<FileDiag, ArenaAllocator> out(arena);
     CompareToBaseline(result, &baseline, arena, out);
     for (usize i = 0; i < out.Size(); ++i) {
-        INFO(Str(out[i].path) << ":" << out[i].d.line << ": " << Str(out[i].d.message));
+        INFO(LintTestStr(out[i].path) << ":" << out[i].d.line << ": " << LintTestStr(out[i].d.message));
         CHECK(out[i].d.severity != Severity::Error);
     }
 }
@@ -239,7 +239,7 @@ TEST_CASE("Lint baseline: [review] renamed, removed and new modules, and an over
     Vector<FileDiag, ArenaAllocator> out(now.arena);
     CompareToBaseline(now.result, &b, now.arena, out);
     std::vector<std::string> msgs;
-    for (usize i = 0; i < out.Size(); ++i) msgs.push_back(Str(out[i].d.message));
+    for (usize i = 0; i < out.Size(); ++i) msgs.push_back(LintTestStr(out[i].d.message));
     auto has = [&](const std::string& n) {
         for (auto& m : msgs) {
             if (m.find(n) != std::string::npos) return true;

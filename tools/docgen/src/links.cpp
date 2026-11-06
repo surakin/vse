@@ -21,7 +21,7 @@ struct Page {
     bool loaded = false;
 };
 
-bool EndsWith(StringView s, const char* suffix) {
+bool LinksEndsWith(StringView s, const char* suffix) {
     usize n = 0;
     while (suffix[n] != '\0') ++n;
     if (s.Length() < n) return false;
@@ -31,7 +31,7 @@ bool EndsWith(StringView s, const char* suffix) {
     return true;
 }
 
-bool StartsWith(StringView s, const char* prefix) {
+bool LinksStartsWith(StringView s, const char* prefix) {
     usize n = 0;
     while (prefix[n] != '\0') ++n;
     if (s.Length() < n) return false;
@@ -233,7 +233,7 @@ private:
             return;
         }
         if (!S_ISREG(st.st_mode)) return; // a directory link is fine
-        if (!EndsWith(target, ".md")) return;
+        if (!LinksEndsWith(target, ".md")) return;
         Page* other = Get(target);
         if (other == nullptr) {
             AddCat(page.path, link.line, Severity::Error, StringView("cannot read "), target);
@@ -259,7 +259,7 @@ private:
         if (home == nullptr) {
             // Without the root page every docs page is unreachable; say so once instead of passing silently.
             for (usize i = 0; i < pages_.Size(); ++i) {
-                if (pages_[i]->in_set && StartsWith(pages_[i]->path, "docs/")) {
+                if (pages_[i]->in_set && LinksStartsWith(pages_[i]->path, "docs/")) {
                     Add(StringView("docs/README.md"), 1, Severity::Error, StringView("missing: the root page every docs page must be reachable from"));
                     return;
                 }
@@ -278,7 +278,7 @@ private:
         }
         for (usize i = 0; i < pages_.Size(); ++i) {
             const Page& p = *pages_[i];
-            if (p.in_set && !p.reached && StartsWith(p.path, "docs/")) {
+            if (p.in_set && !p.reached && LinksStartsWith(p.path, "docs/")) {
                 Add(p.path, 1, Severity::Error, StringView("orphan page: not reachable from docs/README.md"));
             }
         }
@@ -304,7 +304,7 @@ bool CollectMarkdownFiles(StringView root, ArenaAllocator& arena, Vector<StringV
     if (d == nullptr) return false;
     while (const dirent* e = readdir(d)) {
         StringView name(e->d_name, std::strlen(e->d_name));
-        if (name.Empty() || name[0] == '.' || !EndsWith(name, ".md")) continue;
+        if (name.Empty() || name[0] == '.' || !LinksEndsWith(name, ".md")) continue;
         StringView path = ArenaCat(arena, name, StringView());
         struct stat st;
         StringView full = root.Empty() ? path : ArenaCat(arena, root, StringView("/"), path);
@@ -313,7 +313,7 @@ bool CollectMarkdownFiles(StringView root, ArenaAllocator& arena, Vector<StringV
     closedir(d);
     StableSort(files, [](StringView a, StringView b) { return a.Compare(b) < 0; });
     for (usize i = 0; i < files.Size(); ++i) {
-        if (EndsWith(files[i], ".md")) out.Push(files[i]);
+        if (LinksEndsWith(files[i], ".md")) out.Push(files[i]);
     }
     return true;
 }

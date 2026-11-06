@@ -1,5 +1,6 @@
 #include "os/linux/x11/x11_window.h"
 
+#include "unity/x11_enable.h"
 #include <X11/Xlib.h>
 #include <X11/XKBlib.h>
 #include <X11/Xutil.h>
@@ -396,3 +397,5 @@ void X11Window::HandleKey(const void* xkey_event, bool pressed, InputState* inpu
 }
 
 } // namespace engine_placeholder::os::x11
+
+#include "unity/x11_disable.h"

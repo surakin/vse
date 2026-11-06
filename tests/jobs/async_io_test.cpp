@@ -22,7 +22,7 @@ using namespace engine_placeholder::jobs;
 
 namespace {
 
-std::unique_ptr<Scheduler> MakeScheduler(usize n) {
+std::unique_ptr<Scheduler> AsyncIoTestMakeScheduler(usize n) {
     Scheduler::Config cfg;
     cfg.participants = n;
     return std::make_unique<Scheduler>(cfg);
@@ -99,7 +99,7 @@ TEST_CASE("co_await ReadFileAsync returns the right bytes (small, multi-MB, empt
     for (auto& c : cases) WriteFile(dir.File(c.name), c.size);
 
     for (usize n : {usize{1}, usize{2}, usize{0}}) {
-        auto s = MakeScheduler(n);
+        auto s = AsyncIoTestMakeScheduler(n);
         for (auto& c : cases) {
             std::string path = dir.File(c.name);
             ReadOutcome out;
@@ -119,7 +119,7 @@ TEST_CASE("co_await ReadFileAsync returns the right bytes (small, multi-MB, empt
 
 TEST_CASE("A missing file, an over-long path and an oversized file fail cleanly", "[jobs][io]") {
     TempDir dir;
-    auto s = MakeScheduler(2);
+    auto s = AsyncIoTestMakeScheduler(2);
 
     std::string missing = dir.File("does_not_exist");
     ReadOutcome a;
@@ -156,7 +156,7 @@ Job ReadTinyArena(Scheduler* s, std::string* path, bool* ok, std::atomic<int>* d
 TEST_CASE("A file bigger than max_bytes fails instead of overrunning", "[jobs][io]") {
     TempDir dir;
     WriteFile(dir.File("f.bin"), 100'000);
-    auto s = MakeScheduler(2);
+    auto s = AsyncIoTestMakeScheduler(2);
     std::string path = dir.File("f.bin");
     bool ok = true;
     std::atomic<int> done{0};
@@ -178,7 +178,7 @@ TEST_CASE("64 concurrent reads of different files all complete correctly", "[job
         WriteFile(paths[i], sizes[i]);
     }
     for (usize n : {usize{1}, usize{3}}) {
-        auto s = MakeScheduler(n);
+        auto s = AsyncIoTestMakeScheduler(n);
         std::vector<ReadOutcome> outs(kFiles);
         for (int i = 0; i < kFiles; ++i) s->Submit(ReadJob(s.get(), &paths[i], &outs[i]));
         // Wait until every outcome is done (each flips its own counter).
@@ -210,7 +210,7 @@ TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "
     REQUIRE(mkfifo(fifo.c_str(), 0600) == 0);
 
     for (usize n : {usize{1}, usize{3}}) {
-        auto s = MakeScheduler(n);
+        auto s = AsyncIoTestMakeScheduler(n);
         ReadOutcome blocked;
         // Unblocks the I/O thread at scope exit (before the scheduler is
         // destroyed) even if a REQUIRE below fails, so a failing test
@@ -265,7 +265,7 @@ TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "
 }
 
 TEST_CASE("The I/O thread is not a participant", "[jobs][io]") {
-    auto s = MakeScheduler(2);
+    auto s = AsyncIoTestMakeScheduler(2);
     struct Probe : IoRequest {
         std::atomic<int> is_participant{-1};
         std::atomic<int> done{0};
@@ -285,7 +285,7 @@ TEST_CASE("Shutdown drains queued reads and frame stats balance", "[jobs][io]") 
     WriteFile(dir.File("a.bin"), 5000);
     const u64 live_before = FramePool::Global().GetStats().Live();
     {
-        auto s = MakeScheduler(2);
+        auto s = AsyncIoTestMakeScheduler(2);
         std::string path = dir.File("a.bin");
         ReadOutcome out;
         s->Submit(ReadJob(s.get(), &path, &out));
@@ -331,7 +331,7 @@ TEST_CASE("Concurrent IoThread::Shutdown callers both return only after the join
 TEST_CASE("A read issued after the I/O thread shut down fails cleanly instead of aborting", "[jobs][io]") {
     TempDir dir;
     WriteFile(dir.File("a.bin"), 100);
-    auto s = MakeScheduler(2);
+    auto s = AsyncIoTestMakeScheduler(2);
     s->Io().Shutdown();
     std::string path = dir.File("a.bin");
     ReadOutcome out;
@@ -344,7 +344,7 @@ TEST_CASE("A read issued after the I/O thread shut down fails cleanly instead of
 TEST_CASE("A read still pending when the I/O thread shuts down completes (drained)", "[jobs][io]") {
     TempDir dir;
     WriteFile(dir.File("a.bin"), 3000);
-    auto s = MakeScheduler(2);
+    auto s = AsyncIoTestMakeScheduler(2);
     std::string path = dir.File("a.bin");
     std::vector<ReadOutcome> outs(20);
     for (auto& o : outs) s->Submit(ReadJob(s.get(), &path, &o));

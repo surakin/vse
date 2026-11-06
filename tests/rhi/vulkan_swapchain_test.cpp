@@ -20,7 +20,7 @@ namespace {
 
 VkSurfaceFormatKHR Fmt(VkFormat f, VkColorSpaceKHR cs = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) { return VkSurfaceFormatKHR{f, cs}; }
 
-bool HaveEnv(const char* name) {
+bool VulkanSwapchainTestHaveEnv(const char* name) {
     const char* v = std::getenv(name);
     return v != nullptr && v[0] != '\0';
 }
@@ -247,14 +247,14 @@ void RunPresentationChecks(os::WindowBackend backend) {
 } // namespace
 
 TEST_CASE("Vulkan swapchain presents to a Wayland window", "[rhi][vulkan][gpu][window][wayland]") {
-    if (!HaveEnv("WAYLAND_DISPLAY")) {
+    if (!VulkanSwapchainTestHaveEnv("WAYLAND_DISPLAY")) {
         SKIP("no Wayland session");
     }
     RunPresentationChecks(os::WindowBackend::Wayland);
 }
 
 TEST_CASE("Vulkan swapchain presents to an X11 window", "[rhi][vulkan][gpu][window][x11]") {
-    if (!HaveEnv("DISPLAY")) {
+    if (!VulkanSwapchainTestHaveEnv("DISPLAY")) {
         SKIP("no X11 display");
     }
     RunPresentationChecks(os::WindowBackend::X11);

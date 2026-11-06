@@ -75,6 +75,23 @@ phase in progress. Day to day, run only what the work can have affected:
 
 See `docs/guide/building-and-testing.md` ("Test phases and scoped runs").
 
+## Unity builds: fix conflicts with macros first, exclude files last (required)
+
+`ENGINE_UNITY_BUILD` (root `CMakeLists.txt`, default ON) merges each target's sources into a few translation units.
+When a file breaks under it, work down this list and stop at the first step that fixes it:
+
+1. **Surround the problematic `#include` with an enable/disable pair** that keeps the header's macros from leaking
+   into the files merged after it. `unity/x11_enable.h` (before the X11 includes) saves the clashing macro names with
+   `#pragma push_macro`; `unity/x11_disable.h` (after the file's last use of them) restores them. Another leaky
+   header gets its own `unity/<name>_enable.h` / `_disable.h` pair in `engine/foundation/unity/`, same shape.
+2. **Rename or share colliding file-local symbols** (anonymous-namespace helpers with the same name in two files):
+   give them distinct names or move the common helper to a header.
+3. **Only then** exclude the file with `SKIP_UNITY_BUILD_INCLUSION`, and list it in `KNOWN-ISSUES.md` with the
+   reason steps 1-2 did not work.
+
+Never skip a file from unity builds as the first response to a conflict. The plain `-DENGINE_UNITY_BUILD=OFF` build
+must keep passing too, so every source still compiles on its own.
+
 ## End-of-day code review (required)
 
 **Every implementation day ends with a high-effort code review before it

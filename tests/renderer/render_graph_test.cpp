@@ -91,10 +91,10 @@ rhi::BufferDesc AnyBuffer() {
     return d;
 }
 
-struct Fixture {
+struct RenderGraphTestFixture {
     ArenaAllocator arena{kArenaBytes};
     RenderGraph graph;
-    explicit Fixture(const RenderGraphDesc& desc = RenderGraphDesc{}) : graph(&arena, desc) {}
+    explicit RenderGraphTestFixture(const RenderGraphDesc& desc = RenderGraphDesc{}) : graph(&arena, desc) {}
 
     GraphResource Tex(const char* name) { return graph.CreateTexture(name, AnyTexture()); }
     GraphResource Buf(const char* name) { return graph.CreateBuffer(name, AnyBuffer()); }
@@ -131,7 +131,7 @@ using Names = std::vector<std::string>;
 } // namespace
 
 TEST_CASE("A linear chain compiles to its declaration order", "[renderer][graph]") {
-    Fixture f;
+    RenderGraphTestFixture f;
     const GraphResource a = f.Tex("a");
     const GraphResource b = f.Tex("b");
     const GraphResource out = f.Backbuffer();
@@ -160,7 +160,7 @@ TEST_CASE("A linear chain compiles to its declaration order", "[renderer][graph]
 }
 
 TEST_CASE("A diamond keeps declaration order among independent passes", "[renderer][graph]") {
-    Fixture f;
+    RenderGraphTestFixture f;
     const GraphResource src = f.Tex("src");
     const GraphResource l = f.Tex("left");
     const GraphResource r = f.Tex("right");
@@ -178,7 +178,7 @@ TEST_CASE("A diamond keeps declaration order among independent passes", "[render
 }
 
 TEST_CASE("Passes nothing consumes are culled, unless they have side effects", "[renderer][graph]") {
-    Fixture f;
+    RenderGraphTestFixture f;
     const GraphResource used = f.Tex("used");
     const GraphResource dead = f.Tex("dead");
     const GraphResource dead2 = f.Tex("dead2");
@@ -203,7 +203,7 @@ TEST_CASE("Passes nothing consumes are culled, unless they have side effects", "
 }
 
 TEST_CASE("An overwritten result is dead; edges name write-after-write and write-after-read", "[renderer][graph]") {
-    Fixture f;
+    RenderGraphTestFixture f;
     const GraphResource t = f.Tex("t");
     const GraphResource out = f.Backbuffer();
     f.Pass("clear_old").Write(t, GraphUsage::ColorAttachment);        // 0: overwritten before anyone reads it
@@ -219,7 +219,7 @@ TEST_CASE("An overwritten result is dead; edges name write-after-write and write
 }
 
 TEST_CASE("ReadWrite keeps the earlier writer alive", "[renderer][graph]") {
-    Fixture f;
+    RenderGraphTestFixture f;
     const GraphResource t = f.Tex("t");
     const GraphResource out = f.Backbuffer();
     f.Pass("clear").Write(t, GraphUsage::ColorAttachment);
@@ -230,7 +230,7 @@ TEST_CASE("ReadWrite keeps the earlier writer alive", "[renderer][graph]") {
 }
 
 TEST_CASE("Explicit dependencies reorder only what they must", "[renderer][graph]") {
-    Fixture f;
+    RenderGraphTestFixture f;
     const GraphResource out = f.Backbuffer();
     const PassId a = f.Pass("a", PassFlags::SideEffects).Id();
     f.Pass("b", PassFlags::SideEffects);
@@ -244,7 +244,7 @@ TEST_CASE("Explicit dependencies reorder only what they must", "[renderer][graph
 }
 
 TEST_CASE("A cycle is rejected and named", "[renderer][graph]") {
-    Fixture f;
+    RenderGraphTestFixture f;
     const PassId a = f.Pass("alpha", PassFlags::SideEffects).Id();
     const PassId b = f.Pass("beta", PassFlags::SideEffects).Id();
     const PassId c = f.Pass("gamma", PassFlags::SideEffects).Id();
@@ -264,14 +264,14 @@ TEST_CASE("A cycle is rejected and named", "[renderer][graph]") {
 
 TEST_CASE("Mistakes in a graph are reported by Compile with names", "[renderer][graph]") {
     SECTION("reading a transient resource nobody wrote") {
-        Fixture f;
+        RenderGraphTestFixture f;
         const GraphResource t = f.Tex("hdr");
         f.Pass("tonemap", PassFlags::SideEffects).Read(t, GraphUsage::Sampled);
         CHECK_FALSE(f.graph.Compile());
         CHECK(f.Errors() == "pass 'tonemap' reads 'hdr' but no earlier pass writes it\n");
     }
     SECTION("reading it before the pass that writes it") {
-        Fixture f;
+        RenderGraphTestFixture f;
         const GraphResource t = f.Tex("hdr");
         f.Pass("tonemap", PassFlags::SideEffects).Read(t, GraphUsage::Sampled);
         f.Pass("lighting").Write(t, GraphUsage::ColorAttachment);
@@ -279,27 +279,27 @@ TEST_CASE("Mistakes in a graph are reported by Compile with names", "[renderer][
         CHECK(f.Errors() == "pass 'tonemap' reads 'hdr' but no earlier pass writes it\n");
     }
     SECTION("a read of an import is fine") {
-        Fixture f;
+        RenderGraphTestFixture f;
         const GraphResource in = f.Backbuffer(true);
         f.Pass("sample", PassFlags::SideEffects).Read(in, GraphUsage::Sampled);
         CHECK(f.graph.Compile());
     }
     SECTION("a ReadWrite of an import needs no earlier writer either") {
-        Fixture f;
+        RenderGraphTestFixture f;
         const GraphResource out = f.Backbuffer();
         f.Pass("blend").ReadWrite(out, GraphUsage::ColorAttachment);
         CHECK(f.graph.Compile());
         CHECK(f.Schedule() == Names{"blend"}); // it writes an import, so it stays
     }
     SECTION("writing a read-only import") {
-        Fixture f;
+        RenderGraphTestFixture f;
         const GraphResource in = f.Backbuffer(true);
         f.Pass("draw").Write(in, GraphUsage::ColorAttachment);
         CHECK_FALSE(f.graph.Compile());
         CHECK(f.Errors() == "pass 'draw' writes 'backbuffer', which is a read-only import\n");
     }
     SECTION("a usage that does not suit the access") {
-        Fixture f;
+        RenderGraphTestFixture f;
         const GraphResource t = f.Tex("t");
         f.Pass("p").Read(t, GraphUsage::ColorAttachment);
         f.Pass("q").Write(t, GraphUsage::Sampled);
@@ -309,7 +309,7 @@ TEST_CASE("Mistakes in a graph are reported by Compile with names", "[renderer][
               "pass 'q': usage 'sampled' of 't' is a read, so it cannot be declared with write\n");
     }
     SECTION("a usage that does not suit the resource kind") {
-        Fixture f;
+        RenderGraphTestFixture f;
         const GraphResource t = f.Tex("t");
         const GraphResource b = f.Buf("b");
         f.Pass("p").Read(t, GraphUsage::VertexBuffer).Read(b, GraphUsage::Sampled);
@@ -319,14 +319,14 @@ TEST_CASE("Mistakes in a graph are reported by Compile with names", "[renderer][
               "pass 'p': usage 'sampled' does not apply to the buffer 'b'\n");
     }
     SECTION("the same resource twice in a pass") {
-        Fixture f;
+        RenderGraphTestFixture f;
         const GraphResource t = f.Tex("t");
         f.Pass("p").Write(t, GraphUsage::ColorAttachment).Read(t, GraphUsage::Sampled);
         CHECK_FALSE(f.graph.Compile());
         CHECK(f.Errors() == "pass 'p' declares 't' twice; use ReadWrite for one access that reads and writes\n");
     }
     SECTION("an access declared after the next pass was added") {
-        Fixture f;
+        RenderGraphTestFixture f;
         const GraphResource t = f.Tex("t");
         PassBuilder first = f.Pass("first");
         f.Pass("second");
@@ -335,7 +335,7 @@ TEST_CASE("Mistakes in a graph are reported by Compile with names", "[renderer][
         CHECK(f.Errors() == "pass 'first': its accesses must be declared before the next pass is added\n");
     }
     SECTION("an invalid resource and an invalid import") {
-        Fixture f;
+        RenderGraphTestFixture f;
         f.Pass("p").Read(GraphResource{}, GraphUsage::Sampled);
         f.graph.ImportTexture("bad", rhi::TextureHandle{}, rhi::ResourceState::Undefined, rhi::ResourceState::Undefined, false);
         CHECK_FALSE(f.graph.Compile());
@@ -347,7 +347,7 @@ TEST_CASE("Mistakes in a graph are reported by Compile with names", "[renderer][
         small.max_resources = 1;
         small.max_accesses = 1;
         small.max_dependencies = 1;
-        Fixture f(small);
+        RenderGraphTestFixture f(small);
         const GraphResource t = f.Tex("t");
         f.Tex("u");
         PassBuilder p = f.Pass("p");
@@ -361,14 +361,14 @@ TEST_CASE("Mistakes in a graph are reported by Compile with names", "[renderer][
         CHECK(f.Errors().find("pass 'q' not added") != std::string::npos);
     }
     SECTION("errors beyond the stored limit are counted") {
-        Fixture f;
+        RenderGraphTestFixture f;
         for (int i = 0; i < 20; ++i) f.Pass("p").Read(GraphResource{}, GraphUsage::Sampled);
         CHECK_FALSE(f.graph.Compile());
         CHECK(f.graph.ErrorCount() == kMaxGraphErrors);
         CHECK(f.graph.DroppedErrors() == 20 - kMaxGraphErrors);
     }
     SECTION("dependencies that name nothing") {
-        Fixture f;
+        RenderGraphTestFixture f;
         const PassId a = f.Pass("a").Id();
         f.graph.AddDependency(a, a);
         f.graph.AddDependency(a, PassId{});
@@ -387,7 +387,7 @@ TEST_CASE("A graph in an arena too small to hold it is invalid", "[renderer][gra
 }
 
 TEST_CASE("Pass callbacks and their context are kept", "[renderer][graph]") {
-    Fixture f;
+    RenderGraphTestFixture f;
     int token = 0;
     PassExecuteFn fn = [](const PassExecuteContext&, void* user) { ++*static_cast<int*>(user); };
     const PassId id = f.graph.AddPass("p", fn, &token, PassFlags::SideEffects).Id();
@@ -409,7 +409,7 @@ TEST_CASE("Usages map to resource states", "[renderer][graph]") {
 }
 
 TEST_CASE("The dump can be measured and truncates safely; the dot file marks culled passes", "[renderer][graph]") {
-    Fixture f;
+    RenderGraphTestFixture f;
     const GraphResource a = f.Tex("a");
     const GraphResource out = f.Backbuffer();
     f.Pass("make").Write(a, GraphUsage::ColorAttachment);
@@ -561,7 +561,7 @@ TEST_CASE("A 1000-pass random DAG matches an independent reference", "[renderer]
 }
 
 TEST_CASE("Long names are measured and truncated correctly in the dump", "[renderer][graph]") {
-    Fixture f;
+    RenderGraphTestFixture f;
     const std::string long_name(900, 'x');
     const GraphResource t = f.Tex(long_name.c_str());
     f.Pass(long_name.c_str(), PassFlags::SideEffects).Write(t, GraphUsage::ColorAttachment);
@@ -577,7 +577,7 @@ TEST_CASE("Long names are measured and truncated correctly in the dump", "[rende
 }
 
 TEST_CASE("A graph keeps its descriptors and imports; recompiling after a change refreshes the schedule", "[renderer][graph]") {
-    Fixture f;
+    RenderGraphTestFixture f;
     rhi::TextureDesc td;
     td.width = 64;
     td.height = 32;
@@ -605,7 +605,7 @@ TEST_CASE("A graph keeps its descriptors and imports; recompiling after a change
 }
 
 TEST_CASE("An explicit dependency does not keep its predecessor alive", "[renderer][graph]") {
-    Fixture f;
+    RenderGraphTestFixture f;
     const PassId sync = f.Pass("sync").Id();
     const PassId work = f.Pass("work", PassFlags::SideEffects).Id();
     f.graph.AddDependency(sync, work);

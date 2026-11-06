@@ -48,8 +48,8 @@ bool StartsWith(StringView s, const char* p) {
     return true;
 }
 
-bool IsIdentStart(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
-bool IsIdentChar(char c) { return IsIdentStart(c) || (c >= '0' && c <= '9'); }
+bool DocParserIsIdentStart(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
+bool DocParserIsIdentChar(char c) { return DocParserIsIdentStart(c) || (c >= '0' && c <= '9'); }
 
 struct LabelMatch {
     bool matched = false;
@@ -73,8 +73,8 @@ bool MatchLabel(StringView t, LabelMatch& m) {
         usize j = i;
         while (j < t.Length() && t[j] == ' ') ++j;
         usize k = j;
-        if (k < t.Length() && IsIdentStart(t[k])) {
-            while (k < t.Length() && IsIdentChar(t[k])) ++k;
+        if (k < t.Length() && DocParserIsIdentStart(t[k])) {
+            while (k < t.Length() && DocParserIsIdentChar(t[k])) ++k;
             if (k < t.Length() && t[k] == ':' && (k + 1 == t.Length() || t[k + 1] == ' ')) {
                 m.matched = true;
                 m.known = true;

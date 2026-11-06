@@ -54,7 +54,7 @@ private:
 
 std::string Str(StringView v) { return std::string(v.Data(), v.Length()); }
 
-std::string ReadWhole(const std::string& path) {
+std::string ExtractorTestReadWhole(const std::string& path) {
     FILE* f = std::fopen(path.c_str(), "rb");
     if (f == nullptr) return {};
     std::string s;
@@ -65,7 +65,7 @@ std::string ReadWhole(const std::string& path) {
     return s;
 }
 
-void ListFiles(const std::string& dir, const char* suffix, std::vector<std::string>& out) {
+void ExtractorTestListFiles(const std::string& dir, const char* suffix, std::vector<std::string>& out) {
     DIR* d = opendir(dir.c_str());
     if (d == nullptr) return;
     std::vector<std::string> names;
@@ -79,7 +79,7 @@ void ListFiles(const std::string& dir, const char* suffix, std::vector<std::stri
         std::string p = dir + "/" + n;
         struct stat st;
         if (stat(p.c_str(), &st) != 0) continue;
-        if (S_ISDIR(st.st_mode)) ListFiles(p, suffix, out);
+        if (S_ISDIR(st.st_mode)) ExtractorTestListFiles(p, suffix, out);
         else if (p.size() >= std::strlen(suffix) && p.compare(p.size() - std::strlen(suffix), std::strlen(suffix), suffix) == 0)
             out.push_back(p);
     }
@@ -98,14 +98,14 @@ bool ExtractorOwns(const std::string& message) {
 
 TEST_CASE("Good fixtures extract with no diagnostics and match their golden trees", "[docgen][extractor][fixtures]") {
     std::vector<std::string> files;
-    ListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
+    ExtractorTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
     REQUIRE(files.size() >= 13);
     for (auto& f : files) {
         INFO(f);
-        Extracted e(ReadWhole(f));
+        Extracted e(ExtractorTestReadWhole(f));
         REQUIRE(e.scan.diagnostics.Size() == 0);
         REQUIRE(e.Diags() == 0);
-        std::string golden = ReadWhole(f.substr(0, f.size() - 2) + ".tree");
+        std::string golden = ExtractorTestReadWhole(f.substr(0, f.size() - 2) + ".tree");
         INFO("missing or empty golden tree");
         REQUIRE_FALSE(golden.empty());
         REQUIRE(e.Dump() == golden);
@@ -114,12 +114,12 @@ TEST_CASE("Good fixtures extract with no diagnostics and match their golden tree
 
 TEST_CASE("Bad fixtures: the extractor reports exactly the diagnostics it owns", "[docgen][extractor][fixtures]") {
     std::vector<std::string> files;
-    ListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
+    ExtractorTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
     int checked = 0;
     for (auto& f : files) {
         INFO(f);
         std::vector<std::string> expected;
-        std::string exp = ReadWhole(f + ".expect");
+        std::string exp = ExtractorTestReadWhole(f + ".expect");
         size_t pos = 0;
         while (pos < exp.size()) {
             size_t nl = exp.find('\n', pos);
@@ -132,7 +132,7 @@ TEST_CASE("Bad fixtures: the extractor reports exactly the diagnostics it owns",
             REQUIRE(c2 != std::string::npos);
             if (ExtractorOwns(line.substr(c2 + 2))) expected.push_back(line);
         }
-        Extracted e(ReadWhole(f));
+        Extracted e(ExtractorTestReadWhole(f));
         REQUIRE(e.Diags() == expected.size());
         for (usize i = 0; i < e.Diags(); ++i) REQUIRE(e.Diag(i).compare(0, expected[i].size(), expected[i]) == 0);
         if (!expected.empty()) ++checked;
@@ -142,12 +142,12 @@ TEST_CASE("Bad fixtures: the extractor reports exactly the diagnostics it owns",
 
 TEST_CASE("Every engine header extracts with zero diagnostics", "[docgen][extractor][engine]") {
     std::vector<std::string> files;
-    ListFiles(DOCGEN_ENGINE_DIR, ".h", files);
+    ExtractorTestListFiles(DOCGEN_ENGINE_DIR, ".h", files);
     REQUIRE(files.size() >= 40);
     usize functions = 0, classes = 0;
     for (auto& f : files) {
         INFO(f);
-        Extracted e(ReadWhole(f));
+        Extracted e(ExtractorTestReadWhole(f));
         REQUIRE(e.scan.diagnostics.Size() == 0);
         if (e.Diags() != 0) INFO(e.Diag(0));
         REQUIRE(e.Diags() == 0);
@@ -474,7 +474,7 @@ TEST_CASE("A declaration cut off by a closing brace or end of file is an error",
 }
 
 TEST_CASE("Extraction is deterministic", "[docgen][extractor]") {
-    std::string src = ReadWhole(std::string(DOCGEN_FIXTURE_DIR) + "/good/classes.h");
+    std::string src = ExtractorTestReadWhole(std::string(DOCGEN_FIXTURE_DIR) + "/good/classes.h");
     Extracted a(src), b(src);
     REQUIRE(a.Dump(true) == b.Dump(true));
 }
@@ -483,8 +483,8 @@ TEST_CASE("Extraction is deterministic", "[docgen][extractor]") {
 
 TEST_CASE("Mutated headers never crash or hang the extractor", "[docgen][extractor][fuzz]") {
     std::vector<std::string> files;
-    ListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
-    ListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
+    ExtractorTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
+    ExtractorTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
     unsigned long long seed = 0x9E3779B97F4A7C15ull;
     auto next = [&]() {
         seed = seed * 6364136223846793005ull + 1442695040888963407ull;
@@ -493,7 +493,7 @@ TEST_CASE("Mutated headers never crash or hang the extractor", "[docgen][extract
     const char* junk[] = {"{", "}", "(", ")", "[", "]", "<", ">", ";", "template <", "operator", "requires", "enum", "class ", "::", "= ",
                           ": ", "namespace ", "extern \"C\" {", "///", "///<", "\n"};
     for (auto& f : files) {
-        std::string base = ReadWhole(f);
+        std::string base = ExtractorTestReadWhole(f);
         for (int round = 0; round < 40; ++round) {
             std::string s = base;
             int edits = 1 + static_cast<int>(next() % 4);

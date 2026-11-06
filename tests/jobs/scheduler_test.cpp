@@ -26,9 +26,9 @@ Job SpawnChildren(std::atomic<int>* counter, int fanout) {
     co_return;
 }
 
-u64 Live() { return FramePool::Global().GetStats().Live(); }
+u64 SchedulerTestLive() { return FramePool::Global().GetStats().Live(); }
 
-std::unique_ptr<Scheduler> MakeScheduler(usize n) {
+std::unique_ptr<Scheduler> SchedulerTestMakeScheduler(usize n) {
     Scheduler::Config cfg;
     cfg.participants = n; // 0 = default
     return std::make_unique<Scheduler>(cfg);
@@ -45,19 +45,19 @@ void RunBurst(Scheduler& s, int jobs) {
 
 TEST_CASE("10,000 trivial jobs complete exactly once for N = 1, 2 and the default", "[jobs][scheduler]") {
     for (usize n : {usize{1}, usize{2}, usize{0}}) {
-        const u64 live_before = Live();
-        auto s = MakeScheduler(n);
+        const u64 live_before = SchedulerTestLive();
+        auto s = SchedulerTestMakeScheduler(n);
         RunBurst(*s, 10'000);
         REQUIRE(s->Shutdown() == 0); // quiesce: stats are exact once workers are joined
         REQUIRE(s->TotalResumes() == 10'000);
         s.reset();
-        REQUIRE(Live() == live_before);
+        REQUIRE(SchedulerTestLive() == live_before);
     }
 }
 
 TEST_CASE("The 10,000-job burst is stable over 100 consecutive runs per configuration", "[jobs][scheduler][repeat]") {
     for (usize n : {usize{1}, usize{2}, usize{0}}) {
-        auto s = MakeScheduler(n);
+        auto s = SchedulerTestMakeScheduler(n);
         for (int run = 0; run < 100; ++run) RunBurst(*s, 10'000);
         REQUIRE(s->Shutdown() == 0);
         REQUIRE(s->TotalResumes() == 100u * 10'000u);
@@ -65,13 +65,13 @@ TEST_CASE("The 10,000-job burst is stable over 100 consecutive runs per configur
 }
 
 TEST_CASE("Main with N=1 can submit more jobs than the queues hold before helping", "[jobs][scheduler]") {
-    auto s = MakeScheduler(1);
+    auto s = SchedulerTestMakeScheduler(1);
     constexpr int kJobs = static_cast<int>(WorkStealingDeque::Capacity() + Scheduler::InjectionCapacity()) + 1000;
     RunBurst(*s, kJobs);
 }
 
 TEST_CASE("A full deque spills to the injection queue", "[jobs][scheduler]") {
-    auto s = MakeScheduler(1);
+    auto s = SchedulerTestMakeScheduler(1);
     std::atomic<int> counter{0};
     const int extra = 500;
     const int total = static_cast<int>(WorkStealingDeque::Capacity()) + extra;
@@ -84,7 +84,7 @@ TEST_CASE("A full deque spills to the injection queue", "[jobs][scheduler]") {
 
 TEST_CASE("A non-participant thread submits through the injection queue", "[jobs][scheduler]") {
     for (usize n : {usize{1}, usize{3}}) {
-        auto s = MakeScheduler(n);
+        auto s = SchedulerTestMakeScheduler(n);
         std::atomic<int> counter{0};
         constexpr int kJobs = 3000; // < injection capacity: no consumer needed while submitting
         std::thread t([&] {
@@ -97,7 +97,7 @@ TEST_CASE("A non-participant thread submits through the injection queue", "[jobs
 }
 
 TEST_CASE("Jobs submitted from worker participants run exactly once", "[jobs][scheduler]") {
-    auto s = MakeScheduler(4);
+    auto s = SchedulerTestMakeScheduler(4);
     std::atomic<int> counter{0};
     constexpr int kParents = 200, kFanout = 20;
     for (int i = 0; i < kParents; ++i) s->Submit(SpawnChildren(&counter, kFanout));
@@ -106,7 +106,7 @@ TEST_CASE("Jobs submitted from worker participants run exactly once", "[jobs][sc
 }
 
 TEST_CASE("Shutdown while every worker is parked does not hang", "[jobs][scheduler]") {
-    auto s = MakeScheduler(4);
+    auto s = SchedulerTestMakeScheduler(4);
     RunBurst(*s, 100);
     std::this_thread::sleep_for(std::chrono::milliseconds(50)); // let them park
     REQUIRE(s->Shutdown() == 0);
@@ -114,20 +114,20 @@ TEST_CASE("Shutdown while every worker is parked does not hang", "[jobs][schedul
 
 TEST_CASE("Shutdown right after a burst loses nothing: ran + destroyed == submitted", "[jobs][scheduler]") {
     for (int round = 0; round < 20; ++round) {
-        const u64 live_before = Live();
-        auto s = MakeScheduler(4);
+        const u64 live_before = SchedulerTestLive();
+        auto s = SchedulerTestMakeScheduler(4);
         std::atomic<int> counter{0};
         constexpr int kJobs = 5000;
         for (int i = 0; i < kJobs; ++i) s->Submit(IncrementJob(&counter));
         usize dropped = s->Shutdown();
         REQUIRE(static_cast<usize>(counter.load()) + dropped == static_cast<usize>(kJobs));
-        REQUIRE(Live() == live_before); // every frame freed, run or not
+        REQUIRE(SchedulerTestLive() == live_before); // every frame freed, run or not
     }
 }
 
 TEST_CASE("Scheduler::Current is set on participants only", "[jobs][scheduler]") {
     REQUIRE(Scheduler::Current() == nullptr);
-    auto s = MakeScheduler(2);
+    auto s = SchedulerTestMakeScheduler(2);
     REQUIRE(Scheduler::Current() == s.get());
     Scheduler* seen = reinterpret_cast<Scheduler*>(1);
     std::thread t([&] { seen = Scheduler::Current(); });
@@ -147,7 +147,7 @@ bool WaitForParked(Scheduler& s, u32 want) {
 } // namespace
 
 TEST_CASE("Workers really park when idle, and a later submission wakes one", "[jobs][scheduler]") {
-    auto s = MakeScheduler(4);
+    auto s = SchedulerTestMakeScheduler(4);
     REQUIRE(WaitForParked(*s, 3)); // all 3 workers parked
     for (int round = 0; round < 200; ++round) {
         std::atomic<int> counter{0};
@@ -160,7 +160,7 @@ TEST_CASE("Workers really park when idle, and a later submission wakes one", "[j
 }
 
 TEST_CASE("A woken-from-park worker runs work submitted from a non-participant thread", "[jobs][scheduler]") {
-    auto s = MakeScheduler(2); // one worker, main does not help: the worker must run it
+    auto s = SchedulerTestMakeScheduler(2); // one worker, main does not help: the worker must run it
     REQUIRE(WaitForParked(*s, 1));
     std::atomic<int> counter{0};
     std::thread t([&] { s->Submit(IncrementJob(&counter)); });

@@ -15,7 +15,7 @@ using namespace engine_placeholder::rhi::vulkan;
 
 namespace {
 
-bool HaveEnv(const char* name) {
+bool VulkanFrameTestHaveEnv(const char* name) {
     const char* v = std::getenv(name);
     return v != nullptr && v[0] != '\0';
 }
@@ -167,14 +167,14 @@ void RunFrameLoopChecks(os::WindowBackend backend) {
 } // namespace
 
 TEST_CASE("The frame loop on a Wayland window keeps frames in flight bounded and leaks nothing", "[rhi][vulkan][gpu][window][wayland][frame]") {
-    if (!HaveEnv("WAYLAND_DISPLAY")) {
+    if (!VulkanFrameTestHaveEnv("WAYLAND_DISPLAY")) {
         SKIP("no Wayland session");
     }
     RunFrameLoopChecks(os::WindowBackend::Wayland);
 }
 
 TEST_CASE("The frame loop on an X11 window keeps frames in flight bounded and leaks nothing", "[rhi][vulkan][gpu][window][x11][frame]") {
-    if (!HaveEnv("DISPLAY")) {
+    if (!VulkanFrameTestHaveEnv("DISPLAY")) {
         SKIP("no X11 display");
     }
     RunFrameLoopChecks(os::WindowBackend::X11);

@@ -67,7 +67,7 @@ bool BufferUsageOk(GraphUsage u) {
 }
 
 // Bounded text output: counts the full length, stores what fits.
-struct Writer {
+struct RenderGraphWriter {
     char* out;
     usize capacity;
     usize length = 0;
@@ -855,7 +855,7 @@ rhi::ResourceState RenderGraph::StateAfterLastUse(GraphResource resource) const 
 }
 
 usize RenderGraph::DumpBarriers(char* out, usize capacity) const {
-    Writer w{out, capacity};
+    RenderGraphWriter w{out, capacity};
     if (compiled_) {
         for (u32 i = 0; i < barrier_count_; ++i) {
             const BarrierRec& b = barriers_[i];
@@ -1083,7 +1083,7 @@ bool RenderGraph::ExecuteParallel(TransientPool* pool, rhi::Device* device, jobs
 // ---- text output ----
 
 usize RenderGraph::Dump(char* out, usize capacity) const {
-    Writer w{out, capacity};
+    RenderGraphWriter w{out, capacity};
     if (compiled_) {
         w.Add("graph passes=%u resources=%u scheduled=%u culled=%u\n", pass_count_, resource_count_, schedule_count_, pass_count_ - schedule_count_);
         w.Add("schedule:");
@@ -1135,7 +1135,7 @@ usize RenderGraph::Dump(char* out, usize capacity) const {
 }
 
 usize RenderGraph::WriteDot(char* out, usize capacity) const {
-    Writer w{out, capacity};
+    RenderGraphWriter w{out, capacity};
     char a[128];
     char b[128];
     w.Add("digraph render_graph {\n  rankdir=LR;\n  node [shape=box];\n");

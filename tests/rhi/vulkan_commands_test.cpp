@@ -19,7 +19,7 @@ using namespace engine_placeholder::rhi::vulkan;
 
 namespace {
 
-std::vector<unsigned char> Pattern(usize size, unsigned seed) {
+std::vector<unsigned char> VulkanCommandsTestPattern(usize size, unsigned seed) {
     std::vector<unsigned char> bytes(size);
     unsigned state = seed * 2654435761u + 12345u;
     for (usize i = 0; i < size; ++i) {
@@ -29,7 +29,7 @@ std::vector<unsigned char> Pattern(usize size, unsigned seed) {
     return bytes;
 }
 
-VulkanDevicePtr MakeDevice() {
+VulkanDevicePtr VulkanCommandsTestMakeDevice() {
     DeviceCreateInfo info;
     info.validation = ValidationSetting::On;
     info.sync_validation = true;
@@ -140,12 +140,12 @@ TEST_CASE("GetBarrierScopes: the state table matches hand-derived stages, access
 TEST_CASE("Vulkan: record, submit and verify a buffer copy", "[rhi][vulkan][gpu][commands]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevicePtr device = MakeDevice();
+    VulkanDevicePtr device = VulkanCommandsTestMakeDevice();
 
     constexpr u64 kSize = 64 * 1024;
     BufferHandle src = MakeBuffer(device.Get(), kSize);
     BufferHandle dst = MakeBuffer(device.Get(), kSize);
-    const std::vector<unsigned char> data = Pattern(kSize, 1);
+    const std::vector<unsigned char> data = VulkanCommandsTestPattern(kSize, 1);
     REQUIRE(device->UploadBuffer(src, 0, data.data(), kSize).ok);
 
     device->BeginFrame();
@@ -171,11 +171,11 @@ TEST_CASE("Vulkan: record, submit and verify a buffer copy", "[rhi][vulkan][gpu]
 TEST_CASE("Vulkan fences: values increase, waiting times out when never signaled", "[rhi][vulkan][gpu][commands][fence]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevicePtr device = MakeDevice();
+    VulkanDevicePtr device = VulkanCommandsTestMakeDevice();
 
     BufferHandle a = MakeBuffer(device.Get(), 4096);
     BufferHandle b = MakeBuffer(device.Get(), 4096);
-    const std::vector<unsigned char> data = Pattern(4096, 2);
+    const std::vector<unsigned char> data = VulkanCommandsTestPattern(4096, 2);
     device->UploadBuffer(a, 0, data.data(), data.size());
 
     device->BeginFrame();
@@ -208,11 +208,11 @@ TEST_CASE("Vulkan fences: values increase, waiting times out when never signaled
 TEST_CASE("Vulkan: many frames reuse the per-thread pools", "[rhi][vulkan][gpu][commands][frames]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevicePtr device = MakeDevice();
+    VulkanDevicePtr device = VulkanCommandsTestMakeDevice();
 
     BufferHandle src = MakeBuffer(device.Get(), 1024);
     BufferHandle dst = MakeBuffer(device.Get(), 1024);
-    const std::vector<unsigned char> data = Pattern(1024, 3);
+    const std::vector<unsigned char> data = VulkanCommandsTestPattern(1024, 3);
     device->UploadBuffer(src, 0, data.data(), data.size());
 
     FenceValue last = 0;
@@ -247,7 +247,7 @@ TEST_CASE("Vulkan: many frames reuse the per-thread pools", "[rhi][vulkan][gpu][
 TEST_CASE("Vulkan: command lists are recorded on many job threads and submitted in order", "[rhi][vulkan][gpu][commands][mt]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevicePtr device = MakeDevice();
+    VulkanDevicePtr device = VulkanCommandsTestMakeDevice();
 
     constexpr usize kLists = 64;
     constexpr u64 kSize = 16 * 1024;
@@ -257,7 +257,7 @@ TEST_CASE("Vulkan: command lists are recorded on many job threads and submitted 
     for (usize i = 0; i < kLists; ++i) {
         src[i] = MakeBuffer(device.Get(), kSize);
         dst[i] = MakeBuffer(device.Get(), kSize);
-        data[i] = Pattern(kSize, static_cast<unsigned>(10 + i));
+        data[i] = VulkanCommandsTestPattern(kSize, static_cast<unsigned>(10 + i));
         REQUIRE(device->UploadBuffer(src[i], 0, data[i].data(), kSize).ok);
     }
 
@@ -304,10 +304,10 @@ TEST_CASE("Vulkan: command lists are recorded on many job threads and submitted 
 TEST_CASE("Vulkan: plain threads can record, and thread slots are recycled", "[rhi][vulkan][gpu][commands][mt]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevicePtr device = MakeDevice();
+    VulkanDevicePtr device = VulkanCommandsTestMakeDevice();
 
     BufferHandle src = MakeBuffer(device.Get(), 1024);
-    const std::vector<unsigned char> data = Pattern(1024, 4);
+    const std::vector<unsigned char> data = VulkanCommandsTestPattern(1024, 4);
     device->UploadBuffer(src, 0, data.data(), data.size());
     constexpr int kThreads = 3;
     BufferHandle dst[kThreads];
@@ -357,11 +357,11 @@ TEST_CASE("Vulkan: plain threads can record, and thread slots are recycled", "[r
 TEST_CASE("Vulkan: a lost device makes submission and list creation fail without crashing", "[rhi][vulkan][gpu][commands][lost]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevicePtr device = MakeDevice();
+    VulkanDevicePtr device = VulkanCommandsTestMakeDevice();
 
     BufferHandle a = MakeBuffer(device.Get(), 1024);
     BufferHandle b = MakeBuffer(device.Get(), 1024);
-    const std::vector<unsigned char> data = Pattern(1024, 5);
+    const std::vector<unsigned char> data = VulkanCommandsTestPattern(1024, 5);
     device->UploadBuffer(a, 0, data.data(), data.size());
 
     device->BeginFrame();
@@ -391,7 +391,7 @@ TEST_CASE("Vulkan: a lost device makes submission and list creation fail without
 TEST_CASE("Vulkan: an empty submit returns the latest fence", "[rhi][vulkan][gpu][commands]") {
     gpu_test::GpuFixture fx;
     fx.Require();
-    VulkanDevicePtr device = MakeDevice();
+    VulkanDevicePtr device = VulkanCommandsTestMakeDevice();
     device->BeginFrame();
     CHECK(device->Submit(nullptr, 0) == 0); // nothing was ever submitted
     BufferHandle a = MakeBuffer(device.Get(), 64);
@@ -412,7 +412,7 @@ TEST_CASE("Null device: command lists recorded on job threads submit in order (r
     for (usize i = 0; i < kLists; ++i) {
         src[i] = MakeBuffer(device.Get(), kSize);
         dst[i] = MakeBuffer(device.Get(), kSize);
-        data[i] = Pattern(kSize, static_cast<unsigned>(50 + i));
+        data[i] = VulkanCommandsTestPattern(kSize, static_cast<unsigned>(50 + i));
         REQUIRE(device->UploadBuffer(src[i], 0, data[i].data(), kSize).ok);
     }
 

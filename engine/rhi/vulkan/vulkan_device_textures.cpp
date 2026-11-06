@@ -14,7 +14,7 @@ namespace engine_placeholder::rhi::vulkan {
 namespace {
 
 constexpr u64 kTextureChunkBytes = 4ull << 20;
-constexpr u64 kStagingWaitNs = 10ull * 1000 * 1000 * 1000;
+constexpr u64 kVulkanDeviceTexturesStagingWaitNs = 10ull * 1000 * 1000 * 1000;
 
 u32 MipExtent(u32 base, u32 mip) {
     const u32 v = base >> mip;
@@ -365,7 +365,7 @@ bool VulkanDevice::StageChunkLocked(u64 alloc_bytes, u64 align, u64* ring_offset
     staging_ring_->Reclaim(CompletedTimeline());
     while (!staging_ring_->Allocate(alloc_bytes, align, ring_offset)) {
         const u64 pending = staging_ring_->OldestPendingFence();
-        if (pending == 0 || !WaitTimeline(pending, kStagingWaitNs)) {
+        if (pending == 0 || !WaitTimeline(pending, kVulkanDeviceTexturesStagingWaitNs)) {
             RhiLog(LogVerbosity::Error, "UploadTexture: the staging ring is exhausted and the GPU is not freeing it");
             return false;
         }

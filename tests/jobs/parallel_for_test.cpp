@@ -14,7 +14,7 @@ using namespace engine_placeholder::jobs;
 
 namespace {
 
-std::unique_ptr<Scheduler> MakeScheduler(usize n) {
+std::unique_ptr<Scheduler> ParallelForTestMakeScheduler(usize n) {
     Scheduler::Config cfg;
     cfg.participants = n;
     return std::make_unique<Scheduler>(cfg);
@@ -62,7 +62,7 @@ TEST_CASE("parallel_for sums 100,000 elements exactly, for N = 1, 2, default", "
     auto data = MakeData(n);
     const u64 expected = static_cast<u64>(n) * (n - 1) / 2;
     for (usize workers : {usize{1}, usize{2}, usize{0}}) {
-        auto s = MakeScheduler(workers);
+        auto s = ParallelForTestMakeScheduler(workers);
         for (usize chunk : {usize{0}, usize{1000}, usize{4096}, usize{99'999}, usize{100'000}, usize{1'000'000}}) {
             REQUIRE(ParallelSum(*s, data, chunk) == expected);
         }
@@ -85,7 +85,7 @@ TEST_CASE("parallel_for honors ENGINE_JOB_THREADS=3 via the default scheduler co
     } restore;
     setenv("ENGINE_JOB_THREADS", "3", 1);
     {
-        auto s = MakeScheduler(0); // default => reads the env override
+        auto s = ParallelForTestMakeScheduler(0); // default => reads the env override
         REQUIRE(s->ParticipantCount() == 3);
         auto data = MakeData(100'000);
         REQUIRE(ParallelSum(*s, data, 0) == 100'000ull * 99'999ull / 2);
@@ -94,7 +94,7 @@ TEST_CASE("parallel_for honors ENGINE_JOB_THREADS=3 via the default scheduler co
 
 TEST_CASE("parallel_for edge cases", "[jobs][parallel_for]") {
     for (usize workers : {usize{1}, usize{2}, usize{0}}) {
-        auto s = MakeScheduler(workers);
+        auto s = ParallelForTestMakeScheduler(workers);
 
         SECTION("count == 0 runs nothing") {
             std::vector<u64> empty;
@@ -144,7 +144,7 @@ TEST_CASE("The Job-returning ParallelFor joins inside a job and via Spawn", "[jo
         }
     };
     for (usize workers : {usize{1}, usize{2}, usize{0}}) {
-        auto s = MakeScheduler(workers);
+        auto s = ParallelForTestMakeScheduler(workers);
         auto data = MakeData(10'000);
         u64 out = 0;
         std::atomic<int> done{0};
@@ -155,7 +155,7 @@ TEST_CASE("The Job-returning ParallelFor joins inside a job and via Spawn", "[jo
 }
 
 TEST_CASE("The typed callable wrapper forwards (begin, end)", "[jobs][parallel_for]") {
-    auto s = MakeScheduler(2);
+    auto s = ParallelForTestMakeScheduler(2);
     std::vector<std::atomic<u8>> hit(5000);
     for (auto& h : hit) h.store(0);
     auto fn = [&](usize begin, usize end) {
@@ -168,7 +168,7 @@ TEST_CASE("The typed callable wrapper forwards (begin, end)", "[jobs][parallel_f
 TEST_CASE("Frame stats balance after parallel_for", "[jobs][parallel_for]") {
     const u64 before = FramePool::Global().GetStats().Live();
     {
-        auto s = MakeScheduler(2);
+        auto s = ParallelForTestMakeScheduler(2);
         auto data = MakeData(20'000);
         ParallelSum(*s, data, 100);
     }
@@ -201,7 +201,7 @@ JobFormResult RunJobForm(Scheduler& s, usize n, usize chunk) {
 
 TEST_CASE("The Job form handles the same edge cases and configurations", "[jobs][parallel_for]") {
     for (usize workers : {usize{1}, usize{2}, usize{0}}) {
-        auto s = MakeScheduler(workers);
+        auto s = ParallelForTestMakeScheduler(workers);
         auto r0 = RunJobForm(*s, 0, 10);
         REQUIRE(r0.invocations == 0);
         auto r1 = RunJobForm(*s, 1, 10);
@@ -223,7 +223,7 @@ TEST_CASE("A huge chunk count is clamped instead of overflowing the queues", "[j
     CHECK(EffectiveChunkSize(kMaxChunks * 10, 1) == 10);
     CHECK(EffectiveChunkSize(kMaxChunks * 10 + 1, 1) == 11);
     for (usize workers : {usize{1}, usize{4}}) {
-        auto s = MakeScheduler(workers);
+        auto s = ParallelForTestMakeScheduler(workers);
         // 200,000 single-element requests would be 200,000 jobs unclamped.
         auto r = RunJobForm(*s, 200'000, 1); // from the main thread, joined via Counter
         REQUIRE(r.sum == 200'000ull * 199'999 / 2);

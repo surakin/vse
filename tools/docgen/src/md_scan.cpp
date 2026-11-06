@@ -4,12 +4,12 @@ namespace docgen {
 
 namespace {
 
-bool IsSpace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
+bool MdScanIsSpace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
 
-StringView Trim(StringView s) {
+StringView MdScanTrim(StringView s) {
     usize a = 0, e = s.Length();
-    while (a < e && IsSpace(s[a])) ++a;
-    while (e > a && (IsSpace(s[e - 1]) || s[e - 1] == '\r')) --e;
+    while (a < e && MdScanIsSpace(s[a])) ++a;
+    while (e > a && (MdScanIsSpace(s[e - 1]) || s[e - 1] == '\r')) --e;
     return StringView(s.Data() + a, e - a);
 }
 
@@ -24,9 +24,9 @@ bool EqualsLower(StringView a, StringView b) {
     return true;
 }
 
-class Scanner {
+class MdScanScanner {
 public:
-    Scanner(ArenaAllocator& arena, MdDoc& out) : arena_(arena), out_(out), slugs_(arena) {}
+    MdScanScanner(ArenaAllocator& arena, MdDoc& out) : arena_(arena), out_(out), slugs_(arena) {}
 
     void Run(StringView text) {
         u32 line_no = 0;
@@ -80,7 +80,7 @@ public:
                     fence_len = n;
                     body_start = eol < text.Length() ? eol + 1 : eol;
                     last_body_end = body_start > 0 ? body_start - 1 : 0;
-                } else if (Trim(line).Empty()) {
+                } else if (MdScanTrim(line).Empty()) {
                     flush();
                 } else if (Structural(line, line_no)) {
                     flush();
@@ -111,13 +111,13 @@ private:
 
     static bool IsOpeningFence(StringView line, u32& indent, char& c, usize& n, StringView& info) {
         usize i = 0;
-        while (i < line.Length() && IsSpace(line[i])) ++i;
+        while (i < line.Length() && MdScanIsSpace(line[i])) ++i;
         if (i >= line.Length() || (line[i] != '`' && line[i] != '~')) return false;
         c = line[i];
         usize j = i;
         while (j < line.Length() && line[j] == c) ++j;
         if (j - i < 3) return false;
-        StringView rest = Trim(StringView(line.Data() + j, line.Length() - j));
+        StringView rest = MdScanTrim(StringView(line.Data() + j, line.Length() - j));
         if (c == '`') { // an info string may not contain backticks (that is an inline code span)
             for (usize k = 0; k < rest.Length(); ++k) {
                 if (rest[k] == '`') return false;
@@ -131,22 +131,22 @@ private:
 
     static bool IsClosingFence(StringView line, char c, usize len) {
         usize i = 0;
-        while (i < line.Length() && IsSpace(line[i])) ++i;
+        while (i < line.Length() && MdScanIsSpace(line[i])) ++i;
         usize j = i;
         while (j < line.Length() && line[j] == c) ++j;
         if (j - i < len) return false;
-        return Trim(StringView(line.Data() + j, line.Length() - j)).Empty();
+        return MdScanTrim(StringView(line.Data() + j, line.Length() - j)).Empty();
     }
 
     // Headings and link reference definitions are single-line constructs. Returns true if `line` is one
     // (and has been handled), false for ordinary prose.
     bool Structural(StringView line, u32 line_no) {
-        StringView t = Trim(line);
+        StringView t = MdScanTrim(line);
         // ATX heading
         usize hashes = 0;
         while (hashes < t.Length() && t[hashes] == '#') ++hashes;
-        if (hashes >= 1 && hashes <= 6 && (hashes == t.Length() || IsSpace(t[hashes])) && LeadingSpaces(line) <= 3) {
-            Heading(Trim(StringView(t.Data() + hashes, t.Length() - hashes)));
+        if (hashes >= 1 && hashes <= 6 && (hashes == t.Length() || MdScanIsSpace(t[hashes])) && LeadingSpaces(line) <= 3) {
+            Heading(MdScanTrim(StringView(t.Data() + hashes, t.Length() - hashes)));
             Inline(t, line_no);
             return true;
         }
@@ -156,14 +156,14 @@ private:
             while (close < t.Length() && t[close] != ']') ++close;
             if (close + 1 < t.Length() && t[close + 1] == ':' && close > 1 && t[1] != '[' && t[1] != '^') {
                 usize k = close + 2;
-                while (k < t.Length() && IsSpace(t[k])) ++k;
+                while (k < t.Length() && MdScanIsSpace(t[k])) ++k;
                 usize e = k;
                 if (k < t.Length() && t[k] == '<') {
                     ++k;
                     e = k;
                     while (e < t.Length() && t[e] != '>') ++e;
                 } else {
-                    while (e < t.Length() && !IsSpace(t[e])) ++e;
+                    while (e < t.Length() && !MdScanIsSpace(t[e])) ++e;
                 }
                 if (e > k) out_.links.Push(MdLink{line_no, StringView(t.Data() + k, e - k), false});
                 return true;
@@ -174,7 +174,7 @@ private:
 
     static usize LeadingSpaces(StringView line) {
         usize n = 0;
-        while (n < line.Length() && IsSpace(line[n])) ++n;
+        while (n < line.Length() && MdScanIsSpace(line[n])) ++n;
         return n;
     }
 
@@ -182,14 +182,14 @@ private:
         // trailing closing hashes
         usize e = text.Length();
         while (e > 0 && text[e - 1] == '#') --e;
-        if (e < text.Length() && (e == 0 || IsSpace(text[e - 1]))) text = Trim(StringView(text.Data(), e));
+        if (e < text.Length() && (e == 0 || MdScanIsSpace(text[e - 1]))) text = MdScanTrim(StringView(text.Data(), e));
         // explicit {#id}
         if (text.Length() >= 4 && text[text.Length() - 1] == '}') {
             usize open = text.Length();
             while (open > 0 && text[open - 1] != '{') --open;
             if (open > 0 && open < text.Length() - 1 && text[open] == '#') {
                 out_.anchors.Push(StringView(text.Data() + open + 1, text.Length() - open - 2));
-                text = Trim(StringView(text.Data(), open - 1));
+                text = MdScanTrim(StringView(text.Data(), open - 1));
             }
         }
         StringView slug = HeadingSlug(text, arena_);
@@ -250,7 +250,7 @@ private:
                 }
                 continue;
             }
-            if (c == '<' && Starts(t, i + 1, "a") && i + 2 < t.Length() && IsSpace(t[i + 2])) { // <a id="x"> / <a name="x">
+            if (c == '<' && Starts(t, i + 1, "a") && i + 2 < t.Length() && MdScanIsSpace(t[i + 2])) { // <a id="x"> / <a name="x">
                 usize e = i;
                 while (e < t.Length() && t[e] != '>') ++e;
                 AnchorAttrs(StringView(t.Data() + i, e - i));
@@ -259,7 +259,7 @@ private:
             }
             if (c == '<' && (Starts(t, i + 1, "http://") || Starts(t, i + 1, "https://"))) {
                 usize e = i + 1;
-                while (e < t.Length() && t[e] != '>' && !IsSpace(t[e])) ++e;
+                while (e < t.Length() && t[e] != '>' && !MdScanIsSpace(t[e])) ++e;
                 out_.links.Push(MdLink{LineAt(i), StringView(t.Data() + i + 1, e - i - 1), false});
                 i = e;
                 continue;
@@ -268,7 +268,7 @@ private:
                 usize j = i + 2;
                 while (j + 1 < t.Length() && !(t[j] == ']' && t[j + 1] == ']')) ++j;
                 if (j + 1 < t.Length()) {
-                    StringView target = Trim(StringView(t.Data() + i + 2, j - i - 2));
+                    StringView target = MdScanTrim(StringView(t.Data() + i + 2, j - i - 2));
                     if (target.Empty()) {
                         out_.diagnostics.Push(Diagnostic{Severity::Error, LineAt(i), StringView("malformed reference: empty [[]]")});
                     } else {
@@ -284,7 +284,7 @@ private:
             if (c == ']' && i + 1 < t.Length() && t[i + 1] == '(') {
                 const bool image = IsImage(t, i);
                 usize k = i + 2;
-                while (k < t.Length() && IsSpace(t[k])) ++k;
+                while (k < t.Length() && MdScanIsSpace(t[k])) ++k;
                 usize s = k, e = k;
                 if (k < t.Length() && t[k] == '<') {
                     s = ++k;
@@ -292,7 +292,7 @@ private:
                     e = k;
                 } else {
                     int depth = 0;
-                    while (k < t.Length() && !IsSpace(t[k])) {
+                    while (k < t.Length() && !MdScanIsSpace(t[k])) {
                         if (t[k] == '(') ++depth;
                         if (t[k] == ')') {
                             if (depth == 0) break;
@@ -316,7 +316,7 @@ private:
             usize kl = 0;
             while (key[kl] != '\0') ++kl;
             for (usize k = 1; k + kl < tag.Length(); ++k) {
-                if (!IsSpace(tag[k - 1]) || !Starts(tag, k, key)) continue;
+                if (!MdScanIsSpace(tag[k - 1]) || !Starts(tag, k, key)) continue;
                 usize v = k + kl, ve = v;
                 while (ve < tag.Length() && tag[ve] != '"') ++ve;
                 out_.anchors.Push(StringView(tag.Data() + v, ve - v));
@@ -335,14 +335,14 @@ private:
         engine_placeholder::StringBuilder<ArenaAllocator> sb(arena_);
         char prev = 0;
         for (usize i = 0; i < t.Length();) {
-            if (!IsSpace(t[i])) {
+            if (!MdScanIsSpace(t[i])) {
                 sb.Append(t[i]);
                 prev = t[i++];
                 continue;
             }
             bool newline = false;
             usize j = i;
-            while (j < t.Length() && IsSpace(t[j])) newline = newline || t[j++] == '\n';
+            while (j < t.Length() && MdScanIsSpace(t[j])) newline = newline || t[j++] == '\n';
             if (!newline) {
                 sb.Append(StringView(t.Data() + i, j - i));
             } else if (j < t.Length() && prev != 0 && !glue(prev) && !glue(t[j])) {
@@ -420,7 +420,7 @@ StringView HeadingSlug(StringView h, ArenaAllocator& arena) {
 }
 
 void ScanMarkdown(StringView text, ArenaAllocator& arena, MdDoc& out) {
-    Scanner s(arena, out);
+    MdScanScanner s(arena, out);
     s.Run(text);
 }
 

@@ -15,7 +15,7 @@ using namespace docgen;
 
 namespace {
 
-std::string Str(StringView v) { return std::string(v.Data(), v.Length()); }
+std::string DocParserTestStr(StringView v) { return std::string(v.Data(), v.Length()); }
 
 struct Parsed {
     ArenaAllocator arena{usize{64} << 20};
@@ -33,7 +33,7 @@ struct Parsed {
     usize Diags() const { return docs.diagnostics.Size(); }
     std::string Diag(usize i) const {
         const Diagnostic& d = docs.diagnostics[i];
-        return std::to_string(d.line) + ": " + SeverityName(d.severity) + ": " + Str(d.message);
+        return std::to_string(d.line) + ": " + SeverityName(d.severity) + ": " + DocParserTestStr(d.message);
     }
     bool HasDiag(const std::string& text) const {
         for (usize i = 0; i < Diags(); ++i) {
@@ -52,18 +52,18 @@ struct Parsed {
     std::string Emit(usize i = 0) {
         engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
         EmitDoc(Doc(i), sb);
-        return Str(sb.View());
+        return DocParserTestStr(sb.View());
     }
     std::vector<std::string> Undocumented() const {
         std::vector<std::string> v;
-        for (usize i = 0; i < docs.undocumented.Size(); ++i) v.push_back(Str(docs.undocumented[i]->qualified));
+        for (usize i = 0; i < docs.undocumented.Size(); ++i) v.push_back(DocParserTestStr(docs.undocumented[i]->qualified));
         return v;
     }
     const Decl* Find(const std::string& q) const { return FindIn(ex.root, q); }
 
 private:
     static const Decl* FindIn(const Decl* d, const std::string& q) {
-        if (Str(d->qualified) == q && d->parent != nullptr) return d;
+        if (DocParserTestStr(d->qualified) == q && d->parent != nullptr) return d;
         for (usize i = 0; i < d->children.Size(); ++i) {
             if (const Decl* r = FindIn(d->children[i], q)) return r;
         }
@@ -90,7 +90,7 @@ std::string Fn(const std::string& comment, const std::string& decl = "int f(int 
     return AsComment(comment) + decl + "\n";
 }
 
-std::string ReadWhole(const std::string& path) {
+std::string DocParserTestReadWhole(const std::string& path) {
     FILE* f = std::fopen(path.c_str(), "rb");
     if (f == nullptr) return {};
     std::string s;
@@ -101,7 +101,7 @@ std::string ReadWhole(const std::string& path) {
     return s;
 }
 
-void ListFiles(const std::string& dir, const char* suffix, std::vector<std::string>& out) {
+void DocParserTestListFiles(const std::string& dir, const char* suffix, std::vector<std::string>& out) {
     DIR* d = opendir(dir.c_str());
     if (d == nullptr) return;
     std::vector<std::string> names;
@@ -115,7 +115,7 @@ void ListFiles(const std::string& dir, const char* suffix, std::vector<std::stri
         std::string p = dir + "/" + n;
         struct stat st;
         if (stat(p.c_str(), &st) != 0) continue;
-        if (S_ISDIR(st.st_mode)) ListFiles(p, suffix, out);
+        if (S_ISDIR(st.st_mode)) DocParserTestListFiles(p, suffix, out);
         else if (p.size() >= std::strlen(suffix) && p.compare(p.size() - std::strlen(suffix), std::strlen(suffix), suffix) == 0)
             out.push_back(p);
     }
@@ -136,11 +136,11 @@ bool DocOwns(const std::string& message) {
 
 TEST_CASE("Good fixtures have no doc diagnostics", "[docgen][docs][fixtures]") {
     std::vector<std::string> files;
-    ListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
+    DocParserTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
     REQUIRE(files.size() >= 13);
     for (auto& f : files) {
         INFO(f);
-        Parsed p(ReadWhole(f));
+        Parsed p(DocParserTestReadWhole(f));
         if (p.Diags() > 0) INFO(p.Diag(0));
         REQUIRE(p.Diags() == 0);
         for (usize i = 0; i < p.scan.docs.Size(); ++i) REQUIRE(p.docs.parsed[i] != nullptr);
@@ -149,12 +149,12 @@ TEST_CASE("Good fixtures have no doc diagnostics", "[docgen][docs][fixtures]") {
 
 TEST_CASE("Bad fixtures: the doc parser reports exactly the diagnostics it owns", "[docgen][docs][fixtures]") {
     std::vector<std::string> files;
-    ListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
+    DocParserTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
     int checked = 0;
     for (auto& f : files) {
         INFO(f);
         std::vector<std::string> expected;
-        std::string exp = ReadWhole(f + ".expect");
+        std::string exp = DocParserTestReadWhole(f + ".expect");
         size_t pos = 0;
         while (pos < exp.size()) {
             size_t nl = exp.find('\n', pos);
@@ -167,7 +167,7 @@ TEST_CASE("Bad fixtures: the doc parser reports exactly the diagnostics it owns"
             REQUIRE(c2 != std::string::npos);
             if (DocOwns(line.substr(c2 + 2))) expected.push_back(line);
         }
-        Parsed p(ReadWhole(f));
+        Parsed p(DocParserTestReadWhole(f));
         REQUIRE(p.Diags() == expected.size());
         for (usize i = 0; i < p.Diags(); ++i) REQUIRE(p.Diag(i).compare(0, expected[i].size(), expected[i]) == 0);
         if (!expected.empty()) ++checked;
@@ -176,34 +176,34 @@ TEST_CASE("Bad fixtures: the doc parser reports exactly the diagnostics it owns"
 }
 
 TEST_CASE("The contract_labels fixture parses into the expected structure", "[docgen][docs]") {
-    Parsed p(ReadWhole(std::string(DOCGEN_FIXTURE_DIR) + "/good/contract_labels.h"));
+    Parsed p(DocParserTestReadWhole(std::string(DOCGEN_FIXTURE_DIR) + "/good/contract_labels.h"));
     REQUIRE(p.Diags() == 0);
     const ParsedDoc& d = p.Doc(0);
-    REQUIRE(Str(d.summary) == "Reads a value from a handle.");
+    REQUIRE(DocParserTestStr(d.summary) == "Reads a value from a handle.");
     REQUIRE(d.has_summary);
     REQUIRE(d.blocks.Size() == 2);
     REQUIRE(d.blocks[0].kind == BlockKind::Paragraph);
-    REQUIRE(Str(d.blocks[0].text) ==
+    REQUIRE(DocParserTestStr(d.blocks[0].text) ==
             "Details paragraph: this explains the behaviour in more depth and may span several lines.");
     REQUIRE(d.blocks[1].kind == BlockKind::List);
     REQUIRE(d.blocks[1].item_count == 2);
-    REQUIRE(Str(d.items[d.blocks[1].first_item + 1]) == "Second bullet, which continues on a second line.");
+    REQUIRE(DocParserTestStr(d.items[d.blocks[1].first_item + 1]) == "Second bullet, which continues on a second line.");
 
     const LabelKind order[] = {LabelKind::Param,        LabelKind::Param,     LabelKind::Returns,   LabelKind::Fails,
                                LabelKind::Aborts,       LabelKind::ThreadSafety, LabelKind::Ownership, LabelKind::Example,
                                LabelKind::See};
     REQUIRE(d.labels.Size() == 9);
     for (usize i = 0; i < 9; ++i) REQUIRE(d.labels[i].kind == order[i]);
-    REQUIRE(Str(d.labels[0].name) == "handle");
-    REQUIRE(Str(d.labels[1].name) == "out");
-    REQUIRE(Str(d.labels[5].text) == "thread-compatible. Distinct handles may be read concurrently.");
+    REQUIRE(DocParserTestStr(d.labels[0].name) == "handle");
+    REQUIRE(DocParserTestStr(d.labels[1].name) == "out");
+    REQUIRE(DocParserTestStr(d.labels[5].text) == "thread-compatible. Distinct handles may be read concurrently.");
     REQUIRE(d.labels[7].has_code);
-    REQUIRE(Str(d.labels[7].code_lang) == "cpp");
-    REQUIRE(Str(d.labels[7].code) == "int v;\nRead(3, &v);");
+    REQUIRE(DocParserTestStr(d.labels[7].code_lang) == "cpp");
+    REQUIRE(DocParserTestStr(d.labels[7].code) == "int v;\nRead(3, &v);");
     REQUIRE(d.labels[8].ref_count == 2);
     REQUIRE(d.refs.Size() == 2);
-    REQUIRE(Str(d.refs[0].target) == "Read");
-    REQUIRE(Str(d.refs[1].target) == "Write");
+    REQUIRE(DocParserTestStr(d.refs[0].target) == "Read");
+    REQUIRE(DocParserTestStr(d.refs[1].target) == "Write");
     REQUIRE(d.labels[0].line == 12);
 
     REQUIRE(p.Doc(1).Find(LabelKind::Deprecated) != nullptr);
@@ -216,10 +216,10 @@ TEST_CASE("The contract_labels fixture parses into the expected structure", "[do
 TEST_CASE("Summary is the first paragraph; later paragraphs are details", "[docgen][docs]") {
     Parsed p(Fn("First line of\nthe summary.\n\nSecond paragraph.\nstill second.\n\nThird."));
     REQUIRE(p.Diags() == 0);
-    REQUIRE(Str(p.Doc().summary) == "First line of the summary.");
+    REQUIRE(DocParserTestStr(p.Doc().summary) == "First line of the summary.");
     REQUIRE(p.Doc().blocks.Size() == 2);
-    REQUIRE(Str(p.Doc().blocks[0].text) == "Second paragraph. still second.");
-    REQUIRE(Str(p.Doc().blocks[1].text) == "Third.");
+    REQUIRE(DocParserTestStr(p.Doc().blocks[0].text) == "Second paragraph. still second.");
+    REQUIRE(DocParserTestStr(p.Doc().blocks[1].text) == "Third.");
 }
 
 TEST_CASE("Lists, code blocks and inline markup", "[docgen][docs]") {
@@ -229,12 +229,12 @@ TEST_CASE("Lists, code blocks and inline markup", "[docgen][docs]") {
     REQUIRE(d.blocks.Size() == 3);
     REQUIRE(d.blocks[0].kind == BlockKind::List);
     REQUIRE(d.blocks[0].item_count == 2);
-    REQUIRE(Str(d.items[1]) == "two with `[[not a ref]]` and a continuation");
+    REQUIRE(DocParserTestStr(d.items[1]) == "two with `[[not a ref]]` and a continuation");
     REQUIRE(d.refs.Size() == 0); // inside a code span
     REQUIRE(d.blocks[1].kind == BlockKind::Code);
-    REQUIRE(Str(d.blocks[1].lang) == "cpp");
-    REQUIRE(Str(d.blocks[1].text) == "int x;\n\nint y;"); // blank line kept inside the fence
-    REQUIRE(Str(d.blocks[2].text) == "After.");
+    REQUIRE(DocParserTestStr(d.blocks[1].lang) == "cpp");
+    REQUIRE(DocParserTestStr(d.blocks[1].text) == "int x;\n\nint y;"); // blank line kept inside the fence
+    REQUIRE(DocParserTestStr(d.blocks[2].text) == "After.");
 }
 
 TEST_CASE("Labels continue on indented lines and end at a blank line", "[docgen][docs]") {
@@ -242,10 +242,10 @@ TEST_CASE("Labels continue on indented lines and end at a blank line", "[docgen]
     REQUIRE(p.Diags() == 0);
     const ParsedDoc& d = p.Doc();
     REQUIRE(d.labels.Size() == 2);
-    REQUIRE(Str(d.Find(LabelKind::Returns)->text) == "the value, or zero on failure.");
-    REQUIRE(Str(d.Find(LabelKind::Fails)->text) == "never.");
+    REQUIRE(DocParserTestStr(d.Find(LabelKind::Returns)->text) == "the value, or zero on failure.");
+    REQUIRE(DocParserTestStr(d.Find(LabelKind::Fails)->text) == "never.");
     REQUIRE(d.blocks.Size() == 1);
-    REQUIRE(Str(d.blocks[0].text) == "Trailing paragraph.");
+    REQUIRE(DocParserTestStr(d.blocks[0].text) == "Trailing paragraph.");
 }
 
 TEST_CASE("Example takes an immediately following fenced block", "[docgen][docs]") {
@@ -253,9 +253,9 @@ TEST_CASE("Example takes an immediately following fenced block", "[docgen][docs]
     REQUIRE(p.Diags() == 0);
     const Label* ex = p.Doc().Find(LabelKind::Example);
     REQUIRE(ex != nullptr);
-    REQUIRE(Str(ex->text) == "basic use.");
-    REQUIRE(Str(ex->code_lang) == "cpp compile");
-    REQUIRE(Str(ex->code) == "f(1, 2);");
+    REQUIRE(DocParserTestStr(ex->text) == "basic use.");
+    REQUIRE(DocParserTestStr(ex->code_lang) == "cpp compile");
+    REQUIRE(DocParserTestStr(ex->code) == "f(1, 2);");
     REQUIRE(p.Doc().blocks.Size() == 0);
     REQUIRE(p.Doc().Find(LabelKind::See) != nullptr);
 }
@@ -332,7 +332,7 @@ TEST_CASE("See needs a reference; malformed references are errors", "[docgen][do
     {
         Parsed p(Fn("Summary with [[a::B::c(Counter&)]] and [[X]]."));
         REQUIRE(p.Diags() == 0);
-        REQUIRE(Str(p.Doc().refs[0].target) == "a::B::c(Counter&)");
+        REQUIRE(DocParserTestStr(p.Doc().refs[0].target) == "a::B::c(Counter&)");
         REQUIRE(p.Doc().refs.Size() == 2);
     }
 }
@@ -341,7 +341,7 @@ TEST_CASE("An unterminated code fence is an error at the fence", "[docgen][docs]
     Parsed p(Fn("Summary.\n\n```cpp\nint x;"));
     REQUIRE(p.Diags() == 1);
     REQUIRE(p.Diag(0) == "3: error: unterminated code fence");
-    REQUIRE(Str(p.Doc().blocks[0].text) == "int x;");
+    REQUIRE(DocParserTestStr(p.Doc().blocks[0].text) == "int x;");
 }
 
 TEST_CASE("Summary rules", "[docgen][docs]") {
@@ -397,7 +397,7 @@ TEST_CASE("Parameter names are extracted from every declarator form", "[docgen][
         "/// H.\nvoid H(int, ...);\n");
     const Decl* f = p.Find("F");
     std::string names;
-    for (usize i = 0; i < f->params.Size(); ++i) names += Str(f->params[i]) + ",";
+    for (usize i = 0; i < f->params.Size(); ++i) names += DocParserTestStr(f->params[i]) + ",";
     REQUIRE(names == "name,count,done,arr,tmpl,def,rest,");
     REQUIRE(p.Find("G")->params.Size() == 0);
     REQUIRE(p.Find("H")->params.Size() == 0);
@@ -467,9 +467,9 @@ TEST_CASE("An override without a doc comment inherits from the base", "[docgen][
     const Decl* bf = p.Find("B::F");
     const Decl* base = ResolveInherited(*bf, p.ex);
     REQUIRE(base != nullptr);
-    REQUIRE(Str(base->qualified) == "A::F");
+    REQUIRE(DocParserTestStr(base->qualified) == "A::F");
     // Through a chain: C::F -> B::F (undocumented) -> A::F.
-    REQUIRE(Str(ResolveInherited(*p.Find("C::F"), p.ex)->qualified) == "A::F");
+    REQUIRE(DocParserTestStr(ResolveInherited(*p.Find("C::F"), p.ex)->qualified) == "A::F");
     // Not an override, or no matching signature: nothing to inherit.
     REQUIRE(ResolveInherited(*p.Find("A::F"), p.ex) == nullptr);
     // Inheriting members are not reported as undocumented.
@@ -515,11 +515,11 @@ TEST_CASE("A doc comment on a non-declaration is an error", "[docgen][docs]") {
 
 TEST_CASE("Emit then parse then emit is stable", "[docgen][docs][roundtrip]") {
     std::vector<std::string> files;
-    ListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
+    DocParserTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
     int docs = 0;
     for (auto& f : files) {
         INFO(f);
-        Parsed p(ReadWhole(f));
+        Parsed p(DocParserTestReadWhole(f));
         for (usize i = 0; i < p.scan.docs.Size(); ++i) {
             if (p.scan.docs[i].kind != DocKind::Declaration) continue;
             std::string e1 = p.Emit(i);
@@ -548,8 +548,8 @@ TEST_CASE("Round trip preserves a rich comment exactly", "[docgen][docs][roundtr
 
 TEST_CASE("Mutated comments never crash the doc parser", "[docgen][docs][fuzz]") {
     std::vector<std::string> files;
-    ListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
-    ListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
+    DocParserTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/good", ".h", files);
+    DocParserTestListFiles(std::string(DOCGEN_FIXTURE_DIR) + "/bad", ".h", files);
     unsigned long long seed = 0x2545F4914F6CDD1Dull;
     auto next = [&]() {
         seed = seed * 6364136223846793005ull + 1442695040888963407ull;
@@ -557,7 +557,7 @@ TEST_CASE("Mutated comments never crash the doc parser", "[docgen][docs][fuzz]")
     };
     const char* junk[] = {"[[", "]]", "`", "```", "Param ", "Returns:", "Example:", "See: ", ":", "- ", "  ", "///\n", "/// ", "\n\n", "Thread-safety:"};
     for (auto& f : files) {
-        std::string base = ReadWhole(f);
+        std::string base = DocParserTestReadWhole(f);
         for (int round = 0; round < 40; ++round) {
             std::string s = base;
             int edits = 1 + static_cast<int>(next() % 5);
@@ -603,7 +603,7 @@ TEST_CASE("[review] pointer-to-member parameters are named; trailing const is no
     REQUIRE(p.Find("F")->param_count == 2);
     REQUIRE(p.Find("G")->param_count == 3);
     REQUIRE(p.Find("G")->params.Size() == 1);
-    REQUIRE(Str(p.Find("G")->params[0]) == "x");
+    REQUIRE(DocParserTestStr(p.Find("G")->params[0]) == "x");
     Parsed q("/// G.\n/// Param const: bogus.\nvoid G(int const);\n");
     REQUIRE(q.Diags() == 1);
 }
@@ -636,7 +636,7 @@ TEST_CASE("[review] a reference may wrap across comment lines", "[docgen][docs][
     Parsed p(Fn("Summary.\n\nSee also [[jobs::Scheduler::\nHelpUntil]] for details."));
     REQUIRE(p.Diags() == 0);
     REQUIRE(p.Doc().refs.Size() == 1);
-    REQUIRE(Str(p.Doc().refs[0].target) == "jobs::Scheduler:: HelpUntil");
+    REQUIRE(DocParserTestStr(p.Doc().refs[0].target) == "jobs::Scheduler:: HelpUntil");
     REQUIRE(p.Doc().refs[0].line == 3);
     // Errors are reported on the line where the reference starts.
     Parsed q(Fn("Summary.\n\nFirst line.\nSecond [[Broken line."));

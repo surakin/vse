@@ -21,7 +21,7 @@ using gpu_test::Image;
 
 namespace {
 
-constexpr u32 kSize = 32;
+constexpr u32 kVulkanStripTestSize = 32;
 
 struct Vertex {
     float x, y, r, g, b;
@@ -107,7 +107,7 @@ struct StripScene {
 
     // Draws with `pipeline`, indexed when `index_count` is non-zero, and reads the target back.
     Image Draw(PipelineHandle pipeline, u32 vertex_count, u32 index_count) {
-        gpu_test::RenderTarget target(device.Get(), kSize, kSize);
+        gpu_test::RenderTarget target(device.Get(), kVulkanStripTestSize, kVulkanStripTestSize);
         REQUIRE(target.Valid());
         device->BeginFrame();
         CommandList* list = device->CreateCommandList();
@@ -122,8 +122,8 @@ struct StripScene {
         pass.color[0].clear_color[3] = 1.0f;
         list->BeginRendering(pass);
         list->SetPipeline(pipeline);
-        list->SetViewport(Viewport{0, 0, static_cast<f32>(kSize), static_cast<f32>(kSize), 0.0f, 1.0f});
-        list->SetScissor(ScissorRect{0, 0, kSize, kSize});
+        list->SetViewport(Viewport{0, 0, static_cast<f32>(kVulkanStripTestSize), static_cast<f32>(kVulkanStripTestSize), 0.0f, 1.0f});
+        list->SetScissor(ScissorRect{0, 0, kVulkanStripTestSize, kVulkanStripTestSize});
         list->SetVertexBuffer(0, vb, 0);
         if (index_count != 0) {
             list->SetIndexBuffer(ib, 0, IndexType::UInt16);

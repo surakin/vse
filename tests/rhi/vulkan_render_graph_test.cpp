@@ -22,7 +22,7 @@ using namespace engine_placeholder::renderer;
 
 namespace {
 
-constexpr u32 kSize = 16;
+constexpr u32 kVulkanRenderGraphTestSize = 16;
 
 struct GraphScene {
     Device* device = nullptr;
@@ -120,8 +120,8 @@ struct GraphScene {
         rd.color_count = 1;
         ctx.list->BeginRendering(rd);
         ctx.list->SetPipeline(sample_pipeline);
-        ctx.list->SetViewport(Viewport{0, 0, static_cast<f32>(kSize), static_cast<f32>(kSize), 0.0f, 1.0f});
-        ctx.list->SetScissor(ScissorRect{0, 0, kSize, kSize});
+        ctx.list->SetViewport(Viewport{0, 0, static_cast<f32>(kVulkanRenderGraphTestSize), static_cast<f32>(kVulkanRenderGraphTestSize), 0.0f, 1.0f});
+        ctx.list->SetScissor(ScissorRect{0, 0, kVulkanRenderGraphTestSize, kVulkanRenderGraphTestSize});
         ctx.list->SetBindGroup(0, group);
         ctx.list->Draw(3, 1, 0, 0);
         ctx.list->EndRendering();
@@ -160,7 +160,7 @@ void ComputePass(const PassExecuteContext& ctx, void* user) {
     const BindGroupHandle group = s->device->CreateBindGroup(gd);
     ctx.list->SetPipeline(s->compute_pipeline);
     ctx.list->SetBindGroup(0, group);
-    ctx.list->Dispatch(kSize / 8, kSize / 8, 1); // c(x, y) = (x / 255, y / 255, 0, 1)
+    ctx.list->Dispatch(kVulkanRenderGraphTestSize / 8, kVulkanRenderGraphTestSize / 8, 1); // c(x, y) = (x / 255, y / 255, 0, 1)
 }
 
 void CombinePass(const PassExecuteContext& ctx, void* user) {
@@ -189,7 +189,7 @@ TEST_CASE("A four-pass render graph runs on a real device with no validation or 
         TransientPool pool(device.Get(), TransientPoolDesc{});
 
         TextureDesc target_desc;
-        target_desc.width = target_desc.height = kSize;
+        target_desc.width = target_desc.height = kVulkanRenderGraphTestSize;
         target_desc.format = Format::RGBA8_UNorm;
         target_desc.usage = TextureUsage::ColorAttachment | TextureUsage::CopySrc;
         target_desc.debug_name = "graph target";
@@ -203,7 +203,7 @@ TEST_CASE("A four-pass render graph runs on a real device with no validation or 
             RenderGraph graph(&arena, RenderGraphDesc{});
             pool.BeginFrame(frame);
             TextureDesc rt;
-            rt.width = rt.height = kSize;
+            rt.width = rt.height = kVulkanRenderGraphTestSize;
             rt.format = Format::RGBA8_UNorm;
             rt.usage = TextureUsage::ColorAttachment | TextureUsage::Sampled;
             TextureDesc st = rt;
@@ -232,13 +232,13 @@ TEST_CASE("A four-pass render graph runs on a real device with no validation or 
             device->WaitIdle();
             pool.EndFrame();
 
-            std::vector<u8> pixels(kSize * kSize * 4);
+            std::vector<u8> pixels(kVulkanRenderGraphTestSize * kVulkanRenderGraphTestSize * 4);
             REQUIRE(device->ReadbackTexture(target, 0, 0, pixels.data(), pixels.size(), ResourceState::CopySrc));
             // out(x, y) = b + c = (0.2 + x / 255, 0.4 + y / 255, 0.1, 1.0), in 8 bits: (51 + x, 102 + y, 26, 255).
             u32 bad = 0;
-            for (u32 y = 0; y < kSize; ++y) {
-                for (u32 x = 0; x < kSize; ++x) {
-                    const u8* px = &pixels[(y * kSize + x) * 4];
+            for (u32 y = 0; y < kVulkanRenderGraphTestSize; ++y) {
+                for (u32 x = 0; x < kVulkanRenderGraphTestSize; ++x) {
+                    const u8* px = &pixels[(y * kVulkanRenderGraphTestSize + x) * 4];
                     auto off = [](int got, int want) { return got < want - 2 || got > want + 2; };
                     if (off(px[0], 51 + static_cast<int>(x)) || off(px[1], 102 + static_cast<int>(y)) || off(px[2], 26) || px[3] != 255) ++bad;
                 }

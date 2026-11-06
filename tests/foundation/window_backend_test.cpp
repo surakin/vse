@@ -99,7 +99,7 @@ TEST_CASE("PlatformWindowHost opens the Wayland backend when forced", "[window][
     InputState input;
     PlatformWindowHost host;
     REQUIRE(host.Open(WindowBackend::Wayland, "forced wayland", 640, 480, &input));
-    Window* w = host.Get();
+    os::Window* w = host.Get();
     REQUIRE(w != nullptr);
     REQUIRE(w->Valid());
     REQUIRE(StringView(w->BackendName()) == StringView("wayland"));
@@ -119,7 +119,7 @@ TEST_CASE("PlatformWindowHost opens the X11 backend when forced", "[window][x11]
     InputState input;
     PlatformWindowHost host;
     REQUIRE(host.Open(WindowBackend::X11, "forced x11", 640, 480, &input));
-    Window* w = host.Get();
+    os::Window* w = host.Get();
     REQUIRE(w != nullptr);
     REQUIRE(w->Valid());
     REQUIRE(StringView(w->BackendName()) == StringView("x11"));
@@ -279,7 +279,7 @@ TEST_CASE("A Wayland window exposes its native display and surface", "[window][w
     InputState input;
     PlatformWindowHost host;
     REQUIRE(host.Open(WindowBackend::Wayland, "native info", 320, 240, &input));
-    Window* w = host.Get();
+    os::Window* w = host.Get();
     REQUIRE(w != nullptr);
 
     NativeWindowInfo info = w->GetNativeInfo();
@@ -323,7 +323,7 @@ TEST_CASE("An X11 window exposes its native display and window id", "[window][x1
     InputState input;
     PlatformWindowHost host;
     REQUIRE(host.Open(WindowBackend::X11, "native info x11", 320, 240, &input));
-    Window* w = host.Get();
+    os::Window* w = host.Get();
     REQUIRE(w != nullptr);
 
     NativeWindowInfo info = w->GetNativeInfo();

@@ -17,10 +17,10 @@ using namespace engine_placeholder::rhi::vulkan;
 
 namespace {
 
-struct QuietLog {
+struct VulkanComputeTestQuietLog {
     bool saved = LogRhi.Enabled();
-    QuietLog() { LogRhi.SetEnabled(false); }
-    ~QuietLog() { LogRhi.SetEnabled(saved); }
+    VulkanComputeTestQuietLog() { LogRhi.SetEnabled(false); }
+    ~VulkanComputeTestQuietLog() { LogRhi.SetEnabled(saved); }
 };
 
 struct ComputeDevice {
@@ -178,7 +178,7 @@ TEST_CASE("Compute shaders fill a buffer and a second dispatch reads it after a 
 TEST_CASE("Compute pipeline creation refuses bad input", "[rhi][vulkan][gpu][compute]") {
     ComputeDevice t;
     t.fx.ExpectErrors(0);
-    QuietLog quiet;
+    VulkanComputeTestQuietLog quiet;
     const ShaderHandle cs = t.Shader(shaders::kFillCompSpv, shaders::kFillCompSpvWordCount);
     const BindGroupLayoutHandle one = t.StorageLayout(1);
 

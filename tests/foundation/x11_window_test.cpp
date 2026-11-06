@@ -1,4 +1,5 @@
 #include <utility>
+#include "unity/x11_enable.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
@@ -551,3 +552,5 @@ TEST_CASE("X11Window reports itself minimized while its window is unmapped", "[x
     PumpUntil(window, [] { return false; });
     REQUIRE_FALSE(window.IsMinimized());
 }
+
+#include "unity/x11_disable.h"
