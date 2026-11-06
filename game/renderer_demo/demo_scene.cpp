@@ -227,8 +227,8 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
               make(kGold, "gold", plain, Vec4(1.0f, 0.77f, 0.34f, 1), 0.2f, 1.0f, 0.0f) && make(kCopper, "copper", plain, Vec4(0.95f, 0.5f, 0.35f, 1), 0.6f, 1.0f, 0.0f) &&
               make(kEmissive, "emissive", plain, Vec4(0.1f, 0.8f, 0.7f, 1), 0.8f, 0.0f, 0.9f) && make(kVertexColor, "vertex color", vertex_colored, Vec4(1, 1, 1, 1), 0.5f, 0.0f, 0.0f);
     if (ok) {
-        ok = materials->SetTexture(ids[kGround], "albedo_tex", textures_[0].Handle()) && materials->SetTexture(ids[kChecker], "albedo_tex", textures_[0].Handle()) &&
-             materials->SetTexture(ids[kStripes], "albedo_tex", textures_[1].Handle()) && materials->SetTexture(ids[kBumps], "normal_tex", textures_[2].Handle());
+        ok = materials->SetTexture(ids[kGround], "albedo_tex", &textures_[0]) && materials->SetTexture(ids[kChecker], "albedo_tex", &textures_[0]) &&
+             materials->SetTexture(ids[kStripes], "albedo_tex", &textures_[1]) && materials->SetTexture(ids[kBumps], "normal_tex", &textures_[2]); // owners, so a device reset keeps them
     }
     if (!ok) {
         rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: creating the materials failed");

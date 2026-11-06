@@ -100,6 +100,9 @@ struct RendererDesc {
     RenderGraphDesc graph;
     /// Capacities and aging of the transient pool.
     TransientPoolDesc pool;
+    /// The registry the renderer's transient pool registers with so it survives a device reset; null for none. The caller
+    /// calls [[renderer::Renderer::Rebind]] with the new device and swapchain after the reset.
+    DeviceResources* resources = nullptr;
     /// The frame callback.
     FrameBuildFn build = nullptr;
     /// Passed to the callback.
@@ -140,6 +143,16 @@ public:
     explicit Renderer(const RendererDesc& desc);
     Renderer(const Renderer&) = delete;
     Renderer& operator=(const Renderer&) = delete;
+
+    /// Points the renderer at a new device and swapchain after the device was replaced. The renderer keeps no other device
+    /// handle between frames: its transient pool is rebuilt through the registry, and the per-frame state is rebuilt by the
+    /// next `RenderFrame`.
+    ///
+    /// Param device: the new device.
+    /// Param swapchain: the new swapchain, or null for offscreen rendering.
+    /// Ownership: both are borrowed.
+    /// Aborts: `device` is null, or the renderer was built without `RendererDesc::resources` (its pool could not follow the device).
+    void Rebind(rhi::Device* device, rhi::Swapchain* swapchain);
 
     /// Renders one frame.
     ///

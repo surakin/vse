@@ -55,8 +55,12 @@ public:
     // the scene. Call it outside a frame, before the render loop. Returns false, logging why, on failure; the object is then
     // empty.
     bool Create(rhi::Device* device, renderer::MaterialSystem* materials, const renderer::GBufferTemplates& templates, const SceneOptions& options);
+    // Points the scene at the device a reset made. Its meshes and textures were rebuilt through the registry; the scene only
+    // keeps the pointer to wait on the device when it is destroyed.
+    void Rebind(rhi::Device* device) { device_ = device; }
 
-    // Releases everything, idling the device first. Safe on an empty scene; the destructor calls it.
+    // Releases everything, idling the device first. Safe on an empty scene; the destructor calls it. The materials of the
+    // frame this scene was created with follow its textures by pointer: destroy the scene before the frame (declare it after).
     void Destroy();
 
     // Moves the point lights to where they are at `seconds`.

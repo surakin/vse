@@ -44,8 +44,35 @@ TransientPool::TransientPool(rhi::Device* device, const TransientPoolDesc& desc)
 }
 
 TransientPool::~TransientPool() {
+    registration_.Reset();
     for (u32 i = 0; i < texture_count_; ++i) device_->DestroyTexture(textures_[i].handle);
     for (u32 i = 0; i < buffer_count_; ++i) device_->DestroyBuffer(buffers_[i].handle);
+}
+
+void TransientPool::Release() {
+    if (released_) return;
+    for (u32 i = 0; i < texture_count_; ++i) {
+        ENGINE_ASSERT(!textures_[i].in_use, "TransientPool::Release: a texture is still in use");
+        device_->DestroyTexture(textures_[i].handle);
+        textures_[i] = TextureEntry{};
+    }
+    for (u32 i = 0; i < buffer_count_; ++i) {
+        ENGINE_ASSERT(!buffers_[i].in_use, "TransientPool::Release: a buffer is still in use");
+        device_->DestroyBuffer(buffers_[i].handle);
+        buffers_[i] = BufferEntry{};
+    }
+    texture_count_ = 0;
+    buffer_count_ = 0;
+    stats_.textures_live = stats_.textures_idle = 0;
+    stats_.buffers_live = stats_.buffers_idle = 0;
+    ++stats_.resets;
+    released_ = true;
+}
+
+bool TransientPool::Recreate(rhi::Device* device) {
+    device_ = device;
+    released_ = false;
+    return true;
 }
 
 void TransientPool::BeginFrame(u64 frame_index) { frame_ = frame_index; }

@@ -35,9 +35,12 @@ bool DemoFrame::Create(const FrameSetup& setup) {
     device_ = setup.device;
     gbuffer_layer_ = setup.gbuffer_layer;
     exposure_ = setup.exposure;
-    materials_ = MakeUnique<MaterialSystem>(setup.device, MaterialSystemDesc{});
+    MaterialSystemDesc md;
+    md.resources = setup.resources;
+    md.prewarm_pipelines = setup.prewarm_pipelines;
+    materials_ = MakeUnique<MaterialSystem>(setup.device, md);
     frame_ = MakeUnique<FrameResources>(setup.device, setup.max_objects, setup.max_lights);
-    if (!materials_->Valid() || !frame_->Valid()) {
+    if (!frame_->RegisterWith(setup.resources) || !materials_->Valid() || !frame_->Valid()) {
         rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: could not create the material system or the frame buffers");
         Destroy();
         return false;
@@ -47,7 +50,8 @@ bool DemoFrame::Create(const FrameSetup& setup) {
     lighting_ = MakeUnique<LightingPass>(setup.device, materials_.Get(), frame_.Get());
     tonemap_ = MakeUnique<TonemapPass>(setup.device);
     debug_view_ = MakeUnique<GBufferDebugView>(setup.device);
-    if (!templates_.plain.IsValid() || !templates_.colored.IsValid() || !lighting_->Valid() || !tonemap_->Valid() || !debug_view_->Valid()) {
+    const bool registered = lighting_->RegisterWith(setup.resources) && tonemap_->RegisterWith(setup.resources) && debug_view_->RegisterWith(setup.resources);
+    if (!registered || !templates_.plain.IsValid() || !templates_.colored.IsValid() || !lighting_->Valid() || !tonemap_->Valid() || !debug_view_->Valid()) {
         rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: could not create the render passes");
         Destroy();
         return false;
@@ -56,10 +60,17 @@ bool DemoFrame::Create(const FrameSetup& setup) {
     rd.device = setup.device;
     rd.swapchain = setup.swapchain;
     rd.scheduler = setup.scheduler;
+    rd.resources = setup.resources;
     rd.build = &DemoFrame::Build;
     rd.build_user = this;
     renderer_ = MakeUnique<Renderer>(rd);
     return true;
+}
+
+void DemoFrame::Rebind(rhi::Device* device, rhi::Swapchain* swapchain) {
+    if (!renderer_) return;
+    device_ = device;
+    renderer_->Rebind(device, swapchain);
 }
 
 FrameStatus DemoFrame::Render(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen) {

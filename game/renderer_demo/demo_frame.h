@@ -33,6 +33,10 @@ struct FrameSetup {
     f32 exposure = 1.0f;
     // The job scheduler the frame's passes record on, or null to record on the calling thread.
     jobs::Scheduler* scheduler = nullptr;
+    // The registry every device-owning part registers with so the frame survives a device reset, or null.
+    renderer::DeviceResources* resources = nullptr;
+    // Rebuild pipelines in the reset (true) or when they are next used (false).
+    bool prewarm_pipelines = false;
 };
 
 class DemoFrame {
@@ -45,6 +49,8 @@ public:
     // Creates everything. Returns false, logging why, if a part could not be created (the G-buffer formats are unsupported, a
     // shader or a pipeline fails).
     bool Create(const FrameSetup& setup);
+    // Points the frame at the device and swapchain a reset made; the parts rebuilt themselves through the registry.
+    void Rebind(rhi::Device* device, rhi::Swapchain* swapchain);
     // Releases everything; idle the device first. The destructor calls it.
     void Destroy();
 

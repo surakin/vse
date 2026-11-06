@@ -8,6 +8,7 @@
 #include "log/assert.h"
 #include "renderer/frame_data.h"
 #include "renderer/renderer_log.h"
+#include "renderer/texture.h"
 
 namespace engine_placeholder::renderer {
 
@@ -162,6 +163,8 @@ struct MaterialSystem::MaterialSlot {
     u32 dirty_slots = 0;
     rhi::TextureHandle textures[kMaxMaterialTextures];
     rhi::SamplerHandle samplers[kMaxMaterialSamplers];
+    const GpuTexture* texture_owners[kMaxMaterialTextures] = {}; // when set, the slot follows the owner's handle
+    const GpuSampler* sampler_owners[kMaxMaterialSamplers] = {};
     rhi::TextureHandle applied_textures[kMaxMaterialTextures]; // what the current bind groups were built from
     rhi::SamplerHandle applied_samplers[kMaxMaterialSamplers];
     rhi::BindGroupHandle groups[kSlots];
@@ -191,6 +194,16 @@ MaterialSystem::MaterialSystem(rhi::Device* device, const MaterialSystemDesc& de
     materials_.Resize(desc.max_materials);
     pipelines_.Resize(desc.max_pipelines);
 
+    const bool ok = CreateDefaults();
+    valid_ = ok;
+    if (!ok) {
+        RenderLog(LogVerbosity::Error, "MaterialSystem: creating the default resources failed");
+    } else if (!registration_.Attach(desc.resources, this, tiers::kMaterials)) {
+        RenderLog(LogVerbosity::Error, "MaterialSystem: could not register with the device resources; it will not survive a reset");
+    }
+}
+
+bool MaterialSystem::CreateDefaults() {
     rhi::BindingDesc frame_binding;
     frame_binding.binding = 0;
     frame_binding.type = rhi::BindingType::UniformBuffer;
@@ -198,7 +211,7 @@ MaterialSystem::MaterialSystem(rhi::Device* device, const MaterialSystemDesc& de
     rhi::BindGroupLayoutDesc fl;
     fl.entries = rhi::Span<rhi::BindingDesc>(&frame_binding, 1);
     fl.debug_name = "frame layout";
-    frame_layout_ = device->CreateBindGroupLayout(fl);
+    frame_layout_ = device_->CreateBindGroupLayout(fl);
 
     rhi::BindingDesc object_binding;
     object_binding.binding = 0;
@@ -207,11 +220,11 @@ MaterialSystem::MaterialSystem(rhi::Device* device, const MaterialSystemDesc& de
     rhi::BindGroupLayoutDesc ol;
     ol.entries = rhi::Span<rhi::BindingDesc>(&object_binding, 1);
     ol.debug_name = "object layout";
-    object_layout_ = device->CreateBindGroupLayout(ol);
+    object_layout_ = device_->CreateBindGroupLayout(ol);
 
     rhi::SamplerDesc sd;
     sd.debug_name = "default sampler";
-    default_sampler_ = device->CreateSampler(sd);
+    default_sampler_ = device_->CreateSampler(sd);
 
     const unsigned char pixels[3][4] = {{255, 255, 255, 255}, {0, 0, 0, 255}, {128, 128, 255, 255}};
     const char* names[3] = {"default white", "default black", "default flat normal"};
@@ -223,23 +236,68 @@ MaterialSystem::MaterialSystem(rhi::Device* device, const MaterialSystemDesc& de
         td.format = rhi::Format::RGBA8_UNorm;
         td.usage = rhi::TextureUsage::Sampled | rhi::TextureUsage::CopyDst;
         td.debug_name = names[i];
-        defaults_[i] = device->CreateTexture(td);
-        if (!defaults_[i].IsValid() || !device->UploadTexture(defaults_[i], 0, 0, pixels[i], 0).ok) {
+        defaults_[i] = device_->CreateTexture(td);
+        if (!defaults_[i].IsValid() || !device_->UploadTexture(defaults_[i], 0, 0, pixels[i], 0).ok) {
             ok = false;
         }
     }
-    valid_ = ok;
     if (!ok) {
-        RenderLog(LogVerbosity::Error, "MaterialSystem: creating the default resources failed");
+        DestroyDefaults();
     }
+    return ok;
+}
+
+void MaterialSystem::DestroyDefaults() {
+    for (rhi::TextureHandle& tex : defaults_) {
+        if (tex.IsValid()) device_->DestroyTexture(tex);
+        tex = {};
+    }
+    if (default_sampler_.IsValid()) device_->DestroySampler(default_sampler_);
+    default_sampler_ = {};
+    if (frame_layout_.IsValid()) device_->DestroyBindGroupLayout(frame_layout_);
+    frame_layout_ = {};
+    if (object_layout_.IsValid()) device_->DestroyBindGroupLayout(object_layout_);
+    object_layout_ = {};
 }
 
 MaterialSystem::~MaterialSystem() {
+    registration_.Reset();
+    Release();
+}
+
+void MaterialSystem::Release() {
+    if (released_ || device_ == nullptr) {
+        return;
+    }
     for (u32 i = 0; i < desc_.max_materials; ++i) {
-        if (materials_[i].alive) DestroyMaterialObjects(materials_[i]);
+        MaterialSlot& m = materials_[i];
+        if (!m.alive) continue;
+        for (rhi::BindGroupHandle& g : m.groups) {
+            if (g.IsValid()) device_->DestroyBindGroup(g);
+            g = {};
+        }
+        if (m.mapped != nullptr) device_->UnmapBuffer(m.params);
+        if (m.params.IsValid()) device_->DestroyBuffer(m.params);
+        m.mapped = nullptr;
+        m.params = {};
+        // Raw handles belong to the old device; owner bindings are kept and followed again after the rebuild.
+        for (u32 k = 0; k < kMaxMaterialTextures; ++k) {
+            if (m.texture_owners[k] == nullptr) m.textures[k] = {};
+            m.applied_textures[k] = {};
+        }
+        for (u32 k = 0; k < kMaxMaterialSamplers; ++k) {
+            if (m.sampler_owners[k] == nullptr) m.samplers[k] = {};
+            m.applied_samplers[k] = {};
+        }
+        m.groups_dirty = true;
     }
     for (u32 i = 0; i < pipeline_count_; ++i) {
-        if (pipelines_[i].used) device_->DestroyPipeline(pipelines_[i].pipeline);
+        PipelineEntry& p = pipelines_[i];
+        if (p.used && p.pipeline.IsValid()) {
+            device_->DestroyPipeline(p.pipeline);
+            p.pipeline = {};
+            --stats_.pipelines;
+        }
     }
     for (u32 i = 0; i < desc_.max_templates; ++i) {
         TemplateSlot& t = templates_[i];
@@ -247,17 +305,87 @@ MaterialSystem::~MaterialSystem() {
         for (u32 v = 0; v < t.variant_count; ++v) {
             if (t.variants[v].fragment.IsValid()) device_->DestroyShader(t.variants[v].fragment);
             if (t.variants[v].layout.IsValid()) device_->DestroyBindGroupLayout(t.variants[v].layout);
+            t.variants[v].fragment = {};
+            t.variants[v].layout = {};
         }
         if (t.vertex.IsValid()) device_->DestroyShader(t.vertex);
+        t.vertex = {};
     }
     for (u32 i = 0; i < frame_group_count_; ++i) device_->DestroyBindGroup(frame_groups_[i].group);
     for (u32 i = 0; i < object_group_count_; ++i) device_->DestroyBindGroup(object_groups_[i].group);
-    for (rhi::TextureHandle& tex : defaults_) {
-        if (tex.IsValid()) device_->DestroyTexture(tex);
+    frame_group_count_ = 0;
+    object_group_count_ = 0;
+    DestroyDefaults();
+    released_ = true;
+}
+
+bool MaterialSystem::Recreate(rhi::Device* device) {
+    ENGINE_ASSERT(released_, "MaterialSystem::Recreate: the system still holds device objects");
+    device_ = device;
+    released_ = false; // Release() below cleans up whatever was built if a step fails
+    const u32 previous_rebuilds = stats_.rebuilds;
+    auto fail = [&](const char* what) {
+        RenderLog(LogVerbosity::Error, "MaterialSystem: recreating failed: %s", what);
+        Release();
+        stats_.rebuilds = previous_rebuilds;
+        return false;
+    };
+    if (!CreateDefaults()) {
+        return fail("the default resources");
     }
-    if (default_sampler_.IsValid()) device_->DestroySampler(default_sampler_);
-    if (frame_layout_.IsValid()) device_->DestroyBindGroupLayout(frame_layout_);
-    if (object_layout_.IsValid()) device_->DestroyBindGroupLayout(object_layout_);
+    for (u32 i = 0; i < desc_.max_templates; ++i) {
+        TemplateSlot& t = templates_[i];
+        if (!t.alive) continue;
+        rhi::ShaderDesc sd;
+        sd.stage = rhi::ShaderStage::Vertex;
+        sd.words = t.desc.vertex.words;
+        sd.word_count = t.desc.vertex.word_count;
+        sd.debug_name = t.name;
+        t.vertex = device_->CreateShader(sd);
+        if (!t.vertex.IsValid()) {
+            return fail("a vertex shader");
+        }
+        // Rebuilt in the same order, so every material's variant index stays right.
+        u32 keys[kMaxPermutationKeys];
+        const u32 key_count = t.variant_count;
+        for (u32 v = 0; v < key_count; ++v) keys[v] = t.variants[v].key_bits;
+        t.variant_count = 0;
+        for (u32 v = 0; v < key_count; ++v) {
+            PermutationKey key;
+            key.bits = keys[v];
+            if (BuildVariant(t, key) == nullptr) {
+                t.variant_count = key_count; // entries not rebuilt yet still hold their CPU data; a retry starts from them
+                return fail("a material variant");
+            }
+        }
+    }
+    for (u32 i = 0; i < material_high_; ++i) {
+        MaterialSlot& m = materials_[i];
+        if (!m.alive) continue;
+        if (!CreateParams(m)) {
+            return fail("a parameter buffer");
+        }
+        m.dirty_slots = m.shadow_size != 0 ? (1u << kSlots) - 1 : 0;
+        for (u32 k = 0; k < kMaxMaterialTextures; ++k) {
+            if (m.texture_owners[k] != nullptr) m.textures[k] = m.texture_owners[k]->Handle();
+        }
+        for (u32 k = 0; k < kMaxMaterialSamplers; ++k) {
+            if (m.sampler_owners[k] != nullptr) m.samplers[k] = m.sampler_owners[k]->Handle();
+        }
+        if (!BuildGroups(m)) {
+            return fail("a material's bind groups");
+        }
+    }
+    if (desc_.prewarm_pipelines) {
+        for (u32 i = 0; i < pipeline_count_; ++i) {
+            if (pipelines_[i].used && !RebuildPipeline(pipelines_[i])) {
+                // Not fatal: the entry keeps its description and is built on first use, as in lazy mode.
+                RenderLog(LogVerbosity::Warn, "MaterialSystem: a pipeline could not be prewarmed; it will be built when first used");
+            }
+        }
+    }
+    ++stats_.rebuilds;
+    return true;
 }
 
 bool MaterialSystem::Valid() const { return valid_; }
@@ -363,7 +491,7 @@ void MaterialSystem::DestroyTemplate(TemplateId id) {
         if (t.variants[v].fragment.IsValid()) device_->DestroyShader(t.variants[v].fragment);
         if (t.variants[v].layout.IsValid()) device_->DestroyBindGroupLayout(t.variants[v].layout);
     }
-    device_->DestroyShader(t.vertex);
+    if (t.vertex.IsValid()) device_->DestroyShader(t.vertex);
     t.vertex = {};
     t.variant_count = 0;
     t.alive = false;
@@ -375,9 +503,9 @@ void MaterialSystem::DestroyPipelines(u32 template_index) {
     for (u32 i = 0; i < pipeline_count_; ++i) {
         PipelineEntry& p = pipelines_[i];
         if (p.used && p.template_index == template_index) {
-            device_->DestroyPipeline(p.pipeline);
+            if (p.pipeline.IsValid()) device_->DestroyPipeline(p.pipeline);
+            if (p.pipeline.IsValid()) --stats_.pipelines;
             p = PipelineEntry{};
-            --stats_.pipelines;
         }
     }
 }
@@ -610,16 +738,7 @@ MaterialId MaterialSystem::CreateMaterial(TemplateId tmpl, PermutationKey key, c
         const bool shadow_ok = m.shadow.TryResize(size);
         m.shadow_size = shadow_ok ? size : 0;
         m.stride = MaterialAlignUp(size, device_->Caps().min_uniform_buffer_offset_alignment);
-        rhi::BufferDesc bd;
-        bd.size = m.stride * kSlots;
-        bd.usage = rhi::BufferUsage::Uniform;
-        bd.location = rhi::MemoryLocation::CpuToGpu;
-        bd.debug_name = m.name;
-        m.params = device_->CreateBuffer(bd);
-        if (m.params.IsValid()) {
-            m.mapped = static_cast<unsigned char*>(device_->MapBuffer(m.params));
-        }
-        if (!shadow_ok || m.mapped == nullptr) {
+        if (!shadow_ok || !CreateParams(m)) {
             RenderLog(LogVerbosity::Error, "MaterialSystem: material '%s' not created: its parameter buffer could not be made", m.name);
             DestroyMaterialObjects(m);
             return MaterialId{};
@@ -638,6 +757,25 @@ MaterialId MaterialSystem::CreateMaterial(TemplateId tmpl, PermutationKey key, c
     id.index = index;
     id.generation = m.generation;
     return id;
+}
+
+// Creates (or recreates) the mapped parameter buffer of a material whose size and stride are known.
+bool MaterialSystem::CreateParams(MaterialSlot& m) {
+    const Variant& v = templates_[m.template_index].variants[m.variant_index];
+    if (!v.has_block) {
+        return true;
+    }
+    m.stride = MaterialAlignUp(v.block.size, device_->Caps().min_uniform_buffer_offset_alignment);
+    rhi::BufferDesc bd;
+    bd.size = m.stride * kSlots;
+    bd.usage = rhi::BufferUsage::Uniform;
+    bd.location = rhi::MemoryLocation::CpuToGpu;
+    bd.debug_name = m.name;
+    m.params = device_->CreateBuffer(bd);
+    if (m.params.IsValid()) {
+        m.mapped = static_cast<unsigned char*>(device_->MapBuffer(m.params));
+    }
+    return m.mapped != nullptr;
 }
 
 bool MaterialSystem::BuildGroups(MaterialSlot& m) {
@@ -773,6 +911,7 @@ bool MaterialSystem::SetTexture(MaterialId id, const char* name, rhi::TextureHan
     const Variant& v = templates_[m.template_index].variants[m.variant_index];
     for (u32 i = 0; i < v.texture_count; ++i) {
         if (std::strcmp(v.textures[i].name, name) == 0) {
+            m.texture_owners[i] = nullptr;
             if (!(m.textures[i] == texture)) {
                 m.textures[i] = texture;
                 m.groups_dirty = true;
@@ -789,8 +928,45 @@ bool MaterialSystem::SetSampler(MaterialId id, const char* name, rhi::SamplerHan
     const Variant& v = templates_[m.template_index].variants[m.variant_index];
     for (u32 i = 0; i < v.sampler_count; ++i) {
         if (std::strcmp(v.samplers[i].name, name) == 0) {
+            m.sampler_owners[i] = nullptr;
             if (!(m.samplers[i] == sampler)) {
                 m.samplers[i] = sampler;
+                m.groups_dirty = true;
+            }
+            return true;
+        }
+    }
+    RenderLog(LogVerbosity::Error, "material '%s': there is no sampler slot '%s'", m.name, name);
+    return false;
+}
+
+bool MaterialSystem::SetTexture(MaterialId id, const char* name, const GpuTexture* texture) {
+    MaterialSlot& m = Get(id);
+    const Variant& v = templates_[m.template_index].variants[m.variant_index];
+    for (u32 i = 0; i < v.texture_count; ++i) {
+        if (std::strcmp(v.textures[i].name, name) == 0) {
+            m.texture_owners[i] = texture;
+            const rhi::TextureHandle handle = texture != nullptr ? texture->Handle() : rhi::TextureHandle{};
+            if (!(m.textures[i] == handle)) {
+                m.textures[i] = handle;
+                m.groups_dirty = true;
+            }
+            return true;
+        }
+    }
+    RenderLog(LogVerbosity::Error, "material '%s': there is no texture slot '%s'", m.name, name);
+    return false;
+}
+
+bool MaterialSystem::SetSampler(MaterialId id, const char* name, const GpuSampler* sampler) {
+    MaterialSlot& m = Get(id);
+    const Variant& v = templates_[m.template_index].variants[m.variant_index];
+    for (u32 i = 0; i < v.sampler_count; ++i) {
+        if (std::strcmp(v.samplers[i].name, name) == 0) {
+            m.sampler_owners[i] = sampler;
+            const rhi::SamplerHandle handle = sampler != nullptr ? sampler->Handle() : rhi::SamplerHandle{};
+            if (!(m.samplers[i] == handle)) {
+                m.samplers[i] = handle;
                 m.groups_dirty = true;
             }
             return true;
@@ -806,10 +982,24 @@ void MaterialSystem::BeginFrame(u64 frame_index) {
 }
 
 void MaterialSystem::FlushMaterials() {
+    ENGINE_ASSERT(!released_, "MaterialSystem::FlushMaterials: the system is released (a device reset is in progress or failed)");
     ENGINE_ASSERT(begun_, "MaterialSystem::FlushMaterials: BeginFrame was not called");
     for (u32 i = 0; i < material_high_; ++i) {
         MaterialSlot& m = materials_[i];
         if (!m.alive) continue;
+        // A material bound to an owner follows the owner's current handle (it changes after a device reset).
+        for (u32 k = 0; k < kMaxMaterialTextures; ++k) {
+            if (m.texture_owners[k] != nullptr && !(m.textures[k] == m.texture_owners[k]->Handle())) {
+                m.textures[k] = m.texture_owners[k]->Handle();
+                m.groups_dirty = true;
+            }
+        }
+        for (u32 k = 0; k < kMaxMaterialSamplers; ++k) {
+            if (m.sampler_owners[k] != nullptr && !(m.samplers[k] == m.sampler_owners[k]->Handle())) {
+                m.samplers[k] = m.sampler_owners[k]->Handle();
+                m.groups_dirty = true;
+            }
+        }
         if (m.groups_dirty) {
             if (BuildGroups(m)) {
                 ++m.rebuilds;
@@ -843,7 +1033,8 @@ rhi::TextureHandle MaterialSystem::EffectiveTexture(MaterialId id, const char* n
     const Variant& v = templates_[m.template_index].variants[m.variant_index];
     for (u32 i = 0; i < v.texture_count; ++i) {
         if (std::strcmp(v.textures[i].name, name) == 0) {
-            return m.textures[i].IsValid() ? m.textures[i] : defaults_[static_cast<u32>(v.textures[i].fallback)];
+            const rhi::TextureHandle bound = m.texture_owners[i] != nullptr ? m.texture_owners[i]->Handle() : m.textures[i];
+            return bound.IsValid() ? bound : defaults_[static_cast<u32>(v.textures[i].fallback)];
         }
     }
     return rhi::TextureHandle{};
@@ -865,6 +1056,67 @@ u32 MaterialSystem::BindGroupRebuilds(MaterialId id) const { return Get(id).rebu
 
 // ---- pipelines ----
 
+rhi::PipelineHandle MaterialSystem::MakePipeline(TemplateSlot& t, const Variant& v, const PipelineTarget& target, const VertexLayoutData& vertex_layout,
+                                                 rhi::PrimitiveTopology topology, bool primitive_restart) {
+    const char* tname = t.name;
+    rhi::VertexBindingDesc binding;
+    binding.stride = vertex_layout.stride;
+    rhi::GraphicsPipelineDesc pd;
+    pd.topology = topology;
+    pd.primitive_restart = primitive_restart;
+    pd.vertex_shader = t.vertex;
+    pd.fragment_shader = v.fragment;
+    pd.vertex_bindings = rhi::Span<rhi::VertexBindingDesc>(&binding, 1);
+    pd.vertex_attributes = rhi::Span<rhi::VertexAttributeDesc>(vertex_layout.attributes, vertex_layout.attribute_count);
+    pd.cull_mode = t.desc.state.cull;
+    pd.depth_format = target.depth_format;
+    pd.depth_test = t.desc.state.depth_test && target.depth_format != rhi::Format::Undefined;
+    pd.depth_write = t.desc.state.depth_write && target.depth_format != rhi::Format::Undefined;
+    pd.depth_compare = t.desc.state.depth_compare;
+    pd.color_target_count = target.color_count;
+    for (u32 i = 0; i < target.color_count; ++i) {
+        pd.color_targets[i].format = target.color_formats[i];
+        if (t.desc.state.alpha_blend) {
+            rhi::BlendState& b = pd.color_targets[i].blend;
+            b.enable = true;
+            b.src_color = rhi::BlendFactor::SrcAlpha;
+            b.dst_color = rhi::BlendFactor::OneMinusSrcAlpha;
+            b.src_alpha = rhi::BlendFactor::One;
+            b.dst_alpha = rhi::BlendFactor::OneMinusSrcAlpha;
+        }
+    }
+    pd.bind_group_layouts[0] = frame_layout_;
+    pd.bind_group_layouts[1] = v.layout;
+    pd.bind_group_layouts[2] = object_layout_;
+    pd.bind_group_layout_count = 3;
+    pd.debug_name = tname;
+    const rhi::PipelineHandle pipeline = device_->CreateGraphicsPipeline(pd);
+    if (!pipeline.IsValid()) {
+        RenderLog(LogVerbosity::Error, "MaterialSystem: the device could not create the pipeline for '%s'", tname);
+    }
+    return pipeline;
+}
+
+bool MaterialSystem::RebuildPipeline(PipelineEntry& entry) {
+    if (entry.pipeline.IsValid()) {
+        return true;
+    }
+    TemplateSlot& t = templates_[entry.template_index];
+    if (!t.alive || t.generation != entry.template_generation) {
+        return true; // the template is gone; the entry is stale
+    }
+    for (u32 v = 0; v < t.variant_count; ++v) {
+        if (t.variants[v].key_bits == entry.key_bits) {
+            entry.pipeline = MakePipeline(t, t.variants[v], entry.target, entry.layout, entry.topology, entry.restart);
+            if (entry.pipeline.IsValid()) {
+                ++stats_.pipelines;
+            }
+            return entry.pipeline.IsValid();
+        }
+    }
+    return true;
+}
+
 PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& target, const VertexLayoutData& vertex_layout,
                                            rhi::PrimitiveTopology topology, bool primitive_restart) {
     const MaterialSlot& m = Get(id);
@@ -875,8 +1127,19 @@ PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& 
         const PipelineEntry& p = pipelines_[i];
         if (p.used && p.template_index == m.template_index && p.template_generation == t.generation && p.key_bits == v.key_bits &&
             SameTarget(p.target, target) && SameLayout(p.layout, vertex_layout) && p.topology == topology && p.restart == primitive_restart) {
-            ++stats_.pipeline_hits;
-            return PipelineLookup{p.pipeline, i};
+            if (p.pipeline.IsValid()) {
+                ++stats_.pipeline_hits;
+                return PipelineLookup{p.pipeline, i};
+            }
+            // The entry survived a device reset without its pipeline: build it again in the same slot (a lazy rebuild).
+            ++stats_.pipeline_misses;
+            const rhi::PipelineHandle rebuilt = MakePipeline(t, v, target, vertex_layout, topology, primitive_restart);
+            if (!rebuilt.IsValid()) {
+                return PipelineLookup{};
+            }
+            pipelines_[i].pipeline = rebuilt;
+            ++stats_.pipelines;
+            return PipelineLookup{rebuilt, i};
         }
     }
     ++stats_.pipeline_misses;
@@ -933,40 +1196,8 @@ PipelineLookup MaterialSystem::GetPipeline(MaterialId id, const PipelineTarget& 
         RenderLog(LogVerbosity::Error, "MaterialSystem: pipeline for '%s': primitive restart needs a strip topology", tname);
         return PipelineLookup{};
     }
-    rhi::VertexBindingDesc binding;
-    binding.stride = vertex_layout.stride;
-    rhi::GraphicsPipelineDesc pd;
-    pd.topology = topology;
-    pd.primitive_restart = primitive_restart;
-    pd.vertex_shader = t.vertex;
-    pd.fragment_shader = v.fragment;
-    pd.vertex_bindings = rhi::Span<rhi::VertexBindingDesc>(&binding, 1);
-    pd.vertex_attributes = rhi::Span<rhi::VertexAttributeDesc>(vertex_layout.attributes, vertex_layout.attribute_count);
-    pd.cull_mode = t.desc.state.cull;
-    pd.depth_format = target.depth_format;
-    pd.depth_test = t.desc.state.depth_test && target.depth_format != rhi::Format::Undefined;
-    pd.depth_write = t.desc.state.depth_write && target.depth_format != rhi::Format::Undefined;
-    pd.depth_compare = t.desc.state.depth_compare;
-    pd.color_target_count = target.color_count;
-    for (u32 i = 0; i < target.color_count; ++i) {
-        pd.color_targets[i].format = target.color_formats[i];
-        if (t.desc.state.alpha_blend) {
-            rhi::BlendState& b = pd.color_targets[i].blend;
-            b.enable = true;
-            b.src_color = rhi::BlendFactor::SrcAlpha;
-            b.dst_color = rhi::BlendFactor::OneMinusSrcAlpha;
-            b.src_alpha = rhi::BlendFactor::One;
-            b.dst_alpha = rhi::BlendFactor::OneMinusSrcAlpha;
-        }
-    }
-    pd.bind_group_layouts[0] = frame_layout_;
-    pd.bind_group_layouts[1] = v.layout;
-    pd.bind_group_layouts[2] = object_layout_;
-    pd.bind_group_layout_count = 3;
-    pd.debug_name = tname;
-    const rhi::PipelineHandle pipeline = device_->CreateGraphicsPipeline(pd);
+    const rhi::PipelineHandle pipeline = MakePipeline(t, v, target, vertex_layout, topology, primitive_restart);
     if (!pipeline.IsValid()) {
-        RenderLog(LogVerbosity::Error, "MaterialSystem: the device could not create the pipeline for '%s'", tname);
         return PipelineLookup{};
     }
     PipelineEntry& e = pipelines_[slot];

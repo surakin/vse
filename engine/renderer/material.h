@@ -10,6 +10,7 @@
 #include "containers/vector.h"
 #include "math/matrix.h"
 #include "math/vector.h"
+#include "renderer/device_resources.h"
 #include "renderer/frame_data.h"
 #include "renderer/shader_permutation.h"
 #include "renderer/shader_reflection.h"
@@ -17,6 +18,9 @@
 #include "types.h"
 
 namespace engine_placeholder::renderer {
+
+class GpuTexture;
+class GpuSampler;
 
 /// Descriptor set of the frame uniform.
 inline constexpr u32 kFrameSet = 0;
@@ -155,6 +159,8 @@ struct MaterialStats {
     u32 bind_group_rebuilds = 0;
     /// Times a material's parameter block was copied to the GPU buffer.
     u32 parameter_flushes = 0;
+    /// Times the system released its device objects and rebuilt them after a device change.
+    u32 rebuilds = 0;
 };
 
 /// Capacities of a [[renderer::MaterialSystem]].
@@ -167,6 +173,11 @@ struct MaterialSystemDesc {
     u32 max_materials = 1024;
     /// Most pipelines in the cache.
     u32 max_pipelines = 256;
+    /// The registry to register with so the system survives a device reset; null for none.
+    DeviceResources* resources = nullptr;
+    /// Whether a recreate also rebuilds every pipeline the system had (eager); otherwise a pipeline is rebuilt the first time
+    /// it is asked for (lazy). Eager moves the compile cost into the reset; the pipeline cache file makes both cheap.
+    bool prewarm_pipelines = false;
 };
 
 /// Packs the draw order into one integer: pipeline first, then material, then mesh.
@@ -198,7 +209,7 @@ u64 MakeDrawSortKey(u32 pipeline_index, u32 material_index, u32 mesh_index);
 /// Thread-safety: thread-compatible.
 /// Ownership: borrows the device, which must outlive it; owns the shaders, layouts, buffers, bind groups, pipelines and
 ///   default textures it creates. Textures and samplers given to a material belong to the caller and must outlive it.
-class MaterialSystem {
+class MaterialSystem final : public Recreatable {
 public:
     /// Creates the system, the frame and object layouts, the default textures and the default sampler.
     ///
@@ -210,7 +221,7 @@ public:
     MaterialSystem(rhi::Device* device, const MaterialSystemDesc& desc);
     /// Destroys every material, template, pipeline and default resource. The GPU may still be using them; the device
     /// defers the actual release.
-    ~MaterialSystem();
+    ~MaterialSystem() override;
     MaterialSystem(const MaterialSystem&) = delete;
     MaterialSystem& operator=(const MaterialSystem&) = delete;
 
@@ -369,6 +380,28 @@ public:
     /// Ownership: `texture` is borrowed; it must outlive the material's use of it.
     bool SetTexture(MaterialId id, const char* name, rhi::TextureHandle texture);
 
+    /// Binds a texture owner: the material follows the owner's handle through a device reset. Preferred over the raw handle.
+    ///
+    /// Param id: the material.
+    /// Param name: the texture slot's name.
+    /// Param texture: the owner, or null to unbind; borrowed, must outlive the material or be unbound first.
+    /// Returns: true if the slot exists.
+    /// Fails: returns false, logging the reason, if the material has no such slot.
+    /// Aborts: `id` is invalid or stale.
+    /// Ownership: the owner is borrowed.
+    bool SetTexture(MaterialId id, const char* name, const GpuTexture* texture);
+
+    /// Binds a sampler owner; see the texture overload.
+    ///
+    /// Param id: the material.
+    /// Param name: the sampler slot's name.
+    /// Param sampler: the owner, or null to unbind; borrowed.
+    /// Returns: true if the slot exists.
+    /// Fails: returns false, logging the reason, if the material has no such slot.
+    /// Aborts: `id` is invalid or stale.
+    /// Ownership: the owner is borrowed.
+    bool SetSampler(MaterialId id, const char* name, const GpuSampler* sampler);
+
     /// Sets a sampler slot. The bind groups are rebuilt at the next flush.
     ///
     /// Param id: a live material.
@@ -477,12 +510,33 @@ public:
     /// Fails: never.
     MaterialStats Stats() const;
 
+    /// Destroys every device object (layouts, shaders, default textures, parameter buffers, bind groups, pipelines) and keeps
+    /// the CPU side: template descriptors and reflection, parameter values, owner bindings, and the pipeline descriptors.
+    /// Raw texture and sampler handles set by the caller are forgotten (they belong to the old device).
+    void Release() override;
+
+    /// Rebuilds everything on `device` in dependency order; pipelines lazily, or eagerly with `prewarm_pipelines`.
+    ///
+    /// Param device: the new device.
+    /// Returns: true on success.
+    /// Fails: returns false, logging the reason, with nothing left allocated if any object cannot be made.
+    /// Ownership: the device is borrowed.
+    bool Recreate(rhi::Device* device) override;
+    bool Live() const override { return valid_ && !released_; }
+    const char* RecreatableName() const override { return "materials"; }
+
 private:
     struct TemplateSlot;
     struct MaterialSlot;
     struct PipelineEntry;
     struct Variant;
 
+    bool CreateDefaults();
+    void DestroyDefaults();
+    bool CreateParams(MaterialSlot& m);
+    bool RebuildPipeline(PipelineEntry& entry);
+    rhi::PipelineHandle MakePipeline(TemplateSlot& t, const Variant& v, const PipelineTarget& target, const VertexLayoutData& vertex_layout,
+                                     rhi::PrimitiveTopology topology, bool primitive_restart);
     void DestroyMaterialObjects(MaterialSlot& m);
     bool BuildGroups(MaterialSlot& m);
     bool SetValue(MaterialId id, const char* name, MemberKind kind, ScalarType scalar, u32 rows, u32 columns, const void* data, usize size);
@@ -505,6 +559,8 @@ private:
     u32 slot_ = 0;
     bool begun_ = false;
     bool valid_ = false;
+    bool released_ = false;
+    ScopedRegistration registration_;
     MaterialStats stats_;
     struct CachedGroup {
         rhi::BufferHandle buffer;

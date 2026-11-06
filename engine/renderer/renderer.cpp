@@ -31,7 +31,18 @@ const RendererDesc& Checked(const RendererDesc& desc) {
 
 } // namespace
 
-Renderer::Renderer(const RendererDesc& desc) : desc_(Checked(desc)), arena_(desc.arena_bytes), pool_(desc.device, desc.pool) {}
+Renderer::Renderer(const RendererDesc& desc) : desc_(Checked(desc)), arena_(desc.arena_bytes), pool_(desc.device, desc.pool) {
+    if (!pool_.RegisterWith(desc.resources)) {
+        RenderLog(LogVerbosity::Error, "Renderer: the transient pool could not register with the device resources");
+    }
+}
+
+void Renderer::Rebind(rhi::Device* device, rhi::Swapchain* swapchain) {
+    ENGINE_ASSERT(device != nullptr, "Renderer::Rebind: the device is null");
+    ENGINE_ASSERT(desc_.resources != nullptr, "Renderer::Rebind: the renderer was built without a DeviceResources registry, so its pool cannot follow the device");
+    desc_.device = device;
+    desc_.swapchain = swapchain;
+}
 
 void Renderer::SetError(const char* fmt, ...) {
     va_list ap;

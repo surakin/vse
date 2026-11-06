@@ -31,6 +31,13 @@ FrameData MakeFrameData(const Camera& camera, u32 width, u32 height, f32 time_se
 FrameResources::FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights) : device_(device), max_objects_(max_objects), max_lights_(max_lights) {
     ENGINE_ASSERT(device != nullptr && max_objects > 0 && max_lights > 0 && max_lights <= kMaxLights,
                   "FrameResources: need a device, at least one object, and from one to kMaxLights lights");
+    Build();
+}
+
+void FrameResources::Build() {
+    rhi::Device* device = device_;
+    const u32 max_objects = max_objects_;
+    const u32 max_lights = max_lights_;
     const rhi::DeviceCaps& caps = device->Caps();
     frame_stride_ = AlignUp(sizeof(FrameData), caps.min_uniform_buffer_offset_alignment);
     object_stride_ = AlignUp(static_cast<u64>(max_objects) * sizeof(ObjectData), caps.min_storage_buffer_offset_alignment);
@@ -73,12 +80,33 @@ FrameResources::FrameResources(rhi::Device* device, u32 max_objects, u32 max_lig
 }
 
 FrameResources::~FrameResources() {
+    registration_.Reset();
+    Release();
+}
+
+void FrameResources::Release() {
+    if (device_ == nullptr) return;
     if (frame_mapped_ != nullptr) device_->UnmapBuffer(frame_buffer_);
     if (object_mapped_ != nullptr) device_->UnmapBuffer(object_buffer_);
     if (light_mapped_ != nullptr) device_->UnmapBuffer(light_buffer_);
     if (frame_buffer_.IsValid()) device_->DestroyBuffer(frame_buffer_);
     if (object_buffer_.IsValid()) device_->DestroyBuffer(object_buffer_);
     if (light_buffer_.IsValid()) device_->DestroyBuffer(light_buffer_);
+    frame_mapped_ = nullptr;
+    object_mapped_ = nullptr;
+    light_mapped_ = nullptr;
+    frame_buffer_ = {};
+    object_buffer_ = {};
+    light_buffer_ = {};
+    begun_ = false;
+    objects_written_ = 0;
+    lights_written_ = 0;
+}
+
+bool FrameResources::Recreate(rhi::Device* device) {
+    device_ = device;
+    Build();
+    return Valid();
 }
 
 void FrameResources::BeginFrame(u64 frame_index) {

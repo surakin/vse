@@ -1303,7 +1303,7 @@ Not zero is an error: the picture is missing light. It is also logged once per [
 `class renderer::FrameResources` — defined in `engine/renderer/frame_data.h`
 
 ```cpp
-class FrameResources { ... }
+class FrameResources final : public Recreatable { ... }
 ```
 
 The per-frame buffers, in `kSlots` rotating regions so the CPU never writes data the GPU is still reading.
@@ -1348,7 +1348,7 @@ Creates the buffers.
 `destructor renderer::FrameResources::~FrameResources` — defined in `engine/renderer/frame_data.h`
 
 ```cpp
-~FrameResources();
+~FrameResources() override;
 ```
 
 Unmaps and destroys the buffers.
@@ -1372,6 +1372,74 @@ FrameResources& operator=(const FrameResources&) = delete;
 ```
 
 _Deleted._
+
+### `RegisterWith(DeviceResources*)` {#renderer-frameresources-registerwith-deviceresources-star}
+
+`method renderer::FrameResources::RegisterWith` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+bool RegisterWith(DeviceResources* resources);
+```
+
+Registers the buffers with a registry so they survive a device reset. Nothing else needs saving: every frame writes the whole frame, object and light data again from the scene.
+
+| Field | Value |
+|---|---|
+| Parameter `resources` | the registry; null does nothing. |
+| Returns | true if registered or `resources` is null. |
+| Fails | returns false if the registry refused. |
+| Ownership | the registry is borrowed. |
+
+### `Release()` {#renderer-frameresources-release}
+
+`method renderer::FrameResources::Release` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+void Release() override;
+```
+
+Destroys the three buffers; `Valid` is false until `Recreate`.
+
+### `Recreate(rhi::Device*)` {#renderer-frameresources-recreate-rhi-device-star}
+
+`method renderer::FrameResources::Recreate` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+bool Recreate(rhi::Device* device) override;
+```
+
+Creates the buffers again at their capacities.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the new device. |
+| Returns | true if `Valid` afterwards. |
+| Fails | returns false, logging the reason, if a buffer cannot be made or mapped. |
+| Ownership | the device is borrowed. |
+
+### `Live()` {#renderer-frameresources-live-const}
+
+`method renderer::FrameResources::Live` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+bool Live() const override;
+```
+
+Returns whether the owner currently holds its device objects. The registry asks when the owner registers, so an owner that registers after it made its objects is released at the next reset.
+
+_Inherited from [`renderer::Recreatable::Live() const`](#renderer-recreatable-live-const)._
+
+### `RecreatableName()` {#renderer-frameresources-recreatablename-const}
+
+`method renderer::FrameResources::RecreatableName` — defined in `engine/renderer/frame_data.h`
+
+```cpp
+const char* RecreatableName() const override;
+```
+
+Returns a short name for logs and failure reports.
+
+_Inherited from [`renderer::Recreatable::RecreatableName() const`](#renderer-recreatable-recreatablename-const)._
 
 ### `Valid()` {#renderer-frameresources-valid-const}
 
@@ -2285,7 +2353,7 @@ Returns the counts of the last `Prepare`.
 `class renderer::GBufferDebugView` — defined in `engine/renderer/gbuffer.h`
 
 ```cpp
-class GBufferDebugView { ... }
+class GBufferDebugView final : public Recreatable { ... }
 ```
 
 Draws one G-buffer layer into a color target, for debugging and the demo.
@@ -2318,7 +2386,7 @@ Creates the view's shaders and sampler.
 `destructor renderer::GBufferDebugView::~GBufferDebugView` — defined in `engine/renderer/gbuffer.h`
 
 ```cpp
-~GBufferDebugView();
+~GBufferDebugView() override;
 ```
 
 Destroys the pipelines, shaders and sampler.
@@ -2342,6 +2410,74 @@ GBufferDebugView& operator=(const GBufferDebugView&) = delete;
 ```
 
 _Deleted._
+
+### `RegisterWith(DeviceResources*)` {#renderer-gbufferdebugview-registerwith-deviceresources-star}
+
+`method renderer::GBufferDebugView::RegisterWith` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+bool RegisterWith(DeviceResources* resources);
+```
+
+Registers the debug view with a registry so it survives a device reset.
+
+| Field | Value |
+|---|---|
+| Parameter `resources` | the registry; null does nothing. |
+| Returns | true if registered or `resources` is null. |
+| Fails | returns false if the registry refused. |
+| Ownership | the registry is borrowed. |
+
+### `Release()` {#renderer-gbufferdebugview-release}
+
+`method renderer::GBufferDebugView::Release` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+void Release() override;
+```
+
+Destroys the shaders, layout, sampler and pipelines; nothing else is kept on the device.
+
+### `Recreate(rhi::Device*)` {#renderer-gbufferdebugview-recreate-rhi-device-star}
+
+`method renderer::GBufferDebugView::Recreate` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+bool Recreate(rhi::Device* device) override;
+```
+
+Makes the shaders, layout, sampler and (on first use) pipelines again.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the new device. |
+| Returns | true if the objects were made. |
+| Fails | returns false, logging the reason, if the device refuses one of them. |
+| Ownership | the device is borrowed. |
+
+### `Live()` {#renderer-gbufferdebugview-live-const}
+
+`method renderer::GBufferDebugView::Live` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+bool Live() const override;
+```
+
+Returns whether the owner currently holds its device objects. The registry asks when the owner registers, so an owner that registers after it made its objects is released at the next reset.
+
+_Inherited from [`renderer::Recreatable::Live() const`](#renderer-recreatable-live-const)._
+
+### `RecreatableName()` {#renderer-gbufferdebugview-recreatablename-const}
+
+`method renderer::GBufferDebugView::RecreatableName` — defined in `engine/renderer/gbuffer.h`
+
+```cpp
+const char* RecreatableName() const override;
+```
+
+Returns a short name for logs and failure reports.
+
+_Inherited from [`renderer::Recreatable::RecreatableName() const`](#renderer-recreatable-recreatablename-const)._
 
 ### `Valid()` {#renderer-gbufferdebugview-valid-const}
 
@@ -2669,7 +2805,7 @@ A sphere that reaches the camera's plane (any corner of its bounding box is not 
 `class renderer::LightingPass` — defined in `engine/renderer/lighting.h`
 
 ```cpp
-class LightingPass { ... }
+class LightingPass final : public Recreatable { ... }
 ```
 
 Lights the G-buffer with the scene's ambient, directional and point lights.
@@ -2702,7 +2838,7 @@ Creates the shaders, the bind group layout and the pipeline.
 `destructor renderer::LightingPass::~LightingPass` — defined in `engine/renderer/lighting.h`
 
 ```cpp
-~LightingPass();
+~LightingPass() override;
 ```
 
 Destroys the pipeline, shaders and layout.
@@ -2726,6 +2862,74 @@ LightingPass& operator=(const LightingPass&) = delete;
 ```
 
 _Deleted._
+
+### `RegisterWith(DeviceResources*)` {#renderer-lightingpass-registerwith-deviceresources-star}
+
+`method renderer::LightingPass::RegisterWith` — defined in `engine/renderer/lighting.h`
+
+```cpp
+bool RegisterWith(DeviceResources* resources);
+```
+
+Registers the lighting pass with a registry so it survives a device reset.
+
+| Field | Value |
+|---|---|
+| Parameter `resources` | the registry; null does nothing. |
+| Returns | true if registered or `resources` is null. |
+| Fails | returns false if the registry refused. |
+| Ownership | the registry is borrowed. |
+
+### `Release()` {#renderer-lightingpass-release}
+
+`method renderer::LightingPass::Release` — defined in `engine/renderer/lighting.h`
+
+```cpp
+void Release() override;
+```
+
+Destroys the shaders, layout and both pipelines; nothing else is kept on the device.
+
+### `Recreate(rhi::Device*)` {#renderer-lightingpass-recreate-rhi-device-star}
+
+`method renderer::LightingPass::Recreate` — defined in `engine/renderer/lighting.h`
+
+```cpp
+bool Recreate(rhi::Device* device) override;
+```
+
+Makes the shaders, layout and both pipelines again.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the new device. |
+| Returns | true if the objects were made. |
+| Fails | returns false, logging the reason, if the device refuses one of them. |
+| Ownership | the device is borrowed. |
+
+### `Live()` {#renderer-lightingpass-live-const}
+
+`method renderer::LightingPass::Live` — defined in `engine/renderer/lighting.h`
+
+```cpp
+bool Live() const override;
+```
+
+Returns whether the owner currently holds its device objects. The registry asks when the owner registers, so an owner that registers after it made its objects is released at the next reset.
+
+_Inherited from [`renderer::Recreatable::Live() const`](#renderer-recreatable-live-const)._
+
+### `RecreatableName()` {#renderer-lightingpass-recreatablename-const}
+
+`method renderer::LightingPass::RecreatableName` — defined in `engine/renderer/lighting.h`
+
+```cpp
+const char* RecreatableName() const override;
+```
+
+Returns a short name for logs and failure reports.
+
+_Inherited from [`renderer::Recreatable::RecreatableName() const`](#renderer-recreatable-recreatablename-const)._
 
 ### `Valid()` {#renderer-lightingpass-valid-const}
 
@@ -2814,7 +3018,7 @@ Declares the accumulation target and the lighting pass.
 `class renderer::TonemapPass` — defined in `engine/renderer/lighting.h`
 
 ```cpp
-class TonemapPass { ... }
+class TonemapPass final : public Recreatable { ... }
 ```
 
 Applies exposure and the ACES fit to the HDR accumulation and writes the display target.
@@ -2845,7 +3049,7 @@ Creates the shaders and the bind group layout.
 `destructor renderer::TonemapPass::~TonemapPass` — defined in `engine/renderer/lighting.h`
 
 ```cpp
-~TonemapPass();
+~TonemapPass() override;
 ```
 
 Destroys the pipeline, shaders and layout.
@@ -2869,6 +3073,74 @@ TonemapPass& operator=(const TonemapPass&) = delete;
 ```
 
 _Deleted._
+
+### `RegisterWith(DeviceResources*)` {#renderer-tonemappass-registerwith-deviceresources-star}
+
+`method renderer::TonemapPass::RegisterWith` — defined in `engine/renderer/lighting.h`
+
+```cpp
+bool RegisterWith(DeviceResources* resources);
+```
+
+Registers the tonemap pass with a registry so it survives a device reset. Its pipeline follows the output format, so a swapchain format change is handled by the next `AddToGraph`.
+
+| Field | Value |
+|---|---|
+| Parameter `resources` | the registry; null does nothing. |
+| Returns | true if registered or `resources` is null. |
+| Fails | returns false if the registry refused. |
+| Ownership | the registry is borrowed. |
+
+### `Release()` {#renderer-tonemappass-release}
+
+`method renderer::TonemapPass::Release` — defined in `engine/renderer/lighting.h`
+
+```cpp
+void Release() override;
+```
+
+Destroys the shaders, layout and pipeline; nothing else is kept on the device.
+
+### `Recreate(rhi::Device*)` {#renderer-tonemappass-recreate-rhi-device-star}
+
+`method renderer::TonemapPass::Recreate` — defined in `engine/renderer/lighting.h`
+
+```cpp
+bool Recreate(rhi::Device* device) override;
+```
+
+Makes the shaders and layout again; the pipeline is made on first use for the output format then.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the new device. |
+| Returns | true if the objects were made. |
+| Fails | returns false, logging the reason, if the device refuses one of them. |
+| Ownership | the device is borrowed. |
+
+### `Live()` {#renderer-tonemappass-live-const}
+
+`method renderer::TonemapPass::Live` — defined in `engine/renderer/lighting.h`
+
+```cpp
+bool Live() const override;
+```
+
+Returns whether the owner currently holds its device objects. The registry asks when the owner registers, so an owner that registers after it made its objects is released at the next reset.
+
+_Inherited from [`renderer::Recreatable::Live() const`](#renderer-recreatable-live-const)._
+
+### `RecreatableName()` {#renderer-tonemappass-recreatablename-const}
+
+`method renderer::TonemapPass::RecreatableName` — defined in `engine/renderer/lighting.h`
+
+```cpp
+const char* RecreatableName() const override;
+```
+
+Returns a short name for logs and failure reports.
+
+_Inherited from [`renderer::Recreatable::RecreatableName() const`](#renderer-recreatable-recreatablename-const)._
 
 ### `Valid()` {#renderer-tonemappass-valid-const}
 
@@ -3404,6 +3676,16 @@ u32 parameter_flushes;
 
 Times a material's parameter block was copied to the GPU buffer.
 
+### `rebuilds` {#renderer-materialstats-rebuilds}
+
+`variable renderer::MaterialStats::rebuilds` — defined in `engine/renderer/material.h`
+
+```cpp
+u32 rebuilds;
+```
+
+Times the system released its device objects and rebuilt them after a device change.
+
 ## `MaterialSystemDesc` {#renderer-materialsystemdesc}
 
 `struct renderer::MaterialSystemDesc` — defined in `engine/renderer/material.h`
@@ -3448,6 +3730,26 @@ u32 max_pipelines;
 
 Most pipelines in the cache.
 
+### `resources` {#renderer-materialsystemdesc-resources}
+
+`variable renderer::MaterialSystemDesc::resources` — defined in `engine/renderer/material.h`
+
+```cpp
+DeviceResources* resources;
+```
+
+The registry to register with so the system survives a device reset; null for none.
+
+### `prewarm_pipelines` {#renderer-materialsystemdesc-prewarm-pipelines}
+
+`variable renderer::MaterialSystemDesc::prewarm_pipelines` — defined in `engine/renderer/material.h`
+
+```cpp
+bool prewarm_pipelines;
+```
+
+Whether a recreate also rebuilds every pipeline the system had (eager); otherwise a pipeline is rebuilt the first time it is asked for (lazy). Eager moves the compile cost into the reset; the pipeline cache file makes both cheap.
+
 ## `MakeDrawSortKey(u32,u32,u32)` {#renderer-makedrawsortkey-u32-u32-u32}
 
 `function renderer::MakeDrawSortKey` — defined in `engine/renderer/material.h`
@@ -3473,7 +3775,7 @@ Sorting by this key groups draws that share a pipeline and, within it, a materia
 `class renderer::MaterialSystem` — defined in `engine/renderer/material.h`
 
 ```cpp
-class MaterialSystem { ... }
+class MaterialSystem final : public Recreatable { ... }
 ```
 
 Templates, materials, default textures, bind groups and the pipeline cache.
@@ -3510,7 +3812,7 @@ Creates the system, the frame and object layouts, the default textures and the d
 `destructor renderer::MaterialSystem::~MaterialSystem` — defined in `engine/renderer/material.h`
 
 ```cpp
-~MaterialSystem();
+~MaterialSystem() override;
 ```
 
 Destroys every material, template, pipeline and default resource. The GPU may still be using them; the device defers the actual release.
@@ -3855,6 +4157,46 @@ Sets a texture slot. The bind groups are rebuilt at the next flush.
 | Aborts | `id` is invalid or stale. |
 | Ownership | `texture` is borrowed; it must outlive the material's use of it. |
 
+### `SetTexture(MaterialId,const char*,const GpuTexture*)` {#renderer-materialsystem-settexture-materialid-const-char-star-const-gputexture-star}
+
+`method renderer::MaterialSystem::SetTexture` — defined in `engine/renderer/material.h`
+
+```cpp
+bool SetTexture(MaterialId id, const char* name, const GpuTexture* texture);
+```
+
+Binds a texture owner: the material follows the owner's handle through a device reset. Preferred over the raw handle.
+
+| Field | Value |
+|---|---|
+| Parameter `id` | the material. |
+| Parameter `name` | the texture slot's name. |
+| Parameter `texture` | the owner, or null to unbind; borrowed, must outlive the material or be unbound first. |
+| Returns | true if the slot exists. |
+| Fails | returns false, logging the reason, if the material has no such slot. |
+| Aborts | `id` is invalid or stale. |
+| Ownership | the owner is borrowed. |
+
+### `SetSampler(MaterialId,const char*,const GpuSampler*)` {#renderer-materialsystem-setsampler-materialid-const-char-star-const-gpusampler-star}
+
+`method renderer::MaterialSystem::SetSampler` — defined in `engine/renderer/material.h`
+
+```cpp
+bool SetSampler(MaterialId id, const char* name, const GpuSampler* sampler);
+```
+
+Binds a sampler owner; see the texture overload.
+
+| Field | Value |
+|---|---|
+| Parameter `id` | the material. |
+| Parameter `name` | the sampler slot's name. |
+| Parameter `sampler` | the owner, or null to unbind; borrowed. |
+| Returns | true if the slot exists. |
+| Fails | returns false, logging the reason, if the material has no such slot. |
+| Aborts | `id` is invalid or stale. |
+| Ownership | the owner is borrowed. |
+
 ### `SetSampler(MaterialId,const char*,rhi::SamplerHandle)` {#renderer-materialsystem-setsampler-materialid-const-char-star-rhi-samplerhandle}
 
 `method renderer::MaterialSystem::SetSampler` — defined in `engine/renderer/material.h`
@@ -4087,6 +4429,57 @@ Returns the counters.
 | Field | Value |
 |---|---|
 | Fails | never. |
+
+### `Release()` {#renderer-materialsystem-release}
+
+`method renderer::MaterialSystem::Release` — defined in `engine/renderer/material.h`
+
+```cpp
+void Release() override;
+```
+
+Destroys every device object (layouts, shaders, default textures, parameter buffers, bind groups, pipelines) and keeps the CPU side: template descriptors and reflection, parameter values, owner bindings, and the pipeline descriptors. Raw texture and sampler handles set by the caller are forgotten (they belong to the old device).
+
+### `Recreate(rhi::Device*)` {#renderer-materialsystem-recreate-rhi-device-star}
+
+`method renderer::MaterialSystem::Recreate` — defined in `engine/renderer/material.h`
+
+```cpp
+bool Recreate(rhi::Device* device) override;
+```
+
+Rebuilds everything on `device` in dependency order; pipelines lazily, or eagerly with `prewarm_pipelines`.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the new device. |
+| Returns | true on success. |
+| Fails | returns false, logging the reason, with nothing left allocated if any object cannot be made. |
+| Ownership | the device is borrowed. |
+
+### `Live()` {#renderer-materialsystem-live-const}
+
+`method renderer::MaterialSystem::Live` — defined in `engine/renderer/material.h`
+
+```cpp
+bool Live() const override;
+```
+
+Returns whether the owner currently holds its device objects. The registry asks when the owner registers, so an owner that registers after it made its objects is released at the next reset.
+
+_Inherited from [`renderer::Recreatable::Live() const`](#renderer-recreatable-live-const)._
+
+### `RecreatableName()` {#renderer-materialsystem-recreatablename-const}
+
+`method renderer::MaterialSystem::RecreatableName` — defined in `engine/renderer/material.h`
+
+```cpp
+const char* RecreatableName() const override;
+```
+
+Returns a short name for logs and failure reports.
+
+_Inherited from [`renderer::Recreatable::RecreatableName() const`](#renderer-recreatable-recreatablename-const)._
 
 ## `StandardVertex` {#renderer-standardvertex}
 
@@ -8678,6 +9071,16 @@ TransientPoolDesc pool;
 
 Capacities and aging of the transient pool.
 
+### `resources` {#renderer-rendererdesc-resources}
+
+`variable renderer::RendererDesc::resources` — defined in `engine/renderer/renderer.h`
+
+```cpp
+DeviceResources* resources;
+```
+
+The registry the renderer's transient pool registers with so it survives a device reset; null for none. The caller calls [`renderer::Renderer::Rebind`](#renderer-renderer-rebind-rhi-device-star-rhi-swapchain-star) with the new device and swapchain after the reset.
+
 ### `build` {#renderer-rendererdesc-build}
 
 `variable renderer::RendererDesc::build` — defined in `engine/renderer/renderer.h`
@@ -8822,6 +9225,23 @@ Renderer& operator=(const Renderer&) = delete;
 ```
 
 _Deleted._
+
+### `Rebind(rhi::Device*,rhi::Swapchain*)` {#renderer-renderer-rebind-rhi-device-star-rhi-swapchain-star}
+
+`method renderer::Renderer::Rebind` — defined in `engine/renderer/renderer.h`
+
+```cpp
+void Rebind(rhi::Device* device, rhi::Swapchain* swapchain);
+```
+
+Points the renderer at a new device and swapchain after the device was replaced. The renderer keeps no other device handle between frames: its transient pool is rebuilt through the registry, and the per-frame state is rebuilt by the next `RenderFrame`.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the new device. |
+| Parameter `swapchain` | the new swapchain, or null for offscreen rendering. |
+| Aborts | `device` is null, or the renderer was built without `RendererDesc::resources` (its pool could not follow the device). |
+| Ownership | both are borrowed. |
 
 ### `RenderFrame(const RenderScene*,const Camera*,const FrameTarget*)` {#renderer-renderer-renderframe-const-renderscene-star-const-camera-star-const-frametarget-star}
 
@@ -10786,12 +11206,22 @@ u32 buffers_idle;
 
 Buffers idle now.
 
+### `resets` {#renderer-transientpoolstats-resets}
+
+`variable renderer::TransientPoolStats::resets` — defined in `engine/renderer/transient_pool.h`
+
+```cpp
+u32 resets;
+```
+
+Times the pool was released for a device change.
+
 ## `TransientPool` {#renderer-transientpool}
 
 `class renderer::TransientPool` — defined in `engine/renderer/transient_pool.h`
 
 ```cpp
-class TransientPool { ... }
+class TransientPool final : public Recreatable { ... }
 ```
 
 Pools transient textures and buffers by description.
@@ -10825,7 +11255,7 @@ Creates an empty pool.
 `destructor renderer::TransientPool::~TransientPool` — defined in `engine/renderer/transient_pool.h`
 
 ```cpp
-~TransientPool();
+~TransientPool() override;
 ```
 
 Destroys every pooled resource.
@@ -10849,6 +11279,78 @@ TransientPool& operator=(const TransientPool&) = delete;
 ```
 
 _Deleted._
+
+### `RegisterWith(DeviceResources*)` {#renderer-transientpool-registerwith-deviceresources-star}
+
+`method renderer::TransientPool::RegisterWith` — defined in `engine/renderer/transient_pool.h`
+
+```cpp
+bool RegisterWith(DeviceResources* resources);
+```
+
+Registers the pool with a registry so it survives a device reset.
+
+| Field | Value |
+|---|---|
+| Parameter `resources` | the registry; null does nothing. |
+| Returns | true if registered or `resources` is null. |
+| Fails | returns false if the registry refused. |
+| Ownership | the registry is borrowed. |
+
+### `Release()` {#renderer-transientpool-release}
+
+`method renderer::TransientPool::Release` — defined in `engine/renderer/transient_pool.h`
+
+```cpp
+void Release() override;
+```
+
+Destroys every pooled texture and buffer and empties the free lists. Contents are per frame, so nothing is kept.
+
+| Field | Value |
+|---|---|
+| Aborts | a resource is still in use (a frame is running). |
+
+### `Recreate(rhi::Device*)` {#renderer-transientpool-recreate-rhi-device-star}
+
+`method renderer::TransientPool::Recreate` — defined in `engine/renderer/transient_pool.h`
+
+```cpp
+bool Recreate(rhi::Device* device) override;
+```
+
+Points the pool at the new device; resources are made again on demand by the next frame.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the new device. |
+| Returns | true. |
+| Fails | never. |
+| Ownership | the device is borrowed. |
+
+### `Live()` {#renderer-transientpool-live-const}
+
+`method renderer::TransientPool::Live` — defined in `engine/renderer/transient_pool.h`
+
+```cpp
+bool Live() const override;
+```
+
+Returns whether the owner currently holds its device objects. The registry asks when the owner registers, so an owner that registers after it made its objects is released at the next reset.
+
+_Inherited from [`renderer::Recreatable::Live() const`](#renderer-recreatable-live-const)._
+
+### `RecreatableName()` {#renderer-transientpool-recreatablename-const}
+
+`method renderer::TransientPool::RecreatableName` — defined in `engine/renderer/transient_pool.h`
+
+```cpp
+const char* RecreatableName() const override;
+```
+
+Returns a short name for logs and failure reports.
+
+_Inherited from [`renderer::Recreatable::RecreatableName() const`](#renderer-recreatable-recreatablename-const)._
 
 ### `BeginFrame(u64)` {#renderer-transientpool-beginframe-u64}
 

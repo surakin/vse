@@ -17,6 +17,7 @@ set(RENDERER_TEST_SOURCES
   renderer_fault_test.cpp
   render_settings_test.cpp
   device_resources_test.cpp
+  recreatable_renderer_test.cpp
   # The demo's frame and scene are compiled into the test binary (as tests/rhi does) so each sanitizer flavor gets its own objects.
   ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_scene.cpp
   ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_frame.cpp

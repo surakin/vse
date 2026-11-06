@@ -284,7 +284,7 @@ private:
 ///
 /// Thread-safety: thread-compatible.
 /// Ownership: borrows the device, which must outlive it; owns its shaders, sampler, layout and pipeline.
-class GBufferDebugView {
+class GBufferDebugView final : public Recreatable {
 public:
     /// Creates the view's shaders and sampler.
     ///
@@ -293,9 +293,30 @@ public:
     /// Aborts: `device` is null.
     explicit GBufferDebugView(rhi::Device* device);
     /// Destroys the pipelines, shaders and sampler.
-    ~GBufferDebugView();
+    ~GBufferDebugView() override;
     GBufferDebugView(const GBufferDebugView&) = delete;
     GBufferDebugView& operator=(const GBufferDebugView&) = delete;
+
+    /// Registers the debug view with a registry so it survives a device reset.
+    ///
+    /// Param resources: the registry; null does nothing.
+    /// Returns: true if registered or `resources` is null.
+    /// Fails: returns false if the registry refused.
+    /// Ownership: the registry is borrowed.
+    bool RegisterWith(DeviceResources* resources) { return registration_.Attach(resources, this, tiers::kPasses); }
+
+    /// Destroys the shaders, layout, sampler and pipelines; nothing else is kept on the device.
+    void Release() override;
+
+    /// Makes the shaders, layout, sampler and (on first use) pipelines again.
+    ///
+    /// Param device: the new device.
+    /// Returns: true if the objects were made.
+    /// Fails: returns false, logging the reason, if the device refuses one of them.
+    /// Ownership: the device is borrowed.
+    bool Recreate(rhi::Device* device) override;
+    bool Live() const override { return device_ != nullptr && vertex_.IsValid(); }
+    const char* RecreatableName() const override { return "gbuffer debug view"; }
 
     /// Returns whether the shaders and sampler were created.
     /// Fails: never.
@@ -337,6 +358,9 @@ private:
     };
     static void Record(const PassExecuteContext& context, void* user);
 
+    void Build();
+
+    ScopedRegistration registration_;
     rhi::Device* device_ = nullptr;
     rhi::ShaderHandle vertex_;
     rhi::ShaderHandle fragment_;

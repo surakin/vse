@@ -445,6 +445,11 @@ void GBufferPass::Record(const PassExecuteContext& context, void* user) {
 
 GBufferDebugView::GBufferDebugView(rhi::Device* device) : device_(device) {
     ENGINE_ASSERT(device != nullptr, "GBufferDebugView: device is null");
+    Build();
+}
+
+void GBufferDebugView::Build() {
+    rhi::Device* device = device_;
     rhi::ShaderDesc sd;
     sd.stage = rhi::ShaderStage::Vertex;
     sd.words = shaders::kFullscreenVertSpv;
@@ -470,11 +475,34 @@ GBufferDebugView::GBufferDebugView(rhi::Device* device) : device_(device) {
 }
 
 GBufferDebugView::~GBufferDebugView() {
+    registration_.Reset();
+    Release();
+}
+
+void GBufferDebugView::Release() {
+    if (device_ == nullptr) return;
     if (pipeline_.IsValid()) device_->DestroyPipeline(pipeline_);
     if (layout_.IsValid()) device_->DestroyBindGroupLayout(layout_);
     if (sampler_.IsValid()) device_->DestroySampler(sampler_);
     if (fragment_.IsValid()) device_->DestroyShader(fragment_);
     if (vertex_.IsValid()) device_->DestroyShader(vertex_);
+    pipeline_ = {};
+    layout_ = {};
+    sampler_ = {};
+    fragment_ = {};
+    vertex_ = {};
+    pipeline_format_ = rhi::Format::Undefined; // the pipeline is made again by the next AddToGraph
+}
+
+bool GBufferDebugView::Recreate(rhi::Device* device) {
+    device_ = device;
+    Build();
+    if (!Valid()) {
+        RenderLog(LogVerbosity::Error, "GBufferDebugView: recreating the shaders, sampler or layout failed");
+        Release();
+        return false;
+    }
+    return true;
 }
 
 bool GBufferDebugView::Valid() const { return vertex_.IsValid() && fragment_.IsValid() && sampler_.IsValid() && layout_.IsValid(); }

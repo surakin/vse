@@ -8,6 +8,7 @@
 //! nobody asks for during a number of frames is destroyed.
 
 #include "containers/vector.h"
+#include "renderer/device_resources.h"
 #include "rhi/rhi.h"
 #include "types.h"
 
@@ -69,6 +70,8 @@ struct TransientPoolStats {
     u32 buffers_live = 0;
     /// Buffers idle now.
     u32 buffers_idle = 0;
+    /// Times the pool was released for a device change.
+    u32 resets = 0;
 };
 
 /// Pools transient textures and buffers by description.
@@ -79,7 +82,7 @@ struct TransientPoolStats {
 /// Thread-safety: thread-compatible.
 /// Ownership: borrows the device, which must outlive the pool; owns the resources it created and destroys them through
 ///   the device (so the GPU may still be using them) when it is destroyed or they age out.
-class TransientPool {
+class TransientPool final : public Recreatable {
 public:
     /// Creates an empty pool.
     ///
@@ -89,9 +92,31 @@ public:
     /// Ownership: `device` is borrowed.
     TransientPool(rhi::Device* device, const TransientPoolDesc& desc);
     /// Destroys every pooled resource.
-    ~TransientPool();
+    ~TransientPool() override;
     TransientPool(const TransientPool&) = delete;
     TransientPool& operator=(const TransientPool&) = delete;
+
+    /// Registers the pool with a registry so it survives a device reset.
+    ///
+    /// Param resources: the registry; null does nothing.
+    /// Returns: true if registered or `resources` is null.
+    /// Fails: returns false if the registry refused.
+    /// Ownership: the registry is borrowed.
+    bool RegisterWith(DeviceResources* resources) { return registration_.Attach(resources, this, tiers::kPasses); }
+
+    /// Destroys every pooled texture and buffer and empties the free lists. Contents are per frame, so nothing is kept.
+    /// Aborts: a resource is still in use (a frame is running).
+    void Release() override;
+
+    /// Points the pool at the new device; resources are made again on demand by the next frame.
+    ///
+    /// Param device: the new device.
+    /// Returns: true.
+    /// Fails: never.
+    /// Ownership: the device is borrowed.
+    bool Recreate(rhi::Device* device) override;
+    bool Live() const override { return !released_; }
+    const char* RecreatableName() const override { return "transient pool"; }
 
     /// Starts a frame; resources idle for more than `max_idle_frames` frames are destroyed at `EndFrame`.
     ///
@@ -158,6 +183,8 @@ private:
     struct TextureEntry;
     struct BufferEntry;
 
+    ScopedRegistration registration_;
+    bool released_ = false;
     rhi::Device* device_ = nullptr;
     TransientPoolDesc desc_;
     Vector<TextureEntry> textures_;

@@ -133,6 +133,12 @@ bool LightScreenRect(const FrameData& view, const Vec3& center, f32 radius, u32 
 
 LightingPass::LightingPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame) : device_(device), materials_(materials), frame_(frame) {
     ENGINE_ASSERT(device != nullptr && materials != nullptr && frame != nullptr, "LightingPass: device, materials or frame is null");
+    Build();
+}
+
+void LightingPass::Build() {
+    rhi::Device* device = device_;
+    MaterialSystem* materials = materials_;
     rhi::ShaderDesc sd;
     sd.stage = rhi::ShaderStage::Vertex;
     sd.words = shaders::kFullscreenVertSpv;
@@ -196,6 +202,12 @@ LightingPass::LightingPass(rhi::Device* device, MaterialSystem* materials, Frame
 }
 
 LightingPass::~LightingPass() {
+    registration_.Reset();
+    Release();
+}
+
+void LightingPass::Release() {
+    if (device_ == nullptr) return;
     if (volume_pipeline_.IsValid()) device_->DestroyPipeline(volume_pipeline_);
     if (volume_fragment_.IsValid()) device_->DestroyShader(volume_fragment_);
     if (volume_vertex_.IsValid()) device_->DestroyShader(volume_vertex_);
@@ -203,6 +215,25 @@ LightingPass::~LightingPass() {
     if (layout_.IsValid()) device_->DestroyBindGroupLayout(layout_);
     if (fragment_.IsValid()) device_->DestroyShader(fragment_);
     if (vertex_.IsValid()) device_->DestroyShader(vertex_);
+    volume_pipeline_ = {};
+    volume_fragment_ = {};
+    volume_vertex_ = {};
+    pipeline_ = {};
+    layout_ = {};
+    fragment_ = {};
+    vertex_ = {};
+    frame_group_ = {}; // a handle from the old device; Prepare fetches it again
+}
+
+bool LightingPass::Recreate(rhi::Device* device) {
+    device_ = device;
+    Build();
+    if (!pipeline_.IsValid() || !volume_pipeline_.IsValid()) {
+        RenderLog(LogVerbosity::Error, "LightingPass: recreating the shaders or pipelines failed");
+        Release();
+        return false;
+    }
+    return true;
 }
 
 LightSummary LightingPass::Prepare(const RenderScene& scene, const FrameData& view) {
@@ -323,6 +354,11 @@ void LightingPass::Record(const PassExecuteContext& context, void* user) {
 
 TonemapPass::TonemapPass(rhi::Device* device) : device_(device) {
     ENGINE_ASSERT(device != nullptr, "TonemapPass: device is null");
+    Build();
+}
+
+void TonemapPass::Build() {
+    rhi::Device* device = device_;
     rhi::ShaderDesc sd;
     sd.stage = rhi::ShaderStage::Vertex;
     sd.words = shaders::kFullscreenVertSpv;
@@ -339,10 +375,32 @@ TonemapPass::TonemapPass(rhi::Device* device) : device_(device) {
 }
 
 TonemapPass::~TonemapPass() {
+    registration_.Reset();
+    Release();
+}
+
+void TonemapPass::Release() {
+    if (device_ == nullptr) return;
     if (pipeline_.IsValid()) device_->DestroyPipeline(pipeline_);
     if (layout_.IsValid()) device_->DestroyBindGroupLayout(layout_);
     if (fragment_.IsValid()) device_->DestroyShader(fragment_);
     if (vertex_.IsValid()) device_->DestroyShader(vertex_);
+    pipeline_ = {};
+    layout_ = {};
+    fragment_ = {};
+    vertex_ = {};
+    pipeline_format_ = rhi::Format::Undefined; // made again by the next AddToGraph, for whatever the output format is then
+}
+
+bool TonemapPass::Recreate(rhi::Device* device) {
+    device_ = device;
+    Build();
+    if (!Valid()) {
+        RenderLog(LogVerbosity::Error, "TonemapPass: recreating the shaders or layout failed");
+        Release();
+        return false;
+    }
+    return true;
 }
 
 bool TonemapPass::Valid() const { return vertex_.IsValid() && fragment_.IsValid() && layout_.IsValid(); }

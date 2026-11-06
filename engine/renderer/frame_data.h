@@ -4,6 +4,7 @@
 //! rewritten each frame. A draw picks its object by instance index, so no bind group is created per draw.
 
 #include "containers/vector.h"
+#include "renderer/device_resources.h"
 #include "renderer/camera.h"
 #include "renderer/render_scene.h"
 #include "rhi/rhi.h"
@@ -108,7 +109,7 @@ struct LightSummary {
 ///
 /// Thread-safety: thread-compatible. Not copyable.
 /// Ownership: owns its buffers; the device must outlive it.
-class FrameResources {
+class FrameResources final : public Recreatable {
 public:
     /// The number of rotating regions; the largest frames in flight a device allows.
     static constexpr u32 kSlots = 3;
@@ -122,9 +123,31 @@ public:
     /// Aborts: `device` is null, `max_objects` is 0, or `max_lights` is 0 or above [[renderer::kMaxLights]].
     FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights = 64);
     /// Unmaps and destroys the buffers.
-    ~FrameResources();
+    ~FrameResources() override;
     FrameResources(const FrameResources&) = delete;
     FrameResources& operator=(const FrameResources&) = delete;
+
+    /// Registers the buffers with a registry so they survive a device reset. Nothing else needs saving: every frame writes the
+    /// whole frame, object and light data again from the scene.
+    ///
+    /// Param resources: the registry; null does nothing.
+    /// Returns: true if registered or `resources` is null.
+    /// Fails: returns false if the registry refused.
+    /// Ownership: the registry is borrowed.
+    bool RegisterWith(DeviceResources* resources) { return registration_.Attach(resources, this, tiers::kPasses); }
+
+    /// Destroys the three buffers; `Valid` is false until `Recreate`.
+    void Release() override;
+
+    /// Creates the buffers again at their capacities.
+    ///
+    /// Param device: the new device.
+    /// Returns: true if `Valid` afterwards.
+    /// Fails: returns false, logging the reason, if a buffer cannot be made or mapped.
+    /// Ownership: the device is borrowed.
+    bool Recreate(rhi::Device* device) override;
+    bool Live() const override { return frame_buffer_.IsValid(); }
+    const char* RecreatableName() const override { return "frame resources"; }
 
     /// Returns whether both buffers were created and mapped.
     /// Fails: never; false means creation failed (logged) and every write will fail.
@@ -198,6 +221,9 @@ public:
     u32 MaxObjects() const { return max_objects_; }
 
 private:
+    void Build();
+
+    ScopedRegistration registration_;
     rhi::Device* device_ = nullptr;
     rhi::BufferHandle frame_buffer_;
     rhi::BufferHandle object_buffer_;

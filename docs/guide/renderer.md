@@ -720,6 +720,25 @@ int main() {
 valid: yes, handle changed: yes
 ```
 
+#### What each owner does at a reset
+
+| Owner | `Release` | `Recreate` | Kept on the CPU |
+|---|---|---|---|
+| [[renderer::MaterialSystem]] (tier 3) | destroys layouts, default textures and sampler, shaders, parameter buffers, bind groups and pipelines | rebuilds them in that order; pipelines lazily on first use, or all at once with `MaterialSystemDesc::prewarm_pipelines` | template descriptors and reflection, parameter values, owner bindings, pipeline descriptors |
+| [[renderer::GBufferDebugView]], [[renderer::LightingPass]], [[renderer::TonemapPass]] (tier 4) | destroys shaders, layouts, sampler, pipelines | rebuilds them; the tonemap and debug pipelines are made by the next frame for the output format it has then | the embedded SPIR-V |
+| [[renderer::FrameResources]] (tier 4) | unmaps and destroys the frame, object and light buffers | creates them again at the same capacities | nothing: every frame rewrites all of it from the scene |
+| [[renderer::TransientPool]] (tier 4) | destroys every pooled texture and buffer | nothing; the next frame takes what it needs | nothing (contents are per frame) |
+| [[renderer::GBufferPass]] | nothing: it holds only per-frame lists | | |
+
+Materials bind textures and samplers **by owner** (`MaterialSystem::SetTexture` with a [[renderer::GpuTexture]] pointer), so a
+material follows the owner's new handle without being told: `FlushMaterials` notices the changed handle and rebuilds the bind group. A
+material given a raw handle forgets it at a reset (the handle belongs to the old device) and reads its default texture until the caller
+sets it again, so use the owner overloads for anything that must survive. **Pipelines: lazy or eager?** Lazy is the default: a reset
+costs only the layouts, shaders and bind groups, and each pipeline is compiled when a draw first needs it (the pipeline cache file on
+disk makes that cheap). Eager moves all the compile cost into the reset, so no frame after it stutters; choose it when a reset happens
+at a loading screen. After a reset call [[renderer::Renderer::Rebind]] with the new device and swapchain; the pool and the passes are
+rebuilt through the registry.
+
 ### The renderer demo
 
 `game/renderer_demo` puts the pieces together: a scene of 540 objects in eight materials, 300 point lights, a sun and ambient

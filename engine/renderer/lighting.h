@@ -154,7 +154,7 @@ bool LightScreenRect(const FrameData& view, const Vec3& center, f32 radius, u32 
 /// Thread-safety: thread-compatible; `Prepare` and `AddToGraph` run on the frame's thread.
 /// Ownership: borrows the device, the material system (for the frame bind group) and the frame resources, which must outlive it;
 ///   owns its shaders and pipelines.
-class LightingPass {
+class LightingPass final : public Recreatable {
 public:
     /// Creates the shaders, the bind group layout and the pipeline.
     ///
@@ -165,9 +165,30 @@ public:
     /// Aborts: `device`, `materials` or `frame` is null.
     LightingPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame);
     /// Destroys the pipeline, shaders and layout.
-    ~LightingPass();
+    ~LightingPass() override;
     LightingPass(const LightingPass&) = delete;
     LightingPass& operator=(const LightingPass&) = delete;
+
+    /// Registers the lighting pass with a registry so it survives a device reset.
+    ///
+    /// Param resources: the registry; null does nothing.
+    /// Returns: true if registered or `resources` is null.
+    /// Fails: returns false if the registry refused.
+    /// Ownership: the registry is borrowed.
+    bool RegisterWith(DeviceResources* resources) { return registration_.Attach(resources, this, tiers::kPasses); }
+
+    /// Destroys the shaders, layout and both pipelines; nothing else is kept on the device.
+    void Release() override;
+
+    /// Makes the shaders, layout and both pipelines again.
+    ///
+    /// Param device: the new device.
+    /// Returns: true if the objects were made.
+    /// Fails: returns false, logging the reason, if the device refuses one of them.
+    /// Ownership: the device is borrowed.
+    bool Recreate(rhi::Device* device) override;
+    bool Live() const override { return device_ != nullptr && pipeline_.IsValid() && volume_pipeline_.IsValid(); }
+    const char* RecreatableName() const override { return "lighting pass"; }
 
     /// Returns whether the pipeline and shaders were created.
     /// Fails: never.
@@ -212,7 +233,9 @@ private:
         u32 pad[3] = {};
     };
     static void Record(const PassExecuteContext& context, void* user);
+    void Build();
 
+    ScopedRegistration registration_;
     rhi::Device* device_ = nullptr;
     MaterialSystem* materials_ = nullptr;
     FrameResources* frame_ = nullptr;
@@ -245,7 +268,7 @@ private:
 ///
 /// Thread-safety: thread-compatible.
 /// Ownership: borrows the device; owns its shaders, layout and the pipeline for the last output format.
-class TonemapPass {
+class TonemapPass final : public Recreatable {
 public:
     /// Creates the shaders and the bind group layout.
     ///
@@ -254,9 +277,30 @@ public:
     /// Aborts: `device` is null.
     explicit TonemapPass(rhi::Device* device);
     /// Destroys the pipeline, shaders and layout.
-    ~TonemapPass();
+    ~TonemapPass() override;
     TonemapPass(const TonemapPass&) = delete;
     TonemapPass& operator=(const TonemapPass&) = delete;
+
+    /// Registers the tonemap pass with a registry so it survives a device reset. Its pipeline follows the output format, so a swapchain format change is handled by the next `AddToGraph`.
+    ///
+    /// Param resources: the registry; null does nothing.
+    /// Returns: true if registered or `resources` is null.
+    /// Fails: returns false if the registry refused.
+    /// Ownership: the registry is borrowed.
+    bool RegisterWith(DeviceResources* resources) { return registration_.Attach(resources, this, tiers::kPasses); }
+
+    /// Destroys the shaders, layout and pipeline; nothing else is kept on the device.
+    void Release() override;
+
+    /// Makes the shaders and layout again; the pipeline is made on first use for the output format then.
+    ///
+    /// Param device: the new device.
+    /// Returns: true if the objects were made.
+    /// Fails: returns false, logging the reason, if the device refuses one of them.
+    /// Ownership: the device is borrowed.
+    bool Recreate(rhi::Device* device) override;
+    bool Live() const override { return device_ != nullptr && vertex_.IsValid(); }
+    const char* RecreatableName() const override { return "tonemap pass"; }
 
     /// Returns whether the shaders and layout were created.
     /// Fails: never.
@@ -280,7 +324,9 @@ private:
         f32 pad[3] = {};
     };
     static void Record(const PassExecuteContext& context, void* user);
+    void Build();
 
+    ScopedRegistration registration_;
     rhi::Device* device_ = nullptr;
     rhi::ShaderHandle vertex_;
     rhi::ShaderHandle fragment_;
