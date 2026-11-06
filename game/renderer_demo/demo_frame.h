@@ -37,6 +37,15 @@ struct FrameSetup {
     renderer::DeviceResources* resources = nullptr;
     // Rebuild pipelines in the reset (true) or when they are next used (false).
     bool prewarm_pipelines = false;
+    // The device host the renderer replaces the device through (for Renderer::ApplySettings and recovery), or null.
+    rhi::DeviceHost* host = nullptr;
+    // What a replacement device is created with besides the settings, and the settings the host's device was made from.
+    rhi::DeviceCreateInfo create_info;
+    const renderer::RenderSettings* initial_settings = nullptr;
+    // The window the swapchain shows, for fullscreen, or null.
+    os::Window* window = nullptr;
+    // What to do when the device is lost.
+    renderer::RecoveryPolicy recovery;
 };
 
 class DemoFrame {
@@ -54,6 +63,8 @@ public:
     // Releases everything; idle the device first. The destructor calls it.
     void Destroy();
 
+    // The renderer, for ApplySettings and its statistics; null before Create.
+    renderer::Renderer* GetRenderer() { return renderer_.Get(); }
     renderer::MaterialSystem* Materials() { return materials_.Get(); }
     const renderer::GBufferTemplates& Templates() const { return templates_; }
 

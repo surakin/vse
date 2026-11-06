@@ -1388,15 +1388,16 @@ rhi::DeviceHost::Create(const DeviceCreateInfo&,const SwapchainDesc&)	function	r
 rhi::DeviceHost::Recreate(const DeviceCreateInfo&,const SwapchainDesc&)	function	rhi	rhi-devicehost-recreate-const-devicecreateinfo-amp-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:98
 rhi::DeviceHost::ReconfigureSwapchain(const SwapchainDesc&)	function	rhi	rhi-devicehost-reconfigureswapchain-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:109
 rhi::DeviceHost::RecreateSurface(const os::Window*,const SwapchainDesc&)	function	rhi	rhi-devicehost-recreatesurface-const-os-window-star-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:122
-rhi::DeviceHost::SurfaceFallbackCount() const	function	rhi	rhi-devicehost-surfacefallbackcount-const	rhi.md	engine/rhi/device_host.h:125
-rhi::DeviceHost::Destroy()	function	rhi	rhi-devicehost-destroy	rhi.md	engine/rhi/device_host.h:130
-rhi::DeviceHost::GetDevice() const	function	rhi	rhi-devicehost-getdevice-const	rhi.md	engine/rhi/device_host.h:136
-rhi::DeviceHost::GetSwapchain() const	function	rhi	rhi-devicehost-getswapchain-const	rhi.md	engine/rhi/device_host.h:141
-rhi::DeviceHost::Epoch() const	function	rhi	rhi-devicehost-epoch-const	rhi.md	engine/rhi/device_host.h:143
-rhi::DeviceHost::ResetCount() const	function	rhi	rhi-devicehost-resetcount-const	rhi.md	engine/rhi/device_host.h:145
-rhi::DeviceHost::LastError() const	function	rhi	rhi-devicehost-lasterror-const	rhi.md	engine/rhi/device_host.h:150
-rhi::DeviceHost::AddObserver(DeviceObserver*,u32)	function	rhi	rhi-devicehost-addobserver-deviceobserver-star-u32	rhi.md	engine/rhi/device_host.h:160
-rhi::DeviceHost::RemoveObserver(DeviceObserver*)	function	rhi	rhi-devicehost-removeobserver-deviceobserver-star	rhi.md	engine/rhi/device_host.h:167
+rhi::DeviceHost::LeakedObjects() const	function	rhi	rhi-devicehost-leakedobjects-const	rhi.md	engine/rhi/device_host.h:127
+rhi::DeviceHost::SurfaceFallbackCount() const	function	rhi	rhi-devicehost-surfacefallbackcount-const	rhi.md	engine/rhi/device_host.h:130
+rhi::DeviceHost::Destroy()	function	rhi	rhi-devicehost-destroy	rhi.md	engine/rhi/device_host.h:135
+rhi::DeviceHost::GetDevice() const	function	rhi	rhi-devicehost-getdevice-const	rhi.md	engine/rhi/device_host.h:141
+rhi::DeviceHost::GetSwapchain() const	function	rhi	rhi-devicehost-getswapchain-const	rhi.md	engine/rhi/device_host.h:146
+rhi::DeviceHost::Epoch() const	function	rhi	rhi-devicehost-epoch-const	rhi.md	engine/rhi/device_host.h:148
+rhi::DeviceHost::ResetCount() const	function	rhi	rhi-devicehost-resetcount-const	rhi.md	engine/rhi/device_host.h:150
+rhi::DeviceHost::LastError() const	function	rhi	rhi-devicehost-lasterror-const	rhi.md	engine/rhi/device_host.h:155
+rhi::DeviceHost::AddObserver(DeviceObserver*,u32)	function	rhi	rhi-devicehost-addobserver-deviceobserver-star-u32	rhi.md	engine/rhi/device_host.h:165
+rhi::DeviceHost::RemoveObserver(DeviceObserver*)	function	rhi	rhi-devicehost-removeobserver-deviceobserver-star	rhi.md	engine/rhi/device_host.h:172
 rhi::EnableFlagOperators	struct	rhi	rhi-enableflagoperators	rhi.md	engine/rhi/enums.h:15
 rhi::EnableFlagOperators::value	variable	rhi	rhi-enableflagoperators-value	rhi.md	engine/rhi/enums.h:18
 rhi::operator|(E,E)	function	rhi	rhi-operator-pipe-e-e	rhi.md	engine/rhi/enums.h:25

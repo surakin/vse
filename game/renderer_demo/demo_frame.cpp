@@ -61,6 +61,11 @@ bool DemoFrame::Create(const FrameSetup& setup) {
     rd.swapchain = setup.swapchain;
     rd.scheduler = setup.scheduler;
     rd.resources = setup.resources;
+    rd.host = setup.host;
+    rd.create_info = setup.create_info;
+    rd.initial_settings = setup.initial_settings;
+    rd.window = setup.window;
+    rd.recovery = setup.recovery;
     rd.build = &DemoFrame::Build;
     rd.build_user = this;
     renderer_ = MakeUnique<Renderer>(rd);

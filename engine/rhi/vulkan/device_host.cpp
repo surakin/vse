@@ -60,12 +60,15 @@ void DeviceHost::DestroyDevice() {
             swapchain_ = nullptr;
         }
         const ResourceCounts counts = device_->Resources();
-        if (counts.UserObjects() != 0) {
+        // Command lists of the last frame are recycled by the next BeginFrame and die with the device; they are not leaks.
+        const usize leaked = counts.UserObjects() - counts.command_lists;
+        if (leaked != 0) {
+            leaked_objects_ += static_cast<u32>(leaked);
             RhiLog(LogVerbosity::Error,
                    "DeviceHost: the device still holds %zu object(s) (buffers %zu, textures %zu, samplers %zu, shaders %zu, "
-                   "layouts %zu, bind groups %zu, pipelines %zu, command lists %zu) after the observers released",
-                   counts.UserObjects(), counts.buffers, counts.textures, counts.samplers, counts.shaders,
-                   counts.bind_group_layouts, counts.bind_groups, counts.pipelines, counts.command_lists);
+                   "layouts %zu, bind groups %zu, pipelines %zu) after the observers released",
+                   leaked, counts.buffers, counts.textures, counts.samplers, counts.shaders,
+                   counts.bind_group_layouts, counts.bind_groups, counts.pipelines);
         }
         device_.Reset();
     }

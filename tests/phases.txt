@@ -122,10 +122,12 @@ tests/renderer/device_resources_test.cpp        7
 tests/renderer/recreatable_renderer_test.cpp    7
 tests/renderer/apply_settings_test.cpp          7
 tests/renderer/device_loss_recovery_test.cpp    7
+tests/renderer/reset_soak_test.cpp              7
 tests/rhi/adapter_test.cpp                      7
 tests/rhi/device_host_test.cpp                  7
 tests/foundation/window_fullscreen_test.cpp     7
 tests/rhi/swapchain_reconfigure_test.cpp        7
+tests/rhi/vulkan_reset_golden_test.cpp          7
 
 # --- Phase 5: test scoping ---
 test:test_phase_*                              5

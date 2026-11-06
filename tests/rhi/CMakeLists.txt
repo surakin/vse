@@ -11,6 +11,7 @@ set(RHI_TEST_SOURCES
   adapter_test.cpp
   device_host_test.cpp
   swapchain_reconfigure_test.cpp
+  vulkan_reset_golden_test.cpp
   vulkan_loader_test.cpp
   vulkan_instance_test.cpp
   vulkan_device_test.cpp
@@ -75,7 +76,7 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib suffix label spec)
   string(REGEX REPLACE "^rhi" "renderer" renderer_lib "${rhi_lib}")
   string(REGEX REPLACE "^rhi" "renderer_passes" passes_lib "${rhi_lib}")
   target_link_libraries(${target} PRIVATE ${passes_lib} ${renderer_lib} ${rhi_lib} ${rhi_vulkan_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common ${CMAKE_SOURCE_DIR}/game/renderer_demo)
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/tests/renderer)
   target_compile_definitions(${target} PRIVATE ENGINE_RHI_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
     ENGINE_RHI_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/rhi_demo/assets"
     ENGINE_RENDERER_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/renderer_demo/assets"

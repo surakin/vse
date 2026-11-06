@@ -3678,6 +3678,16 @@ Destroys the swapchain, asks the device for a new surface ([`rhi::Device::Recrea
 | Fails | returns false with `LastError` set and the host empty if even the full reset fails. |
 | Aborts | called off the owning thread or between `BeginFrame` and `EndFrame`. |
 
+### `LeakedObjects()` {#rhi-devicehost-leakedobjects-const}
+
+`method rhi::DeviceHost::LeakedObjects` — defined in `engine/rhi/device_host.h`
+
+```cpp
+u32 LeakedObjects() const;
+```
+
+Returns how many device objects were still alive, after every observer released, when devices were destroyed. Any is a leak in an owner that did not release; each is also logged as an error. Command lists are not counted: the last frame's lists are recycled by the next `BeginFrame` and die with the device.
+
 ### `SurfaceFallbackCount()` {#rhi-devicehost-surfacefallbackcount-const}
 
 `method rhi::DeviceHost::SurfaceFallbackCount` — defined in `engine/rhi/device_host.h`

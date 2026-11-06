@@ -131,6 +131,31 @@ validation and fails the test on any validation error. `ENGINE_RHI_VALIDATION_FA
 instead, for debugging a single test, and `ENGINE_RHI_VALIDATION=0` turns validation off for `Auto` instances. See
 the validation section of the [RHI guide](rhi.md).
 
+### Testing a reset
+
+Phase 7 made replacing the device a normal operation, so a test of anything that owns device objects should survive one. Write it like
+this:
+
+1. Use `tests/renderer/reset_rig.h`: a `Rig` holds a `DeviceHost`, a `DeviceResources` registry, an offscreen target (itself a registered
+   owner) and the deferred demo frame and scene, all registered. `rig.Create(rhi::Backend::Null)` needs no GPU; pass
+   `rhi::Backend::Vulkan` for a `[gpu]` test (it skips without a device).
+2. Make the scene or owner under test, render, then `rig.ResetDevice(sync_validation)`, which flips a device-class setting and so replaces
+   the device through `Renderer::ApplySettings`; render again.
+3. Assert with the counts, not with timing: `device->Quiesce()` then `device->Resources()` gives the live objects per kind, which must equal
+   those before the reset; `rig.host.LeakedObjects()` is 0 when every owner released before the device was destroyed; compare pictures
+   byte for byte on one adapter.
+4. To lose the device instead, set `info.faults` (`lose_device_at_frame`, `_at_submit`, `_at_present`) on the `create_info` and limit the
+   strikes with `strikes_left` so the recovery's new device is not lost again.
+
+The phase's tests: `tests/renderer/reset_soak_test.cpp` (100 resets on the null backend, resets during a 50-frame sequence, what each
+cost class leaves alone, a reset with the job scheduler running), `tests/rhi/vulkan_reset_golden_test.cpp` (the picture before and after a
+reset is byte-identical and matches the blessed golden; 100 resets on the real device, 20 under the sanitizers, with memory and descriptor
+drift reported), `tests/renderer/device_loss_recovery_test.cpp`, `tests/renderer/apply_settings_test.cpp`,
+`tests/renderer/recreatable_renderer_test.cpp`, `tests/renderer/device_resources_test.cpp`. The GPU ones carry the `gpu` tag and run in the
+plain and ASan flavors, not in TSan. **The cross-adapter comparison** (a discrete against an integrated GPU, golden tolerance only) and
+**switching adapters on real hardware** need a machine with two GPUs; the development machine has one, so those checks are not written as
+skipped tests but filed in `KNOWN-ISSUES.md`.
+
 ### The RHI boundary gate
 
 `rhi_boundary_check` (label `boundary`, no GPU needed) enforces the rule that only `engine/rhi/vulkan/` may name the

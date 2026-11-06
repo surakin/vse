@@ -121,6 +121,11 @@ public:
     /// Aborts: called off the owning thread or between `BeginFrame` and `EndFrame`.
     bool RecreateSurface(const os::Window* window, const SwapchainDesc& swapchain);
 
+    /// Returns how many device objects were still alive, after every observer released, when devices were destroyed. Any is a leak
+    /// in an owner that did not release; each is also logged as an error. Command lists are not counted: the last frame's lists are
+    /// recycled by the next `BeginFrame` and die with the device.
+    u32 LeakedObjects() const { return leaked_objects_; }
+
     /// Returns how many times `RecreateSurface` had to fall back to a full reset.
     u32 SurfaceFallbackCount() const { return surface_fallbacks_; }
 
@@ -188,6 +193,7 @@ private:
     u32 next_sequence_ = 0;
     u32 reset_count_ = 0;
     u32 surface_fallbacks_ = 0;
+    u32 leaked_objects_ = 0;
     DeviceCreateInfo last_info_;
     bool resetting_ = false;
     bool has_owner_ = false;
