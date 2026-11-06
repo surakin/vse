@@ -17,7 +17,7 @@ backend itself, third-party code); the Windows and macOS checklists (`BACKEND.md
 `docs/guide/io.md` is complete; the full suite passes in every flavor.
 
 Every day of this phase has its own file under `plans/phase-08-file-handling/` (see `CLAUDE.md`, planning policy).
-**Status: planned (2026-11-06), not started.** Days 115-124 are written; `CURRENT_PHASE` changes to 8 in the commit that completes
+**Status: started (2026-11-06); Day 115 done.** Days 115-124 are written; `CURRENT_PHASE` changes to 8 in the commit that completes
 Day 115's first task. Day numbers continue from Phase 7 (which ended at Day 114).
 
 ## Days
@@ -88,3 +88,4 @@ that keeps the port from rotting, the platform checklists, and closes the phase.
 - **Locks and sharing modes** (Windows share flags, `flock`): minimal in this phase (exclusive create, atomic replace); revisit with Phase 10.
 - **Text encodings and line endings** are the caller's concern (the layer moves bytes); the config classes in Phase 9 define their own text rules.
 - **Large directory trees** (docgen walks the repository): the iteration API must not require loading a whole directory into memory.
+- **Open-question dispositions (Day 115):** memory mapping deferred to Phase 17 planning; file watching decided by Phase 9's design; locks/sharing modes Phase 10; `log::LoadConfig` (an existing config reader) is for Phase 9 to absorb or replace. See the spec, section 7.

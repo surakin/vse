@@ -25,3 +25,5 @@ A pure value type: no syscalls, no allocation beyond its string. New files `engi
 - [ ] Update `STATUS.md`; commit.
 
 **Done:** `Path` parses, builds, normalizes and compares paths for both styles with the Spike C table and the property tests passing, with no syscall in the module, and the guide section is committed.
+
+**Added on Day 115:** this day also adds `flavors 8 ...` to `tests/phases.txt` the `io` module to `docs/reference/modules.txt`, and `engine/foundation/io` to `tests/module_map.txt` (`0,1,2,2.5,3,4,6,8`); Spike C's tables (spec Appendix A) are the test data.
