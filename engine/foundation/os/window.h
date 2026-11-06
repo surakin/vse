@@ -88,6 +88,28 @@ public:
     /// process-wide counter, so an open window never reports 0, and a value never repeats across size changes,
     /// windows, or closing and reopening. An invalid or closed window reports 0.
     virtual u64 ResizeSerial() const = 0;
+
+    /// Returns whether this window can be made fullscreen (the platform and, where it can be known, the compositor allow it).
+    ///
+    /// The default is false; a backend that implements [[os::Window::SetFullscreen]] overrides it. A settings layer greys
+    /// the `fullscreen` setting out when this is false.
+    virtual bool SupportsFullscreen() const { return false; }
+
+    /// Asks for fullscreen on or off.
+    ///
+    /// The change is a request: the window manager or compositor answers with a new size, which shows up as a change of
+    /// [[os::Window::ResizeSerial]] after `PumpEvents`. Some compositors refuse; then nothing changes.
+    ///
+    /// Param fullscreen: the state wanted.
+    /// Returns: true if the request was sent.
+    /// Fails: returns false, changing nothing, if the window is invalid or fullscreen is unsupported.
+    virtual bool SetFullscreen(bool fullscreen) {
+        (void)fullscreen;
+        return false;
+    }
+
+    /// Returns whether the window is fullscreen as far as the last `PumpEvents` could tell.
+    virtual bool IsFullscreen() const { return false; }
 };
 
 namespace detail {

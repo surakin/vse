@@ -33,6 +33,8 @@ struct NullDeviceOptions {
     /// Reports the device lost at the start of this frame (1 is the first `BeginFrame`), as [[rhi::FaultInjection]] does
     /// for the Vulkan backend; 0 never does.
     u32 lose_device_at_frame = 0;
+    /// Makes `RecreateSurface` fail, to exercise the fallback to a full reset.
+    bool fail_surface_recreate = false;
     /// The adapter the device reports from `Device::Adapter`; the default is the first of [[rhi::DefaultNullAdapters]].
     /// [[rhi::CreateDevice]] fills it from the requested adapter.
     AdapterInfo adapter = DefaultAdapter();
@@ -177,6 +179,13 @@ public:
 
     /// Makes the device behave as lost: later submits fail and `DeviceLost()` reports true.
     void SimulateDeviceLoss();
+
+    /// Makes the swapchain report `Lost` from now on, as if the window's surface had been taken away.
+    ///
+    /// A device without a swapchain ignores it.
+    void SimulateSurfaceLoss();
+
+    bool RecreateSurface(const os::Window* window) override;
 
 private:
     UniquePtr<detail::NullDeviceState> state_;

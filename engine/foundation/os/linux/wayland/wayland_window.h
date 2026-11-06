@@ -99,6 +99,14 @@ public:
     u32 Height() const { return height_; }
     /// Returns a counter that changes each time a configure changes the window size.
     u64 ResizeSerial() const { return resize_serial_; }
+    /// Asks the compositor to make the toplevel fullscreen (`xdg_toplevel_set_fullscreen`) or to leave fullscreen.
+    ///
+    /// Param fullscreen: the state wanted.
+    /// Returns: true if the request was sent.
+    /// Fails: returns false on an invalid window.
+    bool SetFullscreen(bool fullscreen);
+    /// Returns whether the latest toplevel configure listed the fullscreen state.
+    bool IsFullscreen() const { return fullscreen_; }
 
 private:
     // xdg_surface/xdg_toplevel listener trampolines. Private statics
@@ -150,6 +158,8 @@ private:
     // True if the latest toplevel configure said maximized/fullscreen/
     // tiled: its size must not become the size we restore to later.
     bool pending_constrained_ = false;
+    // True if the latest toplevel configure listed the fullscreen state.
+    bool fullscreen_ = false;
     u32 default_width_ = 0;
     u32 default_height_ = 0;
     // Last size the window had while unconstrained — what a 0x0

@@ -10,6 +10,7 @@ set(RHI_TEST_SOURCES
   null_device_test.cpp
   adapter_test.cpp
   device_host_test.cpp
+  swapchain_reconfigure_test.cpp
   vulkan_loader_test.cpp
   vulkan_instance_test.cpp
   vulkan_device_test.cpp

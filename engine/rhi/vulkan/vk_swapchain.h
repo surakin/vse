@@ -28,6 +28,10 @@ public:
     SwapchainStatus Acquire() override;
     SwapchainStatus Present() override;
     SwapchainStatus Resize(u32 width, u32 height) override;
+    SwapchainStatus Reconfigure(const SwapchainDesc& desc) override;
+    PresentMode ActualPresentMode() const override { return actual_mode_; }
+    ColorSpace GetColorSpace() const override { return color_space_; }
+    SwapchainCaps Capabilities() const override { return caps_; }
     Format ImageFormat() const override;
     u32 Width() const override { return extent_.width; }
     u32 Height() const override { return extent_.height; }
@@ -52,7 +56,10 @@ private:
     static constexpr u32 kMaxImages = 16;
 
     VulkanDevice* device_;
-    PresentMode mode_ = PresentMode::Fifo;
+    SwapchainDesc desc_;      // what was asked for; width and height are the last explicit size, 0 for the window's
+    PresentMode actual_mode_ = PresentMode::Fifo;
+    ColorSpace color_space_ = ColorSpace::SrgbNonlinear;
+    SwapchainCaps caps_;
     VkSwapchainKHR swapchain_ = nullptr;
     VkSurfaceFormatKHR format_{};
     VkExtent2D extent_{0, 0};

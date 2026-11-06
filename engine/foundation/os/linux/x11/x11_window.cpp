@@ -2,6 +2,7 @@
 
 #include "unity/x11_enable.h"
 #include <X11/Xlib.h>
+#include <X11/Xatom.h>
 #include <X11/XKBlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -237,6 +238,51 @@ void X11Window::ReleaseAll() {
     width_ = 0;
     height_ = 0;
     resize_serial_ = 0;
+}
+
+bool X11Window::SetFullscreen(bool fullscreen) {
+    if (display_ == nullptr) {
+        return false;
+    }
+    XEvent event{};
+    event.xclient.type = ClientMessage;
+    event.xclient.window = window_;
+    event.xclient.message_type = XInternAtom(display_, "_NET_WM_STATE", False);
+    event.xclient.format = 32;
+    event.xclient.data.l[0] = fullscreen ? 1 : 0; // _NET_WM_STATE_ADD / _NET_WM_STATE_REMOVE
+    event.xclient.data.l[1] = static_cast<long>(XInternAtom(display_, "_NET_WM_STATE_FULLSCREEN", False));
+    event.xclient.data.l[3] = 1; // source: a normal application
+    const Status sent = XSendEvent(display_, DefaultRootWindow(display_), False,
+                                   SubstructureRedirectMask | SubstructureNotifyMask, &event);
+    XFlush(display_);
+    return sent != 0;
+}
+
+bool X11Window::IsFullscreen() const {
+    if (display_ == nullptr) {
+        return false;
+    }
+    const Atom state = XInternAtom(display_, "_NET_WM_STATE", False);
+    const Atom fullscreen = XInternAtom(display_, "_NET_WM_STATE_FULLSCREEN", False);
+    Atom type = 0;
+    int format = 0;
+    unsigned long count = 0;
+    unsigned long after = 0;
+    unsigned char* data = nullptr;
+    bool result = false;
+    if (XGetWindowProperty(display_, window_, state, 0, 64, False, XA_ATOM, &type, &format, &count, &after, &data) == Success &&
+        data != nullptr) {
+        const Atom* atoms = reinterpret_cast<const Atom*>(data);
+        for (unsigned long i = 0; i < count; ++i) {
+            if (atoms[i] == fullscreen) {
+                result = true;
+            }
+        }
+    }
+    if (data != nullptr) {
+        XFree(data);
+    }
+    return result;
 }
 
 void X11Window::PumpEvents(InputState* input) {

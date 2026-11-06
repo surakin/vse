@@ -36,6 +36,9 @@ struct FaultInjection {
     /// Make the Nth device-memory allocation, counted from device creation (1 is the first), and every one after it
     /// fail as if the device ran out of memory; 0 never does. Resource creation then returns an invalid handle.
     u32 fail_allocations_from = 0;
+    /// Make `Device::RecreateSurface` fail, as if the adapter could not present to the new surface, so the caller's
+    /// fallback to a full reset is exercised. The null backend honors it; the Vulkan backend ignores it.
+    bool fail_surface_recreate = false;
 };
 
 /// What [[rhi::CreateDevice]] needs to know.

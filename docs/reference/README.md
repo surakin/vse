@@ -13,9 +13,9 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Logging and Assertions](foundation-log.md) | 2 | 69 |
 | [Foundation: Fundamental Types](foundation-types.md) | 1 | 11 |
 | [Platform: OS Services](platform-os.md) | 4 | 39 |
-| [Platform: Windowing and Input](platform-window-input.md) | 10 | 252 |
+| [Platform: Windowing and Input](platform-window-input.md) | 10 | 263 |
 | [Foundation: Debugging](foundation-debug.md) | 14 | 200 |
 | [The Job System](jobs.md) | 10 | 172 |
-| [The Render Hardware Interface](rhi.md) | 18 | 683 |
+| [The Render Hardware Interface](rhi.md) | 18 | 712 |
 | [The renderer](renderer.md) | 17 | 822 |
-| [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 16 | 431 |
+| [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 16 | 442 |

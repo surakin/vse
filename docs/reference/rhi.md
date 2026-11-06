@@ -3322,6 +3322,25 @@ virtual void WaitIdle() = 0;
 
 Blocks until all submitted work has finished, then releases every deferred destruction.
 
+### `RecreateSurface(const os::Window*)` {#rhi-device-recreatesurface-const-os-window-star}
+
+`method rhi::Device::RecreateSurface` — defined in `engine/rhi/device.h`
+
+```cpp
+virtual bool RecreateSurface(const os::Window* window) = 0;
+```
+
+Replaces the presentation surface after the window's native surface changed or was lost, keeping the device.
+
+Only possible when the adapter can present to the new surface; otherwise the caller does a full reset ([`rhi::DeviceHost::RecreateSurface`](#rhi-devicehost-recreatesurface-const-os-window-star-const-swapchaindesc-amp) does this).
+
+| Field | Value |
+|---|---|
+| Parameter `window` | the window to present to; usually the one the device was created with. |
+| Returns | true if there is a new surface. The swapchain must be created again. |
+| Fails | returns false, logging the reason, if the surface cannot be created or the adapter cannot present to it. |
+| Aborts | the swapchain still exists, or a frame is open. |
+
 ### `Quiesce()` {#rhi-device-quiesce}
 
 `method rhi::Device::Quiesce` — defined in `engine/rhi/device.h`
@@ -3484,6 +3503,23 @@ Called in ascending tier order. Also called by `DeviceHost::Create` for observer
 | Returns | false if you could not rebuild; the host then releases every observer again and fails the call. |
 | Ownership | the device belongs to the host; do not keep the pointer past `OnDeviceReleasing`. |
 
+### `OnSwapchainChanged(Swapchain*)` {#rhi-deviceobserver-onswapchainchanged-swapchain-star}
+
+`method rhi::DeviceObserver::OnSwapchainChanged` — defined in `engine/rhi/device_host.h`
+
+```cpp
+virtual void OnSwapchainChanged(Swapchain* swapchain);
+```
+
+The swapchain was rebuilt with a different image format or color space (anything built against the old format, such as the tonemap pipeline, must be rebuilt). Called in ascending tier order, on the owning thread.
+
+The default does nothing.
+
+| Field | Value |
+|---|---|
+| Parameter `swapchain` | the swapchain, with its new format. |
+| Ownership | the swapchain belongs to the host. |
+
 ### `ObserverName()` {#rhi-deviceobserver-observername-const}
 
 `method rhi::DeviceObserver::ObserverName` — defined in `engine/rhi/device_host.h`
@@ -3602,6 +3638,55 @@ Replaces the device and swapchain; see the class description for the sequence.
 | Returns | true on success. |
 | Fails | returns false with `LastError` set and the host empty (observers have released); `Create` again to roll back. |
 | Aborts | called off the owning thread, or between `BeginFrame` and `EndFrame`. |
+
+### `ReconfigureSwapchain(const SwapchainDesc&)` {#rhi-devicehost-reconfigureswapchain-const-swapchaindesc-amp}
+
+`method rhi::DeviceHost::ReconfigureSwapchain` — defined in `engine/rhi/device_host.h`
+
+```cpp
+SwapchainStatus ReconfigureSwapchain(const SwapchainDesc& swapchain);
+```
+
+Changes the swapchain's present mode, size, format or HDR mode without touching the device.
+
+Observers hear `OnSwapchainChanged` when the image format or color space changed. A request the surface cannot grant falls back (see [`rhi::Swapchain::Reconfigure`](#rhi-swapchain-reconfigure-const-swapchaindesc-amp)).
+
+| Field | Value |
+|---|---|
+| Parameter `swapchain` | the new description. |
+| Returns | the status of [`rhi::Swapchain::Reconfigure`](#rhi-swapchain-reconfigure-const-swapchaindesc-amp); `Lost` if the host has no swapchain. |
+| Fails | `Lost` as described. |
+| Aborts | called off the owning thread or between `BeginFrame` and `EndFrame`. |
+
+### `RecreateSurface(const os::Window*,const SwapchainDesc&)` {#rhi-devicehost-recreatesurface-const-os-window-star-const-swapchaindesc-amp}
+
+`method rhi::DeviceHost::RecreateSurface` — defined in `engine/rhi/device_host.h`
+
+```cpp
+bool RecreateSurface(const os::Window* window, const SwapchainDesc& swapchain);
+```
+
+Replaces the presentation surface, keeping the device when the adapter can present to the new one.
+
+Destroys the swapchain, asks the device for a new surface ([`rhi::Device::RecreateSurface`](#rhi-device-recreatesurface-const-os-window-star)) and creates the swapchain again; if the device cannot, it does a full `Recreate` with the description of the last `Create` or `Recreate` (`SurfaceFallbackCount` counts those).
+
+| Field | Value |
+|---|---|
+| Parameter `window` | the window to present to; must outlive the host's device. |
+| Parameter `swapchain` | the swapchain description. |
+| Returns | true on success. |
+| Fails | returns false with `LastError` set and the host empty if even the full reset fails. |
+| Aborts | called off the owning thread or between `BeginFrame` and `EndFrame`. |
+
+### `SurfaceFallbackCount()` {#rhi-devicehost-surfacefallbackcount-const}
+
+`method rhi::DeviceHost::SurfaceFallbackCount` — defined in `engine/rhi/device_host.h`
+
+```cpp
+u32 SurfaceFallbackCount() const;
+```
+
+Returns how many times `RecreateSurface` had to fall back to a full reset.
 
 ### `Destroy()` {#rhi-devicehost-destroy}
 
@@ -5261,6 +5346,16 @@ u32 lose_device_at_frame;
 
 Reports the device lost at the start of this frame (1 is the first `BeginFrame`), as [`rhi::FaultInjection`](#rhi-faultinjection) does for the Vulkan backend; 0 never does.
 
+### `fail_surface_recreate` {#rhi-nulldeviceoptions-fail-surface-recreate}
+
+`variable rhi::NullDeviceOptions::fail_surface_recreate` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+bool fail_surface_recreate;
+```
+
+Makes `RecreateSurface` fail, to exercise the fallback to a full reset.
+
 ### `adapter` {#rhi-nulldeviceoptions-adapter}
 
 `variable rhi::NullDeviceOptions::adapter` — defined in `engine/rhi/null/null_device.h`
@@ -6023,6 +6118,30 @@ void SimulateDeviceLoss();
 
 Makes the device behave as lost: later submits fail and `DeviceLost()` reports true.
 
+### `SimulateSurfaceLoss()` {#rhi-nulldevice-simulatesurfaceloss}
+
+`method rhi::NullDevice::SimulateSurfaceLoss` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+void SimulateSurfaceLoss();
+```
+
+Makes the swapchain report `Lost` from now on, as if the window's surface had been taken away.
+
+A device without a swapchain ignores it.
+
+### `RecreateSurface(const os::Window*)` {#rhi-nulldevice-recreatesurface-const-os-window-star}
+
+`method rhi::NullDevice::RecreateSurface` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+bool RecreateSurface(const os::Window* window) override;
+```
+
+Replaces the presentation surface after the window's native surface changed or was lost, keeping the device.
+
+_Inherited from [`rhi::Device::RecreateSurface(const os::Window*)`](#rhi-device-recreatesurface-const-os-window-star)._
+
 ## `CreateNullDevice(const NullDeviceOptions&)` {#rhi-createnulldevice-const-nulldeviceoptions-amp}
 
 `function rhi::CreateNullDevice` — defined in `engine/rhi/null/null_device.h`
@@ -6106,6 +6225,16 @@ u32 fail_allocations_from;
 ```
 
 Make the Nth device-memory allocation, counted from device creation (1 is the first), and every one after it fail as if the device ran out of memory; 0 never does. Resource creation then returns an invalid handle.
+
+### `fail_surface_recreate` {#rhi-faultinjection-fail-surface-recreate}
+
+`variable rhi::FaultInjection::fail_surface_recreate` — defined in `engine/rhi/rhi.h`
+
+```cpp
+bool fail_surface_recreate;
+```
+
+Make `Device::RecreateSurface` fail, as if the adapter could not present to the new surface, so the caller's fallback to a full reset is exercised. The null backend honors it; the Vulkan backend ignores it.
 
 ## `DeviceCreateInfo` {#rhi-devicecreateinfo}
 
@@ -6393,6 +6522,102 @@ How finished images reach the screen.
 | <a id="rhi-presentmode-mailbox"></a>`Mailbox` |  | Replace the queued image with the newest one, no tearing, if the system supports it; otherwise `Fifo`. |
 | <a id="rhi-presentmode-immediate"></a>`Immediate` |  | Present at once, possibly tearing, if the system supports it; otherwise `Fifo`. |
 
+## `HdrMode` {#rhi-hdrmode}
+
+`enum rhi::HdrMode` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+enum class HdrMode : u8 { ... }
+```
+
+Whether and how the swapchain shows high dynamic range.
+
+| Enumerator | Value | Description |
+|---|---|---|
+| <a id="rhi-hdrmode-off"></a>`Off` | `0` | Standard dynamic range. |
+| <a id="rhi-hdrmode-scrgblinear"></a>`ScRgbLinear` |  | Linear extended sRGB in 16-bit float (the "scRGB" mode); 1.0 is SDR white. |
+| <a id="rhi-hdrmode-hdr10"></a>`Hdr10` |  | 10-bit PQ (ST 2084, BT.2020). Needs a 10-bit format the RHI does not have yet, so it is never granted today. |
+
+## `ColorSpace` {#rhi-colorspace}
+
+`enum rhi::ColorSpace` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+enum class ColorSpace : u8 { ... }
+```
+
+The color space of the images a swapchain presents.
+
+| Enumerator | Value | Description |
+|---|---|---|
+| <a id="rhi-colorspace-srgbnonlinear"></a>`SrgbNonlinear` | `0` | sRGB transfer function (what an 8-bit sRGB format means). |
+| <a id="rhi-colorspace-scrgblinear"></a>`ScRgbLinear` |  | Linear extended sRGB. |
+| <a id="rhi-colorspace-hdr10"></a>`Hdr10` |  | HDR10 (PQ, BT.2020). |
+
+## `SwapchainCaps` {#rhi-swapchaincaps}
+
+`struct rhi::SwapchainCaps` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+struct SwapchainCaps { ... }
+```
+
+What a swapchain on a given window can do, so a settings screen can grey out what is unavailable.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `present_mode_supported` {#rhi-swapchaincaps-present-mode-supported}
+
+`variable rhi::SwapchainCaps::present_mode_supported` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+bool present_mode_supported[3];
+```
+
+Whether each [`rhi::PresentMode`](#rhi-presentmode) (by value) is really offered; `Fifo` is always true.
+
+### `formats` {#rhi-swapchaincaps-formats}
+
+`variable rhi::SwapchainCaps::formats` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+Format formats[8];
+```
+
+The image formats the surface offers in the sRGB-nonlinear color space; the first `format_count` are valid.
+
+### `format_count` {#rhi-swapchaincaps-format-count}
+
+`variable rhi::SwapchainCaps::format_count` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+u32 format_count;
+```
+
+Number of valid entries in `formats`.
+
+### `hdr_scrgb` {#rhi-swapchaincaps-hdr-scrgb}
+
+`variable rhi::SwapchainCaps::hdr_scrgb` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+bool hdr_scrgb;
+```
+
+Whether [`rhi::HdrMode::ScRgbLinear`](#rhi-hdrmode-scrgblinear) can be granted.
+
+### `hdr10` {#rhi-swapchaincaps-hdr10}
+
+`variable rhi::SwapchainCaps::hdr10` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+bool hdr10;
+```
+
+Whether [`rhi::HdrMode::Hdr10`](#rhi-hdrmode-hdr10) can be granted.
+
 ## `SwapchainDesc` {#rhi-swapchaindesc}
 
 `struct rhi::SwapchainDesc` — defined in `engine/rhi/swapchain.h`
@@ -6436,6 +6661,26 @@ u32 height;
 ```
 
 Initial image height in pixels; 0 uses the window's current height.
+
+### `format` {#rhi-swapchaindesc-format}
+
+`variable rhi::SwapchainDesc::format` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+Format format;
+```
+
+The preferred image format; `Undefined` lets the backend choose (an sRGB 8-bit format). Falls back, with a log line, when the surface does not offer it; read the result from `ImageFormat`.
+
+### `hdr` {#rhi-swapchaindesc-hdr}
+
+`variable rhi::SwapchainDesc::hdr` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+HdrMode hdr;
+```
+
+The dynamic range wanted; falls back to `Off` with a log line when the surface cannot do it.
 
 ## `Swapchain` {#rhi-swapchain}
 
@@ -6498,6 +6743,59 @@ Presents the current image to the window.
 | Fails | `Lost` means the image was not presented. |
 | Aborts | no image has been acquired. |
 
+### `Reconfigure(const SwapchainDesc&)` {#rhi-swapchain-reconfigure-const-swapchaindesc-amp}
+
+`method rhi::Swapchain::Reconfigure` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+virtual SwapchainStatus Reconfigure(const SwapchainDesc& desc) = 0;
+```
+
+Changes the present mode, size, format and HDR mode in one call, reusing the old swapchain where the API allows.
+
+A request the surface cannot grant falls back with a log line; the result is readable from `ActualPresentMode`, `ImageFormat` and `GetColorSpace`. A zero width or height is remembered (the swapchain is rebuilt with the rest of the request when the window has an area again). The images and textures from before are invalid afterwards.
+
+| Field | Value |
+|---|---|
+| Parameter `desc` | the new description; `width` and `height` of 0 mean the window's current size. |
+| Returns | `Ok` (rebuilt), `Minimized` (nothing to draw to yet), or `Lost`. |
+| Fails | `Lost` when the swapchain cannot be rebuilt. |
+| Aborts | an image is still acquired and not presented. |
+
+### `ActualPresentMode()` {#rhi-swapchain-actualpresentmode-const}
+
+`method rhi::Swapchain::ActualPresentMode` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+virtual PresentMode ActualPresentMode() const = 0;
+```
+
+Returns the present mode really in use (a request for `Mailbox` or `Immediate` may have fallen back to `Fifo`).
+
+### `GetColorSpace()` {#rhi-swapchain-getcolorspace-const}
+
+`method rhi::Swapchain::GetColorSpace` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+virtual ColorSpace GetColorSpace() const = 0;
+```
+
+Returns the color space of the images.
+
+### `Capabilities()` {#rhi-swapchain-capabilities-const}
+
+`method rhi::Swapchain::Capabilities` — defined in `engine/rhi/swapchain.h`
+
+```cpp
+virtual SwapchainCaps Capabilities() const = 0;
+```
+
+Returns what the surface and device offer.
+
+| Field | Value |
+|---|---|
+| Returns | the capabilities, read when the swapchain was last built. |
+
 ### `Resize(u32,u32)` {#rhi-swapchain-resize-u32-u32}
 
 `method rhi::Swapchain::Resize` — defined in `engine/rhi/swapchain.h`
@@ -6506,7 +6804,7 @@ Presents the current image to the window.
 virtual SwapchainStatus Resize(u32 width, u32 height) = 0;
 ```
 
-Recreates the images for a new window size.
+Recreates the images for a new window size, keeping the other settings; `Reconfigure` with a new size.
 
 | Field | Value |
 |---|---|

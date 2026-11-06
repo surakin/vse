@@ -102,6 +102,21 @@ vkCreateXlibSurfaceKHR(display, window_id)
 no surface can be created
 ```
 
+### Fullscreen
+
+[[os::Window::SupportsFullscreen]], [[os::Window::SetFullscreen]] and [[os::Window::IsFullscreen]] ask for and report
+fullscreen. The request is asynchronous: the window manager or compositor answers with a new size, which shows up as a change
+of [[os::Window::ResizeSerial]] after `PumpEvents`, and the swapchain follows it like any resize. A compositor may refuse; then
+nothing changes and `IsFullscreen` stays false, so a settings layer treats the `fullscreen` setting as a request, not a promise.
+
+- **Wayland:** `xdg_toplevel_set_fullscreen` and `xdg_toplevel_unset_fullscreen`; `IsFullscreen` reflects the fullscreen
+  state in the latest toplevel configure. The request goes out with the next `PumpEvents`.
+- **X11:** the `_NET_WM_STATE` client message with `_NET_WM_STATE_FULLSCREEN` sent to the root window (EWMH); `IsFullscreen`
+  reads the window's `_NET_WM_STATE` property. A bare X server with no window manager never honors it.
+- **Windows and macOS** are not implemented yet; the checklists are in `engine/foundation/os/windows/FULLSCREEN.md` and
+  `engine/foundation/os/macos/FULLSCREEN.md`. A backend that does not implement it keeps the default (`SupportsFullscreen` is
+  false) and the setting is unavailable.
+
 ### Wayland specifics
 
 _TODO_

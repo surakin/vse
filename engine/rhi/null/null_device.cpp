@@ -1473,14 +1473,17 @@ namespace {
 // in the description means 640x480.
 class NullSwapchain final : public Swapchain {
 public:
-    NullSwapchain(NullDevice* device, const SwapchainDesc& desc)
-        : device_(device), width_(desc.width != 0 ? desc.width : 640), height_(desc.height != 0 ? desc.height : 480) {
+    NullSwapchain(NullDevice* device, const SwapchainDesc& desc) : device_(device) {
+        Apply(desc);
         Make();
     }
     ~NullSwapchain() override { Drop(); }
 
     SwapchainStatus Acquire() override {
         ENGINE_ASSERT(!acquired_, "Swapchain::Acquire: the previous image was not presented");
+        if (lost_) {
+            return SwapchainStatus::Lost;
+        }
         if (width_ == 0 || height_ == 0) {
             return SwapchainStatus::Minimized;
         }
@@ -1491,30 +1494,72 @@ public:
     SwapchainStatus Present() override {
         ENGINE_ASSERT(acquired_, "Swapchain::Present: no image has been acquired");
         acquired_ = false;
-        return device_->DeviceLost() ? SwapchainStatus::Lost : SwapchainStatus::Ok;
+        return (lost_ || device_->DeviceLost()) ? SwapchainStatus::Lost : SwapchainStatus::Ok;
     }
     SwapchainStatus Resize(u32 width, u32 height) override {
-        Drop();
-        width_ = width;
-        height_ = height;
         if (width == 0 || height == 0) {
+            Drop();
+            width_ = width;
+            height_ = height;
             return SwapchainStatus::Minimized;
         }
+        SwapchainDesc desc = desc_;
+        desc.width = width;
+        desc.height = height;
+        return Reconfigure(desc);
+    }
+    SwapchainStatus Reconfigure(const SwapchainDesc& desc) override {
+        ENGINE_ASSERT(!acquired_, "Swapchain::Reconfigure: the previous image was not presented");
+        if (lost_) {
+            return SwapchainStatus::Lost;
+        }
+        Drop();
+        Apply(desc); // (no window here: a size of 0 means 640x480; use Resize(0, 0) to report Minimized)
         Make();
         return SwapchainStatus::Ok;
     }
-    Format ImageFormat() const override { return Format::BGRA8_SRGB; }
+    Format ImageFormat() const override { return format_; }
+    PresentMode ActualPresentMode() const override { return desc_.present_mode; }
+    ColorSpace GetColorSpace() const override { return space_; }
+    SwapchainCaps Capabilities() const override {
+        SwapchainCaps caps;
+        caps.present_mode_supported[1] = caps.present_mode_supported[2] = true;
+        caps.formats[0] = Format::BGRA8_SRGB;
+        caps.formats[1] = Format::RGBA8_SRGB;
+        caps.formats[2] = Format::BGRA8_UNorm;
+        caps.format_count = 3;
+        caps.hdr_scrgb = true;
+        return caps;
+    }
     u32 Width() const override { return width_; }
     u32 Height() const override { return height_; }
     TextureHandle CurrentTexture() const override { return acquired_ ? images_[current_] : TextureHandle{}; }
 
+    // Test hook: the surface is gone; every later acquire, present and reconfigure reports Lost.
+    void LoseSurface() { lost_ = true; }
+
 private:
     static constexpr u32 kImages = 3;
+    // Settles the description: a size of 0 means 640x480 (there is no window), HDR picks the scRGB format, an
+    // unsupported format request falls back to BGRA8_SRGB.
+    void Apply(const SwapchainDesc& desc) {
+        desc_ = desc;
+        width_ = desc.width != 0 ? desc.width : 640;
+        height_ = desc.height != 0 ? desc.height : 480;
+        format_ = Format::BGRA8_SRGB;
+        space_ = ColorSpace::SrgbNonlinear;
+        if (desc.hdr == HdrMode::ScRgbLinear) {
+            format_ = Format::RGBA16_Float;
+            space_ = ColorSpace::ScRgbLinear;
+        } else if (desc.format == Format::RGBA8_SRGB || desc.format == Format::BGRA8_UNorm) {
+            format_ = desc.format;
+        }
+    }
     void Make() {
         TextureDesc desc;
         desc.width = width_;
         desc.height = height_;
-        desc.format = Format::BGRA8_SRGB;
+        desc.format = format_;
         desc.usage = TextureUsage::ColorAttachment | TextureUsage::CopySrc;
         for (u32 i = 0; i < kImages; ++i) {
             images_[i] = device_->CreateTexture(desc);
@@ -1532,11 +1577,15 @@ private:
     }
 
     NullDevice* device_;
-    u32 width_;
-    u32 height_;
+    SwapchainDesc desc_;
+    u32 width_ = 0;
+    u32 height_ = 0;
+    Format format_ = Format::BGRA8_SRGB;
+    ColorSpace space_ = ColorSpace::SrgbNonlinear;
     TextureHandle images_[kImages];
     u32 current_ = 0;
     bool acquired_ = false;
+    bool lost_ = false;
 };
 
 } // namespace
@@ -1549,6 +1598,23 @@ Swapchain* NullDevice::CreateSwapchain(const SwapchainDesc& desc) {
     }
     s.swapchain = MakeUnique<NullSwapchain>(this, desc);
     return s.swapchain.Get();
+}
+
+void NullDevice::SimulateSurfaceLoss() {
+    State& s = *state_;
+    if (s.swapchain) {
+        static_cast<NullSwapchain*>(s.swapchain.Get())->LoseSurface();
+    }
+}
+
+bool NullDevice::RecreateSurface(const os::Window* window) {
+    State& s = *state_;
+    (void)window; // the null backend has no surface; the call keeps the lifecycle testable
+    if (s.swapchain) {
+        s.Error("RecreateSurface: destroy the swapchain first");
+        return false;
+    }
+    return !s.options.fail_surface_recreate;
 }
 
 void NullDevice::DestroySwapchain(Swapchain* swapchain) {

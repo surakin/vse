@@ -274,6 +274,9 @@ VulkanInstance VulkanInstance::Create(const VulkanLoader& loader, const VulkanIn
             extensions[extension_count++] = "VK_KHR_xlib_surface";
             any_platform = true;
         }
+        if (instance_exts.Has("VK_EXT_swapchain_colorspace")) {
+            extensions[extension_count++] = "VK_EXT_swapchain_colorspace"; // lets surfaces offer HDR color spaces
+        }
         if (!any_platform) {
             RhiLog(LogVerbosity::Error, "Vulkan: neither VK_KHR_wayland_surface nor VK_KHR_xlib_surface is available");
             return result;

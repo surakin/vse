@@ -22,7 +22,7 @@ UniquePtr<VulkanSwapchain> VulkanSwapchain::Create(VulkanDevice* device, const S
     if (!swapchain) {
         return UniquePtr<VulkanSwapchain>();
     }
-    swapchain->mode_ = desc.present_mode;
+    swapchain->desc_ = desc;
     const u32 width = desc.width != 0 ? desc.width : device->window_->Width();
     const u32 height = desc.height != 0 ? desc.height : device->window_->Height();
     const SwapchainStatus status = swapchain->Build(width, height);
@@ -113,12 +113,25 @@ SwapchainStatus VulkanSwapchain::Build(u32 width, u32 height) {
         return SwapchainStatus::Lost;
     }
 
+    FillSwapchainCaps(formats, format_count, modes, mode_count, &caps_);
+    const RequestedFormatChoice requested = ChooseRequestedSurfaceFormat(formats, format_count, desc_.format, desc_.hdr);
+    if (requested.fallback_note != nullptr) {
+        RhiLog(LogVerbosity::Warn, "Vulkan: swapchain request not granted: %s", requested.fallback_note);
+    }
+    SurfaceFormatChoice format;
+    format.format = requested.format;
+    format.preferred = (desc_.format != Format::Undefined && requested.fallback_note == nullptr) ||
+                       requested.space != ColorSpace::SrgbNonlinear || ChooseSurfaceFormat(formats, format_count).preferred;
     const VkExtent2D extent = ChooseExtent(caps, width, height);
     if (extent.width == 0 || extent.height == 0) {
+        // Nothing to draw to yet; the choice is recorded so the format is already right when the window returns.
+        if (format.format.format != VK_FORMAT_UNDEFINED) {
+            format_ = format.format;
+            color_space_ = requested.space;
+        }
         minimized_ = true;
         return SwapchainStatus::Minimized;
     }
-    const SurfaceFormatChoice format = ChooseSurfaceFormat(formats, format_count);
     if (format.format.format == VK_FORMAT_UNDEFINED) {
         RhiLog(LogVerbosity::Error, "Vulkan: the surface offers no format the RHI can describe");
         lost_ = true;
@@ -127,6 +140,7 @@ SwapchainStatus VulkanSwapchain::Build(u32 width, u32 height) {
     if (!format.preferred) {
         RhiLog(LogVerbosity::Warn, "Vulkan: no sRGB 8-bit surface format; using VkFormat %d", static_cast<int>(format.format.format));
     }
+    const VkPresentModeKHR chosen_mode = ChoosePresentMode(modes, mode_count, desc_.present_mode);
     const VkImageUsageFlags usage = ChooseImageUsage(caps.supportedUsageFlags);
     if (usage == 0) {
         RhiLog(LogVerbosity::Error, "Vulkan: the surface cannot be rendered to");
@@ -155,7 +169,7 @@ SwapchainStatus VulkanSwapchain::Build(u32 width, u32 height) {
     info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     info.preTransform = caps.currentTransform;
     info.compositeAlpha = ChooseCompositeAlpha(caps.supportedCompositeAlpha);
-    info.presentMode = ChoosePresentMode(modes, mode_count, mode_);
+    info.presentMode = chosen_mode;
     info.clipped = VK_TRUE;
     info.oldSwapchain = swapchain_;
     VkSwapchainKHR created = nullptr;
@@ -175,6 +189,10 @@ SwapchainStatus VulkanSwapchain::Build(u32 width, u32 height) {
     }
     DestroySemaphores();
     swapchain_ = created;
+    actual_mode_ = chosen_mode == VK_PRESENT_MODE_MAILBOX_KHR     ? PresentMode::Mailbox
+                   : chosen_mode == VK_PRESENT_MODE_IMMEDIATE_KHR ? PresentMode::Immediate
+                                                                  : PresentMode::Fifo;
+    color_space_ = requested.space;
     format_ = format.format;
     extent_ = extent;
     minimized_ = false;
@@ -250,8 +268,21 @@ SwapchainStatus VulkanSwapchain::Resize(u32 width, u32 height) {
         minimized_ = true;
         return SwapchainStatus::Minimized;
     }
-    const SwapchainStatus status = Build(width, height);
-    return status;
+    SwapchainDesc desc = desc_;
+    desc.width = width;
+    desc.height = height;
+    return Reconfigure(desc);
+}
+
+SwapchainStatus VulkanSwapchain::Reconfigure(const SwapchainDesc& desc) {
+    ENGINE_ASSERT(!acquired_, "Swapchain::Reconfigure: the previous image was not presented");
+    if (lost_ || device_->DeviceLost()) {
+        return SwapchainStatus::Lost;
+    }
+    desc_ = desc; // remembered even when the window has no area now: the rebuild on return uses it
+    const u32 width = desc.width != 0 ? desc.width : device_->window_->Width();
+    const u32 height = desc.height != 0 ? desc.height : device_->window_->Height();
+    return Build(width, height);
 }
 
 SwapchainStatus VulkanSwapchain::Acquire() {

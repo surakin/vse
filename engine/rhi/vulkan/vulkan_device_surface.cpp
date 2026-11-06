@@ -47,6 +47,33 @@ bool VulkanDevice::CreateSurface(const os::NativeWindowInfo& native) {
     return true;
 }
 
+bool VulkanDevice::RecreateSurface(const os::Window* window) {
+    ENGINE_ASSERT(!swapchain_, "RecreateSurface: destroy the swapchain first");
+    ENGINE_ASSERT(!frame_open_.load(std::memory_order_acquire), "RecreateSurface: called between BeginFrame and EndFrame");
+    if (window == nullptr) {
+        RhiLog(LogVerbosity::Error, "RecreateSurface: no window");
+        return false;
+    }
+    NoteDeviceLost(fns_.DeviceWaitIdle(device_));
+    if (surface_ != nullptr) {
+        instance_.Fns().DestroySurfaceKHR(instance_.Handle(), surface_, nullptr);
+        surface_ = nullptr;
+    }
+    window_ = window;
+    if (!CreateSurface(window->GetNativeInfo())) {
+        return false;
+    }
+    VkBool32 supported = VK_FALSE;
+    const VkResult r = instance_.Fns().GetPhysicalDeviceSurfaceSupportKHR == nullptr ? VK_ERROR_EXTENSION_NOT_PRESENT : instance_.Fns().GetPhysicalDeviceSurfaceSupportKHR(physical_, static_cast<u32>(queues_.graphics_family), surface_, &supported);
+    if (r != VK_SUCCESS || supported != VK_TRUE) {
+        RhiLog(LogVerbosity::Error, "RecreateSurface: the adapter cannot present to the new surface; a full reset is needed");
+        instance_.Fns().DestroySurfaceKHR(instance_.Handle(), surface_, nullptr);
+        surface_ = nullptr;
+        return false;
+    }
+    return true;
+}
+
 Swapchain* VulkanDevice::CreateSwapchain(const SwapchainDesc& desc) {
     if (surface_ == nullptr || window_ == nullptr) {
         RhiLog(LogVerbosity::Error, "CreateSwapchain: the device was created without a window");

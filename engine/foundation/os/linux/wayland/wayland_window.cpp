@@ -279,6 +279,7 @@ WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
       pending_width_(other.pending_width_),
       pending_height_(other.pending_height_),
       pending_constrained_(other.pending_constrained_),
+      fullscreen_(other.fullscreen_),
       default_width_(other.default_width_),
       default_height_(other.default_height_),
       floating_width_(other.floating_width_),
@@ -299,6 +300,7 @@ WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
     other.pending_width_ = 0;
     other.pending_height_ = 0;
     other.pending_constrained_ = false;
+    other.fullscreen_ = false;
     other.default_width_ = 0;
     other.default_height_ = 0;
     other.floating_width_ = 0;
@@ -327,6 +329,7 @@ WaylandWindow& WaylandWindow::operator=(WaylandWindow&& other) noexcept {
         pending_width_ = other.pending_width_;
         pending_height_ = other.pending_height_;
         pending_constrained_ = other.pending_constrained_;
+        fullscreen_ = other.fullscreen_;
         default_width_ = other.default_width_;
         default_height_ = other.default_height_;
         floating_width_ = other.floating_width_;
@@ -347,6 +350,7 @@ WaylandWindow& WaylandWindow::operator=(WaylandWindow&& other) noexcept {
         other.pending_width_ = 0;
         other.pending_height_ = 0;
         other.pending_constrained_ = false;
+        other.fullscreen_ = false;
         other.default_width_ = 0;
         other.default_height_ = 0;
         other.floating_width_ = 0;
@@ -434,6 +438,7 @@ void WaylandWindow::HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, 
     window->pending_height_ = height > 0 ? static_cast<u32>(height) : 0;
 
     bool constrained = false;
+    bool fullscreen = false;
     auto* begin = static_cast<uint32_t*>(states->data);
     auto* end = begin + states->size / sizeof(uint32_t);
     for (uint32_t* it = begin; it < end; ++it) {
@@ -442,8 +447,24 @@ void WaylandWindow::HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, 
             *it == XDG_TOPLEVEL_STATE_TILED_TOP || *it == XDG_TOPLEVEL_STATE_TILED_BOTTOM) {
             constrained = true;
         }
+        if (*it == XDG_TOPLEVEL_STATE_FULLSCREEN) {
+            fullscreen = true;
+        }
     }
     window->pending_constrained_ = constrained;
+    window->fullscreen_ = fullscreen;
+}
+
+bool WaylandWindow::SetFullscreen(bool fullscreen) {
+    if (xdg_toplevel_ == nullptr) {
+        return false;
+    }
+    if (fullscreen) {
+        xdg_toplevel_set_fullscreen(xdg_toplevel_, nullptr);
+    } else {
+        xdg_toplevel_unset_fullscreen(xdg_toplevel_);
+    }
+    return true;
 }
 
 void WaylandWindow::HandleToplevelClose(void* data, xdg_toplevel* toplevel) {
@@ -481,6 +502,7 @@ void WaylandWindow::ReleaseAll() {
     pending_width_ = 0;
     pending_height_ = 0;
     pending_constrained_ = false;
+    fullscreen_ = false;
     floating_width_ = 0;
     floating_height_ = 0;
     buffer_stale_ = false;

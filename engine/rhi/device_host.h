@@ -36,6 +36,15 @@ public:
     /// Returns: false if you could not rebuild; the host then releases every observer again and fails the call.
     virtual bool OnDeviceCreated(Device* device, u32 epoch) = 0;
 
+    /// The swapchain was rebuilt with a different image format or color space (anything built against the old format, such
+    /// as the tonemap pipeline, must be rebuilt). Called in ascending tier order, on the owning thread.
+    ///
+    /// The default does nothing.
+    ///
+    /// Param swapchain: the swapchain, with its new format.
+    /// Ownership: the swapchain belongs to the host.
+    virtual void OnSwapchainChanged(Swapchain* swapchain) { (void)swapchain; }
+
     /// Returns a short name for logs and failure reports.
     ///
     /// Returns: a static string.
@@ -88,6 +97,33 @@ public:
     /// Aborts: called off the owning thread, or between `BeginFrame` and `EndFrame`.
     bool Recreate(const DeviceCreateInfo& info, const SwapchainDesc& swapchain);
 
+    /// Changes the swapchain's present mode, size, format or HDR mode without touching the device.
+    ///
+    /// Observers hear `OnSwapchainChanged` when the image format or color space changed. A request the surface cannot
+    /// grant falls back (see [[rhi::Swapchain::Reconfigure]]).
+    ///
+    /// Param swapchain: the new description.
+    /// Returns: the status of [[rhi::Swapchain::Reconfigure]]; `Lost` if the host has no swapchain.
+    /// Fails: `Lost` as described.
+    /// Aborts: called off the owning thread or between `BeginFrame` and `EndFrame`.
+    SwapchainStatus ReconfigureSwapchain(const SwapchainDesc& swapchain);
+
+    /// Replaces the presentation surface, keeping the device when the adapter can present to the new one.
+    ///
+    /// Destroys the swapchain, asks the device for a new surface ([[rhi::Device::RecreateSurface]]) and creates the swapchain
+    /// again; if the device cannot, it does a full `Recreate` with the description of the last `Create` or `Recreate`
+    /// (`SurfaceFallbackCount` counts those).
+    ///
+    /// Param window: the window to present to; must outlive the host's device.
+    /// Param swapchain: the swapchain description.
+    /// Returns: true on success.
+    /// Fails: returns false with `LastError` set and the host empty if even the full reset fails.
+    /// Aborts: called off the owning thread or between `BeginFrame` and `EndFrame`.
+    bool RecreateSurface(const os::Window* window, const SwapchainDesc& swapchain);
+
+    /// Returns how many times `RecreateSurface` had to fall back to a full reset.
+    u32 SurfaceFallbackCount() const { return surface_fallbacks_; }
+
     /// Notifies observers, then destroys the swapchain and the device; the host is empty afterwards.
     ///
     /// Aborts: called off the owning thread or between `BeginFrame` and `EndFrame`.
@@ -138,6 +174,7 @@ private:
         bool created = false; // got OnDeviceCreated and not yet OnDeviceReleasing
     };
 
+    void NotifySwapchainChanged();
     bool CreateInternal(const DeviceCreateInfo& info, const SwapchainDesc& swapchain);
     void ReleaseObservers();
     void DestroyDevice();
@@ -150,6 +187,8 @@ private:
     usize entry_count_ = 0;
     u32 next_sequence_ = 0;
     u32 reset_count_ = 0;
+    u32 surface_fallbacks_ = 0;
+    DeviceCreateInfo last_info_;
     bool resetting_ = false;
     bool has_owner_ = false;
     std::thread::id owner_;

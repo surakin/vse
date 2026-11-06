@@ -75,12 +75,14 @@ void DeviceHost::DestroyDevice() {
 
 bool DeviceHost::CreateInternal(const DeviceCreateInfo& info, const SwapchainDesc& swapchain) {
     error_[0] = '\0';
+    last_info_ = info;
     device_ = CreateDevice(info);
     if (!device_) {
         SetError("the device could not be created");
         return false;
     }
-    if (info.window != nullptr) {
+    // A window is needed for a real swapchain; the null backend can make a windowless one when a size is given.
+    if (info.window != nullptr || (info.backend == Backend::Null && swapchain.width != 0)) {
         swapchain_ = device_->CreateSwapchain(swapchain);
         if (swapchain_ == nullptr) {
             SetError("the swapchain could not be created");
@@ -116,6 +118,75 @@ bool DeviceHost::CreateInternal(const DeviceCreateInfo& info, const SwapchainDes
     }
     PublishCrashState();
     return true;
+}
+
+void DeviceHost::NotifySwapchainChanged() {
+    bool done[kMaxObservers] = {};
+    for (;;) {
+        usize pick = kMaxObservers;
+        for (usize i = 0; i < entry_count_; ++i) {
+            if (done[i] || !entries_[i].created) {
+                continue;
+            }
+            if (pick == kMaxObservers || entries_[i].tier < entries_[pick].tier ||
+                (entries_[i].tier == entries_[pick].tier && entries_[i].sequence < entries_[pick].sequence)) {
+                pick = i;
+            }
+        }
+        if (pick == kMaxObservers) {
+            break;
+        }
+        done[pick] = true;
+        entries_[pick].observer->OnSwapchainChanged(swapchain_);
+    }
+}
+
+SwapchainStatus DeviceHost::ReconfigureSwapchain(const SwapchainDesc& swapchain) {
+    ENGINE_ASSERT(!has_owner_ || owner_ == std::this_thread::get_id(), "DeviceHost::ReconfigureSwapchain: called off the owning thread");
+    ENGINE_ASSERT(!device_ || !device_->InFrame(), "DeviceHost::ReconfigureSwapchain: called between BeginFrame and EndFrame");
+    if (!device_ || swapchain_ == nullptr) {
+        return SwapchainStatus::Lost;
+    }
+    device_->Quiesce();
+    const Format old_format = swapchain_->ImageFormat();
+    const ColorSpace old_space = swapchain_->GetColorSpace();
+    const SwapchainStatus status = swapchain_->Reconfigure(swapchain);
+    // A minimized window rebuilds later, but the swapchain already reports the format it will have: tell the observers now.
+    if ((status == SwapchainStatus::Ok || status == SwapchainStatus::Minimized) &&
+        (swapchain_->ImageFormat() != old_format || swapchain_->GetColorSpace() != old_space)) {
+        NotifySwapchainChanged();
+    }
+    return status;
+}
+
+bool DeviceHost::RecreateSurface(const os::Window* window, const SwapchainDesc& swapchain) {
+    ENGINE_ASSERT(!has_owner_ || owner_ == std::this_thread::get_id(), "DeviceHost::RecreateSurface: called off the owning thread");
+    ENGINE_ASSERT(!device_ || !device_->InFrame(), "DeviceHost::RecreateSurface: called between BeginFrame and EndFrame");
+    DeviceCreateInfo info = last_info_;
+    info.window = window;
+    Format old_format = Format::Undefined;
+    ColorSpace old_space = ColorSpace::SrgbNonlinear;
+    if (device_) {
+        device_->Quiesce();
+        if (swapchain_ != nullptr) {
+            old_format = swapchain_->ImageFormat();
+            old_space = swapchain_->GetColorSpace();
+            device_->DestroySwapchain(swapchain_);
+            swapchain_ = nullptr;
+        }
+        if (device_->RecreateSurface(window)) {
+            swapchain_ = device_->CreateSwapchain(swapchain);
+            if (swapchain_ != nullptr) {
+                last_info_ = info;
+                if (swapchain_->ImageFormat() != old_format || swapchain_->GetColorSpace() != old_space) {
+                    NotifySwapchainChanged();
+                }
+                return true;
+            }
+        }
+    }
+    ++surface_fallbacks_;
+    return Recreate(info, swapchain);
 }
 
 bool DeviceHost::Create(const DeviceCreateInfo& info, const SwapchainDesc& swapchain) {

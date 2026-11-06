@@ -627,7 +627,10 @@ os::wayland::WaylandPlatformWindow::BackendName() const	function	platform/window
 os::wayland::WaylandPlatformWindow::GetNativeInfo() const	function	platform/window-input	os-wayland-waylandplatformwindow-getnativeinfo-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:68
 os::wayland::WaylandPlatformWindow::IsMinimized() const	function	platform/window-input	os-wayland-waylandplatformwindow-isminimized-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:79
 os::wayland::WaylandPlatformWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandplatformwindow-resizeserial-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:81
-os::wayland::WaylandPlatformWindow::Input() const	function	platform/window-input	os-wayland-waylandplatformwindow-input-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:84
+os::wayland::WaylandPlatformWindow::SupportsFullscreen() const	function	platform/window-input	os-wayland-waylandplatformwindow-supportsfullscreen-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:83
+os::wayland::WaylandPlatformWindow::SetFullscreen(bool)	function	platform/window-input	os-wayland-waylandplatformwindow-setfullscreen-bool	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:87
+os::wayland::WaylandPlatformWindow::IsFullscreen() const	function	platform/window-input	os-wayland-waylandplatformwindow-isfullscreen-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:91
+os::wayland::WaylandPlatformWindow::Input() const	function	platform/window-input	os-wayland-waylandplatformwindow-input-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:94
 os::wayland::WaylandWindow	class	platform/window-input	os-wayland-waylandwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:24
 os::wayland::WaylandWindow::Create(WaylandConnection&,StringView,StringView,u32,u32)	function	platform/window-input	os-wayland-waylandwindow-create-waylandconnection-amp-stringview-stringview-u32-u32	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:40
 os::wayland::WaylandWindow::WaylandWindow()	function	platform/window-input	os-wayland-waylandwindow-waylandwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:44
@@ -647,6 +650,8 @@ os::wayland::WaylandWindow::ServerSideDecorated() const	function	platform/window
 os::wayland::WaylandWindow::Width() const	function	platform/window-input	os-wayland-waylandwindow-width-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:97
 os::wayland::WaylandWindow::Height() const	function	platform/window-input	os-wayland-waylandwindow-height-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:99
 os::wayland::WaylandWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandwindow-resizeserial-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:101
+os::wayland::WaylandWindow::SetFullscreen(bool)	function	platform/window-input	os-wayland-waylandwindow-setfullscreen-bool	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:107
+os::wayland::WaylandWindow::IsFullscreen() const	function	platform/window-input	os-wayland-waylandwindow-isfullscreen-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:109
 os::x11::X11Window	class	platform/window-input	os-x11-x11window	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:28
 os::x11::X11Window::Create(StringView,u32,u32)	function	platform/window-input	os-x11-x11window-create-stringview-u32-u32	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:36
 os::x11::X11Window::X11Window()	function	platform/window-input	os-x11-x11window-x11window	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:39
@@ -666,8 +671,11 @@ os::x11::X11Window::BackendName() const	function	platform/window-input	os-x11-x1
 os::x11::X11Window::GetNativeInfo() const	function	platform/window-input	os-x11-x11window-getnativeinfo-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:77
 os::x11::X11Window::IsMinimized() const	function	platform/window-input	os-x11-x11window-isminimized-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:87
 os::x11::X11Window::ResizeSerial() const	function	platform/window-input	os-x11-x11window-resizeserial-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:89
-os::x11::X11Window::NativeDisplay() const	function	platform/window-input	os-x11-x11window-nativedisplay-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:94
-os::x11::X11Window::NativeWindow() const	function	platform/window-input	os-x11-x11window-nativewindow-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:98
+os::x11::X11Window::SupportsFullscreen() const	function	platform/window-input	os-x11-x11window-supportsfullscreen-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:92
+os::x11::X11Window::SetFullscreen(bool)	function	platform/window-input	os-x11-x11window-setfullscreen-bool	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:96
+os::x11::X11Window::IsFullscreen() const	function	platform/window-input	os-x11-x11window-isfullscreen-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:98
+os::x11::X11Window::NativeDisplay() const	function	platform/window-input	os-x11-x11window-nativedisplay-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:103
+os::x11::X11Window::NativeWindow() const	function	platform/window-input	os-x11-x11window-nativewindow-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:107
 os::XkbKeyboard	class	platform/window-input	os-xkbkeyboard	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:21
 os::XkbKeyboard::XkbKeyboard()	function	platform/window-input	os-xkbkeyboard-xkbkeyboard	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:23
 os::XkbKeyboard::~XkbKeyboard()	function	platform/window-input	os-xkbkeyboard-tilde-xkbkeyboard	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:26
@@ -702,16 +710,19 @@ os::Window::BackendName() const	function	platform/window-input	os-window-backend
 os::Window::GetNativeInfo() const	function	platform/window-input	os-window-getnativeinfo-const	platform-window-input.md	engine/foundation/os/window.h:75
 os::Window::IsMinimized() const	function	platform/window-input	os-window-isminimized-const	platform-window-input.md	engine/foundation/os/window.h:83
 os::Window::ResizeSerial() const	function	platform/window-input	os-window-resizeserial-const	platform-window-input.md	engine/foundation/os/window.h:90
-os::WindowBackend	enum	platform/window-input	os-windowbackend	platform-window-input.md	engine/foundation/os/window.h:99
-os::WindowBackend::Auto	enumerator	platform/window-input	os-windowbackend-auto	platform-window-input.md	engine/foundation/os/window.h:100
-os::WindowBackend::Wayland	enumerator	platform/window-input	os-windowbackend-wayland	platform-window-input.md	engine/foundation/os/window.h:101
-os::WindowBackend::X11	enumerator	platform/window-input	os-windowbackend-x11	platform-window-input.md	engine/foundation/os/window.h:102
-os::WindowBackend::Invalid	enumerator	platform/window-input	os-windowbackend-invalid	platform-window-input.md	engine/foundation/os/window.h:103
-os::ParseWindowBackend(StringView)	function	platform/window-input	os-parsewindowbackend-stringview	platform-window-input.md	engine/foundation/os/window.h:111
-os::BackendPlan	struct	platform/window-input	os-backendplan	platform-window-input.md	engine/foundation/os/window.h:116
-os::BackendPlan::candidates	variable	platform/window-input	os-backendplan-candidates	platform-window-input.md	engine/foundation/os/window.h:118
-os::BackendPlan::count	variable	platform/window-input	os-backendplan-count	platform-window-input.md	engine/foundation/os/window.h:120
-os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	os-planwindowbackends-windowbackend-bool-bool	platform-window-input.md	engine/foundation/os/window.h:132
+os::Window::SupportsFullscreen() const	function	platform/window-input	os-window-supportsfullscreen-const	platform-window-input.md	engine/foundation/os/window.h:96
+os::Window::SetFullscreen(bool)	function	platform/window-input	os-window-setfullscreen-bool	platform-window-input.md	engine/foundation/os/window.h:106
+os::Window::IsFullscreen() const	function	platform/window-input	os-window-isfullscreen-const	platform-window-input.md	engine/foundation/os/window.h:112
+os::WindowBackend	enum	platform/window-input	os-windowbackend	platform-window-input.md	engine/foundation/os/window.h:121
+os::WindowBackend::Auto	enumerator	platform/window-input	os-windowbackend-auto	platform-window-input.md	engine/foundation/os/window.h:122
+os::WindowBackend::Wayland	enumerator	platform/window-input	os-windowbackend-wayland	platform-window-input.md	engine/foundation/os/window.h:123
+os::WindowBackend::X11	enumerator	platform/window-input	os-windowbackend-x11	platform-window-input.md	engine/foundation/os/window.h:124
+os::WindowBackend::Invalid	enumerator	platform/window-input	os-windowbackend-invalid	platform-window-input.md	engine/foundation/os/window.h:125
+os::ParseWindowBackend(StringView)	function	platform/window-input	os-parsewindowbackend-stringview	platform-window-input.md	engine/foundation/os/window.h:133
+os::BackendPlan	struct	platform/window-input	os-backendplan	platform-window-input.md	engine/foundation/os/window.h:138
+os::BackendPlan::candidates	variable	platform/window-input	os-backendplan-candidates	platform-window-input.md	engine/foundation/os/window.h:140
+os::BackendPlan::count	variable	platform/window-input	os-backendplan-count	platform-window-input.md	engine/foundation/os/window.h:142
+os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	os-planwindowbackends-windowbackend-bool-bool	platform-window-input.md	engine/foundation/os/window.h:154
 ENGINE_DEBUG_BREAK	macro	foundation/debug	engine-debug-break	foundation-debug.md	engine/foundation/debug/compiler.h:13
 ENGINE_UNREACHABLE_HINT	macro	foundation/debug	engine-unreachable-hint	foundation-debug.md	engine/foundation/debug/compiler.h:28
 ENGINE_COLD	macro	foundation/debug	engine-cold	foundation-debug.md	engine/foundation/debug/compiler.h:35
@@ -1294,93 +1305,98 @@ rhi::ComputePipelineDesc::bind_group_layout_count	variable	rhi	rhi-computepipeli
 rhi::ComputePipelineDesc::push_constant_bytes	variable	rhi	rhi-computepipelinedesc-push-constant-bytes	rhi.md	engine/rhi/desc.h:365
 rhi::ComputePipelineDesc::debug_name	variable	rhi	rhi-computepipelinedesc-debug-name	rhi.md	engine/rhi/desc.h:367
 rhi::ComputePipelineDesc::Validate() const	function	rhi	rhi-computepipelinedesc-validate-const	rhi.md	engine/rhi/desc.h:374
-rhi::FenceValue	alias	rhi	rhi-fencevalue	rhi.md	engine/rhi/device.h:18
-rhi::UploadTicket	struct	rhi	rhi-uploadticket	rhi.md	engine/rhi/device.h:23
-rhi::UploadTicket::fence	variable	rhi	rhi-uploadticket-fence	rhi.md	engine/rhi/device.h:26
-rhi::UploadTicket::ok	variable	rhi	rhi-uploadticket-ok	rhi.md	engine/rhi/device.h:29
-rhi::ResourceCounts	struct	rhi	rhi-resourcecounts	rhi.md	engine/rhi/device.h:38
-rhi::ResourceCounts::buffers	variable	rhi	rhi-resourcecounts-buffers	rhi.md	engine/rhi/device.h:40
-rhi::ResourceCounts::textures	variable	rhi	rhi-resourcecounts-textures	rhi.md	engine/rhi/device.h:42
-rhi::ResourceCounts::samplers	variable	rhi	rhi-resourcecounts-samplers	rhi.md	engine/rhi/device.h:44
-rhi::ResourceCounts::shaders	variable	rhi	rhi-resourcecounts-shaders	rhi.md	engine/rhi/device.h:46
-rhi::ResourceCounts::bind_group_layouts	variable	rhi	rhi-resourcecounts-bind-group-layouts	rhi.md	engine/rhi/device.h:48
-rhi::ResourceCounts::bind_groups	variable	rhi	rhi-resourcecounts-bind-groups	rhi.md	engine/rhi/device.h:50
-rhi::ResourceCounts::pipelines	variable	rhi	rhi-resourcecounts-pipelines	rhi.md	engine/rhi/device.h:52
-rhi::ResourceCounts::swapchains	variable	rhi	rhi-resourcecounts-swapchains	rhi.md	engine/rhi/device.h:54
-rhi::ResourceCounts::command_lists	variable	rhi	rhi-resourcecounts-command-lists	rhi.md	engine/rhi/device.h:56
-rhi::ResourceCounts::internal_objects	variable	rhi	rhi-resourcecounts-internal-objects	rhi.md	engine/rhi/device.h:58
-rhi::ResourceCounts::device_memory_bytes	variable	rhi	rhi-resourcecounts-device-memory-bytes	rhi.md	engine/rhi/device.h:60
-rhi::ResourceCounts::UserObjects() const	function	rhi	rhi-resourcecounts-userobjects-const	rhi.md	engine/rhi/device.h:64
-rhi::AllocateDeviceSerial()	function	rhi	rhi-allocatedeviceserial	rhi.md	engine/rhi/device.h:72
-rhi::GenerationSeed(u32)	function	rhi	rhi-generationseed-u32	rhi.md	engine/rhi/device.h:82
-rhi::Device	class	rhi	rhi-device	rhi.md	engine/rhi/device.h:98
-rhi::Device::~Device()	function	rhi	rhi-device-tilde-device	rhi.md	engine/rhi/device.h:100
-rhi::Device::BackendName() const	function	rhi	rhi-device-backendname-const	rhi.md	engine/rhi/device.h:106
-rhi::Device::Adapter() const	function	rhi	rhi-device-adapter-const	rhi.md	engine/rhi/device.h:111
-rhi::Device::Epoch() const	function	rhi	rhi-device-epoch-const	rhi.md	engine/rhi/device.h:115
-rhi::Device::Caps() const	function	rhi	rhi-device-caps-const	rhi.md	engine/rhi/device.h:119
-rhi::Device::CreateBuffer(const BufferDesc&)	function	rhi	rhi-device-createbuffer-const-bufferdesc-amp	rhi.md	engine/rhi/device.h:126
-rhi::Device::DestroyBuffer(BufferHandle)	function	rhi	rhi-device-destroybuffer-bufferhandle	rhi.md	engine/rhi/device.h:131
-rhi::Device::CreateTexture(const TextureDesc&)	function	rhi	rhi-device-createtexture-const-texturedesc-amp	rhi.md	engine/rhi/device.h:138
-rhi::Device::DestroyTexture(TextureHandle)	function	rhi	rhi-device-destroytexture-texturehandle	rhi.md	engine/rhi/device.h:143
-rhi::Device::CreateSampler(const SamplerDesc&)	function	rhi	rhi-device-createsampler-const-samplerdesc-amp	rhi.md	engine/rhi/device.h:154
-rhi::Device::DestroySampler(SamplerHandle)	function	rhi	rhi-device-destroysampler-samplerhandle	rhi.md	engine/rhi/device.h:159
-rhi::Device::CreateShader(const ShaderDesc&)	function	rhi	rhi-device-createshader-const-shaderdesc-amp	rhi.md	engine/rhi/device.h:166
-rhi::Device::DestroyShader(ShaderHandle)	function	rhi	rhi-device-destroyshader-shaderhandle	rhi.md	engine/rhi/device.h:171
-rhi::Device::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi	rhi-device-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi.md	engine/rhi/device.h:178
-rhi::Device::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi	rhi-device-destroybindgrouplayout-bindgrouplayouthandle	rhi.md	engine/rhi/device.h:183
-rhi::Device::CreateBindGroup(const BindGroupDesc&)	function	rhi	rhi-device-createbindgroup-const-bindgroupdesc-amp	rhi.md	engine/rhi/device.h:191
-rhi::Device::DestroyBindGroup(BindGroupHandle)	function	rhi	rhi-device-destroybindgroup-bindgrouphandle	rhi.md	engine/rhi/device.h:197
-rhi::Device::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi	rhi-device-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi.md	engine/rhi/device.h:204
-rhi::Device::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi	rhi-device-createcomputepipeline-const-computepipelinedesc-amp	rhi.md	engine/rhi/device.h:210
-rhi::Device::DestroyPipeline(PipelineHandle)	function	rhi	rhi-device-destroypipeline-pipelinehandle	rhi.md	engine/rhi/device.h:215
-rhi::Device::CreateSwapchain(const SwapchainDesc&)	function	rhi	rhi-device-createswapchain-const-swapchaindesc-amp	rhi.md	engine/rhi/device.h:224
-rhi::Device::DestroySwapchain(Swapchain*)	function	rhi	rhi-device-destroyswapchain-swapchain-star	rhi.md	engine/rhi/device.h:230
-rhi::Device::FormatSupport(Format,TextureUsage) const	function	rhi	rhi-device-formatsupport-format-textureusage-const	rhi.md	engine/rhi/device.h:238
-rhi::Device::CanGenerateMips(Format) const	function	rhi	rhi-device-cangeneratemips-format-const	rhi.md	engine/rhi/device.h:244
-rhi::Device::UploadTexture(TextureHandle,u32,u32,const void*,u32)	function	rhi	rhi-device-uploadtexture-texturehandle-u32-u32-const-void-star-u32	rhi.md	engine/rhi/device.h:268
-rhi::Device::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi	rhi-device-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi.md	engine/rhi/device.h:286
-rhi::Device::MapBuffer(BufferHandle)	function	rhi	rhi-device-mapbuffer-bufferhandle	rhi.md	engine/rhi/device.h:297
-rhi::Device::UnmapBuffer(BufferHandle)	function	rhi	rhi-device-unmapbuffer-bufferhandle	rhi.md	engine/rhi/device.h:302
-rhi::Device::FlushMappedBuffer(BufferHandle,u64,u64)	function	rhi	rhi-device-flushmappedbuffer-bufferhandle-u64-u64	rhi.md	engine/rhi/device.h:312
-rhi::Device::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi	rhi-device-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi.md	engine/rhi/device.h:338
-rhi::Device::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi	rhi-device-readbackbuffer-bufferhandle-u64-void-star-u64	rhi.md	engine/rhi/device.h:353
-rhi::Device::CreateCommandList()	function	rhi	rhi-device-createcommandlist	rhi.md	engine/rhi/device.h:363
-rhi::Device::Submit(CommandList* const*,usize)	function	rhi	rhi-device-submit-commandlist-star-const-star-usize	rhi.md	engine/rhi/device.h:377
-rhi::Device::WaitFence(FenceValue,u64)	function	rhi	rhi-device-waitfence-fencevalue-u64	rhi.md	engine/rhi/device.h:385
-rhi::Device::CompletedFence() const	function	rhi	rhi-device-completedfence-const	rhi.md	engine/rhi/device.h:388
-rhi::Device::BeginFrame()	function	rhi	rhi-device-beginframe	rhi.md	engine/rhi/device.h:393
-rhi::Device::EndFrame()	function	rhi	rhi-device-endframe	rhi.md	engine/rhi/device.h:395
-rhi::Device::FrameNumber() const	function	rhi	rhi-device-framenumber-const	rhi.md	engine/rhi/device.h:397
-rhi::Device::WaitIdle()	function	rhi	rhi-device-waitidle	rhi.md	engine/rhi/device.h:400
-rhi::Device::Quiesce()	function	rhi	rhi-device-quiesce	rhi.md	engine/rhi/device.h:407
-rhi::Device::Resources() const	function	rhi	rhi-device-resources-const	rhi.md	engine/rhi/device.h:412
-rhi::Device::InFrame() const	function	rhi	rhi-device-inframe-const	rhi.md	engine/rhi/device.h:418
-rhi::Device::DeviceLost() const	function	rhi	rhi-device-devicelost-const	rhi.md	engine/rhi/device.h:423
-rhi::DeviceDeleter	struct	rhi	rhi-devicedeleter	rhi.md	engine/rhi/device.h:432
-rhi::DeviceDeleter::operator()(Device*) const	function	rhi	rhi-devicedeleter-operator-call-device-star-const	rhi.md	engine/rhi/device.h:437
-rhi::DevicePtr	alias	rhi	rhi-deviceptr	rhi.md	engine/rhi/device.h:447
+rhi::FenceValue	alias	rhi	rhi-fencevalue	rhi.md	engine/rhi/device.h:19
+rhi::UploadTicket	struct	rhi	rhi-uploadticket	rhi.md	engine/rhi/device.h:24
+rhi::UploadTicket::fence	variable	rhi	rhi-uploadticket-fence	rhi.md	engine/rhi/device.h:27
+rhi::UploadTicket::ok	variable	rhi	rhi-uploadticket-ok	rhi.md	engine/rhi/device.h:30
+rhi::ResourceCounts	struct	rhi	rhi-resourcecounts	rhi.md	engine/rhi/device.h:39
+rhi::ResourceCounts::buffers	variable	rhi	rhi-resourcecounts-buffers	rhi.md	engine/rhi/device.h:41
+rhi::ResourceCounts::textures	variable	rhi	rhi-resourcecounts-textures	rhi.md	engine/rhi/device.h:43
+rhi::ResourceCounts::samplers	variable	rhi	rhi-resourcecounts-samplers	rhi.md	engine/rhi/device.h:45
+rhi::ResourceCounts::shaders	variable	rhi	rhi-resourcecounts-shaders	rhi.md	engine/rhi/device.h:47
+rhi::ResourceCounts::bind_group_layouts	variable	rhi	rhi-resourcecounts-bind-group-layouts	rhi.md	engine/rhi/device.h:49
+rhi::ResourceCounts::bind_groups	variable	rhi	rhi-resourcecounts-bind-groups	rhi.md	engine/rhi/device.h:51
+rhi::ResourceCounts::pipelines	variable	rhi	rhi-resourcecounts-pipelines	rhi.md	engine/rhi/device.h:53
+rhi::ResourceCounts::swapchains	variable	rhi	rhi-resourcecounts-swapchains	rhi.md	engine/rhi/device.h:55
+rhi::ResourceCounts::command_lists	variable	rhi	rhi-resourcecounts-command-lists	rhi.md	engine/rhi/device.h:57
+rhi::ResourceCounts::internal_objects	variable	rhi	rhi-resourcecounts-internal-objects	rhi.md	engine/rhi/device.h:59
+rhi::ResourceCounts::device_memory_bytes	variable	rhi	rhi-resourcecounts-device-memory-bytes	rhi.md	engine/rhi/device.h:61
+rhi::ResourceCounts::UserObjects() const	function	rhi	rhi-resourcecounts-userobjects-const	rhi.md	engine/rhi/device.h:65
+rhi::AllocateDeviceSerial()	function	rhi	rhi-allocatedeviceserial	rhi.md	engine/rhi/device.h:73
+rhi::GenerationSeed(u32)	function	rhi	rhi-generationseed-u32	rhi.md	engine/rhi/device.h:83
+rhi::Device	class	rhi	rhi-device	rhi.md	engine/rhi/device.h:99
+rhi::Device::~Device()	function	rhi	rhi-device-tilde-device	rhi.md	engine/rhi/device.h:101
+rhi::Device::BackendName() const	function	rhi	rhi-device-backendname-const	rhi.md	engine/rhi/device.h:107
+rhi::Device::Adapter() const	function	rhi	rhi-device-adapter-const	rhi.md	engine/rhi/device.h:112
+rhi::Device::Epoch() const	function	rhi	rhi-device-epoch-const	rhi.md	engine/rhi/device.h:116
+rhi::Device::Caps() const	function	rhi	rhi-device-caps-const	rhi.md	engine/rhi/device.h:120
+rhi::Device::CreateBuffer(const BufferDesc&)	function	rhi	rhi-device-createbuffer-const-bufferdesc-amp	rhi.md	engine/rhi/device.h:127
+rhi::Device::DestroyBuffer(BufferHandle)	function	rhi	rhi-device-destroybuffer-bufferhandle	rhi.md	engine/rhi/device.h:132
+rhi::Device::CreateTexture(const TextureDesc&)	function	rhi	rhi-device-createtexture-const-texturedesc-amp	rhi.md	engine/rhi/device.h:139
+rhi::Device::DestroyTexture(TextureHandle)	function	rhi	rhi-device-destroytexture-texturehandle	rhi.md	engine/rhi/device.h:144
+rhi::Device::CreateSampler(const SamplerDesc&)	function	rhi	rhi-device-createsampler-const-samplerdesc-amp	rhi.md	engine/rhi/device.h:155
+rhi::Device::DestroySampler(SamplerHandle)	function	rhi	rhi-device-destroysampler-samplerhandle	rhi.md	engine/rhi/device.h:160
+rhi::Device::CreateShader(const ShaderDesc&)	function	rhi	rhi-device-createshader-const-shaderdesc-amp	rhi.md	engine/rhi/device.h:167
+rhi::Device::DestroyShader(ShaderHandle)	function	rhi	rhi-device-destroyshader-shaderhandle	rhi.md	engine/rhi/device.h:172
+rhi::Device::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi	rhi-device-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi.md	engine/rhi/device.h:179
+rhi::Device::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi	rhi-device-destroybindgrouplayout-bindgrouplayouthandle	rhi.md	engine/rhi/device.h:184
+rhi::Device::CreateBindGroup(const BindGroupDesc&)	function	rhi	rhi-device-createbindgroup-const-bindgroupdesc-amp	rhi.md	engine/rhi/device.h:192
+rhi::Device::DestroyBindGroup(BindGroupHandle)	function	rhi	rhi-device-destroybindgroup-bindgrouphandle	rhi.md	engine/rhi/device.h:198
+rhi::Device::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi	rhi-device-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi.md	engine/rhi/device.h:205
+rhi::Device::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi	rhi-device-createcomputepipeline-const-computepipelinedesc-amp	rhi.md	engine/rhi/device.h:211
+rhi::Device::DestroyPipeline(PipelineHandle)	function	rhi	rhi-device-destroypipeline-pipelinehandle	rhi.md	engine/rhi/device.h:216
+rhi::Device::CreateSwapchain(const SwapchainDesc&)	function	rhi	rhi-device-createswapchain-const-swapchaindesc-amp	rhi.md	engine/rhi/device.h:225
+rhi::Device::DestroySwapchain(Swapchain*)	function	rhi	rhi-device-destroyswapchain-swapchain-star	rhi.md	engine/rhi/device.h:231
+rhi::Device::FormatSupport(Format,TextureUsage) const	function	rhi	rhi-device-formatsupport-format-textureusage-const	rhi.md	engine/rhi/device.h:239
+rhi::Device::CanGenerateMips(Format) const	function	rhi	rhi-device-cangeneratemips-format-const	rhi.md	engine/rhi/device.h:245
+rhi::Device::UploadTexture(TextureHandle,u32,u32,const void*,u32)	function	rhi	rhi-device-uploadtexture-texturehandle-u32-u32-const-void-star-u32	rhi.md	engine/rhi/device.h:269
+rhi::Device::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi	rhi-device-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi.md	engine/rhi/device.h:287
+rhi::Device::MapBuffer(BufferHandle)	function	rhi	rhi-device-mapbuffer-bufferhandle	rhi.md	engine/rhi/device.h:298
+rhi::Device::UnmapBuffer(BufferHandle)	function	rhi	rhi-device-unmapbuffer-bufferhandle	rhi.md	engine/rhi/device.h:303
+rhi::Device::FlushMappedBuffer(BufferHandle,u64,u64)	function	rhi	rhi-device-flushmappedbuffer-bufferhandle-u64-u64	rhi.md	engine/rhi/device.h:313
+rhi::Device::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi	rhi-device-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi.md	engine/rhi/device.h:339
+rhi::Device::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi	rhi-device-readbackbuffer-bufferhandle-u64-void-star-u64	rhi.md	engine/rhi/device.h:354
+rhi::Device::CreateCommandList()	function	rhi	rhi-device-createcommandlist	rhi.md	engine/rhi/device.h:364
+rhi::Device::Submit(CommandList* const*,usize)	function	rhi	rhi-device-submit-commandlist-star-const-star-usize	rhi.md	engine/rhi/device.h:378
+rhi::Device::WaitFence(FenceValue,u64)	function	rhi	rhi-device-waitfence-fencevalue-u64	rhi.md	engine/rhi/device.h:386
+rhi::Device::CompletedFence() const	function	rhi	rhi-device-completedfence-const	rhi.md	engine/rhi/device.h:389
+rhi::Device::BeginFrame()	function	rhi	rhi-device-beginframe	rhi.md	engine/rhi/device.h:394
+rhi::Device::EndFrame()	function	rhi	rhi-device-endframe	rhi.md	engine/rhi/device.h:396
+rhi::Device::FrameNumber() const	function	rhi	rhi-device-framenumber-const	rhi.md	engine/rhi/device.h:398
+rhi::Device::WaitIdle()	function	rhi	rhi-device-waitidle	rhi.md	engine/rhi/device.h:401
+rhi::Device::RecreateSurface(const os::Window*)	function	rhi	rhi-device-recreatesurface-const-os-window-star	rhi.md	engine/rhi/device.h:412
+rhi::Device::Quiesce()	function	rhi	rhi-device-quiesce	rhi.md	engine/rhi/device.h:419
+rhi::Device::Resources() const	function	rhi	rhi-device-resources-const	rhi.md	engine/rhi/device.h:424
+rhi::Device::InFrame() const	function	rhi	rhi-device-inframe-const	rhi.md	engine/rhi/device.h:430
+rhi::Device::DeviceLost() const	function	rhi	rhi-device-devicelost-const	rhi.md	engine/rhi/device.h:435
+rhi::DeviceDeleter	struct	rhi	rhi-devicedeleter	rhi.md	engine/rhi/device.h:444
+rhi::DeviceDeleter::operator()(Device*) const	function	rhi	rhi-devicedeleter-operator-call-device-star-const	rhi.md	engine/rhi/device.h:449
+rhi::DevicePtr	alias	rhi	rhi-deviceptr	rhi.md	engine/rhi/device.h:459
 rhi::DeviceObserver	class	rhi	rhi-deviceobserver	rhi.md	engine/rhi/device_host.h:18
 rhi::DeviceObserver::~DeviceObserver()	function	rhi	rhi-deviceobserver-tilde-deviceobserver	rhi.md	engine/rhi/device_host.h:20
 rhi::DeviceObserver::OnDeviceReleasing(u32)	function	rhi	rhi-deviceobserver-ondevicereleasing-u32	rhi.md	engine/rhi/device_host.h:27
 rhi::DeviceObserver::OnDeviceCreated(Device*,u32)	function	rhi	rhi-deviceobserver-ondevicecreated-device-star-u32	rhi.md	engine/rhi/device_host.h:37
-rhi::DeviceObserver::ObserverName() const	function	rhi	rhi-deviceobserver-observername-const	rhi.md	engine/rhi/device_host.h:44
-rhi::DeviceHost	class	rhi	rhi-devicehost	rhi.md	engine/rhi/device_host.h:58
-rhi::DeviceHost::kMaxObservers	variable	rhi	rhi-devicehost-kmaxobservers	rhi.md	engine/rhi/device_host.h:61
-rhi::DeviceHost::DeviceHost()	function	rhi	rhi-devicehost-devicehost	rhi.md	engine/rhi/device_host.h:64
-rhi::DeviceHost::DeviceHost(const DeviceHost&)	function	rhi	rhi-devicehost-devicehost-const-devicehost-amp	rhi.md	engine/rhi/device_host.h:66
-rhi::DeviceHost::operator=(const DeviceHost&)	function	rhi	rhi-devicehost-operator-eq-const-devicehost-amp	rhi.md	engine/rhi/device_host.h:67
-rhi::DeviceHost::~DeviceHost()	function	rhi	rhi-devicehost-tilde-devicehost	rhi.md	engine/rhi/device_host.h:70
-rhi::DeviceHost::Create(const DeviceCreateInfo&,const SwapchainDesc&)	function	rhi	rhi-devicehost-create-const-devicecreateinfo-amp-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:80
-rhi::DeviceHost::Recreate(const DeviceCreateInfo&,const SwapchainDesc&)	function	rhi	rhi-devicehost-recreate-const-devicecreateinfo-amp-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:89
-rhi::DeviceHost::Destroy()	function	rhi	rhi-devicehost-destroy	rhi.md	engine/rhi/device_host.h:94
-rhi::DeviceHost::GetDevice() const	function	rhi	rhi-devicehost-getdevice-const	rhi.md	engine/rhi/device_host.h:100
-rhi::DeviceHost::GetSwapchain() const	function	rhi	rhi-devicehost-getswapchain-const	rhi.md	engine/rhi/device_host.h:105
-rhi::DeviceHost::Epoch() const	function	rhi	rhi-devicehost-epoch-const	rhi.md	engine/rhi/device_host.h:107
-rhi::DeviceHost::ResetCount() const	function	rhi	rhi-devicehost-resetcount-const	rhi.md	engine/rhi/device_host.h:109
-rhi::DeviceHost::LastError() const	function	rhi	rhi-devicehost-lasterror-const	rhi.md	engine/rhi/device_host.h:114
-rhi::DeviceHost::AddObserver(DeviceObserver*,u32)	function	rhi	rhi-devicehost-addobserver-deviceobserver-star-u32	rhi.md	engine/rhi/device_host.h:124
-rhi::DeviceHost::RemoveObserver(DeviceObserver*)	function	rhi	rhi-devicehost-removeobserver-deviceobserver-star	rhi.md	engine/rhi/device_host.h:131
+rhi::DeviceObserver::OnSwapchainChanged(Swapchain*)	function	rhi	rhi-deviceobserver-onswapchainchanged-swapchain-star	rhi.md	engine/rhi/device_host.h:46
+rhi::DeviceObserver::ObserverName() const	function	rhi	rhi-deviceobserver-observername-const	rhi.md	engine/rhi/device_host.h:53
+rhi::DeviceHost	class	rhi	rhi-devicehost	rhi.md	engine/rhi/device_host.h:67
+rhi::DeviceHost::kMaxObservers	variable	rhi	rhi-devicehost-kmaxobservers	rhi.md	engine/rhi/device_host.h:70
+rhi::DeviceHost::DeviceHost()	function	rhi	rhi-devicehost-devicehost	rhi.md	engine/rhi/device_host.h:73
+rhi::DeviceHost::DeviceHost(const DeviceHost&)	function	rhi	rhi-devicehost-devicehost-const-devicehost-amp	rhi.md	engine/rhi/device_host.h:75
+rhi::DeviceHost::operator=(const DeviceHost&)	function	rhi	rhi-devicehost-operator-eq-const-devicehost-amp	rhi.md	engine/rhi/device_host.h:76
+rhi::DeviceHost::~DeviceHost()	function	rhi	rhi-devicehost-tilde-devicehost	rhi.md	engine/rhi/device_host.h:79
+rhi::DeviceHost::Create(const DeviceCreateInfo&,const SwapchainDesc&)	function	rhi	rhi-devicehost-create-const-devicecreateinfo-amp-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:89
+rhi::DeviceHost::Recreate(const DeviceCreateInfo&,const SwapchainDesc&)	function	rhi	rhi-devicehost-recreate-const-devicecreateinfo-amp-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:98
+rhi::DeviceHost::ReconfigureSwapchain(const SwapchainDesc&)	function	rhi	rhi-devicehost-reconfigureswapchain-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:109
+rhi::DeviceHost::RecreateSurface(const os::Window*,const SwapchainDesc&)	function	rhi	rhi-devicehost-recreatesurface-const-os-window-star-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:122
+rhi::DeviceHost::SurfaceFallbackCount() const	function	rhi	rhi-devicehost-surfacefallbackcount-const	rhi.md	engine/rhi/device_host.h:125
+rhi::DeviceHost::Destroy()	function	rhi	rhi-devicehost-destroy	rhi.md	engine/rhi/device_host.h:130
+rhi::DeviceHost::GetDevice() const	function	rhi	rhi-devicehost-getdevice-const	rhi.md	engine/rhi/device_host.h:136
+rhi::DeviceHost::GetSwapchain() const	function	rhi	rhi-devicehost-getswapchain-const	rhi.md	engine/rhi/device_host.h:141
+rhi::DeviceHost::Epoch() const	function	rhi	rhi-devicehost-epoch-const	rhi.md	engine/rhi/device_host.h:143
+rhi::DeviceHost::ResetCount() const	function	rhi	rhi-devicehost-resetcount-const	rhi.md	engine/rhi/device_host.h:145
+rhi::DeviceHost::LastError() const	function	rhi	rhi-devicehost-lasterror-const	rhi.md	engine/rhi/device_host.h:150
+rhi::DeviceHost::AddObserver(DeviceObserver*,u32)	function	rhi	rhi-devicehost-addobserver-deviceobserver-star-u32	rhi.md	engine/rhi/device_host.h:160
+rhi::DeviceHost::RemoveObserver(DeviceObserver*)	function	rhi	rhi-devicehost-removeobserver-deviceobserver-star	rhi.md	engine/rhi/device_host.h:167
 rhi::EnableFlagOperators	struct	rhi	rhi-enableflagoperators	rhi.md	engine/rhi/enums.h:15
 rhi::EnableFlagOperators::value	variable	rhi	rhi-enableflagoperators-value	rhi.md	engine/rhi/enums.h:18
 rhi::operator|(E,E)	function	rhi	rhi-operator-pipe-e-e	rhi.md	engine/rhi/enums.h:25
@@ -1631,71 +1647,74 @@ rhi::NullDeviceOptions::abort_on_error	variable	rhi	rhi-nulldeviceoptions-abort-
 rhi::NullDeviceOptions::simulated_latency_frames	variable	rhi	rhi-nulldeviceoptions-simulated-latency-frames	rhi.md	engine/rhi/null/null_device.h:30
 rhi::NullDeviceOptions::max_buffer_bytes	variable	rhi	rhi-nulldeviceoptions-max-buffer-bytes	rhi.md	engine/rhi/null/null_device.h:32
 rhi::NullDeviceOptions::lose_device_at_frame	variable	rhi	rhi-nulldeviceoptions-lose-device-at-frame	rhi.md	engine/rhi/null/null_device.h:35
-rhi::NullDeviceOptions::adapter	variable	rhi	rhi-nulldeviceoptions-adapter	rhi.md	engine/rhi/null/null_device.h:38
-rhi::NullDeviceOptions::DefaultAdapter()	function	rhi	rhi-nulldeviceoptions-defaultadapter	rhi.md	engine/rhi/null/null_device.h:41
-rhi::NullDeviceStats	struct	rhi	rhi-nulldevicestats	rhi.md	engine/rhi/null/null_device.h:51
-rhi::NullDeviceStats::buffers	variable	rhi	rhi-nulldevicestats-buffers	rhi.md	engine/rhi/null/null_device.h:53
-rhi::NullDeviceStats::textures	variable	rhi	rhi-nulldevicestats-textures	rhi.md	engine/rhi/null/null_device.h:55
-rhi::NullDeviceStats::samplers	variable	rhi	rhi-nulldevicestats-samplers	rhi.md	engine/rhi/null/null_device.h:57
-rhi::NullDeviceStats::shaders	variable	rhi	rhi-nulldevicestats-shaders	rhi.md	engine/rhi/null/null_device.h:59
-rhi::NullDeviceStats::bind_group_layouts	variable	rhi	rhi-nulldevicestats-bind-group-layouts	rhi.md	engine/rhi/null/null_device.h:61
-rhi::NullDeviceStats::bind_groups	variable	rhi	rhi-nulldevicestats-bind-groups	rhi.md	engine/rhi/null/null_device.h:63
-rhi::NullDeviceStats::pipelines	variable	rhi	rhi-nulldevicestats-pipelines	rhi.md	engine/rhi/null/null_device.h:65
-rhi::NullDeviceStats::pending_destruction	variable	rhi	rhi-nulldevicestats-pending-destruction	rhi.md	engine/rhi/null/null_device.h:67
-rhi::NullDeviceStats::command_lists	variable	rhi	rhi-nulldevicestats-command-lists	rhi.md	engine/rhi/null/null_device.h:69
-rhi::NullDevicePtr	alias	rhi	rhi-nulldeviceptr	rhi.md	engine/rhi/null/null_device.h:75
-rhi::NullDevice	class	rhi	rhi-nulldevice	rhi.md	engine/rhi/null/null_device.h:87
-rhi::NullDevice::NullDevice(const NullDeviceOptions&)	function	rhi	rhi-nulldevice-nulldevice-const-nulldeviceoptions-amp	rhi.md	engine/rhi/null/null_device.h:92
-rhi::NullDevice::~NullDevice()	function	rhi	rhi-nulldevice-tilde-nulldevice	rhi.md	engine/rhi/null/null_device.h:95
-rhi::NullDevice::BackendName() const	function	rhi	rhi-nulldevice-backendname-const	rhi.md	engine/rhi/null/null_device.h:97
-rhi::NullDevice::Adapter() const	function	rhi	rhi-nulldevice-adapter-const	rhi.md	engine/rhi/null/null_device.h:98
-rhi::NullDevice::Epoch() const	function	rhi	rhi-nulldevice-epoch-const	rhi.md	engine/rhi/null/null_device.h:99
-rhi::NullDevice::Resources() const	function	rhi	rhi-nulldevice-resources-const	rhi.md	engine/rhi/null/null_device.h:100
-rhi::NullDevice::InFrame() const	function	rhi	rhi-nulldevice-inframe-const	rhi.md	engine/rhi/null/null_device.h:101
-rhi::NullDevice::Caps() const	function	rhi	rhi-nulldevice-caps-const	rhi.md	engine/rhi/null/null_device.h:102
-rhi::NullDevice::CreateBuffer(const BufferDesc&)	function	rhi	rhi-nulldevice-createbuffer-const-bufferdesc-amp	rhi.md	engine/rhi/null/null_device.h:103
-rhi::NullDevice::DestroyBuffer(BufferHandle)	function	rhi	rhi-nulldevice-destroybuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:104
-rhi::NullDevice::CreateTexture(const TextureDesc&)	function	rhi	rhi-nulldevice-createtexture-const-texturedesc-amp	rhi.md	engine/rhi/null/null_device.h:105
-rhi::NullDevice::DestroyTexture(TextureHandle)	function	rhi	rhi-nulldevice-destroytexture-texturehandle	rhi.md	engine/rhi/null/null_device.h:106
-rhi::NullDevice::CreateSampler(const SamplerDesc&)	function	rhi	rhi-nulldevice-createsampler-const-samplerdesc-amp	rhi.md	engine/rhi/null/null_device.h:107
-rhi::NullDevice::DestroySampler(SamplerHandle)	function	rhi	rhi-nulldevice-destroysampler-samplerhandle	rhi.md	engine/rhi/null/null_device.h:108
-rhi::NullDevice::CreateShader(const ShaderDesc&)	function	rhi	rhi-nulldevice-createshader-const-shaderdesc-amp	rhi.md	engine/rhi/null/null_device.h:109
-rhi::NullDevice::DestroyShader(ShaderHandle)	function	rhi	rhi-nulldevice-destroyshader-shaderhandle	rhi.md	engine/rhi/null/null_device.h:110
-rhi::NullDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi	rhi-nulldevice-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi.md	engine/rhi/null/null_device.h:111
-rhi::NullDevice::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi	rhi-nulldevice-destroybindgrouplayout-bindgrouplayouthandle	rhi.md	engine/rhi/null/null_device.h:112
-rhi::NullDevice::CreateBindGroup(const BindGroupDesc&)	function	rhi	rhi-nulldevice-createbindgroup-const-bindgroupdesc-amp	rhi.md	engine/rhi/null/null_device.h:113
-rhi::NullDevice::DestroyBindGroup(BindGroupHandle)	function	rhi	rhi-nulldevice-destroybindgroup-bindgrouphandle	rhi.md	engine/rhi/null/null_device.h:114
-rhi::NullDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi	rhi-nulldevice-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi.md	engine/rhi/null/null_device.h:115
-rhi::NullDevice::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi	rhi-nulldevice-createcomputepipeline-const-computepipelinedesc-amp	rhi.md	engine/rhi/null/null_device.h:116
-rhi::NullDevice::DestroyPipeline(PipelineHandle)	function	rhi	rhi-nulldevice-destroypipeline-pipelinehandle	rhi.md	engine/rhi/null/null_device.h:117
-rhi::NullDevice::MapBuffer(BufferHandle)	function	rhi	rhi-nulldevice-mapbuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:118
-rhi::NullDevice::UnmapBuffer(BufferHandle)	function	rhi	rhi-nulldevice-unmapbuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:119
-rhi::NullDevice::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi	rhi-nulldevice-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi.md	engine/rhi/null/null_device.h:120
-rhi::NullDevice::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi	rhi-nulldevice-readbackbuffer-bufferhandle-u64-void-star-u64	rhi.md	engine/rhi/null/null_device.h:121
-rhi::NullDevice::CreateSwapchain(const SwapchainDesc&)	function	rhi	rhi-nulldevice-createswapchain-const-swapchaindesc-amp	rhi.md	engine/rhi/null/null_device.h:122
-rhi::NullDevice::DestroySwapchain(Swapchain*)	function	rhi	rhi-nulldevice-destroyswapchain-swapchain-star	rhi.md	engine/rhi/null/null_device.h:123
-rhi::NullDevice::FormatSupport(Format,TextureUsage) const	function	rhi	rhi-nulldevice-formatsupport-format-textureusage-const	rhi.md	engine/rhi/null/null_device.h:124
-rhi::NullDevice::CanGenerateMips(Format) const	function	rhi	rhi-nulldevice-cangeneratemips-format-const	rhi.md	engine/rhi/null/null_device.h:125
-rhi::NullDevice::UploadTexture(TextureHandle,u32,u32,const void*,u32)	function	rhi	rhi-nulldevice-uploadtexture-texturehandle-u32-u32-const-void-star-u32	rhi.md	engine/rhi/null/null_device.h:126
-rhi::NullDevice::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi	rhi-nulldevice-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi.md	engine/rhi/null/null_device.h:127
-rhi::NullDevice::CreateCommandList()	function	rhi	rhi-nulldevice-createcommandlist	rhi.md	engine/rhi/null/null_device.h:128
-rhi::NullDevice::Submit(CommandList* const*,usize)	function	rhi	rhi-nulldevice-submit-commandlist-star-const-star-usize	rhi.md	engine/rhi/null/null_device.h:129
-rhi::NullDevice::WaitFence(FenceValue,u64)	function	rhi	rhi-nulldevice-waitfence-fencevalue-u64	rhi.md	engine/rhi/null/null_device.h:130
-rhi::NullDevice::CompletedFence() const	function	rhi	rhi-nulldevice-completedfence-const	rhi.md	engine/rhi/null/null_device.h:131
-rhi::NullDevice::BeginFrame()	function	rhi	rhi-nulldevice-beginframe	rhi.md	engine/rhi/null/null_device.h:132
-rhi::NullDevice::EndFrame()	function	rhi	rhi-nulldevice-endframe	rhi.md	engine/rhi/null/null_device.h:133
-rhi::NullDevice::FrameNumber() const	function	rhi	rhi-nulldevice-framenumber-const	rhi.md	engine/rhi/null/null_device.h:134
-rhi::NullDevice::WaitIdle()	function	rhi	rhi-nulldevice-waitidle	rhi.md	engine/rhi/null/null_device.h:135
-rhi::NullDevice::DeviceLost() const	function	rhi	rhi-nulldevice-devicelost-const	rhi.md	engine/rhi/null/null_device.h:136
-rhi::NullDevice::ErrorCount() const	function	rhi	rhi-nulldevice-errorcount-const	rhi.md	engine/rhi/null/null_device.h:139
-rhi::NullDevice::LastError(char*,usize) const	function	rhi	rhi-nulldevice-lasterror-char-star-usize-const	rhi.md	engine/rhi/null/null_device.h:147
-rhi::NullDevice::ResetErrors()	function	rhi	rhi-nulldevice-reseterrors	rhi.md	engine/rhi/null/null_device.h:150
-rhi::NullDevice::Statistics() const	function	rhi	rhi-nulldevice-statistics-const	rhi.md	engine/rhi/null/null_device.h:153
-rhi::NullDevice::PeekBuffer(BufferHandle,u64,void*,u64) const	function	rhi	rhi-nulldevice-peekbuffer-bufferhandle-u64-void-star-u64-const	rhi.md	engine/rhi/null/null_device.h:164
-rhi::NullDevice::StateOf(BufferHandle) const	function	rhi	rhi-nulldevice-stateof-bufferhandle-const	rhi.md	engine/rhi/null/null_device.h:170
-rhi::NullDevice::StateOf(TextureHandle) const	function	rhi	rhi-nulldevice-stateof-texturehandle-const	rhi.md	engine/rhi/null/null_device.h:176
-rhi::NullDevice::SimulateDeviceLoss()	function	rhi	rhi-nulldevice-simulatedeviceloss	rhi.md	engine/rhi/null/null_device.h:179
-rhi::CreateNullDevice(const NullDeviceOptions&)	function	rhi	rhi-createnulldevice-const-nulldeviceoptions-amp	rhi.md	engine/rhi/null/null_device.h:191
+rhi::NullDeviceOptions::fail_surface_recreate	variable	rhi	rhi-nulldeviceoptions-fail-surface-recreate	rhi.md	engine/rhi/null/null_device.h:37
+rhi::NullDeviceOptions::adapter	variable	rhi	rhi-nulldeviceoptions-adapter	rhi.md	engine/rhi/null/null_device.h:40
+rhi::NullDeviceOptions::DefaultAdapter()	function	rhi	rhi-nulldeviceoptions-defaultadapter	rhi.md	engine/rhi/null/null_device.h:43
+rhi::NullDeviceStats	struct	rhi	rhi-nulldevicestats	rhi.md	engine/rhi/null/null_device.h:53
+rhi::NullDeviceStats::buffers	variable	rhi	rhi-nulldevicestats-buffers	rhi.md	engine/rhi/null/null_device.h:55
+rhi::NullDeviceStats::textures	variable	rhi	rhi-nulldevicestats-textures	rhi.md	engine/rhi/null/null_device.h:57
+rhi::NullDeviceStats::samplers	variable	rhi	rhi-nulldevicestats-samplers	rhi.md	engine/rhi/null/null_device.h:59
+rhi::NullDeviceStats::shaders	variable	rhi	rhi-nulldevicestats-shaders	rhi.md	engine/rhi/null/null_device.h:61
+rhi::NullDeviceStats::bind_group_layouts	variable	rhi	rhi-nulldevicestats-bind-group-layouts	rhi.md	engine/rhi/null/null_device.h:63
+rhi::NullDeviceStats::bind_groups	variable	rhi	rhi-nulldevicestats-bind-groups	rhi.md	engine/rhi/null/null_device.h:65
+rhi::NullDeviceStats::pipelines	variable	rhi	rhi-nulldevicestats-pipelines	rhi.md	engine/rhi/null/null_device.h:67
+rhi::NullDeviceStats::pending_destruction	variable	rhi	rhi-nulldevicestats-pending-destruction	rhi.md	engine/rhi/null/null_device.h:69
+rhi::NullDeviceStats::command_lists	variable	rhi	rhi-nulldevicestats-command-lists	rhi.md	engine/rhi/null/null_device.h:71
+rhi::NullDevicePtr	alias	rhi	rhi-nulldeviceptr	rhi.md	engine/rhi/null/null_device.h:77
+rhi::NullDevice	class	rhi	rhi-nulldevice	rhi.md	engine/rhi/null/null_device.h:89
+rhi::NullDevice::NullDevice(const NullDeviceOptions&)	function	rhi	rhi-nulldevice-nulldevice-const-nulldeviceoptions-amp	rhi.md	engine/rhi/null/null_device.h:94
+rhi::NullDevice::~NullDevice()	function	rhi	rhi-nulldevice-tilde-nulldevice	rhi.md	engine/rhi/null/null_device.h:97
+rhi::NullDevice::BackendName() const	function	rhi	rhi-nulldevice-backendname-const	rhi.md	engine/rhi/null/null_device.h:99
+rhi::NullDevice::Adapter() const	function	rhi	rhi-nulldevice-adapter-const	rhi.md	engine/rhi/null/null_device.h:100
+rhi::NullDevice::Epoch() const	function	rhi	rhi-nulldevice-epoch-const	rhi.md	engine/rhi/null/null_device.h:101
+rhi::NullDevice::Resources() const	function	rhi	rhi-nulldevice-resources-const	rhi.md	engine/rhi/null/null_device.h:102
+rhi::NullDevice::InFrame() const	function	rhi	rhi-nulldevice-inframe-const	rhi.md	engine/rhi/null/null_device.h:103
+rhi::NullDevice::Caps() const	function	rhi	rhi-nulldevice-caps-const	rhi.md	engine/rhi/null/null_device.h:104
+rhi::NullDevice::CreateBuffer(const BufferDesc&)	function	rhi	rhi-nulldevice-createbuffer-const-bufferdesc-amp	rhi.md	engine/rhi/null/null_device.h:105
+rhi::NullDevice::DestroyBuffer(BufferHandle)	function	rhi	rhi-nulldevice-destroybuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:106
+rhi::NullDevice::CreateTexture(const TextureDesc&)	function	rhi	rhi-nulldevice-createtexture-const-texturedesc-amp	rhi.md	engine/rhi/null/null_device.h:107
+rhi::NullDevice::DestroyTexture(TextureHandle)	function	rhi	rhi-nulldevice-destroytexture-texturehandle	rhi.md	engine/rhi/null/null_device.h:108
+rhi::NullDevice::CreateSampler(const SamplerDesc&)	function	rhi	rhi-nulldevice-createsampler-const-samplerdesc-amp	rhi.md	engine/rhi/null/null_device.h:109
+rhi::NullDevice::DestroySampler(SamplerHandle)	function	rhi	rhi-nulldevice-destroysampler-samplerhandle	rhi.md	engine/rhi/null/null_device.h:110
+rhi::NullDevice::CreateShader(const ShaderDesc&)	function	rhi	rhi-nulldevice-createshader-const-shaderdesc-amp	rhi.md	engine/rhi/null/null_device.h:111
+rhi::NullDevice::DestroyShader(ShaderHandle)	function	rhi	rhi-nulldevice-destroyshader-shaderhandle	rhi.md	engine/rhi/null/null_device.h:112
+rhi::NullDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi	rhi-nulldevice-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi.md	engine/rhi/null/null_device.h:113
+rhi::NullDevice::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi	rhi-nulldevice-destroybindgrouplayout-bindgrouplayouthandle	rhi.md	engine/rhi/null/null_device.h:114
+rhi::NullDevice::CreateBindGroup(const BindGroupDesc&)	function	rhi	rhi-nulldevice-createbindgroup-const-bindgroupdesc-amp	rhi.md	engine/rhi/null/null_device.h:115
+rhi::NullDevice::DestroyBindGroup(BindGroupHandle)	function	rhi	rhi-nulldevice-destroybindgroup-bindgrouphandle	rhi.md	engine/rhi/null/null_device.h:116
+rhi::NullDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi	rhi-nulldevice-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi.md	engine/rhi/null/null_device.h:117
+rhi::NullDevice::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi	rhi-nulldevice-createcomputepipeline-const-computepipelinedesc-amp	rhi.md	engine/rhi/null/null_device.h:118
+rhi::NullDevice::DestroyPipeline(PipelineHandle)	function	rhi	rhi-nulldevice-destroypipeline-pipelinehandle	rhi.md	engine/rhi/null/null_device.h:119
+rhi::NullDevice::MapBuffer(BufferHandle)	function	rhi	rhi-nulldevice-mapbuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:120
+rhi::NullDevice::UnmapBuffer(BufferHandle)	function	rhi	rhi-nulldevice-unmapbuffer-bufferhandle	rhi.md	engine/rhi/null/null_device.h:121
+rhi::NullDevice::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi	rhi-nulldevice-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi.md	engine/rhi/null/null_device.h:122
+rhi::NullDevice::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi	rhi-nulldevice-readbackbuffer-bufferhandle-u64-void-star-u64	rhi.md	engine/rhi/null/null_device.h:123
+rhi::NullDevice::CreateSwapchain(const SwapchainDesc&)	function	rhi	rhi-nulldevice-createswapchain-const-swapchaindesc-amp	rhi.md	engine/rhi/null/null_device.h:124
+rhi::NullDevice::DestroySwapchain(Swapchain*)	function	rhi	rhi-nulldevice-destroyswapchain-swapchain-star	rhi.md	engine/rhi/null/null_device.h:125
+rhi::NullDevice::FormatSupport(Format,TextureUsage) const	function	rhi	rhi-nulldevice-formatsupport-format-textureusage-const	rhi.md	engine/rhi/null/null_device.h:126
+rhi::NullDevice::CanGenerateMips(Format) const	function	rhi	rhi-nulldevice-cangeneratemips-format-const	rhi.md	engine/rhi/null/null_device.h:127
+rhi::NullDevice::UploadTexture(TextureHandle,u32,u32,const void*,u32)	function	rhi	rhi-nulldevice-uploadtexture-texturehandle-u32-u32-const-void-star-u32	rhi.md	engine/rhi/null/null_device.h:128
+rhi::NullDevice::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi	rhi-nulldevice-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi.md	engine/rhi/null/null_device.h:129
+rhi::NullDevice::CreateCommandList()	function	rhi	rhi-nulldevice-createcommandlist	rhi.md	engine/rhi/null/null_device.h:130
+rhi::NullDevice::Submit(CommandList* const*,usize)	function	rhi	rhi-nulldevice-submit-commandlist-star-const-star-usize	rhi.md	engine/rhi/null/null_device.h:131
+rhi::NullDevice::WaitFence(FenceValue,u64)	function	rhi	rhi-nulldevice-waitfence-fencevalue-u64	rhi.md	engine/rhi/null/null_device.h:132
+rhi::NullDevice::CompletedFence() const	function	rhi	rhi-nulldevice-completedfence-const	rhi.md	engine/rhi/null/null_device.h:133
+rhi::NullDevice::BeginFrame()	function	rhi	rhi-nulldevice-beginframe	rhi.md	engine/rhi/null/null_device.h:134
+rhi::NullDevice::EndFrame()	function	rhi	rhi-nulldevice-endframe	rhi.md	engine/rhi/null/null_device.h:135
+rhi::NullDevice::FrameNumber() const	function	rhi	rhi-nulldevice-framenumber-const	rhi.md	engine/rhi/null/null_device.h:136
+rhi::NullDevice::WaitIdle()	function	rhi	rhi-nulldevice-waitidle	rhi.md	engine/rhi/null/null_device.h:137
+rhi::NullDevice::DeviceLost() const	function	rhi	rhi-nulldevice-devicelost-const	rhi.md	engine/rhi/null/null_device.h:138
+rhi::NullDevice::ErrorCount() const	function	rhi	rhi-nulldevice-errorcount-const	rhi.md	engine/rhi/null/null_device.h:141
+rhi::NullDevice::LastError(char*,usize) const	function	rhi	rhi-nulldevice-lasterror-char-star-usize-const	rhi.md	engine/rhi/null/null_device.h:149
+rhi::NullDevice::ResetErrors()	function	rhi	rhi-nulldevice-reseterrors	rhi.md	engine/rhi/null/null_device.h:152
+rhi::NullDevice::Statistics() const	function	rhi	rhi-nulldevice-statistics-const	rhi.md	engine/rhi/null/null_device.h:155
+rhi::NullDevice::PeekBuffer(BufferHandle,u64,void*,u64) const	function	rhi	rhi-nulldevice-peekbuffer-bufferhandle-u64-void-star-u64-const	rhi.md	engine/rhi/null/null_device.h:166
+rhi::NullDevice::StateOf(BufferHandle) const	function	rhi	rhi-nulldevice-stateof-bufferhandle-const	rhi.md	engine/rhi/null/null_device.h:172
+rhi::NullDevice::StateOf(TextureHandle) const	function	rhi	rhi-nulldevice-stateof-texturehandle-const	rhi.md	engine/rhi/null/null_device.h:178
+rhi::NullDevice::SimulateDeviceLoss()	function	rhi	rhi-nulldevice-simulatedeviceloss	rhi.md	engine/rhi/null/null_device.h:181
+rhi::NullDevice::SimulateSurfaceLoss()	function	rhi	rhi-nulldevice-simulatesurfaceloss	rhi.md	engine/rhi/null/null_device.h:186
+rhi::NullDevice::RecreateSurface(const os::Window*)	function	rhi	rhi-nulldevice-recreatesurface-const-os-window-star	rhi.md	engine/rhi/null/null_device.h:188
+rhi::CreateNullDevice(const NullDeviceOptions&)	function	rhi	rhi-createnulldevice-const-nulldeviceoptions-amp	rhi.md	engine/rhi/null/null_device.h:200
 rhi::Backend	enum	rhi	rhi-backend	rhi.md	engine/rhi/rhi.h:13
 rhi::Backend::Null	enumerator	rhi	rhi-backend-null	rhi.md	engine/rhi/rhi.h:14
 rhi::Backend::Vulkan	enumerator	rhi	rhi-backend-vulkan	rhi.md	engine/rhi/rhi.h:15
@@ -1706,19 +1725,20 @@ rhi::ValidationSetting::On	enumerator	rhi	rhi-validationsetting-on	rhi.md	engine
 rhi::FaultInjection	struct	rhi	rhi-faultinjection	rhi.md	engine/rhi/rhi.h:32
 rhi::FaultInjection::lose_device_at_frame	variable	rhi	rhi-faultinjection-lose-device-at-frame	rhi.md	engine/rhi/rhi.h:35
 rhi::FaultInjection::fail_allocations_from	variable	rhi	rhi-faultinjection-fail-allocations-from	rhi.md	engine/rhi/rhi.h:38
-rhi::DeviceCreateInfo	struct	rhi	rhi-devicecreateinfo	rhi.md	engine/rhi/rhi.h:46
-rhi::DeviceCreateInfo::backend	variable	rhi	rhi-devicecreateinfo-backend	rhi.md	engine/rhi/rhi.h:48
-rhi::DeviceCreateInfo::application_name	variable	rhi	rhi-devicecreateinfo-application-name	rhi.md	engine/rhi/rhi.h:50
-rhi::DeviceCreateInfo::validation	variable	rhi	rhi-devicecreateinfo-validation	rhi.md	engine/rhi/rhi.h:52
-rhi::DeviceCreateInfo::sync_validation	variable	rhi	rhi-devicecreateinfo-sync-validation	rhi.md	engine/rhi/rhi.h:54
-rhi::DeviceCreateInfo::adapter	variable	rhi	rhi-devicecreateinfo-adapter	rhi.md	engine/rhi/rhi.h:61
-rhi::DeviceCreateInfo::window	variable	rhi	rhi-devicecreateinfo-window	rhi.md	engine/rhi/rhi.h:66
-rhi::DeviceCreateInfo::frames_in_flight	variable	rhi	rhi-devicecreateinfo-frames-in-flight	rhi.md	engine/rhi/rhi.h:69
-rhi::DeviceCreateInfo::pipeline_cache	variable	rhi	rhi-devicecreateinfo-pipeline-cache	rhi.md	engine/rhi/rhi.h:74
-rhi::DeviceCreateInfo::descriptor_sets_per_pool	variable	rhi	rhi-devicecreateinfo-descriptor-sets-per-pool	rhi.md	engine/rhi/rhi.h:77
-rhi::DeviceCreateInfo::pipeline_cache_dir	variable	rhi	rhi-devicecreateinfo-pipeline-cache-dir	rhi.md	engine/rhi/rhi.h:80
-rhi::DeviceCreateInfo::faults	variable	rhi	rhi-devicecreateinfo-faults	rhi.md	engine/rhi/rhi.h:82
-rhi::CreateDevice(const DeviceCreateInfo&)	function	rhi	rhi-createdevice-const-devicecreateinfo-amp	rhi.md	engine/rhi/rhi.h:103
+rhi::FaultInjection::fail_surface_recreate	variable	rhi	rhi-faultinjection-fail-surface-recreate	rhi.md	engine/rhi/rhi.h:41
+rhi::DeviceCreateInfo	struct	rhi	rhi-devicecreateinfo	rhi.md	engine/rhi/rhi.h:49
+rhi::DeviceCreateInfo::backend	variable	rhi	rhi-devicecreateinfo-backend	rhi.md	engine/rhi/rhi.h:51
+rhi::DeviceCreateInfo::application_name	variable	rhi	rhi-devicecreateinfo-application-name	rhi.md	engine/rhi/rhi.h:53
+rhi::DeviceCreateInfo::validation	variable	rhi	rhi-devicecreateinfo-validation	rhi.md	engine/rhi/rhi.h:55
+rhi::DeviceCreateInfo::sync_validation	variable	rhi	rhi-devicecreateinfo-sync-validation	rhi.md	engine/rhi/rhi.h:57
+rhi::DeviceCreateInfo::adapter	variable	rhi	rhi-devicecreateinfo-adapter	rhi.md	engine/rhi/rhi.h:64
+rhi::DeviceCreateInfo::window	variable	rhi	rhi-devicecreateinfo-window	rhi.md	engine/rhi/rhi.h:69
+rhi::DeviceCreateInfo::frames_in_flight	variable	rhi	rhi-devicecreateinfo-frames-in-flight	rhi.md	engine/rhi/rhi.h:72
+rhi::DeviceCreateInfo::pipeline_cache	variable	rhi	rhi-devicecreateinfo-pipeline-cache	rhi.md	engine/rhi/rhi.h:77
+rhi::DeviceCreateInfo::descriptor_sets_per_pool	variable	rhi	rhi-devicecreateinfo-descriptor-sets-per-pool	rhi.md	engine/rhi/rhi.h:80
+rhi::DeviceCreateInfo::pipeline_cache_dir	variable	rhi	rhi-devicecreateinfo-pipeline-cache-dir	rhi.md	engine/rhi/rhi.h:83
+rhi::DeviceCreateInfo::faults	variable	rhi	rhi-devicecreateinfo-faults	rhi.md	engine/rhi/rhi.h:85
+rhi::CreateDevice(const DeviceCreateInfo&)	function	rhi	rhi-createdevice-const-devicecreateinfo-amp	rhi.md	engine/rhi/rhi.h:106
 rhi::LogRhi	variable	rhi	rhi-logrhi	rhi.md	engine/rhi/rhi_log.h:13
 rhi::RhiLogV(LogVerbosity,const char*,...)	function	rhi	rhi-rhilogv-logverbosity-const-char-star	rhi.md	engine/rhi/rhi_log.h:24
 RhiLog	macro	rhi	rhilog	rhi.md	engine/rhi/rhi_log.h:44
@@ -1735,19 +1755,39 @@ rhi::PresentMode	enum	rhi	rhi-presentmode	rhi.md	engine/rhi/swapchain.h:20
 rhi::PresentMode::Fifo	enumerator	rhi	rhi-presentmode-fifo	rhi.md	engine/rhi/swapchain.h:21
 rhi::PresentMode::Mailbox	enumerator	rhi	rhi-presentmode-mailbox	rhi.md	engine/rhi/swapchain.h:22
 rhi::PresentMode::Immediate	enumerator	rhi	rhi-presentmode-immediate	rhi.md	engine/rhi/swapchain.h:23
-rhi::SwapchainDesc	struct	rhi	rhi-swapchaindesc	rhi.md	engine/rhi/swapchain.h:29
-rhi::SwapchainDesc::present_mode	variable	rhi	rhi-swapchaindesc-present-mode	rhi.md	engine/rhi/swapchain.h:31
-rhi::SwapchainDesc::width	variable	rhi	rhi-swapchaindesc-width	rhi.md	engine/rhi/swapchain.h:33
-rhi::SwapchainDesc::height	variable	rhi	rhi-swapchaindesc-height	rhi.md	engine/rhi/swapchain.h:35
-rhi::Swapchain	class	rhi	rhi-swapchain	rhi.md	engine/rhi/swapchain.h:47
-rhi::Swapchain::~Swapchain()	function	rhi	rhi-swapchain-tilde-swapchain	rhi.md	engine/rhi/swapchain.h:49
-rhi::Swapchain::Acquire()	function	rhi	rhi-swapchain-acquire	rhi.md	engine/rhi/swapchain.h:60
-rhi::Swapchain::Present()	function	rhi	rhi-swapchain-present	rhi.md	engine/rhi/swapchain.h:68
-rhi::Swapchain::Resize(u32,u32)	function	rhi	rhi-swapchain-resize-u32-u32	rhi.md	engine/rhi/swapchain.h:76
-rhi::Swapchain::ImageFormat() const	function	rhi	rhi-swapchain-imageformat-const	rhi.md	engine/rhi/swapchain.h:79
-rhi::Swapchain::Width() const	function	rhi	rhi-swapchain-width-const	rhi.md	engine/rhi/swapchain.h:82
-rhi::Swapchain::Height() const	function	rhi	rhi-swapchain-height-const	rhi.md	engine/rhi/swapchain.h:85
-rhi::Swapchain::CurrentTexture() const	function	rhi	rhi-swapchain-currenttexture-const	rhi.md	engine/rhi/swapchain.h:91
+rhi::HdrMode	enum	rhi	rhi-hdrmode	rhi.md	engine/rhi/swapchain.h:27
+rhi::HdrMode::Off	enumerator	rhi	rhi-hdrmode-off	rhi.md	engine/rhi/swapchain.h:28
+rhi::HdrMode::ScRgbLinear	enumerator	rhi	rhi-hdrmode-scrgblinear	rhi.md	engine/rhi/swapchain.h:29
+rhi::HdrMode::Hdr10	enumerator	rhi	rhi-hdrmode-hdr10	rhi.md	engine/rhi/swapchain.h:30
+rhi::ColorSpace	enum	rhi	rhi-colorspace	rhi.md	engine/rhi/swapchain.h:34
+rhi::ColorSpace::SrgbNonlinear	enumerator	rhi	rhi-colorspace-srgbnonlinear	rhi.md	engine/rhi/swapchain.h:35
+rhi::ColorSpace::ScRgbLinear	enumerator	rhi	rhi-colorspace-scrgblinear	rhi.md	engine/rhi/swapchain.h:36
+rhi::ColorSpace::Hdr10	enumerator	rhi	rhi-colorspace-hdr10	rhi.md	engine/rhi/swapchain.h:37
+rhi::SwapchainCaps	struct	rhi	rhi-swapchaincaps	rhi.md	engine/rhi/swapchain.h:43
+rhi::SwapchainCaps::present_mode_supported	variable	rhi	rhi-swapchaincaps-present-mode-supported	rhi.md	engine/rhi/swapchain.h:45
+rhi::SwapchainCaps::formats	variable	rhi	rhi-swapchaincaps-formats	rhi.md	engine/rhi/swapchain.h:47
+rhi::SwapchainCaps::format_count	variable	rhi	rhi-swapchaincaps-format-count	rhi.md	engine/rhi/swapchain.h:49
+rhi::SwapchainCaps::hdr_scrgb	variable	rhi	rhi-swapchaincaps-hdr-scrgb	rhi.md	engine/rhi/swapchain.h:51
+rhi::SwapchainCaps::hdr10	variable	rhi	rhi-swapchaincaps-hdr10	rhi.md	engine/rhi/swapchain.h:53
+rhi::SwapchainDesc	struct	rhi	rhi-swapchaindesc	rhi.md	engine/rhi/swapchain.h:59
+rhi::SwapchainDesc::present_mode	variable	rhi	rhi-swapchaindesc-present-mode	rhi.md	engine/rhi/swapchain.h:61
+rhi::SwapchainDesc::width	variable	rhi	rhi-swapchaindesc-width	rhi.md	engine/rhi/swapchain.h:63
+rhi::SwapchainDesc::height	variable	rhi	rhi-swapchaindesc-height	rhi.md	engine/rhi/swapchain.h:65
+rhi::SwapchainDesc::format	variable	rhi	rhi-swapchaindesc-format	rhi.md	engine/rhi/swapchain.h:68
+rhi::SwapchainDesc::hdr	variable	rhi	rhi-swapchaindesc-hdr	rhi.md	engine/rhi/swapchain.h:70
+rhi::Swapchain	class	rhi	rhi-swapchain	rhi.md	engine/rhi/swapchain.h:82
+rhi::Swapchain::~Swapchain()	function	rhi	rhi-swapchain-tilde-swapchain	rhi.md	engine/rhi/swapchain.h:84
+rhi::Swapchain::Acquire()	function	rhi	rhi-swapchain-acquire	rhi.md	engine/rhi/swapchain.h:95
+rhi::Swapchain::Present()	function	rhi	rhi-swapchain-present	rhi.md	engine/rhi/swapchain.h:103
+rhi::Swapchain::Reconfigure(const SwapchainDesc&)	function	rhi	rhi-swapchain-reconfigure-const-swapchaindesc-amp	rhi.md	engine/rhi/swapchain.h:115
+rhi::Swapchain::ActualPresentMode() const	function	rhi	rhi-swapchain-actualpresentmode-const	rhi.md	engine/rhi/swapchain.h:118
+rhi::Swapchain::GetColorSpace() const	function	rhi	rhi-swapchain-getcolorspace-const	rhi.md	engine/rhi/swapchain.h:121
+rhi::Swapchain::Capabilities() const	function	rhi	rhi-swapchain-capabilities-const	rhi.md	engine/rhi/swapchain.h:126
+rhi::Swapchain::Resize(u32,u32)	function	rhi	rhi-swapchain-resize-u32-u32	rhi.md	engine/rhi/swapchain.h:134
+rhi::Swapchain::ImageFormat() const	function	rhi	rhi-swapchain-imageformat-const	rhi.md	engine/rhi/swapchain.h:137
+rhi::Swapchain::Width() const	function	rhi	rhi-swapchain-width-const	rhi.md	engine/rhi/swapchain.h:140
+rhi::Swapchain::Height() const	function	rhi	rhi-swapchain-height-const	rhi.md	engine/rhi/swapchain.h:143
+rhi::Swapchain::CurrentTexture() const	function	rhi	rhi-swapchain-currenttexture-const	rhi.md	engine/rhi/swapchain.h:149
 rhi::UniformAllocation	struct	rhi	rhi-uniformallocation	rhi.md	engine/rhi/uniform_ring.h:15
 rhi::UniformAllocation::buffer	variable	rhi	rhi-uniformallocation-buffer	rhi.md	engine/rhi/uniform_ring.h:17
 rhi::UniformAllocation::offset	variable	rhi	rhi-uniformallocation-offset	rhi.md	engine/rhi/uniform_ring.h:19
@@ -2878,20 +2918,30 @@ rhi::vulkan::VulkanSwapchain::~VulkanSwapchain()	function	rhi-vulkan	rhi-vulkan-
 rhi::vulkan::VulkanSwapchain::Acquire()	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-acquire	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:28
 rhi::vulkan::VulkanSwapchain::Present()	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-present	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:29
 rhi::vulkan::VulkanSwapchain::Resize(u32,u32)	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-resize-u32-u32	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:30
-rhi::vulkan::VulkanSwapchain::ImageFormat() const	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-imageformat-const	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:31
-rhi::vulkan::VulkanSwapchain::Width() const	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-width-const	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:32
-rhi::vulkan::VulkanSwapchain::Height() const	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-height-const	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:33
-rhi::vulkan::VulkanSwapchain::CurrentTexture() const	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-currenttexture-const	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:34
-rhi::vulkan::VulkanSwapchain::Create(VulkanDevice*,const SwapchainDesc&)	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-create-vulkandevice-star-const-swapchaindesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:43
+rhi::vulkan::VulkanSwapchain::Reconfigure(const SwapchainDesc&)	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-reconfigure-const-swapchaindesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:31
+rhi::vulkan::VulkanSwapchain::ActualPresentMode() const	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-actualpresentmode-const	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:32
+rhi::vulkan::VulkanSwapchain::GetColorSpace() const	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-getcolorspace-const	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:33
+rhi::vulkan::VulkanSwapchain::Capabilities() const	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-capabilities-const	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:34
+rhi::vulkan::VulkanSwapchain::ImageFormat() const	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-imageformat-const	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:35
+rhi::vulkan::VulkanSwapchain::Width() const	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-width-const	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:36
+rhi::vulkan::VulkanSwapchain::Height() const	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-height-const	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:37
+rhi::vulkan::VulkanSwapchain::CurrentTexture() const	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-currenttexture-const	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:38
+rhi::vulkan::VulkanSwapchain::Create(VulkanDevice*,const SwapchainDesc&)	function	rhi-vulkan	rhi-vulkan-vulkanswapchain-create-vulkandevice-star-const-swapchaindesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain.h:47
 rhi::vulkan::SurfaceFormatChoice	struct	rhi-vulkan	rhi-vulkan-surfaceformatchoice	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:14
 rhi::vulkan::SurfaceFormatChoice::format	variable	rhi-vulkan	rhi-vulkan-surfaceformatchoice-format	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:16
 rhi::vulkan::SurfaceFormatChoice::preferred	variable	rhi-vulkan	rhi-vulkan-surfaceformatchoice-preferred	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:18
 rhi::vulkan::ChooseSurfaceFormat(const VkSurfaceFormatKHR*,usize)	function	rhi-vulkan	rhi-vulkan-choosesurfaceformat-const-vksurfaceformatkhr-star-usize	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:30
-rhi::vulkan::ChoosePresentMode(const VkPresentModeKHR*,usize,PresentMode)	function	rhi-vulkan	rhi-vulkan-choosepresentmode-const-vkpresentmodekhr-star-usize-presentmode	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:40
-rhi::vulkan::ChooseImageCount(u32,u32)	function	rhi-vulkan	rhi-vulkan-chooseimagecount-u32-u32	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:48
-rhi::vulkan::ChooseExtent(const VkSurfaceCapabilitiesKHR&,u32,u32)	function	rhi-vulkan	rhi-vulkan-chooseextent-const-vksurfacecapabilitieskhr-amp-u32-u32	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:59
-rhi::vulkan::ChooseCompositeAlpha(VkCompositeAlphaFlagsKHR)	function	rhi-vulkan	rhi-vulkan-choosecompositealpha-vkcompositealphaflagskhr	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:65
-rhi::vulkan::ChooseImageUsage(VkImageUsageFlags)	function	rhi-vulkan	rhi-vulkan-chooseimageusage-vkimageusageflags	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:71
+rhi::vulkan::RequestedFormatChoice	struct	rhi-vulkan	rhi-vulkan-requestedformatchoice	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:35
+rhi::vulkan::RequestedFormatChoice::format	variable	rhi-vulkan	rhi-vulkan-requestedformatchoice-format	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:37
+rhi::vulkan::RequestedFormatChoice::space	variable	rhi-vulkan	rhi-vulkan-requestedformatchoice-space	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:39
+rhi::vulkan::RequestedFormatChoice::fallback_note	variable	rhi-vulkan	rhi-vulkan-requestedformatchoice-fallback-note	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:41
+rhi::vulkan::ChooseRequestedSurfaceFormat(const VkSurfaceFormatKHR*,usize,Format,HdrMode)	function	rhi-vulkan	rhi-vulkan-chooserequestedsurfaceformat-const-vksurfaceformatkhr-star-usize-format-hdrmode	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:55
+rhi::vulkan::FillSwapchainCaps(const VkSurfaceFormatKHR*,usize,const VkPresentModeKHR*,usize,SwapchainCaps*)	function	rhi-vulkan	rhi-vulkan-fillswapchaincaps-const-vksurfaceformatkhr-star-usize-const-vkpresentmodekhr-star-usize-swapchaincaps-star	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:65
+rhi::vulkan::ChoosePresentMode(const VkPresentModeKHR*,usize,PresentMode)	function	rhi-vulkan	rhi-vulkan-choosepresentmode-const-vkpresentmodekhr-star-usize-presentmode	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:76
+rhi::vulkan::ChooseImageCount(u32,u32)	function	rhi-vulkan	rhi-vulkan-chooseimagecount-u32-u32	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:84
+rhi::vulkan::ChooseExtent(const VkSurfaceCapabilitiesKHR&,u32,u32)	function	rhi-vulkan	rhi-vulkan-chooseextent-const-vksurfacecapabilitieskhr-amp-u32-u32	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:95
+rhi::vulkan::ChooseCompositeAlpha(VkCompositeAlphaFlagsKHR)	function	rhi-vulkan	rhi-vulkan-choosecompositealpha-vkcompositealphaflagskhr	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:101
+rhi::vulkan::ChooseImageUsage(VkImageUsageFlags)	function	rhi-vulkan	rhi-vulkan-chooseimageusage-vkimageusageflags	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:107
 rhi::vulkan::CreateXlibSurface(void*,void*,void*,u64,u64*)	function	rhi-vulkan	rhi-vulkan-createxlibsurface-void-star-void-star-void-star-u64-u64-star	rhi-vulkan.md	engine/rhi/vulkan/vk_xlib_surface.h:21
 rhi::vulkan::VulkanDevicePtr	alias	rhi-vulkan	rhi-vulkan-vulkandeviceptr	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:29
 rhi::vulkan::VulkanDevice	class	rhi-vulkan	rhi-vulkan-vulkandevice	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:39
@@ -2905,118 +2955,119 @@ rhi::vulkan::VulkanDevice::BackendName() const	function	rhi-vulkan	rhi-vulkan-vu
 rhi::vulkan::VulkanDevice::Adapter() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-adapter-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:68
 rhi::vulkan::VulkanDevice::Epoch() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-epoch-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:69
 rhi::vulkan::VulkanDevice::Resources() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-resources-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:70
-rhi::vulkan::VulkanDevice::InFrame() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-inframe-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:71
-rhi::vulkan::VulkanDevice::Caps() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-caps-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:72
-rhi::vulkan::VulkanDevice::CreateBuffer(const BufferDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbuffer-const-bufferdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:73
-rhi::vulkan::VulkanDevice::DestroyBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:74
-rhi::vulkan::VulkanDevice::CreateTexture(const TextureDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createtexture-const-texturedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:75
-rhi::vulkan::VulkanDevice::DestroyTexture(TextureHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroytexture-texturehandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:76
-rhi::vulkan::VulkanDevice::CreateSampler(const SamplerDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createsampler-const-samplerdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:77
-rhi::vulkan::VulkanDevice::DestroySampler(SamplerHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroysampler-samplerhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:78
-rhi::vulkan::VulkanDevice::CreateShader(const ShaderDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createshader-const-shaderdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:79
-rhi::vulkan::VulkanDevice::DestroyShader(ShaderHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroyshader-shaderhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:80
-rhi::vulkan::VulkanDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:81
-rhi::vulkan::VulkanDevice::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybindgrouplayout-bindgrouplayouthandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:82
-rhi::vulkan::VulkanDevice::CreateBindGroup(const BindGroupDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbindgroup-const-bindgroupdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:83
-rhi::vulkan::VulkanDevice::DestroyBindGroup(BindGroupHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybindgroup-bindgrouphandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:84
-rhi::vulkan::VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:85
-rhi::vulkan::VulkanDevice::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createcomputepipeline-const-computepipelinedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:86
-rhi::vulkan::VulkanDevice::DestroyPipeline(PipelineHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroypipeline-pipelinehandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:87
-rhi::vulkan::VulkanDevice::MapBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-mapbuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:88
-rhi::vulkan::VulkanDevice::UnmapBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-unmapbuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:89
-rhi::vulkan::VulkanDevice::FlushMappedBuffer(BufferHandle,u64,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-flushmappedbuffer-bufferhandle-u64-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:90
-rhi::vulkan::VulkanDevice::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:91
-rhi::vulkan::VulkanDevice::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-readbackbuffer-bufferhandle-u64-void-star-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:92
-rhi::vulkan::VulkanDevice::CreateSwapchain(const SwapchainDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createswapchain-const-swapchaindesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:93
-rhi::vulkan::VulkanDevice::DestroySwapchain(Swapchain*)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroyswapchain-swapchain-star	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:94
-rhi::vulkan::VulkanDevice::FormatSupport(Format,TextureUsage) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-formatsupport-format-textureusage-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:95
-rhi::vulkan::VulkanDevice::CanGenerateMips(Format) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-cangeneratemips-format-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:96
-rhi::vulkan::VulkanDevice::UploadTexture(TextureHandle,u32,u32,const void*,u32)	function	rhi-vulkan	rhi-vulkan-vulkandevice-uploadtexture-texturehandle-u32-u32-const-void-star-u32	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:97
-rhi::vulkan::VulkanDevice::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi-vulkan	rhi-vulkan-vulkandevice-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:98
-rhi::vulkan::VulkanDevice::CreateCommandList()	function	rhi-vulkan	rhi-vulkan-vulkandevice-createcommandlist	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:99
-rhi::vulkan::VulkanDevice::Submit(CommandList* const*,usize)	function	rhi-vulkan	rhi-vulkan-vulkandevice-submit-commandlist-star-const-star-usize	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:100
-rhi::vulkan::VulkanDevice::WaitFence(FenceValue,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-waitfence-fencevalue-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:101
-rhi::vulkan::VulkanDevice::CompletedFence() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-completedfence-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:102
-rhi::vulkan::VulkanDevice::BeginFrame()	function	rhi-vulkan	rhi-vulkan-vulkandevice-beginframe	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:103
-rhi::vulkan::VulkanDevice::EndFrame()	function	rhi-vulkan	rhi-vulkan-vulkandevice-endframe	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:104
-rhi::vulkan::VulkanDevice::FrameNumber() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-framenumber-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:105
-rhi::vulkan::VulkanDevice::WaitIdle()	function	rhi-vulkan	rhi-vulkan-vulkandevice-waitidle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:106
-rhi::vulkan::VulkanDevice::DeviceLost() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-devicelost-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:107
-rhi::vulkan::VulkanDevice::GpuName() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-gpuname-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:111
-rhi::vulkan::VulkanDevice::GpuInfo() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-gpuinfo-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:114
-rhi::vulkan::VulkanDevice::Queues() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-queues-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:117
-rhi::vulkan::VulkanDevice::Instance() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-instance-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:120
-rhi::vulkan::VulkanDevice::Handle() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-handle-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:123
-rhi::vulkan::VulkanDevice::Fns() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-fns-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:126
-rhi::vulkan::VulkanDevice::MemoryProperties() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-memoryproperties-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:129
-rhi::vulkan::VulkanDevice::Properties() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-properties-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:132
-rhi::vulkan::VulkanDevice::Memory()	function	rhi-vulkan	rhi-vulkan-vulkandevice-memory	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:136
-rhi::vulkan::VulkanDevice::MemoryObjectsAllocated() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-memoryobjectsallocated-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:139
-rhi::vulkan::VulkanDevice::HeapBudget(u32,u64*,u64*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-heapbudget-u32-u64-star-u64-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:148
-rhi::vulkan::VulkanDevice::ObjectCounts	struct	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:153
-rhi::vulkan::VulkanDevice::ObjectCounts::buffers	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-buffers	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:155
-rhi::vulkan::VulkanDevice::ObjectCounts::pending_destruction	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pending-destruction	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:157
-rhi::vulkan::VulkanDevice::ObjectCounts::raw_buffers	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-raw-buffers	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:159
-rhi::vulkan::VulkanDevice::ObjectCounts::textures	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-textures	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:161
-rhi::vulkan::VulkanDevice::ObjectCounts::samplers	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-samplers	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:163
-rhi::vulkan::VulkanDevice::ObjectCounts::pending_image_destruction	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pending-image-destruction	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:165
-rhi::vulkan::VulkanDevice::ObjectCounts::raw_images	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-raw-images	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:167
-rhi::vulkan::VulkanDevice::ObjectCounts::shaders	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-shaders	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:169
-rhi::vulkan::VulkanDevice::ObjectCounts::bind_group_layouts	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-bind-group-layouts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:171
-rhi::vulkan::VulkanDevice::ObjectCounts::pipelines	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pipelines	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:173
-rhi::vulkan::VulkanDevice::ObjectCounts::descriptor_set_layouts	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-descriptor-set-layouts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:175
-rhi::vulkan::VulkanDevice::ObjectCounts::pipeline_layouts	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pipeline-layouts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:177
-rhi::vulkan::VulkanDevice::ObjectCounts::bind_groups	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-bind-groups	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:179
-rhi::vulkan::VulkanDevice::ObjectCounts::descriptor_pools	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-descriptor-pools	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:181
-rhi::vulkan::VulkanDevice::Counts() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-counts-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:185
-rhi::vulkan::VulkanDevice::CompletedFrame() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-completedframe-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:188
-rhi::vulkan::VulkanDevice::FramesInFlight() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-framesinflight-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:191
-rhi::vulkan::VulkanDevice::LeakCounts	struct	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:196
-rhi::vulkan::VulkanDevice::LeakCounts::user_objects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts-user-objects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:199
-rhi::vulkan::VulkanDevice::LeakCounts::internal_objects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts-internal-objects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:201
-rhi::vulkan::VulkanDevice::GetLeakCounts()	function	rhi-vulkan	rhi-vulkan-vulkandevice-getleakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:206
-rhi::vulkan::VulkanDevice::ResetLeakCounts()	function	rhi-vulkan	rhi-vulkan-vulkandevice-resetleakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:209
-rhi::vulkan::VulkanDevice::LookupBuffer(BufferHandle,VkBuffer*,BufferDesc*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupbuffer-bufferhandle-vkbuffer-star-bufferdesc-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:218
-rhi::vulkan::VulkanDevice::TextureInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:223
-rhi::vulkan::VulkanDevice::TextureInfo::image	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-image	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:225
-rhi::vulkan::VulkanDevice::TextureInfo::view	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-view	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:227
-rhi::vulkan::VulkanDevice::TextureInfo::attachment_view	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-attachment-view	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:229
-rhi::vulkan::VulkanDevice::TextureInfo::desc	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-desc	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:231
-rhi::vulkan::VulkanDevice::TextureInfo::aspects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-aspects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:233
-rhi::vulkan::VulkanDevice::LookupTexture(TextureHandle,TextureInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookuptexture-texturehandle-textureinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:242
-rhi::vulkan::VulkanDevice::ShaderInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:249
-rhi::vulkan::VulkanDevice::ShaderInfo::module	variable	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo-module	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:251
-rhi::vulkan::VulkanDevice::ShaderInfo::stage	variable	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo-stage	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:253
-rhi::vulkan::VulkanDevice::ShaderInfo::entry	variable	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo-entry	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:255
-rhi::vulkan::VulkanDevice::LookupSampler(SamplerHandle,VkSampler*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupsampler-samplerhandle-vksampler-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:265
-rhi::vulkan::VulkanDevice::LookupShader(ShaderHandle,ShaderInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupshader-shaderhandle-shaderinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:274
-rhi::vulkan::VulkanDevice::PipelineInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:280
-rhi::vulkan::VulkanDevice::PipelineInfo::pipeline	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-pipeline	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:282
-rhi::vulkan::VulkanDevice::PipelineInfo::layout	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-layout	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:284
-rhi::vulkan::VulkanDevice::PipelineInfo::compute	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-compute	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:286
-rhi::vulkan::VulkanDevice::PipelineInfo::layout_count	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-layout-count	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:288
-rhi::vulkan::VulkanDevice::PipelineInfo::layout_ids	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-layout-ids	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:290
-rhi::vulkan::VulkanDevice::PipelineInfo::push_bytes	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-push-bytes	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:292
-rhi::vulkan::VulkanDevice::PipelineInfo::push_stages	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-push-stages	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:294
-rhi::vulkan::VulkanDevice::PipelineInfo::color_count	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-color-count	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:296
-rhi::vulkan::VulkanDevice::PipelineInfo::color_formats	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-color-formats	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:298
-rhi::vulkan::VulkanDevice::PipelineInfo::depth_format	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-depth-format	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:300
-rhi::vulkan::VulkanDevice::BindGroupInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:308
-rhi::vulkan::VulkanDevice::BindGroupInfo::set	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-set	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:310
-rhi::vulkan::VulkanDevice::BindGroupInfo::layout_id	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-layout-id	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:312
-rhi::vulkan::VulkanDevice::BindGroupInfo::transient	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-transient	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:314
-rhi::vulkan::VulkanDevice::BindGroupInfo::frame	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-frame	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:316
-rhi::vulkan::VulkanDevice::BindGroupInfo::resources_live	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-resources-live	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:318
-rhi::vulkan::VulkanDevice::LookupBindGroup(BindGroupHandle,BindGroupInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupbindgroup-bindgrouphandle-bindgroupinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:328
-rhi::vulkan::VulkanDevice::LookupPipeline(PipelineHandle,PipelineInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookuppipeline-pipelinehandle-pipelineinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:337
-rhi::vulkan::VulkanDevice::PipelineCacheStats	struct	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:342
-rhi::vulkan::VulkanDevice::PipelineCacheStats::enabled	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-enabled	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:344
-rhi::vulkan::VulkanDevice::PipelineCacheStats::loaded_bytes	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-loaded-bytes	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:346
-rhi::vulkan::VulkanDevice::PipelineCacheStats::rejected	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-rejected	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:348
-rhi::vulkan::VulkanDevice::PipelineCacheStats::saved_bytes	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-saved-bytes	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:350
-rhi::vulkan::VulkanDevice::PipelineCache() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecache-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:354
-rhi::vulkan::VulkanDevice::SavePipelineCache()	function	rhi-vulkan	rhi-vulkan-vulkandevice-savepipelinecache	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:362
-rhi::vulkan::VulkanDevice::PipelineCachePath() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachepath-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:365
-rhi::vulkan::VulkanDevice::ReportResult(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-reportresult-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:371
-rhi::vulkan::VulkanDevice::InjectSubmitFailure(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-injectsubmitfailure-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:377
-rhi::vulkan::VulkanDevice::CommandPoolCount() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-commandpoolcount-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:380
+rhi::vulkan::VulkanDevice::RecreateSurface(const os::Window*)	function	rhi-vulkan	rhi-vulkan-vulkandevice-recreatesurface-const-os-window-star	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:71
+rhi::vulkan::VulkanDevice::InFrame() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-inframe-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:72
+rhi::vulkan::VulkanDevice::Caps() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-caps-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:73
+rhi::vulkan::VulkanDevice::CreateBuffer(const BufferDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbuffer-const-bufferdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:74
+rhi::vulkan::VulkanDevice::DestroyBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:75
+rhi::vulkan::VulkanDevice::CreateTexture(const TextureDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createtexture-const-texturedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:76
+rhi::vulkan::VulkanDevice::DestroyTexture(TextureHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroytexture-texturehandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:77
+rhi::vulkan::VulkanDevice::CreateSampler(const SamplerDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createsampler-const-samplerdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:78
+rhi::vulkan::VulkanDevice::DestroySampler(SamplerHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroysampler-samplerhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:79
+rhi::vulkan::VulkanDevice::CreateShader(const ShaderDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createshader-const-shaderdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:80
+rhi::vulkan::VulkanDevice::DestroyShader(ShaderHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroyshader-shaderhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:81
+rhi::vulkan::VulkanDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:82
+rhi::vulkan::VulkanDevice::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybindgrouplayout-bindgrouplayouthandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:83
+rhi::vulkan::VulkanDevice::CreateBindGroup(const BindGroupDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbindgroup-const-bindgroupdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:84
+rhi::vulkan::VulkanDevice::DestroyBindGroup(BindGroupHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybindgroup-bindgrouphandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:85
+rhi::vulkan::VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:86
+rhi::vulkan::VulkanDevice::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createcomputepipeline-const-computepipelinedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:87
+rhi::vulkan::VulkanDevice::DestroyPipeline(PipelineHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroypipeline-pipelinehandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:88
+rhi::vulkan::VulkanDevice::MapBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-mapbuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:89
+rhi::vulkan::VulkanDevice::UnmapBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-unmapbuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:90
+rhi::vulkan::VulkanDevice::FlushMappedBuffer(BufferHandle,u64,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-flushmappedbuffer-bufferhandle-u64-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:91
+rhi::vulkan::VulkanDevice::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:92
+rhi::vulkan::VulkanDevice::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-readbackbuffer-bufferhandle-u64-void-star-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:93
+rhi::vulkan::VulkanDevice::CreateSwapchain(const SwapchainDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createswapchain-const-swapchaindesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:94
+rhi::vulkan::VulkanDevice::DestroySwapchain(Swapchain*)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroyswapchain-swapchain-star	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:95
+rhi::vulkan::VulkanDevice::FormatSupport(Format,TextureUsage) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-formatsupport-format-textureusage-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:96
+rhi::vulkan::VulkanDevice::CanGenerateMips(Format) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-cangeneratemips-format-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:97
+rhi::vulkan::VulkanDevice::UploadTexture(TextureHandle,u32,u32,const void*,u32)	function	rhi-vulkan	rhi-vulkan-vulkandevice-uploadtexture-texturehandle-u32-u32-const-void-star-u32	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:98
+rhi::vulkan::VulkanDevice::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi-vulkan	rhi-vulkan-vulkandevice-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:99
+rhi::vulkan::VulkanDevice::CreateCommandList()	function	rhi-vulkan	rhi-vulkan-vulkandevice-createcommandlist	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:100
+rhi::vulkan::VulkanDevice::Submit(CommandList* const*,usize)	function	rhi-vulkan	rhi-vulkan-vulkandevice-submit-commandlist-star-const-star-usize	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:101
+rhi::vulkan::VulkanDevice::WaitFence(FenceValue,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-waitfence-fencevalue-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:102
+rhi::vulkan::VulkanDevice::CompletedFence() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-completedfence-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:103
+rhi::vulkan::VulkanDevice::BeginFrame()	function	rhi-vulkan	rhi-vulkan-vulkandevice-beginframe	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:104
+rhi::vulkan::VulkanDevice::EndFrame()	function	rhi-vulkan	rhi-vulkan-vulkandevice-endframe	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:105
+rhi::vulkan::VulkanDevice::FrameNumber() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-framenumber-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:106
+rhi::vulkan::VulkanDevice::WaitIdle()	function	rhi-vulkan	rhi-vulkan-vulkandevice-waitidle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:107
+rhi::vulkan::VulkanDevice::DeviceLost() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-devicelost-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:108
+rhi::vulkan::VulkanDevice::GpuName() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-gpuname-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:112
+rhi::vulkan::VulkanDevice::GpuInfo() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-gpuinfo-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:115
+rhi::vulkan::VulkanDevice::Queues() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-queues-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:118
+rhi::vulkan::VulkanDevice::Instance() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-instance-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:121
+rhi::vulkan::VulkanDevice::Handle() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-handle-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:124
+rhi::vulkan::VulkanDevice::Fns() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-fns-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:127
+rhi::vulkan::VulkanDevice::MemoryProperties() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-memoryproperties-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:130
+rhi::vulkan::VulkanDevice::Properties() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-properties-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:133
+rhi::vulkan::VulkanDevice::Memory()	function	rhi-vulkan	rhi-vulkan-vulkandevice-memory	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:137
+rhi::vulkan::VulkanDevice::MemoryObjectsAllocated() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-memoryobjectsallocated-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:140
+rhi::vulkan::VulkanDevice::HeapBudget(u32,u64*,u64*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-heapbudget-u32-u64-star-u64-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:149
+rhi::vulkan::VulkanDevice::ObjectCounts	struct	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:154
+rhi::vulkan::VulkanDevice::ObjectCounts::buffers	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-buffers	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:156
+rhi::vulkan::VulkanDevice::ObjectCounts::pending_destruction	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pending-destruction	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:158
+rhi::vulkan::VulkanDevice::ObjectCounts::raw_buffers	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-raw-buffers	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:160
+rhi::vulkan::VulkanDevice::ObjectCounts::textures	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-textures	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:162
+rhi::vulkan::VulkanDevice::ObjectCounts::samplers	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-samplers	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:164
+rhi::vulkan::VulkanDevice::ObjectCounts::pending_image_destruction	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pending-image-destruction	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:166
+rhi::vulkan::VulkanDevice::ObjectCounts::raw_images	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-raw-images	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:168
+rhi::vulkan::VulkanDevice::ObjectCounts::shaders	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-shaders	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:170
+rhi::vulkan::VulkanDevice::ObjectCounts::bind_group_layouts	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-bind-group-layouts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:172
+rhi::vulkan::VulkanDevice::ObjectCounts::pipelines	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pipelines	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:174
+rhi::vulkan::VulkanDevice::ObjectCounts::descriptor_set_layouts	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-descriptor-set-layouts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:176
+rhi::vulkan::VulkanDevice::ObjectCounts::pipeline_layouts	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pipeline-layouts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:178
+rhi::vulkan::VulkanDevice::ObjectCounts::bind_groups	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-bind-groups	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:180
+rhi::vulkan::VulkanDevice::ObjectCounts::descriptor_pools	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-descriptor-pools	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:182
+rhi::vulkan::VulkanDevice::Counts() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-counts-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:186
+rhi::vulkan::VulkanDevice::CompletedFrame() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-completedframe-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:189
+rhi::vulkan::VulkanDevice::FramesInFlight() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-framesinflight-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:192
+rhi::vulkan::VulkanDevice::LeakCounts	struct	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:197
+rhi::vulkan::VulkanDevice::LeakCounts::user_objects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts-user-objects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:200
+rhi::vulkan::VulkanDevice::LeakCounts::internal_objects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts-internal-objects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:202
+rhi::vulkan::VulkanDevice::GetLeakCounts()	function	rhi-vulkan	rhi-vulkan-vulkandevice-getleakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:207
+rhi::vulkan::VulkanDevice::ResetLeakCounts()	function	rhi-vulkan	rhi-vulkan-vulkandevice-resetleakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:210
+rhi::vulkan::VulkanDevice::LookupBuffer(BufferHandle,VkBuffer*,BufferDesc*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupbuffer-bufferhandle-vkbuffer-star-bufferdesc-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:219
+rhi::vulkan::VulkanDevice::TextureInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:224
+rhi::vulkan::VulkanDevice::TextureInfo::image	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-image	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:226
+rhi::vulkan::VulkanDevice::TextureInfo::view	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-view	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:228
+rhi::vulkan::VulkanDevice::TextureInfo::attachment_view	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-attachment-view	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:230
+rhi::vulkan::VulkanDevice::TextureInfo::desc	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-desc	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:232
+rhi::vulkan::VulkanDevice::TextureInfo::aspects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-aspects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:234
+rhi::vulkan::VulkanDevice::LookupTexture(TextureHandle,TextureInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookuptexture-texturehandle-textureinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:243
+rhi::vulkan::VulkanDevice::ShaderInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:250
+rhi::vulkan::VulkanDevice::ShaderInfo::module	variable	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo-module	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:252
+rhi::vulkan::VulkanDevice::ShaderInfo::stage	variable	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo-stage	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:254
+rhi::vulkan::VulkanDevice::ShaderInfo::entry	variable	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo-entry	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:256
+rhi::vulkan::VulkanDevice::LookupSampler(SamplerHandle,VkSampler*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupsampler-samplerhandle-vksampler-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:266
+rhi::vulkan::VulkanDevice::LookupShader(ShaderHandle,ShaderInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupshader-shaderhandle-shaderinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:275
+rhi::vulkan::VulkanDevice::PipelineInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:281
+rhi::vulkan::VulkanDevice::PipelineInfo::pipeline	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-pipeline	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:283
+rhi::vulkan::VulkanDevice::PipelineInfo::layout	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-layout	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:285
+rhi::vulkan::VulkanDevice::PipelineInfo::compute	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-compute	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:287
+rhi::vulkan::VulkanDevice::PipelineInfo::layout_count	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-layout-count	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:289
+rhi::vulkan::VulkanDevice::PipelineInfo::layout_ids	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-layout-ids	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:291
+rhi::vulkan::VulkanDevice::PipelineInfo::push_bytes	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-push-bytes	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:293
+rhi::vulkan::VulkanDevice::PipelineInfo::push_stages	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-push-stages	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:295
+rhi::vulkan::VulkanDevice::PipelineInfo::color_count	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-color-count	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:297
+rhi::vulkan::VulkanDevice::PipelineInfo::color_formats	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-color-formats	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:299
+rhi::vulkan::VulkanDevice::PipelineInfo::depth_format	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-depth-format	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:301
+rhi::vulkan::VulkanDevice::BindGroupInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:309
+rhi::vulkan::VulkanDevice::BindGroupInfo::set	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-set	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:311
+rhi::vulkan::VulkanDevice::BindGroupInfo::layout_id	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-layout-id	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:313
+rhi::vulkan::VulkanDevice::BindGroupInfo::transient	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-transient	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:315
+rhi::vulkan::VulkanDevice::BindGroupInfo::frame	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-frame	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:317
+rhi::vulkan::VulkanDevice::BindGroupInfo::resources_live	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-resources-live	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:319
+rhi::vulkan::VulkanDevice::LookupBindGroup(BindGroupHandle,BindGroupInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupbindgroup-bindgrouphandle-bindgroupinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:329
+rhi::vulkan::VulkanDevice::LookupPipeline(PipelineHandle,PipelineInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookuppipeline-pipelinehandle-pipelineinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:338
+rhi::vulkan::VulkanDevice::PipelineCacheStats	struct	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:343
+rhi::vulkan::VulkanDevice::PipelineCacheStats::enabled	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-enabled	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:345
+rhi::vulkan::VulkanDevice::PipelineCacheStats::loaded_bytes	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-loaded-bytes	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:347
+rhi::vulkan::VulkanDevice::PipelineCacheStats::rejected	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-rejected	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:349
+rhi::vulkan::VulkanDevice::PipelineCacheStats::saved_bytes	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-saved-bytes	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:351
+rhi::vulkan::VulkanDevice::PipelineCache() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecache-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:355
+rhi::vulkan::VulkanDevice::SavePipelineCache()	function	rhi-vulkan	rhi-vulkan-vulkandevice-savepipelinecache	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:363
+rhi::vulkan::VulkanDevice::PipelineCachePath() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachepath-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:366
+rhi::vulkan::VulkanDevice::ReportResult(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-reportresult-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:372
+rhi::vulkan::VulkanDevice::InjectSubmitFailure(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-injectsubmitfailure-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:378
+rhi::vulkan::VulkanDevice::CommandPoolCount() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-commandpoolcount-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:381

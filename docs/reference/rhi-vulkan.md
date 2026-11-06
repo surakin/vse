@@ -3279,9 +3279,57 @@ _Inherited from [`rhi::Swapchain::Present()`](rhi.md#rhi-swapchain-present)._
 SwapchainStatus Resize(u32 width, u32 height) override;
 ```
 
-Recreates the images for a new window size.
+Recreates the images for a new window size, keeping the other settings; `Reconfigure` with a new size.
 
 _Inherited from [`rhi::Swapchain::Resize(u32,u32)`](rhi.md#rhi-swapchain-resize-u32-u32)._
+
+### `Reconfigure(const SwapchainDesc&)` {#rhi-vulkan-vulkanswapchain-reconfigure-const-swapchaindesc-amp}
+
+`method rhi::vulkan::VulkanSwapchain::Reconfigure` — defined in `engine/rhi/vulkan/vk_swapchain.h`
+
+```cpp
+SwapchainStatus Reconfigure(const SwapchainDesc& desc) override;
+```
+
+Changes the present mode, size, format and HDR mode in one call, reusing the old swapchain where the API allows.
+
+_Inherited from [`rhi::Swapchain::Reconfigure(const SwapchainDesc&)`](rhi.md#rhi-swapchain-reconfigure-const-swapchaindesc-amp)._
+
+### `ActualPresentMode()` {#rhi-vulkan-vulkanswapchain-actualpresentmode-const}
+
+`method rhi::vulkan::VulkanSwapchain::ActualPresentMode` — defined in `engine/rhi/vulkan/vk_swapchain.h`
+
+```cpp
+PresentMode ActualPresentMode() const override;
+```
+
+Returns the present mode really in use (a request for `Mailbox` or `Immediate` may have fallen back to `Fifo`).
+
+_Inherited from [`rhi::Swapchain::ActualPresentMode() const`](rhi.md#rhi-swapchain-actualpresentmode-const)._
+
+### `GetColorSpace()` {#rhi-vulkan-vulkanswapchain-getcolorspace-const}
+
+`method rhi::vulkan::VulkanSwapchain::GetColorSpace` — defined in `engine/rhi/vulkan/vk_swapchain.h`
+
+```cpp
+ColorSpace GetColorSpace() const override;
+```
+
+Returns the color space of the images.
+
+_Inherited from [`rhi::Swapchain::GetColorSpace() const`](rhi.md#rhi-swapchain-getcolorspace-const)._
+
+### `Capabilities()` {#rhi-vulkan-vulkanswapchain-capabilities-const}
+
+`method rhi::vulkan::VulkanSwapchain::Capabilities` — defined in `engine/rhi/vulkan/vk_swapchain.h`
+
+```cpp
+SwapchainCaps Capabilities() const override;
+```
+
+Returns what the surface and device offer.
+
+_Inherited from [`rhi::Swapchain::Capabilities() const`](rhi.md#rhi-swapchain-capabilities-const)._
 
 ### `ImageFormat()` {#rhi-vulkan-vulkanswapchain-imageformat-const}
 
@@ -3400,6 +3448,89 @@ Prefers `B8G8R8A8_SRGB`, then `R8G8B8A8_SRGB`, both with the sRGB-nonlinear colo
 | Parameter `formats` | the formats the surface supports. |
 | Parameter `count` | number of entries. |
 | Returns | the choice; `format.format` is `VK_FORMAT_UNDEFINED` if none of the offered formats is usable. |
+
+## `RequestedFormatChoice` {#rhi-vulkan-requestedformatchoice}
+
+`struct rhi::vulkan::RequestedFormatChoice` — defined in `engine/rhi/vulkan/vk_swapchain_policy.h`
+
+```cpp
+struct RequestedFormatChoice { ... }
+```
+
+A surface format choice made for a request that may ask for a format and for HDR.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `format` {#rhi-vulkan-requestedformatchoice-format}
+
+`variable rhi::vulkan::RequestedFormatChoice::format` — defined in `engine/rhi/vulkan/vk_swapchain_policy.h`
+
+```cpp
+VkSurfaceFormatKHR format;
+```
+
+The format and color space to create the swapchain with; `VK_FORMAT_UNDEFINED` if nothing usable was offered.
+
+### `space` {#rhi-vulkan-requestedformatchoice-space}
+
+`variable rhi::vulkan::RequestedFormatChoice::space` — defined in `engine/rhi/vulkan/vk_swapchain_policy.h`
+
+```cpp
+ColorSpace space;
+```
+
+The RHI color space of the choice.
+
+### `fallback_note` {#rhi-vulkan-requestedformatchoice-fallback-note}
+
+`variable rhi::vulkan::RequestedFormatChoice::fallback_note` — defined in `engine/rhi/vulkan/vk_swapchain_policy.h`
+
+```cpp
+const char* fallback_note;
+```
+
+What was not granted: null if the request was met, otherwise a static sentence for the log.
+
+## `ChooseRequestedSurfaceFormat(const VkSurfaceFormatKHR*,usize,Format,HdrMode)` {#rhi-vulkan-chooserequestedsurfaceformat-const-vksurfaceformatkhr-star-usize-format-hdrmode}
+
+`function rhi::vulkan::ChooseRequestedSurfaceFormat` — defined in `engine/rhi/vulkan/vk_swapchain_policy.h`
+
+```cpp
+RequestedFormatChoice ChooseRequestedSurfaceFormat(const VkSurfaceFormatKHR* formats, usize count, Format requested, HdrMode hdr);
+```
+
+Chooses the surface format for a request.
+
+`hdr` first: `ScRgbLinear` needs `R16G16B16A16_SFLOAT` in `EXTENDED_SRGB_LINEAR`; `Hdr10` is never granted (the RHI has no 10-bit format yet). Then `requested` (`Undefined` means no preference) must be offered in the sRGB-nonlinear color space. Whatever cannot be granted falls back to [`rhi::vulkan::ChooseSurfaceFormat`](#rhi-vulkan-choosesurfaceformat-const-vksurfaceformatkhr-star-usize) and sets `fallback_note`.
+
+| Field | Value |
+|---|---|
+| Parameter `formats` | the formats the surface supports. |
+| Parameter `count` | number of entries. |
+| Parameter `requested` | the preferred [`rhi::Format`](rhi.md#rhi-format). |
+| Parameter `hdr` | the dynamic range wanted. |
+| Returns | the choice. |
+
+## `FillSwapchainCaps(const VkSurfaceFormatKHR*,usize,const VkPresentModeKHR*,usize,SwapchainCaps*)` {#rhi-vulkan-fillswapchaincaps-const-vksurfaceformatkhr-star-usize-const-vkpresentmodekhr-star-usize-swapchaincaps-star}
+
+`function rhi::vulkan::FillSwapchainCaps` — defined in `engine/rhi/vulkan/vk_swapchain_policy.h`
+
+```cpp
+void FillSwapchainCaps(const VkSurfaceFormatKHR* formats, usize format_count, const VkPresentModeKHR* modes, usize mode_count, SwapchainCaps* out);
+```
+
+Fills the capability description from what the surface offers.
+
+| Field | Value |
+|---|---|
+| Parameter `formats` | the surface formats. |
+| Parameter `format_count` | number of entries. |
+| Parameter `modes` | the present modes. |
+| Parameter `mode_count` | number of entries. |
+| Parameter `out` | receives the capabilities. |
+| Ownership | `out` belongs to the caller. |
 
 ## `ChoosePresentMode(const VkPresentModeKHR*,usize,PresentMode)` {#rhi-vulkan-choosepresentmode-const-vkpresentmodekhr-star-usize-presentmode}
 
@@ -3652,6 +3783,18 @@ ResourceCounts Resources() const override;
 Returns the live object counts; see [`rhi::ResourceCounts`](rhi.md#rhi-resourcecounts).
 
 _Inherited from [`rhi::Device::Resources() const`](rhi.md#rhi-device-resources-const)._
+
+### `RecreateSurface(const os::Window*)` {#rhi-vulkan-vulkandevice-recreatesurface-const-os-window-star}
+
+`method rhi::vulkan::VulkanDevice::RecreateSurface` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+bool RecreateSurface(const os::Window* window) override;
+```
+
+Replaces the presentation surface after the window's native surface changed or was lost, keeping the device.
+
+_Inherited from [`rhi::Device::RecreateSurface(const os::Window*)`](rhi.md#rhi-device-recreatesurface-const-os-window-star)._
 
 ### `InFrame()` {#rhi-vulkan-vulkandevice-inframe-const}
 

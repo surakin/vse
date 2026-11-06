@@ -394,6 +394,29 @@ int main() {
 new device: yes, live buffers: 1, resets: 1
 ```
 
+### Presentation
+
+[[rhi::Swapchain::Reconfigure]] changes the present mode, size, image format and HDR mode in one call, reusing the old
+swapchain where the API allows (`oldSwapchain` on Vulkan). A request the surface cannot grant falls back with a log line, and the
+result is readable: [[rhi::Swapchain::ActualPresentMode]], [[rhi::Swapchain::ImageFormat]], [[rhi::Swapchain::GetColorSpace]].
+[[rhi::Swapchain::Capabilities]] lists what the surface offers (present modes, formats, HDR) so a settings screen can grey out what
+is unavailable. `Resize` is `Reconfigure` with a new size. The images and textures from before a reconfigure are invalid; call it
+between frames.
+
+- **HDR:** `HdrMode::ScRgbLinear` is granted when the surface offers `R16G16B16A16_SFLOAT` in the extended-sRGB-linear color space
+  (the engine asks for `VK_EXT_swapchain_colorspace` when it is installed); `HdrMode::Hdr10` needs a 10-bit format the RHI does
+  not have yet and falls back. Neither has been seen on a real HDR display (see `KNOWN-ISSUES.md`).
+- **Zero extent:** a window with no area gets no swapchain; the request is remembered and applied by the `Acquire` that sees the
+  window again. No zero-sized image is ever created.
+- **A format change** reaches the renderer through [[rhi::DeviceHost::ReconfigureSwapchain]], which calls
+  `DeviceObserver::OnSwapchainChanged` only when the image format or color space changed, so only what was built against the
+  old format (the tonemap pipeline) is rebuilt.
+- **A lost surface** (`Swapchain` returns `Lost` because the window's native surface changed) is repaired by
+  [[rhi::DeviceHost::RecreateSurface]]: it destroys the swapchain, asks the device for a new surface
+  ([[rhi::Device::RecreateSurface]]) and creates the swapchain again; if the adapter cannot present to the new surface it falls
+  back to a full reset.
+- **Fullscreen** belongs to the window: see [[os::Window::SetFullscreen]]; the swapchain just follows the resize.
+
 ### Uploading data
 
 Buffers in `GpuOnly` memory cannot be written by the CPU. [[rhi::Device::UploadBuffer]] copies bytes into one: it

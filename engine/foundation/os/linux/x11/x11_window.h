@@ -87,6 +87,15 @@ public:
     bool IsMinimized() const override { return display_ == nullptr || width_ == 0 || height_ == 0 || unmapped_; }
     /// Returns a counter that changes each time the size changes; 0 for an invalid window.
     u64 ResizeSerial() const override { return resize_serial_; }
+    /// Returns true on a valid window: X11 fullscreen goes through the window manager (`_NET_WM_STATE_FULLSCREEN`), which
+    /// may still refuse.
+    bool SupportsFullscreen() const override { return display_ != nullptr; }
+    /// Sends the `_NET_WM_STATE` client message to the root window that adds or removes fullscreen.
+    /// Param fullscreen: the state wanted.
+    /// Returns: true if the message was sent; false on an invalid window.
+    bool SetFullscreen(bool fullscreen) override;
+    /// Returns whether `_NET_WM_STATE` currently lists fullscreen (read from the window manager's property).
+    bool IsFullscreen() const override;
 
     /// Returns the underlying Xlib `Display*`, or null if invalid.
     ///

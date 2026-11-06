@@ -23,6 +23,36 @@ enum class PresentMode : u8 {
     Immediate, ///< Present at once, possibly tearing, if the system supports it; otherwise `Fifo`.
 };
 
+/// Whether and how the swapchain shows high dynamic range.
+enum class HdrMode : u8 {
+    Off = 0,     ///< Standard dynamic range.
+    ScRgbLinear, ///< Linear extended sRGB in 16-bit float (the "scRGB" mode); 1.0 is SDR white.
+    Hdr10,       ///< 10-bit PQ (ST 2084, BT.2020). Needs a 10-bit format the RHI does not have yet, so it is never granted today.
+};
+
+/// The color space of the images a swapchain presents.
+enum class ColorSpace : u8 {
+    SrgbNonlinear = 0, ///< sRGB transfer function (what an 8-bit sRGB format means).
+    ScRgbLinear,       ///< Linear extended sRGB.
+    Hdr10,             ///< HDR10 (PQ, BT.2020).
+};
+
+/// What a swapchain on a given window can do, so a settings screen can grey out what is unavailable.
+///
+/// Thread-safety: thread-compatible plain data.
+struct SwapchainCaps {
+    /// Whether each [[rhi::PresentMode]] (by value) is really offered; `Fifo` is always true.
+    bool present_mode_supported[3] = {true, false, false};
+    /// The image formats the surface offers in the sRGB-nonlinear color space; the first `format_count` are valid.
+    Format formats[8] = {};
+    /// Number of valid entries in `formats`.
+    u32 format_count = 0;
+    /// Whether [[rhi::HdrMode::ScRgbLinear]] can be granted.
+    bool hdr_scrgb = false;
+    /// Whether [[rhi::HdrMode::Hdr10]] can be granted.
+    bool hdr10 = false;
+};
+
 /// What to create a [[rhi::Swapchain]] for.
 ///
 /// Thread-safety: thread-compatible plain data.
@@ -33,6 +63,11 @@ struct SwapchainDesc {
     u32 width = 0;
     /// Initial image height in pixels; 0 uses the window's current height.
     u32 height = 0;
+    /// The preferred image format; `Undefined` lets the backend choose (an sRGB 8-bit format). Falls back, with a log
+    /// line, when the surface does not offer it; read the result from `ImageFormat`.
+    Format format = Format::Undefined;
+    /// The dynamic range wanted; falls back to `Off` with a log line when the surface cannot do it.
+    HdrMode hdr = HdrMode::Off;
 };
 
 /// The images of one window's swapchain, acquired and presented once per frame.
@@ -67,7 +102,30 @@ public:
     /// Aborts: no image has been acquired.
     virtual SwapchainStatus Present() = 0;
 
-    /// Recreates the images for a new window size.
+    /// Changes the present mode, size, format and HDR mode in one call, reusing the old swapchain where the API allows.
+    ///
+    /// A request the surface cannot grant falls back with a log line; the result is readable from `ActualPresentMode`,
+    /// `ImageFormat` and `GetColorSpace`. A zero width or height is remembered (the swapchain is rebuilt with the rest of the
+    /// request when the window has an area again). The images and textures from before are invalid afterwards.
+    ///
+    /// Param desc: the new description; `width` and `height` of 0 mean the window's current size.
+    /// Returns: `Ok` (rebuilt), `Minimized` (nothing to draw to yet), or `Lost`.
+    /// Fails: `Lost` when the swapchain cannot be rebuilt.
+    /// Aborts: an image is still acquired and not presented.
+    virtual SwapchainStatus Reconfigure(const SwapchainDesc& desc) = 0;
+
+    /// Returns the present mode really in use (a request for `Mailbox` or `Immediate` may have fallen back to `Fifo`).
+    virtual PresentMode ActualPresentMode() const = 0;
+
+    /// Returns the color space of the images.
+    virtual ColorSpace GetColorSpace() const = 0;
+
+    /// Returns what the surface and device offer.
+    ///
+    /// Returns: the capabilities, read when the swapchain was last built.
+    virtual SwapchainCaps Capabilities() const = 0;
+
+    /// Recreates the images for a new window size, keeping the other settings; `Reconfigure` with a new size.
     ///
     /// Param width: new width in pixels.
     /// Param height: new height in pixels; zero in either dimension is treated as minimized.

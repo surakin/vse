@@ -573,3 +573,5 @@ Phase 7 Day 105 (adapter enumeration) is done: `engine/rhi/adapter.h` (`Enumerat
 
 Phase 7 Day 106 (device lifecycle) is done: handle epochs (each device seeds its generations from a process-wide serial), `Device::Resources`/`Quiesce`/`InFrame`/`Epoch`, `rhi::DeviceHost` with tiered `DeviceObserver`s, guide "Lifecycle and reset". Scoped runs: `ran 951 of 2517` plain (only the known X11 window test failed), `ran 682 of 2517` asan, `ran 412 of 2517` tsan; docs 4/4. High-effort review: 10 findings, 7 fixed, 3 declined (day file). Gaps filed in `KNOWN-ISSUES.md`. **Next: Day 107 (swapchain and presentation).**
 
+Phase 7 Day 107 (swapchain and presentation) is done: `Swapchain::Reconfigure` with format and HDR requests and truthful results, `SwapchainCaps`, `Device::RecreateSurface` and `DeviceHost::ReconfigureSwapchain/RecreateSurface` (with `OnSwapchainChanged`), `os::Window` fullscreen on Wayland and X11 with Windows/macOS checklists. Scoped runs: `ran 967 of 2555` plain, `ran 694 of 2555` asan, `ran 422 of 2555` tsan, all pass; docs 4/4. High-effort review: 10 findings, 7 fixed, 3 declined (day file). **Next: Day 108 (resource registry).**
+

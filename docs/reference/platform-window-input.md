@@ -972,6 +972,41 @@ u64 ResizeSerial() const override;
 
 Returns a counter that changes each time a configure changes the window size; 0 when not open.
 
+### `SupportsFullscreen()` {#os-wayland-waylandplatformwindow-supportsfullscreen-const}
+
+`method os::wayland::WaylandPlatformWindow::SupportsFullscreen` — defined in `engine/foundation/os/linux/wayland/wayland_platform_window.h`
+
+```cpp
+bool SupportsFullscreen() const override;
+```
+
+Returns true on an open window: fullscreen is part of xdg-shell, which every compositor with a window has.
+
+### `SetFullscreen(bool)` {#os-wayland-waylandplatformwindow-setfullscreen-bool}
+
+`method os::wayland::WaylandPlatformWindow::SetFullscreen` — defined in `engine/foundation/os/linux/wayland/wayland_platform_window.h`
+
+```cpp
+bool SetFullscreen(bool fullscreen) override;
+```
+
+Asks the compositor for fullscreen on or off; see [`os::wayland::WaylandWindow::SetFullscreen`](#os-wayland-waylandwindow-setfullscreen-bool).
+
+| Field | Value |
+|---|---|
+| Parameter `fullscreen` | the state wanted. |
+| Returns | true if the request was sent. |
+
+### `IsFullscreen()` {#os-wayland-waylandplatformwindow-isfullscreen-const}
+
+`method os::wayland::WaylandPlatformWindow::IsFullscreen` — defined in `engine/foundation/os/linux/wayland/wayland_platform_window.h`
+
+```cpp
+bool IsFullscreen() const override;
+```
+
+Returns whether the compositor's latest configure said fullscreen.
+
 ### `Input()` {#os-wayland-waylandplatformwindow-input-const}
 
 `method os::wayland::WaylandPlatformWindow::Input` — defined in `engine/foundation/os/linux/wayland/wayland_platform_window.h`
@@ -1215,6 +1250,32 @@ u64 ResizeSerial() const;
 
 Returns a counter that changes each time a configure changes the window size.
 
+### `SetFullscreen(bool)` {#os-wayland-waylandwindow-setfullscreen-bool}
+
+`method os::wayland::WaylandWindow::SetFullscreen` — defined in `engine/foundation/os/linux/wayland/wayland_window.h`
+
+```cpp
+bool SetFullscreen(bool fullscreen);
+```
+
+Asks the compositor to make the toplevel fullscreen (`xdg_toplevel_set_fullscreen`) or to leave fullscreen.
+
+| Field | Value |
+|---|---|
+| Parameter `fullscreen` | the state wanted. |
+| Returns | true if the request was sent. |
+| Fails | returns false on an invalid window. |
+
+### `IsFullscreen()` {#os-wayland-waylandwindow-isfullscreen-const}
+
+`method os::wayland::WaylandWindow::IsFullscreen` — defined in `engine/foundation/os/linux/wayland/wayland_window.h`
+
+```cpp
+bool IsFullscreen() const;
+```
+
+Returns whether the latest toplevel configure listed the fullscreen state.
+
 ## `X11Window` {#os-x11-x11window}
 
 `class os::x11::X11Window` — defined in `engine/foundation/os/linux/x11/x11_window.h`
@@ -1429,6 +1490,41 @@ u64 ResizeSerial() const override;
 ```
 
 Returns a counter that changes each time the size changes; 0 for an invalid window.
+
+### `SupportsFullscreen()` {#os-x11-x11window-supportsfullscreen-const}
+
+`method os::x11::X11Window::SupportsFullscreen` — defined in `engine/foundation/os/linux/x11/x11_window.h`
+
+```cpp
+bool SupportsFullscreen() const override;
+```
+
+Returns true on a valid window: X11 fullscreen goes through the window manager (`_NET_WM_STATE_FULLSCREEN`), which may still refuse.
+
+### `SetFullscreen(bool)` {#os-x11-x11window-setfullscreen-bool}
+
+`method os::x11::X11Window::SetFullscreen` — defined in `engine/foundation/os/linux/x11/x11_window.h`
+
+```cpp
+bool SetFullscreen(bool fullscreen) override;
+```
+
+Sends the `_NET_WM_STATE` client message to the root window that adds or removes fullscreen.
+
+| Field | Value |
+|---|---|
+| Parameter `fullscreen` | the state wanted. |
+| Returns | true if the message was sent; false on an invalid window. |
+
+### `IsFullscreen()` {#os-x11-x11window-isfullscreen-const}
+
+`method os::x11::X11Window::IsFullscreen` — defined in `engine/foundation/os/linux/x11/x11_window.h`
+
+```cpp
+bool IsFullscreen() const override;
+```
+
+Returns whether `_NET_WM_STATE` currently lists fullscreen (read from the window manager's property).
 
 ### `NativeDisplay()` {#os-x11-x11window-nativedisplay-const}
 
@@ -1812,6 +1908,46 @@ virtual u64 ResizeSerial() const = 0;
 Returns a counter that changes every time the window size changes, so a swapchain can cheaply tell that it is stale.
 
 The value is opaque: compare it for equality with a value read earlier. Values come from one process-wide counter, so an open window never reports 0, and a value never repeats across size changes, windows, or closing and reopening. An invalid or closed window reports 0.
+
+### `SupportsFullscreen()` {#os-window-supportsfullscreen-const}
+
+`method os::Window::SupportsFullscreen` — defined in `engine/foundation/os/window.h`
+
+```cpp
+virtual bool SupportsFullscreen() const;
+```
+
+Returns whether this window can be made fullscreen (the platform and, where it can be known, the compositor allow it).
+
+The default is false; a backend that implements [`os::Window::SetFullscreen`](#os-window-setfullscreen-bool) overrides it. A settings layer greys the `fullscreen` setting out when this is false.
+
+### `SetFullscreen(bool)` {#os-window-setfullscreen-bool}
+
+`method os::Window::SetFullscreen` — defined in `engine/foundation/os/window.h`
+
+```cpp
+virtual bool SetFullscreen(bool fullscreen);
+```
+
+Asks for fullscreen on or off.
+
+The change is a request: the window manager or compositor answers with a new size, which shows up as a change of [`os::Window::ResizeSerial`](#os-window-resizeserial-const) after `PumpEvents`. Some compositors refuse; then nothing changes.
+
+| Field | Value |
+|---|---|
+| Parameter `fullscreen` | the state wanted. |
+| Returns | true if the request was sent. |
+| Fails | returns false, changing nothing, if the window is invalid or fullscreen is unsupported. |
+
+### `IsFullscreen()` {#os-window-isfullscreen-const}
+
+`method os::Window::IsFullscreen` — defined in `engine/foundation/os/window.h`
+
+```cpp
+virtual bool IsFullscreen() const;
+```
+
+Returns whether the window is fullscreen as far as the last `PumpEvents` could tell.
 
 ## `WindowBackend` {#os-windowbackend}
 

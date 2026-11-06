@@ -2,6 +2,7 @@
 
 #include "containers/unique_ptr.h"
 #include "mem/heap_allocator.h"
+#include "os/window.h"
 #include "rhi/adapter.h"
 #include "rhi/caps.h"
 #include "rhi/command_list.h"
@@ -398,6 +399,17 @@ public:
 
     /// Blocks until all submitted work has finished, then releases every deferred destruction.
     virtual void WaitIdle() = 0;
+
+    /// Replaces the presentation surface after the window's native surface changed or was lost, keeping the device.
+    ///
+    /// Only possible when the adapter can present to the new surface; otherwise the caller does a full reset
+    /// ([[rhi::DeviceHost::RecreateSurface]] does this).
+    ///
+    /// Param window: the window to present to; usually the one the device was created with.
+    /// Returns: true if there is a new surface. The swapchain must be created again.
+    /// Fails: returns false, logging the reason, if the surface cannot be created or the adapter cannot present to it.
+    /// Aborts: the swapchain still exists, or a frame is open.
+    virtual bool RecreateSurface(const os::Window* window) = 0;
 
     /// Waits for the GPU to go idle and drains the deferred-destruction queue; the device stays usable.
     ///

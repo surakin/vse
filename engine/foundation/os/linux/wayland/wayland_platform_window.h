@@ -79,6 +79,16 @@ public:
     bool IsMinimized() const override { return !Valid() || window_.Width() == 0 || window_.Height() == 0; }
     /// Returns a counter that changes each time a configure changes the window size; 0 when not open.
     u64 ResizeSerial() const override { return Valid() ? window_.ResizeSerial() : 0; }
+    /// Returns true on an open window: fullscreen is part of xdg-shell, which every compositor with a window has.
+    bool SupportsFullscreen() const override { return Valid(); }
+    /// Asks the compositor for fullscreen on or off; see [[os::wayland::WaylandWindow::SetFullscreen]].
+    /// Param fullscreen: the state wanted.
+    /// Returns: true if the request was sent.
+    bool SetFullscreen(bool fullscreen) override {
+        return Valid() && window_.SetFullscreen(fullscreen); // sent with the next PumpEvents
+    }
+    /// Returns whether the compositor's latest configure said fullscreen.
+    bool IsFullscreen() const override { return Valid() && window_.IsFullscreen(); }
 
     /// Returns the seat input handler, for querying keyboard, pointer and keymap availability.
     const WaylandInput& Input() const { return input_; }
