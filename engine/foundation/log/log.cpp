@@ -54,6 +54,7 @@ struct RingSlot {
 RingSlot g_log_ring[kLogRingSlots];
 std::atomic<u64> g_log_ring_head{0}; // number of lines ever written
 
+// SIGNAL-SAFE-BEGIN
 void RingAppend(const char* text, usize length) {
     if (length > kLogRingLineBytes) {
         length = kLogRingLineBytes;
@@ -77,6 +78,7 @@ void RingAppend(const char* text, usize length) {
     slot.sequence.store(2 * line + 2, std::memory_order_release); // even: holds line `line`
 }
 
+// SIGNAL-SAFE-END
 const char* VerbosityName(LogVerbosity level) {
     switch (level) {
         case LogVerbosity::Error:
@@ -191,9 +193,12 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message) {
     g_write_sink(1, buf, offset);
 }
 
+// SIGNAL-SAFE-BEGIN
 void ReadRecentLogLines(RecentLogLineFn callback, void* context, usize max_lines) {
-    // The loads of the text below are relaxed; the release read-modify-write after them keeps them from moving past the
-    // second look at the sequence.
+    // The loads of the text below are acquire: if one of them sees a word a newer writer stored (a release store, made after
+    // that writer marked the slot odd), the second look at the sequence is then guaranteed to see the mark and drop the line.
+    // An acquire load keeps everything after it, including the second look, from happening before it, so the loads cannot
+    // drift past that look.
     const u64 head = g_log_ring_head.load(std::memory_order_acquire);
     u64 first = head > kLogRingSlots ? head - kLogRingSlots : 0;
     if (max_lines != 0 && head - first > max_lines) {
@@ -207,9 +212,9 @@ void ReadRecentLogLines(RecentLogLineFn callback, void* context, usize max_lines
         }
         char text[kLogRingLineBytes + 1];
         u64 words[kRingWords];
-        const u32 length = slot.length.load(std::memory_order_relaxed);
+        const u32 length = slot.length.load(std::memory_order_acquire);
         for (usize w = 0; w < kRingWords; ++w) {
-            words[w] = slot.words[w].load(std::memory_order_relaxed);
+            words[w] = slot.words[w].load(std::memory_order_acquire);
         }
         if (slot.sequence.fetch_add(0, std::memory_order_release) != before || length > kLogRingLineBytes) {
             continue; // changed while we copied: torn, drop it
@@ -220,6 +225,7 @@ void ReadRecentLogLines(RecentLogLineFn callback, void* context, usize max_lines
     }
 }
 
+// SIGNAL-SAFE-END
 void ResetLogRingForTesting() {
     g_log_ring_head.store(0, std::memory_order_relaxed);
     for (RingSlot& slot : g_log_ring) {

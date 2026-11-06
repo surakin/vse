@@ -60,6 +60,17 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options);
 /// Thread-safety: thread-safe. Not async-signal-safe.
 void UninstallCrashHandler();
 
+/// Gives the calling thread room to handle a fault, so a stack overflow on it still produces a report and a dump.
+///
+/// A fault handler needs stack to run on, and a thread whose stack is exhausted has none. [[debug::InstallCrashHandler]] does
+/// this for the thread that calls it; call this once at the start of every other thread that may run deep (job workers, the
+/// I/O thread). The memory is 128 KiB of address space per thread, released when the thread ends.
+///
+/// Returns: true if the thread can now handle a stack overflow.
+/// Fails: returns false if the memory or the platform call is refused; the thread still produces reports for other faults.
+/// Thread-safety: thread-safe; it affects only the calling thread. Not async-signal-safe.
+bool RegisterThreadForCrashHandling();
+
 /// Reports whether the crash handler is installed.
 /// Returns: true between a successful [[debug::InstallCrashHandler]] and [[debug::UninstallCrashHandler]].
 /// Thread-safety: thread-safe.

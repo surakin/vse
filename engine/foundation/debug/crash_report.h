@@ -76,6 +76,9 @@ struct CrashReportInfo {
     const char* message = nullptr;
     /// The call stack to print; null for none.
     const StackTrace* trace = nullptr;
+    /// Id of the thread that faulted; 0 means the calling thread. The thread's name is read from the calling thread, so a
+    /// report written for another thread names none.
+    u64 thread_id = 0;
 };
 
 /// Writes the whole report: a header with the reason and the thread, the stack trace, then [[debug::WriteCrashContext]].

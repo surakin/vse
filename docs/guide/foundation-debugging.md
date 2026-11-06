@@ -172,6 +172,65 @@ Every line sent through `Log` is also kept in a lock-free ring of the newest 256
 Writers never wait; a reader skips a slot being overwritten. `log::ReadRecentLogLines` returns them oldest first, and the
 report shows the last 32.
 
+## When the program crashes
+
+With the crash handler installed ([[debug::InstallCrashHandler]]), a fatal fault (a bad memory access, an illegal
+instruction, an arithmetic trap, an abort, a stack overflow) does four things, in this order, on the thread that faulted:
+
+1. **The report** ("What a crash report contains" above) is written to standard error and to `crash-report.txt` in the dump
+   directory. It names the faulting thread, so a crash on a worker is not mistaken for one on the main thread.
+2. **The library writes the minidump**: every thread, the registers, the stack memory and the module list. The dump, the
+   report file and the release string travel together in one `.envelope` file under the dump directory.
+3. **The original fault is delivered again**, so the process ends with the signal that killed it (`SIGSEGV`, `SIGABRT`, ...)
+   and a debugger or the shell sees the real cause.
+4. A failed `ENGINE_ASSERT` prints its own message and context first and then aborts, so the crash report follows it (reason
+   `Abort`); the file and the dump are written as for any other crash.
+
+If the report itself faults (a state provider that reads freed memory, say), the process prints `double fault` and carries on
+to step 2, so the dump is not lost. If two threads fault at once, one report is written. A report is cut off after ten
+seconds between sections; a provider that never returns is not covered (see KNOWN-ISSUES).
+
+The engine puts one small signal handler in front of the library's, only to learn the fault address and the faulting thread
+(the library's Linux backend tells its hook neither), and always calls the library's handler afterwards.
+
+### Stack overflow and other threads
+
+A stack overflow needs a separate stack to handle it on. [[debug::InstallCrashHandler]] sets one up for the thread that
+installs the handler; call [[debug::RegisterThreadForCrashHandling]] at the start of every other thread that may recurse
+deeply. Without it a stack overflow on that thread kills the process with no report and no dump (other faults still work).
+
+### If your program has its own signal handler
+
+Install it **after** `InstallCrashHandler` and call the handler that was there before it (the one `sigaction` returns). A handler
+installed before is replaced by the library's and never runs. `UninstallCrashHandler` removes ours and puts the library's
+predecessor back.
+
+### Reading the exit status
+
+A shell shows a program killed by a signal as 128 plus the signal number (`139` is `SIGSEGV`, `134` is `SIGABRT`).
+[[debug::RunInChild]] reports it as `ChildResult::native_code` and maps it to a [[debug::CrashReason]].
+
+### Opening a dump
+
+`crash_extract` pulls the minidump out of the envelope; `lldb` reads it directly:
+
+```text
+crash_extract <dump directory>/<run>/<id>.envelope crash.dmp
+DEBUGINFOD_URLS= lldb --no-lldbinit -b -c crash.dmp -o 'thread list' -o 'bt all' -o 'image list'
+```
+
+`thread list` shows the faulting thread with its stop reason, `bt all` every thread's stack, and `image list` the modules with
+their build ids (compare the first 16 bytes with the `build id:` line of the report). Setting `DEBUGINFOD_URLS` empty keeps
+the debugger from going to the network to look for symbols.
+
+### Sanitizer builds
+
+| Build | The crash handler | What to expect |
+|---|---|---|
+| plain, Release | works | report, dump, original signal |
+| ASan, UBSan | works when the sanitizer's own fault handling is off (`handle_segv=0:handle_abort=0`, which the death-test child sets) | otherwise the sanitizer's report replaces ours |
+| TSan | works; a fault inside the report path loses the `double fault` message and the dump | see KNOWN-ISSUES |
+
 ## Testing code that crashes
 
 A crash kills the process that crashes, so a test cannot simply call code that is supposed to crash. A **death test**

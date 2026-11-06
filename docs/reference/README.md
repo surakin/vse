@@ -12,9 +12,9 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Math](foundation-math.md) | 5 | 101 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 2 | 67 |
 | [Foundation: Fundamental Types](foundation-types.md) | 1 | 11 |
-| [Platform: OS Services](platform-os.md) | 4 | 37 |
+| [Platform: OS Services](platform-os.md) | 4 | 38 |
 | [Platform: Windowing and Input](platform-window-input.md) | 10 | 252 |
-| [Foundation: Debugging](foundation-debug.md) | 12 | 160 |
+| [Foundation: Debugging](foundation-debug.md) | 13 | 162 |
 | [The Job System](jobs.md) | 10 | 172 |
 | [The Render Hardware Interface](rhi.md) | 16 | 608 |
 | [The renderer](renderer.md) | 16 | 704 |

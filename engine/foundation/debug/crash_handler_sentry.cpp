@@ -3,6 +3,9 @@
 #include "debug/crash_handler.h"
 
 #include "debug/crash_context.h"
+#include "debug/crash_event_platform.h"
+#include "debug/crash_report.h"
+#include "debug/stack_trace.h"
 #include "log/log.h"
 #include "os/os.h"
 
@@ -11,6 +14,7 @@
 #include <atomic>
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 #include <mutex>
 
 namespace engine_placeholder::debug {
@@ -63,6 +67,78 @@ void RouteSentryLog(sentry_level_t level, const char* message, va_list args, voi
     Log(LogCrash, verbosity, StringView(text));
 }
 
+// ---- the report -------------------------------------------------------------------------------------------------------------
+
+// Where the crash report text is also written: <dump directory>/crash-report.txt, or the caller's report_file. The library
+// attaches that file to the envelope of the crash it records. Set before the handler is installed, read in the crash.
+char g_report_path[os::kMaxPathBytes];
+// A crash report that takes longer than this to write is cut off between pieces, so a stuck provider cannot hold the process.
+constexpr u64 kReportBudgetNanos = 10ull * 1000 * 1000 * 1000;
+
+// SIGNAL-SAFE-BEGIN
+struct ReportDestination {
+    int file_descriptor = -1;
+    u64 deadline = 0;
+    bool cut_off = false;
+};
+
+// Writes all of the bytes, retrying a write that was interrupted or took only part of them (a pipe, a signal).
+void WriteAll(int fd, const char* data, usize length) {
+    int failures = 0;
+    while (length > 0 && failures < 8) {
+        const long n = os::Write(fd, data, length);
+        if (n > 0) {
+            data += n;
+            length -= static_cast<usize>(n);
+        } else {
+            ++failures;
+        }
+    }
+}
+
+void WriteReportPiece(void* context, const char* data, usize length) {
+    ReportDestination& destination = *static_cast<ReportDestination*>(context);
+    if (os::MonotonicTimeNanos() > destination.deadline) {
+        // Out of time: what is written stays, the rest is dropped, and the report says so once.
+        if (!destination.cut_off) {
+            destination.cut_off = true;
+            static const char kText[] = "\n[report cut off: out of time]\n";
+            WriteAll(2, kText, sizeof(kText) - 1);
+            if (destination.file_descriptor >= 0) {
+                WriteAll(destination.file_descriptor, kText, sizeof(kText) - 1);
+            }
+        }
+        return;
+    }
+    WriteAll(2, data, length);
+    if (destination.file_descriptor >= 0) {
+        WriteAll(destination.file_descriptor, data, length);
+    }
+}
+
+// Runs on the thread that faulted, inside the platform's recorder, before the library writes the dump.
+void OnCrashEvent(const detail::CrashEvent& event) {
+    ReportDestination destination;
+    destination.deadline = os::MonotonicTimeNanos() + kReportBudgetNanos;
+    if (g_report_path[0] != '\0') {
+        destination.file_descriptor = os::CreateFileForWriting(StringView(g_report_path));
+    }
+    CrashReportInfo info;
+    info.reason = event.reason;
+    info.has_fault_address = event.has_fault_address;
+    info.fault_address = event.fault_address;
+    info.trace = &event.trace;
+    info.thread_id = event.thread_id;
+    CrashReportSink sink;
+    sink.write = &WriteReportPiece;
+    sink.context = &destination;
+    WriteCrashReport(sink, info);
+    if (destination.file_descriptor >= 0) {
+        os::Close(destination.file_descriptor);
+    }
+}
+
+// SIGNAL-SAFE-END
 } // namespace
 
 CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
@@ -93,15 +169,18 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
         return CrashHandlerResult::DirectoryFailed;
     }
 
+    // The crash report calls the stack-trace functions inside the fault; they are safe there only once this has run.
+    InitDebugFacilities();
+    if (!CrashContextInitialized()) {
+        InitCrashContext(0, nullptr);
+    }
+
     sentry_options_t* sentry = sentry_options_new();
     if (sentry == nullptr) {
         return CrashHandlerResult::InitFailed;
     }
     sentry_options_set_database_path(sentry, directory);
     // Every dump records which build made it: the caller's version text, or else the executable's build id.
-    if (!CrashContextInitialized()) {
-        InitCrashContext(0, nullptr);
-    }
     if (options.release != nullptr && options.release[0] != '\0') {
         sentry_options_set_release(sentry, options.release);
     } else if (GetCrashContext().build_id[0] != '\0') {
@@ -110,8 +189,27 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
     if (options.handler_path != nullptr && options.handler_path[0] != '\0') {
         sentry_options_set_handler_path(sentry, options.handler_path);
     }
+    // The report text goes next to the dump, and into the envelope with it.
     if (options.report_file != nullptr && options.report_file[0] != '\0') {
-        sentry_options_add_attachment(sentry, options.report_file);
+        const int n = std::snprintf(g_report_path, sizeof(g_report_path), "%s", options.report_file);
+        if (n < 0 || static_cast<usize>(n) >= sizeof(g_report_path)) {
+            g_report_path[0] = '\0';
+        }
+    } else {
+        const int n = std::snprintf(g_report_path, sizeof(g_report_path), "%s/crash-report.txt", directory);
+        if (n < 0 || static_cast<usize>(n) >= sizeof(g_report_path)) {
+            g_report_path[0] = '\0';
+        }
+    }
+    if (g_report_path[0] != '\0') {
+        // Empty any report an earlier run left, so a crash that writes none does not attach a stale one.
+        const int stale = os::CreateFileForWriting(StringView(g_report_path));
+        if (stale >= 0) {
+            os::Close(stale);
+        }
+        sentry_options_add_attachment(sentry, g_report_path);
+    } else {
+        Log(LogCrash, LogVerbosity::Warn, "the crash report file path is too long; the report will not be written to a file");
     }
     // Only local files: no account, no address to send to, no session tracking, a transport that saves envelopes to disk, and
     // the library's own warnings and errors in our log. (The library calls the logger only when "debug" is on; the level
@@ -132,6 +230,12 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
         Log(LogCrash, LogVerbosity::Warn, "the crash handler library failed to start; crash handler not installed");
         return CrashHandlerResult::InitFailed;
     }
+    // The recorder goes in front of the library's handlers (installed by sentry_init), so the report is written first and the
+    // fault's details are known; it then calls the library. The calling thread also gets a stack big enough for both.
+    if (!detail::InstallCrashEventHook(&OnCrashEvent)) {
+        Log(LogCrash, LogVerbosity::Warn, "the crash report hook could not be installed; crashes leave a dump but no report");
+    }
+    RegisterThreadForCrashHandling();
     g_crash_handler_installed.store(true, std::memory_order_release);
     return CrashHandlerResult::Installed;
 }
@@ -141,6 +245,7 @@ void UninstallCrashHandler() {
     if (!g_crash_handler_installed.load(std::memory_order_acquire)) {
         return;
     }
+    detail::RemoveCrashEventHook();
     sentry_close();
     g_crash_handler_installed.store(false, std::memory_order_release);
 }

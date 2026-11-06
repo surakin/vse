@@ -8,6 +8,7 @@
 
 namespace engine_placeholder::debug {
 
+// SIGNAL-SAFE-BEGIN
 namespace {
 
 struct ProviderEntry {
@@ -90,6 +91,7 @@ void WriteLogLine(const char* line, usize length, void* context) {
 
 } // namespace
 
+// SIGNAL-SAFE-END
 bool RegisterCrashStateProvider(const char* name, CrashStateFn fn, void* context) {
     if (name == nullptr || fn == nullptr) {
         return false;
@@ -109,6 +111,7 @@ bool RegisterCrashStateProvider(const char* name, CrashStateFn fn, void* context
     return true;
 }
 
+// SIGNAL-SAFE-BEGIN
 void ResetCrashStateProvidersForTesting() {
     g_provider_count.store(0, std::memory_order_relaxed);
     for (ProviderEntry& entry : g_providers) {
@@ -181,7 +184,7 @@ void WriteCrashReport(const CrashReportSink& sink, const CrashReportInfo& info) 
             w.Text(": ").Text(info.message);
         }
         w.EndLine();
-        w.Text("thread: ").Decimal(CurrentThreadId());
+        w.Text("thread: ").Decimal(info.thread_id != 0 ? info.thread_id : CurrentThreadId());
         if (CrashThreadName()[0] != '\0') {
             w.Text(" \"").Text(CrashThreadName()).Char('"');
         }
@@ -213,4 +216,5 @@ void WriteCrashReport(const CrashReportSink& sink, const CrashReportInfo& info) 
     w.Text("=== END OF REPORT ===").EndLine();
 }
 
+// SIGNAL-SAFE-END
 } // namespace engine_placeholder::debug

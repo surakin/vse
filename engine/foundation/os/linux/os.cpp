@@ -53,6 +53,10 @@ int Open(StringView path, int flags, int mode) {
     return ::open(c_path, flags, mode);
 }
 
+int CreateFileForWriting(StringView path, int mode) {
+    return Open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
+}
+
 int Close(int fd) {
     return ::close(fd);
 }

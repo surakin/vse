@@ -372,6 +372,25 @@ Opens the file at the UTF-8 `path` and returns a file descriptor.
 | Fails | returns -1 if the OS rejects the open or the path is too long for [`os::kMaxPathBytes`](#os-kmaxpathbytes). |
 | Ownership | the caller owns the descriptor and must release it with [`os::Close`](#os-close-int). |
 
+## `CreateFileForWriting(StringView,int)` {#os-createfileforwriting-stringview-int}
+
+`function os::CreateFileForWriting` — defined in `engine/foundation/os/os.h`
+
+```cpp
+int CreateFileForWriting(StringView path, int mode = 0600);
+```
+
+Creates the file at the UTF-8 `path` for writing, emptying it if it exists, and returns a file descriptor.
+
+| Field | Value |
+|---|---|
+| Parameter `path` | UTF-8 file path, at most [`os::kMaxPathBytes`](#os-kmaxpathbytes) - 1 bytes. |
+| Parameter `mode` | permission bits for a new file; the default keeps it private to the user. |
+| Returns | the file descriptor, or -1 on failure. |
+| Fails | returns -1 if the OS rejects the open or the path is too long for [`os::kMaxPathBytes`](#os-kmaxpathbytes). |
+| Thread-safety | thread-safe. Async-signal-safe (the crash report uses it). |
+| Ownership | the caller owns the descriptor and must release it with [`os::Close`](#os-close-int). |
+
 ## `Close(int)` {#os-close-int}
 
 `function os::Close` — defined in `engine/foundation/os/os.h`

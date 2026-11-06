@@ -42,6 +42,15 @@ long Read(int fd, void* buf, usize len);
 /// Ownership: the caller owns the descriptor and must release it with [[os::Close]].
 int Open(StringView path, int flags, int mode = 0644);
 
+/// Creates the file at the UTF-8 `path` for writing, emptying it if it exists, and returns a file descriptor.
+/// Param path: UTF-8 file path, at most [[os::kMaxPathBytes]] - 1 bytes.
+/// Param mode: permission bits for a new file; the default keeps it private to the user.
+/// Returns: the file descriptor, or -1 on failure.
+/// Fails: returns -1 if the OS rejects the open or the path is too long for [[os::kMaxPathBytes]].
+/// Ownership: the caller owns the descriptor and must release it with [[os::Close]].
+/// Thread-safety: thread-safe. Async-signal-safe (the crash report uses it).
+int CreateFileForWriting(StringView path, int mode = 0600);
+
 /// Closes a file descriptor.
 /// Param fd: a descriptor from [[os::Open]].
 /// Returns: 0 on success, -1 on error.
