@@ -806,3 +806,4 @@ that changed from the plan and why.)_
   included)`, all passing; planted regressions all caught; both demos 1000 frames clean on Wayland and X11. `CURRENT_PHASE` stays
   6 until Phase 7 has its day files and starts.
 
+- **2026-11-06 — Phase 7 (RHI reset) planned: Days 103-114.** Day files written under `plans/phase-07-rhi-reset/`. Seven design calls recorded in the phase file for Day 103's spec to confirm: a reset destroys and re-creates the `Device` (owner `rhi::DeviceHost`); handle generations are seeded per device so stale handles are detected; owners rebuild from CPU-side sources through a tiered registry; `backend` is a setting (Null to Vulkan tested, Vulkan to DX12/Metal left to Phases 8-9); fullscreen needs a new window API (Wayland and X11); a failed reset rolls back; settings are an open registry with declared cost classes. Planning only; `CURRENT_PHASE` stays 6 until Day 103.

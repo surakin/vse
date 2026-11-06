@@ -16,10 +16,55 @@ meshes, textures, materials, pipelines and passes, with the scene intact; a rese
 leaks, the rendered picture before and after matches the golden image, and a lost device recovers through the same
 path.
 
-Before it starts, every day of this phase needs its own file under `plans/phase-07-rhi-reset/` (see `CLAUDE.md`,
-planning policy).
+Every day of this phase has its own file under `plans/phase-07-rhi-reset/` (see `CLAUDE.md`, planning policy).
+**Status: planned (2026-11-06), not started.** Days 103-114 are written; `CURRENT_PHASE` changes to 7 in the commit that
+completes Day 103's first task.
 
-## Key deliverables (to be expanded into day-by-day tasks when started)
+## Days
+
+Each day has its own file of individually checkable sub-tasks, a docs task, an end-of-day `/code-review high` task, and a
+concrete Done condition. Day numbers continue from Phase 6 (which ended at Day 102).
+
+103. [Design Spec, Reset Spike & Phase Setup](phase-07-rhi-reset/day-103-design-spec-and-spike.md)
+104. [The Settings Model: `RenderSettings`, Cost Classes, Diff](phase-07-rhi-reset/day-104-settings-model.md)
+105. [Adapter Enumeration & Selection](phase-07-rhi-reset/day-105-adapter-enumeration.md)
+106. [Device Lifecycle: `DeviceHost`, Epochs, Leak Accounting](phase-07-rhi-reset/day-106-device-lifecycle.md)
+107. [Swapchain & Presentation Changes](phase-07-rhi-reset/day-107-swapchain-and-presentation.md)
+108. [The Resource Registry; Recreatable Meshes & Textures](phase-07-rhi-reset/day-108-resource-registry.md)
+109. [Recreatable Materials, Passes, Frame Data & Transient Pool](phase-07-rhi-reset/day-109-recreatable-renderer-state.md)
+110. [`Renderer::ApplySettings`](phase-07-rhi-reset/day-110-apply-settings.md)
+111. [Device-Loss Recovery](phase-07-rhi-reset/day-111-device-loss-recovery.md)
+112. [Reset Loops, Golden Equality & Sanitizers](phase-07-rhi-reset/day-112-reset-soak-and-golden.md)
+113. [Demo Seams, Settings File & Cost Measurements](phase-07-rhi-reset/day-113-demo-seams-and-measurements.md)
+114. [Portability, Docs, Closing Full Run & Wrap-up](phase-07-rhi-reset/day-114-portability-docs-and-closing-run.md)
+
+Order reasoning: Day 103 settles the architecture by spike, because the cost of an in-process device re-creation (driver
+leaks, surface re-creation, pipeline cache reuse) decides the rest. The settings model (104) and adapter enumeration
+(105) are pure data and come before anything that applies them. The lifecycle (106) and the swapchain changes (107) are the
+RHI half; the resource registry and the recreatable owners (108-109) are the renderer half; `ApplySettings` (110) joins
+them; device-loss recovery (111) reuses that path; 112 proves it under load and in the sanitizers; 113 gives the demos
+the live controls and measures what a reset costs; 114 prepares DX12/Metal and closes the phase.
+
+## Design decisions made while planning (2026-11-06; Day 103 confirms or amends them in the spec)
+
+1. **A reset destroys the `Device` object and creates a new one.** No backend gets an in-place `Reset()`: re-creating is
+   the only way to change the adapter, the instance (validation layers) or the backend, so one mechanism serves every
+   case. A small owner, `rhi::DeviceHost`, holds the device and swapchain and performs the sequence.
+2. **Handles from a dead device are detectable.** A fresh device's handle pools would otherwise reuse generation 1 and
+   alias valid handles. Each device is created with a process-wide serial that seeds its generation counters (Day 106).
+3. **Owners rebuild from CPU-side sources**, through a renderer-level registry that rebuilds in tier order (Days 108-109).
+   Pipelines are rebuilt from descriptors, never serialized.
+4. **`backend` is a setting** classified as a full reset, so Null to Vulkan is tested here. Vulkan to DX12 or Metal is
+   decided out of this phase (there is no second real backend yet) and filed for Phases 8-9.
+5. **Fullscreen needs a platform window API that does not exist** (`os::Window` has resize serial only). Day 107 adds
+   `SetFullscreen` for Wayland and X11 with the Windows and macOS checklists, or records it as a capability the window
+   reports as unsupported; the settings model treats it as a capability either way.
+6. **A failed reset rolls back.** If the new device cannot be created, the previous settings are recreated; if that fails
+   too, the frame reports `DeviceLost` and the app is told (Days 110-111).
+7. **Settings are open for extension.** Later phases register a setting with its cost class; the diff never switches over
+   a closed enum of today's settings (Day 104).
+
+## Key deliverables (the day files hold the sub-tasks)
 
 - **Settings model.** One `RenderSettings` struct (versioned, comparable, serializable) with a function that diffs two
   settings into the *cheapest sufficient action*: none, dynamic (change a parameter), swapchain recreation, pipeline
