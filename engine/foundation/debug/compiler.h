@@ -47,9 +47,10 @@
 #endif
 
 /// Keeps the compiler from inlining a lambda, placed between the lambda's parameter list and its `->`: `[](int x) ENGINE_NOINLINE_LAMBDA -> int`.
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__clang__)
 #define ENGINE_NOINLINE_LAMBDA [[msvc::noinline]]
 #else
+// (clang, including clang-cl and clang targeting the MSVC ABI, rejects [[msvc::noinline]] on a lambda but takes the GNU attribute)
 #define ENGINE_NOINLINE_LAMBDA __attribute__((noinline))
 #endif
 

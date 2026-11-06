@@ -15,6 +15,7 @@ namespace engine_placeholder::debug {
 ///
 /// Returns: true if a debugger (or another tracer) is attached; false if none is or the platform cannot tell.
 /// Thread-safety: thread-safe.
+/// Backend: Windows: IsDebuggerPresent; macOS: sysctl kern.proc.pid with the P_TRACED flag.
 bool IsDebuggerAttached();
 
 } // namespace engine_placeholder::debug

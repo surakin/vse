@@ -292,6 +292,12 @@ TEST_CASE("Duplicate labels are errors; Param is per parameter", "[docgen][docs]
     }
 }
 
+TEST_CASE("The Backend label is known and keeps its text", "[docgen][docs]") {
+    Parsed p(Fn("Summary.\nBackend: Windows IsDebuggerPresent; macOS sysctl P_TRACED."));
+    REQUIRE(p.Diags() == 0);
+    REQUIRE(std::string(LabelName(LabelKind::Backend)) == "Backend");
+}
+
 TEST_CASE("Empty labels are errors", "[docgen][docs]") {
     Parsed p(Fn("Summary.\nReturns:\nInternal:\nExample:"));
     REQUIRE(p.Diags() == 3);

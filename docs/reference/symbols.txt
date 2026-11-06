@@ -457,7 +457,7 @@ os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbo
 os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:112
 os::EnsureDirectory(StringView,int)	function	platform/os	os-ensuredirectory-stringview-int	platform-os.md	engine/foundation/os/os.h:120
 os::EnsurePrivateDirectory(StringView)	function	platform/os	os-ensureprivatedirectory-stringview	platform-os.md	engine/foundation/os/os.h:132
-os::GetCrashDumpDirectory(char*,usize)	function	platform/os	os-getcrashdumpdirectory-char-star-usize	platform-os.md	engine/foundation/os/os.h:148
+os::GetCrashDumpDirectory(char*,usize)	function	platform/os	os-getcrashdumpdirectory-char-star-usize	platform-os.md	engine/foundation/os/os.h:149
 os::Key	enum	platform/window-input	os-key	platform-window-input.md	engine/foundation/os/input.h:12
 os::Key::Unknown	enumerator	platform/window-input	os-key-unknown	platform-window-input.md	engine/foundation/os/input.h:13
 os::Key::A	enumerator	platform/window-input	os-key-a	platform-window-input.md	engine/foundation/os/input.h:14
@@ -715,7 +715,7 @@ ENGINE_UNREACHABLE_HINT	macro	foundation/debug	engine-unreachable-hint	foundatio
 ENGINE_COLD	macro	foundation/debug	engine-cold	foundation-debug.md	engine/foundation/debug/compiler.h:35
 ENGINE_COMPILER_BARRIER	macro	foundation/debug	engine-compiler-barrier	foundation-debug.md	engine/foundation/debug/compiler.h:44
 ENGINE_NOINLINE_LAMBDA	macro	foundation/debug	engine-noinline-lambda	foundation-debug.md	engine/foundation/debug/compiler.h:51
-ENGINE_NOINLINE	macro	foundation/debug	engine-noinline	foundation-debug.md	engine/foundation/debug/compiler.h:58
+ENGINE_NOINLINE	macro	foundation/debug	engine-noinline	foundation-debug.md	engine/foundation/debug/compiler.h:59
 debug::kMaxBuildIdText	variable	foundation/debug	debug-kmaxbuildidtext	foundation-debug.md	engine/foundation/debug/crash_context.h:11
 debug::kMaxContextPath	variable	foundation/debug	debug-kmaxcontextpath	foundation-debug.md	engine/foundation/debug/crash_context.h:13
 debug::kMaxContextCommandLine	variable	foundation/debug	debug-kmaxcontextcommandline	foundation-debug.md	engine/foundation/debug/crash_context.h:15
@@ -734,10 +734,10 @@ debug::CrashContext::cpu_brand	variable	foundation/debug	debug-crashcontext-cpu-
 debug::CrashContext::cpu_count	variable	foundation/debug	debug-crashcontext-cpu-count	foundation-debug.md	engine/foundation/debug/crash_context.h:48
 debug::CrashContext::total_memory_bytes	variable	foundation/debug	debug-crashcontext-total-memory-bytes	foundation-debug.md	engine/foundation/debug/crash_context.h:50
 debug::CrashContext::start_time_unix	variable	foundation/debug	debug-crashcontext-start-time-unix	foundation-debug.md	engine/foundation/debug/crash_context.h:52
-debug::InitCrashContext(int,const char* const*)	function	foundation/debug	debug-initcrashcontext-int-const-char-star-const-star	foundation-debug.md	engine/foundation/debug/crash_context.h:64
-debug::SetCoreDumpDescription(const char*)	function	foundation/debug	debug-setcoredumpdescription-const-char-star	foundation-debug.md	engine/foundation/debug/crash_context.h:70
-debug::CrashContextInitialized()	function	foundation/debug	debug-crashcontextinitialized	foundation-debug.md	engine/foundation/debug/crash_context.h:75
-debug::GetCrashContext()	function	foundation/debug	debug-getcrashcontext	foundation-debug.md	engine/foundation/debug/crash_context.h:81
+debug::InitCrashContext(int,const char* const*)	function	foundation/debug	debug-initcrashcontext-int-const-char-star-const-star	foundation-debug.md	engine/foundation/debug/crash_context.h:65
+debug::SetCoreDumpDescription(const char*)	function	foundation/debug	debug-setcoredumpdescription-const-char-star	foundation-debug.md	engine/foundation/debug/crash_context.h:71
+debug::CrashContextInitialized()	function	foundation/debug	debug-crashcontextinitialized	foundation-debug.md	engine/foundation/debug/crash_context.h:76
+debug::GetCrashContext()	function	foundation/debug	debug-getcrashcontext	foundation-debug.md	engine/foundation/debug/crash_context.h:82
 debug::CrashHandlerOptions	struct	foundation/debug	debug-crashhandleroptions	foundation-debug.md	engine/foundation/debug/crash_handler.h:20
 debug::CrashHandlerOptions::dump_directory	variable	foundation/debug	debug-crashhandleroptions-dump-directory	foundation-debug.md	engine/foundation/debug/crash_handler.h:22
 debug::CrashHandlerOptions::report_file	variable	foundation/debug	debug-crashhandleroptions-report-file	foundation-debug.md	engine/foundation/debug/crash_handler.h:25
@@ -754,8 +754,8 @@ debug::CrashHandlerResult::InitFailed	enumerator	foundation/debug	debug-crashhan
 debug::CrashHandlerResult::Unsupported	enumerator	foundation/debug	debug-crashhandlerresult-unsupported	foundation-debug.md	engine/foundation/debug/crash_handler.h:45
 debug::InstallCrashHandler(const CrashHandlerOptions&)	function	foundation/debug	debug-installcrashhandler-const-crashhandleroptions-amp	foundation-debug.md	engine/foundation/debug/crash_handler.h:57
 debug::UninstallCrashHandler()	function	foundation/debug	debug-uninstallcrashhandler	foundation-debug.md	engine/foundation/debug/crash_handler.h:64
-debug::RegisterThreadForCrashHandling(const char*)	function	foundation/debug	debug-registerthreadforcrashhandling-const-char-star	foundation-debug.md	engine/foundation/debug/crash_handler.h:77
-debug::CrashHandlerInstalled()	function	foundation/debug	debug-crashhandlerinstalled	foundation-debug.md	engine/foundation/debug/crash_handler.h:82
+debug::RegisterThreadForCrashHandling(const char*)	function	foundation/debug	debug-registerthreadforcrashhandling-const-char-star	foundation-debug.md	engine/foundation/debug/crash_handler.h:78
+debug::CrashHandlerInstalled()	function	foundation/debug	debug-crashhandlerinstalled	foundation-debug.md	engine/foundation/debug/crash_handler.h:83
 debug::CrashReason	enum	foundation/debug	debug-crashreason	foundation-debug.md	engine/foundation/debug/crash_reason.h:16
 debug::CrashReason::None	enumerator	foundation/debug	debug-crashreason-none	foundation-debug.md	engine/foundation/debug/crash_reason.h:17
 debug::CrashReason::AccessViolation	enumerator	foundation/debug	debug-crashreason-accessviolation	foundation-debug.md	engine/foundation/debug/crash_reason.h:18
@@ -826,13 +826,13 @@ debug::ChildResult::stderr_length	variable	foundation/debug	debug-childresult-st
 debug::ChildResult::stderr_truncated	variable	foundation/debug	debug-childresult-stderr-truncated	foundation-debug.md	engine/foundation/debug/death_test.h:108
 debug::ChildResult::StderrContains(const char*) const	function	foundation/debug	debug-childresult-stderrcontains-const-char-star-const	foundation-debug.md	engine/foundation/debug/death_test.h:113
 debug::ChildResult::StdoutContains(const char*) const	function	foundation/debug	debug-childresult-stdoutcontains-const-char-star-const	foundation-debug.md	engine/foundation/debug/death_test.h:117
-debug::DeathTestsSupported()	function	foundation/debug	debug-deathtestssupported	foundation-debug.md	engine/foundation/debug/death_test.h:123
-debug::RunInChild(const char*,const char*,const ChildOptions&)	function	foundation/debug	debug-runinchild-const-char-star-const-char-star-const-childoptions-amp	foundation-debug.md	engine/foundation/debug/death_test.h:139
-debug::RunDeathTestChildIfRequested()	function	foundation/debug	debug-rundeathtestchildifrequested	foundation-debug.md	engine/foundation/debug/death_test.h:148
-debug::ExitChildProcess(int)	function	foundation/debug	debug-exitchildprocess-int	foundation-debug.md	engine/foundation/debug/death_test.h:153
-debug::SetDeathTestSupportForTesting(bool)	function	foundation/debug	debug-setdeathtestsupportfortesting-bool	foundation-debug.md	engine/foundation/debug/death_test.h:158
-ENGINE_DEATH_TEST_FN	macro	foundation/debug	engine-death-test-fn	foundation-debug.md	engine/foundation/debug/death_test.h:168
-debug::IsDebuggerAttached()	function	foundation/debug	debug-isdebuggerattached	foundation-debug.md	engine/foundation/debug/debugger.h:18
+debug::DeathTestsSupported()	function	foundation/debug	debug-deathtestssupported	foundation-debug.md	engine/foundation/debug/death_test.h:124
+debug::RunInChild(const char*,const char*,const ChildOptions&)	function	foundation/debug	debug-runinchild-const-char-star-const-char-star-const-childoptions-amp	foundation-debug.md	engine/foundation/debug/death_test.h:141
+debug::RunDeathTestChildIfRequested()	function	foundation/debug	debug-rundeathtestchildifrequested	foundation-debug.md	engine/foundation/debug/death_test.h:150
+debug::ExitChildProcess(int)	function	foundation/debug	debug-exitchildprocess-int	foundation-debug.md	engine/foundation/debug/death_test.h:155
+debug::SetDeathTestSupportForTesting(bool)	function	foundation/debug	debug-setdeathtestsupportfortesting-bool	foundation-debug.md	engine/foundation/debug/death_test.h:160
+ENGINE_DEATH_TEST_FN	macro	foundation/debug	engine-death-test-fn	foundation-debug.md	engine/foundation/debug/death_test.h:170
+debug::IsDebuggerAttached()	function	foundation/debug	debug-isdebuggerattached	foundation-debug.md	engine/foundation/debug/debugger.h:19
 debug::FaultKind	enum	foundation/debug	debug-faultkind	foundation-debug.md	engine/foundation/debug/fault_injection.h:12
 debug::FaultKind::NullWrite	enumerator	foundation/debug	debug-faultkind-nullwrite	foundation-debug.md	engine/foundation/debug/fault_injection.h:13
 debug::FaultKind::Abort	enumerator	foundation/debug	debug-faultkind-abort	foundation-debug.md	engine/foundation/debug/fault_injection.h:14
@@ -840,8 +840,8 @@ debug::FaultKind::IllegalInstruction	enumerator	foundation/debug	debug-faultkind
 debug::FaultKind::DivideByZero	enumerator	foundation/debug	debug-faultkind-dividebyzero	foundation-debug.md	engine/foundation/debug/fault_injection.h:16
 debug::FaultKind::StackOverflow	enumerator	foundation/debug	debug-faultkind-stackoverflow	foundation-debug.md	engine/foundation/debug/fault_injection.h:17
 debug::FaultKind::BusError	enumerator	foundation/debug	debug-faultkind-buserror	foundation-debug.md	engine/foundation/debug/fault_injection.h:18
-debug::FaultSupported(FaultKind)	function	foundation/debug	debug-faultsupported-faultkind	foundation-debug.md	engine/foundation/debug/fault_injection.h:27
-debug::InjectFault(FaultKind)	function	foundation/debug	debug-injectfault-faultkind	foundation-debug.md	engine/foundation/debug/fault_injection.h:34
+debug::FaultSupported(FaultKind)	function	foundation/debug	debug-faultsupported-faultkind	foundation-debug.md	engine/foundation/debug/fault_injection.h:28
+debug::InjectFault(FaultKind)	function	foundation/debug	debug-injectfault-faultkind	foundation-debug.md	engine/foundation/debug/fault_injection.h:36
 debug::kMaxModulePathBytes	variable	foundation/debug	debug-kmaxmodulepathbytes	foundation-debug.md	engine/foundation/debug/module_list.h:9
 debug::LoadedModule	struct	foundation/debug	debug-loadedmodule	foundation-debug.md	engine/foundation/debug/module_list.h:14
 debug::LoadedModule::load_bias	variable	foundation/debug	debug-loadedmodule-load-bias	foundation-debug.md	engine/foundation/debug/module_list.h:17
@@ -863,7 +863,7 @@ debug::PostMortemReport::previous_limit_bytes	variable	foundation/debug	debug-po
 debug::PostMortemReport::current_limit_bytes	variable	foundation/debug	debug-postmortemreport-current-limit-bytes	foundation-debug.md	engine/foundation/debug/post_mortem.h:44
 debug::PostMortemReport::destination	variable	foundation/debug	debug-postmortemreport-destination	foundation-debug.md	engine/foundation/debug/post_mortem.h:46
 debug::PostMortemReport::note	variable	foundation/debug	debug-postmortemreport-note	foundation-debug.md	engine/foundation/debug/post_mortem.h:48
-debug::EnablePostMortemDumps(const PostMortemOptions&)	function	foundation/debug	debug-enablepostmortemdumps-const-postmortemoptions-amp	foundation-debug.md	engine/foundation/debug/post_mortem.h:61
+debug::EnablePostMortemDumps(const PostMortemOptions&)	function	foundation/debug	debug-enablepostmortemdumps-const-postmortemoptions-amp	foundation-debug.md	engine/foundation/debug/post_mortem.h:62
 debug::CrashTestKind	enum	foundation/debug	debug-crashtestkind	foundation-debug.md	engine/foundation/debug/program_setup.h:14
 debug::CrashTestKind::None	enumerator	foundation/debug	debug-crashtestkind-none	foundation-debug.md	engine/foundation/debug/program_setup.h:15
 debug::CrashTestKind::Segv	enumerator	foundation/debug	debug-crashtestkind-segv	foundation-debug.md	engine/foundation/debug/program_setup.h:16
@@ -900,16 +900,16 @@ debug::FrameInfo::file	variable	foundation/debug	debug-frameinfo-file	foundation
 debug::FrameInfo::module	variable	foundation/debug	debug-frameinfo-module	foundation-debug.md	engine/foundation/debug/stack_trace.h:57
 debug::FormatOptions	struct	foundation/debug	debug-formatoptions	foundation-debug.md	engine/foundation/debug/stack_trace.h:63
 debug::FormatOptions::demangle	variable	foundation/debug	debug-formatoptions-demangle	foundation-debug.md	engine/foundation/debug/stack_trace.h:66
-debug::InitDebugFacilities()	function	foundation/debug	debug-initdebugfacilities	foundation-debug.md	engine/foundation/debug/stack_trace.h:76
-debug::ReloadDebugModules()	function	foundation/debug	debug-reloaddebugmodules	foundation-debug.md	engine/foundation/debug/stack_trace.h:85
-debug::CaptureStackTrace(StackTrace&,u32)	function	foundation/debug	debug-capturestacktrace-stacktrace-amp-u32	foundation-debug.md	engine/foundation/debug/stack_trace.h:96
-debug::ResolveStackTrace(const StackTrace&,FrameInfo*,usize)	function	foundation/debug	debug-resolvestacktrace-const-stacktrace-amp-frameinfo-star-usize	foundation-debug.md	engine/foundation/debug/stack_trace.h:109
-debug::FormatStackTrace(const StackTrace&,char*,usize,const FormatOptions&)	function	foundation/debug	debug-formatstacktrace-const-stacktrace-amp-char-star-usize-const-formatoptions-amp	foundation-debug.md	engine/foundation/debug/stack_trace.h:126
-debug::DemangleSymbol(const char*,char*,usize)	function	foundation/debug	debug-demanglesymbol-const-char-star-char-star-usize	foundation-debug.md	engine/foundation/debug/stack_trace.h:137
+debug::InitDebugFacilities()	function	foundation/debug	debug-initdebugfacilities	foundation-debug.md	engine/foundation/debug/stack_trace.h:77
+debug::ReloadDebugModules()	function	foundation/debug	debug-reloaddebugmodules	foundation-debug.md	engine/foundation/debug/stack_trace.h:87
+debug::CaptureStackTrace(StackTrace&,u32)	function	foundation/debug	debug-capturestacktrace-stacktrace-amp-u32	foundation-debug.md	engine/foundation/debug/stack_trace.h:98
+debug::ResolveStackTrace(const StackTrace&,FrameInfo*,usize)	function	foundation/debug	debug-resolvestacktrace-const-stacktrace-amp-frameinfo-star-usize	foundation-debug.md	engine/foundation/debug/stack_trace.h:111
+debug::FormatStackTrace(const StackTrace&,char*,usize,const FormatOptions&)	function	foundation/debug	debug-formatstacktrace-const-stacktrace-amp-char-star-usize-const-formatoptions-amp	foundation-debug.md	engine/foundation/debug/stack_trace.h:128
+debug::DemangleSymbol(const char*,char*,usize)	function	foundation/debug	debug-demanglesymbol-const-char-star-char-star-usize	foundation-debug.md	engine/foundation/debug/stack_trace.h:140
 debug::kMaxThreadNameBytes	variable	foundation/debug	debug-kmaxthreadnamebytes	foundation-debug.md	engine/foundation/debug/thread_info.h:9
-debug::CurrentThreadId()	function	foundation/debug	debug-currentthreadid	foundation-debug.md	engine/foundation/debug/thread_info.h:13
-debug::SetCrashThreadName(const char*)	function	foundation/debug	debug-setcrashthreadname-const-char-star	foundation-debug.md	engine/foundation/debug/thread_info.h:19
-debug::CrashThreadName()	function	foundation/debug	debug-crashthreadname	foundation-debug.md	engine/foundation/debug/thread_info.h:25
+debug::CurrentThreadId()	function	foundation/debug	debug-currentthreadid	foundation-debug.md	engine/foundation/debug/thread_info.h:14
+debug::SetCrashThreadName(const char*)	function	foundation/debug	debug-setcrashthreadname-const-char-star	foundation-debug.md	engine/foundation/debug/thread_info.h:20
+debug::CrashThreadName()	function	foundation/debug	debug-crashthreadname	foundation-debug.md	engine/foundation/debug/thread_info.h:26
 jobs::IoRequest	struct	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:53
 jobs::IoRequest::next	variable	jobs	jobs-iorequest-next	jobs.md	engine/jobs/async_io.h:55
 jobs::IoRequest::run	variable	jobs	jobs-iorequest-run	jobs.md	engine/jobs/async_io.h:57

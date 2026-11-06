@@ -36,4 +36,4 @@ handle each OS's app lifecycle and touch input.
 
 - Full day-by-day breakdown deferred until reached.
 
-- **Debugging facilities backend (from Phase 6; designed in, no Phase 6 work):** sentry-native's `inproc` backend is the Android default (it writes no minidump, so Android needs a decision) and iOS is not in its supported list. Death tests skip where a process cannot be spawned; post-mortem dumps report `Unsupported` where there is none. See `plans/phase-06-debugging-facilities.md`.
+- **Debugging facilities backend (from Phase 6; designed in, no Phase 6 work):** sentry-native's `inproc` backend is the Android default and writes no minidump; Breakpad on Android and iOS is untested upstream, and iOS is not in the supported list: decide here. Death tests skip where a process cannot be spawned; post-mortem dumps report `Unsupported` where there is none. See `docs/guide/porting-debugging.md`.

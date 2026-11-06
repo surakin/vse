@@ -25,6 +25,7 @@ const LabelInfo kLabels[] = {
     {"See", LabelKind::See},
     {"Deprecated", LabelKind::Deprecated},
     {"Internal", LabelKind::Internal},
+    {"Backend", LabelKind::Backend},
 };
 
 const char* const kCategories[] = {"immutable",      "thread-safe",  "thread-compatible",

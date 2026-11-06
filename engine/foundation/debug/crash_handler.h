@@ -74,6 +74,7 @@ void UninstallCrashHandler();
 /// Fails: returns false if the crash handler is not installed yet (only the name is set; call this again after installing, or
 ///   install first) or if the memory or the platform call is refused; the thread still produces reports for other faults.
 /// Thread-safety: thread-safe; it affects only the calling thread. Not async-signal-safe.
+/// Backend: Windows: SetThreadStackGuarantee so a stack overflow can be handled; macOS: the name only (the library takes Mach exceptions, which need no alternate stack).
 bool RegisterThreadForCrashHandling(const char* name = nullptr);
 
 /// Reports whether the crash handler is installed.

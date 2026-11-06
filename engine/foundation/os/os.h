@@ -145,6 +145,7 @@ bool EnsurePrivateDirectory(StringView path);
 ///   the directory is not a private directory of this user (see [[os::EnsurePrivateDirectory]]).
 /// Thread-safety: thread-safe, except that it reads the environment, so another thread must not change it (`setenv`) at the
 ///   same time.
+/// Backend: Windows: %LOCALAPPDATA%/<app>/crashes; macOS: ~/Library/Application Support/<app>/crashes; Android and iOS: the app-private files directory.
 bool GetCrashDumpDirectory(char* out, usize capacity);
 
 } // namespace engine_placeholder::os

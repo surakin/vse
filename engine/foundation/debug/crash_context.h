@@ -61,6 +61,7 @@ struct CrashContext {
 /// The first call fills the context. A later call changes nothing, except that it supplies the command line if the first call
 /// had none (the crash handler and a failed assert initialize without arguments when the program has not).
 /// Thread-safety: thread-safe. Not async-signal-safe: it reads files.
+/// Backend: the system-information reads. Windows: build id from the PE CodeView record (GUID and age), OS from RtlGetVersion, memory from GlobalMemoryStatusEx; macOS: build id from LC_UUID, OS and CPU from sysctl.
 void InitCrashContext(int argc, const char* const* argv);
 
 /// Records where a core dump will go (from [[debug::EnablePostMortemDumps]]), to be printed in every crash report.

@@ -140,3 +140,30 @@ set_tests_properties(debug_no_network_check_imports_planted PROPERTIES LABELS "d
   PASS_REGULAR_EXPRESSION "imports a network function: getaddrinfo")
 set_tests_properties(debug_no_network_check_defines_clean PROPERTIES LABELS "debug")
 engine_label_tests(debug_no_network_check_imports_planted debug_no_network_check_defines_clean)
+
+# The neutral functions a platform backend implements carry a `Backend:` doc label; the Windows and macOS checklists must list
+# every one of them (and name no function without the label). Tested on a good and a bad fixture tree.
+function(engine_backend_lists_test name root)
+  add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DROOT=${root} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_backend_lists.cmake)
+  set_tests_properties(${name} PROPERTIES LABELS "debug")
+endfunction()
+engine_backend_lists_test(debug_backend_lists ${CMAKE_SOURCE_DIR})
+engine_backend_lists_test(debug_backend_lists_clean ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/backend_lists/good)
+engine_backend_lists_test(debug_backend_lists_planted ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/backend_lists/bad)
+set_tests_properties(debug_backend_lists_planted PROPERTIES WILL_FAIL TRUE)
+engine_backend_lists_test(debug_backend_lists_planted_count ${CMAKE_CURRENT_SOURCE_DIR}/fixtures/backend_lists/bad)
+set_tests_properties(debug_backend_lists_planted_count PROPERTIES
+  PASS_REGULAR_EXPRESSION "windows: BACKEND.md lists `Stale`.*windows: BACKEND.md has no section heading for `Forgotten`.*macos: BACKEND.md lists `Stale`.*macos: BACKEND.md has no section heading for `Forgotten`.*4 problem")
+engine_label_tests(debug_backend_lists debug_backend_lists_clean debug_backend_lists_planted debug_backend_lists_planted_count)
+
+# The neutral headers and the platform-free facade sources must compile for the Windows and macOS targets (clang -fsyntax-only with
+# shim standard headers). Skipped where clang++ is missing. Not covered: stack_trace_backtrace.cpp, crash_handler_sentry.cpp and
+# module_list.cpp (they include libbacktrace's and sentry's headers, which need the target's operating system headers; see
+# KNOWN-ISSUES.md).
+function(engine_cross_syntax_test name triple)
+  add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DTRIPLE=${triple} -DROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/cross_syntax/check_cross_syntax.cmake)
+  set_tests_properties(${name} PROPERTIES LABELS "debug" SKIP_REGULAR_EXPRESSION "clang\\+\\+ not found")
+endfunction()
+engine_cross_syntax_test(debug_cross_syntax_windows x86_64-pc-windows-msvc)
+engine_cross_syntax_test(debug_cross_syntax_macos arm64-apple-macos13)
+engine_label_tests(debug_cross_syntax_windows debug_cross_syntax_macos)

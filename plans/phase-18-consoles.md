@@ -24,4 +24,4 @@ be treated as actionable until then.
 
 - Do not expand this phase further until dev kit/NDA access is secured.
 
-- **Debugging facilities backend (from Phase 6; designed in, no Phase 6 work):** the crash library has console repos (PlayStation, Xbox, Switch) under NDA; the neutral facade forwards to them; death tests are skipped. See `plans/phase-06-debugging-facilities.md`.
+- **Debugging facilities backend (from Phase 6; designed in, see Phase 6):** the console crash libraries are under NDA; the neutral facade forwards to them; death tests are skipped. See `docs/guide/porting-debugging.md`.

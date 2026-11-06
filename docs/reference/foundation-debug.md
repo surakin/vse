@@ -321,6 +321,7 @@ The first call fills the context. A later call changes nothing, except that it s
 | Parameter `argc` | number of arguments, or 0 if the program has no command line. |
 | Parameter `argv` | the arguments; borrowed for the call; null if the program has none. |
 | Thread-safety | thread-safe. Not async-signal-safe: it reads files. |
+| Backend | the system-information reads. Windows: build id from the PE CodeView record (GUID and age), OS from RtlGetVersion, memory from GlobalMemoryStatusEx; macOS: build id from LC_UUID, OS and CPU from sysctl. |
 
 ## `SetCoreDumpDescription(const char*)` {#debug-setcoredumpdescription-const-char-star}
 
@@ -516,6 +517,7 @@ A fault handler needs stack to run on, and a thread whose stack is exhausted has
 | Returns | true if the thread can now handle a stack overflow. |
 | Fails | returns false if the crash handler is not installed yet (only the name is set; call this again after installing, or install first) or if the memory or the platform call is refused; the thread still produces reports for other faults. |
 | Thread-safety | thread-safe; it affects only the calling thread. Not async-signal-safe. |
+| Backend | Windows: SetThreadStackGuarantee so a stack overflow can be handled; macOS: the name only (the library takes Mach exceptions, which need no alternate stack). |
 
 ## `CrashHandlerInstalled()` {#debug-crashhandlerinstalled}
 
@@ -1280,6 +1282,7 @@ Reports whether this platform can start child processes, so death tests can skip
 |---|---|
 | Returns | true where [`debug::RunInChild`](#debug-runinchild-const-char-star-const-char-star-const-childoptions-amp) works. |
 | Thread-safety | thread-safe. |
+| Backend | Windows: true (CreateProcess); macOS: true (posix_spawn, shared with Linux). |
 
 ## `RunInChild(const char*,const char*,const ChildOptions&)` {#debug-runinchild-const-char-star-const-char-star-const-childoptions-amp}
 
@@ -1301,6 +1304,7 @@ The child inherits the environment (plus `options.extra_env`) and nothing else: 
 | Returns | the result; `supported` is false where the platform cannot start a process. |
 | Fails | `started` is false if the process could not be started; `timed_out` is set if it had to be killed. If the platform never reported how the child ended (its status was reaped by someone else), `started` is true and both `exited` and `terminated` are false. |
 | Thread-safety | thread-safe. Each call owns its child and its pipes. The child's environment is built from the process environment, so do not change it (`setenv`) from another thread while a call is running. |
+| Backend | Windows: CreateProcess with a job object, exit codes decoded from NTSTATUS; macOS: posix_spawn, signals decoded as on Linux. |
 
 ## `RunDeathTestChildIfRequested()` {#debug-rundeathtestchildifrequested}
 
@@ -1383,6 +1387,7 @@ Any tracer counts, not only an interactive debugger: on Linux a process run unde
 |---|---|
 | Returns | true if a debugger (or another tracer) is attached; false if none is or the platform cannot tell. |
 | Thread-safety | thread-safe. |
+| Backend | Windows: IsDebuggerPresent; macOS: sysctl kern.proc.pid with the P_TRACED flag. |
 
 ## `FaultKind` {#debug-faultkind}
 
@@ -1418,6 +1423,7 @@ Reports whether the current platform can cause `kind`.
 | Parameter `kind` | the fault to ask about. |
 | Returns | true if [`debug::InjectFault`](#debug-injectfault-faultkind) produces that fault here. Integer division does not trap on some CPUs, so [`debug::FaultKind::DivideByZero`](#debug-faultkind-dividebyzero) is not available everywhere. |
 | Thread-safety | thread-safe. |
+| Backend | which faults the platform can cause. Windows and macOS: every kind except an integer divide on arm64, which does not trap. |
 
 ## `InjectFault(FaultKind)` {#debug-injectfault-faultkind}
 
@@ -1434,6 +1440,7 @@ Causes the fault `kind` and never returns.
 | Parameter `kind` | the fault to cause; must satisfy [`debug::FaultSupported`](#debug-faultsupported-faultkind). |
 | Aborts | `kind` is not supported on this platform. |
 | Thread-safety | thread-safe. The fault ends the whole process. |
+| Backend | Windows: a write to address 0, __ud2, an integer divide, unbounded recursion, abort(); macOS: the same signals as Linux. |
 
 ## `kMaxModulePathBytes` {#debug-kmaxmodulepathbytes}
 
@@ -1666,6 +1673,7 @@ On Linux this raises the soft core size limit to the hard limit (or to `options.
 | Returns | what was done; never fails hard. |
 | Fails | reports [`debug::PostMortemResult::Limited`](#debug-postmortemresult-limited) when the system's hard limit is zero (nothing the process can do) and [`debug::PostMortemResult::Unsupported`](#debug-postmortemresult-unsupported) where there is no such artifact. |
 | Thread-safety | thread-safe. Not async-signal-safe. |
+| Backend | Windows: WER LocalDumps registry values (Limited without the right to write them); macOS: setrlimit(RLIMIT_CORE) and /cores; Android: Enabled with nothing to do. |
 
 ## `CrashTestKind` {#debug-crashtestkind}
 
@@ -2057,6 +2065,7 @@ Calling it at program start means a later trace, including one taken in a signal
 | Field | Value |
 |---|---|
 | Thread-safety | thread-safe. Not async-signal-safe: it allocates and reads files. |
+| Backend | the loaded-module walk. Windows: EnumProcessModules; macOS: _dyld_image_count and _dyld_get_image_header. |
 
 ## `ReloadDebugModules()` {#debug-reloaddebugmodules}
 
@@ -2073,6 +2082,7 @@ Libraries loaded after [`debug::InitDebugFacilities`](#debug-initdebugfacilities
 | Field | Value |
 |---|---|
 | Thread-safety | thread-safe. Not async-signal-safe. A lookup that runs at the same time may mix the old and the new information for that one call. |
+| Backend | as InitDebugFacilities, run again after a library is loaded or unloaded. |
 
 ## `CaptureStackTrace(StackTrace&,u32)` {#debug-capturestacktrace-stacktrace-amp-u32}
 
@@ -2154,6 +2164,7 @@ Turns a mangled C++ name into a readable one.
 | Fails | returns false, leaving `out` empty, for a name that is not mangled or too long for `out`. |
 | Thread-safety | thread-safe. Allocates; not async-signal-safe. |
 | Ownership | `out` stays the caller's; nothing is retained after the call. |
+| Backend | Windows: UnDecorateSymbolName for MSVC names, the Itanium demangler for clang; macOS: abi::__cxa_demangle. |
 
 ## `kMaxThreadNameBytes` {#debug-kmaxthreadnamebytes}
 
@@ -2178,6 +2189,7 @@ Returns the operating system's id for the calling thread (the number a debugger 
 | Field | Value |
 |---|---|
 | Thread-safety | thread-safe. Async-signal-safe. |
+| Backend | Windows: GetCurrentThreadId; macOS: pthread_threadid_np. |
 
 ## `SetCrashThreadName(const char*)` {#debug-setcrashthreadname-const-char-star}
 

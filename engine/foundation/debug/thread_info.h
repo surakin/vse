@@ -10,6 +10,7 @@ constexpr usize kMaxThreadNameBytes = 32;
 
 /// Returns the operating system's id for the calling thread (the number a debugger and `top` show).
 /// Thread-safety: thread-safe. Async-signal-safe.
+/// Backend: Windows: GetCurrentThreadId; macOS: pthread_threadid_np.
 u64 CurrentThreadId();
 
 /// Gives the calling thread a name to appear in crash reports (for example `"worker 3"`), cut at [[debug::kMaxThreadNameBytes]] - 1 bytes.

@@ -1,0 +1,11 @@
+// Stand-in for the standard header (see cstddef).
+#pragma once
+#include <stddef.h>
+extern "C" {
+char* getenv(const char*);
+void abort();
+}
+namespace std {
+using ::abort;
+using ::getenv;
+} // namespace std

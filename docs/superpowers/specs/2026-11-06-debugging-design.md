@@ -201,3 +201,47 @@ a sink type instead of a descriptor, `Unsupported` results) is unchanged from th
 - Day 97: no signal handler of ours; the install-order rule is moot; the safety gate covers the hook.
 - Day 99: `crash-report.sh` calls `crash_extract` first.
 - Day 101: the Windows/macOS audit records the above notes; `BACKEND.md` lists no handler-executable entry.
+
+## 10. Platform audit (Phase 6 Day 101; read from the vendored sources, not from memory)
+
+Checked in `third_party/sentry_native/` (0.17.6) and `third_party/libbacktrace/` (commit `0b9b49c`).
+
+| | Linux (built and tested) | Windows (Phase 8) | macOS (Phase 9) | Android / iOS (Phase 17) | Consoles (Phase 18) |
+|---|---|---|---|---|---|
+| sentry-native Breakpad backend | supported | supported (README matrix) | supported (README matrix) | "(✓)": builds, untested upstream | separate repos, NDA |
+| Transport `none` | supported | supported | supported | supported | n/a |
+| Default backend upstream | Crashpad | Crashpad (Breakpad for Xbox/WINGDK) | Crashpad | `inproc` (writes no minidump) | n/a |
+| What we set | `SENTRY_BACKEND=breakpad`, `SENTRY_TRANSPORT=none`, static library | the same; no handler executable with Breakpad (Crashpad would need one and uses winhttp, not libcurl); `SENTRY_THREAD_STACK_GUARANTEE_*` exist for stack overflow | the same | `breakpad` is untested there; a Phase 17 decision | not decided |
+| `on_crash` hook arguments | `uctx` is **null**, hook runs in a **helper thread** (read from `sentry_backend_breakpad.cpp` and Breakpad's `exception_handler.cc`) | `uctx` carries the `EXCEPTION_POINTERS` | `uctx` carries the user context (non-system Breakpad) | untested | n/a |
+| libbacktrace object format | ELF (`elf.c`, built) | PE/COFF (`pecoff.c` + `alloc.c`, vendored, not built) | Mach-O (`macho.c`, vendored, not built) | ELF (Android), Mach-O (iOS) | n/a |
+| Symbols | DWARF | **DWARF only**: PDB is not read | DWARF in a dSYM next to the binary | DWARF | n/a |
+
+What each platform needs that Linux does not:
+
+- **Windows:** a build id reader (PE CodeView GUID and age; `-Wl,--build-id` has no effect), the unhandled-exception filter and
+  vectored handler are installed by the library, fast-fail crashes bypass SEH and are not seen by `on_crash` (a documented
+  gap), `SetThreadStackGuarantee` for a stack overflow, a job object for death-test children, PowerShell equivalents of the
+  scripts, and the DWARF-or-PDB decision for symbols.
+- **macOS:** the library takes Mach exceptions, so the Linux signal recorder is not used and the report is written from
+  `on_crash` (which receives the context); dSYM bundles next to the binary; `/cores` is normally disabled; the hardened runtime
+  and notarization restrict handlers; `PR_SET_PDEATHSIG` does not exist (death-test children need another way to die with the
+  parent).
+- **Android / iOS:** Breakpad is untested upstream on both; Android's default backend writes no minidump; iOS has no supported
+  list entry. Both are "designed in" (`Unsupported`, skipped death tests) and decided in Phase 17.
+- **Consoles:** the crash libraries are under NDA; the neutral facade forwards to them; decided in Phase 18.
+
+Known gaps and the decision each needs: **(1)** PDB symbols on Windows (Phase 8: clang with DWARF, or a DbgHelp resolver behind
+`ResolveStackTrace`); **(2)** file and line on macOS need the dSYM (Phase 9: ship or locate it); **(3)** the Windows and macOS
+crash report is written from `on_crash`, so the Linux recorder (`os/linux/debug/crash_signal.cpp`) has no counterpart and
+`detail::InstallCrashEventHook` is not implemented there; **(4)** Android and iOS minidumps (Phase 17); **(5)** consoles
+(Phase 18). The lists per function are `engine/foundation/os/windows/debug/BACKEND.md` and
+`engine/foundation/os/macos/debug/BACKEND.md`, kept in step with the headers by `debug_backend_lists`.
+
+**Correction to section 9 (as built).** Days 96 and 97 do write the report from a small signal recorder placed in front of
+Breakpad's handler on Linux, not from the `on_crash` hook: on Linux the hook gets no signal information and runs on a helper
+thread, so the fault address, the faulting thread's name and its stack are not available there (day 97 file). On Windows and
+macOS the hook does receive the context, so the report moves back into the hook there.
+
+**What the cross-target syntax check found (Day 101).** `ENGINE_NOINLINE_LAMBDA` expanded to `[[msvc::noinline]]` for every
+compiler that defines `_MSC_VER`, which clang rejects on a lambda when it targets Windows. It is now `__declspec(noinline)`.
+

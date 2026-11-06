@@ -120,6 +120,7 @@ struct ChildResult {
 /// Reports whether this platform can start child processes, so death tests can skip where it cannot.
 /// Returns: true where [[debug::RunInChild]] works.
 /// Thread-safety: thread-safe.
+/// Backend: Windows: true (CreateProcess); macOS: true (posix_spawn, shared with Linux).
 bool DeathTestsSupported();
 
 /// Starts the running program as a child, runs the registered death test `name` in it, and reports what happened.
@@ -136,6 +137,7 @@ bool DeathTestsSupported();
 ///   `exited` and `terminated` are false.
 /// Thread-safety: thread-safe. Each call owns its child and its pipes. The child's environment is built from the
 ///   process environment, so do not change it (`setenv`) from another thread while a call is running.
+/// Backend: Windows: CreateProcess with a job object, exit codes decoded from NTSTATUS; macOS: posix_spawn, signals decoded as on Linux.
 ChildResult RunInChild(const char* name, const char* argument = "", const ChildOptions& options = ChildOptions());
 
 /// Makes the program act as a death-test child if the parent asked for it, otherwise returns.

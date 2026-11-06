@@ -1,0 +1,25 @@
+// Stand-in for the standard header (see cstddef): just the part of std::atomic the neutral headers name.
+#pragma once
+namespace std {
+enum memory_order { memory_order_relaxed, memory_order_consume, memory_order_acquire, memory_order_release, memory_order_acq_rel, memory_order_seq_cst };
+template <class T>
+struct atomic {
+    T value;
+    constexpr atomic() = default;
+    constexpr atomic(T v) : value(v) {}
+    T load(memory_order = memory_order_seq_cst) const { return value; }
+    void store(T v, memory_order = memory_order_seq_cst) { value = v; }
+    T exchange(T v, memory_order = memory_order_seq_cst) { T old = value; value = v; return old; }
+    bool compare_exchange_strong(T& expected, T desired, memory_order = memory_order_seq_cst, memory_order = memory_order_seq_cst) {
+        if (value == expected) { value = desired; return true; }
+        expected = value;
+        return false;
+    }
+    bool compare_exchange_weak(T& expected, T desired, memory_order = memory_order_seq_cst, memory_order = memory_order_seq_cst) {
+        return compare_exchange_strong(expected, desired);
+    }
+    T fetch_add(T v, memory_order = memory_order_seq_cst) { T old = value; value += v; return old; }
+    atomic& operator=(T v) { value = v; return *this; }
+    operator T() const { return value; }
+};
+} // namespace std

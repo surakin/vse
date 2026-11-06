@@ -600,4 +600,5 @@ On Linux it is `$XDG_STATE_HOME/<app>/crashes`, or `~/.local/state/<app>/crashes
 | Returns | true if `out` names a private directory of this user that exists. |
 | Fails | returns false, leaving `out` empty, if no base directory is known (no `XDG_STATE_HOME` and no `HOME`), the application name is unusable (`.`, `..`, empty, containing a slash, or longer than 200 bytes), the path does not fit, or the directory is not a private directory of this user (see [`os::EnsurePrivateDirectory`](#os-ensureprivatedirectory-stringview)). |
 | Thread-safety | thread-safe, except that it reads the environment, so another thread must not change it (`setenv`) at the same time. |
+| Backend | Windows: %LOCALAPPDATA%/<app>/crashes; macOS: ~/Library/Application Support/<app>/crashes; Android and iOS: the app-private files directory. |
 

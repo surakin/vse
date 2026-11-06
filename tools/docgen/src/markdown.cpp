@@ -178,7 +178,7 @@ public:
 
     void Contract(const ParsedDoc& doc) {
         static const LabelKind order[] = {LabelKind::Param,        LabelKind::Returns,   LabelKind::Fails,      LabelKind::Aborts,
-                                          LabelKind::ThreadSafety, LabelKind::Ownership, LabelKind::Deprecated};
+                                          LabelKind::ThreadSafety, LabelKind::Ownership, LabelKind::Backend,   LabelKind::Deprecated};
         bool any = false;
         for (LabelKind k : order) {
             for (usize i = 0; i < doc.labels.Size(); ++i) {

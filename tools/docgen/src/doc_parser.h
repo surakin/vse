@@ -26,6 +26,7 @@ enum class LabelKind : engine_placeholder::u8 {
     See,
     Deprecated,
     Internal,
+    Backend,
 };
 
 // The label as written in a comment ("Thread-safety").

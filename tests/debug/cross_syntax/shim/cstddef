@@ -1,0 +1,9 @@
+// Stand-in for the standard header, so the neutral headers can be syntax-checked for a target whose C++ library is not installed.
+#pragma once
+#include <stddef.h>
+namespace std {
+using ::ptrdiff_t;
+using ::size_t;
+using max_align_t = ::max_align_t;
+using nullptr_t = decltype(nullptr);
+} // namespace std

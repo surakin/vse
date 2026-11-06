@@ -73,6 +73,7 @@ struct FormatOptions {
 /// Without it the first trace does the same work then. Safe to call more than once.
 ///
 /// Thread-safety: thread-safe. Not async-signal-safe: it allocates and reads files.
+/// Backend: the loaded-module walk. Windows: EnumProcessModules; macOS: _dyld_image_count and _dyld_get_image_header.
 void InitDebugFacilities();
 
 /// Reads the debug information and the list of loaded modules again, to pick up libraries loaded since the last call.
@@ -82,6 +83,7 @@ void InitDebugFacilities();
 ///
 /// Thread-safety: thread-safe. Not async-signal-safe. A lookup that runs at the same time may mix the old and the new
 ///   information for that one call.
+/// Backend: as InitDebugFacilities, run again after a library is loaded or unloaded.
 void ReloadDebugModules();
 
 /// Captures the call stack of the current thread.
@@ -134,6 +136,7 @@ usize FormatStackTrace(const StackTrace& trace, char* out, usize capacity, const
 /// Fails: returns false, leaving `out` empty, for a name that is not mangled or too long for `out`.
 /// Ownership: `out` stays the caller's; nothing is retained after the call.
 /// Thread-safety: thread-safe. Allocates; not async-signal-safe.
+/// Backend: Windows: UnDecorateSymbolName for MSVC names, the Itanium demangler for clang; macOS: abi::__cxa_demangle.
 bool DemangleSymbol(const char* mangled, char* out, usize capacity);
 
 } // namespace engine_placeholder::debug
