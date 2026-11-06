@@ -571,3 +571,16 @@ TEST_CASE("text with edge blanks and enum names the format cannot carry are refu
         CHECK_FALSE(r.Register(d).IsValid());
     }
 }
+
+TEST_CASE("multi_adapter is a capability from two suitable adapters on", "[render_settings][adapter]") {
+    Capabilities c;
+    CHECK(c.AdapterCount() == 0);
+    c.SetAdapterCount(1);
+    CHECK(c.AdapterCount() == 1);
+    CHECK_FALSE(c.Has("multi_adapter"));
+    c.SetAdapterCount(2);
+    CHECK(c.AdapterCount() == 2);
+    CHECK(c.Has("multi_adapter"));
+    c.SetAdapterCount(1);
+    CHECK_FALSE(c.Has("multi_adapter")); // a smaller count takes it away again
+}

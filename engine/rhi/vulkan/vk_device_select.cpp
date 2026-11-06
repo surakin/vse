@@ -2,6 +2,10 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include <cstdio>
+#include <cstring>
+
+#include "rhi/adapter.h"
 #include "rhi/rhi_log.h"
 
 namespace engine_placeholder::rhi::vulkan {
@@ -17,36 +21,6 @@ const char* KindName(GpuKind kind) {
     case GpuKind::Other: break;
     }
     return "other";
-}
-
-char Lower(char c) { return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c; }
-
-bool ContainsIgnoreCase(const char* haystack, const char* needle) {
-    for (usize i = 0; haystack[i] != '\0'; ++i) {
-        usize j = 0;
-        while (needle[j] != '\0' && haystack[i + j] != '\0' && Lower(haystack[i + j]) == Lower(needle[j])) {
-            ++j;
-        }
-        if (needle[j] == '\0') {
-            return true;
-        }
-    }
-    return false;
-}
-
-// Parses a non-empty all-digit string; returns -1 if it is not one.
-long ParseIndex(const char* text) {
-    long value = 0;
-    if (text[0] == '\0') {
-        return -1;
-    }
-    for (usize i = 0; text[i] != '\0'; ++i) {
-        if (text[i] < '0' || text[i] > '9' || value > 100000) {
-            return -1;
-        }
-        value = value * 10 + (text[i] - '0');
-    }
-    return value;
 }
 
 bool FamilyUsable(const QueueFamilyInfo& f, bool presentable) {
@@ -101,7 +75,42 @@ QueuePlan PlanQueues(const PhysicalDeviceInfo& info, bool presentable) {
     return plan;
 }
 
+void MakeAdapterId(const PhysicalDeviceInfo& info, char* out, usize capacity) {
+    static const char kHex[] = "0123456789abcdef";
+    char uuid[33];
+    for (usize i = 0; i < 16; ++i) {
+        uuid[i * 2] = kHex[info.uuid[i] >> 4];
+        uuid[i * 2 + 1] = kHex[info.uuid[i] & 15];
+    }
+    uuid[32] = '\0';
+    std::snprintf(out, capacity, "vk-%04x-%04x-%s", info.vendor_id & 0xFFFFu, info.device_id & 0xFFFFu, uuid);
+}
+
+AdapterInfo MakeAdapterInfo(const PhysicalDeviceInfo& info, bool presentable) {
+    AdapterInfo out;
+    MakeAdapterId(info, out.id, sizeof(out.id));
+    std::strncpy(out.name, info.name, sizeof(out.name) - 1);
+    switch (info.kind) {
+    case GpuKind::Discrete: out.kind = AdapterKind::Discrete; break;
+    case GpuKind::Integrated: out.kind = AdapterKind::Integrated; break;
+    case GpuKind::Virtual: out.kind = AdapterKind::Virtual; break;
+    case GpuKind::Cpu: out.kind = AdapterKind::Software; break;
+    case GpuKind::Other: out.kind = AdapterKind::Other; break;
+    }
+    out.dedicated_memory_bytes = info.dedicated_memory_bytes;
+    std::strncpy(out.driver, info.driver, sizeof(out.driver) - 1);
+    out.unsuitable_reason = RejectionReason(info, presentable);
+    out.suitable = out.unsuitable_reason == nullptr;
+    out.can_present = presentable && PlanQueues(info, true).graphics_family >= 0 && info.swapchain_extension;
+    return out;
+}
+
 int SelectPhysicalDevice(const PhysicalDeviceInfo* devices, usize count, bool presentable, const char* override_text) {
+    return SelectPhysicalDeviceFor(devices, count, presentable, override_text, "ENGINE_RHI_GPU");
+}
+
+int SelectPhysicalDeviceFor(const PhysicalDeviceInfo* devices, usize count, bool presentable, const char* override_text,
+                            const char* source) {
     if (count > kMaxPhysicalDevices) {
         count = kMaxPhysicalDevices;
     }
@@ -125,23 +134,17 @@ int SelectPhysicalDevice(const PhysicalDeviceInfo* devices, usize count, bool pr
 
     int chosen = best;
     if (override_text != nullptr && override_text[0] != '\0') {
-        int match = -1;
-        long index = ParseIndex(override_text);
-        if (index >= 0 && static_cast<usize>(index) < count) {
-            match = static_cast<int>(index);
-        } else {
-            for (usize i = 0; i < count && match < 0; ++i) {
-                if (ContainsIgnoreCase(devices[i].name, override_text)) {
-                    match = static_cast<int>(i);
-                }
-            }
+        AdapterInfo adapters[kMaxPhysicalDevices];
+        for (usize i = 0; i < count; ++i) {
+            adapters[i] = MakeAdapterInfo(devices[i], presentable);
         }
+        const int match = MatchAdapter(adapters, count, override_text);
         if (match < 0) {
-            RhiLog(LogVerbosity::Error, "Vulkan: ENGINE_RHI_GPU='%s' matches none of the %zu GPUs", override_text, count);
+            RhiLog(LogVerbosity::Error, "Vulkan: %s='%s' matches none of the %zu GPUs", source, override_text, count);
             return -1;
         }
         if (reasons[match] != nullptr) {
-            RhiLog(LogVerbosity::Error, "Vulkan: ENGINE_RHI_GPU='%s' selects GPU %d '%s', which %s", override_text, match,
+            RhiLog(LogVerbosity::Error, "Vulkan: %s='%s' selects GPU %d '%s', which %s", source, override_text, match,
                    devices[match].name, reasons[match]);
             return -1;
         }

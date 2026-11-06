@@ -1001,6 +1001,10 @@ const char* NullDevice::BackendName() const {
     return "null";
 }
 
+const AdapterInfo& NullDevice::Adapter() const {
+    return state_->options.adapter;
+}
+
 const DeviceCaps& NullDevice::Caps() const {
     return state_->options.caps;
 }

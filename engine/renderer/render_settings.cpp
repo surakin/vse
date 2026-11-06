@@ -454,9 +454,16 @@ bool Capabilities::Add(const char* name) {
     return true;
 }
 
+void Capabilities::SetAdapterCount(u32 count) {
+    adapter_count_ = count;
+}
+
 bool Capabilities::Has(const char* name) const {
     if (name == nullptr) {
         return true;
+    }
+    if (std::strcmp(name, "multi_adapter") == 0) {
+        return adapter_count_ > 1; // derived, so a later smaller count removes it
     }
     for (u32 i = 0; i < count_; ++i) {
         if (std::strcmp(names_[i], name) == 0) {

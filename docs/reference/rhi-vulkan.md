@@ -792,6 +792,56 @@ bool memory_budget_extension;
 
 Whether the device supports `VK_EXT_memory_budget`.
 
+### `vendor_id` {#rhi-vulkan-physicaldeviceinfo-vendor-id}
+
+`variable rhi::vulkan::PhysicalDeviceInfo::vendor_id` — defined in `engine/rhi/vulkan/vk_device_select.h`
+
+```cpp
+u32 vendor_id;
+```
+
+The PCI vendor id.
+
+### `device_id` {#rhi-vulkan-physicaldeviceinfo-device-id}
+
+`variable rhi::vulkan::PhysicalDeviceInfo::device_id` — defined in `engine/rhi/vulkan/vk_device_select.h`
+
+```cpp
+u32 device_id;
+```
+
+The device id within the vendor.
+
+### `uuid` {#rhi-vulkan-physicaldeviceinfo-uuid}
+
+`variable rhi::vulkan::PhysicalDeviceInfo::uuid` — defined in `engine/rhi/vulkan/vk_device_select.h`
+
+```cpp
+u8 uuid[16];
+```
+
+The device UUID (`VkPhysicalDeviceIDProperties::deviceUUID`); all zero when the driver gives none.
+
+### `driver` {#rhi-vulkan-physicaldeviceinfo-driver}
+
+`variable rhi::vulkan::PhysicalDeviceInfo::driver` — defined in `engine/rhi/vulkan/vk_device_select.h`
+
+```cpp
+char driver[64];
+```
+
+The driver version, already decoded to text (for example `575.57.8`), null-terminated.
+
+### `dedicated_memory_bytes` {#rhi-vulkan-physicaldeviceinfo-dedicated-memory-bytes}
+
+`variable rhi::vulkan::PhysicalDeviceInfo::dedicated_memory_bytes` — defined in `engine/rhi/vulkan/vk_device_select.h`
+
+```cpp
+u64 dedicated_memory_bytes;
+```
+
+The size in bytes of the largest device-local memory heap; 0 if unknown.
+
 ### `families` {#rhi-vulkan-physicaldeviceinfo-families}
 
 `variable rhi::vulkan::PhysicalDeviceInfo::families` — defined in `engine/rhi/vulkan/vk_device_select.h`
@@ -831,6 +881,40 @@ A device is unusable if its Vulkan version is below 1.3, it lacks dynamic render
 | Returns | a static explanation, or null if suitable. |
 | Ownership | the string is static. |
 
+## `MakeAdapterId(const PhysicalDeviceInfo&,char*,usize)` {#rhi-vulkan-makeadapterid-const-physicaldeviceinfo-amp-char-star-usize}
+
+`function rhi::vulkan::MakeAdapterId` — defined in `engine/rhi/vulkan/vk_device_select.h`
+
+```cpp
+void MakeAdapterId(const PhysicalDeviceInfo& info, char* out, usize capacity);
+```
+
+Builds the stable adapter id of a physical device: `vk-<vendor>-<device>-<uuid>`, lowercase hex.
+
+The id does not depend on the enumeration order, so a saved setting survives another GPU being added.
+
+| Field | Value |
+|---|---|
+| Parameter `info` | the device description. |
+| Parameter `out` | receives the null-terminated id. |
+| Parameter `capacity` | size of `out` in bytes; at least `kAdapterIdBytes`. |
+
+## `MakeAdapterInfo(const PhysicalDeviceInfo&,bool)` {#rhi-vulkan-makeadapterinfo-const-physicaldeviceinfo-amp-bool}
+
+`function rhi::vulkan::MakeAdapterInfo` — defined in `engine/rhi/vulkan/vk_device_select.h`
+
+```cpp
+AdapterInfo MakeAdapterInfo(const PhysicalDeviceInfo& info, bool presentable);
+```
+
+Describes a physical device as an adapter.
+
+| Field | Value |
+|---|---|
+| Parameter `info` | the device description. |
+| Parameter `presentable` | whether the device must be able to present (the enumeration was given a window). |
+| Returns | the adapter; `suitable` and `unsuitable_reason` come from [`rhi::vulkan::RejectionReason`](#rhi-vulkan-rejectionreason-const-physicaldeviceinfo-amp-bool). |
+
 ## `SelectPhysicalDevice(const PhysicalDeviceInfo*,usize,bool,const char*)` {#rhi-vulkan-selectphysicaldevice-const-physicaldeviceinfo-star-usize-bool-const-char-star}
 
 `function rhi::vulkan::SelectPhysicalDevice` — defined in `engine/rhi/vulkan/vk_device_select.h`
@@ -841,7 +925,7 @@ int SelectPhysicalDevice(const PhysicalDeviceInfo* devices, usize count, bool pr
 
 Chooses the physical device to use.
 
-Unsuitable devices are skipped; the rest are ranked by [`rhi::vulkan::GpuKind`](#rhi-vulkan-gpukind) (discrete best), ties going to the earlier device. A non-empty `override_text` that is a decimal number below the device count picks that device index; any other text (including a number too large to be an index, such as a model number) picks the first device whose name contains it, ignoring case. The override must match a suitable device or selection fails. The whole ranking and every rejection reason is logged on `LogRhi`.
+Unsuitable devices are skipped; the rest are ranked by [`rhi::vulkan::GpuKind`](#rhi-vulkan-gpukind) (discrete best), ties going to the earlier device. A non-empty `override_text` that is a decimal number below the device count picks that device index; any other text (including a number too large to be an index, such as a model number) picks the first device whose name contains it, ignoring case; the text is first tried as an adapter id (see [`rhi::MatchAdapter`](rhi.md#rhi-matchadapter-const-adapterinfo-star-usize-const-char-star)). The override must match a suitable device or selection fails. The whole ranking and every rejection reason is logged on `LogRhi`.
 
 | Field | Value |
 |---|---|
@@ -851,6 +935,20 @@ Unsuitable devices are skipped; the rest are ranked by [`rhi::vulkan::GpuKind`](
 | Parameter `override_text` | the value of `ENGINE_RHI_GPU`, or null/empty for none. |
 | Returns | the index of the chosen device, or -1. |
 | Fails | returns -1 if no device is suitable or the override matches no suitable device. |
+
+## `SelectPhysicalDeviceFor(const PhysicalDeviceInfo*,usize,bool,const char*,const char*)` {#rhi-vulkan-selectphysicaldevicefor-const-physicaldeviceinfo-star-usize-bool-const-char-star-const-char-star}
+
+`function rhi::vulkan::SelectPhysicalDeviceFor` — defined in `engine/rhi/vulkan/vk_device_select.h`
+
+```cpp
+int SelectPhysicalDeviceFor(const PhysicalDeviceInfo* devices, usize count, bool presentable, const char* override_text, const char* source);
+```
+
+As [`rhi::vulkan::SelectPhysicalDevice`](#rhi-vulkan-selectphysicaldevice-const-physicaldeviceinfo-star-usize-bool-const-char-star) (see there), naming where the request came from in the log lines.
+
+| Field | Value |
+|---|---|
+| Parameter `source` | a static label such as `"DeviceCreateInfo::adapter"` or `"ENGINE_RHI_GPU"`. |
 
 ## `QueuePlan` {#rhi-vulkan-queueplan}
 
@@ -3461,6 +3559,22 @@ Creates a Vulkan device.
 | Fails | as for [`rhi::CreateDevice`](rhi.md#rhi-createdevice-const-devicecreateinfo-amp). |
 | Ownership | the caller owns the result through the returned pointer. |
 
+### `EnumerateAdapters(const DeviceCreateInfo&,AdapterList*)` {#rhi-vulkan-vulkandevice-enumerateadapters-const-devicecreateinfo-amp-adapterlist-star}
+
+`method rhi::vulkan::VulkanDevice::EnumerateAdapters` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+static bool EnumerateAdapters(const DeviceCreateInfo& info, AdapterList* out);
+```
+
+Lists the physical devices, as [`rhi::EnumerateAdapters`](rhi.md#rhi-enumerateadapters-const-devicecreateinfo-amp-adapterlist-star) does for this backend.
+
+| Field | Value |
+|---|---|
+| Parameter `info` | validation settings and the window to test presentability against. |
+| Parameter `out` | receives the list. |
+| Returns | false if the loader or the instance could not be created. |
+
 ### `kFramePools` {#rhi-vulkan-vulkandevice-kframepools}
 
 `variable rhi::vulkan::VulkanDevice::kFramePools` — defined in `engine/rhi/vulkan/vulkan_device.h`
@@ -3502,6 +3616,18 @@ const char* BackendName() const override;
 Returns the stable lowercase backend id, for logs and tests.
 
 _Inherited from [`rhi::Device::BackendName() const`](rhi.md#rhi-device-backendname-const)._
+
+### `Adapter()` {#rhi-vulkan-vulkandevice-adapter-const}
+
+`method rhi::vulkan::VulkanDevice::Adapter` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+const AdapterInfo& Adapter() const override;
+```
+
+Returns the adapter (GPU) the device was created on.
+
+_Inherited from [`rhi::Device::Adapter() const`](rhi.md#rhi-device-adapter-const)._
 
 ### `Caps()` {#rhi-vulkan-vulkandevice-caps-const}
 

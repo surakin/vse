@@ -35,6 +35,34 @@ void DescribeDevice(const VkInstanceFns& fns, VkPhysicalDevice device, VkSurface
     std::strncpy(out->name, props.deviceName, sizeof(out->name) - 1);
     out->kind = ToGpuKind(props.deviceType);
     out->api_version = props.apiVersion;
+    out->vendor_id = props.vendorID;
+    out->device_id = props.deviceID;
+    if (props.vendorID == 0x10DE) { // NVIDIA packs 10.8.8.6 bits
+        std::snprintf(out->driver, sizeof(out->driver), "%u.%u.%u.%u", props.driverVersion >> 22, (props.driverVersion >> 14) & 0xFF,
+                      (props.driverVersion >> 6) & 0xFF, props.driverVersion & 0x3F);
+    } else {
+        std::snprintf(out->driver, sizeof(out->driver), "%u.%u.%u", VK_VERSION_MAJOR(props.driverVersion),
+                      VK_VERSION_MINOR(props.driverVersion), VK_VERSION_PATCH(props.driverVersion));
+    }
+    if (props.apiVersion >= VK_API_VERSION_1_1) {
+        VkPhysicalDeviceIDProperties id_props{};
+        id_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+        VkPhysicalDeviceProperties2 props2{};
+        props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        props2.pNext = &id_props;
+        fns.GetPhysicalDeviceProperties2(device, &props2);
+        std::memcpy(out->uuid, id_props.deviceUUID, sizeof(out->uuid));
+    }
+    {
+        VkPhysicalDeviceMemoryProperties memory{};
+        fns.GetPhysicalDeviceMemoryProperties(device, &memory);
+        for (u32 i = 0; i < memory.memoryHeapCount; ++i) {
+            if ((memory.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) != 0 &&
+                memory.memoryHeaps[i].size > out->dedicated_memory_bytes) {
+                out->dedicated_memory_bytes = memory.memoryHeaps[i].size;
+            }
+        }
+    }
 
     VkPhysicalDeviceVulkan13Features f13{};
     f13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
@@ -102,7 +130,7 @@ VulkanDevicePtr VulkanDevice::Create(const DeviceCreateInfo& info) {
     return VulkanDevicePtr(device.Release());
 }
 
-bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
+bool VulkanDevice::Discover(const DeviceCreateInfo& info, VkPhysicalDevice* physicals, PhysicalDeviceInfo* infos, u32* count) {
     VulkanLoader loader;
     if (LoadVulkanLoader(&loader) != LoaderStatus::Ok) {
         return false;
@@ -130,24 +158,58 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     VkInstance instance = instance_.Handle();
 
     // Enumerate and describe every physical device.
-    VkPhysicalDevice physicals[kMaxPhysicalDevices];
     u32 physical_count = static_cast<u32>(kMaxPhysicalDevices);
     VkResult enumerated = ifns.EnumeratePhysicalDevices(instance, &physical_count, physicals);
     if ((enumerated != VK_SUCCESS && enumerated != VK_INCOMPLETE) || physical_count == 0) {
         RhiLog(LogVerbosity::Error, "Vulkan: no physical devices found");
         return false;
     }
-    PhysicalDeviceInfo infos[kMaxPhysicalDevices];
     for (u32 i = 0; i < physical_count; ++i) {
         DescribeDevice(ifns, physicals[i], surface_, &infos[i]);
     }
+    *count = physical_count;
+    return true;
+}
 
-    int chosen = SelectPhysicalDevice(infos, physical_count, presentable, std::getenv("ENGINE_RHI_GPU"));
+bool VulkanDevice::EnumerateAdapters(const DeviceCreateInfo& info, AdapterList* out) {
+    *out = AdapterList{};
+    // Held with the plain deleter: this object never gets a device, so it must not be waited on.
+    UniquePtr<VulkanDevice> scratch = MakeUnique<VulkanDevice>();
+    if (!scratch) {
+        return false;
+    }
+    VkPhysicalDevice physicals[kMaxPhysicalDevices];
+    PhysicalDeviceInfo infos[kMaxPhysicalDevices];
+    u32 count = 0;
+    if (!scratch->Discover(info, physicals, infos, &count)) {
+        return false;
+    }
+    for (u32 i = 0; i < count && i < kMaxAdapters; ++i) {
+        out->items[i] = MakeAdapterInfo(infos[i], info.window != nullptr);
+        ++out->count;
+    }
+    return true;
+}
+
+bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
+    const bool presentable = info.window != nullptr;
+    VkPhysicalDevice physicals[kMaxPhysicalDevices];
+    PhysicalDeviceInfo infos[kMaxPhysicalDevices];
+    u32 physical_count = 0;
+    if (!Discover(info, physicals, infos, &physical_count)) {
+        return false;
+    }
+    const VkInstanceFns& ifns = instance_.Fns();
+
+    const bool explicit_adapter = info.adapter != nullptr && info.adapter[0] != '\0';
+    int chosen = explicit_adapter ? SelectPhysicalDeviceFor(infos, physical_count, presentable, info.adapter, "DeviceCreateInfo::adapter")
+                                  : SelectPhysicalDevice(infos, physical_count, presentable, std::getenv("ENGINE_RHI_GPU"));
     if (chosen < 0) {
         return false;
     }
     physical_ = physicals[chosen];
     gpu_info_ = infos[chosen];
+    adapter_ = MakeAdapterInfo(gpu_info_, presentable);
     queues_ = PlanQueues(gpu_info_, presentable);
 
     ifns.GetPhysicalDeviceProperties(physical_, &properties_);

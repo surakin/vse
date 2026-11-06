@@ -7470,6 +7470,32 @@ Returns whether a capability is present.
 | Parameter `name` | the capability; null means none needed and is always present. |
 | Returns | true if present. |
 
+### `SetAdapterCount(u32)` {#renderer-capabilities-setadaptercount-u32}
+
+`method renderer::Capabilities::SetAdapterCount` — defined in `engine/renderer/render_settings.h`
+
+```cpp
+void SetAdapterCount(u32 count);
+```
+
+Records how many suitable adapters the machine has (from [`rhi::EnumerateAdapters`](rhi.md#rhi-enumerateadapters-const-devicecreateinfo-amp-adapterlist-star)).
+
+With two or more the `multi_adapter` capability is present, which a settings screen can use to offer a choice.
+
+| Field | Value |
+|---|---|
+| Parameter `count` | the number of suitable adapters. |
+
+### `AdapterCount()` {#renderer-capabilities-adaptercount-const}
+
+`method renderer::Capabilities::AdapterCount` — defined in `engine/renderer/render_settings.h`
+
+```cpp
+u32 AdapterCount() const;
+```
+
+Returns the count given to `SetAdapterCount`; 0 until then.
+
 ## `UnsupportedSetting` {#renderer-unsupportedsetting}
 
 `struct renderer::UnsupportedSetting` — defined in `engine/renderer/render_settings.h`

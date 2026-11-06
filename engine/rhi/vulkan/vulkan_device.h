@@ -49,6 +49,13 @@ public:
     /// Ownership: the caller owns the result through the returned pointer.
     static VulkanDevicePtr Create(const DeviceCreateInfo& info);
 
+    /// Lists the physical devices, as [[rhi::EnumerateAdapters]] does for this backend.
+    ///
+    /// Param info: validation settings and the window to test presentability against.
+    /// Param out: receives the list.
+    /// Returns: false if the loader or the instance could not be created.
+    static bool EnumerateAdapters(const DeviceCreateInfo& info, AdapterList* out);
+
     /// How many frames of command pools exist; a pool is reset only after the frame that used it has finished.
     static constexpr usize kFramePools = 3;
     /// How many threads can hold a command-pool slot at once; a thread releases its slot when it exits.
@@ -58,6 +65,7 @@ public:
     ~VulkanDevice() override;
 
     const char* BackendName() const override;
+    const AdapterInfo& Adapter() const override { return adapter_; }
     const DeviceCaps& Caps() const override;
     BufferHandle CreateBuffer(const BufferDesc& desc) override;
     void DestroyBuffer(BufferHandle buffer) override;
@@ -370,6 +378,8 @@ public:
 
 private:
     bool Initialize(const DeviceCreateInfo& info);
+    // Loads the loader, creates the instance and the surface, and describes every physical device.
+    bool Discover(const DeviceCreateInfo& info, VkPhysicalDevice* physicals, PhysicalDeviceInfo* infos, u32* count);
     void FillCaps();
     // Logs that `what` is not implemented yet in this build of the backend (resource kinds arrive on later days).
     static void NotImplemented(const char* what);
@@ -541,6 +551,7 @@ private:
     VkPhysicalDeviceProperties properties_{};
     VkPhysicalDeviceMemoryProperties memory_properties_{};
     DeviceCaps caps_;
+    AdapterInfo adapter_;
     bool anisotropy_enabled_ = false;
     bool memory_budget_enabled_ = false;
     UniquePtr<VulkanMemoryBackend> memory_backend_;

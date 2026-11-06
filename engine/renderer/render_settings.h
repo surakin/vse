@@ -342,9 +342,18 @@ public:
     /// Returns: true if present.
     bool Has(const char* name) const;
 
+    /// Records how many suitable adapters the machine has (from [[rhi::EnumerateAdapters]]).
+    ///
+    /// With two or more the `multi_adapter` capability is present, which a settings screen can use to offer a choice.
+    /// Param count: the number of suitable adapters.
+    void SetAdapterCount(u32 count);
+    /// Returns the count given to `SetAdapterCount`; 0 until then.
+    u32 AdapterCount() const { return adapter_count_; }
+
 private:
     const char* names_[kMaxCapabilities] = {};
     u32 count_ = 0;
+    u32 adapter_count_ = 0;
 };
 
 /// A requested change that cannot be done.

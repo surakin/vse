@@ -1,6 +1,7 @@
 #pragma once
 
 #include "os/window.h"
+#include "rhi/adapter.h"
 #include "rhi/device.h"
 #include "types.h"
 
@@ -51,6 +52,13 @@ struct DeviceCreateInfo {
     ValidationSetting validation = ValidationSetting::Auto;
     /// Also enable synchronization validation (barrier and hazard checks) when validation is on.
     bool sync_validation = false;
+    /// Which adapter (GPU) to use: an id from [[rhi::EnumerateAdapters]], or text that [[rhi::MatchAdapter]] accepts (an
+    /// index or part of the name). Null means the best one.
+    ///
+    /// The order of precedence is this field, then `ENGINE_RHI_GPU` (Vulkan only), then the ranking. A requested adapter that does not
+    /// exist or is unsuitable makes [[rhi::CreateDevice]] fail with a log line naming the reason; it never falls back to
+    /// another adapter, so the caller decides what to do. Borrowed for the call.
+    const char* adapter = nullptr;
     /// The window the device will present to, or null for a device that only computes and renders offscreen.
     ///
     /// The Vulkan backend creates the presentation surface from the window's native handles and picks a GPU that can
@@ -74,12 +82,17 @@ struct DeviceCreateInfo {
     FaultInjection faults;
 };
 
+namespace detail {
+/// The null backend's adapter list; used by [[rhi::EnumerateAdapters]] and [[rhi::CreateDevice]].
+void NullAdapters(AdapterList* out);
+} // namespace detail
+
 /// Creates a device for the requested backend.
 ///
 /// For the Vulkan backend the physical device is chosen by a ranking (discrete before integrated before virtual
 /// before software), among those that have Vulkan 1.3, dynamic rendering, synchronization2, timeline semaphores
 /// and a graphics+compute queue. `ENGINE_RHI_GPU=<index or name substring>` overrides the choice; the full ranking
-/// is logged on [[rhi::LogRhi]].
+/// is logged on [[rhi::LogRhi]]. `DeviceCreateInfo::adapter` overrides both.
 ///
 /// Param info: what to create.
 /// Returns: the device, or an empty pointer.

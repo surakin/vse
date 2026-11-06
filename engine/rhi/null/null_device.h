@@ -33,6 +33,16 @@ struct NullDeviceOptions {
     /// Reports the device lost at the start of this frame (1 is the first `BeginFrame`), as [[rhi::FaultInjection]] does
     /// for the Vulkan backend; 0 never does.
     u32 lose_device_at_frame = 0;
+    /// The adapter the device reports from `Device::Adapter`; the default is the first of [[rhi::DefaultNullAdapters]].
+    /// [[rhi::CreateDevice]] fills it from the requested adapter.
+    AdapterInfo adapter = DefaultAdapter();
+
+    /// Returns the adapter a default-constructed option set reports.
+    static AdapterInfo DefaultAdapter() {
+        AdapterList list;
+        DefaultNullAdapters(&list);
+        return list.items[0];
+    }
 };
 
 /// Counts of the null device's resources, for tests and leak checks.
@@ -85,6 +95,7 @@ public:
     ~NullDevice() override;
 
     const char* BackendName() const override;
+    const AdapterInfo& Adapter() const override;
     const DeviceCaps& Caps() const override;
     BufferHandle CreateBuffer(const BufferDesc& desc) override;
     void DestroyBuffer(BufferHandle buffer) override;

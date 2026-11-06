@@ -2,6 +2,7 @@
 
 #include "containers/unique_ptr.h"
 #include "mem/heap_allocator.h"
+#include "rhi/adapter.h"
 #include "rhi/caps.h"
 #include "rhi/command_list.h"
 #include "rhi/desc.h"
@@ -51,6 +52,11 @@ public:
     /// Returns: `"null"` or `"vulkan"`.
     /// Ownership: the string is static and is never freed by the caller.
     virtual const char* BackendName() const = 0;
+
+    /// Returns the adapter (GPU) the device was created on.
+    ///
+    /// Ownership: the reference is valid for the life of the device.
+    virtual const AdapterInfo& Adapter() const = 0;
 
     /// Returns the device limits.
     /// Ownership: the reference is valid for the life of the device.

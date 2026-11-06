@@ -280,6 +280,53 @@ one submission thread (the queue is not externally synchronized beyond that rule
 features it uses: dynamic rendering, synchronization2, timeline semaphores and, where available, anisotropic
 filtering. [[rhi::Device::Caps]] reports the limits it found.
 
+### Choosing a GPU
+
+[[rhi::EnumerateAdapters]] lists the GPUs a backend can use, and [[rhi::DeviceCreateInfo::adapter]] picks one. Each
+[[rhi::AdapterInfo]] has a **stable id** (Vulkan builds it from the vendor id, the device id and the device UUID, never the
+enumeration index), a name, a kind, device-local memory, whether it can present to the window you passed, and whether it
+is suitable; an unsuitable adapter says why in `unsuitable_reason`. Save the id, not the index: it survives another GPU
+being added.
+
+The request is matched by [[rhi::MatchAdapter]]: an id first, then a decimal index, then a case-insensitive part of the
+name. The order of precedence is `DeviceCreateInfo::adapter`, then the `ENGINE_RHI_GPU` environment variable (Vulkan), then
+the ranking (discrete before integrated before virtual before software). A request that names nothing, or an adapter that
+is not suitable, makes [[rhi::CreateDevice]] fail with a log line that names the reason. It never falls back to another
+GPU: the caller decides whether to try the best one instead.
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "rhi/rhi.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    rhi::DeviceCreateInfo info;
+    info.backend = rhi::Backend::Null;   // the null backend lists two fake adapters, so this runs without a GPU
+    rhi::AdapterList adapters;
+    if (rhi::EnumerateAdapters(info, &adapters)) {
+        for (u32 i = 0; i < adapters.count; ++i) {
+            std::printf("%s: %s\n", adapters.items[i].id, adapters.items[i].name);
+        }
+    }
+    info.adapter = "integrated";         // an id, an index or part of the name
+    rhi::DevicePtr device = rhi::CreateDevice(info);
+    if (device != nullptr) {
+        std::printf("created on %s\n", device->Adapter().id);
+    }
+    return 0;
+}
+```
+```output
+null-discrete: Null Discrete GPU
+null-integrated: Null Integrated GPU
+created on null-integrated
+```
+
+`Device::Adapter` reports the adapter a device was created on. On a machine with one GPU everything above still works; the
+list has one entry. Direct3D 12 and Metal map onto the same struct: see the portability notes in the Phase 8 and 9 plans.
+
 ### Uploading data
 
 Buffers in `GpuOnly` memory cannot be written by the CPU. [[rhi::Device::UploadBuffer]] copies bytes into one: it

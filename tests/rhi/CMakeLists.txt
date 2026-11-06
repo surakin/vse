@@ -8,6 +8,7 @@ set(RHI_TEST_SOURCES
   handle_pool_test.cpp
   grow_array_test.cpp
   null_device_test.cpp
+  adapter_test.cpp
   vulkan_loader_test.cpp
   vulkan_instance_test.cpp
   vulkan_device_test.cpp

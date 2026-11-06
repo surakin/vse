@@ -6,6 +6,7 @@
 # Day 54, with multithreaded command recording).
 set(RHI_SOURCES
   rhi.cpp
+  adapter.cpp
   desc.cpp
   spirv.cpp
   uniform_ring.cpp

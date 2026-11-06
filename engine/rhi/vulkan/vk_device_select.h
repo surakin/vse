@@ -1,5 +1,6 @@
 #pragma once
 
+#include "rhi/adapter.h"
 #include "types.h"
 
 //! Choosing a physical device and planning its queues, as pure functions over plain data.
@@ -62,6 +63,16 @@ struct PhysicalDeviceInfo {
     bool swapchain_extension = false;
     /// Whether the device supports `VK_EXT_memory_budget`.
     bool memory_budget_extension = false;
+    /// The PCI vendor id.
+    u32 vendor_id = 0;
+    /// The device id within the vendor.
+    u32 device_id = 0;
+    /// The device UUID (`VkPhysicalDeviceIDProperties::deviceUUID`); all zero when the driver gives none.
+    u8 uuid[16] = {};
+    /// The driver version, already decoded to text (for example `575.57.8`), null-terminated.
+    char driver[64] = {};
+    /// The size in bytes of the largest device-local memory heap; 0 if unknown.
+    u64 dedicated_memory_bytes = 0;
     /// The queue families; only the first `queue_family_count` are valid.
     QueueFamilyInfo families[kMaxQueueFamilies];
     /// Number of valid entries in `families`.
@@ -80,13 +91,29 @@ struct PhysicalDeviceInfo {
 /// Ownership: the string is static.
 const char* RejectionReason(const PhysicalDeviceInfo& info, bool presentable);
 
+/// Builds the stable adapter id of a physical device: `vk-<vendor>-<device>-<uuid>`, lowercase hex.
+///
+/// The id does not depend on the enumeration order, so a saved setting survives another GPU being added.
+///
+/// Param info: the device description.
+/// Param out: receives the null-terminated id.
+/// Param capacity: size of `out` in bytes; at least `kAdapterIdBytes`.
+void MakeAdapterId(const PhysicalDeviceInfo& info, char* out, usize capacity);
+
+/// Describes a physical device as an adapter.
+///
+/// Param info: the device description.
+/// Param presentable: whether the device must be able to present (the enumeration was given a window).
+/// Returns: the adapter; `suitable` and `unsuitable_reason` come from [[rhi::vulkan::RejectionReason]].
+AdapterInfo MakeAdapterInfo(const PhysicalDeviceInfo& info, bool presentable);
+
 /// Chooses the physical device to use.
 ///
 /// Unsuitable devices are skipped; the rest are ranked by [[rhi::vulkan::GpuKind]] (discrete best), ties going
 /// to the earlier device. A non-empty `override_text` that is a decimal number below the device count picks that
 /// device index; any other text (including a number too large to be an index, such as a model number) picks the first
-/// device whose name contains it, ignoring case. The override must match a suitable device or
-/// selection fails. The whole ranking and every rejection reason is logged on `LogRhi`.
+/// device whose name contains it, ignoring case; the text is first tried as an adapter id (see
+/// [[rhi::MatchAdapter]]). The override must match a suitable device or selection fails. The whole ranking and every rejection reason is logged on `LogRhi`.
 ///
 /// Param devices: the candidate devices.
 /// Param count: number of candidates; at most `kMaxPhysicalDevices` are considered.
@@ -95,6 +122,12 @@ const char* RejectionReason(const PhysicalDeviceInfo& info, bool presentable);
 /// Returns: the index of the chosen device, or -1.
 /// Fails: returns -1 if no device is suitable or the override matches no suitable device.
 int SelectPhysicalDevice(const PhysicalDeviceInfo* devices, usize count, bool presentable, const char* override_text);
+
+/// As [[rhi::vulkan::SelectPhysicalDevice]] (see there), naming where the request came from in the log lines.
+///
+/// Param source: a static label such as `"DeviceCreateInfo::adapter"` or `"ENGINE_RHI_GPU"`.
+int SelectPhysicalDeviceFor(const PhysicalDeviceInfo* devices, usize count, bool presentable, const char* override_text,
+                            const char* source);
 
 /// The queue families chosen for a device.
 ///
