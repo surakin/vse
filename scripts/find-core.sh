@@ -42,9 +42,13 @@ trap cleanup EXIT
 find_with_coredumpctl() {
   local out="$output"
   if [ -z "$out" ]; then
-    # Not given: a private directory (a core holds process memory), removed when the script ends unless the core is the answer.
-    scratch="$(mktemp -d "${TMPDIR:-/tmp}/find-core.XXXXXX")" || return 1
+    # Not given: a private directory (a core holds process memory), made once (not per --wait attempt) and removed when the
+    # script ends unless the core is the answer.
+    if [ -z "$scratch" ]; then
+      scratch="$(mktemp -d "${TMPDIR:-/tmp}/find-core.XXXXXX")" || return 1
+    fi
     out="$scratch/core"
+    rm -f "$out" # a partial file from an earlier attempt
   fi
   local match="$exe"
   [ -n "$pid" ] && match="$pid"

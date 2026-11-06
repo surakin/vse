@@ -12,6 +12,11 @@ namespace engine_placeholder::jobs {
 namespace {
 
 thread_local FramePool::ThreadCache t_cache;
+// Set when t_cache is destroyed at thread exit. Thread-local destructors run in unspecified order, so another one (or a static
+// destructor on the main thread) may still allocate or free a frame after the cache is gone; those must bypass the cache and go
+// straight to the central pool, or the block would sit in a dead cache forever. Kept outside the cache, in a trivially
+// destructible variable, because a store a destructor makes to its own object is dead and an optimizer removes it (seen at -O2).
+thread_local bool t_cache_destroyed = false;
 
 // Guards "at most one pool uses thread caches" (a thread_local cache is
 // keyed to a single pool).
@@ -146,7 +151,7 @@ void* FramePool::Allocate(usize size) {
 
     void* block = nullptr;
     ThreadCache& cache = t_cache;
-    if (config_.thread_caches && !cache.destroyed) {
+    if (config_.thread_caches && !t_cache_destroyed) {
         ENGINE_ASSERT(cache.owner == nullptr || cache.owner == this, "FramePool: thread cache belongs to another pool");
         cache.owner = this;
         if (cache.head[c] == nullptr) {
@@ -200,7 +205,7 @@ void FramePool::Deallocate(void* ptr) {
     pooled_frees_[cls].fetch_add(1, std::memory_order_relaxed);
 
     ThreadCache& cache = t_cache;
-    if (!config_.thread_caches || cache.destroyed) {
+    if (!config_.thread_caches || t_cache_destroyed) {
         std::lock_guard<std::mutex> lock(mutex_);
         CentralPushLocked(cls, block);
         return;
@@ -236,11 +241,10 @@ void FramePool::FlushCache(ThreadCache& cache) {
 FramePool::ThreadCache::~ThreadCache() {
     // Thread exit: return cached blocks to the central pool so they
     // aren't stranded. The Global() pool outlives every thread.
+    t_cache_destroyed = true; // first: anything FlushCache or a later destructor frees must bypass this cache
     if (owner != nullptr) {
         owner->FlushCache(*this);
-        owner = nullptr;
     }
-    destroyed = true;
 }
 
 FramePool::Stats FramePool::GetStats() const {

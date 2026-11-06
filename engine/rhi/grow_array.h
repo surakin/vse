@@ -45,11 +45,12 @@ public:
 
     void Insert(usize index, const T& value) {
         ENGINE_ASSERT(index <= size_, "GrowArray: insert index out of range");
+        const T copy = value; // `value` may be an element of this array: Grow frees it and the shift moves it
         Grow(size_ + 1);
         if (index < size_) {
             std::memmove(data_ + index + 1, data_ + index, (size_ - index) * sizeof(T));
         }
-        data_[index] = value;
+        data_[index] = copy;
         ++size_;
     }
 

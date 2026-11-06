@@ -117,3 +117,17 @@ TEST_CASE("The name of a crash state entry is copied, so the caller's string may
     CHECK(section.find("garbage") == std::string::npos);
     ResetCrashStateForTesting();
 }
+
+TEST_CASE("A log message longer than the line buffer is cut but the line still ends with a newline", "[log][debug]") {
+    static LogChannel channel("LogLongTest", LogVerbosity::Info);
+    SetWriteSinkForTesting(&CaptureWrite);
+    g_captured.clear();
+    const std::string long_message(2000, 'm');
+    Log(channel, LogVerbosity::Info, StringView(long_message.c_str()));
+    Log(channel, LogVerbosity::Info, "next");
+    SetWriteSinkForTesting(&os::Write);
+    const usize first_end = g_captured.find('\n');
+    REQUIRE(first_end != std::string::npos);
+    CHECK(first_end == 511);                                         // 511 bytes of text, then the newline
+    CHECK(g_captured.substr(first_end + 1) == "[LogLongTest] INFO: next\n"); // not glued onto the long line
+}

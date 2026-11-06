@@ -92,8 +92,10 @@ struct Hash<T*> {
 ///
 /// `K` needs `operator==`, a `Hash<K>` specialization, and a default
 /// constructor; `V` needs a default constructor. Keys and values are copied in
-/// and stored by value. The table starts with at least 8 slots and doubles when
-/// the load factor, counting tombstones, reaches 0.7. Growth rehashes into a new
+/// and stored by value. The table starts with at least 8 slots and rehashes when
+/// the load factor, counting tombstones, reaches 0.7: into twice the slots if the
+/// live entries alone fill at least half of that, otherwise into the same number
+/// (which clears the tombstones left by removals). Growth rehashes into a new
 /// block and abandons the old one inside the allocator, as with [[Vector]].
 /// Growth invalidates pointers returned by `Find`. There is no iteration
 /// support.
@@ -130,7 +132,10 @@ public:
     /// Aborts: growth is needed and the allocator is out of memory.
     void Insert(const K& key, const V& value) {
         if (NeedsGrow()) {
-            Rehash(slots_.Capacity() * 2);
+            // Double only when the live entries need the room; when the load is mostly tombstones (insert/remove churn),
+            // rehash at the same size, which clears them, so churn does not grow the table without bound.
+            const bool live_needs_room = (count_ + 1) * 20 >= slots_.Capacity() * 7; // live load >= 0.35
+            Rehash(live_needs_room ? slots_.Capacity() * 2 : slots_.Capacity());
         }
         InsertNoRehashCheck(key, value);
     }
@@ -186,6 +191,12 @@ public:
     ///
     /// Exposed so tests can observe growth; production code should not need it.
     usize SlotCapacity() const { return slots_.Capacity(); }
+
+    /// Returns the number of slots holding a removed entry's tombstone, which the next rehash clears.
+    ///
+    /// Returns: the tombstone count.
+    /// Thread-safety: thread-compatible.
+    usize TombstoneCount() const { return tombstone_count_; }
 
 private:
     enum class SlotState : u8 { Empty, Occupied, Tombstone };

@@ -96,7 +96,7 @@ _TODO_
 
 ### Build id and error traces
 
-A program that calls [[debug::StartProgramDebugging]] logs one `build <id> <platform> <config>` line on `LogCore` first, so every
+A program that calls [[debug::StartProgramDebugging]] logs one `build <id> <platform> <config>` line on its own `LogBuild` channel first, so every
 log names the binary that wrote it. `SetLogErrorTraces(true)` adds a short stack trace under every `Error` line (the output of
 other lines does not change); the same call turns it on in Debug builds. Traces are in mangled form: pipe through `c++filt`.
 

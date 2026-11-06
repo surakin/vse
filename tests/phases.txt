@@ -59,6 +59,7 @@ tests/docgen/                                   2.5
 test:docs_*                                     2.5
 
 # --- Phase 3: RHI ---
+tests/rhi/grow_array_test.cpp                   3
 tests/rhi/handle_pool_test.cpp                  3
 tests/rhi/null_device_test.cpp                  3
 tests/rhi/shader_test.cpp                       3

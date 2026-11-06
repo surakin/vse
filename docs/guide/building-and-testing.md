@@ -80,7 +80,7 @@ scripts/test-phase.sh --affected --dry-run # show the selection only
 
 Every run ends with how much it ran, for example `ran 35 of 1874 tests (phases: 5; flavors: plain; display: excluded)`,
 and says so loudly when it left tests out. Quote that line when reporting a reduced run; "all tests pass" means the
-`--all --flavor all` line. `--help` lists the options.
+`--all --flavor all` line. `--help` lists the options. A scoped run with `--flavor asan` or `tsan` needs ctest 3.29 or newer (it combines two label filters); the script stops with a message on an older one.
 
 `--affected` reads the paths changed since the last commit that changed `CURRENT_PHASE` (the commits of the phase and the
 working tree, plus new files) and adds the phases listed for each directory in `tests/module_map.txt`: `engine/rhi` selects

@@ -340,7 +340,7 @@ class HashMap { ... }
 
 Hash map from `K` to `V` using open addressing with linear probing.
 
-`K` needs `operator==`, a `Hash<K>` specialization, and a default constructor; `V` needs a default constructor. Keys and values are copied in and stored by value. The table starts with at least 8 slots and doubles when the load factor, counting tombstones, reaches 0.7. Growth rehashes into a new block and abandons the old one inside the allocator, as with [`Vector`](#vector). Growth invalidates pointers returned by `Find`. There is no iteration support.
+`K` needs `operator==`, a `Hash<K>` specialization, and a default constructor; `V` needs a default constructor. Keys and values are copied in and stored by value. The table starts with at least 8 slots and rehashes when the load factor, counting tombstones, reaches 0.7: into twice the slots if the live entries alone fill at least half of that, otherwise into the same number (which clears the tombstones left by removals). Growth rehashes into a new block and abandons the old one inside the allocator, as with [`Vector`](#vector). Growth invalidates pointers returned by `Find`. There is no iteration support.
 
 | Field | Value |
 |---|---|
@@ -469,6 +469,21 @@ usize SlotCapacity() const;
 Returns the number of slots in the table (capacity, not element count).
 
 Exposed so tests can observe growth; production code should not need it.
+
+### `TombstoneCount()` {#hashmap-tombstonecount-const}
+
+`method HashMap::TombstoneCount` — defined in `engine/foundation/containers/hash_map.h`
+
+```cpp
+usize TombstoneCount() const;
+```
+
+Returns the number of slots holding a removed entry's tombstone, which the next rehash clears.
+
+| Field | Value |
+|---|---|
+| Returns | the tombstone count. |
+| Thread-safety | thread-compatible. |
 
 ## `AtomicRefCount` {#atomicrefcount}
 
@@ -1303,7 +1318,7 @@ Appends a copy of `value`, growing if full.
 
 | Field | Value |
 |---|---|
-| Parameter `value` | element to copy; it must not refer to an element of this array because growth may invalidate it. |
+| Parameter `value` | element to copy; it may be an element of this vector. |
 | Aborts | growth is needed and the allocator is out of memory. |
 
 ### `Push(T&&)` {#vector-push-t-amp-amp}
@@ -1318,7 +1333,7 @@ Appends `value` by move, growing if full.
 
 | Field | Value |
 |---|---|
-| Parameter `value` | element to move from; it must not refer to an element of this array because growth may invalidate it. |
+| Parameter `value` | element to move from; it may be an element of this vector. |
 | Aborts | growth is needed and the allocator is out of memory. |
 
 ### `Pop()` {#vector-pop}
@@ -1348,7 +1363,7 @@ Inserts a copy of `value` before position `index`, shifting later elements up by
 | Field | Value |
 |---|---|
 | Parameter `index` | destination position; `Size()` appends. Must be at most `Size()` (not checked). |
-| Parameter `value` | element to copy; must not refer to an element of this array. |
+| Parameter `value` | element to copy; it may be an element of this vector. |
 | Aborts | growth is needed and the allocator is out of memory. |
 
 ### `Remove(usize)` {#vector-remove-usize}

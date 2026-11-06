@@ -175,6 +175,18 @@ if [ "$show_display" = no ]; then
 fi
 [ -z "$exclude" ] || sel+=(-LE "^(${exclude})\$")
 
+# A phase and a sanitizer flavor are two -L options, which ctest combines with AND only from CMake 3.29 on; an older ctest uses
+# just the last one and would run every phase of the flavor while this script reports a scoped run. Refuse instead.
+if [ "$phases" != all ] && { [ "$flavor" = asan ] || [ "$flavor" = tsan ]; }; then
+    ctest_version="$(ctest --version | awk 'NR == 1 { print $3 }')"
+    ctest_major="${ctest_version%%.*}"
+    ctest_minor="${ctest_version#*.}"
+    ctest_minor="${ctest_minor%%.*}"
+    if [ "${ctest_major:-0}" -lt 3 ] || { [ "${ctest_major:-0}" -eq 3 ] && [ "${ctest_minor:-0}" -lt 29 ]; }; then
+        die "a scoped --flavor $flavor run needs ctest 3.29 or newer (this is $ctest_version, which cannot combine two label filters); use --all, or --flavor plain"
+    fi
+fi
+
 [ -d "$build" ] || die "no build directory at $build (configure first: cmake -S . -B build)"
 # Tests are registered when their executable is built, so build before counting (a dry run counts the tree as built).
 if [ "$dry" = 0 ] && [ "$do_build" = 1 ]; then

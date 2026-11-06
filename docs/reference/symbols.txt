@@ -56,16 +56,17 @@ Hash<u64>	struct	foundation/containers	hash-lt-u64-gt	foundation-containers.md	e
 Hash<u64>::operator()(u64) const	function	foundation/containers	hash-lt-u64-gt-operator-call-u64-const	foundation-containers.md	engine/foundation/containers/hash_map.h:79
 Hash<T*>	struct	foundation/containers	hash-lt-t-star-gt	foundation-containers.md	engine/foundation/containers/hash_map.h:83
 Hash<T*>::operator()(T*) const	function	foundation/containers	hash-lt-t-star-gt-operator-call-t-star-const	foundation-containers.md	engine/foundation/containers/hash_map.h:86
-HashMap	class	foundation/containers	hashmap	foundation-containers.md	engine/foundation/containers/hash_map.h:105
-HashMap::HashMap(Allocator&,usize)	function	foundation/containers	hashmap-hashmap-allocator-amp-usize	foundation-containers.md	engine/foundation/containers/hash_map.h:115
-HashMap::HashMap(const HashMap&)	function	foundation/containers	hashmap-hashmap-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:120
-HashMap::operator=(const HashMap&)	function	foundation/containers	hashmap-operator-eq-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:121
-HashMap::Insert(const K&,const V&)	function	foundation/containers	hashmap-insert-const-k-amp-const-v-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:131
-HashMap::Find(const K&)	function	foundation/containers	hashmap-find-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:144
-HashMap::Find(const K&) const	function	foundation/containers	hashmap-find-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:158
-HashMap::Remove(const K&)	function	foundation/containers	hashmap-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:171
-HashMap::Size() const	function	foundation/containers	hashmap-size-const	foundation-containers.md	engine/foundation/containers/hash_map.h:183
-HashMap::SlotCapacity() const	function	foundation/containers	hashmap-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_map.h:188
+HashMap	class	foundation/containers	hashmap	foundation-containers.md	engine/foundation/containers/hash_map.h:107
+HashMap::HashMap(Allocator&,usize)	function	foundation/containers	hashmap-hashmap-allocator-amp-usize	foundation-containers.md	engine/foundation/containers/hash_map.h:117
+HashMap::HashMap(const HashMap&)	function	foundation/containers	hashmap-hashmap-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:122
+HashMap::operator=(const HashMap&)	function	foundation/containers	hashmap-operator-eq-const-hashmap-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:123
+HashMap::Insert(const K&,const V&)	function	foundation/containers	hashmap-insert-const-k-amp-const-v-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:133
+HashMap::Find(const K&)	function	foundation/containers	hashmap-find-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:149
+HashMap::Find(const K&) const	function	foundation/containers	hashmap-find-const-k-amp-const	foundation-containers.md	engine/foundation/containers/hash_map.h:163
+HashMap::Remove(const K&)	function	foundation/containers	hashmap-remove-const-k-amp	foundation-containers.md	engine/foundation/containers/hash_map.h:176
+HashMap::Size() const	function	foundation/containers	hashmap-size-const	foundation-containers.md	engine/foundation/containers/hash_map.h:188
+HashMap::SlotCapacity() const	function	foundation/containers	hashmap-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_map.h:193
+HashMap::TombstoneCount() const	function	foundation/containers	hashmap-tombstonecount-const	foundation-containers.md	engine/foundation/containers/hash_map.h:199
 AtomicRefCount	struct	foundation/containers	atomicrefcount	foundation-containers.md	engine/foundation/containers/shared_ptr.h:16
 AtomicRefCount::count	variable	foundation/containers	atomicrefcount-count	foundation-containers.md	engine/foundation/containers/shared_ptr.h:18
 AtomicRefCount::Increment()	function	foundation/containers	atomicrefcount-increment	foundation-containers.md	engine/foundation/containers/shared_ptr.h:20
@@ -137,17 +138,17 @@ Vector::TryResize(usize)	function	foundation/containers	vector-tryresize-usize	f
 Vector::TryResizeUninitialized(usize)	function	foundation/containers	vector-tryresizeuninitialized-usize	foundation-containers.md	engine/foundation/containers/vector.h:164
 Vector::Clear()	function	foundation/containers	vector-clear	foundation-containers.md	engine/foundation/containers/vector.h:179
 Vector::Reset()	function	foundation/containers	vector-reset	foundation-containers.md	engine/foundation/containers/vector.h:185
-Vector::Push(const T&)	function	foundation/containers	vector-push-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:198
-Vector::Push(T&&)	function	foundation/containers	vector-push-t-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:209
-Vector::Pop()	function	foundation/containers	vector-pop	foundation-containers.md	engine/foundation/containers/vector.h:218
-Vector::Insert(usize,const T&)	function	foundation/containers	vector-insert-usize-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:231
-Vector::Remove(usize)	function	foundation/containers	vector-remove-usize	foundation-containers.md	engine/foundation/containers/vector.h:248
-Vector::operator[](usize)	function	foundation/containers	vector-operator-index-usize	foundation-containers.md	engine/foundation/containers/vector.h:259
-Vector::operator[](usize) const	function	foundation/containers	vector-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/vector.h:263
-Vector::Data()	function	foundation/containers	vector-data	foundation-containers.md	engine/foundation/containers/vector.h:266
-Vector::Data() const	function	foundation/containers	vector-data-const	foundation-containers.md	engine/foundation/containers/vector.h:268
-Vector::Size() const	function	foundation/containers	vector-size-const	foundation-containers.md	engine/foundation/containers/vector.h:271
-Vector::Capacity() const	function	foundation/containers	vector-capacity-const	foundation-containers.md	engine/foundation/containers/vector.h:273
+Vector::Push(const T&)	function	foundation/containers	vector-push-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:197
+Vector::Push(T&&)	function	foundation/containers	vector-push-t-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:214
+Vector::Pop()	function	foundation/containers	vector-pop	foundation-containers.md	engine/foundation/containers/vector.h:229
+Vector::Insert(usize,const T&)	function	foundation/containers	vector-insert-usize-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:242
+Vector::Remove(usize)	function	foundation/containers	vector-remove-usize	foundation-containers.md	engine/foundation/containers/vector.h:261
+Vector::operator[](usize)	function	foundation/containers	vector-operator-index-usize	foundation-containers.md	engine/foundation/containers/vector.h:272
+Vector::operator[](usize) const	function	foundation/containers	vector-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/vector.h:276
+Vector::Data()	function	foundation/containers	vector-data	foundation-containers.md	engine/foundation/containers/vector.h:279
+Vector::Data() const	function	foundation/containers	vector-data-const	foundation-containers.md	engine/foundation/containers/vector.h:281
+Vector::Size() const	function	foundation/containers	vector-size-const	foundation-containers.md	engine/foundation/containers/vector.h:284
+Vector::Capacity() const	function	foundation/containers	vector-capacity-const	foundation-containers.md	engine/foundation/containers/vector.h:286
 GraphemeBreakProperty	enum	foundation/strings	graphemebreakproperty	foundation-strings.md	engine/foundation/string/grapheme.h:13
 GraphemeBreakProperty::Other	enumerator	foundation/strings	graphemebreakproperty-other	foundation-strings.md	engine/foundation/string/grapheme.h:14
 GraphemeBreakProperty::CR	enumerator	foundation/strings	graphemebreakproperty-cr	foundation-strings.md	engine/foundation/string/grapheme.h:15
@@ -995,15 +996,15 @@ jobs::FramePool::Stats::fallback_frees	variable	jobs	jobs-framepool-stats-fallba
 jobs::FramePool::Stats::TotalPooledAllocs() const	function	jobs	jobs-framepool-stats-totalpooledallocs-const	jobs.md	engine/jobs/frame_pool.h:89
 jobs::FramePool::Stats::TotalPooledFrees() const	function	jobs	jobs-framepool-stats-totalpooledfrees-const	jobs.md	engine/jobs/frame_pool.h:94
 jobs::FramePool::Stats::Live() const	function	jobs	jobs-framepool-stats-live-const	jobs.md	engine/jobs/frame_pool.h:99
-jobs::FramePool::FramePool(const Config&)	function	jobs	jobs-framepool-framepool-const-config-amp	jobs.md	engine/jobs/frame_pool.h:126
-jobs::FramePool::~FramePool()	function	jobs	jobs-framepool-tilde-framepool	jobs.md	engine/jobs/frame_pool.h:131
-jobs::FramePool::FramePool(const FramePool&)	function	jobs	jobs-framepool-framepool-const-framepool-amp	jobs.md	engine/jobs/frame_pool.h:133
-jobs::FramePool::operator=(const FramePool&)	function	jobs	jobs-framepool-operator-eq-const-framepool-amp	jobs.md	engine/jobs/frame_pool.h:134
-jobs::FramePool::Allocate(usize)	function	jobs	jobs-framepool-allocate-usize	jobs.md	engine/jobs/frame_pool.h:143
-jobs::FramePool::Deallocate(void*)	function	jobs	jobs-framepool-deallocate-void-star	jobs.md	engine/jobs/frame_pool.h:154
-jobs::FramePool::GetStats() const	function	jobs	jobs-framepool-getstats-const	jobs.md	engine/jobs/frame_pool.h:160
-jobs::FramePool::CentralAvailableForTesting(usize)	function	jobs	jobs-framepool-centralavailablefortesting-usize	jobs.md	engine/jobs/frame_pool.h:171
-jobs::FramePool::Global()	function	jobs	jobs-framepool-global	jobs.md	engine/jobs/frame_pool.h:181
+jobs::FramePool::FramePool(const Config&)	function	jobs	jobs-framepool-framepool-const-config-amp	jobs.md	engine/jobs/frame_pool.h:121
+jobs::FramePool::~FramePool()	function	jobs	jobs-framepool-tilde-framepool	jobs.md	engine/jobs/frame_pool.h:126
+jobs::FramePool::FramePool(const FramePool&)	function	jobs	jobs-framepool-framepool-const-framepool-amp	jobs.md	engine/jobs/frame_pool.h:128
+jobs::FramePool::operator=(const FramePool&)	function	jobs	jobs-framepool-operator-eq-const-framepool-amp	jobs.md	engine/jobs/frame_pool.h:129
+jobs::FramePool::Allocate(usize)	function	jobs	jobs-framepool-allocate-usize	jobs.md	engine/jobs/frame_pool.h:138
+jobs::FramePool::Deallocate(void*)	function	jobs	jobs-framepool-deallocate-void-star	jobs.md	engine/jobs/frame_pool.h:149
+jobs::FramePool::GetStats() const	function	jobs	jobs-framepool-getstats-const	jobs.md	engine/jobs/frame_pool.h:155
+jobs::FramePool::CentralAvailableForTesting(usize)	function	jobs	jobs-framepool-centralavailablefortesting-usize	jobs.md	engine/jobs/frame_pool.h:166
+jobs::FramePool::Global()	function	jobs	jobs-framepool-global	jobs.md	engine/jobs/frame_pool.h:176
 jobs::CompletionFn	alias	jobs	jobs-completionfn	jobs.md	engine/jobs/job.h:36
 jobs::Job	class	jobs	jobs-job	jobs.md	engine/jobs/job.h:54
 jobs::Job::Handle	alias	jobs	jobs-job-handle	jobs.md	engine/jobs/job.h:59

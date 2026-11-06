@@ -192,23 +192,34 @@ public:
 
     /// Appends a copy of `value`, growing if full.
     ///
-    /// Param value: element to copy; it must not refer to an element of this
-    ///   array because growth may invalidate it.
+    /// Param value: element to copy; it may be an element of this vector.
     /// Aborts: growth is needed and the allocator is out of memory.
     void Push(const T& value) {
-        GrowIfNeeded();
-        new (data_ + size_) T(value);
+        if (size_ == capacity_ && InStorage(&value)) {
+            // `value` may be an element of this vector (`v.Push(v[0])`), which growing frees: copy it first.
+            T copy(value);
+            GrowIfNeeded();
+            new (data_ + size_) T(std::move(copy));
+        } else {
+            GrowIfNeeded();
+            new (data_ + size_) T(value);
+        }
         ++size_;
     }
 
     /// Appends `value` by move, growing if full.
     ///
-    /// Param value: element to move from; it must not refer to an element of
-    ///   this array because growth may invalidate it.
+    /// Param value: element to move from; it may be an element of this vector.
     /// Aborts: growth is needed and the allocator is out of memory.
     void Push(T&& value) {
-        GrowIfNeeded();
-        new (data_ + size_) T(std::move(value));
+        if (size_ == capacity_ && InStorage(&value)) {
+            T moved(std::move(value)); // as above: `value` may live in the storage growing frees
+            GrowIfNeeded();
+            new (data_ + size_) T(std::move(moved));
+        } else {
+            GrowIfNeeded();
+            new (data_ + size_) T(std::move(value));
+        }
         ++size_;
     }
 
@@ -226,18 +237,20 @@ public:
     ///
     /// Param index: destination position; `Size()` appends. Must be at most
     ///   `Size()` (not checked).
-    /// Param value: element to copy; must not refer to an element of this array.
+    /// Param value: element to copy; it may be an element of this vector.
     /// Aborts: growth is needed and the allocator is out of memory.
     void Insert(usize index, const T& value) {
+        // `value` may be an element of this vector: growing would free it and the shift below would move it, so copy it first.
+        T copy(value);
         GrowIfNeeded();
         if (size_ > index) {
             new (data_ + size_) T(std::move(data_[size_ - 1]));
             for (usize i = size_ - 1; i > index; --i) {
                 data_[i] = std::move(data_[i - 1]);
             }
-            data_[index] = value;
+            data_[index] = std::move(copy);
         } else {
-            new (data_ + size_) T(value);
+            new (data_ + size_) T(std::move(copy));
         }
         ++size_;
     }
@@ -273,6 +286,13 @@ public:
     usize Capacity() const { return capacity_; }
 
 private:
+    // True if `p` points into this vector's elements (compared as addresses: the value may come from anywhere).
+    bool InStorage(const T* p) const {
+        const auto address = reinterpret_cast<uintptr_t>(p);
+        const auto begin = reinterpret_cast<uintptr_t>(data_);
+        return data_ != nullptr && address >= begin && address < begin + size_ * sizeof(T);
+    }
+
     void GrowIfNeeded() {
         if (size_ < capacity_) {
             return;

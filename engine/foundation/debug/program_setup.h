@@ -66,7 +66,7 @@ bool IsProgramDebugArgument(const char* argument);
 /// Prepares the debugging facilities for this program and installs the crash handler if wanted. Call first thing in `main`.
 ///
 /// Runs [[debug::InitDebugFacilities]] and [[debug::InitCrashContext]], logs one `build ...` line (build id, platform,
-/// configuration) on the `LogCore` channel, and installs the crash handler as described at the top of this header.
+/// configuration) on its own `LogBuild` channel (always at Info), and installs the crash handler as described at the top of this header.
 ///
 /// Param argc: number of arguments; 0 for a program with no command line.
 /// Param argv: the arguments; borrowed for the call; may be null.

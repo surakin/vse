@@ -1820,7 +1820,7 @@ ProgramDebugSetup StartProgramDebugging(int argc, const char* const* argv);
 
 Prepares the debugging facilities for this program and installs the crash handler if wanted. Call first thing in `main`.
 
-Runs [`debug::InitDebugFacilities`](#debug-initdebugfacilities) and [`debug::InitCrashContext`](#debug-initcrashcontext-int-const-char-star-const-star), logs one `build ...` line (build id, platform, configuration) on the `LogCore` channel, and installs the crash handler as described at the top of this header.
+Runs [`debug::InitDebugFacilities`](#debug-initdebugfacilities) and [`debug::InitCrashContext`](#debug-initcrashcontext-int-const-char-star-const-star), logs one `build ...` line (build id, platform, configuration) on its own `LogBuild` channel (always at Info), and installs the crash handler as described at the top of this header.
 
 | Field | Value |
 |---|---|

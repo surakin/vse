@@ -18,9 +18,15 @@ namespace {
 constexpr usize kSlotWords = (VulkanDevice::kThreadSlots + 63) / 64;
 std::atomic<u64> g_slot_words[kSlotWords];
 
+// Set when this thread's slot has been given back at thread exit. Kept outside the holder, in a trivially destructible variable:
+// a store the destructor made to its own `id` would be dead (and removed by the optimizer), so a later thread-exit handler on
+// this thread would reuse a slot that another thread may own by then.
+thread_local bool t_slot_released = false;
+
 struct FallbackSlotHolder {
     i32 id = -1;
     ~FallbackSlotHolder() {
+        t_slot_released = true;
         if (id >= 0) {
             g_slot_words[static_cast<usize>(id) / 64].fetch_and(~(u64{1} << (static_cast<usize>(id) % 64)), std::memory_order_release);
         }
@@ -47,8 +53,11 @@ i32 ClaimSlot() {
     return -1;
 }
 
-// Returns the calling thread's pool slot, or -1 if all are taken.
+// Returns the calling thread's pool slot, -1 if all are taken, or -2 if this thread already gave its slot back (it is exiting).
 i32 CurrentPoolSlot() {
+    if (t_slot_released) {
+        return -2;
+    }
     thread_local FallbackSlotHolder holder;
     if (holder.id < 0) {
         holder.id = ClaimSlot();
@@ -88,6 +97,10 @@ usize VulkanDevice::CommandPoolCount() const {
 
 VulkanDevice::ThreadPool* VulkanDevice::PoolForCurrentThread(usize frame_slot) {
     const i32 slot = CurrentPoolSlot();
+    if (slot == -2) {
+        RhiLog(LogVerbosity::Error, "Vulkan: a command list was requested by a thread that is exiting (its command pool slot is gone)");
+        return nullptr;
+    }
     if (slot < 0) {
         RhiLog(LogVerbosity::Error, "Vulkan: no command pool slot is free for this thread (more than %zu threads recording at once)",
                kThreadSlots);

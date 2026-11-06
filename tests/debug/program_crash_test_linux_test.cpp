@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "debug/program_setup.h"
+#include "log/log.h"
 #include "support/death_test_skip.h"
 
 #include <cstdio>
@@ -105,7 +106,7 @@ TEST_CASE("Every shipped program turns --crash-test=segv into a report, a dump a
         CHECK(run.output.find("reason: AccessViolation") != std::string::npos);
         CHECK(run.output.find("RunCrashTest") != std::string::npos);
         CHECK(run.output.find("build id: ") != std::string::npos);
-        CHECK(run.output.find("[LogCore] INFO: build ") != std::string::npos); // the build line, first thing the program logs
+        CHECK(run.output.find("[LogBuild] INFO: build ") != std::string::npos); // the build line, first thing the program logs
         CHECK(CountEnvelopes(state.Path()) == 1);
     }
 }
@@ -214,4 +215,11 @@ TEST_CASE("A value that is neither on nor off is ignored, and the crash test is 
     CHECK(IsProgramDebugArgument("--crash-handler=on"));
     CHECK_FALSE(IsProgramDebugArgument("--frames"));
     CHECK_FALSE(IsProgramDebugArgument(nullptr));
+}
+
+TEST_CASE("The build line has its own channel, so a config line for LogCore reaches the real LogCore", "[crash][programs][debug]") {
+    // Exactly one channel answers to each name; the build line's channel is LogBuild.
+    StartProgramDebugging(0, nullptr);
+    CHECK(LogChannel::Find(StringView("LogCore")) == &LogCore);
+    CHECK(LogChannel::Find(StringView("LogBuild")) != nullptr);
 }

@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "containers/hash_map.h"
+#include "mem/heap_allocator.h"
 #include "mem/arena_allocator.h"
 #include "types.h"
 
@@ -69,5 +70,34 @@ TEST_CASE("HashMap: tombstone accumulation from insert/remove churn still trigge
     }
 
     REQUIRE(map.Size() == 0);
-    REQUIRE(map.SlotCapacity() > initial_capacity);
+    // The tombstones were cleared by rehashing, at the same size: nothing live needed more room.
+    REQUIRE(map.TombstoneCount() * 10 < map.SlotCapacity() * 7);
+    REQUIRE(map.SlotCapacity() == initial_capacity);
+}
+
+TEST_CASE("HashMap: insert/remove churn with few live keys does not grow the table", "[containers][hash_map]") {
+    engine_placeholder::HeapAllocator heap;
+    HashMap<usize, usize, engine_placeholder::HeapAllocator> map(heap);
+    for (usize k = 0; k < 10; ++k) {
+        map.Insert(k, k);
+    }
+    // A first round of churn may grow the table once (ten live keys fill 16 slots past the threshold for doubling).
+    for (usize k = 1000; k < 2000; ++k) {
+        map.Insert(k, k);
+        map.Remove(k);
+    }
+    const usize capacity_after_setup = map.SlotCapacity();
+    CHECK(capacity_after_setup <= 32);
+    // 100,000 more fresh keys inserted and removed again: the live count stays at 10, so the table must not grow.
+    for (usize k = 2000; k < 102000; ++k) {
+        map.Insert(k, k);
+        map.Remove(k);
+    }
+    CHECK(map.Size() == 10);
+    CHECK(map.SlotCapacity() == capacity_after_setup);
+    for (usize k = 0; k < 10; ++k) {
+        const usize* v = map.Find(k);
+        REQUIRE(v != nullptr);
+        CHECK(*v == k);
+    }
 }

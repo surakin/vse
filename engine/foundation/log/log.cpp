@@ -199,14 +199,16 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message) {
         return;
     }
     char buf[512];
+    // Everything but the newline goes into the first 511 bytes, so a long message is cut but the line still ends.
+    constexpr usize kText = sizeof(buf) - 1;
     usize offset = 0;
-    offset = AppendStrToBuffer(buf, sizeof(buf), offset, "[");
-    offset = AppendStrToBuffer(buf, sizeof(buf), offset, channel.Name());
-    offset = AppendStrToBuffer(buf, sizeof(buf), offset, "] ");
-    offset = AppendStrToBuffer(buf, sizeof(buf), offset, VerbosityName(level));
-    offset = AppendStrToBuffer(buf, sizeof(buf), offset, ": ");
-    offset = AppendStrToBuffer(buf, sizeof(buf), offset, message);
-    offset = AppendStrToBuffer(buf, sizeof(buf), offset, "\n");
+    offset = AppendStrToBuffer(buf, kText, offset, "[");
+    offset = AppendStrToBuffer(buf, kText, offset, channel.Name());
+    offset = AppendStrToBuffer(buf, kText, offset, "] ");
+    offset = AppendStrToBuffer(buf, kText, offset, VerbosityName(level));
+    offset = AppendStrToBuffer(buf, kText, offset, ": ");
+    offset = AppendStrToBuffer(buf, kText, offset, message);
+    buf[offset++] = '\n';
     RingAppend(buf, offset);
     if (level == LogVerbosity::Error && g_log_error_traces.load(std::memory_order_relaxed)) {
         // Where the error came from, under the line, in the same write so another thread's output cannot come between them

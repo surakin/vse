@@ -346,3 +346,57 @@ TEST_CASE("Vector: TryResizeUninitialized sizes a byte buffer without touching i
     REQUIRE(v.Size() == 8);
     REQUIRE_FALSE(v.TryResizeUninitialized(static_cast<usize>(1) << 56));
 }
+
+namespace {
+// Records its value; its destructor overwrites it, so reading a destroyed element shows up as -1.
+struct VectorAliasProbe {
+    int value = 0;
+    explicit VectorAliasProbe(int v) : value(v) {}
+    VectorAliasProbe(const VectorAliasProbe& other) : value(other.value) {}
+    VectorAliasProbe(VectorAliasProbe&& other) noexcept : value(other.value) {}
+    VectorAliasProbe& operator=(const VectorAliasProbe& other) {
+        value = other.value;
+        return *this;
+    }
+    VectorAliasProbe& operator=(VectorAliasProbe&& other) noexcept {
+        value = other.value;
+        return *this;
+    }
+    ~VectorAliasProbe() { value = -1; }
+};
+} // namespace
+
+TEST_CASE("Vector: pushing or inserting one of its own elements works when the vector must grow", "[containers][vector_container]") {
+    Vector<VectorAliasProbe> v;
+    v.Push(VectorAliasProbe(7));
+    while (v.Size() < v.Capacity()) {
+        v.Push(VectorAliasProbe(static_cast<int>(v.Size()) + 100));
+    }
+    // Full: the next push grows, which destroys and frees the element being copied.
+    v.Push(v[0]);
+    CHECK(v[v.Size() - 1].value == 7);
+    while (v.Size() < v.Capacity()) {
+        v.Push(VectorAliasProbe(1));
+    }
+    const usize size = v.Size();
+    const int second = v[1].value;
+    v.Push(static_cast<VectorAliasProbe&&>(v[1])); // moved from its own element
+    CHECK(v[v.Size() - 1].value == second);
+    while (v.Size() < v.Capacity()) {
+        v.Push(VectorAliasProbe(2));
+    }
+    // Insert at the front a copy of the last element, which the shift also moves.
+    const int last = v[v.Size() - 1].value;
+    v.Insert(0, v[v.Size() - 1]);
+    CHECK(v[0].value == last);
+    CHECK(v.Size() > size);
+    // Without growth: insert a copy of an element that the shift moves.
+    Vector<VectorAliasProbe> w;
+    w.Reserve(8);
+    w.Push(VectorAliasProbe(1));
+    w.Push(VectorAliasProbe(2));
+    w.Push(VectorAliasProbe(3));
+    w.Insert(0, w[2]);
+    CHECK(w[0].value == 3);
+    CHECK(w[3].value == 3);
+}

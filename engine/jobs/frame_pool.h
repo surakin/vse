@@ -107,13 +107,8 @@ public:
         FramePool* owner = nullptr;
         void* head[kClassCount] = {};
         u32 count[kClassCount] = {};
-        // Set by the destructor at thread exit. Thread-local destructors
-        // run in unspecified order, so another one (or a static
-        // destructor on the main thread) may still free a frame after
-        // this cache is gone; such late allocations/frees must bypass
-        // the cache and go straight to the central pool, or the block
-        // would sit in a dead cache forever.
-        bool destroyed = false;
+        // (Whether this cache was destroyed is kept outside it, in a separate thread_local flag: a store the destructor makes
+        // to the object it is destroying is dead, and optimizers remove it.)
         ~ThreadCache();
     };
 

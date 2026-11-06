@@ -749,7 +749,7 @@ Writes `[Channel] LEVEL: message` plus a newline to the write sink (standard out
 |---|---|
 | Parameter `channel` | channel to log on. |
 | Parameter `level` | severity of this message. |
-| Parameter `message` | text to print. The whole line is formatted into a 512-byte buffer, so overlong messages are truncated (and lose the trailing newline). |
+| Parameter `message` | text to print. The whole line is formatted into a 512-byte buffer, so overlong messages are cut; the line always ends with its newline. |
 | Thread-safety | thread-compatible. Formatting uses a stack buffer, but the channel state it reads is unsynchronized. |
 
 ## `LoadConfig(const char*)` {#loadconfig-const-char-star}
