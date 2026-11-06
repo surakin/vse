@@ -10,6 +10,7 @@
 - `engine/foundation/debug/fault_injection.h`
 - `engine/foundation/debug/death_test.h`
 - `engine/foundation/debug/stack_trace.h`, `module_list.h`, `debugger.h`, `compiler.h`
+- `engine/foundation/debug/crash_handler.h`; `third_party/sentry_native/VENDORED.md`; `tools/crash_extract/`
 - `tests/debug/` (the tests, and `tests/debug/BACKEND-CONFORMANCE.md` once Day 101 writes it)
 
 ## API reference
@@ -22,6 +23,8 @@ Full reference: [Foundation: Debugging](../reference/foundation-debug.md).
 - [[debug::ChildResult]] — the exit code, the fault, the timeout and the captured output of a child
 - [[debug::CaptureStackTrace]], [[debug::ResolveStackTrace]], [[debug::FormatStackTrace]] — the call stack, with names, files and lines
 - [[debug::InitDebugFacilities]] — prepare the stack-trace facilities at program start
+- [[debug::InstallCrashHandler]], [[debug::UninstallCrashHandler]], [[debug::CrashHandlerOptions]] — leave a minidump when the program faults
+- [[os::GetCrashDumpDirectory]], [[os::EnsureDirectory]] — where dumps go
 
 ## Capturing and reading a stack trace
 
@@ -70,6 +73,63 @@ What to know:
   the trace under the message, starting at the failing function, in one write. The names are left mangled (demangling
   allocates, and an assertion can fail inside the allocator): pipe the output through `c++filt` to read them.
 - **Only DWARF.** Binaries built for Windows with PDB debug information will need a different resolver (Phase 8).
+
+## Installing the crash handler
+
+[[debug::InstallCrashHandler]] makes the process leave a **minidump** on disk when it dies from a fault (a null or wild
+pointer, an illegal instruction, a divide by zero, a stack overflow, an `abort`). A minidump holds every thread's registers
+and stack memory and the list of loaded modules; `lldb -c <dump>` and `minidump-stackwalk` open it. After writing the dump
+the process dies from the original fault, so its exit status, a core dump and a debugger all behave as before.
+
+```cpp compile standalone
+#include "debug/crash_handler.h"
+#include "debug/stack_trace.h"
+
+using namespace engine_placeholder;
+
+// Call once, early in main.
+void SetUpCrashHandling() {
+    debug::InitDebugFacilities();
+    debug::CrashHandlerOptions options;
+    options.release = "mygame 1.2.3"; // recorded with every dump
+    // options.dump_directory is left null: the default directory under the user's state directory is used.
+    const debug::CrashHandlerResult result = debug::InstallCrashHandler(options);
+    if (result != debug::CrashHandlerResult::Installed) {
+        // The program runs on without a handler; the reason was logged as a warning.
+    }
+}
+```
+
+The library is sentry-native with its Breakpad backend, vendored in `third_party/sentry_native/` (`PLAN.md` assumption #20;
+the choice and the numbers are in `docs/superpowers/specs/2026-11-06-debugging-design.md`). It runs inside the process, so
+there is no helper program to ship next to the game.
+
+- **Install it once, early, and install it first.** A handler a program installs for the same signals *after* this call must
+  call the one it replaced, or the dump is not written. The engine installs none of its own.
+- **A failure is not fatal.** If the dump directory cannot be created or the library cannot start, `InstallCrashHandler`
+  returns the reason (`DirectoryFailed`, `InitFailed`), logs a warning on the `LogCrash` channel, and the program runs without
+  a handler. `Disabled` is what a program returns to itself when configuration switches the handler off.
+- **Dumps survive a restart.** Right after a crash the envelope sits in a `<uuid>.run/` folder inside the dump directory.
+  The next time the program installs the handler, the library moves it into `<dump directory>/saved/<uuid>.envelope` and
+  removes the run folder. Nothing deletes the saved files: clear them out yourself when you no longer need them.
+- **Turning a dump into a trace.** The library wraps the minidump in an *envelope* file; `crash_extract <file>.envelope`
+  (built as `tools/crash_extract`) writes the plain `.dmp` next to it.
+
+### Where dumps go, and what is never sent
+
+Dumps go to a directory on the local disk, never the working directory (a game started from a read-only or sandboxed
+directory could not write there): `$XDG_STATE_HOME/<app>/crashes`, or `~/.local/state/<app>/crashes`, where `<app>` is the
+environment variable `ENGINE_APP_NAME` or the executable's name (a name that is `.`, `..`, has a slash, or is very long is
+refused). The directory must be a real directory (not a symbolic link) owned by the user, is created private to them
+(mode 0700), is tightened to 0700 if it exists open to others, and must be writable; otherwise the handler is not
+installed. A program can name another directory in the options; the same rules apply to it. A dump contains the memory of the process at the moment it crashed,
+including whatever the program held in memory, so treat the files as sensitive.
+
+**Nothing is ever sent anywhere.** The library is built with no network transport, so no upload code exists in the program;
+the only "transport" it is given is a function that copies an envelope into the `saved/` folder. The options have no field
+for an address or an account, and ctests (`debug_no_network_*`) fail if a test binary lists a network or TLS library or
+imports their functions (the demos and benches that install the handler are added to that check when they are wired in). Sending a dump, if a project ever wants
+to, is its own tool that reads the file.
 
 ## Testing code that crashes
 
@@ -136,7 +196,6 @@ test that wants [[debug::CrashReason::StackOverflow]] checks for [[debug::CrashR
 
 ## Outline
 
-- Installing the crash handler, and what is never sent (Day 95)
 - What a crash report contains (Day 96)
 - When the program crashes (Day 97)
 - Core dumps (Day 98)

@@ -488,8 +488,9 @@ interpretations keep it buildable — flag any that don't match intent:
     `engine/foundation/debug/`: only the two implementation files include the libraries' headers (`backtrace.h`,
     `sentry.h`; a gate enforces it, like the RHI boundary), both libraries have C interfaces so no STL type reaches
     engine code, and they are built with their own flags like Catch2. **Nothing is ever uploaded:** the transport is
-    `none`, our options have no URL or DSN field, dumps stay on the developer's disk, and a test fails if a binary links
-    libcurl, a TLS library or winhttp. What stays hand-written because it is engine-specific or small: the
+    `none` (the facade gives the library a transport that only copies envelopes into a local `saved/` folder, because the null
+    transport would delete a crash's dump on the next start), our options have no URL or DSN field, dumps stay on the
+    developer's disk, and a test fails if a binary links libcurl, a TLS library or winhttp. What stays hand-written because it is engine-specific or small: the
     assert/ensure/verify family, the crash context and recent-log ring buffer, the death-test helper (Catch2 has none), the
     core-dump setup and scripts, and a small dev tool that extracts the minidump from sentry's envelope. Windows and macOS
     (Phases 8 and 9) reuse the same two libraries; the one known gap is that libbacktrace reads DWARF only, not PDB

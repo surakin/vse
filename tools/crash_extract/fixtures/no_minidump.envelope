@@ -1,0 +1,3 @@
+{"event_id":"11111111-2222-3333-4444-555555555555","trace":{"release":"fixture@1","sampled":"false"}}
+{"type":"event","length":67}
+{"event_id":"11111111-2222-3333-4444-555555555555","level":"fatal"}

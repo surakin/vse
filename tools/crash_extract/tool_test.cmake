@@ -1,0 +1,61 @@
+# Runs crash_extract on the fixtures and checks exit status and output. cmake -DTOOL= -DFIXTURES= -DWORK= -P tool_test.cmake
+cmake_minimum_required(VERSION 3.20)
+file(REMOVE_RECURSE "${WORK}")
+file(MAKE_DIRECTORY "${WORK}")
+
+function(run name expected_status)
+  execute_process(COMMAND "${TOOL}" ${ARGN} RESULT_VARIABLE status OUTPUT_VARIABLE out ERROR_VARIABLE err)
+  if(NOT status EQUAL expected_status)
+    message(FATAL_ERROR "${name}: exit status ${status}, expected ${expected_status}\n${out}${err}")
+  endif()
+endfunction()
+
+# A good envelope: status 0, and the output starts with the minidump signature "MDMP" and is 64 bytes long.
+run("good" 0 "${FIXTURES}/good.envelope" "${WORK}/good.dmp")
+file(READ "${WORK}/good.dmp" head HEX LIMIT 4)
+if(NOT head STREQUAL "4d444d50")
+  message(FATAL_ERROR "good: the output does not start with MDMP (${head})")
+endif()
+file(SIZE "${WORK}/good.dmp" size)
+if(NOT size EQUAL 64)
+  message(FATAL_ERROR "good: the output has ${size} bytes, expected 64")
+endif()
+
+# Without an output path the dump goes next to the envelope as .dmp.
+file(COPY "${FIXTURES}/good.envelope" DESTINATION "${WORK}")
+run("default output" 0 "${WORK}/good.envelope")
+if(NOT EXISTS "${WORK}/good.dmp")
+  message(FATAL_ERROR "default output: ${WORK}/good.dmp was not written")
+endif()
+
+run("no minidump" 1 "${FIXTURES}/no_minidump.envelope" "${WORK}/none.dmp")
+if(EXISTS "${WORK}/none.dmp")
+  message(FATAL_ERROR "no minidump: an output file was written")
+endif()
+run("truncated" 2 "${FIXTURES}/truncated.envelope" "${WORK}/cut.dmp")
+if(EXISTS "${WORK}/cut.dmp")
+  message(FATAL_ERROR "truncated: an output file was written")
+endif()
+run("missing file" 2 "${WORK}/does-not-exist.envelope")
+
+# An input without the .envelope extension gets no derived output name, and the input is never the output.
+file(COPY "${FIXTURES}/good.envelope" DESTINATION "${WORK}")
+file(RENAME "${WORK}/good.envelope" "${WORK}/crash.bin")
+run("no extension" 2 "${WORK}/crash.bin")
+if(EXISTS "${WORK}/crash.bin.dmp" OR EXISTS "${WORK}/crash.dmp")
+  message(FATAL_ERROR "no extension: an output file was derived anyway")
+endif()
+run("output is input" 2 "${WORK}/crash.bin" "${WORK}/crash.bin")
+file(READ "${WORK}/crash.bin" still HEX LIMIT 1)
+if(still STREQUAL "")
+  message(FATAL_ERROR "output is input: the input was destroyed")
+endif()
+
+# A write that fails leaves nothing behind (no partial output, no temporary file).
+run("unwritable output" 2 "${FIXTURES}/good.envelope" "${WORK}/no-such-directory/out.dmp")
+file(GLOB leftovers "${WORK}/no-such-directory/*" "${WORK}/*.partial")
+if(leftovers)
+  message(FATAL_ERROR "unwritable output: left ${leftovers}")
+endif()
+run("no arguments" 64)
+run("too many arguments" 64 a b c)

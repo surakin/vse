@@ -1,0 +1,6 @@
+Dynamic section at offset 0x2d58 contains 28 entries:
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+Symbol table '.dynsym' contains 3 entries:
+   Num:    Value          Size Type    Bind   Vis      Ndx Name
+   654: 00000000000cc6b8     5 FUNC    WEAK   DEFAULT   13 gethostbyname
+   655: 00000000000cc6c8     5 FUNC    WEAK   DEFAULT   13 getaddrinfo

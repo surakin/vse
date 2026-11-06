@@ -20,6 +20,7 @@ tools/shader_mint   3,4
 tools/rhi_boundary_check 3
 tools/raw_new_check 4
 tools/platform_neutral_check 6
+tools/crash_extract 6
 game/rhi_demo       3,4
 game/renderer_demo  3,4
 game/renderer_bench 3,4

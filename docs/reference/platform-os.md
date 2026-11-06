@@ -527,3 +527,58 @@ Unloads a library loaded with [`os::LoadLibrary`](#os-loadlibrary-stringview); d
 |---|---|
 | Parameter `handle` | the handle to release; invalid afterwards. |
 
+## `EnsureDirectory(StringView,int)` {#os-ensuredirectory-stringview-int}
+
+`function os::EnsureDirectory` — defined in `engine/foundation/os/os.h`
+
+```cpp
+bool EnsureDirectory(StringView path, int mode = 0700);
+```
+
+Makes sure a directory exists, creating it and any missing parents.
+
+| Field | Value |
+|---|---|
+| Parameter `path` | UTF-8 directory path, at most [`os::kMaxPathBytes`](#os-kmaxpathbytes) - 1 bytes. |
+| Parameter `mode` | permission bits for the directories this call creates (existing ones are left alone), for example 0700. |
+| Returns | true if the directory exists afterwards and is a directory. |
+| Fails | returns false if the path is too long, a component exists but is not a directory, or the OS refuses to create it. |
+
+## `EnsurePrivateDirectory(StringView)` {#os-ensureprivatedirectory-stringview}
+
+`function os::EnsurePrivateDirectory` — defined in `engine/foundation/os/os.h`
+
+```cpp
+bool EnsurePrivateDirectory(StringView path);
+```
+
+Makes sure a directory exists and is private to the current user, creating it if needed.
+
+Stricter than [`os::EnsureDirectory`](#os-ensuredirectory-stringview-int), for places that hold sensitive files (crash dumps contain process memory): the final component must be a real directory, not a symbolic link, owned by the user running the program; if group or other users can access it, its permissions are tightened to 0700; and the user must be able to write to it.
+
+| Field | Value |
+|---|---|
+| Parameter `path` | UTF-8 directory path, at most [`os::kMaxPathBytes`](#os-kmaxpathbytes) - 1 bytes. |
+| Returns | true if the directory exists, is owned by this user, is private to them, and is writable. |
+| Fails | returns false if the path is too long, the final component is a symbolic link or not a directory, it belongs to another user, its permissions cannot be tightened, or it is not writable. |
+
+## `GetCrashDumpDirectory(char*,usize)` {#os-getcrashdumpdirectory-char-star-usize}
+
+`function os::GetCrashDumpDirectory` — defined in `engine/foundation/os/os.h`
+
+```cpp
+bool GetCrashDumpDirectory(char* out, usize capacity);
+```
+
+Finds, and creates if needed, the directory where this program writes crash dumps.
+
+On Linux it is `$XDG_STATE_HOME/<app>/crashes`, or `~/.local/state/<app>/crashes` without it, created readable by the owner only (mode 0700). `<app>` is the environment variable `ENGINE_APP_NAME` or, without it, the name of the executable. It is never the working directory: a sandboxed or read-only working directory is not a place to put a dump.
+
+| Field | Value |
+|---|---|
+| Parameter `out` | receives the null-terminated path; borrowed for the call. |
+| Parameter `capacity` | size of `out` in bytes. |
+| Returns | true if `out` names a private directory of this user that exists. |
+| Fails | returns false, leaving `out` empty, if no base directory is known (no `XDG_STATE_HOME` and no `HOME`), the application name is unusable (`.`, `..`, empty, containing a slash, or longer than 200 bytes), the path does not fit, or the directory is not a private directory of this user (see [`os::EnsurePrivateDirectory`](#os-ensureprivatedirectory-stringview)). |
+| Thread-safety | thread-safe, except that it reads the environment, so another thread must not change it (`setenv`) at the same time. |
+

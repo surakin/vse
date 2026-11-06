@@ -447,6 +447,9 @@ os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.m
 os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:91
 os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:99
 os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:103
+os::EnsureDirectory(StringView,int)	function	platform/os	os-ensuredirectory-stringview-int	platform-os.md	engine/foundation/os/os.h:111
+os::EnsurePrivateDirectory(StringView)	function	platform/os	os-ensureprivatedirectory-stringview	platform-os.md	engine/foundation/os/os.h:123
+os::GetCrashDumpDirectory(char*,usize)	function	platform/os	os-getcrashdumpdirectory-char-star-usize	platform-os.md	engine/foundation/os/os.h:139
 os::Key	enum	platform/window-input	os-key	platform-window-input.md	engine/foundation/os/input.h:12
 os::Key::Unknown	enumerator	platform/window-input	os-key-unknown	platform-window-input.md	engine/foundation/os/input.h:13
 os::Key::A	enumerator	platform/window-input	os-key-a	platform-window-input.md	engine/foundation/os/input.h:14
@@ -705,6 +708,22 @@ ENGINE_COLD	macro	foundation/debug	engine-cold	foundation-debug.md	engine/founda
 ENGINE_COMPILER_BARRIER	macro	foundation/debug	engine-compiler-barrier	foundation-debug.md	engine/foundation/debug/compiler.h:44
 ENGINE_NOINLINE_LAMBDA	macro	foundation/debug	engine-noinline-lambda	foundation-debug.md	engine/foundation/debug/compiler.h:51
 ENGINE_NOINLINE	macro	foundation/debug	engine-noinline	foundation-debug.md	engine/foundation/debug/compiler.h:58
+debug::CrashHandlerOptions	struct	foundation/debug	debug-crashhandleroptions	foundation-debug.md	engine/foundation/debug/crash_handler.h:20
+debug::CrashHandlerOptions::dump_directory	variable	foundation/debug	debug-crashhandleroptions-dump-directory	foundation-debug.md	engine/foundation/debug/crash_handler.h:22
+debug::CrashHandlerOptions::report_file	variable	foundation/debug	debug-crashhandleroptions-report-file	foundation-debug.md	engine/foundation/debug/crash_handler.h:25
+debug::CrashHandlerOptions::release	variable	foundation/debug	debug-crashhandleroptions-release	foundation-debug.md	engine/foundation/debug/crash_handler.h:27
+debug::CrashHandlerOptions::handler_path	variable	foundation/debug	debug-crashhandleroptions-handler-path	foundation-debug.md	engine/foundation/debug/crash_handler.h:29
+debug::CrashHandlerOptions::enabled	variable	foundation/debug	debug-crashhandleroptions-enabled	foundation-debug.md	engine/foundation/debug/crash_handler.h:32
+debug::CrashHandlerResult	enum	foundation/debug	debug-crashhandlerresult	foundation-debug.md	engine/foundation/debug/crash_handler.h:36
+debug::CrashHandlerResult::Installed	enumerator	foundation/debug	debug-crashhandlerresult-installed	foundation-debug.md	engine/foundation/debug/crash_handler.h:37
+debug::CrashHandlerResult::AlreadyInstalled	enumerator	foundation/debug	debug-crashhandlerresult-alreadyinstalled	foundation-debug.md	engine/foundation/debug/crash_handler.h:38
+debug::CrashHandlerResult::Disabled	enumerator	foundation/debug	debug-crashhandlerresult-disabled	foundation-debug.md	engine/foundation/debug/crash_handler.h:39
+debug::CrashHandlerResult::DirectoryFailed	enumerator	foundation/debug	debug-crashhandlerresult-directoryfailed	foundation-debug.md	engine/foundation/debug/crash_handler.h:40
+debug::CrashHandlerResult::InitFailed	enumerator	foundation/debug	debug-crashhandlerresult-initfailed	foundation-debug.md	engine/foundation/debug/crash_handler.h:41
+debug::CrashHandlerResult::Unsupported	enumerator	foundation/debug	debug-crashhandlerresult-unsupported	foundation-debug.md	engine/foundation/debug/crash_handler.h:42
+debug::InstallCrashHandler(const CrashHandlerOptions&)	function	foundation/debug	debug-installcrashhandler-const-crashhandleroptions-amp	foundation-debug.md	engine/foundation/debug/crash_handler.h:54
+debug::UninstallCrashHandler()	function	foundation/debug	debug-uninstallcrashhandler	foundation-debug.md	engine/foundation/debug/crash_handler.h:61
+debug::CrashHandlerInstalled()	function	foundation/debug	debug-crashhandlerinstalled	foundation-debug.md	engine/foundation/debug/crash_handler.h:66
 debug::CrashReason	enum	foundation/debug	debug-crashreason	foundation-debug.md	engine/foundation/debug/crash_reason.h:16
 debug::CrashReason::None	enumerator	foundation/debug	debug-crashreason-none	foundation-debug.md	engine/foundation/debug/crash_reason.h:17
 debug::CrashReason::AccessViolation	enumerator	foundation/debug	debug-crashreason-accessviolation	foundation-debug.md	engine/foundation/debug/crash_reason.h:18

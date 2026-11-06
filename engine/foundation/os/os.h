@@ -102,4 +102,40 @@ void* GetSymbol(DynamicLibraryHandle handle, const char* symbol_name);
 /// Param handle: the handle to release; invalid afterwards.
 void UnloadLibrary(DynamicLibraryHandle handle);
 
+/// Makes sure a directory exists, creating it and any missing parents.
+///
+/// Param path: UTF-8 directory path, at most [[os::kMaxPathBytes]] - 1 bytes.
+/// Param mode: permission bits for the directories this call creates (existing ones are left alone), for example 0700.
+/// Returns: true if the directory exists afterwards and is a directory.
+/// Fails: returns false if the path is too long, a component exists but is not a directory, or the OS refuses to create it.
+bool EnsureDirectory(StringView path, int mode = 0700);
+
+/// Makes sure a directory exists and is private to the current user, creating it if needed.
+///
+/// Stricter than [[os::EnsureDirectory]], for places that hold sensitive files (crash dumps contain process memory): the
+/// final component must be a real directory, not a symbolic link, owned by the user running the program; if group or other
+/// users can access it, its permissions are tightened to 0700; and the user must be able to write to it.
+///
+/// Param path: UTF-8 directory path, at most [[os::kMaxPathBytes]] - 1 bytes.
+/// Returns: true if the directory exists, is owned by this user, is private to them, and is writable.
+/// Fails: returns false if the path is too long, the final component is a symbolic link or not a directory, it belongs to
+///   another user, its permissions cannot be tightened, or it is not writable.
+bool EnsurePrivateDirectory(StringView path);
+
+/// Finds, and creates if needed, the directory where this program writes crash dumps.
+///
+/// On Linux it is `$XDG_STATE_HOME/<app>/crashes`, or `~/.local/state/<app>/crashes` without it, created readable by the
+/// owner only (mode 0700). `<app>` is the environment variable `ENGINE_APP_NAME` or, without it, the name of the executable.
+/// It is never the working directory: a sandboxed or read-only working directory is not a place to put a dump.
+///
+/// Param out: receives the null-terminated path; borrowed for the call.
+/// Param capacity: size of `out` in bytes.
+/// Returns: true if `out` names a private directory of this user that exists.
+/// Fails: returns false, leaving `out` empty, if no base directory is known (no `XDG_STATE_HOME` and no `HOME`), the
+///   application name is unusable (`.`, `..`, empty, containing a slash, or longer than 200 bytes), the path does not fit, or
+///   the directory is not a private directory of this user (see [[os::EnsurePrivateDirectory]]).
+/// Thread-safety: thread-safe, except that it reads the environment, so another thread must not change it (`setenv`) at the
+///   same time.
+bool GetCrashDumpDirectory(char* out, usize capacity);
+
 } // namespace engine_placeholder::os

@@ -71,6 +71,7 @@ set(FOUNDATION_SOURCES
   debug/crash_reason.cpp
   debug/death_test.cpp
   debug/stack_trace_backtrace.cpp
+  debug/crash_handler_sentry.cpp
   ${FOUNDATION_PLATFORM_SOURCES}
   ${FOUNDATION_DEBUG_PLATFORM_SOURCES}
 )
@@ -95,7 +96,7 @@ target_compile_options(foundation PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRO
 # correct here (unlike the compile-options split above).
 target_link_libraries(foundation PUBLIC ${CMAKE_DL_LIBS})
 # Phase 6: libbacktrace (third_party/libbacktrace), used only by debug/stack_trace_backtrace.cpp; one plain build for every flavor.
-target_link_libraries(foundation PRIVATE backtrace)
+target_link_libraries(foundation PRIVATE backtrace sentry)
 # Day 18: libwayland-client (see the platform-selection block above).
 target_link_libraries(foundation PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)
 
@@ -122,7 +123,7 @@ target_compile_options(foundation_asan PUBLIC -fsanitize=address,undefined -fno-
 target_link_options(foundation_asan PUBLIC -fsanitize=address,undefined)
 target_link_libraries(foundation_asan PUBLIC ${CMAKE_DL_LIBS})
 # Phase 6: libbacktrace (third_party/libbacktrace), used only by debug/stack_trace_backtrace.cpp; one plain build for every flavor.
-target_link_libraries(foundation_asan PRIVATE backtrace)
+target_link_libraries(foundation_asan PRIVATE backtrace sentry)
 target_link_libraries(foundation_asan PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)
 
 add_executable(engine_main_asan main.cpp)
@@ -141,5 +142,5 @@ target_compile_options(foundation_tsan PUBLIC -fsanitize=thread -fno-omit-frame-
 target_link_options(foundation_tsan PUBLIC -fsanitize=thread)
 target_link_libraries(foundation_tsan PUBLIC ${CMAKE_DL_LIBS})
 # Phase 6: libbacktrace (third_party/libbacktrace), used only by debug/stack_trace_backtrace.cpp; one plain build for every flavor.
-target_link_libraries(foundation_tsan PRIVATE backtrace)
+target_link_libraries(foundation_tsan PRIVATE backtrace sentry)
 target_link_libraries(foundation_tsan PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)

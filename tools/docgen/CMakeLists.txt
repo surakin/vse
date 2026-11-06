@@ -41,7 +41,7 @@ set(DOCGEN_FLAGS_ARGS --flag -std=c++20)
 foreach(opt ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   list(APPEND DOCGEN_FLAGS_ARGS --flag ${opt})
 endforeach()
-set(DOCGEN_LINK_ARGS --link $<TARGET_FILE:renderer_passes> --link $<TARGET_FILE:renderer> --link $<TARGET_FILE:rhi> --link $<TARGET_FILE:jobs> --link $<TARGET_FILE:foundation> --link $<TARGET_FILE:backtrace> --link -pthread --link -ldl)
+set(DOCGEN_LINK_ARGS --link $<TARGET_FILE:renderer_passes> --link $<TARGET_FILE:renderer> --link $<TARGET_FILE:rhi> --link $<TARGET_FILE:jobs> --link $<TARGET_FILE:foundation> --link $<TARGET_FILE:backtrace> --link $<TARGET_FILE:sentry> --link $<TARGET_FILE:breakpad_client> --link $<TARGET_FILE:unwind> --link -pthread --link -ldl)
 # The system libraries `foundation` links (see engine/foundation/CMakeLists.txt), asked of pkg-config
 # here instead of borrowed from variables set in another directory's scope.
 find_package(PkgConfig REQUIRED)
@@ -76,6 +76,6 @@ add_custom_target(docs
   COMMAND docgen links --root ${CMAKE_SOURCE_DIR}
   COMMAND docgen samples ${DOCGEN_SAMPLES_ARGS}
   COMMAND docgen lint ${DOCGEN_LINT_ARGS}
-  DEPENDS docgen renderer_passes renderer rhi jobs foundation backtrace
+  DEPENDS docgen renderer_passes renderer rhi jobs foundation backtrace sentry breakpad_client unwind
   COMMENT "Regenerating docs/reference and running the documentation checks"
   USES_TERMINAL)

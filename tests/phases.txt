@@ -105,3 +105,5 @@ test:test_phase_*                              5
 tests/debug/                                     6
 test:platform_neutral_check*                     6
 test:debug_stack_trace_stripped                  6
+test:crash_extract_*                             6
+test:debug_no_network_*                          6

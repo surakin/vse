@@ -11,6 +11,9 @@ set(DEBUG_TEST_SOURCES
   assert_family_test.cpp
   assert_linux_test.cpp
   stack_trace_test.cpp
+  crash_extract_test.cpp
+  crash_handler_test.cpp
+  crash_handler_linux_test.cpp
   resource_guard_linux.cpp
 )
 
@@ -22,6 +25,9 @@ function(engine_add_debug_tests target foundation_lib jobs_lib suffix label)
   engine_enable_death_tests(${target})
   target_link_libraries(${target} PRIVATE ${foundation_lib} ${jobs_lib} Catch2::Catch2WithMain Threads::Threads)
   add_dependencies(${target} debug_test_plugin)
+  # The envelope parser of the crash_extract tool, compiled into each flavor so the sweeps run under the sanitizers.
+  target_sources(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/crash_extract/envelope.cpp)
+  target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/crash_extract)
   target_compile_definitions(${target} PRIVATE DEBUG_TEST_PLUGIN_PATH="$<TARGET_FILE:debug_test_plugin>")
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   # The family tests exercise the checking paths, so they need debug and slow checks on whatever the configuration is.
@@ -78,3 +84,36 @@ if(ENGINE_STRIP_TOOL)
     LABELS "debug")
   engine_label_tests(debug_stack_trace_stripped)
 endif()
+
+# Nothing can upload (PLAN.md assumption #20): no built test binary may list a network or TLS library or import their
+# functions. The check itself is tested on two canned readelf outputs.
+function(engine_no_network_test name binary_target)
+  add_test(NAME debug_no_network_${name}
+    COMMAND ${CMAKE_COMMAND} -DBINARY=$<TARGET_FILE:${binary_target}> -P ${CMAKE_CURRENT_SOURCE_DIR}/check_no_network.cmake)
+  set_tests_properties(debug_no_network_${name} PROPERTIES LABELS "debug" SKIP_REGULAR_EXPRESSION "readelf not found")
+  engine_label_tests(debug_no_network_${name})
+endfunction()
+engine_no_network_test(debug_tests debug_tests)
+engine_no_network_test(debug_tests_asan debug_tests_asan)
+engine_no_network_test(debug_tests_tsan debug_tests_tsan)
+engine_no_network_test(debug_alloc_tests debug_alloc_tests)
+engine_no_network_test(crash_extract crash_extract)
+
+add_test(NAME debug_no_network_check_clean
+  COMMAND ${CMAKE_COMMAND} -DREADELF_TEXT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/readelf_clean.txt -P ${CMAKE_CURRENT_SOURCE_DIR}/check_no_network.cmake)
+add_test(NAME debug_no_network_check_planted
+  COMMAND ${CMAKE_COMMAND} -DREADELF_TEXT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/readelf_with_curl.txt -P ${CMAKE_CURRENT_SOURCE_DIR}/check_no_network.cmake)
+set_tests_properties(debug_no_network_check_clean PROPERTIES LABELS "debug")
+set_tests_properties(debug_no_network_check_planted PROPERTIES LABELS "debug"
+  PASS_REGULAR_EXPRESSION "links a network library: Shared library: \\[libcurl.so.4\\]")
+engine_label_tests(debug_no_network_check_clean debug_no_network_check_planted)
+
+# The symbol half of the check: an imported network function fails, a defined one (a sanitizer runtime's interceptor) does not.
+add_test(NAME debug_no_network_check_imports_planted
+  COMMAND ${CMAKE_COMMAND} -DREADELF_TEXT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/readelf_imports_only.txt -P ${CMAKE_CURRENT_SOURCE_DIR}/check_no_network.cmake)
+add_test(NAME debug_no_network_check_defines_clean
+  COMMAND ${CMAKE_COMMAND} -DREADELF_TEXT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/readelf_defines_only.txt -P ${CMAKE_CURRENT_SOURCE_DIR}/check_no_network.cmake)
+set_tests_properties(debug_no_network_check_imports_planted PROPERTIES LABELS "debug"
+  PASS_REGULAR_EXPRESSION "imports a network function: getaddrinfo")
+set_tests_properties(debug_no_network_check_defines_clean PROPERTIES LABELS "debug")
+engine_label_tests(debug_no_network_check_imports_planted debug_no_network_check_defines_clean)
