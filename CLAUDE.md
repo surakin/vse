@@ -111,6 +111,11 @@ passing, and before the final commit for that day:
 4. Only then commit the day as complete. If the review's fixes land in
    follow-up commits, the day is not done until they do.
 
+**The end-of-phase review is uncapped.** A phase's last day also runs `/code-review high --max-findings all` over the whole phase's diff (every day of
+the phase, from the commit before its first day to the working tree), so that no finding is cut off by the default limit on the number reported. Verify,
+fix or decline each finding as above, and record the count and the outcome under "Post-implementation code review" in the last day's file. The ordinary
+end-of-day review keeps the default limit.
+
 This applies to every implementation day in every phase, including days
 that look low-risk. It does not apply to planning-only commits (plan
 files, `STATUS.md`-only edits). Concurrency, lifetime/ownership and
