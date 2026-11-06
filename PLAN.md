@@ -597,7 +597,7 @@ PLAN.md
 | 2.5 | **Documentation tooling (`docgen`)** | none (dev tool) | [plans/phase-02-5-docs-tooling.md](plans/phase-02-5-docs-tooling.md) | Own C++ tool generates the API reference from `///` comments, checks links, compiles doc samples and lints coverage; wired into ctest |
 | 3 | Vulkan RHI | Linux | [plans/phase-03-vulkan-rhi.md](plans/phase-03-vulkan-rhi.md) | RHI renders a lit, textured cube through Vulkan; no Vulkan calls leak outside `/engine/rhi/vulkan` |
 | 4 | Renderer core (complete) | Linux | [plans/phase-04-renderer-core.md](plans/phase-04-renderer-core.md) | Render graph draws multiple objects, basic materials/lighting, depth buffering |
-| 5 | **Test scoping** | none (dev tooling) | [plans/phase-05-test-scoping.md](plans/phase-05-test-scoping.md) | Every test belongs to a phase; day-to-day work re-runs only the current phase's tests (plus the modules a change touches), and the full suite, in all sanitizer flavors, runs when a phase completes |
+| 5 | **Test scoping** (complete) | none (dev tooling) | [plans/phase-05-test-scoping.md](plans/phase-05-test-scoping.md) | Every test belongs to a phase; day-to-day work re-runs only the current phase's tests (plus the modules a change touches), and the full suite, in all sanitizer flavors, runs when a phase completes |
 | 6 | **Debugging facilities** | Linux first (Windows/macOS designed in) | [plans/phase-06-debugging-facilities.md](plans/phase-06-debugging-facilities.md) | Stack traces with symbols, a crash handler that writes core dumps and minidumps, and assert/ensure/verify macros with a pluggable handler; a crashing test process yields a readable report |
 | 7 | **RHI reset** | Linux | [plans/phase-07-rhi-reset.md](plans/phase-07-rhi-reset.md) | Any rendering setting (GPU, present mode, resolution, validation, quality, ...) changes at run time by re-initializing the RHI and recreating device resources, without restarting the app; device loss recovers through the same path |
 | 8 | Windows port + DX12 backend | Windows | [plans/phase-08-windows-dx12.md](plans/phase-08-windows-dx12.md) | Phases 1-4's functionality (window/input, RHI, renderer) running on Windows through the DX12 RHI backend; the Phase 3 golden images and Phase 4 scene tests pass |
@@ -718,6 +718,15 @@ that changed from the plan and why.)_
   were renamed and cross-references updated, while earlier log entries and dated specs keep the
   numbers they were written with. The three new phases are at goal level and need their day files
   before they start.
+
+- **2026-11-06 - Phase 5 complete (Days 85-90).** Every one of the 1874 tests carries one `phaseN` label from
+  `tests/phases.txt` (enforced by `test_phase_labels`); `scripts/test-phase.sh` runs the current phase (default), the
+  current phase plus the modules a change touched (`--affected`), one phase, or everything, and always reports
+  `ran X of Y tests`. Measured on the development machine: the whole suite in three flavors takes 66 s at `-j16` and
+  341 s at `-j1`; a day that touches only the renderer and RHI selects 638 tests (26 s), a day in `engine/foundation`
+  selects 871 (38 s), and a new phase's own tests run in about a second. Planted regressions confirmed the design: a
+  foundation allocator break is caught by `--affected`; a break in the RHI is missed by `--current` and caught by
+  `--affected` and `--all`. CURRENT_PHASE is now 6; Phase 6 (Debugging facilities) needs day files first.
 
 - **2026-11-05 — UI phase scope (then Phase 6, now Phase 8): theming and UI render-to-texture.**
   Theming is a required deliverable (run-time-swappable themes, per

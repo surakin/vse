@@ -89,6 +89,15 @@ the RHI and renderer tests and the docs checks, `engine/foundation` almost every
 `tests/module_map.txt` changed, or when a changed path is in no line of the module map, so a new directory is never skipped
 silently.
 
+#### What it saves
+
+Measured on 2026-11-06 (Ryzen 9 7950X3D, 16 threads, `-j16`; the suite is 1874 tests): the whole suite in plain, ASan
+and TSan takes 66 s (341 s with `-j1`). One phase, wall time, plain / all flavors: phase 0 0.1 / 0.1 s, phase 1 8.8 / 8.8 s
+(window tests), phase 2 1.8 / 9.3 s, phase 2.5 1.6 / 1.9 s, phase 3 17 / 47 s, phase 4 13 / 44 s, phase 5 1.4 / 1.4 s. A change
+in `engine/foundation` selects every phase, so `--affected` runs 871 tests in 38 s plain; one in `engine/rhi` and
+`engine/renderer` selects 638 tests, 26 s. The saving is large for work inside one phase and small for work in the
+foundation, which everything links.
+
 #### What a scoped run can miss
 
 A behavior change can reach a finished phase through a dependency nobody edited (the renderer starts calling an RHI

@@ -1,5 +1,7 @@
 # Phase 5 — Test Scoping
 
+**Status: complete (2026-11-06).** Days 85-90 are done; the closing full run (1874/1874 in plain, ASan and TSan) is in [Day 90](phase-05-test-scoping/day-90-measure-wrapup.md). Phase 6 (Debugging facilities) needs its own day files before it starts.
+
 **Depends on:** Phase 4 (Renderer core) complete. Inserted on 2026-11-05, ahead of the Windows port, because the
 suite has grown to about 1800 tests (65 s on 16 cores in three sanitizer flavors) and every day was re-running all of
 them.
