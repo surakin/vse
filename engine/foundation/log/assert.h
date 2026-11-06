@@ -100,7 +100,9 @@ using AssertHandler = AssertAction (*)(const AssertInfo& info);
 /// then returns [[AssertAction::Break]] if a debugger is attached, otherwise [[AssertAction::Abort]] for every kind
 /// except [[AssertKind::Ensure]], which gets [[AssertAction::Continue]].
 ///
-/// A custom handler can call it to keep the printed line and then choose its own action.
+/// The line is followed by the stack trace (see [[debug::FormatStackTrace]]), starting at the function that failed; names
+/// are left mangled because demangling allocates. Called through a wrapper, the first lines of the trace are the wrapper's
+/// frames. A custom handler can call it to keep the printed report and then choose its own action.
 ///
 /// Param info: the failure.
 /// Returns: the action described above.
@@ -227,7 +229,7 @@ ENGINE_NOINLINE ENGINE_COLD AssertAction EnsureFailed(EnsureSite& site, const ch
 /// Returns: the value of `cond`.
 #define ENGINE_ENSURE(cond, msg)                                                                                      \
     (static_cast<bool>(cond) ||                                                                                       \
-     [](const char* engine_ensure_function_) -> bool {                                                                \
+     [](const char* engine_ensure_function_) ENGINE_NOINLINE_LAMBDA -> bool {                                                                \
          static ::engine_placeholder::detail::EnsureSite engine_ensure_site_{__FILE__, __LINE__, #cond, msg};        \
          if (::engine_placeholder::detail::EnsureFailed(engine_ensure_site_, engine_ensure_function_) ==             \
              ::engine_placeholder::AssertAction::Break) {                                                             \

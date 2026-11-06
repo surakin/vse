@@ -39,6 +39,7 @@ endif()
 
 enable_testing()
 add_subdirectory(third_party/catch2)
+add_subdirectory(third_party/libbacktrace)
 include(cmake/EngineTestPhases.cmake)
 include(cmake/EngineDeathTests.cmake)
 

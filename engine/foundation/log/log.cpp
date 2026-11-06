@@ -1,6 +1,7 @@
 #include "log/log.h"
 
 #include "debug/debugger.h"
+#include "debug/stack_trace.h"
 #include "os/os.h"
 
 #include <atomic>
@@ -191,7 +192,20 @@ AssertAction DefaultAssertHandler(const AssertInfo& info) {
         offset = sizeof(buf) - 1; // truncated: keep room for the newline
     }
     buf[offset++] = '\n';
-    g_write_sink(1, buf, offset);
+
+    // The message line and, under it, the stack trace with the first frame at the line that failed, in one buffer and one
+    // write so concurrent failures do not interleave. The frames above are this handler, AssertFailed and, for an ensure,
+    // EnsureFailed and the macro's lambda (all kept out of line so the count holds); reached through a wrapper, the trace
+    // simply starts with the wrapper's frames. Names stay mangled: demangling allocates, and an assertion can fail inside
+    // the allocator.
+    char report[sizeof(buf) + 8192];
+    std::memcpy(report, buf, offset);
+    usize report_length = offset;
+    debug::StackTrace trace;
+    if (debug::CaptureStackTrace(trace, info.kind == AssertKind::Ensure ? 4 : 2)) {
+        report_length += debug::FormatStackTrace(trace, report + offset, sizeof(report) - offset);
+    }
+    g_write_sink(1, report, report_length);
 
     if (debug::IsDebuggerAttached()) {
         return AssertAction::Break;
@@ -240,7 +254,10 @@ AssertAction EnsureFailed(EnsureSite& site, const char* function) {
     do {
         site.next = head;
     } while (!g_ensure_head.compare_exchange_weak(head, &site, std::memory_order_release, std::memory_order_relaxed));
-    return AssertFailed(AssertKind::Ensure, site.file, site.line, function, site.condition, site.message);
+    const AssertAction action = AssertFailed(AssertKind::Ensure, site.file, site.line, function, site.condition, site.message);
+    // Not a tail call: the stack trace the default handler prints counts this frame, and an optimizing compiler would drop it.
+    ENGINE_COMPILER_BARRIER();
+    return action;
 }
 
 } // namespace detail

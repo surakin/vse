@@ -198,7 +198,7 @@ The handler used until [`SetAssertHandler`](#setasserthandler-asserthandler) rep
 
 Prints one line to the write sink (file descriptor 1), `ASSERT FAILED: file:line function: condition: message` (the leading words depend on the kind; empty parts are left out; truncated at 512 bytes, always ending in a newline), then returns [`AssertAction::Break`](#assertaction-break) if a debugger is attached, otherwise [`AssertAction::Abort`](#assertaction-abort) for every kind except [`AssertKind::Ensure`](#assertkind-ensure), which gets [`AssertAction::Continue`](#assertaction-continue).
 
-A custom handler can call it to keep the printed line and then choose its own action.
+The line is followed by the stack trace (see [`debug::FormatStackTrace`](foundation-debug.md#debug-formatstacktrace-const-stacktrace-amp-char-star-usize-const-formatoptions-amp)), starting at the function that failed; names are left mangled because demangling allocates. Called through a wrapper, the first lines of the trace are the wrapper's frames. A custom handler can call it to keep the printed report and then choose its own action.
 
 | Field | Value |
 |---|---|

@@ -9,6 +9,7 @@
 - `engine/foundation/debug/crash_reason.h`
 - `engine/foundation/debug/fault_injection.h`
 - `engine/foundation/debug/death_test.h`
+- `engine/foundation/debug/stack_trace.h`, `module_list.h`, `debugger.h`, `compiler.h`
 - `tests/debug/` (the tests, and `tests/debug/BACKEND-CONFORMANCE.md` once Day 101 writes it)
 
 ## API reference
@@ -19,6 +20,56 @@ Full reference: [Foundation: Debugging](../reference/foundation-debug.md).
 - [[debug::FaultKind]] and [[debug::InjectFault]] — cause a deliberate fault in a test
 - [[debug::RunInChild]] — run a registered function in a child process and see what happened
 - [[debug::ChildResult]] — the exit code, the fault, the timeout and the captured output of a child
+- [[debug::CaptureStackTrace]], [[debug::ResolveStackTrace]], [[debug::FormatStackTrace]] — the call stack, with names, files and lines
+- [[debug::InitDebugFacilities]] — prepare the stack-trace facilities at program start
+
+## Capturing and reading a stack trace
+
+[[debug::CaptureStackTrace]] records the return addresses of the current thread (up to [[debug::kMaxStackFrames]], innermost
+first); [[debug::ResolveStackTrace]] turns them into function, file, line and module; [[debug::FormatStackTrace]] writes them
+as text. They use libbacktrace behind the interface (`PLAN.md` assumption #20), which walks the stack with the compiler's own
+unwinder, so the program does **not** need frame pointers, and which reads the DWARF debug information of the executable
+and of the libraries it loaded.
+
+```cpp compile standalone
+#include "debug/stack_trace.h"
+#include "os/os.h"
+
+using namespace engine_placeholder;
+
+// Writes the call stack of the caller to standard output.
+void PrintMyCallStack() {
+    debug::InitDebugFacilities(); // once, at program start; see below
+    debug::StackTrace trace;
+    if (!debug::CaptureStackTrace(trace)) {
+        return;
+    }
+    char text[4096];
+    debug::FormatOptions options;
+    options.demangle = true; // readable C++ names; allocates, so not for a signal handler
+    const usize length = debug::FormatStackTrace(trace, text, sizeof(text), options);
+    os::Write(1, text, length);
+}
+```
+
+Each line has a fixed layout so tools can read it: `#N  0xADDRESS  function  file:line`. A function inlined into another
+repeats the frame number and ends with ` [inlined]`; `file:line` is left out when the binary has no debug information (build
+with `-g`; the default Debug configuration has it); when even the function name is unknown the line shows the module and
+the offset (`/lib/libfoo.so+0x1234`), which `addr2line -e /lib/libfoo.so 0x1234` turns into a file and line.
+
+What to know:
+
+- **Call [[debug::InitDebugFacilities]] at program start.** It reads the executable's debug information and the list of
+  loaded libraries, and takes and resolves one trace to prime the unwinder. After it, capturing, resolving and formatting
+  (without `demangle`) never call `malloc` (the library maps memory with `mmap` when it first reads the debug information
+  of another part of the program), so a crash handler can use them. They do take the library's internal lock, so a fault
+  inside them on the same thread cannot be survived. A trace taken without the call does that work on first use. Reading
+  the debug information of a large binary can take a noticeable moment, once.
+- **Libraries loaded later are not symbolized** until [[debug::ReloadDebugModules]] runs; their frames show as `??`.
+- **An assertion failure prints a trace.** A failed `ENGINE_ASSERT` and the first failure of each `ENGINE_ENSURE` site print
+  the trace under the message, starting at the failing function, in one write. The names are left mangled (demangling
+  allocates, and an assertion can fail inside the allocator): pipe the output through `c++filt` to read them.
+- **Only DWARF.** Binaries built for Windows with PDB debug information will need a different resolver (Phase 8).
 
 ## Testing code that crashes
 
@@ -81,11 +132,10 @@ test that wants [[debug::CrashReason::StackOverflow]] checks for [[debug::CrashR
 
 ## Already known — seed material (verify against the code when writing)
 
-- A failed `ENGINE_ASSERT` ends the process with `abort()` (Day 93), so it dies with `SIGABRT`; the crash handler (Days 95-97) builds on that. See [Foundation: Logging and Assertions](foundation-logging-and-assert.md) for the macros.
+- A failed `ENGINE_ASSERT` ends the process with `abort()` (Day 93) after printing its stack trace (Day 94), so it dies with `SIGABRT`; the crash handler (Days 95-97) builds on that. See [Foundation: Logging and Assertions](foundation-logging-and-assert.md) for the macros.
 
 ## Outline
 
-- Capturing and reading a stack trace (Day 94)
 - Installing the crash handler, and what is never sent (Day 95)
 - What a crash report contains (Day 96)
 - When the program crashes (Day 97)

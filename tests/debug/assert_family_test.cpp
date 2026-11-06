@@ -8,6 +8,7 @@
 
 #include <atomic>
 #include <cstring>
+#include <string>
 #include <thread>
 
 using namespace engine_placeholder;
@@ -84,14 +85,27 @@ void FamilyCollectSites(const EnsureSiteInfo& site, void* context) {
 }
 
 // Write sink that keeps what the default handler prints.
-char g_family_text[2048];
+char g_family_text[16384];
 usize g_family_text_length = 0;
+int g_family_sink_calls = 0;
 long FamilyCapturingSink(int, const void* buf, usize len) {
+    ++g_family_sink_calls;
     const usize room = sizeof(g_family_text) - g_family_text_length;
     const usize take = len < room ? len : room;
     std::memcpy(g_family_text + g_family_text_length, buf, take);
     g_family_text_length += take;
     return static_cast<long>(len);
+}
+
+// Length of the first line of the captured text, newline included (0 if there is none): the default handler prints the
+// message line first and the stack trace after it.
+usize FamilyFirstLineLength() {
+    for (usize i = 0; i < g_family_text_length; ++i) {
+        if (g_family_text[i] == '\n') {
+            return i + 1;
+        }
+    }
+    return 0;
 }
 
 } // namespace
@@ -180,10 +194,13 @@ TEST_CASE("The default handler truncates a long message at 512 bytes, ends the l
     std::memset(message, 'm', sizeof(message) - 1);
     message[sizeof(message) - 1] = '\0';
     g_family_text_length = 0;
+    g_family_sink_calls = 0;
     SetWriteSinkForTesting(&FamilyCapturingSink);
     const AssertInfo assert_info{AssertKind::Assert, "a/file.cpp", 7, "Func", "x > 0", message};
     const AssertAction assert_action = DefaultAssertHandler(assert_info);
-    const usize first_length = g_family_text_length;
+    const int sink_calls = g_family_sink_calls; // the message and its stack trace are one write, so concurrent reports do not interleave
+    const usize first_length = FamilyFirstLineLength();
+    const usize first_total = g_family_text_length;
     const char first_last_byte = first_length > 0 ? g_family_text[first_length - 1] : '\0';
     const bool first_starts_right = std::strncmp(g_family_text, "ASSERT FAILED: a/file.cpp:7 Func: x > 0: mmm", 43) == 0;
     g_family_text_length = 0;
@@ -192,13 +209,15 @@ TEST_CASE("The default handler truncates a long message at 512 bytes, ends the l
     SetWriteSinkForTesting(&os::Write);
 
     CHECK(first_length == 512);
+    CHECK(sink_calls == 1);
+    CHECK(first_total > first_length); // the trace follows the line
     CHECK(first_last_byte == '\n'); // even a truncated line ends in a newline
     CHECK(first_starts_right);
     CHECK(assert_action == AssertAction::Abort);   // no debugger attached in a test run
     CHECK(ensure_action == AssertAction::Continue); // ensure never aborts by default
     // The capture was reset before the second call, so its line starts at the beginning.
     const char* expected = "ENSURE FAILED: a/file.cpp:8 Func: y > 0: short\n";
-    CHECK(g_family_text_length == std::strlen(expected));
+    CHECK(FamilyFirstLineLength() == std::strlen(expected));
     CHECK(std::strncmp(g_family_text, expected, std::strlen(expected)) == 0);
 }
 
@@ -220,7 +239,7 @@ TEST_CASE("The default handler prints each kind with its own label and leaves ou
         DefaultAssertHandler(AssertInfo{c.kind, "f.cpp", 1, "g", c.condition, "m"});
         SetWriteSinkForTesting(&os::Write);
         INFO(c.expected);
-        CHECK(g_family_text_length == std::strlen(c.expected));
+        CHECK(FamilyFirstLineLength() == std::strlen(c.expected));
         CHECK(std::strncmp(g_family_text, c.expected, std::strlen(c.expected)) == 0);
     }
 }
@@ -289,6 +308,7 @@ TEST_CASE("Eight threads failing the same ENGINE_ENSURE for the first time produ
             t = std::thread([&] {
                 ready.fetch_add(1);
                 while (!go.load()) {
+                    std::this_thread::yield();
                 }
                 for (int i = 0; i < 100; ++i) {
                     FamilyEnsureSiteC(false);
@@ -296,6 +316,7 @@ TEST_CASE("Eight threads failing the same ENGINE_ENSURE for the first time produ
             });
         }
         while (ready.load() < 8) {
+            std::this_thread::yield();
         }
         go = true;
         for (std::thread& t : threads) {
@@ -352,6 +373,12 @@ TEST_CASE("A failed ENGINE_ASSERT with the default handler prints one line and d
     CHECK(r.StdoutContains("assert_family_test.cpp:"));
     CHECK(r.StdoutContains("1 + 1 == 3"));
     CHECK(r.StdoutContains("arithmetic broke"));
+    // The stack trace follows the message, and its first frame is the function that failed the assert.
+    const char* first_frame = std::strstr(r.stdout_text, "#0  0x");
+    REQUIRE(first_frame != nullptr);
+    const char* end_of_line = std::strchr(first_frame, '\n');
+    REQUIRE(end_of_line != nullptr);
+    CHECK(std::string(first_frame, end_of_line).find("dt_family_assert_false") != std::string::npos);
     CHECK(guard.Clean());
 }
 
@@ -388,10 +415,17 @@ TEST_CASE("A failed ENGINE_ENSURE prints once and the program goes on", "[ensure
     CHECK(r.exit_code == 0);
     CHECK(r.StdoutContains("ENSURE FAILED: "));
     CHECK(r.StdoutContains("AFTER-ENSURE"));
-    // Three failures, one line.
+    // Three failures, one line, one trace.
     const char* first = std::strstr(r.stdout_text, "ENSURE FAILED: ");
     REQUIRE(first != nullptr);
     CHECK(std::strstr(first + 1, "ENSURE FAILED: ") == nullptr);
+    const char* frame = std::strstr(r.stdout_text, "#0  0x");
+    REQUIRE(frame != nullptr);
+    CHECK(std::strstr(frame + 1, "#0  0x") == nullptr);
+    // The trace starts at the function that holds the ensure, not at the machinery behind the macro.
+    const char* end_of_line = std::strchr(frame, '\n');
+    REQUIRE(end_of_line != nullptr);
+    CHECK(std::string(frame, end_of_line).find("FamilyEnsureSiteA") != std::string::npos);
 }
 
 TEST_CASE("An ensure site whose failure count wraps is not reported or linked a second time", "[ensure][debug]") {

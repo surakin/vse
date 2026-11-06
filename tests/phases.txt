@@ -104,3 +104,4 @@ test:test_phase_*                              5
 # --- Phase 6: debugging facilities (tests/debug, tools/platform_neutral_check) ---
 tests/debug/                                     6
 test:platform_neutral_check*                     6
+test:debug_stack_trace_stripped                  6

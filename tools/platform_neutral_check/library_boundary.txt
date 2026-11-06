@@ -1,3 +1,3 @@
 # Which one file may include each third-party library header (Phase 6 assumption #20): `header|path|reason`.
-# Days 94 and 95 add `backtrace.h|engine/foundation/debug/stack_trace_backtrace.cpp|...` and
-# `sentry.h|engine/foundation/debug/crash_handler_sentry.cpp|...`. Until then nobody may include either header.
+# Day 95 adds `sentry.h|engine/foundation/debug/crash_handler_sentry.cpp|...`; until then nobody may include that header.
+backtrace.h|engine/foundation/debug/stack_trace_backtrace.cpp|The facade over libbacktrace (Phase 6 Day 94); everything else uses debug/stack_trace.h.

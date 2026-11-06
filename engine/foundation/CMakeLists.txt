@@ -22,6 +22,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES
     os/linux/debug/death_test.cpp
     os/linux/debug/debugger.cpp
+    os/linux/debug/module_list.cpp
     os/linux/debug/fault_injection.cpp
   )
 
@@ -69,6 +70,7 @@ set(FOUNDATION_SOURCES
   string/generated/composition_exclusions_table.cpp
   debug/crash_reason.cpp
   debug/death_test.cpp
+  debug/stack_trace_backtrace.cpp
   ${FOUNDATION_PLATFORM_SOURCES}
   ${FOUNDATION_DEBUG_PLATFORM_SOURCES}
 )
@@ -92,6 +94,8 @@ target_compile_options(foundation PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRO
 # lives in libc (glibc >= 2.34) — a link requirement, so PUBLIC is
 # correct here (unlike the compile-options split above).
 target_link_libraries(foundation PUBLIC ${CMAKE_DL_LIBS})
+# Phase 6: libbacktrace (third_party/libbacktrace), used only by debug/stack_trace_backtrace.cpp; one plain build for every flavor.
+target_link_libraries(foundation PRIVATE backtrace)
 # Day 18: libwayland-client (see the platform-selection block above).
 target_link_libraries(foundation PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)
 
@@ -117,6 +121,8 @@ target_compile_options(foundation_asan PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGIN
 target_compile_options(foundation_asan PUBLIC -fsanitize=address,undefined -fno-sanitize=vptr -fno-omit-frame-pointer -g)
 target_link_options(foundation_asan PUBLIC -fsanitize=address,undefined)
 target_link_libraries(foundation_asan PUBLIC ${CMAKE_DL_LIBS})
+# Phase 6: libbacktrace (third_party/libbacktrace), used only by debug/stack_trace_backtrace.cpp; one plain build for every flavor.
+target_link_libraries(foundation_asan PRIVATE backtrace)
 target_link_libraries(foundation_asan PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)
 
 add_executable(engine_main_asan main.cpp)
@@ -134,4 +140,6 @@ target_compile_options(foundation_tsan PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGIN
 target_compile_options(foundation_tsan PUBLIC -fsanitize=thread -fno-omit-frame-pointer -g)
 target_link_options(foundation_tsan PUBLIC -fsanitize=thread)
 target_link_libraries(foundation_tsan PUBLIC ${CMAKE_DL_LIBS})
+# Phase 6: libbacktrace (third_party/libbacktrace), used only by debug/stack_trace_backtrace.cpp; one plain build for every flavor.
+target_link_libraries(foundation_tsan PRIVATE backtrace)
 target_link_libraries(foundation_tsan PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)

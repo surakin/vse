@@ -37,6 +37,22 @@
 #define ENGINE_COLD __attribute__((cold))
 #endif
 
+/// Keeps the compiler from moving or removing memory accesses across this point, and from turning a call just before it into
+/// a tail call, so the calling function keeps its frame in a stack trace.
+#if defined(_MSC_VER)
+#include <intrin.h>
+#define ENGINE_COMPILER_BARRIER() _ReadWriteBarrier()
+#else
+#define ENGINE_COMPILER_BARRIER() __asm__ volatile("" ::: "memory")
+#endif
+
+/// Keeps the compiler from inlining a lambda, placed between the lambda's parameter list and its `->`: `[](int x) ENGINE_NOINLINE_LAMBDA -> int`.
+#if defined(_MSC_VER)
+#define ENGINE_NOINLINE_LAMBDA [[msvc::noinline]]
+#else
+#define ENGINE_NOINLINE_LAMBDA __attribute__((noinline))
+#endif
+
 /// Keeps the compiler from inlining the function it is placed on, so the function stays a distinct frame in a stack trace.
 #if defined(_MSC_VER)
 #define ENGINE_NOINLINE __declspec(noinline)

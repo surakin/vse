@@ -362,26 +362,26 @@ AssertAction::Abort	enumerator	foundation/log	assertaction-abort	foundation-log.
 AssertAction::Continue	enumerator	foundation/log	assertaction-continue	foundation-log.md	engine/foundation/log/assert.h:89
 AssertAction::Break	enumerator	foundation/log	assertaction-break	foundation-log.md	engine/foundation/log/assert.h:90
 AssertHandler	alias	foundation/log	asserthandler	foundation-log.md	engine/foundation/log/assert.h:94
-DefaultAssertHandler(const AssertInfo&)	function	foundation/log	defaultasserthandler-const-assertinfo-amp	foundation-log.md	engine/foundation/log/assert.h:108
-SetAssertHandler(AssertHandler)	function	foundation/log	setasserthandler-asserthandler	foundation-log.md	engine/foundation/log/assert.h:118
-AssertFail(const char*,int,const char*)	function	foundation/log	assertfail-const-char-star-int-const-char-star	foundation-log.md	engine/foundation/log/assert.h:130
-EnsureSiteInfo	struct	foundation/log	ensuresiteinfo	foundation-log.md	engine/foundation/log/assert.h:136
-EnsureSiteInfo::file	variable	foundation/log	ensuresiteinfo-file	foundation-log.md	engine/foundation/log/assert.h:138
-EnsureSiteInfo::line	variable	foundation/log	ensuresiteinfo-line	foundation-log.md	engine/foundation/log/assert.h:140
-EnsureSiteInfo::function	variable	foundation/log	ensuresiteinfo-function	foundation-log.md	engine/foundation/log/assert.h:142
-EnsureSiteInfo::condition	variable	foundation/log	ensuresiteinfo-condition	foundation-log.md	engine/foundation/log/assert.h:144
-EnsureSiteInfo::message	variable	foundation/log	ensuresiteinfo-message	foundation-log.md	engine/foundation/log/assert.h:146
-EnsureSiteInfo::failure_count	variable	foundation/log	ensuresiteinfo-failure-count	foundation-log.md	engine/foundation/log/assert.h:148
-EnsureVisitor	alias	foundation/log	ensurevisitor	foundation-log.md	engine/foundation/log/assert.h:152
-ForEachFailedEnsure(EnsureVisitor,void*)	function	foundation/log	foreachfailedensure-ensurevisitor-void-star	foundation-log.md	engine/foundation/log/assert.h:159
-EnsureFailedSiteCount()	function	foundation/log	ensurefailedsitecount	foundation-log.md	engine/foundation/log/assert.h:163
-ResetEnsureStateForTesting()	function	foundation/log	resetensurestatefortesting	foundation-log.md	engine/foundation/log/assert.h:167
-ENGINE_ASSERT	macro	foundation/log	engine-assert	foundation-log.md	engine/foundation/log/assert.h:208
-ENGINE_ENSURE	macro	foundation/log	engine-ensure	foundation-log.md	engine/foundation/log/assert.h:228
-ENGINE_VERIFY	macro	foundation/log	engine-verify	foundation-log.md	engine/foundation/log/assert.h:266
-ENGINE_CHECK_SLOW	macro	foundation/log	engine-check-slow	foundation-log.md	engine/foundation/log/assert.h:288
-ENGINE_UNREACHABLE	macro	foundation/log	engine-unreachable	foundation-log.md	engine/foundation/log/assert.h:308
-ENGINE_NOT_IMPLEMENTED	macro	foundation/log	engine-not-implemented	foundation-log.md	engine/foundation/log/assert.h:313
+DefaultAssertHandler(const AssertInfo&)	function	foundation/log	defaultasserthandler-const-assertinfo-amp	foundation-log.md	engine/foundation/log/assert.h:110
+SetAssertHandler(AssertHandler)	function	foundation/log	setasserthandler-asserthandler	foundation-log.md	engine/foundation/log/assert.h:120
+AssertFail(const char*,int,const char*)	function	foundation/log	assertfail-const-char-star-int-const-char-star	foundation-log.md	engine/foundation/log/assert.h:132
+EnsureSiteInfo	struct	foundation/log	ensuresiteinfo	foundation-log.md	engine/foundation/log/assert.h:138
+EnsureSiteInfo::file	variable	foundation/log	ensuresiteinfo-file	foundation-log.md	engine/foundation/log/assert.h:140
+EnsureSiteInfo::line	variable	foundation/log	ensuresiteinfo-line	foundation-log.md	engine/foundation/log/assert.h:142
+EnsureSiteInfo::function	variable	foundation/log	ensuresiteinfo-function	foundation-log.md	engine/foundation/log/assert.h:144
+EnsureSiteInfo::condition	variable	foundation/log	ensuresiteinfo-condition	foundation-log.md	engine/foundation/log/assert.h:146
+EnsureSiteInfo::message	variable	foundation/log	ensuresiteinfo-message	foundation-log.md	engine/foundation/log/assert.h:148
+EnsureSiteInfo::failure_count	variable	foundation/log	ensuresiteinfo-failure-count	foundation-log.md	engine/foundation/log/assert.h:150
+EnsureVisitor	alias	foundation/log	ensurevisitor	foundation-log.md	engine/foundation/log/assert.h:154
+ForEachFailedEnsure(EnsureVisitor,void*)	function	foundation/log	foreachfailedensure-ensurevisitor-void-star	foundation-log.md	engine/foundation/log/assert.h:161
+EnsureFailedSiteCount()	function	foundation/log	ensurefailedsitecount	foundation-log.md	engine/foundation/log/assert.h:165
+ResetEnsureStateForTesting()	function	foundation/log	resetensurestatefortesting	foundation-log.md	engine/foundation/log/assert.h:169
+ENGINE_ASSERT	macro	foundation/log	engine-assert	foundation-log.md	engine/foundation/log/assert.h:210
+ENGINE_ENSURE	macro	foundation/log	engine-ensure	foundation-log.md	engine/foundation/log/assert.h:230
+ENGINE_VERIFY	macro	foundation/log	engine-verify	foundation-log.md	engine/foundation/log/assert.h:268
+ENGINE_CHECK_SLOW	macro	foundation/log	engine-check-slow	foundation-log.md	engine/foundation/log/assert.h:290
+ENGINE_UNREACHABLE	macro	foundation/log	engine-unreachable	foundation-log.md	engine/foundation/log/assert.h:310
+ENGINE_NOT_IMPLEMENTED	macro	foundation/log	engine-not-implemented	foundation-log.md	engine/foundation/log/assert.h:315
 LogVerbosity	enum	foundation/log	logverbosity	foundation-log.md	engine/foundation/log/log.h:16
 LogVerbosity::Error	enumerator	foundation/log	logverbosity-error	foundation-log.md	engine/foundation/log/log.h:17
 LogVerbosity::Warn	enumerator	foundation/log	logverbosity-warn	foundation-log.md	engine/foundation/log/log.h:18
@@ -702,7 +702,9 @@ os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	o
 ENGINE_DEBUG_BREAK	macro	foundation/debug	engine-debug-break	foundation-debug.md	engine/foundation/debug/compiler.h:13
 ENGINE_UNREACHABLE_HINT	macro	foundation/debug	engine-unreachable-hint	foundation-debug.md	engine/foundation/debug/compiler.h:28
 ENGINE_COLD	macro	foundation/debug	engine-cold	foundation-debug.md	engine/foundation/debug/compiler.h:35
-ENGINE_NOINLINE	macro	foundation/debug	engine-noinline	foundation-debug.md	engine/foundation/debug/compiler.h:42
+ENGINE_COMPILER_BARRIER	macro	foundation/debug	engine-compiler-barrier	foundation-debug.md	engine/foundation/debug/compiler.h:44
+ENGINE_NOINLINE_LAMBDA	macro	foundation/debug	engine-noinline-lambda	foundation-debug.md	engine/foundation/debug/compiler.h:51
+ENGINE_NOINLINE	macro	foundation/debug	engine-noinline	foundation-debug.md	engine/foundation/debug/compiler.h:58
 debug::CrashReason	enum	foundation/debug	debug-crashreason	foundation-debug.md	engine/foundation/debug/crash_reason.h:16
 debug::CrashReason::None	enumerator	foundation/debug	debug-crashreason-none	foundation-debug.md	engine/foundation/debug/crash_reason.h:17
 debug::CrashReason::AccessViolation	enumerator	foundation/debug	debug-crashreason-accessviolation	foundation-debug.md	engine/foundation/debug/crash_reason.h:18
@@ -766,6 +768,39 @@ debug::FaultKind::StackOverflow	enumerator	foundation/debug	debug-faultkind-stac
 debug::FaultKind::BusError	enumerator	foundation/debug	debug-faultkind-buserror	foundation-debug.md	engine/foundation/debug/fault_injection.h:18
 debug::FaultSupported(FaultKind)	function	foundation/debug	debug-faultsupported-faultkind	foundation-debug.md	engine/foundation/debug/fault_injection.h:27
 debug::InjectFault(FaultKind)	function	foundation/debug	debug-injectfault-faultkind	foundation-debug.md	engine/foundation/debug/fault_injection.h:34
+debug::kMaxModulePathBytes	variable	foundation/debug	debug-kmaxmodulepathbytes	foundation-debug.md	engine/foundation/debug/module_list.h:9
+debug::LoadedModule	struct	foundation/debug	debug-loadedmodule	foundation-debug.md	engine/foundation/debug/module_list.h:14
+debug::LoadedModule::load_bias	variable	foundation/debug	debug-loadedmodule-load-bias	foundation-debug.md	engine/foundation/debug/module_list.h:17
+debug::LoadedModule::begin	variable	foundation/debug	debug-loadedmodule-begin	foundation-debug.md	engine/foundation/debug/module_list.h:19
+debug::LoadedModule::end	variable	foundation/debug	debug-loadedmodule-end	foundation-debug.md	engine/foundation/debug/module_list.h:21
+debug::LoadedModule::path	variable	foundation/debug	debug-loadedmodule-path	foundation-debug.md	engine/foundation/debug/module_list.h:23
+debug::RefreshLoadedModules()	function	foundation/debug	debug-refreshloadedmodules	foundation-debug.md	engine/foundation/debug/module_list.h:32
+debug::FindLoadedModule(u64,LoadedModule*)	function	foundation/debug	debug-findloadedmodule-u64-loadedmodule-star	foundation-debug.md	engine/foundation/debug/module_list.h:42
+debug::kMaxStackFrames	variable	foundation/debug	debug-kmaxstackframes	foundation-debug.md	engine/foundation/debug/stack_trace.h:16
+debug::kMaxSymbolBytes	variable	foundation/debug	debug-kmaxsymbolbytes	foundation-debug.md	engine/foundation/debug/stack_trace.h:20
+debug::kMaxSourcePathBytes	variable	foundation/debug	debug-kmaxsourcepathbytes	foundation-debug.md	engine/foundation/debug/stack_trace.h:22
+debug::kMaxFrameModuleBytes	variable	foundation/debug	debug-kmaxframemodulebytes	foundation-debug.md	engine/foundation/debug/stack_trace.h:24
+debug::StackTrace	struct	foundation/debug	debug-stacktrace	foundation-debug.md	engine/foundation/debug/stack_trace.h:29
+debug::StackTrace::frames	variable	foundation/debug	debug-stacktrace-frames	foundation-debug.md	engine/foundation/debug/stack_trace.h:31
+debug::StackTrace::count	variable	foundation/debug	debug-stacktrace-count	foundation-debug.md	engine/foundation/debug/stack_trace.h:33
+debug::StackTrace::truncated	variable	foundation/debug	debug-stacktrace-truncated	foundation-debug.md	engine/foundation/debug/stack_trace.h:35
+debug::FrameInfo	struct	foundation/debug	debug-frameinfo	foundation-debug.md	engine/foundation/debug/stack_trace.h:41
+debug::FrameInfo::address	variable	foundation/debug	debug-frameinfo-address	foundation-debug.md	engine/foundation/debug/stack_trace.h:43
+debug::FrameInfo::module_offset	variable	foundation/debug	debug-frameinfo-module-offset	foundation-debug.md	engine/foundation/debug/stack_trace.h:45
+debug::FrameInfo::line	variable	foundation/debug	debug-frameinfo-line	foundation-debug.md	engine/foundation/debug/stack_trace.h:47
+debug::FrameInfo::inlined	variable	foundation/debug	debug-frameinfo-inlined	foundation-debug.md	engine/foundation/debug/stack_trace.h:49
+debug::FrameInfo::has_module	variable	foundation/debug	debug-frameinfo-has-module	foundation-debug.md	engine/foundation/debug/stack_trace.h:51
+debug::FrameInfo::function	variable	foundation/debug	debug-frameinfo-function	foundation-debug.md	engine/foundation/debug/stack_trace.h:53
+debug::FrameInfo::file	variable	foundation/debug	debug-frameinfo-file	foundation-debug.md	engine/foundation/debug/stack_trace.h:55
+debug::FrameInfo::module	variable	foundation/debug	debug-frameinfo-module	foundation-debug.md	engine/foundation/debug/stack_trace.h:57
+debug::FormatOptions	struct	foundation/debug	debug-formatoptions	foundation-debug.md	engine/foundation/debug/stack_trace.h:63
+debug::FormatOptions::demangle	variable	foundation/debug	debug-formatoptions-demangle	foundation-debug.md	engine/foundation/debug/stack_trace.h:66
+debug::InitDebugFacilities()	function	foundation/debug	debug-initdebugfacilities	foundation-debug.md	engine/foundation/debug/stack_trace.h:76
+debug::ReloadDebugModules()	function	foundation/debug	debug-reloaddebugmodules	foundation-debug.md	engine/foundation/debug/stack_trace.h:85
+debug::CaptureStackTrace(StackTrace&,u32)	function	foundation/debug	debug-capturestacktrace-stacktrace-amp-u32	foundation-debug.md	engine/foundation/debug/stack_trace.h:96
+debug::ResolveStackTrace(const StackTrace&,FrameInfo*,usize)	function	foundation/debug	debug-resolvestacktrace-const-stacktrace-amp-frameinfo-star-usize	foundation-debug.md	engine/foundation/debug/stack_trace.h:109
+debug::FormatStackTrace(const StackTrace&,char*,usize,const FormatOptions&)	function	foundation/debug	debug-formatstacktrace-const-stacktrace-amp-char-star-usize-const-formatoptions-amp	foundation-debug.md	engine/foundation/debug/stack_trace.h:126
+debug::DemangleSymbol(const char*,char*,usize)	function	foundation/debug	debug-demanglesymbol-const-char-star-char-star-usize	foundation-debug.md	engine/foundation/debug/stack_trace.h:137
 jobs::IoRequest	struct	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:53
 jobs::IoRequest::next	variable	jobs	jobs-iorequest-next	jobs.md	engine/jobs/async_io.h:55
 jobs::IoRequest::run	variable	jobs	jobs-iorequest-run	jobs.md	engine/jobs/async_io.h:57

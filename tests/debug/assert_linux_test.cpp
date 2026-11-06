@@ -5,12 +5,14 @@
 #include "debug/compiler.h"
 #include "debug/death_test.h"
 #include "debug/debugger.h"
+#include "debug/module_list.h"
 #include "log/assert.h"
 #include "os/linux/debug/debugger_linux.h"
 #include "os/os.h"
 #include "support/death_test_skip.h"
 
 #include <csignal>
+#include <link.h>
 #include <cstring>
 #include <sys/ptrace.h>
 #include <unistd.h>
@@ -131,4 +133,36 @@ TEST_CASE("A traced child sees a debugger attached", "[debug][linux]") {
         SKIP("ptrace is not allowed here");
     }
     CHECK(r.StdoutContains("ATTACHED"));
+}
+
+namespace {
+
+struct LinModuleCheck {
+    int objects = 0;
+    int missing = 0;
+};
+
+int LinCheckObject(struct dl_phdr_info* info, size_t, void* data) {
+    LinModuleCheck* check = static_cast<LinModuleCheck*>(data);
+    for (int i = 0; i < info->dlpi_phnum; ++i) {
+        if (info->dlpi_phdr[i].p_type == PT_LOAD) {
+            ++check->objects;
+            LoadedModule found;
+            if (!FindLoadedModule(static_cast<u64>(info->dlpi_addr) + info->dlpi_phdr[i].p_vaddr, &found)) {
+                ++check->missing;
+            }
+            break;
+        }
+    }
+    return 0;
+}
+
+} // namespace
+
+TEST_CASE("Every object the loader reports is in the module list, however many there are", "[stacktrace][debug][linux]") {
+    RefreshLoadedModules();
+    LinModuleCheck check;
+    dl_iterate_phdr(&LinCheckObject, &check);
+    CHECK(check.objects > 3);
+    CHECK(check.missing == 0);
 }
