@@ -28,6 +28,7 @@ set(ENGINE_PRODUCTION_COMPILE_OPTIONS -fno-exceptions -fno-rtti -fno-stack-prote
 enable_testing()
 add_subdirectory(third_party/catch2)
 include(cmake/EngineTestPhases.cmake)
+include(cmake/EngineDeathTests.cmake)
 
 # Unity (jumbo) build: each target compiles its sources in batches merged into a few translation units, which cuts
 # full-build time. Set after the vendored Catch2 so only our own targets are batched. Turn it off
@@ -44,10 +45,12 @@ add_subdirectory(tools/docgen)
 add_subdirectory(tools/shader_mint)
 add_subdirectory(tools/rhi_boundary_check)
 add_subdirectory(tools/raw_new_check)
+add_subdirectory(tools/platform_neutral_check)
 add_subdirectory(tests/foundation)
 add_subdirectory(tests/jobs)
 add_subdirectory(tests/rhi)
 add_subdirectory(tests/renderer)
+add_subdirectory(tests/debug)
 add_subdirectory(tests/shader_mint)
 add_subdirectory(shaders)
 add_subdirectory(game)

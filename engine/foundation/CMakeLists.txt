@@ -17,6 +17,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/wayland/generated/xdg-decoration-protocol.c
   )
 
+  # Phase 6: the per-platform half of the debugging facilities (debug/*.h are the neutral interfaces). Windows and macOS
+  # add os/<platform>/debug/ in Phases 8 and 9 (see the BACKEND.md checklists there).
+  set(FOUNDATION_DEBUG_PLATFORM_SOURCES
+    os/linux/debug/death_test.cpp
+    os/linux/debug/fault_injection.cpp
+  )
+
   # Day 18: libwayland-client, the reference Wayland client library
   # (PLAN.md assumption #3 — an OS/vendor-boundary exception, not a
   # third-party convenience dependency). xdg-shell bindings are
@@ -34,6 +41,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # backend (PLAN.md assumption #3 — same OS-boundary category as
   # libwayland-client).
   pkg_check_modules(X11Client REQUIRED IMPORTED_TARGET x11)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  message(FATAL_ERROR "Windows is implemented in Phase 8 (the debugging backend: os/windows/debug/BACKEND.md)")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  message(FATAL_ERROR "macOS is implemented in Phase 9 (the debugging backend: os/macos/debug/BACKEND.md)")
 else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
 endif()
@@ -55,7 +66,10 @@ set(FOUNDATION_SOURCES
   string/generated/decomposition_table.cpp
   string/generated/combining_class_table.cpp
   string/generated/composition_exclusions_table.cpp
+  debug/crash_reason.cpp
+  debug/death_test.cpp
   ${FOUNDATION_PLATFORM_SOURCES}
+  ${FOUNDATION_DEBUG_PLATFORM_SOURCES}
 )
 
 # ENGINE_PRODUCTION_COMPILE_OPTIONS (-fno-exceptions etc) is applied

@@ -31,6 +31,13 @@ module platform/window-input "Platform: Windowing and Input"
   header engine/foundation/os/linux/**/*.h
   exclude engine/foundation/os/linux/wayland/generated/*.h   # wayland-scanner output, not our API
 
+module foundation/debug "Foundation: Debugging"
+  header engine/foundation/debug/*.h
+  exclude engine/foundation/debug/death_test_platform.h   # the per-platform half of the death-test helper, not API
+  strict thread-safety
+  strict ownership
+  strict failure
+
 module jobs "The Job System"
   header engine/jobs/*.h
   strict thread-safety

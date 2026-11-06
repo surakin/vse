@@ -1,0 +1,3 @@
+# Which one file may include each third-party library header (Phase 6 assumption #20): `header|path|reason`.
+# Days 94 and 95 add `backtrace.h|engine/foundation/debug/stack_trace_backtrace.cpp|...` and
+# `sentry.h|engine/foundation/debug/crash_handler_sentry.cpp|...`. Until then nobody may include either header.

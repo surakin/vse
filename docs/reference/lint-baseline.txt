@@ -1,15 +1,16 @@
 # docgen lint baseline v1
 # Written by `docgen lint --baseline FILE --update-baseline`. The lint tolerates exactly these findings and fails on
 # any other, or if a module's documented/total ratio drops below its line here. Delete entries as symbols get documented.
-module	foundation/memory	18	18
-module	foundation/containers	41	41
+module	foundation/memory	22	22
+module	foundation/containers	112	112
 module	foundation/strings	86	86
 module	foundation/math	97	97
 module	foundation/log	26	26
 module	foundation/types	11	11
 module	platform/os	30	30
-module	platform/window-input	229	229
+module	platform/window-input	230	230
+module	foundation/debug	62	62
 module	jobs	151	151
-module	rhi	594	594
-module	renderer	459	459
-module	rhi-vulkan	408	408
+module	rhi	599	599
+module	renderer	678	678
+module	rhi-vulkan	410	410
