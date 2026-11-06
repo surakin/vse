@@ -1,6 +1,6 @@
 # Phase 9 — Settings System
 
-**Depends on:** Phase 8 (the file layer: `io::Path`, `io::File`, `io::Directory`, atomic replace, the special folders), Phase 7 (the rendering-settings
+**Depends on:** Phase 8.5 (the standard types: `byte`, `u128`, `Span`, and the container rule new code follows), Phase 8 (the file layer: `io::Path`, `io::File`, `io::Directory`, atomic replace, the special folders), Phase 7 (the rendering-settings
 model this phase generalizes: `renderer::RenderSettings`, the registry with cost classes, the text format), Phase 2 (jobs, for background saving).
 Must complete before the UI phase (Phase 13, whose settings screens bind to it) and before the demos get settings options.
 **Goal:** one engine-wide settings system: a registry that every subsystem registers its settings with (the renderer's, later audio, input, UI scale, gameplay),
