@@ -86,3 +86,19 @@ TEST_CASE("StringBuilder::AppendHex formats lowercase hex with optional zero pad
     REQUIRE(hex(5, 4) == StringView("0005"));
     REQUIRE(hex(0, 3) == StringView("000"));
 }
+
+TEST_CASE("StringView: LastIndexOf, StartsWith, EndsWith and open-ended Substring", "[string][stringview]") {
+    StringView a("a/b/c");
+    REQUIRE(a.LastIndexOf('/') == 3);
+    REQUIRE(a.LastIndexOf('x') == a.Length());
+    REQUIRE(StringView().LastIndexOf('/') == 0);
+    REQUIRE(a.StartsWith("a/b"));
+    REQUIRE(a.StartsWith(""));
+    REQUIRE_FALSE(a.StartsWith("a/b/c/d"));
+    REQUIRE_FALSE(a.StartsWith("b"));
+    REQUIRE(a.EndsWith("b/c"));
+    REQUIRE(a.EndsWith(""));
+    REQUIRE_FALSE(a.EndsWith("xa/b/c"));
+    REQUIRE(a.Substring(2) == StringView("b/c"));
+    REQUIRE(a.Substring(a.Length()).Empty());
+}

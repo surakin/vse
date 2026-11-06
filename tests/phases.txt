@@ -19,6 +19,7 @@ flavors 4   plain,asan,tsan
 flavors 5   plain
 flavors 6   plain,asan,tsan
 flavors 7   plain,asan,tsan
+flavors 8   plain,asan,tsan
 
 # --- Phase 0: foundation (tests/foundation) ---
 tests/foundation/arena_allocator_test.cpp       0
@@ -163,3 +164,6 @@ test:platform_neutral_check*                     6
 test:debug_stack_trace_stripped                  6
 test:crash_extract_*                             6
 test:debug_no_network_*                          6
+
+# --- Phase 8: file handling ---
+tests/io/                                       8

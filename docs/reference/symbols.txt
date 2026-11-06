@@ -198,31 +198,35 @@ StringView::operator<(const StringView&) const	function	foundation/strings	strin
 StringView::Substring(usize,usize) const	function	foundation/strings	stringview-substring-usize-usize-const	foundation-strings.md	engine/foundation/string/string.h:91
 StringView::IndexOf(char) const	function	foundation/strings	stringview-indexof-char-const	foundation-strings.md	engine/foundation/string/string.h:100
 StringView::Find(StringView) const	function	foundation/strings	stringview-find-stringview-const	foundation-strings.md	engine/foundation/string/string.h:115
-StringView::Contains(StringView) const	function	foundation/strings	stringview-contains-stringview-const	foundation-strings.md	engine/foundation/string/string.h:136
-String	class	foundation/strings	string	foundation-strings.md	engine/foundation/string/string.h:155
-String::String(Allocator&)	function	foundation/strings	string-string-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:162
-String::String(Allocator&,StringView)	function	foundation/strings	string-string-allocator-amp-stringview	foundation-strings.md	engine/foundation/string/string.h:171
-String::String(const String&)	function	foundation/strings	string-string-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:179
-String::operator=(const String&)	function	foundation/strings	string-operator-eq-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:180
-String::String(String&&) noexcept	function	foundation/strings	string-string-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:182
-String::operator=(String&&) noexcept	function	foundation/strings	string-operator-eq-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:183
-String::Append(StringView)	function	foundation/strings	string-append-stringview	foundation-strings.md	engine/foundation/string/string.h:190
-String::Append(char)	function	foundation/strings	string-append-char	foundation-strings.md	engine/foundation/string/string.h:204
-String::AppendRawBytes(const char*,usize)	function	foundation/strings	string-appendrawbytes-const-char-star-usize	foundation-strings.md	engine/foundation/string/string.h:218
-String::CStr() const	function	foundation/strings	string-cstr-const	foundation-strings.md	engine/foundation/string/string.h:230
-String::Length() const	function	foundation/strings	string-length-const	foundation-strings.md	engine/foundation/string/string.h:232
-String::View() const	function	foundation/strings	string-view-const	foundation-strings.md	engine/foundation/string/string.h:235
-StringBuilder	class	foundation/strings	stringbuilder	foundation-strings.md	engine/foundation/string/string.h:250
-StringBuilder::StringBuilder(Allocator&)	function	foundation/strings	stringbuilder-stringbuilder-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:257
-StringBuilder::Append(StringView)	function	foundation/strings	stringbuilder-append-stringview	foundation-strings.md	engine/foundation/string/string.h:264
-StringBuilder::Append(char)	function	foundation/strings	stringbuilder-append-char	foundation-strings.md	engine/foundation/string/string.h:274
-StringBuilder::AppendCodepoint(u32)	function	foundation/strings	stringbuilder-appendcodepoint-u32	foundation-strings.md	engine/foundation/string/string.h:285
-StringBuilder::AppendInt(i64)	function	foundation/strings	stringbuilder-appendint-i64	foundation-strings.md	engine/foundation/string/string.h:299
-StringBuilder::AppendUInt(u64)	function	foundation/strings	stringbuilder-appenduint-u64	foundation-strings.md	engine/foundation/string/string.h:318
-StringBuilder::AppendHex(u64,int)	function	foundation/strings	stringbuilder-appendhex-u64-int	foundation-strings.md	engine/foundation/string/string.h:335
-StringBuilder::AppendFloat(f64,int)	function	foundation/strings	stringbuilder-appendfloat-f64-int	foundation-strings.md	engine/foundation/string/string.h:366
-StringBuilder::View() const	function	foundation/strings	stringbuilder-view-const	foundation-strings.md	engine/foundation/string/string.h:389
-StringBuilder::CStr() const	function	foundation/strings	stringbuilder-cstr-const	foundation-strings.md	engine/foundation/string/string.h:391
+StringView::Substring(usize) const	function	foundation/strings	stringview-substring-usize-const	foundation-strings.md	engine/foundation/string/string.h:138
+StringView::LastIndexOf(char) const	function	foundation/strings	stringview-lastindexof-char-const	foundation-strings.md	engine/foundation/string/string.h:145
+StringView::StartsWith(StringView) const	function	foundation/strings	stringview-startswith-stringview-const	foundation-strings.md	engine/foundation/string/string.h:155
+StringView::EndsWith(StringView) const	function	foundation/strings	stringview-endswith-stringview-const	foundation-strings.md	engine/foundation/string/string.h:160
+StringView::Contains(StringView) const	function	foundation/strings	stringview-contains-stringview-const	foundation-strings.md	engine/foundation/string/string.h:165
+String	class	foundation/strings	string	foundation-strings.md	engine/foundation/string/string.h:184
+String::String(Allocator&)	function	foundation/strings	string-string-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:191
+String::String(Allocator&,StringView)	function	foundation/strings	string-string-allocator-amp-stringview	foundation-strings.md	engine/foundation/string/string.h:200
+String::String(const String&)	function	foundation/strings	string-string-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:208
+String::operator=(const String&)	function	foundation/strings	string-operator-eq-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:209
+String::String(String&&) noexcept	function	foundation/strings	string-string-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:211
+String::operator=(String&&) noexcept	function	foundation/strings	string-operator-eq-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:212
+String::Append(StringView)	function	foundation/strings	string-append-stringview	foundation-strings.md	engine/foundation/string/string.h:219
+String::Append(char)	function	foundation/strings	string-append-char	foundation-strings.md	engine/foundation/string/string.h:233
+String::AppendRawBytes(const char*,usize)	function	foundation/strings	string-appendrawbytes-const-char-star-usize	foundation-strings.md	engine/foundation/string/string.h:247
+String::CStr() const	function	foundation/strings	string-cstr-const	foundation-strings.md	engine/foundation/string/string.h:259
+String::Length() const	function	foundation/strings	string-length-const	foundation-strings.md	engine/foundation/string/string.h:261
+String::View() const	function	foundation/strings	string-view-const	foundation-strings.md	engine/foundation/string/string.h:264
+StringBuilder	class	foundation/strings	stringbuilder	foundation-strings.md	engine/foundation/string/string.h:279
+StringBuilder::StringBuilder(Allocator&)	function	foundation/strings	stringbuilder-stringbuilder-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:286
+StringBuilder::Append(StringView)	function	foundation/strings	stringbuilder-append-stringview	foundation-strings.md	engine/foundation/string/string.h:293
+StringBuilder::Append(char)	function	foundation/strings	stringbuilder-append-char	foundation-strings.md	engine/foundation/string/string.h:303
+StringBuilder::AppendCodepoint(u32)	function	foundation/strings	stringbuilder-appendcodepoint-u32	foundation-strings.md	engine/foundation/string/string.h:314
+StringBuilder::AppendInt(i64)	function	foundation/strings	stringbuilder-appendint-i64	foundation-strings.md	engine/foundation/string/string.h:328
+StringBuilder::AppendUInt(u64)	function	foundation/strings	stringbuilder-appenduint-u64	foundation-strings.md	engine/foundation/string/string.h:347
+StringBuilder::AppendHex(u64,int)	function	foundation/strings	stringbuilder-appendhex-u64-int	foundation-strings.md	engine/foundation/string/string.h:364
+StringBuilder::AppendFloat(f64,int)	function	foundation/strings	stringbuilder-appendfloat-f64-int	foundation-strings.md	engine/foundation/string/string.h:395
+StringBuilder::View() const	function	foundation/strings	stringbuilder-view-const	foundation-strings.md	engine/foundation/string/string.h:418
+StringBuilder::CStr() const	function	foundation/strings	stringbuilder-cstr-const	foundation-strings.md	engine/foundation/string/string.h:420
 CodepointCount(StringView)	function	foundation/strings	codepointcount-stringview	foundation-strings.md	engine/foundation/string/utf8.h:17
 IsValidUtf8(StringView)	function	foundation/strings	isvalidutf8-stringview	foundation-strings.md	engine/foundation/string/utf8.h:33
 Utf8CodepointIterator	class	foundation/strings	utf8codepointiterator	foundation-strings.md	engine/foundation/string/utf8.h:53
@@ -240,6 +244,60 @@ DecodedCodepoint::codepoint	variable	foundation/strings	decodedcodepoint-codepoi
 DecodedCodepoint::byte_length	variable	foundation/strings	decodedcodepoint-byte-length	foundation-strings.md	engine/foundation/string/utf8_codec.h:12
 DecodeUtf8At(const char*,usize,usize,bool*)	function	foundation/strings	decodeutf8at-const-char-star-usize-usize-bool-star	foundation-strings.md	engine/foundation/string/utf8_codec.h:28
 EncodeUtf8(u32,char[4])	function	foundation/strings	encodeutf8-u32-char-4	foundation-strings.md	engine/foundation/string/utf8_codec.h:37
+io::PathStyle	enum	foundation/io	io-pathstyle	foundation-io.md	engine/foundation/io/path.h:18
+io::PathStyle::Posix	enumerator	foundation/io	io-pathstyle-posix	foundation-io.md	engine/foundation/io/path.h:19
+io::PathStyle::Windows	enumerator	foundation/io	io-pathstyle-windows	foundation-io.md	engine/foundation/io/path.h:20
+io::NativePathStyle()	function	foundation/io	io-nativepathstyle	foundation-io.md	engine/foundation/io/path.h:24
+io::kMaxPathBytes	variable	foundation/io	io-kmaxpathbytes	foundation-io.md	engine/foundation/io/path.h:33
+io::Path	class	foundation/io	io-path	foundation-io.md	engine/foundation/io/path.h:47
+io::Path::Path()	function	foundation/io	io-path-path	foundation-io.md	engine/foundation/io/path.h:50
+io::Path::Path(PathStyle)	function	foundation/io	io-path-path-pathstyle	foundation-io.md	engine/foundation/io/path.h:52
+io::Path::Path(StringView,PathStyle)	function	foundation/io	io-path-path-stringview-pathstyle	foundation-io.md	engine/foundation/io/path.h:59
+io::Path::Path(const Path&)	function	foundation/io	io-path-path-const-path-amp	foundation-io.md	engine/foundation/io/path.h:62
+io::Path::operator=(const Path&)	function	foundation/io	io-path-operator-eq-const-path-amp	foundation-io.md	engine/foundation/io/path.h:64
+io::Path::Path(Path&&) noexcept	function	foundation/io	io-path-path-path-amp-amp-noexcept	foundation-io.md	engine/foundation/io/path.h:65
+io::Path::operator=(Path&&) noexcept	function	foundation/io	io-path-operator-eq-path-amp-amp-noexcept	foundation-io.md	engine/foundation/io/path.h:66
+io::Path::Parse(StringView,PathStyle,Path*)	function	foundation/io	io-path-parse-stringview-pathstyle-path-star	foundation-io.md	engine/foundation/io/path.h:74
+io::Path::Style() const	function	foundation/io	io-path-style-const	foundation-io.md	engine/foundation/io/path.h:77
+io::Path::View() const	function	foundation/io	io-path-view-const	foundation-io.md	engine/foundation/io/path.h:80
+io::Path::ToNative(char*,usize) const	function	foundation/io	io-path-tonative-char-star-usize-const	foundation-io.md	engine/foundation/io/path.h:86
+io::Path::IsEmpty() const	function	foundation/io	io-path-isempty-const	foundation-io.md	engine/foundation/io/path.h:89
+io::Path::IsAbsolute() const	function	foundation/io	io-path-isabsolute-const	foundation-io.md	engine/foundation/io/path.h:92
+io::Path::IsRelative() const	function	foundation/io	io-path-isrelative-const	foundation-io.md	engine/foundation/io/path.h:94
+io::Path::HasRoot() const	function	foundation/io	io-path-hasroot-const	foundation-io.md	engine/foundation/io/path.h:96
+io::Path::RootName() const	function	foundation/io	io-path-rootname-const	foundation-io.md	engine/foundation/io/path.h:98
+io::Path::Parent() const	function	foundation/io	io-path-parent-const	foundation-io.md	engine/foundation/io/path.h:102
+io::Path::FileName() const	function	foundation/io	io-path-filename-const	foundation-io.md	engine/foundation/io/path.h:104
+io::Path::Stem() const	function	foundation/io	io-path-stem-const	foundation-io.md	engine/foundation/io/path.h:106
+io::Path::Extension() const	function	foundation/io	io-path-extension-const	foundation-io.md	engine/foundation/io/path.h:109
+io::Path::Components	class	foundation/io	io-path-components	foundation-io.md	engine/foundation/io/path.h:112
+io::Path::Components::Next(StringView*)	function	foundation/io	io-path-components-next-stringview-star	foundation-io.md	engine/foundation/io/path.h:117
+io::Path::GetComponents() const	function	foundation/io	io-path-getcomponents-const	foundation-io.md	engine/foundation/io/path.h:124
+io::Path::Join(const Path&) const	function	foundation/io	io-path-join-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:131
+io::Path::Join(StringView) const	function	foundation/io	io-path-join-stringview-const	foundation-io.md	engine/foundation/io/path.h:133
+io::Path::TryJoin(const Path&,Path*) const	function	foundation/io	io-path-tryjoin-const-path-amp-path-star-const	foundation-io.md	engine/foundation/io/path.h:138
+io::Path::operator/(const Path&) const	function	foundation/io	io-path-operator-slash-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:140
+io::Path::operator/(StringView) const	function	foundation/io	io-path-operator-slash-stringview-const	foundation-io.md	engine/foundation/io/path.h:142
+io::Path::Append(StringView)	function	foundation/io	io-path-append-stringview	foundation-io.md	engine/foundation/io/path.h:146
+io::Path::WithFileName(StringView) const	function	foundation/io	io-path-withfilename-stringview-const	foundation-io.md	engine/foundation/io/path.h:152
+io::Path::WithExtension(StringView) const	function	foundation/io	io-path-withextension-stringview-const	foundation-io.md	engine/foundation/io/path.h:156
+io::Path::WithoutExtension() const	function	foundation/io	io-path-withoutextension-const	foundation-io.md	engine/foundation/io/path.h:158
+io::Path::Normalize() const	function	foundation/io	io-path-normalize-const	foundation-io.md	engine/foundation/io/path.h:162
+io::Path::RelativeTo(const Path&,Path*) const	function	foundation/io	io-path-relativeto-const-path-amp-path-star-const	foundation-io.md	engine/foundation/io/path.h:171
+io::Path::IsInside(const Path&) const	function	foundation/io	io-path-isinside-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:174
+io::Path::StartsWith(const Path&) const	function	foundation/io	io-path-startswith-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:177
+io::Path::Hash() const	function	foundation/io	io-path-hash-const	foundation-io.md	engine/foundation/io/path.h:180
+io::Path::operator==(const Path&) const	function	foundation/io	io-path-operator-eq-eq-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:182
+io::Path::operator!=(const Path&) const	function	foundation/io	io-path-operator-not-eq-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:184
+io::Path::operator<(const Path&) const	function	foundation/io	io-path-operator-lt-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:186
+io::Path::Compare(const Path&) const	function	foundation/io	io-path-compare-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:188
+io::PathBuilder	class	foundation/io	io-pathbuilder	foundation-io.md	engine/foundation/io/path.h:207
+io::PathBuilder::PathBuilder(PathStyle)	function	foundation/io	io-pathbuilder-pathbuilder-pathstyle	foundation-io.md	engine/foundation/io/path.h:213
+io::PathBuilder::Set(StringView)	function	foundation/io	io-pathbuilder-set-stringview	foundation-io.md	engine/foundation/io/path.h:218
+io::PathBuilder::Append(StringView)	function	foundation/io	io-pathbuilder-append-stringview	foundation-io.md	engine/foundation/io/path.h:222
+io::PathBuilder::CStr() const	function	foundation/io	io-pathbuilder-cstr-const	foundation-io.md	engine/foundation/io/path.h:224
+io::PathBuilder::View() const	function	foundation/io	io-pathbuilder-view-const	foundation-io.md	engine/foundation/io/path.h:226
+io::PathBuilder::Style() const	function	foundation/io	io-pathbuilder-style-const	foundation-io.md	engine/foundation/io/path.h:228
 Sqrt(f32)	function	foundation/math	sqrt-f32	foundation-math.md	engine/foundation/math/math_util.h:11
 Sin(f32)	function	foundation/math	sin-f32	foundation-math.md	engine/foundation/math/math_util.h:13
 Cos(f32)	function	foundation/math	cos-f32	foundation-math.md	engine/foundation/math/math_util.h:15

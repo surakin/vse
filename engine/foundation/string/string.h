@@ -132,6 +132,35 @@ public:
         return length_;
     }
 
+    /// Returns the sub-range from `start` to the end, sharing the same memory.
+    ///
+    /// Param start: first byte of the sub-range; must not exceed `Length()` (not checked).
+    StringView Substring(usize start) const { return StringView(data_ + start, length_ - start); }
+
+    /// Finds the last occurrence of the byte `c`.
+    ///
+    /// Param c: byte to look for.
+    /// Returns: its index, or `Length()` if it does not occur.
+    /// Fails: reports absence by returning `Length()`.
+    usize LastIndexOf(char c) const {
+        for (usize i = length_; i > 0; --i) {
+            if (data_[i - 1] == c) {
+                return i - 1;
+            }
+        }
+        return length_;
+    }
+
+    /// Returns true if the view begins with `prefix`; an empty prefix always matches.
+    bool StartsWith(StringView prefix) const {
+        return prefix.length_ <= length_ && Substring(0, prefix.length_) == prefix;
+    }
+
+    /// Returns true if the view ends with `suffix`; an empty suffix always matches.
+    bool EndsWith(StringView suffix) const {
+        return suffix.length_ <= length_ && Substring(length_ - suffix.length_) == suffix;
+    }
+
     /// Returns true if `pattern` occurs in this view; an empty pattern never does.
     bool Contains(StringView pattern) const { return Find(pattern) != length_; }
 

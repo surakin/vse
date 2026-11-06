@@ -500,6 +500,56 @@ Finds the first occurrence of `pattern` as a substring.
 | Returns | the start index of the first match, or `Length()` if there is none or `pattern` is empty. |
 | Fails | reports absence by returning `Length()`. |
 
+### `Substring(usize)` {#stringview-substring-usize-const}
+
+`method StringView::Substring` — defined in `engine/foundation/string/string.h`
+
+```cpp
+StringView Substring(usize start) const;
+```
+
+Returns the sub-range from `start` to the end, sharing the same memory.
+
+| Field | Value |
+|---|---|
+| Parameter `start` | first byte of the sub-range; must not exceed `Length()` (not checked). |
+
+### `LastIndexOf(char)` {#stringview-lastindexof-char-const}
+
+`method StringView::LastIndexOf` — defined in `engine/foundation/string/string.h`
+
+```cpp
+usize LastIndexOf(char c) const;
+```
+
+Finds the last occurrence of the byte `c`.
+
+| Field | Value |
+|---|---|
+| Parameter `c` | byte to look for. |
+| Returns | its index, or `Length()` if it does not occur. |
+| Fails | reports absence by returning `Length()`. |
+
+### `StartsWith(StringView)` {#stringview-startswith-stringview-const}
+
+`method StringView::StartsWith` — defined in `engine/foundation/string/string.h`
+
+```cpp
+bool StartsWith(StringView prefix) const;
+```
+
+Returns true if the view begins with `prefix`; an empty prefix always matches.
+
+### `EndsWith(StringView)` {#stringview-endswith-stringview-const}
+
+`method StringView::EndsWith` — defined in `engine/foundation/string/string.h`
+
+```cpp
+bool EndsWith(StringView suffix) const;
+```
+
+Returns true if the view ends with `suffix`; an empty suffix always matches.
+
 ### `Contains(StringView)` {#stringview-contains-stringview-const}
 
 `method StringView::Contains` — defined in `engine/foundation/string/string.h`

@@ -18,3 +18,4 @@ Concept pages, one per subsystem. All are currently skeletons.
 - [rhi-shaders](rhi-shaders.md)
 - [renderer](renderer.md)
 - [render-settings](render-settings.md)
+- [io](io.md)

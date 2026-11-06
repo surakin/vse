@@ -64,6 +64,7 @@ set(FOUNDATION_SOURCES
   mem/pool_allocator.cpp
   mem/stack_allocator.cpp
   log/log.cpp
+  io/path.cpp
   string/utf8_codec.cpp
   string/grapheme.cpp
   string/generated/grapheme_break_table.cpp
