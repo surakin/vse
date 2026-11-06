@@ -5,6 +5,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "io/directory.h"
+#include "io/file.h"
 #include "renderer/device_resources.h"
 #include "renderer/renderer.h"
 #include "rhi/adapter.h"
@@ -402,12 +404,14 @@ namespace {
 
 // Resident memory in KiB from /proc/self/statm (0 where unavailable).
 long ResidentKiB() {
-    std::FILE* f = std::fopen("/proc/self/statm", "r");
-    if (f == nullptr) return 0;
+    io::Path statm_path("/proc/self/statm", io::PathStyle::Posix);
+    Vector<u8> bytes;
+    if (io::ReadFile(statm_path, &bytes, 4096).Failed() || bytes.Size() == 0) return 0;
+    char text[128] = {};
+    std::memcpy(text, bytes.Data(), bytes.Size() < sizeof(text) - 1 ? bytes.Size() : sizeof(text) - 1);
     long pages = 0;
     long resident = 0;
-    const int n = std::fscanf(f, "%ld %ld", &pages, &resident);
-    std::fclose(f);
+    const int n = std::sscanf(text, "%ld %ld", &pages, &resident);
     return n == 2 ? resident * 4 : 0;
 }
 

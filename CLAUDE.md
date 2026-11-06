@@ -215,11 +215,16 @@ table in `PLAN.md`.
   not by raw handle. A test of such an owner resets the device through `tests/renderer/reset_rig.h` and compares the counts from
   `Device::Resources()` (`docs/guide/building-and-testing.md`, "Testing a reset"). Rendering settings change at run time through
   `Renderer::ApplySettings` and are classified by cost (`docs/guide/render-settings.md`).
-- **All file and directory access goes through the file layer (Phase 8): `io::File`, `io::Path`, `io::Directory`.** Planned, not built yet
-  (`plans/phase-08-file-handling.md`, `PLAN.md` assumption #21). `File` is an interface with synchronous and asynchronous operations so files can be
-  network-backed later; `Path` is a value type with no syscalls. Until the phase lands, do not add new direct `fopen`/`open`/`opendir`/`stat`/`mkdir`/`rename`
-  calls or string-pasted paths to engine code if an existing helper in `os/` serves; after it lands, a gate rejects them. The documented exceptions are
-  the signal-safe crash-report writer, console output and third-party code. Config files and the settings system (Phase 9) are built on this layer.
+- **All file and directory access goes through the file layer (Phase 8): `io::File`, `io::Path`, `io::Directory`** (`engine/foundation/io/`; guide
+  `docs/guide/io.md`; design `docs/superpowers/specs/2026-11-06-file-layer-design.md`; `PLAN.md` assumption #21). `File` is an interface with synchronous and
+  asynchronous operations (only the local file is implemented; the network-like test double proves it fits others); `Path` is a value type with no syscalls and
+  a `PathStyle`, so Windows rules are tested on Linux; errors are values (`io::Status`). Do not call `fopen`, `open`, `opendir`, `stat`, `mkdir`, `rename`,
+  `realpath`, `getcwd`, `std::ifstream` and the like, or paste path strings, in `engine/`, `game/`, `tools/` or `tests/`: the `file_access_check` gate
+  (`tools/file_access_check`, ctest `file_access_check`) fails on them. Its allow list (`tools/file_access_check/allowlist.txt`, a reason per entry, a stale
+  entry fails) holds the documented exceptions: the Linux backend itself, the descriptor primitives of `os/` (`os::Open`, `os::CreateFileForWriting`), code between
+  `SIGNAL-SAFE` markers, `memfd` shared memory, console output (`os::Write`, stdout and stderr), tests that plant raw file-system shapes on purpose, and third-party
+  code. A new platform implements `engine/foundation/io/BACKEND.md` (kept in step by `io_backend_lists`). Config files and the settings system (Phase 9) are built
+  on this layer.
 - **Every target platform is designed in from day one — desktop, mobile,
   and console alike — even though only Linux is implemented before
   Phase 10 (Windows).** Platform-layer and engine-facing interfaces must stay

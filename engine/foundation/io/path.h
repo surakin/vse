@@ -21,6 +21,7 @@ enum class PathStyle : u8 {
 };
 
 /// Returns the style of the platform the program was built for.
+/// Backend: Windows: PathStyle::Windows; macOS, Android, iOS and consoles: PathStyle::Posix.
 constexpr PathStyle NativePathStyle() {
 #if defined(_WIN32)
     return PathStyle::Windows;

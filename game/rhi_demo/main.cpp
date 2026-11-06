@@ -13,6 +13,7 @@
 
 #include <unistd.h>
 
+#include "io/directory.h"
 #include "io/file.h"
 #include "io/file_system.h"
 #include "debug/program_setup.h"
@@ -60,14 +61,13 @@ double NowSeconds() {
 
 // The resident set size of this process in KiB, or 0 if it cannot be read.
 long ResidentKiB() {
-    std::FILE* f = std::fopen("/proc/self/statm", "r");
-    if (f == nullptr) {
-        return 0;
-    }
-    long size = 0;
-    long resident = 0;
-    const int read = std::fscanf(f, "%ld %ld", &size, &resident);
-    std::fclose(f);
+    io::Path statm_path("/proc/self/statm", io::PathStyle::Posix);
+    Vector<u8> bytes;
+    if (io::ReadFile(statm_path, &bytes, 4096).Failed() || bytes.Size() == 0) return 0;
+    char text[128] = {};
+    std::memcpy(text, bytes.Data(), bytes.Size() < sizeof(text) - 1 ? bytes.Size() : sizeof(text) - 1);
+    long size = 0, resident = 0;
+    const int read = std::sscanf(text, "%ld %ld", &size, &resident);
     return read == 2 ? resident * (sysconf(_SC_PAGESIZE) / 1024) : 0;
 }
 

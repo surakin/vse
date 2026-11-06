@@ -167,7 +167,7 @@ Status ListDirectory(const Path& path, bool sorted, Vector<DirectoryItem>* out) 
         DirectoryItem item;
         if (!Path::Parse(entry.name, PathStyle::Posix, &item.name)) return Status::Of(Error::TooLong);
         item.type = entry.type;
-        if (!items.TryReserve(items.Size() + 1)) return Status::Of(Error::OutOfMemory);
+        if (items.Size() == items.Capacity() && !items.TryReserve(items.Capacity() < 16 ? 16 : items.Capacity() * 2)) return Status::Of(Error::OutOfMemory);
         items.Push(static_cast<DirectoryItem&&>(item));
     }
     if (sorted && items.Size() > 1) {
@@ -370,7 +370,10 @@ Status WalkDirectory(const Path& root, const WalkOptions& options, WalkVisitor v
     st.visitor = visitor;
     st.user = user;
     Identity id;
-    if (GetIdentity(root, &id).Ok() && st.ancestors.TryReserve(1)) st.ancestors.Push(id);
+    if (GetIdentity(root, &id).Ok()) {
+        if (!st.ancestors.TryReserve(1)) return Status::Of(Error::OutOfMemory); // the loop check needs the root
+        st.ancestors.Push(id);
+    }
     WalkDir(st, source, root, 0);
     return Status::Success();
 }

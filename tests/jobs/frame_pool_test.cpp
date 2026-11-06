@@ -8,6 +8,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "io/directory.h"
+#include "io/file.h"
 #include "jobs/frame_pool.h"
 
 using namespace engine_placeholder;
@@ -242,11 +244,13 @@ TEST_CASE("FramePool does not commit slab memory until blocks are used", "[jobs]
     // backed design wrote a link into every slot on first use, committing
     // the whole slab under the central lock.)
     auto resident_kb = [] {
-        FILE* f = std::fopen("/proc/self/statm", "r");
+        io::Path statm_path("/proc/self/statm", io::PathStyle::Posix);
+        Vector<u8> bytes;
         long total = 0, resident = 0;
-        if (f != nullptr) {
-            if (std::fscanf(f, "%ld %ld", &total, &resident) != 2) resident = 0;
-            std::fclose(f);
+        if (io::ReadFile(statm_path, &bytes, 4096).Ok() && bytes.Size() != 0) {
+            char text[128] = {};
+            std::memcpy(text, bytes.Data(), bytes.Size() < sizeof(text) - 1 ? bytes.Size() : sizeof(text) - 1);
+            if (std::sscanf(text, "%ld %ld", &total, &resident) != 2) resident = 0;
         }
         return resident * (sysconf(_SC_PAGESIZE) / 1024);
     };

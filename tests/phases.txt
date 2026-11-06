@@ -167,3 +167,6 @@ test:debug_no_network_*                          6
 
 # --- Phase 8: file handling ---
 tests/io/                                       8
+test:file_access_check*                         8
+test:io_backend_lists*                          8
+test:io_cross_syntax_*                          8

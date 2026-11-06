@@ -502,8 +502,10 @@ interpretations keep it buildable — flag any that don't match intent:
     assumption #12, are `File` implementations); only local files are implemented in Phase 8. `Path` is a value type with no syscalls and a
     `PathStyle`, so Windows path rules are tested on Linux. Errors are values (`io::Error`), not exceptions or `errno`. The foundation defines
     completion-callback async operations and an `IoExecutor` seam; the job system (above the foundation) supplies the executor and the `co_await`
-    adapters. Documented exceptions, enforced by a gate: the signal-safe crash-report writer and console output keep raw descriptors, the backend
-    itself, and third-party code. The settings system (Phase 9) is built on this layer; neither exists as a design yet beyond these plan files.
+    adapters. Documented exceptions, enforced by the `file_access_check` gate (an allow list with a reason per entry; a stale entry fails): the signal-safe
+    crash-report writer and console output keep raw descriptors, the backend itself, `memfd` shared memory, tests that plant raw file-system shapes on
+    purpose, and third-party code. Built in Phase 8 (Days 115-124); a new platform implements `engine/foundation/io/BACKEND.md`. The settings system
+    (Phase 9) is built on this layer.
 
 ## Guiding principles
 
@@ -828,3 +830,15 @@ that changed from the plan and why.)_
   Windows and macOS are now Phases 10 and 11, font and text 12, UI 13, ECS 14, physics 15, audio 16, asset pipeline 17, scripting 18, Android/iOS 19, consoles 20,
   Unreal import 21 and 22, editor 23, first playable demo 24, feature parity 25. All references in plans, docs, comments and `CLAUDE.md` were renumbered the same
   way (the phase files are `plans/phase-NN-*.md` with the new numbers). `CURRENT_PHASE` stays 7 until Phase 8 starts.
+
+- **2026-11-07 — Phase 8 (File handling) complete (Days 115-124).** One file and path layer: `io::Path` (value type, `PathStyle` so Windows rules are tested on
+  Linux), `io::Error`/`Status` (errors are values), file-system operations and special folders, `io::File` (interface, `LocalFile`, a scheme registry for other
+  backends), asynchronous operations over a foundation `IoExecutor` (the job system's I/O thread implements it; `co_await` adapters in `jobs`), and
+  `io::Directory`/`ListDirectory`/`WalkDirectory`. A network-like test double passes the same conformance suite as the local file. Every file-access site in the
+  foundation, jobs, the RHI pipeline cache, the demos and the tools was ported; the `file_access_check` gate fails on new direct file calls outside a documented allow
+  list (the backend, the signal-safe and assert-path descriptor code, `memfd`, tests that plant raw shapes). `engine/foundation/io/BACKEND.md` is the Windows/macOS/
+  mobile/console checklist, kept in step by a test, and the neutral headers compile for the Windows and macOS targets. Measured: an asynchronous read through the
+  `IoExecutor` seam costs 2.32 us against 2.28 us directly on the I/O thread. Closing run: `ran 2914 of 2914 tests (phases: all; flavors: all; display: included;
+  crash tests: included)`, all passing; both demos 1000 frames with validation on Wayland and X11. Deliberately not done (filed in `KNOWN-ISSUES.md`): memory
+  mapping, file watching, share modes and locks, the Windows/macOS/mobile/console backends, network and pak backends. `CURRENT_PHASE` stays 8 until Phase 9 (settings
+  system) has its day files and starts.

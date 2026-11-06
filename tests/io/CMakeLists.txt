@@ -22,3 +22,17 @@ endfunction()
 engine_add_io_tests(io_tests foundation jobs "" "io")
 engine_add_io_tests(io_tests_asan foundation_asan jobs_asan " [asan]" "asan")
 engine_add_io_tests(io_tests_tsan foundation_tsan jobs_tsan " [tsan]" "tsan")
+
+# Phase 8 Day 124: the backend checklist stays in step with the headers, and the neutral headers compile for the Windows and macOS targets
+# (needs clang++; skips without it).
+add_test(NAME io_backend_lists COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_io_backend_lists.cmake)
+function(engine_io_cross_syntax_test name triple)
+  add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DTRIPLE=${triple} -DROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/cross_syntax/check_io_cross_syntax.cmake)
+endfunction()
+engine_io_cross_syntax_test(io_cross_syntax_windows x86_64-pc-windows-msvc)
+engine_io_cross_syntax_test(io_cross_syntax_macos arm64-apple-macos13)
+# A list with a section for a function that has no label, and a missing section, must both fail (planted copies of the checklist).
+add_test(NAME io_backend_lists_planted COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR}
+         -DBACKEND_FILE=${CMAKE_CURRENT_SOURCE_DIR}/cross_syntax/planted_backend.md -P ${CMAKE_CURRENT_SOURCE_DIR}/check_io_backend_lists.cmake)
+set_tests_properties(io_backend_lists_planted PROPERTIES WILL_FAIL TRUE)
+engine_label_tests(io_backend_lists io_backend_lists_planted io_cross_syntax_windows io_cross_syntax_macos)

@@ -1,7 +1,6 @@
 #include "debug/crash_context_platform.h"
 #include "debug/thread_info.h"
 
-#include "io/file.h"
 #include "os/os.h"
 
 #include <cstdio>
@@ -74,22 +73,23 @@ int FindBuildId(struct dl_phdr_info* info, size_t, void* data) {
 
 // Reads "key: value" from a /proc text file; copies the value (trimmed at the line end) into out. Returns false if absent.
 bool ReadProcValue(const char* path, const char* key, char* out, usize capacity) {
-    // Startup only (never in the fault handler): the file layer may allocate here. /proc files report size 0, so read until the end.
-    io::Path file_path;
-    io::FilePtr file;
-    if (!io::Path::Parse(StringView(path), io::PathStyle::Posix, &file_path) ||
-        io::File::Open(file_path, io::OpenMode::Read, io::kOpenNone, &file).Failed()) {
+    const int fd = os::Open(path, O_RDONLY);
+    if (fd < 0) {
         return false;
     }
     char text[16384];
     usize used = 0;
-    while (used + 1 < sizeof(text)) {
-        usize n = 0;
-        if (file->Read(text + used, sizeof(text) - 1 - used, used, &n).Failed() || n == 0) {
+    for (;;) {
+        const long n = os::Read(fd, text + used, sizeof(text) - 1 - used);
+        if (n <= 0) {
             break;
         }
-        used += n;
+        used += static_cast<usize>(n);
+        if (used + 1 >= sizeof(text)) {
+            break;
+        }
     }
+    os::Close(fd);
     text[used] = '\0';
     const usize key_length = std::strlen(key);
     for (const char* line = text; *line != '\0';) {

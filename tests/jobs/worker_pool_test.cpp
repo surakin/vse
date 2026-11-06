@@ -8,6 +8,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "io/directory.h"
+#include "io/file.h"
 #include "jobs/topology.h"
 #include "jobs/worker_pool.h"
 
@@ -21,24 +23,26 @@ namespace {
 bool ReadCpusAllowedList(i32 tid, char* out, usize cap) {
     char path[64];
     std::snprintf(path, sizeof(path), "/proc/self/task/%d/status", tid);
-    FILE* f = std::fopen(path, "r");
-    if (f == nullptr) return false;
-    char line[512];
-    bool found = false;
-    while (std::fgets(line, sizeof(line), f) != nullptr) {
-        if (std::strncmp(line, "Cpus_allowed_list:", 18) == 0) {
-            const char* p = line + 18;
+    io::Path status_path;
+    Vector<u8> bytes;
+    if (!io::Path::Parse(StringView(path), io::PathStyle::Posix, &status_path) || io::ReadFile(status_path, &bytes, 1 << 16).Failed()) return false;
+    const std::string whole(reinterpret_cast<const char*>(bytes.Data()), bytes.Size());
+    size_t line_start = 0;
+    while (line_start < whole.size()) {
+        const size_t line_end = whole.find('\n', line_start);
+        const std::string line = whole.substr(line_start, line_end == std::string::npos ? std::string::npos : line_end - line_start);
+        line_start = line_end == std::string::npos ? whole.size() : line_end + 1;
+        if (line.compare(0, 18, "Cpus_allowed_list:") == 0) {
+            const char* p = line.c_str() + 18;
             while (*p == ' ' || *p == '\t') ++p;
-            usize n = std::strcspn(p, "\n");
+            usize n = std::strlen(p);
             if (n >= cap) n = cap - 1;
             std::memcpy(out, p, n);
             out[n] = '\0';
-            found = true;
-            break;
+            return true;
         }
     }
-    std::fclose(f);
-    return found;
+    return false;
 }
 
 struct EnvGuard {

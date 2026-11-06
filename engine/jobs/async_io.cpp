@@ -21,10 +21,7 @@ IoThread::IoThread() {
     thread_id_ = thread_.get_id();
 }
 
-IoThread::~IoThread() {
-    io::ClearDefaultExecutorIf(this);
-    Shutdown();
-}
+IoThread::~IoThread() { Shutdown(); } // Shutdown also withdraws this thread as the default file executor
 
 bool IoThread::Enqueue(IoRequest* request) {
     request->next = nullptr;

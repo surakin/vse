@@ -46,7 +46,7 @@ FileIoAwaitable FlushAsync(Scheduler& scheduler, io::File& file) {
 
 // ---- whole file -------------------------------------------------------------------------------------------------------
 
-void FileReadAllAwaitable::Issue() { file_->ReadAsync(&request_, chunk_, kChunk, offset_, &OnChunk, this); }
+void FileReadAllAwaitable::Issue() { file_->ReadAsync(&request_, chunk_.Data(), kChunk, offset_, &OnChunk, this); }
 
 void FileReadAllAwaitable::OnChunk(void* user, const io::AsyncResult& result) {
     FileReadAllAwaitable* self = static_cast<FileReadAllAwaitable*>(user);
@@ -60,7 +60,7 @@ void FileReadAllAwaitable::OnChunk(void* user, const io::AsyncResult& result) {
         } else if (!self->bytes_.TryResizeUninitialized(old + result.bytes)) {
             self->status_ = io::Status::Of(io::Error::OutOfMemory);
         } else {
-            std::memcpy(self->bytes_.Data() + old, self->chunk_, result.bytes);
+            std::memcpy(self->bytes_.Data() + old, self->chunk_.Data(), result.bytes);
             self->Issue(); // the previous request has completed, so its storage is free to reuse
             return;
         }
@@ -74,7 +74,12 @@ bool FileReadAllAwaitable::await_suspend(std::coroutine_handle<> h) noexcept {
         bytes_.TryReserve(static_cast<usize>(hint)); // a hint only: failure just means the vector grows as it reads
     }
     counter_.Increment();
-    Issue();
+    if (!chunk_.TryResizeUninitialized(kChunk)) {
+        status_ = io::Status::Of(io::Error::OutOfMemory);
+        counter_.Decrement();
+    } else {
+        Issue();
+    }
     return counter_.operator co_await().await_suspend(h);
 }
 

@@ -247,48 +247,48 @@ EncodeUtf8(u32,char[4])	function	foundation/strings	encodeutf8-u32-char-4	founda
 io::DirectoryEntry	struct	foundation/io	io-directoryentry	foundation-io.md	engine/foundation/io/directory.h:20
 io::DirectoryEntry::name	variable	foundation/io	io-directoryentry-name	foundation-io.md	engine/foundation/io/directory.h:21
 io::DirectoryEntry::type	variable	foundation/io	io-directoryentry-type	foundation-io.md	engine/foundation/io/directory.h:22
-io::DirectoryEntry::Info(FileInfo*) const	function	foundation/io	io-directoryentry-info-fileinfo-star-const	foundation-io.md	engine/foundation/io/directory.h:27
-io::Directory	class	foundation/io	io-directory	foundation-io.md	engine/foundation/io/directory.h:41
-io::Directory::Directory()	function	foundation/io	io-directory-directory	foundation-io.md	engine/foundation/io/directory.h:43
-io::Directory::Directory(const Directory&)	function	foundation/io	io-directory-directory-const-directory-amp	foundation-io.md	engine/foundation/io/directory.h:44
-io::Directory::operator=(const Directory&)	function	foundation/io	io-directory-operator-eq-const-directory-amp	foundation-io.md	engine/foundation/io/directory.h:45
-io::Directory::Directory(Directory&&) noexcept	function	foundation/io	io-directory-directory-directory-amp-amp-noexcept	foundation-io.md	engine/foundation/io/directory.h:47
-io::Directory::operator=(Directory&&) noexcept	function	foundation/io	io-directory-operator-eq-directory-amp-amp-noexcept	foundation-io.md	engine/foundation/io/directory.h:49
-io::Directory::~Directory()	function	foundation/io	io-directory-tilde-directory	foundation-io.md	engine/foundation/io/directory.h:51
-io::Directory::Open(const Path&,Directory*)	function	foundation/io	io-directory-open-const-path-amp-directory-star	foundation-io.md	engine/foundation/io/directory.h:57
-io::Directory::IsOpen() const	function	foundation/io	io-directory-isopen-const	foundation-io.md	engine/foundation/io/directory.h:60
-io::Directory::GetPath() const	function	foundation/io	io-directory-getpath-const	foundation-io.md	engine/foundation/io/directory.h:62
-io::Directory::Next(DirectoryEntry*,bool*)	function	foundation/io	io-directory-next-directoryentry-star-bool-star	foundation-io.md	engine/foundation/io/directory.h:68
-io::Directory::Close()	function	foundation/io	io-directory-close	foundation-io.md	engine/foundation/io/directory.h:70
-io::Directory::Create(const Path&)	function	foundation/io	io-directory-create-const-path-amp	foundation-io.md	engine/foundation/io/directory.h:73
-io::Directory::CreateAll(const Path&)	function	foundation/io	io-directory-createall-const-path-amp	foundation-io.md	engine/foundation/io/directory.h:75
-io::Directory::Remove(const Path&)	function	foundation/io	io-directory-remove-const-path-amp	foundation-io.md	engine/foundation/io/directory.h:77
-io::Directory::RemoveAll(const Path&)	function	foundation/io	io-directory-removeall-const-path-amp	foundation-io.md	engine/foundation/io/directory.h:79
-io::Directory::IsEmpty(const Path&,bool*)	function	foundation/io	io-directory-isempty-const-path-amp-bool-star	foundation-io.md	engine/foundation/io/directory.h:83
-io::DirectoryItem	struct	foundation/io	io-directoryitem	foundation-io.md	engine/foundation/io/directory.h:92
-io::DirectoryItem::name	variable	foundation/io	io-directoryitem-name	foundation-io.md	engine/foundation/io/directory.h:93
-io::DirectoryItem::type	variable	foundation/io	io-directoryitem-type	foundation-io.md	engine/foundation/io/directory.h:94
-io::ListDirectory(const Path&,bool,Vector<DirectoryItem>*)	function	foundation/io	io-listdirectory-const-path-amp-bool-vector-lt-directoryitem-gt-star	foundation-io.md	engine/foundation/io/directory.h:102
-io::MatchesWildcard(StringView,StringView)	function	foundation/io	io-matcheswildcard-stringview-stringview	foundation-io.md	engine/foundation/io/directory.h:107
-io::WalkAction	enum	foundation/io	io-walkaction	foundation-io.md	engine/foundation/io/directory.h:110
-io::WalkAction::Continue	enumerator	foundation/io	io-walkaction-continue	foundation-io.md	engine/foundation/io/directory.h:111
-io::WalkAction::SkipSubtree	enumerator	foundation/io	io-walkaction-skipsubtree	foundation-io.md	engine/foundation/io/directory.h:112
-io::WalkAction::Stop	enumerator	foundation/io	io-walkaction-stop	foundation-io.md	engine/foundation/io/directory.h:113
-io::WalkEntry	struct	foundation/io	io-walkentry	foundation-io.md	engine/foundation/io/directory.h:117
-io::WalkEntry::path	variable	foundation/io	io-walkentry-path	foundation-io.md	engine/foundation/io/directory.h:118
-io::WalkEntry::name	variable	foundation/io	io-walkentry-name	foundation-io.md	engine/foundation/io/directory.h:119
-io::WalkEntry::type	variable	foundation/io	io-walkentry-type	foundation-io.md	engine/foundation/io/directory.h:120
-io::WalkEntry::depth	variable	foundation/io	io-walkentry-depth	foundation-io.md	engine/foundation/io/directory.h:121
-io::WalkEntry::after_children	variable	foundation/io	io-walkentry-after-children	foundation-io.md	engine/foundation/io/directory.h:122
-io::WalkEntry::error	variable	foundation/io	io-walkentry-error	foundation-io.md	engine/foundation/io/directory.h:123
-io::WalkOptions	struct	foundation/io	io-walkoptions	foundation-io.md	engine/foundation/io/directory.h:127
-io::WalkOptions::max_depth	variable	foundation/io	io-walkoptions-max-depth	foundation-io.md	engine/foundation/io/directory.h:128
-io::WalkOptions::follow_symlinks	variable	foundation/io	io-walkoptions-follow-symlinks	foundation-io.md	engine/foundation/io/directory.h:129
-io::WalkOptions::post_order	variable	foundation/io	io-walkoptions-post-order	foundation-io.md	engine/foundation/io/directory.h:130
-io::WalkOptions::sorted	variable	foundation/io	io-walkoptions-sorted	foundation-io.md	engine/foundation/io/directory.h:131
-io::WalkOptions::name_pattern	variable	foundation/io	io-walkoptions-name-pattern	foundation-io.md	engine/foundation/io/directory.h:132
-io::WalkVisitor	alias	foundation/io	io-walkvisitor	foundation-io.md	engine/foundation/io/directory.h:136
-io::WalkDirectory(const Path&,const WalkOptions&,WalkVisitor,void*)	function	foundation/io	io-walkdirectory-const-path-amp-const-walkoptions-amp-walkvisitor-void-star	foundation-io.md	engine/foundation/io/directory.h:146
+io::DirectoryEntry::Info(FileInfo*) const	function	foundation/io	io-directoryentry-info-fileinfo-star-const	foundation-io.md	engine/foundation/io/directory.h:28
+io::Directory	class	foundation/io	io-directory	foundation-io.md	engine/foundation/io/directory.h:42
+io::Directory::Directory()	function	foundation/io	io-directory-directory	foundation-io.md	engine/foundation/io/directory.h:44
+io::Directory::Directory(const Directory&)	function	foundation/io	io-directory-directory-const-directory-amp	foundation-io.md	engine/foundation/io/directory.h:45
+io::Directory::operator=(const Directory&)	function	foundation/io	io-directory-operator-eq-const-directory-amp	foundation-io.md	engine/foundation/io/directory.h:46
+io::Directory::Directory(Directory&&) noexcept	function	foundation/io	io-directory-directory-directory-amp-amp-noexcept	foundation-io.md	engine/foundation/io/directory.h:48
+io::Directory::operator=(Directory&&) noexcept	function	foundation/io	io-directory-operator-eq-directory-amp-amp-noexcept	foundation-io.md	engine/foundation/io/directory.h:50
+io::Directory::~Directory()	function	foundation/io	io-directory-tilde-directory	foundation-io.md	engine/foundation/io/directory.h:52
+io::Directory::Open(const Path&,Directory*)	function	foundation/io	io-directory-open-const-path-amp-directory-star	foundation-io.md	engine/foundation/io/directory.h:59
+io::Directory::IsOpen() const	function	foundation/io	io-directory-isopen-const	foundation-io.md	engine/foundation/io/directory.h:62
+io::Directory::GetPath() const	function	foundation/io	io-directory-getpath-const	foundation-io.md	engine/foundation/io/directory.h:64
+io::Directory::Next(DirectoryEntry*,bool*)	function	foundation/io	io-directory-next-directoryentry-star-bool-star	foundation-io.md	engine/foundation/io/directory.h:71
+io::Directory::Close()	function	foundation/io	io-directory-close	foundation-io.md	engine/foundation/io/directory.h:74
+io::Directory::Create(const Path&)	function	foundation/io	io-directory-create-const-path-amp	foundation-io.md	engine/foundation/io/directory.h:77
+io::Directory::CreateAll(const Path&)	function	foundation/io	io-directory-createall-const-path-amp	foundation-io.md	engine/foundation/io/directory.h:79
+io::Directory::Remove(const Path&)	function	foundation/io	io-directory-remove-const-path-amp	foundation-io.md	engine/foundation/io/directory.h:81
+io::Directory::RemoveAll(const Path&)	function	foundation/io	io-directory-removeall-const-path-amp	foundation-io.md	engine/foundation/io/directory.h:83
+io::Directory::IsEmpty(const Path&,bool*)	function	foundation/io	io-directory-isempty-const-path-amp-bool-star	foundation-io.md	engine/foundation/io/directory.h:87
+io::DirectoryItem	struct	foundation/io	io-directoryitem	foundation-io.md	engine/foundation/io/directory.h:96
+io::DirectoryItem::name	variable	foundation/io	io-directoryitem-name	foundation-io.md	engine/foundation/io/directory.h:97
+io::DirectoryItem::type	variable	foundation/io	io-directoryitem-type	foundation-io.md	engine/foundation/io/directory.h:98
+io::ListDirectory(const Path&,bool,Vector<DirectoryItem>*)	function	foundation/io	io-listdirectory-const-path-amp-bool-vector-lt-directoryitem-gt-star	foundation-io.md	engine/foundation/io/directory.h:106
+io::MatchesWildcard(StringView,StringView)	function	foundation/io	io-matcheswildcard-stringview-stringview	foundation-io.md	engine/foundation/io/directory.h:111
+io::WalkAction	enum	foundation/io	io-walkaction	foundation-io.md	engine/foundation/io/directory.h:114
+io::WalkAction::Continue	enumerator	foundation/io	io-walkaction-continue	foundation-io.md	engine/foundation/io/directory.h:115
+io::WalkAction::SkipSubtree	enumerator	foundation/io	io-walkaction-skipsubtree	foundation-io.md	engine/foundation/io/directory.h:116
+io::WalkAction::Stop	enumerator	foundation/io	io-walkaction-stop	foundation-io.md	engine/foundation/io/directory.h:117
+io::WalkEntry	struct	foundation/io	io-walkentry	foundation-io.md	engine/foundation/io/directory.h:121
+io::WalkEntry::path	variable	foundation/io	io-walkentry-path	foundation-io.md	engine/foundation/io/directory.h:122
+io::WalkEntry::name	variable	foundation/io	io-walkentry-name	foundation-io.md	engine/foundation/io/directory.h:123
+io::WalkEntry::type	variable	foundation/io	io-walkentry-type	foundation-io.md	engine/foundation/io/directory.h:124
+io::WalkEntry::depth	variable	foundation/io	io-walkentry-depth	foundation-io.md	engine/foundation/io/directory.h:125
+io::WalkEntry::after_children	variable	foundation/io	io-walkentry-after-children	foundation-io.md	engine/foundation/io/directory.h:126
+io::WalkEntry::error	variable	foundation/io	io-walkentry-error	foundation-io.md	engine/foundation/io/directory.h:127
+io::WalkOptions	struct	foundation/io	io-walkoptions	foundation-io.md	engine/foundation/io/directory.h:131
+io::WalkOptions::max_depth	variable	foundation/io	io-walkoptions-max-depth	foundation-io.md	engine/foundation/io/directory.h:132
+io::WalkOptions::follow_symlinks	variable	foundation/io	io-walkoptions-follow-symlinks	foundation-io.md	engine/foundation/io/directory.h:133
+io::WalkOptions::post_order	variable	foundation/io	io-walkoptions-post-order	foundation-io.md	engine/foundation/io/directory.h:134
+io::WalkOptions::sorted	variable	foundation/io	io-walkoptions-sorted	foundation-io.md	engine/foundation/io/directory.h:135
+io::WalkOptions::name_pattern	variable	foundation/io	io-walkoptions-name-pattern	foundation-io.md	engine/foundation/io/directory.h:136
+io::WalkVisitor	alias	foundation/io	io-walkvisitor	foundation-io.md	engine/foundation/io/directory.h:140
+io::WalkDirectory(const Path&,const WalkOptions&,WalkVisitor,void*)	function	foundation/io	io-walkdirectory-const-path-amp-const-walkoptions-amp-walkvisitor-void-star	foundation-io.md	engine/foundation/io/directory.h:150
 io::Error	enum	foundation/io	io-error	foundation-io.md	engine/foundation/io/error.h:11
 io::Error::None	enumerator	foundation/io	io-error-none	foundation-io.md	engine/foundation/io/error.h:12
 io::Error::NotFound	enumerator	foundation/io	io-error-notfound	foundation-io.md	engine/foundation/io/error.h:13
@@ -311,16 +311,16 @@ io::Error::OutOfMemory	enumerator	foundation/io	io-error-outofmemory	foundation-
 io::Error::EndOfFile	enumerator	foundation/io	io-error-endoffile	foundation-io.md	engine/foundation/io/error.h:30
 io::Error::Io	enumerator	foundation/io	io-error-io	foundation-io.md	engine/foundation/io/error.h:31
 io::ErrorName(Error)	function	foundation/io	io-errorname-error	foundation-io.md	engine/foundation/io/error.h:35
-io::ErrorFromOsCode(i32)	function	foundation/io	io-errorfromoscode-i32	foundation-io.md	engine/foundation/io/error.h:39
-io::Status	struct	foundation/io	io-status	foundation-io.md	engine/foundation/io/error.h:44
-io::Status::error	variable	foundation/io	io-status-error	foundation-io.md	engine/foundation/io/error.h:45
-io::Status::os_code	variable	foundation/io	io-status-os-code	foundation-io.md	engine/foundation/io/error.h:46
-io::Status::Ok() const	function	foundation/io	io-status-ok-const	foundation-io.md	engine/foundation/io/error.h:49
-io::Status::Failed() const	function	foundation/io	io-status-failed-const	foundation-io.md	engine/foundation/io/error.h:51
-io::Status::Is(Error) const	function	foundation/io	io-status-is-error-const	foundation-io.md	engine/foundation/io/error.h:53
-io::Status::Success()	function	foundation/io	io-status-success	foundation-io.md	engine/foundation/io/error.h:55
-io::Status::Of(Error)	function	foundation/io	io-status-of-error	foundation-io.md	engine/foundation/io/error.h:57
-io::Status::FromOs(i32)	function	foundation/io	io-status-fromos-i32	foundation-io.md	engine/foundation/io/error.h:59
+io::ErrorFromOsCode(i32)	function	foundation/io	io-errorfromoscode-i32	foundation-io.md	engine/foundation/io/error.h:40
+io::Status	struct	foundation/io	io-status	foundation-io.md	engine/foundation/io/error.h:45
+io::Status::error	variable	foundation/io	io-status-error	foundation-io.md	engine/foundation/io/error.h:46
+io::Status::os_code	variable	foundation/io	io-status-os-code	foundation-io.md	engine/foundation/io/error.h:47
+io::Status::Ok() const	function	foundation/io	io-status-ok-const	foundation-io.md	engine/foundation/io/error.h:50
+io::Status::Failed() const	function	foundation/io	io-status-failed-const	foundation-io.md	engine/foundation/io/error.h:52
+io::Status::Is(Error) const	function	foundation/io	io-status-is-error-const	foundation-io.md	engine/foundation/io/error.h:54
+io::Status::Success()	function	foundation/io	io-status-success	foundation-io.md	engine/foundation/io/error.h:56
+io::Status::Of(Error)	function	foundation/io	io-status-of-error	foundation-io.md	engine/foundation/io/error.h:58
+io::Status::FromOs(i32)	function	foundation/io	io-status-fromos-i32	foundation-io.md	engine/foundation/io/error.h:60
 io::LogIo	variable	foundation/io	io-logio	foundation-io.md	engine/foundation/io/file.h:20
 io::OpenMode	enum	foundation/io	io-openmode	foundation-io.md	engine/foundation/io/file.h:23
 io::OpenMode::Read	enumerator	foundation/io	io-openmode-read	foundation-io.md	engine/foundation/io/file.h:24
@@ -378,37 +378,37 @@ io::File::File()	function	foundation/io	io-file-file	foundation-io.md	engine/fou
 io::File::File(const File&)	function	foundation/io	io-file-file-const-file-amp	foundation-io.md	engine/foundation/io/file.h:146
 io::File::operator=(const File&)	function	foundation/io	io-file-operator-eq-const-file-amp	foundation-io.md	engine/foundation/io/file.h:147
 io::File::~File()	function	foundation/io	io-file-tilde-file	foundation-io.md	engine/foundation/io/file.h:149
-io::File::Open(const Path&,OpenMode,u32,FilePtr*)	function	foundation/io	io-file-open-const-path-amp-openmode-u32-fileptr-star	foundation-io.md	engine/foundation/io/file.h:162
-io::File::OpenLocation(StringView,OpenMode,u32,FilePtr*)	function	foundation/io	io-file-openlocation-stringview-openmode-u32-fileptr-star	foundation-io.md	engine/foundation/io/file.h:169
-io::File::IsOpen() const	function	foundation/io	io-file-isopen-const	foundation-io.md	engine/foundation/io/file.h:172
-io::File::Capabilities() const	function	foundation/io	io-file-capabilities-const	foundation-io.md	engine/foundation/io/file.h:174
-io::File::Size(u64*)	function	foundation/io	io-file-size-u64-star	foundation-io.md	engine/foundation/io/file.h:178
-io::File::Read(void*,usize,u64,usize*)	function	foundation/io	io-file-read-void-star-usize-u64-usize-star	foundation-io.md	engine/foundation/io/file.h:185
-io::File::Write(const void*,usize,u64)	function	foundation/io	io-file-write-const-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:189
-io::File::Append(const void*,usize)	function	foundation/io	io-file-append-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:193
-io::File::Flush()	function	foundation/io	io-file-flush	foundation-io.md	engine/foundation/io/file.h:195
-io::File::Sync()	function	foundation/io	io-file-sync	foundation-io.md	engine/foundation/io/file.h:199
-io::File::Truncate(u64)	function	foundation/io	io-file-truncate-u64	foundation-io.md	engine/foundation/io/file.h:203
-io::File::Close()	function	foundation/io	io-file-close	foundation-io.md	engine/foundation/io/file.h:207
-io::File::Seek(u64)	function	foundation/io	io-file-seek-u64	foundation-io.md	engine/foundation/io/file.h:212
-io::File::Tell() const	function	foundation/io	io-file-tell-const	foundation-io.md	engine/foundation/io/file.h:214
-io::File::Read(void*,usize,usize*)	function	foundation/io	io-file-read-void-star-usize-usize-star	foundation-io.md	engine/foundation/io/file.h:216
-io::File::Write(const void*,usize)	function	foundation/io	io-file-write-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:218
-io::File::ReadAsync(AsyncRequest*,void*,usize,u64,Completion,void*)	function	foundation/io	io-file-readasync-asyncrequest-star-void-star-usize-u64-completion-void-star	foundation-io.md	engine/foundation/io/file.h:227
-io::File::WriteAsync(AsyncRequest*,const void*,usize,u64,Completion,void*)	function	foundation/io	io-file-writeasync-asyncrequest-star-const-void-star-usize-u64-completion-void-star	foundation-io.md	engine/foundation/io/file.h:231
-io::File::FlushAsync(AsyncRequest*,Completion,void*)	function	foundation/io	io-file-flushasync-asyncrequest-star-completion-void-star	foundation-io.md	engine/foundation/io/file.h:235
-io::File::Cancel(AsyncRequest*)	function	foundation/io	io-file-cancel-asyncrequest-star	foundation-io.md	engine/foundation/io/file.h:239
-io::FileFactory	alias	foundation/io	io-filefactory	foundation-io.md	engine/foundation/io/file.h:270
-io::RegisterFileScheme(StringView,FileFactory)	function	foundation/io	io-registerfilescheme-stringview-filefactory	foundation-io.md	engine/foundation/io/file.h:277
-io::UnregisterFileScheme(StringView)	function	foundation/io	io-unregisterfilescheme-stringview	foundation-io.md	engine/foundation/io/file.h:279
-io::ReadExact(File&,void*,usize,u64)	function	foundation/io	io-readexact-file-amp-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:284
-io::ReadAll(File&,Vector<u8>*,u64)	function	foundation/io	io-readall-file-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:289
-io::ReadAll(File&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readall-file-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:295
-io::ReadFile(const Path&,Vector<u8>*,u64)	function	foundation/io	io-readfile-const-path-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:300
-io::ReadFile(const Path&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readfile-const-path-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:304
-io::ReadTextFile(const Path&,String<HeapAllocator>*,u64)	function	foundation/io	io-readtextfile-const-path-amp-string-lt-heapallocator-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:308
-io::WriteFile(const Path&,const void*,usize)	function	foundation/io	io-writefile-const-path-amp-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:312
-io::WriteFileAtomic(const Path&,const void*,usize,u32)	function	foundation/io	io-writefileatomic-const-path-amp-const-void-star-usize-u32	foundation-io.md	engine/foundation/io/file.h:323
+io::File::Open(const Path&,OpenMode,u32,FilePtr*)	function	foundation/io	io-file-open-const-path-amp-openmode-u32-fileptr-star	foundation-io.md	engine/foundation/io/file.h:163
+io::File::OpenLocation(StringView,OpenMode,u32,FilePtr*)	function	foundation/io	io-file-openlocation-stringview-openmode-u32-fileptr-star	foundation-io.md	engine/foundation/io/file.h:170
+io::File::IsOpen() const	function	foundation/io	io-file-isopen-const	foundation-io.md	engine/foundation/io/file.h:173
+io::File::Capabilities() const	function	foundation/io	io-file-capabilities-const	foundation-io.md	engine/foundation/io/file.h:175
+io::File::Size(u64*)	function	foundation/io	io-file-size-u64-star	foundation-io.md	engine/foundation/io/file.h:179
+io::File::Read(void*,usize,u64,usize*)	function	foundation/io	io-file-read-void-star-usize-u64-usize-star	foundation-io.md	engine/foundation/io/file.h:186
+io::File::Write(const void*,usize,u64)	function	foundation/io	io-file-write-const-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:190
+io::File::Append(const void*,usize)	function	foundation/io	io-file-append-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:194
+io::File::Flush()	function	foundation/io	io-file-flush	foundation-io.md	engine/foundation/io/file.h:196
+io::File::Sync()	function	foundation/io	io-file-sync	foundation-io.md	engine/foundation/io/file.h:200
+io::File::Truncate(u64)	function	foundation/io	io-file-truncate-u64	foundation-io.md	engine/foundation/io/file.h:204
+io::File::Close()	function	foundation/io	io-file-close	foundation-io.md	engine/foundation/io/file.h:208
+io::File::Seek(u64)	function	foundation/io	io-file-seek-u64	foundation-io.md	engine/foundation/io/file.h:213
+io::File::Tell() const	function	foundation/io	io-file-tell-const	foundation-io.md	engine/foundation/io/file.h:215
+io::File::Read(void*,usize,usize*)	function	foundation/io	io-file-read-void-star-usize-usize-star	foundation-io.md	engine/foundation/io/file.h:217
+io::File::Write(const void*,usize)	function	foundation/io	io-file-write-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:219
+io::File::ReadAsync(AsyncRequest*,void*,usize,u64,Completion,void*)	function	foundation/io	io-file-readasync-asyncrequest-star-void-star-usize-u64-completion-void-star	foundation-io.md	engine/foundation/io/file.h:228
+io::File::WriteAsync(AsyncRequest*,const void*,usize,u64,Completion,void*)	function	foundation/io	io-file-writeasync-asyncrequest-star-const-void-star-usize-u64-completion-void-star	foundation-io.md	engine/foundation/io/file.h:232
+io::File::FlushAsync(AsyncRequest*,Completion,void*)	function	foundation/io	io-file-flushasync-asyncrequest-star-completion-void-star	foundation-io.md	engine/foundation/io/file.h:236
+io::File::Cancel(AsyncRequest*)	function	foundation/io	io-file-cancel-asyncrequest-star	foundation-io.md	engine/foundation/io/file.h:240
+io::FileFactory	alias	foundation/io	io-filefactory	foundation-io.md	engine/foundation/io/file.h:271
+io::RegisterFileScheme(StringView,FileFactory)	function	foundation/io	io-registerfilescheme-stringview-filefactory	foundation-io.md	engine/foundation/io/file.h:278
+io::UnregisterFileScheme(StringView)	function	foundation/io	io-unregisterfilescheme-stringview	foundation-io.md	engine/foundation/io/file.h:280
+io::ReadExact(File&,void*,usize,u64)	function	foundation/io	io-readexact-file-amp-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:285
+io::ReadAll(File&,Vector<u8>*,u64)	function	foundation/io	io-readall-file-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:290
+io::ReadAll(File&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readall-file-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:296
+io::ReadFile(const Path&,Vector<u8>*,u64)	function	foundation/io	io-readfile-const-path-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:301
+io::ReadFile(const Path&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readfile-const-path-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:305
+io::ReadTextFile(const Path&,String<HeapAllocator>*,u64)	function	foundation/io	io-readtextfile-const-path-amp-string-lt-heapallocator-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:309
+io::WriteFile(const Path&,const void*,usize)	function	foundation/io	io-writefile-const-path-amp-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:313
+io::WriteFileAtomic(const Path&,const void*,usize,u32)	function	foundation/io	io-writefileatomic-const-path-amp-const-void-star-usize-u32	foundation-io.md	engine/foundation/io/file.h:324
 io::FileType	enum	foundation/io	io-filetype	foundation-io.md	engine/foundation/io/file_system.h:16
 io::FileType::None	enumerator	foundation/io	io-filetype-none	foundation-io.md	engine/foundation/io/file_system.h:17
 io::FileType::Regular	enumerator	foundation/io	io-filetype-regular	foundation-io.md	engine/foundation/io/file_system.h:18
@@ -421,90 +421,90 @@ io::FileInfo::size	variable	foundation/io	io-fileinfo-size	foundation-io.md	engi
 io::FileInfo::modified_unix_ns	variable	foundation/io	io-fileinfo-modified-unix-ns	foundation-io.md	engine/foundation/io/file_system.h:30
 io::FileInfo::permissions	variable	foundation/io	io-fileinfo-permissions	foundation-io.md	engine/foundation/io/file_system.h:31
 io::FileInfo::read_only	variable	foundation/io	io-fileinfo-read-only	foundation-io.md	engine/foundation/io/file_system.h:32
-io::Stat(const Path&,FileInfo*)	function	foundation/io	io-stat-const-path-amp-fileinfo-star	foundation-io.md	engine/foundation/io/file_system.h:40
-io::Lstat(const Path&,FileInfo*)	function	foundation/io	io-lstat-const-path-amp-fileinfo-star	foundation-io.md	engine/foundation/io/file_system.h:44
-io::Exists(const Path&)	function	foundation/io	io-exists-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:46
-io::IsFile(const Path&)	function	foundation/io	io-isfile-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:48
-io::IsDirectory(const Path&)	function	foundation/io	io-isdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:50
-io::Remove(const Path&)	function	foundation/io	io-remove-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:55
-io::kRemoveAllMinComponents	variable	foundation/io	io-kremoveallmincomponents	foundation-io.md	engine/foundation/io/file_system.h:57
-io::RemoveAll(const Path&)	function	foundation/io	io-removeall-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:65
-io::Rename(const Path&,const Path&)	function	foundation/io	io-rename-const-path-amp-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:70
-io::Copy(const Path&,const Path&,bool)	function	foundation/io	io-copy-const-path-amp-const-path-amp-bool	foundation-io.md	engine/foundation/io/file_system.h:76
-io::SetPermissions(const Path&,u32)	function	foundation/io	io-setpermissions-const-path-amp-u32	foundation-io.md	engine/foundation/io/file_system.h:81
-io::SyncDirectory(const Path&)	function	foundation/io	io-syncdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:86
-io::CreateDirectory(const Path&)	function	foundation/io	io-createdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:91
-io::CreateDirectories(const Path&)	function	foundation/io	io-createdirectories-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:95
-io::CreatePrivateDirectory(const Path&)	function	foundation/io	io-createprivatedirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:100
-io::CreateTempFile(const Path&,StringView,Path*)	function	foundation/io	io-createtempfile-const-path-amp-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:107
-io::CreateTempDirectory(const Path&,StringView,Path*)	function	foundation/io	io-createtempdirectory-const-path-amp-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:111
-io::CurrentDirectory(Path*)	function	foundation/io	io-currentdirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:116
-io::SetCurrentDirectory(const Path&)	function	foundation/io	io-setcurrentdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:121
-io::Absolute(const Path&,Path*)	function	foundation/io	io-absolute-const-path-amp-path-star	foundation-io.md	engine/foundation/io/file_system.h:126
-io::Canonical(const Path&,Path*)	function	foundation/io	io-canonical-const-path-amp-path-star	foundation-io.md	engine/foundation/io/file_system.h:130
-io::ReadLink(const Path&,Path*)	function	foundation/io	io-readlink-const-path-amp-path-star	foundation-io.md	engine/foundation/io/file_system.h:134
-io::TempDirectory(Path*)	function	foundation/io	io-tempdirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:137
-io::ExecutablePath(Path*)	function	foundation/io	io-executablepath-path-star	foundation-io.md	engine/foundation/io/file_system.h:141
-io::ExecutableDirectory(Path*)	function	foundation/io	io-executabledirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:143
-io::UserConfigDirectory(StringView,Path*)	function	foundation/io	io-userconfigdirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:149
-io::UserCacheDirectory(StringView,Path*)	function	foundation/io	io-usercachedirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:153
-io::UserDataDirectory(StringView,Path*)	function	foundation/io	io-userdatadirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:157
-io::UserStateDirectory(StringView,Path*)	function	foundation/io	io-userstatedirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:161
-io::CrashDumpDirectory(Path*)	function	foundation/io	io-crashdumpdirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:172
+io::Stat(const Path&,FileInfo*)	function	foundation/io	io-stat-const-path-amp-fileinfo-star	foundation-io.md	engine/foundation/io/file_system.h:41
+io::Lstat(const Path&,FileInfo*)	function	foundation/io	io-lstat-const-path-amp-fileinfo-star	foundation-io.md	engine/foundation/io/file_system.h:46
+io::Exists(const Path&)	function	foundation/io	io-exists-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:48
+io::IsFile(const Path&)	function	foundation/io	io-isfile-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:50
+io::IsDirectory(const Path&)	function	foundation/io	io-isdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:52
+io::Remove(const Path&)	function	foundation/io	io-remove-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:58
+io::kRemoveAllMinComponents	variable	foundation/io	io-kremoveallmincomponents	foundation-io.md	engine/foundation/io/file_system.h:60
+io::RemoveAll(const Path&)	function	foundation/io	io-removeall-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:69
+io::Rename(const Path&,const Path&)	function	foundation/io	io-rename-const-path-amp-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:75
+io::Copy(const Path&,const Path&,bool)	function	foundation/io	io-copy-const-path-amp-const-path-amp-bool	foundation-io.md	engine/foundation/io/file_system.h:82
+io::SetPermissions(const Path&,u32)	function	foundation/io	io-setpermissions-const-path-amp-u32	foundation-io.md	engine/foundation/io/file_system.h:88
+io::SyncDirectory(const Path&)	function	foundation/io	io-syncdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:94
+io::CreateDirectory(const Path&)	function	foundation/io	io-createdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:100
+io::CreateDirectories(const Path&)	function	foundation/io	io-createdirectories-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:105
+io::CreatePrivateDirectory(const Path&)	function	foundation/io	io-createprivatedirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:111
+io::CreateTempFile(const Path&,StringView,Path*)	function	foundation/io	io-createtempfile-const-path-amp-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:119
+io::CreateTempDirectory(const Path&,StringView,Path*)	function	foundation/io	io-createtempdirectory-const-path-amp-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:124
+io::CurrentDirectory(Path*)	function	foundation/io	io-currentdirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:130
+io::SetCurrentDirectory(const Path&)	function	foundation/io	io-setcurrentdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:136
+io::Absolute(const Path&,Path*)	function	foundation/io	io-absolute-const-path-amp-path-star	foundation-io.md	engine/foundation/io/file_system.h:142
+io::Canonical(const Path&,Path*)	function	foundation/io	io-canonical-const-path-amp-path-star	foundation-io.md	engine/foundation/io/file_system.h:147
+io::ReadLink(const Path&,Path*)	function	foundation/io	io-readlink-const-path-amp-path-star	foundation-io.md	engine/foundation/io/file_system.h:152
+io::TempDirectory(Path*)	function	foundation/io	io-tempdirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:156
+io::ExecutablePath(Path*)	function	foundation/io	io-executablepath-path-star	foundation-io.md	engine/foundation/io/file_system.h:161
+io::ExecutableDirectory(Path*)	function	foundation/io	io-executabledirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:164
+io::UserConfigDirectory(StringView,Path*)	function	foundation/io	io-userconfigdirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:171
+io::UserCacheDirectory(StringView,Path*)	function	foundation/io	io-usercachedirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:176
+io::UserDataDirectory(StringView,Path*)	function	foundation/io	io-userdatadirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:181
+io::UserStateDirectory(StringView,Path*)	function	foundation/io	io-userstatedirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:186
+io::CrashDumpDirectory(Path*)	function	foundation/io	io-crashdumpdirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:197
 io::PathStyle	enum	foundation/io	io-pathstyle	foundation-io.md	engine/foundation/io/path.h:18
 io::PathStyle::Posix	enumerator	foundation/io	io-pathstyle-posix	foundation-io.md	engine/foundation/io/path.h:19
 io::PathStyle::Windows	enumerator	foundation/io	io-pathstyle-windows	foundation-io.md	engine/foundation/io/path.h:20
-io::NativePathStyle()	function	foundation/io	io-nativepathstyle	foundation-io.md	engine/foundation/io/path.h:24
-io::kMaxPathBytes	variable	foundation/io	io-kmaxpathbytes	foundation-io.md	engine/foundation/io/path.h:33
-io::Path	class	foundation/io	io-path	foundation-io.md	engine/foundation/io/path.h:47
-io::Path::Path()	function	foundation/io	io-path-path	foundation-io.md	engine/foundation/io/path.h:50
-io::Path::Path(PathStyle)	function	foundation/io	io-path-path-pathstyle	foundation-io.md	engine/foundation/io/path.h:52
-io::Path::Path(StringView,PathStyle)	function	foundation/io	io-path-path-stringview-pathstyle	foundation-io.md	engine/foundation/io/path.h:59
-io::Path::Path(const Path&)	function	foundation/io	io-path-path-const-path-amp	foundation-io.md	engine/foundation/io/path.h:62
-io::Path::operator=(const Path&)	function	foundation/io	io-path-operator-eq-const-path-amp	foundation-io.md	engine/foundation/io/path.h:64
-io::Path::Path(Path&&) noexcept	function	foundation/io	io-path-path-path-amp-amp-noexcept	foundation-io.md	engine/foundation/io/path.h:65
-io::Path::operator=(Path&&) noexcept	function	foundation/io	io-path-operator-eq-path-amp-amp-noexcept	foundation-io.md	engine/foundation/io/path.h:66
-io::Path::Parse(StringView,PathStyle,Path*)	function	foundation/io	io-path-parse-stringview-pathstyle-path-star	foundation-io.md	engine/foundation/io/path.h:74
-io::Path::Style() const	function	foundation/io	io-path-style-const	foundation-io.md	engine/foundation/io/path.h:77
-io::Path::View() const	function	foundation/io	io-path-view-const	foundation-io.md	engine/foundation/io/path.h:80
-io::Path::ToNative(char*,usize) const	function	foundation/io	io-path-tonative-char-star-usize-const	foundation-io.md	engine/foundation/io/path.h:86
-io::Path::IsEmpty() const	function	foundation/io	io-path-isempty-const	foundation-io.md	engine/foundation/io/path.h:89
-io::Path::IsAbsolute() const	function	foundation/io	io-path-isabsolute-const	foundation-io.md	engine/foundation/io/path.h:92
-io::Path::IsRelative() const	function	foundation/io	io-path-isrelative-const	foundation-io.md	engine/foundation/io/path.h:94
-io::Path::HasRoot() const	function	foundation/io	io-path-hasroot-const	foundation-io.md	engine/foundation/io/path.h:96
-io::Path::RootName() const	function	foundation/io	io-path-rootname-const	foundation-io.md	engine/foundation/io/path.h:98
-io::Path::Parent() const	function	foundation/io	io-path-parent-const	foundation-io.md	engine/foundation/io/path.h:102
-io::Path::FileName() const	function	foundation/io	io-path-filename-const	foundation-io.md	engine/foundation/io/path.h:104
-io::Path::Stem() const	function	foundation/io	io-path-stem-const	foundation-io.md	engine/foundation/io/path.h:106
-io::Path::Extension() const	function	foundation/io	io-path-extension-const	foundation-io.md	engine/foundation/io/path.h:109
-io::Path::Components	class	foundation/io	io-path-components	foundation-io.md	engine/foundation/io/path.h:112
-io::Path::Components::Next(StringView*)	function	foundation/io	io-path-components-next-stringview-star	foundation-io.md	engine/foundation/io/path.h:117
-io::Path::GetComponents() const	function	foundation/io	io-path-getcomponents-const	foundation-io.md	engine/foundation/io/path.h:124
-io::Path::Join(const Path&) const	function	foundation/io	io-path-join-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:131
-io::Path::Join(StringView) const	function	foundation/io	io-path-join-stringview-const	foundation-io.md	engine/foundation/io/path.h:133
-io::Path::TryJoin(const Path&,Path*) const	function	foundation/io	io-path-tryjoin-const-path-amp-path-star-const	foundation-io.md	engine/foundation/io/path.h:138
-io::Path::operator/(const Path&) const	function	foundation/io	io-path-operator-slash-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:140
-io::Path::operator/(StringView) const	function	foundation/io	io-path-operator-slash-stringview-const	foundation-io.md	engine/foundation/io/path.h:142
-io::Path::Append(StringView)	function	foundation/io	io-path-append-stringview	foundation-io.md	engine/foundation/io/path.h:146
-io::Path::WithFileName(StringView) const	function	foundation/io	io-path-withfilename-stringview-const	foundation-io.md	engine/foundation/io/path.h:152
-io::Path::WithExtension(StringView) const	function	foundation/io	io-path-withextension-stringview-const	foundation-io.md	engine/foundation/io/path.h:156
-io::Path::WithoutExtension() const	function	foundation/io	io-path-withoutextension-const	foundation-io.md	engine/foundation/io/path.h:158
-io::Path::Normalize() const	function	foundation/io	io-path-normalize-const	foundation-io.md	engine/foundation/io/path.h:162
-io::Path::RelativeTo(const Path&,Path*) const	function	foundation/io	io-path-relativeto-const-path-amp-path-star-const	foundation-io.md	engine/foundation/io/path.h:171
-io::Path::IsInside(const Path&) const	function	foundation/io	io-path-isinside-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:174
-io::Path::StartsWith(const Path&) const	function	foundation/io	io-path-startswith-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:177
-io::Path::Hash() const	function	foundation/io	io-path-hash-const	foundation-io.md	engine/foundation/io/path.h:180
-io::Path::operator==(const Path&) const	function	foundation/io	io-path-operator-eq-eq-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:182
-io::Path::operator!=(const Path&) const	function	foundation/io	io-path-operator-not-eq-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:184
-io::Path::operator<(const Path&) const	function	foundation/io	io-path-operator-lt-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:186
-io::Path::Compare(const Path&) const	function	foundation/io	io-path-compare-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:188
-io::PathBuilder	class	foundation/io	io-pathbuilder	foundation-io.md	engine/foundation/io/path.h:207
-io::PathBuilder::PathBuilder(PathStyle)	function	foundation/io	io-pathbuilder-pathbuilder-pathstyle	foundation-io.md	engine/foundation/io/path.h:213
-io::PathBuilder::Set(StringView)	function	foundation/io	io-pathbuilder-set-stringview	foundation-io.md	engine/foundation/io/path.h:218
-io::PathBuilder::Append(StringView)	function	foundation/io	io-pathbuilder-append-stringview	foundation-io.md	engine/foundation/io/path.h:222
-io::PathBuilder::CStr() const	function	foundation/io	io-pathbuilder-cstr-const	foundation-io.md	engine/foundation/io/path.h:224
-io::PathBuilder::View() const	function	foundation/io	io-pathbuilder-view-const	foundation-io.md	engine/foundation/io/path.h:226
-io::PathBuilder::Style() const	function	foundation/io	io-pathbuilder-style-const	foundation-io.md	engine/foundation/io/path.h:228
+io::NativePathStyle()	function	foundation/io	io-nativepathstyle	foundation-io.md	engine/foundation/io/path.h:25
+io::kMaxPathBytes	variable	foundation/io	io-kmaxpathbytes	foundation-io.md	engine/foundation/io/path.h:34
+io::Path	class	foundation/io	io-path	foundation-io.md	engine/foundation/io/path.h:48
+io::Path::Path()	function	foundation/io	io-path-path	foundation-io.md	engine/foundation/io/path.h:51
+io::Path::Path(PathStyle)	function	foundation/io	io-path-path-pathstyle	foundation-io.md	engine/foundation/io/path.h:53
+io::Path::Path(StringView,PathStyle)	function	foundation/io	io-path-path-stringview-pathstyle	foundation-io.md	engine/foundation/io/path.h:60
+io::Path::Path(const Path&)	function	foundation/io	io-path-path-const-path-amp	foundation-io.md	engine/foundation/io/path.h:63
+io::Path::operator=(const Path&)	function	foundation/io	io-path-operator-eq-const-path-amp	foundation-io.md	engine/foundation/io/path.h:65
+io::Path::Path(Path&&) noexcept	function	foundation/io	io-path-path-path-amp-amp-noexcept	foundation-io.md	engine/foundation/io/path.h:66
+io::Path::operator=(Path&&) noexcept	function	foundation/io	io-path-operator-eq-path-amp-amp-noexcept	foundation-io.md	engine/foundation/io/path.h:67
+io::Path::Parse(StringView,PathStyle,Path*)	function	foundation/io	io-path-parse-stringview-pathstyle-path-star	foundation-io.md	engine/foundation/io/path.h:75
+io::Path::Style() const	function	foundation/io	io-path-style-const	foundation-io.md	engine/foundation/io/path.h:78
+io::Path::View() const	function	foundation/io	io-path-view-const	foundation-io.md	engine/foundation/io/path.h:81
+io::Path::ToNative(char*,usize) const	function	foundation/io	io-path-tonative-char-star-usize-const	foundation-io.md	engine/foundation/io/path.h:87
+io::Path::IsEmpty() const	function	foundation/io	io-path-isempty-const	foundation-io.md	engine/foundation/io/path.h:90
+io::Path::IsAbsolute() const	function	foundation/io	io-path-isabsolute-const	foundation-io.md	engine/foundation/io/path.h:93
+io::Path::IsRelative() const	function	foundation/io	io-path-isrelative-const	foundation-io.md	engine/foundation/io/path.h:95
+io::Path::HasRoot() const	function	foundation/io	io-path-hasroot-const	foundation-io.md	engine/foundation/io/path.h:97
+io::Path::RootName() const	function	foundation/io	io-path-rootname-const	foundation-io.md	engine/foundation/io/path.h:99
+io::Path::Parent() const	function	foundation/io	io-path-parent-const	foundation-io.md	engine/foundation/io/path.h:103
+io::Path::FileName() const	function	foundation/io	io-path-filename-const	foundation-io.md	engine/foundation/io/path.h:105
+io::Path::Stem() const	function	foundation/io	io-path-stem-const	foundation-io.md	engine/foundation/io/path.h:107
+io::Path::Extension() const	function	foundation/io	io-path-extension-const	foundation-io.md	engine/foundation/io/path.h:110
+io::Path::Components	class	foundation/io	io-path-components	foundation-io.md	engine/foundation/io/path.h:113
+io::Path::Components::Next(StringView*)	function	foundation/io	io-path-components-next-stringview-star	foundation-io.md	engine/foundation/io/path.h:118
+io::Path::GetComponents() const	function	foundation/io	io-path-getcomponents-const	foundation-io.md	engine/foundation/io/path.h:125
+io::Path::Join(const Path&) const	function	foundation/io	io-path-join-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:132
+io::Path::Join(StringView) const	function	foundation/io	io-path-join-stringview-const	foundation-io.md	engine/foundation/io/path.h:134
+io::Path::TryJoin(const Path&,Path*) const	function	foundation/io	io-path-tryjoin-const-path-amp-path-star-const	foundation-io.md	engine/foundation/io/path.h:139
+io::Path::operator/(const Path&) const	function	foundation/io	io-path-operator-slash-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:141
+io::Path::operator/(StringView) const	function	foundation/io	io-path-operator-slash-stringview-const	foundation-io.md	engine/foundation/io/path.h:143
+io::Path::Append(StringView)	function	foundation/io	io-path-append-stringview	foundation-io.md	engine/foundation/io/path.h:147
+io::Path::WithFileName(StringView) const	function	foundation/io	io-path-withfilename-stringview-const	foundation-io.md	engine/foundation/io/path.h:153
+io::Path::WithExtension(StringView) const	function	foundation/io	io-path-withextension-stringview-const	foundation-io.md	engine/foundation/io/path.h:157
+io::Path::WithoutExtension() const	function	foundation/io	io-path-withoutextension-const	foundation-io.md	engine/foundation/io/path.h:159
+io::Path::Normalize() const	function	foundation/io	io-path-normalize-const	foundation-io.md	engine/foundation/io/path.h:163
+io::Path::RelativeTo(const Path&,Path*) const	function	foundation/io	io-path-relativeto-const-path-amp-path-star-const	foundation-io.md	engine/foundation/io/path.h:172
+io::Path::IsInside(const Path&) const	function	foundation/io	io-path-isinside-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:175
+io::Path::StartsWith(const Path&) const	function	foundation/io	io-path-startswith-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:178
+io::Path::Hash() const	function	foundation/io	io-path-hash-const	foundation-io.md	engine/foundation/io/path.h:181
+io::Path::operator==(const Path&) const	function	foundation/io	io-path-operator-eq-eq-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:183
+io::Path::operator!=(const Path&) const	function	foundation/io	io-path-operator-not-eq-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:185
+io::Path::operator<(const Path&) const	function	foundation/io	io-path-operator-lt-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:187
+io::Path::Compare(const Path&) const	function	foundation/io	io-path-compare-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:189
+io::PathBuilder	class	foundation/io	io-pathbuilder	foundation-io.md	engine/foundation/io/path.h:208
+io::PathBuilder::PathBuilder(PathStyle)	function	foundation/io	io-pathbuilder-pathbuilder-pathstyle	foundation-io.md	engine/foundation/io/path.h:214
+io::PathBuilder::Set(StringView)	function	foundation/io	io-pathbuilder-set-stringview	foundation-io.md	engine/foundation/io/path.h:219
+io::PathBuilder::Append(StringView)	function	foundation/io	io-pathbuilder-append-stringview	foundation-io.md	engine/foundation/io/path.h:223
+io::PathBuilder::CStr() const	function	foundation/io	io-pathbuilder-cstr-const	foundation-io.md	engine/foundation/io/path.h:225
+io::PathBuilder::View() const	function	foundation/io	io-pathbuilder-view-const	foundation-io.md	engine/foundation/io/path.h:227
+io::PathBuilder::Style() const	function	foundation/io	io-pathbuilder-style-const	foundation-io.md	engine/foundation/io/path.h:229
 Sqrt(f32)	function	foundation/math	sqrt-f32	foundation-math.md	engine/foundation/math/math_util.h:11
 Sin(f32)	function	foundation/math	sin-f32	foundation-math.md	engine/foundation/math/math_util.h:13
 Cos(f32)	function	foundation/math	cos-f32	foundation-math.md	engine/foundation/math/math_util.h:15

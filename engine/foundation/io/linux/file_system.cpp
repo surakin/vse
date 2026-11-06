@@ -53,7 +53,8 @@ Status FromPath(StringView text, Path* out) {
 
 constexpr int kMaxTreeDepth = 128;
 
-// Removes `name` below the directory `parent_fd`, without following links; holds one descriptor per level.
+// Removes `name` below the directory `parent_fd`, without following links; holds one descriptor per level. Some file systems skip
+// entries when others are removed during a read of the directory, so an `ENOTEMPTY` after the sweep means "sweep again" (a few times).
 Status RemoveTree(int parent_fd, const char* name, int depth) {
     struct stat st;
     if (::fstatat(parent_fd, name, &st, AT_SYMLINK_NOFOLLOW) != 0) return Errno();
@@ -61,29 +62,33 @@ Status RemoveTree(int parent_fd, const char* name, int depth) {
         return ::unlinkat(parent_fd, name, 0) == 0 ? Status::Success() : Errno();
     }
     if (depth >= kMaxTreeDepth) return Status::Of(Error::TooLong);
-    const int fd = ::openat(parent_fd, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
-    if (fd < 0) return Errno();
-    DIR* dir = ::fdopendir(fd);
-    if (dir == nullptr) {
-        const Status s = Errno();
-        ::close(fd);
-        return s;
-    }
-    Status first;
-    for (;;) {
-        errno = 0;
-        const struct dirent* entry = ::readdir(dir);
-        if (entry == nullptr) {
-            if (errno != 0 && first.Ok()) first = Errno();
-            break;
+    for (int attempt = 0; attempt < 3; ++attempt) {
+        const int fd = ::openat(parent_fd, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+        if (fd < 0) return Errno();
+        DIR* dir = ::fdopendir(fd);
+        if (dir == nullptr) {
+            const Status s = Errno();
+            ::close(fd);
+            return s;
         }
-        if (std::strcmp(entry->d_name, ".") == 0 || std::strcmp(entry->d_name, "..") == 0) continue;
-        const Status s = RemoveTree(fd, entry->d_name, depth + 1);
-        if (s.Failed() && first.Ok()) first = s;
+        Status first;
+        for (;;) {
+            errno = 0;
+            const struct dirent* entry = ::readdir(dir);
+            if (entry == nullptr) {
+                if (errno != 0 && first.Ok()) first = Errno();
+                break;
+            }
+            if (std::strcmp(entry->d_name, ".") == 0 || std::strcmp(entry->d_name, "..") == 0) continue;
+            const Status s = RemoveTree(fd, entry->d_name, depth + 1);
+            if (s.Failed() && first.Ok()) first = s;
+        }
+        ::closedir(dir); // closes fd
+        if (first.Failed()) return first;
+        if (::unlinkat(parent_fd, name, AT_REMOVEDIR) == 0) return Status::Success();
+        if (errno != ENOTEMPTY) return Errno();
     }
-    ::closedir(dir); // closes fd
-    if (first.Failed()) return first;
-    return ::unlinkat(parent_fd, name, AT_REMOVEDIR) == 0 ? Status::Success() : Errno();
+    return Status::Of(Error::NotEmpty);
 }
 
 bool ValidAppName(StringView name) {
@@ -223,12 +228,18 @@ Status Copy(const Path& from, const Path& to, bool overwrite) {
         return s;
     }
     struct stat out_st;
-    if (::fstat(out, &out_st) != 0 || (out_st.st_dev == st.st_dev && out_st.st_ino == st.st_ino) ||
-        (overwrite && S_ISREG(out_st.st_mode) && ::ftruncate(out, 0) != 0)) {
-        const Status s = (out_st.st_dev == st.st_dev && out_st.st_ino == st.st_ino) ? Status::Of(Error::Invalid) : Errno();
+    Status setup;
+    if (::fstat(out, &out_st) != 0) {
+        setup = Errno();
+    } else if (out_st.st_dev == st.st_dev && out_st.st_ino == st.st_ino) {
+        setup = Status::Of(Error::Invalid); // the same file: truncating it would destroy the source
+    } else if (overwrite && S_ISREG(out_st.st_mode) && ::ftruncate(out, 0) != 0) {
+        setup = Errno();
+    }
+    if (setup.Failed()) {
         ::close(in);
         ::close(out);
-        return s;
+        return setup;
     }
     Status result;
     char buffer[64 * 1024];

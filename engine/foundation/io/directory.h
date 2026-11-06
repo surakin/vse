@@ -24,6 +24,7 @@ struct DirectoryEntry {
     /// Describes the entry now (`lstat`: a link is described, not its target); lazy because most callers only need `name` and `type`.
     ///
     /// Fails: `NotFound` (removed since it was listed), `PermissionDenied`.
+    /// Backend: Windows: the attributes the find call already returned, plus GetFileInformationByHandle for the rest; macOS: fstatat with AT_SYMLINK_NOFOLLOW.
     Status Info(FileInfo* out) const;
 
 private:
@@ -54,6 +55,7 @@ public:
     ///
     /// Param out: receives the open directory (closing a previous one); unchanged on failure.
     /// Fails: `NotFound`, `NotADirectory`, `PermissionDenied`, `TooManyOpenFiles`, `TooLong`.
+    /// Backend: Windows: FindFirstFileExW (or NtQueryDirectoryFile) over a handle opened with FILE_FLAG_BACKUP_SEMANTICS; macOS: opendir.
     static Status Open(const Path& path, Directory* out);
 
     /// Returns true while the directory is open.
@@ -65,8 +67,10 @@ public:
     /// Param entry: receives the entry when `*found` is true.
     /// Param found: set to false at the end of the directory.
     /// Fails: `Invalid` (closed), `Io` (a read error; the position is then undefined).
+    /// Backend: Windows: FindNextFileW, skipping the dot entries, the type from the attributes (a reparse point is a Symlink); macOS: readdir.
     Status Next(DirectoryEntry* entry, bool* found);
     /// Closes the directory; idempotent.
+    /// Backend: Windows: FindClose; macOS: closedir.
     void Close();
 
     /// Creates a directory ([[io::CreateDirectory]]).

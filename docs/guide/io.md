@@ -1,9 +1,27 @@
 # Paths, files and directories
 
-Status: draft (Phase 8, Days 116-120: paths, errors, file-system operations, files, asynchronous I/O and directories).
+Status: draft (Phase 8 complete, Days 115-124).
 
 The file layer lives in `engine/foundation/io/` (namespace `engine_placeholder::io`). Design and reasons:
 `docs/superpowers/specs/2026-11-06-file-layer-design.md`.
+
+## Which API do I use?
+
+| I want to... | Use |
+|---|---|
+| build, split, join, compare or normalize a path | `io::Path` (no disk access; `PathBuilder<N>` when you cannot allocate) |
+| read a whole file | `io::ReadFile` (into a `Vector<u8>` or an arena), `io::ReadTextFile` |
+| write a whole file | `io::WriteFile`; `io::WriteFileAtomic` when a half-written file would hurt (config, caches, generated output) |
+| read or write part of a file, at offsets, from several threads | `io::File::Open` + `Read`/`Write` at an offset |
+| read or write without blocking a job | `File::ReadAsync`/`WriteAsync` with a completion, or `co_await jobs::ReadAsync` / `ReadAllAsync` |
+| ask whether something exists, its size, its time | `io::Exists`, `io::Stat` |
+| create, remove, rename or copy | `io::CreateDirectories`, `CreatePrivateDirectory`, `Remove`, `RemoveAll`, `Rename`, `Copy` |
+| list a directory or walk a tree | `io::Directory` (streaming), `io::ListDirectory` (sorted), `io::WalkDirectory` |
+| find the user's config, cache or data folder, the temp folder, my executable | `io::UserConfigDirectory`, `UserCacheDirectory`, `UserDataDirectory`, `TempDirectory`, `ExecutablePath` |
+| read from a pak or a server | an `io::File` backend registered with `RegisterFileScheme`, opened with `File::OpenLocation` |
+| write a crash report from a fault handler, or print to the console | the raw descriptor primitives in `os.h` (`os::Write`, `os::CreateFileForWriting`): the documented exceptions |
+
+The rule, and what the `file_access_check` gate allows, is in `CLAUDE.md`. Everything below is the detail.
 
 ## Paths
 

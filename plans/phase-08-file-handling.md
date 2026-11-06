@@ -17,8 +17,8 @@ backend itself, third-party code); the Windows and macOS checklists (`BACKEND.md
 `docs/guide/io.md` is complete; the full suite passes in every flavor.
 
 Every day of this phase has its own file under `plans/phase-08-file-handling/` (see `CLAUDE.md`, planning policy).
-**Status: started (2026-11-06); Day 115 done.** Days 115-124 are written; `CURRENT_PHASE` changes to 8 in the commit that completes
-Day 115's first task. Day numbers continue from Phase 7 (which ended at Day 114).
+**Status: COMPLETE (Days 115-124, 2026-11-06 to 2026-11-07).** Closing run: `ran 2914 of 2914 tests (phases: all; flavors: all; display: included; crash tests: included)`, all passing. Days 115-124 are written; `CURRENT_PHASE` changes to 8 in the commit that completes
+Day 115's first task. Day numbers continue from Phase 7 (which ended at Day 114). What was built: `io::Path`/`PathBuilder`, `io::Error`/`Status`, the file-system operations and special folders, `io::File` with `LocalFile`, the scheme registry, asynchronous operations over an `IoExecutor` seam with `co_await` adapters, `io::Directory`/`WalkDirectory`, the `file_access_check` gate and `engine/foundation/io/BACKEND.md`; every file-access site ported except the documented exceptions. Design and numbers: `docs/superpowers/specs/2026-11-06-file-layer-design.md`; guide: `docs/guide/io.md`.
 
 ## Days
 

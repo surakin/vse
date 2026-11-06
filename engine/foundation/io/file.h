@@ -159,13 +159,14 @@ public:
     /// Fails: `NotFound`, `PermissionDenied`, `IsADirectory` (also when the path names a directory and the mode is `Read`), `AlreadyExists`
     ///   (`kOpenCreateNew`), `Invalid` (`OpenMode::Read` with `kOpenCreate`, `kOpenCreateNew` or `kOpenTruncate`), `NotADirectory`,
     ///   `TooManyOpenFiles`, `SymlinkLoop`, `TooLong`.
+    /// Backend: Windows: CreateFileW with FILE_FLAG_OVERLAPPED (so the file is NativelyAsync); macOS: open with O_CLOEXEC and dispatch_io for asynchronous work.
     static Status Open(const Path& path, OpenMode mode, u32 flags, FilePtr* out);
     /// Opens `location`, which is either a local path or `scheme://rest`. `file:///abs/path` (percent escapes such as `%20` are
     /// decoded; no query or fragment) and a text without a scheme are local files;
     /// other schemes go to the backend registered with [[io::RegisterFileScheme]].
     ///
     /// Param location: path text or URL.
-    /// Fails: `Unsupported` for a scheme nobody registered, plus the errors of [[io::File::Open]].
+    /// Fails: `Unsupported` for a scheme nobody registered, `Invalid` for a malformed percent escape or an encoded NUL byte, plus the errors of [[io::File::Open]].
     static Status OpenLocation(StringView location, OpenMode mode, u32 flags, FilePtr* out);
 
     /// Returns true until the file is closed.
@@ -314,7 +315,7 @@ Status WriteFile(const Path& path, const void* data, usize length);
 ///
 /// Writes a temporary file in the same directory, flushes and syncs it, then renames it over `path`. The temporary is removed on
 /// every failure path, and the directory is synced after the rename so the new entry survives a crash. A symbolic link at `path` is
-/// followed (the file it points to is replaced, the link stays). A replaced file keeps its permission bits; a new file gets `new_file_permissions` (private to the owner by default: pass 0644 for
+/// followed (the file it points to is replaced, the link stays). The replacement is a new file: a replaced file keeps its permission bits, but its owner, hard links, ACLs and extended attributes are not carried over (the writing user owns the result). A new file gets `new_file_permissions` (private to the owner by default: pass 0644 for
 /// ordinary generated files).
 ///
 /// Param path: the target; its directory must exist.

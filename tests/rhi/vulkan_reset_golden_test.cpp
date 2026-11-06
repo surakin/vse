@@ -1,6 +1,5 @@
 // Phase 7 Day 112: the reset on a real device: the picture before and after a reset is identical and still matches the blessed
 // golden image, and a loop of resets leaves nothing behind.
-#include <dirent.h>
 #include <unistd.h>
 
 #include <cstdio>
@@ -8,6 +7,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "io/directory.h"
+#include "io/file.h"
 #include "gpu_fixture.h"
 #include "image_compare.h"
 #include "reset_rig.h"
@@ -23,20 +24,24 @@ constexpr u32 kResetShotH = 180;
 
 long OpenDescriptorCount() {
     long count = 0;
-    if (DIR* d = opendir("/proc/self/fd")) {
-        while (readdir(d) != nullptr) ++count;
-        closedir(d);
+    io::Directory fds;
+    if (io::Directory::Open(io::Path("/proc/self/fd", io::PathStyle::Posix), &fds).Ok()) {
+        io::DirectoryEntry entry;
+        bool found = false;
+        while (fds.Next(&entry, &found).Ok() && found) ++count;
     }
     return count;
 }
 
 long ResetResidentKiB() {
-    std::FILE* f = std::fopen("/proc/self/statm", "r");
-    if (f == nullptr) return 0;
+    io::Path statm_path("/proc/self/statm", io::PathStyle::Posix);
+    Vector<u8> bytes;
+    if (io::ReadFile(statm_path, &bytes, 4096).Failed() || bytes.Size() == 0) return 0;
+    char text[128] = {};
+    std::memcpy(text, bytes.Data(), bytes.Size() < sizeof(text) - 1 ? bytes.Size() : sizeof(text) - 1);
     long pages = 0;
     long resident = 0;
-    const int n = std::fscanf(f, "%ld %ld", &pages, &resident);
-    std::fclose(f);
+    const int n = std::sscanf(text, "%ld %ld", &pages, &resident);
     return n == 2 ? resident * (sysconf(_SC_PAGESIZE) / 1024) : 0;
 }
 

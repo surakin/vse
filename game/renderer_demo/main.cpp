@@ -8,10 +8,10 @@
 #include <cstring>
 #include <ctime>
 
-#include <dirent.h>
 #include <unistd.h>
 
 #include "textures.h"
+#include "io/directory.h"
 #include "io/file.h"
 #include "io/file_system.h"
 #include "debug/program_setup.h"
@@ -73,21 +73,25 @@ double NowSeconds() {
 }
 
 long ResidentKiB() {
-    std::FILE* f = std::fopen("/proc/self/statm", "r");
-    if (f == nullptr) return 0;
+    io::Path statm_path("/proc/self/statm", io::PathStyle::Posix);
+    Vector<u8> bytes;
+    if (io::ReadFile(statm_path, &bytes, 4096).Failed() || bytes.Size() == 0) return 0;
+    char text[128] = {};
+    std::memcpy(text, bytes.Data(), bytes.Size() < sizeof(text) - 1 ? bytes.Size() : sizeof(text) - 1);
     long size = 0, resident = 0;
-    const int read = std::fscanf(f, "%ld %ld", &size, &resident);
-    std::fclose(f);
+    const int read = std::sscanf(text, "%ld %ld", &size, &resident);
     return read == 2 ? resident * (sysconf(_SC_PAGESIZE) / 1024) : 0;
 }
 
 long OpenDescriptors() {
     long count = 0;
-    if (DIR* d = opendir("/proc/self/fd")) {
-        while (readdir(d) != nullptr) ++count;
-        closedir(d);
+    io::Directory fds;
+    if (io::Directory::Open(io::Path("/proc/self/fd", io::PathStyle::Posix), &fds).Ok()) {
+        io::DirectoryEntry entry;
+        bool found = false;
+        while (fds.Next(&entry, &found).Ok() && found) ++count;
     }
-    return count - 3; // ".", ".." and the descriptor of the directory itself
+    return count - 1; // the descriptor of the directory itself
 }
 
 f32 Clamp(f32 v, f32 lo, f32 hi) { return v < lo ? lo : (v > hi ? hi : v); }

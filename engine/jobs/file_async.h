@@ -114,7 +114,7 @@ private:
     io::Status status_;
     Vector<u8> bytes_;
     io::AsyncRequest request_;
-    u8 chunk_[kChunk];
+    Vector<u8> chunk_; // allocated when the read starts, so the awaiting coroutine's frame stays small
 };
 
 /// Reads the whole of `file` asynchronously.

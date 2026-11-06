@@ -149,6 +149,7 @@ TEST_CASE("io::File: locations, schemes and the registry", "[io][file]") {
     REQUIRE(io::File::OpenLocation(StringView(escaped.data(), escaped.size()), OpenMode::Read, io::kOpenNone, &f).Ok());
     CHECK(io::File::OpenLocation("file:///tmp/%zz", OpenMode::Read, io::kOpenNone, &f).Is(Error::Invalid));
     CHECK(io::File::OpenLocation("file:///tmp/%2", OpenMode::Read, io::kOpenNone, &f).Is(Error::Invalid));
+    CHECK(io::File::OpenLocation("file:///tmp/a%00b", OpenMode::Read, io::kOpenNone, &f).Is(Error::Invalid)); // an encoded NUL
     CHECK(io::File::OpenLocation("nope://x/y", OpenMode::Read, io::kOpenNone, &f).Is(Error::Unsupported));
 
     // A registered scheme gets the whole location; a directory path with a colon is still a path.

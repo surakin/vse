@@ -316,6 +316,7 @@ Status File::OpenLocation(StringView location, OpenMode mode, u32 flags, FilePtr
                     c = static_cast<char>(hi * 16 + lo);
                     i += 2;
                 }
+                if (c == '\0') return Status::Of(Error::Invalid); // %00
                 if (length >= kMaxPathBytes) return Status::Of(Error::TooLong);
                 decoded[length++] = c;
             }

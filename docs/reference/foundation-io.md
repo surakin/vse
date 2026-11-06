@@ -67,6 +67,7 @@ Describes the entry now (`lstat`: a link is described, not its target); lazy bec
 | Field | Value |
 |---|---|
 | Fails | `NotFound` (removed since it was listed), `PermissionDenied`. |
+| Backend | Windows: the attributes the find call already returned, plus GetFileInformationByHandle for the rest; macOS: fstatat with AT_SYMLINK_NOFOLLOW. |
 
 ## `Directory` {#io-directory}
 
@@ -158,6 +159,7 @@ Opens `path` for listing.
 |---|---|
 | Parameter `out` | receives the open directory (closing a previous one); unchanged on failure. |
 | Fails | `NotFound`, `NotADirectory`, `PermissionDenied`, `TooManyOpenFiles`, `TooLong`. |
+| Backend | Windows: FindFirstFileExW (or NtQueryDirectoryFile) over a handle opened with FILE_FLAG_BACKUP_SEMANTICS; macOS: opendir. |
 
 ### `IsOpen()` {#io-directory-isopen-const}
 
@@ -194,6 +196,7 @@ Reads the next entry, skipping `.` and `..`.
 | Parameter `entry` | receives the entry when `*found` is true. |
 | Parameter `found` | set to false at the end of the directory. |
 | Fails | `Invalid` (closed), `Io` (a read error; the position is then undefined). |
+| Backend | Windows: FindNextFileW, skipping the dot entries, the type from the attributes (a reparse point is a Symlink); macOS: readdir. |
 
 ### `Close()` {#io-directory-close}
 
@@ -204,6 +207,10 @@ void Close();
 ```
 
 Closes the directory; idempotent.
+
+| Field | Value |
+|---|---|
+| Backend | Windows: FindClose; macOS: closedir. |
 
 ### `Create(const Path&)` {#io-directory-create-const-path-amp}
 
@@ -542,6 +549,10 @@ Error ErrorFromOsCode(i32 os_code);
 ```
 
 Maps an operating system error code (`errno` on POSIX, `GetLastError()` on Windows) to an [`io::Error`](#io-error); the table is one function per platform. Codes not listed in [`io::Error`](#io-error) collapse into [`io::Error::Io`](#io-error-io). Zero maps to [`io::Error::None`](#io-error-none).
+
+| Field | Value |
+|---|---|
+| Backend | Windows: GetLastError() codes (ERROR_FILE_NOT_FOUND, ERROR_ACCESS_DENIED, ERROR_ALREADY_EXISTS, ERROR_DISK_FULL, ...); macOS: errno as on Linux. |
 
 ## `Status` {#io-status}
 
@@ -1079,6 +1090,7 @@ A FIFO opened for reading blocks until a writer appears; a terminal device does 
 | Parameter `flags` | [`io::OpenFlag`](#io-openflag) bits. |
 | Parameter `out` | receives the file; unchanged on failure. |
 | Fails | `NotFound`, `PermissionDenied`, `IsADirectory` (also when the path names a directory and the mode is `Read`), `AlreadyExists` (`kOpenCreateNew`), `Invalid` (`OpenMode::Read` with `kOpenCreate`, `kOpenCreateNew` or `kOpenTruncate`), `NotADirectory`, `TooManyOpenFiles`, `SymlinkLoop`, `TooLong`. |
+| Backend | Windows: CreateFileW with FILE_FLAG_OVERLAPPED (so the file is NativelyAsync); macOS: open with O_CLOEXEC and dispatch_io for asynchronous work. |
 
 ### `OpenLocation(StringView,OpenMode,u32,FilePtr*)` {#io-file-openlocation-stringview-openmode-u32-fileptr-star}
 
@@ -1093,7 +1105,7 @@ Opens `location`, which is either a local path or `scheme://rest`. `file:///abs/
 | Field | Value |
 |---|---|
 | Parameter `location` | path text or URL. |
-| Fails | `Unsupported` for a scheme nobody registered, plus the errors of [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-fileptr-star). |
+| Fails | `Unsupported` for a scheme nobody registered, `Invalid` for a malformed percent escape or an encoded NUL byte, plus the errors of [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-fileptr-star). |
 
 ### `IsOpen()` {#io-file-isopen-const}
 
@@ -1470,7 +1482,7 @@ Status WriteFileAtomic(const Path& path, const void* data, usize length, u32 new
 
 Replaces the contents of `path` so that a reader sees the old file or the new one, never a mix, and a crash leaves one of them.
 
-Writes a temporary file in the same directory, flushes and syncs it, then renames it over `path`. The temporary is removed on every failure path, and the directory is synced after the rename so the new entry survives a crash. A symbolic link at `path` is followed (the file it points to is replaced, the link stays). A replaced file keeps its permission bits; a new file gets `new_file_permissions` (private to the owner by default: pass 0644 for ordinary generated files).
+Writes a temporary file in the same directory, flushes and syncs it, then renames it over `path`. The temporary is removed on every failure path, and the directory is synced after the rename so the new entry survives a crash. A symbolic link at `path` is followed (the file it points to is replaced, the link stays). The replacement is a new file: a replaced file keeps its permission bits, but its owner, hard links, ACLs and extended attributes are not carried over (the writing user owns the result). A new file gets `new_file_permissions` (private to the owner by default: pass 0644 for ordinary generated files).
 
 | Field | Value |
 |---|---|
@@ -1575,6 +1587,7 @@ Describes `path`, following symbolic links.
 | Parameter `path` | the name to look at. |
 | Parameter `out` | receives the description; unchanged on failure. |
 | Fails | `NotFound`, `PermissionDenied`, `NotADirectory`, `SymlinkLoop`, `TooLong`. |
+| Backend | Windows: GetFileAttributesExW / GetFileInformationByHandle (reparse points followed); macOS: stat. |
 
 ## `Lstat(const Path&,FileInfo*)` {#io-lstat-const-path-amp-fileinfo-star}
 
@@ -1589,6 +1602,7 @@ Like [`io::Stat`](#io-stat-const-path-amp-fileinfo-star) but describes a final s
 | Field | Value |
 |---|---|
 | Fails | as [`io::Stat`](#io-stat-const-path-amp-fileinfo-star). |
+| Backend | Windows: the same without following reparse points; macOS: lstat. |
 
 ## `Exists(const Path&)` {#io-exists-const-path-amp}
 
@@ -1633,6 +1647,7 @@ Removes a file, a symbolic link (not its target) or an empty directory.
 | Field | Value |
 |---|---|
 | Fails | `NotFound`, `PermissionDenied`, `NotEmpty`, `ReadOnly`, `Busy`. |
+| Backend | Windows: DeleteFileW or RemoveDirectoryW (clear the read-only attribute first); macOS: remove. |
 
 ## `kRemoveAllMinComponents` {#io-kremoveallmincomponents}
 
@@ -1658,6 +1673,7 @@ Removes `path` and everything below it. Symbolic links inside the tree are remov
 |---|---|
 | Parameter `path` | a file, link or directory. A relative path is made absolute against the current directory first. |
 | Fails | `Invalid` (the empty path, a root, or fewer than [`io::kRemoveAllMinComponents`](#io-kremoveallmincomponents) components after making it absolute and normalizing), `NotFound`, `PermissionDenied`, `TooLong` (too deep). Entries removed before a failure stay removed; the first error is the one returned. |
+| Backend | Windows: a walk with FindFirstFileExW, never following reparse points; macOS: fts or openat/unlinkat. |
 
 ## `Rename(const Path&,const Path&)` {#io-rename-const-path-amp-const-path-amp}
 
@@ -1672,6 +1688,7 @@ Renames `from` to `to`. An existing regular file at `to` is replaced atomically;
 | Field | Value |
 |---|---|
 | Fails | `NotFound`, `CrossDevice`, `NotEmpty`, `IsADirectory`, `NotADirectory`, `PermissionDenied`, `Busy`. |
+| Backend | Windows: MoveFileExW(MOVEFILE_REPLACE_EXISTING); macOS: rename. |
 
 ## `Copy(const Path&,const Path&,bool)` {#io-copy-const-path-amp-const-path-amp-bool}
 
@@ -1687,6 +1704,7 @@ Copies the bytes of the regular file `from` to `to`, keeping the permission bits
 |---|---|
 | Parameter `overwrite` | when false an existing `to` is an error; when true it is truncated and rewritten. |
 | Fails | `NotFound`, `AlreadyExists`, `IsADirectory`, `NoSpace`, `PermissionDenied`. |
+| Backend | Windows: CopyFile2; macOS: copyfile or a read/write loop. |
 
 ## `SetPermissions(const Path&,u32)` {#io-setpermissions-const-path-amp-u32}
 
@@ -1701,6 +1719,7 @@ Sets the permission bits of `path` (following links); platforms without them map
 | Field | Value |
 |---|---|
 | Fails | `NotFound`, `PermissionDenied`, `ReadOnly`. |
+| Backend | Windows: the read-only attribute from the owner write bit; macOS: chmod. |
 
 ## `SyncDirectory(const Path&)` {#io-syncdirectory-const-path-amp}
 
@@ -1715,6 +1734,7 @@ Makes the entries of directory `path` durable (`fsync` of the directory): call i
 | Field | Value |
 |---|---|
 | Fails | `NotFound`, `NotADirectory`, `PermissionDenied`, `Io`; `Unsupported` on a platform that has no such operation. |
+| Backend | Windows: Unsupported (NTFS journals directory changes); macOS: fsync on the directory (F_FULLFSYNC for durability). |
 
 ## `CreateDirectory(const Path&)` {#io-createdirectory-const-path-amp}
 
@@ -1729,6 +1749,7 @@ Creates one directory (permissions 0777 minus the umask).
 | Field | Value |
 |---|---|
 | Fails | `AlreadyExists` (also when a file is there), `NotFound` (the parent is missing), `PermissionDenied`, `ReadOnly`. |
+| Backend | Windows: CreateDirectoryW; macOS: mkdir. |
 
 ## `CreateDirectories(const Path&)` {#io-createdirectories-const-path-amp}
 
@@ -1743,6 +1764,7 @@ Creates a directory and any missing parents; an existing directory is success.
 | Field | Value |
 |---|---|
 | Fails | `NotADirectory` when a component exists and is not a directory, plus the errors of [`io::CreateDirectory`](#io-createdirectory-const-path-amp). |
+| Backend | Windows: CreateDirectoryW from the root down; macOS: mkdir from the root down. |
 
 ## `CreatePrivateDirectory(const Path&)` {#io-createprivatedirectory-const-path-amp}
 
@@ -1757,6 +1779,7 @@ Creates (or accepts) a directory that only this user can use: mode 0700, owned b
 | Field | Value |
 |---|---|
 | Fails | `PermissionDenied` (another user's, or not writable), `SymlinkLoop` (the final component is a link), `NotADirectory`. |
+| Backend | Windows: an ACL granting only the current user, refusing a reparse point; macOS: mode 0700 and an owner check, refusing a symbolic link. |
 
 ## `CreateTempFile(const Path&,StringView,Path*)` {#io-createtempfile-const-path-amp-stringview-path-star}
 
@@ -1774,6 +1797,7 @@ Creates an empty file with a unique name `<prefix>.<random>` in `directory` (mod
 | Parameter `prefix` | a single name component, for example `cache.tmp`. |
 | Parameter `out` | receives the path of the new file. |
 | Fails | `NotFound`, `PermissionDenied`, `Invalid` (the prefix has a separator), `TooLong`. |
+| Backend | Windows: CreateFileW(CREATE_NEW) with a random name; macOS: mkstemp. |
 
 ## `CreateTempDirectory(const Path&,StringView,Path*)` {#io-createtempdirectory-const-path-amp-stringview-path-star}
 
@@ -1788,6 +1812,7 @@ Creates a directory with a unique name `<prefix>.<random>` in `directory` (mode 
 | Field | Value |
 |---|---|
 | Fails | as [`io::CreateTempFile`](#io-createtempfile-const-path-amp-stringview-path-star). |
+| Backend | Windows: CreateDirectoryW with a random name; macOS: mkdtemp. |
 
 ## `CurrentDirectory(Path*)` {#io-currentdirectory-path-star}
 
@@ -1802,6 +1827,7 @@ Returns the process working directory.
 | Field | Value |
 |---|---|
 | Fails | `NotFound` (the directory was removed), `TooLong`. |
+| Backend | Windows: GetCurrentDirectoryW; macOS: getcwd. |
 
 ## `SetCurrentDirectory(const Path&)` {#io-setcurrentdirectory-const-path-amp}
 
@@ -1816,6 +1842,7 @@ Changes the process working directory. Process-global: every thread sees it, so 
 | Field | Value |
 |---|---|
 | Fails | `NotFound`, `NotADirectory`, `PermissionDenied`. |
+| Backend | Windows: SetCurrentDirectoryW; macOS: chdir. |
 
 ## `Absolute(const Path&,Path*)` {#io-absolute-const-path-amp-path-star}
 
@@ -1830,6 +1857,7 @@ Returns `path` made absolute against the current directory, lexically (no links 
 | Field | Value |
 |---|---|
 | Fails | as [`io::CurrentDirectory`](#io-currentdirectory-path-star); `TooLong` when the result is longer than [`io::kMaxPathBytes`](#io-kmaxpathbytes). |
+| Backend | Windows: lexical against GetCurrentDirectoryW (the drive-relative form needs the per-drive directory); macOS: lexical against getcwd. |
 
 ## `Canonical(const Path&,Path*)` {#io-canonical-const-path-amp-path-star}
 
@@ -1844,6 +1872,7 @@ Returns the absolute path with every symbolic link resolved and `.`/`..` removed
 | Field | Value |
 |---|---|
 | Fails | `NotFound`, `SymlinkLoop`, `PermissionDenied`, `TooLong`. |
+| Backend | Windows: GetFinalPathNameByHandleW with the extended-length prefix removed; macOS: realpath. |
 
 ## `ReadLink(const Path&,Path*)` {#io-readlink-const-path-amp-path-star}
 
@@ -1858,6 +1887,7 @@ Returns the target of the symbolic link `path`, as written in the link.
 | Field | Value |
 |---|---|
 | Fails | `NotFound`, `Invalid` (not a link), `PermissionDenied`. |
+| Backend | Windows: DeviceIoControl(FSCTL_GET_REPARSE_POINT); macOS: readlink. |
 
 ## `TempDirectory(Path*)` {#io-tempdirectory-path-star}
 
@@ -1868,6 +1898,10 @@ Status TempDirectory(Path* out);
 ```
 
 The directory for temporary files: `$TMPDIR` when absolute, else `/tmp` on Linux. Creates nothing.
+
+| Field | Value |
+|---|---|
+| Backend | Windows: GetTempPath2W; macOS: NSTemporaryDirectory or $TMPDIR. |
 
 ## `ExecutablePath(Path*)` {#io-executablepath-path-star}
 
@@ -1882,6 +1916,7 @@ Returns the path of the running executable.
 | Field | Value |
 |---|---|
 | Fails | `NotFound`, `Unsupported`. |
+| Backend | Windows: GetModuleFileNameW; macOS: _NSGetExecutablePath resolved with realpath. |
 
 ## `ExecutableDirectory(Path*)` {#io-executabledirectory-path-star}
 
@@ -1892,6 +1927,10 @@ Status ExecutableDirectory(Path* out);
 ```
 
 Returns the directory containing the running executable.
+
+| Field | Value |
+|---|---|
+| Backend | Windows and macOS: the parent of ExecutablePath. |
 
 ## `UserConfigDirectory(StringView,Path*)` {#io-userconfigdirectory-stringview-path-star}
 
@@ -1907,6 +1946,7 @@ The per-user configuration directory for an application: `$XDG_CONFIG_HOME/<app>
 |---|---|
 | Parameter `app_name` | one path component (no separators, not `.` or `..`). |
 | Fails | `Invalid` (a bad app name), `NotFound` (no home directory is known). |
+| Backend | Windows: FOLDERID_RoamingAppData; macOS: ~/Library/Application Support (or the sandbox container's). |
 
 ## `UserCacheDirectory(StringView,Path*)` {#io-usercachedirectory-stringview-path-star}
 
@@ -1921,6 +1961,7 @@ The per-user cache directory: `$XDG_CACHE_HOME/<app>` or `<home>/.cache/<app>` o
 | Field | Value |
 |---|---|
 | Fails | as [`io::UserConfigDirectory`](#io-userconfigdirectory-stringview-path-star). |
+| Backend | Windows: FOLDERID_LocalAppData\cache; macOS: ~/Library/Caches. |
 
 ## `UserDataDirectory(StringView,Path*)` {#io-userdatadirectory-stringview-path-star}
 
@@ -1935,6 +1976,7 @@ The per-user data directory: `$XDG_DATA_HOME/<app>` or `<home>/.local/share/<app
 | Field | Value |
 |---|---|
 | Fails | as [`io::UserConfigDirectory`](#io-userconfigdirectory-stringview-path-star). |
+| Backend | Windows: FOLDERID_LocalAppData; macOS: ~/Library/Application Support. |
 
 ## `UserStateDirectory(StringView,Path*)` {#io-userstatedirectory-stringview-path-star}
 
@@ -1949,6 +1991,7 @@ The per-user state directory: `$XDG_STATE_HOME/<app>` or `<home>/.local/state/<a
 | Field | Value |
 |---|---|
 | Fails | as [`io::UserConfigDirectory`](#io-userconfigdirectory-stringview-path-star). |
+| Backend | Windows: FOLDERID_LocalAppData\state; macOS: ~/Library/Application Support/<app>/state. |
 
 ## `CrashDumpDirectory(Path*)` {#io-crashdumpdirectory-path-star}
 
@@ -1991,6 +2034,10 @@ constexpr PathStyle NativePathStyle();
 ```
 
 Returns the style of the platform the program was built for.
+
+| Field | Value |
+|---|---|
+| Backend | Windows: PathStyle::Windows; macOS, Android, iOS and consoles: PathStyle::Posix. |
 
 ## `kMaxPathBytes` {#io-kmaxpathbytes}
 

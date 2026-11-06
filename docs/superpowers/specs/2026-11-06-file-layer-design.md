@@ -20,7 +20,7 @@ Production code (all hits of `fopen|fread|fwrite|opendir|readdir|mkdir|rename|st
 | `foundation/main.cpp` | console output only (`os::Write(1, ...)`) | `os::Write` | no | E1: console descriptor, stays |
 | `foundation/debug/crash_handler_sentry.cpp` | report file, database directory | `os::` | partly | **Done Day 121:** directories and the stale-report reset use `io`; the SIGNAL-SAFE report file keeps `os::CreateFileForWriting` (E1) |
 | `os/linux/debug/crash_signal.cpp` | crash-time writes | `os::` | yes | E1: stays raw |
-| `os/linux/debug/crash_context.cpp` | `/proc/cpuinfo` and `/proc/meminfo` reads in `InitCrashContext` (startup, never in the handler) | `os::Open/Read/Close` | no | **Done Day 121** (`io::File`; checked against the `SIGNAL-SAFE` markers: none in this file) |
+| `os/linux/debug/crash_context.cpp` | `/proc/cpuinfo` and `/proc/meminfo` reads and the executable path in `InitCrashContext` | `os::Open/Read/Close`, `readlink` | no, but the assert-failure handler calls `InitCrashContext` lazily | **Stays raw (E2)**: ported on Day 121, reverted on Day 124 when the end-of-phase review found the assert path reaches it while the heap may be inconsistent |
 | `os/linux/debug/debugger.cpp` | reads `/proc/self/status` (tracer detection) | `os::Open/Read/Close` | no, but reached from the assert-failure path | **Day 121 decision: stays raw (E2)**: the assert handler may run while the heap is inconsistent, and the file layer allocates |
 | `os/linux/debug/core_dump.cpp` | reads `/proc/sys/kernel/core_pattern` | `os::Open/Read` | no | **Done Day 121** (`io::File`) |
 | `foundation/debug/death_test.cpp` | writes a message to stderr in the child | `os::Write(2, ...)` | yes | E1: stays |

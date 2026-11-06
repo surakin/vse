@@ -48,7 +48,7 @@ bool SaveCacheFile(const char* path, const void* data, usize size) {
         return false;
     }
     const io::Path dir = file_path.Parent();
-    return (dir.IsEmpty() || io::CreateDirectories(dir).Ok()) && io::WriteFileAtomic(file_path, data, size).Ok();
+    return (dir.IsEmpty() || io::CreateDirectories(dir).Ok()) && io::WriteFileAtomic(file_path, data, size, 0644).Ok(); // readable by others, as a cache shared through ENGINE_RHI_CACHE_DIR was before
 }
 
 } // namespace
