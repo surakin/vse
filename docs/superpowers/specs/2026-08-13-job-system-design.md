@@ -10,7 +10,7 @@ has raw OS thread primitives (Phase 1 Day 20: `clone()`-based thread
 creation, futex mutex/condvar). There is no portable job/task
 abstraction, no work-stealing scheduler, and no coroutine support
 anywhere in the plan. This gap was already flagged implicitly in
-`plans/phase-12-ecs.md`'s note that "multithreaded system scheduling
+`plans/phase-14-ecs.md`'s note that "multithreaded system scheduling
 depends on Phase 1's threading primitives; confirm they're sufficient or
 need extending" — they are not sufficient on their own; every consumer
 (ECS parallel system scheduling, renderer command recording, physics,
@@ -110,7 +110,7 @@ so there is nothing OS- or ABI-specific anywhere in this phase.
   ready handle from the worker's deque — no OS thread ever blocks on a
   job dependency. The sub-job that decrements the counter to zero
   reschedules the waiting continuation onto some worker's deque.
-- **Async I/O** (first real consumer: Phase 9's asset streaming) uses the
+- **Async I/O** (first real consumer: Phase 11's asset streaming) uses the
   identical mechanism — `co_await LoadTextureAsync(path)` suspends until
   the I/O completes, then resumes as a scheduled job. One suspension
   primitive serves both job-graph waits and async I/O.
@@ -152,7 +152,7 @@ and checkable, not aspirational:
    fibers considered and rejected for portability, x86-64-first per
    existing ABI scoping via assumption #7).
 3. `CLAUDE.md`: update the "phase-00…17" range reference to "phase-00…18".
-4. Renumbered `plans/phase-12-ecs.md` (was phase-04): rewrite the note
+4. Renumbered `plans/phase-14-ecs.md` (was phase-04): rewrite the note
    about depending on "Phase 1's threading primitives" to reference the
    new phase's `Job`/`Counter` API instead.
 5. Sweep all renumbered phase files' "Depends on" lines and any

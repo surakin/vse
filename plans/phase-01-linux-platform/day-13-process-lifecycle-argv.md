@@ -15,7 +15,7 @@ raw stack ourselves.
 **Scope amendment (2026-08-16):** engine code must not handle raw
 `argc`/`argv` directly — it goes through an `os::CommandLine` wrapper
 that also has to extend cleanly to future platforms (Windows/macOS/
-Android/iOS/consoles, Phases 5-6 and 14-15), the same seam treatment Day 26 gives
+Android/iOS/consoles, Phases 5-6 and 16-17), the same seam treatment Day 26 gives
 the `Window`/input interface. See
 `docs/superpowers/specs/2026-08-16-command-line-wrapper-design.md` for
 the full design (class shape, parsing rules, per-platform sourcing via

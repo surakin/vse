@@ -1,6 +1,6 @@
 # Syntax-checks the neutral debugging headers and the platform-free facade sources for another operating system, with clang's
 # -fsyntax-only and small stand-ins for the standard headers (tests/debug/cross_syntax/shim), so a Linux-only dependency that
-# slipped into the neutral code shows up long before the Windows and macOS ports (Phases 8 and 9). Run as:
+# slipped into the neutral code shows up long before the Windows and macOS ports (Phases 10 and 11). Run as:
 #   cmake -DTRIPLE=<triple> -DROOT=<source tree> -P check_cross_syntax.cmake
 # Skips (message "clang++ not found") where there is no clang++.
 cmake_minimum_required(VERSION 3.20)

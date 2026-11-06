@@ -1,11 +1,11 @@
-# Phase 8 — Windows Port + DX12 Backend
+# Phase 10 — Windows Port + DX12 Backend
 
 **Depends on:** Phase 4 (Renderer core) complete on Linux, and Phases 5-7 (test scoping, debugging facilities, RHI reset) complete — the reset lifecycle is part of the RHI interface this backend implements, and the crash/minidump work gets its Windows backend here — this phase ports
 the stack built so far (platform layer, RHI, renderer, shaders, job system,
 foundation); it doesn't build new engine features. Unreal import (Phases
-19-20) is deliberately sequenced after multiplatform support, so it isn't
+21-22) is deliberately sequenced after multiplatform support, so it isn't
 part of what this phase ports. Before it starts, every day of this phase
-needs its own file under `plans/phase-08-windows-dx12/` (see `CLAUDE.md`,
+needs its own file under `plans/phase-10-windows-dx12/` (see `CLAUDE.md`,
 planning policy).
 **Goal:** Phases 1-4 running on Windows, with DX12 as the RHI backend
 (Vulkan also available on Windows if useful, but DX12 is the native
@@ -37,7 +37,7 @@ recorded here when the phase is broken into days).
 ## Notes / open questions
 
 - Full day-by-day breakdown deferred until Phase 4 is complete.
-- **Open, decided at Phase 9 completion:** how Phases 10-16 keep the Windows build working (see `PLAN.md` assumption #11). Until then those phases are developed on Linux first.
+- **Open, decided at Phase 11 completion:** how Phases 12-18 keep the Windows build working (see `PLAN.md` assumption #11). Until then those phases are developed on Linux first.
 - Windows' lack of a raw "syscall" layer the way Linux has one means the
   no-CRT boundary is drawn differently here — Win32 itself is the
   platform contract. Document the precise boundary when this phase starts.
@@ -77,3 +77,5 @@ From the renderer (see `docs/superpowers/specs/2026-11-04-renderer-portability-r
 - **Backend registry (from Phase 7 Day 110):** `rhi::CreateDevice`, `EnumerateAdapters` and `DeviceHost` are compiled into `rhi_vulkan`, and the renderer links that library. Add a small backend registry to `rhi` (each backend library registers a factory and an adapter lister) so the renderer and `DeviceHost` live in the backend-neutral library and the DX12 backend plugs in without the renderer changing its link line.
 
 - **Device lifecycle (from Phase 7 Day 114):** implement `engine/rhi/BACKEND-LIFECYCLE.md` (fifteen functions) and add a DX12 factory to `tests/rhi/lifecycle_conformance_test.cpp`; handle generation seeding (`AllocateDeviceSerial`, `GenerationSeed`); `ResizeBuffers` for `Swapchain::Reconfigure`; bounded fence waits so destruction after `DXGI_ERROR_DEVICE_REMOVED` cannot hang; `DeviceHost` and `renderer::Renderer::ApplySettings` then work unchanged. Details: `docs/superpowers/specs/2026-11-04-rhi-portability-review.md`, section 6. **Backend switch at run time** (Vulkan to DX12 through the `backend` setting) is deferred from Phase 7 to here: it needs the backend registry above; Null to Vulkan is tested.
+
+- **File layer (from Phase 8, planned 2026-11-06):** implement `engine/foundation/io/BACKEND.md` for Windows (UTF-16 at the boundary, drive letters and UNC, long paths, `CreateFileW`, overlapped I/O, `MoveFileEx`/`ReplaceFile` for atomic replace, known folders) and run the `File` conformance suite on it. Phase 8 completes before this phase starts.

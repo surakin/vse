@@ -1,9 +1,9 @@
-# Phase 15 — Asset Pipeline & Resource System
+# Phase 17 — Asset Pipeline & Resource System
 
-**Depends on:** Phase 12 (ECS), Phase 4 (Renderer core).
+**Depends on:** Phase 14 (ECS), Phase 4 (Renderer core).
 **Goal:** a resource system with pluggable storage backends, versioned
 per-type binary formats, offline tooling to produce them, and a runtime
-loader — the foundation Phase 19 (Unreal import) targets when converting
+loader — the foundation Phase 21 (Unreal import) targets when converting
 external content into engine-native form. See root `PLAN.md` assumption
 #12 for the settled design decisions this phase implements.
 **Definition of done:** an offline mint converts source assets (in our
@@ -38,7 +38,7 @@ editor/tool code linked into the game binary. Minting is deterministic
   offline re-mint step vs. both) is a day-level design decision when this
   phase starts.
   - Custom mesh format (vertex/index buffers, LODs, material slot
-    references) — also the target format Phase 19's Unreal mesh importer
+    references) — also the target format Phase 21's Unreal mesh importer
     writes into.
   - Custom texture format (wraps GPU-native compressed payloads —
     BCn/ASTC — per assumption #4).
@@ -60,7 +60,7 @@ editor/tool code linked into the game binary. Minting is deterministic
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 12 is complete.
+- Full day-by-day breakdown deferred until Phase 14 is complete.
 - Network backend scope (auth, caching, offline/retry behavior) is
   intentionally undecided until this phase starts.
 - Exact version-migration mechanism (loader-side upgrade vs. offline
@@ -68,3 +68,5 @@ editor/tool code linked into the game binary. Minting is deterministic
 - Which resource types get an optional text format, beyond the obvious
   levels/scenes case, is undecided — revisit per-type as each format is
   designed.
+
+- **File layer (from Phase 8, planned 2026-11-06):** the storage backends of the resource system (pak, filesystem, network; `PLAN.md` assumption #12) are `io::File` implementations plus a container reader; Phase 8 builds the interface, the local file and a network-like test double, not the pak or network formats.

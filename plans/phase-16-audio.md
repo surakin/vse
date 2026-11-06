@@ -1,8 +1,8 @@
-# Phase 14 — Audio
+# Phase 16 — Audio
 
 **Depends on:** Phase 1 (Linux platform layer) for the Linux audio device
-output path, and Phases 8 and 9 (the Windows and macOS platform layers) for
-their output backends; can proceed in parallel with Phases 3-4 and 10-13
+output path, and Phases 10 and 11 (the Windows and macOS platform layers) for
+their output backends; can proceed in parallel with Phases 3-4 and 12-15
 once those exist.
 **Goal:** a custom audio mixer with positional 3D sound, no codec/mixing
 libraries.
@@ -33,12 +33,12 @@ on Linux, Windows and macOS through one platform-independent mixer.
 
 ## Notes / open questions
 
-- Mobile: Phase 17 extends this phase with the Android (AAudio) and iOS
+- Mobile: Phase 19 extends this phase with the Android (AAudio) and iOS
   (CoreAudio, shared with the macOS backend where the API matches)
   output backends, plus the app-lifecycle handling audio needs (interruptions,
   route changes, pausing when backgrounded). The device interface above
   must be shaped so those are additions, not a redesign (assumption #11);
-  consoles (Phase 18) follow the same pattern.
+  consoles (Phase 20) follow the same pattern.
 
 - Full day-by-day breakdown deferred until started.
 - Compressed audio formats (OGG/MP3) are explicitly out of scope until

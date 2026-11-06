@@ -1,6 +1,6 @@
-# Phase 18 — Console Ports (Xbox, PS5)
+# Phase 20 — Console Ports (Xbox, PS5)
 
-**Depends on:** Phase 8 (Windows + DX12, closest analog to Xbox) and
+**Depends on:** Phase 10 (Windows + DX12, closest analog to Xbox) and
 Phase 3 (Vulkan RHI, closest analog to PS5's GNM/GNMX-adjacent needs —
 exact backend TBD, see below).
 **Goal:** the engine running on Xbox and PlayStation 5.
@@ -16,7 +16,7 @@ be treated as actionable until then.
 ## Key deliverables (high-level placeholder, real scoping needs vendor docs)
 
 - Xbox: platform layer + RHI backend (likely DX12-family, reusing much of
-  Phase 8's DX12 backend).
+  Phase 10's DX12 backend).
 - PS5: platform layer + RHI backend targeting Sony's proprietary graphics
   API (not Vulkan/DX12/Metal — a fourth RHI backend).
 

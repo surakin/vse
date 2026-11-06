@@ -1,6 +1,6 @@
 # Backend lifecycle checklist (Phase 7)
 
-What a backend (DX12 in Phase 8, Metal in Phase 9) must provide so the device can be destroyed and created again at run time, a
+What a backend (DX12 in Phase 10, Metal in Phase 11) must provide so the device can be destroyed and created again at run time, a
 setting can change without a restart, and a lost device can be replaced. The Vulkan backend (`engine/rhi/vulkan`) and the null
 backend (`engine/rhi/null`) are the references; `tests/rhi/lifecycle_conformance_test.cpp` is the conformance suite: a new backend
 runs it by adding one factory function to the list at the top of that file. `tests/rhi/check_lifecycle_list.cmake` (the ctest

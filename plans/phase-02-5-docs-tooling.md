@@ -45,7 +45,7 @@ Day numbering continues from Phase 2 (the next phase's days follow Day 44).
 - Doc-comment inheritance for `override`s and the exact public/internal
   rules are pinned down on Days 36 and 39.
 - Static HTML rendering and in-editor help are out of scope here; the
-  symbol index and Markdown output are designed so Phase 21's help viewer
+  symbol index and Markdown output are designed so Phase 23's help viewer
   or a later site generator can consume them.
 - Fuzzy risks: templates/requires-clauses and macro-heavy code are the
   likeliest scanner gaps; Day 38 runs over every real header to flush them

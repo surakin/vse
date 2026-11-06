@@ -1,13 +1,13 @@
-# Phase 16 — Scripting (Lua/LuaJIT)
+# Phase 18 — Scripting (Lua/LuaJIT)
 
-**Depends on:** Phase 12 (ECS).
+**Depends on:** Phase 14 (ECS).
 **Goal:** embedded gameplay scripting via a real, well-known language
 instead of a custom bytecode VM — starting with Lua via LuaJIT (root
 `PLAN.md` assumption #13). Designed with a pluggable language-backend
 seam so more languages can be added later as additive backends, not a
 redesign — same pattern already used for the RHI (Phase 3), resource
-backends (Phase 15), and window backends (Phase 1). Also the
-compilation/execution target for Phase 20's Blueprint importer, so this
+backends (Phase 17), and window backends (Phase 1). Also the
+compilation/execution target for Phase 22's Blueprint importer, so this
 phase's engine API bindings and event model should keep Blueprint's
 semantics (event graphs, latent nodes, function calls, casts) in mind
 even though this phase itself doesn't parse any Unreal data.
@@ -27,22 +27,22 @@ moves an ECS entity via this phase's engine API bindings.
   get/set, basic math/logging calls.
 - **Event/callback model** (e.g. "on tick," "on collision") — needed both
   for native gameplay scripting and, later, as the landing target for
-  Blueprint's event graphs (Phase 20).
+  Blueprint's event graphs (Phase 22).
 - **JIT-vs-interpreter platform seam.** LuaJIT's JIT (runtime code
   generation) is disallowed on iOS App Store builds and typically on
   console certification; LuaJIT ships an interpreter-only fallback mode
-  for those. Not implemented until Phases 17/18 (iOS, consoles),
+  for those. Not implemented until Phases 19/20 (iOS, consoles),
   but the embedding should make that a platform-config choice from the
   start, not an API change (ties to root `PLAN.md` assumption #11).
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 12 is complete.
-- Phase 20 (Blueprint import) will likely surface gaps in binding/event
+- Full day-by-day breakdown deferred until Phase 14 is complete.
+- Phase 22 (Blueprint import) will likely surface gaps in binding/event
   coverage (loops, latent/async waits, casts, interfaces) — expect to
-  revisit this phase's scope once Phase 20 starts, rather than trying to
+  revisit this phase's scope once Phase 22 starts, rather than trying to
   anticipate all of Blueprint's semantics up front.
 - Which additional "well-known languages" get added later (and when) is
   undecided — revisit against real demand, not speculatively.
 - Exact JIT-vs-interpreter fallback handling for iOS/console builds is a
-  day-level decision for Phases 17/18, not now.
+  day-level decision for Phases 19/20, not now.

@@ -1,4 +1,4 @@
-# Fullscreen on Windows (checklist for Phase 8)
+# Fullscreen on Windows (checklist for Phase 10)
 
 `os::Window::SupportsFullscreen`, `SetFullscreen` and `IsFullscreen` are the interface (`engine/foundation/os/window.h`).
 

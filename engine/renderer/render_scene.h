@@ -1,6 +1,6 @@
 #pragma once
 
-//! The scene a frame is built from: a fixed-capacity list of objects and lights with stable ids; the ECS replaces it in Phase 12.
+//! The scene a frame is built from: a fixed-capacity list of objects and lights with stable ids; the ECS replaces it in Phase 14.
 
 #include "containers/vector.h"
 #include "math/matrix.h"
