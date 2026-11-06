@@ -103,3 +103,17 @@ TEST_CASE("Registering a thread before the crash handler is installed sets its n
     CHECK(std::strcmp(CrashThreadName(), "early-thread") == 0);
     SetCrashThreadName("");
 }
+
+TEST_CASE("The name of a crash state entry is copied, so the caller's string may go away", "[crashstate][debug]") {
+    ResetCrashStateForTesting();
+    {
+        char name[16];
+        std::strcpy(name, "test-copied");
+        REQUIRE(SetCrashStateText(name, "kept"));
+        std::strcpy(name, "garbage!!!!");
+    }
+    const std::string section = StateSection();
+    CHECK(section.find("test-copied: kept\n") != std::string::npos);
+    CHECK(section.find("garbage") == std::string::npos);
+    ResetCrashStateForTesting();
+}

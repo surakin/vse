@@ -17,17 +17,17 @@ inline constexpr usize kCrashStateEntryTextBytes = 128;
 /// Call during startup (when the adapter is chosen, when the window opens). Setting the text again replaces it; a report
 /// written at that very moment may show a mix of old and new text, which is acceptable for a crash report.
 ///
-/// Param name: a short label; must outlive the program (a literal).
+/// Param name: a short label (at most 31 characters, longer is cut); copied.
 /// Param text: the text; copied and cut to [[debug::kCrashStateEntryTextBytes]]; null clears it.
 /// Returns: true if the entry exists or was created.
 /// Fails: returns false if the table of entries is full or `name` is null.
-/// Ownership: the text is copied; the name is stored as given.
+/// Ownership: the text and the name are copied.
 /// Thread-safety: thread-safe against other callers; not async-signal-safe.
 bool SetCrashStateText(const char* name, const char* text);
 
 /// Returns the counter shown for `name` in the crash report, creating the entry on first use. Store to it as often as needed.
 ///
-/// Param name: a short label; must outlive the program (a literal).
+/// Param name: a short label (at most 31 characters, longer is cut); copied.
 /// Returns: the counter, valid for the life of the program; null if the table of entries is full or `name` is null.
 /// Fails: returns null as described.
 /// Ownership: the counter belongs to the crash state table; the caller keeps the pointer and never frees it.

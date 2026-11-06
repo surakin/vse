@@ -12,7 +12,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Math](foundation-math.md) | 5 | 101 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 2 | 69 |
 | [Foundation: Fundamental Types](foundation-types.md) | 1 | 11 |
-| [Platform: OS Services](platform-os.md) | 4 | 38 |
+| [Platform: OS Services](platform-os.md) | 4 | 39 |
 | [Platform: Windowing and Input](platform-window-input.md) | 10 | 252 |
 | [Foundation: Debugging](foundation-debug.md) | 14 | 200 |
 | [The Job System](jobs.md) | 10 | 172 |

@@ -139,6 +139,13 @@ documented.** "Public API" is anything in a header named by
 4. The day file's Done condition names the pages touched, and
    `ctest -L docs` passes.
 
+Contract labels name the macro family: `Aborts:` for a function with an `ENGINE_ASSERT`, `ENGINE_VERIFY` or `ENGINE_CHECK_SLOW`
+precondition, `Fails:` for a failure reported by return value or by an `ENGINE_ENSURE` the function survives. A function a
+platform backend must implement (the debugging facilities) also carries `Backend:` and a section in both
+`engine/foundation/os/windows/debug/BACKEND.md` and `os/macos/debug/BACKEND.md`; the ctest `debug_backend_lists` checks it.
+Code that runs inside a crashing process sits between `// SIGNAL-SAFE-BEGIN` and `// SIGNAL-SAFE-END` and may not allocate, lock
+or format with the C library (`tools/signal_safety_check` enforces it).
+
 New modules are added to `docs/reference/modules.txt` in the same day.
 Planning-only commits are exempt, as are days that change no public header.
 

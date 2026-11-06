@@ -353,6 +353,26 @@ Reads up to `len` bytes from file descriptor `fd` into `buf`.
 | Parameter `len` | maximum number of bytes to read. |
 | Returns | the number of bytes read, 0 at end of file, or -1 on error. |
 
+## `WriteAllWithTimeout(int,const void*,usize,u64)` {#os-writeallwithtimeout-int-const-void-star-usize-u64}
+
+`function os::WriteAllWithTimeout` — defined in `engine/foundation/os/os.h`
+
+```cpp
+long WriteAllWithTimeout(int fd, const void* buf, usize len, u64 timeout_nanos);
+```
+
+Writes all `len` bytes to `fd`, retrying short and interrupted writes, but never waiting more than `timeout_nanos` in total for the descriptor to become writable (a pipe whose reader has stopped).
+
+| Field | Value |
+|---|---|
+| Parameter `fd` | an open descriptor. |
+| Parameter `buf` | the bytes; borrowed for the call. |
+| Parameter `len` | number of bytes. |
+| Parameter `timeout_nanos` | longest total wait; 0 means one attempt without waiting. |
+| Returns | the number of bytes written, which is less than `len` if the wait ran out or the write failed. |
+| Fails | returns fewer bytes than asked; never blocks past the timeout. |
+| Thread-safety | thread-safe. Async-signal-safe. |
+
 ## `Open(StringView,int,int)` {#os-open-stringview-int-int}
 
 `function os::Open` — defined in `engine/foundation/os/os.h`

@@ -12,7 +12,7 @@ namespace {
 constexpr usize kMaxEntries = 8;
 
 struct Entry {
-    const char* name = nullptr;
+    char name[32] = {};
     bool is_counter = false;
     std::atomic<u64> counter{0};
     char text[kCrashStateEntryTextBytes] = {};
@@ -67,10 +67,11 @@ Entry* FindOrCreate(const char* name, bool counter) {
         return nullptr;
     }
     Entry& entry = g_entries[g_entry_count];
-    entry.name = name;
+    std::strncpy(entry.name, name, sizeof(entry.name) - 1); // copied: the caller's string need not outlive the call
+    entry.name[sizeof(entry.name) - 1] = '\0';
     entry.is_counter = counter;
-    if (!RegisterCrashStateProvider(name, &ProvideEntry, &entry)) {
-        entry.name = nullptr; // the provider table is full: leave the slot unused
+    if (!RegisterCrashStateProvider(entry.name, &ProvideEntry, &entry)) {
+        entry.name[0] = '\0'; // the provider table is full: leave the slot unused
         entry.is_counter = false;
         return nullptr;
     }
@@ -84,7 +85,7 @@ void ResetCrashStateForTesting() {
     std::lock_guard<std::mutex> lock(g_mutex);
     ResetCrashStateProvidersForTesting();
     for (usize i = 0; i < g_entry_count; ++i) {
-        g_entries[i].name = nullptr;
+        g_entries[i].name[0] = '\0';
         g_entries[i].text[0] = '\0';
         g_entries[i].counter.store(0, std::memory_order_relaxed);
     }

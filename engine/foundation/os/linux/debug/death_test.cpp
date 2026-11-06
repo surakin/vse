@@ -431,6 +431,10 @@ ChildResult PlatformRunChild(const char* name, const char* argument, const Child
             } while (waited_after_kill < 0 && errno == EINTR);
             observed = waited_after_kill == pid;
             reaped = true;
+            // The child may have finished by itself just before the kill landed: then it did not time out.
+            if (observed && !(WIFSIGNALED(status) && WTERMSIG(status) == SIGKILL)) {
+                result.timed_out = false;
+            }
         }
     }
     // Whatever the child wrote before it died is still in the pipes.

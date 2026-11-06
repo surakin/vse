@@ -366,6 +366,7 @@ TEST_CASE("A crash report has every section, in order", "[crashreport][debug]") 
         "\"report-tester\"\n",
         "--- stack trace ---\n",
         "#0  0x",
+        "#1  0x",
         "--- build ---\n",
         "build id: ",
         "--- platform ---\n",

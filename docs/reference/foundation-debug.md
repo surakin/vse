@@ -830,12 +830,12 @@ Call during startup (when the adapter is chosen, when the window opens). Setting
 
 | Field | Value |
 |---|---|
-| Parameter `name` | a short label; must outlive the program (a literal). |
+| Parameter `name` | a short label (at most 31 characters, longer is cut); copied. |
 | Parameter `text` | the text; copied and cut to [`debug::kCrashStateEntryTextBytes`](#debug-kcrashstateentrytextbytes); null clears it. |
 | Returns | true if the entry exists or was created. |
 | Fails | returns false if the table of entries is full or `name` is null. |
 | Thread-safety | thread-safe against other callers; not async-signal-safe. |
-| Ownership | the text is copied; the name is stored as given. |
+| Ownership | the text and the name are copied. |
 
 ## `CrashStateCounter(const char*)` {#debug-crashstatecounter-const-char-star}
 
@@ -849,7 +849,7 @@ Returns the counter shown for `name` in the crash report, creating the entry on 
 
 | Field | Value |
 |---|---|
-| Parameter `name` | a short label; must outlive the program (a literal). |
+| Parameter `name` | a short label (at most 31 characters, longer is cut); copied. |
 | Returns | the counter, valid for the life of the program; null if the table of entries is full or `name` is null. |
 | Fails | returns null as described. |
 | Thread-safety | thread-safe. Storing to the returned counter is lock-free. |

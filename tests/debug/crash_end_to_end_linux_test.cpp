@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <dirent.h>
+#include <fcntl.h>
 #include <ftw.h>
 #include <string>
 #include <sys/stat.h>
@@ -627,4 +628,39 @@ TEST_CASE("Installing the crash handler leaves the installing thread a signal st
     REQUIRE(at != std::string::npos);
     // The library's own stack is 16 KiB, which the report (an 8 KiB trace buffer and more) does not fit on.
     CHECK(std::strtoull(out.c_str() + at + 9, nullptr, 10) >= 64 * 1024);
+}
+
+TEST_CASE("Writing to a pipe whose reader has stopped gives up after the timeout instead of hanging", "[crash][crashreport][debug][linux]") {
+    int fds[2];
+    REQUIRE(pipe(fds) == 0);
+    // Fill the pipe without blocking.
+    const int flags = fcntl(fds[1], F_GETFL);
+    fcntl(fds[1], F_SETFL, flags | O_NONBLOCK);
+    char block[4096];
+    std::memset(block, 'x', sizeof(block));
+    usize filled = 0;
+    for (;;) {
+        const ssize_t n = write(fds[1], block, sizeof(block));
+        if (n <= 0) {
+            break;
+        }
+        filled += static_cast<usize>(n);
+    }
+    fcntl(fds[1], F_SETFL, flags); // blocking again, as the report's descriptors are
+    CHECK(filled > 0);
+    const u64 before = os::MonotonicTimeNanos();
+    const long written = os::WriteAllWithTimeout(fds[1], block, 1000, 100ull * 1000 * 1000);
+    const u64 elapsed = os::MonotonicTimeNanos() - before;
+    CHECK(written == 0);
+    CHECK(elapsed < 2ull * 1000 * 1000 * 1000);
+    // Once the reader catches up, everything goes through.
+    char sink[4096];
+    while (filled > 0) {
+        const ssize_t n = read(fds[0], sink, sizeof(sink));
+        REQUIRE(n > 0);
+        filled -= static_cast<usize>(n);
+    }
+    CHECK(os::WriteAllWithTimeout(fds[1], block, 1000, 100ull * 1000 * 1000) == 1000);
+    close(fds[0]);
+    close(fds[1]);
 }

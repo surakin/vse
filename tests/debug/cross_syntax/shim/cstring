@@ -10,6 +10,7 @@ size_t strlen(const char*);
 int strcmp(const char*, const char*);
 int strncmp(const char*, const char*, size_t);
 char* strchr(char*, int);
+char* strncpy(char*, const char*, size_t);
 const char* strstr(const char*, const char*);
 }
 namespace std {
@@ -20,5 +21,6 @@ using ::memset;
 using ::strcmp;
 using ::strlen;
 using ::strncmp;
+using ::strncpy;
 using ::strstr;
 } // namespace std

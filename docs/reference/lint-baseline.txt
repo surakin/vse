@@ -7,7 +7,7 @@ module	foundation/strings	86	86
 module	foundation/math	97	97
 module	foundation/log	69	69
 module	foundation/types	11	11
-module	platform/os	34	34
+module	platform/os	35	35
 module	platform/window-input	230	230
 module	foundation/debug	200	200
 module	jobs	151	151

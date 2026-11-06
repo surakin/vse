@@ -443,21 +443,22 @@ os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/fo
 os::Exit(int)	function	platform/os	os-exit-int	platform-os.md	engine/foundation/os/os.h:20
 os::Write(int,const void*,usize)	function	platform/os	os-write-int-const-void-star-usize	platform-os.md	engine/foundation/os/os.h:27
 os::Read(int,void*,usize)	function	platform/os	os-read-int-void-star-usize	platform-os.md	engine/foundation/os/os.h:34
-os::Open(StringView,int,int)	function	platform/os	os-open-stringview-int-int	platform-os.md	engine/foundation/os/os.h:43
-os::CreateFileForWriting(StringView,int)	function	platform/os	os-createfileforwriting-stringview-int	platform-os.md	engine/foundation/os/os.h:52
-os::Close(int)	function	platform/os	os-close-int	platform-os.md	engine/foundation/os/os.h:57
-os::Lseek(int,long,int)	function	platform/os	os-lseek-int-long-int	platform-os.md	engine/foundation/os/os.h:64
-os::ReserveMemory(usize)	function	platform/os	os-reservememory-usize	platform-os.md	engine/foundation/os/os.h:71
-os::ReleaseMemory(void*,usize)	function	platform/os	os-releasememory-void-star-usize	platform-os.md	engine/foundation/os/os.h:76
-os::MonotonicTimeNanos()	function	platform/os	os-monotonictimenanos	platform-os.md	engine/foundation/os/os.h:84
-os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:90
-os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:93
-os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:100
-os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:108
-os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:112
-os::EnsureDirectory(StringView,int)	function	platform/os	os-ensuredirectory-stringview-int	platform-os.md	engine/foundation/os/os.h:120
-os::EnsurePrivateDirectory(StringView)	function	platform/os	os-ensureprivatedirectory-stringview	platform-os.md	engine/foundation/os/os.h:132
-os::GetCrashDumpDirectory(char*,usize)	function	platform/os	os-getcrashdumpdirectory-char-star-usize	platform-os.md	engine/foundation/os/os.h:149
+os::WriteAllWithTimeout(int,const void*,usize,u64)	function	platform/os	os-writeallwithtimeout-int-const-void-star-usize-u64	platform-os.md	engine/foundation/os/os.h:45
+os::Open(StringView,int,int)	function	platform/os	os-open-stringview-int-int	platform-os.md	engine/foundation/os/os.h:54
+os::CreateFileForWriting(StringView,int)	function	platform/os	os-createfileforwriting-stringview-int	platform-os.md	engine/foundation/os/os.h:63
+os::Close(int)	function	platform/os	os-close-int	platform-os.md	engine/foundation/os/os.h:68
+os::Lseek(int,long,int)	function	platform/os	os-lseek-int-long-int	platform-os.md	engine/foundation/os/os.h:75
+os::ReserveMemory(usize)	function	platform/os	os-reservememory-usize	platform-os.md	engine/foundation/os/os.h:82
+os::ReleaseMemory(void*,usize)	function	platform/os	os-releasememory-void-star-usize	platform-os.md	engine/foundation/os/os.h:87
+os::MonotonicTimeNanos()	function	platform/os	os-monotonictimenanos	platform-os.md	engine/foundation/os/os.h:95
+os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:101
+os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:104
+os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:111
+os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:119
+os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:123
+os::EnsureDirectory(StringView,int)	function	platform/os	os-ensuredirectory-stringview-int	platform-os.md	engine/foundation/os/os.h:131
+os::EnsurePrivateDirectory(StringView)	function	platform/os	os-ensureprivatedirectory-stringview	platform-os.md	engine/foundation/os/os.h:143
+os::GetCrashDumpDirectory(char*,usize)	function	platform/os	os-getcrashdumpdirectory-char-star-usize	platform-os.md	engine/foundation/os/os.h:160
 os::Key	enum	platform/window-input	os-key	platform-window-input.md	engine/foundation/os/input.h:12
 os::Key::Unknown	enumerator	platform/window-input	os-key-unknown	platform-window-input.md	engine/foundation/os/input.h:13
 os::Key::A	enumerator	platform/window-input	os-key-a	platform-window-input.md	engine/foundation/os/input.h:14

@@ -7,6 +7,7 @@
 #include <ctime>
 #include <dlfcn.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -38,6 +39,34 @@ void Exit(int code) {
 
 long Write(int fd, const void* buf, usize len) {
     return ::write(fd, buf, len);
+}
+
+long WriteAllWithTimeout(int fd, const void* buf, usize len, u64 timeout_nanos) {
+    const char* bytes = static_cast<const char*>(buf);
+    usize done = 0;
+    const u64 deadline = MonotonicTimeNanos() + timeout_nanos;
+    while (done < len) {
+        // Wait until the descriptor can take a small chunk (a pipe whose reader stopped never can), then write only that much, so
+        // the write itself cannot block past the deadline.
+        const u64 now = MonotonicTimeNanos();
+        const int wait_ms = deadline > now ? static_cast<int>((deadline - now + 999999ull) / 1000000ull) : 0;
+        struct pollfd waiting = {fd, POLLOUT, 0};
+        const int ready = ::poll(&waiting, 1, wait_ms);
+        if (ready < 0 && errno == EINTR) {
+            continue;
+        }
+        if (ready <= 0 || (waiting.revents & (POLLERR | POLLHUP | POLLNVAL)) != 0) {
+            break;
+        }
+        const usize chunk = len - done < 512 ? len - done : 512;
+        const long n = ::write(fd, bytes + done, chunk);
+        if (n > 0) {
+            done += static_cast<usize>(n);
+        } else if (!(n < 0 && (errno == EINTR || errno == EAGAIN))) {
+            break;
+        }
+    }
+    return static_cast<long>(done);
 }
 
 long Read(int fd, void* buf, usize len) {

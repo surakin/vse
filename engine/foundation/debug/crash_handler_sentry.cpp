@@ -83,18 +83,10 @@ struct ReportDestination {
     bool cut_off = false;
 };
 
-// Writes all of the bytes, retrying a write that was interrupted or took only part of them (a pipe, a signal).
+// Writes all of the bytes, retrying a write that took only part of them, but waiting at most 2 seconds in total for a pipe whose
+// reader has stopped: the report must not hold a crashing process forever.
 void WriteAll(int fd, const char* data, usize length) {
-    int failures = 0;
-    while (length > 0 && failures < 8) {
-        const long n = os::Write(fd, data, length);
-        if (n > 0) {
-            data += n;
-            length -= static_cast<usize>(n);
-        } else {
-            ++failures;
-        }
-    }
+    os::WriteAllWithTimeout(fd, data, length, 2ull * 1000 * 1000 * 1000);
 }
 
 void WriteReportPiece(void* context, const char* data, usize length) {
@@ -260,6 +252,10 @@ void UninstallCrashHandler() {
         return;
     }
     detail::RemoveCrashEventHook();
+    // A crash being reported on another thread must finish before the library goes away (bounded: it normally ends the process).
+    for (int waited = 0; waited < 1000 && detail::CrashReportInProgress(); ++waited) {
+        os::SleepNanos(1000 * 1000);
+    }
     sentry_close();
     g_crash_handler_installed.store(false, std::memory_order_release);
 }

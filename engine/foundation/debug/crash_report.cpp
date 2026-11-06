@@ -197,21 +197,23 @@ void WriteCrashReport(const CrashReportSink& sink, const CrashReportInfo& info) 
         LineWriter w(sink);
         w.Text("--- stack trace ---").EndLine();
     }
-    if (info.trace != nullptr) {
-        char text[8192];
-        const usize length = FormatStackTrace(*info.trace, text, sizeof(text));
-        if (length > 0 && sink.write != nullptr) {
-            // Frame by frame, so a fault in the middle of resolving leaves the earlier frames written.
-            usize start = 0;
-            for (usize i = 0; i < length; ++i) {
-                if (text[i] == '\n') {
-                    sink.write(sink.context, text + start, i + 1 - start);
-                    start = i + 1;
-                }
+    if (info.trace != nullptr && sink.write != nullptr) {
+        // One frame at a time, written as soon as it is resolved, so a fault while resolving frame N leaves frames 0 to N-1 written.
+        for (u32 i = 0; i < info.trace->count; ++i) {
+            StackTrace one;
+            one.frames[0] = info.trace->frames[i];
+            one.count = 1;
+            char text[2048];
+            const usize length = FormatStackTrace(one, text, sizeof(text));
+            if (length <= 2) {
+                continue;
             }
-            if (start < length) {
-                sink.write(sink.context, text + start, length - start); // a last frame cut short by the buffer
-            }
+            // The formatted line starts "#0"; this frame is number i.
+            {
+                LineWriter w(sink);
+                w.Text("#").Decimal(i);
+            } // (flushed here, before the rest of the line)
+            sink.write(sink.context, text + 2, length - 2);
         }
     }
     WriteCrashContext(sink);

@@ -1,29 +1,48 @@
 # Foundation: Debugging
 
-> **Status:** draft — Phase 6 Day 92 (death tests and fault injection); the stack-trace, crash-handler and dump sections arrive on later days  
+> **Status:** complete for Phase 6 (Linux implemented; Windows and macOS are ready, see [porting](porting-debugging.md))  
 > **Audience:** engine programmers  
 > **Covers:** Phase 6
 
+## Debugging a crash: a checklist
+
+You have a crash report on the screen, a `.envelope` in the dump directory, or a core. In this order:
+
+1. **Read the report.** It starts with the reason and the faulting thread (`thread: 12345 "worker-2"`), then the stack trace.
+   The first frame is the function that faulted. Under it: the build id, the platform, the engine state (`gpu:`, `frame:`,
+   `window:`) and the last 32 log lines. See "What a crash report contains".
+2. **No names or no lines?** A Release program has names but no file and line; a stripped one has neither. Use a
+   RelWithDebInfo build, or resolve with the symbol store: "Turning a dump into a trace".
+3. **Need more than the report?** `scripts/crash-report.sh <envelope> <program>` prints every thread and the modules from the
+   minidump (and refuses the wrong build). For heap or object state ask for a core: "Core dumps on Linux".
+4. **Is it the right build?** Compare `build id:` in the report with `readelf -n <program>`; the scripts do it for you.
+5. **Reproduce it.** `--crash-test=...` in any demo shows the path works; a test that expects a crash is in "Testing code that
+   crashes". Make the failing case a test before you fix it.
+6. **Report, don't upload.** Nothing the engine does ever sends a dump anywhere. A dump and a core hold process memory: keep
+   them private.
+
 ## Source of truth
 
-- `engine/foundation/debug/crash_reason.h`
-- `engine/foundation/debug/fault_injection.h`
-- `engine/foundation/debug/death_test.h`
-- `engine/foundation/debug/stack_trace.h`, `module_list.h`, `debugger.h`, `compiler.h`
-- `engine/foundation/debug/crash_handler.h`; `third_party/sentry_native/VENDORED.md`; `tools/crash_extract/`
-- `tests/debug/` (the tests, and `tests/debug/BACKEND-CONFORMANCE.md` once Day 101 writes it)
+- `engine/foundation/debug/`: `crash_reason.h`, `fault_injection.h`, `death_test.h`, `stack_trace.h`, `module_list.h`, `debugger.h`,
+  `compiler.h`, `crash_handler.h`, `crash_context.h`, `crash_report.h`, `crash_state.h`, `post_mortem.h`, `program_setup.h`,
+  `thread_info.h`
+- `engine/foundation/log/log.h`, `assert.h` (the assert family and the recent-log ring)
+- `engine/foundation/os/linux/debug/` (the Linux backend) and `os/windows/debug/BACKEND.md`, `os/macos/debug/BACKEND.md`
+- `third_party/libbacktrace/VENDORED.md`, `third_party/sentry_native/VENDORED.md`; `tools/crash_extract/`; `tools/signal_safety_check/`
+- `scripts/`: `crash-report.sh`, `store-symbols.sh`, `split-debug.sh`, `find-core.sh`, `open-core.sh`
+- `tests/debug/` (the tests, and `tests/debug/BACKEND-CONFORMANCE.md`)
 
 ## API reference
 
-Full reference: [Foundation: Debugging](../reference/foundation-debug.md).
+Full reference: [Foundation: Debugging](../reference/foundation-debug.md) and [Foundation: Logging](../reference/foundation-log.md).
 
-- [[debug::CrashReason]] — why a process or thread was stopped abnormally, independent of the operating system
-- [[debug::FaultKind]] and [[debug::InjectFault]] — cause a deliberate fault in a test
-- [[debug::RunInChild]] — run a registered function in a child process and see what happened
-- [[debug::ChildResult]] — the exit code, the fault, the timeout and the captured output of a child
+- [[debug::StartProgramDebugging]], [[debug::RunCrashTest]] — what every program calls first
 - [[debug::CaptureStackTrace]], [[debug::ResolveStackTrace]], [[debug::FormatStackTrace]] — the call stack, with names, files and lines
 - [[debug::InitDebugFacilities]] — prepare the stack-trace facilities at program start
-- [[debug::InstallCrashHandler]], [[debug::UninstallCrashHandler]], [[debug::CrashHandlerOptions]] — leave a minidump when the program faults
+- [[debug::InstallCrashHandler]], [[debug::UninstallCrashHandler]], [[debug::CrashHandlerOptions]], [[debug::RegisterThreadForCrashHandling]]
+- [[debug::WriteCrashReport]], [[debug::WriteCrashContext]], [[debug::RegisterCrashStateProvider]], [[debug::SetCrashStateText]], [[debug::CrashStateCounter]]
+- [[debug::EnablePostMortemDumps]] — core dumps
+- [[debug::CrashReason]], [[debug::FaultKind]], [[debug::InjectFault]], [[debug::RunInChild]], [[debug::ChildResult]] — testing code that crashes
 - [[os::GetCrashDumpDirectory]], [[os::EnsureDirectory]] — where dumps go
 
 ## Capturing and reading a stack trace
@@ -104,8 +123,10 @@ The library is sentry-native with its Breakpad backend, vendored in `third_party
 the choice and the numbers are in `docs/superpowers/specs/2026-11-06-debugging-design.md`). It runs inside the process, so
 there is no helper program to ship next to the game.
 
-- **Install it once, early, and install it first.** A handler a program installs for the same signals *after* this call must
-  call the one it replaced, or the dump is not written. The engine installs none of its own.
+- **Install it once, early.** Programs do it through [[debug::StartProgramDebugging]]. The engine puts one small recorder in front
+  of the library's handler (to learn the fault address and the faulting thread, which the library does not tell its hook on Linux)
+  and always calls the library afterwards. A handler a program installs for the same signals *after* this call must call the one
+  it replaced, or the dump is not written.
 - **A failure is not fatal.** If the dump directory cannot be created or the library cannot start, `InstallCrashHandler`
   returns the reason (`DirectoryFailed`, `InitFailed`), logs a warning on the `LogCrash` channel, and the program runs without
   a handler. `Disabled` is what a program returns to itself when configuration switches the handler off.
@@ -341,6 +362,20 @@ privately, not next to the download.
 Breakpad `.sym` files (for `minidump-stackwalk`) are produced by `dump_syms` from the same `.debug` files; the script looks for
 them in `<store>/breakpad` (a directory you create; `store-symbols.sh` does not). That path is documented but not exercised on the development machine (see KNOWN-ISSUES).
 
+## Assert, ensure or verify
+
+Choose by what the program can do after the failure (the macros are in [Logging and Assertions](foundation-logging-and-assert.md)):
+
+- `ENGINE_ASSERT(cond, msg)`: the condition is a precondition whose violation is a bug and nothing sensible can follow. It
+  prints the message, the trace and the crash context, then aborts, so the crash handler adds the minidump.
+- `ENGINE_ENSURE(cond, msg)`: the code can survive it (a missing optional resource, a value out of range that it clamps). It
+  prints the message and trace **once per call site**, counts the rest, returns `false`, and the program goes on. Use it where
+  you would otherwise write a silent `if (!x) return;`: the first failure is then visible.
+- `ENGINE_VERIFY(expr, msg)`: like assert, but `expr` must run in every build (it has a side effect); the check is dropped in
+  Release unless forced on.
+
+A failed ensure leaves no dump and does not print the crash context (the program is fine); a failed assert does both.
+
 ## Testing code that crashes
 
 A crash kills the process that crashes, so a test cannot simply call code that is supposed to crash. A **death test**
@@ -399,14 +434,3 @@ child and closes every descriptor it opened.
 
 A fault shows up as an exit status, and a stack overflow is an access violation as far as the status can tell, so a death
 test that wants [[debug::CrashReason::StackOverflow]] checks for [[debug::CrashReason::AccessViolation]].
-
-## Already known — seed material (verify against the code when writing)
-
-- A failed `ENGINE_ASSERT` ends the process with `abort()` (Day 93) after printing its stack trace (Day 94), so it dies with `SIGABRT`; the crash handler (Days 95-97) builds on that. See [Foundation: Logging and Assertions](foundation-logging-and-assert.md) for the macros.
-
-## Outline
-
-- What a crash report contains (Day 96)
-- When the program crashes (Day 97)
-- Core dumps (Day 98)
-- Turning a dump into a trace (Day 99)

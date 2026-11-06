@@ -623,7 +623,7 @@ PLAN.md
 | 3 | Vulkan RHI | Linux | [plans/phase-03-vulkan-rhi.md](plans/phase-03-vulkan-rhi.md) | RHI renders a lit, textured cube through Vulkan; no Vulkan calls leak outside `/engine/rhi/vulkan` |
 | 4 | Renderer core (complete) | Linux | [plans/phase-04-renderer-core.md](plans/phase-04-renderer-core.md) | Render graph draws multiple objects, basic materials/lighting, depth buffering |
 | 5 | **Test scoping** (complete) | none (dev tooling) | [plans/phase-05-test-scoping.md](plans/phase-05-test-scoping.md) | Every test belongs to a phase; day-to-day work re-runs only the current phase's tests (plus the modules a change touches), and the full suite, in all sanitizer flavors, runs when a phase completes |
-| 6 | **Debugging facilities** | Linux first (Windows/macOS designed in) | [plans/phase-06-debugging-facilities.md](plans/phase-06-debugging-facilities.md) | Stack traces with symbols, a crash handler that writes core dumps and minidumps, and assert/ensure/verify macros with a pluggable handler; a crashing test process yields a readable report |
+| 6 | **Debugging facilities** (complete) | Linux first (Windows/macOS designed in) | [plans/phase-06-debugging-facilities.md](plans/phase-06-debugging-facilities.md) | Stack traces with symbols, a crash handler that writes core dumps and minidumps, and assert/ensure/verify macros with a pluggable handler; a crashing test process yields a readable report |
 | 7 | **RHI reset** | Linux | [plans/phase-07-rhi-reset.md](plans/phase-07-rhi-reset.md) | Any rendering setting (GPU, present mode, resolution, validation, quality, ...) changes at run time by re-initializing the RHI and recreating device resources, without restarting the app; device loss recovers through the same path |
 | 8 | Windows port + DX12 backend | Windows | [plans/phase-08-windows-dx12.md](plans/phase-08-windows-dx12.md) | Phases 1-4's functionality (window/input, RHI, renderer) running on Windows through the DX12 RHI backend; the Phase 3 golden images and Phase 4 scene tests pass |
 | 9 | macOS port + Metal backend | macOS | [plans/phase-09-macos-metal.md](plans/phase-09-macos-metal.md) | Phases 1-4's functionality running on macOS through the Metal RHI backend; the same golden images and scene tests pass |
@@ -798,4 +798,11 @@ that changed from the plan and why.)_
   with the **Breakpad** backend and no transport. The proposed Crashpad backend was rejected: on Linux it requires libcurl and
   its handler executable needs libcurl plus about 25 shared libraries. Assumption #20 and `CLAUDE.md` name the final choice;
   the spec is `docs/superpowers/specs/2026-11-06-debugging-design.md`.
+- **2026-11-06 — Phase 6 (Debugging facilities) complete (Days 91-102).** Linux is implemented; Windows and macOS are ready (audit,
+  `BACKEND.md` checklists kept in step with the headers by a test, conformance list, cross-target syntax checks, porting guide).
+  Two deviations from the plan, both recorded in the day files: the report is written by a small signal recorder placed in front
+  of Breakpad's handler on Linux (the library's `on_crash` hook gets no signal information there and runs on a helper thread);
+  and the log ring needed a single-writer slot claim. Closing run: `ran 2371 of 2371 tests (phases: all; flavors: all; display:
+  included)`, all passing; planted regressions all caught; both demos 1000 frames clean on Wayland and X11. `CURRENT_PHASE` stays
+  6 until Phase 7 has its day files and starts.
 

@@ -28,6 +28,9 @@ using CrashEventFn = void (*)(const CrashEvent& event);
 // Call after the library has installed its own. Returns false if it could not.
 bool InstallCrashEventHook(CrashEventFn fn);
 
+// True while a fault is being reported (or the library's handler is running after the report). Uninstalling waits for it to end.
+bool CrashReportInProgress();
+
 // Removes the recorder if it is still the current handler; if something was installed over it, it stays but passes through.
 void RemoveCrashEventHook();
 

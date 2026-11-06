@@ -33,6 +33,17 @@ long Write(int fd, const void* buf, usize len);
 /// Returns: the number of bytes read, 0 at end of file, or -1 on error.
 long Read(int fd, void* buf, usize len);
 
+/// Writes all `len` bytes to `fd`, retrying short and interrupted writes, but never waiting more than `timeout_nanos` in total for
+/// the descriptor to become writable (a pipe whose reader has stopped).
+/// Param fd: an open descriptor.
+/// Param buf: the bytes; borrowed for the call.
+/// Param len: number of bytes.
+/// Param timeout_nanos: longest total wait; 0 means one attempt without waiting.
+/// Returns: the number of bytes written, which is less than `len` if the wait ran out or the write failed.
+/// Fails: returns fewer bytes than asked; never blocks past the timeout.
+/// Thread-safety: thread-safe. Async-signal-safe.
+long WriteAllWithTimeout(int fd, const void* buf, usize len, u64 timeout_nanos);
+
 /// Opens the file at the UTF-8 `path` and returns a file descriptor.
 /// Param path: UTF-8 file path, at most [[os::kMaxPathBytes]] - 1 bytes.
 /// Param flags: POSIX `open` flags such as `O_RDONLY`.

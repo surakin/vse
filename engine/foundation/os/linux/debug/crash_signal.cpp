@@ -55,6 +55,7 @@ u64 StackPointer(const void* user_context) {
 
 // Passes the signal on to whatever was installed before the recorder (the library's handler, normally).
 void Chain(int signal_number, siginfo_t* info, void* user_context) {
+    const bool from_hardware = info != nullptr && info->si_code > 0; // a fault, not kill/raise/abort (those have si_code <= 0)
     const struct sigaction& previous = g_previous[signal_number];
     if ((previous.sa_flags & SA_SIGINFO) != 0 && previous.sa_sigaction != nullptr) {
         previous.sa_sigaction(signal_number, info, user_context);
@@ -67,8 +68,8 @@ void Chain(int signal_number, siginfo_t* info, void* user_context) {
         std::memset(&dfl, 0, sizeof(dfl));
         dfl.sa_handler = SIG_DFL;
         ::sigaction(signal_number, &dfl, nullptr);
-        if (signal_number == SIGABRT || signal_number == SIGTRAP) {
-            ::raise(signal_number);
+        if (signal_number == SIGABRT || signal_number == SIGTRAP || !from_hardware) {
+            ::raise(signal_number); // nothing will re-run a faulting instruction: deliver the signal again with the default action
         }
     }
 }
@@ -154,6 +155,7 @@ namespace detail {
 
 bool InstallCrashEventHook(CrashEventFn fn) {
     bool any = false;
+    g_reported.store(false, std::memory_order_release);
     for (int signal_number : kFatalSignals) {
         if (g_installed_signal[signal_number]) {
             any = true; // the recorder is still in the chain (something was installed over it when it was removed): reuse it
@@ -173,8 +175,13 @@ bool InstallCrashEventHook(CrashEventFn fn) {
     return any;
 }
 
+bool CrashReportInProgress() {
+    return g_reporting_thread.load(std::memory_order_acquire) != 0;
+}
+
 void RemoveCrashEventHook() {
     g_event_fn.store(nullptr, std::memory_order_release);
+    g_reported.store(false, std::memory_order_release); // a later install may report again
     for (int signal_number : kFatalSignals) {
         if (!g_installed_signal[signal_number]) {
             continue;
@@ -185,7 +192,11 @@ void RemoveCrashEventHook() {
             ::sigaction(signal_number, &g_previous[signal_number], nullptr);
             g_installed_signal[signal_number] = false;
         }
-        // Otherwise a handler was installed over ours; it stays, and ours (still in its chain) passes through.
+        // Otherwise a handler was installed over ours; it stays, and ours (still in its chain) passes through. What it would call
+        // next is the library's handler, which the caller is about to close: make that the default action instead.
+        if (g_installed_signal[signal_number]) {
+            std::memset(&g_previous[signal_number], 0, sizeof(g_previous[signal_number]));
+        }
     }
 }
 

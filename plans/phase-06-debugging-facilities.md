@@ -15,8 +15,7 @@ nothing is ever uploaded; all of it is documented and covered by tests in plain,
 off by default in release builds unless enabled.
 
 Every day of this phase has its own file under `plans/phase-06-debugging-facilities/` (see `CLAUDE.md`, planning
-policy). **Planned 2026-11-06, rebuilt the same day on existing libraries; Day 91 done (libraries chosen); Days 92-102 not started** (`CURRENT_PHASE` is already 6, so
-scoped runs select this phase's tests, of which there are none until Day 92).
+policy). **Status: complete (2026-11-06).** Days 91-102 are done; the closing full run (`ran 2371 of 2371 tests (phases: all; flavors: all; display: included)`) and the measurements are in [Day 102](phase-06-debugging-facilities/day-102-docs-and-closing-run.md). Phase 7 needs its own day files before it starts; `CURRENT_PHASE` changes in the commit that starts it.
 
 ## Days
 
@@ -24,17 +23,17 @@ Each day has its own file of individually checkable sub-tasks, a docs task, an e
 concrete Done condition. Day numbers continue from Phase 5 (which ended at Day 90).
 
 91. [Library Selection & Spikes] (done)(phase-06-debugging-facilities/day-91-library-selection-and-spikes.md)
-92. [Death-Test Helper & the `tests/debug` Suite](phase-06-debugging-facilities/day-92-death-test-helper.md)
-93. [Assert, Ensure, Verify & the Handler Chain](phase-06-debugging-facilities/day-93-assert-family.md)
-94. [Vendoring libbacktrace & the Stack-Trace Facade](phase-06-debugging-facilities/day-94-libbacktrace-and-stack-traces.md)
-95. [Vendoring the Crash Library & the Crash Facade](phase-06-debugging-facilities/day-95-crash-library-and-facade.md)
-96. [What a Crash Report Contains](phase-06-debugging-facilities/day-96-crash-report-content.md)
-97. [Crash Handling End to End](phase-06-debugging-facilities/day-97-crash-handler-integration.md)
-98. [Core Dumps](phase-06-debugging-facilities/day-98-core-dumps.md)
-99. [Dump Tooling & Symbols](phase-06-debugging-facilities/day-99-dump-tooling-and-symbols.md)
-100. [Wiring the Engine In](phase-06-debugging-facilities/day-100-subsystem-integration.md)
-101. [Windows & macOS Readiness](phase-06-debugging-facilities/day-101-windows-macos-readiness.md)
-102. [Documentation Sweep, Closing Full Run & Wrap-up](phase-06-debugging-facilities/day-102-docs-and-closing-run.md)
+92. [Death-Test Helper & the `tests/debug` Suite] (done)(phase-06-debugging-facilities/day-92-death-test-helper.md)
+93. [Assert, Ensure, Verify & the Handler Chain] (done)(phase-06-debugging-facilities/day-93-assert-family.md)
+94. [Vendoring libbacktrace & the Stack-Trace Facade] (done)(phase-06-debugging-facilities/day-94-libbacktrace-and-stack-traces.md)
+95. [Vendoring the Crash Library & the Crash Facade] (done)(phase-06-debugging-facilities/day-95-crash-library-and-facade.md)
+96. [What a Crash Report Contains] (done)(phase-06-debugging-facilities/day-96-crash-report-content.md)
+97. [Crash Handling End to End] (done)(phase-06-debugging-facilities/day-97-crash-handler-integration.md)
+98. [Core Dumps] (done)(phase-06-debugging-facilities/day-98-core-dumps.md)
+99. [Dump Tooling & Symbols] (done)(phase-06-debugging-facilities/day-99-dump-tooling-and-symbols.md)
+100. [Wiring the Engine In] (done)(phase-06-debugging-facilities/day-100-subsystem-integration.md)
+101. [Windows & macOS Readiness] (done)(phase-06-debugging-facilities/day-101-windows-macos-readiness.md)
+102. [Documentation Sweep, Closing Full Run & Wrap-up] (done)(phase-06-debugging-facilities/day-102-docs-and-closing-run.md)
 
 Order reasoning: Day 91 chooses the libraries by spike, because everything after depends on it. The death-test helper
 comes next because every later day tests code that aborts or crashes; the assert family follows because every other phase
