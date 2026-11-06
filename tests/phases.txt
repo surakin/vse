@@ -93,8 +93,8 @@ tests/rhi/vulkan_render_graph_test.cpp          4
 tests/rhi/vulkan_renderer_demo_test.cpp         4
 tests/rhi/vulkan_strip_test.cpp                 4   # an RHI field, added by the renderer's mesh work
 test:raw_new_check*                             4
-test:shaders_check                              4
-test:shaders_portability                        4
+testopt:shaders_check                           4   # only with slangc
+testopt:shaders_portability                     4   # only with slangc
 test:renderer_demo_*                            4
 
 # --- Phase 5: test scoping ---

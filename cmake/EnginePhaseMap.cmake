@@ -3,7 +3,8 @@
 # Lines are `<pattern>  <phase>`; `#` starts a comment. A pattern is
 #   - a source path relative to the repo root: `tests/foundation/log_test.cpp`; `*` matches within one path segment, and a
 #     trailing `/` means every file below that directory;
-#   - `test:<glob>`: the name of a test that is not a Catch2 test case (`*` matches any characters).
+#   - `test:<glob>`: the name of a test that is not a Catch2 test case (`*` matches any characters); `testopt:<glob>` for
+#     one that exists only in some configurations (the shader tests need slangc), which test_phase_labels may find unused.
 # `flavors <phase> plain,asan,tsan` states which sanitizer flavors have tests of that phase (test_phase_labels checks it).
 # A phase is 0, 1, 2, 2.5, 3, ...; its ctest label is `phase<N>` with `.` written `_` (`phase2_5`), because label
 # filters are regular expressions. A subject matching no pattern, or patterns with different phases, is an error.
@@ -28,9 +29,9 @@ function(engine_phase_map_load map_file)
     endif()
     set(pattern "${CMAKE_MATCH_1}")
     set(phase "${CMAKE_MATCH_2}")
-    if(pattern MATCHES "^test:(.*)$")
+    if(pattern MATCHES "^test(opt)?:(.*)$")
       set(kind test)
-      set(pattern "${CMAKE_MATCH_1}")
+      set(pattern "${CMAKE_MATCH_2}")
       set(any ".*")
     else()
       set(kind file)

@@ -79,7 +79,8 @@ current_phase() {
     [ -f "$phase_file" ] || die "$phase_file is missing; it holds the current phase (see --help)"
     local p
     p="$(grep -v '^[[:space:]]*#' "$phase_file" | tr -d '[:space:]')"
-    is_known "$p" || die "'$p' in $phase_file is not a known phase (known: ${known_phases% })"
+    # A new phase has no tests yet, so it need not be in tests/phases.txt.
+    case "$p" in ''|*[!0-9.]*|.*|*.|*.*.*) die "'$p' in $phase_file is not a phase number (like 4 or 2.5)" ;; esac
     printf '%s' "$p"
 }
 
@@ -189,7 +190,7 @@ if [ -n "$reasons" ] && [ "$mode" = affected ]; then
     echo "test-phase: running everything because of:$reasons"
 fi
 if [ "$picked" -eq 0 ]; then
-    echo "test-phase: the selection ($summary) contains no tests; nothing ran" >&2
+    echo "test-phase: the selection ($summary) contains no tests; nothing ran (a phase has none until its first test file is in tests/phases.txt; --affected adds the touched modules' phases)" >&2
     exit 1
 fi
 if [ "$dry" = 1 ]; then

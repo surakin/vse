@@ -73,7 +73,7 @@ phase_script_case(affected_cmake_file PHASES all ARGS --affected --current-phase
 phase_script_case(affected_phase_map PHASES all ARGS --affected --current-phase-file ${FIX}/phase4.txt
   --diff-from-file ${FIX}/diff_map.txt CTEST ${PLAIN})
 # Refusals.
-phase_script_refuses(bad_current_phase "not a known phase" --current --current-phase-file ${FIX}/bad.txt)
+phase_script_refuses(bad_current_phase "not a phase number" --current --current-phase-file ${FIX}/bad.txt)
 phase_script_refuses(missing_current_phase "is missing" --current --current-phase-file ${FIX}/nonexistent.txt)
 phase_script_refuses(unknown_phase "not a known phase" 9)
 phase_script_refuses(bad_flavor "--flavor must be" 4 --flavor sanitized)

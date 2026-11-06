@@ -16,7 +16,7 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
   `scripts/test-phase.sh 4`. Add `--dry-run` to see what would run.
 - **Everything, every flavor** (a phase's closing run): `scripts/test-phase.sh --all --flavor all`, or plain `ctest` from `build/`.
 - Every test has one `phaseN` label (`ctest -L '^phase4$'`); `tests/phases.txt` is the only place a phase is decided, and
-  `CURRENT_PHASE` changes only in the commit that starts a phase. Docs checks: `ctest -L docs` (not scoped).
+  `CURRENT_PHASE` changes in the commit that closes the previous phase or starts this one. Docs checks: `ctest -L docs` (not scoped).
 - A reduced run is quoted with its `ran X of Y tests` line, never as "all tests pass". Guide: `docs/guide/building-and-testing.md`.
 
 ## Phase 0 (Foundation layer)

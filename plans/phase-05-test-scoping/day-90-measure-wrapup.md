@@ -58,3 +58,17 @@ foundation selects every phase), a new directory forces the full suite until it 
 4/4; `docgen lint` unchanged (no header changed), `docs/reference/` unchanged. `rhi_demo` and `renderer_demo` `--frames 1000 --validation` on Wayland
 and on X11: no validation, error or warning lines; memory flat (301472 to 301520 KiB, 312488 to 312892, 310696 to 310876, 320656 to 320852).
 `CURRENT_PHASE` is 6; Phase 5 is marked complete in its plan file, `PLAN.md` (roadmap row and progress log) and `STATUS.md`.
+
+## Post-implementation code review
+
+`/code-review high` on the phase's diff (Days 85-90 as committed), 5 findings:
+
+1. `CURRENT_PHASE` was committed empty (my edit truncated it) and a phase with no tests yet was rejected as unknown. **Fixed**: the file says `6`; the
+   runner accepts any phase number there (a new phase has no tests yet) and, with nothing selected, says why; the test for a bad file now expects "not a phase number".
+2. `shaders_check`/`shaders_portability` exist only with `slangc`, so `test_phase_labels` would fail the unused-line check on a checkout without it.
+   **Fixed**: `testopt:` map lines may be unused (the two shader tests). Not exercised here, since `slangc` is installed.
+3. The module map missed the scanning gates (boundary check scans `engine/ game/ tools/ tests/renderer`, raw-new check scans `engine/ game/`). **Fixed**: those directories now select phases 3 and 4.
+4. An all-upper-case label is read as a property name. **Declined** again (documented in `cmake/EngineTestPhases.cmake`; the phase label itself is unaffected).
+5. Phase-map lookups are linear and re-parsed per call. **Declined** (discovery of every test executable plus the check takes seconds, measured on Day 86).
+
+The closing run was repeated after the fixes: `ran 1874 of 1874 tests ... in` the line above, `ctest -L docs` 4/4.
