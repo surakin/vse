@@ -767,3 +767,8 @@ flavor runs them; see [the RHI guide](rhi.md#platform-notes).
 - [The RHI](rhi.md) and the [renderer design](../superpowers/specs/2026-11-04-renderer-design.md).
 - [Renderer portability review](../superpowers/specs/2026-11-04-renderer-portability-review.md): what Phases 8-9 and 17 add.
 - [Shaders: from Slang to a shader module](rhi-shaders.md) and [Tutorial: From a Scene to a Lit Frame](../tutorials/hello-renderer.md).
+
+## What the renderer adds to a crash report
+
+Each frame the renderer stores its frame number in a crash state counter, so a report shows `frame: <n>` next to the `gpu:` line
+the RHI registers. Add your own counter with [[debug::CrashStateCounter]] and store to it as often as you like (one atomic store).

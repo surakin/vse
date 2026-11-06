@@ -52,3 +52,8 @@ _TODO_
 
 _TODO_
 
+## What the platform layer adds to a crash report
+
+When a window opens, its backend (`wayland` or `x11`) is registered as the `window` line of every crash report. A fault in a window
+callback names the thread it ran on, like any other. The crash dump directory comes from `os::GetCrashDumpDirectory` (under
+`$XDG_STATE_HOME` or `~/.local/state`); `os::CreateFileForWriting` is what the crash report uses to write its file.

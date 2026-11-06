@@ -10,6 +10,7 @@
 
 #include <unistd.h>
 
+#include "debug/program_setup.h"
 #include "containers/vector.h"
 #include "demo_frame.h"
 #include "demo_scene.h"
@@ -397,11 +398,16 @@ int Usage(const char* program, int code) {
 } // namespace
 
 int main(int argc, char** argv) {
+    const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(argc, argv);
+    engine_placeholder::debug::RunCrashTest(debug_setup.crash_test); // --crash-test=segv|abort|assert|ensure, before any window or device
     LogRhi.SetVerbosity(LogVerbosity::Info); // the frame-time line is Info
     Options options;
     const char* frames_env = std::getenv("RENDERER_DEMO_FRAMES");
     options.frames = frames_env != nullptr ? std::atol(frames_env) : 0;
     for (int i = 1; i < argc; ++i) {
+        if (engine_placeholder::debug::IsProgramDebugArgument(argv[i])) {
+            continue; // --crash-handler=... and --crash-test=... are handled by StartProgramDebugging
+        }
         const bool has_value = i + 1 < argc;
         if (std::strcmp(argv[i], "--frames") == 0 && has_value) {
             if (!ParseCount(argv[++i], &options.frames)) return Usage(argv[0], kExitUsage);

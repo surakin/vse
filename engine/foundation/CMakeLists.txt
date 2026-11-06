@@ -76,6 +76,8 @@ set(FOUNDATION_SOURCES
   debug/stack_trace_backtrace.cpp
   debug/thread_info.cpp
   debug/crash_context.cpp
+  debug/crash_state.cpp
+  debug/program_setup.cpp
   debug/crash_report.cpp
   debug/crash_handler_sentry.cpp
   ${FOUNDATION_PLATFORM_SOURCES}

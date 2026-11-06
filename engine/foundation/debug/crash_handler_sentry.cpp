@@ -236,6 +236,7 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
     if (!detail::InstallCrashEventHook(&OnCrashEvent)) {
         Log(LogCrash, LogVerbosity::Warn, "the crash report hook could not be installed; crashes leave a dump but no report");
     }
+    g_crash_handler_installed.store(true, std::memory_order_release); // before the registration below, which needs it
     RegisterThreadForCrashHandling();
     // Last, so a failed install leaves the process's core settings alone. The report says where a core goes, or why none will.
     SetCoreDumpDescription("");
@@ -250,7 +251,6 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
             Log(LogCrash, LogVerbosity::Warn, StringView(post_mortem.note));
         }
     }
-    g_crash_handler_installed.store(true, std::memory_order_release);
     return CrashHandlerResult::Installed;
 }
 

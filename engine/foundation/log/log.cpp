@@ -182,6 +182,18 @@ void SetWriteSinkForTesting(WriteSinkFn sink) {
     g_write_sink = sink;
 }
 
+namespace {
+std::atomic<bool> g_log_error_traces{false};
+}
+
+void SetLogErrorTraces(bool enabled) {
+    g_log_error_traces.store(enabled, std::memory_order_relaxed);
+}
+
+bool LogErrorTraces() {
+    return g_log_error_traces.load(std::memory_order_relaxed);
+}
+
 void Log(LogChannel& channel, LogVerbosity level, StringView message) {
     if (!channel.ShouldLog(level)) {
         return;
@@ -196,6 +208,19 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message) {
     offset = AppendStrToBuffer(buf, sizeof(buf), offset, message);
     offset = AppendStrToBuffer(buf, sizeof(buf), offset, "\n");
     RingAppend(buf, offset);
+    if (level == LogVerbosity::Error && g_log_error_traces.load(std::memory_order_relaxed)) {
+        // Where the error came from, under the line, in the same write so another thread's output cannot come between them
+        // (names stay mangled: demangling allocates).
+        char text[sizeof(buf) + 4096];
+        std::memcpy(text, buf, offset);
+        usize length = offset;
+        debug::StackTrace trace;
+        if (debug::CaptureStackTrace(trace, 1)) {
+            length += debug::FormatStackTrace(trace, text + offset, sizeof(text) - offset);
+        }
+        g_write_sink(1, text, length);
+        return;
+    }
     g_write_sink(1, buf, offset);
 }
 

@@ -20,6 +20,9 @@ set(DEBUG_TEST_SOURCES
   core_dump_test.cpp
   core_dump_linux_test.cpp
   crash_report_script_linux_test.cpp
+  program_crash_test_linux_test.cpp
+  job_crash_linux_test.cpp
+  crash_state_test.cpp
   resource_guard_linux.cpp
 )
 
@@ -36,6 +39,14 @@ function(engine_add_debug_tests target foundation_lib jobs_lib suffix label)
   target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/crash_extract)
   target_compile_definitions(${target} PRIVATE DEBUG_TEST_PLUGIN_PATH="$<TARGET_FILE:debug_test_plugin>" ENGINE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
     ENGINE_CRASH_EXTRACT_PATH="$<TARGET_FILE:crash_extract>")
+  # The tests that run the shipped programs are in the plain flavor only: the programs are not sanitized, so the other flavors
+  # would run the same binaries again for no extra coverage (and would need every program built to build a sanitizer test).
+  if(suffix STREQUAL "")
+    target_compile_definitions(${target} PRIVATE
+      ENGINE_PROGRAM_RHI_DEMO="$<TARGET_FILE:rhi_demo>" ENGINE_PROGRAM_RHI_BENCH="$<TARGET_FILE:rhi_bench>"
+      ENGINE_PROGRAM_RENDERER_DEMO="$<TARGET_FILE:renderer_demo>" ENGINE_PROGRAM_RENDERER_BENCH="$<TARGET_FILE:renderer_bench>")
+    add_dependencies(${target} rhi_demo rhi_bench renderer_demo renderer_bench)
+  endif()
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   # The family tests exercise the checking paths, so they need debug and slow checks on whatever the configuration is.
   target_compile_definitions(${target} PRIVATE ENGINE_DEBUG_CHECKS=1 ENGINE_SLOW_CHECKS=1)
@@ -105,6 +116,11 @@ engine_no_network_test(debug_tests_asan debug_tests_asan)
 engine_no_network_test(debug_tests_tsan debug_tests_tsan)
 engine_no_network_test(debug_alloc_tests debug_alloc_tests)
 engine_no_network_test(crash_extract crash_extract)
+# The programs that ship install the crash handler too, so the guarantee covers them (the targets are defined in game/, later).
+engine_no_network_test(rhi_demo rhi_demo)
+engine_no_network_test(rhi_bench rhi_bench)
+engine_no_network_test(renderer_demo renderer_demo)
+engine_no_network_test(renderer_bench renderer_bench)
 
 add_test(NAME debug_no_network_check_clean
   COMMAND ${CMAKE_COMMAND} -DREADELF_TEXT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/readelf_clean.txt -P ${CMAKE_CURRENT_SOURCE_DIR}/check_no_network.cmake)

@@ -21,6 +21,9 @@ endfunction()
 set(RHI_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
 rhi_demo_expect(rhi_demo_device_loss_screenshot 3 "the GPU device was lost" "${RHI_NO_GPU}"
   --screenshot ${RHI_DEMO_SHOT} --frames 5 --inject-device-loss 3)
+# A lost device also leaves a trace of where it was noticed (an ensure, once), and the frame still ends as lost (exit 3).
+rhi_demo_expect(rhi_demo_device_loss_trace 3 "ENSURE FAILED[^\n]*the Vulkan device was lost" "${RHI_NO_GPU}"
+  --screenshot ${RHI_DEMO_SHOT} --frames 5 --inject-device-loss 3)
 # Device creation allocates a driver-dependent number of times, so the third allocation fails either creation itself or
 # the first resource after it; the demo must report either cleanly (exit 1), never crash.
 rhi_demo_expect(rhi_demo_oom_later 1 "no Vulkan device|could not create the target or the cube" "${RHI_NO_GPU}"
@@ -38,5 +41,5 @@ add_test(NAME rhi_demo_no_vulkan
     ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:rhi_demo>;--screenshot;${RHI_DEMO_SHOT}" -DEXPECT_CODE=1 "-DEXPECT_OUT=no Vulkan device"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/expect_run.cmake)
 set_tests_properties(rhi_demo_no_vulkan PROPERTIES LABELS demo)
-engine_label_tests(rhi_demo_device_loss_screenshot rhi_demo_oom_later rhi_demo_oom_device rhi_demo_bad_injection
+engine_label_tests(rhi_demo_device_loss_screenshot rhi_demo_device_loss_trace rhi_demo_oom_later rhi_demo_oom_device rhi_demo_bad_injection
   rhi_demo_negative_injection rhi_demo_no_vulkan)

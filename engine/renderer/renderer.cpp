@@ -1,8 +1,10 @@
 #include "renderer/renderer.h"
 
+#include <atomic>
 #include <cstdarg>
 #include <cstdio>
 
+#include "debug/crash_state.h"
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 
@@ -120,6 +122,13 @@ FrameStatus Renderer::RenderFrame(const RenderScene* scene, const Camera* camera
     context.camera = camera;
     context.device = device;
     context.frame_index = frame_;
+    {
+        // The crash report shows which frame was being built.
+        static std::atomic<u64>* const frame_counter = debug::CrashStateCounter("frame");
+        if (frame_counter != nullptr) {
+            frame_counter->store(frame_, std::memory_order_relaxed);
+        }
+    }
     if (!desc_.build(context, desc_.build_user)) {
         SetError("the frame callback abandoned the frame");
         return Abandon(FrameStatus::Failed, acquired);

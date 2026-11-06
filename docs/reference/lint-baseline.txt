@@ -5,11 +5,11 @@ module	foundation/memory	22	22
 module	foundation/containers	112	112
 module	foundation/strings	86	86
 module	foundation/math	97	97
-module	foundation/log	67	67
+module	foundation/log	69	69
 module	foundation/types	11	11
 module	platform/os	34	34
 module	platform/window-input	230	230
-module	foundation/debug	179	179
+module	foundation/debug	200	200
 module	jobs	151	151
 module	rhi	599	599
 module	renderer	678	678

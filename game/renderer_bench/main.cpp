@@ -13,6 +13,7 @@
 #include <cstring>
 #include <ctime>
 
+#include "debug/program_setup.h"
 #include "demo_frame.h"
 #include "demo_scene.h"
 #include "jobs/scheduler.h"
@@ -271,8 +272,13 @@ int Usage(const char* program) {
 } // namespace
 
 int main(int argc, char** argv) {
+    const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(argc, argv);
+    engine_placeholder::debug::RunCrashTest(debug_setup.crash_test); // --crash-test=segv|abort|assert|ensure, before any window or device
     Options o;
     for (int i = 1; i < argc; ++i) {
+        if (engine_placeholder::debug::IsProgramDebugArgument(argv[i])) {
+            continue; // --crash-handler=... and --crash-test=... are handled by StartProgramDebugging
+        }
         const bool has_value = i + 1 < argc;
         if (std::strcmp(argv[i], "--section") == 0 && has_value) {
             o.section = argv[++i];

@@ -2,6 +2,7 @@
 
 #include <cstring>
 
+#include "log/assert.h"
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vulkan_device.h"
@@ -111,6 +112,9 @@ void VulkanDevice::SetDebugName(u64 handle, VkObjectType type, const char* name)
 void VulkanDevice::NoteDeviceLost(VkResult result) {
     if (result == VK_ERROR_DEVICE_LOST && !device_lost_.exchange(true, std::memory_order_relaxed)) {
         RhiLog(LogVerbosity::Error, "Vulkan: the device was lost; further submissions are ignored");
+        // A trace of what the program was doing when the loss was noticed, once (the first loss); the frame goes on to end as
+        // DeviceLost. The crash report's `gpu` line names the adapter.
+        ENGINE_ENSURE(false, "the Vulkan device was lost");
     }
 }
 
@@ -659,6 +663,7 @@ void VulkanDevice::BeginFrame() {
         if (lose_device_at_frame_ != 0 && frame == lose_device_at_frame_ && !device_lost_.exchange(true, std::memory_order_relaxed)) {
             RhiLog(LogVerbosity::Error, "Vulkan: the device was lost (injected at frame %llu); further submissions are ignored",
                    static_cast<unsigned long long>(frame));
+            ENGINE_ENSURE(false, "the Vulkan device was lost"); // the same report as a real loss: a trace, once
         }
         if (waited && !device_lost_.load(std::memory_order_relaxed)) {
             ResetFrameDescriptorsLocked(frame % kFramePools); // the frame that last used these pools has finished

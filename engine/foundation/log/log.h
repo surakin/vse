@@ -100,6 +100,17 @@ void ReadRecentLogLines(RecentLogLineFn callback, void* context, usize max_lines
 /// Thread-safety: not-thread-safe. Call only while no thread logs.
 void ResetLogRingForTesting();
 
+/// Makes every `Error` line carry a short stack trace under it, to find where an error came from. Off by default;
+/// [[debug::StartProgramDebugging]] turns it on in Debug builds. The output of lines at other levels does not change.
+/// Param enabled: true to add traces.
+/// Thread-safety: thread-safe.
+void SetLogErrorTraces(bool enabled);
+
+/// Reports whether `Error` lines carry a trace.
+/// Returns: the setting made by [[SetLogErrorTraces]].
+/// Thread-safety: thread-safe.
+bool LogErrorTraces();
+
 /// Channel for core engine and foundation messages.
 extern LogChannel LogCore;
 /// Channel for rendering messages.

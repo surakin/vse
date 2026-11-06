@@ -13,6 +13,7 @@
 
 #include <unistd.h>
 
+#include "debug/program_setup.h"
 #include "cube_scene.h"
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
@@ -265,11 +266,16 @@ void BenchPipelines() {
 } // namespace
 
 int main(int argc, char** argv) {
+    const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(argc, argv);
+    engine_placeholder::debug::RunCrashTest(debug_setup.crash_test); // --crash-test=segv|abort|assert|ensure, before any window or device
     long draws = 0;
     long frames = 30;
     bool uploads = true;
     bool pipelines = true;
     for (int i = 1; i < argc; ++i) {
+        if (engine_placeholder::debug::IsProgramDebugArgument(argv[i])) {
+            continue; // --crash-handler=... and --crash-test=... are handled by StartProgramDebugging
+        }
         if (std::strcmp(argv[i], "--draws") == 0 && i + 1 < argc) {
             draws = std::atol(argv[++i]);
         } else if (std::strcmp(argv[i], "--frames") == 0 && i + 1 < argc) {

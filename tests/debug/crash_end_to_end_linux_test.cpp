@@ -606,3 +606,25 @@ TEST_CASE("With post-mortem dumps requested the crash report says where the core
     CHECK(err.find("hard core size limit is 0") != std::string::npos); // the warning at install time
     CHECK(err.find("=== END OF REPORT ===") != std::string::npos);
 }
+
+ENGINE_DEATH_TEST_FN(dt_e2e_alternate_stack_size) {
+    CrashHandlerOptions options;
+    options.dump_directory = argument;
+    InstallCrashHandler(options);
+    stack_t current;
+    sigaltstack(nullptr, &current);
+    char line[64];
+    const int n = std::snprintf(line, sizeof(line), "ALTSTACK=%zu\n", static_cast<size_t>(current.ss_size));
+    os::Write(1, line, static_cast<usize>(n));
+}
+
+TEST_CASE("Installing the crash handler leaves the installing thread a signal stack big enough for the report", "[crash][crashreport][death][debug][linux]") {
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult r = RunCrashChild("dt_e2e_alternate_stack_size", dir.Path());
+    const std::string out(r.stdout_text, r.stdout_length);
+    const usize at = out.find("ALTSTACK=");
+    REQUIRE(at != std::string::npos);
+    // The library's own stack is 16 KiB, which the report (an 8 KiB trace buffer and more) does not fit on.
+    CHECK(std::strtoull(out.c_str() + at + 9, nullptr, 10) >= 64 * 1024);
+}

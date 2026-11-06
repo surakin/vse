@@ -172,6 +172,41 @@ Every line sent through `Log` is also kept in a lock-free ring of the newest 256
 Writers never wait; a reader skips a slot being overwritten. `log::ReadRecentLogLines` returns them oldest first, and the
 report shows the last 32.
 
+## Starting a program
+
+Every program that ships calls [[debug::StartProgramDebugging]] first thing in `main` and [[debug::RunCrashTest]] right after it:
+
+```text
+const debug::ProgramDebugSetup setup = debug::StartProgramDebugging(argc, argv);
+debug::RunCrashTest(setup.crash_test);
+```
+
+It prepares the stack-trace facilities and the crash context, logs the build id, and installs the crash handler **if wanted**:
+`--crash-handler=on|off` wins, then the environment variable `ENGINE_CRASH_HANDLER` (`1`/`0`), then the build's default, which is
+**on in Debug and RelWithDebInfo and off in Release**. A program with no command line (mobile, console) passes `0, nullptr` and
+uses the environment and the default. A program with its own argument parser skips these arguments with
+[[debug::IsProgramDebugArgument]].
+
+`--crash-test=segv|abort|assert|ensure` makes the program cause that fault right away, before it opens a window or a device,
+for checking the whole crash path by hand (the demos and benches all take it):
+
+```text
+rhi_bench --crash-handler=on --crash-test=segv
+```
+
+### Release builds
+
+A Release program with the handler on (`--crash-handler=on`) still produces the report, the dump and the original signal. Its
+trace has function names (the symbol table is not stripped) but no file and line numbers (no `-g`), and tail-called and inlined
+functions are missing from it. For readable traces from a Release program use RelWithDebInfo, or keep the debug information of
+every release you ship in a symbol store and read the dump with `scripts/crash-report.sh` ("Keeping symbols for release builds").
+
+### Adding your subsystem's state, the short way
+
+You do not need a provider function for a line of text or a counter: [[debug::SetCrashStateText]] sets a line once (the RHI does
+this for the adapter, the window layer for its backend) and [[debug::CrashStateCounter]] gives a counter to store into (the
+renderer keeps the frame number there). Use [[debug::RegisterCrashStateProvider]] when the state must be computed.
+
 ## When the program crashes
 
 With the crash handler installed ([[debug::InstallCrashHandler]]), a fatal fault (a bad memory access, an illegal

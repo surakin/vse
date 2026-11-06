@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 
+#include "debug/crash_state.h"
 #include "log/log.h"
 #include "mem/arena_allocator.h"
 
@@ -19,6 +20,7 @@ void LogChosen(const char* backend) {
     StringBuilder<ArenaAllocator> line(scratch);
     line.Append("Window: using ").Append(backend).Append(" backend");
     Log(LogPlatform, LogVerbosity::Info, line.View());
+    debug::SetCrashStateText("window", backend); // the crash report says which display backend this run used
 }
 
 } // namespace

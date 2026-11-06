@@ -92,3 +92,11 @@ _TODO_
 
 _TODO_
 
+## When a job crashes
+
+Every worker thread and the I/O thread register themselves with the crash handler at start (`worker-0`, `worker-1`, ..., `io`), so
+a crash report names the thread that faulted and a stack overflow on a worker can still be handled. A failed `ENGINE_ASSERT` inside
+a job prints its own trace, which includes the job's function, and then the crash report repeats the thread name and trace. To
+show something of your own in every report (a job count, a queue depth), add a crash state entry with
+[[debug::CrashStateCounter]] or [[debug::SetCrashStateText]]; see "Adding your subsystem's state" in
+[Debugging](foundation-debugging.md). A thread you create yourself should call [[debug::RegisterThreadForCrashHandling]] with a name.

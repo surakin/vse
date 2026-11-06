@@ -675,6 +675,36 @@ Empties the ring of recent log lines. For tests.
 |---|---|
 | Thread-safety | not-thread-safe. Call only while no thread logs. |
 
+## `SetLogErrorTraces(bool)` {#setlogerrortraces-bool}
+
+`function SetLogErrorTraces` — defined in `engine/foundation/log/log.h`
+
+```cpp
+void SetLogErrorTraces(bool enabled);
+```
+
+Makes every `Error` line carry a short stack trace under it, to find where an error came from. Off by default; [`debug::StartProgramDebugging`](foundation-debug.md#debug-startprogramdebugging-int-const-char-star-const-star) turns it on in Debug builds. The output of lines at other levels does not change.
+
+| Field | Value |
+|---|---|
+| Parameter `enabled` | true to add traces. |
+| Thread-safety | thread-safe. |
+
+## `LogErrorTraces()` {#logerrortraces}
+
+`function LogErrorTraces` — defined in `engine/foundation/log/log.h`
+
+```cpp
+bool LogErrorTraces();
+```
+
+Reports whether `Error` lines carry a trace.
+
+| Field | Value |
+|---|---|
+| Returns | the setting made by [`SetLogErrorTraces`](#setlogerrortraces-bool). |
+| Thread-safety | thread-safe. |
+
 ## `LogCore` {#logcore}
 
 `variable LogCore` — defined in `engine/foundation/log/log.h`

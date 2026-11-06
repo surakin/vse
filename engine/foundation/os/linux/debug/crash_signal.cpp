@@ -22,6 +22,7 @@ constexpr u64 kStackOverflowWindow = 64 * 1024;
 
 std::atomic<detail::CrashEventFn> g_event_fn{nullptr};
 std::atomic<bool> g_reported{false}; // a report was written in this process; a fatal signal does not need a second
+std::atomic<u64> g_chaining_thread{0};  // the thread that finished its report and is inside the library's handler
 std::atomic<u64> g_reporting_thread{0}; // thread id of the fault being reported, 0 when none
 struct sigaction g_previous[NSIG];
 bool g_installed_signal[NSIG];
@@ -78,7 +79,17 @@ void Recorder(int signal_number, siginfo_t* info, void* user_context) {
         const u64 thread = CurrentThreadId();
         const u64 owner = g_reporting_thread.load(std::memory_order_acquire);
         u64 expected = 0;
-        if (owner == thread) {
+        if (owner == thread && g_chaining_thread.load(std::memory_order_acquire) == thread) {
+            // A fault inside the library's own handler (it already has the lock this fault would wait for): give up. The
+            // default action ends the process when the faulting instruction runs again.
+            static const char kText[] = "double fault: the crash library's handler faulted; giving up\n";
+            os::Write(2, kText, sizeof(kText) - 1);
+            struct sigaction dfl;
+            std::memset(&dfl, 0, sizeof(dfl));
+            dfl.sa_handler = SIG_DFL;
+            ::sigaction(signal_number, &dfl, nullptr);
+            return;
+        } else if (owner == thread) {
             // A fault inside the report this thread is writing: no second report, but the library still gets the fault.
             static const char kText[] = "double fault: the crash report itself faulted; continuing to the crash dump\n";
             os::Write(2, kText, sizeof(kText) - 1);
@@ -101,7 +112,9 @@ void Recorder(int signal_number, siginfo_t* info, void* user_context) {
             // Skip the recorder itself and the kernel's signal trampoline; the first frame is the one that faulted.
             CaptureStackTrace(event.trace, 2);
             fn(event);
+            g_chaining_thread.store(thread, std::memory_order_release);
             Chain(signal_number, info, user_context);
+            g_chaining_thread.store(0, std::memory_order_release);
             g_reporting_thread.store(0, std::memory_order_release);
             return;
         } else if (g_reporting_thread.load(std::memory_order_acquire) != 0) { // read again: it may have been claimed since `owner`
@@ -178,7 +191,13 @@ void RemoveCrashEventHook() {
 
 } // namespace detail
 
-bool RegisterThreadForCrashHandling() {
+bool RegisterThreadForCrashHandling(const char* name) {
+    if (name != nullptr) {
+        SetCrashThreadName(name);
+    }
+    if (!CrashHandlerInstalled()) {
+        return false; // nothing handles faults yet: no stack to set up (only the name, above)
+    }
     thread_local AlternateStack stack;
     if (stack.memory != nullptr) {
         return true;

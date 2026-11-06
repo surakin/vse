@@ -709,3 +709,11 @@ Tests do not read the counters by hand. Every `[gpu]` test constructs `gpu_test:
 `ENGINE_RHI_REQUIRE_GPU=1`), owns a validation-enabled instance with synchronization validation on, and fails the
 test at teardown if any validation error was reported. A test that provokes an error on purpose declares it with
 `ExpectErrors(n)`.
+
+## What the RHI reports when something goes wrong
+
+The Vulkan device registers the adapter, its driver version and the API version as the `gpu` line of every crash report. A lost
+device (real, or injected with `--inject-device-loss`) and the first validation error each print a trace of where they were
+noticed, through an `ENGINE_ENSURE` that reports once per site; the frame still ends as `DeviceLost`. The traces use the same
+mechanism as any ensure and need no Vulkan names outside `engine/rhi/vulkan`. To add device state to the report, call
+[[debug::SetCrashStateText]] from the backend.

@@ -35,6 +35,8 @@ renderer_demo_expect(renderer_demo_gbuffer_layers 0 "wrote" "${RENDERER_NO_GPU}"
   --screenshot RENDERER_DEMO_SHOT --gbuffer normal --objects 100 --lights 10)
 renderer_demo_expect(renderer_demo_device_loss_screenshot 3 "the GPU device was lost" "${RENDERER_NO_GPU}"
   --screenshot RENDERER_DEMO_SHOT --frames 5 --inject-device-loss 3)
+renderer_demo_expect(renderer_demo_device_loss_trace 3 "ENSURE FAILED[^\n]*the Vulkan device was lost" "${RENDERER_NO_GPU}"
+  --screenshot RENDERER_DEMO_SHOT --frames 5 --inject-device-loss 3)
 # Device creation allocates a driver-dependent number of times, so the third allocation fails either creation itself or
 # the first resource after it; the demo must report either cleanly (exit 1), never crash.
 renderer_demo_expect(renderer_demo_oom_later 1 "no Vulkan device|could not create the target or the scene" "${RENDERER_NO_GPU}"
@@ -56,6 +58,6 @@ add_test(NAME renderer_demo_assets_current
   COMMAND ${CMAKE_COMMAND} -DMINT=$<TARGET_FILE:renderer_demo_mint> -DASSETS=${CMAKE_CURRENT_SOURCE_DIR}/assets
     -DWORK=${CMAKE_CURRENT_BINARY_DIR}/assets-check -P ${CMAKE_CURRENT_SOURCE_DIR}/check_assets.cmake)
 set_tests_properties(renderer_demo_assets_current PROPERTIES LABELS demo)
-engine_label_tests(renderer_demo_screenshot renderer_demo_gbuffer_layers renderer_demo_device_loss_screenshot renderer_demo_oom_later
+engine_label_tests(renderer_demo_screenshot renderer_demo_gbuffer_layers renderer_demo_device_loss_screenshot renderer_demo_device_loss_trace renderer_demo_oom_later
   renderer_demo_oom_device renderer_demo_bad_injection renderer_demo_bad_layer renderer_demo_bad_objects renderer_demo_no_vulkan
   renderer_demo_assets_current)

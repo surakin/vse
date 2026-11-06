@@ -69,10 +69,12 @@ void UninstallCrashHandler();
 /// this for the thread that calls it; call this once at the start of every other thread that may run deep (job workers, the
 /// I/O thread). The memory is 128 KiB of address space per thread, released when the thread ends.
 ///
+/// Param name: a short name for the thread, shown in crash reports (`"worker-3"`); copied. Null leaves the name as it is.
 /// Returns: true if the thread can now handle a stack overflow.
-/// Fails: returns false if the memory or the platform call is refused; the thread still produces reports for other faults.
+/// Fails: returns false if the crash handler is not installed yet (only the name is set; call this again after installing, or
+///   install first) or if the memory or the platform call is refused; the thread still produces reports for other faults.
 /// Thread-safety: thread-safe; it affects only the calling thread. Not async-signal-safe.
-bool RegisterThreadForCrashHandling();
+bool RegisterThreadForCrashHandling(const char* name = nullptr);
 
 /// Reports whether the crash handler is installed.
 /// Returns: true between a successful [[debug::InstallCrashHandler]] and [[debug::UninstallCrashHandler]].

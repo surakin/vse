@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "debug/crash_state.h"
+#include "log/assert.h"
 #include "rhi/rhi_log.h"
 #include "rhi/spirv.h"
 #include "rhi/vulkan/vk_format.h"
@@ -149,6 +151,15 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     queues_ = PlanQueues(gpu_info_, presentable);
 
     ifns.GetPhysicalDeviceProperties(physical_, &properties_);
+    {
+        // The crash report names the adapter and driver (a vendor fix is often the answer to a GPU crash).
+        char gpu[debug::kCrashStateEntryTextBytes];
+        std::snprintf(gpu, sizeof(gpu), "%s, driver %u.%u.%u, api %u.%u.%u", properties_.deviceName,
+                      VK_VERSION_MAJOR(properties_.driverVersion), VK_VERSION_MINOR(properties_.driverVersion),
+                      VK_VERSION_PATCH(properties_.driverVersion), VK_VERSION_MAJOR(properties_.apiVersion),
+                      VK_VERSION_MINOR(properties_.apiVersion), VK_VERSION_PATCH(properties_.apiVersion));
+        debug::SetCrashStateText("gpu", gpu);
+    }
     ifns.GetPhysicalDeviceMemoryProperties(physical_, &memory_properties_);
 
     // Enable exactly the features the backend uses.

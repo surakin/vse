@@ -6,6 +6,7 @@
 #include <cstring>
 #include <mutex>
 
+#include "log/assert.h"
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_result.h"
 
@@ -60,6 +61,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessengerCallback(VkDebugUtilsMessageSeverit
     const char* id = (data->pMessageIdName != nullptr) ? data->pMessageIdName : "";
     const char* message = (data->pMessage != nullptr) ? data->pMessage : "";
     RhiLog(level, "validation [%s] %s", id, message);
+    if (level == LogVerbosity::Error) {
+        // A trace of where the first validation error was reported (an ensure reports once per site); the log has every error.
+        ENGINE_ENSURE(false, "a Vulkan validation error was reported");
+    }
     // Copy the hook under the lock and call it outside, so a hook may itself log, call Vulkan or replace the hook.
     ValidationCaptureFn capture = nullptr;
     void* capture_user = nullptr;
