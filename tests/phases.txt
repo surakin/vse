@@ -18,7 +18,7 @@ flavors 3   plain,asan,tsan
 flavors 4   plain,asan,tsan
 flavors 5   plain
 flavors 6   plain,asan,tsan
-# flavors 7: added with Phase 7's first test file (Day 104); a flavor line for a phase with no tests fails test_phase_labels.
+flavors 7   plain,asan,tsan
 
 # --- Phase 0: foundation (tests/foundation) ---
 tests/foundation/arena_allocator_test.cpp       0
@@ -87,7 +87,20 @@ test:rhi_boundary_check*                        3
 test:rhi_demo_*                                 3
 
 # --- Phase 4: renderer, shaders and the renderer demo ---
-tests/renderer/                                 4
+tests/renderer/gbuffer_test.cpp                       4
+tests/renderer/geometry_test.cpp                      4
+tests/renderer/lighting_test.cpp                      4
+tests/renderer/lsan_options.cpp                       4
+tests/renderer/material_test.cpp                      4
+tests/renderer/mesh_topology_test.cpp                 4
+tests/renderer/render_graph_barrier_test.cpp          4
+tests/renderer/render_graph_test.cpp                  4
+tests/renderer/renderer_fault_test.cpp                4
+tests/renderer/renderer_test.cpp                      4
+tests/renderer/scene_test.cpp                         4
+tests/renderer/shader_permutation_test.cpp            4
+tests/renderer/shader_reflection_test.cpp             4
+tests/renderer/smoke_test.cpp                         4
 tests/shader_mint/                              4
 tests/rhi/shader_interface_test.cpp             4   # asserts the Slang shaders' reflected interface (Days 69-71)
 tests/rhi/vulkan_gbuffer_test.cpp               4
@@ -102,6 +115,9 @@ test:debug_cross_syntax_*                       6
 testopt:shaders_check                           4   # only with slangc
 testopt:shaders_portability                     4   # only with slangc
 test:renderer_demo_*                            4
+
+# --- Phase 7: RHI reset ---
+tests/renderer/render_settings_test.cpp         7
 
 # --- Phase 5: test scoping ---
 test:test_phase_*                              5

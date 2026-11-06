@@ -17,5 +17,5 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Debugging](foundation-debug.md) | 14 | 200 |
 | [The Job System](jobs.md) | 10 | 172 |
 | [The Render Hardware Interface](rhi.md) | 16 | 608 |
-| [The renderer](renderer.md) | 16 | 704 |
+| [The renderer](renderer.md) | 17 | 820 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 16 | 418 |
