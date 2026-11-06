@@ -103,5 +103,5 @@ the live controls and measures what a reset costs; 114 prepares DX12/Metal and c
   first. Define this in the RHI thread-safety contract.
 - **Interaction with Phase 8/9.** DX12 and Metal must implement the same lifecycle; the portability reviews should be
   re-read for adapter enumeration (DXGI factory, `MTLCopyAllDevices`) and window-surface re-creation.
-- Backend switch at run time (Vulkan to DX12 on Windows) is a stretch goal of the same mechanism; decide in the day
-  files whether to include it.
+- Backend switch at run time (Vulkan to DX12 on Windows): decided on Day 103 — not in this phase; Null to Vulkan is tested, the rest waits for Phases 8-9.
+- Day 103 answers (spec `docs/superpowers/specs/2026-11-06-rhi-reset-design.md`): a device cycle costs about 210 ms for a trivial scene with no fd and near-zero memory drift over 100 iterations; the instance and surface are already per device; the development machine has one Vulkan adapter, so adapter switching is tested on the null backend only; the pipeline-set rebuild cost is measured on Day 113.
