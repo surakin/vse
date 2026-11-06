@@ -124,11 +124,8 @@ SwapchainStatus VulkanSwapchain::Build(u32 width, u32 height) {
                        requested.space != ColorSpace::SrgbNonlinear || ChooseSurfaceFormat(formats, format_count).preferred;
     const VkExtent2D extent = ChooseExtent(caps, width, height);
     if (extent.width == 0 || extent.height == 0) {
-        // Nothing to draw to yet; the choice is recorded so the format is already right when the window returns.
-        if (format.format.format != VK_FORMAT_UNDEFINED) {
-            format_ = format.format;
-            color_space_ = requested.space;
-        }
+        // Nothing to draw to yet; the request is remembered in desc_ and applied when the window returns (the old images keep
+        // their format until then, so ImageFormat() keeps matching them).
         minimized_ = true;
         return SwapchainStatus::Minimized;
     }
@@ -177,7 +174,11 @@ SwapchainStatus VulkanSwapchain::Build(u32 width, u32 height) {
     if (r != VK_SUCCESS) {
         d.NoteDeviceLost(r);
         ENGINE_VK_CHECK(r);
-        lost_ = true;
+        // A rejected request (a format, image count or mode the surface refuses) leaves the old swapchain intact; only a lost
+        // device or surface makes this one unusable.
+        if (r == VK_ERROR_DEVICE_LOST || r == VK_ERROR_SURFACE_LOST_KHR) {
+            lost_ = true;
+        }
         return SwapchainStatus::Lost;
     }
 
@@ -279,10 +280,15 @@ SwapchainStatus VulkanSwapchain::Reconfigure(const SwapchainDesc& desc) {
     if (lost_ || device_->DeviceLost()) {
         return SwapchainStatus::Lost;
     }
+    const SwapchainDesc previous = desc_;
     desc_ = desc; // remembered even when the window has no area now: the rebuild on return uses it
     const u32 width = desc.width != 0 ? desc.width : device_->window_->Width();
     const u32 height = desc.height != 0 ? desc.height : device_->window_->Height();
-    return Build(width, height);
+    const SwapchainStatus status = Build(width, height);
+    if (status == SwapchainStatus::Lost && !lost_) {
+        desc_ = previous; // the request was refused and the old swapchain still stands: a rollback can reconfigure it again
+    }
+    return status;
 }
 
 SwapchainStatus VulkanSwapchain::Acquire() {

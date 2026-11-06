@@ -1812,6 +1812,12 @@ FenceValue NullDevice::Submit(CommandList* const* lists, usize count) {
     if (count > 0 && s.options.lose_device_at_submit != 0 && ++s.submits == s.options.lose_device_at_submit && s.Strike()) {
         s.lost = true;
         RhiLog(LogVerbosity::Error, "NullDevice: device lost (injected at submit %u)", s.submits);
+        for (usize i = 0; i < count; ++i) { // the batch is consumed, as on the Vulkan backend
+            auto* l = static_cast<NullCommandList*>(lists[i]);
+            if (l != nullptr && l->Owner() == state_.Get() && l->GetPhase() == NullCommandList::Phase::Ended) {
+                l->MarkSubmitted();
+            }
+        }
         return 0;
     }
     if (count > 0 && lists == nullptr) {

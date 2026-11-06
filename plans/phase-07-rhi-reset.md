@@ -17,8 +17,7 @@ leaks, the rendered picture before and after matches the golden image, and a los
 path.
 
 Every day of this phase has its own file under `plans/phase-07-rhi-reset/` (see `CLAUDE.md`, planning policy).
-**Status: planned (2026-11-06), not started.** Days 103-114 are written; `CURRENT_PHASE` changes to 7 in the commit that
-completes Day 103's first task.
+**Status: COMPLETE (2026-11-06).** Days 103-114 are done. Closing run: `ran 2737 of 2737 tests (phases: all; flavors: all; display: included; crash tests: included)`, all passing; docs 4/4; both demos clean on Wayland and X11 with validation; 100 scripted resets on each. `CURRENT_PHASE` stays 7 until Phase 8 has its day files and starts.
 
 ## Days
 

@@ -722,18 +722,22 @@ bool GpuMesh::Recreate(rhi::Device* device) {
     device_ = device;
     if (was_ready_) {
         // Put the buffers back into their read states, as before the reset.
-        device->BeginFrame();
+        const bool own_frame = !device->InFrame(); // inside an open frame the work joins it
+        if (own_frame) device->BeginFrame();
         rhi::CommandList* list = device->CreateCommandList();
         bool submitted = false;
+        rhi::FenceValue fence = 0;
         if (list != nullptr) {
             list->Begin();
             RecordPrepare(list);
             list->End();
             rhi::CommandList* lists[] = {list};
-            submitted = device->Submit(lists, 1) != 0;
+            fence = device->Submit(lists, 1);
+            submitted = fence != 0;
         }
-        device->EndFrame();
-        device->WaitIdle();
+        if (own_frame) device->EndFrame();
+        if (own_frame) device->WaitIdle();
+        else if (submitted) device->WaitFence(fence, ~0ull);
         if (!submitted) {
             RenderLog(LogVerbosity::Error, "GpuMesh '%s': preparing the rebuilt buffers failed", name_);
             Release();

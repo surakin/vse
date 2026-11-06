@@ -514,6 +514,8 @@ TEST_CASE("With recovery on, a change that cannot be undone is recovered from", 
     CHECK(result.device_lost);
     CHECK_FALSE(rig.renderer->IsBroken());           // recovery rebuilt the previous device
     CHECK(rig.renderer->Stats().recoveries == 1);
+    CHECK(rig.begins == rig.ends);                   // the begin and end callbacks stay balanced (change, then recovery)
+    CHECK(rig.begins == 2);
     CHECK(std::strcmp(rig.host.GetDevice()->Adapter().id, "null-discrete") == 0);
     CHECK(rig.Render() == FrameStatus::Ok);
 }

@@ -856,8 +856,8 @@ Returns the name of the owner whose `Recreate` failed last, or null.
 
 | Field | Value |
 |---|---|
-| Fails | never. |
-| Ownership | the string belongs to that owner and is valid until it is destroyed. |
+| Fails | returns null when nothing failed. |
+| Ownership | the string belongs to the registry (a copy of the owner's name) and is valid until the next reset. |
 
 ### `CurrentDevice()` {#renderer-deviceresources-currentdevice-const}
 

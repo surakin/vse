@@ -461,3 +461,22 @@ TEST_CASE("An owner registered before the registry saw a device is released at t
     CHECK(device->Resources().samplers == 0 );
     sampler.Destroy();
 }
+
+TEST_CASE("A texture with GPU mips can be made inside an open frame", "[device_resources][texture]") {
+    ResQuietLog quiet;
+    rhi::NullDevicePtr device = rhi::CreateNullDevice();
+    GpuTexture texture;
+    TextureImage image;
+    image.desc.width = image.desc.height = 8;
+    image.desc.mip_levels = 4;
+    image.desc.format = rhi::Format::RGBA8_UNorm;
+    image.desc.usage = rhi::TextureUsage::Sampled;
+    image.pixels.Resize(8 * 8 * 4);
+    image.generate_mips = true;
+    device->BeginFrame(); // the caller's frame is open
+    REQUIRE(texture.Create(device.Get(), static_cast<TextureImage&&>(image), nullptr, "streamed"));
+    CHECK(device->InFrame()); // the texture did not close the caller's frame
+    device->EndFrame();
+    CHECK(device->ErrorCount() == 0);
+    texture.Destroy();
+}

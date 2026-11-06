@@ -1,5 +1,7 @@
 #include "renderer/device_resources.h"
 
+#include <cstdio>
+
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 
@@ -47,9 +49,6 @@ void DeviceResources::Unregister(Recreatable* owner) {
                 entries_[j - 1] = entries_[j];
             }
             --count_;
-            if (failed_name_ != nullptr && owner->RecreatableName() == failed_name_) {
-                failed_name_ = nullptr; // the owner is going away; its name must not dangle
-            }
             return;
         }
     }
@@ -79,7 +78,7 @@ void DeviceResources::ReleaseFrom(u32 first_tier) {
 bool DeviceResources::RecreateFrom(u32 first_tier) {
     ENGINE_ASSERT(device_ != nullptr, "DeviceResources::RecreateFrom: there is no current device");
     resetting_ = true;
-    failed_name_ = nullptr;
+    failed_name_[0] = '\0';
     bool ok = true;
     for (;;) {
         Entry* pick = nullptr;
@@ -95,7 +94,7 @@ bool DeviceResources::RecreateFrom(u32 first_tier) {
         }
         pick->live = true;
         if (!pick->owner->Recreate(device_)) {
-            failed_name_ = pick->owner->RecreatableName();
+            std::snprintf(failed_name_, sizeof(failed_name_), "%s", pick->owner->RecreatableName());
             RenderLog(LogVerbosity::Error, "DeviceResources: '%s' could not be recreated", failed_name_);
             pick->live = false;
             ok = false;

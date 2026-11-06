@@ -40,7 +40,7 @@ Renderer::Renderer(const RendererDesc& desc)
     if (!pool_.RegisterWith(desc.resources)) {
         RenderLog(LogVerbosity::Error, "Renderer: the transient pool could not register with the device resources");
     }
-    if (desc.initial_settings == nullptr && desc.host != nullptr) {
+    if (desc.initial_settings == nullptr) {
         // The host's device was made from create_info: the settings in force must say so, or the next reset would switch
         // backend, adapter or validation to the defaults.
         settings_.SetEnum(settings::kBackend, desc.create_info.backend == rhi::Backend::Null ? 0 : 1);
@@ -53,7 +53,7 @@ Renderer::Renderer(const RendererDesc& desc)
     }
     active_info_ = desc.create_info;
     BuildCreateInfo(settings_, active_adapter_, &active_info_);
-    RefreshCapabilities(true);
+    RefreshCapabilities(desc.host != nullptr); // the adapter list is only read when devices can be replaced
 }
 
 void Renderer::Rebind(rhi::Device* device, rhi::Swapchain* swapchain) {
@@ -187,6 +187,10 @@ ApplyResult Renderer::ApplyNow(const RenderSettings& requested, bool force_devic
         SetReason(&result, "this settings change needs a DeviceHost and the renderer was built without one");
         return result;
     }
+    if (cost > CostClass::Dynamic && host->GetDevice() == nullptr) {
+        SetReason(&result, "the renderer has no device right now (a device loss is being recovered from)");
+        return result;
+    }
     if (cost == CostClass::PipelineRebuild && desc_.resources == nullptr) {
         cost = CostClass::DeviceReset; // nothing registered to rebuild selectively: do the full thing
     }
@@ -199,6 +203,7 @@ ApplyResult Renderer::ApplyNow(const RenderSettings& requested, bool force_devic
             reset_begin_(reset_user_, cost == CostClass::Swapchain ? "swapchain" : cost == CostClass::PipelineRebuild ? "pipelines" : "device");
         }
         bool ok = true;
+        bool start_recovery = false;
         host->GetDevice()->WaitIdle(); // frames in flight drained; the build callback is not running
         if (cost == CostClass::Swapchain) {
             f64 t = NowMs();
@@ -277,7 +282,7 @@ ApplyResult Renderer::ApplyNow(const RenderSettings& requested, bool force_devic
                 desc_.swapchain = nullptr;
                 if (desc_.recovery.max_attempts > 0) {
                     force_full_recovery_ = true; // the device is not "lost" to the driver, but the owners must all be rebuilt
-                    NoteLost();                  // tries again by the recovery policy; gives up (broken) after the last attempt
+                    start_recovery = true;       // after the end callback, so the callbacks stay balanced
                 } else {
                     broken_ = true;
                 }
@@ -285,6 +290,9 @@ ApplyResult Renderer::ApplyNow(const RenderSettings& requested, bool force_devic
         }
         if (reset_end_ != nullptr) {
             reset_end_(reset_user_, ok);
+        }
+        if (start_recovery) {
+            NoteLost(); // tries again by the recovery policy; gives up (broken) after the last attempt
         }
         result.ok = ok;
         if (ok) {

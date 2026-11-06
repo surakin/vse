@@ -7,7 +7,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <utility>
 
 #include <dirent.h>
 #include <unistd.h>
@@ -420,15 +419,18 @@ int RunWindow(const Options& options, RenderSettings settings) {
             exit_code = kExitFailure;
         } else {
             Renderer& renderer = *frame.GetRenderer();
-            std::pair<DemoFrame*, DemoScene*> parts(&frame, &scene);
+            struct ResetParts {
+                DemoFrame* frame;
+                DemoScene* scene;
+            } parts{&frame, &scene};
             renderer.SetResetCallbacks(
                 [](void*, const char* stage) { RhiLogV(LogVerbosity::Info, "renderer_demo: changing settings (%s): the window keeps its last picture", stage); },
                 [](void* user, bool ok) {
-                    auto* p = static_cast<std::pair<DemoFrame*, DemoScene*>*>(user);
-                    Renderer* r = p->first->GetRenderer();
+                    auto* p = static_cast<ResetParts*>(user);
+                    Renderer* r = p->frame->GetRenderer();
                     if (r->GetDevice() != nullptr) {
-                        p->first->Rebind(r->GetDevice(), r->GetSwapchain());
-                        p->second->Rebind(r->GetDevice());
+                        p->frame->Rebind(r->GetDevice(), r->GetSwapchain());
+                        p->scene->Rebind(r->GetDevice());
                     }
                     if (!ok) RhiLogV(LogVerbosity::Warn, "renderer_demo: the change did not work; the previous settings are back");
                 },

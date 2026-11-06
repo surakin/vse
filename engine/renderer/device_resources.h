@@ -121,9 +121,9 @@ public:
 
     /// Returns the name of the owner whose `Recreate` failed last, or null.
     ///
-    /// Ownership: the string belongs to that owner and is valid until it is destroyed.
-    /// Fails: never.
-    const char* FailedOwner() const { return failed_name_; }
+    /// Ownership: the string belongs to the registry (a copy of the owner's name) and is valid until the next reset.
+    /// Fails: returns null when nothing failed.
+    const char* FailedOwner() const { return failed_name_[0] != '\0' ? failed_name_ : nullptr; }
 
     /// Returns the device the registry last recreated on, or null while released.
     /// Fails: never.
@@ -166,7 +166,7 @@ private:
     rhi::Device* device_ = nullptr;
     bool resetting_ = false;
     bool compact_pending_ = false;
-    const char* failed_name_ = nullptr;
+    char failed_name_[48] = {};
 };
 
 /// Keeps an owner registered for exactly as long as this object lives.

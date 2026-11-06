@@ -110,18 +110,24 @@ bool GpuTexture::Make(rhi::Device* device, const TextureImage& image) {
         offset += LevelBytes(desc, level);
     }
     if (generate) {
-        device->BeginFrame();
+        // Inside an open frame (a caller streaming a texture between BeginFrame and EndFrame) the work joins that frame and is
+        // waited for by its fence; otherwise it gets a frame of its own.
+        const bool own_frame = !device->InFrame();
+        if (own_frame) device->BeginFrame();
         rhi::CommandList* list = device->CreateCommandList();
         bool submitted = false;
+        rhi::FenceValue fence = 0;
         if (list != nullptr) {
             list->Begin();
             list->GenerateMips(texture);
             list->End();
             rhi::CommandList* lists[] = {list};
-            submitted = device->Submit(lists, 1) != 0;
+            fence = device->Submit(lists, 1);
+            submitted = fence != 0;
         }
-        device->EndFrame();
-        device->WaitIdle();
+        if (own_frame) device->EndFrame();
+        if (own_frame) device->WaitIdle();
+        else if (submitted) device->WaitFence(fence, ~0ull);
         if (!submitted) {
             device->DestroyTexture(texture);
             return false;
