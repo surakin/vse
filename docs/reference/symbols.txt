@@ -244,6 +244,51 @@ DecodedCodepoint::codepoint	variable	foundation/strings	decodedcodepoint-codepoi
 DecodedCodepoint::byte_length	variable	foundation/strings	decodedcodepoint-byte-length	foundation-strings.md	engine/foundation/string/utf8_codec.h:12
 DecodeUtf8At(const char*,usize,usize,bool*)	function	foundation/strings	decodeutf8at-const-char-star-usize-usize-bool-star	foundation-strings.md	engine/foundation/string/utf8_codec.h:28
 EncodeUtf8(u32,char[4])	function	foundation/strings	encodeutf8-u32-char-4	foundation-strings.md	engine/foundation/string/utf8_codec.h:37
+io::DirectoryEntry	struct	foundation/io	io-directoryentry	foundation-io.md	engine/foundation/io/directory.h:20
+io::DirectoryEntry::name	variable	foundation/io	io-directoryentry-name	foundation-io.md	engine/foundation/io/directory.h:21
+io::DirectoryEntry::type	variable	foundation/io	io-directoryentry-type	foundation-io.md	engine/foundation/io/directory.h:22
+io::DirectoryEntry::Info(FileInfo*) const	function	foundation/io	io-directoryentry-info-fileinfo-star-const	foundation-io.md	engine/foundation/io/directory.h:27
+io::Directory	class	foundation/io	io-directory	foundation-io.md	engine/foundation/io/directory.h:41
+io::Directory::Directory()	function	foundation/io	io-directory-directory	foundation-io.md	engine/foundation/io/directory.h:43
+io::Directory::Directory(const Directory&)	function	foundation/io	io-directory-directory-const-directory-amp	foundation-io.md	engine/foundation/io/directory.h:44
+io::Directory::operator=(const Directory&)	function	foundation/io	io-directory-operator-eq-const-directory-amp	foundation-io.md	engine/foundation/io/directory.h:45
+io::Directory::Directory(Directory&&) noexcept	function	foundation/io	io-directory-directory-directory-amp-amp-noexcept	foundation-io.md	engine/foundation/io/directory.h:47
+io::Directory::operator=(Directory&&) noexcept	function	foundation/io	io-directory-operator-eq-directory-amp-amp-noexcept	foundation-io.md	engine/foundation/io/directory.h:49
+io::Directory::~Directory()	function	foundation/io	io-directory-tilde-directory	foundation-io.md	engine/foundation/io/directory.h:51
+io::Directory::Open(const Path&,Directory*)	function	foundation/io	io-directory-open-const-path-amp-directory-star	foundation-io.md	engine/foundation/io/directory.h:57
+io::Directory::IsOpen() const	function	foundation/io	io-directory-isopen-const	foundation-io.md	engine/foundation/io/directory.h:60
+io::Directory::GetPath() const	function	foundation/io	io-directory-getpath-const	foundation-io.md	engine/foundation/io/directory.h:62
+io::Directory::Next(DirectoryEntry*,bool*)	function	foundation/io	io-directory-next-directoryentry-star-bool-star	foundation-io.md	engine/foundation/io/directory.h:68
+io::Directory::Close()	function	foundation/io	io-directory-close	foundation-io.md	engine/foundation/io/directory.h:70
+io::Directory::Create(const Path&)	function	foundation/io	io-directory-create-const-path-amp	foundation-io.md	engine/foundation/io/directory.h:73
+io::Directory::CreateAll(const Path&)	function	foundation/io	io-directory-createall-const-path-amp	foundation-io.md	engine/foundation/io/directory.h:75
+io::Directory::Remove(const Path&)	function	foundation/io	io-directory-remove-const-path-amp	foundation-io.md	engine/foundation/io/directory.h:77
+io::Directory::RemoveAll(const Path&)	function	foundation/io	io-directory-removeall-const-path-amp	foundation-io.md	engine/foundation/io/directory.h:79
+io::Directory::IsEmpty(const Path&,bool*)	function	foundation/io	io-directory-isempty-const-path-amp-bool-star	foundation-io.md	engine/foundation/io/directory.h:83
+io::DirectoryItem	struct	foundation/io	io-directoryitem	foundation-io.md	engine/foundation/io/directory.h:92
+io::DirectoryItem::name	variable	foundation/io	io-directoryitem-name	foundation-io.md	engine/foundation/io/directory.h:93
+io::DirectoryItem::type	variable	foundation/io	io-directoryitem-type	foundation-io.md	engine/foundation/io/directory.h:94
+io::ListDirectory(const Path&,bool,Vector<DirectoryItem>*)	function	foundation/io	io-listdirectory-const-path-amp-bool-vector-lt-directoryitem-gt-star	foundation-io.md	engine/foundation/io/directory.h:102
+io::MatchesWildcard(StringView,StringView)	function	foundation/io	io-matcheswildcard-stringview-stringview	foundation-io.md	engine/foundation/io/directory.h:107
+io::WalkAction	enum	foundation/io	io-walkaction	foundation-io.md	engine/foundation/io/directory.h:110
+io::WalkAction::Continue	enumerator	foundation/io	io-walkaction-continue	foundation-io.md	engine/foundation/io/directory.h:111
+io::WalkAction::SkipSubtree	enumerator	foundation/io	io-walkaction-skipsubtree	foundation-io.md	engine/foundation/io/directory.h:112
+io::WalkAction::Stop	enumerator	foundation/io	io-walkaction-stop	foundation-io.md	engine/foundation/io/directory.h:113
+io::WalkEntry	struct	foundation/io	io-walkentry	foundation-io.md	engine/foundation/io/directory.h:117
+io::WalkEntry::path	variable	foundation/io	io-walkentry-path	foundation-io.md	engine/foundation/io/directory.h:118
+io::WalkEntry::name	variable	foundation/io	io-walkentry-name	foundation-io.md	engine/foundation/io/directory.h:119
+io::WalkEntry::type	variable	foundation/io	io-walkentry-type	foundation-io.md	engine/foundation/io/directory.h:120
+io::WalkEntry::depth	variable	foundation/io	io-walkentry-depth	foundation-io.md	engine/foundation/io/directory.h:121
+io::WalkEntry::after_children	variable	foundation/io	io-walkentry-after-children	foundation-io.md	engine/foundation/io/directory.h:122
+io::WalkEntry::error	variable	foundation/io	io-walkentry-error	foundation-io.md	engine/foundation/io/directory.h:123
+io::WalkOptions	struct	foundation/io	io-walkoptions	foundation-io.md	engine/foundation/io/directory.h:127
+io::WalkOptions::max_depth	variable	foundation/io	io-walkoptions-max-depth	foundation-io.md	engine/foundation/io/directory.h:128
+io::WalkOptions::follow_symlinks	variable	foundation/io	io-walkoptions-follow-symlinks	foundation-io.md	engine/foundation/io/directory.h:129
+io::WalkOptions::post_order	variable	foundation/io	io-walkoptions-post-order	foundation-io.md	engine/foundation/io/directory.h:130
+io::WalkOptions::sorted	variable	foundation/io	io-walkoptions-sorted	foundation-io.md	engine/foundation/io/directory.h:131
+io::WalkOptions::name_pattern	variable	foundation/io	io-walkoptions-name-pattern	foundation-io.md	engine/foundation/io/directory.h:132
+io::WalkVisitor	alias	foundation/io	io-walkvisitor	foundation-io.md	engine/foundation/io/directory.h:136
+io::WalkDirectory(const Path&,const WalkOptions&,WalkVisitor,void*)	function	foundation/io	io-walkdirectory-const-path-amp-const-walkoptions-amp-walkvisitor-void-star	foundation-io.md	engine/foundation/io/directory.h:146
 io::Error	enum	foundation/io	io-error	foundation-io.md	engine/foundation/io/error.h:11
 io::Error::None	enumerator	foundation/io	io-error-none	foundation-io.md	engine/foundation/io/error.h:12
 io::Error::NotFound	enumerator	foundation/io	io-error-notfound	foundation-io.md	engine/foundation/io/error.h:13

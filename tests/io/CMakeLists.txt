@@ -5,6 +5,7 @@ set(IO_TEST_SOURCES
   path_test.cpp
   file_system_test.cpp
   file_test.cpp
+  directory_test.cpp
   async_file_test.cpp
 )
 

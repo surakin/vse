@@ -68,6 +68,7 @@ set(FOUNDATION_SOURCES
   io/linux/error.cpp
   io/linux/file_system.cpp
   io/linux/local_file.cpp
+  io/linux/directory.cpp
   io/file.cpp
   string/utf8_codec.cpp
   string/grapheme.cpp

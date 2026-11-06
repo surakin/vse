@@ -1,6 +1,6 @@
 # Paths, files and directories
 
-Status: draft (Phase 8, Days 116-119: paths, errors, file-system operations, files and asynchronous I/O). Directories arrive on Day 120.
+Status: draft (Phase 8, Days 116-120: paths, errors, file-system operations, files, asynchronous I/O and directories).
 
 The file layer lives in `engine/foundation/io/` (namespace `engine_placeholder::io`). Design and reasons:
 `docs/superpowers/specs/2026-11-06-file-layer-design.md`.
@@ -279,3 +279,47 @@ whose operations complete on its own thread, after a delay, in short chunks, wit
 5. **Close** is idempotent, and every operation after it fails with `Invalid`.
 6. Run the conformance suite (`tests/io/file_conformance.h`: `RunReadConformance`, `RunWriteConformance`) against your backend with a factory
    that makes a file holding given bytes, and register a URL scheme with `io::RegisterFileScheme` if the file is opened by location.
+
+## Directories and walking a tree
+
+`io::Directory` (`engine/foundation/io/directory.h`) lists one directory without loading it: `Directory::Open(path, &dir)`, then
+`dir.Next(&entry, &found)` until `found` is false. An entry has a `name` (a view valid until the next call) and a `type` (a link is
+`Symlink`; the call resolves `DT_UNKNOWN` for you); `entry.Info(&info)` stats it lazily. `.` and `..` are never returned. **The order is
+the file system's, not sorted**; entries added or removed while you iterate may or may not be seen, none is returned twice.
+
+- **A stable order:** `ListDirectory(path, sorted, &items)` reads one directory into a vector, bytewise by name when `sorted`. Tools whose
+  output must be reproducible (the minters) use it.
+- **Walking a tree:** `WalkDirectory(root, options, visitor, user)` visits everything below `root` depth first. The visitor returns `Continue`,
+  `SkipSubtree` or `Stop`. Options: `max_depth` (1 = the root's children), `follow_symlinks` (off; when on, a link back to an ancestor is
+  reported with `SymlinkLoop` instead of followed), `post_order` (a directory after its children), `sorted`, and `name_pattern`.
+  An entry that cannot be examined or entered is reported with `entry.error` set and the walk goes on.
+- **Patterns:** `MatchesWildcard(pattern, name)`: `*` any run, `?` one character (a whole UTF-8 sequence), `\` escapes the next
+  pattern character; case-sensitive; a leading dot is not special.
+
+```cpp compile run
+io::Path dir;
+io::TempDirectory(&dir);
+io::Path scratch;
+io::CreateTempDirectory(dir, "guide", &scratch);
+io::CreateDirectories(scratch / "src/util");
+io::WriteFile(scratch / "src/main.cpp", "", 0);
+io::WriteFile(scratch / "src/util/strings.cpp", "", 0);
+io::WriteFile(scratch / "src/util/strings.h", "", 0);
+
+struct Found { io::Path root; };
+Found found{scratch};
+io::WalkOptions options;
+options.sorted = true;
+options.name_pattern = "*.cpp";
+io::WalkDirectory(scratch, options, [](void* user, const io::WalkEntry& entry) {
+    io::Path relative;
+    entry.path.RelativeTo(static_cast<Found*>(user)->root, &relative);
+    std::printf("%.*s\n", static_cast<int>(relative.View().Length()), relative.View().Data());
+    return io::WalkAction::Continue;
+}, &found);
+io::RemoveAll(scratch);
+```
+```output
+src/main.cpp
+src/util/strings.cpp
+```
