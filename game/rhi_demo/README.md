@@ -22,6 +22,8 @@ cmake --build build --target rhi_demo
 | `--frames N` | stop after N frames (also `RHI_DEMO_FRAMES=N`); a run of 200 or more frames also checks that memory did not grow by more than 8 MiB between frame 100 and the end |
 | `--screenshot FILE` | render offscreen with a fixed camera and light, with no window, and write the last frame to FILE as a binary PPM (N frames with `--frames`) |
 | `--no-vsync` | present with `Immediate` instead of `Fifo` |
+| `--gpu G` | the GPU to use: an id from `--list-gpus`, an index, or part of its name; a GPU that does not exist fails (exit 1) and never falls back |
+| `--list-gpus` | print the GPUs and exit |
 | `--validation` | enable the Vulkan validation layer with synchronization validation |
 | `--help` | print the options |
 

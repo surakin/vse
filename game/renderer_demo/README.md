@@ -27,14 +27,18 @@ cmake --build build --target renderer_demo
 | `--objects N` | total objects, the 49 ground tiles included, 64 to 20000 (default 540) |
 | `--lights N` | point lights, 0 to 16000 (default 300) |
 | `--gbuffer LAYER` | `albedo`, `normal`, `material`, `depth` or `worldpos` instead of the lit picture |
-| `--no-vsync` | present with `Immediate` instead of `Fifo` |
+| `--no-vsync` | present with `Immediate` instead of `Fifo` (the same as pressing F1 once the window is open) |
+| `--gpu G` | the GPU to use: an id from `--list-gpus`, an index, or part of its name. A GPU that does not exist or cannot present fails (exit 1); it never falls back to another one |
+| `--list-gpus` | print the GPUs (id, name, kind, memory, driver, and why one is unsuitable) and exit |
+| `--prewarm` | after a device reset rebuild every pipeline at once instead of when it is first used |
+| `--script WORDS` | run the live paths without a keyboard (below) |
 | `--validation` | enable the Vulkan validation layer with synchronization validation |
 | `--inject-device-loss F`, `--inject-oom N` | fault injection (see the tests) |
 | `--help` | print the options |
 
 Exit codes: 0 success, 1 a runtime failure (no device, window or swapchain, a failed frame, or memory growth), 2 a usage
 error, 3 the GPU device was lost (the demo stops cleanly). Other environment variables: `ENGINE_RHI_VALIDATION*` (see the RHI
-guide), `ENGINE_RHI_GPU` to pick a GPU.
+guide). `--gpu` is the preferred way to pick a GPU; `ENGINE_RHI_GPU` still works when `--gpu` is not given.
 
 Once a second the demo logs the average frame time, the objects and draw calls, and the point lights (written, culled by the
 frustum, dropped for lack of room) and light volume draws.
@@ -44,6 +48,36 @@ frustum, dropped for lack of room) and light volume draws.
 Orbit camera (default): arrow keys or dragging with the left mouse button turn and tilt it, the wheel zooms. **Tab** switches
 to the fly camera: W/A/S/D move, Q/E (or Space) go down/up, Shift is faster, arrows or dragging look around. The point lights
 drift slowly around where they were placed.
+
+## Changing settings while it runs
+
+The window demo goes through `renderer::Renderer::ApplySettings`, so rendering settings change without restarting. Keys (printed at
+startup, and every change is logged with its cost class and the time it took):
+
+| Key | Setting | Cost class |
+|---|---|---|
+| F1 | vsync on/off (`present_mode` fifo/immediate) | swapchain |
+| F2 | validation on/off | device reset |
+| F3 | next GPU | device reset |
+| F4 | render scale (no consumer yet) | dynamic |
+| F5 | fullscreen | swapchain |
+| F6 | swapchain format (auto, srgb8, rgba16f) | swapchain |
+| F7 | shader quality (low, medium, high; no consumer yet, so it only rebuilds the pipelines) | pipeline rebuild |
+| F9 | force a device reset with the settings unchanged | device reset |
+| F10 | tell the device it is lost (it recovers; see the renderer guide, "Device loss and recovery") | recovery |
+
+While a change runs the window keeps its last picture; the log says what is happening and, afterwards, how long the first good frame
+took. There is no progress display: a device reset takes about 40 ms here (see the Day 113 measurements in
+`plans/phase-07-rhi-reset/day-113-demo-seams-and-measurements.md`).
+
+`--script` takes space-separated steps: `frame:N` (run until N frames were drawn), `set:key=value` (a setting by its name, for example
+`set:present_mode=immediate`), `reset`, `gpu:next`, `loss` (lose the device), `quit`. The keys are off while a script runs. Example:
+
+```
+renderer_demo --validation --frames 120 --script "frame:10 set:present_mode=immediate frame:20 reset frame:30 set:shader_quality=low frame:40 loss frame:100 quit"
+```
+
+`--inject-device-loss F` still means a terminal loss (exit 3): it turns recovery off so the tests can see the old behavior.
 
 ## What it shows
 
@@ -71,7 +105,7 @@ is logged), so a checkout without the files still runs.
 
 | | |
 |---|---|
-| `main.cpp` | options, the window loop, the offscreen path, the cameras |
+| `main.cpp` | options, the window loop and its keys and script, the offscreen path, the cameras |
 | `demo_scene.*` | the scene: meshes, textures, materials, objects, lights (also used by the tests) |
 | `demo_frame.*` | material system, per-frame buffers, passes and `Renderer` around them (also used by the tests) |
 | `demo_assets.*`, `mint_assets.cpp` | the procedural textures and the tool that writes them |

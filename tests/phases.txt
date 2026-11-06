@@ -84,7 +84,13 @@ tests/rhi/vulkan_swapchain_test.cpp             3
 tests/rhi/vulkan_textured_cube_test.cpp         3
 tests/rhi/vulkan_texture_test.cpp               3
 test:rhi_boundary_check*                        3
-test:rhi_demo_*                                 3
+test:rhi_demo_device_loss_screenshot            3
+test:rhi_demo_device_loss_trace                 3
+test:rhi_demo_oom_later                         3
+test:rhi_demo_oom_device                        3
+test:rhi_demo_bad_injection                     3
+test:rhi_demo_negative_injection                3
+test:rhi_demo_no_vulkan                         3
 
 # --- Phase 4: renderer, shaders and the renderer demo ---
 tests/renderer/gbuffer_test.cpp                       4
@@ -114,7 +120,17 @@ test:debug_backend_lists*                       6
 test:debug_cross_syntax_*                       6
 testopt:shaders_check                           4   # only with slangc
 testopt:shaders_portability                     4   # only with slangc
-test:renderer_demo_*                            4
+test:renderer_demo_screenshot                   4
+test:renderer_demo_gbuffer_layers               4
+test:renderer_demo_device_loss_screenshot       4
+test:renderer_demo_device_loss_trace            4
+test:renderer_demo_oom_later                    4
+test:renderer_demo_oom_device                   4
+test:renderer_demo_bad_injection                4
+test:renderer_demo_bad_layer                    4
+test:renderer_demo_bad_objects                  4
+test:renderer_demo_no_vulkan                    4
+test:renderer_demo_assets_current               4
 
 # --- Phase 7: RHI reset ---
 tests/renderer/render_settings_test.cpp         7
@@ -128,6 +144,11 @@ tests/rhi/device_host_test.cpp                  7
 tests/foundation/window_fullscreen_test.cpp     7
 tests/rhi/swapchain_reconfigure_test.cpp        7
 tests/rhi/vulkan_reset_golden_test.cpp          7
+test:renderer_demo_script_*                     7
+test:renderer_demo_list_gpus                    7
+test:rhi_demo_list_gpus                         7
+test:rhi_demo_unknown_gpu                       7
+test:renderer_demo_unknown_gpu                  7
 
 # --- Phase 5: test scoping ---
 test:test_phase_*                              5

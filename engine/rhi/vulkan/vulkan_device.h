@@ -68,6 +68,7 @@ public:
     const AdapterInfo& Adapter() const override { return adapter_; }
     u32 Epoch() const override { return epoch_; }
     ResourceCounts Resources() const override;
+    void InjectDeviceLoss() override { InjectLoss("request", 0); }
     bool RecreateSurface(const os::Window* window) override;
     bool InFrame() const override { return frame_open_.load(std::memory_order_acquire); }
     const DeviceCaps& Caps() const override;

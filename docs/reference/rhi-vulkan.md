@@ -3784,6 +3784,18 @@ Returns the live object counts; see [`rhi::ResourceCounts`](rhi.md#rhi-resourcec
 
 _Inherited from [`rhi::Device::Resources() const`](rhi.md#rhi-device-resources-const)._
 
+### `InjectDeviceLoss()` {#rhi-vulkan-vulkandevice-injectdeviceloss}
+
+`method rhi::vulkan::VulkanDevice::InjectDeviceLoss` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+void InjectDeviceLoss() override;
+```
+
+Makes the device behave as lost, as if the driver had reported it: later submissions are ignored and `DeviceLost` is true.
+
+_Inherited from [`rhi::Device::InjectDeviceLoss()`](rhi.md#rhi-device-injectdeviceloss)._
+
 ### `RecreateSurface(const os::Window*)` {#rhi-vulkan-vulkandevice-recreatesurface-const-os-window-star}
 
 `method rhi::vulkan::VulkanDevice::RecreateSurface` — defined in `engine/rhi/vulkan/vulkan_device.h`

@@ -71,8 +71,8 @@ void SetReason(ApplyResult* r, const char* text) { std::snprintf(r->reason, size
 
 } // namespace
 
-void Renderer::BuildCreateInfo(const RenderSettings& settings, char* adapter_buffer, rhi::DeviceCreateInfo* out) const {
-    *out = desc_.create_info;
+void MakeDeviceCreateInfo(const RenderSettings& settings, const rhi::DeviceCreateInfo& base, char* adapter_buffer, rhi::DeviceCreateInfo* out) {
+    *out = base;
     out->backend = settings.GetEnum(settings::kBackend) == 0 ? rhi::Backend::Null : rhi::Backend::Vulkan;
     const char* adapter = settings.GetText(settings::kAdapter);
     if (adapter != nullptr && adapter[0] != '\0') {
@@ -88,7 +88,7 @@ void Renderer::BuildCreateInfo(const RenderSettings& settings, char* adapter_buf
     out->frames_in_flight = static_cast<u32>(settings.GetInt(settings::kFramesInFlight));
 }
 
-rhi::SwapchainDesc Renderer::BuildSwapchainDesc(const RenderSettings& settings) {
+rhi::SwapchainDesc MakeSwapchainDesc(const RenderSettings& settings) {
     rhi::SwapchainDesc d;
     const u32 mode = settings.GetEnum(settings::kPresentMode);
     d.present_mode = mode == 1 ? rhi::PresentMode::Mailbox : mode == 2 ? rhi::PresentMode::Immediate : rhi::PresentMode::Fifo;
@@ -157,7 +157,17 @@ bool Renderer::RollbackDevice(ApplyResult* result) {
     return true;
 }
 
-ApplyResult Renderer::ApplyNow(const RenderSettings& requested) {
+ApplyResult Renderer::ForceDeviceReset() {
+    if (in_frame_ || recovering_) {
+        ApplyResult refused;
+        SetReason(&refused, "a reset cannot be forced inside a frame or while recovering");
+        return refused;
+    }
+    last_apply_ = ApplyNow(settings_, /*force_device_reset=*/true); // a queued request stays queued and applies at the next boundary
+    return last_apply_;
+}
+
+ApplyResult Renderer::ApplyNow(const RenderSettings& requested, bool force_device_reset) {
     ApplyResult result;
     const f64 start = NowMs();
     if (broken_) {
@@ -167,11 +177,11 @@ ApplyResult Renderer::ApplyNow(const RenderSettings& requested) {
     result.change = DiffSettings(settings_, requested, caps_); // also lists what needs a missing capability
     RenderSettings resolved = ResolveSettings(settings_, requested, caps_);
     resolved.SetGeneration(settings_.Generation() + 1); // changes only when the change is applied
-    if (!result.change.Any()) {
+    if (!result.change.Any() && !force_device_reset) {
         result.ok = true;
         return result;
     }
-    CostClass cost = result.change.cost;
+    CostClass cost = force_device_reset ? CostClass::DeviceReset : result.change.cost;
     rhi::DeviceHost* host = desc_.host;
     if (cost > CostClass::Dynamic && host == nullptr) {
         SetReason(&result, "this settings change needs a DeviceHost and the renderer was built without one");
@@ -235,6 +245,7 @@ ApplyResult Renderer::ApplyNow(const RenderSettings& requested) {
             f64 t = NowMs();
             ok = host->Recreate(info, sc);
             result.device_ms = NowMs() - t;
+            result.reset = host->LastTimings();
             if (ok) {
                 std::snprintf(active_adapter_, sizeof(active_adapter_), "%s", adapter);
                 active_info_ = info;

@@ -429,6 +429,11 @@ public:
     /// Thread-safety: thread-safe.
     virtual bool InFrame() const = 0;
 
+    /// Makes the device behave as lost, as if the driver had reported it: later submissions are ignored and `DeviceLost` is true.
+    ///
+    /// A development and test aid (the demos use it to exercise recovery). The default does nothing.
+    virtual void InjectDeviceLoss() {}
+
     /// Returns whether the device was lost; once true it stays true.
     ///
     /// Returns: true after a device-lost error.

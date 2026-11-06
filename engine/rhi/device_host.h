@@ -53,6 +53,22 @@ public:
     virtual const char* ObserverName() const = 0;
 };
 
+/// Where the time of the last `Recreate` went, in milliseconds.
+///
+/// Thread-safety: thread-compatible plain data.
+struct ResetTimings {
+    /// Observers releasing their device objects (`OnDeviceReleasing`, all of them).
+    double release_ms = 0.0;
+    /// Waiting for the GPU, destroying the swapchain and the device (the pipeline cache is saved here).
+    double destroy_ms = 0.0;
+    /// `CreateDevice`: instance, surface and device.
+    double create_device_ms = 0.0;
+    /// Creating the swapchain.
+    double create_swapchain_ms = 0.0;
+    /// Observers rebuilding (`OnDeviceCreated`, all of them: textures re-uploaded, meshes re-uploaded, layouts, shaders, ...).
+    double rebuild_ms = 0.0;
+};
+
 /// Owns a [[rhi::Device]] and its [[rhi::Swapchain]] and replaces them on request.
 ///
 /// `Recreate` runs: notify observers (`OnDeviceReleasing`, high tier first), `Quiesce`, destroy the swapchain, destroy the
@@ -148,6 +164,10 @@ public:
     u32 Epoch() const { return device_ ? device_->Epoch() : 0; }
     /// Returns how many times `Recreate` succeeded.
     u32 ResetCount() const { return reset_count_; }
+    /// Returns where the time of the last `Create` or `Recreate` went.
+    /// Fails: never.
+    const ResetTimings& LastTimings() const { return timings_; }
+
     /// Returns the reason the last `Create` or `Recreate` failed, or an empty string.
     ///
     /// Fails: never.
@@ -194,6 +214,7 @@ private:
     u32 reset_count_ = 0;
     u32 surface_fallbacks_ = 0;
     u32 leaked_objects_ = 0;
+    ResetTimings timings_;
     DeviceCreateInfo last_info_;
     bool resetting_ = false;
     bool has_owner_ = false;

@@ -32,8 +32,13 @@ rhi_demo_expect(rhi_demo_oom_later 1 "no Vulkan device|could not create the targ
 rhi_demo_expect(rhi_demo_oom_device 1 "cannot set up the staging ring" "${RHI_NO_GPU}"
   --screenshot ${RHI_DEMO_SHOT} --inject-oom 1)
 # A mistyped fault is a usage error (exit 2), not "inject nothing".
+# A mistyped fault is a usage error (exit 2), not "inject nothing".
+# The GPUs are listed without a window; a GPU that does not exist fails cleanly and does not fall back to another.
+rhi_demo_expect(rhi_demo_list_gpus 0 "[0-9]+ GPU\\(s\\):" "${RHI_NO_GPU}" --list-gpus)
+rhi_demo_expect(rhi_demo_unknown_gpu 1 "no Vulkan device" "${RHI_NO_GPU}" --screenshot ${RHI_DEMO_SHOT} --gpu no-such-gpu)
 rhi_demo_expect(rhi_demo_bad_injection 2 "usage" "" --inject-oom abc)
 rhi_demo_expect(rhi_demo_negative_injection 2 "usage" "" --inject-device-loss -1)
+
 
 # Without a Vulkan loader the demo reports it and exits 1; it does not crash. Needs no GPU.
 add_test(NAME rhi_demo_no_vulkan
@@ -41,5 +46,5 @@ add_test(NAME rhi_demo_no_vulkan
     ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:rhi_demo>;--screenshot;${RHI_DEMO_SHOT}" -DEXPECT_CODE=1 "-DEXPECT_OUT=no Vulkan device"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/expect_run.cmake)
 set_tests_properties(rhi_demo_no_vulkan PROPERTIES LABELS demo)
-engine_label_tests(rhi_demo_device_loss_screenshot rhi_demo_device_loss_trace rhi_demo_oom_later rhi_demo_oom_device rhi_demo_bad_injection
+engine_label_tests(rhi_demo_list_gpus rhi_demo_unknown_gpu rhi_demo_device_loss_screenshot rhi_demo_device_loss_trace rhi_demo_oom_later rhi_demo_oom_device rhi_demo_bad_injection
   rhi_demo_negative_injection rhi_demo_no_vulkan)

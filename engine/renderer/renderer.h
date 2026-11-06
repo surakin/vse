@@ -173,6 +173,22 @@ struct RendererStats {
     rhi::FenceValue last_fence = 0;
 };
 
+/// Builds the description a device is created with from settings: backend, adapter, validation, sync validation and frames in flight
+/// come from `settings`, everything else from `base`.
+///
+/// Param settings: the settings.
+/// Param base: the rest of the description (window, application name, faults).
+/// Param adapter_buffer: at least 64 bytes; holds the adapter text that `out->adapter` points to.
+/// Param out: receives the description.
+/// Ownership: `out->adapter` points into `adapter_buffer`, which must outlive the use of `out`.
+void MakeDeviceCreateInfo(const RenderSettings& settings, const rhi::DeviceCreateInfo& base, char* adapter_buffer, rhi::DeviceCreateInfo* out);
+
+/// Builds the swapchain description from settings: present mode, size, format and HDR.
+///
+/// Param settings: the settings.
+/// Returns: the description.
+rhi::SwapchainDesc MakeSwapchainDesc(const RenderSettings& settings);
+
 /// What `Renderer::ApplySettings` did.
 ///
 /// Thread-safety: thread-compatible plain data (about 1.5 KB).
@@ -201,6 +217,9 @@ struct ApplyResult {
     f64 swapchain_ms = 0.0;
     /// Milliseconds spent rebuilding owners (a pipeline rebuild).
     f64 rebuild_ms = 0.0;
+    /// For a device reset, where `device_ms` went: the host's split (owners releasing, destroying the old device, creating the
+    /// device, the swapchain, owners rebuilding).
+    rhi::ResetTimings reset;
 };
 
 /// Called when a settings change that touches the GPU starts. `stage` is "swapchain", "pipelines" or "device".
@@ -251,6 +270,14 @@ public:
     /// Returns: what happened; `queued` if it waits for the frame boundary.
     /// Fails: `ok` is false with `reason` set; `rolled_back` or `device_lost` say what state the renderer is in.
     ApplyResult ApplySettings(const RenderSettings& requested);
+
+    /// Replaces the device with one made from the settings in force, although nothing changed (a reset on request).
+    ///
+    /// Same sequence, thread rule and failure handling as a device-reset change in `ApplySettings`.
+    ///
+    /// Returns: what happened; `performed` is `DeviceReset` on success.
+    /// Fails: as for `ApplySettings`.
+    ApplyResult ForceDeviceReset();
 
     /// Returns the settings in force.
     /// Fails: never.
@@ -331,9 +358,11 @@ public:
 private:
     void SetError(const char* fmt, ...) __attribute__((format(printf, 2, 3)));
     FrameStatus RenderFrameImpl(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen);
-    ApplyResult ApplyNow(const RenderSettings& requested);
-    void BuildCreateInfo(const RenderSettings& settings, char* adapter_buffer, rhi::DeviceCreateInfo* out) const;
-    static rhi::SwapchainDesc BuildSwapchainDesc(const RenderSettings& settings);
+    ApplyResult ApplyNow(const RenderSettings& requested, bool force_device_reset = false);
+    void BuildCreateInfo(const RenderSettings& settings, char* adapter_buffer, rhi::DeviceCreateInfo* out) const {
+        MakeDeviceCreateInfo(settings, desc_.create_info, adapter_buffer, out);
+    }
+    static rhi::SwapchainDesc BuildSwapchainDesc(const RenderSettings& settings) { return MakeSwapchainDesc(settings); }
     void RefreshCapabilities(bool adapters_too);
     bool RollbackDevice(ApplyResult* result);
     bool RecoveryAttempt();

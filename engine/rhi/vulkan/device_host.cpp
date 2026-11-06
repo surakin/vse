@@ -5,6 +5,7 @@
 
 #include "debug/crash_state.h"
 #include "log/assert.h"
+#include "os/os.h"
 #include "rhi/rhi_log.h"
 
 namespace engine_placeholder::rhi {
@@ -76,15 +77,22 @@ void DeviceHost::DestroyDevice() {
     PublishCrashState();
 }
 
+namespace {
+double NowMs() { return static_cast<double>(os::MonotonicTimeNanos()) / 1.0e6; }
+} // namespace
+
 bool DeviceHost::CreateInternal(const DeviceCreateInfo& info, const SwapchainDesc& swapchain) {
     error_[0] = '\0';
     last_info_ = info;
+    double t = NowMs();
     device_ = CreateDevice(info);
+    timings_.create_device_ms = NowMs() - t;
     if (!device_) {
         SetError("the device could not be created");
         return false;
     }
     // A window is needed for a real swapchain; the null backend can make a windowless one when a size is given.
+    t = NowMs();
     if (info.window != nullptr || (info.backend == Backend::Null && swapchain.width != 0)) {
         swapchain_ = device_->CreateSwapchain(swapchain);
         if (swapchain_ == nullptr) {
@@ -93,6 +101,8 @@ bool DeviceHost::CreateInternal(const DeviceCreateInfo& info, const SwapchainDes
             return false;
         }
     }
+    timings_.create_swapchain_ms = NowMs() - t;
+    t = NowMs();
     // Ascending tier; among equal tiers, registration order.
     for (;;) {
         Entry* pick = nullptr;
@@ -119,6 +129,7 @@ bool DeviceHost::CreateInternal(const DeviceCreateInfo& info, const SwapchainDes
             return false;
         }
     }
+    timings_.rebuild_ms = NowMs() - t;
     PublishCrashState();
     return true;
 }
@@ -194,6 +205,7 @@ bool DeviceHost::RecreateSurface(const os::Window* window, const SwapchainDesc& 
 
 bool DeviceHost::Create(const DeviceCreateInfo& info, const SwapchainDesc& swapchain) {
     ENGINE_ASSERT(!device_, "DeviceHost::Create: the host already holds a device");
+    timings_ = ResetTimings{};
     owner_ = std::this_thread::get_id();
     has_owner_ = true;
     resetting_ = true;
@@ -210,9 +222,14 @@ bool DeviceHost::Recreate(const DeviceCreateInfo& info, const SwapchainDesc& swa
         has_owner_ = true;
     }
     resetting_ = true;
+    timings_ = ResetTimings{};
     if (device_) {
+        double t = NowMs();
         ReleaseObservers();
+        timings_.release_ms = NowMs() - t;
+        t = NowMs();
         DestroyDevice();
+        timings_.destroy_ms = NowMs() - t;
     }
     const bool ok = CreateInternal(info, swapchain);
     if (ok) {

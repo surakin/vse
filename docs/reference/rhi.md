@@ -3386,6 +3386,18 @@ Returns whether a frame is open (between `BeginFrame` and `EndFrame`).
 | Fails | never. |
 | Thread-safety | thread-safe. |
 
+### `InjectDeviceLoss()` {#rhi-device-injectdeviceloss}
+
+`method rhi::Device::InjectDeviceLoss` — defined in `engine/rhi/device.h`
+
+```cpp
+virtual void InjectDeviceLoss();
+```
+
+Makes the device behave as lost, as if the driver had reported it: later submissions are ignored and `DeviceLost` is true.
+
+A development and test aid (the demos use it to exercise recovery). The default does nothing.
+
 ### `DeviceLost()` {#rhi-device-devicelost-const}
 
 `method rhi::Device::DeviceLost` — defined in `engine/rhi/device.h`
@@ -3535,6 +3547,70 @@ Returns a short name for logs and failure reports.
 | Returns | a static string. |
 | Fails | never. |
 | Ownership | the string is static. |
+
+## `ResetTimings` {#rhi-resettimings}
+
+`struct rhi::ResetTimings` — defined in `engine/rhi/device_host.h`
+
+```cpp
+struct ResetTimings { ... }
+```
+
+Where the time of the last `Recreate` went, in milliseconds.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `release_ms` {#rhi-resettimings-release-ms}
+
+`variable rhi::ResetTimings::release_ms` — defined in `engine/rhi/device_host.h`
+
+```cpp
+double release_ms;
+```
+
+Observers releasing their device objects (`OnDeviceReleasing`, all of them).
+
+### `destroy_ms` {#rhi-resettimings-destroy-ms}
+
+`variable rhi::ResetTimings::destroy_ms` — defined in `engine/rhi/device_host.h`
+
+```cpp
+double destroy_ms;
+```
+
+Waiting for the GPU, destroying the swapchain and the device (the pipeline cache is saved here).
+
+### `create_device_ms` {#rhi-resettimings-create-device-ms}
+
+`variable rhi::ResetTimings::create_device_ms` — defined in `engine/rhi/device_host.h`
+
+```cpp
+double create_device_ms;
+```
+
+`CreateDevice`: instance, surface and device.
+
+### `create_swapchain_ms` {#rhi-resettimings-create-swapchain-ms}
+
+`variable rhi::ResetTimings::create_swapchain_ms` — defined in `engine/rhi/device_host.h`
+
+```cpp
+double create_swapchain_ms;
+```
+
+Creating the swapchain.
+
+### `rebuild_ms` {#rhi-resettimings-rebuild-ms}
+
+`variable rhi::ResetTimings::rebuild_ms` — defined in `engine/rhi/device_host.h`
+
+```cpp
+double rebuild_ms;
+```
+
+Observers rebuilding (`OnDeviceCreated`, all of them: textures re-uploaded, meshes re-uploaded, layouts, shaders, ...).
 
 ## `DeviceHost` {#rhi-devicehost}
 
@@ -3761,6 +3837,20 @@ u32 ResetCount() const;
 ```
 
 Returns how many times `Recreate` succeeded.
+
+### `LastTimings()` {#rhi-devicehost-lasttimings-const}
+
+`method rhi::DeviceHost::LastTimings` — defined in `engine/rhi/device_host.h`
+
+```cpp
+const ResetTimings& LastTimings() const;
+```
+
+Returns where the time of the last `Create` or `Recreate` went.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `LastError()` {#rhi-devicehost-lasterror-const}
 
@@ -6060,6 +6150,18 @@ bool DeviceLost() const override;
 Returns whether the device was lost; once true it stays true.
 
 _Inherited from [`rhi::Device::DeviceLost() const`](#rhi-device-devicelost-const)._
+
+### `InjectDeviceLoss()` {#rhi-nulldevice-injectdeviceloss}
+
+`method rhi::NullDevice::InjectDeviceLoss` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+void InjectDeviceLoss() override;
+```
+
+Makes the device behave as lost, as if the driver had reported it: later submissions are ignored and `DeviceLost` is true.
+
+_Inherited from [`rhi::Device::InjectDeviceLoss()`](#rhi-device-injectdeviceloss)._
 
 ### `ErrorCount()` {#rhi-nulldevice-errorcount-const}
 

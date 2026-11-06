@@ -46,6 +46,8 @@ struct Options {
     bool validation = false;
     long inject_device_loss = 0;     // lose the device at this frame (fault injection), 0 = never
     long inject_oom = 0;             // fail device-memory allocations from the Nth on (fault injection), 0 = never
+    const char* gpu = nullptr;       // --gpu: an adapter id, an index or part of a name
+    bool list_gpus = false;          // --list-gpus
 };
 
 double NowSeconds() {
@@ -244,7 +246,27 @@ DeviceCreateInfo DeviceInfo(const Options& options) {
     }
     info.faults.lose_device_at_frame = static_cast<u32>(options.inject_device_loss);
     info.faults.fail_allocations_from = static_cast<u32>(options.inject_oom);
+    info.adapter = options.gpu;
     return info;
+}
+
+// Prints the GPUs a Vulkan device can be made on, one per line, and returns the exit code.
+int ListGpus() {
+    DeviceCreateInfo info;
+    AdapterList list;
+    if (!EnumerateAdapters(info, &list)) {
+        std::fprintf(stderr, "rhi_demo: cannot list the GPUs (no Vulkan loader or instance)\n");
+        return kExitFailure;
+    }
+    static const char* const kKinds[] = {"other", "software", "virtual", "integrated", "discrete"};
+    std::printf("%u GPU(s):\n", list.count);
+    for (u32 i = 0; i < list.count; ++i) {
+        const AdapterInfo& a = list.items[i];
+        std::printf("  %u  %s  %s  (%s, %llu MiB, driver %s)%s%s\n", i, a.id, a.name, kKinds[static_cast<usize>(a.kind)],
+                    static_cast<unsigned long long>(a.dedicated_memory_bytes >> 20), a.driver, a.suitable ? "" : "  unsuitable: ",
+                    a.suitable ? "" : (a.unsuitable_reason != nullptr ? a.unsuitable_reason : "?"));
+    }
+    return kExitOk;
 }
 
 // Renders `frames` frames offscreen (no window) and saves the last one, with a fixed camera and light.
@@ -494,11 +516,13 @@ bool ParseCount(const char* text, long* out) {
 int Usage(const char* program, int code) {
     std::fprintf(code == kExitOk ? stdout : stderr,
                  "usage: %s [--backend wayland|x11] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
-                 "       [--inject-device-loss FRAME] [--inject-oom N]\n"
+                 "       [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus]\n"
                  "  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)\n"
                  "  --frames N        stop after N frames (also RHI_DEMO_FRAMES=N)\n"
                  "  --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM)\n"
                  "  --no-vsync        present without waiting for the display\n"
+                 "  --gpu G           the GPU to use: an id from --list-gpus, an index, or part of the name\n"
+                 "  --list-gpus       print the GPUs and exit\n"
                  "  --validation      enable the validation layer with synchronization validation\n"
                  "  --inject-device-loss F  fault injection: lose the GPU device at frame F (exit code 3)\n"
                  "  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it\n",
@@ -526,6 +550,10 @@ int main(int argc, char** argv) {
             options.screenshot = argv[++i];
         } else if (std::strcmp(argv[i], "--backend") == 0 && has_value) {
             options.backend = argv[++i];
+        } else if (std::strcmp(argv[i], "--gpu") == 0 && has_value) {
+            options.gpu = argv[++i];
+        } else if (std::strcmp(argv[i], "--list-gpus") == 0) {
+            options.list_gpus = true;
         } else if (std::strcmp(argv[i], "--no-vsync") == 0) {
             options.no_vsync = true;
         } else if (std::strcmp(argv[i], "--validation") == 0) {
@@ -551,5 +579,6 @@ int main(int argc, char** argv) {
         }
         setenv("ENGINE_WINDOW_BACKEND", options.backend, 1);
     }
+    if (options.list_gpus) return ListGpus();
     return options.screenshot != nullptr ? RunScreenshot(options) : RunWindow(options);
 }

@@ -146,6 +146,7 @@ public:
     u64 FrameNumber() const override;
     void WaitIdle() override;
     bool DeviceLost() const override;
+    void InjectDeviceLoss() override { SimulateDeviceLoss(); }
 
     /// Returns how many contract violations have been reported since creation or the last `ResetErrors`.
     u32 ErrorCount() const;

@@ -9371,6 +9371,39 @@ rhi::FenceValue last_fence;
 
 The fence value of the latest submission.
 
+## `MakeDeviceCreateInfo(const RenderSettings&,const rhi::DeviceCreateInfo&,char*,rhi::DeviceCreateInfo*)` {#renderer-makedevicecreateinfo-const-rendersettings-amp-const-rhi-devicecreateinfo-amp-char-star-rhi-devicecreateinfo-star}
+
+`function renderer::MakeDeviceCreateInfo` — defined in `engine/renderer/renderer.h`
+
+```cpp
+void MakeDeviceCreateInfo(const RenderSettings& settings, const rhi::DeviceCreateInfo& base, char* adapter_buffer, rhi::DeviceCreateInfo* out);
+```
+
+Builds the description a device is created with from settings: backend, adapter, validation, sync validation and frames in flight come from `settings`, everything else from `base`.
+
+| Field | Value |
+|---|---|
+| Parameter `settings` | the settings. |
+| Parameter `base` | the rest of the description (window, application name, faults). |
+| Parameter `adapter_buffer` | at least 64 bytes; holds the adapter text that `out->adapter` points to. |
+| Parameter `out` | receives the description. |
+| Ownership | `out->adapter` points into `adapter_buffer`, which must outlive the use of `out`. |
+
+## `MakeSwapchainDesc(const RenderSettings&)` {#renderer-makeswapchaindesc-const-rendersettings-amp}
+
+`function renderer::MakeSwapchainDesc` — defined in `engine/renderer/renderer.h`
+
+```cpp
+rhi::SwapchainDesc MakeSwapchainDesc(const RenderSettings& settings);
+```
+
+Builds the swapchain description from settings: present mode, size, format and HDR.
+
+| Field | Value |
+|---|---|
+| Parameter `settings` | the settings. |
+| Returns | the description. |
+
 ## `ApplyResult` {#renderer-applyresult}
 
 `struct renderer::ApplyResult` — defined in `engine/renderer/renderer.h`
@@ -9505,6 +9538,16 @@ f64 rebuild_ms;
 
 Milliseconds spent rebuilding owners (a pipeline rebuild).
 
+### `reset` {#renderer-applyresult-reset}
+
+`variable renderer::ApplyResult::reset` — defined in `engine/renderer/renderer.h`
+
+```cpp
+rhi::ResetTimings reset;
+```
+
+For a device reset, where `device_ms` went: the host's split (owners releasing, destroying the old device, creating the device, the swapchain, owners rebuilding).
+
 ## `ResetBeginFn` {#renderer-resetbeginfn}
 
 `alias renderer::ResetBeginFn` — defined in `engine/renderer/renderer.h`
@@ -9612,6 +9655,23 @@ Called inside a frame (from the build callback, which runs on the owning thread)
 | Parameter `requested` | the settings wanted. |
 | Returns | what happened; `queued` if it waits for the frame boundary. |
 | Fails | `ok` is false with `reason` set; `rolled_back` or `device_lost` say what state the renderer is in. |
+
+### `ForceDeviceReset()` {#renderer-renderer-forcedevicereset}
+
+`method renderer::Renderer::ForceDeviceReset` — defined in `engine/renderer/renderer.h`
+
+```cpp
+ApplyResult ForceDeviceReset();
+```
+
+Replaces the device with one made from the settings in force, although nothing changed (a reset on request).
+
+Same sequence, thread rule and failure handling as a device-reset change in `ApplySettings`.
+
+| Field | Value |
+|---|---|
+| Returns | what happened; `performed` is `DeviceReset` on success. |
+| Fails | as for `ApplySettings`. |
 
 ### `Settings()` {#renderer-renderer-settings-const}
 

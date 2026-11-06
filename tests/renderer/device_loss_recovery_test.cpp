@@ -521,3 +521,17 @@ TEST_CASE("A request queued while recovering does not bring back the abandoned a
     CHECK(rig.renderer->Settings().GetEnum(kGBufferDebugLayer) == 2);
     CHECK(rig.renderer->LastApply().performed == CostClass::Dynamic); // no reset back to the failing adapter
 }
+
+TEST_CASE("A device told to be lost (as the demo's F10 key does) is recovered from", "[recovery]") {
+    LossQuietLog quiet;
+    LossRig rig;
+    rig.strikes = 0;
+    rig.Create(RecoveryPolicy{});
+    CHECK(rig.Render() == FrameStatus::Ok);
+    const u32 epoch = rig.host.Epoch();
+    rig.renderer->GetDevice()->InjectDeviceLoss();
+    CHECK(rig.Render() == FrameStatus::DeviceLost);
+    CHECK(rig.host.Epoch() != epoch);
+    CHECK(rig.renderer->Stats().recoveries == 1);
+    CHECK(rig.Render() == FrameStatus::Ok);
+}

@@ -517,3 +517,18 @@ TEST_CASE("With recovery on, a change that cannot be undone is recovered from", 
     CHECK(std::strcmp(rig.host.GetDevice()->Adapter().id, "null-discrete") == 0);
     CHECK(rig.Render() == FrameStatus::Ok);
 }
+
+TEST_CASE("A device reset can be forced with the settings unchanged", "[apply_settings]") {
+    ApplyQuietLog quiet;
+    ApplyRig rig;
+    REQUIRE(rig.Create());
+    const u32 epoch = rig.Epoch();
+    const u64 generation = rig.renderer->Settings().Generation();
+    const ApplyResult result = rig.renderer->ForceDeviceReset();
+    REQUIRE(result.ok);
+    CHECK(result.performed == CostClass::DeviceReset);
+    CHECK(rig.Epoch() != epoch);
+    CHECK(rig.texture_owner.recreates == 1);
+    CHECK(rig.renderer->Settings().Generation() == generation + 1); // a reset on request is still a settings event
+    CHECK(rig.Render() == FrameStatus::Ok);
+}

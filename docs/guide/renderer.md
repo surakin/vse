@@ -835,6 +835,8 @@ tell the user and offer to restart the program (a driver that cannot create a de
 
 ### The renderer demo
 
+`renderer_demo` goes through `Renderer::ApplySettings`: with a window open, F1-F10 change settings live (vsync, validation, GPU, fullscreen, swapchain format, shader quality, a forced reset, a simulated device loss), `--gpu` and `--list-gpus` choose the GPU, and `--script` drives the same paths without a keyboard (`game/renderer_demo/README.md` lists the keys and the script words). The demos have no settings file or generic `--set` option: the engine has no settings system yet (`KNOWN-ISSUES.md`).
+
 `game/renderer_demo` puts the pieces together: a scene of 540 objects in eight materials, 300 point lights, a sun and ambient
 light, drawn by `Renderer::RenderFrame` through the G-buffer, lighting (with light volumes) and tonemap passes, in a window or
 offscreen. Its README lists the options and controls and the tutorial [From a Scene to a Lit Frame](../tutorials/hello-renderer.md)
