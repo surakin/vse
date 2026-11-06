@@ -5356,6 +5356,16 @@ bool fail_surface_recreate;
 
 Makes `RecreateSurface` fail, to exercise the fallback to a full reset.
 
+### `fail_swapchain_create` {#rhi-nulldeviceoptions-fail-swapchain-create}
+
+`variable rhi::NullDeviceOptions::fail_swapchain_create` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+bool fail_swapchain_create;
+```
+
+Makes `CreateSwapchain` fail.
+
 ### `adapter` {#rhi-nulldeviceoptions-adapter}
 
 `variable rhi::NullDeviceOptions::adapter` — defined in `engine/rhi/null/null_device.h`
@@ -6235,6 +6245,16 @@ bool fail_surface_recreate;
 ```
 
 Make `Device::RecreateSurface` fail, as if the adapter could not present to the new surface, so the caller's fallback to a full reset is exercised. The null backend honors it; the Vulkan backend ignores it.
+
+### `fail_swapchain_create` {#rhi-faultinjection-fail-swapchain-create}
+
+`variable rhi::FaultInjection::fail_swapchain_create` — defined in `engine/rhi/rhi.h`
+
+```cpp
+bool fail_swapchain_create;
+```
+
+Make `Device::CreateSwapchain` fail (returns null), to exercise the rollback of a settings change. The null backend honors it; the Vulkan backend ignores it.
 
 ## `DeviceCreateInfo` {#rhi-devicecreateinfo}
 

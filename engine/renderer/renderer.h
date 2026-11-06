@@ -12,7 +12,9 @@
 #include "renderer/camera.h"
 #include "renderer/render_graph.h"
 #include "renderer/render_scene.h"
+#include "renderer/render_settings.h"
 #include "renderer/transient_pool.h"
+#include "rhi/device_host.h"
 #include "rhi/rhi.h"
 #include "rhi/swapchain.h"
 #include "types.h"
@@ -100,6 +102,18 @@ struct RendererDesc {
     RenderGraphDesc graph;
     /// Capacities and aging of the transient pool.
     TransientPoolDesc pool;
+    /// The device host the renderer takes its device and swapchain from and replaces them through (for `ApplySettings`), or null
+    /// for the borrowed-device path in which only `None` and `Dynamic` settings can be applied. When set, `device` and
+    /// `swapchain` must be the host's current ones; the renderer follows the host from then on. Borrowed; must outlive the renderer.
+    rhi::DeviceHost* host = nullptr;
+    /// What every device is created with besides the settings (the window, application name, pipeline cache). Backend, adapter,
+    /// validation, sync validation and frames in flight come from the settings. `window` and the strings must outlive the renderer.
+    rhi::DeviceCreateInfo create_info;
+    /// The window the swapchain presents to, for fullscreen and the capabilities; null for none. Borrowed.
+    os::Window* window = nullptr;
+    /// The settings the host's device was created with. Null with a host means "derive them from `create_info`"; without a host,
+    /// the defaults.
+    const RenderSettings* initial_settings = nullptr;
     /// The registry the renderer's transient pool registers with so it survives a device reset; null for none. The caller
     /// calls [[renderer::Renderer::Rebind]] with the new device and swapchain after the reset.
     DeviceResources* resources = nullptr;
@@ -123,9 +137,52 @@ struct RendererStats {
     u64 frames_lost = 0;
     /// Times the swapchain reported `Recreated` (a resize); targets sized from it follow because the graph is rebuilt.
     u64 swapchain_recreations = 0;
+    /// Settings applications that performed each cost class (`CostClass` as the index).
+    u64 applies[5] = {};
+    /// Device resets done by `ApplySettings`.
+    u64 resets = 0;
+    /// Resets or rebuilds that failed and were undone by restoring the previous settings.
+    u64 rollbacks = 0;
+    /// How long the last reset took, in milliseconds.
+    f64 last_reset_ms = 0.0;
     /// The fence value of the latest submission.
     rhi::FenceValue last_fence = 0;
 };
+
+/// What `Renderer::ApplySettings` did.
+///
+/// Thread-safety: thread-compatible plain data (about 1.5 KB).
+struct ApplyResult {
+    /// The settings are in force (or were already).
+    bool ok = false;
+    /// The renderer was inside a frame; the request waits for the start of the next `RenderFrame` and nothing was done yet.
+    bool queued = false;
+    /// A step failed and the previous settings were restored; the renderer works as before.
+    bool rolled_back = false;
+    /// Restoring failed too: the renderer is in the device-lost state (`RenderFrame` returns `DeviceLost`).
+    bool device_lost = false;
+    /// The cost class actually performed.
+    CostClass performed = CostClass::None;
+    /// The settings that changed, and any that could not be applied for a missing capability.
+    SettingsChange change;
+    /// Why it failed; empty on success.
+    char reason[192] = {};
+    /// Milliseconds spent in the whole change.
+    f64 total_ms = 0.0;
+    /// Milliseconds spent releasing owners (a pipeline rebuild).
+    f64 release_ms = 0.0;
+    /// Milliseconds spent replacing the device (release, destroy, create, rebuild: the whole `DeviceHost::Recreate`).
+    f64 device_ms = 0.0;
+    /// Milliseconds spent reconfiguring the swapchain.
+    f64 swapchain_ms = 0.0;
+    /// Milliseconds spent rebuilding owners (a pipeline rebuild).
+    f64 rebuild_ms = 0.0;
+};
+
+/// Called when a settings change that touches the GPU starts. `stage` is "swapchain", "pipelines" or "device".
+using ResetBeginFn = void (*)(void* user, const char* stage);
+/// Called when it ends; `ok` is false if it failed (the renderer then restored the previous settings or is device-lost).
+using ResetEndFn = void (*)(void* user, bool ok);
 
 /// Renders frames.
 ///
@@ -153,6 +210,63 @@ public:
     /// Ownership: both are borrowed.
     /// Aborts: `device` is null, or the renderer was built without `RendererDesc::resources` (its pool could not follow the device).
     void Rebind(rhi::Device* device, rhi::Swapchain* swapchain);
+
+    /// Changes the rendering settings at run time, doing the cheapest sufficient thing.
+    ///
+    /// The change is diffed against the settings in force ([[renderer::DiffSettings]]) and its highest cost class is performed:
+    /// `None` and `Dynamic` store the values; `Swapchain` reconfigures the swapchain (and asks the window for fullscreen);
+    /// `PipelineRebuild` releases and recreates the registry's tier 3 and above (materials, passes); `DeviceReset` replaces the
+    /// device through the host and every registered owner rebuilds. If a step fails the previous settings are restored; if that
+    /// fails too the renderer is device-lost. Settings that need a missing capability (fullscreen, HDR) are left as they were.
+    ///
+    /// Called inside a frame (from the build callback, which runs on the owning thread) the request is queued and applied at the
+    /// start of the next `RenderFrame`; a newer request replaces a pending one, also one made later outside a frame. Call from the
+    /// owning thread only (never from a job); workers that record must be idle.
+    ///
+    /// Param requested: the settings wanted.
+    /// Returns: what happened; `queued` if it waits for the frame boundary.
+    /// Fails: `ok` is false with `reason` set; `rolled_back` or `device_lost` say what state the renderer is in.
+    ApplyResult ApplySettings(const RenderSettings& requested);
+
+    /// Returns the settings in force.
+    /// Fails: never.
+    const RenderSettings& Settings() const { return settings_; }
+
+    /// Returns what the last `ApplySettings` (also one applied at a frame boundary) did.
+    /// Fails: never.
+    const ApplyResult& LastApply() const { return last_apply_; }
+
+    /// Returns what the device and window can do now, as the settings layer sees it.
+    /// Fails: never.
+    const Capabilities& GetCapabilities() const { return caps_; }
+
+    /// Sets the functions called around a settings change that touches the GPU, so the application can show a message, pause
+    /// audio or drop its own GPU caches.
+    ///
+    /// Param begin: called with the stage name; may be null.
+    /// Param end: called with the outcome; may be null.
+    /// Param user: passed to both.
+    /// Ownership: `user` is borrowed.
+    void SetResetCallbacks(ResetBeginFn begin, ResetEndFn end, void* user) {
+        reset_begin_ = begin;
+        reset_end_ = end;
+        reset_user_ = user;
+    }
+
+    /// Returns the device the renderer draws on now. After a reset or a rollback it is a new device: rebind your own pointers
+    /// from this (also when the end callback reports failure, since a rollback creates the previous device again).
+    /// Fails: returns null once the renderer is broken (a failed change could not be undone).
+    /// Ownership: borrowed from the host.
+    rhi::Device* GetDevice() const { return desc_.device; }
+
+    /// Returns the swapchain the renderer presents to now, or null.
+    /// Fails: returns null without a swapchain or once the renderer is broken.
+    /// Ownership: borrowed from the host.
+    rhi::Swapchain* GetSwapchain() const { return desc_.swapchain; }
+
+    /// Returns whether a failed change left the renderer without a device (every frame returns `DeviceLost`).
+    /// Fails: never.
+    bool IsBroken() const { return broken_; }
 
     /// Renders one frame.
     ///
@@ -188,9 +302,27 @@ public:
 
 private:
     void SetError(const char* fmt, ...) __attribute__((format(printf, 2, 3)));
+    FrameStatus RenderFrameImpl(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen);
+    ApplyResult ApplyNow(const RenderSettings& requested);
+    void BuildCreateInfo(const RenderSettings& settings, char* adapter_buffer, rhi::DeviceCreateInfo* out) const;
+    static rhi::SwapchainDesc BuildSwapchainDesc(const RenderSettings& settings);
+    void RefreshCapabilities(bool adapters_too);
+    bool RollbackDevice(ApplyResult* result);
     FrameStatus Abandon(FrameStatus status, bool acquired);
 
     RendererDesc desc_;
+    RenderSettings settings_;
+    RenderSettings pending_;
+    bool has_pending_ = false;
+    bool in_frame_ = false;
+    bool broken_ = false;
+    Capabilities caps_;
+    ApplyResult last_apply_;
+    rhi::DeviceCreateInfo active_info_;
+    char active_adapter_[64] = {};
+    ResetBeginFn reset_begin_ = nullptr;
+    ResetEndFn reset_end_ = nullptr;
+    void* reset_user_ = nullptr;
     ArenaAllocator arena_;
     TransientPool pool_;
     RendererStats stats_;

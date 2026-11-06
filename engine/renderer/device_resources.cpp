@@ -1,5 +1,6 @@
 #include "renderer/device_resources.h"
 
+#include "log/assert.h"
 #include "renderer/renderer_log.h"
 
 namespace engine_placeholder::renderer {
@@ -64,12 +65,58 @@ void DeviceResources::Rebind(Recreatable* from, Recreatable* to) {
 }
 
 void DeviceResources::ReleaseAllLive() {
+    ReleaseLive(0);
+    device_ = nullptr;
+}
+
+void DeviceResources::ReleaseFrom(u32 first_tier) {
+    resetting_ = true;
+    ReleaseLive(first_tier);
+    resetting_ = false;
+    Compact();
+}
+
+bool DeviceResources::RecreateFrom(u32 first_tier) {
+    ENGINE_ASSERT(device_ != nullptr, "DeviceResources::RecreateFrom: there is no current device");
+    resetting_ = true;
+    failed_name_ = nullptr;
+    bool ok = true;
+    for (;;) {
+        Entry* pick = nullptr;
+        for (usize i = 0; i < count_; ++i) {
+            Entry& e = entries_[i];
+            if (e.owner != nullptr && !e.live && e.tier >= first_tier &&
+                (pick == nullptr || e.tier < pick->tier || (e.tier == pick->tier && e.sequence < pick->sequence))) {
+                pick = &e;
+            }
+        }
+        if (pick == nullptr) {
+            break;
+        }
+        pick->live = true;
+        if (!pick->owner->Recreate(device_)) {
+            failed_name_ = pick->owner->RecreatableName();
+            RenderLog(LogVerbosity::Error, "DeviceResources: '%s' could not be recreated", failed_name_);
+            pick->live = false;
+            ok = false;
+            break;
+        }
+    }
+    if (!ok) {
+        ReleaseLive(first_tier);
+    }
+    resetting_ = false;
+    Compact();
+    return ok;
+}
+
+void DeviceResources::ReleaseLive(u32 first_tier) {
     // Highest tier first; within a tier the later registration first.
     for (;;) {
         Entry* pick = nullptr;
         for (usize i = 0; i < count_; ++i) {
             Entry& e = entries_[i];
-            if (e.owner != nullptr && e.live && (pick == nullptr || e.tier > pick->tier || (e.tier == pick->tier && e.sequence > pick->sequence))) {
+            if (e.owner != nullptr && e.live && e.tier >= first_tier && (pick == nullptr || e.tier > pick->tier || (e.tier == pick->tier && e.sequence > pick->sequence))) {
                 pick = &e;
             }
         }
@@ -79,7 +126,6 @@ void DeviceResources::ReleaseAllLive() {
         pick->live = false;
         pick->owner->Release();
     }
-    device_ = nullptr;
 }
 
 void DeviceResources::OnDeviceReleasing(u32 epoch) {
@@ -92,36 +138,12 @@ void DeviceResources::OnDeviceReleasing(u32 epoch) {
 
 bool DeviceResources::OnDeviceCreated(rhi::Device* device, u32 epoch) {
     (void)epoch;
-    resetting_ = true;
-    failed_name_ = nullptr;
     device_ = device;
-    bool ok = true;
-    for (;;) {
-        Entry* pick = nullptr;
-        for (usize i = 0; i < count_; ++i) {
-            Entry& e = entries_[i];
-            if (e.owner != nullptr && !e.live && (pick == nullptr || e.tier < pick->tier || (e.tier == pick->tier && e.sequence < pick->sequence))) {
-                pick = &e;
-            }
-        }
-        if (pick == nullptr) {
-            break;
-        }
-        pick->live = true;
-        if (!pick->owner->Recreate(device)) {
-            failed_name_ = pick->owner->RecreatableName();
-            RenderLog(LogVerbosity::Error, "DeviceResources: '%s' could not be recreated", failed_name_);
-            pick->live = false; // it cleaned up after itself
-            ok = false;
-            break;
-        }
+    if (!RecreateFrom(0)) {
+        device_ = nullptr; // everything is released again; a half-built set is never used
+        return false;
     }
-    if (!ok) {
-        ReleaseAllLive(); // a half-built set is never used
-    }
-    resetting_ = false;
-    Compact();
-    return ok;
+    return true;
 }
 
 } // namespace engine_placeholder::renderer

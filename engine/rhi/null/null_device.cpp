@@ -1592,6 +1592,9 @@ private:
 
 Swapchain* NullDevice::CreateSwapchain(const SwapchainDesc& desc) {
     State& s = *state_;
+    if (s.options.fail_swapchain_create) {
+        return nullptr;
+    }
     if (s.swapchain) {
         s.Error("CreateSwapchain: the device already has a swapchain");
         return nullptr;

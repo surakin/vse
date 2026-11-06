@@ -44,6 +44,7 @@ DevicePtr CreateDevice(const DeviceCreateInfo& info) {
         }
         options.lose_device_at_frame = info.faults.lose_device_at_frame;
         options.fail_surface_recreate = info.faults.fail_surface_recreate;
+        options.fail_swapchain_create = info.faults.fail_swapchain_create;
         return CreateNullDevice(options);
     }
     case Backend::Vulkan: return vulkan::VulkanDevice::Create(info);

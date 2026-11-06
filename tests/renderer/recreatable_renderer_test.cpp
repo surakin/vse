@@ -24,8 +24,8 @@ struct RecQuietLog {
     ~RecQuietLog() { rhi::LogRhi.SetEnabled(saved); }
 };
 
-constexpr u32 kWidth = 96;
-constexpr u32 kHeight = 64;
+constexpr u32 kTargetWidth = 96;
+constexpr u32 kTargetHeight = 64;
 
 // The deferred frame on a device the host can replace: every part registers with one registry.
 struct ResetRig {
@@ -55,14 +55,14 @@ struct ResetRig {
         so.resources = &registry;
         if (!scene.Create(host.GetDevice(), frame.Materials(), frame.Templates(), so)) return false;
         scene.Animate(0.0f);
-        camera = scene.OverviewCamera(static_cast<f32>(kWidth) / kHeight);
+        camera = scene.OverviewCamera(static_cast<f32>(kTargetWidth) / kTargetHeight);
         FitCameraDepthRange(scene.Scene(), &camera, 0.1f);
         return true;
     }
     bool MakeTarget() {
         rhi::TextureDesc td;
-        td.width = kWidth;
-        td.height = kHeight;
+        td.width = kTargetWidth;
+        td.height = kTargetHeight;
         td.format = rhi::Format::RGBA8_SRGB;
         td.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
         target = host.GetDevice()->CreateTexture(td);
@@ -71,8 +71,8 @@ struct ResetRig {
     FrameStatus Render() {
         FrameTarget ft;
         ft.texture = target;
-        ft.width = kWidth;
-        ft.height = kHeight;
+        ft.width = kTargetWidth;
+        ft.height = kTargetHeight;
         ft.format = rhi::Format::RGBA8_SRGB;
         ft.final_state = rhi::ResourceState::CopySrc;
         return frame.Render(&scene.Scene(), &camera, &ft);
@@ -254,7 +254,7 @@ TEST_CASE("An offscreen frame is pixel-identical before and after a reset on a r
     auto render_and_read = [&](std::vector<unsigned char>* out) {
         REQUIRE(rig.Render() == FrameStatus::Ok);
         rig.host.GetDevice()->WaitIdle();
-        out->assign(static_cast<usize>(kWidth) * kHeight * 4, 0);
+        out->assign(static_cast<usize>(kTargetWidth) * kTargetHeight * 4, 0);
         REQUIRE(rig.host.GetDevice()->ReadbackTexture(rig.target, 0, 0, out->data(), out->size(), rhi::ResourceState::CopySrc));
     };
     std::vector<unsigned char> before;

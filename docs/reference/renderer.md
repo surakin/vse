@@ -814,6 +814,36 @@ usize Count() const;
 
 Returns the number of registered owners.
 
+### `ReleaseFrom(u32)` {#renderer-deviceresources-releasefrom-u32}
+
+`method renderer::DeviceResources::ReleaseFrom` — defined in `engine/renderer/device_resources.h`
+
+```cpp
+void ReleaseFrom(u32 first_tier);
+```
+
+Releases the live owners at `first_tier` and above, highest first, leaving the lower tiers alone (a pipeline rebuild releases tiers 3 and 4 only). `CurrentDevice` is unchanged.
+
+| Field | Value |
+|---|---|
+| Parameter `first_tier` | the lowest tier to release. |
+
+### `RecreateFrom(u32)` {#renderer-deviceresources-recreatefrom-u32}
+
+`method renderer::DeviceResources::RecreateFrom` — defined in `engine/renderer/device_resources.h`
+
+```cpp
+bool RecreateFrom(u32 first_tier);
+```
+
+Recreates the released owners at `first_tier` and above, lowest first, on the current device.
+
+| Field | Value |
+|---|---|
+| Parameter `first_tier` | the lowest tier to recreate. |
+| Returns | false if an owner failed; the owners at `first_tier` and above are released again and `FailedOwner` names it. |
+| Aborts | there is no current device (the registry is fully released). |
+
 ### `FailedOwner()` {#renderer-deviceresources-failedowner-const}
 
 `method renderer::DeviceResources::FailedOwner` — defined in `engine/renderer/device_resources.h`
@@ -9071,6 +9101,46 @@ TransientPoolDesc pool;
 
 Capacities and aging of the transient pool.
 
+### `host` {#renderer-rendererdesc-host}
+
+`variable renderer::RendererDesc::host` — defined in `engine/renderer/renderer.h`
+
+```cpp
+rhi::DeviceHost* host;
+```
+
+The device host the renderer takes its device and swapchain from and replaces them through (for `ApplySettings`), or null for the borrowed-device path in which only `None` and `Dynamic` settings can be applied. When set, `device` and `swapchain` must be the host's current ones; the renderer follows the host from then on. Borrowed; must outlive the renderer.
+
+### `create_info` {#renderer-rendererdesc-create-info}
+
+`variable renderer::RendererDesc::create_info` — defined in `engine/renderer/renderer.h`
+
+```cpp
+rhi::DeviceCreateInfo create_info;
+```
+
+What every device is created with besides the settings (the window, application name, pipeline cache). Backend, adapter, validation, sync validation and frames in flight come from the settings. `window` and the strings must outlive the renderer.
+
+### `window` {#renderer-rendererdesc-window}
+
+`variable renderer::RendererDesc::window` — defined in `engine/renderer/renderer.h`
+
+```cpp
+os::Window* window;
+```
+
+The window the swapchain presents to, for fullscreen and the capabilities; null for none. Borrowed.
+
+### `initial_settings` {#renderer-rendererdesc-initial-settings}
+
+`variable renderer::RendererDesc::initial_settings` — defined in `engine/renderer/renderer.h`
+
+```cpp
+const RenderSettings* initial_settings;
+```
+
+The settings the host's device was created with. Null with a host means "derive them from `create_info`"; without a host, the defaults.
+
 ### `resources` {#renderer-rendererdesc-resources}
 
 `variable renderer::RendererDesc::resources` — defined in `engine/renderer/renderer.h`
@@ -9165,6 +9235,46 @@ u64 swapchain_recreations;
 
 Times the swapchain reported `Recreated` (a resize); targets sized from it follow because the graph is rebuilt.
 
+### `applies` {#renderer-rendererstats-applies}
+
+`variable renderer::RendererStats::applies` — defined in `engine/renderer/renderer.h`
+
+```cpp
+u64 applies[5];
+```
+
+Settings applications that performed each cost class (`CostClass` as the index).
+
+### `resets` {#renderer-rendererstats-resets}
+
+`variable renderer::RendererStats::resets` — defined in `engine/renderer/renderer.h`
+
+```cpp
+u64 resets;
+```
+
+Device resets done by `ApplySettings`.
+
+### `rollbacks` {#renderer-rendererstats-rollbacks}
+
+`variable renderer::RendererStats::rollbacks` — defined in `engine/renderer/renderer.h`
+
+```cpp
+u64 rollbacks;
+```
+
+Resets or rebuilds that failed and were undone by restoring the previous settings.
+
+### `last_reset_ms` {#renderer-rendererstats-last-reset-ms}
+
+`variable renderer::RendererStats::last_reset_ms` — defined in `engine/renderer/renderer.h`
+
+```cpp
+f64 last_reset_ms;
+```
+
+How long the last reset took, in milliseconds.
+
 ### `last_fence` {#renderer-rendererstats-last-fence}
 
 `variable renderer::RendererStats::last_fence` — defined in `engine/renderer/renderer.h`
@@ -9174,6 +9284,160 @@ rhi::FenceValue last_fence;
 ```
 
 The fence value of the latest submission.
+
+## `ApplyResult` {#renderer-applyresult}
+
+`struct renderer::ApplyResult` — defined in `engine/renderer/renderer.h`
+
+```cpp
+struct ApplyResult { ... }
+```
+
+What `Renderer::ApplySettings` did.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data (about 1.5 KB). |
+
+### `ok` {#renderer-applyresult-ok}
+
+`variable renderer::ApplyResult::ok` — defined in `engine/renderer/renderer.h`
+
+```cpp
+bool ok;
+```
+
+The settings are in force (or were already).
+
+### `queued` {#renderer-applyresult-queued}
+
+`variable renderer::ApplyResult::queued` — defined in `engine/renderer/renderer.h`
+
+```cpp
+bool queued;
+```
+
+The renderer was inside a frame; the request waits for the start of the next `RenderFrame` and nothing was done yet.
+
+### `rolled_back` {#renderer-applyresult-rolled-back}
+
+`variable renderer::ApplyResult::rolled_back` — defined in `engine/renderer/renderer.h`
+
+```cpp
+bool rolled_back;
+```
+
+A step failed and the previous settings were restored; the renderer works as before.
+
+### `device_lost` {#renderer-applyresult-device-lost}
+
+`variable renderer::ApplyResult::device_lost` — defined in `engine/renderer/renderer.h`
+
+```cpp
+bool device_lost;
+```
+
+Restoring failed too: the renderer is in the device-lost state (`RenderFrame` returns `DeviceLost`).
+
+### `performed` {#renderer-applyresult-performed}
+
+`variable renderer::ApplyResult::performed` — defined in `engine/renderer/renderer.h`
+
+```cpp
+CostClass performed;
+```
+
+The cost class actually performed.
+
+### `change` {#renderer-applyresult-change}
+
+`variable renderer::ApplyResult::change` — defined in `engine/renderer/renderer.h`
+
+```cpp
+SettingsChange change;
+```
+
+The settings that changed, and any that could not be applied for a missing capability.
+
+### `reason` {#renderer-applyresult-reason}
+
+`variable renderer::ApplyResult::reason` — defined in `engine/renderer/renderer.h`
+
+```cpp
+char reason[192];
+```
+
+Why it failed; empty on success.
+
+### `total_ms` {#renderer-applyresult-total-ms}
+
+`variable renderer::ApplyResult::total_ms` — defined in `engine/renderer/renderer.h`
+
+```cpp
+f64 total_ms;
+```
+
+Milliseconds spent in the whole change.
+
+### `release_ms` {#renderer-applyresult-release-ms}
+
+`variable renderer::ApplyResult::release_ms` — defined in `engine/renderer/renderer.h`
+
+```cpp
+f64 release_ms;
+```
+
+Milliseconds spent releasing owners (a pipeline rebuild).
+
+### `device_ms` {#renderer-applyresult-device-ms}
+
+`variable renderer::ApplyResult::device_ms` — defined in `engine/renderer/renderer.h`
+
+```cpp
+f64 device_ms;
+```
+
+Milliseconds spent replacing the device (release, destroy, create, rebuild: the whole `DeviceHost::Recreate`).
+
+### `swapchain_ms` {#renderer-applyresult-swapchain-ms}
+
+`variable renderer::ApplyResult::swapchain_ms` — defined in `engine/renderer/renderer.h`
+
+```cpp
+f64 swapchain_ms;
+```
+
+Milliseconds spent reconfiguring the swapchain.
+
+### `rebuild_ms` {#renderer-applyresult-rebuild-ms}
+
+`variable renderer::ApplyResult::rebuild_ms` — defined in `engine/renderer/renderer.h`
+
+```cpp
+f64 rebuild_ms;
+```
+
+Milliseconds spent rebuilding owners (a pipeline rebuild).
+
+## `ResetBeginFn` {#renderer-resetbeginfn}
+
+`alias renderer::ResetBeginFn` — defined in `engine/renderer/renderer.h`
+
+```cpp
+using ResetBeginFn = void (*)(void* user, const char* stage);
+```
+
+Called when a settings change that touches the GPU starts. `stage` is "swapchain", "pipelines" or "device".
+
+## `ResetEndFn` {#renderer-resetendfn}
+
+`alias renderer::ResetEndFn` — defined in `engine/renderer/renderer.h`
+
+```cpp
+using ResetEndFn = void (*)(void* user, bool ok);
+```
+
+Called when it ends; `ok` is false if it failed (the renderer then restored the previous settings or is device-lost).
 
 ## `Renderer` {#renderer-renderer}
 
@@ -9242,6 +9506,129 @@ Points the renderer at a new device and swapchain after the device was replaced.
 | Parameter `swapchain` | the new swapchain, or null for offscreen rendering. |
 | Aborts | `device` is null, or the renderer was built without `RendererDesc::resources` (its pool could not follow the device). |
 | Ownership | both are borrowed. |
+
+### `ApplySettings(const RenderSettings&)` {#renderer-renderer-applysettings-const-rendersettings-amp}
+
+`method renderer::Renderer::ApplySettings` — defined in `engine/renderer/renderer.h`
+
+```cpp
+ApplyResult ApplySettings(const RenderSettings& requested);
+```
+
+Changes the rendering settings at run time, doing the cheapest sufficient thing.
+
+The change is diffed against the settings in force ([`renderer::DiffSettings`](#renderer-diffsettings-const-rendersettings-amp-const-rendersettings-amp-const-capabilities-amp)) and its highest cost class is performed: `None` and `Dynamic` store the values; `Swapchain` reconfigures the swapchain (and asks the window for fullscreen); `PipelineRebuild` releases and recreates the registry's tier 3 and above (materials, passes); `DeviceReset` replaces the device through the host and every registered owner rebuilds. If a step fails the previous settings are restored; if that fails too the renderer is device-lost. Settings that need a missing capability (fullscreen, HDR) are left as they were.
+
+Called inside a frame (from the build callback, which runs on the owning thread) the request is queued and applied at the start of the next `RenderFrame`; a newer request replaces a pending one, also one made later outside a frame. Call from the owning thread only (never from a job); workers that record must be idle.
+
+| Field | Value |
+|---|---|
+| Parameter `requested` | the settings wanted. |
+| Returns | what happened; `queued` if it waits for the frame boundary. |
+| Fails | `ok` is false with `reason` set; `rolled_back` or `device_lost` say what state the renderer is in. |
+
+### `Settings()` {#renderer-renderer-settings-const}
+
+`method renderer::Renderer::Settings` — defined in `engine/renderer/renderer.h`
+
+```cpp
+const RenderSettings& Settings() const;
+```
+
+Returns the settings in force.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `LastApply()` {#renderer-renderer-lastapply-const}
+
+`method renderer::Renderer::LastApply` — defined in `engine/renderer/renderer.h`
+
+```cpp
+const ApplyResult& LastApply() const;
+```
+
+Returns what the last `ApplySettings` (also one applied at a frame boundary) did.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `GetCapabilities()` {#renderer-renderer-getcapabilities-const}
+
+`method renderer::Renderer::GetCapabilities` — defined in `engine/renderer/renderer.h`
+
+```cpp
+const Capabilities& GetCapabilities() const;
+```
+
+Returns what the device and window can do now, as the settings layer sees it.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `SetResetCallbacks(ResetBeginFn,ResetEndFn,void*)` {#renderer-renderer-setresetcallbacks-resetbeginfn-resetendfn-void-star}
+
+`method renderer::Renderer::SetResetCallbacks` — defined in `engine/renderer/renderer.h`
+
+```cpp
+void SetResetCallbacks(ResetBeginFn begin, ResetEndFn end, void* user);
+```
+
+Sets the functions called around a settings change that touches the GPU, so the application can show a message, pause audio or drop its own GPU caches.
+
+| Field | Value |
+|---|---|
+| Parameter `begin` | called with the stage name; may be null. |
+| Parameter `end` | called with the outcome; may be null. |
+| Parameter `user` | passed to both. |
+| Ownership | `user` is borrowed. |
+
+### `GetDevice()` {#renderer-renderer-getdevice-const}
+
+`method renderer::Renderer::GetDevice` — defined in `engine/renderer/renderer.h`
+
+```cpp
+rhi::Device* GetDevice() const;
+```
+
+Returns the device the renderer draws on now. After a reset or a rollback it is a new device: rebind your own pointers from this (also when the end callback reports failure, since a rollback creates the previous device again).
+
+| Field | Value |
+|---|---|
+| Fails | returns null once the renderer is broken (a failed change could not be undone). |
+| Ownership | borrowed from the host. |
+
+### `GetSwapchain()` {#renderer-renderer-getswapchain-const}
+
+`method renderer::Renderer::GetSwapchain` — defined in `engine/renderer/renderer.h`
+
+```cpp
+rhi::Swapchain* GetSwapchain() const;
+```
+
+Returns the swapchain the renderer presents to now, or null.
+
+| Field | Value |
+|---|---|
+| Fails | returns null without a swapchain or once the renderer is broken. |
+| Ownership | borrowed from the host. |
+
+### `IsBroken()` {#renderer-renderer-isbroken-const}
+
+`method renderer::Renderer::IsBroken` — defined in `engine/renderer/renderer.h`
+
+```cpp
+bool IsBroken() const;
+```
+
+Returns whether a failed change left the renderer without a device (every frame returns `DeviceLost`).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `RenderFrame(const RenderScene*,const Camera*,const FrameTarget*)` {#renderer-renderer-renderframe-const-renderscene-star-const-camera-star-const-frametarget-star}
 

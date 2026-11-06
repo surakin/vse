@@ -6,6 +6,7 @@
 
 #include "debug/crash_state.h"
 #include "log/assert.h"
+#include "os/os.h"
 #include "renderer/renderer_log.h"
 
 namespace engine_placeholder::renderer {
@@ -31,10 +32,28 @@ const RendererDesc& Checked(const RendererDesc& desc) {
 
 } // namespace
 
-Renderer::Renderer(const RendererDesc& desc) : desc_(Checked(desc)), arena_(desc.arena_bytes), pool_(desc.device, desc.pool) {
+Renderer::Renderer(const RendererDesc& desc)
+    : desc_(Checked(desc)), settings_(), pending_(), arena_(desc.arena_bytes), pool_(desc.device, desc.pool) {
+    if (desc.initial_settings != nullptr) {
+        settings_ = *desc.initial_settings;
+    }
     if (!pool_.RegisterWith(desc.resources)) {
         RenderLog(LogVerbosity::Error, "Renderer: the transient pool could not register with the device resources");
     }
+    if (desc.initial_settings == nullptr && desc.host != nullptr) {
+        // The host's device was made from create_info: the settings in force must say so, or the next reset would switch
+        // backend, adapter or validation to the defaults.
+        settings_.SetEnum(settings::kBackend, desc.create_info.backend == rhi::Backend::Null ? 0 : 1);
+        settings_.SetEnum(settings::kValidation, desc.create_info.validation == rhi::ValidationSetting::Off ? 1 : desc.create_info.validation == rhi::ValidationSetting::On ? 2 : 0);
+        settings_.SetBool(settings::kSyncValidation, desc.create_info.sync_validation);
+        settings_.SetInt(settings::kFramesInFlight, desc.create_info.frames_in_flight);
+        if (desc.create_info.adapter != nullptr) {
+            settings_.SetText(settings::kAdapter, desc.create_info.adapter);
+        }
+    }
+    active_info_ = desc.create_info;
+    BuildCreateInfo(settings_, active_adapter_, &active_info_);
+    RefreshCapabilities(true);
 }
 
 void Renderer::Rebind(rhi::Device* device, rhi::Swapchain* swapchain) {
@@ -42,6 +61,235 @@ void Renderer::Rebind(rhi::Device* device, rhi::Swapchain* swapchain) {
     ENGINE_ASSERT(desc_.resources != nullptr, "Renderer::Rebind: the renderer was built without a DeviceResources registry, so its pool cannot follow the device");
     desc_.device = device;
     desc_.swapchain = swapchain;
+}
+
+namespace {
+
+f64 NowMs() { return static_cast<f64>(os::MonotonicTimeNanos()) / 1.0e6; }
+
+void SetReason(ApplyResult* r, const char* text) { std::snprintf(r->reason, sizeof(r->reason), "%s", text); }
+
+} // namespace
+
+void Renderer::BuildCreateInfo(const RenderSettings& settings, char* adapter_buffer, rhi::DeviceCreateInfo* out) const {
+    *out = desc_.create_info;
+    out->backend = settings.GetEnum(settings::kBackend) == 0 ? rhi::Backend::Null : rhi::Backend::Vulkan;
+    const char* adapter = settings.GetText(settings::kAdapter);
+    if (adapter != nullptr && adapter[0] != '\0') {
+        std::snprintf(adapter_buffer, 64, "%s", adapter);
+        out->adapter = adapter_buffer;
+    } else {
+        adapter_buffer[0] = '\0';
+        out->adapter = nullptr;
+    }
+    const u32 validation = settings.GetEnum(settings::kValidation);
+    out->validation = validation == 1 ? rhi::ValidationSetting::Off : validation == 2 ? rhi::ValidationSetting::On : rhi::ValidationSetting::Auto;
+    out->sync_validation = settings.GetBool(settings::kSyncValidation);
+    out->frames_in_flight = static_cast<u32>(settings.GetInt(settings::kFramesInFlight));
+}
+
+rhi::SwapchainDesc Renderer::BuildSwapchainDesc(const RenderSettings& settings) {
+    rhi::SwapchainDesc d;
+    const u32 mode = settings.GetEnum(settings::kPresentMode);
+    d.present_mode = mode == 1 ? rhi::PresentMode::Mailbox : mode == 2 ? rhi::PresentMode::Immediate : rhi::PresentMode::Fifo;
+    d.width = static_cast<u32>(settings.GetInt(settings::kWidth));
+    d.height = static_cast<u32>(settings.GetInt(settings::kHeight));
+    const u32 format = settings.GetEnum(settings::kSwapchainFormat);
+    d.format = format == 1 ? rhi::Format::BGRA8_SRGB : format == 2 ? rhi::Format::RGBA16_Float : rhi::Format::Undefined;
+    const u32 hdr = settings.GetEnum(settings::kHdr);
+    d.hdr = hdr == 1 ? rhi::HdrMode::ScRgbLinear : hdr == 2 ? rhi::HdrMode::Hdr10 : rhi::HdrMode::Off;
+    return d;
+}
+
+void Renderer::RefreshCapabilities(bool adapters_too) {
+    const u32 adapter_count = caps_.AdapterCount();
+    caps_ = Capabilities();
+    if (desc_.window != nullptr && desc_.window->SupportsFullscreen()) {
+        caps_.Add("fullscreen");
+    }
+    if (desc_.swapchain != nullptr && desc_.swapchain->Capabilities().hdr_scrgb) {
+        caps_.Add("hdr");
+    }
+    u32 suitable = adapter_count; // only a device reset can change the adapter list
+    if (adapters_too) {
+        rhi::AdapterList adapters;
+        suitable = 0;
+        if (rhi::EnumerateAdapters(active_info_, &adapters)) {
+            for (u32 i = 0; i < adapters.count; ++i) {
+                suitable += adapters.items[i].suitable ? 1 : 0;
+            }
+        }
+    }
+    caps_.SetAdapterCount(suitable);
+}
+
+ApplyResult Renderer::ApplySettings(const RenderSettings& requested) {
+    if (in_frame_) {
+        pending_ = requested; // a newer request replaces an older one
+        has_pending_ = true;
+        ApplyResult queued;
+        queued.queued = true;
+        queued.ok = true;
+        return queued;
+    }
+    has_pending_ = false; // a newer request replaces a queued one
+    last_apply_ = ApplyNow(requested);
+    return last_apply_;
+}
+
+// Puts the previous device back after a failed replacement. Returns whether it worked.
+bool Renderer::RollbackDevice(ApplyResult* result) {
+    rhi::DeviceHost* host = desc_.host;
+    char adapter[64];
+    rhi::DeviceCreateInfo info;
+    BuildCreateInfo(settings_, adapter, &info);
+    const rhi::SwapchainDesc sc = BuildSwapchainDesc(settings_);
+    host->Destroy();
+    if (!host->Create(info, sc)) {
+        SetReason(result, host->LastError()[0] != '\0' ? host->LastError() : "the previous device could not be created again");
+        return false;
+    }
+    std::snprintf(active_adapter_, sizeof(active_adapter_), "%s", adapter);
+    active_info_ = info;
+    active_info_.adapter = active_adapter_[0] != '\0' ? active_adapter_ : nullptr;
+    desc_.device = host->GetDevice();
+    desc_.swapchain = host->GetSwapchain();
+    return true;
+}
+
+ApplyResult Renderer::ApplyNow(const RenderSettings& requested) {
+    ApplyResult result;
+    const f64 start = NowMs();
+    if (broken_) {
+        SetReason(&result, "the renderer has no device (an earlier settings change failed and could not be undone)");
+        return result;
+    }
+    result.change = DiffSettings(settings_, requested, caps_); // also lists what needs a missing capability
+    RenderSettings resolved = ResolveSettings(settings_, requested, caps_);
+    resolved.SetGeneration(settings_.Generation() + 1); // changes only when the change is applied
+    if (!result.change.Any()) {
+        result.ok = true;
+        return result;
+    }
+    CostClass cost = result.change.cost;
+    rhi::DeviceHost* host = desc_.host;
+    if (cost > CostClass::Dynamic && host == nullptr) {
+        SetReason(&result, "this settings change needs a DeviceHost and the renderer was built without one");
+        return result;
+    }
+    if (cost == CostClass::PipelineRebuild && desc_.resources == nullptr) {
+        cost = CostClass::DeviceReset; // nothing registered to rebuild selectively: do the full thing
+    }
+    result.performed = cost;
+
+    if (cost <= CostClass::Dynamic) {
+        settings_ = resolved;
+    } else {
+        if (reset_begin_ != nullptr) {
+            reset_begin_(reset_user_, cost == CostClass::Swapchain ? "swapchain" : cost == CostClass::PipelineRebuild ? "pipelines" : "device");
+        }
+        bool ok = true;
+        host->GetDevice()->WaitIdle(); // frames in flight drained; the build callback is not running
+        if (cost == CostClass::Swapchain) {
+            f64 t = NowMs();
+            const bool fullscreen_changed = resolved.GetBool(settings::kFullscreen) != settings_.GetBool(settings::kFullscreen) && desc_.window != nullptr;
+            if (fullscreen_changed) {
+                desc_.window->SetFullscreen(resolved.GetBool(settings::kFullscreen));
+            }
+            // A device with no swapchain (offscreen) has nothing to reconfigure: the values are just stored.
+            const rhi::SwapchainStatus status =
+                host->GetSwapchain() != nullptr ? host->ReconfigureSwapchain(BuildSwapchainDesc(resolved)) : rhi::SwapchainStatus::Ok;
+            result.swapchain_ms = NowMs() - t;
+            if (status == rhi::SwapchainStatus::Lost) {
+                ok = false;
+                SetReason(&result, "the swapchain could not be reconfigured");
+                if (fullscreen_changed) {
+                    desc_.window->SetFullscreen(settings_.GetBool(settings::kFullscreen)); // the window goes back too
+                }
+                if (host->ReconfigureSwapchain(BuildSwapchainDesc(settings_)) == rhi::SwapchainStatus::Lost) {
+                    result.device_lost = true;
+                } else {
+                    result.rolled_back = true;
+                }
+            }
+        } else if (cost == CostClass::PipelineRebuild) {
+            f64 t = NowMs();
+            desc_.resources->ReleaseFrom(tiers::kMaterials);
+            result.release_ms = NowMs() - t;
+            t = NowMs();
+            if (!desc_.resources->RecreateFrom(tiers::kMaterials)) {
+                ok = false;
+                SetReason(&result, "an owner could not be rebuilt");
+                result.rebuild_ms = NowMs() - t;
+                // Try the same rebuild once more (the settings it read have not changed); if that fails the device is unusable.
+                result.rolled_back = desc_.resources->RecreateFrom(tiers::kMaterials);
+                result.device_lost = !result.rolled_back;
+            } else {
+                result.rebuild_ms = NowMs() - t;
+            }
+        } else {
+            char adapter[64];
+            rhi::DeviceCreateInfo info;
+            BuildCreateInfo(resolved, adapter, &info);
+            const rhi::SwapchainDesc sc = BuildSwapchainDesc(resolved);
+            f64 t = NowMs();
+            ok = host->Recreate(info, sc);
+            result.device_ms = NowMs() - t;
+            if (ok) {
+                std::snprintf(active_adapter_, sizeof(active_adapter_), "%s", adapter);
+                active_info_ = info;
+                active_info_.adapter = active_adapter_[0] != '\0' ? active_adapter_ : nullptr;
+                desc_.device = host->GetDevice();
+                desc_.swapchain = host->GetSwapchain();
+                ++stats_.resets;
+            } else {
+                SetReason(&result, host->LastError()[0] != '\0' ? host->LastError() : "the device could not be replaced");
+                if (RollbackDevice(&result)) {
+                    result.rolled_back = true;
+                } else {
+                    result.device_lost = true;
+                }
+            }
+        }
+        if (ok) {
+            if (host->GetDevice() != nullptr) {
+                desc_.device = host->GetDevice();
+                desc_.swapchain = host->GetSwapchain();
+            }
+            settings_ = resolved;
+        } else {
+            if (result.rolled_back) {
+                ++stats_.rollbacks;
+            }
+            if (result.device_lost) {
+                broken_ = true;
+                desc_.device = nullptr; // nothing valid to hand out
+                desc_.swapchain = nullptr;
+            }
+        }
+        if (reset_end_ != nullptr) {
+            reset_end_(reset_user_, ok);
+        }
+        result.ok = ok;
+        if (ok) {
+            RefreshCapabilities(cost == CostClass::DeviceReset);
+        }
+    }
+    if (cost <= CostClass::Dynamic) {
+        result.ok = true;
+    }
+    if (result.ok) {
+        ++stats_.applies[static_cast<usize>(result.performed)];
+        static std::atomic<u64>* const generation = debug::CrashStateCounter("settings_generation");
+        if (generation != nullptr) {
+            generation->store(settings_.Generation(), std::memory_order_relaxed);
+        }
+    }
+    result.total_ms = NowMs() - start;
+    if (cost == CostClass::DeviceReset) {
+        stats_.last_reset_ms = result.total_ms;
+    }
+    return result;
 }
 
 void Renderer::SetError(const char* fmt, ...) {
@@ -79,6 +327,33 @@ FrameStatus Renderer::Abandon(FrameStatus status, bool acquired) {
 }
 
 FrameStatus Renderer::RenderFrame(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen) {
+    error_[0] = 0;
+    if (broken_) {
+        SetError("the renderer has no device");
+        ++stats_.frames_lost;
+        return FrameStatus::DeviceLost;
+    }
+    if (has_pending_) {
+        // A settings change asked for during a frame is applied at the boundary, before anything of this frame exists.
+        has_pending_ = false;
+        last_apply_ = ApplyNow(pending_);
+        if (!last_apply_.ok) {
+            SetError("settings change failed: %s", last_apply_.reason);
+            if (broken_) {
+                ++stats_.frames_lost;
+                return FrameStatus::DeviceLost;
+            }
+            ++stats_.frames_failed;
+            return FrameStatus::Failed;
+        }
+    }
+    in_frame_ = true;
+    const FrameStatus status = RenderFrameImpl(scene, camera, offscreen);
+    in_frame_ = false;
+    return status;
+}
+
+FrameStatus Renderer::RenderFrameImpl(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen) {
     rhi::Device* device = desc_.device;
     error_[0] = 0;
     if (desc_.swapchain == nullptr) {

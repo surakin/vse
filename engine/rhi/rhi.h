@@ -39,6 +39,9 @@ struct FaultInjection {
     /// Make `Device::RecreateSurface` fail, as if the adapter could not present to the new surface, so the caller's
     /// fallback to a full reset is exercised. The null backend honors it; the Vulkan backend ignores it.
     bool fail_surface_recreate = false;
+    /// Make `Device::CreateSwapchain` fail (returns null), to exercise the rollback of a settings change. The null backend
+    /// honors it; the Vulkan backend ignores it.
+    bool fail_swapchain_create = false;
 };
 
 /// What [[rhi::CreateDevice]] needs to know.

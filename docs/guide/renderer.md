@@ -739,6 +739,76 @@ disk makes that cheap). Eager moves all the compile cost into the reset, so no f
 at a loading screen. After a reset call [[renderer::Renderer::Rebind]] with the new device and swapchain; the pool and the passes are
 rebuilt through the registry.
 
+### Changing settings at run time
+
+[[renderer::Renderer::ApplySettings]] changes any rendering setting while the program runs. It diffs the request against the settings in
+force and performs the **cheapest sufficient action**, the highest cost class among the changed settings:
+
+| Class | What the renderer does | Example settings |
+|---|---|---|
+| `None` | stores the value | a setting nothing reads yet |
+| `Dynamic` | stores it; the next frame reads it | `gbuffer_debug_layer`, `render_scale` |
+| `Swapchain` | `ReconfigureSwapchain` (and a fullscreen request to the window) | `present_mode`, `width`, `height`, `fullscreen`, `swapchain_format`, `hdr` |
+| `PipelineRebuild` | releases and recreates the registry's tiers 3 and above (materials, passes); the device stays | `shader_quality` |
+| `DeviceReset` | `DeviceHost::Recreate`; every registered owner rebuilds (the sequence in the RHI guide) | `backend`, `adapter`, `validation`, `sync_validation`, `frames_in_flight` |
+
+**When it runs.** Called between frames it applies at once. Called inside a frame (from the build callback or a job) it is *queued* and
+applied at the start of the next `RenderFrame`, before anything of that frame exists; a newer request replaces a pending one. It runs on
+the owning thread with the device idle (`Quiesce`), so no worker is still recording; the job scheduler itself is not touched. While a
+change runs, the window keeps showing its last picture, and the first frame after a swapchain change is a normal frame into the new
+images (never uninitialized memory). The renderer calls the functions given to [[renderer::Renderer::SetResetCallbacks]] around any change
+that touches the GPU, so the application can log a message, pause audio or drop its own GPU caches.
+
+**Failure.** If the new device or swapchain cannot be made, or an owner cannot rebuild, the renderer puts the **previous settings** back
+(it creates the previous device again). The result has `rolled_back` set and `reason` says why; the settings generation does not change.
+If the rollback fails too, the renderer is in the device-lost state: `RenderFrame` returns `DeviceLost` and `ApplySettings` fails. A
+rollback creates a new device, so rebind your own pointers from [[renderer::Renderer::GetDevice]] also when the end callback reports a
+failure. A setting that needs a missing capability (fullscreen without a window that can do it, HDR on an SDR surface) is left as it was
+and listed in `ApplyResult::change.unsupported`. A renderer built without a `DeviceHost` can apply `None` and `Dynamic` changes only.
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "renderer/renderer.h"
+#include "rhi/device_host.h"
+
+using namespace engine_placeholder;
+
+static bool Build(const renderer::FrameContext&, void*) { return true; }
+
+int main() {
+    renderer::DeviceResources registry;
+    rhi::DeviceHost host;
+    host.AddObserver(&registry, 0);
+    rhi::DeviceCreateInfo info;
+    info.backend = rhi::Backend::Null;
+    host.Create(info, rhi::SwapchainDesc{});
+
+    renderer::RenderSettings initial;                              // what the host's device was created with
+    initial.SetEnum(renderer::settings::kBackend, 0);
+    renderer::RendererDesc desc;
+    desc.initial_settings = &initial;
+    desc.device = host.GetDevice();
+    desc.host = &host;
+    desc.create_info = info;
+    desc.resources = &registry;
+    desc.build = &Build;
+    renderer::Renderer renderer(desc);
+
+    renderer::RenderSettings wanted = renderer.Settings();
+    wanted.SetEnum(renderer::settings::kGBufferDebugLayer, 2);      // dynamic: no GPU work
+    renderer::ApplyResult dynamic = renderer.ApplySettings(wanted);
+    wanted.SetText(renderer::settings::kAdapter, "null-integrated"); // device reset
+    renderer::ApplyResult reset = renderer.ApplySettings(wanted);
+    std::printf("%s ok=%d, %s ok=%d, adapter %s\n", renderer::CostClassName(dynamic.performed), dynamic.ok,
+                renderer::CostClassName(reset.performed), reset.ok, host.GetDevice()->Adapter().id);
+    return 0;
+}
+```
+```output
+dynamic ok=1, device-reset ok=1, adapter null-integrated
+```
+
 ### The renderer demo
 
 `game/renderer_demo` puts the pieces together: a scene of 540 objects in eight materials, 300 point lights, a sun and ambient

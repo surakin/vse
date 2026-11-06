@@ -120,6 +120,7 @@ test:renderer_demo_*                            4
 tests/renderer/render_settings_test.cpp         7
 tests/renderer/device_resources_test.cpp        7
 tests/renderer/recreatable_renderer_test.cpp    7
+tests/renderer/apply_settings_test.cpp          7
 tests/rhi/adapter_test.cpp                      7
 tests/rhi/device_host_test.cpp                  7
 tests/foundation/window_fullscreen_test.cpp     7

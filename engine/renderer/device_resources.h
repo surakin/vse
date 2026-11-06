@@ -106,6 +106,19 @@ public:
     /// Returns the number of registered owners.
     usize Count() const { return count_; }
 
+    /// Releases the live owners at `first_tier` and above, highest first, leaving the lower tiers alone (a pipeline rebuild
+    /// releases tiers 3 and 4 only). `CurrentDevice` is unchanged.
+    ///
+    /// Param first_tier: the lowest tier to release.
+    void ReleaseFrom(u32 first_tier);
+
+    /// Recreates the released owners at `first_tier` and above, lowest first, on the current device.
+    ///
+    /// Param first_tier: the lowest tier to recreate.
+    /// Returns: false if an owner failed; the owners at `first_tier` and above are released again and `FailedOwner` names it.
+    /// Aborts: there is no current device (the registry is fully released).
+    bool RecreateFrom(u32 first_tier);
+
     /// Returns the name of the owner whose `Recreate` failed last, or null.
     ///
     /// Ownership: the string belongs to that owner and is valid until it is destroyed.
@@ -143,6 +156,7 @@ private:
         bool live = false;
     };
 
+    void ReleaseLive(u32 first_tier);
     void ReleaseAllLive();
     void Compact();
 

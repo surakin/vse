@@ -35,6 +35,8 @@ struct NullDeviceOptions {
     u32 lose_device_at_frame = 0;
     /// Makes `RecreateSurface` fail, to exercise the fallback to a full reset.
     bool fail_surface_recreate = false;
+    /// Makes `CreateSwapchain` fail.
+    bool fail_swapchain_create = false;
     /// The adapter the device reports from `Device::Adapter`; the default is the first of [[rhi::DefaultNullAdapters]].
     /// [[rhi::CreateDevice]] fills it from the requested adapter.
     AdapterInfo adapter = DefaultAdapter();
