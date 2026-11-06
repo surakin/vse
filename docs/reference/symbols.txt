@@ -340,12 +340,48 @@ Vec4::Length() const	function	foundation/math	vec4-length-const	foundation-math.
 Vec4::Normalized() const	function	foundation/math	vec4-normalized-const	foundation-math.md	engine/foundation/math/vector.h:217
 Vec4::operator==(const Vec4&) const	function	foundation/math	vec4-operator-eq-eq-const-vec4-amp-const	foundation-math.md	engine/foundation/math/vector.h:224
 Vec4::operator!=(const Vec4&) const	function	foundation/math	vec4-operator-not-eq-const-vec4-amp-const	foundation-math.md	engine/foundation/math/vector.h:226
-WriteSinkFn	alias	foundation/log	writesinkfn	foundation-log.md	engine/foundation/log/assert.h:11
-ExitSinkFn	alias	foundation/log	exitsinkfn	foundation-log.md	engine/foundation/log/assert.h:13
-SetWriteSinkForTesting(WriteSinkFn)	function	foundation/log	setwritesinkfortesting-writesinkfn	foundation-log.md	engine/foundation/log/assert.h:20
-SetExitSinkForTesting(ExitSinkFn)	function	foundation/log	setexitsinkfortesting-exitsinkfn	foundation-log.md	engine/foundation/log/assert.h:27
-AssertFail(const char*,int,const char*)	function	foundation/log	assertfail-const-char-star-int-const-char-star	foundation-log.md	engine/foundation/log/assert.h:38
-ENGINE_ASSERT	macro	foundation/log	engine-assert	foundation-log.md	engine/foundation/log/assert.h:48
+ENGINE_DEBUG_CHECKS	macro	foundation/log	engine-debug-checks	foundation-log.md	engine/foundation/log/assert.h:27
+ENGINE_SLOW_CHECKS	macro	foundation/log	engine-slow-checks	foundation-log.md	engine/foundation/log/assert.h:39
+WriteSinkFn	alias	foundation/log	writesinkfn	foundation-log.md	engine/foundation/log/assert.h:49
+SetWriteSinkForTesting(WriteSinkFn)	function	foundation/log	setwritesinkfortesting-writesinkfn	foundation-log.md	engine/foundation/log/assert.h:56
+AssertKind	enum	foundation/log	assertkind	foundation-log.md	engine/foundation/log/assert.h:59
+AssertKind::Assert	enumerator	foundation/log	assertkind-assert	foundation-log.md	engine/foundation/log/assert.h:60
+AssertKind::Ensure	enumerator	foundation/log	assertkind-ensure	foundation-log.md	engine/foundation/log/assert.h:61
+AssertKind::Verify	enumerator	foundation/log	assertkind-verify	foundation-log.md	engine/foundation/log/assert.h:62
+AssertKind::Unreachable	enumerator	foundation/log	assertkind-unreachable	foundation-log.md	engine/foundation/log/assert.h:63
+AssertKind::NotImplemented	enumerator	foundation/log	assertkind-notimplemented	foundation-log.md	engine/foundation/log/assert.h:64
+AssertInfo	struct	foundation/log	assertinfo	foundation-log.md	engine/foundation/log/assert.h:71
+AssertInfo::kind	variable	foundation/log	assertinfo-kind	foundation-log.md	engine/foundation/log/assert.h:73
+AssertInfo::file	variable	foundation/log	assertinfo-file	foundation-log.md	engine/foundation/log/assert.h:75
+AssertInfo::line	variable	foundation/log	assertinfo-line	foundation-log.md	engine/foundation/log/assert.h:77
+AssertInfo::function	variable	foundation/log	assertinfo-function	foundation-log.md	engine/foundation/log/assert.h:79
+AssertInfo::condition	variable	foundation/log	assertinfo-condition	foundation-log.md	engine/foundation/log/assert.h:81
+AssertInfo::message	variable	foundation/log	assertinfo-message	foundation-log.md	engine/foundation/log/assert.h:83
+AssertAction	enum	foundation/log	assertaction	foundation-log.md	engine/foundation/log/assert.h:87
+AssertAction::Abort	enumerator	foundation/log	assertaction-abort	foundation-log.md	engine/foundation/log/assert.h:88
+AssertAction::Continue	enumerator	foundation/log	assertaction-continue	foundation-log.md	engine/foundation/log/assert.h:89
+AssertAction::Break	enumerator	foundation/log	assertaction-break	foundation-log.md	engine/foundation/log/assert.h:90
+AssertHandler	alias	foundation/log	asserthandler	foundation-log.md	engine/foundation/log/assert.h:94
+DefaultAssertHandler(const AssertInfo&)	function	foundation/log	defaultasserthandler-const-assertinfo-amp	foundation-log.md	engine/foundation/log/assert.h:108
+SetAssertHandler(AssertHandler)	function	foundation/log	setasserthandler-asserthandler	foundation-log.md	engine/foundation/log/assert.h:118
+AssertFail(const char*,int,const char*)	function	foundation/log	assertfail-const-char-star-int-const-char-star	foundation-log.md	engine/foundation/log/assert.h:130
+EnsureSiteInfo	struct	foundation/log	ensuresiteinfo	foundation-log.md	engine/foundation/log/assert.h:136
+EnsureSiteInfo::file	variable	foundation/log	ensuresiteinfo-file	foundation-log.md	engine/foundation/log/assert.h:138
+EnsureSiteInfo::line	variable	foundation/log	ensuresiteinfo-line	foundation-log.md	engine/foundation/log/assert.h:140
+EnsureSiteInfo::function	variable	foundation/log	ensuresiteinfo-function	foundation-log.md	engine/foundation/log/assert.h:142
+EnsureSiteInfo::condition	variable	foundation/log	ensuresiteinfo-condition	foundation-log.md	engine/foundation/log/assert.h:144
+EnsureSiteInfo::message	variable	foundation/log	ensuresiteinfo-message	foundation-log.md	engine/foundation/log/assert.h:146
+EnsureSiteInfo::failure_count	variable	foundation/log	ensuresiteinfo-failure-count	foundation-log.md	engine/foundation/log/assert.h:148
+EnsureVisitor	alias	foundation/log	ensurevisitor	foundation-log.md	engine/foundation/log/assert.h:152
+ForEachFailedEnsure(EnsureVisitor,void*)	function	foundation/log	foreachfailedensure-ensurevisitor-void-star	foundation-log.md	engine/foundation/log/assert.h:159
+EnsureFailedSiteCount()	function	foundation/log	ensurefailedsitecount	foundation-log.md	engine/foundation/log/assert.h:163
+ResetEnsureStateForTesting()	function	foundation/log	resetensurestatefortesting	foundation-log.md	engine/foundation/log/assert.h:167
+ENGINE_ASSERT	macro	foundation/log	engine-assert	foundation-log.md	engine/foundation/log/assert.h:208
+ENGINE_ENSURE	macro	foundation/log	engine-ensure	foundation-log.md	engine/foundation/log/assert.h:228
+ENGINE_VERIFY	macro	foundation/log	engine-verify	foundation-log.md	engine/foundation/log/assert.h:266
+ENGINE_CHECK_SLOW	macro	foundation/log	engine-check-slow	foundation-log.md	engine/foundation/log/assert.h:288
+ENGINE_UNREACHABLE	macro	foundation/log	engine-unreachable	foundation-log.md	engine/foundation/log/assert.h:308
+ENGINE_NOT_IMPLEMENTED	macro	foundation/log	engine-not-implemented	foundation-log.md	engine/foundation/log/assert.h:313
 LogVerbosity	enum	foundation/log	logverbosity	foundation-log.md	engine/foundation/log/log.h:16
 LogVerbosity::Error	enumerator	foundation/log	logverbosity-error	foundation-log.md	engine/foundation/log/log.h:17
 LogVerbosity::Warn	enumerator	foundation/log	logverbosity-warn	foundation-log.md	engine/foundation/log/log.h:18
@@ -663,6 +699,10 @@ os::BackendPlan	struct	platform/window-input	os-backendplan	platform-window-inpu
 os::BackendPlan::candidates	variable	platform/window-input	os-backendplan-candidates	platform-window-input.md	engine/foundation/os/window.h:118
 os::BackendPlan::count	variable	platform/window-input	os-backendplan-count	platform-window-input.md	engine/foundation/os/window.h:120
 os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	os-planwindowbackends-windowbackend-bool-bool	platform-window-input.md	engine/foundation/os/window.h:132
+ENGINE_DEBUG_BREAK	macro	foundation/debug	engine-debug-break	foundation-debug.md	engine/foundation/debug/compiler.h:13
+ENGINE_UNREACHABLE_HINT	macro	foundation/debug	engine-unreachable-hint	foundation-debug.md	engine/foundation/debug/compiler.h:28
+ENGINE_COLD	macro	foundation/debug	engine-cold	foundation-debug.md	engine/foundation/debug/compiler.h:35
+ENGINE_NOINLINE	macro	foundation/debug	engine-noinline	foundation-debug.md	engine/foundation/debug/compiler.h:42
 debug::CrashReason	enum	foundation/debug	debug-crashreason	foundation-debug.md	engine/foundation/debug/crash_reason.h:16
 debug::CrashReason::None	enumerator	foundation/debug	debug-crashreason-none	foundation-debug.md	engine/foundation/debug/crash_reason.h:17
 debug::CrashReason::AccessViolation	enumerator	foundation/debug	debug-crashreason-accessviolation	foundation-debug.md	engine/foundation/debug/crash_reason.h:18
@@ -716,6 +756,7 @@ debug::RunDeathTestChildIfRequested()	function	foundation/debug	debug-rundeathte
 debug::ExitChildProcess(int)	function	foundation/debug	debug-exitchildprocess-int	foundation-debug.md	engine/foundation/debug/death_test.h:153
 debug::SetDeathTestSupportForTesting(bool)	function	foundation/debug	debug-setdeathtestsupportfortesting-bool	foundation-debug.md	engine/foundation/debug/death_test.h:158
 ENGINE_DEATH_TEST_FN	macro	foundation/debug	engine-death-test-fn	foundation-debug.md	engine/foundation/debug/death_test.h:168
+debug::IsDebuggerAttached()	function	foundation/debug	debug-isdebuggerattached	foundation-debug.md	engine/foundation/debug/debugger.h:18
 debug::FaultKind	enum	foundation/debug	debug-faultkind	foundation-debug.md	engine/foundation/debug/fault_injection.h:12
 debug::FaultKind::NullWrite	enumerator	foundation/debug	debug-faultkind-nullwrite	foundation-debug.md	engine/foundation/debug/fault_injection.h:13
 debug::FaultKind::Abort	enumerator	foundation/debug	debug-faultkind-abort	foundation-debug.md	engine/foundation/debug/fault_injection.h:14

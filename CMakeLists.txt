@@ -25,6 +25,18 @@ endif()
 # affected.
 set(ENGINE_PRODUCTION_COMPILE_OPTIONS -fno-exceptions -fno-rtti -fno-stack-protector)
 
+# Debug checks (engine/foundation/log/assert.h): ENGINE_VERIFY and ENGINE_UNREACHABLE check, and ENGINE_CHECK_SLOW
+# evaluates, only in builds without NDEBUG (the Debug configuration) unless forced on here. ENGINE_ASSERT and
+# ENGINE_NOT_IMPLEMENTED are always on.
+option(ENGINE_FORCE_DEBUG_CHECKS "Keep ENGINE_VERIFY and ENGINE_UNREACHABLE checks in every build configuration" OFF)
+option(ENGINE_FORCE_SLOW_CHECKS "Keep ENGINE_CHECK_SLOW checks in every build configuration" OFF)
+if(ENGINE_FORCE_DEBUG_CHECKS)
+  add_compile_definitions(ENGINE_DEBUG_CHECKS=1)
+endif()
+if(ENGINE_FORCE_SLOW_CHECKS)
+  add_compile_definitions(ENGINE_SLOW_CHECKS=1)
+endif()
+
 enable_testing()
 add_subdirectory(third_party/catch2)
 include(cmake/EngineTestPhases.cmake)

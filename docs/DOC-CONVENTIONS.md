@@ -54,8 +54,8 @@ comment text begins a labeled field; indented following lines continue it.
 |---|---|---|
 | `Param <name>:` | functions/methods/macros with parameters | meaning, units, ownership of the argument; `<name>` must be a real parameter name |
 | `Returns:` | non-`void` functions | what is returned, including the failure value |
-| `Fails:` | functions that report failure (null, `false`, error code) | when and how failure is reported |
-| `Aborts:` | functions with an `ENGINE_ASSERT` precondition | the precondition whose violation aborts |
+| `Fails:` | functions that report failure (null, `false`, error code), including a condition checked with `ENGINE_ENSURE` that the function survives | when and how failure is reported, and what the function returns or does instead |
+| `Aborts:` | functions with an `ENGINE_ASSERT`, `ENGINE_VERIFY` or `ENGINE_CHECK_SLOW` precondition | the precondition whose violation aborts |
 | `Thread-safety:` | classes/structs, free functions, methods when they differ from the class | begins with one **category** (below), then optional detail |
 | `Ownership:` | anything that takes, returns or stores a raw pointer/handle, or owns a resource | who owns what and when it is released |
 | `Example:` | any | followed by a fenced code block (compiled if tagged, see *Samples*) |
@@ -115,8 +115,10 @@ already name `file.md:LINE`, a sample that runs longer than the timeout
 
 ## Rules
 
-- Contracts the code asserts (`ENGINE_ASSERT`) are documented as
-  `Aborts:`, never "undefined".
+- Contracts the code asserts (`ENGINE_ASSERT`, and `ENGINE_VERIFY` or `ENGINE_CHECK_SLOW` in builds where they check) are
+  documented as `Aborts:`, never "undefined". A condition the function checks with `ENGINE_ENSURE` and survives is
+  documented as `Fails:` (what it returns or does instead): `ENGINE_ASSERT` is for a caller's bug that cannot be
+  recovered from, `ENGINE_ENSURE` for a condition that should hold but that the caller can live with.
 - State thread-safety and ownership for every type that crosses threads or
   hands out resources.
 - Link to the header path, not to a line number.

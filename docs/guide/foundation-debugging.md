@@ -81,7 +81,7 @@ test that wants [[debug::CrashReason::StackOverflow]] checks for [[debug::CrashR
 
 ## Already known — seed material (verify against the code when writing)
 
-- `AssertFail` ends with an exit code today and becomes an `abort()` on Day 93; the crash handler (Days 95-97) builds on that.
+- A failed `ENGINE_ASSERT` ends the process with `abort()` (Day 93), so it dies with `SIGABRT`; the crash handler (Days 95-97) builds on that. See [Foundation: Logging and Assertions](foundation-logging-and-assert.md) for the macros.
 
 ## Outline
 

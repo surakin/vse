@@ -13,7 +13,10 @@ using engine_placeholder::LogChannel;
 using engine_placeholder::LogCore;
 using engine_placeholder::LogVerbosity;
 using engine_placeholder::LoadConfig;
-using engine_placeholder::SetExitSinkForTesting;
+using engine_placeholder::AssertAction;
+using engine_placeholder::AssertHandler;
+using engine_placeholder::AssertInfo;
+using engine_placeholder::SetAssertHandler;
 using engine_placeholder::SetWriteSinkForTesting;
 using engine_placeholder::StringView;
 using engine_placeholder::usize;
@@ -39,14 +42,15 @@ long CapturingWriteSink(int fd, const void* buf, usize len) {
 
 // Exceptions are enabled for this test target (unlike the `foundation`
 // production library, see /tests/foundation/CMakeLists.txt), so the
-// exit sink can unwind the stack by throwing instead of the
-// setjmp/longjmp trick production code without exceptions would need.
-struct TestAssertExit {
-    int code;
+// assert handler can unwind the stack by throwing instead of aborting.
+struct TestAssertFailure {
+    int line;
 };
 
-[[noreturn]] void TestExitSink(int code) {
-    throw TestAssertExit{code};
+// Prints the usual line through the default handler (so the output is captured), then unwinds.
+AssertAction ThrowAfterPrinting(const AssertInfo& info) {
+    engine_placeholder::DefaultAssertHandler(info);
+    throw TestAssertFailure{info.line};
 }
 
 } // namespace
@@ -65,25 +69,25 @@ TEST_CASE("Error-level messages emit by default; Info-level is suppressed", "[lo
     REQUIRE_FALSE(captured.Contains(StringView("info hidden by default")));
 }
 
-TEST_CASE("ENGINE_ASSERT on a false condition exits with code 1 and logs a labeled message", "[log][assert]") {
+TEST_CASE("ENGINE_ASSERT on a false condition reports through the handler and logs a labeled message", "[log][assert]") {
     g_capture_len = 0;
     SetWriteSinkForTesting(&CapturingWriteSink);
-    SetExitSinkForTesting(&TestExitSink);
+    const AssertHandler previous = SetAssertHandler(&ThrowAfterPrinting);
 
     bool reached_after_assert = false;
-    int exit_code = 0;
+    int reported_line = 0;
     try {
         ENGINE_ASSERT(false, "intentional test failure");
         reached_after_assert = true; // should never execute
-    } catch (const TestAssertExit& e) {
-        exit_code = e.code;
+    } catch (const TestAssertFailure& e) {
+        reported_line = e.line;
     }
 
+    SetAssertHandler(previous);
     SetWriteSinkForTesting(&Write);
-    SetExitSinkForTesting(&engine_placeholder::os::Exit);
 
     REQUIRE_FALSE(reached_after_assert);
-    REQUIRE(exit_code == 1);
+    REQUIRE(reported_line > 0);
 
     StringView captured(g_capture_buffer, g_capture_len);
     REQUIRE(captured.Contains(StringView("intentional test failure")));

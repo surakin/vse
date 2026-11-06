@@ -7,6 +7,10 @@
 #   neutral API (CrashReason, FaultKind, ChildResult), so the Windows and macOS ports build the same sources. Files whose
 #   name contains `_linux` (before a `_` or `.`) hold the Linux-only details and are exempt, and so is the per-platform
 #   code under engine/foundation/os/<platform>/debug/ (it is not under these directories). Comments are ignored.
+# Rule 3: ENGINE_VERIFY, ENGINE_CHECK_SLOW and ENGINE_UNREACHABLE are not used in headers. Whether they check is decided
+#   per translation unit (ENGINE_DEBUG_CHECKS / ENGINE_SLOW_CHECKS), so an inline function in a header that used them
+#   would have different bodies in different translation units (an ODR violation). Headers use ENGINE_ASSERT or
+#   ENGINE_ENSURE; the definitions in engine/foundation/log/assert.h are the one exception.
 # Rule 2: the third-party library headers are included only by the one implementation file named for each library in the
 #   BOUNDARY table (`header|path|reason` lines): `backtrace.h` (libbacktrace) and `sentry.h` (sentry-native). Anywhere
 #   under engine/, game/, tools/ and tests/ except fixtures. Until Days 94 and 95 add the files, nobody may include them.
@@ -147,6 +151,25 @@ foreach(f IN LISTS all_files)
         message(SEND_ERROR "${f}:${n}: includes ${which}.h, which only its one implementation file may include: ${l}")
         math(EXPR errors "${errors}+1")
       endif()
+    endif()
+  endforeach()
+endforeach()
+
+# --- Rule 3 ------------------------------------------------------------------------------------------------------------
+set(config_macro_re "(^|[^A-Za-z0-9_])(ENGINE_VERIFY|ENGINE_CHECK_SLOW|ENGINE_UNREACHABLE)[ \t]*\\(")
+foreach(f IN LISTS all_files)
+  if(f MATCHES "(^|/)fixtures/" OR NOT f MATCHES "\\.(h|hpp|inl)$" OR f STREQUAL "engine/foundation/log/assert.h")
+    continue()
+  endif()
+  read_lines("${ROOT}/${f}" lines)
+  set(n 0)
+  set(in_block FALSE)
+  foreach(l IN LISTS lines)
+    math(EXPR n "${n}+1")
+    strip_comments()
+    if(code MATCHES "${config_macro_re}")
+      message(SEND_ERROR "${f}:${n}: ${CMAKE_MATCH_2} depends on a per-translation-unit setting and is not allowed in a header: ${l}")
+      math(EXPR errors "${errors}+1")
     endif()
   endforeach()
 endforeach()

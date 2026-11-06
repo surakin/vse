@@ -1,9 +1,12 @@
 #include "log/log.h"
 
-#include <fcntl.h>
-
-#include <cstring>
+#include "debug/debugger.h"
 #include "os/os.h"
+
+#include <atomic>
+#include <cstdlib>
+#include <cstring>
+#include <fcntl.h>
 
 namespace engine_placeholder {
 
@@ -29,7 +32,6 @@ LogChannel* LogChannel::Find(StringView name) {
 namespace {
 
 WriteSinkFn g_write_sink = &os::Write;
-ExitSinkFn g_exit_sink = &os::Exit;
 
 const char* VerbosityName(LogVerbosity level) {
     switch (level) {
@@ -128,10 +130,6 @@ void SetWriteSinkForTesting(WriteSinkFn sink) {
     g_write_sink = sink;
 }
 
-void SetExitSinkForTesting(ExitSinkFn sink) {
-    g_exit_sink = sink;
-}
-
 void Log(LogChannel& channel, LogVerbosity level, StringView message) {
     if (!channel.ShouldLog(level)) {
         return;
@@ -148,21 +146,129 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message) {
     g_write_sink(1, buf, offset);
 }
 
-[[noreturn]] void AssertFail(const char* file, int line, const char* message) {
+namespace {
+
+const char* AssertKindLabel(AssertKind kind) {
+    switch (kind) {
+    case AssertKind::Assert: return "ASSERT FAILED: ";
+    case AssertKind::Ensure: return "ENSURE FAILED: ";
+    case AssertKind::Verify: return "VERIFY FAILED: ";
+    case AssertKind::Unreachable: return "UNREACHABLE REACHED: ";
+    case AssertKind::NotImplemented: return "NOT IMPLEMENTED: ";
+    }
+    return "ASSERT FAILED: ";
+}
+
+std::atomic<AssertHandler> g_assert_handler{&DefaultAssertHandler};
+
+// Head of the list of ENGINE_ENSURE call sites that have failed.
+std::atomic<detail::EnsureSite*> g_ensure_head{nullptr};
+
+} // namespace
+
+AssertAction DefaultAssertHandler(const AssertInfo& info) {
+    // A null string must not crash the code that reports a failure.
+    auto text = [](const char* s) { return s != nullptr ? s : ""; };
     char buf[512];
     usize offset = 0;
-    offset = AppendStrToBuffer(buf, sizeof(buf), offset, "ASSERT FAILED: ");
-    offset = AppendStrToBuffer(buf, sizeof(buf), offset, file);
+    offset = AppendStrToBuffer(buf, sizeof(buf), offset, AssertKindLabel(info.kind));
+    offset = AppendStrToBuffer(buf, sizeof(buf), offset, text(info.file));
     offset = AppendStrToBuffer(buf, sizeof(buf), offset, ":");
-    offset = AppendUIntToBuffer(buf, sizeof(buf), offset, static_cast<u64>(line));
+    offset = AppendUIntToBuffer(buf, sizeof(buf), offset, static_cast<u64>(info.line));
+    if (info.function != nullptr && info.function[0] != '\0') {
+        offset = AppendStrToBuffer(buf, sizeof(buf), offset, " ");
+        offset = AppendStrToBuffer(buf, sizeof(buf), offset, text(info.function));
+        offset = AppendStrToBuffer(buf, sizeof(buf), offset, ":");
+    }
+    if (info.condition != nullptr && info.condition[0] != '\0') {
+        offset = AppendStrToBuffer(buf, sizeof(buf), offset, " ");
+        offset = AppendStrToBuffer(buf, sizeof(buf), offset, text(info.condition));
+        offset = AppendStrToBuffer(buf, sizeof(buf), offset, ":");
+    }
     offset = AppendStrToBuffer(buf, sizeof(buf), offset, " ");
-    offset = AppendStrToBuffer(buf, sizeof(buf), offset, message);
-    offset = AppendStrToBuffer(buf, sizeof(buf), offset, "\n");
+    offset = AppendStrToBuffer(buf, sizeof(buf), offset, text(info.message));
+    if (offset >= sizeof(buf)) {
+        offset = sizeof(buf) - 1; // truncated: keep room for the newline
+    }
+    buf[offset++] = '\n';
     g_write_sink(1, buf, offset);
-    g_exit_sink(1);
-    for (;;) {
-        // Unreachable: both the real os::Exit and any test-installed
-        // exit sink never return (the latter via longjmp).
+
+    if (debug::IsDebuggerAttached()) {
+        return AssertAction::Break;
+    }
+    return info.kind == AssertKind::Ensure ? AssertAction::Continue : AssertAction::Abort;
+}
+
+AssertHandler SetAssertHandler(AssertHandler handler) {
+    return g_assert_handler.exchange(handler != nullptr ? handler : &DefaultAssertHandler, std::memory_order_acq_rel);
+}
+
+[[noreturn]] void AssertFail(const char* file, int line, const char* message) {
+    detail::AssertFailed(AssertKind::Assert, file, line, "", "", message);
+    std::abort(); // the handler chose to continue (or break and was resumed); this function does not return
+}
+
+namespace detail {
+
+AssertAction AssertFailed(AssertKind kind, const char* file, int line, const char* function, const char* condition,
+                          const char* message) {
+    const AssertInfo info{kind, file, line, function, condition, message};
+    AssertAction action = g_assert_handler.load(std::memory_order_acquire)(info);
+    // Control cannot continue past a place declared unreachable.
+    if (action == AssertAction::Continue && kind == AssertKind::Unreachable) {
+        action = AssertAction::Abort;
+    }
+    if (action == AssertAction::Abort) {
+        std::abort();
+    }
+    return action;
+}
+
+void UnreachableAbort() {
+    std::abort();
+}
+
+AssertAction EnsureFailed(EnsureSite& site, const char* function) {
+    site.count.fetch_add(1, std::memory_order_relaxed);
+    // `reported`, not the count, decides who is first: the count is only a statistic and may wrap.
+    if (site.reported.exchange(true, std::memory_order_acq_rel)) {
+        return AssertAction::Continue; // already reported; only counted
+    }
+    // The first failure at this site: publish it in the list, then report. Only one thread gets here per site.
+    site.function = function;
+    EnsureSite* head = g_ensure_head.load(std::memory_order_relaxed);
+    do {
+        site.next = head;
+    } while (!g_ensure_head.compare_exchange_weak(head, &site, std::memory_order_release, std::memory_order_relaxed));
+    return AssertFailed(AssertKind::Ensure, site.file, site.line, function, site.condition, site.message);
+}
+
+} // namespace detail
+
+void ForEachFailedEnsure(EnsureVisitor visitor, void* context) {
+    for (const detail::EnsureSite* s = g_ensure_head.load(std::memory_order_acquire); s != nullptr; s = s->next) {
+        const EnsureSiteInfo info{s->file, s->line, s->function != nullptr ? s->function : "", s->condition, s->message,
+                                  s->count.load(std::memory_order_relaxed)};
+        visitor(info, context);
+    }
+}
+
+u32 EnsureFailedSiteCount() {
+    u32 n = 0;
+    for (const detail::EnsureSite* s = g_ensure_head.load(std::memory_order_acquire); s != nullptr; s = s->next) {
+        ++n;
+    }
+    return n;
+}
+
+void ResetEnsureStateForTesting() {
+    detail::EnsureSite* s = g_ensure_head.exchange(nullptr, std::memory_order_acq_rel);
+    while (s != nullptr) {
+        detail::EnsureSite* next = s->next;
+        s->count.store(0, std::memory_order_relaxed);
+        s->reported.store(false, std::memory_order_relaxed);
+        s->next = nullptr;
+        s = next;
     }
 }
 

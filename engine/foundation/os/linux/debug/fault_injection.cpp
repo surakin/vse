@@ -12,6 +12,7 @@ namespace {
 
 volatile int* volatile g_fault_null_pointer = nullptr;
 volatile int g_fault_zero = 0;
+volatile int g_fault_one = 1;
 volatile unsigned g_fault_depth = 0;
 
 // Recurses with a sizeable frame so the stack runs out quickly; the volatile counter and the use of the result keep the
@@ -70,7 +71,9 @@ void InjectFault(FaultKind kind) {
 #endif
         break;
     case FaultKind::DivideByZero: {
-        volatile int result = 1 / g_fault_zero;
+        // Both operands volatile: with a constant numerator an optimizing compiler turns `1 / x` into compares and never
+        // emits a divide instruction.
+        volatile int result = g_fault_one / g_fault_zero;
         (void)result;
         break;
     }

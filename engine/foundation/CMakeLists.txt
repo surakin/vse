@@ -21,6 +21,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # add os/<platform>/debug/ in Phases 8 and 9 (see the BACKEND.md checklists there).
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES
     os/linux/debug/death_test.cpp
+    os/linux/debug/debugger.cpp
     os/linux/debug/fault_injection.cpp
   )
 

@@ -9,7 +9,9 @@
 
 using engine_placeholder::ArenaAllocator;
 using engine_placeholder::Vector;
-using engine_placeholder::SetExitSinkForTesting;
+using engine_placeholder::AssertAction;
+using engine_placeholder::AssertInfo;
+using engine_placeholder::SetAssertHandler;
 using engine_placeholder::SetWriteSinkForTesting;
 using engine_placeholder::usize;
 using engine_placeholder::os::Write;
@@ -168,36 +170,28 @@ namespace {
 
 // Exceptions are enabled for this test target (unlike the `foundation`
 // production library — see /tests/foundation/CMakeLists.txt), so the
-// exit sink can unwind the stack by throwing when an ENGINE_ASSERT
+// assert handler can unwind the stack by throwing when an ENGINE_ASSERT
 // fires, instead of aborting the whole test process.
 struct AssertTriggered {
-    int code;
+    const char* message;
 };
 
-[[noreturn]] void ThrowOnExit(int code) {
-    throw AssertTriggered{code};
+AssertAction ThrowFromHandler(const AssertInfo& info) {
+    throw AssertTriggered{info.message};
 }
 
-long DiscardWrites(int fd, const void* buf, usize len) {
-    (void)fd;
-    (void)buf;
-    return static_cast<long>(len);
-}
-
-// Runs `fn` with the assert-failure exit path redirected to a throw;
+// Runs `fn` with assert failures redirected to a throw;
 // returns true if `fn` triggered an ENGINE_ASSERT failure.
 template <typename Fn>
 bool TriggersAssert(Fn&& fn) {
-    SetWriteSinkForTesting(&DiscardWrites);
-    SetExitSinkForTesting(&ThrowOnExit);
+    const engine_placeholder::AssertHandler previous = SetAssertHandler(&ThrowFromHandler);
     bool triggered = false;
     try {
         fn();
     } catch (const AssertTriggered&) {
         triggered = true;
     }
-    SetWriteSinkForTesting(&Write);
-    SetExitSinkForTesting(&engine_placeholder::os::Exit);
+    SetAssertHandler(previous);
     return triggered;
 }
 
