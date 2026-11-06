@@ -11,10 +11,49 @@ dump file; an `ENGINE_ENSURE` that fails logs once with a trace and execution co
 purpose (in a child process) produces both, and the test reads the report; all of it is documented and the Linux
 backend is covered by tests, with the handler off by default in release builds unless enabled.
 
-Before it starts, every day of this phase needs its own file under `plans/phase-06-debugging-facilities/` (see
-`CLAUDE.md`, planning policy).
+Every day of this phase has its own file under `plans/phase-06-debugging-facilities/` (see `CLAUDE.md`, planning
+policy). **Planned 2026-11-06; not started** (`CURRENT_PHASE` is already 6, so scoped runs select this phase's tests, of
+which there are none until Day 92).
 
-## Key deliverables (to be expanded into day-by-day tasks when started)
+## Days
+
+Each day has its own file of individually checkable sub-tasks, a docs task, an end-of-day `/code-review high` task, and a
+concrete Done condition. Day numbers continue from Phase 5 (which ended at Day 90).
+
+91. [Design & Spikes](phase-06-debugging-facilities/day-91-design-and-spikes.md)
+92. [Death-Test Helper & the `tests/debug` Suite](phase-06-debugging-facilities/day-92-death-test-helper.md)
+93. [Assert, Ensure, Verify & the Handler Chain](phase-06-debugging-facilities/day-93-assert-family.md)
+94. [Stack Capture](phase-06-debugging-facilities/day-94-stack-capture.md)
+95. [Modules & Symbolization](phase-06-debugging-facilities/day-95-symbolization.md)
+96. [What a Crash Report Contains](phase-06-debugging-facilities/day-96-crash-report-content.md)
+97. [The Crash Handler](phase-06-debugging-facilities/day-97-crash-handler.md)
+98. [Core Dumps](phase-06-debugging-facilities/day-98-core-dumps.md)
+99. [The Minidump Writer](phase-06-debugging-facilities/day-99-minidump-writer.md)
+100. [Minidump Reader & Dump Tool](phase-06-debugging-facilities/day-100-minidump-reader-and-tools.md)
+101. [Wiring the Engine In](phase-06-debugging-facilities/day-101-subsystem-integration.md)
+102. [Documentation Sweep, Closing Full Run & Wrap-up](phase-06-debugging-facilities/day-102-docs-and-closing-run.md)
+
+Order reasoning: the death-test helper comes first because every later day tests code that aborts or crashes; the assert
+family is next because it is the part of the phase every other phase uses; the capture, symbolization and report pieces
+are built and tested one at a time before the signal handler composes them; core dumps and minidumps hang off the
+handler; integration with the existing subsystems comes last, when the pieces are stable.
+
+## Decisions made while planning (Day 91 confirms or amends them with spike results)
+
+- **Symbolization:** raw addresses and `module+offset` first, always (async-signal-safe); function names from an own ELF
+  symbol reader; `file:line` offline through `tools/symbolize` (runs `addr2line`, a developer tool). An own DWARF line
+  reader is out of scope (filed in `KNOWN-ISSUES.md` on Day 102).
+- **Linux minidump:** an own writer, crashing thread only; other threads are listed by id (their stacks need a ptrace
+  helper process, filed as a deferral). The reason: one format and one set of readers across Linux, Windows and macOS.
+  `lldb` is installed on the development machine (2026-11-06, 23.1.4, with its minidump plugin), so a dump is verified
+  by the in-tree reader and by `lldb` in an automated test that skips where `lldb` is missing; `minidump-stackwalk` is
+  an optional second reader.
+- **`ENGINE_ASSERT`** stays always on and fatal but ends in `abort()` (not `os::Exit(1)`), through a handler chain that
+  tests, the crash handler and a debugger share.
+- **Where:** `engine/foundation/debug/` (interfaces), `engine/foundation/os/linux/debug/` (backends), tests in the new
+  `tests/debug/` with plain, ASan and TSan flavors (`flavors 6 plain,asan,tsan` in `tests/phases.txt`).
+
+## Key deliverables
 
 - **Stack traces.** Capture the call stack of the current thread (and, from a signal handler, the faulting thread)
   without allocating; symbolize it into function, file and line when debug info is present, and into module plus

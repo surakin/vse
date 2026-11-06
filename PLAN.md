@@ -752,3 +752,9 @@ that changed from the plan and why.)_
   keep the Windows/macOS builds working (assumption #11). Plan-only
   change; Phases 5 and 6 still need day files before they can start.
 
+- **2026-11-06 — Phase 6 (Debugging facilities) planned.** Twelve day files, Days 91-102, under
+  `plans/phase-06-debugging-facilities/`: design and spikes, death-test helper, assert/ensure/verify family, stack capture,
+  symbolization, crash report content, the crash handler, core dumps, an own Linux minidump writer (crashing thread only)
+  and reader, subsystem integration, and the closing run. Planning only; no code. Day 91 settles the open questions with
+  spikes.
+

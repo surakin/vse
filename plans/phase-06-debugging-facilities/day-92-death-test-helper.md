@@ -1,0 +1,23 @@
+# Phase 6 / Day 92 — Death-Test Helper & the `tests/debug` Suite
+
+**Phase:** [Phase 6 — Debugging Facilities](../phase-06-debugging-facilities.md)
+**Depends on:** Day 91.
+
+Every later day tests code that aborts or crashes. Build the helper that runs a function in a child process and reports
+what happened, and the test target that holds this phase's tests, first.
+
+## Tasks
+
+- [ ] Add `engine/foundation/debug/death_test.h` with `RunInChild(fn, ctx, options) -> ChildResult`: forks, runs `fn(ctx)` in the child, and returns `exited`/`exit_code`, `signaled`/`signal`, `timed_out`, and the captured stderr and stdout text (fixed-capacity buffer, truncation flagged). `options`: timeout in milliseconds (default 10 s, the child is killed with `SIGKILL` and `timed_out` set), whether to capture stdout, extra environment entries, and whether to disable core dumps in the child (default yes, so tests do not fill the disk).
+- [ ] Implement it for Linux in `engine/foundation/os/linux/debug/death_test.cpp`: `pipe2` with `O_CLOEXEC`, `fork`, `dup2` in the child, `poll` with a deadline in the parent while draining the pipes (never a blocking read after the child dies without closing, never a deadlock when the child fills the pipe), `waitpid` retried on `EINTR`, and reaping on every path. The child leaves through `_exit` after `fn` returns so no parent state (Catch2 reporters, atexit handlers, static destructors) runs twice.
+- [ ] Decide and implement what the child inherits: after a fork in a multithreaded parent only the calling thread exists in the child, so the helper documents that `fn` must not take a lock another thread may hold (allocator, logger), and the unit tests for it use only code that is safe in that situation. Add a debug check that the parent is single-threaded or accept it with a documented caveat; record the choice.
+- [ ] Add the `tests/debug/` directory with its CMake target `debug_tests` in the three flavors (plain, ASan, TSan, linked against `foundation`, `foundation_asan`, `foundation_tsan`) using `engine_discover_tests`, a `lsan_options.cpp` if the leak checker needs it, and Catch2 as in `tests/jobs`.
+- [ ] Wire the scoping: add `tests/debug/` lines to `tests/phases.txt` (phase 6) and a `flavors 6 plain,asan,tsan` line; add `tests/debug 6` and `engine/foundation/debug`/`engine/foundation/os/linux/debug` to the module map `tests/module_map.txt` (with the phases of the tests that cover them); run `test_phase_labels` and the `test_phase_script_*` tests to prove the map still validates.
+- [ ] Tests: a child that returns normally (exit code 0), calls `_exit(7)`, raises `SIGSEGV` by writing to null, calls `abort()`, writes 1 MB to stderr (the pipe fills; no deadlock), hangs (timed out and killed within the deadline plus a margin), closes stderr and then crashes, and forks a grandchild that keeps the pipe open (the helper still returns at the child's exit). Every test also asserts there is no zombie left (`waitpid(-1, WNOHANG)` finds nothing) and no leaked descriptor (`/proc/self/fd` count before and after).
+- [ ] Run the helper's tests in all three flavors, at `-j16` and 20 times in a loop (`ctest --repeat until-fail:20`) to catch flakiness; record the numbers. Anything flaky goes to `KNOWN-ISSUES.md` with its phase.
+- [ ] **Documentation:** `///` comments with the contract labels of the new module (add `module foundation/debug "Foundation: Debugging"` to `docs/reference/modules.txt` with `strict thread-safety`, `strict ownership` and `strict failure`); `docs/guide/foundation-debugging.md` created with a section "Testing code that crashes" and a tagged, compiled sample; `docgen lint` at zero known findings; `cmake --build build --target docs` output committed; `ctest -L docs` passes.
+- [ ] Run the day's scoped tests: `scripts/test-phase.sh --affected` (the day touches an `engine/foundation` header, so it runs everything), then `--flavor asan` and `--flavor tsan` of the same selection; quote the `ran X of Y tests` lines.
+- [ ] **End-of-day review (CLAUDE.md):** run `/code-review high` on the day's diff, fix or decline each finding with a reason, record it under "Post-implementation code review" here, and mention it in `STATUS.md`. Extra scrutiny on the fork/pipe lifetime and descriptor handling.
+- [ ] Update `STATUS.md`; commit.
+
+**Done:** `RunInChild` reports exit code, signal, timeout and captured output for the eight cases above without leaking a process or descriptor, in all three flavors, repeated 20 times without a failure; `tests/debug` is wired into the phase map and the scoped runner; the guide page and reference exist and `ctest -L docs` passes.
