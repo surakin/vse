@@ -89,7 +89,7 @@ renderer_demo --validation --frames 120 --script "frame:10 set:present_mode=imme
 
 ## Assets
 
-`assets/*.rtex` are written by `renderer_demo_mint` from the procedural code in `demo_assets.cpp` (a checker, diagonal stripes
+`assets/*.rtex` are written (atomically, through the file layer) by `renderer_demo_mint` from the procedural code in `demo_assets.cpp` (a checker, diagonal stripes
 and a tangent-space normal map of round bumps): no binary file is without a way to regenerate it.
 
 ```

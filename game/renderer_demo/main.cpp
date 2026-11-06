@@ -11,6 +11,9 @@
 #include <dirent.h>
 #include <unistd.h>
 
+#include "textures.h"
+#include "io/file.h"
+#include "io/file_system.h"
 #include "debug/program_setup.h"
 #include "containers/vector.h"
 #include "demo_frame.h"
@@ -171,14 +174,8 @@ private:
 };
 
 bool WritePpm(const char* path, u32 width, u32 height, const Vector<unsigned char>& rgba) {
-    std::FILE* f = std::fopen(path, "wb");
-    if (f == nullptr) return false;
-    std::fprintf(f, "P6\n%u %u\n255\n", width, height);
-    bool ok = true;
-    for (usize i = 0; i < static_cast<usize>(width) * height && ok; ++i) {
-        ok = std::fwrite(&rgba[i * 4], 1, 3, f) == 3;
-    }
-    return std::fclose(f) == 0 && ok;
+    io::Path file;
+    return io::Path::Parse(StringView(path), io::NativePathStyle(), &file) && demo::WritePpm(file, width, height, rgba.Data()).Ok();
 }
 
 DeviceCreateInfo DeviceInfo(const Options& options) {

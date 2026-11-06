@@ -1,5 +1,8 @@
 #include "demo_scene.h"
 
+#include "io/file.h"
+#include "io/file_system.h"
+
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -55,10 +58,15 @@ bool LoadTextureImage(void* user, TextureImage* out) {
     const auto* info = static_cast<const TextureLoadInfo*>(user);
     const DemoTexture& texture = *info->texture;
     if (info->asset_dir != nullptr) {
-        char path[1024];
-        std::snprintf(path, sizeof(path), "%s/%s", info->asset_dir, texture.file);
+        io::Path dir;
         demo::RtexImage image;
-        if (demo::ReadRtex(path, &image) && image.format == texture.format) {
+        io::Status read_status = io::Status::Of(io::Error::TooLong);
+        io::Path file;
+        if (io::Path::Parse(StringView(info->asset_dir), io::NativePathStyle(), &dir)) {
+            file = dir.Join(StringView(texture.file));
+            read_status = demo::ReadRtex(file, &image);
+        }
+        if (read_status.Ok() && image.format == texture.format) {
             out->desc.width = image.width;
             out->desc.height = image.height;
             out->desc.mip_levels = image.mip_count;
@@ -68,7 +76,8 @@ bool LoadTextureImage(void* user, TextureImage* out) {
             std::memcpy(out->pixels.Data(), image.data.data(), image.data.size());
             return true;
         }
-        rhi::RhiLogV(LogVerbosity::Warn, "renderer_demo: %s could not be loaded; using the procedural texture", path);
+        rhi::RhiLogV(LogVerbosity::Warn, "renderer_demo: %.*s could not be loaded (%s); using the procedural texture", static_cast<int>(file.View().Length()),
+                     file.View().Data(), read_status.Ok() ? "the format differs" : io::ErrorName(read_status.error));
     }
     const demo::Pixels pixels = texture.make();
     out->desc.width = pixels.width;

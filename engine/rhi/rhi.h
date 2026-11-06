@@ -93,7 +93,8 @@ struct DeviceCreateInfo {
     /// one runs out, so this sets the granularity of growth, not a limit. The null backend ignores it.
     u32 descriptor_sets_per_pool = 1024;
     /// The directory for the pipeline cache file, or null to use `ENGINE_RHI_CACHE_DIR`, then
-    /// `$XDG_CACHE_HOME/<application_name>`, then `$HOME/.cache/<application_name>`. Borrowed for the call.
+    /// the user's cache directory for `application_name` (`$XDG_CACHE_HOME/<application_name>`, then `$HOME/.cache/<application_name>`). A directory set here
+    /// or in the environment that cannot be used means no cache; it never falls back to another one. Borrowed for the call.
     const char* pipeline_cache_dir = nullptr;
     /// Faults to inject on purpose; see [[rhi::FaultInjection]]. Nothing by default.
     FaultInjection faults;

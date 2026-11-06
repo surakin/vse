@@ -19,4 +19,4 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [The Job System](jobs.md) | 11 | 190 |
 | [The Render Hardware Interface](rhi.md) | 18 | 731 |
 | [The renderer](renderer.md) | 19 | 986 |
-| [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 16 | 443 |
+| [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 16 | 448 |

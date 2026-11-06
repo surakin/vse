@@ -1,5 +1,8 @@
 #include "image_compare.h"
 
+#include "io/file.h"
+#include "io/file_system.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -93,63 +96,67 @@ CompareResult Compare(const Image& golden, const Image& actual, const CompareOpt
 
 bool WritePpm(const char* path, const Image& image) {
     if (!image.Valid()) return false;
-    std::FILE* f = std::fopen(path, "wb");
-    if (f == nullptr) return false;
-    std::fprintf(f, "P6\n%u %u\n255\n", image.width, image.height);
-    bool ok = true;
-    for (size_t i = 0; i < static_cast<size_t>(image.width) * image.height && ok; ++i) {
-        ok = std::fwrite(&image.rgba[i * 4], 1, 3, f) == 3;
+    namespace io = engine_placeholder::io;
+    io::Path file;
+    if (!io::Path::Parse(engine_placeholder::StringView(path), io::NativePathStyle(), &file)) return false;
+    char header[64];
+    const int header_length = std::snprintf(header, sizeof(header), "P6\n%u %u\n255\n", image.width, image.height);
+    std::string bytes(header, static_cast<size_t>(header_length));
+    bytes.reserve(bytes.size() + static_cast<size_t>(image.width) * image.height * 3);
+    for (size_t i = 0; i < static_cast<size_t>(image.width) * image.height; ++i) {
+        bytes.append(reinterpret_cast<const char*>(&image.rgba[i * 4]), 3);
     }
-    return std::fclose(f) == 0 && ok;
+    return io::WriteFile(file, bytes.data(), bytes.size()).Ok();
 }
 
 namespace {
 
-// Reads the next unsigned integer of a PPM header, skipping whitespace and '#' comments.
-bool ReadHeaderNumber(std::FILE* f, unsigned* out) {
-    int c = std::fgetc(f);
+// Reads the next unsigned integer of a PPM header from `data[*pos..size)`, skipping whitespace and '#' comments. The character after
+// the number (one whitespace after the last) is consumed.
+bool ReadHeaderNumber(const unsigned char* data, size_t size, size_t* pos, unsigned* out) {
+    auto next = [&]() -> int { return *pos < size ? data[(*pos)++] : -1; };
+    int c = next();
     for (;;) {
-        while (c == ' ' || c == '\t' || c == '\r' || c == '\n') c = std::fgetc(f);
+        while (c == ' ' || c == '\t' || c == '\r' || c == '\n') c = next();
         if (c != '#') break;
-        while (c != '\n' && c != EOF) c = std::fgetc(f);
+        while (c != '\n' && c != -1) c = next();
     }
     if (c < '0' || c > '9') return false;
     unsigned long v = 0;
     while (c >= '0' && c <= '9') {
         v = v * 10 + static_cast<unsigned long>(c - '0');
         if (v > 1000000) return false;
-        c = std::fgetc(f);
+        c = next();
     }
     *out = static_cast<unsigned>(v);
-    return true; // the character after the number (one whitespace after the last) is consumed
+    return true;
 }
 
 } // namespace
 
 bool ReadPpm(const char* path, Image* image) {
-    std::FILE* f = std::fopen(path, "rb");
-    if (f == nullptr) return false;
+    namespace io = engine_placeholder::io;
+    io::Path file;
+    engine_placeholder::Vector<engine_placeholder::u8> bytes;
+    if (!io::Path::Parse(engine_placeholder::StringView(path), io::NativePathStyle(), &file) || io::ReadFile(file, &bytes).Failed()) return false;
+    const unsigned char* data = bytes.Data();
+    const size_t size = bytes.Size();
+    size_t pos = 0;
     unsigned w = 0, h = 0, max = 0;
-    bool ok = std::fgetc(f) == 'P' && std::fgetc(f) == '6' && ReadHeaderNumber(f, &w) && ReadHeaderNumber(f, &h) && ReadHeaderNumber(f, &max) &&
-              max == 255 && w > 0 && h > 0;
-    if (ok) {
-        // The file must hold the whole image before anything is allocated for it.
-        const long data_start = std::ftell(f);
-        ok = data_start >= 0 && std::fseek(f, 0, SEEK_END) == 0;
-        const long size = ok ? std::ftell(f) : -1;
-        ok = ok && size >= data_start && static_cast<unsigned long long>(size - data_start) >= static_cast<unsigned long long>(w) * h * 3 &&
-             std::fseek(f, data_start, SEEK_SET) == 0;
+    bool ok = size >= 2 && data[0] == 'P' && data[1] == '6';
+    pos = 2;
+    ok = ok && ReadHeaderNumber(data, size, &pos, &w) && ReadHeaderNumber(data, size, &pos, &h) && ReadHeaderNumber(data, size, &pos, &max) &&
+         max == 255 && w > 0 && h > 0;
+    // The file must hold the whole image before anything is allocated for it.
+    ok = ok && static_cast<unsigned long long>(size - pos) >= static_cast<unsigned long long>(w) * h * 3;
+    if (!ok) return false;
+    image->width = w;
+    image->height = h;
+    image->rgba.assign(static_cast<size_t>(w) * h * 4, 255);
+    for (size_t i = 0; i < static_cast<size_t>(w) * h; ++i) {
+        std::memcpy(&image->rgba[i * 4], data + pos + i * 3, 3);
     }
-    if (ok) {
-        image->width = w;
-        image->height = h;
-        image->rgba.assign(static_cast<size_t>(w) * h * 4, 255);
-        for (size_t i = 0; i < static_cast<size_t>(w) * h && ok; ++i) {
-            ok = std::fread(&image->rgba[i * 4], 1, 3, f) == 3;
-        }
-    }
-    std::fclose(f);
-    return ok;
+    return true;
 }
 
 bool UpdatingGoldens() {
@@ -158,10 +165,12 @@ bool UpdatingGoldens() {
 }
 
 std::string TempPath(const char* name) {
-    const char* dir = std::getenv("TMPDIR");
-    std::string path = dir != nullptr && dir[0] != '\0' ? dir : "/tmp";
-    path += "/rhi_" + std::to_string(static_cast<long>(getpid())) + "_" + name;
-    return path;
+    namespace io = engine_placeholder::io;
+    io::Path dir;
+    if (io::TempDirectory(&dir).Failed()) dir = io::Path("/tmp");
+    const std::string leaf = "rhi_" + std::to_string(static_cast<long>(getpid())) + "_" + name;
+    const io::Path path = dir.Join(engine_placeholder::StringView(leaf.data(), leaf.size()));
+    return std::string(path.View().Data(), path.View().Length());
 }
 
 std::string GoldenPath(const char* file) { return std::string(ENGINE_RHI_GOLDEN_DIR) + "/" + file; }

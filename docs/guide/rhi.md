@@ -624,8 +624,11 @@ internal and shows in `VulkanDevice::Counts()`. Pipeline layouts live as long as
 faster. It is read when the device is created and written, atomically (a temporary file then a rename), when the device is
 destroyed. The file is named from the vendor, device and driver UUID, so a driver update starts a new file. A file
 whose header does not match, or that the driver rejects, is ignored with a log line; it is never an error. The
-directory is, in order: `DeviceCreateInfo::pipeline_cache_dir`, `$ENGINE_RHI_CACHE_DIR`, `$XDG_CACHE_HOME/<application
-name>`, `$HOME/.cache/<application name>`. Set `DeviceCreateInfo::pipeline_cache` to false to turn it off. The test
+directory is, in order: `DeviceCreateInfo::pipeline_cache_dir`, `$ENGINE_RHI_CACHE_DIR`, then the user's cache directory for the
+application (`io::UserCacheDirectory`: `$XDG_CACHE_HOME/<application name>` or `$HOME/.cache/<application name>`). A configured
+directory that cannot be used (too long, a file, not writable) means no cache or a warning when saving; the device still works. All
+file and directory work goes through the file layer (`io::File`, `io::WriteFileAtomic`, `io::CreateDirectories`); see [io](io.md).
+Set `DeviceCreateInfo::pipeline_cache` to false to turn it off. The test
 runner points `ENGINE_RHI_CACHE_DIR` into the build tree so tests never write to your home directory.
 
 ### Binding resources

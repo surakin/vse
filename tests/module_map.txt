@@ -29,7 +29,7 @@ game/common         3,4
 docs                2.5
 tests/foundation    0,1
 tests/jobs          2
-tests/io            8
+tests/io            3,4,8   # temp_dir.h is shared with the rhi and renderer tests
 tests/debug         6
 tests/docgen        2.5
 tests/rhi           3,4

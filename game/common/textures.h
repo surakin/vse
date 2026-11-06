@@ -9,6 +9,7 @@
 
 #include <vector>
 
+#include "io/file.h"
 #include "rhi/rhi.h"
 
 namespace demo {
@@ -56,8 +57,13 @@ struct RtexImage {
 // linear light, like the GPU's `GenerateMips`).
 RtexImage BuildRtex(const Pixels& pixels, rhi::Format format);
 
-bool WriteRtex(const char* path, const RtexImage& image);
-bool ReadRtex(const char* path, RtexImage* image);
+// Writes `width` x `height` RGBA8 pixels as a binary PPM (the alpha channel is dropped).
+io::Status WritePpm(const io::Path& path, u32 width, u32 height, const unsigned char* rgba);
+
+// Writes the image atomically (a failed write never leaves a half file). Fails with `Invalid` for a malformed image.
+io::Status WriteRtex(const io::Path& path, const RtexImage& image);
+// Reads and validates a file; `image` is unchanged on failure. A damaged, truncated or oversized file is `Invalid`; a missing one `NotFound`.
+io::Status ReadRtex(const io::Path& path, RtexImage* image);
 
 // Creates a `Sampled` texture from an `.rtex` image, uploading every stored level. Same rules as `CreateSampledTexture`.
 rhi::TextureHandle CreateTextureFromRtex(rhi::Device* device, const RtexImage& image, const char* debug_name);

@@ -3,9 +3,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <sys/stat.h>
-#include <unistd.h>
 
+#include "io/file.h"
+#include "io/file_system.h"
 #include "log/assert.h"
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_format.h"
@@ -29,73 +29,26 @@ bool SameBindings(const BindingDesc* a, u32 a_count, const BindingDesc* b, u32 b
     return true;
 }
 
-// Creates `path` and every missing parent directory; true if it exists afterwards.
-bool MakeDirectories(const char* path) {
-    char buffer[512];
-    usize length = std::strlen(path);
-    if (length == 0 || length >= sizeof(buffer)) {
+// Reads a whole cache file into `out`; false if it does not exist, is not a regular file (a directory or a pipe must not stall
+// start-up), is empty or too large, or cannot be read.
+bool ReadCacheFile(const char* path, Vector<unsigned char>* out) {
+    io::Path file_path;
+    io::FileInfo info;
+    if (!io::Path::Parse(StringView(path), io::NativePathStyle(), &file_path) || io::Stat(file_path, &info).Failed() ||
+        info.type != io::FileType::Regular || info.size == 0 || info.size > (u64{256} << 20)) {
         return false;
     }
-    std::memcpy(buffer, path, length + 1);
-    for (usize i = 1; i <= length; ++i) {
-        if (buffer[i] == '/' || buffer[i] == '\0') {
-            const char saved = buffer[i];
-            buffer[i] = '\0';
-            if (mkdir(buffer, 0755) != 0) {
-                struct stat st;
-                if (stat(buffer, &st) != 0 || !S_ISDIR(st.st_mode)) {
-                    return false;
-                }
-            }
-            buffer[i] = saved;
-        }
-    }
-    return true;
+    return io::ReadFile(file_path, out, u64{256} << 20).Ok();
 }
 
-// Reads a whole file into `out`; false if it does not exist or cannot be read.
-bool ReadFile(const char* path, Vector<unsigned char>* out) {
-    struct stat info;
-    if (stat(path, &info) != 0 || !S_ISREG(info.st_mode)) {
-        return false; // missing, or not a regular file (a directory or a pipe must not stall start-up)
-    }
-    std::FILE* f = std::fopen(path, "rb");
-    if (f == nullptr) {
+// Creates the cache directory and writes the file whole, atomically: a reader sees the old cache or the new one.
+bool SaveCacheFile(const char* path, const void* data, usize size) {
+    io::Path file_path;
+    if (!io::Path::Parse(StringView(path), io::NativePathStyle(), &file_path)) {
         return false;
     }
-    const long end = static_cast<long>(info.st_size);
-    if (end <= 0 || end > (256l << 20)) {
-        std::fclose(f);
-        return false;
-    }
-    Vector<unsigned char> data;
-    if (!data.TryResizeUninitialized(static_cast<usize>(end))) {
-        std::fclose(f);
-        return false;
-    }
-    const usize got = std::fread(data.Data(), 1, static_cast<usize>(end), f);
-    std::fclose(f);
-    if (got != static_cast<usize>(end)) {
-        return false;
-    }
-    *out = static_cast<Vector<unsigned char>&&>(data);
-    return true;
-}
-
-bool WriteFileAtomically(const char* path, const void* data, usize size) {
-    char temp[600];
-    std::snprintf(temp, sizeof(temp), "%s.%d.tmp", path, static_cast<int>(getpid()));
-    std::FILE* f = std::fopen(temp, "wb");
-    if (f == nullptr) {
-        return false;
-    }
-    const bool wrote = std::fwrite(data, 1, size, f) == size;
-    const bool closed = std::fclose(f) == 0;
-    if (!wrote || !closed || std::rename(temp, path) != 0) {
-        std::remove(temp);
-        return false;
-    }
-    return true;
+    const io::Path dir = file_path.Parent();
+    return (dir.IsEmpty() || io::CreateDirectories(dir).Ok()) && io::WriteFileAtomic(file_path, data, size).Ok();
 }
 
 } // namespace
@@ -111,12 +64,20 @@ void VulkanDevice::InitializePipelineCache(const DeviceCreateInfo& info) {
 
     Vector<unsigned char> blob;
     if (info.pipeline_cache) {
+        // An explicit directory, then ENGINE_RHI_CACHE_DIR, then the user's cache directory for the application.
         char dir[400];
-        if (ChoosePipelineCacheDir(info.pipeline_cache_dir, std::getenv("ENGINE_RHI_CACHE_DIR"), std::getenv("XDG_CACHE_HOME"),
-                                   std::getenv("HOME"), info.application_name, dir, sizeof(dir)) &&
-            BuildPipelineCachePath(dir, identity, cache_path_, sizeof(cache_path_))) {
+        const PipelineCacheDirChoice choice = ChoosePipelineCacheDir(info.pipeline_cache_dir, std::getenv("ENGINE_RHI_CACHE_DIR"), dir, sizeof(dir));
+        bool have_dir = choice == PipelineCacheDirChoice::Chosen;
+        if (choice == PipelineCacheDirChoice::NotConfigured) {
+            char app[200];
+            io::Path user_cache;
+            const io::Status s = SanitizePipelineCacheAppName(info.application_name, app, sizeof(app)) ? io::UserCacheDirectory(StringView(app), &user_cache)
+                                                                                                    : io::Status::Of(io::Error::Invalid);
+            have_dir = s.Ok() && user_cache.ToNative(dir, sizeof(dir));
+        }
+        if (have_dir && BuildPipelineCachePath(dir, identity, cache_path_, sizeof(cache_path_))) {
             cache_stats_.enabled = true;
-            ReadFile(cache_path_, &blob);
+            ReadCacheFile(cache_path_, &blob);
             if (blob.Size() != 0) {
                 const char* why = CheckPipelineCacheHeader(blob.Data(), blob.Size(), identity);
                 if (why != nullptr) {
@@ -179,14 +140,7 @@ bool VulkanDevice::SavePipelineCache() {
     }
     bool saved = false;
     if (fns_.GetPipelineCacheData(device_, pipeline_cache_, &size, data.Data()) == VK_SUCCESS) {
-        char dir[512];
-        std::strncpy(dir, cache_path_, sizeof(dir) - 1);
-        dir[sizeof(dir) - 1] = '\0';
-        char* slash = std::strrchr(dir, '/');
-        if (slash != nullptr) {
-            *slash = '\0';
-        }
-        if (MakeDirectories(dir) && WriteFileAtomically(cache_path_, data.Data(), size)) {
+        if (SaveCacheFile(cache_path_, data.Data(), size)) {
             std::lock_guard<std::mutex> lock(resource_mutex_);
             cache_stats_.saved_bytes = size;
             saved = true;

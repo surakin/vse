@@ -6562,7 +6562,7 @@ How many bind groups one descriptor pool holds, 16 to 65536 (clamped). The Vulka
 const char* pipeline_cache_dir;
 ```
 
-The directory for the pipeline cache file, or null to use `ENGINE_RHI_CACHE_DIR`, then `$XDG_CACHE_HOME/<application_name>`, then `$HOME/.cache/<application_name>`. Borrowed for the call.
+The directory for the pipeline cache file, or null to use `ENGINE_RHI_CACHE_DIR`, then the user's cache directory for `application_name` (`$XDG_CACHE_HOME/<application_name>`, then `$HOME/.cache/<application_name>`). A directory set here or in the environment that cannot be used means no cache; it never falls back to another one. Borrowed for the call.
 
 ### `faults` {#rhi-devicecreateinfo-faults}
 

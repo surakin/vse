@@ -2033,9 +2033,9 @@ rhi::DeviceCreateInfo::window	variable	rhi	rhi-devicecreateinfo-window	rhi.md	en
 rhi::DeviceCreateInfo::frames_in_flight	variable	rhi	rhi-devicecreateinfo-frames-in-flight	rhi.md	engine/rhi/rhi.h:86
 rhi::DeviceCreateInfo::pipeline_cache	variable	rhi	rhi-devicecreateinfo-pipeline-cache	rhi.md	engine/rhi/rhi.h:91
 rhi::DeviceCreateInfo::descriptor_sets_per_pool	variable	rhi	rhi-devicecreateinfo-descriptor-sets-per-pool	rhi.md	engine/rhi/rhi.h:94
-rhi::DeviceCreateInfo::pipeline_cache_dir	variable	rhi	rhi-devicecreateinfo-pipeline-cache-dir	rhi.md	engine/rhi/rhi.h:97
-rhi::DeviceCreateInfo::faults	variable	rhi	rhi-devicecreateinfo-faults	rhi.md	engine/rhi/rhi.h:99
-rhi::CreateDevice(const DeviceCreateInfo&)	function	rhi	rhi-createdevice-const-devicecreateinfo-amp	rhi.md	engine/rhi/rhi.h:120
+rhi::DeviceCreateInfo::pipeline_cache_dir	variable	rhi	rhi-devicecreateinfo-pipeline-cache-dir	rhi.md	engine/rhi/rhi.h:98
+rhi::DeviceCreateInfo::faults	variable	rhi	rhi-devicecreateinfo-faults	rhi.md	engine/rhi/rhi.h:100
+rhi::CreateDevice(const DeviceCreateInfo&)	function	rhi	rhi-createdevice-const-devicecreateinfo-amp	rhi.md	engine/rhi/rhi.h:121
 rhi::LogRhi	variable	rhi	rhi-logrhi	rhi.md	engine/rhi/rhi_log.h:13
 rhi::RhiLogV(LogVerbosity,const char*,...)	function	rhi	rhi-rhilogv-logverbosity-const-char-star	rhi.md	engine/rhi/rhi_log.h:24
 RhiLog	macro	rhi	rhilog	rhi.md	engine/rhi/rhi_log.h:44
@@ -3354,7 +3354,12 @@ rhi::vulkan::PipelineCacheIdentity::uuid	variable	rhi-vulkan	rhi-vulkan-pipeline
 rhi::vulkan::kPipelineCacheHeaderBytes	variable	rhi-vulkan	rhi-vulkan-kpipelinecacheheaderbytes	rhi-vulkan.md	engine/rhi/vulkan/vk_pipeline_policy.h:74
 rhi::vulkan::CheckPipelineCacheHeader(const void*,usize,const PipelineCacheIdentity&)	function	rhi-vulkan	rhi-vulkan-checkpipelinecacheheader-const-void-star-usize-const-pipelinecacheidentity-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_pipeline_policy.h:88
 rhi::vulkan::BuildPipelineCachePath(const char*,const PipelineCacheIdentity&,char*,usize)	function	rhi-vulkan	rhi-vulkan-buildpipelinecachepath-const-char-star-const-pipelinecacheidentity-amp-char-star-usize	rhi-vulkan.md	engine/rhi/vulkan/vk_pipeline_policy.h:99
-rhi::vulkan::ChoosePipelineCacheDir(const char*,const char*,const char*,const char*,const char*,char*,usize)	function	rhi-vulkan	rhi-vulkan-choosepipelinecachedir-const-char-star-const-char-star-const-char-star-const-char-star-const-char-star-char-star-usize	rhi-vulkan.md	engine/rhi/vulkan/vk_pipeline_policy.h:116
+rhi::vulkan::PipelineCacheDirChoice	enum	rhi-vulkan	rhi-vulkan-pipelinecachedirchoice	rhi-vulkan.md	engine/rhi/vulkan/vk_pipeline_policy.h:102
+rhi::vulkan::PipelineCacheDirChoice::NotConfigured	enumerator	rhi-vulkan	rhi-vulkan-pipelinecachedirchoice-notconfigured	rhi-vulkan.md	engine/rhi/vulkan/vk_pipeline_policy.h:103
+rhi::vulkan::PipelineCacheDirChoice::Chosen	enumerator	rhi-vulkan	rhi-vulkan-pipelinecachedirchoice-chosen	rhi-vulkan.md	engine/rhi/vulkan/vk_pipeline_policy.h:104
+rhi::vulkan::PipelineCacheDirChoice::TooLong	enumerator	rhi-vulkan	rhi-vulkan-pipelinecachedirchoice-toolong	rhi-vulkan.md	engine/rhi/vulkan/vk_pipeline_policy.h:105
+rhi::vulkan::ChoosePipelineCacheDir(const char*,const char*,char*,usize)	function	rhi-vulkan	rhi-vulkan-choosepipelinecachedir-const-char-star-const-char-star-char-star-usize	rhi-vulkan.md	engine/rhi/vulkan/vk_pipeline_policy.h:119
+rhi::vulkan::SanitizePipelineCacheAppName(const char*,char*,usize)	function	rhi-vulkan	rhi-vulkan-sanitizepipelinecacheappname-const-char-star-char-star-usize	rhi-vulkan.md	engine/rhi/vulkan/vk_pipeline_policy.h:129
 rhi::vulkan::VkResultClass	enum	rhi-vulkan	rhi-vulkan-vkresultclass	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:10
 rhi::vulkan::VkResultClass::Success	enumerator	rhi-vulkan	rhi-vulkan-vkresultclass-success	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:11
 rhi::vulkan::VkResultClass::Suboptimal	enumerator	rhi-vulkan	rhi-vulkan-vkresultclass-suboptimal	rhi-vulkan.md	engine/rhi/vulkan/vk_result.h:12

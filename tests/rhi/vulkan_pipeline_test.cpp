@@ -9,6 +9,9 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "temp_dir.h"
+#include "io/file.h"
+#include "io/file_system.h"
 #include "gpu_fixture.h"
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
@@ -123,17 +126,25 @@ TEST_CASE("The pipeline cache path and directory follow the documented order", "
     CHECK(tiny[0] == '\0');
 
     char dir[128];
-    REQUIRE(ChoosePipelineCacheDir("/explicit", "/env", "/xdg", "/home/u", "app", dir, sizeof(dir)));
+    CHECK(ChoosePipelineCacheDir("/explicit", "/env", dir, sizeof(dir)) == PipelineCacheDirChoice::Chosen);
     CHECK(std::strcmp(dir, "/explicit") == 0);
-    REQUIRE(ChoosePipelineCacheDir(nullptr, "/env", "/xdg", "/home/u", "app", dir, sizeof(dir)));
+    CHECK(ChoosePipelineCacheDir(nullptr, "/env", dir, sizeof(dir)) == PipelineCacheDirChoice::Chosen);
     CHECK(std::strcmp(dir, "/env") == 0);
-    REQUIRE(ChoosePipelineCacheDir("", "", "/xdg", "/home/u", "my/app", dir, sizeof(dir)));
-    CHECK(std::strcmp(dir, "/xdg/my_app") == 0);
-    REQUIRE(ChoosePipelineCacheDir(nullptr, nullptr, nullptr, "/home/u", "app", dir, sizeof(dir)));
-    CHECK(std::strcmp(dir, "/home/u/.cache/app") == 0);
-    CHECK_FALSE(ChoosePipelineCacheDir(nullptr, nullptr, nullptr, nullptr, "app", dir, sizeof(dir)));
-    CHECK(dir[0] == '\0');
-    CHECK_FALSE(ChoosePipelineCacheDir("/a/very/long/directory/name/that/does/not/fit", nullptr, nullptr, nullptr, "app", tiny, sizeof(tiny)));
+    CHECK(ChoosePipelineCacheDir("", "", dir, sizeof(dir)) == PipelineCacheDirChoice::NotConfigured);
+    CHECK(dir[0] == '\0'); // neither set: the caller falls back to the user's cache directory
+    CHECK(ChoosePipelineCacheDir(nullptr, nullptr, dir, sizeof(dir)) == PipelineCacheDirChoice::NotConfigured);
+    CHECK(ChoosePipelineCacheDir("/a/very/long/directory/name/that/does/not/fit", nullptr, tiny, sizeof(tiny)) == PipelineCacheDirChoice::TooLong);
+    CHECK(tiny[0] == '\0');
+
+    char app[32];
+    REQUIRE(SanitizePipelineCacheAppName("my/app", app, sizeof(app)));
+    CHECK(std::strcmp(app, "my_app") == 0);
+    REQUIRE(SanitizePipelineCacheAppName(nullptr, app, sizeof(app)));
+    CHECK(std::strcmp(app, "engine") == 0);
+    REQUIRE(SanitizePipelineCacheAppName("", app, sizeof(app)));
+    CHECK(std::strcmp(app, "engine") == 0);
+    CHECK_FALSE(SanitizePipelineCacheAppName("an application name that is much too long for the buffer", app, 8));
+    CHECK(app[0] == '\0');
 }
 
 namespace {
@@ -462,13 +473,42 @@ TEST_CASE("The triangle pipeline draws a triangle into an offscreen target", "[r
     t.device->DestroyTexture(target);
 }
 
+TEST_CASE("A cache directory that cannot be used never stops the device", "[rhi][vulkan][gpu][pipeline][cache]") {
+    io_test::TempDir temp_dir;
+    VulkanPipelineTestQuietLog quiet;
+    SECTION("the cache directory is a file") {
+        REQUIRE(io_test::WriteText(temp_dir / "blocked", "not a directory"));
+        const std::string dir = temp_dir.Native() + "/blocked";
+        TriangleDevice t(dir.c_str());
+        CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
+        CHECK_FALSE(t.device->SavePipelineCache()); // reported with a warning, not a failure of the device
+        CHECK(t.device->PipelineCache().saved_bytes == 0);
+    }
+    SECTION("the cache directory cannot be written") {
+        if (::geteuid() == 0) {
+            SUCCEED("root writes anywhere");
+            return;
+        }
+        REQUIRE(io::CreateDirectory(temp_dir / "readonly").Ok());
+        REQUIRE(::chmod((temp_dir.Native() + "/readonly").c_str(), 0500) == 0);
+        const std::string dir = temp_dir.Native() + "/readonly/cache";
+        TriangleDevice t(dir.c_str());
+        CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
+        CHECK_FALSE(t.device->SavePipelineCache());
+    }
+    SECTION("the path is too long to hold a cache file name") {
+        const std::string dir = temp_dir.Native() + "/" + std::string(600, 'd');
+        TriangleDevice t(dir.c_str());
+        CHECK(t.device->PipelineCachePath()[0] == '\0'); // running without a cache
+        CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
+    }
+}
+
 TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when damaged", "[rhi][vulkan][gpu][pipeline][cache]") {
-    char dir[] = "/tmp/rhi_cache_test_XXXXXX";
-    REQUIRE(mkdtemp(dir) != nullptr);
-    auto cleanup = [&](const char* path) {
-        if (path != nullptr && path[0] != '\0') std::remove(path);
-        rmdir(dir);
-    };
+    io_test::TempDir temp_dir;
+    char dir[512];
+    REQUIRE(temp_dir.Native().size() < sizeof(dir));
+    std::snprintf(dir, sizeof(dir), "%s", temp_dir.Native().c_str()); // the TempDir removes everything, whatever a section left behind
     char file[512] = {};
 
     {
@@ -484,9 +524,9 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
         CHECK(p.IsValid());
         t.device->DestroyPipeline(p);
     } // saved here
-    struct stat st;
-    REQUIRE(stat(file, &st) == 0);
-    const u64 first_size = static_cast<u64>(st.st_size);
+    io::FileInfo st;
+    REQUIRE(io::Stat(io::Path(StringView(file)), &st).Ok());
+    const u64 first_size = st.size;
     CHECK(first_size > 32);
 
     {
@@ -501,25 +541,23 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
             TriangleDevice t(dir);
             const PipelineHandle p = t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm));
             REQUIRE(p.IsValid());
-            REQUIRE(std::remove(file) == 0);
+            REQUIRE(io::Remove(io::Path(StringView(file))).Ok());
             CHECK(t.device->SavePipelineCache());
-            CHECK(stat(file, &st) == 0);
+            CHECK(io::Stat(io::Path(StringView(file)), &st).Ok());
             CHECK(t.device->PipelineCache().saved_bytes > 32);
             t.device->DestroyPipeline(p);
         }
     }
     SECTION("a cache path that is a directory is ignored, not read") {
-        REQUIRE(std::remove(file) == 0);
-        REQUIRE(mkdir(file, 0755) == 0);
+        REQUIRE(io::Remove(io::Path(StringView(file))).Ok());
+        REQUIRE(io::CreateDirectory(io::Path(StringView(file))).Ok());
         {
             TriangleDevice t(dir);
             CHECK(t.device->PipelineCache().loaded_bytes == 0);
             CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
         }
-        rmdir(file);
-        REQUIRE(stat(file, &st) != 0); // saving into the directory failed, and nothing was left behind
-        std::FILE* f = std::fopen(file, "wb"); // so cleanup below finds a file to remove
-        if (f != nullptr) std::fclose(f);
+        REQUIRE(io::Remove(io::Path(StringView(file))).Ok());
+        REQUIRE(io::Stat(io::Path(StringView(file)), &st).Is(io::Error::NotFound)); // saving into the directory failed, and nothing was left behind
     }
     SECTION("a truncated file is ignored and replaced") {
         REQUIRE(truncate(file, 10) == 0);
@@ -536,24 +574,22 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
         CHECK_FALSE(again.device->PipelineCache().rejected);
     }
     SECTION("a file for another device is ignored") {
-        std::FILE* f = std::fopen(file, "r+b");
-        REQUIRE(f != nullptr);
-        std::fseek(f, 8, SEEK_SET); // the vendor id
+        io::FilePtr f;
+        REQUIRE(io::File::Open(io::Path(StringView(file)), io::OpenMode::ReadWrite, io::kOpenNone, &f).Ok());
         const unsigned char bogus[4] = {0xde, 0xad, 0xbe, 0xef};
-        std::fwrite(bogus, 1, 4, f);
-        std::fclose(f);
+        REQUIRE(f->Write(bogus, 4, 8).Ok()); // the vendor id
+        REQUIRE(f->Close().Ok());
         VulkanPipelineTestQuietLog quiet;
         TriangleDevice t(dir);
         CHECK(t.device->PipelineCache().rejected);
         CHECK(t.device->PipelineCache().loaded_bytes == 0);
     }
     SECTION("garbage with a plausible header is survived") {
-        std::FILE* f = std::fopen(file, "r+b");
-        REQUIRE(f != nullptr);
-        std::fseek(f, 40, SEEK_SET);
+        io::FilePtr f;
+        REQUIRE(io::File::Open(io::Path(StringView(file)), io::OpenMode::ReadWrite, io::kOpenNone, &f).Ok());
         const unsigned char junk[64] = {0xff};
-        std::fwrite(junk, 1, sizeof(junk), f);
-        std::fclose(f);
+        REQUIRE(f->Write(junk, sizeof(junk), 40).Ok());
+        REQUIRE(f->Close().Ok());
         VulkanPipelineTestQuietLog quiet;
         TriangleDevice t(dir);
         CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
@@ -569,5 +605,4 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
         CHECK_FALSE(t.device->PipelineCache().enabled);
         CHECK(t.device->PipelineCachePath()[0] == '\0');
     }
-    cleanup(file);
 }

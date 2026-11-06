@@ -6,6 +6,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "io/file.h"
 #include "cube_fixture.h"
 #include "cube_scene.h"
 #include "image_compare.h"
@@ -228,50 +229,44 @@ TEST_CASE("An rtex file round-trips and damaged ones are refused", "[rhi][textur
     CHECK(built.data[16 * 16 * 4] == 128);
     const std::string path_string = gpu_test::TempPath("roundtrip.rtex");
     const char* path = path_string.c_str();
-    REQUIRE(demo::WriteRtex(path, built));
+    REQUIRE(demo::WriteRtex(io::Path(StringView(path)), built).Ok());
     demo::RtexImage back;
-    REQUIRE(demo::ReadRtex(path, &back));
+    REQUIRE(demo::ReadRtex(io::Path(StringView(path)), &back).Ok());
     CHECK(back.width == 16);
     CHECK(back.mip_count == 5);
     CHECK(back.format == Format::RGBA8_UNorm);
     CHECK(back.data == built.data);
 
     auto write = [](const char* p, const unsigned char* bytes, usize n) {
-        std::FILE* f = std::fopen(p, "wb");
-        REQUIRE(f != nullptr);
-        std::fwrite(bytes, 1, n, f);
-        std::fclose(f);
+        REQUIRE(io::WriteFile(io::Path(StringView(p)), bytes, n).Ok());
     };
     // Truncated payload.
     std::vector<unsigned char> good;
     {
-        std::FILE* f = std::fopen(path, "rb");
-        REQUIRE(f != nullptr);
-        unsigned char buf[4096];
-        usize n;
-        while ((n = std::fread(buf, 1, sizeof(buf), f)) > 0) good.insert(good.end(), buf, buf + n);
-        std::fclose(f);
+        Vector<u8> bytes;
+        REQUIRE(io::ReadFile(io::Path(StringView(path)), &bytes).Ok());
+        good.assign(bytes.Data(), bytes.Data() + bytes.Size());
     }
     write(gpu_test::TempPath("rhi_test_short.rtex").c_str(), good.data(), good.size() - 1);
-    CHECK_FALSE(demo::ReadRtex(gpu_test::TempPath("rhi_test_short.rtex").c_str(), &back));
+    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_short.rtex").c_str())), &back).Failed());
     // A wrong magic, an unknown format, a mip count beyond the chain, and a huge size over a tiny file.
     std::vector<unsigned char> bad = good;
     bad[0] = 'X';
     write(gpu_test::TempPath("rhi_test_magic.rtex").c_str(), bad.data(), bad.size());
-    CHECK_FALSE(demo::ReadRtex(gpu_test::TempPath("rhi_test_magic.rtex").c_str(), &back));
+    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_magic.rtex").c_str())), &back).Failed());
     bad = good;
     bad[16] = 0xff;
     write(gpu_test::TempPath("rhi_test_format.rtex").c_str(), bad.data(), bad.size());
-    CHECK_FALSE(demo::ReadRtex(gpu_test::TempPath("rhi_test_format.rtex").c_str(), &back));
+    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_format.rtex").c_str())), &back).Failed());
     bad = good;
     bad[20] = 40;
     write(gpu_test::TempPath("rhi_test_mips.rtex").c_str(), bad.data(), bad.size());
-    CHECK_FALSE(demo::ReadRtex(gpu_test::TempPath("rhi_test_mips.rtex").c_str(), &back));
+    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_mips.rtex").c_str())), &back).Failed());
     bad = good;
     bad[9] = 0x40; // width 16 + 0x4000
     write(gpu_test::TempPath("rhi_test_huge.rtex").c_str(), bad.data(), 24);
-    CHECK_FALSE(demo::ReadRtex(gpu_test::TempPath("rhi_test_huge.rtex").c_str(), &back));
-    CHECK_FALSE(demo::ReadRtex(gpu_test::TempPath("rhi_no_such.rtex").c_str(), &back));
+    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_test_huge.rtex").c_str())), &back).Failed());
+    CHECK(demo::ReadRtex(io::Path(StringView(gpu_test::TempPath("rhi_no_such.rtex").c_str())), &back).Failed());
 }
 
 TEST_CASE("The demo asset is a valid rtex file", "[rhi][textured][image]") {
@@ -280,10 +275,10 @@ TEST_CASE("The demo asset is a valid rtex file", "[rhi][textured][image]") {
     if (gpu_test::UpdatingGoldens()) {
         // The same switch that regenerates goldens regenerates the demo asset: a 256x256 sRGB checkerboard.
         const demo::Pixels checker = demo::Checkerboard(256, 32, {235, 200, 90, 255}, {40, 60, 120, 255});
-        REQUIRE(demo::WriteRtex(path.c_str(), demo::BuildRtex(checker, Format::RGBA8_SRGB)));
+        REQUIRE(demo::WriteRtex(io::Path(StringView(path.c_str())), demo::BuildRtex(checker, Format::RGBA8_SRGB)).Ok());
         WARN("ENGINE_RHI_UPDATE_GOLDEN=1: game/rhi_demo/assets/checker.rtex was rewritten");
     }
-    REQUIRE(demo::ReadRtex(path.c_str(), &asset));
+    REQUIRE(demo::ReadRtex(io::Path(StringView(path.c_str())), &asset).Ok());
     CHECK(asset.width == 256);
     CHECK(asset.format == Format::RGBA8_SRGB);
     CHECK(asset.mip_count == 9);

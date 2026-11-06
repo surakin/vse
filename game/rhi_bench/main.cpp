@@ -13,6 +13,8 @@
 
 #include <unistd.h>
 
+#include "io/file.h"
+#include "io/file_system.h"
 #include "debug/program_setup.h"
 #include "cube_scene.h"
 #include "rhi/rhi.h"
@@ -247,8 +249,11 @@ double TimePipeline(bool cache, const char* dir) {
 }
 
 void BenchPipelines() {
-    char dir[] = "/tmp/rhi-bench-cache-XXXXXX";
-    if (mkdtemp(dir) == nullptr) {
+    io::Path temp;
+    io::Path scratch;
+    char dir[io::kMaxPathBytes + 1];
+    if (io::TempDirectory(&temp).Failed() || io::CreateTempDirectory(temp, "rhi-bench-cache", &scratch).Failed() ||
+        !scratch.ToNative(dir, sizeof(dir))) {
         std::printf("pipelines: no temp directory\n");
         return;
     }
@@ -256,9 +261,7 @@ void BenchPipelines() {
     const double cold = TimePipeline(true, dir);
     const double warm = TimePipeline(true, dir);
     std::printf("pipeline     cube create: no cache %.3f ms, cold cache %.3f ms, warm cache %.3f ms\n", off * 1e3, cold * 1e3, warm * 1e3);
-    char command[256];
-    std::snprintf(command, sizeof(command), "rm -rf %s", dir);
-    if (std::system(command) != 0) {
+    if (io::RemoveAll(scratch).Failed()) {
         std::printf("(could not remove %s)\n", dir);
     }
 }

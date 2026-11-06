@@ -5,6 +5,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "io/file.h"
 #include "gpu_fixture.h"
 #include "image_compare.h"
 #include "render_target.h"
@@ -247,10 +248,8 @@ TEST_CASE("PPM files round-trip and malformed ones are refused",
   CHECK(back.height == 4);
   CHECK(back.rgba == img.rgba);
   CHECK_FALSE(gpu_test::ReadPpm(gpu_test::TempPath("rhi_no_such_file.ppm").c_str(), &back));
-  std::FILE *f = std::fopen(gpu_test::TempPath("rhi_ppm_bad.ppm").c_str(), "wb");
-  REQUIRE(f != nullptr);
-  std::fputs("P6\n4 4\n255\nshort", f);
-  std::fclose(f);
+  const char bad[] = "P6\n4 4\n255\nshort";
+  REQUIRE(engine_placeholder::io::WriteFile(engine_placeholder::io::Path(engine_placeholder::StringView(gpu_test::TempPath("rhi_ppm_bad.ppm").c_str())), bad, sizeof(bad) - 1).Ok());
   CHECK_FALSE(gpu_test::ReadPpm(gpu_test::TempPath("rhi_ppm_bad.ppm").c_str(), &back));
 }
 

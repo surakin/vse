@@ -190,6 +190,14 @@ TEST_CASE("io: RemoveAll removes trees, never follows links and refuses dangerou
     for (int i = 0; i < 140; ++i) deep = deep.Join("d");
     CHECK(io::CreateDirectories(deep).Ok());
     CHECK(io::RemoveAll(dir / "deep").Is(Error::TooLong));
+    // Make it shallow enough for the fixture's own cleanup: the refused RemoveAll deleted nothing, so remove the deepest 20 levels from the
+    // bottom up.
+    Path leaf = dir / "deep";
+    for (int i = 0; i < 140; ++i) leaf = leaf.Join("d");
+    for (int level = 0; level < 20; ++level) {
+        REQUIRE(io::Remove(leaf).Ok());
+        leaf = leaf.Parent();
+    }
 }
 
 TEST_CASE("io: Rename and Copy", "[io][fs]") {

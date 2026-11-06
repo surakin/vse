@@ -180,59 +180,75 @@ RtexImage BuildRtex(const Pixels& pixels, Format format) {
     return out;
 }
 
-bool WriteRtex(const char* path, const RtexImage& image) {
-    if (!FourByte(image.format) || image.width == 0 || image.height == 0 || image.mip_count == 0 || image.data.size() != PayloadBytes(image.width, image.height, image.mip_count)) {
-        return false;
+io::Status WritePpm(const io::Path& path, u32 width, u32 height, const unsigned char* rgba) {
+    char header[64];
+    const int header_length = std::snprintf(header, sizeof(header), "P6\n%u %u\n255\n", width, height);
+    if (header_length <= 0) {
+        return io::Status::Of(io::Error::Invalid);
     }
-    unsigned char header[kHeaderBytes];
-    std::memcpy(header, kMagic, 4);
-    PutU32(header + 4, kVersion);
-    PutU32(header + 8, image.width);
-    PutU32(header + 12, image.height);
-    PutU32(header + 16, static_cast<u32>(image.format));
-    PutU32(header + 20, image.mip_count);
-    std::FILE* f = std::fopen(path, "wb");
-    if (f == nullptr) {
-        return false;
+    const usize pixels = static_cast<usize>(width) * height;
+    std::vector<unsigned char> bytes(static_cast<usize>(header_length) + pixels * 3);
+    std::memcpy(bytes.data(), header, static_cast<usize>(header_length));
+    for (usize i = 0; i < pixels; ++i) {
+        std::memcpy(bytes.data() + header_length + i * 3, rgba + i * 4, 3);
     }
-    const bool ok = std::fwrite(header, 1, kHeaderBytes, f) == kHeaderBytes && std::fwrite(image.data.data(), 1, image.data.size(), f) == image.data.size();
-    return std::fclose(f) == 0 && ok;
+    return io::WriteFile(path, bytes.data(), bytes.size());
 }
 
-bool ReadRtex(const char* path, RtexImage* image) {
-    std::FILE* f = std::fopen(path, "rb");
-    if (f == nullptr) {
-        return false;
+io::Status WriteRtex(const io::Path& path, const RtexImage& image) {
+    if (!FourByte(image.format) || image.width == 0 || image.height == 0 || image.mip_count == 0 || image.data.size() != PayloadBytes(image.width, image.height, image.mip_count)) {
+        return io::Status::Of(io::Error::Invalid);
+    }
+    std::vector<unsigned char> bytes(kHeaderBytes + image.data.size());
+    std::memcpy(bytes.data(), kMagic, 4);
+    PutU32(bytes.data() + 4, kVersion);
+    PutU32(bytes.data() + 8, image.width);
+    PutU32(bytes.data() + 12, image.height);
+    PutU32(bytes.data() + 16, static_cast<u32>(image.format));
+    PutU32(bytes.data() + 20, image.mip_count);
+    std::memcpy(bytes.data() + kHeaderBytes, image.data.data(), image.data.size());
+    return io::WriteFileAtomic(path, bytes.data(), bytes.size());
+}
+
+io::Status ReadRtex(const io::Path& path, RtexImage* image) {
+    io::FilePtr file;
+    if (io::Status s = io::File::Open(path, io::OpenMode::Read, io::kOpenNone, &file); s.Failed()) {
+        return s;
     }
     unsigned char header[kHeaderBytes];
-    bool ok = std::fread(header, 1, kHeaderBytes, f) == kHeaderBytes && std::memcmp(header, kMagic, 4) == 0 && GetU32(header + 4) == kVersion;
+    if (io::Status s = io::ReadExact(*file, header, kHeaderBytes, 0); s.Failed()) {
+        return s.Is(io::Error::EndOfFile) ? io::Status::Of(io::Error::Invalid) : s;
+    }
+    if (std::memcmp(header, kMagic, 4) != 0 || GetU32(header + 4) != kVersion) {
+        return io::Status::Of(io::Error::Invalid);
+    }
     RtexImage r;
-    if (ok) {
-        r.width = GetU32(header + 8);
-        r.height = GetU32(header + 12);
-        const u32 format = GetU32(header + 16);
-        r.mip_count = GetU32(header + 20);
-        ok = r.width > 0 && r.height > 0 && r.width <= kMaxDimension && r.height <= kMaxDimension && format > 0 &&
-             format < static_cast<u32>(Format::Count) && r.mip_count > 0 && r.mip_count <= FullMipCount(r.width, r.height);
-        r.format = ok ? static_cast<Format>(format) : Format::Undefined;
-        ok = ok && FourByte(r.format);
+    r.width = GetU32(header + 8);
+    r.height = GetU32(header + 12);
+    const u32 format = GetU32(header + 16);
+    r.mip_count = GetU32(header + 20);
+    bool ok = r.width > 0 && r.height > 0 && r.width <= kMaxDimension && r.height <= kMaxDimension && format > 0 &&
+              format < static_cast<u32>(Format::Count) && r.mip_count > 0 && r.mip_count <= FullMipCount(r.width, r.height);
+    r.format = ok ? static_cast<Format>(format) : Format::Undefined;
+    ok = ok && FourByte(r.format);
+    if (!ok) {
+        return io::Status::Of(io::Error::Invalid);
     }
-    if (ok) {
-        // The file must hold the whole payload before anything is allocated for it.
-        const u64 payload = PayloadBytes(r.width, r.height, r.mip_count);
-        ok = std::fseek(f, 0, SEEK_END) == 0;
-        const long size = ok ? std::ftell(f) : -1;
-        ok = ok && size >= 0 && static_cast<u64>(size) == kHeaderBytes + payload && std::fseek(f, kHeaderBytes, SEEK_SET) == 0;
-        if (ok) {
-            r.data.resize(static_cast<usize>(payload));
-            ok = std::fread(r.data.data(), 1, r.data.size(), f) == r.data.size();
-        }
+    // The file must hold exactly the payload before anything is allocated for it.
+    const u64 payload = PayloadBytes(r.width, r.height, r.mip_count);
+    u64 size = 0;
+    if (io::Status s = file->Size(&size); s.Failed()) {
+        return s;
     }
-    std::fclose(f);
-    if (ok) {
-        *image = static_cast<RtexImage&&>(r);
+    if (size != kHeaderBytes + payload) {
+        return io::Status::Of(io::Error::Invalid);
     }
-    return ok;
+    r.data.resize(static_cast<usize>(payload));
+    if (io::Status s = io::ReadExact(*file, r.data.data(), r.data.size(), kHeaderBytes); s.Failed()) {
+        return s.Is(io::Error::EndOfFile) ? io::Status::Of(io::Error::Invalid) : s;
+    }
+    *image = static_cast<RtexImage&&>(r);
+    return io::Status::Success();
 }
 
 TextureHandle CreateTextureFromRtex(Device* device, const RtexImage& image, const char* debug_name) {

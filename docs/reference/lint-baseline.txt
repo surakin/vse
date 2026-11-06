@@ -14,4 +14,4 @@ module	foundation/debug	200	200
 module	jobs	165	165
 module	rhi	718	718
 module	renderer	947	947
-module	rhi-vulkan	435	435
+module	rhi-vulkan	440	440
