@@ -1,0 +1,2 @@
+plans/phase-05-test-scoping.md
+STATUS.md

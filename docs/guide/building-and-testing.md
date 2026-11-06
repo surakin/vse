@@ -61,7 +61,7 @@ Tests per phase and flavor on 2026-11-06 (`plain` is neither `asan` nor `tsan`; 
 | 2.5 documentation tooling | 172 | 168 | - |
 | 3 RHI | 226 | 211 | 143 |
 | 4 renderer | 211 | 178 | 148 |
-| 5 test scoping | 4 | - | - |
+| 5 test scoping | 35 | - | - |
 
 The `flavors` lines in `tests/phases.txt` state which flavors each phase has, and `test_phase_labels` fails if one
 appears or disappears.

@@ -120,8 +120,11 @@ Label names: `phase0`, `phase1`, `phase2`, `phase2_5`, `phase3`, `phase4`, then 
    starts a phase, nowhere else.
 3. **A scoped run** (`scripts/test-phase.sh --current`, the default for development) is: the current phase's tests,
    plus `--affected`: the tests of every phase that owns a module the diff touches. The module-to-phase map
-   (`tests/module_map.txt`, one `dir phases` line each): `engine/foundation` 0 and 1, `engine/jobs` 2, `engine/rhi`
-   3, `engine/renderer` and `shaders` 4, `tools/docgen` 2.5, `game/rhi_demo` 3, `game/renderer_demo` 4, `tools/shader_mint` 4.
+   (`tests/module_map.txt`, one `dir phases` line each). Revised on Day 88 after review: a directory maps to the tests of
+   everything that links it, not only its own: `engine/foundation` 0, 1, 2, 2.5, 3 and 4, `engine/jobs` 2 to 4 (the
+   renderer records on the scheduler), `engine/rhi` 2.5, 3 and 4, `engine/renderer` 2.5 and 4, `shaders` 3 and 4,
+   `tools/docgen` 2.5, `game/rhi_demo` 3, `game/renderer_demo` 4, `tools/shader_mint` 4; `docs` 2.5. Every `engine/`
+   directory includes 2.5 because the docs checks read the public headers.
    A touched directory missing from the map forces the full suite (fail safe).
 4. **Always full** (all phases, `--all`): the closing day of every phase, any change to a `CMakeLists.txt`, `cmake/`,
    `CMakePresets.json` or `tests/phases.txt`, a change to any header under `engine/foundation` (every module includes

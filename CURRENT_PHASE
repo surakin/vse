@@ -1,0 +1,3 @@
+# The phase the project is in (an integer, or 2.5 style). scripts/test-phase.sh runs this phase's tests by default.
+# Changed only in the commit that starts a phase.
+5

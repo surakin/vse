@@ -1,0 +1,43 @@
+# Which phases' tests exercise each source directory (the tests of the module itself, of everything that links it, and
+# of the docs checks when it holds public headers), for scripts/test-phase.sh --affected (Phase 5).
+#
+# `<path>  <phases>`: a file or directory (longest match wins), then a comma-separated list of phases, or `-` for
+# "no test depends on it" (plans, notes). A changed file under no line makes --affected run the full suite, so a new
+# directory cannot be skipped by accident. Separately, --affected always runs everything when a CMakeLists.txt, cmake/,
+# CMakePresets.json, third_party/, a header under engine/foundation or tests/phases.txt changes (the script holds that list).
+
+engine/foundation   0,1,2,2.5,3,4
+engine/jobs         2,2.5,3,4
+engine/rhi          2.5,3,4
+engine/renderer     2.5,4
+shaders             3,4
+tools/docgen        2.5
+tools/shader_mint   4
+tools/rhi_boundary_check 3
+tools/raw_new_check 4
+game/rhi_demo       3
+game/renderer_demo  4
+game/renderer_bench 4
+game/common         3,4
+docs                2.5
+tests/foundation    0,1
+tests/jobs          2
+tests/docgen        2.5
+tests/rhi           3,4
+tests/renderer      4
+tests/shader_mint   4
+tests/phase_labels  5
+tests/test_phase_script 5
+
+# Nothing runs against these.
+plans               -
+claude-memory       -
+.remember           -
+.gitignore          -
+CLAUDE.md           -
+PLAN.md             -
+STATUS.md           -
+KNOWN-ISSUES.md     -
+UNICODE_VERSION     -
+scripts             5
+CURRENT_PHASE       -

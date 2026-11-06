@@ -1,0 +1,2 @@
+tools/docgen/scanner.cpp
+shaders/lit.frag.slang
