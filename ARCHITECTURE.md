@@ -70,6 +70,14 @@ Measured edges outside the cycle that break a rule:
 | 9 | programs include `os/linux/` | `game/rhi_demo/main.cpp`, `game/renderer_demo/main.cpp` include `os/linux/platform_window_host.h` | Programs use neutral headers only; these do not compile on Windows. |
 | 10 | display libraries are PUBLIC on foundation | `target_link_libraries(foundation PUBLIC PkgConfig::WaylandClient ... X11Client)` | Every consumer, including `docgen` and `shader_mint`, links Wayland and X11. A consequence of item 5. |
 
+Found when the graph was re-measured on 2026-11-07 (Phase 12 Day 140; they keep the cycle connected even after items 1-4 are fixed):
+
+| # | Upward edge | Where | Why it is there |
+|---|---|---|---|
+| 11 | log (3) → strings (4) | `log/log.h` includes `string/string.h` | `Log` and `LogChannel::Find` take a `StringView`. |
+| 12 | containers (4) ↔ strings (4) | `containers/span.h` includes `string/string.h`, which includes `containers/vector.h` | A `Span` of chars converts to and from `StringView`. |
+| 13 | base (0) → strings (4), log (3) | `int128.h` includes `string/string.h` (`FromText(StringView)`), `int128.cpp` includes `log/log.h` | Parsing text into a 128-bit integer. |
+
 Placement only (not a dependency problem): `algorithm.h` is in the foundation root but uses `Span` and the heap allocator, so it is layer 4;
 `int128.h`'s `FromText` takes a `StringView`, so either it moves to layer 4 or `FromText` moves to the string module.
 
@@ -97,6 +105,8 @@ The day that does each item is in brackets; the plan is `plans/phase-12-module-l
    can then build and test each layer as soon as its backend exists.
 9. **[Day 141, first] A gate keeps it this way:** a `module_deps_check` ctest computes the include graph, maps files to the modules of section 1 and fails on an upward edge, a
    cycle or a program including `os/<platform>/`, with an allow list (a reason per entry, stale entries fail) that starts with the items above still open.
+10. **[Day 142-143] `StringView` becomes a base-layer type** (`string_view.h`, needs only `types.h`); `log.h`, `os.h`, `int128.h` and `span.h` include it instead of
+    `string/string.h`, and `int128.cpp` includes `log/assert.h` (base) instead of `log/log.h`. Removes items 11, 12 and 13 (with `os.h`'s part of item 4).
 
 ## 4. Platform-specific code
 

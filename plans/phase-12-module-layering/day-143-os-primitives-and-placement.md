@@ -11,6 +11,8 @@ foundation's include graph has no cycle except through the window code that Day 
 - [ ] **Log configuration:** find every caller of `log::LoadConfig` (and of the `<Channel>.verbosity/enabled` file form); since Phase 11 made the channels
       settings, either retire the file form (callers use `--set log.*` or a settings file) or move its file reading into `foundation_settings`; `log/log.cpp` no
       longer includes `io/`. Any user-visible change (a flag or file that stops working) is listed in the day file and the guide, with the replacement.
+- [ ] **`StringView` to the base layer (spec D3):** new `string_view.h` in the foundation root, `string/string.h` includes it; `log/log.h`, `os/os.h`,
+      `int128.h`, `containers/span.h` include it instead of `string/string.h`; `int128.cpp` includes `log/assert.h`, not `log/log.h`. Removes items 11, 12, 13.
 - [ ] **OS primitives below strings:** `os/os.h` stops including `string/string.h` and `mem/heap_allocator.h`: paths are passed as `StringView` moved to the base
       layer (or as pointer and length — the spec's choice), `EnvironmentEntry` writes into a caller buffer and reports the needed size; every caller (the settings
       environment source, the log, the debug facilities, tests) is ported; the signal-safe callers are unchanged in behavior (`signal_safety_check` passes).

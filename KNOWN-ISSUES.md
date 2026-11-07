@@ -8,7 +8,7 @@ whenever a day leaves something broken, unmeasured or deferred. Entries state fa
 
 | Test | Since | Cause | Status |
 |---|---|---|---|
-| (none) | | | |
+| `renderer_demo_script_wayland` (phase 8) | 2026-11-07 (first seen on Phase 12 Day 140, before any Phase 12 code) | Observed: `renderer_demo --backend wayland` (with or without `--script`) segfaults on its first frame, 3 of 3 runs; the faulting call is a null function pointer inside `libnvidia-glcore.so.615.78.08`, reached through `libVkLayer_khronos_validation.so` from `VulkanSwapchain::Acquire` (`vk_swapchain.cpp:335`). The demo log reports driver `615.312.512` while the library file on disk is `615.78.08`. The X11 variant (`renderer_demo_script_x11`) passes. Not investigated further. | open; not caused by Phase 12 (docs-only diff at the time) |
 
 ## Flaky tests
 
