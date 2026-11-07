@@ -90,7 +90,9 @@ run-time GPU switch is tested against on Windows.
 5. **Symbols are PDBs; stack traces use DbgHelp** behind `ResolveStackTrace` (libbacktrace reads DWARF only and is not built on Windows). Crash capture is
    sentry-native's Breakpad backend with no transport, as on Linux; the report is written from its `on_crash` hook. The symbol store uses the standard
    `<pdb>/<GUID+age>/<pdb>` layout so WinDbg and Visual Studio read it without extra tools.
-6. **One Win32 window backend** (`WindowBackend::Win32`; `auto` means Win32 on Windows); input from window messages plus raw input for relative mouse
+6. **One Win32 window backend** (`WindowBackend::Win32`; `auto` means Win32 on Windows); **windowed programs use the Windows subsystem**,
+   entered through `main` with `/ENTRY:mainCRTStartup` (no `WinMain`; developer decision, 2026-11-07), tests and tools stay console programs (Day
+   158); input from window messages plus raw input for relative mouse
    motion.
 7. **Vulkan on Windows comes before DX12** (Days 160-161): it proves the window, the renderer and the golden images on Windows with a backend that
    already works, and it is the baseline the DX12 numbers are compared with on the same machine.

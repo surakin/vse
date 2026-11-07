@@ -27,7 +27,16 @@ The `os::Window` backend for Windows (input is tomorrow). New files under `engin
 - [ ] **Window tests on Windows:** the shared window tests (`tests/foundation/window_*`) run in the `display` group, skipping through `SKIP_IF_NO_DISPLAY_SESSION()`
       on a locked session; Windows-specific cases (`win32_window_windows_test.cpp`, phase 13): DPI change by `SetWindowPos` across a simulated DPI, minimize and
       restore, close request, destroying the window with messages still queued, two windows at once.
-- [ ] **Human check** (record here or file): a window appears, resizes by dragging, minimizes and restores, toggles fullscreen and closes with the close button.
+- [ ] **Windowed programs use the Windows subsystem** (developer decision, 2026-11-07), still entered through `main` (no `WinMain`): a CMake
+      helper `engine_windowed_program(<target>)` sets `WIN32_EXECUTABLE` and `/ENTRY:mainCRTStartup` (for both `link.exe` and `lld-link`), so the
+      C runtime still builds `argv` (UTF-8 through the manifest) and calls `main`; `game/hello_window` uses it from today, the demos from Day 161.
+      Tests and command-line tools stay console programs (ctest captures their output and a terminal waits for them). A GUI program has no
+      console, so the `os` backend gives standard output and error somewhere to go: handles the program inherited (a pipe, a redirected file,
+      ctest) are used as they are; with none, the first write tries `AttachConsole(ATTACH_PARENT_PROCESS)` once and opens `CONOUT$`, so a program
+      started from a terminal still prints there (after the shell's prompt, since the shell does not wait for a GUI program: documented); with
+      no parent console, writes report failure and the log file still has everything. Tests: a windowed probe built with the helper has subsystem
+      2 (`IMAGE_SUBSYSTEM_WINDOWS_GUI`) in its PE header, receives non-ASCII arguments in `main`, and its output reaches a parent's pipe.
+- [ ] **Human check** (record here or file): started from Explorer, `hello_window` opens no console window; a window appears, resizes by dragging, minimizes and restores, toggles fullscreen and closes with the close button.
 - [ ] **Documentation:** `window.h` comments name Win32 where they list backends; `docs/guide/platform-windowing-and-input.md` "Windows"; the docs module map
       (`docs/reference/modules.txt`) includes the Windows window header if it is public, as the Linux ones are; reference regenerated; `docgen lint` zero.
 - [ ] **Runs:** Windows `--affected` plain and asan; Linux `--affected` (`window.h` and the backend plan changed); quote the lines.
