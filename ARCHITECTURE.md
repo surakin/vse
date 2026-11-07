@@ -83,7 +83,9 @@ The numbers are the items of the original table; the plan is `plans/phase-12-mod
   `rhi/<backend>/`). Each has a `BACKEND.md` checklist kept in step by a ctest.
 - OS and graphics headers (`windows.h`, `wayland-client.h`, `X11/Xlib.h`, `vulkan.h`, `d3d12.h`, Metal) appear only in those directories
   (`platform_neutral_check`, `rhi_boundary_check`).
-- Programs and neutral code never include a per-platform header.
+- Programs and neutral code never include a per-platform header. A per-platform directory may include the same platform's directory of a
+  lower layer (`io/windows/` uses `os/windows/win32.h` and `os/windows/utf16.h`; Phase 13 Day 151), named as an owner on its
+  `platform-dir` line in `tools/module_deps_check/modules.txt`.
 
 ## 5. Third-party code
 

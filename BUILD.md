@@ -76,8 +76,8 @@ Day 163, `ENGINE_SLANGC` and `ENGINE_DXC`.
 | Vulkan SDK | 1.4.363.0 | Required | Its headers (`vulkan/vulkan_core.h`) are needed to build; its validation layers serve `--validation`. The loader is already in the driver. | `winget install --id KhronosGroup.VulkanSDK -e` |
 | `slangc` | **exactly v2026.18.2** | For checks | Same version as Linux, so minted SPIR-V and DXIL match byte for byte. winget's `shader-slang.slang` is older (2026.14.1); use the Windows x86-64 zip from https://github.com/shader-slang/slang/releases/tag/v2026.18.2 and put its `bin` on `PATH`, or set `ENGINE_SLANGC`. | GitHub release |
 | WinDbg, or Debugging Tools for Windows (`cdb`) | current | For checks | Reading minidumps with the symbol store (Phase 13 Days 155-156). | `winget install --id Microsoft.WinDbg -e` |
-| Long paths (`HKLM\SYSTEM\CurrentControlSet\Control\FileSystem\LongPathsEnabled = 1`) | off on the developer PC (2026-11-07) | Optional | Lets the manifest's `longPathAware` take effect. The file layer works either way (it uses the `\\?\` prefix); one check is done by hand with it on (Phase 13 Day 151). An elevated system change: the developer makes it. | Group Policy "Enable Win32 long paths", or the registry value |
-| Developer Mode | off on the developer PC | Optional | Lets tests create symbolic links without elevation; without it they skip with a reason (Phase 13 Day 152). | Settings → System → For developers |
+| Long paths (`HKLM\SYSTEM\CurrentControlSet\Control\FileSystem\LongPathsEnabled = 1`) | off on the developer PC (2026-11-07) | Optional | Lets the manifest's `longPathAware` take effect. The file layer works either way (it adds the `\\?\` prefix past 248 characters; `tests/io/io_windows_test.cpp` checks it with the setting off). The check with it on has not been done. An elevated system change: the developer makes it. | Group Policy "Enable Win32 long paths", or the registry value |
+| Developer Mode | off on the developer PC | Optional | Lets tests create symbolic links without elevation; without it they skip with a reason (Phase 13 Days 151-152: the `Stat`/`Lstat` link checks). | Settings → System → For developers |
 | PIX for Windows | current | Optional | GPU captures while debugging the DX12 backend. | `winget install --id Microsoft.PIX -e` |
 | Python 3 | 3.x | Optional | `scripts/list-aborts.py` only. | `winget install --id Python.Python.3.14 -e` |
 
@@ -90,4 +90,4 @@ command-line tools (Clang, the Metal toolchain), CMake, Ninja and `slangc` v2026
 
 ## Android, iOS, consoles: not yet supported
 
-Phases 22 (Android, iOS) and 22 (consoles, gated on dev-kit and NDA access). Each phase adds its section here when it is broken into days.
+Phases 22 (Android, iOS) and 23 (consoles, gated on dev-kit and NDA access). Each phase adds its section here when it is broken into days.

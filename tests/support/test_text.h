@@ -8,6 +8,7 @@
 #include <cstdio>
 
 #include "containers/vector.h"
+#include "debug/compiler.h"
 #include "mem/heap_allocator.h"
 #include "string/string.h"
 #include "types.h"
@@ -32,7 +33,7 @@ inline Text Repeated(usize count, char c) {
 }
 
 /// printf-style construction.
-inline Text Format(const char* format, ...) __attribute__((format(printf, 1, 2)));
+inline Text Format(const char* format, ...) ENGINE_PRINTF_FORMAT(1, 2);
 inline Text Format(const char* format, ...) {
     va_list args;
     va_start(args, format);

@@ -36,7 +36,8 @@ struct FileInfo {
 ///
 /// Param path: the name to look at.
 /// Param out: receives the description; unchanged on failure.
-/// Fails: `NotFound`, `PermissionDenied`, `NotADirectory`, `SymlinkLoop`, `TooLong`.
+/// Fails: `NotFound`, `PermissionDenied`, `NotADirectory`, `SymlinkLoop`, `TooLong`, `Invalid` (Windows: a name the backend refuses, as for
+///   [[io::File::Open]]).
 /// Backend: Windows: GetFileAttributesExW / GetFileInformationByHandle (reparse points followed); macOS: stat.
 Status Stat(const Path& path, FileInfo* out);
 /// Like [[io::Stat]] but describes a final symbolic link itself.

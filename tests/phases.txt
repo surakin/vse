@@ -37,7 +37,7 @@ flavors 5   windows: plain
 flavors 6   windows: plain
 flavors 7   windows: plain
 flavors 8   windows: none
-flavors 9   windows: plain
+flavors 9   windows: plain,asan
 flavors 10  windows: plain,asan
 flavors 11  windows: plain
 flavors 12  windows: plain

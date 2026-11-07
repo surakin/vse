@@ -18,6 +18,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/debug/core_dump.cpp
     os/linux/debug/fault_injection.cpp
   )
+  set(FOUNDATION_IO_PLATFORM_SOURCES
+    io/linux/error.cpp
+    io/linux/file_system.cpp
+    io/linux/local_file.cpp
+    io/linux/directory.cpp
+  )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   # Phase 13 ports one layer per day (ARCHITECTURE.md order): the base layer's os/windows/ backend on Day 149, the file layer on Days
   # 151-152, the debugging backend (os/windows/debug/BACKEND.md) on Days 154-156.
@@ -28,6 +34,14 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     os/windows/vulkan_loader_name.cpp
   )
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES "")
+  # The file layer: paths, errors, Stat and the synchronous local file on Day 151; directories, the other file-system operations and
+  # asynchronous I/O on Day 152 (io/BACKEND.md).
+  set(FOUNDATION_IO_PLATFORM_SOURCES
+    io/windows/win_path.cpp
+    io/windows/error.cpp
+    io/windows/file_system.cpp
+    io/windows/local_file.cpp
+  )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   message(FATAL_ERROR "macOS is implemented in Phase 14 (the debugging backend: os/macos/debug/BACKEND.md)")
 else()
@@ -63,10 +77,8 @@ set(FOUNDATION_BASE_SOURCES
 
 set(FOUNDATION_IO_SOURCES
   io/path.cpp
-  io/linux/error.cpp
-  io/linux/file_system.cpp
-  io/linux/local_file.cpp
-  io/linux/directory.cpp
+  io/error.cpp
+  ${FOUNDATION_IO_PLATFORM_SOURCES}
   io/file.cpp
 )
 
@@ -140,7 +152,7 @@ function(engine_add_foundation_libs suffix)
 endfunction()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  # Only the base layer so far (see the platform selection above); the layers above it join as their Windows backends arrive.
+  # The base layer and the file layer so far (see the platform selection above); the layers above them join as their Windows backends arrive.
   # os/gpu_driver_probe.h includes <vulkan/vulkan_core.h>: Linux has it in /usr/include, Windows a copy of the SDK's C headers
   # (ENGINE_VULKAN_HEADERS_DIR, made by the root CMakeLists.txt).
   set(_engine_flavors "")
@@ -152,6 +164,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_include_directories(foundation_base${suffix} SYSTEM PUBLIC "${ENGINE_VULKAN_HEADERS_DIR}")
     # WTSQuerySessionInformation (os/windows/session.cpp); user32 for the input desktop.
     target_link_libraries(foundation_base${suffix} PUBLIC wtsapi32 user32)
+    engine_add_foundation_layer(foundation_io "${suffix}" ${FOUNDATION_IO_SOURCES})
+    # advapi32: the ACL check behind FileInfo::read_only (io/windows/file_system.cpp).
+    target_link_libraries(foundation_io${suffix} PUBLIC foundation_base${suffix} advapi32)
   endforeach()
 else()
   engine_add_foundation_libs("")

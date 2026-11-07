@@ -1,10 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <dirent.h>
 #include <atomic>
-#include <sys/stat.h>
 #include <thread>
+
+#if !defined(_WIN32)
+#include <dirent.h>
+#include <sys/stat.h>
 #include <unistd.h>
+#endif
 
 #include "file_conformance.h"
 #include "io/file.h"
@@ -32,6 +35,11 @@ io::FilePtr MakeLocal(TempDir& dir, StringView content, bool writable) {
 }
 
 size_t CountEntries(const Path& dir) {
+#if defined(_WIN32)
+    size_t n = 0;
+    io_test::ForEachEntry(io_test::WinPath(dir).text, [&](const wchar_t*, DWORD) { ++n; });
+    return n;
+#else
     char p[io::kMaxPathBytes + 1];
     dir.ToNative(p, sizeof(p));
     size_t n = 0;
@@ -42,6 +50,7 @@ size_t CountEntries(const Path& dir) {
         ::closedir(d);
     }
     return n;
+#endif
 }
 
 } // namespace
@@ -104,11 +113,17 @@ TEST_CASE("io::File: open modes, flags and errors", "[io][file]") {
     // A missing parent.
     CHECK(io::File::Open(dir / "no/such/dir/f", OpenMode::Write, io::kOpenNone, &f).Is(Error::NotFound));
     // An unreadable file.
+#if defined(_WIN32)
+    REQUIRE(io_test::WriteText(dir / "secret", "x"));
+    REQUIRE(io_test::DenyCurrentUser(dir / "secret", FILE_READ_DATA));
+    CHECK(io::File::Open(dir / "secret", OpenMode::Read, io::kOpenNone, &f).Is(Error::PermissionDenied));
+#else
     if (::geteuid() != 0) {
         REQUIRE(io_test::WriteText(dir / "secret", "x"));
         REQUIRE(::chmod(Str((dir / "secret").View()).CStr(), 0200) == 0);
         CHECK(io::File::Open(dir / "secret", OpenMode::Read, io::kOpenNone, &f).Is(Error::PermissionDenied));
     }
+#endif
 }
 
 TEST_CASE("io::File: append mode", "[io][file]") {
@@ -139,12 +154,14 @@ TEST_CASE("io::File: locations, schemes and the registry", "[io][file]") {
     REQUIRE(io::File::OpenLocation(native.View(), OpenMode::Read, io::kOpenNone, &f).Ok());
     REQUIRE(f->Read(b, 8, 0, &n).Ok());
     CHECK(StringView(b, n) == StringView("local"));
-    const engine_test::Text url = engine_test::Concat("file://", native.View());
+    // A file URL is `file://` plus an absolute path, whose `/` starts it on POSIX; a drive path gets one more (`file:///C:/x`).
+    const StringView file_scheme = io::NativePathStyle() == io::PathStyle::Windows ? StringView("file:///") : StringView("file://");
+    const engine_test::Text url = engine_test::Concat(file_scheme, native.View());
     REQUIRE(io::File::OpenLocation(url.View(), OpenMode::Read, io::kOpenNone, &f).Ok());
     CHECK(io::File::OpenLocation("file://host/x", OpenMode::Read, io::kOpenNone, &f).Is(Error::Unsupported));
     // Percent escapes in a file URL.
     REQUIRE(io_test::WriteText(dir / "a b.txt", "spaced"));
-    const engine_test::Text escaped = engine_test::Concat("file://", dir.Native().View(), "/a%20b.txt");
+    const engine_test::Text escaped = engine_test::Concat(file_scheme, dir.Native().View(), "/a%20b.txt");
     REQUIRE(io::File::OpenLocation(escaped.View(), OpenMode::Read, io::kOpenNone, &f).Ok());
     CHECK(io::File::OpenLocation("file:///tmp/%zz", OpenMode::Read, io::kOpenNone, &f).Is(Error::Invalid));
     CHECK(io::File::OpenLocation("file:///tmp/%2", OpenMode::Read, io::kOpenNone, &f).Is(Error::Invalid));
@@ -187,10 +204,12 @@ TEST_CASE("io::File: files over 4 GiB and generated files", "[io][file]") {
         REQUIRE(f->Size(&size).Ok());
         CHECK(size == five_gib);
     }
+#if !defined(_WIN32) // Windows has no file that reports a wrong size
     // /proc files report size 0 but have content: ReadAll must not trust the size.
     Vector<u8> status;
     REQUIRE(io::ReadFile(Path("/proc/self/status"), &status).Ok());
     CHECK(status.Size() > 100);
+#endif
 }
 
 TEST_CASE("io::File: a full device fails with NoSpace", "[io][file]") {
@@ -241,9 +260,11 @@ TEST_CASE("io: the read helpers", "[io][file]") {
     REQUIRE(io::ReadFile(dir / "empty", arena, &data, &size).Ok());
     CHECK(size == 0);
     CHECK(data != nullptr);
+#if !defined(_WIN32)
     // A file whose reported size is wrong (a /proc file reports 0) still reads whole through the arena path.
     REQUIRE(io::ReadFile(Path("/proc/self/status"), arena, &data, &size).Ok());
     CHECK(size > 100);
+#endif
     ArenaAllocator tiny(8);
     CHECK(io::ReadFile(dir / "t.txt", tiny, &data, &size).Is(Error::OutOfMemory));
     Vector<u8> bytes;
@@ -252,6 +273,9 @@ TEST_CASE("io: the read helpers", "[io][file]") {
 }
 
 TEST_CASE("io: WriteFileAtomic replaces whole files and leaves nothing behind on failure", "[io][file]") {
+#if defined(_WIN32)
+    SKIP("Windows: WriteFileAtomic needs CreateTempFile, SetPermissions, Rename and Remove, which arrive on Phase 13 Day 152");
+#endif
     TempDir dir;
     const Path target = dir / "config.ini";
     REQUIRE(io::WriteFileAtomic(target, "old", 3).Ok()); // creates
@@ -271,6 +295,7 @@ TEST_CASE("io: WriteFileAtomic replaces whole files and leaves nothing behind on
     // A symbolic link target: the file behind the link is replaced and the link stays.
     REQUIRE(io::CreateDirectory(dir / "real").Ok());
     REQUIRE(io_test::WriteText(dir / "real/data", "before"));
+#if !defined(_WIN32) // Day 152 ports the symbolic link half (a link needs Developer Mode on Windows)
     REQUIRE(::symlink("real/data", Str((dir / "lnk").View()).CStr()) == 0);
     REQUIRE(io::WriteFileAtomic(dir / "lnk", "after", 5).Ok());
     CHECK(io_test::ReadText(dir / "real/data") == "after");
@@ -278,6 +303,7 @@ TEST_CASE("io: WriteFileAtomic replaces whole files and leaves nothing behind on
     CHECK(info.type == io::FileType::Symlink);
     REQUIRE(io::RemoveAll(dir / "real").Ok());
     REQUIRE(io::Remove(dir / "lnk").Ok());
+#endif
     CHECK(io::SyncDirectory(dir.Path()).Ok());
     CHECK(io::SyncDirectory(dir / "nope").Is(Error::NotFound));
     CHECK(io::SyncDirectory(target).Is(Error::NotADirectory));
@@ -316,6 +342,9 @@ TEST_CASE("io: WriteFileAtomic replaces whole files and leaves nothing behind on
 }
 
 TEST_CASE("The span overloads write and read the same bytes as the pointer forms", "[io][span]") {
+#if defined(_WIN32)
+    SKIP("Windows: the WriteFileAtomic half needs Phase 13 Day 152");
+#endif
     TempDir dir;
     const byte payload[] = {1, 2, 3, 250, 0, 7};
     const Path a = dir / "span_a";

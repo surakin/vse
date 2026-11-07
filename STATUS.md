@@ -728,3 +728,12 @@ Runs: `ran 247 of 287 tests (phases: all; flavors: plain; display: included; cra
 `ctest -L docs` on Windows to Day 157, `shader_mint` (with its exceptions option) to Day 163. Review: 10 findings, 7 fixed (among them the 30 script tests
 that were silently missing from the Windows build), 3 declined with reasons. Linux: pending until the phase close. **Next: Day 151 (the file layer on
 Windows).**
+
+Phase 13 **Day 151 (2026-11-07, Windows PC): the file layer I.** `foundation_io` builds on Windows: paths at the Win32 boundary (`io/windows/win_path.cpp`:
+UTF-16, reserved device names and trailing dots or spaces refused, `\\?\` added past 248 characters after `GetFullPathNameW`), the Win32 error table,
+the synchronous `LocalFile` (offset reads in an `OVERLAPPED`, atomic append, sparse growth, truncation through the handle) and `Stat`/`Lstat` (junctions
+`Other`, `read_only` from the attribute and the ACL). One sharing rule for every platform: nothing is locked (`BACKEND.md` "Sharing",
+`tests/io/share_test.cpp`). `tests/io` runs on Windows with `path_test`, `file_test`, `share_test` and the new `io_windows_test`; the rest of
+`file_system.h` returns `Unsupported` until Day 152. Runs: `ran 283 of 357 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`,
+asan `ran 74 of 357`; `windows-clang-cl` 314 of 314; non-unity 357 of 357. Review: 10 findings, 6 fixed, 4 declined. Linux: pending until the phase
+close. **Next: Day 152 (directories, the other file-system operations, asynchronous I/O).**

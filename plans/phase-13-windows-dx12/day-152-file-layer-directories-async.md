@@ -7,6 +7,10 @@ Finish the Windows file backend: every function of `engine/foundation/io/BACKEND
 
 ## Tasks
 
+- [ ] **Left by Day 151:** replace every `Unsupported` placeholder in `io/windows/file_system.cpp`; remove the two `SKIP`s in `tests/io/file_test.cpp`
+      (`WriteFileAtomic`, the span overloads) and port their symbolic-link half; let the Windows `TempDir` in `tests/io/temp_dir.h` sweep stale
+      `re_io_test.*` directories as the Linux one does; add to `tests/io/share_test.cpp` that an open file can be renamed and removed through
+      `io::Rename`/`io::Remove` (Day 151 checks it with Win32 only); run the long-path test's rename and remove through the layer.
 - [ ] **`io/windows/directory.cpp`:** `Open`/`Next`/`Close`/`Info` over `FindFirstFileExW(FindExInfoBasic, FIND_FIRST_EX_LARGE_FETCH)`; `.` and `..` skipped;
       names converted to UTF-8; reparse points reported, not followed.
 - [ ] **`io/windows/file_system.cpp`**, one function per `BACKEND.md` section: `Remove` (read-only files: the attribute cleared only if the interface promises

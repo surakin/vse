@@ -156,10 +156,13 @@ public:
     /// Param flags: [[io::OpenFlag]] bits.
     /// Param out: receives the file; unchanged on failure.
     /// A FIFO opened for reading blocks until a writer appears; a terminal device does not become the controlling terminal.
+    /// Nothing is locked: the same file can be open any number of times at once, in any modes, and renamed, replaced or removed while
+    /// open (engine/foundation/io/BACKEND.md, "Sharing").
     ///
     /// Fails: `NotFound`, `PermissionDenied`, `IsADirectory` (also when the path names a directory and the mode is `Read`), `AlreadyExists`
-    ///   (`kOpenCreateNew`), `Invalid` (`OpenMode::Read` with `kOpenCreate`, `kOpenCreateNew` or `kOpenTruncate`), `NotADirectory`,
-    ///   `TooManyOpenFiles`, `SymlinkLoop`, `TooLong`.
+    ///   (`kOpenCreateNew`), `Invalid` (`OpenMode::Read` with `kOpenCreate`, `kOpenCreateNew` or `kOpenTruncate`; on Windows also a reserved
+    ///   device name, a name ending in a dot or a space, or a colon in a name), `NotADirectory`, `TooManyOpenFiles`, `SymlinkLoop`, `TooLong`,
+    ///   `Busy` (Windows: another program opened the file without sharing).
     /// Backend: Windows: CreateFileW with FILE_FLAG_OVERLAPPED (so the file is NativelyAsync); macOS: open with O_CLOEXEC and dispatch_io for asynchronous work.
     static Status Open(const Path& path, OpenMode mode, u32 flags, FilePtr* out);
     /// Opens `location`, which is either a local path or `scheme://rest`. `file:///abs/path` (percent escapes such as `%20` are

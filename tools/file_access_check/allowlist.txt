@@ -3,6 +3,7 @@
 # The rule and its exceptions: CLAUDE.md ("All file and directory access goes through io::File, io::Path and io::Directory") and
 # docs/superpowers/specs/2026-11-06-file-layer-design.md (section 2, exceptions E1-E5).
 engine/foundation/io/linux/|E5: the Linux backend of the file layer itself (file_system.cpp, local_file.cpp, directory.cpp, error.cpp).
+engine/foundation/io/windows/|E5: the Windows backend of the file layer itself (win_path.cpp, local_file.cpp, file_system.cpp, error.cpp; Phase 13).
 engine/foundation/os/linux/os.cpp|E1: the descriptor primitives os::Open and os::CreateFileForWriting, kept for the assert-path debugger check and for the crash report, which opens its file inside the fault handler.
 engine/foundation/os/windows/os.cpp|E1: the Windows descriptor primitives os::Open and os::CreateFileForWriting (CreateFileW), for the same callers as on Linux.
 engine/foundation/os/linux/debug/module_list.cpp|E1: reads the executable path with readlink while a crash report lists modules (it may run in the fault handler, where the file layer cannot allocate).

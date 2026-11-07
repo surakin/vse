@@ -36,6 +36,34 @@ Linux is implemented in `engine/foundation/io/linux/`. A new platform adds `engi
 - **Consoles (Phase 23):** title storage and save-data APIs behind the same `File`; the install directory is read-only; asynchronous requests map to the
   platform's I/O queue.
 
+## Sharing (every platform)
+
+One rule, which every backend keeps (decided on Phase 13 Day 151, tested by `tests/io/share_test.cpp` on every machine): **a file can be open any
+number of times at once, in any modes, by this process and by others, and every open sees the others' writes at once.** Nothing is locked and
+nothing is exclusive; a file that is open can be renamed, replaced or removed (the opens keep reading the old file). Linux has no mandatory
+locks, so it holds by itself. The Windows backend opens every file with `FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE` to keep it;
+a file that another program opened without sharing fails with `Busy` (the code is `ERROR_SHARING_VIOLATION`). A caller that needs exclusive
+access arranges it itself (a lock file, `kOpenCreateNew`); the layer offers no lock.
+
+## Windows paths
+
+`engine/foundation/io/windows/win_path.h` turns a `Path` into what a Win32 file function takes (Phase 13 Day 151), in this order:
+
+- A path written with the `\\?\` or `\\.\` prefix passes through as it is, and the name checks below are skipped: the caller asked for the
+  literal name or a device. A device path is a UNC root to `Path`, so it reads with the root's separator (`\\.\NUL\`), which Win32 accepts for
+  the devices; the volume device `\\.\C:` (without a separator) cannot be named through `Path`.
+- Every other path is refused with `Invalid` when a component is a reserved device name (`CON`, `PRN`, `AUX`, `NUL`, `COM0`-`COM9`, `LPT0`-`LPT9`,
+  the superscript `COM¹²³`/`LPT¹²³`, `CONIN$`, `CONOUT$`; in any case, with an extension, with spaces before the dot), ends in a dot or a space,
+  or holds a colon (an alternate data stream), and when the text is not valid UTF-8. `Path` keeps such names as text (it is lexical); the backend
+  refuses them because Win32 would reach a device, strip the dots and spaces (`a.` and `a` would be one file), or open a stream. Windows 11
+  no longer turns `dir\CON` into the console, earlier versions do; the rule is the same on all of them. `<>"|?*` and control characters are
+  refused by Win32 itself (`ERROR_INVALID_NAME`, `Invalid`).
+- A path shorter than 248 characters (the limit of the Win32 functions that create directories; the others stop at 259) is used as it is,
+  relative or not.
+- A longer one is resolved with `GetFullPathNameW` (the current directory, the drive's own current directory for `C:foo`, `.` and `..`,
+  lexically, as Win32 always resolves) and gets the `\\?\` prefix (`\\?\UNC\` for a UNC path), which lifts the limit whatever
+  `LongPathsEnabled` says. Resolving first matters: the prefix turns off Win32's own handling of `..` and of relative paths.
+
 ## The File interface
 
 Not a function with a `Backend:` label because it is a class: a backend subclasses `io::File` and implements `IsOpen`, `Capabilities`, `Size`,
@@ -51,6 +79,12 @@ Windows: GetFileAttributesExW / GetFileInformationByHandle (reparse points follo
 
 Report the modification time as nanoseconds since 1970-01-01 UTC (FILETIME counts 100 ns units since 1601). `permissions` is synthesized from the read-only attribute (0444 or 0644, plus the execute bits for directories). `read_only` also considers the ACL for the current user.
 
+Windows, as built (Day 151): `CreateFileW(FILE_READ_ATTRIBUTES | READ_CONTROL, FILE_FLAG_BACKUP_SEMANTICS)` and `GetFileInformationByHandleEx`
+(attribute tag, standard and basic information). A handle that is not a disk file (`\\.\NUL`, a pipe) is `Other`. The read-only attribute
+counts for files only: on a directory Windows uses it to mark a customized folder, so a directory is 0755. `read_only` is the attribute or an
+`AccessCheck` of the file's ACL against the process token (write data for a file, add a file for a directory); when the ACL itself cannot be
+read, the attribute alone decides. A parent that is a file gives `NotADirectory` (Win32 says "path not found": the parents are looked at).
+
 
 ### `Lstat`
 
@@ -58,6 +92,9 @@ Windows: the same without following reparse points; macOS: lstat.
 
 
 A symbolic link is a reparse point with the symlink tag; junctions and other tags are reported as `Other`.
+
+Windows, as built (Day 151): the open adds `FILE_FLAG_OPEN_REPARSE_POINT`. `Other` is for the name-surrogate tags (junctions, mount points); a
+reparse point that is not a name surrogate (a cloud placeholder, a deduplicated file) is the file or directory it stands for, as `Stat` reports it.
 
 
 ### `Remove`
@@ -219,6 +256,17 @@ Windows: CreateFileW with FILE_FLAG_OVERLAPPED (so the file is NativelyAsync); m
 `File::Open` and `Directory::Open` share this section. A file backend implements every pure virtual of `File` (see "The File interface" below) and must pass the conformance suite.
 
 
+`File::Open` on Windows, as built (Day 151): `CreateFileW` with the sharing rule above and the disposition from the mode and flags (`OPEN_ALWAYS` when the mode
+or `kOpenCreate` creates, `CREATE_NEW` for `kOpenCreateNew`, else `OPEN_EXISTING`); truncation (`Write`, `kOpenTruncate`) is a separate
+end-of-file of 0 on the open handle, as `O_TRUNC` keeps the file: `CREATE_ALWAYS` and `TRUNCATE_EXISTING` refuse a hidden or system file and
+`CREATE_ALWAYS` replaces its attributes. The handle is
+synchronous until Day 152; reads and writes at an offset pass it in an `OVERLAPPED`, so concurrent offset reads share no file pointer. An append
+writes at the offset `0xFFFFFFFF'FFFFFFFF`, which is Win32's atomic append. `Flush` has nothing to flush (no buffer in the process); `Sync` is
+`FlushFileBuffers`. `Truncate` that grows a file first marks it sparse (`FSCTL_SET_SPARSE`), so the new part is a hole as on Linux and not
+gigabytes of zeros written by the next write past the old end; a file system without sparse files grows it plainly. A directory opened as a
+file is `IsADirectory` (`AlreadyExists` with `kOpenCreateNew`, as `O_EXCL` says).
+
+
 ### `Next`
 
 Windows: FindNextFileW, skipping the dot entries, the type from the attributes (a reparse point is a Symlink); macOS: readdir.
@@ -236,11 +284,17 @@ Windows: GetLastError() codes (ERROR_FILE_NOT_FOUND, ERROR_ACCESS_DENIED, ERROR_
 
 One function with a test table (`tests/io/file_system_test.cpp` shows the Linux one). Codes with no portable meaning collapse into `Io`.
 
+Windows, as built (Day 151): `io/windows/error.cpp`, tested by `tests/io/io_windows_test.cpp`. Not found: `ERROR_FILE_NOT_FOUND`,
+`ERROR_PATH_NOT_FOUND`, `ERROR_INVALID_DRIVE`, `ERROR_BAD_NETPATH`, `ERROR_BAD_NET_NAME`. Busy: `ERROR_SHARING_VIOLATION`, `ERROR_LOCK_VIOLATION`,
+`ERROR_DELETE_PENDING`, `ERROR_USER_MAPPED_FILE`. `ERROR_DIRECTORY` is `NotADirectory`, `ERROR_CANT_RESOLVE_FILENAME` (a link loop) `SymlinkLoop`,
+`ERROR_HANDLE_EOF` `EndOfFile`; `ERROR_NOT_READY`, `ERROR_BROKEN_PIPE`, `ERROR_IO_PENDING` and the device errors are `Io`. A message is the
+engine's text and the number (`Status::os_code`); `FormatMessageW` is not called.
+
 
 ### `NativePathStyle`
 
 Windows: PathStyle::Windows; macOS, Android, iOS and consoles: PathStyle::Posix.
 
 
-A constexpr function; the whole layer picks its path rules from it. Windows paths are stored with `/` and converted back by `Path::ToNative`; the extended-length prefix is added there for paths over 259 characters.
+A constexpr function; the whole layer picks its path rules from it. Windows paths are stored with `/` and converted back by `Path::ToNative`. The extended-length prefix is not `Path`'s: the Windows backend adds it at the Win32 boundary ("Windows paths" above).
 

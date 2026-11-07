@@ -7,10 +7,40 @@ set(IO_TEST_SOURCES
   file_test.cpp
   directory_test.cpp
   async_file_test.cpp
+  share_test.cpp
 )
 
 find_package(Threads REQUIRED)
 include(Catch)
+
+# Windows (Phase 13): the file layer arrives in two days. Day 151 has paths, errors, Stat and the synchronous local file, so the tests of
+# those run (with the Windows-only ones); file_system_test, directory_test and async_file_test join on Day 152 with the rest of the backend,
+# and the jobs library (the asynchronous half) on Day 153.
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  set(_io_windows_sources path_test.cpp file_test.cpp share_test.cpp io_windows_test.cpp)
+  set(_io_windows_flavors "")
+  if(ENGINE_HAVE_ASAN)
+    list(APPEND _io_windows_flavors "_asan")
+  endif()
+  foreach(suffix "" ${_io_windows_flavors})
+    add_executable(io_tests${suffix} ${_io_windows_sources})
+    target_link_libraries(io_tests${suffix} PRIVATE foundation_io${suffix} Catch2::Catch2WithMain)
+    target_include_directories(io_tests${suffix} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)
+    engine_asan_runtime(io_tests${suffix})
+  endforeach()
+  engine_discover_tests(io_tests TEST_SUFFIX "" PROPERTIES LABELS "io")
+  if(ENGINE_HAVE_ASAN)
+    engine_discover_tests(io_tests_asan TEST_SUFFIX " [asan]" PROPERTIES LABELS "asan")
+  endif()
+  # The backend checklist gate is a CMake script and runs here too (BACKEND.md gains the Windows notes from Day 151); the cross-syntax
+  # checks stay Linux-only, the Windows build being the real check of the neutral headers.
+  add_test(NAME io_backend_lists COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_io_backend_lists.cmake)
+  add_test(NAME io_backend_lists_planted COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR}
+           -DBACKEND_FILE=${CMAKE_CURRENT_SOURCE_DIR}/cross_syntax/planted_backend.md -P ${CMAKE_CURRENT_SOURCE_DIR}/check_io_backend_lists.cmake)
+  set_tests_properties(io_backend_lists_planted PROPERTIES WILL_FAIL TRUE)
+  engine_label_tests(io_backend_lists io_backend_lists_planted)
+  return()
+endif()
 
 function(engine_add_io_tests target foundation_lib jobs_lib suffix label)
   add_executable(${target} ${IO_TEST_SOURCES})

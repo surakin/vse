@@ -135,9 +135,12 @@ same-layer-ok 13
 
 # --- per-platform code -------------------------------------------------------------------------------------------------
 platform-dir engine/foundation/os/linux/ engine/foundation/os/
-platform-dir engine/foundation/os/windows/ engine/foundation/os/
+# The Windows file backend uses the Windows OS helpers (os/windows/win32.h, utf16.h): a per-platform directory may include the same
+# platform's directory of a lower layer (ARCHITECTURE.md section 4).
+platform-dir engine/foundation/os/windows/ engine/foundation/os/,engine/foundation/io/windows/
 platform-dir engine/foundation/os/macos/ engine/foundation/os/
 platform-dir engine/foundation/io/linux/ engine/foundation/io/
+platform-dir engine/foundation/io/windows/ engine/foundation/io/
 platform-dir engine/platform/linux/ engine/platform/
 platform-dir engine/platform/windows/ engine/platform/
 platform-dir engine/platform/macos/ engine/platform/

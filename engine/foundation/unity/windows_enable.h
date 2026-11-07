@@ -39,3 +39,10 @@
 #pragma push_macro("Yield")
 #pragma push_macro("min")
 #pragma push_macro("max")
+// Inside the region `far` and `near` are what <windows.h> makes them, empty: an SDK header included in a later pair of its own (winioctl.h,
+// dbghelp.h, shlobj.h) spells `FAR` and `NEAR`, which expand to them, and windows_disable.h has taken the definitions away again
+// (found on Phase 13 Day 151). <windows.h> redefines both the same way, so this changes nothing for it.
+#undef far
+#define far
+#undef near
+#define near

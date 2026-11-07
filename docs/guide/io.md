@@ -79,6 +79,24 @@ C:/Users/you/Cache.TXT
 1
 ```
 
+### Windows paths
+
+On Windows (`NativePathStyle()` is `PathStyle::Windows`):
+
+- **Drive letters and drive-relative paths.** `C:/x` is absolute; `C:x` is relative to drive C's own current directory, and `/x` to the current
+  drive's root: neither is absolute.
+- **UNC and prefixes.** `\\server\share\x` has the root name `//server/share`. `\\?\C:\x` (the literal name) and `\\.\NUL` (a device) pass
+  through to Win32 as written; a device reads with a trailing separator (`\\.\NUL\`).
+- **Long paths.** Any path works up to `io::kMaxPathBytes`: past 248 characters the backend resolves it and adds the `\\?\` prefix itself, so
+  the `LongPathsEnabled` setting does not matter.
+- **Names Windows cannot keep.** A component that is a device name (`CON`, `NUL`, `COM1`, `LPT1`, also `nul.txt` and `CON .log`), ends in a dot or
+  a space, or holds a colon is refused with `Invalid` by every file function. `Path` itself keeps them (it is text), so code that builds names
+  from user input should expect `Invalid` on Windows.
+- **Case.** Comparisons fold ASCII letters only (`C:/A` equals `c:/a`); the text keeps the case it was written in, and the file system decides
+  the rest (NTFS folds all of Unicode, and some directories are case-sensitive).
+- **Sharing.** Files are never locked: opening the same file twice works on every platform, and an open file can be renamed or removed. On
+  Windows a file another program holds open without sharing fails with `Busy`.
+
 ## Rules in one table
 
 | Operation | Result |
