@@ -46,7 +46,7 @@ struct Call {
 
 const Value& SettingsSnapshot::Get(SettingId id) const {
     ENGINE_ASSERT(id.value >= 1 && id.value <= values.Size(), "settings::SettingsSnapshot::Get: unknown id");
-    return values[id.value - 1u];
+    return *values[id.value - 1u];
 }
 
 struct Settings::Subscription {
@@ -66,7 +66,20 @@ Settings::~Settings() = default;
 
 void Settings::RebuildSnapshotLocked() {
     auto snap = MakeShared<SettingsSnapshot>();
-    for (u32 i = 0; i < registry_->Count(); ++i) snap->values.Push(registry_->Current(SettingId{static_cast<u16>(i + 1)}));
+    for (u32 i = 0; i < registry_->Count(); ++i) snap->values.Push(MakeShared<const Value>(registry_->Current(SettingId{static_cast<u16>(i + 1)})));
+    std::lock_guard<std::mutex> lock(mutex_);
+    snap->generation = ++generation_;
+    snapshot_ = SharedPtr<const SettingsSnapshot>(static_cast<SharedPtr<SettingsSnapshot>&&>(snap));
+}
+
+void Settings::PublishChangesLocked(const Change* changes, usize count) {
+    auto snap = MakeShared<SettingsSnapshot>();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        snap->values.Reserve(snapshot_->values.Size());
+        for (usize i = 0; i < snapshot_->values.Size(); ++i) snap->values.Push(snapshot_->values[i]); // pointers, shared with the previous snapshot
+    }
+    for (usize k = 0; k < count; ++k) snap->values[changes[k].id.value - 1u] = MakeShared<const Value>(changes[k].new_value);
     std::lock_guard<std::mutex> lock(mutex_);
     snap->generation = ++generation_;
     snapshot_ = SharedPtr<const SettingsSnapshot>(static_cast<SharedPtr<SettingsSnapshot>&&>(snap));
@@ -77,6 +90,7 @@ LoadReport Settings::Load(const LoadOptions& options) {
     {
         std::lock_guard<std::recursive_mutex> op(op_);
         stack_.Clear();
+        cli_from_load_ = false;
         minimal_ = options.minimal_writes;
         command_line_ = CommandLineResult();
         if (options.shipped != nullptr && options.shipped_count != 0) {
@@ -123,7 +137,10 @@ LoadReport Settings::Load(const LoadOptions& options) {
             const EnvironmentSnapshot captured = options.environment == nullptr ? EnvironmentSnapshot::Capture() : EnvironmentSnapshot();
             stack_.AddLayer("environment", LayerRole::Environment, MakeUnique<EnvironmentSource>(*registry_, options.environment != nullptr ? *options.environment : captured));
         }
-        if (cli) stack_.AddLayer("command line", LayerRole::CommandLine, ConfigStorePtr(static_cast<UniquePtr<CommandLineSource>&&>(cli)));
+        if (cli) {
+            stack_.AddLayer("command line", LayerRole::CommandLine, ConfigStorePtr(static_cast<UniquePtr<CommandLineSource>&&>(cli)));
+            cli_from_load_ = true;
+        }
     }
     LoadReport report = LoadFromLayers();
     for (usize i = 0; i < command_line_.settings_files.Size(); ++i) { // a file the user named must exist
@@ -236,6 +253,32 @@ Resolution Settings::Provenance(SettingId id) {
     return r;
 }
 
+SetResult Settings::SetFromCommandLine(StringView key, StringView text, StringView origin) {
+    std::lock_guard<std::recursive_mutex> op(op_);
+    const usize cli = stack_.Find(LayerRole::CommandLine);
+    Key parsed;
+    if (cli >= stack_.Size() || !cli_from_load_ || Key::Parse(key, &parsed) != KeyError::None || !registry_->Find(key).IsValid()) return SetText(key, text);
+    const SettingId id = registry_->Find(key);
+    Key canonical; // the command-line layer is keyed by the canonical name, whatever alias the caller used
+    Key::Parse(registry_->KeyOf(id).View(), &canonical);
+    StoredValue given;
+    if (stack_.Store(cli).Get(canonical.View(), &given).Ok()) return SetResult(); // an explicit --set wins
+    Value value;
+    const ValueError e = ParseValue(*registry_->Desc(id), text, &value);
+    if (e != ValueError::None && e != ValueError::Clamped) {
+        SetResult bad;
+        bad.error = SetError::BadValue;
+        bad.value = e;
+        return bad;
+    }
+    ChangeRequest request;
+    request.id = id;
+    request.value = value;
+    const SetResult result = DoApply(&request, 1, nullptr, nullptr, true);
+    if (result.Ok()) static_cast<CommandLineSource&>(stack_.Store(cli)).AddFromProgram(canonical, text, origin); // recorded only once it was accepted
+    return result;
+}
+
 SetResult Settings::Set(SettingId id, const Value& value) {
     ChangeRequest request;
     request.id = id;
@@ -262,7 +305,7 @@ SetResult Settings::SetText(StringView key, StringView text) {
 
 SetResult Settings::Apply(const ChangeRequest* requests, usize count, ApplyFn apply, void* user) { return DoApply(requests, count, apply, user); }
 
-SetResult Settings::DoApply(const ChangeRequest* requests, usize count, ApplyFn apply, void* user) {
+SetResult Settings::DoApply(const ChangeRequest* requests, usize count, ApplyFn apply, void* user, bool memory_only) {
     SetResult result;
     if (g_depth >= 8) {
         result.error = SetError::Reentrant;
@@ -322,7 +365,7 @@ SetResult Settings::DoApply(const ChangeRequest* requests, usize count, ApplyFn 
             else stack_.Unset(*registry_, pending[back].change.id);
         }
     };
-    if (w < stack_.Size()) {
+    if (w < stack_.Size() && !memory_only) {
         for (usize k = 0; k < pending.Size(); ++k) {
             Pending& p = pending[k];
             p.had_write = stack_.Store(w).Get(registry_->KeyOf(p.change.id).View(), &p.write_before).Ok();
@@ -356,13 +399,13 @@ SetResult Settings::DoApply(const ChangeRequest* requests, usize count, ApplyFn 
     const bool applied = apply == nullptr || apply(user, event);
     if (!applied) {
         --g_depth;
-        if (w < stack_.Size()) restore(pending.Size());
+        if (w < stack_.Size() && !memory_only) restore(pending.Size());
         result.error = SetError::ApplyFailed;
         return result;
     }
     // Accepted: publish, then announce.
     for (usize k = 0; k < pending.Size(); ++k) registry_->Publish(pending[k].change.id, pending[k].change.new_value);
-    RebuildSnapshotLocked();
+    PublishChangesLocked(changes.Data(), changes.Size());
     {
         std::lock_guard<std::mutex> lock(mutex_);
         dirty_ = true;
@@ -520,10 +563,11 @@ void Settings::UpdateCrashState() {
     int e = 0;
     usize used = 0;
     u32 non_default = 0;
+    const SharedPtr<const SettingsSnapshot> current = Snapshot(); // read in place: no copy of every value
     for (u32 i = 0; i < registry_->Count(); ++i) {
         const SettingId id{static_cast<u16>(i + 1)};
         const SettingDesc& d = *registry_->Desc(id);
-        const Value v = registry_->Current(id);
+        const Value& v = current->Get(id);
         if (v == d.default_value) continue;
         ++non_default;
         if (e >= kEntries) continue;

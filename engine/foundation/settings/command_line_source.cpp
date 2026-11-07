@@ -116,4 +116,11 @@ void CommandLineSource::Describe(char* out, usize capacity) const {
     if (capacity != 0) std::snprintf(out, capacity, "command line");
 }
 
+bool CommandLineSource::AddFromProgram(const Key& key, StringView text, StringView origin) {
+    StoredValue existing;
+    if (Get(key.View(), &existing).Ok()) return false;
+    Put(key, text, origin);
+    return true;
+}
+
 } // namespace engine_placeholder::settings

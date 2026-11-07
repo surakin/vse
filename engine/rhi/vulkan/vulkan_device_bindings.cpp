@@ -166,14 +166,12 @@ void VulkanDevice::ResetFrameDescriptorsLocked(usize frame_slot) {
     pools.current = 0;
     // The frame's transient groups ended with it: invalidate their handles. The stamp is the open frame, which no
     // earlier destroy exceeds, so the pool's retirement order holds.
-    rhi::detail::GrowArray<BindGroupHandle>& groups = frame_groups_[frame_slot];
+    Vector<BindGroupHandle>& groups = frame_groups_[frame_slot];
     const u64 current = frame_number_.load(std::memory_order_relaxed);
     for (usize i = 0; i < groups.Size(); ++i) {
         bind_groups_.Retire(groups[i], current);
     }
-    while (!groups.Empty()) {
-        groups.Erase(groups.Size() - 1);
-    }
+    groups.Clear();
 }
 
 void VulkanDevice::ReleaseBindGroupLocked(BindGroupRes* group) {

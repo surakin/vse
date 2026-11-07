@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cstring>
 
-extern "C" char** environ;
+#include "os/os.h"
 
 namespace engine_placeholder::settings {
 
@@ -29,9 +29,10 @@ const String<HeapAllocator>* EnvironmentSnapshot::Find(StringView name) const {
 
 EnvironmentSnapshot EnvironmentSnapshot::Capture() {
     EnvironmentSnapshot snapshot;
-    if (environ == nullptr) return snapshot;
-    for (char** e = environ; *e != nullptr; ++e) {
-        const StringView entry(*e);
+    for (usize i = 0;; ++i) {
+        String<HeapAllocator> text(HeapAllocator::Default());
+        if (!os::EnvironmentEntry(i, &text)) break;
+        const StringView entry = text.View();
         const usize eq = entry.IndexOf('=');
         if (eq == entry.Length() || eq == 0) continue;
         snapshot.Add(entry.Substring(0, eq), entry.Substring(eq + 1));

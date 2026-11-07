@@ -184,13 +184,14 @@ Vector::Pop()	function	foundation/containers	vector-pop	foundation-containers.md
 Vector::Insert(usize,const T&)	function	foundation/containers	vector-insert-usize-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:242
 Vector::Insert(usize,T&&)	function	foundation/containers	vector-insert-usize-t-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:263
 Vector::Remove(usize)	function	foundation/containers	vector-remove-usize	foundation-containers.md	engine/foundation/containers/vector.h:282
-Vector::operator[](usize)	function	foundation/containers	vector-operator-index-usize	foundation-containers.md	engine/foundation/containers/vector.h:293
-Vector::operator[](usize) const	function	foundation/containers	vector-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/vector.h:297
-Vector::Data()	function	foundation/containers	vector-data	foundation-containers.md	engine/foundation/containers/vector.h:300
-Vector::Data() const	function	foundation/containers	vector-data-const	foundation-containers.md	engine/foundation/containers/vector.h:302
-Vector::Size() const	function	foundation/containers	vector-size-const	foundation-containers.md	engine/foundation/containers/vector.h:305
-Vector::Empty() const	function	foundation/containers	vector-empty-const	foundation-containers.md	engine/foundation/containers/vector.h:307
-Vector::Capacity() const	function	foundation/containers	vector-capacity-const	foundation-containers.md	engine/foundation/containers/vector.h:309
+Vector::RemoveRange(usize,usize)	function	foundation/containers	vector-removerange-usize-usize	foundation-containers.md	engine/foundation/containers/vector.h:295
+Vector::operator[](usize)	function	foundation/containers	vector-operator-index-usize	foundation-containers.md	engine/foundation/containers/vector.h:308
+Vector::operator[](usize) const	function	foundation/containers	vector-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/vector.h:312
+Vector::Data()	function	foundation/containers	vector-data	foundation-containers.md	engine/foundation/containers/vector.h:315
+Vector::Data() const	function	foundation/containers	vector-data-const	foundation-containers.md	engine/foundation/containers/vector.h:317
+Vector::Size() const	function	foundation/containers	vector-size-const	foundation-containers.md	engine/foundation/containers/vector.h:320
+Vector::Empty() const	function	foundation/containers	vector-empty-const	foundation-containers.md	engine/foundation/containers/vector.h:322
+Vector::Capacity() const	function	foundation/containers	vector-capacity-const	foundation-containers.md	engine/foundation/containers/vector.h:324
 GraphemeBreakProperty	enum	foundation/strings	graphemebreakproperty	foundation-strings.md	engine/foundation/string/grapheme.h:13
 GraphemeBreakProperty::Other	enumerator	foundation/strings	graphemebreakproperty-other	foundation-strings.md	engine/foundation/string/grapheme.h:14
 GraphemeBreakProperty::CR	enumerator	foundation/strings	graphemebreakproperty-cr	foundation-strings.md	engine/foundation/string/grapheme.h:15
@@ -726,92 +727,92 @@ LogRender	variable	foundation/log	logrender	foundation-log.md	engine/foundation/
 LogPlatform	variable	foundation/log	logplatform	foundation-log.md	engine/foundation/log/log.h:127
 Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:138
 LoadConfig(const char*)	function	foundation/log	loadconfig-const-char-star	foundation-log.md	engine/foundation/log/log.h:154
-ENGINE_INT128_NAMESPACE::detail128::NativeU	variable	foundation/types	engine-int128-namespace-detail128-nativeu	foundation-types.md	engine/foundation/int128.h:40
-ENGINE_INT128_NAMESPACE::detail128::NativeI	variable	foundation/types	engine-int128-namespace-detail128-nativei	foundation-types.md	engine/foundation/int128.h:42
-ENGINE_INT128_NAMESPACE::detail128::Parts	struct	foundation/types	engine-int128-namespace-detail128-parts	foundation-types.md	engine/foundation/int128.h:45
-ENGINE_INT128_NAMESPACE::detail128::Parts::lo	variable	foundation/types	engine-int128-namespace-detail128-parts-lo	foundation-types.md	engine/foundation/int128.h:47
-ENGINE_INT128_NAMESPACE::detail128::Parts::hi	variable	foundation/types	engine-int128-namespace-detail128-parts-hi	foundation-types.md	engine/foundation/int128.h:49
-ENGINE_INT128_NAMESPACE::detail128::PortableMul(Parts,Parts)	function	foundation/types	engine-int128-namespace-detail128-portablemul-parts-parts	foundation-types.md	engine/foundation/int128.h:52
-ENGINE_INT128_NAMESPACE::detail128::PortableDivMod(Parts,Parts,Parts*,Parts*)	function	foundation/types	engine-int128-namespace-detail128-portabledivmod-parts-parts-parts-star-parts-star	foundation-types.md	engine/foundation/int128.h:54
-ENGINE_INT128_NAMESPACE::u128	struct	foundation/types	engine-int128-namespace-u128	foundation-types.md	engine/foundation/int128.h:61
-ENGINE_INT128_NAMESPACE::u128::lo	variable	foundation/types	engine-int128-namespace-u128-lo	foundation-types.md	engine/foundation/int128.h:63
-ENGINE_INT128_NAMESPACE::u128::hi	variable	foundation/types	engine-int128-namespace-u128-hi	foundation-types.md	engine/foundation/int128.h:65
-ENGINE_INT128_NAMESPACE::u128::kMaxTextBytes	variable	foundation/types	engine-int128-namespace-u128-kmaxtextbytes	foundation-types.md	engine/foundation/int128.h:68
-ENGINE_INT128_NAMESPACE::u128::u128()	function	foundation/types	engine-int128-namespace-u128-u128	foundation-types.md	engine/foundation/int128.h:71
-ENGINE_INT128_NAMESPACE::u128::u128(T)	function	foundation/types	engine-int128-namespace-u128-u128-t	foundation-types.md	engine/foundation/int128.h:73
-ENGINE_INT128_NAMESPACE::u128::FromParts(u64,u64)	function	foundation/types	engine-int128-namespace-u128-fromparts-u64-u64	foundation-types.md	engine/foundation/int128.h:77
-ENGINE_INT128_NAMESPACE::u128::Max()	function	foundation/types	engine-int128-namespace-u128-max	foundation-types.md	engine/foundation/int128.h:84
-ENGINE_INT128_NAMESPACE::u128::operator T() const	function	foundation/types	engine-int128-namespace-u128-operator-t-const	foundation-types.md	engine/foundation/int128.h:87
-ENGINE_INT128_NAMESPACE::u128::operator bool() const	function	foundation/types	engine-int128-namespace-u128-operator-bool-const	foundation-types.md	engine/foundation/int128.h:93
-ENGINE_INT128_NAMESPACE::u128::operator f64() const	function	foundation/types	engine-int128-namespace-u128-operator-f64-const	foundation-types.md	engine/foundation/int128.h:95
-ENGINE_INT128_NAMESPACE::u128::CountLeadingZeros() const	function	foundation/types	engine-int128-namespace-u128-countleadingzeros-const	foundation-types.md	engine/foundation/int128.h:107
-ENGINE_INT128_NAMESPACE::u128::CountTrailingZeros() const	function	foundation/types	engine-int128-namespace-u128-counttrailingzeros-const	foundation-types.md	engine/foundation/int128.h:112
-ENGINE_INT128_NAMESPACE::u128::PopCount() const	function	foundation/types	engine-int128-namespace-u128-popcount-const	foundation-types.md	engine/foundation/int128.h:117
-ENGINE_INT128_NAMESPACE::u128::ByteSwap() const	function	foundation/types	engine-int128-namespace-u128-byteswap-const	foundation-types.md	engine/foundation/int128.h:119
-ENGINE_INT128_NAMESPACE::u128::Hash() const	function	foundation/types	engine-int128-namespace-u128-hash-const	foundation-types.md	engine/foundation/int128.h:121
-ENGINE_INT128_NAMESPACE::u128::ToText(char*,usize,u32) const	function	foundation/types	engine-int128-namespace-u128-totext-char-star-usize-u32-const	foundation-types.md	engine/foundation/int128.h:136
-ENGINE_INT128_NAMESPACE::u128::FromText(StringView,u32,u128*)	function	foundation/types	engine-int128-namespace-u128-fromtext-stringview-u32-u128-star	foundation-types.md	engine/foundation/int128.h:144
-ENGINE_INT128_NAMESPACE::u128::operator+=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-plus-eq-u128	foundation-types.md	engine/foundation/int128.h:147
-ENGINE_INT128_NAMESPACE::u128::operator-=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-minus-eq-u128	foundation-types.md	engine/foundation/int128.h:154
-ENGINE_INT128_NAMESPACE::u128::operator*=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-star-eq-u128	foundation-types.md	engine/foundation/int128.h:161
-ENGINE_INT128_NAMESPACE::u128::operator/=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-slash-eq-u128	foundation-types.md	engine/foundation/int128.h:175
-ENGINE_INT128_NAMESPACE::u128::operator%=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-pct-eq-u128	foundation-types.md	engine/foundation/int128.h:179
-ENGINE_INT128_NAMESPACE::u128::operator<<=(u32)	function	foundation/types	engine-int128-namespace-u128-operator-lt-lt-eq-u32	foundation-types.md	engine/foundation/int128.h:181
-ENGINE_INT128_NAMESPACE::u128::operator>>=(u32)	function	foundation/types	engine-int128-namespace-u128-operator-gt-gt-eq-u32	foundation-types.md	engine/foundation/int128.h:195
-ENGINE_INT128_NAMESPACE::u128::operator&=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-amp-eq-u128	foundation-types.md	engine/foundation/int128.h:209
-ENGINE_INT128_NAMESPACE::u128::operator|=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-pipe-eq-u128	foundation-types.md	engine/foundation/int128.h:215
-ENGINE_INT128_NAMESPACE::u128::operator^=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-caret-eq-u128	foundation-types.md	engine/foundation/int128.h:221
-ENGINE_INT128_NAMESPACE::u128::operator++()	function	foundation/types	engine-int128-namespace-u128-operator-plus-plus	foundation-types.md	engine/foundation/int128.h:227
-ENGINE_INT128_NAMESPACE::u128::operator++(int)	function	foundation/types	engine-int128-namespace-u128-operator-plus-plus-int	foundation-types.md	engine/foundation/int128.h:229
-ENGINE_INT128_NAMESPACE::u128::operator--()	function	foundation/types	engine-int128-namespace-u128-operator-minus-minus	foundation-types.md	engine/foundation/int128.h:235
-ENGINE_INT128_NAMESPACE::u128::operator--(int)	function	foundation/types	engine-int128-namespace-u128-operator-minus-minus-int	foundation-types.md	engine/foundation/int128.h:237
-ENGINE_INT128_NAMESPACE::u128::operator+() const	function	foundation/types	engine-int128-namespace-u128-operator-plus-const	foundation-types.md	engine/foundation/int128.h:243
-ENGINE_INT128_NAMESPACE::u128::operator-() const	function	foundation/types	engine-int128-namespace-u128-operator-minus-const	foundation-types.md	engine/foundation/int128.h:245
-ENGINE_INT128_NAMESPACE::u128::operator~() const	function	foundation/types	engine-int128-namespace-u128-operator-tilde-const	foundation-types.md	engine/foundation/int128.h:247
-ENGINE_INT128_NAMESPACE::u128::operator!() const	function	foundation/types	engine-int128-namespace-u128-operator-not-const	foundation-types.md	engine/foundation/int128.h:249
-ENGINE_INT128_NAMESPACE::u128::ToNative() const	function	foundation/types	engine-int128-namespace-u128-tonative-const	foundation-types.md	engine/foundation/int128.h:290
-ENGINE_INT128_NAMESPACE::u128::FromNative(detail128::NativeU)	function	foundation/types	engine-int128-namespace-u128-fromnative-detail128-nativeu	foundation-types.md	engine/foundation/int128.h:292
-ENGINE_INT128_NAMESPACE::i128	struct	foundation/types	engine-int128-namespace-i128	foundation-types.md	engine/foundation/int128.h:338
-ENGINE_INT128_NAMESPACE::i128::lo	variable	foundation/types	engine-int128-namespace-i128-lo	foundation-types.md	engine/foundation/int128.h:340
-ENGINE_INT128_NAMESPACE::i128::hi	variable	foundation/types	engine-int128-namespace-i128-hi	foundation-types.md	engine/foundation/int128.h:342
-ENGINE_INT128_NAMESPACE::i128::kMaxTextBytes	variable	foundation/types	engine-int128-namespace-i128-kmaxtextbytes	foundation-types.md	engine/foundation/int128.h:345
-ENGINE_INT128_NAMESPACE::i128::i128()	function	foundation/types	engine-int128-namespace-i128-i128	foundation-types.md	engine/foundation/int128.h:348
-ENGINE_INT128_NAMESPACE::i128::i128(T)	function	foundation/types	engine-int128-namespace-i128-i128-t	foundation-types.md	engine/foundation/int128.h:350
-ENGINE_INT128_NAMESPACE::i128::i128(u128)	function	foundation/types	engine-int128-namespace-i128-i128-u128	foundation-types.md	engine/foundation/int128.h:358
-ENGINE_INT128_NAMESPACE::i128::FromParts(u64,u64)	function	foundation/types	engine-int128-namespace-i128-fromparts-u64-u64	foundation-types.md	engine/foundation/int128.h:360
-ENGINE_INT128_NAMESPACE::i128::Max()	function	foundation/types	engine-int128-namespace-i128-max	foundation-types.md	engine/foundation/int128.h:367
-ENGINE_INT128_NAMESPACE::i128::Min()	function	foundation/types	engine-int128-namespace-i128-min	foundation-types.md	engine/foundation/int128.h:369
-ENGINE_INT128_NAMESPACE::i128::ToBits() const	function	foundation/types	engine-int128-namespace-i128-tobits-const	foundation-types.md	engine/foundation/int128.h:372
-ENGINE_INT128_NAMESPACE::i128::IsNegative() const	function	foundation/types	engine-int128-namespace-i128-isnegative-const	foundation-types.md	engine/foundation/int128.h:374
-ENGINE_INT128_NAMESPACE::i128::Magnitude() const	function	foundation/types	engine-int128-namespace-i128-magnitude-const	foundation-types.md	engine/foundation/int128.h:376
-ENGINE_INT128_NAMESPACE::i128::operator T() const	function	foundation/types	engine-int128-namespace-i128-operator-t-const	foundation-types.md	engine/foundation/int128.h:378
-ENGINE_INT128_NAMESPACE::i128::operator bool() const	function	foundation/types	engine-int128-namespace-i128-operator-bool-const	foundation-types.md	engine/foundation/int128.h:384
-ENGINE_INT128_NAMESPACE::i128::operator f64() const	function	foundation/types	engine-int128-namespace-i128-operator-f64-const	foundation-types.md	engine/foundation/int128.h:386
-ENGINE_INT128_NAMESPACE::i128::Hash() const	function	foundation/types	engine-int128-namespace-i128-hash-const	foundation-types.md	engine/foundation/int128.h:388
-ENGINE_INT128_NAMESPACE::i128::ToText(char*,usize,u32) const	function	foundation/types	engine-int128-namespace-i128-totext-char-star-usize-u32-const	foundation-types.md	engine/foundation/int128.h:397
-ENGINE_INT128_NAMESPACE::i128::FromText(StringView,u32,i128*)	function	foundation/types	engine-int128-namespace-i128-fromtext-stringview-u32-i128-star	foundation-types.md	engine/foundation/int128.h:405
-ENGINE_INT128_NAMESPACE::i128::operator+=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-plus-eq-i128	foundation-types.md	engine/foundation/int128.h:408
-ENGINE_INT128_NAMESPACE::i128::operator-=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-minus-eq-i128	foundation-types.md	engine/foundation/int128.h:410
-ENGINE_INT128_NAMESPACE::i128::operator*=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-star-eq-i128	foundation-types.md	engine/foundation/int128.h:412
-ENGINE_INT128_NAMESPACE::i128::operator/=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-slash-eq-i128	foundation-types.md	engine/foundation/int128.h:416
-ENGINE_INT128_NAMESPACE::i128::operator%=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-pct-eq-i128	foundation-types.md	engine/foundation/int128.h:420
-ENGINE_INT128_NAMESPACE::i128::operator<<=(u32)	function	foundation/types	engine-int128-namespace-i128-operator-lt-lt-eq-u32	foundation-types.md	engine/foundation/int128.h:422
-ENGINE_INT128_NAMESPACE::i128::operator>>=(u32)	function	foundation/types	engine-int128-namespace-i128-operator-gt-gt-eq-u32	foundation-types.md	engine/foundation/int128.h:424
-ENGINE_INT128_NAMESPACE::i128::operator&=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-amp-eq-i128	foundation-types.md	engine/foundation/int128.h:429
-ENGINE_INT128_NAMESPACE::i128::operator|=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-pipe-eq-i128	foundation-types.md	engine/foundation/int128.h:431
-ENGINE_INT128_NAMESPACE::i128::operator^=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-caret-eq-i128	foundation-types.md	engine/foundation/int128.h:433
-ENGINE_INT128_NAMESPACE::i128::operator++()	function	foundation/types	engine-int128-namespace-i128-operator-plus-plus	foundation-types.md	engine/foundation/int128.h:435
-ENGINE_INT128_NAMESPACE::i128::operator++(int)	function	foundation/types	engine-int128-namespace-i128-operator-plus-plus-int	foundation-types.md	engine/foundation/int128.h:437
-ENGINE_INT128_NAMESPACE::i128::operator--()	function	foundation/types	engine-int128-namespace-i128-operator-minus-minus	foundation-types.md	engine/foundation/int128.h:443
-ENGINE_INT128_NAMESPACE::i128::operator--(int)	function	foundation/types	engine-int128-namespace-i128-operator-minus-minus-int	foundation-types.md	engine/foundation/int128.h:445
-ENGINE_INT128_NAMESPACE::i128::operator+() const	function	foundation/types	engine-int128-namespace-i128-operator-plus-const	foundation-types.md	engine/foundation/int128.h:451
-ENGINE_INT128_NAMESPACE::i128::operator-() const	function	foundation/types	engine-int128-namespace-i128-operator-minus-const	foundation-types.md	engine/foundation/int128.h:453
-ENGINE_INT128_NAMESPACE::i128::operator~() const	function	foundation/types	engine-int128-namespace-i128-operator-tilde-const	foundation-types.md	engine/foundation/int128.h:455
-ENGINE_INT128_NAMESPACE::i128::operator!() const	function	foundation/types	engine-int128-namespace-i128-operator-not-const	foundation-types.md	engine/foundation/int128.h:457
-Hash<u128>	struct	foundation/types	hash-lt-u128-gt	foundation-types.md	engine/foundation/int128.h:508
-Hash<u128>::operator()(const u128&) const	function	foundation/types	hash-lt-u128-gt-operator-call-const-u128-amp-const	foundation-types.md	engine/foundation/int128.h:511
-Hash<i128>	struct	foundation/types	hash-lt-i128-gt	foundation-types.md	engine/foundation/int128.h:514
-Hash<i128>::operator()(const i128&) const	function	foundation/types	hash-lt-i128-gt-operator-call-const-i128-amp-const	foundation-types.md	engine/foundation/int128.h:517
+ENGINE_INT128_NAMESPACE::detail128::NativeU	variable	foundation/types	engine-int128-namespace-detail128-nativeu	foundation-types.md	engine/foundation/int128.h:41
+ENGINE_INT128_NAMESPACE::detail128::NativeI	variable	foundation/types	engine-int128-namespace-detail128-nativei	foundation-types.md	engine/foundation/int128.h:43
+ENGINE_INT128_NAMESPACE::detail128::Parts	struct	foundation/types	engine-int128-namespace-detail128-parts	foundation-types.md	engine/foundation/int128.h:46
+ENGINE_INT128_NAMESPACE::detail128::Parts::lo	variable	foundation/types	engine-int128-namespace-detail128-parts-lo	foundation-types.md	engine/foundation/int128.h:48
+ENGINE_INT128_NAMESPACE::detail128::Parts::hi	variable	foundation/types	engine-int128-namespace-detail128-parts-hi	foundation-types.md	engine/foundation/int128.h:50
+ENGINE_INT128_NAMESPACE::detail128::PortableMul(Parts,Parts)	function	foundation/types	engine-int128-namespace-detail128-portablemul-parts-parts	foundation-types.md	engine/foundation/int128.h:53
+ENGINE_INT128_NAMESPACE::detail128::PortableDivMod(Parts,Parts,Parts*,Parts*)	function	foundation/types	engine-int128-namespace-detail128-portabledivmod-parts-parts-parts-star-parts-star	foundation-types.md	engine/foundation/int128.h:55
+ENGINE_INT128_NAMESPACE::u128	struct	foundation/types	engine-int128-namespace-u128	foundation-types.md	engine/foundation/int128.h:62
+ENGINE_INT128_NAMESPACE::u128::lo	variable	foundation/types	engine-int128-namespace-u128-lo	foundation-types.md	engine/foundation/int128.h:64
+ENGINE_INT128_NAMESPACE::u128::hi	variable	foundation/types	engine-int128-namespace-u128-hi	foundation-types.md	engine/foundation/int128.h:66
+ENGINE_INT128_NAMESPACE::u128::kMaxTextBytes	variable	foundation/types	engine-int128-namespace-u128-kmaxtextbytes	foundation-types.md	engine/foundation/int128.h:69
+ENGINE_INT128_NAMESPACE::u128::u128()	function	foundation/types	engine-int128-namespace-u128-u128	foundation-types.md	engine/foundation/int128.h:72
+ENGINE_INT128_NAMESPACE::u128::u128(T)	function	foundation/types	engine-int128-namespace-u128-u128-t	foundation-types.md	engine/foundation/int128.h:74
+ENGINE_INT128_NAMESPACE::u128::FromParts(u64,u64)	function	foundation/types	engine-int128-namespace-u128-fromparts-u64-u64	foundation-types.md	engine/foundation/int128.h:78
+ENGINE_INT128_NAMESPACE::u128::Max()	function	foundation/types	engine-int128-namespace-u128-max	foundation-types.md	engine/foundation/int128.h:85
+ENGINE_INT128_NAMESPACE::u128::operator T() const	function	foundation/types	engine-int128-namespace-u128-operator-t-const	foundation-types.md	engine/foundation/int128.h:88
+ENGINE_INT128_NAMESPACE::u128::operator bool() const	function	foundation/types	engine-int128-namespace-u128-operator-bool-const	foundation-types.md	engine/foundation/int128.h:94
+ENGINE_INT128_NAMESPACE::u128::operator f64() const	function	foundation/types	engine-int128-namespace-u128-operator-f64-const	foundation-types.md	engine/foundation/int128.h:96
+ENGINE_INT128_NAMESPACE::u128::CountLeadingZeros() const	function	foundation/types	engine-int128-namespace-u128-countleadingzeros-const	foundation-types.md	engine/foundation/int128.h:108
+ENGINE_INT128_NAMESPACE::u128::CountTrailingZeros() const	function	foundation/types	engine-int128-namespace-u128-counttrailingzeros-const	foundation-types.md	engine/foundation/int128.h:113
+ENGINE_INT128_NAMESPACE::u128::PopCount() const	function	foundation/types	engine-int128-namespace-u128-popcount-const	foundation-types.md	engine/foundation/int128.h:118
+ENGINE_INT128_NAMESPACE::u128::ByteSwap() const	function	foundation/types	engine-int128-namespace-u128-byteswap-const	foundation-types.md	engine/foundation/int128.h:120
+ENGINE_INT128_NAMESPACE::u128::Hash() const	function	foundation/types	engine-int128-namespace-u128-hash-const	foundation-types.md	engine/foundation/int128.h:122
+ENGINE_INT128_NAMESPACE::u128::ToText(char*,usize,u32) const	function	foundation/types	engine-int128-namespace-u128-totext-char-star-usize-u32-const	foundation-types.md	engine/foundation/int128.h:137
+ENGINE_INT128_NAMESPACE::u128::FromText(StringView,u32,u128*)	function	foundation/types	engine-int128-namespace-u128-fromtext-stringview-u32-u128-star	foundation-types.md	engine/foundation/int128.h:145
+ENGINE_INT128_NAMESPACE::u128::operator+=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-plus-eq-u128	foundation-types.md	engine/foundation/int128.h:148
+ENGINE_INT128_NAMESPACE::u128::operator-=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-minus-eq-u128	foundation-types.md	engine/foundation/int128.h:155
+ENGINE_INT128_NAMESPACE::u128::operator*=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-star-eq-u128	foundation-types.md	engine/foundation/int128.h:162
+ENGINE_INT128_NAMESPACE::u128::operator/=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-slash-eq-u128	foundation-types.md	engine/foundation/int128.h:176
+ENGINE_INT128_NAMESPACE::u128::operator%=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-pct-eq-u128	foundation-types.md	engine/foundation/int128.h:180
+ENGINE_INT128_NAMESPACE::u128::operator<<=(u32)	function	foundation/types	engine-int128-namespace-u128-operator-lt-lt-eq-u32	foundation-types.md	engine/foundation/int128.h:182
+ENGINE_INT128_NAMESPACE::u128::operator>>=(u32)	function	foundation/types	engine-int128-namespace-u128-operator-gt-gt-eq-u32	foundation-types.md	engine/foundation/int128.h:196
+ENGINE_INT128_NAMESPACE::u128::operator&=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-amp-eq-u128	foundation-types.md	engine/foundation/int128.h:210
+ENGINE_INT128_NAMESPACE::u128::operator|=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-pipe-eq-u128	foundation-types.md	engine/foundation/int128.h:216
+ENGINE_INT128_NAMESPACE::u128::operator^=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-caret-eq-u128	foundation-types.md	engine/foundation/int128.h:222
+ENGINE_INT128_NAMESPACE::u128::operator++()	function	foundation/types	engine-int128-namespace-u128-operator-plus-plus	foundation-types.md	engine/foundation/int128.h:228
+ENGINE_INT128_NAMESPACE::u128::operator++(int)	function	foundation/types	engine-int128-namespace-u128-operator-plus-plus-int	foundation-types.md	engine/foundation/int128.h:230
+ENGINE_INT128_NAMESPACE::u128::operator--()	function	foundation/types	engine-int128-namespace-u128-operator-minus-minus	foundation-types.md	engine/foundation/int128.h:236
+ENGINE_INT128_NAMESPACE::u128::operator--(int)	function	foundation/types	engine-int128-namespace-u128-operator-minus-minus-int	foundation-types.md	engine/foundation/int128.h:238
+ENGINE_INT128_NAMESPACE::u128::operator+() const	function	foundation/types	engine-int128-namespace-u128-operator-plus-const	foundation-types.md	engine/foundation/int128.h:244
+ENGINE_INT128_NAMESPACE::u128::operator-() const	function	foundation/types	engine-int128-namespace-u128-operator-minus-const	foundation-types.md	engine/foundation/int128.h:246
+ENGINE_INT128_NAMESPACE::u128::operator~() const	function	foundation/types	engine-int128-namespace-u128-operator-tilde-const	foundation-types.md	engine/foundation/int128.h:248
+ENGINE_INT128_NAMESPACE::u128::operator!() const	function	foundation/types	engine-int128-namespace-u128-operator-not-const	foundation-types.md	engine/foundation/int128.h:250
+ENGINE_INT128_NAMESPACE::u128::ToNative() const	function	foundation/types	engine-int128-namespace-u128-tonative-const	foundation-types.md	engine/foundation/int128.h:293
+ENGINE_INT128_NAMESPACE::u128::FromNative(detail128::NativeU)	function	foundation/types	engine-int128-namespace-u128-fromnative-detail128-nativeu	foundation-types.md	engine/foundation/int128.h:295
+ENGINE_INT128_NAMESPACE::i128	struct	foundation/types	engine-int128-namespace-i128	foundation-types.md	engine/foundation/int128.h:341
+ENGINE_INT128_NAMESPACE::i128::lo	variable	foundation/types	engine-int128-namespace-i128-lo	foundation-types.md	engine/foundation/int128.h:343
+ENGINE_INT128_NAMESPACE::i128::hi	variable	foundation/types	engine-int128-namespace-i128-hi	foundation-types.md	engine/foundation/int128.h:345
+ENGINE_INT128_NAMESPACE::i128::kMaxTextBytes	variable	foundation/types	engine-int128-namespace-i128-kmaxtextbytes	foundation-types.md	engine/foundation/int128.h:348
+ENGINE_INT128_NAMESPACE::i128::i128()	function	foundation/types	engine-int128-namespace-i128-i128	foundation-types.md	engine/foundation/int128.h:351
+ENGINE_INT128_NAMESPACE::i128::i128(T)	function	foundation/types	engine-int128-namespace-i128-i128-t	foundation-types.md	engine/foundation/int128.h:353
+ENGINE_INT128_NAMESPACE::i128::i128(u128)	function	foundation/types	engine-int128-namespace-i128-i128-u128	foundation-types.md	engine/foundation/int128.h:361
+ENGINE_INT128_NAMESPACE::i128::FromParts(u64,u64)	function	foundation/types	engine-int128-namespace-i128-fromparts-u64-u64	foundation-types.md	engine/foundation/int128.h:363
+ENGINE_INT128_NAMESPACE::i128::Max()	function	foundation/types	engine-int128-namespace-i128-max	foundation-types.md	engine/foundation/int128.h:370
+ENGINE_INT128_NAMESPACE::i128::Min()	function	foundation/types	engine-int128-namespace-i128-min	foundation-types.md	engine/foundation/int128.h:372
+ENGINE_INT128_NAMESPACE::i128::ToBits() const	function	foundation/types	engine-int128-namespace-i128-tobits-const	foundation-types.md	engine/foundation/int128.h:375
+ENGINE_INT128_NAMESPACE::i128::IsNegative() const	function	foundation/types	engine-int128-namespace-i128-isnegative-const	foundation-types.md	engine/foundation/int128.h:377
+ENGINE_INT128_NAMESPACE::i128::Magnitude() const	function	foundation/types	engine-int128-namespace-i128-magnitude-const	foundation-types.md	engine/foundation/int128.h:379
+ENGINE_INT128_NAMESPACE::i128::operator T() const	function	foundation/types	engine-int128-namespace-i128-operator-t-const	foundation-types.md	engine/foundation/int128.h:381
+ENGINE_INT128_NAMESPACE::i128::operator bool() const	function	foundation/types	engine-int128-namespace-i128-operator-bool-const	foundation-types.md	engine/foundation/int128.h:387
+ENGINE_INT128_NAMESPACE::i128::operator f64() const	function	foundation/types	engine-int128-namespace-i128-operator-f64-const	foundation-types.md	engine/foundation/int128.h:389
+ENGINE_INT128_NAMESPACE::i128::Hash() const	function	foundation/types	engine-int128-namespace-i128-hash-const	foundation-types.md	engine/foundation/int128.h:391
+ENGINE_INT128_NAMESPACE::i128::ToText(char*,usize,u32) const	function	foundation/types	engine-int128-namespace-i128-totext-char-star-usize-u32-const	foundation-types.md	engine/foundation/int128.h:400
+ENGINE_INT128_NAMESPACE::i128::FromText(StringView,u32,i128*)	function	foundation/types	engine-int128-namespace-i128-fromtext-stringview-u32-i128-star	foundation-types.md	engine/foundation/int128.h:408
+ENGINE_INT128_NAMESPACE::i128::operator+=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-plus-eq-i128	foundation-types.md	engine/foundation/int128.h:411
+ENGINE_INT128_NAMESPACE::i128::operator-=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-minus-eq-i128	foundation-types.md	engine/foundation/int128.h:413
+ENGINE_INT128_NAMESPACE::i128::operator*=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-star-eq-i128	foundation-types.md	engine/foundation/int128.h:415
+ENGINE_INT128_NAMESPACE::i128::operator/=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-slash-eq-i128	foundation-types.md	engine/foundation/int128.h:419
+ENGINE_INT128_NAMESPACE::i128::operator%=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-pct-eq-i128	foundation-types.md	engine/foundation/int128.h:423
+ENGINE_INT128_NAMESPACE::i128::operator<<=(u32)	function	foundation/types	engine-int128-namespace-i128-operator-lt-lt-eq-u32	foundation-types.md	engine/foundation/int128.h:425
+ENGINE_INT128_NAMESPACE::i128::operator>>=(u32)	function	foundation/types	engine-int128-namespace-i128-operator-gt-gt-eq-u32	foundation-types.md	engine/foundation/int128.h:427
+ENGINE_INT128_NAMESPACE::i128::operator&=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-amp-eq-i128	foundation-types.md	engine/foundation/int128.h:432
+ENGINE_INT128_NAMESPACE::i128::operator|=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-pipe-eq-i128	foundation-types.md	engine/foundation/int128.h:434
+ENGINE_INT128_NAMESPACE::i128::operator^=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-caret-eq-i128	foundation-types.md	engine/foundation/int128.h:436
+ENGINE_INT128_NAMESPACE::i128::operator++()	function	foundation/types	engine-int128-namespace-i128-operator-plus-plus	foundation-types.md	engine/foundation/int128.h:438
+ENGINE_INT128_NAMESPACE::i128::operator++(int)	function	foundation/types	engine-int128-namespace-i128-operator-plus-plus-int	foundation-types.md	engine/foundation/int128.h:440
+ENGINE_INT128_NAMESPACE::i128::operator--()	function	foundation/types	engine-int128-namespace-i128-operator-minus-minus	foundation-types.md	engine/foundation/int128.h:446
+ENGINE_INT128_NAMESPACE::i128::operator--(int)	function	foundation/types	engine-int128-namespace-i128-operator-minus-minus-int	foundation-types.md	engine/foundation/int128.h:448
+ENGINE_INT128_NAMESPACE::i128::operator+() const	function	foundation/types	engine-int128-namespace-i128-operator-plus-const	foundation-types.md	engine/foundation/int128.h:454
+ENGINE_INT128_NAMESPACE::i128::operator-() const	function	foundation/types	engine-int128-namespace-i128-operator-minus-const	foundation-types.md	engine/foundation/int128.h:456
+ENGINE_INT128_NAMESPACE::i128::operator~() const	function	foundation/types	engine-int128-namespace-i128-operator-tilde-const	foundation-types.md	engine/foundation/int128.h:458
+ENGINE_INT128_NAMESPACE::i128::operator!() const	function	foundation/types	engine-int128-namespace-i128-operator-not-const	foundation-types.md	engine/foundation/int128.h:460
+Hash<u128>	struct	foundation/types	hash-lt-u128-gt	foundation-types.md	engine/foundation/int128.h:513
+Hash<u128>::operator()(const u128&) const	function	foundation/types	hash-lt-u128-gt-operator-call-const-u128-amp-const	foundation-types.md	engine/foundation/int128.h:516
+Hash<i128>	struct	foundation/types	hash-lt-i128-gt	foundation-types.md	engine/foundation/int128.h:519
+Hash<i128>::operator()(const i128&) const	function	foundation/types	hash-lt-i128-gt-operator-call-const-i128-amp-const	foundation-types.md	engine/foundation/int128.h:522
 i8	alias	foundation/types	i8	foundation-types.md	engine/foundation/types.h:21
 i16	alias	foundation/types	i16	foundation-types.md	engine/foundation/types.h:23
 i32	alias	foundation/types	i32	foundation-types.md	engine/foundation/types.h:25
@@ -992,7 +993,8 @@ settings::CommandLineResult::save_path	variable	foundation/settings	settings-com
 settings::CommandLineSource	class	foundation/settings	settings-commandlinesource	foundation-settings.md	engine/foundation/settings/env_source.h:117
 settings::CommandLineSource::CommandLineSource(const Registry&,int,const char* const*)	function	foundation/settings	settings-commandlinesource-commandlinesource-const-registry-amp-int-const-char-star-const-star	foundation-settings.md	engine/foundation/settings/env_source.h:124
 settings::CommandLineSource::Result() const	function	foundation/settings	settings-commandlinesource-result-const	foundation-settings.md	engine/foundation/settings/env_source.h:127
-settings::CommandLineSource::Describe(char*,usize) const	function	foundation/settings	settings-commandlinesource-describe-char-star-usize-const	foundation-settings.md	engine/foundation/settings/env_source.h:129
+settings::CommandLineSource::AddFromProgram(const Key&,StringView,StringView)	function	foundation/settings	settings-commandlinesource-addfromprogram-const-key-amp-stringview-stringview	foundation-settings.md	engine/foundation/settings/env_source.h:135
+settings::CommandLineSource::Describe(char*,usize) const	function	foundation/settings	settings-commandlinesource-describe-char-star-usize-const	foundation-settings.md	engine/foundation/settings/env_source.h:137
 settings::FileStoreOptions	struct	foundation/settings	settings-filestoreoptions	foundation-settings.md	engine/foundation/settings/file_store.h:12
 settings::FileStoreOptions::permissions	variable	foundation/settings	settings-filestoreoptions-permissions	foundation-settings.md	engine/foundation/settings/file_store.h:14
 settings::FileStoreOptions::create_directories	variable	foundation/settings	settings-filestoreoptions-create-directories	foundation-settings.md	engine/foundation/settings/file_store.h:16
@@ -1259,40 +1261,41 @@ settings::SaveOptions::include_command_line	variable	foundation/settings	setting
 settings::SaveOptions::replace_damaged	variable	foundation/settings	settings-saveoptions-replace-damaged	foundation-settings.md	engine/foundation/settings/settings.h:149
 settings::SaveOptions::replace_newer	variable	foundation/settings	settings-saveoptions-replace-newer	foundation-settings.md	engine/foundation/settings/settings.h:151
 settings::SettingsSnapshot	struct	foundation/settings	settings-settingssnapshot	foundation-settings.md	engine/foundation/settings/settings.h:157
-settings::SettingsSnapshot::values	variable	foundation/settings	settings-settingssnapshot-values	foundation-settings.md	engine/foundation/settings/settings.h:159
-settings::SettingsSnapshot::generation	variable	foundation/settings	settings-settingssnapshot-generation	foundation-settings.md	engine/foundation/settings/settings.h:161
-settings::SettingsSnapshot::Get(SettingId) const	function	foundation/settings	settings-settingssnapshot-get-settingid-const	foundation-settings.md	engine/foundation/settings/settings.h:165
-settings::Settings	class	foundation/settings	settings-settings	foundation-settings.md	engine/foundation/settings/settings.h:176
-settings::Settings::Settings(Registry&)	function	foundation/settings	settings-settings-settings-registry-amp	foundation-settings.md	engine/foundation/settings/settings.h:179
-settings::Settings::~Settings()	function	foundation/settings	settings-settings-tilde-settings	foundation-settings.md	engine/foundation/settings/settings.h:181
-settings::Settings::Settings(const Settings&)	function	foundation/settings	settings-settings-settings-const-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:182
-settings::Settings::operator=(const Settings&)	function	foundation/settings	settings-settings-operator-eq-const-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:183
-settings::Settings::GetRegistry()	function	foundation/settings	settings-settings-getregistry	foundation-settings.md	engine/foundation/settings/settings.h:186
-settings::Settings::Load(const LoadOptions&)	function	foundation/settings	settings-settings-load-const-loadoptions-amp	foundation-settings.md	engine/foundation/settings/settings.h:194
-settings::Settings::LoadFromLayers()	function	foundation/settings	settings-settings-loadfromlayers	foundation-settings.md	engine/foundation/settings/settings.h:198
-settings::Settings::Migrations()	function	foundation/settings	settings-settings-migrations	foundation-settings.md	engine/foundation/settings/settings.h:201
-settings::Settings::UserFileIsNewer() const	function	foundation/settings	settings-settings-userfileisnewer-const	foundation-settings.md	engine/foundation/settings/settings.h:203
-settings::Settings::Layers()	function	foundation/settings	settings-settings-layers	foundation-settings.md	engine/foundation/settings/settings.h:206
-settings::Settings::CommandLine() const	function	foundation/settings	settings-settings-commandline-const	foundation-settings.md	engine/foundation/settings/settings.h:208
-settings::Settings::Set(SettingId,const Value&)	function	foundation/settings	settings-settings-set-settingid-const-value-amp	foundation-settings.md	engine/foundation/settings/settings.h:215
-settings::Settings::SetText(StringView,StringView)	function	foundation/settings	settings-settings-settext-stringview-stringview	foundation-settings.md	engine/foundation/settings/settings.h:217
-settings::Settings::Apply(const ChangeRequest*,usize,ApplyFn,void*)	function	foundation/settings	settings-settings-apply-const-changerequest-star-usize-applyfn-void-star	foundation-settings.md	engine/foundation/settings/settings.h:227
-settings::Settings::AddListener(StringView,SettingsListener,void*)	function	foundation/settings	settings-settings-addlistener-stringview-settingslistener-void-star	foundation-settings.md	engine/foundation/settings/settings.h:233
-settings::Settings::RemoveListener(u32)	function	foundation/settings	settings-settings-removelistener-u32	foundation-settings.md	engine/foundation/settings/settings.h:235
-settings::Settings::SetCapabilityCheck(CapabilityFn,void*)	function	foundation/settings	settings-settings-setcapabilitycheck-capabilityfn-void-star	foundation-settings.md	engine/foundation/settings/settings.h:237
-settings::Settings::Snapshot() const	function	foundation/settings	settings-settings-snapshot-const	foundation-settings.md	engine/foundation/settings/settings.h:240
-settings::Settings::Provenance(SettingId)	function	foundation/settings	settings-settings-provenance-settingid	foundation-settings.md	engine/foundation/settings/settings.h:242
-settings::Settings::Save(const SaveOptions&)	function	foundation/settings	settings-settings-save-const-saveoptions-amp	foundation-settings.md	engine/foundation/settings/settings.h:247
-settings::Settings::LastSaveStatus() const	function	foundation/settings	settings-settings-lastsavestatus-const	foundation-settings.md	engine/foundation/settings/settings.h:250
-settings::Settings::SaveIfChanged()	function	foundation/settings	settings-settings-saveifchanged	foundation-settings.md	engine/foundation/settings/settings.h:255
-settings::Settings::HasUnsavedChanges() const	function	foundation/settings	settings-settings-hasunsavedchanges-const	foundation-settings.md	engine/foundation/settings/settings.h:257
-settings::Settings::SetAutosaveQuietSeconds(double)	function	foundation/settings	settings-settings-setautosavequietseconds-double	foundation-settings.md	engine/foundation/settings/settings.h:259
-settings::Settings::PollAutosave()	function	foundation/settings	settings-settings-pollautosave	foundation-settings.md	engine/foundation/settings/settings.h:263
-settings::SaveOnExit	class	foundation/settings	settings-saveonexit	foundation-settings.md	engine/foundation/settings/settings.h:297
-settings::SaveOnExit::SaveOnExit(Settings&)	function	foundation/settings	settings-saveonexit-saveonexit-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:300
-settings::SaveOnExit::~SaveOnExit()	function	foundation/settings	settings-saveonexit-tilde-saveonexit	foundation-settings.md	engine/foundation/settings/settings.h:302
-settings::SaveOnExit::SaveOnExit(const SaveOnExit&)	function	foundation/settings	settings-saveonexit-saveonexit-const-saveonexit-amp	foundation-settings.md	engine/foundation/settings/settings.h:303
-settings::SaveOnExit::operator=(const SaveOnExit&)	function	foundation/settings	settings-saveonexit-operator-eq-const-saveonexit-amp	foundation-settings.md	engine/foundation/settings/settings.h:304
+settings::SettingsSnapshot::values	variable	foundation/settings	settings-settingssnapshot-values	foundation-settings.md	engine/foundation/settings/settings.h:160
+settings::SettingsSnapshot::generation	variable	foundation/settings	settings-settingssnapshot-generation	foundation-settings.md	engine/foundation/settings/settings.h:162
+settings::SettingsSnapshot::Get(SettingId) const	function	foundation/settings	settings-settingssnapshot-get-settingid-const	foundation-settings.md	engine/foundation/settings/settings.h:166
+settings::Settings	class	foundation/settings	settings-settings	foundation-settings.md	engine/foundation/settings/settings.h:177
+settings::Settings::Settings(Registry&)	function	foundation/settings	settings-settings-settings-registry-amp	foundation-settings.md	engine/foundation/settings/settings.h:180
+settings::Settings::~Settings()	function	foundation/settings	settings-settings-tilde-settings	foundation-settings.md	engine/foundation/settings/settings.h:182
+settings::Settings::Settings(const Settings&)	function	foundation/settings	settings-settings-settings-const-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:183
+settings::Settings::operator=(const Settings&)	function	foundation/settings	settings-settings-operator-eq-const-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:184
+settings::Settings::GetRegistry()	function	foundation/settings	settings-settings-getregistry	foundation-settings.md	engine/foundation/settings/settings.h:187
+settings::Settings::Load(const LoadOptions&)	function	foundation/settings	settings-settings-load-const-loadoptions-amp	foundation-settings.md	engine/foundation/settings/settings.h:195
+settings::Settings::LoadFromLayers()	function	foundation/settings	settings-settings-loadfromlayers	foundation-settings.md	engine/foundation/settings/settings.h:199
+settings::Settings::Migrations()	function	foundation/settings	settings-settings-migrations	foundation-settings.md	engine/foundation/settings/settings.h:202
+settings::Settings::UserFileIsNewer() const	function	foundation/settings	settings-settings-userfileisnewer-const	foundation-settings.md	engine/foundation/settings/settings.h:204
+settings::Settings::Layers()	function	foundation/settings	settings-settings-layers	foundation-settings.md	engine/foundation/settings/settings.h:207
+settings::Settings::CommandLine() const	function	foundation/settings	settings-settings-commandline-const	foundation-settings.md	engine/foundation/settings/settings.h:209
+settings::Settings::Set(SettingId,const Value&)	function	foundation/settings	settings-settings-set-settingid-const-value-amp	foundation-settings.md	engine/foundation/settings/settings.h:216
+settings::Settings::SetText(StringView,StringView)	function	foundation/settings	settings-settings-settext-stringview-stringview	foundation-settings.md	engine/foundation/settings/settings.h:218
+settings::Settings::SetFromCommandLine(StringView,StringView,StringView)	function	foundation/settings	settings-settings-setfromcommandline-stringview-stringview-stringview	foundation-settings.md	engine/foundation/settings/settings.h:227
+settings::Settings::Apply(const ChangeRequest*,usize,ApplyFn,void*)	function	foundation/settings	settings-settings-apply-const-changerequest-star-usize-applyfn-void-star	foundation-settings.md	engine/foundation/settings/settings.h:237
+settings::Settings::AddListener(StringView,SettingsListener,void*)	function	foundation/settings	settings-settings-addlistener-stringview-settingslistener-void-star	foundation-settings.md	engine/foundation/settings/settings.h:243
+settings::Settings::RemoveListener(u32)	function	foundation/settings	settings-settings-removelistener-u32	foundation-settings.md	engine/foundation/settings/settings.h:245
+settings::Settings::SetCapabilityCheck(CapabilityFn,void*)	function	foundation/settings	settings-settings-setcapabilitycheck-capabilityfn-void-star	foundation-settings.md	engine/foundation/settings/settings.h:247
+settings::Settings::Snapshot() const	function	foundation/settings	settings-settings-snapshot-const	foundation-settings.md	engine/foundation/settings/settings.h:250
+settings::Settings::Provenance(SettingId)	function	foundation/settings	settings-settings-provenance-settingid	foundation-settings.md	engine/foundation/settings/settings.h:252
+settings::Settings::Save(const SaveOptions&)	function	foundation/settings	settings-settings-save-const-saveoptions-amp	foundation-settings.md	engine/foundation/settings/settings.h:257
+settings::Settings::LastSaveStatus() const	function	foundation/settings	settings-settings-lastsavestatus-const	foundation-settings.md	engine/foundation/settings/settings.h:260
+settings::Settings::SaveIfChanged()	function	foundation/settings	settings-settings-saveifchanged	foundation-settings.md	engine/foundation/settings/settings.h:265
+settings::Settings::HasUnsavedChanges() const	function	foundation/settings	settings-settings-hasunsavedchanges-const	foundation-settings.md	engine/foundation/settings/settings.h:267
+settings::Settings::SetAutosaveQuietSeconds(double)	function	foundation/settings	settings-settings-setautosavequietseconds-double	foundation-settings.md	engine/foundation/settings/settings.h:269
+settings::Settings::PollAutosave()	function	foundation/settings	settings-settings-pollautosave	foundation-settings.md	engine/foundation/settings/settings.h:273
+settings::SaveOnExit	class	foundation/settings	settings-saveonexit	foundation-settings.md	engine/foundation/settings/settings.h:309
+settings::SaveOnExit::SaveOnExit(Settings&)	function	foundation/settings	settings-saveonexit-saveonexit-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:312
+settings::SaveOnExit::~SaveOnExit()	function	foundation/settings	settings-saveonexit-tilde-saveonexit	foundation-settings.md	engine/foundation/settings/settings.h:314
+settings::SaveOnExit::SaveOnExit(const SaveOnExit&)	function	foundation/settings	settings-saveonexit-saveonexit-const-saveonexit-amp	foundation-settings.md	engine/foundation/settings/settings.h:315
+settings::SaveOnExit::operator=(const SaveOnExit&)	function	foundation/settings	settings-saveonexit-operator-eq-const-saveonexit-amp	foundation-settings.md	engine/foundation/settings/settings.h:316
 settings::kMaxTextBytes	variable	foundation/settings	settings-kmaxtextbytes	foundation-settings.md	engine/foundation/settings/value.h:11
 settings::Type	enum	foundation/settings	settings-type	foundation-settings.md	engine/foundation/settings/value.h:14
 settings::Type::Bool	enumerator	foundation/settings	settings-type-bool	foundation-settings.md	engine/foundation/settings/value.h:15
@@ -1334,22 +1337,24 @@ os::CommandLine::FlagName(usize) const	function	platform/os	os-commandline-flagn
 os::CommandLine::FlagHasValue(usize) const	function	platform/os	os-commandline-flaghasvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:136
 os::CommandLine::FlagValue(usize) const	function	platform/os	os-commandline-flagvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:145
 os::ProbeVulkanCreateInstance()	function	platform/os	os-probevulkancreateinstance	platform-os.md	engine/foundation/os/gpu_driver_probe.h:15
-os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/foundation/os/os.h:18
-os::Exit(int)	function	platform/os	os-exit-int	platform-os.md	engine/foundation/os/os.h:22
-os::Write(int,const void*,usize)	function	platform/os	os-write-int-const-void-star-usize	platform-os.md	engine/foundation/os/os.h:29
-os::Read(int,void*,usize)	function	platform/os	os-read-int-void-star-usize	platform-os.md	engine/foundation/os/os.h:36
-os::WriteAllWithTimeout(int,const void*,usize,u64)	function	platform/os	os-writeallwithtimeout-int-const-void-star-usize-u64	platform-os.md	engine/foundation/os/os.h:47
-os::Open(StringView,int,int)	function	platform/os	os-open-stringview-int-int	platform-os.md	engine/foundation/os/os.h:58
-os::CreateFileForWriting(StringView,int)	function	platform/os	os-createfileforwriting-stringview-int	platform-os.md	engine/foundation/os/os.h:68
-os::Close(int)	function	platform/os	os-close-int	platform-os.md	engine/foundation/os/os.h:73
-os::ReserveMemory(usize)	function	platform/os	os-reservememory-usize	platform-os.md	engine/foundation/os/os.h:80
-os::ReleaseMemory(void*,usize)	function	platform/os	os-releasememory-void-star-usize	platform-os.md	engine/foundation/os/os.h:85
-os::MonotonicTimeNanos()	function	platform/os	os-monotonictimenanos	platform-os.md	engine/foundation/os/os.h:93
-os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:99
-os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:102
-os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:109
-os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:117
-os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:121
+os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/foundation/os/os.h:19
+os::Exit(int)	function	platform/os	os-exit-int	platform-os.md	engine/foundation/os/os.h:23
+os::Write(int,const void*,usize)	function	platform/os	os-write-int-const-void-star-usize	platform-os.md	engine/foundation/os/os.h:30
+os::Read(int,void*,usize)	function	platform/os	os-read-int-void-star-usize	platform-os.md	engine/foundation/os/os.h:37
+os::WriteAllWithTimeout(int,const void*,usize,u64)	function	platform/os	os-writeallwithtimeout-int-const-void-star-usize-u64	platform-os.md	engine/foundation/os/os.h:48
+os::Open(StringView,int,int)	function	platform/os	os-open-stringview-int-int	platform-os.md	engine/foundation/os/os.h:59
+os::CreateFileForWriting(StringView,int)	function	platform/os	os-createfileforwriting-stringview-int	platform-os.md	engine/foundation/os/os.h:69
+os::Close(int)	function	platform/os	os-close-int	platform-os.md	engine/foundation/os/os.h:74
+os::ReserveMemory(usize)	function	platform/os	os-reservememory-usize	platform-os.md	engine/foundation/os/os.h:81
+os::ReleaseMemory(void*,usize)	function	platform/os	os-releasememory-void-star-usize	platform-os.md	engine/foundation/os/os.h:86
+os::MonotonicTimeNanos()	function	platform/os	os-monotonictimenanos	platform-os.md	engine/foundation/os/os.h:94
+os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:100
+os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:103
+os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:110
+os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:118
+os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:122
+os::EnvironmentCount()	function	platform/os	os-environmentcount	platform-os.md	engine/foundation/os/os.h:125
+os::EnvironmentEntry(usize,String<HeapAllocator>*)	function	platform/os	os-environmententry-usize-string-lt-heapallocator-gt-star	platform-os.md	engine/foundation/os/os.h:133
 os::SessionState	enum	platform/os	os-sessionstate	platform-os.md	engine/foundation/os/session.h:11
 os::SessionState::Active	enumerator	platform/os	os-sessionstate-active	platform-os.md	engine/foundation/os/session.h:12
 os::SessionState::Locked	enumerator	platform/os	os-sessionstate-locked	platform-os.md	engine/foundation/os/session.h:13
@@ -1651,24 +1656,26 @@ debug::InitCrashContext(int,const char* const*)	function	foundation/debug	debug-
 debug::SetCoreDumpDescription(const char*)	function	foundation/debug	debug-setcoredumpdescription-const-char-star	foundation-debug.md	engine/foundation/debug/crash_context.h:71
 debug::CrashContextInitialized()	function	foundation/debug	debug-crashcontextinitialized	foundation-debug.md	engine/foundation/debug/crash_context.h:76
 debug::GetCrashContext()	function	foundation/debug	debug-getcrashcontext	foundation-debug.md	engine/foundation/debug/crash_context.h:82
-debug::CrashHandlerOptions	struct	foundation/debug	debug-crashhandleroptions	foundation-debug.md	engine/foundation/debug/crash_handler.h:20
-debug::CrashHandlerOptions::dump_directory	variable	foundation/debug	debug-crashhandleroptions-dump-directory	foundation-debug.md	engine/foundation/debug/crash_handler.h:22
-debug::CrashHandlerOptions::report_file	variable	foundation/debug	debug-crashhandleroptions-report-file	foundation-debug.md	engine/foundation/debug/crash_handler.h:25
-debug::CrashHandlerOptions::release	variable	foundation/debug	debug-crashhandleroptions-release	foundation-debug.md	engine/foundation/debug/crash_handler.h:27
-debug::CrashHandlerOptions::handler_path	variable	foundation/debug	debug-crashhandleroptions-handler-path	foundation-debug.md	engine/foundation/debug/crash_handler.h:29
-debug::CrashHandlerOptions::post_mortem_dumps	variable	foundation/debug	debug-crashhandleroptions-post-mortem-dumps	foundation-debug.md	engine/foundation/debug/crash_handler.h:32
-debug::CrashHandlerOptions::enabled	variable	foundation/debug	debug-crashhandleroptions-enabled	foundation-debug.md	engine/foundation/debug/crash_handler.h:35
-debug::CrashHandlerResult	enum	foundation/debug	debug-crashhandlerresult	foundation-debug.md	engine/foundation/debug/crash_handler.h:39
-debug::CrashHandlerResult::Installed	enumerator	foundation/debug	debug-crashhandlerresult-installed	foundation-debug.md	engine/foundation/debug/crash_handler.h:40
-debug::CrashHandlerResult::AlreadyInstalled	enumerator	foundation/debug	debug-crashhandlerresult-alreadyinstalled	foundation-debug.md	engine/foundation/debug/crash_handler.h:41
-debug::CrashHandlerResult::Disabled	enumerator	foundation/debug	debug-crashhandlerresult-disabled	foundation-debug.md	engine/foundation/debug/crash_handler.h:42
-debug::CrashHandlerResult::DirectoryFailed	enumerator	foundation/debug	debug-crashhandlerresult-directoryfailed	foundation-debug.md	engine/foundation/debug/crash_handler.h:43
-debug::CrashHandlerResult::InitFailed	enumerator	foundation/debug	debug-crashhandlerresult-initfailed	foundation-debug.md	engine/foundation/debug/crash_handler.h:44
-debug::CrashHandlerResult::Unsupported	enumerator	foundation/debug	debug-crashhandlerresult-unsupported	foundation-debug.md	engine/foundation/debug/crash_handler.h:45
-debug::InstallCrashHandler(const CrashHandlerOptions&)	function	foundation/debug	debug-installcrashhandler-const-crashhandleroptions-amp	foundation-debug.md	engine/foundation/debug/crash_handler.h:57
-debug::UninstallCrashHandler()	function	foundation/debug	debug-uninstallcrashhandler	foundation-debug.md	engine/foundation/debug/crash_handler.h:64
-debug::RegisterThreadForCrashHandling(const char*)	function	foundation/debug	debug-registerthreadforcrashhandling-const-char-star	foundation-debug.md	engine/foundation/debug/crash_handler.h:78
-debug::CrashHandlerInstalled()	function	foundation/debug	debug-crashhandlerinstalled	foundation-debug.md	engine/foundation/debug/crash_handler.h:83
+debug::CrashHandlerOptions	struct	foundation/debug	debug-crashhandleroptions	foundation-debug.md	engine/foundation/debug/crash_handler.h:21
+debug::CrashHandlerOptions::dump_directory	variable	foundation/debug	debug-crashhandleroptions-dump-directory	foundation-debug.md	engine/foundation/debug/crash_handler.h:23
+debug::CrashHandlerOptions::report_file	variable	foundation/debug	debug-crashhandleroptions-report-file	foundation-debug.md	engine/foundation/debug/crash_handler.h:26
+debug::CrashHandlerOptions::release	variable	foundation/debug	debug-crashhandleroptions-release	foundation-debug.md	engine/foundation/debug/crash_handler.h:28
+debug::CrashHandlerOptions::handler_path	variable	foundation/debug	debug-crashhandleroptions-handler-path	foundation-debug.md	engine/foundation/debug/crash_handler.h:30
+debug::CrashHandlerOptions::post_mortem_dumps	variable	foundation/debug	debug-crashhandleroptions-post-mortem-dumps	foundation-debug.md	engine/foundation/debug/crash_handler.h:33
+debug::CrashHandlerOptions::enabled	variable	foundation/debug	debug-crashhandleroptions-enabled	foundation-debug.md	engine/foundation/debug/crash_handler.h:36
+debug::CrashHandlerOptions::keep_saved_dumps	variable	foundation/debug	debug-crashhandleroptions-keep-saved-dumps	foundation-debug.md	engine/foundation/debug/crash_handler.h:39
+debug::PruneSavedDumps(const io::Path&,u32)	function	foundation/debug	debug-prunesaveddumps-const-io-path-amp-u32	foundation-debug.md	engine/foundation/debug/crash_handler.h:49
+debug::CrashHandlerResult	enum	foundation/debug	debug-crashhandlerresult	foundation-debug.md	engine/foundation/debug/crash_handler.h:52
+debug::CrashHandlerResult::Installed	enumerator	foundation/debug	debug-crashhandlerresult-installed	foundation-debug.md	engine/foundation/debug/crash_handler.h:53
+debug::CrashHandlerResult::AlreadyInstalled	enumerator	foundation/debug	debug-crashhandlerresult-alreadyinstalled	foundation-debug.md	engine/foundation/debug/crash_handler.h:54
+debug::CrashHandlerResult::Disabled	enumerator	foundation/debug	debug-crashhandlerresult-disabled	foundation-debug.md	engine/foundation/debug/crash_handler.h:55
+debug::CrashHandlerResult::DirectoryFailed	enumerator	foundation/debug	debug-crashhandlerresult-directoryfailed	foundation-debug.md	engine/foundation/debug/crash_handler.h:56
+debug::CrashHandlerResult::InitFailed	enumerator	foundation/debug	debug-crashhandlerresult-initfailed	foundation-debug.md	engine/foundation/debug/crash_handler.h:57
+debug::CrashHandlerResult::Unsupported	enumerator	foundation/debug	debug-crashhandlerresult-unsupported	foundation-debug.md	engine/foundation/debug/crash_handler.h:58
+debug::InstallCrashHandler(const CrashHandlerOptions&)	function	foundation/debug	debug-installcrashhandler-const-crashhandleroptions-amp	foundation-debug.md	engine/foundation/debug/crash_handler.h:70
+debug::UninstallCrashHandler()	function	foundation/debug	debug-uninstallcrashhandler	foundation-debug.md	engine/foundation/debug/crash_handler.h:77
+debug::RegisterThreadForCrashHandling(const char*)	function	foundation/debug	debug-registerthreadforcrashhandling-const-char-star	foundation-debug.md	engine/foundation/debug/crash_handler.h:91
+debug::CrashHandlerInstalled()	function	foundation/debug	debug-crashhandlerinstalled	foundation-debug.md	engine/foundation/debug/crash_handler.h:96
 debug::CrashReason	enum	foundation/debug	debug-crashreason	foundation-debug.md	engine/foundation/debug/crash_reason.h:16
 debug::CrashReason::None	enumerator	foundation/debug	debug-crashreason-none	foundation-debug.md	engine/foundation/debug/crash_reason.h:17
 debug::CrashReason::AccessViolation	enumerator	foundation/debug	debug-crashreason-accessviolation	foundation-debug.md	engine/foundation/debug/crash_reason.h:18

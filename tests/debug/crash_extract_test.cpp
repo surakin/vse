@@ -1,11 +1,14 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "containers/vector.h"
 #include "envelope.h"
 
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <string>
+
+using engine_placeholder::Vector;
 
 using crash_extract::EnvelopeResult;
 using crash_extract::FindMinidump;
@@ -119,8 +122,11 @@ TEST_CASE("Cutting a real envelope at every length never reads outside it and on
     for (std::size_t length = 0; length <= full.size(); ++length) {
         // A copy of exactly `length` bytes, so any read past its end is outside an allocation (ASan reports it).
         std::string cut(full.data(), length);
-        char* exact = new char[length == 0 ? 1 : length];
-        std::memcpy(exact, cut.data(), length);
+        Vector<char> storage; // reserved to exactly the length, so the capacity ends where the data does
+        storage.Reserve(length == 0 ? 1 : length);
+        storage.Resize(length);
+        char* exact = storage.Data();
+        if (length != 0) std::memcpy(exact, cut.data(), length);
         Minidump dump;
         const EnvelopeResult result = FindMinidump(exact, length, &dump);
         if (result == EnvelopeResult::Ok) {
@@ -131,7 +137,6 @@ TEST_CASE("Cutting a real envelope at every length never reads outside it and on
         } else {
             CHECK(length < dump_end + 1);
         }
-        delete[] exact;
     }
 }
 
@@ -139,7 +144,10 @@ TEST_CASE("Flipping any byte of a real envelope never reads outside it", "[crash
     const std::string full = ExtractEnvelope();
     for (std::size_t i = 0; i < full.size(); ++i) {
         for (unsigned char flip : {static_cast<unsigned char>(0xff), static_cast<unsigned char>(0x20), static_cast<unsigned char>(0x01)}) {
-            char* exact = new char[full.size()];
+            Vector<char> storage;
+            storage.Reserve(full.size());
+            storage.Resize(full.size());
+            char* exact = storage.Data();
             std::memcpy(exact, full.data(), full.size());
             exact[i] = static_cast<char>(static_cast<unsigned char>(exact[i]) ^ flip);
             Minidump dump;
@@ -148,7 +156,6 @@ TEST_CASE("Flipping any byte of a real envelope never reads outside it", "[crash
                 REQUIRE(dump.data >= exact);
                 REQUIRE(dump.data + dump.size <= exact + full.size());
             }
-            delete[] exact;
         }
     }
 }
@@ -156,7 +163,10 @@ TEST_CASE("Flipping any byte of a real envelope never reads outside it", "[crash
 TEST_CASE("Random bytes are rejected without a crash", "[crash-extract][debug]") {
     std::uint32_t state = 12345;
     for (int round = 0; round < 200; ++round) {
-        char* bytes = new char[257];
+        Vector<char> storage;
+        storage.Reserve(257);
+        storage.Resize(257);
+        char* bytes = storage.Data();
         for (int i = 0; i < 257; ++i) {
             state = state * 1664525u + 1013904223u;
             bytes[i] = static_cast<char>(state >> 24);
@@ -170,6 +180,5 @@ TEST_CASE("Random bytes are rejected without a crash", "[crash-extract][debug]")
         if (result == EnvelopeResult::Ok) {
             REQUIRE(dump.data + dump.size <= bytes + 257);
         }
-        delete[] bytes;
     }
 }

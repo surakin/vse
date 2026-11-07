@@ -1,6 +1,7 @@
 #pragma once
 
 #include "debug/crash_reason.h"
+#include "io/path.h"
 #include "types.h"
 
 //! Catching a fatal fault and leaving a minidump of the process behind.
@@ -33,7 +34,19 @@ struct CrashHandlerOptions {
     /// False to leave the handler off: [[debug::InstallCrashHandler]] then does nothing and returns
     /// [[debug::CrashHandlerResult::Disabled]]. Lets a program keep one call and switch it by configuration.
     bool enabled = true;
+    /// How many saved crash dumps (`<dump directory>/saved/*.envelope`) to keep: when the handler is installed, the oldest beyond this many are
+    /// deleted. 0 keeps all of them.
+    u32 keep_saved_dumps = 20;
 };
+
+/// Deletes the oldest `*.envelope` files of a directory so that at most `keep` remain.
+///
+/// Param saved: the directory holding the saved dumps; a missing one is not an error.
+/// Param keep: how many of the newest to keep; 0 deletes nothing.
+/// Returns: how many files were deleted.
+/// Fails: returns 0 when the directory cannot be listed; a file that cannot be deleted is skipped.
+/// Thread-safety: thread-compatible. Not signal-safe; called when the handler is installed, not from the crash path.
+u32 PruneSavedDumps(const io::Path& saved, u32 keep);
 
 /// What [[debug::InstallCrashHandler]] did.
 enum class CrashHandlerResult : u8 {

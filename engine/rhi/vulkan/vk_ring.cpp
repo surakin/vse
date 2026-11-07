@@ -42,7 +42,7 @@ void RingAllocator::Retire(u64 fence) {
     if (unretired_ == 0) {
         return;
     }
-    ENGINE_ASSERT(groups_.Empty() || fence >= groups_.Back().fence, "RingAllocator::Retire: fence values must not decrease");
+    ENGINE_ASSERT(groups_.Empty() || fence >= groups_[groups_.Size() - 1].fence, "RingAllocator::Retire: fence values must not decrease");
     groups_.Push({fence, head_, unretired_});
     unretired_ = 0;
 }
@@ -54,7 +54,7 @@ void RingAllocator::Reclaim(u64 completed) {
         tail_ = groups_[freed].end >= capacity_ ? 0 : groups_[freed].end;
         ++freed;
     }
-    groups_.EraseFront(freed);
+    groups_.RemoveRange(0, freed);
 }
 
 } // namespace engine_placeholder::rhi::vulkan

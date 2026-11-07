@@ -314,3 +314,14 @@ TEST_CASE("The 128-bit types have a fixed size, alignment and layout", "[types][
     constexpr i128 n = -i128(5);
     STATIC_REQUIRE(n < i128(0));
 }
+
+TEST_CASE("u128 and i128: the three-way comparison agrees with the six operators", "[types][int128]") {
+    const u128 small = u128::FromParts(0, 1), big = u128::FromParts(1, 0);
+    CHECK((small <=> big) < 0);
+    CHECK((big <=> small) > 0);
+    CHECK((small <=> small) == 0);
+    const i128 neg(i64{-5}), pos(i64{3});
+    CHECK((neg <=> pos) < 0);
+    CHECK((pos <=> neg) > 0);
+    CHECK((neg <=> neg) == 0);
+}

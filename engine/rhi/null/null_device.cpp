@@ -13,12 +13,12 @@
 #include "log/assert.h"
 #include "rhi/spirv.h"
 #include "rhi/handle_pool.h"
-#include "rhi/grow_array.h"
+#include "containers/vector.h"
 #include "rhi/rhi_log.h"
 
 namespace engine_placeholder::rhi {
 
-namespace {
+namespace null_impl { // named, not anonymous: NullDeviceState (external linkage) holds pools of these types
 
 constexpr u32 kMaxGroupElements = 64;
 
@@ -187,7 +187,8 @@ u32 MipExtent(u32 base, u32 mip) {
     return e == 0 ? 1 : e;
 }
 
-} // namespace
+} // namespace null_impl
+using namespace null_impl;
 
 namespace detail {
 
@@ -203,7 +204,7 @@ struct NullDeviceState {
     HandlePool<ShaderRes, ShaderTag> shaders;
     HandlePool<LayoutRes, BindGroupLayoutTag> layouts;
     HandlePool<GroupRes, BindGroupTag> groups;
-    detail::GrowArray<BindGroupHandle> transient_groups; // created in the open frame, retired by EndFrame
+    Vector<BindGroupHandle> transient_groups; // created in the open frame, retired by EndFrame
     HandlePool<PipelineRes, PipelineTag> pipelines;
 
     u64 frame = 0;
@@ -1955,9 +1956,7 @@ void NullDevice::EndFrame() {
     for (usize i = 0; i < s.transient_groups.Size(); ++i) {
         s.groups.Retire(s.transient_groups[i], s.frame);
     }
-    while (!s.transient_groups.Empty()) {
-        s.transient_groups.Erase(s.transient_groups.Size() - 1);
-    }
+    s.transient_groups.Clear();
 }
 
 u64 NullDevice::FrameNumber() const {

@@ -400,3 +400,19 @@ TEST_CASE("Vector: pushing or inserting one of its own elements works when the v
     CHECK(w[0].value == 3);
     CHECK(w[3].value == 3);
 }
+
+TEST_CASE("Vector: RemoveRange removes a run in one pass and keeps the order", "[containers][vector_container]") {
+    Vector<int> v;
+    for (int i = 0; i < 8; ++i) v.Push(i);
+    v.RemoveRange(0, 3); // [3,4,5,6,7]
+    REQUIRE(v.Size() == 5);
+    CHECK(v[0] == 3);
+    CHECK(v[4] == 7);
+    v.RemoveRange(1, 2); // [3,6,7]
+    REQUIRE(v.Size() == 3);
+    CHECK(v[1] == 6);
+    v.RemoveRange(1, 0);
+    CHECK(v.Size() == 3);
+    v.RemoveRange(0, 3);
+    CHECK(v.Empty());
+}

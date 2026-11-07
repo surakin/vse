@@ -68,7 +68,8 @@ struct NullRenderer {
     rhi::NullDevicePtr device;
     rhi::Swapchain* swapchain = nullptr;
     ThreePass scene;
-    Renderer* renderer = nullptr;
+    UniquePtr<Renderer> renderer_owner;
+    Renderer* renderer = nullptr; // view of renderer_owner
 
     explicit NullRenderer(bool with_swapchain, jobs::Scheduler* scheduler = nullptr, u32 lose_at = 0) {
         rhi::NullDeviceOptions options;
@@ -86,10 +87,11 @@ struct NullRenderer {
         rd.scheduler = scheduler;
         rd.build = &BuildThreePass;
         rd.build_user = &scene;
-        renderer = new Renderer(rd);
+        renderer_owner = MakeUnique<Renderer>(rd);
+        renderer = renderer_owner.Get();
     }
     ~NullRenderer() {
-        delete renderer;
+        renderer_owner.Reset();
         if (swapchain != nullptr) device->DestroySwapchain(swapchain);
         device.Reset();
     }

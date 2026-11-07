@@ -1,5 +1,6 @@
 #pragma once
 
+#include <compare>
 #include <type_traits>
 
 #include "string/string.h"
@@ -284,6 +285,8 @@ struct alignas(16) u128 {
     friend constexpr bool operator<=(u128 a, u128 b) { return !(b < a); }
     /// Returns true if `a` is at least `b`.
     friend constexpr bool operator>=(u128 a, u128 b) { return !(a < b); }
+    /// Three-way comparison (the order of `<`).
+    friend constexpr std::strong_ordering operator<=>(u128 a, u128 b) { return a < b ? std::strong_ordering::less : (a == b ? std::strong_ordering::equal : std::strong_ordering::greater); }
 
 #if ENGINE_HAS_NATIVE_INT128
     /// Returns the value as the compiler's native type (only where `ENGINE_HAS_NATIVE_INT128`).
@@ -495,6 +498,8 @@ struct alignas(16) i128 {
     friend constexpr bool operator<=(i128 a, i128 b) { return !(b < a); }
     /// Returns true if `a` is at least `b`.
     friend constexpr bool operator>=(i128 a, i128 b) { return !(a < b); }
+    /// Three-way comparison (the order of `<`, signed).
+    friend constexpr std::strong_ordering operator<=>(i128 a, i128 b) { return a < b ? std::strong_ordering::less : (a == b ? std::strong_ordering::equal : std::strong_ordering::greater); }
 };
 
 static_assert(sizeof(u128) == 16 && sizeof(i128) == 16, "the 128-bit types are 16 bytes");

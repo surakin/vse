@@ -252,3 +252,82 @@ TEST_CASE("LastSaveStatus can be read while another thread saves", "[settings][r
     reader.join();
     CHECK(reads.load() > 0);
 }
+
+TEST_CASE("A value set from the command line by the program outranks the user's file, is not saved, and yields to --set", "[settings][review]") {
+    io_test::TempDir dir;
+    Registry registry;
+    const SettingId a = registry.Register(MakeInt("rv.a", 1, 0, 100));
+    const SettingId b = registry.Register(MakeInt("rv.b", 1, 0, 100));
+    const io::Path user = dir / "u.cfg";
+    RvWrite(user, "[rv]\na = 20\nb = 30\n");
+    Settings settings(registry);
+    LoadOptions options;
+    options.app_name = "rv";
+    options.user_file = &user;
+    options.use_environment = false;
+    const char* argv[] = {"prog", "--set", "rv.b=77"};
+    options.argc = 3;
+    options.argv = argv;
+    settings.Load(options);
+    REQUIRE(settings.SetFromCommandLine("rv.a", "5", "--old-flag").Ok());
+    CHECK(settings.Snapshot()->Get(a).AsInt() == 5);
+    const Resolution r = settings.Provenance(a);
+    CHECK(StringView(r.layer_name) == "command line");
+    CHECK(StringView(r.origin).Contains("--old-flag"));
+    REQUIRE(settings.SetFromCommandLine("rv.b", "6", "--old-flag").Ok());   // the explicit --set wins
+    CHECK(settings.Snapshot()->Get(b).AsInt() == 77);
+    REQUIRE(settings.Save().Ok());
+    const engine_test::Text saved = RvSlurp(user);
+    CHECK(saved.View().Contains("a = 20"));                                 // the user's file keeps its own value
+    CHECK_FALSE(saved.View().Contains("= 5"));
+}
+
+TEST_CASE("A change makes a new snapshot that shares the unchanged values and leaves the old snapshot alone", "[settings][review]") {
+    Registry registry;
+    const SettingId a = registry.Register(MakeInt("rv.a", 1, 0, 100));
+    const SettingId b = registry.Register(MakeInt("rv.b", 2, 0, 100));
+    Settings settings(registry);
+    settings.Layers().AddLayer("user", LayerRole::User, MakeUnique<MemoryConfigStore>());
+    settings.LoadFromLayers();
+    const SharedPtr<const SettingsSnapshot> before = settings.Snapshot();
+    REQUIRE(settings.Set(a, Value::FromInt(9)).Ok());
+    const SharedPtr<const SettingsSnapshot> after = settings.Snapshot();
+    CHECK(before->Get(a).AsInt() == 1);          // the old snapshot is what it was
+    CHECK(after->Get(a).AsInt() == 9);
+    CHECK(&before->Get(b) == &after->Get(b));    // the value nobody changed is the same object
+    CHECK(after->generation > before->generation);
+}
+
+TEST_CASE("A command-line value from the program is recorded under the canonical key and only once it was accepted", "[settings][review]") {
+    Registry registry;
+    SettingDesc d = MakeInt("rv.new_name", 1, 0, 100);
+    const char* const old[] = {"rv.old_name"};
+    d.deprecated_keys = old;
+    d.deprecated_count = 1;
+    d.capability = "never";
+    const SettingId id = registry.Register(d);
+    Settings settings(registry);
+    LoadOptions options;
+    options.app_name = "rv";
+    options.use_environment = false;
+    const char* argv[] = {"prog", "--set", "rv.new_name=9"};
+    options.argc = 3;
+    options.argv = argv;
+    settings.Load(options);
+    // An explicit --set under the canonical name beats a flag that names the setting by its old name.
+    REQUIRE(settings.SetFromCommandLine("rv.old_name", "5", "--flag").Ok());
+    CHECK(settings.Snapshot()->Get(id).AsInt() == 9);
+    // A rejected change leaves nothing in the command-line layer.
+    Settings other(registry);
+    LoadOptions plain;
+    plain.app_name = "rv";
+    plain.use_environment = false;
+    const char* argv2[] = {"prog"};
+    plain.argc = 1;
+    plain.argv = argv2;
+    other.Load(plain);
+    other.SetCapabilityCheck([](void*, const char*) { return false; }, nullptr);
+    CHECK(other.SetFromCommandLine("rv.new_name", "5", "--flag").error == SetError::Unsupported);
+    StoredValue sv;
+    CHECK(other.Layers().Store(other.Layers().Find(LayerRole::CommandLine)).Get("rv.new_name", &sv).Is(StoreError::NotFound));
+}

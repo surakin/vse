@@ -155,8 +155,9 @@ struct SaveOptions {
 ///
 /// Thread-safety: thread-safe; immutable once published, so any thread may read it.
 struct SettingsSnapshot {
-    /// The values, indexed by `SettingId::value - 1`.
-    Vector<Value> values;
+    /// The values, indexed by `SettingId::value - 1`. Each is immutable and shared with the snapshots before and after this one, so a change
+    /// copies a table of pointers, not every value.
+    Vector<SharedPtr<const Value>> values;
     /// Increases with every published change.
     u64 generation = 0;
     /// Returns a setting's value.
@@ -215,6 +216,15 @@ public:
     SetResult Set(SettingId id, const Value& value);
     /// Sets a setting from its text form (`1920`, `mailbox`, `"quoted"`), found by key or deprecated key.
     SetResult SetText(StringView key, StringView text);
+    /// Sets a setting the way the command line would: the value goes into the command-line layer (so it outranks files and the environment, shows
+    /// `origin` as its source, and is not written to the user's file), and is published like any change. For programs that keep an old flag
+    /// (`--no-vsync`) next to the settings options. An explicit `--set` of the same key wins and nothing changes.
+    ///
+    /// Param key: the setting's key.
+    /// Param text: the value in its text form.
+    /// Param origin: shown as the source, for example `--no-vsync`.
+    /// Returns: as [[settings::Settings::Set]]; with no command-line layer (a hand-built stack) it is `SetText`.
+    SetResult SetFromCommandLine(StringView key, StringView text, StringView origin);
     /// Sets several settings as one change: all are checked first and written to the write layer, then `apply` (if any) is called with the whole
     /// batch (the handles and the snapshot still show the old values during the call: the event carries the new ones); if it returns false the
     /// write layer is restored and nothing is published or announced. Otherwise the values are published together and the listeners see the
@@ -264,8 +274,9 @@ public:
 
 private:
     struct Subscription;
-    SetResult DoApply(const ChangeRequest* requests, usize count, ApplyFn apply, void* user);
+    SetResult DoApply(const ChangeRequest* requests, usize count, ApplyFn apply, void* user, bool memory_only = false); // memory_only: skip the write layer
     void RebuildSnapshotLocked();
+    void PublishChangesLocked(const Change* changes, usize count); // a new snapshot that differs from the last in these settings only
     void UpdateCrashState();
     Registry* registry_;
     // `op_` serializes every operation that changes or reads the layer stack (it is recursive, so a listener or apply function may call Set);
@@ -281,6 +292,7 @@ private:
     void* capability_user_ = nullptr;
     MigrationSet migrations_;
     bool newer_file_ = false;
+    bool cli_from_load_ = false; // the command-line layer is a CommandLineSource that Load made
     Status last_save_status_;
     bool stamp_versions_ = false; // write `version`/`<section>.schema` into the file at the next save
     bool minimal_ = true;

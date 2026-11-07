@@ -476,8 +476,8 @@ private:
         u32 counts[5];
     };
     struct DescriptorPools {
-        rhi::detail::GrowArray<VkDescriptorPool> pools;
-        rhi::detail::GrowArray<ExactPool> exact; // reused when they fit, so large layouts do not make a pool per group
+        Vector<VkDescriptorPool> pools;
+        Vector<ExactPool> exact; // reused when they fit, so large layouts do not make a pool per group
         usize current = 0;
     };
     static constexpr usize kMaxSetLayouts = 512;
@@ -587,7 +587,7 @@ private:
     HandlePool<BindGroupRes, BindGroupTag> bind_groups_;
     DescriptorPools persistent_pools_;
     DescriptorPools frame_pools_[kFramePools];
-    rhi::detail::GrowArray<BindGroupHandle> frame_groups_[kFramePools];
+    Vector<BindGroupHandle> frame_groups_[kFramePools];
     u32 descriptor_sets_per_pool_ = 1024;
     SetLayoutEntry set_layouts_[kMaxSetLayouts];
     u64 next_set_layout_id_ = 1;
@@ -612,10 +612,10 @@ private:
     VkSemaphore timeline_ = nullptr;
     u64 last_submit_value_ = 0;
     VkCommandPool upload_pool_ = nullptr;
-    rhi::detail::GrowArray<CommandBufferSlot> upload_buffers_;
+    Vector<CommandBufferSlot> upload_buffers_;
     UniquePtr<RingAllocator> staging_ring_;
     RawBuffer staging_;
-    rhi::detail::GrowArray<VkCommandBufferSubmitInfo> submit_scratch_;
+    Vector<VkCommandBufferSubmitInfo> submit_scratch_;
     std::atomic<i32> inject_submit_result_{0};
 
     // Per-thread command pools, a ring of kFramePools frames deep, indexed by the thread's slot.

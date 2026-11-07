@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+#include <cstdlib>
 
 #include "os/os.h"
 #include "types.h"
@@ -23,4 +24,21 @@ TEST_CASE("SleepNanos blocks for at least (most of) the requested duration", "[o
     // meaningful upper bound to assert since the OS is free to delay a
     // sleeping thread arbitrarily longer.
     REQUIRE(t2 - t1 >= kRequestedNanos * 8 / 10);
+}
+
+TEST_CASE("os::EnvironmentEntry lists the process environment as NAME=value", "[os][environment]") {
+    setenv("RE_ENVIRONMENT_ENTRY_TEST", "abc=def", 1);
+    const engine_placeholder::usize count = engine_placeholder::os::EnvironmentCount();
+    REQUIRE(count > 0);
+    bool found = false;
+    for (engine_placeholder::usize i = 0; i < count; ++i) {
+        engine_placeholder::String<engine_placeholder::HeapAllocator> entry(engine_placeholder::HeapAllocator::Default());
+        REQUIRE(engine_placeholder::os::EnvironmentEntry(i, &entry));
+        found = found || entry.View() == engine_placeholder::StringView("RE_ENVIRONMENT_ENTRY_TEST=abc=def");
+    }
+    CHECK(found);
+    engine_placeholder::String<engine_placeholder::HeapAllocator> none(engine_placeholder::HeapAllocator::Default(), "x");
+    CHECK_FALSE(engine_placeholder::os::EnvironmentEntry(count + 10, &none));
+    CHECK(none.Length() == 0);
+    unsetenv("RE_ENVIRONMENT_ENTRY_TEST");
 }

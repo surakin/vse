@@ -168,6 +168,8 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
         return CrashHandlerResult::DirectoryFailed;
     }
 
+    PruneSavedDumps(saved_path, options.keep_saved_dumps);
+
     // The crash report calls the stack-trace functions inside the fault; they are safe there only once this has run.
     InitDebugFacilities();
     if (!CrashContextInitialized()) {

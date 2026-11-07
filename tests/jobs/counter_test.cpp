@@ -5,6 +5,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "containers/unique_ptr.h"
 #include "jobs/counter.h"
 #include "jobs/frame_pool.h"
 #include "jobs/scheduler.h"
@@ -42,7 +43,7 @@ std::atomic<int> g_race_resumes{0};
 Job AwaiterJob(RaceCell* cell, u32 spin, std::atomic<int>* done) {
     SpinFor(spin);
     co_await cell->counter;
-    delete cell;
+    engine_placeholder::DefaultDelete<RaceCell>()(cell); // frees the cell made by MakeUnique(...).Release()
     g_race_resumes.fetch_add(1, std::memory_order_acq_rel);
     done->fetch_add(1, std::memory_order_acq_rel);
 }
@@ -170,7 +171,7 @@ TEST_CASE("Await/decrement race: exactly-once resumption over 100,000 iterations
         for (int b = 0; b < kBatches; ++b) {
             std::atomic<int> done{0};
             for (int i = 0; i < kPerBatch; ++i) {
-                auto* cell = new RaceCell(*s);
+                auto* cell = engine_placeholder::MakeUnique<RaceCell>(*s).Release();
                 cell->counter.Increment();
                 u32 r = CounterTestNextRand(rng);
                 Job a = AwaiterJob(cell, r % 400, &done);

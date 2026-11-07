@@ -45,12 +45,9 @@ bool DemoSettings::Begin(const char* app_name, const char* usage, int argc, char
     return cli.errors.Empty() && !bad_value;
 }
 
-void DemoSettings::SetLegacy(const char* key, const char* text) {
-    const sset::SettingId id = registry_.Find(StringView(key));
-    if (!id.IsValid()) return;
-    const sset::Resolution r = settings_->Provenance(id);
-    // A flag outranks files and the environment, and yields only to an explicit --set.
-    if (StringView(r.layer_name) != "command line") settings_->SetText(StringView(key), StringView(text));
+void DemoSettings::SetLegacy(const char* key, const char* text, const char* flag) {
+    // An old flag counts as the command line: it outranks files and the environment, is not written to the user's file, and yields to an explicit --set.
+    settings_->SetFromCommandLine(StringView(key), StringView(text), StringView(flag));
 }
 
 void DemoSettings::FillDeviceCreateInfo(::engine_placeholder::rhi::DeviceCreateInfo* info) {

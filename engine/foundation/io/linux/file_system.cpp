@@ -317,7 +317,19 @@ Status CreateDirectories(const Path& path) { return CreateDirectoriesWithMode(pa
 Status CreatePrivateDirectory(const Path& path) {
     NativePath p;
     if (Status s = ToNative(path, p); s.Failed()) return s;
-    // Missing parents are created private too (an existing parent is left as it is).
+    // An existing ancestor must belong to this user or to root: a directory another user owns could have the private directory renamed or replaced.
+    for (Path ancestor = path.Parent(); !ancestor.IsEmpty(); ancestor = ancestor.Parent()) {
+        NativePath a;
+        if (Status s = ToNative(ancestor, a); s.Failed()) return s;
+        struct stat ast;
+        // Another user's directory is fine if that user alone can change it; one others can write to (and that is not sticky) lets the private
+        // directory be renamed away or swapped.
+        if (::stat(a, &ast) == 0 && ast.st_uid != ::geteuid() && ast.st_uid != 0 && (ast.st_mode & 022) != 0 && (ast.st_mode & S_ISVTX) == 0) {
+            return Status::Of(Error::PermissionDenied);
+        }
+        if (ancestor.Parent() == ancestor) break;
+    }
+    // Missing parents are created private too.
     const Path parent = path.Parent();
     if (!parent.IsEmpty() && parent != path) {
         if (Status s = CreateDirectoriesWithMode(parent, 0700); s.Failed()) return s;

@@ -19,3 +19,5 @@ void NoSpace() {
     delete(a);
     void* operator_decl; Widget* b = new ::Widget; /* operator new is not what this line does */
 }
+auto* split = new
+    Widget(1);

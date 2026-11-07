@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mem/heap_allocator.h"
 #include "string/string.h"
 #include "types.h"
 
@@ -119,5 +120,16 @@ void* GetSymbol(DynamicLibraryHandle handle, const char* symbol_name);
 /// Unloads a library loaded with [[os::LoadLibrary]]; does nothing if `handle` is `nullptr`.
 /// Param handle: the handle to release; invalid afterwards.
 void UnloadLibrary(DynamicLibraryHandle handle);
+
+/// Returns how many variables the process environment holds.
+usize EnvironmentCount();
+
+/// Copies one environment entry as `NAME=value`.
+///
+/// Param index: position, less than [[os::EnvironmentCount]].
+/// Param out: receives the entry, replacing its contents; empty if `index` is out of range.
+/// Returns: true if the entry exists.
+/// Thread-safety: thread-compatible; another thread changing the environment (`setenv`) while this runs is a race, as it is for `getenv`.
+bool EnvironmentEntry(usize index, String<HeapAllocator>* out);
 
 } // namespace engine_placeholder::os

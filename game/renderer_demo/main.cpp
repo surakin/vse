@@ -744,10 +744,10 @@ int main(int argc, char** argv) {
         }
     }
     // The flags of this program that are settings: put them into the settings, so --list-settings and --save-settings show them.
-    if (options.no_vsync) demo_settings.SetLegacy("renderer.present_mode", "immediate");
+    if (options.no_vsync) demo_settings.SetLegacy("renderer.present_mode", "immediate", "--no-vsync");
     if (options.validation) {
-        demo_settings.SetLegacy("renderer.validation", "on");
-        demo_settings.SetLegacy("renderer.sync_validation", "true");
+        demo_settings.SetLegacy("renderer.validation", "on", "--validation");
+        demo_settings.SetLegacy("renderer.sync_validation", "true", "--validation");
     }
     {
         const int code = demo_settings.Finish();

@@ -1814,11 +1814,11 @@ Creates a directory and any missing parents; an existing directory is success.
 Status CreatePrivateDirectory(const Path& path);
 ```
 
-Creates (or accepts) a directory that only this user can use: mode 0700, owned by the effective user, not a symbolic link, writable. Missing parents are created too, with mode 0700 as well (existing parents are left alone and are not checked). An existing directory with group or other access is tightened.
+Creates (or accepts) a directory that only this user can use: mode 0700, owned by the effective user, not a symbolic link, writable. Missing parents are created too, with mode 0700 as well; existing parents are left alone, but none may be owned by someone else (neither this user nor root) and be writable by group or others without the sticky bit: the private directory could be renamed away or swapped. An existing directory with group or other access is tightened.
 
 | Field | Value |
 |---|---|
-| Fails | `PermissionDenied` (another user's, or not writable), `SymlinkLoop` (the final component is a link), `NotADirectory`. |
+| Fails | `PermissionDenied` (another user's, an ancestor another user owns and others can write to, or not writable), `SymlinkLoop` (the final component is a link), `NotADirectory`. |
 | Backend | Windows: an ACL granting only the current user, refusing a reparse point; macOS: mode 0700 and an owner check, refusing a symbolic link. |
 
 ## `CreateTempFile(const Path&,StringView,Path*)` {#io-createtempfile-const-path-amp-stringview-path-star}

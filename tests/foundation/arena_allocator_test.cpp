@@ -80,3 +80,33 @@ TEST_CASE("ArenaAllocator::Alloc rejects a size that would overflow the bounds c
     void* ok = arena.Alloc(16, 8);
     REQUIRE(ok != nullptr);
 }
+
+TEST_CASE("ArenaAllocator: each allocation uses exactly its size and the smallest alignment padding", "[mem][arena]") {
+    ArenaAllocator arena(4096);
+    u8* a = static_cast<u8*>(arena.Alloc(100, 1));
+    REQUIRE(a != nullptr);
+    u8* b = static_cast<u8*>(arena.Alloc(100, 1));
+    REQUIRE(b != nullptr);
+    CHECK(b == a + 100); // no byte skipped between byte-aligned allocations
+
+    arena.Reset();
+    u8* c = static_cast<u8*>(arena.Alloc(1, 1));
+    u8* d = static_cast<u8*>(arena.Alloc(8, 8));
+    REQUIRE((c != nullptr && d != nullptr));
+    CHECK(d == c + 8); // the offset 1 is padded to 8, not to 16
+    u8* e = static_cast<u8*>(arena.Alloc(8, 8));
+    CHECK(e == d + 8); // an offset that is already aligned gets no padding
+    u8* f = static_cast<u8*>(arena.Alloc(16, 16));
+    REQUIRE(f != nullptr);
+    CHECK(static_cast<usize>(f - c) == 32); // offset 24 is padded to 32, the next multiple of 16
+}
+
+TEST_CASE("ArenaAllocator: the whole capacity can be allocated, not a byte more, and Reset gives it back", "[mem][arena]") {
+    ArenaAllocator arena(4096);
+    REQUIRE(arena.Alloc(4096, 1) != nullptr);
+    CHECK(arena.Alloc(1, 1) == nullptr);
+    arena.Reset();
+    REQUIRE(arena.Alloc(4095, 1) != nullptr);
+    CHECK(arena.Alloc(1, 1) != nullptr);
+    CHECK(arena.Alloc(1, 1) == nullptr);
+}

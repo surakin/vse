@@ -1,0 +1,14 @@
+// Stand-in for the standard header (see cstddef): the ordering type three-way comparisons return.
+#pragma once
+namespace std {
+struct strong_ordering {
+    signed char value;
+    static const strong_ordering less, equal, greater;
+    friend constexpr bool operator==(strong_ordering a, strong_ordering b) { return a.value == b.value; }
+    friend constexpr bool operator<(strong_ordering a, int) { return a.value < 0; }
+    friend constexpr bool operator>(strong_ordering a, int) { return a.value > 0; }
+};
+inline constexpr strong_ordering strong_ordering::less{-1};
+inline constexpr strong_ordering strong_ordering::equal{0};
+inline constexpr strong_ordering strong_ordering::greater{1};
+} // namespace std

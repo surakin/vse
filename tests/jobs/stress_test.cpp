@@ -133,8 +133,8 @@ void BuildGraph(Graph& g, u64 seed, u32 max_nodes) {
             queue.push_back({cid, it.depth + 1});
         }
     }
-    g.exec.reset(new std::atomic<u32>[g.nodes.size()]);
-    g.post.reset(new std::atomic<u32>[g.nodes.size()]);
+    g.exec = std::make_unique<std::atomic<u32>[]>(g.nodes.size());
+    g.post = std::make_unique<std::atomic<u32>[]>(g.nodes.size());
     for (usize i = 0; i < g.nodes.size(); ++i) {
         g.exec[i].store(0);
         g.post[i].store(0);

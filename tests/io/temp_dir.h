@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstdlib>
 #include <cstring>
 
@@ -8,6 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "io/directory.h"
 #include "io/file_system.h"
 #include "test_text.h"
 
@@ -57,6 +59,24 @@ inline void MakeWritable(const engine_test::Text& path, int depth = 0) {
     }
 }
 
+/// Removes the `re_io_test.*` directories an interrupted run left behind: only those not modified for an hour, so a test program running
+/// at the same time keeps its own. Called once per process, with the directory just created as the clock (its modification time is "now").
+inline void SweepStaleTempDirs(const io::Path& tmp, const io::Path& fresh) {
+    io::FileInfo now_info;
+    if (io::Stat(fresh, &now_info).Failed()) return;
+    constexpr i64 kStaleNs = i64{3600} * 1000000000;
+    Vector<io::DirectoryItem> items;
+    if (io::ListDirectory(tmp, false, &items).Failed()) return;
+    for (usize i = 0; i < items.Size(); ++i) {
+        if (items[i].type != io::FileType::Directory || !items[i].name.View().StartsWith("re_io_test.")) continue;
+        const io::Path candidate = tmp.Join(items[i].name.View());
+        io::FileInfo info;
+        if (candidate == fresh || io::Lstat(candidate, &info).Failed() || now_info.modified_unix_ns - info.modified_unix_ns < kStaleNs) continue;
+        MakeWritable(engine_test::MakeText(candidate.View()));
+        io::RemoveAll(candidate);
+    }
+}
+
 /// A directory created for one test and removed (with everything in it) afterwards.
 class TempDir {
 public:
@@ -66,6 +86,8 @@ public:
         if (io::CreateTempDirectory(tmp, "re_io_test", &path_).Failed()) {
             std::abort();
         }
+        static std::atomic<bool> swept{false}; // the first directory of the process cleans up after earlier, interrupted runs
+        if (!swept.exchange(true)) SweepStaleTempDirs(tmp, path_);
     }
     ~TempDir() {
         MakeWritable(Native());

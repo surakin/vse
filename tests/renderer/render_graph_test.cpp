@@ -461,8 +461,8 @@ TEST_CASE("Building and compiling a graph allocates nothing from the heap", "[re
     REQUIRE(ok);
     CHECK(after == before);
     // The counter itself works: a heap allocation is seen.
-    int* volatile canary = new int(0); // volatile: the compiler may not elide the pair
-    delete canary;
+    void* volatile canary = ::operator new(sizeof(int)); // volatile: the compiler may not elide the pair
+    ::operator delete(canary);
     CHECK(g_heap_allocations.load() > after);
 }
 

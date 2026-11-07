@@ -6,7 +6,6 @@ set(RHI_TEST_SOURCES
   smoke_test.cpp
   types_test.cpp
   handle_pool_test.cpp
-  grow_array_test.cpp
   null_device_test.cpp
   adapter_test.cpp
   device_host_test.cpp

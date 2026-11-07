@@ -5,7 +5,7 @@
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "rhi/enums.h"
-#include "rhi/grow_array.h"
+#include "containers/vector.h"
 #include "types.h"
 
 //! GPU memory suballocation: large blocks carved by a free list, so `vkAllocateMemory` is called rarely.
@@ -267,7 +267,7 @@ private:
         u64 offset;
         u64 size;
     };
-    rhi::detail::GrowArray<Range> ranges_;
+    Vector<Range> ranges_;
     u64 capacity_;
     u64 free_bytes_;
 };
@@ -350,7 +350,7 @@ private:
         u64 size;
         u32 heap;
     };
-    rhi::detail::GrowArray<Dedicated> dedicated_; // every live dedicated object, so teardown frees them and a double free is caught
+    Vector<Dedicated> dedicated_; // every live dedicated object, so teardown frees them and a double free is caught
     u64 dedicated_bytes_[kMaxMemoryHeaps] = {};
     u32 dedicated_count_[kMaxMemoryHeaps] = {};
     u32 live_objects_ = 0;

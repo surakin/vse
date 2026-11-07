@@ -24,7 +24,7 @@ set_tests_properties(test_phase_labels_planted_doubled PROPERTIES
 phase_labels_test(test_phase_labels_planted_extra_flavor ${CMAKE_CURRENT_BINARY_DIR}/fixtures/extra_flavor -DCHECK_FLAVORS=1)
 phase_labels_test(test_phase_labels_planted_missing_flavor ${CMAKE_CURRENT_BINARY_DIR}/fixtures/missing_flavor -DCHECK_FLAVORS=1)
 set_tests_properties(test_phase_labels_planted_extra_flavor PROPERTIES
-  PASS_REGULAR_EXPRESSION "phase0 has 1 asan tests, but the map does not list that flavor")
+  PASS_REGULAR_EXPRESSION "phase1 has 1 asan tests, but the map does not list that flavor")
 set_tests_properties(test_phase_labels_planted_missing_flavor PROPERTIES
   PASS_REGULAR_EXPRESSION "phase2 has no tsan tests, but the map lists that flavor")
 engine_label_tests(test_phase_labels_planted_extra_flavor test_phase_labels_planted_missing_flavor)

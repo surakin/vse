@@ -74,6 +74,10 @@ inline Pixel Project(const Camera& cam, const Vec3& p) {
 // Everything a G-buffer test needs, around one device.
 struct Rig {
     rhi::Device* device = nullptr;
+    // The owners, and non-owning views of them for the many places that pass the pointers on.
+    UniquePtr<MaterialSystem> sys_owner;
+    UniquePtr<FrameResources> frame_owner;
+    UniquePtr<TransientPool> pool_owner;
     MaterialSystem* sys = nullptr;
     FrameResources* frame = nullptr;
     TransientPool* pool = nullptr;
@@ -82,16 +86,24 @@ struct Rig {
 
     bool Create(rhi::Device* d) {
         device = d;
-        sys = new MaterialSystem(device, MaterialSystemDesc{});
-        frame = new FrameResources(device, 64);
-        pool = new TransientPool(device, TransientPoolDesc{});
+        sys_owner = MakeUnique<MaterialSystem>(device, MaterialSystemDesc{});
+        frame_owner = MakeUnique<FrameResources>(device, 64);
+        pool_owner = MakeUnique<TransientPool>(device, TransientPoolDesc{});
+        sys = sys_owner.Get();
+        frame = frame_owner.Get();
+        pool = pool_owner.Get();
         templates = CreateGBufferTemplates(sys);
         return sys->Valid() && frame->Valid() && templates.plain.IsValid() && templates.colored.IsValid();
     }
+    /// Replaces the frame resources (a test that wants other sizes).
+    void ReplaceFrame(u32 a, u32 b) {
+        frame_owner = MakeUnique<FrameResources>(device, a, b);
+        frame = frame_owner.Get();
+    }
     ~Rig() {
-        delete pool;
-        delete frame;
-        delete sys;
+        pool_owner.Reset(); // in this order: the pool and the frame resources go before the material system
+        frame_owner.Reset();
+        sys_owner.Reset();
     }
 
     // Uploads a mesh and makes it drawable.

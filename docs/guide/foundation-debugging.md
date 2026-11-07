@@ -132,7 +132,7 @@ there is no helper program to ship next to the game.
   a handler. `Disabled` is what a program returns to itself when configuration switches the handler off.
 - **Dumps survive a restart.** Right after a crash the envelope sits in a `<uuid>.run/` folder inside the dump directory.
   The next time the program installs the handler, the library moves it into `<dump directory>/saved/<uuid>.envelope` and
-  removes the run folder. Nothing deletes the saved files: clear them out yourself when you no longer need them.
+  removes the run folder. When the handler is installed the oldest saved files beyond `CrashHandlerOptions::keep_saved_dumps` (20 by default, 0 keeps all) are deleted ([[debug::PruneSavedDumps]]).
 - **Turning a dump into a trace.** The library wraps the minidump in an *envelope* file; `crash_extract <file>.envelope`
   (built as `tools/crash_extract`) writes the plain `.dmp` next to it.
 

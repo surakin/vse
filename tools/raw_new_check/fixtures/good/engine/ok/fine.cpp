@@ -21,3 +21,4 @@ void Placement(void* storage) {
     new (storage) NoCopy2();   // placement new into container-owned storage is allowed
     Widget* p = new (storage) Widget(2);
 }
+// a brand new type, and: return new_value;

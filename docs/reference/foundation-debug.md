@@ -445,6 +445,34 @@ bool enabled;
 
 False to leave the handler off: [`debug::InstallCrashHandler`](#debug-installcrashhandler-const-crashhandleroptions-amp) then does nothing and returns [`debug::CrashHandlerResult::Disabled`](#debug-crashhandlerresult-disabled). Lets a program keep one call and switch it by configuration.
 
+### `keep_saved_dumps` {#debug-crashhandleroptions-keep-saved-dumps}
+
+`variable debug::CrashHandlerOptions::keep_saved_dumps` — defined in `engine/foundation/debug/crash_handler.h`
+
+```cpp
+u32 keep_saved_dumps;
+```
+
+How many saved crash dumps (`<dump directory>/saved/*.envelope`) to keep: when the handler is installed, the oldest beyond this many are deleted. 0 keeps all of them.
+
+## `PruneSavedDumps(const io::Path&,u32)` {#debug-prunesaveddumps-const-io-path-amp-u32}
+
+`function debug::PruneSavedDumps` — defined in `engine/foundation/debug/crash_handler.h`
+
+```cpp
+u32 PruneSavedDumps(const io::Path& saved, u32 keep);
+```
+
+Deletes the oldest `*.envelope` files of a directory so that at most `keep` remain.
+
+| Field | Value |
+|---|---|
+| Parameter `saved` | the directory holding the saved dumps; a missing one is not an error. |
+| Parameter `keep` | how many of the newest to keep; 0 deletes nothing. |
+| Returns | how many files were deleted. |
+| Fails | returns 0 when the directory cannot be listed; a file that cannot be deleted is skipped. |
+| Thread-safety | thread-compatible. Not signal-safe; called when the handler is installed, not from the crash path. |
+
 ## `CrashHandlerResult` {#debug-crashhandlerresult}
 
 `enum debug::CrashHandlerResult` — defined in `engine/foundation/debug/crash_handler.h`

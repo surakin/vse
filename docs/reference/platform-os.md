@@ -528,6 +528,33 @@ Unloads a library loaded with [`os::LoadLibrary`](#os-loadlibrary-stringview); d
 |---|---|
 | Parameter `handle` | the handle to release; invalid afterwards. |
 
+## `EnvironmentCount()` {#os-environmentcount}
+
+`function os::EnvironmentCount` — defined in `engine/foundation/os/os.h`
+
+```cpp
+usize EnvironmentCount();
+```
+
+Returns how many variables the process environment holds.
+
+## `EnvironmentEntry(usize,String<HeapAllocator>*)` {#os-environmententry-usize-string-lt-heapallocator-gt-star}
+
+`function os::EnvironmentEntry` — defined in `engine/foundation/os/os.h`
+
+```cpp
+bool EnvironmentEntry(usize index, String<HeapAllocator>* out);
+```
+
+Copies one environment entry as `NAME=value`.
+
+| Field | Value |
+|---|---|
+| Parameter `index` | position, less than [`os::EnvironmentCount`](#os-environmentcount). |
+| Parameter `out` | receives the entry, replacing its contents; empty if `index` is out of range. |
+| Returns | true if the entry exists. |
+| Thread-safety | thread-compatible; another thread changing the environment (`setenv`) while this runs is a race, as it is for `getenv`. |
+
 ## `SessionState` {#os-sessionstate}
 
 `enum os::SessionState` — defined in `engine/foundation/os/session.h`

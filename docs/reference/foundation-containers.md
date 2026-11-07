@@ -1896,6 +1896,22 @@ Removes the element at `index`, shifting later elements down by one.
 |---|---|
 | Parameter `index` | position to remove; must be less than `Size()` (not checked). |
 
+### `RemoveRange(usize,usize)` {#vector-removerange-usize-usize}
+
+`method Vector::RemoveRange` — defined in `engine/foundation/containers/vector.h`
+
+```cpp
+void RemoveRange(usize first, usize count);
+```
+
+Removes `count` elements starting at `first`, shifting later elements down once (one pass, unlike `count` calls of `Remove`).
+
+| Field | Value |
+|---|---|
+| Parameter `first` | position of the first element to remove. |
+| Parameter `count` | how many to remove; `first + count` must be at most `Size()`. |
+| Aborts | `first + count` is greater than `Size()`. |
+
 ### `operator[](usize)` {#vector-operator-index-usize}
 
 `operator Vector::operator[]` — defined in `engine/foundation/containers/vector.h`

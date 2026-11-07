@@ -50,9 +50,9 @@ public:
     };
     Effective ReadEffective();
 
-    // Sets a setting from a flag of the program (--no-vsync, --validation) unless the user has already given it a value some other way (a file, the
-    // environment, --set): an explicit setting is not overridden by a convenience flag.
-    void SetLegacy(const char* key, const char* text);
+    // Gives a setting the value of an old flag of the program (--no-vsync, --validation) as if it had been given on the command line: it outranks
+    // files and the environment, is shown with the flag as its source, is not written to the user's file, and yields to an explicit --set.
+    void SetLegacy(const char* key, const char* text, const char* flag);
 
     // Fills the parts of a device description that are settings: the validation layer, the GPU, the pipeline cache, the frames in flight. The
     // strings it points to belong to this object.

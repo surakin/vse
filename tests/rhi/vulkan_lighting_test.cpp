@@ -729,8 +729,7 @@ TEST_CASE("Point light scale: 1, 100 and 1000 lights at 1080p (measured, not ass
     {
         Rig rig;
         REQUIRE(rig.Create(device.Get()));
-        delete rig.frame;
-        rig.frame = new FrameResources(device.Get(), 64, 2048);
+        rig.ReplaceFrame(64, 2048);
         REQUIRE(rig.frame->Valid());
         MeshData d;
         REQUIRE(MakePlaneMesh(24.0f, 24.0f, 1, 1, &d) == nullptr);

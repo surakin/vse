@@ -1,6 +1,6 @@
 # Raw new/delete gate (Phase 5 Days 80a-80b). Run as:
 #   cmake -DROOT=<tree> -P check.cmake
-# No file under engine/ or game/ may use `new T`, `new T[n]`, `new (std::nothrow) T`, `delete p` or `delete[] p`:
+# No file under engine/, game/, tools/ or tests/ (the planted fixtures of tools/*/fixtures excepted) may use `new T`, `new T[n]`, `new (std::nothrow) T`, `delete p` or `delete[] p`:
 # owning arrays are `Array<T, N>` (compile-time size, inline) or `Vector<T>`; single objects are `UniquePtr<T>` or
 # `SharedPtr<T>`. Exempt: the foundation allocators (engine/foundation/mem/), placement `new (ptr) T` into storage
 # a container owns, `operator new`/`operator delete` definitions, and `= delete`. Comments and strings are ignored.
@@ -23,12 +23,14 @@ endfunction()
 # Heap `new` (a type name follows, or the nothrow tag then a type); placement `new (ptr) T` does not match.
 set(new_re "(^|[^A-Za-z0-9_])new([ \t]+[A-Za-z_:]|[ \t]*\\(std::nothrow\\)[ \t]*[A-Za-z_:])")
 # `delete p`, `delete (p)`, `delete(p)`, `delete[] p`; `= delete;` does not match.
+# A `new` that ends its line: the type is on the next line.
+set(new_eol_re "(^|[^A-Za-z0-9_])new[ \t]*$")
 set(delete_re "(^|[^A-Za-z0-9_])delete[ \t]*(<LB><RB>|\\(|[ \t][A-Za-z_(*:])")
 # `operator new` / `operator delete` (definitions, declarations) are removed from the line before matching.
 set(operator_re "operator[ \t]+(new|delete)(<LB><RB>)?")
 
 set(files "")
-foreach(dir engine game)
+foreach(dir engine game tools tests)
   file(GLOB_RECURSE found RELATIVE "${ROOT}" "${ROOT}/${dir}/*.h" "${ROOT}/${dir}/*.hpp" "${ROOT}/${dir}/*.cpp"
        "${ROOT}/${dir}/*.cc" "${ROOT}/${dir}/*.inl" "${ROOT}/${dir}/*.mm")
   list(APPEND files ${found})
@@ -36,7 +38,8 @@ endforeach()
 
 set(errors 0)
 foreach(f IN LISTS files)
-  if(f MATCHES "^engine/foundation/mem/")
+  # The foundation allocators, and the planted violations the other gates keep as fixtures.
+  if(f MATCHES "^engine/foundation/mem/" OR f MATCHES "^tools/[^/]+/fixtures/")
     continue()
   endif()
   read_lines("${ROOT}/${f}" lines)
@@ -70,7 +73,7 @@ foreach(f IN LISTS files)
       endif()
     endif()
     string(REGEX REPLACE "${operator_re}" "" code "${code}")
-    if(code MATCHES "${new_re}" OR code MATCHES "${delete_re}")
+    if(code MATCHES "${new_re}" OR code MATCHES "${new_eol_re}" OR code MATCHES "${delete_re}")
       string(REPLACE "<LB>" "[" shown "${l}")
       string(REPLACE "<RB>" "]" shown "${shown}")
       string(REPLACE "<SEMI>" ";" shown "${shown}")

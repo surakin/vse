@@ -287,6 +287,21 @@ public:
         data_[size_].~T();
     }
 
+    /// Removes `count` elements starting at `first`, shifting later elements down once (one pass, unlike `count` calls of `Remove`).
+    ///
+    /// Param first: position of the first element to remove.
+    /// Param count: how many to remove; `first + count` must be at most `Size()`.
+    /// Aborts: `first + count` is greater than `Size()`.
+    void RemoveRange(usize first, usize count) {
+        ENGINE_ASSERT(first <= size_ && count <= size_ - first, "Vector::RemoveRange: the range is past the end");
+        if (count == 0) return;
+        for (usize i = first; i + count < size_; ++i) {
+            data_[i] = std::move(data_[i + count]);
+        }
+        DestroyRange(size_ - count, size_);
+        size_ -= count;
+    }
+
     /// Returns a reference to the element at `index`.
     ///
     /// Param index: element position; must be less than `Size()` (not checked).

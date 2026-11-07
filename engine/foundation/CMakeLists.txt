@@ -103,6 +103,7 @@ set(FOUNDATION_SOURCES
   debug/program_setup.cpp
   debug/crash_report.cpp
   debug/crash_handler_sentry.cpp
+  debug/saved_dumps.cpp
   ${FOUNDATION_PLATFORM_SOURCES}
   ${FOUNDATION_DEBUG_PLATFORM_SOURCES}
 )

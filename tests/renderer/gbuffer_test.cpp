@@ -24,17 +24,21 @@ namespace {
 // A null device, a material system with the G-buffer templates, and frame resources.
 struct Rig {
     rhi::NullDevicePtr device = rhi::CreateNullDevice();
-    MaterialSystem* sys = nullptr;
+    UniquePtr<MaterialSystem> sys_owner;
+    UniquePtr<FrameResources> frame_owner;
+    MaterialSystem* sys = nullptr; // views of the owners
     FrameResources* frame = nullptr;
     GBufferTemplates templates;
     Rig() {
-        sys = new MaterialSystem(device.Get(), MaterialSystemDesc{});
-        frame = new FrameResources(device.Get(), 32);
+        sys_owner = MakeUnique<MaterialSystem>(device.Get(), MaterialSystemDesc{});
+        frame_owner = MakeUnique<FrameResources>(device.Get(), 32);
+        sys = sys_owner.Get();
+        frame = frame_owner.Get();
         templates = CreateGBufferTemplates(sys);
     }
     ~Rig() {
-        delete frame;
-        delete sys;
+        frame_owner.Reset();
+        sys_owner.Reset();
         device.Reset();
     }
     void MakeReady(GpuMesh* mesh) {

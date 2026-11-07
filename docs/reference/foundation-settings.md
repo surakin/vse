@@ -1715,6 +1715,23 @@ const CommandLineResult& Result() const;
 
 Returns what the parse found.
 
+### `AddFromProgram(const Key&,StringView,StringView)` {#settings-commandlinesource-addfromprogram-const-key-amp-stringview-stringview}
+
+`method settings::CommandLineSource::AddFromProgram` — defined in `engine/foundation/settings/env_source.h`
+
+```cpp
+bool AddFromProgram(const Key& key, StringView text, StringView origin);
+```
+
+Adds a value the program derived from its own command line (an old flag such as `--no-vsync`), unless the arguments already gave the key.
+
+| Field | Value |
+|---|---|
+| Parameter `key` | the setting's key. |
+| Parameter `text` | the value in its text form. |
+| Parameter `origin` | what to show as the source, for example `--no-vsync`. |
+| Returns | false if the key was already given, in which case nothing changes (an explicit `--set` wins over an old flag). |
+
 ### `Describe(char*,usize)` {#settings-commandlinesource-describe-char-star-usize-const}
 
 `method settings::CommandLineSource::Describe` — defined in `engine/foundation/settings/env_source.h`
@@ -4402,10 +4419,10 @@ A snapshot of every setting's value, consistent at one instant.
 `variable settings::SettingsSnapshot::values` — defined in `engine/foundation/settings/settings.h`
 
 ```cpp
-Vector<Value> values;
+Vector<SharedPtr<const Value>> values;
 ```
 
-The values, indexed by `SettingId::value - 1`.
+The values, indexed by `SettingId::value - 1`. Each is immutable and shared with the snapshots before and after this one, so a change copies a table of pointers, not every value.
 
 ### `generation` {#settings-settingssnapshot-generation}
 
@@ -4586,6 +4603,23 @@ SetResult SetText(StringView key, StringView text);
 ```
 
 Sets a setting from its text form (`1920`, `mailbox`, `"quoted"`), found by key or deprecated key.
+
+### `SetFromCommandLine(StringView,StringView,StringView)` {#settings-settings-setfromcommandline-stringview-stringview-stringview}
+
+`method settings::Settings::SetFromCommandLine` — defined in `engine/foundation/settings/settings.h`
+
+```cpp
+SetResult SetFromCommandLine(StringView key, StringView text, StringView origin);
+```
+
+Sets a setting the way the command line would: the value goes into the command-line layer (so it outranks files and the environment, shows `origin` as its source, and is not written to the user's file), and is published like any change. For programs that keep an old flag (`--no-vsync`) next to the settings options. An explicit `--set` of the same key wins and nothing changes.
+
+| Field | Value |
+|---|---|
+| Parameter `key` | the setting's key. |
+| Parameter `text` | the value in its text form. |
+| Parameter `origin` | shown as the source, for example `--no-vsync`. |
+| Returns | as [`settings::Settings::Set`](#settings-settings-set-settingid-const-value-amp); with no command-line layer (a hand-built stack) it is `SetText`. |
 
 ### `Apply(const ChangeRequest*,usize,ApplyFn,void*)` {#settings-settings-apply-const-changerequest-star-usize-applyfn-void-star}
 

@@ -7,17 +7,17 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | Module | Headers | Symbols |
 |---|---|---|
 | [Foundation: Memory](foundation-memory.md) | 4 | 28 |
-| [Foundation: Containers](foundation-containers.md) | 7 | 164 |
+| [Foundation: Containers](foundation-containers.md) | 7 | 165 |
 | [Foundation: Strings](foundation-strings.md) | 5 | 98 |
 | [Foundation: Paths and Files](foundation-io.md) | 5 | 265 |
 | [Foundation: Math](foundation-math.md) | 5 | 101 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 2 | 71 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
-| [Foundation: Settings](foundation-settings.md) | 15 | 491 |
-| [Platform: OS Services](platform-os.md) | 4 | 44 |
+| [Foundation: Settings](foundation-settings.md) | 15 | 493 |
+| [Platform: OS Services](platform-os.md) | 4 | 46 |
 | [Platform: Windowing and Input](platform-window-input.md) | 10 | 263 |
-| [Foundation: Debugging](foundation-debug.md) | 14 | 200 |
+| [Foundation: Debugging](foundation-debug.md) | 14 | 202 |
 | [The Job System](jobs.md) | 11 | 190 |
-| [The Render Hardware Interface](rhi.md) | 18 | 725 |
+| [The Render Hardware Interface](rhi.md) | 17 | 725 |
 | [The renderer](renderer.md) | 20 | 994 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 16 | 448 |

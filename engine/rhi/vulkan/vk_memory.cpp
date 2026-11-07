@@ -113,7 +113,7 @@ bool FreeList::Allocate(u64 size, u64 alignment, u64* out_offset) {
     } else if (tail > 0) {
         ranges_[best] = {aligned + size, tail};
     } else {
-        ranges_.Erase(best);
+        ranges_.Remove(best);
     }
     free_bytes_ -= size;
     *out_offset = aligned;
@@ -138,7 +138,7 @@ bool FreeList::Free(u64 offset, u64 size) {
     }
     if (touches_prev && touches_next) {
         ranges_[i - 1].size += size + ranges_[i].size;
-        ranges_.Erase(i);
+        ranges_.Remove(i);
     } else if (touches_prev) {
         ranges_[i - 1].size += size;
     } else if (touches_next) {
@@ -366,7 +366,7 @@ void MemoryAllocator::FreeLocked(const MemoryAllocation& allocation) {
         --live_objects_;
         --dedicated_count_[dedicated_[found].heap];
         dedicated_bytes_[dedicated_[found].heap] -= dedicated_[found].size;
-        dedicated_.Erase(found);
+        dedicated_.Remove(found);
         return;
     }
     ENGINE_ASSERT(allocation.pool < kMaxMemoryTypes * 2, "MemoryAllocator::Free: allocation is not from this allocator");

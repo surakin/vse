@@ -12,6 +12,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+extern "C" char** environ;
+
 namespace engine_placeholder::os {
 
 namespace {
@@ -132,6 +134,25 @@ void UnloadLibrary(DynamicLibraryHandle handle) {
     if (handle != nullptr) {
         ::dlclose(handle);
     }
+}
+
+usize EnvironmentCount() {
+    usize n = 0;
+    if (environ != nullptr) {
+        while (environ[n] != nullptr) ++n;
+    }
+    return n;
+}
+
+bool EnvironmentEntry(usize index, String<HeapAllocator>* out) {
+    *out = String<HeapAllocator>(HeapAllocator::Default());
+    if (environ == nullptr) return false;
+    for (usize i = 0; i < index; ++i) { // walk to the entry; stops at the end of the array
+        if (environ[i] == nullptr) return false;
+    }
+    if (environ[index] == nullptr) return false;
+    out->Append(StringView(environ[index]));
+    return true;
 }
 
 } // namespace engine_placeholder::os

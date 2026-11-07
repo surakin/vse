@@ -17,7 +17,7 @@ function(demo_settings_tests demo)
   add_test(NAME ${demo}_settings_legacy_flag_yields COMMAND ${CMAKE_COMMAND} ${common} -DMODE=regex "-DARGS=--no-vsync;--set;renderer.present_mode=fifo;--list-settings"
     "-DEXPECT=renderer.present_mode +fifo .*from command line \\(--set renderer.present_mode=fifo\\)" -DEXPECT_CODE=0 -P ${cli})
   add_test(NAME ${demo}_settings_flag_beats_user_file COMMAND ${CMAKE_COMMAND} ${common} -DMODE=regex "-DUSER_FILE=[renderer]\npresent_mode = fifo\n" -DAPP=${demo} "-DARGS=--no-vsync;--list-settings"
-    "-DEXPECT=renderer.present_mode +immediate " -DEXPECT_CODE=0 -P ${cli})
+    "-DEXPECT=renderer.present_mode +immediate +default fifo +from command line \\(--no-vsync\\)" -DEXPECT_CODE=0 -P ${cli})
   add_test(NAME ${demo}_settings_bad_key COMMAND ${CMAKE_COMMAND} ${common} -DMODE=regex "-DARGS=--set;renderer.widht=1;--list-settings"
     "-DEXPECT=did you mean 'renderer.width'" -DEXPECT_CODE=2 -P ${cli})
   add_test(NAME ${demo}_settings_bad_value COMMAND ${CMAKE_COMMAND} ${common} -DMODE=regex "-DARGS=--set;renderer.width=wide;--list-settings"

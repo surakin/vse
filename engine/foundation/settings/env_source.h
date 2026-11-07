@@ -126,6 +126,14 @@ public:
     /// Returns what the parse found.
     const CommandLineResult& Result() const { return result_; }
 
+    /// Adds a value the program derived from its own command line (an old flag such as `--no-vsync`), unless the arguments already gave the key.
+    ///
+    /// Param key: the setting's key.
+    /// Param text: the value in its text form.
+    /// Param origin: what to show as the source, for example `--no-vsync`.
+    /// Returns: false if the key was already given, in which case nothing changes (an explicit `--set` wins over an old flag).
+    bool AddFromProgram(const Key& key, StringView text, StringView origin);
+
     void Describe(char* out, usize capacity) const override;
 
 private:
