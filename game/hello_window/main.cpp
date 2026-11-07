@@ -3,8 +3,8 @@
 #include "log/log.h"
 #include "mem/arena_allocator.h"
 #include "os/command_line.h"
-#include "os/input.h"
-#include "os/linux/platform_window_host.h"
+#include "platform/input.h"
+#include "platform/window_host.h"
 #include "os/os.h"
 #include "string/string.h"
 

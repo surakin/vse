@@ -1,15 +1,15 @@
 # Phase 13 / Day 158 — Win32 Window
 
 **Phase:** [Phase 13 — Windows Port + DX12 Backend](../phase-13-windows-dx12.md)
-**Depends on:** Day 157; `engine/foundation/os/window.h`, `engine/foundation/os/windows/FULLSCREEN.md`.
+**Depends on:** Day 157; `engine/platform/window.h`, `engine/platform/windows/FULLSCREEN.md`.
 
-The `os::Window` backend for Windows (input is tomorrow). New files under `engine/foundation/os/windows/`.
+The `os::Window` backend for Windows (input is tomorrow). New files under `engine/platform/windows/` (the `platform` library, Phase 12).
 
 ## Tasks
 
 - [ ] **Backend selection:** `WindowBackend::Win32` added; `ParseWindowBackend("win32")`; `PlanWindowBackends` on Windows yields Win32 for `Auto` and refuses
       Wayland/X11 with the reason; the Linux plan is unchanged (tests on both machines). The `window_backend` setting's enum names gain `win32`.
-- [ ] **`Win32Window`** (`os/windows/win32_window.h/.cpp`): a window class registered once per process (`RegisterClassExW`, `CS_OWNDC` only if the spec needs it),
+- [ ] **`Win32Window`** (`platform/windows/win32_window.h/.cpp`): a window class registered once per process (`RegisterClassExW`, `CS_OWNDC` only if the spec needs it),
       `CreateWindowExW` with the client size the caller asked for (`AdjustWindowRectExForDpi`), title in UTF-8 converted, `WndProc` dispatching to the instance
       through `GWLP_USERDATA` (set in `WM_NCCREATE`); `PumpEvents` drains with `PeekMessageW` and never blocks; `ShouldClose` on `WM_CLOSE` (the window is not
       destroyed until the owner destroys it).
@@ -19,7 +19,7 @@ The `os::Window` backend for Windows (input is tomorrow). New files under `engin
 - [ ] **DPI:** per-monitor-v2 (manifest from Day 148 plus `SetThreadDpiAwarenessContext` fallback); `WM_DPICHANGED` applies the suggested rectangle; the scale
       factor is exposed only if `window.h` gains it — decide whether this phase adds it (the UI phase needs it) and record.
 - [ ] **Native info:** `GetNativeInfo` returns `NativeWindowKind::Win32` with `HINSTANCE` and `HWND`; `BackendName` is `"win32"`; `PlatformWindowHost` on Windows
-      (`os/windows/platform_window_host.cpp`) mirrors the Linux one.
+      (`platform/windows/window_host_windows.cpp`) mirrors the Linux one.
 - [ ] **Fullscreen** per `FULLSCREEN.md`: borderless on the window's monitor, saved style and placement restored; `IsFullscreen` true once the `WM_SIZE` for the
       new rectangle arrives; `tests/foundation/window_fullscreen_test.cpp` runs on Windows.
 - [ ] **Lifecycle events:** whatever `window.h` already models for suspend/resume/focus (`WM_ACTIVATEAPP`, `WM_POWERBROADCAST` `PBT_APMSUSPEND`/

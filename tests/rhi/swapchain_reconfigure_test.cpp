@@ -10,8 +10,8 @@
 #include <cstdlib>
 
 #include "log/assert.h"
-#include "os/input.h"
-#include "os/linux/platform_window_host.h"
+#include "platform/input.h"
+#include "platform/window_host.h"
 #include "rhi/device_host.h"
 #include "rhi/null/null_device.h"
 #include "rhi/rhi_log.h"

@@ -2,7 +2,7 @@
 
 #include "containers/unique_ptr.h"
 #include "mem/heap_allocator.h"
-#include "os/window.h"
+#include "platform/window.h"
 #include "rhi/adapter.h"
 #include "rhi/caps.h"
 #include "rhi/command_list.h"

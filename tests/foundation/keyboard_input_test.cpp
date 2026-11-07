@@ -1,10 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
 
-#include "os/input.h"
-#include "os/linux/wayland/wayland_connection.h"
-#include "os/linux/wayland/wayland_input.h"
-#include "os/linux/xkb_keyboard.h"
+#include "platform/input.h"
+#include "platform/linux/wayland/wayland_connection.h"
+#include "platform/linux/wayland/wayland_input.h"
+#include "platform/linux/xkb_keyboard.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::os;

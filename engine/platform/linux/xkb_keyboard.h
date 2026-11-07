@@ -1,6 +1,6 @@
 #pragma once
 
-#include "os/input.h"
+#include "platform/input.h"
 #include "types.h"
 
 //! XKB keyboard: libxkbcommon keymap and state used to translate evdev keycodes into engine keys.

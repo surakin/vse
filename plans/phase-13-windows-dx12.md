@@ -144,7 +144,7 @@ Windows PC when the phase was planned. Every day that changes a prerequisite upd
 - **Device lifecycle (Phase 8 Day 114)** — Day 172: `engine/rhi/BACKEND-LIFECYCLE.md` (fifteen functions), a DX12 factory in
   `tests/rhi/lifecycle_conformance_test.cpp`, `AllocateDeviceSerial`/`GenerationSeed`, `ResizeBuffers` for `Swapchain::Reconfigure`, bounded fence waits
   after `DXGI_ERROR_DEVICE_REMOVED`, and the run-time backend switch (deferred from Phase 8).
-- **Fullscreen and session state** — Day 158: `engine/foundation/os/windows/FULLSCREEN.md` and `SESSION.md`.
+- **Fullscreen and session state** — Day 158: `engine/platform/windows/FULLSCREEN.md` and `SESSION.md`.
 - **File layer (Phase 9)** — Days 151-152: `engine/foundation/io/BACKEND.md` for Windows (UTF-16 at the boundary, drive letters and UNC, long paths,
   `CreateFileW`, overlapped I/O, `MoveFileEx`/`ReplaceFile`, known folders), the `File` conformance suite, share modes (filed in Phase 9).
 - **Settings stores (Phase 11 Day 139)** — Day 157: `engine/foundation/settings/BACKEND.md` for Windows, starting from `RegistryShapedConfigStore`.

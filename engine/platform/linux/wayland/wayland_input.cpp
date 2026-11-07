@@ -1,4 +1,4 @@
-#include "os/linux/wayland/wayland_input.h"
+#include "platform/linux/wayland/wayland_input.h"
 
 #include <sys/mman.h>
 #include <unistd.h>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "os/input.h"
-#include "os/window.h"
+#include "platform/input.h"
+#include "platform/window.h"
 #include "string/string.h"
 #include "types.h"
 

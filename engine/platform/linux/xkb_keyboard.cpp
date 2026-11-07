@@ -1,4 +1,4 @@
-#include "os/linux/xkb_keyboard.h"
+#include "platform/linux/xkb_keyboard.h"
 
 #include <xkbcommon/xkbcommon.h>
 

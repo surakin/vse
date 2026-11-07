@@ -1,4 +1,4 @@
-#include "os/linux/wayland/wayland_platform_window.h"
+#include "platform/linux/wayland/wayland_platform_window.h"
 
 #include <cerrno>
 #include <poll.h>

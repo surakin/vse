@@ -4,9 +4,17 @@
 > **Audience:** engine and game programmers  
 > **Covers:** Phase 1
 
+
+## Where the code lives, and what to link
+
+Windows and input are the **platform layer** (layer 9): `engine/platform/`, the CMake library `platform` (`platform_asan`, `platform_tsan`), headers included as
+`platform/window.h`, `platform/input.h` and `platform/window_host.h`. The types keep the `os::` namespace. `platform` is the only library that links the display libraries
+(Wayland, xkbcommon, X11 on Linux); a program or test that opens a window links `platform` (the RHI libraries do, so anything on the RHI gets it). A program includes only the neutral
+`platform/window_host.h`: `os::PlatformWindowHost` picks and owns the backend, which is defined in `platform/linux/` and never included by a program (the `module_deps_check` gate fails on it).
+
 ## Source of truth
 
-- `engine/foundation/os/window.h`
+- `engine/platform/window.h`
 - `input.h`
 - `linux/platform_window_host.h`
 - `linux/wayland/*`
@@ -72,7 +80,7 @@ A graphics layer needs three things from a window that the polled interface does
 ```cpp compile standalone run
 #include <cstdio>
 
-#include "os/window.h"
+#include "platform/window.h"
 
 using namespace engine_placeholder::os;
 
@@ -113,7 +121,7 @@ nothing changes and `IsFullscreen` stays false, so a settings layer treats the `
   state in the latest toplevel configure. The request goes out with the next `PumpEvents`.
 - **X11:** the `_NET_WM_STATE` client message with `_NET_WM_STATE_FULLSCREEN` sent to the root window (EWMH); `IsFullscreen`
   reads the window's `_NET_WM_STATE` property. A bare X server with no window manager never honors it.
-- **Windows and macOS** are not implemented yet; the checklists are in `engine/foundation/os/windows/FULLSCREEN.md` and
+- **Windows and macOS** are not implemented yet; the checklists are in `engine/platform/windows/FULLSCREEN.md` and
   `engine/foundation/os/macos/FULLSCREEN.md`. A backend that does not implement it keeps the default (`SupportsFullscreen` is
   false) and the setting is unavailable.
 

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 # C is enabled alongside CXX only to compile the generated xdg-shell
-# protocol bindings (os/linux/wayland/generated/xdg-shell-protocol.c,
+# protocol bindings (platform/linux/wayland/generated/xdg-shell-protocol.c,
 # wayland-scanner's own output format) — the engine itself is C++20
 # throughout; see PLAN.md assumption #2.
 project(engine_placeholder CXX C)
@@ -88,6 +88,7 @@ set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
 set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
 
 add_subdirectory(engine/foundation)
+add_subdirectory(engine/platform)
 add_subdirectory(engine/jobs)
 add_subdirectory(engine/rhi)
 add_subdirectory(engine/renderer)

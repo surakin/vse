@@ -41,8 +41,8 @@ set(DOCGEN_FLAGS_ARGS --flag -std=c++20)
 foreach(opt ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   list(APPEND DOCGEN_FLAGS_ARGS --flag ${opt})
 endforeach()
-set(DOCGEN_LINK_ARGS --link $<TARGET_FILE:renderer_passes> --link $<TARGET_FILE:renderer> --link $<TARGET_FILE:rhi_vulkan> --link $<TARGET_FILE:rhi> --link $<TARGET_FILE:jobs> --link $<TARGET_FILE:foundation> --link $<TARGET_FILE:backtrace> --link $<TARGET_FILE:sentry> --link $<TARGET_FILE:breakpad_client> --link $<TARGET_FILE:unwind> --link -pthread --link -ldl)
-# The system libraries `foundation` links (see engine/foundation/CMakeLists.txt), asked of pkg-config
+set(DOCGEN_LINK_ARGS --link $<TARGET_FILE:renderer_passes> --link $<TARGET_FILE:renderer> --link $<TARGET_FILE:rhi_vulkan> --link $<TARGET_FILE:rhi> --link $<TARGET_FILE:jobs> --link $<TARGET_FILE:platform> --link $<TARGET_FILE:foundation> --link $<TARGET_FILE:backtrace> --link $<TARGET_FILE:sentry> --link $<TARGET_FILE:breakpad_client> --link $<TARGET_FILE:unwind> --link -pthread --link -ldl)
+# The system libraries `platform` links (see engine/platform/CMakeLists.txt), asked of pkg-config
 # here instead of borrowed from variables set in another directory's scope.
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(DocsSampleLibs REQUIRED wayland-client xkbcommon x11)

@@ -5,8 +5,8 @@
 #include "display_session.h"
 
 #include "gpu_fixture.h"
-#include "os/input.h"
-#include "os/linux/platform_window_host.h"
+#include "platform/input.h"
+#include "platform/window_host.h"
 #include "rhi/rhi.h"
 #include "rhi/vulkan/vulkan_device.h"
 

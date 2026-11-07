@@ -7,7 +7,7 @@ engine/foundation/os/linux/os.cpp|E1: the descriptor primitives os::Open and os:
 engine/foundation/os/linux/debug/module_list.cpp|E1: reads the executable path with readlink while a crash report lists modules (it may run in the fault handler, where the file layer cannot allocate).
 engine/foundation/os/linux/debug/crash_context.cpp|E2: InitCrashContext reads /proc and the executable path with the raw descriptor primitives because the assert-failure handler can call it lazily while the heap may be inconsistent; the file layer allocates.
 engine/foundation/os/linux/debug/fault_injection.cpp|E3: memfd_create makes anonymous memory for the fault-injection helper; it is not a path.
-engine/foundation/os/linux/wayland/wayland_window.cpp|E3: memfd_create makes the shared-memory buffer shared with the compositor; it is not a path.
+engine/platform/linux/wayland/wayland_window.cpp|E3: memfd_create makes the shared-memory buffer shared with the compositor; it is not a path.
 tests/io/|E4: the tests of the file layer plant files, links, permissions and temporary trees with the operating system directly, so they do not depend on the code under test.
 tests/debug/|E4: the Phase 7 crash, core-dump and death tests drive the operating system on purpose (planting links, permissions and dump directories, reading what a crash left behind).
 tests/jobs/async_io_test.cpp|E4: builds FIFOs and non-blocking descriptors to test that the I/O thread survives a blocking open; scratch files for the read tests.

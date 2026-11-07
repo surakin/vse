@@ -35,10 +35,11 @@ module platform/os "Platform: OS Services"
   header engine/foundation/os/session.h
 
 module platform/window-input "Platform: Windowing and Input"
-  header engine/foundation/os/window.h
-  header engine/foundation/os/input.h
-  header engine/foundation/os/linux/**/*.h
-  exclude engine/foundation/os/linux/wayland/generated/*.h   # wayland-scanner output, not our API
+  header engine/platform/window.h
+  header engine/platform/input.h
+  header engine/platform/window_host.h
+  header engine/platform/linux/**/*.h
+  exclude engine/platform/linux/wayland/generated/*.h   # wayland-scanner output, not our API
 
 module foundation/debug "Foundation: Debugging"
   header engine/foundation/debug/*.h

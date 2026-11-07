@@ -3,8 +3,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
 
-#include "os/linux/wayland/wayland_connection.h"
-#include "os/linux/wayland/wayland_window.h"
+#include "platform/linux/wayland/wayland_connection.h"
+#include "platform/linux/wayland/wayland_window.h"
 
 using engine_placeholder::os::wayland::WaylandConnection;
 using engine_placeholder::os::wayland::WaylandWindow;

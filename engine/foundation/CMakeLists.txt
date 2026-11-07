@@ -7,15 +7,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/os.cpp
     os/linux/session.cpp
     os/linux/command_line.cpp
-    os/linux/xkb_keyboard.cpp
-    os/linux/wayland/wayland_input.cpp
-    os/linux/x11/x11_window.cpp
-    os/linux/wayland/wayland_platform_window.cpp
-    os/linux/platform_window_host.cpp
-    os/linux/wayland/wayland_connection.cpp
-    os/linux/wayland/wayland_window.cpp
-    os/linux/wayland/generated/xdg-shell-protocol.c
-    os/linux/wayland/generated/xdg-decoration-protocol.c
   )
 
   # Phase 7: the per-platform half of the debugging facilities (debug/*.h are the neutral interfaces). Windows and macOS
@@ -29,24 +20,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/debug/core_dump.cpp
     os/linux/debug/fault_injection.cpp
   )
-
-  # Day 18: libwayland-client, the reference Wayland client library
-  # (PLAN.md assumption #3 — an OS/vendor-boundary exception, not a
-  # third-party convenience dependency). xdg-shell bindings are
-  # generated-and-committed (see
-  # os/linux/wayland/generated/VENDORED.md), so wayland-scanner/
-  # wayland-protocols are dev-time-only, not linked here.
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(WaylandClient REQUIRED IMPORTED_TARGET wayland-client)
-  # Day 21: libxkbcommon, the reference keymap-interpretation library
-  # Wayland compositors expect clients to use. A named dependency the
-  # user explicitly approved on 2026-11-03 (see
-  # plans/phase-01-linux-platform.md Notes).
-  pkg_check_modules(XkbCommon REQUIRED IMPORTED_TARGET xkbcommon)
-  # Day 24: libX11, the reference X client library, for the X11 fallback
-  # backend (PLAN.md assumption #3 — same OS-boundary category as
-  # libwayland-client).
-  pkg_check_modules(X11Client REQUIRED IMPORTED_TARGET x11)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   message(FATAL_ERROR "Windows is implemented in Phase 13 (the debugging backend: os/windows/debug/BACKEND.md)")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
@@ -57,8 +30,6 @@ endif()
 
 set(FOUNDATION_SOURCES
   foundation.cpp
-  os/key_translate.cpp
-  os/window.cpp
   os/session.cpp
   os/gpu_driver_probe.cpp
   mem/arena_allocator.cpp
@@ -130,8 +101,6 @@ target_compile_options(foundation PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRO
 target_link_libraries(foundation PUBLIC ${CMAKE_DL_LIBS})
 # Phase 7: libbacktrace (third_party/libbacktrace), used only by debug/stack_trace_backtrace.cpp; one plain build for every flavor.
 target_link_libraries(foundation PRIVATE backtrace sentry)
-# Day 18: libwayland-client (see the platform-selection block above).
-target_link_libraries(foundation PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)
 
 # Sanitized variants: separate targets built from the same sources, not
 # a build-wide flag, so both the normal and sanitized binaries exist
@@ -152,7 +121,6 @@ target_link_options(foundation_asan PUBLIC -fsanitize=address,undefined)
 target_link_libraries(foundation_asan PUBLIC ${CMAKE_DL_LIBS})
 # Phase 7: libbacktrace (third_party/libbacktrace), used only by debug/stack_trace_backtrace.cpp; one plain build for every flavor.
 target_link_libraries(foundation_asan PRIVATE backtrace sentry)
-target_link_libraries(foundation_asan PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)
 
 # Phase 2 Day 27: ThreadSanitizer variant. A separate build from the
 # ASan/UBSan one above because TSan cannot be combined with ASan. The
@@ -167,4 +135,3 @@ target_link_options(foundation_tsan PUBLIC -fsanitize=thread)
 target_link_libraries(foundation_tsan PUBLIC ${CMAKE_DL_LIBS})
 # Phase 7: libbacktrace (third_party/libbacktrace), used only by debug/stack_trace_backtrace.cpp; one plain build for every flavor.
 target_link_libraries(foundation_tsan PRIVATE backtrace sentry)
-target_link_libraries(foundation_tsan PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)

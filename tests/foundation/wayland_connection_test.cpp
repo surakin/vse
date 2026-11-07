@@ -4,7 +4,7 @@
 #include "display_session.h"
 
 #include "log/log.h"
-#include "os/linux/wayland/wayland_connection.h"
+#include "platform/linux/wayland/wayland_connection.h"
 #include "os/os.h"
 #include "string/string.h"
 #include "types.h"

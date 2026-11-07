@@ -22,7 +22,7 @@ From the bottom up. "Platform code" means a per-OS backend directory (`linux/`, 
 | 6. File layer | `foundation/io` (+ `io/<platform>/`) | `Path`, `File`, `Directory`, file-system operations, special folders. Layers 0-5. |
 | 7. Debugging | `foundation/debug` (+ `os/<platform>/debug/`) | Stack traces, crash handler, crash context and state, death tests, dumps. Layers 0-6; libbacktrace and sentry-native only in its two facade files (`library_boundary.txt`). |
 | 8. Settings | `foundation/settings` | Registry, stores, layers, the `Settings` service. Layers 0-7. |
-| 9. Platform: windows and input | `foundation/os/window.h`, `input.h`, `os/<platform>/` window backends and `PlatformWindowHost` | Windows, input state, display backends (Wayland, X11, Win32). Layers 0-8. **`PLAN.md` puts this in `engine/platform/`, which is empty** (section 3, item 5). |
+| 9. Platform: windows and input | `engine/platform` (`window.h`, `input.h`, `window_host.h`, `platform/<platform>/` backends) | Windows, input state, display backends (Wayland, X11, Win32), the CMake library `platform`, the only one that links the display libraries. Layers 0-8. Moved here from the foundation on Phase 12 Day 144. |
 | 10. Jobs | `engine/jobs` | Scheduler, coroutines, frame pool, async I/O. Foundation (layers 0-8). |
 | 11. RHI | `engine/rhi` (neutral), `engine/rhi/null`, `engine/rhi/vulkan`, later `rhi/dx12`, `rhi/metal` | The neutral RHI, and one library per backend. Backends depend on `rhi`, jobs and foundation, never on each other. Graphics API headers only inside their backend (`rhi_boundary_check`). |
 | 12. Renderer | `engine/renderer` (+ `renderer_passes`) | Render graph, materials, passes. RHI (neutral only), jobs, foundation including settings. |

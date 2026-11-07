@@ -1,6 +1,6 @@
 #pragma once
 
-#include "os/input.h"
+#include "platform/input.h"
 #include "string/string.h"
 #include "types.h"
 

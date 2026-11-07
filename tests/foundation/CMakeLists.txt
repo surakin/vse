@@ -40,7 +40,7 @@ set(FOUNDATION_TEST_SOURCES
 find_package(Threads REQUIRED)
 
 add_executable(foundation_tests ${FOUNDATION_TEST_SOURCES})
-target_link_libraries(foundation_tests PRIVATE foundation Catch2::Catch2WithMain Threads::Threads)
+target_link_libraries(foundation_tests PRIVATE platform foundation Catch2::Catch2WithMain Threads::Threads)
 target_include_directories(foundation_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)
 
 include(Catch)

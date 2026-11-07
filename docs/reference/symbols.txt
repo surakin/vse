@@ -1373,269 +1373,270 @@ os::SessionStateName(SessionState)	function	platform/os	os-sessionstatename-sess
 os::SessionStateFromFlags(bool,bool,bool,bool)	function	platform/os	os-sessionstatefromflags-bool-bool-bool-bool	platform-os.md	engine/foundation/os/session.h:28
 os::SessionCanShowWindows(SessionState)	function	platform/os	os-sessioncanshowwindows-sessionstate	platform-os.md	engine/foundation/os/session.h:31
 os::QuerySessionState()	function	platform/os	os-querysessionstate	platform-os.md	engine/foundation/os/session.h:39
-os::Key	enum	platform/window-input	os-key	platform-window-input.md	engine/foundation/os/input.h:12
-os::Key::Unknown	enumerator	platform/window-input	os-key-unknown	platform-window-input.md	engine/foundation/os/input.h:13
-os::Key::A	enumerator	platform/window-input	os-key-a	platform-window-input.md	engine/foundation/os/input.h:14
-os::Key::B	enumerator	platform/window-input	os-key-b	platform-window-input.md	engine/foundation/os/input.h:15
-os::Key::C	enumerator	platform/window-input	os-key-c	platform-window-input.md	engine/foundation/os/input.h:16
-os::Key::D	enumerator	platform/window-input	os-key-d	platform-window-input.md	engine/foundation/os/input.h:17
-os::Key::E	enumerator	platform/window-input	os-key-e	platform-window-input.md	engine/foundation/os/input.h:18
-os::Key::F	enumerator	platform/window-input	os-key-f	platform-window-input.md	engine/foundation/os/input.h:19
-os::Key::G	enumerator	platform/window-input	os-key-g	platform-window-input.md	engine/foundation/os/input.h:20
-os::Key::H	enumerator	platform/window-input	os-key-h	platform-window-input.md	engine/foundation/os/input.h:21
-os::Key::I	enumerator	platform/window-input	os-key-i	platform-window-input.md	engine/foundation/os/input.h:22
-os::Key::J	enumerator	platform/window-input	os-key-j	platform-window-input.md	engine/foundation/os/input.h:23
-os::Key::K	enumerator	platform/window-input	os-key-k	platform-window-input.md	engine/foundation/os/input.h:24
-os::Key::L	enumerator	platform/window-input	os-key-l	platform-window-input.md	engine/foundation/os/input.h:25
-os::Key::M	enumerator	platform/window-input	os-key-m	platform-window-input.md	engine/foundation/os/input.h:26
-os::Key::N	enumerator	platform/window-input	os-key-n	platform-window-input.md	engine/foundation/os/input.h:27
-os::Key::O	enumerator	platform/window-input	os-key-o	platform-window-input.md	engine/foundation/os/input.h:28
-os::Key::P	enumerator	platform/window-input	os-key-p	platform-window-input.md	engine/foundation/os/input.h:29
-os::Key::Q	enumerator	platform/window-input	os-key-q	platform-window-input.md	engine/foundation/os/input.h:30
-os::Key::R	enumerator	platform/window-input	os-key-r	platform-window-input.md	engine/foundation/os/input.h:31
-os::Key::S	enumerator	platform/window-input	os-key-s	platform-window-input.md	engine/foundation/os/input.h:32
-os::Key::T	enumerator	platform/window-input	os-key-t	platform-window-input.md	engine/foundation/os/input.h:33
-os::Key::U	enumerator	platform/window-input	os-key-u	platform-window-input.md	engine/foundation/os/input.h:34
-os::Key::V	enumerator	platform/window-input	os-key-v	platform-window-input.md	engine/foundation/os/input.h:35
-os::Key::W	enumerator	platform/window-input	os-key-w	platform-window-input.md	engine/foundation/os/input.h:36
-os::Key::X	enumerator	platform/window-input	os-key-x	platform-window-input.md	engine/foundation/os/input.h:37
-os::Key::Y	enumerator	platform/window-input	os-key-y	platform-window-input.md	engine/foundation/os/input.h:38
-os::Key::Z	enumerator	platform/window-input	os-key-z	platform-window-input.md	engine/foundation/os/input.h:39
-os::Key::Num0	enumerator	platform/window-input	os-key-num0	platform-window-input.md	engine/foundation/os/input.h:40
-os::Key::Num1	enumerator	platform/window-input	os-key-num1	platform-window-input.md	engine/foundation/os/input.h:41
-os::Key::Num2	enumerator	platform/window-input	os-key-num2	platform-window-input.md	engine/foundation/os/input.h:42
-os::Key::Num3	enumerator	platform/window-input	os-key-num3	platform-window-input.md	engine/foundation/os/input.h:43
-os::Key::Num4	enumerator	platform/window-input	os-key-num4	platform-window-input.md	engine/foundation/os/input.h:44
-os::Key::Num5	enumerator	platform/window-input	os-key-num5	platform-window-input.md	engine/foundation/os/input.h:45
-os::Key::Num6	enumerator	platform/window-input	os-key-num6	platform-window-input.md	engine/foundation/os/input.h:46
-os::Key::Num7	enumerator	platform/window-input	os-key-num7	platform-window-input.md	engine/foundation/os/input.h:47
-os::Key::Num8	enumerator	platform/window-input	os-key-num8	platform-window-input.md	engine/foundation/os/input.h:48
-os::Key::Num9	enumerator	platform/window-input	os-key-num9	platform-window-input.md	engine/foundation/os/input.h:49
-os::Key::F1	enumerator	platform/window-input	os-key-f1	platform-window-input.md	engine/foundation/os/input.h:50
-os::Key::F2	enumerator	platform/window-input	os-key-f2	platform-window-input.md	engine/foundation/os/input.h:51
-os::Key::F3	enumerator	platform/window-input	os-key-f3	platform-window-input.md	engine/foundation/os/input.h:52
-os::Key::F4	enumerator	platform/window-input	os-key-f4	platform-window-input.md	engine/foundation/os/input.h:53
-os::Key::F5	enumerator	platform/window-input	os-key-f5	platform-window-input.md	engine/foundation/os/input.h:54
-os::Key::F6	enumerator	platform/window-input	os-key-f6	platform-window-input.md	engine/foundation/os/input.h:55
-os::Key::F7	enumerator	platform/window-input	os-key-f7	platform-window-input.md	engine/foundation/os/input.h:56
-os::Key::F8	enumerator	platform/window-input	os-key-f8	platform-window-input.md	engine/foundation/os/input.h:57
-os::Key::F9	enumerator	platform/window-input	os-key-f9	platform-window-input.md	engine/foundation/os/input.h:58
-os::Key::F10	enumerator	platform/window-input	os-key-f10	platform-window-input.md	engine/foundation/os/input.h:59
-os::Key::F11	enumerator	platform/window-input	os-key-f11	platform-window-input.md	engine/foundation/os/input.h:60
-os::Key::F12	enumerator	platform/window-input	os-key-f12	platform-window-input.md	engine/foundation/os/input.h:61
-os::Key::Escape	enumerator	platform/window-input	os-key-escape	platform-window-input.md	engine/foundation/os/input.h:62
-os::Key::Enter	enumerator	platform/window-input	os-key-enter	platform-window-input.md	engine/foundation/os/input.h:63
-os::Key::Tab	enumerator	platform/window-input	os-key-tab	platform-window-input.md	engine/foundation/os/input.h:64
-os::Key::Backspace	enumerator	platform/window-input	os-key-backspace	platform-window-input.md	engine/foundation/os/input.h:65
-os::Key::Space	enumerator	platform/window-input	os-key-space	platform-window-input.md	engine/foundation/os/input.h:66
-os::Key::Insert	enumerator	platform/window-input	os-key-insert	platform-window-input.md	engine/foundation/os/input.h:67
-os::Key::Delete	enumerator	platform/window-input	os-key-delete	platform-window-input.md	engine/foundation/os/input.h:68
-os::Key::Home	enumerator	platform/window-input	os-key-home	platform-window-input.md	engine/foundation/os/input.h:69
-os::Key::End	enumerator	platform/window-input	os-key-end	platform-window-input.md	engine/foundation/os/input.h:70
-os::Key::PageUp	enumerator	platform/window-input	os-key-pageup	platform-window-input.md	engine/foundation/os/input.h:71
-os::Key::PageDown	enumerator	platform/window-input	os-key-pagedown	platform-window-input.md	engine/foundation/os/input.h:72
-os::Key::Left	enumerator	platform/window-input	os-key-left	platform-window-input.md	engine/foundation/os/input.h:73
-os::Key::Right	enumerator	platform/window-input	os-key-right	platform-window-input.md	engine/foundation/os/input.h:74
-os::Key::Up	enumerator	platform/window-input	os-key-up	platform-window-input.md	engine/foundation/os/input.h:75
-os::Key::Down	enumerator	platform/window-input	os-key-down	platform-window-input.md	engine/foundation/os/input.h:76
-os::Key::LeftShift	enumerator	platform/window-input	os-key-leftshift	platform-window-input.md	engine/foundation/os/input.h:77
-os::Key::RightShift	enumerator	platform/window-input	os-key-rightshift	platform-window-input.md	engine/foundation/os/input.h:78
-os::Key::LeftCtrl	enumerator	platform/window-input	os-key-leftctrl	platform-window-input.md	engine/foundation/os/input.h:79
-os::Key::RightCtrl	enumerator	platform/window-input	os-key-rightctrl	platform-window-input.md	engine/foundation/os/input.h:80
-os::Key::LeftAlt	enumerator	platform/window-input	os-key-leftalt	platform-window-input.md	engine/foundation/os/input.h:81
-os::Key::RightAlt	enumerator	platform/window-input	os-key-rightalt	platform-window-input.md	engine/foundation/os/input.h:82
-os::Key::LeftSuper	enumerator	platform/window-input	os-key-leftsuper	platform-window-input.md	engine/foundation/os/input.h:83
-os::Key::RightSuper	enumerator	platform/window-input	os-key-rightsuper	platform-window-input.md	engine/foundation/os/input.h:84
-os::Key::CapsLock	enumerator	platform/window-input	os-key-capslock	platform-window-input.md	engine/foundation/os/input.h:85
-os::Key::Minus	enumerator	platform/window-input	os-key-minus	platform-window-input.md	engine/foundation/os/input.h:86
-os::Key::Equals	enumerator	platform/window-input	os-key-equals	platform-window-input.md	engine/foundation/os/input.h:87
-os::Key::LeftBracket	enumerator	platform/window-input	os-key-leftbracket	platform-window-input.md	engine/foundation/os/input.h:88
-os::Key::RightBracket	enumerator	platform/window-input	os-key-rightbracket	platform-window-input.md	engine/foundation/os/input.h:89
-os::Key::Backslash	enumerator	platform/window-input	os-key-backslash	platform-window-input.md	engine/foundation/os/input.h:90
-os::Key::Semicolon	enumerator	platform/window-input	os-key-semicolon	platform-window-input.md	engine/foundation/os/input.h:91
-os::Key::Apostrophe	enumerator	platform/window-input	os-key-apostrophe	platform-window-input.md	engine/foundation/os/input.h:92
-os::Key::Grave	enumerator	platform/window-input	os-key-grave	platform-window-input.md	engine/foundation/os/input.h:93
-os::Key::Comma	enumerator	platform/window-input	os-key-comma	platform-window-input.md	engine/foundation/os/input.h:94
-os::Key::Period	enumerator	platform/window-input	os-key-period	platform-window-input.md	engine/foundation/os/input.h:95
-os::Key::Slash	enumerator	platform/window-input	os-key-slash	platform-window-input.md	engine/foundation/os/input.h:96
-os::Key::Count	enumerator	platform/window-input	os-key-count	platform-window-input.md	engine/foundation/os/input.h:97
-os::ModifierBit	enum	platform/window-input	os-modifierbit	platform-window-input.md	engine/foundation/os/input.h:103
-os::kModShift	enumerator	platform/window-input	os-kmodshift	platform-window-input.md	engine/foundation/os/input.h:104
-os::kModCtrl	enumerator	platform/window-input	os-kmodctrl	platform-window-input.md	engine/foundation/os/input.h:105
-os::kModAlt	enumerator	platform/window-input	os-kmodalt	platform-window-input.md	engine/foundation/os/input.h:106
-os::kModSuper	enumerator	platform/window-input	os-kmodsuper	platform-window-input.md	engine/foundation/os/input.h:107
-os::kModCapsLock	enumerator	platform/window-input	os-kmodcapslock	platform-window-input.md	engine/foundation/os/input.h:108
-os::kModNumLock	enumerator	platform/window-input	os-kmodnumlock	platform-window-input.md	engine/foundation/os/input.h:109
-os::KeyFromKeysym(u32)	function	platform/window-input	os-keyfromkeysym-u32	platform-window-input.md	engine/foundation/os/input.h:117
-os::KeyboardState	struct	platform/window-input	os-keyboardstate	platform-window-input.md	engine/foundation/os/input.h:123
-os::KeyboardState::kKeyCount	variable	platform/window-input	os-keyboardstate-kkeycount	platform-window-input.md	engine/foundation/os/input.h:125
-os::KeyboardState::IsDown(Key) const	function	platform/window-input	os-keyboardstate-isdown-key-const	platform-window-input.md	engine/foundation/os/input.h:130
-os::KeyboardState::SetDown(Key,bool)	function	platform/window-input	os-keyboardstate-setdown-key-bool	platform-window-input.md	engine/foundation/os/input.h:138
-os::KeyboardState::ReleaseAll()	function	platform/window-input	os-keyboardstate-releaseall	platform-window-input.md	engine/foundation/os/input.h:152
-os::KeyboardState::modifiers	variable	platform/window-input	os-keyboardstate-modifiers	platform-window-input.md	engine/foundation/os/input.h:158
-os::MouseButtonBit	enum	platform/window-input	os-mousebuttonbit	platform-window-input.md	engine/foundation/os/input.h:165
-os::kMouseLeft	enumerator	platform/window-input	os-kmouseleft	platform-window-input.md	engine/foundation/os/input.h:166
-os::kMouseRight	enumerator	platform/window-input	os-kmouseright	platform-window-input.md	engine/foundation/os/input.h:167
-os::kMouseMiddle	enumerator	platform/window-input	os-kmousemiddle	platform-window-input.md	engine/foundation/os/input.h:168
-os::kMouseBack	enumerator	platform/window-input	os-kmouseback	platform-window-input.md	engine/foundation/os/input.h:169
-os::kMouseForward	enumerator	platform/window-input	os-kmouseforward	platform-window-input.md	engine/foundation/os/input.h:170
-os::InputState	struct	platform/window-input	os-inputstate	platform-window-input.md	engine/foundation/os/input.h:179
-os::InputState::keyboard	variable	platform/window-input	os-inputstate-keyboard	platform-window-input.md	engine/foundation/os/input.h:181
-os::InputState::mouse_x	variable	platform/window-input	os-inputstate-mouse-x	platform-window-input.md	engine/foundation/os/input.h:184
-os::InputState::mouse_y	variable	platform/window-input	os-inputstate-mouse-y	platform-window-input.md	engine/foundation/os/input.h:186
-os::InputState::pointer_inside	variable	platform/window-input	os-inputstate-pointer-inside	platform-window-input.md	engine/foundation/os/input.h:188
-os::InputState::mouse_buttons	variable	platform/window-input	os-inputstate-mouse-buttons	platform-window-input.md	engine/foundation/os/input.h:190
-os::InputState::scroll_dx	variable	platform/window-input	os-inputstate-scroll-dx	platform-window-input.md	engine/foundation/os/input.h:193
-os::InputState::scroll_dy	variable	platform/window-input	os-inputstate-scroll-dy	platform-window-input.md	engine/foundation/os/input.h:195
-os::InputState::IsMouseDown(u32) const	function	platform/window-input	os-inputstate-ismousedown-u32-const	platform-window-input.md	engine/foundation/os/input.h:199
-os::InputState::BeginFrame()	function	platform/window-input	os-inputstate-beginframe	platform-window-input.md	engine/foundation/os/input.h:204
-os::PlatformWindowHost	class	platform/window-input	os-platformwindowhost	platform-window-input.md	engine/foundation/os/linux/platform_window_host.h:18
-os::PlatformWindowHost::PlatformWindowHost()	function	platform/window-input	os-platformwindowhost-platformwindowhost	platform-window-input.md	engine/foundation/os/linux/platform_window_host.h:20
-os::PlatformWindowHost::PlatformWindowHost(const PlatformWindowHost&)	function	platform/window-input	os-platformwindowhost-platformwindowhost-const-platformwindowhost-amp	platform-window-input.md	engine/foundation/os/linux/platform_window_host.h:21
-os::PlatformWindowHost::operator=(const PlatformWindowHost&)	function	platform/window-input	os-platformwindowhost-operator-eq-const-platformwindowhost-amp	platform-window-input.md	engine/foundation/os/linux/platform_window_host.h:22
-os::PlatformWindowHost::Open(WindowBackend,StringView,u32,u32,InputState*)	function	platform/window-input	os-platformwindowhost-open-windowbackend-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/foundation/os/linux/platform_window_host.h:34
-os::PlatformWindowHost::OpenFromEnvironment(StringView,u32,u32,InputState*)	function	platform/window-input	os-platformwindowhost-openfromenvironment-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/foundation/os/linux/platform_window_host.h:45
-os::PlatformWindowHost::Get()	function	platform/window-input	os-platformwindowhost-get	platform-window-input.md	engine/foundation/os/linux/platform_window_host.h:50
-os::wayland::WaylandConnection	class	platform/window-input	os-wayland-waylandconnection	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:20
-os::wayland::WaylandConnection::Connect()	function	platform/window-input	os-wayland-waylandconnection-connect	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:28
-os::wayland::WaylandConnection::WaylandConnection()	function	platform/window-input	os-wayland-waylandconnection-waylandconnection	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:31
-os::wayland::WaylandConnection::~WaylandConnection()	function	platform/window-input	os-wayland-waylandconnection-tilde-waylandconnection	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:34
-os::wayland::WaylandConnection::WaylandConnection(const WaylandConnection&)	function	platform/window-input	os-wayland-waylandconnection-waylandconnection-const-waylandconnection-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:36
-os::wayland::WaylandConnection::operator=(const WaylandConnection&)	function	platform/window-input	os-wayland-waylandconnection-operator-eq-const-waylandconnection-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:37
-os::wayland::WaylandConnection::WaylandConnection(WaylandConnection&&) noexcept	function	platform/window-input	os-wayland-waylandconnection-waylandconnection-waylandconnection-amp-amp-noexcept	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:39
-os::wayland::WaylandConnection::operator=(WaylandConnection&&) noexcept	function	platform/window-input	os-wayland-waylandconnection-operator-eq-waylandconnection-amp-amp-noexcept	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:42
-os::wayland::WaylandConnection::Valid() const	function	platform/window-input	os-wayland-waylandconnection-valid-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:45
-os::wayland::WaylandConnection::Display() const	function	platform/window-input	os-wayland-waylandconnection-display-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:48
-os::wayland::WaylandConnection::Compositor() const	function	platform/window-input	os-wayland-waylandconnection-compositor-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:50
-os::wayland::WaylandConnection::XdgWmBase() const	function	platform/window-input	os-wayland-waylandconnection-xdgwmbase-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:52
-os::wayland::WaylandConnection::Seat() const	function	platform/window-input	os-wayland-waylandconnection-seat-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:54
-os::wayland::WaylandConnection::Shm() const	function	platform/window-input	os-wayland-waylandconnection-shm-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:56
-os::wayland::WaylandConnection::DecorationManager() const	function	platform/window-input	os-wayland-waylandconnection-decorationmanager-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_connection.h:61
-os::wayland::WaylandInput	class	platform/window-input	os-wayland-waylandinput	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:23
-os::wayland::WaylandInput::WaylandInput()	function	platform/window-input	os-wayland-waylandinput-waylandinput	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:26
-os::wayland::WaylandInput::~WaylandInput()	function	platform/window-input	os-wayland-waylandinput-tilde-waylandinput	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:29
-os::wayland::WaylandInput::WaylandInput(const WaylandInput&)	function	platform/window-input	os-wayland-waylandinput-waylandinput-const-waylandinput-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:31
-os::wayland::WaylandInput::operator=(const WaylandInput&)	function	platform/window-input	os-wayland-waylandinput-operator-eq-const-waylandinput-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:32
-os::wayland::WaylandInput::WaylandInput(WaylandInput&&)	function	platform/window-input	os-wayland-waylandinput-waylandinput-waylandinput-amp-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:33
-os::wayland::WaylandInput::operator=(WaylandInput&&)	function	platform/window-input	os-wayland-waylandinput-operator-eq-waylandinput-amp-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:34
-os::wayland::WaylandInput::Init(WaylandConnection&,InputState*)	function	platform/window-input	os-wayland-waylandinput-init-waylandconnection-amp-inputstate-star	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:44
-os::wayland::WaylandInput::Shutdown()	function	platform/window-input	os-wayland-waylandinput-shutdown	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:50
-os::wayland::WaylandInput::Valid() const	function	platform/window-input	os-wayland-waylandinput-valid-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:53
-os::wayland::WaylandInput::HasKeyboard() const	function	platform/window-input	os-wayland-waylandinput-haskeyboard-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:55
-os::wayland::WaylandInput::HasPointer() const	function	platform/window-input	os-wayland-waylandinput-haspointer-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:57
-os::wayland::WaylandInput::HasKeymap() const	function	platform/window-input	os-wayland-waylandinput-haskeymap-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_input.h:59
-os::wayland::WaylandPlatformWindow	class	platform/window-input	os-wayland-waylandplatformwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:19
-os::wayland::WaylandPlatformWindow::WaylandPlatformWindow()	function	platform/window-input	os-wayland-waylandplatformwindow-waylandplatformwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:22
-os::wayland::WaylandPlatformWindow::Open(StringView,u32,u32,InputState*)	function	platform/window-input	os-wayland-waylandplatformwindow-open-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:31
-os::wayland::WaylandPlatformWindow::Close()	function	platform/window-input	os-wayland-waylandplatformwindow-close	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:37
-os::wayland::WaylandPlatformWindow::~WaylandPlatformWindow()	function	platform/window-input	os-wayland-waylandplatformwindow-tilde-waylandplatformwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:40
-os::wayland::WaylandPlatformWindow::Valid() const	function	platform/window-input	os-wayland-waylandplatformwindow-valid-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:43
-os::wayland::WaylandPlatformWindow::PumpEvents()	function	platform/window-input	os-wayland-waylandplatformwindow-pumpevents	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:48
-os::wayland::WaylandPlatformWindow::ShouldClose() const	function	platform/window-input	os-wayland-waylandplatformwindow-shouldclose-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:54
-os::wayland::WaylandPlatformWindow::ConnectionLost() const	function	platform/window-input	os-wayland-waylandplatformwindow-connectionlost-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:56
-os::wayland::WaylandPlatformWindow::NativeDisplay() const	function	platform/window-input	os-wayland-waylandplatformwindow-nativedisplay-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:60
-os::wayland::WaylandPlatformWindow::Width() const	function	platform/window-input	os-wayland-waylandplatformwindow-width-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:62
-os::wayland::WaylandPlatformWindow::Height() const	function	platform/window-input	os-wayland-waylandplatformwindow-height-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:64
-os::wayland::WaylandPlatformWindow::BackendName() const	function	platform/window-input	os-wayland-waylandplatformwindow-backendname-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:66
-os::wayland::WaylandPlatformWindow::GetNativeInfo() const	function	platform/window-input	os-wayland-waylandplatformwindow-getnativeinfo-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:68
-os::wayland::WaylandPlatformWindow::IsMinimized() const	function	platform/window-input	os-wayland-waylandplatformwindow-isminimized-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:79
-os::wayland::WaylandPlatformWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandplatformwindow-resizeserial-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:81
-os::wayland::WaylandPlatformWindow::SupportsFullscreen() const	function	platform/window-input	os-wayland-waylandplatformwindow-supportsfullscreen-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:83
-os::wayland::WaylandPlatformWindow::SetFullscreen(bool)	function	platform/window-input	os-wayland-waylandplatformwindow-setfullscreen-bool	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:87
-os::wayland::WaylandPlatformWindow::IsFullscreen() const	function	platform/window-input	os-wayland-waylandplatformwindow-isfullscreen-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:91
-os::wayland::WaylandPlatformWindow::Input() const	function	platform/window-input	os-wayland-waylandplatformwindow-input-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_platform_window.h:94
-os::wayland::WaylandWindow	class	platform/window-input	os-wayland-waylandwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:24
-os::wayland::WaylandWindow::Create(WaylandConnection&,StringView,StringView,u32,u32)	function	platform/window-input	os-wayland-waylandwindow-create-waylandconnection-amp-stringview-stringview-u32-u32	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:40
-os::wayland::WaylandWindow::WaylandWindow()	function	platform/window-input	os-wayland-waylandwindow-waylandwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:44
-os::wayland::WaylandWindow::~WaylandWindow()	function	platform/window-input	os-wayland-waylandwindow-tilde-waylandwindow	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:47
-os::wayland::WaylandWindow::WaylandWindow(const WaylandWindow&)	function	platform/window-input	os-wayland-waylandwindow-waylandwindow-const-waylandwindow-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:49
-os::wayland::WaylandWindow::operator=(const WaylandWindow&)	function	platform/window-input	os-wayland-waylandwindow-operator-eq-const-waylandwindow-amp	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:50
-os::wayland::WaylandWindow::WaylandWindow(WaylandWindow&&) noexcept	function	platform/window-input	os-wayland-waylandwindow-waylandwindow-waylandwindow-amp-amp-noexcept	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:52
-os::wayland::WaylandWindow::operator=(WaylandWindow&&) noexcept	function	platform/window-input	os-wayland-waylandwindow-operator-eq-waylandwindow-amp-amp-noexcept	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:55
-os::wayland::WaylandWindow::Valid() const	function	platform/window-input	os-wayland-waylandwindow-valid-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:58
-os::wayland::WaylandWindow::ShouldClose() const	function	platform/window-input	os-wayland-waylandwindow-shouldclose-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:64
-os::wayland::WaylandWindow::CommitPendingResize()	function	platform/window-input	os-wayland-waylandwindow-commitpendingresize	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:72
-os::wayland::WaylandWindow::MarkSurfaceExported() const	function	platform/window-input	os-wayland-waylandwindow-marksurfaceexported-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:78
-os::wayland::WaylandWindow::Surface() const	function	platform/window-input	os-wayland-waylandwindow-surface-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:83
-os::wayland::WaylandWindow::XdgSurface() const	function	platform/window-input	os-wayland-waylandwindow-xdgsurface-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:87
-os::wayland::WaylandWindow::XdgToplevel() const	function	platform/window-input	os-wayland-waylandwindow-xdgtoplevel-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:91
-os::wayland::WaylandWindow::ServerSideDecorated() const	function	platform/window-input	os-wayland-waylandwindow-serversidedecorated-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:95
-os::wayland::WaylandWindow::Width() const	function	platform/window-input	os-wayland-waylandwindow-width-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:97
-os::wayland::WaylandWindow::Height() const	function	platform/window-input	os-wayland-waylandwindow-height-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:99
-os::wayland::WaylandWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandwindow-resizeserial-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:101
-os::wayland::WaylandWindow::SetFullscreen(bool)	function	platform/window-input	os-wayland-waylandwindow-setfullscreen-bool	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:107
-os::wayland::WaylandWindow::IsFullscreen() const	function	platform/window-input	os-wayland-waylandwindow-isfullscreen-const	platform-window-input.md	engine/foundation/os/linux/wayland/wayland_window.h:109
-os::x11::X11Window	class	platform/window-input	os-x11-x11window	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:28
-os::x11::X11Window::Create(StringView,u32,u32)	function	platform/window-input	os-x11-x11window-create-stringview-u32-u32	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:36
-os::x11::X11Window::X11Window()	function	platform/window-input	os-x11-x11window-x11window	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:39
-os::x11::X11Window::~X11Window()	function	platform/window-input	os-x11-x11window-tilde-x11window	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:42
-os::x11::X11Window::X11Window(const X11Window&)	function	platform/window-input	os-x11-x11window-x11window-const-x11window-amp	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:44
-os::x11::X11Window::operator=(const X11Window&)	function	platform/window-input	os-x11-x11window-operator-eq-const-x11window-amp	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:45
-os::x11::X11Window::X11Window(X11Window&&) noexcept	function	platform/window-input	os-x11-x11window-x11window-x11window-amp-amp-noexcept	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:47
-os::x11::X11Window::operator=(X11Window&&) noexcept	function	platform/window-input	os-x11-x11window-operator-eq-x11window-amp-amp-noexcept	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:50
-os::x11::X11Window::Valid() const	function	platform/window-input	os-x11-x11window-valid-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:53
-os::x11::X11Window::PumpEvents(InputState*)	function	platform/window-input	os-x11-x11window-pumpevents-inputstate-star	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:60
-os::x11::X11Window::PumpEvents()	function	platform/window-input	os-x11-x11window-pumpevents	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:63
-os::x11::X11Window::SetInputState(InputState*)	function	platform/window-input	os-x11-x11window-setinputstate-inputstate-star	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:67
-os::x11::X11Window::ShouldClose() const	function	platform/window-input	os-x11-x11window-shouldclose-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:69
-os::x11::X11Window::Width() const	function	platform/window-input	os-x11-x11window-width-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:71
-os::x11::X11Window::Height() const	function	platform/window-input	os-x11-x11window-height-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:73
-os::x11::X11Window::BackendName() const	function	platform/window-input	os-x11-x11window-backendname-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:75
-os::x11::X11Window::GetNativeInfo() const	function	platform/window-input	os-x11-x11window-getnativeinfo-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:77
-os::x11::X11Window::IsMinimized() const	function	platform/window-input	os-x11-x11window-isminimized-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:87
-os::x11::X11Window::ResizeSerial() const	function	platform/window-input	os-x11-x11window-resizeserial-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:89
-os::x11::X11Window::SupportsFullscreen() const	function	platform/window-input	os-x11-x11window-supportsfullscreen-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:92
-os::x11::X11Window::SetFullscreen(bool)	function	platform/window-input	os-x11-x11window-setfullscreen-bool	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:96
-os::x11::X11Window::IsFullscreen() const	function	platform/window-input	os-x11-x11window-isfullscreen-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:98
-os::x11::X11Window::NativeDisplay() const	function	platform/window-input	os-x11-x11window-nativedisplay-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:103
-os::x11::X11Window::NativeWindow() const	function	platform/window-input	os-x11-x11window-nativewindow-const	platform-window-input.md	engine/foundation/os/linux/x11/x11_window.h:107
-os::XkbKeyboard	class	platform/window-input	os-xkbkeyboard	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:21
-os::XkbKeyboard::XkbKeyboard()	function	platform/window-input	os-xkbkeyboard-xkbkeyboard	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:23
-os::XkbKeyboard::~XkbKeyboard()	function	platform/window-input	os-xkbkeyboard-tilde-xkbkeyboard	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:26
-os::XkbKeyboard::XkbKeyboard(const XkbKeyboard&)	function	platform/window-input	os-xkbkeyboard-xkbkeyboard-const-xkbkeyboard-amp	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:28
-os::XkbKeyboard::operator=(const XkbKeyboard&)	function	platform/window-input	os-xkbkeyboard-operator-eq-const-xkbkeyboard-amp	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:29
-os::XkbKeyboard::InitFromNames(const char*,const char*)	function	platform/window-input	os-xkbkeyboard-initfromnames-const-char-star-const-char-star	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:36
-os::XkbKeyboard::InitFromKeymapText(const char*,usize)	function	platform/window-input	os-xkbkeyboard-initfromkeymaptext-const-char-star-usize	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:43
-os::XkbKeyboard::Valid() const	function	platform/window-input	os-xkbkeyboard-valid-const	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:46
-os::XkbKeyboard::KeyForEvdevCode(u32) const	function	platform/window-input	os-xkbkeyboard-keyforevdevcode-u32-const	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:53
-os::XkbKeyboard::UpdateMask(u32,u32,u32,u32)	function	platform/window-input	os-xkbkeyboard-updatemask-u32-u32-u32-u32	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:60
-os::XkbKeyboard::Modifiers() const	function	platform/window-input	os-xkbkeyboard-modifiers-const	platform-window-input.md	engine/foundation/os/linux/xkb_keyboard.h:65
-os::NativeWindowKind	enum	platform/window-input	os-nativewindowkind	platform-window-input.md	engine/foundation/os/window.h:14
-os::NativeWindowKind::Invalid	enumerator	platform/window-input	os-nativewindowkind-invalid	platform-window-input.md	engine/foundation/os/window.h:15
-os::NativeWindowKind::Wayland	enumerator	platform/window-input	os-nativewindowkind-wayland	platform-window-input.md	engine/foundation/os/window.h:16
-os::NativeWindowKind::Xlib	enumerator	platform/window-input	os-nativewindowkind-xlib	platform-window-input.md	engine/foundation/os/window.h:17
-os::NativeWindowKind::Win32	enumerator	platform/window-input	os-nativewindowkind-win32	platform-window-input.md	engine/foundation/os/window.h:18
-os::NativeWindowKind::Cocoa	enumerator	platform/window-input	os-nativewindowkind-cocoa	platform-window-input.md	engine/foundation/os/window.h:19
-os::NativeWindowKind::Android	enumerator	platform/window-input	os-nativewindowkind-android	platform-window-input.md	engine/foundation/os/window.h:20
-os::NativeWindowInfo	struct	platform/window-input	os-nativewindowinfo	platform-window-input.md	engine/foundation/os/window.h:31
-os::NativeWindowInfo::kind	variable	platform/window-input	os-nativewindowinfo-kind	platform-window-input.md	engine/foundation/os/window.h:33
-os::NativeWindowInfo::display	variable	platform/window-input	os-nativewindowinfo-display	platform-window-input.md	engine/foundation/os/window.h:35
-os::NativeWindowInfo::surface	variable	platform/window-input	os-nativewindowinfo-surface	platform-window-input.md	engine/foundation/os/window.h:37
-os::NativeWindowInfo::window_id	variable	platform/window-input	os-nativewindowinfo-window-id	platform-window-input.md	engine/foundation/os/window.h:39
-os::Window	class	platform/window-input	os-window	platform-window-input.md	engine/foundation/os/window.h:48
-os::Window::~Window()	function	platform/window-input	os-window-tilde-window	platform-window-input.md	engine/foundation/os/window.h:50
-os::Window::Valid() const	function	platform/window-input	os-window-valid-const	platform-window-input.md	engine/foundation/os/window.h:53
-os::Window::PumpEvents()	function	platform/window-input	os-window-pumpevents	platform-window-input.md	engine/foundation/os/window.h:56
-os::Window::ShouldClose() const	function	platform/window-input	os-window-shouldclose-const	platform-window-input.md	engine/foundation/os/window.h:59
-os::Window::Width() const	function	platform/window-input	os-window-width-const	platform-window-input.md	engine/foundation/os/window.h:62
-os::Window::Height() const	function	platform/window-input	os-window-height-const	platform-window-input.md	engine/foundation/os/window.h:65
-os::Window::BackendName() const	function	platform/window-input	os-window-backendname-const	platform-window-input.md	engine/foundation/os/window.h:69
-os::Window::GetNativeInfo() const	function	platform/window-input	os-window-getnativeinfo-const	platform-window-input.md	engine/foundation/os/window.h:75
-os::Window::IsMinimized() const	function	platform/window-input	os-window-isminimized-const	platform-window-input.md	engine/foundation/os/window.h:83
-os::Window::ResizeSerial() const	function	platform/window-input	os-window-resizeserial-const	platform-window-input.md	engine/foundation/os/window.h:90
-os::Window::SupportsFullscreen() const	function	platform/window-input	os-window-supportsfullscreen-const	platform-window-input.md	engine/foundation/os/window.h:96
-os::Window::SetFullscreen(bool)	function	platform/window-input	os-window-setfullscreen-bool	platform-window-input.md	engine/foundation/os/window.h:106
-os::Window::IsFullscreen() const	function	platform/window-input	os-window-isfullscreen-const	platform-window-input.md	engine/foundation/os/window.h:112
-os::WindowBackend	enum	platform/window-input	os-windowbackend	platform-window-input.md	engine/foundation/os/window.h:121
-os::WindowBackend::Auto	enumerator	platform/window-input	os-windowbackend-auto	platform-window-input.md	engine/foundation/os/window.h:122
-os::WindowBackend::Wayland	enumerator	platform/window-input	os-windowbackend-wayland	platform-window-input.md	engine/foundation/os/window.h:123
-os::WindowBackend::X11	enumerator	platform/window-input	os-windowbackend-x11	platform-window-input.md	engine/foundation/os/window.h:124
-os::WindowBackend::Invalid	enumerator	platform/window-input	os-windowbackend-invalid	platform-window-input.md	engine/foundation/os/window.h:125
-os::ParseWindowBackend(StringView)	function	platform/window-input	os-parsewindowbackend-stringview	platform-window-input.md	engine/foundation/os/window.h:133
-os::BackendPlan	struct	platform/window-input	os-backendplan	platform-window-input.md	engine/foundation/os/window.h:138
-os::BackendPlan::candidates	variable	platform/window-input	os-backendplan-candidates	platform-window-input.md	engine/foundation/os/window.h:140
-os::BackendPlan::count	variable	platform/window-input	os-backendplan-count	platform-window-input.md	engine/foundation/os/window.h:142
-os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	os-planwindowbackends-windowbackend-bool-bool	platform-window-input.md	engine/foundation/os/window.h:154
+os::Key	enum	platform/window-input	os-key	platform-window-input.md	engine/platform/input.h:12
+os::Key::Unknown	enumerator	platform/window-input	os-key-unknown	platform-window-input.md	engine/platform/input.h:13
+os::Key::A	enumerator	platform/window-input	os-key-a	platform-window-input.md	engine/platform/input.h:14
+os::Key::B	enumerator	platform/window-input	os-key-b	platform-window-input.md	engine/platform/input.h:15
+os::Key::C	enumerator	platform/window-input	os-key-c	platform-window-input.md	engine/platform/input.h:16
+os::Key::D	enumerator	platform/window-input	os-key-d	platform-window-input.md	engine/platform/input.h:17
+os::Key::E	enumerator	platform/window-input	os-key-e	platform-window-input.md	engine/platform/input.h:18
+os::Key::F	enumerator	platform/window-input	os-key-f	platform-window-input.md	engine/platform/input.h:19
+os::Key::G	enumerator	platform/window-input	os-key-g	platform-window-input.md	engine/platform/input.h:20
+os::Key::H	enumerator	platform/window-input	os-key-h	platform-window-input.md	engine/platform/input.h:21
+os::Key::I	enumerator	platform/window-input	os-key-i	platform-window-input.md	engine/platform/input.h:22
+os::Key::J	enumerator	platform/window-input	os-key-j	platform-window-input.md	engine/platform/input.h:23
+os::Key::K	enumerator	platform/window-input	os-key-k	platform-window-input.md	engine/platform/input.h:24
+os::Key::L	enumerator	platform/window-input	os-key-l	platform-window-input.md	engine/platform/input.h:25
+os::Key::M	enumerator	platform/window-input	os-key-m	platform-window-input.md	engine/platform/input.h:26
+os::Key::N	enumerator	platform/window-input	os-key-n	platform-window-input.md	engine/platform/input.h:27
+os::Key::O	enumerator	platform/window-input	os-key-o	platform-window-input.md	engine/platform/input.h:28
+os::Key::P	enumerator	platform/window-input	os-key-p	platform-window-input.md	engine/platform/input.h:29
+os::Key::Q	enumerator	platform/window-input	os-key-q	platform-window-input.md	engine/platform/input.h:30
+os::Key::R	enumerator	platform/window-input	os-key-r	platform-window-input.md	engine/platform/input.h:31
+os::Key::S	enumerator	platform/window-input	os-key-s	platform-window-input.md	engine/platform/input.h:32
+os::Key::T	enumerator	platform/window-input	os-key-t	platform-window-input.md	engine/platform/input.h:33
+os::Key::U	enumerator	platform/window-input	os-key-u	platform-window-input.md	engine/platform/input.h:34
+os::Key::V	enumerator	platform/window-input	os-key-v	platform-window-input.md	engine/platform/input.h:35
+os::Key::W	enumerator	platform/window-input	os-key-w	platform-window-input.md	engine/platform/input.h:36
+os::Key::X	enumerator	platform/window-input	os-key-x	platform-window-input.md	engine/platform/input.h:37
+os::Key::Y	enumerator	platform/window-input	os-key-y	platform-window-input.md	engine/platform/input.h:38
+os::Key::Z	enumerator	platform/window-input	os-key-z	platform-window-input.md	engine/platform/input.h:39
+os::Key::Num0	enumerator	platform/window-input	os-key-num0	platform-window-input.md	engine/platform/input.h:40
+os::Key::Num1	enumerator	platform/window-input	os-key-num1	platform-window-input.md	engine/platform/input.h:41
+os::Key::Num2	enumerator	platform/window-input	os-key-num2	platform-window-input.md	engine/platform/input.h:42
+os::Key::Num3	enumerator	platform/window-input	os-key-num3	platform-window-input.md	engine/platform/input.h:43
+os::Key::Num4	enumerator	platform/window-input	os-key-num4	platform-window-input.md	engine/platform/input.h:44
+os::Key::Num5	enumerator	platform/window-input	os-key-num5	platform-window-input.md	engine/platform/input.h:45
+os::Key::Num6	enumerator	platform/window-input	os-key-num6	platform-window-input.md	engine/platform/input.h:46
+os::Key::Num7	enumerator	platform/window-input	os-key-num7	platform-window-input.md	engine/platform/input.h:47
+os::Key::Num8	enumerator	platform/window-input	os-key-num8	platform-window-input.md	engine/platform/input.h:48
+os::Key::Num9	enumerator	platform/window-input	os-key-num9	platform-window-input.md	engine/platform/input.h:49
+os::Key::F1	enumerator	platform/window-input	os-key-f1	platform-window-input.md	engine/platform/input.h:50
+os::Key::F2	enumerator	platform/window-input	os-key-f2	platform-window-input.md	engine/platform/input.h:51
+os::Key::F3	enumerator	platform/window-input	os-key-f3	platform-window-input.md	engine/platform/input.h:52
+os::Key::F4	enumerator	platform/window-input	os-key-f4	platform-window-input.md	engine/platform/input.h:53
+os::Key::F5	enumerator	platform/window-input	os-key-f5	platform-window-input.md	engine/platform/input.h:54
+os::Key::F6	enumerator	platform/window-input	os-key-f6	platform-window-input.md	engine/platform/input.h:55
+os::Key::F7	enumerator	platform/window-input	os-key-f7	platform-window-input.md	engine/platform/input.h:56
+os::Key::F8	enumerator	platform/window-input	os-key-f8	platform-window-input.md	engine/platform/input.h:57
+os::Key::F9	enumerator	platform/window-input	os-key-f9	platform-window-input.md	engine/platform/input.h:58
+os::Key::F10	enumerator	platform/window-input	os-key-f10	platform-window-input.md	engine/platform/input.h:59
+os::Key::F11	enumerator	platform/window-input	os-key-f11	platform-window-input.md	engine/platform/input.h:60
+os::Key::F12	enumerator	platform/window-input	os-key-f12	platform-window-input.md	engine/platform/input.h:61
+os::Key::Escape	enumerator	platform/window-input	os-key-escape	platform-window-input.md	engine/platform/input.h:62
+os::Key::Enter	enumerator	platform/window-input	os-key-enter	platform-window-input.md	engine/platform/input.h:63
+os::Key::Tab	enumerator	platform/window-input	os-key-tab	platform-window-input.md	engine/platform/input.h:64
+os::Key::Backspace	enumerator	platform/window-input	os-key-backspace	platform-window-input.md	engine/platform/input.h:65
+os::Key::Space	enumerator	platform/window-input	os-key-space	platform-window-input.md	engine/platform/input.h:66
+os::Key::Insert	enumerator	platform/window-input	os-key-insert	platform-window-input.md	engine/platform/input.h:67
+os::Key::Delete	enumerator	platform/window-input	os-key-delete	platform-window-input.md	engine/platform/input.h:68
+os::Key::Home	enumerator	platform/window-input	os-key-home	platform-window-input.md	engine/platform/input.h:69
+os::Key::End	enumerator	platform/window-input	os-key-end	platform-window-input.md	engine/platform/input.h:70
+os::Key::PageUp	enumerator	platform/window-input	os-key-pageup	platform-window-input.md	engine/platform/input.h:71
+os::Key::PageDown	enumerator	platform/window-input	os-key-pagedown	platform-window-input.md	engine/platform/input.h:72
+os::Key::Left	enumerator	platform/window-input	os-key-left	platform-window-input.md	engine/platform/input.h:73
+os::Key::Right	enumerator	platform/window-input	os-key-right	platform-window-input.md	engine/platform/input.h:74
+os::Key::Up	enumerator	platform/window-input	os-key-up	platform-window-input.md	engine/platform/input.h:75
+os::Key::Down	enumerator	platform/window-input	os-key-down	platform-window-input.md	engine/platform/input.h:76
+os::Key::LeftShift	enumerator	platform/window-input	os-key-leftshift	platform-window-input.md	engine/platform/input.h:77
+os::Key::RightShift	enumerator	platform/window-input	os-key-rightshift	platform-window-input.md	engine/platform/input.h:78
+os::Key::LeftCtrl	enumerator	platform/window-input	os-key-leftctrl	platform-window-input.md	engine/platform/input.h:79
+os::Key::RightCtrl	enumerator	platform/window-input	os-key-rightctrl	platform-window-input.md	engine/platform/input.h:80
+os::Key::LeftAlt	enumerator	platform/window-input	os-key-leftalt	platform-window-input.md	engine/platform/input.h:81
+os::Key::RightAlt	enumerator	platform/window-input	os-key-rightalt	platform-window-input.md	engine/platform/input.h:82
+os::Key::LeftSuper	enumerator	platform/window-input	os-key-leftsuper	platform-window-input.md	engine/platform/input.h:83
+os::Key::RightSuper	enumerator	platform/window-input	os-key-rightsuper	platform-window-input.md	engine/platform/input.h:84
+os::Key::CapsLock	enumerator	platform/window-input	os-key-capslock	platform-window-input.md	engine/platform/input.h:85
+os::Key::Minus	enumerator	platform/window-input	os-key-minus	platform-window-input.md	engine/platform/input.h:86
+os::Key::Equals	enumerator	platform/window-input	os-key-equals	platform-window-input.md	engine/platform/input.h:87
+os::Key::LeftBracket	enumerator	platform/window-input	os-key-leftbracket	platform-window-input.md	engine/platform/input.h:88
+os::Key::RightBracket	enumerator	platform/window-input	os-key-rightbracket	platform-window-input.md	engine/platform/input.h:89
+os::Key::Backslash	enumerator	platform/window-input	os-key-backslash	platform-window-input.md	engine/platform/input.h:90
+os::Key::Semicolon	enumerator	platform/window-input	os-key-semicolon	platform-window-input.md	engine/platform/input.h:91
+os::Key::Apostrophe	enumerator	platform/window-input	os-key-apostrophe	platform-window-input.md	engine/platform/input.h:92
+os::Key::Grave	enumerator	platform/window-input	os-key-grave	platform-window-input.md	engine/platform/input.h:93
+os::Key::Comma	enumerator	platform/window-input	os-key-comma	platform-window-input.md	engine/platform/input.h:94
+os::Key::Period	enumerator	platform/window-input	os-key-period	platform-window-input.md	engine/platform/input.h:95
+os::Key::Slash	enumerator	platform/window-input	os-key-slash	platform-window-input.md	engine/platform/input.h:96
+os::Key::Count	enumerator	platform/window-input	os-key-count	platform-window-input.md	engine/platform/input.h:97
+os::ModifierBit	enum	platform/window-input	os-modifierbit	platform-window-input.md	engine/platform/input.h:103
+os::kModShift	enumerator	platform/window-input	os-kmodshift	platform-window-input.md	engine/platform/input.h:104
+os::kModCtrl	enumerator	platform/window-input	os-kmodctrl	platform-window-input.md	engine/platform/input.h:105
+os::kModAlt	enumerator	platform/window-input	os-kmodalt	platform-window-input.md	engine/platform/input.h:106
+os::kModSuper	enumerator	platform/window-input	os-kmodsuper	platform-window-input.md	engine/platform/input.h:107
+os::kModCapsLock	enumerator	platform/window-input	os-kmodcapslock	platform-window-input.md	engine/platform/input.h:108
+os::kModNumLock	enumerator	platform/window-input	os-kmodnumlock	platform-window-input.md	engine/platform/input.h:109
+os::KeyFromKeysym(u32)	function	platform/window-input	os-keyfromkeysym-u32	platform-window-input.md	engine/platform/input.h:117
+os::KeyboardState	struct	platform/window-input	os-keyboardstate	platform-window-input.md	engine/platform/input.h:123
+os::KeyboardState::kKeyCount	variable	platform/window-input	os-keyboardstate-kkeycount	platform-window-input.md	engine/platform/input.h:125
+os::KeyboardState::IsDown(Key) const	function	platform/window-input	os-keyboardstate-isdown-key-const	platform-window-input.md	engine/platform/input.h:130
+os::KeyboardState::SetDown(Key,bool)	function	platform/window-input	os-keyboardstate-setdown-key-bool	platform-window-input.md	engine/platform/input.h:138
+os::KeyboardState::ReleaseAll()	function	platform/window-input	os-keyboardstate-releaseall	platform-window-input.md	engine/platform/input.h:152
+os::KeyboardState::modifiers	variable	platform/window-input	os-keyboardstate-modifiers	platform-window-input.md	engine/platform/input.h:158
+os::MouseButtonBit	enum	platform/window-input	os-mousebuttonbit	platform-window-input.md	engine/platform/input.h:165
+os::kMouseLeft	enumerator	platform/window-input	os-kmouseleft	platform-window-input.md	engine/platform/input.h:166
+os::kMouseRight	enumerator	platform/window-input	os-kmouseright	platform-window-input.md	engine/platform/input.h:167
+os::kMouseMiddle	enumerator	platform/window-input	os-kmousemiddle	platform-window-input.md	engine/platform/input.h:168
+os::kMouseBack	enumerator	platform/window-input	os-kmouseback	platform-window-input.md	engine/platform/input.h:169
+os::kMouseForward	enumerator	platform/window-input	os-kmouseforward	platform-window-input.md	engine/platform/input.h:170
+os::InputState	struct	platform/window-input	os-inputstate	platform-window-input.md	engine/platform/input.h:179
+os::InputState::keyboard	variable	platform/window-input	os-inputstate-keyboard	platform-window-input.md	engine/platform/input.h:181
+os::InputState::mouse_x	variable	platform/window-input	os-inputstate-mouse-x	platform-window-input.md	engine/platform/input.h:184
+os::InputState::mouse_y	variable	platform/window-input	os-inputstate-mouse-y	platform-window-input.md	engine/platform/input.h:186
+os::InputState::pointer_inside	variable	platform/window-input	os-inputstate-pointer-inside	platform-window-input.md	engine/platform/input.h:188
+os::InputState::mouse_buttons	variable	platform/window-input	os-inputstate-mouse-buttons	platform-window-input.md	engine/platform/input.h:190
+os::InputState::scroll_dx	variable	platform/window-input	os-inputstate-scroll-dx	platform-window-input.md	engine/platform/input.h:193
+os::InputState::scroll_dy	variable	platform/window-input	os-inputstate-scroll-dy	platform-window-input.md	engine/platform/input.h:195
+os::InputState::IsMouseDown(u32) const	function	platform/window-input	os-inputstate-ismousedown-u32-const	platform-window-input.md	engine/platform/input.h:199
+os::InputState::BeginFrame()	function	platform/window-input	os-inputstate-beginframe	platform-window-input.md	engine/platform/input.h:204
+os::wayland::WaylandConnection	class	platform/window-input	os-wayland-waylandconnection	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:20
+os::wayland::WaylandConnection::Connect()	function	platform/window-input	os-wayland-waylandconnection-connect	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:28
+os::wayland::WaylandConnection::WaylandConnection()	function	platform/window-input	os-wayland-waylandconnection-waylandconnection	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:31
+os::wayland::WaylandConnection::~WaylandConnection()	function	platform/window-input	os-wayland-waylandconnection-tilde-waylandconnection	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:34
+os::wayland::WaylandConnection::WaylandConnection(const WaylandConnection&)	function	platform/window-input	os-wayland-waylandconnection-waylandconnection-const-waylandconnection-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:36
+os::wayland::WaylandConnection::operator=(const WaylandConnection&)	function	platform/window-input	os-wayland-waylandconnection-operator-eq-const-waylandconnection-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:37
+os::wayland::WaylandConnection::WaylandConnection(WaylandConnection&&) noexcept	function	platform/window-input	os-wayland-waylandconnection-waylandconnection-waylandconnection-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:39
+os::wayland::WaylandConnection::operator=(WaylandConnection&&) noexcept	function	platform/window-input	os-wayland-waylandconnection-operator-eq-waylandconnection-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:42
+os::wayland::WaylandConnection::Valid() const	function	platform/window-input	os-wayland-waylandconnection-valid-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:45
+os::wayland::WaylandConnection::Display() const	function	platform/window-input	os-wayland-waylandconnection-display-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:48
+os::wayland::WaylandConnection::Compositor() const	function	platform/window-input	os-wayland-waylandconnection-compositor-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:50
+os::wayland::WaylandConnection::XdgWmBase() const	function	platform/window-input	os-wayland-waylandconnection-xdgwmbase-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:52
+os::wayland::WaylandConnection::Seat() const	function	platform/window-input	os-wayland-waylandconnection-seat-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:54
+os::wayland::WaylandConnection::Shm() const	function	platform/window-input	os-wayland-waylandconnection-shm-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:56
+os::wayland::WaylandConnection::DecorationManager() const	function	platform/window-input	os-wayland-waylandconnection-decorationmanager-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:61
+os::wayland::WaylandInput	class	platform/window-input	os-wayland-waylandinput	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:23
+os::wayland::WaylandInput::WaylandInput()	function	platform/window-input	os-wayland-waylandinput-waylandinput	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:26
+os::wayland::WaylandInput::~WaylandInput()	function	platform/window-input	os-wayland-waylandinput-tilde-waylandinput	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:29
+os::wayland::WaylandInput::WaylandInput(const WaylandInput&)	function	platform/window-input	os-wayland-waylandinput-waylandinput-const-waylandinput-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:31
+os::wayland::WaylandInput::operator=(const WaylandInput&)	function	platform/window-input	os-wayland-waylandinput-operator-eq-const-waylandinput-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:32
+os::wayland::WaylandInput::WaylandInput(WaylandInput&&)	function	platform/window-input	os-wayland-waylandinput-waylandinput-waylandinput-amp-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:33
+os::wayland::WaylandInput::operator=(WaylandInput&&)	function	platform/window-input	os-wayland-waylandinput-operator-eq-waylandinput-amp-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:34
+os::wayland::WaylandInput::Init(WaylandConnection&,InputState*)	function	platform/window-input	os-wayland-waylandinput-init-waylandconnection-amp-inputstate-star	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:44
+os::wayland::WaylandInput::Shutdown()	function	platform/window-input	os-wayland-waylandinput-shutdown	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:50
+os::wayland::WaylandInput::Valid() const	function	platform/window-input	os-wayland-waylandinput-valid-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:53
+os::wayland::WaylandInput::HasKeyboard() const	function	platform/window-input	os-wayland-waylandinput-haskeyboard-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:55
+os::wayland::WaylandInput::HasPointer() const	function	platform/window-input	os-wayland-waylandinput-haspointer-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:57
+os::wayland::WaylandInput::HasKeymap() const	function	platform/window-input	os-wayland-waylandinput-haskeymap-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:59
+os::wayland::WaylandPlatformWindow	class	platform/window-input	os-wayland-waylandplatformwindow	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:19
+os::wayland::WaylandPlatformWindow::WaylandPlatformWindow()	function	platform/window-input	os-wayland-waylandplatformwindow-waylandplatformwindow	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:22
+os::wayland::WaylandPlatformWindow::Open(StringView,u32,u32,InputState*)	function	platform/window-input	os-wayland-waylandplatformwindow-open-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:31
+os::wayland::WaylandPlatformWindow::Close()	function	platform/window-input	os-wayland-waylandplatformwindow-close	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:37
+os::wayland::WaylandPlatformWindow::~WaylandPlatformWindow()	function	platform/window-input	os-wayland-waylandplatformwindow-tilde-waylandplatformwindow	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:40
+os::wayland::WaylandPlatformWindow::Valid() const	function	platform/window-input	os-wayland-waylandplatformwindow-valid-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:43
+os::wayland::WaylandPlatformWindow::PumpEvents()	function	platform/window-input	os-wayland-waylandplatformwindow-pumpevents	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:48
+os::wayland::WaylandPlatformWindow::ShouldClose() const	function	platform/window-input	os-wayland-waylandplatformwindow-shouldclose-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:54
+os::wayland::WaylandPlatformWindow::ConnectionLost() const	function	platform/window-input	os-wayland-waylandplatformwindow-connectionlost-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:56
+os::wayland::WaylandPlatformWindow::NativeDisplay() const	function	platform/window-input	os-wayland-waylandplatformwindow-nativedisplay-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:60
+os::wayland::WaylandPlatformWindow::Width() const	function	platform/window-input	os-wayland-waylandplatformwindow-width-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:62
+os::wayland::WaylandPlatformWindow::Height() const	function	platform/window-input	os-wayland-waylandplatformwindow-height-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:64
+os::wayland::WaylandPlatformWindow::BackendName() const	function	platform/window-input	os-wayland-waylandplatformwindow-backendname-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:66
+os::wayland::WaylandPlatformWindow::GetNativeInfo() const	function	platform/window-input	os-wayland-waylandplatformwindow-getnativeinfo-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:68
+os::wayland::WaylandPlatformWindow::IsMinimized() const	function	platform/window-input	os-wayland-waylandplatformwindow-isminimized-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:79
+os::wayland::WaylandPlatformWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandplatformwindow-resizeserial-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:81
+os::wayland::WaylandPlatformWindow::SupportsFullscreen() const	function	platform/window-input	os-wayland-waylandplatformwindow-supportsfullscreen-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:83
+os::wayland::WaylandPlatformWindow::SetFullscreen(bool)	function	platform/window-input	os-wayland-waylandplatformwindow-setfullscreen-bool	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:87
+os::wayland::WaylandPlatformWindow::IsFullscreen() const	function	platform/window-input	os-wayland-waylandplatformwindow-isfullscreen-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:91
+os::wayland::WaylandPlatformWindow::Input() const	function	platform/window-input	os-wayland-waylandplatformwindow-input-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:94
+os::wayland::WaylandWindow	class	platform/window-input	os-wayland-waylandwindow	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:24
+os::wayland::WaylandWindow::Create(WaylandConnection&,StringView,StringView,u32,u32)	function	platform/window-input	os-wayland-waylandwindow-create-waylandconnection-amp-stringview-stringview-u32-u32	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:40
+os::wayland::WaylandWindow::WaylandWindow()	function	platform/window-input	os-wayland-waylandwindow-waylandwindow	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:44
+os::wayland::WaylandWindow::~WaylandWindow()	function	platform/window-input	os-wayland-waylandwindow-tilde-waylandwindow	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:47
+os::wayland::WaylandWindow::WaylandWindow(const WaylandWindow&)	function	platform/window-input	os-wayland-waylandwindow-waylandwindow-const-waylandwindow-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:49
+os::wayland::WaylandWindow::operator=(const WaylandWindow&)	function	platform/window-input	os-wayland-waylandwindow-operator-eq-const-waylandwindow-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:50
+os::wayland::WaylandWindow::WaylandWindow(WaylandWindow&&) noexcept	function	platform/window-input	os-wayland-waylandwindow-waylandwindow-waylandwindow-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:52
+os::wayland::WaylandWindow::operator=(WaylandWindow&&) noexcept	function	platform/window-input	os-wayland-waylandwindow-operator-eq-waylandwindow-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:55
+os::wayland::WaylandWindow::Valid() const	function	platform/window-input	os-wayland-waylandwindow-valid-const	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:58
+os::wayland::WaylandWindow::ShouldClose() const	function	platform/window-input	os-wayland-waylandwindow-shouldclose-const	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:64
+os::wayland::WaylandWindow::CommitPendingResize()	function	platform/window-input	os-wayland-waylandwindow-commitpendingresize	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:72
+os::wayland::WaylandWindow::MarkSurfaceExported() const	function	platform/window-input	os-wayland-waylandwindow-marksurfaceexported-const	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:78
+os::wayland::WaylandWindow::Surface() const	function	platform/window-input	os-wayland-waylandwindow-surface-const	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:83
+os::wayland::WaylandWindow::XdgSurface() const	function	platform/window-input	os-wayland-waylandwindow-xdgsurface-const	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:87
+os::wayland::WaylandWindow::XdgToplevel() const	function	platform/window-input	os-wayland-waylandwindow-xdgtoplevel-const	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:91
+os::wayland::WaylandWindow::ServerSideDecorated() const	function	platform/window-input	os-wayland-waylandwindow-serversidedecorated-const	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:95
+os::wayland::WaylandWindow::Width() const	function	platform/window-input	os-wayland-waylandwindow-width-const	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:97
+os::wayland::WaylandWindow::Height() const	function	platform/window-input	os-wayland-waylandwindow-height-const	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:99
+os::wayland::WaylandWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandwindow-resizeserial-const	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:101
+os::wayland::WaylandWindow::SetFullscreen(bool)	function	platform/window-input	os-wayland-waylandwindow-setfullscreen-bool	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:107
+os::wayland::WaylandWindow::IsFullscreen() const	function	platform/window-input	os-wayland-waylandwindow-isfullscreen-const	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:109
+os::x11::X11Window	class	platform/window-input	os-x11-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:28
+os::x11::X11Window::Create(StringView,u32,u32)	function	platform/window-input	os-x11-x11window-create-stringview-u32-u32	platform-window-input.md	engine/platform/linux/x11/x11_window.h:36
+os::x11::X11Window::X11Window()	function	platform/window-input	os-x11-x11window-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:39
+os::x11::X11Window::~X11Window()	function	platform/window-input	os-x11-x11window-tilde-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:42
+os::x11::X11Window::X11Window(const X11Window&)	function	platform/window-input	os-x11-x11window-x11window-const-x11window-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:44
+os::x11::X11Window::operator=(const X11Window&)	function	platform/window-input	os-x11-x11window-operator-eq-const-x11window-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:45
+os::x11::X11Window::X11Window(X11Window&&) noexcept	function	platform/window-input	os-x11-x11window-x11window-x11window-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/x11/x11_window.h:47
+os::x11::X11Window::operator=(X11Window&&) noexcept	function	platform/window-input	os-x11-x11window-operator-eq-x11window-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/x11/x11_window.h:50
+os::x11::X11Window::Valid() const	function	platform/window-input	os-x11-x11window-valid-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:53
+os::x11::X11Window::PumpEvents(InputState*)	function	platform/window-input	os-x11-x11window-pumpevents-inputstate-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:60
+os::x11::X11Window::PumpEvents()	function	platform/window-input	os-x11-x11window-pumpevents	platform-window-input.md	engine/platform/linux/x11/x11_window.h:63
+os::x11::X11Window::SetInputState(InputState*)	function	platform/window-input	os-x11-x11window-setinputstate-inputstate-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:67
+os::x11::X11Window::ShouldClose() const	function	platform/window-input	os-x11-x11window-shouldclose-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:69
+os::x11::X11Window::Width() const	function	platform/window-input	os-x11-x11window-width-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:71
+os::x11::X11Window::Height() const	function	platform/window-input	os-x11-x11window-height-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:73
+os::x11::X11Window::BackendName() const	function	platform/window-input	os-x11-x11window-backendname-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:75
+os::x11::X11Window::GetNativeInfo() const	function	platform/window-input	os-x11-x11window-getnativeinfo-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:77
+os::x11::X11Window::IsMinimized() const	function	platform/window-input	os-x11-x11window-isminimized-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:87
+os::x11::X11Window::ResizeSerial() const	function	platform/window-input	os-x11-x11window-resizeserial-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:89
+os::x11::X11Window::SupportsFullscreen() const	function	platform/window-input	os-x11-x11window-supportsfullscreen-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:92
+os::x11::X11Window::SetFullscreen(bool)	function	platform/window-input	os-x11-x11window-setfullscreen-bool	platform-window-input.md	engine/platform/linux/x11/x11_window.h:96
+os::x11::X11Window::IsFullscreen() const	function	platform/window-input	os-x11-x11window-isfullscreen-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:98
+os::x11::X11Window::NativeDisplay() const	function	platform/window-input	os-x11-x11window-nativedisplay-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:103
+os::x11::X11Window::NativeWindow() const	function	platform/window-input	os-x11-x11window-nativewindow-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:107
+os::XkbKeyboard	class	platform/window-input	os-xkbkeyboard	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:21
+os::XkbKeyboard::XkbKeyboard()	function	platform/window-input	os-xkbkeyboard-xkbkeyboard	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:23
+os::XkbKeyboard::~XkbKeyboard()	function	platform/window-input	os-xkbkeyboard-tilde-xkbkeyboard	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:26
+os::XkbKeyboard::XkbKeyboard(const XkbKeyboard&)	function	platform/window-input	os-xkbkeyboard-xkbkeyboard-const-xkbkeyboard-amp	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:28
+os::XkbKeyboard::operator=(const XkbKeyboard&)	function	platform/window-input	os-xkbkeyboard-operator-eq-const-xkbkeyboard-amp	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:29
+os::XkbKeyboard::InitFromNames(const char*,const char*)	function	platform/window-input	os-xkbkeyboard-initfromnames-const-char-star-const-char-star	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:36
+os::XkbKeyboard::InitFromKeymapText(const char*,usize)	function	platform/window-input	os-xkbkeyboard-initfromkeymaptext-const-char-star-usize	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:43
+os::XkbKeyboard::Valid() const	function	platform/window-input	os-xkbkeyboard-valid-const	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:46
+os::XkbKeyboard::KeyForEvdevCode(u32) const	function	platform/window-input	os-xkbkeyboard-keyforevdevcode-u32-const	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:53
+os::XkbKeyboard::UpdateMask(u32,u32,u32,u32)	function	platform/window-input	os-xkbkeyboard-updatemask-u32-u32-u32-u32	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:60
+os::XkbKeyboard::Modifiers() const	function	platform/window-input	os-xkbkeyboard-modifiers-const	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:65
+os::NativeWindowKind	enum	platform/window-input	os-nativewindowkind	platform-window-input.md	engine/platform/window.h:14
+os::NativeWindowKind::Invalid	enumerator	platform/window-input	os-nativewindowkind-invalid	platform-window-input.md	engine/platform/window.h:15
+os::NativeWindowKind::Wayland	enumerator	platform/window-input	os-nativewindowkind-wayland	platform-window-input.md	engine/platform/window.h:16
+os::NativeWindowKind::Xlib	enumerator	platform/window-input	os-nativewindowkind-xlib	platform-window-input.md	engine/platform/window.h:17
+os::NativeWindowKind::Win32	enumerator	platform/window-input	os-nativewindowkind-win32	platform-window-input.md	engine/platform/window.h:18
+os::NativeWindowKind::Cocoa	enumerator	platform/window-input	os-nativewindowkind-cocoa	platform-window-input.md	engine/platform/window.h:19
+os::NativeWindowKind::Android	enumerator	platform/window-input	os-nativewindowkind-android	platform-window-input.md	engine/platform/window.h:20
+os::NativeWindowInfo	struct	platform/window-input	os-nativewindowinfo	platform-window-input.md	engine/platform/window.h:31
+os::NativeWindowInfo::kind	variable	platform/window-input	os-nativewindowinfo-kind	platform-window-input.md	engine/platform/window.h:33
+os::NativeWindowInfo::display	variable	platform/window-input	os-nativewindowinfo-display	platform-window-input.md	engine/platform/window.h:35
+os::NativeWindowInfo::surface	variable	platform/window-input	os-nativewindowinfo-surface	platform-window-input.md	engine/platform/window.h:37
+os::NativeWindowInfo::window_id	variable	platform/window-input	os-nativewindowinfo-window-id	platform-window-input.md	engine/platform/window.h:39
+os::Window	class	platform/window-input	os-window	platform-window-input.md	engine/platform/window.h:48
+os::Window::~Window()	function	platform/window-input	os-window-tilde-window	platform-window-input.md	engine/platform/window.h:50
+os::Window::Valid() const	function	platform/window-input	os-window-valid-const	platform-window-input.md	engine/platform/window.h:53
+os::Window::PumpEvents()	function	platform/window-input	os-window-pumpevents	platform-window-input.md	engine/platform/window.h:56
+os::Window::ShouldClose() const	function	platform/window-input	os-window-shouldclose-const	platform-window-input.md	engine/platform/window.h:59
+os::Window::Width() const	function	platform/window-input	os-window-width-const	platform-window-input.md	engine/platform/window.h:62
+os::Window::Height() const	function	platform/window-input	os-window-height-const	platform-window-input.md	engine/platform/window.h:65
+os::Window::BackendName() const	function	platform/window-input	os-window-backendname-const	platform-window-input.md	engine/platform/window.h:69
+os::Window::GetNativeInfo() const	function	platform/window-input	os-window-getnativeinfo-const	platform-window-input.md	engine/platform/window.h:75
+os::Window::IsMinimized() const	function	platform/window-input	os-window-isminimized-const	platform-window-input.md	engine/platform/window.h:83
+os::Window::ResizeSerial() const	function	platform/window-input	os-window-resizeserial-const	platform-window-input.md	engine/platform/window.h:90
+os::Window::SupportsFullscreen() const	function	platform/window-input	os-window-supportsfullscreen-const	platform-window-input.md	engine/platform/window.h:96
+os::Window::SetFullscreen(bool)	function	platform/window-input	os-window-setfullscreen-bool	platform-window-input.md	engine/platform/window.h:106
+os::Window::IsFullscreen() const	function	platform/window-input	os-window-isfullscreen-const	platform-window-input.md	engine/platform/window.h:112
+os::WindowBackend	enum	platform/window-input	os-windowbackend	platform-window-input.md	engine/platform/window.h:121
+os::WindowBackend::Auto	enumerator	platform/window-input	os-windowbackend-auto	platform-window-input.md	engine/platform/window.h:122
+os::WindowBackend::Wayland	enumerator	platform/window-input	os-windowbackend-wayland	platform-window-input.md	engine/platform/window.h:123
+os::WindowBackend::X11	enumerator	platform/window-input	os-windowbackend-x11	platform-window-input.md	engine/platform/window.h:124
+os::WindowBackend::Invalid	enumerator	platform/window-input	os-windowbackend-invalid	platform-window-input.md	engine/platform/window.h:125
+os::ParseWindowBackend(StringView)	function	platform/window-input	os-parsewindowbackend-stringview	platform-window-input.md	engine/platform/window.h:133
+os::BackendPlan	struct	platform/window-input	os-backendplan	platform-window-input.md	engine/platform/window.h:138
+os::BackendPlan::candidates	variable	platform/window-input	os-backendplan-candidates	platform-window-input.md	engine/platform/window.h:140
+os::BackendPlan::count	variable	platform/window-input	os-backendplan-count	platform-window-input.md	engine/platform/window.h:142
+os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	os-planwindowbackends-windowbackend-bool-bool	platform-window-input.md	engine/platform/window.h:154
+os::PlatformWindowHost	class	platform/window-input	os-platformwindowhost	platform-window-input.md	engine/platform/window_host.h:22
+os::PlatformWindowHost::PlatformWindowHost()	function	platform/window-input	os-platformwindowhost-platformwindowhost	platform-window-input.md	engine/platform/window_host.h:25
+os::PlatformWindowHost::~PlatformWindowHost()	function	platform/window-input	os-platformwindowhost-tilde-platformwindowhost	platform-window-input.md	engine/platform/window_host.h:27
+os::PlatformWindowHost::PlatformWindowHost(const PlatformWindowHost&)	function	platform/window-input	os-platformwindowhost-platformwindowhost-const-platformwindowhost-amp	platform-window-input.md	engine/platform/window_host.h:28
+os::PlatformWindowHost::operator=(const PlatformWindowHost&)	function	platform/window-input	os-platformwindowhost-operator-eq-const-platformwindowhost-amp	platform-window-input.md	engine/platform/window_host.h:29
+os::PlatformWindowHost::Open(WindowBackend,StringView,u32,u32,InputState*)	function	platform/window-input	os-platformwindowhost-open-windowbackend-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/window_host.h:41
+os::PlatformWindowHost::OpenFromEnvironment(StringView,u32,u32,InputState*)	function	platform/window-input	os-platformwindowhost-openfromenvironment-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/window_host.h:52
+os::PlatformWindowHost::Get()	function	platform/window-input	os-platformwindowhost-get	platform-window-input.md	engine/platform/window_host.h:57
 ENGINE_DEBUG_BREAK	macro	foundation/debug	engine-debug-break	foundation-debug.md	engine/foundation/debug/compiler.h:13
 ENGINE_UNREACHABLE_HINT	macro	foundation/debug	engine-unreachable-hint	foundation-debug.md	engine/foundation/debug/compiler.h:28
 ENGINE_COLD	macro	foundation/debug	engine-cold	foundation-debug.md	engine/foundation/debug/compiler.h:35

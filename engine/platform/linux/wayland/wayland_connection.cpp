@@ -1,4 +1,4 @@
-#include "os/linux/wayland/wayland_connection.h"
+#include "platform/linux/wayland/wayland_connection.h"
 
 #include "log/log.h"
 #include "mem/arena_allocator.h"

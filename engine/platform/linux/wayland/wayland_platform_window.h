@@ -1,9 +1,9 @@
 #pragma once
 
-#include "os/linux/wayland/wayland_connection.h"
-#include "os/linux/wayland/wayland_input.h"
-#include "os/linux/wayland/wayland_window.h"
-#include "os/window.h"
+#include "platform/linux/wayland/wayland_connection.h"
+#include "platform/linux/wayland/wayland_input.h"
+#include "platform/linux/wayland/wayland_window.h"
+#include "platform/window.h"
 
 //! Wayland platform window: the Wayland backend packaged as an `os::Window`.
 

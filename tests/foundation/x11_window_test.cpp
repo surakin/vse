@@ -6,7 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
 
-#include "os/linux/x11/x11_window.h"
+#include "platform/linux/x11/x11_window.h"
 #include "os/os.h"
 
 using engine_placeholder::os::x11::X11Window;
@@ -147,7 +147,7 @@ TEST_CASE("X11Window move transfers ownership without double-close", "[x11][os]"
 #include <cstdlib>
 #include <string_view>
 
-#include "os/input.h"
+#include "platform/input.h"
 
 using engine_placeholder::os::InputState;
 using engine_placeholder::os::Key;

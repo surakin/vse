@@ -74,7 +74,7 @@ list(REMOVE_DUPLICATES files)
 set(errors 0)
 set(scanned 0)
 foreach(f IN LISTS files)
-  if(f MATCHES "^tools/[^/]+/fixtures/" OR f MATCHES "^engine/foundation/os/linux/wayland/generated/" OR f MATCHES "^fixtures/")
+  if(f MATCHES "^tools/[^/]+/fixtures/" OR f MATCHES "^engine/platform/linux/wayland/generated/" OR f MATCHES "^fixtures/")
     continue() # data for the tools' own tests, and generated protocol code
   endif()
   math(EXPR scanned "${scanned}+1")

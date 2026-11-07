@@ -1,7 +1,7 @@
 # Phase 13 / Day 159 — Win32 Input
 
 **Phase:** [Phase 13 — Windows Port + DX12 Backend](../phase-13-windows-dx12.md)
-**Depends on:** Day 158; `engine/foundation/os/input.h`, `os/key_translate.cpp`.
+**Depends on:** Day 158; `engine/platform/input.h`, `engine/platform/key_translate.cpp`.
 
 Fill the bound `InputState` from Win32 messages with the same meaning the Wayland and X11 backends give it.
 

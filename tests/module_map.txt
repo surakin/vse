@@ -13,6 +13,7 @@ engine/foundation/debug 3,7
 engine/foundation/io 0,1,2,3,4,5,7,9,10,11
 engine/foundation/settings 3,11
 engine/foundation/os/linux/debug 7
+engine/platform     0,1,4,5,8
 engine/jobs         2,3,4,5
 engine/rhi          3,4,5
 engine/renderer     3,4,5

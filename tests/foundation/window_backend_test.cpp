@@ -6,10 +6,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
 
-#include "os/input.h"
-#include "os/linux/platform_window_host.h"
+#include "platform/input.h"
+#include "platform/window_host.h"
+#include "platform/linux/wayland/wayland_platform_window.h"
+#include "platform/linux/x11/x11_window.h"
 #include "os/os.h"
-#include "os/window.h"
+#include "platform/window.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::os;

@@ -1,6 +1,6 @@
 # Fullscreen on Windows (checklist for Phase 13)
 
-`os::Window::SupportsFullscreen`, `SetFullscreen` and `IsFullscreen` are the interface (`engine/foundation/os/window.h`).
+`os::Window::SupportsFullscreen`, `SetFullscreen` and `IsFullscreen` are the interface (`engine/platform/window.h`).
 
 - **Borderless fullscreen (the default):** save `GetWindowLongPtr(GWL_STYLE)` and `GetWindowPlacement`, remove `WS_OVERLAPPEDWINDOW`,
   `SetWindowPos` to the monitor rectangle of `MonitorFromWindow(MONITOR_DEFAULTTONEAREST)` / `GetMonitorInfo` with

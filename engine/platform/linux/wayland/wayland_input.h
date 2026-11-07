@@ -2,9 +2,9 @@
 
 #include <wayland-client.h>
 
-#include "os/input.h"
-#include "os/linux/wayland/wayland_connection.h"
-#include "os/linux/xkb_keyboard.h"
+#include "platform/input.h"
+#include "platform/linux/wayland/wayland_connection.h"
+#include "platform/linux/xkb_keyboard.h"
 #include "types.h"
 
 //! Wayland seat input: keyboard and pointer events from a `wl_seat` into an `InputState`.

@@ -1,4 +1,4 @@
-#include "os/input.h"
+#include "platform/input.h"
 
 // Header-only keysym constants (no libxkbcommon symbols are used here);
 // the numbering is the X11 keysym numbering, so the X11 backend shares

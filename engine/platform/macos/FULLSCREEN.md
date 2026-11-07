@@ -1,6 +1,6 @@
 # Fullscreen on macOS (checklist for Phase 14)
 
-`os::Window::SupportsFullscreen`, `SetFullscreen` and `IsFullscreen` are the interface (`engine/foundation/os/window.h`).
+`os::Window::SupportsFullscreen`, `SetFullscreen` and `IsFullscreen` are the interface (`engine/platform/window.h`).
 
 - Use native fullscreen: `[NSWindow toggleFullScreen:]` (the window needs `NSWindowCollectionBehaviorFullScreenPrimary`). It animates
   into a separate Space, so the request is asynchronous: `IsFullscreen` follows `windowDidEnterFullScreen` /

@@ -1,4 +1,4 @@
-#include "os/linux/wayland/wayland_window.h"
+#include "platform/linux/wayland/wayland_window.h"
 
 #include <sys/mman.h>
 #include <cstring>
@@ -6,7 +6,7 @@
 
 #include "log/log.h"
 #include "mem/arena_allocator.h"
-#include "os/window.h"
+#include "platform/window.h"
 
 namespace engine_placeholder::os::wayland {
 

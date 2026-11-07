@@ -1,4 +1,4 @@
-#include "os/linux/platform_window_host.h"
+#include "platform/window_host.h"
 
 #include <cstdlib>
 
@@ -7,6 +7,15 @@
 #include "mem/arena_allocator.h"
 
 namespace engine_placeholder::os {
+
+// Both concrete backends, held by value; only the one that opens is used.
+struct PlatformWindowHost::Impl {
+    wayland::WaylandPlatformWindow wayland;
+    x11::X11Window x11;
+};
+
+PlatformWindowHost::PlatformWindowHost() = default;
+PlatformWindowHost::~PlatformWindowHost() = default;
 
 namespace {
 
@@ -31,6 +40,7 @@ bool PlatformWindowHost::Open(WindowBackend requested, StringView title, u32 wid
         Log(LogPlatform, LogVerbosity::Error, "Window: PlatformWindowHost::Open called twice");
         return false;
     }
+    impl_ = MakeUnique<Impl>();
     BackendPlan plan = PlanWindowBackends(requested, EnvSet("WAYLAND_DISPLAY"), EnvSet("DISPLAY"));
     if (plan.count == 0) {
         Log(LogPlatform, LogVerbosity::Error, "Window: no usable backend (WAYLAND_DISPLAY/DISPLAY unset?)");
@@ -38,16 +48,16 @@ bool PlatformWindowHost::Open(WindowBackend requested, StringView title, u32 wid
     }
     for (usize i = 0; i < plan.count; ++i) {
         if (plan.candidates[i] == WindowBackend::Wayland) {
-            if (wayland_.Open(title, width, height, input)) {
-                active_ = &wayland_;
+            if (impl_->wayland.Open(title, width, height, input)) {
+                active_ = &impl_->wayland;
                 LogChosen("wayland");
                 return true;
             }
         } else if (plan.candidates[i] == WindowBackend::X11) {
-            x11_ = x11::X11Window::Create(title, width, height);
-            if (x11_.Valid()) {
-                x11_.SetInputState(input);
-                active_ = &x11_;
+            impl_->x11 = x11::X11Window::Create(title, width, height);
+            if (impl_->x11.Valid()) {
+                impl_->x11.SetInputState(input);
+                active_ = &impl_->x11;
                 LogChosen("x11");
                 return true;
             }

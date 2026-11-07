@@ -2,8 +2,8 @@
 
 #include <wayland-client.h>
 
-#include "os/linux/wayland/generated/xdg-shell-client-protocol.h"
-#include "os/linux/wayland/wayland_connection.h"
+#include "platform/linux/wayland/generated/xdg-shell-client-protocol.h"
+#include "platform/linux/wayland/wayland_connection.h"
 #include "string/string.h"
 #include "types.h"
 

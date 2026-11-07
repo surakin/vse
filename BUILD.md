@@ -38,7 +38,7 @@ Arch Linux's, the distribution the development machine uses.
 | `objcopy`, `strip`, `readelf` | any current | For checks | Split debug info, the crash-script tests, the no-network check. | `binutils` |
 | `systemd-coredump` | | Optional | Where the system stores core dumps (`scripts/open-core.sh`). | part of `systemd` |
 | Python 3 | 3.x | Optional | `scripts/list-aborts.py` only. | `python` |
-| `wayland-scanner`, `wayland-protocols` | 1.26.0, 1.49 | Optional | Only to regenerate the vendored protocol code (`engine/foundation/os/linux/wayland/generated/VENDORED.md`). | `wayland`, `wayland-protocols` |
+| `wayland-scanner`, `wayland-protocols` | 1.26.0, 1.49 | Optional | Only to regenerate the vendored protocol code (`engine/platform/linux/wayland/generated/VENDORED.md`). | `wayland`, `wayland-protocols` |
 | A Wayland compositor and an X server (or Xwayland) | | For checks | The `display` test group; it skips on a locked session. | |
 
 ## Windows (x86-64): being ported in Phase 13

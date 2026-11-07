@@ -2,8 +2,8 @@
 
 #include <wayland-client.h>
 
-#include "os/linux/wayland/generated/xdg-decoration-client-protocol.h"
-#include "os/linux/wayland/generated/xdg-shell-client-protocol.h"
+#include "platform/linux/wayland/generated/xdg-decoration-client-protocol.h"
+#include "platform/linux/wayland/generated/xdg-shell-client-protocol.h"
 
 //! Wayland connection: the compositor connection and the globals the engine binds.
 

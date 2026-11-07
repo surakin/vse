@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-#include "os/window.h"
+#include "platform/window.h"
 #include "rhi/adapter.h"
 #include "rhi/device.h"
 #include "types.h"

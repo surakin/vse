@@ -81,16 +81,7 @@ module engine/foundation/os/macos/debug/ debug 7
 # 8 settings
 module engine/foundation/settings/ settings 8
 # 9 platform: windows and input
-module engine/foundation/os/window.h platform 9
-module engine/foundation/os/window.cpp platform 9
-module engine/foundation/os/input.h platform 9
-module engine/foundation/os/key_translate.cpp platform 9
-module engine/foundation/os/linux/wayland/ platform 9
-module engine/foundation/os/linux/x11/ platform 9
-module engine/foundation/os/linux/xkb_keyboard.h platform 9
-module engine/foundation/os/linux/xkb_keyboard.cpp platform 9
-module engine/foundation/os/linux/platform_window_host.h platform 9
-module engine/foundation/os/linux/platform_window_host.cpp platform 9
+module engine/platform/ platform 9
 # 10 jobs
 module engine/jobs/ jobs 10
 # 11 RHI: the neutral interface and one module per backend
@@ -144,6 +135,9 @@ platform-dir engine/foundation/os/linux/ engine/foundation/os/
 platform-dir engine/foundation/os/windows/ engine/foundation/os/
 platform-dir engine/foundation/os/macos/ engine/foundation/os/
 platform-dir engine/foundation/io/linux/ engine/foundation/io/
+platform-dir engine/platform/linux/ engine/platform/
+platform-dir engine/platform/windows/ engine/platform/
+platform-dir engine/platform/macos/ engine/platform/
 platform-dir engine/rhi/vulkan/ engine/rhi/
 
 # --- CMake targets -----------------------------------------------------------------------------------------------------
@@ -151,6 +145,7 @@ layer foundation 9
 target foundation foundation
 target hello_window game/hello_window
 target jobs jobs
+target platform platform
 target rhi rhi
 target rhi_vulkan rhi/vulkan
 target renderer renderer

@@ -43,11 +43,11 @@ set(RHI_VULKAN_SOURCES
 # Headers are included as "rhi/<name>.h", rooted at engine/.
 set(RHI_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-function(engine_add_rhi_libs suffix foundation_lib jobs_lib)
+function(engine_add_rhi_libs suffix foundation_lib jobs_lib platform_lib)
   add_library(rhi${suffix} STATIC ${RHI_SOURCES})
   target_include_directories(rhi${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
   target_compile_options(rhi${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  target_link_libraries(rhi${suffix} PUBLIC ${foundation_lib} ${jobs_lib})
+  target_link_libraries(rhi${suffix} PUBLIC ${foundation_lib} ${jobs_lib} ${platform_lib})
 
   add_library(rhi_vulkan${suffix} STATIC ${RHI_VULKAN_SOURCES})
   target_include_directories(rhi_vulkan${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
@@ -55,6 +55,6 @@ function(engine_add_rhi_libs suffix foundation_lib jobs_lib)
   target_link_libraries(rhi_vulkan${suffix} PUBLIC rhi${suffix})
 endfunction()
 
-engine_add_rhi_libs("" foundation jobs)
-engine_add_rhi_libs("_asan" foundation_asan jobs_asan)
-engine_add_rhi_libs("_tsan" foundation_tsan jobs_tsan)
+engine_add_rhi_libs("" foundation jobs platform)
+engine_add_rhi_libs("_asan" foundation_asan jobs_asan platform_asan)
+engine_add_rhi_libs("_tsan" foundation_tsan jobs_tsan platform_tsan)
