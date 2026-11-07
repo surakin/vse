@@ -243,13 +243,6 @@ int ListGpus() {
 }
 
 // What the keys and the script do to the settings. Each returns the settings to apply.
-const char* const kPresentNames[] = {"fifo", "mailbox", "immediate"};
-
-const char* EnumName(const RenderSettings& s, SettingId id) {
-    const SettingDesc* d = s.Registry().Find(id);
-    return d != nullptr && d->type == SettingType::Enum ? d->enum_names[s.GetEnum(id)] : "?";
-}
-
 void CycleEnum(RenderSettings* s, SettingId id) {
     const SettingDesc* d = s->Registry().Find(id);
     s->SetEnum(id, (s->GetEnum(id) + 1) % d->enum_count);

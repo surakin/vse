@@ -16,11 +16,6 @@ using namespace engine_placeholder::renderer;
 
 namespace {
 
-Vec3 Unit(f32 x, f32 y, f32 z) {
-    const f32 len = std::sqrt(x * x + y * y + z * z);
-    return Vec3(x / len, y / len, z / len);
-}
-
 bool Near(f32 a, f32 b, f32 tol = 1e-5f) { return std::fabs(a - b) <= tol; }
 
 } // namespace

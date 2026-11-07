@@ -520,8 +520,8 @@ void Validate(const Decl& d, const ParsedDoc& doc, Vector<Diagnostic, ArenaAlloc
 
 class Walker {
 public:
-    Walker(const ScanResult& scan, const ExtractResult& ex, DocResult& out, ArenaAllocator& arena)
-        : scan_(scan), ex_(ex), out_(out), arena_(arena) {}
+    Walker(const ExtractResult& ex, DocResult& out, ArenaAllocator& arena)
+        : ex_(ex), out_(out), arena_(arena) {}
 
     void Visit(const Decl& d) {
         if (d.doc >= 0) Validate(d, *out_.parsed[static_cast<usize>(d.doc)], out_.diagnostics, arena_);
@@ -537,7 +537,6 @@ public:
 private:
     static bool NeedsDoc(const Decl& d) { return d.kind != DeclKind::Namespace; }
 
-    const ScanResult& scan_;
     const ExtractResult& ex_;
     DocResult& out_;
     ArenaAllocator& arena_;
@@ -619,7 +618,7 @@ void ParseDocs(const ScanResult& scan, const ExtractResult& ex, ArenaAllocator& 
     for (usize i = 0; i < scan.docs.Size(); ++i) out.parsed.Push(parser.Parse(scan.docs[i]));
 
     if (ex.root != nullptr) {
-        Walker w(scan, ex, out, arena);
+        Walker w(ex, out, arena);
         w.Visit(*ex.root);
     }
     if (!ex.HasErrors()) {

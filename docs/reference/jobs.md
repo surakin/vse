@@ -1742,7 +1742,7 @@ The log channel used by the job system.
 `function jobs::JobsLogV` — defined in `engine/jobs/jobs_log.h`
 
 ```cpp
-void JobsLogV(LogVerbosity level, const char* fmt, ...) __attribute__((format(printf, 2, 3)));
+void JobsLogV(LogVerbosity level, const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
 ```
 
 Logs a printf-style message on [`jobs::LogJobs`](#jobs-logjobs) using a 256-byte stack buffer and no allocator.
@@ -2294,7 +2294,7 @@ usize GetAllowedCpus(u32* out, usize capacity);
 
 Lists the logical CPU ids this process is allowed to run on, in ascending order.
 
-On Linux it honours the affinity mask (`sched_getaffinity`), not `std::thread::hardware_concurrency`, which ignores the mask.
+On Linux it honours the affinity mask (`sched_getaffinity`), not `std::thread::hardware_concurrency`, which ignores the mask. On Windows the ids are `group * 64 + bit` over the processor groups the process may use, restricted by the process affinity mask when it has one group.
 
 | Field | Value |
 |---|---|
@@ -2385,7 +2385,7 @@ CPU id the thread is pinned to, or -1 for main or an unpinned worker.
 i32 tid;
 ```
 
-OS thread id, for inspection through `/proc`.
+OS thread id (Linux: the kernel tid, for `/proc`; Windows: GetCurrentThreadId).
 
 ### `owner` {#jobs-participant-owner}
 

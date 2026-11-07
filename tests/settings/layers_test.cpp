@@ -51,13 +51,6 @@ UniquePtr<MemoryConfigStore> WithInt(const char* key, i64 v) {
     return store;
 }
 
-StoredValue Int(i64 v) {
-    StoredValue s;
-    s.typed = true;
-    s.value = Value::FromInt(v);
-    return s;
-}
-
 }  // namespace
 
 TEST_CASE("Layer precedence: for every combination of layers holding a value, the highest one wins", "[settings][layers]") {

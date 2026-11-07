@@ -62,7 +62,8 @@ TEST_CASE("SharedPtr: move transfers the share without touching the count; assig
     c = b; // the object c held is released
     REQUIRE(SharedPtrTestCounted::alive == 1);
     REQUIRE(b.UseCount() == 2);
-    c = c; // self-assignment is harmless
+    SharedPtr<SharedPtrTestCounted>& alias = c;
+    c = alias; // self-assignment is harmless
     REQUIRE(b.UseCount() == 2);
     b.Reset();
     c.Reset();

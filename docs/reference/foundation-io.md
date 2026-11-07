@@ -159,7 +159,7 @@ Opens `path` for listing.
 |---|---|
 | Parameter `out` | receives the open directory (closing a previous one); unchanged on failure. |
 | Fails | `NotFound`, `NotADirectory`, `PermissionDenied`, `TooManyOpenFiles`, `TooLong`. |
-| Backend | Windows: FindFirstFileExW (or NtQueryDirectoryFile) over a handle opened with FILE_FLAG_BACKUP_SEMANTICS; macOS: opendir. |
+| Backend | Windows: FindFirstFileExW(FindExInfoBasic, FIND_FIRST_EX_LARGE_FETCH) on `<path>\*`; macOS: opendir. |
 
 ### `IsOpen()` {#io-directory-isopen-const}
 
@@ -196,7 +196,7 @@ Reads the next entry, skipping `.` and `..`.
 | Parameter `entry` | receives the entry when `*found` is true. |
 | Parameter `found` | set to false at the end of the directory. |
 | Fails | `Invalid` (closed), `Io` (a read error; the position is then undefined). |
-| Backend | Windows: FindNextFileW, skipping the dot entries, the type from the attributes (a reparse point is a Symlink); macOS: readdir. |
+| Backend | Windows: FindNextFileW, skipping the dot entries, the type from the attributes and reparse tag (as Lstat); macOS: readdir. |
 
 ### `Close()` {#io-directory-close}
 
@@ -1081,7 +1081,7 @@ static Status Open(const Path& path, OpenMode mode, u32 flags, FilePtr* out);
 
 Opens the local file `path` (the path is never read as a URL; see [`io::File::OpenLocation`](#io-file-openlocation-stringview-openmode-u32-fileptr-star)).
 
-A FIFO opened for reading blocks until a writer appears; a terminal device does not become the controlling terminal.
+A FIFO opened for reading blocks until a writer appears; a terminal device does not become the controlling terminal. Nothing is locked: the same file can be open any number of times at once, in any modes, and renamed, replaced or removed while open (engine/foundation/io/BACKEND.md, "Sharing").
 
 | Field | Value |
 |---|---|
@@ -1089,8 +1089,8 @@ A FIFO opened for reading blocks until a writer appears; a terminal device does 
 | Parameter `mode` | how to open it. |
 | Parameter `flags` | [`io::OpenFlag`](#io-openflag) bits. |
 | Parameter `out` | receives the file; unchanged on failure. |
-| Fails | `NotFound`, `PermissionDenied`, `IsADirectory` (also when the path names a directory and the mode is `Read`), `AlreadyExists` (`kOpenCreateNew`), `Invalid` (`OpenMode::Read` with `kOpenCreate`, `kOpenCreateNew` or `kOpenTruncate`), `NotADirectory`, `TooManyOpenFiles`, `SymlinkLoop`, `TooLong`. |
-| Backend | Windows: CreateFileW with FILE_FLAG_OVERLAPPED (so the file is NativelyAsync); macOS: open with O_CLOEXEC and dispatch_io for asynchronous work. |
+| Fails | `NotFound`, `PermissionDenied`, `IsADirectory` (also when the path names a directory and the mode is `Read`), `AlreadyExists` (`kOpenCreateNew`), `Invalid` (`OpenMode::Read` with `kOpenCreate`, `kOpenCreateNew` or `kOpenTruncate`; on Windows also a reserved device name, a name ending in a dot or a space, or a colon in a name), `NotADirectory`, `TooManyOpenFiles`, `SymlinkLoop`, `TooLong`, `Busy` (Windows: another program opened the file without sharing). |
+| Backend | Windows: CreateFileW, asynchronous work on the executor as on Linux (BACKEND.md, Open); macOS: open with O_CLOEXEC and dispatch_io for asynchronous work. |
 
 ### `OpenLocation(StringView,OpenMode,u32,FilePtr*)` {#io-file-openlocation-stringview-openmode-u32-fileptr-star}
 
@@ -1626,7 +1626,7 @@ Describes `path`, following symbolic links.
 |---|---|
 | Parameter `path` | the name to look at. |
 | Parameter `out` | receives the description; unchanged on failure. |
-| Fails | `NotFound`, `PermissionDenied`, `NotADirectory`, `SymlinkLoop`, `TooLong`. |
+| Fails | `NotFound`, `PermissionDenied`, `NotADirectory`, `SymlinkLoop`, `TooLong`, `Invalid` (Windows: a name the backend refuses, as for [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-fileptr-star)). |
 | Backend | Windows: GetFileAttributesExW / GetFileInformationByHandle (reparse points followed); macOS: stat. |
 
 ## `Lstat(const Path&,FileInfo*)` {#io-lstat-const-path-amp-fileinfo-star}
@@ -1687,7 +1687,7 @@ Removes a file, a symbolic link (not its target) or an empty directory.
 | Field | Value |
 |---|---|
 | Fails | `NotFound`, `PermissionDenied`, `NotEmpty`, `ReadOnly`, `Busy`. |
-| Backend | Windows: DeleteFileW or RemoveDirectoryW (clear the read-only attribute first); macOS: remove. |
+| Backend | Windows: FileDispositionInfoEx with POSIX semantics (read-only and open files too); macOS: remove. |
 
 ## `kRemoveAllMinComponents` {#io-kremoveallmincomponents}
 
@@ -1728,7 +1728,7 @@ Renames `from` to `to`. An existing regular file at `to` is replaced atomically;
 | Field | Value |
 |---|---|
 | Fails | `NotFound`, `CrossDevice`, `NotEmpty`, `IsADirectory`, `NotADirectory`, `PermissionDenied`, `Busy`. |
-| Backend | Windows: MoveFileExW(MOVEFILE_REPLACE_EXISTING); macOS: rename. |
+| Backend | Windows: FileRenameInfoEx with POSIX semantics (replaces open, read-only and empty-directory targets); macOS: rename. |
 
 ## `Copy(const Path&,const Path&,bool)` {#io-copy-const-path-amp-const-path-amp-bool}
 
@@ -1774,7 +1774,7 @@ Makes the entries of directory `path` durable (`fsync` of the directory): call i
 | Field | Value |
 |---|---|
 | Fails | `NotFound`, `NotADirectory`, `PermissionDenied`, `Io`; `Unsupported` on a platform that has no such operation. |
-| Backend | Windows: Unsupported (NTFS journals directory changes); macOS: fsync on the directory (F_FULLFSYNC for durability). |
+| Backend | Windows: FlushFileBuffers on a directory handle opened for writing; macOS: fsync on the directory (F_FULLFSYNC for durability). |
 
 ## `CreateDirectory(const Path&)` {#io-createdirectory-const-path-amp}
 
@@ -2001,7 +2001,7 @@ The per-user cache directory: `$XDG_CACHE_HOME/<app>` or `<home>/.cache/<app>` o
 | Field | Value |
 |---|---|
 | Fails | as [`io::UserConfigDirectory`](#io-userconfigdirectory-stringview-path-star). |
-| Backend | Windows: FOLDERID_LocalAppData\cache; macOS: ~/Library/Caches. |
+| Backend | Windows: FOLDERID_LocalAppData\<app>\cache; macOS: ~/Library/Caches. |
 
 ## `UserDataDirectory(StringView,Path*)` {#io-userdatadirectory-stringview-path-star}
 
@@ -2031,7 +2031,7 @@ The per-user state directory: `$XDG_STATE_HOME/<app>` or `<home>/.local/state/<a
 | Field | Value |
 |---|---|
 | Fails | as [`io::UserConfigDirectory`](#io-userconfigdirectory-stringview-path-star). |
-| Backend | Windows: FOLDERID_LocalAppData\state; macOS: ~/Library/Application Support/<app>/state. |
+| Backend | Windows: FOLDERID_LocalAppData\<app>\state; macOS: ~/Library/Application Support/<app>/state. |
 
 ## `CrashDumpDirectory(Path*)` {#io-crashdumpdirectory-path-star}
 

@@ -36,6 +36,8 @@ if(NOT ENGINE_MSVC_LIKE)
   set(ENGINE_EXCEPTIONS_COMPILE_OPTIONS "")  # GCC and Clang have exceptions on unless told otherwise
   set(ENGINE_WINDOWS_COMPILE_OPTIONS "")
   set(ENGINE_WINDOWS_DEFINITIONS "")
+  # Warnings are errors (CLAUDE.md, "Warnings are errors"): every target of ours, tests and tools included, never the vendored libraries.
+  set(ENGINE_WARNING_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:C,CXX>:-Wall>" "$<$<COMPILE_LANGUAGE:C,CXX>:-Wextra>" "$<$<COMPILE_LANGUAGE:C,CXX>:-Werror>")
   set(ENGINE_HAVE_ASAN TRUE)
   set(ENGINE_HAVE_TSAN TRUE)
   set(ENGINE_ASAN_COMPILE_OPTIONS -fsanitize=address,undefined -fno-sanitize=vptr -fno-omit-frame-pointer -g)
@@ -100,9 +102,10 @@ function(engine_add_manifest_to_executables dir)
 endfunction()
 cmake_language(DEFER DIRECTORY "${CMAKE_SOURCE_DIR}" CALL engine_add_manifest_to_executables "${CMAKE_SOURCE_DIR}")
 
-# /W4 for the engine's own code; warnings are not errors (as on Linux). C4324 ("structure was padded due to alignment specifier") is off:
-# the engine writes alignas only where the padding is the point (cache-line separation in jobs/deque.h).
-set(ENGINE_PRODUCTION_COMPILE_OPTIONS /EHs-c- /GR- /GS- /D_HAS_EXCEPTIONS=0 /W4 /wd4324)
+# /W4 /WX for every target of ours (CLAUDE.md, "Warnings are errors"; the root CMakeLists.txt adds them after third_party/). C4324 ("structure
+# was padded due to alignment specifier") is off: the engine writes alignas only where the padding is the point (cache-line separation in jobs/deque.h).
+set(ENGINE_WARNING_COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:C,CXX>:/W4>" "$<$<COMPILE_LANGUAGE:C,CXX>:/WX>" "$<$<COMPILE_LANGUAGE:C,CXX>:/wd4324>")
+set(ENGINE_PRODUCTION_COMPILE_OPTIONS /EHs-c- /GR- /GS- /D_HAS_EXCEPTIONS=0)
 
 if(ENGINE_CLANG_CL)
   # Native __int128 division needs compiler-rt's builtins (the toolchain file found the library).

@@ -12,6 +12,8 @@ Thin wrappers around OS calls: file descriptors, memory reservation, clocks, dyn
 
 Exit/Write/Read/Open/Close keep POSIX-shaped signatures; the implementation lives per platform. Files and directories belong to the file layer ([`io::File`](foundation-io.md#io-file), [`io::Directory`](foundation-io.md#io-directory), [`io::Path`](foundation-io.md#io-path)); the descriptor functions here are for the console, pipes, sockets and the signal-safe code of the debugging facilities.
 
+**Windows** (Phase 13). Descriptors are the engine's own: 0, 1 and 2 are the standard handles, and [`os::Open`](#os-open-stringview-int-int) hands out 3 and up from a fixed table of 256 handles, claimed without a lock so the crash path can use it (the C runtime's descriptors are not used: a thread stopped inside one holds a lock a crash report would wait on). `long` is 32 bits there, so one [`os::Write`](#os-write-int-const-void-star-usize) or [`os::Read`](#os-read-int-void-star-usize) moves at most 2^31 - 1 bytes and reports a short count, which every caller handles. Writes to a console are converted from UTF-8 and shown with the console's Unicode API; the console's code page is never changed (that would outlive the program in the user's shell). Paths are UTF-8 and become UTF-16 at the call, with `/` turned into `\` and the `\\?\` prefix added to long absolute paths.
+
 ## `StashNativeCommandLine(int,char**)` {#os-stashnativecommandline-int-char-star-star}
 
 `function os::StashNativeCommandLine` — defined in `engine/foundation/os/command_line.h`
@@ -22,7 +24,7 @@ void StashNativeCommandLine(int argc, char** argv);
 
 Records the process `argc`/`argv` so [`os::CommandLine::FromNative`](#os-commandline-fromnative-allocator-amp) can read them later.
 
-Call once from the program entry point before `FromNative`. On platforms that source arguments another way this is a no-op.
+Call once from the program entry point before `FromNative`. On platforms that source arguments another way this is a no-op. On Windows `argv` holds UTF-8, because every executable's manifest sets the process code page to UTF-8 and the C runtime builds `argv` with it.
 
 | Field | Value |
 |---|---|
@@ -254,6 +256,23 @@ Returns the value of the flag at `index`.
 | Aborts | `index` is out of range, or the flag has no value. |
 | Ownership | the view is borrowed from this object and valid for its lifetime. |
 
+## `VulkanLoaderName()` {#os-vulkanloadername}
+
+`function os::VulkanLoaderName` — defined in `engine/foundation/os/gpu_driver_probe.h`
+
+```cpp
+const char* VulkanLoaderName();
+```
+
+Returns the file name of this platform's Vulkan loader library: `libvulkan.so.1` on Linux, `vulkan-1.dll` on Windows.
+
+The one place the name is chosen; the GPU driver probe and the Vulkan backend's loader both use it.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe. |
+| Ownership | a static string, never freed. |
+
 ## `ProbeVulkanCreateInstance()` {#os-probevulkancreateinstance}
 
 `function os::ProbeVulkanCreateInstance` — defined in `engine/foundation/os/gpu_driver_probe.h`
@@ -262,7 +281,7 @@ Returns the value of the flag at `index`.
 PFN_vkVoidFunction ProbeVulkanCreateInstance();
 ```
 
-Loads `libvulkan.so.1` and resolves `vkCreateInstance` through `vkGetInstanceProcAddr`.
+Loads the Vulkan loader ([`os::VulkanLoaderName`](#os-vulkanloadername)) and resolves `vkCreateInstance` through `vkGetInstanceProcAddr`.
 
 Each step is logged on the platform log channel, including which step failed.
 
@@ -330,7 +349,7 @@ Reads up to `len` bytes from file descriptor `fd` into `buf`.
 | Parameter `fd` | an open file descriptor. |
 | Parameter `buf` | destination buffer of at least `len` bytes; borrowed for the call. |
 | Parameter `len` | maximum number of bytes to read. |
-| Returns | the number of bytes read, 0 at end of file, or -1 on error. |
+| Returns | the number of bytes read, 0 at end of file (on Windows also when the other end of a pipe was closed), or -1 on error. |
 
 ## `WriteAllWithTimeout(int,const void*,usize,u64)` {#os-writeallwithtimeout-int-const-void-star-usize-u64}
 
@@ -349,7 +368,7 @@ Writes all `len` bytes to `fd`, retrying short and interrupted writes, but never
 | Parameter `len` | number of bytes. |
 | Parameter `timeout_nanos` | longest total wait; 0 means one attempt without waiting. |
 | Returns | the number of bytes written, which is less than `len` if the wait ran out or the write failed. |
-| Fails | returns fewer bytes than asked; never blocks past the timeout. |
+| Fails | returns fewer bytes than asked; never blocks past the timeout. On Windows a blocking write (a pipe whose reader stopped, a console the user paused) cannot be bounded, so the writes run on a helper thread from a 64 KiB static buffer and the call waits only until the deadline: a write still blocked then may complete after the call returned, and later calls return 0 at once until it has. |
 | Thread-safety | thread-safe. Async-signal-safe. |
 
 ## `Open(StringView,int,int)` {#os-open-stringview-int-int}
@@ -435,7 +454,7 @@ Returns memory obtained from [`os::ReserveMemory`](#os-reservememory-usize) to t
 | Field | Value |
 |---|---|
 | Parameter `addr` | base address returned by [`os::ReserveMemory`](#os-reservememory-usize). |
-| Parameter `size` | the size passed to [`os::ReserveMemory`](#os-reservememory-usize). |
+| Parameter `size` | the size passed to [`os::ReserveMemory`](#os-reservememory-usize) (Windows releases the whole reservation and does not use it). |
 
 ## `MonotonicTimeNanos()` {#os-monotonictimenanos}
 
@@ -463,7 +482,7 @@ void SleepNanos(u64 nanos);
 
 Blocks the calling thread for at least `nanos` nanoseconds.
 
-May sleep longer under scheduler contention; interrupted sleeps are resumed, so it never returns early.
+May sleep longer under scheduler contention; interrupted sleeps are resumed, so it never returns early. On Windows the wait is a high-resolution timer, which on the development PC wakes in steps of about half a millisecond: 100 us took at least 0.51 ms there.
 
 | Field | Value |
 |---|---|
@@ -487,7 +506,9 @@ Opaque per-platform dynamic-library handle; `nullptr` means not loaded.
 DynamicLibraryHandle LoadLibrary(StringView path);
 ```
 
-Loads the shared library at `path` (for example `"libvulkan.so.1"`).
+Loads the shared library at `path` (for example `"libvulkan.so.1"`, `"vulkan-1.dll"`).
+
+On Windows the current directory is never searched: a bare name is looked for in the program's directory, System32 and the directories added with `AddDllDirectory`; an absolute path is loaded as named; a relative path with a directory in it is refused.
 
 | Field | Value |
 |---|---|
@@ -547,6 +568,8 @@ bool EnvironmentEntry(usize index, char* buffer, usize capacity, usize* length);
 ```
 
 Copies one environment entry as `NAME=value` into the caller's buffer.
+
+On Windows the entries are the process environment converted from UTF-16 (an unpaired surrogate becomes U+FFFD), without the `=C:=C:\dir` entries Windows keeps for each drive's current directory, which are not variables; [`os::EnvironmentCount`](#os-environmentcount) skips them too.
 
 | Field | Value |
 |---|---|
@@ -623,6 +646,8 @@ SessionState QuerySessionState();
 ```
 
 Asks the platform for the state of the current session: the one the calling process belongs to, which is not necessarily the one that owns the display it will open a window on (a program started over ssh reports the ssh session).
+
+Linux asks systemd-logind; Windows reads the session's connect state (`WTSQuerySessionInformation`, not `WTSActive` is `Inactive`) and the input desktop's name (not `Default` is `Locked`) and never reports `Idle`.
 
 | Field | Value |
 |---|---|

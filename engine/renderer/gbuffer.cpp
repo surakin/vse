@@ -222,7 +222,7 @@ struct GBufferPass::SortEntry {
     const GpuMesh* mesh = nullptr;
 };
 
-GBufferPass::GBufferPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame) : device_(device), materials_(materials), frame_(frame) {
+GBufferPass::GBufferPass(rhi::Device* device, MaterialSystem* materials, FrameResources* frame) : materials_(materials), frame_(frame) {
     ENGINE_ASSERT(device != nullptr && materials != nullptr && frame != nullptr, "GBufferPass: device, materials or frame is null");
     const u32 cap = frame->MaxObjects();
     if (!draws_.TryResize(cap) || !slots_.TryResize(cap) || !sort_scratch_.TryResize(cap)) {

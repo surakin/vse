@@ -509,7 +509,7 @@ TEST_CASE("An accepted change is published only after the apply function accepts
         bool accept = false;
     } seen{&app.registry, app.width};
     ChangeRequest request{app.width, Value::FromInt(2000)};
-    SetResult r = settings.Apply(&request, 1, [](void* u, const ChangeEvent& e) {
+    SetResult r = settings.Apply(&request, 1, [](void* u, const ChangeEvent&) {
         Seen* s = static_cast<Seen*>(u);
         s->during = Setting<i64>(*s->registry, s->id).Get(); // handles still show the old value while the consumer decides
         return s->accept;

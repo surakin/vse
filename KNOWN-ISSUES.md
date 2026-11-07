@@ -44,6 +44,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - Phase 8 Day 103 (2026-11-06): the development machine has one Vulkan adapter (RTX 3060; `vulkaninfo` lists one, only the NVIDIA ICD is installed), so switching the GPU at run time cannot be exercised on real hardware here; adapter selection is tested on the null backend's fake adapters, and the Vulkan test will run on the one adapter. A machine with two GPUs is needed for this check.
 - Phase 8 Day 103 spike: each Vulkan device creation leaves about 3 allocations (about 2 KiB) held through `libdbus-1.so` (the driver's loader path, covered by `tests/rhi/lsan.supp`'s existing entry); 20 creations under ASan counted 60 suppressed allocations. A 100-reset loop retains about 200 KiB; the loop test budgets for it.
 - Phase 8 Day 103 spike: after an injected device loss, resident memory rose 5.4 MiB (26412 to 31812 KiB) and stayed there for the next two iterations; one sample, not investigated. Day 111: not reproduced; eight injected losses on one process cost 268 KiB resident.
+- Warnings as errors (2026-11-07, CLAUDE.md): `-Wall -Wextra -Werror` is verified with Clang on Linux only (unity and non-unity, plain/asan/tsan targets). The Windows `/W4 /WX` (cl) and clang-cl settings were added without a Windows build, so the first Windows build may stop on warnings the Windows days introduced; GCC is not tested (it reports `-Wformat-truncation` on several `snprintf` calls Clang does not).
 
 ## Deferred items
 

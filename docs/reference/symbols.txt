@@ -139,30 +139,30 @@ AsByteSpan(StringView)	function	foundation/containers	asbytespan-stringview	foun
 ToStringView(ByteSpan)	function	foundation/containers	tostringview-bytespan	foundation-containers.md	engine/foundation/containers/span.h:150
 Append(Vector<T,A>&,std::type_identity_t<Span<const T>>)	function	foundation/containers	append-vector-lt-t-a-gt-amp-std-type-identity-t-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:157
 Assign(Vector<T,A>&,std::type_identity_t<Span<const T>>)	function	foundation/containers	assign-vector-lt-t-a-gt-amp-std-type-identity-t-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:182
-DefaultDelete	struct	foundation/containers	defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:22
-DefaultDelete::DefaultDelete()	function	foundation/containers	defaultdelete-defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:25
-DefaultDelete::DefaultDelete(const DefaultDelete<U>&)	function	foundation/containers	defaultdelete-defaultdelete-const-defaultdelete-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:27
-DefaultDelete::operator()(T*) const	function	foundation/containers	defaultdelete-operator-call-t-star-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:38
-UniquePtr	class	foundation/containers	uniqueptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:54
-UniquePtr::UniquePtr()	function	foundation/containers	uniqueptr-uniqueptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:58
-UniquePtr::UniquePtr(decltype(nullptr))	function	foundation/containers	uniqueptr-uniqueptr-decltype-nullptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:60
-UniquePtr::UniquePtr(T*,Deleter)	function	foundation/containers	uniqueptr-uniqueptr-t-star-deleter	foundation-containers.md	engine/foundation/containers/unique_ptr.h:66
-UniquePtr::~UniquePtr()	function	foundation/containers	uniqueptr-tilde-uniqueptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:69
-UniquePtr::UniquePtr(const UniquePtr&)	function	foundation/containers	uniqueptr-uniqueptr-const-uniqueptr-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:71
-UniquePtr::operator=(const UniquePtr&)	function	foundation/containers	uniqueptr-operator-eq-const-uniqueptr-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:72
-UniquePtr::UniquePtr(UniquePtr&&) noexcept	function	foundation/containers	uniqueptr-uniqueptr-uniqueptr-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/unique_ptr.h:75
-UniquePtr::UniquePtr(UniquePtr<U,E>&&) noexcept	function	foundation/containers	uniqueptr-uniqueptr-uniqueptr-lt-u-e-gt-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/unique_ptr.h:78
-UniquePtr::operator=(UniquePtr&&) noexcept	function	foundation/containers	uniqueptr-operator-eq-uniqueptr-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/unique_ptr.h:83
-UniquePtr::operator=(decltype(nullptr))	function	foundation/containers	uniqueptr-operator-eq-decltype-nullptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:93
-UniquePtr::Get() const	function	foundation/containers	uniqueptr-get-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:104
-UniquePtr::operator->() const	function	foundation/containers	uniqueptr-operator-minus-gt-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:108
-UniquePtr::operator*() const	function	foundation/containers	uniqueptr-operator-star-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:110
-UniquePtr::operator bool() const	function	foundation/containers	uniqueptr-operator-bool-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:112
-UniquePtr::Release()	function	foundation/containers	uniqueptr-release	foundation-containers.md	engine/foundation/containers/unique_ptr.h:115
-UniquePtr::Reset(T*)	function	foundation/containers	uniqueptr-reset-t-star	foundation-containers.md	engine/foundation/containers/unique_ptr.h:124
-UniquePtr::GetDeleter()	function	foundation/containers	uniqueptr-getdeleter	foundation-containers.md	engine/foundation/containers/unique_ptr.h:133
-UniquePtr::GetDeleter() const	function	foundation/containers	uniqueptr-getdeleter-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:135
-MakeUnique(Args&&...)	function	foundation/containers	makeunique-args-amp-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:149
+DefaultDelete	struct	foundation/containers	defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:23
+DefaultDelete::DefaultDelete()	function	foundation/containers	defaultdelete-defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:26
+DefaultDelete::DefaultDelete(const DefaultDelete<U>&)	function	foundation/containers	defaultdelete-defaultdelete-const-defaultdelete-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:28
+DefaultDelete::operator()(T*) const	function	foundation/containers	defaultdelete-operator-call-t-star-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:39
+UniquePtr	class	foundation/containers	uniqueptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:55
+UniquePtr::UniquePtr()	function	foundation/containers	uniqueptr-uniqueptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:59
+UniquePtr::UniquePtr(decltype(nullptr))	function	foundation/containers	uniqueptr-uniqueptr-decltype-nullptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:61
+UniquePtr::UniquePtr(T*,Deleter)	function	foundation/containers	uniqueptr-uniqueptr-t-star-deleter	foundation-containers.md	engine/foundation/containers/unique_ptr.h:67
+UniquePtr::~UniquePtr()	function	foundation/containers	uniqueptr-tilde-uniqueptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:70
+UniquePtr::UniquePtr(const UniquePtr&)	function	foundation/containers	uniqueptr-uniqueptr-const-uniqueptr-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:72
+UniquePtr::operator=(const UniquePtr&)	function	foundation/containers	uniqueptr-operator-eq-const-uniqueptr-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:73
+UniquePtr::UniquePtr(UniquePtr&&) noexcept	function	foundation/containers	uniqueptr-uniqueptr-uniqueptr-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/unique_ptr.h:76
+UniquePtr::UniquePtr(UniquePtr<U,E>&&) noexcept	function	foundation/containers	uniqueptr-uniqueptr-uniqueptr-lt-u-e-gt-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/unique_ptr.h:79
+UniquePtr::operator=(UniquePtr&&) noexcept	function	foundation/containers	uniqueptr-operator-eq-uniqueptr-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/unique_ptr.h:84
+UniquePtr::operator=(decltype(nullptr))	function	foundation/containers	uniqueptr-operator-eq-decltype-nullptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:94
+UniquePtr::Get() const	function	foundation/containers	uniqueptr-get-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:105
+UniquePtr::operator->() const	function	foundation/containers	uniqueptr-operator-minus-gt-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:109
+UniquePtr::operator*() const	function	foundation/containers	uniqueptr-operator-star-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:111
+UniquePtr::operator bool() const	function	foundation/containers	uniqueptr-operator-bool-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:113
+UniquePtr::Release()	function	foundation/containers	uniqueptr-release	foundation-containers.md	engine/foundation/containers/unique_ptr.h:116
+UniquePtr::Reset(T*)	function	foundation/containers	uniqueptr-reset-t-star	foundation-containers.md	engine/foundation/containers/unique_ptr.h:125
+UniquePtr::GetDeleter()	function	foundation/containers	uniqueptr-getdeleter	foundation-containers.md	engine/foundation/containers/unique_ptr.h:134
+UniquePtr::GetDeleter() const	function	foundation/containers	uniqueptr-getdeleter-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:136
+MakeUnique(Args&&...)	function	foundation/containers	makeunique-args-amp-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:150
 Vector	class	foundation/containers	vector	foundation-containers.md	engine/foundation/containers/vector.h:30
 Vector::Vector(Allocator&)	function	foundation/containers	vector-vector-allocator-amp	foundation-containers.md	engine/foundation/containers/vector.h:37
 Vector::Vector()	function	foundation/containers	vector-vector	foundation-containers.md	engine/foundation/containers/vector.h:42
@@ -424,41 +424,41 @@ io::File::File()	function	foundation/io	io-file-file	foundation-io.md	engine/fou
 io::File::File(const File&)	function	foundation/io	io-file-file-const-file-amp	foundation-io.md	engine/foundation/io/file.h:147
 io::File::operator=(const File&)	function	foundation/io	io-file-operator-eq-const-file-amp	foundation-io.md	engine/foundation/io/file.h:148
 io::File::~File()	function	foundation/io	io-file-tilde-file	foundation-io.md	engine/foundation/io/file.h:150
-io::File::Open(const Path&,OpenMode,u32,FilePtr*)	function	foundation/io	io-file-open-const-path-amp-openmode-u32-fileptr-star	foundation-io.md	engine/foundation/io/file.h:164
-io::File::OpenLocation(StringView,OpenMode,u32,FilePtr*)	function	foundation/io	io-file-openlocation-stringview-openmode-u32-fileptr-star	foundation-io.md	engine/foundation/io/file.h:171
-io::File::IsOpen() const	function	foundation/io	io-file-isopen-const	foundation-io.md	engine/foundation/io/file.h:174
-io::File::Capabilities() const	function	foundation/io	io-file-capabilities-const	foundation-io.md	engine/foundation/io/file.h:176
-io::File::Size(u64*)	function	foundation/io	io-file-size-u64-star	foundation-io.md	engine/foundation/io/file.h:180
-io::File::Read(void*,usize,u64,usize*)	function	foundation/io	io-file-read-void-star-usize-u64-usize-star	foundation-io.md	engine/foundation/io/file.h:187
-io::File::Write(const void*,usize,u64)	function	foundation/io	io-file-write-const-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:191
-io::File::Append(const void*,usize)	function	foundation/io	io-file-append-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:195
-io::File::Flush()	function	foundation/io	io-file-flush	foundation-io.md	engine/foundation/io/file.h:197
-io::File::Sync()	function	foundation/io	io-file-sync	foundation-io.md	engine/foundation/io/file.h:201
-io::File::Truncate(u64)	function	foundation/io	io-file-truncate-u64	foundation-io.md	engine/foundation/io/file.h:205
-io::File::Close()	function	foundation/io	io-file-close	foundation-io.md	engine/foundation/io/file.h:209
-io::File::Seek(u64)	function	foundation/io	io-file-seek-u64	foundation-io.md	engine/foundation/io/file.h:214
-io::File::Tell() const	function	foundation/io	io-file-tell-const	foundation-io.md	engine/foundation/io/file.h:216
-io::File::Read(void*,usize,usize*)	function	foundation/io	io-file-read-void-star-usize-usize-star	foundation-io.md	engine/foundation/io/file.h:218
-io::File::Write(const void*,usize)	function	foundation/io	io-file-write-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:220
-io::File::Read(MutableByteSpan,usize*)	function	foundation/io	io-file-read-mutablebytespan-usize-star	foundation-io.md	engine/foundation/io/file.h:222
-io::File::Write(ByteSpan)	function	foundation/io	io-file-write-bytespan	foundation-io.md	engine/foundation/io/file.h:224
-io::File::ReadAsync(AsyncRequest*,void*,usize,u64,Completion,void*)	function	foundation/io	io-file-readasync-asyncrequest-star-void-star-usize-u64-completion-void-star	foundation-io.md	engine/foundation/io/file.h:233
-io::File::WriteAsync(AsyncRequest*,const void*,usize,u64,Completion,void*)	function	foundation/io	io-file-writeasync-asyncrequest-star-const-void-star-usize-u64-completion-void-star	foundation-io.md	engine/foundation/io/file.h:237
-io::File::FlushAsync(AsyncRequest*,Completion,void*)	function	foundation/io	io-file-flushasync-asyncrequest-star-completion-void-star	foundation-io.md	engine/foundation/io/file.h:241
-io::File::Cancel(AsyncRequest*)	function	foundation/io	io-file-cancel-asyncrequest-star	foundation-io.md	engine/foundation/io/file.h:245
-io::FileFactory	alias	foundation/io	io-filefactory	foundation-io.md	engine/foundation/io/file.h:276
-io::RegisterFileScheme(StringView,FileFactory)	function	foundation/io	io-registerfilescheme-stringview-filefactory	foundation-io.md	engine/foundation/io/file.h:283
-io::UnregisterFileScheme(StringView)	function	foundation/io	io-unregisterfilescheme-stringview	foundation-io.md	engine/foundation/io/file.h:285
-io::ReadExact(File&,void*,usize,u64)	function	foundation/io	io-readexact-file-amp-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:290
-io::ReadAll(File&,Vector<u8>*,u64)	function	foundation/io	io-readall-file-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:295
-io::ReadAll(File&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readall-file-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:301
-io::ReadFile(const Path&,Vector<u8>*,u64)	function	foundation/io	io-readfile-const-path-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:306
-io::ReadFile(const Path&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readfile-const-path-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:310
-io::ReadTextFile(const Path&,String<HeapAllocator>*,u64)	function	foundation/io	io-readtextfile-const-path-amp-string-lt-heapallocator-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:314
-io::WriteFile(const Path&,const void*,usize)	function	foundation/io	io-writefile-const-path-amp-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:318
-io::WriteFile(const Path&,ByteSpan)	function	foundation/io	io-writefile-const-path-amp-bytespan	foundation-io.md	engine/foundation/io/file.h:320
-io::WriteFileAtomic(const Path&,const void*,usize,u32)	function	foundation/io	io-writefileatomic-const-path-amp-const-void-star-usize-u32	foundation-io.md	engine/foundation/io/file.h:331
-io::WriteFileAtomic(const Path&,ByteSpan,u32)	function	foundation/io	io-writefileatomic-const-path-amp-bytespan-u32	foundation-io.md	engine/foundation/io/file.h:333
+io::File::Open(const Path&,OpenMode,u32,FilePtr*)	function	foundation/io	io-file-open-const-path-amp-openmode-u32-fileptr-star	foundation-io.md	engine/foundation/io/file.h:167
+io::File::OpenLocation(StringView,OpenMode,u32,FilePtr*)	function	foundation/io	io-file-openlocation-stringview-openmode-u32-fileptr-star	foundation-io.md	engine/foundation/io/file.h:174
+io::File::IsOpen() const	function	foundation/io	io-file-isopen-const	foundation-io.md	engine/foundation/io/file.h:177
+io::File::Capabilities() const	function	foundation/io	io-file-capabilities-const	foundation-io.md	engine/foundation/io/file.h:179
+io::File::Size(u64*)	function	foundation/io	io-file-size-u64-star	foundation-io.md	engine/foundation/io/file.h:183
+io::File::Read(void*,usize,u64,usize*)	function	foundation/io	io-file-read-void-star-usize-u64-usize-star	foundation-io.md	engine/foundation/io/file.h:190
+io::File::Write(const void*,usize,u64)	function	foundation/io	io-file-write-const-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:194
+io::File::Append(const void*,usize)	function	foundation/io	io-file-append-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:198
+io::File::Flush()	function	foundation/io	io-file-flush	foundation-io.md	engine/foundation/io/file.h:200
+io::File::Sync()	function	foundation/io	io-file-sync	foundation-io.md	engine/foundation/io/file.h:204
+io::File::Truncate(u64)	function	foundation/io	io-file-truncate-u64	foundation-io.md	engine/foundation/io/file.h:208
+io::File::Close()	function	foundation/io	io-file-close	foundation-io.md	engine/foundation/io/file.h:212
+io::File::Seek(u64)	function	foundation/io	io-file-seek-u64	foundation-io.md	engine/foundation/io/file.h:217
+io::File::Tell() const	function	foundation/io	io-file-tell-const	foundation-io.md	engine/foundation/io/file.h:219
+io::File::Read(void*,usize,usize*)	function	foundation/io	io-file-read-void-star-usize-usize-star	foundation-io.md	engine/foundation/io/file.h:221
+io::File::Write(const void*,usize)	function	foundation/io	io-file-write-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:223
+io::File::Read(MutableByteSpan,usize*)	function	foundation/io	io-file-read-mutablebytespan-usize-star	foundation-io.md	engine/foundation/io/file.h:225
+io::File::Write(ByteSpan)	function	foundation/io	io-file-write-bytespan	foundation-io.md	engine/foundation/io/file.h:227
+io::File::ReadAsync(AsyncRequest*,void*,usize,u64,Completion,void*)	function	foundation/io	io-file-readasync-asyncrequest-star-void-star-usize-u64-completion-void-star	foundation-io.md	engine/foundation/io/file.h:236
+io::File::WriteAsync(AsyncRequest*,const void*,usize,u64,Completion,void*)	function	foundation/io	io-file-writeasync-asyncrequest-star-const-void-star-usize-u64-completion-void-star	foundation-io.md	engine/foundation/io/file.h:240
+io::File::FlushAsync(AsyncRequest*,Completion,void*)	function	foundation/io	io-file-flushasync-asyncrequest-star-completion-void-star	foundation-io.md	engine/foundation/io/file.h:244
+io::File::Cancel(AsyncRequest*)	function	foundation/io	io-file-cancel-asyncrequest-star	foundation-io.md	engine/foundation/io/file.h:248
+io::FileFactory	alias	foundation/io	io-filefactory	foundation-io.md	engine/foundation/io/file.h:279
+io::RegisterFileScheme(StringView,FileFactory)	function	foundation/io	io-registerfilescheme-stringview-filefactory	foundation-io.md	engine/foundation/io/file.h:286
+io::UnregisterFileScheme(StringView)	function	foundation/io	io-unregisterfilescheme-stringview	foundation-io.md	engine/foundation/io/file.h:288
+io::ReadExact(File&,void*,usize,u64)	function	foundation/io	io-readexact-file-amp-void-star-usize-u64	foundation-io.md	engine/foundation/io/file.h:293
+io::ReadAll(File&,Vector<u8>*,u64)	function	foundation/io	io-readall-file-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:298
+io::ReadAll(File&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readall-file-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:304
+io::ReadFile(const Path&,Vector<u8>*,u64)	function	foundation/io	io-readfile-const-path-amp-vector-lt-u8-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:309
+io::ReadFile(const Path&,ArenaAllocator&,u8**,usize*,u64)	function	foundation/io	io-readfile-const-path-amp-arenaallocator-amp-u8-star-star-usize-star-u64	foundation-io.md	engine/foundation/io/file.h:313
+io::ReadTextFile(const Path&,String<HeapAllocator>*,u64)	function	foundation/io	io-readtextfile-const-path-amp-string-lt-heapallocator-gt-star-u64	foundation-io.md	engine/foundation/io/file.h:317
+io::WriteFile(const Path&,const void*,usize)	function	foundation/io	io-writefile-const-path-amp-const-void-star-usize	foundation-io.md	engine/foundation/io/file.h:321
+io::WriteFile(const Path&,ByteSpan)	function	foundation/io	io-writefile-const-path-amp-bytespan	foundation-io.md	engine/foundation/io/file.h:323
+io::WriteFileAtomic(const Path&,const void*,usize,u32)	function	foundation/io	io-writefileatomic-const-path-amp-const-void-star-usize-u32	foundation-io.md	engine/foundation/io/file.h:334
+io::WriteFileAtomic(const Path&,ByteSpan,u32)	function	foundation/io	io-writefileatomic-const-path-amp-bytespan-u32	foundation-io.md	engine/foundation/io/file.h:336
 io::FileType	enum	foundation/io	io-filetype	foundation-io.md	engine/foundation/io/file_system.h:16
 io::FileType::None	enumerator	foundation/io	io-filetype-none	foundation-io.md	engine/foundation/io/file_system.h:17
 io::FileType::Regular	enumerator	foundation/io	io-filetype-regular	foundation-io.md	engine/foundation/io/file_system.h:18
@@ -471,36 +471,36 @@ io::FileInfo::size	variable	foundation/io	io-fileinfo-size	foundation-io.md	engi
 io::FileInfo::modified_unix_ns	variable	foundation/io	io-fileinfo-modified-unix-ns	foundation-io.md	engine/foundation/io/file_system.h:30
 io::FileInfo::permissions	variable	foundation/io	io-fileinfo-permissions	foundation-io.md	engine/foundation/io/file_system.h:31
 io::FileInfo::read_only	variable	foundation/io	io-fileinfo-read-only	foundation-io.md	engine/foundation/io/file_system.h:32
-io::Stat(const Path&,FileInfo*)	function	foundation/io	io-stat-const-path-amp-fileinfo-star	foundation-io.md	engine/foundation/io/file_system.h:41
-io::Lstat(const Path&,FileInfo*)	function	foundation/io	io-lstat-const-path-amp-fileinfo-star	foundation-io.md	engine/foundation/io/file_system.h:46
-io::Exists(const Path&)	function	foundation/io	io-exists-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:48
-io::IsFile(const Path&)	function	foundation/io	io-isfile-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:50
-io::IsDirectory(const Path&)	function	foundation/io	io-isdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:52
-io::Remove(const Path&)	function	foundation/io	io-remove-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:58
-io::kRemoveAllMinComponents	variable	foundation/io	io-kremoveallmincomponents	foundation-io.md	engine/foundation/io/file_system.h:60
-io::RemoveAll(const Path&)	function	foundation/io	io-removeall-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:69
-io::Rename(const Path&,const Path&)	function	foundation/io	io-rename-const-path-amp-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:75
-io::Copy(const Path&,const Path&,bool)	function	foundation/io	io-copy-const-path-amp-const-path-amp-bool	foundation-io.md	engine/foundation/io/file_system.h:82
-io::SetPermissions(const Path&,u32)	function	foundation/io	io-setpermissions-const-path-amp-u32	foundation-io.md	engine/foundation/io/file_system.h:88
-io::SyncDirectory(const Path&)	function	foundation/io	io-syncdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:94
-io::CreateDirectory(const Path&)	function	foundation/io	io-createdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:100
-io::CreateDirectories(const Path&)	function	foundation/io	io-createdirectories-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:105
-io::CreatePrivateDirectory(const Path&)	function	foundation/io	io-createprivatedirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:111
-io::CreateTempFile(const Path&,StringView,Path*)	function	foundation/io	io-createtempfile-const-path-amp-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:119
-io::CreateTempDirectory(const Path&,StringView,Path*)	function	foundation/io	io-createtempdirectory-const-path-amp-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:124
-io::CurrentDirectory(Path*)	function	foundation/io	io-currentdirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:130
-io::SetCurrentDirectory(const Path&)	function	foundation/io	io-setcurrentdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:136
-io::Absolute(const Path&,Path*)	function	foundation/io	io-absolute-const-path-amp-path-star	foundation-io.md	engine/foundation/io/file_system.h:142
-io::Canonical(const Path&,Path*)	function	foundation/io	io-canonical-const-path-amp-path-star	foundation-io.md	engine/foundation/io/file_system.h:147
-io::ReadLink(const Path&,Path*)	function	foundation/io	io-readlink-const-path-amp-path-star	foundation-io.md	engine/foundation/io/file_system.h:152
-io::TempDirectory(Path*)	function	foundation/io	io-tempdirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:156
-io::ExecutablePath(Path*)	function	foundation/io	io-executablepath-path-star	foundation-io.md	engine/foundation/io/file_system.h:161
-io::ExecutableDirectory(Path*)	function	foundation/io	io-executabledirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:164
-io::UserConfigDirectory(StringView,Path*)	function	foundation/io	io-userconfigdirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:171
-io::UserCacheDirectory(StringView,Path*)	function	foundation/io	io-usercachedirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:176
-io::UserDataDirectory(StringView,Path*)	function	foundation/io	io-userdatadirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:181
-io::UserStateDirectory(StringView,Path*)	function	foundation/io	io-userstatedirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:186
-io::CrashDumpDirectory(Path*)	function	foundation/io	io-crashdumpdirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:197
+io::Stat(const Path&,FileInfo*)	function	foundation/io	io-stat-const-path-amp-fileinfo-star	foundation-io.md	engine/foundation/io/file_system.h:42
+io::Lstat(const Path&,FileInfo*)	function	foundation/io	io-lstat-const-path-amp-fileinfo-star	foundation-io.md	engine/foundation/io/file_system.h:47
+io::Exists(const Path&)	function	foundation/io	io-exists-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:49
+io::IsFile(const Path&)	function	foundation/io	io-isfile-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:51
+io::IsDirectory(const Path&)	function	foundation/io	io-isdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:53
+io::Remove(const Path&)	function	foundation/io	io-remove-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:59
+io::kRemoveAllMinComponents	variable	foundation/io	io-kremoveallmincomponents	foundation-io.md	engine/foundation/io/file_system.h:61
+io::RemoveAll(const Path&)	function	foundation/io	io-removeall-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:70
+io::Rename(const Path&,const Path&)	function	foundation/io	io-rename-const-path-amp-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:76
+io::Copy(const Path&,const Path&,bool)	function	foundation/io	io-copy-const-path-amp-const-path-amp-bool	foundation-io.md	engine/foundation/io/file_system.h:83
+io::SetPermissions(const Path&,u32)	function	foundation/io	io-setpermissions-const-path-amp-u32	foundation-io.md	engine/foundation/io/file_system.h:89
+io::SyncDirectory(const Path&)	function	foundation/io	io-syncdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:95
+io::CreateDirectory(const Path&)	function	foundation/io	io-createdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:101
+io::CreateDirectories(const Path&)	function	foundation/io	io-createdirectories-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:106
+io::CreatePrivateDirectory(const Path&)	function	foundation/io	io-createprivatedirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:112
+io::CreateTempFile(const Path&,StringView,Path*)	function	foundation/io	io-createtempfile-const-path-amp-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:120
+io::CreateTempDirectory(const Path&,StringView,Path*)	function	foundation/io	io-createtempdirectory-const-path-amp-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:125
+io::CurrentDirectory(Path*)	function	foundation/io	io-currentdirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:131
+io::SetCurrentDirectory(const Path&)	function	foundation/io	io-setcurrentdirectory-const-path-amp	foundation-io.md	engine/foundation/io/file_system.h:137
+io::Absolute(const Path&,Path*)	function	foundation/io	io-absolute-const-path-amp-path-star	foundation-io.md	engine/foundation/io/file_system.h:143
+io::Canonical(const Path&,Path*)	function	foundation/io	io-canonical-const-path-amp-path-star	foundation-io.md	engine/foundation/io/file_system.h:148
+io::ReadLink(const Path&,Path*)	function	foundation/io	io-readlink-const-path-amp-path-star	foundation-io.md	engine/foundation/io/file_system.h:153
+io::TempDirectory(Path*)	function	foundation/io	io-tempdirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:157
+io::ExecutablePath(Path*)	function	foundation/io	io-executablepath-path-star	foundation-io.md	engine/foundation/io/file_system.h:162
+io::ExecutableDirectory(Path*)	function	foundation/io	io-executabledirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:165
+io::UserConfigDirectory(StringView,Path*)	function	foundation/io	io-userconfigdirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:172
+io::UserCacheDirectory(StringView,Path*)	function	foundation/io	io-usercachedirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:177
+io::UserDataDirectory(StringView,Path*)	function	foundation/io	io-userdatadirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:182
+io::UserStateDirectory(StringView,Path*)	function	foundation/io	io-userstatedirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:187
+io::CrashDumpDirectory(Path*)	function	foundation/io	io-crashdumpdirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:198
 io::PathStyle	enum	foundation/io	io-pathstyle	foundation-io.md	engine/foundation/io/path.h:18
 io::PathStyle::Posix	enumerator	foundation/io	io-pathstyle-posix	foundation-io.md	engine/foundation/io/path.h:19
 io::PathStyle::Windows	enumerator	foundation/io	io-pathstyle-windows	foundation-io.md	engine/foundation/io/path.h:20
@@ -1327,42 +1327,43 @@ settings::Value::AsEnum() const	function	foundation/settings	settings-value-asen
 settings::Value::AsText() const	function	foundation/settings	settings-value-astext-const	foundation-settings.md	engine/foundation/settings/value.h:74
 settings::Value::operator==(const Value&) const	function	foundation/settings	settings-value-operator-eq-eq-const-value-amp-const	foundation-settings.md	engine/foundation/settings/value.h:77
 settings::Value::operator!=(const Value&) const	function	foundation/settings	settings-value-operator-not-eq-const-value-amp-const	foundation-settings.md	engine/foundation/settings/value.h:79
-os::StashNativeCommandLine(int,char**)	function	platform/os	os-stashnativecommandline-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:20
-os::CommandLine	class	platform/os	os-commandline	platform-os.md	engine/foundation/os/command_line.h:38
-os::CommandLine::CommandLine(Allocator&,int,char**)	function	platform/os	os-commandline-commandline-allocator-amp-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:49
-os::CommandLine::FromNative(Allocator&)	function	platform/os	os-commandline-fromnative-allocator-amp	platform-os.md	engine/foundation/os/command_line.h:74
-os::CommandLine::CommandLine(const CommandLine&)	function	platform/os	os-commandline-commandline-const-commandline-amp	platform-os.md	engine/foundation/os/command_line.h:81
-os::CommandLine::operator=(const CommandLine&)	function	platform/os	os-commandline-operator-eq-const-commandline-amp	platform-os.md	engine/foundation/os/command_line.h:82
-os::CommandLine::CommandLine(CommandLine&&) noexcept	function	platform/os	os-commandline-commandline-commandline-amp-amp-noexcept	platform-os.md	engine/foundation/os/command_line.h:83
-os::CommandLine::operator=(CommandLine&&) noexcept	function	platform/os	os-commandline-operator-eq-commandline-amp-amp-noexcept	platform-os.md	engine/foundation/os/command_line.h:84
-os::CommandLine::ProgramName() const	function	platform/os	os-commandline-programname-const	platform-os.md	engine/foundation/os/command_line.h:88
-os::CommandLine::ArgCount() const	function	platform/os	os-commandline-argcount-const	platform-os.md	engine/foundation/os/command_line.h:91
-os::CommandLine::Arg(usize) const	function	platform/os	os-commandline-arg-usize-const	platform-os.md	engine/foundation/os/command_line.h:97
-os::CommandLine::HasFlag(StringView) const	function	platform/os	os-commandline-hasflag-stringview-const	platform-os.md	engine/foundation/os/command_line.h:104
-os::CommandLine::TryGetOption(StringView,StringView&) const	function	platform/os	os-commandline-trygetoption-stringview-stringview-amp-const	platform-os.md	engine/foundation/os/command_line.h:112
-os::CommandLine::FlagCount() const	function	platform/os	os-commandline-flagcount-const	platform-os.md	engine/foundation/os/command_line.h:122
-os::CommandLine::FlagName(usize) const	function	platform/os	os-commandline-flagname-usize-const	platform-os.md	engine/foundation/os/command_line.h:128
-os::CommandLine::FlagHasValue(usize) const	function	platform/os	os-commandline-flaghasvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:136
-os::CommandLine::FlagValue(usize) const	function	platform/os	os-commandline-flagvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:145
-os::ProbeVulkanCreateInstance()	function	platform/os	os-probevulkancreateinstance	platform-os.md	engine/foundation/os/gpu_driver_probe.h:15
-os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/foundation/os/os.h:18
-os::Exit(int)	function	platform/os	os-exit-int	platform-os.md	engine/foundation/os/os.h:22
-os::Write(int,const void*,usize)	function	platform/os	os-write-int-const-void-star-usize	platform-os.md	engine/foundation/os/os.h:29
-os::Read(int,void*,usize)	function	platform/os	os-read-int-void-star-usize	platform-os.md	engine/foundation/os/os.h:36
-os::WriteAllWithTimeout(int,const void*,usize,u64)	function	platform/os	os-writeallwithtimeout-int-const-void-star-usize-u64	platform-os.md	engine/foundation/os/os.h:47
-os::Open(StringView,int,int)	function	platform/os	os-open-stringview-int-int	platform-os.md	engine/foundation/os/os.h:58
-os::CreateFileForWriting(StringView,int)	function	platform/os	os-createfileforwriting-stringview-int	platform-os.md	engine/foundation/os/os.h:68
-os::Close(int)	function	platform/os	os-close-int	platform-os.md	engine/foundation/os/os.h:73
-os::ReserveMemory(usize)	function	platform/os	os-reservememory-usize	platform-os.md	engine/foundation/os/os.h:80
-os::ReleaseMemory(void*,usize)	function	platform/os	os-releasememory-void-star-usize	platform-os.md	engine/foundation/os/os.h:85
-os::MonotonicTimeNanos()	function	platform/os	os-monotonictimenanos	platform-os.md	engine/foundation/os/os.h:93
-os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:99
-os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:102
-os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:109
-os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:117
-os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:121
-os::EnvironmentCount()	function	platform/os	os-environmentcount	platform-os.md	engine/foundation/os/os.h:124
-os::EnvironmentEntry(usize,char*,usize,usize*)	function	platform/os	os-environmententry-usize-char-star-usize-usize-star	platform-os.md	engine/foundation/os/os.h:136
+os::StashNativeCommandLine(int,char**)	function	platform/os	os-stashnativecommandline-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:21
+os::CommandLine	class	platform/os	os-commandline	platform-os.md	engine/foundation/os/command_line.h:39
+os::CommandLine::CommandLine(Allocator&,int,char**)	function	platform/os	os-commandline-commandline-allocator-amp-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:50
+os::CommandLine::FromNative(Allocator&)	function	platform/os	os-commandline-fromnative-allocator-amp	platform-os.md	engine/foundation/os/command_line.h:75
+os::CommandLine::CommandLine(const CommandLine&)	function	platform/os	os-commandline-commandline-const-commandline-amp	platform-os.md	engine/foundation/os/command_line.h:82
+os::CommandLine::operator=(const CommandLine&)	function	platform/os	os-commandline-operator-eq-const-commandline-amp	platform-os.md	engine/foundation/os/command_line.h:83
+os::CommandLine::CommandLine(CommandLine&&) noexcept	function	platform/os	os-commandline-commandline-commandline-amp-amp-noexcept	platform-os.md	engine/foundation/os/command_line.h:84
+os::CommandLine::operator=(CommandLine&&) noexcept	function	platform/os	os-commandline-operator-eq-commandline-amp-amp-noexcept	platform-os.md	engine/foundation/os/command_line.h:85
+os::CommandLine::ProgramName() const	function	platform/os	os-commandline-programname-const	platform-os.md	engine/foundation/os/command_line.h:89
+os::CommandLine::ArgCount() const	function	platform/os	os-commandline-argcount-const	platform-os.md	engine/foundation/os/command_line.h:92
+os::CommandLine::Arg(usize) const	function	platform/os	os-commandline-arg-usize-const	platform-os.md	engine/foundation/os/command_line.h:98
+os::CommandLine::HasFlag(StringView) const	function	platform/os	os-commandline-hasflag-stringview-const	platform-os.md	engine/foundation/os/command_line.h:105
+os::CommandLine::TryGetOption(StringView,StringView&) const	function	platform/os	os-commandline-trygetoption-stringview-stringview-amp-const	platform-os.md	engine/foundation/os/command_line.h:113
+os::CommandLine::FlagCount() const	function	platform/os	os-commandline-flagcount-const	platform-os.md	engine/foundation/os/command_line.h:123
+os::CommandLine::FlagName(usize) const	function	platform/os	os-commandline-flagname-usize-const	platform-os.md	engine/foundation/os/command_line.h:129
+os::CommandLine::FlagHasValue(usize) const	function	platform/os	os-commandline-flaghasvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:137
+os::CommandLine::FlagValue(usize) const	function	platform/os	os-commandline-flagvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:146
+os::VulkanLoaderName()	function	platform/os	os-vulkanloadername	platform-os.md	engine/foundation/os/gpu_driver_probe.h:14
+os::ProbeVulkanCreateInstance()	function	platform/os	os-probevulkancreateinstance	platform-os.md	engine/foundation/os/gpu_driver_probe.h:22
+os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/foundation/os/os.h:25
+os::Exit(int)	function	platform/os	os-exit-int	platform-os.md	engine/foundation/os/os.h:29
+os::Write(int,const void*,usize)	function	platform/os	os-write-int-const-void-star-usize	platform-os.md	engine/foundation/os/os.h:36
+os::Read(int,void*,usize)	function	platform/os	os-read-int-void-star-usize	platform-os.md	engine/foundation/os/os.h:43
+os::WriteAllWithTimeout(int,const void*,usize,u64)	function	platform/os	os-writeallwithtimeout-int-const-void-star-usize-u64	platform-os.md	engine/foundation/os/os.h:56
+os::Open(StringView,int,int)	function	platform/os	os-open-stringview-int-int	platform-os.md	engine/foundation/os/os.h:67
+os::CreateFileForWriting(StringView,int)	function	platform/os	os-createfileforwriting-stringview-int	platform-os.md	engine/foundation/os/os.h:77
+os::Close(int)	function	platform/os	os-close-int	platform-os.md	engine/foundation/os/os.h:82
+os::ReserveMemory(usize)	function	platform/os	os-reservememory-usize	platform-os.md	engine/foundation/os/os.h:89
+os::ReleaseMemory(void*,usize)	function	platform/os	os-releasememory-void-star-usize	platform-os.md	engine/foundation/os/os.h:94
+os::MonotonicTimeNanos()	function	platform/os	os-monotonictimenanos	platform-os.md	engine/foundation/os/os.h:102
+os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:109
+os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:112
+os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:122
+os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:130
+os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:134
+os::EnvironmentCount()	function	platform/os	os-environmentcount	platform-os.md	engine/foundation/os/os.h:137
+os::EnvironmentEntry(usize,char*,usize,usize*)	function	platform/os	os-environmententry-usize-char-star-usize-usize-star	platform-os.md	engine/foundation/os/os.h:151
 os::SessionState	enum	platform/os	os-sessionstate	platform-os.md	engine/foundation/os/session.h:11
 os::SessionState::Active	enumerator	platform/os	os-sessionstate-active	platform-os.md	engine/foundation/os/session.h:12
 os::SessionState::Locked	enumerator	platform/os	os-sessionstate-locked	platform-os.md	engine/foundation/os/session.h:13
@@ -1372,7 +1373,7 @@ os::SessionState::Unknown	enumerator	platform/os	os-sessionstate-unknown	platfor
 os::SessionStateName(SessionState)	function	platform/os	os-sessionstatename-sessionstate	platform-os.md	engine/foundation/os/session.h:20
 os::SessionStateFromFlags(bool,bool,bool,bool)	function	platform/os	os-sessionstatefromflags-bool-bool-bool-bool	platform-os.md	engine/foundation/os/session.h:28
 os::SessionCanShowWindows(SessionState)	function	platform/os	os-sessioncanshowwindows-sessionstate	platform-os.md	engine/foundation/os/session.h:31
-os::QuerySessionState()	function	platform/os	os-querysessionstate	platform-os.md	engine/foundation/os/session.h:39
+os::QuerySessionState()	function	platform/os	os-querysessionstate	platform-os.md	engine/foundation/os/session.h:41
 os::Key	enum	platform/window-input	os-key	platform-window-input.md	engine/platform/input.h:12
 os::Key::Unknown	enumerator	platform/window-input	os-key-unknown	platform-window-input.md	engine/platform/input.h:13
 os::Key::A	enumerator	platform/window-input	os-key-a	platform-window-input.md	engine/platform/input.h:14
@@ -1637,12 +1638,15 @@ os::PlatformWindowHost::operator=(const PlatformWindowHost&)	function	platform/w
 os::PlatformWindowHost::Open(WindowBackend,StringView,u32,u32,InputState*)	function	platform/window-input	os-platformwindowhost-open-windowbackend-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/window_host.h:41
 os::PlatformWindowHost::OpenFromEnvironment(StringView,u32,u32,InputState*)	function	platform/window-input	os-platformwindowhost-openfromenvironment-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/window_host.h:52
 os::PlatformWindowHost::Get()	function	platform/window-input	os-platformwindowhost-get	platform-window-input.md	engine/platform/window_host.h:57
-ENGINE_DEBUG_BREAK	macro	foundation/debug	engine-debug-break	foundation-debug.md	engine/foundation/debug/compiler.h:13
-ENGINE_UNREACHABLE_HINT	macro	foundation/debug	engine-unreachable-hint	foundation-debug.md	engine/foundation/debug/compiler.h:28
-ENGINE_COLD	macro	foundation/debug	engine-cold	foundation-debug.md	engine/foundation/debug/compiler.h:35
-ENGINE_COMPILER_BARRIER	macro	foundation/debug	engine-compiler-barrier	foundation-debug.md	engine/foundation/debug/compiler.h:44
-ENGINE_NOINLINE_LAMBDA	macro	foundation/debug	engine-noinline-lambda	foundation-debug.md	engine/foundation/debug/compiler.h:51
-ENGINE_NOINLINE	macro	foundation/debug	engine-noinline	foundation-debug.md	engine/foundation/debug/compiler.h:59
+ENGINE_DEBUG_BREAK	macro	foundation/debug	engine-debug-break	foundation-debug.md	engine/foundation/debug/compiler.h:14
+ENGINE_TRAP	macro	foundation/debug	engine-trap	foundation-debug.md	engine/foundation/debug/compiler.h:32
+ENGINE_PRINTF_FORMAT	macro	foundation/debug	engine-printf-format	foundation-debug.md	engine/foundation/debug/compiler.h:43
+ENGINE_NO_UNIQUE_ADDRESS	macro	foundation/debug	engine-no-unique-address	foundation-debug.md	engine/foundation/debug/compiler.h:53
+ENGINE_UNREACHABLE_HINT	macro	foundation/debug	engine-unreachable-hint	foundation-debug.md	engine/foundation/debug/compiler.h:62
+ENGINE_COLD	macro	foundation/debug	engine-cold	foundation-debug.md	engine/foundation/debug/compiler.h:69
+ENGINE_COMPILER_BARRIER	macro	foundation/debug	engine-compiler-barrier	foundation-debug.md	engine/foundation/debug/compiler.h:78
+ENGINE_NOINLINE_LAMBDA	macro	foundation/debug	engine-noinline-lambda	foundation-debug.md	engine/foundation/debug/compiler.h:87
+ENGINE_NOINLINE	macro	foundation/debug	engine-noinline	foundation-debug.md	engine/foundation/debug/compiler.h:95
 debug::kMaxBuildIdText	variable	foundation/debug	debug-kmaxbuildidtext	foundation-debug.md	engine/foundation/debug/crash_context.h:11
 debug::kMaxContextPath	variable	foundation/debug	debug-kmaxcontextpath	foundation-debug.md	engine/foundation/debug/crash_context.h:13
 debug::kMaxContextCommandLine	variable	foundation/debug	debug-kmaxcontextcommandline	foundation-debug.md	engine/foundation/debug/crash_context.h:15
@@ -1711,10 +1715,12 @@ debug::CrashReportInfo::has_fault_address	variable	foundation/debug	debug-crashr
 debug::CrashReportInfo::fault_address	variable	foundation/debug	debug-crashreportinfo-fault-address	foundation-debug.md	engine/foundation/debug/crash_report.h:74
 debug::CrashReportInfo::message	variable	foundation/debug	debug-crashreportinfo-message	foundation-debug.md	engine/foundation/debug/crash_report.h:76
 debug::CrashReportInfo::trace	variable	foundation/debug	debug-crashreportinfo-trace	foundation-debug.md	engine/foundation/debug/crash_report.h:78
-debug::CrashReportInfo::thread_id	variable	foundation/debug	debug-crashreportinfo-thread-id	foundation-debug.md	engine/foundation/debug/crash_report.h:81
-debug::WriteCrashReport(const CrashReportSink&,const CrashReportInfo&)	function	foundation/debug	debug-writecrashreport-const-crashreportsink-amp-const-crashreportinfo-amp	foundation-debug.md	engine/foundation/debug/crash_report.h:90
-debug::WriteCrashContext(const CrashReportSink&)	function	foundation/debug	debug-writecrashcontext-const-crashreportsink-amp	foundation-debug.md	engine/foundation/debug/crash_report.h:97
-debug::kCrashReportLogLines	variable	foundation/debug	debug-kcrashreportloglines	foundation-debug.md	engine/foundation/debug/crash_report.h:100
+debug::CrashReportInfo::thread_id	variable	foundation/debug	debug-crashreportinfo-thread-id	foundation-debug.md	engine/foundation/debug/crash_report.h:80
+debug::CrashReportInfo::thread_known	variable	foundation/debug	debug-crashreportinfo-thread-known	foundation-debug.md	engine/foundation/debug/crash_report.h:84
+debug::CrashReportInfo::thread_name	variable	foundation/debug	debug-crashreportinfo-thread-name	foundation-debug.md	engine/foundation/debug/crash_report.h:87
+debug::WriteCrashReport(const CrashReportSink&,const CrashReportInfo&)	function	foundation/debug	debug-writecrashreport-const-crashreportsink-amp-const-crashreportinfo-amp	foundation-debug.md	engine/foundation/debug/crash_report.h:96
+debug::WriteCrashContext(const CrashReportSink&)	function	foundation/debug	debug-writecrashcontext-const-crashreportsink-amp	foundation-debug.md	engine/foundation/debug/crash_report.h:103
+debug::kCrashReportLogLines	variable	foundation/debug	debug-kcrashreportloglines	foundation-debug.md	engine/foundation/debug/crash_report.h:106
 debug::kCrashStateEntryTextBytes	variable	foundation/debug	debug-kcrashstateentrytextbytes	foundation-debug.md	engine/foundation/debug/crash_state.h:13
 debug::SetCrashStateText(const char*,const char*)	function	foundation/debug	debug-setcrashstatetext-const-char-star-const-char-star	foundation-debug.md	engine/foundation/debug/crash_state.h:26
 debug::CrashStateCounter(const char*)	function	foundation/debug	debug-crashstatecounter-const-char-star	foundation-debug.md	engine/foundation/debug/crash_state.h:35
@@ -1951,22 +1957,22 @@ jobs::FramePool::Deallocate(void*)	function	jobs	jobs-framepool-deallocate-void-
 jobs::FramePool::GetStats() const	function	jobs	jobs-framepool-getstats-const	jobs.md	engine/jobs/frame_pool.h:155
 jobs::FramePool::CentralAvailableForTesting(usize)	function	jobs	jobs-framepool-centralavailablefortesting-usize	jobs.md	engine/jobs/frame_pool.h:166
 jobs::FramePool::Global()	function	jobs	jobs-framepool-global	jobs.md	engine/jobs/frame_pool.h:176
-jobs::CompletionFn	alias	jobs	jobs-completionfn	jobs.md	engine/jobs/job.h:36
-jobs::Job	class	jobs	jobs-job	jobs.md	engine/jobs/job.h:54
-jobs::Job::Handle	alias	jobs	jobs-job-handle	jobs.md	engine/jobs/job.h:59
-jobs::Job::Job()	function	jobs	jobs-job-job	jobs.md	engine/jobs/job.h:108
-jobs::Job::~Job()	function	jobs	jobs-job-tilde-job	jobs.md	engine/jobs/job.h:113
-jobs::Job::Job(const Job&)	function	jobs	jobs-job-job-const-job-amp	jobs.md	engine/jobs/job.h:120
-jobs::Job::operator=(const Job&)	function	jobs	jobs-job-operator-eq-const-job-amp	jobs.md	engine/jobs/job.h:121
-jobs::Job::Job(Job&&) noexcept	function	jobs	jobs-job-job-job-amp-amp-noexcept	jobs.md	engine/jobs/job.h:124
-jobs::Job::operator=(Job&&) noexcept	function	jobs	jobs-job-operator-eq-job-amp-amp-noexcept	jobs.md	engine/jobs/job.h:127
-jobs::Job::Valid() const	function	jobs	jobs-job-valid-const	jobs.md	engine/jobs/job.h:141
-jobs::Job::SetCompletion(CompletionFn,void*)	function	jobs	jobs-job-setcompletion-completionfn-void-star	jobs.md	engine/jobs/job.h:156
-jobs::Job::SetCompletion(Counter&)	function	jobs	jobs-job-setcompletion-counter-amp	jobs.md	engine/jobs/job.h:171
-jobs::Job::Release()	function	jobs	jobs-job-release	jobs.md	engine/jobs/job.h:181
-jobs::LogJobs	variable	jobs	jobs-logjobs	jobs.md	engine/jobs/jobs_log.h:11
-jobs::JobsLogV(LogVerbosity,const char*,...)	function	jobs	jobs-jobslogv-logverbosity-const-char-star	jobs.md	engine/jobs/jobs_log.h:21
-JobsLog	macro	jobs	jobslog	jobs.md	engine/jobs/jobs_log.h:41
+jobs::CompletionFn	alias	jobs	jobs-completionfn	jobs.md	engine/jobs/job.h:37
+jobs::Job	class	jobs	jobs-job	jobs.md	engine/jobs/job.h:55
+jobs::Job::Handle	alias	jobs	jobs-job-handle	jobs.md	engine/jobs/job.h:60
+jobs::Job::Job()	function	jobs	jobs-job-job	jobs.md	engine/jobs/job.h:109
+jobs::Job::~Job()	function	jobs	jobs-job-tilde-job	jobs.md	engine/jobs/job.h:114
+jobs::Job::Job(const Job&)	function	jobs	jobs-job-job-const-job-amp	jobs.md	engine/jobs/job.h:121
+jobs::Job::operator=(const Job&)	function	jobs	jobs-job-operator-eq-const-job-amp	jobs.md	engine/jobs/job.h:122
+jobs::Job::Job(Job&&) noexcept	function	jobs	jobs-job-job-job-amp-amp-noexcept	jobs.md	engine/jobs/job.h:125
+jobs::Job::operator=(Job&&) noexcept	function	jobs	jobs-job-operator-eq-job-amp-amp-noexcept	jobs.md	engine/jobs/job.h:128
+jobs::Job::Valid() const	function	jobs	jobs-job-valid-const	jobs.md	engine/jobs/job.h:142
+jobs::Job::SetCompletion(CompletionFn,void*)	function	jobs	jobs-job-setcompletion-completionfn-void-star	jobs.md	engine/jobs/job.h:157
+jobs::Job::SetCompletion(Counter&)	function	jobs	jobs-job-setcompletion-counter-amp	jobs.md	engine/jobs/job.h:172
+jobs::Job::Release()	function	jobs	jobs-job-release	jobs.md	engine/jobs/job.h:182
+jobs::LogJobs	variable	jobs	jobs-logjobs	jobs.md	engine/jobs/jobs_log.h:12
+jobs::JobsLogV(LogVerbosity,const char*,...)	function	jobs	jobs-jobslogv-logverbosity-const-char-star	jobs.md	engine/jobs/jobs_log.h:22
+JobsLog	macro	jobs	jobslog	jobs.md	engine/jobs/jobs_log.h:42
 jobs::ParallelForFn	alias	jobs	jobs-parallelforfn	jobs.md	engine/jobs/parallel_for.h:35
 jobs::kDefaultChunkSize	variable	jobs	jobs-kdefaultchunksize	jobs.md	engine/jobs/parallel_for.h:38
 jobs::kMaxChunks	variable	jobs	jobs-kmaxchunks	jobs.md	engine/jobs/parallel_for.h:45
@@ -2000,9 +2006,9 @@ jobs::Scheduler::ParkedWorkersForTesting() const	function	jobs	jobs-scheduler-pa
 jobs::Scheduler::InjectionQueueSizeForTesting()	function	jobs	jobs-scheduler-injectionqueuesizefortesting	jobs.md	engine/jobs/scheduler.h:236
 jobs::Scheduler::InjectionCapacity()	function	jobs	jobs-scheduler-injectioncapacity	jobs.md	engine/jobs/scheduler.h:241
 jobs::kMaxParticipants	variable	jobs	jobs-kmaxparticipants	jobs.md	engine/jobs/topology.h:12
-jobs::GetAllowedCpus(u32*,usize)	function	jobs	jobs-getallowedcpus-u32-star-usize	jobs.md	engine/jobs/topology.h:24
-jobs::ParseParticipantOverride(const char*,usize,bool*)	function	jobs	jobs-parseparticipantoverride-const-char-star-usize-bool-star	jobs.md	engine/jobs/topology.h:38
-jobs::DefaultParticipantCount()	function	jobs	jobs-defaultparticipantcount	jobs.md	engine/jobs/topology.h:47
+jobs::GetAllowedCpus(u32*,usize)	function	jobs	jobs-getallowedcpus-u32-star-usize	jobs.md	engine/jobs/topology.h:26
+jobs::ParseParticipantOverride(const char*,usize,bool*)	function	jobs	jobs-parseparticipantoverride-const-char-star-usize-bool-star	jobs.md	engine/jobs/topology.h:40
+jobs::DefaultParticipantCount()	function	jobs	jobs-defaultparticipantcount	jobs.md	engine/jobs/topology.h:49
 jobs::Participant	struct	jobs	jobs-participant	jobs.md	engine/jobs/worker_pool.h:24
 jobs::Participant::index	variable	jobs	jobs-participant-index	jobs.md	engine/jobs/worker_pool.h:26
 jobs::Participant::cpu	variable	jobs	jobs-participant-cpu	jobs.md	engine/jobs/worker_pool.h:28
@@ -2687,9 +2693,9 @@ rhi::DeviceCreateInfo::descriptor_sets_per_pool	variable	rhi	rhi-devicecreateinf
 rhi::DeviceCreateInfo::pipeline_cache_dir	variable	rhi	rhi-devicecreateinfo-pipeline-cache-dir	rhi.md	engine/rhi/rhi.h:98
 rhi::DeviceCreateInfo::faults	variable	rhi	rhi-devicecreateinfo-faults	rhi.md	engine/rhi/rhi.h:100
 rhi::CreateDevice(const DeviceCreateInfo&)	function	rhi	rhi-createdevice-const-devicecreateinfo-amp	rhi.md	engine/rhi/rhi.h:121
-rhi::LogRhi	variable	rhi	rhi-logrhi	rhi.md	engine/rhi/rhi_log.h:13
-rhi::RhiLogV(LogVerbosity,const char*,...)	function	rhi	rhi-rhilogv-logverbosity-const-char-star	rhi.md	engine/rhi/rhi_log.h:24
-RhiLog	macro	rhi	rhilog	rhi.md	engine/rhi/rhi_log.h:44
+rhi::LogRhi	variable	rhi	rhi-logrhi	rhi.md	engine/rhi/rhi_log.h:14
+rhi::RhiLogV(LogVerbosity,const char*,...)	function	rhi	rhi-rhilogv-logverbosity-const-char-star	rhi.md	engine/rhi/rhi_log.h:25
+RhiLog	macro	rhi	rhilog	rhi.md	engine/rhi/rhi_log.h:45
 rhi::kSpirvMagic	variable	rhi	rhi-kspirvmagic	rhi.md	engine/rhi/spirv.h:11
 rhi::kMaxShaderEntryNameLength	variable	rhi	rhi-kmaxshaderentrynamelength	rhi.md	engine/rhi/spirv.h:14
 rhi::ShaderEntryNameTooLong(const char*)	function	rhi	rhi-shaderentrynametoolong-const-char-star	rhi.md	engine/rhi/spirv.h:21
@@ -2892,54 +2898,54 @@ renderer::Frustum::FromViewProjection(const Mat4&)	function	renderer	renderer-fr
 renderer::Frustum::TestSphere(const BoundingSphere&) const	function	renderer	renderer-frustum-testsphere-const-boundingsphere-amp-const	renderer.md	engine/renderer/frustum.h:53
 renderer::Frustum::TestAabb(const Aabb&) const	function	renderer	renderer-frustum-testaabb-const-aabb-amp-const	renderer.md	engine/renderer/frustum.h:60
 renderer::Frustum::Visible(const Bounds&) const	function	renderer	renderer-frustum-visible-const-bounds-amp-const	renderer.md	engine/renderer/frustum.h:68
-renderer::kGBufferAlbedoFormat	variable	renderer	renderer-kgbufferalbedoformat	renderer.md	engine/renderer/gbuffer.h:32
-renderer::kGBufferNormalFormat	variable	renderer	renderer-kgbuffernormalformat	renderer.md	engine/renderer/gbuffer.h:34
-renderer::kGBufferMaterialFormat	variable	renderer	renderer-kgbuffermaterialformat	renderer.md	engine/renderer/gbuffer.h:36
-renderer::kGBufferDepthFormat	variable	renderer	renderer-kgbufferdepthformat	renderer.md	engine/renderer/gbuffer.h:38
-renderer::GBufferLayer	enum	renderer	renderer-gbufferlayer	renderer.md	engine/renderer/gbuffer.h:41
-renderer::GBufferLayer::Albedo	enumerator	renderer	renderer-gbufferlayer-albedo	renderer.md	engine/renderer/gbuffer.h:42
-renderer::GBufferLayer::Normal	enumerator	renderer	renderer-gbufferlayer-normal	renderer.md	engine/renderer/gbuffer.h:43
-renderer::GBufferLayer::Material	enumerator	renderer	renderer-gbufferlayer-material	renderer.md	engine/renderer/gbuffer.h:44
-renderer::GBufferLayer::Depth	enumerator	renderer	renderer-gbufferlayer-depth	renderer.md	engine/renderer/gbuffer.h:45
-renderer::GBufferLayer::WorldPosition	enumerator	renderer	renderer-gbufferlayer-worldposition	renderer.md	engine/renderer/gbuffer.h:46
-renderer::CheckGBufferFormats(const rhi::Device*,char*,usize)	function	renderer	renderer-checkgbufferformats-const-rhi-device-star-char-star-usize	renderer.md	engine/renderer/gbuffer.h:59
-renderer::GBufferPipelineTarget()	function	renderer	renderer-gbufferpipelinetarget	renderer.md	engine/renderer/gbuffer.h:64
-renderer::OctEncode(const Vec3&)	function	renderer	renderer-octencode-const-vec3-amp	renderer.md	engine/renderer/gbuffer.h:71
-renderer::OctDecode(const Vec2&)	function	renderer	renderer-octdecode-const-vec2-amp	renderer.md	engine/renderer/gbuffer.h:78
-renderer::SrgbToLinear(f32)	function	renderer	renderer-srgbtolinear-f32	renderer.md	engine/renderer/gbuffer.h:85
-renderer::LinearizeDepth(f32,f32,f32)	function	renderer	renderer-linearizedepth-f32-f32-f32	renderer.md	engine/renderer/gbuffer.h:94
-renderer::FitCameraDepthRange(const RenderScene&,Camera*,f32)	function	renderer	renderer-fitcameradepthrange-const-renderscene-amp-camera-star-f32	renderer.md	engine/renderer/gbuffer.h:106
-renderer::GBufferOptions	struct	renderer	renderer-gbufferoptions	renderer.md	engine/renderer/gbuffer.h:111
-renderer::GBufferOptions::normal_map	variable	renderer	renderer-gbufferoptions-normal-map	renderer.md	engine/renderer/gbuffer.h:113
-renderer::GBufferOptions::alpha_test	variable	renderer	renderer-gbufferoptions-alpha-test	renderer.md	engine/renderer/gbuffer.h:115
-renderer::GBufferOptions::vertex_color	variable	renderer	renderer-gbufferoptions-vertex-color	renderer.md	engine/renderer/gbuffer.h:117
-renderer::GBufferTemplates	struct	renderer	renderer-gbuffertemplates	renderer.md	engine/renderer/gbuffer.h:123
-renderer::GBufferTemplates::plain	variable	renderer	renderer-gbuffertemplates-plain	renderer.md	engine/renderer/gbuffer.h:125
-renderer::GBufferTemplates::colored	variable	renderer	renderer-gbuffertemplates-colored	renderer.md	engine/renderer/gbuffer.h:127
-renderer::CreateGBufferTemplates(MaterialSystem*)	function	renderer	renderer-creategbuffertemplates-materialsystem-star	renderer.md	engine/renderer/gbuffer.h:137
-renderer::CreateGBufferMaterial(MaterialSystem*,const GBufferTemplates&,const GBufferOptions&,const char*)	function	renderer	renderer-creategbuffermaterial-materialsystem-star-const-gbuffertemplates-amp-const-gbufferoptions-amp-const-char-star	renderer.md	engine/renderer/gbuffer.h:153
-renderer::GBufferTargets	struct	renderer	renderer-gbuffertargets	renderer.md	engine/renderer/gbuffer.h:158
-renderer::GBufferTargets::albedo	variable	renderer	renderer-gbuffertargets-albedo	renderer.md	engine/renderer/gbuffer.h:160
-renderer::GBufferTargets::normal	variable	renderer	renderer-gbuffertargets-normal	renderer.md	engine/renderer/gbuffer.h:162
-renderer::GBufferTargets::material	variable	renderer	renderer-gbuffertargets-material	renderer.md	engine/renderer/gbuffer.h:164
-renderer::GBufferTargets::depth	variable	renderer	renderer-gbuffertargets-depth	renderer.md	engine/renderer/gbuffer.h:166
-renderer::GBufferStats	struct	renderer	renderer-gbufferstats	renderer.md	engine/renderer/gbuffer.h:172
-renderer::GBufferStats::visible	variable	renderer	renderer-gbufferstats-visible	renderer.md	engine/renderer/gbuffer.h:174
-renderer::GBufferStats::drawn_objects	variable	renderer	renderer-gbufferstats-drawn-objects	renderer.md	engine/renderer/gbuffer.h:176
-renderer::GBufferStats::draws	variable	renderer	renderer-gbufferstats-draws	renderer.md	engine/renderer/gbuffer.h:178
-renderer::GBufferStats::rejected	variable	renderer	renderer-gbufferstats-rejected	renderer.md	engine/renderer/gbuffer.h:180
-renderer::GBufferStats::pipeline_binds	variable	renderer	renderer-gbufferstats-pipeline-binds	renderer.md	engine/renderer/gbuffer.h:182
-renderer::GBufferStats::material_binds	variable	renderer	renderer-gbufferstats-material-binds	renderer.md	engine/renderer/gbuffer.h:184
-renderer::GBufferPass	class	renderer	renderer-gbufferpass	renderer.md	engine/renderer/gbuffer.h:192
-renderer::GBufferPass::GBufferPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-gbufferpass-gbufferpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/gbuffer.h:201
-renderer::GBufferPass::~GBufferPass()	function	renderer	renderer-gbufferpass-tilde-gbufferpass	renderer.md	engine/renderer/gbuffer.h:203
-renderer::GBufferPass::GBufferPass(const GBufferPass&)	function	renderer	renderer-gbufferpass-gbufferpass-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:204
-renderer::GBufferPass::operator=(const GBufferPass&)	function	renderer	renderer-gbufferpass-operator-eq-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:205
-renderer::GBufferPass::Prepare(const RenderScene&,const Frustum&)	function	renderer	renderer-gbufferpass-prepare-const-renderscene-amp-const-frustum-amp	renderer.md	engine/renderer/gbuffer.h:220
-renderer::GBufferPass::AddToGraph(RenderGraph*,u32,u32)	function	renderer	renderer-gbufferpass-addtograph-rendergraph-star-u32-u32	renderer.md	engine/renderer/gbuffer.h:230
-renderer::GBufferPass::SetExtraTargetUsage(rhi::TextureUsage)	function	renderer	renderer-gbufferpass-setextratargetusage-rhi-textureusage	renderer.md	engine/renderer/gbuffer.h:239
-renderer::GBufferPass::LastError() const	function	renderer	renderer-gbufferpass-lasterror-const	renderer.md	engine/renderer/gbuffer.h:244
-renderer::GBufferPass::Stats() const	function	renderer	renderer-gbufferpass-stats-const	renderer.md	engine/renderer/gbuffer.h:247
+renderer::kGBufferAlbedoFormat	variable	renderer	renderer-kgbufferalbedoformat	renderer.md	engine/renderer/gbuffer.h:33
+renderer::kGBufferNormalFormat	variable	renderer	renderer-kgbuffernormalformat	renderer.md	engine/renderer/gbuffer.h:35
+renderer::kGBufferMaterialFormat	variable	renderer	renderer-kgbuffermaterialformat	renderer.md	engine/renderer/gbuffer.h:37
+renderer::kGBufferDepthFormat	variable	renderer	renderer-kgbufferdepthformat	renderer.md	engine/renderer/gbuffer.h:39
+renderer::GBufferLayer	enum	renderer	renderer-gbufferlayer	renderer.md	engine/renderer/gbuffer.h:42
+renderer::GBufferLayer::Albedo	enumerator	renderer	renderer-gbufferlayer-albedo	renderer.md	engine/renderer/gbuffer.h:43
+renderer::GBufferLayer::Normal	enumerator	renderer	renderer-gbufferlayer-normal	renderer.md	engine/renderer/gbuffer.h:44
+renderer::GBufferLayer::Material	enumerator	renderer	renderer-gbufferlayer-material	renderer.md	engine/renderer/gbuffer.h:45
+renderer::GBufferLayer::Depth	enumerator	renderer	renderer-gbufferlayer-depth	renderer.md	engine/renderer/gbuffer.h:46
+renderer::GBufferLayer::WorldPosition	enumerator	renderer	renderer-gbufferlayer-worldposition	renderer.md	engine/renderer/gbuffer.h:47
+renderer::CheckGBufferFormats(const rhi::Device*,char*,usize)	function	renderer	renderer-checkgbufferformats-const-rhi-device-star-char-star-usize	renderer.md	engine/renderer/gbuffer.h:60
+renderer::GBufferPipelineTarget()	function	renderer	renderer-gbufferpipelinetarget	renderer.md	engine/renderer/gbuffer.h:65
+renderer::OctEncode(const Vec3&)	function	renderer	renderer-octencode-const-vec3-amp	renderer.md	engine/renderer/gbuffer.h:72
+renderer::OctDecode(const Vec2&)	function	renderer	renderer-octdecode-const-vec2-amp	renderer.md	engine/renderer/gbuffer.h:79
+renderer::SrgbToLinear(f32)	function	renderer	renderer-srgbtolinear-f32	renderer.md	engine/renderer/gbuffer.h:86
+renderer::LinearizeDepth(f32,f32,f32)	function	renderer	renderer-linearizedepth-f32-f32-f32	renderer.md	engine/renderer/gbuffer.h:95
+renderer::FitCameraDepthRange(const RenderScene&,Camera*,f32)	function	renderer	renderer-fitcameradepthrange-const-renderscene-amp-camera-star-f32	renderer.md	engine/renderer/gbuffer.h:107
+renderer::GBufferOptions	struct	renderer	renderer-gbufferoptions	renderer.md	engine/renderer/gbuffer.h:112
+renderer::GBufferOptions::normal_map	variable	renderer	renderer-gbufferoptions-normal-map	renderer.md	engine/renderer/gbuffer.h:114
+renderer::GBufferOptions::alpha_test	variable	renderer	renderer-gbufferoptions-alpha-test	renderer.md	engine/renderer/gbuffer.h:116
+renderer::GBufferOptions::vertex_color	variable	renderer	renderer-gbufferoptions-vertex-color	renderer.md	engine/renderer/gbuffer.h:118
+renderer::GBufferTemplates	struct	renderer	renderer-gbuffertemplates	renderer.md	engine/renderer/gbuffer.h:124
+renderer::GBufferTemplates::plain	variable	renderer	renderer-gbuffertemplates-plain	renderer.md	engine/renderer/gbuffer.h:126
+renderer::GBufferTemplates::colored	variable	renderer	renderer-gbuffertemplates-colored	renderer.md	engine/renderer/gbuffer.h:128
+renderer::CreateGBufferTemplates(MaterialSystem*)	function	renderer	renderer-creategbuffertemplates-materialsystem-star	renderer.md	engine/renderer/gbuffer.h:138
+renderer::CreateGBufferMaterial(MaterialSystem*,const GBufferTemplates&,const GBufferOptions&,const char*)	function	renderer	renderer-creategbuffermaterial-materialsystem-star-const-gbuffertemplates-amp-const-gbufferoptions-amp-const-char-star	renderer.md	engine/renderer/gbuffer.h:154
+renderer::GBufferTargets	struct	renderer	renderer-gbuffertargets	renderer.md	engine/renderer/gbuffer.h:159
+renderer::GBufferTargets::albedo	variable	renderer	renderer-gbuffertargets-albedo	renderer.md	engine/renderer/gbuffer.h:161
+renderer::GBufferTargets::normal	variable	renderer	renderer-gbuffertargets-normal	renderer.md	engine/renderer/gbuffer.h:163
+renderer::GBufferTargets::material	variable	renderer	renderer-gbuffertargets-material	renderer.md	engine/renderer/gbuffer.h:165
+renderer::GBufferTargets::depth	variable	renderer	renderer-gbuffertargets-depth	renderer.md	engine/renderer/gbuffer.h:167
+renderer::GBufferStats	struct	renderer	renderer-gbufferstats	renderer.md	engine/renderer/gbuffer.h:173
+renderer::GBufferStats::visible	variable	renderer	renderer-gbufferstats-visible	renderer.md	engine/renderer/gbuffer.h:175
+renderer::GBufferStats::drawn_objects	variable	renderer	renderer-gbufferstats-drawn-objects	renderer.md	engine/renderer/gbuffer.h:177
+renderer::GBufferStats::draws	variable	renderer	renderer-gbufferstats-draws	renderer.md	engine/renderer/gbuffer.h:179
+renderer::GBufferStats::rejected	variable	renderer	renderer-gbufferstats-rejected	renderer.md	engine/renderer/gbuffer.h:181
+renderer::GBufferStats::pipeline_binds	variable	renderer	renderer-gbufferstats-pipeline-binds	renderer.md	engine/renderer/gbuffer.h:183
+renderer::GBufferStats::material_binds	variable	renderer	renderer-gbufferstats-material-binds	renderer.md	engine/renderer/gbuffer.h:185
+renderer::GBufferPass	class	renderer	renderer-gbufferpass	renderer.md	engine/renderer/gbuffer.h:193
+renderer::GBufferPass::GBufferPass(rhi::Device*,MaterialSystem*,FrameResources*)	function	renderer	renderer-gbufferpass-gbufferpass-rhi-device-star-materialsystem-star-frameresources-star	renderer.md	engine/renderer/gbuffer.h:202
+renderer::GBufferPass::~GBufferPass()	function	renderer	renderer-gbufferpass-tilde-gbufferpass	renderer.md	engine/renderer/gbuffer.h:204
+renderer::GBufferPass::GBufferPass(const GBufferPass&)	function	renderer	renderer-gbufferpass-gbufferpass-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:205
+renderer::GBufferPass::operator=(const GBufferPass&)	function	renderer	renderer-gbufferpass-operator-eq-const-gbufferpass-amp	renderer.md	engine/renderer/gbuffer.h:206
+renderer::GBufferPass::Prepare(const RenderScene&,const Frustum&)	function	renderer	renderer-gbufferpass-prepare-const-renderscene-amp-const-frustum-amp	renderer.md	engine/renderer/gbuffer.h:221
+renderer::GBufferPass::AddToGraph(RenderGraph*,u32,u32)	function	renderer	renderer-gbufferpass-addtograph-rendergraph-star-u32-u32	renderer.md	engine/renderer/gbuffer.h:231
+renderer::GBufferPass::SetExtraTargetUsage(rhi::TextureUsage)	function	renderer	renderer-gbufferpass-setextratargetusage-rhi-textureusage	renderer.md	engine/renderer/gbuffer.h:240
+renderer::GBufferPass::LastError() const	function	renderer	renderer-gbufferpass-lasterror-const	renderer.md	engine/renderer/gbuffer.h:245
+renderer::GBufferPass::Stats() const	function	renderer	renderer-gbufferpass-stats-const	renderer.md	engine/renderer/gbuffer.h:248
 renderer::GBufferDebugView	class	renderer	renderer-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:287
 renderer::GBufferDebugView::GBufferDebugView(rhi::Device*)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:294
 renderer::GBufferDebugView::~GBufferDebugView()	function	renderer	renderer-gbufferdebugview-tilde-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:296
@@ -3176,111 +3182,111 @@ renderer::GpuMesh::RecordPrepare(rhi::CommandList*)	function	renderer	renderer-g
 renderer::GpuMesh::MarkReady()	function	renderer	renderer-gpumesh-markready	renderer.md	engine/renderer/mesh.h:408
 renderer::GpuMesh::Ready() const	function	renderer	renderer-gpumesh-ready-const	renderer.md	engine/renderer/mesh.h:412
 renderer::GpuMesh::Draw(rhi::CommandList*,u32,u32) const	function	renderer	renderer-gpumesh-draw-rhi-commandlist-star-u32-u32-const	renderer.md	engine/renderer/mesh.h:423
-renderer::kMaxGraphErrors	variable	renderer	renderer-kmaxgrapherrors	renderer.md	engine/renderer/render_graph.h:28
-renderer::kGraphErrorLength	variable	renderer	renderer-kgrapherrorlength	renderer.md	engine/renderer/render_graph.h:30
-renderer::kNeverUsed	variable	renderer	renderer-kneverused	renderer.md	engine/renderer/render_graph.h:32
-renderer::PassId	struct	renderer	renderer-passid	renderer.md	engine/renderer/render_graph.h:37
-renderer::PassId::index	variable	renderer	renderer-passid-index	renderer.md	engine/renderer/render_graph.h:39
-renderer::PassId::kInvalid	variable	renderer	renderer-passid-kinvalid	renderer.md	engine/renderer/render_graph.h:42
-renderer::PassId::IsValid() const	function	renderer	renderer-passid-isvalid-const	renderer.md	engine/renderer/render_graph.h:45
-renderer::GraphResource	struct	renderer	renderer-graphresource	renderer.md	engine/renderer/render_graph.h:51
-renderer::GraphResource::index	variable	renderer	renderer-graphresource-index	renderer.md	engine/renderer/render_graph.h:53
-renderer::GraphResource::kInvalid	variable	renderer	renderer-graphresource-kinvalid	renderer.md	engine/renderer/render_graph.h:56
-renderer::GraphResource::IsValid() const	function	renderer	renderer-graphresource-isvalid-const	renderer.md	engine/renderer/render_graph.h:59
-renderer::GraphResourceKind	enum	renderer	renderer-graphresourcekind	renderer.md	engine/renderer/render_graph.h:63
-renderer::GraphResourceKind::Texture	enumerator	renderer	renderer-graphresourcekind-texture	renderer.md	engine/renderer/render_graph.h:64
-renderer::GraphResourceKind::Buffer	enumerator	renderer	renderer-graphresourcekind-buffer	renderer.md	engine/renderer/render_graph.h:65
-renderer::GraphUsage	enum	renderer	renderer-graphusage	renderer.md	engine/renderer/render_graph.h:69
-renderer::GraphUsage::ColorAttachment	enumerator	renderer	renderer-graphusage-colorattachment	renderer.md	engine/renderer/render_graph.h:70
-renderer::GraphUsage::DepthAttachment	enumerator	renderer	renderer-graphusage-depthattachment	renderer.md	engine/renderer/render_graph.h:71
-renderer::GraphUsage::DepthRead	enumerator	renderer	renderer-graphusage-depthread	renderer.md	engine/renderer/render_graph.h:72
-renderer::GraphUsage::Sampled	enumerator	renderer	renderer-graphusage-sampled	renderer.md	engine/renderer/render_graph.h:73
-renderer::GraphUsage::StorageRead	enumerator	renderer	renderer-graphusage-storageread	renderer.md	engine/renderer/render_graph.h:74
-renderer::GraphUsage::StorageWrite	enumerator	renderer	renderer-graphusage-storagewrite	renderer.md	engine/renderer/render_graph.h:75
-renderer::GraphUsage::CopySrc	enumerator	renderer	renderer-graphusage-copysrc	renderer.md	engine/renderer/render_graph.h:76
-renderer::GraphUsage::CopyDst	enumerator	renderer	renderer-graphusage-copydst	renderer.md	engine/renderer/render_graph.h:77
-renderer::GraphUsage::UniformBuffer	enumerator	renderer	renderer-graphusage-uniformbuffer	renderer.md	engine/renderer/render_graph.h:78
-renderer::GraphUsage::VertexBuffer	enumerator	renderer	renderer-graphusage-vertexbuffer	renderer.md	engine/renderer/render_graph.h:79
-renderer::GraphUsage::IndexBuffer	enumerator	renderer	renderer-graphusage-indexbuffer	renderer.md	engine/renderer/render_graph.h:80
-renderer::GraphUsage::Count	enumerator	renderer	renderer-graphusage-count	renderer.md	engine/renderer/render_graph.h:81
-renderer::GraphAccess	enum	renderer	renderer-graphaccess	renderer.md	engine/renderer/render_graph.h:85
-renderer::GraphAccess::Read	enumerator	renderer	renderer-graphaccess-read	renderer.md	engine/renderer/render_graph.h:86
-renderer::GraphAccess::Write	enumerator	renderer	renderer-graphaccess-write	renderer.md	engine/renderer/render_graph.h:87
-renderer::GraphAccess::ReadWrite	enumerator	renderer	renderer-graphaccess-readwrite	renderer.md	engine/renderer/render_graph.h:88
-renderer::PassFlags	enum	renderer	renderer-passflags	renderer.md	engine/renderer/render_graph.h:92
-renderer::PassFlags::None	enumerator	renderer	renderer-passflags-none	renderer.md	engine/renderer/render_graph.h:93
-renderer::PassFlags::SideEffects	enumerator	renderer	renderer-passflags-sideeffects	renderer.md	engine/renderer/render_graph.h:94
-renderer::operator|(PassFlags,PassFlags)	function	renderer	renderer-operator-pipe-passflags-passflags	renderer.md	engine/renderer/render_graph.h:98
-renderer::operator&(PassFlags,PassFlags)	function	renderer	renderer-operator-amp-passflags-passflags	renderer.md	engine/renderer/render_graph.h:100
-renderer::StateForUsage(GraphUsage)	function	renderer	renderer-stateforusage-graphusage	renderer.md	engine/renderer/render_graph.h:107
-renderer::UsageWrites(GraphUsage)	function	renderer	renderer-usagewrites-graphusage	renderer.md	engine/renderer/render_graph.h:113
-renderer::UsageName(GraphUsage)	function	renderer	renderer-usagename-graphusage	renderer.md	engine/renderer/render_graph.h:121
-renderer::StateName(rhi::ResourceState)	function	renderer	renderer-statename-rhi-resourcestate	renderer.md	engine/renderer/render_graph.h:129
-renderer::PassExecuteContext	struct	renderer	renderer-passexecutecontext	renderer.md	engine/renderer/render_graph.h:136
-renderer::PassExecuteContext::list	variable	renderer	renderer-passexecutecontext-list	renderer.md	engine/renderer/render_graph.h:138
-renderer::PassExecuteContext::pass_index	variable	renderer	renderer-passexecutecontext-pass-index	renderer.md	engine/renderer/render_graph.h:140
-renderer::PassExecuteContext::graph	variable	renderer	renderer-passexecutecontext-graph	renderer.md	engine/renderer/render_graph.h:142
-renderer::PassExecuteFn	alias	renderer	renderer-passexecutefn	renderer.md	engine/renderer/render_graph.h:146
-renderer::RenderGraphDesc	struct	renderer	renderer-rendergraphdesc	renderer.md	engine/renderer/render_graph.h:151
-renderer::RenderGraphDesc::max_passes	variable	renderer	renderer-rendergraphdesc-max-passes	renderer.md	engine/renderer/render_graph.h:153
-renderer::RenderGraphDesc::max_resources	variable	renderer	renderer-rendergraphdesc-max-resources	renderer.md	engine/renderer/render_graph.h:155
-renderer::RenderGraphDesc::max_accesses	variable	renderer	renderer-rendergraphdesc-max-accesses	renderer.md	engine/renderer/render_graph.h:157
-renderer::RenderGraphDesc::max_dependencies	variable	renderer	renderer-rendergraphdesc-max-dependencies	renderer.md	engine/renderer/render_graph.h:159
-renderer::GraphBarrier	struct	renderer	renderer-graphbarrier	renderer.md	engine/renderer/render_graph.h:167
-renderer::GraphBarrier::resource	variable	renderer	renderer-graphbarrier-resource	renderer.md	engine/renderer/render_graph.h:169
-renderer::GraphBarrier::position	variable	renderer	renderer-graphbarrier-position	renderer.md	engine/renderer/render_graph.h:171
-renderer::GraphBarrier::before	variable	renderer	renderer-graphbarrier-before	renderer.md	engine/renderer/render_graph.h:174
-renderer::GraphBarrier::after	variable	renderer	renderer-graphbarrier-after	renderer.md	engine/renderer/render_graph.h:176
-renderer::PassBuilder	class	renderer	renderer-passbuilder	renderer.md	engine/renderer/render_graph.h:182
-renderer::PassBuilder::Read(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-read-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:191
-renderer::PassBuilder::Write(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-write-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:198
-renderer::PassBuilder::ReadWrite(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-readwrite-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:205
-renderer::PassBuilder::Id() const	function	renderer	renderer-passbuilder-id-const	renderer.md	engine/renderer/render_graph.h:208
-renderer::RenderGraph	class	renderer	renderer-rendergraph	renderer.md	engine/renderer/render_graph.h:227
-renderer::RenderGraph::RenderGraph(ArenaAllocator*,const RenderGraphDesc&)	function	renderer	renderer-rendergraph-rendergraph-arenaallocator-star-const-rendergraphdesc-amp	renderer.md	engine/renderer/render_graph.h:237
-renderer::RenderGraph::RenderGraph(const RenderGraph&)	function	renderer	renderer-rendergraph-rendergraph-const-rendergraph-amp	renderer.md	engine/renderer/render_graph.h:238
-renderer::RenderGraph::operator=(const RenderGraph&)	function	renderer	renderer-rendergraph-operator-eq-const-rendergraph-amp	renderer.md	engine/renderer/render_graph.h:239
-renderer::RenderGraph::Valid() const	function	renderer	renderer-rendergraph-valid-const	renderer.md	engine/renderer/render_graph.h:243
-renderer::RenderGraph::CreateTexture(const char*,const rhi::TextureDesc&)	function	renderer	renderer-rendergraph-createtexture-const-char-star-const-rhi-texturedesc-amp	renderer.md	engine/renderer/render_graph.h:251
-renderer::RenderGraph::CreateBuffer(const char*,const rhi::BufferDesc&)	function	renderer	renderer-rendergraph-createbuffer-const-char-star-const-rhi-bufferdesc-amp	renderer.md	engine/renderer/render_graph.h:258
-renderer::RenderGraph::ImportTexture(const char*,rhi::TextureHandle,rhi::ResourceState,rhi::ResourceState,bool)	function	renderer	renderer-rendergraph-importtexture-const-char-star-rhi-texturehandle-rhi-resourcestate-rhi-resourcestate-bool	renderer.md	engine/renderer/render_graph.h:268
-renderer::RenderGraph::ImportBuffer(const char*,rhi::BufferHandle,rhi::ResourceState,rhi::ResourceState,bool)	function	renderer	renderer-rendergraph-importbuffer-const-char-star-rhi-bufferhandle-rhi-resourcestate-rhi-resourcestate-bool	renderer.md	engine/renderer/render_graph.h:278
-renderer::RenderGraph::AddPass(const char*,PassExecuteFn,void*,PassFlags)	function	renderer	renderer-rendergraph-addpass-const-char-star-passexecutefn-void-star-passflags	renderer.md	engine/renderer/render_graph.h:289
-renderer::RenderGraph::AddDependency(PassId,PassId)	function	renderer	renderer-rendergraph-adddependency-passid-passid	renderer.md	engine/renderer/render_graph.h:297
-renderer::RenderGraph::Compile()	function	renderer	renderer-rendergraph-compile	renderer.md	engine/renderer/render_graph.h:307
-renderer::RenderGraph::KindOf(GraphResource) const	function	renderer	renderer-rendergraph-kindof-graphresource-const	renderer.md	engine/renderer/render_graph.h:313
-renderer::RenderGraph::IsImport(GraphResource) const	function	renderer	renderer-rendergraph-isimport-graphresource-const	renderer.md	engine/renderer/render_graph.h:318
-renderer::RenderGraph::TextureDescOf(GraphResource) const	function	renderer	renderer-rendergraph-texturedescof-graphresource-const	renderer.md	engine/renderer/render_graph.h:324
-renderer::RenderGraph::BufferDescOf(GraphResource) const	function	renderer	renderer-rendergraph-bufferdescof-graphresource-const	renderer.md	engine/renderer/render_graph.h:330
-renderer::RenderGraph::ImportedTexture(GraphResource) const	function	renderer	renderer-rendergraph-importedtexture-graphresource-const	renderer.md	engine/renderer/render_graph.h:335
-renderer::RenderGraph::ImportedBuffer(GraphResource) const	function	renderer	renderer-rendergraph-importedbuffer-graphresource-const	renderer.md	engine/renderer/render_graph.h:340
-renderer::RenderGraph::InitialState(GraphResource) const	function	renderer	renderer-rendergraph-initialstate-graphresource-const	renderer.md	engine/renderer/render_graph.h:345
-renderer::RenderGraph::FinalState(GraphResource) const	function	renderer	renderer-rendergraph-finalstate-graphresource-const	renderer.md	engine/renderer/render_graph.h:350
-renderer::RenderGraph::ErrorCount() const	function	renderer	renderer-rendergraph-errorcount-const	renderer.md	engine/renderer/render_graph.h:354
-renderer::RenderGraph::DroppedErrors() const	function	renderer	renderer-rendergraph-droppederrors-const	renderer.md	engine/renderer/render_graph.h:357
-renderer::RenderGraph::ExecuteError() const	function	renderer	renderer-rendergraph-executeerror-const	renderer.md	engine/renderer/render_graph.h:362
-renderer::RenderGraph::Error(u32) const	function	renderer	renderer-rendergraph-error-u32-const	renderer.md	engine/renderer/render_graph.h:369
-renderer::RenderGraph::PassCount() const	function	renderer	renderer-rendergraph-passcount-const	renderer.md	engine/renderer/render_graph.h:373
-renderer::RenderGraph::ResourceCount() const	function	renderer	renderer-rendergraph-resourcecount-const	renderer.md	engine/renderer/render_graph.h:376
-renderer::RenderGraph::ScheduleCount() const	function	renderer	renderer-rendergraph-schedulecount-const	renderer.md	engine/renderer/render_graph.h:379
-renderer::RenderGraph::Scheduled(u32) const	function	renderer	renderer-rendergraph-scheduled-u32-const	renderer.md	engine/renderer/render_graph.h:384
-renderer::RenderGraph::IsCulled(PassId) const	function	renderer	renderer-rendergraph-isculled-passid-const	renderer.md	engine/renderer/render_graph.h:389
-renderer::RenderGraph::PassName(PassId) const	function	renderer	renderer-rendergraph-passname-passid-const	renderer.md	engine/renderer/render_graph.h:395
-renderer::RenderGraph::PassCallback(PassId) const	function	renderer	renderer-rendergraph-passcallback-passid-const	renderer.md	engine/renderer/render_graph.h:400
-renderer::RenderGraph::PassUser(PassId) const	function	renderer	renderer-rendergraph-passuser-passid-const	renderer.md	engine/renderer/render_graph.h:406
-renderer::RenderGraph::ResourceName(GraphResource) const	function	renderer	renderer-rendergraph-resourcename-graphresource-const	renderer.md	engine/renderer/render_graph.h:412
-renderer::RenderGraph::FirstUse(GraphResource) const	function	renderer	renderer-rendergraph-firstuse-graphresource-const	renderer.md	engine/renderer/render_graph.h:418
-renderer::RenderGraph::LastUse(GraphResource) const	function	renderer	renderer-rendergraph-lastuse-graphresource-const	renderer.md	engine/renderer/render_graph.h:424
-renderer::RenderGraph::BarrierCount() const	function	renderer	renderer-rendergraph-barriercount-const	renderer.md	engine/renderer/render_graph.h:437
-renderer::RenderGraph::BarrierAt(u32) const	function	renderer	renderer-rendergraph-barrierat-u32-const	renderer.md	engine/renderer/render_graph.h:442
-renderer::RenderGraph::StateAfterLastUse(GraphResource) const	function	renderer	renderer-rendergraph-stateafterlastuse-graphresource-const	renderer.md	engine/renderer/render_graph.h:447
-renderer::RenderGraph::DumpBarriers(char*,usize) const	function	renderer	renderer-rendergraph-dumpbarriers-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:457
-renderer::RenderGraph::Execute(TransientPool*,rhi::CommandList*)	function	renderer	renderer-rendergraph-execute-transientpool-star-rhi-commandlist-star	renderer.md	engine/renderer/render_graph.h:476
-renderer::RenderGraph::ExecuteParallel(TransientPool*,rhi::Device*,jobs::Scheduler*,rhi::FenceValue*)	function	renderer	renderer-rendergraph-executeparallel-transientpool-star-rhi-device-star-jobs-scheduler-star-rhi-fencevalue-star	renderer.md	engine/renderer/render_graph.h:503
-renderer::RenderGraph::ResolvedTexture(GraphResource) const	function	renderer	renderer-rendergraph-resolvedtexture-graphresource-const	renderer.md	engine/renderer/render_graph.h:510
-renderer::RenderGraph::ResolvedBuffer(GraphResource) const	function	renderer	renderer-rendergraph-resolvedbuffer-graphresource-const	renderer.md	engine/renderer/render_graph.h:516
-renderer::RenderGraph::Dump(char*,usize) const	function	renderer	renderer-rendergraph-dump-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:533
-renderer::RenderGraph::WriteDot(char*,usize) const	function	renderer	renderer-rendergraph-writedot-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:542
+renderer::kMaxGraphErrors	variable	renderer	renderer-kmaxgrapherrors	renderer.md	engine/renderer/render_graph.h:29
+renderer::kGraphErrorLength	variable	renderer	renderer-kgrapherrorlength	renderer.md	engine/renderer/render_graph.h:31
+renderer::kNeverUsed	variable	renderer	renderer-kneverused	renderer.md	engine/renderer/render_graph.h:33
+renderer::PassId	struct	renderer	renderer-passid	renderer.md	engine/renderer/render_graph.h:38
+renderer::PassId::index	variable	renderer	renderer-passid-index	renderer.md	engine/renderer/render_graph.h:40
+renderer::PassId::kInvalid	variable	renderer	renderer-passid-kinvalid	renderer.md	engine/renderer/render_graph.h:43
+renderer::PassId::IsValid() const	function	renderer	renderer-passid-isvalid-const	renderer.md	engine/renderer/render_graph.h:46
+renderer::GraphResource	struct	renderer	renderer-graphresource	renderer.md	engine/renderer/render_graph.h:52
+renderer::GraphResource::index	variable	renderer	renderer-graphresource-index	renderer.md	engine/renderer/render_graph.h:54
+renderer::GraphResource::kInvalid	variable	renderer	renderer-graphresource-kinvalid	renderer.md	engine/renderer/render_graph.h:57
+renderer::GraphResource::IsValid() const	function	renderer	renderer-graphresource-isvalid-const	renderer.md	engine/renderer/render_graph.h:60
+renderer::GraphResourceKind	enum	renderer	renderer-graphresourcekind	renderer.md	engine/renderer/render_graph.h:64
+renderer::GraphResourceKind::Texture	enumerator	renderer	renderer-graphresourcekind-texture	renderer.md	engine/renderer/render_graph.h:65
+renderer::GraphResourceKind::Buffer	enumerator	renderer	renderer-graphresourcekind-buffer	renderer.md	engine/renderer/render_graph.h:66
+renderer::GraphUsage	enum	renderer	renderer-graphusage	renderer.md	engine/renderer/render_graph.h:70
+renderer::GraphUsage::ColorAttachment	enumerator	renderer	renderer-graphusage-colorattachment	renderer.md	engine/renderer/render_graph.h:71
+renderer::GraphUsage::DepthAttachment	enumerator	renderer	renderer-graphusage-depthattachment	renderer.md	engine/renderer/render_graph.h:72
+renderer::GraphUsage::DepthRead	enumerator	renderer	renderer-graphusage-depthread	renderer.md	engine/renderer/render_graph.h:73
+renderer::GraphUsage::Sampled	enumerator	renderer	renderer-graphusage-sampled	renderer.md	engine/renderer/render_graph.h:74
+renderer::GraphUsage::StorageRead	enumerator	renderer	renderer-graphusage-storageread	renderer.md	engine/renderer/render_graph.h:75
+renderer::GraphUsage::StorageWrite	enumerator	renderer	renderer-graphusage-storagewrite	renderer.md	engine/renderer/render_graph.h:76
+renderer::GraphUsage::CopySrc	enumerator	renderer	renderer-graphusage-copysrc	renderer.md	engine/renderer/render_graph.h:77
+renderer::GraphUsage::CopyDst	enumerator	renderer	renderer-graphusage-copydst	renderer.md	engine/renderer/render_graph.h:78
+renderer::GraphUsage::UniformBuffer	enumerator	renderer	renderer-graphusage-uniformbuffer	renderer.md	engine/renderer/render_graph.h:79
+renderer::GraphUsage::VertexBuffer	enumerator	renderer	renderer-graphusage-vertexbuffer	renderer.md	engine/renderer/render_graph.h:80
+renderer::GraphUsage::IndexBuffer	enumerator	renderer	renderer-graphusage-indexbuffer	renderer.md	engine/renderer/render_graph.h:81
+renderer::GraphUsage::Count	enumerator	renderer	renderer-graphusage-count	renderer.md	engine/renderer/render_graph.h:82
+renderer::GraphAccess	enum	renderer	renderer-graphaccess	renderer.md	engine/renderer/render_graph.h:86
+renderer::GraphAccess::Read	enumerator	renderer	renderer-graphaccess-read	renderer.md	engine/renderer/render_graph.h:87
+renderer::GraphAccess::Write	enumerator	renderer	renderer-graphaccess-write	renderer.md	engine/renderer/render_graph.h:88
+renderer::GraphAccess::ReadWrite	enumerator	renderer	renderer-graphaccess-readwrite	renderer.md	engine/renderer/render_graph.h:89
+renderer::PassFlags	enum	renderer	renderer-passflags	renderer.md	engine/renderer/render_graph.h:93
+renderer::PassFlags::None	enumerator	renderer	renderer-passflags-none	renderer.md	engine/renderer/render_graph.h:94
+renderer::PassFlags::SideEffects	enumerator	renderer	renderer-passflags-sideeffects	renderer.md	engine/renderer/render_graph.h:95
+renderer::operator|(PassFlags,PassFlags)	function	renderer	renderer-operator-pipe-passflags-passflags	renderer.md	engine/renderer/render_graph.h:99
+renderer::operator&(PassFlags,PassFlags)	function	renderer	renderer-operator-amp-passflags-passflags	renderer.md	engine/renderer/render_graph.h:101
+renderer::StateForUsage(GraphUsage)	function	renderer	renderer-stateforusage-graphusage	renderer.md	engine/renderer/render_graph.h:108
+renderer::UsageWrites(GraphUsage)	function	renderer	renderer-usagewrites-graphusage	renderer.md	engine/renderer/render_graph.h:114
+renderer::UsageName(GraphUsage)	function	renderer	renderer-usagename-graphusage	renderer.md	engine/renderer/render_graph.h:122
+renderer::StateName(rhi::ResourceState)	function	renderer	renderer-statename-rhi-resourcestate	renderer.md	engine/renderer/render_graph.h:130
+renderer::PassExecuteContext	struct	renderer	renderer-passexecutecontext	renderer.md	engine/renderer/render_graph.h:137
+renderer::PassExecuteContext::list	variable	renderer	renderer-passexecutecontext-list	renderer.md	engine/renderer/render_graph.h:139
+renderer::PassExecuteContext::pass_index	variable	renderer	renderer-passexecutecontext-pass-index	renderer.md	engine/renderer/render_graph.h:141
+renderer::PassExecuteContext::graph	variable	renderer	renderer-passexecutecontext-graph	renderer.md	engine/renderer/render_graph.h:143
+renderer::PassExecuteFn	alias	renderer	renderer-passexecutefn	renderer.md	engine/renderer/render_graph.h:147
+renderer::RenderGraphDesc	struct	renderer	renderer-rendergraphdesc	renderer.md	engine/renderer/render_graph.h:152
+renderer::RenderGraphDesc::max_passes	variable	renderer	renderer-rendergraphdesc-max-passes	renderer.md	engine/renderer/render_graph.h:154
+renderer::RenderGraphDesc::max_resources	variable	renderer	renderer-rendergraphdesc-max-resources	renderer.md	engine/renderer/render_graph.h:156
+renderer::RenderGraphDesc::max_accesses	variable	renderer	renderer-rendergraphdesc-max-accesses	renderer.md	engine/renderer/render_graph.h:158
+renderer::RenderGraphDesc::max_dependencies	variable	renderer	renderer-rendergraphdesc-max-dependencies	renderer.md	engine/renderer/render_graph.h:160
+renderer::GraphBarrier	struct	renderer	renderer-graphbarrier	renderer.md	engine/renderer/render_graph.h:168
+renderer::GraphBarrier::resource	variable	renderer	renderer-graphbarrier-resource	renderer.md	engine/renderer/render_graph.h:170
+renderer::GraphBarrier::position	variable	renderer	renderer-graphbarrier-position	renderer.md	engine/renderer/render_graph.h:172
+renderer::GraphBarrier::before	variable	renderer	renderer-graphbarrier-before	renderer.md	engine/renderer/render_graph.h:175
+renderer::GraphBarrier::after	variable	renderer	renderer-graphbarrier-after	renderer.md	engine/renderer/render_graph.h:177
+renderer::PassBuilder	class	renderer	renderer-passbuilder	renderer.md	engine/renderer/render_graph.h:183
+renderer::PassBuilder::Read(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-read-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:192
+renderer::PassBuilder::Write(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-write-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:199
+renderer::PassBuilder::ReadWrite(GraphResource,GraphUsage)	function	renderer	renderer-passbuilder-readwrite-graphresource-graphusage	renderer.md	engine/renderer/render_graph.h:206
+renderer::PassBuilder::Id() const	function	renderer	renderer-passbuilder-id-const	renderer.md	engine/renderer/render_graph.h:209
+renderer::RenderGraph	class	renderer	renderer-rendergraph	renderer.md	engine/renderer/render_graph.h:228
+renderer::RenderGraph::RenderGraph(ArenaAllocator*,const RenderGraphDesc&)	function	renderer	renderer-rendergraph-rendergraph-arenaallocator-star-const-rendergraphdesc-amp	renderer.md	engine/renderer/render_graph.h:238
+renderer::RenderGraph::RenderGraph(const RenderGraph&)	function	renderer	renderer-rendergraph-rendergraph-const-rendergraph-amp	renderer.md	engine/renderer/render_graph.h:239
+renderer::RenderGraph::operator=(const RenderGraph&)	function	renderer	renderer-rendergraph-operator-eq-const-rendergraph-amp	renderer.md	engine/renderer/render_graph.h:240
+renderer::RenderGraph::Valid() const	function	renderer	renderer-rendergraph-valid-const	renderer.md	engine/renderer/render_graph.h:244
+renderer::RenderGraph::CreateTexture(const char*,const rhi::TextureDesc&)	function	renderer	renderer-rendergraph-createtexture-const-char-star-const-rhi-texturedesc-amp	renderer.md	engine/renderer/render_graph.h:252
+renderer::RenderGraph::CreateBuffer(const char*,const rhi::BufferDesc&)	function	renderer	renderer-rendergraph-createbuffer-const-char-star-const-rhi-bufferdesc-amp	renderer.md	engine/renderer/render_graph.h:259
+renderer::RenderGraph::ImportTexture(const char*,rhi::TextureHandle,rhi::ResourceState,rhi::ResourceState,bool)	function	renderer	renderer-rendergraph-importtexture-const-char-star-rhi-texturehandle-rhi-resourcestate-rhi-resourcestate-bool	renderer.md	engine/renderer/render_graph.h:269
+renderer::RenderGraph::ImportBuffer(const char*,rhi::BufferHandle,rhi::ResourceState,rhi::ResourceState,bool)	function	renderer	renderer-rendergraph-importbuffer-const-char-star-rhi-bufferhandle-rhi-resourcestate-rhi-resourcestate-bool	renderer.md	engine/renderer/render_graph.h:279
+renderer::RenderGraph::AddPass(const char*,PassExecuteFn,void*,PassFlags)	function	renderer	renderer-rendergraph-addpass-const-char-star-passexecutefn-void-star-passflags	renderer.md	engine/renderer/render_graph.h:290
+renderer::RenderGraph::AddDependency(PassId,PassId)	function	renderer	renderer-rendergraph-adddependency-passid-passid	renderer.md	engine/renderer/render_graph.h:298
+renderer::RenderGraph::Compile()	function	renderer	renderer-rendergraph-compile	renderer.md	engine/renderer/render_graph.h:308
+renderer::RenderGraph::KindOf(GraphResource) const	function	renderer	renderer-rendergraph-kindof-graphresource-const	renderer.md	engine/renderer/render_graph.h:314
+renderer::RenderGraph::IsImport(GraphResource) const	function	renderer	renderer-rendergraph-isimport-graphresource-const	renderer.md	engine/renderer/render_graph.h:319
+renderer::RenderGraph::TextureDescOf(GraphResource) const	function	renderer	renderer-rendergraph-texturedescof-graphresource-const	renderer.md	engine/renderer/render_graph.h:325
+renderer::RenderGraph::BufferDescOf(GraphResource) const	function	renderer	renderer-rendergraph-bufferdescof-graphresource-const	renderer.md	engine/renderer/render_graph.h:331
+renderer::RenderGraph::ImportedTexture(GraphResource) const	function	renderer	renderer-rendergraph-importedtexture-graphresource-const	renderer.md	engine/renderer/render_graph.h:336
+renderer::RenderGraph::ImportedBuffer(GraphResource) const	function	renderer	renderer-rendergraph-importedbuffer-graphresource-const	renderer.md	engine/renderer/render_graph.h:341
+renderer::RenderGraph::InitialState(GraphResource) const	function	renderer	renderer-rendergraph-initialstate-graphresource-const	renderer.md	engine/renderer/render_graph.h:346
+renderer::RenderGraph::FinalState(GraphResource) const	function	renderer	renderer-rendergraph-finalstate-graphresource-const	renderer.md	engine/renderer/render_graph.h:351
+renderer::RenderGraph::ErrorCount() const	function	renderer	renderer-rendergraph-errorcount-const	renderer.md	engine/renderer/render_graph.h:355
+renderer::RenderGraph::DroppedErrors() const	function	renderer	renderer-rendergraph-droppederrors-const	renderer.md	engine/renderer/render_graph.h:358
+renderer::RenderGraph::ExecuteError() const	function	renderer	renderer-rendergraph-executeerror-const	renderer.md	engine/renderer/render_graph.h:363
+renderer::RenderGraph::Error(u32) const	function	renderer	renderer-rendergraph-error-u32-const	renderer.md	engine/renderer/render_graph.h:370
+renderer::RenderGraph::PassCount() const	function	renderer	renderer-rendergraph-passcount-const	renderer.md	engine/renderer/render_graph.h:374
+renderer::RenderGraph::ResourceCount() const	function	renderer	renderer-rendergraph-resourcecount-const	renderer.md	engine/renderer/render_graph.h:377
+renderer::RenderGraph::ScheduleCount() const	function	renderer	renderer-rendergraph-schedulecount-const	renderer.md	engine/renderer/render_graph.h:380
+renderer::RenderGraph::Scheduled(u32) const	function	renderer	renderer-rendergraph-scheduled-u32-const	renderer.md	engine/renderer/render_graph.h:385
+renderer::RenderGraph::IsCulled(PassId) const	function	renderer	renderer-rendergraph-isculled-passid-const	renderer.md	engine/renderer/render_graph.h:390
+renderer::RenderGraph::PassName(PassId) const	function	renderer	renderer-rendergraph-passname-passid-const	renderer.md	engine/renderer/render_graph.h:396
+renderer::RenderGraph::PassCallback(PassId) const	function	renderer	renderer-rendergraph-passcallback-passid-const	renderer.md	engine/renderer/render_graph.h:401
+renderer::RenderGraph::PassUser(PassId) const	function	renderer	renderer-rendergraph-passuser-passid-const	renderer.md	engine/renderer/render_graph.h:407
+renderer::RenderGraph::ResourceName(GraphResource) const	function	renderer	renderer-rendergraph-resourcename-graphresource-const	renderer.md	engine/renderer/render_graph.h:413
+renderer::RenderGraph::FirstUse(GraphResource) const	function	renderer	renderer-rendergraph-firstuse-graphresource-const	renderer.md	engine/renderer/render_graph.h:419
+renderer::RenderGraph::LastUse(GraphResource) const	function	renderer	renderer-rendergraph-lastuse-graphresource-const	renderer.md	engine/renderer/render_graph.h:425
+renderer::RenderGraph::BarrierCount() const	function	renderer	renderer-rendergraph-barriercount-const	renderer.md	engine/renderer/render_graph.h:438
+renderer::RenderGraph::BarrierAt(u32) const	function	renderer	renderer-rendergraph-barrierat-u32-const	renderer.md	engine/renderer/render_graph.h:443
+renderer::RenderGraph::StateAfterLastUse(GraphResource) const	function	renderer	renderer-rendergraph-stateafterlastuse-graphresource-const	renderer.md	engine/renderer/render_graph.h:448
+renderer::RenderGraph::DumpBarriers(char*,usize) const	function	renderer	renderer-rendergraph-dumpbarriers-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:458
+renderer::RenderGraph::Execute(TransientPool*,rhi::CommandList*)	function	renderer	renderer-rendergraph-execute-transientpool-star-rhi-commandlist-star	renderer.md	engine/renderer/render_graph.h:477
+renderer::RenderGraph::ExecuteParallel(TransientPool*,rhi::Device*,jobs::Scheduler*,rhi::FenceValue*)	function	renderer	renderer-rendergraph-executeparallel-transientpool-star-rhi-device-star-jobs-scheduler-star-rhi-fencevalue-star	renderer.md	engine/renderer/render_graph.h:504
+renderer::RenderGraph::ResolvedTexture(GraphResource) const	function	renderer	renderer-rendergraph-resolvedtexture-graphresource-const	renderer.md	engine/renderer/render_graph.h:511
+renderer::RenderGraph::ResolvedBuffer(GraphResource) const	function	renderer	renderer-rendergraph-resolvedbuffer-graphresource-const	renderer.md	engine/renderer/render_graph.h:517
+renderer::RenderGraph::Dump(char*,usize) const	function	renderer	renderer-rendergraph-dump-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:534
+renderer::RenderGraph::WriteDot(char*,usize) const	function	renderer	renderer-rendergraph-writedot-char-star-usize-const	renderer.md	engine/renderer/render_graph.h:543
 renderer::ObjectId	struct	renderer	renderer-objectid	renderer.md	engine/renderer/render_scene.h:19
 renderer::ObjectId::index	variable	renderer	renderer-objectid-index	renderer.md	engine/renderer/render_scene.h:21
 renderer::ObjectId::generation	variable	renderer	renderer-objectid-generation	renderer.md	engine/renderer/render_scene.h:23
@@ -3462,104 +3468,104 @@ renderer::SettingsParseReport::warning_count	variable	renderer	renderer-settings
 renderer::SettingsParseReport::warnings	variable	renderer	renderer-settingsparsereport-warnings	renderer.md	engine/renderer/render_settings.h:442
 renderer::SettingsKeyMigrationFn	alias	renderer	renderer-settingskeymigrationfn	renderer.md	engine/renderer/render_settings.h:448
 renderer::ParseSettings(const char*,usize,RenderSettings*,SettingsParseReport*,SettingsKeyMigrationFn)	function	renderer	renderer-parsesettings-const-char-star-usize-rendersettings-star-settingsparsereport-star-settingskeymigrationfn	renderer.md	engine/renderer/render_settings.h:464
-renderer::FrameStatus	enum	renderer	renderer-framestatus	renderer.md	engine/renderer/renderer.h:29
-renderer::FrameStatus::Ok	enumerator	renderer	renderer-framestatus-ok	renderer.md	engine/renderer/renderer.h:30
-renderer::FrameStatus::Skipped	enumerator	renderer	renderer-framestatus-skipped	renderer.md	engine/renderer/renderer.h:31
-renderer::FrameStatus::DeviceLost	enumerator	renderer	renderer-framestatus-devicelost	renderer.md	engine/renderer/renderer.h:32
-renderer::FrameStatus::Failed	enumerator	renderer	renderer-framestatus-failed	renderer.md	engine/renderer/renderer.h:33
-renderer::FrameStatusName(FrameStatus)	function	renderer	renderer-framestatusname-framestatus	renderer.md	engine/renderer/renderer.h:42
-renderer::FrameTarget	struct	renderer	renderer-frametarget	renderer.md	engine/renderer/renderer.h:47
-renderer::FrameTarget::texture	variable	renderer	renderer-frametarget-texture	renderer.md	engine/renderer/renderer.h:49
-renderer::FrameTarget::width	variable	renderer	renderer-frametarget-width	renderer.md	engine/renderer/renderer.h:51
-renderer::FrameTarget::height	variable	renderer	renderer-frametarget-height	renderer.md	engine/renderer/renderer.h:53
-renderer::FrameTarget::format	variable	renderer	renderer-frametarget-format	renderer.md	engine/renderer/renderer.h:55
-renderer::FrameTarget::initial	variable	renderer	renderer-frametarget-initial	renderer.md	engine/renderer/renderer.h:57
-renderer::FrameTarget::final_state	variable	renderer	renderer-frametarget-final-state	renderer.md	engine/renderer/renderer.h:59
-renderer::FrameContext	struct	renderer	renderer-framecontext	renderer.md	engine/renderer/renderer.h:65
-renderer::FrameContext::graph	variable	renderer	renderer-framecontext-graph	renderer.md	engine/renderer/renderer.h:67
-renderer::FrameContext::target	variable	renderer	renderer-framecontext-target	renderer.md	engine/renderer/renderer.h:69
-renderer::FrameContext::width	variable	renderer	renderer-framecontext-width	renderer.md	engine/renderer/renderer.h:71
-renderer::FrameContext::height	variable	renderer	renderer-framecontext-height	renderer.md	engine/renderer/renderer.h:73
-renderer::FrameContext::format	variable	renderer	renderer-framecontext-format	renderer.md	engine/renderer/renderer.h:75
-renderer::FrameContext::scene	variable	renderer	renderer-framecontext-scene	renderer.md	engine/renderer/renderer.h:77
-renderer::FrameContext::camera	variable	renderer	renderer-framecontext-camera	renderer.md	engine/renderer/renderer.h:79
-renderer::FrameContext::device	variable	renderer	renderer-framecontext-device	renderer.md	engine/renderer/renderer.h:81
-renderer::FrameContext::frame_index	variable	renderer	renderer-framecontext-frame-index	renderer.md	engine/renderer/renderer.h:83
-renderer::FrameBuildFn	alias	renderer	renderer-framebuildfn	renderer.md	engine/renderer/renderer.h:87
-renderer::RecoveryPolicy	struct	renderer	renderer-recoverypolicy	renderer.md	engine/renderer/renderer.h:95
-renderer::RecoveryPolicy::max_attempts	variable	renderer	renderer-recoverypolicy-max-attempts	renderer.md	engine/renderer/renderer.h:97
-renderer::RecoveryPolicy::delay_frames	variable	renderer	renderer-recoverypolicy-delay-frames	renderer.md	engine/renderer/renderer.h:100
-renderer::RecoveryPolicy::max_delay_frames	variable	renderer	renderer-recoverypolicy-max-delay-frames	renderer.md	engine/renderer/renderer.h:102
-renderer::RecoveryPolicy::fallback_adapter	variable	renderer	renderer-recoverypolicy-fallback-adapter	renderer.md	engine/renderer/renderer.h:104
-renderer::RendererDesc	struct	renderer	renderer-rendererdesc	renderer.md	engine/renderer/renderer.h:110
-renderer::RendererDesc::device	variable	renderer	renderer-rendererdesc-device	renderer.md	engine/renderer/renderer.h:112
-renderer::RendererDesc::swapchain	variable	renderer	renderer-rendererdesc-swapchain	renderer.md	engine/renderer/renderer.h:114
-renderer::RendererDesc::scheduler	variable	renderer	renderer-rendererdesc-scheduler	renderer.md	engine/renderer/renderer.h:116
-renderer::RendererDesc::arena_bytes	variable	renderer	renderer-rendererdesc-arena-bytes	renderer.md	engine/renderer/renderer.h:118
-renderer::RendererDesc::graph	variable	renderer	renderer-rendererdesc-graph	renderer.md	engine/renderer/renderer.h:120
-renderer::RendererDesc::pool	variable	renderer	renderer-rendererdesc-pool	renderer.md	engine/renderer/renderer.h:122
-renderer::RendererDesc::host	variable	renderer	renderer-rendererdesc-host	renderer.md	engine/renderer/renderer.h:126
-renderer::RendererDesc::create_info	variable	renderer	renderer-rendererdesc-create-info	renderer.md	engine/renderer/renderer.h:129
-renderer::RendererDesc::recovery	variable	renderer	renderer-rendererdesc-recovery	renderer.md	engine/renderer/renderer.h:131
-renderer::RendererDesc::window	variable	renderer	renderer-rendererdesc-window	renderer.md	engine/renderer/renderer.h:133
-renderer::RendererDesc::initial_settings	variable	renderer	renderer-rendererdesc-initial-settings	renderer.md	engine/renderer/renderer.h:136
-renderer::RendererDesc::resources	variable	renderer	renderer-rendererdesc-resources	renderer.md	engine/renderer/renderer.h:139
-renderer::RendererDesc::build	variable	renderer	renderer-rendererdesc-build	renderer.md	engine/renderer/renderer.h:141
-renderer::RendererDesc::build_user	variable	renderer	renderer-rendererdesc-build-user	renderer.md	engine/renderer/renderer.h:143
-renderer::RendererStats	struct	renderer	renderer-rendererstats	renderer.md	engine/renderer/renderer.h:149
-renderer::RendererStats::frames_rendered	variable	renderer	renderer-rendererstats-frames-rendered	renderer.md	engine/renderer/renderer.h:151
-renderer::RendererStats::frames_skipped	variable	renderer	renderer-rendererstats-frames-skipped	renderer.md	engine/renderer/renderer.h:153
-renderer::RendererStats::frames_failed	variable	renderer	renderer-rendererstats-frames-failed	renderer.md	engine/renderer/renderer.h:155
-renderer::RendererStats::frames_lost	variable	renderer	renderer-rendererstats-frames-lost	renderer.md	engine/renderer/renderer.h:157
-renderer::RendererStats::swapchain_recreations	variable	renderer	renderer-rendererstats-swapchain-recreations	renderer.md	engine/renderer/renderer.h:159
-renderer::RendererStats::applies	variable	renderer	renderer-rendererstats-applies	renderer.md	engine/renderer/renderer.h:161
-renderer::RendererStats::resets	variable	renderer	renderer-rendererstats-resets	renderer.md	engine/renderer/renderer.h:163
-renderer::RendererStats::rollbacks	variable	renderer	renderer-rendererstats-rollbacks	renderer.md	engine/renderer/renderer.h:165
-renderer::RendererStats::recoveries	variable	renderer	renderer-rendererstats-recoveries	renderer.md	engine/renderer/renderer.h:167
-renderer::RendererStats::recovery_failures	variable	renderer	renderer-rendererstats-recovery-failures	renderer.md	engine/renderer/renderer.h:169
-renderer::RendererStats::last_reset_ms	variable	renderer	renderer-rendererstats-last-reset-ms	renderer.md	engine/renderer/renderer.h:171
-renderer::RendererStats::last_fence	variable	renderer	renderer-rendererstats-last-fence	renderer.md	engine/renderer/renderer.h:173
-renderer::MakeDeviceCreateInfo(const RenderSettings&,const rhi::DeviceCreateInfo&,char*,rhi::DeviceCreateInfo*)	function	renderer	renderer-makedevicecreateinfo-const-rendersettings-amp-const-rhi-devicecreateinfo-amp-char-star-rhi-devicecreateinfo-star	renderer.md	engine/renderer/renderer.h:184
-renderer::MakeSwapchainDesc(const RenderSettings&)	function	renderer	renderer-makeswapchaindesc-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:190
-renderer::ApplyResult	struct	renderer	renderer-applyresult	renderer.md	engine/renderer/renderer.h:195
-renderer::ApplyResult::ok	variable	renderer	renderer-applyresult-ok	renderer.md	engine/renderer/renderer.h:197
-renderer::ApplyResult::queued	variable	renderer	renderer-applyresult-queued	renderer.md	engine/renderer/renderer.h:199
-renderer::ApplyResult::rolled_back	variable	renderer	renderer-applyresult-rolled-back	renderer.md	engine/renderer/renderer.h:201
-renderer::ApplyResult::device_lost	variable	renderer	renderer-applyresult-device-lost	renderer.md	engine/renderer/renderer.h:203
-renderer::ApplyResult::performed	variable	renderer	renderer-applyresult-performed	renderer.md	engine/renderer/renderer.h:205
-renderer::ApplyResult::change	variable	renderer	renderer-applyresult-change	renderer.md	engine/renderer/renderer.h:207
-renderer::ApplyResult::reason	variable	renderer	renderer-applyresult-reason	renderer.md	engine/renderer/renderer.h:209
-renderer::ApplyResult::total_ms	variable	renderer	renderer-applyresult-total-ms	renderer.md	engine/renderer/renderer.h:211
-renderer::ApplyResult::release_ms	variable	renderer	renderer-applyresult-release-ms	renderer.md	engine/renderer/renderer.h:213
-renderer::ApplyResult::device_ms	variable	renderer	renderer-applyresult-device-ms	renderer.md	engine/renderer/renderer.h:215
-renderer::ApplyResult::swapchain_ms	variable	renderer	renderer-applyresult-swapchain-ms	renderer.md	engine/renderer/renderer.h:217
-renderer::ApplyResult::rebuild_ms	variable	renderer	renderer-applyresult-rebuild-ms	renderer.md	engine/renderer/renderer.h:219
-renderer::ApplyResult::reset	variable	renderer	renderer-applyresult-reset	renderer.md	engine/renderer/renderer.h:222
-renderer::ResetBeginFn	alias	renderer	renderer-resetbeginfn	renderer.md	engine/renderer/renderer.h:226
-renderer::ResetEndFn	alias	renderer	renderer-resetendfn	renderer.md	engine/renderer/renderer.h:228
-renderer::Renderer	class	renderer	renderer-renderer	renderer.md	engine/renderer/renderer.h:236
-renderer::Renderer::Renderer(const RendererDesc&)	function	renderer	renderer-renderer-renderer-const-rendererdesc-amp	renderer.md	engine/renderer/renderer.h:243
-renderer::Renderer::Renderer(const Renderer&)	function	renderer	renderer-renderer-renderer-const-renderer-amp	renderer.md	engine/renderer/renderer.h:244
-renderer::Renderer::operator=(const Renderer&)	function	renderer	renderer-renderer-operator-eq-const-renderer-amp	renderer.md	engine/renderer/renderer.h:245
-renderer::Renderer::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-renderer-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/renderer.h:255
-renderer::Renderer::ApplySettings(const RenderSettings&)	function	renderer	renderer-renderer-applysettings-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:272
-renderer::Renderer::ForceDeviceReset()	function	renderer	renderer-renderer-forcedevicereset	renderer.md	engine/renderer/renderer.h:280
-renderer::Renderer::Settings() const	function	renderer	renderer-renderer-settings-const	renderer.md	engine/renderer/renderer.h:284
-renderer::Renderer::LastApply() const	function	renderer	renderer-renderer-lastapply-const	renderer.md	engine/renderer/renderer.h:288
-renderer::Renderer::GetCapabilities() const	function	renderer	renderer-renderer-getcapabilities-const	renderer.md	engine/renderer/renderer.h:292
-renderer::Renderer::SetResetCallbacks(ResetBeginFn,ResetEndFn,void*)	function	renderer	renderer-renderer-setresetcallbacks-resetbeginfn-resetendfn-void-star	renderer.md	engine/renderer/renderer.h:301
-renderer::Renderer::GetDevice() const	function	renderer	renderer-renderer-getdevice-const	renderer.md	engine/renderer/renderer.h:311
-renderer::Renderer::GetSwapchain() const	function	renderer	renderer-renderer-getswapchain-const	renderer.md	engine/renderer/renderer.h:316
-renderer::Renderer::IsRecovering() const	function	renderer	renderer-renderer-isrecovering-const	renderer.md	engine/renderer/renderer.h:320
-renderer::Renderer::IsBroken() const	function	renderer	renderer-renderer-isbroken-const	renderer.md	engine/renderer/renderer.h:324
-renderer::Renderer::RenderFrame(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-renderer-renderframe-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/renderer.h:339
-renderer::Renderer::LastError() const	function	renderer	renderer-renderer-lasterror-const	renderer.md	engine/renderer/renderer.h:344
-renderer::Renderer::Stats() const	function	renderer	renderer-renderer-stats-const	renderer.md	engine/renderer/renderer.h:348
-renderer::Renderer::Pool() const	function	renderer	renderer-renderer-pool-const	renderer.md	engine/renderer/renderer.h:352
-renderer::Renderer::FrameIndex() const	function	renderer	renderer-renderer-frameindex-const	renderer.md	engine/renderer/renderer.h:356
+renderer::FrameStatus	enum	renderer	renderer-framestatus	renderer.md	engine/renderer/renderer.h:30
+renderer::FrameStatus::Ok	enumerator	renderer	renderer-framestatus-ok	renderer.md	engine/renderer/renderer.h:31
+renderer::FrameStatus::Skipped	enumerator	renderer	renderer-framestatus-skipped	renderer.md	engine/renderer/renderer.h:32
+renderer::FrameStatus::DeviceLost	enumerator	renderer	renderer-framestatus-devicelost	renderer.md	engine/renderer/renderer.h:33
+renderer::FrameStatus::Failed	enumerator	renderer	renderer-framestatus-failed	renderer.md	engine/renderer/renderer.h:34
+renderer::FrameStatusName(FrameStatus)	function	renderer	renderer-framestatusname-framestatus	renderer.md	engine/renderer/renderer.h:43
+renderer::FrameTarget	struct	renderer	renderer-frametarget	renderer.md	engine/renderer/renderer.h:48
+renderer::FrameTarget::texture	variable	renderer	renderer-frametarget-texture	renderer.md	engine/renderer/renderer.h:50
+renderer::FrameTarget::width	variable	renderer	renderer-frametarget-width	renderer.md	engine/renderer/renderer.h:52
+renderer::FrameTarget::height	variable	renderer	renderer-frametarget-height	renderer.md	engine/renderer/renderer.h:54
+renderer::FrameTarget::format	variable	renderer	renderer-frametarget-format	renderer.md	engine/renderer/renderer.h:56
+renderer::FrameTarget::initial	variable	renderer	renderer-frametarget-initial	renderer.md	engine/renderer/renderer.h:58
+renderer::FrameTarget::final_state	variable	renderer	renderer-frametarget-final-state	renderer.md	engine/renderer/renderer.h:60
+renderer::FrameContext	struct	renderer	renderer-framecontext	renderer.md	engine/renderer/renderer.h:66
+renderer::FrameContext::graph	variable	renderer	renderer-framecontext-graph	renderer.md	engine/renderer/renderer.h:68
+renderer::FrameContext::target	variable	renderer	renderer-framecontext-target	renderer.md	engine/renderer/renderer.h:70
+renderer::FrameContext::width	variable	renderer	renderer-framecontext-width	renderer.md	engine/renderer/renderer.h:72
+renderer::FrameContext::height	variable	renderer	renderer-framecontext-height	renderer.md	engine/renderer/renderer.h:74
+renderer::FrameContext::format	variable	renderer	renderer-framecontext-format	renderer.md	engine/renderer/renderer.h:76
+renderer::FrameContext::scene	variable	renderer	renderer-framecontext-scene	renderer.md	engine/renderer/renderer.h:78
+renderer::FrameContext::camera	variable	renderer	renderer-framecontext-camera	renderer.md	engine/renderer/renderer.h:80
+renderer::FrameContext::device	variable	renderer	renderer-framecontext-device	renderer.md	engine/renderer/renderer.h:82
+renderer::FrameContext::frame_index	variable	renderer	renderer-framecontext-frame-index	renderer.md	engine/renderer/renderer.h:84
+renderer::FrameBuildFn	alias	renderer	renderer-framebuildfn	renderer.md	engine/renderer/renderer.h:88
+renderer::RecoveryPolicy	struct	renderer	renderer-recoverypolicy	renderer.md	engine/renderer/renderer.h:96
+renderer::RecoveryPolicy::max_attempts	variable	renderer	renderer-recoverypolicy-max-attempts	renderer.md	engine/renderer/renderer.h:98
+renderer::RecoveryPolicy::delay_frames	variable	renderer	renderer-recoverypolicy-delay-frames	renderer.md	engine/renderer/renderer.h:101
+renderer::RecoveryPolicy::max_delay_frames	variable	renderer	renderer-recoverypolicy-max-delay-frames	renderer.md	engine/renderer/renderer.h:103
+renderer::RecoveryPolicy::fallback_adapter	variable	renderer	renderer-recoverypolicy-fallback-adapter	renderer.md	engine/renderer/renderer.h:105
+renderer::RendererDesc	struct	renderer	renderer-rendererdesc	renderer.md	engine/renderer/renderer.h:111
+renderer::RendererDesc::device	variable	renderer	renderer-rendererdesc-device	renderer.md	engine/renderer/renderer.h:113
+renderer::RendererDesc::swapchain	variable	renderer	renderer-rendererdesc-swapchain	renderer.md	engine/renderer/renderer.h:115
+renderer::RendererDesc::scheduler	variable	renderer	renderer-rendererdesc-scheduler	renderer.md	engine/renderer/renderer.h:117
+renderer::RendererDesc::arena_bytes	variable	renderer	renderer-rendererdesc-arena-bytes	renderer.md	engine/renderer/renderer.h:119
+renderer::RendererDesc::graph	variable	renderer	renderer-rendererdesc-graph	renderer.md	engine/renderer/renderer.h:121
+renderer::RendererDesc::pool	variable	renderer	renderer-rendererdesc-pool	renderer.md	engine/renderer/renderer.h:123
+renderer::RendererDesc::host	variable	renderer	renderer-rendererdesc-host	renderer.md	engine/renderer/renderer.h:127
+renderer::RendererDesc::create_info	variable	renderer	renderer-rendererdesc-create-info	renderer.md	engine/renderer/renderer.h:130
+renderer::RendererDesc::recovery	variable	renderer	renderer-rendererdesc-recovery	renderer.md	engine/renderer/renderer.h:132
+renderer::RendererDesc::window	variable	renderer	renderer-rendererdesc-window	renderer.md	engine/renderer/renderer.h:134
+renderer::RendererDesc::initial_settings	variable	renderer	renderer-rendererdesc-initial-settings	renderer.md	engine/renderer/renderer.h:137
+renderer::RendererDesc::resources	variable	renderer	renderer-rendererdesc-resources	renderer.md	engine/renderer/renderer.h:140
+renderer::RendererDesc::build	variable	renderer	renderer-rendererdesc-build	renderer.md	engine/renderer/renderer.h:142
+renderer::RendererDesc::build_user	variable	renderer	renderer-rendererdesc-build-user	renderer.md	engine/renderer/renderer.h:144
+renderer::RendererStats	struct	renderer	renderer-rendererstats	renderer.md	engine/renderer/renderer.h:150
+renderer::RendererStats::frames_rendered	variable	renderer	renderer-rendererstats-frames-rendered	renderer.md	engine/renderer/renderer.h:152
+renderer::RendererStats::frames_skipped	variable	renderer	renderer-rendererstats-frames-skipped	renderer.md	engine/renderer/renderer.h:154
+renderer::RendererStats::frames_failed	variable	renderer	renderer-rendererstats-frames-failed	renderer.md	engine/renderer/renderer.h:156
+renderer::RendererStats::frames_lost	variable	renderer	renderer-rendererstats-frames-lost	renderer.md	engine/renderer/renderer.h:158
+renderer::RendererStats::swapchain_recreations	variable	renderer	renderer-rendererstats-swapchain-recreations	renderer.md	engine/renderer/renderer.h:160
+renderer::RendererStats::applies	variable	renderer	renderer-rendererstats-applies	renderer.md	engine/renderer/renderer.h:162
+renderer::RendererStats::resets	variable	renderer	renderer-rendererstats-resets	renderer.md	engine/renderer/renderer.h:164
+renderer::RendererStats::rollbacks	variable	renderer	renderer-rendererstats-rollbacks	renderer.md	engine/renderer/renderer.h:166
+renderer::RendererStats::recoveries	variable	renderer	renderer-rendererstats-recoveries	renderer.md	engine/renderer/renderer.h:168
+renderer::RendererStats::recovery_failures	variable	renderer	renderer-rendererstats-recovery-failures	renderer.md	engine/renderer/renderer.h:170
+renderer::RendererStats::last_reset_ms	variable	renderer	renderer-rendererstats-last-reset-ms	renderer.md	engine/renderer/renderer.h:172
+renderer::RendererStats::last_fence	variable	renderer	renderer-rendererstats-last-fence	renderer.md	engine/renderer/renderer.h:174
+renderer::MakeDeviceCreateInfo(const RenderSettings&,const rhi::DeviceCreateInfo&,char*,rhi::DeviceCreateInfo*)	function	renderer	renderer-makedevicecreateinfo-const-rendersettings-amp-const-rhi-devicecreateinfo-amp-char-star-rhi-devicecreateinfo-star	renderer.md	engine/renderer/renderer.h:185
+renderer::MakeSwapchainDesc(const RenderSettings&)	function	renderer	renderer-makeswapchaindesc-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:191
+renderer::ApplyResult	struct	renderer	renderer-applyresult	renderer.md	engine/renderer/renderer.h:196
+renderer::ApplyResult::ok	variable	renderer	renderer-applyresult-ok	renderer.md	engine/renderer/renderer.h:198
+renderer::ApplyResult::queued	variable	renderer	renderer-applyresult-queued	renderer.md	engine/renderer/renderer.h:200
+renderer::ApplyResult::rolled_back	variable	renderer	renderer-applyresult-rolled-back	renderer.md	engine/renderer/renderer.h:202
+renderer::ApplyResult::device_lost	variable	renderer	renderer-applyresult-device-lost	renderer.md	engine/renderer/renderer.h:204
+renderer::ApplyResult::performed	variable	renderer	renderer-applyresult-performed	renderer.md	engine/renderer/renderer.h:206
+renderer::ApplyResult::change	variable	renderer	renderer-applyresult-change	renderer.md	engine/renderer/renderer.h:208
+renderer::ApplyResult::reason	variable	renderer	renderer-applyresult-reason	renderer.md	engine/renderer/renderer.h:210
+renderer::ApplyResult::total_ms	variable	renderer	renderer-applyresult-total-ms	renderer.md	engine/renderer/renderer.h:212
+renderer::ApplyResult::release_ms	variable	renderer	renderer-applyresult-release-ms	renderer.md	engine/renderer/renderer.h:214
+renderer::ApplyResult::device_ms	variable	renderer	renderer-applyresult-device-ms	renderer.md	engine/renderer/renderer.h:216
+renderer::ApplyResult::swapchain_ms	variable	renderer	renderer-applyresult-swapchain-ms	renderer.md	engine/renderer/renderer.h:218
+renderer::ApplyResult::rebuild_ms	variable	renderer	renderer-applyresult-rebuild-ms	renderer.md	engine/renderer/renderer.h:220
+renderer::ApplyResult::reset	variable	renderer	renderer-applyresult-reset	renderer.md	engine/renderer/renderer.h:223
+renderer::ResetBeginFn	alias	renderer	renderer-resetbeginfn	renderer.md	engine/renderer/renderer.h:227
+renderer::ResetEndFn	alias	renderer	renderer-resetendfn	renderer.md	engine/renderer/renderer.h:229
+renderer::Renderer	class	renderer	renderer-renderer	renderer.md	engine/renderer/renderer.h:237
+renderer::Renderer::Renderer(const RendererDesc&)	function	renderer	renderer-renderer-renderer-const-rendererdesc-amp	renderer.md	engine/renderer/renderer.h:244
+renderer::Renderer::Renderer(const Renderer&)	function	renderer	renderer-renderer-renderer-const-renderer-amp	renderer.md	engine/renderer/renderer.h:245
+renderer::Renderer::operator=(const Renderer&)	function	renderer	renderer-renderer-operator-eq-const-renderer-amp	renderer.md	engine/renderer/renderer.h:246
+renderer::Renderer::Rebind(rhi::Device*,rhi::Swapchain*)	function	renderer	renderer-renderer-rebind-rhi-device-star-rhi-swapchain-star	renderer.md	engine/renderer/renderer.h:256
+renderer::Renderer::ApplySettings(const RenderSettings&)	function	renderer	renderer-renderer-applysettings-const-rendersettings-amp	renderer.md	engine/renderer/renderer.h:273
+renderer::Renderer::ForceDeviceReset()	function	renderer	renderer-renderer-forcedevicereset	renderer.md	engine/renderer/renderer.h:281
+renderer::Renderer::Settings() const	function	renderer	renderer-renderer-settings-const	renderer.md	engine/renderer/renderer.h:285
+renderer::Renderer::LastApply() const	function	renderer	renderer-renderer-lastapply-const	renderer.md	engine/renderer/renderer.h:289
+renderer::Renderer::GetCapabilities() const	function	renderer	renderer-renderer-getcapabilities-const	renderer.md	engine/renderer/renderer.h:293
+renderer::Renderer::SetResetCallbacks(ResetBeginFn,ResetEndFn,void*)	function	renderer	renderer-renderer-setresetcallbacks-resetbeginfn-resetendfn-void-star	renderer.md	engine/renderer/renderer.h:302
+renderer::Renderer::GetDevice() const	function	renderer	renderer-renderer-getdevice-const	renderer.md	engine/renderer/renderer.h:312
+renderer::Renderer::GetSwapchain() const	function	renderer	renderer-renderer-getswapchain-const	renderer.md	engine/renderer/renderer.h:317
+renderer::Renderer::IsRecovering() const	function	renderer	renderer-renderer-isrecovering-const	renderer.md	engine/renderer/renderer.h:321
+renderer::Renderer::IsBroken() const	function	renderer	renderer-renderer-isbroken-const	renderer.md	engine/renderer/renderer.h:325
+renderer::Renderer::RenderFrame(const RenderScene*,const Camera*,const FrameTarget*)	function	renderer	renderer-renderer-renderframe-const-renderscene-star-const-camera-star-const-frametarget-star	renderer.md	engine/renderer/renderer.h:340
+renderer::Renderer::LastError() const	function	renderer	renderer-renderer-lasterror-const	renderer.md	engine/renderer/renderer.h:345
+renderer::Renderer::Stats() const	function	renderer	renderer-renderer-stats-const	renderer.md	engine/renderer/renderer.h:349
+renderer::Renderer::Pool() const	function	renderer	renderer-renderer-pool-const	renderer.md	engine/renderer/renderer.h:353
+renderer::Renderer::FrameIndex() const	function	renderer	renderer-renderer-frameindex-const	renderer.md	engine/renderer/renderer.h:357
 renderer::RendererName()	function	renderer	renderer-renderername	renderer.md	engine/renderer/renderer_info.h:12
-renderer::RenderLogV(LogVerbosity,const char*,...)	function	renderer	renderer-renderlogv-logverbosity-const-char-star	renderer.md	engine/renderer/renderer_log.h:21
-RenderLog	macro	renderer	renderlog	renderer.md	engine/renderer/renderer_log.h:41
+renderer::RenderLogV(LogVerbosity,const char*,...)	function	renderer	renderer-renderlogv-logverbosity-const-char-star	renderer.md	engine/renderer/renderer_log.h:22
+RenderLog	macro	renderer	renderlog	renderer.md	engine/renderer/renderer_log.h:42
 renderer::kMaxPermutationOptions	variable	renderer	renderer-kmaxpermutationoptions	renderer.md	engine/renderer/shader_permutation.h:17
 renderer::kMaxPermutationKeys	variable	renderer	renderer-kmaxpermutationkeys	renderer.md	engine/renderer/shader_permutation.h:19
 renderer::PermutationKey	struct	renderer	renderer-permutationkey	renderer.md	engine/renderer/shader_permutation.h:24

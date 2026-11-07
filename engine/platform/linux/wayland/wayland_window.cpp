@@ -269,8 +269,6 @@ WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
       server_side_decorated_(other.server_side_decorated_),
       buffer_(other.buffer_),
       shm_(other.shm_),
-      buffer_stale_(other.buffer_stale_),
-      surface_exported_(other.surface_exported_),
       shm_data_(other.shm_data_),
       shm_size_(other.shm_size_),
       width_(other.width_),
@@ -284,6 +282,8 @@ WaylandWindow::WaylandWindow(WaylandWindow&& other) noexcept
       default_height_(other.default_height_),
       floating_width_(other.floating_width_),
       floating_height_(other.floating_height_),
+      buffer_stale_(other.buffer_stale_),
+      surface_exported_(other.surface_exported_),
       should_close_(other.should_close_) {
     other.surface_ = nullptr;
     other.xdg_surface_ = nullptr;
@@ -377,10 +377,14 @@ const xdg_surface_listener WaylandWindow::kXdgSurfaceListener = {
     .configure = WaylandWindow::HandleXdgSurfaceConfigure,
 };
 
-const xdg_toplevel_listener WaylandWindow::kXdgToplevelListener = {
-    .configure = WaylandWindow::HandleToplevelConfigure,
-    .close = WaylandWindow::HandleToplevelClose,
-};
+// Built by assignment: the protocol version adds members (configure_bounds, wm_capabilities) this window does not handle, and a
+// designated initializer that leaves them out is a warning.
+const xdg_toplevel_listener WaylandWindow::kXdgToplevelListener = [] {
+    xdg_toplevel_listener listener{};
+    listener.configure = WaylandWindow::HandleToplevelConfigure;
+    listener.close = WaylandWindow::HandleToplevelClose;
+    return listener;
+}();
 
 const zxdg_toplevel_decoration_v1_listener WaylandWindow::kDecorationListener = {
     .configure = WaylandWindow::HandleDecorationConfigure,

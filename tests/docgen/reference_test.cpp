@@ -79,7 +79,6 @@ struct Project {
     TempDir dir;
     explicit Project(const std::vector<std::pair<std::string, std::string>>& files, const std::string& map) {
         for (auto& f : files) {
-            size_t slash = f.first.rfind('/');
             WriteWhole(dir.path + "/" + f.first, f.second);
         }
         WriteWhole(dir.path + "/modules.txt", map);

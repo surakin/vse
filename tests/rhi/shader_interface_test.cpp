@@ -49,8 +49,8 @@ constexpr u32 kDecorationBinding = 33;
 constexpr u32 kDecorationDescriptorSet = 34;
 
 struct Interface {
-    std::vector<u32> locations;                 // sorted
-    std::vector<std::pair<u32, u32>> bindings;  // (set, binding), sorted
+    std::vector<u32> locations = {};            // sorted
+    std::vector<std::pair<u32, u32>> bindings = {};  // (set, binding), sorted
     u32 local_size[3] = {0, 0, 0};
     u32 entry_points = 0;
     std::vector<u32> capabilities;      // sorted
@@ -116,13 +116,13 @@ Interface Reflect(const u32* words, usize count) {
 using namespace engine_placeholder::shaders;
 
 struct Expect {
-    std::vector<std::pair<u32, u32>> bindings;  // (set, binding)
-    std::vector<u32> locations;                 // sorted
-    std::vector<u32> offsets;                   // std140 / std430 member offsets, sorted
+    std::vector<std::pair<u32, u32>> bindings = {};  // (set, binding)
+    std::vector<u32> locations = {};            // sorted
+    std::vector<u32> offsets = {};              // std140 / std430 member offsets, sorted
     u32 local_size[3] = {0, 0, 0};
     u32 non_readable = 0;
     u32 non_writable = 0;
-    std::vector<u32> image_formats;  // sorted; 0 = Unknown (sampled images), 4 = Rgba8
+    std::vector<u32> image_formats = {};  // sorted; 0 = Unknown (sampled images), 4 = Rgba8
     u32 uniform_blocks = 0;
     u32 storage_buffers = 0;
     u32 push_constant_blocks = 0;

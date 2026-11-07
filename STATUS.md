@@ -782,3 +782,9 @@ A death-test child could hang in `ExitProcess` under ASan; it now ends with `Ter
 `windows-clang-cl` 573 of 573, non-unity 862 of 862. Review: 7 findings, 4 fixed, 1 not a defect, 2 declined; the full runs found two more, fixed.
 Not done: a person opening a dump in WinDbg (no debugger installed), the reference for `post_mortem.h` (docgen on Windows is Day 157). Linux:
 pending until the phase close. **Next: Day 157 (settings on Windows: the registry store).**
+
+**Linux check after Days 147-156 (2026-11-07), and warnings as errors.** Linux broke in three places, all fixed: a unity name clash (`kEntriesPerFrame` in two
+debug files), `tests/debug` missing the `tests/support` include path, and stale `docs/reference/` pages. New policy (CLAUDE.md, "Warnings are errors"):
+`-Wall -Wextra -Werror` on Clang/GCC and `/W4 /WX` on cl and clang-cl for every target of ours; 34 Clang warnings fixed. Verified with Clang on Linux in
+unity and non-unity builds; the Windows settings are untested (`KNOWN-ISSUES.md`). Run: `ran 1537 of 3510 tests (phases: all; flavors: plain; display: included;
+crash tests: included)`; only the two known Wayland `renderer_demo` tests fail.

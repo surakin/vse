@@ -6539,7 +6539,7 @@ The log channel used by the RHI and its backends.
 `function rhi::RhiLogV` — defined in `engine/rhi/rhi_log.h`
 
 ```cpp
-void RhiLogV(LogVerbosity level, const char* fmt, ...) __attribute__((format(printf, 2, 3)));
+void RhiLogV(LogVerbosity level, const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
 ```
 
 Logs a printf-style message on [`rhi::LogRhi`](#rhi-logrhi) using a 512-byte stack buffer and no allocator.

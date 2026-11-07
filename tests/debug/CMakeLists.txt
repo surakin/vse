@@ -164,7 +164,7 @@ function(engine_add_debug_tests target foundation_lib jobs_lib suffix label)
       ENGINE_PROGRAM_RENDERER_DEMO="$<TARGET_FILE:renderer_demo>" ENGINE_PROGRAM_RENDERER_BENCH="$<TARGET_FILE:renderer_bench>")
     add_dependencies(${target} rhi_demo rhi_bench renderer_demo renderer_bench)
   endif()
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)
   # The family tests exercise the checking paths, so they need debug and slow checks on whatever the configuration is.
   target_compile_definitions(${target} PRIVATE ENGINE_DEBUG_CHECKS=1 ENGINE_SLOW_CHECKS=1)
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label};crash")

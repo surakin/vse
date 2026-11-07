@@ -235,7 +235,7 @@ u64 SeedBase() {
 
 // ---- skewed load -------------------------------------------------------------
 
-u64 g_sink = 0;
+volatile u64 g_sink = 0;
 
 u64 Burn(u64 iters) {
     u64 x = 0x12345;
@@ -252,7 +252,7 @@ u64 Calibrate(u64 micros) {
     u64 iters = 100'000;
     for (int attempt = 0; attempt < 5; ++attempt) {
         auto t0 = Clock::now();
-        g_sink ^= Burn(iters);
+        g_sink = g_sink ^ Burn(iters);
         double us = std::chrono::duration<double, std::micro>(Clock::now() - t0).count();
         if (us > 2000) return static_cast<u64>(static_cast<double>(iters) * micros / us) + 1;
         iters *= 4;

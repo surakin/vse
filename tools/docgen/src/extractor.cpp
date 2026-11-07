@@ -976,7 +976,6 @@ private:
         usize start = p_;
         usize i = p_;
         usize paren_open = kNone;
-        usize params_end = kNone;
         usize op_idx = kNone;
         usize fp_name = kNone;
         usize last_ident = kNone;
@@ -1025,7 +1024,6 @@ private:
                         continue;
                     }
                     paren_open = i;
-                    params_end = after;
                     i = after;
                     continue;
                 }

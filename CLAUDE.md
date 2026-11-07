@@ -106,6 +106,14 @@ When a file breaks under it, work down this list and stop at the first step that
 Never skip a file from unity builds as the first response to a conflict. The plain `-DENGINE_UNITY_BUILD=OFF` build
 must keep passing too, so every source still compiles on its own.
 
+## Warnings are errors, on every platform (required)
+
+Every target of ours (`engine/`, `game/`, `tools/`, `tests/`) compiles with warnings as errors: `-Wall -Wextra -Werror` on Clang/GCC, `/W4 /WX` on cl and clang-cl
+(`ENGINE_WARNING_COMPILE_OPTIONS` in `cmake/EngineCompilerOptions.cmake`, added by the root `CMakeLists.txt` after `third_party/`, so the vendored libraries keep their
+own flags). **Fix the code; do not silence the warning.** No `-Wno-...`, no `#pragma` that disables a warning, no `(void)` to hide a defect. The rule starts as an absolute;
+if a real exception turns up, it is added here with its reason (and to the CMake file) in the same commit, not decided locally. A change must build clean in unity and
+`-DENGINE_UNITY_BUILD=OFF` (unused-function and unused-field warnings differ between the two).
+
 ## End-of-day code review (required)
 
 **Every implementation day ends with a high-effort code review before it

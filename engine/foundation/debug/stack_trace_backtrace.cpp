@@ -169,7 +169,7 @@ usize ResolveWithState(backtrace_state* state, const StackTrace& trace, FrameInf
     return ctx.count;
 }
 
-constexpr usize kEntriesPerFrame = 8; // entries resolved per address while priming the library in InitDebugFacilities
+constexpr usize kPrimeEntriesPerAddress = 8; // entries resolved per address while priming the library in InitDebugFacilities
 
 } // namespace
 
@@ -191,7 +191,7 @@ void InitDebugFacilities() {
     StackTrace trace;
     CaptureContext ctx{&trace};
     backtrace_simple(created, 0, &CaptureFrame, &TraceError, &ctx);
-    FrameInfo entries[kEntriesPerFrame * 4];
+    FrameInfo entries[kPrimeEntriesPerAddress * 4];
     ResolveWithState(created, trace, entries, sizeof(entries) / sizeof(entries[0]));
     g_trace_state.store(created, std::memory_order_release);
 }

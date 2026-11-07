@@ -259,7 +259,6 @@ private:
     static void Record(const PassExecuteContext& context, void* user);
     void Reject(const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
 
-    rhi::Device* device_ = nullptr;
     MaterialSystem* materials_ = nullptr;
     FrameResources* frame_ = nullptr;
     Vector<Draw> draws_;

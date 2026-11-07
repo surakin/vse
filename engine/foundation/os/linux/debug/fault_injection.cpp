@@ -18,6 +18,7 @@ volatile unsigned g_fault_depth = 0;
 // Recurses with a sizeable frame so the stack runs out quickly; the volatile counter and the use of the result keep the
 // compiler from turning the recursion into a loop.
 [[gnu::noinline]] unsigned FaultRecurse(unsigned n) {
+    if (g_fault_zero != 0) return n;  // never taken; the compiler cannot prove the recursion is unconditional
     volatile char frame[2048];
     frame[0] = static_cast<char>(n);
     g_fault_depth = g_fault_depth + 1;

@@ -20,6 +20,30 @@ using namespace engine_placeholder::debug;
 
 namespace {
 
+class ProgramStateDir {
+public:
+    ProgramStateDir() {
+        std::snprintf(path_, sizeof(path_), "/tmp/engine-program-XXXXXX");
+        if (mkdtemp(path_) == nullptr) {
+            path_[0] = '\0';
+        }
+    }
+    ~ProgramStateDir() {
+        if (path_[0] != '\0') {
+            nftw(path_, &Remove, 16, FTW_DEPTH | FTW_PHYS);
+        }
+    }
+    ProgramStateDir(const ProgramStateDir&) = delete;
+    ProgramStateDir& operator=(const ProgramStateDir&) = delete;
+    std::string Path() const { return path_; }
+
+private:
+    static int Remove(const char* entry, const struct stat*, int, struct FTW*) { return ::remove(entry); }
+    char path_[64];
+};
+
+#if defined(ENGINE_PROGRAM_RHI_DEMO) // the shipped programs are built into the plain flavor only
+
 struct ProgramRun {
     std::string output;
     int exit_code = -1;
@@ -44,29 +68,6 @@ ProgramRun RunProgramCommand(const std::string& command) {
     return run;
 }
 
-class ProgramStateDir {
-public:
-    ProgramStateDir() {
-        std::snprintf(path_, sizeof(path_), "/tmp/engine-program-XXXXXX");
-        if (mkdtemp(path_) == nullptr) {
-            path_[0] = '\0';
-        }
-    }
-    ~ProgramStateDir() {
-        if (path_[0] != '\0') {
-            nftw(path_, &Remove, 16, FTW_DEPTH | FTW_PHYS);
-        }
-    }
-    ProgramStateDir(const ProgramStateDir&) = delete;
-    ProgramStateDir& operator=(const ProgramStateDir&) = delete;
-    std::string Path() const { return path_; }
-
-private:
-    static int Remove(const char* entry, const struct stat*, int, struct FTW*) { return ::remove(entry); }
-    char path_[64];
-};
-
-#if defined(ENGINE_PROGRAM_RHI_DEMO) // the shipped programs are built into the plain flavor only
 struct ShippedProgram {
     const char* name;
     const char* path;

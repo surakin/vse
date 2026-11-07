@@ -12,13 +12,17 @@ const wl_seat_listener WaylandInput::kSeatListener = {
     .name = WaylandInput::HandleSeatName,
 };
 
-const wl_pointer_listener WaylandInput::kPointerListener = {
-    .enter = WaylandInput::HandlePointerEnter,
-    .leave = WaylandInput::HandlePointerLeave,
-    .motion = WaylandInput::HandlePointerMotion,
-    .button = WaylandInput::HandlePointerButton,
-    .axis = WaylandInput::HandlePointerAxis,
-};
+// Built by assignment: newer protocol versions add members (frame, axis_source, ...) this input does not handle, and a designated
+// initializer that leaves them out is a warning.
+const wl_pointer_listener WaylandInput::kPointerListener = [] {
+    wl_pointer_listener listener{};
+    listener.enter = WaylandInput::HandlePointerEnter;
+    listener.leave = WaylandInput::HandlePointerLeave;
+    listener.motion = WaylandInput::HandlePointerMotion;
+    listener.button = WaylandInput::HandlePointerButton;
+    listener.axis = WaylandInput::HandlePointerAxis;
+    return listener;
+}();
 
 const wl_keyboard_listener WaylandInput::kKeyboardListener = {
     .keymap = WaylandInput::HandleKeyboardKeymap,

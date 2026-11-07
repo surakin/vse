@@ -147,9 +147,9 @@ TEST_CASE("u128: edge values, shifts and wrapping", "[types][int128]") {
     CHECK(-u128(1u) == max);
     CHECK(max * max == u128(1u));
     CHECK((max >> 127) == u128(1u));
-    CHECK(u128(1u) << 127 == u128::FromParts(u64{1} << 63, 0));
+    CHECK((u128(1u) << 127) == u128::FromParts(u64{1} << 63, 0));
     for (u32 count : {0u, 1u, 63u, 64u, 65u, 127u}) {
-        CHECK((u128(1u) << count) >> count == u128(1u));
+        CHECK(((u128(1u) << count) >> count) == u128(1u));
     }
     CHECK((u128(1u) << 128) == u128());
     CHECK((max >> 128) == u128());
@@ -246,11 +246,11 @@ TEST_CASE("i128: edge values, wrapping, signed division and arithmetic shifts", 
     CHECK(i128(-7) % i128(2) == i128(-1)); // the remainder has the dividend's sign
     CHECK(i128(7) / i128(-2) == i128(-3));
     CHECK(i128(7) % i128(-2) == i128(1));
-    CHECK(i128(-1) >> 1 == i128(-1));
-    CHECK(i128(-1) >> 200 == i128(-1));
-    CHECK(i128(5) >> 200 == i128());
-    CHECK(i128(-8) >> 2 == i128(-2));
-    CHECK(i128(1) << 127 == min);
+    CHECK((i128(-1) >> 1) == i128(-1));
+    CHECK((i128(-1) >> 200) == i128(-1));
+    CHECK((i128(5) >> 200) == i128());
+    CHECK((i128(-8) >> 2) == i128(-2));
+    CHECK((i128(1) << 127) == min);
     CHECK(i128(-1) < i128(0));
     CHECK(i128(0) > i128(-5));
     CHECK(i128(-5) < i128(-4));

@@ -28,7 +28,7 @@ FrameData MakeFrameData(const Camera& camera, u32 width, u32 height, f32 time_se
     return data;
 }
 
-FrameResources::FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights) : device_(device), max_objects_(max_objects), max_lights_(max_lights) {
+FrameResources::FrameResources(rhi::Device* device, u32 max_objects, u32 max_lights) : device_(device), max_lights_(max_lights), max_objects_(max_objects) {
     ENGINE_ASSERT(device != nullptr && max_objects > 0 && max_lights > 0 && max_lights <= kMaxLights,
                   "FrameResources: need a device, at least one object, and from one to kMaxLights lights");
     Build();

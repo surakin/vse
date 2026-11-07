@@ -14,9 +14,9 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Logging and Assertions](foundation-log.md) | 3 | 79 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 15 | 493 |
-| [Platform: OS Services](platform-os.md) | 4 | 46 |
+| [Platform: OS Services](platform-os.md) | 4 | 47 |
 | [Platform: Windowing and Input](platform-window-input.md) | 9 | 264 |
-| [Foundation: Debugging](foundation-debug.md) | 15 | 203 |
+| [Foundation: Debugging](foundation-debug.md) | 15 | 208 |
 | [The Job System](jobs.md) | 11 | 190 |
 | [The Render Hardware Interface](rhi.md) | 17 | 725 |
 | [The renderer](renderer.md) | 20 | 994 |

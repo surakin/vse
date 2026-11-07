@@ -13,17 +13,6 @@ StringView MdScanTrim(StringView s) {
     return StringView(s.Data() + a, e - a);
 }
 
-bool EqualsLower(StringView a, StringView b) {
-    if (a.Length() != b.Length()) return false;
-    for (usize i = 0; i < a.Length(); ++i) {
-        char x = a[i], y = b[i];
-        if (x >= 'A' && x <= 'Z') x = static_cast<char>(x - 'A' + 'a');
-        if (y >= 'A' && y <= 'Z') y = static_cast<char>(y - 'A' + 'a');
-        if (x != y) return false;
-    }
-    return true;
-}
-
 class MdScanScanner {
 public:
     MdScanScanner(ArenaAllocator& arena, MdDoc& out) : arena_(arena), out_(out), slugs_(arena) {}

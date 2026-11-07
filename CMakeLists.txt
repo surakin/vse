@@ -100,7 +100,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
     target_compile_options(sentry PRIVATE -Wno-error -w)
   endif()
   # The engine's own Windows options, for every target created from here on (the vendored libraries above keep their own).
-  add_compile_options(${ENGINE_WINDOWS_COMPILE_OPTIONS})
+  add_compile_options(${ENGINE_WINDOWS_COMPILE_OPTIONS} ${ENGINE_WARNING_COMPILE_OPTIONS})
   add_compile_definitions(${ENGINE_WINDOWS_DEFINITIONS})
   # The Vulkan C headers (os/gpu_driver_probe.h, the Vulkan backend) from the SDK the toolchain file found. Only vulkan/*.h and the
   # vk_video/ headers vulkan_core.h includes are copied into the build tree: the SDK's Include/ also holds slang, shaderc, dxc and
@@ -160,6 +160,9 @@ include(cmake/EngineDeathTests.cmake)
 option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
 set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
 set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
+
+# Warnings are errors for everything from here on (CLAUDE.md): the vendored libraries above keep their own flags.
+add_compile_options(${ENGINE_WARNING_COMPILE_OPTIONS})
 
 add_subdirectory(engine/foundation)
 add_subdirectory(engine/platform)

@@ -9895,7 +9895,7 @@ Returns a short static description of the renderer, for logs and tools.
 `function renderer::RenderLogV` — defined in `engine/renderer/renderer_log.h`
 
 ```cpp
-void RenderLogV(LogVerbosity level, const char* fmt, ...) __attribute__((format(printf, 2, 3)));
+void RenderLogV(LogVerbosity level, const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
 ```
 
 Logs a printf-style message on the foundation's `LogRender` channel using a 512-byte stack buffer and no allocator.
