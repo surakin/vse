@@ -733,6 +733,13 @@ void VulkanDevice::WaitIdle() {
     // On a really lost device the driver answers VK_ERROR_DEVICE_LOST at once, so this does not hang; an injected loss leaves a
     // healthy device that may still be running work, so the wait must happen in both cases.
     NoteDeviceLost(fns_.DeviceWaitIdle(device_));
+    // Then the timeline itself, so CompletedFence() and the frame count below are current when this returns. The device being idle
+    // should be enough (every signal operation has completed), but AMD's Windows driver (26.10.1, Radeon 860M) reads one value short for
+    // about 100 us after vkDeviceWaitIdle returns, in 79 of 80 runs without validation (measured on Phase 13 Day 160). On other drivers
+    // the wait returns at once.
+    if (!device_lost_.load(std::memory_order_relaxed)) {
+        WaitTimeline(last_submit_value_, ~0ull);
+    }
     std::lock_guard<std::mutex> lock(resource_mutex_);
     UpdateCompletedFrames();
     CollectRetired(true); // the device is idle (or lost), so everything retired is free to release

@@ -3,7 +3,7 @@
 #include "os/os.h"
 #include "types.h"
 
-//! Vulkan loader access: `libvulkan.so.1` opened at runtime, so nothing links against Vulkan.
+//! Vulkan loader access: the platform's loader (`libvulkan.so.1`, `vulkan-1.dll`) opened at run time, so nothing links against Vulkan.
 
 #ifndef VK_NO_PROTOTYPES
 #define VK_NO_PROTOTYPES
@@ -12,7 +12,8 @@
 // forward-declares wl_display/wl_surface); the per-platform entries in vk_functions.inc are guarded on the
 // extension macro the platform header defines, so another platform adds its define here and its line there.
 // The Xlib surface header is deliberately NOT enabled: it includes <X11/Xlib.h>, whose `Success`/`None`/
-// `Bool` macros break ordinary C++ enums. Day 56 adds vkCreateXlibSurfaceKHR from an isolated translation unit.
+// `Bool` macros break ordinary C++ enums. Day 56 adds vkCreateXlibSurfaceKHR from an isolated translation unit. Windows enables
+// nothing here either: `vulkan_win32.h` needs <windows.h>, so vkCreateWin32SurfaceKHR comes from windows/vk_win32_surface.cpp.
 #if defined(__linux__) && !defined(VK_USE_PLATFORM_WAYLAND_KHR)
 #define VK_USE_PLATFORM_WAYLAND_KHR
 #endif
@@ -52,7 +53,8 @@ struct VulkanLoader {
 
 /// Opens the Vulkan loader library and resolves `vkGetInstanceProcAddr`.
 ///
-/// The library is `libvulkan.so.1` unless [[rhi::vulkan::kVulkanLibraryEnvVar]] names another path, which is
+/// The library is [[os::VulkanLoaderName]] (`libvulkan.so.1` on Linux, `vulkan-1.dll` on Windows) unless
+/// [[rhi::vulkan::kVulkanLibraryEnvVar]] names another path, which is
 /// how tests simulate a machine without Vulkan. The override is a development aid and grants nothing the
 /// process environment does not already (`LD_PRELOAD` and `VK_ICD_FILENAMES` redirect the loader the same way). The reason for a failure is logged on `LogRhi`.
 ///

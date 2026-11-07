@@ -137,7 +137,7 @@ same-layer-ok 13
 platform-dir engine/foundation/os/linux/ engine/foundation/os/
 # The Windows file backend uses the Windows OS helpers (os/windows/win32.h, utf16.h): a per-platform directory may include the same
 # platform's directory of a lower layer (ARCHITECTURE.md section 4).
-platform-dir engine/foundation/os/windows/ engine/foundation/os/,engine/foundation/io/windows/,engine/jobs/windows/,engine/foundation/settings/windows/,tools/crash_extract/windows/,engine/platform/windows/
+platform-dir engine/foundation/os/windows/ engine/foundation/os/,engine/foundation/io/windows/,engine/jobs/windows/,engine/foundation/settings/windows/,tools/crash_extract/windows/,engine/platform/windows/,engine/rhi/vulkan/windows/
 platform-dir engine/foundation/os/macos/ engine/foundation/os/
 platform-dir engine/foundation/io/linux/ engine/foundation/io/
 platform-dir engine/foundation/io/windows/ engine/foundation/io/
@@ -148,6 +148,8 @@ platform-dir engine/foundation/settings/windows/ engine/foundation/settings/
 platform-dir engine/jobs/windows/ engine/jobs/
 platform-dir engine/platform/linux/ engine/platform/
 platform-dir engine/platform/windows/ engine/platform/
+# The Vulkan backend's Win32 surface (Phase 13 Day 160), the one file of the backend that includes <windows.h>.
+platform-dir engine/rhi/vulkan/windows/ engine/rhi/vulkan/
 platform-dir engine/platform/macos/ engine/platform/
 platform-dir engine/rhi/vulkan/ engine/rhi/
 # The crash_extract tool's DbgHelp resolver (Phase 13 Day 156): uses os/windows/win32.h and <dbghelp.h>.

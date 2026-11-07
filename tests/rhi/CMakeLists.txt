@@ -20,7 +20,6 @@ set(RHI_TEST_SOURCES
   vulkan_commands_test.cpp
   vulkan_texture_test.cpp
   vulkan_fault_test.cpp
-  lsan_options.cpp
   vulkan_swapchain_test.cpp
   vulkan_frame_test.cpp
   vulkan_pipeline_test.cpp
@@ -44,6 +43,11 @@ set(RHI_TEST_SOURCES
   shader_test.cpp
   shader_interface_test.cpp
 )
+
+# LeakSanitizer's suppressions and its driver-unloading workaround: Linux only (MSVC's AddressSanitizer has no leak checker).
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  list(APPEND RHI_TEST_SOURCES lsan_options.cpp)
+endif()
 
 # Header self-containment: one generated translation unit per public RHI
 # header that includes only that header, so a header that relies on another
@@ -72,6 +76,9 @@ include(Catch)
 # multithreaded tests (null device) and the pure logic. With a Mesa software driver, run the whole binary by hand.
 function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib suffix label spec)
   add_executable(${target} ${RHI_TEST_SOURCES} ${RHI_HEADER_CHECK_SOURCES})
+  if(label STREQUAL "asan")
+    engine_asan_runtime(${target}) # before the discovery below, which runs the program (Windows: the runtime DLLs beside it)
+  endif()
   # cube_scene.cpp (compiled into this executable) uses the renderer's camera helpers; same sanitizer flavor as rhi_lib.
   string(REGEX REPLACE "^rhi" "renderer" renderer_lib "${rhi_lib}")
   string(REGEX REPLACE "^rhi" "renderer_passes" passes_lib "${rhi_lib}")
@@ -95,8 +102,12 @@ engine_add_rhi_tests(rhi_tests rhi rhi_vulkan "" "rhi" "")
 # The X11 presentation test is left out of the ASan flavor: the NVIDIA driver's Xlib WSI path leaks inside a library
 # it unloads before exit (every frame of the report is an anonymous module, so no suppression can name it), and the
 # Wayland presentation test, which runs the same code of ours, is clean.
-engine_add_rhi_tests(rhi_tests_asan rhi_asan rhi_vulkan_asan " [asan]" "asan" "~[x11]")
-engine_add_rhi_tests(rhi_tests_tsan rhi_tsan rhi_vulkan_tsan " [tsan]" "tsan" "~[gpu]")
+if(ENGINE_HAVE_ASAN)
+  engine_add_rhi_tests(rhi_tests_asan rhi_asan rhi_vulkan_asan " [asan]" "asan" "~[x11]")
+endif()
+if(ENGINE_HAVE_TSAN)
+  engine_add_rhi_tests(rhi_tests_tsan rhi_tsan rhi_vulkan_tsan " [tsan]" "tsan" "~[gpu]")
+endif()
 
 # Phase 8 Day 114: the lifecycle checklist for the DX12 and Metal backends stays in step with the interfaces, and the neutral RHI
 # headers compile for the Windows and macOS targets (needs clang++; skips without it).

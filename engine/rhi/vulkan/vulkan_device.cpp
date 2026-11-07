@@ -10,7 +10,6 @@
 #include "rhi/vulkan/vk_format.h"
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vk_swapchain.h"
-#include "rhi/vulkan/vk_xlib_surface.h"
 
 namespace engine_placeholder::rhi::vulkan {
 

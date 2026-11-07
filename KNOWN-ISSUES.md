@@ -23,7 +23,9 @@ Seen failing once or intermittently, passing on rerun. Cause not investigated.
 - Phase 13 Day 155 (2026-11-07, Windows PC): `FramePool does not commit slab memory until blocks are used [asan]` (phase 2) failed once in a
   full `ctest -j8` run of the non-unity MSVC build; it passed 5 times alone (plain and asan) right after. The failure output was not captured.
   Seen again on Day 156 in `scripts/test-phase.sh --affected --crashes --flavor asan` of the MSVC unity build (passed in the full `ctest -j8`
-  run that followed).
+  run that followed). Seen again on Day 160 in a full `ctest -j8` run of the non-unity MSVC build (1775 tests, the only failure), and then alone: run
+  directly, `jobs_tests_asan.exe` failed it on the 14th of 14 runs with `REQUIRE( after - before < 8 * 1024 )`, `33836 < 8192` (the working
+  set grew 33 MiB, against the 8 MiB the test allows, after allocating one block from a 128 MiB slab). Seen only in the ASan flavor.
 - Phase 13 Day 153 (2026-11-07, Windows PC): `Skewed load: other participants execute stolen work [asan]` (phase 2) failed once in a full
   `ctest -j8` run of the non-unity MSVC build; it passed 30 times alone and in 5 runs under `-j16` load. The failure output was not captured.
 
@@ -37,7 +39,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - `fr`/`de` keyboard layouts through a live X server (xkbcommon tests cover them).
 - Phase 5 Day 70: vsync-paced `rhi_demo` frame time was 50 ms on Wayland and 17 ms on X11 against 4.1 ms in Phase 4 in that session. The cause is believed to be compositor pacing (negligible shader cost with `--no-vsync`) but it was not re-measured after a session restart.
 - Phase 5 Day 82 (2026-11-05): the demo's interactive controls (orbit, fly with Tab and WASD, mouse drag, wheel) were not exercised with real input; only the offscreen screenshot, the bounded runs (`--frames 1000`, `--validation`) and the 16 `demo` ctests were run.
-- Phase 5 Day 82: the demo golden (`tests/rhi/golden/renderer_demo.ppm`) was blessed on an NVIDIA GeForce RTX 3060 only; the tolerance (6 levels, wider on edges) is untested on other GPUs and drivers, and so is the exact draw-order independence.
+- Phase 5 Day 82: the demo golden (`tests/rhi/golden/renderer_demo.ppm`) was blessed on an NVIDIA GeForce RTX 3060 only; the tolerance (6 levels, wider on edges) is untested on other GPUs and drivers, and so is the exact draw-order independence. Phase 13 Day 160 (2026-11-08): every golden image (triangle, cube, textured cube, lit cube, the demo scene, and the compute readback) also matches on an AMD Radeon 860M (integrated, driver 26.10.1, Windows) with the tolerances unchanged; the draw-order independence is still untested elsewhere.
 - Phase 5 Day 78 (2026-11-05): in repeated full `ctest -j8` runs, one run had 1 failure and two had X11Window tests fail (`translates key press/release into Key via the server's keymap`, `releases keys and modifiers on a real focus loss but not during WM grabs`, `releases the Key a code was pressed as even if modifiers changed`); other runs passed 1643/1643 and 1649/1649. No code those tests exercise changed that day; not investigated. Seen again on Phase 5 Day 84 (2026-11-05): one `ctest -j16` run failed `X11Window maps event state bits to engine modifiers` (modifiers 0, expected 15) and `releases keys and modifiers on a real focus loss...`; the next full run failed `translates key press/release into Key via the server's keymap`; the third run passed 1839/1839, as did 1832/1832 on Day 83, and the two tests passed 6 of 6 times rerun alone.
 
 - Phase 8 Day 103 (2026-11-06): the development machine has one Vulkan adapter (RTX 3060; `vulkaninfo` lists one, only the NVIDIA ICD is installed), so switching the GPU at run time cannot be exercised on real hardware here; adapter selection is tested on the null backend's fake adapters, and the Vulkan test will run on the one adapter. A machine with two GPUs is needed for this check.
@@ -185,6 +187,14 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   no real keyboard or mouse input was injected (`SendInput` would type into whatever has the desktop's focus).
 - Phase 13 Day 159, deferred: text input on every backend (the characters typed, dead keys, input methods; `InputState` has no field for it, X11 drops
   the text it looks up): the UI phase (16). Relative mouse motion, cursor clip and hide: `os::Window` has no call for them; no phase plans them yet.
+- Phase 13 Day 160 (2026-11-08), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 160 file, "For the
+  Linux run") were built and tested only on Windows, among them `vk_loader.cpp` (the loader name from `os::VulkanLoaderName`),
+  `vk_instance.cpp`, `vulkan_device_surface.cpp`, `vulkan_device_buffers.cpp` (`WaitIdle` also waits on the timeline), the RHI and renderer
+  CMake (sanitizer flavors only where they exist, the Xlib surface in the Linux list) and the ported `tests/rhi` files.
+- Phase 13 Day 160, until Day 161: on Windows `vulkan_reset_golden_test.cpp`'s resident-memory and descriptor counts read 0 (they come from
+  `/proc`), so its drift checks measure nothing there; Day 161, which brings the reset tests to Windows, gives them a Windows measure.
+- Phase 13 Day 160: `vulkan_pipeline_test.cpp`'s "the cache directory cannot be written" case does not run on Windows (a directory's
+  read-only attribute does not stop writes, as for the settings tests of Day 157).
 - Phase 13 Day 157, until Day 161: `docgen samples` (and with it `docs_samples` and the `docs` target's sample step) does not run on Windows: the samples link
   the renderer, the RHI and the platform layer, which reach Windows on Days 158-161; `ctest -L docs` on Windows is `docs_check`, `docs_links` and `docs_lint`.
 - Phase 13 Day 157, known limitation: on Windows a file has no mode bits, so a settings or session file the engine writes "private" (0600 on Linux) takes its

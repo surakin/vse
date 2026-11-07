@@ -3965,16 +3965,16 @@ rhi::vulkan::VulkanInstance::Fns() const	function	rhi-vulkan	rhi-vulkan-vulkanin
 rhi::vulkan::VulkanInstance::Loader() const	function	rhi-vulkan	rhi-vulkan-vulkaninstance-loader-const	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:140
 rhi::vulkan::VulkanInstance::ValidationEnabled() const	function	rhi-vulkan	rhi-vulkan-vulkaninstance-validationenabled-const	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:143
 rhi::vulkan::VulkanInstance::Presentable() const	function	rhi-vulkan	rhi-vulkan-vulkaninstance-presentable-const	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:146
-rhi::vulkan::kVulkanLibraryEnvVar	variable	rhi-vulkan	rhi-vulkan-kvulkanlibraryenvvar	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:24
-rhi::vulkan::LoaderStatus	enum	rhi-vulkan	rhi-vulkan-loaderstatus	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:27
-rhi::vulkan::LoaderStatus::Ok	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-ok	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:28
-rhi::vulkan::LoaderStatus::NoLoader	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-noloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:29
-rhi::vulkan::LoaderStatus::BadLoader	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-badloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:30
-rhi::vulkan::LoaderStatusName(LoaderStatus)	function	rhi-vulkan	rhi-vulkan-loaderstatusname-loaderstatus	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:35
-rhi::vulkan::VulkanLoader	struct	rhi-vulkan	rhi-vulkan-vulkanloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:46
-rhi::vulkan::VulkanLoader::library	variable	rhi-vulkan	rhi-vulkan-vulkanloader-library	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:48
-rhi::vulkan::VulkanLoader::get_instance_proc_addr	variable	rhi-vulkan	rhi-vulkan-vulkanloader-get-instance-proc-addr	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:50
-rhi::vulkan::LoadVulkanLoader(VulkanLoader*)	function	rhi-vulkan	rhi-vulkan-loadvulkanloader-vulkanloader-star	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:64
+rhi::vulkan::kVulkanLibraryEnvVar	variable	rhi-vulkan	rhi-vulkan-kvulkanlibraryenvvar	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:25
+rhi::vulkan::LoaderStatus	enum	rhi-vulkan	rhi-vulkan-loaderstatus	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:28
+rhi::vulkan::LoaderStatus::Ok	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-ok	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:29
+rhi::vulkan::LoaderStatus::NoLoader	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-noloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:30
+rhi::vulkan::LoaderStatus::BadLoader	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-badloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:31
+rhi::vulkan::LoaderStatusName(LoaderStatus)	function	rhi-vulkan	rhi-vulkan-loaderstatusname-loaderstatus	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:36
+rhi::vulkan::VulkanLoader	struct	rhi-vulkan	rhi-vulkan-vulkanloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:47
+rhi::vulkan::VulkanLoader::library	variable	rhi-vulkan	rhi-vulkan-vulkanloader-library	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:49
+rhi::vulkan::VulkanLoader::get_instance_proc_addr	variable	rhi-vulkan	rhi-vulkan-vulkanloader-get-instance-proc-addr	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:51
+rhi::vulkan::LoadVulkanLoader(VulkanLoader*)	function	rhi-vulkan	rhi-vulkan-loadvulkanloader-vulkanloader-star	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:66
 rhi::vulkan::kMaxMemoryTypes	variable	rhi-vulkan	rhi-vulkan-kmaxmemorytypes	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:19
 rhi::vulkan::kMaxMemoryHeaps	variable	rhi-vulkan	rhi-vulkan-kmaxmemoryheaps	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:21
 rhi::vulkan::MemoryTypeInfo	struct	rhi-vulkan	rhi-vulkan-memorytypeinfo	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:26
@@ -4275,3 +4275,4 @@ rhi::vulkan::VulkanDevice::PipelineCachePath() const	function	rhi-vulkan	rhi-vul
 rhi::vulkan::VulkanDevice::ReportResult(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-reportresult-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:377
 rhi::vulkan::VulkanDevice::InjectSubmitFailure(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-injectsubmitfailure-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:383
 rhi::vulkan::VulkanDevice::CommandPoolCount() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-commandpoolcount-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:386
+rhi::vulkan::CreateWin32Surface(void*,void*,void*,void*,u64*)	function	rhi-vulkan	rhi-vulkan-createwin32surface-void-star-void-star-void-star-void-star-u64-star	rhi-vulkan.md	engine/rhi/vulkan/windows/vk_win32_surface.h:23

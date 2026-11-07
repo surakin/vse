@@ -221,7 +221,7 @@ TEST_CASE("Compute pipeline creation refuses bad input", "[rhi][vulkan][gpu][com
 TEST_CASE("A compute shader writes a storage texture that is read back", "[rhi][vulkan][gpu][compute]") {
     ComputeDevice t;
     t.fx.ExpectErrors(0);
-    constexpr u32 kSize = 64;
+    constexpr u32 kTextureSize = 64;
     const ShaderHandle cs = t.Shader(shaders::kGradientCompSpv, shaders::kGradientCompSpvWordCount);
     BindingDesc entry = {0, BindingType::StorageTexture, ShaderStage::Compute, 1};
     BindGroupLayoutDesc ld;
@@ -235,8 +235,8 @@ TEST_CASE("A compute shader writes a storage texture that is read back", "[rhi][
     REQUIRE(pipeline.IsValid());
 
     TextureDesc td;
-    td.width = kSize;
-    td.height = kSize;
+    td.width = kTextureSize;
+    td.height = kTextureSize;
     td.format = Format::RGBA8_UNorm;
     td.usage = TextureUsage::Storage | TextureUsage::CopySrc;
     const TextureHandle image = t.device->CreateTexture(td);
@@ -256,19 +256,19 @@ TEST_CASE("A compute shader writes a storage texture that is read back", "[rhi][
     list->Barrier(image, ResourceState::Undefined, ResourceState::ShaderWrite);
     list->SetPipeline(pipeline);
     list->SetBindGroup(0, group);
-    list->Dispatch(kSize / 8, kSize / 8, 1);
+    list->Dispatch(kTextureSize / 8, kTextureSize / 8, 1);
     list->Barrier(image, ResourceState::ShaderWrite, ResourceState::CopySrc); // compute write -> copy read
     list->End();
     CommandList* lists[] = {list};
     REQUIRE(t.device->Submit(lists, 1) != 0);
     t.device->EndFrame();
 
-    std::vector<unsigned char> pixels(kSize * kSize * 4);
+    std::vector<unsigned char> pixels(kTextureSize * kTextureSize * 4);
     REQUIRE(t.device->ReadbackTexture(image, 0, 0, pixels.data(), pixels.size(), ResourceState::CopySrc));
     u32 bad = 0;
-    for (u32 y = 0; y < kSize; ++y) {
-        for (u32 x = 0; x < kSize; ++x) {
-            const unsigned char* p = &pixels[(y * kSize + x) * 4];
+    for (u32 y = 0; y < kTextureSize; ++y) {
+        for (u32 x = 0; x < kTextureSize; ++x) {
+            const unsigned char* p = &pixels[(y * kTextureSize + x) * 4];
             // float -> unorm8 conversion may differ by one level between implementations.
             auto near = [](int got, int want) { return got >= want - 1 && got <= want + 1; };
             bad += !(near(p[0], static_cast<int>(x)) && near(p[1], static_cast<int>(y)) && p[2] == 0 && p[3] == 255);

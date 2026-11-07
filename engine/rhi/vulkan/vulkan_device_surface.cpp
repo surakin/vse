@@ -3,7 +3,11 @@
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vk_swapchain.h"
+#if defined(_WIN32)
+#include "rhi/vulkan/windows/vk_win32_surface.h"
+#else
 #include "rhi/vulkan/vk_xlib_surface.h"
+#endif
 #include "rhi/vulkan/vulkan_device.h"
 
 namespace engine_placeholder::rhi::vulkan {
@@ -25,6 +29,7 @@ bool VulkanDevice::CreateSurface(const os::NativeWindowInfo& native) {
 #endif
         break;
     }
+#if !defined(_WIN32)
     case os::NativeWindowKind::Xlib: {
         u64 handle = 0;
         result = static_cast<VkResult>(CreateXlibSurface(reinterpret_cast<void*>(instance_.Loader().get_instance_proc_addr), instance_.Handle(),
@@ -34,6 +39,17 @@ bool VulkanDevice::CreateSurface(const os::NativeWindowInfo& native) {
         }
         break;
     }
+#else
+    case os::NativeWindowKind::Win32: {
+        u64 handle = 0;
+        result = static_cast<VkResult>(CreateWin32Surface(reinterpret_cast<void*>(instance_.Loader().get_instance_proc_addr), instance_.Handle(),
+                                                          native.display, native.surface, &handle));
+        if (result == VK_SUCCESS) {
+            surface_ = HandleFromU64<VkSurfaceKHR>(handle);
+        }
+        break;
+    }
+#endif
     default:
         RhiLog(LogVerbosity::Error, "Vulkan: the window kind %d cannot be presented to by this build", static_cast<int>(native.kind));
         return false;

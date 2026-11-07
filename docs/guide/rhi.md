@@ -219,8 +219,8 @@ demo with exit code 3 and a message, a failed allocation with exit code 1.
 ### Platform notes
 
 The Vulkan backend is the only one built. It needs Vulkan 1.3 with dynamic rendering, synchronization2 and timeline
-semaphores, and presents through `VK_KHR_wayland_surface` or `VK_KHR_xlib_surface` depending on the window
-([[os::Window]]). With the NVIDIA proprietary driver, ThreadSanitizer cannot run GPU tests (the driver's threads crash
+semaphores, and presents through `VK_KHR_wayland_surface` or `VK_KHR_xlib_surface` on Linux and `VK_KHR_win32_surface`
+on Windows, depending on the window ([[os::Window]]); "Vulkan on Windows" below has the Windows details. With the NVIDIA proprietary driver, ThreadSanitizer cannot run GPU tests (the driver's threads crash
 inside its interceptors), and the X11 presentation path leaks inside a library the driver unloads; see "Building and
 Testing" for how the sanitizer flavors cover this.
 
@@ -808,8 +808,9 @@ is informational and never makes an allocation fail.
 
 ### Vulkan backend notes
 
-The backend never links against Vulkan. [[rhi::vulkan::LoadVulkanLoader]] opens `libvulkan.so.1` at runtime
-(or the path in `ENGINE_VULKAN_LIBRARY`, which tests use to simulate a machine without Vulkan) and
+The backend never links against Vulkan. [[rhi::vulkan::LoadVulkanLoader]] opens the platform's loader at run time
+([[os::VulkanLoaderName]]: `libvulkan.so.1`, `vulkan-1.dll`), or the path in `ENGINE_VULKAN_LIBRARY`, which tests use to
+simulate a machine without Vulkan, and
 resolves `vkGetInstanceProcAddr`. A missing library is reported as `NoLoader` and logged; it is not a crash,
 so an engine built with this backend still starts on a machine without a driver. The library handle is
 deliberately never unloaded: drivers and layers keep threads and global state alive past `vkDestroyInstance`.
@@ -840,7 +841,7 @@ If the layer is not installed, one warning is logged and the instance is created
 | `ENGINE_RHI_VALIDATION_BEST_PRACTICES` | `1` / `0` overrides best-practices validation. |
 | `ENGINE_RHI_VALIDATION_FATAL` | `1` aborts the process on the first validation error — for interactive runs. |
 | `ENGINE_RHI_GPU` | GPU index or name substring to use instead of the highest-ranked suitable GPU. |
-| `ENGINE_VULKAN_LIBRARY` | Path of the Vulkan loader library to use instead of `libvulkan.so.1`. |
+| `ENGINE_VULKAN_LIBRARY` | Path of the Vulkan loader library to use instead of `libvulkan.so.1` or `vulkan-1.dll`. |
 
 Every validation message is logged on `LogRhi` with its severity (`ERROR` becomes `Error`, `WARNING` `Warn`,
 `INFO` `Debug`, `VERBOSE` `Trace`) and its message id, and errors and warnings are counted:
@@ -852,6 +853,25 @@ Tests do not read the counters by hand. Every `[gpu]` test constructs `gpu_test:
 `ENGINE_RHI_REQUIRE_GPU=1`), owns a validation-enabled instance with synchronization validation on, and fails the
 test at teardown if any validation error was reported. A test that provokes an error on purpose declares it with
 `ExpectErrors(n)`.
+
+### Vulkan on Windows
+
+The same backend runs on Windows (Phase 13 Day 160). What differs:
+
+- **The loader** is `vulkan-1.dll`, which every Vulkan driver installs into System32; a program needs no SDK to run. It is opened
+  through `os::LoadLibrary`, whose search order never includes the current directory.
+- **The surface** is `VK_KHR_win32_surface`, made from the window's `HINSTANCE` and `HWND` ([[os::NativeWindowKind]] `Win32`) in
+  `engine/rhi/vulkan/windows/vk_win32_surface.cpp`, the backend's one file that sees `<windows.h>` (as the Xlib surface has its own file on
+  Linux). Whether a queue family can present is asked through the surface, as on Linux. The window must outlive the surface: the device
+  is destroyed (or `RecreateSurface` called) before the window.
+- **The validation layers** come from the Vulkan SDK (BUILD.md), which registers them; the variables above behave the same.
+- **The pipeline cache** defaults to `%LOCALAPPDATA%\<app>\cache\pipeline_cache_<vendor>_<device>_<uuid>.bin` (the user's cache
+  directory, `io::UserCacheDirectory`), named by adapter identity as on Linux.
+- **Seen on the AMD Radeon 860M** (driver 26.10.1): the timeline semaphore can read one value short for about 100 us after
+  `vkDeviceWaitIdle`, so [[rhi::Device::WaitIdle]] also waits on the timeline before it returns. The memory types the allocator picks on
+  this integrated GPU, which reports a device-local heap and a host heap: GPU-only memory from the device-local type that is not host
+  visible, uploads from the host-visible, coherent type of the host heap, readbacks from the host-cached type; AMD's uncached
+  device-coherent types are never chosen.
 
 ## What the RHI reports when something goes wrong
 

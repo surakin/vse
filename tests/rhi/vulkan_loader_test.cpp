@@ -4,6 +4,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "test_env.h"
+
 #include "gpu_fixture.h"
 #include "rhi/vulkan/vk_functions.h"
 #include "rhi/vulkan/vk_loader.h"
@@ -27,8 +29,8 @@ using gpu_test::GpuRequired;
     }
 
 struct EnvGuard {
-    explicit EnvGuard(const char* value) { setenv(kVulkanLibraryEnvVar, value, 1); }
-    ~EnvGuard() { unsetenv(kVulkanLibraryEnvVar); }
+    explicit EnvGuard(const char* value) { test_support::SetEnv(kVulkanLibraryEnvVar, value); }
+    ~EnvGuard() { test_support::UnsetEnv(kVulkanLibraryEnvVar); }
 };
 
 // Creates a bare Vulkan 1.3 instance (no extensions) for the GPU tests.
@@ -55,7 +57,11 @@ TEST_CASE("Vulkan loader reports NoLoader for a missing library without crashing
 }
 
 TEST_CASE("Vulkan loader reports BadLoader for a library without vkGetInstanceProcAddr", "[rhi][vulkan]") {
+#if defined(_WIN32)
+    EnvGuard guard("kernel32.dll"); // a system library that is not a Vulkan loader
+#else
     EnvGuard guard("libm.so.6");
+#endif
     VulkanLoader loader;
     CHECK(LoadVulkanLoader(&loader) == LoaderStatus::BadLoader);
     CHECK(loader.get_instance_proc_addr == nullptr);

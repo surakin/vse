@@ -7,7 +7,11 @@
 #include <cstdlib>
 #include <cstring>
 
-#include <unistd.h>
+#if defined(_WIN32)
+#include <process.h> // _getpid
+#else
+#include <unistd.h> // getpid
+#endif
 
 #ifndef ENGINE_RHI_GOLDEN_DIR
 #define ENGINE_RHI_GOLDEN_DIR "tests/rhi/golden"
@@ -168,7 +172,12 @@ std::string TempPath(const char* name) {
     namespace io = engine_placeholder::io;
     io::Path dir;
     if (io::TempDirectory(&dir).Failed()) dir = io::Path("/tmp");
-    const std::string leaf = "rhi_" + std::to_string(static_cast<long>(getpid())) + "_" + name;
+#if defined(_WIN32)
+    const long pid = static_cast<long>(_getpid());
+#else
+    const long pid = static_cast<long>(getpid());
+#endif
+    const std::string leaf = "rhi_" + std::to_string(pid) + "_" + name;
     const io::Path path = dir.Join(engine_placeholder::StringView(leaf.data(), leaf.size()));
     return std::string(path.View().Data(), path.View().Length());
 }

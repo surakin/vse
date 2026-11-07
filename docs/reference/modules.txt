@@ -75,3 +75,4 @@ module renderer "The renderer"
 
 module rhi-vulkan "The Vulkan backend (loader, function tables, result helpers)"
   header engine/rhi/vulkan/*.h
+  header engine/rhi/vulkan/windows/*.h

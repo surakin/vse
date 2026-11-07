@@ -86,7 +86,7 @@ The numbers are the items of the original table; the plan is `plans/phase-12-mod
 - Programs and neutral code never include a per-platform header. A per-platform directory may include the same platform's directory of a
   lower layer (`io/windows/` and `jobs/windows/` use `os/windows/win32.h` and `os/windows/utf16.h`; Phase 13 Days 151 and 153; the `crash_extract` tool's
   `tools/crash_extract/windows/` uses `win32.h` for DbgHelp, Day 156; `settings/windows/`, the registry store, uses `win32.h` and `utf16.h`, Day 157; `platform/windows/`, the Win32 window and the windowed programs'
-  entry point, the same two, Day 158), named as an owner on its
+  entry point, the same two, Day 158; `rhi/vulkan/windows/`, the Vulkan backend's Win32 surface, `win32.h`, Day 160), named as an owner on its
   `platform-dir` line in `tools/module_deps_check/modules.txt`.
 
 ## 5. Third-party code

@@ -3,9 +3,10 @@
 #include <cstring>
 #include <vector>
 
-#include <dirent.h>
+#if !defined(_WIN32)
+#include <unistd.h> // geteuid, chmod for the read-only directory case
 #include <sys/stat.h>
-#include <unistd.h>
+#endif
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -58,6 +59,14 @@ std::vector<unsigned char> CacheBlob(usize extra = 8) {
 }
 
 } // namespace
+
+// Cuts a cache file to `size` bytes, through the file layer (damage the loader must survive).
+static bool TruncateCacheFile(const char* path, u64 size) {
+    io::FilePtr f;
+    if (!io::File::Open(io::Path(StringView(path)), io::OpenMode::ReadWrite, io::kOpenNone, &f).Ok()) return false;
+    const bool cut = f->Truncate(size).Ok();
+    return f->Close().Ok() && cut;
+}
 
 TEST_CASE("Pipeline state converts to the matching Vulkan enums", "[rhi][vulkan][pipeline][policy]") {
     CHECK(ToVkTopology(PrimitiveTopology::TriangleList) == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
@@ -485,6 +494,10 @@ TEST_CASE("A cache directory that cannot be used never stops the device", "[rhi]
         CHECK(t.device->PipelineCache().saved_bytes == 0);
     }
     SECTION("the cache directory cannot be written") {
+#if defined(_WIN32)
+        SUCCEED("not on Windows: a directory's read-only attribute does not stop writes (KNOWN-ISSUES.md, Phase 13 Day 157)");
+        return;
+#else
         if (::geteuid() == 0) {
             SUCCEED("root writes anywhere");
             return;
@@ -495,6 +508,7 @@ TEST_CASE("A cache directory that cannot be used never stops the device", "[rhi]
         TriangleDevice t(dir.CStr());
         CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
         CHECK_FALSE(t.device->SavePipelineCache());
+#endif
     }
     SECTION("the path is too long to hold a cache file name") {
         const engine_test::Text long_name = engine_test::Repeated(600, 'd');
@@ -561,7 +575,7 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
         REQUIRE(io::Stat(io::Path(StringView(file)), &st).Is(io::Error::NotFound)); // saving into the directory failed, and nothing was left behind
     }
     SECTION("a truncated file is ignored and replaced") {
-        REQUIRE(truncate(file, 10) == 0);
+        REQUIRE(TruncateCacheFile(file, 10));
         {
             VulkanPipelineTestQuietLog quiet;
             TriangleDevice t(dir);
@@ -596,7 +610,7 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
         CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
     }
     SECTION("an empty file is ignored") {
-        REQUIRE(truncate(file, 0) == 0);
+        REQUIRE(TruncateCacheFile(file, 0));
         VulkanPipelineTestQuietLog quiet;
         TriangleDevice t(dir);
         CHECK(t.device->PipelineCache().loaded_bytes == 0);

@@ -51,9 +51,9 @@ struct Recorder final : DeviceObserver {
         buffer = BufferHandle{};
         device = nullptr;
     }
-    bool OnDeviceCreated(Device* device, u32 epoch) override {
+    bool OnDeviceCreated(Device* created_device, u32 epoch) override {
         last_epoch = epoch;
-        this->device = device;
+        device = created_device;
         if (fail_create) {
             log->push_back(std::string("fail ") + name);
             return false;

@@ -144,6 +144,9 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tests/debug)  # the debugging facilities, Days 154-156
   add_subdirectory(tests/settings)  # the settings layer and the registry store, Day 157
   add_subdirectory(game/hello_window)  # Day 158: the first windowed program (the demos: Day 161)
+  add_subdirectory(engine/rhi)  # Day 160: the RHI and the Vulkan backend (DX12 from Day 162)
+  add_subdirectory(engine/renderer)  # built for tests/rhi, which links it; its own suite runs from Day 161
+  add_subdirectory(tests/rhi)  # Day 160: the Phase 4 RHI suite through Vulkan
   # The source gates are CMake scripts over the tree, the same on every platform (Day 150).
   foreach(gate rhi_boundary_check raw_new_check file_access_check std_container_check settings_fixtures_check config_access_check
                signal_safety_check platform_neutral_check module_deps_check)
@@ -151,9 +154,9 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   endforeach()
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
-  message(STATUS "Windows (Phase 13): building the foundation, jobs, the platform layer (windows; input from Day 159), hello_window, docgen, "
-                 "crash_extract, the gates and their tests. Not yet ported, so not configured: the RHI and the renderer (Days 160-172), the demos "
-                 "(161) and shader_mint (163). See plans/phase-13-windows-dx12.md.")
+  message(STATUS "Windows (Phase 13): building the foundation, jobs, the platform layer, hello_window, the RHI with its Vulkan backend and the "
+                 "renderer libraries, docgen, crash_extract, the gates and their tests. Not yet ported, so not configured: the renderer's tests and "
+                 "the demos (Day 161), DX12 (162-172) and shader_mint (163). See plans/phase-13-windows-dx12.md.")
   return()
 endif()
 

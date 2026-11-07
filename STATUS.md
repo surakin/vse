@@ -833,3 +833,13 @@ virtual keys (`VK_ESCAPE`) as Vulkan in `platform/windows/`. Not done: text inpu
 the human check. Runs: `ran 588 of 1198 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 348 of 1198`; MSVC 1198
 of 1198, `windows-clang-cl` 751 of 751, non-unity 1198 of 1198. Review: 5 findings, 2 fixed, 3 declined. Linux: pending until the phase close.
 **Next: Day 160 (Vulkan on Windows).**
+
+Phase 13 **Day 160 (2026-11-08, Windows PC): Vulkan on Windows.** The Vulkan backend runs on Windows: the loader is `vulkan-1.dll` (named in one place,
+`os::VulkanLoaderName`), windows present through `VK_KHR_win32_surface` (its own file, `rhi/vulkan/windows/vk_win32_surface.cpp`), validation comes
+from the SDK, and the pipeline cache defaults to `%LOCALAPPDATA%\<app>\cache`. The Phase 4 RHI suite builds and runs on the AMD Radeon 860M: 289
+tests, 281 pass and 8 skip (the Wayland and X11 window cases; four Win32 window cases were added and pass), with validation silent; every golden image
+matches with the tolerances unchanged. Found on the way: AMD's driver reads the timeline one value short for about 100 us after `vkDeviceWaitIdle`, so
+`WaitIdle` now also waits on the timeline (a regression test without validation fails 9 rounds in 10 without it). The renderer libraries build for
+the RHI tests; their own suite is Day 161. Runs: `ran 880 of 1775 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan
+`ran 633 of 1775`; MSVC 1775 of 1775, `windows-clang-cl` 1043 of 1043, non-unity 1774 of 1775 (the known FramePool ASan flake). Review: 5 findings, 2 fixed, 3 declined. Linux:
+pending until the phase close. **Next: Day 161 (the renderer and the demos on Windows through Vulkan).**

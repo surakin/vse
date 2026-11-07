@@ -23,7 +23,7 @@ struct VulkanInstanceDesc {
     const char* application_name = "engine";
     /// Application version reported to the driver (`VK_MAKE_VERSION` encoding).
     u32 application_version = 0;
-    /// Enable the surface extensions (`VK_KHR_surface` and the Wayland/Xlib ones) so windows can be presented to.
+    /// Enable the surface extensions (`VK_KHR_surface` and the platform's: Wayland and Xlib, or Win32) so windows can be presented to.
     bool presentable = false;
     /// Whether the validation layer is wanted; see [[rhi::vulkan::ValidationMode]].
     ValidationMode validation = ValidationMode::Auto;

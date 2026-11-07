@@ -33,12 +33,19 @@ set(RHI_VULKAN_SOURCES
   vulkan/vk_pipeline_policy.cpp
   vulkan/vulkan_device_pipelines.cpp
   vulkan/vulkan_device_bindings.cpp
-  vulkan/vk_xlib_surface.cpp
   vulkan/vk_barrier.cpp
   vulkan/vk_command_list.cpp
   vulkan/create_device.cpp
   vulkan/device_host.cpp
 )
+
+# The presentation surface of each platform's windows (Phase 13 Day 160): Xlib in its own translation unit on Linux (Wayland's is in
+# vulkan_device_surface.cpp), Win32 under windows/ (it includes <windows.h>).
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  list(APPEND RHI_VULKAN_SOURCES vulkan/vk_xlib_surface.cpp)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  list(APPEND RHI_VULKAN_SOURCES vulkan/windows/vk_win32_surface.cpp)
+endif()
 
 # Headers are included as "rhi/<name>.h", rooted at engine/.
 set(RHI_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
@@ -56,5 +63,9 @@ function(engine_add_rhi_libs suffix foundation_lib jobs_lib platform_lib)
 endfunction()
 
 engine_add_rhi_libs("" foundation jobs platform)
-engine_add_rhi_libs("_asan" foundation_asan jobs_asan platform_asan)
-engine_add_rhi_libs("_tsan" foundation_tsan jobs_tsan platform_tsan)
+if(ENGINE_HAVE_ASAN)
+  engine_add_rhi_libs("_asan" foundation_asan jobs_asan platform_asan)
+endif()
+if(ENGINE_HAVE_TSAN)
+  engine_add_rhi_libs("_tsan" foundation_tsan jobs_tsan platform_tsan)
+endif()

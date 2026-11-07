@@ -182,3 +182,13 @@ TEST_CASE("The frame loop on an X11 window keeps frames in flight bounded and le
     }
     RunFrameLoopChecks(os::WindowBackend::X11);
 }
+
+// Phase 13 Day 160: the same checks through the Win32 window and the VK_KHR_win32_surface surface.
+TEST_CASE("The frame loop on a Win32 window keeps frames in flight bounded and leaks nothing", "[rhi][vulkan][gpu][window][win32][frame]") {
+#if defined(_WIN32)
+    SKIP_IF_NO_DISPLAY_SESSION();
+    RunFrameLoopChecks(os::WindowBackend::Win32);
+#else
+    SKIP("Win32 is the Windows backend");
+#endif
+}

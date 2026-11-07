@@ -1,7 +1,9 @@
 // Phase 8 Day 112: the reset on a real device: the picture before and after a reset is identical and still matches the blessed
 // golden image, and a loop of resets leaves nothing behind.
-#include <unistd.h>
 
+#if !defined(_WIN32)
+#include <unistd.h> // sysconf
+#endif
 #include <cstdio>
 #include <vector>
 
@@ -33,7 +35,12 @@ long OpenDescriptorCount() {
     return count;
 }
 
+// The resident set from /proc on Linux. On Windows there is no /proc: 0 (and so no drift) until the reset tests get a Windows measure
+// on Day 161 (KNOWN-ISSUES.md). The descriptor count above is 0 there for the same reason.
 long ResetResidentKiB() {
+#if defined(_WIN32)
+    return 0;
+#else
     io::Path statm_path("/proc/self/statm", io::PathStyle::Posix);
     Vector<u8> bytes;
     if (io::ReadFile(statm_path, &bytes, 4096).Failed() || bytes.Size() == 0) return 0;
@@ -43,18 +50,22 @@ long ResetResidentKiB() {
     long resident = 0;
     const int n = std::sscanf(text, "%ld %ld", &pages, &resident);
     return n == 2 ? resident * (sysconf(_SC_PAGESIZE) / 1024) : 0;
+#endif
 }
 
+// One return per configuration: code after an unconditional return is a warning (C4702) under /WX.
 bool Sanitized() {
 #if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
     return true;
-#endif
-#if defined(__has_feature)
+#elif defined(__has_feature)
 #if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer)
     return true;
-#endif
-#endif
+#else
     return false;
+#endif
+#else
+    return false;
+#endif
 }
 
 } // namespace

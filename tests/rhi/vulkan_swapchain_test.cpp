@@ -263,6 +263,16 @@ TEST_CASE("Vulkan swapchain presents to an X11 window", "[rhi][vulkan][gpu][wind
     RunPresentationChecks(os::WindowBackend::X11);
 }
 
+// Phase 13 Day 160: the same checks through the Win32 window and the VK_KHR_win32_surface surface.
+TEST_CASE("Vulkan swapchain presents to a Win32 window", "[rhi][vulkan][gpu][window][win32]") {
+#if defined(_WIN32)
+    SKIP_IF_NO_DISPLAY_SESSION();
+    RunPresentationChecks(os::WindowBackend::Win32);
+#else
+    SKIP("Win32 is the Windows backend");
+#endif
+}
+
 TEST_CASE("Vulkan device without a window refuses a swapchain", "[rhi][vulkan][gpu][swapchain]") {
     gpu_test::GpuFixture fx;
     fx.Require();

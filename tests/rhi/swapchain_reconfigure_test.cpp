@@ -376,3 +376,13 @@ TEST_CASE("An X11 swapchain reconfigures and its surface is replaced", "[rhi][vu
     }
     RunWindowReconfigure(os::WindowBackend::X11);
 }
+
+// Phase 13 Day 160: the same checks through the Win32 window and the VK_KHR_win32_surface surface.
+TEST_CASE("A Win32 swapchain reconfigures and its surface is replaced", "[rhi][vulkan][gpu][window][win32][swapchain]") {
+#if defined(_WIN32)
+    SKIP_IF_NO_DISPLAY_SESSION();
+    RunWindowReconfigure(os::WindowBackend::Win32);
+#else
+    SKIP("Win32 is the Windows backend");
+#endif
+}

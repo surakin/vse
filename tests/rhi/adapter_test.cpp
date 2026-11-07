@@ -4,6 +4,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "test_env.h"
+
 #include "gpu_fixture.h"
 #include "render_target.h"
 #include "rhi/adapter.h"
@@ -272,12 +274,12 @@ TEST_CASE("Real adapters are listed and a device is created on each presentable 
         // The explicit request wins over the environment.
         const char* saved = std::getenv("ENGINE_RHI_GPU");
         const std::string saved_copy = saved != nullptr ? saved : "";
-        setenv("ENGINE_RHI_GPU", "no-such-gpu-name", 1);
+        test_support::SetEnv("ENGINE_RHI_GPU", "no-such-gpu-name");
         DevicePtr device = CreateDevice(create);
         if (saved != nullptr) {
-            setenv("ENGINE_RHI_GPU", saved_copy.c_str(), 1);
+            test_support::SetEnv("ENGINE_RHI_GPU", saved_copy.c_str());
         } else {
-            unsetenv("ENGINE_RHI_GPU");
+            test_support::UnsetEnv("ENGINE_RHI_GPU");
         }
         REQUIRE(device != nullptr);
         CHECK(std::strcmp(device->Adapter().id, list.items[i].id) == 0);

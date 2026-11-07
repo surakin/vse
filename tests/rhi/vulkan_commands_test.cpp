@@ -458,3 +458,42 @@ TEST_CASE("Null device: a command list cannot be created outside a frame", "[rhi
     CHECK(device->ErrorCount() == 2);
     device.Reset();
 }
+
+// Phase 13 Day 160: WaitIdle's promise, checked where it was found broken. AMD's Windows driver reads the timeline one value short for
+// about 100 us after vkDeviceWaitIdle (79 of 80 runs without validation, where the layer's own work does not hide the gap), so WaitIdle
+// also waits on the timeline. Without validation on purpose.
+TEST_CASE("Vulkan: after WaitIdle the completed fence is the last submitted one", "[rhi][vulkan][gpu][commands]") {
+    DeviceCreateInfo info;
+    info.validation = ValidationSetting::Off;
+    VulkanDevicePtr device = VulkanDevice::Create(info);
+    if (device == nullptr) {
+        if (gpu_test::GpuRequired()) FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
+        SKIP("no suitable Vulkan device");
+    }
+    BufferHandle src = MakeBuffer(device.Get(), 1024);
+    BufferHandle dst = MakeBuffer(device.Get(), 1024);
+    for (int round = 0; round < 10; ++round) {
+        FenceValue last = 0;
+        for (int frame = 0; frame < 20; ++frame) {
+            device->BeginFrame();
+            CommandList* list = device->CreateCommandList();
+            REQUIRE(list != nullptr);
+            list->Begin();
+            const bool first = round == 0 && frame == 0;
+            list->Barrier(src, first ? ResourceState::Undefined : ResourceState::CopySrc, ResourceState::CopySrc);
+            list->Barrier(dst, first ? ResourceState::Undefined : ResourceState::CopyDst, ResourceState::CopyDst);
+            list->CopyBuffer(src, dst, 0, 0, 1024);
+            list->End();
+            CommandList* lists[] = {list};
+            last = device->Submit(lists, 1);
+            REQUIRE(last != 0);
+            device->EndFrame();
+        }
+        device->WaitIdle();
+        INFO("round " << round);
+        CHECK(device->CompletedFence() >= last);
+    }
+    device->DestroyBuffer(src);
+    device->DestroyBuffer(dst);
+    device.Reset();
+}
