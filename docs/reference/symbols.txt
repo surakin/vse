@@ -33,9 +33,12 @@ Clamp(T,T,T)	function	foundation/containers	clamp-t-t-t	foundation-containers.md
 IndexOf(const C&,const V&)	function	foundation/containers	indexof-const-c-amp-const-v-amp	foundation-containers.md	engine/foundation/algorithm.h:38
 detail_sort::InsertionSort(T*,usize,Less)	function	foundation/containers	detail-sort-insertionsort-t-star-usize-less	foundation-containers.md	engine/foundation/algorithm.h:49
 detail_sort::SiftDown(T*,usize,usize,Less)	function	foundation/containers	detail-sort-siftdown-t-star-usize-usize-less	foundation-containers.md	engine/foundation/algorithm.h:63
-Sort(Span<T>,Less)	function	foundation/containers	sort-span-lt-t-gt-less	foundation-containers.md	engine/foundation/algorithm.h:83
-Sort(Span<T>)	function	foundation/containers	sort-span-lt-t-gt	foundation-containers.md	engine/foundation/algorithm.h:101
-StableSort(Span<T>,Less)	function	foundation/containers	stablesort-span-lt-t-gt-less	foundation-containers.md	engine/foundation/algorithm.h:109
+detail_sort::SwapItems(T&,T&)	function	foundation/containers	detail-sort-swapitems-t-amp-t-amp	foundation-containers.md	engine/foundation/algorithm.h:83
+detail_sort::HeapSortItems(T*,usize,Less)	function	foundation/containers	detail-sort-heapsortitems-t-star-usize-less	foundation-containers.md	engine/foundation/algorithm.h:91
+detail_sort::IntroSortItems(T*,usize,int,Less)	function	foundation/containers	detail-sort-introsortitems-t-star-usize-int-less	foundation-containers.md	engine/foundation/algorithm.h:101
+Sort(Span<T>,Less)	function	foundation/containers	sort-span-lt-t-gt-less	foundation-containers.md	engine/foundation/algorithm.h:137
+Sort(Span<T>)	function	foundation/containers	sort-span-lt-t-gt	foundation-containers.md	engine/foundation/algorithm.h:146
+StableSort(Span<T>,Less)	function	foundation/containers	stablesort-span-lt-t-gt-less	foundation-containers.md	engine/foundation/algorithm.h:154
 Array	struct	foundation/containers	array	foundation-containers.md	engine/foundation/containers/array.h:19
 Array::items	variable	foundation/containers	array-items	foundation-containers.md	engine/foundation/containers/array.h:24
 Array::operator[](usize)	function	foundation/containers	array-operator-index-usize	foundation-containers.md	engine/foundation/containers/array.h:29
@@ -108,34 +111,34 @@ SharedPtr::operator bool() const	function	foundation/containers	sharedptr-operat
 SharedPtr::UseCount() const	function	foundation/containers	sharedptr-usecount-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:147
 LocalSharedPtr	alias	foundation/containers	localsharedptr	foundation-containers.md	engine/foundation/containers/shared_ptr.h:172
 MakeShared(Args&&...)	function	foundation/containers	makeshared-args-amp-amp	foundation-containers.md	engine/foundation/containers/shared_ptr.h:198
-Span	class	foundation/containers	span	foundation-containers.md	engine/foundation/containers/span.h:24
-Span::Span()	function	foundation/containers	span-span	foundation-containers.md	engine/foundation/containers/span.h:28
-Span::Span(T*,usize)	function	foundation/containers	span-span-t-star-usize	foundation-containers.md	engine/foundation/containers/span.h:34
-Span::Span(U(&)[N])	function	foundation/containers	span-span-u-amp-n	foundation-containers.md	engine/foundation/containers/span.h:38
-Span::Span(const Span<U>&)	function	foundation/containers	span-span-const-span-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:42
-Span::Span(Vector<U,A>&)	function	foundation/containers	span-span-vector-lt-u-a-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:46
-Span::Span(const Vector<U,A>&)	function	foundation/containers	span-span-const-vector-lt-u-a-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:50
-Span::Span(Array<U,N>&)	function	foundation/containers	span-span-array-lt-u-n-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:54
-Span::Span(const Array<U,N>&)	function	foundation/containers	span-span-const-array-lt-u-n-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:58
-Span::Data() const	function	foundation/containers	span-data-const	foundation-containers.md	engine/foundation/containers/span.h:63
-Span::Size() const	function	foundation/containers	span-size-const	foundation-containers.md	engine/foundation/containers/span.h:65
-Span::SizeBytes() const	function	foundation/containers	span-sizebytes-const	foundation-containers.md	engine/foundation/containers/span.h:67
-Span::Empty() const	function	foundation/containers	span-empty-const	foundation-containers.md	engine/foundation/containers/span.h:69
-Span::operator[](usize) const	function	foundation/containers	span-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/span.h:75
-Span::begin() const	function	foundation/containers	span-begin-const	foundation-containers.md	engine/foundation/containers/span.h:81
-Span::end() const	function	foundation/containers	span-end-const	foundation-containers.md	engine/foundation/containers/span.h:83
-Span::First(usize) const	function	foundation/containers	span-first-usize-const	foundation-containers.md	engine/foundation/containers/span.h:89
-Span::Last(usize) const	function	foundation/containers	span-last-usize-const	foundation-containers.md	engine/foundation/containers/span.h:97
-Span::Subspan(usize,usize) const	function	foundation/containers	span-subspan-usize-usize-const	foundation-containers.md	engine/foundation/containers/span.h:106
-Span::Subspan(usize) const	function	foundation/containers	span-subspan-usize-const	foundation-containers.md	engine/foundation/containers/span.h:114
-ByteSpan	alias	foundation/containers	bytespan	foundation-containers.md	engine/foundation/containers/span.h:125
-MutableByteSpan	alias	foundation/containers	mutablebytespan	foundation-containers.md	engine/foundation/containers/span.h:127
-AsBytes(const T&)	function	foundation/containers	asbytes-const-t-amp	foundation-containers.md	engine/foundation/containers/span.h:132
-AsBytes(Span<T>)	function	foundation/containers	asbytes-span-lt-t-gt	foundation-containers.md	engine/foundation/containers/span.h:139
-AsByteSpan(StringView)	function	foundation/containers	asbytespan-stringview	foundation-containers.md	engine/foundation/containers/span.h:146
-ToStringView(ByteSpan)	function	foundation/containers	tostringview-bytespan	foundation-containers.md	engine/foundation/containers/span.h:149
-Append(Vector<T,A>&,std::type_identity_t<Span<const T>>)	function	foundation/containers	append-vector-lt-t-a-gt-amp-std-type-identity-t-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:155
-Assign(Vector<T,A>&,std::type_identity_t<Span<const T>>)	function	foundation/containers	assign-vector-lt-t-a-gt-amp-std-type-identity-t-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:172
+Span	class	foundation/containers	span	foundation-containers.md	engine/foundation/containers/span.h:25
+Span::Span()	function	foundation/containers	span-span	foundation-containers.md	engine/foundation/containers/span.h:29
+Span::Span(T*,usize)	function	foundation/containers	span-span-t-star-usize	foundation-containers.md	engine/foundation/containers/span.h:35
+Span::Span(U(&)[N])	function	foundation/containers	span-span-u-amp-n	foundation-containers.md	engine/foundation/containers/span.h:39
+Span::Span(const Span<U>&)	function	foundation/containers	span-span-const-span-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:43
+Span::Span(Vector<U,A>&)	function	foundation/containers	span-span-vector-lt-u-a-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:47
+Span::Span(const Vector<U,A>&)	function	foundation/containers	span-span-const-vector-lt-u-a-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:51
+Span::Span(Array<U,N>&)	function	foundation/containers	span-span-array-lt-u-n-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:55
+Span::Span(const Array<U,N>&)	function	foundation/containers	span-span-const-array-lt-u-n-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:59
+Span::Data() const	function	foundation/containers	span-data-const	foundation-containers.md	engine/foundation/containers/span.h:64
+Span::Size() const	function	foundation/containers	span-size-const	foundation-containers.md	engine/foundation/containers/span.h:66
+Span::SizeBytes() const	function	foundation/containers	span-sizebytes-const	foundation-containers.md	engine/foundation/containers/span.h:68
+Span::Empty() const	function	foundation/containers	span-empty-const	foundation-containers.md	engine/foundation/containers/span.h:70
+Span::operator[](usize) const	function	foundation/containers	span-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/span.h:76
+Span::begin() const	function	foundation/containers	span-begin-const	foundation-containers.md	engine/foundation/containers/span.h:82
+Span::end() const	function	foundation/containers	span-end-const	foundation-containers.md	engine/foundation/containers/span.h:84
+Span::First(usize) const	function	foundation/containers	span-first-usize-const	foundation-containers.md	engine/foundation/containers/span.h:90
+Span::Last(usize) const	function	foundation/containers	span-last-usize-const	foundation-containers.md	engine/foundation/containers/span.h:98
+Span::Subspan(usize,usize) const	function	foundation/containers	span-subspan-usize-usize-const	foundation-containers.md	engine/foundation/containers/span.h:107
+Span::Subspan(usize) const	function	foundation/containers	span-subspan-usize-const	foundation-containers.md	engine/foundation/containers/span.h:115
+ByteSpan	alias	foundation/containers	bytespan	foundation-containers.md	engine/foundation/containers/span.h:126
+MutableByteSpan	alias	foundation/containers	mutablebytespan	foundation-containers.md	engine/foundation/containers/span.h:128
+AsBytes(const T&)	function	foundation/containers	asbytes-const-t-amp	foundation-containers.md	engine/foundation/containers/span.h:133
+AsBytes(Span<T>)	function	foundation/containers	asbytes-span-lt-t-gt	foundation-containers.md	engine/foundation/containers/span.h:140
+AsByteSpan(StringView)	function	foundation/containers	asbytespan-stringview	foundation-containers.md	engine/foundation/containers/span.h:147
+ToStringView(ByteSpan)	function	foundation/containers	tostringview-bytespan	foundation-containers.md	engine/foundation/containers/span.h:150
+Append(Vector<T,A>&,std::type_identity_t<Span<const T>>)	function	foundation/containers	append-vector-lt-t-a-gt-amp-std-type-identity-t-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:157
+Assign(Vector<T,A>&,std::type_identity_t<Span<const T>>)	function	foundation/containers	assign-vector-lt-t-a-gt-amp-std-type-identity-t-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:182
 DefaultDelete	struct	foundation/containers	defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:22
 DefaultDelete::DefaultDelete()	function	foundation/containers	defaultdelete-defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:25
 DefaultDelete::DefaultDelete(const DefaultDelete<U>&)	function	foundation/containers	defaultdelete-defaultdelete-const-defaultdelete-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:27

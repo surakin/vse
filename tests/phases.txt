@@ -175,3 +175,4 @@ test:io_cross_syntax_*                          9
 # --- Phase 10: standard types and containers ---
 tests/types/                                    10
 test:types_cross_syntax_*                       10
+test:std_container_check*                        10

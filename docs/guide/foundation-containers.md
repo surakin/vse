@@ -2,7 +2,9 @@
 
 > **Status:** skeleton — not yet written  
 > **Audience:** engine programmers  
-> **Covers:** Phase 0
+> **Covers:** Phase 0, Phase 10
+
+The engine has its own containers and does not use the standard library's; the table "Which type do I use?" in [Standard types](foundation-types.md) says which one to reach for (bytes, text, sequences, maps, owned pointers, views, 128-bit integers). The `std_container_check` test enforces it.
 
 ## Source of truth
 
@@ -23,6 +25,7 @@ Full reference: [Foundation: Containers](../reference/foundation-containers.md).
 - [[UniquePtr]] — owns one object (move-only, optional deleter)
 - [[SharedPtr]] — shares one object by reference count (atomic or plain)
 - [[HashMap]] — open-addressing hash map
+- [[Span]] — a non-owning view of consecutive elements (`ByteSpan` for bytes), see [Standard types](foundation-types.md)
 
 ## Already known — seed material (verify against the code when writing)
 

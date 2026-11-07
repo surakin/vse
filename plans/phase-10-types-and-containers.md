@@ -1,5 +1,7 @@
 # Phase 10 — Standard Types and Container Hygiene
 
+**Status: complete (2026-11-07).** Days 125-129 are done; the closing full run was `ran 3030 of 3030 tests (phases: all; flavors: all; display: included; crash tests: included)` with only the known X11 window test failing. `CURRENT_PHASE` stays 10 until Phase 11 Day 130 starts.
+
 **Depends on:** Phase 0 (foundation types and containers), Phase 9 (the file layer and its tests, which are among the code to port). Inserted after Phase 9 and before the settings system (Phase 11), so the settings system
 and everything after it is written against the finished vocabulary.
 **Goal:** one standard vocabulary of types, used everywhere, and a rule about containers that is enforced rather than hoped for. Two parts. **Types:** a standard `byte`, fixed-width signed and unsigned integers

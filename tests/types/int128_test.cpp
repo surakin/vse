@@ -254,7 +254,7 @@ TEST_CASE("i128: edge values, wrapping, signed division and arithmetic shifts", 
     CHECK(i128(-1) < i128(0));
     CHECK(i128(0) > i128(-5));
     CHECK(i128(-5) < i128(-4));
-    CHECK(i128(int8_t(-3)).IsNegative());
+    CHECK(i128(i8(-3)).IsNegative());
     CHECK(i128(-3).Magnitude() == u128(3u));
     CHECK(min.Magnitude() == u128(1u) << 127);
     CHECK(static_cast<f64>(i128(-3)) == -3.0);

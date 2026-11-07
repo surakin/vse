@@ -184,8 +184,21 @@ table in `PLAN.md`.
   (for concurrency) already-portable across every target platform, with
   no control/performance/learning upside to reinventing or re-wrapping
   them; the vector/matrix/quaternion *types* built on top of `<cmath>`
-  are still hand-rolled. See `PLAN.md` assumption #2. STL containers/
-  algorithms, exceptions, and RTTI remain unused/disabled.
+  are still hand-rolled. See `PLAN.md` assumption #2. Exceptions and RTTI
+  remain disabled.
+- **The standard library's containers, strings, smart pointers, function wrappers, algorithms and streams are not used** in
+  `engine/`, `game/`, `tools/` or the tests (Phase 10). Use `String`/`StringView`/`StringBuilder`, `Vector`, `Array`, `HashMap`,
+  `UniquePtr`/`SharedPtr`, `Span`/`ByteSpan` (`containers/span.h`), `Sort`/`StableSort`/`Min`/`Max`/`Clamp`/`IndexOf`
+  (`algorithm.h`), and the fixed-width vocabulary of `engine/foundation/types.h`: `byte` (= `u8`), `i8`..`i64`, `u8`..`u64`,
+  the portable 128-bit `i128`/`u128` (`int128.h`), `usize`/`isize`, `f32`/`f64`. Never spell `unsigned char`, `signed char` or
+  `(std::)u?int(8|16|32|64)_t`. Allowed: the concurrency primitives, the C library through `std::` (`std::memcpy`, `std::snprintf`),
+  `<cmath>`, `<chrono>`, `<type_traits>`, `<utility>`, `<limits>`, `<new>`, `<initializer_list>`. Exceptions: `engine/foundation/types.h`
+  (it defines the aliases), `tools/shader_mint/reflect_json.cpp` and its test (the nlohmann/json boundary, `PLAN.md` assumption
+  #19), `tests/support/catch_engine_types.h` (Catch2 returns `std::string`); the older test directories are allow-listed with their
+  counts. The ctest `std_container_check` (`tools/std_container_check`, allow list `allowlist.txt` with a reason per entry, a
+  stale entry fails) enforces it; a new test directory is scanned from its first file. Test helpers: `tests/support/test_text.h`,
+  `tests/support/catch_engine_types.h`; see `docs/guide/building-and-testing.md` ("Writing a test") and
+  `docs/guide/foundation-types.md`. Convert an older test file when a day touches it and lower its directory's count.
 - **The engine is heavily multithreaded, through one job system — not ad
   hoc thread pools per subsystem.** Phase 2 defines a portable
   work-stealing job scheduler that every later multithreaded subsystem

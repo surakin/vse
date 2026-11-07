@@ -412,7 +412,7 @@ StringView HeadingSlug(StringView h, ArenaAllocator& arena) {
             buf[n++] = '-';
             continue;
         }
-        const bool keep = (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-' || static_cast<unsigned char>(c) >= 0x80;
+        const bool keep = (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-' || static_cast<engine_placeholder::byte>(c) >= 0x80;
         if (keep) buf[n++] = c;
     }
     buf[n] = '\0';

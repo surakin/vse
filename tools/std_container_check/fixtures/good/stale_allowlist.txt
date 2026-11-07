@@ -1,0 +1,2 @@
+engine/old/|legacy code kept on purpose (fixture)
+engine/clean.cpp|nothing in this file is banned, so this entry is stale

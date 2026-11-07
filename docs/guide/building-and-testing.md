@@ -47,7 +47,7 @@ Tests use the engine's own types, like the code they test: `String`, `StringView
 - Where Catch2 itself needs `std::` (the text it returns from a printer, `GENERATE` ranges), the use stays local and has a comment.
 
 The `std_container_check` gate (ctest `std_container_check`, added by Phase 10 Day 129) fails on a banned `std::` name in `engine/`, `game/`, `tools/` and the test
-directories listed as clean (`tests/io`, `tests/types`, `tests/support`, `tests/shader_mint`); its allow list
+every directory under `tests/`, so a new test directory is checked from its first file; its allow list
 (`tools/std_container_check/allowlist.txt`) names every exception with a reason, and the older test directories are one entry each with
 their count, so the list only shrinks. Convert an old test file when a day touches it.
 

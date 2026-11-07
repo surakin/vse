@@ -77,24 +77,69 @@ void SiftDown(T* items, usize start, usize count, Less less) {
 
 } // namespace detail_sort
 
-/// Sorts the span in place so that `less(b, a)` is false for every earlier `a` and later `b`. Not stable. Heap sort above 16 elements: O(n log n) worst case, no allocation, no recursion.
+namespace detail_sort {
+
+/// Swaps two elements by move.
+template <typename T>
+void SwapItems(T& a, T& b) {
+    T tmp = static_cast<T&&>(a);
+    a = static_cast<T&&>(b);
+    b = static_cast<T&&>(tmp);
+}
+
+/// Heap sort of `count` elements: the fallback of `Sort` when quick sort degrades.
+template <typename T, typename Less>
+void HeapSortItems(T* p, usize count, Less less) {
+    for (usize i = count / 2; i-- > 0;) SiftDown(p, i, count, less);
+    for (usize end = count - 1; end > 0; --end) {
+        SwapItems(p[0], p[end]);
+        SiftDown(p, 0, end, less);
+    }
+}
+
+/// Quick sort with a median-of-three pivot; recurses into the smaller side, and falls back to heap sort past `depth` levels.
+template <typename T, typename Less>
+void IntroSortItems(T* p, usize n, int depth, Less less) {
+    while (n > 16) {
+        if (depth-- == 0) {
+            HeapSortItems(p, n, less);
+            return;
+        }
+        const usize mid = n / 2;
+        if (less(p[mid], p[0])) SwapItems(p[mid], p[0]);
+        if (less(p[n - 1], p[0])) SwapItems(p[n - 1], p[0]);
+        if (less(p[n - 1], p[mid])) SwapItems(p[n - 1], p[mid]);
+        SwapItems(p[mid], p[n - 1]); // the median is the pivot, parked at the end
+        usize store = 0;
+        for (usize j = 0; j + 1 < n; ++j) {
+            if (less(p[j], p[n - 1])) SwapItems(p[store++], p[j]);
+        }
+        SwapItems(p[store], p[n - 1]);
+        const usize left = store, right = n - store - 1;
+        if (left < right) {
+            IntroSortItems(p, left, depth, less);
+            p += store + 1;
+            n = right;
+        } else {
+            IntroSortItems(p + store + 1, right, depth, less);
+            n = left;
+        }
+    }
+    InsertionSort(p, n, less);
+}
+
+} // namespace detail_sort
+
+/// Sorts the span in place so that `less(b, a)` is false for every earlier `a` and later `b`. Not stable. Introsort: quick sort with a
+/// median-of-three pivot, heap sort when it degrades, insertion sort for small runs; O(n log n) worst case, no allocation.
 ///
 /// Param less: a strict weak ordering, `bool less(const T&, const T&)`.
 template <typename T, typename Less>
 void Sort(Span<T> items, Less less) {
     const usize n = items.Size();
-    if (n <= 16) {
-        detail_sort::InsertionSort(items.Data(), n, less);
-        return;
-    }
-    T* p = items.Data();
-    for (usize i = n / 2; i-- > 0;) detail_sort::SiftDown(p, i, n, less);
-    for (usize end = n - 1; end > 0; --end) {
-        T tmp = static_cast<T&&>(p[0]);
-        p[0] = static_cast<T&&>(p[end]);
-        p[end] = static_cast<T&&>(tmp);
-        detail_sort::SiftDown(p, 0, end, less);
-    }
+    int depth = 0;
+    for (usize m = n; m > 1; m >>= 1) depth += 2;
+    detail_sort::IntroSortItems(items.Data(), n, depth, less);
 }
 
 /// Sorts the span in place with `operator<`.

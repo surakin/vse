@@ -21,7 +21,7 @@ namespace {
 
 bool ReadWholeFile(const char* path, engine_placeholder::Vector<engine_placeholder::u8>* bytes) {
     namespace io = engine_placeholder::io;
-    constexpr std::uint64_t kMaxEnvelopeBytes = 256u * 1024u * 1024u;
+    constexpr engine_placeholder::u64 kMaxEnvelopeBytes = 256u * 1024u * 1024u;
     io::Path file;
     return io::Path::Parse(engine_placeholder::StringView(path), io::NativePathStyle(), &file) && io::ReadFile(file, bytes, kMaxEnvelopeBytes).Ok();
 }

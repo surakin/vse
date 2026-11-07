@@ -102,7 +102,7 @@ TEST_CASE("Span: bytes of values, text and structs", "[types][span]") {
 
 TEST_CASE("byte is u8 and the standard widths hold", "[types]") {
     STATIC_REQUIRE(std::is_same_v<byte, u8>);
-    STATIC_REQUIRE(std::is_same_v<byte, unsigned char>);
+    STATIC_REQUIRE(std::is_same_v<byte, u8> && std::is_unsigned_v<byte> && sizeof(byte) == 1);
     STATIC_REQUIRE(sizeof(isize) == sizeof(usize));
     STATIC_REQUIRE(std::is_signed_v<isize>);
     STATIC_REQUIRE(std::is_unsigned_v<usize>);

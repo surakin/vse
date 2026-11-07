@@ -9,7 +9,7 @@ namespace {
 using engine_placeholder::i32;
 
 bool IsIdentStart(char c) {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || (static_cast<unsigned char>(c) >= 0x80);
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || (static_cast<engine_placeholder::byte>(c) >= 0x80);
 }
 bool IsDigit(char c) { return c >= '0' && c <= '9'; }
 bool IsIdentChar(char c) { return IsIdentStart(c) || IsDigit(c); }
@@ -22,8 +22,8 @@ public:
 
     void Run() {
         // Skip a UTF-8 byte-order mark.
-        if (n_ >= 3 && static_cast<unsigned char>(src_[0]) == 0xEF && static_cast<unsigned char>(src_[1]) == 0xBB &&
-            static_cast<unsigned char>(src_[2]) == 0xBF) {
+        if (n_ >= 3 && static_cast<engine_placeholder::byte>(src_[0]) == 0xEF && static_cast<engine_placeholder::byte>(src_[1]) == 0xBB &&
+            static_cast<engine_placeholder::byte>(src_[2]) == 0xBF) {
             pos_ = 3;
             line_start_ = 3;
         }

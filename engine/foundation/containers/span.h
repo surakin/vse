@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstring>
 #include <type_traits>
 
 #include "containers/array.h"
@@ -148,7 +149,8 @@ inline ByteSpan AsByteSpan(StringView text) { return ByteSpan(reinterpret_cast<c
 /// Views bytes as text (no validation).
 inline StringView ToStringView(ByteSpan bytes) { return StringView(reinterpret_cast<const char*>(bytes.Data()), bytes.Size()); }
 
-/// Appends copies of `items` to the end of `target`; the vector grows geometrically, so repeated calls are amortized.
+/// Appends copies of `items` to the end of `target`; the vector grows geometrically, so repeated calls are amortized. A string literal
+/// converts to a span that includes its terminating NUL.
 ///
 /// Param items: elements to copy; they must not be elements of `target`.
 /// Aborts: `items` overlaps `target`, or growth is needed and the allocator is out of memory.
@@ -162,7 +164,15 @@ void Append(Vector<T, A>& target, std::type_identity_t<Span<const T>> items) {
         const usize doubled = target.Capacity() * 2;
         target.Reserve(needed > doubled ? needed : doubled);
     }
-    for (usize i = 0; i < items.Size(); ++i) target.Push(items[i]);
+    if constexpr (std::is_trivially_copyable_v<T>) {
+        if (items.Size() != 0) {
+            const usize old_size = target.Size();
+            target.Resize(old_size + items.Size());
+            std::memcpy(target.Data() + old_size, items.Data(), items.SizeBytes());
+        }
+    } else {
+        for (usize i = 0; i < items.Size(); ++i) target.Push(items[i]);
+    }
 }
 
 /// Replaces the contents of `target` with copies of `items`.

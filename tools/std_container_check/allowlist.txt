@@ -1,0 +1,16 @@
+# path|reason - files (or directories, with a trailing /) allowed to use the standard library's containers, strings, algorithms or raw
+# integer spellings. An entry that no longer exempts anything fails the gate (remove it).
+# The rule and its exceptions: CLAUDE.md ("Standard library containers are not used") and
+# docs/superpowers/specs/2026-11-07-types-and-containers-design.md.
+engine/foundation/types.h|Defines the fixed-width aliases (i8..u64, byte, usize) on top of <cstdint>; the only place the raw spellings belong.
+tools/shader_mint/reflect_json.cpp|The nlohmann/json boundary of shader_mint (PLAN.md assumption #19): the library's API is built on std::string and std::vector.
+tests/shader_mint/reflect_json_test.cpp|Tests that same boundary; it builds its JSON text with std::string.
+tests/support/catch_engine_types.h|Catch2's StringMaker returns std::string, so the printers for the engine's types build one.
+# The older test directories, one entry each with the number of offending lines on 2026-11-07 (Phase 10 Day 129). Convert a test
+# file when a day touches it (docs/guide/building-and-testing.md, "Writing a test"), and lower or remove the entry in that commit.
+tests/debug/|Older test directory: 328 offending lines (std::string, std::vector, ...) not yet ported.
+tests/docgen/|Older test directory: 331 offending lines, including fs_fixture.h, which the 7 docgen test files share; they convert together.
+tests/foundation/|Older test directory: 10 offending lines not yet ported.
+tests/jobs/|Older test directory: 102 offending lines not yet ported.
+tests/renderer/|Older test directory: 167 offending lines not yet ported.
+tests/rhi/|Older test directory: 286 offending lines, including image_compare.*, which 8 rhi test files share; they convert together.

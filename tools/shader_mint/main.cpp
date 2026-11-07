@@ -440,7 +440,7 @@ int main(int argc, char** argv) {
     Vector<u32> key_module;
     shader_mint::DedupeModules(per_key, &modules, &key_module);
     const StringView label(source);
-    const usize slang_at = label.Find(".slang"); // the whole label when there is no suffix
+    const usize slang_at = label.EndsWith(".slang") ? label.Length() - 6 : label.Length(); // drop only a trailing ".slang"
     const Text shader_file = MakeText(label.Substring(0, slang_at));
     const Text perm_text = shader_mint::EmitPermutationInc(base.View(), shader_file.View(), label, StringView(compiler), options, keys, key_module, modules);
     const OutputFile files[] = {{spv_out, &spv_text}, {refl_out, &refl_text}, {perm_out, &perm_text}};

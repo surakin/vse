@@ -124,3 +124,26 @@ TEST_CASE("Vector::Insert moves a move-only value in", "[types][algorithm]") {
     CHECK(*v[1] == 2);
     CHECK(*v[2] == 3);
 }
+
+TEST_CASE("Sort handles sorted, reversed, all-equal and organ-pipe input", "[types][algorithm]") {
+    for (int shape = 0; shape < 4; ++shape) {
+        Vector<int> v;
+        for (int i = 0; i < 5000; ++i) {
+            v.Push(shape == 0 ? i : shape == 1 ? 5000 - i : shape == 2 ? 7 : (i < 2500 ? i : 5000 - i));
+        }
+        Sort(Span<int>(v));
+        bool sorted = true;
+        for (usize i = 1; i < v.Size(); ++i) sorted = sorted && !(v[i] < v[i - 1]);
+        CHECK(sorted);
+    }
+}
+
+TEST_CASE("Append of trivially copyable elements copies them all", "[types][algorithm]") {
+    Vector<byte> bytes;
+    const byte data[300] = {1, 2, 3};
+    Append(bytes, Span<const byte>(data, 300));
+    Append(bytes, Span<const byte>(data, 3));
+    REQUIRE(bytes.Size() == 303);
+    CHECK(bytes[1] == 2);
+    CHECK(bytes[301] == 2);
+}

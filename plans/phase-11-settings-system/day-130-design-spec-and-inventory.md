@@ -6,6 +6,8 @@
 No product code except the phase setup. The decisions in the phase file are confirmed or amended by experiment, the settings that exist today are inventoried
 exactly, and the phase is wired into the test map.
 
+> **Phase 10 rule:** new code in this phase, including `tests/settings/`, uses the engine's types from the start (`String`, `Vector`, `UniquePtr`, `Span`, `byte`, `u8`..`u128`); the `std_container_check` gate scans `tests/settings/` from its first file, and the helpers are `tests/support/test_text.h` and `tests/support/catch_engine_types.h`.
+
 ## Tasks
 
 - [ ] **Phase setup first:** `CURRENT_PHASE` becomes 11; `tests/phases.txt` phase list comment names "11 settings system"; `docs/guide/building-and-testing.md` table gets a row for phase 9 (file handling, with the closing counts) and a placeholder

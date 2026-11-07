@@ -96,6 +96,39 @@ void SiftDown(T* items, usize start, usize count, Less less);
 
 Restores the heap property below `start` in a heap of `count` elements; the step of `Sort`.
 
+## `SwapItems(T&,T&)` {#detail-sort-swapitems-t-amp-t-amp}
+
+`function detail_sort::SwapItems` — defined in `engine/foundation/algorithm.h`
+
+```cpp
+template <typename T>
+void SwapItems(T& a, T& b);
+```
+
+Swaps two elements by move.
+
+## `HeapSortItems(T*,usize,Less)` {#detail-sort-heapsortitems-t-star-usize-less}
+
+`function detail_sort::HeapSortItems` — defined in `engine/foundation/algorithm.h`
+
+```cpp
+template <typename T, typename Less>
+void HeapSortItems(T* p, usize count, Less less);
+```
+
+Heap sort of `count` elements: the fallback of `Sort` when quick sort degrades.
+
+## `IntroSortItems(T*,usize,int,Less)` {#detail-sort-introsortitems-t-star-usize-int-less}
+
+`function detail_sort::IntroSortItems` — defined in `engine/foundation/algorithm.h`
+
+```cpp
+template <typename T, typename Less>
+void IntroSortItems(T* p, usize n, int depth, Less less);
+```
+
+Quick sort with a median-of-three pivot; recurses into the smaller side, and falls back to heap sort past `depth` levels.
+
 ## `Sort(Span<T>,Less)` {#sort-span-lt-t-gt-less}
 
 `function Sort` — defined in `engine/foundation/algorithm.h`
@@ -105,7 +138,7 @@ template <typename T, typename Less>
 void Sort(Span<T> items, Less less);
 ```
 
-Sorts the span in place so that `less(b, a)` is false for every earlier `a` and later `b`. Not stable. Heap sort above 16 elements: O(n log n) worst case, no allocation, no recursion.
+Sorts the span in place so that `less(b, a)` is false for every earlier `a` and later `b`. Not stable. Introsort: quick sort with a median-of-three pivot, heap sort when it degrades, insertion sort for small runs; O(n log n) worst case, no allocation.
 
 | Field | Value |
 |---|---|
@@ -1273,7 +1306,7 @@ template <typename T, typename A>
 void Append(Vector<T, A>& target, std::type_identity_t<Span<const T>> items);
 ```
 
-Appends copies of `items` to the end of `target`; the vector grows geometrically, so repeated calls are amortized.
+Appends copies of `items` to the end of `target`; the vector grows geometrically, so repeated calls are amortized. A string literal converts to a span that includes its terminating NUL.
 
 | Field | Value |
 |---|---|

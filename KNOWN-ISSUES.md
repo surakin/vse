@@ -120,3 +120,6 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - Phase 10 Day 126 (2026-11-07): `u128`/`i128` have no `operator<=>` (the Windows/macOS cross-syntax shim has no `<compare>`); the six comparison operators exist.
 
 - Phase 10 Day 128 (2026-11-07): `tests/docgen/fs_fixture.h` (14 `std::` uses) and `tests/rhi/image_compare.*` (14) still use `std::string`/`std::vector`; the 7 docgen and 8 rhi test files that call them use the same types, so they convert together. `slangc` is not installed on this machine, so `cmake --build build --target shaders` did not run after the `tools/shader_mint` port; the committed `*.inc` files were not regenerated to compare byte for byte.
+
+- Phase 10 Day 129 (2026-11-07): the older test directories still use `std::` containers and raw integer spellings: `tests/debug` 328 offending lines, `tests/docgen` 331, `tests/foundation` 10, `tests/jobs` 102, `tests/renderer` 167, `tests/rhi` 286 (counts as `tools/std_container_check/allowlist.txt` records them). Convert a file when a day touches it; `std_container_check` scans every new test directory from its first file.
+- Phase 10 Day 129 (2026-11-07): the portable (no `__int128`) path of `u128`/`i128` is verified on Linux with `ENGINE_FORCE_PORTABLE_INT128` and by the Windows/macOS syntax-only checks; it has not been built or run with MSVC (Phase 12).
