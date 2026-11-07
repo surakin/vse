@@ -97,8 +97,9 @@ run-time GPU switch is tested against on Windows.
    adapter lister, so the renderer and `DeviceHost` stop linking `rhi_vulkan`), and `ShaderDesc` becomes a format-tagged bytecode blob (SPIR-V, DXIL;
    MSL in Phase 14).
 9. **Shaders:** `slangc` (the same version as Linux, v2026.18.2) mints DXIL offline; outputs committed as `*.dxil.inc` beside `*.spv.inc`, minted
-   deterministically; the per-object index reaches D3D12 shaders through a root constant behind a shader define (Day 147's spike confirms against a
-   per-draw vertex stream); the clip-space Y flip lives in the projection (`PerspectiveD3D` or a per-backend flag).
+   deterministically; the per-object index reaches D3D12 shaders through a per-instance vertex stream (`OBJECT_INDEX` from a static buffer `[0, N)`, draw
+   `i` issued with `StartInstanceLocation = i`), behind the define `ENGINE_OBJECT_INDEX_STREAM` (**amended on Day 147**: Spike B measured 14.8 ns per draw
+   against 21.5 for a root constant, and the renderer's `first_instance = i` needs no change); the clip-space Y flip lives in the projection (`PerspectiveD3D` or a per-backend flag).
 10. **D3D12 baseline:** feature level 12_0, shader model 6.0, resource binding tier 2, legacy `ResourceBarrier` (enhanced barriers only if measured),
     flip-model swap chains, the OS's own `d3d12.dll` (no Agility SDK redistributable, no D3D12MA, no DirectX-Headers package, no WRL `ComPtr`: the
     backend has a small `ComRef<T>` of its own). Committed resources first; placed resources only if Day 165's measurements ask for them.

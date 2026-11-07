@@ -15,7 +15,7 @@ The renderer through DX12: render graph, materials and permutations, G-buffer, d
       `renderer_demo.ppm` within tolerance on DX12 (same rule as Day 170) and compared with the Windows Vulkan image.
 - [ ] **`renderer_demo` on DX12:** 1000 frames with `--validation`, `--set renderer.backend=dx12` (or the setting's final key), settings round trip, the `demo`
       ctests per backend.
-- [ ] **Performance:** `renderer_bench` on DX12 versus the Windows Vulkan baseline (instanced-draw cost with the root-constant object index, frame time of the
+- [ ] **Performance:** `renderer_bench` on DX12 versus the Windows Vulkan baseline (instanced-draw cost with the object-index stream, frame time of the
       demo scene); record both; a large gap is investigated (PIX capture if installed) and either fixed or filed with the numbers.
 - [ ] **The renderer suite** (phase 5 label) passes on Windows for both backends; results recorded here.
 - [ ] **Documentation:** `docs/guide/renderer.md` notes for DX12 (projection, object index, what differs); reference regenerated if headers changed.

@@ -26,6 +26,9 @@ kinds. The tests in the `crash` group run only with `--all` or `--crashes`.
       `BACKEND-CONFORMANCE.md` reason in a child.
 - [ ] **Fast-fail gap:** a test runs `__fastfail` in a child and checks the exit code is `0xC0000409` and that no engine report was written; the gap is documented
       in `BACKEND.md` and `foundation-debugging.md`, and filed in `KNOWN-ISSUES.md` as a known limitation (not a failure).
+- [ ] **The allocation check without `--wrap`** (found on Day 147, spec section 3 item 2): `tests/debug` proves the crash path does not allocate by wrapping
+      `malloc`/`calloc`/`realloc` with `-Wl,--wrap`, which `link.exe` and `lld-link` do not have. Pick the Windows form (a test-only seam in the engine's heap
+      entry points, or `_CrtSetAllocHook` in a Debug build), show it catches a planted allocation in the crash hook, and record the choice.
 - [ ] **Conformance groups:** *death tests*, *fault injection*, *crash report*, *assert* (fatal parts), *crash state* — every case passes or skips with a reason;
       `tests/debug`'s Linux-only files stay Linux-only, and new `*_windows_test.cpp` files cover what differs (the marker rule, WER dialogs never shown, the job
       object killing a hung child).

@@ -51,7 +51,8 @@ re-versions a prerequisite updates `BUILD.md` in the same commit**: a new system
 The auto-memory files are `claude-memory/` in this repo, so they move with
 the checkout between machines. Claude Code looks for them under
 `~/.claude/projects/<project path>/memory`, which is a symlink to that
-directory; on a new machine run `scripts/link-claude-memory.sh` once. Memory
+directory; on a new machine run `scripts/link-claude-memory.sh` once (Windows: `scripts/link-claude-memory.ps1`, which makes a
+directory junction). Memory
 edits show up as ordinary changes under `claude-memory/` and are committed
 and pushed with the work that prompted them.
 

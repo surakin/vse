@@ -102,7 +102,8 @@ Tests per phase and flavor on 2026-11-06 (`plain` is neither `asan` nor `tsan`; 
 | 9 file handling | 64 | 53 | 53 |
 | 10 standard types and containers | 61 | 26 | 26 |
 | 11 settings system | 164 | 127 | 127 |
-| 12 module layering | 0 (started on Day 140; its first tests arrive on Day 141, with its `flavors` line) | - | - |
+| 12 module layering | 19 | - | - |
+| 13 Windows port | 0 (started on Day 147; its first tests arrive on Day 148, with its `flavors` line) | - | - |
 
 The `flavors` lines in `tests/phases.txt` state which flavors each phase has, and `test_phase_labels` fails if one
 appears or disappears.

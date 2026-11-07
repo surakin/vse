@@ -49,6 +49,18 @@ machine must stay green.
       the exact list is Spike C's) and `engine/foundation/os/windows/win32.h`, the one header Windows code includes. A test (`windows_header_test.cpp`,
       phase 13) includes `win32.h` and then every foundation header in one unity batch and checks it compiles; a fixture with the wrapper removed fails to
       compile (a `WILL_FAIL` build test, as Phase 10 does for the type checks).
+- [ ] **Per-platform flavor lines (moved here from Day 150, found on Day 147):** this day's tests are the first of phase 13 and exist only on Windows, so a
+      plain `flavors 13 plain,asan` line would make `test_phase_labels` fail on Linux (phase 13 has no tests there). `tests/phases.txt` accepts a platform
+      qualifier on a `flavors` line (`flavors 13 windows: plain,asan`), `test_phase_labels` checks it only on that platform, and its self-tests cover both
+      platforms; the rest of the platform rule (platform-only test files) stays on Day 150.
+- [ ] **The two spellings Spike C found behind 38 of the 43 failures:** an `ENGINE_PRINTF_FORMAT(fmt_index, args_index)` macro in `debug/compiler.h` (the GCC
+      attribute on GCC/Clang, empty on MSVC, `_Printf_format_string_` on the format parameter where it helps) replaces `__attribute__((format(...)))` in the ten
+      files the spec lists, and `jobs/job.h` uses `compiler.h`'s trap macro instead of `__builtin_trap`. `_CRT_SECURE_NO_WARNINGS` for every Windows target
+      (C4996 on `strncpy`/`getenv`: the C library is used on purpose); C4324 off for `jobs/deque.h`'s aligned struct; fix the C4649 and C4189 sites. Decide
+      whether `/WX` is on, matching Linux's rule.
+- [ ] **`clang-cl` and `__int128`:** division and remainder of the native type call compiler-rt (`__udivti3`, `__umodti3`), which `clang-cl` does not link
+      against the MSVC runtime; the `clang-cl` configuration links `clang_rt.builtins-x86_64.lib` from the LLVM install the toolchain file found
+      (`lib/clang/<major>/lib/windows/`). Test: `tests/types` in the `clang-cl` build (native path) and the MSVC build (portable path).
 - [ ] **Compiler portability in shared headers:** `debug/compiler.h` gains MSVC spellings (`__forceinline`, `__declspec(noinline)`, `__assume`,
       `_ReturnAddress`, `__debugbreak`, `_BitScanForward64`/`__lzcnt64`/`__popcnt64` behind the existing macro names, `__restrict`), the printf-format
       attribute becomes a macro that is empty on MSVC (with `_Printf_format_string_` where it helps), `int128.h` takes the portable path on MSVC

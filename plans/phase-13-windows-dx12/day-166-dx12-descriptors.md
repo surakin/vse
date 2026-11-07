@@ -11,8 +11,8 @@ Bind groups on D3D12: CPU descriptor heaps, a root signature per pipeline layout
       resource is created and freed with deferred destruction.
 - [ ] **Samplers:** every RHI sampler state mapped (`D3D12_SAMPLER_DESC`), border colors as the RHI allows, anisotropy; heap samplers (static samplers only if
       the spec chose them for fixed cases).
-- [ ] **Bind group layouts → root signatures:** one descriptor table per bind group (CBV/SRV/UAV range plus a sampler table), the object-index root constant from
-      Day 163 at its reserved register; serialized with root signature 1.1 and cached by layout hash; the register/space assignment matches the minted
+- [ ] **Bind group layouts → root signatures:** one descriptor table per bind group (CBV/SRV/UAV range plus a sampler table) and root constants for push constants (the
+      object index needs no root parameter: spec decision 9; the layout is the spec's section 5); serialized with root signature 1.1 and cached by layout hash; the register/space assignment matches the minted
       reflection (a test checks every committed shader's reflection against the layout it is used with).
 - [ ] **Bind groups:** a bind group stores its CPU descriptors; `SetBindGroup` copies them into the current frame's shader-visible ring (`CopyDescriptorsSimple`)
       and sets the table; the ring is per frame in flight and recycled by fence; running out of ring space is an error with sizes, not a hang.

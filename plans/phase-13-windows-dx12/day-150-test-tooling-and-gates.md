@@ -22,6 +22,9 @@ work there first, and the gates learn the Windows rules (where `windows.h`, D3D1
 - [ ] **Gates on Windows and for Windows code** (each gate's self-tests gain planted Windows violations):
       - `platform_neutral_check`: `windows.h`, `winternl.h`, `dxgi*.h`, `d3d12*.h`, `shlobj.h`, `dbghelp.h` only under the Windows directories of the phase
         file's rule, and only through `os/windows/win32.h` (or `rhi/dx12/d3d12_api.h`, added Day 164).
+      - `module_deps_check` (found on Day 147, spec section 3 item 3): a neutral file may not include a platform system header (`xkbcommon/`, `wayland-`,
+        `X11/`, `windows.h` and the Win32 headers, `d3d12*.h`, `dxgi*.h`, `vulkan_win32.h`, `vulkan_wayland.h`, `vulkan_xlib.h`); `platform/key_translate.cpp` is
+        allow-listed until Day 159 moves its XKB part.
       - `rhi_boundary_check`: D3D12/DXGI names and headers only in `engine/rhi/dx12/` (as Vulkan's are only in `engine/rhi/vulkan/`).
       - `file_access_check`: the Win32 and CRT file calls (`CreateFileW`, `CreateFileA`, `FindFirstFile*`, `MoveFileEx*`, `ReplaceFile*`, `DeleteFile*`,
         `CreateDirectory*`, `GetFileAttributes*`, `GetFullPathName*`, `_wfopen`, `_open`, `_wopen`, `fopen_s`) are violations outside the allow list; the Windows

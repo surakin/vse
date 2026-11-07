@@ -7,6 +7,9 @@ Fill the bound `InputState` from Win32 messages with the same meaning the Waylan
 
 ## Tasks
 
+- [ ] **`platform/key_translate.cpp` loses its XKB part** (found on Day 147, spec section 3 item 3): it is neutral but includes `xkbcommon-keysyms.h`; the keysym
+      translation moves to `platform/linux/` (used by the Wayland and X11 backends), the neutral file keeps what every backend shares, and the Day 150
+      allow-list entry is deleted.
 - [ ] **Keys:** `WM_KEYDOWN`/`WM_KEYUP`/`WM_SYSKEYDOWN`/`WM_SYSKEYUP` mapped through the scan code (bits 16-23 plus the extended bit; `MapVirtualKeyW` only for what
       the scan code cannot tell), so the `Key` enum is layout-independent the way Linux's evdev codes are; left/right modifiers told apart (`VK_LSHIFT` etc. via
       the scan code), `Pause`, `PrintScreen`, numpad with and without NumLock; auto-repeat follows what the Linux backends report (the `KeyboardState` contract).

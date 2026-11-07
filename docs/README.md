@@ -20,7 +20,8 @@ Internal design history is for contributors, not engine users: the specs in
 [file layer](superpowers/specs/2026-11-06-file-layer-design.md),
 [standard types and containers](superpowers/specs/2026-11-07-types-and-containers-design.md),
 [settings system](superpowers/specs/2026-11-07-settings-design.md),
-[module layering](superpowers/specs/2026-11-07-module-layering-design.md) —
+[module layering](superpowers/specs/2026-11-07-module-layering-design.md),
+[Windows port and DX12](superpowers/specs/2026-11-07-windows-port-design.md) —
 and the plans in `plans/`.
 
 ## Map

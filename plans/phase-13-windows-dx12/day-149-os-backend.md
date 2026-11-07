@@ -31,8 +31,7 @@ the first time. `scripts/test-phase.sh` does not run on Windows until Day 150, s
       "not available" result the callers already handle.
 - [ ] **Base-layer tests on Windows:** every test that links only `foundation_base` (Phase 12 made these explicit: `tests/types` and the core `tests/foundation`
       files) builds and runs; tests of higher layers arrive with their layer (file layer Days 151-152, debugging Days 154-156, settings Day 157, window Day 158)
-      and are not configured on Windows until then; record per file. Add the `flavors 13 plain,asan` line with the
-      first phase-13 test.
+      and are not configured on Windows until then; record per file. (The `flavors 13` line arrived on Day 148.)
 - [ ] **ASan on Windows:** `foundation_base_asan` and the sanitized threading tests of `tests/foundation_sanitized` build and pass with `/fsanitize=address`; record
       any MSVC ASan false positive with its suppression and reason.
 - [ ] **Documentation:** `os.h`, `command_line.h`, `session.h` comments name the Windows behavior where it differs (the environment's drive entries, the

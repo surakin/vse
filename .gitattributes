@@ -1,0 +1,17 @@
+# Line endings are pinned so minted outputs, golden files and the generated reference are byte-identical on every machine
+# (Phase 13 Day 147). Text is stored and checked out with LF everywhere, whatever core.autocrlf says.
+* text=auto eol=lf
+
+# Binary data: never converted.
+*.ppm      binary
+*.rtex     binary
+*.envelope binary
+*.dmp      binary
+*.bin      binary
+*.spv      binary
+
+# Kept byte for byte as stored.
+# The docgen fixture tests CRLF input on purpose.
+tests/docgen/fixtures/good/crlf.h -text
+# Vendored third-party sources stay exactly as upstream shipped them.
+third_party/** -text
