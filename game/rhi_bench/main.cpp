@@ -8,8 +8,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <memory>
-#include <vector>
 
 #include <unistd.h>
 
@@ -195,18 +193,20 @@ void BenchUploads(Device* device) {
         bd.usage = BufferUsage::Vertex | BufferUsage::CopyDst;
         bd.location = MemoryLocation::GpuOnly;
         const BufferHandle buffer = device->CreateBuffer(bd);
-        std::vector<unsigned char> data(c.bytes, 0x5a);
+        Vector<byte> data;
+        data.Resize(c.bytes);
+        std::memset(data.Data(), 0x5a, data.Size());
         if (!buffer.IsValid()) {
             std::printf("upload %llu MiB: buffer creation failed\n", static_cast<unsigned long long>(c.bytes >> 20));
             continue;
         }
-        device->UploadBuffer(buffer, 0, data.data(), c.bytes); // warm up the staging ring
+        device->UploadBuffer(buffer, 0, data.Data(), c.bytes); // warm up the staging ring
         device->WaitIdle();
         const double start = Now();
         FenceValue last = 0;
         bool ok = true;
         for (int i = 0; i < c.count && ok; ++i) {
-            const UploadTicket ticket = device->UploadBuffer(buffer, 0, data.data(), c.bytes);
+            const UploadTicket ticket = device->UploadBuffer(buffer, 0, data.Data(), c.bytes);
             ok = ticket.ok;
             last = ticket.fence;
         }

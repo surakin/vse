@@ -107,7 +107,7 @@ VkDescriptorType ToVkDescriptorType(BindingType type) {
 
 namespace {
 
-u32 ReadLe32(const unsigned char* p) {
+u32 ReadLe32(const byte* p) {
     return static_cast<u32>(p[0]) | (static_cast<u32>(p[1]) << 8) | (static_cast<u32>(p[2]) << 16) | (static_cast<u32>(p[3]) << 24);
 }
 
@@ -139,7 +139,7 @@ const char* CheckPipelineCacheHeader(const void* data, usize size, const Pipelin
     if (data == nullptr || size < kPipelineCacheHeaderBytes) {
         return "pipeline cache file is smaller than its header";
     }
-    const unsigned char* p = static_cast<const unsigned char*>(data);
+    const byte* p = static_cast<const byte*>(data);
     if (ReadLe32(p) < kPipelineCacheHeaderBytes) {
         return "pipeline cache header size is too small";
     }

@@ -1200,7 +1200,7 @@ BindGroupLayoutHandle NullDevice::CreateBindGroupLayout(const BindGroupLayoutDes
         return BindGroupLayoutHandle{};
     }
     LayoutRes res;
-    res.count = static_cast<u32>(desc.entries.count);
+    res.count = static_cast<u32>(desc.entries.Size());
     u64 elements = 0;  // 64-bit: counts are caller-supplied and a 32-bit sum could wrap past the check
     for (u32 i = 0; i < res.count; ++i) {
         res.entries[i] = desc.entries[i];
@@ -1247,7 +1247,7 @@ BindGroupHandle NullDevice::CreateBindGroup(const BindGroupDesc& desc) {
         const BindingDesc& bd = layout->entries[b];
         for (u32 e = 0; e < bd.count; ++e) {
             const BindGroupEntry* found = nullptr;
-            for (usize k = 0; k < desc.entries.count; ++k) {
+            for (usize k = 0; k < desc.entries.Size(); ++k) {
                 if (desc.entries[k].binding == bd.binding && desc.entries[k].array_element == e) {
                     found = &desc.entries[k];
                     break;
@@ -1313,9 +1313,9 @@ BindGroupHandle NullDevice::CreateBindGroup(const BindGroupDesc& desc) {
             ++expected;
         }
     }
-    if (desc.entries.count != expected) {
+    if (desc.entries.Size() != expected) {
         s.Error("CreateBindGroup: %u entries given but the layout has %u binding elements",
-                static_cast<u32>(desc.entries.count), expected);
+                static_cast<u32>(desc.entries.Size()), expected);
         return BindGroupHandle{};
     }
     BindGroupHandle h = s.groups.Allocate(std::move(res));
@@ -1378,7 +1378,7 @@ PipelineHandle NullDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& de
         res.layouts[i] = desc.bind_group_layouts[i];
     }
     res.push_bytes = desc.push_constant_bytes;
-    res.vertex_binding_count = static_cast<u32>(desc.vertex_bindings.count);
+    res.vertex_binding_count = static_cast<u32>(desc.vertex_bindings.Size());
     res.color_count = desc.color_target_count;
     for (u32 i = 0; i < desc.color_target_count; ++i) {
         res.color_formats[i] = desc.color_targets[i].format;

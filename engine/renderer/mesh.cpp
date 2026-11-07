@@ -43,9 +43,9 @@ MeshData& MeshData::operator=(MeshData&& other) {
         Release();
         layout_ = other.layout_;
         position_offset_ = other.position_offset_;
-        vertices_ = static_cast<Vector<unsigned char>&&>(other.vertices_);
+        vertices_ = static_cast<Vector<byte>&&>(other.vertices_);
         vertex_count_ = other.vertex_count_;
-        indices_ = static_cast<Vector<unsigned char>&&>(other.indices_);
+        indices_ = static_cast<Vector<byte>&&>(other.indices_);
         index_count_ = other.index_count_;
         index_type_ = other.index_type_;
         topology_ = other.topology_;
@@ -126,10 +126,10 @@ const char* MeshData::Set(const VertexLayoutData& layout, u32 position_offset, c
         u32 index;
         if (index_type == rhi::IndexType::UInt16) {
             u16 v;
-            std::memcpy(&v, static_cast<const unsigned char*>(indices) + static_cast<usize>(i) * 2, 2);
+            std::memcpy(&v, static_cast<const byte*>(indices) + static_cast<usize>(i) * 2, 2);
             index = v;
         } else {
-            std::memcpy(&index, static_cast<const unsigned char*>(indices) + static_cast<usize>(i) * 4, 4);
+            std::memcpy(&index, static_cast<const byte*>(indices) + static_cast<usize>(i) * 4, 4);
         }
         if (strip && index == (index_type == rhi::IndexType::UInt16 ? 0xFFFFu : 0xFFFFFFFFu)) {
             has_restart = true;
@@ -141,21 +141,21 @@ const char* MeshData::Set(const VertexLayoutData& layout, u32 position_offset, c
     }
     for (u32 v = 0; v < vertex_count; ++v) {
         f32 p[3];
-        std::memcpy(p, static_cast<const unsigned char*>(vertices) + static_cast<usize>(v) * layout.stride + position_offset, sizeof(p));
+        std::memcpy(p, static_cast<const byte*>(vertices) + static_cast<usize>(v) * layout.stride + position_offset, sizeof(p));
         if (!std::isfinite(p[0]) || !std::isfinite(p[1]) || !std::isfinite(p[2])) {
             return "mesh: a vertex position is not finite";
         }
     }
 
-    Vector<unsigned char> v;
-    Vector<unsigned char> ix;
+    Vector<byte> v;
+    Vector<byte> ix;
     if (!v.TryResizeUninitialized(vertex_bytes) || !ix.TryResizeUninitialized(index_bytes)) {
         return "mesh: out of memory";
     }
     std::memcpy(v.Data(), vertices, vertex_bytes);
     std::memcpy(ix.Data(), indices, index_bytes);
-    vertices_ = static_cast<Vector<unsigned char>&&>(v);
-    indices_ = static_cast<Vector<unsigned char>&&>(ix);
+    vertices_ = static_cast<Vector<byte>&&>(v);
+    indices_ = static_cast<Vector<byte>&&>(ix);
     vertex_count_ = vertex_count;
     index_count_ = index_count;
     index_type_ = index_type;

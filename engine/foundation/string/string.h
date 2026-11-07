@@ -70,8 +70,8 @@ public:
         usize min_len = length_ < other.length_ ? length_ : other.length_;
         for (usize i = 0; i < min_len; ++i) {
             if (data_[i] != other.data_[i]) {
-                return static_cast<int>(static_cast<unsigned char>(data_[i])) -
-                       static_cast<int>(static_cast<unsigned char>(other.data_[i]));
+                return static_cast<int>(static_cast<byte>(data_[i])) -
+                       static_cast<int>(static_cast<byte>(other.data_[i]));
             }
         }
         if (length_ == other.length_) {

@@ -345,7 +345,7 @@ TEST_CASE("BindGroupLayoutDesc validation", "[rhi][desc]") {
     entries[0] = {0, BindingType::UniformBuffer, ShaderStage::Vertex, 1};
     entries[1] = {1, BindingType::SampledTexture, ShaderStage::Fragment, 1};
     BindGroupLayoutDesc d;
-    d.entries = Span<BindingDesc>(entries);
+    d.entries = rhi::Span<BindingDesc>(entries);
     CHECK(d.Validate() == nullptr);
 
     BindGroupLayoutDesc empty;
@@ -353,32 +353,32 @@ TEST_CASE("BindGroupLayoutDesc validation", "[rhi][desc]") {
 
     BindingDesc dup[2] = {entries[0], entries[0]};
     BindGroupLayoutDesc dups;
-    dups.entries = Span<BindingDesc>(dup);
+    dups.entries = rhi::Span<BindingDesc>(dup);
     CHECK(Rejects(dups.Validate(), "BindGroupLayoutDesc: duplicate"));
 
     BindingDesc bad = entries[0];
     bad.stages = ShaderStage::None;
     BindGroupLayoutDesc nostages;
-    nostages.entries = Span<BindingDesc>(&bad, 1);
+    nostages.entries = rhi::Span<BindingDesc>(&bad, 1);
     CHECK(Rejects(nostages.Validate(), "BindGroupLayoutDesc: binding stages"));
 
     bad = entries[0];
     bad.count = 0;
     BindGroupLayoutDesc zero;
-    zero.entries = Span<BindingDesc>(&bad, 1);
+    zero.entries = rhi::Span<BindingDesc>(&bad, 1);
     CHECK(Rejects(zero.Validate(), "BindGroupLayoutDesc: binding count"));
 
     bad = entries[0];
     bad.count = 4;  // arrays of uniform buffers are not supported
     BindGroupLayoutDesc arr;
-    arr.entries = Span<BindingDesc>(&bad, 1);
+    arr.entries = rhi::Span<BindingDesc>(&bad, 1);
     CHECK(Rejects(arr.Validate(), "BindGroupLayoutDesc: only sampled"));
     bad.type = BindingType::SampledTexture;
     CHECK(arr.Validate() == nullptr);
 
     BindingDesc huge = {0, BindingType::Sampler, ShaderStage::Fragment, kMaxBindingArraySize + 1};
     BindGroupLayoutDesc huge_desc;
-    huge_desc.entries = Span<BindingDesc>(&huge, 1);
+    huge_desc.entries = rhi::Span<BindingDesc>(&huge, 1);
     CHECK(Rejects(huge_desc.Validate(), "BindGroupLayoutDesc: binding array is too large"));
     huge.count = kMaxBindingArraySize;
     CHECK(huge_desc.Validate() == nullptr);
@@ -388,7 +388,7 @@ TEST_CASE("BindGroupLayoutDesc validation", "[rhi][desc]") {
         many[i] = {i, BindingType::UniformBuffer, ShaderStage::Vertex, 1};
     }
     BindGroupLayoutDesc too_many;
-    too_many.entries = Span<BindingDesc>(many);
+    too_many.entries = rhi::Span<BindingDesc>(many);
     CHECK(Rejects(too_many.Validate(), "BindGroupLayoutDesc: too many"));
 }
 
@@ -401,8 +401,8 @@ GraphicsPipelineDesc GoodPipeline(VertexBindingDesc* binding, VertexAttributeDes
     GraphicsPipelineDesc d;
     d.vertex_shader = ShaderHandle{1, 1};
     d.fragment_shader = ShaderHandle{2, 1};
-    d.vertex_bindings = Span<VertexBindingDesc>(binding, 1);
-    d.vertex_attributes = Span<VertexAttributeDesc>(attrs, 2);
+    d.vertex_bindings = rhi::Span<VertexBindingDesc>(binding, 1);
+    d.vertex_attributes = rhi::Span<VertexAttributeDesc>(attrs, 2);
     d.color_targets[0].format = Format::BGRA8_SRGB;
     d.color_target_count = 1;
     return d;
@@ -479,7 +479,7 @@ TEST_CASE("GraphicsPipelineDesc validation", "[rhi][desc]") {
     }
     SECTION("a binding no attribute reads is legal") {
         VertexBindingDesc two[2] = {{24, false}, {16, true}};
-        d.vertex_bindings = Span<VertexBindingDesc>(two);
+        d.vertex_bindings = rhi::Span<VertexBindingDesc>(two);
         CHECK(d.Validate() == nullptr);
     }
     SECTION("garbage formats are rejected, not asserted on") {

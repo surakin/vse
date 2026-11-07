@@ -2,6 +2,7 @@
 
 #include <atomic>
 
+#include "containers/span.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "io/error.h"
@@ -13,7 +14,7 @@
 
 //! [[io::File]]: an open file as an abstract interface, so the same code reads a local file, a pak entry or a file on a
 //! server. Only the local file exists now. Also the helpers that work through any `File`, the scheme registry that picks a
-//! backend, and [[io::WriteFileAtomic]].
+//! backend, and [[io::WriteFileAtomic(const Path&,const void*,usize,u32)]].
 namespace engine_placeholder::io {
 
 /// The log channel of the file layer (`io`).
@@ -41,7 +42,7 @@ enum FileCapability : u32 {
     kCapSizeKnown = 2,     ///< [[io::File::Size]] succeeds. A size can be wrong for files the OS generates (`/proc`): read until 0.
     kCapWritable = 4,      ///< The file was opened for writing.
     kCapNativelyAsync = 8, ///< The backend completes asynchronous operations on its own (a network file), not on an executor.
-    kCapAtomicReplace = 16, ///< The backend can replace a whole file atomically (see [[io::WriteFileAtomic]]).
+    kCapAtomicReplace = 16, ///< The backend can replace a whole file atomically (see [[io::WriteFileAtomic(const Path&,const void*,usize,u32)]]).
     kCapAppendOnly = 32,   ///< Opened with `OpenMode::Append`: writes go to the end and offset writes fail.
 };
 
@@ -217,6 +218,10 @@ public:
     Status Read(void* buffer, usize length, usize* bytes_read);
     /// Writes all bytes at the stream position and advances it; on an `Append`-mode file it appends.
     Status Write(const void* data, usize length);
+    /// Reads into `buffer` at the stream position; as `Read(void*,usize,usize*)` with the span's size.
+    Status Read(MutableByteSpan buffer, usize* bytes_read) { return Read(buffer.Data(), buffer.Size(), bytes_read); }
+    /// Writes all of `data` at the stream position; as `Write(const void*,usize)`.
+    Status Write(ByteSpan data) { return Write(data.Data(), data.Size()); }
 
     /// Starts reading up to `length` bytes at `offset` into `buffer`; `request` completes with the bytes read (`Read` rules: fewer is
     /// allowed, zero is the end). Returns at once. The buffer and `request` must stay valid until `done` has run. Many requests may
@@ -307,10 +312,12 @@ Status ReadFile(const Path& path, ArenaAllocator& arena, u8** data, usize* size,
 ///
 /// Fails: as [[io::ReadFile(const Path&,Vector<u8>*,u64)]].
 Status ReadTextFile(const Path& path, String<HeapAllocator>* out, u64 max_bytes = u64{1} << 28);
-/// Creates or truncates `path` and writes `length` bytes. Not atomic: a failure can leave a partial file; see [[io::WriteFileAtomic]].
+/// Creates or truncates `path` and writes `length` bytes. Not atomic: a failure can leave a partial file; see [[io::WriteFileAtomic(const Path&,const void*,usize,u32)]].
 ///
 /// Fails: the errors of [[io::File::Open]] and [[io::File::Write(const void*,usize,u64)]].
 Status WriteFile(const Path& path, const void* data, usize length);
+/// Like [[io::WriteFile(const Path&,const void*,usize)]] for a span of bytes.
+inline Status WriteFile(const Path& path, ByteSpan data) { return WriteFile(path, data.Data(), data.Size()); }
 /// Replaces the contents of `path` so that a reader sees the old file or the new one, never a mix, and a crash leaves one of them.
 ///
 /// Writes a temporary file in the same directory, flushes and syncs it, then renames it over `path`. The temporary is removed on
@@ -322,9 +329,13 @@ Status WriteFile(const Path& path, const void* data, usize length);
 /// Param new_file_permissions: the permission bits of a file that did not exist.
 /// Fails: `NotFound` (no directory), `PermissionDenied`, `NoSpace`, `IsADirectory` (the target is a directory), `Io`; the old content is intact.
 Status WriteFileAtomic(const Path& path, const void* data, usize length, u32 new_file_permissions = 0600);
+/// Like [[io::WriteFileAtomic(const Path&,const void*,usize,u32)]] for a span of bytes.
+inline Status WriteFileAtomic(const Path& path, ByteSpan data, u32 new_file_permissions = 0600) {
+    return WriteFileAtomic(path, data.Data(), data.Size(), new_file_permissions);
+}
 
 namespace detail {
-/// Which step of [[io::WriteFileAtomic]] a test makes fail: 0 none, 1 write, 2 flush, 3 sync, 4 rename.
+/// Which step of [[io::WriteFileAtomic(const Path&,const void*,usize,u32)]] a test makes fail: 0 none, 1 write, 2 flush, 3 sync, 4 rename.
 void SetAtomicWriteFailureStep(int step);
 } // namespace detail
 

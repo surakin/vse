@@ -313,3 +313,26 @@ TEST_CASE("io: WriteFileAtomic replaces whole files and leaves nothing behind on
     REQUIRE(io::ReadFile(target, &back).Ok());
     CHECK(std::string(reinterpret_cast<const char*>(back.Data()), back.Size()) == big);
 }
+
+TEST_CASE("The span overloads write and read the same bytes as the pointer forms", "[io][span]") {
+    TempDir dir;
+    const byte payload[] = {1, 2, 3, 250, 0, 7};
+    const Path a = dir / "span_a";
+    const Path b = dir / "span_b";
+    REQUIRE(io::WriteFile(a, ByteSpan(payload)).Ok());
+    REQUIRE(io::WriteFileAtomic(b, ByteSpan(payload), 0644).Ok());
+    for (const Path& p : {a, b}) {
+        Vector<u8> back;
+        REQUIRE(io::ReadFile(p, &back).Ok());
+        REQUIRE(back.Size() == sizeof(payload));
+        CHECK(ByteSpan(back).Size() == sizeof(payload));
+        CHECK(back[3] == 250);
+    }
+    io::FilePtr f;
+    REQUIRE(io::File::Open(a, OpenMode::Read, io::kOpenNone, &f).Ok());
+    byte buf[4] = {};
+    usize n = 0;
+    REQUIRE(f->Read(MutableByteSpan(buf), &n).Ok());
+    CHECK(n == 4);
+    CHECK(buf[2] == 3);
+}

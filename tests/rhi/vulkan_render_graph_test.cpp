@@ -54,10 +54,10 @@ struct GraphScene {
                                           {1, BindingType::SampledTexture, ShaderStage::Fragment, 1},
                                           {2, BindingType::Sampler, ShaderStage::Fragment, 1}};
         BindGroupLayoutDesc ld;
-        ld.entries = Span<BindingDesc>(sample_bindings, 3);
+        ld.entries = rhi::Span<BindingDesc>(sample_bindings, 3);
         sample_layout = device->CreateBindGroupLayout(ld);
         BindingDesc compute_binding = {0, BindingType::StorageTexture, ShaderStage::Compute, 1};
-        ld.entries = Span<BindingDesc>(&compute_binding, 1);
+        ld.entries = rhi::Span<BindingDesc>(&compute_binding, 1);
         compute_layout = device->CreateBindGroupLayout(ld);
 
         GraphicsPipelineDesc gp;
@@ -107,7 +107,7 @@ struct GraphScene {
         e[2].sampler = sampler;
         BindGroupDesc gd;
         gd.layout = sample_layout;
-        gd.entries = Span<BindGroupEntry>(e, 3);
+        gd.entries = rhi::Span<BindGroupEntry>(e, 3);
         gd.transient = true;
         const BindGroupHandle group = device->CreateBindGroup(gd);
         RenderingDesc rd;
@@ -155,7 +155,7 @@ void ComputePass(const PassExecuteContext& ctx, void* user) {
     e.texture = ctx.graph->ResolvedTexture(s->c);
     BindGroupDesc gd;
     gd.layout = s->compute_layout;
-    gd.entries = Span<BindGroupEntry>(&e, 1);
+    gd.entries = rhi::Span<BindGroupEntry>(&e, 1);
     gd.transient = true;
     const BindGroupHandle group = s->device->CreateBindGroup(gd);
     ctx.list->SetPipeline(s->compute_pipeline);

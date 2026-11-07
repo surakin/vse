@@ -33,7 +33,7 @@ bool ValidText(const char* text) {
     }
     usize length = 0;
     for (; text[length] != '\0'; ++length) {
-        const unsigned char c = static_cast<unsigned char>(text[length]);
+        const byte c = static_cast<byte>(text[length]);
         if (c < 32 || c > 126 || length + 1 >= kSettingTextBytes) {
             return false;
         }
@@ -50,7 +50,7 @@ bool ValidEnumName(const char* name) {
     }
     usize length = 0;
     for (; name[length] != '\0'; ++length) {
-        const unsigned char c = static_cast<unsigned char>(name[length]);
+        const byte c = static_cast<byte>(name[length]);
         if (c <= 32 || c > 126 || c == '=' || c == '#' || length >= 31) {
             return false;
         }

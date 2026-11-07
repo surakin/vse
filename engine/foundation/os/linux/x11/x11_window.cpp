@@ -119,7 +119,7 @@ X11Window X11Window::Create(StringView title, u32 width, u32 height) {
     Atom net_wm_name = XInternAtom(display, "_NET_WM_NAME", False);
     Atom utf8_string = XInternAtom(display, "UTF8_STRING", False);
     XChangeProperty(display, window, net_wm_name, utf8_string, 8, PropModeReplace,
-                    reinterpret_cast<const unsigned char*>(title_buf), static_cast<int>(n));
+                    reinterpret_cast<const byte*>(title_buf), static_cast<int>(n));
 
     // Ask the WM to send a ClientMessage on close instead of killing the
     // connection.
@@ -268,7 +268,7 @@ bool X11Window::IsFullscreen() const {
     int format = 0;
     unsigned long count = 0;
     unsigned long after = 0;
-    unsigned char* data = nullptr;
+    byte* data = nullptr;
     bool result = false;
     if (XGetWindowProperty(display_, window_, state, 0, 64, False, XA_ATOM, &type, &format, &count, &after, &data) == Success &&
         data != nullptr) {

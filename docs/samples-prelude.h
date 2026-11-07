@@ -14,6 +14,7 @@
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "int128.h"
+#include "algorithm.h"
 #include "containers/hash_map.h"
 #include "io/file.h"
 #include "io/directory.h"

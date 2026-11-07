@@ -86,7 +86,7 @@ public:
 private:
     Device* device_;
     BufferHandle buffer_;
-    unsigned char* mapped_ = nullptr;
+    byte* mapped_ = nullptr;
     u64 region_bytes_ = 0;
     u64 alignment_ = 256;
     u64 region_base_ = 0;

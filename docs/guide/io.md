@@ -182,6 +182,8 @@ hello, files
 files
 ```
 
+`File::Read`/`File::Write`, `WriteFile` and `WriteFileAtomic` also take a `ByteSpan` (or `MutableByteSpan`) in place of the pointer and length, so `io::WriteFile(path, ByteSpan(buffer))` writes a `Vector<byte>` or an `Array<byte, N>` directly.
+
 Helpers that work through any file: `ReadAll` (into a `Vector<u8>` or an arena), `ReadFile`, `ReadTextFile`, `WriteFile`.
 
 ## Replacing a file atomically

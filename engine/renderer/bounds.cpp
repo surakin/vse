@@ -9,7 +9,7 @@ namespace engine_placeholder::renderer {
 
 Aabb ComputeAabb(const void* points, u32 count, u32 stride_bytes) {
     ENGINE_ASSERT(points != nullptr && count > 0 && stride_bytes >= 12, "ComputeAabb: need at least one point of at least 12 bytes");
-    const auto* bytes = static_cast<const unsigned char*>(points);
+    const auto* bytes = static_cast<const byte*>(points);
     Aabb box;
     for (u32 i = 0; i < count; ++i) {
         f32 p[3];
@@ -31,7 +31,7 @@ Bounds ComputeBounds(const void* points, u32 count, u32 stride_bytes) {
     bounds.box = ComputeAabb(points, count, stride_bytes);
     bounds.sphere.center = bounds.box.Center();
     f32 farthest = 0.0f;
-    const auto* bytes = static_cast<const unsigned char*>(points);
+    const auto* bytes = static_cast<const byte*>(points);
     for (u32 i = 0; i < count; ++i) {
         f32 p[3];
         std::memcpy(p, bytes + static_cast<usize>(i) * stride_bytes, sizeof(p));

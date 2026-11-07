@@ -203,7 +203,7 @@ private:
 
     // Per-class central state, guarded by mutex_.
     struct ClassState {
-        unsigned char* base = nullptr; // slab start (nullptr = reservation failed)
+        byte* base = nullptr; // slab start (nullptr = reservation failed)
         usize slots = 0;
         usize next_unused = 0; // bump index into the slab
         void* free_list = nullptr; // returned blocks

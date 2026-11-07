@@ -241,7 +241,7 @@ private:
     static constexpr u32 kNone = 0xFFFFFFFFu;
 
     struct Slot {
-        alignas(T) unsigned char storage[sizeof(T)];
+        alignas(T) byte storage[sizeof(T)];
         u32 generation = 1;
         u32 next = kNone;
         u64 retire_frame = 0;

@@ -32,8 +32,8 @@ char Fold(PathStyle style, char c) {
 int CompareFoldSlow(PathStyle style, StringView a, StringView b) {
     const usize n = a.Length() < b.Length() ? a.Length() : b.Length();
     for (usize i = 0; i < n; ++i) {
-        const unsigned char x = static_cast<unsigned char>(Fold(style, a[i]));
-        const unsigned char y = static_cast<unsigned char>(Fold(style, b[i]));
+        const byte x = static_cast<byte>(Fold(style, a[i]));
+        const byte y = static_cast<byte>(Fold(style, b[i]));
         if (x != y) {
             return x < y ? -1 : 1;
         }
@@ -577,7 +577,7 @@ bool Path::StartsWith(const Path& prefix) const {
 usize Path::Hash() const {
     u64 h = 14695981039346656037ull ^ static_cast<u64>(style_);
     for (usize i = 0; i < text_.Size(); ++i) {
-        h ^= static_cast<unsigned char>(Fold(style_, text_.Data()[i]));
+        h ^= static_cast<byte>(Fold(style_, text_.Data()[i]));
         h *= 1099511628211ull;
     }
     return static_cast<usize>(h);

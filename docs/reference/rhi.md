@@ -4493,82 +4493,16 @@ The kind of resource a binding refers to.
 
 ## `Span` {#rhi-span}
 
-`struct rhi::Span` — defined in `engine/rhi/enums.h`
+`alias rhi::Span` — defined in `engine/rhi/enums.h`
 
 ```cpp
 template <typename T>
-struct Span { ... }
+using Span = engine_placeholder::Span<const T>;
 ```
 
-A read-only view of `count` consecutive `T` owned by the caller.
+A read-only view of consecutive `T` owned by the caller: the foundation [`Span`](foundation-containers.md#span) of const elements.
 
 Used in descriptors so they need no allocation. The memory must stay valid for the duration of the call the descriptor is passed to; backends copy what they keep.
-
-| Field | Value |
-|---|---|
-| Thread-safety | thread-compatible plain data. |
-| Ownership | does not own the elements. |
-
-### `data` {#rhi-span-data}
-
-`variable rhi::Span::data` — defined in `engine/rhi/enums.h`
-
-```cpp
-const T* data;
-```
-
-Pointer to the first element, or null when empty.
-
-### `count` {#rhi-span-count}
-
-`variable rhi::Span::count` — defined in `engine/rhi/enums.h`
-
-```cpp
-usize count;
-```
-
-Number of elements.
-
-### `Span()` {#rhi-span-span}
-
-`constructor rhi::Span::Span` — defined in `engine/rhi/enums.h`
-
-```cpp
-constexpr Span() = default;
-```
-
-Creates an empty span.
-
-### `Span(const T*,usize)` {#rhi-span-span-const-t-star-usize}
-
-`constructor rhi::Span::Span` — defined in `engine/rhi/enums.h`
-
-```cpp
-constexpr Span(const T* p, usize n);
-```
-
-Creates a span over `n` elements starting at `p`.
-
-### `Span(const T(&)[N])` {#rhi-span-span-const-t-amp-n}
-
-`constructor rhi::Span::Span` — defined in `engine/rhi/enums.h`
-
-```cpp
-template <usize N>
-constexpr Span(const T (&arr)[N]);
-```
-
-Creates a span over a C array of fixed size.
-
-### `operator[](usize)` {#rhi-span-operator-index-usize-const}
-
-`operator rhi::Span::operator[]` — defined in `engine/rhi/enums.h`
-
-```cpp
-constexpr const T& operator[](usize i) const;
-```
-
-Returns the element at `i` (not bounds-checked).
 
 ## `Format` {#rhi-format}
 

@@ -177,7 +177,7 @@ private:
     f64 drag_y_ = 0.0;
 };
 
-bool WritePpm(const char* path, u32 width, u32 height, const Vector<unsigned char>& rgba) {
+bool WritePpm(const char* path, u32 width, u32 height, const Vector<byte>& rgba) {
     io::Path file;
     return io::Path::Parse(StringView(path), io::NativePathStyle(), &file) && demo::WritePpm(file, width, height, rgba.Data()).Ok();
 }
@@ -330,7 +330,7 @@ int RunScreenshot(const Options& options, const RenderSettings& settings) {
                 status = frame.Render(&scene.Scene(), &camera, &ft);
                 ft.initial = ResourceState::CopySrc; // the next frame starts where this one ended
             }
-            Vector<unsigned char> pixels;
+            Vector<byte> pixels;
             pixels.Resize(static_cast<usize>(kShotWidth) * kShotHeight * 4);
             device->WaitIdle();
             if (status == FrameStatus::DeviceLost || device->DeviceLost()) {

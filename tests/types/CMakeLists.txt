@@ -4,6 +4,7 @@
 set(TYPES_TEST_SOURCES
   int128_test.cpp
   span_test.cpp
+  algorithm_test.cpp
 )
 
 find_package(Threads REQUIRED)

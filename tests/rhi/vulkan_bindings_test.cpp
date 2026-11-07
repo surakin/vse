@@ -29,7 +29,7 @@ struct QuietLog {
 BindGroupLayoutHandle UniformLayout(Device* device) {
     BindingDesc entry = {0, BindingType::UniformBuffer, ShaderStage::Vertex, 1};
     BindGroupLayoutDesc ld;
-    ld.entries = Span<BindingDesc>(&entry, 1);
+    ld.entries = rhi::Span<BindingDesc>(&entry, 1);
     return device->CreateBindGroupLayout(ld);
 }
 
@@ -144,7 +144,7 @@ TEST_CASE("Transient bind groups end with their frame on the null device", "[rhi
     QuietLog quiet;
     BindingDesc entry = {0, BindingType::UniformBuffer, ShaderStage::Vertex, 1};
     BindGroupLayoutDesc ld;
-    ld.entries = Span<BindingDesc>(&entry, 1);
+    ld.entries = rhi::Span<BindingDesc>(&entry, 1);
     const BindGroupLayoutHandle layout = device->CreateBindGroupLayout(ld);
     BufferDesc bd;
     bd.size = 1024;
@@ -156,7 +156,7 @@ TEST_CASE("Transient bind groups end with their frame on the null device", "[rhi
     ge.buffer = buffer;
     BindGroupDesc gd;
     gd.layout = layout;
-    gd.entries = Span<BindGroupEntry>(&ge, 1);
+    gd.entries = rhi::Span<BindGroupEntry>(&ge, 1);
 
     device->BeginFrame();
     gd.transient = true;
@@ -267,7 +267,7 @@ TEST_CASE("A uniform, texture and sampler bind group and a push constant reach t
                               {1, BindingType::SampledTexture, ShaderStage::Fragment, 1},
                               {2, BindingType::Sampler, ShaderStage::Fragment, 1}};
     BindGroupLayoutDesc ld;
-    ld.entries = Span<BindingDesc>(entries, 3);
+    ld.entries = rhi::Span<BindingDesc>(entries, 3);
     const BindGroupLayoutHandle layout = device->CreateBindGroupLayout(ld);
     REQUIRE(layout.IsValid());
     BindGroupEntry ge[3];
@@ -279,7 +279,7 @@ TEST_CASE("A uniform, texture and sampler bind group and a push constant reach t
     ge[2].sampler = sampler;
     BindGroupDesc gd;
     gd.layout = layout;
-    gd.entries = Span<BindGroupEntry>(ge, 3);
+    gd.entries = rhi::Span<BindGroupEntry>(ge, 3);
     const BindGroupHandle persistent = device->CreateBindGroup(gd);
     REQUIRE(persistent.IsValid());
 
@@ -395,7 +395,7 @@ TEST_CASE("Heavy transient descriptor use grows pools instead of failing", "[rhi
     ge.buffer = ubo;
     BindGroupDesc gd;
     gd.layout = layout;
-    gd.entries = Span<BindGroupEntry>(&ge, 1);
+    gd.entries = rhi::Span<BindGroupEntry>(&ge, 1);
     gd.transient = true;
 
     usize pools_after_first = 0;
@@ -438,7 +438,7 @@ TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of 
     ge.buffer = ubo;
     BindGroupDesc gd;
     gd.layout = layout;
-    gd.entries = Span<BindGroupEntry>(&ge, 1);
+    gd.entries = rhi::Span<BindGroupEntry>(&ge, 1);
 
     // Create and destroy far more groups over time than one pool holds: freed sets are reused.
     usize peak_pools = 0;
@@ -458,7 +458,7 @@ TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of 
     // 200 samplers in one binding do not fit a 16-set pool sized by the default rule: they get an exact pool.
     BindingDesc big = {0, BindingType::Sampler, ShaderStage::Fragment, 200};
     BindGroupLayoutDesc ld;
-    ld.entries = Span<BindingDesc>(&big, 1);
+    ld.entries = rhi::Span<BindingDesc>(&big, 1);
     const BindGroupLayoutHandle big_layout = device->CreateBindGroupLayout(ld);
     REQUIRE(big_layout.IsValid());
     const SamplerHandle sampler = device->CreateSampler(SamplerDesc{});
@@ -470,7 +470,7 @@ TEST_CASE("Persistent bind groups are recycled and a large array gets a pool of 
     }
     BindGroupDesc bg;
     bg.layout = big_layout;
-    bg.entries = Span<BindGroupEntry>(entries.data(), entries.size());
+    bg.entries = rhi::Span<BindGroupEntry>(entries.data(), entries.size());
     const BindGroupHandle big_group = device->CreateBindGroup(bg);
     CHECK(big_group.IsValid());
     device->DestroyBindGroup(big_group);
@@ -521,7 +521,7 @@ TEST_CASE("Bind group misuse is refused before the driver sees it", "[rhi][vulka
     ge.buffer = ubo;
     BindGroupDesc gd;
     gd.layout = layout;
-    gd.entries = Span<BindGroupEntry>(&ge, 1);
+    gd.entries = rhi::Span<BindGroupEntry>(&ge, 1);
     SECTION("a buffer without Uniform usage") {
         ge.buffer = vertex_buffer;
         CHECK_FALSE(device->CreateBindGroup(gd).IsValid());
@@ -539,7 +539,7 @@ TEST_CASE("Bind group misuse is refused before the driver sees it", "[rhi][vulka
         CHECK_FALSE(device->CreateBindGroup(gd).IsValid());
     }
     SECTION("no entry for a binding") {
-        gd.entries = Span<BindGroupEntry>();
+        gd.entries = rhi::Span<BindGroupEntry>();
         CHECK_FALSE(device->CreateBindGroup(gd).IsValid());
     }
     SECTION("a destroyed buffer") {

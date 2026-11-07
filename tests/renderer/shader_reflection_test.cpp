@@ -195,7 +195,7 @@ TEST_CASE("Layouts are built from reflection", "[renderer][reflection]") {
         CHECK(layout.entries[1].stages == ShaderStage::Fragment);
         CHECK(layout.entries[2].binding == 2);
         CHECK(layout.entries[2].type == BindingType::Sampler);
-        CHECK(layout.Desc().entries.count == 3);
+        CHECK(layout.Desc().entries.Size() == 3);
         CHECK(layout.Desc().Validate() == nullptr);
     }
     SECTION("the order of the shaders does not matter") {

@@ -56,7 +56,7 @@ struct ComputeDevice {
     BindGroupLayoutHandle StorageLayout(u32 buffers) {
         BindingDesc entries[2] = {{0, BindingType::StorageBuffer, ShaderStage::Compute, 1}, {1, BindingType::StorageBuffer, ShaderStage::Compute, 1}};
         BindGroupLayoutDesc ld;
-        ld.entries = Span<BindingDesc>(entries, buffers);
+        ld.entries = rhi::Span<BindingDesc>(entries, buffers);
         return device->CreateBindGroupLayout(ld);
     }
 
@@ -86,7 +86,7 @@ struct ComputeDevice {
         e[1].buffer = b;
         BindGroupDesc gd;
         gd.layout = layout;
-        gd.entries = Span<BindGroupEntry>(e, b.IsValid() ? 2 : 1);
+        gd.entries = rhi::Span<BindGroupEntry>(e, b.IsValid() ? 2 : 1);
         return device->CreateBindGroup(gd);
     }
 };
@@ -225,7 +225,7 @@ TEST_CASE("A compute shader writes a storage texture that is read back", "[rhi][
     const ShaderHandle cs = t.Shader(shaders::kGradientCompSpv, shaders::kGradientCompSpvWordCount);
     BindingDesc entry = {0, BindingType::StorageTexture, ShaderStage::Compute, 1};
     BindGroupLayoutDesc ld;
-    ld.entries = Span<BindingDesc>(&entry, 1);
+    ld.entries = rhi::Span<BindingDesc>(&entry, 1);
     const BindGroupLayoutHandle layout = t.device->CreateBindGroupLayout(ld);
     ComputePipelineDesc cp;
     cp.shader = cs;
@@ -246,7 +246,7 @@ TEST_CASE("A compute shader writes a storage texture that is read back", "[rhi][
     e.texture = image;
     BindGroupDesc gd;
     gd.layout = layout;
-    gd.entries = Span<BindGroupEntry>(&e, 1);
+    gd.entries = rhi::Span<BindGroupEntry>(&e, 1);
     const BindGroupHandle group = t.device->CreateBindGroup(gd);
     REQUIRE(group.IsValid());
 

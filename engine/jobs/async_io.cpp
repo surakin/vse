@@ -79,7 +79,7 @@ struct ReadState : IoRequest {
     Scheduler* scheduler;
     // The arena is sized from the file's real length on the I/O thread
     // (not reserved up front for every request), so it is built lazily.
-    alignas(ArenaAllocator) unsigned char arena_storage[sizeof(ArenaAllocator)];
+    alignas(ArenaAllocator) byte arena_storage[sizeof(ArenaAllocator)];
     ArenaAllocator* arena = nullptr;
     // Result, written by the I/O thread before the counter decrement.
     bool ok = false;

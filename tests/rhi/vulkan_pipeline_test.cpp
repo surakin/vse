@@ -191,8 +191,8 @@ struct TriangleDevice {
         GraphicsPipelineDesc g;
         g.vertex_shader = vs;
         g.fragment_shader = fs;
-        g.vertex_bindings = Span<VertexBindingDesc>(&binding, 1);
-        g.vertex_attributes = Span<VertexAttributeDesc>(attributes, 2);
+        g.vertex_bindings = rhi::Span<VertexBindingDesc>(&binding, 1);
+        g.vertex_attributes = rhi::Span<VertexAttributeDesc>(attributes, 2);
         g.cull_mode = CullMode::None;
         g.color_targets[0].format = target;
         g.color_target_count = 1;
@@ -296,7 +296,7 @@ TEST_CASE("Equal bind group layouts share one descriptor set layout and pipeline
     TriangleDevice t;
     BindingDesc entries[2] = {{0, BindingType::UniformBuffer, ShaderStage::Vertex, 1}, {1, BindingType::SampledTexture, ShaderStage::Fragment, 1}};
     BindGroupLayoutDesc ld;
-    ld.entries = Span<BindingDesc>(entries, 2);
+    ld.entries = rhi::Span<BindingDesc>(entries, 2);
     const BindGroupLayoutHandle a = t.device->CreateBindGroupLayout(ld);
     const BindGroupLayoutHandle b = t.device->CreateBindGroupLayout(ld);
     REQUIRE(a.IsValid());
@@ -308,7 +308,7 @@ TEST_CASE("Equal bind group layouts share one descriptor set layout and pipeline
     // The same bindings listed in another order are the same layout.
     BindingDesc swapped[2] = {entries[1], entries[0]};
     BindGroupLayoutDesc sd;
-    sd.entries = Span<BindingDesc>(swapped, 2);
+    sd.entries = rhi::Span<BindingDesc>(swapped, 2);
     const BindGroupLayoutHandle reordered = t.device->CreateBindGroupLayout(sd);
     REQUIRE(reordered.IsValid());
     CHECK(t.device->Counts().descriptor_set_layouts == 1);
@@ -379,7 +379,7 @@ TEST_CASE("Creating and destroying many distinct layouts does not run out of pip
         for (u32 i = 0; i < 16; ++i) {
             BindingDesc entry = {i + round, BindingType::UniformBuffer, ShaderStage::Vertex, 1};
             BindGroupLayoutDesc ld;
-            ld.entries = Span<BindingDesc>(&entry, 1);
+            ld.entries = rhi::Span<BindingDesc>(&entry, 1);
             layouts[i] = t.device->CreateBindGroupLayout(ld);
             REQUIRE(layouts[i].IsValid());
             GraphicsPipelineDesc g = t.Desc(Format::RGBA8_UNorm);

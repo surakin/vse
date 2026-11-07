@@ -100,7 +100,7 @@ struct DrawScene {
             {2, BindingType::Sampler, ShaderStage::Fragment, 1},
         };
         BindGroupLayoutDesc ld;
-        ld.entries = Span<BindingDesc>(entries);
+        ld.entries = rhi::Span<BindingDesc>(entries);
         layout = f.dev->CreateBindGroupLayout(ld);
 
         BindGroupEntry ge[3];
@@ -112,7 +112,7 @@ struct DrawScene {
         ge[2].sampler = sampler;
         BindGroupDesc gd;
         gd.layout = layout;
-        gd.entries = Span<BindGroupEntry>(ge);
+        gd.entries = rhi::Span<BindGroupEntry>(ge);
         group = f.dev->CreateBindGroup(gd);
 
         vs = f.Shader(ShaderStage::Vertex);
@@ -120,8 +120,8 @@ struct DrawScene {
         GraphicsPipelineDesc pd;
         pd.vertex_shader = vs;
         pd.fragment_shader = fs;
-        pd.vertex_bindings = Span<VertexBindingDesc>(&binding, 1);
-        pd.vertex_attributes = Span<VertexAttributeDesc>(&attr, 1);
+        pd.vertex_bindings = rhi::Span<VertexBindingDesc>(&binding, 1);
+        pd.vertex_attributes = rhi::Span<VertexAttributeDesc>(&attr, 1);
         pd.color_targets[0].format = Format::RGBA8_UNorm;
         pd.color_target_count = 1;
         pd.bind_group_layouts[0] = layout;
@@ -241,7 +241,7 @@ TEST_CASE("A legal indexed draw and a legal compute dispatch produce no errors",
     // Compute with one storage buffer.
     BindingDesc cb{0, BindingType::StorageBuffer, ShaderStage::Compute, 1};
     BindGroupLayoutDesc ld;
-    ld.entries = Span<BindingDesc>(&cb, 1);
+    ld.entries = rhi::Span<BindingDesc>(&cb, 1);
     BindGroupLayoutHandle layout = f.dev->CreateBindGroupLayout(ld);
     BufferHandle storage = f.Buffer(1024, BufferUsage::Storage);
     BindGroupEntry ge;
@@ -249,7 +249,7 @@ TEST_CASE("A legal indexed draw and a legal compute dispatch produce no errors",
     ge.buffer = storage;
     BindGroupDesc gd;
     gd.layout = layout;
-    gd.entries = Span<BindGroupEntry>(&ge, 1);
+    gd.entries = rhi::Span<BindGroupEntry>(&ge, 1);
     BindGroupHandle group = f.dev->CreateBindGroup(gd);
     ComputePipelineDesc cd;
     cd.shader = f.Shader(ShaderStage::Compute);
@@ -302,7 +302,7 @@ TEST_CASE("Huge binding array counts cannot overflow the element budget", "[rhi]
         {1, BindingType::Sampler, ShaderStage::Fragment, 0x80000000u},
     };
     BindGroupLayoutDesc ld;
-    ld.entries = Span<BindingDesc>(big);
+    ld.entries = rhi::Span<BindingDesc>(big);
     CHECK_FALSE(f.dev->CreateBindGroupLayout(ld).IsValid());
     f.ExpectOneError();
 
@@ -312,7 +312,7 @@ TEST_CASE("Huge binding array counts cannot overflow the element budget", "[rhi]
         {1, BindingType::Sampler, ShaderStage::Fragment, 40},
         {2, BindingType::Sampler, ShaderStage::Fragment, 1},
     };
-    ld.entries = Span<BindingDesc>(many);
+    ld.entries = rhi::Span<BindingDesc>(many);
     CHECK_FALSE(f.dev->CreateBindGroupLayout(ld).IsValid());
     f.ExpectOneError();
 }
@@ -600,14 +600,14 @@ TEST_CASE("Binding misuse", "[rhi][null][misuse]") {
     // A group made from a different layout than the pipeline declares.
     BindingDesc other{0, BindingType::UniformBuffer, ShaderStage::Vertex, 1};
     BindGroupLayoutDesc ld;
-    ld.entries = Span<BindingDesc>(&other, 1);
+    ld.entries = rhi::Span<BindingDesc>(&other, 1);
     BindGroupLayoutHandle other_layout = f.dev->CreateBindGroupLayout(ld);
     BindGroupEntry ge;
     ge.binding = 0;
     ge.buffer = s.uniforms;
     BindGroupDesc gd;
     gd.layout = other_layout;
-    gd.entries = Span<BindGroupEntry>(&ge, 1);
+    gd.entries = rhi::Span<BindGroupEntry>(&ge, 1);
     BindGroupHandle wrong = f.dev->CreateBindGroup(gd);
     REQUIRE(wrong.IsValid());
 
@@ -776,32 +776,32 @@ TEST_CASE("Bind groups must match their layout", "[rhi][null][misuse]") {
     ge[2].binding = 2;
     ge[2].sampler = s.sampler;
 
-    gd.entries = Span<BindGroupEntry>(ge, 2);  // missing the sampler
+    gd.entries = rhi::Span<BindGroupEntry>(ge, 2);  // missing the sampler
     CHECK_FALSE(f.dev->CreateBindGroup(gd).IsValid());
     f.ExpectOneError();
 
-    gd.entries = Span<BindGroupEntry>(ge);
+    gd.entries = rhi::Span<BindGroupEntry>(ge);
     BindGroupEntry extra[4] = {ge[0], ge[1], ge[2], ge[0]};
     extra[3].binding = 9;  // no such binding
-    gd.entries = Span<BindGroupEntry>(extra);
+    gd.entries = rhi::Span<BindGroupEntry>(extra);
     CHECK_FALSE(f.dev->CreateBindGroup(gd).IsValid());
     f.ExpectOneError();
 
     BindGroupEntry wrong_buffer[3] = {ge[0], ge[1], ge[2]};
     wrong_buffer[0].buffer = s.vertices;  // lacks Uniform usage
-    gd.entries = Span<BindGroupEntry>(wrong_buffer);
+    gd.entries = rhi::Span<BindGroupEntry>(wrong_buffer);
     CHECK_FALSE(f.dev->CreateBindGroup(gd).IsValid());
     f.ExpectOneError();
 
     BindGroupEntry unaligned[3] = {ge[0], ge[1], ge[2]};
     unaligned[0].offset = 4;
-    gd.entries = Span<BindGroupEntry>(unaligned);
+    gd.entries = rhi::Span<BindGroupEntry>(unaligned);
     CHECK_FALSE(f.dev->CreateBindGroup(gd).IsValid());
     f.ExpectOneError();
 
     BindGroupEntry wrong_texture[3] = {ge[0], ge[1], ge[2]};
     wrong_texture[1].texture = s.target;  // lacks Sampled usage
-    gd.entries = Span<BindGroupEntry>(wrong_texture);
+    gd.entries = rhi::Span<BindGroupEntry>(wrong_texture);
     CHECK_FALSE(f.dev->CreateBindGroup(gd).IsValid());
     f.ExpectOneError();
 

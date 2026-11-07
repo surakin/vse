@@ -8,9 +8,9 @@ namespace {
 
 constexpr u32 kSize = 256;
 
-unsigned char Byte(f32 v) {
+byte Byte(f32 v) {
     const f32 c = v * 255.0f + 0.5f;
-    return static_cast<unsigned char>(c < 0.0f ? 0.0f : (c > 255.0f ? 255.0f : c));
+    return static_cast<byte>(c < 0.0f ? 0.0f : (c > 255.0f ? 255.0f : c));
 }
 
 } // namespace
@@ -21,14 +21,14 @@ demo::Pixels MakeStripePixels() {
     demo::Pixels p;
     p.width = kSize;
     p.height = kSize;
-    p.rgba.resize(static_cast<usize>(kSize) * kSize * 4);
+    p.rgba.Resize(static_cast<usize>(kSize) * kSize * 4);
     for (u32 y = 0; y < kSize; ++y) {
         for (u32 x = 0; x < kSize; ++x) {
             // A smooth triangle wave along the diagonal: 8 stripes per tile, so the tile repeats seamlessly.
             const f32 t = static_cast<f32>((x + y) % (kSize / 8 * 2)) / static_cast<f32>(kSize / 8 * 2);
             const f32 wave = t < 0.5f ? t * 2.0f : 2.0f - t * 2.0f;
             const f32 k = wave * wave * (3.0f - 2.0f * wave);
-            unsigned char* px = &p.rgba[(static_cast<usize>(y) * kSize + x) * 4];
+            byte* px = &p.rgba[(static_cast<usize>(y) * kSize + x) * 4];
             px[0] = Byte(0.75f + 0.2f * k);
             px[1] = Byte(0.12f + 0.75f * k);
             px[2] = Byte(0.1f + 0.65f * k);
@@ -42,7 +42,7 @@ demo::Pixels MakeBumpNormalPixels() {
     demo::Pixels p;
     p.width = kSize;
     p.height = kSize;
-    p.rgba.resize(static_cast<usize>(kSize) * kSize * 4);
+    p.rgba.Resize(static_cast<usize>(kSize) * kSize * 4);
     constexpr u32 kCell = kSize / 4;
     for (u32 y = 0; y < kSize; ++y) {
         for (u32 x = 0; x < kSize; ++x) {
@@ -61,7 +61,7 @@ demo::Pixels MakeBumpNormalPixels() {
                 ny = sy / len;
                 nz = h / len;
             }
-            unsigned char* px = &p.rgba[(static_cast<usize>(y) * kSize + x) * 4];
+            byte* px = &p.rgba[(static_cast<usize>(y) * kSize + x) * 4];
             px[0] = Byte(nx * 0.5f + 0.5f);
             px[1] = Byte(ny * 0.5f + 0.5f);
             px[2] = Byte(nz * 0.5f + 0.5f);

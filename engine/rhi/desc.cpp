@@ -189,13 +189,10 @@ const char* ShaderDesc::Validate() const {
 }
 
 const char* BindGroupLayoutDesc::Validate() const {
-    if (entries.count > kMaxBindingsPerLayout) {
+    if (entries.Size() > kMaxBindingsPerLayout) {
         return "BindGroupLayoutDesc: too many bindings";
     }
-    if (entries.count > 0 && entries.data == nullptr) {
-        return "BindGroupLayoutDesc: entries is null";
-    }
-    for (usize i = 0; i < entries.count; ++i) {
+    for (usize i = 0; i < entries.Size(); ++i) {
         const BindingDesc& e = entries[i];
         if (static_cast<usize>(e.type) >= static_cast<usize>(BindingType::Count)) {
             return "BindGroupLayoutDesc: unknown binding type";
@@ -229,13 +226,10 @@ const char* BindGroupDesc::Validate() const {
     if (!layout.IsValid()) {
         return "BindGroupDesc: layout handle is invalid";
     }
-    if (entries.count > kMaxBindingsPerLayout * 8) {
+    if (entries.Size() > kMaxBindingsPerLayout * 8) {
         return "BindGroupDesc: too many entries";
     }
-    if (entries.count > 0 && entries.data == nullptr) {
-        return "BindGroupDesc: entries is null";
-    }
-    for (usize i = 0; i < entries.count; ++i) {
+    for (usize i = 0; i < entries.Size(); ++i) {
         for (usize j = 0; j < i; ++j) {
             if (entries[j].binding == entries[i].binding && entries[j].array_element == entries[i].array_element) {
                 return "BindGroupDesc: duplicate entry";
@@ -293,24 +287,20 @@ const char* GraphicsPipelineDesc::Validate() const {
         }
     }
 
-    if (vertex_bindings.count > kMaxVertexBindings) {
+    if (vertex_bindings.Size() > kMaxVertexBindings) {
         return "GraphicsPipelineDesc: too many vertex bindings";
     }
-    if (vertex_attributes.count > kMaxVertexAttributes) {
+    if (vertex_attributes.Size() > kMaxVertexAttributes) {
         return "GraphicsPipelineDesc: too many vertex attributes";
     }
-    if ((vertex_bindings.count > 0 && vertex_bindings.data == nullptr) ||
-        (vertex_attributes.count > 0 && vertex_attributes.data == nullptr)) {
-        return "GraphicsPipelineDesc: vertex layout span is null";
-    }
-    for (usize i = 0; i < vertex_bindings.count; ++i) {
+    for (usize i = 0; i < vertex_bindings.Size(); ++i) {
         if (vertex_bindings[i].stride == 0) {
             return "GraphicsPipelineDesc: vertex binding stride is zero";
         }
     }
-    for (usize i = 0; i < vertex_attributes.count; ++i) {
+    for (usize i = 0; i < vertex_attributes.Size(); ++i) {
         const VertexAttributeDesc& a = vertex_attributes[i];
-        if (a.binding >= vertex_bindings.count) {
+        if (a.binding >= vertex_bindings.Size()) {
             return "GraphicsPipelineDesc: vertex attribute references a missing binding";
         }
         u32 size = VertexFormatSize(a.format);

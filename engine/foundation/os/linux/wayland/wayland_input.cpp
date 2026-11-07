@@ -76,7 +76,7 @@ void WaylandInput::HandleSeatName(void* data, wl_seat* seat, const char* name) {
     (void)name;
 }
 
-void WaylandInput::HandleSeatCapabilities(void* data, wl_seat* seat, uint32_t capabilities) {
+void WaylandInput::HandleSeatCapabilities(void* data, wl_seat* seat, u32 capabilities) {
     auto* self = static_cast<WaylandInput*>(data);
     if (self == nullptr) {
         return;
@@ -107,8 +107,8 @@ void WaylandInput::HandleSeatCapabilities(void* data, wl_seat* seat, uint32_t ca
     }
 }
 
-void WaylandInput::HandleKeyboardKeymap(void* data, wl_keyboard* keyboard, uint32_t format, int32_t fd,
-                                        uint32_t size) {
+void WaylandInput::HandleKeyboardKeymap(void* data, wl_keyboard* keyboard, u32 format, i32 fd,
+                                        u32 size) {
     (void)keyboard;
     auto* self = static_cast<WaylandInput*>(data);
     if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1 || size == 0) {
@@ -130,21 +130,21 @@ void WaylandInput::HandleKeyboardKeymap(void* data, wl_keyboard* keyboard, uint3
     ::munmap(mapped, size);
 }
 
-void WaylandInput::HandleKeyboardEnter(void* data, wl_keyboard* keyboard, uint32_t serial, wl_surface* surface,
+void WaylandInput::HandleKeyboardEnter(void* data, wl_keyboard* keyboard, u32 serial, wl_surface* surface,
                                        wl_array* keys) {
     (void)keyboard;
     (void)serial;
     (void)surface;
     auto* self = static_cast<WaylandInput*>(data);
     // `keys` lists the evdev codes already held when focus arrived.
-    auto* begin = static_cast<uint32_t*>(keys->data);
-    auto* end = begin + keys->size / sizeof(uint32_t);
-    for (uint32_t* it = begin; it < end; ++it) {
+    auto* begin = static_cast<u32*>(keys->data);
+    auto* end = begin + keys->size / sizeof(u32);
+    for (u32* it = begin; it < end; ++it) {
         self->ApplyKey(*it, true);
     }
 }
 
-void WaylandInput::HandleKeyboardLeave(void* data, wl_keyboard* keyboard, uint32_t serial, wl_surface* surface) {
+void WaylandInput::HandleKeyboardLeave(void* data, wl_keyboard* keyboard, u32 serial, wl_surface* surface) {
     (void)keyboard;
     (void)serial;
     (void)surface;
@@ -152,17 +152,17 @@ void WaylandInput::HandleKeyboardLeave(void* data, wl_keyboard* keyboard, uint32
     static_cast<WaylandInput*>(data)->ReleaseAllKeys();
 }
 
-void WaylandInput::HandleKeyboardKey(void* data, wl_keyboard* keyboard, uint32_t serial, uint32_t time, uint32_t key,
-                                     uint32_t state) {
+void WaylandInput::HandleKeyboardKey(void* data, wl_keyboard* keyboard, u32 serial, u32 time, u32 key,
+                                     u32 state) {
     (void)keyboard;
     (void)serial;
     (void)time;
     static_cast<WaylandInput*>(data)->ApplyKey(key, state == WL_KEYBOARD_KEY_STATE_PRESSED);
 }
 
-void WaylandInput::HandleKeyboardModifiers(void* data, wl_keyboard* keyboard, uint32_t serial,
-                                           uint32_t mods_depressed, uint32_t mods_latched, uint32_t mods_locked,
-                                           uint32_t group) {
+void WaylandInput::HandleKeyboardModifiers(void* data, wl_keyboard* keyboard, u32 serial,
+                                           u32 mods_depressed, u32 mods_latched, u32 mods_locked,
+                                           u32 group) {
     (void)keyboard;
     (void)serial;
     auto* self = static_cast<WaylandInput*>(data);
@@ -170,7 +170,7 @@ void WaylandInput::HandleKeyboardModifiers(void* data, wl_keyboard* keyboard, ui
     self->input_state_->keyboard.modifiers = self->xkb_.Modifiers();
 }
 
-void WaylandInput::HandleKeyboardRepeatInfo(void* data, wl_keyboard* keyboard, int32_t rate, int32_t delay) {
+void WaylandInput::HandleKeyboardRepeatInfo(void* data, wl_keyboard* keyboard, i32 rate, i32 delay) {
     // Only sent to v4+ keyboards; key repeat is the input layer's job.
     (void)data;
     (void)keyboard;
@@ -178,7 +178,7 @@ void WaylandInput::HandleKeyboardRepeatInfo(void* data, wl_keyboard* keyboard, i
     (void)delay;
 }
 
-void WaylandInput::HandlePointerEnter(void* data, wl_pointer* pointer, uint32_t serial, wl_surface* surface,
+void WaylandInput::HandlePointerEnter(void* data, wl_pointer* pointer, u32 serial, wl_surface* surface,
                                       wl_fixed_t x, wl_fixed_t y) {
     (void)pointer;
     (void)serial;
@@ -189,7 +189,7 @@ void WaylandInput::HandlePointerEnter(void* data, wl_pointer* pointer, uint32_t 
     state->mouse_y = wl_fixed_to_double(y);
 }
 
-void WaylandInput::HandlePointerLeave(void* data, wl_pointer* pointer, uint32_t serial, wl_surface* surface) {
+void WaylandInput::HandlePointerLeave(void* data, wl_pointer* pointer, u32 serial, wl_surface* surface) {
     (void)pointer;
     (void)serial;
     (void)surface;
@@ -198,7 +198,7 @@ void WaylandInput::HandlePointerLeave(void* data, wl_pointer* pointer, uint32_t 
     static_cast<WaylandInput*>(data)->input_state_->pointer_inside = false;
 }
 
-void WaylandInput::HandlePointerMotion(void* data, wl_pointer* pointer, uint32_t time, wl_fixed_t x,
+void WaylandInput::HandlePointerMotion(void* data, wl_pointer* pointer, u32 time, wl_fixed_t x,
                                        wl_fixed_t y) {
     (void)pointer;
     (void)time;
@@ -207,17 +207,17 @@ void WaylandInput::HandlePointerMotion(void* data, wl_pointer* pointer, uint32_t
     state->mouse_y = wl_fixed_to_double(y);
 }
 
-void WaylandInput::HandlePointerButton(void* data, wl_pointer* pointer, uint32_t serial, uint32_t time,
-                                       uint32_t button, uint32_t state) {
+void WaylandInput::HandlePointerButton(void* data, wl_pointer* pointer, u32 serial, u32 time,
+                                       u32 button, u32 state) {
     (void)pointer;
     (void)serial;
     (void)time;
     // Linux evdev BTN_* codes (input-event-codes.h).
-    constexpr uint32_t kBtnLeft = 0x110;
-    constexpr uint32_t kBtnRight = 0x111;
-    constexpr uint32_t kBtnMiddle = 0x112;
-    constexpr uint32_t kBtnSide = 0x113;
-    constexpr uint32_t kBtnExtra = 0x114;
+    constexpr u32 kBtnLeft = 0x110;
+    constexpr u32 kBtnRight = 0x111;
+    constexpr u32 kBtnMiddle = 0x112;
+    constexpr u32 kBtnSide = 0x113;
+    constexpr u32 kBtnExtra = 0x114;
 
     u32 bit = 0;
     switch (button) {
@@ -236,7 +236,7 @@ void WaylandInput::HandlePointerButton(void* data, wl_pointer* pointer, uint32_t
     }
 }
 
-void WaylandInput::HandlePointerAxis(void* data, wl_pointer* pointer, uint32_t time, uint32_t axis,
+void WaylandInput::HandlePointerAxis(void* data, wl_pointer* pointer, u32 time, u32 axis,
                                      wl_fixed_t value) {
     (void)pointer;
     (void)time;

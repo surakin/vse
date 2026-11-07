@@ -7,9 +7,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <memory>
-#include <string>
-#include <vector>
 
 #include <unistd.h>
 
@@ -117,13 +114,12 @@ struct CubeTexture {
 
     bool Create(Device* device) {
         const io::Path asset = io::Path(StringView(RHI_DEMO_ASSET_DIR)).Join("checker.rtex");
-        const std::string path(asset.View().Data(), asset.View().Length());
         demo::RtexImage image;
         if (demo::ReadRtex(asset, &image).Ok()) {
             texture = demo::CreateTextureFromRtex(device, image, "checker.rtex");
         }
         if (!texture.IsValid()) {
-            RhiLogV(LogVerbosity::Warn, "rhi_demo: %s could not be loaded; using a procedural checkerboard", path.c_str());
+            RhiLogV(LogVerbosity::Warn, "rhi_demo: %.*s could not be loaded; using a procedural checkerboard", static_cast<int>(asset.View().Length()), asset.View().Data());
             texture = demo::CreateSampledTexture(device, demo::Checkerboard(256, 32, {235, 200, 90, 255}, {40, 60, 120, 255}), Format::RGBA8_SRGB, true,
                                                  "checker");
         }
@@ -181,14 +177,14 @@ struct Scene {
     demo::CubeRenderer cube;
     CubeTexture texture;
     DepthBuffer depth;
-    std::unique_ptr<UniformRing> ring;
+    UniquePtr<UniformRing> ring;
 
     bool Create(Device* device, Format color_format) {
         demo::CubeOptions options;
         options.color_format = color_format;
         options.depth_format = device->Caps().depth_format;
         options.lit = true;
-        ring = std::make_unique<UniformRing>(device, 4096);
+        ring = MakeUnique<UniformRing>(device, 4096);
         if (!ring->Valid() || !texture.Create(device) || !cube.Create(device, options)) {
             return false;
         }
@@ -200,7 +196,7 @@ struct Scene {
         cube.Destroy();
         texture.Destroy(device);
         depth.Destroy(device);
-        ring.reset(); // the ring owns a buffer: it goes before the device
+        ring.Reset(); // the ring owns a buffer: it goes before the device
     }
 };
 
@@ -220,7 +216,7 @@ bool RecordFrame(CommandList* list, Scene* scene, TextureHandle color, u32 width
     pass.depth.store = StoreOp::DontCare; // read by nothing after the pass
     list->BeginRendering(pass);
     const Mat4 projection = demo::PerspectiveVulkan(0.7853982f, static_cast<f32>(width) / static_cast<f32>(height), 0.1f, 20.0f);
-    const bool drawn = scene->cube.DrawLit(list, scene->ring.get(), projection * camera.View(), Mat4::Identity(), lighting, width, height);
+    const bool drawn = scene->cube.DrawLit(list, scene->ring.Get(), projection * camera.View(), Mat4::Identity(), lighting, width, height);
     list->EndRendering();
     if (final_state != ResourceState::ColorAttachment) {
         list->Barrier(color, ResourceState::ColorAttachment, final_state);
@@ -228,9 +224,9 @@ bool RecordFrame(CommandList* list, Scene* scene, TextureHandle color, u32 width
     return drawn;
 }
 
-bool WritePpm(const char* path, u32 width, u32 height, const std::vector<unsigned char>& rgba) {
+bool WritePpm(const char* path, u32 width, u32 height, const Vector<byte>& rgba) {
     io::Path file;
-    return io::Path::Parse(StringView(path), io::NativePathStyle(), &file) && demo::WritePpm(file, width, height, rgba.data()).Ok();
+    return io::Path::Parse(StringView(path), io::NativePathStyle(), &file) && demo::WritePpm(file, width, height, rgba.Data()).Ok();
 }
 
 DeviceCreateInfo DeviceInfo(const Options& options) {
@@ -306,7 +302,8 @@ int RunScreenshot(const Options& options) {
             }
             device->EndFrame();
         }
-        std::vector<unsigned char> pixels(static_cast<usize>(kSize) * kSize * 4);
+        Vector<byte> pixels;
+        pixels.Resize(static_cast<usize>(kSize) * kSize * 4);
         if (!lost && device->DeviceLost()) { // lost during the last frame's submit: no further BeginFrame to notice
             RhiLogV(LogVerbosity::Error, "rhi_demo: the GPU device was lost; stopping");
             lost = true;
@@ -315,7 +312,7 @@ int RunScreenshot(const Options& options) {
             exit_code = kExitDeviceLost;
         } else if (!drawn) {
             RhiLogV(LogVerbosity::Error, "rhi_demo: the cube could not be drawn");
-        } else if (!device->ReadbackTexture(target, 0, 0, pixels.data(), pixels.size(), ResourceState::ColorAttachment)) {
+        } else if (!device->ReadbackTexture(target, 0, 0, pixels.Data(), pixels.Size(), ResourceState::ColorAttachment)) {
             RhiLogV(LogVerbosity::Error, "rhi_demo: could not read the image back");
         } else if (!WritePpm(options.screenshot, kSize, kSize, pixels)) {
             RhiLogV(LogVerbosity::Error, "rhi_demo: could not write %s", options.screenshot);

@@ -59,25 +59,25 @@ public:
     bool HasKeymap() const { return xkb_.Valid(); }
 
 private:
-    static void HandleSeatCapabilities(void* data, wl_seat* seat, uint32_t capabilities);
+    static void HandleSeatCapabilities(void* data, wl_seat* seat, u32 capabilities);
     static void HandleSeatName(void* data, wl_seat* seat, const char* name);
-    static void HandleKeyboardKeymap(void* data, wl_keyboard* keyboard, uint32_t format, int32_t fd, uint32_t size);
-    static void HandleKeyboardEnter(void* data, wl_keyboard* keyboard, uint32_t serial, wl_surface* surface,
+    static void HandleKeyboardKeymap(void* data, wl_keyboard* keyboard, u32 format, i32 fd, u32 size);
+    static void HandleKeyboardEnter(void* data, wl_keyboard* keyboard, u32 serial, wl_surface* surface,
                                     wl_array* keys);
-    static void HandleKeyboardLeave(void* data, wl_keyboard* keyboard, uint32_t serial, wl_surface* surface);
-    static void HandleKeyboardKey(void* data, wl_keyboard* keyboard, uint32_t serial, uint32_t time, uint32_t key,
-                                  uint32_t state);
-    static void HandleKeyboardModifiers(void* data, wl_keyboard* keyboard, uint32_t serial, uint32_t mods_depressed,
-                                        uint32_t mods_latched, uint32_t mods_locked, uint32_t group);
-    static void HandleKeyboardRepeatInfo(void* data, wl_keyboard* keyboard, int32_t rate, int32_t delay);
+    static void HandleKeyboardLeave(void* data, wl_keyboard* keyboard, u32 serial, wl_surface* surface);
+    static void HandleKeyboardKey(void* data, wl_keyboard* keyboard, u32 serial, u32 time, u32 key,
+                                  u32 state);
+    static void HandleKeyboardModifiers(void* data, wl_keyboard* keyboard, u32 serial, u32 mods_depressed,
+                                        u32 mods_latched, u32 mods_locked, u32 group);
+    static void HandleKeyboardRepeatInfo(void* data, wl_keyboard* keyboard, i32 rate, i32 delay);
 
-    static void HandlePointerEnter(void* data, wl_pointer* pointer, uint32_t serial, wl_surface* surface,
+    static void HandlePointerEnter(void* data, wl_pointer* pointer, u32 serial, wl_surface* surface,
                                    wl_fixed_t x, wl_fixed_t y);
-    static void HandlePointerLeave(void* data, wl_pointer* pointer, uint32_t serial, wl_surface* surface);
-    static void HandlePointerMotion(void* data, wl_pointer* pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y);
-    static void HandlePointerButton(void* data, wl_pointer* pointer, uint32_t serial, uint32_t time,
-                                    uint32_t button, uint32_t state);
-    static void HandlePointerAxis(void* data, wl_pointer* pointer, uint32_t time, uint32_t axis, wl_fixed_t value);
+    static void HandlePointerLeave(void* data, wl_pointer* pointer, u32 serial, wl_surface* surface);
+    static void HandlePointerMotion(void* data, wl_pointer* pointer, u32 time, wl_fixed_t x, wl_fixed_t y);
+    static void HandlePointerButton(void* data, wl_pointer* pointer, u32 serial, u32 time,
+                                    u32 button, u32 state);
+    static void HandlePointerAxis(void* data, wl_pointer* pointer, u32 time, u32 axis, wl_fixed_t value);
 
     static const wl_pointer_listener kPointerListener;
     static const wl_seat_listener kSeatListener;

@@ -8,7 +8,7 @@ Listing and walking directories without loading a whole tree: [`io::Directory`](
 
 Errors of the file layer, reported as values: [`io::Error`](#io-error) and [`io::Status`](#io-status).
 
-[`io::File`](#io-file): an open file as an abstract interface, so the same code reads a local file, a pak entry or a file on a server. Only the local file exists now. Also the helpers that work through any `File`, the scheme registry that picks a backend, and [`io::WriteFileAtomic`](#io-writefileatomic-const-path-amp-const-void-star-usize-u32).
+[`io::File`](#io-file): an open file as an abstract interface, so the same code reads a local file, a pak entry or a file on a server. Only the local file exists now. Also the helpers that work through any `File`, the scheme registry that picks a backend, and [`io::WriteFileAtomic(const Path&,const void*,usize,u32)`](#io-writefileatomic-const-path-amp-const-void-star-usize-u32).
 
 Operations on paths: looking at the disk, creating, removing and renaming, resolving, and the special folders.
 
@@ -708,7 +708,7 @@ What a backend can do; test the bits of [`io::File::Capabilities`](#io-file-capa
 | <a id="io-kcapsizeknown"></a>`kCapSizeKnown` | `2` | [`io::File::Size`](#io-file-size-u64-star) succeeds. A size can be wrong for files the OS generates (`/proc`): read until 0. |
 | <a id="io-kcapwritable"></a>`kCapWritable` | `4` | The file was opened for writing. |
 | <a id="io-kcapnativelyasync"></a>`kCapNativelyAsync` | `8` | The backend completes asynchronous operations on its own (a network file), not on an executor. |
-| <a id="io-kcapatomicreplace"></a>`kCapAtomicReplace` | `16` | The backend can replace a whole file atomically (see [`io::WriteFileAtomic`](#io-writefileatomic-const-path-amp-const-void-star-usize-u32)). |
+| <a id="io-kcapatomicreplace"></a>`kCapAtomicReplace` | `16` | The backend can replace a whole file atomically (see [`io::WriteFileAtomic(const Path&,const void*,usize,u32)`](#io-writefileatomic-const-path-amp-const-void-star-usize-u32)). |
 | <a id="io-kcapappendonly"></a>`kCapAppendOnly` | `32` | Opened with `OpenMode::Append`: writes go to the end and offset writes fail. |
 
 ## `FilePtr` {#io-fileptr}
@@ -1281,6 +1281,26 @@ Status Write(const void* data, usize length);
 
 Writes all bytes at the stream position and advances it; on an `Append`-mode file it appends.
 
+### `Read(MutableByteSpan,usize*)` {#io-file-read-mutablebytespan-usize-star}
+
+`method io::File::Read` — defined in `engine/foundation/io/file.h`
+
+```cpp
+Status Read(MutableByteSpan buffer, usize* bytes_read);
+```
+
+Reads into `buffer` at the stream position; as `Read(void*,usize,usize*)` with the span's size.
+
+### `Write(ByteSpan)` {#io-file-write-bytespan}
+
+`method io::File::Write` — defined in `engine/foundation/io/file.h`
+
+```cpp
+Status Write(ByteSpan data);
+```
+
+Writes all of `data` at the stream position; as `Write(const void*,usize)`.
+
 ### `ReadAsync(AsyncRequest*,void*,usize,u64,Completion,void*)` {#io-file-readasync-asyncrequest-star-void-star-usize-u64-completion-void-star}
 
 `method io::File::ReadAsync` — defined in `engine/foundation/io/file.h`
@@ -1466,11 +1486,21 @@ Reads a whole text file into `out`. The bytes are not validated as UTF-8.
 Status WriteFile(const Path& path, const void* data, usize length);
 ```
 
-Creates or truncates `path` and writes `length` bytes. Not atomic: a failure can leave a partial file; see [`io::WriteFileAtomic`](#io-writefileatomic-const-path-amp-const-void-star-usize-u32).
+Creates or truncates `path` and writes `length` bytes. Not atomic: a failure can leave a partial file; see [`io::WriteFileAtomic(const Path&,const void*,usize,u32)`](#io-writefileatomic-const-path-amp-const-void-star-usize-u32).
 
 | Field | Value |
 |---|---|
 | Fails | the errors of [`io::File::Open`](#io-file-open-const-path-amp-openmode-u32-fileptr-star) and [`io::File::Write(const void*,usize,u64)`](#io-file-write-const-void-star-usize-u64). |
+
+## `WriteFile(const Path&,ByteSpan)` {#io-writefile-const-path-amp-bytespan}
+
+`function io::WriteFile` — defined in `engine/foundation/io/file.h`
+
+```cpp
+inline Status WriteFile(const Path& path, ByteSpan data);
+```
+
+Like [`io::WriteFile(const Path&,const void*,usize)`](#io-writefile-const-path-amp-const-void-star-usize) for a span of bytes.
 
 ## `WriteFileAtomic(const Path&,const void*,usize,u32)` {#io-writefileatomic-const-path-amp-const-void-star-usize-u32}
 
@@ -1489,6 +1519,16 @@ Writes a temporary file in the same directory, flushes and syncs it, then rename
 | Parameter `path` | the target; its directory must exist. |
 | Parameter `new_file_permissions` | the permission bits of a file that did not exist. |
 | Fails | `NotFound` (no directory), `PermissionDenied`, `NoSpace`, `IsADirectory` (the target is a directory), `Io`; the old content is intact. |
+
+## `WriteFileAtomic(const Path&,ByteSpan,u32)` {#io-writefileatomic-const-path-amp-bytespan-u32}
+
+`function io::WriteFileAtomic` — defined in `engine/foundation/io/file.h`
+
+```cpp
+inline Status WriteFileAtomic(const Path& path, ByteSpan data, u32 new_file_permissions = 0600);
+```
+
+Like [`io::WriteFileAtomic(const Path&,const void*,usize,u32)`](#io-writefileatomic-const-path-amp-const-void-star-usize-u32) for a span of bytes.
 
 ## `FileType` {#io-filetype}
 

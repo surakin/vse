@@ -151,9 +151,9 @@ private:
 
     VertexLayoutData layout_;
     u32 position_offset_ = 0;
-    Vector<unsigned char> vertices_;
+    Vector<byte> vertices_;
     u32 vertex_count_ = 0;
-    Vector<unsigned char> indices_;
+    Vector<byte> indices_;
     u32 index_count_ = 0;
     rhi::IndexType index_type_ = rhi::IndexType::UInt16;
     rhi::PrimitiveTopology topology_ = rhi::PrimitiveTopology::TriangleList;

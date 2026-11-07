@@ -87,7 +87,7 @@ bool CubeRenderer::Create(Device* device, const CubeOptions& options) {
                                {1, BindingType::SampledTexture, ShaderStage::Fragment, 1},
                                {2, BindingType::Sampler, ShaderStage::Fragment, 1}};
     BindGroupLayoutDesc ld;
-    ld.entries = Span<BindingDesc>(bindings, textured_ ? 3 : 1);
+    ld.entries = rhi::Span<BindingDesc>(bindings, textured_ ? 3 : 1);
     layout_ = device->CreateBindGroupLayout(ld);
 
     VertexBindingDesc vertex_binding = {sizeof(CubeVertex), false};
@@ -95,8 +95,8 @@ bool CubeRenderer::Create(Device* device, const CubeOptions& options) {
     GraphicsPipelineDesc gp;
     gp.vertex_shader = vs_;
     gp.fragment_shader = fs_;
-    gp.vertex_bindings = Span<VertexBindingDesc>(&vertex_binding, 1);
-    gp.vertex_attributes = Span<VertexAttributeDesc>(attributes, 3);
+    gp.vertex_bindings = rhi::Span<VertexBindingDesc>(&vertex_binding, 1);
+    gp.vertex_attributes = rhi::Span<VertexAttributeDesc>(attributes, 3);
     gp.cull_mode = options.cull;
     gp.front_face = FrontFace::CounterClockwise; // see the conventions at the top of cube_scene.h
     gp.color_targets[0].format = options.color_format;
@@ -238,7 +238,7 @@ bool CubeRenderer::DrawWith(CommandList* list, const UniformAllocation& u, u32 w
     entries[2].sampler = sampler_;
     BindGroupDesc gd;
     gd.layout = layout_;
-    gd.entries = Span<BindGroupEntry>(entries, textured_ ? 3 : 1);
+    gd.entries = rhi::Span<BindGroupEntry>(entries, textured_ ? 3 : 1);
     gd.transient = true;
     const BindGroupHandle group = device_->CreateBindGroup(gd);
     if (!group.IsValid()) {

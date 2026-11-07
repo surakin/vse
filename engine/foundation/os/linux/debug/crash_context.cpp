@@ -40,19 +40,19 @@ int FindBuildId(struct dl_phdr_info* info, size_t, void* data) {
         if (ph.p_type != PT_NOTE) {
             continue;
         }
-        const unsigned char* begin = reinterpret_cast<const unsigned char*>(info->dlpi_addr + ph.p_vaddr);
-        const unsigned char* end = begin + ph.p_memsz;
-        const unsigned char* p = begin;
+        const byte* begin = reinterpret_cast<const byte*>(info->dlpi_addr + ph.p_vaddr);
+        const byte* end = begin + ph.p_memsz;
+        const byte* p = begin;
         while (p + sizeof(ElfW(Nhdr)) <= end) {
             const ElfW(Nhdr)* note = reinterpret_cast<const ElfW(Nhdr)*>(p);
-            const unsigned char* name = p + sizeof(ElfW(Nhdr));
+            const byte* name = p + sizeof(ElfW(Nhdr));
             const usize name_size = (static_cast<usize>(note->n_namesz) + 3u) & ~static_cast<usize>(3);
             const usize desc_size = (static_cast<usize>(note->n_descsz) + 3u) & ~static_cast<usize>(3);
             const usize room = static_cast<usize>(end - name);
             if (name_size > room || note->n_descsz > room - name_size) {
                 break; // truncated or corrupt note
             }
-            const unsigned char* desc = name + name_size;
+            const byte* desc = name + name_size;
             if (note->n_type == kGnuBuildIdNote && note->n_namesz == 4 && name_size >= 4 && std::memcmp(name, "GNU", 4) == 0) {
                 usize digits = 0;
                 for (u32 b = 0; b < note->n_descsz && digits + 2 < kMaxBuildIdText; ++b) {

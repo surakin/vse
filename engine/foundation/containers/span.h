@@ -148,4 +148,34 @@ inline ByteSpan AsByteSpan(StringView text) { return ByteSpan(reinterpret_cast<c
 /// Views bytes as text (no validation).
 inline StringView ToStringView(ByteSpan bytes) { return StringView(reinterpret_cast<const char*>(bytes.Data()), bytes.Size()); }
 
+/// Appends copies of `items` to the end of `target`; the vector grows geometrically, so repeated calls are amortized.
+///
+/// Param items: elements to copy; they must not be elements of `target`.
+/// Aborts: `items` overlaps `target`, or growth is needed and the allocator is out of memory.
+template <typename T, typename A>
+void Append(Vector<T, A>& target, std::type_identity_t<Span<const T>> items) {
+    const T* begin = target.Data();
+    ENGINE_ASSERT(target.Size() == 0 || items.Size() == 0 || items.Data() + items.Size() <= begin || items.Data() >= begin + target.Size(),
+                  "Append: the source overlaps the vector");
+    const usize needed = target.Size() + items.Size();
+    if (needed > target.Capacity()) {
+        const usize doubled = target.Capacity() * 2;
+        target.Reserve(needed > doubled ? needed : doubled);
+    }
+    for (usize i = 0; i < items.Size(); ++i) target.Push(items[i]);
+}
+
+/// Replaces the contents of `target` with copies of `items`.
+///
+/// Param items: elements to copy; they must not be elements of `target`.
+/// Aborts: `items` overlaps `target`, or growth is needed and the allocator is out of memory.
+template <typename T, typename A>
+void Assign(Vector<T, A>& target, std::type_identity_t<Span<const T>> items) {
+    const T* begin = target.Data();
+    ENGINE_ASSERT(target.Size() == 0 || items.Size() == 0 || items.Data() + items.Size() <= begin || items.Data() >= begin + target.Size(),
+                  "Assign: the source overlaps the vector");
+    target.Clear();
+    Append(target, items);
+}
+
 } // namespace engine_placeholder

@@ -598,8 +598,8 @@ and the push-constant range. Viewport and scissor are dynamic: set them on the c
 GraphicsPipelineDesc desc;
 desc.vertex_shader = vs;
 desc.fragment_shader = fs;
-desc.vertex_bindings = Span<VertexBindingDesc>(&binding, 1);
-desc.vertex_attributes = Span<VertexAttributeDesc>(attributes, 2);
+desc.vertex_bindings = rhi::Span<VertexBindingDesc>(&binding, 1);
+desc.vertex_attributes = rhi::Span<VertexAttributeDesc>(attributes, 2);
 desc.color_targets[0].format = swapchain->ImageFormat();
 desc.color_target_count = 1;
 PipelineHandle pipeline = device->CreateGraphicsPipeline(desc);   // invalid handle + a logged reason on failure
@@ -642,7 +642,7 @@ declares which layouts it uses at group slots 0, 1, ... In Slang a layout is `[[
 BindingDesc entries[3] = {{0, BindingType::UniformBuffer,  ShaderStage::Fragment, 1},
                           {1, BindingType::SampledTexture, ShaderStage::Fragment, 1},
                           {2, BindingType::Sampler,        ShaderStage::Fragment, 1}};
-BindGroupLayoutHandle layout = device->CreateBindGroupLayout({.entries = Span<BindingDesc>(entries, 3)});
+BindGroupLayoutHandle layout = device->CreateBindGroupLayout({.entries = rhi::Span<BindingDesc>(entries, 3)});
 // ... a pipeline created with desc.bind_group_layouts[0] = layout ...
 BindGroupHandle group = device->CreateBindGroup(group_desc);   // entries name the buffer, texture and sampler
 list->SetPipeline(pipeline);

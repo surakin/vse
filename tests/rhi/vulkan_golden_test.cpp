@@ -134,8 +134,8 @@ bool RenderTriangle(Image* image) {
     GraphicsPipelineDesc gp;
     gp.vertex_shader = scene.vs;
     gp.fragment_shader = scene.fs;
-    gp.vertex_bindings = Span<VertexBindingDesc>(&binding, 1);
-    gp.vertex_attributes = Span<VertexAttributeDesc>(attributes, 2);
+    gp.vertex_bindings = rhi::Span<VertexBindingDesc>(&binding, 1);
+    gp.vertex_attributes = rhi::Span<VertexAttributeDesc>(attributes, 2);
     gp.cull_mode = CullMode::None;
     gp.color_targets[0].format = Format::RGBA8_UNorm;
     gp.color_target_count = 1;

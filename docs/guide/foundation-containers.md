@@ -32,6 +32,12 @@ Full reference: [Foundation: Containers](../reference/foundation-containers.md).
 
 ## Outline
 
+### Sorting, searching and copying spans
+
+`algorithm.h` holds the small algorithms the engine uses instead of `<algorithm>`: `Min`, `Max`, `Clamp`, `IndexOf(span, value)`,
+`Sort(span, less)` (in place, no allocation, not stable) and `StableSort(span, less)` (keeps equal elements in order; allocates a
+scratch buffer). `Append(vector, span)` and `Assign(vector, span)` copy a span into a vector, growing it once.
+
 ### Array and Vector: which one
 
 Engine code never writes `new T[n]` / `delete[]`; a ctest source scan (`raw_array_check`) fails the build if it

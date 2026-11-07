@@ -218,9 +218,9 @@ BindGroupHandle VulkanDevice::CreateBindGroup(const BindGroupDesc& desc) {
     for (u32 b = 0; b < layout->binding_count; ++b) {
         total += layout->bindings[b].count;
     }
-    if (desc.entries.count != total) {
+    if (desc.entries.Size() != total) {
         RhiLog(LogVerbosity::Error, "CreateBindGroup: %u entries given but the layout has %u binding elements",
-               static_cast<u32>(desc.entries.count), total);
+               static_cast<u32>(desc.entries.Size()), total);
         return {};
     }
 
@@ -246,7 +246,7 @@ BindGroupHandle VulkanDevice::CreateBindGroup(const BindGroupDesc& desc) {
         const BindingDesc& bd = layout->bindings[b];
         for (u32 e = 0; e < bd.count; ++e) {
             const BindGroupEntry* found = nullptr;
-            for (usize k = 0; k < desc.entries.count; ++k) {
+            for (usize k = 0; k < desc.entries.Size(); ++k) {
                 if (desc.entries[k].binding == bd.binding && desc.entries[k].array_element == e) {
                     found = &desc.entries[k];
                     break;

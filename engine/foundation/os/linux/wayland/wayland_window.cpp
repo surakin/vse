@@ -100,7 +100,7 @@ bool MakeFilledBuffer(wl_shm* shm, u32 width, u32 height, wl_buffer*& out_buffer
         }
     }
 
-    wl_shm_pool* pool = wl_shm_create_pool(shm, region.fd, static_cast<int32_t>(shm_size));
+    wl_shm_pool* pool = wl_shm_create_pool(shm, region.fd, static_cast<i32>(shm_size));
     // The pool creation request already sent the fd to the compositor
     // (SCM_RIGHTS, synchronously as part of the wire request) — safe to
     // close our copy now.
@@ -110,8 +110,8 @@ bool MakeFilledBuffer(wl_shm* shm, u32 width, u32 height, wl_buffer*& out_buffer
         ::munmap(region.data, shm_size);
         return false;
     }
-    wl_buffer* buffer = wl_shm_pool_create_buffer(pool, 0, static_cast<int32_t>(width), static_cast<int32_t>(height),
-                                                   static_cast<int32_t>(stride), WL_SHM_FORMAT_XRGB8888);
+    wl_buffer* buffer = wl_shm_pool_create_buffer(pool, 0, static_cast<i32>(width), static_cast<i32>(height),
+                                                   static_cast<i32>(stride), WL_SHM_FORMAT_XRGB8888);
     wl_shm_pool_destroy(pool);
     if (buffer == nullptr) {
         Log(LogPlatform, LogVerbosity::Error, "Wayland: wl_shm_pool_create_buffer failed");
@@ -221,7 +221,7 @@ bool WaylandWindow::ReplaceBuffer() {
         return false;
     }
     wl_surface_attach(surface_, buffer, 0, 0);
-    wl_surface_damage_buffer(surface_, 0, 0, static_cast<int32_t>(width_), static_cast<int32_t>(height_));
+    wl_surface_damage_buffer(surface_, 0, 0, static_cast<i32>(width_), static_cast<i32>(height_));
     wl_surface_commit(surface_);
 
     // The old buffer can go as soon as the new one is attached; the
@@ -386,7 +386,7 @@ const zxdg_toplevel_decoration_v1_listener WaylandWindow::kDecorationListener = 
     .configure = WaylandWindow::HandleDecorationConfigure,
 };
 
-void WaylandWindow::HandleDecorationConfigure(void* data, zxdg_toplevel_decoration_v1* decoration, uint32_t mode) {
+void WaylandWindow::HandleDecorationConfigure(void* data, zxdg_toplevel_decoration_v1* decoration, u32 mode) {
     (void)decoration;
     auto* window = static_cast<WaylandWindow*>(data);
     window->server_side_decorated_ = mode == ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE;
@@ -395,7 +395,7 @@ void WaylandWindow::HandleDecorationConfigure(void* data, zxdg_toplevel_decorati
                                        : "Wayland: client-side decorations (window is undecorated)");
 }
 
-void WaylandWindow::HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, uint32_t serial) {
+void WaylandWindow::HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, u32 serial) {
     auto* window = static_cast<WaylandWindow*>(data);
     xdg_surface_ack_configure(surface, serial);
 
@@ -427,7 +427,7 @@ void WaylandWindow::HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, 
     }
 }
 
-void WaylandWindow::HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, int32_t width, int32_t height,
+void WaylandWindow::HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, i32 width, i32 height,
                                              wl_array* states) {
     (void)toplevel;
     auto* window = static_cast<WaylandWindow*>(data);
@@ -439,9 +439,9 @@ void WaylandWindow::HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, 
 
     bool constrained = false;
     bool fullscreen = false;
-    auto* begin = static_cast<uint32_t*>(states->data);
-    auto* end = begin + states->size / sizeof(uint32_t);
-    for (uint32_t* it = begin; it < end; ++it) {
+    auto* begin = static_cast<u32*>(states->data);
+    auto* end = begin + states->size / sizeof(u32);
+    for (u32* it = begin; it < end; ++it) {
         if (*it == XDG_TOPLEVEL_STATE_MAXIMIZED || *it == XDG_TOPLEVEL_STATE_FULLSCREEN ||
             *it == XDG_TOPLEVEL_STATE_TILED_LEFT || *it == XDG_TOPLEVEL_STATE_TILED_RIGHT ||
             *it == XDG_TOPLEVEL_STATE_TILED_TOP || *it == XDG_TOPLEVEL_STATE_TILED_BOTTOM) {

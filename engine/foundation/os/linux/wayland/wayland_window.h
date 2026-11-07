@@ -113,11 +113,11 @@ private:
     // (not free functions in an anonymous namespace) so they can reach
     // instance state directly via the `data` pointer without a friend
     // declaration.
-    static void HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, uint32_t serial);
-    static void HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, int32_t width, int32_t height,
+    static void HandleXdgSurfaceConfigure(void* data, xdg_surface* surface, u32 serial);
+    static void HandleToplevelConfigure(void* data, xdg_toplevel* toplevel, i32 width, i32 height,
                                          wl_array* states);
     static void HandleToplevelClose(void* data, xdg_toplevel* toplevel);
-    static void HandleDecorationConfigure(void* data, zxdg_toplevel_decoration_v1* decoration, uint32_t mode);
+    static void HandleDecorationConfigure(void* data, zxdg_toplevel_decoration_v1* decoration, u32 mode);
 
     // Listener vtables. Static members (rather than anonymous-namespace
     // globals in the .cpp) so their initializers, which reference the

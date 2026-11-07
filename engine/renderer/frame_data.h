@@ -228,7 +228,7 @@ private:
     rhi::BufferHandle frame_buffer_;
     rhi::BufferHandle object_buffer_;
     rhi::BufferHandle light_buffer_;
-    unsigned char* light_mapped_ = nullptr;
+    byte* light_mapped_ = nullptr;
     struct PointEntry {
         f32 distance_squared;
         u32 slot;
@@ -240,8 +240,8 @@ private:
     u32 max_lights_ = 0;
     u32 lights_written_ = 0;
     bool warned_lights_ = false;
-    unsigned char* frame_mapped_ = nullptr;
-    unsigned char* object_mapped_ = nullptr;
+    byte* frame_mapped_ = nullptr;
+    byte* object_mapped_ = nullptr;
     u64 frame_stride_ = 0;  // bytes between the frame regions: sizeof(FrameData) rounded to the offset alignment
     u64 object_stride_ = 0; // bytes between the object regions
     u32 max_objects_ = 0;

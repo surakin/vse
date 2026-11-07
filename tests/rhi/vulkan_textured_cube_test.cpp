@@ -62,7 +62,7 @@ TEST_CASE("A 2x2 texture with nearest filtering shows its four colors on a face"
     demo::Pixels px;
     px.width = px.height = 2;
     const demo::Rgba colors[4] = {{255, 0, 0, 255}, {0, 255, 0, 255}, {0, 0, 255, 255}, {255, 255, 0, 255}};
-    for (const demo::Rgba& c : colors) px.rgba.insert(px.rgba.end(), {c.r, c.g, c.b, c.a});
+    for (const demo::Rgba& c : colors) { px.rgba.Push(c.r); px.rgba.Push(c.g); px.rgba.Push(c.b); px.rgba.Push(c.a); }
     const TextureHandle texture = demo::CreateSampledTexture(scene.device.Get(), px, Format::RGBA8_UNorm, false, "quadrants");
     REQUIRE(texture.IsValid());
     const SamplerHandle sampler = NearestSampler(scene.device.Get());
@@ -190,7 +190,7 @@ TEST_CASE("The textured cube renders from a fixed angle and matches its golden i
 
 TEST_CASE("Procedural textures have the documented content", "[rhi][textured][image]") {
     const demo::Pixels checker = demo::Checkerboard(4, 2, {10, 20, 30, 255}, {200, 210, 220, 255});
-    REQUIRE(checker.rgba.size() == 4 * 4 * 4);
+    REQUIRE(checker.rgba.Size() == 4 * 4 * 4);
     CHECK(checker.rgba[0] == 10);                       // (0,0) is the first color
     CHECK(checker.rgba[(0 * 4 + 2) * 4] == 200);        // two texels right: the second color
     CHECK(checker.rgba[(2 * 4 + 0) * 4] == 200);        // two rows down: the second color
@@ -224,7 +224,7 @@ TEST_CASE("An rtex file round-trips and damaged ones are refused", "[rhi][textur
     const demo::Pixels checker = demo::Checkerboard(16, 1, {0, 0, 0, 255}, {255, 255, 255, 255});
     const demo::RtexImage built = demo::BuildRtex(checker, Format::RGBA8_UNorm);
     CHECK(built.mip_count == 5);
-    CHECK(built.data.size() == (16 * 16 + 8 * 8 + 4 * 4 + 2 * 2 + 1) * 4);
+    CHECK(built.data.Size() == (16 * 16 + 8 * 8 + 4 * 4 + 2 * 2 + 1) * 4);
     // A 1-texel checker averages to mid-gray from the first mip on.
     CHECK(built.data[16 * 16 * 4] == 128);
     const std::string path_string = gpu_test::TempPath("roundtrip.rtex");
@@ -235,7 +235,8 @@ TEST_CASE("An rtex file round-trips and damaged ones are refused", "[rhi][textur
     CHECK(back.width == 16);
     CHECK(back.mip_count == 5);
     CHECK(back.format == Format::RGBA8_UNorm);
-    CHECK(back.data == built.data);
+    REQUIRE(back.data.Size() == built.data.Size());
+    CHECK(std::memcmp(back.data.Data(), built.data.Data(), back.data.Size()) == 0);
 
     auto write = [](const char* p, const unsigned char* bytes, usize n) {
         REQUIRE(io::WriteFile(io::Path(StringView(p)), bytes, n).Ok());

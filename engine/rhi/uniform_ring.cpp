@@ -19,7 +19,7 @@ UniformRing::UniformRing(Device* device, u64 bytes_per_frame) : device_(device) 
     desc.debug_name = "uniform ring";
     buffer_ = device->CreateBuffer(desc);
     if (buffer_.IsValid()) {
-        mapped_ = static_cast<unsigned char*>(device->MapBuffer(buffer_));
+        mapped_ = static_cast<byte*>(device->MapBuffer(buffer_));
     }
 }
 

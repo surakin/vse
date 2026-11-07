@@ -31,7 +31,7 @@ bool SameBindings(const BindingDesc* a, u32 a_count, const BindingDesc* b, u32 b
 
 // Reads a whole cache file into `out`; false if it does not exist, is not a regular file (a directory or a pipe must not stall
 // start-up), is empty or too large, or cannot be read.
-bool ReadCacheFile(const char* path, Vector<unsigned char>* out) {
+bool ReadCacheFile(const char* path, Vector<byte>* out) {
     io::Path file_path;
     io::FileInfo info;
     if (!io::Path::Parse(StringView(path), io::NativePathStyle(), &file_path) || io::Stat(file_path, &info).Failed() ||
@@ -62,7 +62,7 @@ void VulkanDevice::InitializePipelineCache(const DeviceCreateInfo& info) {
     identity.device_id = properties_.deviceID;
     std::memcpy(identity.uuid, properties_.pipelineCacheUUID, 16);
 
-    Vector<unsigned char> blob;
+    Vector<byte> blob;
     if (info.pipeline_cache) {
         // An explicit directory, then ENGINE_RHI_CACHE_DIR, then the user's cache directory for the application.
         char dir[400];
@@ -134,7 +134,7 @@ bool VulkanDevice::SavePipelineCache() {
     if (fns_.GetPipelineCacheData(device_, pipeline_cache_, &size, nullptr) != VK_SUCCESS || size == 0) {
         return false;
     }
-    Vector<unsigned char> data;
+    Vector<byte> data;
     if (!data.TryResizeUninitialized(size)) {
         return false;
     }
@@ -180,7 +180,7 @@ BindGroupLayoutHandle VulkanDevice::CreateBindGroupLayout(const BindGroupLayoutD
         return {};
     }
     BindGroupLayoutRes res;
-    res.binding_count = static_cast<u32>(desc.entries.count);
+    res.binding_count = static_cast<u32>(desc.entries.Size());
     // Sorted by binding index, so layouts that differ only in the order of their entries are equal and share one object.
     for (u32 i = 0; i < res.binding_count; ++i) {
         u32 at = i;
@@ -424,20 +424,20 @@ PipelineHandle VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& 
     }
 
     VkVertexInputBindingDescription bindings[kMaxVertexBindings];
-    for (usize i = 0; i < desc.vertex_bindings.count; ++i) {
+    for (usize i = 0; i < desc.vertex_bindings.Size(); ++i) {
         bindings[i] = {static_cast<u32>(i), desc.vertex_bindings[i].stride,
                        desc.vertex_bindings[i].per_instance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX};
     }
     VkVertexInputAttributeDescription attributes[kMaxVertexAttributes];
-    for (usize i = 0; i < desc.vertex_attributes.count; ++i) {
+    for (usize i = 0; i < desc.vertex_attributes.Size(); ++i) {
         const VertexAttributeDesc& a = desc.vertex_attributes[i];
         attributes[i] = {a.location, a.binding, ToVkVertexFormat(a.format), a.offset};
     }
     VkPipelineVertexInputStateCreateInfo vertex_input{};
     vertex_input.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input.vertexBindingDescriptionCount = static_cast<u32>(desc.vertex_bindings.count);
+    vertex_input.vertexBindingDescriptionCount = static_cast<u32>(desc.vertex_bindings.Size());
     vertex_input.pVertexBindingDescriptions = bindings;
-    vertex_input.vertexAttributeDescriptionCount = static_cast<u32>(desc.vertex_attributes.count);
+    vertex_input.vertexAttributeDescriptionCount = static_cast<u32>(desc.vertex_attributes.Size());
     vertex_input.pVertexAttributeDescriptions = attributes;
 
     VkPipelineInputAssemblyStateCreateInfo assembly{};

@@ -13,7 +13,7 @@ namespace engine_placeholder::io {
 
 namespace {
 
-FileType TypeFromDirent(unsigned char d_type) {
+FileType TypeFromDirent(byte d_type) {
     switch (d_type) {
     case DT_REG: return FileType::Regular;
     case DT_DIR: return FileType::Directory;
@@ -188,7 +188,7 @@ Status ListDirectory(const Path& path, bool sorted, Vector<DirectoryItem>* out) 
 
 namespace {
 // Length of the UTF-8 sequence that starts with `lead` (1 for a malformed lead, so matching always advances).
-usize SequenceLength(unsigned char lead) {
+usize SequenceLength(byte lead) {
     if (lead < 0x80) return 1;
     if ((lead & 0xE0) == 0xC0) return 2;
     if ((lead & 0xF0) == 0xE0) return 3;
@@ -213,7 +213,7 @@ bool MatchesWildcard(StringView pattern, StringView name) {
                 continue;
             }
             if (pc == '?') {
-                const usize len = SequenceLength(static_cast<unsigned char>(name[n]));
+                const usize len = SequenceLength(static_cast<byte>(name[n]));
                 n += len < name.Length() - n ? len : name.Length() - n;
                 ++p;
                 continue;
@@ -229,7 +229,7 @@ bool MatchesWildcard(StringView pattern, StringView name) {
         if (matched) continue;
         if (!have_star) return false;
         // Backtrack: let the last `*` swallow one more character.
-        const usize len = SequenceLength(static_cast<unsigned char>(name[star_n]));
+        const usize len = SequenceLength(static_cast<byte>(name[star_n]));
         star_n += len < name.Length() - star_n ? len : name.Length() - star_n;
         n = star_n;
         p = star_p;

@@ -8,7 +8,7 @@ namespace engine_placeholder::os::wayland {
 
 namespace {
 
-void HandlePing(void* data, xdg_wm_base* shell, uint32_t serial) {
+void HandlePing(void* data, xdg_wm_base* shell, u32 serial) {
     (void)data;
     // Mandatory per the xdg-shell spec: a client that doesn't respond
     // risks the compositor considering it unresponsive/dead.
@@ -19,7 +19,7 @@ constexpr xdg_wm_base_listener kXdgWmBaseListener = {
     .ping = HandlePing,
 };
 
-void LogBoundGlobal(const char* interface_name, uint32_t version) {
+void LogBoundGlobal(const char* interface_name, u32 version) {
     ArenaAllocator scratch(256);
     StringBuilder<ArenaAllocator> line(scratch);
     line.Append("Wayland: bound ").Append(interface_name).Append(" v").AppendUInt(version);
@@ -39,7 +39,7 @@ struct RegistryState {
     zxdg_decoration_manager_v1* decoration_manager = nullptr; // optional
 };
 
-void HandleGlobal(void* data, wl_registry* registry, uint32_t name, const char* interface, uint32_t version) {
+void HandleGlobal(void* data, wl_registry* registry, u32 name, const char* interface, u32 version) {
     auto* state = static_cast<RegistryState*>(data);
     StringView iface(interface);
 
@@ -66,7 +66,7 @@ void HandleGlobal(void* data, wl_registry* registry, uint32_t name, const char* 
     // engine needs yet — silently ignored, not an error.
 }
 
-void HandleGlobalRemove(void* data, wl_registry* registry, uint32_t name) {
+void HandleGlobalRemove(void* data, wl_registry* registry, u32 name) {
     // A compositor global disappearing mid-session (e.g. a seat being
     // unplugged) is Day 20's event-loop concern, not Day 18's connect
     // +bind step.

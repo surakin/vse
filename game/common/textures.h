@@ -7,8 +7,9 @@
 // header - the magic "RTEX", a version (1), width, height, the `rhi::Format` value and the mip count - followed by
 // every mip level's rows tightly packed, level 0 first. Only the 8-bit-per-channel RGBA and BGRA formats are supported (`RGBA8`/`BGRA8`, `UNorm` or `SRGB`).
 
-#include <vector>
 
+#include "containers/span.h"
+#include "containers/vector.h"
 #include "io/file.h"
 #include "rhi/rhi.h"
 
@@ -17,14 +18,14 @@ namespace demo {
 using namespace engine_placeholder;
 
 struct Rgba {
-    unsigned char r, g, b, a;
+    byte r, g, b, a;
 };
 
 // An RGBA8 image, tightly packed, row 0 first.
 struct Pixels {
     u32 width = 0;
     u32 height = 0;
-    std::vector<unsigned char> rgba;
+    Vector<byte> rgba;
 };
 
 // A `size` x `size` checkerboard of `cell`-texel squares; the square at the origin is `a`.
@@ -50,7 +51,7 @@ struct RtexImage {
     u32 height = 0;
     rhi::Format format = rhi::Format::Undefined;
     u32 mip_count = 0;
-    std::vector<unsigned char> data; // every level, tightly packed
+    Vector<byte> data; // every level, tightly packed
 };
 
 // Builds a full mip chain for `pixels` on the CPU (a 2x2 box filter; the color of an sRGB format is averaged as
@@ -58,7 +59,7 @@ struct RtexImage {
 RtexImage BuildRtex(const Pixels& pixels, rhi::Format format);
 
 // Writes `width` x `height` RGBA8 pixels as a binary PPM (the alpha channel is dropped).
-io::Status WritePpm(const io::Path& path, u32 width, u32 height, const unsigned char* rgba);
+io::Status WritePpm(const io::Path& path, u32 width, u32 height, const byte* rgba);
 
 // Writes the image atomically (a failed write never leaves a half file). Fails with `Invalid` for a malformed image.
 io::Status WriteRtex(const io::Path& path, const RtexImage& image);

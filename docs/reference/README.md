@@ -7,9 +7,9 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | Module | Headers | Symbols |
 |---|---|---|
 | [Foundation: Memory](foundation-memory.md) | 4 | 28 |
-| [Foundation: Containers](foundation-containers.md) | 6 | 148 |
+| [Foundation: Containers](foundation-containers.md) | 7 | 159 |
 | [Foundation: Strings](foundation-strings.md) | 5 | 95 |
-| [Foundation: Paths and Files](foundation-io.md) | 5 | 261 |
+| [Foundation: Paths and Files](foundation-io.md) | 5 | 265 |
 | [Foundation: Math](foundation-math.md) | 5 | 101 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 2 | 69 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
@@ -17,6 +17,6 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Platform: Windowing and Input](platform-window-input.md) | 10 | 263 |
 | [Foundation: Debugging](foundation-debug.md) | 14 | 200 |
 | [The Job System](jobs.md) | 11 | 190 |
-| [The Render Hardware Interface](rhi.md) | 18 | 731 |
+| [The Render Hardware Interface](rhi.md) | 18 | 725 |
 | [The renderer](renderer.md) | 19 | 986 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 16 | 448 |

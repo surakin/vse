@@ -23,7 +23,7 @@ thread_local bool t_cache_destroyed = false;
 std::atomic<bool> g_thread_cached_pool_exists{false};
 
 void* BlockToUser(void* block) {
-    return static_cast<unsigned char*>(block) + FramePool::kHeaderBytes;
+    return static_cast<byte*>(block) + FramePool::kHeaderBytes;
 }
 
 } // namespace
@@ -58,7 +58,7 @@ FramePool::FramePool(const Config& config) : config_(config) {
         if (slots == 0) continue;
         void* mem = os::ReserveMemory(slots * kBlockSizes[c]);
         if (mem != nullptr) {
-            classes_[c].base = static_cast<unsigned char*>(mem);
+            classes_[c].base = static_cast<byte*>(mem);
             classes_[c].slots = slots;
         }
     }
@@ -84,7 +84,7 @@ FramePool::~FramePool() {
 FramePool& FramePool::Global() {
     // Immortal by design: built once in static storage and never destroyed (no heap), so thread-exit cache
     // flushes and late frees always find it alive.
-    alignas(FramePool) static unsigned char storage[sizeof(FramePool)];
+    alignas(FramePool) static byte storage[sizeof(FramePool)];
     static FramePool* instance = [] {
         Config config;
         config.thread_caches = true;
@@ -190,7 +190,7 @@ void* FramePool::Allocate(usize size) {
 
 void FramePool::Deallocate(void* ptr) {
     ENGINE_ASSERT(ptr != nullptr, "FramePool::Deallocate(nullptr)");
-    void* block = static_cast<unsigned char*>(ptr) - kHeaderBytes;
+    void* block = static_cast<byte*>(ptr) - kHeaderBytes;
     auto* header = static_cast<Header*>(block);
     ENGINE_ASSERT(header->magic == kHeaderMagic, "FramePool::Deallocate: pointer not from a FramePool (or double free)");
 

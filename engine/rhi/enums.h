@@ -1,5 +1,6 @@
 #pragma once
 
+#include "containers/span.h"
 #include "types.h"
 
 //! Enumerations and type-safe flag sets shared by every RHI descriptor and command.
@@ -313,30 +314,11 @@ enum class BindingType : u8 {
     Count,             ///< Number of binding types; not a type.
 };
 
-/// A read-only view of `count` consecutive `T` owned by the caller.
+/// A read-only view of consecutive `T` owned by the caller: the foundation [[Span]] of const elements.
 ///
 /// Used in descriptors so they need no allocation. The memory must stay valid for the duration of the
 /// call the descriptor is passed to; backends copy what they keep.
-///
-/// Thread-safety: thread-compatible plain data.
-/// Ownership: does not own the elements.
 template <typename T>
-struct Span {
-    /// Pointer to the first element, or null when empty.
-    const T* data = nullptr;
-    /// Number of elements.
-    usize count = 0;
-
-    /// Creates an empty span.
-    constexpr Span() = default;
-    /// Creates a span over `n` elements starting at `p`.
-    constexpr Span(const T* p, usize n) : data(p), count(n) {}
-    /// Creates a span over a C array of fixed size.
-    template <usize N>
-    constexpr Span(const T (&arr)[N]) : data(arr), count(N) {}
-
-    /// Returns the element at `i` (not bounds-checked).
-    constexpr const T& operator[](usize i) const { return data[i]; }
-};
+using Span = engine_placeholder::Span<const T>;
 
 } // namespace engine_placeholder::rhi

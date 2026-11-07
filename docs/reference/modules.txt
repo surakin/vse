@@ -6,6 +6,7 @@ module foundation/memory "Foundation: Memory"
 
 module foundation/containers "Foundation: Containers"
   header engine/foundation/containers/*.h
+  header engine/foundation/algorithm.h
 
 module foundation/strings "Foundation: Strings"
   header engine/foundation/string/*.h

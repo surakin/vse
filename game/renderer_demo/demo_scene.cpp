@@ -72,8 +72,8 @@ bool LoadTextureImage(void* user, TextureImage* out) {
             out->desc.mip_levels = image.mip_count;
             out->desc.format = image.format;
             out->desc.usage = rhi::TextureUsage::Sampled;
-            out->pixels.Resize(image.data.size());
-            std::memcpy(out->pixels.Data(), image.data.data(), image.data.size());
+            out->pixels.Resize(image.data.Size());
+            std::memcpy(out->pixels.Data(), image.data.Data(), image.data.Size());
             return true;
         }
         rhi::RhiLogV(LogVerbosity::Warn, "renderer_demo: %.*s could not be loaded (%s); using the procedural texture", static_cast<int>(file.View().Length()),
@@ -85,8 +85,8 @@ bool LoadTextureImage(void* user, TextureImage* out) {
     out->desc.mip_levels = demo::FullMipCount(pixels.width, pixels.height);
     out->desc.format = texture.format;
     out->desc.usage = rhi::TextureUsage::Sampled;
-    out->pixels.Resize(pixels.rgba.size());
-    std::memcpy(out->pixels.Data(), pixels.rgba.data(), pixels.rgba.size());
+    out->pixels.Resize(pixels.rgba.Size());
+    std::memcpy(out->pixels.Data(), pixels.rgba.Data(), pixels.rgba.Size());
     out->generate_mips = true;
     return true;
 }

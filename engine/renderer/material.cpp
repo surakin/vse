@@ -155,10 +155,10 @@ struct MaterialSystem::MaterialSlot {
     char name[kNameBytes] = {};
     u32 template_index = 0;
     u32 variant_index = 0;
-    Vector<unsigned char> shadow;
+    Vector<byte> shadow;
     u32 shadow_size = 0;
     rhi::BufferHandle params;
-    unsigned char* mapped = nullptr;
+    byte* mapped = nullptr;
     u64 stride = 0;
     u32 dirty_slots = 0;
     rhi::TextureHandle textures[kMaxMaterialTextures];
@@ -226,7 +226,7 @@ bool MaterialSystem::CreateDefaults() {
     sd.debug_name = "default sampler";
     default_sampler_ = device_->CreateSampler(sd);
 
-    const unsigned char pixels[3][4] = {{255, 255, 255, 255}, {0, 0, 0, 255}, {128, 128, 255, 255}};
+    const byte pixels[3][4] = {{255, 255, 255, 255}, {0, 0, 0, 255}, {128, 128, 255, 255}};
     const char* names[3] = {"default white", "default black", "default flat normal"};
     bool ok = frame_layout_.IsValid() && object_layout_.IsValid() && default_sampler_.IsValid();
     for (u32 i = 0; i < 3 && ok; ++i) {
@@ -773,7 +773,7 @@ bool MaterialSystem::CreateParams(MaterialSlot& m) {
     bd.debug_name = m.name;
     m.params = device_->CreateBuffer(bd);
     if (m.params.IsValid()) {
-        m.mapped = static_cast<unsigned char*>(device_->MapBuffer(m.params));
+        m.mapped = static_cast<byte*>(device_->MapBuffer(m.params));
     }
     return m.mapped != nullptr;
 }

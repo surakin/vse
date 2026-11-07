@@ -7,12 +7,12 @@
 // `frame` times a whole frame's CPU work (scene preparation, graph build and compile, recording, submission) at 1k, 10k and 50k
 // objects; the device is idled after every frame, outside the timer, so the number is CPU work and not waiting for the GPU.
 
-#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
 
+#include "algorithm.h"
 #include "debug/program_setup.h"
 #include "demo_frame.h"
 #include "demo_scene.h"
@@ -44,12 +44,12 @@ struct Samples {
     }
     double Median() {
         if (n == 0) return 0;
-        std::sort(v, v + n);
+        Sort(Span<double>(v, n));
         return v[n / 2];
     }
     double Min() {
         double m = v[0];
-        for (u32 i = 1; i < n; ++i) m = std::min(m, v[i]);
+        for (u32 i = 1; i < n; ++i) m = engine_placeholder::Min(m, v[i]);
         return m;
     }
 };

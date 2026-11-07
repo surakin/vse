@@ -58,9 +58,9 @@ void FrameResources::Build() {
     light_buffer_ = device->CreateBuffer(bd);
 
     if (frame_buffer_.IsValid() && object_buffer_.IsValid() && light_buffer_.IsValid() && staged_.TryResize(max_lights) && point_scratch_.TryReserve(max_lights)) {
-        frame_mapped_ = static_cast<unsigned char*>(device->MapBuffer(frame_buffer_));
-        object_mapped_ = static_cast<unsigned char*>(device->MapBuffer(object_buffer_));
-        light_mapped_ = static_cast<unsigned char*>(device->MapBuffer(light_buffer_));
+        frame_mapped_ = static_cast<byte*>(device->MapBuffer(frame_buffer_));
+        object_mapped_ = static_cast<byte*>(device->MapBuffer(object_buffer_));
+        light_mapped_ = static_cast<byte*>(device->MapBuffer(light_buffer_));
     }
     if (!Valid()) {
         RenderLog(LogVerbosity::Error, "FrameResources: creating or mapping the per-frame buffers failed");
@@ -125,7 +125,7 @@ void FrameResources::WriteFrameData(const FrameData& data) {
 u32 FrameResources::WriteObjects(const RenderScene& scene, const u32* slots, u32 count) {
     ENGINE_ASSERT(begun_, "FrameResources::WriteObjects: BeginFrame was not called");
     ENGINE_ASSERT(count <= max_objects_ && (slots != nullptr || count == 0), "FrameResources::WriteObjects: too many objects or null list");
-    unsigned char* base = object_mapped_ + object_stride_ * slot_;
+    byte* base = object_mapped_ + object_stride_ * slot_;
     for (u32 i = 0; i < count; ++i) {
         const RenderObject& object = scene.ObjectAt(slots[i]);
         ObjectData data;

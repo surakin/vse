@@ -122,8 +122,8 @@ int main() {
     GraphicsPipelineDesc gp;
     gp.vertex_shader = vs;
     gp.fragment_shader = fs;
-    gp.vertex_bindings = Span<VertexBindingDesc>(&binding, 1);
-    gp.vertex_attributes = Span<VertexAttributeDesc>(attributes, 2);
+    gp.vertex_bindings = rhi::Span<VertexBindingDesc>(&binding, 1);
+    gp.vertex_attributes = rhi::Span<VertexAttributeDesc>(attributes, 2);
     gp.cull_mode = CullMode::None;
     gp.color_targets[0].format = Format::RGBA8_UNorm;
     gp.color_target_count = 1;
@@ -225,8 +225,8 @@ int main() {
     GraphicsPipelineDesc gp;
     gp.vertex_shader = vs;
     gp.fragment_shader = fs;
-    gp.vertex_bindings = Span<VertexBindingDesc>(&binding, 1);
-    gp.vertex_attributes = Span<VertexAttributeDesc>(attributes, 2);
+    gp.vertex_bindings = rhi::Span<VertexBindingDesc>(&binding, 1);
+    gp.vertex_attributes = rhi::Span<VertexAttributeDesc>(attributes, 2);
     gp.cull_mode = CullMode::Back;
     gp.front_face = FrontFace::CounterClockwise;
     gp.color_targets[0].format = Format::RGBA8_UNorm;
@@ -358,7 +358,7 @@ int main() {
 
     BindingDesc bindings[2] = {{1, BindingType::SampledTexture, ShaderStage::Fragment, 1}, {2, BindingType::Sampler, ShaderStage::Fragment, 1}};
     BindGroupLayoutDesc ld;
-    ld.entries = Span<BindingDesc>(bindings, 2);
+    ld.entries = rhi::Span<BindingDesc>(bindings, 2);
     const BindGroupLayoutHandle layout = device->CreateBindGroupLayout(ld);
     BindGroupEntry entries[2];
     entries[0].binding = 1;
@@ -367,7 +367,7 @@ int main() {
     entries[1].sampler = sampler;
     BindGroupDesc gd;
     gd.layout = layout;
-    gd.entries = Span<BindGroupEntry>(entries, 2);
+    gd.entries = rhi::Span<BindGroupEntry>(entries, 2);
     const BindGroupHandle group = device->CreateBindGroup(gd);
 
     device->WaitIdle();
