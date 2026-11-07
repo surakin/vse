@@ -26,7 +26,9 @@ machine must stay green.
       - The Windows SDK from the registry (`HKLM\SOFTWARE\Microsoft\Windows Kits\Installed Roots`, `KitsRoot10`) with the newest version directory under
         `Include/` that has `um/windows.h`; `rc.exe` and `mt.exe` from its `bin/<version>/x64/`.
       - `clang-cl.exe` and `lld-link.exe` from Visual Studio's `VC/Tools/Llvm/x64/bin` first, then an LLVM install (`HKLM\SOFTWARE\LLVM\LLVM`, then
-        `%ProgramFiles%/LLVM/bin`).
+        `%ProgramFiles%/LLVM/bin`). The PC's LLVM 23.1.5 (winget `LLVM.LLVM`) writes no registry key and is not on `PATH`, so the last fallback must work and
+        is the case the stripped-environment test exercises; the found `clang-cl` uses the MSVC headers and libraries found above (`/imsvc`, `/libpath`), and
+        its version is printed at configure time. `int128.h`: `clang-cl` takes the native `__int128` path, MSVC the portable one; both are built and tested.
       - The include and library directories (MSVC `include`/`lib/x64`, SDK `ucrt`, `um`, `shared`, `winrt` and their `Lib/<version>/{ucrt,um}/x64`) set through
         `CMAKE_<LANG>_STANDARD_INCLUDE_DIRECTORIES` and the link directories, and the tool directories added to the build's environment where the tools need
         them (ASan's runtime DLL beside the test executables, so tests run without a developer `PATH`).

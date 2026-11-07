@@ -111,7 +111,11 @@ run-time GPU switch is tested against on Windows.
 - The **Graphics Tools** optional Windows feature (the D3D12 debug layer, `d3d12SDKLayers.dll`; not installed on 2026-11-07).
 - The **Vulkan SDK** for Windows (validation layers; the loader `vulkan-1.dll` already ships with the driver).
 - **`slangc`** v2026.18.2 for Windows (the version the Linux machine uses, so minted outputs match byte for byte).
-- The Visual Studio component **C++ Clang tools for Windows** (`clang-cl`).
+- **`clang-cl`: installed 2026-11-07** as LLVM 23.1.5 through winget (`LLVM.LLVM`) in `C:\Program Files\LLVM`; it writes no `HKLM\SOFTWARE\LLVM\LLVM`
+  key and was not on `PATH` in an open shell, so the `%ProgramFiles%\LLVM\bin` fallback of Day 141's search is what finds it. Checked by hand: `clang-cl`
+  23.1.5 with MSVC 14.51's headers, the 10.0.26100 SDK and `lld-link` compiled, linked and ran a C++20 `windows.h` program from a plain shell (no
+  `INCLUDE`/`LIB`). The Visual Studio "C++ Clang tools" component is not needed. `clang-cl` has native `unsigned __int128` and MSVC does not, so the two
+  Windows configurations cover both `int128.h` paths.
 - **Debugging Tools for Windows** (`cdb`, WinDbg) from the Windows SDK installer, for the minidump checks.
 - Optional: PIX for Windows, for GPU captures while debugging DX12.
 

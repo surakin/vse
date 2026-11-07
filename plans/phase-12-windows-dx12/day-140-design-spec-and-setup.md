@@ -16,7 +16,7 @@ inventoried with the day that ports it, and both machines are ready.
 - [ ] **Memory link on Windows:** `scripts/link-claude-memory.ps1` (a directory junction, `New-Item -ItemType Junction`, same backup rule as the shell script) and a
       line in `CLAUDE.md` naming it; run it on the Windows PC.
 - [ ] **Prerequisites** (phase file list): check each on the Windows PC and record the version in the spec — Graphics Tools (D3D12 debug layer), Vulkan SDK,
-      `slangc` v2026.18.2, `clang-cl`, Debugging Tools for Windows, (PIX). The developer installs what is missing; nothing is installed by a script.
+      `slangc` v2026.18.2, `clang-cl` (already recorded in the phase file: LLVM 23.1.5 from winget), Debugging Tools for Windows, (PIX). The developer installs what is missing; nothing is installed by a script.
 - [ ] **The Linux machine:** record its CPU, GPU, driver, distribution, compiler and how it is reached from the Windows PC (SSH over Tailscale or by hand),
       and the procedure for a two-machine day (push from one, pull and run `--affected` on the other, quote both lines).
 - [ ] **Inventory** (a table in the spec: file, what is Linux-specific, the Windows counterpart, the port day): every file under `os/linux/`, `io/linux/`; every

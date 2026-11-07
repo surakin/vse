@@ -10,7 +10,9 @@ work there first, and the gates learn the Windows rules (where `windows.h`, D3D1
 
 - [ ] **`scripts/test-phase.sh` on Windows** under Git for Windows' `bash` (a dev-time tool like CMake; the spec records the decision against a PowerShell
       port): build directory and preset per platform, `ctest` paths, `.exe` names, CRLF-free output; `--flavor all` means the flavors the platform has, and the
-      summary line names the ones skipped (`flavors: plain,asan (tsan: not on Windows)`); `--affected` maps Windows-only directories to phase 12; the `display`
+      summary line names the ones skipped (`flavors: plain,asan (tsan: not on Windows)`); Git Bash rewrites arguments that look like paths (seen 2026-11-07:
+      `/link` and `/libpath:...` passed to `clang-cl` became file names), so the script and any test that passes `/`-style tool flags sets
+      `MSYS2_ARG_CONV_EXCL` (or calls the tool through CMake), with a test that a `/flag` argument reaches a child program unchanged; `--affected` maps Windows-only directories to phase 12; the `display`
       group detects a desktop session through `os::QuerySessionState`'s Windows answer.
 - [ ] **Platform-specific test files:** `tests/phases.txt` gains a platform qualifier for files that exist on one platform only (`*_linux_test.cpp`,
       `*_windows_test.cpp`, the Wayland/X11 tests, later `tests/rhi/dx12_*`); `test_phase_labels` checks every built test has one label on the platform it runs on,
