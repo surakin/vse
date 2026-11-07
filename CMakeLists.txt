@@ -80,6 +80,22 @@ endif()
 # Windows (Phase 13) builds one layer more each day, in dependency order (ARCHITECTURE.md): today the base layer of the
 # foundation and the Windows-only tests. Each later day moves its directories from the skipped list into the build.
 if(ENGINE_PLATFORM STREQUAL "windows")
+  # sentry-native for the crash handler (Phase 13 Days 154-156), configured as on Linux (below) and added before the engine's own options,
+  # so it keeps its own. libbacktrace is not built on Windows: stack traces resolve through DbgHelp (os/windows/debug/BACKEND.md).
+  set(SENTRY_BACKEND breakpad CACHE STRING "" FORCE)
+  set(SENTRY_TRANSPORT none CACHE STRING "" FORCE)
+  set(SENTRY_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+  set(SENTRY_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+  set(SENTRY_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+  set(SENTRY_BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
+  set(SENTRY_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+  add_subdirectory(third_party/sentry_native)
+  # sentry-native builds itself with -Werror -Wall under clang-cl, where -Wall means -Weverything: a newer clang than the pinned release
+  # was tested with (23 here) stops on warnings the release predates (-Wc++-keyword, -Wpadded in vendor/mpack.h, ...). Warnings off for
+  # that vendored target only (its warnings are not ours to fix, and the sources stay unmodified).
+  if(ENGINE_CLANG_CL)
+    target_compile_options(sentry PRIVATE -Wno-error -w)
+  endif()
   # The engine's own Windows options, for every target created from here on (the vendored libraries above keep their own).
   add_compile_options(${ENGINE_WINDOWS_COMPILE_OPTIONS})
   add_compile_definitions(${ENGINE_WINDOWS_DEFINITIONS})
@@ -101,9 +117,11 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tests/types)
   add_subdirectory(tests/foundation_sanitized)
   add_subdirectory(tests/windows)
+  include(cmake/EngineDeathTests.cmake)
   add_subdirectory(engine/jobs)  # Day 153
   add_subdirectory(tests/io)  # the file layer, Days 151-152 (its asynchronous tests need jobs)
   add_subdirectory(tests/jobs)
+  add_subdirectory(tests/debug)  # the debugging facilities, Days 154-156
   # The source gates are CMake scripts over the tree, the same on every platform (Day 150).
   foreach(gate rhi_boundary_check raw_new_check file_access_check std_container_check settings_fixtures_check config_access_check
                signal_safety_check platform_neutral_check module_deps_check)

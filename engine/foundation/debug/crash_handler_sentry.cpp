@@ -12,7 +12,11 @@
 #include "io/file_system.h"
 #include "os/os.h"
 
+// On Windows sentry.h includes <windows.h> itself: the enable/disable pair keeps its macros (CreateDirectory, LoadLibrary, ...) from leaking
+// into the files a unity build merges after this one (CLAUDE.md, "Unity builds"; Phase 13 Day 154). The pair is harmless elsewhere.
+#include "unity/windows_enable.h"
 #include <sentry.h>
+#include "unity/windows_disable.h"
 
 #include <atomic>
 #include <cstdarg>

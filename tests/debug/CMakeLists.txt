@@ -32,6 +32,67 @@ set(DEBUG_TEST_SOURCES
 find_package(Threads REQUIRED)
 include(Catch)
 
+# Windows (Phase 13 Days 154-156): the neutral files, in plain and ASan, one conformance group at a time. Day 154: stack traces, the crash
+# context, the asserts and threads (the death-test cases among them skip until Day 155, which adds the death tests, fault injection, the
+# crash hook and crash_handler_test and crash_report_test); Day 156 adds saved_dumps_test, core_dump_test and crash_extract. The programs'
+# crash tests come with the programs.
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  set(_debug_windows_sources
+    death_test_registry_test.cpp
+    death_test_run_test.cpp
+    assert_family_test.cpp
+    stack_trace_test.cpp
+    crash_state_test.cpp
+    failure_hooks_test.cpp
+    install_hooks.cpp
+    resource_guard_windows.cpp
+    stack_trace_windows_test.cpp
+  )
+  add_library(debug_test_plugin MODULE plugin.cpp)
+  target_include_directories(debug_test_plugin PRIVATE ${CMAKE_SOURCE_DIR}/engine/foundation)
+  set_target_properties(debug_test_plugin PROPERTIES UNITY_BUILD OFF)
+  # No incremental linking: with it GetProcAddress returns a jump thunk, not the function the trace's frame lies in.
+  target_link_options(debug_test_plugin PRIVATE /INCREMENTAL:NO)
+  set(_debug_flavors "")
+  if(ENGINE_HAVE_ASAN)
+    list(APPEND _debug_flavors "_asan")
+  endif()
+  foreach(suffix "" ${_debug_flavors})
+    add_executable(debug_tests${suffix} ${_debug_windows_sources})
+    engine_enable_death_tests(debug_tests${suffix})
+    target_link_libraries(debug_tests${suffix} PRIVATE foundation_debug${suffix} jobs${suffix} Catch2::Catch2WithMain dbghelp)
+    add_dependencies(debug_tests${suffix} debug_test_plugin)
+    target_compile_definitions(debug_tests${suffix} PRIVATE DEBUG_TEST_PLUGIN_PATH="$<TARGET_FILE:debug_test_plugin>" ENGINE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+      ENGINE_DEBUG_CHECKS=1 ENGINE_SLOW_CHECKS=1)
+    target_include_directories(debug_tests${suffix} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support
+      ${CMAKE_SOURCE_DIR}/tests/windows/support)
+    engine_asan_runtime(debug_tests${suffix})
+  endforeach()
+  engine_discover_tests(debug_tests TEST_SUFFIX "" PROPERTIES LABELS "debug;crash")
+  if(ENGINE_HAVE_ASAN)
+    engine_discover_tests(debug_tests_asan TEST_SUFFIX " [asan]" PROPERTIES LABELS "asan;crash")
+  endif()
+  add_executable(debug_checks_off_tests assert_checks_off_test.cpp)
+  target_link_libraries(debug_checks_off_tests PRIVATE foundation_debug Catch2::Catch2WithMain)
+  target_compile_definitions(debug_checks_off_tests PRIVATE ENGINE_DEBUG_CHECKS=0 ENGINE_SLOW_CHECKS=0)
+  engine_discover_tests(debug_checks_off_tests TEST_SUFFIX " [checks off]" PROPERTIES LABELS "debug;crash")
+  # The backend checklists (os/windows/debug/BACKEND.md and the macOS one) stay in step with the headers: CMake scripts, run here too.
+  foreach(case "debug_backend_lists|${CMAKE_SOURCE_DIR}" "debug_backend_lists_clean|${CMAKE_CURRENT_SOURCE_DIR}/fixtures/backend_lists/good"
+               "debug_backend_lists_planted|${CMAKE_CURRENT_SOURCE_DIR}/fixtures/backend_lists/bad"
+               "debug_backend_lists_planted_count|${CMAKE_CURRENT_SOURCE_DIR}/fixtures/backend_lists/bad")
+    string(REPLACE "|" ";" parts "${case}")
+    list(GET parts 0 name)
+    list(GET parts 1 root)
+    add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DROOT=${root} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_backend_lists.cmake)
+    set_tests_properties(${name} PROPERTIES LABELS "debug")
+  endforeach()
+  set_tests_properties(debug_backend_lists_planted PROPERTIES WILL_FAIL TRUE)
+  set_tests_properties(debug_backend_lists_planted_count PROPERTIES
+    PASS_REGULAR_EXPRESSION "windows: BACKEND.md lists `Stale`.*windows: BACKEND.md has no section heading for `Forgotten`.*macos: BACKEND.md lists `Stale`.*macos: BACKEND.md has no section heading for `Forgotten`.*4 problem")
+  engine_label_tests(debug_backend_lists debug_backend_lists_clean debug_backend_lists_planted debug_backend_lists_planted_count)
+  return()
+endif()
+
 # Every Catch2 test of this directory carries the label `crash`: the suite crashes processes on purpose (death tests, the demos'
 # --crash-test), which makes systemd-coredump and desktop crash reporters notify the user. scripts/test-phase.sh leaves the label
 # out unless it runs --all or is given --crashes; plain ctest runs it.

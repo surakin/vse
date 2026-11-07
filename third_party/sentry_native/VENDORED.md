@@ -29,8 +29,10 @@ libcurl and about 25 shared libraries (`docs/superpowers/specs/2026-11-06-debugg
 
 Dropped: `tests/`, `examples/`, `fuzzing-examples/`, `ndk/`, `toolchains/`, `external/crashpad/` (16 MB), `external/benchmark/`,
 `external/libunwindstack-ndk/`, `vendor/acutest.h`, and the rest of Breakpad (its processor, tools, docs and tests).
-**Phases 8 and 9:** the Windows and macOS sources of Breakpad are kept but not their private headers; re-vendor those from the
-same release asset when those backends are built.
+**Phase 13 Day 154 (Windows):** the two private headers the Windows build includes were copied from the same release asset (its
+SHA-256 checked against the one above), unmodified: `external/breakpad/src/client/windows/common/ipc_protocol.h` and
+`external/breakpad/src/common/windows/string_utils-inl.h` (found by building the `sentry` target until no include was missing).
+**Phase 14 (macOS):** the macOS private headers are still to re-vendor the same way.
 
 ## Added by this repository
 

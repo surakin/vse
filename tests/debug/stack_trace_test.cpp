@@ -7,10 +7,10 @@
 #include "jobs/scheduler.h"
 #include "os/os.h"
 #include "support/death_test_skip.h"
+#include "test_text.h"
 
 #include <atomic>
 #include <cstring>
-#include <string>
 #include <thread>
 
 using namespace engine_placeholder;
@@ -50,8 +50,14 @@ ENGINE_NOINLINE u32 Recurse(int depth, StackTrace* trace) {
     return r;
 }
 
-// A leaf that is always inlined into its caller, so one address belongs to two functions.
-__attribute__((always_inline)) inline void InlinedLeaf(StackTrace* trace) {
+// A leaf that is always inlined into its caller, so one address belongs to two functions. MSVC's Debug build inlines nothing, even
+// __forceinline: the test below skips when the leaf is a frame of its own.
+#if defined(_MSC_VER) && !defined(__clang__)
+#define STACK_TRACE_TEST_ALWAYS_INLINE __forceinline
+#else
+#define STACK_TRACE_TEST_ALWAYS_INLINE __attribute__((always_inline)) inline
+#endif
+STACK_TRACE_TEST_ALWAYS_INLINE void InlinedLeaf(StackTrace* trace) {
     CaptureStackTrace(*trace, 0);
 }
 ENGINE_NOINLINE void InlinedHost(StackTrace* trace) {
@@ -134,6 +140,9 @@ TEST_CASE("A function inlined into another gets its own entry marked inlined, at
         SKIP("this binary has no inlining information (built without -g)");
     }
     REQUIRE(host >= 0);
+    if (entries[leaf].address != entries[host].address) {
+        SKIP("the compiler did not inline the leaf in this build (MSVC Debug inlines nothing)");
+    }
     CHECK(host == leaf + 1);                           // the inlined function first, the function it was inlined into after it
     CHECK(entries[leaf].address == entries[host].address);
     CHECK(entries[leaf].inlined);
@@ -256,10 +265,17 @@ TEST_CASE("The trace text has a fixed layout and names the chain", "[stacktrace]
     options.demangle = true;
     char readable[8192];
     FormatStackTrace(trace, readable, sizeof(readable), options);
+#if defined(_WIN32)
+    // The PDB stores the name readable already (no parameter list): demangling changes nothing (os/windows/debug/BACKEND.md).
+    CHECK(std::strstr(text, "stack_trace_test::ChainC") != nullptr);
+    CHECK(std::strstr(readable, "stack_trace_test::ChainC") != nullptr);
+#else
     CHECK(std::strstr(text, "_ZN16stack_trace_test6ChainC") != nullptr);
     CHECK(std::strstr(readable, "stack_trace_test::ChainC(") != nullptr);
+#endif
 }
 
+#if !defined(_WIN32) // Itanium names; Windows decorates the Microsoft way (stack_trace_windows_test.cpp)
 TEST_CASE("DemangleSymbol turns mangled names readable and refuses the rest", "[stacktrace][debug]") {
     char out[128];
     CHECK(DemangleSymbol("_ZN3foo3barEv", out, sizeof(out)));
@@ -271,6 +287,7 @@ TEST_CASE("DemangleSymbol turns mangled names readable and refuses the rest", "[
     CHECK_FALSE(DemangleSymbol("_ZN3foo3barEv", tiny, sizeof(tiny))); // does not fit
     CHECK_FALSE(DemangleSymbol("_ZN3foo3barEv", tiny, 0));
 }
+#endif
 
 TEST_CASE("An address with no symbol is named by module and offset, and one in no module by ??", "[stacktrace][debug]") {
     InitDebugFacilities();
@@ -345,7 +362,7 @@ TEST_CASE("A library loaded after startup is symbolized once the modules are rel
     plugin_entry = FindEntry(entries, n, "DebugTestPluginCall");
     REQUIRE(plugin_entry >= 0);
     CHECK(entries[plugin_entry].has_module);
-    CHECK(std::strstr(entries[plugin_entry].module, "libdebug_test_plugin") != nullptr);
+    CHECK(std::strstr(entries[plugin_entry].module, "debug_test_plugin") != nullptr); // libdebug_test_plugin.so, debug_test_plugin.dll
     os::UnloadLibrary(library);
 }
 #endif
@@ -389,7 +406,8 @@ TEST_CASE("Eight threads starting the facilities at once all get a working trace
     for (int round = 0; round < 5; ++round) {
         const ChildResult r = RunInChild("dt_stack_concurrent_init");
         INFO("timed out " << r.timed_out << ", terminated " << r.terminated << " by " << r.native_code << ", exit code " << r.exit_code
-                          << "\nchild stderr: " << std::string(r.stderr_text, r.stderr_length).substr(0, 600));
+                          << "\nchild stderr: "
+                          << engine_test::MakeText(StringView(r.stderr_text, r.stderr_length < 600 ? r.stderr_length : 600)).CStr());
         REQUIRE(r.exited);
         CHECK(r.exit_code == 0);
         CHECK(r.StdoutContains("INIT-OK"));

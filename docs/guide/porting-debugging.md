@@ -51,8 +51,14 @@ Child result    exit code is an NTSTATUS: 0xC0000005 AccessViolation, 0xC000001D
                 (not on arm64), 0xC00000FD StackOverflow; exit code 3 plus a marker written by the child's SIGABRT handler is Abort
 Thread          GetCurrentThreadId; SetThreadStackGuarantee for stack overflow; SetThreadDescription for the name
 Post-mortem     WER LocalDumps registry values (needs elevation: report Limited without it)
-Symbols         DWARF (clang) works with libbacktrace; PDB needs a DbgHelp resolver behind ResolveStackTrace (the Phase 13 decision)
+Symbols         DbgHelp from the PDBs (decided and built on Phase 13 Day 154; libbacktrace is not built on Windows): capture with
+                RtlCaptureStackBackTrace, names and lines with SymFromAddrW / SymGetLineFromAddrW64, inlined frames with
+                SymAddrIncludeInlineTrace; every DbgHelp call under one lock, never from the crash hook
+Modules         EnumProcessModulesEx + GetModuleInformation + GetModuleFileNameExW, the same immutable table as Linux
 ```
+
+Done on Day 154: symbols, modules, the crash context, the debugger check, thread ids and names (`os/windows/debug/`). The crash hook,
+death tests and fault injection are Day 155; post-mortem dumps, the symbol store and the scripts Day 156.
 
 The traps: an exception filter may call only a few APIs and must not allocate; fast-fail crashes (`__fastfail`, `/GS` failures)
 bypass the filter and the library's `on_crash`; WER can show a dialog for a crashed child; every path is wide characters and

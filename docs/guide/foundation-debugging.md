@@ -91,7 +91,11 @@ What to know:
 - **An assertion failure prints a trace.** A failed `ENGINE_ASSERT` and the first failure of each `ENGINE_ENSURE` site print
   the trace under the message, starting at the failing function, in one write. The names are left mangled (demangling
   allocates, and an assertion can fail inside the allocator): pipe the output through `c++filt` to read them.
-- **Only DWARF.** Binaries built for Windows with PDB debug information will need a different resolver (Phase 13).
+- **Linux reads DWARF (libbacktrace); Windows reads the PDBs through DbgHelp** (Phase 13 Day 154). DbgHelp is single-threaded,
+  so every call takes one lock, and it is never used while a crash is being reported: a crash report on Windows records raw
+  addresses and module offsets, and the names are found afterwards (by the crash script, a debugger or a test parent). On Windows
+  the PDB stores function names readable already (`engine::Foo`, without the parameter list), so `demangle` changes nothing there;
+  an MSVC-decorated name (`?Foo@@YAXH@Z`) passed to [[debug::DemangleSymbol]] is undecorated with `UnDecorateSymbolName`.
 
 ## Installing the crash handler
 

@@ -1,6 +1,8 @@
 # Windows debugging backend (Phase 13)
 
-What Phase 13 implements to bring up the debugging facilities on Windows. Nothing here exists yet; Linux is the reference
+What Phase 13 implements to bring up the debugging facilities on Windows. Day 154 built symbols, modules, the crash context, the debugger
+check and thread ids and names (marked **Built** below); Days 155-156 the rest, which `os/windows/debug/crash_pending.cpp` holds as
+placeholders that report themselves unsupported until then. Linux is the reference
 (`engine/foundation/os/linux/debug/`). Everything else is shared: the facade (`debug/*.cpp`), the assert family, the report
 writer, the log ring, the crash state, the scripts' logic and the tests. See `docs/guide/porting-debugging.md` for the order of
 work and `tests/debug/BACKEND-CONFORMANCE.md` for what each test group needs.
@@ -8,7 +10,10 @@ work and `tests/debug/BACKEND-CONFORMANCE.md` for what each test group needs.
 The crash library (sentry-native, Breakpad backend) and libbacktrace both list Windows as supported at the pinned versions
 (audit: `docs/superpowers/specs/2026-11-06-debugging-design.md`, "Platform audit"). **Open decision for Phase 13:** libbacktrace
 reads DWARF only, so a clang build with DWARF works as is; an MSVC/PDB build needs a DbgHelp resolver behind
-`ResolveStackTrace`.
+`ResolveStackTrace`. **Decided on Day 154: DbgHelp for both compilers** (`os/windows/debug/stack_trace_dbghelp.cpp`); libbacktrace is not
+built on Windows, and the facade's formatting is the neutral `debug/stack_trace_format.cpp`. **Rule: DbgHelp is never called while a crash
+is being reported** (it is not async-safe and takes a lock the crashed thread may hold): the Windows report records raw addresses and module
+offsets, and names are resolved afterwards, in the test parent, the crash script or a debugger.
 
 Each entry: the neutral function, the Windows API, the trap, the conformance groups that exercise it.
 
@@ -19,7 +24,9 @@ Fill the platform fields of the crash context (`detail::FillPlatformCrashContext
 PE debug directory's CodeView (RSDS) record, GUID plus age, written as lowercase hex. OS: `RtlGetVersion` (not
 `GetVersionEx`, which lies without a manifest). CPU brand: `__cpuid` leaves 0x80000002-4; count: `GetActiveProcessorCount`.
 Memory: `GlobalMemoryStatusEx`. Executable: `GetModuleFileNameW` converted to UTF-8. Trap: all text is UTF-8; the fields are
-fixed buffers. Groups: *crash context*.
+fixed buffers. Groups: *crash context*. **Built (Day 154)**, `os/windows/debug/crash_context.cpp`: the build id is the GUID's fields in
+order (Data1, Data2, Data3 as numbers, then the 8 bytes of Data4) and the age in hex, all lowercase and without dashes; the OS version is
+`major.minor.build`; the architecture `x86_64`, `aarch64` or `x86`; the CPU count is `GetActiveProcessorCount(ALL_PROCESSOR_GROUPS)`.
 
 ### `EnablePostMortemDumps`
 Windows Error Reporting `LocalDumps`: the registry values under `HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\<exe>`
@@ -33,7 +40,7 @@ which values to set. Never write outside the program's own key. Groups: *post-mo
 `ArithmeticFault` (0xC0000094), `StackOverflow` (0xC00000FD), `Abort`. Groups: *fault injection*.
 
 ### `IsDebuggerAttached`
-`IsDebuggerPresent()`. Trap: it is true under any debugger, including a tracer the user did not mean. Groups: *assert*.
+`IsDebuggerPresent()`. Trap: it is true under any debugger, including a tracer the user did not mean. Groups: *assert*. **Built (Day 154).**
 
 **`CrashDumpDirectory`** (moved to the file layer: see `engine/foundation/io/BACKEND.md`).
 `%LOCALAPPDATA%/<app>/crashes` through `SHGetKnownFolderPath(FOLDERID_LocalAppData)`, converted to UTF-8, created private to the
@@ -42,17 +49,22 @@ user (an ACL granting only the user; the Linux 0700 check has no direct equivale
 ### `RegisterThreadForCrashHandling`
 `SetThreadStackGuarantee` to a size that holds the report (the library documents `SENTRY_THREAD_STACK_GUARANTEE_*`; the
 build option `SENTRY_THREAD_STACK_GUARANTEE_AUTO_INIT` does it for threads that start in the DLL). Sets the name with
-`SetThreadDescription` as well as `SetCrashThreadName`. Groups: *threads*.
+`SetThreadDescription` as well as `SetCrashThreadName`. Groups: *threads*. **Built (Day 154)** with a 64 KiB guarantee; Day 155 measures what
+the report written from `on_crash` needs and sets that.
 
 ### `InitDebugFacilities` and `ReloadDebugModules`
 The module list for symbol lookup: `EnumProcessModules` plus `GetModuleInformation`, published through the immutable table in
-`module_list.h`. Groups: *stack trace*.
+`module_list.h`. Groups: *stack trace*. **Built (Day 154)**: `EnumProcessModulesEx(LIST_MODULES_ALL)`; a module's offset is relative to its
+image base. `ReloadDebugModules` also calls `SymRefreshModuleList`, so a DLL loaded later gets its names (tested with the test plugin, which
+is linked `/INCREMENTAL:NO`: with incremental linking `GetProcAddress` returns a jump thunk outside the function).
 
 ### `DemangleSymbol`
-`UnDecorateSymbolName` for MSVC names; clang-cl with Itanium names uses the LLVM demangler. Groups: *stack trace*.
+`UnDecorateSymbolName` for MSVC names; clang-cl with Itanium names uses the LLVM demangler. Groups: *stack trace*. **Built (Day 154)**:
+clang-cl decorates the Microsoft way too (tested), so no Itanium demangler is needed; a name without the leading `?` is refused. Names that
+come from DbgHelp are already undecorated (`SYMOPT_UNDNAME`, and the PDB keeps them readable).
 
 ### `CurrentThreadId`
-`GetCurrentThreadId`. Groups: *crash report*.
+`GetCurrentThreadId`. Groups: *crash report*. **Built (Day 154).**
 
 ### `DeathTestsSupported` and `RunInChild`
 `CreateProcessW` with `CREATE_SUSPENDED`, assign to a job object with `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`, resume; pipes for

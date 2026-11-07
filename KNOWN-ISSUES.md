@@ -76,7 +76,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - Phase 7 Day 94: libraries loaded after `InitDebugFacilities` are not symbolized until `ReloadDebugModules` is called (libbacktrace reads the loaded objects once); their frames show as `??`. Documented in the guide. The Vulkan driver loads its libraries at device creation, so a trace taken inside them needs a reload after that.
 - Phase 7 Day 94: the signal-handler allocation test counts `malloc`, `calloc` and `realloc` calls but not `mmap`, which libbacktrace uses for its own memory; the AArch64 behavior of the stack-trace code (unwinder, `dl_iterate_phdr`) is not run here.
 - Phase 7 Day 95: the library's own warnings reach the engine log (`LogCrash`) but no test provokes one; routing was confirmed once by raising the level temporarily. The empty-server-address warning is dropped by a text match on "DSN" in `crash_handler_sentry.cpp`, which a library upgrade could invalidate (the silent-install test would then fail).
-- Phase 7 Day 95: the Windows and macOS private headers of Breakpad are not vendored (only the sources sentry's CMake names); Phases 13 and 14 re-vendor them. The no-upload check covers the test binaries and `crash_extract`, not yet the demos (Day 100).
+- Phase 7 Day 95: the macOS private headers of Breakpad are not vendored (only the sources sentry's CMake names); Phase 14 re-vendors them (the Windows ones were re-vendored on Phase 13 Day 154). The no-upload check covers the test binaries and `crash_extract`, not yet the demos (Day 100).
 - Phase 7 Day 97 (2026-11-06): under ThreadSanitizer, a fault inside the crash report (a state provider that crashes) kills the process without the `double fault` message and without a dump (the test skips those two checks in the TSan flavor); plain and ASan print the message and leave the dump. Not investigated.
 - Phase 7 Day 97: the report's ten-second budget is checked between pieces, so a state provider that never returns holds the crashing process (a second thread waits up to twenty seconds for it). A watchdog would need a timer signal in the crash path; not done.
 - Phase 7 Day 97: the AArch64 branch of the stack-pointer read in `os/linux/debug/crash_signal.cpp` (used to tell a stack overflow from a wild pointer) has not been compiled or run.
@@ -144,6 +144,15 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - Phase 13 Day 152 (2026-11-07), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 152 file, "For the
   Linux run"), among them the split of `io/linux/directory.cpp` into the neutral `io/directory.cpp`, were built and tested only on Windows; the
   reference for the changed Backend labels of `io/file.h`, `io/file_system.h` and `io/directory.h` was not regenerated.
+- Phase 13 Day 154 (2026-11-07), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 154 file, "For the
+  Linux run"), among them the move of `FormatStackTrace` into the neutral `debug/stack_trace_format.cpp`, were built and tested only on Windows.
+- Phase 13 Day 154, until Days 155-156: on Windows the crash event hook, death tests and fault injection (Day 155) and `EnablePostMortemDumps`
+  (Day 156) are placeholders in `os/windows/debug/crash_pending.cpp` that report themselves unsupported, so every death-test case of `tests/debug`
+  skips there; `crash_handler_test`, `crash_report_test`, `saved_dumps_test`, `core_dump_test` and `crash_extract` are not built on Windows yet.
+- Phase 13 Day 154: on Windows an assertion's trace is resolved through DbgHelp, which allocates from the process heap; an assert that fires while
+  the heap lock is held (inside a CRT allocation) could deadlock while printing it. Linux resolves without `malloc`. Not observed; from review.
+- Phase 13 Day 154: under MSVC's Debug build the inlined-frame case of `stack_trace_test` skips (MSVC inlines nothing at `/Od`); the clang-cl
+  build runs and passes it.
 - Phase 13 Day 153 (2026-11-07), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 153 file, "For the
   Linux run"), among them the move of the Linux CPU, pinning and thread-id code into `jobs/linux/thread_platform.cpp` and five converted jobs tests,
   were built and tested only on Windows; the reference for `jobs/topology.h` and `jobs/worker_pool.h` was not regenerated.

@@ -5,7 +5,7 @@
 #   ucontext_t, siginfo_t, pid_t, HANDLE, SIGxxx, /proc, fork(, waitpid(, sigaction(, and the headers <unistd.h>,
 #   <windows.h>, <signal.h>, <csignal>, <sys/...>, <poll.h>, <spawn.h>, <fcntl.h>, <dirent.h>. Those files speak the
 #   neutral API (CrashReason, FaultKind, ChildResult), so the Windows and macOS ports build the same sources. Files whose
-#   name contains `_linux` (before a `_` or `.`) hold the Linux-only details and are exempt, and so is the per-platform
+#   name contains `_linux`, `_windows` or `_macos` (before a `_` or `.`) hold that platform's details and are exempt, and so is the per-platform
 #   code under engine/foundation/os/<platform>/debug/ (it is not under these directories). Comments are ignored.
 # Rule 3: ENGINE_VERIFY, ENGINE_CHECK_SLOW and ENGINE_UNREACHABLE are not used in headers. Whether they check is decided
 #   per translation unit (ENGINE_DEBUG_CHECKS / ENGINE_SLOW_CHECKS), so an inline function in a header that used them
@@ -121,7 +121,7 @@ endforeach()
 
 foreach(f IN LISTS neutral_files)
   get_filename_component(base "${f}" NAME)
-  if(base MATCHES "_linux[_.]")
+  if(base MATCHES "_(linux|windows|macos)[_.]") # the per-platform test files (Phase 13 Day 154: Windows as well as Linux)
     continue()
   endif()
   read_lines("${ROOT}/${f}" lines)

@@ -753,3 +753,12 @@ from 102 to 33). Wake latency (new `jobs_tests "[latency]"`): median 72 us, p99 
 failures; one flake recorded. Runs: `ran 400 of 591 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 191 of 591`;
 `windows-clang-cl` 431 of 431; non-unity 591 of 591. Review: 5 findings, 1 fixed, 4 declined. Linux: pending until the phase close. **Next: Day 154
 (debugging I: stack traces on Windows).**
+
+Phase 13 **Day 154 (2026-11-07, Windows PC): debugging I.** `foundation_debug` builds on Windows with sentry-native (two Breakpad headers re-vendored
+from the pinned release, checksum verified). Stack traces resolve through DbgHelp from the PDBs (`os/windows/debug/stack_trace_dbghelp.cpp`: inlined
+frames, `address - 1`, a search path that never names a symbol server; never called while a crash is reported); `FormatStackTrace` is now neutral.
+Module list, crash context (CodeView build id), debugger check, thread ids and names are built; the crash hook, death tests and fault injection
+(Day 155) and post-mortem dumps (Day 156) are placeholders that report themselves unsupported. `tests/debug` runs on Windows with today's groups.
+Runs: `ran 472 of 727 tests (phases: all; flavors: plain; display: included; crash tests: included)`, asan `ran 255 of 727`; `windows-clang-cl` 503 of
+503; non-unity 727 of 727. Review: 6 findings, 2 fixed, 4 declined. Linux: pending until the phase close. **Next: Day 155 (debugging II: the crash
+handler on Windows).**

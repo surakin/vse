@@ -10,6 +10,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # Phase 7: the per-platform half of the debugging facilities (debug/*.h are the neutral interfaces). Windows and macOS
   # add os/<platform>/debug/ in Phases 13 and 14 (see the BACKEND.md checklists there).
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES
+    debug/stack_trace_backtrace.cpp
     os/linux/debug/death_test.cpp
     os/linux/debug/debugger.cpp
     os/linux/debug/module_list.cpp
@@ -33,7 +34,14 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     os/windows/session.cpp
     os/windows/vulkan_loader_name.cpp
   )
-  set(FOUNDATION_DEBUG_PLATFORM_SOURCES "")
+  # Day 154: stack traces through DbgHelp, the module list, the crash context; crash_pending.cpp holds what Days 155-156 build (the crash
+  # hook, death tests, fault injection, post-mortem dumps). libbacktrace is not built on Windows.
+  set(FOUNDATION_DEBUG_PLATFORM_SOURCES
+    os/windows/debug/stack_trace_dbghelp.cpp
+    os/windows/debug/module_list.cpp
+    os/windows/debug/crash_context.cpp
+    os/windows/debug/crash_pending.cpp
+  )
   # The file layer: paths, errors, Stat and the local file on Day 151; directories and the other file-system operations on Day 152
   # (io/BACKEND.md). Asynchronous I/O is the neutral executor path, as on Linux.
   set(FOUNDATION_IO_PLATFORM_SOURCES
@@ -89,7 +97,7 @@ set(FOUNDATION_DEBUG_SOURCES
   debug/crash_reason.cpp
   debug/failure_hooks.cpp
   debug/death_test.cpp
-  debug/stack_trace_backtrace.cpp
+  debug/stack_trace_format.cpp
   debug/thread_info.cpp
   debug/crash_context.cpp
   debug/crash_state.cpp
@@ -170,6 +178,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     engine_add_foundation_layer(foundation_io "${suffix}" ${FOUNDATION_IO_SOURCES})
     # advapi32: ACLs (FileInfo::read_only, private directories); bcrypt: random temporary names; shell32 and ole32: the known folders.
     target_link_libraries(foundation_io${suffix} PUBLIC foundation_base${suffix} advapi32 bcrypt shell32 ole32)
+    engine_add_foundation_layer(foundation_debug "${suffix}" ${FOUNDATION_DEBUG_SOURCES})
+    # sentry-native (Breakpad backend, no transport) as on Linux; DbgHelp and PSAPI for symbols and the module list (Day 154).
+    # synchronization: sentry-native's WaitOnAddress (its CMake does not name the library for a static build).
+    target_link_libraries(foundation_debug${suffix} PUBLIC foundation_io${suffix} PRIVATE sentry dbghelp psapi synchronization)
   endforeach()
 else()
   engine_add_foundation_libs("")
