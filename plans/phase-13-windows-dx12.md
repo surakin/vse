@@ -59,9 +59,10 @@ run-time GPU switch is tested against on Windows.
 
 - **Two machines.** Shared code is everything outside `engine/foundation/os/windows/`, `engine/foundation/io/windows/`,
   `engine/foundation/settings/windows/`, `engine/rhi/dx12/`, Windows-only tests (`*_windows_test.cpp`, `tests/rhi/dx12_*`) and Windows-only scripts
-  (`scripts/*.ps1`). A day that changes shared code ends with `scripts/test-phase.sh --affected` on **both** the Windows PC and the Linux machine (the
-  work moves between them through `git push`), and the day file and `STATUS.md` quote both final lines. A day that touches only Windows files says so
-  and quotes the Windows line alone.
+  (`scripts/*.ps1`). **Amended 2026-11-07 (developer decision, after Day 148): the Linux machine is checked once, when the phase closes (Day 174),**
+  not at the end of each day. Each day still names, in its result and in `KNOWN-ISSUES.md`, what the Linux run must cover (shared files touched, the
+  flavors to run, docs to regenerate); Day 174 runs them all (`scripts/test-phase.sh --all --flavor all`, both unity modes, `ctest -L docs`, the
+  reference regeneration) and fixes what they find before the phase is complete. Days quote the Windows line only and say that Linux is pending.
 - **Flavors.** Windows has `plain` and `asan` (MSVC `/fsanitize=address`); MSVC has no ThreadSanitizer or UBSan, so `tsan` (and the UBSan half of Linux's
   `asan` flavor) run on the Linux machine only. `scripts/test-phase.sh` on Windows reports the flavors it skipped (Day 150). Concurrency, lifetime and
   memory days run the Windows ASan flavor and the Linux sanitizer flavors of the same selection.

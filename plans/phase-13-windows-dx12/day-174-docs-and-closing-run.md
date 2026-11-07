@@ -20,6 +20,9 @@ Finish the documentation, run everything on both machines, review the whole phas
 - [ ] **Known-issues sweep:** every Phase 13 deferral filed (enhanced barriers, placed resources, HDR10, exclusive fullscreen, IME composition, ARM64, fast-fail
       crashes, anything left by a day), every entry this phase fixed removed (the backend registry and switch, the HLSL object index, the D3D12 Y flip, `--permute`
       on Windows, the portable `u128` under MSVC, the Breakpad Windows headers, `env_source.cpp`'s `environ`, share modes).
+- [ ] **The deferred Linux checks** (the two-machine rule as amended on 2026-11-07): everything each day filed for the Linux machine in `KNOWN-ISSUES.md`
+      (Days 147 onward): both unity builds, the CMake version, the reference regeneration with `docgen lint`, the phase-label self-tests, the shared-code
+      changes of every day; fix what fails, with the day it came from named in the fix.
 - [ ] **Closing full runs (CLAUDE.md, required for a phase's last day):** Windows `scripts/test-phase.sh --all --flavor all` (plain and asan; the summary names tsan
       as not on Windows), `ctest -L docs`; Linux `scripts/test-phase.sh --all --flavor all`, `ctest -L docs`; both demos 1000 frames with validation on DX12 and
       Vulkan (Windows) and on Wayland and X11 (Linux); record both final `ran X of Y tests (phases ...)` lines in this file; nothing left out on either machine.
