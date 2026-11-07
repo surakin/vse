@@ -1,6 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <unistd.h>
+#if !defined(_WIN32)
+#include <unistd.h> // geteuid: the read-only directory case below is POSIX-only
+#endif
 
 #include "catch_engine_types.h"
 #include "config_store_conformance.h"
@@ -56,9 +58,11 @@ TEST_CASE("FileConfigStore: a missing file is an empty store, and the first comm
     REQUIRE(s.Ok());
     CHECK(s.done == 1);
     CHECK(Slurp(path).View() == "[a]\nb = 1\n");
+#if !defined(_WIN32) // Windows has no file modes: the store's permissions option does not apply there (io/BACKEND.md, SetPermissions)
     io::FileInfo info;
     REQUIRE(io::Stat(path, &info).Ok());
     CHECK((info.permissions & 0777) == 0640);
+#endif
 }
 
 TEST_CASE("FileConfigStore: what a person wrote survives a save", "[settings][file]") {
@@ -175,11 +179,9 @@ TEST_CASE("FileConfigStore: failures leave the old file and the staged changes",
 }
 
 TEST_CASE("FileConfigStore: read-only files and directories, and missing directories", "[settings][file][permissions]") {
-    if (::geteuid() == 0) {
-        SUCCEED("root writes anywhere");
-        return;
-    }
     io_test::TempDir dir;
+#if !defined(_WIN32) // a directory without write permission refuses the commit; on Windows a directory's read-only attribute does not stop writes
+    if (::geteuid() != 0) { // (root writes anywhere)
     REQUIRE(io::CreateDirectory(dir / "ro").Ok());
     Write(dir / "ro/settings.cfg", "a = 1\n");
     REQUIRE(io::SetPermissions(dir / "ro", 0500).Ok());
@@ -190,6 +192,8 @@ TEST_CASE("FileConfigStore: read-only files and directories, and missing directo
     CHECK((refused.Is(StoreError::PermissionDenied) || refused.Is(StoreError::ReadOnly)));
     CHECK(Slurp(dir / "ro/settings.cfg").View() == "a = 1\n");
     REQUIRE(io::SetPermissions(dir / "ro", 0700).Ok());
+    }
+#endif
     // A missing directory is created only when the options say so.
     FileConfigStore no_dirs(dir / "deep/er/settings.cfg");
     REQUIRE(no_dirs.Load().Ok());

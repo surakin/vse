@@ -76,6 +76,7 @@ enum class SetError : u8 {
     Store,          ///< The write layer refused (see `store`).
     ApplyFailed,    ///< The apply function rejected the batch; it was rolled back.
     Reentrant,      ///< Called from a listener nested more than 8 deep.
+    Enforced,       ///< A [[settings::LayerRole::Policy]] layer holds the setting: an administrator decides its value, the program cannot change it.
 };
 
 /// The result of `Set`, `SetText` or `Apply`.
@@ -118,6 +119,13 @@ struct LoadOptions {
     int argc = 0;
     /// `MinimalWrites` for later `Set` calls: a value equal to what the lower layers give is not written to the file.
     bool minimal_writes = true;
+    /// Add the platform's policy layers ([[settings::LayerRole::Policy]]): on Windows the group-policy keys `Software\Policies\<name>` under
+    /// HKCU and then HKLM (the machine's win); elsewhere none yet.
+    bool use_policy = true;
+    /// The name the policy layers read under, or null for `app_name`.
+    const char* policy_name = nullptr;
+    /// The registry key the policy layers read instead of `Software\Policies\<name>` (a test's own key), or null.
+    const char* policy_path = nullptr;
 };
 
 /// What `Load` found.

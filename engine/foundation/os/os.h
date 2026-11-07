@@ -136,6 +136,12 @@ void UnloadLibrary(DynamicLibraryHandle handle);
 /// Returns how many variables the process environment holds.
 usize EnvironmentCount();
 
+/// Returns whether the platform's environment variable names ignore case (`Path` and `PATH` are one variable).
+///
+/// Returns: true on Windows, false on Linux and macOS.
+/// Fails: never.
+bool EnvironmentNamesIgnoreCase();
+
 /// Copies one environment entry as `NAME=value` into the caller's buffer.
 ///
 /// Param index: position, less than [[os::EnvironmentCount]].

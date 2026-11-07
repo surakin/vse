@@ -19,16 +19,35 @@ unsigned long CountOpenHandles() {
     return GetProcessHandleCount(GetCurrentProcess(), &count) ? static_cast<unsigned long>(count) : 0;
 }
 
-// True when a process whose parent is this one is still running (an exited child is gone from the snapshot).
-bool AnyChildRunning() {
+// True when a child of this process is still running. A snapshot entry's parent id alone is not enough: Windows reuses process ids, and a
+// process whose parent ended long ago keeps that parent's id, so an unrelated older process (seen on Day 157: `vctip.exe`, `csrss.exe`,
+// `winlogon.exe`) can name this process as its parent. A child is a process listed with this parent that was created after this process
+// and has not exited (an ended child can stay listed while another program holds a handle to it).
+bool AnyChildRunning(bool verbose = false) {
     const HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE) return false;
     const DWORD self = GetCurrentProcessId();
+    FILETIME self_created{}, unused_a{}, unused_b{}, unused_c{};
+    GetProcessTimes(GetCurrentProcess(), &self_created, &unused_a, &unused_b, &unused_c);
     PROCESSENTRY32W entry{};
     entry.dwSize = sizeof(entry);
     bool found = false;
-    for (BOOL more = Process32FirstW(snapshot, &entry); more && !found; more = Process32NextW(snapshot, &entry)) {
-        found = entry.th32ParentProcessID == self && entry.th32ProcessID != self;
+    for (BOOL more = Process32FirstW(snapshot, &entry); more; more = Process32NextW(snapshot, &entry)) {
+        if (entry.th32ParentProcessID != self || entry.th32ProcessID == self) continue;
+        // A process this one started can always be opened by it; one that cannot be opened belongs to someone else.
+        const HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, entry.th32ProcessID);
+        if (process == nullptr) continue;
+        DWORD code = 0;
+        FILETIME created{};
+        const bool times = GetProcessTimes(process, &created, &unused_a, &unused_b, &unused_c) != 0;
+        const bool running = GetExitCodeProcess(process, &code) != 0 && code == STILL_ACTIVE;
+        CloseHandle(process);
+        const bool ours = times && CompareFileTime(&created, &self_created) >= 0;
+        if (verbose) {
+            std::fprintf(stderr, "ChildResourceGuard: listed child %lu '%ls' running %d created after this process %d\n", entry.th32ProcessID,
+                         entry.szExeFile, running ? 1 : 0, ours ? 1 : 0);
+        }
+        if (ours && running) found = true;
     }
     CloseHandle(snapshot);
     return found;
@@ -63,6 +82,6 @@ bool ChildResourceGuard::Clean() const {
         Sleep(10);
     }
     std::fprintf(stderr, "ChildResourceGuard: handles before %lu, now %lu, child running %d\n", descriptors_before_, CountOpenHandles(),
-                 AnyChildRunning() ? 1 : 0);
+                 AnyChildRunning(true) ? 1 : 0);
     return false;
 }

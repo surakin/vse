@@ -137,11 +137,14 @@ same-layer-ok 13
 platform-dir engine/foundation/os/linux/ engine/foundation/os/
 # The Windows file backend uses the Windows OS helpers (os/windows/win32.h, utf16.h): a per-platform directory may include the same
 # platform's directory of a lower layer (ARCHITECTURE.md section 4).
-platform-dir engine/foundation/os/windows/ engine/foundation/os/,engine/foundation/io/windows/,engine/jobs/windows/,tools/crash_extract/windows/
+platform-dir engine/foundation/os/windows/ engine/foundation/os/,engine/foundation/io/windows/,engine/jobs/windows/,engine/foundation/settings/windows/,tools/crash_extract/windows/
 platform-dir engine/foundation/os/macos/ engine/foundation/os/
 platform-dir engine/foundation/io/linux/ engine/foundation/io/
 platform-dir engine/foundation/io/windows/ engine/foundation/io/
 platform-dir engine/jobs/linux/ engine/jobs/
+# The settings stores of each platform (Phase 13 Day 157: the registry store and the policy layers on Windows).
+platform-dir engine/foundation/settings/linux/ engine/foundation/settings/
+platform-dir engine/foundation/settings/windows/ engine/foundation/settings/
 platform-dir engine/jobs/windows/ engine/jobs/
 platform-dir engine/platform/linux/ engine/platform/
 platform-dir engine/platform/windows/ engine/platform/

@@ -1,6 +1,5 @@
 #include "symbol_index.h"
 
-#include <sys/stat.h>
 
 #include <cstring>
 #include <new>

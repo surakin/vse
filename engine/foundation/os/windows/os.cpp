@@ -322,6 +322,8 @@ void ForEachEnvironmentEntry(Visit visit) {
 
 } // namespace
 
+bool EnvironmentNamesIgnoreCase() { return true; } // GetEnvironmentVariable("path") finds PATH
+
 usize EnvironmentCount() {
     usize count = 0;
     ForEachEnvironmentEntry([&](const wchar_t*, usize) {

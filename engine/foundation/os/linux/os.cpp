@@ -136,6 +136,8 @@ void UnloadLibrary(DynamicLibraryHandle handle) {
     }
 }
 
+bool EnvironmentNamesIgnoreCase() { return false; }
+
 usize EnvironmentCount() {
     usize n = 0;
     if (environ != nullptr) {

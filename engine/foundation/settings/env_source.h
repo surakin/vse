@@ -12,6 +12,10 @@ namespace engine_placeholder::settings {
 /// Ownership: owns copies of the names and values.
 class EnvironmentSnapshot {
 public:
+    /// An empty snapshot. With `ignore_case`, names that differ only in ASCII case are one variable, as on Windows: a later `Add` replaces an
+    /// earlier one whatever its case, and `Find` matches any case. [[settings::EnvironmentSnapshot::Capture]] sets it from
+    /// [[os::EnvironmentNamesIgnoreCase]].
+    explicit EnvironmentSnapshot(bool ignore_case = false) : ignore_case_(ignore_case) {}
     /// One variable.
     struct Var {
         /// The variable's name.
@@ -29,9 +33,13 @@ public:
     static EnvironmentSnapshot Capture();
     /// Returns the number of variables.
     usize Size() const { return vars_.Size(); }
+    /// Returns whether names are matched without regard to case.
+    bool IgnoresCase() const { return ignore_case_; }
 
 private:
+    bool SameName(StringView a, StringView b) const;
     Vector<Var> vars_;
+    bool ignore_case_ = false;
 };
 
 /// The longest variable name [[settings::EnvironmentVariableFor]] writes, including the terminator.

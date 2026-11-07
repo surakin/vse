@@ -22,12 +22,23 @@ function(engine_add_settings_tests target foundation_lib suffix label)
   target_link_libraries(${target} PRIVATE ${foundation_lib} Catch2::Catch2WithMain Threads::Threads)
   target_compile_definitions(${target} PRIVATE TEST_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support ${CMAKE_SOURCE_DIR}/tests/io)
+  if(label STREQUAL "asan" AND COMMAND engine_asan_runtime)
+    engine_asan_runtime(${target}) # Windows: the ASan runtime DLL beside the test, before the tests are listed
+  endif()
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
 endfunction()
 
+# Windows (Phase 13 Day 157): the registry store's own tests join, and the flavors are the ones the platform has (no tsan).
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  list(APPEND SETTINGS_TEST_SOURCES registry_store_windows_test.cpp)
+endif()
 engine_add_settings_tests(settings_tests foundation_settings "" "settings")
-engine_add_settings_tests(settings_tests_asan foundation_settings_asan " [asan]" "asan")
-engine_add_settings_tests(settings_tests_tsan foundation_settings_tsan " [tsan]" "tsan")
+if(ENGINE_HAVE_ASAN)
+  engine_add_settings_tests(settings_tests_asan foundation_settings_asan " [asan]" "asan")
+endif()
+if(ENGINE_HAVE_TSAN)
+  engine_add_settings_tests(settings_tests_tsan foundation_settings_tsan " [tsan]" "tsan")
+endif()
 
 # The backend checklist stays in step with the headers, and the neutral headers compile for the Windows and macOS targets (needs clang++; skips without it).
 add_test(NAME settings_backend_lists COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_settings_backend_lists.cmake)

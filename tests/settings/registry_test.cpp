@@ -1,5 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include <limits>
+
 #include <atomic>
 #include <thread>
 
@@ -64,7 +66,7 @@ TEST_CASE("Registry: every registration failure has a reason and changes nothing
     CHECK(TryRegister(r, MakeInt("y.c", -1, 0, 10)) == RegisterError::BadDefault);
     CHECK(TryRegister(r, MakeFloat("y.d", 0, 2.0, 1.0)) == RegisterError::BadRange);
     CHECK(TryRegister(r, MakeFloat("y.e", 5.0, 0.0, 1.0)) == RegisterError::BadDefault);
-    CHECK(TryRegister(r, MakeFloat("y.f", 0.0, 0.0, __builtin_inf())) == RegisterError::BadRange);
+    CHECK(TryRegister(r, MakeFloat("y.f", 0.0, 0.0, std::numeric_limits<f64>::infinity())) == RegisterError::BadRange);
     CHECK(TryRegister(r, MakeEnum("y.g", kRegistryModes, 0, 0)) == RegisterError::BadEnum);
     CHECK(TryRegister(r, MakeEnum("y.h", nullptr, 3, 0)) == RegisterError::BadEnum);
     CHECK(TryRegister(r, MakeEnum("y.i", kRegistryModes, 3, 3)) == RegisterError::BadDefault);

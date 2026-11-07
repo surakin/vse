@@ -22,6 +22,10 @@ the same machine.
       fullscreen toggle through the setting; record what was checked by hand.
 - [ ] **Baselines:** run `rhi_bench` and `renderer_bench` on Windows through Vulkan and record the numbers (SetBindGroup cost, instanced-draw cost, frame time
       of the demo scene) in the spec: these are what Days 166, 171 and 173 compare DX12 with.
+- [ ] **The guide samples on Windows** (moved from Day 157, which brought `docgen`'s reference, check, links and lint to Windows; the samples link the renderer,
+      the RHI and the platform layer, which are on Windows from today): `docgen samples` gets a Windows runner (a process helper with a deadline and a job
+      object, output to files, the scratch directory as the working directory) and the `cl`/`clang-cl` command line (`/std:c++20`, `/I`, `/Fe`, the
+      libraries by path); `docs_samples` and the `docs` target's sample step run on Windows; `ctest -L docs` passes there with the samples.
 - [ ] **Documentation:** `docs/guide/getting-started.md` names the Windows commands to build and run the demos; reference regenerated if headers changed.
 - [ ] **Runs:** Windows `--affected` plain and asan; Linux `--affected` (the demos' sources are shared) plus asan and tsan; quote the lines.
 - [ ] **End-of-day review:** `/code-review high`. Extra scrutiny: swapchain recreation during the modal resize loop, and a minimized window's zero-size extent.

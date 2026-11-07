@@ -61,6 +61,7 @@ LoadOptions Options(const io::Path& user) {
     o.app_name = "settings-test";
     o.user_file = &user;
     o.use_environment = false;
+    o.use_policy = false; // the layer counts below are the file layers' (Windows would add the two group-policy layers)
     return o;
 }
 
@@ -365,6 +366,9 @@ TEST_CASE("Save: only the changed lines of the user's file change, the command l
 }
 
 TEST_CASE("Save: a read-only directory is a status, not a crash, and memory is untouched", "[settings][service][save]") {
+#if defined(_WIN32)
+    SKIP("needs a directory that refuses writes: on Windows a directory's read-only attribute does not (an ACL would; not built)");
+#else
     if (::geteuid() == 0) {
         SUCCEED("root writes anywhere");
         return;
@@ -385,6 +389,7 @@ TEST_CASE("Save: a read-only directory is a status, not a crash, and memory is u
     REQUIRE(io::SetPermissions(dir / "ro", 0700).Ok());
     CHECK(settings.Save().Ok());
     CHECK(SlurpText(user).View() == "[renderer]\nwidth = 2000\n");
+#endif
 }
 
 TEST_CASE("A damaged user file: values load, Save refuses, and the explicit replace keeps a backup", "[settings][service][save]") {
@@ -547,6 +552,9 @@ TEST_CASE("Without a write layer a change is in memory only; callbacks may read 
 }
 
 TEST_CASE("Save with the command line's values: they join the user's file, and a failed save takes them out again", "[settings][service][regression]") {
+#if defined(_WIN32)
+    SKIP("needs a directory that refuses writes: on Windows a directory's read-only attribute does not (an ACL would; not built)");
+#else
     if (::geteuid() == 0) {
         SUCCEED("root writes anywhere");
         return;
@@ -571,6 +579,7 @@ TEST_CASE("Save with the command line's values: they join the user's file, and a
     REQUIRE(settings.Layers().Store(w).Get("renderer.width", &sv).Ok());
     CHECK(sv.value.AsText() == "1000"); // the user's own value, not the command line's 3000
     REQUIRE(io::SetPermissions(dir / "ro", 0700).Ok());
+#endif
 }
 
 TEST_CASE("Autosave does not retry a failing save on every poll", "[settings][service][regression]") {

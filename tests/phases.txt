@@ -31,7 +31,7 @@ flavors 13  windows: plain,asan
 flavors 0   windows: plain,asan
 flavors 1   windows: plain
 flavors 2   windows: plain,asan
-flavors 3   windows: none
+flavors 3   windows: plain
 flavors 4   windows: plain
 flavors 5   windows: plain
 flavors 6   windows: plain
@@ -39,7 +39,7 @@ flavors 7   windows: plain,asan
 flavors 8   windows: none
 flavors 9   windows: plain,asan
 flavors 10  windows: plain,asan
-flavors 11  windows: plain
+flavors 11  windows: plain,asan
 flavors 12  windows: plain
 
 # --- Phase 0: foundation (tests/foundation) ---

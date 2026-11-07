@@ -7,9 +7,20 @@
 
 namespace engine_placeholder::settings {
 
+bool EnvironmentSnapshot::SameName(StringView a, StringView b) const {
+    if (!ignore_case_) return a == b;
+    if (a.Length() != b.Length()) return false;
+    for (usize i = 0; i < a.Length(); ++i) {
+        const char x = a[i] >= 'a' && a[i] <= 'z' ? static_cast<char>(a[i] - 'a' + 'A') : a[i];
+        const char y = b[i] >= 'a' && b[i] <= 'z' ? static_cast<char>(b[i] - 'a' + 'A') : b[i];
+        if (x != y) return false;
+    }
+    return true;
+}
+
 void EnvironmentSnapshot::Add(StringView name, StringView value) {
     for (usize i = 0; i < vars_.Size(); ++i) {
-        if (vars_[i].name.View() == name) {
+        if (SameName(vars_[i].name.View(), name)) {
             vars_[i].value = String<HeapAllocator>(HeapAllocator::Default(), value);
             return;
         }
@@ -22,13 +33,13 @@ void EnvironmentSnapshot::Add(StringView name, StringView value) {
 
 const String<HeapAllocator>* EnvironmentSnapshot::Find(StringView name) const {
     for (usize i = 0; i < vars_.Size(); ++i) {
-        if (vars_[i].name.View() == name) return &vars_[i].value;
+        if (SameName(vars_[i].name.View(), name)) return &vars_[i].value;
     }
     return nullptr;
 }
 
 EnvironmentSnapshot EnvironmentSnapshot::Capture() {
-    EnvironmentSnapshot snapshot;
+    EnvironmentSnapshot snapshot(os::EnvironmentNamesIgnoreCase());
     for (usize i = 0;; ++i) {
         char stack_entry[1024];
         usize length = 0;

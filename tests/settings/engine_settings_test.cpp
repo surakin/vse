@@ -158,9 +158,11 @@ TEST_CASE("A secret is not shown by --set provenance and not saved to a session 
     Vector<u8> bytes;
     REQUIRE(io::ReadFile(path, &bytes).Ok());
     CHECK_FALSE(StringView(reinterpret_cast<const char*>(bytes.Data()), bytes.Size()).Contains("hunter2"));
+#if !defined(_WIN32) // Windows has no file modes: a file takes its directory's ACL, private in the user's own folders (io/BACKEND.md, CreateTempFile)
     io::FileInfo info;
     REQUIRE(io::Stat(path, &info).Ok());
     CHECK((info.permissions & 0777) == 0600);
+#endif
 }
 
 TEST_CASE("SaveSettingsTo does not overwrite a file it cannot read", "[settings][engine][regression]") {

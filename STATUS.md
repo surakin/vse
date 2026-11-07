@@ -793,3 +793,15 @@ crash tests: included)`; only the two known Wayland `renderer_demo` tests fail.
 `-Wall -Wextra` equivalent: five warnings fixed (a `[[gnu::noinline]]` cl does not know, code after `SKIP` and after a fault that does not return, two
 helpers unused on Windows). Full suites: MSVC 862 of 862, non-unity 862 of 862, `windows-clang-cl` 573 of 573. **Next: Day 157 (settings on Windows: the
 registry store).**
+
+Phase 13 **Day 157 (2026-11-07, Windows PC): settings on Windows.** `settings::RegistryConfigStore` (`settings/windows/registry_store.h`) keeps settings
+under a registry key (`HKCU\Software\<app>` by default): sections are subkeys, every value is a `REG_SZ` of its canonical text (decided today: a typed
+mapping cannot round-trip enums), per-key writes, and a watch thread that tells a listener about other writers' changes. Group policy is a new top layer,
+`LayerRole::Policy` (`HKCU` then `HKLM` `Software\Policies\<name>`, read-only), and `Settings::Set` refuses an enforced setting (`SetError::Enforced`).
+Windows environment names ignore case (`os::EnvironmentNamesIgnoreCase`). `config_access_check` reports registry reads outside `settings/`. The default
+user store stays the file on every platform. `docgen` builds on Windows: the reference generated there matches Linux's byte for byte, `ctest -L docs` runs
+`docs_check`, `docs_links` and `docs_lint` (the samples come on Day 161). The full runs also found the Windows test guard counting unrelated processes
+whose parent id was reused (fixed, with a test). Runs: `ran 545 of 1125 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`,
+asan `ran 318 of 1125`; MSVC 1125 of 1125, `windows-clang-cl` 708 of 708, non-unity 1125 of 1125; docs 3 of 3. Review: 8 findings, 5 fixed, 3 declined.
+Not done: the demos' `--settings` round trip on Windows (Day 161, with the demos). Linux: pending until the phase close. **Next: Day 158 (the Win32
+window).**

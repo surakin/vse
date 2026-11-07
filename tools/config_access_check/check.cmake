@@ -1,6 +1,6 @@
 # Configuration access gate (Phase 11 Day 139). Run as: cmake -DROOT=<tree> [-DALLOWLIST=<file>] [-DDIRS="engine;game"] -P check.cmake
 # Anything a user can configure is a setting registered with settings::Registry and read through Setting<T> or Settings: code under engine/ and game/ may
-# not call `getenv` or parse a `--flag` of its own. A file may only do so if it is in the allow list with a reason (code that runs before any Settings can
+# not call `getenv`, read the Windows registry or parse a `--flag` of its own. A file may only do so if it is in the allow list with a reason (code that runs before any Settings can
 # exist, such as the window host reading ENGINE_WINDOW_BACKEND, the death-test child protocol, and a demo's launch-only options). Comments are ignored. A
 # stale allow-list entry (it no longer exempts anything) fails the gate, so the list only shrinks.
 cmake_minimum_required(VERSION 3.20)
@@ -65,6 +65,9 @@ set(allow_used "")
 # getenv and, on Windows (Phase 13 Day 150), its Win32 and C runtime forms and the command-line readers.
 set(env_re "(^|[^A-Za-z0-9_.>])(std::)?(getenv|secure_getenv|GetEnvironmentVariableW|GetEnvironmentVariableA|_wgetenv|_dupenv_s|_wdupenv_s|getenv_s|_wgetenv_s|GetCommandLineW|GetCommandLineA|CommandLineToArgvW)[ \t]*\\(")
 set(flag_re "\"--[a-z][a-z0-9-]*")
+# The Windows registry (Phase 13 Day 157): reading or writing a value there is configuration too; the settings system's registry store
+# (engine/foundation/settings/windows/) is the one place for it.
+set(reg_re "(^|[^A-Za-z0-9_])(RegGetValue[AW]?|RegQueryValueEx[AW]?|RegSetValueEx[AW]?|RegOpenKeyEx[AW]?|RegCreateKeyEx[AW]?|RegEnumValue[AW]?|SHGetValue[AW]?|SHRegGetValue[AW]?)[ \t]*\\(")
 
 set(files "")
 foreach(dir IN LISTS DIRS)
@@ -114,7 +117,7 @@ foreach(f IN LISTS files)
       endif()
     endif()
     set(hit FALSE)
-    if(code MATCHES "${env_re}" OR code MATCHES "${flag_re}")
+    if(code MATCHES "${env_re}" OR code MATCHES "${flag_re}" OR code MATCHES "${reg_re}")
       set(hit TRUE)
     endif()
     if(NOT hit)

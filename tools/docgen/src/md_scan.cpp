@@ -28,12 +28,12 @@ public:
         usize last_body_end = 0;
         // Consecutive prose lines form a paragraph that is scanned as one piece, so
         // code spans and [[references]] may wrap across lines.
-        constexpr usize kNone = ~usize{0};
-        usize para_start = kNone, para_end = 0;
+        constexpr usize kNoParagraph = ~usize{0};
+        usize para_start = kNoParagraph, para_end = 0;
         u32 para_line = 0;
         auto flush = [&]() {
-            if (para_start != kNone) Inline(StringView(text.Data() + para_start, para_end - para_start), para_line);
-            para_start = kNone;
+            if (para_start != kNoParagraph) Inline(StringView(text.Data() + para_start, para_end - para_start), para_line);
+            para_start = kNoParagraph;
         };
         while (pos < text.Length()) {
             usize eol = pos;
@@ -74,7 +74,7 @@ public:
                 } else if (Structural(line, line_no)) {
                     flush();
                 } else {
-                    if (para_start == kNone) {
+                    if (para_start == kNoParagraph) {
                         para_start = pos;
                         para_line = line_no;
                     }

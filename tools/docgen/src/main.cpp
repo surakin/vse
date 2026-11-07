@@ -3,7 +3,6 @@
 
 #include <climits>
 #include <cstdlib>
-#include <sys/stat.h>
 
 #include "doc_parser.h"
 #include "lint.h"

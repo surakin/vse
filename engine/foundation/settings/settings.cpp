@@ -8,6 +8,7 @@
 #include "io/file_system.h"
 #include "log/assert.h"
 #include "settings/file_store.h"
+#include "settings/policy_layers.h"
 
 namespace engine_placeholder::settings {
 
@@ -141,6 +142,7 @@ LoadReport Settings::Load(const LoadOptions& options) {
             stack_.AddLayer("command line", LayerRole::CommandLine, ConfigStorePtr(static_cast<UniquePtr<CommandLineSource>&&>(cli)));
             cli_from_load_ = true;
         }
+        if (options.use_policy) detail::AddPolicyLayers(options, &stack_);
     }
     LoadReport report = LoadFromLayers();
     for (usize i = 0; i < command_line_.settings_files.Size(); ++i) { // a file the user named must exist
@@ -336,6 +338,15 @@ SetResult Settings::DoApply(const ChangeRequest* requests, usize count, ApplyFn 
         if (desc->capability != nullptr && capability_ != nullptr && !(checked == desc->default_value) && !capability_(capability_user_, desc->capability)) {
             result.error = SetError::Unsupported;
             return result;
+        }
+        for (usize layer = 0; layer < stack_.Size(); ++layer) { // an administrator's value is not the program's to change (Windows group policy)
+            StoredValue enforced;
+            Value usable;
+            if (stack_.Role(layer) == LayerRole::Policy && stack_.State(layer) == LayerState::Loaded &&
+                stack_.Store(layer).Get(registry_->KeyOf(requests[i].id).View(), &enforced).Ok() && FromStored(*desc, enforced, &usable) == ValueError::None) {
+                result.error = SetError::Enforced;
+                return result;
+            }
         }
         bool merged = false;
         for (usize k = 0; k < pending.Size(); ++k) { // the same setting twice in a batch: the last one wins

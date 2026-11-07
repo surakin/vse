@@ -3,7 +3,8 @@
 //! Layered sources: several stores that read as one, lowest to highest, with a way to ask where a value came from.
 //!
 //! The order, lowest first: the registry's defaults, then the layers by role: [[settings::LayerRole::System]] (shipped defaults),
-//! `User` (the user's file, the one that is written), `Project`, `Custom` (a file named by `--settings`), `Environment`, `CommandLine`.
+//! `User` (the user's file, the one that is written), `Project`, `Custom` (a file named by `--settings`), `Environment`, `CommandLine`,
+//! and above them all `Policy` (what an administrator enforces: Windows group policy).
 //! A value set in a higher layer hides the lower ones; a value missing or unusable in a layer falls through to the next lower one.
 
 #include "containers/unique_ptr.h"
@@ -22,9 +23,10 @@ enum class LayerRole : u8 {
     Custom,      ///< A file named on the command line (`--settings FILE`).
     Environment, ///< Environment variables.
     CommandLine, ///< `--set` and the flag aliases.
+    Policy,      ///< Values an administrator enforces (Windows: group-policy registry keys); read-only, and above every other layer.
 };
 
-/// Returns a role's name (`system`, `user`, `project`, `custom`, `environment`, `command-line`).
+/// Returns a role's name (`system`, `user`, `project`, `custom`, `environment`, `command-line`, `policy`).
 ///
 /// Returns: a static string.
 /// Fails: never.

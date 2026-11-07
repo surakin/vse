@@ -35,6 +35,7 @@ const char* LayerRoleName(LayerRole role) {
     case LayerRole::Custom: return "custom";
     case LayerRole::Environment: return "environment";
     case LayerRole::CommandLine: return "command-line";
+    case LayerRole::Policy: return "policy";
     }
     return "unknown";
 }

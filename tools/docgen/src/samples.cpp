@@ -1,5 +1,6 @@
 #include "samples.h"
 
+#if !defined(_WIN32) // the runner starts the compiler and the samples with posix_spawn; on Windows it comes with the libraries (Phase 13 Day 161)
 #include <fcntl.h>
 #include <signal.h>
 #include <spawn.h>
@@ -7,6 +8,7 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
+#endif
 
 #include <cerrno>
 #include <cstdio>
@@ -16,7 +18,9 @@
 #include "io/file.h"
 #include "source_file.h"
 
+#if !defined(_WIN32)
 extern char** environ;
+#endif
 
 namespace docgen {
 
@@ -54,6 +58,7 @@ bool BlankBetween(StringView text, const Vector<usize, ArenaAllocator>& starts, 
     return true;
 }
 
+#if !defined(_WIN32)
 double Now() {
     timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -65,6 +70,8 @@ StringView Num(ArenaAllocator& arena, u32 n) {
     sb.AppendUInt(n);
     return sb.View();
 }
+
+#endif // !_WIN32
 
 // The code with `indent` leading columns removed from every line.
 StringView Dedent(StringView code, u32 indent, ArenaAllocator& arena) {
@@ -82,6 +89,7 @@ StringView Dedent(StringView code, u32 indent, ArenaAllocator& arena) {
     return sb.View();
 }
 
+#if !defined(_WIN32)
 StringView ReadSmall(StringView path, ArenaAllocator& arena) {
     // Captured output can be huge (a template error cascade): the first 1 MiB is kept, the rest dropped.
     constexpr usize kLimit = usize{1} << 20;
@@ -444,6 +452,7 @@ private:
     Vector<Task*, ArenaAllocator> tasks_;
     StringView scratch_;
 };
+#endif // !_WIN32
 
 } // namespace
 
@@ -499,6 +508,7 @@ void ExtractSamples(StringView path, StringView text, const MdDoc& doc, ArenaAll
     }
 }
 
+#if !defined(_WIN32)
 void RequestStop() { g_stop = 1; }
 
 bool RunSamples(const SampleOptions& options, const Vector<Sample, ArenaAllocator>& samples, ArenaAllocator& arena,
@@ -506,6 +516,16 @@ bool RunSamples(const SampleOptions& options, const Vector<Sample, ArenaAllocato
     Runner r(options, arena, out, stats);
     return r.Run(samples);
 }
+#else
+void RequestStop() {}
+
+// Phase 13: the samples link the renderer, the RHI and the platform layer, which reach Windows on Days 158-161; the runner (a Windows
+// process helper and the cl command line) comes with them, on Day 161 (KNOWN-ISSUES.md).
+bool RunSamples(const SampleOptions&, const Vector<Sample, ArenaAllocator>&, ArenaAllocator&, Vector<FileDiag, ArenaAllocator>&, SampleStats&) {
+    std::fprintf(stderr, "docgen samples: not available on Windows yet (Phase 13 Day 161 brings the runner with the libraries the samples link)\n");
+    return false;
+}
+#endif
 
 StringView AbsoluteKeepingLinks(StringView path, ArenaAllocator& arena) {
     if (path.Length() > 0 && path.Data()[0] == '/') {

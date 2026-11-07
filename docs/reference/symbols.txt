@@ -969,40 +969,42 @@ settings::RegisterEngineSettings(Registry*)	function	foundation/settings	setting
 settings::RegisterLogSettings(Registry*)	function	foundation/settings	settings-registerlogsettings-registry-star	foundation-settings.md	engine/foundation/settings/engine_settings.h:35
 settings::AttachLogSettings(Settings*)	function	foundation/settings	settings-attachlogsettings-settings-star	foundation-settings.md	engine/foundation/settings/engine_settings.h:43
 settings::EnvironmentSnapshot	class	foundation/settings	settings-environmentsnapshot	foundation-settings.md	engine/foundation/settings/env_source.h:13
-settings::EnvironmentSnapshot::Var	struct	foundation/settings	settings-environmentsnapshot-var	foundation-settings.md	engine/foundation/settings/env_source.h:16
-settings::EnvironmentSnapshot::Var::name	variable	foundation/settings	settings-environmentsnapshot-var-name	foundation-settings.md	engine/foundation/settings/env_source.h:18
-settings::EnvironmentSnapshot::Var::value	variable	foundation/settings	settings-environmentsnapshot-var-value	foundation-settings.md	engine/foundation/settings/env_source.h:20
-settings::EnvironmentSnapshot::Add(StringView,StringView)	function	foundation/settings	settings-environmentsnapshot-add-stringview-stringview	foundation-settings.md	engine/foundation/settings/env_source.h:23
-settings::EnvironmentSnapshot::Find(StringView) const	function	foundation/settings	settings-environmentsnapshot-find-stringview-const	foundation-settings.md	engine/foundation/settings/env_source.h:25
-settings::EnvironmentSnapshot::Capture()	function	foundation/settings	settings-environmentsnapshot-capture	foundation-settings.md	engine/foundation/settings/env_source.h:29
-settings::EnvironmentSnapshot::Size() const	function	foundation/settings	settings-environmentsnapshot-size-const	foundation-settings.md	engine/foundation/settings/env_source.h:31
-settings::kMaxEnvNameBytes	variable	foundation/settings	settings-kmaxenvnamebytes	foundation-settings.md	engine/foundation/settings/env_source.h:38
-settings::EnvironmentVariableFor(const Key&,char*,usize)	function	foundation/settings	settings-environmentvariablefor-const-key-amp-char-star-usize	foundation-settings.md	engine/foundation/settings/env_source.h:45
-settings::TextEntryStore	class	foundation/settings	settings-textentrystore	foundation-settings.md	engine/foundation/settings/env_source.h:51
-settings::TextEntryStore::Capabilities() const	function	foundation/settings	settings-textentrystore-capabilities-const	foundation-settings.md	engine/foundation/settings/env_source.h:53
-settings::TextEntryStore::Load()	function	foundation/settings	settings-textentrystore-load	foundation-settings.md	engine/foundation/settings/env_source.h:54
-settings::TextEntryStore::Get(StringView,StoredValue*)	function	foundation/settings	settings-textentrystore-get-stringview-storedvalue-star	foundation-settings.md	engine/foundation/settings/env_source.h:56
-settings::TextEntryStore::Set(StringView,const StoredValue&)	function	foundation/settings	settings-textentrystore-set-stringview-const-storedvalue-amp	foundation-settings.md	engine/foundation/settings/env_source.h:57
-settings::TextEntryStore::Remove(StringView)	function	foundation/settings	settings-textentrystore-remove-stringview	foundation-settings.md	engine/foundation/settings/env_source.h:58
-settings::TextEntryStore::Enumerate(StringView,Vector<Key>*)	function	foundation/settings	settings-textentrystore-enumerate-stringview-vector-lt-key-gt-star	foundation-settings.md	engine/foundation/settings/env_source.h:59
-settings::TextEntryStore::Commit(const CommitOptions&)	function	foundation/settings	settings-textentrystore-commit-const-commitoptions-amp	foundation-settings.md	engine/foundation/settings/env_source.h:60
-settings::TextEntryStore::Origin(StringView,char*,usize) const	function	foundation/settings	settings-textentrystore-origin-stringview-char-star-usize-const	foundation-settings.md	engine/foundation/settings/env_source.h:61
-settings::EnvironmentSource	class	foundation/settings	settings-environmentsource	foundation-settings.md	engine/foundation/settings/env_source.h:82
-settings::EnvironmentSource::EnvironmentSource(const Registry&,const EnvironmentSnapshot&)	function	foundation/settings	settings-environmentsource-environmentsource-const-registry-amp-const-environmentsnapshot-amp	foundation-settings.md	engine/foundation/settings/env_source.h:85
-settings::EnvironmentSource::Describe(char*,usize) const	function	foundation/settings	settings-environmentsource-describe-char-star-usize-const	foundation-settings.md	engine/foundation/settings/env_source.h:87
-settings::CommandLineResult	struct	foundation/settings	settings-commandlineresult	foundation-settings.md	engine/foundation/settings/env_source.h:93
-settings::CommandLineResult::rest	variable	foundation/settings	settings-commandlineresult-rest	foundation-settings.md	engine/foundation/settings/env_source.h:95
-settings::CommandLineResult::errors	variable	foundation/settings	settings-commandlineresult-errors	foundation-settings.md	engine/foundation/settings/env_source.h:97
-settings::CommandLineResult::settings_files	variable	foundation/settings	settings-commandlineresult-settings-files	foundation-settings.md	engine/foundation/settings/env_source.h:99
-settings::CommandLineResult::list_settings	variable	foundation/settings	settings-commandlineresult-list-settings	foundation-settings.md	engine/foundation/settings/env_source.h:101
-settings::CommandLineResult::help	variable	foundation/settings	settings-commandlineresult-help	foundation-settings.md	engine/foundation/settings/env_source.h:103
-settings::CommandLineResult::save_settings	variable	foundation/settings	settings-commandlineresult-save-settings	foundation-settings.md	engine/foundation/settings/env_source.h:105
-settings::CommandLineResult::save_path	variable	foundation/settings	settings-commandlineresult-save-path	foundation-settings.md	engine/foundation/settings/env_source.h:107
-settings::CommandLineSource	class	foundation/settings	settings-commandlinesource	foundation-settings.md	engine/foundation/settings/env_source.h:117
-settings::CommandLineSource::CommandLineSource(const Registry&,int,const char* const*)	function	foundation/settings	settings-commandlinesource-commandlinesource-const-registry-amp-int-const-char-star-const-star	foundation-settings.md	engine/foundation/settings/env_source.h:124
-settings::CommandLineSource::Result() const	function	foundation/settings	settings-commandlinesource-result-const	foundation-settings.md	engine/foundation/settings/env_source.h:127
-settings::CommandLineSource::AddFromProgram(const Key&,StringView,StringView)	function	foundation/settings	settings-commandlinesource-addfromprogram-const-key-amp-stringview-stringview	foundation-settings.md	engine/foundation/settings/env_source.h:135
-settings::CommandLineSource::Describe(char*,usize) const	function	foundation/settings	settings-commandlinesource-describe-char-star-usize-const	foundation-settings.md	engine/foundation/settings/env_source.h:137
+settings::EnvironmentSnapshot::EnvironmentSnapshot(bool)	function	foundation/settings	settings-environmentsnapshot-environmentsnapshot-bool	foundation-settings.md	engine/foundation/settings/env_source.h:18
+settings::EnvironmentSnapshot::Var	struct	foundation/settings	settings-environmentsnapshot-var	foundation-settings.md	engine/foundation/settings/env_source.h:20
+settings::EnvironmentSnapshot::Var::name	variable	foundation/settings	settings-environmentsnapshot-var-name	foundation-settings.md	engine/foundation/settings/env_source.h:22
+settings::EnvironmentSnapshot::Var::value	variable	foundation/settings	settings-environmentsnapshot-var-value	foundation-settings.md	engine/foundation/settings/env_source.h:24
+settings::EnvironmentSnapshot::Add(StringView,StringView)	function	foundation/settings	settings-environmentsnapshot-add-stringview-stringview	foundation-settings.md	engine/foundation/settings/env_source.h:27
+settings::EnvironmentSnapshot::Find(StringView) const	function	foundation/settings	settings-environmentsnapshot-find-stringview-const	foundation-settings.md	engine/foundation/settings/env_source.h:29
+settings::EnvironmentSnapshot::Capture()	function	foundation/settings	settings-environmentsnapshot-capture	foundation-settings.md	engine/foundation/settings/env_source.h:33
+settings::EnvironmentSnapshot::Size() const	function	foundation/settings	settings-environmentsnapshot-size-const	foundation-settings.md	engine/foundation/settings/env_source.h:35
+settings::EnvironmentSnapshot::IgnoresCase() const	function	foundation/settings	settings-environmentsnapshot-ignorescase-const	foundation-settings.md	engine/foundation/settings/env_source.h:37
+settings::kMaxEnvNameBytes	variable	foundation/settings	settings-kmaxenvnamebytes	foundation-settings.md	engine/foundation/settings/env_source.h:46
+settings::EnvironmentVariableFor(const Key&,char*,usize)	function	foundation/settings	settings-environmentvariablefor-const-key-amp-char-star-usize	foundation-settings.md	engine/foundation/settings/env_source.h:53
+settings::TextEntryStore	class	foundation/settings	settings-textentrystore	foundation-settings.md	engine/foundation/settings/env_source.h:59
+settings::TextEntryStore::Capabilities() const	function	foundation/settings	settings-textentrystore-capabilities-const	foundation-settings.md	engine/foundation/settings/env_source.h:61
+settings::TextEntryStore::Load()	function	foundation/settings	settings-textentrystore-load	foundation-settings.md	engine/foundation/settings/env_source.h:62
+settings::TextEntryStore::Get(StringView,StoredValue*)	function	foundation/settings	settings-textentrystore-get-stringview-storedvalue-star	foundation-settings.md	engine/foundation/settings/env_source.h:64
+settings::TextEntryStore::Set(StringView,const StoredValue&)	function	foundation/settings	settings-textentrystore-set-stringview-const-storedvalue-amp	foundation-settings.md	engine/foundation/settings/env_source.h:65
+settings::TextEntryStore::Remove(StringView)	function	foundation/settings	settings-textentrystore-remove-stringview	foundation-settings.md	engine/foundation/settings/env_source.h:66
+settings::TextEntryStore::Enumerate(StringView,Vector<Key>*)	function	foundation/settings	settings-textentrystore-enumerate-stringview-vector-lt-key-gt-star	foundation-settings.md	engine/foundation/settings/env_source.h:67
+settings::TextEntryStore::Commit(const CommitOptions&)	function	foundation/settings	settings-textentrystore-commit-const-commitoptions-amp	foundation-settings.md	engine/foundation/settings/env_source.h:68
+settings::TextEntryStore::Origin(StringView,char*,usize) const	function	foundation/settings	settings-textentrystore-origin-stringview-char-star-usize-const	foundation-settings.md	engine/foundation/settings/env_source.h:69
+settings::EnvironmentSource	class	foundation/settings	settings-environmentsource	foundation-settings.md	engine/foundation/settings/env_source.h:90
+settings::EnvironmentSource::EnvironmentSource(const Registry&,const EnvironmentSnapshot&)	function	foundation/settings	settings-environmentsource-environmentsource-const-registry-amp-const-environmentsnapshot-amp	foundation-settings.md	engine/foundation/settings/env_source.h:93
+settings::EnvironmentSource::Describe(char*,usize) const	function	foundation/settings	settings-environmentsource-describe-char-star-usize-const	foundation-settings.md	engine/foundation/settings/env_source.h:95
+settings::CommandLineResult	struct	foundation/settings	settings-commandlineresult	foundation-settings.md	engine/foundation/settings/env_source.h:101
+settings::CommandLineResult::rest	variable	foundation/settings	settings-commandlineresult-rest	foundation-settings.md	engine/foundation/settings/env_source.h:103
+settings::CommandLineResult::errors	variable	foundation/settings	settings-commandlineresult-errors	foundation-settings.md	engine/foundation/settings/env_source.h:105
+settings::CommandLineResult::settings_files	variable	foundation/settings	settings-commandlineresult-settings-files	foundation-settings.md	engine/foundation/settings/env_source.h:107
+settings::CommandLineResult::list_settings	variable	foundation/settings	settings-commandlineresult-list-settings	foundation-settings.md	engine/foundation/settings/env_source.h:109
+settings::CommandLineResult::help	variable	foundation/settings	settings-commandlineresult-help	foundation-settings.md	engine/foundation/settings/env_source.h:111
+settings::CommandLineResult::save_settings	variable	foundation/settings	settings-commandlineresult-save-settings	foundation-settings.md	engine/foundation/settings/env_source.h:113
+settings::CommandLineResult::save_path	variable	foundation/settings	settings-commandlineresult-save-path	foundation-settings.md	engine/foundation/settings/env_source.h:115
+settings::CommandLineSource	class	foundation/settings	settings-commandlinesource	foundation-settings.md	engine/foundation/settings/env_source.h:125
+settings::CommandLineSource::CommandLineSource(const Registry&,int,const char* const*)	function	foundation/settings	settings-commandlinesource-commandlinesource-const-registry-amp-int-const-char-star-const-star	foundation-settings.md	engine/foundation/settings/env_source.h:132
+settings::CommandLineSource::Result() const	function	foundation/settings	settings-commandlinesource-result-const	foundation-settings.md	engine/foundation/settings/env_source.h:135
+settings::CommandLineSource::AddFromProgram(const Key&,StringView,StringView)	function	foundation/settings	settings-commandlinesource-addfromprogram-const-key-amp-stringview-stringview	foundation-settings.md	engine/foundation/settings/env_source.h:143
+settings::CommandLineSource::Describe(char*,usize) const	function	foundation/settings	settings-commandlinesource-describe-char-star-usize-const	foundation-settings.md	engine/foundation/settings/env_source.h:145
 settings::FileStoreOptions	struct	foundation/settings	settings-filestoreoptions	foundation-settings.md	engine/foundation/settings/file_store.h:12
 settings::FileStoreOptions::permissions	variable	foundation/settings	settings-filestoreoptions-permissions	foundation-settings.md	engine/foundation/settings/file_store.h:14
 settings::FileStoreOptions::create_directories	variable	foundation/settings	settings-filestoreoptions-create-directories	foundation-settings.md	engine/foundation/settings/file_store.h:16
@@ -1047,51 +1049,52 @@ settings::Key::Hash() const	function	foundation/settings	settings-key-hash-const
 settings::Key::operator==(const Key&) const	function	foundation/settings	settings-key-operator-eq-eq-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:70
 settings::Key::operator!=(const Key&) const	function	foundation/settings	settings-key-operator-not-eq-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:72
 settings::Key::operator<(const Key&) const	function	foundation/settings	settings-key-operator-lt-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:74
-settings::LayerRole	enum	foundation/settings	settings-layerrole	foundation-settings.md	engine/foundation/settings/layers.h:18
-settings::LayerRole::System	enumerator	foundation/settings	settings-layerrole-system	foundation-settings.md	engine/foundation/settings/layers.h:19
-settings::LayerRole::User	enumerator	foundation/settings	settings-layerrole-user	foundation-settings.md	engine/foundation/settings/layers.h:20
-settings::LayerRole::Project	enumerator	foundation/settings	settings-layerrole-project	foundation-settings.md	engine/foundation/settings/layers.h:21
-settings::LayerRole::Custom	enumerator	foundation/settings	settings-layerrole-custom	foundation-settings.md	engine/foundation/settings/layers.h:22
-settings::LayerRole::Environment	enumerator	foundation/settings	settings-layerrole-environment	foundation-settings.md	engine/foundation/settings/layers.h:23
-settings::LayerRole::CommandLine	enumerator	foundation/settings	settings-layerrole-commandline	foundation-settings.md	engine/foundation/settings/layers.h:24
-settings::LayerRoleName(LayerRole)	function	foundation/settings	settings-layerrolename-layerrole	foundation-settings.md	engine/foundation/settings/layers.h:32
-settings::LayerState	enum	foundation/settings	settings-layerstate	foundation-settings.md	engine/foundation/settings/layers.h:35
-settings::LayerState::NotLoaded	enumerator	foundation/settings	settings-layerstate-notloaded	foundation-settings.md	engine/foundation/settings/layers.h:36
-settings::LayerState::Loaded	enumerator	foundation/settings	settings-layerstate-loaded	foundation-settings.md	engine/foundation/settings/layers.h:37
-settings::LayerState::Missing	enumerator	foundation/settings	settings-layerstate-missing	foundation-settings.md	engine/foundation/settings/layers.h:38
-settings::LayerState::Damaged	enumerator	foundation/settings	settings-layerstate-damaged	foundation-settings.md	engine/foundation/settings/layers.h:39
-settings::LayerState::Failed	enumerator	foundation/settings	settings-layerstate-failed	foundation-settings.md	engine/foundation/settings/layers.h:40
-settings::LayerProblem	struct	foundation/settings	settings-layerproblem	foundation-settings.md	engine/foundation/settings/layers.h:46
-settings::LayerProblem::layer	variable	foundation/settings	settings-layerproblem-layer	foundation-settings.md	engine/foundation/settings/layers.h:48
-settings::LayerProblem::key	variable	foundation/settings	settings-layerproblem-key	foundation-settings.md	engine/foundation/settings/layers.h:50
-settings::LayerProblem::message	variable	foundation/settings	settings-layerproblem-message	foundation-settings.md	engine/foundation/settings/layers.h:52
-settings::Resolution	struct	foundation/settings	settings-resolution	foundation-settings.md	engine/foundation/settings/layers.h:58
-settings::Resolution::value	variable	foundation/settings	settings-resolution-value	foundation-settings.md	engine/foundation/settings/layers.h:60
-settings::Resolution::layer	variable	foundation/settings	settings-resolution-layer	foundation-settings.md	engine/foundation/settings/layers.h:62
-settings::Resolution::note	variable	foundation/settings	settings-resolution-note	foundation-settings.md	engine/foundation/settings/layers.h:64
-settings::Resolution::layer_name	variable	foundation/settings	settings-resolution-layer-name	foundation-settings.md	engine/foundation/settings/layers.h:66
-settings::Resolution::origin	variable	foundation/settings	settings-resolution-origin	foundation-settings.md	engine/foundation/settings/layers.h:68
-settings::LayerStack	class	foundation/settings	settings-layerstack	foundation-settings.md	engine/foundation/settings/layers.h:75
-settings::LayerStack::LayerStack()	function	foundation/settings	settings-layerstack-layerstack	foundation-settings.md	engine/foundation/settings/layers.h:78
-settings::LayerStack::~LayerStack()	function	foundation/settings	settings-layerstack-tilde-layerstack	foundation-settings.md	engine/foundation/settings/layers.h:80
-settings::LayerStack::LayerStack(const LayerStack&)	function	foundation/settings	settings-layerstack-layerstack-const-layerstack-amp	foundation-settings.md	engine/foundation/settings/layers.h:81
-settings::LayerStack::operator=(const LayerStack&)	function	foundation/settings	settings-layerstack-operator-eq-const-layerstack-amp	foundation-settings.md	engine/foundation/settings/layers.h:82
-settings::LayerStack::AddLayer(StringView,LayerRole,ConfigStorePtr)	function	foundation/settings	settings-layerstack-addlayer-stringview-layerrole-configstoreptr	foundation-settings.md	engine/foundation/settings/layers.h:90
-settings::LayerStack::Clear()	function	foundation/settings	settings-layerstack-clear	foundation-settings.md	engine/foundation/settings/layers.h:92
-settings::LayerStack::Size() const	function	foundation/settings	settings-layerstack-size-const	foundation-settings.md	engine/foundation/settings/layers.h:94
-settings::LayerStack::Store(usize)	function	foundation/settings	settings-layerstack-store-usize	foundation-settings.md	engine/foundation/settings/layers.h:96
-settings::LayerStack::Name(usize) const	function	foundation/settings	settings-layerstack-name-usize-const	foundation-settings.md	engine/foundation/settings/layers.h:98
-settings::LayerStack::Role(usize) const	function	foundation/settings	settings-layerstack-role-usize-const	foundation-settings.md	engine/foundation/settings/layers.h:100
-settings::LayerStack::State(usize) const	function	foundation/settings	settings-layerstack-state-usize-const	foundation-settings.md	engine/foundation/settings/layers.h:102
-settings::LayerStack::Find(LayerRole) const	function	foundation/settings	settings-layerstack-find-layerrole-const	foundation-settings.md	engine/foundation/settings/layers.h:104
-settings::LayerStack::LoadAll(Vector<LayerProblem>*)	function	foundation/settings	settings-layerstack-loadall-vector-lt-layerproblem-gt-star	foundation-settings.md	engine/foundation/settings/layers.h:109
-settings::LayerStack::Resolve(const Registry&,SettingId,Resolution*,Vector<LayerProblem>*)	function	foundation/settings	settings-layerstack-resolve-const-registry-amp-settingid-resolution-star-vector-lt-layerproblem-gt-star	foundation-settings.md	engine/foundation/settings/layers.h:118
-settings::LayerStack::ResolveBelow(const Registry&,SettingId,usize,Resolution*)	function	foundation/settings	settings-layerstack-resolvebelow-const-registry-amp-settingid-usize-resolution-star	foundation-settings.md	engine/foundation/settings/layers.h:121
-settings::LayerStack::WriteLayer() const	function	foundation/settings	settings-layerstack-writelayer-const	foundation-settings.md	engine/foundation/settings/layers.h:124
-settings::LayerStack::SetWriteLayer(usize)	function	foundation/settings	settings-layerstack-setwritelayer-usize	foundation-settings.md	engine/foundation/settings/layers.h:128
-settings::LayerStack::Set(const Registry&,SettingId,const Value&,bool)	function	foundation/settings	settings-layerstack-set-const-registry-amp-settingid-const-value-amp-bool	foundation-settings.md	engine/foundation/settings/layers.h:134
-settings::LayerStack::Unset(const Registry&,SettingId)	function	foundation/settings	settings-layerstack-unset-const-registry-amp-settingid	foundation-settings.md	engine/foundation/settings/layers.h:138
-settings::SuggestKey(const Registry&,StringView,Key*)	function	foundation/settings	settings-suggestkey-const-registry-amp-stringview-key-star	foundation-settings.md	engine/foundation/settings/layers.h:158
+settings::LayerRole	enum	foundation/settings	settings-layerrole	foundation-settings.md	engine/foundation/settings/layers.h:19
+settings::LayerRole::System	enumerator	foundation/settings	settings-layerrole-system	foundation-settings.md	engine/foundation/settings/layers.h:20
+settings::LayerRole::User	enumerator	foundation/settings	settings-layerrole-user	foundation-settings.md	engine/foundation/settings/layers.h:21
+settings::LayerRole::Project	enumerator	foundation/settings	settings-layerrole-project	foundation-settings.md	engine/foundation/settings/layers.h:22
+settings::LayerRole::Custom	enumerator	foundation/settings	settings-layerrole-custom	foundation-settings.md	engine/foundation/settings/layers.h:23
+settings::LayerRole::Environment	enumerator	foundation/settings	settings-layerrole-environment	foundation-settings.md	engine/foundation/settings/layers.h:24
+settings::LayerRole::CommandLine	enumerator	foundation/settings	settings-layerrole-commandline	foundation-settings.md	engine/foundation/settings/layers.h:25
+settings::LayerRole::Policy	enumerator	foundation/settings	settings-layerrole-policy	foundation-settings.md	engine/foundation/settings/layers.h:26
+settings::LayerRoleName(LayerRole)	function	foundation/settings	settings-layerrolename-layerrole	foundation-settings.md	engine/foundation/settings/layers.h:34
+settings::LayerState	enum	foundation/settings	settings-layerstate	foundation-settings.md	engine/foundation/settings/layers.h:37
+settings::LayerState::NotLoaded	enumerator	foundation/settings	settings-layerstate-notloaded	foundation-settings.md	engine/foundation/settings/layers.h:38
+settings::LayerState::Loaded	enumerator	foundation/settings	settings-layerstate-loaded	foundation-settings.md	engine/foundation/settings/layers.h:39
+settings::LayerState::Missing	enumerator	foundation/settings	settings-layerstate-missing	foundation-settings.md	engine/foundation/settings/layers.h:40
+settings::LayerState::Damaged	enumerator	foundation/settings	settings-layerstate-damaged	foundation-settings.md	engine/foundation/settings/layers.h:41
+settings::LayerState::Failed	enumerator	foundation/settings	settings-layerstate-failed	foundation-settings.md	engine/foundation/settings/layers.h:42
+settings::LayerProblem	struct	foundation/settings	settings-layerproblem	foundation-settings.md	engine/foundation/settings/layers.h:48
+settings::LayerProblem::layer	variable	foundation/settings	settings-layerproblem-layer	foundation-settings.md	engine/foundation/settings/layers.h:50
+settings::LayerProblem::key	variable	foundation/settings	settings-layerproblem-key	foundation-settings.md	engine/foundation/settings/layers.h:52
+settings::LayerProblem::message	variable	foundation/settings	settings-layerproblem-message	foundation-settings.md	engine/foundation/settings/layers.h:54
+settings::Resolution	struct	foundation/settings	settings-resolution	foundation-settings.md	engine/foundation/settings/layers.h:60
+settings::Resolution::value	variable	foundation/settings	settings-resolution-value	foundation-settings.md	engine/foundation/settings/layers.h:62
+settings::Resolution::layer	variable	foundation/settings	settings-resolution-layer	foundation-settings.md	engine/foundation/settings/layers.h:64
+settings::Resolution::note	variable	foundation/settings	settings-resolution-note	foundation-settings.md	engine/foundation/settings/layers.h:66
+settings::Resolution::layer_name	variable	foundation/settings	settings-resolution-layer-name	foundation-settings.md	engine/foundation/settings/layers.h:68
+settings::Resolution::origin	variable	foundation/settings	settings-resolution-origin	foundation-settings.md	engine/foundation/settings/layers.h:70
+settings::LayerStack	class	foundation/settings	settings-layerstack	foundation-settings.md	engine/foundation/settings/layers.h:77
+settings::LayerStack::LayerStack()	function	foundation/settings	settings-layerstack-layerstack	foundation-settings.md	engine/foundation/settings/layers.h:80
+settings::LayerStack::~LayerStack()	function	foundation/settings	settings-layerstack-tilde-layerstack	foundation-settings.md	engine/foundation/settings/layers.h:82
+settings::LayerStack::LayerStack(const LayerStack&)	function	foundation/settings	settings-layerstack-layerstack-const-layerstack-amp	foundation-settings.md	engine/foundation/settings/layers.h:83
+settings::LayerStack::operator=(const LayerStack&)	function	foundation/settings	settings-layerstack-operator-eq-const-layerstack-amp	foundation-settings.md	engine/foundation/settings/layers.h:84
+settings::LayerStack::AddLayer(StringView,LayerRole,ConfigStorePtr)	function	foundation/settings	settings-layerstack-addlayer-stringview-layerrole-configstoreptr	foundation-settings.md	engine/foundation/settings/layers.h:92
+settings::LayerStack::Clear()	function	foundation/settings	settings-layerstack-clear	foundation-settings.md	engine/foundation/settings/layers.h:94
+settings::LayerStack::Size() const	function	foundation/settings	settings-layerstack-size-const	foundation-settings.md	engine/foundation/settings/layers.h:96
+settings::LayerStack::Store(usize)	function	foundation/settings	settings-layerstack-store-usize	foundation-settings.md	engine/foundation/settings/layers.h:98
+settings::LayerStack::Name(usize) const	function	foundation/settings	settings-layerstack-name-usize-const	foundation-settings.md	engine/foundation/settings/layers.h:100
+settings::LayerStack::Role(usize) const	function	foundation/settings	settings-layerstack-role-usize-const	foundation-settings.md	engine/foundation/settings/layers.h:102
+settings::LayerStack::State(usize) const	function	foundation/settings	settings-layerstack-state-usize-const	foundation-settings.md	engine/foundation/settings/layers.h:104
+settings::LayerStack::Find(LayerRole) const	function	foundation/settings	settings-layerstack-find-layerrole-const	foundation-settings.md	engine/foundation/settings/layers.h:106
+settings::LayerStack::LoadAll(Vector<LayerProblem>*)	function	foundation/settings	settings-layerstack-loadall-vector-lt-layerproblem-gt-star	foundation-settings.md	engine/foundation/settings/layers.h:111
+settings::LayerStack::Resolve(const Registry&,SettingId,Resolution*,Vector<LayerProblem>*)	function	foundation/settings	settings-layerstack-resolve-const-registry-amp-settingid-resolution-star-vector-lt-layerproblem-gt-star	foundation-settings.md	engine/foundation/settings/layers.h:120
+settings::LayerStack::ResolveBelow(const Registry&,SettingId,usize,Resolution*)	function	foundation/settings	settings-layerstack-resolvebelow-const-registry-amp-settingid-usize-resolution-star	foundation-settings.md	engine/foundation/settings/layers.h:123
+settings::LayerStack::WriteLayer() const	function	foundation/settings	settings-layerstack-writelayer-const	foundation-settings.md	engine/foundation/settings/layers.h:126
+settings::LayerStack::SetWriteLayer(usize)	function	foundation/settings	settings-layerstack-setwritelayer-usize	foundation-settings.md	engine/foundation/settings/layers.h:130
+settings::LayerStack::Set(const Registry&,SettingId,const Value&,bool)	function	foundation/settings	settings-layerstack-set-const-registry-amp-settingid-const-value-amp-bool	foundation-settings.md	engine/foundation/settings/layers.h:136
+settings::LayerStack::Unset(const Registry&,SettingId)	function	foundation/settings	settings-layerstack-unset-const-registry-amp-settingid	foundation-settings.md	engine/foundation/settings/layers.h:140
+settings::SuggestKey(const Registry&,StringView,Key*)	function	foundation/settings	settings-suggestkey-const-registry-amp-stringview-key-star	foundation-settings.md	engine/foundation/settings/layers.h:160
 settings::MemoryBacking	class	foundation/settings	settings-memorybacking	foundation-settings.md	engine/foundation/settings/memory_store.h:19
 settings::MemoryBacking::Entry	struct	foundation/settings	settings-memorybacking-entry	foundation-settings.md	engine/foundation/settings/memory_store.h:22
 settings::MemoryBacking::Entry::key	variable	foundation/settings	settings-memorybacking-entry-key	foundation-settings.md	engine/foundation/settings/memory_store.h:24
@@ -1238,72 +1241,76 @@ settings::SetError::Unsupported	enumerator	foundation/settings	settings-seterror
 settings::SetError::Store	enumerator	foundation/settings	settings-seterror-store	foundation-settings.md	engine/foundation/settings/settings.h:76
 settings::SetError::ApplyFailed	enumerator	foundation/settings	settings-seterror-applyfailed	foundation-settings.md	engine/foundation/settings/settings.h:77
 settings::SetError::Reentrant	enumerator	foundation/settings	settings-seterror-reentrant	foundation-settings.md	engine/foundation/settings/settings.h:78
-settings::SetResult	struct	foundation/settings	settings-setresult	foundation-settings.md	engine/foundation/settings/settings.h:84
-settings::SetResult::error	variable	foundation/settings	settings-setresult-error	foundation-settings.md	engine/foundation/settings/settings.h:86
-settings::SetResult::value	variable	foundation/settings	settings-setresult-value	foundation-settings.md	engine/foundation/settings/settings.h:88
-settings::SetResult::store	variable	foundation/settings	settings-setresult-store	foundation-settings.md	engine/foundation/settings/settings.h:90
-settings::SetResult::changed	variable	foundation/settings	settings-setresult-changed	foundation-settings.md	engine/foundation/settings/settings.h:92
-settings::SetResult::Ok() const	function	foundation/settings	settings-setresult-ok-const	foundation-settings.md	engine/foundation/settings/settings.h:94
-settings::LoadOptions	struct	foundation/settings	settings-loadoptions	foundation-settings.md	engine/foundation/settings/settings.h:98
-settings::LoadOptions::app_name	variable	foundation/settings	settings-loadoptions-app-name	foundation-settings.md	engine/foundation/settings/settings.h:100
-settings::LoadOptions::user_file	variable	foundation/settings	settings-loadoptions-user-file	foundation-settings.md	engine/foundation/settings/settings.h:102
-settings::LoadOptions::system_file	variable	foundation/settings	settings-loadoptions-system-file	foundation-settings.md	engine/foundation/settings/settings.h:104
-settings::LoadOptions::project_file	variable	foundation/settings	settings-loadoptions-project-file	foundation-settings.md	engine/foundation/settings/settings.h:106
-settings::LoadOptions::shipped	variable	foundation/settings	settings-loadoptions-shipped	foundation-settings.md	engine/foundation/settings/settings.h:108
-settings::LoadOptions::shipped_count	variable	foundation/settings	settings-loadoptions-shipped-count	foundation-settings.md	engine/foundation/settings/settings.h:110
-settings::LoadOptions::environment	variable	foundation/settings	settings-loadoptions-environment	foundation-settings.md	engine/foundation/settings/settings.h:112
-settings::LoadOptions::use_environment	variable	foundation/settings	settings-loadoptions-use-environment	foundation-settings.md	engine/foundation/settings/settings.h:114
-settings::LoadOptions::argv	variable	foundation/settings	settings-loadoptions-argv	foundation-settings.md	engine/foundation/settings/settings.h:116
-settings::LoadOptions::argc	variable	foundation/settings	settings-loadoptions-argc	foundation-settings.md	engine/foundation/settings/settings.h:118
-settings::LoadOptions::minimal_writes	variable	foundation/settings	settings-loadoptions-minimal-writes	foundation-settings.md	engine/foundation/settings/settings.h:120
-settings::LoadReport	struct	foundation/settings	settings-loadreport	foundation-settings.md	engine/foundation/settings/settings.h:124
-settings::LoadReport::LayerInfo	struct	foundation/settings	settings-loadreport-layerinfo	foundation-settings.md	engine/foundation/settings/settings.h:126
-settings::LoadReport::LayerInfo::name	variable	foundation/settings	settings-loadreport-layerinfo-name	foundation-settings.md	engine/foundation/settings/settings.h:128
-settings::LoadReport::LayerInfo::state	variable	foundation/settings	settings-loadreport-layerinfo-state	foundation-settings.md	engine/foundation/settings/settings.h:130
-settings::LoadReport::layers	variable	foundation/settings	settings-loadreport-layers	foundation-settings.md	engine/foundation/settings/settings.h:133
-settings::LoadReport::problems	variable	foundation/settings	settings-loadreport-problems	foundation-settings.md	engine/foundation/settings/settings.h:135
-settings::LoadReport::notes	variable	foundation/settings	settings-loadreport-notes	foundation-settings.md	engine/foundation/settings/settings.h:138
-settings::LoadReport::Clean() const	function	foundation/settings	settings-loadreport-clean-const	foundation-settings.md	engine/foundation/settings/settings.h:140
-settings::SaveOptions	struct	foundation/settings	settings-saveoptions	foundation-settings.md	engine/foundation/settings/settings.h:144
-settings::SaveOptions::include_command_line	variable	foundation/settings	settings-saveoptions-include-command-line	foundation-settings.md	engine/foundation/settings/settings.h:147
-settings::SaveOptions::replace_damaged	variable	foundation/settings	settings-saveoptions-replace-damaged	foundation-settings.md	engine/foundation/settings/settings.h:149
-settings::SaveOptions::replace_newer	variable	foundation/settings	settings-saveoptions-replace-newer	foundation-settings.md	engine/foundation/settings/settings.h:151
-settings::SettingsSnapshot	struct	foundation/settings	settings-settingssnapshot	foundation-settings.md	engine/foundation/settings/settings.h:157
-settings::SettingsSnapshot::values	variable	foundation/settings	settings-settingssnapshot-values	foundation-settings.md	engine/foundation/settings/settings.h:160
-settings::SettingsSnapshot::generation	variable	foundation/settings	settings-settingssnapshot-generation	foundation-settings.md	engine/foundation/settings/settings.h:162
-settings::SettingsSnapshot::Get(SettingId) const	function	foundation/settings	settings-settingssnapshot-get-settingid-const	foundation-settings.md	engine/foundation/settings/settings.h:166
-settings::Settings	class	foundation/settings	settings-settings	foundation-settings.md	engine/foundation/settings/settings.h:177
-settings::Settings::Settings(Registry&)	function	foundation/settings	settings-settings-settings-registry-amp	foundation-settings.md	engine/foundation/settings/settings.h:180
-settings::Settings::~Settings()	function	foundation/settings	settings-settings-tilde-settings	foundation-settings.md	engine/foundation/settings/settings.h:182
-settings::Settings::Settings(const Settings&)	function	foundation/settings	settings-settings-settings-const-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:183
-settings::Settings::operator=(const Settings&)	function	foundation/settings	settings-settings-operator-eq-const-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:184
-settings::Settings::GetRegistry()	function	foundation/settings	settings-settings-getregistry	foundation-settings.md	engine/foundation/settings/settings.h:187
-settings::Settings::Load(const LoadOptions&)	function	foundation/settings	settings-settings-load-const-loadoptions-amp	foundation-settings.md	engine/foundation/settings/settings.h:195
-settings::Settings::LoadFromLayers()	function	foundation/settings	settings-settings-loadfromlayers	foundation-settings.md	engine/foundation/settings/settings.h:199
-settings::Settings::Migrations()	function	foundation/settings	settings-settings-migrations	foundation-settings.md	engine/foundation/settings/settings.h:202
-settings::Settings::UserFileIsNewer() const	function	foundation/settings	settings-settings-userfileisnewer-const	foundation-settings.md	engine/foundation/settings/settings.h:204
-settings::Settings::Layers()	function	foundation/settings	settings-settings-layers	foundation-settings.md	engine/foundation/settings/settings.h:207
-settings::Settings::CommandLine() const	function	foundation/settings	settings-settings-commandline-const	foundation-settings.md	engine/foundation/settings/settings.h:209
-settings::Settings::Set(SettingId,const Value&)	function	foundation/settings	settings-settings-set-settingid-const-value-amp	foundation-settings.md	engine/foundation/settings/settings.h:216
-settings::Settings::SetText(StringView,StringView)	function	foundation/settings	settings-settings-settext-stringview-stringview	foundation-settings.md	engine/foundation/settings/settings.h:218
-settings::Settings::SetFromCommandLine(StringView,StringView,StringView)	function	foundation/settings	settings-settings-setfromcommandline-stringview-stringview-stringview	foundation-settings.md	engine/foundation/settings/settings.h:227
-settings::Settings::Apply(const ChangeRequest*,usize,ApplyFn,void*)	function	foundation/settings	settings-settings-apply-const-changerequest-star-usize-applyfn-void-star	foundation-settings.md	engine/foundation/settings/settings.h:237
-settings::Settings::AddListener(StringView,SettingsListener,void*)	function	foundation/settings	settings-settings-addlistener-stringview-settingslistener-void-star	foundation-settings.md	engine/foundation/settings/settings.h:243
-settings::Settings::RemoveListener(u32)	function	foundation/settings	settings-settings-removelistener-u32	foundation-settings.md	engine/foundation/settings/settings.h:245
-settings::Settings::SetCapabilityCheck(CapabilityFn,void*)	function	foundation/settings	settings-settings-setcapabilitycheck-capabilityfn-void-star	foundation-settings.md	engine/foundation/settings/settings.h:247
-settings::Settings::Snapshot() const	function	foundation/settings	settings-settings-snapshot-const	foundation-settings.md	engine/foundation/settings/settings.h:250
-settings::Settings::Provenance(SettingId)	function	foundation/settings	settings-settings-provenance-settingid	foundation-settings.md	engine/foundation/settings/settings.h:252
-settings::Settings::Save(const SaveOptions&)	function	foundation/settings	settings-settings-save-const-saveoptions-amp	foundation-settings.md	engine/foundation/settings/settings.h:257
-settings::Settings::LastSaveStatus() const	function	foundation/settings	settings-settings-lastsavestatus-const	foundation-settings.md	engine/foundation/settings/settings.h:260
-settings::Settings::SaveIfChanged()	function	foundation/settings	settings-settings-saveifchanged	foundation-settings.md	engine/foundation/settings/settings.h:265
-settings::Settings::HasUnsavedChanges() const	function	foundation/settings	settings-settings-hasunsavedchanges-const	foundation-settings.md	engine/foundation/settings/settings.h:267
-settings::Settings::SetAutosaveQuietSeconds(double)	function	foundation/settings	settings-settings-setautosavequietseconds-double	foundation-settings.md	engine/foundation/settings/settings.h:269
-settings::Settings::PollAutosave()	function	foundation/settings	settings-settings-pollautosave	foundation-settings.md	engine/foundation/settings/settings.h:273
-settings::SaveOnExit	class	foundation/settings	settings-saveonexit	foundation-settings.md	engine/foundation/settings/settings.h:309
-settings::SaveOnExit::SaveOnExit(Settings&)	function	foundation/settings	settings-saveonexit-saveonexit-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:312
-settings::SaveOnExit::~SaveOnExit()	function	foundation/settings	settings-saveonexit-tilde-saveonexit	foundation-settings.md	engine/foundation/settings/settings.h:314
-settings::SaveOnExit::SaveOnExit(const SaveOnExit&)	function	foundation/settings	settings-saveonexit-saveonexit-const-saveonexit-amp	foundation-settings.md	engine/foundation/settings/settings.h:315
-settings::SaveOnExit::operator=(const SaveOnExit&)	function	foundation/settings	settings-saveonexit-operator-eq-const-saveonexit-amp	foundation-settings.md	engine/foundation/settings/settings.h:316
+settings::SetError::Enforced	enumerator	foundation/settings	settings-seterror-enforced	foundation-settings.md	engine/foundation/settings/settings.h:79
+settings::SetResult	struct	foundation/settings	settings-setresult	foundation-settings.md	engine/foundation/settings/settings.h:85
+settings::SetResult::error	variable	foundation/settings	settings-setresult-error	foundation-settings.md	engine/foundation/settings/settings.h:87
+settings::SetResult::value	variable	foundation/settings	settings-setresult-value	foundation-settings.md	engine/foundation/settings/settings.h:89
+settings::SetResult::store	variable	foundation/settings	settings-setresult-store	foundation-settings.md	engine/foundation/settings/settings.h:91
+settings::SetResult::changed	variable	foundation/settings	settings-setresult-changed	foundation-settings.md	engine/foundation/settings/settings.h:93
+settings::SetResult::Ok() const	function	foundation/settings	settings-setresult-ok-const	foundation-settings.md	engine/foundation/settings/settings.h:95
+settings::LoadOptions	struct	foundation/settings	settings-loadoptions	foundation-settings.md	engine/foundation/settings/settings.h:99
+settings::LoadOptions::app_name	variable	foundation/settings	settings-loadoptions-app-name	foundation-settings.md	engine/foundation/settings/settings.h:101
+settings::LoadOptions::user_file	variable	foundation/settings	settings-loadoptions-user-file	foundation-settings.md	engine/foundation/settings/settings.h:103
+settings::LoadOptions::system_file	variable	foundation/settings	settings-loadoptions-system-file	foundation-settings.md	engine/foundation/settings/settings.h:105
+settings::LoadOptions::project_file	variable	foundation/settings	settings-loadoptions-project-file	foundation-settings.md	engine/foundation/settings/settings.h:107
+settings::LoadOptions::shipped	variable	foundation/settings	settings-loadoptions-shipped	foundation-settings.md	engine/foundation/settings/settings.h:109
+settings::LoadOptions::shipped_count	variable	foundation/settings	settings-loadoptions-shipped-count	foundation-settings.md	engine/foundation/settings/settings.h:111
+settings::LoadOptions::environment	variable	foundation/settings	settings-loadoptions-environment	foundation-settings.md	engine/foundation/settings/settings.h:113
+settings::LoadOptions::use_environment	variable	foundation/settings	settings-loadoptions-use-environment	foundation-settings.md	engine/foundation/settings/settings.h:115
+settings::LoadOptions::argv	variable	foundation/settings	settings-loadoptions-argv	foundation-settings.md	engine/foundation/settings/settings.h:117
+settings::LoadOptions::argc	variable	foundation/settings	settings-loadoptions-argc	foundation-settings.md	engine/foundation/settings/settings.h:119
+settings::LoadOptions::minimal_writes	variable	foundation/settings	settings-loadoptions-minimal-writes	foundation-settings.md	engine/foundation/settings/settings.h:121
+settings::LoadOptions::use_policy	variable	foundation/settings	settings-loadoptions-use-policy	foundation-settings.md	engine/foundation/settings/settings.h:124
+settings::LoadOptions::policy_name	variable	foundation/settings	settings-loadoptions-policy-name	foundation-settings.md	engine/foundation/settings/settings.h:126
+settings::LoadOptions::policy_path	variable	foundation/settings	settings-loadoptions-policy-path	foundation-settings.md	engine/foundation/settings/settings.h:128
+settings::LoadReport	struct	foundation/settings	settings-loadreport	foundation-settings.md	engine/foundation/settings/settings.h:132
+settings::LoadReport::LayerInfo	struct	foundation/settings	settings-loadreport-layerinfo	foundation-settings.md	engine/foundation/settings/settings.h:134
+settings::LoadReport::LayerInfo::name	variable	foundation/settings	settings-loadreport-layerinfo-name	foundation-settings.md	engine/foundation/settings/settings.h:136
+settings::LoadReport::LayerInfo::state	variable	foundation/settings	settings-loadreport-layerinfo-state	foundation-settings.md	engine/foundation/settings/settings.h:138
+settings::LoadReport::layers	variable	foundation/settings	settings-loadreport-layers	foundation-settings.md	engine/foundation/settings/settings.h:141
+settings::LoadReport::problems	variable	foundation/settings	settings-loadreport-problems	foundation-settings.md	engine/foundation/settings/settings.h:143
+settings::LoadReport::notes	variable	foundation/settings	settings-loadreport-notes	foundation-settings.md	engine/foundation/settings/settings.h:146
+settings::LoadReport::Clean() const	function	foundation/settings	settings-loadreport-clean-const	foundation-settings.md	engine/foundation/settings/settings.h:148
+settings::SaveOptions	struct	foundation/settings	settings-saveoptions	foundation-settings.md	engine/foundation/settings/settings.h:152
+settings::SaveOptions::include_command_line	variable	foundation/settings	settings-saveoptions-include-command-line	foundation-settings.md	engine/foundation/settings/settings.h:155
+settings::SaveOptions::replace_damaged	variable	foundation/settings	settings-saveoptions-replace-damaged	foundation-settings.md	engine/foundation/settings/settings.h:157
+settings::SaveOptions::replace_newer	variable	foundation/settings	settings-saveoptions-replace-newer	foundation-settings.md	engine/foundation/settings/settings.h:159
+settings::SettingsSnapshot	struct	foundation/settings	settings-settingssnapshot	foundation-settings.md	engine/foundation/settings/settings.h:165
+settings::SettingsSnapshot::values	variable	foundation/settings	settings-settingssnapshot-values	foundation-settings.md	engine/foundation/settings/settings.h:168
+settings::SettingsSnapshot::generation	variable	foundation/settings	settings-settingssnapshot-generation	foundation-settings.md	engine/foundation/settings/settings.h:170
+settings::SettingsSnapshot::Get(SettingId) const	function	foundation/settings	settings-settingssnapshot-get-settingid-const	foundation-settings.md	engine/foundation/settings/settings.h:174
+settings::Settings	class	foundation/settings	settings-settings	foundation-settings.md	engine/foundation/settings/settings.h:185
+settings::Settings::Settings(Registry&)	function	foundation/settings	settings-settings-settings-registry-amp	foundation-settings.md	engine/foundation/settings/settings.h:188
+settings::Settings::~Settings()	function	foundation/settings	settings-settings-tilde-settings	foundation-settings.md	engine/foundation/settings/settings.h:190
+settings::Settings::Settings(const Settings&)	function	foundation/settings	settings-settings-settings-const-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:191
+settings::Settings::operator=(const Settings&)	function	foundation/settings	settings-settings-operator-eq-const-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:192
+settings::Settings::GetRegistry()	function	foundation/settings	settings-settings-getregistry	foundation-settings.md	engine/foundation/settings/settings.h:195
+settings::Settings::Load(const LoadOptions&)	function	foundation/settings	settings-settings-load-const-loadoptions-amp	foundation-settings.md	engine/foundation/settings/settings.h:203
+settings::Settings::LoadFromLayers()	function	foundation/settings	settings-settings-loadfromlayers	foundation-settings.md	engine/foundation/settings/settings.h:207
+settings::Settings::Migrations()	function	foundation/settings	settings-settings-migrations	foundation-settings.md	engine/foundation/settings/settings.h:210
+settings::Settings::UserFileIsNewer() const	function	foundation/settings	settings-settings-userfileisnewer-const	foundation-settings.md	engine/foundation/settings/settings.h:212
+settings::Settings::Layers()	function	foundation/settings	settings-settings-layers	foundation-settings.md	engine/foundation/settings/settings.h:215
+settings::Settings::CommandLine() const	function	foundation/settings	settings-settings-commandline-const	foundation-settings.md	engine/foundation/settings/settings.h:217
+settings::Settings::Set(SettingId,const Value&)	function	foundation/settings	settings-settings-set-settingid-const-value-amp	foundation-settings.md	engine/foundation/settings/settings.h:224
+settings::Settings::SetText(StringView,StringView)	function	foundation/settings	settings-settings-settext-stringview-stringview	foundation-settings.md	engine/foundation/settings/settings.h:226
+settings::Settings::SetFromCommandLine(StringView,StringView,StringView)	function	foundation/settings	settings-settings-setfromcommandline-stringview-stringview-stringview	foundation-settings.md	engine/foundation/settings/settings.h:235
+settings::Settings::Apply(const ChangeRequest*,usize,ApplyFn,void*)	function	foundation/settings	settings-settings-apply-const-changerequest-star-usize-applyfn-void-star	foundation-settings.md	engine/foundation/settings/settings.h:245
+settings::Settings::AddListener(StringView,SettingsListener,void*)	function	foundation/settings	settings-settings-addlistener-stringview-settingslistener-void-star	foundation-settings.md	engine/foundation/settings/settings.h:251
+settings::Settings::RemoveListener(u32)	function	foundation/settings	settings-settings-removelistener-u32	foundation-settings.md	engine/foundation/settings/settings.h:253
+settings::Settings::SetCapabilityCheck(CapabilityFn,void*)	function	foundation/settings	settings-settings-setcapabilitycheck-capabilityfn-void-star	foundation-settings.md	engine/foundation/settings/settings.h:255
+settings::Settings::Snapshot() const	function	foundation/settings	settings-settings-snapshot-const	foundation-settings.md	engine/foundation/settings/settings.h:258
+settings::Settings::Provenance(SettingId)	function	foundation/settings	settings-settings-provenance-settingid	foundation-settings.md	engine/foundation/settings/settings.h:260
+settings::Settings::Save(const SaveOptions&)	function	foundation/settings	settings-settings-save-const-saveoptions-amp	foundation-settings.md	engine/foundation/settings/settings.h:265
+settings::Settings::LastSaveStatus() const	function	foundation/settings	settings-settings-lastsavestatus-const	foundation-settings.md	engine/foundation/settings/settings.h:268
+settings::Settings::SaveIfChanged()	function	foundation/settings	settings-settings-saveifchanged	foundation-settings.md	engine/foundation/settings/settings.h:273
+settings::Settings::HasUnsavedChanges() const	function	foundation/settings	settings-settings-hasunsavedchanges-const	foundation-settings.md	engine/foundation/settings/settings.h:275
+settings::Settings::SetAutosaveQuietSeconds(double)	function	foundation/settings	settings-settings-setautosavequietseconds-double	foundation-settings.md	engine/foundation/settings/settings.h:277
+settings::Settings::PollAutosave()	function	foundation/settings	settings-settings-pollautosave	foundation-settings.md	engine/foundation/settings/settings.h:281
+settings::SaveOnExit	class	foundation/settings	settings-saveonexit	foundation-settings.md	engine/foundation/settings/settings.h:317
+settings::SaveOnExit::SaveOnExit(Settings&)	function	foundation/settings	settings-saveonexit-saveonexit-settings-amp	foundation-settings.md	engine/foundation/settings/settings.h:320
+settings::SaveOnExit::~SaveOnExit()	function	foundation/settings	settings-saveonexit-tilde-saveonexit	foundation-settings.md	engine/foundation/settings/settings.h:322
+settings::SaveOnExit::SaveOnExit(const SaveOnExit&)	function	foundation/settings	settings-saveonexit-saveonexit-const-saveonexit-amp	foundation-settings.md	engine/foundation/settings/settings.h:323
+settings::SaveOnExit::operator=(const SaveOnExit&)	function	foundation/settings	settings-saveonexit-operator-eq-const-saveonexit-amp	foundation-settings.md	engine/foundation/settings/settings.h:324
 settings::kMaxTextBytes	variable	foundation/settings	settings-kmaxtextbytes	foundation-settings.md	engine/foundation/settings/value.h:11
 settings::Type	enum	foundation/settings	settings-type	foundation-settings.md	engine/foundation/settings/value.h:14
 settings::Type::Bool	enumerator	foundation/settings	settings-type-bool	foundation-settings.md	engine/foundation/settings/value.h:15
@@ -1327,6 +1334,30 @@ settings::Value::AsEnum() const	function	foundation/settings	settings-value-asen
 settings::Value::AsText() const	function	foundation/settings	settings-value-astext-const	foundation-settings.md	engine/foundation/settings/value.h:74
 settings::Value::operator==(const Value&) const	function	foundation/settings	settings-value-operator-eq-eq-const-value-amp-const	foundation-settings.md	engine/foundation/settings/value.h:77
 settings::Value::operator!=(const Value&) const	function	foundation/settings	settings-value-operator-not-eq-const-value-amp-const	foundation-settings.md	engine/foundation/settings/value.h:79
+settings::RegistryHive	enum	foundation/settings	settings-registryhive	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:22
+settings::RegistryHive::CurrentUser	enumerator	foundation/settings	settings-registryhive-currentuser	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:23
+settings::RegistryHive::LocalMachine	enumerator	foundation/settings	settings-registryhive-localmachine	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:24
+settings::RegistryStoreOptions	struct	foundation/settings	settings-registrystoreoptions	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:30
+settings::RegistryStoreOptions::hive	variable	foundation/settings	settings-registrystoreoptions-hive	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:32
+settings::RegistryStoreOptions::path	variable	foundation/settings	settings-registrystoreoptions-path	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:34
+settings::RegistryStoreOptions::read_only	variable	foundation/settings	settings-registrystoreoptions-read-only	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:36
+settings::RegistrySettingsPath(StringView,char*,usize)	function	foundation/settings	settings-registrysettingspath-stringview-char-star-usize	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:44
+settings::RegistryConfigStore	class	foundation/settings	settings-registryconfigstore	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:50
+settings::RegistryConfigStore::RegistryConfigStore(const RegistryStoreOptions&)	function	foundation/settings	settings-registryconfigstore-registryconfigstore-const-registrystoreoptions-amp	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:53
+settings::RegistryConfigStore::~RegistryConfigStore()	function	foundation/settings	settings-registryconfigstore-tilde-registryconfigstore	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:55
+settings::RegistryConfigStore::RegistryConfigStore(const RegistryConfigStore&)	function	foundation/settings	settings-registryconfigstore-registryconfigstore-const-registryconfigstore-amp	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:56
+settings::RegistryConfigStore::operator=(const RegistryConfigStore&)	function	foundation/settings	settings-registryconfigstore-operator-eq-const-registryconfigstore-amp	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:57
+settings::RegistryConfigStore::Capabilities() const	function	foundation/settings	settings-registryconfigstore-capabilities-const	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:60
+settings::RegistryConfigStore::Describe(char*,usize) const	function	foundation/settings	settings-registryconfigstore-describe-char-star-usize-const	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:62
+settings::RegistryConfigStore::Load()	function	foundation/settings	settings-registryconfigstore-load	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:64
+settings::RegistryConfigStore::Get(StringView,StoredValue*)	function	foundation/settings	settings-registryconfigstore-get-stringview-storedvalue-star	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:66
+settings::RegistryConfigStore::Set(StringView,const StoredValue&)	function	foundation/settings	settings-registryconfigstore-set-stringview-const-storedvalue-amp	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:68
+settings::RegistryConfigStore::Remove(StringView)	function	foundation/settings	settings-registryconfigstore-remove-stringview	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:70
+settings::RegistryConfigStore::Enumerate(StringView,Vector<Key>*)	function	foundation/settings	settings-registryconfigstore-enumerate-stringview-vector-lt-key-gt-star	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:72
+settings::RegistryConfigStore::Commit(const CommitOptions&)	function	foundation/settings	settings-registryconfigstore-commit-const-commitoptions-amp	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:74
+settings::RegistryConfigStore::Origin(StringView,char*,usize) const	function	foundation/settings	settings-registryconfigstore-origin-stringview-char-star-usize-const	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:76
+settings::RegistryConfigStore::IsPresent() const	function	foundation/settings	settings-registryconfigstore-ispresent-const	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:78
+settings::RegistryConfigStore::SetChangeListener(ChangeListener,void*)	function	foundation/settings	settings-registryconfigstore-setchangelistener-changelistener-void-star	foundation-settings.md	engine/foundation/settings/windows/registry_store.h:83
 os::StashNativeCommandLine(int,char**)	function	platform/os	os-stashnativecommandline-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:21
 os::CommandLine	class	platform/os	os-commandline	platform-os.md	engine/foundation/os/command_line.h:39
 os::CommandLine::CommandLine(Allocator&,int,char**)	function	platform/os	os-commandline-commandline-allocator-amp-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:50
@@ -1363,7 +1394,8 @@ os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platf
 os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:130
 os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:134
 os::EnvironmentCount()	function	platform/os	os-environmentcount	platform-os.md	engine/foundation/os/os.h:137
-os::EnvironmentEntry(usize,char*,usize,usize*)	function	platform/os	os-environmententry-usize-char-star-usize-usize-star	platform-os.md	engine/foundation/os/os.h:151
+os::EnvironmentNamesIgnoreCase()	function	platform/os	os-environmentnamesignorecase	platform-os.md	engine/foundation/os/os.h:143
+os::EnvironmentEntry(usize,char*,usize,usize*)	function	platform/os	os-environmententry-usize-char-star-usize-usize-star	platform-os.md	engine/foundation/os/os.h:157
 os::SessionState	enum	platform/os	os-sessionstate	platform-os.md	engine/foundation/os/session.h:11
 os::SessionState::Active	enumerator	platform/os	os-sessionstate-active	platform-os.md	engine/foundation/os/session.h:12
 os::SessionState::Locked	enumerator	platform/os	os-sessionstate-locked	platform-os.md	engine/foundation/os/session.h:13

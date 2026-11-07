@@ -97,7 +97,8 @@ The contract in a few lines:
 - `Capabilities()` says what the store really does: writable, order-preserving, atomic, per-key, notifying, typed. A caller asks instead of guessing, and the conformance suite checks the claims.
 - A store may be told to call a function when another writer changes the durable state (`SetChangeListener`, only with `kCapNotifies`); the call is best effort and may come from any thread.
 
-A value goes into a store as a `StoredValue`: typed (`kCapTypedValues`, a registry that records integers as integers) or its canonical text (a file). `ToStored` and `FromStored` are the only place
+A value goes into a store as a `StoredValue`: typed (`kCapTypedValues`, a medium that records integers as integers, such as `NSUserDefaults`) or its canonical text (a file, and
+the Windows registry: see "Settings on Windows"). `ToStored` and `FromStored` are the only place
 that converts, so a store never needs the registry's enum names or ranges.
 
 ```cpp compile run
@@ -201,7 +202,8 @@ this is not a setting
 ## Layers and where a value comes from
 
 A program reads its settings from several places, and a `settings::LayerStack` puts them in order. From lowest to highest: the **defaults** declared in the registry, then the layers by role:
-`System` (defaults shipped with the program or machine), `User` (the user's file), `Project` (a file next to the content), `Custom` (a file named with `--settings`), `Environment` and `CommandLine`.
+`System` (defaults shipped with the program or machine), `User` (the user's file), `Project` (a file next to the content), `Custom` (a file named with `--settings`), `Environment`, `CommandLine`,
+and on top `Policy` (values an administrator enforces: Windows group policy; a program cannot change them, `SetError::Enforced`).
 A value in a higher layer hides the lower ones. A layer that has no value for a key, cannot be read, or holds a value that does not convert (a bad number in the environment) is skipped for that key, and
 the next lower layer answers; each skip is a `LayerProblem` naming the layer, the key and, for a bad value, where it came from.
 
@@ -245,6 +247,25 @@ std::printf("%lld from %s\n", static_cast<long long>(r.value.AsInt()), r.layer_n
 1920 from user
 1600 from shipped defaults
 ```
+
+## Settings on Windows
+
+**Where values live.** The user's settings are the same file as on Linux, `<user config directory>/<app>/settings.cfg` (`%APPDATA%\<app>\settings.cfg`), so
+one format, its comments and `--settings` files work everywhere. A program that would rather keep them in the registry adds a `settings::RegistryConfigStore`
+(`settings/windows/registry_store.h`) as its user layer, by default over `HKCU\Software\<app>`.
+
+**The registry layout.** A dotted key's sections are subkeys and its last segment is the value name: `renderer.width` is the value `width` under
+`HKCU\Software\<app>\renderer`. Every value is a `REG_SZ` holding the same text a settings file holds (`1920`, `true`, `mailbox`, `"a name"`; plain text without
+quotes reads too), so `regedit` shows and edits what a file would. A value of another type (a `REG_DWORD` written by hand) is reported for its key as a type
+mismatch and the next layer down answers; it is never converted. The store writes each change at once and tells a listener about other writers' changes (another
+process, `regedit`) from a thread of its own. It always uses the 64-bit view of the registry, so a 32-bit tool sees the same values.
+
+**Policy keys.** An administrator enforces a value by writing it under `Software\Policies\<app>`: in `HKCU` for one user, in `HKLM` for the machine (which wins
+over the user's policy). `Settings::Load` adds both as read-only `Policy` layers, above everything else (`LoadOptions::use_policy`, on by default;
+`policy_name` names another key). A program cannot change a setting a policy holds: `Set` returns `SetError::Enforced`. `--list-settings` names the policy as the
+value's source.
+
+**Environment names ignore case** on Windows, as the system's own lookups do: `ENGINE_SETTING_RENDERER__WIDTH` and `engine_setting_renderer__width` are one variable.
 
 ## Environment and command line
 

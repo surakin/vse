@@ -559,6 +559,21 @@ usize EnvironmentCount();
 
 Returns how many variables the process environment holds.
 
+## `EnvironmentNamesIgnoreCase()` {#os-environmentnamesignorecase}
+
+`function os::EnvironmentNamesIgnoreCase` — defined in `engine/foundation/os/os.h`
+
+```cpp
+bool EnvironmentNamesIgnoreCase();
+```
+
+Returns whether the platform's environment variable names ignore case (`Path` and `PATH` are one variable).
+
+| Field | Value |
+|---|---|
+| Returns | true on Windows, false on Linux and macOS. |
+| Fails | never. |
+
 ## `EnvironmentEntry(usize,char*,usize,usize*)` {#os-environmententry-usize-char-star-usize-usize-star}
 
 `function os::EnvironmentEntry` — defined in `engine/foundation/os/os.h`

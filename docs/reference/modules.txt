@@ -27,6 +27,7 @@ module foundation/types "Foundation: Fundamental Types"
 
 module foundation/settings "Foundation: Settings"
   header engine/foundation/settings/*.h
+  header engine/foundation/settings/windows/registry_store.h
 
 module platform/os "Platform: OS Services"
   header engine/foundation/os/os.h

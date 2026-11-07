@@ -23,14 +23,37 @@ target_link_libraries(docgen_lib PUBLIC foundation)
 
 # ASan/UBSan flavor, linked against the matching foundation: the scanner
 # reads arbitrary bytes, so out-of-bounds reads are the main risk.
-add_library(docgen_lib_asan STATIC ${DOCGEN_SOURCES})
-target_include_directories(docgen_lib_asan PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_compile_options(docgen_lib_asan PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-target_link_libraries(docgen_lib_asan PUBLIC foundation_asan)
+if(ENGINE_HAVE_ASAN) # (not clang-cl on Windows, whose configuration has no ASan flavor)
+  add_library(docgen_lib_asan STATIC ${DOCGEN_SOURCES})
+  target_include_directories(docgen_lib_asan PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+  target_compile_options(docgen_lib_asan PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
+  target_link_libraries(docgen_lib_asan PUBLIC foundation_asan)
+endif()
 
 add_executable(docgen src/main.cpp)
 target_compile_options(docgen PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_link_libraries(docgen PRIVATE docgen_lib)
+
+# Windows (Phase 13 Day 157): the reference and the checks that read the tree (check, links, lint). The samples link the renderer, the RHI
+# and the platform layer, which arrive on Days 158-161; their check joins on Day 161 with a Windows runner. Until then `docs` regenerates
+# the reference and runs the other three checks.
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  set(DOCGEN_LINT_ARGS --root ${CMAKE_SOURCE_DIR} --baseline ${CMAKE_SOURCE_DIR}/docs/reference/lint-baseline.txt)
+  add_test(NAME docs_check COMMAND docgen check --root ${CMAKE_SOURCE_DIR})
+  add_test(NAME docs_links COMMAND docgen links --root ${CMAKE_SOURCE_DIR})
+  add_test(NAME docs_lint COMMAND docgen lint ${DOCGEN_LINT_ARGS} --quiet)
+  set_tests_properties(docs_check docs_links docs_lint PROPERTIES LABELS "docs" TIMEOUT 300)
+  engine_label_tests(docs_check docs_links docs_lint)
+  add_custom_target(docs
+    COMMAND $<TARGET_FILE:docgen> reference --root ${CMAKE_SOURCE_DIR}
+    COMMAND $<TARGET_FILE:docgen> check --root ${CMAKE_SOURCE_DIR}
+    COMMAND $<TARGET_FILE:docgen> links --root ${CMAKE_SOURCE_DIR}
+    COMMAND $<TARGET_FILE:docgen> lint ${DOCGEN_LINT_ARGS}
+    DEPENDS docgen
+    COMMENT "Regenerating docs/reference and running the documentation checks (the samples: Linux, and Windows from Day 161)"
+    USES_TERMINAL)
+  return()
+endif()
 
 # Phase 3 Day 43: the documentation checks. `cmake --build build --target
 # docs` regenerates docs/reference and then runs every check; ctest runs the

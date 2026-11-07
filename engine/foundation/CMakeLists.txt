@@ -25,6 +25,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     io/linux/local_file.cpp
     io/linux/directory.cpp
   )
+  set(FOUNDATION_SETTINGS_PLATFORM_SOURCES
+    settings/linux/policy_layers.cpp
+  )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   # Phase 13 ports one layer per day (ARCHITECTURE.md order): the base layer's os/windows/ backend on Day 149, the file layer on Days
   # 151-152, the debugging backend (os/windows/debug/BACKEND.md) on Days 154-156.
@@ -47,6 +50,11 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   )
   # The file layer: paths, errors, Stat and the local file on Day 151; directories and the other file-system operations on Day 152
   # (io/BACKEND.md). Asynchronous I/O is the neutral executor path, as on Linux.
+  # Day 157: the registry store and the group-policy layers (settings/BACKEND.md).
+  set(FOUNDATION_SETTINGS_PLATFORM_SOURCES
+    settings/windows/registry_store.cpp
+    settings/windows/policy_layers.cpp
+  )
   set(FOUNDATION_IO_PLATFORM_SOURCES
     io/windows/win_path.cpp
     io/windows/error.cpp
@@ -158,7 +166,7 @@ function(engine_add_foundation_libs suffix)
   # one plain build of each for every flavor.
   target_link_libraries(foundation_debug${suffix} PUBLIC foundation_io${suffix} PRIVATE backtrace sentry)
 
-  engine_add_foundation_layer(foundation_settings "${suffix}" ${FOUNDATION_SETTINGS_SOURCES})
+  engine_add_foundation_layer(foundation_settings "${suffix}" ${FOUNDATION_SETTINGS_SOURCES} ${FOUNDATION_SETTINGS_PLATFORM_SOURCES})
   target_link_libraries(foundation_settings${suffix} PUBLIC foundation_debug${suffix})
 
   add_library(foundation${suffix} INTERFACE)
@@ -185,6 +193,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     # sentry-native (Breakpad backend, no transport) as on Linux; DbgHelp and PSAPI for symbols and the module list (Day 154).
     # synchronization: sentry-native's WaitOnAddress (its CMake does not name the library for a static build).
     target_link_libraries(foundation_debug${suffix} PUBLIC foundation_io${suffix} PRIVATE sentry dbghelp psapi synchronization)
+    # Day 157: the settings layer, with the registry store (settings/windows/); advapi32 for the registry.
+    engine_add_foundation_layer(foundation_settings "${suffix}" ${FOUNDATION_SETTINGS_SOURCES} ${FOUNDATION_SETTINGS_PLATFORM_SOURCES})
+    target_link_libraries(foundation_settings${suffix} PUBLIC foundation_debug${suffix} advapi32)
+    add_library(foundation${suffix} INTERFACE)
+    target_link_libraries(foundation${suffix} INTERFACE foundation_settings${suffix} foundation_debug${suffix} foundation_io${suffix} foundation_base${suffix})
   endforeach()
 else()
   engine_add_foundation_libs("")

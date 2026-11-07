@@ -36,15 +36,24 @@ store, the memory stores, the environment and command-line layers and everything
 | `kCapPerKeyWrites` | set | a second instance sees every `Set` before `Commit`; `Load` does not discard writes |
 | `kCapAtomicCommit` | not set | nothing is asserted about a failed `Commit`; `Status::done` and `total` report how far it got |
 | `kCapPreservesOrder` | not set | `Enumerate` order is not compared |
-| `kCapTypedValues` | set | `Get` must return a typed value of the type that was stored |
+| `kCapTypedValues` | not set (Windows, Day 157: see below) | `Get` must return a typed value of the type that was stored |
 | `kCapNotifies` | set | `SetChangeListener` must succeed (without it, `Unsupported`) |
 
 ## Platform notes
 
-- **Windows (Phase 13):** `HKCU\Software\<app>`. Dotted keys become subkeys (`renderer.width` is the value `width` under the subkey `renderer`); typed values
-  `REG_DWORD`/`REG_QWORD` for ints and bools, `REG_SZ` for text and enum names, an `f64` as `REG_QWORD` bits or `REG_SZ` text (decide in Phase 13 and
-  keep it readable by `regedit`); no comments, no order, each write immediate; `RegNotifyChangeKeyValue` on its own thread for the change capability;
-  the 64-bit view (`KEY_WOW64_64KEY`); group-policy keys (`HKLM\Software\Policies\<app>`) as a read-only `System` layer.
+- **Windows (Phase 13), built on Day 157:** `RegistryConfigStore` (`settings/windows/registry_store.h`), by default over `HKCU\Software\<app>`.
+  Dotted keys become subkeys (`renderer.width` is the value `width` under the subkey `renderer`). **Every value is a `REG_SZ` holding the value's
+  canonical text**, the text a settings file holds (`true`, `-42`, `0.1`, `fifo`, `"a name"`; plain text typed by hand reads too): the store is a
+  text store, not a typed one. The typed mapping first planned (`REG_DWORD` for bools, `REG_QWORD` for ints, `REG_SZ` for text and enum names) cannot
+  round-trip: a typed enum reaches the store as an index without its names, and as a `REG_DWORD` it would be indistinguishable from a bool; text
+  round-trips every type exactly and `regedit` shows what a file would. A value of another registry type is `TypeMismatch` for its key, never
+  converted. No comments, no order, each write immediate (`kCapPerKeyWrites`), the section subkeys a removal empties are deleted; the 64-bit view
+  (`KEY_WOW64_64KEY`) from every process; `RegNotifyChangeKeyValue` on the store's own thread for `kCapNotifies`, with the store's own writes told
+  apart by comparing against what it last saw (written under the same lock as its writes). Group policy is the top layer, `LayerRole::Policy`
+  (not `System`, which sits below the user's file: an enforced value must win): `HKCU` and then `HKLM` `Software\Policies\<app>`, read-only; a setting a
+  policy holds cannot be changed by the program (`SetError::Enforced`). The default user store on Windows stays the file
+  (`<user config directory>/<app>/settings.cfg`, as on Linux: one format, comments, `--settings` files); a program that wants the registry adds a
+  `RegistryConfigStore` layer itself.
 - **macOS (Phase 14):** `NSUserDefaults` (a suite named after the application) or a plist file through the file store; `NSUserDefaultsDidChangeNotification`
   for changes; the application bundle's defaults as the read-only `System` layer.
 - **Android (Phase 22):** `SharedPreferences`; `apply()` is asynchronous and `commit()` synchronous, so `Commit` calls `commit()` and reports its result;
@@ -53,7 +62,8 @@ store, the memory stores, the environment and command-line layers and everything
 - **Consoles (Phase 23):** the platform's save-data API behind the same store; mind size limits and commit latency (`Commit` may be slow: the service
   never calls it from a frame).
 - **The environment** (`EnvironmentSnapshot::Capture`) is the one other platform-bound piece: Windows reads `GetEnvironmentStringsW` (UTF-16 to UTF-8), macOS
-  `_NSGetEnviron`; consoles may return an empty snapshot.
+  `_NSGetEnviron`; consoles may return an empty snapshot. Windows variable names ignore case (`os::EnvironmentNamesIgnoreCase`): the snapshot holds
+  one variable for two spellings (the later replaces the earlier) and finds it in any case.
 
 ## The functions
 
@@ -106,6 +116,12 @@ Optional. Where an entry came from inside the store, for provenance messages (`l
 ### `IsPresent`
 
 Optional. Whether the backing medium exists (a file not written yet, a registry key not created yet); used for the load report's `Missing`.
+
+### `AddPolicyLayers`
+
+What `Settings::Load` adds as the `Policy` layers (`settings/policy_layers.h`). Windows (Day 157): two read-only `RegistryConfigStore`s,
+`HKCU\Software\Policies\<name>` and then `HKLM\Software\Policies\<name>` (the machine's win, as group policy orders them); `LoadOptions::policy_path`
+replaces both with one key of the caller's (a test's own HKCU key). Linux: none yet. A policy key that does not exist is an empty layer.
 
 ### `Capture`
 

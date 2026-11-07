@@ -127,7 +127,7 @@ public:
 
     /// Returns the store's [[settings::StoreCapability]] bits.
     ///
-    /// Backend: Windows: the registry store reports kCapWritable | kCapPerKeyWrites | kCapTypedValues | kCapNotifies; macOS: NSUserDefaults reports kCapWritable | kCapTypedValues | kCapNotifies.
+    /// Backend: Windows: the registry store reports kCapWritable | kCapPerKeyWrites | kCapNotifies (values are REG_SZ text, not typed); macOS: NSUserDefaults reports kCapWritable | kCapTypedValues | kCapNotifies.
     virtual u32 Capabilities() const = 0;
 
     /// Writes a short description for logs into `out` (a path, `memory`, `registry HKCU\Software\app`), NUL-terminated and cut to fit.
@@ -149,7 +149,7 @@ public:
     /// Param out: receives the value.
     /// Fails: `NotFound`, `Invalid` (not a valid key).
     ///
-    /// Backend: Windows: RegGetValue with the type the value was stored with; macOS: objectForKey.
+    /// Backend: Windows: RegQueryValueEx of a REG_SZ (another type is TypeMismatch); macOS: objectForKey.
     virtual Status Get(StringView key, StoredValue* out) = 0;
 
     /// Sets one entry.

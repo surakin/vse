@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "debug/death_test.h"
+#include "resource_guard.h"
 #include "support/death_test_skip.h"
 
 #include <cstdio>
@@ -112,4 +113,34 @@ TEST_CASE("Windows: a child that hangs is killed at the deadline, and so is ever
         if (waited != WAIT_OBJECT_0) TerminateProcess(grandchild, 1);
         CloseHandle(grandchild);
     }
+}
+
+// ---- the resource guard -----------------------------------------------------------------------------------------------------------
+
+// The guard tells a child from an unrelated process that names this one as its parent (a reused process id, Day 157). This checks the other
+// side: a child this process started, still running, with no handle of ours left open, is reported until it ends.
+TEST_CASE("Windows: the resource guard reports a running child until it ends", "[death][debug][windows]") {
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    ChildResourceGuard guard;
+    wchar_t exe[MAX_PATH * 4];
+    const DWORD length = GetModuleFileNameW(nullptr, exe, static_cast<DWORD>(sizeof(exe) / sizeof(exe[0])));
+    REQUIRE(length != 0);
+    REQUIRE(length < sizeof(exe) / sizeof(exe[0]));
+    wchar_t command[MAX_PATH * 4 + 64];
+    std::swprintf(command, sizeof(command) / sizeof(command[0]), L"\"%ls\" --list-tests", exe);
+    STARTUPINFOW startup{};
+    startup.cb = sizeof(startup);
+    PROCESS_INFORMATION process{};
+    // Suspended, so it is running (not exited) for as long as the test needs and runs none of its code.
+    REQUIRE(CreateProcessW(nullptr, command, nullptr, nullptr, FALSE, CREATE_NO_WINDOW | CREATE_SUSPENDED, nullptr, nullptr, &startup, &process));
+    CloseHandle(process.hThread);
+    CloseHandle(process.hProcess);
+    CHECK_FALSE(guard.Clean());
+
+    const HANDLE child = OpenProcess(SYNCHRONIZE | PROCESS_TERMINATE, FALSE, process.dwProcessId);
+    REQUIRE(child != nullptr);
+    TerminateProcess(child, 1);
+    CHECK(WaitForSingleObject(child, 5000) == WAIT_OBJECT_0);
+    CloseHandle(child);
+    CHECK(guard.Clean());
 }

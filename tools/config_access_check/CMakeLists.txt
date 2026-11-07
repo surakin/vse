@@ -16,7 +16,7 @@ config_access_test(config_access_check_planted ${CONFIG_ACCESS_FIXTURES}/bad ${C
 set_tests_properties(config_access_check_planted PROPERTIES WILL_FAIL TRUE)
 config_access_test(config_access_check_planted_count ${CONFIG_ACCESS_FIXTURES}/bad ${CONFIG_ACCESS_FIXTURES}/good/allowlist.txt)
 set_tests_properties(config_access_check_planted_count PROPERTIES
-  PASS_REGULAR_EXPRESSION "engine/leak.cpp:4:.*engine/leak.cpp:5:.*engine/leak.cpp:7:.*engine/leak.cpp:10:.*engine/win_leak.cpp:1:.*engine/win_leak.cpp:2:.*engine/win_leak.cpp:3:.*stale entry engine/boot/.*8 problem")
+  PASS_REGULAR_EXPRESSION "engine/leak.cpp:4:.*engine/leak.cpp:5:.*engine/leak.cpp:7:.*engine/leak.cpp:10:.*engine/win_leak.cpp:1:.*engine/win_leak.cpp:2:.*engine/win_leak.cpp:3:.*engine/win_leak.cpp:4:.*stale entry engine/boot/.*9 problem")
 
 # A clean tree passes: comments, the allowed directory.
 config_access_test(config_access_check_clean ${CONFIG_ACCESS_FIXTURES}/good ${CONFIG_ACCESS_FIXTURES}/good/allowlist.txt)

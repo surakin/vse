@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <stdlib.h>
+#include "test_env.h"
 
 #include "catch_engine_types.h"
 #include "io/file.h"
@@ -55,10 +55,11 @@ UniquePtr<MemoryConfigStore> WithInt(const char* key, i64 v) {
 
 TEST_CASE("Layer precedence: for every combination of layers holding a value, the highest one wins", "[settings][layers]") {
     Fixture f;
-    const LayerRole roles[] = {LayerRole::System, LayerRole::User, LayerRole::Project, LayerRole::Custom, LayerRole::Environment, LayerRole::CommandLine};
-    for (u32 mask = 0; mask < 64; ++mask) {
+    const LayerRole roles[] = {LayerRole::System, LayerRole::User, LayerRole::Project, LayerRole::Custom, LayerRole::Environment, LayerRole::CommandLine,
+                               LayerRole::Policy};
+    for (u32 mask = 0; mask < 128; ++mask) {
         LayerStack stack;
-        for (u32 r = 0; r < 6; ++r) {
+        for (u32 r = 0; r < 7; ++r) {
             auto store = (mask & (1u << r)) ? WithInt("renderer.width", 100 + r) : MakeUnique<MemoryConfigStore>();
             stack.AddLayer(LayerRoleName(roles[r]), roles[r], ConfigStorePtr(static_cast<UniquePtr<MemoryConfigStore>&&>(store)));
         }
@@ -70,7 +71,7 @@ TEST_CASE("Layer precedence: for every combination of layers holding a value, th
             CHECK(StringView(res.layer_name) == "defaults");
             CHECK(res.value.AsInt() == 1280);
         } else {
-            u32 top = 5;
+            u32 top = 6;
             while (!(mask & (1u << top))) --top;
             INFO("mask " << mask);
             CHECK(res.value.AsInt() == 100 + top);
@@ -229,9 +230,9 @@ TEST_CASE("The environment: standard names, legacy aliases, which wins, and the 
     stack.Resolve(f.registry, f.mode, &r, nullptr);
     CHECK(r.value.AsEnum() == 1);
     // The process environment is captured, scrubbed by the test itself.
-    ::setenv("ENGINE_SETTING_RENDERER__WIDTH", "4321", 1);
+    test_support::SetEnv("ENGINE_SETTING_RENDERER__WIDTH", "4321");
     const EnvironmentSnapshot real = EnvironmentSnapshot::Capture();
-    ::unsetenv("ENGINE_SETTING_RENDERER__WIDTH");
+    test_support::UnsetEnv("ENGINE_SETTING_RENDERER__WIDTH");
     REQUIRE(real.Find("ENGINE_SETTING_RENDERER__WIDTH") != nullptr);
     CHECK(real.Find("ENGINE_SETTING_RENDERER__WIDTH")->View() == "4321");
     CHECK(EnvironmentSnapshot::Capture().Find("ENGINE_SETTING_RENDERER__WIDTH") == nullptr);
