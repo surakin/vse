@@ -1,0 +1,2 @@
+planted_v1.cfg planted 1
+planted_v2.cfg planted 2

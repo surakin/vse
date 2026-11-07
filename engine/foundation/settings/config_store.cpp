@@ -17,6 +17,7 @@ const char* StoreErrorName(StoreError error) {
     case StoreError::Invalid: return "invalid";
     case StoreError::PermissionDenied: return "permission_denied";
     case StoreError::Interrupted: return "interrupted";
+    case StoreError::TooNew: return "too_new";
     }
     return "unknown";
 }

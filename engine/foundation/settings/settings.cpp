@@ -135,6 +135,51 @@ LoadReport Settings::LoadFromLayers() {
         info.state = stack_.State(i);
         report.layers.Push(info);
     }
+    auto note = [&](StringView layer, StringView message) {
+        LayerProblem n;
+        CopyText(n.layer, sizeof(n.layer), layer);
+        CopyText(n.message, sizeof(n.message), message);
+        report.notes.Push(n);
+    };
+    // Upgrade the user's file in memory (the file itself is rewritten the next time the application saves).
+    newer_file_ = false;
+    stamp_versions_ = false;
+    const usize w = stack_.WriteLayer();
+    if (w < stack_.Size() && (stack_.Store(w).Capabilities() & kCapWritable) != 0 && stack_.State(w) != LayerState::Failed) {
+        MigrationReport migrated;
+        Vector<Key> existing;
+        stack_.Store(w).Enumerate(StringView(), &existing);
+        if (!existing.Empty()) migrations_.Migrate(*registry_, stack_.Store(w), &migrated); // a new install has nothing to upgrade: it is only stamped
+        stamp_versions_ = existing.Empty() || migrated.sections_upgraded != 0; // a new file, or one that was just upgraded, records what wrote it
+        for (usize i = 0; i < migrated.notes.Size(); ++i) note(stack_.Name(w), migrated.notes[i].View());
+        if (migrated.newer_format || !migrated.newer_sections.Empty()) {
+            newer_file_ = true;
+            note(stack_.Name(w), "written by a newer version of the program: known settings are used, the rest is kept as it is, and the file is not rewritten without replace_newer");
+        }
+    }
+    // Keys nobody registered: kept in the files, mentioned once (the environment and command-line layers only hold registered keys).
+    Vector<Key> mentioned;
+    for (usize layer = 0; layer < stack_.Size(); ++layer) {
+        if (stack_.State(layer) == LayerState::Failed || stack_.Role(layer) == LayerRole::Environment || stack_.Role(layer) == LayerRole::CommandLine) continue;
+        Vector<Key> keys;
+        if (stack_.Store(layer).Enumerate(StringView(), &keys).Failed()) continue;
+        for (usize k = 0; k < keys.Size(); ++k) {
+            const StringView name = keys[k].View();
+            if (name == "version" || name.EndsWith(".schema") || registry_->Find(name).IsValid()) continue;
+            bool seen = false;
+            for (usize m = 0; m < mentioned.Size() && !seen; ++m) seen = mentioned[m] == keys[k];
+            if (seen) continue;
+            mentioned.Push(keys[k]);
+            char message[200];
+            Key suggestion;
+            if (SuggestKey(*registry_, name, &suggestion)) {
+                std::snprintf(message, sizeof(message), "unknown key '%.*s'; did you mean '%.*s'?", static_cast<int>(name.Length()), name.Data(), static_cast<int>(suggestion.View().Length()), suggestion.View().Data());
+            } else {
+                std::snprintf(message, sizeof(message), "unknown key '%.*s' (kept as it is)", static_cast<int>(name.Length()), name.Data());
+            }
+            note(stack_.Name(layer), message);
+        }
+    }
     for (u32 i = 0; i < registry_->Count(); ++i) {
         const SettingId id{static_cast<u16>(i + 1)};
         Resolution r;
@@ -363,6 +408,11 @@ Status Settings::Save(const SaveOptions& options) {
     std::lock_guard<std::recursive_mutex> op(op_);
     const usize w = stack_.WriteLayer();
     if (w >= stack_.Size()) return Status::Of(StoreError::NotFound);
+    if (newer_file_ && !options.replace_newer) {
+        last_save_status_ = Status::Of(StoreError::TooNew);
+        return last_save_status_;
+    }
+    if (stamp_versions_ || options.replace_newer) StampVersions(*registry_, stack_.Store(w), options.replace_newer);
     struct Undo {
         SettingId id;
         bool had = false;
@@ -388,7 +438,10 @@ Status Settings::Save(const SaveOptions& options) {
     CommitOptions commit;
     commit.replace_damaged = options.replace_damaged;
     const Status s = stack_.Store(w).Commit(commit);
+    last_save_status_ = s;
     if (s.Ok()) {
+        newer_file_ = false; // the file now carries this program's versions
+        stamp_versions_ = false;
         std::lock_guard<std::mutex> lock(mutex_);
         dirty_ = false;
     } else {

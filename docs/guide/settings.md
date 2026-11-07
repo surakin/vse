@@ -1,6 +1,6 @@
 # Settings
 
-Status: draft (Phase 11, Days 131-135: keys, values, the registry, typed handles, stores, the text-file store, layers, the environment, the command line and the `Settings` service; migration and the demos arrive on Days 136-138).
+Status: draft (Phase 11, Days 131-136: keys, values, the registry, typed handles, stores, the text-file store, layers, the environment, the command line, the `Settings` service and migration; the demos arrive on Day 138).
 
 The settings system is one registry that every module declares its settings in, and handles that read them cheaply. Where values come from (files, the environment, the command line) and how they
 are saved arrive later in this phase. Design and reasons: `docs/superpowers/specs/2026-11-07-settings-design.md`.
@@ -292,3 +292,21 @@ after the value is published and with no lock held, so a listener may call `Set`
 
 `Apply` takes an **apply function** for a consumer that must act on the batch and may refuse it (the renderer's `ApplySettings`). The handles still show the old values while the function runs (the event carries the new ones), because nothing is published until it accepts. If it returns false the write layer is put back exactly as it was, nobody is told, and the call returns `SetError::ApplyFailed`. One lock covers the whole operation, so another thread's change waits until this one has been applied and announced; a listener must not wait for a thread that is itself changing a setting. A consumer that needs an owner thread (a GPU object) queues the change
 itself from its listener, as the renderer already does.
+
+## Changing a setting between versions
+
+Settings files outlive the program that wrote them, so a change to a setting is a change to a file format. The rules for the owner of a setting:
+
+- **Never reuse a key for a different meaning.** A key that meant "a width in pixels" does not later mean "a scale". Give the new meaning a new key.
+- **To rename a key,** keep the old name as a `deprecated_keys` entry of the new declaration. Files that still use it keep working: the value is read from the old key and the load report says `uses the deprecated key '...'; it is now '...'`.
+  When a rename should also rewrite the file, add a `Rename` migration step.
+- **To change what a value means,** raise the section's schema version (`registry.SetSchemaVersion("renderer", 3)`) and add a migration step from the version it replaces: `Rename` (move a value to a new key), `MapValue`
+  (`fifo` is now `vsync`), `Drop` (the key no longer exists) or `Callback` (a function that may read and write the store, for a split or a merge). Steps are applied on load, in order of `from_version`, to the user's
+  file *in memory*: the file is rewritten (comments and all) the next time the application saves, and the load report lists each step it applied. Running a migration twice gives the same result as once.
+- **To remove a setting,** add a `Drop` step. An unknown key is not an error: it stays in the file as it is and is mentioned once in the report (with the closest registered key as a suggestion, for a typo).
+- **Add the old format as a fixture.** Raising a schema version to N needs the file format of version N-1 in `tests/settings/fixtures/<section>_v<N-1>.cfg`, listed in `SCHEMAS.txt`, loaded by `tests/settings/migration_test.cpp`.
+  The ctest `settings_fixtures` fails the build when a `SetSchemaVersion("<section>", N)` in `engine/` or `game/` has no such fixture, no list entry or no test.
+
+A file records the version of the format (`version = 1`) and of each section (`<section>.schema = N`); a new file, and a file that was just migrated, are stamped when saved. A file **newer** than the program
+(`version` or a schema above what the program knows) is read in compatibility mode: the settings the program knows are used, everything else stays as it is, the report says so, and `Save` refuses with `TooNew` so an
+older program never rewrites a newer file; `SaveOptions::replace_newer` overrides that (the old text goes to the `.bak`).

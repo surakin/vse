@@ -20,6 +20,7 @@
 #include "settings/env_source.h"
 #include "settings/layers.h"
 #include "settings/memory_store.h"
+#include "settings/migration.h"
 
 namespace engine_placeholder::settings {
 
@@ -132,6 +133,9 @@ struct LoadReport {
     Vector<LayerInfo> layers;
     /// Every problem: damaged and failed layers, bad values that were skipped, command-line errors.
     Vector<LayerProblem> problems;
+    /// What was noticed but is not wrong: migrations applied to the user's file, unknown keys (kept as they are, with a suggestion), a file
+    /// written by a newer version (read in compatibility mode).
+    Vector<LayerProblem> notes;
     /// Returns whether no layer failed or was damaged and nothing was skipped.
     bool Clean() const { return problems.Empty(); }
 };
@@ -143,6 +147,8 @@ struct SaveOptions {
     bool include_command_line = false;
     /// Replace a user file that was damaged on load (the old text goes to `.bak`).
     bool replace_damaged = false;
+    /// Replace a user file written by a newer version of the program (it is otherwise never rewritten in an older format; the old text goes to `.bak`).
+    bool replace_newer = false;
 };
 
 /// A snapshot of every setting's value, consistent at one instant.
@@ -191,6 +197,11 @@ public:
     /// publishes the values. `Load` is this after building the standard stack.
     LoadReport LoadFromLayers();
 
+    /// Returns the migration steps applied to the user's file on load; add steps before `Load`.
+    MigrationSet& Migrations() { return migrations_; }
+    /// Returns whether the last load found the user's file written by a newer version (compatibility mode: `Save` refuses without `replace_newer`).
+    bool UserFileIsNewer() const { return newer_file_; }
+
     /// Returns the layer stack (for tests and for a custom stack: add layers, then call `LoadFromLayers`).
     LayerStack& Layers() { return stack_; }
     /// Returns what the command line asked for in the last `Load`.
@@ -234,6 +245,12 @@ public:
     ///
     /// Returns: success, or why not (`Damaged`, `PermissionDenied`, `Io`, ...); the in-memory values are unaffected by a failure.
     Status Save(const SaveOptions& options = SaveOptions());
+    /// Returns the result of the most recent `Save` (including the ones `SaveIfChanged`, `SaveOnExit` and autosave make), so an application can tell the
+    /// user that saving is failing (`TooNew`, `PermissionDenied`, ...). Success until a save has failed.
+    Status LastSaveStatus() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return last_save_status_;
+    }
     /// Saves only if a change was made since the last load or save.
     Status SaveIfChanged();
     /// Returns whether a change has not been saved.
@@ -262,6 +279,10 @@ private:
     u32 next_listener_ = 1;
     CapabilityFn capability_ = nullptr;
     void* capability_user_ = nullptr;
+    MigrationSet migrations_;
+    bool newer_file_ = false;
+    Status last_save_status_;
+    bool stamp_versions_ = false; // write `version`/`<section>.schema` into the file at the next save
     bool minimal_ = true;
     bool dirty_ = false;
     double autosave_quiet_ = 0;

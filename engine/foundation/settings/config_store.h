@@ -33,9 +33,10 @@ enum class StoreError : u8 {
     Invalid,          ///< The key is not a valid [[settings::Key]], or an argument is wrong.
     PermissionDenied, ///< The medium refused access.
     Interrupted,      ///< The call was abandoned (a shutdown).
+    TooNew,           ///< The stored content was written by a newer version of the program; it is read but not replaced.
 };
 
-/// Returns a short name for a store error (`none`, `not_found`, `type_mismatch`, `read_only`, `damaged`, `io`, `unsupported`, `too_long`, `invalid`, `permission_denied`, `interrupted`).
+/// Returns a short name for a store error (`none`, `not_found`, `type_mismatch`, `read_only`, `damaged`, `io`, `unsupported`, `too_long`, `invalid`, `permission_denied`, `interrupted`, `too_new`).
 ///
 /// Returns: a static string.
 /// Fails: never.

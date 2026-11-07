@@ -441,13 +441,13 @@ TEST_CASE("Autosave: off by default, saves after the quiet time, and SaveOnExit 
     CHECK_FALSE(settings.PollAutosave()); // too soon
     std::this_thread::sleep_for(std::chrono::milliseconds(80));
     CHECK(settings.PollAutosave());
-    CHECK(SlurpText(user).View() == "[renderer]\nwidth = 1111\n");
+    CHECK(SlurpText(user).View() == "version = 1\n\n[renderer]\nwidth = 1111\n");
     CHECK_FALSE(settings.PollAutosave()); // nothing new
     {
         SaveOnExit guard(settings);
         REQUIRE(settings.Set(app.width, Value::FromInt(2222)).Ok());
     }
-    CHECK(SlurpText(user).View() == "[renderer]\nwidth = 2222\n");
+    CHECK(SlurpText(user).View() == "version = 1\n\n[renderer]\nwidth = 2222\n");
 }
 
 TEST_CASE("The crash report carries the settings that are not at their default", "[settings][service][crash]") {

@@ -1,0 +1,6 @@
+# Every fixture file in this directory, with the schema it exercises: `<file> <section> <schema version it was written with>`.
+# Rule (checked by the ctest `settings_fixtures`): for every `SetSchemaVersion("<section>", N)` in engine/ or game/ (a test may register made-up schemas freely), the fixtures
+# `<section>_v1.cfg` ... `<section>_v(N-1).cfg` (the older schemas) must exist and be listed here, and tests/settings/migration_test.cpp must
+# name each of them. Adding a schema version means adding the fixture of the one it replaces and a migration test.
+demo_v1.cfg demo 1
+demo_v2.cfg demo 2

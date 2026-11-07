@@ -23,6 +23,7 @@ tools/rhi_boundary_check 4
 tools/raw_new_check 5
 tools/file_access_check 9
 tools/std_container_check 10
+tools/settings_fixtures_check 11
 tools/platform_neutral_check 7
 tools/crash_extract 7
 game/rhi_demo       4,5

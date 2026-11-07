@@ -37,7 +37,7 @@ inline constexpr u32 kMaxRegisteredSettings = 65535;
 /// Why a registration was refused.
 enum class RegisterError : u8 {
     None = 0,     ///< Registered.
-    BadKey,       ///< The key (or a deprecated key) is not a valid [[settings::Key]], or is null.
+    BadKey,       ///< The key (or a deprecated key) is not a valid [[settings::Key]], is null, or is `version` or ends in `.schema` (reserved for version stamps).
     Duplicate,    ///< The key, or a deprecated key, is already taken.
     BadDefault,   ///< The default has another type than the declaration, is outside the range or the enum, or is not finite.
     BadRange,     ///< `min` is above `max`, or a float bound is not finite.
@@ -105,6 +105,19 @@ public:
     /// Returns whether `key` is one of the setting's *deprecated* keys rather than its current one.
     bool IsDeprecatedKey(StringView key) const;
 
+    /// Declares the schema version of a section: the number of times the meaning of its keys has changed, starting at 1. Files record the version
+    /// they were written with (`<section>.schema`), and migrations upgrade older ones. A section without a declared version is version 1 and has
+    /// no migrations.
+    ///
+    /// Aborts: the registry is frozen, `section` is not a valid key, or `version` is 0.
+    void SetSchemaVersion(StringView section, u32 version);
+    /// Returns the declared schema version of `section`, or 0 if none was declared.
+    u32 SchemaVersion(StringView section) const;
+    /// Returns the number of sections with a declared schema version.
+    u32 SchemaCount() const { return static_cast<u32>(schemas_.Size()); }
+    /// Returns the `index`th declared section name and sets `*version`; `index` must be less than `SchemaCount()`.
+    StringView SchemaAt(u32 index, u32* version) const;
+
     /// Returns a setting's declaration, or null if `id` is not registered.
     const SettingDesc* Desc(SettingId id) const;
     /// Returns a setting's key, or the invalid key if `id` is not registered.
@@ -137,6 +150,11 @@ private:
     struct Slot;
     Vector<UniquePtr<Slot>> slots_;
     Vector<u16> sorted_; // ids ordered by key
+    struct Schema {
+        Key section;
+        u32 version = 0;
+    };
+    Vector<Schema> schemas_;
     Vector<u16> aliases_sorted_; // ids of settings that have deprecated keys, searched linearly (rare)
     mutable std::mutex text_mutex_;
     std::atomic<bool> frozen_{false};

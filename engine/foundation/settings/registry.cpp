@@ -94,6 +94,8 @@ SettingId Registry::Register(const SettingDesc& desc, RegisterError* error) {
     if (slots_.Size() >= kMaxRegisteredSettings) return fail(RegisterError::Full);
     Key key;
     if (desc.key == nullptr || Key::Parse(StringView(desc.key), &key) != KeyError::None) return fail(RegisterError::BadKey);
+    // `version` and `<section>.schema` hold the file's version stamps; a setting cannot take them.
+    if (key.View() == "version" || key.View().EndsWith(".schema")) return fail(RegisterError::BadKey);
     if (Find(key.View()).IsValid()) return fail(RegisterError::Duplicate);
     if (desc.deprecated_count > kMaxDeprecatedNames || (desc.deprecated_count != 0 && desc.deprecated_keys == nullptr)) return fail(RegisterError::BadDeprecated);
     for (u32 i = 0; i < desc.deprecated_count; ++i) {
@@ -139,6 +141,35 @@ SettingId Registry::Register(const SettingDesc& desc, RegisterError* error) {
     sorted_.Insert(LowerBound(key.View()), id.value);
     if (desc.deprecated_count != 0) aliases_sorted_.Push(id.value);
     return id;
+}
+
+void Registry::SetSchemaVersion(StringView section, u32 version) {
+    ENGINE_ASSERT(!frozen_.load(std::memory_order_relaxed), "settings::Registry::SetSchemaVersion: the registry is frozen");
+    Key key;
+    ENGINE_ASSERT(version != 0 && Key::Parse(section, &key) == KeyError::None, "settings::Registry::SetSchemaVersion: a valid section and a version of at least 1 are needed");
+    for (usize i = 0; i < schemas_.Size(); ++i) {
+        if (schemas_[i].section == key) {
+            schemas_[i].version = version;
+            return;
+        }
+    }
+    Schema s;
+    s.section = key;
+    s.version = version;
+    schemas_.Push(s);
+}
+
+u32 Registry::SchemaVersion(StringView section) const {
+    for (usize i = 0; i < schemas_.Size(); ++i) {
+        if (schemas_[i].section.View() == section) return schemas_[i].version;
+    }
+    return 0;
+}
+
+StringView Registry::SchemaAt(u32 index, u32* version) const {
+    ENGINE_ASSERT(index < schemas_.Size(), "settings::Registry::SchemaAt: index out of range");
+    *version = schemas_[index].version;
+    return schemas_[index].section.View();
 }
 
 void Registry::Freeze() { frozen_.store(true, std::memory_order_relaxed); }
