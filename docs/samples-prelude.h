@@ -20,6 +20,7 @@
 #include "settings/config_text.h"
 #include "settings/file_store.h"
 #include "settings/layers.h"
+#include "settings/settings.h"
 #include "settings/env_source.h"
 #include "settings/setting.h"
 #include "containers/hash_map.h"

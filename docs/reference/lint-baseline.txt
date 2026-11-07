@@ -8,7 +8,7 @@ module	foundation/io	255	255
 module	foundation/math	97	97
 module	foundation/log	69	69
 module	foundation/types	97	97
-module	foundation/settings	347	347
+module	foundation/settings	429	429
 module	platform/os	30	30
 module	platform/window-input	241	241
 module	foundation/debug	200	200

@@ -54,6 +54,11 @@ usize LayerStack::AddLayer(StringView name, LayerRole role, ConfigStorePtr store
     return at;
 }
 
+void LayerStack::Clear() {
+    layers_.Clear();
+    write_layer_ = static_cast<usize>(-1);
+}
+
 usize LayerStack::Find(LayerRole role) const {
     for (usize i = 0; i < layers_.Size(); ++i) {
         if (layers_[i].role == role) return i;

@@ -75,6 +75,7 @@ set(FOUNDATION_SOURCES
   settings/layers.cpp
   settings/env_source.cpp
   settings/command_line_source.cpp
+  settings/settings.cpp
   io/path.cpp
   io/linux/error.cpp
   io/linux/file_system.cpp

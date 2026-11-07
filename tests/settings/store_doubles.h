@@ -24,6 +24,11 @@ public:
     FailingConfigStore(ConfigStorePtr inner, u32 fail_at, StoreError error, bool sticky = false)
         : owned_(static_cast<ConfigStorePtr&&>(inner)), inner_(owned_.Get()), fail_at_(fail_at), error_(error), sticky_(sticky) {}
 
+    /// From now on every call fails.
+    void FailFromNextCall() {
+        fail_at_ = calls_ + 1;
+        sticky_ = true;
+    }
     u32 calls() const { return calls_; }
     u32 failures() const { return failures_; }
 

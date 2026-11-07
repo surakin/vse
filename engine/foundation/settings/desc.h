@@ -19,6 +19,7 @@ enum SettingFlags : u32 {
     kRestartRequired = 1u << 0, ///< A change takes effect only after a restart (a UI shows a note).
     kAdvanced = 1u << 1,        ///< Hidden from a basic settings screen.
     kHidden = 1u << 2,          ///< Never shown in a settings screen or a generated help list.
+    kSecret = 1u << 3,          ///< The value is not written to the crash report or a settings listing.
 };
 
 /// The most names in an enum.

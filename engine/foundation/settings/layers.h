@@ -88,6 +88,8 @@ public:
     /// Param store: the store; the stack owns it.
     /// Returns: the layer's index (indices of higher layers shift when a layer is inserted below them).
     usize AddLayer(StringView name, LayerRole role, ConfigStorePtr store);
+    /// Removes every layer.
+    void Clear();
     /// Returns the number of layers.
     usize Size() const { return layers_.Size(); }
     /// Returns a layer's store, name, role and state.

@@ -1,6 +1,6 @@
 # Settings
 
-Status: draft (Phase 11, Days 131-134: keys, values, the registry, typed handles, stores, the text-file store, layers, the environment and the command line; the service and the demos arrive on Days 135-138).
+Status: draft (Phase 11, Days 131-135: keys, values, the registry, typed handles, stores, the text-file store, layers, the environment, the command line and the `Settings` service; migration and the demos arrive on Days 136-138).
 
 The settings system is one registry that every module declares its settings in, and handles that read them cheaply. Where values come from (files, the environment, the command line) and how they
 are saved arrive later in this phase. Design and reasons: `docs/superpowers/specs/2026-11-07-settings-design.md`.
@@ -241,3 +241,54 @@ std::printf("%lld from %s\n", static_cast<long long>(r.value.AsInt()), r.layer_n
 (`--gpu NAME` or `--gpu=NAME`; for a bool `--vsync`, `--vsync=false` and `--no-vsync`, never a separate value), and the options the application handles itself, recorded in `Result()`: `--settings FILE` (one `Custom` layer per file),
 `--list-settings`, `--save-settings[=FILE]` and `--help`. Arguments it does not own stay in `Result().rest`, and a bare `--` ends the options: it and everything after it go to `rest` untouched. A variable that is set but empty counts as unset. An unknown `--set` key is an error that suggests the closest registered key
 (`--set renderer.widht: no such setting; did you mean 'renderer.width'?`).
+
+## Loading, changing and saving
+
+An application owns one `settings::Settings` over a registry (it freezes the registry). `Load(LoadOptions)` builds the standard stack for the platform and the program's arguments: the defaults the program
+ships (`shipped`), an optional system-wide file, the user's file (`<user config directory>/<app>/settings.cfg`, the layer that is written), an optional project file, the files named by `--settings`,
+the environment and the command line. It reads every layer, resolves every setting through the layers and publishes the values. The returned `LoadReport` has one entry per layer (`Loaded`, `Missing`,
+`Damaged`, `Failed`) and one `LayerProblem` for everything that was skipped or wrong: a damaged file, a bad value in the environment, an unknown `--set` key with its suggestion. A problem in one
+layer never stops the others. `Load` is `LoadFromLayers` after building the stack, and a program or test with its own layers (`Settings::Layers()`) calls `LoadFromLayers` directly.
+
+`Set(id, value)`, `SetText(key, text)` and `Apply(requests, count, apply, user)` change settings. The value is checked against the declaration first: a number outside its range is clamped or refused by the
+setting's policy, an enum index must exist, the type must match, and a setting that needs a capability the program does not have (`SetCapabilityCheck`) only accepts its default. The change is written to
+the write layer in memory, handed to the apply function if there is one, then published (handles and `Snapshot()` see it), and then the listeners run. Several settings changed by one `Apply` are checked together, published together and announced together;
+`Snapshot()` returns an immutable copy of all values taken at one instant, so code that needs several settings to agree reads them from one snapshot rather than through separate handles.
+
+`Save()` writes the user's file: only that layer, only the lines that changed, atomically, with a `.bak` of the previous file. A `--set` value is not saved unless asked (`SaveOptions::include_command_line`, after which they are part of the user's file).
+A user file that was damaged on load is not replaced unless the caller says so (`replace_damaged`), and a read-only home directory is a `Status` the application can show: the values in memory are untouched
+and `HasUnsavedChanges()` stays true. `SaveIfChanged()` saves only after a change; `SaveOnExit` is a scope guard that does it at the end of `main`; `SetAutosaveQuietSeconds` plus calling `PollAutosave()`
+(once a frame is fine) saves after a period without changes, and is off by default. The settings that are not at their default are also written into the crash report (the `settings` entries); a setting declared with `kSecret` shows no value there.
+
+```cpp compile run
+settings::Registry registry;
+settings::SettingId width = registry.Register(settings::MakeInt("renderer.width", 1280, 0, 16384));
+settings::SettingId height = registry.Register(settings::MakeInt("renderer.height", 720, 0, 16384));
+settings::Settings settings(registry);
+settings.Layers().AddLayer("user", settings::LayerRole::User, MakeUnique<settings::MemoryConfigStore>());
+settings.LoadFromLayers();
+
+settings::Setting<i64> width_now(registry, width);
+std::printf("%lld\n", static_cast<long long>(width_now.Get()));
+settings.Set(width, settings::Value::FromInt(1920));
+settings::SetResult too_big = settings.Set(width, settings::Value::FromInt(99999)); // clamped to the range
+std::printf("%lld %d\n", static_cast<long long>(width_now.Get()), static_cast<int>(too_big.Ok()));
+settings::ChangeRequest both[] = {{width, settings::Value::FromInt(800)}, {height, settings::Value::FromInt(600)}};
+settings.Apply(both, 2, nullptr, nullptr);
+std::printf("%lld %lld\n", static_cast<long long>(settings.Snapshot()->Get(width).AsInt()), static_cast<long long>(settings.Snapshot()->Get(height).AsInt()));
+```
+
+```output
+1280
+16384 1
+800 600
+```
+
+## Reacting to a change
+
+`AddListener(prefix, function, user)` subscribes to the settings whose key is the prefix or below it (an empty prefix means all). The function gets a `ChangeEvent`: the changes (old and new value), the
+highest `apply_class` among them and whether any is `kRestartRequired`, so a consumer can do the cheapest action that is enough. Listeners run in the order they were added, on the thread that made the change,
+after the value is published and with no lock held, so a listener may call `Set` (a nested call is announced too, up to 8 deep; deeper is refused with `SetError::Reentrant`).
+
+`Apply` takes an **apply function** for a consumer that must act on the batch and may refuse it (the renderer's `ApplySettings`). The handles still show the old values while the function runs (the event carries the new ones), because nothing is published until it accepts. If it returns false the write layer is put back exactly as it was, nobody is told, and the call returns `SetError::ApplyFailed`. One lock covers the whole operation, so another thread's change waits until this one has been applied and announced; a listener must not wait for a thread that is itself changing a setting. A consumer that needs an owner thread (a GPU object) queues the change
+itself from its listener, as the renderer already does.
