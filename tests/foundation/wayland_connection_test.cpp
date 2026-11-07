@@ -1,6 +1,7 @@
 #include <cstdlib>
 
 #include <catch2/catch_test_macros.hpp>
+#include "display_session.h"
 
 #include "log/log.h"
 #include "os/linux/wayland/wayland_connection.h"
@@ -37,6 +38,7 @@ long WaylandConnectionTestCapturingWriteSink(int fd, const void* buf, usize len)
 
 TEST_CASE("WaylandConnection::Connect binds compositor/xdg_wm_base/seat/shm against a real compositor",
           "[wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
     REQUIRE(conn.Display() != nullptr);
@@ -63,6 +65,7 @@ TEST_CASE("WaylandConnection::Connect fails gracefully (no crash) when no compos
 }
 
 TEST_CASE("WaylandConnection::Connect logs each bound global's interface name and version", "[wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     g_WaylandConnectionTest_capture_len = 0;
     LogPlatform.SetVerbosity(LogVerbosity::Info);
     SetWriteSinkForTesting(&WaylandConnectionTestCapturingWriteSink);
@@ -82,6 +85,7 @@ TEST_CASE("WaylandConnection::Connect logs each bound global's interface name an
 
 TEST_CASE("WaylandConnection move construction/assignment transfers ownership without double-free",
           "[wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection a = WaylandConnection::Connect();
     REQUIRE(a.Valid());
     wl_display* display = a.Display();

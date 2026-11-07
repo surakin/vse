@@ -4,6 +4,7 @@
 #include <string>
 
 #include <catch2/catch_test_macros.hpp>
+#include "display_session.h"
 
 #include "os/input.h"
 #include "os/linux/platform_window_host.h"
@@ -93,6 +94,7 @@ TEST_CASE("PlanWindowBackends: a forced backend ignores the environment and neve
 }
 
 TEST_CASE("PlatformWindowHost opens the Wayland backend when forced", "[window][wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!HaveEnv("WAYLAND_DISPLAY")) {
         SKIP("no Wayland session");
     }
@@ -113,6 +115,7 @@ TEST_CASE("PlatformWindowHost opens the Wayland backend when forced", "[window][
 }
 
 TEST_CASE("PlatformWindowHost opens the X11 backend when forced", "[window][x11][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!HaveEnv("DISPLAY")) {
         SKIP("no X11 display");
     }
@@ -130,6 +133,7 @@ TEST_CASE("PlatformWindowHost opens the X11 backend when forced", "[window][x11]
 }
 
 TEST_CASE("PlatformWindowHost auto falls back to X11 when WAYLAND_DISPLAY is unset", "[window][x11][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!HaveEnv("DISPLAY")) {
         SKIP("no X11 display");
     }
@@ -141,6 +145,7 @@ TEST_CASE("PlatformWindowHost auto falls back to X11 when WAYLAND_DISPLAY is uns
 }
 
 TEST_CASE("PlatformWindowHost auto falls back to X11 when the Wayland connection fails", "[window][x11][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!HaveEnv("DISPLAY")) {
         SKIP("no X11 display");
     }
@@ -153,6 +158,7 @@ TEST_CASE("PlatformWindowHost auto falls back to X11 when the Wayland connection
 }
 
 TEST_CASE("A forced backend does not fall back when it fails", "[window][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     ScopedEnv bad_wayland("WAYLAND_DISPLAY", "wayland-does-not-exist");
     InputState input;
     PlatformWindowHost host;
@@ -161,6 +167,7 @@ TEST_CASE("A forced backend does not fall back when it fails", "[window][os]") {
 }
 
 TEST_CASE("PlatformWindowHost::OpenFromEnvironment honors ENGINE_WINDOW_BACKEND", "[window][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     InputState input;
     {
         ScopedEnv bad("ENGINE_WINDOW_BACKEND", "carrier-pigeon");
@@ -182,6 +189,7 @@ TEST_CASE("PlatformWindowHost::OpenFromEnvironment honors ENGINE_WINDOW_BACKEND"
 }
 
 TEST_CASE("PlatformWindowHost rejects opening twice and a null InputState for Wayland", "[window][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!HaveEnv("DISPLAY")) {
         SKIP("no X11 display");
     }
@@ -199,6 +207,7 @@ TEST_CASE("PlatformWindowHost rejects opening twice and a null InputState for Wa
 
 TEST_CASE("The Wayland backend ends up with a keyboard and keymap (seat capabilities not lost to window setup)",
           "[window][wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!HaveEnv("WAYLAND_DISPLAY")) {
         SKIP("no Wayland session");
     }
@@ -213,6 +222,7 @@ TEST_CASE("The Wayland backend ends up with a keyboard and keymap (seat capabili
 }
 
 TEST_CASE("WaylandPlatformWindow reports a dead compositor connection as ShouldClose", "[window][wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!HaveEnv("WAYLAND_DISPLAY")) {
         SKIP("no Wayland session");
     }
@@ -242,6 +252,7 @@ TEST_CASE("WaylandPlatformWindow reports a dead compositor connection as ShouldC
 }
 
 TEST_CASE("WaylandPlatformWindow::Close tears everything down and is idempotent", "[window][wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!HaveEnv("WAYLAND_DISPLAY")) {
         SKIP("no Wayland session");
     }
@@ -273,6 +284,7 @@ TEST_CASE("WaylandPlatformWindow::Close tears everything down and is idempotent"
 }
 
 TEST_CASE("A Wayland window exposes its native display and surface", "[window][wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!HaveEnv("WAYLAND_DISPLAY")) {
         SKIP("no Wayland session");
     }
@@ -297,6 +309,7 @@ TEST_CASE("A Wayland window exposes its native display and surface", "[window][w
 }
 
 TEST_CASE("A closed or never-opened Wayland window has no native info and counts as minimized", "[window][wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     engine_placeholder::os::wayland::WaylandPlatformWindow closed;
     NativeWindowInfo info = closed.GetNativeInfo();
     REQUIRE(info.kind == NativeWindowKind::Invalid);
@@ -317,6 +330,7 @@ TEST_CASE("A closed or never-opened Wayland window has no native info and counts
 }
 
 TEST_CASE("An X11 window exposes its native display and window id", "[window][x11][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!HaveEnv("DISPLAY")) {
         SKIP("no X11 display");
     }

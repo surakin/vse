@@ -2,6 +2,7 @@
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
+#include "display_session.h"
 
 #include "gpu_fixture.h"
 #include "os/input.h"
@@ -167,6 +168,7 @@ void RunFrameLoopChecks(os::WindowBackend backend) {
 } // namespace
 
 TEST_CASE("The frame loop on a Wayland window keeps frames in flight bounded and leaks nothing", "[rhi][vulkan][gpu][window][wayland][frame]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!VulkanFrameTestHaveEnv("WAYLAND_DISPLAY")) {
         SKIP("no Wayland session");
     }
@@ -174,6 +176,7 @@ TEST_CASE("The frame loop on a Wayland window keeps frames in flight bounded and
 }
 
 TEST_CASE("The frame loop on an X11 window keeps frames in flight bounded and leaks nothing", "[rhi][vulkan][gpu][window][x11][frame]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!VulkanFrameTestHaveEnv("DISPLAY")) {
         SKIP("no X11 display");
     }

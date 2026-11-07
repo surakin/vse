@@ -1,6 +1,7 @@
 #include <utility>
 
 #include <catch2/catch_test_macros.hpp>
+#include "display_session.h"
 
 #include "os/linux/wayland/wayland_connection.h"
 #include "os/linux/wayland/wayland_window.h"
@@ -10,6 +11,7 @@ using engine_placeholder::os::wayland::WaylandWindow;
 
 TEST_CASE("WaylandWindow::Create maps a real, visible toplevel window against a real compositor",
           "[wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
 
@@ -24,6 +26,7 @@ TEST_CASE("WaylandWindow::Create maps a real, visible toplevel window against a 
 
 TEST_CASE("WaylandWindow::Create's window does not request close before any close event arrives",
           "[wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
 
@@ -47,6 +50,7 @@ TEST_CASE("WaylandWindow::Create fails gracefully on an invalid connection", "[w
 }
 
 TEST_CASE("WaylandWindow::Create truncates an overlong title instead of failing", "[wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
 
@@ -62,6 +66,7 @@ TEST_CASE("WaylandWindow::Create truncates an overlong title instead of failing"
 }
 
 TEST_CASE("WaylandWindow move construction/assignment transfers ownership without double-free", "[wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
 
@@ -83,6 +88,7 @@ TEST_CASE("WaylandWindow move construction/assignment transfers ownership withou
 
 TEST_CASE("WaylandWindow gets server-side decorations when the compositor offers xdg-decoration",
           "[wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
     if (conn.DecorationManager() == nullptr) {
@@ -99,6 +105,7 @@ TEST_CASE("WaylandWindow gets server-side decorations when the compositor offers
 
 TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the compositor resizes it",
           "[wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
     WaylandWindow window = WaylandWindow::Create(conn, "resize test", "engine_placeholder");
@@ -139,6 +146,7 @@ TEST_CASE("WaylandWindow re-allocates its buffer and takes the new size when the
 }
 
 TEST_CASE("WaylandWindow::Create uses the size hint when the compositor suggests none", "[wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
     WaylandWindow window = WaylandWindow::Create(conn, "hinted", "engine_placeholder", 500, 300);
@@ -148,6 +156,7 @@ TEST_CASE("WaylandWindow::Create uses the size hint when the compositor suggests
 }
 
 TEST_CASE("WaylandWindow's resize serial survives a move and is non-zero once sized", "[wayland][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     WaylandConnection conn = WaylandConnection::Connect();
     REQUIRE(conn.Valid());
     WaylandWindow window = WaylandWindow::Create(conn, "serial test", "engine_placeholder");

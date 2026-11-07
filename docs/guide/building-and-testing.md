@@ -142,6 +142,13 @@ Run one flavor with `--flavor asan|tsan|plain`; plain means neither sanitizer la
 
 Window tests also carry the label `display` (they share the one desktop and run one at a time).
 
+### Window tests and the session
+
+A window never appears while the screen is locked, idle or switched to another user, so a window test run then fails for a reason that is not a defect. A test that opens a real window starts with
+`SKIP_IF_NO_DISPLAY_SESSION()` (`tests/support/display_session.h`): it asks `os::QuerySessionState()` (`engine/foundation/os/session.h`) and skips with the state as the reason unless the session is `Active`. An `Unknown`
+state (no session manager, a container) does not skip, so such a machine still runs and can fail. Tag the test `[x11]` or `[wayland]` so it also holds the ctest `display` resource. On Linux the query asks systemd-logind
+through `libsystemd.so.0`, loaded at run time; `os/windows/SESSION.md` and `os/macos/SESSION.md` say what the other ports call.
+
 ### GPU tests and validation layers
 
 Tests tagged `[gpu]` (CTest label `gpu`) need a Vulkan driver. Without one they skip; set

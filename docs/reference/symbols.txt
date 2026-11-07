@@ -1350,6 +1350,16 @@ os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.m
 os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:109
 os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:117
 os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:121
+os::SessionState	enum	platform/os	os-sessionstate	platform-os.md	engine/foundation/os/session.h:11
+os::SessionState::Active	enumerator	platform/os	os-sessionstate-active	platform-os.md	engine/foundation/os/session.h:12
+os::SessionState::Locked	enumerator	platform/os	os-sessionstate-locked	platform-os.md	engine/foundation/os/session.h:13
+os::SessionState::Idle	enumerator	platform/os	os-sessionstate-idle	platform-os.md	engine/foundation/os/session.h:14
+os::SessionState::Inactive	enumerator	platform/os	os-sessionstate-inactive	platform-os.md	engine/foundation/os/session.h:15
+os::SessionState::Unknown	enumerator	platform/os	os-sessionstate-unknown	platform-os.md	engine/foundation/os/session.h:16
+os::SessionStateName(SessionState)	function	platform/os	os-sessionstatename-sessionstate	platform-os.md	engine/foundation/os/session.h:20
+os::SessionStateFromFlags(bool,bool,bool,bool)	function	platform/os	os-sessionstatefromflags-bool-bool-bool-bool	platform-os.md	engine/foundation/os/session.h:28
+os::SessionCanShowWindows(SessionState)	function	platform/os	os-sessioncanshowwindows-sessionstate	platform-os.md	engine/foundation/os/session.h:31
+os::QuerySessionState()	function	platform/os	os-querysessionstate	platform-os.md	engine/foundation/os/session.h:39
 os::Key	enum	platform/window-input	os-key	platform-window-input.md	engine/foundation/os/input.h:12
 os::Key::Unknown	enumerator	platform/window-input	os-key-unknown	platform-window-input.md	engine/foundation/os/input.h:13
 os::Key::A	enumerator	platform/window-input	os-key-a	platform-window-input.md	engine/foundation/os/input.h:14

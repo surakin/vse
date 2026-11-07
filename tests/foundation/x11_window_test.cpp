@@ -4,6 +4,7 @@
 #include <X11/Xutil.h>
 
 #include <catch2/catch_test_macros.hpp>
+#include "display_session.h"
 
 #include "os/linux/x11/x11_window.h"
 #include "os/os.h"
@@ -28,6 +29,7 @@ bool PumpUntil(X11Window& window, Pred done) {
 } // namespace
 
 TEST_CASE("X11Window::Create opens a mapped window on the real X server", "[x11][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     X11Window window = X11Window::Create("engine_placeholder x11 test", 640, 480);
     REQUIRE(window.Valid());
     REQUIRE(window.NativeDisplay() != nullptr);
@@ -60,6 +62,7 @@ TEST_CASE("A default-constructed X11Window is invalid and pumping it is a no-op"
 }
 
 TEST_CASE("X11Window sets ShouldClose when the WM sends WM_DELETE_WINDOW", "[x11][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     X11Window window = X11Window::Create("close test", 320, 240);
     REQUIRE(window.Valid());
 
@@ -82,6 +85,7 @@ TEST_CASE("X11Window sets ShouldClose when the WM sends WM_DELETE_WINDOW", "[x11
 }
 
 TEST_CASE("X11Window ignores unrelated ClientMessages", "[x11][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     X11Window window = X11Window::Create("ignore test", 320, 240);
     REQUIRE(window.Valid());
 
@@ -105,6 +109,7 @@ TEST_CASE("X11Window ignores unrelated ClientMessages", "[x11][os]") {
 }
 
 TEST_CASE("X11Window tracks resizes from ConfigureNotify", "[x11][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     X11Window window = X11Window::Create("resize test", 300, 200);
     REQUIRE(window.Valid());
 
@@ -118,6 +123,7 @@ TEST_CASE("X11Window tracks resizes from ConfigureNotify", "[x11][os]") {
 }
 
 TEST_CASE("X11Window move transfers ownership without double-close", "[x11][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     X11Window a = X11Window::Create("move test", 200, 200);
     REQUIRE(a.Valid());
     unsigned long native = a.NativeWindow();
@@ -252,6 +258,7 @@ X11Window CreateSettled(const char* title, engine_placeholder::u32 w, engine_pla
 } // namespace
 
 TEST_CASE("X11Window translates key press/release into Key via the server's keymap", "[x11][input][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     X11Window window = CreateSettled("key test", 320, 240);
     REQUIRE(window.Valid());
     Injector inj;
@@ -284,6 +291,7 @@ TEST_CASE("X11Window translates key press/release into Key via the server's keym
 }
 
 TEST_CASE("X11Window releases the Key a code was pressed as even if modifiers changed", "[x11][input][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     X11Window window = CreateSettled("held key test", 320, 240);
     REQUIRE(window.Valid());
     Injector inj;
@@ -304,6 +312,7 @@ TEST_CASE("X11Window releases the Key a code was pressed as even if modifiers ch
 }
 
 TEST_CASE("X11Window maps event state bits to engine modifiers", "[x11][input][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     X11Window window = CreateSettled("mods test", 320, 240);
     REQUIRE(window.Valid());
     Injector inj;
@@ -319,6 +328,7 @@ TEST_CASE("X11Window maps event state bits to engine modifiers", "[x11][input][o
 }
 
 TEST_CASE("X11Window mirrors pointer position, buttons and scroll into InputState", "[x11][input][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     using namespace engine_placeholder::os;
     X11Window window = CreateSettled("pointer test", 320, 240);
     REQUIRE(window.Valid());
@@ -365,6 +375,7 @@ TEST_CASE("X11Window mirrors pointer position, buttons and scroll into InputStat
 }
 
 TEST_CASE("X11Window input events are ignored (no crash) when no InputState is supplied", "[x11][input][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     X11Window window = CreateSettled("no input state", 320, 240);
     REQUIRE(window.Valid());
     Injector inj;
@@ -383,6 +394,7 @@ TEST_CASE("X11Window input events are ignored (no crash) when no InputState is s
 // machine's own layout isn't known to the test.
 TEST_CASE("X11Window yields layout-correct Keys for physical keycodes (needs ENGINE_X11_TEST_LAYOUT)",
           "[x11][input][os][layout]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     const char* layout = std::getenv("ENGINE_X11_TEST_LAYOUT");
     if (layout == nullptr) {
         SKIP("ENGINE_X11_TEST_LAYOUT not set");
@@ -417,6 +429,7 @@ TEST_CASE("X11Window yields layout-correct Keys for physical keycodes (needs ENG
 
 TEST_CASE("X11Window releases keys and modifiers on a real focus loss but not during WM grabs",
           "[x11][input][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     using namespace engine_placeholder::os;
     X11Window window = CreateSettled("focus test", 320, 240);
     REQUIRE(window.Valid());
@@ -447,6 +460,7 @@ TEST_CASE("X11Window releases keys and modifiers on a real focus loss but not du
 }
 
 TEST_CASE("X11Window reports native info, and none once invalid or moved from", "[x11][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     using engine_placeholder::os::NativeWindowKind;
     X11Window none;
     REQUIRE(none.GetNativeInfo().kind == NativeWindowKind::Invalid);
@@ -469,6 +483,7 @@ TEST_CASE("X11Window reports native info, and none once invalid or moved from", 
 }
 
 TEST_CASE("X11Window's resize serial changes on every size change and never repeats", "[x11][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     X11Window window = X11Window::Create("serial test", 300, 200);
     REQUIRE(window.Valid());
     REQUIRE(window.ResizeSerial() != 0);
@@ -517,6 +532,7 @@ TEST_CASE("X11Window's resize serial changes on every size change and never repe
 }
 
 TEST_CASE("X11Window reports itself minimized while its window is unmapped", "[x11][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     X11Window window = X11Window::Create("unmap test", 300, 200);
     REQUIRE(window.Valid());
     PumpUntil(window, [] { return false; });

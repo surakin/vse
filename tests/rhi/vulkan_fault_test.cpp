@@ -1,6 +1,7 @@
 #include <cstdlib>
 
 #include <catch2/catch_test_macros.hpp>
+#include "display_session.h"
 
 #include "gpu_fixture.h"
 #include "os/input.h"
@@ -211,6 +212,7 @@ void RunResizeStorm(os::WindowBackend backend) {
 } // namespace
 
 TEST_CASE("A swapchain survives 200 resize requests including zero sizes on Wayland", "[rhi][vulkan][gpu][window][wayland][fault]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!HaveEnv("WAYLAND_DISPLAY")) {
         SKIP("no Wayland session");
     }
@@ -218,6 +220,7 @@ TEST_CASE("A swapchain survives 200 resize requests including zero sizes on Wayl
 }
 
 TEST_CASE("A swapchain survives 200 resize requests including zero sizes on X11", "[rhi][vulkan][gpu][window][x11][fault]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!HaveEnv("DISPLAY")) {
         SKIP("no X11 display");
     }

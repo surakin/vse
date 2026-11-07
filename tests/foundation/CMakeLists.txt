@@ -31,6 +31,7 @@ set(FOUNDATION_TEST_SOURCES
   wayland_window_test.cpp
   keyboard_input_test.cpp
   x11_window_test.cpp
+  session_state_test.cpp
   window_backend_test.cpp
   window_fullscreen_test.cpp
 )
@@ -39,7 +40,7 @@ find_package(Threads REQUIRED)
 
 add_executable(foundation_tests ${FOUNDATION_TEST_SOURCES})
 target_link_libraries(foundation_tests PRIVATE foundation Catch2::Catch2WithMain Threads::Threads)
-target_include_directories(foundation_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(foundation_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)
 
 include(Catch)
 # Tests that open a window share one desktop and its input focus. A window another test opens or closes moves the real

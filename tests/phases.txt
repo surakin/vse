@@ -38,6 +38,7 @@ tests/foundation/normalize_test.cpp             0
 tests/foundation/os_timing_test.cpp             0
 tests/foundation/pool_allocator_test.cpp        0
 tests/foundation/quaternion_test.cpp            0
+tests/foundation/session_state_test.cpp         1
 tests/foundation/shared_ptr_test.cpp            0   # extended in Phase 5 Day 80b, still a foundation type
 tests/foundation/stack_allocator_test.cpp       0
 tests/foundation/string_test.cpp                0

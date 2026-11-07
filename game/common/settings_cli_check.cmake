@@ -1,11 +1,15 @@
 # Command-line checks of the demos' settings options (Phase 11 Day 138). Run as:
 #   cmake -DEXE=<program> -DMODE=<golden|regex|reproduce> -DARGS="a;b" [-DENV="K=V;..."] [-DGOLDEN=<file>] [-DEXPECT=<regex>] [-DWORK=<dir>] -P settings_cli_check.cmake
 # The program runs with an empty environment (env -i), a private empty XDG_CONFIG_HOME, and only the variables in ENV, so the developer's own settings and
-# variables cannot change the output.
+# variables cannot change the output. WORK is a prefix: the checks of one program run in parallel, so each uses WORK_<hash of what it runs>.
 cmake_minimum_required(VERSION 3.20)
 if(NOT WORK)
   set(WORK "${CMAKE_CURRENT_BINARY_DIR}/settings_cli_work")
 endif()
+# Tests of one program run in parallel under ctest: each gets a directory of its own, named by what it runs.
+string(MD5 work_hash "${EXE}|${MODE}|${ARGS}|${ENV}|${USER_FILE}|${GOLDEN}|${EXPECT}")
+string(SUBSTRING "${work_hash}" 0 8 work_hash)
+set(WORK "${WORK}_${work_hash}")
 file(REMOVE_RECURSE "${WORK}")
 file(MAKE_DIRECTORY "${WORK}/xdg")
 

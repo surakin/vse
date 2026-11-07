@@ -1,5 +1,6 @@
 // Phase 8 Day 107: the fullscreen request of os::Window on the real display backends.
 #include <catch2/catch_test_macros.hpp>
+#include "display_session.h"
 
 #include "os/input.h"
 #include "os/linux/wayland/wayland_platform_window.h"
@@ -38,6 +39,7 @@ void ToggleFullscreen(os::Window& window) {
 } // namespace
 
 TEST_CASE("An X11 window toggles fullscreen", "[x11][window][fullscreen]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     os::x11::X11Window window = os::x11::X11Window::Create("fullscreen test", 320, 240);
     if (!window.Valid()) {
         SKIP("no X server");
@@ -46,6 +48,7 @@ TEST_CASE("An X11 window toggles fullscreen", "[x11][window][fullscreen]") {
 }
 
 TEST_CASE("A Wayland window toggles fullscreen", "[wayland][window][fullscreen]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     os::InputState input;
     os::wayland::WaylandPlatformWindow window;
     if (!window.Open("fullscreen test", 320, 240, &input)) {

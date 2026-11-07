@@ -5,6 +5,7 @@
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(FOUNDATION_PLATFORM_SOURCES
     os/linux/os.cpp
+    os/linux/session.cpp
     os/linux/command_line.cpp
     os/linux/xkb_keyboard.cpp
     os/linux/wayland/wayland_input.cpp
@@ -58,6 +59,7 @@ set(FOUNDATION_SOURCES
   foundation.cpp
   os/key_translate.cpp
   os/window.cpp
+  os/session.cpp
   os/gpu_driver_probe.cpp
   mem/arena_allocator.cpp
   mem/pool_allocator.cpp

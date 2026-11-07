@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+#include "display_session.h"
 
 #include "os/input.h"
 #include "os/linux/wayland/wayland_connection.h"
@@ -109,6 +110,7 @@ TEST_CASE("XkbKeyboard rejects unusable keymap text and stays invalid", "[input]
 }
 
 TEST_CASE("WaylandInput::Init hooks the real seat and loads its keymap", "[wayland][input][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     wayland::WaylandConnection conn = wayland::WaylandConnection::Connect();
     REQUIRE(conn.Valid());
 
@@ -156,6 +158,7 @@ TEST_CASE("InputState defaults to idle and BeginFrame clears only scroll deltas"
 }
 
 TEST_CASE("WaylandInput::Init creates a pointer iff the seat advertises one", "[wayland][input][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     wayland::WaylandConnection conn = wayland::WaylandConnection::Connect();
     REQUIRE(conn.Valid());
 

@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
+#include "display_session.h"
 
 #include "gpu_fixture.h"
 #include "os/input.h"
@@ -247,6 +248,7 @@ void RunPresentationChecks(os::WindowBackend backend) {
 } // namespace
 
 TEST_CASE("Vulkan swapchain presents to a Wayland window", "[rhi][vulkan][gpu][window][wayland]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!VulkanSwapchainTestHaveEnv("WAYLAND_DISPLAY")) {
         SKIP("no Wayland session");
     }
@@ -254,6 +256,7 @@ TEST_CASE("Vulkan swapchain presents to a Wayland window", "[rhi][vulkan][gpu][w
 }
 
 TEST_CASE("Vulkan swapchain presents to an X11 window", "[rhi][vulkan][gpu][window][x11]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
     if (!VulkanSwapchainTestHaveEnv("DISPLAY")) {
         SKIP("no X11 display");
     }
