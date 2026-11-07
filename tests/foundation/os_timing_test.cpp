@@ -2,6 +2,7 @@
 #include <cstdlib>
 
 #include "os/os.h"
+#include "test_env.h"
 #include "types.h"
 
 using engine_placeholder::u64;
@@ -29,7 +30,7 @@ TEST_CASE("SleepNanos blocks for at least (most of) the requested duration", "[o
 TEST_CASE("os::EnvironmentEntry lists the process environment as NAME=value", "[os][environment]") {
     using engine_placeholder::StringView;
     using engine_placeholder::usize;
-    setenv("RE_ENVIRONMENT_ENTRY_TEST", "abc=def", 1);
+    test_support::SetEnv("RE_ENVIRONMENT_ENTRY_TEST", "abc=def");
     const usize count = engine_placeholder::os::EnvironmentCount();
     REQUIRE(count > 0);
     bool found = false;
@@ -73,5 +74,5 @@ TEST_CASE("os::EnvironmentEntry lists the process environment as NAME=value", "[
     CHECK_FALSE(engine_placeholder::os::EnvironmentEntry(count + 10, none, sizeof(none), &length));
     CHECK(length == 0);
     CHECK(none[0] == '\0');
-    unsetenv("RE_ENVIRONMENT_ENTRY_TEST");
+    test_support::UnsetEnv("RE_ENVIRONMENT_ENTRY_TEST");
 }

@@ -48,9 +48,12 @@ add_executable(foundation_base_tests ${FOUNDATION_BASE_TEST_SOURCES})
 target_link_libraries(foundation_base_tests PRIVATE foundation_base Catch2::Catch2WithMain Threads::Threads)
 target_include_directories(foundation_base_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)
 
-add_executable(foundation_tests ${FOUNDATION_PLATFORM_TEST_SOURCES})
-target_link_libraries(foundation_tests PRIVATE platform foundation Catch2::Catch2WithMain Threads::Threads)
-target_include_directories(foundation_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)
+# The file-layer and window tests need foundation_io and the platform library, which Windows builds from Days 151 and 158.
+if(TARGET platform)
+  add_executable(foundation_tests ${FOUNDATION_PLATFORM_TEST_SOURCES})
+  target_link_libraries(foundation_tests PRIVATE platform foundation Catch2::Catch2WithMain Threads::Threads)
+  target_include_directories(foundation_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)
+endif()
 
 include(Catch)
 # Tests that open a window share one desktop and its input focus. A window another test opens or closes moves the real
@@ -58,5 +61,7 @@ include(Catch)
 # tests under `ctest -j6` failed in 3 runs out of 4, and one in most full runs; each passes alone). The window tests hold
 # the ctest resource `display` (shared with tests/rhi), so ctest runs them one at a time while the rest stays parallel.
 engine_discover_tests(foundation_base_tests)
-engine_discover_tests(foundation_tests TEST_SPEC "~[window]~[x11]~[wayland]")
-engine_discover_tests(foundation_tests TEST_SPEC "[window],[x11],[wayland]" PROPERTIES LABELS display RESOURCE_LOCK display)
+if(TARGET foundation_tests)
+  engine_discover_tests(foundation_tests TEST_SPEC "~[window]~[x11]~[wayland]")
+  engine_discover_tests(foundation_tests TEST_SPEC "[window],[x11],[wayland]" PROPERTIES LABELS display RESOURCE_LOCK display)
+endif()

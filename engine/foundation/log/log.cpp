@@ -6,7 +6,6 @@
 #include <atomic>
 #include <cstdlib>
 #include <cstring>
-#include <fcntl.h>
 
 namespace engine_placeholder {
 

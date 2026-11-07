@@ -28,7 +28,8 @@ work there first, and the gates learn the Windows rules (where `windows.h`, D3D1
       - `rhi_boundary_check`: D3D12/DXGI names and headers only in `engine/rhi/dx12/` (as Vulkan's are only in `engine/rhi/vulkan/`).
       - `file_access_check`: the Win32 and CRT file calls (`CreateFileW`, `CreateFileA`, `FindFirstFile*`, `MoveFileEx*`, `ReplaceFile*`, `DeleteFile*`,
         `CreateDirectory*`, `GetFileAttributes*`, `GetFullPathName*`, `_wfopen`, `_open`, `_wopen`, `fopen_s`) are violations outside the allow list; the Windows
-        file backend and the `os` descriptor primitives are allow-listed with reasons.
+        file backend and the `os` descriptor primitives are allow-listed with reasons (from Day 149: `engine/foundation/os/windows/os.cpp`, which
+        implements them with `CreateFileW`, and `tests/windows/os_windows_test.cpp`, which tests them on ordinary files and cleans up with `DeleteFileA`).
       - `config_access_check`: `GetEnvironmentVariable*`, `_wgetenv`, `_dupenv_s`, `GetCommandLine*`, `CommandLineToArgvW` outside the settings system and `os/`.
       - `signal_safety_check`: the Windows crash hook's code is marked `SIGNAL-SAFE` and checked by the same rules (no allocation, no locks, no CRT formatting);
         the rule text says what "signal-safe" means on Windows (code that runs inside a crashed process's exception handler).

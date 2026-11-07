@@ -97,10 +97,13 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
   set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
   add_subdirectory(engine/foundation)
+  add_subdirectory(tests/foundation)  # foundation_base_tests only, until the platform library exists
+  add_subdirectory(tests/types)
+  add_subdirectory(tests/foundation_sanitized)
   add_subdirectory(tests/windows)
   # tests/phase_labels joins on Day 150, when the phase map can say which tests each platform has (every other phase's tests are
   # absent here, so its flavor and unused-line checks would fail today); engine_label_tests() already refuses an unmapped test.
-  message(STATUS "Windows (Phase 13): building foundation_base and tests/windows. Not yet ported, so not configured: the file layer "
+  message(STATUS "Windows (Phase 13): building foundation_base, its tests (tests/foundation's base files, tests/types, tests/foundation_sanitized) and tests/windows. Not yet ported, so not configured: the file layer "
                  "(Days 151-152), jobs (153), debugging and sentry-native (154-156; libbacktrace is Linux-only), settings (157), platform (158-159), "
                  "RHI and renderer (160-172), tools, game and the other tests (as their layers arrive). See plans/phase-13-windows-dx12.md.")
   return()

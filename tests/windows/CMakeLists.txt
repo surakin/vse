@@ -50,6 +50,29 @@ target_include_directories(windows_manifest_probe PRIVATE "${CMAKE_SOURCE_DIR}/e
 add_test(NAME windows_manifest COMMAND windows_manifest_probe)
 set_tests_properties(windows_manifest PROPERTIES PASS_REGULAR_EXPRESSION "active code page 65001; DPI awareness per-monitor-v2")
 
+# --- The Windows os backend and the UTF-16 helpers (Day 149): Catch2 tests plus a child program they start -------------------------
+find_package(Threads REQUIRED)
+include(Catch)
+add_executable(windows_os_probe os_probe.cpp)
+target_link_libraries(windows_os_probe PRIVATE foundation_base)
+target_compile_options(windows_os_probe PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
+function(engine_add_windows_os_tests target foundation_lib suffix label)
+  add_executable(${target} os_windows_test.cpp)
+  target_link_libraries(${target} PRIVATE ${foundation_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_include_directories(${target} PRIVATE "${CMAKE_SOURCE_DIR}/tests/support")
+  target_compile_definitions(${target} PRIVATE "WINDOWS_OS_PROBE_PATH=L\"$<TARGET_FILE:windows_os_probe>\"")
+  add_dependencies(${target} windows_os_probe)
+  if(label STREQUAL "asan")
+    engine_asan_runtime(${target})
+  endif()
+  # A probe that hangs (a pipe write that never returns) must fail the test, not stall the run.
+  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}" TIMEOUT 60)
+endfunction()
+engine_add_windows_os_tests(windows_os_tests foundation_base "" "windows")
+if(ENGINE_HAVE_ASAN)
+  engine_add_windows_os_tests(windows_os_tests_asan foundation_base_asan " [asan]" "asan")
+endif()
+
 # --- Toolchain discovery from a stripped environment -----------------------------------------------------------------------
 foreach(_tc msvc clang-cl)
   string(REPLACE "-" "_" _name "${_tc}")

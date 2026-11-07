@@ -69,8 +69,10 @@ module engine/foundation/os/session.h os_services 5
 module engine/foundation/os/session.cpp os_services 5
 module engine/foundation/os/gpu_driver_probe.h os_services 5
 module engine/foundation/os/gpu_driver_probe.cpp os_services 5
-module engine/foundation/os/linux/command_line.cpp os_services 5
 module engine/foundation/os/linux/session.cpp os_services 5
+module engine/foundation/os/linux/vulkan_loader_name.cpp os_services 5
+module engine/foundation/os/windows/session.cpp os_services 5
+module engine/foundation/os/windows/vulkan_loader_name.cpp os_services 5
 # 6 file layer
 module engine/foundation/io/ io 6
 # 7 debugging

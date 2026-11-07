@@ -25,8 +25,8 @@ TEST_CASE("LoadLibrary returns nullptr for a path too long to fit kMaxPathBytes"
     REQUIRE(handle == nullptr);
 }
 
-TEST_CASE("LoadLibrary/GetSymbol resolve libvulkan.so.1's vkGetInstanceProcAddr", "[gpu_driver][os]") {
-    DynamicLibraryHandle handle = LoadLibrary("libvulkan.so.1");
+TEST_CASE("LoadLibrary/GetSymbol resolve the Vulkan loader's vkGetInstanceProcAddr", "[gpu_driver][os]") {
+    DynamicLibraryHandle handle = LoadLibrary(StringView(engine_placeholder::os::VulkanLoaderName())); // libvulkan.so.1, vulkan-1.dll
     REQUIRE(handle != nullptr);
 
     void* symbol = GetSymbol(handle, "vkGetInstanceProcAddr");

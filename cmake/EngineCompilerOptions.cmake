@@ -17,6 +17,18 @@ if(MSVC)  # true for cl.exe and for clang-cl
   set(ENGINE_MSVC_LIKE TRUE)
 endif()
 
+# engine_asan_runtime(<target>): with MSVC, copies the AddressSanitizer runtime DLLs beside an ASan executable when it links, so it starts
+# without a developer PATH (Catch2 runs every test executable at build time to list its tests). Call it before engine_discover_tests, so
+# the copy runs first. Does nothing elsewhere (GCC and Clang link the runtime statically).
+function(engine_asan_runtime target)
+  if(ENGINE_MSVC_LIKE AND ENGINE_HAVE_ASAN)
+    foreach(dll clang_rt.asan_dynamic-x86_64.dll clang_rt.asan_dbg_dynamic-x86_64.dll)
+      add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${ENGINE_MSVC_BIN}/${dll}" "$<TARGET_FILE_DIR:${target}>")
+    endforeach()
+  endif()
+endfunction()
+
 if(NOT ENGINE_MSVC_LIKE)
   # GCC and Clang (Linux). The sanitizer flags are unchanged from Phase 7: -fno-sanitize=vptr because the engine libraries are built
   # -fno-rtti while the Catch2 executables are not (see engine/foundation/CMakeLists.txt).
@@ -100,7 +112,10 @@ if(ENGINE_CLANG_CL)
   set(ENGINE_HAVE_ASAN FALSE)
 else()
   set(ENGINE_HAVE_ASAN TRUE)
-  set(ENGINE_ASAN_COMPILE_OPTIONS /fsanitize=address)
+  # _DISABLE_STL_ANNOTATION: the MSVC standard library records whether its containers are annotated for ASan in every object, and the
+  # linker refuses to mix the two (LNK2038). Catch2 is not built with ASan, so the ASan objects turn the annotations off to match; the
+  # engine uses no standard container, so nothing it checks is lost (found on Day 149).
+  set(ENGINE_ASAN_COMPILE_OPTIONS /fsanitize=address /D_DISABLE_STL_ANNOTATION)
   set(ENGINE_ASAN_LINK_OPTIONS "")  # cl records the runtime libraries in the objects (/INFERASANLIBS is link.exe's default)
 endif()
 set(ENGINE_HAVE_TSAN FALSE)  # MSVC has no ThreadSanitizer; the tsan flavor runs on Linux only

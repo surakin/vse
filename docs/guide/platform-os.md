@@ -48,7 +48,25 @@ _TODO_
 
 ### Porting notes (Windows/macOS/mobile/console)
 
-_TODO_
+**Windows** (Phase 13; `engine/foundation/os/windows/`). Win32 is the platform contract; the C runtime is used where it is the plain
+choice (`std::exit`), never for descriptors.
+
+- **Strings at the boundary.** The engine is UTF-8; Win32 takes UTF-16. `os/windows/utf16.h` converts in both directions into caller
+  buffers, counts invalid input (which becomes U+FFFD) instead of hiding it, and allocates nothing. Paths also get `/` turned into `\`, and
+  long absolute paths the `\\?\` prefix, so they work whatever `LongPathsEnabled` says.
+- **Descriptors** are a table of handles of the engine's own (0-2 the standard handles, 256 more slots claimed without a lock). The C
+  runtime's descriptors were rejected because a thread stopped inside `_write` holds a lock that a crash report on another thread would
+  wait on forever (Phase 13 Day 147, Spike A). Console output is converted to UTF-16 and written with `WriteConsoleW`; the console's code
+  page is left alone, because changing it would outlast the program in the user's shell.
+- **`argv` is UTF-8** because every executable carries `cmake/engine.manifest`, which sets the process code page to UTF-8; the C runtime
+  builds `argv` with it, and `os::StashNativeCommandLine` keeps it as on Linux. A test starts a child with non-ASCII arguments, quotes and
+  backslashes and checks the bytes.
+- **Sleeping** uses a high-resolution waitable timer per thread: never early, but on the development PC it wakes in steps of about half a
+  millisecond (a 100 µs request took 0.51 ms at best). Code that must wait less spins instead.
+- **Libraries** are never searched for in the current directory; a relative path with a directory in it is refused.
+- **Session state** comes from `WTSQuerySessionInformation` (inactive) and the input desktop's name (locked); Windows has no idle hint.
+- **`include os/windows/win32.h`, never `<windows.h>`**: it removes the macros whose names are engine identifiers (`LoadLibrary`, `near`,
+  `far`, ...), so Windows code calls the explicit `...W` functions.
 
 ## What the platform layer adds to a crash report
 

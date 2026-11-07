@@ -14,20 +14,31 @@ function(engine_add_types_tests target foundation_lib suffix label)
   add_executable(${target} ${TYPES_TEST_SOURCES})
   target_link_libraries(${target} PRIVATE ${foundation_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  if(label STREQUAL "asan")
+    engine_asan_runtime(${target})
+  endif()
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
 endfunction()
 
 engine_add_types_tests(types_tests foundation_base "" "types")
-engine_add_types_tests(types_tests_asan foundation_base_asan " [asan]" "asan")
-engine_add_types_tests(types_tests_tsan foundation_base_tsan " [tsan]" "tsan")
+if(ENGINE_HAVE_ASAN)
+  engine_add_types_tests(types_tests_asan foundation_base_asan " [asan]" "asan")
+endif()
+if(ENGINE_HAVE_TSAN)  # not with MSVC
+  engine_add_types_tests(types_tests_tsan foundation_base_tsan " [tsan]" "tsan")
+endif()
 
 # The same cases with the portable 128-bit implementation forced on (ENGINE_FORCE_PORTABLE_INT128): int128.cpp is compiled into this
-# executable with the macro, so no translation unit sees the other definition of the inline operators.
-add_executable(types_tests_portable ${TYPES_TEST_SOURCES} ${CMAKE_SOURCE_DIR}/engine/foundation/int128.cpp)
-target_compile_definitions(types_tests_portable PRIVATE ENGINE_FORCE_PORTABLE_INT128=1)
-target_link_libraries(types_tests_portable PRIVATE foundation_base Catch2::Catch2WithMain Threads::Threads)
-target_include_directories(types_tests_portable PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-engine_discover_tests(types_tests_portable TEST_SUFFIX " [portable]" PROPERTIES LABELS "types")
+# executable with the macro, so no translation unit sees the other definition of the inline operators. Only where the compiler has a
+# native __int128 (GCC, Clang, clang-cl): with MSVC the library itself is the portable path, so types_tests already covers it and this
+# executable would define every portable symbol twice (found on Phase 13 Day 149).
+if(NOT ENGINE_MSVC_LIKE OR ENGINE_CLANG_CL)
+  add_executable(types_tests_portable ${TYPES_TEST_SOURCES} ${CMAKE_SOURCE_DIR}/engine/foundation/int128.cpp)
+  target_compile_definitions(types_tests_portable PRIVATE ENGINE_FORCE_PORTABLE_INT128=1)
+  target_link_libraries(types_tests_portable PRIVATE foundation_base Catch2::Catch2WithMain Threads::Threads)
+  target_include_directories(types_tests_portable PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  engine_discover_tests(types_tests_portable TEST_SUFFIX " [portable]" PROPERTIES LABELS "types")
+endif()
 
 # The type vocabulary headers compile for the Windows and macOS targets (needs clang++; skips without it). Windows has no __int128, so this is the
 # portable 128-bit path compiled for real.

@@ -12,7 +12,8 @@ namespace engine_placeholder::os {
 /// Records the process `argc`/`argv` so [[os::CommandLine::FromNative]] can read them later.
 ///
 /// Call once from the program entry point before `FromNative`. On platforms that source arguments another
-/// way this is a no-op.
+/// way this is a no-op. On Windows `argv` holds UTF-8, because every executable's manifest sets the process code page to UTF-8 and the
+/// C runtime builds `argv` with it.
 /// Param argc: argument count passed to `main`.
 /// Param argv: argument vector passed to `main`; stored by pointer, not copied.
 /// Thread-safety: not-thread-safe. Call before any other thread reads the command line.

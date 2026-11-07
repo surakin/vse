@@ -33,6 +33,8 @@ bool SessionCanShowWindows(SessionState state);
 /// Asks the platform for the state of the current session: the one the calling process belongs to, which is not necessarily the one that owns the display
 /// it will open a window on (a program started over ssh reports the ssh session).
 ///
+/// Linux asks systemd-logind; Windows reads the session's connect state (`WTSQuerySessionInformation`, not `WTSActive` is `Inactive`) and the
+/// input desktop's name (not `Default` is `Locked`) and never reports `Idle`.
 /// Returns: the state, `Unknown` when the platform cannot say.
 /// Fails: reports `Unknown`; never aborts and waits at most a few seconds (a session manager that does not answer gives `Unknown`).
 /// Thread-safety: thread-safe.

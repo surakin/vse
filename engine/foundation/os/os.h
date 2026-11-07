@@ -8,6 +8,13 @@
 //! Exit/Write/Read/Open/Close keep POSIX-shaped signatures; the implementation lives per platform. Files and directories belong to the
 //! file layer ([[io::File]], [[io::Directory]], [[io::Path]]); the descriptor functions here are for the console, pipes, sockets and the
 //! signal-safe code of the debugging facilities.
+//!
+//! **Windows** (Phase 13). Descriptors are the engine's own: 0, 1 and 2 are the standard handles, and [[os::Open]] hands out 3 and up from
+//! a fixed table of 256 handles, claimed without a lock so the crash path can use it (the C runtime's descriptors are not used: a thread
+//! stopped inside one holds a lock a crash report would wait on). `long` is 32 bits there, so one [[os::Write]] or [[os::Read]] moves at
+//! most 2^31 - 1 bytes and reports a short count, which every caller handles. Writes to a console are converted from UTF-8 and shown with
+//! the console's Unicode API; the console's code page is never changed (that would outlive the program in the user's shell). Paths are
+//! UTF-8 and become UTF-16 at the call, with `/` turned into `\` and the `\\?\` prefix added to long absolute paths.
 
 namespace engine_placeholder::os {
 
@@ -32,7 +39,7 @@ long Write(int fd, const void* buf, usize len);
 /// Param fd: an open file descriptor.
 /// Param buf: destination buffer of at least `len` bytes; borrowed for the call.
 /// Param len: maximum number of bytes to read.
-/// Returns: the number of bytes read, 0 at end of file, or -1 on error.
+/// Returns: the number of bytes read, 0 at end of file (on Windows also when the other end of a pipe was closed), or -1 on error.
 long Read(int fd, void* buf, usize len);
 
 /// Writes all `len` bytes to `fd`, retrying short and interrupted writes, but never waiting more than `timeout_nanos` in total for
@@ -42,7 +49,9 @@ long Read(int fd, void* buf, usize len);
 /// Param len: number of bytes.
 /// Param timeout_nanos: longest total wait; 0 means one attempt without waiting.
 /// Returns: the number of bytes written, which is less than `len` if the wait ran out or the write failed.
-/// Fails: returns fewer bytes than asked; never blocks past the timeout.
+/// Fails: returns fewer bytes than asked; never blocks past the timeout. On Windows a blocking write (a pipe whose reader stopped, a console
+///   the user paused) cannot be bounded, so the writes run on a helper thread from a 64 KiB static buffer and the call waits only until the
+///   deadline: a write still blocked then may complete after the call returned, and later calls return 0 at once until it has.
 /// Thread-safety: thread-safe. Async-signal-safe.
 long WriteAllWithTimeout(int fd, const void* buf, usize len, u64 timeout_nanos);
 
@@ -81,7 +90,7 @@ void* ReserveMemory(usize size);
 
 /// Returns memory obtained from [[os::ReserveMemory]] to the OS.
 /// Param addr: base address returned by [[os::ReserveMemory]].
-/// Param size: the size passed to [[os::ReserveMemory]].
+/// Param size: the size passed to [[os::ReserveMemory]] (Windows releases the whole reservation and does not use it).
 void ReleaseMemory(void* addr, usize size);
 
 /// Returns the current time of a monotonic clock in nanoseconds.
@@ -94,14 +103,18 @@ u64 MonotonicTimeNanos();
 
 /// Blocks the calling thread for at least `nanos` nanoseconds.
 ///
-/// May sleep longer under scheduler contention; interrupted sleeps are resumed, so it never returns early.
+/// May sleep longer under scheduler contention; interrupted sleeps are resumed, so it never returns early. On Windows the wait is a
+/// high-resolution timer, which on the development PC wakes in steps of about half a millisecond: 100 us took at least 0.51 ms there.
 /// Param nanos: minimum duration to sleep.
 void SleepNanos(u64 nanos);
 
 /// Opaque per-platform dynamic-library handle; `nullptr` means not loaded.
 using DynamicLibraryHandle = void*;
 
-/// Loads the shared library at `path` (for example `"libvulkan.so.1"`).
+/// Loads the shared library at `path` (for example `"libvulkan.so.1"`, `"vulkan-1.dll"`).
+///
+/// On Windows the current directory is never searched: a bare name is looked for in the program's directory, System32 and the
+/// directories added with `AddDllDirectory`; an absolute path is loaded as named; a relative path with a directory in it is refused.
 /// Param path: library name or path, at most [[os::kMaxPathBytes]] - 1 bytes.
 /// Returns: the library handle, or `nullptr` on failure.
 /// Fails: returns `nullptr` if the file is not found, has unresolved dependencies, or the path is too long.
@@ -131,6 +144,8 @@ usize EnvironmentCount();
 /// Param length: receives the entry's full length without the terminator, even when it was cut; 0 when the entry does not exist. Must not be null.
 /// Returns: true if the entry exists. The copy is complete when `*length < capacity`; otherwise call again with a buffer of `*length + 1` bytes.
 /// Fails: returns false and writes an empty string when `index` is out of range; a short buffer is not a failure (see `length`).
+/// On Windows the entries are the process environment converted from UTF-16 (an unpaired surrogate becomes U+FFFD), without the
+/// `=C:=C:\dir` entries Windows keeps for each drive's current directory, which are not variables; [[os::EnvironmentCount]] skips them too.
 /// Ownership: nothing is retained.
 /// Thread-safety: thread-compatible; another thread changing the environment (`setenv`) while this runs is a race, as it is for `getenv`.
 bool EnvironmentEntry(usize index, char* buffer, usize capacity, usize* length);

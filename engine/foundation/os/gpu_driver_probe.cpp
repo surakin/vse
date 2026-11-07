@@ -3,19 +3,20 @@
 #include "log/log.h"
 #include "os/os.h"
 
+#include <cstdio>
+
 namespace engine_placeholder::os {
 
 PFN_vkVoidFunction ProbeVulkanCreateInstance() {
-    // Versioned name deliberately, not "libvulkan.so": the loader package
-    // always installs libvulkan.so.1; the unversioned symlink only exists
-    // alongside the -dev headers, which aren't guaranteed on every
-    // machine that has a working Vulkan runtime.
-    DynamicLibraryHandle vulkan = LoadLibrary("libvulkan.so.1");
+    char line[96];
+    DynamicLibraryHandle vulkan = LoadLibrary(StringView(VulkanLoaderName()));
     if (vulkan == nullptr) {
-        Log(LogPlatform, LogVerbosity::Error, "GPU driver probe: failed to load libvulkan.so.1");
+        std::snprintf(line, sizeof(line), "GPU driver probe: failed to load %s", VulkanLoaderName());
+        Log(LogPlatform, LogVerbosity::Error, StringView(line));
         return nullptr;
     }
-    Log(LogPlatform, LogVerbosity::Info, "GPU driver probe: loaded libvulkan.so.1");
+    std::snprintf(line, sizeof(line), "GPU driver probe: loaded %s", VulkanLoaderName());
+    Log(LogPlatform, LogVerbosity::Info, StringView(line));
 
     void* symbol = GetSymbol(vulkan, "vkGetInstanceProcAddr");
     if (symbol == nullptr) {

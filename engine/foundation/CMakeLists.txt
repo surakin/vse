@@ -4,7 +4,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(FOUNDATION_PLATFORM_SOURCES
     os/linux/os.cpp
     os/linux/session.cpp
-    os/linux/command_line.cpp
+    os/linux/vulkan_loader_name.cpp
   )
 
   # Phase 7: the per-platform half of the debugging facilities (debug/*.h are the neutral interfaces). Windows and macOS
@@ -19,9 +19,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/debug/fault_injection.cpp
   )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  # Phase 13 ports one layer per day (ARCHITECTURE.md order). Day 148 compiles the base layer's platform-free sources; its os/windows/
-  # backend arrives on Day 149, the file layer on Days 151-152, the debugging backend (os/windows/debug/BACKEND.md) on Days 154-156.
-  set(FOUNDATION_PLATFORM_SOURCES "")
+  # Phase 13 ports one layer per day (ARCHITECTURE.md order): the base layer's os/windows/ backend on Day 149, the file layer on Days
+  # 151-152, the debugging backend (os/windows/debug/BACKEND.md) on Days 154-156.
+  set(FOUNDATION_PLATFORM_SOURCES
+    os/windows/os.cpp
+    os/windows/utf16.cpp
+    os/windows/session.cpp
+    os/windows/vulkan_loader_name.cpp
+  )
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES "")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   message(FATAL_ERROR "macOS is implemented in Phase 14 (the debugging backend: os/macos/debug/BACKEND.md)")
@@ -39,6 +44,7 @@ endif()
 set(FOUNDATION_BASE_SOURCES
   foundation.cpp
   os/session.cpp
+  os/command_line.cpp
   os/gpu_driver_probe.cpp
   mem/arena_allocator.cpp
   mem/pool_allocator.cpp
@@ -144,6 +150,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   foreach(suffix "" ${_engine_flavors})
     engine_add_foundation_layer(foundation_base "${suffix}" ${FOUNDATION_BASE_SOURCES})
     target_include_directories(foundation_base${suffix} SYSTEM PUBLIC "${ENGINE_VULKAN_HEADERS_DIR}")
+    # WTSQuerySessionInformation (os/windows/session.cpp); user32 for the input desktop.
+    target_link_libraries(foundation_base${suffix} PUBLIC wtsapi32 user32)
   endforeach()
 else()
   engine_add_foundation_libs("")

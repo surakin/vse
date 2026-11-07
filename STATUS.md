@@ -706,3 +706,11 @@ bugs fixed (an ignored lambda `noinline`, and `[[no_unique_address]]` ignored, d
 `windows-clang-cl` 5 of 5 (plain ctest; `test-phase.sh` runs on Windows from Day 150). Review: 10 findings, 9 fixed, 1 deferred (the reference regeneration). **Not
 done: everything on the Linux machine** (both unity builds, `--affected` with asan and tsan, the new phase-label self-tests, docs regeneration), and `tests/types` under
 MSVC (Day 149); filed in `KNOWN-ISSUES.md`. **Next: Day 149 (the `os` backend), after the Linux runs of Days 147-148.**
+
+Phase 13 **Day 149 (2026-11-07, Windows PC): the `os` backend.** `os.h` on Windows: an engine table of handles behind the `int` descriptors (lock-free,
+the crash path's), console output in UTF-16 with the code page untouched, `WriteAllWithTimeout` bounded by a helper thread, `QueryPerformanceCounter`,
+a high-resolution sleep (steps of about 0.5 ms here), `LoadLibraryExW` that never searches the current directory, the environment without drive entries;
+UTF-8/UTF-16 helpers with long-path handling; session state; `os::VulkanLoaderName`. The command line stays as on Linux (now the neutral
+`os/command_line.cpp`): the manifest makes `argv` UTF-8. The base-layer tests run on Windows: `ctest --preset windows-msvc` 190 of 190 (plain and ASan),
+`windows-clang-cl` 181 of 181 (plain `ctest`). Review: 10 findings, 7 fixed, 1 deferred to Day 150, 2 declined with reasons. The Phase 10 MSVC 128-bit
+entry is closed. Linux: pending until the phase close. **Next: Day 150 (test tooling, gates and docs on Windows).**

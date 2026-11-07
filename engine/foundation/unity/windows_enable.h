@@ -6,8 +6,9 @@
 // translation unit holds several .cpp files, so a declaration seen before <windows.h> and a use after it would name two different
 // functions (`os::LoadLibrary` against `os::LoadLibraryW`). This header remembers the state of each such name; windows_disable.h
 // restores it, so the macros are gone again and Windows code calls the explicit `...W` functions. The list was measured on Phase 13
-// Day 148 (every windows.h macro intersected with the engine's identifiers) plus names the engine is likely to use; `interface` is
-// deliberately not here because the COM headers (d3d12.h, dxgi.h) need it. Intentionally has no include guard.
+// Day 148 (every windows.h macro intersected with the engine's identifiers) plus function names the engine is likely to use. Not here:
+// `interface`, which the COM headers (d3d12.h, dxgi.h) need, and the annotation and constant macros IN, OUT, OPTIONAL, ERROR and DELETE,
+// which later SDK headers use (wtsapi32.h needs IN; found on Day 149). Intentionally has no include guard.
 #pragma push_macro("LoadLibrary")
 #pragma push_macro("CreateDirectory")
 #pragma push_macro("SetCurrentDirectory")
@@ -36,10 +37,5 @@
 #pragma push_macro("SendMessage")
 #pragma push_macro("SetEnvironmentVariable")
 #pragma push_macro("Yield")
-#pragma push_macro("ERROR")
-#pragma push_macro("DELETE")
-#pragma push_macro("IN")
-#pragma push_macro("OUT")
-#pragma push_macro("OPTIONAL")
 #pragma push_macro("min")
 #pragma push_macro("max")
