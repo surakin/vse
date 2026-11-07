@@ -1,0 +1,30 @@
+usage: PROGRAM [--backend wayland|x11] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]
+       [--objects N] [--lights N] [--gbuffer albedo|normal|material|depth|worldpos]
+       [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus] [--prewarm]
+       [--script WORDS]
+  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)
+  --frames N        stop after N frames (also RENDERER_DEMO_FRAMES=N)
+  --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM, 640x360)
+  --objects N       total objects including 49 ground tiles, 64 to 20000 (default 540)
+  --lights N        point lights, 0 to 16000 (default 300)
+  --gbuffer L       show a G-buffer layer instead of the lit picture
+  --no-vsync        present without waiting for the display
+  --validation      enable the validation layer with synchronization validation
+  --gpu G           the GPU to use: an id from --list-gpus, an index, or part of the name
+  --list-gpus       print the GPUs and exit
+  --prewarm         after a device reset rebuild every pipeline at once instead of when it is first used
+  --script W        run steps without a keyboard: frame:N set:key=value reset gpu:next loss crash:segv|abort|assert quit (space separated)
+  --inject-device-loss F  fault injection: lose the GPU device at frame F (exit code 3)
+  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it
+Settings:
+  --set KEY=VALUE         set a setting (repeatable; the value may be quoted); --list-settings shows the keys
+  --settings FILE         read settings from FILE (above the project file, below the environment)
+  --save-settings[=FILE]  write the settings that differ from their defaults to FILE (default: the user's settings file) and exit
+  --list-settings         print every setting: its value, default, where it came from and what it is for, and exit
+  --backend NAME          platform.window_backend: the display backend on Linux: wayland or x11 (auto picks Wayland, then X11)
+  --gpu TEXT              renderer.adapter: the GPU: an id from --list-gpus, an index, or part of the name (empty: the best one)
+Environment: ENGINE_SETTING_<KEY> sets any setting (the key in capitals, dots written as __, e.g. ENGINE_SETTING_RENDERER__PRESENT_MODE); also:
+  ENGINE_WINDOW_BACKEND                 platform.window_backend
+  ENGINE_RHI_GPU                        renderer.adapter
+  ENGINE_RHI_VALIDATION_SYNC            renderer.sync_validation
+  ENGINE_RHI_CACHE_DIR                  rhi.pipeline_cache_dir

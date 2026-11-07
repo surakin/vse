@@ -125,7 +125,7 @@ struct LoadReport {
     /// One entry per layer, lowest first.
     struct LayerInfo {
         /// The layer's name.
-        char name[40] = {};
+        char name[128] = {};
         /// How it fared.
         LayerState state = LayerState::NotLoaded;
     };

@@ -355,7 +355,7 @@ Every `ENGINE_ASSERT`, `ENGINE_VERIFY` and `ENGINE_CHECK_SLOW` under `engine/` (
 
 ## `engine/renderer/shared_settings.cpp` (1)
 
-- line 86: renderer::RegisterSharedSettings: a rendering setting could not be declared (duplicate key or bad declaration)
+- line 111: renderer::RegisterSharedSettings: a rendering setting could not be declared (duplicate key or bad declaration)
 
 ## `engine/renderer/texture.cpp` (5)
 

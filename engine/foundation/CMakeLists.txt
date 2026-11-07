@@ -76,6 +76,8 @@ set(FOUNDATION_SOURCES
   settings/env_source.cpp
   settings/command_line_source.cpp
   settings/migration.cpp
+  settings/engine_settings.cpp
+  settings/report.cpp
   settings/settings.cpp
   io/path.cpp
   io/linux/error.cpp

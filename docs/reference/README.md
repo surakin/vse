@@ -11,9 +11,9 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Strings](foundation-strings.md) | 5 | 98 |
 | [Foundation: Paths and Files](foundation-io.md) | 5 | 265 |
 | [Foundation: Math](foundation-math.md) | 5 | 101 |
-| [Foundation: Logging and Assertions](foundation-log.md) | 2 | 69 |
+| [Foundation: Logging and Assertions](foundation-log.md) | 2 | 71 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
-| [Foundation: Settings](foundation-settings.md) | 13 | 485 |
+| [Foundation: Settings](foundation-settings.md) | 15 | 491 |
 | [Platform: OS Services](platform-os.md) | 3 | 34 |
 | [Platform: Windowing and Input](platform-window-input.md) | 10 | 263 |
 | [Foundation: Debugging](foundation-debug.md) | 14 | 200 |

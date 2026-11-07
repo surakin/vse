@@ -612,6 +612,31 @@ Looks up a registered channel by name, for config-file overrides.
 | Fails | reports an unknown name by returning nullptr. |
 | Ownership | the channel is owned by whoever constructed it. |
 
+### `First()` {#logchannel-first}
+
+`method LogChannel::First` — defined in `engine/foundation/log/log.h`
+
+```cpp
+static LogChannel* First();
+```
+
+Returns the first channel of the global registry (the most recently constructed), or null; `Next` walks the rest.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+| Thread-safety | not-thread-safe against channel construction. |
+
+### `Next()` {#logchannel-next-const}
+
+`method LogChannel::Next` — defined in `engine/foundation/log/log.h`
+
+```cpp
+LogChannel* Next() const;
+```
+
+Returns the channel constructed before this one, or null at the end of the registry.
+
 ## `kLogRingSlots` {#klogringslots}
 
 `variable kLogRingSlots` — defined in `engine/foundation/log/log.h`

@@ -6,9 +6,9 @@ module	foundation/containers	154	154
 module	foundation/strings	93	93
 module	foundation/io	255	255
 module	foundation/math	97	97
-module	foundation/log	69	69
+module	foundation/log	71	71
 module	foundation/types	97	97
-module	foundation/settings	470	470
+module	foundation/settings	476	476
 module	platform/os	30	30
 module	platform/window-input	241	241
 module	foundation/debug	200	200

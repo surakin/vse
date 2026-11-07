@@ -66,6 +66,14 @@ public:
     /// Ownership: the channel is owned by whoever constructed it.
     static LogChannel* Find(StringView name);
 
+    /// Returns the first channel of the global registry (the most recently constructed), or null; `Next` walks the rest.
+    ///
+    /// Fails: never.
+    /// Thread-safety: not-thread-safe against channel construction.
+    static LogChannel* First() { return head_; }
+    /// Returns the channel constructed before this one, or null at the end of the registry.
+    LogChannel* Next() const { return next_; }
+
 private:
     const char* name_;
     LogVerbosity verbosity_;

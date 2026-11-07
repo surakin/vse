@@ -1,6 +1,6 @@
 # Settings
 
-Status: draft (Phase 11, Days 131-136: keys, values, the registry, typed handles, stores, the text-file store, layers, the environment, the command line, the `Settings` service and migration; the demos arrive on Day 138).
+Status: draft (Phase 11, Days 131-138: everything from keys to the demos; the platform checklists arrive on Day 139).
 
 The settings system is one registry that every module declares its settings in, and handles that read them cheaply. Where values come from (files, the environment, the command line) and how they
 are saved arrive later in this phase. Design and reasons: `docs/superpowers/specs/2026-11-07-settings-design.md`.
@@ -310,3 +310,32 @@ Settings files outlive the program that wrote them, so a change to a setting is 
 A file records the version of the format (`version = 1`) and of each section (`<section>.schema = N`); a new file, and a file that was just migrated, are stamped when saved. A file **newer** than the program
 (`version` or a schema above what the program knows) is read in compatibility mode: the settings the program knows are used, everything else stays as it is, the report says so, and `Save` refuses with `TooNew` so an
 older program never rewrites a newer file; `SaveOptions::replace_newer` overrides that (the old text goes to the `.bak`).
+
+## Settings in an application
+
+The standard `main` of a program built on the settings system, as `renderer_demo` and `rhi_demo` write it (the helper is `demo::DemoSettings` in `game/common/settings_main.h`):
+
+```cpp
+int main(int argc, char** argv) {
+    demo::DemoSettings demo_settings;
+    if (!demo_settings.Begin("mygame", kUsageText, argc, argv)) return 2;  // registers the settings, loads every layer, prints what went wrong
+    argc = demo_settings.RestCount();                                       // the arguments the settings system did not take
+    argv = demo_settings.RestArgs();
+    // ... the program's own flags, putting the ones that are settings into demo_settings.Get() (SetText("renderer.present_mode", "immediate"))
+    const int code = demo_settings.Finish();                                // --help, --list-settings, --save-settings
+    if (code >= 0) return code;
+    // ... run, reading settings through typed handles, and applying changes with demo_settings.Get().Apply(...)
+}
+```
+
+Every program built this way understands the same options, and `--help` prints them generated from the registry:
+
+- `--set KEY=VALUE` (repeatable), `--settings FILE`, `--save-settings[=FILE]` (writes the settings that differ from their defaults, so `--settings FILE` reproduces the session), `--list-settings` (every setting: its value, its default,
+  the layer and line or variable it came from, and what it is for);
+- a flag for each setting that declares one (`--gpu NAME` is `renderer.adapter`, `--backend NAME` is `platform.window_backend`);
+- the environment: `ENGINE_SETTING_<KEY>` for any setting, and the variables the engine has always read (`ENGINE_RHI_GPU`, `ENGINE_WINDOW_BACKEND`, `ENGINE_RHI_CACHE_DIR`, `ENGINE_RHI_VALIDATION_SYNC`), which now show up with their
+  provenance. Some variables are not settings: `ENGINE_JOB_THREADS`, `ENGINE_CRASH_HANDLER`, `ENGINE_RHI_VALIDATION_BEST_PRACTICES` and the window host read them before any `Settings` exists, and nothing in a settings file changes them (the configuration check lists them as exceptions).
+
+The engine's own settings are `platform.window_backend`, `rhi.pipeline_cache` and `rhi.pipeline_cache_dir`
+(`settings::RegisterEngineSettings`), the 14 rendering settings (`renderer::RegisterSharedSettings`), and, for every log channel that exists, `log.<channel>.verbosity` and `log.<channel>.enabled`
+(`settings::RegisterLogSettings` and `AttachLogSettings`, which applies them to the channels and keeps them in step). The old `log::LoadConfig` file lines still work and are unchanged.

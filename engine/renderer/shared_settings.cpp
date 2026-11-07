@@ -81,6 +81,31 @@ void RegisterSharedSettings(sset::Registry* registry) {
             s.max_text = kSettingTextBytes - 1;
             s.default_value = sset::Value::FromText(d.default_text == nullptr ? StringView() : StringView(d.default_text)); break;
         }
+        // What a user sees in --list-settings and --help, and the environment variables and flags that were already there.
+        static const struct { const char* name; const char* description; const char* env; const char* flag; } kInfo[] = {
+            {"backend", "the graphics backend: null (no GPU) or vulkan", nullptr, nullptr},
+            {"adapter", "the GPU: an id from --list-gpus, an index, or part of the name (empty: the best one)", "ENGINE_RHI_GPU", "gpu"},
+            {"validation", "the validation layer: auto, off or on", nullptr, nullptr},
+            {"sync_validation", "also run synchronization validation", "ENGINE_RHI_VALIDATION_SYNC", nullptr},
+            {"frames_in_flight", "frames the CPU may record ahead of the GPU (1 to 3)", nullptr, nullptr},
+            {"present_mode", "how frames reach the display: fifo (vsync), mailbox or immediate", nullptr, nullptr},
+            {"width", "the window width in pixels (0: the default size)", nullptr, nullptr},
+            {"height", "the window height in pixels (0: the default size)", nullptr, nullptr},
+            {"fullscreen", "fullscreen (needs the fullscreen capability)", nullptr, nullptr},
+            {"swapchain_format", "the swapchain format: auto, srgb8, rgba16f or rgb10a2", nullptr, nullptr},
+            {"hdr", "HDR output: off, scrgb or hdr10 (needs the hdr capability)", nullptr, nullptr},
+            {"shader_quality", "shader quality: low, medium or high", nullptr, nullptr},
+            {"gbuffer_debug_layer", "show a G-buffer layer instead of the lit picture", nullptr, nullptr},
+            {"render_scale", "the internal resolution as a fraction of the window", nullptr, nullptr},
+        };
+        for (const auto& info : kInfo) {
+            if (std::strcmp(info.name, d.name) == 0) {
+                s.description = info.description;
+                s.env = info.env;
+                s.flag = info.flag;
+                s.group = "renderer";
+            }
+        }
         sset::RegisterError error = sset::RegisterError::None;
         const sset::SettingId id = registry->Register(s, &error);
         ENGINE_ASSERT(id.IsValid(), "renderer::RegisterSharedSettings: a rendering setting could not be declared (duplicate key or bad declaration)");

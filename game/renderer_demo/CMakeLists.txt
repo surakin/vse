@@ -5,7 +5,7 @@ target_compile_options(renderer_demo_lib PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPT
 target_include_directories(renderer_demo_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/game/common)
 target_link_libraries(renderer_demo_lib PUBLIC renderer_passes renderer rhi foundation)
 
-add_executable(renderer_demo main.cpp)
+add_executable(renderer_demo main.cpp ../common/settings_main.cpp)
 engine_split_debug_info(renderer_demo)
 target_compile_options(renderer_demo PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_compile_definitions(renderer_demo PRIVATE RENDERER_DEMO_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
@@ -89,3 +89,5 @@ set_tests_properties(renderer_demo_assets_current PROPERTIES LABELS demo)
 engine_label_tests(renderer_demo_crash_after_reset renderer_demo_list_gpus renderer_demo_unknown_gpu renderer_demo_script_wayland renderer_demo_script_x11 renderer_demo_screenshot renderer_demo_gbuffer_layers renderer_demo_device_loss_screenshot renderer_demo_device_loss_trace renderer_demo_oom_later
   renderer_demo_oom_device renderer_demo_bad_injection renderer_demo_bad_layer renderer_demo_bad_objects renderer_demo_no_vulkan
   renderer_demo_assets_current)
+
+demo_settings_tests(renderer_demo)

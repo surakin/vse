@@ -45,7 +45,7 @@ enum class LayerState : u8 {
 /// Thread-safety: thread-compatible plain data.
 struct LayerProblem {
     /// The layer's name, NUL-terminated and cut to fit.
-    char layer[40] = {};
+    char layer[128] = {};
     /// The key, or empty.
     char key[96] = {};
     /// What is wrong, NUL-terminated and cut to fit.
@@ -63,7 +63,7 @@ struct Resolution {
     /// `Clamped` if the stored value was moved into its range, else `None`.
     ValueError note = ValueError::None;
     /// The layer's name (`defaults` when `layer` is -1).
-    char layer_name[40] = {};
+    char layer_name[128] = {};
     /// What the layer says about the entry (`line 12`, `$ENGINE_RHI_GPU`, `--gpu`), or empty.
     char origin[96] = {};
 };

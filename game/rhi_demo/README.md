@@ -55,3 +55,22 @@ The offscreen screenshot target is linear (UNORM), so it looks darker than the w
 | `../common/textures.*` | procedural textures, the `.rtex` container |
 | `/shaders/lit.vert`, `lit.frag` | the lighting math |
 | `/tests/rhi/vulkan_lit_cube_test.cpp` | the golden and analytic lighting tests |
+
+## Settings options
+
+Every program built on the settings system accepts these options, the settings of `--list-settings`, and the environment variables below. The list is generated from the registry; the ctest `rhi_demo_readme_current` fails when this block differs from `--help`.
+
+```
+Settings:
+  --set KEY=VALUE         set a setting (repeatable; the value may be quoted); --list-settings shows the keys
+  --settings FILE         read settings from FILE (above the project file, below the environment)
+  --save-settings[=FILE]  write the settings that differ from their defaults to FILE (default: the user's settings file) and exit
+  --list-settings         print every setting: its value, default, where it came from and what it is for, and exit
+  --backend NAME          platform.window_backend: the display backend on Linux: wayland or x11 (auto picks Wayland, then X11)
+  --gpu TEXT              renderer.adapter: the GPU: an id from --list-gpus, an index, or part of the name (empty: the best one)
+Environment: ENGINE_SETTING_<KEY> sets any setting (the key in capitals, dots written as __, e.g. ENGINE_SETTING_RENDERER__PRESENT_MODE); also:
+  ENGINE_WINDOW_BACKEND                 platform.window_backend
+  ENGINE_RHI_GPU                        renderer.adapter
+  ENGINE_RHI_VALIDATION_SYNC            renderer.sync_validation
+  ENGINE_RHI_CACHE_DIR                  rhi.pipeline_cache_dir
+```

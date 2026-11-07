@@ -10,6 +10,7 @@ set(SETTINGS_TEST_SOURCES
   layers_test.cpp
   settings_test.cpp
   migration_test.cpp
+  engine_settings_test.cpp
 )
 
 find_package(Threads REQUIRED)

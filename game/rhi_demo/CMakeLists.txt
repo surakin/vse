@@ -1,7 +1,7 @@
 # The first dogfood app: opens a window and animates a clear color and spins a cube through the RHI.
 # Draws a lit, textured cube; --screenshot out.ppm renders offscreen without a window.
 # Runs until the window closes, or for RHI_DEMO_FRAMES frames when that variable is set.
-add_executable(rhi_demo main.cpp ../common/cube_scene.cpp ../common/textures.cpp)
+add_executable(rhi_demo main.cpp ../common/cube_scene.cpp ../common/textures.cpp ../common/settings_main.cpp)
 engine_split_debug_info(rhi_demo)
 target_compile_options(rhi_demo PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_compile_definitions(rhi_demo PRIVATE RHI_DEMO_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
@@ -48,3 +48,5 @@ add_test(NAME rhi_demo_no_vulkan
 set_tests_properties(rhi_demo_no_vulkan PROPERTIES LABELS demo)
 engine_label_tests(rhi_demo_list_gpus rhi_demo_unknown_gpu rhi_demo_device_loss_screenshot rhi_demo_device_loss_trace rhi_demo_oom_later rhi_demo_oom_device rhi_demo_bad_injection
   rhi_demo_negative_injection rhi_demo_no_vulkan)
+
+demo_settings_tests(rhi_demo)

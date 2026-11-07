@@ -10,6 +10,8 @@
 
 #include <unistd.h>
 
+#include "settings_main.h"
+#include "renderer/shared_settings.h"
 #include "textures.h"
 #include "io/directory.h"
 #include "io/file.h"
@@ -182,12 +184,11 @@ bool WritePpm(const char* path, u32 width, u32 height, const Vector<byte>& rgba)
     return io::Path::Parse(StringView(path), io::NativePathStyle(), &file) && demo::WritePpm(file, width, height, rgba.Data()).Ok();
 }
 
+demo::DemoSettings* g_demo_settings = nullptr; // the settings of this run: the device description, the F keys and the script
+
 DeviceCreateInfo DeviceInfo(const Options& options) {
     DeviceCreateInfo info;
-    if (options.validation) {
-        info.validation = ValidationSetting::On;
-        info.sync_validation = true;
-    }
+    g_demo_settings->FillDeviceCreateInfo(&info); // the validation layer, the GPU, the pipeline cache and the frames in flight come from the settings
     info.faults.lose_device_at_frame = static_cast<u32>(options.inject_device_loss);
     info.faults.fail_allocations_from = static_cast<u32>(options.inject_oom);
     return info;
@@ -215,12 +216,12 @@ FrameSetup SetupFor(const Options& options, const SceneOptions& so, Device* devi
 
 // The rendering settings the flags describe (the demo has no settings file or generic setting option yet; see KNOWN-ISSUES.md).
 void BuildSettings(const Options& options, RenderSettings* settings) {
-    if (options.no_vsync) settings->SetEnum(settings::kPresentMode, 2);
+    if (options.no_vsync) settings->SetEnum(renderer::settings::kPresentMode, 2);
     if (options.validation) {
-        settings->SetEnum(settings::kValidation, 2);
-        settings->SetBool(settings::kSyncValidation, true);
+        settings->SetEnum(renderer::settings::kValidation, 2);
+        settings->SetBool(renderer::settings::kSyncValidation, true);
     }
-    if (options.gpu != nullptr) settings->SetText(settings::kAdapter, options.gpu);
+    if (options.gpu != nullptr) settings->SetText(renderer::settings::kAdapter, options.gpu);
 }
 
 int ListGpus() {
@@ -455,7 +456,19 @@ int RunWindow(const Options& options, RenderSettings settings) {
             bool quit = false;
             auto apply = [&](const char* what, const RenderSettings& wanted) {
                 const double t = NowSeconds();
-                const ApplyResult r = renderer.ApplySettings(wanted);
+                // Through the settings system: the change is validated, layered (and so saved by --save-settings style code), announced, and the
+                // renderer applies it with the cheapest sufficient action; a failure rolls the setting back.
+                Vector<engine_placeholder::settings::ChangeRequest> requests;
+                renderer::RenderSettingsToChanges(wanted, g_demo_settings->GetRegistry(), &requests);
+                g_demo_settings->Get().SetCapabilityCheck(&renderer::RendererCapability, &renderer);
+                const engine_placeholder::settings::SetResult set = g_demo_settings->Get().Apply(requests.Data(), requests.Size(), &renderer::ApplySharedChange, &renderer);
+                if (!set.Ok()) { // refused before the renderer was asked (a missing capability, a value outside the range): say why, change nothing
+                    RhiLogV(LogVerbosity::Warn, "renderer_demo: %s: the settings system refused the change (error %d, value %s)", what, static_cast<int>(set.error), engine_placeholder::settings::ValueErrorName(set.value));
+                    return;
+                }
+                ApplyResult unchanged; // nothing differed: the renderer reports "ok, nothing to do"
+                if (set.Ok() && set.changed == 0) unchanged = renderer.ApplySettings(wanted);
+                const ApplyResult& r = set.Ok() && set.changed == 0 ? unchanged : renderer.LastApply();
                 LogApply(what, r);
                 if (r.ok && r.performed >= CostClass::Swapchain) {
                     measure_next_frame = true;
@@ -502,7 +515,7 @@ int RunWindow(const Options& options, RenderSettings settings) {
                             RhiLogV(LogVerbosity::Warn, "renderer_demo: script: gpu:next skipped (no device right now)");
                         } else if (NextAdapterId(renderer.GetDevice()->Adapter().id, id, sizeof(id))) {
                             RenderSettings wanted = renderer.Settings();
-                            wanted.SetText(settings::kAdapter, id);
+                            wanted.SetText(renderer::settings::kAdapter, id);
                             apply("gpu:next", wanted);
                         }
                     } else if (std::strcmp(word, "loss") == 0) {
@@ -529,15 +542,15 @@ int RunWindow(const Options& options, RenderSettings settings) {
                             RenderSettings wanted = renderer.Settings();
                             char id[64];
                             switch (k) {
-                            case 0: wanted.SetEnum(settings::kPresentMode, wanted.GetEnum(settings::kPresentMode) == 0 ? 2 : 0); apply("F1 vsync", wanted); break;
-                            case 1: wanted.SetEnum(settings::kValidation, wanted.GetEnum(settings::kValidation) == 2 ? 1 : 2); wanted.SetBool(settings::kSyncValidation, wanted.GetEnum(settings::kValidation) == 2); apply("F2 validation", wanted); break;
+                            case 0: wanted.SetEnum(renderer::settings::kPresentMode, wanted.GetEnum(renderer::settings::kPresentMode) == 0 ? 2 : 0); apply("F1 vsync", wanted); break;
+                            case 1: wanted.SetEnum(renderer::settings::kValidation, wanted.GetEnum(renderer::settings::kValidation) == 2 ? 1 : 2); wanted.SetBool(renderer::settings::kSyncValidation, wanted.GetEnum(renderer::settings::kValidation) == 2); apply("F2 validation", wanted); break;
                             case 2:
-                                if (renderer.GetDevice() != nullptr && NextAdapterId(renderer.GetDevice()->Adapter().id, id, sizeof(id))) { wanted.SetText(settings::kAdapter, id); apply("F3 next GPU", wanted); }
+                                if (renderer.GetDevice() != nullptr && NextAdapterId(renderer.GetDevice()->Adapter().id, id, sizeof(id))) { wanted.SetText(renderer::settings::kAdapter, id); apply("F3 next GPU", wanted); }
                                 break;
-                            case 3: wanted.SetFloat(settings::kRenderScale, wanted.GetFloat(settings::kRenderScale) >= 2.0f ? 0.5f : wanted.GetFloat(settings::kRenderScale) * 2.0f); apply("F4 render scale", wanted); break;
-                            case 4: wanted.SetBool(settings::kFullscreen, !wanted.GetBool(settings::kFullscreen)); apply("F5 fullscreen", wanted); break;
-                            case 5: CycleEnum(&wanted, settings::kSwapchainFormat); apply("F6 swapchain format", wanted); break;
-                            case 6: CycleEnum(&wanted, settings::kShaderQuality); apply("F7 shader quality", wanted); break;
+                            case 3: wanted.SetFloat(renderer::settings::kRenderScale, wanted.GetFloat(renderer::settings::kRenderScale) >= 2.0f ? 0.5f : wanted.GetFloat(renderer::settings::kRenderScale) * 2.0f); apply("F4 render scale", wanted); break;
+                            case 4: wanted.SetBool(renderer::settings::kFullscreen, !wanted.GetBool(renderer::settings::kFullscreen)); apply("F5 fullscreen", wanted); break;
+                            case 5: CycleEnum(&wanted, renderer::settings::kSwapchainFormat); apply("F6 swapchain format", wanted); break;
+                            case 6: CycleEnum(&wanted, renderer::settings::kShaderQuality); apply("F7 shader quality", wanted); break;
                             case 8: {
                                 const double t = NowSeconds();
                                 const ApplyResult r = renderer.ForceDeviceReset();
@@ -645,8 +658,7 @@ int ParseLayer(const char* name) {
     return -1;
 }
 
-int Usage(const char* program, int code) {
-    std::fprintf(code == kExitOk ? stdout : stderr,
+const char kUsageFormat[] =
                  "usage: %s [--backend wayland|x11] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
                  "       [--objects N] [--lights N] [--gbuffer albedo|normal|material|depth|worldpos]\n"
                  "       [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus] [--prewarm]\n"
@@ -664,8 +676,10 @@ int Usage(const char* program, int code) {
                  "  --prewarm         after a device reset rebuild every pipeline at once instead of when it is first used\n"
                  "  --script W        run steps without a keyboard: frame:N set:key=value reset gpu:next loss crash:segv|abort|assert quit (space separated)\n"
                  "  --inject-device-loss F  fault injection: lose the GPU device at frame F (exit code 3)\n"
-                 "  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it\n",
-                 program);
+                 "  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it\n";
+
+int Usage(const char* program, int code) {
+    std::fprintf(code == kExitOk ? stdout : stderr, kUsageFormat, program);
     return code;
 }
 
@@ -675,6 +689,13 @@ int main(int argc, char** argv) {
     const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(argc, argv);
     engine_placeholder::debug::RunCrashTest(debug_setup.crash_test); // --crash-test=segv|abort|assert|ensure, before any window or device
     LogRhi.SetVerbosity(LogVerbosity::Info); // the frame-time line is Info
+    demo::DemoSettings demo_settings;
+    char usage_text[4096];
+    std::snprintf(usage_text, sizeof(usage_text), kUsageFormat, argv[0]);
+    if (!demo_settings.Begin("renderer_demo", usage_text, argc, argv)) return kExitUsage;
+    g_demo_settings = &demo_settings;
+    argc = demo_settings.RestCount(); // what the settings system did not take: --set, --settings, --gpu, --backend, ... are handled there
+    argv = demo_settings.RestArgs();
     Options options;
     const char* frames_env = std::getenv("RENDERER_DEMO_FRAMES");
     options.frames = frames_env != nullptr ? std::atol(frames_env) : 0;
@@ -718,16 +739,26 @@ int main(int argc, char** argv) {
             return Usage(argv[0], kExitUsage);
         }
     }
-    if (options.backend != nullptr) {
-        if (std::strcmp(options.backend, "wayland") != 0 && std::strcmp(options.backend, "x11") != 0) {
-            std::fprintf(stderr, "renderer_demo: unknown backend '%s'\n", options.backend);
-            return kExitUsage;
-        }
-        setenv("ENGINE_WINDOW_BACKEND", options.backend, 1);
+    // The flags of this program that are settings: put them into the settings, so --list-settings and --save-settings show them.
+    if (options.no_vsync) demo_settings.SetLegacy("renderer.present_mode", "immediate");
+    if (options.validation) {
+        demo_settings.SetLegacy("renderer.validation", "on");
+        demo_settings.SetLegacy("renderer.sync_validation", "true");
     }
+    {
+        const int code = demo_settings.Finish();
+        if (code >= 0) return code;
+    }
+    // And what the settings say (a file, --set, the environment) is what the program does.
+    static demo::DemoSettings::Effective effective;
+    effective = demo_settings.ReadEffective();
+    if (effective.gpu[0] != '\0') options.gpu = effective.gpu;
+    options.no_vsync = effective.immediate;
+    options.validation = effective.validation;
+    if (std::strcmp(effective.window_backend, "auto") != 0) setenv("ENGINE_WINDOW_BACKEND", effective.window_backend, 1);
     if (options.list_gpus) return ListGpus();
-    RenderSettings settings;
-    settings.SetEnum(settings::kBackend, 1); // the demo draws with Vulkan
+    RenderSettings settings = renderer::RenderSettingsFromSnapshot(demo_settings.GetRegistry(), *demo_settings.Get().Snapshot());
+    settings.SetEnum(renderer::settings::kBackend, 1); // the demo draws with Vulkan
     BuildSettings(options, &settings);
     if (options.screenshot != nullptr) {
         return RunScreenshot(options, settings);

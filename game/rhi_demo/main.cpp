@@ -20,6 +20,7 @@
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 #include "rhi/uniform_ring.h"
+#include "settings_main.h"
 #include "textures.h"
 
 using namespace engine_placeholder;
@@ -229,15 +230,13 @@ bool WritePpm(const char* path, u32 width, u32 height, const Vector<byte>& rgba)
     return io::Path::Parse(StringView(path), io::NativePathStyle(), &file) && demo::WritePpm(file, width, height, rgba.Data()).Ok();
 }
 
+demo::DemoSettings* g_demo_settings = nullptr; // the settings of this run
+
 DeviceCreateInfo DeviceInfo(const Options& options) {
     DeviceCreateInfo info;
-    if (options.validation) {
-        info.validation = ValidationSetting::On;
-        info.sync_validation = true;
-    }
+    g_demo_settings->FillDeviceCreateInfo(&info); // the validation layer, the GPU, the pipeline cache and the frames in flight come from the settings
     info.faults.lose_device_at_frame = static_cast<u32>(options.inject_device_loss);
     info.faults.fail_allocations_from = static_cast<u32>(options.inject_oom);
-    info.adapter = options.gpu;
     return info;
 }
 
@@ -505,8 +504,7 @@ bool ParseCount(const char* text, long* out) {
     return true;
 }
 
-int Usage(const char* program, int code) {
-    std::fprintf(code == kExitOk ? stdout : stderr,
+const char kUsageFormat[] =
                  "usage: %s [--backend wayland|x11] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
                  "       [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus]\n"
                  "  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)\n"
@@ -517,8 +515,10 @@ int Usage(const char* program, int code) {
                  "  --list-gpus       print the GPUs and exit\n"
                  "  --validation      enable the validation layer with synchronization validation\n"
                  "  --inject-device-loss F  fault injection: lose the GPU device at frame F (exit code 3)\n"
-                 "  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it\n",
-                 program);
+                 "  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it\n";
+
+int Usage(const char* program, int code) {
+    std::fprintf(code == kExitOk ? stdout : stderr, kUsageFormat, program);
     return code;
 }
 
@@ -528,6 +528,13 @@ int main(int argc, char** argv) {
     const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(argc, argv);
     engine_placeholder::debug::RunCrashTest(debug_setup.crash_test); // --crash-test=segv|abort|assert|ensure, before any window or device
     LogRhi.SetVerbosity(LogVerbosity::Info); // the frame-time line is Info
+    demo::DemoSettings demo_settings;
+    char usage_text[2048];
+    std::snprintf(usage_text, sizeof(usage_text), kUsageFormat, argv[0]);
+    if (!demo_settings.Begin("rhi_demo", usage_text, argc, argv)) return kExitUsage;
+    g_demo_settings = &demo_settings;
+    argc = demo_settings.RestCount(); // what the settings system did not take: --set, --settings, --gpu, --backend, ... are handled there
+    argv = demo_settings.RestArgs();
     Options options;
     const char* frames_env = std::getenv("RHI_DEMO_FRAMES");
     options.frames = frames_env != nullptr ? std::atol(frames_env) : 0;
@@ -564,13 +571,23 @@ int main(int argc, char** argv) {
             return Usage(argv[0], kExitUsage);
         }
     }
-    if (options.backend != nullptr) {
-        if (std::strcmp(options.backend, "wayland") != 0 && std::strcmp(options.backend, "x11") != 0) {
-            std::fprintf(stderr, "rhi_demo: unknown backend '%s'\n", options.backend);
-            return kExitUsage;
-        }
-        setenv("ENGINE_WINDOW_BACKEND", options.backend, 1);
+    // The flags of this program that are settings: put them into the settings, so --list-settings and --save-settings show them.
+    if (options.no_vsync) demo_settings.SetLegacy("renderer.present_mode", "immediate");
+    if (options.validation) {
+        demo_settings.SetLegacy("renderer.validation", "on");
+        demo_settings.SetLegacy("renderer.sync_validation", "true");
     }
+    {
+        const int code = demo_settings.Finish();
+        if (code >= 0) return code;
+    }
+    // And what the settings say (a file, --set, the environment) is what the program does.
+    static demo::DemoSettings::Effective effective;
+    effective = demo_settings.ReadEffective();
+    if (effective.gpu[0] != '\0') options.gpu = effective.gpu;
+    options.no_vsync = effective.immediate;
+    options.validation = effective.validation;
+    if (std::strcmp(effective.window_backend, "auto") != 0) setenv("ENGINE_WINDOW_BACKEND", effective.window_backend, 1);
     if (options.list_gpus) return ListGpus();
     return options.screenshot != nullptr ? RunScreenshot(options) : RunWindow(options);
 }

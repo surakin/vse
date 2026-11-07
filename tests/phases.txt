@@ -179,6 +179,10 @@ tests/types/                                    10
 test:types_cross_syntax_*                       10
 test:std_container_check*                        10
 test:settings_fixtures*                          11
+test:rhi_demo_settings_*                         11
+test:renderer_demo_settings_*                    11
+test:rhi_demo_readme_current                     11
+test:renderer_demo_readme_current                11
 
 # --- Phase 11: settings system ---
 tests/settings/                                 11

@@ -712,18 +712,20 @@ LogChannel::SetVerbosity(LogVerbosity)	function	foundation/log	logchannel-setver
 LogChannel::SetEnabled(bool)	function	foundation/log	logchannel-setenabled-bool	foundation-log.md	engine/foundation/log/log.h:52
 LogChannel::ShouldLog(LogVerbosity) const	function	foundation/log	logchannel-shouldlog-logverbosity-const	foundation-log.md	engine/foundation/log/log.h:59
 LogChannel::Find(StringView)	function	foundation/log	logchannel-find-stringview	foundation-log.md	engine/foundation/log/log.h:67
-kLogRingSlots	variable	foundation/log	klogringslots	foundation-log.md	engine/foundation/log/log.h:80
-kLogRingLineBytes	variable	foundation/log	klogringlinebytes	foundation-log.md	engine/foundation/log/log.h:82
-RecentLogLineFn	alias	foundation/log	recentloglinefn	foundation-log.md	engine/foundation/log/log.h:85
-ReadRecentLogLines(RecentLogLineFn,void*,usize)	function	foundation/log	readrecentloglines-recentloglinefn-void-star-usize	foundation-log.md	engine/foundation/log/log.h:97
-ResetLogRingForTesting()	function	foundation/log	resetlogringfortesting	foundation-log.md	engine/foundation/log/log.h:101
-SetLogErrorTraces(bool)	function	foundation/log	setlogerrortraces-bool	foundation-log.md	engine/foundation/log/log.h:107
-LogErrorTraces()	function	foundation/log	logerrortraces	foundation-log.md	engine/foundation/log/log.h:112
-LogCore	variable	foundation/log	logcore	foundation-log.md	engine/foundation/log/log.h:115
-LogRender	variable	foundation/log	logrender	foundation-log.md	engine/foundation/log/log.h:117
-LogPlatform	variable	foundation/log	logplatform	foundation-log.md	engine/foundation/log/log.h:119
-Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:130
-LoadConfig(const char*)	function	foundation/log	loadconfig-const-char-star	foundation-log.md	engine/foundation/log/log.h:146
+LogChannel::First()	function	foundation/log	logchannel-first	foundation-log.md	engine/foundation/log/log.h:73
+LogChannel::Next() const	function	foundation/log	logchannel-next-const	foundation-log.md	engine/foundation/log/log.h:75
+kLogRingSlots	variable	foundation/log	klogringslots	foundation-log.md	engine/foundation/log/log.h:88
+kLogRingLineBytes	variable	foundation/log	klogringlinebytes	foundation-log.md	engine/foundation/log/log.h:90
+RecentLogLineFn	alias	foundation/log	recentloglinefn	foundation-log.md	engine/foundation/log/log.h:93
+ReadRecentLogLines(RecentLogLineFn,void*,usize)	function	foundation/log	readrecentloglines-recentloglinefn-void-star-usize	foundation-log.md	engine/foundation/log/log.h:105
+ResetLogRingForTesting()	function	foundation/log	resetlogringfortesting	foundation-log.md	engine/foundation/log/log.h:109
+SetLogErrorTraces(bool)	function	foundation/log	setlogerrortraces-bool	foundation-log.md	engine/foundation/log/log.h:115
+LogErrorTraces()	function	foundation/log	logerrortraces	foundation-log.md	engine/foundation/log/log.h:120
+LogCore	variable	foundation/log	logcore	foundation-log.md	engine/foundation/log/log.h:123
+LogRender	variable	foundation/log	logrender	foundation-log.md	engine/foundation/log/log.h:125
+LogPlatform	variable	foundation/log	logplatform	foundation-log.md	engine/foundation/log/log.h:127
+Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:138
+LoadConfig(const char*)	function	foundation/log	loadconfig-const-char-star	foundation-log.md	engine/foundation/log/log.h:154
 ENGINE_INT128_NAMESPACE::detail128::NativeU	variable	foundation/types	engine-int128-namespace-detail128-nativeu	foundation-types.md	engine/foundation/int128.h:40
 ENGINE_INT128_NAMESPACE::detail128::NativeI	variable	foundation/types	engine-int128-namespace-detail128-nativei	foundation-types.md	engine/foundation/int128.h:42
 ENGINE_INT128_NAMESPACE::detail128::Parts	struct	foundation/types	engine-int128-namespace-detail128-parts	foundation-types.md	engine/foundation/int128.h:45
@@ -954,6 +956,9 @@ settings::ValidateValue(const SettingDesc&,const Value&,Value*)	function	foundat
 settings::kMaxValueTextBytes	variable	foundation/settings	settings-kmaxvaluetextbytes	foundation-settings.md	engine/foundation/settings/desc.h:123
 settings::ParseValue(const SettingDesc&,StringView,Value*)	function	foundation/settings	settings-parsevalue-const-settingdesc-amp-stringview-value-star	foundation-settings.md	engine/foundation/settings/desc.h:135
 settings::FormatValue(const SettingDesc&,const Value&,char*,usize)	function	foundation/settings	settings-formatvalue-const-settingdesc-amp-const-value-amp-char-star-usize	foundation-settings.md	engine/foundation/settings/desc.h:147
+settings::RegisterEngineSettings(Registry*)	function	foundation/settings	settings-registerenginesettings-registry-star	foundation-settings.md	engine/foundation/settings/engine_settings.h:26
+settings::RegisterLogSettings(Registry*)	function	foundation/settings	settings-registerlogsettings-registry-star	foundation-settings.md	engine/foundation/settings/engine_settings.h:35
+settings::AttachLogSettings(Settings*)	function	foundation/settings	settings-attachlogsettings-settings-star	foundation-settings.md	engine/foundation/settings/engine_settings.h:43
 settings::EnvironmentSnapshot	class	foundation/settings	settings-environmentsnapshot	foundation-settings.md	engine/foundation/settings/env_source.h:13
 settings::EnvironmentSnapshot::Var	struct	foundation/settings	settings-environmentsnapshot-var	foundation-settings.md	engine/foundation/settings/env_source.h:16
 settings::EnvironmentSnapshot::Var::name	variable	foundation/settings	settings-environmentsnapshot-var-name	foundation-settings.md	engine/foundation/settings/env_source.h:18
@@ -1184,6 +1189,9 @@ settings::Registry::Current(SettingId) const	function	foundation/settings	settin
 settings::Registry::Publish(SettingId,const Value&)	function	foundation/settings	settings-registry-publish-settingid-const-value-amp	foundation-settings.md	engine/foundation/settings/registry.h:138
 settings::Registry::CellOf(SettingId) const	function	foundation/settings	settings-registry-cellof-settingid-const	foundation-settings.md	engine/foundation/settings/registry.h:140
 settings::Registry::CurrentText(SettingId,char*,usize) const	function	foundation/settings	settings-registry-currenttext-settingid-char-star-usize-const	foundation-settings.md	engine/foundation/settings/registry.h:147
+settings::FormatSettingsListing(Settings&,String<HeapAllocator>*)	function	foundation/settings	settings-formatsettingslisting-settings-amp-string-lt-heapallocator-gt-star	foundation-settings.md	engine/foundation/settings/report.h:20
+settings::FormatSettingsHelp(const Registry&,String<HeapAllocator>*)	function	foundation/settings	settings-formatsettingshelp-const-registry-amp-string-lt-heapallocator-gt-star	foundation-settings.md	engine/foundation/settings/report.h:28
+settings::SaveSettingsTo(Settings&,const io::Path&)	function	foundation/settings	settings-savesettingsto-settings-amp-const-io-path-amp	foundation-settings.md	engine/foundation/settings/report.h:41
 settings::Setting	class	foundation/settings	settings-setting	foundation-settings.md	engine/foundation/settings/setting.h:56
 settings::Setting::Setting()	function	foundation/settings	settings-setting-setting	foundation-settings.md	engine/foundation/settings/setting.h:60
 settings::Setting::Setting(const Registry&,SettingId)	function	foundation/settings	settings-setting-setting-const-registry-amp-settingid	foundation-settings.md	engine/foundation/settings/setting.h:67
