@@ -21,6 +21,7 @@ module foundation/log "Foundation: Logging and Assertions"
 
 module foundation/types "Foundation: Fundamental Types"
   header engine/foundation/types.h
+  header engine/foundation/int128.h
 
 module platform/os "Platform: OS Services"
   header engine/foundation/os/os.h

@@ -5,6 +5,7 @@ Concept pages, one per subsystem. All are currently skeletons.
 - [getting-started](getting-started.md)
 - [building-and-testing](building-and-testing.md)
 - [foundation-memory](foundation-memory.md)
+- [foundation-types](foundation-types.md)
 - [foundation-containers](foundation-containers.md)
 - [foundation-strings](foundation-strings.md)
 - [foundation-math](foundation-math.md)

@@ -7,12 +7,12 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | Module | Headers | Symbols |
 |---|---|---|
 | [Foundation: Memory](foundation-memory.md) | 4 | 28 |
-| [Foundation: Containers](foundation-containers.md) | 5 | 122 |
+| [Foundation: Containers](foundation-containers.md) | 6 | 148 |
 | [Foundation: Strings](foundation-strings.md) | 5 | 95 |
 | [Foundation: Paths and Files](foundation-io.md) | 5 | 261 |
 | [Foundation: Math](foundation-math.md) | 5 | 101 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 2 | 69 |
-| [Foundation: Fundamental Types](foundation-types.md) | 1 | 11 |
+| [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Platform: OS Services](platform-os.md) | 3 | 34 |
 | [Platform: Windowing and Input](platform-window-input.md) | 10 | 263 |
 | [Foundation: Debugging](foundation-debug.md) | 14 | 200 |

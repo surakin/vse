@@ -63,6 +63,7 @@ set(FOUNDATION_SOURCES
   mem/pool_allocator.cpp
   mem/stack_allocator.cpp
   log/log.cpp
+  int128.cpp
   io/path.cpp
   io/linux/error.cpp
   io/linux/file_system.cpp

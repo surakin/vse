@@ -11,4 +11,13 @@ template <class T, class... Args> inline constexpr bool is_constructible_v = __i
 template <class T> struct remove_reference { using type = T; };
 template <class T> struct remove_reference<T&> { using type = T; };
 template <class T> struct remove_reference<T&&> { using type = T; };
+template <class T> inline constexpr bool is_const_v = __is_const(T);
+template <class T> inline constexpr bool is_trivially_copyable_v = __is_trivially_copyable(T);
+template <class T> inline constexpr bool is_standard_layout_v = __is_standard_layout(T);
+template <class T> inline constexpr bool is_integral_v = __is_integral(T);
+template <class T> inline constexpr bool is_signed_v = __is_signed(T);
+template <class T> inline constexpr bool is_unsigned_v = __is_unsigned(T);
+template <class T> struct remove_const { using type = T; };
+template <class T> struct remove_const<const T> { using type = T; };
+template <class T> using remove_const_t = typename remove_const<T>::type;
 } // namespace std

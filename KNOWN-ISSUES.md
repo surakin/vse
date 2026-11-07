@@ -116,3 +116,5 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   - `os::Open`, `os::CreateFileForWriting` and raw `readlink` remain for the assert-path debugger check, `InitCrashContext` (which the assert handler can call lazily) and the crash report; `io::File::Open` allocates and so cannot run there.
   - `CreatePrivateDirectory` does not check that existing parents are owned by the user (the function it replaced did not either).
   - `tests/io` leaves the temporary directory of an interrupted run behind (`/tmp/re_io_test.*`); nothing sweeps them.
+
+- Phase 10 Day 126 (2026-11-07): `u128`/`i128` have no `operator<=>` (the Windows/macOS cross-syntax shim has no `<compare>`); the six comparison operators exist.

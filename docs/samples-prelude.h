@@ -10,8 +10,10 @@
 
 #include "containers/array.h"
 #include "containers/shared_ptr.h"
+#include "containers/span.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
+#include "int128.h"
 #include "containers/hash_map.h"
 #include "io/file.h"
 #include "io/directory.h"

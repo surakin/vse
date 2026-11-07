@@ -99,6 +99,32 @@ SharedPtr::operator bool() const	function	foundation/containers	sharedptr-operat
 SharedPtr::UseCount() const	function	foundation/containers	sharedptr-usecount-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:147
 LocalSharedPtr	alias	foundation/containers	localsharedptr	foundation-containers.md	engine/foundation/containers/shared_ptr.h:172
 MakeShared(Args&&...)	function	foundation/containers	makeshared-args-amp-amp	foundation-containers.md	engine/foundation/containers/shared_ptr.h:198
+Span	class	foundation/containers	span	foundation-containers.md	engine/foundation/containers/span.h:24
+Span::Span()	function	foundation/containers	span-span	foundation-containers.md	engine/foundation/containers/span.h:28
+Span::Span(T*,usize)	function	foundation/containers	span-span-t-star-usize	foundation-containers.md	engine/foundation/containers/span.h:34
+Span::Span(U(&)[N])	function	foundation/containers	span-span-u-amp-n	foundation-containers.md	engine/foundation/containers/span.h:38
+Span::Span(const Span<U>&)	function	foundation/containers	span-span-const-span-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:42
+Span::Span(Vector<U,A>&)	function	foundation/containers	span-span-vector-lt-u-a-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:46
+Span::Span(const Vector<U,A>&)	function	foundation/containers	span-span-const-vector-lt-u-a-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:50
+Span::Span(Array<U,N>&)	function	foundation/containers	span-span-array-lt-u-n-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:54
+Span::Span(const Array<U,N>&)	function	foundation/containers	span-span-const-array-lt-u-n-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:58
+Span::Data() const	function	foundation/containers	span-data-const	foundation-containers.md	engine/foundation/containers/span.h:63
+Span::Size() const	function	foundation/containers	span-size-const	foundation-containers.md	engine/foundation/containers/span.h:65
+Span::SizeBytes() const	function	foundation/containers	span-sizebytes-const	foundation-containers.md	engine/foundation/containers/span.h:67
+Span::Empty() const	function	foundation/containers	span-empty-const	foundation-containers.md	engine/foundation/containers/span.h:69
+Span::operator[](usize) const	function	foundation/containers	span-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/span.h:75
+Span::begin() const	function	foundation/containers	span-begin-const	foundation-containers.md	engine/foundation/containers/span.h:81
+Span::end() const	function	foundation/containers	span-end-const	foundation-containers.md	engine/foundation/containers/span.h:83
+Span::First(usize) const	function	foundation/containers	span-first-usize-const	foundation-containers.md	engine/foundation/containers/span.h:89
+Span::Last(usize) const	function	foundation/containers	span-last-usize-const	foundation-containers.md	engine/foundation/containers/span.h:97
+Span::Subspan(usize,usize) const	function	foundation/containers	span-subspan-usize-usize-const	foundation-containers.md	engine/foundation/containers/span.h:106
+Span::Subspan(usize) const	function	foundation/containers	span-subspan-usize-const	foundation-containers.md	engine/foundation/containers/span.h:114
+ByteSpan	alias	foundation/containers	bytespan	foundation-containers.md	engine/foundation/containers/span.h:125
+MutableByteSpan	alias	foundation/containers	mutablebytespan	foundation-containers.md	engine/foundation/containers/span.h:127
+AsBytes(const T&)	function	foundation/containers	asbytes-const-t-amp	foundation-containers.md	engine/foundation/containers/span.h:132
+AsBytes(Span<T>)	function	foundation/containers	asbytes-span-lt-t-gt	foundation-containers.md	engine/foundation/containers/span.h:139
+AsByteSpan(StringView)	function	foundation/containers	asbytespan-stringview	foundation-containers.md	engine/foundation/containers/span.h:146
+ToStringView(ByteSpan)	function	foundation/containers	tostringview-bytespan	foundation-containers.md	engine/foundation/containers/span.h:149
 DefaultDelete	struct	foundation/containers	defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:22
 DefaultDelete::DefaultDelete()	function	foundation/containers	defaultdelete-defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:25
 DefaultDelete::DefaultDelete(const DefaultDelete<U>&)	function	foundation/containers	defaultdelete-defaultdelete-const-defaultdelete-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:27
@@ -675,17 +701,105 @@ LogRender	variable	foundation/log	logrender	foundation-log.md	engine/foundation/
 LogPlatform	variable	foundation/log	logplatform	foundation-log.md	engine/foundation/log/log.h:119
 Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:130
 LoadConfig(const char*)	function	foundation/log	loadconfig-const-char-star	foundation-log.md	engine/foundation/log/log.h:146
-i8	alias	foundation/types	i8	foundation-types.md	engine/foundation/types.h:12
-i16	alias	foundation/types	i16	foundation-types.md	engine/foundation/types.h:14
-i32	alias	foundation/types	i32	foundation-types.md	engine/foundation/types.h:16
-i64	alias	foundation/types	i64	foundation-types.md	engine/foundation/types.h:18
-u8	alias	foundation/types	u8	foundation-types.md	engine/foundation/types.h:21
-u16	alias	foundation/types	u16	foundation-types.md	engine/foundation/types.h:23
-u32	alias	foundation/types	u32	foundation-types.md	engine/foundation/types.h:25
-u64	alias	foundation/types	u64	foundation-types.md	engine/foundation/types.h:27
-usize	alias	foundation/types	usize	foundation-types.md	engine/foundation/types.h:30
-f32	alias	foundation/types	f32	foundation-types.md	engine/foundation/types.h:33
-f64	alias	foundation/types	f64	foundation-types.md	engine/foundation/types.h:35
+ENGINE_INT128_NAMESPACE::detail128::NativeU	variable	foundation/types	engine-int128-namespace-detail128-nativeu	foundation-types.md	engine/foundation/int128.h:40
+ENGINE_INT128_NAMESPACE::detail128::NativeI	variable	foundation/types	engine-int128-namespace-detail128-nativei	foundation-types.md	engine/foundation/int128.h:42
+ENGINE_INT128_NAMESPACE::detail128::Parts	struct	foundation/types	engine-int128-namespace-detail128-parts	foundation-types.md	engine/foundation/int128.h:45
+ENGINE_INT128_NAMESPACE::detail128::Parts::lo	variable	foundation/types	engine-int128-namespace-detail128-parts-lo	foundation-types.md	engine/foundation/int128.h:47
+ENGINE_INT128_NAMESPACE::detail128::Parts::hi	variable	foundation/types	engine-int128-namespace-detail128-parts-hi	foundation-types.md	engine/foundation/int128.h:49
+ENGINE_INT128_NAMESPACE::detail128::PortableMul(Parts,Parts)	function	foundation/types	engine-int128-namespace-detail128-portablemul-parts-parts	foundation-types.md	engine/foundation/int128.h:52
+ENGINE_INT128_NAMESPACE::detail128::PortableDivMod(Parts,Parts,Parts*,Parts*)	function	foundation/types	engine-int128-namespace-detail128-portabledivmod-parts-parts-parts-star-parts-star	foundation-types.md	engine/foundation/int128.h:54
+ENGINE_INT128_NAMESPACE::u128	struct	foundation/types	engine-int128-namespace-u128	foundation-types.md	engine/foundation/int128.h:61
+ENGINE_INT128_NAMESPACE::u128::lo	variable	foundation/types	engine-int128-namespace-u128-lo	foundation-types.md	engine/foundation/int128.h:63
+ENGINE_INT128_NAMESPACE::u128::hi	variable	foundation/types	engine-int128-namespace-u128-hi	foundation-types.md	engine/foundation/int128.h:65
+ENGINE_INT128_NAMESPACE::u128::kMaxTextBytes	variable	foundation/types	engine-int128-namespace-u128-kmaxtextbytes	foundation-types.md	engine/foundation/int128.h:68
+ENGINE_INT128_NAMESPACE::u128::u128()	function	foundation/types	engine-int128-namespace-u128-u128	foundation-types.md	engine/foundation/int128.h:71
+ENGINE_INT128_NAMESPACE::u128::u128(T)	function	foundation/types	engine-int128-namespace-u128-u128-t	foundation-types.md	engine/foundation/int128.h:73
+ENGINE_INT128_NAMESPACE::u128::FromParts(u64,u64)	function	foundation/types	engine-int128-namespace-u128-fromparts-u64-u64	foundation-types.md	engine/foundation/int128.h:77
+ENGINE_INT128_NAMESPACE::u128::Max()	function	foundation/types	engine-int128-namespace-u128-max	foundation-types.md	engine/foundation/int128.h:84
+ENGINE_INT128_NAMESPACE::u128::operator T() const	function	foundation/types	engine-int128-namespace-u128-operator-t-const	foundation-types.md	engine/foundation/int128.h:87
+ENGINE_INT128_NAMESPACE::u128::operator bool() const	function	foundation/types	engine-int128-namespace-u128-operator-bool-const	foundation-types.md	engine/foundation/int128.h:93
+ENGINE_INT128_NAMESPACE::u128::operator f64() const	function	foundation/types	engine-int128-namespace-u128-operator-f64-const	foundation-types.md	engine/foundation/int128.h:95
+ENGINE_INT128_NAMESPACE::u128::CountLeadingZeros() const	function	foundation/types	engine-int128-namespace-u128-countleadingzeros-const	foundation-types.md	engine/foundation/int128.h:107
+ENGINE_INT128_NAMESPACE::u128::CountTrailingZeros() const	function	foundation/types	engine-int128-namespace-u128-counttrailingzeros-const	foundation-types.md	engine/foundation/int128.h:112
+ENGINE_INT128_NAMESPACE::u128::PopCount() const	function	foundation/types	engine-int128-namespace-u128-popcount-const	foundation-types.md	engine/foundation/int128.h:117
+ENGINE_INT128_NAMESPACE::u128::ByteSwap() const	function	foundation/types	engine-int128-namespace-u128-byteswap-const	foundation-types.md	engine/foundation/int128.h:119
+ENGINE_INT128_NAMESPACE::u128::Hash() const	function	foundation/types	engine-int128-namespace-u128-hash-const	foundation-types.md	engine/foundation/int128.h:121
+ENGINE_INT128_NAMESPACE::u128::ToText(char*,usize,u32) const	function	foundation/types	engine-int128-namespace-u128-totext-char-star-usize-u32-const	foundation-types.md	engine/foundation/int128.h:136
+ENGINE_INT128_NAMESPACE::u128::FromText(StringView,u32,u128*)	function	foundation/types	engine-int128-namespace-u128-fromtext-stringview-u32-u128-star	foundation-types.md	engine/foundation/int128.h:144
+ENGINE_INT128_NAMESPACE::u128::operator+=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-plus-eq-u128	foundation-types.md	engine/foundation/int128.h:147
+ENGINE_INT128_NAMESPACE::u128::operator-=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-minus-eq-u128	foundation-types.md	engine/foundation/int128.h:154
+ENGINE_INT128_NAMESPACE::u128::operator*=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-star-eq-u128	foundation-types.md	engine/foundation/int128.h:161
+ENGINE_INT128_NAMESPACE::u128::operator/=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-slash-eq-u128	foundation-types.md	engine/foundation/int128.h:175
+ENGINE_INT128_NAMESPACE::u128::operator%=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-pct-eq-u128	foundation-types.md	engine/foundation/int128.h:179
+ENGINE_INT128_NAMESPACE::u128::operator<<=(u32)	function	foundation/types	engine-int128-namespace-u128-operator-lt-lt-eq-u32	foundation-types.md	engine/foundation/int128.h:181
+ENGINE_INT128_NAMESPACE::u128::operator>>=(u32)	function	foundation/types	engine-int128-namespace-u128-operator-gt-gt-eq-u32	foundation-types.md	engine/foundation/int128.h:195
+ENGINE_INT128_NAMESPACE::u128::operator&=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-amp-eq-u128	foundation-types.md	engine/foundation/int128.h:209
+ENGINE_INT128_NAMESPACE::u128::operator|=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-pipe-eq-u128	foundation-types.md	engine/foundation/int128.h:215
+ENGINE_INT128_NAMESPACE::u128::operator^=(u128)	function	foundation/types	engine-int128-namespace-u128-operator-caret-eq-u128	foundation-types.md	engine/foundation/int128.h:221
+ENGINE_INT128_NAMESPACE::u128::operator++()	function	foundation/types	engine-int128-namespace-u128-operator-plus-plus	foundation-types.md	engine/foundation/int128.h:227
+ENGINE_INT128_NAMESPACE::u128::operator++(int)	function	foundation/types	engine-int128-namespace-u128-operator-plus-plus-int	foundation-types.md	engine/foundation/int128.h:229
+ENGINE_INT128_NAMESPACE::u128::operator--()	function	foundation/types	engine-int128-namespace-u128-operator-minus-minus	foundation-types.md	engine/foundation/int128.h:235
+ENGINE_INT128_NAMESPACE::u128::operator--(int)	function	foundation/types	engine-int128-namespace-u128-operator-minus-minus-int	foundation-types.md	engine/foundation/int128.h:237
+ENGINE_INT128_NAMESPACE::u128::operator+() const	function	foundation/types	engine-int128-namespace-u128-operator-plus-const	foundation-types.md	engine/foundation/int128.h:243
+ENGINE_INT128_NAMESPACE::u128::operator-() const	function	foundation/types	engine-int128-namespace-u128-operator-minus-const	foundation-types.md	engine/foundation/int128.h:245
+ENGINE_INT128_NAMESPACE::u128::operator~() const	function	foundation/types	engine-int128-namespace-u128-operator-tilde-const	foundation-types.md	engine/foundation/int128.h:247
+ENGINE_INT128_NAMESPACE::u128::operator!() const	function	foundation/types	engine-int128-namespace-u128-operator-not-const	foundation-types.md	engine/foundation/int128.h:249
+ENGINE_INT128_NAMESPACE::u128::ToNative() const	function	foundation/types	engine-int128-namespace-u128-tonative-const	foundation-types.md	engine/foundation/int128.h:290
+ENGINE_INT128_NAMESPACE::u128::FromNative(detail128::NativeU)	function	foundation/types	engine-int128-namespace-u128-fromnative-detail128-nativeu	foundation-types.md	engine/foundation/int128.h:292
+ENGINE_INT128_NAMESPACE::i128	struct	foundation/types	engine-int128-namespace-i128	foundation-types.md	engine/foundation/int128.h:338
+ENGINE_INT128_NAMESPACE::i128::lo	variable	foundation/types	engine-int128-namespace-i128-lo	foundation-types.md	engine/foundation/int128.h:340
+ENGINE_INT128_NAMESPACE::i128::hi	variable	foundation/types	engine-int128-namespace-i128-hi	foundation-types.md	engine/foundation/int128.h:342
+ENGINE_INT128_NAMESPACE::i128::kMaxTextBytes	variable	foundation/types	engine-int128-namespace-i128-kmaxtextbytes	foundation-types.md	engine/foundation/int128.h:345
+ENGINE_INT128_NAMESPACE::i128::i128()	function	foundation/types	engine-int128-namespace-i128-i128	foundation-types.md	engine/foundation/int128.h:348
+ENGINE_INT128_NAMESPACE::i128::i128(T)	function	foundation/types	engine-int128-namespace-i128-i128-t	foundation-types.md	engine/foundation/int128.h:350
+ENGINE_INT128_NAMESPACE::i128::i128(u128)	function	foundation/types	engine-int128-namespace-i128-i128-u128	foundation-types.md	engine/foundation/int128.h:358
+ENGINE_INT128_NAMESPACE::i128::FromParts(u64,u64)	function	foundation/types	engine-int128-namespace-i128-fromparts-u64-u64	foundation-types.md	engine/foundation/int128.h:360
+ENGINE_INT128_NAMESPACE::i128::Max()	function	foundation/types	engine-int128-namespace-i128-max	foundation-types.md	engine/foundation/int128.h:367
+ENGINE_INT128_NAMESPACE::i128::Min()	function	foundation/types	engine-int128-namespace-i128-min	foundation-types.md	engine/foundation/int128.h:369
+ENGINE_INT128_NAMESPACE::i128::ToBits() const	function	foundation/types	engine-int128-namespace-i128-tobits-const	foundation-types.md	engine/foundation/int128.h:372
+ENGINE_INT128_NAMESPACE::i128::IsNegative() const	function	foundation/types	engine-int128-namespace-i128-isnegative-const	foundation-types.md	engine/foundation/int128.h:374
+ENGINE_INT128_NAMESPACE::i128::Magnitude() const	function	foundation/types	engine-int128-namespace-i128-magnitude-const	foundation-types.md	engine/foundation/int128.h:376
+ENGINE_INT128_NAMESPACE::i128::operator T() const	function	foundation/types	engine-int128-namespace-i128-operator-t-const	foundation-types.md	engine/foundation/int128.h:378
+ENGINE_INT128_NAMESPACE::i128::operator bool() const	function	foundation/types	engine-int128-namespace-i128-operator-bool-const	foundation-types.md	engine/foundation/int128.h:384
+ENGINE_INT128_NAMESPACE::i128::operator f64() const	function	foundation/types	engine-int128-namespace-i128-operator-f64-const	foundation-types.md	engine/foundation/int128.h:386
+ENGINE_INT128_NAMESPACE::i128::Hash() const	function	foundation/types	engine-int128-namespace-i128-hash-const	foundation-types.md	engine/foundation/int128.h:388
+ENGINE_INT128_NAMESPACE::i128::ToText(char*,usize,u32) const	function	foundation/types	engine-int128-namespace-i128-totext-char-star-usize-u32-const	foundation-types.md	engine/foundation/int128.h:397
+ENGINE_INT128_NAMESPACE::i128::FromText(StringView,u32,i128*)	function	foundation/types	engine-int128-namespace-i128-fromtext-stringview-u32-i128-star	foundation-types.md	engine/foundation/int128.h:405
+ENGINE_INT128_NAMESPACE::i128::operator+=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-plus-eq-i128	foundation-types.md	engine/foundation/int128.h:408
+ENGINE_INT128_NAMESPACE::i128::operator-=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-minus-eq-i128	foundation-types.md	engine/foundation/int128.h:410
+ENGINE_INT128_NAMESPACE::i128::operator*=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-star-eq-i128	foundation-types.md	engine/foundation/int128.h:412
+ENGINE_INT128_NAMESPACE::i128::operator/=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-slash-eq-i128	foundation-types.md	engine/foundation/int128.h:416
+ENGINE_INT128_NAMESPACE::i128::operator%=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-pct-eq-i128	foundation-types.md	engine/foundation/int128.h:420
+ENGINE_INT128_NAMESPACE::i128::operator<<=(u32)	function	foundation/types	engine-int128-namespace-i128-operator-lt-lt-eq-u32	foundation-types.md	engine/foundation/int128.h:422
+ENGINE_INT128_NAMESPACE::i128::operator>>=(u32)	function	foundation/types	engine-int128-namespace-i128-operator-gt-gt-eq-u32	foundation-types.md	engine/foundation/int128.h:424
+ENGINE_INT128_NAMESPACE::i128::operator&=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-amp-eq-i128	foundation-types.md	engine/foundation/int128.h:429
+ENGINE_INT128_NAMESPACE::i128::operator|=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-pipe-eq-i128	foundation-types.md	engine/foundation/int128.h:431
+ENGINE_INT128_NAMESPACE::i128::operator^=(i128)	function	foundation/types	engine-int128-namespace-i128-operator-caret-eq-i128	foundation-types.md	engine/foundation/int128.h:433
+ENGINE_INT128_NAMESPACE::i128::operator++()	function	foundation/types	engine-int128-namespace-i128-operator-plus-plus	foundation-types.md	engine/foundation/int128.h:435
+ENGINE_INT128_NAMESPACE::i128::operator++(int)	function	foundation/types	engine-int128-namespace-i128-operator-plus-plus-int	foundation-types.md	engine/foundation/int128.h:437
+ENGINE_INT128_NAMESPACE::i128::operator--()	function	foundation/types	engine-int128-namespace-i128-operator-minus-minus	foundation-types.md	engine/foundation/int128.h:443
+ENGINE_INT128_NAMESPACE::i128::operator--(int)	function	foundation/types	engine-int128-namespace-i128-operator-minus-minus-int	foundation-types.md	engine/foundation/int128.h:445
+ENGINE_INT128_NAMESPACE::i128::operator+() const	function	foundation/types	engine-int128-namespace-i128-operator-plus-const	foundation-types.md	engine/foundation/int128.h:451
+ENGINE_INT128_NAMESPACE::i128::operator-() const	function	foundation/types	engine-int128-namespace-i128-operator-minus-const	foundation-types.md	engine/foundation/int128.h:453
+ENGINE_INT128_NAMESPACE::i128::operator~() const	function	foundation/types	engine-int128-namespace-i128-operator-tilde-const	foundation-types.md	engine/foundation/int128.h:455
+ENGINE_INT128_NAMESPACE::i128::operator!() const	function	foundation/types	engine-int128-namespace-i128-operator-not-const	foundation-types.md	engine/foundation/int128.h:457
+Hash<u128>	struct	foundation/types	hash-lt-u128-gt	foundation-types.md	engine/foundation/int128.h:508
+Hash<u128>::operator()(const u128&) const	function	foundation/types	hash-lt-u128-gt-operator-call-const-u128-amp-const	foundation-types.md	engine/foundation/int128.h:511
+Hash<i128>	struct	foundation/types	hash-lt-i128-gt	foundation-types.md	engine/foundation/int128.h:514
+Hash<i128>::operator()(const i128&) const	function	foundation/types	hash-lt-i128-gt-operator-call-const-i128-amp-const	foundation-types.md	engine/foundation/int128.h:517
+i8	alias	foundation/types	i8	foundation-types.md	engine/foundation/types.h:21
+i16	alias	foundation/types	i16	foundation-types.md	engine/foundation/types.h:23
+i32	alias	foundation/types	i32	foundation-types.md	engine/foundation/types.h:25
+i64	alias	foundation/types	i64	foundation-types.md	engine/foundation/types.h:27
+u8	alias	foundation/types	u8	foundation-types.md	engine/foundation/types.h:30
+u16	alias	foundation/types	u16	foundation-types.md	engine/foundation/types.h:32
+u32	alias	foundation/types	u32	foundation-types.md	engine/foundation/types.h:34
+u64	alias	foundation/types	u64	foundation-types.md	engine/foundation/types.h:36
+byte	alias	foundation/types	byte	foundation-types.md	engine/foundation/types.h:39
+usize	alias	foundation/types	usize	foundation-types.md	engine/foundation/types.h:42
+isize	alias	foundation/types	isize	foundation-types.md	engine/foundation/types.h:44
+f32	alias	foundation/types	f32	foundation-types.md	engine/foundation/types.h:47
+f64	alias	foundation/types	f64	foundation-types.md	engine/foundation/types.h:49
 os::StashNativeCommandLine(int,char**)	function	platform/os	os-stashnativecommandline-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:20
 os::CommandLine	class	platform/os	os-commandline	platform-os.md	engine/foundation/os/command_line.h:38
 os::CommandLine::CommandLine(Allocator&,int,char**)	function	platform/os	os-commandline-commandline-allocator-amp-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:49
