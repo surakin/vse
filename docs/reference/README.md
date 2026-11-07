@@ -13,11 +13,11 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Math](foundation-math.md) | 5 | 101 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 2 | 69 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
-| [Foundation: Settings](foundation-settings.md) | 13 | 484 |
+| [Foundation: Settings](foundation-settings.md) | 13 | 485 |
 | [Platform: OS Services](platform-os.md) | 3 | 34 |
 | [Platform: Windowing and Input](platform-window-input.md) | 10 | 263 |
 | [Foundation: Debugging](foundation-debug.md) | 14 | 200 |
 | [The Job System](jobs.md) | 11 | 190 |
 | [The Render Hardware Interface](rhi.md) | 18 | 725 |
-| [The renderer](renderer.md) | 19 | 986 |
+| [The renderer](renderer.md) | 20 | 994 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 16 | 448 |

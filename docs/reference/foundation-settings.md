@@ -963,6 +963,16 @@ RangePolicy policy;
 
 What an out-of-range number does.
 
+### `max_text` {#settings-settingdesc-max-text}
+
+`variable settings::SettingDesc::max_text` — defined in `engine/foundation/settings/desc.h`
+
+```cpp
+u32 max_text;
+```
+
+The longest `Text` in bytes (at most 511); 0 means 511. A longer value is `ValueError::TooLong`.
+
 ### `enum_names` {#settings-settingdesc-enum-names}
 
 `variable settings::SettingDesc::enum_names` — defined in `engine/foundation/settings/desc.h`

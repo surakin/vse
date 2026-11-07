@@ -1,1 +1,1 @@
-void F(R& r) { r.SetSchemaVersion("planted", 2); }
+void F(R& r) { r.SetSchemaVersion("planted", 3); }

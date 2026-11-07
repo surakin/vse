@@ -921,38 +921,39 @@ settings::SettingDesc::max_int	variable	foundation/settings	settings-settingdesc
 settings::SettingDesc::min_float	variable	foundation/settings	settings-settingdesc-min-float	foundation-settings.md	engine/foundation/settings/desc.h:48
 settings::SettingDesc::max_float	variable	foundation/settings	settings-settingdesc-max-float	foundation-settings.md	engine/foundation/settings/desc.h:50
 settings::SettingDesc::policy	variable	foundation/settings	settings-settingdesc-policy	foundation-settings.md	engine/foundation/settings/desc.h:52
-settings::SettingDesc::enum_names	variable	foundation/settings	settings-settingdesc-enum-names	foundation-settings.md	engine/foundation/settings/desc.h:54
-settings::SettingDesc::enum_count	variable	foundation/settings	settings-settingdesc-enum-count	foundation-settings.md	engine/foundation/settings/desc.h:56
-settings::SettingDesc::apply_class	variable	foundation/settings	settings-settingdesc-apply-class	foundation-settings.md	engine/foundation/settings/desc.h:58
-settings::SettingDesc::label	variable	foundation/settings	settings-settingdesc-label	foundation-settings.md	engine/foundation/settings/desc.h:60
-settings::SettingDesc::description	variable	foundation/settings	settings-settingdesc-description	foundation-settings.md	engine/foundation/settings/desc.h:62
-settings::SettingDesc::group	variable	foundation/settings	settings-settingdesc-group	foundation-settings.md	engine/foundation/settings/desc.h:64
-settings::SettingDesc::capability	variable	foundation/settings	settings-settingdesc-capability	foundation-settings.md	engine/foundation/settings/desc.h:66
-settings::SettingDesc::env	variable	foundation/settings	settings-settingdesc-env	foundation-settings.md	engine/foundation/settings/desc.h:68
-settings::SettingDesc::flag	variable	foundation/settings	settings-settingdesc-flag	foundation-settings.md	engine/foundation/settings/desc.h:70
-settings::SettingDesc::deprecated_keys	variable	foundation/settings	settings-settingdesc-deprecated-keys	foundation-settings.md	engine/foundation/settings/desc.h:72
-settings::SettingDesc::deprecated_count	variable	foundation/settings	settings-settingdesc-deprecated-count	foundation-settings.md	engine/foundation/settings/desc.h:74
-settings::SettingDesc::flags	variable	foundation/settings	settings-settingdesc-flags	foundation-settings.md	engine/foundation/settings/desc.h:76
-settings::MakeBool(const char*,bool)	function	foundation/settings	settings-makebool-const-char-star-bool	foundation-settings.md	engine/foundation/settings/desc.h:80
-settings::MakeInt(const char*,i64,i64,i64,RangePolicy)	function	foundation/settings	settings-makeint-const-char-star-i64-i64-i64-rangepolicy	foundation-settings.md	engine/foundation/settings/desc.h:82
-settings::MakeFloat(const char*,f64,f64,f64,RangePolicy)	function	foundation/settings	settings-makefloat-const-char-star-f64-f64-f64-rangepolicy	foundation-settings.md	engine/foundation/settings/desc.h:84
-settings::MakeEnum(const char*,const char* const*,u32,u32)	function	foundation/settings	settings-makeenum-const-char-star-const-char-star-const-star-u32-u32	foundation-settings.md	engine/foundation/settings/desc.h:86
-settings::MakeText(const char*,const char*)	function	foundation/settings	settings-maketext-const-char-star-const-char-star	foundation-settings.md	engine/foundation/settings/desc.h:88
-settings::ValueError	enum	foundation/settings	settings-valueerror	foundation-settings.md	engine/foundation/settings/desc.h:91
-settings::ValueError::None	enumerator	foundation/settings	settings-valueerror-none	foundation-settings.md	engine/foundation/settings/desc.h:92
-settings::ValueError::Clamped	enumerator	foundation/settings	settings-valueerror-clamped	foundation-settings.md	engine/foundation/settings/desc.h:93
-settings::ValueError::Empty	enumerator	foundation/settings	settings-valueerror-empty	foundation-settings.md	engine/foundation/settings/desc.h:94
-settings::ValueError::BadBool	enumerator	foundation/settings	settings-valueerror-badbool	foundation-settings.md	engine/foundation/settings/desc.h:95
-settings::ValueError::BadNumber	enumerator	foundation/settings	settings-valueerror-badnumber	foundation-settings.md	engine/foundation/settings/desc.h:96
-settings::ValueError::OutOfRange	enumerator	foundation/settings	settings-valueerror-outofrange	foundation-settings.md	engine/foundation/settings/desc.h:97
-settings::ValueError::NotInEnum	enumerator	foundation/settings	settings-valueerror-notinenum	foundation-settings.md	engine/foundation/settings/desc.h:98
-settings::ValueError::TooLong	enumerator	foundation/settings	settings-valueerror-toolong	foundation-settings.md	engine/foundation/settings/desc.h:99
-settings::ValueError::BadEscape	enumerator	foundation/settings	settings-valueerror-badescape	foundation-settings.md	engine/foundation/settings/desc.h:100
-settings::ValueErrorName(ValueError)	function	foundation/settings	settings-valueerrorname-valueerror	foundation-settings.md	engine/foundation/settings/desc.h:108
-settings::ValidateValue(const SettingDesc&,const Value&,Value*)	function	foundation/settings	settings-validatevalue-const-settingdesc-amp-const-value-amp-value-star	foundation-settings.md	engine/foundation/settings/desc.h:118
-settings::kMaxValueTextBytes	variable	foundation/settings	settings-kmaxvaluetextbytes	foundation-settings.md	engine/foundation/settings/desc.h:121
-settings::ParseValue(const SettingDesc&,StringView,Value*)	function	foundation/settings	settings-parsevalue-const-settingdesc-amp-stringview-value-star	foundation-settings.md	engine/foundation/settings/desc.h:133
-settings::FormatValue(const SettingDesc&,const Value&,char*,usize)	function	foundation/settings	settings-formatvalue-const-settingdesc-amp-const-value-amp-char-star-usize	foundation-settings.md	engine/foundation/settings/desc.h:145
+settings::SettingDesc::max_text	variable	foundation/settings	settings-settingdesc-max-text	foundation-settings.md	engine/foundation/settings/desc.h:54
+settings::SettingDesc::enum_names	variable	foundation/settings	settings-settingdesc-enum-names	foundation-settings.md	engine/foundation/settings/desc.h:56
+settings::SettingDesc::enum_count	variable	foundation/settings	settings-settingdesc-enum-count	foundation-settings.md	engine/foundation/settings/desc.h:58
+settings::SettingDesc::apply_class	variable	foundation/settings	settings-settingdesc-apply-class	foundation-settings.md	engine/foundation/settings/desc.h:60
+settings::SettingDesc::label	variable	foundation/settings	settings-settingdesc-label	foundation-settings.md	engine/foundation/settings/desc.h:62
+settings::SettingDesc::description	variable	foundation/settings	settings-settingdesc-description	foundation-settings.md	engine/foundation/settings/desc.h:64
+settings::SettingDesc::group	variable	foundation/settings	settings-settingdesc-group	foundation-settings.md	engine/foundation/settings/desc.h:66
+settings::SettingDesc::capability	variable	foundation/settings	settings-settingdesc-capability	foundation-settings.md	engine/foundation/settings/desc.h:68
+settings::SettingDesc::env	variable	foundation/settings	settings-settingdesc-env	foundation-settings.md	engine/foundation/settings/desc.h:70
+settings::SettingDesc::flag	variable	foundation/settings	settings-settingdesc-flag	foundation-settings.md	engine/foundation/settings/desc.h:72
+settings::SettingDesc::deprecated_keys	variable	foundation/settings	settings-settingdesc-deprecated-keys	foundation-settings.md	engine/foundation/settings/desc.h:74
+settings::SettingDesc::deprecated_count	variable	foundation/settings	settings-settingdesc-deprecated-count	foundation-settings.md	engine/foundation/settings/desc.h:76
+settings::SettingDesc::flags	variable	foundation/settings	settings-settingdesc-flags	foundation-settings.md	engine/foundation/settings/desc.h:78
+settings::MakeBool(const char*,bool)	function	foundation/settings	settings-makebool-const-char-star-bool	foundation-settings.md	engine/foundation/settings/desc.h:82
+settings::MakeInt(const char*,i64,i64,i64,RangePolicy)	function	foundation/settings	settings-makeint-const-char-star-i64-i64-i64-rangepolicy	foundation-settings.md	engine/foundation/settings/desc.h:84
+settings::MakeFloat(const char*,f64,f64,f64,RangePolicy)	function	foundation/settings	settings-makefloat-const-char-star-f64-f64-f64-rangepolicy	foundation-settings.md	engine/foundation/settings/desc.h:86
+settings::MakeEnum(const char*,const char* const*,u32,u32)	function	foundation/settings	settings-makeenum-const-char-star-const-char-star-const-star-u32-u32	foundation-settings.md	engine/foundation/settings/desc.h:88
+settings::MakeText(const char*,const char*)	function	foundation/settings	settings-maketext-const-char-star-const-char-star	foundation-settings.md	engine/foundation/settings/desc.h:90
+settings::ValueError	enum	foundation/settings	settings-valueerror	foundation-settings.md	engine/foundation/settings/desc.h:93
+settings::ValueError::None	enumerator	foundation/settings	settings-valueerror-none	foundation-settings.md	engine/foundation/settings/desc.h:94
+settings::ValueError::Clamped	enumerator	foundation/settings	settings-valueerror-clamped	foundation-settings.md	engine/foundation/settings/desc.h:95
+settings::ValueError::Empty	enumerator	foundation/settings	settings-valueerror-empty	foundation-settings.md	engine/foundation/settings/desc.h:96
+settings::ValueError::BadBool	enumerator	foundation/settings	settings-valueerror-badbool	foundation-settings.md	engine/foundation/settings/desc.h:97
+settings::ValueError::BadNumber	enumerator	foundation/settings	settings-valueerror-badnumber	foundation-settings.md	engine/foundation/settings/desc.h:98
+settings::ValueError::OutOfRange	enumerator	foundation/settings	settings-valueerror-outofrange	foundation-settings.md	engine/foundation/settings/desc.h:99
+settings::ValueError::NotInEnum	enumerator	foundation/settings	settings-valueerror-notinenum	foundation-settings.md	engine/foundation/settings/desc.h:100
+settings::ValueError::TooLong	enumerator	foundation/settings	settings-valueerror-toolong	foundation-settings.md	engine/foundation/settings/desc.h:101
+settings::ValueError::BadEscape	enumerator	foundation/settings	settings-valueerror-badescape	foundation-settings.md	engine/foundation/settings/desc.h:102
+settings::ValueErrorName(ValueError)	function	foundation/settings	settings-valueerrorname-valueerror	foundation-settings.md	engine/foundation/settings/desc.h:110
+settings::ValidateValue(const SettingDesc&,const Value&,Value*)	function	foundation/settings	settings-validatevalue-const-settingdesc-amp-const-value-amp-value-star	foundation-settings.md	engine/foundation/settings/desc.h:120
+settings::kMaxValueTextBytes	variable	foundation/settings	settings-kmaxvaluetextbytes	foundation-settings.md	engine/foundation/settings/desc.h:123
+settings::ParseValue(const SettingDesc&,StringView,Value*)	function	foundation/settings	settings-parsevalue-const-settingdesc-amp-stringview-value-star	foundation-settings.md	engine/foundation/settings/desc.h:135
+settings::FormatValue(const SettingDesc&,const Value&,char*,usize)	function	foundation/settings	settings-formatvalue-const-settingdesc-amp-const-value-amp-char-star-usize	foundation-settings.md	engine/foundation/settings/desc.h:147
 settings::EnvironmentSnapshot	class	foundation/settings	settings-environmentsnapshot	foundation-settings.md	engine/foundation/settings/env_source.h:13
 settings::EnvironmentSnapshot::Var	struct	foundation/settings	settings-environmentsnapshot-var	foundation-settings.md	engine/foundation/settings/env_source.h:16
 settings::EnvironmentSnapshot::Var::name	variable	foundation/settings	settings-environmentsnapshot-var-name	foundation-settings.md	engine/foundation/settings/env_source.h:18
@@ -3627,6 +3628,14 @@ renderer::VertexLayoutData::attributes	variable	renderer	renderer-vertexlayoutda
 renderer::VertexLayoutData::attribute_count	variable	renderer	renderer-vertexlayoutdata-attribute-count	renderer.md	engine/renderer/shader_reflection.h:272
 renderer::VertexLayoutData::stride	variable	renderer	renderer-vertexlayoutdata-stride	renderer.md	engine/renderer/shader_reflection.h:274
 renderer::BuildVertexLayout(const ShaderReflection&,u32,VertexLayoutData*,ReflectionError*)	function	renderer	renderer-buildvertexlayout-const-shaderreflection-amp-u32-vertexlayoutdata-star-reflectionerror-star	renderer.md	engine/renderer/shader_reflection.h:290
+renderer::kRendererSchemaVersion	variable	renderer	renderer-krendererschemaversion	renderer.md	engine/renderer/shared_settings.h:21
+renderer::RegisterSharedSettings(::engine_placeholder::settings::Registry*)	function	renderer	renderer-registersharedsettings-engine-placeholder-settings-registry-star	renderer.md	engine/renderer/shared_settings.h:29
+renderer::AddRendererMigrations(::engine_placeholder::settings::MigrationSet*)	function	renderer	renderer-addrenderermigrations-engine-placeholder-settings-migrationset-star	renderer.md	engine/renderer/shared_settings.h:35
+renderer::RenderSettingsFromSnapshot(const::engine_placeholder::settings::Registry&,const::engine_placeholder::settings::SettingsSnapshot&)	function	renderer	renderer-rendersettingsfromsnapshot-const-engine-placeholder-settings-registry-amp-const-engine-placeholder-settings-settingssnapshot-amp	renderer.md	engine/renderer/shared_settings.h:42
+renderer::RenderSettingsToChanges(const RenderSettings&,const::engine_placeholder::settings::Registry&,Vector<::engine_placeholder::settings::ChangeRequest>*)	function	renderer	renderer-rendersettingstochanges-const-rendersettings-amp-const-engine-placeholder-settings-registry-amp-vector-lt-engine-placeholder-settings-changerequest-gt-star	renderer.md	engine/renderer/shared_settings.h:48
+renderer::ApplySharedChange(void*,const::engine_placeholder::settings::ChangeEvent&)	function	renderer	renderer-applysharedchange-void-star-const-engine-placeholder-settings-changeevent-amp	renderer.md	engine/renderer/shared_settings.h:63
+renderer::SyncSharedFromRenderer(Renderer*,::engine_placeholder::settings::Settings*)	function	renderer	renderer-syncsharedfromrenderer-renderer-star-engine-placeholder-settings-settings-star	renderer.md	engine/renderer/shared_settings.h:72
+renderer::RendererCapability(void*,const char*)	function	renderer	renderer-renderercapability-void-star-const-char-star	renderer.md	engine/renderer/shared_settings.h:80
 renderer::TextureImage	struct	renderer	renderer-textureimage	renderer.md	engine/renderer/texture.h:16
 renderer::TextureImage::desc	variable	renderer	renderer-textureimage-desc	renderer.md	engine/renderer/texture.h:18
 renderer::TextureImage::pixels	variable	renderer	renderer-textureimage-pixels	renderer.md	engine/renderer/texture.h:20

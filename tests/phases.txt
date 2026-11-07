@@ -137,6 +137,7 @@ test:renderer_demo_assets_current               5
 
 # --- Phase 8: RHI reset ---
 tests/renderer/render_settings_test.cpp         8
+tests/renderer/shared_settings_test.cpp         11
 tests/renderer/device_resources_test.cpp        8
 tests/renderer/recreatable_renderer_test.cpp    8
 tests/renderer/apply_settings_test.cpp          8

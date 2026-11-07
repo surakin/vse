@@ -229,8 +229,14 @@ ValueError ParseValue(const SettingDesc& desc, StringView text, Value* out) {
             if (Same(text, desc.enum_names[i])) { *out = Value::FromEnum(i); return ValueError::None; }
         }
         return ValueError::NotInEnum;
-    case Type::Text:
-        return ParseText(text, out);
+    case Type::Text: {
+        Value parsed;
+        const ValueError e = ParseText(text, &parsed);
+        if (e != ValueError::None) return e;
+        if (desc.max_text != 0 && parsed.AsText().Length() > desc.max_text) return ValueError::TooLong;
+        *out = parsed;
+        return ValueError::None;
+    }
     }
     return ValueError::BadNumber;
 }
@@ -264,8 +270,11 @@ ValueError ValidateValue(const SettingDesc& desc, const Value& value, Value* out
         if (value.AsEnum() >= desc.enum_count) return ValueError::NotInEnum;
         *out = value;
         return ValueError::None;
-    case Type::Bool:
-    case Type::Text: *out = value; return ValueError::None;
+    case Type::Text:
+        if (desc.max_text != 0 && value.AsText().Length() > desc.max_text) return ValueError::TooLong;
+        *out = value;
+        return ValueError::None;
+    case Type::Bool: *out = value; return ValueError::None;
     }
     return ValueError::BadNumber;
 }

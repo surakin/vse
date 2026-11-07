@@ -16,6 +16,7 @@ set(RENDERER_SOURCES
   transient_pool.cpp
   renderer.cpp
   render_settings.cpp
+  shared_settings.cpp
   device_resources.cpp
   texture.cpp
 )

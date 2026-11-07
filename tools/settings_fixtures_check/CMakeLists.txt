@@ -10,5 +10,5 @@ add_test(NAME settings_fixtures_planted COMMAND ${CMAKE_COMMAND} -DROOT=${SETTIN
 set_tests_properties(settings_fixtures_planted PROPERTIES WILL_FAIL TRUE)
 add_test(NAME settings_fixtures_planted_message COMMAND ${CMAKE_COMMAND} -DROOT=${SETTINGS_FIXTURES_TREES}/bad -P ${SETTINGS_FIXTURES_SCRIPT})
 set_tests_properties(settings_fixtures_planted_message PROPERTIES
-  PASS_REGULAR_EXPRESSION "the fixture planted_v1.cfg .* is missing.*planted_v1.cfg is not listed.*does not load the fixture planted_v1.cfg.*3 problem")
+  PASS_REGULAR_EXPRESSION "the fixture planted_v1.cfg .* is missing.*tests/settings/migration_test.cpp does not load the fixture planted_v1.cfg.*planted_v2.cfg is not listed.*4 problem")
 engine_label_tests(settings_fixtures settings_fixtures_clean settings_fixtures_planted settings_fixtures_planted_message)

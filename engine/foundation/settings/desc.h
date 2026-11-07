@@ -50,6 +50,8 @@ struct SettingDesc {
     f64 max_float = 0;
     /// What an out-of-range number does.
     RangePolicy policy = RangePolicy::Clamp;
+    /// The longest `Text` in bytes (at most 511); 0 means 511. A longer value is `ValueError::TooLong`.
+    u32 max_text = 0;
     /// The names of an `Enum`'s values, in index order (1 to 32 names).
     const char* const* enum_names = nullptr;
     /// How many names `enum_names` holds.

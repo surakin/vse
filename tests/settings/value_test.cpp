@@ -5,6 +5,7 @@
 
 #include "catch_engine_types.h"
 #include "settings/desc.h"
+#include "settings/registry.h"
 #include "test_text.h"
 
 using namespace engine_placeholder;
@@ -167,4 +168,24 @@ TEST_CASE("Float text is plain decimals for ordinary sizes and an exponent only 
 TEST_CASE("Value: -0.0 and 0.0 are different values", "[settings][value]") {
     CHECK(Value::FromFloat(-0.0) != Value::FromFloat(0.0));
     CHECK(Value::FromFloat(0.5) == Value::FromFloat(0.5));
+}
+
+TEST_CASE("A text setting's own length limit is enforced in ParseValue and ValidateValue", "[settings][value]") {
+    SettingDesc d = MakeText("t.short", "");
+    d.max_text = 5;
+    Value v;
+    CHECK(ParseValue(d, "12345", &v) == ValueError::None);
+    CHECK(ParseValue(d, "123456", &v) == ValueError::TooLong);
+    CHECK(ParseValue(d, "\"123456\"", &v) == ValueError::TooLong);
+    CHECK(ParseValue(d, "\"\\x41\\x42\"", &v) == ValueError::None);
+    CHECK(ValidateValue(d, Value::FromText("123456"), &v) == ValueError::TooLong);
+    CHECK(ValidateValue(d, Value::FromText("12345"), &v) == ValueError::None);
+    Registry registry;
+    RegisterError e = RegisterError::None;
+    d.default_value = Value::FromText("toolong");
+    CHECK_FALSE(registry.Register(d, &e).IsValid());
+    CHECK(e == RegisterError::BadDefault);
+    SettingDesc huge = MakeText("t.huge", "");
+    huge.max_text = 600;
+    CHECK_FALSE(registry.Register(huge, &e).IsValid());
 }

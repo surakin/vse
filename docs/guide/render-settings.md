@@ -2,7 +2,8 @@
 
 Everything a user can change about rendering without restarting the program is a **setting**. This page covers what a
 setting is, what changing one costs, how to add one, and the file format. The header is `engine/renderer/render_settings.h`.
-(Applying settings to a running renderer arrives on Phase 8 Day 110; this page is about describing and comparing them.)
+Since Phase 11 the same settings also live in the engine-wide settings system (see "Rendering settings in the shared system" below);
+the rest of this page describes `RenderSettings`, the value type the renderer works with.
 
 ## Concepts
 
@@ -137,6 +138,30 @@ adapter =
 - Comparing settings that follow different registries aborts.
 - Expecting `SetInt` to refuse an out-of-range value: the default policy clamps and returns `Clamped`; ask for
   `RangePolicy::Reject` when a bad value must be an error.
+
+## Rendering settings in the shared system
+
+`renderer::RegisterSharedSettings(&registry)` (`engine/renderer/shared_settings.h`) declares the 14 built-in settings in a `settings::Registry` as `renderer.backend`, `renderer.adapter`, `renderer.validation`,
+`renderer.sync_validation`, `renderer.frames_in_flight`, `renderer.present_mode`, `renderer.width`, `renderer.height`, `renderer.fullscreen`, `renderer.swapchain_format`, `renderer.hdr`, `renderer.shader_quality`,
+`renderer.gbuffer_debug_layer` and `renderer.render_scale`, with the types, defaults, ranges, range policies and capabilities above. A setting's **cost class** is its **apply class**: the number
+`CostClass` has (`none` 0, `dynamic` 1, `swapchain` 2, `pipeline-rebuild` 3, `device-reset` 4), which a listener reads from the `ChangeEvent` to do the cheapest sufficient thing. `RenderSettings` stays the renderer's own
+value type; `RenderSettingsFromSnapshot` builds one from a `settings::Settings` snapshot (to start the renderer with the loaded settings) and `RenderSettingsToChanges` goes the other way.
+
+To change a setting at run time through the shared system, call `settings.Apply(requests, count, &renderer::ApplySharedChange, &renderer)`. The apply function builds the requested `RenderSettings` from the
+renderer's current ones plus the changes and calls `Renderer::ApplySettings`; if that fails the renderer has already restored its previous settings and the settings system rolls the value back too.
+`settings.SetCapabilityCheck(&renderer::RendererCapability, &renderer)` makes a setting that needs a missing capability (fullscreen, HDR) refuse a non-default value instead of silently not applying it.
+A change made while the renderer is inside a frame is queued by the renderer and cannot be rolled back afterwards; if it then fails at the frame boundary, `renderer::SyncSharedFromRenderer(&renderer, &settings)` (call it after `RenderFrame`) makes the settings system hold what the renderer actually runs. The apply function builds the request from the values the settings system holds, so a second change made before the first was applied does not drop it. A renderer started from other settings than the settings system holds (a test rig, a different backend) should be aligned once with `SyncSharedFromRenderer` before the first change, or the first apply would carry the difference too. A text longer than the renderer can hold (63 characters) is refused with `TooLong`, not cut.
+
+In a settings file the keys are the `[renderer]` section:
+
+```
+[renderer]
+present_mode = "mailbox"
+width = 1920
+```
+
+The Phase 8 text above (`version = 1` and flat keys) is **schema 1** of the `renderer` section: `renderer::AddRendererMigrations(&settings.Migrations())` renames each flat key to its `renderer.` key when such a file
+is loaded, and the file keeps its comments and is rewritten in schema 2 the next time the application saves. `ParseSettings` and `SerializeSettings` are unchanged and still read and write schema 1 for tools that use them.
 
 ## See also
 

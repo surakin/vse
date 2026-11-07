@@ -8,11 +8,11 @@ module	foundation/io	255	255
 module	foundation/math	97	97
 module	foundation/log	69	69
 module	foundation/types	97	97
-module	foundation/settings	469	469
+module	foundation/settings	470	470
 module	platform/os	30	30
 module	platform/window-input	241	241
 module	foundation/debug	200	200
 module	jobs	165	165
 module	rhi	713	713
-module	renderer	947	947
+module	renderer	955	955
 module	rhi-vulkan	440	440

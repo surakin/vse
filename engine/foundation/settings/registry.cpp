@@ -129,7 +129,9 @@ SettingId Registry::Register(const SettingDesc& desc, RegisterError* error) {
         }
         if (def.AsEnum() >= desc.enum_count) return fail(RegisterError::BadDefault);
         break;
-    case Type::Text: break; // the Value already refused text over 511 bytes
+    case Type::Text:
+        if (desc.max_text > kMaxTextBytes || (desc.max_text != 0 && def.AsText().Length() > desc.max_text)) return fail(RegisterError::BadDefault);
+        break;
     }
     UniquePtr<Slot> slot = MakeUnique<Slot>();
     slot->desc = desc;
