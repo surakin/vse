@@ -21,6 +21,7 @@ flavors 7   plain,asan,tsan
 flavors 8   plain,asan,tsan
 flavors 9   plain,asan,tsan
 flavors 10  plain,asan,tsan
+flavors 11  plain,asan,tsan
 
 # --- Phase 0: foundation (tests/foundation) ---
 tests/foundation/arena_allocator_test.cpp       0
@@ -176,3 +177,6 @@ test:io_cross_syntax_*                          9
 tests/types/                                    10
 test:types_cross_syntax_*                       10
 test:std_container_check*                        10
+
+# --- Phase 11: settings system ---
+tests/settings/                                 11

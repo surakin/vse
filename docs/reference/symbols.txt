@@ -823,6 +823,152 @@ usize	alias	foundation/types	usize	foundation-types.md	engine/foundation/types.h
 isize	alias	foundation/types	isize	foundation-types.md	engine/foundation/types.h:44
 f32	alias	foundation/types	f32	foundation-types.md	engine/foundation/types.h:47
 f64	alias	foundation/types	f64	foundation-types.md	engine/foundation/types.h:49
+settings::RangePolicy	enum	foundation/settings	settings-rangepolicy	foundation-settings.md	engine/foundation/settings/desc.h:12
+settings::RangePolicy::Clamp	enumerator	foundation/settings	settings-rangepolicy-clamp	foundation-settings.md	engine/foundation/settings/desc.h:13
+settings::RangePolicy::Reject	enumerator	foundation/settings	settings-rangepolicy-reject	foundation-settings.md	engine/foundation/settings/desc.h:14
+settings::SettingFlags	enum	foundation/settings	settings-settingflags	foundation-settings.md	engine/foundation/settings/desc.h:18
+settings::kRestartRequired	enumerator	foundation/settings	settings-krestartrequired	foundation-settings.md	engine/foundation/settings/desc.h:19
+settings::kAdvanced	enumerator	foundation/settings	settings-kadvanced	foundation-settings.md	engine/foundation/settings/desc.h:20
+settings::kHidden	enumerator	foundation/settings	settings-khidden	foundation-settings.md	engine/foundation/settings/desc.h:21
+settings::kMaxEnumNames	variable	foundation/settings	settings-kmaxenumnames	foundation-settings.md	engine/foundation/settings/desc.h:25
+settings::kMaxDeprecatedNames	variable	foundation/settings	settings-kmaxdeprecatednames	foundation-settings.md	engine/foundation/settings/desc.h:27
+settings::kMaxEnumNameBytes	variable	foundation/settings	settings-kmaxenumnamebytes	foundation-settings.md	engine/foundation/settings/desc.h:29
+settings::SettingDesc	struct	foundation/settings	settings-settingdesc	foundation-settings.md	engine/foundation/settings/desc.h:35
+settings::SettingDesc::key	variable	foundation/settings	settings-settingdesc-key	foundation-settings.md	engine/foundation/settings/desc.h:37
+settings::SettingDesc::type	variable	foundation/settings	settings-settingdesc-type	foundation-settings.md	engine/foundation/settings/desc.h:39
+settings::SettingDesc::default_value	variable	foundation/settings	settings-settingdesc-default-value	foundation-settings.md	engine/foundation/settings/desc.h:41
+settings::SettingDesc::min_int	variable	foundation/settings	settings-settingdesc-min-int	foundation-settings.md	engine/foundation/settings/desc.h:43
+settings::SettingDesc::max_int	variable	foundation/settings	settings-settingdesc-max-int	foundation-settings.md	engine/foundation/settings/desc.h:45
+settings::SettingDesc::min_float	variable	foundation/settings	settings-settingdesc-min-float	foundation-settings.md	engine/foundation/settings/desc.h:47
+settings::SettingDesc::max_float	variable	foundation/settings	settings-settingdesc-max-float	foundation-settings.md	engine/foundation/settings/desc.h:49
+settings::SettingDesc::policy	variable	foundation/settings	settings-settingdesc-policy	foundation-settings.md	engine/foundation/settings/desc.h:51
+settings::SettingDesc::enum_names	variable	foundation/settings	settings-settingdesc-enum-names	foundation-settings.md	engine/foundation/settings/desc.h:53
+settings::SettingDesc::enum_count	variable	foundation/settings	settings-settingdesc-enum-count	foundation-settings.md	engine/foundation/settings/desc.h:55
+settings::SettingDesc::apply_class	variable	foundation/settings	settings-settingdesc-apply-class	foundation-settings.md	engine/foundation/settings/desc.h:57
+settings::SettingDesc::label	variable	foundation/settings	settings-settingdesc-label	foundation-settings.md	engine/foundation/settings/desc.h:59
+settings::SettingDesc::description	variable	foundation/settings	settings-settingdesc-description	foundation-settings.md	engine/foundation/settings/desc.h:61
+settings::SettingDesc::group	variable	foundation/settings	settings-settingdesc-group	foundation-settings.md	engine/foundation/settings/desc.h:63
+settings::SettingDesc::capability	variable	foundation/settings	settings-settingdesc-capability	foundation-settings.md	engine/foundation/settings/desc.h:65
+settings::SettingDesc::env	variable	foundation/settings	settings-settingdesc-env	foundation-settings.md	engine/foundation/settings/desc.h:67
+settings::SettingDesc::flag	variable	foundation/settings	settings-settingdesc-flag	foundation-settings.md	engine/foundation/settings/desc.h:69
+settings::SettingDesc::deprecated_keys	variable	foundation/settings	settings-settingdesc-deprecated-keys	foundation-settings.md	engine/foundation/settings/desc.h:71
+settings::SettingDesc::deprecated_count	variable	foundation/settings	settings-settingdesc-deprecated-count	foundation-settings.md	engine/foundation/settings/desc.h:73
+settings::SettingDesc::flags	variable	foundation/settings	settings-settingdesc-flags	foundation-settings.md	engine/foundation/settings/desc.h:75
+settings::MakeBool(const char*,bool)	function	foundation/settings	settings-makebool-const-char-star-bool	foundation-settings.md	engine/foundation/settings/desc.h:79
+settings::MakeInt(const char*,i64,i64,i64,RangePolicy)	function	foundation/settings	settings-makeint-const-char-star-i64-i64-i64-rangepolicy	foundation-settings.md	engine/foundation/settings/desc.h:81
+settings::MakeFloat(const char*,f64,f64,f64,RangePolicy)	function	foundation/settings	settings-makefloat-const-char-star-f64-f64-f64-rangepolicy	foundation-settings.md	engine/foundation/settings/desc.h:83
+settings::MakeEnum(const char*,const char* const*,u32,u32)	function	foundation/settings	settings-makeenum-const-char-star-const-char-star-const-star-u32-u32	foundation-settings.md	engine/foundation/settings/desc.h:85
+settings::MakeText(const char*,const char*)	function	foundation/settings	settings-maketext-const-char-star-const-char-star	foundation-settings.md	engine/foundation/settings/desc.h:87
+settings::ValueError	enum	foundation/settings	settings-valueerror	foundation-settings.md	engine/foundation/settings/desc.h:90
+settings::ValueError::None	enumerator	foundation/settings	settings-valueerror-none	foundation-settings.md	engine/foundation/settings/desc.h:91
+settings::ValueError::Clamped	enumerator	foundation/settings	settings-valueerror-clamped	foundation-settings.md	engine/foundation/settings/desc.h:92
+settings::ValueError::Empty	enumerator	foundation/settings	settings-valueerror-empty	foundation-settings.md	engine/foundation/settings/desc.h:93
+settings::ValueError::BadBool	enumerator	foundation/settings	settings-valueerror-badbool	foundation-settings.md	engine/foundation/settings/desc.h:94
+settings::ValueError::BadNumber	enumerator	foundation/settings	settings-valueerror-badnumber	foundation-settings.md	engine/foundation/settings/desc.h:95
+settings::ValueError::OutOfRange	enumerator	foundation/settings	settings-valueerror-outofrange	foundation-settings.md	engine/foundation/settings/desc.h:96
+settings::ValueError::NotInEnum	enumerator	foundation/settings	settings-valueerror-notinenum	foundation-settings.md	engine/foundation/settings/desc.h:97
+settings::ValueError::TooLong	enumerator	foundation/settings	settings-valueerror-toolong	foundation-settings.md	engine/foundation/settings/desc.h:98
+settings::ValueError::BadEscape	enumerator	foundation/settings	settings-valueerror-badescape	foundation-settings.md	engine/foundation/settings/desc.h:99
+settings::ValueErrorName(ValueError)	function	foundation/settings	settings-valueerrorname-valueerror	foundation-settings.md	engine/foundation/settings/desc.h:107
+settings::kMaxValueTextBytes	variable	foundation/settings	settings-kmaxvaluetextbytes	foundation-settings.md	engine/foundation/settings/desc.h:110
+settings::ParseValue(const SettingDesc&,StringView,Value*)	function	foundation/settings	settings-parsevalue-const-settingdesc-amp-stringview-value-star	foundation-settings.md	engine/foundation/settings/desc.h:122
+settings::FormatValue(const SettingDesc&,const Value&,char*,usize)	function	foundation/settings	settings-formatvalue-const-settingdesc-amp-const-value-amp-char-star-usize	foundation-settings.md	engine/foundation/settings/desc.h:134
+settings::kMaxKeyBytes	variable	foundation/settings	settings-kmaxkeybytes	foundation-settings.md	engine/foundation/settings/key.h:15
+settings::kMaxSegmentBytes	variable	foundation/settings	settings-kmaxsegmentbytes	foundation-settings.md	engine/foundation/settings/key.h:17
+settings::kMaxKeySegments	variable	foundation/settings	settings-kmaxkeysegments	foundation-settings.md	engine/foundation/settings/key.h:19
+settings::KeyError	enum	foundation/settings	settings-keyerror	foundation-settings.md	engine/foundation/settings/key.h:22
+settings::KeyError::None	enumerator	foundation/settings	settings-keyerror-none	foundation-settings.md	engine/foundation/settings/key.h:23
+settings::KeyError::Empty	enumerator	foundation/settings	settings-keyerror-empty	foundation-settings.md	engine/foundation/settings/key.h:24
+settings::KeyError::TooLong	enumerator	foundation/settings	settings-keyerror-toolong	foundation-settings.md	engine/foundation/settings/key.h:25
+settings::KeyError::BadCharacter	enumerator	foundation/settings	settings-keyerror-badcharacter	foundation-settings.md	engine/foundation/settings/key.h:26
+settings::KeyError::EmptySegment	enumerator	foundation/settings	settings-keyerror-emptysegment	foundation-settings.md	engine/foundation/settings/key.h:27
+settings::KeyError::TooManySegments	enumerator	foundation/settings	settings-keyerror-toomanysegments	foundation-settings.md	engine/foundation/settings/key.h:28
+settings::KeyError::SegmentTooLong	enumerator	foundation/settings	settings-keyerror-segmenttoolong	foundation-settings.md	engine/foundation/settings/key.h:29
+settings::KeyErrorName(KeyError)	function	foundation/settings	settings-keyerrorname-keyerror	foundation-settings.md	engine/foundation/settings/key.h:37
+settings::Key	class	foundation/settings	settings-key	foundation-settings.md	engine/foundation/settings/key.h:43
+settings::Key::Key()	function	foundation/settings	settings-key-key	foundation-settings.md	engine/foundation/settings/key.h:46
+settings::Key::Parse(StringView,Key*)	function	foundation/settings	settings-key-parse-stringview-key-star	foundation-settings.md	engine/foundation/settings/key.h:54
+settings::Key::View() const	function	foundation/settings	settings-key-view-const	foundation-settings.md	engine/foundation/settings/key.h:57
+settings::Key::IsValid() const	function	foundation/settings	settings-key-isvalid-const	foundation-settings.md	engine/foundation/settings/key.h:59
+settings::Key::Segments() const	function	foundation/settings	settings-key-segments-const	foundation-settings.md	engine/foundation/settings/key.h:61
+settings::Key::Section() const	function	foundation/settings	settings-key-section-const	foundation-settings.md	engine/foundation/settings/key.h:63
+settings::Key::Name() const	function	foundation/settings	settings-key-name-const	foundation-settings.md	engine/foundation/settings/key.h:65
+settings::Key::Hash() const	function	foundation/settings	settings-key-hash-const	foundation-settings.md	engine/foundation/settings/key.h:67
+settings::Key::operator==(const Key&) const	function	foundation/settings	settings-key-operator-eq-eq-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:70
+settings::Key::operator!=(const Key&) const	function	foundation/settings	settings-key-operator-not-eq-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:72
+settings::Key::operator<(const Key&) const	function	foundation/settings	settings-key-operator-lt-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:74
+settings::SettingId	struct	foundation/settings	settings-settingid	foundation-settings.md	engine/foundation/settings/registry.h:23
+settings::SettingId::value	variable	foundation/settings	settings-settingid-value	foundation-settings.md	engine/foundation/settings/registry.h:25
+settings::SettingId::IsValid() const	function	foundation/settings	settings-settingid-isvalid-const	foundation-settings.md	engine/foundation/settings/registry.h:27
+settings::SettingId::operator==(const SettingId&) const	function	foundation/settings	settings-settingid-operator-eq-eq-const-settingid-amp-const	foundation-settings.md	engine/foundation/settings/registry.h:29
+settings::SettingId::operator!=(const SettingId&) const	function	foundation/settings	settings-settingid-operator-not-eq-const-settingid-amp-const	foundation-settings.md	engine/foundation/settings/registry.h:31
+settings::kMaxRegisteredSettings	variable	foundation/settings	settings-kmaxregisteredsettings	foundation-settings.md	engine/foundation/settings/registry.h:35
+settings::RegisterError	enum	foundation/settings	settings-registererror	foundation-settings.md	engine/foundation/settings/registry.h:38
+settings::RegisterError::None	enumerator	foundation/settings	settings-registererror-none	foundation-settings.md	engine/foundation/settings/registry.h:39
+settings::RegisterError::BadKey	enumerator	foundation/settings	settings-registererror-badkey	foundation-settings.md	engine/foundation/settings/registry.h:40
+settings::RegisterError::Duplicate	enumerator	foundation/settings	settings-registererror-duplicate	foundation-settings.md	engine/foundation/settings/registry.h:41
+settings::RegisterError::BadDefault	enumerator	foundation/settings	settings-registererror-baddefault	foundation-settings.md	engine/foundation/settings/registry.h:42
+settings::RegisterError::BadRange	enumerator	foundation/settings	settings-registererror-badrange	foundation-settings.md	engine/foundation/settings/registry.h:43
+settings::RegisterError::BadEnum	enumerator	foundation/settings	settings-registererror-badenum	foundation-settings.md	engine/foundation/settings/registry.h:44
+settings::RegisterError::BadDeprecated	enumerator	foundation/settings	settings-registererror-baddeprecated	foundation-settings.md	engine/foundation/settings/registry.h:45
+settings::RegisterError::Full	enumerator	foundation/settings	settings-registererror-full	foundation-settings.md	engine/foundation/settings/registry.h:46
+settings::RegisterErrorName(RegisterError)	function	foundation/settings	settings-registererrorname-registererror	foundation-settings.md	engine/foundation/settings/registry.h:54
+settings::Registry	class	foundation/settings	settings-registry	foundation-settings.md	engine/foundation/settings/registry.h:61
+settings::Registry::Cell	struct	foundation/settings	settings-registry-cell	foundation-settings.md	engine/foundation/settings/registry.h:64
+settings::Registry::Cell::bits	variable	foundation/settings	settings-registry-cell-bits	foundation-settings.md	engine/foundation/settings/registry.h:66
+settings::Registry::Registry()	function	foundation/settings	settings-registry-registry	foundation-settings.md	engine/foundation/settings/registry.h:70
+settings::Registry::~Registry()	function	foundation/settings	settings-registry-tilde-registry	foundation-settings.md	engine/foundation/settings/registry.h:72
+settings::Registry::Registry(const Registry&)	function	foundation/settings	settings-registry-registry-const-registry-amp	foundation-settings.md	engine/foundation/settings/registry.h:73
+settings::Registry::operator=(const Registry&)	function	foundation/settings	settings-registry-operator-eq-const-registry-amp	foundation-settings.md	engine/foundation/settings/registry.h:74
+settings::Registry::Global()	function	foundation/settings	settings-registry-global	foundation-settings.md	engine/foundation/settings/registry.h:81
+settings::Registry::Register(const SettingDesc&,RegisterError*)	function	foundation/settings	settings-registry-register-const-settingdesc-amp-registererror-star	foundation-settings.md	engine/foundation/settings/registry.h:90
+settings::Registry::Freeze()	function	foundation/settings	settings-registry-freeze	foundation-settings.md	engine/foundation/settings/registry.h:93
+settings::Registry::IsFrozen() const	function	foundation/settings	settings-registry-isfrozen-const	foundation-settings.md	engine/foundation/settings/registry.h:95
+settings::Registry::Count() const	function	foundation/settings	settings-registry-count-const	foundation-settings.md	engine/foundation/settings/registry.h:97
+settings::Registry::Find(StringView) const	function	foundation/settings	settings-registry-find-stringview-const	foundation-settings.md	engine/foundation/settings/registry.h:104
+settings::Registry::IsDeprecatedKey(StringView) const	function	foundation/settings	settings-registry-isdeprecatedkey-stringview-const	foundation-settings.md	engine/foundation/settings/registry.h:106
+settings::Registry::Desc(SettingId) const	function	foundation/settings	settings-registry-desc-settingid-const	foundation-settings.md	engine/foundation/settings/registry.h:109
+settings::Registry::KeyOf(SettingId) const	function	foundation/settings	settings-registry-keyof-settingid-const	foundation-settings.md	engine/foundation/settings/registry.h:111
+settings::Registry::SortedAt(u32) const	function	foundation/settings	settings-registry-sortedat-u32-const	foundation-settings.md	engine/foundation/settings/registry.h:115
+settings::Registry::Current(SettingId) const	function	foundation/settings	settings-registry-current-settingid-const	foundation-settings.md	engine/foundation/settings/registry.h:120
+settings::Registry::Publish(SettingId,const Value&)	function	foundation/settings	settings-registry-publish-settingid-const-value-amp	foundation-settings.md	engine/foundation/settings/registry.h:125
+settings::Registry::CellOf(SettingId) const	function	foundation/settings	settings-registry-cellof-settingid-const	foundation-settings.md	engine/foundation/settings/registry.h:127
+settings::Registry::CurrentText(SettingId,char*,usize) const	function	foundation/settings	settings-registry-currenttext-settingid-char-star-usize-const	foundation-settings.md	engine/foundation/settings/registry.h:134
+settings::Setting	class	foundation/settings	settings-setting	foundation-settings.md	engine/foundation/settings/setting.h:56
+settings::Setting::Setting()	function	foundation/settings	settings-setting-setting	foundation-settings.md	engine/foundation/settings/setting.h:60
+settings::Setting::Setting(const Registry&,SettingId)	function	foundation/settings	settings-setting-setting-const-registry-amp-settingid	foundation-settings.md	engine/foundation/settings/setting.h:67
+settings::Setting::Find(const Registry&,StringView)	function	foundation/settings	settings-setting-find-const-registry-amp-stringview	foundation-settings.md	engine/foundation/settings/setting.h:77
+settings::Setting::Get() const	function	foundation/settings	settings-setting-get-const	foundation-settings.md	engine/foundation/settings/setting.h:82
+settings::Setting::Default() const	function	foundation/settings	settings-setting-default-const	foundation-settings.md	engine/foundation/settings/setting.h:89
+settings::Setting::Desc() const	function	foundation/settings	settings-setting-desc-const	foundation-settings.md	engine/foundation/settings/setting.h:93
+settings::Setting::Id() const	function	foundation/settings	settings-setting-id-const	foundation-settings.md	engine/foundation/settings/setting.h:98
+settings::TextSetting	class	foundation/settings	settings-textsetting	foundation-settings.md	engine/foundation/settings/setting.h:110
+settings::TextSetting::TextSetting(const Registry&,SettingId)	function	foundation/settings	settings-textsetting-textsetting-const-registry-amp-settingid	foundation-settings.md	engine/foundation/settings/setting.h:115
+settings::TextSetting::Get(char*,usize) const	function	foundation/settings	settings-textsetting-get-char-star-usize-const	foundation-settings.md	engine/foundation/settings/setting.h:120
+settings::TextSetting::Id() const	function	foundation/settings	settings-textsetting-id-const	foundation-settings.md	engine/foundation/settings/setting.h:122
+settings::kMaxTextBytes	variable	foundation/settings	settings-kmaxtextbytes	foundation-settings.md	engine/foundation/settings/value.h:11
+settings::Type	enum	foundation/settings	settings-type	foundation-settings.md	engine/foundation/settings/value.h:14
+settings::Type::Bool	enumerator	foundation/settings	settings-type-bool	foundation-settings.md	engine/foundation/settings/value.h:15
+settings::Type::Int	enumerator	foundation/settings	settings-type-int	foundation-settings.md	engine/foundation/settings/value.h:16
+settings::Type::Float	enumerator	foundation/settings	settings-type-float	foundation-settings.md	engine/foundation/settings/value.h:17
+settings::Type::Enum	enumerator	foundation/settings	settings-type-enum	foundation-settings.md	engine/foundation/settings/value.h:18
+settings::Type::Text	enumerator	foundation/settings	settings-type-text	foundation-settings.md	engine/foundation/settings/value.h:19
+settings::TypeName(Type)	function	foundation/settings	settings-typename-type	foundation-settings.md	engine/foundation/settings/value.h:27
+settings::Value	class	foundation/settings	settings-value	foundation-settings.md	engine/foundation/settings/value.h:33
+settings::Value::Value()	function	foundation/settings	settings-value-value	foundation-settings.md	engine/foundation/settings/value.h:36
+settings::Value::FromBool(bool)	function	foundation/settings	settings-value-frombool-bool	foundation-settings.md	engine/foundation/settings/value.h:39
+settings::Value::FromInt(i64)	function	foundation/settings	settings-value-fromint-i64	foundation-settings.md	engine/foundation/settings/value.h:41
+settings::Value::FromFloat(f64)	function	foundation/settings	settings-value-fromfloat-f64	foundation-settings.md	engine/foundation/settings/value.h:45
+settings::Value::FromEnum(u32)	function	foundation/settings	settings-value-fromenum-u32	foundation-settings.md	engine/foundation/settings/value.h:47
+settings::Value::FromText(StringView)	function	foundation/settings	settings-value-fromtext-stringview	foundation-settings.md	engine/foundation/settings/value.h:51
+settings::Value::GetType() const	function	foundation/settings	settings-value-gettype-const	foundation-settings.md	engine/foundation/settings/value.h:54
+settings::Value::AsBool() const	function	foundation/settings	settings-value-asbool-const	foundation-settings.md	engine/foundation/settings/value.h:58
+settings::Value::AsInt() const	function	foundation/settings	settings-value-asint-const	foundation-settings.md	engine/foundation/settings/value.h:62
+settings::Value::AsFloat() const	function	foundation/settings	settings-value-asfloat-const	foundation-settings.md	engine/foundation/settings/value.h:66
+settings::Value::AsEnum() const	function	foundation/settings	settings-value-asenum-const	foundation-settings.md	engine/foundation/settings/value.h:70
+settings::Value::AsText() const	function	foundation/settings	settings-value-astext-const	foundation-settings.md	engine/foundation/settings/value.h:74
+settings::Value::operator==(const Value&) const	function	foundation/settings	settings-value-operator-eq-eq-const-value-amp-const	foundation-settings.md	engine/foundation/settings/value.h:77
+settings::Value::operator!=(const Value&) const	function	foundation/settings	settings-value-operator-not-eq-const-value-amp-const	foundation-settings.md	engine/foundation/settings/value.h:79
 os::StashNativeCommandLine(int,char**)	function	platform/os	os-stashnativecommandline-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:20
 os::CommandLine	class	platform/os	os-commandline	platform-os.md	engine/foundation/os/command_line.h:38
 os::CommandLine::CommandLine(Allocator&,int,char**)	function	platform/os	os-commandline-commandline-allocator-amp-int-char-star-star	platform-os.md	engine/foundation/os/command_line.h:49

@@ -64,6 +64,10 @@ set(FOUNDATION_SOURCES
   mem/stack_allocator.cpp
   log/log.cpp
   int128.cpp
+  settings/key.cpp
+  settings/value.cpp
+  settings/desc.cpp
+  settings/registry.cpp
   io/path.cpp
   io/linux/error.cpp
   io/linux/file_system.cpp

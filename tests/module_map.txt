@@ -8,9 +8,10 @@
 # directory cannot be skipped by accident. Separately, --affected always runs everything when a CMakeLists.txt, cmake/,
 # CMakePresets.json, third_party/, a header under engine/foundation or tests/phases.txt changes (the script holds that list).
 
-engine/foundation   0,1,2,3,4,5,7,9,10
+engine/foundation   0,1,2,3,4,5,7,9,10,11
 engine/foundation/debug 3,7
-engine/foundation/io 0,1,2,3,4,5,7,9,10
+engine/foundation/io 0,1,2,3,4,5,7,9,10,11
+engine/foundation/settings 3,11
 engine/foundation/os/linux/debug 7
 engine/jobs         2,3,4,5
 engine/rhi          3,4,5
@@ -33,6 +34,7 @@ tests/foundation    0,1
 tests/jobs          2
 tests/io            4,5,9   # temp_dir.h is shared with the rhi and renderer tests
 tests/types         10
+tests/settings      11
 tests/debug         7
 tests/docgen        3
 tests/rhi           4,5

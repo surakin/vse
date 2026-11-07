@@ -57,7 +57,7 @@ if(EXISTS "${ALLOWLIST}")
 endif()
 set(allow_used "")
 
-set(names "string|string_view|wstring|vector|array|map|multimap|set|multiset|unordered_map|unordered_set|deque|list|forward_list|queue|stack|priority_queue|bitset|unique_ptr|shared_ptr|weak_ptr|make_unique|make_shared|function|optional|variant|span|pair|tuple|to_string|stringstream|ostringstream|istringstream|ifstream|ofstream|sort|stable_sort|find|find_if|min|max|copy|fill|reverse|unique|lower_bound|upper_bound|accumulate|iota|any_of|all_of|none_of|count|count_if|remove_if|transform|swap|clamp|max_element|min_element|cout|cerr|clog|cin|ostream|istream|getline|to_chars|from_chars|exchange")
+set(names "string|string_view|wstring|vector|array|map|multimap|set|multiset|unordered_map|unordered_set|deque|list|forward_list|queue|stack|priority_queue|bitset|unique_ptr|shared_ptr|weak_ptr|make_unique|make_shared|function|optional|variant|span|pair|tuple|to_string|stringstream|ostringstream|istringstream|ifstream|ofstream|sort|stable_sort|find|find_if|min|max|copy|fill|reverse|unique|lower_bound|upper_bound|accumulate|iota|any_of|all_of|none_of|count|count_if|remove_if|transform|swap|clamp|max_element|min_element|cout|cerr|clog|cin|ostream|istream|getline|exchange")
 set(name_re "std::(${names})([^A-Za-z0-9_]|$)")
 set(int_re "(^|[^A-Za-z0-9_])(unsigned char|signed char|(std::)?u?int(8|16|32|64)_t)([^A-Za-z0-9_]|$)")
 set(headers "string|vector|array|map|set|unordered_map|unordered_set|deque|list|queue|stack|memory|functional|optional|variant|span|tuple|algorithm|numeric|sstream|iostream|fstream|filesystem|string_view|bitset")

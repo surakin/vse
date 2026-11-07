@@ -64,8 +64,8 @@ phase_script_case(affected_docgen_and_shaders PHASES "3 4 5" ARGS --affected --c
   --diff-from-file ${FIX}/diff_docgen_shaders.txt CTEST -L "^(phase3|phase4|phase5)$" ${PLAIN_NO_DISPLAY})
 phase_script_case(affected_notes_only PHASES 5 ARGS --affected --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_notes.txt CTEST -L "^(phase5)$" ${PLAIN_NO_DISPLAY})
-phase_script_case(affected_foundation_source PHASES "0 1 2 3 4 5 7 9 10" DISPLAY included ARGS --affected --current-phase-file ${FIX}/phase5.txt
-  --diff-from-file ${FIX}/diff_foundation_source.txt CTEST -L "^(phase0|phase1|phase2|phase3|phase4|phase5|phase7|phase9|phase10)$" ${PLAIN})
+phase_script_case(affected_foundation_source PHASES "0 1 2 3 4 5 7 9 10 11" DISPLAY included ARGS --affected --current-phase-file ${FIX}/phase5.txt
+  --diff-from-file ${FIX}/diff_foundation_source.txt CTEST -L "^(phase0|phase1|phase2|phase3|phase4|phase5|phase7|phase9|phase10|phase11)$" ${PLAIN})
 # Escalations to the whole suite.
 phase_script_case(affected_foundation_header PHASES all DISPLAY included ARGS --affected --current-phase-file ${FIX}/phase5.txt
   --diff-from-file ${FIX}/diff_foundation_header.txt CTEST ${PLAIN})
