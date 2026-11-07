@@ -35,7 +35,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     os/windows/vulkan_loader_name.cpp
   )
   # Day 154: stack traces through DbgHelp, the module list, the crash context; Day 155: the crash hook, death tests, fault injection;
-  # crash_pending.cpp holds Day 156's post-mortem dumps. libbacktrace is not built on Windows.
+  # Day 156: post-mortem dumps (Windows Error Reporting LocalDumps). libbacktrace is not built on Windows.
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES
     os/windows/debug/stack_trace_dbghelp.cpp
     os/windows/debug/module_list.cpp
@@ -43,7 +43,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     os/windows/debug/crash_hook.cpp
     os/windows/debug/death_test.cpp
     os/windows/debug/fault_injection.cpp
-    os/windows/debug/crash_pending.cpp
+    os/windows/debug/post_mortem.cpp
   )
   # The file layer: paths, errors, Stat and the local file on Day 151; directories and the other file-system operations on Day 152
   # (io/BACKEND.md). Asynchronous I/O is the neutral executor path, as on Linux.

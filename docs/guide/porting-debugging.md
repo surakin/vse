@@ -54,7 +54,8 @@ Thread          GetCurrentThreadId; SetThreadStackGuarantee for stack overflow; 
 Crash report    from the library's on_crash hook, on Breakpad's handler thread after the dump: EXCEPTION_POINTERS -> reason, address,
                 RtlVirtualUnwind walk; the faulting thread from a first vectored handler that only observes; frames as module+offset
                 (no DbgHelp while a crash is reported); a gate filter so a second crashing thread waits instead of ending the process
-Post-mortem     WER LocalDumps registry values (needs elevation: report Limited without it)
+Post-mortem     WER LocalDumps under HKLM only (the per-user key is ignored, measured): read, never written; Limited with the values to set
+Symbol store    PDB and image in the WinDbg layout (store-symbols.ps1); crash-report.ps1 and crash_extract --resolve name the frames
 Symbols         DbgHelp from the PDBs (decided and built on Phase 13 Day 154; libbacktrace is not built on Windows): capture with
                 RtlCaptureStackBackTrace, names and lines with SymFromAddrW / SymGetLineFromAddrW64, inlined frames with
                 SymAddrIncludeInlineTrace; every DbgHelp call under one lock, never from the crash hook
@@ -63,7 +64,8 @@ Modules         EnumProcessModulesEx + GetModuleInformation + GetModuleFileNameE
 
 Done on Day 154: symbols, modules, the crash context, the debugger check, thread ids and names (`os/windows/debug/`). Done on Day 155:
 the crash hook and the report, the crash gate, death tests and fault injection (`BusError` has no Windows form), the no-upload check and
-the allocation check. Post-mortem dumps, the symbol store and the scripts are Day 156.
+the allocation check. Done on Day 156: post-mortem dumps (read-only), `crash_extract` on Windows, the symbol store and the PowerShell scripts.
+The Windows order of work is complete; what is left is the Linux run of the shared changes at the phase close.
 
 The traps: an exception filter may call only a few APIs and must not allocate; fast-fail crashes (`__fastfail`, `/GS` failures)
 end the process in the kernel, so no filter, handler or `on_crash` sees them (no report, no dump; exit code `0xC0000409`); Breakpad

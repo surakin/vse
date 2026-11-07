@@ -124,6 +124,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(engine/jobs)  # Day 153
   add_subdirectory(tests/io)  # the file layer, Days 151-152 (its asynchronous tests need jobs)
   add_subdirectory(tests/jobs)
+  add_subdirectory(tools/crash_extract)  # Day 156: the dump reader the crash scripts use
   add_subdirectory(tests/debug)  # the debugging facilities, Days 154-156
   # The source gates are CMake scripts over the tree, the same on every platform (Day 150).
   foreach(gate rhi_boundary_check raw_new_check file_access_check std_container_check settings_fixtures_check config_access_check

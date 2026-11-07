@@ -384,6 +384,14 @@ ChildResult PlatformRunChild(const char* name, const char* argument, const Child
 
 } // namespace detail
 
-void ExitChildProcess(int code) { std::_Exit(code); } // ends at once, as _exit does on Linux (no atexit handlers, no flushing)
+// Ends at once, as _exit does on Linux: TerminateProcess runs no atexit handler, static destructor or DLL detach. std::_Exit is not enough on
+// Windows: it goes through ExitProcess, whose loader shutdown hung a death-test child about once in a hundred runs under AddressSanitizer
+// with the crash library loaded (seen on Day 156: the child waited in RtlExitUserProcess until its deadline). The C streams are flushed first
+// (a child's printf output is what the parent reads).
+void ExitChildProcess(int code) {
+    std::fflush(nullptr);
+    TerminateProcess(GetCurrentProcess(), static_cast<UINT>(code));
+    for (;;) Sleep(INFINITE); // TerminateProcess on this process does not return; this keeps [[noreturn]] true if it ever did
+}
 
 } // namespace engine_placeholder::debug

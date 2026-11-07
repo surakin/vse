@@ -92,6 +92,8 @@ struct ItemHeader {
     bool has_length = false;
     std::size_t payload_length = 0;
     bool is_minidump = false;
+    const char* filename = nullptr; // the attachment's file name, escapes left as they are; null if the header names none
+    std::size_t filename_length = 0;
 };
 
 // Parses a flat item header line such as {"type":"attachment","length":123,"attachment_type":"event.minidump"}.
@@ -143,6 +145,10 @@ bool ParseItemHeader(const char* line, std::size_t length, ItemHeader& header) {
                 return false;
             }
             header.is_minidump = text_length == 14 && std::memcmp(text, "event.minidump", 14) == 0;
+        } else if (key_length == 8 && std::memcmp(key, "filename", 8) == 0) {
+            if (!ReadString(line, length, i, header.filename, header.filename_length)) {
+                return false;
+            }
         } else if (!SkipValue(line, length, i)) {
             return false;
         }
@@ -169,11 +175,11 @@ std::size_t FindNewline(const char* data, std::size_t size, std::size_t from) {
     return size;
 }
 
-} // namespace
-
-EnvelopeResult FindMinidump(const char* data, std::size_t size, Minidump* out) {
-    out->data = nullptr;
-    out->size = 0;
+// Walks every item; the first that `wanted` accepts is returned in `out_data`/`out_size`. The whole envelope is checked either way.
+template <typename Wanted>
+EnvelopeResult FindItem(const char* data, std::size_t size, Wanted wanted, const char** out_data, std::size_t* out_size) {
+    *out_data = nullptr;
+    *out_size = 0;
     if (data == nullptr || size == 0) {
         return EnvelopeResult::Malformed;
     }
@@ -203,9 +209,9 @@ EnvelopeResult FindMinidump(const char* data, std::size_t size, Minidump* out) {
         } else {
             payload_length = FindNewline(data, size, payload_start) - payload_start; // runs to the end of the line
         }
-        if (header.is_minidump && !found) {
-            out->data = data + payload_start;
-            out->size = payload_length;
+        if (!found && wanted(header)) {
+            *out_data = data + payload_start;
+            *out_size = payload_length;
             found = true;
         }
         pos = payload_start + payload_length;
@@ -217,6 +223,22 @@ EnvelopeResult FindMinidump(const char* data, std::size_t size, Minidump* out) {
         }
     }
     return found ? EnvelopeResult::Ok : EnvelopeResult::NoMinidump;
+}
+
+} // namespace
+
+EnvelopeResult FindMinidump(const char* data, std::size_t size, Minidump* out) {
+    return FindItem(data, size, [](const ItemHeader& h) { return h.is_minidump; }, &out->data, &out->size);
+}
+
+EnvelopeResult FindAttachment(const char* data, std::size_t size, const char* filename, Attachment* out) {
+    const std::size_t name_length = filename != nullptr ? std::strlen(filename) : 0;
+    return FindItem(
+        data, size,
+        [&](const ItemHeader& h) {
+            return !h.is_minidump && h.filename != nullptr && h.filename_length == name_length && std::memcmp(h.filename, filename, name_length) == 0;
+        },
+        &out->data, &out->size);
 }
 
 } // namespace crash_extract

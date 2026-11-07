@@ -137,7 +137,7 @@ same-layer-ok 13
 platform-dir engine/foundation/os/linux/ engine/foundation/os/
 # The Windows file backend uses the Windows OS helpers (os/windows/win32.h, utf16.h): a per-platform directory may include the same
 # platform's directory of a lower layer (ARCHITECTURE.md section 4).
-platform-dir engine/foundation/os/windows/ engine/foundation/os/,engine/foundation/io/windows/,engine/jobs/windows/
+platform-dir engine/foundation/os/windows/ engine/foundation/os/,engine/foundation/io/windows/,engine/jobs/windows/,tools/crash_extract/windows/
 platform-dir engine/foundation/os/macos/ engine/foundation/os/
 platform-dir engine/foundation/io/linux/ engine/foundation/io/
 platform-dir engine/foundation/io/windows/ engine/foundation/io/
@@ -147,6 +147,8 @@ platform-dir engine/platform/linux/ engine/platform/
 platform-dir engine/platform/windows/ engine/platform/
 platform-dir engine/platform/macos/ engine/platform/
 platform-dir engine/rhi/vulkan/ engine/rhi/
+# The crash_extract tool's DbgHelp resolver (Phase 13 Day 156): uses os/windows/win32.h and <dbghelp.h>.
+platform-dir tools/crash_extract/windows/ tools/crash_extract/
 
 # --- CMake targets -----------------------------------------------------------------------------------------------------
 layer foundation_base 5

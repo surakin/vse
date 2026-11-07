@@ -1,9 +1,8 @@
 # Windows debugging backend (Phase 13)
 
 What Phase 13 implements to bring up the debugging facilities on Windows. Day 154 built symbols, modules, the crash context, the debugger
-check and thread ids and names; Day 155 the crash handler, the report, death tests and fault injection (marked **Built** below); Day 156
-the post-mortem dumps and the scripts, which `os/windows/debug/crash_pending.cpp` holds as a placeholder that reports itself unsupported
-until then. Linux is the reference
+check and thread ids and names; Day 155 the crash handler, the report, death tests and fault injection; Day 156 the post-mortem dumps,
+`crash_extract` and the scripts. Every section below is marked **Built** or not applicable. Linux is the reference
 (`engine/foundation/os/linux/debug/`). Everything else is shared: the facade (`debug/*.cpp`), the assert family, the report
 writer, the log ring, the crash state, the scripts' logic and the tests. See `docs/guide/porting-debugging.md` for the order of
 work and `tests/debug/BACKEND-CONFORMANCE.md` for what each test group needs.
@@ -34,7 +33,14 @@ order (Data1, Data2, Data3 as numbers, then the 8 bytes of Data4) and the age in
 ### `EnablePostMortemDumps`
 Windows Error Reporting `LocalDumps`: the registry values under `HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\<exe>`
 (`DumpFolder`, `DumpType`, `DumpCount`). Trap: writing HKLM needs elevation; without it return `Limited` with a note saying
-which values to set. Never write outside the program's own key. Groups: *post-mortem*.
+which values to set. Never write outside the program's own key. Groups: *post-mortem*. **Built (Day 156)**, `os/windows/debug/post_mortem.cpp`,
+**read-only**: measured on this Windows 11 build, WER ignored the same values under the per-user key (HKCU) for both the engine's test
+program and a minimal probe, though it ran and queued its own report (asked to keep it local, `WER_FAULT_REPORTING_FLAG_QUEUE`, and to show
+nothing, `WER_FAULT_REPORTING_NO_UI`; the queued reports were removed). Writing HKLM needs an administrator and changes the machine for
+every user, so the function writes nothing: `Enabled` with the folder and dump type when the machine's key lists the program (or all
+programs), `Limited` with a note naming the key and values to create otherwise, or when the process's error mode (`SEM_NOGPFAULTERRORBOX`,
+every death-test child) or the machine (`Disabled`) keeps WER from running. `tests/debug/post_mortem_windows_test.cpp` covers both states
+and checks nothing is written.
 
 ### `FaultSupported` and `InjectFault`
 `NullWrite`: volatile write to address 0. `IllegalInstruction`: `__ud2()`. `DivideByZero`: integer divide with volatile operands.
@@ -49,7 +55,8 @@ raises SIGBUS), so `FaultSupported(BusError)` is false and its case skips; `Divi
 
 **`CrashDumpDirectory`** (moved to the file layer: see `engine/foundation/io/BACKEND.md`).
 `%LOCALAPPDATA%/<app>/crashes` through `SHGetKnownFolderPath(FOLDERID_LocalAppData)`, converted to UTF-8, created private to the
-user (an ACL granting only the user; the Linux 0700 check has no direct equivalent). Groups: *dump directory*.
+user (an ACL granting only the user; the Linux 0700 check has no direct equivalent). Groups: *dump directory*. **Built (Day 152)**; Day 156
+tests the crash handler's default directory, a directory that cannot be created, and dumps kept across a restart (`saved\`) on Windows.
 
 ### `RegisterThreadForCrashHandling`
 `SetThreadStackGuarantee` to a size that holds the report (the library documents `SENTRY_THREAD_STACK_GUARANTEE_*`; the
@@ -122,11 +129,16 @@ mode and job limits a child runs with, and that a hung child's own child is gone
   equivalent). A planted `malloc` in a state provider shows it counts. Heap use inside Windows itself (`HeapAlloc`) is outside what it sees.
 - **Fast-fail crashes** (`__fastfail`, `/GS` failures) end the process in the kernel: no vectored handler, filter or library sees them, so
   there is no report and no dump in the handler's directory (exit code `0xC0000409`; `crash_end_to_end_windows_test.cpp` checks it).
-  Windows Error Reporting's LocalDumps (Day 156) is the only dump such a crash can leave.
+  Windows Error Reporting's LocalDumps, when an administrator has set them up (`EnablePostMortemDumps`), is the only dump such a crash can leave.
 - **`detail::InstallCrashEventHook`** installs the observer and the crash gate; `RemoveCrashEventHook` removes the observer and turns the
   gate into a pass-through.
-- **Scripts:** `find-core.sh`, `open-core.sh`, `split-debug.sh` and `store-symbols.sh` are Linux shell scripts. Windows needs
-  PowerShell equivalents for WER dumps and a symbol store (PDB or DWARF, chosen with the resolver decision above).
-- **CMake:** the branch in `engine/foundation/CMakeLists.txt` that stops with a message names this file; replace it with the
-  real source list. Add the `-Wl,--build-id` equivalent (`/DEBUG` produces the CodeView record). Port `libbacktrace` with
-  `pecoff.c`, `alloc.c`, `read.c` (not `mmap.c`).
+- **Scripts (Built, Day 156):** `scripts/store-symbols.ps1` files a program's PDB and image in the layout WinDbg reads
+  (`<pdb>\<GUID+age>\<pdb>`, `<exe>\<timestamp><size>\<exe>`); `crash-report.ps1` prints the exception, the modules with their build ids
+  and the report with its frames named from the store (`crash_extract --resolve`, DbgHelp), and refuses a different build of the program
+  (exit 3); `find-dump.ps1` lists the engine's envelopes and WER's dumps; `open-dump.ps1` opens a dump in WinDbg or cdb with the store as the
+  only symbol path (`_NT_SYMBOL_PATH` cleared). `split-debug.sh` has no Windows twin: a PDB is already separate from its image. `crash_extract`
+  gained `--modules`, `--report`, `--image` and `--resolve` (`tools/crash_extract/minidump.cpp`, `resolve.cpp`, `windows/resolve.cpp`);
+  names it takes from a dump become store paths only as one plain file name and hex. Tests: `crash_report_script_windows_test.cpp`,
+  `minidump_test.cpp`.
+- **CMake (Built, Days 154-156):** the Windows source list replaced the stop; `/DEBUG` (CMake's Debug default) produces the CodeView
+  record the build id comes from. `libbacktrace` is not ported: not applicable, DbgHelp resolves on Windows (Day 154's decision).

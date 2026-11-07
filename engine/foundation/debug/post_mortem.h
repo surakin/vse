@@ -58,7 +58,7 @@ struct PostMortemReport {
 /// Fails: reports [[debug::PostMortemResult::Limited]] when the system's hard limit is zero (nothing the process can do) and
 ///   [[debug::PostMortemResult::Unsupported]] where there is no such artifact.
 /// Thread-safety: thread-safe. Not async-signal-safe.
-/// Backend: Windows: WER LocalDumps registry values (Limited without the right to write them); macOS: setrlimit(RLIMIT_CORE) and /cores; Android: Enabled with nothing to do.
+/// Backend: Windows: reads WER's LocalDumps values under HKLM and writes nothing (Limited, with the values to set, when they are absent); macOS: setrlimit(RLIMIT_CORE) and /cores; Android: Enabled with nothing to do.
 PostMortemReport EnablePostMortemDumps(const PostMortemOptions& options);
 
 } // namespace engine_placeholder::debug

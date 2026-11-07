@@ -11,6 +11,7 @@
 #include "debug/stack_trace.h"
 #include "debug/thread_info.h"
 #include "envelope.h"
+#include "hang_watchdog_windows.h"
 #include "io/directory.h"
 #include "io/file.h"
 #include "io/file_system.h"
@@ -467,4 +468,120 @@ TEST_CASE("Windows: a fast fail ends the process with 0xC0000409 and no engine r
     CHECK(r.native_code == kFastFail);
     CHECK_FALSE(r.StderrContains("=== CRASH REPORT ==="));
     CHECK(FindFiles(dir.IoPath(), "*.envelope").Empty());
+}
+
+// ---- the dump directory, and dumps across a restart ---------------------------------------------------------------------------------
+
+namespace {
+
+// %LOCALAPPDATA%\<app>, which the default crash dump directory of an application named <app> sits in; removed at the end of the scope.
+class AppDataFolder {
+public:
+    explicit AppDataFolder(const char* app) {
+        char local[MAX_PATH] = {};
+        const DWORD n = GetEnvironmentVariableA("LOCALAPPDATA", local, MAX_PATH);
+        ok_ = n > 0 && n < MAX_PATH && io::Path::Parse(StringView(local), io::PathStyle::Windows, &path_);
+        if (ok_) path_ = path_.Join(StringView(app));
+    }
+    ~AppDataFolder() {
+        if (ok_) (void)io::RemoveAll(path_);
+    }
+    AppDataFolder(const AppDataFolder&) = delete;
+    AppDataFolder& operator=(const AppDataFolder&) = delete;
+    bool Ok() const { return ok_; }
+    const io::Path& Path() const { return path_; }
+
+private:
+    io::Path path_;
+    bool ok_ = false;
+};
+
+void PutResult(const char* key, int value) {
+    char line[64];
+    const int n = std::snprintf(line, sizeof(line), "%s=%d\n", key, value);
+    os::Write(1, line, static_cast<usize>(n));
+}
+
+} // namespace
+
+ENGINE_DEATH_TEST_FN(dt_e2e_win_default_directory_then_fault) {
+    hang_watchdog::Start(20);
+    InitDebugFacilities();
+    CrashHandlerOptions options; // no dump_directory: io::CrashDumpDirectory, %LOCALAPPDATA%\<ENGINE_APP_NAME>\crashes
+    PutResult("INSTALLED", static_cast<int>(InstallCrashHandler(options)));
+    InjectFault(FaultKind::NullWrite);
+}
+
+TEST_CASE("Windows: without a directory in the options the dump goes under the application's local folder", "[crash][death][debug][windows]") {
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    // A name of this process's own: ctest runs the plain and the ASan copy of this case at the same time, and a shared folder made each
+    // remove the other's dump (seen on Day 156).
+    const Text name = engine_test::Format("engine-e2e-default-dir-%lu", static_cast<unsigned long>(GetCurrentProcessId()));
+    AppDataFolder app(name.CStr());
+    REQUIRE(app.Ok());
+    const Text variable = engine_test::Concat("ENGINE_APP_NAME=", name.View());
+    const char* const extra[] = {variable.CStr()};
+    ChildOptions options;
+    options.extra_env = extra;
+    options.extra_env_count = 1;
+    options.timeout_ms = 60000;
+    const ChildResult r = RunInChild("dt_e2e_win_default_directory_then_fault", "", options);
+    CHECK(r.StdoutContains("INSTALLED=0"));
+    CHECK(r.reason == CrashReason::AccessViolation);
+    CHECK(FindFiles(app.Path().Join("crashes"), "*.envelope").Size() == 1);
+}
+
+ENGINE_DEATH_TEST_FN(dt_e2e_win_bad_directory) {
+    CrashHandlerOptions options;
+    options.dump_directory = argument; // a path under a file: it cannot be created
+    PutResult("RESULT", static_cast<int>(InstallCrashHandler(options)));
+    PutResult("INSTALLED", CrashHandlerInstalled() ? 1 : 0);
+    os::Write(1, "PROGRAM-RAN-ON\n", 15);
+}
+
+TEST_CASE("Windows: a dump directory that cannot be created fails the install, and the program runs on", "[crash][death][debug][windows]") {
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    REQUIRE(io::WriteFile(dir.IoPath().Join("a-file"), "x", 1).Ok());
+    const Text bad = MakeText(dir.IoPath().Join("a-file").Join("crashes").View());
+    const ChildResult r = RunInChild("dt_e2e_win_bad_directory", bad.CStr());
+    REQUIRE(r.exited);
+    CHECK(r.StdoutContains(engine_test::Format("RESULT=%d", static_cast<int>(CrashHandlerResult::DirectoryFailed)).CStr()));
+    CHECK(r.StdoutContains("INSTALLED=0"));
+    CHECK(r.StdoutContains("PROGRAM-RAN-ON"));
+}
+
+ENGINE_DEATH_TEST_FN(dt_e2e_win_install_and_exit) {
+    hang_watchdog::Start(20); // (KNOWN-ISSUES.md: this child has hung once in a while under ASan)
+    CrashHandlerOptions options;
+    options.dump_directory = argument;
+    PutResult("INSTALLED", static_cast<int>(InstallCrashHandler(options)));
+    UninstallCrashHandler();
+    os::Write(1, "UNINSTALLED\n", 12);
+}
+
+// The library moves the last run's envelope into saved\ when the handler is installed again (PruneSavedDumps then keeps the newest).
+TEST_CASE("Windows: a crash dump is still there after the program is started again", "[crash][death][debug][windows]") {
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    const ChildResult crashed = RunCrashChild("dt_e2e_win_null_write", dir.Path());
+    REQUIRE(crashed.terminated);
+    REQUIRE(FindFiles(dir.IoPath(), "*.envelope").Size() == 1);
+    for (int launch = 0; launch < 2; ++launch) {
+        const ChildResult restarted = RunCrashChild("dt_e2e_win_install_and_exit", dir.Path());
+        INFO("launch " << launch << ": terminated " << restarted.terminated << " status 0x" << std::hex << restarted.native_code << std::dec
+                       << ", timed out " << restarted.timed_out << ", stdout " << Catch::Detail::stringify(StringView(restarted.stdout_text, restarted.stdout_length))
+                       << ", stderr " << Catch::Detail::stringify(Stderr(restarted)));
+        if (!restarted.exited) hang_watchdog::NameFrames(restarted.stderr_text, restarted.stderr_length);
+        REQUIRE(restarted.exited);
+        CHECK(restarted.StdoutContains("INSTALLED=0"));
+    }
+    const TextList after = FindFiles(dir.IoPath(), "*.envelope");
+    REQUIRE(after.Size() == 1);
+    INFO(after[0].CStr());
+    CHECK((TextHas(after[0], "\\saved\\") || TextHas(after[0], "/saved/"))); // (an io::Path's own text may use either separator)
+    const Vector<u8> kept = ReadWholeFile(after[0]);
+    crash_extract::Minidump dump;
+    REQUIRE(crash_extract::FindMinidump(reinterpret_cast<const char*>(kept.Data()), kept.Size(), &dump) == crash_extract::EnvelopeResult::Ok);
+    CHECK(dump.size > 1000);
 }

@@ -24,4 +24,14 @@ struct Minidump {
 // Finds the first minidump item. `data` is borrowed for the call and for as long as `out` is used.
 EnvelopeResult FindMinidump(const char* data, std::size_t size, Minidump* out);
 
+// An attachment's payload, inside the buffer passed to FindAttachment.
+struct Attachment {
+    const char* data = nullptr;
+    std::size_t size = 0;
+};
+
+// Finds the first attachment (not the minidump) whose header names `filename` exactly, such as "crash-report.txt", the report the crash
+// handler attaches (Phase 13 Day 156). NoMinidump means: a well-formed envelope without it.
+EnvelopeResult FindAttachment(const char* data, std::size_t size, const char* filename, Attachment* out);
+
 } // namespace crash_extract

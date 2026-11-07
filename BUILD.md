@@ -78,6 +78,8 @@ Day 163, `ENGINE_SLANGC` and `ENGINE_DXC`.
 | WinDbg, or Debugging Tools for Windows (`cdb`) | current | For checks | Reading minidumps with the symbol store (Phase 13 Days 155-156). | `winget install --id Microsoft.WinDbg -e` |
 | Long paths (`HKLM\SYSTEM\CurrentControlSet\Control\FileSystem\LongPathsEnabled = 1`) | off on the developer PC (2026-11-07) | Optional | Lets the manifest's `longPathAware` take effect. The file layer works either way (it adds the `\\?\` prefix past 248 characters; `tests/io/io_windows_test.cpp` checks it with the setting off). The check with it on has not been done. An elevated system change: the developer makes it. | Group Policy "Enable Win32 long paths", or the registry value |
 | Developer Mode | off on the developer PC | Optional | Lets tests create symbolic links without elevation; without it they skip with a reason (Phase 13 Days 151-152: the `Stat`/`Lstat` link checks). | Settings → System → For developers |
+| Windows PowerShell | 5.1 (ships with Windows) | Required for checks | Runs `scripts/store-symbols.ps1`, `crash-report.ps1`, `find-dump.ps1` and `open-dump.ps1`, and the tests of them (Phase 13 Day 156). | part of Windows |
+| WinDbg or the Debugging Tools for Windows (`cdb`) | not installed on the developer PC | Optional | `scripts/open-dump.ps1` opens a dump in one of them (it exits 66 and says what to install without); `crash-report.ps1` does not need them. | `winget install --id Microsoft.WinDbg -e`, or the Windows SDK feature "Debugging Tools for Windows" |
 | PIX for Windows | current | Optional | GPU captures while debugging the DX12 backend. | `winget install --id Microsoft.PIX -e` |
 | Python 3 | 3.x | Optional | `scripts/list-aborts.py` only. | `winget install --id Python.Python.3.14 -e` |
 

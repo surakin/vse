@@ -353,6 +353,35 @@ llvm-symbolizer --obj=<module file> 0x<offset>
 addr2line -f -C -e <module file> 0x<offset>
 ```
 
+### Reading a crash on Windows
+
+**Where the dumps are.** The crash handler's envelopes are in `%LOCALAPPDATA%\<app>\crashes` (the `<uuid>.run` folder of the last run,
+then `saved\` once the program starts again). Windows Error Reporting keeps a dump of its own only where an administrator set up
+`LocalDumps` under `HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps` (the same values under the user's own key are
+ignored); [[debug::EnablePostMortemDumps]] says whether that is so, and never writes the registry. `scripts/find-dump.ps1 <app>` lists both
+kinds, newest first.
+
+**Keeping symbols.** For every build you ship, file the program and its PDB in a symbol store:
+
+```text
+powershell -File scripts\store-symbols.ps1 build-msvc\game\rhi_demo\rhi_demo.exe symbols
+```
+
+This writes `symbols\<name>.pdb\<GUID+age>\<name>.pdb` and `symbols\<name>.exe\<timestamp><size>\<name>.exe`, the layout WinDbg and
+Visual Studio read with the symbol path `srv*symbols`. The GUID and age are the build id the crash report and the minidump record.
+
+**Reading the crash.**
+
+```text
+powershell -File scripts\crash-report.ps1 <envelope> [<program>] [<symbol store>]
+```
+
+prints the exception, the modules with their build ids, and the engine's crash report with each `module+0x<offset>` frame named with its
+function, file and line from the store (`crash_extract --resolve`, through DbgHelp, with the store as the only symbol path: nothing is
+fetched from a symbol server). Given the program, it refuses a dump made by a different build (exit status 3).
+`scripts\open-dump.ps1 <envelope> <symbol store>` opens the dump in WinDbg (or cdb with `-Batch`), with `_NT_SYMBOL_PATH` cleared so the
+debugger stays offline too; without either debugger it exits with status 66 and says what to install.
+
 ## Keeping symbols for release builds
 
 A release program is stripped, so its dumps have no function names unless you kept the debug information of **that build**.

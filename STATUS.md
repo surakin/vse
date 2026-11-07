@@ -770,4 +770,15 @@ the process before the dump (seen one run in three before it). Death tests (job 
 (`BusError` skips) work; fast fail is a documented gap; the allocation check is the debug C runtime's hook. Neutral fixes: a module offset
 printed one digit; the report can say `thread: unknown`. Runs: `ran 515 of 807 tests (phases: all; flavors: plain; display: included; crash
 tests: included)`, asan `ran 292 of 807`; MSVC 807 of 807, `windows-clang-cl` 545 of 545, non-unity 806 of 807 (a phase 2 flake, filed). Review:
-9 findings, 5 fixed, 4 declined. Linux: pending until the phase close. **Next: Day 156 (debugging III: dumps, symbol store and scripts).**
+9 findings, 5 fixed, 4 declined. Linux: pending until the phase close.
+
+Phase 13 **Day 156 (2026-11-07, Windows PC): debugging III.** A Windows crash reads back with names: `scripts/store-symbols.ps1` files the PDB and
+image under the build id (the WinDbg layout), `crash-report.ps1` prints the exception, the modules and the report with each `module+offset` frame
+named from the store (`crash_extract --resolve`, DbgHelp, no symbol server), `find-dump.ps1` and `open-dump.ps1` find and open dumps.
+`crash_extract` builds on Windows with `--modules`, `--report`, `--image` and `--resolve` (bounds-checked minidump and PE readers).
+`EnablePostMortemDumps` only reads WER's machine-wide LocalDumps key (measured: the per-user key is ignored on this build) and writes nothing.
+A death-test child could hang in `ExitProcess` under ASan; it now ends with `TerminateProcess`, as `_exit` on Linux. Runs: `ran 543 of 862 tests
+(phases: all; flavors: plain; display: included; crash tests: included)`, asan `ran 319 of 862` (one known phase 2 flake); MSVC 862 of 862,
+`windows-clang-cl` 573 of 573, non-unity 862 of 862. Review: 7 findings, 4 fixed, 1 not a defect, 2 declined; the full runs found two more, fixed.
+Not done: a person opening a dump in WinDbg (no debugger installed), the reference for `post_mortem.h` (docgen on Windows is Day 157). Linux:
+pending until the phase close. **Next: Day 157 (settings on Windows: the registry store).**

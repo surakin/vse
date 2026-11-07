@@ -18,8 +18,13 @@ Seen failing once or intermittently, passing on rerun. Cause not investigated.
 - The window tests (X11, Wayland, and the RHI presentation tests) used to fail at random under `ctest -j6`; they now hold the ctest resource `display` and run one at a time (5 full runs in a row passed, 2026-11-05).
 
 
+- Phase 13 Day 156 (2026-11-07, Windows PC): `The child receives its argument and environment and its output is captured` (phase 7, plain) failed
+  once in a full `ctest -j8` run of the non-unity MSVC build; it passed 15 times alone and once through `ctest -R`. The failure output was not
+  captured.
 - Phase 13 Day 155 (2026-11-07, Windows PC): `FramePool does not commit slab memory until blocks are used [asan]` (phase 2) failed once in a
   full `ctest -j8` run of the non-unity MSVC build; it passed 5 times alone (plain and asan) right after. The failure output was not captured.
+  Seen again on Day 156 in `scripts/test-phase.sh --affected --crashes --flavor asan` of the MSVC unity build (passed in the full `ctest -j8`
+  run that followed).
 - Phase 13 Day 153 (2026-11-07, Windows PC): `Skewed load: other participants execute stolen work [asan]` (phase 2) failed once in a full
   `ctest -j8` run of the non-unity MSVC build; it passed 30 times alone and in 5 runs under `-j16` load. The failure output was not captured.
 
@@ -153,11 +158,20 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   formatting fix in `debug/stack_trace_format.cpp`, the converted `crash_report_test.cpp` and the readelf case moved into
   `crash_report_linux_test.cpp`. The reference for `debug/crash_report.h` was not regenerated, and `docgen lint` and `ctest -L docs` were not run
   (docgen builds on Windows from Day 157).
-- Phase 13 Day 155, until Day 156: on Windows `EnablePostMortemDumps` is a placeholder in `os/windows/debug/crash_pending.cpp` that reports itself
-  unsupported; `saved_dumps_test`, `core_dump_test` and `crash_extract` are not built on Windows yet.
+- Phase 13 Day 156 (2026-11-07), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 156 file, "For the
+  Linux run") were built and tested only on Windows: `crash_extract`'s new modes and parsers (`tools/crash_extract/envelope.cpp` `FindAttachment`,
+  `minidump.cpp`, `resolve.cpp`), the new `tests/debug/minidump_test.cpp` and the two parser sources added to the Linux debug test executables,
+  and the `post_mortem.h` comment. The reference for `debug/post_mortem.h` was not regenerated (docgen builds on Windows from Day 157).
+- Phase 13 Day 156, check not done: a Windows minidump has not been opened in WinDbg or cdb with the stored symbols by a person; neither debugger is
+  installed on the Windows PC (`scripts/open-dump.ps1` exits 66 there). The dumps were read back with `crash_extract --modules` and their frames
+  named through DbgHelp from the store (`crash_report_script_windows_test.cpp`), not by a debugger.
+- Phase 13 Day 156, not tested: `EnablePostMortemDumps` reporting `Enabled` on Windows, and WER writing a local dump of an engine program: the PC has
+  no `HKLM\...\Windows Error Reporting\LocalDumps` key and setting one needs an administrator. Measured instead: WER ignores the same values under
+  HKCU on this Windows 11 build (Windows 10.0.26300).
 - Phase 13 Day 155, known limitation (not a failure): a fast fail (`__fastfail`, `/GS` stack-cookie failures, some C runtime checks) ends a Windows
   process in the kernel with `0xC0000409`; no handler sees it, so it leaves no engine report and no dump in the crash handler's directory
-  (`crash_end_to_end_windows_test.cpp` checks this). Windows Error Reporting LocalDumps (Day 156) is the only dump it can leave.
+  (`crash_end_to_end_windows_test.cpp` checks this). Windows Error Reporting LocalDumps, where an administrator set them up, is the only dump it
+  can leave.
 - Phase 13 Day 155, known limitation: on Windows the crash report opens its report file at crash time with `CreateFileW`, which converts the path
   with a heap allocation inside Windows; a crash while another thread holds the process heap's lock could stop the report there (the dump is
   written before the report). The allocation check sees only the C runtime's allocations. Not observed; from the day's design review.

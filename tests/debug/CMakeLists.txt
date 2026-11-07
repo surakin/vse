@@ -12,6 +12,7 @@ set(DEBUG_TEST_SOURCES
   assert_linux_test.cpp
   stack_trace_test.cpp
   crash_extract_test.cpp
+  minidump_test.cpp
   crash_handler_test.cpp
   saved_dumps_test.cpp
   crash_handler_linux_test.cpp
@@ -34,7 +35,7 @@ include(Catch)
 
 # Windows (Phase 13 Days 154-156): the neutral files, in plain and ASan, one conformance group at a time. Day 154: stack traces, the crash
 # context, the asserts and threads (the death-test cases among them skip until Day 155, which adds the death tests, fault injection, the
-# crash hook and crash_handler_test and crash_report_test); Day 156 adds saved_dumps_test, core_dump_test and crash_extract. The programs'
+# crash hook and crash_handler_test and crash_report_test); Day 156 adds saved_dumps_test, core_dump_test, crash_extract and the scripts. The programs'
 # crash tests come with the programs.
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(_debug_windows_sources
@@ -52,7 +53,16 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     death_test_windows_test.cpp
     crash_end_to_end_windows_test.cpp
     crash_alloc_windows_test.cpp
+    hang_watchdog_windows.cpp
+    post_mortem_windows_test.cpp
+    saved_dumps_test.cpp
+    core_dump_test.cpp
+    crash_extract_test.cpp
+    minidump_test.cpp
+    crash_report_script_windows_test.cpp
     ${CMAKE_SOURCE_DIR}/tools/crash_extract/envelope.cpp
+    ${CMAKE_SOURCE_DIR}/tools/crash_extract/minidump.cpp
+    ${CMAKE_SOURCE_DIR}/tools/crash_extract/resolve.cpp
   )
   add_library(debug_test_plugin MODULE plugin.cpp)
   target_include_directories(debug_test_plugin PRIVATE ${CMAKE_SOURCE_DIR}/engine/foundation)
@@ -67,9 +77,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_executable(debug_tests${suffix} ${_debug_windows_sources})
     engine_enable_death_tests(debug_tests${suffix})
     target_link_libraries(debug_tests${suffix} PRIVATE foundation_debug${suffix} jobs${suffix} Catch2::Catch2WithMain dbghelp)
-    add_dependencies(debug_tests${suffix} debug_test_plugin)
+    add_dependencies(debug_tests${suffix} debug_test_plugin crash_extract)
     target_compile_definitions(debug_tests${suffix} PRIVATE DEBUG_TEST_PLUGIN_PATH="$<TARGET_FILE:debug_test_plugin>" ENGINE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-      ENGINE_DEBUG_CHECKS=1 ENGINE_SLOW_CHECKS=1)
+      ENGINE_CRASH_EXTRACT_PATH="$<TARGET_FILE:crash_extract>" ENGINE_DEBUG_CHECKS=1 ENGINE_SLOW_CHECKS=1)
     target_include_directories(debug_tests${suffix} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support
       ${CMAKE_SOURCE_DIR}/tests/windows/support ${CMAKE_SOURCE_DIR}/tools/crash_extract)
     engine_asan_runtime(debug_tests${suffix})
@@ -141,7 +151,8 @@ function(engine_add_debug_tests target foundation_lib jobs_lib suffix label)
   target_link_libraries(${target} PRIVATE ${foundation_lib} ${jobs_lib} Catch2::Catch2WithMain Threads::Threads)
   add_dependencies(${target} debug_test_plugin crash_extract)
   # The envelope parser of the crash_extract tool, compiled into each flavor so the sweeps run under the sanitizers.
-  target_sources(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/crash_extract/envelope.cpp)
+  target_sources(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/crash_extract/envelope.cpp ${CMAKE_SOURCE_DIR}/tools/crash_extract/minidump.cpp
+    ${CMAKE_SOURCE_DIR}/tools/crash_extract/resolve.cpp)
   target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/tools/crash_extract)
   target_compile_definitions(${target} PRIVATE DEBUG_TEST_PLUGIN_PATH="$<TARGET_FILE:debug_test_plugin>" ENGINE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
     ENGINE_CRASH_EXTRACT_PATH="$<TARGET_FILE:crash_extract>")
