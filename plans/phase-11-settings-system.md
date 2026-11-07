@@ -23,27 +23,22 @@ loading at startup and saving on request or exit, with a failed read never losin
 changing its behavior or tests; `--settings`, `--save-settings`, `--set key=value` and `--list-settings` in both demos, with `--help` generated from the registry;
 guide `docs/guide/settings.md`; the full suite passes in every flavor.
 
-**Status: planned (2026-11-07), not started.** Days 130-139 are written under `plans/phase-11-settings-system/`; `CURRENT_PHASE` changes to 11 in the commit that completes
+**Status: in progress (started 2026-11-07, Day 130 done: spec and spikes).** The spec is `docs/superpowers/specs/2026-11-07-settings-design.md`. Days 130-139 are written under `plans/phase-11-settings-system/`; `CURRENT_PHASE` changes to 11 in the commit that completes
 Day 130's first task. Day numbers continue from Phase 9 (which ended at Day 124). The definition of done above is the goal; the day files hold the sub-tasks, and Day 130's spec
 confirms or amends the decisions below with experiments.
 
 ## Days
 
-130. [Design Spec, Inventory & Phase Setup](phase-11-settings-system/day-125-design-spec-and-inventory.md)
-126. [Keys, Values and the Registry](phase-11-settings-system/day-126-keys-values-registry.md)
-127. [The `ConfigStore` Interface](phase-11-settings-system/day-127-config-store.md)
-128. [The Text Format and `FileConfigStore`](phase-11-settings-system/day-128-text-format-file-store.md)
-129. [Layered Sources, Environment and Command Line](phase-11-settings-system/day-129-layers-and-sources.md)
-130. [The Settings Service: Loading, Change Notification, Saving, Threads](phase-11-settings-system/day-130-settings-service.md)
-131. [Versioning, Migration and Unknown Keys](phase-11-settings-system/day-131-versioning-migration.md)
-132. [Move the Renderer onto the Shared System](phase-11-settings-system/day-132-renderer-migration.md)
-133. [Command Line, the Demos and the Other Consumers](phase-11-settings-system/day-133-command-line-demos-and-config.md)
-134. [Platform Checklists, Guide, Closing Full Run & Wrap-up](phase-11-settings-system/day-134-platform-docs-and-closing-run.md)
-
-Order reasoning: Day 130 settles the model and takes the inventory of what must move, because the store interface shape and the read cost of a setting decide everything after it. The model (126) is
-pure; the store interface (127) is proven with doubles before any file code exists, so the file store (128) is one implementation of something already shaped by a non-file store. Layers (129) and the
-service (130) build on stores; migration (131) needs the service's load path. The renderer (132) is the first real consumer and the strictest test of "no behavior change"; the demos and the scattered
-environment variables (133) are the user-visible end. Day 139 adds the platform checklists and a configuration check that keeps new ad hoc configuration from creeping back, and closes the phase.
+130. [Design Spec, Inventory & Phase Setup](phase-11-settings-system/day-130-design-spec-and-inventory.md)
+131. [Keys, Values and the Registry](phase-11-settings-system/day-131-keys-values-registry.md)
+132. [The `ConfigStore` Interface](phase-11-settings-system/day-132-config-store.md)
+133. [The Text Format and `FileConfigStore`](phase-11-settings-system/day-133-text-format-file-store.md)
+134. [Layered Sources, Environment and Command Line](phase-11-settings-system/day-134-layers-and-sources.md)
+135. [The Settings Service: Loading, Change Notification, Saving, Threads](phase-11-settings-system/day-135-settings-service.md)
+136. [Versioning, Migration and Unknown Keys](phase-11-settings-system/day-136-versioning-migration.md)
+137. [Move the Renderer onto the Shared System](phase-11-settings-system/day-137-renderer-migration.md)
+138. [Command Line, the Demos and the Other Consumers](phase-11-settings-system/day-138-command-line-demos-and-config.md)
+139. [Platform Checklists, Guide, Closing Full Run & Wrap-up](phase-11-settings-system/day-139-platform-docs-and-closing-run.md)
 
 ## Design decisions made while planning (2026-11-07; Day 130 confirms or amends them in the spec)
 
@@ -68,7 +63,9 @@ environment variables (133) are the user-visible end. Day 139 adds the platform 
 - **Consumers:** the renderer, the log, the engine's environment variables, both demos (`--settings`, `--save-settings`, `--set`, `--list-settings`, generated `--help`).
 - **Platform checklists** (`BACKEND.md`) with a list test and a cross-target syntax check; **docs:** `docs/guide/settings.md`; **a configuration check**.
 
-## Notes / open questions (for the design spec, the phase's first day)
+## Notes / open questions (settled in the spec on Day 130; where each was decided)
+
+Decided on Day 130 in `docs/superpowers/specs/2026-11-07-settings-design.md` section 1: lists (not a type this phase), secrets and per-machine state (not settings; a second `Settings` instance later, Phase 15), remote/live reload (optional `Poll`, Day 132; no implementation), UI metadata (`label`, `group`, `flags` in `SettingDesc`), file locations, saving (explicit only). The original notes follow.
 
 - **Store interface shape.** Read-all-then-write versus per-key get/set with a `Commit()`; whether comments/order preservation is a capability of the file store or part of the contract (the registry has neither); how a store reports external changes (poll, callback, watcher); the Windows registry mapping of sections and lists (Phase 12 implements it; this phase writes its `BACKEND.md` section and a cross-syntax check, as Phases 7-9 do).
 - **Format.** (File-backed store only.) A small INI/TOML-like text format (sections, `key = value`, comments, arrays) versus extending the Phase 8 `key = value` format; hand-written parser (no third-party

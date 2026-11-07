@@ -18,7 +18,8 @@ Internal design history is for contributors, not engine users: the specs in
 [debugging facilities](superpowers/specs/2026-11-06-debugging-design.md),
 [RHI reset](superpowers/specs/2026-11-06-rhi-reset-design.md),
 [file layer](superpowers/specs/2026-11-06-file-layer-design.md),
-[standard types and containers](superpowers/specs/2026-11-07-types-and-containers-design.md) —
+[standard types and containers](superpowers/specs/2026-11-07-types-and-containers-design.md),
+[settings system](superpowers/specs/2026-11-07-settings-design.md) —
 and the plans in `plans/`.
 
 ## Map
