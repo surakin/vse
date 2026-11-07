@@ -37,6 +37,8 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 
 ## Deferred items
 
+- Phase 12 Day 141 (2026-11-07): the module-dependency gate's `tools/module_deps_check/allowlist.txt` lists 17 known violations of `ARCHITECTURE.md` (upward includes in `log`, `io`, `os`, `containers`; the demos and `engine_main` including a per-platform header; the display libraries linked by `foundation`; two RHI entries). Phase 12 Days 142-144 delete all but the two RHI entries (Phase 13 Day 162); each line names its day.
+
 | Item | Needed by | Where recorded |
 |---|---|---|
 | Pipeline creation time for permuted shaders was not measured; specialization constants are the Vulkan-only escape hatch if profiling asks for it | Only if profiling shows a problem | `docs/superpowers/specs/2026-11-04-renderer-design.md` R10.1 |

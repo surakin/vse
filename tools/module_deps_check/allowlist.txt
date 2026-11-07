@@ -1,0 +1,31 @@
+# Known violations of the module rules, each with the reason and the day that removes it (check.cmake describes the format).
+# Phase 12 deletes these one by one; a line whose violation is gone fails the gate until it is deleted. ARCHITECTURE.md section 2
+# numbers the items.
+#
+# kind from -> to | reason | day
+
+# item 1: the assert failure report (stack trace, crash context, debugger break) is built into log.cpp
+edge log -> debug | log.cpp includes debug/stack_trace.h, crash_report.h, crash_context.h, debugger.h for the default assert handler | Phase 12 Day 142
+# item 2: log::LoadConfig reads a file through the file layer
+edge log -> io | log.cpp includes io/file.h for log::LoadConfig | Phase 12 Day 143
+# item 3: the I/O thread registers itself with the crash handler
+edge io -> debug | io/file.cpp includes debug/crash_handler.h for RegisterThreadForCrashHandling | Phase 12 Day 142
+# item 4: os.h takes StringView paths and fills a String<HeapAllocator>
+edge os -> string | os.h includes string/string.h | Phase 12 Day 143
+edge os -> mem | os.h includes mem/heap_allocator.h for EnvironmentEntry | Phase 12 Day 143
+# items 11-13: StringView lives in string/string.h
+edge log -> string | log/log.h includes string/string.h for StringView | Phase 12 Day 143
+edge containers -> string | containers/span.h includes string/string.h for StringView | Phase 12 Day 143
+edge base -> string | int128.h includes string/string.h for FromText(StringView) | Phase 12 Day 143
+# item 6: a program in a library directory
+platform engine_main -> platform | main.cpp includes os/linux/platform_window_host.h | Phase 12 Day 143
+# item 9: the demos include a per-platform header
+platform game/rhi_demo -> platform | main.cpp includes os/linux/platform_window_host.h | Phase 12 Day 144
+platform game/renderer_demo -> platform | main.cpp includes os/linux/platform_window_host.h | Phase 12 Day 144
+# item 10: the display libraries are linked by every foundation consumer
+syslib foundation -> PkgConfig::WaylandClient | the window code is compiled into the foundation library | Phase 12 Day 144
+syslib foundation -> PkgConfig::XkbCommon | the window code is compiled into the foundation library | Phase 12 Day 144
+syslib foundation -> PkgConfig::X11Client | the window code is compiled into the foundation library | Phase 12 Day 144
+# items 7 and 8: no RHI backend registry yet
+edge rhi/vulkan -> rhi/null | create_device.cpp dispatches to the null backend from inside the Vulkan library | Phase 13 Day 162
+edge renderer -> rhi/vulkan | the renderer links rhi_vulkan to reach CreateDevice, EnumerateAdapters and DeviceHost | Phase 13 Day 162

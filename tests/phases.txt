@@ -22,6 +22,7 @@ flavors 8   plain,asan,tsan
 flavors 9   plain,asan,tsan
 flavors 10  plain,asan,tsan
 flavors 11  plain,asan,tsan
+flavors 12  plain
 
 # --- Phase 0: foundation (tests/foundation) ---
 tests/foundation/arena_allocator_test.cpp       0
@@ -190,3 +191,6 @@ test:renderer_demo_readme_current                11
 # --- Phase 11: settings system ---
 tests/settings/                                 11
 tests/foundation_sanitized/                     0
+
+# --- Phase 12: module layering ---
+test:module_deps_check*                         12

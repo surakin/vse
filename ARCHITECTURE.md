@@ -4,7 +4,7 @@ The engine's modules, the layer each belongs to, what each may depend on, and ho
 the long-term layer diagram; this file is the **source of truth for dependencies between the modules that exist**. It is measured from the code, not
 written from intent, and each mismatch is listed with what fixes it.
 
-Written 2026-11-07 (before Phase 12, the module layering), from the `#include` graph of `engine/`, `game/` and `tools/` and the CMake link lines. The rule: **a module
+Written 2026-11-07 (before Phase 12, the module layering; items 11-13 added by Day 140's re-measure), from the `#include` graph of `engine/`, `game/` and `tools/` and the CMake link lines. The rule: **a module
 may include and link only modules in lower layers, or other modules its row allows; never one above it, and no cycles.**
 
 ## 1. Layers
@@ -76,7 +76,7 @@ Found when the graph was re-measured on 2026-11-07 (Phase 12 Day 140; they keep 
 |---|---|---|---|
 | 11 | log (3) → strings (4) | `log/log.h` includes `string/string.h` | `Log` and `LogChannel::Find` take a `StringView`. |
 | 12 | containers (4) ↔ strings (4) | `containers/span.h` includes `string/string.h`, which includes `containers/vector.h` | A `Span` of chars converts to and from `StringView`. |
-| 13 | base (0) → strings (4), log (3) | `int128.h` includes `string/string.h` (`FromText(StringView)`), `int128.cpp` includes `log/log.h` | Parsing text into a 128-bit integer. |
+| 13 | base (0) → strings (4) | `int128.h` includes `string/string.h` (`FromText(StringView)`) | Parsing text into a 128-bit integer. (`int128.cpp` includes only `log/assert.h`, which the gate maps to the base layer.) |
 
 Placement only (not a dependency problem): `algorithm.h` is in the foundation root but uses `Span` and the heap allocator, so it is layer 4;
 `int128.h`'s `FromText` takes a `StringView`, so either it moves to layer 4 or `FromText` moves to the string module.
@@ -127,5 +127,12 @@ The day that does each item is in brackets; the plan is `plans/phase-12-module-l
 
 ## 6. Keeping this file true
 
-A change that adds a module, moves one between layers or adds an allowed edge updates this file in the same commit. Until the `module_deps_check` gate
-exists (section 3, item 9), the graph in section 2 is re-measured by hand when a phase starts.
+A change that adds a module, moves one between layers or adds an allowed edge updates this file in the same commit. The gate **`module_deps_check`**
+(`tools/module_deps_check`, ctest `module_deps_check`, phase 12) measures the graph on every run: `modules.txt` maps files to modules and layers (and lists
+the same-layer edges a row permits, the forbidden pairs, the per-platform directories, the CMake targets and the system libraries only one module may link),
+`check.cmake` resolves every `#include "..."` the way the compiler does and every `target_link_libraries` line, and `allowlist.txt` lists the known
+violations (kind, edge, reason, the day that removes it). It fails on an upward edge, a same-layer edge without an `allow` line, a forbidden pair, a file
+outside a platform directory's owners including a file in it, an include that resolves nowhere, a file or CMake target no module owns, a stale allow-list
+entry, an entry without a reason and day, and any cycle left after the allow list is applied. A floor on the number of edges found keeps it from passing on
+an empty graph. Its output is `module_deps_check: <what>: <from> (<layer>) -> <to> (<layer>): <file>:<line>`. A new module gets a `module` line there and a row
+in section 1; a new violation is not added to the allow list (CLAUDE.md).

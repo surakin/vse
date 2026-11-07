@@ -1,0 +1,15 @@
+# The module map the fixture trees are checked with (the same directives as ../modules.txt).
+scan engine
+scan game
+include-dir engine
+module engine/low/ low 1
+module engine/mid/ mid 2
+module engine/mid2/ mid2 2
+module game/prog/ prog 3
+allow mid mid2
+allow mid2 mid
+platform-dir engine/low/linux/ engine/low/
+target low low
+target mid mid
+target prog prog
+syslib PkgConfig::Display low

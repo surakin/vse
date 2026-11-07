@@ -36,7 +36,8 @@ happen, and be committed, first.
 ## Module dependencies follow ARCHITECTURE.md (required)
 
 `ARCHITECTURE.md` lists every module, its layer and what it may depend on, measured from the code. **A module includes and links only modules
-below it, never one above, and no cycles.** A change that adds a module, moves one or adds an allowed edge updates `ARCHITECTURE.md` in the same
+below it, never one above, and no cycles.** The gate `module_deps_check` (`tools/module_deps_check`; ctest `module_deps_check`) enforces it: `modules.txt` maps files and CMake targets to modules,
+`allowlist.txt` holds the known violations with the day that removes each, and a stale entry fails. A change that adds a module, moves one or adds an allowed edge updates `ARCHITECTURE.md` in the same
 commit; a new upward edge or cycle is not added, even temporarily. The known violations are listed there with their fixes.
 
 ## Build prerequisites are listed in BUILD.md (required)

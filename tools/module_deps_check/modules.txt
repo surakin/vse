@@ -1,0 +1,172 @@
+# The module map of the dependency gate (Phase 12 Day 141; ARCHITECTURE.md section 1 is the source for the layers).
+#
+#   scan <dir>                        a directory whose sources and CMakeLists.txt files are checked
+#   exclude <substring>               a path containing it is neither scanned nor mapped (fixtures, vendored code)
+#   include-dir <dir>                 an include directory, tried after the including file's own directory, in this order
+#   system-include <regex>            a quoted include that is not ours (a system or generated-code header) and need not resolve
+#   module <path> <name> <layer>      a file, or a directory when the path ends in '/', belongs to the module; the longest path wins
+#   allow <from> <to>                 a same-layer edge a module's row permits (an edge to a lower layer needs no entry)
+#   same-layer-ok <layer>             every module of the layer may use every other (the programs); cycles are still checked
+#   forbid <from> <to>                an edge that is wrong whatever the layers say (a backend using another backend, the
+#                                     renderer using a backend directly)
+#   platform-dir <dir/> <owner/>,...  files under <dir/> are per-platform code: only files under an owner directory (or the
+#                                     directory itself) may include them
+#   layer <module> <layer>            the layer of a module that has no files of its own (a CMake aggregate)
+#   target <cmake-target> <module>    the module a CMake library or executable belongs to (flavor suffixes _asan/_tsan are
+#                                     stripped before the lookup); every add_library/add_executable under a scan directory needs one
+#   syslib <prefix> <module>          a system library (a CMake imported target) that only this module's targets may link
+#
+# A violation that is known and scheduled goes in allowlist.txt, not here.
+
+scan engine
+scan game
+scan tools
+exclude /fixtures/
+exclude /third_party/
+exclude /generated/
+
+include-dir engine/foundation
+include-dir engine
+include-dir .
+include-dir game/common
+include-dir game/renderer_demo
+include-dir shaders
+include-dir tools/docgen/src
+include-dir tools/shader_mint
+include-dir third_party/nlohmann_json
+system-include ^wayland-[a-z-]*\.h$
+
+# --- layers (ARCHITECTURE.md section 1) --------------------------------------------------------------------------------
+# 0 base
+module engine/foundation/types.h base 0
+module engine/foundation/int128.h base 0
+module engine/foundation/int128.cpp base 0
+module engine/foundation/foundation.cpp base 0
+module engine/foundation/debug/compiler.h base 0
+module engine/foundation/log/assert.h base 0
+module engine/foundation/unity/ base 0
+module shaders/ shaders 0
+module third_party/ external 0
+# 1 OS primitives
+module engine/foundation/os/ os 1
+# 2 memory
+module engine/foundation/mem/ mem 2
+# 3 assert and log core
+module engine/foundation/log/ log 3
+# 4 containers and strings
+module engine/foundation/containers/ containers 4
+module engine/foundation/string/ string 4
+module engine/foundation/math/ math 4
+module engine/foundation/algorithm.h algorithm 4
+allow string containers
+allow algorithm containers
+allow algorithm string
+# 5 OS services
+module engine/foundation/os/command_line.h os_services 5
+module engine/foundation/os/command_line.cpp os_services 5
+module engine/foundation/os/session.h os_services 5
+module engine/foundation/os/session.cpp os_services 5
+module engine/foundation/os/gpu_driver_probe.h os_services 5
+module engine/foundation/os/gpu_driver_probe.cpp os_services 5
+module engine/foundation/os/linux/command_line.cpp os_services 5
+module engine/foundation/os/linux/session.cpp os_services 5
+# 6 file layer
+module engine/foundation/io/ io 6
+# 7 debugging
+module engine/foundation/debug/ debug 7
+module engine/foundation/os/linux/debug/ debug 7
+module engine/foundation/os/windows/debug/ debug 7
+module engine/foundation/os/macos/debug/ debug 7
+# 8 settings
+module engine/foundation/settings/ settings 8
+# 9 platform: windows and input
+module engine/foundation/os/window.h platform 9
+module engine/foundation/os/window.cpp platform 9
+module engine/foundation/os/input.h platform 9
+module engine/foundation/os/key_translate.cpp platform 9
+module engine/foundation/os/linux/wayland/ platform 9
+module engine/foundation/os/linux/x11/ platform 9
+module engine/foundation/os/linux/xkb_keyboard.h platform 9
+module engine/foundation/os/linux/xkb_keyboard.cpp platform 9
+module engine/foundation/os/linux/platform_window_host.h platform 9
+module engine/foundation/os/linux/platform_window_host.cpp platform 9
+# 10 jobs
+module engine/jobs/ jobs 10
+# 11 RHI: the neutral interface and one module per backend
+module engine/rhi/ rhi 11
+module engine/rhi/null/ rhi/null 11
+module engine/rhi/vulkan/ rhi/vulkan 11
+module engine/rhi/dx12/ rhi/dx12 11
+module engine/rhi/metal/ rhi/metal 11
+allow rhi/null rhi
+allow rhi/vulkan rhi
+allow rhi/dx12 rhi
+allow rhi/metal rhi
+forbid rhi/vulkan rhi/null
+forbid rhi/null rhi/vulkan
+forbid rhi/dx12 rhi/vulkan
+forbid rhi/dx12 rhi/null
+forbid rhi/metal rhi/vulkan
+forbid rhi/metal rhi/null
+forbid rhi rhi/vulkan
+forbid rhi rhi/null
+# 12 renderer
+module engine/renderer/ renderer 12
+forbid renderer rhi/vulkan
+forbid renderer rhi/null
+forbid renderer rhi/dx12
+forbid renderer rhi/metal
+# 13 programs: demos, benchmarks, tools (and the program in the foundation directory)
+module engine/foundation/main.cpp engine_main 13
+module game/common/ game/common 13
+module game/renderer_bench/ game/renderer_bench 13
+module game/renderer_demo/ game/renderer_demo 13
+module game/rhi_bench/ game/rhi_bench 13
+module game/rhi_demo/ game/rhi_demo 13
+module tools/crash_extract/ tools/crash_extract 13
+module tools/docgen/ tools/docgen 13
+module tools/shader_mint/ tools/shader_mint 13
+module tools/unicode_data_gen/ tools/unicode_data_gen 13
+module tools/config_access_check/ tools/gates 13
+module tools/file_access_check/ tools/gates 13
+module tools/module_deps_check/ tools/gates 13
+module tools/platform_neutral_check/ tools/gates 13
+module tools/raw_new_check/ tools/gates 13
+module tools/rhi_boundary_check/ tools/gates 13
+module tools/settings_fixtures_check/ tools/gates 13
+module tools/signal_safety_check/ tools/gates 13
+module tools/std_container_check/ tools/gates 13
+same-layer-ok 13
+
+# --- per-platform code -------------------------------------------------------------------------------------------------
+platform-dir engine/foundation/os/linux/ engine/foundation/os/
+platform-dir engine/foundation/os/windows/ engine/foundation/os/
+platform-dir engine/foundation/os/macos/ engine/foundation/os/
+platform-dir engine/foundation/io/linux/ engine/foundation/io/
+platform-dir engine/rhi/vulkan/ engine/rhi/
+
+# --- CMake targets -----------------------------------------------------------------------------------------------------
+layer foundation 9
+target foundation foundation
+target engine_main engine_main
+target jobs jobs
+target rhi rhi
+target rhi_vulkan rhi/vulkan
+target renderer renderer
+target renderer_passes renderer
+target rhi_demo game/rhi_demo
+target rhi_bench game/rhi_bench
+target renderer_demo_lib game/renderer_demo
+target renderer_demo game/renderer_demo
+target renderer_demo_mint game/renderer_demo
+target renderer_bench game/renderer_bench
+target crash_extract tools/crash_extract
+target shader_mint_lib tools/shader_mint
+target shader_mint tools/shader_mint
+target docgen_lib tools/docgen
+target docgen tools/docgen
+
+# --- system libraries ----------------------------------------------------------------------------------------------------
+syslib PkgConfig::WaylandClient platform
+syslib PkgConfig::XkbCommon platform
+syslib PkgConfig::X11Client platform
