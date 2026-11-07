@@ -4,7 +4,7 @@ The engine's modules, the layer each belongs to, what each may depend on, and ho
 the long-term layer diagram; this file is the **source of truth for dependencies between the modules that exist**. It is measured from the code, not
 written from intent, and each mismatch is listed with what fixes it.
 
-Written 2026-11-07 (before Phase 12, the module layering; items 11-13 added by Day 140's re-measure), from the `#include` graph of `engine/`, `game/` and `tools/` and the CMake link lines. The rule: **a module
+Written 2026-11-07 and brought to the state after Phase 12 (the module layering) the same day, from the `#include` graph of `engine/`, `game/` and `tools/` and the CMake link lines. The rule: **a module
 may include and link only modules in lower layers, or other modules its row allows; never one above it, and no cycles.**
 
 ## 1. Layers
@@ -31,82 +31,51 @@ From the bottom up. "Platform code" means a per-OS backend directory (`linux/`, 
 Later phases add modules above the renderer in the order `PLAN.md`'s diagram gives (text, UI, ECS, physics, audio, assets, scripting, Unreal import,
 editor); each gets its row here when its phase is broken into days.
 
-## 2. The measured graph (2026-11-07)
+## 2. The measured graph (after Phase 12, 2026-11-07)
 
-**Above the foundation the graph is acyclic and already follows the table:**
+Measured by `module_deps_check` on the whole tree: **136 distinct module edges from includes, plus the CMake link lines, 0 problems.** There is no cycle and no
+upward edge. Two allow-listed edges remain, both for Phase 13 Day 162 (the RHI backend registry):
+
+| Edge | Where | Why it stays |
+|---|---|---|
+| rhi/vulkan → rhi/null | `rhi/vulkan/create_device.cpp` includes `rhi/null/null_device.h` | `CreateDevice` dispatches to the null backend from inside the Vulkan library; the registry needs the DX12 backend's shape to design well. |
+| renderer → rhi/vulkan | `engine/renderer/CMakeLists.txt` links `rhi_vulkan` | The renderer reaches `CreateDevice`, `EnumerateAdapters` and `DeviceHost` through it. Consequence: `shader_mint` (which links `renderer`) still links the display libraries (`KNOWN-ISSUES.md`). |
+
+The libraries follow the layers; each links only the ones below it (`docs/guide/building-and-testing.md`, "Libraries and layers"):
 
 ```
-game/*, tools/*  ->  renderer, rhi, rhi/null, jobs, foundation
-renderer         ->  rhi, jobs, foundation (incl. settings, math)
-rhi/vulkan       ->  rhi, jobs, foundation          (+ rhi/null: item 7)
-rhi/null         ->  rhi, foundation
-rhi              ->  foundation
-jobs             ->  foundation
+game/*, tools/*   ->  renderer, rhi, jobs, platform, foundation
+renderer          ->  rhi, jobs, foundation (incl. settings, math)           (+ rhi/vulkan: allow list)
+rhi/vulkan        ->  rhi, jobs, platform, foundation                        (+ rhi/null: allow list)
+rhi/null          ->  rhi, foundation
+rhi               ->  platform, foundation
+jobs              ->  foundation
+platform          ->  foundation_debug                                       (the only library linking Wayland, xkbcommon, X11)
+foundation        =   foundation_settings -> foundation_debug -> foundation_io -> foundation_base     (INTERFACE aggregate of the four)
 ```
 
-**Inside the foundation, nine parts form one cycle:** base, `mem`, `os`, `os/linux`, `log`, `containers`, `string`, `io` and `debug` all reach each other.
-`settings` and `math` sit outside the cycle (nothing in the foundation depends on them). The cycle is why `foundation` is a single static library
-(`engine/foundation/CMakeLists.txt`), why no part of it can be built, tested or ported alone, and why Phase 13's plan could not run a Windows test until
-the OS, file and debugging backends were all ported.
+`foundation_base` holds layers 0-5, `foundation_io` layer 6, `foundation_debug` layer 7 (the only library linking libbacktrace and sentry-native), `foundation_settings`
+layer 8; each has `_asan` and `_tsan` flavors. A test of a layer links that layer only, so an upward reference fails to link.
 
-Most edges in the cycle go downward by the table and are fine (`containers -> mem`, `debug -> io`, `mem -> os.h`). The cycle exists because of these
-upward edges (section 3 says how each is fixed):
+## 3. How the mismatches were fixed (Phase 12, Days 140-145)
 
-| # | Upward edge | Where | Why it is there |
-|---|---|---|---|
-| 1 | log (3) → debug (7) | `log/log.cpp` includes `debug/stack_trace.h`, `crash_report.h`, `crash_context.h`, `debugger.h` | The assert failure path captures a stack trace, writes the crash context and checks for a debugger. |
-| 2 | log (3) → io (6) | `log/log.cpp` includes `io/file.h` | `log::LoadConfig` reads a channel configuration file. |
-| 3 | io (6) → debug (7) | `io/file.cpp` includes `debug/crash_handler.h` | The I/O thread calls `debug::RegisterThreadForCrashHandling("io")`. |
-| 4 | OS primitives (1) → strings (4), memory (2) | `os/os.h` includes `string/string.h`, `mem/heap_allocator.h` | Paths are `StringView`s; `EnvironmentEntry` fills a `String<HeapAllocator>`. |
-| 5 | platform (9) code inside the foundation library | `os/linux/platform_window_host.cpp` includes `debug/crash_state.h` (fine by layer) but is compiled into `foundation` | Windows and input live in `foundation/os/`, so the window backends and their display libraries are part of every foundation consumer. |
-| 6 | program inside a library directory | `engine/foundation/main.cpp` (`engine_main`) includes `os/linux/platform_window_host.h` | The Phase 1 hello-window program lives beside the library sources. |
+The cycle measured on 2026-11-07 (nine foundation parts reaching each other through six upward includes, plus the three found by Day 140's re-measure) is gone.
+The numbers are the items of the original table; the plan is `plans/phase-12-module-layering.md`.
 
-Measured edges outside the cycle that break a rule:
-
-| # | Edge | Where | Rule broken |
-|---|---|---|---|
-| 7 | rhi/vulkan → rhi/null | `rhi/vulkan/create_device.cpp` includes `rhi/null/null_device.h` | Backends never depend on each other: `CreateDevice` dispatches to the null backend from inside the Vulkan library (no backend registry yet). |
-| 8 | renderer links rhi_vulkan | `engine/renderer/CMakeLists.txt` | The renderer may use only the neutral RHI; it links the Vulkan library to reach `CreateDevice`, `EnumerateAdapters` and `DeviceHost`. |
-| 9 | programs include `os/linux/` | `game/rhi_demo/main.cpp`, `game/renderer_demo/main.cpp` include `os/linux/platform_window_host.h` | Programs use neutral headers only; these do not compile on Windows. |
-| 10 | display libraries are PUBLIC on foundation | `target_link_libraries(foundation PUBLIC PkgConfig::WaylandClient ... X11Client)` | Every consumer, including `docgen` and `shader_mint`, links Wayland and X11. A consequence of item 5. |
-
-Found when the graph was re-measured on 2026-11-07 (Phase 12 Day 140; they keep the cycle connected even after items 1-4 are fixed):
-
-| # | Upward edge | Where | Why it is there |
-|---|---|---|---|
-| 11 | log (3) → strings (4) | `log/log.h` includes `string/string.h` | `Log` and `LogChannel::Find` take a `StringView`. |
-| 12 | containers (4) ↔ strings (4) | `containers/span.h` includes `string/string.h`, which includes `containers/vector.h` | A `Span` of chars converts to and from `StringView`. |
-| 13 | base (0) → strings (4) | `int128.h` includes `string/string.h` (`FromText(StringView)`) | Parsing text into a 128-bit integer. (`int128.cpp` includes only `log/assert.h`, which the gate maps to the base layer.) |
-
-Placement only (not a dependency problem): `algorithm.h` is in the foundation root but uses `Span` and the heap allocator, so it is layer 4;
-`int128.h`'s `FromText` takes a `StringView`, so either it moves to layer 4 or `FromText` moves to the string module.
-
-## 3. How each mismatch is fixed (scheduled: Phase 12, Module layering, Days 140-146)
-
-The day that does each item is in brackets; the plan is `plans/phase-12-module-layering.md`.
-
-1. **[Day 142] Assert failure report as a hook.** `log` keeps the assert macros and a minimal failure path (message to standard error, then abort). The debugging
-   module installs the full report (stack trace, crash context, debugger break) at start-up, through the existing handler slot (`SetAssertHandler`) or a
-   dedicated report hook. Asserts that fire before installation still print and abort. Removes item 1.
-2. **[Day 143] Log configuration above the file layer.** `log::LoadConfig`'s file reading moves out of `log` (Phase 11 made the log channels settings, so the file
-   form may be retired or moved into `settings`). Removes item 2.
-3. **[Day 142] Crash registration as a hook.** The job system and the I/O thread register threads through a thread-start hook the debugging module installs, not by
-   calling into `debug` from `io`. Removes item 3.
-4. **[Day 143] OS primitives below strings.** `os.h` takes paths as pointer and length (or a base-layer `StringView` moved to layer 0), and `EnvironmentEntry` writes into
-   a caller buffer. Removes item 4.
-5. **[Day 144] Windows and input become the platform layer.** `window.h`, `input.h`, `key_translate.cpp`, `PlatformWindowHost` and the display backends move to
-   `engine/platform/` (as `PLAN.md` always said) as their own library, which alone links Wayland, X11 or Win32. `PlatformWindowHost` gets a neutral header.
-   Removes items 5, 9 and 10.
-6. **[Day 143] `engine_main` moves** to `game/hello_window/` (or is retired if the demos cover it). Removes item 6.
-7. **[Phase 13 Day 162] The RHI backend registry**: backends register with the neutral `rhi`; the renderer and `DeviceHost` stop linking
-   `rhi_vulkan`, and `rhi/vulkan` stops including `rhi/null`. Removes items 7 and 8.
-8. **[Day 145, done] One library per layer** once the cycle was gone: `foundation_base` (layers 0-5), `foundation_io` (6), `foundation_debug` (7) and
-   `foundation_settings` (8), each linking only the ones below it, with `foundation` kept as the `INTERFACE` aggregate consumers link, and `platform` (9) beside them
-   (`docs/guide/building-and-testing.md`, "Libraries and layers"). A port can then build and test each layer as soon as its backend exists.
-9. **[Day 141, first] A gate keeps it this way:** a `module_deps_check` ctest computes the include graph, maps files to the modules of section 1 and fails on an upward edge, a
-   cycle or a program including `os/<platform>/`, with an allow list (a reason per entry, stale entries fail) that starts with the items above still open.
-10. **[Day 142-143] `StringView` becomes a base-layer type** (`string_view.h`, needs only `types.h`); `log.h`, `os.h`, `int128.h` and `span.h` include it instead of
-    `string/string.h`, and `int128.cpp` includes `log/assert.h` (base) instead of `log/log.h`. Removes items 11, 12 and 13 (with `os.h`'s part of item 4).
+1. **[Day 142, done] Assert failure report as a hook** (`log/diagnostics_hooks.h`: `FailureReportHooks`). `debug::InstallDiagnosticsHooks()` (called by
+   `InitDebugFacilities`) installs the stack trace, crash context and debugger check; with none installed an assert prints its message and aborts. Removed item 1.
+2. **[Day 143, done] `log::LoadConfig` retired**: Phase 11 made the log channels settings, so the file form had no caller. Removed item 2.
+3. **[Day 142, done] Crash registration as a hook** (`SetThreadStartHook` / `NotifyThreadStart`): `io` and `jobs` call it, `debug` installs it; a thread started
+   before installation is not registered later. Removed item 3.
+4. **[Day 143, done] OS primitives below strings**: `StringView` is a base-layer type (`string_view.h`), `os::EnvironmentEntry` fills a caller buffer, `os.h` no
+   longer includes `mem/heap_allocator.h`. Removed item 4 (and items 11-13 with `log.h`, `int128.h` and `span.h` including `string_view.h`).
+5. **[Day 144, done] Windows and input are the platform layer** in `engine/platform/` (`platform/window.h`, `input.h`, `window_host.h`; namespace still `os::`), library
+   `platform`, which alone links the display libraries; `PlatformWindowHost` has a neutral header. Removed items 5, 9 and 10 (except `shader_mint`, see above).
+6. **[Day 143, done] `engine_main` moved** to `game/hello_window/`. Removed item 6.
+7. **[Phase 13 Day 162] The RHI backend registry**: backends register with the neutral `rhi`; the renderer and `DeviceHost` stop linking `rhi_vulkan`, and `rhi/vulkan`
+   stops including `rhi/null`. Removes items 7 and 8 (the two allow-list entries).
+8. **[Day 145, done] One library per layer** (see section 2).
+9. **[Day 141, done] The gate** keeps it this way (section 6).
 
 ## 4. Platform-specific code
 

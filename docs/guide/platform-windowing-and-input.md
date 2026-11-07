@@ -16,7 +16,7 @@ Windows and input are the **platform layer** (layer 9): `engine/platform/`, the 
 
 - `engine/platform/window.h`
 - `input.h`
-- `linux/platform_window_host.h`
+- `window_host.h` (the neutral host) and `linux/window_host_linux.cpp`
 - `linux/wayland/*`
 - `linux/x11/*`
 - `linux/xkb_keyboard.h`

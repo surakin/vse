@@ -21,7 +21,7 @@ Two registrations through which the debugging module (layer 7) reaches code belo
 
 `debug::InstallDiagnosticsHooks` (called by `debug::InitDebugFacilities`) installs both. Until then the base behavior is complete on its own: a failed assert prints its message line and aborts, an ensure prints its line and continues, and a thread starts unregistered.
 
-Channel-based logging with per-channel verbosity, overridable from a config file.
+Channel-based logging with per-channel verbosity (the settings system overrides it, `log.<channel>.verbosity`).
 
 Needs no allocator; log lines and config parsing use fixed-size stack buffers.
 
@@ -655,7 +655,7 @@ Creates a channel, enabled, and adds it to the global registry.
 
 | Field | Value |
 |---|---|
-| Parameter `name` | channel name used in output and config files; must be a string that outlives the channel (typically a literal). |
+| Parameter `name` | channel name used in output and in the settings keys (`log.<name>.verbosity`); must be a string that outlives the channel (typically a literal). |
 | Parameter `default_verbosity` | initial threshold. |
 
 ### `Name()` {#logchannel-name-const}

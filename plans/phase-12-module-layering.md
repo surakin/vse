@@ -13,7 +13,7 @@ only one that links the display libraries; a test of a layer links only that lay
 a `module_deps_check` gate fails on any new upward edge or cycle; behavior is unchanged (every test, golden image and demo run as before); `ARCHITECTURE.md`
 section 2 shows the new graph; the full suite passes in every flavor.
 
-**Status: in progress (started 2026-11-07), Days 140-146; Day 140 done.** Day numbers continue from Phase 11 (which ended at Day 139). Day 140's spec confirms or amends
+**Status: complete (2026-11-07), Days 140-146.** Day numbers continue from Phase 11 (which ended at Day 139). Day 140's spec confirms or amends
 the decisions below.
 
 **Where it runs.** All of it is shared code and the build does not configure on Windows until Phase 13, so every day builds and tests on the **Linux

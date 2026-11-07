@@ -4,7 +4,7 @@
 #include "string_view.h"
 #include "types.h"
 
-//! Channel-based logging with per-channel verbosity, overridable from a config file.
+//! Channel-based logging with per-channel verbosity (the settings system overrides it, `log.<channel>.verbosity`).
 //!
 //! Needs no allocator; log lines and config parsing use fixed-size stack buffers.
 namespace engine_placeholder {
@@ -34,7 +34,7 @@ class LogChannel {
 public:
     /// Creates a channel, enabled, and adds it to the global registry.
     ///
-    /// Param name: channel name used in output and config files; must be a
+    /// Param name: channel name used in output and in the settings keys (`log.<name>.verbosity`); must be a
     ///   string that outlives the channel (typically a literal).
     /// Param default_verbosity: initial threshold.
     explicit LogChannel(const char* name, LogVerbosity default_verbosity = LogVerbosity::Warn);
@@ -136,6 +136,5 @@ extern LogChannel LogPlatform;
 /// Thread-safety: thread-compatible. Formatting uses a stack buffer, but the
 ///   channel state it reads is unsynchronized.
 void Log(LogChannel& channel, LogVerbosity level, StringView message);
-
 
 } // namespace engine_placeholder
