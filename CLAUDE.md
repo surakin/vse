@@ -33,6 +33,12 @@ sub-tasks (see "How the plan is structured" below), is not yet
 startable; doing that breakdown is itself planning work that has to
 happen, and be committed, first.
 
+## Build prerequisites are listed in BUILD.md (required)
+
+`BUILD.md` lists what each platform needs installed (required, for checks, optional), with the versions in use. **A change that adds, removes or
+re-versions a prerequisite updates `BUILD.md` in the same commit**: a new system library, tool, SDK, optional Windows feature or pinned tool version
+(such as `slangc`). A phase that ports a platform adds that platform's section before its first implementation day.
+
 ## Claude memory lives in the repo
 
 The auto-memory files are `claude-memory/` in this repo, so they move with

@@ -64,7 +64,7 @@ machine must stay green.
       asan and tsan flavors; quote the lines.
 - [ ] **End-of-day review:** `/code-review high`. Extra scrutiny: macros that silently change meaning between compilers (`ENGINE_ASSUME`, the bit-scan
       helpers' behavior at zero, `long` widths), and the manifest being on every executable.
-- [ ] Update `STATUS.md` (build commands for both platforms) and `KNOWN-ISSUES.md` (the remaining Windows link failures until Day 142); commit and push.
+- [ ] Update `BUILD.md` (the Windows status line: the tree configures; the override variables as implemented), `STATUS.md` (build commands for both platforms) and `KNOWN-ISSUES.md` (the remaining Windows link failures until Day 142); commit and push.
 
 **Done:** the tree configures with MSVC and `clang-cl` from a plain shell (the toolchain files find Visual Studio, the Windows SDK and clang-cl themselves,
 proven by the stripped-environment test), the platform-free foundation compiles on Windows in both unity modes, the `windows.h` wrapper and its

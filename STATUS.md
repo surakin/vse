@@ -10,6 +10,9 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
 
 ## Build and test commands
 
+What to install first, per platform: `BUILD.md`.
+
+
 - Configure and build: `cmake -S . -B build && cmake --build build`. Our own targets build as unity (merged) translation
   units by default; `-DENGINE_UNITY_BUILD=OFF` compiles every source on its own (both must keep building; CLAUDE.md, "Unity builds").
 - **Current phase** (the phase in `CURRENT_PHASE`, plain flavor): `scripts/test-phase.sh`. **Plus the modules a change

@@ -14,7 +14,7 @@ Finish the documentation, run everything on both machines, review the whole phas
       `platform-windowing-and-input.md`, `io.md`, `settings.md`, `jobs.md`, `foundation-debugging.md`, `porting-debugging.md`, `rhi.md`, `rhi-shaders.md`,
       `renderer.md`, `render-settings.md`; every tagged sample compiles and runs on both machines; `docs/reference/modules.txt` covers every new public header;
       `docgen lint` zero; reference regenerated (identical on both machines) and committed.
-- [ ] **Project documents:** `CLAUDE.md` (Windows build and test commands; the Windows directories rule; flavors per platform; the two-machine rule if it stays
+- [ ] **Project documents:** `BUILD.md` (Windows section marked supported, every version checked on the PC, the Linux table checked on the Linux machine); `CLAUDE.md` (Windows build and test commands; the Windows directories rule; flavors per platform; the two-machine rule if it stays
       for later phases; the DbgHelp exception to the debugging-library rule; `windows.h` only through `win32.h`); `PLAN.md` (assumption #7 gains Windows x64; #2
       states the UCRT; #18 states DXIL minting; #20 the DbgHelp resolver; roadmap row; progress-log entry); `shaders/README.md` current.
 - [ ] **Known-issues sweep:** every Phase 12 deferral filed (enhanced barriers, placed resources, HDR10, exclusive fullscreen, IME composition, ARM64, fast-fail

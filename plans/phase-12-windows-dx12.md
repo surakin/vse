@@ -108,6 +108,9 @@ run-time GPU switch is tested against on Windows.
 
 ## Prerequisites the developer installs (Day 140 checks each and records the version)
 
+The full per-platform list, with install commands, is [`BUILD.md`](../BUILD.md) (added 2026-11-07); the items below are the ones that were missing on the
+Windows PC when the phase was planned. Every day that changes a prerequisite updates `BUILD.md`.
+
 - The **Graphics Tools** optional Windows feature (the D3D12 debug layer, `d3d12SDKLayers.dll`; not installed on 2026-11-07).
 - The **Vulkan SDK** for Windows (validation layers; the loader `vulkan-1.dll` already ships with the driver).
 - **`slangc`** v2026.18.2 for Windows (the version the Linux machine uses, so minted outputs match byte for byte).
