@@ -793,7 +793,7 @@ crash tests: included)`; only the two known Wayland `renderer_demo` tests fail.
 second Vulkan instance while the device is live, and destroying it clears driver state the live swapchain needs (NVIDIA 615.78.08 on Wayland: `vkAcquireNextImageKHR` calls a null function).
 `Device::ListAdapters` returns the list the device already holds; the renderer and the demo's F3 use it. On Linux CMake now picks `clang++` when it is installed and GCC otherwise, and GCC
 builds clean (seven `-Wformat-truncation` sites, one `-Wsubobject-linkage`, one missing include). Run: `ran 1540 of 3515 tests (phases: all; flavors: plain; display: included; crash tests: included) in 56 s`,
-no failures; Clang and GCC build clean in unity and non-unity. Not run: asan and tsan.
+no failures; Clang and GCC build clean in unity and non-unity. asan `ran 1129 of 3515 tests (phases: all; flavors: asan; display: included; crash tests: included) in 41 s`, tsan `ran 846 of 3515 tests (phases: all; flavors: tsan; display: included; crash tests: included) in 10 s`, no failures.
 
 **Windows under warnings as errors (2026-11-07).** The three Windows builds compile clean with `/W4 /WX` (cl, unity and non-unity) and clang-cl's
 `-Wall -Wextra` equivalent: five warnings fixed (a `[[gnu::noinline]]` cl does not know, code after `SKIP` and after a fault that does not return, two
