@@ -83,6 +83,13 @@ endforeach()
 add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX>:/Zi;/FS>")  # (not for rc.exe)
 add_link_options(/DEBUG:FULL)
 
+# The subsystem is chosen in source, never per target in a build file (Phase 13 Day 158, platform/entry_point.h). CMake passes
+# /subsystem:console to every executable, which tests and tools keep; ENGINE_WINDOWED_PROGRAM's expansion carries a
+# `#pragma comment(linker, "/SUBSYSTEM:WINDOWS")` beside its wWinMain, and that directive wins over the command line in link.exe and in
+# lld-link (measured: the programs' PE headers say 2; tests/windows checks it). Clearing CMake's flag instead, so the linkers would infer
+# the subsystem from the entry point, fails for the tests: their `main` is in Catch2's library, and with no /SUBSYSTEM the linker stops
+# with LNK1561 (no entry point) before it searches libraries.
+
 # Every executable carries cmake/engine.manifest (UTF-8 active code page, long paths, per-monitor-v2 DPI, supported OS versions).
 # CMake merges a target's .manifest sources into the program with the mt.exe the toolchain file found (CMAKE_MT); a linker
 # /MANIFEST:EMBED flag would make link.exe look for mt.exe on PATH instead, which a plain shell does not have. So at the end of

@@ -5,6 +5,7 @@
 #   windows_header_check     every foundation header, then os/windows/win32.h, then uses of the clashing names: compiles
 #   windows_header_planted   the same with a bare <windows.h>: must fail, naming the renamed LoadLibrary (the wrapper is what prevents it)
 #   windows_manifest         an engine-built executable runs with the manifest's UTF-8 code page and per-monitor-v2 DPI awareness
+#   windows_platform_tests   the Win32 window (Day 158) and ENGINE_WINDOWED_PROGRAM (subsystem, arguments, output), with windows_windowed_probe
 
 # --- The header check: generated from the real list of foundation headers, so a new header is covered without an edit here -------
 file(GLOB_RECURSE _foundation_headers RELATIVE "${CMAKE_SOURCE_DIR}/engine/foundation" CONFIGURE_DEPENDS
@@ -71,6 +72,30 @@ endfunction()
 engine_add_windows_os_tests(windows_os_tests foundation_base "" "windows")
 if(ENGINE_HAVE_ASAN)
   engine_add_windows_os_tests(windows_os_tests_asan foundation_base_asan " [asan]" "asan")
+endif()
+
+# --- The Win32 window and the windowed programs' entry point (Day 158): Catch2 tests plus a GUI program they start ------------------------
+add_executable(windows_windowed_probe windowed_probe.cpp)
+target_link_libraries(windows_windowed_probe PRIVATE platform)
+target_compile_options(windows_windowed_probe PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
+function(engine_add_windows_platform_tests target platform_lib suffix label)
+  add_executable(${target} win32_window_windows_test.cpp)
+  target_link_libraries(${target} PRIVATE ${platform_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_include_directories(${target} PRIVATE "${CMAKE_SOURCE_DIR}/tests/support")
+  target_compile_definitions(${target} PRIVATE "WINDOWED_PROBE_PATH=L\"$<TARGET_FILE:windows_windowed_probe>\""
+                             "WINDOWED_PROBE_PATH_UTF8=\"$<TARGET_FILE:windows_windowed_probe>\"")
+  add_dependencies(${target} windows_windowed_probe)
+  if(label STREQUAL "asan")
+    engine_asan_runtime(${target})
+  endif()
+  # The window cases share the desktop with the other window tests (the `display` resource, as in tests/foundation).
+  engine_discover_tests(${target} TEST_SPEC "~[window]" TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}" TIMEOUT 60)
+  engine_discover_tests(${target} TEST_SPEC "[window]" TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label};display" RESOURCE_LOCK display
+                        TIMEOUT 60)
+endfunction()
+engine_add_windows_platform_tests(windows_platform_tests platform "" "windows")
+if(ENGINE_HAVE_ASAN)
+  engine_add_windows_platform_tests(windows_platform_tests_asan platform_asan " [asan]" "asan")
 endif()
 
 # --- Toolchain discovery from a stripped environment -----------------------------------------------------------------------

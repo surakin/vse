@@ -10,19 +10,27 @@ using engine_placeholder::u8;
 using engine_placeholder::usize;
 namespace io = engine_placeholder::io;
 
-TEST_CASE("io::ReadFile reads /proc/self/exe and finds the ELF magic number", "[file_io][io]") {
+// The running test program, read through its path: ELF on Linux, a PE image (`MZ`) on Windows (Phase 13 Day 158).
+TEST_CASE("io::ReadFile reads the running program and finds its executable magic number", "[file_io][io]") {
     ArenaAllocator arena(128 * 1024 * 1024); // the running test binary (Catch2 statically linked) is well into the tens of MB
     usize size = 0;
     u8* buffer = nullptr;
-    const io::Status status = io::ReadFile(io::Path("/proc/self/exe"), arena, &buffer, &size);
+    io::Path self;
+    REQUIRE(io::ExecutablePath(&self).Ok());
+    const io::Status status = io::ReadFile(self, arena, &buffer, &size);
 
     REQUIRE(status.Ok());
     REQUIRE(buffer != nullptr);
     REQUIRE(size >= 4);
+#if defined(_WIN32)
+    REQUIRE(buffer[0] == 'M');
+    REQUIRE(buffer[1] == 'Z');
+#else
     REQUIRE(buffer[0] == 0x7F);
     REQUIRE(buffer[1] == 'E');
     REQUIRE(buffer[2] == 'L');
     REQUIRE(buffer[3] == 'F');
+#endif
 }
 
 TEST_CASE("io::ReadFile reports NotFound for a nonexistent file", "[file_io][io]") {

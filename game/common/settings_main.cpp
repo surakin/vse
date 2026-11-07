@@ -79,8 +79,8 @@ DemoSettings::Effective DemoSettings::ReadEffective() {
     for (usize i = 0; i < n; ++i) e.gpu[i] = adapter[i];
     e.immediate = snapshot.Get(id("renderer.present_mode")).AsEnum() == 2;
     e.validation = snapshot.Get(id("renderer.validation")).AsEnum() == 2;
-    static const char* const kBackends[] = {"auto", "wayland", "x11"};
-    std::snprintf(e.window_backend, sizeof(e.window_backend), "%s", kBackends[snapshot.Get(id("platform.window_backend")).AsEnum() % 3]);
+    static const char* const kBackends[] = {"auto", "wayland", "x11", "win32"};
+    std::snprintf(e.window_backend, sizeof(e.window_backend), "%s", kBackends[snapshot.Get(id("platform.window_backend")).AsEnum() % 4]);
     return e;
 }
 

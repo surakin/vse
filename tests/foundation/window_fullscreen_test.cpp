@@ -3,10 +3,15 @@
 #include "display_session.h"
 
 #include "platform/input.h"
-#include "platform/linux/wayland/wayland_platform_window.h"
-#include "platform/linux/x11/x11_window.h"
 #include "os/os.h"
 #include "platform/window.h"
+
+#if defined(_WIN32)
+#include "platform/windows/win32_window.h"
+#else
+#include "platform/linux/wayland/wayland_platform_window.h"
+#include "platform/linux/x11/x11_window.h"
+#endif
 
 using namespace engine_placeholder;
 
@@ -38,6 +43,28 @@ void ToggleFullscreen(os::Window& window) {
 
 } // namespace
 
+#if defined(_WIN32)
+
+// Phase 13 Day 158: borderless over the window's monitor (platform/windows/FULLSCREEN.md), and back to the size it had.
+TEST_CASE("A Win32 window toggles fullscreen", "[window][fullscreen]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    os::InputState input;
+    os::win32::Win32Window window;
+    REQUIRE(window.Open("fullscreen test", 320, 240, &input));
+    ToggleFullscreen(window);
+    CHECK(window.Width() == 320); // the placement it had is given back
+    CHECK(window.Height() == 240);
+}
+
+TEST_CASE("The default Window reports fullscreen unsupported", "[window][fullscreen]") {
+    os::win32::Win32Window invalid; // a window that is not open supports nothing
+    CHECK_FALSE(invalid.SupportsFullscreen());
+    CHECK_FALSE(invalid.SetFullscreen(true));
+    CHECK_FALSE(invalid.IsFullscreen());
+}
+
+#else
+
 TEST_CASE("An X11 window toggles fullscreen", "[x11][window][fullscreen]") {
     SKIP_IF_NO_DISPLAY_SESSION();
     os::x11::X11Window window = os::x11::X11Window::Create("fullscreen test", 320, 240);
@@ -63,3 +90,5 @@ TEST_CASE("The default Window reports fullscreen unsupported", "[window][fullscr
     CHECK_FALSE(invalid.SetFullscreen(true));
     CHECK_FALSE(invalid.IsFullscreen());
 }
+
+#endif

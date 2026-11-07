@@ -8,7 +8,7 @@ namespace engine_placeholder::settings {
 
 namespace {
 
-const char* const kWindowBackends[] = {"auto", "wayland", "x11"};
+const char* const kWindowBackends[] = {"auto", "wayland", "x11", "win32"};
 const char* const kVerbosities[] = {"error", "warn", "info", "debug", "trace"};
 
 struct LogKeys {
@@ -50,11 +50,11 @@ void OnLogChange(void*, const ChangeEvent& event) {
 }  // namespace
 
 void RegisterEngineSettings(Registry* registry) {
-    SettingDesc d = MakeEnum("platform.window_backend", kWindowBackends, 3, 0);
+    SettingDesc d = MakeEnum("platform.window_backend", kWindowBackends, 4, 0);
     d.env = "ENGINE_WINDOW_BACKEND";
     d.flag = "backend";
     d.label = "Window backend";
-    d.description = "the display backend on Linux: wayland or x11 (auto picks Wayland, then X11)";
+    d.description = "the display backend: wayland or x11 on Linux, win32 on Windows (auto picks Wayland, then X11, on Linux)";
     d.group = "platform";
     d.flags = kRestartRequired;
     registry->Register(d);

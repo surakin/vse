@@ -14,7 +14,7 @@ log.logrender.enabled                true           default true         from de
 log.logrender.verbosity              warn           default warn         from defaults                           how much the channel logs: error, warn, info, debug or trace
 log.logrhi.enabled                   true           default true         from defaults                           whether the channel logs at all
 log.logrhi.verbosity                 info           default info         from defaults                           how much the channel logs: error, warn, info, debug or trace
-platform.window_backend              auto           default auto         from defaults                           the display backend on Linux: wayland or x11 (auto picks Wayland, then X11)
+platform.window_backend              auto           default auto         from defaults                           the display backend: wayland or x11 on Linux, win32 on Windows (auto picks Wayland, then X11, on Linux)
 renderer.adapter                     ""             default ""           from defaults                           the GPU: an id from --list-gpus, an index, or part of the name (empty: the best one)
 renderer.backend                     vulkan         default vulkan       from defaults                           the graphics backend: null (no GPU) or vulkan
 renderer.frames_in_flight            2              default 2            from defaults                           frames the CPU may record ahead of the GPU (1 to 3)

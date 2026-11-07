@@ -33,16 +33,21 @@ set(FOUNDATION_BASE_TEST_SOURCES
 
 find_package(Threads REQUIRED)
 
-# The tests that need the file layer or the platform (windows, input, the display servers) link both.
+# The tests that need the file layer or the platform (windows, input, the display servers) link both. The Wayland, X11 and keyboard
+# tests are Linux's; the backend plan and the fullscreen toggle run on Windows too (Phase 13 Day 158; the Win32 cases are in tests/windows).
 set(FOUNDATION_PLATFORM_TEST_SOURCES
   file_io_test.cpp
-  wayland_connection_test.cpp
-  wayland_window_test.cpp
-  keyboard_input_test.cpp
-  x11_window_test.cpp
   window_backend_test.cpp
   window_fullscreen_test.cpp
 )
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  list(APPEND FOUNDATION_PLATFORM_TEST_SOURCES
+    wayland_connection_test.cpp
+    wayland_window_test.cpp
+    keyboard_input_test.cpp
+    x11_window_test.cpp
+  )
+endif()
 
 add_executable(foundation_base_tests ${FOUNDATION_BASE_TEST_SOURCES})
 target_link_libraries(foundation_base_tests PRIVATE foundation_base Catch2::Catch2WithMain Threads::Threads)

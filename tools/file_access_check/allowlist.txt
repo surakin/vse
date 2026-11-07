@@ -17,4 +17,5 @@ tests/jobs/async_io_test.cpp|E4: builds FIFOs and non-blocking descriptors to te
 tests/docgen/reference_test.cpp|E4: builds link loops, an unreadable directory and a read-only output directory, shapes the file layer's own helpers cannot create.
 tests/docgen/samples_test.cpp|E4: a symbolic link to a program and the working directory, to test how the sample runner finds its compiler.
 tests/rhi/vulkan_pipeline_test.cpp|E4: truncates and re-permissions cache files to test that the pipeline cache survives damage.
+engine/platform/windows/entry_point_windows.cpp|E3: a GUI program started from a terminal opens the console it attached to (CONOUT$, CreateFileW) for its standard output and error; it is a device, not a path.
 tests/windows/os_windows_test.cpp|E4: tests the Windows descriptor primitives themselves on an ordinary file, which it names with GetTempPathA and removes with DeleteFileA.

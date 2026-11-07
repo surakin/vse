@@ -4,7 +4,7 @@
 #include "string/string.h"
 #include "types.h"
 
-//! Platform-neutral window interface implemented by each display backend (Wayland, X11).
+//! Platform-neutral window interface implemented by each display backend (Wayland and X11 on Linux, Win32 on Windows).
 //!
 //! The interface is polled: pump events, then read size, close request and the bound `InputState`.
 
@@ -15,7 +15,7 @@ enum class NativeWindowKind : u8 {
     Invalid = 0, ///< No native window (an invalid or closed window); named to avoid the X11 `None` macro.
     Wayland,  ///< A Wayland surface: `display` is a `wl_display*`, `surface` is a `wl_surface*`.
     Xlib,     ///< An X11 window: `display` is a `Display*`, `window_id` is the `Window` (XID).
-    Win32,    ///< Reserved for the Windows port: `display` is the `HINSTANCE`, `surface` the `HWND`.
+    Win32,    ///< A Win32 window: `display` is the `HINSTANCE` of the module that registered the window class, `surface` the `HWND`.
     Cocoa,    ///< Reserved for the macOS port: `surface` is the `NSView*` (or `CAMetalLayer*`).
     Android,  ///< Reserved for the Android port: `surface` is the `ANativeWindow*`.
 };
@@ -64,7 +64,7 @@ public:
     /// Returns the current window height in pixels.
     virtual u32 Height() const = 0;
 
-    /// Returns the stable lowercase backend id (`"wayland"`, `"x11"`), for logs and tests.
+    /// Returns the stable lowercase backend id (`"wayland"`, `"x11"`, `"win32"`), for logs and tests.
     /// Ownership: the string is static and is never freed by the caller.
     virtual const char* BackendName() const = 0;
 
@@ -78,8 +78,8 @@ public:
     ///
     /// A window that is invalid, closed or has lost its connection counts, as does one with zero width or
     /// height. X11 also reports a window the window manager has unmapped or iconified (which includes a window
-    /// on a hidden desktop). Wayland has no client-visible minimized or occluded state, so there only the
-    /// first two cases apply.
+    /// on a hidden desktop), and Win32 a minimized window. Wayland has no client-visible minimized or occluded
+    /// state, so there only the first two cases apply.
     virtual bool IsMinimized() const = 0;
 
     /// Returns a counter that changes every time the window size changes, so a swapchain can cheaply tell that it is stale.
@@ -110,6 +110,20 @@ public:
 
     /// Returns whether the window is fullscreen as far as the last `PumpEvents` could tell.
     virtual bool IsFullscreen() const { return false; }
+
+    /// A function a window calls while the platform holds the thread in a loop of its own, from which `PumpEvents` cannot return.
+    using ModalLoopCallback = void (*)(void* user);
+
+    /// Sets the function to call during the platform's own loops, so a program can keep drawing: on Windows, while the user moves or
+    /// resizes the window by its frame (or has its system menu open), about every 10 ms; on Linux there is no such loop and it is never called.
+    ///
+    /// The default ignores it. A program renders a frame from the callback and reads the window's size there as usual.
+    /// Param callback: the function, or null to stop; it must not close or destroy the window.
+    /// Param user: passed to `callback`.
+    virtual void SetModalLoopCallback(ModalLoopCallback callback, void* user) {
+        (void)callback;
+        (void)user;
+    }
 };
 
 namespace detail {
@@ -119,13 +133,14 @@ u64 NextResizeSerial();
 
 /// Selects which display backend to use for a window.
 enum class WindowBackend : u8 {
-    Auto = 0, ///< Choose from the environment, Wayland first.
-    Wayland,  ///< Force the Wayland backend.
-    X11,      ///< Force the X11 backend.
+    Auto = 0, ///< The platform's choice: on Linux from the environment, Wayland first; on Windows, Win32.
+    Wayland,  ///< Force the Wayland backend (Linux).
+    X11,      ///< Force the X11 backend (Linux).
+    Win32,    ///< Force the Win32 backend (Windows).
     Invalid,  ///< Unrecognized name, or an empty candidate slot.
 };
 
-/// Parses `"auto"`, `"wayland"` or `"x11"` into a [[os::WindowBackend]].
+/// Parses `"auto"`, `"wayland"`, `"x11"` or `"win32"` into a [[os::WindowBackend]], on every platform (the plan says what the platform has).
 ///
 /// Anything else, including an empty string, yields `WindowBackend::Invalid`, so callers can tell an
 /// unrecognized name from `"auto"`.
@@ -140,17 +155,26 @@ struct BackendPlan {
     WindowBackend candidates[2] = {WindowBackend::Invalid, WindowBackend::Invalid};
     /// Number of valid entries in `candidates`.
     usize count = 0;
+    /// Why the plan is empty when a backend was asked for by name that the platform does not have (`"wayland is a Linux backend"`); null
+    /// otherwise. Ownership: a static string.
+    const char* refusal = nullptr;
 };
 
-/// Builds the ordered list of backends to try for the requested backend and environment.
+/// Builds the ordered list of backends to try on Linux for the requested backend and environment.
 ///
 /// With `Auto`, Wayland comes first when its environment is set, then X11 when its environment is set, so a
 /// Wayland failure falls through to X11. A forced backend yields exactly that one candidate regardless
-/// of the environment, with no fallback. `Invalid` yields an empty plan.
+/// of the environment, with no fallback. `Win32` and `Invalid` yield an empty plan (`Win32` with its `refusal`).
 /// Param requested: the backend asked for.
 /// Param wayland_env_set: whether `$WAYLAND_DISPLAY` is set.
 /// Param x11_env_set: whether `$DISPLAY` is set.
 /// Returns: the plan; `count` is 0 when no backend is eligible.
 BackendPlan PlanWindowBackends(WindowBackend requested, bool wayland_env_set, bool x11_env_set);
+
+/// Builds the list of backends to try on Windows: `Auto` and `Win32` yield Win32, `Wayland` and `X11` an empty plan with its `refusal`.
+///
+/// Param requested: the backend asked for.
+/// Returns: the plan; `count` is 0 when no backend is eligible.
+BackendPlan PlanWin32WindowBackends(WindowBackend requested);
 
 } // namespace engine_placeholder::os

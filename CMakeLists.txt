@@ -116,7 +116,8 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
   set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
   add_subdirectory(engine/foundation)
-  add_subdirectory(tests/foundation)  # foundation_base_tests only, until the platform library exists
+  add_subdirectory(engine/platform)  # Day 158: the Win32 window and the windowed programs' entry point (input: Day 159)
+  add_subdirectory(tests/foundation)  # foundation_base_tests, and from Day 158 the file-layer and window tests (foundation_tests)
   add_subdirectory(tests/types)
   add_subdirectory(tests/foundation_sanitized)
   add_subdirectory(tests/windows)
@@ -128,6 +129,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tools/docgen)  # Day 157: the reference and the documentation checks (the samples from Day 161)
   add_subdirectory(tests/debug)  # the debugging facilities, Days 154-156
   add_subdirectory(tests/settings)  # the settings layer and the registry store, Day 157
+  add_subdirectory(game/hello_window)  # Day 158: the first windowed program (the demos: Day 161)
   # The source gates are CMake scripts over the tree, the same on every platform (Day 150).
   foreach(gate rhi_boundary_check raw_new_check file_access_check std_container_check settings_fixtures_check config_access_check
                signal_safety_check platform_neutral_check module_deps_check)
@@ -135,9 +137,9 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   endforeach()
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
-  message(STATUS "Windows (Phase 13): building foundation_base, its tests (tests/foundation's base files, tests/types, tests/foundation_sanitized) and tests/windows. Not yet ported, so not configured: the file layer "
-                 "(Days 151-152), jobs (153), debugging and sentry-native (154-156; libbacktrace is Linux-only), settings (157), platform (158-159), "
-                 "RHI and renderer (160-172), tools, game and the other tests (as their layers arrive). See plans/phase-13-windows-dx12.md.")
+  message(STATUS "Windows (Phase 13): building the foundation, jobs, the platform layer (windows; input from Day 159), hello_window, docgen, "
+                 "crash_extract, the gates and their tests. Not yet ported, so not configured: the RHI and the renderer (Days 160-172), the demos "
+                 "(161) and shader_mint (163). See plans/phase-13-windows-dx12.md.")
   return()
 endif()
 

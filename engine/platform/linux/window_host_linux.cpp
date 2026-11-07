@@ -45,7 +45,14 @@ bool PlatformWindowHost::Open(WindowBackend requested, StringView title, u32 wid
     impl_ = MakeUnique<Impl>();
     BackendPlan plan = PlanWindowBackends(requested, EnvSet("WAYLAND_DISPLAY"), EnvSet("DISPLAY"));
     if (plan.count == 0) {
-        Log(LogPlatform, LogVerbosity::Error, "Window: no usable backend (WAYLAND_DISPLAY/DISPLAY unset?)");
+        if (plan.refusal != nullptr) {
+            ArenaAllocator scratch(128);
+            StringBuilder<ArenaAllocator> line(scratch);
+            line.Append("Window: no usable backend (").Append(plan.refusal).Append(')');
+            Log(LogPlatform, LogVerbosity::Error, line.View());
+        } else {
+            Log(LogPlatform, LogVerbosity::Error, "Window: no usable backend (WAYLAND_DISPLAY/DISPLAY unset?)");
+        }
         return false;
     }
     for (usize i = 0; i < plan.count; ++i) {

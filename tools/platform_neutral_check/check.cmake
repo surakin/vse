@@ -21,6 +21,8 @@
 #   engine/rhi/dx12/d3d12_api.h alone (Day 164), and any other SDK header only after win32.h in the same file. tests/windows/discovery/
 #   is exempt: its programs probe the toolchain and are built outside the engine. Anywhere under engine/, game/, tools/ and tests/
 #   except fixtures; comments are ignored.
+# Rule 5 (Phase 13 Day 158): a windowed program under game/ (a file including platform/window_host.h or platform/window.h) defines no
+#   main, wmain, WinMain or wWinMain; it writes ENGINE_WINDOWED_PROGRAM (platform/entry_point.h). The demos are listed until Day 161.
 cmake_minimum_required(VERSION 3.20)
 
 if(NOT ROOT OR NOT BOUNDARY)
@@ -234,6 +236,47 @@ foreach(f IN LISTS all_files)
       gate_problem("${f}:${n}: ${why}: ${l}")
     endif()
   endforeach()
+endforeach()
+
+# --- Rule 5 ------------------------------------------------------------------------------------------------------------
+# A windowed program under game/ (a file that includes platform/window_host.h or platform/window.h) defines no main, wmain, WinMain or
+# wWinMain of its own: it writes ENGINE_WINDOWED_PROGRAM (platform/entry_point.h), which makes it a GUI program on Windows. The demos
+# move to the macro on Day 161, when they reach Windows; until then they are listed here, and an entry whose file no longer defines
+# an entry point is stale and fails.
+set(windowed_main_until_day161 "game/rhi_demo/main.cpp" "game/renderer_demo/main.cpp")
+set(entry_def_re "^[ \t]*(extern[ \t]+\"C\"[ \t]+)?int[ \t]+(__stdcall[ \t]+|WINAPI[ \t]+)?(main|wmain|WinMain|wWinMain)[ \t]*\\(")
+set(window_include_re "^[ \t]*#[ \t]*include[ \t]*\"platform/(window_host|window)\\.h\"")
+foreach(f IN LISTS all_files)
+  if(f MATCHES "(^|/)fixtures/" OR NOT f MATCHES "^game/")
+    continue()
+  endif()
+  read_lines("${ROOT}/${f}" lines)
+  set(n 0)
+  set(in_block FALSE)
+  set(windowed FALSE)
+  set(entry_lines "")
+  foreach(l IN LISTS lines)
+    math(EXPR n "${n}+1")
+    strip_comments()
+    if(code MATCHES "${window_include_re}")
+      set(windowed TRUE)
+    endif()
+    if(code MATCHES "${entry_def_re}")
+      list(APPEND entry_lines "${n}")
+    endif()
+  endforeach()
+  list(FIND windowed_main_until_day161 "${f}" waiting)
+  if(waiting GREATER_EQUAL 0)
+    if(entry_lines STREQUAL "")
+      gate_problem("${f}: listed in check.cmake's windowed_main_until_day161 but defines no main of its own; remove the entry")
+    endif()
+    continue()
+  endif()
+  if(windowed)
+    foreach(n IN LISTS entry_lines)
+      gate_problem("${f}:${n}: a windowed program defines its own entry point; write ENGINE_WINDOWED_PROGRAM(EngineMain) (platform/entry_point.h)")
+    endforeach()
+  endif()
 endforeach()
 
 if(errors GREATER 0)

@@ -805,3 +805,15 @@ whose parent id was reused (fixed, with a test). Runs: `ran 545 of 1125 tests (p
 asan `ran 318 of 1125`; MSVC 1125 of 1125, `windows-clang-cl` 708 of 708, non-unity 1125 of 1125; docs 3 of 3. Review: 8 findings, 5 fixed, 3 declined.
 Not done: the demos' `--settings` round trip on Windows (Day 161, with the demos). Linux: pending until the phase close. **Next: Day 158 (the Win32
 window).**
+
+Phase 13 **Day 158 (2026-11-07, Windows PC): the Win32 window.** `os::win32::Win32Window` (`platform/windows/win32_window.h`) opens a top-level
+window with the exact client size at its DPI (per-monitor-v2), reports size, minimize, close and DPI changes, hands its `HWND` and `HINSTANCE` to
+graphics code, toggles borderless fullscreen, and calls `os::Window::SetModalLoopCallback`'s function during Windows' drag and menu loops so a
+program can keep drawing. `PlatformWindowHost` on Windows opens it (`WindowBackend::Win32`; Wayland and X11 are refused with the reason).
+Windowed programs write `ENGINE_WINDOWED_PROGRAM(EngineMain)` (`platform/entry_point.h`): `main` on Linux, `wWinMain` on Windows with a linker
+directive for the GUI subsystem (clearing CMake's console flag instead breaks every test link); UTF-8 arguments, output to inherited handles or
+the parent's console. `hello_window` uses it; `platform_neutral_check` rule 5 keeps windowed programs under `game/` off `main` (the demos are
+listed until Day 161). Runs: `ran 573 of 1168 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 333 of
+1168`; MSVC, `windows-clang-cl` and non-unity full runs pass except a stale `docs_check`, then regenerated: docs 3 of 3 in all three, lint
+4099/4099. Review: 7 findings, 3 fixed, 4 declined. Not done: the human check from Explorer (filed). Linux: pending until the phase close.
+**Next: Day 159 (input on Windows).**

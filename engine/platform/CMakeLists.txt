@@ -3,16 +3,17 @@
 # Headers are included as "platform/<name>.h", rooted at engine/ (the foundation's own headers come from engine/foundation).
 set(PLATFORM_SOURCES
   window.cpp
-  key_translate.cpp
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND PLATFORM_SOURCES
+    key_translate.cpp  # X11 keysyms (xkbcommon's header) to Key, shared by both Linux backends; Windows translates virtual keys (Day 159)
     linux/xkb_keyboard.cpp
     linux/wayland/wayland_input.cpp
     linux/x11/x11_window.cpp
     linux/wayland/wayland_platform_window.cpp
     linux/window_host_linux.cpp
+    linux/entry_point_linux.cpp
     linux/wayland/wayland_connection.cpp
     linux/wayland/wayland_window.cpp
     linux/wayland/generated/xdg-shell-protocol.c
@@ -31,7 +32,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   pkg_check_modules(X11Client REQUIRED IMPORTED_TARGET x11)
   set(PLATFORM_DISPLAY_LIBS PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  message(FATAL_ERROR "Windows is implemented in Phase 13 (the window backend: platform/windows/FULLSCREEN.md)")
+  # Phase 13 Day 158: the Win32 window and the windowed programs' entry point (input on Day 159). user32 holds the window functions,
+  # shell32 CommandLineToArgvW.
+  list(APPEND PLATFORM_SOURCES
+    windows/win32_window.cpp
+    windows/window_host_windows.cpp
+    windows/entry_point_windows.cpp
+  )
+  set(PLATFORM_DISPLAY_LIBS user32 shell32)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   message(FATAL_ERROR "macOS is implemented in Phase 14 (the window backend: platform/macos/FULLSCREEN.md)")
 else()
@@ -47,5 +55,9 @@ function(engine_add_platform_lib suffix foundation_lib)
 endfunction()
 
 engine_add_platform_lib("" foundation_debug)
-engine_add_platform_lib("_asan" foundation_debug_asan)
-engine_add_platform_lib("_tsan" foundation_debug_tsan)
+if(ENGINE_HAVE_ASAN)
+  engine_add_platform_lib("_asan" foundation_debug_asan)
+endif()
+if(ENGINE_HAVE_TSAN)
+  engine_add_platform_lib("_tsan" foundation_debug_tsan)
+endif()

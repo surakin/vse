@@ -164,6 +164,21 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   (`settings/linux/policy_layers.cpp` is new and has never been compiled), `EnvironmentSnapshot`'s case rule and `os::EnvironmentNamesIgnoreCase` (its Linux
   definition in `os/linux/os.cpp` is new), the layer-precedence test over seven roles, the guarded POSIX parts of `docgen samples`, and the `config_access_check`
   registry rule. The reference was regenerated on Windows (byte-identical to Linux's for the committed tree before the day).
+- Phase 13 Day 158 (2026-11-07), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 158 file, "For the
+  Linux run") were built and tested only on Windows: `window.h` (`WindowBackend::Win32`, `BackendPlan::refusal`, `PlanWin32WindowBackends`,
+  `Window::SetModalLoopCallback`), the refusal log in `window_host_linux.cpp`, `platform/entry_point.h` and `platform/linux/entry_point_linux.cpp`
+  (new, never compiled), `hello_window` on `ENGINE_WINDOWED_PROGRAM`, the platform CMake (`key_translate.cpp` moved to the Linux list), the
+  `win32` value of `platform.window_backend` with the demos' `--help` and `--list-settings` goldens and READMEs edited by hand, the fenced
+  `window_backend_test.cpp` and `window_fullscreen_test.cpp`, the portable `file_io_test.cpp` case, and `platform_neutral_check` rule 5.
+- Phase 13 Day 158, check not done: a person starting `hello_window` from Explorer (no console window), resizing it by dragging the frame (the
+  modal-loop callback during a real drag; the test drives the loop's messages itself), minimizing, restoring and closing it. Fullscreen has no key
+  until input arrives (Day 159), so the toggle is checked by the tests only.
+- Phase 13 Day 158, deferred: `os::Window` has no content scale (DPI) yet; `Win32Window::Dpi` is the Windows backend's own. The UI phase (16)
+  adds one for every backend (Wayland's buffer scale, X11's `Xft.dpi`, Windows' DPI).
+- Phase 13 Day 158, deferred: `window.h` models no lifecycle events (focus, suspend, resume), so `WM_ACTIVATEAPP` and `WM_POWERBROADCAST`
+  (`PBT_APMSUSPEND`, `PBT_APMRESUMEAUTOMATIC`) are not reported; no phase plans them yet (`PLAN.md` assumption #11: the mobile ports need them).
+- Phase 13 Day 158, until Day 159: `os::KeyFromKeysym` is declared in the neutral `platform/input.h` but defined only on Linux
+  (`key_translate.cpp` uses xkbcommon's keysym header); a Windows caller would not link. Day 159 (input) decides where it lives.
 - Phase 13 Day 157, until Day 161: `docgen samples` (and with it `docs_samples` and the `docs` target's sample step) does not run on Windows: the samples link
   the renderer, the RHI and the platform layer, which reach Windows on Days 158-161; `ctest -L docs` on Windows is `docs_check`, `docs_links` and `docs_lint`.
 - Phase 13 Day 157, known limitation: on Windows a file has no mode bits, so a settings or session file the engine writes "private" (0600 on Linux) takes its

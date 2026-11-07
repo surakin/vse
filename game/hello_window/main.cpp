@@ -3,6 +3,7 @@
 #include "log/log.h"
 #include "mem/arena_allocator.h"
 #include "os/command_line.h"
+#include "platform/entry_point.h"
 #include "platform/input.h"
 #include "platform/window_host.h"
 #include "os/os.h"
@@ -92,9 +93,9 @@ void LogInputIfChanged(const os::InputState& in, InputSnapshot& prev) {
 
 } // namespace
 
-int main(int argc, char** argv) {
-    os::StashNativeCommandLine(argc, argv);
-
+// The program's entry point (platform/entry_point.h): ENGINE_WINDOWED_PROGRAM at the end of the file makes it `main` on Linux and
+// `wWinMain` on Windows, where hello_window is a GUI program (no console window). The arguments are already stashed for FromNative.
+int EngineMain(int, char**) {
     ArenaAllocator cmd_line_arena(4096);
     os::CommandLine<ArenaAllocator> cmd_line = os::CommandLine<ArenaAllocator>::FromNative(cmd_line_arena);
 
@@ -153,7 +154,7 @@ int main(int argc, char** argv) {
         if (!have_flag) {
             window_host.OpenFromEnvironment("re-engine", 1280, 720, &input_state);
         } else if (requested == os::WindowBackend::Invalid) {
-            Log(LogPlatform, LogVerbosity::Error, "Window: unrecognized --backend (want auto|wayland|x11)");
+            Log(LogPlatform, LogVerbosity::Error, "Window: unrecognized --backend (want auto|wayland|x11|win32)");
         } else {
             window_host.Open(requested, "re-engine", 1280, 720, &input_state);
         }
@@ -214,3 +215,5 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+
+ENGINE_WINDOWED_PROGRAM(EngineMain)

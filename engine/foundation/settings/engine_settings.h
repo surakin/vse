@@ -10,7 +10,7 @@ namespace engine_placeholder::settings {
 ///
 /// | key | type | environment variable |
 /// |---|---|---|
-/// | `platform.window_backend` | enum `auto`, `wayland`, `x11` | `ENGINE_WINDOW_BACKEND` (flag `--backend`) |
+/// | `platform.window_backend` | enum `auto`, `wayland`, `x11`, `win32` | `ENGINE_WINDOW_BACKEND` (flag `--backend`) |
 /// | `rhi.pipeline_cache` | bool | |
 /// | `rhi.pipeline_cache_dir` | text | `ENGINE_RHI_CACHE_DIR` |
 ///

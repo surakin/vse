@@ -1,21 +1,30 @@
-#include <sys/socket.h>
-
+// The window backend choice: the name parser and both platforms' plans run everywhere; the window host is tested on the platform it is
+// built for (Linux: Wayland and X11, Windows: Win32, Phase 13 Day 158).
 #include <cstdlib>
-#include <string>
 
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
 
 #include "platform/input.h"
 #include "platform/window_host.h"
-#include "platform/linux/wayland/wayland_platform_window.h"
-#include "platform/linux/x11/x11_window.h"
 #include "os/os.h"
 #include "platform/window.h"
+
+#if defined(_WIN32)
+#include "test_env.h"
+#else
+#include <sys/socket.h>
+
+#include <string>
+
+#include "platform/linux/wayland/wayland_platform_window.h"
+#include "platform/linux/x11/x11_window.h"
+#endif
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::os;
 
+#if !defined(_WIN32)
 namespace {
 
 // Sets/unsets an env var for a scope, restoring the previous value.
@@ -53,14 +62,16 @@ bool HaveEnv(const char* name) {
 }
 
 } // namespace
+#endif
 
-TEST_CASE("ParseWindowBackend recognizes auto/wayland/x11 and rejects the rest", "[window][os]") {
+TEST_CASE("ParseWindowBackend recognizes auto/wayland/x11/win32 and rejects the rest", "[window][os]") {
     REQUIRE(ParseWindowBackend("auto") == WindowBackend::Auto);
     REQUIRE(ParseWindowBackend("wayland") == WindowBackend::Wayland);
     REQUIRE(ParseWindowBackend("x11") == WindowBackend::X11);
+    REQUIRE(ParseWindowBackend("win32") == WindowBackend::Win32);
     REQUIRE(ParseWindowBackend("") == WindowBackend::Invalid);
     REQUIRE(ParseWindowBackend("X11") == WindowBackend::Invalid);
-    REQUIRE(ParseWindowBackend("win32") == WindowBackend::Invalid);
+    REQUIRE(ParseWindowBackend("Win32") == WindowBackend::Invalid);
 }
 
 TEST_CASE("PlanWindowBackends: auto prefers Wayland, falls back to X11", "[window][os]") {
@@ -93,7 +104,107 @@ TEST_CASE("PlanWindowBackends: a forced backend ignores the environment and neve
         }
     }
     REQUIRE(PlanWindowBackends(WindowBackend::Invalid, true, true).count == 0);
+    REQUIRE(PlanWindowBackends(WindowBackend::Invalid, true, true).refusal == nullptr);
 }
+
+TEST_CASE("PlanWindowBackends: Linux refuses win32 with the reason, whatever the environment", "[window][os]") {
+    for (bool w : {false, true}) {
+        for (bool x : {false, true}) {
+            const BackendPlan plan = PlanWindowBackends(WindowBackend::Win32, w, x);
+            REQUIRE(plan.count == 0);
+            REQUIRE(plan.refusal != nullptr);
+            CHECK(StringView(plan.refusal) == StringView("win32 is the Windows backend"));
+        }
+    }
+    CHECK(PlanWindowBackends(WindowBackend::Auto, false, false).refusal == nullptr); // nothing set is not a refusal by name
+}
+
+TEST_CASE("PlanWin32WindowBackends: auto and win32 give Win32, wayland and x11 are refused with the reason", "[window][os]") {
+    for (WindowBackend requested : {WindowBackend::Auto, WindowBackend::Win32}) {
+        const BackendPlan plan = PlanWin32WindowBackends(requested);
+        REQUIRE(plan.count == 1);
+        CHECK(plan.candidates[0] == WindowBackend::Win32);
+        CHECK(plan.refusal == nullptr);
+    }
+    const BackendPlan wayland = PlanWin32WindowBackends(WindowBackend::Wayland);
+    CHECK(wayland.count == 0);
+    REQUIRE(wayland.refusal != nullptr);
+    CHECK(StringView(wayland.refusal) == StringView("wayland is a Linux backend"));
+    const BackendPlan x11 = PlanWin32WindowBackends(WindowBackend::X11);
+    CHECK(x11.count == 0);
+    REQUIRE(x11.refusal != nullptr);
+    CHECK(StringView(x11.refusal) == StringView("x11 is a Linux backend"));
+    CHECK(PlanWin32WindowBackends(WindowBackend::Invalid).count == 0);
+}
+
+#if defined(_WIN32)
+
+namespace {
+
+// Sets ENGINE_WINDOW_BACKEND for a scope and removes it after (the test processes do not set it themselves).
+struct ScopedBackendVariable {
+    explicit ScopedBackendVariable(const char* value) { test_support::SetEnv("ENGINE_WINDOW_BACKEND", value); }
+    ~ScopedBackendVariable() { test_support::UnsetEnv("ENGINE_WINDOW_BACKEND"); }
+    ScopedBackendVariable(const ScopedBackendVariable&) = delete;
+    ScopedBackendVariable& operator=(const ScopedBackendVariable&) = delete;
+};
+
+} // namespace
+
+TEST_CASE("Windows: PlatformWindowHost opens Win32 for auto and for win32", "[window][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    for (WindowBackend requested : {WindowBackend::Auto, WindowBackend::Win32}) {
+        InputState input;
+        PlatformWindowHost host;
+        REQUIRE(host.Open(requested, "host win32", 640, 480, &input));
+        os::Window* w = host.Get();
+        REQUIRE(w != nullptr);
+        REQUIRE(w->Valid());
+        CHECK(StringView(w->BackendName()) == StringView("win32"));
+        CHECK(w->Width() == 640);
+        CHECK(w->Height() == 480);
+        CHECK_FALSE(w->ShouldClose());
+        CHECK(w->GetNativeInfo().kind == NativeWindowKind::Win32);
+        w->PumpEvents();
+        REQUIRE_FALSE(host.Open(requested, "second", 320, 240, &input)); // a host opens once
+    }
+}
+
+TEST_CASE("Windows: PlatformWindowHost refuses Wayland and X11", "[window][os]") {
+    InputState input;
+    PlatformWindowHost wayland;
+    CHECK_FALSE(wayland.Open(WindowBackend::Wayland, "no wayland", 320, 240, &input));
+    CHECK(wayland.Get() == nullptr);
+    PlatformWindowHost x11;
+    CHECK_FALSE(x11.Open(WindowBackend::X11, "no x11", 320, 240, &input));
+    CHECK(x11.Get() == nullptr);
+}
+
+TEST_CASE("Windows: PlatformWindowHost::OpenFromEnvironment honors ENGINE_WINDOW_BACKEND", "[window][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    InputState input;
+    {
+        ScopedBackendVariable bad("carrier-pigeon");
+        PlatformWindowHost host;
+        CHECK_FALSE(host.OpenFromEnvironment("bad override", 320, 240, &input));
+    }
+    {
+        ScopedBackendVariable linux_only("x11");
+        PlatformWindowHost host;
+        CHECK_FALSE(host.OpenFromEnvironment("x11 on windows", 320, 240, &input));
+    }
+    {
+        ScopedBackendVariable win32("win32");
+        PlatformWindowHost host;
+        REQUIRE(host.OpenFromEnvironment("env win32", 320, 240, &input));
+        CHECK(StringView(host.Get()->BackendName()) == StringView("win32"));
+    }
+    PlatformWindowHost unset;
+    REQUIRE(unset.OpenFromEnvironment("env unset", 320, 240, &input));
+    CHECK(StringView(unset.Get()->BackendName()) == StringView("win32"));
+}
+
+#else // Linux: the window host over Wayland and X11
 
 TEST_CASE("PlatformWindowHost opens the Wayland backend when forced", "[window][wayland][os]") {
     SKIP_IF_NO_DISPLAY_SESSION();
@@ -349,3 +460,5 @@ TEST_CASE("An X11 window exposes its native display and window id", "[window][x1
     REQUIRE(info.surface == nullptr);
     REQUIRE_FALSE(w->IsMinimized());
 }
+
+#endif
