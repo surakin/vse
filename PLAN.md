@@ -573,6 +573,9 @@ interpretations keep it buildable — flag any that don't match intent:
 
 ## Architecture layers (dependency flows downward only)
 
+The long-term diagram. The modules that exist, their layers, allowed dependencies and the measured graph (including the cycle inside the
+foundation, found 2026-11-07) are in `ARCHITECTURE.md`, which is the source of truth for dependencies.
+
 ```
 Game / Demo content
 Editor tooling                 --> built on the UI system (and Viewport widget)

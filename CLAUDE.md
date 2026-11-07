@@ -33,6 +33,12 @@ sub-tasks (see "How the plan is structured" below), is not yet
 startable; doing that breakdown is itself planning work that has to
 happen, and be committed, first.
 
+## Module dependencies follow ARCHITECTURE.md (required)
+
+`ARCHITECTURE.md` lists every module, its layer and what it may depend on, measured from the code. **A module includes and links only modules
+below it, never one above, and no cycles.** A change that adds a module, moves one or adds an allowed edge updates `ARCHITECTURE.md` in the same
+commit; a new upward edge or cycle is not added, even temporarily. The known violations are listed there with their fixes.
+
 ## Build prerequisites are listed in BUILD.md (required)
 
 `BUILD.md` lists what each platform needs installed (required, for checks, optional), with the versions in use. **A change that adds, removes or
