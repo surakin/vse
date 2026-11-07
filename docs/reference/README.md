@@ -11,12 +11,12 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Strings](foundation-strings.md) | 5 | 98 |
 | [Foundation: Paths and Files](foundation-io.md) | 5 | 265 |
 | [Foundation: Math](foundation-math.md) | 5 | 101 |
-| [Foundation: Logging and Assertions](foundation-log.md) | 2 | 71 |
+| [Foundation: Logging and Assertions](foundation-log.md) | 3 | 80 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 15 | 493 |
 | [Platform: OS Services](platform-os.md) | 4 | 46 |
 | [Platform: Windowing and Input](platform-window-input.md) | 10 | 263 |
-| [Foundation: Debugging](foundation-debug.md) | 14 | 202 |
+| [Foundation: Debugging](foundation-debug.md) | 15 | 203 |
 | [The Job System](jobs.md) | 11 | 190 |
 | [The Render Hardware Interface](rhi.md) | 17 | 725 |
 | [The renderer](renderer.md) | 20 | 994 |

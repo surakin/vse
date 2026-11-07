@@ -22,6 +22,7 @@ set(FOUNDATION_TEST_SOURCES
   quaternion_test.cpp
   transform_test.cpp
   log_test.cpp
+  diagnostics_hooks_test.cpp
   command_line_test.cpp
   os_timing_test.cpp
   concurrency_primitives_test.cpp

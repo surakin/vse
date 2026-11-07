@@ -100,6 +100,14 @@ A program that calls [[debug::StartProgramDebugging]] logs one `build <id> <plat
 log names the binary that wrote it. `SetLogErrorTraces(true)` adds a short stack trace under every `Error` line (the output of
 other lines does not change); the same call turns it on in Debug builds. Traces are in mangled form: pipe through `c++filt`.
 
+### Who completes an assert report
+
+`log` knows nothing about stack traces: the default handler prints the message line and, with nothing else installed, aborts (an ensure prints and
+continues). `debug::InstallDiagnosticsHooks`, which `debug::InitDebugFacilities` (and so `StartProgramDebugging`) calls, installs a
+`FailureReportHooks` table (`log/diagnostics_hooks.h`) that adds the stack trace, the crash context and a look at the debugger. New threads announce
+themselves with `NotifyThreadStart(name)`; the same call installs crash-handler registration. A program that never starts the debugging facilities gets
+the bare message, which is complete on its own.
+
 ### Adding a channel
 
 _TODO_

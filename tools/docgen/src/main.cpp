@@ -13,6 +13,7 @@
 #include "extractor.h"
 #include "scanner.h"
 #include "source_file.h"
+#include "debug/failure_hooks.h"
 
 using namespace docgen;
 
@@ -430,6 +431,7 @@ int Samples(int argc, char** argv) {
 } // namespace
 
 int main(int argc, char** argv) {
+    engine_placeholder::debug::InstallDiagnosticsHooks(); // a failed assert prints its stack trace
     if (argc == 3 && std::strcmp(argv[1], "tokens") == 0) return Tokens(argv[2]);
     if (argc >= 3 && std::strcmp(argv[1], "dump") == 0) return Dump(argc, argv);
     if (argc >= 3 && std::strcmp(argv[1], "docs") == 0) return Docs(argc, argv);

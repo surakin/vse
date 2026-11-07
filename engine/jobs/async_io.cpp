@@ -4,7 +4,7 @@
 #include <cstring>
 #include <new>
 
-#include "debug/crash_handler.h"
+#include "log/diagnostics_hooks.h"
 #include "jobs/jobs_log.h"
 #include "jobs/scheduler.h"
 #include "jobs/worker_pool.h"
@@ -53,7 +53,7 @@ void IoThread::Shutdown() {
 }
 
 void IoThread::Loop() {
-    debug::RegisterThreadForCrashHandling("io");
+    NotifyThreadStart("io");
     for (;;) {
         IoRequest* req = nullptr;
         {

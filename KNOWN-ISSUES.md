@@ -8,7 +8,7 @@ whenever a day leaves something broken, unmeasured or deferred. Entries state fa
 
 | Test | Since | Cause | Status |
 |---|---|---|---|
-| `renderer_demo_script_wayland` (phase 8) | 2026-11-07 (first seen on Phase 12 Day 140, before any Phase 12 code) | Observed: `renderer_demo --backend wayland` (with or without `--script`) segfaults on its first frame, 3 of 3 runs; the faulting call is a null function pointer inside `libnvidia-glcore.so.615.78.08`, reached through `libVkLayer_khronos_validation.so` from `VulkanSwapchain::Acquire` (`vk_swapchain.cpp:335`). The demo log reports driver `615.312.512` while the library file on disk is `615.78.08`. The X11 variant (`renderer_demo_script_x11`) passes. Not investigated further. | open; not caused by Phase 12 (docs-only diff at the time) |
+| `renderer_demo_script_wayland`, `renderer_demo_crash_after_reset` (phase 8) | 2026-11-07 (first seen on Phase 12 Day 140, before any Phase 12 code) | Observed: `renderer_demo --backend wayland` (with or without `--script`) segfaults on its first frame, 3 of 3 runs; the faulting call is a null function pointer inside `libnvidia-glcore.so.615.78.08`, reached through `libVkLayer_khronos_validation.so` from `VulkanSwapchain::Acquire` (`vk_swapchain.cpp:335`). The demo log reports driver `615.312.512` while the library file on disk is `615.78.08`. The X11 variant (`renderer_demo_script_x11`) passes; `renderer_demo_crash_after_reset` (also `--backend wayland`) fails by the same segfault instead of the abort it expects. Not investigated further. | open; not caused by Phase 12 (docs-only diff at the time) |
 
 ## Flaky tests
 
@@ -37,7 +37,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 
 ## Deferred items
 
-- Phase 12 Day 141 (2026-11-07): the module-dependency gate's `tools/module_deps_check/allowlist.txt` lists 17 known violations of `ARCHITECTURE.md` (upward includes in `log`, `io`, `os`, `containers`; the demos and `engine_main` including a per-platform header; the display libraries linked by `foundation`; two RHI entries). Phase 12 Days 142-144 delete all but the two RHI entries (Phase 13 Day 162); each line names its day.
+- Phase 12 Day 141 (2026-11-07): the module-dependency gate's `tools/module_deps_check/allowlist.txt` lists 17 known violations of `ARCHITECTURE.md` (upward includes in `log`, `io`, `os`, `containers`; the demos and `engine_main` including a per-platform header; the display libraries linked by `foundation`; two RHI entries). Phase 12 Days 142-144 delete all but the two RHI entries (Day 142 deleted the two `-> debug` entries) (Phase 13 Day 162); each line names its day.
 
 | Item | Needed by | Where recorded |
 |---|---|---|

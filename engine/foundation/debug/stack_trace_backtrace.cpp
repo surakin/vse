@@ -1,6 +1,7 @@
 // The stack-trace facade over libbacktrace. This is the only file that includes backtrace.h (enforced by
 // tools/platform_neutral_check); the rest of the engine sees debug/stack_trace.h.
 #include "debug/stack_trace.h"
+#include "debug/failure_hooks.h"
 
 #include "debug/module_list.h"
 
@@ -218,6 +219,7 @@ constexpr usize kEntriesPerFrame = 8; // inlined functions shown per address; mo
 } // namespace
 
 void InitDebugFacilities() {
+    InstallDiagnosticsHooks();
     if (g_trace_state.load(std::memory_order_acquire) != nullptr) {
         return;
     }

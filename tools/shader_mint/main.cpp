@@ -35,6 +35,7 @@
 #include "reflect_json.h"
 #include "renderer/shader_reflection.h"
 #include "types.h"
+#include "debug/failure_hooks.h"
 
 using namespace engine_placeholder;
 using shader_mint::Appendf;
@@ -279,6 +280,7 @@ bool ReflText(StringView base, const char* source, const char* compiler, const M
 } // namespace
 
 int main(int argc, char** argv) {
+    engine_placeholder::debug::InstallDiagnosticsHooks(); // a failed assert prints its stack trace
     const char* name = nullptr;
     const char* source = nullptr;
     const char* source_path = nullptr;

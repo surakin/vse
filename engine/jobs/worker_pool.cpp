@@ -7,7 +7,7 @@
 
 #include <cstdio>
 
-#include "debug/crash_handler.h"
+#include "log/diagnostics_hooks.h"
 #include "jobs/jobs_log.h"
 #include "log/assert.h"
 
@@ -88,7 +88,7 @@ void WorkerPool::ThreadMain(WorkerPool* pool, usize index) {
         // A crash report names this thread, and a stack overflow on it can still be handled.
         char name[24];
         std::snprintf(name, sizeof(name), "worker-%zu", static_cast<size_t>(index));
-        debug::RegisterThreadForCrashHandling(name);
+        NotifyThreadStart(name);
     }
     Participant& self = pool->participants_[index];
     self.tid = static_cast<i32>(::syscall(SYS_gettid));

@@ -8,7 +8,7 @@
 #include <mutex>
 #include <thread>
 
-#include "debug/crash_handler.h"
+#include "log/diagnostics_hooks.h"
 #include "io/file_system.h"
 #include "log/assert.h"
 
@@ -79,7 +79,7 @@ public:
 
 private:
     void Loop() {
-        debug::RegisterThreadForCrashHandling("io");
+        NotifyThreadStart("io");
         for (;;) {
             IoWork* work = nullptr;
             {

@@ -28,6 +28,7 @@ flavors 12  plain
 tests/foundation/arena_allocator_test.cpp       0
 tests/foundation/array_test.cpp                 0
 tests/foundation/command_line_test.cpp          0
+tests/foundation/diagnostics_hooks_test.cpp     12
 tests/foundation/concurrency_primitives_test.cpp 0   # atomics and lock wrappers, not the scheduler
 tests/foundation/container_vector_test.cpp      0
 tests/foundation/file_io_test.cpp               0

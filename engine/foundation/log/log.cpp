@@ -1,10 +1,7 @@
 #include "log/log.h"
 #include "io/file.h"
 
-#include "debug/crash_context.h"
-#include "debug/crash_report.h"
-#include "debug/debugger.h"
-#include "debug/stack_trace.h"
+#include "log/diagnostics_hooks.h"
 #include "os/os.h"
 
 #include <atomic>
@@ -217,9 +214,9 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message) {
         char text[sizeof(buf) + 4096];
         std::memcpy(text, buf, offset);
         usize length = offset;
-        debug::StackTrace trace;
-        if (debug::CaptureStackTrace(trace, 1)) {
-            length += debug::FormatStackTrace(trace, text + offset, sizeof(text) - offset);
+        const FailureReportHooks* hooks = GetFailureReportHooks();
+        if (hooks != nullptr && hooks->append_stack_trace != nullptr) {
+            length += hooks->append_stack_trace(text + offset, sizeof(text) - offset, 1);
         }
         g_write_sink(1, text, length);
         return;
@@ -327,27 +324,47 @@ AssertAction DefaultAssertHandler(const AssertInfo& info) {
     char report[sizeof(buf) + 8192];
     std::memcpy(report, buf, offset);
     usize report_length = offset;
-    debug::StackTrace trace;
-    if (debug::CaptureStackTrace(trace, info.kind == AssertKind::Ensure ? 4 : 2)) {
-        report_length += debug::FormatStackTrace(trace, report + offset, sizeof(report) - offset);
+    // Without the hooks (nothing installed them yet) the report is the message line alone.
+    const FailureReportHooks* hooks = GetFailureReportHooks();
+    if (hooks != nullptr && hooks->append_stack_trace != nullptr) {
+        report_length += hooks->append_stack_trace(report + offset, sizeof(report) - offset, info.kind == AssertKind::Ensure ? 4 : 2);
     }
     g_write_sink(1, report, report_length);
 
     // A failed check that ends the program also says what program and machine it was, what the subsystems report and what was
     // logged last, exactly like a crash report does. An ensure carries on, so it gets only the message and the trace.
-    if (info.kind != AssertKind::Ensure) {
-        if (!debug::CrashContextInitialized()) {
-            debug::InitCrashContext(0, nullptr); // an assert is not a signal handler, so reading /proc is fine here
-        }
-        debug::CrashReportSink sink;
-        sink.write = &AssertReportWrite;
-        debug::WriteCrashContext(sink);
+    if (info.kind != AssertKind::Ensure && hooks != nullptr && hooks->write_crash_context != nullptr) {
+        hooks->write_crash_context(&AssertReportWrite, nullptr);
     }
 
-    if (debug::IsDebuggerAttached()) {
+    if (hooks != nullptr && hooks->debugger_attached != nullptr && hooks->debugger_attached()) {
         return AssertAction::Break;
     }
     return info.kind == AssertKind::Ensure ? AssertAction::Continue : AssertAction::Abort;
+}
+
+namespace {
+std::atomic<const FailureReportHooks*> g_failure_hooks{nullptr};
+std::atomic<ThreadStartHook> g_thread_start_hook{nullptr};
+} // namespace
+
+const FailureReportHooks* SetFailureReportHooks(const FailureReportHooks* hooks) {
+    return g_failure_hooks.exchange(hooks, std::memory_order_acq_rel);
+}
+
+const FailureReportHooks* GetFailureReportHooks() {
+    return g_failure_hooks.load(std::memory_order_acquire);
+}
+
+ThreadStartHook SetThreadStartHook(ThreadStartHook hook) {
+    return g_thread_start_hook.exchange(hook, std::memory_order_acq_rel);
+}
+
+void NotifyThreadStart(const char* name) {
+    ThreadStartHook hook = g_thread_start_hook.load(std::memory_order_acquire);
+    if (hook != nullptr) {
+        hook(name);
+    }
 }
 
 AssertHandler SetAssertHandler(AssertHandler handler) {

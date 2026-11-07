@@ -362,6 +362,13 @@ privately, not next to the download.
 Breakpad `.sym` files (for `minidump-stackwalk`) are produced by `dump_syms` from the same `.debug` files; the script looks for
 them in `<store>/breakpad` (a directory you create; `store-symbols.sh` does not). That path is documented but not exercised on the development machine (see KNOWN-ISSUES).
 
+### What installs the assert report
+
+The assert macros live in the log module, below this one, so they reach stack traces and the crash context through hooks
+(`log/diagnostics_hooks.h`). `debug::InitDebugFacilities` installs them (`debug::InstallDiagnosticsHooks`): after that a failed assert prints its
+trace and context, and the I/O thread and job workers register with the crash handler when they start. Before, an assert prints its message and
+aborts. A thread that started before installation is not registered later; registration only succeeds once the crash handler is installed anyway.
+
 ## Assert, ensure or verify
 
 Choose by what the program can do after the failure (the macros are in [Logging and Assertions](foundation-logging-and-assert.md)):

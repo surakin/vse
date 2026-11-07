@@ -698,6 +698,15 @@ ENGINE_VERIFY	macro	foundation/log	engine-verify	foundation-log.md	engine/founda
 ENGINE_CHECK_SLOW	macro	foundation/log	engine-check-slow	foundation-log.md	engine/foundation/log/assert.h:290
 ENGINE_UNREACHABLE	macro	foundation/log	engine-unreachable	foundation-log.md	engine/foundation/log/assert.h:310
 ENGINE_NOT_IMPLEMENTED	macro	foundation/log	engine-not-implemented	foundation-log.md	engine/foundation/log/assert.h:315
+FailureReportHooks	struct	foundation/log	failurereporthooks	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:23
+FailureReportHooks::append_stack_trace	variable	foundation/log	failurereporthooks-append-stack-trace	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:26
+FailureReportHooks::write_crash_context	variable	foundation/log	failurereporthooks-write-crash-context	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:28
+FailureReportHooks::debugger_attached	variable	foundation/log	failurereporthooks-debugger-attached	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:30
+SetFailureReportHooks(const FailureReportHooks*)	function	foundation/log	setfailurereporthooks-const-failurereporthooks-star	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:39
+GetFailureReportHooks()	function	foundation/log	getfailurereporthooks	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:43
+ThreadStartHook	alias	foundation/log	threadstarthook	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:46
+SetThreadStartHook(ThreadStartHook)	function	foundation/log	setthreadstarthook-threadstarthook	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:56
+NotifyThreadStart(const char*)	function	foundation/log	notifythreadstart-const-char-star	foundation-log.md	engine/foundation/log/diagnostics_hooks.h:62
 LogVerbosity	enum	foundation/log	logverbosity	foundation-log.md	engine/foundation/log/log.h:16
 LogVerbosity::Error	enumerator	foundation/log	logverbosity-error	foundation-log.md	engine/foundation/log/log.h:17
 LogVerbosity::Warn	enumerator	foundation/log	logverbosity-warn	foundation-log.md	engine/foundation/log/log.h:18
@@ -1753,6 +1762,7 @@ debug::ExitChildProcess(int)	function	foundation/debug	debug-exitchildprocess-in
 debug::SetDeathTestSupportForTesting(bool)	function	foundation/debug	debug-setdeathtestsupportfortesting-bool	foundation-debug.md	engine/foundation/debug/death_test.h:160
 ENGINE_DEATH_TEST_FN	macro	foundation/debug	engine-death-test-fn	foundation-debug.md	engine/foundation/debug/death_test.h:170
 debug::IsDebuggerAttached()	function	foundation/debug	debug-isdebuggerattached	foundation-debug.md	engine/foundation/debug/debugger.h:19
+debug::InstallDiagnosticsHooks()	function	foundation/debug	debug-installdiagnosticshooks	foundation-debug.md	engine/foundation/debug/failure_hooks.h:17
 debug::FaultKind	enum	foundation/debug	debug-faultkind	foundation-debug.md	engine/foundation/debug/fault_injection.h:12
 debug::FaultKind::NullWrite	enumerator	foundation/debug	debug-faultkind-nullwrite	foundation-debug.md	engine/foundation/debug/fault_injection.h:13
 debug::FaultKind::Abort	enumerator	foundation/debug	debug-faultkind-abort	foundation-debug.md	engine/foundation/debug/fault_injection.h:14

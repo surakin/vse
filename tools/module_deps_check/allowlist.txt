@@ -4,12 +4,8 @@
 #
 # kind from -> to | reason | day
 
-# item 1: the assert failure report (stack trace, crash context, debugger break) is built into log.cpp
-edge log -> debug | log.cpp includes debug/stack_trace.h, crash_report.h, crash_context.h, debugger.h for the default assert handler | Phase 12 Day 142
 # item 2: log::LoadConfig reads a file through the file layer
 edge log -> io | log.cpp includes io/file.h for log::LoadConfig | Phase 12 Day 143
-# item 3: the I/O thread registers itself with the crash handler
-edge io -> debug | io/file.cpp includes debug/crash_handler.h for RegisterThreadForCrashHandling | Phase 12 Day 142
 # item 4: os.h takes StringView paths and fills a String<HeapAllocator>
 edge os -> string | os.h includes string/string.h | Phase 12 Day 143
 edge os -> mem | os.h includes mem/heap_allocator.h for EnvironmentEntry | Phase 12 Day 143

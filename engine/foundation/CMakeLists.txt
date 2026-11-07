@@ -95,6 +95,7 @@ set(FOUNDATION_SOURCES
   string/generated/combining_class_table.cpp
   string/generated/composition_exclusions_table.cpp
   debug/crash_reason.cpp
+  debug/failure_hooks.cpp
   debug/death_test.cpp
   debug/stack_trace_backtrace.cpp
   debug/thread_info.cpp

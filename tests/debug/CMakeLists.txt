@@ -24,7 +24,9 @@ set(DEBUG_TEST_SOURCES
   program_crash_test_linux_test.cpp
   job_crash_linux_test.cpp
   crash_state_test.cpp
+  failure_hooks_test.cpp
   resource_guard_linux.cpp
+  install_hooks.cpp
 )
 
 find_package(Threads REQUIRED)
