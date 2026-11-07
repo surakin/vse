@@ -141,13 +141,18 @@ TEST_CASE("Each fault kind ends the child with the matching crash reason", "[dea
         FaultKind kind;
         CrashReason expected;
     };
-    // A stack overflow is an access violation as far as an exit status can tell.
+    // A stack overflow is an access violation as far as a POSIX exit status can tell; Windows' exit code says STATUS_STACK_OVERFLOW.
+#if defined(_WIN32)
+    constexpr CrashReason kOverflow = CrashReason::StackOverflow;
+#else
+    constexpr CrashReason kOverflow = CrashReason::AccessViolation;
+#endif
     const Case cases[] = {
         {FaultKind::NullWrite, CrashReason::AccessViolation},
         {FaultKind::Abort, CrashReason::Abort},
         {FaultKind::IllegalInstruction, CrashReason::IllegalInstruction},
         {FaultKind::DivideByZero, CrashReason::ArithmeticFault},
-        {FaultKind::StackOverflow, CrashReason::AccessViolation},
+        {FaultKind::StackOverflow, kOverflow},
         {FaultKind::BusError, CrashReason::BusError},
     };
     for (const Case& c : cases) {

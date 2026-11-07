@@ -18,6 +18,8 @@ Seen failing once or intermittently, passing on rerun. Cause not investigated.
 - The window tests (X11, Wayland, and the RHI presentation tests) used to fail at random under `ctest -j6`; they now hold the ctest resource `display` and run one at a time (5 full runs in a row passed, 2026-11-05).
 
 
+- Phase 13 Day 155 (2026-11-07, Windows PC): `FramePool does not commit slab memory until blocks are used [asan]` (phase 2) failed once in a
+  full `ctest -j8` run of the non-unity MSVC build; it passed 5 times alone (plain and asan) right after. The failure output was not captured.
 - Phase 13 Day 153 (2026-11-07, Windows PC): `Skewed load: other participants execute stolen work [asan]` (phase 2) failed once in a full
   `ctest -j8` run of the non-unity MSVC build; it passed 30 times alone and in 5 runs under `-j16` load. The failure output was not captured.
 
@@ -146,9 +148,24 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   reference for the changed Backend labels of `io/file.h`, `io/file_system.h` and `io/directory.h` was not regenerated.
 - Phase 13 Day 154 (2026-11-07), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 154 file, "For the
   Linux run"), among them the move of `FormatStackTrace` into the neutral `debug/stack_trace_format.cpp`, were built and tested only on Windows.
-- Phase 13 Day 154, until Days 155-156: on Windows the crash event hook, death tests and fault injection (Day 155) and `EnablePostMortemDumps`
-  (Day 156) are placeholders in `os/windows/debug/crash_pending.cpp` that report themselves unsupported, so every death-test case of `tests/debug`
-  skips there; `crash_handler_test`, `crash_report_test`, `saved_dumps_test`, `core_dump_test` and `crash_extract` are not built on Windows yet.
+- Phase 13 Day 155 (2026-11-07), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 155 file, "For the
+  Linux run") were built and tested only on Windows: the new `CrashReportInfo::thread_name` and `CrashEvent::thread_name`, the module offset
+  formatting fix in `debug/stack_trace_format.cpp`, the converted `crash_report_test.cpp` and the readelf case moved into
+  `crash_report_linux_test.cpp`. The reference for `debug/crash_report.h` was not regenerated, and `docgen lint` and `ctest -L docs` were not run
+  (docgen builds on Windows from Day 157).
+- Phase 13 Day 155, until Day 156: on Windows `EnablePostMortemDumps` is a placeholder in `os/windows/debug/crash_pending.cpp` that reports itself
+  unsupported; `saved_dumps_test`, `core_dump_test` and `crash_extract` are not built on Windows yet.
+- Phase 13 Day 155, known limitation (not a failure): a fast fail (`__fastfail`, `/GS` stack-cookie failures, some C runtime checks) ends a Windows
+  process in the kernel with `0xC0000409`; no handler sees it, so it leaves no engine report and no dump in the crash handler's directory
+  (`crash_end_to_end_windows_test.cpp` checks this). Windows Error Reporting LocalDumps (Day 156) is the only dump it can leave.
+- Phase 13 Day 155, known limitation: on Windows the crash report opens its report file at crash time with `CreateFileW`, which converts the path
+  with a heap allocation inside Windows; a crash while another thread holds the process heap's lock could stop the report there (the dump is
+  written before the report). The allocation check sees only the C runtime's allocations. Not observed; from the day's design review.
+- Phase 13 Day 155: the Windows allocation check of the crash report (`crash_alloc_windows_test.cpp`, the debug C runtime's `_CrtSetAllocHook`) runs
+  only in the plain Debug flavor; it skips under AddressSanitizer, whose allocator the hook does not see.
+- Phase 13 Day 155: on Windows the crash hook remembers at most 256 threads registered with `RegisterThreadForCrashHandling` (their stack ranges, for
+  an `abort()` on them); entries are not removed when a thread ends, so after 256 registrations an `abort()` on a newer thread is reported
+  without its id and name. A matched entry of an ended thread whose stack was reused gives the wrong id (its name read is guarded).
 - Phase 13 Day 154: on Windows an assertion's trace is resolved through DbgHelp, which allocates from the process heap; an assert that fires while
   the heap lock is held (inside a CRT allocation) could deadlock while printing it. Linux resolves without `malloc`. Not observed; from review.
 - Phase 13 Day 154: under MSVC's Debug build the inlined-frame case of `stack_trace_test` skips (MSVC inlines nothing at `/Od`); the clang-cl

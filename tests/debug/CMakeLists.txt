@@ -42,11 +42,17 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     death_test_run_test.cpp
     assert_family_test.cpp
     stack_trace_test.cpp
+    crash_handler_test.cpp
+    crash_report_test.cpp
     crash_state_test.cpp
     failure_hooks_test.cpp
     install_hooks.cpp
     resource_guard_windows.cpp
     stack_trace_windows_test.cpp
+    death_test_windows_test.cpp
+    crash_end_to_end_windows_test.cpp
+    crash_alloc_windows_test.cpp
+    ${CMAKE_SOURCE_DIR}/tools/crash_extract/envelope.cpp
   )
   add_library(debug_test_plugin MODULE plugin.cpp)
   target_include_directories(debug_test_plugin PRIVATE ${CMAKE_SOURCE_DIR}/engine/foundation)
@@ -65,8 +71,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_compile_definitions(debug_tests${suffix} PRIVATE DEBUG_TEST_PLUGIN_PATH="$<TARGET_FILE:debug_test_plugin>" ENGINE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
       ENGINE_DEBUG_CHECKS=1 ENGINE_SLOW_CHECKS=1)
     target_include_directories(debug_tests${suffix} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support
-      ${CMAKE_SOURCE_DIR}/tests/windows/support)
+      ${CMAKE_SOURCE_DIR}/tests/windows/support ${CMAKE_SOURCE_DIR}/tools/crash_extract)
     engine_asan_runtime(debug_tests${suffix})
+    # An 8 MiB main-thread stack, as Linux gives: a ChildResult is a 64 KiB value, and a Debug build keeps several copies of it on the stack
+    # between a test, RunInChild and the platform (Windows' default is 1 MiB; Phase 13 Day 155).
+    target_link_options(debug_tests${suffix} PRIVATE /STACK:8388608)
   endforeach()
   engine_discover_tests(debug_tests TEST_SUFFIX "" PROPERTIES LABELS "debug;crash")
   if(ENGINE_HAVE_ASAN)
@@ -90,6 +99,36 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set_tests_properties(debug_backend_lists_planted_count PROPERTIES
     PASS_REGULAR_EXPRESSION "windows: BACKEND.md lists `Stale`.*windows: BACKEND.md has no section heading for `Forgotten`.*macos: BACKEND.md lists `Stale`.*macos: BACKEND.md has no section heading for `Forgotten`.*4 problem")
   engine_label_tests(debug_backend_lists debug_backend_lists_clean debug_backend_lists_planted debug_backend_lists_planted_count)
+  # Nothing can upload (PLAN.md assumption #20), as on Linux below: no built binary imports or names a network library
+  # (check_no_network_windows.cmake). The import table is read with link.exe /dump (MSVC) or llvm-readobj (clang-cl, next to the compiler).
+  if(CMAKE_LINKER MATCHES "lld-link")
+    get_filename_component(_llvm_bin "${CMAKE_LINKER}" DIRECTORY)
+    set(_import_dump_tool "${_llvm_bin}/llvm-readobj.exe")
+  else()
+    set(_import_dump_tool "${CMAKE_LINKER}")
+  endif()
+  set(_no_network_binaries debug_tests debug_checks_off_tests)
+  if(ENGINE_HAVE_ASAN)
+    list(APPEND _no_network_binaries debug_tests_asan)
+  endif()
+  foreach(binary IN LISTS _no_network_binaries)
+    add_test(NAME debug_no_network_${binary}
+      COMMAND ${CMAKE_COMMAND} -DBINARY=$<TARGET_FILE:${binary}> -DDUMP_TOOL=${_import_dump_tool} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_no_network_windows.cmake)
+    set_tests_properties(debug_no_network_${binary} PROPERTIES LABELS "debug" SKIP_REGULAR_EXPRESSION "no import dump tool found")
+    engine_label_tests(debug_no_network_${binary})
+  endforeach()
+  foreach(case "clean|dumpbin_clean.txt" "planted_library|dumpbin_with_winhttp.txt" "planted_delay_function|dumpbin_delay_function.txt")
+    string(REPLACE "|" ";" parts "${case}")
+    list(GET parts 0 name)
+    list(GET parts 1 fixture)
+    add_test(NAME debug_no_network_check_windows_${name}
+      COMMAND ${CMAKE_COMMAND} -DIMPORTS_TEXT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/fixtures/${fixture} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_no_network_windows.cmake)
+    set_tests_properties(debug_no_network_check_windows_${name} PROPERTIES LABELS "debug")
+    engine_label_tests(debug_no_network_check_windows_${name})
+  endforeach()
+  # (CMake wraps a long error message, so the expected text may break at any space.)
+  set_tests_properties(debug_no_network_check_windows_planted_library PROPERTIES PASS_REGULAR_EXPRESSION "network[ \n]+library:[ \n]+winhttp.dll")
+  set_tests_properties(debug_no_network_check_windows_planted_delay_function PROPERTIES PASS_REGULAR_EXPRESSION "network[ \n]+function:[ \n]+getaddrinfow")
   return()
 endif()
 

@@ -34,12 +34,15 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     os/windows/session.cpp
     os/windows/vulkan_loader_name.cpp
   )
-  # Day 154: stack traces through DbgHelp, the module list, the crash context; crash_pending.cpp holds what Days 155-156 build (the crash
-  # hook, death tests, fault injection, post-mortem dumps). libbacktrace is not built on Windows.
+  # Day 154: stack traces through DbgHelp, the module list, the crash context; Day 155: the crash hook, death tests, fault injection;
+  # crash_pending.cpp holds Day 156's post-mortem dumps. libbacktrace is not built on Windows.
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES
     os/windows/debug/stack_trace_dbghelp.cpp
     os/windows/debug/module_list.cpp
     os/windows/debug/crash_context.cpp
+    os/windows/debug/crash_hook.cpp
+    os/windows/debug/death_test.cpp
+    os/windows/debug/fault_injection.cpp
     os/windows/debug/crash_pending.cpp
   )
   # The file layer: paths, errors, Stat and the local file on Day 151; directories and the other file-system operations on Day 152

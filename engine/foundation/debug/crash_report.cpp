@@ -187,9 +187,15 @@ void WriteCrashReport(const CrashReportSink& sink, const CrashReportInfo& info) 
             w.Text(": ").Text(info.message);
         }
         w.EndLine();
-        w.Text("thread: ").Decimal(info.thread_id != 0 ? info.thread_id : CurrentThreadId());
-        if (CrashThreadName()[0] != '\0') {
-            w.Text(" \"").Text(CrashThreadName()).Char('"');
+        w.Text("thread: ");
+        if (!info.thread_known) {
+            w.Text("unknown"); // never the calling thread's id or name: on Windows that is the crash library's own thread
+        } else {
+            w.Decimal(info.thread_id != 0 ? info.thread_id : CurrentThreadId());
+        }
+        const char* thread_name = info.thread_name != nullptr ? info.thread_name : CrashThreadName();
+        if (info.thread_known && thread_name[0] != '\0') {
+            w.Text(" \"").Text(thread_name).Char('"');
         }
         w.EndLine();
     }

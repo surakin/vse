@@ -4,7 +4,7 @@
 # raw system calls, atomics and a few memory functions: no allocation, no stdio formatting, no locks, no engine log. Such code
 # sits between the marker comments `// SIGNAL-SAFE-BEGIN` and `// SIGNAL-SAFE-END`; between them these are forbidden:
 #   malloc calloc realloc free new delete, printf-family, FILE I/O, strdup, mutex and lock types, Log(, std:: names other than
-#   the allowed few (atomic, memory_order_*, memset, memcpy, strlen, strncmp).
+#   the allowed few (atomic, atomic_thread_fence, memory_order_*, memset, memcpy, strlen, strncmp).
 # On Windows (Phase 13 Day 150) "signal-safe" means code that runs inside a crashed process's exception handler (the vectored or
 # unhandled-exception filter): the heap and the loader lock may be held by the thread that crashed, so the same rules apply and these
 # Win32 and C runtime names are forbidden too: HeapAlloc HeapReAlloc HeapFree LocalAlloc LocalFree GlobalAlloc GlobalFree
@@ -97,7 +97,7 @@ foreach(f IN LISTS files)
     else()
       string(REGEX MATCHALL "${std_re}" names "${code}")
       foreach(name IN LISTS names)
-        if(NOT name MATCHES "^std::(atomic|memory_order_[a-z_]+|memset|memcpy|strlen|strncmp|strchr)$")
+        if(NOT name MATCHES "^std::(atomic|atomic_thread_fence|memory_order_[a-z_]+|memset|memcpy|strlen|strncmp|strchr)$")
           set(why "${name}")
         endif()
       endforeach()

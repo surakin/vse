@@ -93,7 +93,8 @@ What to know:
   allocates, and an assertion can fail inside the allocator): pipe the output through `c++filt` to read them.
 - **Linux reads DWARF (libbacktrace); Windows reads the PDBs through DbgHelp** (Phase 13 Day 154). DbgHelp is single-threaded,
   so every call takes one lock, and it is never used while a crash is being reported: a crash report on Windows records raw
-  addresses and module offsets, and the names are found afterwards (by the crash script, a debugger or a test parent). On Windows
+  addresses and module offsets (`#0  0x00007ff6...  C:\path\program.exe+0x1a2b3`), and the names are found afterwards (by the crash
+  script, a debugger or a test parent). On Windows
   the PDB stores function names readable already (`engine::Foo`, without the parameter list), so `demangle` changes nothing there;
   an MSVC-decorated name (`?Foo@@YAXH@Z`) passed to [[debug::DemangleSymbol]] is undecorated with `UnDecorateSymbolName`.
 
@@ -130,7 +131,13 @@ there is no helper program to ship next to the game.
 - **Install it once, early.** Programs do it through [[debug::StartProgramDebugging]]. The engine puts one small recorder in front
   of the library's handler (to learn the fault address and the faulting thread, which the library does not tell its hook on Linux)
   and always calls the library afterwards. A handler a program installs for the same signals *after* this call must call the one
-  it replaced, or the dump is not written.
+  it replaced, or the dump is not written. **On Windows** the library writes the dump first and then the engine writes the report,
+  from the library's own handler thread; the engine adds an observer (a vectored handler that only notes which thread raised each
+  exception) and a gate filter (so a second thread crashing meanwhile waits instead of ending the process before the dump). A program
+  that installs its own unhandled-exception filter after this call replaces the library's, so do not.
+- **What no handler sees (Windows).** A fast fail (`__fastfail`, the `/GS` stack-cookie check, some C runtime checks) ends the process
+  in the kernel with exit code `0xC0000409`: no report and no dump in the dump directory. Windows Error Reporting's local dumps
+  (post-mortem dumps) are the only record such a crash leaves.
 - **A failure is not fatal.** If the dump directory cannot be created or the library cannot start, `InstallCrashHandler`
   returns the reason (`DirectoryFailed`, `InitFailed`), logs a warning on the `LogCrash` channel, and the program runs without
   a handler. `Disabled` is what a program returns to itself when configuration switches the handler off.
@@ -153,7 +160,7 @@ including whatever the program held in memory, so treat the files as sensitive.
 **Nothing is ever sent anywhere.** The library is built with no network transport, so no upload code exists in the program;
 the only "transport" it is given is a function that copies an envelope into the `saved/` folder. The options have no field
 for an address or an account, and ctests (`debug_no_network_*`) fail if a test binary lists a network or TLS library or
-imports their functions (the demos and benches that install the handler are added to that check when they are wired in). Sending a dump, if a project ever wants
+imports their functions (on Windows: imports one of `winhttp`, `wininet`, `ws2_32` and the like, or names one in its data) (the demos and benches that install the handler are added to that check when they are wired in). Sending a dump, if a project ever wants
 to, is its own tool that reads the file.
 
 ## What a crash report contains

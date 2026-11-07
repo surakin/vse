@@ -1,0 +1,45 @@
+
+Dump of file debug_tests.exe
+
+File Type: EXECUTABLE IMAGE
+
+  Section contains the following imports:
+
+    dbghelp.dll
+             1404801B8 Import Address Table
+             140481B48 Import Name Table
+                     0 time date stamp
+                     0 Index of first forwarder reference
+
+                          CF SymSetSearchPathW
+                          AB SymInitializeW
+                          5F SymFromInlineContextW
+                          BA SymRefreshModuleList
+                          5B SymFromAddrW
+                          B9 SymQueryInlineTrace
+                          33 SymAddrIncludeInlineTrace
+    KERNEL32.dll
+             14047F198 Import Address Table
+             140480B28 Import Name Table
+                     0 time date stamp
+                     0 Index of first forwarder reference
+
+                         278 GetFileInformationByHandleEx
+                         146 DeviceIoControl
+                         32C GetTempPath2W
+                         56B SetFileInformationByHandle
+                         568 SetFileAttributesW
+                         28A GetFullPathNameW
+                         5C7 SetWaitableTimerEx
+                         122 CreateWaitableTimerExW
+                         22A GetConsoleMode
+                         4AB ReadConsoleW
+
+  Section contains the following delay load imports:
+
+    NETAPI.dll
+                          0 GetAddrInfoW
+
+  Summary
+
+        1000 .data

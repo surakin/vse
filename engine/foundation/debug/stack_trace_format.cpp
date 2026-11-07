@@ -52,6 +52,13 @@ private:
     usize length_ = 0;
 };
 
+// The number of hex digits `value` needs, at least one.
+int HexDigits(u64 value) {
+    int digits = 1;
+    while (digits < 16 && (value >> (digits * 4)) != 0) ++digits;
+    return digits;
+}
+
 constexpr usize kEntriesPerFrame = 8; // inlined functions shown per address; more are dropped (and the last shown is marked inlined)
 
 } // namespace
@@ -86,7 +93,7 @@ usize FormatStackTrace(const StackTrace& trace, char* out, usize capacity, const
             } else if (info.has_module) {
                 writer.Add(info.module);
                 writer.Add("+0x");
-                writer.AddHex(info.module_offset, 1);
+                writer.AddHex(info.module_offset, HexDigits(info.module_offset)); // every digit (it once printed only the last one)
             } else {
                 writer.Add("??");
             }

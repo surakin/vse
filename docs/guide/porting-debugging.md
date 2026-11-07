@@ -46,10 +46,14 @@ Build id        RSDS record in the PE debug directory (GUID + age), hex
 OS version      RtlGetVersion
 Debugger        IsDebuggerPresent
 Dump directory  SHGetKnownFolderPath(FOLDERID_LocalAppData) / <app> / crashes, UTF-8
-Death tests     CreateProcessW suspended -> job object (KILL_ON_JOB_CLOSE) -> resume; SetErrorMode(SEM_NOGPFAULTERRORBOX) in the child
+Death tests     CreateProcessW suspended -> job object (KILL_ON_JOB_CLOSE, DIE_ON_UNHANDLED_EXCEPTION) -> resume; only the pipe ends
+                inherited; SetErrorMode(SEM_NOGPFAULTERRORBOX) and _set_abort_behavior in the child; the deadline ends the whole job
 Child result    exit code is an NTSTATUS: 0xC0000005 AccessViolation, 0xC000001D IllegalInstruction, 0xC0000094 ArithmeticFault
                 (not on arm64), 0xC00000FD StackOverflow; exit code 3 plus a marker written by the child's SIGABRT handler is Abort
 Thread          GetCurrentThreadId; SetThreadStackGuarantee for stack overflow; SetThreadDescription for the name
+Crash report    from the library's on_crash hook, on Breakpad's handler thread after the dump: EXCEPTION_POINTERS -> reason, address,
+                RtlVirtualUnwind walk; the faulting thread from a first vectored handler that only observes; frames as module+offset
+                (no DbgHelp while a crash is reported); a gate filter so a second crashing thread waits instead of ending the process
 Post-mortem     WER LocalDumps registry values (needs elevation: report Limited without it)
 Symbols         DbgHelp from the PDBs (decided and built on Phase 13 Day 154; libbacktrace is not built on Windows): capture with
                 RtlCaptureStackBackTrace, names and lines with SymFromAddrW / SymGetLineFromAddrW64, inlined frames with
@@ -57,12 +61,15 @@ Symbols         DbgHelp from the PDBs (decided and built on Phase 13 Day 154; li
 Modules         EnumProcessModulesEx + GetModuleInformation + GetModuleFileNameExW, the same immutable table as Linux
 ```
 
-Done on Day 154: symbols, modules, the crash context, the debugger check, thread ids and names (`os/windows/debug/`). The crash hook,
-death tests and fault injection are Day 155; post-mortem dumps, the symbol store and the scripts Day 156.
+Done on Day 154: symbols, modules, the crash context, the debugger check, thread ids and names (`os/windows/debug/`). Done on Day 155:
+the crash hook and the report, the crash gate, death tests and fault injection (`BusError` has no Windows form), the no-upload check and
+the allocation check. Post-mortem dumps, the symbol store and the scripts are Day 156.
 
 The traps: an exception filter may call only a few APIs and must not allocate; fast-fail crashes (`__fastfail`, `/GS` failures)
-bypass the filter and the library's `on_crash`; WER can show a dialog for a crashed child; every path is wide characters and
-the engine speaks UTF-8.
+end the process in the kernel, so no filter, handler or `on_crash` sees them (no report, no dump; exit code `0xC0000409`); Breakpad
+restores the previous top-level filter while it handles a crash, so a second thread crashing meanwhile needs the gate; the report is
+written on another thread, so the faulting thread's id and name must be recorded where it faulted; WER can show a dialog for a
+crashed child; every path is wide characters and the engine speaks UTF-8.
 
 ## macOS
 

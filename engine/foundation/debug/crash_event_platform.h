@@ -18,6 +18,8 @@ struct CrashEvent {
     bool has_fault_address = false;
     u64 fault_address = 0;
     u64 thread_id = 0;
+    bool thread_known = true; // false: the platform could not tell which thread faulted (the report says so)
+    const char* thread_name = nullptr; // the faulting thread's name when the event is built on another thread (Windows); null: the caller's
     StackTrace trace; // from the fault, not from the recorder
 };
 
@@ -33,5 +35,14 @@ bool CrashReportInProgress();
 
 // Removes the recorder if it is still the current handler; if something was installed over it, it stays but passes through.
 void RemoveCrashEventHook();
+
+#if defined(_WIN32)
+// Windows: called before the library is initialized, so the platform's crash gate (crash_hook.cpp) is the filter the library replaces.
+void PrepareCrashEventHook();
+
+// Windows: the crash library calls its `on_crash` hook with the fault's EXCEPTION_POINTERS (on its own handler thread, after the dump);
+// crash_handler_sentry.cpp passes them here, which builds the CrashEvent and calls the hook InstallCrashEventHook installed. Signal-safe.
+void ReportCrashFromExceptionPointers(const void* exception_pointers);
+#endif
 
 } // namespace engine_placeholder::debug::detail

@@ -89,6 +89,9 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   set(SENTRY_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
   set(SENTRY_BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
   set(SENTRY_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+  # The engine sets each thread's stack guarantee itself (RegisterThreadForCrashHandling, os/windows/debug/BACKEND.md); the library's own
+  # setting at sentry_init would be a second, smaller one that only logs a warning when ours is already there.
+  set(SENTRY_THREAD_STACK_GUARANTEE_AUTO_INIT OFF CACHE BOOL "" FORCE)
   add_subdirectory(third_party/sentry_native)
   # sentry-native builds itself with -Werror -Wall under clang-cl, where -Wall means -Weverything: a newer clang than the pinned release
   # was tested with (23 here) stops on warnings the release predates (-Wc++-keyword, -Wpadded in vendor/mpack.h, ...). Warnings off for

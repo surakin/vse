@@ -4,6 +4,7 @@ engine/foundation/debug/program_setup.cpp|Launch-time debugging switches (--cras
 engine/foundation/io/linux/file_system.cpp|HOME, XDG_* and ENGINE_APP_NAME locate the configuration directory itself, so they are needed before any settings file can be read.
 engine/foundation/io/windows/file_operations.cpp|ENGINE_APP_NAME names the crash dump directory, which the crash handler needs before any settings can be read (as on Linux).
 engine/foundation/os/linux/debug/death_test.cpp|The death-test child protocol (environment variables and Catch2 arguments passed to the re-executed test program); not user configuration.
+engine/foundation/os/windows/debug/death_test.cpp|The death-test child protocol on Windows: the variables that name the case a child runs, as on Linux.
 engine/platform/linux/window_host_linux.cpp|ENGINE_WINDOW_BACKEND is read when the window host opens its first window, before an application has Settings; the demos mirror it as platform.window_backend.
 engine/jobs/topology.cpp|ENGINE_JOB_THREADS is read when the scheduler starts, which can be before any Settings exists.
 engine/rhi/vulkan/vk_instance.cpp|The validation variables (ENGINE_RHI_VALIDATION*, _FATAL) are read at Vulkan instance creation, a process-wide switch for tests and CI; ENGINE_RHI_VALIDATION_SYNC is also renderer.sync_validation.

@@ -1,9 +1,10 @@
 // The stack-trace facade on Windows (Phase 13 Day 154): capture with RtlCaptureStackBackTrace, resolution with DbgHelp from the PDBs. The
 // counterpart of debug/stack_trace_backtrace.cpp (libbacktrace, Linux); FormatStackTrace is the neutral debug/stack_trace_format.cpp.
 //
-// DbgHelp is single-threaded: every call is made under one lock. The resolver is never called while a crash is being reported: the
-// report records raw addresses and module offsets, and names are found afterwards (in the test parent, the crash script or a debugger;
-// os/windows/debug/BACKEND.md). Capture needs no DbgHelp and no lock.
+// DbgHelp is single-threaded: every call is made under one lock. DbgHelp is never used while a crash is being reported: the resolver then
+// gives raw addresses and module offsets from the module table (read at initialization, no lock), and names are found afterwards (in the
+// test parent, the crash script or a debugger; os/windows/debug/BACKEND.md). Capture needs no DbgHelp and no lock.
+#include "debug/crash_event_platform.h"
 #include "debug/failure_hooks.h"
 #include "debug/module_list.h"
 #include "debug/stack_trace.h"
@@ -183,6 +184,18 @@ bool CaptureStackTrace(StackTrace& trace, u32 skip_frames) {
 }
 
 usize ResolveStackTrace(const StackTrace& trace, FrameInfo* out, usize capacity) {
+    if (detail::CrashReportInProgress()) {
+        // A crash is being reported (on the library's handler thread, while the faulting thread waits, perhaps holding a lock or the heap's):
+        // no DbgHelp, which locks and allocates. The module and offset only, from the table read at initialization; names come afterwards.
+        usize count = 0;
+        for (u32 i = 0; i < trace.count && count < capacity; ++i) {
+            out[count] = FrameInfo();
+            out[count].address = trace.frames[i];
+            ApplyModule(out[count]);
+            ++count;
+        }
+        return count;
+    }
     if (!g_initialized.load(std::memory_order_acquire)) InitDebugFacilities();
     std::lock_guard<std::mutex> lock(g_dbghelp_mutex);
     usize count = 0;

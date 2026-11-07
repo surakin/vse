@@ -1,8 +1,9 @@
 # Windows debugging backend (Phase 13)
 
 What Phase 13 implements to bring up the debugging facilities on Windows. Day 154 built symbols, modules, the crash context, the debugger
-check and thread ids and names (marked **Built** below); Days 155-156 the rest, which `os/windows/debug/crash_pending.cpp` holds as
-placeholders that report themselves unsupported until then. Linux is the reference
+check and thread ids and names; Day 155 the crash handler, the report, death tests and fault injection (marked **Built** below); Day 156
+the post-mortem dumps and the scripts, which `os/windows/debug/crash_pending.cpp` holds as a placeholder that reports itself unsupported
+until then. Linux is the reference
 (`engine/foundation/os/linux/debug/`). Everything else is shared: the facade (`debug/*.cpp`), the assert family, the report
 writer, the log ring, the crash state, the scripts' logic and the tests. See `docs/guide/porting-debugging.md` for the order of
 work and `tests/debug/BACKEND-CONFORMANCE.md` for what each test group needs.
@@ -12,8 +13,10 @@ The crash library (sentry-native, Breakpad backend) and libbacktrace both list W
 reads DWARF only, so a clang build with DWARF works as is; an MSVC/PDB build needs a DbgHelp resolver behind
 `ResolveStackTrace`. **Decided on Day 154: DbgHelp for both compilers** (`os/windows/debug/stack_trace_dbghelp.cpp`); libbacktrace is not
 built on Windows, and the facade's formatting is the neutral `debug/stack_trace_format.cpp`. **Rule: DbgHelp is never called while a crash
-is being reported** (it is not async-safe and takes a lock the crashed thread may hold): the Windows report records raw addresses and module
-offsets, and names are resolved afterwards, in the test parent, the crash script or a debugger.
+is being reported** (it is not async-safe and takes a lock the crashed thread may hold): while `detail::CrashReportInProgress()` is true,
+`ResolveStackTrace` gives each frame's module and offset from the module table read at initialization (no lock, no allocation), so the
+Windows report prints `module+0x<offset>` lines, and names are resolved afterwards, in the test parent, the crash script or a debugger
+(Day 155; `crash_end_to_end_windows_test.cpp` resolves the faulting frame's offset in its own process and finds `InjectFault`).
 
 Each entry: the neutral function, the Windows API, the trap, the conformance groups that exercise it.
 
@@ -37,7 +40,9 @@ which values to set. Never write outside the program's own key. Groups: *post-mo
 `NullWrite`: volatile write to address 0. `IllegalInstruction`: `__ud2()`. `DivideByZero`: integer divide with volatile operands.
 `StackOverflow`: unbounded recursion with a volatile local. `Abort`: `abort()`. **Windows on arm64:** an integer divide does not trap, so
 `FaultSupported(DivideByZero)` is false there, as on macOS arm64. Expected `CrashReason`: `AccessViolation` (0xC0000005), `IllegalInstruction` (0xC000001D),
-`ArithmeticFault` (0xC0000094), `StackOverflow` (0xC00000FD), `Abort`. Groups: *fault injection*.
+`ArithmeticFault` (0xC0000094), `StackOverflow` (0xC00000FD), `Abort`. Groups: *fault injection*. **Built (Day 155)**,
+`os/windows/debug/fault_injection.cpp`: `BusError` has no Windows form (no fault that every machine raises the way a truncated mapping
+raises SIGBUS), so `FaultSupported(BusError)` is false and its case skips; `DivideByZero` only on x86 and x64.
 
 ### `IsDebuggerAttached`
 `IsDebuggerPresent()`. Trap: it is true under any debugger, including a tracer the user did not mean. Groups: *assert*. **Built (Day 154).**
@@ -49,8 +54,13 @@ user (an ACL granting only the user; the Linux 0700 check has no direct equivale
 ### `RegisterThreadForCrashHandling`
 `SetThreadStackGuarantee` to a size that holds the report (the library documents `SENTRY_THREAD_STACK_GUARANTEE_*`; the
 build option `SENTRY_THREAD_STACK_GUARANTEE_AUTO_INIT` does it for threads that start in the DLL). Sets the name with
-`SetThreadDescription` as well as `SetCrashThreadName`. Groups: *threads*. **Built (Day 154)** with a 64 KiB guarantee; Day 155 measures what
-the report written from `on_crash` needs and sets that.
+`SetThreadDescription` as well as `SetCrashThreadName`. Groups: *threads*. **Built (Day 154)** with a 64 KiB guarantee. **Measured (Day 155):**
+the report is written on Breakpad's handler thread, which has its own stack, so the overflowed thread only runs the observer, the crash gate
+and Breakpad's filter (which hands the exception over and waits): the stack-overflow cases on the main thread and on a worker pass with a
+guarantee of 4, 8 and 16 KiB (three runs each, plain flavor). 64 KiB is kept, for the larger frames of the AddressSanitizer flavor and a
+debugger's own use. It also records the thread's stack range and its `CrashThreadName` buffer, so an `abort()` (which raises no exception
+the observer sees) is reported for the right thread, with its name. The library's own setting (`SENTRY_THREAD_STACK_GUARANTEE_AUTO_INIT`)
+is turned off in the root `CMakeLists.txt`: it set a second, smaller guarantee and logged a warning into every report's log section.
 
 ### `InitDebugFacilities` and `ReloadDebugModules`
 The module list for symbol lookup: `EnumProcessModules` plus `GetModuleInformation`, published through the immutable table in
@@ -73,18 +83,48 @@ NTSTATUS values above. `abort()` exits with code 3, which `exit(3)` also produce
 `signal(SIGABRT, ...)` first and the handler writes a marker line (`ENGINE-ABORT`) to standard error before exiting: the decoder maps
 "exit code 3 and the marker" to `Abort`. (`__fastfail` exits with `0xC0000409` and is not a `FaultKind`.) Trap: Windows Error Reporting may show a dialog for a crashed child:
 set `SetErrorMode(SEM_NOGPFAULTERRORBOX)` in the child. `posix_spawn` is not available; the environment block is built as a
-wide-character block. Groups: *death tests*.
+wide-character block. Groups: *death tests*. **Built (Day 155)**, `os/windows/debug/death_test.cpp`: the job also has
+`JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION`, so a crashed child never waits on a dialog; only the pipe ends are inherited
+(`PROC_THREAD_ATTRIBUTE_HANDLE_LIST`); the pipes are drained with `PeekNamedPipe` polls against the deadline; the child also calls
+`_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT)`; a child past its deadline is ended with `TerminateJobObject`, which ends any
+process it started too (exit code `0xDEAD0001`, reported as `timed_out`). `death_test_windows_test.cpp` checks the marker rule, the error
+mode and job limits a child runs with, and that a hung child's own child is gone after the deadline.
 
 ## Pieces without a neutral label
 
 - **Crash handler build:** `SENTRY_BACKEND=breakpad`, `SENTRY_TRANSPORT=none`; no handler executable is needed with that
-  backend (Crashpad would need one and uses winhttp). Keep `SENTRY_BUILD_SHARED_LIBS=OFF`. The library installs the
-  unhandled-exception filter and the vectored handler itself; **do not add an engine recorder** like Linux's
-  `crash_signal.cpp`: instead write the report from the library's `on_crash` hook, where Windows (unlike Linux) passes the
-  `EXCEPTION_POINTERS`. The hook runs in the faulting process; stack overflow needs the guarantee above.
-- **Fast-fail crashes** (`__fastfail`, `/GS` failures) bypass SEH: the library notes that `on_crash` is not called for them on
-  Breakpad. Document the gap.
-- **`detail::InstallCrashEventHook`** has no Windows implementation; the Windows `OnCrashEvent` is the `on_crash` hook.
+  backend (Crashpad would need one and uses winhttp). Keep `SENTRY_BUILD_SHARED_LIBS=OFF`. **Built (Day 155):** the library and Breakpad
+  are added before the engine's Windows options, so they compile with CMake's default `/EHsc` (Breakpad uses the C++ library) while the
+  engine keeps `/EHs-c- /GR-`; the library's `sentry.rc.in` is only for its shared build, so no resource compiles. Nothing can upload: the
+  ctests `debug_no_network_*` read each test binary's imports (`link /dump /imports`, or `llvm-readobj --coff-imports` for clang-cl) and its
+  ASCII and UTF-16 strings for a network library (`tests/debug/check_no_network_windows.cmake`, tested on three canned dumps).
+- **The report (Built, Day 155; `os/windows/debug/crash_hook.cpp`):** the library writes the dump on Breakpad's handler thread and then
+  calls its `on_crash` hook there with the fault's `EXCEPTION_POINTERS` (the faulting thread waits); `crash_handler_sentry.cpp` passes them
+  to `detail::ReportCrashFromExceptionPointers`, which decodes the reason (the codes above, `0x40000015` for the library's `abort()`; any
+  other code prints as `None`), walks the faulting thread's stack from its `CONTEXT` with `RtlVirtualUnwind` under `__try`, and writes the
+  report. A fault inside the report (a state provider) ends it with a `double fault` line; the dump is already written. Because the report
+  is written on another thread, the faulting thread is found by an **observer** (a first vectored handler that only notes which thread
+  raised each exception record, and that thread's crash name, in a ring of 128, and always passes the exception on) or, for `abort()`, by
+  the registered stack ranges; when neither knows (an `abort()` on a thread never registered) the report says `thread: unknown` rather than
+  name the handler thread it runs on. An abort is reported without an address (the record is the library's), as on Linux. A first frame at
+  address 0 (a call through a null pointer) is kept and the walk goes on from the return address on top of the stack.
+- **The crash gate (Day 155):** Breakpad's filter, while it handles one crash, puts back the top-level filter that was there before it, so a
+  second thread faulting at that moment got the system's default handling and the process ended without a dump (seen in about one run in
+  three of two threads faulting together). `detail::PrepareCrashEventHook` installs a gate filter before `sentry_init` (so it is what
+  Breakpad puts back) and `InstallCrashEventHook` installs it again on top: the first crash goes to the library, a later one waits for the
+  process to end, and a crash the library hands back goes on to the system (one it resumes, `EXCEPTION_CONTINUE_EXECUTION`, frees the
+  gate again). The gate handles nothing itself. After `UninstallCrashHandler`
+  it passes everything on to the filter that was there before it.
+- **What the report calls into Windows for:** the report file is opened at crash time with `CreateFileW` (through `os::CreateFileForWriting`),
+  which converts the path with a heap allocation inside Windows (`KNOWN-ISSUES.md`); everything else is fixed buffers and `WriteFile`. The
+  allocation check (`tests/debug/crash_alloc_windows_test.cpp`) is the debug C runtime's `_CrtSetAllocHook`, counting the C runtime
+  allocations on the reporting thread (Debug build, plain flavor; GNU ld's `--wrap`, which Linux uses, has no `link.exe` or `lld-link`
+  equivalent). A planted `malloc` in a state provider shows it counts. Heap use inside Windows itself (`HeapAlloc`) is outside what it sees.
+- **Fast-fail crashes** (`__fastfail`, `/GS` failures) end the process in the kernel: no vectored handler, filter or library sees them, so
+  there is no report and no dump in the handler's directory (exit code `0xC0000409`; `crash_end_to_end_windows_test.cpp` checks it).
+  Windows Error Reporting's LocalDumps (Day 156) is the only dump such a crash can leave.
+- **`detail::InstallCrashEventHook`** installs the observer and the crash gate; `RemoveCrashEventHook` removes the observer and turns the
+  gate into a pass-through.
 - **Scripts:** `find-core.sh`, `open-core.sh`, `split-debug.sh` and `store-symbols.sh` are Linux shell scripts. Windows needs
   PowerShell equivalents for WER dumps and a symbol store (PDB or DWARF, chosen with the resolver decision above).
 - **CMake:** the branch in `engine/foundation/CMakeLists.txt` that stops with a message names this file; replace it with the

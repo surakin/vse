@@ -760,5 +760,14 @@ frames, `address - 1`, a search path that never names a symbol server; never cal
 Module list, crash context (CodeView build id), debugger check, thread ids and names are built; the crash hook, death tests and fault injection
 (Day 155) and post-mortem dumps (Day 156) are placeholders that report themselves unsupported. `tests/debug` runs on Windows with today's groups.
 Runs: `ran 472 of 727 tests (phases: all; flavors: plain; display: included; crash tests: included)`, asan `ran 255 of 727`; `windows-clang-cl` 503 of
-503; non-unity 727 of 727. Review: 6 findings, 2 fixed, 4 declined. Linux: pending until the phase close. **Next: Day 155 (debugging II: the crash
-handler on Windows).**
+503; non-unity 727 of 727. Review: 6 findings, 2 fixed, 4 declined. Linux: pending until the phase close.
+
+Phase 13 **Day 155 (2026-11-07, Windows PC): debugging II.** A crashing Windows process leaves a minidump and the engine report, with nothing
+uploaded (`debug_no_network_*` read imports and strings). The report is written from the library's `on_crash` hook on Breakpad's handler thread
+(`os/windows/debug/crash_hook.cpp`): an observing vectored handler records each exception's thread and name, the stack is walked with
+`RtlVirtualUnwind`, frames are module and offset only (no DbgHelp during a crash), and a gate filter stops a second crashing thread from ending
+the process before the dump (seen one run in three before it). Death tests (job objects, the `ENGINE-ABORT` marker) and fault injection
+(`BusError` skips) work; fast fail is a documented gap; the allocation check is the debug C runtime's hook. Neutral fixes: a module offset
+printed one digit; the report can say `thread: unknown`. Runs: `ran 515 of 807 tests (phases: all; flavors: plain; display: included; crash
+tests: included)`, asan `ran 292 of 807`; MSVC 807 of 807, `windows-clang-cl` 545 of 545, non-unity 806 of 807 (a phase 2 flake, filed). Review:
+9 findings, 5 fixed, 4 declined. Linux: pending until the phase close. **Next: Day 156 (debugging III: dumps, symbol store and scripts).**

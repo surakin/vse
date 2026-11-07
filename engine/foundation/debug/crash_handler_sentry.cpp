@@ -128,6 +128,8 @@ void OnCrashEvent(const detail::CrashEvent& event) {
     info.fault_address = event.fault_address;
     info.trace = &event.trace;
     info.thread_id = event.thread_id;
+    info.thread_name = event.thread_name;
+    info.thread_known = event.thread_known;
     CrashReportSink sink;
     sink.write = &WriteReportPiece;
     sink.context = &destination;
@@ -136,6 +138,15 @@ void OnCrashEvent(const detail::CrashEvent& event) {
         os::Close(destination.file_descriptor);
     }
 }
+
+#if defined(_WIN32)
+// Windows: the library calls this on its handler thread, after it wrote the dump, with the fault's EXCEPTION_POINTERS; the platform turns them
+// into the CrashEvent and calls OnCrashEvent (os/windows/debug/crash_hook.cpp). Keeping the event keeps the envelope with the dump and report.
+sentry_value_t OnLibraryCrash(const sentry_ucontext_t* context, sentry_value_t event, sentry_hint_t*, void*) {
+    if (context != nullptr) detail::ReportCrashFromExceptionPointers(&context->exception_ptrs);
+    return event;
+}
+#endif
 
 // SIGNAL-SAFE-END
 } // namespace
@@ -149,13 +160,13 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
         return CrashHandlerResult::AlreadyInstalled;
     }
 
-    io::Path directory_path(io::PathStyle::Posix);
+    io::Path directory_path; // the native style: a Windows dump directory is a Windows path (Phase 13 Day 155)
     if (options.dump_directory == nullptr || options.dump_directory[0] == '\0') {
         if (io::CrashDumpDirectory(&directory_path).Failed()) {
             Log(LogCrash, LogVerbosity::Warn, "no directory for crash dumps could be found or created; crash handler not installed");
             return CrashHandlerResult::DirectoryFailed;
         }
-    } else if (!io::Path::Parse(StringView(options.dump_directory), io::PathStyle::Posix, &directory_path) ||
+    } else if (!io::Path::Parse(StringView(options.dump_directory), io::NativePathStyle(), &directory_path) ||
                io::CreatePrivateDirectory(directory_path).Failed()) {
         Log(LogCrash, LogVerbosity::Warn, "the crash dump directory is missing, not private to this user, or not writable; crash handler not installed");
         return CrashHandlerResult::DirectoryFailed;
@@ -230,6 +241,10 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
     sentry_options_set_logger_level(sentry, SENTRY_LEVEL_WARNING);
     sentry_options_set_logger(sentry, &RouteSentryLog, nullptr);
     sentry_options_set_logger_enabled_when_crashed(sentry, 0); // our log is not safe to call from a crashing process
+#if defined(_WIN32)
+    sentry_options_set_on_crash(sentry, &OnLibraryCrash, nullptr); // the report on Windows (above)
+    detail::PrepareCrashEventHook(); // the crash gate goes under the library's filter (crash_hook.cpp)
+#endif
 
     if (sentry_init(sentry) != 0) { // takes ownership of `sentry`
         Log(LogCrash, LogVerbosity::Warn, "the crash handler library failed to start; crash handler not installed");
