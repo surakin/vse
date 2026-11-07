@@ -2,11 +2,17 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <unistd.h>
 #include <thread>
-#include <vector>
+
+#if defined(_WIN32)
+#include "process_memory.h" // tests/windows/support
+#else
+#include <unistd.h>
+#endif
 
 #include <catch2/catch_test_macros.hpp>
+
+#include "containers/vector.h"
 
 #include "io/directory.h"
 #include "io/file.h"
@@ -72,19 +78,19 @@ TEST_CASE("FramePool routes requests to the smallest class that fits and aligns 
 
 TEST_CASE("FramePool live blocks never overlap", "[jobs][framepool]") {
     FramePool pool(LocalConfig(32));
-    std::vector<void*> blocks;
-    std::vector<usize> sizes;
+    Vector<void*> blocks;
+    Vector<usize> sizes;
     for (usize i = 0; i < 100; ++i) {
         usize size = 8 + (i * 37) % 1900;
         void* p = pool.Allocate(size);
         Fill(p, size, static_cast<u8>(i));
-        blocks.push_back(p);
-        sizes.push_back(size);
+        blocks.Push(p);
+        sizes.Push(size);
     }
-    for (usize i = 0; i < blocks.size(); ++i) {
+    for (usize i = 0; i < blocks.Size(); ++i) {
         REQUIRE(Check(blocks[i], sizes[i], static_cast<u8>(i)));
     }
-    for (void* p : blocks) pool.Deallocate(p);
+    for (usize i = 0; i < blocks.Size(); ++i) pool.Deallocate(blocks[i]);
     REQUIRE(pool.GetStats().Live() == 0);
 }
 
@@ -113,17 +119,17 @@ TEST_CASE("FramePool oversize requests take the counted malloc fallback", "[jobs
 
 TEST_CASE("FramePool falls back (never nullptr) when a class is exhausted, then recovers", "[jobs][framepool]") {
     FramePool pool(LocalConfig(4)); // only 4 class-0 slots
-    std::vector<void*> blocks;
+    Vector<void*> blocks;
     for (int i = 0; i < 7; ++i) {
         void* p = pool.Allocate(16);
         REQUIRE(p != nullptr);
-        blocks.push_back(p);
+        blocks.Push(p);
     }
     FramePool::Stats s = pool.GetStats();
     REQUIRE(s.pooled_allocs[0] == 4);
     REQUIRE(s.fallback_allocs == 3);
 
-    for (void* p : blocks) pool.Deallocate(p);
+    for (usize i = 0; i < blocks.Size(); ++i) pool.Deallocate(blocks[i]);
     s = pool.GetStats();
     REQUIRE(s.pooled_frees[0] == 4);
     REQUIRE(s.fallback_frees == 3);
@@ -139,18 +145,18 @@ TEST_CASE("FramePool global instance: blocks freed on another thread are reusabl
     FramePool& pool = FramePool::Global();
     FramePool::Stats before = pool.GetStats();
 
-    std::vector<void*> blocks;
-    for (int i = 0; i < 1000; ++i) blocks.push_back(pool.Allocate(100));
+    Vector<void*> blocks;
+    for (int i = 0; i < 1000; ++i) blocks.Push(pool.Allocate(100));
     std::thread freer([&] {
-        for (void* p : blocks) pool.Deallocate(p);
+        for (usize i = 0; i < blocks.Size(); ++i) pool.Deallocate(blocks[i]);
     });
     freer.join();
 
     // The freeing thread exited and flushed its cache; everything is
     // allocatable again with no fallback.
-    std::vector<void*> again;
-    for (int i = 0; i < 1000; ++i) again.push_back(pool.Allocate(100));
-    for (void* p : again) pool.Deallocate(p);
+    Vector<void*> again;
+    for (int i = 0; i < 1000; ++i) again.Push(pool.Allocate(100));
+    for (usize i = 0; i < again.Size(); ++i) pool.Deallocate(again[i]);
 
     FramePool::Stats after = pool.GetStats();
     REQUIRE(after.Live() == before.Live());
@@ -169,8 +175,9 @@ TEST_CASE("FramePool survives 8-thread cross-thread alloc/free churn with no ove
 
     // Mailbox: a block parked here by one thread is freed by whichever
     // thread takes it, so allocation and free routinely cross threads.
-    std::vector<std::atomic<void*>> mailbox(kSlots);
-    for (auto& m : mailbox) m.store(nullptr);
+    Vector<std::atomic<void*>> mailbox; // sized once while empty, so the atomics never move
+    mailbox.Resize(kSlots);
+    for (usize i = 0; i < mailbox.Size(); ++i) mailbox[i].store(nullptr);
     std::atomic<int> corruption{0};
 
     // Each block: [0..8) = tag, [8..16) = size, [size-8..size) = tag.
@@ -219,12 +226,12 @@ TEST_CASE("FramePool survives 8-thread cross-thread alloc/free churn with no ove
         }
     };
 
-    std::vector<std::thread> threads;
-    for (int i = 0; i < kThreads; ++i) threads.emplace_back(worker, i);
-    for (auto& t : threads) t.join();
+    Vector<std::thread> threads;
+    for (int i = 0; i < kThreads; ++i) threads.Push(std::thread(worker, i));
+    for (usize i = 0; i < threads.Size(); ++i) threads[i].join();
 
-    for (auto& m : mailbox) {
-        void* p = m.exchange(nullptr);
+    for (usize i = 0; i < mailbox.Size(); ++i) {
+        void* p = mailbox[i].exchange(nullptr);
         if (p != nullptr) {
             if (!verify(p)) corruption.fetch_add(1);
             pool.Deallocate(p);
@@ -244,6 +251,9 @@ TEST_CASE("FramePool does not commit slab memory until blocks are used", "[jobs]
     // backed design wrote a link into every slot on first use, committing
     // the whole slab under the central lock.)
     auto resident_kb = [] {
+#if defined(_WIN32)
+        return test_support::ResidentKb();
+#else
         io::Path statm_path("/proc/self/statm", io::PathStyle::Posix);
         Vector<u8> bytes;
         long total = 0, resident = 0;
@@ -253,6 +263,7 @@ TEST_CASE("FramePool does not commit slab memory until blocks are used", "[jobs]
             if (std::sscanf(text, "%ld %ld", &total, &resident) != 2) resident = 0;
         }
         return resident * (sysconf(_SC_PAGESIZE) / 1024);
+#endif
     };
     FramePool::Config c;
     for (usize i = 0; i < FramePool::kClassCount; ++i) c.slots_per_class[i] = 0;

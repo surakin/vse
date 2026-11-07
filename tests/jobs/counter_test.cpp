@@ -1,9 +1,13 @@
 #include <atomic>
-#include <memory>
 #include <thread>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
+
+#include "containers/unique_ptr.h"
+#include "debug/compiler.h"
+#if defined(_MSC_VER) && !defined(__clang__)
+#include <intrin.h>
+#endif
 
 #include "containers/unique_ptr.h"
 #include "jobs/counter.h"
@@ -15,10 +19,10 @@ using namespace engine_placeholder::jobs;
 
 namespace {
 
-std::unique_ptr<Scheduler> CounterTestMakeScheduler(usize n) {
+UniquePtr<Scheduler> CounterTestMakeScheduler(usize n) {
     Scheduler::Config cfg;
     cfg.participants = n;
-    return std::make_unique<Scheduler>(cfg);
+    return MakeUnique<Scheduler>(cfg);
 }
 u64 Live() { return FramePool::Global().GetStats().Live(); }
 
@@ -83,7 +87,14 @@ Job ParentJob(std::atomic<int>* ok, std::atomic<int>* finished) {
 
 // ---- deep chain ----------------------------------------------------------
 
-__attribute__((noinline)) usize StackMark() { return reinterpret_cast<usize>(__builtin_frame_address(0)); }
+// Where the stack is now: the frame of a function of its own (MSVC has no __builtin_frame_address; Phase 13 Day 153).
+ENGINE_NOINLINE usize StackMark() {
+#if defined(_MSC_VER) && !defined(__clang__)
+    return reinterpret_cast<usize>(_AddressOfReturnAddress());
+#else
+    return reinterpret_cast<usize>(__builtin_frame_address(0));
+#endif
+}
 
 struct ChainStats {
     usize lowest = ~usize{0};

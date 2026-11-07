@@ -2,11 +2,16 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <memory>
-#include <string>
 #include <thread>
 
 #include <catch2/catch_test_macros.hpp>
+
+#include "containers/unique_ptr.h"
+#include "test_env.h"
+#include "test_text.h"
+#if defined(_WIN32)
+#include "os/windows/win32.h"
+#endif
 
 #include "io/directory.h"
 #include "io/file.h"
@@ -18,46 +23,53 @@ using namespace engine_placeholder::jobs;
 
 namespace {
 
-// Reads the Cpus_allowed_list line of /proc/self/task/<tid>/status.
-// Returns false if the file/line is missing.
-bool ReadCpusAllowedList(i32 tid, char* out, usize cap) {
+// True when the OS says thread `tid` may run on CPU `cpu` alone.
+bool ThreadPinnedTo(i32 tid, i32 cpu) {
+#if defined(_WIN32)
+    // CPU ids are group * 64 + bit (jobs/windows/thread_platform.cpp).
+    const HANDLE thread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, static_cast<DWORD>(tid));
+    if (thread == nullptr) return false;
+    GROUP_AFFINITY affinity{};
+    const BOOL got = GetThreadGroupAffinity(thread, &affinity);
+    CloseHandle(thread);
+    return got && affinity.Group == static_cast<WORD>(cpu / 64) && affinity.Mask == (KAFFINITY{1} << (cpu % 64));
+#else
+    // The Cpus_allowed_list line of /proc/self/task/<tid>/status: exactly one CPU, so the list is that single number.
     char path[64];
     std::snprintf(path, sizeof(path), "/proc/self/task/%d/status", tid);
     io::Path status_path;
     Vector<u8> bytes;
     if (!io::Path::Parse(StringView(path), io::PathStyle::Posix, &status_path) || io::ReadFile(status_path, &bytes, 1 << 16).Failed()) return false;
-    const std::string whole(reinterpret_cast<const char*>(bytes.Data()), bytes.Size());
-    size_t line_start = 0;
-    while (line_start < whole.size()) {
-        const size_t line_end = whole.find('\n', line_start);
-        const std::string line = whole.substr(line_start, line_end == std::string::npos ? std::string::npos : line_end - line_start);
-        line_start = line_end == std::string::npos ? whole.size() : line_end + 1;
-        if (line.compare(0, 18, "Cpus_allowed_list:") == 0) {
-            const char* p = line.c_str() + 18;
-            while (*p == ' ' || *p == '\t') ++p;
-            usize n = std::strlen(p);
-            if (n >= cap) n = cap - 1;
-            std::memcpy(out, p, n);
-            out[n] = '\0';
-            return true;
-        }
+    StringView rest(reinterpret_cast<const char*>(bytes.Data()), bytes.Size());
+    const StringView key("Cpus_allowed_list:");
+    while (!rest.Empty()) {
+        const usize end = rest.IndexOf('\n');
+        StringView line = rest.Substring(0, end);
+        rest = end < rest.Length() ? rest.Substring(end + 1) : StringView();
+        if (!line.StartsWith(key)) continue;
+        line = line.Substring(key.Length());
+        while (!line.Empty() && (line[0] == ' ' || line[0] == '\t')) line = line.Substring(1);
+        char expected[16];
+        const int n = std::snprintf(expected, sizeof(expected), "%d", cpu);
+        return line == StringView(expected, static_cast<usize>(n));
     }
     return false;
+#endif
 }
 
 struct EnvGuard {
-    std::string saved;
+    engine_test::Text saved = engine_test::MakeText();
     bool had;
     explicit EnvGuard(const char* value) {
         const char* old = std::getenv("ENGINE_JOB_THREADS");
         had = old != nullptr;
-        if (had) saved = old;
-        if (value != nullptr) setenv("ENGINE_JOB_THREADS", value, 1);
-        else unsetenv("ENGINE_JOB_THREADS");
+        if (had) saved = engine_test::MakeText(StringView(old));
+        if (value != nullptr) test_support::SetEnv("ENGINE_JOB_THREADS", value);
+        else test_support::UnsetEnv("ENGINE_JOB_THREADS");
     }
     ~EnvGuard() {
-        if (had) setenv("ENGINE_JOB_THREADS", saved.c_str(), 1);
-        else unsetenv("ENGINE_JOB_THREADS");
+        if (had) test_support::SetEnv("ENGINE_JOB_THREADS", saved.CStr());
+        else test_support::UnsetEnv("ENGINE_JOB_THREADS");
     }
 };
 
@@ -110,7 +122,7 @@ TEST_CASE("DefaultParticipantCount honors ENGINE_JOB_THREADS", "[jobs][pool]") {
 }
 
 TEST_CASE("A pool of one participant spawns no threads", "[jobs][pool]") {
-    auto pool = std::make_unique<WorkerPool>(WorkerPool::Config{1});
+    auto pool = MakeUnique<WorkerPool>(WorkerPool::Config{1});
     REQUIRE(pool->ParticipantCount() == 1);
     REQUIRE(pool->SpawnedWorkerCount() == 0);
     REQUIRE(WorkerPool::IsParticipantThread());
@@ -120,7 +132,7 @@ TEST_CASE("A pool of one participant spawns no threads", "[jobs][pool]") {
 TEST_CASE("Participant identity: main is 0, plain threads are not participants", "[jobs][pool]") {
     REQUIRE_FALSE(WorkerPool::IsParticipantThread());
     {
-        auto pool = std::make_unique<WorkerPool>(WorkerPool::Config{3});
+        auto pool = MakeUnique<WorkerPool>(WorkerPool::Config{3});
         REQUIRE(WorkerPool::IsParticipantThread());
         REQUIRE(WorkerPool::CurrentParticipantIndex() == 0);
         bool other_is_participant = true;
@@ -158,7 +170,7 @@ TEST_CASE("Each spawned worker registers a thread-local identity", "[jobs][pool]
     cfg.participants = 4;
     cfg.worker_fn = ProbeBody;
     cfg.user = &probe;
-    auto pool = std::make_unique<WorkerPool>(cfg);
+    auto pool = MakeUnique<WorkerPool>(cfg);
     pool->Join();
     REQUIRE(probe.mismatches.load() == 0);
     REQUIRE(probe.seen_mask.load() == 0b1110); // workers 1..3, not main
@@ -171,7 +183,7 @@ TEST_CASE("Spawned workers are each pinned to one distinct CPU", "[jobs][pool]")
         SKIP("needs at least 2 allowed CPUs (one for main, one for a worker)");
     }
     usize n = allowed < 8 ? allowed : 8; // workers = n-1 <= allowed-1: all distinct
-    auto pool = std::make_unique<WorkerPool>(WorkerPool::Config{n});
+    auto pool = MakeUnique<WorkerPool>(WorkerPool::Config{n});
     REQUIRE(pool->SpawnedWorkerCount() == n - 1);
 
     i32 seen_cpu[kMaxParticipants];
@@ -179,15 +191,10 @@ TEST_CASE("Spawned workers are each pinned to one distinct CPU", "[jobs][pool]")
         const Participant& p = pool->GetParticipant(i);
         REQUIRE(p.tid > 0);
         if (p.cpu < 0) {
-            SKIP("pthread_setaffinity_np was rejected here (restricted cpuset?); pinning cannot be verified");
+            SKIP("the OS rejected pinning here (restricted cpuset or affinity?); pinning cannot be verified");
         }
         REQUIRE(static_cast<u32>(p.cpu) != cpus[0]); // first CPU left to main
-        char list[128];
-        REQUIRE(ReadCpusAllowedList(p.tid, list, sizeof(list)));
-        // Exactly one CPU: the list is that single number.
-        char expected[16];
-        std::snprintf(expected, sizeof(expected), "%d", p.cpu);
-        REQUIRE(std::strcmp(list, expected) == 0);
+        REQUIRE(ThreadPinnedTo(p.tid, p.cpu));
         seen_cpu[i] = p.cpu;
         for (usize j = 1; j < i; ++j) REQUIRE(seen_cpu[j] != seen_cpu[i]);
     }
@@ -199,20 +206,20 @@ TEST_CASE("Oversubscribed pools wrap CPUs and still start and stop", "[jobs][poo
     u32 cpus[kMaxParticipants];
     usize allowed = GetAllowedCpus(cpus, kMaxParticipants);
     usize want = allowed + 3 < kMaxParticipants ? allowed + 3 : kMaxParticipants;
-    auto pool = std::make_unique<WorkerPool>(WorkerPool::Config{want});
+    auto pool = MakeUnique<WorkerPool>(WorkerPool::Config{want});
     REQUIRE(pool->SpawnedWorkerCount() == want - 1);
-    pool.reset(); // joins cleanly
+    pool.Reset(); // joins cleanly
 }
 
 TEST_CASE("Repeated start/stop cycles join cleanly", "[jobs][pool]") {
     for (int i = 0; i < 50; ++i) {
-        auto pool = std::make_unique<WorkerPool>(WorkerPool::Config{4});
+        auto pool = MakeUnique<WorkerPool>(WorkerPool::Config{4});
         if (i % 2 == 0) pool->RequestStop();
     }
 }
 
 TEST_CASE("The default parked worker body wakes on RequestStop and Join is idempotent", "[jobs][pool]") {
-    auto pool = std::make_unique<WorkerPool>(WorkerPool::Config{3});
+    auto pool = MakeUnique<WorkerPool>(WorkerPool::Config{3});
     REQUIRE_FALSE(pool->StopRequested());
     pool->RequestStop();
     REQUIRE(pool->StopRequested());
@@ -221,7 +228,7 @@ TEST_CASE("The default parked worker body wakes on RequestStop and Join is idemp
 }
 
 TEST_CASE("Two overlapping pools keep the right identity when destroyed in reverse order", "[jobs][pool]") {
-    auto a = std::make_unique<WorkerPool>(WorkerPool::Config{2});
+    auto a = MakeUnique<WorkerPool>(WorkerPool::Config{2});
     const Participant* before = WorkerPool::Current();
     {
         WorkerPool b(WorkerPool::Config{2});

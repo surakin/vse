@@ -30,7 +30,7 @@ flavors 13  windows: plain,asan
 # MSVC has no ThreadSanitizer, so no Windows line lists tsan.
 flavors 0   windows: plain,asan
 flavors 1   windows: plain
-flavors 2   windows: none
+flavors 2   windows: plain,asan
 flavors 3   windows: none
 flavors 4   windows: plain
 flavors 5   windows: plain

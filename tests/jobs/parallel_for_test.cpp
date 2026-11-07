@@ -1,10 +1,12 @@
 #include <atomic>
 #include <cstdlib>
-#include <memory>
-#include <string>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
+
+#include "containers/unique_ptr.h"
+#include "containers/vector.h"
+#include "test_env.h"
+#include "test_text.h"
 
 #include "jobs/frame_pool.h"
 #include "jobs/parallel_for.h"
@@ -14,10 +16,18 @@ using namespace engine_placeholder::jobs;
 
 namespace {
 
-std::unique_ptr<Scheduler> ParallelForTestMakeScheduler(usize n) {
+UniquePtr<Scheduler> ParallelForTestMakeScheduler(usize n) {
     Scheduler::Config cfg;
     cfg.participants = n;
-    return std::make_unique<Scheduler>(cfg);
+    return MakeUnique<Scheduler>(cfg);
+}
+
+// `n` zeros.
+Vector<u64> Zeros(usize n) {
+    Vector<u64> v;
+    v.Resize(n);
+    for (usize i = 0; i < n; ++i) v[i] = 0;
+    return v;
 }
 
 struct SumCtx {
@@ -37,20 +47,21 @@ void SumChunk(void* user, usize begin, usize end) {
 
 // Runs the sum with the given scheduler/chunk; returns the combined sum
 // and the number of chunk invocations.
-u64 ParallelSum(Scheduler& s, const std::vector<u64>& data, usize chunk, u64* invocations = nullptr) {
+u64 ParallelSum(Scheduler& s, const Vector<u64>& data, usize chunk, u64* invocations = nullptr) {
     if (chunk == 0) chunk = kDefaultChunkSize;
-    usize chunks = data.empty() ? 0 : (data.size() + chunk - 1) / chunk;
-    std::vector<u64> partials(chunks ? chunks : 1, 0);
-    SumCtx ctx{data.data(), partials.data(), chunk, {0}};
-    ParallelForBlocking(s, data.size(), chunk, SumChunk, &ctx);
+    usize chunks = data.Empty() ? 0 : (data.Size() + chunk - 1) / chunk;
+    Vector<u64> partials = Zeros(chunks ? chunks : 1);
+    SumCtx ctx{data.Data(), partials.Data(), chunk, {0}};
+    ParallelForBlocking(s, data.Size(), chunk, SumChunk, &ctx);
     u64 total = 0;
     for (usize i = 0; i < chunks; ++i) total += partials[i];
     if (invocations) *invocations = ctx.invocations.load();
     return total;
 }
 
-std::vector<u64> MakeData(usize n) {
-    std::vector<u64> v(n);
+Vector<u64> MakeData(usize n) {
+    Vector<u64> v;
+    v.Resize(n);
     for (usize i = 0; i < n; ++i) v[i] = i; // closed form: n(n-1)/2
     return v;
 }
@@ -71,19 +82,19 @@ TEST_CASE("parallel_for sums 100,000 elements exactly, for N = 1, 2, default", "
 
 TEST_CASE("parallel_for honors ENGINE_JOB_THREADS=3 via the default scheduler config", "[jobs][parallel_for]") {
     struct EnvRestore {
-        std::string saved;
+        engine_test::Text saved = engine_test::MakeText();
         bool had;
         EnvRestore() {
             const char* old = std::getenv("ENGINE_JOB_THREADS");
             had = old != nullptr;
-            if (had) saved = old;
+            if (had) saved = engine_test::MakeText(StringView(old));
         }
         ~EnvRestore() {
-            if (had) setenv("ENGINE_JOB_THREADS", saved.c_str(), 1);
-            else unsetenv("ENGINE_JOB_THREADS");
+            if (had) test_support::SetEnv("ENGINE_JOB_THREADS", saved.CStr());
+            else test_support::UnsetEnv("ENGINE_JOB_THREADS");
         }
     } restore;
-    setenv("ENGINE_JOB_THREADS", "3", 1);
+    test_support::SetEnv("ENGINE_JOB_THREADS", "3");
     {
         auto s = ParallelForTestMakeScheduler(0); // default => reads the env override
         REQUIRE(s->ParticipantCount() == 3);
@@ -97,7 +108,7 @@ TEST_CASE("parallel_for edge cases", "[jobs][parallel_for]") {
         auto s = ParallelForTestMakeScheduler(workers);
 
         SECTION("count == 0 runs nothing") {
-            std::vector<u64> empty;
+            Vector<u64> empty;
             u64 inv = 99;
             REQUIRE(ParallelSum(*s, empty, 10, &inv) == 0);
             REQUIRE(inv == 0);
@@ -131,14 +142,14 @@ TEST_CASE("parallel_for edge cases", "[jobs][parallel_for]") {
 
 TEST_CASE("The Job-returning ParallelFor joins inside a job and via Spawn", "[jobs][parallel_for]") {
     struct Local {
-        static Job Parent(const std::vector<u64>* data, u64* out, std::atomic<int>* done) {
-            std::vector<u64> partials((data->size() + 99) / 100);
-            SumCtx ctx{data->data(), partials.data(), 100, {0}};
+        static Job Parent(const Vector<u64>* data, u64* out, std::atomic<int>* done) {
+            Vector<u64> partials = Zeros((data->Size() + 99) / 100);
+            SumCtx ctx{data->Data(), partials.Data(), 100, {0}};
             Counter c;
-            Spawn(c, ParallelFor(data->size(), 100, SumChunk, &ctx));
+            Spawn(c, ParallelFor(data->Size(), 100, SumChunk, &ctx));
             co_await c;
             u64 t = 0;
-            for (u64 p : partials) t += p;
+            for (usize i = 0; i < partials.Size(); ++i) t += partials[i];
             *out = t;
             done->fetch_add(1);
         }
@@ -156,13 +167,14 @@ TEST_CASE("The Job-returning ParallelFor joins inside a job and via Spawn", "[jo
 
 TEST_CASE("The typed callable wrapper forwards (begin, end)", "[jobs][parallel_for]") {
     auto s = ParallelForTestMakeScheduler(2);
-    std::vector<std::atomic<u8>> hit(5000);
-    for (auto& h : hit) h.store(0);
+    Vector<std::atomic<u8>> hit; // sized once while empty, so the atomics never move
+    hit.Resize(5000);
+    for (usize i = 0; i < hit.Size(); ++i) hit[i].store(0);
     auto fn = [&](usize begin, usize end) {
         for (usize i = begin; i < end; ++i) hit[i].fetch_add(1);
     };
-    ParallelForBlocking(*s, hit.size(), 64, fn);
-    for (auto& h : hit) REQUIRE(h.load() == 1);
+    ParallelForBlocking(*s, hit.Size(), 64, fn);
+    for (usize i = 0; i < hit.Size(); ++i) REQUIRE(hit[i].load() == 1);
 }
 
 TEST_CASE("Frame stats balance after parallel_for", "[jobs][parallel_for]") {
@@ -187,13 +199,13 @@ JobFormResult RunJobForm(Scheduler& s, usize n, usize chunk) {
     auto data = MakeData(n);
     usize eff = EffectiveChunkSize(n, chunk);
     usize chunks = n == 0 ? 1 : (n + eff - 1) / eff;
-    std::vector<u64> partials(chunks, 0);
-    SumCtx ctx{data.data(), partials.data(), eff, {0}};
+    Vector<u64> partials = Zeros(chunks);
+    SumCtx ctx{data.Data(), partials.Data(), eff, {0}};
     Counter c(s);
     Spawn(c, ParallelFor(n, chunk, SumChunk, &ctx));
     s.HelpUntil(c);
     JobFormResult r;
-    for (u64 p : partials) r.sum += p;
+    for (usize i = 0; i < partials.Size(); ++i) r.sum += partials[i];
     r.invocations = ctx.invocations.load();
     return r;
 }
@@ -231,15 +243,15 @@ TEST_CASE("A huge chunk count is clamped instead of overflowing the queues", "[j
         // And the Job form really spawning from a worker: run it inside a job.
         struct Local {
             static Job Parent(usize n, u64* out, std::atomic<int>* done) {
-                std::vector<u64> data = MakeData(n);
+                Vector<u64> data = MakeData(n);
                 usize eff = EffectiveChunkSize(n, 1);
-                std::vector<u64> partials((n + eff - 1) / eff, 0);
-                SumCtx ctx{data.data(), partials.data(), eff, {0}};
+                Vector<u64> partials = Zeros((n + eff - 1) / eff);
+                SumCtx ctx{data.Data(), partials.Data(), eff, {0}};
                 Counter c;
                 Spawn(c, ParallelFor(n, 1, SumChunk, &ctx));
                 co_await c;
                 u64 t = 0;
-                for (u64 p : partials) t += p;
+                for (usize i = 0; i < partials.Size(); ++i) t += partials[i];
                 *out = t;
                 done->fetch_add(1);
             }

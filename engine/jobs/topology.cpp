@@ -1,9 +1,8 @@
 #include "jobs/topology.h"
 
-#include <sched.h>
-
 #include <cstdlib>
 
+#include "jobs/detail/thread_platform.h"
 #include "jobs/jobs_log.h"
 
 namespace engine_placeholder::jobs {
@@ -11,20 +10,7 @@ namespace engine_placeholder::jobs {
 LogChannel LogJobs("LogJobs", LogVerbosity::Warn);
 
 usize GetAllowedCpus(u32* out, usize capacity) {
-    cpu_set_t set;
-    CPU_ZERO(&set);
-    usize n = 0;
-    if (sched_getaffinity(0, sizeof(set), &set) != 0) {
-        if (capacity > 0) {
-            out[0] = 0;
-        }
-        return 1;
-    }
-    for (u32 cpu = 0; cpu < CPU_SETSIZE && n < capacity; ++cpu) {
-        if (CPU_ISSET(cpu, &set)) {
-            out[n++] = cpu;
-        }
-    }
+    usize n = detail::QueryAllowedCpus(out, capacity); // the platform's answer (jobs/<platform>/thread_platform.cpp)
     if (n == 0 && capacity > 0) {
         out[0] = 0;
         n = 1;

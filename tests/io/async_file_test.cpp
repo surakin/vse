@@ -447,6 +447,9 @@ jobs::Job ReadProcJob(jobs::Scheduler* s, ProcOut* out) {
 } // namespace
 
 TEST_CASE("jobs::ReadFileAsync reads files whose reported size is wrong (/proc)", "[io][async][jobs]") {
+#if defined(_WIN32)
+    SKIP("Windows has no file whose reported size is wrong (Linux: /proc)");
+#endif
     jobs::Scheduler::Config cfg;
     cfg.participants = 2;
     jobs::Scheduler sched(cfg);

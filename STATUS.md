@@ -745,3 +745,11 @@ directory handle, private directories with a protected DACL, random temporary na
 platforms (the executor). `tests/io` runs on Windows except `async_file_test` (needs `jobs`, Day 153). Runs: `ran 306 of 403 tests (phases: all;
 flavors: plain; display: included; crash tests: excluded)`, asan `ran 97 of 403`; `windows-clang-cl` 337 of 337; non-unity 403 of 403. Review: 8 findings,
 2 fixed, 6 declined. Linux: pending until the phase close. **Next: Day 153 (the job system on Windows).**
+
+Phase 13 **Day 153 (2026-11-07, Windows PC): the job system.** The CPU list, thread ids, pinning and names moved behind `jobs/detail/thread_platform.h`
+(Linux code unchanged; Windows: processor groups, `group * 64 + bit` ids, `SetThreadGroupAffinity`, `SetThreadDescription`); `jobs` and `tests/jobs` run on
+Windows in plain and ASan, and `async_file_test` joined the io tests. Five older jobs tests were converted to engine types (the allow-list count went
+from 102 to 33). Wake latency (new `jobs_tests "[latency]"`): median 72 us, p99 0.6-1.0 ms; throughput 11.4x at 16 participants. ASan jobs 20 runs: 0
+failures; one flake recorded. Runs: `ran 400 of 591 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 191 of 591`;
+`windows-clang-cl` 431 of 431; non-unity 591 of 591. Review: 5 findings, 1 fixed, 4 declined. Linux: pending until the phase close. **Next: Day 154
+(debugging I: stack traces on Windows).**

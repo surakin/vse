@@ -1,11 +1,8 @@
 #include "jobs/worker_pool.h"
 
-#include <pthread.h>
-#include <sched.h>
-#include <sys/syscall.h>
-#include <unistd.h>
-
 #include <cstdio>
+
+#include "jobs/detail/thread_platform.h"
 
 #include "log/diagnostics_hooks.h"
 #include "jobs/jobs_log.h"
@@ -39,7 +36,7 @@ WorkerPool::WorkerPool(const Config& config) : config_(config) {
     // Participant 0 = the calling thread.
     participants_[0].index = 0;
     participants_[0].cpu = -1;
-    participants_[0].tid = static_cast<i32>(::syscall(SYS_gettid));
+    participants_[0].tid = detail::CurrentThreadId();
     participants_[0].owner = this;
     constructor_thread_ = std::this_thread::get_id();
     saved_main_identity_ = tls_current;
@@ -89,14 +86,12 @@ void WorkerPool::ThreadMain(WorkerPool* pool, usize index) {
         char name[24];
         std::snprintf(name, sizeof(name), "worker-%zu", static_cast<size_t>(index));
         NotifyThreadStart(name);
+        detail::NameCurrentThread(name);
     }
     Participant& self = pool->participants_[index];
-    self.tid = static_cast<i32>(::syscall(SYS_gettid));
+    self.tid = detail::CurrentThreadId();
     if (self.cpu >= 0) {
-        cpu_set_t set;
-        CPU_ZERO(&set);
-        CPU_SET(static_cast<unsigned>(self.cpu), &set);
-        if (pthread_setaffinity_np(pthread_self(), sizeof(set), &set) != 0) {
+        if (!detail::PinCurrentThread(static_cast<u32>(self.cpu))) {
             JobsLog(LogVerbosity::Warn, "worker %zu: could not pin to CPU %d", static_cast<size_t>(index), self.cpu);
             self.cpu = -1;
         }

@@ -3,60 +3,48 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <fcntl.h>
-#include <memory>
-#include <string>
-#include <sys/stat.h>
 #include <thread>
+
+#if !defined(_WIN32)
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
-#include <vector>
+#endif
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "containers/unique_ptr.h"
+#include "containers/vector.h"
+#include "io/file.h"
 #include "jobs/async_io.h"
 #include "jobs/frame_pool.h"
 #include "jobs/scheduler.h"
+#include "temp_dir.h"
+#include "test_text.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::jobs;
+using engine_test::Text;
 
 namespace {
 
-std::unique_ptr<Scheduler> AsyncIoTestMakeScheduler(usize n) {
+UniquePtr<Scheduler> AsyncIoTestMakeScheduler(usize n) {
     Scheduler::Config cfg;
     cfg.participants = n;
-    return std::make_unique<Scheduler>(cfg);
+    return MakeUnique<Scheduler>(cfg);
 }
 
-// A scratch directory removed on destruction.
-struct TempDir {
-    std::string path;
-    TempDir() {
-        char tmpl[] = "/tmp/engine_async_io_XXXXXX";
-        const char* p = mkdtemp(tmpl);
-        path = p ? p : "";
-    }
-    ~TempDir() {
-        // best-effort cleanup of the files the tests create
-        std::string cmd = "rm -rf '" + path + "'";
-        int rc = std::system(cmd.c_str());
-        (void)rc;
-    }
-    std::string File(const char* name) const { return path + "/" + name; }
-};
+// A scratch directory removed on destruction (tests/io/temp_dir.h), and the text of a path in it.
+using io_test::TempDir;
+Text FileIn(const TempDir& dir, const char* name) { return engine_test::Concat(dir.Native().View(), "/", StringView(name)); }
 
 u8 PatternByte(usize i) { return static_cast<u8>((i * 131 + (i >> 8) * 7) & 0xFF); }
 
-void WriteFile(const std::string& path, usize size) {
-    FILE* f = std::fopen(path.c_str(), "wb");
-    REQUIRE(f != nullptr);
-    std::vector<u8> chunk(1 << 16);
-    for (usize off = 0; off < size; off += chunk.size()) {
-        usize n = size - off < chunk.size() ? size - off : chunk.size();
-        for (usize i = 0; i < n; ++i) chunk[i] = PatternByte(off + i);
-        REQUIRE(std::fwrite(chunk.data(), 1, n, f) == n);
-    }
-    std::fclose(f);
+void WriteFile(const Text& path, usize size) {
+    Vector<u8> bytes;
+    bytes.Resize(size);
+    for (usize i = 0; i < size; ++i) bytes[i] = PatternByte(i);
+    REQUIRE(io::WriteFile(io::Path(path.View()), bytes.Data(), bytes.Size()).Ok());
 }
 
 struct ReadOutcome {
@@ -69,8 +57,8 @@ struct ReadOutcome {
     std::atomic<int> done{0};
 };
 
-Job ReadJob(Scheduler* s, std::string* path, ReadOutcome* out) {
-    FileReadResult r = co_await ReadFileAsync(*s, StringView(path->c_str(), path->size()));
+Job ReadJob(Scheduler* s, const Text* path, ReadOutcome* out) {
+    FileReadResult r = co_await ReadFileAsync(*s, path->View());
     out->ok = r.ok;
     out->size = r.size;
     out->data_non_null = r.data != nullptr;
@@ -87,23 +75,35 @@ Job ComputeJob(std::atomic<int>* counter) {
     co_return;
 }
 
+// Waits until every outcome in `outs` is done.
+void HelpUntilAllDone(Scheduler& s, Vector<ReadOutcome>& outs) {
+    s.HelpUntil(
+        [](void* u) {
+            Vector<ReadOutcome>& all = *static_cast<Vector<ReadOutcome>*>(u);
+            for (usize i = 0; i < all.Size(); ++i) {
+                if (all[i].done.load(std::memory_order_acquire) == 0) return false;
+            }
+            return true;
+        },
+        &outs);
+}
+
 } // namespace
 
 TEST_CASE("co_await ReadFileAsync returns the right bytes (small, multi-MB, empty)", "[jobs][io]") {
     TempDir dir;
-    REQUIRE_FALSE(dir.path.empty());
     struct Case {
         const char* name;
         usize size;
     } cases[] = {{"small.bin", 1234}, {"big.bin", 9u << 20}, {"empty.bin", 0}, {"one.bin", 1}};
-    for (auto& c : cases) WriteFile(dir.File(c.name), c.size);
+    for (auto& c : cases) WriteFile(FileIn(dir, c.name), c.size);
 
     for (usize n : {usize{1}, usize{2}, usize{0}}) {
         auto s = AsyncIoTestMakeScheduler(n);
         for (auto& c : cases) {
-            std::string path = dir.File(c.name);
+            const Text path = FileIn(dir, c.name);
             ReadOutcome out;
-            s->Submit(ReadJob(s.get(), &path, &out));
+            s->Submit(ReadJob(s.Get(), &path, &out));
             s->HelpUntil(out.done, 1);
             INFO("file " << c.name << " N=" << n);
             REQUIRE(out.ok);
@@ -121,33 +121,33 @@ TEST_CASE("A missing file, an over-long path and an oversized file fail cleanly"
     TempDir dir;
     auto s = AsyncIoTestMakeScheduler(2);
 
-    std::string missing = dir.File("does_not_exist");
+    const Text missing = FileIn(dir, "does_not_exist");
     ReadOutcome a;
-    s->Submit(ReadJob(s.get(), &missing, &a));
+    s->Submit(ReadJob(s.Get(), &missing, &a));
     s->HelpUntil(a.done, 1);
     REQUIRE_FALSE(a.ok);
     REQUIRE(a.size == 0);
     REQUIRE(a.on_participant);
 
-    std::string too_long = "/tmp/" + std::string(kMaxAsyncPathBytes + 10, 'x');
+    const Text too_long = engine_test::Concat("/tmp/", engine_test::Repeated(kMaxAsyncPathBytes + 10, 'x').View());
     ReadOutcome b;
-    s->Submit(ReadJob(s.get(), &too_long, &b));
+    s->Submit(ReadJob(s.Get(), &too_long, &b));
     s->HelpUntil(b.done, 1);
     REQUIRE_FALSE(b.ok);
 
     // The I/O thread is still healthy afterwards.
-    WriteFile(dir.File("after.bin"), 100);
-    std::string after = dir.File("after.bin");
+    const Text after = FileIn(dir, "after.bin");
+    WriteFile(after, 100);
     ReadOutcome c;
-    s->Submit(ReadJob(s.get(), &after, &c));
+    s->Submit(ReadJob(s.Get(), &after, &c));
     s->HelpUntil(c.done, 1);
     REQUIRE(c.ok);
     REQUIRE(c.content_matches);
 }
 
 namespace {
-Job ReadTinyArena(Scheduler* s, std::string* path, bool* ok, std::atomic<int>* done) {
-    FileReadResult r = co_await ReadFileAsync(*s, StringView(path->c_str(), path->size()), 4096);
+Job ReadTinyArena(Scheduler* s, const Text* path, bool* ok, std::atomic<int>* done) {
+    FileReadResult r = co_await ReadFileAsync(*s, path->View(), 4096);
     *ok = r.ok;
     done->fetch_add(1, std::memory_order_release);
 }
@@ -155,12 +155,12 @@ Job ReadTinyArena(Scheduler* s, std::string* path, bool* ok, std::atomic<int>* d
 
 TEST_CASE("A file bigger than max_bytes fails instead of overrunning", "[jobs][io]") {
     TempDir dir;
-    WriteFile(dir.File("f.bin"), 100'000);
+    const Text path = FileIn(dir, "f.bin");
+    WriteFile(path, 100'000);
     auto s = AsyncIoTestMakeScheduler(2);
-    std::string path = dir.File("f.bin");
     bool ok = true;
     std::atomic<int> done{0};
-    s->Submit(ReadTinyArena(s.get(), &path, &ok, &done));
+    s->Submit(ReadTinyArena(s.Get(), &path, &ok, &done));
     s->HelpUntil(done, 1);
     REQUIRE_FALSE(ok);
 }
@@ -168,31 +168,22 @@ TEST_CASE("A file bigger than max_bytes fails instead of overrunning", "[jobs][i
 TEST_CASE("64 concurrent reads of different files all complete correctly", "[jobs][io]") {
     TempDir dir;
     constexpr int kFiles = 64;
-    std::vector<std::string> paths(kFiles);
-    std::vector<usize> sizes(kFiles);
+    Vector<Text> paths;
+    Vector<usize> sizes;
     for (int i = 0; i < kFiles; ++i) {
         char name[32];
         std::snprintf(name, sizeof(name), "f%02d.bin", i);
-        sizes[i] = 1000 + static_cast<usize>(i) * 4099;
-        paths[i] = dir.File(name);
-        WriteFile(paths[i], sizes[i]);
+        sizes.Push(1000 + static_cast<usize>(i) * 4099);
+        paths.Push(FileIn(dir, name));
+        WriteFile(paths[static_cast<usize>(i)], sizes[static_cast<usize>(i)]);
     }
     for (usize n : {usize{1}, usize{3}}) {
         auto s = AsyncIoTestMakeScheduler(n);
-        std::vector<ReadOutcome> outs(kFiles);
-        for (int i = 0; i < kFiles; ++i) s->Submit(ReadJob(s.get(), &paths[i], &outs[i]));
-        // Wait until every outcome is done (each flips its own counter).
-        struct Ctx {
-            std::vector<ReadOutcome>* outs;
-        } ctx{&outs};
-        s->HelpUntil(
-            [](void* u) {
-                for (auto& o : *static_cast<Ctx*>(u)->outs)
-                    if (o.done.load(std::memory_order_acquire) == 0) return false;
-                return true;
-            },
-            &ctx);
-        for (int i = 0; i < kFiles; ++i) {
+        Vector<ReadOutcome> outs; // sized once while empty: the atomics never move
+        outs.Resize(kFiles);
+        for (usize i = 0; i < outs.Size(); ++i) s->Submit(ReadJob(s.Get(), &paths[i], &outs[i]));
+        HelpUntilAllDone(*s, outs);
+        for (usize i = 0; i < outs.Size(); ++i) {
             REQUIRE(outs[i].ok);
             REQUIRE(outs[i].size == sizes[i]);
             REQUIRE(outs[i].content_matches);
@@ -203,11 +194,14 @@ TEST_CASE("64 concurrent reads of different files all complete correctly", "[job
 }
 
 TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "[jobs][io]") {
+#if defined(_WIN32)
+    SKIP("needs a FIFO whose open blocks until a writer comes (POSIX); Windows has no such file, and opening a busy pipe fails at once");
+#else
     TempDir dir;
     // A FIFO with no writer: open() on it blocks the I/O thread until the
     // test opens the write end.
-    std::string fifo = dir.File("blocked.fifo");
-    REQUIRE(mkfifo(fifo.c_str(), 0600) == 0);
+    const Text fifo = FileIn(dir, "blocked.fifo");
+    REQUIRE(mkfifo(fifo.CStr(), 0600) == 0);
 
     for (usize n : {usize{1}, usize{3}}) {
         auto s = AsyncIoTestMakeScheduler(n);
@@ -216,13 +210,13 @@ TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "
         // destroyed) even if a REQUIRE below fails, so a failing test
         // fails instead of hanging in ~Scheduler's join.
         struct FifoRelease {
-            const std::string* path;
+            const Text* path;
             ~FifoRelease() {
-                int fd = open(path->c_str(), O_WRONLY | O_NONBLOCK);
+                int fd = open(path->CStr(), O_WRONLY | O_NONBLOCK);
                 if (fd >= 0) close(fd);
             }
         } release_on_exit{&fifo};
-        s->Submit(ReadJob(s.get(), &fifo, &blocked));
+        s->Submit(ReadJob(s.Get(), &fifo, &blocked));
 
         // Give the read job time to run and park the I/O thread in open()
         // (with N=1 main must run it: it sits below the compute jobs in
@@ -247,7 +241,7 @@ TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "
         // is not seekable).
         int wfd = -1;
         for (int attempt = 0; attempt < 5000 && wfd < 0; ++attempt) {
-            wfd = open(fifo.c_str(), O_WRONLY | O_NONBLOCK);
+            wfd = open(fifo.CStr(), O_WRONLY | O_NONBLOCK);
             if (wfd < 0) {
                 // Let main run the read job if it hasn't yet.
                 Clock slice{std::chrono::steady_clock::now() + std::chrono::milliseconds(2)};
@@ -262,6 +256,7 @@ TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "
         REQUIRE(blocked.on_participant);
         REQUIRE_FALSE(blocked.on_io_thread);
     }
+#endif
 }
 
 TEST_CASE("The I/O thread is not a participant", "[jobs][io]") {
@@ -282,13 +277,13 @@ TEST_CASE("The I/O thread is not a participant", "[jobs][io]") {
 
 TEST_CASE("Shutdown drains queued reads and frame stats balance", "[jobs][io]") {
     TempDir dir;
-    WriteFile(dir.File("a.bin"), 5000);
+    const Text path = FileIn(dir, "a.bin");
+    WriteFile(path, 5000);
     const u64 live_before = FramePool::Global().GetStats().Live();
     {
         auto s = AsyncIoTestMakeScheduler(2);
-        std::string path = dir.File("a.bin");
         ReadOutcome out;
-        s->Submit(ReadJob(s.get(), &path, &out));
+        s->Submit(ReadJob(s.Get(), &path, &out));
         s->HelpUntil(out.done, 1);
         REQUIRE(out.ok);
     }
@@ -330,12 +325,12 @@ TEST_CASE("Concurrent IoThread::Shutdown callers both return only after the join
 
 TEST_CASE("A read issued after the I/O thread shut down fails cleanly instead of aborting", "[jobs][io]") {
     TempDir dir;
-    WriteFile(dir.File("a.bin"), 100);
+    const Text path = FileIn(dir, "a.bin");
+    WriteFile(path, 100);
     auto s = AsyncIoTestMakeScheduler(2);
     s->Io().Shutdown();
-    std::string path = dir.File("a.bin");
     ReadOutcome out;
-    s->Submit(ReadJob(s.get(), &path, &out));
+    s->Submit(ReadJob(s.Get(), &path, &out));
     s->HelpUntil(out.done, 1);
     REQUIRE_FALSE(out.ok);
     REQUIRE(out.on_participant);
@@ -343,17 +338,14 @@ TEST_CASE("A read issued after the I/O thread shut down fails cleanly instead of
 
 TEST_CASE("A read still pending when the I/O thread shuts down completes (drained)", "[jobs][io]") {
     TempDir dir;
-    WriteFile(dir.File("a.bin"), 3000);
+    const Text path = FileIn(dir, "a.bin");
+    WriteFile(path, 3000);
     auto s = AsyncIoTestMakeScheduler(2);
-    std::string path = dir.File("a.bin");
-    std::vector<ReadOutcome> outs(20);
-    for (auto& o : outs) s->Submit(ReadJob(s.get(), &path, &o));
+    Vector<ReadOutcome> outs;
+    outs.Resize(20);
+    for (usize i = 0; i < outs.Size(); ++i) s->Submit(ReadJob(s.Get(), &path, &outs[i]));
     // Keep the workers' continuations alive: join before destruction.
-    struct Ctx { std::vector<ReadOutcome>* outs; } ctx{&outs};
-    s->HelpUntil([](void* u) {
-        for (auto& o : *static_cast<Ctx*>(u)->outs) if (o.done.load(std::memory_order_acquire) == 0) return false;
-        return true;
-    }, &ctx);
-    for (auto& o : outs) REQUIRE(o.ok);
+    HelpUntilAllDone(*s, outs);
+    for (usize i = 0; i < outs.Size(); ++i) REQUIRE(outs[i].ok);
     s->Io().Shutdown();
 }

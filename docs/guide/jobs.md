@@ -70,7 +70,16 @@ _TODO_
 
 ### Configuring the pool
 
-_TODO_
+The pool has one participant per logical CPU the process may use (`jobs::GetAllowedCpus`), or `ENGINE_JOB_THREADS` participants; workers are
+pinned to one CPU each and the main thread is not. The CPU list, thread ids, pinning and names are the per-platform part
+(`jobs/detail/thread_platform.h`, implemented in `jobs/linux/` and `jobs/windows/`):
+
+- **Linux:** the affinity mask (`sched_getaffinity`), kernel thread ids, `pthread_setaffinity_np`.
+- **Windows** (Phase 13 Day 153): CPU ids are `group * 64 + bit` over the processor groups the process may use
+  (`GetLogicalProcessorInformationEx(RelationGroup)`, `GetProcessGroupAffinity`), restricted by the process affinity mask when the process has one
+  group, so `start /affinity` is honoured; a machine with more than 64 logical processors has several groups, and the parser is tested with
+  recorded multi-group data. Pinning is `SetThreadGroupAffinity`; workers are named `worker-N` with `SetThreadDescription`, which debuggers,
+  profilers and crash dumps show.
 
 ### Rules and contracts (lifetime, capacity, shutdown)
 
@@ -86,7 +95,10 @@ _TODO_
 
 ### Performance notes and measured scaling
 
-_TODO_
+Windows PC (16 logical CPUs, MSVC, Debug build; Phase 13 Day 153): the `Throughput scales with participant count` table gave 1.00x, 2.00x, 3.18x and
+11.37x for 1, 2, 4 and 16 participants. Waking an idle worker (`jobs_tests "[latency]"`, 10 000 wake-ups, a job submitted while the only worker
+sleeps): median 72 us, 99th percentile 0.6 to 1.0 ms over two runs. Idle workers wait on a condition variable, which a notification wakes; timer
+resolution (`timeBeginPeriod`) does not bound that, so it is not changed. The Linux numbers are taken at the Phase 13 close.
 
 ### Internals (for contributors): deque, parking protocol, Counter state word
 

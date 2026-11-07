@@ -18,6 +18,9 @@ Seen failing once or intermittently, passing on rerun. Cause not investigated.
 - The window tests (X11, Wayland, and the RHI presentation tests) used to fail at random under `ctest -j6`; they now hold the ctest resource `display` and run one at a time (5 full runs in a row passed, 2026-11-05).
 
 
+- Phase 13 Day 153 (2026-11-07, Windows PC): `Skewed load: other participants execute stolen work [asan]` (phase 2) failed once in a full
+  `ctest -j8` run of the non-unity MSVC build; it passed 30 times alone and in 5 runs under `-j16` load. The failure output was not captured.
+
 - Phase 7 Day 98 (2026-11-06): `The newest core of a crashed program is found by script, checked against the binary, and opens in gdb` failed three times in full `ctest -L phase7 -j16` runs (the non-unity build, a 15-repeat run, a Day 100 8-repeat run) and passed in 25 solo repeats, 40 loaded repeats and 6 further full runs; the failure output was not captured. Phase 7.
 
 ## Unverified by a human
@@ -141,8 +144,11 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - Phase 13 Day 152 (2026-11-07), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 152 file, "For the
   Linux run"), among them the split of `io/linux/directory.cpp` into the neutral `io/directory.cpp`, were built and tested only on Windows; the
   reference for the changed Backend labels of `io/file.h`, `io/file_system.h` and `io/directory.h` was not regenerated.
-- Phase 13 Day 152, until Day 153: `tests/io/async_file_test.cpp` (it links `jobs`) has not run on Windows, so the asynchronous half of the file
-  conformance suite is unverified there.
+- Phase 13 Day 153 (2026-11-07), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 153 file, "For the
+  Linux run"), among them the move of the Linux CPU, pinning and thread-id code into `jobs/linux/thread_platform.cpp` and five converted jobs tests,
+  were built and tested only on Windows; the reference for `jobs/topology.h` and `jobs/worker_pool.h` was not regenerated.
+- Phase 13 Day 153: the Windows CPU list on a machine with several processor groups is tested only with recorded data (this PC has one group);
+  whether `GetProcessGroupAffinity` lists every group a Windows 11 process may use there is unverified.
 - Phase 13 Days 151-152: not checked on the Windows PC: every symbolic-link case of `tests/io` (Developer Mode is off, so they skip with the reason;
   directory links fall back to junctions where a test only needs one), and the long-path behavior with `LongPathsEnabled = 1` (the setting is off;
   the tests pass with it off).

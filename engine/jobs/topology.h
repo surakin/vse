@@ -14,7 +14,9 @@ inline constexpr usize kMaxParticipants = 256;
 /// Lists the logical CPU ids this process is allowed to run on, in ascending order.
 ///
 /// On Linux it honours the affinity mask (`sched_getaffinity`), not
-/// `std::thread::hardware_concurrency`, which ignores the mask.
+/// `std::thread::hardware_concurrency`, which ignores the mask. On Windows the
+/// ids are `group * 64 + bit` over the processor groups the process may use,
+/// restricted by the process affinity mask when it has one group.
 ///
 /// Param out: receives up to `capacity` CPU ids.
 /// Param capacity: number of entries available in `out`.

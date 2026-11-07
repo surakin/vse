@@ -13,16 +13,16 @@ set(IO_TEST_SOURCES
 find_package(Threads REQUIRED)
 include(Catch)
 
-# Windows (Phase 13): the whole suite but async_file_test, which links the job system and joins with it on Day 153.
+# Windows (Phase 13): the whole suite (async_file_test with the job system from Day 153) and the Windows-only cases.
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  set(_io_windows_sources path_test.cpp file_system_test.cpp file_test.cpp directory_test.cpp share_test.cpp io_windows_test.cpp)
+  set(_io_windows_sources path_test.cpp file_system_test.cpp file_test.cpp directory_test.cpp async_file_test.cpp share_test.cpp io_windows_test.cpp)
   set(_io_windows_flavors "")
   if(ENGINE_HAVE_ASAN)
     list(APPEND _io_windows_flavors "_asan")
   endif()
   foreach(suffix "" ${_io_windows_flavors})
     add_executable(io_tests${suffix} ${_io_windows_sources})
-    target_link_libraries(io_tests${suffix} PRIVATE foundation_io${suffix} Catch2::Catch2WithMain)
+    target_link_libraries(io_tests${suffix} PRIVATE jobs${suffix} foundation_io${suffix} Catch2::Catch2WithMain)
     target_include_directories(io_tests${suffix} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)
     engine_asan_runtime(io_tests${suffix})
   endforeach()

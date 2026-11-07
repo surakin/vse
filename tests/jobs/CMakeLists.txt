@@ -13,10 +13,31 @@ set(JOBS_TEST_SOURCES
   scheduler_test.cpp
   deque_test.cpp
   worker_pool_test.cpp
+  wake_latency_test.cpp
 )
 
 find_package(Threads REQUIRED)
 include(Catch)
+
+# Windows (Phase 13 Day 153): plain and ASan; no ThreadSanitizer, so neither the tsan flavor nor its canary.
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  set(_jobs_test_flavors "")
+  if(ENGINE_HAVE_ASAN)
+    list(APPEND _jobs_test_flavors "_asan")
+  endif()
+  foreach(suffix "" ${_jobs_test_flavors})
+    add_executable(jobs_tests${suffix} ${JOBS_TEST_SOURCES} topology_windows_test.cpp)
+    target_link_libraries(jobs_tests${suffix} PRIVATE jobs${suffix} Catch2::Catch2WithMain psapi)
+    target_include_directories(jobs_tests${suffix} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support ${CMAKE_SOURCE_DIR}/tests/io
+      ${CMAKE_SOURCE_DIR}/tests/windows/support)
+    engine_asan_runtime(jobs_tests${suffix})
+  endforeach()
+  engine_discover_tests(jobs_tests TEST_SUFFIX "" PROPERTIES LABELS "jobs")
+  if(ENGINE_HAVE_ASAN)
+    engine_discover_tests(jobs_tests_asan TEST_SUFFIX " [asan]" PROPERTIES LABELS "asan")
+  endif()
+  return()
+endif()
 
 # One executable per sanitizer flavor. ctest names get a suffix so the
 # three flavors don't collide, and the TSan ones carry the `tsan` label
@@ -24,7 +45,7 @@ include(Catch)
 function(engine_add_jobs_tests target jobs_lib suffix label)
   add_executable(${target} ${JOBS_TEST_SOURCES})
   target_link_libraries(${target} PRIVATE ${jobs_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support ${CMAKE_SOURCE_DIR}/tests/io)
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
 endfunction()
 
