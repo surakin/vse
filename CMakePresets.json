@@ -4,7 +4,7 @@
   "configurePresets": [
     {
       "name": "linux",
-      "displayName": "Linux (the default compiler, build/)",
+      "displayName": "Linux (Clang, else the default compiler; build/)",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }

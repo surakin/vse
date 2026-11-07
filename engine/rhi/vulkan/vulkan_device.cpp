@@ -221,13 +221,17 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     physical_ = physicals[chosen];
     gpu_info_ = infos[chosen];
     adapter_ = MakeAdapterInfo(gpu_info_, presentable);
+    adapters_ = AdapterList{};
+    for (u32 i = 0; i < physical_count && i < kMaxAdapters; ++i) {
+        adapters_.items[adapters_.count++] = MakeAdapterInfo(infos[i], presentable);
+    }
     queues_ = PlanQueues(gpu_info_, presentable);
 
     ifns.GetPhysicalDeviceProperties(physical_, &properties_);
     {
         // The crash report names the adapter and driver (a vendor fix is often the answer to a GPU crash).
         char gpu[debug::kCrashStateEntryTextBytes];
-        std::snprintf(gpu, sizeof(gpu), "%s, driver %u.%u.%u, api %u.%u.%u", properties_.deviceName,
+        std::snprintf(gpu, sizeof(gpu), "%.48s, driver %u.%u.%u, api %u.%u.%u", properties_.deviceName,
                       VK_VERSION_MAJOR(properties_.driverVersion), VK_VERSION_MINOR(properties_.driverVersion),
                       VK_VERSION_PATCH(properties_.driverVersion), VK_VERSION_MAJOR(properties_.apiVersion),
                       VK_VERSION_MINOR(properties_.apiVersion), VK_VERSION_PATCH(properties_.apiVersion));

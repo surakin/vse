@@ -114,7 +114,9 @@ void Renderer::RefreshCapabilities(bool adapters_too) {
     if (adapters_too) {
         rhi::AdapterList adapters;
         suitable = 0;
-        if (rhi::EnumerateAdapters(active_info_, &adapters)) {
+        // The live device's own list: a second Vulkan instance made and destroyed here breaks the device's swapchain on Wayland (NVIDIA).
+        const bool listed = desc_.device != nullptr && desc_.device->ListAdapters(&adapters);
+        if (listed || rhi::EnumerateAdapters(active_info_, &adapters)) {
             for (u32 i = 0; i < adapters.count; ++i) {
                 suitable += adapters.items[i].suitable ? 1 : 0;
             }

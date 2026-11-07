@@ -3791,6 +3791,18 @@ Returns the adapter (GPU) the device was created on.
 
 _Inherited from [`rhi::Device::Adapter() const`](rhi.md#rhi-device-adapter-const)._
 
+### `ListAdapters(AdapterList*)` {#rhi-vulkan-vulkandevice-listadapters-adapterlist-star-const}
+
+`method rhi::vulkan::VulkanDevice::ListAdapters` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+bool ListAdapters(AdapterList* out) const override;
+```
+
+Lists the adapters (GPUs) the device's backend can use, as they were when the device was created.
+
+_Inherited from [`rhi::Device::ListAdapters(AdapterList*) const`](rhi.md#rhi-device-listadapters-adapterlist-star-const)._
+
 ### `Epoch()` {#rhi-vulkan-vulkandevice-epoch-const}
 
 `method rhi::vulkan::VulkanDevice::Epoch` — defined in `engine/rhi/vulkan/vulkan_device.h`

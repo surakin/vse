@@ -121,7 +121,7 @@ const PermutationModule* FindPermutation(const ShaderPermutations& table, Permut
     if (error != nullptr) {
         char described[160];
         DescribePermutationKey(table, key, described, sizeof(described));
-        std::snprintf(error->message, kReflectionErrorLength, "shader '%s' has no permutation %s (add the key to its .perm manifest)",
+        std::snprintf(error->message, kReflectionErrorLength, "shader '%.40s' has no permutation %.64s (add the key to its .perm manifest)",
                       table.shader, described);
     }
     return nullptr;

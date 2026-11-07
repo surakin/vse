@@ -22,7 +22,7 @@ Arch Linux's, the distribution the development machine uses.
 | What | Version used | Kind | Notes | Arch package |
 |---|---|---|---|---|
 | CMake | 3.21 or newer | Required | 3.21 for `CMakePresets.json` with toolchain files. | `cmake` |
-| Clang (`clang++`) | C++20 | Required | The compiler in use. Also runs the cross-target syntax checks (`*_cross_syntax_windows`, `_macos`). GCC is not tested. | `clang` |
+| Clang (`clang++`) | C++20 | Required | The compiler CMake picks first on Linux (GCC is the fallback when no `clang++` is installed; it must build clean too). Also runs the cross-target syntax checks (`*_cross_syntax_windows`, `_macos`). | `clang` |
 | Ninja or Make | any | Required | Either generator works. | `ninja` |
 | pkg-config | any | Required | Finds the system libraries below. | `pkgconf` |
 | `libwayland-client` (headers) | any current | Required | Wayland backend. | `wayland` |

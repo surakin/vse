@@ -6,6 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
 
+#include "platform/linux/key_translate.h"
 #include "platform/linux/x11/x11_window.h"
 #include "os/os.h"
 

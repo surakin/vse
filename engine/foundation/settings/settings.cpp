@@ -606,7 +606,7 @@ void Settings::UpdateCrashState() {
     }
     const int top = now_used > crash_entries_used_ ? now_used : crash_entries_used_;
     for (int i = 0; i < top; ++i) {
-        char name[16];
+        char name[24];
         std::snprintf(name, sizeof(name), "settings %d", i + 1);
         debug::SetCrashStateText(name, entries[i][0] != '\0' ? entries[i] : nullptr);
     }

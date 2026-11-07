@@ -112,7 +112,7 @@ Every target of ours (`engine/`, `game/`, `tools/`, `tests/`) compiles with warn
 (`ENGINE_WARNING_COMPILE_OPTIONS` in `cmake/EngineCompilerOptions.cmake`, added by the root `CMakeLists.txt` after `third_party/`, so the vendored libraries keep their
 own flags). **Fix the code; do not silence the warning.** No `-Wno-...`, no `#pragma` that disables a warning, no `(void)` to hide a defect. The rule starts as an absolute;
 if a real exception turns up, it is added here with its reason (and to the CMake file) in the same commit, not decided locally. A change must build clean in unity and
-`-DENGINE_UNITY_BUILD=OFF` (unused-function and unused-field warnings differ between the two).
+`-DENGINE_UNITY_BUILD=OFF` (unused-function and unused-field warnings differ between the two), and with both compilers: on Linux CMake picks Clang when `clang++` is installed and GCC otherwise, and GCC reports things Clang does not (`-Wformat-truncation`, `-Wsubobject-linkage`).
 
 ## End-of-day code review (required)
 

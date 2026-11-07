@@ -3,6 +3,20 @@ cmake_minimum_required(VERSION 3.21)  # 3.21: presets that name a toolchain file
 # protocol bindings (platform/linux/wayland/generated/xdg-shell-protocol.c,
 # wayland-scanner's own output format) — the engine itself is C++20
 # throughout; see PLAN.md assumption #2.
+
+# Linux: Clang is the compiler of choice, GCC the fallback. Chosen before project() when nothing else says which: not when CMAKE_CXX_COMPILER or
+# CMAKE_C_COMPILER is given (-D or a toolchain file), nor when CXX or CC is set in the environment, nor in a build directory that already
+# has a compiler (its cache holds it). Both must build clean under warnings as errors (CLAUDE.md).
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING AND NOT CMAKE_TOOLCHAIN_FILE
+   AND NOT CMAKE_CXX_COMPILER AND NOT CMAKE_C_COMPILER AND NOT DEFINED ENV{CXX} AND NOT DEFINED ENV{CC})
+  find_program(ENGINE_CLANGXX_PROGRAM clang++)
+  find_program(ENGINE_CLANG_PROGRAM clang)
+  if(ENGINE_CLANGXX_PROGRAM AND ENGINE_CLANG_PROGRAM)
+    set(CMAKE_CXX_COMPILER "${ENGINE_CLANGXX_PROGRAM}")
+    set(CMAKE_C_COMPILER "${ENGINE_CLANG_PROGRAM}")
+  endif()
+endif()
+
 project(engine_placeholder CXX C)
 
 # Supported targets: x86-64 Linux, and x86-64 Windows (being ported in Phase 13). Anything else names the phase that ports it.

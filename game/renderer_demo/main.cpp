@@ -249,10 +249,10 @@ void CycleEnum(RenderSettings* s, SettingId id) {
 }
 
 // Picks the next suitable adapter after the one in use, as an id for the `adapter` setting.
-bool NextAdapterId(const char* current_id, char* out, usize capacity) {
-    DeviceCreateInfo info;
+bool NextAdapterId(const Device& device, char* out, usize capacity) {
+    const char* current_id = device.Adapter().id;
     AdapterList list;
-    if (!EnumerateAdapters(info, &list) || list.count == 0) return false;
+    if (!device.ListAdapters(&list) || list.count == 0) return false;
     u32 at = 0;
     for (u32 i = 0; i < list.count; ++i) {
         if (std::strcmp(list.items[i].id, current_id) == 0) at = i;
@@ -510,7 +510,7 @@ int RunWindow(const Options& options, RenderSettings settings) {
                         char id[64];
                         if (renderer.GetDevice() == nullptr) {
                             RhiLogV(LogVerbosity::Warn, "renderer_demo: script: gpu:next skipped (no device right now)");
-                        } else if (NextAdapterId(renderer.GetDevice()->Adapter().id, id, sizeof(id))) {
+                        } else if (NextAdapterId(*renderer.GetDevice(), id, sizeof(id))) {
                             RenderSettings wanted = renderer.Settings();
                             wanted.SetText(renderer::settings::kAdapter, id);
                             apply("gpu:next", wanted);
@@ -542,7 +542,7 @@ int RunWindow(const Options& options, RenderSettings settings) {
                             case 0: wanted.SetEnum(renderer::settings::kPresentMode, wanted.GetEnum(renderer::settings::kPresentMode) == 0 ? 2 : 0); apply("F1 vsync", wanted); break;
                             case 1: wanted.SetEnum(renderer::settings::kValidation, wanted.GetEnum(renderer::settings::kValidation) == 2 ? 1 : 2); wanted.SetBool(renderer::settings::kSyncValidation, wanted.GetEnum(renderer::settings::kValidation) == 2); apply("F2 validation", wanted); break;
                             case 2:
-                                if (renderer.GetDevice() != nullptr && NextAdapterId(renderer.GetDevice()->Adapter().id, id, sizeof(id))) { wanted.SetText(renderer::settings::kAdapter, id); apply("F3 next GPU", wanted); }
+                                if (renderer.GetDevice() != nullptr && NextAdapterId(*renderer.GetDevice(), id, sizeof(id))) { wanted.SetText(renderer::settings::kAdapter, id); apply("F3 next GPU", wanted); }
                                 break;
                             case 3: wanted.SetFloat(renderer::settings::kRenderScale, wanted.GetFloat(renderer::settings::kRenderScale) >= 2.0f ? 0.5f : wanted.GetFloat(renderer::settings::kRenderScale) * 2.0f); apply("F4 render scale", wanted); break;
                             case 4: wanted.SetBool(renderer::settings::kFullscreen, !wanted.GetBool(renderer::settings::kFullscreen)); apply("F5 fullscreen", wanted); break;

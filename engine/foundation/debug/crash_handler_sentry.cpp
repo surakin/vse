@@ -265,7 +265,7 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
             SetCoreDumpDescription(post_mortem.destination);
         } else {
             char text[kPostMortemTextBytes];
-            std::snprintf(text, sizeof(text), "none will be written: %s", post_mortem.note[0] != '\0' ? post_mortem.note : "not supported here");
+            std::snprintf(text, sizeof(text), "none will be written: %.200s", post_mortem.note[0] != '\0' ? post_mortem.note : "not supported here");
             SetCoreDumpDescription(text);
             Log(LogCrash, LogVerbosity::Warn, StringView(post_mortem.note));
         }

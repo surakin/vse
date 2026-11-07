@@ -49,7 +49,7 @@ void FormatSettingsListing(Settings& settings, Text* out) {
         char value[kMaxValueTextBytes], def[kMaxValueTextBytes];
         ValueText(d, r.value, value, sizeof(value));
         ValueText(d, d.default_value, def, sizeof(def));
-        char source[160];
+        char source[256]; // a layer name (up to 127), " (", an origin (up to 95) and ")"
         // A secret's source is the layer only: the origin of a --set entry would repeat the value.
         if (r.origin[0] != '\0' && (d.flags & kSecret) == 0) std::snprintf(source, sizeof(source), "%s (%s)", r.layer_name, r.origin);
         else std::snprintf(source, sizeof(source), "%s", r.layer_name);

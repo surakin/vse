@@ -1,4 +1,5 @@
 #include "rhi/null/null_device.h"
+#include "rhi/rhi.h"
 
 #include <atomic>
 #include <cstdarg>
@@ -1028,6 +1029,11 @@ const char* NullDevice::BackendName() const {
 
 const AdapterInfo& NullDevice::Adapter() const {
     return state_->options.adapter;
+}
+
+bool NullDevice::ListAdapters(AdapterList* out) const {
+    detail::NullAdapters(out);
+    return true;
 }
 
 u32 NullDevice::Epoch() const {

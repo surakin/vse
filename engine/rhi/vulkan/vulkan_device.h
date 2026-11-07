@@ -66,6 +66,10 @@ public:
 
     const char* BackendName() const override;
     const AdapterInfo& Adapter() const override { return adapter_; }
+    bool ListAdapters(AdapterList* out) const override {
+        *out = adapters_;
+        return true;
+    }
     u32 Epoch() const override { return epoch_; }
     ResourceCounts Resources() const override;
     void InjectDeviceLoss() override { InjectLoss("request", 0); }
@@ -561,6 +565,7 @@ private:
     VkPhysicalDeviceMemoryProperties memory_properties_{};
     DeviceCaps caps_;
     AdapterInfo adapter_;
+    AdapterList adapters_; // every adapter Discover found, kept so a live device never needs a second instance to list them
     u32 epoch_ = 0; // assigned once the device is known to be usable, so scratch devices do not use up serials
     std::atomic<u32> swapchain_live_{0};
     bool anisotropy_enabled_ = false;

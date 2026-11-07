@@ -7,7 +7,9 @@
 
 namespace engine_placeholder::settings {
 
-namespace {
+// Named, not anonymous: ConfigDocument::Line (external linkage, defined below) has members of these types, and GCC rejects a type from the
+// anonymous namespace in a class with linkage (-Wsubobject-linkage).
+namespace config_text_detail {
 
 enum class Kind : u8 { Blank, Comment, Section, Entry, Raw };
 
@@ -141,7 +143,9 @@ private:
     Vector<i64> table_;
 };
 
-} // namespace
+} // namespace config_text_detail
+
+using namespace config_text_detail;
 
 struct ConfigDocument::Line {
     String<HeapAllocator> raw = String<HeapAllocator>(HeapAllocator::Default());

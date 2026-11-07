@@ -108,6 +108,7 @@ public:
 
     const char* BackendName() const override;
     const AdapterInfo& Adapter() const override;
+    bool ListAdapters(AdapterList* out) const override;
     u32 Epoch() const override;
     ResourceCounts Resources() const override;
     bool InFrame() const override;

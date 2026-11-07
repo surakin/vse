@@ -105,7 +105,7 @@ ProgramDebugSetup StartProgramDebugging(int argc, const char* const* argv) {
     setup.crash_test = request.crash_test;
 
     const CrashContext& context = GetCrashContext();
-    char line[256];
+    char line[512];  // the build id and the two context strings are each up to 95 characters
     std::snprintf(line, sizeof(line), "build %s %s %s %s", context.build_id[0] != '\0' ? context.build_id : "(no build id)",
                   context.os_name, context.architecture, BuildConfiguration());
     Log(LogBuild, LogVerbosity::Info, StringView(line));

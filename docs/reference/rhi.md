@@ -238,6 +238,8 @@ Lists the adapters the backend of `info` can use.
 
 The Vulkan backend creates a throwaway instance (no device), reads every physical device and whether it can present to `info.window`, and destroys the instance. The null backend lists two fake adapters (discrete, then integrated), or the list set by [`rhi::SetNullAdapters`](#rhi-setnulladapters-const-adapterlist-star); it ignores the window.
 
+While a device is live call [`rhi::Device::ListAdapters`](#rhi-device-listadapters-adapterlist-star-const) instead: destroying the throwaway instance breaks a live Vulkan device's swapchain on Wayland with the NVIDIA driver.
+
 | Field | Value |
 |---|---|
 | Parameter `info` | the backend, validation settings and window to test presentability against. |
@@ -2735,6 +2737,25 @@ Returns the adapter (GPU) the device was created on.
 | Field | Value |
 |---|---|
 | Ownership | the reference is valid for the life of the device. |
+
+### `ListAdapters(AdapterList*)` {#rhi-device-listadapters-adapterlist-star-const}
+
+`method rhi::Device::ListAdapters` — defined in `engine/rhi/device.h`
+
+```cpp
+virtual bool ListAdapters(AdapterList* out) const;
+```
+
+Lists the adapters (GPUs) the device's backend can use, as they were when the device was created.
+
+Use this, not [`rhi::EnumerateAdapters`](#rhi-enumerateadapters-const-devicecreateinfo-amp-adapterlist-star), while a device is live: the Vulkan backend's `EnumerateAdapters` makes and destroys a second Vulkan instance, and destroying it breaks the live device's swapchain on Wayland with the NVIDIA driver (the next `vkAcquireNextImageKHR` calls a null function). This reads a list the device already holds.
+
+| Field | Value |
+|---|---|
+| Parameter `out` | receives the list; cleared first. |
+| Returns | true if the list was read (it may be empty). |
+| Fails | returns false and leaves `out` empty for a backend that keeps no list; the caller may fall back to [`rhi::EnumerateAdapters`](#rhi-enumerateadapters-const-devicecreateinfo-amp-adapterlist-star). |
+| Ownership | the list is copied into `out`; nothing is retained. |
 
 ### `Epoch()` {#rhi-device-epoch-const}
 
@@ -5624,6 +5645,18 @@ const AdapterInfo& Adapter() const override;
 Returns the adapter (GPU) the device was created on.
 
 _Inherited from [`rhi::Device::Adapter() const`](#rhi-device-adapter-const)._
+
+### `ListAdapters(AdapterList*)` {#rhi-nulldevice-listadapters-adapterlist-star-const}
+
+`method rhi::NullDevice::ListAdapters` — defined in `engine/rhi/null/null_device.h`
+
+```cpp
+bool ListAdapters(AdapterList* out) const override;
+```
+
+Lists the adapters (GPUs) the device's backend can use, as they were when the device was created.
+
+_Inherited from [`rhi::Device::ListAdapters(AdapterList*) const`](#rhi-device-listadapters-adapterlist-star-const)._
 
 ### `Epoch()` {#rhi-nulldevice-epoch-const}
 

@@ -67,6 +67,22 @@ TEST_CASE("The null backend lists two fake adapters", "[rhi][adapter]") {
     CHECK(list.items[1].kind == AdapterKind::Integrated);
 }
 
+TEST_CASE("A live device lists its adapters without a second enumeration", "[rhi][adapter]") {
+    // Device::ListAdapters exists because EnumerateAdapters makes and destroys a second Vulkan instance, which breaks a live device's
+    // swapchain on Wayland with the NVIDIA driver (found 2026-11-07). The list must match what EnumerateAdapters reports.
+    DevicePtr device = CreateDevice(NullInfo());
+    REQUIRE(device);
+    AdapterList live;
+    AdapterList enumerated;
+    REQUIRE(device->ListAdapters(&live));
+    REQUIRE(EnumerateAdapters(NullInfo(), &enumerated));
+    REQUIRE(live.count == enumerated.count);
+    for (u32 i = 0; i < live.count; ++i) {
+        CHECK(std::strcmp(live.items[i].id, enumerated.items[i].id) == 0);
+        CHECK(live.items[i].suitable == enumerated.items[i].suitable);
+    }
+}
+
 TEST_CASE("Adapter ids are identical across enumerations", "[rhi][adapter]") {
     AdapterList a;
     AdapterList b;

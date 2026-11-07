@@ -111,6 +111,21 @@ public:
     /// Ownership: the reference is valid for the life of the device.
     virtual const AdapterInfo& Adapter() const = 0;
 
+    /// Lists the adapters (GPUs) the device's backend can use, as they were when the device was created.
+    ///
+    /// Use this, not [[rhi::EnumerateAdapters]], while a device is live: the Vulkan backend's `EnumerateAdapters` makes and destroys a
+    /// second Vulkan instance, and destroying it breaks the live device's swapchain on Wayland with the NVIDIA driver (the next
+    /// `vkAcquireNextImageKHR` calls a null function). This reads a list the device already holds.
+    ///
+    /// Param out: receives the list; cleared first.
+    /// Returns: true if the list was read (it may be empty).
+    /// Ownership: the list is copied into `out`; nothing is retained.
+    /// Fails: returns false and leaves `out` empty for a backend that keeps no list; the caller may fall back to [[rhi::EnumerateAdapters]].
+    virtual bool ListAdapters(AdapterList* out) const {
+        *out = AdapterList{};
+        return false;
+    }
+
     /// Returns the device's serial: unique in the process, the same for the life of the device. Handle generations are
     /// seeded from it (see [[rhi::GenerationSeed]]).
     virtual u32 Epoch() const = 0;

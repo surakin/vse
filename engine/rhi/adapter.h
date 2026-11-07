@@ -65,6 +65,9 @@ struct AdapterList {
 /// `info.window`, and destroys the instance. The null backend lists two fake adapters (discrete, then integrated), or the
 /// list set by [[rhi::SetNullAdapters]]; it ignores the window.
 ///
+/// While a device is live call [[rhi::Device::ListAdapters]] instead: destroying the throwaway instance breaks a live Vulkan
+/// device's swapchain on Wayland with the NVIDIA driver.
+///
 /// Param info: the backend, validation settings and window to test presentability against.
 /// Param out: receives the list; cleared first.
 /// Returns: true if the list was read (it may be empty); false if the backend could not be started.
