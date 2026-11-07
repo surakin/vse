@@ -13,7 +13,9 @@ Mint DXIL for every shader and permutation, deliver the per-object index without
       first `dxc` on `PATH` (the Vulkan SDK puts an older one there: 1.9.0.5512 against the SDK's 1.9.2602.17, spec section 1); the version used is recorded
       beside the committed DXIL. On Linux `dxc` stays optional. Both stay optional for a checkout: without them the build uses the committed outputs.
 - [ ] **`shader_mint --permute` on Windows:** the `posix_spawnp` start of `slangc` goes behind a small process helper (`CreateProcessW` on Windows, the existing
-      spawn on Linux) with the same argument quoting tests on both; `KNOWN-ISSUES.md` entry removed.
+      spawn on Linux) with the same argument quoting tests on both; `KNOWN-ISSUES.md` entry removed. `tools/shader_mint` (and its tests) build on
+      Windows from today (moved from Day 150) and get `ENGINE_EXCEPTIONS_COMPILE_OPTIONS`: nlohmann/json throws, and the engine's `/EHs-c-` would
+      reject it (Day 148 review).
 - [ ] **DXIL minting:** `slangc -target dxil -profile sm_6_0` (the spec's shader model) with `-matrix-layout-column-major` and the existing flags, signed/validated
       DXIL (`dxil.dll` present so the output is validator-signed; record what `slangc` needs for that); outputs committed as `shaders/*.dxil.inc` for every shader
       and every permutation key, beside the `.spv.inc`; the reflection (`*.refl.inc`) gains the D3D12 register and space of each binding where it differs.

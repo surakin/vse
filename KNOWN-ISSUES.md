@@ -135,3 +135,6 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   is MSVC's. Needed only if the `clang-cl` configuration is ever run with ASan.
 - Phase 13 Day 149 (2026-11-07), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 149 file, "For the Linux
   run") were built and tested only on Windows; the reference for `os.h`, `session.h`, `command_line.h` and `gpu_driver_probe.h` was not regenerated.
+- Phase 13 Day 150 (2026-11-07), open until the Linux run at the phase close: the test tooling and gate changes (listed in the Day 150 file, "For the Linux
+  run") were run only on Windows. Not run on Linux: `scripts/test-phase.sh --affected` (everything, the phase map changed) with asan and tsan, the new gate
+  self-tests, `test_phase_labels` with `CHECK_UNUSED` and the new `windows:` lines, and `ctest -L docs` after the guide change.

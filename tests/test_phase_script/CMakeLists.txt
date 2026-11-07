@@ -1,9 +1,22 @@
 # scripts/test-phase.sh: its choice of phases, and that its "X of Y" is what ctest selects (Phase 6). Every case runs the
 # script with --dry-run against this build, reading the changed paths and the current phase from fixture files instead
 # of git and CURRENT_PHASE (see check.cmake).
-find_program(BASH_PROGRAM bash)
+# On Windows the script runs under Git for Windows' bash, found next to git itself (a plain shell has no bash on PATH, and System32's
+# bash.exe would be WSL's).
+if(CMAKE_HOST_WIN32)
+  find_package(Git QUIET)
+  if(GIT_EXECUTABLE)
+    # git.exe is in cmd/ (a plain shell's PATH), bin/ or mingw64/bin/ (Git Bash's PATH); bash.exe is in the Git folder's bin/ and usr/bin/.
+    get_filename_component(_git_dir "${GIT_EXECUTABLE}" DIRECTORY)
+    find_program(BASH_PROGRAM bash HINTS "${_git_dir}" "${_git_dir}/../bin" "${_git_dir}/../../bin" "${_git_dir}/../usr/bin"
+      "${_git_dir}/../../usr/bin" NO_DEFAULT_PATH)
+  endif()
+else()
+  find_program(BASH_PROGRAM bash)
+endif()
+# bash is a required prerequisite (BUILD.md): without it these tests would vanish from the build unnoticed (found by the Day 150 review).
 if(NOT BASH_PROGRAM)
-  return()
+  message(FATAL_ERROR "tests/test_phase_script: no bash found (Windows: Git for Windows' bash, next to git.exe); BUILD.md lists it as required")
 endif()
 set(TEST_PHASE_SCRIPT ${CMAKE_SOURCE_DIR}/scripts/test-phase.sh)
 set(FIX ${CMAKE_CURRENT_SOURCE_DIR}/fixtures)
@@ -16,7 +29,7 @@ function(phase_script_case name)
     set(display "-DEXPECT_DISPLAY=${C_DISPLAY}")
   endif()
   add_test(NAME test_phase_script_${name}
-    COMMAND ${CMAKE_COMMAND} -DSCRIPT=${TEST_PHASE_SCRIPT} -DBUILD=${CMAKE_BINARY_DIR} "-DARGS=${C_ARGS}"
+    COMMAND ${CMAKE_COMMAND} -DBASH=${BASH_PROGRAM} -DSCRIPT=${TEST_PHASE_SCRIPT} -DBUILD=${CMAKE_BINARY_DIR} "-DARGS=${C_ARGS}"
       "-DEXPECT_PHASES=${C_PHASES}" "-DCTEST_ARGS=${C_CTEST}" ${display} -P ${CMAKE_CURRENT_SOURCE_DIR}/check.cmake)
   list(APPEND PHASE_SCRIPT_TESTS test_phase_script_${name})
   set(PHASE_SCRIPT_TESTS ${PHASE_SCRIPT_TESTS} PARENT_SCOPE)
@@ -25,7 +38,7 @@ endfunction()
 # phase_script_refuses(<name> <message regex> <script arguments...>)
 function(phase_script_refuses name text)
   add_test(NAME test_phase_script_${name}
-    COMMAND ${CMAKE_COMMAND} -DSCRIPT=${TEST_PHASE_SCRIPT} -DBUILD=${CMAKE_BINARY_DIR} "-DARGS=${ARGN}"
+    COMMAND ${CMAKE_COMMAND} -DBASH=${BASH_PROGRAM} -DSCRIPT=${TEST_PHASE_SCRIPT} -DBUILD=${CMAKE_BINARY_DIR} "-DARGS=${ARGN}"
       "-DEXPECT_FAIL_TEXT=${text}" -P ${CMAKE_CURRENT_SOURCE_DIR}/check.cmake)
   list(APPEND PHASE_SCRIPT_TESTS test_phase_script_${name})
   set(PHASE_SCRIPT_TESTS ${PHASE_SCRIPT_TESTS} PARENT_SCOPE)
@@ -37,9 +50,16 @@ set(PLAIN_NO_DISPLAY -LE "^(asan|tsan|display|crash)$")
 
 # One explicit phase: all of its tests, in the plain flavor by default.
 phase_script_case(explicit_plain PHASES 5 DISPLAY included ARGS 5 --flavor plain CTEST -L "^(phase5)$" ${PLAIN})
-phase_script_case(explicit_asan PHASES 4 ARGS 4 --flavor asan CTEST -L "^(phase4)$" -L "^asan$" -LE "^crash$")
-phase_script_case(explicit_tsan PHASES 2 ARGS 2 --flavor tsan CTEST -L "^(phase2)$" -L "^tsan$" -LE "^crash$")
-phase_script_case(explicit_all_flavors PHASES 3 ARGS 3 --flavor all CTEST -L "^(phase3)$" -LE "^crash$")
+# The sanitizer cases use phases that have those flavors on the platform (Windows: plain and asan only, in phases 0, 10 and 13 so far).
+if(ENGINE_PLATFORM STREQUAL "windows")
+  phase_script_case(explicit_asan PHASES 13 ARGS 13 --flavor asan CTEST -L "^(phase13)$" -L "^asan$" -LE "^crash$")
+  phase_script_refuses(explicit_tsan "MSVC has no ThreadSanitizer" 2 --flavor tsan)
+  phase_script_case(explicit_all_flavors PHASES 13 ARGS 13 --flavor all CTEST -L "^(phase13)$" -LE "^crash$")
+else()
+  phase_script_case(explicit_asan PHASES 4 ARGS 4 --flavor asan CTEST -L "^(phase4)$" -L "^asan$" -LE "^crash$")
+  phase_script_case(explicit_tsan PHASES 2 ARGS 2 --flavor tsan CTEST -L "^(phase2)$" -L "^tsan$" -LE "^crash$")
+  phase_script_case(explicit_all_flavors PHASES 3 ARGS 3 --flavor all CTEST -L "^(phase3)$" -LE "^crash$")
+endif()
 phase_script_case(everything PHASES all ARGS --all --flavor all)
 phase_script_case(everything_without_windows PHASES all DISPLAY excluded ARGS --all --no-display CTEST -LE "^(asan|tsan|display)$")
 phase_script_case(current_with_crashes PHASES 5 DISPLAY excluded ARGS --current --crashes --current-phase-file ${FIX}/phase5.txt
@@ -87,11 +107,19 @@ add_test(NAME test_phase_script_module_map_paths
   COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR} -DMAP=${CMAKE_SOURCE_DIR}/tests/module_map.txt
     -P ${CMAKE_CURRENT_SOURCE_DIR}/module_map_paths.cmake)
 list(APPEND PHASE_SCRIPT_TESTS test_phase_script_module_map_paths)
-# The three flavors of a phase add up to all of its tests: the label expressions neither overlap nor leave one out.
-foreach(phase 2 4 5)
+# The flavors of a phase add up to all of its tests: the label expressions neither overlap nor leave one out. On Windows the flavors
+# are plain and asan, over the phases that have asan tests there.
+if(ENGINE_PLATFORM STREQUAL "windows")
+  set(_partition_phases 0 10 13)
+  set(_partition_flavors plain,asan)
+else()
+  set(_partition_phases 2 4 5)
+  set(_partition_flavors plain,asan,tsan)
+endif()
+foreach(phase IN LISTS _partition_phases)
   add_test(NAME test_phase_script_flavors_partition_${phase}
-    COMMAND ${CMAKE_COMMAND} -DSCRIPT=${TEST_PHASE_SCRIPT} -DBUILD=${CMAKE_BINARY_DIR} -DPHASE=${phase}
-      -P ${CMAKE_CURRENT_SOURCE_DIR}/partition.cmake)
+    COMMAND ${CMAKE_COMMAND} -DBASH=${BASH_PROGRAM} -DSCRIPT=${TEST_PHASE_SCRIPT} -DBUILD=${CMAKE_BINARY_DIR} -DPHASE=${phase}
+      -DFLAVORS=${_partition_flavors} -P ${CMAKE_CURRENT_SOURCE_DIR}/partition.cmake)
   list(APPEND PHASE_SCRIPT_TESTS test_phase_script_flavors_partition_${phase})
 endforeach()
 

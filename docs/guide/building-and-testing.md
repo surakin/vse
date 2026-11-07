@@ -103,7 +103,7 @@ Tests per phase and flavor on 2026-11-06 (`plain` is neither `asan` nor `tsan`; 
 | 10 standard types and containers | 61 | 26 | 26 |
 | 11 settings system | 164 | 127 | 127 |
 | 12 module layering | 19 | - | - |
-| 13 Windows port | 0 (started on Day 147; its first tests arrive on Day 148, with its `flavors` line) | - | - |
+| 13 Windows port | 21 on Windows (2026-11-07, Day 150; none on Linux) | 16 on Windows | - |
 
 The `flavors` lines in `tests/phases.txt` state which flavors each phase has, and `test_phase_labels` fails if one
 appears or disappears.
@@ -325,6 +325,39 @@ std::puts(sb.CStr());
 ```output
 answer = 42
 ```
+
+### Building and testing on Windows
+
+Phase 13 ports the engine to Windows one layer a day, in dependency order (`ARCHITECTURE.md`), so the Windows build has the layers
+ported so far and their tests; `BUILD.md` lists what to install. CMake finds MSVC, the Windows SDK, LLVM's `clang-cl` and the Vulkan SDK
+itself (vswhere, the registry, the default install folders), so any terminal works: no Developer Command Prompt and no `vcvars`.
+
+- **Presets.** `cmake --preset windows-msvc` configures `build-msvc` (MSVC, the primary compiler, plain and ASan flavors);
+  `cmake --preset windows-clang-cl` configures `build-clang-cl`, a compile-and-test check with no ASan flavor yet. Build and test with
+  `cmake --build --preset <name>` and `ctest --preset <name>`. On Linux the preset is `linux` (`build`).
+- **`scripts/test-phase.sh` runs under Git for Windows' `bash`.** It finds the platform from `uname -s`, defaults to `build-msvc`, and
+  takes the same options as on Linux. `--flavor tsan` stops with a message (MSVC has no ThreadSanitizer), and `--flavor all` runs
+  plain and asan and says so: `flavors: all (plain and asan, no tsan on Windows)`. Git Bash rewrites an argument that looks like an
+  absolute path, so a `/flag` meant for `cl` or `clang-cl` becomes a file name; a script or test that passes such flags sets
+  `MSYS2_ARG_CONV_EXCL='*'` or calls the tool through CMake.
+- **The phase map per platform.** File patterns in `tests/phases.txt` need no platform: every source file is in both checkouts, and only
+  the built tests differ. What differs is which phases have tests in which flavors, so every phase has a `flavors <phase> windows: ...`
+  line (`none` for a phase with no Windows tests yet), and the day that ports a layer updates its phases' lines. `test_phase_labels`
+  checks the line for the platform it runs on, and only the flavors the configuration builds (`clang-cl` is not asked for ASan tests).
+  The unused-line check runs on Linux only: a `test:` line for a test Windows does not build yet matches nothing without being stale.
+- **The `display` group.** `SKIP_IF_NO_DISPLAY_SESSION()` asks `os::QuerySessionState()`, which on Windows asks the Terminal Services
+  API whether this session is the active one and checks that the input desktop is `Default` (a locked workstation or a screen saver
+  switches it; `engine/foundation/os/windows/session.cpp`), so a locked screen skips the window tests, as on Linux.
+- **The source gates** (`*_check`) are CMake scripts and run unchanged on both machines; they also know the Windows rules: `windows.h`
+  only through `engine/foundation/os/windows/win32.h` and the Windows SDK headers only in the Windows directories
+  (`platform_neutral_check`), no platform system header in neutral code (`module_deps_check`), D3D12 and DXGI only in
+  `engine/rhi/dx12/` (`rhi_boundary_check`), and the Win32 and C runtime file, environment and command-line calls
+  (`file_access_check`, `config_access_check`) and heap, lock and formatting calls in signal-safe code (`signal_safety_check`).
+  A gate prints each problem on one line (`message(NOTICE)`), so its self-tests do not depend on the console width or the
+  checkout's path.
+- **Two machines.** During Phase 13 the Windows machine runs the Windows build every day; the shared changes (CMake, the phase map, the
+  gates, `scripts/test-phase.sh`) are checked on Linux once, when the phase closes (Day 174), and `KNOWN-ISSUES.md` lists what is
+  waiting for that run.
 
 ### CI expectations
 

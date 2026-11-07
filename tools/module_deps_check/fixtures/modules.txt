@@ -13,3 +13,5 @@ target low low
 target mid mid
 target prog prog
 syslib PkgConfig::Display low
+platform-header ^windows\.h$
+platform-header ^X11/

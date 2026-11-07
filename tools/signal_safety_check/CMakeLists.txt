@@ -15,7 +15,7 @@ signal_safety_test(signal_safety_check_planted ${SIGNAL_SAFETY_FIXTURES}/bad)
 set_tests_properties(signal_safety_check_planted PROPERTIES WILL_FAIL TRUE)
 signal_safety_test(signal_safety_check_planted_count ${SIGNAL_SAFETY_FIXTURES}/bad)
 set_tests_properties(signal_safety_check_planted_count PROPERTIES
-  PASS_REGULAR_EXPRESSION "'malloc' in signal-safe.*'snprintf' in signal-safe.*'new' in signal-safe.*'Log' in signal-safe.*'std::string' in signal-safe.*'mutex' in signal-safe.*never closed.*8 violation")
+  PASS_REGULAR_EXPRESSION "'malloc' in signal-safe.*'snprintf' in signal-safe.*'new' in signal-safe.*'Log' in signal-safe.*'std::string' in signal-safe.*'mutex' in signal-safe.*never closed.*'HeapAlloc' in signal-safe.*'EnterCriticalSection' in signal-safe.*'wsprintfW' in signal-safe.*'AcquireSRWLockExclusive' in signal-safe.*12 violation")
 signal_safety_test(signal_safety_check_clean ${SIGNAL_SAFETY_FIXTURES}/good)
 
 engine_label_tests(signal_safety_check signal_safety_check_planted signal_safety_check_planted_count signal_safety_check_clean)

@@ -12,7 +12,24 @@ function(phase_labels_test name dir)
       ${ARGN} -P ${PHASE_LABELS_SCRIPT})
 endfunction()
 
-phase_labels_test(test_phase_labels ${CMAKE_BINARY_DIR} -DCHECK_FLAVORS=1 -DPLATFORM=${ENGINE_PLATFORM} -DCHECK_UNUSED=1)
+# The unused-line check runs on Linux only: on Windows, which builds one layer more each day (Phase 13), a `test:` line for a test of a layer
+# not ported yet matches nothing without being stale.
+if(ENGINE_PLATFORM STREQUAL "linux")
+  set(_check_unused -DCHECK_UNUSED=1)
+else()
+  set(_check_unused "")
+endif()
+# The flavors this configuration builds: the map's per-platform lines say what the platform has, and a configuration without a sanitizer
+# (clang-cl, which has no ASan flavor yet) is not asked for its tests.
+set(_built_flavors plain)
+if(ENGINE_HAVE_ASAN)
+  string(APPEND _built_flavors ",asan")
+endif()
+if(ENGINE_HAVE_TSAN)
+  string(APPEND _built_flavors ",tsan")
+endif()
+phase_labels_test(test_phase_labels ${CMAKE_BINARY_DIR} -DCHECK_FLAVORS=1 -DPLATFORM=${ENGINE_PLATFORM} -DBUILT_FLAVORS=${_built_flavors}
+  ${_check_unused})
 phase_labels_test(test_phase_labels_clean ${CMAKE_CURRENT_BINARY_DIR}/fixtures/good)
 phase_labels_test(test_phase_labels_planted_unlabeled ${CMAKE_CURRENT_BINARY_DIR}/fixtures/unlabeled)
 phase_labels_test(test_phase_labels_planted_doubled ${CMAKE_CURRENT_BINARY_DIR}/fixtures/doubled)
@@ -28,6 +45,14 @@ set_tests_properties(test_phase_labels_planted_extra_flavor PROPERTIES
 set_tests_properties(test_phase_labels_planted_missing_flavor PROPERTIES
   PASS_REGULAR_EXPRESSION "phase2 has no tsan tests, but the map lists that flavor")
 engine_label_tests(test_phase_labels_planted_extra_flavor test_phase_labels_planted_missing_flavor)
+# The same fixture, for a configuration that does not build tsan (Day 150): a flavor it cannot build is not demanded. The fixture lacks
+# the other phases' tests, so the check still fails; it must report those (it ran) and not phase 2's tsan.
+phase_labels_test(test_phase_labels_built_flavors ${CMAKE_CURRENT_BINARY_DIR}/fixtures/missing_flavor -DCHECK_FLAVORS=1 -DPLATFORM=linux
+  -DBUILT_FLAVORS=plain,asan)
+set_tests_properties(test_phase_labels_built_flavors PROPERTIES
+  PASS_REGULAR_EXPRESSION "phase0 has no plain tests, but the map lists that flavor"
+  FAIL_REGULAR_EXPRESSION "phase2 has no tsan tests")
+engine_label_tests(test_phase_labels_built_flavors)
 # Platform-qualified `flavors` lines (Phase 13 Day 148): the real map says phase 13 has plain tests on Windows only. One fixture with an
 # asan test of phase 13, checked as both platforms, so either machine tests both rules: on Linux the phase may have no tests at all, on
 # Windows it must have the plain tests its line lists.

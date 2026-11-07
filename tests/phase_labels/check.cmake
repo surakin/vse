@@ -1,9 +1,11 @@
 # Fails, naming the tests, if any test in a build directory lacks a `phaseN` label or has more than one
 # (Phase 6; tests/phases.txt). Run by ctest as test_phase_labels.
-#   cmake -DCTEST=<ctest> -DBUILD_DIR=<dir> -DMAP=<tests/phases.txt> [-DCHECK_FLAVORS=1 -DPLATFORM=linux|windows|macos] [-DCHECK_UNUSED=1] -P check.cmake
+#   cmake -DCTEST=<ctest> -DBUILD_DIR=<dir> -DMAP=<tests/phases.txt> [-DCHECK_FLAVORS=1 -DPLATFORM=linux|windows|macos [-DBUILT_FLAVORS=plain,asan,...]] [-DCHECK_UNUSED=1] -P check.cmake
 # CHECK_FLAVORS also checks that each phase has tests in exactly the sanitizer flavors its `flavors` line lists for PLATFORM: a
 # `flavors <phase> <platform>: <list>` line applies on that platform only, an unqualified line everywhere else, and a phase whose lines
 # all name other platforms must have no tests on this one (Phase 13 Day 148: phase 13's tests exist only on Windows);
+# BUILT_FLAVORS names the flavors this configuration builds (default all three): a flavor the map lists but the configuration cannot build
+# (clang-cl has no ASan flavor yet, Phase 13 Day 150) is not demanded.
 # CHECK_UNUSED also fails on a map line that matches no test or file. Both are for the real build, not the fixtures.
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/EnginePhaseMap.cmake)
 
@@ -73,16 +75,24 @@ if(CHECK_FLAVORS)
   if(NOT PLATFORM MATCHES "^(linux|windows|macos)$")
     message(FATAL_ERROR "check.cmake: CHECK_FLAVORS needs -DPLATFORM=linux, windows or macos (got '${PLATFORM}')")
   endif()
+  if(DEFINED BUILT_FLAVORS)
+    string(REPLACE "," ";" built "${BUILT_FLAVORS}")
+  else()
+    set(built plain asan tsan)
+  endif()
   file(STRINGS "${MAP}" flavor_lines REGEX "^flavors[ \t]")
   set(keys "")
   foreach(line IN LISTS flavor_lines)
     string(REGEX REPLACE "#.*$" "" line "${line}")
-    if(NOT line MATCHES "^flavors[ \t]+([0-9]+)[ \t]+(([a-z]+):[ \t]*)?((plain|asan|tsan)(,(plain|asan|tsan))*)[ \t]*$")
-      string(APPEND problems "  cannot read the map line '${line}' (want 'flavors <phase> [<platform>:] plain,asan,tsan')\n")
+    if(NOT line MATCHES "^flavors[ \t]+([0-9]+)[ \t]+(([a-z]+):[ \t]*)?((plain|asan|tsan)(,(plain|asan|tsan))*|none)[ \t]*$")
+      string(APPEND problems "  cannot read the map line '${line}' (want 'flavors <phase> [<platform>:] plain,asan,tsan' or '... none')\n")
       continue()
     endif()
     set(platform "${CMAKE_MATCH_3}")
     set(listed "${CMAKE_MATCH_4}")
+    if(listed STREQUAL "none")
+      set(listed "-")  # no flavor: the phase has no tests on that platform (yet); a placeholder that is no flavor name
+    endif()
     engine_phase_label("${CMAKE_MATCH_1}" label)
     if(NOT platform STREQUAL "" AND NOT platform MATCHES "^(linux|windows|macos)$")
       string(APPEND problems "  the map line '${line}' names the platform '${platform}' (want linux, windows or macos)\n")
@@ -118,7 +128,7 @@ if(CHECK_FLAVORS)
       string(APPEND problems "  no 'flavors' line in the map for ${label}\n")
       continue()
     endif()
-    foreach(flavor plain asan tsan)
+    foreach(flavor IN LISTS built)
       if(flavor STREQUAL "plain")
         selected_tests(here -L "^${label}$" -LE "^(asan|tsan)$")
       else()

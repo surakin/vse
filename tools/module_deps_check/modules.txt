@@ -15,6 +15,7 @@
 #   target <cmake-target> <module>    the module a CMake library or executable belongs to (flavor suffixes _asan/_tsan are
 #                                     stripped before the lookup); every add_library/add_executable under a scan directory needs one
 #   syslib <prefix> <module>          a system library (a CMake imported target) that only this module's targets may link
+#   platform-header <regex>           an angle-bracket system header only per-platform code (a file under a platform-dir) may include
 #
 # A violation that is known and scheduled goes in allowlist.txt, not here.
 
@@ -173,6 +174,12 @@ target docgen_lib tools/docgen
 target docgen tools/docgen
 
 # --- system libraries ----------------------------------------------------------------------------------------------------
+# Platform system headers (Phase 13 Day 150): neutral code reaches the OS and the graphics APIs only through the per-platform directories.
+platform-header ^(windows|winternl|wtsapi32|psapi|dbghelp|shlobj|shellapi|knownfolders|objbase|combaseapi|processthreadsapi)\.h$
+platform-header ^(d3d12[a-z0-9_]*|dxgi[a-z0-9_]*|d3dcompiler|dxcapi)\.h$
+platform-header ^(X11|xkbcommon|wayland-[a-z-]+|xcb)/
+platform-header ^wayland-[a-z-]+\.h$
+platform-header ^vulkan/vulkan_(win32|wayland|xlib|xcb|metal|android)\.h$
 syslib PkgConfig::WaylandClient platform
 syslib PkgConfig::XkbCommon platform
 syslib PkgConfig::X11Client platform

@@ -19,7 +19,7 @@
 #   --display / --no-display       include or leave out the window tests (label `display`); by default left out of
 #                                  --current/--affected unless phase 1 is selected or engine/foundation changed
 #   --jobs N                       parallel tests (default: the number of CPUs)
-#   --build-dir DIR                the CMake build directory (default: build)
+#   --build-dir DIR                the CMake build directory (default: build; on Windows build-msvc, the windows-msvc preset's)
 #   --no-build                     do not build first
 #   --dry-run                      print what would run and stop
 #   --since REF                    base commit for --affected
@@ -28,10 +28,20 @@
 #
 # The last line says how much ran: "ran X of Y tests (phases: ...; flavors: ...; display: ...)".
 # Closing a phase means --all --flavor all (the full suite, three flavors). See docs/guide/building-and-testing.md.
+# On Windows run it with Git for Windows' bash (from a plain PowerShell: & "C:\Program Files\Git\bin\bash.exe" scripts/test-phase.sh).
+# MSVC has no ThreadSanitizer, so there --flavor all means plain and asan, and the summary line says so; --flavor tsan is refused.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-build="$root/build"
+case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) platform=windows ;;
+    *) platform=linux ;;
+esac
+if [ "$platform" = windows ]; then
+    build="$root/build-msvc"
+else
+    build="$root/build"
+fi
 mode=current
 phase_arg=""
 flavor=plain
@@ -70,6 +80,11 @@ while [ $# -gt 0 ]; do
     shift
 done
 case "$flavor" in plain|asan|tsan|all) ;; *) die "--flavor must be plain, asan, tsan or all (got '$flavor')" ;; esac
+if [ "$platform" = windows ] && [ "$flavor" = tsan ]; then
+    die "--flavor tsan: MSVC has no ThreadSanitizer; the tsan flavor runs on the Linux machine"
+fi
+flavor_note=""
+[ "$platform" = windows ] && [ "$flavor" = all ] && flavor_note=" (plain and asan, no tsan on Windows)"  # no ';' in it: the summary's fields are ';'-separated
 case "$jobs" in ''|*[!0-9]*) die "--jobs must be a number" ;; esac
 
 map="$root/tests/phases.txt"
@@ -196,7 +211,11 @@ if [ "$phases" != all ] && { [ "$flavor" = asan ] || [ "$flavor" = tsan ]; }; th
     fi
 fi
 
-[ -d "$build" ] || die "no build directory at $build (configure first: cmake -S . -B build)"
+if [ "$platform" = windows ]; then
+    [ -d "$build" ] || die "no build directory at $build (configure first: cmake --preset windows-msvc)"
+else
+    [ -d "$build" ] || die "no build directory at $build (configure first: cmake -S . -B build)"
+fi
 # Tests are registered when their executable is built, so build before counting (a dry run counts the tree as built).
 if [ "$dry" = 0 ] && [ "$do_build" = 1 ]; then
     cmake --build "$build" || { echo "test-phase: the build failed; nothing ran" >&2; exit 1; }
@@ -206,7 +225,7 @@ total="$(count)"
 picked="$(count ${sel[@]+"${sel[@]}"})"
 [ -n "$total" ] && [ -n "$picked" ] || die "could not count tests in $build (is it configured?)"
 
-summary="phases: ${phases}; flavors: ${flavor}; display: $([ "$show_display" = yes ] && echo included || echo excluded); crash tests: $([ "$show_crashes" = yes ] && echo included || echo excluded)"
+summary="phases: ${phases}; flavors: ${flavor}${flavor_note}; display: $([ "$show_display" = yes ] && echo included || echo excluded); crash tests: $([ "$show_crashes" = yes ] && echo included || echo excluded)"
 if [ -n "$reasons" ] && [ "$mode" = affected ]; then
     echo "test-phase: running everything because of:$reasons"
 fi

@@ -24,6 +24,9 @@ module_deps_fixture(module_deps_check_cycle cycle cycle/allowlist.txt "cycle: th
 module_deps_fixture(module_deps_check_platform platform platform/allowlist.txt "platform include: prog -> low: game/prog/main.cpp:2 includes the per-platform file low/linux/os.h")
 module_deps_fixture(module_deps_check_link link link/allowlist.txt "upward link: low \\(1\\) -> mid \\(2\\): engine/low/CMakeLists.txt")
 module_deps_fixture(module_deps_check_syslib syslib syslib/allowlist.txt "system library: mid links PkgConfig::Display")
+# Phase 13 Day 150: neutral code may not include a platform system header; per-platform code (under a platform-dir) may.
+module_deps_fixture(module_deps_check_platform_header platform_header platform_header/allowlist.txt
+  "platform header: engine/low/a.h:3 includes <windows.h>.*platform header: game/prog/main.cpp:3 includes <X11/Xlib.h>.*2 problem")
 module_deps_fixture(module_deps_check_unresolved unresolved unresolved/allowlist.txt "unresolved include \"nowhere/missing.h\" in game/prog/main.cpp")
 module_deps_fixture(module_deps_check_unmapped unmapped unmapped/allowlist.txt "no module for engine/newdir/x.h.*no module for the CMake target mystery")
 module_deps_fixture(module_deps_check_stale stale stale/allowlist.txt "stale allow-list entry: edge low -> mid")

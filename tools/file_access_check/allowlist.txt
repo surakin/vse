@@ -4,6 +4,7 @@
 # docs/superpowers/specs/2026-11-06-file-layer-design.md (section 2, exceptions E1-E5).
 engine/foundation/io/linux/|E5: the Linux backend of the file layer itself (file_system.cpp, local_file.cpp, directory.cpp, error.cpp).
 engine/foundation/os/linux/os.cpp|E1: the descriptor primitives os::Open and os::CreateFileForWriting, kept for the assert-path debugger check and for the crash report, which opens its file inside the fault handler.
+engine/foundation/os/windows/os.cpp|E1: the Windows descriptor primitives os::Open and os::CreateFileForWriting (CreateFileW), for the same callers as on Linux.
 engine/foundation/os/linux/debug/module_list.cpp|E1: reads the executable path with readlink while a crash report lists modules (it may run in the fault handler, where the file layer cannot allocate).
 engine/foundation/os/linux/debug/crash_context.cpp|E2: InitCrashContext reads /proc and the executable path with the raw descriptor primitives because the assert-failure handler can call it lazily while the heap may be inconsistent; the file layer allocates.
 engine/foundation/os/linux/debug/fault_injection.cpp|E3: memfd_create makes anonymous memory for the fault-injection helper; it is not a path.
@@ -14,3 +15,4 @@ tests/jobs/async_io_test.cpp|E4: builds FIFOs and non-blocking descriptors to te
 tests/docgen/reference_test.cpp|E4: builds link loops, an unreadable directory and a read-only output directory, shapes the file layer's own helpers cannot create.
 tests/docgen/samples_test.cpp|E4: a symbolic link to a program and the working directory, to test how the sample runner finds its compiler.
 tests/rhi/vulkan_pipeline_test.cpp|E4: truncates and re-permissions cache files to test that the pipeline cache survives damage.
+tests/windows/os_windows_test.cpp|E4: tests the Windows descriptor primitives themselves on an ordinary file, which it names with GetTempPathA and removes with DeleteFileA.

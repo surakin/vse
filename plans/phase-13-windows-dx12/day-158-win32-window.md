@@ -35,6 +35,8 @@ The `os::Window` backend for Windows (input is tomorrow). New files under `engin
       `platform::detail::RunWindowedProgram(entry)` (`platform/<os>/entry_point_*.cpp`), which on Windows builds UTF-8 `argv` from the wide command
       line (`CommandLineToArgvW` and `os/windows/utf16.h`, so it does not depend on the manifest's code page), stashes it for
       `os::CommandLine::FromNative`, gives standard output and error somewhere to go (below), and returns `EngineMain`'s result.
+      `config_access_check` flags `CommandLineToArgvW` and `GetCommandLineW` since Day 150, with no directory exempt: the Windows
+      `entry_point_*.cpp` gets an allow-list entry with its reason (the command line is read before any `Settings` exist).
       - **The subsystem follows the entry point**, with no per-target CMake setting: `link.exe` and `lld-link` pick `/SUBSYSTEM:WINDOWS` for `wWinMain`
         and `/SUBSYSTEM:CONSOLE` for `main` when no `/SUBSYSTEM` is given. CMake passes `/subsystem:console` to every executable by default, so
         `cmake/EngineCompilerOptions.cmake` clears that once for the whole build (`CMAKE_CREATE_CONSOLE_EXE`); check what both linkers infer and

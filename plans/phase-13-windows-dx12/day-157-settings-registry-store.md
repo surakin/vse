@@ -28,6 +28,10 @@ behind `os::`. New directory `engine/foundation/settings/windows/`.
 - [ ] **`config_access_check`** passes with the new code (the registry store is part of the settings system; anything else reading the registry for
       configuration is a violation, with a planted fixture).
 - [ ] **The `tests/settings` suite** passes on Windows.
+- [ ] **`tools/docgen` and `ctest -L docs` on Windows** (moved from Day 150: `docgen` links the whole foundation, complete today): its POSIX includes go
+      (the file layer, and a small process helper for the sample compiler, shared with Day 163's `shader_mint --permute` if that is ready, else its own);
+      `cmake --build --target docs` produces a `docs/reference/` byte-identical to the committed tree (a test: generate on Windows, compare); `ctest -L docs`
+      passes on Windows, including the compiled guide samples. From here a Windows day that changes a public header regenerates the reference itself.
 - [ ] **Documentation:** `BACKEND.md` Windows section marked implemented with the final value mapping; `docs/guide/settings.md` "Settings on Windows" (where values
       live, registry layout, policy keys); reference regenerated; `docgen lint` zero.
 - [ ] **Runs:** Windows `--affected` plain and asan; Linux `--affected` plus asan and tsan (`env_source.cpp` is shared); quote the lines.

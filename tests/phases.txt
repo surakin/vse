@@ -26,6 +26,21 @@ flavors 12  plain
 # Phase 13 tests exist only on Windows. A platform-qualified line (`flavors <phase> <platform>: <list>`, platform linux, windows
 # or macos) applies on that platform only; with no line for the platform it is running on, a phase must have no tests there.
 flavors 13  windows: plain,asan
+# What the Windows build has of each phase (Phase 13 ports one layer per day; each day updates its phases here; `none` = no tests yet).
+# MSVC has no ThreadSanitizer, so no Windows line lists tsan.
+flavors 0   windows: plain,asan
+flavors 1   windows: plain
+flavors 2   windows: none
+flavors 3   windows: none
+flavors 4   windows: plain
+flavors 5   windows: plain
+flavors 6   windows: plain
+flavors 7   windows: plain
+flavors 8   windows: none
+flavors 9   windows: plain
+flavors 10  windows: plain,asan
+flavors 11  windows: plain
+flavors 12  windows: plain
 
 # --- Phase 0: foundation (tests/foundation) ---
 tests/foundation/arena_allocator_test.cpp       0

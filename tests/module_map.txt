@@ -13,6 +13,8 @@ engine/foundation/debug 3,7
 engine/foundation/io 0,1,2,3,4,5,7,9,10,11
 engine/foundation/settings 3,11
 engine/foundation/os/linux/debug 7
+engine/foundation/os/windows 0,13
+engine/foundation/os/windows/debug 7,13
 engine/platform     0,1,4,5,8
 engine/jobs         2,3,4,5
 engine/rhi          3,4,5
@@ -27,6 +29,7 @@ tools/std_container_check 10
 tools/settings_fixtures_check 11
 tools/config_access_check 11
 tools/module_deps_check 12
+tests/windows       13
 tools/platform_neutral_check 7
 tools/crash_extract 7
 game/hello_window  1

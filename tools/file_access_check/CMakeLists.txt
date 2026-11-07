@@ -16,7 +16,7 @@ file_access_test(file_access_check_planted ${FILE_ACCESS_FIXTURES}/bad ${FILE_AC
 set_tests_properties(file_access_check_planted PROPERTIES WILL_FAIL TRUE)
 file_access_test(file_access_check_planted_count ${FILE_ACCESS_FIXTURES}/bad ${FILE_ACCESS_FIXTURES}/good/allowlist.txt)
 set_tests_properties(file_access_check_planted_count PROPERTIES
-  PASS_REGULAR_EXPRESSION "engine/leak.cpp:1:.*engine/leak.cpp:3:.*engine/leak.cpp:4:.*engine/leak.cpp:5:.*engine/leak.cpp:6:.*engine/leak.cpp:7:.*engine/leak.cpp:8:.*engine/leak.cpp:9:.*engine/leak.cpp:11:.*engine/leak.cpp:12:.*tools/tool.cpp:1:.*stale entry engine/foundation/io/linux/.*12 problem")
+  PASS_REGULAR_EXPRESSION "engine/leak.cpp:1:.*engine/leak.cpp:3:.*engine/leak.cpp:4:.*engine/leak.cpp:5:.*engine/leak.cpp:6:.*engine/leak.cpp:7:.*engine/leak.cpp:8:.*engine/leak.cpp:9:.*engine/leak.cpp:11:.*engine/leak.cpp:12:.*engine/win_leak.cpp:1:.*engine/win_leak.cpp:2:.*engine/win_leak.cpp:3:.*engine/win_leak.cpp:4: .*C:.w.[$][{]x[}].*tools/tool.cpp:1:.*stale entry engine/foundation/io/linux/.*16 problem")
 
 # A clean tree passes: the backend directory is allowed, comments, strings, member calls, file-layer functions and SIGNAL-SAFE regions are not violations.
 file_access_test(file_access_check_clean ${FILE_ACCESS_FIXTURES}/good ${FILE_ACCESS_FIXTURES}/good/allowlist.txt)

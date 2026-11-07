@@ -13,8 +13,10 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
 What to install first, per platform: `BUILD.md`.
 
 - **Windows (Phase 13, from Day 148):** from a plain PowerShell or Git Bash (no Developer Command Prompt): `cmake --preset windows-msvc` (or
-  `windows-clang-cl`), `cmake --build --preset windows-msvc`, `ctest --preset windows-msvc`. The Windows build grows one layer per day; `scripts/test-phase.sh`
-  runs on Windows from Day 150. Non-unity check: `cmake --preset windows-msvc -B build-windows-msvc-nounity -DENGINE_UNITY_BUILD=OFF`.
+  `windows-clang-cl`), `cmake --build --preset windows-msvc`, `ctest --preset windows-msvc`. The Windows build grows one layer per day. Scoped runs:
+  `scripts/test-phase.sh --affected` (and `--flavor asan`) under Git for Windows' `bash` (default build directory `build-msvc`; no tsan on Windows, and
+  `--flavor all` says so). Non-unity check: `cmake --preset windows-msvc -B build-windows-msvc-nounity -DENGINE_UNITY_BUILD=OFF`. Guide:
+  `docs/guide/building-and-testing.md`, "Building and testing on Windows".
 
 
 - Configure and build: `cmake -S . -B build && cmake --build build`. Our own targets build as unity (merged) translation
@@ -714,3 +716,15 @@ UTF-8/UTF-16 helpers with long-path handling; session state; `os::VulkanLoaderNa
 `os/command_line.cpp`): the manifest makes `argv` UTF-8. The base-layer tests run on Windows: `ctest --preset windows-msvc` 190 of 190 (plain and ASan),
 `windows-clang-cl` 181 of 181 (plain `ctest`). Review: 10 findings, 7 fixed, 1 deferred to Day 150, 2 declined with reasons. The Phase 10 MSVC 128-bit
 entry is closed. Linux: pending until the phase close. **Next: Day 150 (test tooling, gates and docs on Windows).**
+
+Phase 13 **Day 150 (2026-11-07, Windows PC): test tooling and gates on Windows.** `scripts/test-phase.sh` runs under Git Bash (`build-msvc`, no tsan, the
+summary names it); every phase has a `windows:` `flavors` line (`none` for 2, 3, 8), the unused-line check is Linux-only and the flavor check covers only the
+flavors a configuration builds; `tests/phase_labels`, `tests/test_phase_script` and all nine source gates are in the Windows build. The gates know the Windows
+rules: `windows.h` only through `os/windows/win32.h` and SDK headers only in the Windows directories (`platform_neutral_check` rule 4), no platform system
+header in neutral code (`module_deps_check` `platform-header`), D3D12/DXGI only in `rhi/dx12/`, the Win32/CRT file, environment and command-line calls, and
+the Win32 heap/lock/formatting calls in signal-safe code; each has planted Windows violations, and every gate prints a problem on one unwrapped line.
+Runs: `ran 247 of 287 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 40 of 287`, `--all --flavor all`
+`ran 287 of 287 tests (phases: all; flavors: all (plain and asan, no tsan on Windows); ...)`; `windows-clang-cl` 278 of 278. Moved: `docgen` and
+`ctest -L docs` on Windows to Day 157, `shader_mint` (with its exceptions option) to Day 163. Review: 10 findings, 7 fixed (among them the 30 script tests
+that were silently missing from the Windows build), 3 declined with reasons. Linux: pending until the phase close. **Next: Day 151 (the file layer on
+Windows).**

@@ -5,12 +5,31 @@
 # sits between the marker comments `// SIGNAL-SAFE-BEGIN` and `// SIGNAL-SAFE-END`; between them these are forbidden:
 #   malloc calloc realloc free new delete, printf-family, FILE I/O, strdup, mutex and lock types, Log(, std:: names other than
 #   the allowed few (atomic, memory_order_*, memset, memcpy, strlen, strncmp).
+# On Windows (Phase 13 Day 150) "signal-safe" means code that runs inside a crashed process's exception handler (the vectored or
+# unhandled-exception filter): the heap and the loader lock may be held by the thread that crashed, so the same rules apply and these
+# Win32 and C runtime names are forbidden too: HeapAlloc HeapReAlloc HeapFree LocalAlloc LocalFree GlobalAlloc GlobalFree
+# CoTaskMemAlloc, EnterCriticalSection LeaveCriticalSection AcquireSRWLock* ReleaseSRWLock* (and the TryEnter/TryAcquire forms),
+# wsprintf* swprintf _snprintf _snwprintf sprintf_s _vsnprintf, FormatMessage*, _wfopen fopen_s, OutputDebugString* (it takes a lock
+# and allocates), LoadLibrary* (the loader lock). WriteFile, VirtualAlloc and the interlocked functions stay allowed.
 # An unbalanced marker is also an error.
 cmake_minimum_required(VERSION 3.20)
 
 if(NOT ROOT)
   message(FATAL_ERROR "usage: -DROOT=<tree>")
 endif()
+
+# Reports one problem and counts it. Printed with message(NOTICE), on one line: message(SEND_ERROR) wraps its text at the console width,
+# so the output (and the self-tests that match it) would depend on the length of the checkout's path (found on Windows, Phase 13 Day 150).
+# The script fails at the end when any problem was reported. A function, not a macro: a macro's arguments are substituted into its
+# body as text, so a quoted source line with `\w` or `${x}` in it would be evaluated again. Call it from the top level only (it counts
+# in its caller's scope).
+set(errors 0)
+function(gate_problem text)
+  message(NOTICE "error: ${text}")
+  math(EXPR count "${errors}+1")
+  set(errors ${count} PARENT_SCOPE)
+endfunction()
+
 get_filename_component(ROOT "${ROOT}" ABSOLUTE)
 
 function(read_lines path out)
@@ -24,6 +43,7 @@ endfunction()
 
 set(ident "(^|[^A-Za-z0-9_])")
 set(forbidden_re "${ident}(malloc|calloc|realloc|free|strdup|printf|snprintf|sprintf|vsnprintf|vprintf|fprintf|fopen|fclose|fwrite|fread|fputs|puts|new|delete|pthread_mutex_lock|pthread_mutex_unlock|mutex|lock_guard|unique_lock|scoped_lock|condition_variable)([^A-Za-z0-9_]|$)")
+set(win_forbidden_re "${ident}(HeapAlloc|HeapReAlloc|HeapFree|LocalAlloc|LocalReAlloc|LocalFree|GlobalAlloc|GlobalReAlloc|GlobalFree|CoTaskMemAlloc|EnterCriticalSection|TryEnterCriticalSection|LeaveCriticalSection|AcquireSRWLockExclusive|AcquireSRWLockShared|TryAcquireSRWLockExclusive|TryAcquireSRWLockShared|ReleaseSRWLockExclusive|ReleaseSRWLockShared|wsprintfA|wsprintfW|wvsprintfA|wvsprintfW|swprintf|_snprintf|_snwprintf|sprintf_s|swprintf_s|_vsnprintf|_vsnwprintf|FormatMessageA|FormatMessageW|_wfopen|fopen_s|_wfopen_s|OutputDebugStringA|OutputDebugStringW|LoadLibraryA|LoadLibraryW|LoadLibraryExA|LoadLibraryExW)([^A-Za-z0-9_]|$)")
 set(log_re "${ident}Log[ \t]*\\(")
 set(std_re "std::([A-Za-z_0-9]+)")
 
@@ -33,7 +53,6 @@ foreach(dir engine game)
   list(APPEND files ${found})
 endforeach()
 
-set(errors 0)
 set(regions 0)
 foreach(f IN LISTS files)
   read_lines("${ROOT}/${f}" lines)
@@ -44,8 +63,7 @@ foreach(f IN LISTS files)
     math(EXPR n "${n}+1")
     if(l MATCHES "// SIGNAL-SAFE-BEGIN")
       if(inside)
-        message(SEND_ERROR "${f}:${n}: SIGNAL-SAFE-BEGIN inside a region begun at line ${begin_line}")
-        math(EXPR errors "${errors}+1")
+        gate_problem("${f}:${n}: SIGNAL-SAFE-BEGIN inside a region begun at line ${begin_line}")
       endif()
       set(inside TRUE)
       set(begin_line ${n})
@@ -54,8 +72,7 @@ foreach(f IN LISTS files)
     endif()
     if(l MATCHES "// SIGNAL-SAFE-END")
       if(NOT inside)
-        message(SEND_ERROR "${f}:${n}: SIGNAL-SAFE-END without a begin")
-        math(EXPR errors "${errors}+1")
+        gate_problem("${f}:${n}: SIGNAL-SAFE-END without a begin")
       endif()
       set(inside FALSE)
       continue()
@@ -73,6 +90,8 @@ foreach(f IN LISTS files)
     set(why "")
     if(code MATCHES "${forbidden_re}")
       set(why "${CMAKE_MATCH_2}")
+    elseif(code MATCHES "${win_forbidden_re}")
+      set(why "${CMAKE_MATCH_2}")
     elseif(code MATCHES "${log_re}")
       set(why "Log")
     else()
@@ -88,19 +107,16 @@ foreach(f IN LISTS files)
       string(REPLACE "<RB>" "]" shown "${shown}")
       string(REPLACE "<SEMI>" ";" shown "${shown}")
       string(STRIP "${shown}" shown)
-      message(SEND_ERROR "${f}:${n}: '${why}' in signal-safe code: ${shown}")
-      math(EXPR errors "${errors}+1")
+      gate_problem("${f}:${n}: '${why}' in signal-safe code: ${shown}")
     endif()
   endforeach()
   if(inside)
-    message(SEND_ERROR "${f}: SIGNAL-SAFE-BEGIN at line ${begin_line} is never closed")
-    math(EXPR errors "${errors}+1")
+    gate_problem("${f}: SIGNAL-SAFE-BEGIN at line ${begin_line} is never closed")
   endif()
 endforeach()
 
 if(regions EQUAL 0)
-  message(SEND_ERROR "signal_safety_check: no SIGNAL-SAFE region found under ${ROOT}; the markers have been lost")
-  math(EXPR errors "${errors}+1")
+  gate_problem("signal_safety_check: no SIGNAL-SAFE region found under ${ROOT}; the markers have been lost")
 endif()
 if(errors GREATER 0)
   message(FATAL_ERROR "signal_safety_check: ${errors} violation(s)")
