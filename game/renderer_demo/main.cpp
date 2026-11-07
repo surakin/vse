@@ -462,6 +462,10 @@ int RunWindow(const Options& options, RenderSettings settings) {
                 renderer::RenderSettingsToChanges(wanted, g_demo_settings->GetRegistry(), &requests);
                 g_demo_settings->Get().SetCapabilityCheck(&renderer::RendererCapability, &renderer);
                 const engine_placeholder::settings::SetResult set = g_demo_settings->Get().Apply(requests.Data(), requests.Size(), &renderer::ApplySharedChange, &renderer);
+                if (set.error == engine_placeholder::settings::SetError::ApplyFailed) { // the renderer was asked and said no; the setting is rolled back
+                    LogApply(what, renderer.LastApply());
+                    return;
+                }
                 if (!set.Ok()) { // refused before the renderer was asked (a missing capability, a value outside the range): say why, change nothing
                     RhiLogV(LogVerbosity::Warn, "renderer_demo: %s: the settings system refused the change (error %d, value %s)", what, static_cast<int>(set.error), engine_placeholder::settings::ValueErrorName(set.value));
                     return;

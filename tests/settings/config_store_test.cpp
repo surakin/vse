@@ -278,3 +278,44 @@ TEST_CASE("A commit that lands only some changes says how many (the contract of 
     REQUIRE(observer->Load().Ok());
     CHECK(CountKeys(*observer) == 4);
 }
+
+TEST_CASE("ConfigStore conformance: a registry-shaped store (typed, per-key, unordered, notifying)", "[settings][store][conformance][registry]") {
+    RegistryHive hive;
+    auto make = [&] { return ConfigStorePtr(MakeUnique<RegistryShapedStore>(&hive)); };
+    RunWritableConformance(make);
+    RunDurabilityConformance(make);
+    RunCapabilityConformance(make);
+    ConfigStorePtr store = make();
+    const u32 caps = store->Capabilities();
+    CHECK((caps & kCapPerKeyWrites) != 0);
+    CHECK((caps & kCapAtomicCommit) == 0);
+    CHECK((caps & kCapPreservesOrder) == 0);
+}
+
+TEST_CASE("A registry-shaped store notifies other stores from another thread, never the writer", "[settings][store][notify][registry]") {
+    RegistryHive hive;
+    const ConformanceDescs d;
+    RegistryShapedStore a(&hive), b(&hive);
+    struct Seen {
+        std::atomic<int> calls{0};
+        std::atomic<bool> other_thread{false};
+        std::thread::id main;
+    } seen_a, seen_b;
+    seen_a.main = seen_b.main = std::this_thread::get_id();
+    auto listener = [](void* user) {
+        Seen* s = static_cast<Seen*>(user);
+        s->other_thread = std::this_thread::get_id() != s->main;
+        s->calls.fetch_add(1);
+    };
+    REQUIRE(a.SetChangeListener(listener, &seen_a).Ok());
+    REQUIRE(b.SetChangeListener(listener, &seen_b).Ok());
+    REQUIRE(a.Set("n.x", Stored(a, d.i, Value::FromInt(1))).Ok());
+    for (int i = 0; i < 200 && seen_b.calls.load() == 0; ++i) std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    CHECK(seen_b.calls.load() == 1);
+    CHECK(seen_b.other_thread.load());
+    CHECK(seen_a.calls.load() == 0);
+    REQUIRE(b.SetChangeListener(nullptr, nullptr).Ok());
+    REQUIRE(a.Set("n.y", Stored(a, d.i, Value::FromInt(2))).Ok());
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    CHECK(seen_b.calls.load() == 1); // removed
+}

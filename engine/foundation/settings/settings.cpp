@@ -15,6 +15,13 @@ namespace {
 
 thread_local int g_depth = 0; // how many listener or apply calls this thread is inside
 
+String<HeapAllocator> JoinText(StringView a, StringView b, StringView c) {
+    String<HeapAllocator> out(HeapAllocator::Default(), a);
+    out.Append(b);
+    out.Append(c);
+    return out;
+}
+
 double NowSeconds() { return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
 
 bool Under(StringView key, StringView prefix) {
@@ -29,6 +36,7 @@ void CopyText(char* out, usize capacity, StringView text) {
 }
 
 struct Call {
+    u32 id;
     SettingsListener fn;
     void* user;
     Vector<Change> matching;
@@ -106,6 +114,8 @@ LoadReport Settings::Load(const LoadOptions& options) {
                 io::Path file;
                 if (io::Path::Parse(r.settings_files[i].View(), io::NativePathStyle(), &file)) {
                     stack_.AddLayer(r.settings_files[i].View(), LayerRole::Custom, MakeUnique<FileConfigStore>(file, read_only));
+                } else {
+                    command_line_.errors.Push(JoinText("--settings ", r.settings_files[i].View(), ": not a valid path"));
                 }
             }
         }
@@ -116,6 +126,18 @@ LoadReport Settings::Load(const LoadOptions& options) {
         if (cli) stack_.AddLayer("command line", LayerRole::CommandLine, ConfigStorePtr(static_cast<UniquePtr<CommandLineSource>&&>(cli)));
     }
     LoadReport report = LoadFromLayers();
+    for (usize i = 0; i < command_line_.settings_files.Size(); ++i) { // a file the user named must exist
+        for (usize layer = 0; layer < stack_.Size(); ++layer) {
+            if (stack_.Role(layer) == LayerRole::Custom && stack_.State(layer) == LayerState::Missing && stack_.Name(layer) == command_line_.settings_files[i].View()) {
+                LayerProblem p;
+                CopyText(p.layer, sizeof(p.layer), "command line");
+                char message[200];
+                CopyText(message, sizeof(message), JoinText("--settings ", command_line_.settings_files[i].View(), ": no such file").View());
+                CopyText(p.message, sizeof(p.message), message);
+                report.problems.Push(p);
+            }
+        }
+    }
     for (usize i = 0; i < command_line_.errors.Size(); ++i) {
         LayerProblem p;
         CopyText(p.layer, sizeof(p.layer), "command line");
@@ -352,6 +374,7 @@ SetResult Settings::DoApply(const ChangeRequest* requests, usize count, ApplyFn 
     Vector<Call> calls;
     for (usize s = 0; s < subscriptions_.Size(); ++s) {
         Call call;
+        call.id = subscriptions_[s]->id;
         call.fn = subscriptions_[s]->listener;
         call.user = subscriptions_[s]->user;
         for (usize k = 0; k < changes.Size(); ++k) {
@@ -360,6 +383,9 @@ SetResult Settings::DoApply(const ChangeRequest* requests, usize count, ApplyFn 
         if (!call.matching.Empty()) calls.Push(static_cast<Call&&>(call));
     }
     for (usize c = 0; c < calls.Size(); ++c) {
+        bool still_subscribed = false; // an earlier listener may have removed this one (and freed its user data)
+        for (usize s = 0; s < subscriptions_.Size() && !still_subscribed; ++s) still_subscribed = subscriptions_[s]->id == calls[c].id;
+        if (!still_subscribed) continue;
         ChangeEvent e = event;
         e.changes = calls[c].matching.Data();
         e.count = calls[c].matching.Size();
@@ -409,8 +435,10 @@ Status Settings::Save(const SaveOptions& options) {
     const usize w = stack_.WriteLayer();
     if (w >= stack_.Size()) return Status::Of(StoreError::NotFound);
     if (newer_file_ && !options.replace_newer) {
-        last_save_status_ = Status::Of(StoreError::TooNew);
-        return last_save_status_;
+        const Status too_new = Status::Of(StoreError::TooNew);
+        std::lock_guard<std::mutex> lock(mutex_);
+        last_save_status_ = too_new;
+        return too_new;
     }
     if (stamp_versions_ || options.replace_newer) StampVersions(*registry_, stack_.Store(w), options.replace_newer);
     struct Undo {
@@ -426,7 +454,7 @@ Status Settings::Save(const SaveOptions& options) {
             stack_.Store(cli).Enumerate(StringView(), &keys);
             for (usize i = 0; i < keys.Size(); ++i) {
                 const SettingId id = registry_->Find(keys[i].View());
-                if (!id.IsValid()) continue;
+                if (!id.IsValid() || (registry_->Desc(id)->flags & kSecret) != 0) continue; // a saved file is not the place for a secret
                 Undo u;
                 u.id = id;
                 u.had = stack_.Store(w).Get(keys[i].View(), &u.before).Ok();
@@ -438,7 +466,10 @@ Status Settings::Save(const SaveOptions& options) {
     CommitOptions commit;
     commit.replace_damaged = options.replace_damaged;
     const Status s = stack_.Store(w).Commit(commit);
-    last_save_status_ = s;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        last_save_status_ = s;
+    }
     if (s.Ok()) {
         newer_file_ = false; // the file now carries this program's versions
         stamp_versions_ = false;

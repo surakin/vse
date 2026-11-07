@@ -1,0 +1,2 @@
+engine/boot/|code that runs before any Settings exists (fixture)
+engine/clean.cpp|nothing in it reads configuration, so this entry is stale

@@ -16,6 +16,9 @@ foreach(h IN LISTS headers)
   if(h MATCHES "/engine/foundation/io/")
     continue() # the file layer has its own list: engine/foundation/io/BACKEND.md, checked by io_backend_lists
   endif()
+  if(h MATCHES "/engine/foundation/settings/")
+    continue() # the settings system has its own list: engine/foundation/settings/BACKEND.md, checked by settings_backend_lists
+  endif()
   file(READ "${h}" content)
   string(REPLACE ";" "<SEMI>" content "${content}")
   string(REPLACE "[" "<LB>" content "${content}")

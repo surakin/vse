@@ -61,6 +61,7 @@ Status FileConfigStore::Load() {
     on_disk_.Resize(bytes.Size());
     if (bytes.Size() != 0) std::memcpy(on_disk_.Data(), bytes.Data(), bytes.Size());
     exists_ = true;
+    backup_written_ = false;
     doc_.Parse(StringView(on_disk_.Data(), on_disk_.Size()), &report_);
     return report_.error_count != 0 ? Status::Of(StoreError::Damaged) : Status();
 }
@@ -128,7 +129,7 @@ Status FileConfigStore::Commit(const CommitOptions& options) {
             return result;
         }
     }
-    if (options_.keep_backup && exists_) {
+    if (options_.keep_backup && exists_ && !backup_written_) { // .bak keeps the file as this program found it, not the previous autosave
         String<HeapAllocator> name(HeapAllocator::Default(), path_.View());
         name.Append(".bak");
         io::Path backup_path;
@@ -141,6 +142,7 @@ Status FileConfigStore::Commit(const CommitOptions& options) {
             result.error = FromIo(kept.error);
             return result;
         }
+        backup_written_ = true;
     }
     const io::Status written = io::WriteFileAtomic(path_, text.Data(), text.Size(), options_.permissions);
     if (written.Failed()) {

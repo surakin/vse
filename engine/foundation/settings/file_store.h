@@ -68,6 +68,7 @@ private:
     ConfigReport report_;
     Vector<char> on_disk_; // the bytes the file held at the last Load or Commit (the next .bak)
     bool exists_ = false;  // the file existed then
+    bool backup_written_ = false; // .bak already holds the file as it was found (set by the first Commit that replaced it)
     u32 staged_ = 0;
     StoreError load_error_ = StoreError::None; // why the last Load could not read the file
 };

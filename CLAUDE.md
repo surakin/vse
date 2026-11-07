@@ -243,6 +243,13 @@ table in `PLAN.md`.
   `SIGNAL-SAFE` markers, `memfd` shared memory, console output (`os::Write`, stdout and stderr), tests that plant raw file-system shapes on purpose, and third-party
   code. A new platform implements `engine/foundation/io/BACKEND.md` (kept in step by `io_backend_lists`). Config files and the settings system (Phase 11) are built
   on this layer.
+- **Anything a user can configure is a setting** (Phase 11): declared with `settings::Registry` (`engine/foundation/settings/`; guide `docs/guide/settings.md`;
+  design `docs/superpowers/specs/2026-11-07-settings-design.md`; `PLAN.md` assumption #22) and read through `Setting<T>` or `Settings`. Do not add an ad hoc `getenv`, a
+  `--flag` parse or a configuration file format of your own in `engine/` or `game/`: declare the setting with its `env` and `flag` names and the settings system reads
+  them. The `config_access_check` gate (`tools/config_access_check`, ctest `config_access_check`) fails on them outside its allow list
+  (`tools/config_access_check/allowlist.txt`, a reason per entry, a stale entry fails). Exceptions: variables read before any `Settings` can exist (window host, job
+  scheduler, crash handler, Vulkan loader and validation switches), the death-test child protocol, the launch-only options of demos and benchmarks, third-party code and
+  the tools' own command lines. A new platform store implements `engine/foundation/settings/BACKEND.md` (kept in step by `settings_backend_lists`).
 - **Every target platform is designed in from day one — desktop, mobile,
   and console alike — even though only Linux is implemented before
   Phase 12 (Windows).** Platform-layer and engine-facing interfaces must stay

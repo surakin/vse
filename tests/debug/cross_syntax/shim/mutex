@@ -10,6 +10,15 @@ public:
     void unlock();
     bool try_lock();
 };
+class recursive_mutex {
+public:
+    constexpr recursive_mutex() noexcept = default;
+    recursive_mutex(const recursive_mutex&) = delete;
+    recursive_mutex& operator=(const recursive_mutex&) = delete;
+    void lock();
+    void unlock();
+    bool try_lock();
+};
 template <class M>
 class lock_guard {
 public:

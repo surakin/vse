@@ -16,6 +16,8 @@ function(demo_settings_tests demo)
     "-DEXPECT=platform.window_backend +x11 .*renderer.adapter +\"abc\" .*renderer.present_mode +immediate .*renderer.sync_validation +true .*renderer.validation +on " -DEXPECT_CODE=0 -P ${cli})
   add_test(NAME ${demo}_settings_legacy_flag_yields COMMAND ${CMAKE_COMMAND} ${common} -DMODE=regex "-DARGS=--no-vsync;--set;renderer.present_mode=fifo;--list-settings"
     "-DEXPECT=renderer.present_mode +fifo .*from command line \\(--set renderer.present_mode=fifo\\)" -DEXPECT_CODE=0 -P ${cli})
+  add_test(NAME ${demo}_settings_flag_beats_user_file COMMAND ${CMAKE_COMMAND} ${common} -DMODE=regex "-DUSER_FILE=[renderer]\npresent_mode = fifo\n" -DAPP=${demo} "-DARGS=--no-vsync;--list-settings"
+    "-DEXPECT=renderer.present_mode +immediate " -DEXPECT_CODE=0 -P ${cli})
   add_test(NAME ${demo}_settings_bad_key COMMAND ${CMAKE_COMMAND} ${common} -DMODE=regex "-DARGS=--set;renderer.widht=1;--list-settings"
     "-DEXPECT=did you mean 'renderer.width'" -DEXPECT_CODE=2 -P ${cli})
   add_test(NAME ${demo}_settings_bad_value COMMAND ${CMAKE_COMMAND} ${common} -DMODE=regex "-DARGS=--set;renderer.width=wide;--list-settings"
@@ -24,9 +26,9 @@ function(demo_settings_tests demo)
     "-DEXPECT=\\[renderer\\].*height = 64.*present_mode = \"?immediate\"?.*width = 96"
     "-DEXPECT_LISTING=renderer.height +64 +default 0 +from [^\n]*saved.cfg \\(line [0-9]+\\).*renderer.present_mode +immediate .*renderer.width +96 +default 0 +from [^\n]*saved.cfg" -P ${cli})
   set_tests_properties(${demo}_settings_list ${demo}_settings_help ${demo}_settings_set_every_type ${demo}_settings_environment ${demo}_settings_old_flags
-    ${demo}_settings_bad_key ${demo}_settings_bad_value ${demo}_settings_save_reproduce ${demo}_settings_legacy_flag_yields PROPERTIES LABELS "demo")
+    ${demo}_settings_bad_key ${demo}_settings_bad_value ${demo}_settings_save_reproduce ${demo}_settings_legacy_flag_yields ${demo}_settings_flag_beats_user_file PROPERTIES LABELS "demo")
   engine_label_tests(${demo}_settings_list ${demo}_settings_help ${demo}_settings_set_every_type ${demo}_settings_environment ${demo}_settings_old_flags
-    ${demo}_settings_bad_key ${demo}_settings_bad_value ${demo}_settings_save_reproduce ${demo}_settings_legacy_flag_yields)
+    ${demo}_settings_bad_key ${demo}_settings_bad_value ${demo}_settings_save_reproduce ${demo}_settings_legacy_flag_yields ${demo}_settings_flag_beats_user_file)
 endfunction()
 
 add_subdirectory(rhi_demo)

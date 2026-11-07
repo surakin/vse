@@ -353,6 +353,10 @@ virtual u32 Capabilities() const = 0;
 
 Returns the store's [`settings::StoreCapability`](#settings-storecapability) bits.
 
+| Field | Value |
+|---|---|
+| Backend | Windows: the registry store reports kCapWritable \| kCapPerKeyWrites \| kCapTypedValues \| kCapNotifies; macOS: NSUserDefaults reports kCapWritable \| kCapTypedValues \| kCapNotifies. |
+
 ### `Describe(char*,usize)` {#settings-configstore-describe-char-star-usize-const}
 
 `method settings::ConfigStore::Describe` — defined in `engine/foundation/settings/config_store.h`
@@ -362,6 +366,10 @@ virtual void Describe(char* out, usize capacity) const = 0;
 ```
 
 Writes a short description for logs into `out` (a path, `memory`, `registry HKCU\Software\app`), NUL-terminated and cut to fit.
+
+| Field | Value |
+|---|---|
+| Backend | Windows: `registry HKCU\Software\<app>`; macOS: the defaults domain or the plist path. |
 
 ### `Load()` {#settings-configstore-load}
 
@@ -377,6 +385,7 @@ Reads the durable state, discarding any staged changes. Call it once before usin
 |---|---|
 | Returns | success, or why the state could not be read. A store whose medium does not exist yet loads as empty and succeeds. |
 | Fails | `Damaged` (the content is unreadable as a whole; reads still see what could be parsed), `Io`, `PermissionDenied`. |
+| Backend | Windows: RegOpenKeyEx (a missing key loads as empty) and a read of all values; macOS: synchronize the defaults domain. |
 
 ### `Get(StringView,StoredValue*)` {#settings-configstore-get-stringview-storedvalue-star}
 
@@ -393,6 +402,7 @@ Reads one entry (staged changes included).
 | Parameter `key` | a valid key. |
 | Parameter `out` | receives the value. |
 | Fails | `NotFound`, `Invalid` (not a valid key). |
+| Backend | Windows: RegGetValue with the type the value was stored with; macOS: objectForKey. |
 
 ### `Set(StringView,const StoredValue&)` {#settings-configstore-set-stringview-const-storedvalue-amp}
 
@@ -410,6 +420,7 @@ Sets one entry.
 | Parameter `value` | the value; typed only when the store has [`settings::kCapTypedValues`](#settings-kcaptypedvalues) (use [`settings::ToStored`](#settings-tostored-const-settingdesc-amp-const-value-amp-bool-storedvalue-star)). |
 | Returns | success; staged until `Commit` unless the store has [`settings::kCapPerKeyWrites`](#settings-kcapperkeywrites). |
 | Fails | `ReadOnly`, `Invalid`, `TooLong`, `Io` (a per-key store). |
+| Backend | Windows: RegSetValueEx at once (a per-key store); macOS: setObject:forKey:. |
 
 ### `Remove(StringView)` {#settings-configstore-remove-stringview}
 
@@ -424,6 +435,7 @@ Removes one entry.
 | Field | Value |
 |---|---|
 | Fails | `NotFound` (nothing changes), `ReadOnly`, `Invalid`, `Io` (a per-key store). |
+| Backend | Windows: RegDeleteValue; macOS: removeObjectForKey. |
 
 ### `Enumerate(StringView,Vector<Key>*)` {#settings-configstore-enumerate-stringview-vector-lt-key-gt-star}
 
@@ -438,6 +450,7 @@ Appends the keys under `prefix` to `out`: the keys equal to `prefix` or starting
 | Field | Value |
 |---|---|
 | Fails | `Invalid` (a non-empty prefix that is not a valid key), `Io`. |
+| Backend | Windows: RegEnumValue and RegEnumKeyEx under the subkey the prefix names; macOS: dictionaryRepresentation filtered by the prefix. |
 
 ### `Commit(const CommitOptions&)` {#settings-configstore-commit-const-commitoptions-amp}
 
@@ -454,6 +467,7 @@ Makes the staged changes durable.
 | Parameter `options` | see [`settings::CommitOptions`](#settings-commitoptions). |
 | Returns | success; with nothing staged it succeeds and does nothing. |
 | Fails | `ReadOnly`, `Damaged` (unless `replace_damaged`), `Io`, `PermissionDenied`. With [`settings::kCapAtomicCommit`](#settings-kcapatomiccommit) a failure leaves the durable state as it was and the changes staged (retry is allowed); a store without it reports in `Status::done` how many changes landed. |
+| Backend | Windows: nothing to do for a per-key store, or RegFlushKey; macOS: synchronize. |
 
 ### `Origin(StringView,char*,usize)` {#settings-configstore-origin-stringview-char-star-usize-const}
 
@@ -465,6 +479,10 @@ virtual void Origin(StringView key, char* out, usize capacity) const;
 
 Writes where the entry for `key` came from inside this store, for provenance messages (`line 12`, `$ENGINE_RHI_GPU`, `--gpu`); an empty string when the store has nothing to say. Default: empty.
 
+| Field | Value |
+|---|---|
+| Backend | none needed: a registry key has no line; write the value name when it helps. |
+
 ### `IsPresent()` {#settings-configstore-ispresent-const}
 
 `method settings::ConfigStore::IsPresent` — defined in `engine/foundation/settings/config_store.h`
@@ -474,6 +492,10 @@ virtual bool IsPresent() const;
 ```
 
 Returns whether the backing medium exists (a file that has not been written yet is absent). Default: true.
+
+| Field | Value |
+|---|---|
+| Backend | Windows: whether the registry key exists; macOS: whether the domain has any value. |
 
 ### `SetChangeListener(ChangeListener,void*)` {#settings-configstore-setchangelistener-changelistener-void-star}
 
@@ -490,6 +512,7 @@ Registers a function to call when another writer changes the durable state. Repl
 | Parameter `listener` | the function; called on an unspecified thread, never from inside a call on this store by the same thread. It should only record that a change happened (set a flag, queue work): it must not block on locks other threads hold while they use stores, and must not create or destroy stores. |
 | Parameter `user` | passed back to `listener`. |
 | Fails | `Unsupported` (no [`settings::kCapNotifies`](#settings-kcapnotifies)). |
+| Backend | Windows: RegNotifyChangeKeyValue on a thread; macOS: NSUserDefaultsDidChangeNotification. |
 
 ## `ConfigStorePtr` {#settings-configstoreptr}
 
@@ -1381,6 +1404,10 @@ static EnvironmentSnapshot Capture();
 ```
 
 Copies the process environment.
+
+| Field | Value |
+|---|---|
+| Backend | Windows: GetEnvironmentStringsW converted to UTF-8; macOS: the environ array from _NSGetEnviron. |
 
 ### `Size()` {#settings-environmentsnapshot-size-const}
 
@@ -3071,7 +3098,7 @@ const char* new_key;
 const char* old_value;
 ```
 
-`MapValue`: the old value as written in the file (`mailbox`, `"fifo"`).
+`MapValue`: the old value as written in the file (`mailbox`, `"fifo"`); a text setting is stored quoted, and the plain text (`fifo`) matches it too.
 
 ### `new_value` {#settings-migrationstep-new-value}
 

@@ -1,9 +1,24 @@
 # Settings
 
-Status: draft (Phase 11, Days 131-138: everything from keys to the demos; the platform checklists arrive on Day 139).
+Status: complete (Phase 11, Days 131-139: keys to the demos, the platform checklist and the configuration check).
 
 The settings system is one registry that every module declares its settings in, and handles that read them cheaply. Where values come from (files, the environment, the command line) and how they
 are saved arrive later in this phase. Design and reasons: `docs/superpowers/specs/2026-11-07-settings-design.md`.
+
+## Which API do I use?
+
+| I want to ... | Use |
+|---|---|
+| declare a setting a user can change | `settings::Make*` (a `SettingDesc`) registered with `Registry::Register`; the registry freezes after setup |
+| read a setting on a hot path (per frame, per draw) | the typed handle `Setting<T>` / `TextSetting`: a relaxed atomic read, no lock |
+| read many settings that must agree with each other | `Settings::Snapshot()`: one immutable, consistent view |
+| change a setting | `Settings::Set` / `SetText`; `Settings::Apply` when the change must take effect on something that can refuse it (a rejected change is rolled back) |
+| react when a setting changes | `Settings::AddListener` (with a key prefix), removed with `RemoveListener` |
+| know where a value came from | `Settings::Provenance` (layer, file and line, or variable) |
+| keep values between runs | `Settings::Save`, `SaveIfChanged`, the `SaveOnExit` guard |
+| change a key or its meaning between versions | `MigrationSet` and `Registry::SetSchemaVersion` |
+| store settings somewhere new (registry, defaults, save data) | derive from `ConfigStore`, follow `engine/foundation/settings/BACKEND.md`, pass the conformance suite |
+| read the environment or parse `--flag` for configuration | do not: declare a setting with `env` and `flag` and the settings system reads them; `config_access_check` fails the build otherwise |
 
 ## Keys and values
 
@@ -118,7 +133,7 @@ and uncommitted content does not (unless the store is per-key). A store is not r
 
 Three test doubles in `tests/settings/store_doubles.h` show what a backend must not assume, and are worth running any new store through: `FailingConfigStore` fails the Nth call with a chosen error (a failed
 `Commit` must leave the durable state as it was), `SlowConfigStore` runs every call on its own thread after a delay (no thread affinity, no immediacy), and `NoOrderConfigStore` enumerates in a different
-order each time (a registry has no order). Keep the platform's own types out of the interface: the store maps its medium's errors to `StoreError` and its typing to `StoredValue`.
+order each time (a registry has no order). `RegistryShapedConfigStore` goes further and behaves like the Windows registry: typed values, per-key writes, no comments or order, and change notifications from another thread; it passes the whole suite, so a registry-backed store starts from a model that works. `engine/foundation/settings/BACKEND.md` is the checklist per platform (registry, `NSUserDefaults`, `SharedPreferences`, save data) and the ctest `settings_backend_lists` keeps it in step with the headers. Keep the platform's own types out of the interface: the store maps its medium's errors to `StoreError` and its typing to `StoredValue`.
 
 ## The file format
 
@@ -339,3 +354,10 @@ Every program built this way understands the same options, and `--help` prints t
 The engine's own settings are `platform.window_backend`, `rhi.pipeline_cache` and `rhi.pipeline_cache_dir`
 (`settings::RegisterEngineSettings`), the 14 rendering settings (`renderer::RegisterSharedSettings`), and, for every log channel that exists, `log.<channel>.verbosity` and `log.<channel>.enabled`
 (`settings::RegisterLogSettings` and `AttachLogSettings`, which applies them to the channels and keeps them in step). The old `log::LoadConfig` file lines still work and are unchanged.
+
+## Keeping configuration in one place
+
+Anything a user can configure is a setting: declared once, read through `Setting<T>` or `Settings`. The ctest `config_access_check` (`tools/config_access_check`) scans `engine/` and `game/` and fails on a `getenv` call or a
+`"--flag"` string outside its allow list (`tools/config_access_check/allowlist.txt`, a reason on every line, a stale entry fails). The exceptions are variables read before any `Settings` can exist (the window host, the job
+scheduler, the crash handler, the Vulkan loader and validation switches), the death-test child protocol, and the launch-only options of the demos and benchmarks (frame counts, scenes, fault injection). A new exception needs a
+reason that says why the value cannot be a setting.

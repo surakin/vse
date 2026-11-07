@@ -150,6 +150,20 @@ void LayerStack::SetWriteLayer(usize layer) {
     write_layer_ = layer;
 }
 
+namespace {
+// Removes a setting's key and every deprecated name it may still be stored under, so an old line cannot show through once the new key is gone.
+Status RemoveAll(ConfigStore& store, const SettingDesc& desc, StringView key) {
+    Status result;
+    Status removed = store.Remove(key);
+    if (removed.Failed() && !removed.Is(StoreError::NotFound)) result = removed;
+    for (u32 d = 0; d < desc.deprecated_count; ++d) {
+        removed = store.Remove(StringView(desc.deprecated_keys[d]));
+        if (removed.Failed() && !removed.Is(StoreError::NotFound) && result.Ok()) result = removed;
+    }
+    return result;
+}
+} // namespace
+
 Status LayerStack::Set(const Registry& registry, SettingId id, const Value& value, bool minimal) {
     const usize w = WriteLayer();
     if (w >= layers_.Size()) return Status::Of(StoreError::NotFound);
@@ -160,8 +174,7 @@ Status LayerStack::Set(const Registry& registry, SettingId id, const Value& valu
         Resolution lower;
         ResolveBelow(registry, id, w, &lower);
         if (lower.value == value) {
-            const Status removed = store.Remove(key);
-            return removed.Is(StoreError::NotFound) ? Status() : removed;
+            return RemoveAll(store, desc, key);
         }
     }
     StoredValue stored;
@@ -173,8 +186,7 @@ Status LayerStack::Set(const Registry& registry, SettingId id, const Value& valu
 Status LayerStack::Unset(const Registry& registry, SettingId id) {
     const usize w = WriteLayer();
     if (w >= layers_.Size()) return Status::Of(StoreError::NotFound);
-    const Status removed = layers_[w].store->Remove(registry.KeyOf(id).View());
-    return removed.Is(StoreError::NotFound) ? Status() : removed;
+    return RemoveAll(*layers_[w].store, *registry.Desc(id), registry.KeyOf(id).View());
 }
 
 bool SuggestKey(const Registry& registry, StringView text, Key* out) {

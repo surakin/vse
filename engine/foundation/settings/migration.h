@@ -44,7 +44,7 @@ struct MigrationStep {
     const char* key = nullptr;
     /// `Rename`: the new full key.
     const char* new_key = nullptr;
-    /// `MapValue`: the old value as written in the file (`mailbox`, `"fifo"`).
+    /// `MapValue`: the old value as written in the file (`mailbox`, `"fifo"`); a text setting is stored quoted, and the plain text (`fifo`) matches it too.
     const char* old_value = nullptr;
     /// `MapValue`: the new value as it will be written.
     const char* new_value = nullptr;

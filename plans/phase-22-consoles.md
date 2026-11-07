@@ -25,3 +25,5 @@ be treated as actionable until then.
 - Do not expand this phase further until dev kit/NDA access is secured.
 
 - **Debugging facilities backend (from Phase 7; designed in, see Phase 7):** the console crash libraries are under NDA; the neutral facade forwards to them; death tests are skipped. See `docs/guide/porting-debugging.md`.
+
+- **Settings stores (from Phase 11 Day 139):** `engine/foundation/settings/BACKEND.md` lists the console store: save-data APIs behind `ConfigStore` with their size limits and commit latency (a slow `Commit` is why autosave is asynchronous and rate limited; `SlowConfigStore` in `tests/settings/store_doubles.h` models it). Platform-owned settings (language, accessibility) arrive as a read-only `System` layer.

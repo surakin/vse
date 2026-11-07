@@ -1,4 +1,5 @@
 #include "settings/desc.h"
+#include "string/utf8.h"
 
 #include <charconv>
 #include <cstdio>
@@ -162,6 +163,25 @@ ValueError ParseFloat(const SettingDesc& desc, StringView text, Value* out) {
     return result;
 }
 
+// The length of a text in its stored (quoted, escaped) form, which has to fit a Value; and whether the text is something a file can hold.
+usize StoredTextLength(StringView t) {
+    usize n = 2;
+    for (usize i = 0; i < t.Length(); ++i) {
+        const char c = t[i];
+        if (c == '"' || c == '\\' || c == '\n' || c == '\t') n += 2;
+        else if (static_cast<u8>(c) < 0x20 || c == 0x7f) n += 4;
+        else n += 1;
+    }
+    return n;
+}
+
+ValueError CheckText(const SettingDesc& desc, StringView t) {
+    if (desc.max_text != 0 && t.Length() > desc.max_text) return ValueError::TooLong;
+    if (!IsValidUtf8(t)) return ValueError::BadEscape; // settings text is UTF-8 (the file format refuses anything else)
+    if (StoredTextLength(t) > kMaxTextBytes) return ValueError::TooLong; // quotes and escapes count: the stored form is what the stores carry
+    return ValueError::None;
+}
+
 ValueError ParseText(StringView text, Value* out) {
     if (text.Length() >= 2 && text[0] == '"') {
         const usize end = text.Length() - 1; // index of the closing quote
@@ -233,7 +253,8 @@ ValueError ParseValue(const SettingDesc& desc, StringView text, Value* out) {
         Value parsed;
         const ValueError e = ParseText(text, &parsed);
         if (e != ValueError::None) return e;
-        if (desc.max_text != 0 && parsed.AsText().Length() > desc.max_text) return ValueError::TooLong;
+        const ValueError checked = CheckText(desc, parsed.AsText());
+        if (checked != ValueError::None) return checked;
         *out = parsed;
         return ValueError::None;
     }
@@ -271,7 +292,10 @@ ValueError ValidateValue(const SettingDesc& desc, const Value& value, Value* out
         *out = value;
         return ValueError::None;
     case Type::Text:
-        if (desc.max_text != 0 && value.AsText().Length() > desc.max_text) return ValueError::TooLong;
+        {
+            const ValueError checked = CheckText(desc, value.AsText());
+            if (checked != ValueError::None) return checked;
+        }
         *out = value;
         return ValueError::None;
     case Type::Bool: *out = value; return ValueError::None;

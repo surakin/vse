@@ -37,3 +37,5 @@ handle each OS's app lifecycle and touch input.
 - Full day-by-day breakdown deferred until reached.
 
 - **Debugging facilities backend (from Phase 7; designed in, no Phase 7 work):** sentry-native's `inproc` backend is the Android default and writes no minidump; Breakpad on Android and iOS is untested upstream, and iOS is not in the supported list: decide here. Death tests skip where a process cannot be spawned; post-mortem dumps report `Unsupported` where there is none. See `docs/guide/porting-debugging.md`.
+
+- **Settings stores (from Phase 11 Day 139):** `engine/foundation/settings/BACKEND.md` lists the Android store (`SharedPreferences`; `apply()` versus `commit()` maps to staged versus per-key writes) and the iOS store (`NSUserDefaults`); both run the conformance suite in `tests/settings/`. Per-application sandbox paths replace the desktop standard locations; command line and environment layers are absent on these targets and the layer stack simply has no such layer.

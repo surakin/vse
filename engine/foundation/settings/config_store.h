@@ -126,15 +126,21 @@ public:
     virtual ~ConfigStore() = default;
 
     /// Returns the store's [[settings::StoreCapability]] bits.
+    ///
+    /// Backend: Windows: the registry store reports kCapWritable | kCapPerKeyWrites | kCapTypedValues | kCapNotifies; macOS: NSUserDefaults reports kCapWritable | kCapTypedValues | kCapNotifies.
     virtual u32 Capabilities() const = 0;
 
     /// Writes a short description for logs into `out` (a path, `memory`, `registry HKCU\Software\app`), NUL-terminated and cut to fit.
+    ///
+    /// Backend: Windows: `registry HKCU\Software\<app>`; macOS: the defaults domain or the plist path.
     virtual void Describe(char* out, usize capacity) const = 0;
 
     /// Reads the durable state, discarding any staged changes. Call it once before using the store, and again to pick up external changes.
     ///
     /// Returns: success, or why the state could not be read. A store whose medium does not exist yet loads as empty and succeeds.
     /// Fails: `Damaged` (the content is unreadable as a whole; reads still see what could be parsed), `Io`, `PermissionDenied`.
+    ///
+    /// Backend: Windows: RegOpenKeyEx (a missing key loads as empty) and a read of all values; macOS: synchronize the defaults domain.
     virtual Status Load() = 0;
 
     /// Reads one entry (staged changes included).
@@ -142,6 +148,8 @@ public:
     /// Param key: a valid key.
     /// Param out: receives the value.
     /// Fails: `NotFound`, `Invalid` (not a valid key).
+    ///
+    /// Backend: Windows: RegGetValue with the type the value was stored with; macOS: objectForKey.
     virtual Status Get(StringView key, StoredValue* out) = 0;
 
     /// Sets one entry.
@@ -150,17 +158,23 @@ public:
     /// Param value: the value; typed only when the store has [[settings::kCapTypedValues]] (use [[settings::ToStored]]).
     /// Returns: success; staged until `Commit` unless the store has [[settings::kCapPerKeyWrites]].
     /// Fails: `ReadOnly`, `Invalid`, `TooLong`, `Io` (a per-key store).
+    ///
+    /// Backend: Windows: RegSetValueEx at once (a per-key store); macOS: setObject:forKey:.
     virtual Status Set(StringView key, const StoredValue& value) = 0;
 
     /// Removes one entry.
     ///
     /// Fails: `NotFound` (nothing changes), `ReadOnly`, `Invalid`, `Io` (a per-key store).
+    ///
+    /// Backend: Windows: RegDeleteValue; macOS: removeObjectForKey.
     virtual Status Remove(StringView key) = 0;
 
     /// Appends the keys under `prefix` to `out`: the keys equal to `prefix` or starting with `prefix.`; an empty prefix means every key.
     /// The order is unspecified unless the store has [[settings::kCapPreservesOrder]] (callers that need an order sort).
     ///
     /// Fails: `Invalid` (a non-empty prefix that is not a valid key), `Io`.
+    ///
+    /// Backend: Windows: RegEnumValue and RegEnumKeyEx under the subkey the prefix names; macOS: dictionaryRepresentation filtered by the prefix.
     virtual Status Enumerate(StringView prefix, Vector<Key>* out) = 0;
 
     /// Makes the staged changes durable.
@@ -169,16 +183,22 @@ public:
     /// Returns: success; with nothing staged it succeeds and does nothing.
     /// Fails: `ReadOnly`, `Damaged` (unless `replace_damaged`), `Io`, `PermissionDenied`. With [[settings::kCapAtomicCommit]] a failure leaves the
     ///   durable state as it was and the changes staged (retry is allowed); a store without it reports in `Status::done` how many changes landed.
+    ///
+    /// Backend: Windows: nothing to do for a per-key store, or RegFlushKey; macOS: synchronize.
     virtual Status Commit(const CommitOptions& options) = 0;
 
     /// Writes where the entry for `key` came from inside this store, for provenance messages (`line 12`, `$ENGINE_RHI_GPU`, `--gpu`); an
     /// empty string when the store has nothing to say. Default: empty.
+    ///
+    /// Backend: none needed: a registry key has no line; write the value name when it helps.
     virtual void Origin(StringView key, char* out, usize capacity) const {
         (void)key;
         if (capacity != 0) out[0] = '\0';
     }
 
     /// Returns whether the backing medium exists (a file that has not been written yet is absent). Default: true.
+    ///
+    /// Backend: Windows: whether the registry key exists; macOS: whether the domain has any value.
     virtual bool IsPresent() const { return true; }
 
     /// Registers a function to call when another writer changes the durable state. Replaces any earlier listener; a null function removes it.
@@ -188,6 +208,8 @@ public:
 ///   destroy stores.
     /// Param user: passed back to `listener`.
     /// Fails: `Unsupported` (no [[settings::kCapNotifies]]).
+    ///
+    /// Backend: Windows: RegNotifyChangeKeyValue on a thread; macOS: NSUserDefaultsDidChangeNotification.
     virtual Status SetChangeListener(ChangeListener listener, void* user) {
         (void)listener;
         (void)user;

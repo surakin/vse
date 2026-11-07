@@ -5,6 +5,7 @@
 // "Writing a store backend".)
 
 #include <chrono>
+#include <cstdio>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
@@ -233,6 +234,146 @@ private:
     ConfigStore* inner_;
     u32 land_;
     Vector<Change> staged_;
+};
+
+/// The model of a registry-shaped store (the Windows registry, `NSUserDefaults`): typed values, every write durable at once (`kCapPerKeyWrites`),
+/// no order, and change notifications delivered from another thread. Stores that share a `RegistryHive` see each other's writes. The Windows port
+/// starts from this class, so it passes the whole conformance suite.
+class RegistryHive {
+public:
+    RegistryHive() : worker_([this] { Loop(); }) {}
+    ~RegistryHive() {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            stopping_ = true;
+        }
+        cv_.notify_all();
+        worker_.join();
+    }
+    RegistryHive(const RegistryHive&) = delete;
+    RegistryHive& operator=(const RegistryHive&) = delete;
+
+private:
+    friend class RegistryShapedStore;
+    struct Entry {
+        Key key;
+        StoredValue value;
+    };
+    struct Watcher {
+        const void* owner;
+        ChangeListener listener;
+        void* user;
+    };
+    void Notify(const void* writer) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        pending_writers_.Push(writer);
+        cv_.notify_all();
+    }
+    void Loop() {
+        std::unique_lock<std::mutex> lock(mutex_);
+        for (;;) {
+            cv_.wait(lock, [&] { return stopping_ || !pending_writers_.Empty(); });
+            if (pending_writers_.Empty()) return;
+            const void* writer = pending_writers_[0];
+            pending_writers_.Remove(0);
+            // Listeners run on this thread, never on the writer's, and never for the writer's own change. The lock is held so that a store that is
+            // being destroyed (it removes its watcher under the same lock) is never called afterwards.
+            for (usize i = 0; i < watchers_.Size(); ++i) {
+                if (watchers_[i].owner != writer && watchers_[i].listener != nullptr) watchers_[i].listener(watchers_[i].user);
+            }
+        }
+    }
+    std::mutex mutex_;
+    std::condition_variable cv_;
+    Vector<Entry> entries_;
+    Vector<Watcher> watchers_;
+    Vector<const void*> pending_writers_;
+    bool stopping_ = false;
+    std::thread worker_;
+};
+
+class RegistryShapedStore final : public ConfigStore {
+public:
+    explicit RegistryShapedStore(RegistryHive* hive) : hive_(hive) {}
+    ~RegistryShapedStore() override { SetChangeListener(nullptr, nullptr); }
+
+    u32 Capabilities() const override { return kCapWritable | kCapPerKeyWrites | kCapTypedValues | kCapNotifies; }
+    void Describe(char* out, usize capacity) const override {
+        if (capacity != 0) std::snprintf(out, capacity, "registry-shaped model");
+    }
+    Status Load() override { return Status(); }
+    Status Get(StringView key, StoredValue* out) override {
+        Key k;
+        if (Key::Parse(key, &k) != KeyError::None) return Status::Of(StoreError::Invalid);
+        std::lock_guard<std::mutex> lock(hive_->mutex_);
+        for (usize i = 0; i < hive_->entries_.Size(); ++i) {
+            if (hive_->entries_[i].key == k) {
+                *out = hive_->entries_[i].value;
+                return Status();
+            }
+        }
+        return Status::Of(StoreError::NotFound);
+    }
+    Status Set(StringView key, const StoredValue& value) override {
+        Key k;
+        if (Key::Parse(key, &k) != KeyError::None) return Status::Of(StoreError::Invalid);
+        {
+            std::lock_guard<std::mutex> lock(hive_->mutex_);
+            usize at = 0;
+            while (at < hive_->entries_.Size() && !(hive_->entries_[at].key == k)) ++at;
+            if (at == hive_->entries_.Size()) {
+                RegistryHive::Entry e;
+                e.key = k;
+                e.value = value;
+                hive_->entries_.Push(e);
+            } else {
+                hive_->entries_[at].value = value;
+            }
+        }
+        hive_->Notify(this);
+        return Status();
+    }
+    Status Remove(StringView key) override {
+        Key k;
+        if (Key::Parse(key, &k) != KeyError::None) return Status::Of(StoreError::Invalid);
+        {
+            std::lock_guard<std::mutex> lock(hive_->mutex_);
+            usize at = 0;
+            while (at < hive_->entries_.Size() && !(hive_->entries_[at].key == k)) ++at;
+            if (at == hive_->entries_.Size()) return Status::Of(StoreError::NotFound);
+            hive_->entries_.Remove(at);
+        }
+        hive_->Notify(this);
+        return Status();
+    }
+    Status Enumerate(StringView prefix, Vector<Key>* out) override {
+        if (prefix.Length() != 0 && Key::Parse(prefix, nullptr) != KeyError::None) return Status::Of(StoreError::Invalid);
+        std::lock_guard<std::mutex> lock(hive_->mutex_);
+        for (usize i = hive_->entries_.Size(); i-- > 0;) { // no order: backwards, which is not the order they were written in
+            const StringView k = hive_->entries_[i].key.View();
+            if (prefix.Length() == 0 || k == prefix || (k.Length() > prefix.Length() && k.StartsWith(prefix) && k[prefix.Length()] == '.')) out->Push(hive_->entries_[i].key);
+        }
+        return Status();
+    }
+    Status Commit(const CommitOptions&) override { return Status(); } // every write was durable when it returned
+    Status SetChangeListener(ChangeListener listener, void* user) override {
+        std::lock_guard<std::mutex> lock(hive_->mutex_);
+        for (usize i = 0; i < hive_->watchers_.Size(); ++i) {
+            if (hive_->watchers_[i].owner == this) {
+                if (listener == nullptr) hive_->watchers_.Remove(i);
+                else {
+                    hive_->watchers_[i].listener = listener;
+                    hive_->watchers_[i].user = user;
+                }
+                return Status();
+            }
+        }
+        if (listener != nullptr) hive_->watchers_.Push(RegistryHive::Watcher{this, listener, user});
+        return Status();
+    }
+
+private:
+    RegistryHive* hive_;
 };
 
 } // namespace settings_test

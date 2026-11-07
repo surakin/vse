@@ -201,3 +201,5 @@ a monitor, a wrist display).
   takes the `PipelineTarget`, so UI materials just ask for it.
 
 - **Settings and files (from Phases 9 and 11, planned 2026-11-06):** settings screens bind to the Phase 11 settings registry (labels, ranges, groups and restart-required flags come from its metadata); file dialogs and recent-file lists use `io::Path`.
+
+- **Settings binding (from Phase 11 Day 139):** a settings screen is generated from `settings::Registry` metadata (`label`, `description`, `group`, ranges and `RangePolicy`, enum names, `kRestartRequired`/`kAdvanced`/`kHidden`/`kSecret` flags), writes through `Settings::Apply` (so a rejected change rolls back and the widget shows the reason) and refreshes from `Settings` listeners and `OnChange` rather than polling; provenance (`Settings::Provenance`) lets a widget show that a value is pinned by the environment or the command line and cannot be edited.

@@ -151,6 +151,7 @@ struct ConfigDocument::Line {
     u32 value_begin = 0;
     u32 value_end = 0;
     bool in_section = false; // an Entry written below a [header] (not a top-level dotted key)
+    bool generated = false;  // a header or blank line this class added for a new section (removed again when that section empties)
 };
 
 ConfigDocument::ConfigDocument() = default;
@@ -416,7 +417,10 @@ bool ConfigDocument::Set(StringView key_text, StringView value) {
         return true;
     }
     // A new section at the end, after a blank line.
-    if (!lines_.Empty() && lines_[lines_.Size() - 1].kind != Kind::Blank) AppendLine(StringView());
+    if (!lines_.Empty() && lines_[lines_.Size() - 1].kind != Kind::Blank) {
+        AppendLine(StringView());
+        lines_[lines_.Size() - 1].generated = true;
+    }
     String<HeapAllocator> header(HeapAllocator::Default());
     header.Append('[');
     header.Append(wanted);
@@ -426,6 +430,7 @@ bool ConfigDocument::Set(StringView key_text, StringView value) {
     Key::Parse(wanted, &section_key);
     lines_[lines_.Size() - 1].kind = Kind::Section;
     lines_[lines_.Size() - 1].key = section_key;
+    lines_[lines_.Size() - 1].generated = true;
     lines_.Push(make());
     return true;
 }
@@ -438,6 +443,12 @@ bool ConfigDocument::Remove(StringView key_text) {
         if (lines_[i].kind == Kind::Entry && lines_[i].key == key) {
             lines_.Remove(i);
             removed = true;
+            // A section this class added, whose only entry was just removed (a rolled-back or minimal write), goes away with its blank line.
+            if (i > 0 && lines_[i - 1].kind == Kind::Section && lines_[i - 1].generated && (i == lines_.Size() || lines_[i].kind == Kind::Section)) {
+                lines_.Remove(i - 1);
+                --i;
+                if (i > 0 && lines_[i - 1].kind == Kind::Blank && lines_[i - 1].generated) lines_.Remove(i - 1);
+            }
         }
     }
     return removed;

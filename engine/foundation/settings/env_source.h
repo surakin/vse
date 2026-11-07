@@ -24,6 +24,8 @@ public:
     /// Returns the variable's value, or null if it is not set. Valid until the snapshot changes.
     const String<HeapAllocator>* Find(StringView name) const;
     /// Copies the process environment.
+    ///
+    /// Backend: Windows: GetEnvironmentStringsW converted to UTF-8; macOS: the environ array from _NSGetEnviron.
     static EnvironmentSnapshot Capture();
     /// Returns the number of variables.
     usize Size() const { return vars_.Size(); }

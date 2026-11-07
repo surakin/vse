@@ -38,6 +38,7 @@ bool DemoSettings::Begin(const char* app_name, const char* usage, int argc, char
     rest_storage_.Push(String<HeapAllocator>(HeapAllocator::Default(), StringView(argv[0])));
     for (usize i = 0; i < cli.rest.Size(); ++i) rest_storage_.Push(String<HeapAllocator>(HeapAllocator::Default(), cli.rest[i].View()));
     for (usize i = 0; i < rest_storage_.Size(); ++i) rest_pointers_.Push(const_cast<char*>(rest_storage_[i].CStr()));
+    rest_pointers_.Push(nullptr); // argv[argc] is null, as the C runtime leaves it
     // The load report already listed the command-line errors and bad command-line values; the caller exits with its usage code.
     bool bad_value = false;
     for (usize i = 0; i < report.problems.Size(); ++i) bad_value = bad_value || StringView(report.problems[i].layer) == "command line";
@@ -48,7 +49,8 @@ void DemoSettings::SetLegacy(const char* key, const char* text) {
     const sset::SettingId id = registry_.Find(StringView(key));
     if (!id.IsValid()) return;
     const sset::Resolution r = settings_->Provenance(id);
-    if (r.layer == -1 && StringView(r.layer_name) == "defaults") settings_->SetText(StringView(key), StringView(text));
+    // A flag outranks files and the environment, and yields only to an explicit --set.
+    if (StringView(r.layer_name) != "command line") settings_->SetText(StringView(key), StringView(text));
 }
 
 void DemoSettings::FillDeviceCreateInfo(::engine_placeholder::rhi::DeviceCreateInfo* info) {

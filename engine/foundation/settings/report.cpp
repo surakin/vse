@@ -88,6 +88,14 @@ Status SaveSettingsTo(Settings& settings, const io::Path& path) {
     // A missing file is an empty store and a damaged one is replaced (the old text goes to .bak); a file that cannot be read at all is not overwritten.
     const Status loaded = store.Load();
     if (loaded.Failed() && !loaded.Is(StoreError::Damaged)) return loaded;
+    // A file a newer program wrote keeps its newer stamps: stamping it with ours would make that program migrate data already in its layout.
+    bool newer = StoredFormatVersion(store) > kFormatVersion;
+    for (u32 i = 0; i < registry.SchemaCount() && !newer; ++i) {
+        u32 program = 0;
+        const StringView section = registry.SchemaAt(i, &program);
+        newer = StoredSchemaVersion(store, section) > program;
+    }
+    if (newer) return Status::Of(StoreError::TooNew);
     SharedPtr<const SettingsSnapshot> snapshot = settings.Snapshot();
     for (u32 i = 0; i < registry.Count(); ++i) {
         const SettingId id = registry.SortedAt(i);

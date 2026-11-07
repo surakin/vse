@@ -96,12 +96,15 @@ SettingId Registry::Register(const SettingDesc& desc, RegisterError* error) {
     if (desc.key == nullptr || Key::Parse(StringView(desc.key), &key) != KeyError::None) return fail(RegisterError::BadKey);
     // `version` and `<section>.schema` hold the file's version stamps; a setting cannot take them.
     if (key.View() == "version" || key.View().EndsWith(".schema")) return fail(RegisterError::BadKey);
+    // `__` is how the environment variable name writes a dot, so a key containing it would share a variable with another key.
+    if (key.View().Contains("__")) return fail(RegisterError::BadKey);
     if (Find(key.View()).IsValid()) return fail(RegisterError::Duplicate);
     if (desc.deprecated_count > kMaxDeprecatedNames || (desc.deprecated_count != 0 && desc.deprecated_keys == nullptr)) return fail(RegisterError::BadDeprecated);
     for (u32 i = 0; i < desc.deprecated_count; ++i) {
         if (desc.deprecated_keys[i] == nullptr) return fail(RegisterError::BadDeprecated);
         Key old;
         if (Key::Parse(StringView(desc.deprecated_keys[i]), &old) != KeyError::None) return fail(RegisterError::BadKey);
+        if (old.View() == "version" || old.View().EndsWith(".schema") || old.View().Contains("__")) return fail(RegisterError::BadKey);
         if (Find(old.View()).IsValid() || old == key) return fail(RegisterError::Duplicate);
         for (u32 j = 0; j < i; ++j) {
             if (StringView(desc.deprecated_keys[j]) == old.View()) return fail(RegisterError::Duplicate);

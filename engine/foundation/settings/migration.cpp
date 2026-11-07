@@ -10,6 +10,12 @@ namespace {
 
 using Text = String<HeapAllocator>;
 
+// Reads a quoted text the way a text setting is read.
+bool ParseTextForMigration(StringView quoted, Value* out) {
+    static const SettingDesc desc = MakeText("migration.text", "");
+    return ParseValue(desc, quoted, out) == ValueError::None;
+}
+
 Text MigMake(StringView v) { return Text(HeapAllocator::Default(), v); }
 
 Text Format2(const char* format, StringView a, StringView b = StringView()) {
@@ -133,8 +139,20 @@ void MigrationSet::Migrate(const Registry& registry, ConfigStore& store, Migrati
                 }
                 case MigrationOp::MapValue: {
                     Text value = MigMake(StringView());
-                    if (step.old_value == nullptr || step.new_value == nullptr || !GetText(store, key, &value) || value.View() != StringView(step.old_value)) break;
-                    SetText(store, key, step.new_value);
+                    if (step.old_value == nullptr || step.new_value == nullptr || !GetText(store, key, &value)) break;
+                    // A text setting is stored quoted; compare what it says, so a step written with the plain text matches either form.
+                    Value unquoted;
+                    StringView stored_text = value.View();
+                    if (stored_text.Length() >= 2 && stored_text[0] == '"' && ParseTextForMigration(stored_text, &unquoted)) stored_text = unquoted.AsText();
+                    if (stored_text != StringView(step.old_value) && value.View() != StringView(step.old_value)) break;
+                    if (value.View() != StringView(step.old_value)) { // the old value was stored quoted: keep the new one in the same form
+                        static const SettingDesc quoted_desc = MakeText("migration.text", "");
+                        char formatted[kMaxValueTextBytes];
+                        if (FormatValue(quoted_desc, Value::FromText(StringView(step.new_value)), formatted, sizeof(formatted)) != 0) SetText(store, key, formatted);
+                        else break;
+                    } else {
+                        SetText(store, key, step.new_value);
+                    }
                     rep->notes.Push(Format2("%.*s: value changed to %.*s", key, StringView(step.new_value)));
                     ++rep->steps_applied;
                     break;

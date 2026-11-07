@@ -37,7 +37,7 @@ public:
     const sset::Registry& GetRegistry() const { return registry_; }
 
     // The arguments the settings system does not own, as an argc/argv pair for the demo's own parser (argv[0] is the program name).
-    int RestCount() const { return static_cast<int>(rest_pointers_.Size()); }
+    int RestCount() const { return rest_pointers_.Empty() ? 0 : static_cast<int>(rest_pointers_.Size()) - 1; } // without the null that ends the array
     char** RestArgs() { return rest_pointers_.Data(); }
 
     // What the demos' own flags mean as settings: the GPU (an empty string for "the best one"), whether presenting is immediate (--no-vsync), whether the

@@ -19,6 +19,7 @@ struct atomic {
         return compare_exchange_strong(expected, desired);
     }
     T fetch_add(T v, memory_order = memory_order_seq_cst) { T old = value; value += v; return old; }
+    T fetch_sub(T v, memory_order = memory_order_seq_cst) { T old = value; value -= v; return old; }
     atomic& operator=(T v) { value = v; return *this; }
     operator T() const { return value; }
 };

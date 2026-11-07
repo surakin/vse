@@ -23,7 +23,7 @@ loading at startup and saving on request or exit, with a failed read never losin
 changing its behavior or tests; `--settings`, `--save-settings`, `--set key=value` and `--list-settings` in both demos, with `--help` generated from the registry;
 guide `docs/guide/settings.md`; the full suite passes in every flavor.
 
-**Status: in progress (started 2026-11-07, Day 130 done: spec and spikes).** The spec is `docs/superpowers/specs/2026-11-07-settings-design.md`. Days 130-139 are written under `plans/phase-11-settings-system/`; `CURRENT_PHASE` changes to 11 in the commit that completes
+**Status: complete (2026-11-07), Days 130-139.** The spec is `docs/superpowers/specs/2026-11-07-settings-design.md`; the day files are under `plans/phase-11-settings-system/`. Closing run `ran 3441 of 3441 tests (phases: all; flavors: all; display: included; crash tests: included)`, known X11 failure only.
 Day 130's first task. Day numbers continue from Phase 9 (which ended at Day 124). The definition of done above is the goal; the day files hold the sub-tasks, and Day 130's spec
 confirms or amends the decisions below with experiments.
 

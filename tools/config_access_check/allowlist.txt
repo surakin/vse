@@ -1,0 +1,16 @@
+# path|reason - files allowed to read configuration (getenv, a --flag) outside the settings system. A stale entry fails the gate.
+# The rule: CLAUDE.md ("Anything a user can configure is a setting") and docs/superpowers/specs/2026-11-07-settings-design.md (section 2, the inventory).
+engine/foundation/debug/program_setup.cpp|Launch-time debugging switches (--crash-handler=, --crash-test=, ENGINE_CRASH_HANDLER) that must act before main builds any Settings.
+engine/foundation/io/linux/file_system.cpp|HOME, XDG_* and ENGINE_APP_NAME locate the configuration directory itself, so they are needed before any settings file can be read.
+engine/foundation/os/linux/debug/death_test.cpp|The death-test child protocol (environment variables and Catch2 arguments passed to the re-executed test program); not user configuration.
+engine/foundation/os/linux/platform_window_host.cpp|ENGINE_WINDOW_BACKEND is read when the window host opens its first window, before an application has Settings; the demos mirror it as platform.window_backend.
+engine/jobs/topology.cpp|ENGINE_JOB_THREADS is read when the scheduler starts, which can be before any Settings exists.
+engine/rhi/vulkan/vk_instance.cpp|The validation variables (ENGINE_RHI_VALIDATION*, _FATAL) are read at Vulkan instance creation, a process-wide switch for tests and CI; ENGINE_RHI_VALIDATION_SYNC is also renderer.sync_validation.
+engine/rhi/vulkan/vk_loader.cpp|The Vulkan library path override is read while loading the loader, before a device or any Settings exists.
+engine/rhi/vulkan/vulkan_device.cpp|ENGINE_RHI_GPU is read when a device picks its adapter (the same value is renderer.adapter, which fills DeviceCreateInfo in programs that have Settings).
+engine/rhi/vulkan/vulkan_device_pipelines.cpp|ENGINE_RHI_CACHE_DIR is read when the pipeline cache is opened (the same value is rhi.pipeline_cache_dir, which fills DeviceCreateInfo in programs that have Settings).
+game/renderer_demo/main.cpp|The demo's launch-only options (--frames, --screenshot, --objects, --lights, --gbuffer, --script, --inject-*, ...) and RENDERER_DEMO_FRAMES: scene and test parameters, not settings; the settings options are handled by demo::DemoSettings.
+game/rhi_demo/main.cpp|The demo's launch-only options (--frames, --screenshot, --inject-*, --list-gpus) and RHI_DEMO_FRAMES: test parameters, not settings; the settings options are handled by demo::DemoSettings.
+game/renderer_bench/main.cpp|Benchmark parameters (--threads, --draws, --section, ...): not configuration of the engine.
+game/rhi_bench/main.cpp|Benchmark parameters (--section, --draws, --skip-uploads, ...): not configuration of the engine.
+engine/foundation/settings/|The settings system itself: it parses the --set, --settings, --save-settings, --list-settings and --help options and the ENGINE_* environment on behalf of every program.

@@ -46,3 +46,5 @@ moves an ECS entity via this phase's engine API bindings.
   undecided — revisit against real demand, not speculatively.
 - Exact JIT-vs-interpreter fallback handling for iOS/console builds is a
   day-level decision for Phases 21/22, not now.
+
+- **Settings from scripts (from Phase 11 Day 139):** scripts read and set settings by dotted key through `settings::Settings` (typed `Get`/`Set` validated against the registry, so a script cannot store an out-of-range or wrongly typed value), subscribe with prefix listeners, and never open the configuration file or read the environment themselves; secret settings are not readable from scripts.
