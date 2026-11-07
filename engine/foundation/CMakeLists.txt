@@ -70,6 +70,8 @@ set(FOUNDATION_SOURCES
   settings/registry.cpp
   settings/config_store.cpp
   settings/memory_store.cpp
+  settings/config_text.cpp
+  settings/file_store.cpp
   io/path.cpp
   io/linux/error.cpp
   io/linux/file_system.cpp

@@ -79,7 +79,7 @@ struct StoredValue {
 /// Capabilities of a store, as bits of [[settings::ConfigStore::Capabilities]].
 enum StoreCapability : u32 {
     kCapWritable = 1u << 0,          ///< `Set`, `Remove` and `Commit` can succeed.
-    kCapPreservesOrder = 1u << 1,    ///< `Enumerate` returns keys in the order they were first stored, and a text store keeps comments and layout.
+    kCapPreservesOrder = 1u << 1,    ///< `Enumerate` returns keys in a stable stored order (a memory store: the order they were first stored; a file store: the file's order, which keeps a section's keys together), and a text store keeps comments and layout.
     kCapAtomicCommit = 1u << 2,      ///< `Commit` makes all staged changes durable or none of them.
     kCapPerKeyWrites = 1u << 3,      ///< `Set` and `Remove` are durable at once; `Commit` has nothing to do.
     kCapNotifies = 1u << 4,          ///< [[settings::ConfigStore::SetChangeListener]] works.

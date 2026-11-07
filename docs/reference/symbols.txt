@@ -871,6 +871,32 @@ settings::ConfigStore::Enumerate(StringView,Vector<Key>*)	function	foundation/se
 settings::ConfigStore::Commit(const CommitOptions&)	function	foundation/settings	settings-configstore-commit-const-commitoptions-amp	foundation-settings.md	engine/foundation/settings/config_store.h:171
 settings::ConfigStore::SetChangeListener(ChangeListener,void*)	function	foundation/settings	settings-configstore-setchangelistener-changelistener-void-star	foundation-settings.md	engine/foundation/settings/config_store.h:180
 settings::ConfigStorePtr	alias	foundation/settings	settings-configstoreptr	foundation-settings.md	engine/foundation/settings/config_store.h:188
+settings::kMaxConfigLineBytes	variable	foundation/settings	settings-kmaxconfiglinebytes	foundation-settings.md	engine/foundation/settings/config_text.h:30
+settings::kMaxConfigProblems	variable	foundation/settings	settings-kmaxconfigproblems	foundation-settings.md	engine/foundation/settings/config_text.h:32
+settings::kMaxProblemMessageBytes	variable	foundation/settings	settings-kmaxproblemmessagebytes	foundation-settings.md	engine/foundation/settings/config_text.h:34
+settings::ConfigProblem	struct	foundation/settings	settings-configproblem	foundation-settings.md	engine/foundation/settings/config_text.h:39
+settings::ConfigProblem::line	variable	foundation/settings	settings-configproblem-line	foundation-settings.md	engine/foundation/settings/config_text.h:41
+settings::ConfigProblem::column	variable	foundation/settings	settings-configproblem-column	foundation-settings.md	engine/foundation/settings/config_text.h:43
+settings::ConfigProblem::message	variable	foundation/settings	settings-configproblem-message	foundation-settings.md	engine/foundation/settings/config_text.h:45
+settings::ConfigReport	struct	foundation/settings	settings-configreport	foundation-settings.md	engine/foundation/settings/config_text.h:51
+settings::ConfigReport::errors	variable	foundation/settings	settings-configreport-errors	foundation-settings.md	engine/foundation/settings/config_text.h:53
+settings::ConfigReport::error_count	variable	foundation/settings	settings-configreport-error-count	foundation-settings.md	engine/foundation/settings/config_text.h:55
+settings::ConfigReport::warnings	variable	foundation/settings	settings-configreport-warnings	foundation-settings.md	engine/foundation/settings/config_text.h:57
+settings::ConfigReport::warning_count	variable	foundation/settings	settings-configreport-warning-count	foundation-settings.md	engine/foundation/settings/config_text.h:59
+settings::ConfigDocument	class	foundation/settings	settings-configdocument	foundation-settings.md	engine/foundation/settings/config_text.h:66
+settings::ConfigDocument::ConfigDocument()	function	foundation/settings	settings-configdocument-configdocument	foundation-settings.md	engine/foundation/settings/config_text.h:69
+settings::ConfigDocument::ConfigDocument(ConfigDocument&&) noexcept	function	foundation/settings	settings-configdocument-configdocument-configdocument-amp-amp-noexcept	foundation-settings.md	engine/foundation/settings/config_text.h:71
+settings::ConfigDocument::operator=(ConfigDocument&&) noexcept	function	foundation/settings	settings-configdocument-operator-eq-configdocument-amp-amp-noexcept	foundation-settings.md	engine/foundation/settings/config_text.h:73
+settings::ConfigDocument::~ConfigDocument()	function	foundation/settings	settings-configdocument-tilde-configdocument	foundation-settings.md	engine/foundation/settings/config_text.h:75
+settings::ConfigDocument::Parse(StringView,ConfigReport*)	function	foundation/settings	settings-configdocument-parse-stringview-configreport-star	foundation-settings.md	engine/foundation/settings/config_text.h:82
+settings::ConfigDocument::Find(StringView,StringView*) const	function	foundation/settings	settings-configdocument-find-stringview-stringview-star-const	foundation-settings.md	engine/foundation/settings/config_text.h:89
+settings::ConfigDocument::Set(StringView,StringView)	function	foundation/settings	settings-configdocument-set-stringview-stringview	foundation-settings.md	engine/foundation/settings/config_text.h:97
+settings::ConfigDocument::Remove(StringView)	function	foundation/settings	settings-configdocument-remove-stringview	foundation-settings.md	engine/foundation/settings/config_text.h:102
+settings::ConfigDocument::Keys(StringView,Vector<Key>*) const	function	foundation/settings	settings-configdocument-keys-stringview-vector-lt-key-gt-star-const	foundation-settings.md	engine/foundation/settings/config_text.h:105
+settings::ConfigDocument::RemoveUnreadable()	function	foundation/settings	settings-configdocument-removeunreadable	foundation-settings.md	engine/foundation/settings/config_text.h:109
+settings::ConfigDocument::IsValidValue(StringView)	function	foundation/settings	settings-configdocument-isvalidvalue-stringview	foundation-settings.md	engine/foundation/settings/config_text.h:113
+settings::ConfigDocument::Serialize(Vector<char>*,bool) const	function	foundation/settings	settings-configdocument-serialize-vector-lt-char-gt-star-bool-const	foundation-settings.md	engine/foundation/settings/config_text.h:118
+settings::ConfigDocument::LineCount() const	function	foundation/settings	settings-configdocument-linecount-const	foundation-settings.md	engine/foundation/settings/config_text.h:121
 settings::RangePolicy	enum	foundation/settings	settings-rangepolicy	foundation-settings.md	engine/foundation/settings/desc.h:12
 settings::RangePolicy::Clamp	enumerator	foundation/settings	settings-rangepolicy-clamp	foundation-settings.md	engine/foundation/settings/desc.h:13
 settings::RangePolicy::Reject	enumerator	foundation/settings	settings-rangepolicy-reject	foundation-settings.md	engine/foundation/settings/desc.h:14
@@ -922,6 +948,23 @@ settings::ValidateValue(const SettingDesc&,const Value&,Value*)	function	foundat
 settings::kMaxValueTextBytes	variable	foundation/settings	settings-kmaxvaluetextbytes	foundation-settings.md	engine/foundation/settings/desc.h:120
 settings::ParseValue(const SettingDesc&,StringView,Value*)	function	foundation/settings	settings-parsevalue-const-settingdesc-amp-stringview-value-star	foundation-settings.md	engine/foundation/settings/desc.h:132
 settings::FormatValue(const SettingDesc&,const Value&,char*,usize)	function	foundation/settings	settings-formatvalue-const-settingdesc-amp-const-value-amp-char-star-usize	foundation-settings.md	engine/foundation/settings/desc.h:144
+settings::FileStoreOptions	struct	foundation/settings	settings-filestoreoptions	foundation-settings.md	engine/foundation/settings/file_store.h:12
+settings::FileStoreOptions::permissions	variable	foundation/settings	settings-filestoreoptions-permissions	foundation-settings.md	engine/foundation/settings/file_store.h:14
+settings::FileStoreOptions::create_directories	variable	foundation/settings	settings-filestoreoptions-create-directories	foundation-settings.md	engine/foundation/settings/file_store.h:16
+settings::FileStoreOptions::keep_backup	variable	foundation/settings	settings-filestoreoptions-keep-backup	foundation-settings.md	engine/foundation/settings/file_store.h:18
+settings::FileStoreOptions::max_bytes	variable	foundation/settings	settings-filestoreoptions-max-bytes	foundation-settings.md	engine/foundation/settings/file_store.h:20
+settings::FileConfigStore	class	foundation/settings	settings-fileconfigstore	foundation-settings.md	engine/foundation/settings/file_store.h:38
+settings::FileConfigStore::FileConfigStore(const io::Path&,const FileStoreOptions&)	function	foundation/settings	settings-fileconfigstore-fileconfigstore-const-io-path-amp-const-filestoreoptions-amp	foundation-settings.md	engine/foundation/settings/file_store.h:44
+settings::FileConfigStore::Capabilities() const	function	foundation/settings	settings-fileconfigstore-capabilities-const	foundation-settings.md	engine/foundation/settings/file_store.h:46
+settings::FileConfigStore::Describe(char*,usize) const	function	foundation/settings	settings-fileconfigstore-describe-char-star-usize-const	foundation-settings.md	engine/foundation/settings/file_store.h:47
+settings::FileConfigStore::Load()	function	foundation/settings	settings-fileconfigstore-load	foundation-settings.md	engine/foundation/settings/file_store.h:48
+settings::FileConfigStore::Get(StringView,StoredValue*)	function	foundation/settings	settings-fileconfigstore-get-stringview-storedvalue-star	foundation-settings.md	engine/foundation/settings/file_store.h:49
+settings::FileConfigStore::Set(StringView,const StoredValue&)	function	foundation/settings	settings-fileconfigstore-set-stringview-const-storedvalue-amp	foundation-settings.md	engine/foundation/settings/file_store.h:50
+settings::FileConfigStore::Remove(StringView)	function	foundation/settings	settings-fileconfigstore-remove-stringview	foundation-settings.md	engine/foundation/settings/file_store.h:51
+settings::FileConfigStore::Enumerate(StringView,Vector<Key>*)	function	foundation/settings	settings-fileconfigstore-enumerate-stringview-vector-lt-key-gt-star	foundation-settings.md	engine/foundation/settings/file_store.h:52
+settings::FileConfigStore::Commit(const CommitOptions&)	function	foundation/settings	settings-fileconfigstore-commit-const-commitoptions-amp	foundation-settings.md	engine/foundation/settings/file_store.h:53
+settings::FileConfigStore::Report() const	function	foundation/settings	settings-fileconfigstore-report-const	foundation-settings.md	engine/foundation/settings/file_store.h:56
+settings::FileConfigStore::Damaged() const	function	foundation/settings	settings-fileconfigstore-damaged-const	foundation-settings.md	engine/foundation/settings/file_store.h:58
 settings::kMaxKeyBytes	variable	foundation/settings	settings-kmaxkeybytes	foundation-settings.md	engine/foundation/settings/key.h:15
 settings::kMaxSegmentBytes	variable	foundation/settings	settings-kmaxsegmentbytes	foundation-settings.md	engine/foundation/settings/key.h:17
 settings::kMaxKeySegments	variable	foundation/settings	settings-kmaxkeysegments	foundation-settings.md	engine/foundation/settings/key.h:19

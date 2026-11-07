@@ -1,6 +1,6 @@
 # Settings
 
-Status: draft (Phase 11, Days 131-132: keys, values, the registry, typed handles and the config store interface; the text-file store, layers, the service and the command line arrive on Days 133-138).
+Status: draft (Phase 11, Days 131-133: keys, values, the registry, typed handles, the config store interface and the text-file store; layers, the service and the command line arrive on Days 134-138).
 
 The settings system is one registry that every module declares its settings in, and handles that read them cheaply. Where values come from (files, the environment, the command line) and how they
 are saved arrive later in this phase. Design and reasons: `docs/superpowers/specs/2026-11-07-settings-design.md`.
@@ -119,3 +119,66 @@ and uncommitted content does not (unless the store is per-key). A store is not r
 Three test doubles in `tests/settings/store_doubles.h` show what a backend must not assume, and are worth running any new store through: `FailingConfigStore` fails the Nth call with a chosen error (a failed
 `Commit` must leave the durable state as it was), `SlowConfigStore` runs every call on its own thread after a delay (no thread affinity, no immediacy), and `NoOrderConfigStore` enumerates in a different
 order each time (a registry has no order). Keep the platform's own types out of the interface: the store maps its medium's errors to `StoreError` and its typing to `StoredValue`.
+
+## The file format
+
+`settings::FileConfigStore` keeps settings in a text file a person can edit. A sample:
+
+```
+# Engine settings. Comments you write stay where you put them.
+version = 1
+
+[renderer]
+present_mode = "mailbox"   # fifo | mailbox | immediate
+width = 1920
+height = 1080
+adapter = "NVIDIA \"RTX\" 4090"
+
+[audio]
+volume = 0.8
+```
+
+- A **comment** is a blank line or a line whose first non-blank character is `#` or `;`; either character also starts a comment after a value, when a blank comes before it.
+- `[name]` starts a **section**; the keys below it are `name.<key>` (`[a.b]` makes `a.b.<key>`). Before the first section a key is written whole (`renderer.width = 1`).
+- A **value** is a quoted text, `"..."` with the escapes `\"`, `\\`, `\n`, `\t` and `\xHH`, or a bare run of characters up to the end of the line or a blank followed by `#` or `;`. A bare value cannot
+  start with `#` or `;`: quote it. Booleans are `true`/`false` (`yes`, `no`, `on`, `off`, `1`, `0` also read), numbers are decimal or `0x` hexadecimal, enums are their names.
+- Lines are at most 4096 bytes and the file is UTF-8; a byte order mark and `\r\n` line endings are accepted and kept.
+- A key written twice is a **warning**: the last one wins, and a change edits that one.
+- A key the program does not know is kept as it is and written back.
+
+A line the parser cannot understand is an **error** with a 1-based line and column: `expected key = value`, `invalid key`, `invalid section name`, `unterminated section header`, `unterminated quoted text`,
+`unknown escape in quoted text`, `bad \x escape in quoted text`, `unexpected text after the value`, `unexpected text after the section header`, `line is longer than 4096 bytes`, `a NUL byte in the line`,
+`the line is not valid UTF-8`. Parsing goes on after an error and records the first 20.
+
+**What a save changes.** The store edits the document in place: a changed value rewrites only its own bytes (the spacing and the comment after it stay), a new key goes after the last key of its section (a
+new section is added at the end, a new top-level key before the first section), and a removed key deletes only its line, never the comments around it. A file that is not changed is written back byte for
+byte. `Commit` copies the previous file to `<name>.bak`, then replaces the file atomically (`io::WriteFileAtomic`), so a crash or a full disk leaves the old file whole. A missing file is an empty store; the
+first `Commit` creates it with the permissions in `FileStoreOptions` (`0600` for a user's file, `0644` for a project's), and its missing directories only if `create_directories` is set.
+
+**A file that cannot be read is never overwritten by accident.** If any line is an error, `Load` returns `Damaged` and the store is *damaged*: the lines that were readable are available, the rest stay as
+they are, and `Commit` refuses with `Damaged` and leaves the file untouched. Only `CommitOptions::replace_damaged` goes ahead, and then the damaged text is in the `.bak` file and the lines that could not be
+read are dropped.
+
+```cpp compile run
+settings::ConfigDocument doc;
+settings::ConfigReport report;
+doc.Parse("# mine\n[renderer]\nwidth = 1280   # px\nthis is not a setting\n", &report);
+
+StringView width;
+doc.Find("renderer.width", &width);
+doc.Set("renderer.width", "1920");
+doc.Set("renderer.hdr", "off");
+Vector<char> out;
+doc.Serialize(&out);
+std::printf("%u error: line %u col %u: %s\n", report.error_count, report.errors[0].line, report.errors[0].column, report.errors[0].message);
+std::printf("%.*s", static_cast<int>(out.Size()), out.Data());
+```
+
+```output
+1 error: line 4 col 1: expected key = value
+# mine
+[renderer]
+width = 1920   # px
+hdr = off
+this is not a setting
+```
