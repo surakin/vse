@@ -68,6 +68,8 @@ set(FOUNDATION_SOURCES
   settings/value.cpp
   settings/desc.cpp
   settings/registry.cpp
+  settings/config_store.cpp
+  settings/memory_store.cpp
   io/path.cpp
   io/linux/error.cpp
   io/linux/file_system.cpp

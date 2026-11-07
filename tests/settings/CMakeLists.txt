@@ -4,6 +4,7 @@ set(SETTINGS_TEST_SOURCES
   key_test.cpp
   value_test.cpp
   registry_test.cpp
+  config_store_test.cpp
 )
 
 find_package(Threads REQUIRED)

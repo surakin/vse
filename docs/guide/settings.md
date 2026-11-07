@@ -1,6 +1,6 @@
 # Settings
 
-Status: draft (Phase 11, Day 131: keys, values, the registry and typed handles; stores, layers, the service and the command line arrive on Days 132-138).
+Status: draft (Phase 11, Days 131-132: keys, values, the registry, typed handles and the config store interface; the text-file store, layers, the service and the command line arrive on Days 133-138).
 
 The settings system is one registry that every module declares its settings in, and handles that read them cheaply. Where values come from (files, the environment, the command line) and how they
 are saved arrive later in this phase. Design and reasons: `docs/superpowers/specs/2026-11-07-settings-design.md`.
@@ -64,3 +64,58 @@ std::printf("%lld %lld\n", static_cast<long long>(width_setting.Get()), static_c
 1280 1
 1920 1280
 ```
+
+## Where values live
+
+The settings system never touches a file directly: it reads and writes through a `settings::ConfigStore`, an abstract class like `io::File`. A store holds `key -> value` entries and knows nothing about
+the registry, so the same system runs over a text file, the Windows registry, `NSUserDefaults`, Android `SharedPreferences`, console save data, a server, or memory. The stores built in the foundation
+are `MemoryConfigStore` (everything the interface offers, in memory), `ReadOnlyConfigStore` (the defaults a game ships, as an array of text entries) and, on Day 133, the file-backed store.
+
+The contract in a few lines:
+
+- `Load()` reads the durable state and discards anything staged. A store whose medium does not exist yet loads as empty.
+- `Get`, `Set`, `Remove` and `Enumerate(prefix)` work on the store's *working* state, so a store always reads its own writes. `Enumerate` returns the keys equal to the prefix or below it
+  (`renderer` gives `renderer.width`, not `renderers.x`); the order is unspecified unless the store says it preserves order.
+- `Set` and `Remove` are **staged** until `Commit()` makes them durable together, except on a store with `kCapPerKeyWrites` (a registry), where each is durable at once. With `kCapAtomicCommit` a failed
+  `Commit` changes nothing and leaves the changes staged, so it can be retried; without it `Status::done` says how many landed.
+- Errors are values (`Status`, a `StoreError`: `NotFound`, `ReadOnly`, `Damaged`, `Io`, ...). Nothing throws.
+- `Capabilities()` says what the store really does: writable, order-preserving, atomic, per-key, notifying, typed. A caller asks instead of guessing, and the conformance suite checks the claims.
+- A store may be told to call a function when another writer changes the durable state (`SetChangeListener`, only with `kCapNotifies`); the call is best effort and may come from any thread.
+
+A value goes into a store as a `StoredValue`: typed (`kCapTypedValues`, a registry that records integers as integers) or its canonical text (a file). `ToStored` and `FromStored` are the only place
+that converts, so a store never needs the registry's enum names or ranges.
+
+```cpp compile run
+settings::MemoryBackingPtr backing = settings::MakeMemoryBacking();   // the "disk": two stores over it see each other's commits
+settings::SettingDesc width = settings::MakeInt("renderer.width", 1280, 0, 16384);
+
+settings::MemoryConfigStore writer(backing);
+settings::StoredValue stored;
+settings::ToStored(width, settings::Value::FromInt(1920), (writer.Capabilities() & settings::kCapTypedValues) != 0, &stored);
+writer.Set("renderer.width", stored);                                  // staged
+settings::MemoryConfigStore early(backing);                            // a second reader: sees nothing yet
+writer.Commit(settings::CommitOptions());                              // now durable
+settings::MemoryConfigStore late(backing);
+
+settings::StoredValue got;
+settings::Value value;
+bool early_has = early.Get("renderer.width", &got).Ok();
+late.Get("renderer.width", &got);
+settings::FromStored(width, got, &value);
+std::printf("%d %lld\n", early_has ? 1 : 0, static_cast<long long>(value.AsInt()));
+```
+
+```output
+0 1920
+```
+
+## Writing a store backend
+
+A new backend (the Windows registry in Phase 12, `NSUserDefaults` in Phase 13) derives from `ConfigStore`, implements the eight pure functions, sets only the capability bits that are true, and passes the
+conformance suite in `tests/settings/config_store_conformance.h`: `RunWritableConformance`, `RunDurabilityConformance` and `RunCapabilityConformance` for a writable store, `RunReadOnlyConformance` for one that
+is not. Each takes a factory that returns a new instance over the same durable backing every time it is called (a second instance models a restart), so the suite can check that committed content survives
+and uncommitted content does not (unless the store is per-key). A store is not ready until the suite passes and its `Capabilities()` match what the suite found.
+
+Three test doubles in `tests/settings/store_doubles.h` show what a backend must not assume, and are worth running any new store through: `FailingConfigStore` fails the Nth call with a chosen error (a failed
+`Commit` must leave the durable state as it was), `SlowConfigStore` runs every call on its own thread after a delay (no thread affinity, no immediacy), and `NoOrderConfigStore` enumerates in a different
+order each time (a registry has no order). Keep the platform's own types out of the interface: the store maps its medium's errors to `StoreError` and its typing to `StoredValue`.

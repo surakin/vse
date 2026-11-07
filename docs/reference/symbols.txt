@@ -823,6 +823,54 @@ usize	alias	foundation/types	usize	foundation-types.md	engine/foundation/types.h
 isize	alias	foundation/types	isize	foundation-types.md	engine/foundation/types.h:44
 f32	alias	foundation/types	f32	foundation-types.md	engine/foundation/types.h:47
 f64	alias	foundation/types	f64	foundation-types.md	engine/foundation/types.h:49
+settings::StoreError	enum	foundation/settings	settings-storeerror	foundation-settings.md	engine/foundation/settings/config_store.h:24
+settings::StoreError::None	enumerator	foundation/settings	settings-storeerror-none	foundation-settings.md	engine/foundation/settings/config_store.h:25
+settings::StoreError::NotFound	enumerator	foundation/settings	settings-storeerror-notfound	foundation-settings.md	engine/foundation/settings/config_store.h:26
+settings::StoreError::TypeMismatch	enumerator	foundation/settings	settings-storeerror-typemismatch	foundation-settings.md	engine/foundation/settings/config_store.h:27
+settings::StoreError::ReadOnly	enumerator	foundation/settings	settings-storeerror-readonly	foundation-settings.md	engine/foundation/settings/config_store.h:28
+settings::StoreError::Damaged	enumerator	foundation/settings	settings-storeerror-damaged	foundation-settings.md	engine/foundation/settings/config_store.h:29
+settings::StoreError::Io	enumerator	foundation/settings	settings-storeerror-io	foundation-settings.md	engine/foundation/settings/config_store.h:30
+settings::StoreError::Unsupported	enumerator	foundation/settings	settings-storeerror-unsupported	foundation-settings.md	engine/foundation/settings/config_store.h:31
+settings::StoreError::TooLong	enumerator	foundation/settings	settings-storeerror-toolong	foundation-settings.md	engine/foundation/settings/config_store.h:32
+settings::StoreError::Invalid	enumerator	foundation/settings	settings-storeerror-invalid	foundation-settings.md	engine/foundation/settings/config_store.h:33
+settings::StoreError::PermissionDenied	enumerator	foundation/settings	settings-storeerror-permissiondenied	foundation-settings.md	engine/foundation/settings/config_store.h:34
+settings::StoreError::Interrupted	enumerator	foundation/settings	settings-storeerror-interrupted	foundation-settings.md	engine/foundation/settings/config_store.h:35
+settings::StoreErrorName(StoreError)	function	foundation/settings	settings-storeerrorname-storeerror	foundation-settings.md	engine/foundation/settings/config_store.h:43
+settings::Status	struct	foundation/settings	settings-status	foundation-settings.md	engine/foundation/settings/config_store.h:48
+settings::Status::error	variable	foundation/settings	settings-status-error	foundation-settings.md	engine/foundation/settings/config_store.h:50
+settings::Status::done	variable	foundation/settings	settings-status-done	foundation-settings.md	engine/foundation/settings/config_store.h:52
+settings::Status::total	variable	foundation/settings	settings-status-total	foundation-settings.md	engine/foundation/settings/config_store.h:54
+settings::Status::Ok() const	function	foundation/settings	settings-status-ok-const	foundation-settings.md	engine/foundation/settings/config_store.h:57
+settings::Status::Failed() const	function	foundation/settings	settings-status-failed-const	foundation-settings.md	engine/foundation/settings/config_store.h:59
+settings::Status::Is(StoreError) const	function	foundation/settings	settings-status-is-storeerror-const	foundation-settings.md	engine/foundation/settings/config_store.h:61
+settings::Status::Of(StoreError)	function	foundation/settings	settings-status-of-storeerror	foundation-settings.md	engine/foundation/settings/config_store.h:63
+settings::StoredValue	struct	foundation/settings	settings-storedvalue	foundation-settings.md	engine/foundation/settings/config_store.h:72
+settings::StoredValue::typed	variable	foundation/settings	settings-storedvalue-typed	foundation-settings.md	engine/foundation/settings/config_store.h:74
+settings::StoredValue::value	variable	foundation/settings	settings-storedvalue-value	foundation-settings.md	engine/foundation/settings/config_store.h:76
+settings::StoreCapability	enum	foundation/settings	settings-storecapability	foundation-settings.md	engine/foundation/settings/config_store.h:80
+settings::kCapWritable	enumerator	foundation/settings	settings-kcapwritable	foundation-settings.md	engine/foundation/settings/config_store.h:81
+settings::kCapPreservesOrder	enumerator	foundation/settings	settings-kcappreservesorder	foundation-settings.md	engine/foundation/settings/config_store.h:82
+settings::kCapAtomicCommit	enumerator	foundation/settings	settings-kcapatomiccommit	foundation-settings.md	engine/foundation/settings/config_store.h:83
+settings::kCapPerKeyWrites	enumerator	foundation/settings	settings-kcapperkeywrites	foundation-settings.md	engine/foundation/settings/config_store.h:84
+settings::kCapNotifies	enumerator	foundation/settings	settings-kcapnotifies	foundation-settings.md	engine/foundation/settings/config_store.h:85
+settings::kCapTypedValues	enumerator	foundation/settings	settings-kcaptypedvalues	foundation-settings.md	engine/foundation/settings/config_store.h:86
+settings::CommitOptions	struct	foundation/settings	settings-commitoptions	foundation-settings.md	engine/foundation/settings/config_store.h:90
+settings::CommitOptions::replace_damaged	variable	foundation/settings	settings-commitoptions-replace-damaged	foundation-settings.md	engine/foundation/settings/config_store.h:92
+settings::ChangeListener	alias	foundation/settings	settings-changelistener	foundation-settings.md	engine/foundation/settings/config_store.h:96
+settings::ToStored(const SettingDesc&,const Value&,bool,StoredValue*)	function	foundation/settings	settings-tostored-const-settingdesc-amp-const-value-amp-bool-storedvalue-star	foundation-settings.md	engine/foundation/settings/config_store.h:107
+settings::FromStored(const SettingDesc&,const StoredValue&,Value*)	function	foundation/settings	settings-fromstored-const-settingdesc-amp-const-storedvalue-amp-value-star	foundation-settings.md	engine/foundation/settings/config_store.h:117
+settings::ConfigStore	class	foundation/settings	settings-configstore	foundation-settings.md	engine/foundation/settings/config_store.h:123
+settings::ConfigStore::~ConfigStore()	function	foundation/settings	settings-configstore-tilde-configstore	foundation-settings.md	engine/foundation/settings/config_store.h:125
+settings::ConfigStore::Capabilities() const	function	foundation/settings	settings-configstore-capabilities-const	foundation-settings.md	engine/foundation/settings/config_store.h:128
+settings::ConfigStore::Describe(char*,usize) const	function	foundation/settings	settings-configstore-describe-char-star-usize-const	foundation-settings.md	engine/foundation/settings/config_store.h:131
+settings::ConfigStore::Load()	function	foundation/settings	settings-configstore-load	foundation-settings.md	engine/foundation/settings/config_store.h:137
+settings::ConfigStore::Get(StringView,StoredValue*)	function	foundation/settings	settings-configstore-get-stringview-storedvalue-star	foundation-settings.md	engine/foundation/settings/config_store.h:144
+settings::ConfigStore::Set(StringView,const StoredValue&)	function	foundation/settings	settings-configstore-set-stringview-const-storedvalue-amp	foundation-settings.md	engine/foundation/settings/config_store.h:152
+settings::ConfigStore::Remove(StringView)	function	foundation/settings	settings-configstore-remove-stringview	foundation-settings.md	engine/foundation/settings/config_store.h:157
+settings::ConfigStore::Enumerate(StringView,Vector<Key>*)	function	foundation/settings	settings-configstore-enumerate-stringview-vector-lt-key-gt-star	foundation-settings.md	engine/foundation/settings/config_store.h:163
+settings::ConfigStore::Commit(const CommitOptions&)	function	foundation/settings	settings-configstore-commit-const-commitoptions-amp	foundation-settings.md	engine/foundation/settings/config_store.h:171
+settings::ConfigStore::SetChangeListener(ChangeListener,void*)	function	foundation/settings	settings-configstore-setchangelistener-changelistener-void-star	foundation-settings.md	engine/foundation/settings/config_store.h:180
+settings::ConfigStorePtr	alias	foundation/settings	settings-configstoreptr	foundation-settings.md	engine/foundation/settings/config_store.h:188
 settings::RangePolicy	enum	foundation/settings	settings-rangepolicy	foundation-settings.md	engine/foundation/settings/desc.h:12
 settings::RangePolicy::Clamp	enumerator	foundation/settings	settings-rangepolicy-clamp	foundation-settings.md	engine/foundation/settings/desc.h:13
 settings::RangePolicy::Reject	enumerator	foundation/settings	settings-rangepolicy-reject	foundation-settings.md	engine/foundation/settings/desc.h:14
@@ -870,9 +918,10 @@ settings::ValueError::NotInEnum	enumerator	foundation/settings	settings-valueerr
 settings::ValueError::TooLong	enumerator	foundation/settings	settings-valueerror-toolong	foundation-settings.md	engine/foundation/settings/desc.h:98
 settings::ValueError::BadEscape	enumerator	foundation/settings	settings-valueerror-badescape	foundation-settings.md	engine/foundation/settings/desc.h:99
 settings::ValueErrorName(ValueError)	function	foundation/settings	settings-valueerrorname-valueerror	foundation-settings.md	engine/foundation/settings/desc.h:107
-settings::kMaxValueTextBytes	variable	foundation/settings	settings-kmaxvaluetextbytes	foundation-settings.md	engine/foundation/settings/desc.h:110
-settings::ParseValue(const SettingDesc&,StringView,Value*)	function	foundation/settings	settings-parsevalue-const-settingdesc-amp-stringview-value-star	foundation-settings.md	engine/foundation/settings/desc.h:122
-settings::FormatValue(const SettingDesc&,const Value&,char*,usize)	function	foundation/settings	settings-formatvalue-const-settingdesc-amp-const-value-amp-char-star-usize	foundation-settings.md	engine/foundation/settings/desc.h:134
+settings::ValidateValue(const SettingDesc&,const Value&,Value*)	function	foundation/settings	settings-validatevalue-const-settingdesc-amp-const-value-amp-value-star	foundation-settings.md	engine/foundation/settings/desc.h:117
+settings::kMaxValueTextBytes	variable	foundation/settings	settings-kmaxvaluetextbytes	foundation-settings.md	engine/foundation/settings/desc.h:120
+settings::ParseValue(const SettingDesc&,StringView,Value*)	function	foundation/settings	settings-parsevalue-const-settingdesc-amp-stringview-value-star	foundation-settings.md	engine/foundation/settings/desc.h:132
+settings::FormatValue(const SettingDesc&,const Value&,char*,usize)	function	foundation/settings	settings-formatvalue-const-settingdesc-amp-const-value-amp-char-star-usize	foundation-settings.md	engine/foundation/settings/desc.h:144
 settings::kMaxKeyBytes	variable	foundation/settings	settings-kmaxkeybytes	foundation-settings.md	engine/foundation/settings/key.h:15
 settings::kMaxSegmentBytes	variable	foundation/settings	settings-kmaxsegmentbytes	foundation-settings.md	engine/foundation/settings/key.h:17
 settings::kMaxKeySegments	variable	foundation/settings	settings-kmaxkeysegments	foundation-settings.md	engine/foundation/settings/key.h:19
@@ -897,6 +946,42 @@ settings::Key::Hash() const	function	foundation/settings	settings-key-hash-const
 settings::Key::operator==(const Key&) const	function	foundation/settings	settings-key-operator-eq-eq-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:70
 settings::Key::operator!=(const Key&) const	function	foundation/settings	settings-key-operator-not-eq-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:72
 settings::Key::operator<(const Key&) const	function	foundation/settings	settings-key-operator-lt-const-key-amp-const	foundation-settings.md	engine/foundation/settings/key.h:74
+settings::MemoryBacking	class	foundation/settings	settings-memorybacking	foundation-settings.md	engine/foundation/settings/memory_store.h:19
+settings::MemoryBacking::Entry	struct	foundation/settings	settings-memorybacking-entry	foundation-settings.md	engine/foundation/settings/memory_store.h:22
+settings::MemoryBacking::Entry::key	variable	foundation/settings	settings-memorybacking-entry-key	foundation-settings.md	engine/foundation/settings/memory_store.h:24
+settings::MemoryBacking::Entry::value	variable	foundation/settings	settings-memorybacking-entry-value	foundation-settings.md	engine/foundation/settings/memory_store.h:26
+settings::MemoryBacking::MemoryBacking()	function	foundation/settings	settings-memorybacking-memorybacking	foundation-settings.md	engine/foundation/settings/memory_store.h:29
+settings::MemoryBacking::MemoryBacking(const MemoryBacking&)	function	foundation/settings	settings-memorybacking-memorybacking-const-memorybacking-amp	foundation-settings.md	engine/foundation/settings/memory_store.h:30
+settings::MemoryBacking::operator=(const MemoryBacking&)	function	foundation/settings	settings-memorybacking-operator-eq-const-memorybacking-amp	foundation-settings.md	engine/foundation/settings/memory_store.h:31
+settings::MemoryBacking::Size() const	function	foundation/settings	settings-memorybacking-size-const	foundation-settings.md	engine/foundation/settings/memory_store.h:34
+settings::MemoryBackingPtr	alias	foundation/settings	settings-memorybackingptr	foundation-settings.md	engine/foundation/settings/memory_store.h:45
+settings::MakeMemoryBacking()	function	foundation/settings	settings-makememorybacking	foundation-settings.md	engine/foundation/settings/memory_store.h:48
+settings::MemoryConfigStore	class	foundation/settings	settings-memoryconfigstore	foundation-settings.md	engine/foundation/settings/memory_store.h:54
+settings::MemoryConfigStore::MemoryConfigStore()	function	foundation/settings	settings-memoryconfigstore-memoryconfigstore	foundation-settings.md	engine/foundation/settings/memory_store.h:57
+settings::MemoryConfigStore::MemoryConfigStore(MemoryBackingPtr)	function	foundation/settings	settings-memoryconfigstore-memoryconfigstore-memorybackingptr	foundation-settings.md	engine/foundation/settings/memory_store.h:59
+settings::MemoryConfigStore::~MemoryConfigStore()	function	foundation/settings	settings-memoryconfigstore-tilde-memoryconfigstore	foundation-settings.md	engine/foundation/settings/memory_store.h:61
+settings::MemoryConfigStore::Capabilities() const	function	foundation/settings	settings-memoryconfigstore-capabilities-const	foundation-settings.md	engine/foundation/settings/memory_store.h:63
+settings::MemoryConfigStore::Describe(char*,usize) const	function	foundation/settings	settings-memoryconfigstore-describe-char-star-usize-const	foundation-settings.md	engine/foundation/settings/memory_store.h:64
+settings::MemoryConfigStore::Load()	function	foundation/settings	settings-memoryconfigstore-load	foundation-settings.md	engine/foundation/settings/memory_store.h:65
+settings::MemoryConfigStore::Get(StringView,StoredValue*)	function	foundation/settings	settings-memoryconfigstore-get-stringview-storedvalue-star	foundation-settings.md	engine/foundation/settings/memory_store.h:66
+settings::MemoryConfigStore::Set(StringView,const StoredValue&)	function	foundation/settings	settings-memoryconfigstore-set-stringview-const-storedvalue-amp	foundation-settings.md	engine/foundation/settings/memory_store.h:67
+settings::MemoryConfigStore::Remove(StringView)	function	foundation/settings	settings-memoryconfigstore-remove-stringview	foundation-settings.md	engine/foundation/settings/memory_store.h:68
+settings::MemoryConfigStore::Enumerate(StringView,Vector<Key>*)	function	foundation/settings	settings-memoryconfigstore-enumerate-stringview-vector-lt-key-gt-star	foundation-settings.md	engine/foundation/settings/memory_store.h:69
+settings::MemoryConfigStore::Commit(const CommitOptions&)	function	foundation/settings	settings-memoryconfigstore-commit-const-commitoptions-amp	foundation-settings.md	engine/foundation/settings/memory_store.h:70
+settings::MemoryConfigStore::SetChangeListener(ChangeListener,void*)	function	foundation/settings	settings-memoryconfigstore-setchangelistener-changelistener-void-star	foundation-settings.md	engine/foundation/settings/memory_store.h:71
+settings::DefaultEntry	struct	foundation/settings	settings-defaultentry	foundation-settings.md	engine/foundation/settings/memory_store.h:89
+settings::DefaultEntry::key	variable	foundation/settings	settings-defaultentry-key	foundation-settings.md	engine/foundation/settings/memory_store.h:91
+settings::DefaultEntry::text	variable	foundation/settings	settings-defaultentry-text	foundation-settings.md	engine/foundation/settings/memory_store.h:93
+settings::ReadOnlyConfigStore	class	foundation/settings	settings-readonlyconfigstore	foundation-settings.md	engine/foundation/settings/memory_store.h:100
+settings::ReadOnlyConfigStore::ReadOnlyConfigStore(const DefaultEntry*,usize)	function	foundation/settings	settings-readonlyconfigstore-readonlyconfigstore-const-defaultentry-star-usize	foundation-settings.md	engine/foundation/settings/memory_store.h:106
+settings::ReadOnlyConfigStore::Capabilities() const	function	foundation/settings	settings-readonlyconfigstore-capabilities-const	foundation-settings.md	engine/foundation/settings/memory_store.h:108
+settings::ReadOnlyConfigStore::Describe(char*,usize) const	function	foundation/settings	settings-readonlyconfigstore-describe-char-star-usize-const	foundation-settings.md	engine/foundation/settings/memory_store.h:109
+settings::ReadOnlyConfigStore::Load()	function	foundation/settings	settings-readonlyconfigstore-load	foundation-settings.md	engine/foundation/settings/memory_store.h:110
+settings::ReadOnlyConfigStore::Get(StringView,StoredValue*)	function	foundation/settings	settings-readonlyconfigstore-get-stringview-storedvalue-star	foundation-settings.md	engine/foundation/settings/memory_store.h:111
+settings::ReadOnlyConfigStore::Set(StringView,const StoredValue&)	function	foundation/settings	settings-readonlyconfigstore-set-stringview-const-storedvalue-amp	foundation-settings.md	engine/foundation/settings/memory_store.h:112
+settings::ReadOnlyConfigStore::Remove(StringView)	function	foundation/settings	settings-readonlyconfigstore-remove-stringview	foundation-settings.md	engine/foundation/settings/memory_store.h:113
+settings::ReadOnlyConfigStore::Enumerate(StringView,Vector<Key>*)	function	foundation/settings	settings-readonlyconfigstore-enumerate-stringview-vector-lt-key-gt-star	foundation-settings.md	engine/foundation/settings/memory_store.h:114
+settings::ReadOnlyConfigStore::Commit(const CommitOptions&)	function	foundation/settings	settings-readonlyconfigstore-commit-const-commitoptions-amp	foundation-settings.md	engine/foundation/settings/memory_store.h:115
 settings::SettingId	struct	foundation/settings	settings-settingid	foundation-settings.md	engine/foundation/settings/registry.h:23
 settings::SettingId::value	variable	foundation/settings	settings-settingid-value	foundation-settings.md	engine/foundation/settings/registry.h:25
 settings::SettingId::IsValid() const	function	foundation/settings	settings-settingid-isvalid-const	foundation-settings.md	engine/foundation/settings/registry.h:27

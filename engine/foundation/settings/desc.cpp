@@ -235,6 +235,41 @@ ValueError ParseValue(const SettingDesc& desc, StringView text, Value* out) {
     return ValueError::BadNumber;
 }
 
+ValueError ValidateValue(const SettingDesc& desc, const Value& value, Value* out) {
+    if (value.GetType() != desc.type) return ValueError::BadNumber;
+    switch (desc.type) {
+    case Type::Int: {
+        i64 v = value.AsInt();
+        ValueError result = ValueError::None;
+        if (v < desc.min_int || v > desc.max_int) {
+            if (desc.policy == RangePolicy::Reject) return ValueError::OutOfRange;
+            v = v < desc.min_int ? desc.min_int : desc.max_int;
+            result = ValueError::Clamped;
+        }
+        *out = Value::FromInt(v);
+        return result;
+    }
+    case Type::Float: {
+        f64 v = value.AsFloat();
+        ValueError result = ValueError::None;
+        if (v < desc.min_float || v > desc.max_float) {
+            if (desc.policy == RangePolicy::Reject) return ValueError::OutOfRange;
+            v = v < desc.min_float ? desc.min_float : desc.max_float;
+            result = ValueError::Clamped;
+        }
+        *out = Value::FromFloat(v);
+        return result;
+    }
+    case Type::Enum:
+        if (value.AsEnum() >= desc.enum_count) return ValueError::NotInEnum;
+        *out = value;
+        return ValueError::None;
+    case Type::Bool:
+    case Type::Text: *out = value; return ValueError::None;
+    }
+    return ValueError::BadNumber;
+}
+
 usize FormatValue(const SettingDesc& desc, const Value& value, char* out, usize capacity) {
     ENGINE_ASSERT(value.GetType() == desc.type, "settings::FormatValue: the value's type differs from the declaration's");
     char buffer[kMaxValueTextBytes];

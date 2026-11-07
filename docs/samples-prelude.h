@@ -16,6 +16,7 @@
 #include "int128.h"
 #include "algorithm.h"
 #include "settings/registry.h"
+#include "settings/memory_store.h"
 #include "settings/setting.h"
 #include "containers/hash_map.h"
 #include "io/file.h"

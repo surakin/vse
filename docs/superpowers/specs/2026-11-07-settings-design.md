@@ -136,7 +136,7 @@ template <typename T> class Setting { T Get() const; SettingId Id() const; };   
 
 class ConfigStore {                                                // abstract
  public:
-  virtual u32 Capabilities() const = 0;                            // writable, preserves comments/order, atomic commit, per-key writes, notifies, case-sensitive
+  virtual u32 Capabilities() const = 0;                            // writable, preserves comments/order, atomic commit, per-key writes, notifies, typed values  (Day 132: no case-sensitivity bit — all keys are lowercase — and no lists)
   virtual io::Status Load() = 0;   virtual io::Status Commit(const CommitOptions&) = 0;
   virtual StoreError Get(StringView key, Value* out) = 0;  virtual StoreError Set(StringView key, const Value&) = 0;  virtual StoreError Remove(StringView key) = 0;
   virtual StoreError Keys(StringView prefix, Vector<Text>* out) = 0;

@@ -106,6 +106,16 @@ enum class ValueError : u8 {
 /// Ownership: the string is static and never freed.
 const char* ValueErrorName(ValueError error);
 
+/// Checks a typed value against its declaration: a number outside the range is clamped or refused by the declaration's policy, an enum
+/// index outside the names is refused, a value of another type is refused.
+///
+/// Param desc: the declaration.
+/// Param value: the candidate.
+/// Param out: receives the (possibly clamped) value; unchanged on failure.
+/// Returns: `None`, `Clamped`, `OutOfRange`, `NotInEnum`, or `BadNumber` for a value of another type.
+/// Fails: reports the reason as the return value.
+ValueError ValidateValue(const SettingDesc& desc, const Value& value, Value* out);
+
 /// The most bytes [[settings::FormatValue]] writes, including the terminator.
 inline constexpr usize kMaxValueTextBytes = 2100;
 
