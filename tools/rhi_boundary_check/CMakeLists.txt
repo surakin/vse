@@ -16,10 +16,10 @@ rhi_boundary_test(rhi_boundary_check_planted ${RHI_BOUNDARY_FIXTURES}/bad ${RHI_
 set_tests_properties(rhi_boundary_check_planted PROPERTIES WILL_FAIL TRUE)
 rhi_boundary_test(rhi_boundary_check_planted_count ${RHI_BOUNDARY_FIXTURES}/bad ${RHI_BOUNDARY_FIXTURES}/bad/allow.txt)
 set_tests_properties(rhi_boundary_check_planted_count PROPERTIES
-  PASS_REGULAR_EXPRESSION "engine/foundation/x.cpp:1.*engine/renderer/leak.cpp:1.*engine/rhi/device.h:2.*engine/rhi/vulkan/dx_in_vulkan.cpp:1.*game/after_comment.cpp:1.*game/dx_leak.cpp:1.*game/dx_leak.cpp:2.*game/leak.cpp:1.*game/leak.cpp:2.*tests/renderer/t.cpp:1.*10 problem"
+  PASS_REGULAR_EXPRESSION "engine/foundation/x.cpp:1.*engine/platform/windows/vulkan_in_win32.cpp:3.*engine/renderer/leak.cpp:1.*engine/rhi/device.h:2.*engine/rhi/vulkan/dx_in_vulkan.cpp:1.*game/after_comment.cpp:1.*game/dx_leak.cpp:1.*game/dx_leak.cpp:2.*game/leak.cpp:1.*game/leak.cpp:2.*tests/renderer/t.cpp:1.*11 problem"
   WILL_FAIL FALSE)
 
-# A clean tree (comments and PerspectiveVulkan-style names, Vulkan inside engine/rhi/vulkan) passes.
+# A clean tree (comments and PerspectiveVulkan-style names, Vulkan inside engine/rhi/vulkan, Win32 virtual keys in engine/platform/windows) passes.
 rhi_boundary_test(rhi_boundary_check_clean ${RHI_BOUNDARY_FIXTURES}/good ${RHI_BOUNDARY_FIXTURES}/good/allow.txt)
 
 # Allow-list hygiene: stale and reasonless entries fail.

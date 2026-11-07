@@ -7,4 +7,3 @@
 # items 7 and 8: no RHI backend registry yet
 edge rhi/vulkan -> rhi/null | create_device.cpp dispatches to the null backend from inside the Vulkan library | Phase 13 Day 162
 edge renderer -> rhi/vulkan | the renderer links rhi_vulkan to reach CreateDevice, EnumerateAdapters and DeviceHost | Phase 13 Day 162
-header engine/platform/key_translate.cpp -> xkbcommon/xkbcommon-keysyms.h | a neutral file translating XKB keysyms (header-only constants); the keysym translation moves to platform/linux/ (spec 2026-11-07-windows-port-design.md, section 3 item 3) | Phase 13 Day 159

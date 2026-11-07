@@ -2,6 +2,7 @@
 #include "display_session.h"
 
 #include "platform/input.h"
+#include "platform/linux/key_translate.h"
 #include "platform/linux/wayland/wayland_connection.h"
 #include "platform/linux/wayland/wayland_input.h"
 #include "platform/linux/xkb_keyboard.h"

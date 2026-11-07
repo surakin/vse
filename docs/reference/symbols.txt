@@ -1408,122 +1408,122 @@ os::SessionCanShowWindows(SessionState)	function	platform/os	os-sessioncanshowwi
 os::QuerySessionState()	function	platform/os	os-querysessionstate	platform-os.md	engine/foundation/os/session.h:41
 os::WindowedProgramEntry	alias	platform/window-input	os-windowedprogramentry	platform-window-input.md	engine/platform/entry_point.h:20
 ENGINE_WINDOWED_PROGRAM	macro	platform/window-input	engine-windowed-program	platform-window-input.md	engine/platform/entry_point.h:42
-os::Key	enum	platform/window-input	os-key	platform-window-input.md	engine/platform/input.h:12
-os::Key::Unknown	enumerator	platform/window-input	os-key-unknown	platform-window-input.md	engine/platform/input.h:13
-os::Key::A	enumerator	platform/window-input	os-key-a	platform-window-input.md	engine/platform/input.h:14
-os::Key::B	enumerator	platform/window-input	os-key-b	platform-window-input.md	engine/platform/input.h:15
-os::Key::C	enumerator	platform/window-input	os-key-c	platform-window-input.md	engine/platform/input.h:16
-os::Key::D	enumerator	platform/window-input	os-key-d	platform-window-input.md	engine/platform/input.h:17
-os::Key::E	enumerator	platform/window-input	os-key-e	platform-window-input.md	engine/platform/input.h:18
-os::Key::F	enumerator	platform/window-input	os-key-f	platform-window-input.md	engine/platform/input.h:19
-os::Key::G	enumerator	platform/window-input	os-key-g	platform-window-input.md	engine/platform/input.h:20
-os::Key::H	enumerator	platform/window-input	os-key-h	platform-window-input.md	engine/platform/input.h:21
-os::Key::I	enumerator	platform/window-input	os-key-i	platform-window-input.md	engine/platform/input.h:22
-os::Key::J	enumerator	platform/window-input	os-key-j	platform-window-input.md	engine/platform/input.h:23
-os::Key::K	enumerator	platform/window-input	os-key-k	platform-window-input.md	engine/platform/input.h:24
-os::Key::L	enumerator	platform/window-input	os-key-l	platform-window-input.md	engine/platform/input.h:25
-os::Key::M	enumerator	platform/window-input	os-key-m	platform-window-input.md	engine/platform/input.h:26
-os::Key::N	enumerator	platform/window-input	os-key-n	platform-window-input.md	engine/platform/input.h:27
-os::Key::O	enumerator	platform/window-input	os-key-o	platform-window-input.md	engine/platform/input.h:28
-os::Key::P	enumerator	platform/window-input	os-key-p	platform-window-input.md	engine/platform/input.h:29
-os::Key::Q	enumerator	platform/window-input	os-key-q	platform-window-input.md	engine/platform/input.h:30
-os::Key::R	enumerator	platform/window-input	os-key-r	platform-window-input.md	engine/platform/input.h:31
-os::Key::S	enumerator	platform/window-input	os-key-s	platform-window-input.md	engine/platform/input.h:32
-os::Key::T	enumerator	platform/window-input	os-key-t	platform-window-input.md	engine/platform/input.h:33
-os::Key::U	enumerator	platform/window-input	os-key-u	platform-window-input.md	engine/platform/input.h:34
-os::Key::V	enumerator	platform/window-input	os-key-v	platform-window-input.md	engine/platform/input.h:35
-os::Key::W	enumerator	platform/window-input	os-key-w	platform-window-input.md	engine/platform/input.h:36
-os::Key::X	enumerator	platform/window-input	os-key-x	platform-window-input.md	engine/platform/input.h:37
-os::Key::Y	enumerator	platform/window-input	os-key-y	platform-window-input.md	engine/platform/input.h:38
-os::Key::Z	enumerator	platform/window-input	os-key-z	platform-window-input.md	engine/platform/input.h:39
-os::Key::Num0	enumerator	platform/window-input	os-key-num0	platform-window-input.md	engine/platform/input.h:40
-os::Key::Num1	enumerator	platform/window-input	os-key-num1	platform-window-input.md	engine/platform/input.h:41
-os::Key::Num2	enumerator	platform/window-input	os-key-num2	platform-window-input.md	engine/platform/input.h:42
-os::Key::Num3	enumerator	platform/window-input	os-key-num3	platform-window-input.md	engine/platform/input.h:43
-os::Key::Num4	enumerator	platform/window-input	os-key-num4	platform-window-input.md	engine/platform/input.h:44
-os::Key::Num5	enumerator	platform/window-input	os-key-num5	platform-window-input.md	engine/platform/input.h:45
-os::Key::Num6	enumerator	platform/window-input	os-key-num6	platform-window-input.md	engine/platform/input.h:46
-os::Key::Num7	enumerator	platform/window-input	os-key-num7	platform-window-input.md	engine/platform/input.h:47
-os::Key::Num8	enumerator	platform/window-input	os-key-num8	platform-window-input.md	engine/platform/input.h:48
-os::Key::Num9	enumerator	platform/window-input	os-key-num9	platform-window-input.md	engine/platform/input.h:49
-os::Key::F1	enumerator	platform/window-input	os-key-f1	platform-window-input.md	engine/platform/input.h:50
-os::Key::F2	enumerator	platform/window-input	os-key-f2	platform-window-input.md	engine/platform/input.h:51
-os::Key::F3	enumerator	platform/window-input	os-key-f3	platform-window-input.md	engine/platform/input.h:52
-os::Key::F4	enumerator	platform/window-input	os-key-f4	platform-window-input.md	engine/platform/input.h:53
-os::Key::F5	enumerator	platform/window-input	os-key-f5	platform-window-input.md	engine/platform/input.h:54
-os::Key::F6	enumerator	platform/window-input	os-key-f6	platform-window-input.md	engine/platform/input.h:55
-os::Key::F7	enumerator	platform/window-input	os-key-f7	platform-window-input.md	engine/platform/input.h:56
-os::Key::F8	enumerator	platform/window-input	os-key-f8	platform-window-input.md	engine/platform/input.h:57
-os::Key::F9	enumerator	platform/window-input	os-key-f9	platform-window-input.md	engine/platform/input.h:58
-os::Key::F10	enumerator	platform/window-input	os-key-f10	platform-window-input.md	engine/platform/input.h:59
-os::Key::F11	enumerator	platform/window-input	os-key-f11	platform-window-input.md	engine/platform/input.h:60
-os::Key::F12	enumerator	platform/window-input	os-key-f12	platform-window-input.md	engine/platform/input.h:61
-os::Key::Escape	enumerator	platform/window-input	os-key-escape	platform-window-input.md	engine/platform/input.h:62
-os::Key::Enter	enumerator	platform/window-input	os-key-enter	platform-window-input.md	engine/platform/input.h:63
-os::Key::Tab	enumerator	platform/window-input	os-key-tab	platform-window-input.md	engine/platform/input.h:64
-os::Key::Backspace	enumerator	platform/window-input	os-key-backspace	platform-window-input.md	engine/platform/input.h:65
-os::Key::Space	enumerator	platform/window-input	os-key-space	platform-window-input.md	engine/platform/input.h:66
-os::Key::Insert	enumerator	platform/window-input	os-key-insert	platform-window-input.md	engine/platform/input.h:67
-os::Key::Delete	enumerator	platform/window-input	os-key-delete	platform-window-input.md	engine/platform/input.h:68
-os::Key::Home	enumerator	platform/window-input	os-key-home	platform-window-input.md	engine/platform/input.h:69
-os::Key::End	enumerator	platform/window-input	os-key-end	platform-window-input.md	engine/platform/input.h:70
-os::Key::PageUp	enumerator	platform/window-input	os-key-pageup	platform-window-input.md	engine/platform/input.h:71
-os::Key::PageDown	enumerator	platform/window-input	os-key-pagedown	platform-window-input.md	engine/platform/input.h:72
-os::Key::Left	enumerator	platform/window-input	os-key-left	platform-window-input.md	engine/platform/input.h:73
-os::Key::Right	enumerator	platform/window-input	os-key-right	platform-window-input.md	engine/platform/input.h:74
-os::Key::Up	enumerator	platform/window-input	os-key-up	platform-window-input.md	engine/platform/input.h:75
-os::Key::Down	enumerator	platform/window-input	os-key-down	platform-window-input.md	engine/platform/input.h:76
-os::Key::LeftShift	enumerator	platform/window-input	os-key-leftshift	platform-window-input.md	engine/platform/input.h:77
-os::Key::RightShift	enumerator	platform/window-input	os-key-rightshift	platform-window-input.md	engine/platform/input.h:78
-os::Key::LeftCtrl	enumerator	platform/window-input	os-key-leftctrl	platform-window-input.md	engine/platform/input.h:79
-os::Key::RightCtrl	enumerator	platform/window-input	os-key-rightctrl	platform-window-input.md	engine/platform/input.h:80
-os::Key::LeftAlt	enumerator	platform/window-input	os-key-leftalt	platform-window-input.md	engine/platform/input.h:81
-os::Key::RightAlt	enumerator	platform/window-input	os-key-rightalt	platform-window-input.md	engine/platform/input.h:82
-os::Key::LeftSuper	enumerator	platform/window-input	os-key-leftsuper	platform-window-input.md	engine/platform/input.h:83
-os::Key::RightSuper	enumerator	platform/window-input	os-key-rightsuper	platform-window-input.md	engine/platform/input.h:84
-os::Key::CapsLock	enumerator	platform/window-input	os-key-capslock	platform-window-input.md	engine/platform/input.h:85
-os::Key::Minus	enumerator	platform/window-input	os-key-minus	platform-window-input.md	engine/platform/input.h:86
-os::Key::Equals	enumerator	platform/window-input	os-key-equals	platform-window-input.md	engine/platform/input.h:87
-os::Key::LeftBracket	enumerator	platform/window-input	os-key-leftbracket	platform-window-input.md	engine/platform/input.h:88
-os::Key::RightBracket	enumerator	platform/window-input	os-key-rightbracket	platform-window-input.md	engine/platform/input.h:89
-os::Key::Backslash	enumerator	platform/window-input	os-key-backslash	platform-window-input.md	engine/platform/input.h:90
-os::Key::Semicolon	enumerator	platform/window-input	os-key-semicolon	platform-window-input.md	engine/platform/input.h:91
-os::Key::Apostrophe	enumerator	platform/window-input	os-key-apostrophe	platform-window-input.md	engine/platform/input.h:92
-os::Key::Grave	enumerator	platform/window-input	os-key-grave	platform-window-input.md	engine/platform/input.h:93
-os::Key::Comma	enumerator	platform/window-input	os-key-comma	platform-window-input.md	engine/platform/input.h:94
-os::Key::Period	enumerator	platform/window-input	os-key-period	platform-window-input.md	engine/platform/input.h:95
-os::Key::Slash	enumerator	platform/window-input	os-key-slash	platform-window-input.md	engine/platform/input.h:96
-os::Key::Count	enumerator	platform/window-input	os-key-count	platform-window-input.md	engine/platform/input.h:97
-os::ModifierBit	enum	platform/window-input	os-modifierbit	platform-window-input.md	engine/platform/input.h:103
-os::kModShift	enumerator	platform/window-input	os-kmodshift	platform-window-input.md	engine/platform/input.h:104
-os::kModCtrl	enumerator	platform/window-input	os-kmodctrl	platform-window-input.md	engine/platform/input.h:105
-os::kModAlt	enumerator	platform/window-input	os-kmodalt	platform-window-input.md	engine/platform/input.h:106
-os::kModSuper	enumerator	platform/window-input	os-kmodsuper	platform-window-input.md	engine/platform/input.h:107
-os::kModCapsLock	enumerator	platform/window-input	os-kmodcapslock	platform-window-input.md	engine/platform/input.h:108
-os::kModNumLock	enumerator	platform/window-input	os-kmodnumlock	platform-window-input.md	engine/platform/input.h:109
-os::KeyFromKeysym(u32)	function	platform/window-input	os-keyfromkeysym-u32	platform-window-input.md	engine/platform/input.h:117
-os::KeyboardState	struct	platform/window-input	os-keyboardstate	platform-window-input.md	engine/platform/input.h:123
-os::KeyboardState::kKeyCount	variable	platform/window-input	os-keyboardstate-kkeycount	platform-window-input.md	engine/platform/input.h:125
-os::KeyboardState::IsDown(Key) const	function	platform/window-input	os-keyboardstate-isdown-key-const	platform-window-input.md	engine/platform/input.h:130
-os::KeyboardState::SetDown(Key,bool)	function	platform/window-input	os-keyboardstate-setdown-key-bool	platform-window-input.md	engine/platform/input.h:138
-os::KeyboardState::ReleaseAll()	function	platform/window-input	os-keyboardstate-releaseall	platform-window-input.md	engine/platform/input.h:152
-os::KeyboardState::modifiers	variable	platform/window-input	os-keyboardstate-modifiers	platform-window-input.md	engine/platform/input.h:158
-os::MouseButtonBit	enum	platform/window-input	os-mousebuttonbit	platform-window-input.md	engine/platform/input.h:165
-os::kMouseLeft	enumerator	platform/window-input	os-kmouseleft	platform-window-input.md	engine/platform/input.h:166
-os::kMouseRight	enumerator	platform/window-input	os-kmouseright	platform-window-input.md	engine/platform/input.h:167
-os::kMouseMiddle	enumerator	platform/window-input	os-kmousemiddle	platform-window-input.md	engine/platform/input.h:168
-os::kMouseBack	enumerator	platform/window-input	os-kmouseback	platform-window-input.md	engine/platform/input.h:169
-os::kMouseForward	enumerator	platform/window-input	os-kmouseforward	platform-window-input.md	engine/platform/input.h:170
-os::InputState	struct	platform/window-input	os-inputstate	platform-window-input.md	engine/platform/input.h:179
-os::InputState::keyboard	variable	platform/window-input	os-inputstate-keyboard	platform-window-input.md	engine/platform/input.h:181
-os::InputState::mouse_x	variable	platform/window-input	os-inputstate-mouse-x	platform-window-input.md	engine/platform/input.h:184
-os::InputState::mouse_y	variable	platform/window-input	os-inputstate-mouse-y	platform-window-input.md	engine/platform/input.h:186
-os::InputState::pointer_inside	variable	platform/window-input	os-inputstate-pointer-inside	platform-window-input.md	engine/platform/input.h:188
-os::InputState::mouse_buttons	variable	platform/window-input	os-inputstate-mouse-buttons	platform-window-input.md	engine/platform/input.h:190
-os::InputState::scroll_dx	variable	platform/window-input	os-inputstate-scroll-dx	platform-window-input.md	engine/platform/input.h:193
-os::InputState::scroll_dy	variable	platform/window-input	os-inputstate-scroll-dy	platform-window-input.md	engine/platform/input.h:195
-os::InputState::IsMouseDown(u32) const	function	platform/window-input	os-inputstate-ismousedown-u32-const	platform-window-input.md	engine/platform/input.h:199
-os::InputState::BeginFrame()	function	platform/window-input	os-inputstate-beginframe	platform-window-input.md	engine/platform/input.h:204
+os::Key	enum	platform/window-input	os-key	platform-window-input.md	engine/platform/input.h:17
+os::Key::Unknown	enumerator	platform/window-input	os-key-unknown	platform-window-input.md	engine/platform/input.h:18
+os::Key::A	enumerator	platform/window-input	os-key-a	platform-window-input.md	engine/platform/input.h:19
+os::Key::B	enumerator	platform/window-input	os-key-b	platform-window-input.md	engine/platform/input.h:20
+os::Key::C	enumerator	platform/window-input	os-key-c	platform-window-input.md	engine/platform/input.h:21
+os::Key::D	enumerator	platform/window-input	os-key-d	platform-window-input.md	engine/platform/input.h:22
+os::Key::E	enumerator	platform/window-input	os-key-e	platform-window-input.md	engine/platform/input.h:23
+os::Key::F	enumerator	platform/window-input	os-key-f	platform-window-input.md	engine/platform/input.h:24
+os::Key::G	enumerator	platform/window-input	os-key-g	platform-window-input.md	engine/platform/input.h:25
+os::Key::H	enumerator	platform/window-input	os-key-h	platform-window-input.md	engine/platform/input.h:26
+os::Key::I	enumerator	platform/window-input	os-key-i	platform-window-input.md	engine/platform/input.h:27
+os::Key::J	enumerator	platform/window-input	os-key-j	platform-window-input.md	engine/platform/input.h:28
+os::Key::K	enumerator	platform/window-input	os-key-k	platform-window-input.md	engine/platform/input.h:29
+os::Key::L	enumerator	platform/window-input	os-key-l	platform-window-input.md	engine/platform/input.h:30
+os::Key::M	enumerator	platform/window-input	os-key-m	platform-window-input.md	engine/platform/input.h:31
+os::Key::N	enumerator	platform/window-input	os-key-n	platform-window-input.md	engine/platform/input.h:32
+os::Key::O	enumerator	platform/window-input	os-key-o	platform-window-input.md	engine/platform/input.h:33
+os::Key::P	enumerator	platform/window-input	os-key-p	platform-window-input.md	engine/platform/input.h:34
+os::Key::Q	enumerator	platform/window-input	os-key-q	platform-window-input.md	engine/platform/input.h:35
+os::Key::R	enumerator	platform/window-input	os-key-r	platform-window-input.md	engine/platform/input.h:36
+os::Key::S	enumerator	platform/window-input	os-key-s	platform-window-input.md	engine/platform/input.h:37
+os::Key::T	enumerator	platform/window-input	os-key-t	platform-window-input.md	engine/platform/input.h:38
+os::Key::U	enumerator	platform/window-input	os-key-u	platform-window-input.md	engine/platform/input.h:39
+os::Key::V	enumerator	platform/window-input	os-key-v	platform-window-input.md	engine/platform/input.h:40
+os::Key::W	enumerator	platform/window-input	os-key-w	platform-window-input.md	engine/platform/input.h:41
+os::Key::X	enumerator	platform/window-input	os-key-x	platform-window-input.md	engine/platform/input.h:42
+os::Key::Y	enumerator	platform/window-input	os-key-y	platform-window-input.md	engine/platform/input.h:43
+os::Key::Z	enumerator	platform/window-input	os-key-z	platform-window-input.md	engine/platform/input.h:44
+os::Key::Num0	enumerator	platform/window-input	os-key-num0	platform-window-input.md	engine/platform/input.h:45
+os::Key::Num1	enumerator	platform/window-input	os-key-num1	platform-window-input.md	engine/platform/input.h:46
+os::Key::Num2	enumerator	platform/window-input	os-key-num2	platform-window-input.md	engine/platform/input.h:47
+os::Key::Num3	enumerator	platform/window-input	os-key-num3	platform-window-input.md	engine/platform/input.h:48
+os::Key::Num4	enumerator	platform/window-input	os-key-num4	platform-window-input.md	engine/platform/input.h:49
+os::Key::Num5	enumerator	platform/window-input	os-key-num5	platform-window-input.md	engine/platform/input.h:50
+os::Key::Num6	enumerator	platform/window-input	os-key-num6	platform-window-input.md	engine/platform/input.h:51
+os::Key::Num7	enumerator	platform/window-input	os-key-num7	platform-window-input.md	engine/platform/input.h:52
+os::Key::Num8	enumerator	platform/window-input	os-key-num8	platform-window-input.md	engine/platform/input.h:53
+os::Key::Num9	enumerator	platform/window-input	os-key-num9	platform-window-input.md	engine/platform/input.h:54
+os::Key::F1	enumerator	platform/window-input	os-key-f1	platform-window-input.md	engine/platform/input.h:55
+os::Key::F2	enumerator	platform/window-input	os-key-f2	platform-window-input.md	engine/platform/input.h:56
+os::Key::F3	enumerator	platform/window-input	os-key-f3	platform-window-input.md	engine/platform/input.h:57
+os::Key::F4	enumerator	platform/window-input	os-key-f4	platform-window-input.md	engine/platform/input.h:58
+os::Key::F5	enumerator	platform/window-input	os-key-f5	platform-window-input.md	engine/platform/input.h:59
+os::Key::F6	enumerator	platform/window-input	os-key-f6	platform-window-input.md	engine/platform/input.h:60
+os::Key::F7	enumerator	platform/window-input	os-key-f7	platform-window-input.md	engine/platform/input.h:61
+os::Key::F8	enumerator	platform/window-input	os-key-f8	platform-window-input.md	engine/platform/input.h:62
+os::Key::F9	enumerator	platform/window-input	os-key-f9	platform-window-input.md	engine/platform/input.h:63
+os::Key::F10	enumerator	platform/window-input	os-key-f10	platform-window-input.md	engine/platform/input.h:64
+os::Key::F11	enumerator	platform/window-input	os-key-f11	platform-window-input.md	engine/platform/input.h:65
+os::Key::F12	enumerator	platform/window-input	os-key-f12	platform-window-input.md	engine/platform/input.h:66
+os::Key::Escape	enumerator	platform/window-input	os-key-escape	platform-window-input.md	engine/platform/input.h:67
+os::Key::Enter	enumerator	platform/window-input	os-key-enter	platform-window-input.md	engine/platform/input.h:68
+os::Key::Tab	enumerator	platform/window-input	os-key-tab	platform-window-input.md	engine/platform/input.h:69
+os::Key::Backspace	enumerator	platform/window-input	os-key-backspace	platform-window-input.md	engine/platform/input.h:70
+os::Key::Space	enumerator	platform/window-input	os-key-space	platform-window-input.md	engine/platform/input.h:71
+os::Key::Insert	enumerator	platform/window-input	os-key-insert	platform-window-input.md	engine/platform/input.h:72
+os::Key::Delete	enumerator	platform/window-input	os-key-delete	platform-window-input.md	engine/platform/input.h:73
+os::Key::Home	enumerator	platform/window-input	os-key-home	platform-window-input.md	engine/platform/input.h:74
+os::Key::End	enumerator	platform/window-input	os-key-end	platform-window-input.md	engine/platform/input.h:75
+os::Key::PageUp	enumerator	platform/window-input	os-key-pageup	platform-window-input.md	engine/platform/input.h:76
+os::Key::PageDown	enumerator	platform/window-input	os-key-pagedown	platform-window-input.md	engine/platform/input.h:77
+os::Key::Left	enumerator	platform/window-input	os-key-left	platform-window-input.md	engine/platform/input.h:78
+os::Key::Right	enumerator	platform/window-input	os-key-right	platform-window-input.md	engine/platform/input.h:79
+os::Key::Up	enumerator	platform/window-input	os-key-up	platform-window-input.md	engine/platform/input.h:80
+os::Key::Down	enumerator	platform/window-input	os-key-down	platform-window-input.md	engine/platform/input.h:81
+os::Key::LeftShift	enumerator	platform/window-input	os-key-leftshift	platform-window-input.md	engine/platform/input.h:82
+os::Key::RightShift	enumerator	platform/window-input	os-key-rightshift	platform-window-input.md	engine/platform/input.h:83
+os::Key::LeftCtrl	enumerator	platform/window-input	os-key-leftctrl	platform-window-input.md	engine/platform/input.h:84
+os::Key::RightCtrl	enumerator	platform/window-input	os-key-rightctrl	platform-window-input.md	engine/platform/input.h:85
+os::Key::LeftAlt	enumerator	platform/window-input	os-key-leftalt	platform-window-input.md	engine/platform/input.h:86
+os::Key::RightAlt	enumerator	platform/window-input	os-key-rightalt	platform-window-input.md	engine/platform/input.h:87
+os::Key::LeftSuper	enumerator	platform/window-input	os-key-leftsuper	platform-window-input.md	engine/platform/input.h:88
+os::Key::RightSuper	enumerator	platform/window-input	os-key-rightsuper	platform-window-input.md	engine/platform/input.h:89
+os::Key::CapsLock	enumerator	platform/window-input	os-key-capslock	platform-window-input.md	engine/platform/input.h:90
+os::Key::Minus	enumerator	platform/window-input	os-key-minus	platform-window-input.md	engine/platform/input.h:91
+os::Key::Equals	enumerator	platform/window-input	os-key-equals	platform-window-input.md	engine/platform/input.h:92
+os::Key::LeftBracket	enumerator	platform/window-input	os-key-leftbracket	platform-window-input.md	engine/platform/input.h:93
+os::Key::RightBracket	enumerator	platform/window-input	os-key-rightbracket	platform-window-input.md	engine/platform/input.h:94
+os::Key::Backslash	enumerator	platform/window-input	os-key-backslash	platform-window-input.md	engine/platform/input.h:95
+os::Key::Semicolon	enumerator	platform/window-input	os-key-semicolon	platform-window-input.md	engine/platform/input.h:96
+os::Key::Apostrophe	enumerator	platform/window-input	os-key-apostrophe	platform-window-input.md	engine/platform/input.h:97
+os::Key::Grave	enumerator	platform/window-input	os-key-grave	platform-window-input.md	engine/platform/input.h:98
+os::Key::Comma	enumerator	platform/window-input	os-key-comma	platform-window-input.md	engine/platform/input.h:99
+os::Key::Period	enumerator	platform/window-input	os-key-period	platform-window-input.md	engine/platform/input.h:100
+os::Key::Slash	enumerator	platform/window-input	os-key-slash	platform-window-input.md	engine/platform/input.h:101
+os::Key::Count	enumerator	platform/window-input	os-key-count	platform-window-input.md	engine/platform/input.h:102
+os::ModifierBit	enum	platform/window-input	os-modifierbit	platform-window-input.md	engine/platform/input.h:108
+os::kModShift	enumerator	platform/window-input	os-kmodshift	platform-window-input.md	engine/platform/input.h:109
+os::kModCtrl	enumerator	platform/window-input	os-kmodctrl	platform-window-input.md	engine/platform/input.h:110
+os::kModAlt	enumerator	platform/window-input	os-kmodalt	platform-window-input.md	engine/platform/input.h:111
+os::kModSuper	enumerator	platform/window-input	os-kmodsuper	platform-window-input.md	engine/platform/input.h:112
+os::kModCapsLock	enumerator	platform/window-input	os-kmodcapslock	platform-window-input.md	engine/platform/input.h:113
+os::kModNumLock	enumerator	platform/window-input	os-kmodnumlock	platform-window-input.md	engine/platform/input.h:114
+os::KeyboardState	struct	platform/window-input	os-keyboardstate	platform-window-input.md	engine/platform/input.h:121
+os::KeyboardState::kKeyCount	variable	platform/window-input	os-keyboardstate-kkeycount	platform-window-input.md	engine/platform/input.h:123
+os::KeyboardState::IsDown(Key) const	function	platform/window-input	os-keyboardstate-isdown-key-const	platform-window-input.md	engine/platform/input.h:128
+os::KeyboardState::SetDown(Key,bool)	function	platform/window-input	os-keyboardstate-setdown-key-bool	platform-window-input.md	engine/platform/input.h:136
+os::KeyboardState::ReleaseAll()	function	platform/window-input	os-keyboardstate-releaseall	platform-window-input.md	engine/platform/input.h:150
+os::KeyboardState::modifiers	variable	platform/window-input	os-keyboardstate-modifiers	platform-window-input.md	engine/platform/input.h:156
+os::MouseButtonBit	enum	platform/window-input	os-mousebuttonbit	platform-window-input.md	engine/platform/input.h:163
+os::kMouseLeft	enumerator	platform/window-input	os-kmouseleft	platform-window-input.md	engine/platform/input.h:164
+os::kMouseRight	enumerator	platform/window-input	os-kmouseright	platform-window-input.md	engine/platform/input.h:165
+os::kMouseMiddle	enumerator	platform/window-input	os-kmousemiddle	platform-window-input.md	engine/platform/input.h:166
+os::kMouseBack	enumerator	platform/window-input	os-kmouseback	platform-window-input.md	engine/platform/input.h:167
+os::kMouseForward	enumerator	platform/window-input	os-kmouseforward	platform-window-input.md	engine/platform/input.h:168
+os::InputState	struct	platform/window-input	os-inputstate	platform-window-input.md	engine/platform/input.h:177
+os::InputState::keyboard	variable	platform/window-input	os-inputstate-keyboard	platform-window-input.md	engine/platform/input.h:179
+os::InputState::mouse_x	variable	platform/window-input	os-inputstate-mouse-x	platform-window-input.md	engine/platform/input.h:182
+os::InputState::mouse_y	variable	platform/window-input	os-inputstate-mouse-y	platform-window-input.md	engine/platform/input.h:184
+os::InputState::pointer_inside	variable	platform/window-input	os-inputstate-pointer-inside	platform-window-input.md	engine/platform/input.h:186
+os::InputState::mouse_buttons	variable	platform/window-input	os-inputstate-mouse-buttons	platform-window-input.md	engine/platform/input.h:188
+os::InputState::scroll_dx	variable	platform/window-input	os-inputstate-scroll-dx	platform-window-input.md	engine/platform/input.h:191
+os::InputState::scroll_dy	variable	platform/window-input	os-inputstate-scroll-dy	platform-window-input.md	engine/platform/input.h:193
+os::InputState::IsMouseDown(u32) const	function	platform/window-input	os-inputstate-ismousedown-u32-const	platform-window-input.md	engine/platform/input.h:197
+os::InputState::BeginFrame()	function	platform/window-input	os-inputstate-beginframe	platform-window-input.md	engine/platform/input.h:202
+os::KeyFromKeysym(u32)	function	platform/window-input	os-keyfromkeysym-u32	platform-window-input.md	engine/platform/linux/key_translate.h:17
 os::wayland::WaylandConnection	class	platform/window-input	os-wayland-waylandconnection	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:20
 os::wayland::WaylandConnection::Connect()	function	platform/window-input	os-wayland-waylandconnection-connect	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:28
 os::wayland::WaylandConnection::WaylandConnection()	function	platform/window-input	os-wayland-waylandconnection-waylandconnection	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:31
@@ -1677,28 +1677,36 @@ os::PlatformWindowHost::operator=(const PlatformWindowHost&)	function	platform/w
 os::PlatformWindowHost::Open(WindowBackend,StringView,u32,u32,InputState*)	function	platform/window-input	os-platformwindowhost-open-windowbackend-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/window_host.h:41
 os::PlatformWindowHost::OpenFromEnvironment(StringView,u32,u32,InputState*)	function	platform/window-input	os-platformwindowhost-openfromenvironment-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/window_host.h:52
 os::PlatformWindowHost::Get()	function	platform/window-input	os-platformwindowhost-get	platform-window-input.md	engine/platform/window_host.h:57
-os::win32::Win32Window	class	platform/window-input	os-win32-win32window	platform-window-input.md	engine/platform/windows/win32_window.h:31
-os::win32::Win32Window::Win32Window()	function	platform/window-input	os-win32-win32window-win32window	platform-window-input.md	engine/platform/windows/win32_window.h:34
-os::win32::Win32Window::~Win32Window()	function	platform/window-input	os-win32-win32window-tilde-win32window	platform-window-input.md	engine/platform/windows/win32_window.h:36
-os::win32::Win32Window::Win32Window(const Win32Window&)	function	platform/window-input	os-win32-win32window-win32window-const-win32window-amp	platform-window-input.md	engine/platform/windows/win32_window.h:37
-os::win32::Win32Window::operator=(const Win32Window&)	function	platform/window-input	os-win32-win32window-operator-eq-const-win32window-amp	platform-window-input.md	engine/platform/windows/win32_window.h:38
-os::win32::Win32Window::Open(StringView,u32,u32,InputState*)	function	platform/window-input	os-win32-win32window-open-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/windows/win32_window.h:49
-os::win32::Win32Window::Close()	function	platform/window-input	os-win32-win32window-close	platform-window-input.md	engine/platform/windows/win32_window.h:52
-os::win32::Win32Window::Valid() const	function	platform/window-input	os-win32-win32window-valid-const	platform-window-input.md	engine/platform/windows/win32_window.h:55
-os::win32::Win32Window::PumpEvents()	function	platform/window-input	os-win32-win32window-pumpevents	platform-window-input.md	engine/platform/windows/win32_window.h:59
-os::win32::Win32Window::ShouldClose() const	function	platform/window-input	os-win32-win32window-shouldclose-const	platform-window-input.md	engine/platform/windows/win32_window.h:62
-os::win32::Win32Window::Width() const	function	platform/window-input	os-win32-win32window-width-const	platform-window-input.md	engine/platform/windows/win32_window.h:64
-os::win32::Win32Window::Height() const	function	platform/window-input	os-win32-win32window-height-const	platform-window-input.md	engine/platform/windows/win32_window.h:66
-os::win32::Win32Window::BackendName() const	function	platform/window-input	os-win32-win32window-backendname-const	platform-window-input.md	engine/platform/windows/win32_window.h:68
-os::win32::Win32Window::GetNativeInfo() const	function	platform/window-input	os-win32-win32window-getnativeinfo-const	platform-window-input.md	engine/platform/windows/win32_window.h:70
-os::win32::Win32Window::IsMinimized() const	function	platform/window-input	os-win32-win32window-isminimized-const	platform-window-input.md	engine/platform/windows/win32_window.h:72
-os::win32::Win32Window::ResizeSerial() const	function	platform/window-input	os-win32-win32window-resizeserial-const	platform-window-input.md	engine/platform/windows/win32_window.h:74
-os::win32::Win32Window::SupportsFullscreen() const	function	platform/window-input	os-win32-win32window-supportsfullscreen-const	platform-window-input.md	engine/platform/windows/win32_window.h:76
-os::win32::Win32Window::SetFullscreen(bool)	function	platform/window-input	os-win32-win32window-setfullscreen-bool	platform-window-input.md	engine/platform/windows/win32_window.h:84
-os::win32::Win32Window::IsFullscreen() const	function	platform/window-input	os-win32-win32window-isfullscreen-const	platform-window-input.md	engine/platform/windows/win32_window.h:86
-os::win32::Win32Window::SetModalLoopCallback(ModalLoopCallback,void*)	function	platform/window-input	os-win32-win32window-setmodalloopcallback-modalloopcallback-void-star	platform-window-input.md	engine/platform/windows/win32_window.h:92
-os::win32::Win32Window::Dpi() const	function	platform/window-input	os-win32-win32window-dpi-const	platform-window-input.md	engine/platform/windows/win32_window.h:95
-os::win32::Win32Window::NativeHandle() const	function	platform/window-input	os-win32-win32window-nativehandle-const	platform-window-input.md	engine/platform/windows/win32_window.h:99
+os::win32::Win32KeyMessage	struct	platform/window-input	os-win32-win32keymessage	platform-window-input.md	engine/platform/windows/win32_keys.h:20
+os::win32::Win32KeyMessage::virtual_key	variable	platform/window-input	os-win32-win32keymessage-virtual-key	platform-window-input.md	engine/platform/windows/win32_keys.h:22
+os::win32::Win32KeyMessage::scan_code	variable	platform/window-input	os-win32-win32keymessage-scan-code	platform-window-input.md	engine/platform/windows/win32_keys.h:24
+os::win32::Win32KeyMessage::extended	variable	platform/window-input	os-win32-win32keymessage-extended	platform-window-input.md	engine/platform/windows/win32_keys.h:26
+os::win32::Win32KeyMessage::character	variable	platform/window-input	os-win32-win32keymessage-character	platform-window-input.md	engine/platform/windows/win32_keys.h:28
+os::win32::KeyFromWin32(const Win32KeyMessage&)	function	platform/window-input	os-win32-keyfromwin32-const-win32keymessage-amp	platform-window-input.md	engine/platform/windows/win32_keys.h:34
+os::win32::kWin32KeyIndexCount	variable	platform/window-input	os-win32-kwin32keyindexcount	platform-window-input.md	engine/platform/windows/win32_keys.h:37
+os::win32::Win32KeyIndex(u32,bool)	function	platform/window-input	os-win32-win32keyindex-u32-bool	platform-window-input.md	engine/platform/windows/win32_keys.h:43
+os::win32::Win32Window	class	platform/window-input	os-win32-win32window	platform-window-input.md	engine/platform/windows/win32_window.h:33
+os::win32::Win32Window::Win32Window()	function	platform/window-input	os-win32-win32window-win32window	platform-window-input.md	engine/platform/windows/win32_window.h:36
+os::win32::Win32Window::~Win32Window()	function	platform/window-input	os-win32-win32window-tilde-win32window	platform-window-input.md	engine/platform/windows/win32_window.h:38
+os::win32::Win32Window::Win32Window(const Win32Window&)	function	platform/window-input	os-win32-win32window-win32window-const-win32window-amp	platform-window-input.md	engine/platform/windows/win32_window.h:39
+os::win32::Win32Window::operator=(const Win32Window&)	function	platform/window-input	os-win32-win32window-operator-eq-const-win32window-amp	platform-window-input.md	engine/platform/windows/win32_window.h:40
+os::win32::Win32Window::Open(StringView,u32,u32,InputState*)	function	platform/window-input	os-win32-win32window-open-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/windows/win32_window.h:51
+os::win32::Win32Window::Close()	function	platform/window-input	os-win32-win32window-close	platform-window-input.md	engine/platform/windows/win32_window.h:54
+os::win32::Win32Window::Valid() const	function	platform/window-input	os-win32-win32window-valid-const	platform-window-input.md	engine/platform/windows/win32_window.h:57
+os::win32::Win32Window::PumpEvents()	function	platform/window-input	os-win32-win32window-pumpevents	platform-window-input.md	engine/platform/windows/win32_window.h:61
+os::win32::Win32Window::ShouldClose() const	function	platform/window-input	os-win32-win32window-shouldclose-const	platform-window-input.md	engine/platform/windows/win32_window.h:64
+os::win32::Win32Window::Width() const	function	platform/window-input	os-win32-win32window-width-const	platform-window-input.md	engine/platform/windows/win32_window.h:66
+os::win32::Win32Window::Height() const	function	platform/window-input	os-win32-win32window-height-const	platform-window-input.md	engine/platform/windows/win32_window.h:68
+os::win32::Win32Window::BackendName() const	function	platform/window-input	os-win32-win32window-backendname-const	platform-window-input.md	engine/platform/windows/win32_window.h:70
+os::win32::Win32Window::GetNativeInfo() const	function	platform/window-input	os-win32-win32window-getnativeinfo-const	platform-window-input.md	engine/platform/windows/win32_window.h:72
+os::win32::Win32Window::IsMinimized() const	function	platform/window-input	os-win32-win32window-isminimized-const	platform-window-input.md	engine/platform/windows/win32_window.h:74
+os::win32::Win32Window::ResizeSerial() const	function	platform/window-input	os-win32-win32window-resizeserial-const	platform-window-input.md	engine/platform/windows/win32_window.h:76
+os::win32::Win32Window::SupportsFullscreen() const	function	platform/window-input	os-win32-win32window-supportsfullscreen-const	platform-window-input.md	engine/platform/windows/win32_window.h:78
+os::win32::Win32Window::SetFullscreen(bool)	function	platform/window-input	os-win32-win32window-setfullscreen-bool	platform-window-input.md	engine/platform/windows/win32_window.h:86
+os::win32::Win32Window::IsFullscreen() const	function	platform/window-input	os-win32-win32window-isfullscreen-const	platform-window-input.md	engine/platform/windows/win32_window.h:88
+os::win32::Win32Window::SetModalLoopCallback(ModalLoopCallback,void*)	function	platform/window-input	os-win32-win32window-setmodalloopcallback-modalloopcallback-void-star	platform-window-input.md	engine/platform/windows/win32_window.h:94
+os::win32::Win32Window::Dpi() const	function	platform/window-input	os-win32-win32window-dpi-const	platform-window-input.md	engine/platform/windows/win32_window.h:97
+os::win32::Win32Window::NativeHandle() const	function	platform/window-input	os-win32-win32window-nativehandle-const	platform-window-input.md	engine/platform/windows/win32_window.h:101
 ENGINE_DEBUG_BREAK	macro	foundation/debug	engine-debug-break	foundation-debug.md	engine/foundation/debug/compiler.h:14
 ENGINE_TRAP	macro	foundation/debug	engine-trap	foundation-debug.md	engine/foundation/debug/compiler.h:32
 ENGINE_PRINTF_FORMAT	macro	foundation/debug	engine-printf-format	foundation-debug.md	engine/foundation/debug/compiler.h:43

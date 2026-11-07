@@ -4,7 +4,12 @@
 
 //! Keyboard and mouse input types shared by every platform backend.
 //!
-//! Keys are layout-aware: they name the symbol the user's layout produces, not the physical position.
+//! Keys are layout-aware: they name the symbol the user's layout produces, not the physical position. Each backend gives the state the
+//! same meaning: on Linux from XKB keysyms (`platform/linux/key_translate.h`), on Windows from the layout's character for a key that types
+//! one and the scan code for the others (`platform/windows/win32_keys.h`). The differences on Windows: AltGr is the right Alt alone and no
+//! modifier, as XKB's level-3 shift is; a focus loss also releases the mouse buttons (Windows hands the mouse to the other window, where
+//! the X11 and Wayland servers still deliver the release); and the wheel is scaled to the Linux backends' 10 units per notch. There is no
+//! text input yet on any backend.
 
 namespace engine_placeholder::os {
 
@@ -108,13 +113,6 @@ enum ModifierBit : u32 {
     kModCapsLock = 1u << 4, ///< Caps Lock is on.
     kModNumLock = 1u << 5,  ///< Num Lock is on.
 };
-
-/// Maps an X11/XKB keysym value to an engine [[os::Key]].
-///
-/// Upper- and lower-case letters map to the same key. Anything not in the enum, including non-Latin
-/// letters, yields `Key::Unknown`.
-/// Param keysym: keysym value; X11 and XKB share the same numbering.
-Key KeyFromKeysym(u32 keysym);
 
 /// Per-key down state plus the modifier mask; part of [[os::InputState]].
 ///

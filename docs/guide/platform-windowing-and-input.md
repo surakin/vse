@@ -21,7 +21,8 @@ Windows and input are the **platform layer** (layer 9): `engine/platform/`, the 
 - `linux/wayland/*`
 - `linux/x11/*`
 - `linux/xkb_keyboard.h`
-- `windows/win32_window.h` and `windows/FULLSCREEN.md`
+- `windows/win32_window.h`, `windows/win32_keys.h` and `windows/FULLSCREEN.md`
+- `linux/key_translate.h` (the keysym translation both Linux backends share)
 
 ## API reference
 
@@ -160,6 +161,33 @@ never reaches a destroyed object; for the same reason the object cannot move.
   renders a frame from it, reading the size as usual. The callback must not close the window; a `PumpEvents` from inside it returns at
   once. On Linux there is no such loop and the callback is never called.
 - **Native handles:** kind `Win32`, `display` the `HINSTANCE` of the module that registered the class, `surface` the `HWND`.
+
+### Windows input
+
+`Win32Window` fills the [[os::InputState]] it was opened with from the window's messages, with the meaning the Linux backends give it.
+
+- **Keys are layout-aware**, as on Linux. A key that types a character is named by the character the active layout gives it with the
+  level modifiers held (Shift, Caps Lock, AltGr; not Ctrl or Alt, so Ctrl+A is `Key::A`): on AZERTY the key in the Q position is `A` and
+  the `&` key is `Num1` only with Shift, exactly as XKB names them. Every other key is named by its virtual key and scan code: left and
+  right Shift by the scan code, Ctrl and Alt by the extended flag, the number pad's navigation keys (NumLock off) are `Unknown` like XKB's
+  `KP_Home`, its digits are `Num0`..`Num9`, its Enter is `Enter`, its operators and decimal point are `Unknown`. The translation is
+  `os::win32::KeyFromWin32` (`platform/windows/win32_keys.h`), a table test covers every `Key`.
+- **A release clears the Key its key was pressed as** (tracked per physical key), as on X11, so changing Shift or NumLock while a key is
+  held leaves nothing stuck. Auto-repeat changes nothing. With both Shift keys held, Windows sends one release for both, and it ends both.
+- **AltGr** arrives from Windows as a left Ctrl and a right Alt at the same moment; the Ctrl is dropped, so AltGr is `RightAlt` held and
+  neither `kModCtrl` nor `kModAlt`, as XKB's level-3 shift. Modifiers come from the keys the window saw held; Caps Lock and NumLock are the
+  system's toggles.
+- **Alt and F10 alone open no menu** (the window has no menu bar, and menu mode would take the next keys); Alt+Space still opens the system
+  menu, Alt+F4 still asks to close, and Alt+letter does not beep.
+- **The mouse:** the position is in client coordinates, physical pixels; `pointer_inside` follows the cursor (`WM_MOUSELEAVE`). A press
+  captures the mouse, so the release arrives even outside the window (where the position goes on, outside the client area), as X11 and
+  Wayland deliver it; held buttons stay held when the pointer leaves. The five buttons are left, right, middle and X1/X2 as back and
+  forward. The wheel is 10 units per notch (Linux's scale), down and right positive, and a high-resolution wheel's fractions add up.
+- **Focus loss** (`WM_KILLFOCUS`: Alt+Tab, a click elsewhere, another window of the program) releases every key, button and modifier.
+  Windows sends it only when the keyboard focus really leaves, not for the window's own menus, the line the X11 backend draws with its grab
+  modes. Unlike Linux it also releases the buttons: the other window gets the mouse and the release.
+- **Not yet, on any backend:** text input (the characters typed, dead keys and input methods; the UI phase adds it), relative mouse motion
+  and cursor capture or hiding: `os::Window` has no call for them.
 
 ### Windowed programs: the entry point
 

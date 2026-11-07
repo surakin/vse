@@ -11,6 +11,7 @@
 
 #include "log/log.h"
 #include "mem/arena_allocator.h"
+#include "platform/linux/key_translate.h"
 
 namespace engine_placeholder::os::x11 {
 

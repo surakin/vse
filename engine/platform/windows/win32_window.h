@@ -3,6 +3,7 @@
 #include "containers/array.h"
 #include "platform/input.h"
 #include "platform/window.h"
+#include "platform/windows/win32_keys.h"
 #include "string_view.h"
 #include "types.h"
 
@@ -11,7 +12,8 @@
 //! Sizes are in physical pixels: every engine program is per-monitor DPI aware (version 2, from its manifest; a thread that is not gets the
 //! awareness set around the window's creation), so a window on a 150% monitor that asks for 1280x720 gets a 1280x720 client area, and a move
 //! to a monitor of another scale keeps the window the same size to the eye (the system's suggested rectangle is applied). Fullscreen is
-//! borderless on the window's monitor (`platform/windows/FULLSCREEN.md`). Input is translated on Day 159.
+//! borderless on the window's monitor (`platform/windows/FULLSCREEN.md`). Input fills the bound [[os::InputState]] with the meaning the Linux backends
+//! give it (`platform/windows/win32_keys.h` for the keys; the guide's "Windows input" for the rest).
 
 // The Win32 handle types, forward-declared so including this header does not include <windows.h> (`HWND` is `HWND__*`, `HINSTANCE` is
 // `HINSTANCE__*` with `STRICT`, the default).
@@ -42,7 +44,7 @@ public:
     /// Param title: the title bar text (UTF-8; cut at 511 UTF-16 code units).
     /// Param width: client width in pixels (at least 1).
     /// Param height: client height in pixels (at least 1).
-    /// Param input: receives keyboard and pointer state (from Day 159), or null; not owned, must outlive the window.
+    /// Param input: receives keyboard and pointer state, or null to ignore input; not owned, must outlive the window.
     /// Returns: true if the window opened.
     /// Fails: returns false (logged on `LogPlatform`), leaving the object invalid, if it is already open, a size is 0, or the class or the
     ///   window cannot be created.
@@ -116,6 +118,11 @@ private:
     bool fullscreen_wanted_ = false; // asked for; `fullscreen_` follows once the client area covers the monitor
     bool fullscreen_ = false;
     bool in_modal_loop_ = false;
+    // Input: the Key each physical key (Win32KeyIndex) was pressed as, so a release clears that Key even if the modifiers changed
+    // (as on X11); whether AltGr's synthetic left Ctrl is held; whether a WM_MOUSELEAVE was asked for.
+    Array<Key, kWin32KeyIndexCount> held_ = {};
+    bool altgr_ctrl_held_ = false;
+    bool tracking_leave_ = false;
     ModalLoopCallback modal_callback_ = nullptr;
     void* modal_user_ = nullptr;
     // What leaving fullscreen gives back: the style (`GWL_STYLE`) and the placement (a `WINDOWPLACEMENT`, kept as bytes so this header

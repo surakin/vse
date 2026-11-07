@@ -7,7 +7,7 @@ set(PLATFORM_SOURCES
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND PLATFORM_SOURCES
-    key_translate.cpp  # X11 keysyms (xkbcommon's header) to Key, shared by both Linux backends; Windows translates virtual keys (Day 159)
+    linux/key_translate.cpp  # X11 keysyms to Key, shared by both Linux backends
     linux/xkb_keyboard.cpp
     linux/wayland/wayland_input.cpp
     linux/x11/x11_window.cpp
@@ -36,6 +36,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   # shell32 CommandLineToArgvW.
   list(APPEND PLATFORM_SOURCES
     windows/win32_window.cpp
+    windows/win32_keys.cpp
     windows/window_host_windows.cpp
     windows/entry_point_windows.cpp
   )

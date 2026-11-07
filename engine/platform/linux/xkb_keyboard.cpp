@@ -3,6 +3,7 @@
 #include <xkbcommon/xkbcommon.h>
 
 #include "log/log.h"
+#include "platform/linux/key_translate.h"
 
 namespace engine_placeholder::os {
 

@@ -817,3 +817,13 @@ listed until Day 161). Runs: `ran 573 of 1168 tests (phases: all; flavors: plain
 1168`; MSVC, `windows-clang-cl` and non-unity full runs pass except a stale `docs_check`, then regenerated: docs 3 of 3 in all three, lint
 4099/4099. Review: 7 findings, 3 fixed, 4 declined. Not done: the human check from Explorer (filed). Linux: pending until the phase close.
 **Next: Day 159 (input on Windows).**
+
+Phase 13 **Day 159 (2026-11-08, Windows PC): input on Windows.** `Win32Window` fills `InputState` with the meaning the Linux backends give it: keys are
+layout-aware (a key that types a character is named by the layout's character, so on AZERTY the Q-position key is `A`; the scan code names the rest
+and tells left from right; `os::win32::KeyFromWin32`, a table test covers every `Key`), a release clears the Key its key was pressed as, AltGr is the
+right Alt alone, Alt alone opens no menu while Alt+F4 still closes, the mouse is captured while a button is held, the wheel uses Linux's 10 units per
+notch, and a focus loss releases everything held. The keysym translation moved to `platform/linux/`. `rhi_boundary_check` no longer reads Win32
+virtual keys (`VK_ESCAPE`) as Vulkan in `platform/windows/`. Not done: text input (no backend has it; the UI phase), relative mouse motion (no API),
+the human check. Runs: `ran 588 of 1198 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 348 of 1198`; MSVC 1198
+of 1198, `windows-clang-cl` 751 of 751, non-unity 1198 of 1198. Review: 5 findings, 2 fixed, 3 declined. Linux: pending until the phase close.
+**Next: Day 160 (Vulkan on Windows).**

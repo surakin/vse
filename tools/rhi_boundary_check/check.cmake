@@ -2,6 +2,8 @@
 #   cmake -DROOT=<tree> -DALLOWLIST=<file> -P check.cmake
 # Rule 1: no file under engine/, game/, tools/, tests/renderer/ outside engine/rhi/vulkan/ names a
 #         Vulkan API identifier (vk*, Vk*, VK_*, PFN_vk*) or includes a vulkan header.
+#         In the Win32 platform directory (engine/platform/windows/), `VK_` names are Win32 virtual-key codes (VK_ESCAPE, VK_SHIFT),
+#         not Vulkan's (Phase 13 Day 159): there only vk*, Vk*, PFN_vk* and a Vulkan include count.
 # Rule 2: backend-agnostic engine/rhi/*.h must not include Vulkan/Wayland/X11 headers.
 # Exceptions live in the allow-list as `path|reason`; stale or reasonless entries fail.
 cmake_minimum_required(VERSION 3.20)
@@ -65,6 +67,7 @@ foreach(line IN LISTS allow_lines)
 endforeach()
 
 set(ident_re "(^|[^A-Za-z0-9_])(vk[A-Z][A-Za-z0-9_]*|Vk[A-Z][A-Za-z0-9_]*|VK_[A-Z0-9_]+|PFN_vk[A-Za-z0-9_]*)")
+set(ident_win32_re "(^|[^A-Za-z0-9_])(vk[A-Z][A-Za-z0-9_]*|Vk[A-Z][A-Za-z0-9_]*|PFN_vk[A-Za-z0-9_]*)") # VK_ is a Win32 virtual key there
 set(inc_vk_re "^[ \t]*#[ \t]*include[ \t]*[<\"][^>\"]*[Vv]ulkan[^>\"]*[>\"]")
 set(inc_back_re "^[ \t]*#[ \t]*include[ \t]*[<\"][^>\"]*(wayland|[Xx]11|xcb|rhi/(null|dx12|metal)/)[^>\"]*[>\"]")
 # Direct3D 12 and DXGI (Phase 13 Day 150): their names and headers only in engine/rhi/dx12/, as Vulkan's only in engine/rhi/vulkan/; a
@@ -87,6 +90,10 @@ foreach(f IN LISTS files)
   endif()
   set(vulkan_ok FALSE)
   set(dx_ok FALSE)
+  set(file_ident_re "${ident_re}")
+  if(f MATCHES "^engine/platform/windows/")
+    set(file_ident_re "${ident_win32_re}")
+  endif()
   if(f MATCHES "^engine/rhi/vulkan/")
     set(vulkan_ok TRUE)
   endif()
@@ -133,7 +140,7 @@ foreach(f IN LISTS files)
         endif()
       endif()
     endwhile()
-    if(NOT vulkan_ok AND (code MATCHES "${inc_vk_re}" OR code MATCHES "${ident_re}"))
+    if(NOT vulkan_ok AND (code MATCHES "${inc_vk_re}" OR code MATCHES "${file_ident_re}"))
       list(APPEND hits "${f}:${n}: ${raw}")
     elseif(NOT dx_ok AND (code MATCHES "${inc_dx_re}" OR code MATCHES "${dx_ident_re}"))
       list(APPEND hits "${f}:${n}: ${raw}")

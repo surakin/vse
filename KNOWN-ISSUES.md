@@ -177,8 +177,15 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   adds one for every backend (Wayland's buffer scale, X11's `Xft.dpi`, Windows' DPI).
 - Phase 13 Day 158, deferred: `window.h` models no lifecycle events (focus, suspend, resume), so `WM_ACTIVATEAPP` and `WM_POWERBROADCAST`
   (`PBT_APMSUSPEND`, `PBT_APMRESUMEAUTOMATIC`) are not reported; no phase plans them yet (`PLAN.md` assumption #11: the mobile ports need them).
-- Phase 13 Day 158, until Day 159: `os::KeyFromKeysym` is declared in the neutral `platform/input.h` but defined only on Linux
-  (`key_translate.cpp` uses xkbcommon's keysym header); a Windows caller would not link. Day 159 (input) decides where it lives.
+- Phase 13 Day 159 (2026-11-08), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 159 file, "For the
+  Linux run") were built and tested only on Windows: `key_translate.cpp` moved to `platform/linux/` with the new header `platform/linux/key_translate.h`,
+  `KeyFromKeysym` gone from `input.h`, the includes of `xkb_keyboard.cpp`, `x11_window.cpp` and `keyboard_input_test.cpp`, and `rhi_boundary_check`'s
+  Win32 rule with its two fixtures.
+- Phase 13 Day 159, check not done: a person typing in a Windows window (`hello_window` logs the input state): held keys, AltGr on a layout that has
+  it, a dead key, the mouse buttons, the wheel, Alt alone and Alt+F4, a focus change with a key held. The tests post Windows' messages to the window;
+  no real keyboard or mouse input was injected (`SendInput` would type into whatever has the desktop's focus).
+- Phase 13 Day 159, deferred: text input on every backend (the characters typed, dead keys, input methods; `InputState` has no field for it, X11 drops
+  the text it looks up): the UI phase (16). Relative mouse motion, cursor clip and hide: `os::Window` has no call for them; no phase plans them yet.
 - Phase 13 Day 157, until Day 161: `docgen samples` (and with it `docs_samples` and the `docs` target's sample step) does not run on Windows: the samples link
   the renderer, the RHI and the platform layer, which reach Windows on Days 158-161; `ctest -L docs` on Windows is `docs_check`, `docs_links` and `docs_lint`.
 - Phase 13 Day 157, known limitation: on Windows a file has no mode bits, so a settings or session file the engine writes "private" (0600 on Linux) takes its
