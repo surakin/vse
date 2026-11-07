@@ -21,7 +21,7 @@ Arch Linux's, the distribution the development machine uses.
 
 | What | Version used | Kind | Notes | Arch package |
 |---|---|---|---|---|
-| CMake | 3.20 or newer | Required | | `cmake` |
+| CMake | 3.21 or newer | Required | 3.21 for `CMakePresets.json` with toolchain files. | `cmake` |
 | Clang (`clang++`) | C++20 | Required | The compiler in use. Also runs the cross-target syntax checks (`*_cross_syntax_windows`, `_macos`). GCC is not tested. | `clang` |
 | Ninja or Make | any | Required | Either generator works. | `ninja` |
 | pkg-config | any | Required | Finds the system libraries below. | `pkgconf` |
@@ -43,25 +43,37 @@ Arch Linux's, the distribution the development machine uses.
 
 ## Windows (x86-64): being ported in Phase 13
 
-**Status (2026-11-07): the tree does not configure on Windows yet.** The root `CMakeLists.txt` stops on non-Linux systems until Phase 13 Day 148
-(`plans/phase-13-windows-dx12.md`). This list is what that phase builds against, and the developer PC already has the versions shown.
+**Status (2026-11-07, Phase 13 Day 148): the tree configures and builds on Windows, one layer at a time.** Today that is the foundation's base
+layer and the Windows-only tests (`tests/windows/`); each later day of `plans/phase-13-windows-dx12.md` adds its layer. This list is what the phase
+builds against, and the developer PC has the versions shown.
 
-The build finds Visual Studio (through `vswhere`), the Windows SDK and `clang-cl` by itself (Phase 13 Day 148). **Configure from a plain PowerShell or Git
-Bash, never from a Developer Command Prompt or after `vcvars*.bat`.** The override variables for unusual installs are `ENGINE_VS_INSTALL_DIR`,
-`ENGINE_WINDOWS_SDK_DIR`, `ENGINE_WINDOWS_SDK_VERSION`, `ENGINE_LLVM_DIR`, `ENGINE_SLANGC` and `ENGINE_DXC`.
+The toolchain files (`cmake/toolchains/windows-msvc.cmake`, `windows-clang-cl.cmake`) find Visual Studio (through `vswhere`), the Windows SDK
+(registry), `clang-cl` and the Vulkan SDK by themselves. **Configure from a plain PowerShell or Git Bash, never from a Developer Command Prompt or
+after `vcvars*.bat`** (a Developer Command Prompt that names a different MSVC stops the configure); the `windows_toolchain_discovery_*` tests prove
+it from a stripped environment:
+
+```
+cmake --preset windows-msvc          # or windows-clang-cl
+cmake --build --preset windows-msvc
+ctest --preset windows-msvc
+```
+
+The override variables for unusual installs (cache variables or environment variables) are `ENGINE_VS_INSTALL_DIR`, `ENGINE_WINDOWS_SDK_DIR`,
+`ENGINE_WINDOWS_SDK_VERSION`, `ENGINE_LLVM_DIR`, `ENGINE_VULKAN_SDK` (then `VULKAN_SDK`, then the newest `C:\VulkanSDK\<version>`), and, from
+Day 163, `ENGINE_SLANGC` and `ENGINE_DXC`.
 
 | What | Version used | Kind | Notes | Install |
 |---|---|---|---|---|
 | Windows 10 or 11, x64 | Windows 11 build 26300 | Required | | |
 | Visual Studio Build Tools 2026 (or any Visual Studio 2026 edition) | 18.10, MSVC 14.51.36231 | Required | The C++ build tools workload: MSVC, the C++ AddressSanitizer component (the `asan` flavor) and a Windows SDK. Full Visual Studio is not needed. | `winget install --id Microsoft.VisualStudio.BuildTools -e --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add Microsoft.VisualStudio.Component.VC.ASAN --passive"` |
 | Windows SDK | 10.0.26100.0 | Required | `windows.h`, D3D12, DXGI, DbgHelp, and `dxc.exe` with `dxcompiler.dll` and `dxil.dll`, which the DXIL minting uses. Comes with the Build Tools workload. | with the Build Tools |
-| CMake | 3.20 or newer (4.4.3 used) | Required | | `winget install --id Kitware.CMake -e` |
+| CMake | 3.21 or newer (4.4.3 used) | Required | | `winget install --id Kitware.CMake -e` |
 | Ninja | 1.13 | Required | The generator the presets use. The one tool that must be on `PATH` (or named by `ENGINE_NINJA`). | `winget install --id Ninja-build.Ninja -e` |
 | Git for Windows | 2.5x | Required | Its `bash` runs `scripts/test-phase.sh`. | `winget install --id Git.Git -e` |
 | GPU driver with D3D12 (feature level 12_0) and Vulkan 1.3 | AMD 32.0.32015.7029 | Required to run | `vulkan-1.dll` ships with the driver. | vendor driver |
 | LLVM (`clang-cl`, `lld-link`) | 23.1.5 | For checks | The second Windows configuration, which must keep building (Phase 13 rule). Found in `C:\Program Files\LLVM` without being on `PATH`. | `winget install --id LLVM.LLVM -e` |
 | Graphics Tools (optional Windows feature) | | For checks | The D3D12 debug layer (`d3d12SDKLayers.dll`): `--validation` on DX12 and the debug-layer-silent checks. | Settings → System → Optional features → "Graphics Tools", or elevated: `Add-WindowsCapability -Online -Name Tools.Graphics.DirectX~~~~0.0.1.0` |
-| Vulkan SDK | 1.4.363.0 | For checks | The validation layers for `--validation` on Vulkan. The loader is already in the driver. | `winget install --id KhronosGroup.VulkanSDK -e` |
+| Vulkan SDK | 1.4.363.0 | Required | Its headers (`vulkan/vulkan_core.h`) are needed to build; its validation layers serve `--validation`. The loader is already in the driver. | `winget install --id KhronosGroup.VulkanSDK -e` |
 | `slangc` | **exactly v2026.18.2** | For checks | Same version as Linux, so minted SPIR-V and DXIL match byte for byte. winget's `shader-slang.slang` is older (2026.14.1); use the Windows x86-64 zip from https://github.com/shader-slang/slang/releases/tag/v2026.18.2 and put its `bin` on `PATH`, or set `ENGINE_SLANGC`. | GitHub release |
 | WinDbg, or Debugging Tools for Windows (`cdb`) | current | For checks | Reading minidumps with the symbol store (Phase 13 Days 155-156). | `winget install --id Microsoft.WinDbg -e` |
 | Long paths (`HKLM\SYSTEM\CurrentControlSet\Control\FileSystem\LongPathsEnabled = 1`) | off on the developer PC (2026-11-07) | Optional | Lets the manifest's `longPathAware` take effect. The file layer works either way (it uses the `\\?\` prefix); one check is done by hand with it on (Phase 13 Day 151). An elevated system change: the developer makes it. | Group Policy "Enable Win32 long paths", or the registry value |

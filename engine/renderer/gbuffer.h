@@ -15,6 +15,7 @@
 //! calls per draw: bind the pipeline and material group only when they change, one instanced draw per run of the same mesh
 //! and material.
 #include "containers/vector.h"
+#include "debug/compiler.h"
 #include "math/matrix.h"
 #include "math/vector.h"
 #include "renderer/camera.h"
@@ -256,7 +257,7 @@ private:
         u32 instance_count = 0;
     };
     static void Record(const PassExecuteContext& context, void* user);
-    void Reject(const char* fmt, ...) __attribute__((format(printf, 2, 3)));
+    void Reject(const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
 
     rhi::Device* device_ = nullptr;
     MaterialSystem* materials_ = nullptr;

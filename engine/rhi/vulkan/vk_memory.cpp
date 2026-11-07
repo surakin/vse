@@ -349,7 +349,6 @@ void MemoryAllocator::Free(const MemoryAllocation& allocation) {
 }
 
 void MemoryAllocator::FreeLocked(const MemoryAllocation& allocation) {
-    const MemoryTypeInfo& info = layout_.types[allocation.memory_type];
     if (allocation.dedicated) {
         usize found = dedicated_.Size();
         for (usize i = 0; i < dedicated_.Size(); ++i) {

@@ -36,6 +36,10 @@ work there first, and the gates learn the Windows rules (where `windows.h`, D3D1
 - [ ] **`tools/docgen` on Windows:** its POSIX includes go (it uses the file layer or a documented tool boundary); `cmake --build --target docs` produces a
       `docs/reference/` byte-identical to the Linux output (diff in a test: generate on Windows, compare with the committed tree); `ctest -L docs` passes on
       Windows, including the compiled guide samples.
+- [ ] **`tests/phase_labels` in the Windows build** (Day 148 left it out): with the platform rule above, `test_phase_labels` runs on Windows with
+      `-DPLATFORM=windows` and every phase has the per-platform `flavors` lines it needs there.
+- [ ] **Exceptions for tools that throw** (Day 148 review): `tools/shader_mint` (nlohmann/json) gets `ENGINE_EXCEPTIONS_COMPILE_OPTIONS`; any other tool or
+      vendored library that throws gets it too.
 - [ ] **`tools/shader_mint`, `tools/crash_extract`** build on Windows (the `--permute` process start is Day 163's; until then the permute path reports "not on
       Windows yet" and its tests skip with that reason).
 - [ ] **Documentation:** `docs/guide/building-and-testing.md` gets "Building and testing on Windows" (presets, Git Bash, flavors, display group, the two-machine

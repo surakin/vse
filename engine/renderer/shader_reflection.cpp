@@ -4,6 +4,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include "debug/compiler.h"
+
 namespace engine_placeholder::renderer {
 
 namespace {
@@ -51,7 +53,7 @@ bool IsSingleStage(rhi::ShaderStage stage) {
     return stage == rhi::ShaderStage::Vertex || stage == rhi::ShaderStage::Fragment || stage == rhi::ShaderStage::Compute;
 }
 
-void SetError(ReflectionError* error, const char* format, ...) __attribute__((format(printf, 2, 3)));
+void SetError(ReflectionError* error, const char* format, ...) ENGINE_PRINTF_FORMAT(2, 3);
 
 void SetError(ReflectionError* error, const char* format, ...) {
     if (error == nullptr) {

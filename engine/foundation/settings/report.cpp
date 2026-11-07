@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <cstdio>
 
+#include "debug/compiler.h"
 #include "settings/file_store.h"
 
 namespace engine_placeholder::settings {
@@ -11,7 +12,7 @@ namespace {
 
 using Text = String<HeapAllocator>;
 
-void Line(Text* out, const char* format, ...) __attribute__((format(printf, 2, 3)));
+void Line(Text* out, const char* format, ...) ENGINE_PRINTF_FORMAT(2, 3);
 void Line(Text* out, const char* format, ...) {
     va_list args;
     va_start(args, format);

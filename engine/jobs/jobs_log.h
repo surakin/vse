@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <cstdio>
 
+#include "debug/compiler.h"
 #include "log/log.h"
 
 namespace engine_placeholder::jobs {
@@ -18,7 +19,7 @@ extern LogChannel LogJobs;
 ///
 /// Param level: verbosity of the message.
 /// Param fmt: printf format string; the arguments follow it.
-void JobsLogV(LogVerbosity level, const char* fmt, ...) __attribute__((format(printf, 2, 3)));
+void JobsLogV(LogVerbosity level, const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
 inline void JobsLogV(LogVerbosity level, const char* fmt, ...) {
     if (!LogJobs.ShouldLog(level)) {
         return;

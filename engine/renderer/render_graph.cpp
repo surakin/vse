@@ -6,6 +6,7 @@
 #include <cstring>
 #include <new>
 
+#include "debug/compiler.h"
 #include "jobs/parallel_for.h"
 #include "log/assert.h"
 #include "renderer/transient_pool.h"
@@ -72,7 +73,7 @@ struct RenderGraphWriter {
     usize capacity;
     usize length = 0;
 
-    void Add(const char* fmt, ...) __attribute__((format(printf, 2, 3))) {
+    void Add(const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3) {
         const bool room = out != nullptr && capacity > 0 && length < capacity;
         va_list ap;
         va_start(ap, fmt);

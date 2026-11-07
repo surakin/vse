@@ -10,6 +10,7 @@
 
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
+#include "debug/compiler.h"
 #include "log/assert.h"
 #include "rhi/spirv.h"
 #include "rhi/handle_pool.h"
@@ -248,7 +249,7 @@ struct NullDeviceState {
     }
     ~NullDeviceState();
 
-    void Error(const char* fmt, ...) __attribute__((format(printf, 2, 3)));
+    void Error(const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
     u64 CompletedFrame() const {
         if (frame == 0) {
             return 0;

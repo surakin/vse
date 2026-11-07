@@ -441,3 +441,25 @@ child and closes every descriptor it opened.
 
 A fault shows up as an exit status, and a stack overflow is an access violation as far as the status can tell, so a death
 test that wants [[debug::CrashReason::StackOverflow]] checks for [[debug::CrashReason::AccessViolation]].
+
+## Compiler-specific constructs (`compiler.h`)
+
+Code that needs a compiler builtin, an attribute or inline assembly uses a macro from `debug/compiler.h` instead, so the same source
+builds with GCC and Clang on Linux and with MSVC and clang-cl on Windows. Do not write `__attribute__`, `__builtin_...` or
+`__declspec` elsewhere.
+
+| Macro | For | GCC/Clang | MSVC | clang-cl |
+|---|---|---|---|---|
+| [[ENGINE_DEBUG_BREAK]] | stop in a debugger here | `__builtin_debugtrap` / `int3` | `__debugbreak` | `__debugbreak` |
+| [[ENGINE_TRAP]] | end the process at once, no handler | `__builtin_trap` | `__ud2` | `__builtin_trap` |
+| [[ENGINE_UNREACHABLE_HINT]] | an optimizer hint, unchecked | `__builtin_unreachable` | `__assume(0)` | `__assume(0)` |
+| [[ENGINE_COLD]] | a rarely called function | `__attribute__((cold))` | nothing | nothing |
+| [[ENGINE_NOINLINE]], [[ENGINE_NOINLINE_LAMBDA]] | keep a frame in stack traces | `__attribute__((noinline))` | `__declspec(noinline)` | GNU form |
+| [[ENGINE_PRINTF_FORMAT]] | check `printf`-style arguments | `__attribute__((format(printf, f, a)))` | nothing | GNU form |
+| [[ENGINE_NO_UNIQUE_ADDRESS]] | an empty member that takes no space | `[[no_unique_address]]` | `[[msvc::no_unique_address]]` | `[[msvc::no_unique_address]]` |
+| [[ENGINE_COMPILER_BARRIER]] | no reordering or tail call across this point | an empty `asm` with a memory clobber | `_ReadWriteBarrier` | `_ReadWriteBarrier` |
+
+Two of these were found by building with MSVC (Phase 13 Day 148), and both fail silently: MSVC ignores `[[msvc::noinline]]` placed
+between a lambda's parameters and its `->` and inlines the lambda anyway, and both MSVC and clang-cl ignore the standard
+`[[no_unique_address]]`, which made a `UniquePtr` twice the size of a pointer.
+

@@ -1,12 +1,21 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.21)  # 3.21: presets that name a toolchain file (CMakePresets.json)
 # C is enabled alongside CXX only to compile the generated xdg-shell
 # protocol bindings (platform/linux/wayland/generated/xdg-shell-protocol.c,
 # wayland-scanner's own output format) — the engine itself is C++20
 # throughout; see PLAN.md assumption #2.
 project(engine_placeholder CXX C)
 
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-  message(FATAL_ERROR "Only x86-64 Linux is supported (Phase 0)")
+# Supported targets: x86-64 Linux, and x86-64 Windows (being ported in Phase 13). Anything else names the phase that ports it.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+  set(ENGINE_PLATFORM linux)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|x86_64)$")
+  set(ENGINE_PLATFORM windows)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  message(FATAL_ERROR "macOS is ported in Phase 14 (plans/phase-14-macos-metal.md)")
+elseif(CMAKE_SYSTEM_NAME MATCHES "^(Android|iOS)$")
+  message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} is ported in Phase 22 (plans/phase-22-android-ios.md)")
+else()
+  message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_PROCESSOR} is not a supported target (x86-64 Linux, x86-64 Windows; consoles: Phase 23)")
 endif()
 
 # Every executable gets a GNU build id (a hash of its contents) so a crash report and a minidump name the exact binary.
@@ -43,13 +52,11 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-# Exceptions/RTTI/stack-protector are disabled for the engine's
-# own production code (see CLAUDE.md's hard architectural constraints).
-# Applied per-target (engine/foundation/CMakeLists.txt), not build-wide,
-# so vendored test tooling (Catch2, which needs exceptions for its
-# REQUIRE/CHECK macros) and the test executable that links it aren't
-# affected.
-set(ENGINE_PRODUCTION_COMPILE_OPTIONS -fno-exceptions -fno-rtti -fno-stack-protector)
+# Exceptions/RTTI/stack-protector are disabled for the engine's own production code (see CLAUDE.md's hard architectural
+# constraints), through ENGINE_PRODUCTION_COMPILE_OPTIONS applied per target (engine/foundation/CMakeLists.txt), not build-wide,
+# so vendored test tooling (Catch2, which needs exceptions for its REQUIRE/CHECK macros) and the test executables aren't affected.
+# The options per compiler (GCC/Clang on Linux; cl and clang-cl on Windows) and the sanitizer flavors each compiler has are in:
+include(cmake/EngineCompilerOptions.cmake)
 
 # Debug checks (engine/foundation/log/assert.h): ENGINE_VERIFY and ENGINE_UNREACHABLE check, and ENGINE_CHECK_SLOW
 # evaluates, only in builds without NDEBUG (the Debug configuration) unless forced on here. ENGINE_ASSERT and
@@ -65,6 +72,40 @@ endif()
 
 enable_testing()
 add_subdirectory(third_party/catch2)
+# Catch2's REQUIRE/CHECK throw: exceptions on for Catch2 and, through PUBLIC, every test executable that links it.
+if(ENGINE_EXCEPTIONS_COMPILE_OPTIONS)
+  target_compile_options(Catch2 PUBLIC ${ENGINE_EXCEPTIONS_COMPILE_OPTIONS})
+endif()
+
+# Windows (Phase 13) builds one layer more each day, in dependency order (ARCHITECTURE.md): today the base layer of the
+# foundation and the Windows-only tests. Each later day moves its directories from the skipped list into the build.
+if(ENGINE_PLATFORM STREQUAL "windows")
+  # The engine's own Windows options, for every target created from here on (the vendored libraries above keep their own).
+  add_compile_options(${ENGINE_WINDOWS_COMPILE_OPTIONS})
+  add_compile_definitions(${ENGINE_WINDOWS_DEFINITIONS})
+  # The Vulkan C headers (os/gpu_driver_probe.h, the Vulkan backend) from the SDK the toolchain file found. Only vulkan/*.h and the
+  # vk_video/ headers vulkan_core.h includes are copied into the build tree: the SDK's Include/ also holds slang, shaderc, dxc and
+  # glslang, and exposing those would let engine code compile against a shader compiler (PLAN.md assumption #18).
+  if(NOT ENGINE_VULKAN_SDK_DIR OR NOT EXISTS "${ENGINE_VULKAN_SDK_DIR}/Include/vulkan/vulkan_core.h")
+    message(FATAL_ERROR "No Vulkan SDK found (ENGINE_VULKAN_SDK, VULKAN_SDK, C:/VulkanSDK/<version>): its headers are needed to build. See BUILD.md.")
+  endif()
+  set(ENGINE_VULKAN_HEADERS_DIR "${CMAKE_BINARY_DIR}/vulkan_headers")
+  file(COPY "${ENGINE_VULKAN_SDK_DIR}/Include/vulkan" "${ENGINE_VULKAN_SDK_DIR}/Include/vk_video" DESTINATION "${ENGINE_VULKAN_HEADERS_DIR}"
+       FILES_MATCHING PATTERN "*.h")
+  include(cmake/EngineTestPhases.cmake)
+  option(ENGINE_UNITY_BUILD "Compile each target's sources as merged unity translation units" ON)
+  set(CMAKE_UNITY_BUILD ${ENGINE_UNITY_BUILD})
+  set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
+  add_subdirectory(engine/foundation)
+  add_subdirectory(tests/windows)
+  # tests/phase_labels joins on Day 150, when the phase map can say which tests each platform has (every other phase's tests are
+  # absent here, so its flavor and unused-line checks would fail today); engine_label_tests() already refuses an unmapped test.
+  message(STATUS "Windows (Phase 13): building foundation_base and tests/windows. Not yet ported, so not configured: the file layer "
+                 "(Days 151-152), jobs (153), debugging and sentry-native (154-156; libbacktrace is Linux-only), settings (157), platform (158-159), "
+                 "RHI and renderer (160-172), tools, game and the other tests (as their layers arrive). See plans/phase-13-windows-dx12.md.")
+  return()
+endif()
+
 add_subdirectory(third_party/libbacktrace)
 
 # sentry-native (third_party/sentry_native, PLAN.md assumption #20): crash capture and minidumps only, Breakpad backend, no

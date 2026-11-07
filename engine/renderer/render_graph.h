@@ -14,6 +14,7 @@
 //! uses. All storage comes from the arena the graph is given, so building and compiling a frame allocates nothing from
 //! the heap.
 
+#include "debug/compiler.h"
 #include "mem/arena_allocator.h"
 #include "rhi/rhi.h"
 #include "types.h"
@@ -560,8 +561,8 @@ private:
     bool PassHasWork(u32 position) const;
     struct ParallelRecord;
     static void RecordRange(void* user, usize begin, usize end);
-    void SetExecuteError(const char* fmt, ...) __attribute__((format(printf, 2, 3)));
-    void AddError(const char* fmt, ...) __attribute__((format(printf, 2, 3)));
+    void SetExecuteError(const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
+    void AddError(const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
     bool AddAccess(PassId pass, GraphResource resource, GraphUsage usage, GraphAccess access);
     GraphResource AddResource(const char* name, GraphResourceKind kind, bool import, bool read_only);
 

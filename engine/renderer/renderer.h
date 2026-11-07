@@ -8,6 +8,7 @@
 //! scheduler), submits once and presents. Later days supply the real callback (G-buffer, lighting, tonemap); tests supply
 //! their own.
 
+#include "debug/compiler.h"
 #include "mem/arena_allocator.h"
 #include "renderer/camera.h"
 #include "renderer/render_graph.h"
@@ -356,7 +357,7 @@ public:
     u64 FrameIndex() const { return frame_; }
 
 private:
-    void SetError(const char* fmt, ...) __attribute__((format(printf, 2, 3)));
+    void SetError(const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
     FrameStatus RenderFrameImpl(const RenderScene* scene, const Camera* camera, const FrameTarget* offscreen);
     ApplyResult ApplyNow(const RenderSettings& requested, bool force_device_reset = false);
     void BuildCreateInfo(const RenderSettings& settings, char* adapter_buffer, rhi::DeviceCreateInfo* out) const {

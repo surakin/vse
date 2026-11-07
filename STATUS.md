@@ -12,6 +12,10 @@ Failing tests, flaky tests and deferred items are tracked in `KNOWN-ISSUES.md`.
 
 What to install first, per platform: `BUILD.md`.
 
+- **Windows (Phase 13, from Day 148):** from a plain PowerShell or Git Bash (no Developer Command Prompt): `cmake --preset windows-msvc` (or
+  `windows-clang-cl`), `cmake --build --preset windows-msvc`, `ctest --preset windows-msvc`. The Windows build grows one layer per day; `scripts/test-phase.sh`
+  runs on Windows from Day 150. Non-unity check: `cmake --preset windows-msvc -B build-windows-msvc-nounity -DENGINE_UNITY_BUILD=OFF`.
+
 
 - Configure and build: `cmake -S . -B build && cmake --build build`. Our own targets build as unity (merged) translation
   units by default; `-DENGINE_UNITY_BUILD=OFF` compiles every source on its own (both must keep building; CLAUDE.md, "Unity builds").
@@ -693,3 +697,12 @@ for a root constant; decision 9 amended), and 92 of 97 engine sources compile wi
 record and the Linux runs (`ctest -L docs`, `--affected`), and the D3D12 debug-layer check (Graphics Tools not installed); both filed in `KNOWN-ISSUES.md`.
 No test run on Windows yet (the build does not configure until Day 148). No code review (setup only). **Next: Day 148 (CMake and the compiler on Windows);
 the developer installs Graphics Tools before Day 164.**
+
+Phase 13 **Day 148 (2026-11-07, Windows PC): CMake and the compiler on Windows.** The tree configures from a plain shell with MSVC and `clang-cl` (toolchain files
+find Visual Studio, the Windows SDK, LLVM and the Vulkan SDK; a mismatched Developer Command Prompt stops the configure), builds `foundation_base` and the new
+`tests/windows` with no warning in both unity modes, and embeds `cmake/engine.manifest` in every executable. `windows.h` goes through `os/windows/win32.h` (the
+clashing names measured and restored). Shared changes: `ENGINE_PRINTF_FORMAT`, `ENGINE_TRAP`, `ENGINE_NO_UNIQUE_ADDRESS` in `debug/compiler.h`, and two silent MSVC
+bugs fixed (an ignored lambda `noinline`, and `[[no_unique_address]]` ignored, doubling `UniquePtr`). Runs: `ctest --preset windows-msvc` 5 of 5 and
+`windows-clang-cl` 5 of 5 (plain ctest; `test-phase.sh` runs on Windows from Day 150). Review: 10 findings, 9 fixed, 1 deferred (the reference regeneration). **Not
+done: everything on the Linux machine** (both unity builds, `--affected` with asan and tsan, the new phase-label self-tests, docs regeneration), and `tests/types` under
+MSVC (Day 149); filed in `KNOWN-ISSUES.md`. **Next: Day 149 (the `os` backend), after the Linux runs of Days 147-148.**

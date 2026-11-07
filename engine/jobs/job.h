@@ -3,6 +3,7 @@
 #include <coroutine>
 #include <new>
 
+#include "debug/compiler.h"
 #include "jobs/frame_pool.h"
 #include "log/assert.h"
 #include "types.h"
@@ -100,7 +101,7 @@ public:
         // suspension) select this overload; the pool only guarantees 16.
         static void* operator new(usize, std::align_val_t) {
             ENGINE_ASSERT(false, "Job frame requires over-aligned storage (>16 bytes) which FramePool cannot provide");
-            __builtin_trap(); // assert is a no-op in release; never hand out misaligned storage
+            ENGINE_TRAP(); // never hand out misaligned storage, even where the assert is compiled out
         }
         static void operator delete(void* ptr, usize) noexcept { FramePool::Global().Deallocate(ptr); }
     };

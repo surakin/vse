@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <cstdio>
 
+#include "debug/compiler.h"
 #include "log/log.h"
 
 //! Logging for the RHI: the `LogRhi` channel and a printf-style helper.
@@ -21,7 +22,7 @@ extern LogChannel LogRhi;
 /// Param level: verbosity of the message.
 /// Param fmt: printf format string; the arguments follow it.
 /// Thread-safety: thread-safe. Formats into a stack buffer and logs through the shared sink.
-void RhiLogV(LogVerbosity level, const char* fmt, ...) __attribute__((format(printf, 2, 3)));
+void RhiLogV(LogVerbosity level, const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
 inline void RhiLogV(LogVerbosity level, const char* fmt, ...) {
     if (!LogRhi.ShouldLog(level)) {
         return;

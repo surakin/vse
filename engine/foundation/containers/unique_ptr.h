@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "debug/compiler.h"
 #include "mem/heap_allocator.h"
 #include "types.h"
 
@@ -135,7 +136,7 @@ public:
     const Deleter& GetDeleter() const { return deleter_; }
 
 private:
-    [[no_unique_address]] Deleter deleter_{};
+    ENGINE_NO_UNIQUE_ADDRESS Deleter deleter_{};
     T* ptr_ = nullptr;
 };
 

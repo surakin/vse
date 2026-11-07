@@ -60,6 +60,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 | Other items filed per backend (typeless depth, descriptor copies, `ClampToBorder`, ...) | Phases 13-14 | RHI portability review, section 5 |
 | Metal backend behavior on Apple Silicon (unified memory, tile-based rendering, memoryless attachments) cannot be verified on the developer's 2019 Intel MacBook Pro | Phase 14 (record), Phase 22 (iOS device) | `plans/phase-14-macos-metal.md` |
 | How Phases 15-21 keep the Windows/macOS builds working (per-phase closing day vs periodic catch-up) | Decide when Phase 14 completes | `PLAN.md` assumption #11 |
+| `int128.h` on MSVC uses the plain portable code, not the `_umul128`/`_addcarry_u64` intrinsics; not measured | Only if profiling shows 128-bit arithmetic matters on Windows | Phase 13 Day 148 day file |
 | Epic's UE EULA terms need review | Before Phase 24 starts | `PLAN.md` (open risk) |
 
 - Phase 5 Day 81: the point-light scale numbers (1 / 100 / 1000 lights at 1080p) are CPU wall time from submit to idle; GPU-only time was not measured because the RHI has no timestamp queries yet.
@@ -127,3 +128,11 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   `scripts/test-phase.sh 12 --dry-run`.
 - Phase 13 Day 147: the D3D12 debug layer is not installed on the Windows PC (the Graphics Tools optional feature; `d3d12SDKLayers.dll` absent), so Spike B
   ran without it and whether `slangc`'s DXIL draws with the debug layer silent is not known. Needed by Day 164.
+- Phase 13 Day 148 (2026-11-07), open until done on the Linux machine: the shared changes of the day were built and tested only on Windows. Not run: both Linux
+  unity builds, `scripts/test-phase.sh --affected` with asan and tsan, the new `test_phase_labels_planted_platform_*` self-tests, and the Linux CMake version
+  check for the new 3.21 minimum. `debug/compiler.h` gained `ENGINE_TRAP`, `ENGINE_PRINTF_FORMAT` and `ENGINE_NO_UNIQUE_ADDRESS` (documented with `///`), but
+  `docs/reference/` was not regenerated, and `docgen lint` and `ctest -L docs` were not run (docgen builds on Windows from Day 150).
+- Phase 13 Day 148: `tests/types` (the 128-bit tests) was not built or run under MSVC or `clang-cl`: it links `foundation_base`, whose Windows `os/` backend is Day
+  149. Until then the Phase 10 entry above stays open.
+- Phase 13 Day 148: AddressSanitizer is not wired up for `clang-cl` (its runtime libraries would have to be named on the `lld-link` line); the Windows ASan flavor
+  is MSVC's. Needed only if the `clang-cl` configuration is ever run with ASan.

@@ -1,7 +1,5 @@
-# Per-platform implementation of os/os.h — only os/linux/ exists so far
-# (PLAN.md assumption #11: implementation stays Linux-only until its
-# phase; this selection is where a later os/windows/os.cpp or
-# os/macos/os.cpp plugs in additively, no other CMakeLists change needed).
+# Per-platform implementation of os/os.h: os/linux/ and, being ported in Phase 13, os/windows/ (PLAN.md assumption #11). This
+# selection is where a later os/macos/os.cpp plugs in additively.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(FOUNDATION_PLATFORM_SOURCES
     os/linux/os.cpp
@@ -21,7 +19,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     os/linux/debug/fault_injection.cpp
   )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  message(FATAL_ERROR "Windows is implemented in Phase 13 (the debugging backend: os/windows/debug/BACKEND.md)")
+  # Phase 13 ports one layer per day (ARCHITECTURE.md order). Day 148 compiles the base layer's platform-free sources; its os/windows/
+  # backend arrives on Day 149, the file layer on Days 151-152, the debugging backend (os/windows/debug/BACKEND.md) on Days 154-156.
+  set(FOUNDATION_PLATFORM_SOURCES "")
+  set(FOUNDATION_DEBUG_PLATFORM_SOURCES "")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   message(FATAL_ERROR "macOS is implemented in Phase 14 (the debugging backend: os/macos/debug/BACKEND.md)")
 else()
@@ -132,15 +133,35 @@ function(engine_add_foundation_libs suffix)
   target_link_libraries(foundation${suffix} INTERFACE foundation_settings${suffix} foundation_debug${suffix} foundation_io${suffix} foundation_base${suffix})
 endfunction()
 
-engine_add_foundation_libs("")
-engine_add_foundation_libs("_asan")
-engine_add_foundation_libs("_tsan")
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  # Only the base layer so far (see the platform selection above); the layers above it join as their Windows backends arrive.
+  # os/gpu_driver_probe.h includes <vulkan/vulkan_core.h>: Linux has it in /usr/include, Windows a copy of the SDK's C headers
+  # (ENGINE_VULKAN_HEADERS_DIR, made by the root CMakeLists.txt).
+  set(_engine_flavors "")
+  if(ENGINE_HAVE_ASAN)
+    list(APPEND _engine_flavors "_asan")
+  endif()
+  foreach(suffix "" ${_engine_flavors})
+    engine_add_foundation_layer(foundation_base "${suffix}" ${FOUNDATION_BASE_SOURCES})
+    target_include_directories(foundation_base${suffix} SYSTEM PUBLIC "${ENGINE_VULKAN_HEADERS_DIR}")
+  endforeach()
+else()
+  engine_add_foundation_libs("")
+  engine_add_foundation_libs("_asan")
+  engine_add_foundation_libs("_tsan")
+endif()
 
-# -fno-sanitize=vptr: the engine libraries are built -fno-rtti, so they define no typeinfo, while the test executables
-# (Catch2 needs RTTI) are not. With the vptr check on, GCC 16 makes every virtual call through a library class reference
-# that class's typeinfo and the link fails (`undefined reference to typeinfo for ...NullDevice`). It must come after
-# -fsanitize=undefined, which turns the check back on.
-target_compile_options(foundation_base_asan PUBLIC -fsanitize=address,undefined -fno-sanitize=vptr -fno-omit-frame-pointer -g)
-target_link_options(foundation_base_asan PUBLIC -fsanitize=address,undefined)
-target_compile_options(foundation_base_tsan PUBLIC -fsanitize=thread -fno-omit-frame-pointer -g)
-target_link_options(foundation_base_tsan PUBLIC -fsanitize=thread)
+# The sanitizer flags per compiler are in cmake/EngineCompilerOptions.cmake. On GCC/Clang they include -fno-sanitize=vptr: the
+# engine libraries are built -fno-rtti, so they define no typeinfo, while the test executables (Catch2 needs RTTI) are not. With the
+# vptr check on, GCC 16 makes every virtual call through a library class reference that class's typeinfo and the link fails
+# (`undefined reference to typeinfo for ...NullDevice`). It must come after -fsanitize=undefined, which turns the check back on.
+if(ENGINE_HAVE_ASAN)
+  target_compile_options(foundation_base_asan PUBLIC ${ENGINE_ASAN_COMPILE_OPTIONS})
+  if(ENGINE_ASAN_LINK_OPTIONS)  # empty with cl, which records the ASan runtime in the objects
+    target_link_options(foundation_base_asan PUBLIC ${ENGINE_ASAN_LINK_OPTIONS})
+  endif()
+endif()
+if(ENGINE_HAVE_TSAN)
+  target_compile_options(foundation_base_tsan PUBLIC ${ENGINE_TSAN_COMPILE_OPTIONS})
+  target_link_options(foundation_base_tsan PUBLIC ${ENGINE_TSAN_LINK_OPTIONS})
+endif()

@@ -1,7 +1,9 @@
 # Fails, naming the tests, if any test in a build directory lacks a `phaseN` label or has more than one
 # (Phase 6; tests/phases.txt). Run by ctest as test_phase_labels.
-#   cmake -DCTEST=<ctest> -DBUILD_DIR=<dir> -DMAP=<tests/phases.txt> [-DCHECK_FLAVORS=1] [-DCHECK_UNUSED=1] -P check.cmake
-# CHECK_FLAVORS also checks that each phase has tests in exactly the sanitizer flavors its `flavors` line lists;
+#   cmake -DCTEST=<ctest> -DBUILD_DIR=<dir> -DMAP=<tests/phases.txt> [-DCHECK_FLAVORS=1 -DPLATFORM=linux|windows|macos] [-DCHECK_UNUSED=1] -P check.cmake
+# CHECK_FLAVORS also checks that each phase has tests in exactly the sanitizer flavors its `flavors` line lists for PLATFORM: a
+# `flavors <phase> <platform>: <list>` line applies on that platform only, an unqualified line everywhere else, and a phase whose lines
+# all name other platforms must have no tests on this one (Phase 13 Day 148: phase 13's tests exist only on Windows);
 # CHECK_UNUSED also fails on a map line that matches no test or file. Both are for the real build, not the fixtures.
 include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/EnginePhaseMap.cmake)
 
@@ -66,32 +68,56 @@ if(NOT labeled EQUAL known)
   string(APPEND problems "  ${labeled} tests carry a phase label but only ${known} carry one the map defines\n")
 endif()
 
-# Each phase has tests in exactly the flavors the map lists for it.
+# Each phase has tests in exactly the flavors the map lists for it on PLATFORM.
 if(CHECK_FLAVORS)
+  if(NOT PLATFORM MATCHES "^(linux|windows|macos)$")
+    message(FATAL_ERROR "check.cmake: CHECK_FLAVORS needs -DPLATFORM=linux, windows or macos (got '${PLATFORM}')")
+  endif()
   file(STRINGS "${MAP}" flavor_lines REGEX "^flavors[ \t]")
-  set(expected "")
+  set(keys "")
   foreach(line IN LISTS flavor_lines)
     string(REGEX REPLACE "#.*$" "" line "${line}")
-    if(NOT line MATCHES "^flavors[ \t]+([0-9]+(\\.[0-9]+)?)[ \t]+((plain|asan|tsan)(,(plain|asan|tsan))*)[ \t]*$")
-      string(APPEND problems "  cannot read the map line '${line}' (want 'flavors <phase> plain,asan,tsan')\n")
+    if(NOT line MATCHES "^flavors[ \t]+([0-9]+)[ \t]+(([a-z]+):[ \t]*)?((plain|asan|tsan)(,(plain|asan|tsan))*)[ \t]*$")
+      string(APPEND problems "  cannot read the map line '${line}' (want 'flavors <phase> [<platform>:] plain,asan,tsan')\n")
       continue()
     endif()
+    set(platform "${CMAKE_MATCH_3}")
+    set(listed "${CMAKE_MATCH_4}")
     engine_phase_label("${CMAKE_MATCH_1}" label)
-    if(label IN_LIST expected)
-      string(APPEND problems "  two 'flavors' lines for ${label}\n")
+    if(NOT platform STREQUAL "" AND NOT platform MATCHES "^(linux|windows|macos)$")
+      string(APPEND problems "  the map line '${line}' names the platform '${platform}' (want linux, windows or macos)\n")
+      continue()
     endif()
+    if("${label}:${platform}" IN_LIST keys)
+      if(platform STREQUAL "")
+        string(APPEND problems "  two 'flavors' lines for ${label}\n")
+      else()
+        string(APPEND problems "  two 'flavors' lines for ${label} on ${platform}\n")
+      endif()
+    endif()
+    list(APPEND keys "${label}:${platform}")
     if(NOT label IN_LIST phases)
       string(APPEND problems "  'flavors' line for ${label}, which has no lines in the map\n")
     endif()
-    set(flavors_of_${label} "${CMAKE_MATCH_3}")
-    list(APPEND expected ${label})
+    if(platform STREQUAL "")
+      set(flavors_any_${label} "${listed}")
+    elseif(platform STREQUAL PLATFORM)
+      set(flavors_here_${label} "${listed}")
+    else()
+      set(flavors_elsewhere_${label} TRUE)
+    endif()
   endforeach()
   foreach(label IN LISTS phases)
-    if(NOT label IN_LIST expected)
+    if(DEFINED flavors_here_${label})
+      string(REPLACE "," ";" want "${flavors_here_${label}}")
+    elseif(DEFINED flavors_any_${label})
+      string(REPLACE "," ";" want "${flavors_any_${label}}")
+    elseif(flavors_elsewhere_${label})
+      set(want "")  # the phase's tests exist only on other platforms
+    else()
       string(APPEND problems "  no 'flavors' line in the map for ${label}\n")
       continue()
     endif()
-    string(REPLACE "," ";" want "${flavors_of_${label}}")
     foreach(flavor plain asan tsan)
       if(flavor STREQUAL "plain")
         selected_tests(here -L "^${label}$" -LE "^(asan|tsan)$")

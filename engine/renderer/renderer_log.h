@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <cstdio>
 
+#include "debug/compiler.h"
 #include "log/log.h"
 
 //! The renderer: a deferred, render-graph-driven renderer built on the RHI.
@@ -18,7 +19,7 @@ namespace engine_placeholder::renderer {
 /// Param level: verbosity of the message.
 /// Param fmt: printf format string; the arguments follow it.
 /// Thread-safety: thread-safe. Formats into a stack buffer and logs through the shared sink.
-void RenderLogV(LogVerbosity level, const char* fmt, ...) __attribute__((format(printf, 2, 3)));
+void RenderLogV(LogVerbosity level, const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3);
 inline void RenderLogV(LogVerbosity level, const char* fmt, ...) {
     if (!LogRender.ShouldLog(level)) {
         return;

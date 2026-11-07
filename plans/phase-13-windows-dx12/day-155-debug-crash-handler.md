@@ -8,6 +8,8 @@ kinds. The tests in the `crash` group run only with `--all` or `--crashes`.
 
 ## Tasks
 
+- [ ] **Vendored code and the Windows options** (Day 148): sentry-native and Breakpad are added before the engine's Windows options and definitions, so they
+      build with their own; check whether they need exceptions (`ENGINE_EXCEPTIONS_COMPILE_OPTIONS`) and whether their `.rc` resources compile with `rc.exe`.
 - [ ] **Crash library configuration** (the files were vendored on Day 154): `SENTRY_BACKEND=breakpad`, `SENTRY_TRANSPORT=none`, static library; the no-upload check
       (no `winhttp` import in any test binary or demo: `dumpbin /imports` in a ctest) passes on Windows.
 - [ ] **The report from `on_crash`:** `os/windows/debug/crash_hook.cpp` writes the engine report (reason, address, raw frames with module offsets, crash state,

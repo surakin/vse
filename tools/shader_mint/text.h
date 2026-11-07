@@ -6,6 +6,7 @@
 #include <cstdarg>
 
 #include "containers/vector.h"
+#include "debug/compiler.h"
 #include "mem/heap_allocator.h"
 #include "string/string.h"
 #include "types.h"
@@ -18,9 +19,9 @@ using Text = String<HeapAllocator>;
 inline Text MakeText(StringView view = StringView()) { return Text(HeapAllocator::Default(), view); }
 
 // printf-style append to a text.
-void Appendf(Text* out, const char* format, ...) __attribute__((format(printf, 2, 3)));
+void Appendf(Text* out, const char* format, ...) ENGINE_PRINTF_FORMAT(2, 3);
 
 // Replaces `*out` with the formatted text (used for error messages).
-void SetTextf(Text* out, const char* format, ...) __attribute__((format(printf, 2, 3)));
+void SetTextf(Text* out, const char* format, ...) ENGINE_PRINTF_FORMAT(2, 3);
 
 } // namespace engine_placeholder::shader_mint

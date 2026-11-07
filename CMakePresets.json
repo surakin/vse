@@ -1,0 +1,41 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "linux",
+      "displayName": "Linux (the default compiler, build/)",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+    },
+    {
+      "name": "windows-msvc",
+      "displayName": "Windows, MSVC (build-msvc/); finds Visual Studio and the Windows SDK itself",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-msvc",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/windows-msvc.cmake",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "windows-clang-cl",
+      "displayName": "Windows, clang-cl (build-clang-cl/); finds LLVM, Visual Studio and the Windows SDK itself",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-clang-cl",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/windows-clang-cl.cmake",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "linux", "configurePreset": "linux" },
+    { "name": "windows-msvc", "configurePreset": "windows-msvc" },
+    { "name": "windows-clang-cl", "configurePreset": "windows-clang-cl" }
+  ],
+  "testPresets": [
+    { "name": "linux", "configurePreset": "linux", "output": { "outputOnFailure": true } },
+    { "name": "windows-msvc", "configurePreset": "windows-msvc", "output": { "outputOnFailure": true } },
+    { "name": "windows-clang-cl", "configurePreset": "windows-clang-cl", "output": { "outputOnFailure": true } }
+  ]
+}
