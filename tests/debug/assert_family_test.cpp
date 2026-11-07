@@ -1,5 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "debug/compiler.h"
+
 #include "debug/death_test.h"
 #include "log/assert.h"
 #include "os/os.h"
@@ -59,13 +61,13 @@ private:
     AssertHandler previous_;
 };
 
-[[gnu::noinline]] bool FamilyEnsureSiteA(bool value) {
+ENGINE_NOINLINE bool FamilyEnsureSiteA(bool value) {
     return ENGINE_ENSURE(value, "site A condition");
 }
-[[gnu::noinline]] bool FamilyEnsureSiteB(bool value) {
+ENGINE_NOINLINE bool FamilyEnsureSiteB(bool value) {
     return ENGINE_ENSURE(value, "site B condition");
 }
-[[gnu::noinline]] bool FamilyEnsureSiteC(bool value) {
+ENGINE_NOINLINE bool FamilyEnsureSiteC(bool value) {
     return ENGINE_ENSURE(value, "site C condition");
 }
 

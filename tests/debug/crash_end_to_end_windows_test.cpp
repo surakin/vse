@@ -371,8 +371,8 @@ ENGINE_DEATH_TEST_FN(dt_e2e_win_second_fault_during_report) {
         os::SleepNanos(50ull * 1000 * 1000);
         InjectFault(FaultKind::NullWrite);
     });
+    second.detach(); // InjectFault does not return: the process ends with the crash
     InjectFault(FaultKind::NullWrite); // the main thread reports first, slowly
-    second.join();
 }
 
 TEST_CASE("Windows: a second thread faulting while the first is being reported does not cut the report short", "[crash][crashreport][death][debug][windows]") {

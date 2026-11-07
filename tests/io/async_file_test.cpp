@@ -316,7 +316,7 @@ TEST_CASE("io::File: an executor that is shut down completes requests with Inter
 TEST_CASE("io::File: the local completion path allocates nothing", "[io][async]") {
 #ifdef IO_TEST_SANITIZED
     SKIP("allocation counting needs the plain flavor (the sanitizer runtimes own operator new)");
-#endif
+#else
     TempDir dir;
     io::FilePtr f = OpenWith(dir, io_test::PatternBytes(10000).View());
     constexpr int kN = 1000;
@@ -342,6 +342,7 @@ TEST_CASE("io::File: the local completion path allocates nothing", "[io][async]"
     gate.WaitFor(kN + 1);
     g_counting.store(false);
     CHECK(g_allocs.load() == 0);
+#endif
 }
 
 // --- coroutines on a scheduler -----------------------------------------------------------------------------------------------
@@ -432,6 +433,7 @@ TEST_CASE("jobs: co_await file reads inside jobs on a scheduler", "[io][async][j
     }
 }
 
+#if !defined(_WIN32) // (only the /proc case below uses these)
 namespace {
 struct ProcOut {
     std::atomic<int> done{0};
@@ -445,11 +447,12 @@ jobs::Job ReadProcJob(jobs::Scheduler* s, ProcOut* out) {
     out->done.fetch_add(1, std::memory_order_release);
 }
 } // namespace
+#endif
 
 TEST_CASE("jobs::ReadFileAsync reads files whose reported size is wrong (/proc)", "[io][async][jobs]") {
 #if defined(_WIN32)
     SKIP("Windows has no file whose reported size is wrong (Linux: /proc)");
-#endif
+#else
     jobs::Scheduler::Config cfg;
     cfg.participants = 2;
     jobs::Scheduler sched(cfg);
@@ -458,4 +461,5 @@ TEST_CASE("jobs::ReadFileAsync reads files whose reported size is wrong (/proc)"
     sched.HelpUntil(out.done, 1);
     CHECK(out.ok);
     CHECK(out.size > 100);
+#endif
 }

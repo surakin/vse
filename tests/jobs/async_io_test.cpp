@@ -70,10 +70,12 @@ Job ReadJob(Scheduler* s, const Text* path, ReadOutcome* out) {
     out->done.fetch_add(1, std::memory_order_release);
 }
 
+#if !defined(_WIN32) // (only the FIFO case uses it)
 Job ComputeJob(std::atomic<int>* counter) {
     counter->fetch_add(1, std::memory_order_release);
     co_return;
 }
+#endif
 
 // Waits until every outcome in `outs` is done.
 void HelpUntilAllDone(Scheduler& s, Vector<ReadOutcome>& outs) {

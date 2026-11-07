@@ -788,3 +788,8 @@ debug files), `tests/debug` missing the `tests/support` include path, and stale 
 `-Wall -Wextra -Werror` on Clang/GCC and `/W4 /WX` on cl and clang-cl for every target of ours; 34 Clang warnings fixed. Verified with Clang on Linux in
 unity and non-unity builds; the Windows settings are untested (`KNOWN-ISSUES.md`). Run: `ran 1537 of 3510 tests (phases: all; flavors: plain; display: included;
 crash tests: included)`; only the two known Wayland `renderer_demo` tests fail.
+
+**Windows under warnings as errors (2026-11-07).** The three Windows builds compile clean with `/W4 /WX` (cl, unity and non-unity) and clang-cl's
+`-Wall -Wextra` equivalent: five warnings fixed (a `[[gnu::noinline]]` cl does not know, code after `SKIP` and after a fault that does not return, two
+helpers unused on Windows). Full suites: MSVC 862 of 862, non-unity 862 of 862, `windows-clang-cl` 573 of 573. **Next: Day 157 (settings on Windows: the
+registry store).**
