@@ -109,3 +109,13 @@ TEST_CASE("byte is u8 and the standard widths hold", "[types]") {
     byte b = 0xff;
     CHECK(static_cast<int>(b) == 255);
 }
+
+TEST_CASE("String compares with views and converts to a view", "[types][span]") {
+    String<HeapAllocator> text(HeapAllocator::Default(), StringView("abc"));
+    CHECK(text == "abc");
+    CHECK(text != "abd");
+    const StringView view = text;
+    CHECK(view.Length() == 3);
+    String<HeapAllocator> same(HeapAllocator::Default(), StringView("abc"));
+    CHECK(text == same);
+}

@@ -3,12 +3,12 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
-#include <deque>
 #include <mutex>
-#include <string>
 #include <thread>
 
+#include "algorithm.h"
 #include "io/file.h"
+#include "test_text.h"
 
 namespace io_test {
 
@@ -26,7 +26,7 @@ public:
         int fail_nth = 0; // 1-based request number that fails with Io; 0 never
     };
 
-    SlowFile(const std::string& content, Options options) : options_(options), data_(content), thread_([this] { Loop(); }) {}
+    SlowFile(StringView content, Options options) : options_(options), data_(Copy(content)), thread_([this] { Loop(); }) {}
 
     ~SlowFile() override {
         {
@@ -45,7 +45,7 @@ public:
         if (closed_.load()) return io::Status::Of(io::Error::Invalid);
         if (!size_known_.load()) return io::Status::Of(io::Error::Unsupported);
         std::lock_guard<std::mutex> lock(mutex_);
-        *out = data_.size();
+        *out = data_.Size();
         return io::Status::Success();
     }
 
@@ -74,7 +74,7 @@ public:
     io::Status Truncate(u64 size) override {
         if (closed_.load()) return io::Status::Of(io::Error::Invalid);
         std::lock_guard<std::mutex> lock(mutex_);
-        data_.resize(static_cast<size_t>(size), '\0');
+        data_.Resize(static_cast<usize>(size));
         return io::Status::Success();
     }
     io::Status Close() override {
@@ -83,16 +83,16 @@ public:
     }
 
     int CompletedRequests() const { return completed_.load(); }
-    std::string Contents() {
+    engine_test::Text Contents() {
         std::lock_guard<std::mutex> lock(mutex_);
-        return data_;
+        return engine_test::MakeText(StringView(data_.Data(), data_.Size()));
     }
 
 protected:
     void StartAsync(io::AsyncRequest* r) override {
         {
             std::lock_guard<std::mutex> lock(mutex_);
-            queue_.push_back(r);
+            queue_.Push(r);
         }
         cv_.notify_one();
     }
@@ -125,10 +125,13 @@ private:
             bool stop = false;
             {
                 std::unique_lock<std::mutex> lock(mutex_);
-                cv_.wait(lock, [&] { return stopping_ || !queue_.empty(); });
-                if (queue_.empty()) return;
-                r = queue_.front();
-                queue_.pop_front();
+                cv_.wait(lock, [&] { return stopping_ || head_ < queue_.Size(); });
+                if (head_ >= queue_.Size()) return;
+                r = queue_[head_++];
+                if (head_ == queue_.Size()) {
+                    queue_.Clear();
+                    head_ = 0;
+                }
                 stop = stopping_;
             }
             io::AsyncResult result;
@@ -158,20 +161,20 @@ private:
         std::lock_guard<std::mutex> lock(mutex_);
         switch (r->kind) {
         case io::AsyncKind::Read: {
-            if (r->offset >= data_.size()) {
+            if (r->offset >= data_.Size()) {
                 size_known_.store(true);
                 break;
             }
-            const usize n_bytes = std::min({r->length, options_.chunk, data_.size() - static_cast<usize>(r->offset)});
-            std::memcpy(r->buffer, data_.data() + r->offset, n_bytes);
+            const usize n_bytes = Min(Min(r->length, options_.chunk), data_.Size() - static_cast<usize>(r->offset));
+            std::memcpy(r->buffer, data_.Data() + r->offset, n_bytes);
             result.bytes = n_bytes;
             size_known_.store(true);
             break;
         }
         case io::AsyncKind::Write: {
             const usize end = static_cast<usize>(r->offset) + r->length;
-            if (data_.size() < end) data_.resize(end, '\0');
-            if (r->length != 0) std::memcpy(data_.data() + r->offset, r->data, r->length);
+            if (data_.Size() < end) data_.Resize(end);
+            if (r->length != 0) std::memcpy(data_.Data() + r->offset, r->data, r->length);
             result.bytes = r->length;
             break;
         }
@@ -180,11 +183,19 @@ private:
         return result;
     }
 
+    static Vector<char> Copy(StringView content) {
+        Vector<char> out;
+        out.Resize(content.Length());
+        if (content.Length() != 0) std::memcpy(out.Data(), content.Data(), content.Length());
+        return out;
+    }
+
     Options options_;
-    std::string data_;
+    Vector<char> data_;
     std::mutex mutex_;
     std::condition_variable cv_;
-    std::deque<io::AsyncRequest*> queue_;
+    Vector<io::AsyncRequest*> queue_; // a FIFO: `head_` is the next one to run
+    usize head_ = 0;
     bool stopping_ = false;
     std::atomic<bool> closed_{false};
     std::atomic<bool> size_known_{false};

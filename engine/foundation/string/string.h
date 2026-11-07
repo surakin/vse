@@ -262,6 +262,15 @@ public:
 
     /// Returns a non-owning view of the contents, valid until the string is modified or destroyed.
     StringView View() const { return StringView(CStr(), Length()); }
+    /// Converts to a view of the contents (the same lifetime rules as `View`).
+    operator StringView() const& { return View(); }
+    /// A temporary string does not convert: the view would dangle; call `View()` while the string is alive instead.
+    operator StringView() const&& = delete;
+
+    /// Returns true if the contents equal `other`, byte for byte.
+    bool operator==(StringView other) const { return View() == other; }
+    /// Returns true if the contents differ from `other`.
+    bool operator!=(StringView other) const { return View() != other; }
 
 private:
     Vector<char, Allocator> chars_;

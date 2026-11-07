@@ -478,8 +478,8 @@ TEST_CASE("A cache directory that cannot be used never stops the device", "[rhi]
     VulkanPipelineTestQuietLog quiet;
     SECTION("the cache directory is a file") {
         REQUIRE(io_test::WriteText(temp_dir / "blocked", "not a directory"));
-        const std::string dir = temp_dir.Native() + "/blocked";
-        TriangleDevice t(dir.c_str());
+        const engine_test::Text dir = engine_test::Concat(temp_dir.Native().View(), "/blocked");
+        TriangleDevice t(dir.CStr());
         CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
         CHECK_FALSE(t.device->SavePipelineCache()); // reported with a warning, not a failure of the device
         CHECK(t.device->PipelineCache().saved_bytes == 0);
@@ -490,15 +490,16 @@ TEST_CASE("A cache directory that cannot be used never stops the device", "[rhi]
             return;
         }
         REQUIRE(io::CreateDirectory(temp_dir / "readonly").Ok());
-        REQUIRE(::chmod((temp_dir.Native() + "/readonly").c_str(), 0500) == 0);
-        const std::string dir = temp_dir.Native() + "/readonly/cache";
-        TriangleDevice t(dir.c_str());
+        REQUIRE(::chmod(engine_test::Concat(temp_dir.Native().View(), "/readonly").CStr(), 0500) == 0);
+        const engine_test::Text dir = engine_test::Concat(temp_dir.Native().View(), "/readonly/cache");
+        TriangleDevice t(dir.CStr());
         CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
         CHECK_FALSE(t.device->SavePipelineCache());
     }
     SECTION("the path is too long to hold a cache file name") {
-        const std::string dir = temp_dir.Native() + "/" + std::string(600, 'd');
-        TriangleDevice t(dir.c_str());
+        const engine_test::Text long_name = engine_test::Repeated(600, 'd');
+        const engine_test::Text dir = engine_test::Concat(temp_dir.Native().View(), "/", long_name.View());
+        TriangleDevice t(dir.CStr());
         CHECK(t.device->PipelineCachePath()[0] == '\0'); // running without a cache
         CHECK(t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm)).IsValid());
     }
@@ -507,8 +508,8 @@ TEST_CASE("A cache directory that cannot be used never stops the device", "[rhi]
 TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when damaged", "[rhi][vulkan][gpu][pipeline][cache]") {
     io_test::TempDir temp_dir;
     char dir[512];
-    REQUIRE(temp_dir.Native().size() < sizeof(dir));
-    std::snprintf(dir, sizeof(dir), "%s", temp_dir.Native().c_str()); // the TempDir removes everything, whatever a section left behind
+    REQUIRE(temp_dir.Native().Length() < sizeof(dir));
+    std::snprintf(dir, sizeof(dir), "%s", temp_dir.Native().CStr()); // the TempDir removes everything, whatever a section left behind
     char file[512] = {};
 
     {

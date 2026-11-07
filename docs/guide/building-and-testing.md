@@ -34,7 +34,22 @@ _TODO_
 
 ### Writing a test (Catch2 conventions in this repo)
 
-_TODO_
+Tests use the engine's own types, like the code they test: `String`, `StringView`, `Vector`, `UniquePtr`, `Span`, `byte`, `u8`..`u128`
+(see "Which type do I use?" in `docs/guide/foundation-types.md`). A test never needs `std::string`, `std::vector` or `std::function`:
+
+- `tests/support/test_text.h` has `Text` (an owned heap string), `MakeText`, `Repeated`, `Format`, `Concat`, `Chars` (a mutable buffer),
+  and two small recorders, `TextList` (ordered) and `TextSet` (sorted, no repeats), with `SameAs({...})` to compare against a list.
+- `tests/support/catch_engine_types.h` teaches Catch2 to print `StringView`, `String`, `io::Path`, `io::Status`/`io::Error`, `u128`,
+  `i128` and `Span`, so `CHECK(path == other)` and `CHECK(text == "abc")` show readable values. `String` compares with a `StringView`
+  or a string literal directly. `INFO` takes a stream expression, so pass `Catch::Detail::stringify(value)` for an engine type.
+- Pass a callable with a template parameter or a function pointer plus a `void*`, not `std::function`.
+- `std::thread`, `std::mutex`, `std::condition_variable` and `std::atomic` are allowed (the engine uses them too).
+- Where Catch2 itself needs `std::` (the text it returns from a printer, `GENERATE` ranges), the use stays local and has a comment.
+
+The `std_container_check` gate (ctest `std_container_check`, added by Phase 10 Day 129) fails on a banned `std::` name in `engine/`, `game/`, `tools/` and the test
+directories listed as clean (`tests/io`, `tests/types`, `tests/support`, `tests/shader_mint`); its allow list
+(`tools/std_container_check/allowlist.txt`) names every exception with a reason, and the older test directories are one entry each with
+their count, so the list only shrinks. Convert an old test file when a day touches it.
 
 ### Test phases and scoped runs
 

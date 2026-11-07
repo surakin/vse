@@ -28,6 +28,10 @@ const char* kGoodJson = R"({
 })";
 
 // Replaces the first occurrence of `from` with `to`.
+// The JSON text is std::string: this file tests the nlohmann/json boundary.
+StringView V(const std::string& s) { return StringView(s.data(), s.size()); }
+StringView V(const char* s) { return StringView(s); }
+
 std::string Edit(std::string text, const std::string& from, const std::string& to) {
     const size_t at = text.find(from);
     REQUIRE(at != std::string::npos);
@@ -37,20 +41,20 @@ std::string Edit(std::string text, const std::string& from, const std::string& t
 
 bool Fails(const std::string& json, const char* expected_in_message) {
     ShaderReflection r;
-    std::string error;
-    if (ReflectionFromJson(json, &r, &error)) {
+    Text error = MakeText();
+    if (ReflectionFromJson(V(json), &r, &error)) {
         return false;
     }
-    INFO("error was: " << error);
-    return error.find(expected_in_message) != std::string::npos;
+    INFO("error was: " << error.CStr());
+    return error.View().Contains(StringView(expected_in_message));
 }
 
 } // namespace
 
 TEST_CASE("A well-formed reflection file converts", "[shader_mint]") {
     ShaderReflection r;
-    std::string error;
-    REQUIRE(ReflectionFromJson(kGoodJson, &r, &error));
+    Text error = MakeText();
+    REQUIRE(ReflectionFromJson(V(kGoodJson), &r, &error));
     CHECK(r.stage == rhi::ShaderStage::Fragment);
     REQUIRE(r.binding_count == 2);
     CHECK(r.bindings[0].set == 1);
@@ -62,8 +66,8 @@ TEST_CASE("A well-formed reflection file converts", "[shader_mint]") {
 
 TEST_CASE("A binding the entry point does not use is left out", "[shader_mint]") {
     ShaderReflection r;
-    std::string error;
-    REQUIRE(ReflectionFromJson(Edit(kGoodJson, "\"index\": 4, \"used\": 1", "\"index\": 4, \"used\": 0"), &r, &error));
+    Text error = MakeText();
+    REQUIRE(ReflectionFromJson(V(Edit(kGoodJson, "\"index\": 4, \"used\": 1", "\"index\": 4, \"used\": 0")), &r, &error));
     CHECK(r.binding_count == 1);
 }
 
@@ -88,8 +92,8 @@ TEST_CASE("Two bindings at the same (set, binding) are rejected", "[shader_mint]
 
 TEST_CASE("The SPIR-V cross-check catches a disagreement", "[shader_mint]") {
     ShaderReflection r;
-    std::string error;
-    REQUIRE(ReflectionFromJson(kGoodJson, &r, &error));
+    Text error = MakeText();
+    REQUIRE(ReflectionFromJson(V(kGoodJson), &r, &error));
     // A module with the right header and decorations for (set 1, binding 3) and (set 1, binding 4).
     auto decorate = [](std::vector<u32>& w, u32 id, u32 decoration, u32 value) {
         w.push_back((4u << 16) | 71u);
@@ -107,7 +111,7 @@ TEST_CASE("The SPIR-V cross-check catches a disagreement", "[shader_mint]") {
     std::vector<u32> wrong = words;
     wrong[wrong.size() - 1] = 5; // binding 4 -> 5
     CHECK_FALSE(CrossCheckSpirv(r, wrong.data(), wrong.size(), &error));
-    CHECK(error.find("(set, binding)") != std::string::npos);
+    CHECK(error.View().Contains(StringView("(set, binding)")));
 
     std::vector<u32> broken = words;
     broken[5] = (0u << 16) | 71u; // zero-length instruction
@@ -124,17 +128,17 @@ TEST_CASE("Missing or mistyped layout facts are errors, not zeros", "[shader_min
 
 TEST_CASE("A stale error message is cleared by a successful call", "[shader_mint]") {
     ShaderReflection r;
-    std::string error = "left over";
-    REQUIRE(ReflectionFromJson(kGoodJson, &r, &error));
-    CHECK(error.empty());
+    Text error = MakeText("left over");
+    REQUIRE(ReflectionFromJson(V(kGoodJson), &r, &error));
+    CHECK(error.Length() == 0);
 }
 
 TEST_CASE("A compute group size that does not fit 32 bits is rejected", "[shader_mint]") {
     const std::string compute = Edit(kGoodJson, "\"stage\": \"fragment\"", "\"stage\": \"compute\", \"threadGroupSize\": [4294967297, 1, 1]");
     CHECK(Fails(compute, "32-bit"));
     ShaderReflection r;
-    std::string error;
-    CHECK(ReflectionFromJson(Edit(compute, "4294967297", "64"), &r, &error));
+    Text error = MakeText();
+    CHECK(ReflectionFromJson(V(Edit(compute, "4294967297", "64")), &r, &error));
     CHECK(r.local_size[0] == 64);
 }
 
@@ -144,8 +148,8 @@ TEST_CASE("Vertex input locations are checked against the SPIR-V Input variables
         "parameters": [{"name": "pos", "binding": {"kind": "varyingInput", "index": 2},
           "type": {"kind": "vector", "elementCount": 3, "elementType": {"kind": "scalar", "scalarType": "float32"}}}]}]})";
     ShaderReflection r;
-    std::string error;
-    REQUIRE(ReflectionFromJson(json, &r, &error));
+    Text error = MakeText();
+    REQUIRE(ReflectionFromJson(V(json), &r, &error));
     REQUIRE(r.vertex_input_count == 1);
     auto variable = [](std::vector<u32>& w, u32 id, u32 storage_class) {
         w.push_back((4u << 16) | 59u); // OpVariable %type %id StorageClass

@@ -49,7 +49,7 @@ function(engine_add_renderer_tests target suffix label spec)
   # rhi_vulkan is linked only so tests can create a device through rhi::CreateDevice (which lives there); the renderer
   # library itself does not depend on it, and tests/renderer is scanned by rhi_boundary_check, so a test cannot name Vulkan.
   target_link_libraries(${target} PRIVATE renderer_passes${flavor} renderer${flavor} rhi_vulkan${flavor} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/tests/io)
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/tests/io ${CMAKE_SOURCE_DIR}/tests/support)
   target_compile_definitions(${target} PRIVATE ENGINE_RHI_LSAN_SUPP="${CMAKE_SOURCE_DIR}/tests/rhi/lsan.supp")
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "${spec}"
     PROPERTIES LABELS "${label}" ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${label}")

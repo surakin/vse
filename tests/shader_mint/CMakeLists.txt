@@ -3,5 +3,6 @@
 # does not apply ENGINE_PRODUCTION_COMPILE_OPTIONS because Catch2's REQUIRE/CHECK are exception-based.
 add_executable(shader_mint_tests reflect_json_test.cpp permutations_test.cpp)
 target_link_libraries(shader_mint_tests PRIVATE shader_mint_lib Catch2::Catch2WithMain)
+target_include_directories(shader_mint_tests PRIVATE ${CMAKE_SOURCE_DIR}/tests/support)
 include(Catch)
 engine_discover_tests(shader_mint_tests PROPERTIES LABELS "shaders")

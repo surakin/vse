@@ -118,3 +118,5 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   - `tests/io` leaves the temporary directory of an interrupted run behind (`/tmp/re_io_test.*`); nothing sweeps them.
 
 - Phase 10 Day 126 (2026-11-07): `u128`/`i128` have no `operator<=>` (the Windows/macOS cross-syntax shim has no `<compare>`); the six comparison operators exist.
+
+- Phase 10 Day 128 (2026-11-07): `tests/docgen/fs_fixture.h` (14 `std::` uses) and `tests/rhi/image_compare.*` (14) still use `std::string`/`std::vector`; the 7 docgen and 8 rhi test files that call them use the same types, so they convert together. `slangc` is not installed on this machine, so `cmake --build build --target shaders` did not run after the `tools/shader_mint` port; the committed `*.inc` files were not regenerated to compare byte for byte.

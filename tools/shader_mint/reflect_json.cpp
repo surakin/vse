@@ -1,3 +1,6 @@
+// This file is the nlohmann/json boundary of shader_mint (PLAN.md assumption #19): the library's API is built on
+// std::string and std::vector, so this translation unit is the one place in the tool that uses them. The functions
+// declared in reflect_json.h convert to and from the engine's StringView and Text at the edge.
 #include "reflect_json.h"
 
 #include <algorithm>
@@ -24,7 +27,7 @@ const json* Field(const json& object, const char* key) {
     return it == object.end() ? nullptr : &*it;
 }
 
-std::string Text(const json& object, const char* key) {
+std::string JsonText(const json& object, const char* key) {
     const json* value = Field(object, key);
     return value != nullptr && value->is_string() ? value->get<std::string>() : std::string();
 }
@@ -72,9 +75,9 @@ bool CopyName(const std::string& name, char* out, const char* what, std::string*
 }
 
 std::string Describe(const json& type) {
-    std::string kind = Text(type, "kind");
+    std::string kind = JsonText(type, "kind");
     if (kind == "resource") {
-        kind += " (" + Text(type, "baseShape") + ")";
+        kind += " (" + JsonText(type, "baseShape") + ")";
     }
     return kind;
 }
@@ -82,7 +85,7 @@ std::string Describe(const json& type) {
 // --- Types ----------------------------------------------------------------------------------------------------------
 
 bool ScalarFrom(const json& type, renderer::ScalarType* out) {
-    const std::string name = Text(type, "scalarType");
+    const std::string name = JsonText(type, "scalarType");
     if (name == "float32") {
         *out = renderer::ScalarType::Float32;
     } else if (name == "int32") {
@@ -97,14 +100,14 @@ bool ScalarFrom(const json& type, renderer::ScalarType* out) {
 
 // Fills the type fields of `member` from a non-array type.
 bool FillMemberType(const json& type, renderer::ReflectedMember* member, std::string* error) {
-    const std::string kind = Text(type, "kind");
+    const std::string kind = JsonText(type, "kind");
     const json* element = Field(type, "elementType");
     if (kind == "scalar") {
         member->kind = renderer::MemberKind::Scalar;
         member->rows = 1;
         member->columns = 1;
         if (!ScalarFrom(type, &member->scalar)) {
-            *error = "member '" + std::string(member->name) + "' has unsupported scalar type '" + Text(type, "scalarType") + "'";
+            *error = "member '" + std::string(member->name) + "' has unsupported scalar type '" + JsonText(type, "scalarType") + "'";
             return false;
         }
         return true;
@@ -133,18 +136,18 @@ bool FillMemberType(const json& type, renderer::ReflectedMember* member, std::st
 
 // Fills a block from a struct type: its name, size and members with offsets.
 bool FillBlock(const json& struct_type, renderer::ReflectedBlock* block, std::string* error) {
-    if (Text(struct_type, "kind") != "struct") {
+    if (JsonText(struct_type, "kind") != "struct") {
         *error = "a constant buffer must hold a struct, not " + Describe(struct_type);
         return false;
     }
-    if (!CopyName(Text(struct_type, "name"), block->name, "block", error)) {
+    if (!CopyName(JsonText(struct_type, "name"), block->name, "block", error)) {
         return false;
     }
     const json* sizes = Field(struct_type, "sizes");
     bool have_size = false;
     if (sizes != nullptr && sizes->is_array()) {
         for (const json& entry : *sizes) {
-            if (Text(entry, "kind") == "uniform") {
+            if (JsonText(entry, "kind") == "uniform") {
                 have_size = Required(entry, "value", (std::string("block '") + block->name + "' size").c_str(), &block->size, error);
                 if (!have_size) {
                     return false;
@@ -167,12 +170,12 @@ bool FillBlock(const json& struct_type, renderer::ReflectedBlock* block, std::st
     }
     for (const json& field : *fields) {
         renderer::ReflectedMember& member = block->members[block->member_count];
-        if (!CopyName(Text(field, "name"), member.name, "member", error)) {
+        if (!CopyName(JsonText(field, "name"), member.name, "member", error)) {
             return false;
         }
         const json* type = Field(field, "type");
         const json* binding = Field(field, "binding");
-        if (type == nullptr || binding == nullptr || Text(*binding, "kind") != "uniform") {
+        if (type == nullptr || binding == nullptr || JsonText(*binding, "kind") != "uniform") {
             *error = std::string("member '") + member.name + "' of block '" + block->name + "' has no uniform layout";
             return false;
         }
@@ -180,7 +183,7 @@ bool FillBlock(const json& struct_type, renderer::ReflectedBlock* block, std::st
         if (!Required(*binding, "offset", what.c_str(), &member.offset, error) || !Required(*binding, "size", what.c_str(), &member.size, error)) {
             return false;
         }
-        if (Text(*type, "kind") == "array") {
+        if (JsonText(*type, "kind") == "array") {
             const json* element = Field(*type, "elementType");
             if (!Required(*type, "elementCount", what.c_str(), &member.array_count, error) ||
                 !Required(*type, "uniformStride", what.c_str(), &member.array_stride, error)) {
@@ -211,7 +214,7 @@ struct BindingKind {
 
 bool ClassifyBinding(const json& parameter_type, const std::string& name, BindingKind* out, std::string* error) {
     const json* type = &parameter_type;
-    if (Text(*type, "kind") == "array") {
+    if (JsonText(*type, "kind") == "array") {
         out->count = Number(*type, "elementCount", 0);
         type = Field(*type, "elementType");
         if (type == nullptr || out->count == 0) {
@@ -219,7 +222,7 @@ bool ClassifyBinding(const json& parameter_type, const std::string& name, Bindin
             return false;
         }
     }
-    const std::string kind = Text(*type, "kind");
+    const std::string kind = JsonText(*type, "kind");
     if (kind == "constantBuffer") {
         out->type = rhi::BindingType::UniformBuffer;
         out->block_struct = Field(*type, "elementType");
@@ -230,8 +233,8 @@ bool ClassifyBinding(const json& parameter_type, const std::string& name, Bindin
         return true;
     }
     if (kind == "resource") {
-        const std::string shape = Text(*type, "baseShape");
-        const std::string access = Text(*type, "access");
+        const std::string shape = JsonText(*type, "baseShape");
+        const std::string access = JsonText(*type, "access");
         if (shape == "structuredBuffer" || shape == "byteAddressBuffer") {
             out->type = rhi::BindingType::StorageBuffer;
             return true;
@@ -250,16 +253,16 @@ bool ClassifyBinding(const json& parameter_type, const std::string& name, Bindin
 bool VertexFormatFrom(const json& type, rhi::VertexFormat* out) {
     u32 count = 0;
     const json* scalar = &type;
-    if (Text(type, "kind") == "vector") {
+    if (JsonText(type, "kind") == "vector") {
         count = Number(type, "elementCount", 0);
         scalar = Field(type, "elementType");
-    } else if (Text(type, "kind") == "scalar") {
+    } else if (JsonText(type, "kind") == "scalar") {
         count = 1;
     }
     if (scalar == nullptr || count < 1 || count > 4) {
         return false;
     }
-    const std::string name = Text(*scalar, "scalarType");
+    const std::string name = JsonText(*scalar, "scalarType");
     if (name == "float32") {
         *out = static_cast<rhi::VertexFormat>(static_cast<u32>(rhi::VertexFormat::Float1) + count - 1);
     } else if (name == "uint32") {
@@ -271,10 +274,10 @@ bool VertexFormatFrom(const json& type, rhi::VertexFormat* out) {
 }
 
 bool AddVertexInput(const json& item, renderer::ShaderReflection* out, std::string* error) {
-    const std::string name = Text(item, "name");
+    const std::string name = JsonText(item, "name");
     const json* binding = Field(item, "binding");
     const json* type = Field(item, "type");
-    if (binding == nullptr || Text(*binding, "kind") != "varyingInput" || type == nullptr) {
+    if (binding == nullptr || JsonText(*binding, "kind") != "varyingInput" || type == nullptr) {
         return true; // a system value (SV_*) or something that is not a location-bound input
     }
     if (out->vertex_input_count == renderer::kMaxReflectedVertexInputs) {
@@ -298,7 +301,7 @@ bool AddVertexInput(const json& item, renderer::ShaderReflection* out, std::stri
 
 } // namespace
 
-bool ReflectionFromJson(const std::string& json_text, renderer::ShaderReflection* out, std::string* error) {
+static bool ReflectionFromJsonImpl(const std::string& json_text, renderer::ShaderReflection* out, std::string* error) {
     *out = renderer::ShaderReflection{};
     error->clear();
     const json root = json::parse(json_text, nullptr, /*allow_exceptions=*/false);
@@ -313,10 +316,10 @@ bool ReflectionFromJson(const std::string& json_text, renderer::ShaderReflection
         return false;
     }
     const json& entry = (*entries)[0];
-    if (!CopyName(Text(entry, "name"), out->entry, "entry point", error)) {
+    if (!CopyName(JsonText(entry, "name"), out->entry, "entry point", error)) {
         return false;
     }
-    const std::string stage = Text(entry, "stage");
+    const std::string stage = JsonText(entry, "stage");
     if (stage == "vertex") {
         out->stage = rhi::ShaderStage::Vertex;
     } else if (stage == "fragment") {
@@ -345,14 +348,14 @@ bool ReflectionFromJson(const std::string& json_text, renderer::ShaderReflection
     const json* used = Field(entry, "bindings");
     if (used != nullptr && used->is_array()) {
         for (const json& use : *used) {
-            const std::string name = Text(use, "name");
+            const std::string name = JsonText(use, "name");
             const json* use_binding = Field(use, "binding");
             if (use_binding == nullptr || Number(*use_binding, "used", 1) == 0) {
                 continue;
             }
             const json* parameter = nullptr;
             for (const json& p : *parameters) {
-                if (Text(p, "name") == name) {
+                if (JsonText(p, "name") == name) {
                     parameter = &p;
                 }
             }
@@ -365,7 +368,7 @@ bool ReflectionFromJson(const std::string& json_text, renderer::ShaderReflection
             if (!ClassifyBinding(*type, name, &kind, error)) {
                 return false;
             }
-            const std::string slot_kind = Text(*use_binding, "kind");
+            const std::string slot_kind = JsonText(*use_binding, "kind");
             if (slot_kind == "pushConstantBuffer") {
                 if (out->has_push_constants || out->block_count == renderer::kMaxReflectedBlocks || kind.block_struct == nullptr) {
                     *error = "push constant block '" + name + "' is a duplicate, too many blocks, or not a constant buffer";
@@ -446,7 +449,7 @@ bool ReflectionFromJson(const std::string& json_text, renderer::ShaderReflection
     return true;
 }
 
-bool CrossCheckSpirv(const renderer::ShaderReflection& reflection, const u32* words, usize word_count, std::string* error) {
+static bool CrossCheckSpirvImpl(const renderer::ShaderReflection& reflection, const u32* words, usize word_count, std::string* error) {
     constexpr u32 kOpExecutionMode = 16;
     constexpr u32 kOpVariable = 59;
     constexpr u32 kStorageInput = 1;
@@ -532,6 +535,20 @@ bool CrossCheckSpirv(const renderer::ShaderReflection& reflection, const u32* wo
         }
     }
     return true;
+}
+
+bool ReflectionFromJson(StringView json_text, renderer::ShaderReflection* out, Text* error) {
+    std::string message;
+    const bool ok = ReflectionFromJsonImpl(std::string(json_text.Data(), json_text.Length()), out, &message);
+    *error = MakeText(StringView(message.data(), message.size()));
+    return ok;
+}
+
+bool CrossCheckSpirv(const renderer::ShaderReflection& reflection, const u32* words, usize word_count, Text* error) {
+    std::string message;
+    const bool ok = CrossCheckSpirvImpl(reflection, words, word_count, &message);
+    *error = MakeText(StringView(message.data(), message.size()));
+    return ok;
 }
 
 } // namespace engine_placeholder::shader_mint

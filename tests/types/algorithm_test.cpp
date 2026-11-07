@@ -3,6 +3,7 @@
 #include "algorithm.h"
 #include "containers/array.h"
 #include "containers/span.h"
+#include "containers/unique_ptr.h"
 #include "containers/vector.h"
 
 using namespace engine_placeholder;
@@ -102,4 +103,24 @@ TEST_CASE("IndexOf, Append and Assign accept vectors directly; Append grows geom
     CHECK(reallocations < 20);
     CHECK(Clamp(15, 0, 10) == 10);
     CHECK(Clamp(7u, 0u, 10u) == 7u);
+}
+
+TEST_CASE("Vector::Empty reports whether there are elements", "[types][algorithm]") {
+    Vector<int> v;
+    CHECK(v.Empty());
+    v.Push(1);
+    CHECK_FALSE(v.Empty());
+    v.Clear();
+    CHECK(v.Empty());
+}
+
+TEST_CASE("Vector::Insert moves a move-only value in", "[types][algorithm]") {
+    Vector<UniquePtr<int>> v;
+    v.Push(MakeUnique<int>(1));
+    v.Push(MakeUnique<int>(3));
+    v.Insert(1, MakeUnique<int>(2));
+    REQUIRE(v.Size() == 3);
+    CHECK(*v[0] == 1);
+    CHECK(*v[1] == 2);
+    CHECK(*v[2] == 3);
 }

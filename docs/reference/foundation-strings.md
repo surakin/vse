@@ -729,6 +729,36 @@ StringView View() const;
 
 Returns a non-owning view of the contents, valid until the string is modified or destroyed.
 
+### `operator StringView()` {#string-operator-stringview-const}
+
+`operator String::operator StringView` — defined in `engine/foundation/string/string.h`
+
+```cpp
+operator StringView() const&;
+```
+
+Converts to a view of the contents (the same lifetime rules as `View`).
+
+### `operator==(StringView)` {#string-operator-eq-eq-stringview-const}
+
+`operator String::operator==` — defined in `engine/foundation/string/string.h`
+
+```cpp
+bool operator==(StringView other) const;
+```
+
+Returns true if the contents equal `other`, byte for byte.
+
+### `operator!=(StringView)` {#string-operator-not-eq-stringview-const}
+
+`operator String::operator!=` — defined in `engine/foundation/string/string.h`
+
+```cpp
+bool operator!=(StringView other) const;
+```
+
+Returns true if the contents differ from `other`.
+
 ## `StringBuilder` {#stringbuilder}
 
 `class StringBuilder` — defined in `engine/foundation/string/string.h`

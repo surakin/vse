@@ -255,6 +255,27 @@ public:
         ++size_;
     }
 
+    /// Inserts `value` by move before position `index`, shifting later elements up by one.
+    ///
+    /// Param index: destination position; `Size()` appends.
+    /// Param value: element to move in (the value is moved into a local first, so it may alias an element).
+    /// Aborts: `index` is greater than `Size()`, or growth is needed and the allocator is out of memory.
+    void Insert(usize index, T&& value) {
+        ENGINE_ASSERT(index <= size_, "Vector::Insert: index is past the end");
+        T moved(std::move(value));
+        GrowIfNeeded();
+        if (size_ > index) {
+            new (data_ + size_) T(std::move(data_[size_ - 1]));
+            for (usize i = size_ - 1; i > index; --i) {
+                data_[i] = std::move(data_[i - 1]);
+            }
+            data_[index] = std::move(moved);
+        } else {
+            new (data_ + size_) T(std::move(moved));
+        }
+        ++size_;
+    }
+
     /// Removes the element at `index`, shifting later elements down by one.
     ///
     /// Param index: position to remove; must be less than `Size()` (not checked).
@@ -282,6 +303,8 @@ public:
 
     /// Returns the number of elements.
     usize Size() const { return size_; }
+    /// Returns true if there are no elements.
+    bool Empty() const { return size_ == 0; }
     /// Returns the number of elements the current storage can hold without growing.
     usize Capacity() const { return capacity_; }
 

@@ -4,12 +4,12 @@
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
-#include <string>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #include "io/file_system.h"
 #include "temp_dir.h"
+#include "test_text.h"
 
 using namespace engine_placeholder;
 using io::Error;
@@ -20,17 +20,17 @@ using io_test::TempDir;
 namespace {
 
 struct EnvGuard { // restores an environment variable at scope exit
-    std::string name;
-    std::string old;
+    engine_test::Text name;
+    engine_test::Text old;
     bool had;
-    explicit EnvGuard(const char* n) : name(n) {
+    explicit EnvGuard(const char* n) : name(engine_test::MakeText(StringView(n))), old(engine_test::MakeText()) {
         const char* v = std::getenv(n);
         had = v != nullptr;
-        if (had) old = v;
+        if (had) old = engine_test::MakeText(StringView(v));
     }
     ~EnvGuard() {
-        if (had) ::setenv(name.c_str(), old.c_str(), 1);
-        else ::unsetenv(name.c_str());
+        if (had) ::setenv(name.CStr(), old.CStr(), 1);
+        else ::unsetenv(name.CStr());
     }
 };
 
@@ -52,8 +52,8 @@ TEST_CASE("io::Error: the errno table and names", "[io][error]") {
         INFO("errno " << r.code);
         CHECK(io::ErrorFromOsCode(r.code) == r.error);
     }
-    CHECK(std::string(io::ErrorName(Error::NotFound)) == "not_found");
-    CHECK(std::string(io::ErrorName(Error::Io)) == "io");
+    CHECK(StringView(io::ErrorName(Error::NotFound)) == StringView("not_found"));
+    CHECK(StringView(io::ErrorName(Error::Io)) == StringView("io"));
     const io::Status s = io::Status::FromOs(ENOENT);
     CHECK(s.Failed());
     CHECK(s.Is(Error::NotFound));
@@ -85,19 +85,19 @@ TEST_CASE("io: Stat, Lstat and the existence questions", "[io][fs]") {
 
     // Symbolic links: Stat follows, Lstat describes the link; a dangling link does not exist.
     const Path link = dir / "link";
-    REQUIRE(::symlink("f.txt", io_test::Str(link.View()).c_str()) == 0);
+    REQUIRE(::symlink("f.txt", io_test::Str(link.View()).CStr()) == 0);
     REQUIRE(io::Lstat(link, &info).Ok());
     CHECK(info.type == io::FileType::Symlink);
     REQUIRE(io::Stat(link, &info).Ok());
     CHECK(info.type == io::FileType::Regular);
     const Path dangling = dir / "dangling";
-    REQUIRE(::symlink("gone", io_test::Str(dangling.View()).c_str()) == 0);
+    REQUIRE(::symlink("gone", io_test::Str(dangling.View()).CStr()) == 0);
     CHECK_FALSE(io::Exists(dangling));
     CHECK(io::Lstat(dangling, &info).Ok());
 
     // A symlink loop.
     const Path loop = dir / "loop";
-    REQUIRE(::symlink("loop", io_test::Str(loop.View()).c_str()) == 0);
+    REQUIRE(::symlink("loop", io_test::Str(loop.View()).CStr()) == 0);
     CHECK(io::Stat(loop, &info).Is(Error::SymlinkLoop));
 }
 
@@ -105,7 +105,7 @@ TEST_CASE("io: read-only files report it", "[io][fs]") {
     TempDir dir;
     const Path file = dir / "ro.txt";
     REQUIRE(io_test::WriteText(file, "x"));
-    REQUIRE(::chmod(io_test::Str(file.View()).c_str(), 0444) == 0);
+    REQUIRE(::chmod(io_test::Str(file.View()).CStr(), 0444) == 0);
     io::FileInfo info;
     REQUIRE(io::Stat(file, &info).Ok());
     if (::geteuid() != 0) { // root can write anything
@@ -138,8 +138,8 @@ TEST_CASE("io: CreateDirectory, CreateDirectories and Remove", "[io][fs]") {
     CHECK(io::IsDirectory(odd));
 
     // Over-long names.
-    const std::string long_name(300, 'n');
-    CHECK(io::CreateDirectory(dir / StringView(long_name.data(), long_name.size())).Is(Error::TooLong));
+    const engine_test::Text long_name = engine_test::Repeated(300, 'n');
+    CHECK(io::CreateDirectory(dir / long_name.View()).Is(Error::TooLong));
 }
 
 TEST_CASE("io: read-only directories refuse changes", "[io][fs]") {
@@ -150,7 +150,7 @@ TEST_CASE("io: read-only directories refuse changes", "[io][fs]") {
     TempDir dir;
     const Path d = dir / "locked";
     REQUIRE(io::CreateDirectory(d).Ok());
-    REQUIRE(::chmod(io_test::Str(d.View()).c_str(), 0555) == 0);
+    REQUIRE(::chmod(io_test::Str(d.View()).CStr(), 0555) == 0);
     CHECK(io::CreateDirectory(d / "child").Is(Error::PermissionDenied));
     Path unused;
     CHECK(io::CreateTempFile(d, "t", &unused).Is(Error::PermissionDenied));
@@ -163,7 +163,7 @@ TEST_CASE("io: RemoveAll removes trees, never follows links and refuses dangerou
     REQUIRE(io::CreateDirectories(dir / "t/a/b").Ok());
     REQUIRE(io_test::WriteText(dir / "t/a/b/f", "1"));
     REQUIRE(io_test::WriteText(dir / "t/a/g", "2"));
-    REQUIRE(::symlink(other.Native().c_str(), io_test::Str((dir / "t/a/link").View()).c_str()) == 0);
+    REQUIRE(::symlink(other.Native().CStr(), io_test::Str((dir / "t/a/link").View()).CStr()) == 0);
     CHECK(io::RemoveAll(dir / "t").Ok());
     CHECK_FALSE(io::Exists(dir / "t"));
     CHECK(io::Exists(other / "keep.txt")); // the link was removed, not followed
@@ -180,7 +180,7 @@ TEST_CASE("io: RemoveAll removes trees, never follows links and refuses dangerou
     CHECK(io::RemoveAll(Path("/tmp/..")).Is(Error::Invalid));
     // `..` after a link means something else to the kernel than to a lexical Normalize: refused, nothing deleted.
     REQUIRE(io::CreateDirectories(dir / "real/victim").Ok());
-    REQUIRE(::symlink(io_test::Str((dir / "real/victim").View()).c_str(), io_test::Str((dir / "viaLink").View()).c_str()) == 0);
+    REQUIRE(::symlink(io_test::Str((dir / "real/victim").View()).CStr(), io_test::Str((dir / "viaLink").View()).CStr()) == 0);
     CHECK(io::RemoveAll(dir / "viaLink/../real").Is(Error::Invalid));
     CHECK(io::IsDirectory(dir / "real/victim"));
     CHECK(io::RemoveAll(Path("/usr/../etc/..")).Is(Error::Invalid));
@@ -223,12 +223,12 @@ TEST_CASE("io: Rename and Copy", "[io][fs]") {
     CHECK(io::Copy(dir / "d", dir / "dc", false).Is(Error::IsADirectory));
     // Copying a file onto itself (also through a hard link) is refused and leaves it intact.
     CHECK(io::Copy(dir / "b", dir / "b", true).Is(Error::Invalid));
-    REQUIRE(::link(io_test::Str((dir / "b").View()).c_str(), io_test::Str((dir / "hard").View()).c_str()) == 0);
+    REQUIRE(::link(io_test::Str((dir / "b").View()).CStr(), io_test::Str((dir / "hard").View()).CStr()) == 0);
     CHECK(io::Copy(dir / "b", dir / "hard", true).Is(Error::Invalid));
     CHECK(io_test::ReadText(dir / "b") == "new longer content");
     CHECK(io::Copy(dir / "missing", dir / "mc", false).Is(Error::NotFound));
     // The permission bits travel with the copy.
-    REQUIRE(::chmod(io_test::Str((dir / "b").View()).c_str(), 0640) == 0);
+    REQUIRE(::chmod(io_test::Str((dir / "b").View()).CStr(), 0640) == 0);
     REQUIRE(io::Copy(dir / "b", dir / "perm", false).Ok());
     io::FileInfo info;
     REQUIRE(io::Stat(dir / "perm", &info).Ok());
@@ -245,13 +245,13 @@ TEST_CASE("io: CreatePrivateDirectory", "[io][fs]") {
     // An existing directory with group/other access is tightened.
     const Path open_dir = dir / "open";
     REQUIRE(io::CreateDirectory(open_dir).Ok());
-    REQUIRE(::chmod(io_test::Str(open_dir.View()).c_str(), 0755) == 0);
+    REQUIRE(::chmod(io_test::Str(open_dir.View()).CStr(), 0755) == 0);
     REQUIRE(io::CreatePrivateDirectory(open_dir).Ok());
     REQUIRE(io::Stat(open_dir, &info).Ok());
     CHECK(info.permissions == 0700);
     // A symbolic link, even to a directory, is refused; a file is not a directory.
     const Path link = dir / "link";
-    REQUIRE(::symlink(io_test::Str(open_dir.View()).c_str(), io_test::Str(link.View()).c_str()) == 0);
+    REQUIRE(::symlink(io_test::Str(open_dir.View()).CStr(), io_test::Str(link.View()).CStr()) == 0);
     CHECK(io::CreatePrivateDirectory(link).Is(Error::SymlinkLoop));
     REQUIRE(io_test::WriteText(dir / "file", "x"));
     CHECK(io::CreatePrivateDirectory(dir / "file").Failed());
@@ -264,7 +264,7 @@ TEST_CASE("io: temporary files and directories", "[io][fs]") {
     REQUIRE(io::CreateTempFile(dir.Path(), "cache.tmp", &a).Ok());
     REQUIRE(io::CreateTempFile(dir.Path(), "cache.tmp", &b).Ok());
     CHECK(a != b);
-    CHECK(Str(a.FileName()).rfind("cache.tmp.", 0) == 0);
+    CHECK(a.FileName().StartsWith("cache.tmp."));
     io::FileInfo info;
     REQUIRE(io::Stat(a, &info).Ok());
     CHECK(info.type == io::FileType::Regular);
@@ -291,7 +291,7 @@ TEST_CASE("io: current directory, Absolute, Canonical and ReadLink", "[io][fs]")
     CHECK(abs == Path("/x/y"));
 
     REQUIRE(io::CreateDirectories(dir / "real/sub").Ok());
-    REQUIRE(::symlink("real", io_test::Str((dir / "alias").View()).c_str()) == 0);
+    REQUIRE(::symlink("real", io_test::Str((dir / "alias").View()).CStr()) == 0);
     Path canon;
     REQUIRE(io::Canonical(dir / "alias/sub/../sub", &canon).Ok());
     Path expect;
@@ -353,8 +353,8 @@ TEST_CASE("io: special folders", "[io][fs]") {
     CHECK(io::UserConfigDirectory("", &p).Is(Error::Invalid));
     CHECK(io::UserConfigDirectory("..", &p).Is(Error::Invalid));
     CHECK(io::UserConfigDirectory("a/b", &p).Is(Error::Invalid));
-    const std::string long_name(201, 'a');
-    CHECK(io::UserConfigDirectory(StringView(long_name.data(), long_name.size()), &p).Is(Error::Invalid));
+    const engine_test::Text long_name = engine_test::Repeated(201, 'a');
+    CHECK(io::UserConfigDirectory(long_name.View(), &p).Is(Error::Invalid));
 
     ::setenv("TMPDIR", "/var/tmp", 1);
     REQUIRE(io::TempDirectory(&p).Ok());

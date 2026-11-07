@@ -179,13 +179,15 @@ Vector::Push(const T&)	function	foundation/containers	vector-push-const-t-amp	fo
 Vector::Push(T&&)	function	foundation/containers	vector-push-t-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:214
 Vector::Pop()	function	foundation/containers	vector-pop	foundation-containers.md	engine/foundation/containers/vector.h:229
 Vector::Insert(usize,const T&)	function	foundation/containers	vector-insert-usize-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:242
-Vector::Remove(usize)	function	foundation/containers	vector-remove-usize	foundation-containers.md	engine/foundation/containers/vector.h:261
-Vector::operator[](usize)	function	foundation/containers	vector-operator-index-usize	foundation-containers.md	engine/foundation/containers/vector.h:272
-Vector::operator[](usize) const	function	foundation/containers	vector-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/vector.h:276
-Vector::Data()	function	foundation/containers	vector-data	foundation-containers.md	engine/foundation/containers/vector.h:279
-Vector::Data() const	function	foundation/containers	vector-data-const	foundation-containers.md	engine/foundation/containers/vector.h:281
-Vector::Size() const	function	foundation/containers	vector-size-const	foundation-containers.md	engine/foundation/containers/vector.h:284
-Vector::Capacity() const	function	foundation/containers	vector-capacity-const	foundation-containers.md	engine/foundation/containers/vector.h:286
+Vector::Insert(usize,T&&)	function	foundation/containers	vector-insert-usize-t-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:263
+Vector::Remove(usize)	function	foundation/containers	vector-remove-usize	foundation-containers.md	engine/foundation/containers/vector.h:282
+Vector::operator[](usize)	function	foundation/containers	vector-operator-index-usize	foundation-containers.md	engine/foundation/containers/vector.h:293
+Vector::operator[](usize) const	function	foundation/containers	vector-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/vector.h:297
+Vector::Data()	function	foundation/containers	vector-data	foundation-containers.md	engine/foundation/containers/vector.h:300
+Vector::Data() const	function	foundation/containers	vector-data-const	foundation-containers.md	engine/foundation/containers/vector.h:302
+Vector::Size() const	function	foundation/containers	vector-size-const	foundation-containers.md	engine/foundation/containers/vector.h:305
+Vector::Empty() const	function	foundation/containers	vector-empty-const	foundation-containers.md	engine/foundation/containers/vector.h:307
+Vector::Capacity() const	function	foundation/containers	vector-capacity-const	foundation-containers.md	engine/foundation/containers/vector.h:309
 GraphemeBreakProperty	enum	foundation/strings	graphemebreakproperty	foundation-strings.md	engine/foundation/string/grapheme.h:13
 GraphemeBreakProperty::Other	enumerator	foundation/strings	graphemebreakproperty-other	foundation-strings.md	engine/foundation/string/grapheme.h:14
 GraphemeBreakProperty::CR	enumerator	foundation/strings	graphemebreakproperty-cr	foundation-strings.md	engine/foundation/string/grapheme.h:15
@@ -253,17 +255,20 @@ String::AppendRawBytes(const char*,usize)	function	foundation/strings	string-app
 String::CStr() const	function	foundation/strings	string-cstr-const	foundation-strings.md	engine/foundation/string/string.h:259
 String::Length() const	function	foundation/strings	string-length-const	foundation-strings.md	engine/foundation/string/string.h:261
 String::View() const	function	foundation/strings	string-view-const	foundation-strings.md	engine/foundation/string/string.h:264
-StringBuilder	class	foundation/strings	stringbuilder	foundation-strings.md	engine/foundation/string/string.h:279
-StringBuilder::StringBuilder(Allocator&)	function	foundation/strings	stringbuilder-stringbuilder-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:286
-StringBuilder::Append(StringView)	function	foundation/strings	stringbuilder-append-stringview	foundation-strings.md	engine/foundation/string/string.h:293
-StringBuilder::Append(char)	function	foundation/strings	stringbuilder-append-char	foundation-strings.md	engine/foundation/string/string.h:303
-StringBuilder::AppendCodepoint(u32)	function	foundation/strings	stringbuilder-appendcodepoint-u32	foundation-strings.md	engine/foundation/string/string.h:314
-StringBuilder::AppendInt(i64)	function	foundation/strings	stringbuilder-appendint-i64	foundation-strings.md	engine/foundation/string/string.h:328
-StringBuilder::AppendUInt(u64)	function	foundation/strings	stringbuilder-appenduint-u64	foundation-strings.md	engine/foundation/string/string.h:347
-StringBuilder::AppendHex(u64,int)	function	foundation/strings	stringbuilder-appendhex-u64-int	foundation-strings.md	engine/foundation/string/string.h:364
-StringBuilder::AppendFloat(f64,int)	function	foundation/strings	stringbuilder-appendfloat-f64-int	foundation-strings.md	engine/foundation/string/string.h:395
-StringBuilder::View() const	function	foundation/strings	stringbuilder-view-const	foundation-strings.md	engine/foundation/string/string.h:418
-StringBuilder::CStr() const	function	foundation/strings	stringbuilder-cstr-const	foundation-strings.md	engine/foundation/string/string.h:420
+String::operator StringView() const	function	foundation/strings	string-operator-stringview-const	foundation-strings.md	engine/foundation/string/string.h:266
+String::operator==(StringView) const	function	foundation/strings	string-operator-eq-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:271
+String::operator!=(StringView) const	function	foundation/strings	string-operator-not-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:273
+StringBuilder	class	foundation/strings	stringbuilder	foundation-strings.md	engine/foundation/string/string.h:288
+StringBuilder::StringBuilder(Allocator&)	function	foundation/strings	stringbuilder-stringbuilder-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:295
+StringBuilder::Append(StringView)	function	foundation/strings	stringbuilder-append-stringview	foundation-strings.md	engine/foundation/string/string.h:302
+StringBuilder::Append(char)	function	foundation/strings	stringbuilder-append-char	foundation-strings.md	engine/foundation/string/string.h:312
+StringBuilder::AppendCodepoint(u32)	function	foundation/strings	stringbuilder-appendcodepoint-u32	foundation-strings.md	engine/foundation/string/string.h:323
+StringBuilder::AppendInt(i64)	function	foundation/strings	stringbuilder-appendint-i64	foundation-strings.md	engine/foundation/string/string.h:337
+StringBuilder::AppendUInt(u64)	function	foundation/strings	stringbuilder-appenduint-u64	foundation-strings.md	engine/foundation/string/string.h:356
+StringBuilder::AppendHex(u64,int)	function	foundation/strings	stringbuilder-appendhex-u64-int	foundation-strings.md	engine/foundation/string/string.h:373
+StringBuilder::AppendFloat(f64,int)	function	foundation/strings	stringbuilder-appendfloat-f64-int	foundation-strings.md	engine/foundation/string/string.h:404
+StringBuilder::View() const	function	foundation/strings	stringbuilder-view-const	foundation-strings.md	engine/foundation/string/string.h:427
+StringBuilder::CStr() const	function	foundation/strings	stringbuilder-cstr-const	foundation-strings.md	engine/foundation/string/string.h:429
 CodepointCount(StringView)	function	foundation/strings	codepointcount-stringview	foundation-strings.md	engine/foundation/string/utf8.h:17
 IsValidUtf8(StringView)	function	foundation/strings	isvalidutf8-stringview	foundation-strings.md	engine/foundation/string/utf8.h:33
 Utf8CodepointIterator	class	foundation/strings	utf8codepointiterator	foundation-strings.md	engine/foundation/string/utf8.h:53

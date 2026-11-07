@@ -1833,6 +1833,22 @@ Inserts a copy of `value` before position `index`, shifting later elements up by
 | Parameter `value` | element to copy; it may be an element of this vector. |
 | Aborts | growth is needed and the allocator is out of memory. |
 
+### `Insert(usize,T&&)` {#vector-insert-usize-t-amp-amp}
+
+`method Vector::Insert` — defined in `engine/foundation/containers/vector.h`
+
+```cpp
+void Insert(usize index, T&& value);
+```
+
+Inserts `value` by move before position `index`, shifting later elements up by one.
+
+| Field | Value |
+|---|---|
+| Parameter `index` | destination position; `Size()` appends. |
+| Parameter `value` | element to move in (the value is moved into a local first, so it may alias an element). |
+| Aborts | `index` is greater than `Size()`, or growth is needed and the allocator is out of memory. |
+
 ### `Remove(usize)` {#vector-remove-usize}
 
 `method Vector::Remove` — defined in `engine/foundation/containers/vector.h`
@@ -1904,6 +1920,16 @@ usize Size() const;
 ```
 
 Returns the number of elements.
+
+### `Empty()` {#vector-empty-const}
+
+`method Vector::Empty` — defined in `engine/foundation/containers/vector.h`
+
+```cpp
+bool Empty() const;
+```
+
+Returns true if there are no elements.
 
 ### `Capacity()` {#vector-capacity-const}
 

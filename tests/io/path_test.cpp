@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <string>
 
 #include "io/path.h"
+#include "test_text.h"
 #include "temp_dir.h"
 
 using engine_placeholder::StringView;
@@ -81,16 +81,16 @@ struct Lcg {
     }
 };
 
-std::string RandomRelative(Lcg& rng, bool allow_dots) {
+engine_test::Text RandomRelative(Lcg& rng, bool allow_dots) {
     static const char* names[] = {"a", "b", "cc", "d.txt", "e.tar.gz", ".hid", "..x"};
-    std::string s;
+    engine_test::Text s = engine_test::MakeText();
     const unsigned count = 1 + rng.Next() % 5;
     for (unsigned i = 0; i < count; ++i) {
         if (i > 0) {
-            s += '/';
+            s.Append('/');
         }
         const unsigned pick = rng.Next() % (allow_dots ? 10u : 7u);
-        s += pick < 7 ? names[pick] : (pick == 7 ? "." : "..");
+        s.Append(StringView(pick < 7 ? names[pick] : (pick == 7 ? "." : "..")));
     }
     return s;
 }
@@ -113,7 +113,7 @@ TEST_CASE("Path: canonical form, native form and the empty path", "[io][path]") 
     CHECK(Str(w.View()) == "C:/a/b");
     char native[32];
     REQUIRE(w.ToNative(native, sizeof(native)));
-    CHECK(std::string(native) == "C:\\a\\b");
+    CHECK(StringView(native) == StringView("C:\\a\\b"));
     char tiny[4];
     CHECK_FALSE(w.ToNative(tiny, sizeof(tiny)));
 
@@ -169,30 +169,31 @@ TEST_CASE("Path: builders", "[io][path]") {
 
 TEST_CASE("Path: length limits", "[io][path]") {
     Path out;
-    std::string max(kMaxPathBytes, 'x');
-    REQUIRE(Path::Parse(StringView(max.data(), max.size()), PathStyle::Posix, &out));
+    const engine_test::Text max = engine_test::Repeated(kMaxPathBytes, 'x');
+    REQUIRE(Path::Parse(max.View(), PathStyle::Posix, &out));
     CHECK(out.View().Length() == kMaxPathBytes);
-    std::string over(kMaxPathBytes + 1, 'x');
+    const engine_test::Text over = engine_test::Repeated(kMaxPathBytes + 1, 'x');
     Path keep("keep");
-    CHECK_FALSE(Path::Parse(StringView(over.data(), over.size()), PathStyle::Posix, &keep));
+    CHECK_FALSE(Path::Parse(over.View(), PathStyle::Posix, &keep));
     CHECK(Str(keep.View()) == "keep"); // unchanged on failure
     CHECK_FALSE(Path::Parse(StringView("a\0b", 3), PathStyle::Posix, &keep));
     // Redundant separators do not count against the limit: the canonical form is what is measured.
-    std::string slashes = std::string(kMaxPathBytes + 100, '/') + "a";
-    REQUIRE(Path::Parse(StringView(slashes.data(), slashes.size()), PathStyle::Posix, &out));
+    engine_test::Text slashes = engine_test::Repeated(kMaxPathBytes + 100, '/');
+    slashes.Append('a');
+    REQUIRE(Path::Parse(slashes.View(), PathStyle::Posix, &out));
     CHECK(Str(out.View()) == "/a");
     // TryJoin reports a too-long result and leaves out untouched.
-    std::string half(kMaxPathBytes - 2, 'x');
-    Path left(StringView(half.data(), half.size()));
+    const engine_test::Text half = engine_test::Repeated(kMaxPathBytes - 2, 'x');
+    Path left(half.View());
     Path right("yyyy");
     Path result("untouched");
     CHECK_FALSE(left.TryJoin(right, &result));
     CHECK(Str(result.View()) == "untouched");
     // A single name of 255 bytes round-trips through every lexical operation.
-    std::string name(255, 'n');
-    Path longname(StringView(name.data(), name.size()));
-    CHECK(Str(longname.FileName()) == name);
-    CHECK(Str(longname.Normalize().View()) == name);
+    const engine_test::Text name = engine_test::Repeated(255, 'n');
+    Path longname(name.View());
+    CHECK(Str(longname.FileName()) == name.View());
+    CHECK(Str(longname.Normalize().View()) == name.View());
     CHECK(longname.Parent().IsEmpty());
 }
 
@@ -200,22 +201,22 @@ TEST_CASE("Path: properties over random paths", "[io][path]") {
     Lcg rng{12345};
     for (int i = 0; i < 1000; ++i) {
         for (PathStyle style : {PathStyle::Posix, PathStyle::Windows}) {
-            const std::string text = RandomRelative(rng, true);
-            Path p(StringView(text.data(), text.size()), style);
-            INFO("path: " << text);
+            const engine_test::Text text = RandomRelative(rng, true);
+            Path p(text.View(), style);
+            INFO("path: " << text.CStr());
             // Normalize is idempotent.
             const Path n = p.Normalize();
             CHECK(n.Normalize() == n);
             // Parent(Join(a, b)) == a for a relative single component b that is not "." or "..".
-            const std::string name = RandomRelative(rng, false);
-            const std::string single = name.substr(0, name.find('/'));
-            Path joined = p.Join(StringView(single.data(), single.size()));
+            const engine_test::Text name = RandomRelative(rng, false);
+            const StringView single = name.View().Substring(0, name.View().IndexOf('/'));
+            Path joined = p.Join(single);
             CHECK(joined.Parent() == p);
             CHECK(Str(joined.FileName()) == single);
             // Under a base, RelativeTo then Join returns the (normalized) original.
-            const std::string tail = RandomRelative(rng, false);
-            Path base = Path(StringView(text.data(), text.size()), style).Normalize();
-            Path below = base.Join(StringView(tail.data(), tail.size()));
+            const engine_test::Text tail = RandomRelative(rng, false);
+            Path base = Path(text.View(), style).Normalize();
+            Path below = base.Join(tail.View());
             Path rel(style);
             REQUIRE(below.RelativeTo(base, &rel));
             CHECK(base.Join(rel).Normalize() == below.Normalize());
@@ -231,15 +232,15 @@ TEST_CASE("Path: PathBuilder works without the heap", "[io][path]") {
     PathBuilder<32> b(PathStyle::Windows);
     REQUIRE(b.Set("C:\\users\\"));
     REQUIRE(b.Append("me\\cache"));
-    CHECK(std::string(b.CStr()) == "C:/users/me/cache");
+    CHECK(StringView(b.CStr()) == StringView("C:/users/me/cache"));
     CHECK_FALSE(b.Append("0123456789012345678901234567890")); // would not fit
-    CHECK(std::string(b.CStr()) == "C:/users/me/cache");     // unchanged on failure
+    CHECK(StringView(b.CStr()) == StringView("C:/users/me/cache"));     // unchanged on failure
     CHECK_FALSE(b.Set(StringView("a\0b", 3)));
     PathBuilder<16> posix;
     REQUIRE(posix.Set("/a//b/"));
-    CHECK(std::string(posix.CStr()) == "/a/b");
+    CHECK(StringView(posix.CStr()) == StringView("/a/b"));
     REQUIRE(posix.Append("/abs"));
-    CHECK(std::string(posix.CStr()) == "/abs");
+    CHECK(StringView(posix.CStr()) == StringView("/abs"));
 }
 
 TEST_CASE("Path: copies are independent and moves leave a usable source", "[io][path]") {

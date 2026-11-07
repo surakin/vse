@@ -7,8 +7,8 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | Module | Headers | Symbols |
 |---|---|---|
 | [Foundation: Memory](foundation-memory.md) | 4 | 28 |
-| [Foundation: Containers](foundation-containers.md) | 7 | 159 |
-| [Foundation: Strings](foundation-strings.md) | 5 | 95 |
+| [Foundation: Containers](foundation-containers.md) | 7 | 161 |
+| [Foundation: Strings](foundation-strings.md) | 5 | 98 |
 | [Foundation: Paths and Files](foundation-io.md) | 5 | 265 |
 | [Foundation: Math](foundation-math.md) | 5 | 101 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 2 | 69 |

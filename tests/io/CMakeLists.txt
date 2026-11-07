@@ -15,7 +15,7 @@ include(Catch)
 function(engine_add_io_tests target foundation_lib jobs_lib suffix label)
   add_executable(${target} ${IO_TEST_SOURCES})
   target_link_libraries(${target} PRIVATE ${jobs_lib} ${foundation_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/support)
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
 endfunction()
 

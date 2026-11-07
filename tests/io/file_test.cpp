@@ -2,16 +2,15 @@
 
 #include <dirent.h>
 #include <atomic>
-#include <string>
 #include <sys/stat.h>
 #include <thread>
 #include <unistd.h>
-#include <vector>
 
 #include "file_conformance.h"
 #include "io/file.h"
 #include "io/file_system.h"
 #include "temp_dir.h"
+#include "test_text.h"
 
 using namespace engine_placeholder;
 using io::Error;
@@ -22,11 +21,11 @@ using io_test::TempDir;
 
 namespace {
 
-io::FilePtr MakeLocal(TempDir& dir, const std::string& content, bool writable) {
+io::FilePtr MakeLocal(TempDir& dir, StringView content, bool writable) {
     static int counter = 0;
-    const std::string name = "conf" + std::to_string(counter++);
-    const Path path = dir / StringView(name.data(), name.size());
-    REQUIRE(io::WriteFile(path, content.data(), content.size()).Ok());
+    const engine_test::Text name = engine_test::Format("conf%d", counter++);
+    const Path path = dir / name.View();
+    REQUIRE(io::WriteFile(path, content.Data(), content.Length()).Ok());
     io::FilePtr f;
     REQUIRE(io::File::Open(path, writable ? OpenMode::ReadWrite : OpenMode::Read, io::kOpenNone, &f).Ok());
     return f;
@@ -38,7 +37,7 @@ size_t CountEntries(const Path& dir) {
     size_t n = 0;
     if (DIR* d = ::opendir(p)) {
         while (const dirent* e = ::readdir(d)) {
-            if (std::string(e->d_name) != "." && std::string(e->d_name) != "..") ++n;
+            if (StringView(e->d_name) != StringView(".") && StringView(e->d_name) != StringView("..")) ++n;
         }
         ::closedir(d);
     }
@@ -49,12 +48,12 @@ size_t CountEntries(const Path& dir) {
 
 TEST_CASE("io::File: LocalFile passes the read conformance suite", "[io][file]") {
     TempDir dir;
-    io_test::RunReadConformance([&](const std::string& c, bool w) { return MakeLocal(dir, c, w); });
+    io_test::RunReadConformance([&](StringView c, bool w) { return MakeLocal(dir, c, w); });
 }
 
 TEST_CASE("io::File: LocalFile passes the write conformance suite", "[io][file]") {
     TempDir dir;
-    io_test::RunWriteConformance([&](const std::string& c, bool w) { return MakeLocal(dir, c, w); });
+    io_test::RunWriteConformance([&](StringView c, bool w) { return MakeLocal(dir, c, w); });
 }
 
 TEST_CASE("io::File: open modes, flags and errors", "[io][file]") {
@@ -107,7 +106,7 @@ TEST_CASE("io::File: open modes, flags and errors", "[io][file]") {
     // An unreadable file.
     if (::geteuid() != 0) {
         REQUIRE(io_test::WriteText(dir / "secret", "x"));
-        REQUIRE(::chmod(Str((dir / "secret").View()).c_str(), 0200) == 0);
+        REQUIRE(::chmod(Str((dir / "secret").View()).CStr(), 0200) == 0);
         CHECK(io::File::Open(dir / "secret", OpenMode::Read, io::kOpenNone, &f).Is(Error::PermissionDenied));
     }
 }
@@ -133,29 +132,29 @@ TEST_CASE("io::File: append mode", "[io][file]") {
 TEST_CASE("io::File: locations, schemes and the registry", "[io][file]") {
     TempDir dir;
     REQUIRE(io_test::WriteText(dir / "f.txt", "local"));
-    const std::string native = dir.Native() + "/f.txt";
+    const engine_test::Text native = engine_test::Concat(dir.Native().View(), "/f.txt");
     io::FilePtr f;
     char b[8];
     usize n = 0;
-    REQUIRE(io::File::OpenLocation(StringView(native.data(), native.size()), OpenMode::Read, io::kOpenNone, &f).Ok());
+    REQUIRE(io::File::OpenLocation(native.View(), OpenMode::Read, io::kOpenNone, &f).Ok());
     REQUIRE(f->Read(b, 8, 0, &n).Ok());
-    CHECK(std::string(b, n) == "local");
-    const std::string url = "file://" + native;
-    REQUIRE(io::File::OpenLocation(StringView(url.data(), url.size()), OpenMode::Read, io::kOpenNone, &f).Ok());
+    CHECK(StringView(b, n) == StringView("local"));
+    const engine_test::Text url = engine_test::Concat("file://", native.View());
+    REQUIRE(io::File::OpenLocation(url.View(), OpenMode::Read, io::kOpenNone, &f).Ok());
     CHECK(io::File::OpenLocation("file://host/x", OpenMode::Read, io::kOpenNone, &f).Is(Error::Unsupported));
     // Percent escapes in a file URL.
     REQUIRE(io_test::WriteText(dir / "a b.txt", "spaced"));
-    const std::string escaped = "file://" + dir.Native() + "/a%20b.txt";
-    REQUIRE(io::File::OpenLocation(StringView(escaped.data(), escaped.size()), OpenMode::Read, io::kOpenNone, &f).Ok());
+    const engine_test::Text escaped = engine_test::Concat("file://", dir.Native().View(), "/a%20b.txt");
+    REQUIRE(io::File::OpenLocation(escaped.View(), OpenMode::Read, io::kOpenNone, &f).Ok());
     CHECK(io::File::OpenLocation("file:///tmp/%zz", OpenMode::Read, io::kOpenNone, &f).Is(Error::Invalid));
     CHECK(io::File::OpenLocation("file:///tmp/%2", OpenMode::Read, io::kOpenNone, &f).Is(Error::Invalid));
     CHECK(io::File::OpenLocation("file:///tmp/a%00b", OpenMode::Read, io::kOpenNone, &f).Is(Error::Invalid)); // an encoded NUL
     CHECK(io::File::OpenLocation("nope://x/y", OpenMode::Read, io::kOpenNone, &f).Is(Error::Unsupported));
 
     // A registered scheme gets the whole location; a directory path with a colon is still a path.
-    static std::string seen;
+    static engine_test::Text seen = engine_test::MakeText();
     io::FileFactory factory = [](StringView location, OpenMode, u32, io::FilePtr* out) -> io::Status {
-        seen = std::string(location.Data(), location.Length());
+        seen = engine_test::MakeText(location);
         out->Reset();
         return io::Status::Of(Error::NotFound);
     };
@@ -183,7 +182,7 @@ TEST_CASE("io::File: files over 4 GiB and generated files", "[io][file]") {
         REQUIRE(f->Write("end!", 4, five_gib - 4).Ok());
         char b[4];
         REQUIRE(io::ReadExact(*f, b, 4, five_gib - 4).Ok());
-        CHECK(std::string(b, 4) == "end!");
+        CHECK(StringView(b, 4) == StringView("end!"));
         u64 size = 0;
         REQUIRE(f->Size(&size).Ok());
         CHECK(size == five_gib);
@@ -206,36 +205,38 @@ TEST_CASE("io::File: a full device fails with NoSpace", "[io][file]") {
 
 TEST_CASE("io::File: concurrent offset reads of one file", "[io][file]") {
     TempDir dir;
-    const std::string content = io_test::PatternBytes(256 * 1024);
-    io::FilePtr f = MakeLocal(dir, content, false);
+    const engine_test::Text content = io_test::PatternBytes(256 * 1024);
+    io::FilePtr f = MakeLocal(dir, content.View(), false);
     std::atomic<int> bad{0};
-    std::vector<std::thread> threads;
+    Vector<std::thread> threads;
+    threads.Resize(4);
     for (int t = 0; t < 4; ++t) {
-        threads.emplace_back([&, t] {
-            std::string got(8192, '\0');
+        threads[t] = std::thread([&, t] {
+            Vector<char> got = engine_test::Chars(8192);
             for (int i = 0; i < 200; ++i) {
-                const u64 off = static_cast<u64>((t * 7919 + i * 1237) % (content.size() - 8192));
-                if (io::ReadExact(*f, got.data(), got.size(), off).Failed() || got != content.substr(off, 8192)) bad++;
+                const u64 off = static_cast<u64>((t * 7919 + i * 1237) % (content.Length() - 8192));
+                if (io::ReadExact(*f, got.Data(), got.Size(), off).Failed() ||
+                    StringView(got.Data(), got.Size()) != content.View().Substring(off, 8192)) bad++;
             }
         });
     }
-    for (auto& th : threads) th.join();
+    for (usize i = 0; i < threads.Size(); ++i) threads[i].join();
     CHECK(bad.load() == 0);
 }
 
 TEST_CASE("io: the read helpers", "[io][file]") {
     TempDir dir;
-    const std::string text = "line one\nline two\n";
-    REQUIRE(io::WriteFile(dir / "t.txt", text.data(), text.size()).Ok());
+    const StringView text = "line one\nline two\n";
+    REQUIRE(io::WriteFile(dir / "t.txt", text.Data(), text.Length()).Ok());
     String<HeapAllocator> out(HeapAllocator::Default());
     REQUIRE(io::ReadTextFile(dir / "t.txt", &out).Ok());
-    CHECK(Str(out.View()) == text);
+    CHECK(out.View() == text);
     ArenaAllocator arena(1 << 20);
     u8* data = nullptr;
     usize size = 0;
     REQUIRE(io::ReadFile(dir / "t.txt", arena, &data, &size).Ok());
-    CHECK(size == text.size());
-    CHECK(std::string(reinterpret_cast<char*>(data), size) == text);
+    CHECK(size == text.Length());
+    CHECK(StringView(reinterpret_cast<char*>(data), size) == text);
     REQUIRE(io::WriteFile(dir / "empty", "", 0).Ok());
     REQUIRE(io::ReadFile(dir / "empty", arena, &data, &size).Ok());
     CHECK(size == 0);
@@ -270,7 +271,7 @@ TEST_CASE("io: WriteFileAtomic replaces whole files and leaves nothing behind on
     // A symbolic link target: the file behind the link is replaced and the link stays.
     REQUIRE(io::CreateDirectory(dir / "real").Ok());
     REQUIRE(io_test::WriteText(dir / "real/data", "before"));
-    REQUIRE(::symlink("real/data", Str((dir / "lnk").View()).c_str()) == 0);
+    REQUIRE(::symlink("real/data", Str((dir / "lnk").View()).CStr()) == 0);
     REQUIRE(io::WriteFileAtomic(dir / "lnk", "after", 5).Ok());
     CHECK(io_test::ReadText(dir / "real/data") == "after");
     REQUIRE(io::Lstat(dir / "lnk", &info).Ok());
@@ -307,11 +308,11 @@ TEST_CASE("io: WriteFileAtomic replaces whole files and leaves nothing behind on
     CHECK(CountEntries(dir.Path()) == 2); // config.ini and d: still no temporary
     CHECK(io::WriteFileAtomic(Path("/"), "x", 1).Is(Error::Invalid));
     // A large payload, larger than any internal buffer.
-    const std::string big = io_test::PatternBytes(5 * 1024 * 1024);
-    REQUIRE(io::WriteFileAtomic(target, big.data(), big.size()).Ok());
+    const engine_test::Text big = io_test::PatternBytes(5 * 1024 * 1024);
+    REQUIRE(io::WriteFileAtomic(target, big.CStr(), big.Length()).Ok());
     Vector<u8> back;
     REQUIRE(io::ReadFile(target, &back).Ok());
-    CHECK(std::string(reinterpret_cast<const char*>(back.Data()), back.Size()) == big);
+    CHECK(StringView(reinterpret_cast<const char*>(back.Data()), back.Size()) == big.View());
 }
 
 TEST_CASE("The span overloads write and read the same bytes as the pointer forms", "[io][span]") {
