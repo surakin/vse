@@ -27,15 +27,27 @@ The `os::Window` backend for Windows (input is tomorrow). New files under `engin
 - [ ] **Window tests on Windows:** the shared window tests (`tests/foundation/window_*`) run in the `display` group, skipping through `SKIP_IF_NO_DISPLAY_SESSION()`
       on a locked session; Windows-specific cases (`win32_window_windows_test.cpp`, phase 13): DPI change by `SetWindowPos` across a simulated DPI, minimize and
       restore, close request, destroying the window with messages still queued, two windows at once.
-- [ ] **Windowed programs use the Windows subsystem** (developer decision, 2026-11-07), still entered through `main` (no `WinMain`): a CMake
-      helper `engine_windowed_program(<target>)` sets `WIN32_EXECUTABLE` and `/ENTRY:mainCRTStartup` (for both `link.exe` and `lld-link`), so the
-      C runtime still builds `argv` (UTF-8 through the manifest) and calls `main`; `game/hello_window` uses it from today, the demos from Day 161.
-      Tests and command-line tools stay console programs (ctest captures their output and a terminal waits for them). A GUI program has no
-      console, so the `os` backend gives standard output and error somewhere to go: handles the program inherited (a pipe, a redirected file,
-      ctest) are used as they are; with none, the first write tries `AttachConsole(ATTACH_PARENT_PROCESS)` once and opens `CONOUT$`, so a program
-      started from a terminal still prints there (after the shell's prompt, since the shell does not wait for a GUI program: documented); with
-      no parent console, writes report failure and the log file still has everything. Tests: a windowed probe built with the helper has subsystem
-      2 (`IMAGE_SUBSYSTEM_WINDOWS_GUI`) in its PE header, receives non-ASCII arguments in `main`, and its output reaches a parent's pipe.
+- [ ] **A source-level entry point for windowed programs** (developer decisions, 2026-11-07: windowed programs use the Windows subsystem, and the
+      main/WinMain difference is hidden in source, not chosen per target in CMake). `engine/platform/entry_point.h` declares the program's side,
+      `int EngineMain(int argc, char** argv)` (UTF-8 `argv`), and a macro `ENGINE_WINDOWED_PROGRAM(EngineMain)` that a program writes once, in one
+      source file, instead of `main`. It expands to the platform's real entry point: `int main(int argc, char** argv)` on Linux, and on Windows
+      `wWinMain` (with `extern "C"` and the plain types the CRT expects, so the expanding file need not include `windows.h`). Both call
+      `platform::detail::RunWindowedProgram(entry)` (`platform/<os>/entry_point_*.cpp`), which on Windows builds UTF-8 `argv` from the wide command
+      line (`CommandLineToArgvW` and `os/windows/utf16.h`, so it does not depend on the manifest's code page), stashes it for
+      `os::CommandLine::FromNative`, gives standard output and error somewhere to go (below), and returns `EngineMain`'s result.
+      - **The subsystem follows the entry point**, with no per-target CMake setting: `link.exe` and `lld-link` pick `/SUBSYSTEM:WINDOWS` for `wWinMain`
+        and `/SUBSYSTEM:CONSOLE` for `main` when no `/SUBSYSTEM` is given. CMake passes `/subsystem:console` to every executable by default, so
+        `cmake/EngineCompilerOptions.cmake` clears that once for the whole build (`CMAKE_CREATE_CONSOLE_EXE`); check what both linkers infer and
+        record it. Tests and command-line tools keep a plain `main` and stay console programs (ctest captures their output, a terminal waits).
+      - **Output of a GUI program:** handles it inherited (a pipe, a redirected file, ctest) are used as they are; with none, the first write tries
+        `AttachConsole(ATTACH_PARENT_PROCESS)` once and opens `CONOUT$`, so a program started from a terminal still prints there (after the shell's
+        prompt, since the shell does not wait for a GUI program: documented); with no parent console, writes report failure and the log file still
+        has everything.
+      - `game/hello_window` uses `ENGINE_WINDOWED_PROGRAM` from today; the demos on Day 161. `platform_neutral_check` (or `module_deps_check`) gains a
+        rule that windowed programs under `game/` define no `main` or `WinMain` of their own.
+      - Tests: a windowed probe written with the macro has subsystem 2 (`IMAGE_SUBSYSTEM_WINDOWS_GUI`) in its PE header, receives non-ASCII arguments,
+        quotes and backslashes in `EngineMain`, and its output reaches a parent's pipe; a console test program still has subsystem 3. On Linux the
+        macro gives an ordinary `main` (checked at the phase close).
 - [ ] **Human check** (record here or file): started from Explorer, `hello_window` opens no console window; a window appears, resizes by dragging, minimizes and restores, toggles fullscreen and closes with the close button.
 - [ ] **Documentation:** `window.h` comments name Win32 where they list backends; `docs/guide/platform-windowing-and-input.md` "Windows"; the docs module map
       (`docs/reference/modules.txt`) includes the Windows window header if it is public, as the Linux ones are; reference regenerated; `docgen lint` zero.

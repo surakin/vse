@@ -13,8 +13,9 @@ the same machine.
 - [ ] **The Phase 8 reset tests** on Windows through Vulkan: `lifecycle_conformance_test` (Vulkan factory), `device_host_test`, `swapchain_reconfigure_test`,
       `vulkan_reset_golden_test`, `device_loss_recovery_test`, `reset_soak_test` (100 resets: counts and device memory unchanged); record the reset time on this
       machine beside the Linux 40 ms.
-- [ ] **Demos:** `rhi_demo` and `renderer_demo` are windowed programs (`engine_windowed_program`, Day 158: the Windows subsystem, entered
-      through `main`; `--help` and `--list-settings` from a terminal print through the attached console) and build and run on Windows (POSIX includes in `game/*/main.cpp` gone, through `os::`); 1000 frames with
+- [ ] **Demos:** `rhi_demo` and `renderer_demo` are windowed programs (`ENGINE_WINDOWED_PROGRAM`, Day 158: `wWinMain` and the Windows subsystem on
+      Windows, `main` on Linux, from the same source; `--help` and `--list-settings` from a terminal print through the attached console) and build
+      and run on Windows (POSIX includes in `game/*/main.cpp` gone, through `os::`); 1000 frames with
       `--validation` exit 0; `--list-settings`, `--settings`, `--save-settings` and `--set` work; the `demo` ctests (golden screenshot, bounded runs, settings round
       trip) pass on Windows.
 - [ ] **Window interplay:** resize by dragging and minimize/restore while the demo runs (the swapchain reconfigures; a minimized window does not spin the CPU);
