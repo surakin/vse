@@ -41,12 +41,12 @@ Arch Linux's, the distribution the development machine uses.
 | `wayland-scanner`, `wayland-protocols` | 1.26.0, 1.49 | Optional | Only to regenerate the vendored protocol code (`engine/foundation/os/linux/wayland/generated/VENDORED.md`). | `wayland`, `wayland-protocols` |
 | A Wayland compositor and an X server (or Xwayland) | | For checks | The `display` test group; it skips on a locked session. | |
 
-## Windows (x86-64): being ported in Phase 12
+## Windows (x86-64): being ported in Phase 13
 
-**Status (2026-11-07): the tree does not configure on Windows yet.** The root `CMakeLists.txt` stops on non-Linux systems until Phase 12 Day 141
-(`plans/phase-12-windows-dx12.md`). This list is what that phase builds against, and the developer PC already has the versions shown.
+**Status (2026-11-07): the tree does not configure on Windows yet.** The root `CMakeLists.txt` stops on non-Linux systems until Phase 13 Day 148
+(`plans/phase-13-windows-dx12.md`). This list is what that phase builds against, and the developer PC already has the versions shown.
 
-The build finds Visual Studio (through `vswhere`), the Windows SDK and `clang-cl` by itself (Phase 12 Day 141). **Configure from a plain PowerShell or Git
+The build finds Visual Studio (through `vswhere`), the Windows SDK and `clang-cl` by itself (Phase 13 Day 148). **Configure from a plain PowerShell or Git
 Bash, never from a Developer Command Prompt or after `vcvars*.bat`.** The override variables for unusual installs are `ENGINE_VS_INSTALL_DIR`,
 `ENGINE_WINDOWS_SDK_DIR`, `ENGINE_WINDOWS_SDK_VERSION`, `ENGINE_LLVM_DIR`, `ENGINE_SLANGC` and `ENGINE_DXC`.
 
@@ -59,21 +59,23 @@ Bash, never from a Developer Command Prompt or after `vcvars*.bat`.** The overri
 | Ninja | 1.13 | Required | The generator the presets use. The one tool that must be on `PATH` (or named by `ENGINE_NINJA`). | `winget install --id Ninja-build.Ninja -e` |
 | Git for Windows | 2.5x | Required | Its `bash` runs `scripts/test-phase.sh`. | `winget install --id Git.Git -e` |
 | GPU driver with D3D12 (feature level 12_0) and Vulkan 1.3 | AMD 32.0.32015.7029 | Required to run | `vulkan-1.dll` ships with the driver. | vendor driver |
-| LLVM (`clang-cl`, `lld-link`) | 23.1.5 | For checks | The second Windows configuration, which must keep building (Phase 12 rule). Found in `C:\Program Files\LLVM` without being on `PATH`. | `winget install --id LLVM.LLVM -e` |
+| LLVM (`clang-cl`, `lld-link`) | 23.1.5 | For checks | The second Windows configuration, which must keep building (Phase 13 rule). Found in `C:\Program Files\LLVM` without being on `PATH`. | `winget install --id LLVM.LLVM -e` |
 | Graphics Tools (optional Windows feature) | | For checks | The D3D12 debug layer (`d3d12SDKLayers.dll`): `--validation` on DX12 and the debug-layer-silent checks. | Settings → System → Optional features → "Graphics Tools", or elevated: `Add-WindowsCapability -Online -Name Tools.Graphics.DirectX~~~~0.0.1.0` |
 | Vulkan SDK | 1.4.363.0 | For checks | The validation layers for `--validation` on Vulkan. The loader is already in the driver. | `winget install --id KhronosGroup.VulkanSDK -e` |
 | `slangc` | **exactly v2026.18.2** | For checks | Same version as Linux, so minted SPIR-V and DXIL match byte for byte. winget's `shader-slang.slang` is older (2026.14.1); use the Windows x86-64 zip from https://github.com/shader-slang/slang/releases/tag/v2026.18.2 and put its `bin` on `PATH`, or set `ENGINE_SLANGC`. | GitHub release |
-| WinDbg, or Debugging Tools for Windows (`cdb`) | current | For checks | Reading minidumps with the symbol store (Phase 12 Days 148-149). | `winget install --id Microsoft.WinDbg -e` |
+| WinDbg, or Debugging Tools for Windows (`cdb`) | current | For checks | Reading minidumps with the symbol store (Phase 13 Days 155-156). | `winget install --id Microsoft.WinDbg -e` |
+| Long paths (`HKLM\SYSTEM\CurrentControlSet\Control\FileSystem\LongPathsEnabled = 1`) | off on the developer PC (2026-11-07) | Optional | Lets the manifest's `longPathAware` take effect. The file layer works either way (it uses the `\\?\` prefix); one check is done by hand with it on (Phase 13 Day 151). An elevated system change: the developer makes it. | Group Policy "Enable Win32 long paths", or the registry value |
+| Developer Mode | off on the developer PC | Optional | Lets tests create symbolic links without elevation; without it they skip with a reason (Phase 13 Day 152). | Settings → System → For developers |
 | PIX for Windows | current | Optional | GPU captures while debugging the DX12 backend. | `winget install --id Microsoft.PIX -e` |
 | Python 3 | 3.x | Optional | `scripts/list-aborts.py` only. | `winget install --id Python.Python.3.14 -e` |
 
 There is no Windows ThreadSanitizer or UBSan: those flavors run on the Linux machine only.
 
-## macOS: not yet supported (Phase 13)
+## macOS: not yet supported (Phase 14)
 
-Planned for Phase 13 (Metal backend, `plans/phase-13-macos-metal.md`). The list is written when that phase is broken into days; expect Xcode or its
+Planned for Phase 14 (Metal backend, `plans/phase-14-macos-metal.md`). The list is written when that phase is broken into days; expect Xcode or its
 command-line tools (Clang, the Metal toolchain), CMake, Ninja and `slangc` v2026.18.2.
 
 ## Android, iOS, consoles: not yet supported
 
-Phases 21 (Android, iOS) and 22 (consoles, gated on dev-kit and NDA access). Each phase adds its section here when it is broken into days.
+Phases 22 (Android, iOS) and 22 (consoles, gated on dev-kit and NDA access). Each phase adds its section here when it is broken into days.

@@ -32,7 +32,7 @@ legitimate exception (128). The gate (129) comes last so it can start at zero vi
 
 1. **`byte` is an alias of `u8`** (decided with the user), not a distinct enum: raw bytes, `u8` values and buffers interchange freely. `ByteSpan = Span<const byte>` and `MutableByteSpan = Span<byte>` are pointer-and-length views like
    `StringView`; `StringView` converts to a `ByteSpan` and back through named functions.
-2. **`u128`/`i128` are portable structs** (decided with the user), not aliases of `__int128`, because MSVC (Phase 12) has none: two 64-bit halves (little-endian layout: low half first), operators for the full set of integer
+2. **`u128`/`i128` are portable structs** (decided with the user), not aliases of `__int128`, because MSVC (Phase 13) has none: two 64-bit halves (little-endian layout: low half first), operators for the full set of integer
    arithmetic, shifts, bit operations and comparisons, division and remainder, `Hash`, `ToText`/`FromText`, `CountLeadingZeros`; implemented with `__int128` inside where `ENGINE_HAS_NATIVE_INT128` is set, and a forced-portable
    build (`ENGINE_FORCE_PORTABLE_INT128`) tested against the native one on Linux.
 3. **What "std container" means for the gate** (Day 125 lists it exactly): `std::string`, `std::vector`, `std::array`, `std::map`/`set` and their unordered forms, `std::deque`, `std::list`, `std::queue`, `std::stack`,

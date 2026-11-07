@@ -1,7 +1,7 @@
 # Phase 8 — RHI Reset
 
 **Depends on:** Phase 5 (Renderer core). Runs after Phases 6-7 in the roadmap so its days re-run only their own tests
-and can use the debugging facilities. Must complete before the DX12 and Metal ports (Phases 12-13): the reset contract
+and can use the debugging facilities. Must complete before the DX12 and Metal ports (Phases 13-14): the reset contract
 is part of the RHI interface those backends implement.
 **Goal:** a user can change **any** rendering setting without restarting the application, which means re-initializing
 the RHI (and everything built on it) at run time has to be supported as a normal operation, not a recovery hack. Today a
@@ -17,7 +17,7 @@ leaks, the rendered picture before and after matches the golden image, and a los
 path.
 
 Every day of this phase has its own file under `plans/phase-08-rhi-reset/` (see `CLAUDE.md`, planning policy).
-**Status: COMPLETE (2026-11-06).** Days 103-114 are done. Closing run: `ran 2737 of 2737 tests (phases: all; flavors: all; display: included; crash tests: included)`, all passing; docs 4/4; both demos clean on Wayland and X11 with validation; 100 scripted resets on each. `CURRENT_PHASE` stays 7 until Phase 12 has its day files and starts.
+**Status: COMPLETE (2026-11-06).** Days 103-114 are done. Closing run: `ran 2737 of 2737 tests (phases: all; flavors: all; display: included; crash tests: included)`, all passing; docs 4/4; both demos clean on Wayland and X11 with validation; 100 scripted resets on each. `CURRENT_PHASE` stays 7 until Phase 13 has its day files and starts.
 
 ## Days
 
@@ -54,7 +54,7 @@ the live controls and measures what a reset costs; 114 prepares DX12/Metal and c
 3. **Owners rebuild from CPU-side sources**, through a renderer-level registry that rebuilds in tier order (Days 108-109).
    Pipelines are rebuilt from descriptors, never serialized.
 4. **`backend` is a setting** classified as a full reset, so Null to Vulkan is tested here. Vulkan to DX12 or Metal is
-   decided out of this phase (there is no second real backend yet) and filed for Phases 12-13.
+   decided out of this phase (there is no second real backend yet) and filed for Phases 13-14.
 5. **Fullscreen needs a platform window API that does not exist** (`os::Window` has resize serial only). Day 107 adds
    `SetFullscreen` for Wayland and X11 with the Windows and macOS checklists, or records it as a capability the window
    reports as unsupported; the settings model treats it as a capability either way.
@@ -100,7 +100,7 @@ the live controls and measures what a reset costs; 114 prepares DX12/Metal and c
   in flight are drained first.
 - **Multi-threading.** A reset happens at a frame boundary on the owning thread; any worker still recording is joined
   first. Define this in the RHI thread-safety contract.
-- **Interaction with Phase 12/13.** DX12 and Metal must implement the same lifecycle; the portability reviews should be
+- **Interaction with Phase 13/13.** DX12 and Metal must implement the same lifecycle; the portability reviews should be
   re-read for adapter enumeration (DXGI factory, `MTLCopyAllDevices`) and window-surface re-creation.
-- Backend switch at run time (Vulkan to DX12 on Windows): decided on Day 103 — not in this phase; Null to Vulkan is tested, the rest waits for Phases 12-13.
+- Backend switch at run time (Vulkan to DX12 on Windows): decided on Day 103 — not in this phase; Null to Vulkan is tested, the rest waits for Phases 13-14.
 - Day 103 answers (spec `docs/superpowers/specs/2026-11-06-rhi-reset-design.md`): a device cycle costs about 210 ms for a trivial scene with no fd and near-zero memory drift over 100 iterations; the instance and surface are already per device; the development machine has one Vulkan adapter, so adapter switching is tested on the null backend only; the pipeline-set rebuild cost is measured on Day 113.

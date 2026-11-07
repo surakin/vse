@@ -92,5 +92,5 @@ template <typename T> ByteSpan AsBytes(const T&);  ByteSpan AsByteSpan(StringVie
 ## 6. Open questions and deferrals
 
 - The older tests' `std::` use (about 1090 uses): Catch2 prints engine types through `Catch::StringMaker` specializations written on Day 128 (`StringView`, `String`, `Path`, `Status`, `u128`, `Span`), which is also how a test file is converted later.
-- The Windows build of the portable 128-bit path is verified by the cross-syntax compile only, until Phase 12.
+- The Windows build of the portable 128-bit path is verified by the cross-syntax compile only, until Phase 13.
 - `f16`/`f128`: not planned.

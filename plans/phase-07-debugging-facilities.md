@@ -5,7 +5,7 @@ assertions, process and file wrappers, threads).
 **Goal:** when the engine or a game crashes, fails an assertion, or hits a state that should not happen, the developer
 gets a readable stack trace with function, file and line, a dump file to open in a debugger, and macros that distinguish
 "abort here" from "report and carry on". Built on existing libraries (below) instead of hand-written crash machinery.
-Linux is implemented; Windows (Phase 12) and macOS (Phase 13) are left ready; every interface is shaped so no later
+Linux is implemented; Windows (Phase 13) and macOS (Phase 14) are left ready; every interface is shaped so no later
 platform forces a redesign.
 **Definition of done:** a crash (signal, `ENGINE_ASSERT`, unhandled error) prints a symbolized stack trace and the
 engine's context (build id, platform, last log lines) and leaves a minidump holding every thread; an `ENGINE_ENSURE`
@@ -60,14 +60,14 @@ helper (Catch2 has none); the core-dump setup and the scripts that open a core o
 
 **Dropped from the earlier plan** (the libraries do it): an own frame-pointer stack walker, an own ELF symbol reader, an
 own minidump writer and reader, Mach-O and PE readers, an own crash signal handler, and `tools/symbolize`
-(`llvm-symbolizer` and `addr2line` already exist). Known gap carried to Phase 12: libbacktrace reads DWARF only, not PDB.
+(`llvm-symbolizer` and `addr2line` already exist). Known gap carried to Phase 13: libbacktrace reads DWARF only, not PDB.
 
 ## Platform design (PLAN.md assumption #11)
 
-**Scope (decided 2026-11-06):** this phase implements **Linux only**. It leaves **Windows (Phase 12) and macOS (Phase 13)
+**Scope (decided 2026-11-06):** this phase implements **Linux only**. It leaves **Windows (Phase 13) and macOS (Phase 14)
 ready**: the libraries already support them, so "ready" means a facade and tests free of Linux assumptions, per-backend
 checklists (`BACKEND.md`) for the few platform-specific functions, a backend conformance list the same test sources
-satisfy, cross-target syntax checks, and a porting guide (Day 101). Android, iOS and the consoles (Phases 21 and 22) are
+satisfy, cross-target syntax checks, and a porting guide (Day 101). Android, iOS and the consoles (Phases 22 and 23) are
 **designed in** (the interfaces do not preclude them and `Unsupported` is a valid answer) and get no work here.
 
 Rules applied in every day file:
@@ -78,14 +78,14 @@ Rules applied in every day file:
   (`tools/platform_neutral_check`) enforces this from Day 92.
 - **Death tests re-execute the test binary** (no `fork`, which Windows lacks and which is unsafe in a multithreaded
   process); platforms that cannot spawn (iOS, consoles) report `Unsupported` and the tests skip.
-- **Tests speak the neutral API** (`InjectFault(FaultKind)`, `ChildResult::reason`), so Phases 12 and 13 build the same
+- **Tests speak the neutral API** (`InjectFault(FaultKind)`, `ChildResult::reason`), so Phases 13 and 14 build the same
   sources and make the same groups pass.
 - **No assumption of a command line, a filesystem layout or a process model.** Dumps go to an `os::`-provided directory.
 - **Compiler differences stay in one header** (`debug/compiler.h`: debug break, unreachable hint, noinline).
 
 | Facility | Linux (this phase) | Windows (8) | macOS (9) | Android / iOS (17) | Consoles (18) |
 |---|---|---|---|---|---|
-| Stack capture and symbols | libbacktrace (unwinder, DWARF) | libbacktrace with DWARF builds; PDB needs a DbgHelp resolver (Phase 12 decision) | libbacktrace + dSYM | libbacktrace (Android); iOS dSYM | SDK |
+| Stack capture and symbols | libbacktrace (unwinder, DWARF) | libbacktrace with DWARF builds; PDB needs a DbgHelp resolver (Phase 13 decision) | libbacktrace + dSYM | libbacktrace (Android); iOS dSYM | SDK |
 | Crash capture and dump | crash library, out-of-process handler | same library (exception filter inside it) | same library (Mach exceptions inside it) | the library's `inproc` backend (Android); iOS TBD | console repos of the library (NDA) |
 | Core-dump equivalent | cores / `systemd-coredump` | WER `LocalDumps` | `/cores`, crash reports | tombstones; none on iOS (`Unsupported`) | SDK |
 | Child process for death tests | re-exec (`posix_spawn`) | `CreateProcess` re-exec | `posix_spawn` | no spawn on iOS: tests skip | skipped |

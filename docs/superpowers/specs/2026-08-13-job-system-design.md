@@ -10,7 +10,7 @@ has raw OS thread primitives (Phase 1 Day 20: `clone()`-based thread
 creation, futex mutex/condvar). There is no portable job/task
 abstraction, no work-stealing scheduler, and no coroutine support
 anywhere in the plan. This gap was already flagged implicitly in
-`plans/phase-16-ecs.md`'s note that "multithreaded system scheduling
+`plans/phase-17-ecs.md`'s note that "multithreaded system scheduling
 depends on Phase 1's threading primitives; confirm they're sufficient or
 need extending" — they are not sufficient on their own; every consumer
 (ECS parallel system scheduling, renderer command recording, physics,
@@ -110,7 +110,7 @@ so there is nothing OS- or ABI-specific anywhere in this phase.
   ready handle from the worker's deque — no OS thread ever blocks on a
   job dependency. The sub-job that decrements the counter to zero
   reschedules the waiting continuation onto some worker's deque.
-- **Async I/O** (first real consumer: Phase 13's asset streaming) uses the
+- **Async I/O** (first real consumer: Phase 14's asset streaming) uses the
   identical mechanism — `co_await LoadTextureAsync(path)` suspends until
   the I/O completes, then resumes as a scheduled job. One suspension
   primitive serves both job-graph waits and async I/O.

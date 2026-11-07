@@ -1,4 +1,4 @@
-# Session state on Windows (checklist for Phase 12)
+# Session state on Windows (checklist for Phase 13)
 
 `os::QuerySessionState` (`engine/foundation/os/session.h`) answers whether windows can appear. Implement it in `os/windows/session.cpp` and add the file to `FOUNDATION_PLATFORM_SOURCES`.
 

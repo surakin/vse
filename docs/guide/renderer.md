@@ -945,17 +945,17 @@ past 100000 objects.
 ### Platform notes
 
 The renderer is written and tested on Linux with the Vulkan backend (and the null device, which every non-GPU test uses). Windows
-(D3D12, Phase 12) and macOS (Metal, Phase 13) are planned behind the same RHI; every shader already compiles to HLSL and Metal
+(D3D12, Phase 13) and macOS (Metal, Phase 14) are planned behind the same RHI; every shader already compiles to HLSL and Metal
 (`ctest -R shaders_portability`). The points that shape code today are in the [renderer portability
 review](../superpowers/specs/2026-11-04-renderer-portability-review.md): the Y flip lives in the projection function, the per-object
 index needs another delivery on D3D12, and a deferred G-buffer is a poor fit for tile-based mobile GPUs unless the passes are
-merged (Phase 21). Sanitizers: the TSan flavor excludes the `[gpu]` tests (the proprietary NVIDIA driver's threads crash it), the ASan
+merged (Phase 22). Sanitizers: the TSan flavor excludes the `[gpu]` tests (the proprietary NVIDIA driver's threads crash it), the ASan
 flavor runs them; see [the RHI guide](rhi.md#platform-notes).
 
 ### See also
 
 - [The RHI](rhi.md) and the [renderer design](../superpowers/specs/2026-11-04-renderer-design.md).
-- [Renderer portability review](../superpowers/specs/2026-11-04-renderer-portability-review.md): what Phases 12-13 and 21 add.
+- [Renderer portability review](../superpowers/specs/2026-11-04-renderer-portability-review.md): what Phases 13-14 and 22 add.
 - [Shaders: from Slang to a shader module](rhi-shaders.md) and [Tutorial: From a Scene to a Lit Frame](../tutorials/hello-renderer.md).
 
 ## What the renderer adds to a crash report

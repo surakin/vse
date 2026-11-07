@@ -4,7 +4,7 @@ The engine's modules, the layer each belongs to, what each may depend on, and ho
 the long-term layer diagram; this file is the **source of truth for dependencies between the modules that exist**. It is measured from the code, not
 written from intent, and each mismatch is listed with what fixes it.
 
-Written 2026-11-07 (before Phase 12), from the `#include` graph of `engine/`, `game/` and `tools/` and the CMake link lines. The rule: **a module
+Written 2026-11-07 (before Phase 12, the module layering), from the `#include` graph of `engine/`, `game/` and `tools/` and the CMake link lines. The rule: **a module
 may include and link only modules in lower layers, or other modules its row allows; never one above it, and no cycles.**
 
 ## 1. Layers
@@ -46,7 +46,7 @@ jobs             ->  foundation
 
 **Inside the foundation, nine parts form one cycle:** base, `mem`, `os`, `os/linux`, `log`, `containers`, `string`, `io` and `debug` all reach each other.
 `settings` and `math` sit outside the cycle (nothing in the foundation depends on them). The cycle is why `foundation` is a single static library
-(`engine/foundation/CMakeLists.txt`), why no part of it can be built, tested or ported alone, and why Phase 12's plan could not run a Windows test until
+(`engine/foundation/CMakeLists.txt`), why no part of it can be built, tested or ported alone, and why Phase 13's plan could not run a Windows test until
 the OS, file and debugging backends were all ported.
 
 Most edges in the cycle go downward by the table and are fine (`containers -> mem`, `debug -> io`, `mem -> os.h`). The cycle exists because of these
@@ -73,27 +73,29 @@ Measured edges outside the cycle that break a rule:
 Placement only (not a dependency problem): `algorithm.h` is in the foundation root but uses `Span` and the heap allocator, so it is layer 4;
 `int128.h`'s `FromText` takes a `StringView`, so either it moves to layer 4 or `FromText` moves to the string module.
 
-## 3. How each mismatch is fixed (proposed; to be scheduled)
+## 3. How each mismatch is fixed (scheduled: Phase 12, Module layering, Days 140-146)
 
-1. **Assert failure report as a hook.** `log` keeps the assert macros and a minimal failure path (message to standard error, then abort). The debugging
+The day that does each item is in brackets; the plan is `plans/phase-12-module-layering.md`.
+
+1. **[Day 142] Assert failure report as a hook.** `log` keeps the assert macros and a minimal failure path (message to standard error, then abort). The debugging
    module installs the full report (stack trace, crash context, debugger break) at start-up, through the existing handler slot (`SetAssertHandler`) or a
    dedicated report hook. Asserts that fire before installation still print and abort. Removes item 1.
-2. **Log configuration above the file layer.** `log::LoadConfig`'s file reading moves out of `log` (Phase 11 made the log channels settings, so the file
+2. **[Day 143] Log configuration above the file layer.** `log::LoadConfig`'s file reading moves out of `log` (Phase 11 made the log channels settings, so the file
    form may be retired or moved into `settings`). Removes item 2.
-3. **Crash registration as a hook.** The job system and the I/O thread register threads through a thread-start hook the debugging module installs, not by
+3. **[Day 142] Crash registration as a hook.** The job system and the I/O thread register threads through a thread-start hook the debugging module installs, not by
    calling into `debug` from `io`. Removes item 3.
-4. **OS primitives below strings.** `os.h` takes paths as pointer and length (or a base-layer `StringView` moved to layer 0), and `EnvironmentEntry` writes into
+4. **[Day 143] OS primitives below strings.** `os.h` takes paths as pointer and length (or a base-layer `StringView` moved to layer 0), and `EnvironmentEntry` writes into
    a caller buffer. Removes item 4.
-5. **Windows and input become the platform layer.** `window.h`, `input.h`, `key_translate.cpp`, `PlatformWindowHost` and the display backends move to
+5. **[Day 144] Windows and input become the platform layer.** `window.h`, `input.h`, `key_translate.cpp`, `PlatformWindowHost` and the display backends move to
    `engine/platform/` (as `PLAN.md` always said) as their own library, which alone links Wayland, X11 or Win32. `PlatformWindowHost` gets a neutral header.
    Removes items 5, 9 and 10.
-6. **`engine_main` moves** to `game/hello_window/` (or is retired if the demos cover it). Removes item 6.
-7. **The RHI backend registry** (already Phase 12 Day 155): backends register with the neutral `rhi`; the renderer and `DeviceHost` stop linking
+6. **[Day 143] `engine_main` moves** to `game/hello_window/` (or is retired if the demos cover it). Removes item 6.
+7. **[Phase 13 Day 162] The RHI backend registry**: backends register with the neutral `rhi`; the renderer and `DeviceHost` stop linking
    `rhi_vulkan`, and `rhi/vulkan` stops including `rhi/null`. Removes items 7 and 8.
-8. **One library per layer** once the cycle is gone: `foundation` becomes a set of libraries (for example `foundation_base` with layers 0-5,
+8. **[Day 145] One library per layer** once the cycle is gone: `foundation` becomes a set of libraries (for example `foundation_base` with layers 0-5,
    `foundation_io`, `foundation_debug`, `foundation_settings`), with `foundation` kept as the aggregate consumers link today; and `platform` beside them. A port
    can then build and test each layer as soon as its backend exists.
-9. **A gate keeps it this way:** a `module_deps_check` ctest computes the include graph, maps files to the modules of section 1 and fails on an upward edge, a
+9. **[Day 141, first] A gate keeps it this way:** a `module_deps_check` ctest computes the include graph, maps files to the modules of section 1 and fails on an upward edge, a
    cycle or a program including `os/<platform>/`, with an allow list (a reason per entry, stale entries fail) that starts with the items above still open.
 
 ## 4. Platform-specific code

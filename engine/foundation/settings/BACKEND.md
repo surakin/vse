@@ -41,16 +41,16 @@ store, the memory stores, the environment and command-line layers and everything
 
 ## Platform notes
 
-- **Windows (Phase 12):** `HKCU\Software\<app>`. Dotted keys become subkeys (`renderer.width` is the value `width` under the subkey `renderer`); typed values
-  `REG_DWORD`/`REG_QWORD` for ints and bools, `REG_SZ` for text and enum names, an `f64` as `REG_QWORD` bits or `REG_SZ` text (decide in Phase 12 and
+- **Windows (Phase 13):** `HKCU\Software\<app>`. Dotted keys become subkeys (`renderer.width` is the value `width` under the subkey `renderer`); typed values
+  `REG_DWORD`/`REG_QWORD` for ints and bools, `REG_SZ` for text and enum names, an `f64` as `REG_QWORD` bits or `REG_SZ` text (decide in Phase 13 and
   keep it readable by `regedit`); no comments, no order, each write immediate; `RegNotifyChangeKeyValue` on its own thread for the change capability;
   the 64-bit view (`KEY_WOW64_64KEY`); group-policy keys (`HKLM\Software\Policies\<app>`) as a read-only `System` layer.
-- **macOS (Phase 13):** `NSUserDefaults` (a suite named after the application) or a plist file through the file store; `NSUserDefaultsDidChangeNotification`
+- **macOS (Phase 14):** `NSUserDefaults` (a suite named after the application) or a plist file through the file store; `NSUserDefaultsDidChangeNotification`
   for changes; the application bundle's defaults as the read-only `System` layer.
-- **Android (Phase 21):** `SharedPreferences`; `apply()` is asynchronous and `commit()` synchronous, so `Commit` calls `commit()` and reports its result;
+- **Android (Phase 22):** `SharedPreferences`; `apply()` is asynchronous and `commit()` synchronous, so `Commit` calls `commit()` and reports its result;
   `OnSharedPreferenceChangeListener` for notifications.
-- **iOS (Phase 21):** `NSUserDefaults` as on macOS.
-- **Consoles (Phase 22):** the platform's save-data API behind the same store; mind size limits and commit latency (`Commit` may be slow: the service
+- **iOS (Phase 22):** `NSUserDefaults` as on macOS.
+- **Consoles (Phase 23):** the platform's save-data API behind the same store; mind size limits and commit latency (`Commit` may be slow: the service
   never calls it from a frame).
 - **The environment** (`EnvironmentSnapshot::Capture`) is the one other platform-bound piece: Windows reads `GetEnvironmentStringsW` (UTF-16 to UTF-8), macOS
   `_NSGetEnviron`; consoles may return an empty snapshot.

@@ -29,7 +29,7 @@ Full reference: [Foundation: Strings](../reference/foundation-strings.md).
 - StringView (non-owning), String, StringBuilder are hand-rolled
 - UTF-8 throughout; grapheme clustering follows UAX #29 (Unicode 17.0.0 tables, generated)
 - NFC/NFD normalization tables generated
-- Text cursor/line-break positions will reuse grapheme clustering (Phase 14)
+- Text cursor/line-break positions will reuse grapheme clustering (Phase 15)
 
 ## Outline
 
