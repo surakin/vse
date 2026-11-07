@@ -113,7 +113,7 @@ set(FOUNDATION_SOURCES
 # PRIVATE, not PUBLIC: PUBLIC compile options are a usage requirement
 # that would leak into every consumer that links this target, including
 # /tests/foundation's Catch2-based foundation_tests executable, which
-# needs exceptions. Production executables (engine_main*) that want the
+# needs exceptions. Production executables (game/hello_window) that want the
 # same hardening declare it themselves instead of inheriting it.
 # ENGINE_PRODUCTION_COMPILE_OPTIONS is C++-only (-fno-exceptions/-fno-rtti
 # etc); the generated xdg-shell-protocol.c source is compiled as C, so
@@ -133,17 +133,12 @@ target_link_libraries(foundation PRIVATE backtrace sentry)
 # Day 18: libwayland-client (see the platform-selection block above).
 target_link_libraries(foundation PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)
 
-add_executable(engine_main main.cpp)
-target_compile_options(engine_main PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-target_link_libraries(engine_main PRIVATE foundation)
-
 # Sanitized variants: separate targets built from the same sources, not
 # a build-wide flag, so both the normal and sanitized binaries exist
-# side by side from one configure — `cmake --build build --target
-# engine_main_asan && ./build/engine/foundation/engine_main_asan`.
+# side by side from one configure.
 # The sanitizer flags themselves stay PUBLIC (ASan/UBSan need the whole
-# binary instrumented consistently, including engine_main_asan's own
-# translation units and the runtime it links against) — only the
+# binary instrumented consistently, including the translation units of the
+# programs that link them and the runtime) — only the
 # exceptions/RTTI hardening moved to PRIVATE above.
 add_library(foundation_asan STATIC ${FOUNDATION_SOURCES})
 target_include_directories(foundation_asan PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -158,10 +153,6 @@ target_link_libraries(foundation_asan PUBLIC ${CMAKE_DL_LIBS})
 # Phase 7: libbacktrace (third_party/libbacktrace), used only by debug/stack_trace_backtrace.cpp; one plain build for every flavor.
 target_link_libraries(foundation_asan PRIVATE backtrace sentry)
 target_link_libraries(foundation_asan PUBLIC PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)
-
-add_executable(engine_main_asan main.cpp)
-target_compile_options(engine_main_asan PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-target_link_libraries(engine_main_asan PRIVATE foundation_asan)
 
 # Phase 2 Day 27: ThreadSanitizer variant. A separate build from the
 # ASan/UBSan one above because TSan cannot be combined with ASan. The

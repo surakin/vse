@@ -538,22 +538,26 @@ usize EnvironmentCount();
 
 Returns how many variables the process environment holds.
 
-## `EnvironmentEntry(usize,String<HeapAllocator>*)` {#os-environmententry-usize-string-lt-heapallocator-gt-star}
+## `EnvironmentEntry(usize,char*,usize,usize*)` {#os-environmententry-usize-char-star-usize-usize-star}
 
 `function os::EnvironmentEntry` — defined in `engine/foundation/os/os.h`
 
 ```cpp
-bool EnvironmentEntry(usize index, String<HeapAllocator>* out);
+bool EnvironmentEntry(usize index, char* buffer, usize capacity, usize* length);
 ```
 
-Copies one environment entry as `NAME=value`.
+Copies one environment entry as `NAME=value` into the caller's buffer.
 
 | Field | Value |
 |---|---|
 | Parameter `index` | position, less than [`os::EnvironmentCount`](#os-environmentcount). |
-| Parameter `out` | receives the entry, replacing its contents; empty if `index` is out of range. |
-| Returns | true if the entry exists. |
+| Parameter `buffer` | receives the entry followed by a NUL, cut short if it does not fit; ignored when `capacity` is 0. Borrowed for the call. |
+| Parameter `capacity` | room in `buffer`, terminator included. |
+| Parameter `length` | receives the entry's full length without the terminator, even when it was cut; 0 when the entry does not exist. Must not be null. |
+| Returns | true if the entry exists. The copy is complete when `*length < capacity`; otherwise call again with a buffer of `*length + 1` bytes. |
+| Fails | returns false and writes an empty string when `index` is out of range; a short buffer is not a failure (see `length`). |
 | Thread-safety | thread-compatible; another thread changing the environment (`setenv`) while this runs is a race, as it is for `getenv`. |
+| Ownership | nothing is retained. |
 
 ## `SessionState` {#os-sessionstate}
 

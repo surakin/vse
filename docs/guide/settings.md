@@ -353,7 +353,7 @@ Every program built this way understands the same options, and `--help` prints t
 
 The engine's own settings are `platform.window_backend`, `rhi.pipeline_cache` and `rhi.pipeline_cache_dir`
 (`settings::RegisterEngineSettings`), the 14 rendering settings (`renderer::RegisterSharedSettings`), and, for every log channel that exists, `log.<channel>.verbosity` and `log.<channel>.enabled`
-(`settings::RegisterLogSettings` and `AttachLogSettings`, which applies them to the channels and keeps them in step). The old `log::LoadConfig` file lines still work and are unchanged.
+(`settings::RegisterLogSettings` and `AttachLogSettings`, which applies them to the channels and keeps them in step). The old `log::LoadConfig` file form (`Channel.verbosity=Info` lines) was retired in Phase 12 Day 143: nothing in the engine called it; use `--set log.<channel>.verbosity=Info`, a settings file or the environment (`ENGINE_SETTING_<KEY>`)..
 
 ## Keeping configuration in one place
 

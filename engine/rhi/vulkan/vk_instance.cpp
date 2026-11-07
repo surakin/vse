@@ -1,3 +1,4 @@
+#include "containers/vector.h"
 #include "rhi/vulkan/vk_instance.h"
 
 #include <atomic>

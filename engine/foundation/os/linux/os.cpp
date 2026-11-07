@@ -144,14 +144,22 @@ usize EnvironmentCount() {
     return n;
 }
 
-bool EnvironmentEntry(usize index, String<HeapAllocator>* out) {
-    *out = String<HeapAllocator>(HeapAllocator::Default());
+bool EnvironmentEntry(usize index, char* buffer, usize capacity, usize* length) {
+    *length = 0;
+    if (capacity > 0) buffer[0] = '\0';
     if (environ == nullptr) return false;
     for (usize i = 0; i < index; ++i) { // walk to the entry; stops at the end of the array
         if (environ[i] == nullptr) return false;
     }
-    if (environ[index] == nullptr) return false;
-    out->Append(StringView(environ[index]));
+    const char* entry = environ[index];
+    if (entry == nullptr) return false;
+    const usize full = std::strlen(entry);
+    *length = full;
+    if (capacity > 0) {
+        const usize copy = full < capacity - 1 ? full : capacity - 1;
+        std::memcpy(buffer, entry, copy);
+        buffer[copy] = '\0';
+    }
     return true;
 }
 

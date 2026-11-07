@@ -3,7 +3,7 @@
 #include <compare>
 #include <type_traits>
 
-#include "string/string.h"
+#include "string_view.h"
 #include "types.h"
 
 //! 128-bit integers: [[u128]] and [[i128]].

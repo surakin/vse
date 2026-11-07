@@ -30,9 +30,16 @@ const String<HeapAllocator>* EnvironmentSnapshot::Find(StringView name) const {
 EnvironmentSnapshot EnvironmentSnapshot::Capture() {
     EnvironmentSnapshot snapshot;
     for (usize i = 0;; ++i) {
-        String<HeapAllocator> text(HeapAllocator::Default());
-        if (!os::EnvironmentEntry(i, &text)) break;
-        const StringView entry = text.View();
+        char stack_entry[1024];
+        usize length = 0;
+        if (!os::EnvironmentEntry(i, stack_entry, sizeof(stack_entry), &length)) break;
+        StringView entry(stack_entry, length);
+        Vector<char> large; // only for an entry that does not fit the stack buffer
+        if (length >= sizeof(stack_entry)) {
+            large.Resize(length + 1);
+            if (!os::EnvironmentEntry(i, large.Data(), large.Size(), &length) || length >= large.Size()) continue;
+            entry = StringView(large.Data(), length);
+        }
         const usize eq = entry.IndexOf('=');
         if (eq == entry.Length() || eq == 0) continue;
         snapshot.Add(entry.Substring(0, eq), entry.Substring(eq + 1));

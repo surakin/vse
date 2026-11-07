@@ -1,6 +1,5 @@
-// Real entry point for the `engine_main`/`engine_main_asan` executables.
-// Foundation-layer verification lives in /tests/foundation (Catch2,
-// discovered via `ctest`) — this file has no test logic of its own.
+// The hello-window program (`hello_window`, `hello_window_asan`): opens a window and logs the input state.
+// Verification lives in /tests/foundation (Catch2, discovered via `ctest`) — this file has no test logic of its own.
 #include "log/log.h"
 #include "mem/arena_allocator.h"
 #include "os/command_line.h"
@@ -162,7 +161,7 @@ int main(int argc, char** argv) {
     InputSnapshot prev_input;
 
     // Day 14: frame-timed main loop, target ~60Hz. Still wall-clock
-    // bounded (so `engine_main` terminates on its own with no compositor
+    // bounded (so `hello_window` terminates on its own with no compositor
     // interaction, e.g. in automated/headless runs) but Day 20 adds a
     // second, earlier exit: the window's xdg_toplevel close event, via
     // WaylandWindow::ShouldClose().

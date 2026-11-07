@@ -1,7 +1,6 @@
 #pragma once
 
-#include "mem/heap_allocator.h"
-#include "string/string.h"
+#include "string_view.h"
 #include "types.h"
 
 //! Thin wrappers around OS calls: file descriptors, memory reservation, clocks, dynamic libraries.
@@ -124,12 +123,16 @@ void UnloadLibrary(DynamicLibraryHandle handle);
 /// Returns how many variables the process environment holds.
 usize EnvironmentCount();
 
-/// Copies one environment entry as `NAME=value`.
+/// Copies one environment entry as `NAME=value` into the caller's buffer.
 ///
 /// Param index: position, less than [[os::EnvironmentCount]].
-/// Param out: receives the entry, replacing its contents; empty if `index` is out of range.
-/// Returns: true if the entry exists.
+/// Param buffer: receives the entry followed by a NUL, cut short if it does not fit; ignored when `capacity` is 0. Borrowed for the call.
+/// Param capacity: room in `buffer`, terminator included.
+/// Param length: receives the entry's full length without the terminator, even when it was cut; 0 when the entry does not exist. Must not be null.
+/// Returns: true if the entry exists. The copy is complete when `*length < capacity`; otherwise call again with a buffer of `*length + 1` bytes.
+/// Fails: returns false and writes an empty string when `index` is out of range; a short buffer is not a failure (see `length`).
+/// Ownership: nothing is retained.
 /// Thread-safety: thread-compatible; another thread changing the environment (`setenv`) while this runs is a race, as it is for `getenv`.
-bool EnvironmentEntry(usize index, String<HeapAllocator>* out);
+bool EnvironmentEntry(usize index, char* buffer, usize capacity, usize* length);
 
 } // namespace engine_placeholder::os

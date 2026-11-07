@@ -6,7 +6,7 @@
 #include "containers/array.h"
 #include "containers/vector.h"
 #include "log/assert.h"
-#include "string/string.h"
+#include "string_view.h"
 #include "types.h"
 
 //! Non-owning views of contiguous elements: [[Span]], [[ByteSpan]] and [[MutableByteSpan]].

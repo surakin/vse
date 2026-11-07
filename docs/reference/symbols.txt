@@ -226,53 +226,33 @@ CombiningClass(u32)	function	foundation/strings	combiningclass-u32	foundation-st
 IsCompositionExcluded(u32)	function	foundation/strings	iscompositionexcluded-u32	foundation-strings.md	engine/foundation/string/normalize.h:39
 NormalizeNFD(Allocator&,StringView)	function	foundation/strings	normalizenfd-allocator-amp-stringview	foundation-strings.md	engine/foundation/string/normalize.h:81
 NormalizeNFC(Allocator&,StringView)	function	foundation/strings	normalizenfc-allocator-amp-stringview	foundation-strings.md	engine/foundation/string/normalize.h:111
-StringView	class	foundation/strings	stringview	foundation-strings.md	engine/foundation/string/string.h:23
-StringView::StringView()	function	foundation/strings	stringview-stringview	foundation-strings.md	engine/foundation/string/string.h:26
-StringView::StringView(const char*,usize)	function	foundation/strings	stringview-stringview-const-char-star-usize	foundation-strings.md	engine/foundation/string/string.h:31
-StringView::StringView(const char*)	function	foundation/strings	stringview-stringview-const-char-star	foundation-strings.md	engine/foundation/string/string.h:35
-StringView::Data() const	function	foundation/strings	stringview-data-const	foundation-strings.md	engine/foundation/string/string.h:38
-StringView::Length() const	function	foundation/strings	stringview-length-const	foundation-strings.md	engine/foundation/string/string.h:40
-StringView::Empty() const	function	foundation/strings	stringview-empty-const	foundation-strings.md	engine/foundation/string/string.h:42
-StringView::operator[](usize) const	function	foundation/strings	stringview-operator-index-usize-const	foundation-strings.md	engine/foundation/string/string.h:47
-StringView::operator==(const StringView&) const	function	foundation/strings	stringview-operator-eq-eq-const-stringview-amp-const	foundation-strings.md	engine/foundation/string/string.h:50
-StringView::operator!=(const StringView&) const	function	foundation/strings	stringview-operator-not-eq-const-stringview-amp-const	foundation-strings.md	engine/foundation/string/string.h:62
-StringView::Compare(const StringView&) const	function	foundation/strings	stringview-compare-const-stringview-amp-const	foundation-strings.md	engine/foundation/string/string.h:69
-StringView::operator<(const StringView&) const	function	foundation/strings	stringview-operator-lt-const-stringview-amp-const	foundation-strings.md	engine/foundation/string/string.h:84
-StringView::Substring(usize,usize) const	function	foundation/strings	stringview-substring-usize-usize-const	foundation-strings.md	engine/foundation/string/string.h:91
-StringView::IndexOf(char) const	function	foundation/strings	stringview-indexof-char-const	foundation-strings.md	engine/foundation/string/string.h:100
-StringView::Find(StringView) const	function	foundation/strings	stringview-find-stringview-const	foundation-strings.md	engine/foundation/string/string.h:115
-StringView::Substring(usize) const	function	foundation/strings	stringview-substring-usize-const	foundation-strings.md	engine/foundation/string/string.h:138
-StringView::LastIndexOf(char) const	function	foundation/strings	stringview-lastindexof-char-const	foundation-strings.md	engine/foundation/string/string.h:145
-StringView::StartsWith(StringView) const	function	foundation/strings	stringview-startswith-stringview-const	foundation-strings.md	engine/foundation/string/string.h:155
-StringView::EndsWith(StringView) const	function	foundation/strings	stringview-endswith-stringview-const	foundation-strings.md	engine/foundation/string/string.h:160
-StringView::Contains(StringView) const	function	foundation/strings	stringview-contains-stringview-const	foundation-strings.md	engine/foundation/string/string.h:165
-String	class	foundation/strings	string	foundation-strings.md	engine/foundation/string/string.h:184
-String::String(Allocator&)	function	foundation/strings	string-string-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:191
-String::String(Allocator&,StringView)	function	foundation/strings	string-string-allocator-amp-stringview	foundation-strings.md	engine/foundation/string/string.h:200
-String::String(const String&)	function	foundation/strings	string-string-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:208
-String::operator=(const String&)	function	foundation/strings	string-operator-eq-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:209
-String::String(String&&) noexcept	function	foundation/strings	string-string-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:211
-String::operator=(String&&) noexcept	function	foundation/strings	string-operator-eq-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:212
-String::Append(StringView)	function	foundation/strings	string-append-stringview	foundation-strings.md	engine/foundation/string/string.h:219
-String::Append(char)	function	foundation/strings	string-append-char	foundation-strings.md	engine/foundation/string/string.h:233
-String::AppendRawBytes(const char*,usize)	function	foundation/strings	string-appendrawbytes-const-char-star-usize	foundation-strings.md	engine/foundation/string/string.h:247
-String::CStr() const	function	foundation/strings	string-cstr-const	foundation-strings.md	engine/foundation/string/string.h:259
-String::Length() const	function	foundation/strings	string-length-const	foundation-strings.md	engine/foundation/string/string.h:261
-String::View() const	function	foundation/strings	string-view-const	foundation-strings.md	engine/foundation/string/string.h:264
-String::operator StringView() const	function	foundation/strings	string-operator-stringview-const	foundation-strings.md	engine/foundation/string/string.h:266
-String::operator==(StringView) const	function	foundation/strings	string-operator-eq-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:271
-String::operator!=(StringView) const	function	foundation/strings	string-operator-not-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:273
-StringBuilder	class	foundation/strings	stringbuilder	foundation-strings.md	engine/foundation/string/string.h:288
-StringBuilder::StringBuilder(Allocator&)	function	foundation/strings	stringbuilder-stringbuilder-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:295
-StringBuilder::Append(StringView)	function	foundation/strings	stringbuilder-append-stringview	foundation-strings.md	engine/foundation/string/string.h:302
-StringBuilder::Append(char)	function	foundation/strings	stringbuilder-append-char	foundation-strings.md	engine/foundation/string/string.h:312
-StringBuilder::AppendCodepoint(u32)	function	foundation/strings	stringbuilder-appendcodepoint-u32	foundation-strings.md	engine/foundation/string/string.h:323
-StringBuilder::AppendInt(i64)	function	foundation/strings	stringbuilder-appendint-i64	foundation-strings.md	engine/foundation/string/string.h:337
-StringBuilder::AppendUInt(u64)	function	foundation/strings	stringbuilder-appenduint-u64	foundation-strings.md	engine/foundation/string/string.h:356
-StringBuilder::AppendHex(u64,int)	function	foundation/strings	stringbuilder-appendhex-u64-int	foundation-strings.md	engine/foundation/string/string.h:373
-StringBuilder::AppendFloat(f64,int)	function	foundation/strings	stringbuilder-appendfloat-f64-int	foundation-strings.md	engine/foundation/string/string.h:404
-StringBuilder::View() const	function	foundation/strings	stringbuilder-view-const	foundation-strings.md	engine/foundation/string/string.h:427
-StringBuilder::CStr() const	function	foundation/strings	stringbuilder-cstr-const	foundation-strings.md	engine/foundation/string/string.h:429
+String	class	foundation/strings	string	foundation-strings.md	engine/foundation/string/string.h:28
+String::String(Allocator&)	function	foundation/strings	string-string-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:35
+String::String(Allocator&,StringView)	function	foundation/strings	string-string-allocator-amp-stringview	foundation-strings.md	engine/foundation/string/string.h:44
+String::String(const String&)	function	foundation/strings	string-string-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:52
+String::operator=(const String&)	function	foundation/strings	string-operator-eq-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:53
+String::String(String&&) noexcept	function	foundation/strings	string-string-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:55
+String::operator=(String&&) noexcept	function	foundation/strings	string-operator-eq-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:56
+String::Append(StringView)	function	foundation/strings	string-append-stringview	foundation-strings.md	engine/foundation/string/string.h:63
+String::Append(char)	function	foundation/strings	string-append-char	foundation-strings.md	engine/foundation/string/string.h:77
+String::AppendRawBytes(const char*,usize)	function	foundation/strings	string-appendrawbytes-const-char-star-usize	foundation-strings.md	engine/foundation/string/string.h:91
+String::CStr() const	function	foundation/strings	string-cstr-const	foundation-strings.md	engine/foundation/string/string.h:103
+String::Length() const	function	foundation/strings	string-length-const	foundation-strings.md	engine/foundation/string/string.h:105
+String::View() const	function	foundation/strings	string-view-const	foundation-strings.md	engine/foundation/string/string.h:108
+String::operator StringView() const	function	foundation/strings	string-operator-stringview-const	foundation-strings.md	engine/foundation/string/string.h:110
+String::operator==(StringView) const	function	foundation/strings	string-operator-eq-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:115
+String::operator!=(StringView) const	function	foundation/strings	string-operator-not-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:117
+StringBuilder	class	foundation/strings	stringbuilder	foundation-strings.md	engine/foundation/string/string.h:132
+StringBuilder::StringBuilder(Allocator&)	function	foundation/strings	stringbuilder-stringbuilder-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:139
+StringBuilder::Append(StringView)	function	foundation/strings	stringbuilder-append-stringview	foundation-strings.md	engine/foundation/string/string.h:146
+StringBuilder::Append(char)	function	foundation/strings	stringbuilder-append-char	foundation-strings.md	engine/foundation/string/string.h:156
+StringBuilder::AppendCodepoint(u32)	function	foundation/strings	stringbuilder-appendcodepoint-u32	foundation-strings.md	engine/foundation/string/string.h:167
+StringBuilder::AppendInt(i64)	function	foundation/strings	stringbuilder-appendint-i64	foundation-strings.md	engine/foundation/string/string.h:181
+StringBuilder::AppendUInt(u64)	function	foundation/strings	stringbuilder-appenduint-u64	foundation-strings.md	engine/foundation/string/string.h:200
+StringBuilder::AppendHex(u64,int)	function	foundation/strings	stringbuilder-appendhex-u64-int	foundation-strings.md	engine/foundation/string/string.h:217
+StringBuilder::AppendFloat(f64,int)	function	foundation/strings	stringbuilder-appendfloat-f64-int	foundation-strings.md	engine/foundation/string/string.h:248
+StringBuilder::View() const	function	foundation/strings	stringbuilder-view-const	foundation-strings.md	engine/foundation/string/string.h:271
+StringBuilder::CStr() const	function	foundation/strings	stringbuilder-cstr-const	foundation-strings.md	engine/foundation/string/string.h:273
 CodepointCount(StringView)	function	foundation/strings	codepointcount-stringview	foundation-strings.md	engine/foundation/string/utf8.h:17
 IsValidUtf8(StringView)	function	foundation/strings	isvalidutf8-stringview	foundation-strings.md	engine/foundation/string/utf8.h:33
 Utf8CodepointIterator	class	foundation/strings	utf8codepointiterator	foundation-strings.md	engine/foundation/string/utf8.h:53
@@ -290,6 +270,26 @@ DecodedCodepoint::codepoint	variable	foundation/strings	decodedcodepoint-codepoi
 DecodedCodepoint::byte_length	variable	foundation/strings	decodedcodepoint-byte-length	foundation-strings.md	engine/foundation/string/utf8_codec.h:12
 DecodeUtf8At(const char*,usize,usize,bool*)	function	foundation/strings	decodeutf8at-const-char-star-usize-usize-bool-star	foundation-strings.md	engine/foundation/string/utf8_codec.h:28
 EncodeUtf8(u32,char[4])	function	foundation/strings	encodeutf8-u32-char-4	foundation-strings.md	engine/foundation/string/utf8_codec.h:37
+StringView	class	foundation/strings	stringview	foundation-strings.md	engine/foundation/string_view.h:19
+StringView::StringView()	function	foundation/strings	stringview-stringview	foundation-strings.md	engine/foundation/string_view.h:22
+StringView::StringView(const char*,usize)	function	foundation/strings	stringview-stringview-const-char-star-usize	foundation-strings.md	engine/foundation/string_view.h:27
+StringView::StringView(const char*)	function	foundation/strings	stringview-stringview-const-char-star	foundation-strings.md	engine/foundation/string_view.h:31
+StringView::Data() const	function	foundation/strings	stringview-data-const	foundation-strings.md	engine/foundation/string_view.h:34
+StringView::Length() const	function	foundation/strings	stringview-length-const	foundation-strings.md	engine/foundation/string_view.h:36
+StringView::Empty() const	function	foundation/strings	stringview-empty-const	foundation-strings.md	engine/foundation/string_view.h:38
+StringView::operator[](usize) const	function	foundation/strings	stringview-operator-index-usize-const	foundation-strings.md	engine/foundation/string_view.h:43
+StringView::operator==(const StringView&) const	function	foundation/strings	stringview-operator-eq-eq-const-stringview-amp-const	foundation-strings.md	engine/foundation/string_view.h:46
+StringView::operator!=(const StringView&) const	function	foundation/strings	stringview-operator-not-eq-const-stringview-amp-const	foundation-strings.md	engine/foundation/string_view.h:58
+StringView::Compare(const StringView&) const	function	foundation/strings	stringview-compare-const-stringview-amp-const	foundation-strings.md	engine/foundation/string_view.h:65
+StringView::operator<(const StringView&) const	function	foundation/strings	stringview-operator-lt-const-stringview-amp-const	foundation-strings.md	engine/foundation/string_view.h:80
+StringView::Substring(usize,usize) const	function	foundation/strings	stringview-substring-usize-usize-const	foundation-strings.md	engine/foundation/string_view.h:87
+StringView::IndexOf(char) const	function	foundation/strings	stringview-indexof-char-const	foundation-strings.md	engine/foundation/string_view.h:96
+StringView::Find(StringView) const	function	foundation/strings	stringview-find-stringview-const	foundation-strings.md	engine/foundation/string_view.h:111
+StringView::Substring(usize) const	function	foundation/strings	stringview-substring-usize-const	foundation-strings.md	engine/foundation/string_view.h:134
+StringView::LastIndexOf(char) const	function	foundation/strings	stringview-lastindexof-char-const	foundation-strings.md	engine/foundation/string_view.h:141
+StringView::StartsWith(StringView) const	function	foundation/strings	stringview-startswith-stringview-const	foundation-strings.md	engine/foundation/string_view.h:151
+StringView::EndsWith(StringView) const	function	foundation/strings	stringview-endswith-stringview-const	foundation-strings.md	engine/foundation/string_view.h:156
+StringView::Contains(StringView) const	function	foundation/strings	stringview-contains-stringview-const	foundation-strings.md	engine/foundation/string_view.h:161
 io::DirectoryEntry	struct	foundation/io	io-directoryentry	foundation-io.md	engine/foundation/io/directory.h:20
 io::DirectoryEntry::name	variable	foundation/io	io-directoryentry-name	foundation-io.md	engine/foundation/io/directory.h:21
 io::DirectoryEntry::type	variable	foundation/io	io-directoryentry-type	foundation-io.md	engine/foundation/io/directory.h:22
@@ -735,7 +735,6 @@ LogCore	variable	foundation/log	logcore	foundation-log.md	engine/foundation/log/
 LogRender	variable	foundation/log	logrender	foundation-log.md	engine/foundation/log/log.h:125
 LogPlatform	variable	foundation/log	logplatform	foundation-log.md	engine/foundation/log/log.h:127
 Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:138
-LoadConfig(const char*)	function	foundation/log	loadconfig-const-char-star	foundation-log.md	engine/foundation/log/log.h:154
 ENGINE_INT128_NAMESPACE::detail128::NativeU	variable	foundation/types	engine-int128-namespace-detail128-nativeu	foundation-types.md	engine/foundation/int128.h:41
 ENGINE_INT128_NAMESPACE::detail128::NativeI	variable	foundation/types	engine-int128-namespace-detail128-nativei	foundation-types.md	engine/foundation/int128.h:43
 ENGINE_INT128_NAMESPACE::detail128::Parts	struct	foundation/types	engine-int128-namespace-detail128-parts	foundation-types.md	engine/foundation/int128.h:46
@@ -1346,24 +1345,24 @@ os::CommandLine::FlagName(usize) const	function	platform/os	os-commandline-flagn
 os::CommandLine::FlagHasValue(usize) const	function	platform/os	os-commandline-flaghasvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:136
 os::CommandLine::FlagValue(usize) const	function	platform/os	os-commandline-flagvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:145
 os::ProbeVulkanCreateInstance()	function	platform/os	os-probevulkancreateinstance	platform-os.md	engine/foundation/os/gpu_driver_probe.h:15
-os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/foundation/os/os.h:19
-os::Exit(int)	function	platform/os	os-exit-int	platform-os.md	engine/foundation/os/os.h:23
-os::Write(int,const void*,usize)	function	platform/os	os-write-int-const-void-star-usize	platform-os.md	engine/foundation/os/os.h:30
-os::Read(int,void*,usize)	function	platform/os	os-read-int-void-star-usize	platform-os.md	engine/foundation/os/os.h:37
-os::WriteAllWithTimeout(int,const void*,usize,u64)	function	platform/os	os-writeallwithtimeout-int-const-void-star-usize-u64	platform-os.md	engine/foundation/os/os.h:48
-os::Open(StringView,int,int)	function	platform/os	os-open-stringview-int-int	platform-os.md	engine/foundation/os/os.h:59
-os::CreateFileForWriting(StringView,int)	function	platform/os	os-createfileforwriting-stringview-int	platform-os.md	engine/foundation/os/os.h:69
-os::Close(int)	function	platform/os	os-close-int	platform-os.md	engine/foundation/os/os.h:74
-os::ReserveMemory(usize)	function	platform/os	os-reservememory-usize	platform-os.md	engine/foundation/os/os.h:81
-os::ReleaseMemory(void*,usize)	function	platform/os	os-releasememory-void-star-usize	platform-os.md	engine/foundation/os/os.h:86
-os::MonotonicTimeNanos()	function	platform/os	os-monotonictimenanos	platform-os.md	engine/foundation/os/os.h:94
-os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:100
-os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:103
-os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:110
-os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:118
-os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:122
-os::EnvironmentCount()	function	platform/os	os-environmentcount	platform-os.md	engine/foundation/os/os.h:125
-os::EnvironmentEntry(usize,String<HeapAllocator>*)	function	platform/os	os-environmententry-usize-string-lt-heapallocator-gt-star	platform-os.md	engine/foundation/os/os.h:133
+os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/foundation/os/os.h:18
+os::Exit(int)	function	platform/os	os-exit-int	platform-os.md	engine/foundation/os/os.h:22
+os::Write(int,const void*,usize)	function	platform/os	os-write-int-const-void-star-usize	platform-os.md	engine/foundation/os/os.h:29
+os::Read(int,void*,usize)	function	platform/os	os-read-int-void-star-usize	platform-os.md	engine/foundation/os/os.h:36
+os::WriteAllWithTimeout(int,const void*,usize,u64)	function	platform/os	os-writeallwithtimeout-int-const-void-star-usize-u64	platform-os.md	engine/foundation/os/os.h:47
+os::Open(StringView,int,int)	function	platform/os	os-open-stringview-int-int	platform-os.md	engine/foundation/os/os.h:58
+os::CreateFileForWriting(StringView,int)	function	platform/os	os-createfileforwriting-stringview-int	platform-os.md	engine/foundation/os/os.h:68
+os::Close(int)	function	platform/os	os-close-int	platform-os.md	engine/foundation/os/os.h:73
+os::ReserveMemory(usize)	function	platform/os	os-reservememory-usize	platform-os.md	engine/foundation/os/os.h:80
+os::ReleaseMemory(void*,usize)	function	platform/os	os-releasememory-void-star-usize	platform-os.md	engine/foundation/os/os.h:85
+os::MonotonicTimeNanos()	function	platform/os	os-monotonictimenanos	platform-os.md	engine/foundation/os/os.h:93
+os::SleepNanos(u64)	function	platform/os	os-sleepnanos-u64	platform-os.md	engine/foundation/os/os.h:99
+os::DynamicLibraryHandle	alias	platform/os	os-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:102
+os::LoadLibrary(StringView)	function	platform/os	os-loadlibrary-stringview	platform-os.md	engine/foundation/os/os.h:109
+os::GetSymbol(DynamicLibraryHandle,const char*)	function	platform/os	os-getsymbol-dynamiclibraryhandle-const-char-star	platform-os.md	engine/foundation/os/os.h:117
+os::UnloadLibrary(DynamicLibraryHandle)	function	platform/os	os-unloadlibrary-dynamiclibraryhandle	platform-os.md	engine/foundation/os/os.h:121
+os::EnvironmentCount()	function	platform/os	os-environmentcount	platform-os.md	engine/foundation/os/os.h:124
+os::EnvironmentEntry(usize,char*,usize,usize*)	function	platform/os	os-environmententry-usize-char-star-usize-usize-star	platform-os.md	engine/foundation/os/os.h:136
 os::SessionState	enum	platform/os	os-sessionstate	platform-os.md	engine/foundation/os/session.h:11
 os::SessionState::Active	enumerator	platform/os	os-sessionstate-active	platform-os.md	engine/foundation/os/session.h:12
 os::SessionState::Locked	enumerator	platform/os	os-sessionstate-locked	platform-os.md	engine/foundation/os/session.h:13

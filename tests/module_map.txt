@@ -28,6 +28,7 @@ tools/config_access_check 11
 tools/module_deps_check 12
 tools/platform_neutral_check 7
 tools/crash_extract 7
+game/hello_window  1
 game/rhi_demo       4,5
 game/renderer_demo  4,5
 game/renderer_bench 4,5

@@ -4,17 +4,8 @@
 #
 # kind from -> to | reason | day
 
-# item 2: log::LoadConfig reads a file through the file layer
-edge log -> io | log.cpp includes io/file.h for log::LoadConfig | Phase 12 Day 143
-# item 4: os.h takes StringView paths and fills a String<HeapAllocator>
-edge os -> string | os.h includes string/string.h | Phase 12 Day 143
-edge os -> mem | os.h includes mem/heap_allocator.h for EnvironmentEntry | Phase 12 Day 143
-# items 11-13: StringView lives in string/string.h
-edge log -> string | log/log.h includes string/string.h for StringView | Phase 12 Day 143
-edge containers -> string | containers/span.h includes string/string.h for StringView | Phase 12 Day 143
-edge base -> string | int128.h includes string/string.h for FromText(StringView) | Phase 12 Day 143
-# item 6: a program in a library directory
-platform engine_main -> platform | main.cpp includes os/linux/platform_window_host.h | Phase 12 Day 143
+# item 6 (program in a library directory) is gone: the program moved to game/hello_window. It includes the per-platform header like the demos (item 9)
+platform game/hello_window -> platform | main.cpp includes os/linux/platform_window_host.h | Phase 12 Day 144
 # item 9: the demos include a per-platform header
 platform game/rhi_demo -> platform | main.cpp includes os/linux/platform_window_host.h | Phase 12 Day 144
 platform game/renderer_demo -> platform | main.cpp includes os/linux/platform_window_host.h | Phase 12 Day 144

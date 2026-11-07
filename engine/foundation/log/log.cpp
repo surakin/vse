@@ -1,5 +1,4 @@
 #include "log/log.h"
-#include "io/file.h"
 
 #include "log/diagnostics_hooks.h"
 #include "os/os.h"
@@ -127,51 +126,6 @@ usize AppendUIntToBuffer(char* buf, usize capacity, usize offset, u64 value) {
         --n;
     }
     return offset;
-}
-
-LogVerbosity ParseVerbosityName(StringView v) {
-    if (v == StringView("Error")) {
-        return LogVerbosity::Error;
-    }
-    if (v == StringView("Warn")) {
-        return LogVerbosity::Warn;
-    }
-    if (v == StringView("Info")) {
-        return LogVerbosity::Info;
-    }
-    if (v == StringView("Debug")) {
-        return LogVerbosity::Debug;
-    }
-    if (v == StringView("Trace")) {
-        return LogVerbosity::Trace;
-    }
-    return LogVerbosity::Warn;
-}
-
-void ParseConfigLine(StringView line) {
-    usize eq = line.IndexOf('=');
-    if (eq == line.Length()) {
-        return; // not a key=value line
-    }
-    StringView key = line.Substring(0, eq);
-    StringView value = line.Substring(eq + 1, line.Length() - eq - 1);
-
-    usize dot = key.IndexOf('.');
-    if (dot == key.Length()) {
-        return; // not "channel.attribute"
-    }
-    StringView channel_name = key.Substring(0, dot);
-    StringView attribute = key.Substring(dot + 1, key.Length() - dot - 1);
-
-    LogChannel* channel = LogChannel::Find(channel_name);
-    if (channel == nullptr) {
-        return;
-    }
-    if (attribute == StringView("verbosity")) {
-        channel->SetVerbosity(ParseVerbosityName(value));
-    } else if (attribute == StringView("enabled")) {
-        channel->SetEnabled(value == StringView("true") || value == StringView("1"));
-    }
 }
 
 } // namespace
@@ -441,32 +395,6 @@ void ResetEnsureStateForTesting() {
         s->next = nullptr;
         s = next;
     }
-}
-
-bool LoadConfig(const char* path) {
-    io::Path config_path;
-    io::FilePtr file;
-    if (!io::Path::Parse(StringView(path), io::NativePathStyle(), &config_path) ||
-        io::File::Open(config_path, io::OpenMode::Read, io::kOpenNone, &file).Failed()) {
-        return false;
-    }
-    char buffer[4096];
-    usize len = 0;
-    if (file->Read(buffer, sizeof(buffer), 0, &len).Failed() || len == 0) {
-        return false;
-    }
-
-    usize line_start = 0;
-    for (usize i = 0; i <= len; ++i) {
-        if (i == len || buffer[i] == '\n') {
-            usize line_len = i - line_start;
-            if (line_len > 0) {
-                ParseConfigLine(StringView(buffer + line_start, line_len));
-            }
-            line_start = i + 1;
-        }
-    }
-    return true;
 }
 
 } // namespace engine_placeholder

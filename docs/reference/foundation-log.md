@@ -905,22 +905,3 @@ Writes `[Channel] LEVEL: message` plus a newline to the write sink (standard out
 | Parameter `message` | text to print. The whole line is formatted into a 512-byte buffer, so overlong messages are cut; the line always ends with its newline. |
 | Thread-safety | thread-compatible. Formatting uses a stack buffer, but the channel state it reads is unsynchronized. |
 
-## `LoadConfig(const char*)` {#loadconfig-const-char-star}
-
-`function LoadConfig` — defined in `engine/foundation/log/log.h`
-
-```cpp
-bool LoadConfig(const char* path);
-```
-
-Applies per-channel overrides from a `key=value` config file.
-
-Lines have the form `ChannelName.verbosity=Level` (`Error`, `Warn`, `Info`, `Debug` or `Trace`) or `ChannelName.enabled=true|false` (`1` also means true). Unknown channels, attributes and malformed lines are skipped silently. An unrecognized verbosity name is not skipped: it sets the channel to `Warn`. Only the first 4096 bytes of the file are read.
-
-| Field | Value |
-|---|---|
-| Parameter `path` | path of the config file, NUL-terminated. |
-| Returns | true if the file was opened and had content; false otherwise. |
-| Fails | returns false if the file cannot be opened or is empty. A missing config file is not an error for the caller. |
-| Thread-safety | not-thread-safe. Modifies channel state without synchronization. |
-

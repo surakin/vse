@@ -8,10 +8,10 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 |---|---|---|
 | [Foundation: Memory](foundation-memory.md) | 4 | 28 |
 | [Foundation: Containers](foundation-containers.md) | 7 | 165 |
-| [Foundation: Strings](foundation-strings.md) | 5 | 98 |
+| [Foundation: Strings](foundation-strings.md) | 6 | 98 |
 | [Foundation: Paths and Files](foundation-io.md) | 5 | 265 |
 | [Foundation: Math](foundation-math.md) | 5 | 101 |
-| [Foundation: Logging and Assertions](foundation-log.md) | 3 | 80 |
+| [Foundation: Logging and Assertions](foundation-log.md) | 3 | 79 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 15 | 493 |
 | [Platform: OS Services](platform-os.md) | 4 | 46 |

@@ -16,7 +16,6 @@ Full reference: [Foundation: Logging and Assertions](../reference/foundation-log
 - [[LogChannel]] — a named, filterable log channel
 - [[LogVerbosity]] — verbosity levels
 - [[Log]] — write a message to a channel
-- [[LoadConfig]] — configure channels from a file
 - [[SetAssertHandler]], [[AssertInfo]], [[AssertAction]] — the handler every failed check goes to
 - [[ENGINE_ASSERT]], [[ENGINE_ENSURE]], [[ENGINE_VERIFY]], [[ENGINE_CHECK_SLOW]], [[ENGINE_UNREACHABLE]], [[ENGINE_NOT_IMPLEMENTED]]
 
@@ -72,7 +71,7 @@ int FailuresSeenByChecks() {
 ## Already known — seed material (verify against the code when writing)
 
 - Named channels (LogCore, LogRender, LogPlatform, LogJobs) with per-channel verbosity, conservative default Warn
-- Config file override via LoadConfig; `--log-level` flag on the hello-window binary
+- Channel verbosity and enabled state are settings (`log.<channel>.verbosity`, `log.<channel>.enabled`); the old `LoadConfig` file form was retired in Phase 12 Day 143
 - `ENGINE_ASSERT` is always enabled in every build and aborts (`SIGABRT`) with file/line/function/condition/message
 - No allocator is needed for logging
 

@@ -2,6 +2,7 @@
 
 #include <type_traits>
 
+#include "string/string.h"
 #include "containers/span.h"
 
 using namespace engine_placeholder;

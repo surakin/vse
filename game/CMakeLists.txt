@@ -31,6 +31,7 @@ function(demo_settings_tests demo)
     ${demo}_settings_bad_key ${demo}_settings_bad_value ${demo}_settings_save_reproduce ${demo}_settings_legacy_flag_yields ${demo}_settings_flag_beats_user_file)
 endfunction()
 
+add_subdirectory(hello_window)
 add_subdirectory(rhi_demo)
 add_subdirectory(rhi_bench)
 add_subdirectory(renderer_demo)

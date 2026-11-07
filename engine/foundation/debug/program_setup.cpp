@@ -15,8 +15,7 @@ namespace engine_placeholder::debug {
 
 namespace {
 
-// The build line is Info, which LogCore (Warn by default) would drop, so it has a channel of its own. (A second channel named
-// "LogCore" would make LoadConfig's `LogCore.*` lines reach whichever of the two was registered last.)
+// The build line is Info, which LogCore (Warn by default) would drop, so it has a channel of its own.
 LogChannel LogBuild("LogBuild", LogVerbosity::Info);
 
 #if defined(ENGINE_CRASH_HANDLER_DEFAULT)

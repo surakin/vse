@@ -12,7 +12,6 @@ using engine_placeholder::Log;
 using engine_placeholder::LogChannel;
 using engine_placeholder::LogCore;
 using engine_placeholder::LogVerbosity;
-using engine_placeholder::LoadConfig;
 using engine_placeholder::AssertAction;
 using engine_placeholder::AssertHandler;
 using engine_placeholder::AssertInfo;
@@ -92,41 +91,4 @@ TEST_CASE("ENGINE_ASSERT on a false condition reports through the handler and lo
     StringView captured(g_capture_buffer, g_capture_len);
     REQUIRE(captured.Contains(StringView("intentional test failure")));
     REQUIRE(captured.Contains(StringView("ASSERT FAILED")));
-}
-
-TEST_CASE("LoadConfig overrides a channel's verbosity/enabled state from a file", "[log][config]") {
-    static LogChannel test_channel("TestChannel", LogVerbosity::Warn);
-    test_channel.SetVerbosity(LogVerbosity::Warn);
-    test_channel.SetEnabled(true);
-
-    const char* config_path = "/tmp/engine_test_log_config.txt";
-    int fd = Open(config_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    const char content[] = "TestChannel.verbosity=Info\nTestChannel.enabled=true\n";
-    Write(fd, content, sizeof(content) - 1);
-    Close(fd);
-
-    bool loaded = LoadConfig(config_path);
-    REQUIRE(loaded);
-    REQUIRE(test_channel.Verbosity() == LogVerbosity::Info);
-    REQUIRE(test_channel.Enabled());
-
-    g_capture_len = 0;
-    SetWriteSinkForTesting(&CapturingWriteSink);
-    Log(test_channel, LogVerbosity::Info, "emitted message");
-    Log(test_channel, LogVerbosity::Debug, "suppressed message");
-    SetWriteSinkForTesting(&Write);
-
-    StringView captured(g_capture_buffer, g_capture_len);
-    REQUIRE(captured.Contains(StringView("emitted message")));
-    REQUIRE_FALSE(captured.Contains(StringView("suppressed message")));
-
-    // Disable the channel entirely; even Error-level must be suppressed.
-    test_channel.SetEnabled(false);
-    g_capture_len = 0;
-    SetWriteSinkForTesting(&CapturingWriteSink);
-    Log(test_channel, LogVerbosity::Error, "should not appear when disabled");
-    SetWriteSinkForTesting(&Write);
-
-    StringView captured2(g_capture_buffer, g_capture_len);
-    REQUIRE(captured2.Length() == 0);
 }

@@ -39,6 +39,7 @@ system-include ^wayland-[a-z-]*\.h$
 # --- layers (ARCHITECTURE.md section 1) --------------------------------------------------------------------------------
 # 0 base
 module engine/foundation/types.h base 0
+module engine/foundation/string_view.h base 0
 module engine/foundation/int128.h base 0
 module engine/foundation/int128.cpp base 0
 module engine/foundation/foundation.cpp base 0
@@ -116,8 +117,8 @@ forbid renderer rhi/vulkan
 forbid renderer rhi/null
 forbid renderer rhi/dx12
 forbid renderer rhi/metal
-# 13 programs: demos, benchmarks, tools (and the program in the foundation directory)
-module engine/foundation/main.cpp engine_main 13
+# 13 programs: demos, benchmarks, tools
+module game/hello_window/ game/hello_window 13
 module game/common/ game/common 13
 module game/renderer_bench/ game/renderer_bench 13
 module game/renderer_demo/ game/renderer_demo 13
@@ -148,7 +149,7 @@ platform-dir engine/rhi/vulkan/ engine/rhi/
 # --- CMake targets -----------------------------------------------------------------------------------------------------
 layer foundation 9
 target foundation foundation
-target engine_main engine_main
+target hello_window game/hello_window
 target jobs jobs
 target rhi rhi
 target rhi_vulkan rhi/vulkan
