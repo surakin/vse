@@ -141,7 +141,15 @@ platform-dir engine/platform/macos/ engine/platform/
 platform-dir engine/rhi/vulkan/ engine/rhi/
 
 # --- CMake targets -----------------------------------------------------------------------------------------------------
+layer foundation_base 5
+layer foundation_io 6
+layer foundation_debug 7
+layer foundation_settings 8
 layer foundation 9
+target foundation_base foundation_base
+target foundation_io foundation_io
+target foundation_debug foundation_debug
+target foundation_settings foundation_settings
 target foundation foundation
 target hello_window game/hello_window
 target jobs jobs

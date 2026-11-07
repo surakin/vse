@@ -5,6 +5,8 @@
 #include "debug/crash_state.h"
 #include "log/log.h"
 #include "mem/arena_allocator.h"
+#include "platform/linux/wayland/wayland_platform_window.h"
+#include "platform/linux/x11/x11_window.h"
 
 namespace engine_placeholder::os {
 

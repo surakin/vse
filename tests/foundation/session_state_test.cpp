@@ -1,7 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "os/session.h"
+#include "string_view.h"
 
+using namespace engine_placeholder;
 using namespace engine_placeholder::os;
 
 TEST_CASE("Session state: flags map to a state, locked before idle before inactive", "[os][session]") {

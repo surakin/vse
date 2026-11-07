@@ -25,9 +25,9 @@ function(engine_add_settings_tests target foundation_lib suffix label)
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
 endfunction()
 
-engine_add_settings_tests(settings_tests foundation "" "settings")
-engine_add_settings_tests(settings_tests_asan foundation_asan " [asan]" "asan")
-engine_add_settings_tests(settings_tests_tsan foundation_tsan " [tsan]" "tsan")
+engine_add_settings_tests(settings_tests foundation_settings "" "settings")
+engine_add_settings_tests(settings_tests_asan foundation_settings_asan " [asan]" "asan")
+engine_add_settings_tests(settings_tests_tsan foundation_settings_tsan " [tsan]" "tsan")
 
 # The backend checklist stays in step with the headers, and the neutral headers compile for the Windows and macOS targets (needs clang++; skips without it).
 add_test(NAME settings_backend_lists COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_settings_backend_lists.cmake)

@@ -17,15 +17,15 @@ function(engine_add_types_tests target foundation_lib suffix label)
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
 endfunction()
 
-engine_add_types_tests(types_tests foundation "" "types")
-engine_add_types_tests(types_tests_asan foundation_asan " [asan]" "asan")
-engine_add_types_tests(types_tests_tsan foundation_tsan " [tsan]" "tsan")
+engine_add_types_tests(types_tests foundation_base "" "types")
+engine_add_types_tests(types_tests_asan foundation_base_asan " [asan]" "asan")
+engine_add_types_tests(types_tests_tsan foundation_base_tsan " [tsan]" "tsan")
 
 # The same cases with the portable 128-bit implementation forced on (ENGINE_FORCE_PORTABLE_INT128): int128.cpp is compiled into this
 # executable with the macro, so no translation unit sees the other definition of the inline operators.
 add_executable(types_tests_portable ${TYPES_TEST_SOURCES} ${CMAKE_SOURCE_DIR}/engine/foundation/int128.cpp)
 target_compile_definitions(types_tests_portable PRIVATE ENGINE_FORCE_PORTABLE_INT128=1)
-target_link_libraries(types_tests_portable PRIVATE foundation Catch2::Catch2WithMain Threads::Threads)
+target_link_libraries(types_tests_portable PRIVATE foundation_base Catch2::Catch2WithMain Threads::Threads)
 target_include_directories(types_tests_portable PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 engine_discover_tests(types_tests_portable TEST_SUFFIX " [portable]" PROPERTIES LABELS "types")
 

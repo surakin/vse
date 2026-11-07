@@ -24,6 +24,26 @@
 
 _TODO_
 
+### Libraries and layers
+
+The foundation is built as one static library per layer of `ARCHITECTURE.md` (section 1), each linking only the ones below it, and the windowing code is a
+library of its own. Link the **lowest** one that has what you use; a file that reaches up fails to link in a test of its own layer, which is how the layering
+is proved (the include rules are checked by the `module_deps_check` gate).
+
+| Library | Layers | Link it for | Notes |
+|---|---|---|---|
+| `foundation_base` | 0-5 | `types.h`, `string_view.h`, memory, log, containers, strings, math, `os/` (clocks, environment, dynamic libraries, command line, session) | Needs no other library; `${CMAKE_DL_LIBS}` is PUBLIC. The sanitizer flags of the `_asan`/`_tsan` flavors are PUBLIC here, so every layer above inherits them. |
+| `foundation_io` | 6 | `io::File`, `io::Path`, `io::Directory` | Links `foundation_base`. |
+| `foundation_debug` | 7 | asserts with traces, crash handling, `StartProgramDebugging`, death tests | Links `foundation_io`; the only library that links libbacktrace and sentry-native (PRIVATE). Without it an assert prints one line and aborts (the hooks of `log/diagnostics_hooks.h` are not installed); a program or test that wants traces calls `debug::InitDebugFacilities`. |
+| `foundation_settings` | 8 | `settings::Registry`, `Setting<T>`, `Settings` | Links `foundation_debug`. |
+| `foundation` | 0-8 | everything above | An `INTERFACE` aggregate of the four; what the programs, `jobs` and `rhi` link. |
+| `platform` | 9 | `platform/window.h`, `input.h`, `window_host.h` | Links `foundation_debug` (crash state); the only library that links Wayland, xkbcommon and X11. |
+
+Each library has an `_asan` and a `_tsan` variant (`foundation_io_asan`, `platform_tsan`, ...) and a test links the variant of its own flavor. Tests: `tests/types`,
+`tests/foundation_sanitized` and the core files of `tests/foundation` (the executable `foundation_base_tests`) link `foundation_base`; `tests/io` links
+`foundation_io`; `tests/debug` links `foundation_debug`; `tests/settings` links `foundation_settings`; the file and window tests of `tests/foundation`
+(`foundation_tests`) link `platform` and `foundation`.
+
 ### Running subsets with labels and Catch2 tags
 
 _TODO_

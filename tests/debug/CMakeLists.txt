@@ -64,16 +64,16 @@ add_library(debug_test_plugin MODULE plugin.cpp)
 target_include_directories(debug_test_plugin PRIVATE ${CMAKE_SOURCE_DIR}/engine/foundation)
 set_target_properties(debug_test_plugin PROPERTIES UNITY_BUILD OFF)
 
-engine_add_debug_tests(debug_tests foundation jobs "" "debug")
-engine_add_debug_tests(debug_tests_asan foundation_asan jobs_asan " [asan]" "asan")
-engine_add_debug_tests(debug_tests_tsan foundation_tsan jobs_tsan " [tsan]" "tsan")
+engine_add_debug_tests(debug_tests foundation_debug jobs "" "debug")
+engine_add_debug_tests(debug_tests_asan foundation_debug_asan jobs_asan " [asan]" "asan")
+engine_add_debug_tests(debug_tests_tsan foundation_debug_tsan jobs_tsan " [tsan]" "tsan")
 
 # What the assert macros do in a release configuration: a separate executable with the checks defined off. Not built when
 # the checks are forced on for every configuration (ENGINE_FORCE_DEBUG_CHECKS / ENGINE_FORCE_SLOW_CHECKS), since then no
 # translation unit can have them off.
 if(NOT ENGINE_FORCE_DEBUG_CHECKS AND NOT ENGINE_FORCE_SLOW_CHECKS)
   add_executable(debug_checks_off_tests assert_checks_off_test.cpp)
-  target_link_libraries(debug_checks_off_tests PRIVATE foundation Catch2::Catch2WithMain Threads::Threads)
+  target_link_libraries(debug_checks_off_tests PRIVATE foundation_debug Catch2::Catch2WithMain Threads::Threads)
   target_compile_definitions(debug_checks_off_tests PRIVATE ENGINE_DEBUG_CHECKS=0 ENGINE_SLOW_CHECKS=0)
   engine_discover_tests(debug_checks_off_tests TEST_SUFFIX " [checks off]" PROPERTIES LABELS "debug;crash")
 endif()
@@ -90,9 +90,9 @@ function(engine_add_alloc_tests target foundation_lib suffix label)
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label};crash")
 endfunction()
 
-engine_add_alloc_tests(debug_alloc_tests foundation " [alloc count]" "debug")
-engine_add_alloc_tests(debug_alloc_tests_asan foundation_asan " [alloc count] [asan]" "asan")
-engine_add_alloc_tests(debug_alloc_tests_tsan foundation_tsan " [alloc count] [tsan]" "tsan")
+engine_add_alloc_tests(debug_alloc_tests foundation_debug " [alloc count]" "debug")
+engine_add_alloc_tests(debug_alloc_tests_asan foundation_debug_asan " [alloc count] [asan]" "asan")
+engine_add_alloc_tests(debug_alloc_tests_tsan foundation_debug_tsan " [alloc count] [tsan]" "tsan")
 
 # A stripped copy of the test executable, run by its own ctest entry with ENGINE_EXPECT_STRIPPED_BINARY=1: it checks that
 # frames of a binary with no symbols fall back to module and offset. (The test case skips in the normal executable.)

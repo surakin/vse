@@ -28,7 +28,14 @@ else()
   message(FATAL_ERROR "No foundation os.h implementation for this platform yet")
 endif()
 
-set(FOUNDATION_SOURCES
+# One library per layer (ARCHITECTURE.md section 1), each linking only the ones below it:
+#   foundation_base      layers 0-5: base types, OS primitives, memory, assert and log core, containers, strings, math, OS services
+#   foundation_io        layer 6: paths, files, directories
+#   foundation_debug     layer 7: stack traces, crash handler, crash context, death tests (the only library that links libbacktrace and sentry)
+#   foundation_settings  layer 8: the settings registry, stores, layers and service
+# `foundation` is the aggregate every consumer that wants all of them links; a test of one layer links that layer only.
+# (The windows and input code is not here: it is the `platform` library, engine/platform.)
+set(FOUNDATION_BASE_SOURCES
   foundation.cpp
   os/session.cpp
   os/gpu_driver_probe.cpp
@@ -37,6 +44,41 @@ set(FOUNDATION_SOURCES
   mem/stack_allocator.cpp
   log/log.cpp
   int128.cpp
+  string/utf8_codec.cpp
+  string/grapheme.cpp
+  string/generated/grapheme_break_table.cpp
+  string/normalize.cpp
+  string/generated/decomposition_table.cpp
+  string/generated/combining_class_table.cpp
+  string/generated/composition_exclusions_table.cpp
+  ${FOUNDATION_PLATFORM_SOURCES}
+)
+
+set(FOUNDATION_IO_SOURCES
+  io/path.cpp
+  io/linux/error.cpp
+  io/linux/file_system.cpp
+  io/linux/local_file.cpp
+  io/linux/directory.cpp
+  io/file.cpp
+)
+
+set(FOUNDATION_DEBUG_SOURCES
+  debug/crash_reason.cpp
+  debug/failure_hooks.cpp
+  debug/death_test.cpp
+  debug/stack_trace_backtrace.cpp
+  debug/thread_info.cpp
+  debug/crash_context.cpp
+  debug/crash_state.cpp
+  debug/program_setup.cpp
+  debug/crash_report.cpp
+  debug/crash_handler_sentry.cpp
+  debug/saved_dumps.cpp
+  ${FOUNDATION_DEBUG_PLATFORM_SOURCES}
+)
+
+set(FOUNDATION_SETTINGS_SOURCES
   settings/key.cpp
   settings/value.cpp
   settings/desc.cpp
@@ -52,86 +94,53 @@ set(FOUNDATION_SOURCES
   settings/engine_settings.cpp
   settings/report.cpp
   settings/settings.cpp
-  io/path.cpp
-  io/linux/error.cpp
-  io/linux/file_system.cpp
-  io/linux/local_file.cpp
-  io/linux/directory.cpp
-  io/file.cpp
-  string/utf8_codec.cpp
-  string/grapheme.cpp
-  string/generated/grapheme_break_table.cpp
-  string/normalize.cpp
-  string/generated/decomposition_table.cpp
-  string/generated/combining_class_table.cpp
-  string/generated/composition_exclusions_table.cpp
-  debug/crash_reason.cpp
-  debug/failure_hooks.cpp
-  debug/death_test.cpp
-  debug/stack_trace_backtrace.cpp
-  debug/thread_info.cpp
-  debug/crash_context.cpp
-  debug/crash_state.cpp
-  debug/program_setup.cpp
-  debug/crash_report.cpp
-  debug/crash_handler_sentry.cpp
-  debug/saved_dumps.cpp
-  ${FOUNDATION_PLATFORM_SOURCES}
-  ${FOUNDATION_DEBUG_PLATFORM_SOURCES}
 )
 
-# ENGINE_PRODUCTION_COMPILE_OPTIONS (-fno-exceptions etc) is applied
-# PRIVATE, not PUBLIC: PUBLIC compile options are a usage requirement
-# that would leak into every consumer that links this target, including
-# /tests/foundation's Catch2-based foundation_tests executable, which
-# needs exceptions. Production executables (game/hello_window) that want the
-# same hardening declare it themselves instead of inheriting it.
-# ENGINE_PRODUCTION_COMPILE_OPTIONS is C++-only (-fno-exceptions/-fno-rtti
-# etc); the generated xdg-shell-protocol.c source is compiled as C, so
-# these flags are scoped to CXX translation units via generator
-# expression rather than applied blindly to the whole target.
-add_library(foundation STATIC ${FOUNDATION_SOURCES})
-target_include_directories(foundation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_options(foundation PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-# Day 17: os::LoadLibrary wraps dlopen/dlsym/dlclose. CMAKE_DL_LIBS is
-# the portable way to link libdl where it's a separate library (older
-# glibc, other libc implementations) and empty where dlopen already
-# lives in libc (glibc >= 2.34) — a link requirement, so PUBLIC is
-# correct here (unlike the compile-options split above).
-target_link_libraries(foundation PUBLIC ${CMAKE_DL_LIBS})
-# Phase 7: libbacktrace (third_party/libbacktrace), used only by debug/stack_trace_backtrace.cpp; one plain build for every flavor.
-target_link_libraries(foundation PRIVATE backtrace sentry)
+# ENGINE_PRODUCTION_COMPILE_OPTIONS (-fno-exceptions etc) is applied PRIVATE, not PUBLIC: PUBLIC compile options are a usage
+# requirement that would leak into every consumer that links these targets, including the Catch2-based test executables, which
+# need exceptions. Production executables (game/hello_window) that want the same hardening declare it themselves.
+# ENGINE_PRODUCTION_COMPILE_OPTIONS is C++-only, so it is scoped to CXX translation units by a generator expression.
+#
+# Sanitized variants are separate targets built from the same sources, not a build-wide flag, so the plain and sanitized binaries
+# exist side by side from one configure. The sanitizer flags are PUBLIC on the lowest library of a flavor (foundation_base_asan,
+# foundation_base_tsan) and reach every library above it by linking: ASan/UBSan and TSan need the whole binary instrumented
+# consistently, and TSan only gives trustworthy answers when every library that touches shared memory is instrumented too.
+function(engine_add_foundation_layer name suffix)
+  add_library(${name}${suffix} STATIC ${ARGN})
+  target_include_directories(${name}${suffix} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+  target_compile_options(${name}${suffix} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
+endfunction()
 
-# Sanitized variants: separate targets built from the same sources, not
-# a build-wide flag, so both the normal and sanitized binaries exist
-# side by side from one configure.
-# The sanitizer flags themselves stay PUBLIC (ASan/UBSan need the whole
-# binary instrumented consistently, including the translation units of the
-# programs that link them and the runtime) — only the
-# exceptions/RTTI hardening moved to PRIVATE above.
-add_library(foundation_asan STATIC ${FOUNDATION_SOURCES})
-target_include_directories(foundation_asan PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_options(foundation_asan PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
+function(engine_add_foundation_libs suffix)
+  engine_add_foundation_layer(foundation_base "${suffix}" ${FOUNDATION_BASE_SOURCES})
+  # os::LoadLibrary wraps dlopen/dlsym/dlclose. CMAKE_DL_LIBS is the portable way to link libdl where it is a separate library and
+  # empty where dlopen already lives in libc (glibc >= 2.34): a link requirement, so PUBLIC.
+  target_link_libraries(foundation_base${suffix} PUBLIC ${CMAKE_DL_LIBS})
+
+  engine_add_foundation_layer(foundation_io "${suffix}" ${FOUNDATION_IO_SOURCES})
+  target_link_libraries(foundation_io${suffix} PUBLIC foundation_base${suffix})
+
+  engine_add_foundation_layer(foundation_debug "${suffix}" ${FOUNDATION_DEBUG_SOURCES})
+  # libbacktrace (third_party/libbacktrace) and sentry-native, used only by debug/stack_trace_backtrace.cpp and crash_handler_sentry.cpp;
+  # one plain build of each for every flavor.
+  target_link_libraries(foundation_debug${suffix} PUBLIC foundation_io${suffix} PRIVATE backtrace sentry)
+
+  engine_add_foundation_layer(foundation_settings "${suffix}" ${FOUNDATION_SETTINGS_SOURCES})
+  target_link_libraries(foundation_settings${suffix} PUBLIC foundation_debug${suffix})
+
+  add_library(foundation${suffix} INTERFACE)
+  target_link_libraries(foundation${suffix} INTERFACE foundation_settings${suffix} foundation_debug${suffix} foundation_io${suffix} foundation_base${suffix})
+endfunction()
+
+engine_add_foundation_libs("")
+engine_add_foundation_libs("_asan")
+engine_add_foundation_libs("_tsan")
+
 # -fno-sanitize=vptr: the engine libraries are built -fno-rtti, so they define no typeinfo, while the test executables
 # (Catch2 needs RTTI) are not. With the vptr check on, GCC 16 makes every virtual call through a library class reference
 # that class's typeinfo and the link fails (`undefined reference to typeinfo for ...NullDevice`). It must come after
 # -fsanitize=undefined, which turns the check back on.
-target_compile_options(foundation_asan PUBLIC -fsanitize=address,undefined -fno-sanitize=vptr -fno-omit-frame-pointer -g)
-target_link_options(foundation_asan PUBLIC -fsanitize=address,undefined)
-target_link_libraries(foundation_asan PUBLIC ${CMAKE_DL_LIBS})
-# Phase 7: libbacktrace (third_party/libbacktrace), used only by debug/stack_trace_backtrace.cpp; one plain build for every flavor.
-target_link_libraries(foundation_asan PRIVATE backtrace sentry)
-
-# Phase 2 Day 27: ThreadSanitizer variant. A separate build from the
-# ASan/UBSan one above because TSan cannot be combined with ASan. The
-# job system's lock-free code (Days 30-32) must be proven race-free under
-# this, and TSan only gives trustworthy answers when every library that
-# touches shared memory (including foundation) is instrumented too.
-add_library(foundation_tsan STATIC ${FOUNDATION_SOURCES})
-target_include_directories(foundation_tsan PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_options(foundation_tsan PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${ENGINE_PRODUCTION_COMPILE_OPTIONS}>)
-target_compile_options(foundation_tsan PUBLIC -fsanitize=thread -fno-omit-frame-pointer -g)
-target_link_options(foundation_tsan PUBLIC -fsanitize=thread)
-target_link_libraries(foundation_tsan PUBLIC ${CMAKE_DL_LIBS})
-# Phase 7: libbacktrace (third_party/libbacktrace), used only by debug/stack_trace_backtrace.cpp; one plain build for every flavor.
-target_link_libraries(foundation_tsan PRIVATE backtrace sentry)
+target_compile_options(foundation_base_asan PUBLIC -fsanitize=address,undefined -fno-sanitize=vptr -fno-omit-frame-pointer -g)
+target_link_options(foundation_base_asan PUBLIC -fsanitize=address,undefined)
+target_compile_options(foundation_base_tsan PUBLIC -fsanitize=thread -fno-omit-frame-pointer -g)
+target_link_options(foundation_base_tsan PUBLIC -fsanitize=thread)

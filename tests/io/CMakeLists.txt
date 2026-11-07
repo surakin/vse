@@ -19,9 +19,9 @@ function(engine_add_io_tests target foundation_lib jobs_lib suffix label)
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
 endfunction()
 
-engine_add_io_tests(io_tests foundation jobs "" "io")
-engine_add_io_tests(io_tests_asan foundation_asan jobs_asan " [asan]" "asan")
-engine_add_io_tests(io_tests_tsan foundation_tsan jobs_tsan " [tsan]" "tsan")
+engine_add_io_tests(io_tests foundation_io jobs "" "io")
+engine_add_io_tests(io_tests_asan foundation_io_asan jobs_asan " [asan]" "asan")
+engine_add_io_tests(io_tests_tsan foundation_io_tsan jobs_tsan " [tsan]" "tsan")
 
 # Phase 9 Day 124: the backend checklist stays in step with the headers, and the neutral headers compile for the Windows and macOS targets
 # (needs clang++; skips without it).

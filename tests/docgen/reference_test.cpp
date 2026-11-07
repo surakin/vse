@@ -14,6 +14,7 @@
 #include "fs_fixture.h"
 #include "links.h"
 #include "reference.h"
+#include "source_file.h"
 
 using namespace docgen;
 namespace io = engine_placeholder::io;

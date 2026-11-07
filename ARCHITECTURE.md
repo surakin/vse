@@ -100,9 +100,9 @@ The day that does each item is in brackets; the plan is `plans/phase-12-module-l
 6. **[Day 143] `engine_main` moves** to `game/hello_window/` (or is retired if the demos cover it). Removes item 6.
 7. **[Phase 13 Day 162] The RHI backend registry**: backends register with the neutral `rhi`; the renderer and `DeviceHost` stop linking
    `rhi_vulkan`, and `rhi/vulkan` stops including `rhi/null`. Removes items 7 and 8.
-8. **[Day 145] One library per layer** once the cycle is gone: `foundation` becomes a set of libraries (for example `foundation_base` with layers 0-5,
-   `foundation_io`, `foundation_debug`, `foundation_settings`), with `foundation` kept as the aggregate consumers link today; and `platform` beside them. A port
-   can then build and test each layer as soon as its backend exists.
+8. **[Day 145, done] One library per layer** once the cycle was gone: `foundation_base` (layers 0-5), `foundation_io` (6), `foundation_debug` (7) and
+   `foundation_settings` (8), each linking only the ones below it, with `foundation` kept as the `INTERFACE` aggregate consumers link, and `platform` (9) beside them
+   (`docs/guide/building-and-testing.md`, "Libraries and layers"). A port can then build and test each layer as soon as its backend exists.
 9. **[Day 141, first] A gate keeps it this way:** a `module_deps_check` ctest computes the include graph, maps files to the modules of section 1 and fails on an upward edge, a
    cycle or a program including `os/<platform>/`, with an allow list (a reason per entry, stale entries fail) that starts with the items above still open.
 10. **[Day 142-143] `StringView` becomes a base-layer type** (`string_view.h`, needs only `types.h`); `log.h`, `os.h`, `int128.h` and `span.h` include it instead of

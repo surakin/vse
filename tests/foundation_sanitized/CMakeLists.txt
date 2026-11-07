@@ -14,6 +14,6 @@ function(engine_add_foundation_sanitized_tests target foundation_lib suffix labe
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}")
 endfunction()
 
-engine_add_foundation_sanitized_tests(foundation_sanitized_tests foundation "" "foundation")
-engine_add_foundation_sanitized_tests(foundation_sanitized_tests_asan foundation_asan " [asan]" "asan")
-engine_add_foundation_sanitized_tests(foundation_sanitized_tests_tsan foundation_tsan " [tsan]" "tsan")
+engine_add_foundation_sanitized_tests(foundation_sanitized_tests foundation_base "" "foundation")
+engine_add_foundation_sanitized_tests(foundation_sanitized_tests_asan foundation_base_asan " [asan]" "asan")
+engine_add_foundation_sanitized_tests(foundation_sanitized_tests_tsan foundation_base_tsan " [tsan]" "tsan")

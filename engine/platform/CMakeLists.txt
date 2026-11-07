@@ -38,7 +38,7 @@ else()
   message(FATAL_ERROR "No window backend for this platform yet")
 endif()
 
-# One library per sanitizer flavor, each on the matching foundation (the flags come with it, as for jobs and the RHI).
+# One library per sanitizer flavor, each on the matching foundation_debug (crash state, the lowest layer it uses; the flags come with it, as for jobs and the RHI).
 function(engine_add_platform_lib suffix foundation_lib)
   add_library(platform${suffix} STATIC ${PLATFORM_SOURCES})
   target_include_directories(platform${suffix} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
@@ -46,6 +46,6 @@ function(engine_add_platform_lib suffix foundation_lib)
   target_link_libraries(platform${suffix} PUBLIC ${foundation_lib} ${PLATFORM_DISPLAY_LIBS})
 endfunction()
 
-engine_add_platform_lib("" foundation)
-engine_add_platform_lib("_asan" foundation_asan)
-engine_add_platform_lib("_tsan" foundation_tsan)
+engine_add_platform_lib("" foundation_debug)
+engine_add_platform_lib("_asan" foundation_debug_asan)
+engine_add_platform_lib("_tsan" foundation_debug_tsan)
