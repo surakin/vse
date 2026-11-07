@@ -16,6 +16,9 @@ The scheduler and coroutines are portable C++20; what is Linux-specific is the C
       thread id for logs from `os::`/`debug::CurrentThreadId`; `pthread`/`syscall` includes removed from shared code.
 - [ ] **Timer resolution and sleeping workers:** idle workers on Windows wait on the same primitive as Linux (`std::condition_variable`/`atomic::wait`);
       measure wake latency (median and 99th percentile of 10 000 wake-ups) on both machines and record it; no `timeBeginPeriod` unless the measurement asks for it.
+- [ ] **Left by Day 152:** `tests/io/async_file_test.cpp` joins the Windows io tests (it links `jobs`): the asynchronous half of the conformance
+      suite, cancellation, a completion that destroys its file, an executor shut down, the allocation-free completion path and the `co_await`
+      file reads, on the Windows local file (which uses the executor, as on Linux: Day 152's decision). The `/proc` case stays Linux-only.
 - [ ] **The jobs suite** (`tests/jobs`): everything passes on Windows, including the stress tests (dependency chains, work stealing, frame pool, async I/O
       through the Day 152 completion port); the tsan canary is not built on Windows (Linux-only, reported by the flavor summary).
 - [ ] **Throughput:** run the Phase 2 benchmarks on Windows and record them beside the Linux numbers (different CPUs: the comparison is scaling with core

@@ -737,3 +737,11 @@ the synchronous `LocalFile` (offset reads in an `OVERLAPPED`, atomic append, spa
 `file_system.h` returns `Unsupported` until Day 152. Runs: `ran 283 of 357 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`,
 asan `ran 74 of 357`; `windows-clang-cl` 314 of 314; non-unity 357 of 357. Review: 10 findings, 6 fixed, 4 declined. Linux: pending until the phase
 close. **Next: Day 152 (directories, the other file-system operations, asynchronous I/O).**
+
+Phase 13 **Day 152 (2026-11-07, Windows PC): the file layer II.** The whole Windows file backend: directories (`io/windows/directory.cpp`; the listing,
+walking and wildcards moved to the neutral `io/directory.cpp`) and every file-system operation (`io/windows/file_operations.cpp`): POSIX-semantics
+rename and removal (an open, read-only or empty-directory target is replaced, as on Linux; measured against `MoveFileExW`), `SyncDirectory` through a
+directory handle, private directories with a protected DACL, random temporary names, the known folders. Asynchronous I/O keeps one design on both
+platforms (the executor). `tests/io` runs on Windows except `async_file_test` (needs `jobs`, Day 153). Runs: `ran 306 of 403 tests (phases: all;
+flavors: plain; display: included; crash tests: excluded)`, asan `ran 97 of 403`; `windows-clang-cl` 337 of 337; non-unity 403 of 403. Review: 8 findings,
+2 fixed, 6 declined. Linux: pending until the phase close. **Next: Day 153 (the job system on Windows).**

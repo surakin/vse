@@ -273,16 +273,13 @@ TEST_CASE("io: the read helpers", "[io][file]") {
 }
 
 TEST_CASE("io: WriteFileAtomic replaces whole files and leaves nothing behind on failure", "[io][file]") {
-#if defined(_WIN32)
-    SKIP("Windows: WriteFileAtomic needs CreateTempFile, SetPermissions, Rename and Remove, which arrive on Phase 13 Day 152");
-#endif
     TempDir dir;
     const Path target = dir / "config.ini";
     REQUIRE(io::WriteFileAtomic(target, "old", 3).Ok()); // creates
     CHECK(io_test::ReadText(target) == "old");
     io::FileInfo info;
     REQUIRE(io::Stat(target, &info).Ok());
-    CHECK(info.permissions == 0600);
+    CHECK(info.permissions == io_test::ReportedPermissions(0600));
     REQUIRE(io::WriteFileAtomic(target, "new content", 11).Ok());
     CHECK(io_test::ReadText(target) == "new content");
     CHECK(CountEntries(dir.Path()) == 1); // no temporary left
@@ -290,20 +287,23 @@ TEST_CASE("io: WriteFileAtomic replaces whole files and leaves nothing behind on
     REQUIRE(io::SetPermissions(target, 0640).Ok());
     REQUIRE(io::WriteFileAtomic(target, "perm", 4).Ok());
     REQUIRE(io::Stat(target, &info).Ok());
-    CHECK(info.permissions == 0640);
+    CHECK(info.permissions == io_test::ReportedPermissions(0640));
     REQUIRE(io::WriteFileAtomic(target, "new content", 11).Ok());
     // A symbolic link target: the file behind the link is replaced and the link stays.
     REQUIRE(io::CreateDirectory(dir / "real").Ok());
     REQUIRE(io_test::WriteText(dir / "real/data", "before"));
-#if !defined(_WIN32) // Day 152 ports the symbolic link half (a link needs Developer Mode on Windows)
-    REQUIRE(::symlink("real/data", Str((dir / "lnk").View()).CStr()) == 0);
+    if (io_test::SymlinksAvailable()) { // Windows: Developer Mode
+    REQUIRE(io_test::MakeSymlink("real/data", dir / "lnk"));
     REQUIRE(io::WriteFileAtomic(dir / "lnk", "after", 5).Ok());
     CHECK(io_test::ReadText(dir / "real/data") == "after");
     REQUIRE(io::Lstat(dir / "lnk", &info).Ok());
     CHECK(info.type == io::FileType::Symlink);
     REQUIRE(io::RemoveAll(dir / "real").Ok());
     REQUIRE(io::Remove(dir / "lnk").Ok());
-#endif
+    } else {
+        WARN("skipped the symbolic link target of WriteFileAtomic: this process cannot create symbolic links (Windows: Developer Mode)");
+        REQUIRE(io::RemoveAll(dir / "real").Ok());
+    }
     CHECK(io::SyncDirectory(dir.Path()).Ok());
     CHECK(io::SyncDirectory(dir / "nope").Is(Error::NotFound));
     CHECK(io::SyncDirectory(target).Is(Error::NotADirectory));
@@ -311,11 +311,12 @@ TEST_CASE("io: WriteFileAtomic replaces whole files and leaves nothing behind on
     // A new file can be given other permissions (ordinary generated files); an existing one keeps its own.
     REQUIRE(io::WriteFileAtomic(dir / "ordinary.txt", "x", 1, 0644).Ok());
     REQUIRE(io::Stat(dir / "ordinary.txt", &info).Ok());
-    CHECK(info.permissions == 0644);
-    REQUIRE(io::SetPermissions(dir / "ordinary.txt", 0600).Ok());
+    CHECK(info.permissions == io_test::ReportedPermissions(0644));
+    REQUIRE(io::SetPermissions(dir / "ordinary.txt", 0400).Ok()); // read-only: the one bit every platform keeps
     REQUIRE(io::WriteFileAtomic(dir / "ordinary.txt", "y", 1, 0644).Ok());
     REQUIRE(io::Stat(dir / "ordinary.txt", &info).Ok());
-    CHECK(info.permissions == 0600);
+    CHECK(info.permissions == io_test::ReportedPermissions(0400));
+    REQUIRE(io::SetPermissions(dir / "ordinary.txt", 0600).Ok());
     REQUIRE(io::Remove(dir / "ordinary.txt").Ok());
     // A failure at each step keeps the old content and removes the temporary.
     for (int step = 1; step <= 4; ++step) {
@@ -342,9 +343,6 @@ TEST_CASE("io: WriteFileAtomic replaces whole files and leaves nothing behind on
 }
 
 TEST_CASE("The span overloads write and read the same bytes as the pointer forms", "[io][span]") {
-#if defined(_WIN32)
-    SKIP("Windows: the WriteFileAtomic half needs Phase 13 Day 152");
-#endif
     TempDir dir;
     const byte payload[] = {1, 2, 3, 250, 0, 7};
     const Path a = dir / "span_a";

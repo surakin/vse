@@ -8,6 +8,7 @@
 #include "io/file.h"
 #include "io/file_system.h"
 #include "temp_dir.h"
+#include "test_env.h"
 #include "test_text.h"
 
 #include "os/windows/win32.h"
@@ -34,50 +35,6 @@ io::FilePtr MakeWindowsLocal(TempDir& dir, StringView content, bool writable) {
     io::FilePtr f;
     REQUIRE(io::File::Open(path, writable ? OpenMode::ReadWrite : OpenMode::Read, io::kOpenNone, &f).Ok());
     return f;
-}
-
-// Makes `link` a junction (a mount-point reparse point) to the directory `target`. Junctions need no privilege, unlike symbolic links.
-bool MakeJunction(const Path& link, const Path& target) {
-    const WinPath l(link);
-    if (!CreateDirectoryW(l.text, nullptr)) return false;
-    const HANDLE h = CreateFileW(l.text, GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
-                                 nullptr);
-    if (h == INVALID_HANDLE_VALUE) return false;
-    char native[io::kMaxPathBytes + 1];
-    target.ToNative(native, sizeof(native));
-    wchar_t print[io::kMaxPathBytes + 1];
-    const usize print_length = os::windows::Utf8ToUtf16(StringView(native), print, sizeof(print) / sizeof(print[0]));
-    // The reparse data of a mount point (REPARSE_DATA_BUFFER's MountPointReparseBuffer, which only the driver headers declare).
-    struct MountPoint {
-        DWORD tag;
-        WORD data_length;
-        WORD reserved;
-        WORD substitute_offset;
-        WORD substitute_length;
-        WORD print_offset;
-        WORD print_length;
-        wchar_t path[2 * (io::kMaxPathBytes + 8)];
-    };
-    MountPoint data{};
-    const wchar_t prefix[] = L"\\??\\";
-    const usize prefix_length = 4;
-    usize at = 0;
-    for (usize i = 0; i < prefix_length; ++i) data.path[at++] = prefix[i];
-    for (usize i = 0; i < print_length; ++i) data.path[at++] = print[i];
-    const usize substitute_length = at;
-    data.path[at++] = 0;
-    for (usize i = 0; i < print_length; ++i) data.path[at++] = print[i];
-    data.path[at++] = 0;
-    data.tag = IO_REPARSE_TAG_MOUNT_POINT;
-    data.substitute_offset = 0;
-    data.substitute_length = static_cast<WORD>(substitute_length * sizeof(wchar_t));
-    data.print_offset = static_cast<WORD>((substitute_length + 1) * sizeof(wchar_t));
-    data.print_length = static_cast<WORD>(print_length * sizeof(wchar_t));
-    data.data_length = static_cast<WORD>(8 + at * sizeof(wchar_t));
-    DWORD unused = 0;
-    const BOOL ok = DeviceIoControl(h, FSCTL_SET_REPARSE_POINT, &data, 8 + data.data_length, nullptr, 0, &unused, nullptr);
-    CloseHandle(h);
-    return ok != FALSE;
 }
 
 // Creates a symbolic link without elevation, which Windows allows only in Developer Mode. Returns false (and the reason) otherwise.
@@ -296,7 +253,7 @@ TEST_CASE("io: Stat and Lstat on Windows", "[io][fs][windows]") {
     const WinPath sub(dir / "target");
     REQUIRE(CreateDirectoryW(sub.text, nullptr));
     REQUIRE(io_test::WriteText(dir / "target/inside.txt", "in"));
-    REQUIRE(MakeJunction(dir / "junction", dir / "target"));
+    REQUIRE(io_test::MakeJunction(dir / "target", dir / "junction"));
     REQUIRE(io::Lstat(dir / "junction", &info).Ok());
     CHECK(info.type == io::FileType::Other);
     REQUIRE(io::Stat(dir / "junction", &info).Ok());
@@ -368,14 +325,132 @@ TEST_CASE("io::File on Windows: paths longer than MAX_PATH work with LongPathsEn
     SetCurrentDirectoryW(saved);
     CHECK(relative_stat.Ok());
 
-    // Renamed and removed by Win32 (the file layer's Rename and Remove are Day 152's): the engine sees the result.
-    const WinPath old_name(file);
-    const WinPath new_name(deep / "renamed_file.txt");
-    REQUIRE(MoveFileExW(old_name.text, new_name.text, 0));
+    // Renamed, copied and removed through the layer, and the whole tree listed and removed.
+    REQUIRE(io::Rename(file, deep / "renamed_file.txt").Ok());
     CHECK(io::Stat(file, &info).Is(Error::NotFound));
-    REQUIRE(io::Stat(deep / "renamed_file.txt", &info).Ok());
-    REQUIRE(DeleteFileW(new_name.text));
+    REQUIRE(io::Copy(deep / "renamed_file.txt", deep / "copied_file.txt", false).Ok());
+    REQUIRE(io::Remove(deep / "renamed_file.txt").Ok());
     CHECK_FALSE(io::Exists(deep / "renamed_file.txt"));
+    Vector<io::DirectoryItem> items;
+    REQUIRE(io::ListDirectory(deep, true, &items).Ok());
+    REQUIRE(items.Size() == 1);
+    CHECK(items[0].name.View() == StringView("copied_file.txt"));
+    REQUIRE(io::CreateDirectories(deep / "more/levels/below").Ok());
+    const Path top = dir / "level00_abcdefghijklmnopqrstu";
+    REQUIRE(io::RemoveAll(top).Ok());
+    CHECK_FALSE(io::Exists(top));
+}
+
+TEST_CASE("io: special folders on Windows", "[io][fs][windows]") {
+    // The expected values come from the environment Windows sets for every session, independent of the known-folder calls under test.
+    auto env = [](const wchar_t* name) {
+        wchar_t value[MAX_PATH + 1];
+        const DWORD n = GetEnvironmentVariableW(name, value, MAX_PATH + 1);
+        char utf8[4 * MAX_PATH];
+        const usize m = os::windows::Utf16ToUtf8(value, n, utf8, sizeof(utf8));
+        return Path(StringView(utf8, m));
+    };
+    const Path roaming = env(L"APPDATA");
+    const Path local = env(L"LOCALAPPDATA");
+    Path p;
+    REQUIRE(io::UserConfigDirectory("app", &p).Ok());
+    CHECK(p == roaming / "app");
+    REQUIRE(io::UserDataDirectory("app", &p).Ok());
+    CHECK(p == local / "app");
+    REQUIRE(io::UserCacheDirectory("app", &p).Ok());
+    CHECK(p == local / "app/cache");
+    REQUIRE(io::UserStateDirectory("app", &p).Ok());
+    CHECK(p == local / "app/state");
+    // Bad application names: the POSIX ones, and what Windows cannot keep.
+    const char* const bad[] = {"", ".", "..", "a/b", "a\\b", "a:b", "CON", "nul.txt", "name.", "name "};
+    for (const char* name : bad) {
+        INFO("app name '" << name << "'");
+        CHECK(io::UserConfigDirectory(name, &p).Is(Error::Invalid));
+    }
+    CHECK(io::UserConfigDirectory(engine_test::Repeated(201, 'a').View(), &p).Is(Error::Invalid));
+    // The temporary directory is the user's, as GetTempPathW says.
+    wchar_t temp[MAX_PATH + 1];
+    const DWORD n = GetTempPathW(MAX_PATH + 1, temp);
+    char utf8[4 * MAX_PATH];
+    const usize m = os::windows::Utf16ToUtf8(temp, n, utf8, sizeof(utf8));
+    REQUIRE(io::TempDirectory(&p).Ok());
+    CHECK(p == Path(StringView(utf8, m)));
+    // The executable.
+    Path exe;
+    Path exe_dir;
+    REQUIRE(io::ExecutablePath(&exe).Ok());
+    REQUIRE(io::ExecutableDirectory(&exe_dir).Ok());
+    CHECK(exe.IsAbsolute());
+    CHECK(exe.Parent() == exe_dir);
+    CHECK(io::IsFile(exe));
+    CHECK(exe.Extension() == StringView(".exe"));
+    // The crash dump directory: under the local application data, named after ENGINE_APP_NAME (else the executable), private. A name of
+    // the test's own, removed afterwards, so the run leaves nothing in the user's profile.
+    const engine_test::Text app = engine_test::Format("re_io_test_crashes.%lu", GetCurrentProcessId());
+    test_support::SetEnv("ENGINE_APP_NAME", app.CStr());
+    Path crashes;
+    const io::Status made = io::CrashDumpDirectory(&crashes);
+    test_support::UnsetEnv("ENGINE_APP_NAME");
+    REQUIRE(made.Ok());
+    CHECK(crashes == local / app.View() / "crashes");
+    CHECK(io::IsDirectory(crashes));
+    CHECK(io_test::AclIsPrivate(crashes));
+    REQUIRE(io::RemoveAll(local / app.View()).Ok());
+    CHECK_FALSE(io::Exists(local / app.View()));
+}
+
+TEST_CASE("io: RemoveAll does not follow a junction out of the tree", "[io][fs][windows]") {
+    TempDir dir;
+    TempDir outside;
+    REQUIRE(io_test::WriteText(outside / "keep.txt", "keep"));
+    REQUIRE(io::CreateDirectories(dir / "tree/sub").Ok());
+    REQUIRE(io_test::MakeJunction(outside.Path(), dir / "tree/sub/junction"));
+    REQUIRE(io_test::WriteText(dir / "tree/sub/junction/through.txt", "x")); // written through the junction, lands outside
+    REQUIRE(io::Exists(outside / "through.txt"));
+    // Read-only files and a file held open inside the tree go too (POSIX semantics).
+    REQUIRE(io_test::WriteText(dir / "tree/ro.txt", "r"));
+    REQUIRE(io_test::SetReadOnlyFile(dir / "tree/ro.txt"));
+    io::FilePtr held;
+    REQUIRE(io_test::WriteText(dir / "tree/held.txt", "h"));
+    REQUIRE(io::File::Open(dir / "tree/held.txt", OpenMode::Read, io::kOpenNone, &held).Ok());
+    REQUIRE(io::RemoveAll(dir / "tree").Ok());
+    CHECK_FALSE(io::Exists(dir / "tree"));
+    CHECK(io::Exists(outside / "keep.txt"));
+    CHECK(io::Exists(outside / "through.txt"));
+    // Directory entries report a junction as Other and a walk does not enter it.
+    REQUIRE(io::CreateDirectory(dir / "walk").Ok());
+    REQUIRE(io_test::MakeJunction(outside.Path(), dir / "walk/j"));
+    Vector<io::DirectoryItem> items;
+    REQUIRE(io::ListDirectory(dir / "walk", true, &items).Ok());
+    REQUIRE(items.Size() == 1);
+    CHECK(items[0].type == io::FileType::Other);
+}
+
+TEST_CASE("io: Rename replaces open, read-only and empty-directory targets", "[io][fs][windows]") {
+    TempDir dir;
+    REQUIRE(io_test::WriteText(dir / "a", "new"));
+    REQUIRE(io_test::WriteText(dir / "b", "old"));
+    io::FilePtr open_b;
+    REQUIRE(io::File::Open(dir / "b", OpenMode::Read, io::kOpenNone, &open_b).Ok());
+    REQUIRE(io::Rename(dir / "a", dir / "b").Ok()); // MoveFileExW would refuse: the target is open
+    char buf[3];
+    REQUIRE(io::ReadExact(*open_b, buf, 3, 0).Ok());
+    CHECK(StringView(buf, 3) == StringView("old")); // the open file is the old one
+    CHECK(io_test::ReadText(dir / "b") == "new");
+    REQUIRE(io_test::WriteText(dir / "c", "c"));
+    REQUIRE(io_test::SetReadOnlyFile(dir / "b"));
+    REQUIRE(io::Rename(dir / "c", dir / "b").Ok()); // over a read-only file, as rename(2)
+    CHECK(io_test::ReadText(dir / "b") == "c");
+    REQUIRE(io::CreateDirectory(dir / "d1").Ok());
+    REQUIRE(io::CreateDirectory(dir / "d2").Ok());
+    REQUIRE(io::Rename(dir / "d1", dir / "d2").Ok()); // a directory over an empty one
+    CHECK_FALSE(io::Exists(dir / "d1"));
+    REQUIRE(io_test::WriteText(dir / "f", "f"));
+    CHECK(io::Rename(dir / "d2", dir / "f").Is(Error::NotADirectory));
+    // SyncDirectory flushes a directory handle (opened for writing).
+    CHECK(io::SyncDirectory(dir.Path()).Ok());
+    CHECK(io::SyncDirectory(dir / "f").Is(Error::NotADirectory));
+    CHECK(io::SyncDirectory(dir / "missing").Is(Error::NotFound));
 }
 
 TEST_CASE("io::File on Windows: the conformance suites and the error paths leak no handle", "[io][file][windows]") {
@@ -455,4 +530,13 @@ TEST_CASE("io: Stat describes a file another program holds without sharing its a
     CHECK(info.size > 0);
     CHECK(io::Exists(pagefile));
     CHECK(io::IsFile(pagefile));
+}
+
+TEST_CASE("io: RemoveAll reports a subdirectory it cannot list instead of NotEmpty", "[io][fs][windows]") {
+    TempDir dir;
+    REQUIRE(io::CreateDirectories(dir / "tree/locked").Ok());
+    REQUIRE(io_test::WriteText(dir / "tree/locked/f.txt", "x"));
+    REQUIRE(io_test::DenyListing(dir / "tree/locked"));
+    CHECK(io::RemoveAll(dir / "tree").Is(Error::PermissionDenied)); // as opening a 0000 directory on Linux
+    REQUIRE(io_test::AllowAll(dir / "tree/locked"));
 }

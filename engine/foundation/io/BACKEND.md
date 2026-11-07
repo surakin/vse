@@ -101,6 +101,10 @@ reparse point that is not a name surrogate (a cloud placeholder, a deduplicated 
 
 Windows: DeleteFileW or RemoveDirectoryW (clear the read-only attribute first); macOS: remove.
 
+Windows, as built (Day 152): `SetFileInformationByHandle(FileDispositionInfoEx)` with `DELETE | POSIX_SEMANTICS | IGNORE_READONLY_ATTRIBUTE` on a
+handle opened with `FILE_FLAG_OPEN_REPARSE_POINT`: the name is gone at once even while the file is open (the sharing rule), a read-only file is
+removed as on Linux, a link or junction is removed as itself. A file system without the POSIX information classes (FAT) gets `DeleteFileW` or
+`RemoveDirectoryW`, with the read-only attribute cleared first and put back if the removal fails.
 
 ### `RemoveAll`
 
@@ -109,6 +113,10 @@ Windows: a walk with FindFirstFileExW, never following reparse points; macOS: ft
 
 Keep the contract: never follow a link (a reparse point is removed as itself), refuse the empty path, a root and fewer than two components, and a tree deeper than 128 levels (`TooLong`). Deleting a directory tree on Windows can fail while a file is open without FILE_SHARE_DELETE: report `Busy`.
 
+Windows, as built (Day 152): the same refusals as on Linux; the walk uses `FindFirstFileExW` on the `\\?\` form from the start (so a tree deeper than
+`MAX_PATH` is no problem), removes every name with the POSIX disposition above (read-only and open files included), never enters a reparse
+point (a junction or link is removed as itself; tested with a junction that points outside the tree) and sweeps a directory up to three times
+when it is still not empty.
 
 ### `Rename`
 
@@ -117,16 +125,27 @@ Windows: MoveFileExW(MOVEFILE_REPLACE_EXISTING); macOS: rename.
 
 Replacing an existing file must be atomic where the file system allows it (MoveFileExW does that on NTFS); a directory replaces only an empty directory. Report `CrossDevice` for a different volume (the code is ERROR_NOT_SAME_DEVICE).
 
+Windows, as built (Day 152): `SetFileInformationByHandle(FileRenameInfoEx)` with `REPLACE_IF_EXISTS | POSIX_SEMANTICS | IGNORE_READONLY_ATTRIBUTE` on a
+handle to the source (opened without following a link). Measured on Day 152: `MoveFileExW(MOVEFILE_REPLACE_EXISTING)` refuses a target that is
+open, read-only or an empty directory (all `ERROR_ACCESS_DENIED`), which `rename(2)` replaces; the POSIX rename replaces all three, so the sharing
+rule (an open file can be replaced) holds and `WriteFileAtomic` is atomic. Without the POSIX information classes (FAT) it falls back to
+`MoveFileExW(MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)`. `ReplaceFileW` is not used: it is a sequence of steps, not one rename. A file
+onto a directory is `IsADirectory`, a directory onto a non-empty one `NotEmpty`, onto a file `NotADirectory`, another volume `CrossDevice`.
 
 ### `Copy`
 
 Windows: CopyFile2; macOS: copyfile or a read/write loop.
 
+Windows, as built (Day 152): `CopyFile2` (`COPY_FILE_FAIL_IF_EXISTS` unless overwriting), which copies the read-only attribute as the mode is copied
+on Linux. The same file under two names (a hard link) is detected by volume serial and 128-bit file id first and refused with `Invalid`.
 
 ### `SetPermissions`
 
 Windows: the read-only attribute from the owner write bit; macOS: chmod.
 
+Windows, as built (Day 152): only the owner write bit (0200) has a counterpart, the read-only attribute of a file; on a directory the call succeeds
+and changes nothing (Windows uses that attribute for customized folders). `Stat` then reports 0644 or 0444; the other bits are not kept. Access
+for other users is the ACL's business (`CreatePrivateDirectory`).
 
 ### `SyncDirectory`
 
@@ -135,6 +154,9 @@ Windows: Unsupported (NTFS journals directory changes); macOS: fsync on the dire
 
 Where the platform has no directory sync, return `Unsupported`; `WriteFileAtomic` treats that as success of the replace but reports it.
 
+Windows, as built (Day 152, measured): `FlushFileBuffers` on a directory handle succeeds when the handle is opened for writing (`GENERIC_WRITE`,
+`FILE_FLAG_BACKUP_SEMANTICS`) and is refused with read access only, so the directory is opened that way; `WriteFileAtomic` gets the same
+durability step as on Linux instead of `Unsupported`.
 
 ### `CreateDirectory`
 
@@ -153,6 +175,12 @@ Windows: an ACL granting only the current user, refusing a reparse point; macOS:
 
 Parents that are missing are created private as well. Report `SymlinkLoop` when the final component is a link (a reparse point), `PermissionDenied` when it belongs to another user.
 
+Windows, as built (Day 152): created with a protected DACL that grants the current user everything (inherited by what is created inside; Windows
+stores it as an effective and an inherit-only entry) and nobody else anything; missing parents get it too. An existing directory is opened
+without following a reparse point (one is `SymlinkLoop`), must be owned by the current user (or by the Administrators group when the process is
+elevated, the token's default owner) and gets the same DACL, as `fchmod(0700)` on Linux. Not done: the Linux check that no ancestor is
+writable by others (on Windows, renaming the directory away needs `DELETE` on it, which the private ACL does not grant, or
+`FILE_DELETE_CHILD` on the parent, which the parent's ACL decides).
 
 ### `CreateTempFile`
 
@@ -161,6 +189,10 @@ Windows: CreateFileW(CREATE_NEW) with a random name; macOS: mkstemp.
 
 The file is created exclusively and owner-only; return its path. The unique part is at least 6 random characters.
 
+Windows, as built (Day 152): `<prefix>.` and 8 characters from `BCryptGenRandom`, created with `CREATE_NEW` (or `CreateDirectoryW`), up to 100
+attempts. The file is not given an owner-only ACL of its own: it inherits the directory's (the user's temporary directory and folders are
+private already), because a file keeps its ACL when renamed, and `WriteFileAtomic` renames its temporary over the target, which would otherwise
+change the target's ACL.
 
 ### `CreateTempDirectory`
 
@@ -192,11 +224,15 @@ Windows: GetFinalPathNameByHandleW with the extended-length prefix removed; macO
 
 The file must exist. Return the final path without the `\\?\\` prefix unless the path is longer than the classic limit.
 
+Windows, as built (Day 152): `GetFinalPathNameByHandleW(FILE_NAME_NORMALIZED | VOLUME_NAME_DOS)` on a handle that follows links; the `\\?\` (or
+`\\?\UNC\`) prefix is always removed: a `Path` never carries it, and the backend adds it again where it is needed.
 
 ### `ReadLink`
 
 Windows: DeviceIoControl(FSCTL_GET_REPARSE_POINT); macOS: readlink.
 
+Windows, as built (Day 152): the print name of a symbolic link (relative as written) or of a junction (absolute), or the substitute name without its
+`\??\` when there is no print name. Any other reparse point, and a name that is none, is `Invalid` (`ERROR_NOT_A_REPARSE_POINT`).
 
 ### `TempDirectory`
 
@@ -232,6 +268,9 @@ Windows: FOLDERID_LocalAppData; macOS: ~/Library/Application Support.
 
 Windows: FOLDERID_LocalAppData\state; macOS: ~/Library/Application Support/<app>/state.
 
+Windows, as built (Day 152): `SHGetKnownFolderPath`; configuration `RoamingAppData\<app>`, data `LocalAppData\<app>`, cache `LocalAppData\<app>\cache`, state
+`LocalAppData\<app>\state` (grouped per application, the Windows convention). Nothing is created. An application name that Windows cannot keep
+(a device name, a colon, a trailing dot or space, `\`) is `Invalid` besides the POSIX rules.
 
 ### `CrashDumpDirectory`
 
@@ -240,6 +279,8 @@ Windows: %LOCALAPPDATA%/<app>/crashes; macOS: ~/Library/Application Support/<app
 
 Do not guess a location without the user's profile. Create it private to the user (Windows: an ACL for the current user only).
 
+Windows, as built (Day 152): `LocalAppData\<app>\crashes`, `<app>` from `ENGINE_APP_NAME` or the executable's name without `.exe`, created with
+`CreatePrivateDirectory`.
 
 ### `Info`
 
@@ -260,7 +301,9 @@ Windows: CreateFileW with FILE_FLAG_OVERLAPPED (so the file is NativelyAsync); m
 or `kOpenCreate` creates, `CREATE_NEW` for `kOpenCreateNew`, else `OPEN_EXISTING`); truncation (`Write`, `kOpenTruncate`) is a separate
 end-of-file of 0 on the open handle, as `O_TRUNC` keeps the file: `CREATE_ALWAYS` and `TRUNCATE_EXISTING` refuse a hidden or system file and
 `CREATE_ALWAYS` replaces its attributes. The handle is
-synchronous until Day 152; reads and writes at an offset pass it in an `OVERLAPPED`, so concurrent offset reads share no file pointer. An append
+synchronous, and asynchronous requests run on the executor exactly as on Linux (decided on Day 152: one design on both platforms; `LocalFile`
+does not claim `kCapNativelyAsync`, and overlapped I/O with a completion port is left for a measured need). Reads and writes at an offset pass
+it in an `OVERLAPPED`, so concurrent offset reads share no file pointer. An append
 writes at the offset `0xFFFFFFFF'FFFFFFFF`, which is Win32's atomic append. `Flush` has nothing to flush (no buffer in the process); `Sync` is
 `FlushFileBuffers`. `Truncate` that grows a file first marks it sparse (`FSCTL_SET_SPARSE`), so the new part is a hole as on Linux and not
 gigabytes of zeros written by the next write past the old end; a file system without sparse files grows it plainly. A directory opened as a
@@ -271,6 +314,11 @@ file is `IsADirectory` (`AlreadyExists` with `kOpenCreateNew`, as `O_EXCL` says)
 
 Windows: FindNextFileW, skipping the dot entries, the type from the attributes (a reparse point is a Symlink); macOS: readdir.
 
+Windows, as built (Day 152): `io/windows/directory.cpp`. The type follows `Lstat`: the symlink tag is `Symlink`, a junction or another name surrogate
+`Other` (so a walk never enters it), any other reparse point the file or directory it stands for. An empty root directory with no entries at all
+(no `.` either) is an empty listing. The listing, sorting, wildcards and walking are the neutral `io/directory.cpp` on every platform; a backend
+provides only `Open`, `Next`, `Close`, `DirectoryEntry::Info` and `detail::GetIdentity` (`io/detail/directory_identity.h`; Windows: volume
+serial and the 128-bit file id).
 
 ### `Close`
 

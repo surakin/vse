@@ -3,9 +3,11 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#if !defined(_WIN32)
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#endif
 
 #include "io/file_system.h"
 #include "temp_dir.h"
@@ -19,6 +21,7 @@ using io_test::TempDir;
 
 namespace {
 
+#if !defined(_WIN32)
 struct EnvGuard { // restores an environment variable at scope exit
     engine_test::Text name;
     engine_test::Text old;
@@ -33,9 +36,11 @@ struct EnvGuard { // restores an environment variable at scope exit
         else ::unsetenv(name.CStr());
     }
 };
+#endif
 
 } // namespace
 
+#if !defined(_WIN32) // Windows has its own table (tests/io/io_windows_test.cpp)
 TEST_CASE("io::Error: the errno table and names", "[io][error]") {
     struct Row { int code; Error error; };
     const Row rows[] = {
@@ -60,6 +65,7 @@ TEST_CASE("io::Error: the errno table and names", "[io][error]") {
     CHECK(s.os_code == ENOENT);
     CHECK(io::Status::Success().Ok());
 }
+#endif
 
 TEST_CASE("io: Stat, Lstat and the existence questions", "[io][fs]") {
     TempDir dir;
@@ -84,20 +90,24 @@ TEST_CASE("io: Stat, Lstat and the existence questions", "[io][fs]") {
     CHECK(io::Stat(file / "child", &info).Is(Error::NotADirectory));
 
     // Symbolic links: Stat follows, Lstat describes the link; a dangling link does not exist.
+    if (!io_test::SymlinksAvailable()) {
+        WARN("skipped the symbolic link checks: this process cannot create symbolic links (Windows: Developer Mode)");
+        return;
+    }
     const Path link = dir / "link";
-    REQUIRE(::symlink("f.txt", io_test::Str(link.View()).CStr()) == 0);
+    REQUIRE(io_test::MakeSymlink("f.txt", link));
     REQUIRE(io::Lstat(link, &info).Ok());
     CHECK(info.type == io::FileType::Symlink);
     REQUIRE(io::Stat(link, &info).Ok());
     CHECK(info.type == io::FileType::Regular);
     const Path dangling = dir / "dangling";
-    REQUIRE(::symlink("gone", io_test::Str(dangling.View()).CStr()) == 0);
+    REQUIRE(io_test::MakeSymlink("gone", dangling));
     CHECK_FALSE(io::Exists(dangling));
     CHECK(io::Lstat(dangling, &info).Ok());
 
     // A symlink loop.
     const Path loop = dir / "loop";
-    REQUIRE(::symlink("loop", io_test::Str(loop.View()).CStr()) == 0);
+    REQUIRE(io_test::MakeSymlink("loop", loop));
     CHECK(io::Stat(loop, &info).Is(Error::SymlinkLoop));
 }
 
@@ -105,10 +115,10 @@ TEST_CASE("io: read-only files report it", "[io][fs]") {
     TempDir dir;
     const Path file = dir / "ro.txt";
     REQUIRE(io_test::WriteText(file, "x"));
-    REQUIRE(::chmod(io_test::Str(file.View()).CStr(), 0444) == 0);
+    REQUIRE(io_test::SetReadOnlyFile(file));
     io::FileInfo info;
     REQUIRE(io::Stat(file, &info).Ok());
-    if (::geteuid() != 0) { // root can write anything
+    if (!io_test::RunningAsRoot()) { // root can write anything
         CHECK(info.read_only);
     }
     CHECK(info.permissions == 0444);
@@ -139,21 +149,22 @@ TEST_CASE("io: CreateDirectory, CreateDirectories and Remove", "[io][fs]") {
 
     // Over-long names.
     const engine_test::Text long_name = engine_test::Repeated(300, 'n');
-    CHECK(io::CreateDirectory(dir / long_name.View()).Is(Error::TooLong));
+    CHECK(io::CreateDirectory(dir / long_name.View()).Is(Error::TooLong)); // a component over 255 characters, on every platform
 }
 
 TEST_CASE("io: read-only directories refuse changes", "[io][fs]") {
-    if (::geteuid() == 0) {
+    if (io_test::RunningAsRoot()) {
         SUCCEED("root ignores directory permissions");
         return;
     }
     TempDir dir;
     const Path d = dir / "locked";
     REQUIRE(io::CreateDirectory(d).Ok());
-    REQUIRE(::chmod(io_test::Str(d.View()).CStr(), 0555) == 0);
+    REQUIRE(io_test::DenyChanges(d));
     CHECK(io::CreateDirectory(d / "child").Is(Error::PermissionDenied));
     Path unused;
     CHECK(io::CreateTempFile(d, "t", &unused).Is(Error::PermissionDenied));
+    REQUIRE(io_test::AllowAll(d));
 }
 
 TEST_CASE("io: RemoveAll removes trees, never follows links and refuses dangerous arguments", "[io][fs]") {
@@ -163,7 +174,7 @@ TEST_CASE("io: RemoveAll removes trees, never follows links and refuses dangerou
     REQUIRE(io::CreateDirectories(dir / "t/a/b").Ok());
     REQUIRE(io_test::WriteText(dir / "t/a/b/f", "1"));
     REQUIRE(io_test::WriteText(dir / "t/a/g", "2"));
-    REQUIRE(::symlink(other.Native().CStr(), io_test::Str((dir / "t/a/link").View()).CStr()) == 0);
+    REQUIRE(io_test::MakeDirectoryLink(other.Path(), dir / "t/a/link")); // Windows without Developer Mode: a junction
     CHECK(io::RemoveAll(dir / "t").Ok());
     CHECK_FALSE(io::Exists(dir / "t"));
     CHECK(io::Exists(other / "keep.txt")); // the link was removed, not followed
@@ -180,7 +191,7 @@ TEST_CASE("io: RemoveAll removes trees, never follows links and refuses dangerou
     CHECK(io::RemoveAll(Path("/tmp/..")).Is(Error::Invalid));
     // `..` after a link means something else to the kernel than to a lexical Normalize: refused, nothing deleted.
     REQUIRE(io::CreateDirectories(dir / "real/victim").Ok());
-    REQUIRE(::symlink(io_test::Str((dir / "real/victim").View()).CStr(), io_test::Str((dir / "viaLink").View()).CStr()) == 0);
+    REQUIRE(io_test::MakeDirectoryLink(dir / "real/victim", dir / "viaLink"));
     CHECK(io::RemoveAll(dir / "viaLink/../real").Is(Error::Invalid));
     CHECK(io::IsDirectory(dir / "real/victim"));
     CHECK(io::RemoveAll(Path("/usr/../etc/..")).Is(Error::Invalid));
@@ -223,16 +234,22 @@ TEST_CASE("io: Rename and Copy", "[io][fs]") {
     CHECK(io::Copy(dir / "d", dir / "dc", false).Is(Error::IsADirectory));
     // Copying a file onto itself (also through a hard link) is refused and leaves it intact.
     CHECK(io::Copy(dir / "b", dir / "b", true).Is(Error::Invalid));
-    REQUIRE(::link(io_test::Str((dir / "b").View()).CStr(), io_test::Str((dir / "hard").View()).CStr()) == 0);
+    REQUIRE(io_test::HardLink(dir / "b", dir / "hard"));
     CHECK(io::Copy(dir / "b", dir / "hard", true).Is(Error::Invalid));
     CHECK(io_test::ReadText(dir / "b") == "new longer content");
     CHECK(io::Copy(dir / "missing", dir / "mc", false).Is(Error::NotFound));
-    // The permission bits travel with the copy.
+    // The permission bits travel with the copy (on Windows the one it has, read-only).
+#if defined(_WIN32)
+    REQUIRE(io_test::SetReadOnlyFile(dir / "b"));
+    const u32 expected = 0444;
+#else
     REQUIRE(::chmod(io_test::Str((dir / "b").View()).CStr(), 0640) == 0);
+    const u32 expected = 0640;
+#endif
     REQUIRE(io::Copy(dir / "b", dir / "perm", false).Ok());
     io::FileInfo info;
     REQUIRE(io::Stat(dir / "perm", &info).Ok());
-    CHECK(info.permissions == 0640);
+    CHECK(info.permissions == expected);
 }
 
 TEST_CASE("io: CreatePrivateDirectory", "[io][fs]") {
@@ -241,17 +258,28 @@ TEST_CASE("io: CreatePrivateDirectory", "[io][fs]") {
     REQUIRE(io::CreatePrivateDirectory(p).Ok());
     io::FileInfo info;
     REQUIRE(io::Stat(p, &info).Ok());
+#if defined(_WIN32)
+    CHECK(io_test::AclIsPrivate(p)); // a protected ACL with one entry, for this user
+    CHECK(io_test::AclIsPrivate(p.Parent())); // missing parents are private too
+#else
     CHECK(info.permissions == 0700);
-    // An existing directory with group/other access is tightened.
+#endif
+    // An existing directory with group/other access (on Windows: the inherited ACL) is tightened.
     const Path open_dir = dir / "open";
     REQUIRE(io::CreateDirectory(open_dir).Ok());
+#if defined(_WIN32)
+    CHECK_FALSE(io_test::AclIsPrivate(open_dir));
+    REQUIRE(io::CreatePrivateDirectory(open_dir).Ok());
+    CHECK(io_test::AclIsPrivate(open_dir));
+#else
     REQUIRE(::chmod(io_test::Str(open_dir.View()).CStr(), 0755) == 0);
     REQUIRE(io::CreatePrivateDirectory(open_dir).Ok());
     REQUIRE(io::Stat(open_dir, &info).Ok());
     CHECK(info.permissions == 0700);
-    // A symbolic link, even to a directory, is refused; a file is not a directory.
+#endif
+    // A symbolic link (on Windows also a junction), even to a directory, is refused; a file is not a directory.
     const Path link = dir / "link";
-    REQUIRE(::symlink(io_test::Str(open_dir.View()).CStr(), io_test::Str(link.View()).CStr()) == 0);
+    REQUIRE(io_test::MakeDirectoryLink(open_dir, link));
     CHECK(io::CreatePrivateDirectory(link).Is(Error::SymlinkLoop));
     REQUIRE(io_test::WriteText(dir / "file", "x"));
     CHECK(io::CreatePrivateDirectory(dir / "file").Failed());
@@ -269,7 +297,7 @@ TEST_CASE("io: temporary files and directories", "[io][fs]") {
     REQUIRE(io::Stat(a, &info).Ok());
     CHECK(info.type == io::FileType::Regular);
     CHECK(info.size == 0);
-    CHECK(info.permissions == 0600);
+    CHECK(info.permissions == io_test::ReportedPermissions(0600)); // Windows: the directory's (private) ACL is inherited, BACKEND.md
     Path d;
     REQUIRE(io::CreateTempDirectory(dir.Path(), "work", &d).Ok());
     CHECK(io::IsDirectory(d));
@@ -288,10 +316,20 @@ TEST_CASE("io: current directory, Absolute, Canonical and ReadLink", "[io][fs]")
     REQUIRE(io::Absolute(Path("a/b"), &abs).Ok());
     CHECK(abs == cwd.Join("a/b"));
     REQUIRE(io::Absolute(Path("/x/y"), &abs).Ok());
+#if defined(_WIN32)
+    CHECK(abs == Path(cwd.RootName()).Join("/x/y")); // a rooted path takes the current drive
+#else
     CHECK(abs == Path("/x/y"));
+#endif
 
     REQUIRE(io::CreateDirectories(dir / "real/sub").Ok());
-    REQUIRE(::symlink("real", io_test::Str((dir / "alias").View()).CStr()) == 0);
+    // A relative symbolic link where one can be made; on Windows without Developer Mode a junction, whose target is absolute.
+    const bool symlink = io_test::SymlinksAvailable();
+    if (symlink) {
+        REQUIRE(io_test::MakeSymlink("real", dir / "alias", true));
+    } else {
+        REQUIRE(io_test::MakeDirectoryLink(dir / "real", dir / "alias"));
+    }
     Path canon;
     REQUIRE(io::Canonical(dir / "alias/sub/../sub", &canon).Ok());
     Path expect;
@@ -301,7 +339,11 @@ TEST_CASE("io: current directory, Absolute, Canonical and ReadLink", "[io][fs]")
 
     Path target;
     REQUIRE(io::ReadLink(dir / "alias", &target).Ok());
-    CHECK(Str(target.View()) == "real");
+    if (symlink) {
+        CHECK(Str(target.View()) == "real");
+    } else {
+        CHECK(target == dir / "real");
+    }
     CHECK(io::ReadLink(dir / "real", &target).Is(Error::Invalid));
     CHECK(io::ReadLink(dir / "nope", &target).Is(Error::NotFound));
 
@@ -314,6 +356,7 @@ TEST_CASE("io: current directory, Absolute, Canonical and ReadLink", "[io][fs]")
     REQUIRE(io::SetCurrentDirectory(cwd).Ok());
 }
 
+#if !defined(_WIN32) // Windows: tests/io/io_windows_test.cpp ("special folders on Windows")
 TEST_CASE("io: special folders", "[io][fs]") {
     EnvGuard home("HOME"), cfg("XDG_CONFIG_HOME"), cache("XDG_CACHE_HOME"), data("XDG_DATA_HOME"), state("XDG_STATE_HOME"), tmp("TMPDIR");
     ::setenv("HOME", "/home/test", 1);
@@ -376,3 +419,4 @@ TEST_CASE("io: special folders", "[io][fs]") {
     CHECK(exe.Parent() == exe_dir);
     CHECK(io::IsFile(exe));
 }
+#endif

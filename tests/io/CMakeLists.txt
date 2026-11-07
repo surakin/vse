@@ -13,11 +13,9 @@ set(IO_TEST_SOURCES
 find_package(Threads REQUIRED)
 include(Catch)
 
-# Windows (Phase 13): the file layer arrives in two days. Day 151 has paths, errors, Stat and the synchronous local file, so the tests of
-# those run (with the Windows-only ones); file_system_test, directory_test and async_file_test join on Day 152 with the rest of the backend,
-# and the jobs library (the asynchronous half) on Day 153.
+# Windows (Phase 13): the whole suite but async_file_test, which links the job system and joins with it on Day 153.
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  set(_io_windows_sources path_test.cpp file_test.cpp share_test.cpp io_windows_test.cpp)
+  set(_io_windows_sources path_test.cpp file_system_test.cpp file_test.cpp directory_test.cpp share_test.cpp io_windows_test.cpp)
   set(_io_windows_flavors "")
   if(ENGINE_HAVE_ASAN)
     list(APPEND _io_windows_flavors "_asan")

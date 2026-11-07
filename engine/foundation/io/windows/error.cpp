@@ -38,7 +38,8 @@ Error ErrorFromOsCode(i32 os_code) {
     case ERROR_BAD_PATHNAME:
     case ERROR_INVALID_PARAMETER:
     case ERROR_INVALID_HANDLE:
-    case ERROR_NEGATIVE_SEEK: return Error::Invalid;
+    case ERROR_NEGATIVE_SEEK:
+    case ERROR_NOT_A_REPARSE_POINT: return Error::Invalid; // ReadLink of something that is not a link, as readlink's EINVAL
     case ERROR_NOT_SAME_DEVICE: return Error::CrossDevice;
     case ERROR_CANT_RESOLVE_FILENAME: // too many reparse points on the way (a link loop)
     case ERROR_STOPPED_ON_SYMLINK: return Error::SymlinkLoop;

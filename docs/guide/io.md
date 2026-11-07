@@ -94,8 +94,15 @@ On Windows (`NativePathStyle()` is `PathStyle::Windows`):
   from user input should expect `Invalid` on Windows.
 - **Case.** Comparisons fold ASCII letters only (`C:/A` equals `c:/a`); the text keeps the case it was written in, and the file system decides
   the rest (NTFS folds all of Unicode, and some directories are case-sensitive).
-- **Sharing.** Files are never locked: opening the same file twice works on every platform, and an open file can be renamed or removed. On
-  Windows a file another program holds open without sharing fails with `Busy`.
+- **Sharing.** Files are never locked: opening the same file twice works on every platform, and an open file can be renamed, replaced or
+  removed. On Windows a file another program holds open without sharing fails with `Busy`.
+- **Atomic replace.** `WriteFileAtomic` and `Rename` replace a target that is open or read-only, as on Linux (Windows' POSIX rename on NTFS).
+- **Permissions.** Only "read-only" survives on Windows: `SetPermissions(path, 0444)` sets the read-only attribute, and `Stat` reports 0644 or
+  0444 for files and 0755 for directories. `CreatePrivateDirectory` gives the directory an ACL that admits only the current user.
+- **Special folders.** Configuration lives in `%APPDATA%\<app>`, data in `%LOCALAPPDATA%\<app>` (cache and state in its `cache` and `state`
+  subfolders), crash dumps in `%LOCALAPPDATA%\<app>\crashes`.
+- **Links.** Creating a symbolic link needs Developer Mode (or elevation); junctions need nothing and are reported as `Other` (not followed by a
+  walk or by `RemoveAll`).
 
 ## Rules in one table
 

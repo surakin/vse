@@ -1,8 +1,7 @@
 // The Windows backend of io/file_system.h (Phase 13). One of the places allowed to call the Win32 file API directly.
 //
-// Day 151 implements Stat, Lstat and the existence questions. Every other function of the header is Day 152's
-// (plans/phase-13-windows-dx12/day-152-file-layer-directories-async.md) and returns `Unsupported` until then, so the library links and
-// nothing pretends to work; KNOWN-ISSUES.md lists them.
+// Stat, Lstat and the existence questions (Day 151); the operations that change the disk, the locations and the special folders are
+// io/windows/file_operations.cpp (Day 152).
 #include "io/file_system.h"
 
 #include "io/windows/win_path.h"
@@ -19,18 +18,7 @@ namespace {
 using windows::kShareAll;
 constexpr i64 kUnixEpochIn100Ns = 116444736000000000LL; // 1970-01-01 as a FILETIME (100 ns units since 1601-01-01)
 
-class HandleGuard {
-public:
-    explicit HandleGuard(HANDLE h) : h_(h) {}
-    ~HandleGuard() {
-        if (h_ != INVALID_HANDLE_VALUE) CloseHandle(h_);
-    }
-    HandleGuard(const HandleGuard&) = delete;
-    HandleGuard& operator=(const HandleGuard&) = delete;
-
-private:
-    HANDLE h_;
-};
+using windows::HandleGuard;
 
 // An impersonation copy of the process token, made once: AccessCheck needs one. Null when it cannot be made (then write access is not
 // checked against the ACL). Kept for the life of the process.
@@ -159,8 +147,6 @@ Status DoStat(const Path& path, FileInfo* out, bool follow, bool want_read_only 
     return Status::Success();
 }
 
-Status NotYet() { return Status::Of(Error::Unsupported); } // Day 152
-
 } // namespace
 
 Status Stat(const Path& path, FileInfo* out) { return DoStat(path, out, true); }
@@ -180,31 +166,5 @@ bool IsDirectory(const Path& path) {
     FileInfo info;
     return DoStat(path, &info, true, false).Ok() && info.type == FileType::Directory;
 }
-
-// --- Day 152 -------------------------------------------------------------------------------------------------------------
-Status Remove(const Path&) { return NotYet(); }
-Status RemoveAll(const Path&) { return NotYet(); }
-Status Rename(const Path&, const Path&) { return NotYet(); }
-Status Copy(const Path&, const Path&, bool) { return NotYet(); }
-Status SetPermissions(const Path&, u32) { return NotYet(); }
-Status SyncDirectory(const Path&) { return NotYet(); }
-Status CreateDirectory(const Path&) { return NotYet(); }
-Status CreateDirectories(const Path&) { return NotYet(); }
-Status CreatePrivateDirectory(const Path&) { return NotYet(); }
-Status CreateTempFile(const Path&, StringView, Path*) { return NotYet(); }
-Status CreateTempDirectory(const Path&, StringView, Path*) { return NotYet(); }
-Status CurrentDirectory(Path*) { return NotYet(); }
-Status SetCurrentDirectory(const Path&) { return NotYet(); }
-Status Absolute(const Path&, Path*) { return NotYet(); }
-Status Canonical(const Path&, Path*) { return NotYet(); }
-Status ReadLink(const Path&, Path*) { return NotYet(); }
-Status TempDirectory(Path*) { return NotYet(); }
-Status ExecutablePath(Path*) { return NotYet(); }
-Status ExecutableDirectory(Path*) { return NotYet(); }
-Status UserConfigDirectory(StringView, Path*) { return NotYet(); }
-Status UserCacheDirectory(StringView, Path*) { return NotYet(); }
-Status UserDataDirectory(StringView, Path*) { return NotYet(); }
-Status UserStateDirectory(StringView, Path*) { return NotYet(); }
-Status CrashDumpDirectory(Path*) { return NotYet(); }
 
 } // namespace engine_placeholder::io

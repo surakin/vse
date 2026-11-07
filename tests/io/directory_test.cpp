@@ -1,6 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 
+#if !defined(_WIN32)
 #include <unistd.h>
+#endif
 
 #include "io/directory.h"
 #include "temp_dir.h"
@@ -71,7 +73,8 @@ TEST_CASE("io::Directory: empty, entries, types and Info", "[io][dir]") {
     CHECK(empty);
     REQUIRE(io_test::WriteText(dir / "f.txt", "hello"));
     REQUIRE(io::CreateDirectory(dir / "sub").Ok());
-    REQUIRE(::symlink("f.txt", Str((dir / "ln").View()).CStr()) == 0);
+    const bool symlink = io_test::SymlinksAvailable(); // Windows: Developer Mode
+    if (symlink) REQUIRE(io_test::MakeSymlink("f.txt", dir / "ln"));
     REQUIRE(io::Directory::IsEmpty(dir.Path(), &empty).Ok());
     CHECK_FALSE(empty);
 
@@ -100,7 +103,11 @@ TEST_CASE("io::Directory: empty, entries, types and Info", "[io][dir]") {
             CHECK(info.type == io::FileType::Symlink);
         }
     }
-    CHECK(seen.SameAs({"f.txt", "sub", "ln"}));
+    if (symlink) {
+        CHECK(seen.SameAs({"f.txt", "sub", "ln"}));
+    } else {
+        CHECK(seen.SameAs({"f.txt", "sub"}));
+    }
     // Closing, moving and use after close.
     io::FileInfo before_move;
     io::Directory moved = static_cast<io::Directory&&>(d);
@@ -119,9 +126,15 @@ TEST_CASE("io::Directory: empty, entries, types and Info", "[io][dir]") {
 
 TEST_CASE("io::Directory: names with spaces, newlines and Unicode; many entries", "[io][dir]") {
     TempDir dir;
+#if defined(_WIN32) // control characters and `"` are not allowed in Windows names
+    const char* const odd[] = {"with space", "semi;colon", "日本語.txt", "ünï", ".hidden", "brace{}[]", "percent%20#"};
+    for (const char* n : odd) REQUIRE(io_test::WriteText(dir / StringView(n), "x"));
+    CHECK(Names(dir.Path()).SameAs({"with space", "semi;colon", "日本語.txt", "ünï", ".hidden", "brace{}[]", "percent%20#"}));
+#else
     const char* const odd[] = {"with space", "new\nline", "日本語.txt", "ünï", ".hidden", "tab\there", "quote\"s"};
     for (const char* n : odd) REQUIRE(io_test::WriteText(dir / StringView(n), "x"));
     CHECK(Names(dir.Path()).SameAs({"with space", "new\nline", "日本語.txt", "ünï", ".hidden", "tab\there", "quote\"s"}));
+#endif
 
     TempDir big;
     constexpr int kN = 10000;
@@ -138,12 +151,13 @@ TEST_CASE("io::Directory: names with spaces, newlines and Unicode; many entries"
 
 TEST_CASE("io::ListDirectory: sorted order is bytewise and stable across runs", "[io][dir]") {
     TempDir dir;
-    for (const char* n : {"b", "a", "B", "10", "9", "_x", "é", "Z"}) REQUIRE(io_test::WriteText(dir / n, ""));
+    // No two names differ only in case: NTFS and APFS would make them one file (Phase 13 Day 152).
+    for (const char* n : {"b", "a", "C", "10", "9", "_x", "é", "Z"}) REQUIRE(io_test::WriteText(dir / n, ""));
     Vector<io::DirectoryItem> items;
     REQUIRE(io::ListDirectory(dir.Path(), true, &items).Ok());
     engine_test::TextList got;
     for (usize i = 0; i < items.Size(); ++i) got.Push(items[i].name.View());
-    CHECK(got.SameAs({"10", "9", "B", "Z", "_x", "a", "b", "é"}));
+    CHECK(got.SameAs({"10", "9", "C", "Z", "_x", "a", "b", "é"}));
     CHECK(items[0].type == io::FileType::Regular);
     Vector<io::DirectoryItem> unsorted;
     REQUIRE(io::ListDirectory(dir.Path(), false, &unsorted).Ok());
@@ -269,12 +283,16 @@ TEST_CASE("io::WalkDirectory: order, depth, filter, skipping and stopping", "[io
 }
 
 TEST_CASE("io::WalkDirectory: symbolic links and loops", "[io][dir][walk]") {
+    if (!io_test::SymlinksAvailable()) {
+        WARN("skipped: this process cannot create symbolic links (Windows: Developer Mode)");
+        return;
+    }
     TempDir dir;
     REQUIRE(io::CreateDirectories(dir / "real/inner").Ok());
     REQUIRE(io_test::WriteText(dir / "real/inner/f.txt", "x"));
-    REQUIRE(::symlink("real", Str((dir / "lnk").View()).CStr()) == 0);            // link to a directory
-    REQUIRE(::symlink("real/inner/f.txt", Str((dir / "flink").View()).CStr()) == 0); // link to a file
-    REQUIRE(::symlink("..", Str((dir / "real/inner/up").View()).CStr()) == 0);        // link back to an ancestor
+    REQUIRE(io_test::MakeSymlink("real", dir / "lnk", true));             // link to a directory
+    REQUIRE(io_test::MakeSymlink("real/inner/f.txt", dir / "flink"));     // link to a file
+    REQUIRE(io_test::MakeSymlink("..", dir / "real/inner/up", true));     // link back to an ancestor
     io::WalkOptions o;
     o.sorted = true;
     WalkLog log;
@@ -295,13 +313,13 @@ TEST_CASE("io::WalkDirectory: symbolic links and loops", "[io][dir][walk]") {
 }
 
 TEST_CASE("io::WalkDirectory: an unreadable subdirectory is reported and the walk goes on", "[io][dir][walk]") {
-    if (::geteuid() == 0) {
+    if (io_test::RunningAsRoot()) {
         SUCCEED("root reads everything");
         return;
     }
     TempDir dir;
     MakeTree(dir);
-    REQUIRE(::chmod(Str((dir / "a/b").View()).CStr(), 0000) == 0);
+    REQUIRE(io_test::DenyListing(dir / "a/b"));
     io::WalkOptions o;
     o.sorted = true;
     WalkLog log;
@@ -323,7 +341,7 @@ TEST_CASE("io::WalkDirectory: an unreadable subdirectory is reported and the wal
     o.post_order = false;
     REQUIRE(io::WalkDirectory(dir.Path(), o, &Collect, &log).Ok());
     CHECK(log.seen.Back() == "z"); // later entries were still visited
-    REQUIRE(::chmod(Str((dir / "a/b").View()).CStr(), 0755) == 0);
+    REQUIRE(io_test::AllowAll(dir / "a/b"));
 }
 
 TEST_CASE("io::Directory: the creation and removal statics", "[io][dir]") {

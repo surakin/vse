@@ -52,7 +52,7 @@ bool IsReservedDeviceName(StringView name) {
     return false;
 }
 
-Status ToWin32(const Path& path, WidePath* out) {
+Status ToWin32(const Path& path, WidePath* out, bool extended) {
     out->length = 0;
     out->text[0] = 0;
     char native[kMaxPathBytes + 1];
@@ -68,13 +68,15 @@ Status ToWin32(const Path& path, WidePath* out) {
             if (last == '.' || last == ' ' || name.IndexOf(':') != name.Length() || IsReservedDeviceName(name)) {
                 return Status::Of(Error::Invalid);
             }
+            // NTFS keeps names of up to 255 UTF-16 units; Win32 reports a longer one as an invalid name, POSIX as ENAMETOOLONG.
+            if (name.Length() > 255 && os::windows::Utf8ToUtf16(name, nullptr, 0) > 255) return Status::Of(Error::TooLong);
         }
     }
     usize replaced = 0;
     const usize n = os::windows::Utf8ToUtf16(text, out->text, kWidePathCapacity, &replaced);
     if (replaced != 0) return Status::Of(Error::Invalid);
     if (n >= kWidePathCapacity) return Status::Of(Error::TooLong);
-    if (verbatim || n < kShortPathLimit) {
+    if (verbatim || (n < kShortPathLimit && !extended)) {
         out->length = n;
         return Status::Success();
     }
@@ -128,5 +130,9 @@ Status RefineNotFound(const WidePath& wide, u32 code) {
 }
 
 Status LastError(const WidePath& wide) { return RefineNotFound(wide, GetLastError()); }
+
+HandleGuard::~HandleGuard() {
+    if (h_ != nullptr && h_ != INVALID_HANDLE_VALUE) CloseHandle(h_);
+}
 
 } // namespace engine_placeholder::io::windows

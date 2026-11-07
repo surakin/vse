@@ -55,7 +55,7 @@ bool IsDirectory(const Path& path);
 /// Removes a file, a symbolic link (not its target) or an empty directory.
 ///
 /// Fails: `NotFound`, `PermissionDenied`, `NotEmpty`, `ReadOnly`, `Busy`.
-/// Backend: Windows: DeleteFileW or RemoveDirectoryW (clear the read-only attribute first); macOS: remove.
+/// Backend: Windows: FileDispositionInfoEx with POSIX semantics (read-only and open files too); macOS: remove.
 Status Remove(const Path& path);
 /// The shortest absolute path [[io::RemoveAll]] accepts, in components (`/home/me` has two; `/home` has one).
 constexpr usize kRemoveAllMinComponents = 2;
@@ -72,7 +72,7 @@ Status RemoveAll(const Path& path);
 /// directory. Both must be on the same file system.
 ///
 /// Fails: `NotFound`, `CrossDevice`, `NotEmpty`, `IsADirectory`, `NotADirectory`, `PermissionDenied`, `Busy`.
-/// Backend: Windows: MoveFileExW(MOVEFILE_REPLACE_EXISTING); macOS: rename.
+/// Backend: Windows: FileRenameInfoEx with POSIX semantics (replaces open, read-only and empty-directory targets); macOS: rename.
 Status Rename(const Path& from, const Path& to);
 /// Copies the bytes of the regular file `from` to `to`, keeping the permission bits (not the times or owner). The copy is
 /// not atomic: a failure can leave a partial `to`.
@@ -91,7 +91,7 @@ Status SetPermissions(const Path& path, u32 permissions);
 /// when the change must survive a crash.
 ///
 /// Fails: `NotFound`, `NotADirectory`, `PermissionDenied`, `Io`; `Unsupported` on a platform that has no such operation.
-/// Backend: Windows: Unsupported (NTFS journals directory changes); macOS: fsync on the directory (F_FULLFSYNC for durability).
+/// Backend: Windows: FlushFileBuffers on a directory handle opened for writing; macOS: fsync on the directory (F_FULLFSYNC for durability).
 Status SyncDirectory(const Path& path);
 
 /// Creates one directory (permissions 0777 minus the umask).
@@ -173,7 +173,7 @@ Status UserConfigDirectory(StringView app_name, Path* out);
 /// The per-user cache directory: `$XDG_CACHE_HOME/<app>` or `<home>/.cache/<app>` on Linux. Creates nothing.
 ///
 /// Fails: as [[io::UserConfigDirectory]].
-/// Backend: Windows: FOLDERID_LocalAppData\cache; macOS: ~/Library/Caches.
+/// Backend: Windows: FOLDERID_LocalAppData\<app>\cache; macOS: ~/Library/Caches.
 Status UserCacheDirectory(StringView app_name, Path* out);
 /// The per-user data directory: `$XDG_DATA_HOME/<app>` or `<home>/.local/share/<app>` on Linux. Creates nothing.
 ///
@@ -183,7 +183,7 @@ Status UserDataDirectory(StringView app_name, Path* out);
 /// The per-user state directory: `$XDG_STATE_HOME/<app>` or `<home>/.local/state/<app>` on Linux. Creates nothing.
 ///
 /// Fails: as [[io::UserConfigDirectory]].
-/// Backend: Windows: FOLDERID_LocalAppData\state; macOS: ~/Library/Application Support/<app>/state.
+/// Backend: Windows: FOLDERID_LocalAppData\<app>\state; macOS: ~/Library/Application Support/<app>/state.
 Status UserStateDirectory(StringView app_name, Path* out);
 
 /// The directory where this program writes crash dumps, created (and made private to this user) if needed: `<user state directory>/<app>/crashes`

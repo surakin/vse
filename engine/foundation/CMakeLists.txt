@@ -34,13 +34,15 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     os/windows/vulkan_loader_name.cpp
   )
   set(FOUNDATION_DEBUG_PLATFORM_SOURCES "")
-  # The file layer: paths, errors, Stat and the synchronous local file on Day 151; directories, the other file-system operations and
-  # asynchronous I/O on Day 152 (io/BACKEND.md).
+  # The file layer: paths, errors, Stat and the local file on Day 151; directories and the other file-system operations on Day 152
+  # (io/BACKEND.md). Asynchronous I/O is the neutral executor path, as on Linux.
   set(FOUNDATION_IO_PLATFORM_SOURCES
     io/windows/win_path.cpp
     io/windows/error.cpp
     io/windows/file_system.cpp
+    io/windows/file_operations.cpp
     io/windows/local_file.cpp
+    io/windows/directory.cpp
   )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   message(FATAL_ERROR "macOS is implemented in Phase 14 (the debugging backend: os/macos/debug/BACKEND.md)")
@@ -78,6 +80,7 @@ set(FOUNDATION_BASE_SOURCES
 set(FOUNDATION_IO_SOURCES
   io/path.cpp
   io/error.cpp
+  io/directory.cpp
   ${FOUNDATION_IO_PLATFORM_SOURCES}
   io/file.cpp
 )
@@ -165,8 +168,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     # WTSQuerySessionInformation (os/windows/session.cpp); user32 for the input desktop.
     target_link_libraries(foundation_base${suffix} PUBLIC wtsapi32 user32)
     engine_add_foundation_layer(foundation_io "${suffix}" ${FOUNDATION_IO_SOURCES})
-    # advapi32: the ACL check behind FileInfo::read_only (io/windows/file_system.cpp).
-    target_link_libraries(foundation_io${suffix} PUBLIC foundation_base${suffix} advapi32)
+    # advapi32: ACLs (FileInfo::read_only, private directories); bcrypt: random temporary names; shell32 and ole32: the known folders.
+    target_link_libraries(foundation_io${suffix} PUBLIC foundation_base${suffix} advapi32 bcrypt shell32 ole32)
   endforeach()
 else()
   engine_add_foundation_libs("")

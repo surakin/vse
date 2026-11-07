@@ -12,6 +12,7 @@
 
 #include "unity/windows_enable.h"
 #include <aclapi.h>
+#include <winioctl.h>
 #include "unity/windows_disable.h"
 #else
 #include <dirent.h>
@@ -103,8 +104,13 @@ inline bool DenyCurrentUser(const io::Path& path, DWORD denied) {
     entries[0].grfAccessMode = DENY_ACCESS;
     entries[1].grfAccessPermissions = GENERIC_ALL;
     entries[1].grfAccessMode = GRANT_ACCESS;
+    // Inheritable: a protected ACL replaces what the children inherit, and without it they would be left with no entry at all.
+    entries[1].grfInheritance = SUB_CONTAINERS_AND_OBJECTS_INHERIT;
     PACL acl = nullptr;
-    if (SetEntriesInAclW(2, entries, nullptr, &acl) != ERROR_SUCCESS) return false;
+    // With nothing to deny, only the allow entry (AllowAll).
+    if (denied == 0 ? SetEntriesInAclW(1, entries + 1, nullptr, &acl) != ERROR_SUCCESS : SetEntriesInAclW(2, entries, nullptr, &acl) != ERROR_SUCCESS) {
+        return false;
+    }
     WinPath p(path);
     const DWORD r = SetNamedSecurityInfoW(p.text, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION, nullptr,
                                           nullptr, acl, nullptr);
@@ -115,9 +121,14 @@ inline bool DenyCurrentUser(const io::Path& path, DWORD denied) {
 /// Calls `visit(wide path, attributes)` for every entry of the directory `dir` (not `.` and `..`).
 template <typename Visit>
 inline void ForEachEntry(const wchar_t* dir, Visit&& visit) {
-    wchar_t pattern[io::kMaxPathBytes + 32];
+    // On the heap: callers recurse down a tree, and two path buffers per level on the 1 MiB stack would not last 64 levels.
+    constexpr usize kCapacity = io::kMaxPathBytes + 32;
+    Vector<wchar_t> buffers;
+    buffers.Resize(2 * kCapacity);
+    wchar_t* pattern = buffers.Data();
+    wchar_t* child = buffers.Data() + kCapacity;
     const usize n = std::wcslen(dir);
-    if (n + 3 >= sizeof(pattern) / sizeof(pattern[0])) return;
+    if (n + 3 >= kCapacity) return;
     std::wmemcpy(pattern, dir, n);
     std::wmemcpy(pattern + n, L"\\*", 3);
     WIN32_FIND_DATAW data;
@@ -125,9 +136,8 @@ inline void ForEachEntry(const wchar_t* dir, Visit&& visit) {
     if (find == INVALID_HANDLE_VALUE) return;
     do {
         if (std::wcscmp(data.cFileName, L".") == 0 || std::wcscmp(data.cFileName, L"..") == 0) continue;
-        wchar_t child[io::kMaxPathBytes + 32];
         const usize m = std::wcslen(data.cFileName);
-        if (n + 1 + m + 1 > sizeof(child) / sizeof(child[0])) continue;
+        if (n + 1 + m + 1 > kCapacity) continue;
         std::wmemcpy(child, dir, n);
         child[n] = L'\\';
         std::wmemcpy(child + n + 1, data.cFileName, m + 1);
@@ -146,60 +156,127 @@ inline void MakeWritable(const wchar_t* path, int depth = 0) {
 }
 inline void MakeWritable(const engine_test::Text& path) { MakeWritable(WinPath(path.View()).text); }
 
-/// Removes a tree; a link or junction is removed as itself, never followed.
-inline void RemoveTree(const wchar_t* path, int depth = 0) {
-    const DWORD attributes = GetFileAttributesW(path);
-    if (attributes == INVALID_FILE_ATTRIBUTES) return;
-    const bool directory = (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-    if (directory && (attributes & FILE_ATTRIBUTE_REPARSE_POINT) == 0 && depth < 128) {
-        ForEachEntry(path, [&](const wchar_t* child, DWORD) { RemoveTree(child, depth + 1); });
-    }
-    if (directory) {
-        RemoveDirectoryW(path);
-    } else {
-        SetFileAttributesW(path, FILE_ATTRIBUTE_NORMAL);
-        DeleteFileW(path);
-    }
+/// Makes `link` a junction (a mount-point reparse point) to the directory `target`. Junctions need no privilege, unlike symbolic links.
+inline bool MakeJunction(const io::Path& target, const io::Path& link) {
+    const WinPath l(link);
+    if (!CreateDirectoryW(l.text, nullptr)) return false;
+    const HANDLE h = CreateFileW(l.text, GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+                                 nullptr);
+    if (h == INVALID_HANDLE_VALUE) return false;
+    char native[io::kMaxPathBytes + 1];
+    target.ToNative(native, sizeof(native));
+    wchar_t print[io::kMaxPathBytes + 1];
+    const usize print_length = os::windows::Utf8ToUtf16(StringView(native), print, sizeof(print) / sizeof(print[0]));
+    // The reparse data of a mount point (REPARSE_DATA_BUFFER's MountPointReparseBuffer, which only the driver headers declare).
+    struct MountPoint {
+        DWORD tag;
+        WORD data_length;
+        WORD reserved;
+        WORD substitute_offset;
+        WORD substitute_length;
+        WORD print_offset;
+        WORD print_length;
+        wchar_t path[2 * (io::kMaxPathBytes + 8)];
+    };
+    MountPoint data{};
+    usize at = 0;
+    for (const wchar_t c : {L'\\', L'?', L'?', L'\\'}) data.path[at++] = c;
+    for (usize i = 0; i < print_length; ++i) data.path[at++] = print[i];
+    const usize substitute_length = at;
+    data.path[at++] = 0;
+    for (usize i = 0; i < print_length; ++i) data.path[at++] = print[i];
+    data.path[at++] = 0;
+    data.tag = IO_REPARSE_TAG_MOUNT_POINT;
+    data.substitute_length = static_cast<WORD>(substitute_length * sizeof(wchar_t));
+    data.print_offset = static_cast<WORD>((substitute_length + 1) * sizeof(wchar_t));
+    data.print_length = static_cast<WORD>(print_length * sizeof(wchar_t));
+    data.data_length = static_cast<WORD>(8 + at * sizeof(wchar_t));
+    DWORD unused = 0;
+    const BOOL ok = DeviceIoControl(h, FSCTL_SET_REPARSE_POINT, &data, 8 + data.data_length, nullptr, 0, &unused, nullptr);
+    CloseHandle(h);
+    return ok != FALSE;
 }
 
-/// A directory created for one test and removed (with everything in it) afterwards. On Windows it is made with Win32 until the file
-/// layer's own CreateTempDirectory and RemoveAll exist there (Phase 13 Day 152).
-class TempDir {
-public:
-    TempDir() {
+/// Makes `link` a symbolic link whose text is `target`. Windows allows it without elevation only in Developer Mode: false otherwise.
+inline bool MakeSymlink(StringView target, const io::Path& link, bool to_directory = false) {
+    wchar_t wide_target[io::kMaxPathBytes + 1];
+    char native[io::kMaxPathBytes + 1];
+    // A link's text uses Windows separators.
+    const usize n = target.Length() < io::kMaxPathBytes ? target.Length() : io::kMaxPathBytes;
+    for (usize i = 0; i < n; ++i) native[i] = target[i] == '/' ? '\\' : target[i];
+    native[n] = 0;
+    os::windows::Utf8ToUtf16(StringView(native, n), wide_target, sizeof(wide_target) / sizeof(wide_target[0]));
+    const DWORD flags = SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE | (to_directory ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0);
+    return CreateSymbolicLinkW(WinPath(link).text, wide_target, flags) != FALSE;
+}
+
+/// True when this process can create symbolic links (asked once, by making one in the temporary directory).
+inline bool SymlinksAvailable() {
+    static const bool available = [] {
         wchar_t base[MAX_PATH + 1];
         const DWORD n = GetTempPathW(MAX_PATH + 1, base);
-        if (n == 0 || n > MAX_PATH) std::abort();
-        static std::atomic<u32> counter{0};
-        for (int attempt = 0; attempt < 100; ++attempt) {
-            wchar_t name[MAX_PATH + 64];
-            swprintf(name, sizeof(name) / sizeof(name[0]), L"%lsre_io_test.%lu.%lu.%llu", base, GetCurrentProcessId(),
-                     static_cast<unsigned long>(counter.fetch_add(1)), static_cast<unsigned long long>(GetTickCount64()));
-            if (CreateDirectoryW(name, nullptr)) {
-                char utf8[io::kMaxPathBytes + 1];
-                const usize length = os::windows::Utf16ToUtf8(name, std::wcslen(name), utf8, sizeof(utf8));
-                if (length >= sizeof(utf8) || !io::Path::Parse(StringView(utf8, length), io::PathStyle::Windows, &path_)) std::abort();
-                return;
-            }
-            if (GetLastError() != ERROR_ALREADY_EXISTS) break;
-        }
-        std::abort();
-    }
-    ~TempDir() {
-        const WinPath p = WinPath::Extended(path_); // the tree can be deeper than MAX_PATH (the long-path test)
-        MakeWritable(p.text);
-        RemoveTree(p.text);
-    }
-    TempDir(const TempDir&) = delete;
-    TempDir& operator=(const TempDir&) = delete;
+        if (n == 0 || n > MAX_PATH - 40) return false;
+        wchar_t probe[MAX_PATH + 1];
+        swprintf(probe, MAX_PATH + 1, L"%lsre_io_symlink_probe.%lu", base, GetCurrentProcessId());
+        const bool ok = CreateSymbolicLinkW(probe, L"target", SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE) != FALSE;
+        if (ok) DeleteFileW(probe);
+        return ok;
+    }();
+    return available;
+}
 
-    const io::Path& Path() const { return path_; }
-    io::Path operator/(StringView name) const { return path_.Join(name); }
-    engine_test::Text Native() const { return engine_test::MakeText(path_.View()); }
+/// A link to the directory `target` (absolute): a symbolic link where one can be made, else a junction.
+inline bool MakeDirectoryLink(const io::Path& target, const io::Path& link) {
+    if (SymlinksAvailable()) return MakeSymlink(target.View(), link, true);
+    return MakeJunction(target, link);
+}
 
-private:
-    io::Path path_;
-};
+/// Makes a file read-only the platform's way (the read-only attribute).
+inline bool SetReadOnlyFile(const io::Path& path) { return SetFileAttributesW(WinPath(path).text, FILE_ATTRIBUTE_READONLY) != FALSE; }
+
+/// Takes away the right to add entries to a directory (chmod 0555 on POSIX).
+inline bool DenyChanges(const io::Path& dir) { return DenyCurrentUser(dir, FILE_ADD_FILE | FILE_ADD_SUBDIRECTORY); }
+
+/// Takes away the right to list a directory (chmod 0000 on POSIX).
+inline bool DenyListing(const io::Path& dir) { return DenyCurrentUser(dir, FILE_LIST_DIRECTORY | FILE_TRAVERSE); }
+
+/// Gives the current user full access to `path` again, with a protected ACL (undoes DenyCurrentUser, DenyChanges, DenyListing).
+inline bool AllowAll(const io::Path& path) { return DenyCurrentUser(path, 0); }
+
+/// Makes `link` a second name of the file `existing`.
+inline bool HardLink(const io::Path& existing, const io::Path& link) {
+    return CreateHardLinkW(WinPath(link).text, WinPath(existing).text, nullptr) != FALSE;
+}
+
+/// True when the process ignores permissions (root on POSIX; never on Windows, where an administrator still meets ACLs).
+inline bool RunningAsRoot() { return false; }
+
+/// True when `path`'s ACL is protected and every entry allows the current user (what CreatePrivateDirectory promises; Windows stores an
+/// inheritable grant as two entries, the effective one and an inherit-only one).
+inline bool AclIsPrivate(const io::Path& path) {
+    PACL acl = nullptr;
+    PSECURITY_DESCRIPTOR descriptor = nullptr;
+    if (GetNamedSecurityInfoW(WinPath(path).text, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nullptr, nullptr, &acl, nullptr, &descriptor) !=
+        ERROR_SUCCESS) {
+        return false;
+    }
+    SECURITY_DESCRIPTOR_CONTROL control = 0;
+    DWORD revision = 0;
+    GetSecurityDescriptorControl(descriptor, &control, &revision);
+    bool ok = acl != nullptr && acl->AceCount >= 1 && (control & SE_DACL_PROTECTED) != 0;
+    HANDLE token = nullptr;
+    alignas(TOKEN_USER) byte user[sizeof(TOKEN_USER) + SECURITY_MAX_SID_SIZE];
+    DWORD length = 0;
+    ok = ok && OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token) && GetTokenInformation(token, TokenUser, user, sizeof(user), &length);
+    if (token != nullptr) CloseHandle(token);
+    for (DWORD i = 0; ok && i < acl->AceCount; ++i) {
+        void* ace = nullptr;
+        ok = GetAce(acl, i, &ace) && static_cast<ACE_HEADER*>(ace)->AceType == ACCESS_ALLOWED_ACE_TYPE &&
+             EqualSid(&static_cast<ACCESS_ALLOWED_ACE*>(ace)->SidStart, reinterpret_cast<TOKEN_USER*>(user)->User.Sid);
+    }
+    LocalFree(descriptor);
+    return ok;
+}
 
 #else
 
@@ -243,6 +320,28 @@ inline void MakeWritable(const engine_test::Text& path, int depth = 0) {
     }
 }
 
+inline bool MakeSymlink(StringView target, const io::Path& link, bool to_directory = false) {
+    (void)to_directory;
+    return ::symlink(Str(target).CStr(), Str(link.View()).CStr()) == 0;
+}
+inline bool SymlinksAvailable() { return true; }
+inline bool MakeDirectoryLink(const io::Path& target, const io::Path& link) { return MakeSymlink(target.View(), link, true); }
+inline bool SetReadOnlyFile(const io::Path& path) { return ::chmod(Str(path.View()).CStr(), 0444) == 0; }
+inline bool DenyChanges(const io::Path& dir) { return ::chmod(Str(dir.View()).CStr(), 0555) == 0; }
+inline bool DenyListing(const io::Path& dir) { return ::chmod(Str(dir.View()).CStr(), 0000) == 0; }
+inline bool AllowAll(const io::Path& path) { return ::chmod(Str(path.View()).CStr(), 0755) == 0; }
+inline bool HardLink(const io::Path& existing, const io::Path& link) { return ::link(Str(existing.View()).CStr(), Str(link.View()).CStr()) == 0; }
+inline bool RunningAsRoot() { return ::geteuid() == 0; }
+
+#endif
+
+/// The permission bits Stat reports for a file that was given `posix`: the bits themselves on POSIX; on Windows only the owner write bit
+/// has a counterpart (the read-only attribute), so 0644 or 0444 (io/BACKEND.md, Stat).
+inline u32 ReportedPermissions(u32 posix) {
+    if (io::NativePathStyle() == io::PathStyle::Windows) return (posix & 0200) != 0 ? 0644u : 0444u;
+    return posix;
+}
+
 /// Removes the `re_io_test.*` directories an interrupted run left behind: only those not modified for an hour, so a test program running
 /// at the same time keeps its own. Called once per process, with the directory just created as the clock (its modification time is "now").
 inline void SweepStaleTempDirs(const io::Path& tmp, const io::Path& fresh) {
@@ -261,7 +360,8 @@ inline void SweepStaleTempDirs(const io::Path& tmp, const io::Path& fresh) {
     }
 }
 
-/// A directory created for one test and removed (with everything in it) afterwards.
+/// A directory created for one test and removed (with everything in it) afterwards, through the file layer itself (the helpers above
+/// plant shapes; making and removing the test's own directory is what every test exercises anyway).
 class TempDir {
 public:
     TempDir() {
@@ -287,7 +387,5 @@ public:
 private:
     io::Path path_;
 };
-
-#endif
 
 } // namespace io_test

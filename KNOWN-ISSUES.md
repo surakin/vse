@@ -138,11 +138,14 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - Phase 13 Day 151 (2026-11-07), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 151 file, "For the Linux
   run") were built and tested only on Windows; `tests/io/share_test.cpp` has not run on Linux; the reference for `io/file.h` and `io/file_system.h` was not
   regenerated and `docgen lint` was not run (docgen builds on Windows from Day 157).
-- Phase 13 Day 151, until Day 152: on Windows every function of `io/file_system.h` other than `Stat`, `Lstat`, `Exists`, `IsFile` and `IsDirectory`
-  returns `Unsupported` (`io/windows/file_system.cpp`), so `WriteFileAtomic` fails there; `tests/io/file_test.cpp` skips its two cases with that reason.
-  `io::Directory` and the asynchronous file operations are not built on Windows yet.
-- Phase 13 Day 151: not checked on the Windows PC: the symbolic-link cases of `io: Stat and Lstat on Windows` (Developer Mode is off, so they skip with
-  the reason), and the long-path behavior with `LongPathsEnabled = 1` (the setting is off; the test passes with it off).
+- Phase 13 Day 152 (2026-11-07), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 152 file, "For the
+  Linux run"), among them the split of `io/linux/directory.cpp` into the neutral `io/directory.cpp`, were built and tested only on Windows; the
+  reference for the changed Backend labels of `io/file.h`, `io/file_system.h` and `io/directory.h` was not regenerated.
+- Phase 13 Day 152, until Day 153: `tests/io/async_file_test.cpp` (it links `jobs`) has not run on Windows, so the asynchronous half of the file
+  conformance suite is unverified there.
+- Phase 13 Days 151-152: not checked on the Windows PC: every symbolic-link case of `tests/io` (Developer Mode is off, so they skip with the reason;
+  directory links fall back to junctions where a test only needs one), and the long-path behavior with `LongPathsEnabled = 1` (the setting is off;
+  the tests pass with it off).
 - Phase 13 Day 150 (2026-11-07), open until the Linux run at the phase close: the test tooling and gate changes (listed in the Day 150 file, "For the Linux
   run") were run only on Windows. Not run on Linux: `scripts/test-phase.sh --affected` (everything, the phase map changed) with asan and tsan, the new gate
   self-tests, `test_phase_labels` with `CHECK_UNUSED` and the new `windows:` lines, and `ctest -L docs` after the guide change.

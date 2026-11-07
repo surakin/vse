@@ -13,7 +13,7 @@
 //   2. Every other path is refused with `Invalid` when a component is a reserved device name (CON, PRN, AUX, NUL, COM0-COM9, LPT0-LPT9,
 //      the superscript COM/LPT forms, CONIN$, CONOUT$; with or without an extension, in any case, with spaces before the dot), when a
 //      component ends in a dot or a space (Win32 strips them, so `a.` and `a` would be one file), when a component holds a colon (an
-//      alternate data stream), or when the text is not valid UTF-8. Win32 itself refuses `<>"|?*` and control characters
+//      alternate data stream), or when the text is not valid UTF-8; a component longer than 255 UTF-16 units is `TooLong`. Win32 itself refuses `<>"|?*` and control characters
 //      (`ERROR_INVALID_NAME`, mapped to `Invalid`).
 //   3. A path that fits in MAX_PATH - 1 characters is used as it is, relative or not, so Win32 resolves it as any program would.
 //   4. A longer path is made absolute and resolved with GetFullPathNameW (the current directory, the drive's current directory for
@@ -36,9 +36,22 @@ struct WidePath {
     usize length = 0;
 };
 
-/// Converts `path` for a Win32 file function by the rules above.
+/// Closes a Win32 handle (`void*`, INVALID_HANDLE_VALUE or null meaning none) at scope exit.
+class HandleGuard {
+public:
+    explicit HandleGuard(void* h) : h_(h) {}
+    ~HandleGuard();
+    HandleGuard(const HandleGuard&) = delete;
+    HandleGuard& operator=(const HandleGuard&) = delete;
+
+private:
+    void* h_;
+};
+
+/// Converts `path` for a Win32 file function by the rules above. With `extended`, rule 4 applies whatever the length: the result is
+/// absolute and prefixed, so names appended to it stay valid past MAX_PATH (a walk down a tree).
 /// Fails: `Invalid` (rule 2), `TooLong` (the result does not fit), or the error GetFullPathNameW reports.
-Status ToWin32(const Path& path, WidePath* out);
+Status ToWin32(const Path& path, WidePath* out, bool extended = false);
 
 /// Returns true when `name` (one component, UTF-8) is a reserved device name by rule 2: the part before the first dot, with trailing
 /// spaces removed, compared without case.

@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "io/file.h"
+#include "io/file_system.h"
 #include "temp_dir.h"
 #include "test_text.h"
 
@@ -62,4 +63,26 @@ TEST_CASE("io::File: a file opens twice in every pair of modes, and each open se
             CHECK(b->Close().Ok());
         }
     }
+}
+
+TEST_CASE("io::File: an open file can be renamed, replaced and removed", "[io][file][share]") {
+    TempDir dir;
+    REQUIRE(io::WriteFile(dir / "open.txt", "content", 7).Ok());
+    io::FilePtr f;
+    REQUIRE(io::File::Open(dir / "open.txt", OpenMode::Read, io::kOpenNone, &f).Ok());
+    REQUIRE(io::Rename(dir / "open.txt", dir / "moved.txt").Ok());
+    REQUIRE(io::WriteFileAtomic(dir / "moved.txt", "replaced", 8).Ok()); // replaces the file that is open
+    char buf[7];
+    REQUIRE(io::ReadExact(*f, buf, 7, 0).Ok()); // the open file keeps its old content
+    CHECK(StringView(buf, 7) == StringView("content"));
+    CHECK(io_test::ReadText(dir / "moved.txt") == "replaced");
+    io::FilePtr g;
+    REQUIRE(io::File::Open(dir / "moved.txt", OpenMode::Read, io::kOpenNone, &g).Ok());
+    REQUIRE(io::Remove(dir / "moved.txt").Ok()); // removed while open: the name is gone at once
+    CHECK_FALSE(io::Exists(dir / "moved.txt"));
+    CHECK(f->Close().Ok());
+    CHECK(g->Close().Ok());
+    // A new file can take the name at once.
+    REQUIRE(io::WriteFile(dir / "moved.txt", "again", 5).Ok());
+    CHECK(io_test::ReadText(dir / "moved.txt") == "again");
 }
