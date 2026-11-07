@@ -21,6 +21,10 @@
 #include "platform/linux/x11/x11_window.h"
 #endif
 
+// The using-directives stay inside this namespace: at file scope they would leak into the files merged after this one in a unity build
+// (an X11 header then finds `Window` ambiguous).
+namespace window_backend_test {
+
 using namespace engine_placeholder;
 using namespace engine_placeholder::os;
 
@@ -462,3 +466,5 @@ TEST_CASE("An X11 window exposes its native display and window id", "[window][x1
 }
 
 #endif
+
+} // namespace window_backend_test

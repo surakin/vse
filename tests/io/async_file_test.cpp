@@ -27,11 +27,11 @@
 #endif
 
 // --- an allocation counter (this test executable only), to prove the local completion path allocates nothing -----------------
+#ifndef IO_TEST_SANITIZED // the sanitizer runtimes define their own operator new
 namespace {
 std::atomic<long> g_allocs{0};
 std::atomic<bool> g_counting{false};
 } // namespace
-#ifndef IO_TEST_SANITIZED // the sanitizer runtimes define their own operator new
 void* operator new(std::size_t n) {
     if (g_counting.load(std::memory_order_relaxed)) g_allocs.fetch_add(1, std::memory_order_relaxed);
     if (void* p = std::malloc(n == 0 ? 1 : n)) return p;

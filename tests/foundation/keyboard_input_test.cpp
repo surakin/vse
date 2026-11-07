@@ -6,6 +6,10 @@
 #include "platform/linux/wayland/wayland_input.h"
 #include "platform/linux/xkb_keyboard.h"
 
+// The using-directives stay inside this namespace: at file scope they would leak into the files merged after this one in a unity build
+// (an X11 header then finds `Window` ambiguous).
+namespace keyboard_input_test {
+
 using namespace engine_placeholder;
 using namespace engine_placeholder::os;
 
@@ -170,3 +174,5 @@ TEST_CASE("WaylandInput::Init creates a pointer iff the seat advertises one", "[
     REQUIRE(state.scroll_dx == 0.0);
     REQUIRE(state.scroll_dy == 0.0);
 }
+
+} // namespace keyboard_input_test
