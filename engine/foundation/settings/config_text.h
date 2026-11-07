@@ -101,6 +101,9 @@ public:
     /// Returns: whether anything was removed.
     bool Remove(StringView key);
 
+    /// Returns the 1-based line of the entry that wins for `key`, or 0 if there is none.
+    u32 LineOf(StringView key) const;
+
     /// Appends the keys under `prefix` (equal to it, or starting with `prefix.`; empty means all) in file order, each once.
     void Keys(StringView prefix, Vector<Key>* out) const;
 

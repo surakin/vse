@@ -25,7 +25,14 @@ StoreError FromIo(io::Error e) {
 
 FileConfigStore::FileConfigStore(const io::Path& path, const FileStoreOptions& options) : path_(path), options_(options) {}
 
-u32 FileConfigStore::Capabilities() const { return kCapWritable | kCapPreservesOrder | kCapAtomicCommit; }
+u32 FileConfigStore::Capabilities() const { return options_.read_only ? kCapPreservesOrder : (kCapWritable | kCapPreservesOrder | kCapAtomicCommit); }
+
+void FileConfigStore::Origin(StringView key, char* out, usize capacity) const {
+    if (capacity == 0) return;
+    const u32 line = doc_.LineOf(key);
+    if (line != 0) std::snprintf(out, capacity, "line %u", static_cast<unsigned>(line));
+    else out[0] = '\0';
+}
 
 void FileConfigStore::Describe(char* out, usize capacity) const {
     if (capacity == 0) return;
@@ -72,6 +79,7 @@ Status FileConfigStore::Get(StringView key_text, StoredValue* out) {
 Status FileConfigStore::Set(StringView key_text, const StoredValue& value) {
     Key key;
     if (Key::Parse(key_text, &key) != KeyError::None) return Status::Of(StoreError::Invalid);
+    if (options_.read_only) return Status::Of(StoreError::ReadOnly);
     if (value.typed || value.value.GetType() != Type::Text) return Status::Of(StoreError::Invalid); // a text store takes text (use ToStored)
     if (!doc_.Set(key_text, value.value.AsText())) return Status::Of(StoreError::Invalid);
     ++staged_;
@@ -81,6 +89,7 @@ Status FileConfigStore::Set(StringView key_text, const StoredValue& value) {
 Status FileConfigStore::Remove(StringView key_text) {
     Key key;
     if (Key::Parse(key_text, &key) != KeyError::None) return Status::Of(StoreError::Invalid);
+    if (options_.read_only) return Status::Of(StoreError::ReadOnly);
     if (!doc_.Remove(key_text)) return Status::Of(StoreError::NotFound);
     ++staged_;
     return Status();
@@ -95,6 +104,10 @@ Status FileConfigStore::Enumerate(StringView prefix, Vector<Key>* out) {
 Status FileConfigStore::Commit(const CommitOptions& options) {
     Status result;
     result.total = staged_;
+    if (options_.read_only) {
+        result.error = StoreError::ReadOnly;
+        return result;
+    }
     if (staged_ == 0) return result;
     if (load_error_ != StoreError::None) {
         result.error = load_error_;

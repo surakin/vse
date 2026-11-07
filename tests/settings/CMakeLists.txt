@@ -7,6 +7,7 @@ set(SETTINGS_TEST_SOURCES
   config_store_test.cpp
   config_text_test.cpp
   file_store_test.cpp
+  layers_test.cpp
 )
 
 find_package(Threads REQUIRED)

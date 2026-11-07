@@ -306,6 +306,13 @@ bool ConfigDocument::Find(StringView key_text, StringView* value) const {
     return true;
 }
 
+u32 ConfigDocument::LineOf(StringView key_text) const {
+    Key key;
+    if (Key::Parse(key_text, &key) != KeyError::None) return 0;
+    const usize at = FindLast(key);
+    return at == lines_.Size() ? 0 : static_cast<u32>(at + 1);
+}
+
 bool ConfigDocument::IsValidValue(StringView value) {
     if (value.Length() > 4000) return false;
     if (value.Length() != 0 && (IsBlank(value[0]) || IsBlank(value[value.Length() - 1]))) return false;

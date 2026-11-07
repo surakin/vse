@@ -1,6 +1,6 @@
 # Settings
 
-Status: draft (Phase 11, Days 131-133: keys, values, the registry, typed handles, the config store interface and the text-file store; layers, the service and the command line arrive on Days 134-138).
+Status: draft (Phase 11, Days 131-134: keys, values, the registry, typed handles, stores, the text-file store, layers, the environment and the command line; the service and the demos arrive on Days 135-138).
 
 The settings system is one registry that every module declares its settings in, and handles that read them cheaply. Where values come from (files, the environment, the command line) and how they
 are saved arrive later in this phase. Design and reasons: `docs/superpowers/specs/2026-11-07-settings-design.md`.
@@ -182,3 +182,62 @@ width = 1920   # px
 hdr = off
 this is not a setting
 ```
+
+## Layers and where a value comes from
+
+A program reads its settings from several places, and a `settings::LayerStack` puts them in order. From lowest to highest: the **defaults** declared in the registry, then the layers by role:
+`System` (defaults shipped with the program or machine), `User` (the user's file), `Project` (a file next to the content), `Custom` (a file named with `--settings`), `Environment` and `CommandLine`.
+A value in a higher layer hides the lower ones. A layer that has no value for a key, cannot be read, or holds a value that does not convert (a bad number in the environment) is skipped for that key, and
+the next lower layer answers; each skip is a `LayerProblem` naming the layer, the key and, for a bad value, where it came from.
+
+`Resolve` returns the value and its **provenance**: the index and name of the layer, and what the layer says about the entry (`line 3` for a file, `$ENGINE_RHI_GPU` for the environment, `--set renderer.width=2560` for
+the command line). `LoadAll` loads every layer and records its state (`Loaded`, `Missing`, `Damaged`, `Failed`); a failed layer never stops the others.
+
+One layer is *written*, by default the first `User` layer. `Set` puts a value there; with `minimal` a value equal to what the lower layers already give is not written (and an earlier entry is removed), so a
+file does not fill up with defaults. `Unset` removes the key so the lower layer shows again. The layers above the write layer are never written.
+
+```cpp compile run
+settings::Registry registry;
+settings::SettingId width = registry.Register(settings::MakeInt("renderer.width", 1280, 0, 16384));
+registry.Freeze();
+
+settings::MemoryBackingPtr shipped = settings::MakeMemoryBacking();
+{
+    settings::MemoryConfigStore seed(shipped);
+    settings::StoredValue v;
+    settings::ToStored(*registry.Desc(width), settings::Value::FromInt(1600), true, &v);
+    seed.Set("renderer.width", v);
+    seed.Commit(settings::CommitOptions());
+}
+settings::LayerStack stack;
+stack.AddLayer("shipped defaults", settings::LayerRole::System, MakeUnique<settings::MemoryConfigStore>(shipped));
+stack.AddLayer("user", settings::LayerRole::User, MakeUnique<settings::MemoryConfigStore>());
+stack.LoadAll(nullptr);
+
+settings::Resolution r;
+stack.Resolve(registry, width, &r, nullptr);
+std::printf("%lld from %s\n", static_cast<long long>(r.value.AsInt()), r.layer_name);
+stack.Set(registry, width, settings::Value::FromInt(1920), true);
+stack.Resolve(registry, width, &r, nullptr);
+std::printf("%lld from %s\n", static_cast<long long>(r.value.AsInt()), r.layer_name);
+stack.Set(registry, width, settings::Value::FromInt(1600), true); // what the system layer gives: removed, not written
+stack.Resolve(registry, width, &r, nullptr);
+std::printf("%lld from %s\n", static_cast<long long>(r.value.AsInt()), r.layer_name);
+```
+
+```output
+1600 from shipped defaults
+1920 from user
+1600 from shipped defaults
+```
+
+## Environment and command line
+
+`settings::EnvironmentSource` makes the process environment a layer. A setting is supplied by `ENGINE_SETTING_<KEY>` with the key in upper case and each `.` written `__`
+(`renderer.present_mode` is `ENGINE_SETTING_RENDERER__PRESENT_MODE`), or by the variable its declaration names in `env` (`ENGINE_RHI_GPU`); the standard name wins if both are set.
+`EnvironmentSnapshot::Capture()` copies the real environment; a test builds a snapshot by hand.
+
+`settings::CommandLineSource` makes the arguments a layer: `--set key=value` (repeatable; the last one for a key wins; the value may contain `=` and may be quoted), a setting's declared `flag` alias
+(`--gpu NAME` or `--gpu=NAME`; for a bool `--vsync`, `--vsync=false` and `--no-vsync`, never a separate value), and the options the application handles itself, recorded in `Result()`: `--settings FILE` (one `Custom` layer per file),
+`--list-settings`, `--save-settings[=FILE]` and `--help`. Arguments it does not own stay in `Result().rest`, and a bare `--` ends the options: it and everything after it go to `rest` untouched. A variable that is set but empty counts as unset. An unknown `--set` key is an error that suggests the closest registered key
+(`--set renderer.widht: no such setting; did you mean 'renderer.width'?`).

@@ -170,6 +170,16 @@ public:
     ///   durable state as it was and the changes staged (retry is allowed); a store without it reports in `Status::done` how many changes landed.
     virtual Status Commit(const CommitOptions& options) = 0;
 
+    /// Writes where the entry for `key` came from inside this store, for provenance messages (`line 12`, `$ENGINE_RHI_GPU`, `--gpu`); an
+    /// empty string when the store has nothing to say. Default: empty.
+    virtual void Origin(StringView key, char* out, usize capacity) const {
+        (void)key;
+        if (capacity != 0) out[0] = '\0';
+    }
+
+    /// Returns whether the backing medium exists (a file that has not been written yet is absent). Default: true.
+    virtual bool IsPresent() const { return true; }
+
     /// Registers a function to call when another writer changes the durable state. Replaces any earlier listener; a null function removes it.
     ///
     /// Param listener: the function; called on an unspecified thread, never from inside a call on this store by the same thread. It should only

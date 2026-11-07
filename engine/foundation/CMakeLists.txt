@@ -72,6 +72,9 @@ set(FOUNDATION_SOURCES
   settings/memory_store.cpp
   settings/config_text.cpp
   settings/file_store.cpp
+  settings/layers.cpp
+  settings/env_source.cpp
+  settings/command_line_source.cpp
   io/path.cpp
   io/linux/error.cpp
   io/linux/file_system.cpp

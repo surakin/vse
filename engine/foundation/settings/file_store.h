@@ -18,6 +18,8 @@ struct FileStoreOptions {
     bool keep_backup = true;
     /// The largest file `Load` reads, in bytes; a larger one is `TooLong`.
     u64 max_bytes = u64{8} << 20;
+    /// Never write: `Set`, `Remove` and `Commit` say `ReadOnly` (a layer of shipped defaults or a project file the program must not change).
+    bool read_only = false;
 };
 
 /// A [[settings::ConfigStore]] over one text file (see [[settings::ConfigDocument]] for the format).
@@ -51,6 +53,8 @@ public:
     Status Remove(StringView key) override;
     Status Enumerate(StringView prefix, Vector<Key>* out) override;
     Status Commit(const CommitOptions& options) override;
+    void Origin(StringView key, char* out, usize capacity) const override;
+    bool IsPresent() const override { return exists_; }
 
     /// Returns the problems the last `Load` found (the errors make the store damaged).
     const ConfigReport& Report() const { return report_; }
