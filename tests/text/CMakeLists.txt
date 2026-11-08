@@ -5,6 +5,7 @@ set(TEXT_TEST_SOURCES
   font_test.cpp
   glyph_atlas_test.cpp
   layout_test.cpp
+  cursor_test.cpp
 )
 
 find_package(Threads REQUIRED)

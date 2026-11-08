@@ -1918,6 +1918,25 @@ debug::kMaxThreadNameBytes	variable	foundation/debug	debug-kmaxthreadnamebytes	f
 debug::CurrentThreadId()	function	foundation/debug	debug-currentthreadid	foundation-debug.md	engine/foundation/debug/thread_info.h:14
 debug::SetCrashThreadName(const char*)	function	foundation/debug	debug-setcrashthreadname-const-char-star	foundation-debug.md	engine/foundation/debug/thread_info.h:20
 debug::CrashThreadName()	function	foundation/debug	debug-crashthreadname	foundation-debug.md	engine/foundation/debug/thread_info.h:26
+text::CursorPosition	struct	text	text-cursorposition	text.md	engine/text/cursor.h:18
+text::CursorPosition::x	variable	text	text-cursorposition-x	text.md	engine/text/cursor.h:19
+text::CursorPosition::y	variable	text	text-cursorposition-y	text.md	engine/text/cursor.h:20
+text::CursorPosition::height	variable	text	text-cursorposition-height	text.md	engine/text/cursor.h:21
+text::CursorPosition::line	variable	text	text-cursorposition-line	text.md	engine/text/cursor.h:22
+text::SelectionRect	struct	text	text-selectionrect	text.md	engine/text/cursor.h:29
+text::SelectionRect::x	variable	text	text-selectionrect-x	text.md	engine/text/cursor.h:30
+text::SelectionRect::y	variable	text	text-selectionrect-y	text.md	engine/text/cursor.h:31
+text::SelectionRect::w	variable	text	text-selectionrect-w	text.md	engine/text/cursor.h:32
+text::SelectionRect::h	variable	text	text-selectionrect-h	text.md	engine/text/cursor.h:33
+text::PositionOfOffset(const TextLayout&,u32)	function	text	text-positionofoffset-const-textlayout-amp-u32	text.md	engine/text/cursor.h:44
+text::OffsetAtPoint(const TextLayout&,f32,f32)	function	text	text-offsetatpoint-const-textlayout-amp-f32-f32	text.md	engine/text/cursor.h:57
+text::NextBoundary(const TextLayout&,u32)	function	text	text-nextboundary-const-textlayout-amp-u32	text.md	engine/text/cursor.h:65
+text::PreviousBoundary(const TextLayout&,u32)	function	text	text-previousboundary-const-textlayout-amp-u32	text.md	engine/text/cursor.h:73
+text::LineStart(const TextLayout&,u32)	function	text	text-linestart-const-textlayout-amp-u32	text.md	engine/text/cursor.h:81
+text::LineEnd(const TextLayout&,u32)	function	text	text-lineend-const-textlayout-amp-u32	text.md	engine/text/cursor.h:91
+text::LineAbove(const TextLayout&,u32,f32)	function	text	text-lineabove-const-textlayout-amp-u32-f32	text.md	engine/text/cursor.h:102
+text::LineBelow(const TextLayout&,u32,f32)	function	text	text-linebelow-const-textlayout-amp-u32-f32	text.md	engine/text/cursor.h:111
+text::SelectionRects(const TextLayout&,u32,u32,Vector<SelectionRect>*)	function	text	text-selectionrects-const-textlayout-amp-u32-u32-vector-lt-selectionrect-gt-star	text.md	engine/text/cursor.h:124
 text::GlyphId	alias	text	text-glyphid	text.md	engine/text/font.h:18
 text::char32	alias	text	text-char32	text.md	engine/text/font.h:21
 text::kMaxAtlasPixelSize	variable	text	text-kmaxatlaspixelsize	text.md	engine/text/font.h:24
@@ -2060,33 +2079,39 @@ text::PositionedGlyph::advance	variable	text	text-positionedglyph-advance	text.m
 text::PositionedGlyph::source_byte_offset	variable	text	text-positionedglyph-source-byte-offset	text.md	engine/text/layout.h:51
 text::PositionedGlyph::grapheme_index	variable	text	text-positionedglyph-grapheme-index	text.md	engine/text/layout.h:52
 text::PositionedGlyph::line	variable	text	text-positionedglyph-line	text.md	engine/text/layout.h:53
-text::ClusterInfo	struct	text	text-clusterinfo	text.md	engine/text/layout.h:60
-text::ClusterInfo::byte_begin	variable	text	text-clusterinfo-byte-begin	text.md	engine/text/layout.h:61
-text::ClusterInfo::byte_end	variable	text	text-clusterinfo-byte-end	text.md	engine/text/layout.h:62
-text::ClusterInfo::line	variable	text	text-clusterinfo-line	text.md	engine/text/layout.h:63
-text::ClusterInfo::x	variable	text	text-clusterinfo-x	text.md	engine/text/layout.h:64
-text::ClusterInfo::width	variable	text	text-clusterinfo-width	text.md	engine/text/layout.h:65
-text::ClusterInfo::first_glyph	variable	text	text-clusterinfo-first-glyph	text.md	engine/text/layout.h:66
-text::ClusterInfo::glyph_count	variable	text	text-clusterinfo-glyph-count	text.md	engine/text/layout.h:67
-text::LineInfo	struct	text	text-lineinfo	text.md	engine/text/layout.h:74
-text::LineInfo::first_cluster	variable	text	text-lineinfo-first-cluster	text.md	engine/text/layout.h:75
-text::LineInfo::cluster_count	variable	text	text-lineinfo-cluster-count	text.md	engine/text/layout.h:76
-text::LineInfo::byte_begin	variable	text	text-lineinfo-byte-begin	text.md	engine/text/layout.h:77
-text::LineInfo::byte_end	variable	text	text-lineinfo-byte-end	text.md	engine/text/layout.h:78
-text::LineInfo::x	variable	text	text-lineinfo-x	text.md	engine/text/layout.h:79
-text::LineInfo::width	variable	text	text-lineinfo-width	text.md	engine/text/layout.h:80
-text::LineInfo::top	variable	text	text-lineinfo-top	text.md	engine/text/layout.h:81
-text::LineInfo::height	variable	text	text-lineinfo-height	text.md	engine/text/layout.h:82
-text::LineInfo::baseline	variable	text	text-lineinfo-baseline	text.md	engine/text/layout.h:83
-text::TextLayout	struct	text	text-textlayout	text.md	engine/text/layout.h:90
-text::TextLayout::glyphs	variable	text	text-textlayout-glyphs	text.md	engine/text/layout.h:91
-text::TextLayout::clusters	variable	text	text-textlayout-clusters	text.md	engine/text/layout.h:92
-text::TextLayout::lines	variable	text	text-textlayout-lines	text.md	engine/text/layout.h:93
-text::TextLayout::width	variable	text	text-textlayout-width	text.md	engine/text/layout.h:94
-text::TextLayout::height	variable	text	text-textlayout-height	text.md	engine/text/layout.h:95
-text::TextLayout::byte_length	variable	text	text-textlayout-byte-length	text.md	engine/text/layout.h:96
-text::TextLayout::invalid_sequences	variable	text	text-textlayout-invalid-sequences	text.md	engine/text/layout.h:97
-text::Layout(StringView,const TextStyle&,const LayoutOptions&,TextLayout*)	function	text	text-layout-stringview-const-textstyle-amp-const-layoutoptions-amp-textlayout-star	text.md	engine/text/layout.h:113
+text::ClusterKind	enum	text	text-clusterkind	text.md	engine/text/layout.h:57
+text::ClusterKind::Normal	enumerator	text	text-clusterkind-normal	text.md	engine/text/layout.h:58
+text::ClusterKind::Space	enumerator	text	text-clusterkind-space	text.md	engine/text/layout.h:59
+text::ClusterKind::Tab	enumerator	text	text-clusterkind-tab	text.md	engine/text/layout.h:60
+text::ClusterKind::Break	enumerator	text	text-clusterkind-break	text.md	engine/text/layout.h:61
+text::ClusterInfo	struct	text	text-clusterinfo	text.md	engine/text/layout.h:68
+text::ClusterInfo::byte_begin	variable	text	text-clusterinfo-byte-begin	text.md	engine/text/layout.h:69
+text::ClusterInfo::byte_end	variable	text	text-clusterinfo-byte-end	text.md	engine/text/layout.h:70
+text::ClusterInfo::line	variable	text	text-clusterinfo-line	text.md	engine/text/layout.h:71
+text::ClusterInfo::x	variable	text	text-clusterinfo-x	text.md	engine/text/layout.h:72
+text::ClusterInfo::width	variable	text	text-clusterinfo-width	text.md	engine/text/layout.h:73
+text::ClusterInfo::first_glyph	variable	text	text-clusterinfo-first-glyph	text.md	engine/text/layout.h:74
+text::ClusterInfo::glyph_count	variable	text	text-clusterinfo-glyph-count	text.md	engine/text/layout.h:75
+text::ClusterInfo::kind	variable	text	text-clusterinfo-kind	text.md	engine/text/layout.h:76
+text::LineInfo	struct	text	text-lineinfo	text.md	engine/text/layout.h:83
+text::LineInfo::first_cluster	variable	text	text-lineinfo-first-cluster	text.md	engine/text/layout.h:84
+text::LineInfo::cluster_count	variable	text	text-lineinfo-cluster-count	text.md	engine/text/layout.h:85
+text::LineInfo::byte_begin	variable	text	text-lineinfo-byte-begin	text.md	engine/text/layout.h:86
+text::LineInfo::byte_end	variable	text	text-lineinfo-byte-end	text.md	engine/text/layout.h:87
+text::LineInfo::x	variable	text	text-lineinfo-x	text.md	engine/text/layout.h:88
+text::LineInfo::width	variable	text	text-lineinfo-width	text.md	engine/text/layout.h:89
+text::LineInfo::top	variable	text	text-lineinfo-top	text.md	engine/text/layout.h:90
+text::LineInfo::height	variable	text	text-lineinfo-height	text.md	engine/text/layout.h:91
+text::LineInfo::baseline	variable	text	text-lineinfo-baseline	text.md	engine/text/layout.h:92
+text::TextLayout	struct	text	text-textlayout	text.md	engine/text/layout.h:99
+text::TextLayout::glyphs	variable	text	text-textlayout-glyphs	text.md	engine/text/layout.h:100
+text::TextLayout::clusters	variable	text	text-textlayout-clusters	text.md	engine/text/layout.h:101
+text::TextLayout::lines	variable	text	text-textlayout-lines	text.md	engine/text/layout.h:102
+text::TextLayout::width	variable	text	text-textlayout-width	text.md	engine/text/layout.h:103
+text::TextLayout::height	variable	text	text-textlayout-height	text.md	engine/text/layout.h:104
+text::TextLayout::byte_length	variable	text	text-textlayout-byte-length	text.md	engine/text/layout.h:105
+text::TextLayout::invalid_sequences	variable	text	text-textlayout-invalid-sequences	text.md	engine/text/layout.h:106
+text::Layout(StringView,const TextStyle&,const LayoutOptions&,TextLayout*)	function	text	text-layout-stringview-const-textstyle-amp-const-layoutoptions-amp-textlayout-star	text.md	engine/text/layout.h:122
 text::LibraryVersion	struct	text	text-libraryversion	text.md	engine/text/library.h:16
 text::LibraryVersion::major	variable	text	text-libraryversion-major	text.md	engine/text/library.h:18
 text::LibraryVersion::minor	variable	text	text-libraryversion-minor	text.md	engine/text/library.h:20

@@ -1,6 +1,6 @@
 # Fonts and text
 
-Status: draft (Phase 14, Days 175-178 so far; cursor and the drawing pass follow).
+Status: draft (Phase 14, Days 175-179 so far; the drawing pass follows).
 
 The text layer lives in `engine/text/` (namespace `engine_placeholder::text`). Design and reasons: `docs/superpowers/specs/2026-11-08-text-design.md`.
 FreeType 2.15.0 (vendored, `third_party/freetype/`) reads and rasterizes the fonts; it is named in one file, `engine/text/font_freetype.cpp`, and every
@@ -58,6 +58,17 @@ the top-left of the first line, y down. `TextStyle` names the font, the pixel si
 - With a wrap width, a line breaks after the last space that fits, or between clusters when a word is wider than the line; never inside a cluster. Trailing
   spaces never trigger a wrap and do not count towards a line's width.
 - Malformed UTF-8 draws U+FFFD and is counted in `invalid_sequences`. The same input always gives the same layout.
+
+## Cursor, hit-testing and selection
+
+`text/cursor.h` works on a `TextLayout`. The only valid cursor offsets are **grapheme boundaries**: the start of a cluster, or the text length (an offset inside a cluster
+snaps to the cluster's start). `PositionOfOffset` gives the caret's x, the top and height of its line and the line index; `OffsetAtPoint(x, y)` is the inverse, choosing the
+nearest boundary (the half of a cluster the point is in decides) and clamping above, below, left and right of the text. `NextBoundary` and `PreviousBoundary` move by
+cluster (a combining mark, flag, ZWJ sequence or Hangul syllable is one step); `LineStart`, `LineEnd`, `LineAbove(offset, preferred_x)` and `LineBelow` move by line and
+keep the column through lines of different length when the caller keeps `preferred_x`. `SelectionRects(begin, end)` returns one rectangle per line covered.
+
+Limits: there is no caret affinity, so the offset where a soft-wrapped line ends is the start of the next line; the end of a wrapped line is before its trailing spaces.
+Word movement is not here (Phase 15).
 
 ## Hinting
 

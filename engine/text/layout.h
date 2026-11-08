@@ -53,6 +53,14 @@ struct PositionedGlyph {
     u32 line = 0;                   ///< Index of the glyph's line.
 };
 
+/// What a grapheme cluster is, as far as layout is concerned.
+enum class ClusterKind : u8 {
+    Normal, ///< Drawn text.
+    Space,  ///< A space (U+0020): a wrap opportunity.
+    Tab,    ///< A tab: advances to the next tab stop, draws nothing.
+    Break,  ///< A line break (`\n`, `\r\n`, `\r`): zero width, ends its line.
+};
+
 /// One grapheme cluster: the unit the cursor moves by.
 ///
 /// Thread-safety: thread-compatible plain data.
@@ -65,6 +73,7 @@ struct ClusterInfo {
     f32 width = 0;          ///< Distance to the start of the next cluster's pen (the sum of its advances).
     u32 first_glyph = 0;    ///< Index of its first glyph in [[text::TextLayout::glyphs]].
     u32 glyph_count = 0;    ///< Its glyphs (0 for a line break or a tab).
+    ClusterKind kind = ClusterKind::Normal; ///< Whether it is text, a space, a tab or a line break.
 };
 
 /// One line of the layout.
@@ -109,7 +118,7 @@ struct TextLayout {
 /// Param options: wrapping, line height, tabs, alignment.
 /// Param out: receives the layout; cleared first.
 /// Ownership: nothing is retained; `out` does not refer to `utf8` or the font.
-/// Fails: `InvalidArgument` for a style with no open font, a pixel size the font refuses, a `line_height_scale` not in (0, 100] or a negative or non-finite `max_width`; `OutOfMemory`; `out` is left empty.
+/// Fails: `InvalidArgument` for a style with no open font, a pixel size the font refuses, a `line_height_scale` not in (0, 100] or a negative or non-finite `max_width`, text longer than 4 GiB (offsets are 32-bit); `OutOfMemory`; `out` is left empty.
 Status Layout(StringView utf8, const TextStyle& style, const LayoutOptions& options, TextLayout* out);
 
 } // namespace engine_placeholder::text

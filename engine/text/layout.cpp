@@ -72,6 +72,7 @@ Status Layout(StringView utf8, const TextStyle& style, const LayoutOptions& opti
     out->byte_length = 0;
     out->invalid_sequences = 0;
     if (style.font == nullptr || !style.font->IsOpen()) return Status::Of(Error::InvalidArgument, "the style has no open font");
+    if (utf8.Length() > 0xFFFFFFFFull) return Status::Of(Error::InvalidArgument, "the text is longer than 4 GiB: byte offsets are 32-bit");
     if (!(options.line_height_scale > 0.0f) || options.line_height_scale > 100.0f) return Status::Of(Error::InvalidArgument, "line_height_scale must be above 0 and at most 100");
     if (options.max_width < 0.0f || !(options.max_width < 1.0e9f)) return Status::Of(Error::InvalidArgument, "max_width must be 0 or a finite positive width");
     Font& font = *style.font;
@@ -236,6 +237,7 @@ Status Layout(StringView utf8, const TextStyle& style, const LayoutOptions& opti
             c.width = it.placed_width;
             c.first_glyph = static_cast<u32>(out->glyphs.Size());
             c.glyph_count = it.glyph_count;
+            c.kind = it.kind == Kind::Break ? ClusterKind::Break : it.kind == Kind::Tab ? ClusterKind::Tab : it.kind == Kind::Space ? ClusterKind::Space : ClusterKind::Normal;
             for (u32 g = 0; g < it.glyph_count; ++g) {
                 const LocalGlyph& lg = local[it.first_glyph + g];
                 PositionedGlyph pg;
