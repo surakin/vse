@@ -1,4 +1,4 @@
-# Phase 17 — ECS
+# Phase 16 — ECS
 
 **Depends on:** Phase 5 (Renderer core).
 **Goal:** the data-oriented entity/component/system core that everything

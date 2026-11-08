@@ -2,7 +2,7 @@
 
 **Depends on:** Phase 10 (the standard types: `byte`, `u128`, `Span`, and the container rule new code follows), Phase 9 (the file layer: `io::Path`, `io::File`, `io::Directory`, atomic replace, the special folders), Phase 8 (the rendering-settings
 model this phase generalizes: `renderer::RenderSettings`, the registry with cost classes, the text format), Phase 2 (jobs, for background saving).
-Must complete before the UI phase (Phase 16, whose settings screens bind to it) and before the demos get settings options.
+Must complete before the UI phase (Phase 15, whose settings screens bind to it) and before the demos get settings options.
 **Goal:** one engine-wide settings system: a registry that every subsystem registers its settings with (the renderer's, later audio, input, UI scale, gameplay),
 config-file handling classes that read and write them, layered sources with a defined precedence, and the plumbing that connects them to the command line and
 to code that reacts to a change. Today the engine has only the rendering-settings model (Phase 8 Day 104); there is no place settings live on disk, no loader, no
@@ -45,7 +45,7 @@ confirms or amends the decisions below with experiments.
 1. **Where:** `engine/foundation/settings/` (namespace `engine_placeholder::settings`), foundation level, built on `io`. The renderer, the log, the RHI and the demos are clients.
 2. **Keys are dotted names** (`renderer.present_mode`, at most 3 segments, lowercase letters, digits and `_`); the file format's `[section]` is the key's prefix. Existing flat keys get the `renderer.` prefix now, while no saved file exists to break.
 3. **One registry** (`settings::Registry`), filled at start-up and then read-only. The renderer's `SettingsRegistry` becomes a client (its `CostClass` is one *apply class* table the owner registers); `RenderSettings` stays the renderer's resolved-value struct.
-4. **`ConfigStore` is an abstract class**, shaped by Spike C so a file (whole-document, comments, order, atomic), a registry (per-key, typed, unordered) and a failing store all fit: typed keys and values, capabilities, `Commit`, errors as values. The file store, an in-memory store, a read-only store and test doubles are built; platform stores are Phases 13, 14, 22, 23.
+4. **`ConfigStore` is an abstract class**, shaped by Spike C so a file (whole-document, comments, order, atomic), a registry (per-key, typed, unordered) and a failing store all fit: typed keys and values, capabilities, `Commit`, errors as values. The file store, an in-memory store, a read-only store and test doubles are built; platform stores are Phases 13, 21, 22, 23.
 5. **Layers** (lowest to highest): defaults (the registry) < system < user < project < environment < command line, each a `ConfigStore`; every resolved value can report its provenance; saving writes only the write layer (the user's), never a `--set`.
 6. **Reading a setting must be cheap**: a `Setting<T>` handle reads a published immutable snapshot; Spike B picks the exact mechanism. Writers publish a new snapshot and then call listeners.
 7. **A damaged file is never overwritten by accident**: a parse with errors marks the store damaged, `Commit` refuses unless told to replace it, and the previous good file is kept as `.bak`.
@@ -65,7 +65,7 @@ confirms or amends the decisions below with experiments.
 
 ## Notes / open questions (settled in the spec on Day 130; where each was decided)
 
-Decided on Day 130 in `docs/superpowers/specs/2026-11-07-settings-design.md` section 1: lists (not a type this phase), secrets and per-machine state (not settings; a second `Settings` instance later, Phase 16), remote/live reload (optional `Poll`, Day 132; no implementation), UI metadata (`label`, `group`, `flags` in `SettingDesc`), file locations, saving (explicit only). The original notes follow.
+Decided on Day 130 in `docs/superpowers/specs/2026-11-07-settings-design.md` section 1: lists (not a type this phase), secrets and per-machine state (not settings; a second `Settings` instance later, Phase 15), remote/live reload (optional `Poll`, Day 132; no implementation), UI metadata (`label`, `group`, `flags` in `SettingDesc`), file locations, saving (explicit only). The original notes follow.
 
 - **Store interface shape.** Read-all-then-write versus per-key get/set with a `Commit()`; whether comments/order preservation is a capability of the file store or part of the contract (the registry has neither); how a store reports external changes (poll, callback, watcher); the Windows registry mapping of sections and lists (Phase 13 implements it; this phase writes its `BACKEND.md` section and a cross-syntax check, as Phases 7-9 do).
 - **Format.** (File-backed store only.) A small INI/TOML-like text format (sections, `key = value`, comments, arrays) versus extending the Phase 8 `key = value` format; hand-written parser (no third-party
@@ -78,4 +78,4 @@ Decided on Day 130 in `docs/superpowers/specs/2026-11-07-settings-design.md` sec
 - **Threads.** Readers on worker threads while the main thread applies a change; snapshot versus lock; the renderer applies on the owner thread at a frame boundary today.
 - **Remote and live-reloaded config** (via the `io::File` network backends and a file watcher): out of scope here unless Phase 9's notes pull it in; the design must not preclude it.
 - **Secrets and per-machine state** (window positions, last-used GPU): where they go and whether they are "settings" at all.
-- **UI binding.** What metadata (labels, ranges, groups, restart-required flags) the registry must carry so Phase 16 can build a settings screen without a second description of each setting.
+- **UI binding.** What metadata (labels, ranges, groups, restart-required flags) the registry must carry so Phase 15 can build a settings screen without a second description of each setting.

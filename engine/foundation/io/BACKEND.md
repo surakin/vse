@@ -29,7 +29,7 @@ Linux is implemented in `engine/foundation/io/linux/`. A new platform adds `engi
 - **Windows (Phase 13):** UTF-8 to UTF-16 at the boundary; drive letters, UNC and `\\?\` long paths (Path's `PathStyle::Windows` parses all of them
   already); `CreateFileW`, overlapped I/O (`kCapNativelyAsync`), `MoveFileExW` for atomic replace, known folders through `SHGetKnownFolderPath`.
   A registry-backed settings store is Phase 11/12's, not this layer's.
-- **macOS (Phase 14):** case-insensitive default volumes, `dispatch_io` for native asynchronous reads, application sandbox containers for the
+- **macOS (Phase 21):** case-insensitive default volumes, `dispatch_io` for native asynchronous reads, application sandbox containers for the
   user directories, `NSFileManager` for the locations POSIX does not give.
 - **Android and iOS (Phase 22):** app-private directories as the user directories; the asset bundle is a read-only archive opened as a `File` backend
   with a scheme (`RegisterFileScheme`), not a path; no `Writable` capability there.

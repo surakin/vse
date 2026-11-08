@@ -25,7 +25,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_6
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|x86_64)$")
   set(ENGINE_PLATFORM windows)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  message(FATAL_ERROR "macOS is ported in Phase 14 (plans/phase-14-macos-metal.md)")
+  message(FATAL_ERROR "macOS is ported in Phase 21 (plans/phase-21-macos-metal.md)")
 elseif(CMAKE_SYSTEM_NAME MATCHES "^(Android|iOS)$")
   message(FATAL_ERROR "${CMAKE_SYSTEM_NAME} is ported in Phase 22 (plans/phase-22-android-ios.md)")
 else()

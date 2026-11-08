@@ -75,7 +75,7 @@ in the ≤240 B class (256 B block), all other jobs in ≤112 B (128 B
 block); nothing needed the 512/1024/2048 classes and the fallback count
 was 0 in every run. Decision: keep the Day 27 classes unchanged (the
 unused classes cost only reserved address space); revisit when ECS
-(Phase 14) / asset streaming (Phase 17) bring larger frames.
+(Phase 16) / asset streaming (Phase 19) bring larger frames.
 Numbers (this 32-logical-CPU box, plain build, 3000 × ~60 µs jobs, best
 of 5): N=1 0.163 s; N=2 0.083 s (1.96×); N=4 0.042 s (3.87×); N=32
 0.0069 s (23.6×). Deterministic stealing assertions (every other

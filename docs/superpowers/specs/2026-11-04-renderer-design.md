@@ -52,7 +52,7 @@ Passes, in graph order:
 3. **Tonemap**: exposure and an operator, linear to sRGB through the swapchain format, written to the swapchain image.
 
 Deferred was chosen by the user. Consequences accepted: no hardware MSAA (the RHI keeps `samples = 1`; post-process AA is a
-later add-on); transparent and overlay geometry needs a forward pass after tonemap (Phases 15 and 16 add it); materials
+later add-on); transparent and overlay geometry needs a forward pass after tonemap (Phases 14 and 15 add it); materials
 are limited to what the G-buffer can carry.
 
 ## R4. The render graph
@@ -103,9 +103,9 @@ Resource creation goes through the device's mutex and happens outside recording.
 | Feature | Decision trigger |
 |---|---|
 | MSAA | post-process AA first; revisit only if the user asks |
-| Transparency, particles, overlays | a forward pass after tonemap, added with Phase 15 (text) and Phase 16 (UI) |
+| Transparency, particles, overlays | a forward pass after tonemap, added with Phase 14 (text) and Phase 15 (UI) |
 | Shadows, IBL, ambient occlusion | a Phase after the first playable demo, or when a demo needs them |
-| Skinning, instancing of animated meshes | Phase 17 (ECS) and animation work |
+| Skinning, instancing of animated meshes | Phase 16 (ECS) and animation work |
 | Bindless, indirect draws, async compute | profiling data showing a need (Phase 4 showed per-draw bind groups, solved by R5) |
 | Occlusion culling, LODs | when scenes outgrow frustum culling |
 

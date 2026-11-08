@@ -3,7 +3,7 @@
 # built exception/RTTI-free. Built plain and under ASan/UBSan and TSan, each linked against the matching foundation.
 #
 # Files named *_linux_* hold the Linux-only details (signals, fork, /proc); everything else speaks the neutral API of
-# engine/foundation/debug/ so the Windows and macOS ports (Phases 13 and 14) build the same sources.
+# engine/foundation/debug/ so the Windows and macOS ports (Phases 13 and 21) build the same sources.
 set(DEBUG_TEST_SOURCES
   death_test_registry_test.cpp
   death_test_run_test.cpp

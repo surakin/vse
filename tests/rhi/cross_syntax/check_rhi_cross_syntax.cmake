@@ -1,7 +1,7 @@
 # Syntax-checks the backend-neutral RHI headers for another operating system with clang's -fsyntax-only, using the small standard
 # header stand-ins of tests/debug/cross_syntax/shim, so a Vulkan-only or Linux-only name that leaks into the neutral interface
 # (adapter enumeration, the device lifecycle, the swapchain, the device host) shows up long before the DX12 and Metal ports
-# (Phases 13 and 14). Run as: cmake -DTRIPLE=<triple> -DROOT=<source tree> -P check_rhi_cross_syntax.cmake
+# (Phases 13 and 21). Run as: cmake -DTRIPLE=<triple> -DROOT=<source tree> -P check_rhi_cross_syntax.cmake
 # Skips (message "clang++ not found") where there is no clang++.
 cmake_minimum_required(VERSION 3.20)
 if(NOT TRIPLE OR NOT ROOT)

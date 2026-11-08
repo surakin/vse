@@ -211,7 +211,7 @@ against D3D12 and Metal.
 engine/rhi/                 backend-agnostic headers + null backend + rhi library
 engine/rhi/null/            validating no-GPU backend (Day 47)
 engine/rhi/vulkan/          the only place Vulkan is named (rhi_vulkan library)
-engine/rhi/{dx12,metal}/    reserved for Phases 13-14
+engine/rhi/{dx12,metal}/    reserved for Phases 13 and 21
 tests/rhi/                  rhi_tests (+ _asan, + _tsan from Day 54)
 game/rhi_demo/              dogfood app (Day 57 onward)
 shaders/                    GLSL sources and generated *.spv.inc

@@ -1,11 +1,11 @@
-# Phase 16 — UI System (Widgets & Viewport)
+# Phase 15 — UI System (Widgets & Viewport)
 
-**Depends on:** Phase 15 (Font & Text — glyph atlas, text layout, grapheme
+**Depends on:** Phase 14 (Font & Text — glyph atlas, text layout, grapheme
 cursor positions), Phase 5 (Renderer core — 2D batched drawing through
 the existing pass/material machinery, render-to-texture), Phase 4 (RHI),
 Phase 1 (platform input/window events).
 **Goal:** the engine's own retained-mode GUI toolkit — hand-rolled on the
-RHI and the Phase 15 text layer, no third-party GUI library (Qt, GTK,
+RHI and the Phase 14 text layer, no third-party GUI library (Qt, GTK,
 Dear ImGui, etc. are all out under the zero-third-party-convenience-
 dependencies rule) — with the commonly used widget set and, in
 particular, a **viewport widget** that hosts a rendered 3D world inside
@@ -38,7 +38,7 @@ texture is shown on a quad in a 3D scene (an in-world screen).
   would use.
 - **2D draw layer.** Batched textured/colored quads and rounded rects
   with clip rectangles (needed for scroll views, menus, text fields)
-  through the Phase 5 renderer; glyph quads from Phase 15; z-ordered
+  through the Phase 5 renderer; glyph quads from Phase 14; z-ordered
   layers so popups/tooltips/drag visuals draw above everything.
 - **Layout.** Container widgets (horizontal/vertical box, grid, stack/
   overlay, anchors, splitter), measure/arrange pass, DPI/scale factor
@@ -63,7 +63,7 @@ texture is shown on a quad in a 3D scene (an in-world screen).
   - Widget **variants** (e.g. primary/danger button, heading label) are
     named style entries in the theme, not subclasses.
   - Themes load from an engine data file (the format belongs to the
-    Phase 20 asset pipeline; until then a theme is built in code), and
+    Phase 19 asset pipeline; until then a theme is built in code), and
     scale with the surface's DPI/scale factor.
   - Custom widgets read the same theme, so game UIs and the editor
     share one styling mechanism.
@@ -73,7 +73,7 @@ texture is shown on a quad in a 3D scene (an in-world screen).
 - Display: **label**, image/icon, progress bar, separator, tooltip.
 - Buttons: **button**, toggle button, **checkbox**, radio group.
 - Value input: **slider**, spin box, single-line **text field** (cursor
-  and selection by grapheme cluster via the Phase 15/foundation string
+  and selection by grapheme cluster via the Phase 14/foundation string
   support; multi-line text is a stretch), **combobox** (dropdown).
 - Lists and scrolling: **scrollbar**, scroll view/container, list box;
   tree view if the editor needs it (may land in Phase 26).
@@ -148,7 +148,7 @@ a monitor, a wrist display).
 - Out of scope here: curved or tessellated screens beyond what a normal
   UV-mapped mesh gives, VR/world-space interaction rays, and mipmapping
   or filtering policy beyond what the renderer already offers for any
-  texture. Placing a surface on an entity needs Phase 17 (ECS); this
+  texture. Placing a surface on an entity needs Phase 16 (ECS); this
   phase demonstrates it on a hand-placed quad.
 
 ## Notes / open questions
@@ -170,7 +170,7 @@ a monitor, a wrist display).
 - **Clipboard and drag-and-drop** (Wayland data-device protocol, X11
   selections) are deliberately deferred; text fields get copy/paste in a
   later pass. Revisit when the editor needs asset drag-and-drop.
-- **IME / complex-script text input** is out of scope (matches Phase 15:
+- **IME / complex-script text input** is out of scope (matches Phase 14:
   no shaping). Latin-family text and grapheme-correct cursor movement
   only.
 - **Accessibility** (screen readers) is out of scope for now.
@@ -186,11 +186,11 @@ a monitor, a wrist display).
 - **Threading:** UI is built and ticked on the main thread; the job
   system (Phase 2) may be used for off-thread asset/font work, not for
   widget mutation.
-- Full day-by-day breakdown deferred until Phase 15 is complete.
+- Full day-by-day breakdown deferred until Phase 14 is complete.
 
 ## What Phase 5 gives this phase (Phase 5 Day 84)
 
-- **Pass ordering.** UI is an overlay pass after the tonemap (see Phase 15's notes): the graph orders passes by the resources they read
+- **Pass ordering.** UI is an overlay pass after the tonemap (see Phase 14's notes): the graph orders passes by the resources they read
   and write, so the UI pass declares the tonemap target as its write and runs last; in-game UI, debug tooling and the editor share it.
 - **The viewport widget** renders a 3D world with `Renderer::RenderFrame` into an offscreen `FrameTarget` (a texture the widget then
   samples as an image), using the same frame callback as a window. Resizing the widget is a new target size: the graph and the transient

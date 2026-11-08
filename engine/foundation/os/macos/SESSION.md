@@ -1,4 +1,4 @@
-# Session state on macOS (checklist for Phase 14)
+# Session state on macOS (checklist for Phase 21)
 
 `os::QuerySessionState` (`engine/foundation/os/session.h`) answers whether windows can appear. Implement it in `os/macos/session.mm` and add the file to `FOUNDATION_PLATFORM_SOURCES`.
 

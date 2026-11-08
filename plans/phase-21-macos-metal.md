@@ -1,9 +1,9 @@
-# Phase 14 — macOS Port + Metal Backend
+# Phase 21 — macOS Port + Metal Backend
 
 **Depends on:** Phase 5 (Renderer core) and Phases 6-8 (test scoping, debugging facilities, RHI reset); benefits from Phase 13 having
 already worked through the "porting an already-working stack" process once.
 Before it starts, every day of this phase needs its own file under
-`plans/phase-14-macos-metal/`.
+`plans/phase-21-macos-metal/`.
 **Goal:** Phases 1-5 running on macOS, with Metal as the RHI backend.
 **Definition of done:** the Phase 4 golden images and the Phase 5 scene
 tests pass on macOS through the Metal RHI backend with the Metal API

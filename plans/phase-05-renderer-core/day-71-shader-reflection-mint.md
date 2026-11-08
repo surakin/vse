@@ -3,7 +3,7 @@
 **Phase:** [Phase 5 — Renderer Core](../phase-05-renderer-core.md)
 **Depends on:** Day 70.
 
-Make shaders describe themselves so materials and bind group layouts are generated from them, not written twice. This is the first piece of the Phase 17 mint, scoped to shaders.
+Make shaders describe themselves so materials and bind group layouts are generated from them, not written twice. This is the first piece of the Phase 16 mint, scoped to shaders.
 
 ## Tasks
 

@@ -100,7 +100,7 @@ run-time GPU switch is tested against on Windows.
    already works, and it is the baseline the DX12 numbers are compared with on the same machine.
 8. **Neutral RHI changes first** (Day 162, on both machines): a backend registry in `rhi` (each backend library registers a device factory and an
    adapter lister, so the renderer and `DeviceHost` stop linking `rhi_vulkan`), and `ShaderDesc` becomes a format-tagged bytecode blob (SPIR-V, DXIL;
-   MSL in Phase 14).
+   MSL in Phase 21).
 9. **Shaders:** `slangc` (the same version as Linux, v2026.18.2) mints DXIL offline; outputs committed as `*.dxil.inc` beside `*.spv.inc`, minted
    deterministically; the per-object index reaches D3D12 shaders through a per-instance vertex stream (`OBJECT_INDEX` from a static buffer `[0, N)`, draw
    `i` issued with `StartInstanceLocation = i`), behind the define `ENGINE_OBJECT_INDEX_STREAM` (**amended on Day 147**: Spike B measured 14.8 ns per draw
@@ -162,7 +162,7 @@ Windows PC when the phase was planned. Every day that changes a prerequisite upd
 
 ## Notes / open questions
 
-- **Open, decided at Phase 14 completion:** how Phases 15-21 keep the Windows build working (`PLAN.md` assumption #11). Until then those phases are
+- **Open, decided at Phase 21 completion:** how Phases 14-20 keep the Windows build working (`PLAN.md` assumption #11). Until then those phases are
   developed on Linux first.
 - **HDR on Windows** (`SetColorSpace1` with scRGB, HDR10 once the RHI has a 10-bit format): the swapchain day maps `HdrMode::ScRgbLinear`; HDR10 and a
   real HDR display check stay filed unless the PC's display supports HDR (Day 169 records it).

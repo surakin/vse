@@ -40,7 +40,7 @@ Mint DXIL for every shader and permutation, deliver the per-object index without
       index buffer `[0, N)` at vertex-buffer slot 1 that the renderer binds once per pass; `GBufferPass` keeps drawing object `i` with `first_instance = i`
       (D3D12 fetches instance data at `StartInstanceLocation + SV_InstanceID`), so neither it nor the RHI interface changes. Decide whether the SPIR-V
       build uses the same stream (one shader form on every target, which Metal also wants) or keeps `SV_VulkanInstanceID`; measure the Vulkan draw cost both
-      ways before switching. Vulkan golden images byte-identical on Linux before and after. `KNOWN-ISSUES.md` entries for the HLSL index removed (the Metal half stays for Phase 14).
+      ways before switching. Vulkan golden images byte-identical on Linux before and after. `KNOWN-ISSUES.md` entries for the HLSL index removed (the Metal half stays for Phase 21).
       *(Decided: SPIR-V keeps `SV_VulkanInstanceID` (Vulkan output byte-identical, so no Vulkan cost was measured); D3D12 reads
       `[[vk::location(15)]] TEXCOORD15` under `ENGINE_OBJECT_INDEX_STREAM`, also in `point_light.vert` (the light index). The stream is
       `MaterialSystem::ObjectIndexStream` (65536 indices), slot 1 in material pipelines, slot 0 in the light volume, made only when

@@ -1,14 +1,14 @@
-# Phase 19 — Audio
+# Phase 18 — Audio
 
 **Depends on:** Phase 1 (Linux platform layer) for the Linux audio device
-output path, and Phases 13 and 14 (the Windows and macOS platform layers) for
-their output backends; can proceed in parallel with Phases 4-5 and 15-18
+output path, and Phase 13 (the Windows platform layer) for its output backend;
+the macOS output backend (CoreAudio) waits for Phase 21, the postponed macOS port (2026-11-08); can proceed in parallel with Phases 4-5 and 14-17
 once those exist.
 **Goal:** a custom audio mixer with positional 3D sound, no codec/mixing
 libraries.
 **Definition of done:** the custom mixer plays a hand-decoded WAV file
 with correct positional (3D) attenuation/panning relative to a listener,
-on Linux, Windows and macOS through one platform-independent mixer.
+on Linux and Windows through one platform-independent mixer (macOS joins when Phase 21 lands).
 
 ## Key deliverables (to be expanded into day-by-day tasks when started)
 

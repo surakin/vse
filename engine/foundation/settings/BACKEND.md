@@ -54,7 +54,7 @@ store, the memory stores, the environment and command-line layers and everything
   policy holds cannot be changed by the program (`SetError::Enforced`). The default user store on Windows stays the file
   (`<user config directory>/<app>/settings.cfg`, as on Linux: one format, comments, `--settings` files); a program that wants the registry adds a
   `RegistryConfigStore` layer itself.
-- **macOS (Phase 14):** `NSUserDefaults` (a suite named after the application) or a plist file through the file store; `NSUserDefaultsDidChangeNotification`
+- **macOS (Phase 21):** `NSUserDefaults` (a suite named after the application) or a plist file through the file store; `NSUserDefaultsDidChangeNotification`
   for changes; the application bundle's defaults as the read-only `System` layer.
 - **Android (Phase 22):** `SharedPreferences`; `apply()` is asynchronous and `commit()` synchronous, so `Commit` calls `commit()` and reports its result;
   `OnSharedPreferenceChangeListener` for notifications.

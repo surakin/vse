@@ -23,7 +23,7 @@ The two neutral RHI changes DX12 needs, made and proven on both machines before 
 - [x] **`MatchAdapter`** accepts the second id form (a LUID string) as `adapter.h` was told in Phase 8 Day 105; tests on the null backend's fake adapters.
       *(`AdapterInfo::luid`, 16 hex digits, high part first; Vulkan fills it from `deviceLUID` when valid (Windows drivers); the null adapters have
       `00000000000a0001`/`2`. A LUID-shaped request matches LUIDs only (review fix).)*
-- [x] **`ShaderDesc` as a bytecode blob:** `format` (`ShaderFormat::Spirv`, `Dxil`; `Msl` reserved for Phase 14), `bytes`, `size` replace `words`/`word_count`;
+- [x] **`ShaderDesc` as a bytecode blob:** `format` (`ShaderFormat::Spirv`, `Dxil`; `Msl` reserved for Phase 21), `bytes`, `size` replace `words`/`word_count`;
       `Validate` checks size and alignment per format; `ValidateSpirv` is called only for SPIR-V; the Vulkan backend refuses DXIL with a clear error and vice
       versa. Every caller (tests, `shader_mint`'s generated `.inc` headers, the renderer's shader tables, the demos, guide samples) is ported; the committed
       `.spv.inc` files are re-minted only if their format must change (then byte-identical on both machines).

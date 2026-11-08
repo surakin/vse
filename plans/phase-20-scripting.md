@@ -1,12 +1,12 @@
-# Phase 21 — Scripting (Lua/LuaJIT)
+# Phase 20 — Scripting (Lua/LuaJIT)
 
-**Depends on:** Phase 17 (ECS).
+**Depends on:** Phase 16 (ECS).
 **Goal:** embedded gameplay scripting via a real, well-known language
 instead of a custom bytecode VM — starting with Lua via LuaJIT (root
 `PLAN.md` assumption #13). Designed with a pluggable language-backend
 seam so more languages can be added later as additive backends, not a
 redesign — same pattern already used for the RHI (Phase 4), resource
-backends (Phase 20), and window backends (Phase 1). Also the
+backends (Phase 19), and window backends (Phase 1). Also the
 compilation/execution target for Phase 25's Blueprint importer, so this
 phase's engine API bindings and event model should keep Blueprint's
 semantics (event graphs, latent nodes, function calls, casts) in mind
@@ -37,7 +37,7 @@ moves an ECS entity via this phase's engine API bindings.
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 17 is complete.
+- Full day-by-day breakdown deferred until Phase 16 is complete.
 - Phase 25 (Blueprint import) will likely surface gaps in binding/event
   coverage (loops, latent/async waits, casts, interfaces) — expect to
   revisit this phase's scope once Phase 25 starts, rather than trying to

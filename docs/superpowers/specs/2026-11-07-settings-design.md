@@ -21,9 +21,9 @@ whose results are recorded in section 3.
 
 Open questions resolved here: **lists** are not a setting type in this phase (no inventory entry needs one); the file grammar tolerates arrays and keeps them verbatim as
 `Unknown` values so a later phase can add the type without a format change. **Secrets** and **per-machine state** (window position, last GPU) are not settings: they get their own
-small store when a consumer exists (Phase 16); nothing in this design precludes a second `Settings` instance with a different write layer. **Remote and live-reloaded config**:
+small store when a consumer exists (Phase 15); nothing in this design precludes a second `Settings` instance with a different write layer. **Remote and live-reloaded config**:
 `ConfigStore` has an optional `Poll()` returning "changed since the last Load"; no implementation this phase (decided on Day 132, capability `kCapNotifies`). **UI metadata**: `SettingDesc`
-carries `label`, `group` and `flags` (`kRestartRequired`, `kAdvanced`, `kHidden`) now, so Phase 16 needs no second description. **Where files live:** user layer =
+carries `label`, `group` and `flags` (`kRestartRequired`, `kAdvanced`, `kHidden`) now, so Phase 15 needs no second description. **Where files live:** user layer =
 `io::UserConfigDirectory(app)/settings.cfg`, project layer = `./settings.cfg` next to the content root (read-only by default), system layer = `/etc/<app>/settings.cfg` on Linux (read-only).
 **Who saves:** explicit `Save()` only; `Settings` never saves behind the caller's back; a read-only home directory makes `Save` return `PermissionDenied` and leaves memory state intact.
 
@@ -167,4 +167,4 @@ version newer than the program's is read in compatibility mode (known keys only)
 
 ## 8. Platform sections
 
-`engine/foundation/settings/BACKEND.md` lists what a platform `ConfigStore` implements: Windows registry (Phase 13: sections are subkeys under `HKCU\Software\<app>`, values typed `REG_DWORD`/`REG_SZ`, capability `kCapPerKeyWrites`), macOS `NSUserDefaults`/plist (Phase 14), Android `SharedPreferences` (Phase 22), console save data (Phase 23). The `settings_backend_lists` ctest and a `settings_cross_syntax_windows|macos` check arrive on Day 139, as for Phases 7-9.
+`engine/foundation/settings/BACKEND.md` lists what a platform `ConfigStore` implements: Windows registry (Phase 13: sections are subkeys under `HKCU\Software\<app>`, values typed `REG_DWORD`/`REG_SZ`, capability `kCapPerKeyWrites`), macOS `NSUserDefaults`/plist (Phase 21), Android `SharedPreferences` (Phase 22), console save data (Phase 23). The `settings_backend_lists` ctest and a `settings_cross_syntax_windows|macos` check arrive on Day 139, as for Phases 7-9.

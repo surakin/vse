@@ -3,7 +3,7 @@
 **Phase:** [Phase 5 — Renderer Core](../phase-05-renderer-core.md)
 **Depends on:** Day 72.
 
-The data a frame is built from: cameras decoupled from any scene format, GPU meshes, and a flat scene list (the ECS replaces it in Phase 14).
+The data a frame is built from: cameras decoupled from any scene format, GPU meshes, and a flat scene list (the ECS replaces it in Phase 16).
 
 ## Tasks
 
