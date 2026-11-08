@@ -55,11 +55,13 @@ StringView Num(ArenaAllocator& arena, u32 n) {
     return sb.View();
 }
 
+#if defined(_WIN32)
 StringView Hex(ArenaAllocator& arena, u32 n) {
     char text[16];
     std::snprintf(text, sizeof(text), "0x%08X", n);
     return ArenaCat(arena, StringView(text, std::strlen(text)), StringView());
 }
+#endif
 
 // The code with `indent` leading columns removed from every line.
 StringView Dedent(StringView code, u32 indent, ArenaAllocator& arena) {

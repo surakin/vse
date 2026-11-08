@@ -891,3 +891,9 @@ and shader views), a 64 MiB staging ring (the ring allocator moved into the neut
 records each texture's actual D3D12 state. Counts follow the Vulkan accounting. Committed buffers cost 311 ms per 1000 against Vulkan's 22 ms
 (filed). Runs: `ran 1228 of 2401 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 908 of 2401`. Review: 4
 findings, 2 fixed, 2 declined. Linux: pending until the phase close. **Next: Day 166 (DX12 descriptors and bind groups).**
+
+Linux check after Day 165 (2026-11-08): two breaks fixed. `tools/docgen/src/samples.cpp` defined `Hex` for all platforms but used it only under `_WIN32`
+(`-Wunused-function` under `-Werror` on Clang); it is now under the same `#if`. `test_phase_labels` failed because Days 162-163 added cross-platform
+phase 13 tests (backend registry, minted DXIL) that run on Linux while the map listed phase 13 for Windows only; `tests/phases.txt` now has
+`flavors 13 linux: plain,asan,tsan` and the planted-platform test expects the Linux line. Unity and `-DENGINE_UNITY_BUILD=OFF` build with no
+warnings of ours; `scripts/test-phase.sh --affected`: ran 1393 of 3577 tests (phases: all; flavors: plain; display: included; crash tests: excluded), no failures.

@@ -53,13 +53,13 @@ set_tests_properties(test_phase_labels_built_flavors PROPERTIES
   PASS_REGULAR_EXPRESSION "phase0 has no plain tests, but the map lists that flavor"
   FAIL_REGULAR_EXPRESSION "phase2 has no tsan tests")
 engine_label_tests(test_phase_labels_built_flavors)
-# Platform-qualified `flavors` lines (Phase 13 Day 148): the real map says phase 13 has plain tests on Windows only. One fixture with an
-# asan test of phase 13, checked as both platforms, so either machine tests both rules: on Linux the phase may have no tests at all, on
-# Windows it must have the plain tests its line lists.
+# Platform-qualified `flavors` lines (Phase 13 Day 148): the real map gives phase 13 its own flavors per platform (Windows plain,asan;
+# Linux plain,asan,tsan since Day 162). One fixture with an asan test of phase 13, checked as both platforms, so either machine tests
+# both rules: each platform must have the plain tests its own line lists.
 phase_labels_test(test_phase_labels_planted_platform_linux ${CMAKE_CURRENT_BINARY_DIR}/fixtures/platform_only -DCHECK_FLAVORS=1 -DPLATFORM=linux)
 phase_labels_test(test_phase_labels_planted_platform_windows ${CMAKE_CURRENT_BINARY_DIR}/fixtures/platform_only -DCHECK_FLAVORS=1 -DPLATFORM=windows)
 set_tests_properties(test_phase_labels_planted_platform_linux PROPERTIES
-  PASS_REGULAR_EXPRESSION "phase13 has 1 asan tests, but the map does not list that flavor")
+  PASS_REGULAR_EXPRESSION "phase13 has no plain tests, but the map lists that flavor")
 set_tests_properties(test_phase_labels_planted_platform_windows PROPERTIES
   PASS_REGULAR_EXPRESSION "phase13 has no plain tests, but the map lists that flavor")
 engine_label_tests(test_phase_labels_planted_platform_linux test_phase_labels_planted_platform_windows)
