@@ -210,6 +210,7 @@ struct BindingKind {
     rhi::BindingType type = rhi::BindingType::UniformBuffer;
     u32 count = 1;
     const json* block_struct = nullptr; // the struct inside a constant buffer
+    u32 stride = 0;                     // a structured buffer's element size
 };
 
 bool ClassifyBinding(const json& parameter_type, const std::string& name, BindingKind* out, std::string* error) {
@@ -235,10 +236,30 @@ bool ClassifyBinding(const json& parameter_type, const std::string& name, Bindin
     if (kind == "resource") {
         const std::string shape = JsonText(*type, "baseShape");
         const std::string access = JsonText(*type, "access");
-        if (shape == "structuredBuffer" || shape == "byteAddressBuffer") {
-            // StructuredBuffer (read) is a shader resource view to Direct3D 12, RWStructuredBuffer (readWrite) an unordered access view.
+        if (shape == "structuredBuffer") {
+            // StructuredBuffer (read) is a shader resource view to Direct3D 12, RWStructuredBuffer (readWrite) an unordered access view;
+            // both are structured views, made with the element size (Phase 13 Day 166).
             out->type = access.empty() || access == "read" ? rhi::BindingType::ReadOnlyStorageBuffer : rhi::BindingType::StorageBuffer;
+            const json* element = Field(*type, "resultType");
+            const json* sizes = element == nullptr ? nullptr : Field(*element, "sizes");
+            if (sizes != nullptr && sizes->is_array()) {
+                for (const json& size : *sizes) {
+                    if (JsonText(size, "kind") == "uniform") {
+                        const u32 value = Number(size, "value", 0);
+                        const u32 alignment = Number(size, "alignment", 1);
+                        out->stride = alignment == 0 ? 0 : (value + alignment - 1) / alignment * alignment;
+                    }
+                }
+            }
+            if (out->stride == 0 || out->stride > 2048) {
+                *error = "binding '" + name + "' is a structured buffer whose element size is unknown or above 2048 bytes";
+                return false;
+            }
             return true;
+        }
+        if (shape == "byteAddressBuffer") {
+            *error = "binding '" + name + "' is a ByteAddressBuffer, which needs a raw view the RHI does not make; use StructuredBuffer<uint>";
+            return false;
         }
         if (shape == "texture2D") {
             out->type = access.empty() || access == "read" ? rhi::BindingType::SampledTexture : rhi::BindingType::StorageTexture;
@@ -425,6 +446,7 @@ static bool ReflectionFromJsonImpl(const std::string& json_text, renderer::Shade
             }
             b.type = kind.type;
             b.count = kind.count;
+            b.stride = kind.stride;
             b.stages = out->stage;
             if (kind.block_struct != nullptr) {
                 if (out->block_count == renderer::kMaxReflectedBlocks) {

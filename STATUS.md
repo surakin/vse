@@ -897,3 +897,11 @@ Linux check after Day 165 (2026-11-08): two breaks fixed. `tools/docgen/src/samp
 phase 13 tests (backend registry, minted DXIL) that run on Linux while the map listed phase 13 for Windows only; `tests/phases.txt` now has
 `flavors 13 linux: plain,asan,tsan` and the planted-platform test expects the Linux line. Unity and `-DENGINE_UNITY_BUILD=OFF` build with no
 warnings of ours; `scripts/test-phase.sh --affected`: ran 1393 of 3577 tests (phases: all; flavors: plain; display: included; crash tests: excluded), no failures.
+
+Phase 13 **Day 166 (2026-11-08, Windows PC): DX12 descriptors and bind groups.** Samplers (every RHI state, de-duplicated), bind group layouts,
+bind groups whose views sit together in a CPU heap, a shader-visible view ring of 3 frame slots emptied as each slot comes round, shared sampler
+tables in the 2048-entry sampler heap, and root signatures 1.1 per pipeline layout (a view and a sampler table per group, root constants at
+`b0, space15`) cached by layout content. `BindingDesc` gained `stride` for storage buffers (D3D12's structured views), and reflection records it
+(version 2, every `*.refl.inc` re-minted). The `SetBindGroup` measurement and the end-to-end binding tests moved to Day 168, the reflection-against-
+root-signature check to Day 167 (plan amended). Runs: `ran 1237 of 2418 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 916 of 2418`. Review: 8 findings, 6 fixed, 2
+declined. Linux: pending until the phase close. **Next: Day 167 (DX12 pipelines and the pipeline cache).**

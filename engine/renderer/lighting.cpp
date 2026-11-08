@@ -145,7 +145,8 @@ void LightingPass::Build() {
     volume_fragment_ = rhi::CreateShaderFromSet(*device, shaders::kPointLightFragShader, rhi::ShaderStage::Fragment);
     rhi::BindingDesc bindings[5];
     for (u32 i = 0; i < 4; ++i) bindings[i] = {i, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1};
-    bindings[4] = {4, rhi::BindingType::ReadOnlyStorageBuffer, rhi::ShaderStage::AllGraphics, 1}; // the light volume's vertex shader reads it too
+    // StructuredBuffer<LightData> lights; the light volume's vertex shader reads it too.
+    bindings[4] = {4, rhi::BindingType::ReadOnlyStorageBuffer, rhi::ShaderStage::AllGraphics, 1, static_cast<u32>(sizeof(LightData))};
     rhi::BindGroupLayoutDesc ld;
     ld.entries = rhi::Span<rhi::BindingDesc>(bindings, 5);
     layout_ = device->CreateBindGroupLayout(ld);

@@ -7,6 +7,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "renderer/frame_data.h"
 #include "renderer/shader_reflection.h"
 #include "rhi/device.h"
 #include "rhi/null/null_device.h"
@@ -17,7 +18,9 @@
 #include "cube.vert.refl.inc"
 #include "fill.comp.refl.inc"
 #include "fullscreen.vert.refl.inc"
+#include "gbuffer.vert.refl.inc"
 #include "gradient.comp.refl.inc"
+#include "lighting.frag.refl.inc"
 #include "lit.frag.refl.inc"
 #include "lit.vert.refl.inc"
 #include "saxpy.comp.refl.inc"
@@ -139,6 +142,7 @@ TEST_CASE("Reflection says what the shader sources say", "[renderer][reflection]
         CHECK(fill.local_size[2] == 1);
         REQUIRE(fill.binding_count == 1);
         CHECK(fill.bindings[0].type == BindingType::StorageBuffer);
+        CHECK(fill.bindings[0].stride == 4); // RWStructuredBuffer<uint> (Phase 13 Day 166)
         CHECK(fill.has_push_constants);
         CHECK(fill.blocks[fill.push_constant_block].size == 4);
 
@@ -146,6 +150,8 @@ TEST_CASE("Reflection says what the shader sources say", "[renderer][reflection]
         REQUIRE(saxpy.binding_count == 2);
         CHECK(saxpy.bindings[0].type == BindingType::ReadOnlyStorageBuffer); // x_buf is a StructuredBuffer (Phase 13 Day 163)
         CHECK(saxpy.bindings[1].type == BindingType::StorageBuffer);
+        CHECK(saxpy.bindings[0].stride == 4);
+        CHECK(saxpy.bindings[1].stride == 4);
 
         ShaderReflection gradient = LOAD(kGradientComp);
         CHECK(gradient.local_size[0] == 8);
@@ -160,6 +166,37 @@ TEST_CASE("Reflection says what the shader sources say", "[renderer][reflection]
         CHECK(tri.vertex_inputs[0].format == VertexFormat::Float2);
         CHECK(tri.vertex_inputs[1].format == VertexFormat::Float3);
         CHECK(LOAD(kFullscreenVert).vertex_input_count == 0);
+    }
+}
+
+TEST_CASE("A structured buffer's reflected stride is the C++ element's size, and only storage buffers have one", "[renderer][reflection]") {
+    // Direct3D 12 makes structured views with it (Phase 13 Day 166).
+    const ShaderReflection gbuffer = LOAD(kGbufferVert);
+    const ShaderReflection lighting = LOAD(kLightingFrag);
+    u32 found = 0;
+    for (const ShaderReflection* r : {&gbuffer, &lighting}) {
+        for (u32 i = 0; i < r->binding_count; ++i) {
+            const ReflectedBinding& b = r->bindings[i];
+            INFO(b.name);
+            if (std::strcmp(b.name, "objects") == 0) {
+                CHECK(b.stride == sizeof(ObjectData));
+                ++found;
+            } else if (std::strcmp(b.name, "lights") == 0) {
+                CHECK(b.stride == sizeof(LightData));
+                ++found;
+            } else {
+                CHECK(b.stride == 0);
+            }
+        }
+    }
+    CHECK(found == 2);
+    for (const Blob& blob : kAllBlobs) {
+        const ShaderReflection r = Load(blob);
+        for (u32 i = 0; i < r.binding_count; ++i) {
+            const bool storage = r.bindings[i].type == BindingType::StorageBuffer || r.bindings[i].type == BindingType::ReadOnlyStorageBuffer;
+            INFO(blob.name << " " << r.bindings[i].name);
+            CHECK((r.bindings[i].stride != 0) == storage);
+        }
     }
 }
 
@@ -215,6 +252,7 @@ TEST_CASE("Layouts are built from reflection", "[renderer][reflection]") {
         ShaderReflection other = fs;
         other.bindings[0].type = BindingType::StorageBuffer;
         other.bindings[0].block = kNoBlock;
+        other.bindings[0].stride = 16; // a storage buffer has one (Phase 13 Day 166)
         std::memcpy(other.bindings[0].name, "gizmo", 6);
         const ShaderReflection* pair[2] = {&vs, &other};
         BindGroupLayoutData layout;
@@ -222,6 +260,22 @@ TEST_CASE("Layouts are built from reflection", "[renderer][reflection]") {
         CHECK(std::strstr(error.message, "params") != nullptr);
         CHECK(std::strstr(error.message, "gizmo") != nullptr);
         CHECK(std::strstr(error.message, "binding 0") != nullptr);
+    }
+    SECTION("storage buffers of one binding with different strides conflict, and the message names both") {
+        // Review finding (Day 166): the conflict message left the stride out.
+        ShaderReflection a = fs;
+        a.bindings[0].type = BindingType::ReadOnlyStorageBuffer;
+        a.bindings[0].block = kNoBlock;
+        a.bindings[0].stride = 16;
+        ShaderReflection b = vs;
+        b.bindings[0].type = BindingType::ReadOnlyStorageBuffer;
+        b.bindings[0].block = kNoBlock;
+        b.bindings[0].stride = 32;
+        const ShaderReflection* pair[2] = {&b, &a};
+        BindGroupLayoutData layout;
+        CHECK_FALSE(BuildBindGroupLayout(pair, 2, 0, &layout, &error));
+        CHECK(std::strstr(error.message, "stride 32") != nullptr);
+        CHECK(std::strstr(error.message, "stride 16") != nullptr);
     }
     SECTION("conflicting array sizes are reported too") {
         ShaderReflection other = fs;

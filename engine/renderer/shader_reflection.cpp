@@ -179,6 +179,7 @@ void WriteReflection(Writer& w, const ShaderReflection& r) {
         w.U32(b.count);
         w.U32(static_cast<u32>(b.stages));
         w.U32(b.block);
+        w.U32(b.stride);
     }
     w.U32(r.block_count);
     for (u32 i = 0; i < r.block_count; ++i) {
@@ -294,6 +295,10 @@ const char* ValidateShaderReflection(const ShaderReflection& r) {
         if (b.block != kNoBlock && (b.block >= r.block_count || b.type != rhi::BindingType::UniformBuffer)) {
             return "reflection: a binding names a block that does not exist or is not a uniform buffer";
         }
+        const bool storage = b.type == rhi::BindingType::StorageBuffer || b.type == rhi::BindingType::ReadOnlyStorageBuffer;
+        if (storage ? (b.stride == 0 || b.stride > 2048) : b.stride != 0) {
+            return "reflection: a storage buffer binding has no stride (or one above 2048), or another binding has one";
+        }
         for (u32 j = 0; j < i; ++j) {
             if (r.bindings[j].set == b.set && r.bindings[j].binding == b.binding) {
                 return "reflection: two bindings share a set and binding index";
@@ -377,6 +382,7 @@ const char* ParseShaderReflection(const u8* data, usize size, ShaderReflection* 
         b.count = r.U32();
         b.stages = static_cast<rhi::ShaderStage>(r.U32());
         b.block = r.U32();
+        b.stride = r.U32();
     }
     out->block_count = r.U32();
     if (r.Failed()) {
@@ -522,17 +528,19 @@ bool BuildBindGroupLayout(const ShaderReflection* const* shaders, u32 shader_cou
                 entry.type = b.type;
                 entry.stages = b.stages;
                 entry.count = b.count;
+                entry.stride = b.stride;
                 origin[out->entry_count] = &b;
                 origin_shader[out->entry_count] = &shader;
                 ++out->entry_count;
                 continue;
             }
             rhi::BindingDesc& entry = out->entries[slot];
-            if (entry.type != b.type || entry.count != b.count) {
+            if (entry.type != b.type || entry.count != b.count || entry.stride != b.stride) {
                 SetError(error,
-                         "set %u binding %u: '%s' (%s, count %u) in the %s shader conflicts with '%s' (%s, count %u) in the %s shader",
-                         set, b.binding, origin[slot]->name, BindingTypeName(entry.type), entry.count,
-                         StageName(origin_shader[slot]->stage), b.name, BindingTypeName(b.type), b.count, StageName(shader.stage));
+                         "set %u binding %u: '%s' (%s, count %u, stride %u) in the %s shader conflicts with '%s' (%s, count %u, stride %u) in the %s "
+                         "shader",
+                         set, b.binding, origin[slot]->name, BindingTypeName(entry.type), entry.count, entry.stride,
+                         StageName(origin_shader[slot]->stage), b.name, BindingTypeName(b.type), b.count, b.stride, StageName(shader.stage));
                 return false;
             }
             entry.stages = entry.stages | b.stages;

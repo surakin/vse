@@ -24,7 +24,11 @@ Recording and submission: command allocators per frame, `ResourceState` transiti
 - [ ] **First images:** the triangle and the compute test rendered offscreen on DX12 and compared with `triangle.ppm` and the compute expectation (the full
       golden suite is Day 170).
 - [ ] **Tests** (`tests/rhi/dx12_commands_test.cpp`, phase 13; shared command tests by backend): barriers table, a pass that clears and draws, multi-threaded
-      recording, copies at odd sizes, mips, debug layer silent (including GPU-based validation once for the whole set, recorded).
+      recording, copies at odd sizes, mips, debug layer silent (including GPU-based validation once for the whole set, recorded). Moved here from
+      Day 166: every binding type reaches a compute shader and reads back correctly, many groups per frame, the shader-visible ring wrapping across
+      3 frames of real submissions, and whether the `DATA_STATIC_WHILE_SET_AT_EXECUTE` range flags hold under GPU-based validation (else `DATA_VOLATILE`).
+- [ ] **Measure `SetBindGroup`** (moved from Day 166) with `rhi_bench` on DX12 versus Vulkan on the same PC (Day 161 baseline) and record both; if DX12 is
+      much slower, try caching a group's GPU copy across frames when unchanged (and record the result).
 - [ ] **Runs:** Windows `--affected` plain and asan; Linux `--affected` if the mip shader or shared tests changed.
 - [ ] **End-of-day review:** `/code-review high`. Extra scrutiny: allocator reuse before its fence completes, a barrier missing between a copy and a draw,
       state tracking per subresource.

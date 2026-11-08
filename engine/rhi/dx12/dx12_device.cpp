@@ -186,7 +186,7 @@ bool Dx12Device::Initialize(const DeviceCreateInfo& info) {
     strikes_left_ = info.faults.strikes_left;
     FillCaps();
     epoch_ = AllocateDeviceSerial(); // usable from here on; the handle pools are seeded from it
-    if (!InitializeResources()) {
+    if (!InitializeResources() || !InitializeBindings()) {
         return false;
     }
     RhiLog(LogVerbosity::Info, "D3D12: device on '%s' (%s), validation %s%s", adapter_.name, adapter_.id, validation_ ? "on" : "off",
@@ -233,6 +233,7 @@ Dx12Device::~Dx12Device() {
         g_leaked_user_objects.fetch_add(counts.UserObjects(), std::memory_order_relaxed);
         RhiLog(LogVerbosity::Warn, "D3D12: %zu application object(s) were still alive when the device was destroyed", counts.UserObjects());
     }
+    ShutdownBindings();
     ShutdownResources();
     fence_.Reset();
     queue_.Reset();
@@ -417,6 +418,9 @@ void Dx12Device::CollectRetiredLocked(bool all) {
         if (!t.external) ReleaseResourceBytes(t.bytes);
         t.resource.Reset();
     });
+    bind_groups_.CollectRetired(completed, [&](BindGroupRes& g) { ReleaseBindGroupLocked(g); });
+    samplers_.CollectRetired(completed, [&](SamplerRes& s) { sampler_cpu_heap_.Free(s.cpu); });
+    bind_group_layouts_.CollectRetired(completed, [](BindGroupLayoutRes&) {});
 }
 
 void Dx12Device::BeginFrame() {
@@ -448,6 +452,8 @@ void Dx12Device::BeginFrame() {
     if (lose_device_at_frame_ != 0 && frame_number_ == lose_device_at_frame_) {
         InjectLoss("frame", static_cast<u32>(frame_number_));
     }
+    // The slot's last frame (three back) has finished: BeginFrame waited for frame_number_ - frames_in_flight_, at most 3.
+    RetireFrameGroupsLocked(static_cast<u32>(frame_number_ % kFrameSlots));
     CollectRetiredLocked(false);
 }
 
@@ -514,6 +520,9 @@ ResourceCounts Dx12Device::Resources() const {
         std::lock_guard<std::mutex> lock(resource_mutex_);
         c.buffers = buffers_.LiveCount();
         c.textures = textures_.LiveCount();
+        c.samplers = samplers_.LiveCount();
+        c.bind_group_layouts = bind_group_layouts_.LiveCount();
+        bind_groups_.ForEachLive([&](BindGroupHandle, const BindGroupRes& g) { c.bind_groups += g.transient ? 0 : 1; }); // transient groups end with their frame
     }
     // As on Vulkan: every raw resource alive (the application's and the backend's own, such as the staging ring), and their memory.
     c.internal_objects = raw_resources_.load(std::memory_order_relaxed);

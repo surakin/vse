@@ -33,7 +33,7 @@ inline constexpr u32 kPermuteTestFragPerm1Spv[kPermuteTestFragPerm1SpvWordCount]
 inline constexpr usize kPermuteTestFragPerm1ReflByteCount = 46;
 
 inline constexpr u8 kPermuteTestFragPerm1Refl[kPermuteTestFragPerm1ReflByteCount] = {
-    83, 82, 70, 76, 1, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
@@ -61,7 +61,7 @@ inline constexpr u32 kPermuteTestFragPerm2Spv[kPermuteTestFragPerm2SpvWordCount]
 inline constexpr usize kPermuteTestFragPerm2ReflByteCount = 46;
 
 inline constexpr u8 kPermuteTestFragPerm2Refl[kPermuteTestFragPerm2ReflByteCount] = {
-    83, 82, 70, 76, 1, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
@@ -89,7 +89,7 @@ inline constexpr u32 kPermuteTestFragPerm3Spv[kPermuteTestFragPerm3SpvWordCount]
 inline constexpr usize kPermuteTestFragPerm3ReflByteCount = 46;
 
 inline constexpr u8 kPermuteTestFragPerm3Refl[kPermuteTestFragPerm3ReflByteCount] = {
-    83, 82, 70, 76, 1, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
@@ -117,7 +117,7 @@ inline constexpr u32 kPermuteTestFragPerm4Spv[kPermuteTestFragPerm4SpvWordCount]
 inline constexpr usize kPermuteTestFragPerm4ReflByteCount = 46;
 
 inline constexpr u8 kPermuteTestFragPerm4Refl[kPermuteTestFragPerm4ReflByteCount] = {
-    83, 82, 70, 76, 1, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
@@ -148,7 +148,7 @@ inline constexpr u32 kPermuteTestFragPerm5Spv[kPermuteTestFragPerm5SpvWordCount]
 inline constexpr usize kPermuteTestFragPerm5ReflByteCount = 46;
 
 inline constexpr u8 kPermuteTestFragPerm5Refl[kPermuteTestFragPerm5ReflByteCount] = {
-    83, 82, 70, 76, 1, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 2, 0, 0, 0, 2, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };

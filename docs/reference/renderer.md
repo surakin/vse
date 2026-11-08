@@ -10752,6 +10752,16 @@ u32 block;
 
 Index into [`renderer::ShaderReflection`](#renderer-shaderreflection)'s `blocks` for a uniform buffer, else [`renderer::kNoBlock`](#renderer-knoblock).
 
+### `stride` {#renderer-reflectedbinding-stride}
+
+`variable renderer::ReflectedBinding::stride` — defined in `engine/renderer/shader_reflection.h`
+
+```cpp
+u32 stride;
+```
+
+For a storage buffer, the size of one element (`StructuredBuffer<T>`: `T` rounded up to its alignment), 1 to 2048; else 0. Becomes [`rhi::BindingDesc`](rhi.md#rhi-bindingdesc)'s `stride`.
+
 ## `ReflectedVertexInput` {#renderer-reflectedvertexinput}
 
 `struct renderer::ReflectedVertexInput` — defined in `engine/renderer/shader_reflection.h`

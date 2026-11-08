@@ -1297,6 +1297,12 @@ BindGroupHandle NullDevice::CreateBindGroup(const BindGroupDesc& desc) {
                     s.Error("CreateBindGroup: binding %u offset is not a multiple of %u", bd.binding, align);
                     return BindGroupHandle{};
                 }
+                // A structured view (Direct3D 12) starts on an element: checked here so it is caught on every backend.
+                if (!uniform && bd.stride != 0 && found->offset % bd.stride != 0) {
+                    s.Error("CreateBindGroup: binding %u offset %llu is not a multiple of its stride %u", bd.binding,
+                            static_cast<unsigned long long>(found->offset), bd.stride);
+                    return BindGroupHandle{};
+                }
                 if (found->offset >= buf->desc.size || (found->size != 0 && found->size > buf->desc.size - found->offset)) {
                     s.Error("CreateBindGroup: binding %u range lies outside the buffer", bd.binding);
                     return BindGroupHandle{};

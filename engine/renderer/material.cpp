@@ -216,6 +216,7 @@ bool MaterialSystem::CreateDefaults() {
     rhi::BindingDesc object_binding;
     object_binding.binding = 0;
     object_binding.type = rhi::BindingType::ReadOnlyStorageBuffer;
+    object_binding.stride = sizeof(ObjectData); // StructuredBuffer<ObjectData> objects (gbuffer.vert)
     object_binding.stages = rhi::ShaderStage::AllGraphics;
     rhi::BindGroupLayoutDesc ol;
     ol.entries = rhi::Span<rhi::BindingDesc>(&object_binding, 1);

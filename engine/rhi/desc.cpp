@@ -244,6 +244,13 @@ const char* BindGroupLayoutDesc::Validate() const {
         if (!Any(e.stages) || Any(static_cast<ShaderStage>(static_cast<u32>(e.stages) & ~static_cast<u32>(ShaderStage::All)))) {
             return "BindGroupLayoutDesc: binding stages are empty or unknown";
         }
+        const bool storage = e.type == BindingType::StorageBuffer || e.type == BindingType::ReadOnlyStorageBuffer;
+        if (!storage && e.stride != 0) {
+            return "BindGroupLayoutDesc: only a storage buffer binding has a stride";
+        }
+        if (e.stride > 2048) {
+            return "BindGroupLayoutDesc: a storage buffer stride is larger than 2048 bytes";
+        }
         if (e.type == BindingType::UniformBuffer || e.type == BindingType::StorageBuffer ||
             e.type == BindingType::ReadOnlyStorageBuffer || e.type == BindingType::StorageTexture) {
             // Arrays of buffers/storage images are not part of the Phase 4 contract.

@@ -34,7 +34,8 @@ const char* kFragmentJson = R"({
        "sizes": [{"kind": "uniform", "value": 16, "alignment": 16}]}}},
     {"name": "tex", "binding": {"kind": "descriptorTableSlot", "space": 1, "index": 4}, "type": {"kind": "resource", "baseShape": "texture2D"}},
     {"name": "objects", "binding": {"kind": "descriptorTableSlot", "space": 2, "index": 0},
-     "type": {"kind": "resource", "baseShape": "structuredBuffer"}},
+     "type": {"kind": "resource", "baseShape": "structuredBuffer",
+       "resultType": {"kind": "struct", "name": "Object", "fields": [], "sizes": [{"kind": "uniform", "value": 72, "alignment": 16}]}}},
     {"name": "push", "bindings": [{"kind": "pushConstantBuffer", "index": 0}, {"kind": "descriptorTableSlot", "space": 15, "index": 0}],
      "type": {"kind": "constantBuffer", "elementType": {"kind": "struct", "name": "Push", "fields": [
         {"name": "scale", "type": {"kind": "scalar", "scalarType": "float32"}, "binding": {"kind": "uniform", "offset": 0, "size": 4}}],
@@ -85,6 +86,8 @@ TEST_CASE("The DXIL build's registers must follow the bindings, and push constan
     REQUIRE(r.has_push_constants); // the two-binding form is read as the push constant range
     CHECK(r.binding_count == 3);
     CHECK(r.bindings[2].type == rhi::BindingType::ReadOnlyStorageBuffer); // a StructuredBuffer
+    CHECK(r.bindings[2].stride == 80); // 72 bytes rounded up to the element's 16-byte alignment (Phase 13 Day 166)
+    CHECK(r.bindings[0].stride == 0);
     CHECK(CheckD3D12Registers(r, StringView(kGoodDxilJson), &error));
 
     const StringView good(kGoodDxilJson);
@@ -97,6 +100,18 @@ TEST_CASE("The DXIL build's registers must follow the bindings, and push constan
     CHECK_FALSE(CheckD3D12Registers(r, EditJson(good, R"({"name": "mat",)", R"({"name": "other",)").View(), &error));
     CHECK(error.View().Contains(StringView("missing from the DXIL")));
     CHECK_FALSE(CheckD3D12Registers(r, StringView("not json"), &error));
+}
+
+TEST_CASE("A structured buffer needs a known element size, and a ByteAddressBuffer is refused", "[shader_mint][dxil]") {
+    ShaderReflection r;
+    Text error = MakeText();
+    const StringView good(kFragmentJson);
+    CHECK_FALSE(ReflectionFromJson(EditJson(good, R"("value": 72, "alignment": 16)", R"("value": 0, "alignment": 16)").View(), &r, &error));
+    CHECK(error.View().Contains(StringView("element size is unknown")));
+    CHECK_FALSE(ReflectionFromJson(EditJson(good, R"("value": 72, "alignment": 16)", R"("value": 4096, "alignment": 16)").View(), &r, &error));
+    CHECK(error.View().Contains(StringView("above 2048")));
+    CHECK_FALSE(ReflectionFromJson(EditJson(good, R"("baseShape": "structuredBuffer")", R"("baseShape": "byteAddressBuffer")").View(), &r, &error));
+    CHECK(error.View().Contains(StringView("ByteAddressBuffer")));
 }
 
 TEST_CASE("Windows arguments are quoted so CommandLineToArgvW reads them back unchanged", "[shader_mint]") {

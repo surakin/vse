@@ -56,6 +56,11 @@ public:
     static constexpr u64 kTrackedFrames = 64;
     /// How long one slice of a GPU wait lasts before the device-removed check, in milliseconds.
     static constexpr u32 kWaitSliceMs = 100;
+    /// How many frame slots the per-frame resources rotate through (the shader-visible view ring, transient bind groups); a slot is
+    /// reused only after the frame that last used it has finished.
+    static constexpr u32 kFrameSlots = 3;
+    /// Descriptors in one frame slot of the shader-visible view ring.
+    static constexpr u32 kViewsPerFrame = 131072;
 
     /// Waits for the GPU, releases everything, reports live objects (with validation) and destroys the device.
     ~Dx12Device() override;
@@ -211,6 +216,81 @@ public:
     /// Thread-safety: thread-safe.
     void SetTextureState(TextureHandle texture, D3D12_RESOURCE_STATES state);
 
+    /// What command recording needs to know about a live bind group.
+    ///
+    /// Thread-safety: thread-compatible plain data (a snapshot).
+    /// Ownership: the descriptors are borrowed; valid until the group is destroyed (persistent) or its frame has finished (transient).
+    struct BindGroupInfo {
+        /// The group's CBV/SRV/UAV descriptors, contiguous in a CPU heap; copied into the frame's ring at `SetBindGroup`.
+        D3D12_CPU_DESCRIPTOR_HANDLE views{};
+        /// How many there are (0: the group has no views).
+        u32 view_count = 0;
+        /// The group's sampler table in the shader-visible sampler heap; `ptr` 0 without samplers.
+        D3D12_GPU_DESCRIPTOR_HANDLE samplers{};
+        /// How many samplers.
+        u32 sampler_count = 0;
+        /// Identity of the group's layout; equal ids mean equal layouts.
+        u64 layout_id = 0;
+        /// True for a transient group.
+        bool transient = false;
+        /// For a transient group, the frame it was created in.
+        u64 frame = 0;
+        /// False if a resource the group was built from has since been destroyed.
+        bool resources_live = true;
+    };
+    /// Looks up a bind group and checks that the resources it refers to are still alive.
+    ///
+    /// Param group: the handle.
+    /// Param out: receives the snapshot.
+    /// Returns: true if the handle is live.
+    /// Fails: false for an invalid or stale handle.
+    /// Thread-safety: thread-safe.
+    bool LookupBindGroup(BindGroupHandle group, BindGroupInfo* out) const;
+
+    /// A root signature and where each bind group and the push constants sit in it.
+    ///
+    /// Thread-safety: thread-compatible plain data.
+    /// Ownership: `signature` is borrowed; the device keeps every root signature it made until it is destroyed.
+    struct RootLayout {
+        /// The root signature.
+        ID3D12RootSignature* signature = nullptr;
+        /// Per bind group slot: the root parameter of its CBV/SRV/UAV table, or -1 when it has no views.
+        i32 view_param[kMaxBindGroups] = {-1, -1, -1, -1};
+        /// Per bind group slot: the root parameter of its sampler table, or -1 when it has no samplers.
+        i32 sampler_param[kMaxBindGroups] = {-1, -1, -1, -1};
+        /// The root parameter of the push constants, or -1.
+        i32 push_param = -1;
+        /// The push constants' size in 32-bit values.
+        u32 push_values = 0;
+        /// The layouts' identities, in slot order.
+        u64 layout_ids[kMaxBindGroups] = {};
+        /// How many layouts.
+        u32 layout_count = 0;
+    };
+    /// Finds or makes the root signature of a pipeline layout (the design spec's section 5): one CBV/SRV/UAV table and one sampler
+    /// table per bind group, registers `b`/`t`/`u`/`s` numbered as the bindings in `space<slot>`, and the push constants as root
+    /// constants at `b0, space15`. Serialized as root signature 1.1 and cached by the layouts' identities and the push range.
+    ///
+    /// Param layouts: the bind group layouts, in slot order; each live.
+    /// Param count: how many, at most [[rhi::kMaxBindGroups]].
+    /// Param push_bytes: the push-constant range, at most [[rhi::kMaxPushConstantBytes]].
+    /// Param push_stages: the stages that see it.
+    /// Param compute: true for a compute pipeline (every parameter visible to all stages; no input layout).
+    /// Param out: receives the layout.
+    /// Returns: true on success.
+    /// Fails: false, logging the reason, for a stale layout handle or a root signature D3D12 rejects.
+    /// Thread-safety: thread-safe.
+    bool RootSignatureFor(const BindGroupLayoutHandle* layouts, u32 count, u32 push_bytes, ShaderStage push_stages, bool compute, RootLayout* out);
+
+    /// Returns the shader-visible view ring. Ownership: borrowed.
+    GpuDescriptorRing& ViewRing() { return view_ring_; }
+    /// Returns the shader-visible sampler heap. Ownership: borrowed.
+    ID3D12DescriptorHeap* SamplerHeap() const { return sampler_tables_heap_.Heap(); }
+    /// Returns how many sampler descriptors of the shader-visible heap are free, for tests.
+    u32 FreeSamplerDescriptors() const;
+    /// Returns how many root signatures the device holds, for tests of the cache.
+    usize RootSignatureCount() const;
+
     /// Objects found alive by destroyed devices.
     ///
     /// Thread-safety: thread-compatible plain data (a snapshot).
@@ -275,6 +355,77 @@ private:
     u64 SubmitInternalLocked(usize slot);
     bool StageLocked(u64 size, u64 alignment, u64* offset);
     void SetDebugName(ID3D12Object* object, const char* name);
+
+    // ---- samplers, bind group layouts, bind groups, root signatures (dx12_device_bindings.cpp) ----
+    struct SamplerRes {
+        D3D12_CPU_DESCRIPTOR_HANDLE cpu{};
+        SamplerDesc desc; // normalized: anisotropy clamped, name dropped
+        u32 refs = 0;
+    };
+    struct LayoutBinding {
+        BindingDesc desc;
+        u32 table_offset = 0; // in the view table, or in the sampler table for a sampler
+    };
+    struct BindGroupLayoutRes {
+        LayoutBinding bindings[kMaxBindingsPerLayout];
+        u32 binding_count = 0;
+        u32 view_count = 0;
+        u32 sampler_count = 0;
+        u64 id = 0;
+    };
+    struct GroupRef {
+        BindingType type = BindingType::UniformBuffer;
+        BufferHandle buffer;
+        TextureHandle texture;
+        SamplerHandle sampler;
+    };
+    struct BindGroupRes {
+        D3D12_CPU_DESCRIPTOR_HANDLE views{};
+        u32 view_count = 0;
+        u32 sampler_table = ~0u; // index into sampler_tables_, ~0 without samplers
+        u64 layout_id = 0;
+        bool transient = false;
+        u64 frame = 0;
+        Vector<GroupRef> refs;
+    };
+    // A table of samplers in the shader-visible heap, shared by every group with the same samplers in the same order.
+    struct SamplerTable {
+        u32 offset = 0;
+        u32 count = 0;
+        Vector<u64> keys; // the samplers' handles (index and generation): a destroyed sampler's descriptor may be reused, its handle not
+        u32 refs = 0;     // 0: the entry is free
+    };
+    struct LayoutIdentity {
+        BindingDesc bindings[kMaxBindingsPerLayout];
+        u32 count = 0;
+        u64 id = 0;
+    };
+    struct RootSignatureEntry {
+        ComRef<ID3D12RootSignature> signature;
+        RootLayout layout;
+        u32 push_bytes = 0;
+        ShaderStage push_stages = ShaderStage::None;
+        bool compute = false;
+    };
+    bool InitializeBindings();
+    void ShutdownBindings();
+    void ReleaseBindGroupLocked(BindGroupRes& group);
+    void RetireFrameGroupsLocked(u32 slot);
+    u32 AcquireSamplerTableLocked(const u64* keys, const usize* sources, u32 count);
+    void ReleaseSamplerTableLocked(u32 index);
+
+    HandlePool<SamplerRes, SamplerTag> samplers_;
+    HandlePool<BindGroupLayoutRes, BindGroupLayoutTag> bind_group_layouts_;
+    HandlePool<BindGroupRes, BindGroupTag> bind_groups_;
+    CpuDescriptorHeap sampler_cpu_heap_;
+    CpuDescriptorBlocks group_views_;           // each bind group's views, contiguous
+    GpuDescriptorRing view_ring_;               // shader-visible, per frame slot
+    GpuDescriptorTables sampler_tables_heap_;   // shader-visible samplers
+    Vector<SamplerTable> sampler_tables_;
+    Vector<LayoutIdentity> layout_identities_;  // never shrinks: an id is never reused
+    u64 next_layout_id_ = 1;
+    Vector<RootSignatureEntry> root_signatures_; // under resource_mutex_
+    Vector<BindGroupHandle> frame_groups_[kFrameSlots];
 
     HandlePool<BufferRes, BufferTag> buffers_;
     HandlePool<TextureRes, TextureTag> textures_;

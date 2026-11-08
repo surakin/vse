@@ -2219,6 +2219,16 @@ u32 count;
 
 Array size; 1 for a non-array binding.
 
+### `stride` {#rhi-bindingdesc-stride}
+
+`variable rhi::BindingDesc::stride` — defined in `engine/rhi/desc.h`
+
+```cpp
+u32 stride;
+```
+
+For a `StorageBuffer` or `ReadOnlyStorageBuffer` binding: the size in bytes of one element as the shader declares it (`StructuredBuffer<T>`: `sizeof(T)` in the buffer's std430 layout), at most 2048. Direct3D 12 makes a structured view with it, so a bound range starts on a multiple of it; Vulkan ignores it. 0 for every other type. Phase 13 Day 166.
+
 ## `BindGroupLayoutDesc` {#rhi-bindgrouplayoutdesc}
 
 `struct rhi::BindGroupLayoutDesc` — defined in `engine/rhi/desc.h`

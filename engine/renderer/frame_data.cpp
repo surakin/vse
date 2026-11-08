@@ -13,6 +13,22 @@ namespace {
 
 u64 AlignUp(u64 v, u64 a) { return (v + a - 1) / a * a; }
 
+u64 Gcd(u64 a, u64 b) {
+    while (b != 0) {
+        const u64 t = a % b;
+        a = b;
+        b = t;
+    }
+    return a;
+}
+
+// A slice of a structured buffer starts on the binding alignment and on a whole element (a Direct3D 12 structured view begins at an
+// element; Phase 13 Day 166): the least common multiple of the two.
+u64 SliceAlignment(u64 binding_alignment, u64 element) {
+    const u64 a = binding_alignment == 0 ? 1 : binding_alignment;
+    return a / Gcd(a, element) * element;
+}
+
 } // namespace
 
 FrameData MakeFrameData(const Camera& camera, u32 width, u32 height, f32 time_seconds, f32 delta_seconds, u64 frame_index) {
@@ -40,8 +56,8 @@ void FrameResources::Build() {
     const u32 max_lights = max_lights_;
     const rhi::DeviceCaps& caps = device->Caps();
     frame_stride_ = AlignUp(sizeof(FrameData), caps.min_uniform_buffer_offset_alignment);
-    object_stride_ = AlignUp(static_cast<u64>(max_objects) * sizeof(ObjectData), caps.min_storage_buffer_offset_alignment);
-    light_stride_ = AlignUp(static_cast<u64>(max_lights) * sizeof(LightData), caps.min_storage_buffer_offset_alignment);
+    object_stride_ = AlignUp(static_cast<u64>(max_objects) * sizeof(ObjectData), SliceAlignment(caps.min_storage_buffer_offset_alignment, sizeof(ObjectData)));
+    light_stride_ = AlignUp(static_cast<u64>(max_lights) * sizeof(LightData), SliceAlignment(caps.min_storage_buffer_offset_alignment, sizeof(LightData)));
 
     rhi::BufferDesc bd;
     bd.location = rhi::MemoryLocation::CpuToGpu;

@@ -13,7 +13,7 @@
 namespace engine_placeholder::renderer {
 
 /// The reflection blob format version this build reads and writes.
-inline constexpr u32 kReflectionVersion = 1;
+inline constexpr u32 kReflectionVersion = 2; // 2: bindings carry their storage stride (Phase 13 Day 166)
 /// The capacity of every reflected name, including the terminator; longer names are rejected.
 inline constexpr u32 kMaxReflectionName = 48;
 /// The most bindings one shader module may reflect.
@@ -102,6 +102,9 @@ struct ReflectedBinding {
     rhi::ShaderStage stages = rhi::ShaderStage::None;
     /// Index into [[renderer::ShaderReflection]]'s `blocks` for a uniform buffer, else [[renderer::kNoBlock]].
     u32 block = kNoBlock;
+    /// For a storage buffer, the size of one element (`StructuredBuffer<T>`: `T` rounded up to its alignment), 1 to 2048; else 0.
+    /// Becomes [[rhi::BindingDesc]]'s `stride`.
+    u32 stride = 0;
 };
 
 /// One vertex shader input.

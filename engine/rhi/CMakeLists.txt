@@ -61,6 +61,7 @@ set(RHI_DX12_SOURCES
   dx12/dx12_descriptor_heap.cpp
   dx12/dx12_device.cpp
   dx12/dx12_device_resources.cpp
+  dx12/dx12_device_bindings.cpp
   dx12/dx12_device_later.cpp
   dx12/dx12_backend.cpp
 )

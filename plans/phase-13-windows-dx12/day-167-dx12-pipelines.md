@@ -18,7 +18,9 @@ Graphics and compute pipelines on D3D12 and a persistent cache named by adapter 
       vendor, device and driver identity (`BACKEND-LIFECYCLE.md` rule); a driver change or a different adapter writes its own file; a corrupt or mismatching file
       is discarded with a log line, never a crash. Measure cold versus warm creation of the renderer's pipelines.
 - [ ] **Tests** (`tests/rhi/dx12_pipeline_test.cpp`, phase 13, and shared pipeline tests by backend): every committed shader builds a pipeline with its layout,
-      invalid combinations fail cleanly, the cache file round-trips, a truncated cache file is discarded, debug layer silent.
+      invalid combinations fail cleanly, the cache file round-trips, a truncated cache file is discarded, debug layer silent. Moved here from Day 166: each
+      committed shader's layouts are built from its reflection and its root signature comes from `Dx12Device::RootSignatureFor`, so a register or space
+      that disagrees with the bindings fails the pipeline.
 - [ ] **Runs:** Windows `--affected` plain and asan.
 - [ ] **End-of-day review:** `/code-review high`. Extra scrutiny: cache-file handling of untrusted contents, winding/cull conventions, input-layout semantic names.
 - [ ] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.

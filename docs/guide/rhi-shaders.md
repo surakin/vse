@@ -355,6 +355,8 @@ the next days rely on:
 - **Storage buffers** are `RWStructuredBuffer<T>` (written) or `StructuredBuffer<T>` (read only) and come out as
   std430; `GetDimensions` gives the element count, but Metal cannot answer it (`fill.comp` and `saxpy.comp` do not compile to
   Metal for that reason), so a shader meant for every backend takes the count as a constant.
+  Reflection records each one's element size (`ReflectedBinding::stride`, `T` rounded up to its alignment), which becomes the
+  layout's `BindingDesc::stride`; `ByteAddressBuffer` is refused by the minter (Phase 13 Day 166).
 - **Descriptor sets** are bind groups: the second argument of `[[vk::binding(binding, set)]]` is the group index, the
   first is the entry's `binding` in the bind group layout, and the stages named in the layout must include the
   stage that uses it.

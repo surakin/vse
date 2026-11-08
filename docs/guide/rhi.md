@@ -718,6 +718,12 @@ Both kinds grow instead of failing: when a descriptor pool is full the device ad
 descriptor_sets_per_pool` sets the size of each, 1024 by default), and a layout with an array too large for the
 default size gets a pool of its own. Ten thousand transient groups in one frame are fine.
 
+**Storage buffers have a stride.** A `StorageBuffer` or `ReadOnlyStorageBuffer` binding gives `BindingDesc::stride`, the size of one
+element as the shader declares it (`StructuredBuffer<T>`: `sizeof(T)` in std430), and a bound range starts on a multiple of it as well
+as on the device's storage alignment (the lcm of the two, 768 for 48-byte elements and 256-byte alignment). Direct3D 12 makes a
+structured view from it and refuses a storage binding without one; Vulkan ignores it, and every backend checks the offset. Layouts built
+from reflection get it from the shader. `ByteAddressBuffer` is not supported: use `StructuredBuffer<uint>`.
+
 A group does not keep what it names alive: destroy a buffer, texture or sampler a group uses and the group cannot be
 bound any more (`SetBindGroup` reports it). Equal layouts share one Vulkan object, and pipelines with equal layouts share one
 pipeline layout (see Pipelines).
@@ -957,6 +963,14 @@ Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `
   a depth level is copied whole, as D3D12 requires. D3D12 has no "undefined" before-state, so the device records each texture's actual
   state after everything submitted, and uses it where the RHI says `Undefined`. Creating 1000 small buffers takes about 310 ms here
   against Vulkan's 22 ms (the Vulkan backend sub-allocates); placed resources are filed for when a measurement asks for them.
+- **Bindings** (Day 166). A pipeline layout becomes a root signature (version 1.1, cached by the layouts' content and the push range): per
+  bind group one CBV/SRV/UAV descriptor table and one sampler table, with registers numbered as the bindings in `space<slot>`, and the push
+  constants as root constants at `b0, space15` (shaders/target_common.slang). A bind group keeps its views together in a CPU heap;
+  `SetBindGroup` copies them into the current frame's part of one shader-visible heap (131072 descriptors per frame, three frames),
+  which is emptied when that frame comes round again, so running out is an error that names the sizes, not a wait. Samplers are few
+  and the shader-visible sampler heap holds 2048: a group's samplers are copied once into a table that every group with the same
+  samplers in the same order shares. A uniform buffer view covers the bound range rounded up to 256 bytes; a writable storage buffer
+  must be `GpuOnly`.
 
 ## What the RHI reports when something goes wrong
 

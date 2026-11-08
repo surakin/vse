@@ -9,7 +9,7 @@ namespace engine_placeholder::shaders {
 inline constexpr usize kTriangleVertReflByteCount = 71;
 
 inline constexpr u8 kTriangleVertRefl[kTriangleVertReflByteCount] = {
-    83, 82, 70, 76, 1, 0, 0, 0, 1, 0, 0, 0, 4, 109, 97, 105,
+    83, 82, 70, 76, 2, 0, 0, 0, 1, 0, 0, 0, 4, 109, 97, 105,
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 8, 112,
     111, 115, 105, 116, 105, 111, 110, 0, 0, 0, 0, 1, 5, 99, 111, 108,

@@ -709,6 +709,327 @@ void Shutdown();
 
 Releases every heap.
 
+## `CpuDescriptorBlocks` {#rhi-dx12-cpudescriptorblocks}
+
+`class rhi::dx12::CpuDescriptorBlocks` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+class CpuDescriptorBlocks { ... }
+```
+
+Hands out contiguous ranges of one non-shader-visible heap type: a bind group's views sit next to each other, so `SetBindGroup` copies them into the frame's ring with one `CopyDescriptorsSimple` (Phase 13 Day 166). Ranges come in power-of-two sizes, each with its own free list.
+
+| Field | Value |
+|---|---|
+| Thread-safety | not-thread-safe; the device calls it under its resource lock. |
+| Ownership | owns the heaps. |
+
+### `kDescriptorsPerHeap` {#rhi-dx12-cpudescriptorblocks-kdescriptorsperheap}
+
+`variable rhi::dx12::CpuDescriptorBlocks::kDescriptorsPerHeap` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+static constexpr u32 kDescriptorsPerHeap;
+```
+
+How many descriptors one heap holds; the largest range is this size.
+
+### `Initialize(ID3D12Device*,D3D12_DESCRIPTOR_HEAP_TYPE)` {#rhi-dx12-cpudescriptorblocks-initialize-id3d12device-star-d3d12-descriptor-heap-type}
+
+`method rhi::dx12::CpuDescriptorBlocks::Initialize` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+void Initialize(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE type);
+```
+
+Sets the device and the heap type.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | borrowed for the allocator's life. |
+| Parameter `type` | the heap type. |
+
+### `Allocate(u32,D3D12_CPU_DESCRIPTOR_HANDLE*)` {#rhi-dx12-cpudescriptorblocks-allocate-u32-d3d12-cpu-descriptor-handle-star}
+
+`method rhi::dx12::CpuDescriptorBlocks::Allocate` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+bool Allocate(u32 count, D3D12_CPU_DESCRIPTOR_HANDLE* out);
+```
+
+Returns a range of at least `count` contiguous descriptors.
+
+| Field | Value |
+|---|---|
+| Parameter `count` | 1 to `kDescriptorsPerHeap`. |
+| Parameter `out` | receives the handle of the first. |
+| Returns | true on success. |
+| Fails | false when `count` is out of range or a heap cannot be created. |
+
+### `Free(D3D12_CPU_DESCRIPTOR_HANDLE,u32)` {#rhi-dx12-cpudescriptorblocks-free-d3d12-cpu-descriptor-handle-u32}
+
+`method rhi::dx12::CpuDescriptorBlocks::Free` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+void Free(D3D12_CPU_DESCRIPTOR_HANDLE first, u32 count);
+```
+
+Gives a range back.
+
+| Field | Value |
+|---|---|
+| Parameter `first` | the handle `Allocate` returned; `ptr` 0 is ignored. |
+| Parameter `count` | the count it was asked for. |
+
+### `Increment()` {#rhi-dx12-cpudescriptorblocks-increment-const}
+
+`method rhi::dx12::CpuDescriptorBlocks::Increment` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+u32 Increment() const;
+```
+
+Returns the distance between two descriptors of this type.
+
+### `Shutdown()` {#rhi-dx12-cpudescriptorblocks-shutdown}
+
+`method rhi::dx12::CpuDescriptorBlocks::Shutdown` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+void Shutdown();
+```
+
+Releases every heap.
+
+## `GpuDescriptorRing` {#rhi-dx12-gpudescriptorring}
+
+`class rhi::dx12::GpuDescriptorRing` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+class GpuDescriptorRing { ... }
+```
+
+The shader-visible CBV/SRV/UAV heap, split into one region per frame slot: `SetBindGroup` takes a range from the region of its frame, and `BeginFrame` resets a region once the frame that last used it has finished (Phase 13 Day 166).
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe for `Allocate` (command lists record on several threads); `Reset` belongs to the submission thread. |
+| Ownership | owns the heap. |
+
+### `Initialize(ID3D12Device*,u32,u32)` {#rhi-dx12-gpudescriptorring-initialize-id3d12device-star-u32-u32}
+
+`method rhi::dx12::GpuDescriptorRing::Initialize` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+bool Initialize(ID3D12Device* device, u32 per_slot, u32 slots);
+```
+
+Creates the heap.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the device. |
+| Parameter `per_slot` | descriptors per frame slot. |
+| Parameter `slots` | the number of slots (the device's frame pools). |
+| Returns | true on success. |
+| Fails | false if the heap cannot be created. |
+
+### `Allocate(u32,u32,D3D12_CPU_DESCRIPTOR_HANDLE*,D3D12_GPU_DESCRIPTOR_HANDLE*)` {#rhi-dx12-gpudescriptorring-allocate-u32-u32-d3d12-cpu-descriptor-handle-star-d3d12-gpu-descriptor-handle-star}
+
+`method rhi::dx12::GpuDescriptorRing::Allocate` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+bool Allocate(u32 slot, u32 count, D3D12_CPU_DESCRIPTOR_HANDLE* cpu, D3D12_GPU_DESCRIPTOR_HANDLE* gpu);
+```
+
+Takes `count` descriptors from a slot's region.
+
+| Field | Value |
+|---|---|
+| Parameter `slot` | the frame slot. |
+| Parameter `count` | descriptors wanted. |
+| Parameter `cpu` | receives the CPU handle of the first. |
+| Parameter `gpu` | receives its GPU handle. |
+| Returns | true on success. |
+| Fails | false when the region is full (the caller logs the sizes). |
+
+### `Reset(u32)` {#rhi-dx12-gpudescriptorring-reset-u32}
+
+`method rhi::dx12::GpuDescriptorRing::Reset` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+void Reset(u32 slot);
+```
+
+Empties a slot's region.
+
+| Field | Value |
+|---|---|
+| Parameter `slot` | the frame slot. |
+
+### `Used(u32)` {#rhi-dx12-gpudescriptorring-used-u32-const}
+
+`method rhi::dx12::GpuDescriptorRing::Used` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+u32 Used(u32 slot) const;
+```
+
+Returns how many descriptors of a slot are used.
+
+### `PerSlot()` {#rhi-dx12-gpudescriptorring-perslot-const}
+
+`method rhi::dx12::GpuDescriptorRing::PerSlot` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+u32 PerSlot() const;
+```
+
+Returns the descriptors per slot.
+
+### `Heap()` {#rhi-dx12-gpudescriptorring-heap-const}
+
+`method rhi::dx12::GpuDescriptorRing::Heap` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+ID3D12DescriptorHeap* Heap() const;
+```
+
+Returns the heap. Ownership: borrowed.
+
+### `Shutdown()` {#rhi-dx12-gpudescriptorring-shutdown}
+
+`method rhi::dx12::GpuDescriptorRing::Shutdown` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+void Shutdown();
+```
+
+Releases the heap.
+
+## `GpuDescriptorTables` {#rhi-dx12-gpudescriptortables}
+
+`class rhi::dx12::GpuDescriptorTables` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+class GpuDescriptorTables { ... }
+```
+
+Persistent ranges of the shader-visible sampler heap (2048 descriptors at most, D3D12's limit), first fit with coalescing on free: a bind group's samplers are copied once at creation, and groups with the same samplers share a table (Phase 13 Day 166).
+
+| Field | Value |
+|---|---|
+| Thread-safety | not-thread-safe; the device calls it under its resource lock. |
+| Ownership | owns the heap. |
+
+### `kCapacity` {#rhi-dx12-gpudescriptortables-kcapacity}
+
+`variable rhi::dx12::GpuDescriptorTables::kCapacity` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+static constexpr u32 kCapacity;
+```
+
+The size of the shader-visible sampler heap.
+
+### `Initialize(ID3D12Device*)` {#rhi-dx12-gpudescriptortables-initialize-id3d12device-star}
+
+`method rhi::dx12::GpuDescriptorTables::Initialize` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+bool Initialize(ID3D12Device* device);
+```
+
+Creates the heap.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the device. |
+| Returns | true on success. |
+| Fails | false if the heap cannot be created. |
+
+### `Allocate(u32,u32*)` {#rhi-dx12-gpudescriptortables-allocate-u32-u32-star}
+
+`method rhi::dx12::GpuDescriptorTables::Allocate` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+bool Allocate(u32 count, u32* offset);
+```
+
+Takes a range of `count` descriptors.
+
+| Field | Value |
+|---|---|
+| Parameter `count` | descriptors wanted. |
+| Parameter `offset` | receives the first descriptor's index. |
+| Returns | true on success. |
+| Fails | false when no free range is large enough. |
+
+### `Free(u32,u32)` {#rhi-dx12-gpudescriptortables-free-u32-u32}
+
+`method rhi::dx12::GpuDescriptorTables::Free` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+void Free(u32 offset, u32 count);
+```
+
+Gives a range back.
+
+| Field | Value |
+|---|---|
+| Parameter `offset` | from `Allocate`. |
+| Parameter `count` | the count it was asked for. |
+
+### `Cpu(u32)` {#rhi-dx12-gpudescriptortables-cpu-u32-const}
+
+`method rhi::dx12::GpuDescriptorTables::Cpu` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+D3D12_CPU_DESCRIPTOR_HANDLE Cpu(u32 offset) const;
+```
+
+Returns the CPU handle of a descriptor.
+
+### `Gpu(u32)` {#rhi-dx12-gpudescriptortables-gpu-u32-const}
+
+`method rhi::dx12::GpuDescriptorTables::Gpu` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+D3D12_GPU_DESCRIPTOR_HANDLE Gpu(u32 offset) const;
+```
+
+Returns the GPU handle of a descriptor.
+
+### `FreeCount()` {#rhi-dx12-gpudescriptortables-freecount-const}
+
+`method rhi::dx12::GpuDescriptorTables::FreeCount` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+u32 FreeCount() const;
+```
+
+Returns how many descriptors are free.
+
+### `Heap()` {#rhi-dx12-gpudescriptortables-heap-const}
+
+`method rhi::dx12::GpuDescriptorTables::Heap` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+ID3D12DescriptorHeap* Heap() const;
+```
+
+Returns the heap. Ownership: borrowed.
+
+### `Shutdown()` {#rhi-dx12-gpudescriptortables-shutdown}
+
+`method rhi::dx12::GpuDescriptorTables::Shutdown` — defined in `engine/rhi/dx12/dx12_descriptor_heap.h`
+
+```cpp
+void Shutdown();
+```
+
+Releases the heap.
+
 ## `Dx12DevicePtr` {#rhi-dx12-dx12deviceptr}
 
 `alias rhi::dx12::Dx12DevicePtr` — defined in `engine/rhi/dx12/dx12_device.h`
@@ -798,6 +1119,26 @@ static constexpr u32 kWaitSliceMs;
 ```
 
 How long one slice of a GPU wait lasts before the device-removed check, in milliseconds.
+
+### `kFrameSlots` {#rhi-dx12-dx12device-kframeslots}
+
+`variable rhi::dx12::Dx12Device::kFrameSlots` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+static constexpr u32 kFrameSlots;
+```
+
+How many frame slots the per-frame resources rotate through (the shader-visible view ring, transient bind groups); a slot is reused only after the frame that last used it has finished.
+
+### `kViewsPerFrame` {#rhi-dx12-dx12device-kviewsperframe}
+
+`variable rhi::dx12::Dx12Device::kViewsPerFrame` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+static constexpr u32 kViewsPerFrame;
+```
+
+Descriptors in one frame slot of the shader-visible view ring.
 
 ### `~Dx12Device()` {#rhi-dx12-dx12device-tilde-dx12device}
 
@@ -1641,6 +1982,266 @@ Records the state a texture is in after work just submitted.
 | Parameter `texture` | a live texture; an unknown handle is ignored. |
 | Parameter `state` | the state. |
 | Thread-safety | thread-safe. |
+
+### `BindGroupInfo` {#rhi-dx12-dx12device-bindgroupinfo}
+
+`struct rhi::dx12::Dx12Device::BindGroupInfo` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+struct BindGroupInfo { ... }
+```
+
+What command recording needs to know about a live bind group.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data (a snapshot). |
+| Ownership | the descriptors are borrowed; valid until the group is destroyed (persistent) or its frame has finished (transient). |
+
+#### `views` {#rhi-dx12-dx12device-bindgroupinfo-views}
+
+`variable rhi::dx12::Dx12Device::BindGroupInfo::views` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+D3D12_CPU_DESCRIPTOR_HANDLE views;
+```
+
+The group's CBV/SRV/UAV descriptors, contiguous in a CPU heap; copied into the frame's ring at `SetBindGroup`.
+
+#### `view_count` {#rhi-dx12-dx12device-bindgroupinfo-view-count}
+
+`variable rhi::dx12::Dx12Device::BindGroupInfo::view_count` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+u32 view_count;
+```
+
+How many there are (0: the group has no views).
+
+#### `samplers` {#rhi-dx12-dx12device-bindgroupinfo-samplers}
+
+`variable rhi::dx12::Dx12Device::BindGroupInfo::samplers` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+D3D12_GPU_DESCRIPTOR_HANDLE samplers;
+```
+
+The group's sampler table in the shader-visible sampler heap; `ptr` 0 without samplers.
+
+#### `sampler_count` {#rhi-dx12-dx12device-bindgroupinfo-sampler-count}
+
+`variable rhi::dx12::Dx12Device::BindGroupInfo::sampler_count` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+u32 sampler_count;
+```
+
+How many samplers.
+
+#### `layout_id` {#rhi-dx12-dx12device-bindgroupinfo-layout-id}
+
+`variable rhi::dx12::Dx12Device::BindGroupInfo::layout_id` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+u64 layout_id;
+```
+
+Identity of the group's layout; equal ids mean equal layouts.
+
+#### `transient` {#rhi-dx12-dx12device-bindgroupinfo-transient}
+
+`variable rhi::dx12::Dx12Device::BindGroupInfo::transient` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+bool transient;
+```
+
+True for a transient group.
+
+#### `frame` {#rhi-dx12-dx12device-bindgroupinfo-frame}
+
+`variable rhi::dx12::Dx12Device::BindGroupInfo::frame` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+u64 frame;
+```
+
+For a transient group, the frame it was created in.
+
+#### `resources_live` {#rhi-dx12-dx12device-bindgroupinfo-resources-live}
+
+`variable rhi::dx12::Dx12Device::BindGroupInfo::resources_live` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+bool resources_live;
+```
+
+False if a resource the group was built from has since been destroyed.
+
+### `LookupBindGroup(BindGroupHandle,BindGroupInfo*)` {#rhi-dx12-dx12device-lookupbindgroup-bindgrouphandle-bindgroupinfo-star-const}
+
+`method rhi::dx12::Dx12Device::LookupBindGroup` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+bool LookupBindGroup(BindGroupHandle group, BindGroupInfo* out) const;
+```
+
+Looks up a bind group and checks that the resources it refers to are still alive.
+
+| Field | Value |
+|---|---|
+| Parameter `group` | the handle. |
+| Parameter `out` | receives the snapshot. |
+| Returns | true if the handle is live. |
+| Fails | false for an invalid or stale handle. |
+| Thread-safety | thread-safe. |
+
+### `RootLayout` {#rhi-dx12-dx12device-rootlayout}
+
+`struct rhi::dx12::Dx12Device::RootLayout` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+struct RootLayout { ... }
+```
+
+A root signature and where each bind group and the push constants sit in it.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+| Ownership | `signature` is borrowed; the device keeps every root signature it made until it is destroyed. |
+
+#### `signature` {#rhi-dx12-dx12device-rootlayout-signature}
+
+`variable rhi::dx12::Dx12Device::RootLayout::signature` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+ID3D12RootSignature* signature;
+```
+
+The root signature.
+
+#### `view_param` {#rhi-dx12-dx12device-rootlayout-view-param}
+
+`variable rhi::dx12::Dx12Device::RootLayout::view_param` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+i32 view_param[kMaxBindGroups];
+```
+
+Per bind group slot: the root parameter of its CBV/SRV/UAV table, or -1 when it has no views.
+
+#### `sampler_param` {#rhi-dx12-dx12device-rootlayout-sampler-param}
+
+`variable rhi::dx12::Dx12Device::RootLayout::sampler_param` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+i32 sampler_param[kMaxBindGroups];
+```
+
+Per bind group slot: the root parameter of its sampler table, or -1 when it has no samplers.
+
+#### `push_param` {#rhi-dx12-dx12device-rootlayout-push-param}
+
+`variable rhi::dx12::Dx12Device::RootLayout::push_param` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+i32 push_param;
+```
+
+The root parameter of the push constants, or -1.
+
+#### `push_values` {#rhi-dx12-dx12device-rootlayout-push-values}
+
+`variable rhi::dx12::Dx12Device::RootLayout::push_values` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+u32 push_values;
+```
+
+The push constants' size in 32-bit values.
+
+#### `layout_ids` {#rhi-dx12-dx12device-rootlayout-layout-ids}
+
+`variable rhi::dx12::Dx12Device::RootLayout::layout_ids` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+u64 layout_ids[kMaxBindGroups];
+```
+
+The layouts' identities, in slot order.
+
+#### `layout_count` {#rhi-dx12-dx12device-rootlayout-layout-count}
+
+`variable rhi::dx12::Dx12Device::RootLayout::layout_count` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+u32 layout_count;
+```
+
+How many layouts.
+
+### `RootSignatureFor(const BindGroupLayoutHandle*,u32,u32,ShaderStage,bool,RootLayout*)` {#rhi-dx12-dx12device-rootsignaturefor-const-bindgrouplayouthandle-star-u32-u32-shaderstage-bool-rootlayout-star}
+
+`method rhi::dx12::Dx12Device::RootSignatureFor` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+bool RootSignatureFor(const BindGroupLayoutHandle* layouts, u32 count, u32 push_bytes, ShaderStage push_stages, bool compute, RootLayout* out);
+```
+
+Finds or makes the root signature of a pipeline layout (the design spec's section 5): one CBV/SRV/UAV table and one sampler table per bind group, registers `b`/`t`/`u`/`s` numbered as the bindings in `space<slot>`, and the push constants as root constants at `b0, space15`. Serialized as root signature 1.1 and cached by the layouts' identities and the push range.
+
+| Field | Value |
+|---|---|
+| Parameter `layouts` | the bind group layouts, in slot order; each live. |
+| Parameter `count` | how many, at most [`rhi::kMaxBindGroups`](rhi.md#rhi-kmaxbindgroups). |
+| Parameter `push_bytes` | the push-constant range, at most [`rhi::kMaxPushConstantBytes`](rhi.md#rhi-kmaxpushconstantbytes). |
+| Parameter `push_stages` | the stages that see it. |
+| Parameter `compute` | true for a compute pipeline (every parameter visible to all stages; no input layout). |
+| Parameter `out` | receives the layout. |
+| Returns | true on success. |
+| Fails | false, logging the reason, for a stale layout handle or a root signature D3D12 rejects. |
+| Thread-safety | thread-safe. |
+
+### `ViewRing()` {#rhi-dx12-dx12device-viewring}
+
+`method rhi::dx12::Dx12Device::ViewRing` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+GpuDescriptorRing& ViewRing();
+```
+
+Returns the shader-visible view ring. Ownership: borrowed.
+
+### `SamplerHeap()` {#rhi-dx12-dx12device-samplerheap-const}
+
+`method rhi::dx12::Dx12Device::SamplerHeap` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+ID3D12DescriptorHeap* SamplerHeap() const;
+```
+
+Returns the shader-visible sampler heap. Ownership: borrowed.
+
+### `FreeSamplerDescriptors()` {#rhi-dx12-dx12device-freesamplerdescriptors-const}
+
+`method rhi::dx12::Dx12Device::FreeSamplerDescriptors` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+u32 FreeSamplerDescriptors() const;
+```
+
+Returns how many sampler descriptors of the shader-visible heap are free, for tests.
+
+### `RootSignatureCount()` {#rhi-dx12-dx12device-rootsignaturecount-const}
+
+`method rhi::dx12::Dx12Device::RootSignatureCount` — defined in `engine/rhi/dx12/dx12_device.h`
+
+```cpp
+usize RootSignatureCount() const;
+```
+
+Returns how many root signatures the device holds, for tests of the cache.
 
 ### `LeakCounts` {#rhi-dx12-dx12device-leakcounts}
 

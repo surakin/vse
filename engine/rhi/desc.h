@@ -245,6 +245,10 @@ struct BindingDesc {
     ShaderStage stages = ShaderStage::None;
     /// Array size; 1 for a non-array binding.
     u32 count = 1;
+    /// For a `StorageBuffer` or `ReadOnlyStorageBuffer` binding: the size in bytes of one element as the shader declares it
+    /// (`StructuredBuffer<T>`: `sizeof(T)` in the buffer's std430 layout), at most 2048. Direct3D 12 makes a structured view with it, so
+    /// a bound range starts on a multiple of it; Vulkan ignores it. 0 for every other type. Phase 13 Day 166.
+    u32 stride = 0;
 };
 
 /// Describes a bind group layout: the shape of a set of resource bindings.
