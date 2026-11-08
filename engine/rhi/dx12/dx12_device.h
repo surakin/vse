@@ -3,6 +3,7 @@
 #include <atomic>
 #include <mutex>
 
+#include "containers/shared_ptr.h"
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
 #include "rhi/device.h"
@@ -266,6 +267,9 @@ public:
         u64 layout_ids[kMaxBindGroups] = {};
         /// How many layouts.
         u32 layout_count = 0;
+        /// FNV-1a hash of the serialized root signature: stable across runs, unlike the layout identities, so the pipeline cache keys
+        /// on it.
+        u64 content_hash = 0;
     };
     /// Finds or makes the root signature of a pipeline layout (the design spec's section 5): one CBV/SRV/UAV table and one sampler
     /// table per bind group, registers `b`/`t`/`u`/`s` numbered as the bindings in `space<slot>`, and the push constants as root
@@ -281,6 +285,73 @@ public:
     /// Fails: false, logging the reason, for a stale layout handle or a root signature D3D12 rejects.
     /// Thread-safety: thread-safe.
     bool RootSignatureFor(const BindGroupLayoutHandle* layouts, u32 count, u32 push_bytes, ShaderStage push_stages, bool compute, RootLayout* out);
+
+    /// What command recording needs to know about a live pipeline (Day 168 records with it).
+    ///
+    /// Thread-safety: thread-compatible plain data (a snapshot).
+    /// Ownership: the D3D12 objects are borrowed; valid until the pipeline is destroyed and its frame has finished.
+    struct PipelineInfo {
+        /// The pipeline state.
+        ID3D12PipelineState* state = nullptr;
+        /// For a strip with primitive restart: the state that cuts at 0xFFFF, for 16-bit indices (`state` cuts at 0xFFFFFFFF); else null.
+        ID3D12PipelineState* state_cut16 = nullptr;
+        /// The root signature and where each group and the push constants sit in it.
+        RootLayout root;
+        /// True for a compute pipeline.
+        bool compute = false;
+        /// The primitive topology for `IASetPrimitiveTopology`.
+        D3D_PRIMITIVE_TOPOLOGY topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        /// Each vertex buffer slot's stride, for `IASetVertexBuffers`.
+        u32 vertex_strides[kMaxVertexBindings] = {};
+        /// How many vertex buffer slots.
+        u32 vertex_binding_count = 0;
+        /// The render target formats, in order.
+        Format color_formats[kMaxColorAttachments] = {};
+        /// How many render targets.
+        u32 color_count = 0;
+        /// The depth format, or `Undefined`.
+        Format depth_format = Format::Undefined;
+        /// The push constant range in bytes.
+        u32 push_bytes = 0;
+    };
+    /// Looks up a pipeline.
+    ///
+    /// Param pipeline: the handle.
+    /// Param out: receives the snapshot.
+    /// Returns: true if the handle is live.
+    /// Fails: false for an invalid or stale handle.
+    /// Thread-safety: thread-safe.
+    bool LookupPipeline(PipelineHandle pipeline, PipelineInfo* out) const;
+
+    /// What the on-disk pipeline cache (an `ID3D12PipelineLibrary`) did for this device.
+    ///
+    /// Thread-safety: thread-compatible plain data (a snapshot).
+    struct PipelineCacheStats {
+        /// Whether a cache is in use (not when disabled, without a directory, or when D3D12 cannot make a library).
+        bool enabled = false;
+        /// Bytes of the file the library was loaded from; 0 if there was none or it was ignored.
+        u64 loaded_bytes = 0;
+        /// True if a file existed but was ignored (damaged, or for another adapter or driver).
+        bool rejected = false;
+        /// Pipeline states found in the library (a strip with primitive restart has two states).
+        u32 hits = 0;
+        /// Pipeline states compiled because the library did not have them.
+        u32 misses = 0;
+        /// Bytes written by the last save; 0 until a save.
+        u64 saved_bytes = 0;
+    };
+    /// Returns what the pipeline cache did so far.
+    ///
+    /// Thread-safety: thread-safe.
+    PipelineCacheStats PipelineCache() const;
+    /// Writes the pipeline cache to disk now, as the destructor does, if it holds pipelines the file does not.
+    ///
+    /// Returns: true if a file was written.
+    /// Fails: false when the cache is disabled, unchanged since it was loaded or saved, or cannot be written (logged).
+    /// Thread-safety: thread-safe.
+    bool SavePipelineCache();
+    /// Returns the pipeline cache file's path, or an empty string when no cache is in use.
+    const char* PipelineCachePath() const { return cache_path_; }
 
     /// Returns the shader-visible view ring. Ownership: borrowed.
     GpuDescriptorRing& ViewRing() { return view_ring_; }
@@ -413,6 +484,38 @@ private:
     void RetireFrameGroupsLocked(u32 slot);
     u32 AcquireSamplerTableLocked(const u64* keys, const usize* sources, u32 count);
     void ReleaseSamplerTableLocked(u32 index);
+
+    // ---- shaders, pipelines and the pipeline cache (dx12_device_pipelines.cpp) ----
+    struct ShaderCode {
+        Vector<byte> bytes; // a copy of the DXIL container
+    };
+    struct ShaderRes {
+        SharedPtr<ShaderCode> code; // shared with pipeline creation in progress, so it compiles outside the lock
+        ShaderStage stage = ShaderStage::None;
+        u64 hash = 0;               // FNV-1a of the bytes, part of a pipeline's cache key
+    };
+    struct PipelineRes {
+        ComRef<ID3D12PipelineState> state;
+        ComRef<ID3D12PipelineState> state_cut16;
+        PipelineInfo info;
+    };
+    void InitializePipelineCache(const DeviceCreateInfo& info);
+    void ShutdownPipelines();
+    // Load the pipeline stored under `key` from the library, else create it and store it there.
+    ComRef<ID3D12PipelineState> CachedGraphicsState(u64 key, const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc, const char* name);
+    ComRef<ID3D12PipelineState> CachedComputeState(u64 key, const D3D12_COMPUTE_PIPELINE_STATE_DESC& desc, const char* name);
+    void StoreInLibrary(u64 key, ID3D12PipelineState* state);
+    PipelineHandle AddPipeline(PipelineRes&& res, const char* what);
+
+    HandlePool<ShaderRes, ShaderTag> shaders_;
+    HandlePool<PipelineRes, PipelineTag> pipelines_;
+    ComRef<ID3D12PipelineLibrary> library_; // under library_mutex_
+    Vector<byte> library_file_;             // the file the library was made from: D3D12 reads it for the library's life
+    bool library_dirty_ = false;            // pipelines stored since the last load or save
+    Vector<u64> library_keys_;              // sorted: the pipelines the library holds (asking for another one makes the debug layer warn)
+    char cache_path_[512] = {};
+    PipelineCacheStats cache_stats_;        // under library_mutex_
+    mutable std::mutex library_mutex_;
 
     HandlePool<SamplerRes, SamplerTag> samplers_;
     HandlePool<BindGroupLayoutRes, BindGroupLayoutTag> bind_group_layouts_;

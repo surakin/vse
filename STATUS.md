@@ -913,3 +913,12 @@ moved to them (the sanitizer detection blocks in 11 tests collapsed to one line 
 generated code); CLAUDE.md, ARCHITECTURE.md and `docs/guide/foundation-types.md` say so; `tests/foundation/build_defs_test.cpp` (phase 0) holds the one-of-each-family rule. Also fixed a non-unity
 `-Wunused-const-variable` in `vulkan_device_bindings.cpp`. Not reviewed with `/code-review` (a mechanical rename, no plan day). Windows (cl, clang-cl) not built: the Windows machine must build once.
 `scripts/test-phase.sh --affected`: ran 1398 of 3582 tests (phases: all; flavors: plain; display: included; crash tests: excluded), asan ran 989 of 3582, tsan ran 701 of 3582 (before the macOS-detection edit; plain and asan after), no failures.
+
+Phase 13 **Day 167 (2026-11-08, Windows PC): DX12 pipelines and the pipeline cache.** Shaders keep a shared copy of their DXIL (SPIR-V refused
+by name); graphics pipelines from the RHI state (`TEXCOORD<location>` inputs, the front face unchanged under the Y flip, alpha-blend factors
+mapped, two states for a restart strip) and compute pipelines, all through the root signatures of Day 166. The cache is an
+`ID3D12PipelineLibrary` per adapter and driver, with a checked header and the list of stored names, and the directory rule every backend now
+shares (`rhi/pipeline_cache_file.h`, moved out of the Vulkan backend). Every committed shader forms a pipeline with the layouts its reflection
+gives; damaged, truncated and foreign cache files are discarded. Measured: 33 pipelines 12.2 ms cold, 10.7 ms warm (the driver's cache is warm
+in both). Runs: `ran 1246 of 2436 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 925 of 2436`. Review: 6 findings, 3 fixed, 3 declined. Linux: pending until the
+phase close. **Next: Day 168 (DX12 command lists, barriers, first images).**

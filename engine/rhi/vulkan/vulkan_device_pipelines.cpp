@@ -7,6 +7,7 @@
 #include "io/file.h"
 #include "io/file_system.h"
 #include "log/assert.h"
+#include "rhi/pipeline_cache_file.h"
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_format.h"
 #include "rhi/vulkan/vk_pipeline_policy.h"
@@ -29,28 +30,6 @@ bool SameBindings(const BindingDesc* a, u32 a_count, const BindingDesc* b, u32 b
     return true;
 }
 
-// Reads a whole cache file into `out`; false if it does not exist, is not a regular file (a directory or a pipe must not stall
-// start-up), is empty or too large, or cannot be read.
-bool ReadCacheFile(const char* path, Vector<byte>* out) {
-    io::Path file_path;
-    io::FileInfo info;
-    if (!io::Path::Parse(StringView(path), io::NativePathStyle(), &file_path) || io::Stat(file_path, &info).Failed() ||
-        info.type != io::FileType::Regular || info.size == 0 || info.size > (u64{256} << 20)) {
-        return false;
-    }
-    return io::ReadFile(file_path, out, u64{256} << 20).Ok();
-}
-
-// Creates the cache directory and writes the file whole, atomically: a reader sees the old cache or the new one.
-bool SaveCacheFile(const char* path, const void* data, usize size) {
-    io::Path file_path;
-    if (!io::Path::Parse(StringView(path), io::NativePathStyle(), &file_path)) {
-        return false;
-    }
-    const io::Path dir = file_path.Parent();
-    return (dir.IsEmpty() || io::CreateDirectories(dir).Ok()) && io::WriteFileAtomic(file_path, data, size, 0644).Ok(); // readable by others, as a cache shared through ENGINE_RHI_CACHE_DIR was before
-}
-
 } // namespace
 
 // ---- pipeline cache ----
@@ -66,18 +45,10 @@ void VulkanDevice::InitializePipelineCache(const DeviceCreateInfo& info) {
     if (info.pipeline_cache) {
         // An explicit directory, then ENGINE_RHI_CACHE_DIR, then the user's cache directory for the application.
         char dir[400];
-        const PipelineCacheDirChoice choice = ChoosePipelineCacheDir(info.pipeline_cache_dir, std::getenv("ENGINE_RHI_CACHE_DIR"), dir, sizeof(dir));
-        bool have_dir = choice == PipelineCacheDirChoice::Chosen;
-        if (choice == PipelineCacheDirChoice::NotConfigured) {
-            char app[200];
-            io::Path user_cache;
-            const io::Status s = SanitizePipelineCacheAppName(info.application_name, app, sizeof(app)) ? io::UserCacheDirectory(StringView(app), &user_cache)
-                                                                                                    : io::Status::Of(io::Error::Invalid);
-            have_dir = s.Ok() && user_cache.ToNative(dir, sizeof(dir));
-        }
+        const bool have_dir = ResolvePipelineCacheDir(info, dir, sizeof(dir));
         if (have_dir && BuildPipelineCachePath(dir, identity, cache_path_, sizeof(cache_path_))) {
             cache_stats_.enabled = true;
-            ReadCacheFile(cache_path_, &blob);
+            ReadPipelineCacheFile(cache_path_, &blob);
             if (blob.Size() != 0) {
                 const char* why = CheckPipelineCacheHeader(blob.Data(), blob.Size(), identity);
                 if (why != nullptr) {
@@ -140,7 +111,7 @@ bool VulkanDevice::SavePipelineCache() {
     }
     bool saved = false;
     if (fns_.GetPipelineCacheData(device_, pipeline_cache_, &size, data.Data()) == VK_SUCCESS) {
-        if (SaveCacheFile(cache_path_, data.Data(), size)) {
+        if (WritePipelineCacheFile(cache_path_, data.Data(), size)) {
             std::lock_guard<std::mutex> lock(resource_mutex_);
             cache_stats_.saved_bytes = size;
             saved = true;

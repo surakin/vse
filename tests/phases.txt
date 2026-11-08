@@ -219,9 +219,11 @@ test:module_deps_check*                         12
 
 # --- Phase 13: Windows port (testopt: these tests exist only in the Windows build) ---
 tests/rhi/backend_registry_test.cpp             13
+tests/rhi/pipeline_cache_file_test.cpp           13
 tests/renderer/shader_dxil_test.cpp             13
 tests/rhi/dx12_device_test.cpp                  13
 tests/rhi/dx12_resource_test.cpp                13
 tests/rhi/dx12_bindings_test.cpp                13
+tests/rhi/dx12_pipeline_test.cpp                13
 tests/windows/                                  13
 testopt:windows_*                               13

@@ -10,6 +10,7 @@
 
 #include "log/assert.h"
 #include "rhi/dx12/dx12_device.h"
+#include "rhi/dx12/dx12_pipeline_cache.h"
 #include "rhi/dx12/dx12_result.h"
 #include "rhi/rhi_log.h"
 
@@ -638,6 +639,7 @@ bool Dx12Device::RootSignatureFor(const BindGroupLayoutHandle* layouts, u32 coun
         return false;
     }
     layout.signature = entry.signature.Get();
+    layout.content_hash = Fnv1a(blob->GetBufferPointer(), blob->GetBufferSize());
     entry.layout = layout;
     entry.push_bytes = push_bytes;
     entry.push_stages = push_stages;

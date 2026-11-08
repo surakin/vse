@@ -18,7 +18,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Platform: Windowing and Input](platform-window-input.md) | 13 | 301 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 208 |
 | [The Job System](jobs.md) | 11 | 190 |
-| [The Render Hardware Interface](rhi.md) | 20 | 783 |
+| [The Render Hardware Interface](rhi.md) | 21 | 792 |
 | [The renderer](renderer.md) | 20 | 1004 |
-| [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 446 |
-| [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 9 | 196 |
+| [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 440 |
+| [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 10 | 235 |

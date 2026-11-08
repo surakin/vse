@@ -196,13 +196,18 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   `rhi/staging_ring.*` (namespace `rhi`) and was built and tested only on Windows.
 - Phase 13 Day 165, measured, deferred: creating 1000 256-byte buffers as D3D12 committed resources takes 311 ms on the Radeon 860M against 22 ms
   through the Vulkan backend's sub-allocator. Placed resources or a sub-allocator (design spec decision 10) wait for a measurement that matters.
+- Phase 13 Day 167 (2026-11-08), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 167 file, "For the
+  Linux run") were built and tested only on Windows, among them the pipeline cache file rules moved from `rhi/vulkan/` into
+  `rhi/pipeline_cache_file.h` and the new cross-platform `tests/rhi/pipeline_cache_file_test.cpp`.
+- Phase 13 Day 167, measurement not taken: DX12 pipeline creation with the driver's own shader cache empty (a first-ever compile). With it
+  warm, the 33 pipelines of the committed shaders took 12.2 ms with an empty pipeline library and 10.7 ms from it (Radeon 860M).
 - Phase 13 Day 166 (2026-11-08), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 166 file, "For the
   Linux run") were built and tested only on Windows, among them `BindingDesc::stride`, reflection version 2 and every re-minted `*.refl.inc` and
   `*.perm.inc` (minted by the Windows `slangc` 2026.18.2; whether the Linux one mints them byte-identical is not checked).
 - Phase 13 Days 165 and 166 (2026-11-08, Windows PC), flaky build: the non-unity tree's link of `renderer_tests` failed with
   `LNK1236: corrupt or invalid COFF sections` on `rhi_dx12.lib(dx12_device_later.cpp.obj)`, once on each day, both times in a `cmake --build` that ran
   right after another tree's build; deleting that object and building again fixed it. Not seen in the unity trees.
-- Phase 13 Day 164, until Day 169: the DX12 backend's pipelines, command lists and swapchain (descriptors since Day 166) are placeholders
+- Phase 13 Day 164, until Day 169: the DX12 backend's command lists and swapchain (descriptors since Day 166, pipelines since Day 167) are placeholders
   (`engine/rhi/dx12/dx12_device_later.cpp`) that log "not implemented yet" and fail; `Auto` never picks the backend, and the demos pin Vulkan.
 - Phase 13 Day 163: Windows command lines are quoted by three separate copies of the same rule: `os/windows/debug/death_test.cpp`
   (`AppendQuoted`), `tools/docgen/src/windows/child_process_windows.cpp` and `tools/shader_mint/run_process.cpp` (`AppendWindowsArgument`, the

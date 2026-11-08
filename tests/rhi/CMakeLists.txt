@@ -9,6 +9,7 @@ set(RHI_TEST_SOURCES
   null_device_test.cpp
   adapter_test.cpp
   backend_registry_test.cpp
+  pipeline_cache_file_test.cpp
   device_host_test.cpp
   swapchain_reconfigure_test.cpp
   vulkan_reset_golden_test.cpp
@@ -51,7 +52,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 # The Direct3D 12 backend's own tests (Phase 13, Days 164-172): Windows only, linked through rhi_backends (which links rhi_dx12).
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  list(APPEND RHI_TEST_SOURCES dx12_device_test.cpp dx12_resource_test.cpp dx12_bindings_test.cpp)
+  list(APPEND RHI_TEST_SOURCES dx12_device_test.cpp dx12_resource_test.cpp dx12_bindings_test.cpp dx12_pipeline_test.cpp)
 endif()
 
 # Header self-containment: one generated translation unit per public RHI

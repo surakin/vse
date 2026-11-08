@@ -29,7 +29,7 @@ struct Silence {
     }
 };
 
-Dx12DevicePtr MakeDevice(ValidationSetting validation = ValidationSetting::On) {
+Dx12DevicePtr MakeResourceDevice(ValidationSetting validation = ValidationSetting::On) {
     DeviceCreateInfo info;
     info.backend = Backend::Dx12;
     info.application_name = "dx12-resource-test";
@@ -121,7 +121,7 @@ TEST_CASE("Every RHI format has a DXGI format, sRGB pairs map to sRGB, and depth
 }
 
 TEST_CASE("DX12 buffers on every heap round-trip their data, including uploads larger than a staging chunk", "[rhi][dx12][gpu]") {
-    Dx12DevicePtr device = MakeDevice();
+    Dx12DevicePtr device = MakeResourceDevice();
     REQUIRE(device);
     Silence silence;
     {
@@ -192,7 +192,7 @@ TEST_CASE("DX12 buffers on every heap round-trip their data, including uploads l
 }
 
 TEST_CASE("DX12 textures round-trip every format at odd sizes, with mips, layers and volumes", "[rhi][dx12][gpu]") {
-    Dx12DevicePtr device = MakeDevice();
+    Dx12DevicePtr device = MakeResourceDevice();
     REQUIRE(device);
     Silence silence;
     const Format formats[] = {Format::R8_UNorm,     Format::RG8_UNorm,   Format::RGBA8_UNorm, Format::RGBA8_SRGB,  Format::BGRA8_UNorm,
@@ -222,7 +222,7 @@ TEST_CASE("DX12 textures round-trip every format at odd sizes, with mips, layers
 }
 
 TEST_CASE("A sampled DX12 depth texture is typeless with a typed depth view and a shader view", "[rhi][dx12][gpu]") {
-    Dx12DevicePtr device = MakeDevice();
+    Dx12DevicePtr device = MakeResourceDevice();
     REQUIRE(device);
     Silence silence;
     TextureDesc td;
@@ -261,7 +261,7 @@ TEST_CASE("A sampled DX12 depth texture is typeless with a typed depth view and 
 }
 
 TEST_CASE("DX12 counts its buffers, textures and memory, and destroyed resources leave after their frame", "[rhi][dx12][gpu]") {
-    Dx12DevicePtr device = MakeDevice();
+    Dx12DevicePtr device = MakeResourceDevice();
     REQUIRE(device);
     Silence silence;
     device->Quiesce();
@@ -312,7 +312,7 @@ TEST_CASE("Creating 1000 small buffers as committed resources: DX12 against Vulk
         device.WaitIdle();
         return static_cast<f64>(ns) / 1.0e6;
     };
-    Dx12DevicePtr dx12 = MakeDevice(ValidationSetting::Off);
+    Dx12DevicePtr dx12 = MakeResourceDevice(ValidationSetting::Off);
     REQUIRE(dx12);
     const f64 dx12_ms = measure(*dx12);
     dx12.Reset();

@@ -3033,62 +3033,6 @@ Builds the cache file path `<dir>/pipeline_cache_<vendor>_<device>_<uuid>.bin`.
 | Fails | returns false and leaves `out` empty if the path would not fit. |
 | Thread-safety | thread-safe. A pure function. |
 
-## `PipelineCacheDirChoice` {#rhi-vulkan-pipelinecachedirchoice}
-
-`enum rhi::vulkan::PipelineCacheDirChoice` — defined in `engine/rhi/vulkan/vk_pipeline_policy.h`
-
-```cpp
-enum class PipelineCacheDirChoice : u8 { ... }
-```
-
-The outcome of [`rhi::vulkan::ChoosePipelineCacheDir`](#rhi-vulkan-choosepipelinecachedir-const-char-star-const-char-star-char-star-usize).
-
-| Enumerator | Value | Description |
-|---|---|---|
-| <a id="rhi-vulkan-pipelinecachedirchoice-notconfigured"></a>`NotConfigured` |  | Neither source is set: the caller uses the user's cache directory. |
-| <a id="rhi-vulkan-pipelinecachedirchoice-chosen"></a>`Chosen` |  | A directory was chosen and copied to the output. |
-| <a id="rhi-vulkan-pipelinecachedirchoice-toolong"></a>`TooLong` |  | A source is set but its directory does not fit: run without a cache (never fall back to another directory). |
-
-## `ChoosePipelineCacheDir(const char*,const char*,char*,usize)` {#rhi-vulkan-choosepipelinecachedir-const-char-star-const-char-star-char-star-usize}
-
-`function rhi::vulkan::ChoosePipelineCacheDir` — defined in `engine/rhi/vulkan/vk_pipeline_policy.h`
-
-```cpp
-PipelineCacheDirChoice ChoosePipelineCacheDir(const char* explicit_dir, const char* env_cache_dir, char* out, usize capacity);
-```
-
-Chooses the directory for the pipeline cache from the two explicit sources.
-
-In order: `explicit_dir` if non-empty, then `$ENGINE_RHI_CACHE_DIR`. When neither is set the caller uses the user's cache directory for the application ([`io::UserCacheDirectory`](foundation-io.md#io-usercachedirectory-stringview-path-star), with [`rhi::vulkan::SanitizePipelineCacheAppName`](#rhi-vulkan-sanitizepipelinecacheappname-const-char-star-char-star-usize)).
-
-| Field | Value |
-|---|---|
-| Parameter `explicit_dir` | a directory from the device descriptor, or null. |
-| Parameter `env_cache_dir` | value of `ENGINE_RHI_CACHE_DIR`, or null. |
-| Parameter `out` | receives the nul-terminated directory. |
-| Parameter `capacity` | size of `out` in bytes. |
-| Returns | which of the three outcomes happened. |
-| Thread-safety | thread-safe. A pure function; it does not read the environment itself. |
-
-## `SanitizePipelineCacheAppName(const char*,char*,usize)` {#rhi-vulkan-sanitizepipelinecacheappname-const-char-star-char-star-usize}
-
-`function rhi::vulkan::SanitizePipelineCacheAppName` — defined in `engine/rhi/vulkan/vk_pipeline_policy.h`
-
-```cpp
-bool SanitizePipelineCacheAppName(const char* app, char* out, usize capacity);
-```
-
-Turns an application name into one path component: slashes become underscores, a null or empty name becomes `engine`.
-
-| Field | Value |
-|---|---|
-| Parameter `app` | the application name, or null. |
-| Parameter `out` | receives the nul-terminated name. |
-| Parameter `capacity` | size of `out` in bytes. |
-| Returns | true if it fit. |
-| Fails | returns false, leaving `out` empty, if the name does not fit. |
-| Thread-safety | thread-safe. A pure function. |
-
 ## `VkResultClass` {#rhi-vulkan-vkresultclass}
 
 `enum rhi::vulkan::VkResultClass` — defined in `engine/rhi/vulkan/vk_result.h`

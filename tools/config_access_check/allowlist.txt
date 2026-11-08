@@ -13,7 +13,7 @@ engine/rhi/vulkan/vk_instance.cpp|The validation variables (ENGINE_RHI_VALIDATIO
 engine/rhi/dx12/dx12_device.cpp|ENGINE_RHI_VALIDATION and ENGINE_RHI_VALIDATION_SYNC are read at D3D12 device creation, the same process-wide switches as the Vulkan backend's (vk_instance.cpp); the debug layer is process-wide too.
 engine/rhi/vulkan/vk_loader.cpp|The Vulkan library path override is read while loading the loader, before a device or any Settings exists.
 engine/rhi/vulkan/vulkan_device.cpp|ENGINE_RHI_GPU is read when a device picks its adapter (the same value is renderer.adapter, which fills DeviceCreateInfo in programs that have Settings).
-engine/rhi/vulkan/vulkan_device_pipelines.cpp|ENGINE_RHI_CACHE_DIR is read when the pipeline cache is opened (the same value is rhi.pipeline_cache_dir, which fills DeviceCreateInfo in programs that have Settings).
+engine/rhi/pipeline_cache_file.cpp|ENGINE_RHI_CACHE_DIR is read when a backend opens its pipeline cache (the same value is rhi.pipeline_cache_dir, which fills DeviceCreateInfo in programs that have Settings).
 game/renderer_demo/main.cpp|The demo's launch-only options (--frames, --screenshot, --objects, --lights, --gbuffer, --script, --inject-*, ...) and RENDERER_DEMO_FRAMES: scene and test parameters, not settings; the settings options are handled by demo::DemoSettings.
 game/rhi_demo/main.cpp|The demo's launch-only options (--frames, --screenshot, --inject-*, --list-gpus) and RHI_DEMO_FRAMES: test parameters, not settings; the settings options are handled by demo::DemoSettings.
 game/renderer_bench/main.cpp|Benchmark parameters (--threads, --draws, --section, ...): not configuration of the engine.

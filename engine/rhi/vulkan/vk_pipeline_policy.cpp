@@ -181,40 +181,4 @@ bool BuildPipelineCachePath(const char* dir, const PipelineCacheIdentity& identi
     return ok;
 }
 
-PipelineCacheDirChoice ChoosePipelineCacheDir(const char* explicit_dir, const char* env_cache_dir, char* out, usize capacity) {
-    if (capacity != 0) {
-        out[0] = '\0';
-    }
-    auto set = [](const char* s) { return s != nullptr && s[0] != '\0'; };
-    const char* source = set(explicit_dir) ? explicit_dir : (set(env_cache_dir) ? env_cache_dir : nullptr);
-    if (source == nullptr) {
-        return PipelineCacheDirChoice::NotConfigured;
-    }
-    usize pos = 0;
-    if (capacity == 0 || !Append(out, capacity, &pos, source)) {
-        if (capacity != 0) {
-            out[0] = '\0';
-        }
-        return PipelineCacheDirChoice::TooLong;
-    }
-    out[pos] = '\0';
-    return PipelineCacheDirChoice::Chosen;
-}
-
-bool SanitizePipelineCacheAppName(const char* app, char* out, usize capacity) {
-    if (capacity == 0) {
-        return false;
-    }
-    out[0] = '\0';
-    const char* name = (app != nullptr && app[0] != '\0') ? app : "engine";
-    usize pos = 0;
-    bool ok = true;
-    for (; ok && *name != '\0'; ++name) {
-        const char one[2] = {*name == '/' ? '_' : *name, '\0'};
-        ok = Append(out, capacity, &pos, one);
-    }
-    out[ok ? pos : 0] = '\0';
-    return ok;
-}
-
 } // namespace engine_placeholder::rhi::vulkan

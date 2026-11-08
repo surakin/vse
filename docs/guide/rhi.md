@@ -678,7 +678,9 @@ application (`io::UserCacheDirectory`: `$XDG_CACHE_HOME/<application name>` or `
 directory that cannot be used (too long, a file, not writable) means no cache or a warning when saving; the device still works. All
 file and directory work goes through the file layer (`io::File`, `io::WriteFileAtomic`, `io::CreateDirectories`); see [io](io.md).
 Set `DeviceCreateInfo::pipeline_cache` to false to turn it off. The test
-runner points `ENGINE_RHI_CACHE_DIR` into the build tree so tests never write to your home directory.
+runner points `ENGINE_RHI_CACHE_DIR` into the build tree so tests never write to your home directory. The directory rule and the file
+reading and writing are shared by every backend ([[rhi::ResolvePipelineCacheDir]], `rhi/pipeline_cache_file.h`); what the file holds is
+each backend's own (the DX12 backend's is below).
 
 ### Binding resources
 
@@ -971,6 +973,21 @@ Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `
   and the shader-visible sampler heap holds 2048: a group's samplers are copied once into a table that every group with the same
   samplers in the same order shares. A uniform buffer view covers the bound range rounded up to 256 bytes; a writable storage buffer
   must be `GpuOnly`.
+- **Pipelines** (Day 167). A shader takes the minted DXIL (`ShaderBlobSet::For(Caps().shader_format)`; SPIR-V is refused with the shader's
+  name) and keeps a copy. Vertex inputs are `TEXCOORD<location>`, the convention every shader is minted with. The clip-space Y flip in the
+  D3D12 build puts every vertex where Vulkan puts it on the render target, so the winding there, and `front_face`, are the same as on
+  Vulkan. D3D12 refuses color factors in an alpha blend; on the alpha channel they mean their alpha counterparts, as Vulkan treats them.
+  A strip with `primitive_restart` gets two states, cutting at `0xFFFFFFFF` and at `0xFFFF`, because D3D12 fixes the cut value in the
+  pipeline and the index size comes with the draw.
+- **The pipeline cache** (Day 167) is an `ID3D12PipelineLibrary` in `<cache dir>/pipelines_<adapter id>_<driver>.bin` (the same
+  directory rule as Vulkan's). Each pipeline is stored under a name hashed from its shaders, its root signature's serialized bytes and
+  its whole fixed state. The file starts with a header (magic, format version, adapter and driver identity, size, hash) and the list of
+  stored names, and is checked before D3D12 reads any of it; a truncated, damaged or foreign file, or one the runtime refuses, is
+  ignored with a log line and the pipelines compile. It is written at destruction or by `Dx12Device::SavePipelineCache`, atomically,
+  and only when it gained pipelines. Measured on the Radeon 860M: the 33 pipelines of the committed shaders take 12 ms with an empty
+  library and 11 ms from it, because the driver keeps its own shader cache; a pipeline's own cached blob (`GetCachedBlob`) brought one
+  G-buffer pipeline from 0.10 to 0.06 ms. The library is kept for drivers or machines without that cache; first-ever compiles (with the
+  driver's cache empty) were not measured.
 
 ## What the RHI reports when something goes wrong
 

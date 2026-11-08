@@ -189,6 +189,7 @@ bool Dx12Device::Initialize(const DeviceCreateInfo& info) {
     if (!InitializeResources() || !InitializeBindings()) {
         return false;
     }
+    InitializePipelineCache(info); // running without a cache is not a failure
     RhiLog(LogVerbosity::Info, "D3D12: device on '%s' (%s), validation %s%s", adapter_.name, adapter_.id, validation_ ? "on" : "off",
            gpu_validation_ ? " with GPU-based validation" : "");
     return true;
@@ -233,6 +234,7 @@ Dx12Device::~Dx12Device() {
         g_leaked_user_objects.fetch_add(counts.UserObjects(), std::memory_order_relaxed);
         RhiLog(LogVerbosity::Warn, "D3D12: %zu application object(s) were still alive when the device was destroyed", counts.UserObjects());
     }
+    ShutdownPipelines();
     ShutdownBindings();
     ShutdownResources();
     fence_.Reset();
@@ -418,6 +420,10 @@ void Dx12Device::CollectRetiredLocked(bool all) {
         if (!t.external) ReleaseResourceBytes(t.bytes);
         t.resource.Reset();
     });
+    pipelines_.CollectRetired(completed, [](PipelineRes& p) {
+        p.state.Reset();
+        p.state_cut16.Reset();
+    });
     bind_groups_.CollectRetired(completed, [&](BindGroupRes& g) { ReleaseBindGroupLocked(g); });
     samplers_.CollectRetired(completed, [&](SamplerRes& s) { sampler_cpu_heap_.Free(s.cpu); });
     bind_group_layouts_.CollectRetired(completed, [](BindGroupLayoutRes&) {});
@@ -521,6 +527,8 @@ ResourceCounts Dx12Device::Resources() const {
         c.buffers = buffers_.LiveCount();
         c.textures = textures_.LiveCount();
         c.samplers = samplers_.LiveCount();
+        c.shaders = shaders_.LiveCount();
+        c.pipelines = pipelines_.LiveCount();
         c.bind_group_layouts = bind_group_layouts_.LiveCount();
         bind_groups_.ForEachLive([&](BindGroupHandle, const BindGroupRes& g) { c.bind_groups += g.transient ? 0 : 1; }); // transient groups end with their frame
     }

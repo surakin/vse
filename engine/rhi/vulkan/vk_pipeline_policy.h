@@ -98,34 +98,5 @@ const char* CheckPipelineCacheHeader(const void* data, usize size, const Pipelin
 /// Thread-safety: thread-safe. A pure function.
 bool BuildPipelineCachePath(const char* dir, const PipelineCacheIdentity& identity, char* out, usize capacity);
 
-/// The outcome of [[rhi::vulkan::ChoosePipelineCacheDir]].
-enum class PipelineCacheDirChoice : u8 {
-    NotConfigured, ///< Neither source is set: the caller uses the user's cache directory.
-    Chosen,        ///< A directory was chosen and copied to the output.
-    TooLong,       ///< A source is set but its directory does not fit: run without a cache (never fall back to another directory).
-};
-
-/// Chooses the directory for the pipeline cache from the two explicit sources.
-///
-/// In order: `explicit_dir` if non-empty, then `$ENGINE_RHI_CACHE_DIR`. When neither is set the caller uses the user's cache
-/// directory for the application ([[io::UserCacheDirectory]], with [[rhi::vulkan::SanitizePipelineCacheAppName]]).
-///
-/// Param explicit_dir: a directory from the device descriptor, or null.
-/// Param env_cache_dir: value of `ENGINE_RHI_CACHE_DIR`, or null.
-/// Param out: receives the nul-terminated directory.
-/// Param capacity: size of `out` in bytes.
-/// Returns: which of the three outcomes happened.
-/// Thread-safety: thread-safe. A pure function; it does not read the environment itself.
-PipelineCacheDirChoice ChoosePipelineCacheDir(const char* explicit_dir, const char* env_cache_dir, char* out, usize capacity);
-
-/// Turns an application name into one path component: slashes become underscores, a null or empty name becomes `engine`.
-///
-/// Param app: the application name, or null.
-/// Param out: receives the nul-terminated name.
-/// Param capacity: size of `out` in bytes.
-/// Returns: true if it fit.
-/// Fails: returns false, leaving `out` empty, if the name does not fit.
-/// Thread-safety: thread-safe. A pure function.
-bool SanitizePipelineCacheAppName(const char* app, char* out, usize capacity);
 
 } // namespace engine_placeholder::rhi::vulkan

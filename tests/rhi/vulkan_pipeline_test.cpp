@@ -17,6 +17,7 @@
 #include "gpu_fixture.h"
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
+#include "rhi/pipeline_cache_file.h"
 #include "rhi/vulkan/vk_pipeline_policy.h"
 #include "rhi/vulkan/vulkan_device.h"
 #include "triangle.frag.spv.inc"

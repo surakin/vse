@@ -147,9 +147,11 @@ backend registry (Day 162) replaces "CreateDevice(Backend)"; the object index is
 
 | Root parameter | Contents | Source |
 |---|---|---|
-| 0 .. G-1 | one CBV/SRV/UAV descriptor table per bind group, in group order | bind group layouts |
-| G .. 2G-1 | one sampler descriptor table per bind group that has samplers | bind group layouts |
+| per group, in group order | its CBV/SRV/UAV descriptor table (if it has views), then its sampler table (if it has samplers) | bind group layouts |
 | last | root constants for push constants (up to 32 DWORDs) | `SetPushConstants` |
+
+(Amended on Day 167 to what Day 166 built: the tables of each group sit together and an empty table is left out, so the indices come
+from `Dx12Device::RootLayout`, not from a formula.)
 
 Root signature version 1.1 with the descriptor ranges marked `DATA_STATIC_WHILE_SET_AT_EXECUTE`; register spaces follow the bind group index (`space<g>`),
 registers follow the binding (Slang assigns them from `[[vk::binding(b, g)]]`; Day 163 checks the minted reflection agrees). The object index uses no root

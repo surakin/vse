@@ -1,25 +1,10 @@
-// The parts of Dx12Device that later days of Phase 13 write (pipelines on Day 167,
-// command lists on Day 168, the swapchain on Day 169). Until then each logs that it is not there yet and fails as the RHI contract
+// The parts of Dx12Device that later days of Phase 13 write (command lists on Day 168, the swapchain on Day 169). Until then each logs that it is not there yet and fails as the RHI contract
 // allows (an invalid handle, null, false). Each day moves its functions out of this file.
 
 #include "rhi/dx12/dx12_device.h"
 
 namespace engine_placeholder::rhi::dx12 {
 
-ShaderHandle Dx12Device::CreateShader(const ShaderDesc&) {
-    NotYet("CreateShader", 167);
-    return {};
-}
-void Dx12Device::DestroyShader(ShaderHandle) {}
-PipelineHandle Dx12Device::CreateGraphicsPipeline(const GraphicsPipelineDesc&) {
-    NotYet("CreateGraphicsPipeline", 167);
-    return {};
-}
-PipelineHandle Dx12Device::CreateComputePipeline(const ComputePipelineDesc&) {
-    NotYet("CreateComputePipeline", 167);
-    return {};
-}
-void Dx12Device::DestroyPipeline(PipelineHandle) {}
 CommandList* Dx12Device::CreateCommandList() {
     NotYet("CreateCommandList", 168);
     return nullptr;
