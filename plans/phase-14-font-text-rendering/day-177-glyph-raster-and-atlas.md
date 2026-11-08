@@ -13,6 +13,8 @@ Turn glyphs into coverage bitmaps and pack them into atlas pages, entirely on th
       page, reports the used area; no allocation after construction except the shelf list; deterministic.
 - [ ] **Atlas** `text::GlyphAtlas`: pages of R8 pixels held in CPU memory (the reset source of truth), `GetOrAdd(font, size, GlyphId) -> GlyphEntry {page, u0, v0, u1, v1, width, height, bearing, advance}`; a
       full page adds a page (up to a documented maximum, then `GlyphEntry` invalid with a counted failure — never a crash); dirty rectangles per page tracked so the GPU upload copies only what changed.
+- [ ] **Maximum size:** `kMaxAtlasPixelSize` (value from Day 175) is a constant of the module; `Font::Render` and `GlyphAtlas::GetOrAdd` for a larger size return a `too_large` status and add nothing
+      (counter `too_large`); a test at the maximum (accepted) and at maximum + 1 (refused), and that a refused call leaves the atlas byte-identical.
 - [ ] **Keys and sharing:** one atlas serves several fonts and sizes; the key is (font id, pixel size, glyph id); two layouts of the same string add no second copy; counters (`glyphs`, `pages`, `hits`, `misses`,
       `bytes`) for tests and the benchmark.
 - [ ] **Hinting decision recorded:** the mode chosen on Day 175 is the default; `FontOptions::hinting` exposes the others; a test renders "Hello" in each mode and checks coverage is within the expected

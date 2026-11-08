@@ -9,7 +9,7 @@ A `text::Font` that loads a font file through the file layer and answers every q
 
 - [ ] **Loading:** `Font::Open(ByteSpan data, FontOptions)` (the caller reads the file through `io::File`; the font copies or keeps the bytes as the spec decided — FreeType needs the memory alive,
       so the `Font` owns them) and `OpenFile(io::Path)` convenience; face index; errors as `text::Status` (not found, not a font, unsupported format, out of memory) with a message that names the cause.
-- [ ] **Sizing:** `SetPixelSize(u32)`; `SetPixelSize(0)` and absurd sizes refused; metrics scale with the size (`ascent`, `descent`, `line_height`, `units_per_em`), in 26.6 fixed point converted
+- [ ] **Sizing:** `SetPixelSize(u32)`; `SetPixelSize(0)` and sizes above the sanity limit (2048 px) refused; sizes above `kMaxAtlasPixelSize` are accepted for metrics, layout and outlines (only `Render` refuses them, Day 177); metrics scale with the size (`ascent`, `descent`, `line_height`, `units_per_em`), in 26.6 fixed point converted
       to `f32` pixels once, in one place.
 - [ ] **Glyph lookup:** `GlyphId FindGlyph(char32 codepoint)` through the cmap; `.notdef` (id 0) for a missing code point, never an error; invalid code points (surrogates, above 0x10FFFF) map to `.notdef`;
       `HasGlyph(codepoint)`.

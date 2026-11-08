@@ -15,6 +15,11 @@ Settle the design with experiments before any text code, vendor FreeType the way
         of several code points draws as its component glyphs and moves the cursor as one unit;
       - sizes: pixel size per `Font` instance and per atlas; whether the atlas is keyed by (font, pixel size, glyph) and how HiDPI scale enters (a size in pixels the caller
         computes; no hidden scale);
+      - **size policy (developer decision 2026-11-08):** the atlas rasterizes glyphs up to a **maximum pixel size** (`kMaxAtlasPixelSize`; the value is fixed by the Day 175 measurements of atlas area and
+        rasterization time per glyph, starting from 128 px). Metrics, layout and outlines work at any size up to a separate sanity limit (2048 px). **Above the maximum, text is meant to draw as filled 2D
+        meshes built from the glyph outlines** (the same flatten-and-triangulate code Phase 16's 3D text uses for its faces), so that path is built in Phase 16; until then the text renderer draws such
+        glyphs from the maximum-size raster scaled up (blurry, counted in `Stats`, logged once), never skipped and never an atlas flood. Sizes between the minimum and maximum are used as requested (no
+        quantization in v1); the pen positions the layout produces do not depend on which path draws a glyph, so switching paths later moves nothing;
       - the atlas: R8 coverage pages, a shelf packer, page size, what happens when a page is full (a new page, one draw per page, as Phase 5 Day 84 says), eviction **not** in v1;
       - **reset and loss (CLAUDE.md RHI rule):** the atlas keeps its CPU pages, registers with `renderer::DeviceResources` at its tier, implements `Release`/`Recreate`, and
         never caches a handle past a frame;
@@ -24,7 +29,7 @@ Settle the design with experiments before any text code, vendor FreeType the way
       - the settings the phase adds, if any (CLAUDE.md "Anything configurable is a setting"): which are settings and which are launch-only options of the demos.
 - [ ] **Experiments for the spec:** (a) FreeType built with the minimum modules (TrueType/CFF/autofit only; no zlib, bzip2, png, brotli, harfbuzz) compiles warning-free under our flags or is
       built with the vendored-code flags (`third_party/` is excluded from `-Werror`); (b) the binary-size and build-time cost; (c) rasterizing "Hello, world!" at four sizes with each hinting mode
-      into PGM files in the scratchpad; (d) rasterization time per glyph, to size the atlas policy.
+      into PGM files in the scratchpad; (d) rasterization time and atlas area per glyph at 16, 32, 64, 128, 256 and 512 px, to fix `kMaxAtlasPixelSize`.
 - [ ] **Vendor FreeType** under `third_party/freetype/`: the latest stable release at the time, pinned by version and SHA-256, source only, `VENDORED.md` (version, source URL, hash,
       license choice FTL or GPLv2 — the FreeType License, recorded, with the notice file shipped), the modules enabled in `ftmodule.h`/`ftoption.h` (our config header, the upstream files
       untouched), and a CMake target `freetype` built from source with the same pattern as Catch2 (`PLAN.md` assumption #16). Builds on Linux, MSVC and clang-cl (the Windows PC checks).

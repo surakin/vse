@@ -994,3 +994,6 @@ Planning (2026-11-08, no code): **Phase 14 (Font & text) is planned, Days 175-18
 cursor and hit-testing by grapheme, an overlay text pass, golden images, reset-safe). 3D text and colored glyphs (emoji) moved to a new **Phase 16** (`plans/phase-16-3d-text-and-color-glyphs.md`, right after
 the UI); every phase from the old 16 up moved up by one (ECS 17, physics 18, audio 19, assets 20, scripting 21, macOS + Metal 22, Android/iOS 23, consoles 24, Unreal 25-26, editor 27, demo 28, parity 29).
 `CURRENT_PHASE` stays 13 until Day 175 starts the phase. **Next: Day 175 (design spec, FreeType, the font, the module).**
+
+Plan amendment (2026-11-08): Phase 14 gets a **maximum rasterized pixel size** (value fixed by Day 175's measurements, starting from 128 px; Days 175, 176, 177, 181, 183). Text above it still draws (scaled from the
+maximum raster, counted and logged) until **Phase 16** draws it sharp as filled 2D meshes from the glyph outlines, sharing the flatten-and-triangulate code with the 3D text; Phase 16 is now "3D text, large 2D text & colored glyphs".

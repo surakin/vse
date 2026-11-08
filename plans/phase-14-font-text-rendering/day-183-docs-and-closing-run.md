@@ -15,7 +15,7 @@ Document, measure, run everything on both machines, review the whole phase, clos
       and this file (no thresholds in tests).
 - [ ] **Project documents:** `PLAN.md` (assumption #17's FreeType details, the roadmap row, a progress-log entry), `CLAUDE.md` if a rule changed (the FreeType boundary, the text module), `BUILD.md`,
       `ARCHITECTURE.md` (the measured graph), `STATUS.md`.
-- [ ] **Known-issues sweep:** every Phase 14 deferral filed (no shaping, no right-to-left, no atlas eviction, no word movement, kerning limits, LCD rendering not done, CJK coverage limited by the shipped font);
+- [ ] **Known-issues sweep:** every Phase 14 deferral filed (no shaping, no right-to-left, no atlas eviction, a maximum rasterized size (larger text is scaled up until Phase 16 draws it as meshes), no word movement, kerning limits, LCD rendering not done, CJK coverage limited by the shipped font);
       entries this phase fixed removed.
 - [ ] **Closing full runs (CLAUDE.md, required for a phase's last day):** Linux `scripts/test-phase.sh --all --flavor all`, `ctest -L docs`, the demos 1000 frames with validation on Wayland and X11;
       Windows `scripts/test-phase.sh --all --flavor all` (plain and asan), `ctest -L docs`, the demos 1000 frames on DX12 and Vulkan; record both final `ran X of Y tests (phases ...)` lines here; nothing left out.

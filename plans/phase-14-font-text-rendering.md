@@ -16,7 +16,7 @@ Phase 15 UI's text fields need them.
 **Definition of done:** the string "Hello, world!" (and arbitrary UTF-8: accents, CJK from a font that has them, a combining mark, an emoji ZWJ sequence
 that renders as its component glyphs or `.notdef`, never a crash) draws on screen from a font file through the RHI at an interactive frame rate, in an
 overlay pass after the tonemap, on Vulkan (Linux, Windows) and Direct3D 12 (Windows), with golden images; kerning and advance widths are right;
-the cursor moves, and a point maps to a byte offset and back, by grapheme cluster (combining marks and ZWJ sequences are one unit); the glyph atlas and
+glyphs are rasterized up to a documented maximum pixel size (larger text still draws, scaled from the maximum raster, until Phase 16 draws it as outline meshes); the cursor moves, and a point maps to a byte offset and back, by grapheme cluster (combining marks and ZWJ sequences are one unit); the glyph atlas and
 the text material survive an RHI reset (CLAUDE.md "RHI can be reset at run time").
 
 ## Days (Days 175-183; the day files carry the sub-tasks)
