@@ -1,14 +1,14 @@
-# Phase 18 — Audio
+# Phase 19 — Audio
 
 **Depends on:** Phase 1 (Linux platform layer) for the Linux audio device
 output path, and Phase 13 (the Windows platform layer) for its output backend;
-the macOS output backend (CoreAudio) waits for Phase 21, the postponed macOS port (2026-11-08); can proceed in parallel with Phases 4-5 and 14-17
+the macOS output backend (CoreAudio) waits for Phase 22, the postponed macOS port (2026-11-08); can proceed in parallel with Phases 4-5 and 14-18
 once those exist.
 **Goal:** a custom audio mixer with positional 3D sound, no codec/mixing
 libraries.
 **Definition of done:** the custom mixer plays a hand-decoded WAV file
 with correct positional (3D) attenuation/panning relative to a listener,
-on Linux and Windows through one platform-independent mixer (macOS joins when Phase 21 lands).
+on Linux and Windows through one platform-independent mixer (macOS joins when Phase 22 lands).
 
 ## Key deliverables (to be expanded into day-by-day tasks when started)
 
@@ -33,12 +33,12 @@ on Linux and Windows through one platform-independent mixer (macOS joins when Ph
 
 ## Notes / open questions
 
-- Mobile: Phase 22 extends this phase with the Android (AAudio) and iOS
+- Mobile: Phase 23 extends this phase with the Android (AAudio) and iOS
   (CoreAudio, shared with the macOS backend where the API matches)
   output backends, plus the app-lifecycle handling audio needs (interruptions,
   route changes, pausing when backgrounded). The device interface above
   must be shaped so those are additions, not a redesign (assumption #11);
-  consoles (Phase 23) follow the same pattern.
+  consoles (Phase 24) follow the same pattern.
 
 - Full day-by-day breakdown deferred until started.
 - Compressed audio formats (OGG/MP3) are explicitly out of scope until

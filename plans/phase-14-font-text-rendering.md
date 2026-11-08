@@ -1,6 +1,6 @@
 # Phase 14 — Font & Text Rendering
 
-**Depends on:** Phase 4 (Vulkan RHI), Phase 5 (Renderer core) — glyph
+**Depends on:** Phase 4 (Vulkan RHI), Phase 5 (Renderer core), Phase 8 (RHI reset), Phase 13 (DX12, per-backend GPU tests) — glyph
 bitmaps upload as RHI textures and draw through the renderer's existing
 pass/material machinery, not a separate rendering path.
 **Goal:** arbitrary UTF-8 text on screen, backed by FreeType (root
@@ -8,17 +8,30 @@ pass/material machinery, not a separate rendering path.
 the foundation string module's grapheme clustering (Days 10-12) for
 correct cursor/line-break behavior — the shared text layer every later
 UI need (in-game HUD, debug overlays, the Phase 15 UI system and through it
-the Phase 26 editor's widgets)
+the Phase 27 editor's widgets)
 builds on instead of each hand-rolling its own.
-**Definition of done:** arbitrary UTF-8 text renders on screen through
-the RHI at an interactive frame rate, with correct glyph shapes,
-kerning/advance widths, and multi-codepoint grapheme clusters (combining
-marks, emoji ZWJ sequences) each treated as one cursor-movement unit; and
-the same text layout can be turned into a 3D mesh (extruded, optionally
-beveled outlines of the vector glyphs) that draws through the Phase 5
-renderer like any other mesh.
+**Scope cut (2026-11-08, developer decision):** "a simple hello world is enough until the UI is implemented". 3D text and colored glyphs (emoji) moved to
+[Phase 16](phase-16-3d-text-and-color-glyphs.md); this phase keeps only the 2D path, plus grapheme-aware cursor placement and hit-testing because the
+Phase 15 UI's text fields need them.
+**Definition of done:** the string "Hello, world!" (and arbitrary UTF-8: accents, CJK from a font that has them, a combining mark, an emoji ZWJ sequence
+that renders as its component glyphs or `.notdef`, never a crash) draws on screen from a font file through the RHI at an interactive frame rate, in an
+overlay pass after the tonemap, on Vulkan (Linux, Windows) and Direct3D 12 (Windows), with golden images; kerning and advance widths are right;
+the cursor moves, and a point maps to a byte offset and back, by grapheme cluster (combining marks and ZWJ sequences are one unit); the glyph atlas and
+the text material survive an RHI reset (CLAUDE.md "RHI can be reset at run time").
 
-## Key deliverables (to be expanded into day-by-day tasks when started)
+## Days (Days 175-183; the day files carry the sub-tasks)
+
+1. [Day 175 — Design spec, FreeType vendored, the font, the module](phase-14-font-text-rendering/day-175-design-spec-and-freetype.md)
+2. [Day 176 — Font faces: loading, metrics, glyph lookup, kerning](phase-14-font-text-rendering/day-176-font-face.md)
+3. [Day 177 — Glyph rasterization and the atlas packer (CPU)](phase-14-font-text-rendering/day-177-glyph-raster-and-atlas.md)
+4. [Day 178 — Text layout](phase-14-font-text-rendering/day-178-text-layout.md)
+5. [Day 179 — Cursor placement and hit-testing](phase-14-font-text-rendering/day-179-cursor-and-hit-testing.md)
+6. [Day 180 — The atlas texture, the text material and shader](phase-14-font-text-rendering/day-180-atlas-texture-and-text-material.md)
+7. [Day 181 — The overlay text pass and the draw API](phase-14-font-text-rendering/day-181-overlay-text-pass.md)
+8. [Day 182 — Hello world in the demos, reset and loss, golden images](phase-14-font-text-rendering/day-182-hello-world-demo-and-golden.md)
+9. [Day 183 — Guide, benchmark, closing runs, phase review](phase-14-font-text-rendering/day-183-docs-and-closing-run.md)
+
+## Key deliverables
 
 - Vendor FreeType source under `third_party/freetype/` (pinned release,
   built from source — same pattern as Catch2, `PLAN.md` assumption
@@ -40,51 +53,17 @@ renderer like any other mesh.
 - Cursor placement / hit-testing (byte offset <-> screen position) built
   on grapheme cluster boundaries, not raw codepoints or bytes — needed
   by any future text-input UI (editor, in-game chat/console, etc.).
-- 3D text: generate a mesh from vectorized glyphs. FreeType's outline
-  API supplies each glyph's contours (quadratic/cubic Bezier curves),
-  which are flattened to polylines at a caller-chosen tolerance,
-  triangulated into front and back faces (contours with holes, e.g. `o`
-  and `B`, must come out right), and extruded to a given depth with side
-  walls, with optional bevel and smooth/flat normals. The result is a
-  Phase 5 `MeshData` (positions, normals, UVs), laid out by the same text
-  layout as the 2D path (advances, kerning, line breaks), so 3D text
-  uploads through `GpuMesh` and draws through the material system.
-  Triangulation and extrusion are our own code (no third-party
-  tessellator); the flatten/triangulate/extrude steps are pure CPU
-  functions and are tested without a GPU (watertightness, triangle
-  winding, area against the contour area, holes). Meshes for a string are
-  built on demand and cached per glyph so repeated characters share work.
-  Where it shrinks the vertex count (side walls, bevels, caps of convex
-  runs), glyph meshes may use triangle strips with restart indices
-  (Phase 5 Day 78 topology support). Colored glyphs use the per-vertex colors added in Phase 5 Day 78 (see
-  the colored-glyphs note below).
+- **Seams for Phase 16 (kept, not built):** the font object also exposes outline access; the layout yields glyph ids and pen positions independent of how a
+  glyph is drawn; the atlas can hold an RGBA page later. The design spec (Day 175) records each.
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 5 is complete.
+- The day-by-day breakdown is written (Days 175-183, 2026-11-08); the phase may start once it is committed (CLAUDE.md).
 - Font hinting mode (FreeType supports several: no hinting, light,
   normal/full autohint, or the font's own bytecode hints) is a
   visual-quality tradeoff to decide empirically against real rendered
   text once this phase starts, not speculatively here.
-- 3D text open questions, decided once this phase starts: bevel quality
-  versus triangle count; whether glyph meshes are instanced per
-  character or merged per string; curve-flattening tolerance units
-  (font units vs world units); contour winding rules for fonts that mix
-  conventions. Hinting is irrelevant to the 3D path (outlines are loaded
-  unhinted).
-- Colored glyphs (emoji) are in scope **for the 3D text path and the 2D
-  path alike, in two formats only**: layered-outline `COLR` v0 (each
-  color layer is a vector outline plus a palette color: 3D text builds
-  one extruded mesh per layer carrying the color as a per-vertex color,
-  the Phase 5 Day 78 vertex-color support; the 2D path draws the layers
-  as tinted atlas glyphs) and bitmap `CBDT`/`sbix` (raster only, nothing
-  to extrude: the 2D path samples an RGBA atlas, the 3D path draws a
-  textured quad or thin slab through the existing UV path). `COLR` v1
-  (gradients, transforms, compositing) and the `SVG` table are out of
-  scope; a glyph in one of those formats falls back to its monochrome
-  outline or the font's `.notdef`, and the fallback is a logged, tested
-  behavior, not a crash. Plain grayscale rasterization stays the default
-  and the only path that needs no color support.
+- 3D text and colored glyphs: Phase 16 (their open questions moved with them).
 - Subpixel/LCD-optimized rendering (FreeType supports it) is not a
   Phase 14 goal — this engine targets modern displays where grayscale
   antialiasing is standard; revisit only if a real quality gap shows up.

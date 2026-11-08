@@ -105,7 +105,7 @@ Resource creation goes through the device's mutex and happens outside recording.
 | MSAA | post-process AA first; revisit only if the user asks |
 | Transparency, particles, overlays | a forward pass after tonemap, added with Phase 14 (text) and Phase 15 (UI) |
 | Shadows, IBL, ambient occlusion | a Phase after the first playable demo, or when a demo needs them |
-| Skinning, instancing of animated meshes | Phase 16 (ECS) and animation work |
+| Skinning, instancing of animated meshes | Phase 17 (ECS) and animation work |
 | Bindless, indirect draws, async compute | profiling data showing a need (Phase 4 showed per-draw bind groups, solved by R5) |
 | Occlusion culling, LODs | when scenes outgrow frustum culling |
 

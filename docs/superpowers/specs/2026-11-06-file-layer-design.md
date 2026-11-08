@@ -6,7 +6,7 @@ Windows, macOS, mobile, consoles and network-backed files. `plans/phase-09-file-
 ## 1. Goal
 
 One path/file/directory layer in `engine/foundation/io/` (namespace `engine_placeholder::io`) replacing scattered `fopen`/`open`/`opendir`/
-`stat`/`mkdir`/`rename` calls and string-pasted paths. Phase 11 (settings) is built on it; Phase 19's storage backends implement `io::File`.
+`stat`/`mkdir`/`rename` calls and string-pasted paths. Phase 11 (settings) is built on it; Phase 20's storage backends implement `io::File`.
 
 ## 2. Inventory (what exists today)
 
@@ -90,7 +90,7 @@ The generated tables are in Appendix A and become Day 116's test data. Decisions
 7. **Atomic replace:** confirmed. `WriteFileAtomic(path, bytes)`: temporary sibling (same directory, so `rename` is atomic), write, flush and `fsync`, rename; a failure removes the temporary. Cross-device rename is not a case (same directory).
 8. **Special folders:** confirmed: `TempDirectory`, `CurrentDirectory`, `ExecutableDirectory`, `UserConfigDirectory`, `UserCacheDirectory`, `UserDataDirectory` (XDG with `$HOME` fallbacks on Linux); a program name is passed by the caller, never guessed.
 9. **Platform designs ride along:** confirmed; `BACKEND.md` and its list test on Day 124.
-10. **Phase 19 builds on `io::File`:** confirmed; Spike B is the evidence a non-local backend fits.
+10. **Phase 20 builds on `io::File`:** confirmed; Spike B is the evidence a non-local backend fits.
 
 ## 5. Class sketches
 
@@ -139,7 +139,7 @@ directories, assets as read-only archives (`Writable` off); consoles: title stor
 
 ## 7. Open questions (filed in the phase file)
 
-Memory mapping (a `Map` capability): deferred to Phase 19 planning; file watching: Phase 11 decides whether it asks; locks/sharing modes: Phase 13; text encodings: caller's concern; `log::LoadConfig` is an existing config reader the
+Memory mapping (a `Map` capability): deferred to Phase 20 planning; file watching: Phase 11 decides whether it asks; locks/sharing modes: Phase 13; text encodings: caller's concern; `log::LoadConfig` is an existing config reader the
 Phase 11 design must absorb or replace.
 
 ## Appendix A — Spike C tables

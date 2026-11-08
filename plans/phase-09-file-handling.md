@@ -3,7 +3,7 @@
 **Depends on:** Phase 0 (foundation: strings, containers, allocators, `os/`), Phase 2 (the job system, for the async side), and Phases 6-8
 (test scoping, debugging facilities, RHI reset — the debugging facilities keep their signal-safe descriptor layer, see below). Must
 complete before Phase 11 (the settings system, which reads and writes config files through this layer) and before the Windows and macOS
-ports (Phases 13 and 21): the interfaces here are part of what those ports implement.
+ports (Phases 13 and 22): the interfaces here are part of what those ports implement.
 **Goal:** one file and path layer for the whole engine, in place of the scattered `fopen`/`open`/`opendir`/`stat`/`mkdir`/`rename` calls and
 string-pasted paths that exist today. Three classes: **`io::Path`** (a value type for manipulating paths: join, split, normalize,
 relative, extension, comparison), **`io::File`** (an *interface* class: synchronous and asynchronous read and write, so a file can be backed by
@@ -69,7 +69,7 @@ that keeps the port from rotting, the platform checklists, and closes the phase.
 9. **Platform designs ride along.** Windows (UTF-16 at the boundary, drive letters and UNC, overlapped I/O, long paths), macOS (case-insensitive
    volumes, `dispatch_io`), Android/iOS (app-private directories, asset bundles as read-only archives), consoles (title storage): the interfaces
    must not preclude any of them; each gets a section in `engine/foundation/io/BACKEND.md` on Day 124, kept in step by a test.
-10. **Phase 19's resource system builds on this.** Its pluggable storage backends (pak, filesystem, network; `PLAN.md` assumption #12) are
+10. **Phase 20's resource system builds on this.** Its pluggable storage backends (pak, filesystem, network; `PLAN.md` assumption #12) are
     `io::File` implementations plus a container reader; nothing in this phase builds the pak or network formats.
 
 ## Key deliverables (the day files hold the sub-tasks)
@@ -88,4 +88,4 @@ that keeps the port from rotting, the platform checklists, and closes the phase.
 - **Locks and sharing modes** (Windows share flags, `flock`): minimal in this phase (exclusive create, atomic replace); revisit with Phase 13.
 - **Text encodings and line endings** are the caller's concern (the layer moves bytes); the config classes in Phase 11 define their own text rules.
 - **Large directory trees** (docgen walks the repository): the iteration API must not require loading a whole directory into memory.
-- **Open-question dispositions (Day 115):** memory mapping deferred to Phase 19 planning; file watching decided by Phase 11's design; locks/sharing modes Phase 13; `log::LoadConfig` (an existing config reader) is for Phase 11 to absorb or replace. See the spec, section 7.
+- **Open-question dispositions (Day 115):** memory mapping deferred to Phase 20 planning; file watching decided by Phase 11's design; locks/sharing modes Phase 13; `log::LoadConfig` (an existing config reader) is for Phase 11 to absorb or replace. See the spec, section 7.

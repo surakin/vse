@@ -85,11 +85,11 @@ Day 163, `ENGINE_SLANGC` (`slangc`; else `PATH`, then `C:\Tools\slang-2026.18.2\
 
 There is no Windows ThreadSanitizer or UBSan: those flavors run on the Linux machine only.
 
-## macOS: not yet supported (Phase 21)
+## macOS: not yet supported (Phase 22)
 
-Planned for Phase 21 (Metal backend, `plans/phase-21-macos-metal.md`). The list is written when that phase is broken into days; expect Xcode or its
+Planned for Phase 22 (Metal backend, `plans/phase-22-macos-metal.md`). The list is written when that phase is broken into days; expect Xcode or its
 command-line tools (Clang, the Metal toolchain), CMake, Ninja and `slangc` v2026.18.2.
 
 ## Android, iOS, consoles: not yet supported
 
-Phases 22 (Android, iOS) and 23 (consoles, gated on dev-kit and NDA access). Each phase adds its section here when it is broken into days.
+Phases 23 (Android, iOS) and 23 (consoles, gated on dev-kit and NDA access). Each phase adds its section here when it is broken into days.
