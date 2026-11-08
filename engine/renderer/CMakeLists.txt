@@ -19,6 +19,7 @@ set(RENDERER_SOURCES
   shared_settings.cpp
   device_resources.cpp
   texture.cpp
+  glyph_atlas_texture.cpp
 )
 
 # The passes embed the committed shader includes (<name>.spv.inc), which `shader_mint` generates and which itself links the
@@ -26,6 +27,7 @@ set(RENDERER_SOURCES
 set(RENDERER_PASS_SOURCES
   gbuffer.cpp
   lighting.cpp
+  text_renderer.cpp
 )
 
 # Headers are included as "renderer/<name>.h", rooted at engine/.
@@ -36,7 +38,7 @@ function(engine_add_renderer_lib suffix)
   target_include_directories(renderer${suffix} PUBLIC ${RENDERER_INCLUDE_ROOT})
   target_compile_options(renderer${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   # Only the neutral RHI: devices come through the backend registry, and the program links rhi_backends (Phase 13 Day 162).
-  target_link_libraries(renderer${suffix} PUBLIC rhi${suffix} jobs${suffix} foundation${suffix})
+  target_link_libraries(renderer${suffix} PUBLIC rhi${suffix} jobs${suffix} text${suffix} foundation${suffix}) # text: the CPU glyph atlas the GPU copy follows (Phase 14 Day 180)
   add_library(renderer_passes${suffix} STATIC ${RENDERER_PASS_SOURCES})
   target_include_directories(renderer_passes${suffix} PRIVATE ${CMAKE_SOURCE_DIR}/shaders)
   target_compile_options(renderer_passes${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})

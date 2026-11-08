@@ -1,6 +1,6 @@
 # Fonts and text
 
-Status: draft (Phase 14, Days 175-179 so far; the drawing pass follows).
+Status: draft (Phase 14, Days 175-180 so far; the render-graph pass and the demo follow).
 
 The text layer lives in `engine/text/` (namespace `engine_placeholder::text`). Design and reasons: `docs/superpowers/specs/2026-11-08-text-design.md`.
 FreeType 2.15.0 (vendored, `third_party/freetype/`) reads and rasterizes the fonts; it is named in one file, `engine/text/font_freetype.cpp`, and every
@@ -69,6 +69,32 @@ keep the column through lines of different length when the caller keeps `preferr
 
 Limits: there is no caret affinity, so the offset where a soft-wrapped line ends is the start of the next line; the end of a wrapped line is before its trailing spaces.
 Word movement is not here (Phase 15).
+
+## Drawing text
+
+`renderer::TextRenderer` (`renderer/text_renderer.h`) puts a laid-out text on a color target. It owns a `renderer::GlyphAtlasTexture` (one R8 texture per atlas page), its own pipeline
+(shaders `text.vert` and `text.frag`), a sampler and a vertex buffer with one region per frame in flight, and registers with the `DeviceResources` registry, so a device reset or loss
+rebuilds all of it from the CPU atlas (the pages are the source of truth; no glyph is lost and no handle is kept past a frame).
+
+```cpp
+renderer::TextRenderer text;
+text.Create(device, &atlas, renderer::TextRendererDesc{rhi::Format::RGBA8_SRGB, 8192}, &registry);
+
+// every frame, with a command list that is inside a rendering pass on a target of that format:
+text.BeginFrame();
+text.Add(layout, style, /*x=*/16.0f, /*y=*/16.0f);   // style.color is packed RGBA (red in the lowest byte)
+text.Record(list, &uniform_ring, target_width, target_height);
+```
+
+- Coordinates are pixels of the target, origin at its top-left corner, X right, Y down, as the layout gives them. Each glyph quad is placed on whole pixels, so the atlas bitmap is shown
+  texel for texel (the test compares every pixel with the atlas page).
+- The result is premultiplied alpha: the fragment shader outputs `color * coverage * alpha`, and the pipeline blends with source `One`, destination `OneMinusSrcAlpha`. There is no depth test.
+- Colors are written as the 8-bit values a person picks. For an sRGB target the vertex shader decodes them to linear (the hardware encodes on write), so a gray of 0x80 shows as 0x80; for a
+  UNORM target they are used as they are.
+- `Add` looks each glyph up in the atlas (rasterizing it on first use), so the first frame that uses a glyph pays for it; `Record` sends the atlas pages that changed since the last frame. A
+  changed page is sent **whole** (the RHI uploads a full mip level at a time), one megabyte for a 1024-pixel page.
+- One frame draws at most `max_glyphs` glyphs (8192 by default); the rest are dropped, counted in `DroppedGlyphs()` and logged once per frame, and a full atlas drops glyphs the same way.
+- Only SPIR-V is minted for the text shaders so far, so `Create` on a Direct3D 12 device fails with a logged error until the Windows PC mints DXIL (`KNOWN-ISSUES.md`).
 
 ## Hinting
 

@@ -20,6 +20,6 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Text](text.md) | 6 | 215 |
 | [The Job System](jobs.md) | 11 | 190 |
 | [The Render Hardware Interface](rhi.md) | 21 | 792 |
-| [The renderer](renderer.md) | 20 | 1007 |
+| [The renderer](renderer.md) | 22 | 1042 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 440 |
 | [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 12 | 319 |

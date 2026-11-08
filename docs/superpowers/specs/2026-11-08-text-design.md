@@ -50,7 +50,7 @@ counter increments — never a crash. **No eviction in v1.** Dirty rectangles pe
 ## 6. Reset and loss (CLAUDE.md, "The RHI can be reset at run time")
 
 `GlyphAtlasTexture` keeps the CPU pages, registers with `renderer::DeviceResources` at its tier (a `ScopedRegistration` member), implements `Release`/`Recreate`
-(re-upload every page from the CPU copy) and never caches a handle past a frame; the text material binds the atlas by owner, not by raw handle. Its tests reset the
+(re-upload every page from the CPU copy) and never caches a handle past a frame; the text renderer binds the atlas by owner, not by raw handle (Day 180 amendment: the planned text material in `MaterialSystem` became `renderer::TextRenderer` on the raw RHI; the shaders are `text.vert` / `text.frag`, SPIR-V only until the Windows PC mints DXIL). Its tests reset the
 device through `tests/renderer/reset_rig.h` and compare `Device::Resources()` counts, and recover from a forced device loss.
 
 ## 7. Seams kept for Phase 16

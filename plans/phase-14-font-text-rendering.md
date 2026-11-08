@@ -17,7 +17,7 @@ Phase 15 UI's text fields need them.
 that renders as its component glyphs or `.notdef`, never a crash) draws on screen from a font file through the RHI at an interactive frame rate, in an
 overlay pass after the tonemap, on Vulkan (Linux, Windows) and Direct3D 12 (Windows), with golden images; kerning and advance widths are right;
 glyphs are rasterized up to a documented maximum pixel size (larger text still draws, scaled from the maximum raster, until Phase 16 draws it as outline meshes); the cursor moves, and a point maps to a byte offset and back, by grapheme cluster (combining marks and ZWJ sequences are one unit); the glyph atlas and
-the text material survive an RHI reset (CLAUDE.md "RHI can be reset at run time").
+the text pipeline survive an RHI reset (CLAUDE.md "RHI can be reset at run time").
 
 ## Days (Days 175-183; the day files carry the sub-tasks)
 
@@ -26,7 +26,7 @@ the text material survive an RHI reset (CLAUDE.md "RHI can be reset at run time"
 3. [Day 177 — Glyph rasterization and the atlas packer (CPU)](phase-14-font-text-rendering/day-177-glyph-raster-and-atlas.md)
 4. [Day 178 — Text layout](phase-14-font-text-rendering/day-178-text-layout.md)
 5. [Day 179 — Cursor placement and hit-testing](phase-14-font-text-rendering/day-179-cursor-and-hit-testing.md)
-6. [Day 180 — The atlas texture, the text material and shader](phase-14-font-text-rendering/day-180-atlas-texture-and-text-material.md)
+6. [Day 180 — The atlas texture, the text pipeline and shaders](phase-14-font-text-rendering/day-180-atlas-texture-and-text-material.md)
 7. [Day 181 — The overlay text pass and the draw API](phase-14-font-text-rendering/day-181-overlay-text-pass.md)
 8. [Day 182 — Hello world in the demos, reset and loss, golden images](phase-14-font-text-rendering/day-182-hello-world-demo-and-golden.md)
 9. [Day 183 — Guide, benchmark, closing runs, phase review](phase-14-font-text-rendering/day-183-docs-and-closing-run.md)
@@ -74,7 +74,7 @@ the text material survive an RHI reset (CLAUDE.md "RHI can be reset at run time"
 
 ## What Phase 5 gives this phase (Phase 5 Day 84)
 
-- **Glyph atlases are textures in the material system**: a text material is a template whose fragment shader samples an atlas
+- **Glyph atlases are textures in the material system** (amended on Day 180: `TextRenderer` owns its pipeline on the raw RHI instead, like the other passes; the atlas pages are `GpuTexture`-style Recreatable owners): a text material is a template whose fragment shader samples an atlas
   (`texture slot` + sampler, a parameter block for color/outline) and the atlas upload goes through the RHI staging ring
   (`UploadTexture`). The atlas texture is replaced in place with `MaterialSystem::SetTexture`, which rebuilds only that material's bind
   groups.

@@ -7,7 +7,7 @@ The one call a program makes to put text on the screen, drawn after the tonemap.
 
 ## Tasks
 
-- [ ] **`renderer::TextRenderer`** (owner of the atlas, atlas textures and the text material; per-frame vertex data in the frame resources' regions like the other per-frame buffers):
+- [ ] **Extend `renderer::TextRenderer`** (made on Day 180: pipeline, atlas textures, sampler, per-frame vertex regions, `Add` / `Record`) into the draw API a program uses (the plan amendment on Day 180 explains why it is not a material):
       `Draw(const TextLayout&, origin_px, color)`, `Draw(StringView, Font&, size, origin_px, color, LayoutOptions)` as the convenience call, `Clear` at frame start; draws batch by atlas page in
       call order (z-order = call order, as the Phase 5 notes say).
 - [ ] **Render-graph pass** `TextPass`: reads the tonemap output, writes the target, ordered after `TonemapPass` by the resource it writes; alpha-blends glyph quads, no depth; skipped (no cost, no

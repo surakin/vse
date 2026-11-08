@@ -25,7 +25,7 @@ From the bottom up. "Platform code" means a per-OS backend directory (`linux/`, 
 | 9. Platform: windows and input | `engine/platform` (`window.h`, `input.h`, `window_host.h`, `platform/<platform>/` backends) | Windows, input state, display backends (Wayland, X11, Win32), the CMake library `platform`, the only one that links the display libraries. Layers 0-8. Moved here from the foundation on Phase 12 Day 144. |
 | 10. Jobs, text | `engine/jobs`; `engine/text` (Phase 14) | Jobs: scheduler, coroutines, frame pool, async I/O. Text: font faces, glyph rasterization and atlas packing, layout, cursor and hit-testing; FreeType (vendored) only in `text/font_freetype.cpp`, the CPU side only (the atlas texture and the text pass are in the renderer). Both depend on the foundation (layers 0-8) and not on each other. |
 | 11. RHI | `engine/rhi` (neutral, with the backend registry, `CreateDevice` and `DeviceHost`), `engine/rhi/null`, `engine/rhi/vulkan`, later `rhi/dx12`, `rhi/metal`; `engine/rhi/backends` | The neutral RHI, and one library per backend. Backends depend on `rhi`, jobs and foundation, never on each other; each registers with the neutral registry. `rhi/backends` (library `rhi_backends`, Phase 13 Day 162) is the only module that names every backend, to register them; programs link it, the renderer never does. Graphics API headers only inside their backend (`rhi_boundary_check`). |
-| 12. Renderer | `engine/renderer` (+ `renderer_passes`) | Render graph, materials, passes. RHI (neutral only), jobs, foundation including settings. |
+| 12. Renderer | `engine/renderer` (+ `renderer_passes`) | Render graph, materials, passes, and from Phase 14 the glyph atlas texture and the text renderer. RHI (neutral only), jobs, text (the CPU atlas and layout types), foundation including settings. |
 | 13. Programs | `game/*`, `tools/*`, `tests/*` | Demos, benches, tools and tests. Anything below. Neutral headers only: no `os/<platform>/` include (section 3, item 6). |
 
 Later phases add modules above the renderer in the order `PLAN.md`'s diagram gives (text, UI, ECS, physics, audio, assets, scripting, Unreal import,
@@ -33,7 +33,7 @@ editor); each gets its row here when its phase is broken into days.
 
 ## 2. The measured graph (after Phase 12, 2026-11-07)
 
-Measured by `module_deps_check` on the whole tree: **136 distinct module edges from includes, plus the CMake link lines, 0 problems.** There is no cycle and no
+Measured by `module_deps_check` on the whole tree: **172 module edges from includes, plus the CMake link lines, 0 problems.** There is no cycle and no
 upward edge. The last two allow-listed edges (rhi/vulkan → rhi/null and renderer → rhi/vulkan) were removed by the RHI backend registry on Phase 13 Day 162;
 the allow list is empty.
 
@@ -41,7 +41,7 @@ The libraries follow the layers; each links only the ones below it (`docs/guide/
 
 ```
 game/*, tools/*   ->  renderer, rhi_backends, rhi, jobs, platform, foundation
-renderer          ->  rhi, jobs, foundation (incl. settings, math)
+renderer          ->  rhi, jobs, text, foundation (incl. settings, math)
 rhi_backends      ->  rhi/vulkan, rhi/null (in rhi), later rhi/dx12          (registers each backend; linked by programs)
 rhi/vulkan        ->  rhi, jobs, platform, foundation
 rhi/null          ->  rhi, foundation

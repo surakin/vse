@@ -242,3 +242,4 @@ testopt:windows_*                               13
 
 # --- Phase 14: font and text (FreeType, glyph atlas, layout, cursor, the overlay text pass) ---
 tests/text/                                     14
+tests/renderer/text_renderer_test.cpp           14   # the GPU atlas pages and the text pipeline (Day 180)

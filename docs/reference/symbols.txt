@@ -3313,6 +3313,21 @@ renderer::GBufferDebugView::RecreatableName() const	function	renderer	renderer-g
 renderer::GBufferDebugView::Valid() const	function	renderer	renderer-gbufferdebugview-valid-const	renderer.md	engine/renderer/gbuffer.h:324
 renderer::GBufferDebugView::SetInverseViewProjection(const Mat4&)	function	renderer	renderer-gbufferdebugview-setinverseviewprojection-const-mat4-amp	renderer.md	engine/renderer/gbuffer.h:330
 renderer::GBufferDebugView::AddToGraph(RenderGraph*,const GBufferTargets&,GBufferLayer,GraphResource,rhi::Format,f32,f32)	function	renderer	renderer-gbufferdebugview-addtograph-rendergraph-star-const-gbuffertargets-amp-gbufferlayer-graphresource-rhi-format-f32-f32	renderer.md	engine/renderer/gbuffer.h:350
+renderer::GlyphAtlasTexture	class	renderer	renderer-glyphatlastexture	renderer.md	engine/renderer/glyph_atlas_texture.h:23
+renderer::GlyphAtlasTexture::GlyphAtlasTexture()	function	renderer	renderer-glyphatlastexture-glyphatlastexture	renderer.md	engine/renderer/glyph_atlas_texture.h:25
+renderer::GlyphAtlasTexture::~GlyphAtlasTexture()	function	renderer	renderer-glyphatlastexture-tilde-glyphatlastexture	renderer.md	engine/renderer/glyph_atlas_texture.h:27
+renderer::GlyphAtlasTexture::GlyphAtlasTexture(const GlyphAtlasTexture&)	function	renderer	renderer-glyphatlastexture-glyphatlastexture-const-glyphatlastexture-amp	renderer.md	engine/renderer/glyph_atlas_texture.h:28
+renderer::GlyphAtlasTexture::operator=(const GlyphAtlasTexture&)	function	renderer	renderer-glyphatlastexture-operator-eq-const-glyphatlastexture-amp	renderer.md	engine/renderer/glyph_atlas_texture.h:29
+renderer::GlyphAtlasTexture::Create(rhi::Device*,text::GlyphAtlas*,DeviceResources*)	function	renderer	renderer-glyphatlastexture-create-rhi-device-star-text-glyphatlas-star-deviceresources-star	renderer.md	engine/renderer/glyph_atlas_texture.h:41
+renderer::GlyphAtlasTexture::Destroy()	function	renderer	renderer-glyphatlastexture-destroy	renderer.md	engine/renderer/glyph_atlas_texture.h:44
+renderer::GlyphAtlasTexture::Sync()	function	renderer	renderer-glyphatlastexture-sync	renderer.md	engine/renderer/glyph_atlas_texture.h:53
+renderer::GlyphAtlasTexture::PageCount() const	function	renderer	renderer-glyphatlastexture-pagecount-const	renderer.md	engine/renderer/glyph_atlas_texture.h:57
+renderer::GlyphAtlasTexture::Page(u32) const	function	renderer	renderer-glyphatlastexture-page-u32-const	renderer.md	engine/renderer/glyph_atlas_texture.h:64
+renderer::GlyphAtlasTexture::UploadCount() const	function	renderer	renderer-glyphatlastexture-uploadcount-const	renderer.md	engine/renderer/glyph_atlas_texture.h:68
+renderer::GlyphAtlasTexture::Release()	function	renderer	renderer-glyphatlastexture-release	renderer.md	engine/renderer/glyph_atlas_texture.h:70
+renderer::GlyphAtlasTexture::Recreate(rhi::Device*)	function	renderer	renderer-glyphatlastexture-recreate-rhi-device-star	renderer.md	engine/renderer/glyph_atlas_texture.h:71
+renderer::GlyphAtlasTexture::Live() const	function	renderer	renderer-glyphatlastexture-live-const	renderer.md	engine/renderer/glyph_atlas_texture.h:72
+renderer::GlyphAtlasTexture::RecreatableName() const	function	renderer	renderer-glyphatlastexture-recreatablename-const	renderer.md	engine/renderer/glyph_atlas_texture.h:73
 renderer::kLightAccumFormat	variable	renderer	renderer-klightaccumformat	renderer.md	engine/renderer/lighting.h:39
 renderer::SurfacePoint	struct	renderer	renderer-surfacepoint	renderer.md	engine/renderer/lighting.h:44
 renderer::SurfacePoint::albedo	variable	renderer	renderer-surfacepoint-albedo	renderer.md	engine/renderer/lighting.h:46
@@ -4044,6 +4059,26 @@ renderer::RenderSettingsToChanges(const RenderSettings&,const::engine_placeholde
 renderer::ApplySharedChange(void*,const::engine_placeholder::settings::ChangeEvent&)	function	renderer	renderer-applysharedchange-void-star-const-engine-placeholder-settings-changeevent-amp	renderer.md	engine/renderer/shared_settings.h:63
 renderer::SyncSharedFromRenderer(Renderer*,::engine_placeholder::settings::Settings*)	function	renderer	renderer-syncsharedfromrenderer-renderer-star-engine-placeholder-settings-settings-star	renderer.md	engine/renderer/shared_settings.h:72
 renderer::RendererCapability(void*,const char*)	function	renderer	renderer-renderercapability-void-star-const-char-star	renderer.md	engine/renderer/shared_settings.h:80
+renderer::TextRendererDesc	struct	renderer	renderer-textrendererdesc	renderer.md	engine/renderer/text_renderer.h:20
+renderer::TextRendererDesc::color_format	variable	renderer	renderer-textrendererdesc-color-format	renderer.md	engine/renderer/text_renderer.h:23
+renderer::TextRendererDesc::max_glyphs	variable	renderer	renderer-textrendererdesc-max-glyphs	renderer.md	engine/renderer/text_renderer.h:25
+renderer::TextRenderer	class	renderer	renderer-textrenderer	renderer.md	engine/renderer/text_renderer.h:40
+renderer::TextRenderer::TextRenderer()	function	renderer	renderer-textrenderer-textrenderer	renderer.md	engine/renderer/text_renderer.h:42
+renderer::TextRenderer::~TextRenderer()	function	renderer	renderer-textrenderer-tilde-textrenderer	renderer.md	engine/renderer/text_renderer.h:44
+renderer::TextRenderer::TextRenderer(const TextRenderer&)	function	renderer	renderer-textrenderer-textrenderer-const-textrenderer-amp	renderer.md	engine/renderer/text_renderer.h:45
+renderer::TextRenderer::operator=(const TextRenderer&)	function	renderer	renderer-textrenderer-operator-eq-const-textrenderer-amp	renderer.md	engine/renderer/text_renderer.h:46
+renderer::TextRenderer::Create(rhi::Device*,text::GlyphAtlas*,const TextRendererDesc&,DeviceResources*)	function	renderer	renderer-textrenderer-create-rhi-device-star-text-glyphatlas-star-const-textrendererdesc-amp-deviceresources-star	renderer.md	engine/renderer/text_renderer.h:59
+renderer::TextRenderer::Destroy()	function	renderer	renderer-textrenderer-destroy	renderer.md	engine/renderer/text_renderer.h:62
+renderer::TextRenderer::BeginFrame()	function	renderer	renderer-textrenderer-beginframe	renderer.md	engine/renderer/text_renderer.h:65
+renderer::TextRenderer::Add(const text::TextLayout&,const text::TextStyle&,f32,f32)	function	renderer	renderer-textrenderer-add-const-text-textlayout-amp-const-text-textstyle-amp-f32-f32	renderer.md	engine/renderer/text_renderer.h:80
+renderer::TextRenderer::Record(rhi::CommandList*,rhi::UniformRing*,u32,u32)	function	renderer	renderer-textrenderer-record-rhi-commandlist-star-rhi-uniformring-star-u32-u32	renderer.md	engine/renderer/text_renderer.h:94
+renderer::TextRenderer::QueuedGlyphs() const	function	renderer	renderer-textrenderer-queuedglyphs-const	renderer.md	engine/renderer/text_renderer.h:98
+renderer::TextRenderer::DroppedGlyphs() const	function	renderer	renderer-textrenderer-droppedglyphs-const	renderer.md	engine/renderer/text_renderer.h:101
+renderer::TextRenderer::Pages() const	function	renderer	renderer-textrenderer-pages-const	renderer.md	engine/renderer/text_renderer.h:104
+renderer::TextRenderer::Release()	function	renderer	renderer-textrenderer-release	renderer.md	engine/renderer/text_renderer.h:106
+renderer::TextRenderer::Recreate(rhi::Device*)	function	renderer	renderer-textrenderer-recreate-rhi-device-star	renderer.md	engine/renderer/text_renderer.h:107
+renderer::TextRenderer::Live() const	function	renderer	renderer-textrenderer-live-const	renderer.md	engine/renderer/text_renderer.h:108
+renderer::TextRenderer::RecreatableName() const	function	renderer	renderer-textrenderer-recreatablename-const	renderer.md	engine/renderer/text_renderer.h:109
 renderer::TextureImage	struct	renderer	renderer-textureimage	renderer.md	engine/renderer/texture.h:16
 renderer::TextureImage::desc	variable	renderer	renderer-textureimage-desc	renderer.md	engine/renderer/texture.h:18
 renderer::TextureImage::pixels	variable	renderer	renderer-textureimage-pixels	renderer.md	engine/renderer/texture.h:20
