@@ -126,6 +126,7 @@ TEST_CASE("The 14 rendering settings are declared under renderer. with the same 
         REQUIRE(id.IsValid());
         const st::SettingDesc& d = *rig.registry.Desc(id);
         CHECK(d.apply_class == static_cast<u8>(old.cost));
+        CHECK(((d.flags & st::kRestartRequired) != 0) == old.restart_required); // renderer.backend: chosen at start
         CHECK(((d.capability == nullptr) == (old.capability == nullptr)));
         // The text of the default is what the old registry prints for it.
         rs::RenderSettings defaults;
@@ -158,7 +159,8 @@ TEST_CASE("A file with [renderer] keys loads, layers, applies at start-up and sa
     CHECK(from_file.GetEnum(rs::settings::kPresentMode) == 1);
     CHECK(from_file.GetInt(rs::settings::kWidth) == 96);
     REQUIRE(rig.Create(from_file));
-    CHECK(rs::SyncSharedFromRenderer(rig.renderer.Get(), &settings)); // the rig runs the null backend while the file leaves the default: align once
+    // The rig runs the null backend while the file leaves the default (auto): the backend takes effect at start, so the sync keeps auto.
+    CHECK_FALSE(rs::SyncSharedFromRenderer(rig.renderer.Get(), &settings));
     CHECK(rig.renderer->Settings().GetInt(rs::settings::kWidth) == 96);   // applied at start-up
     settings.SetCapabilityCheck(&rs::RendererCapability, rig.renderer.Get());
     // A Dynamic change through Settings reaches the renderer with the right cost class.
@@ -174,7 +176,7 @@ TEST_CASE("A file with [renderer] keys loads, layers, applies at start-up and sa
     CHECK(rig.renderer->LastApply().performed == rs::CostClass::Swapchain);
     // Saving changes only the changed lines of the file.
     REQUIRE(settings.Save().Ok());
-    CHECK(Slurp(user).View() == "# my renderer\nversion = 1\nrenderer.schema = 2\n\n[renderer]\npresent_mode = mailbox   # smooth\nwidth = 128\nheight = 64\nbackend = null\ngbuffer_debug_layer = normal\n"); // backend = null: the test rig runs the null backend
+    CHECK(Slurp(user).View() == "# my renderer\nversion = 1\nrenderer.schema = 2\n\n[renderer]\npresent_mode = mailbox   # smooth\nwidth = 128\nheight = 64\ngbuffer_debug_layer = normal\n"); // no backend line: the rig's null backend is not written back
 }
 
 TEST_CASE("A change the renderer cannot apply is rolled back through the settings system", "[shared_settings]") {
@@ -281,8 +283,15 @@ TEST_CASE("The settings system is brought back in line when a queued change fail
     st::Settings settings(rig.registry);
     settings.Load(Options(dir / "settings.cfg"));
     REQUIRE(rig.Create(rs::RenderSettings()));
-    CHECK(rs::SyncSharedFromRenderer(rig.renderer.Get(), &settings));       // the rig runs the null backend, the default is Vulkan: aligned now
-    CHECK_FALSE(rs::SyncSharedFromRenderer(rig.renderer.Get(), &settings)); // in line
+    // The rig runs the null backend and the settings system holds `auto`: the backend takes effect at start, so the stored value is the one for
+    // the next start and the sync leaves it alone (Phase 13 Day 173).
+    const st::SettingId backend = rig.registry.Find("renderer.backend");
+    CHECK_FALSE(rs::SyncSharedFromRenderer(rig.renderer.Get(), &settings));
+    CHECK(settings.Snapshot()->Get(backend).AsEnum() == 3);
+    REQUIRE(settings.Set(backend, st::Value::FromEnum(2)).Ok());             // dx12, for the next start
+    CHECK_FALSE(rs::SyncSharedFromRenderer(rig.renderer.Get(), &settings));
+    CHECK(settings.Snapshot()->Get(backend).AsEnum() == 2);
+    CHECK(rig.renderer->Settings().GetEnum(rs::settings::kBackend) == 0);
     // The settings system accepted a value the renderer never applied (as after a queued change that failed).
     const st::SettingId frames = rig.registry.Find("renderer.frames_in_flight");
     REQUIRE(settings.Set(frames, st::Value::FromInt(3)).Ok());               // no apply function: the renderer does not know

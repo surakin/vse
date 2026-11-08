@@ -42,7 +42,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - Phase 5 Day 82: the demo golden (`tests/rhi/golden/renderer_demo.ppm`) was blessed on an NVIDIA GeForce RTX 3060 only; the tolerance (6 levels, wider on edges) is untested on other GPUs and drivers, and so is the exact draw-order independence. Phase 13 Day 160 (2026-11-08): every golden image (triangle, cube, textured cube, lit cube, the demo scene, and the compute readback) also matches on an AMD Radeon 860M (integrated, driver 26.10.1, Windows) with the tolerances unchanged; the draw-order independence is still untested elsewhere.
 - Phase 5 Day 78 (2026-11-05): in repeated full `ctest -j8` runs, one run had 1 failure and two had X11Window tests fail (`translates key press/release into Key via the server's keymap`, `releases keys and modifiers on a real focus loss but not during WM grabs`, `releases the Key a code was pressed as even if modifiers changed`); other runs passed 1643/1643 and 1649/1649. No code those tests exercise changed that day; not investigated. Seen again on Phase 5 Day 84 (2026-11-05): one `ctest -j16` run failed `X11Window maps event state bits to engine modifiers` (modifiers 0, expected 15) and `releases keys and modifiers on a real focus loss...`; the next full run failed `translates key press/release into Key via the server's keymap`; the third run passed 1839/1839, as did 1832/1832 on Day 83, and the two tests passed 6 of 6 times rerun alone.
 
-- Phase 8 Day 103 (2026-11-06): the development machine has one Vulkan adapter (RTX 3060; `vulkaninfo` lists one, only the NVIDIA ICD is installed), so switching the GPU at run time cannot be exercised on real hardware here; adapter selection is tested on the null backend's fake adapters, and the Vulkan test will run on the one adapter. A machine with two GPUs is needed for this check. Phase 13 Day 172: done on Windows with Direct3D 12 (Radeon 860M to WARP and back, `backend_switch_gpu_test.cpp`); still not run with Vulkan on two adapters.
+- Phase 8 Day 103 (2026-11-06): the development machine has one Vulkan adapter (RTX 3060; `vulkaninfo` lists one, only the NVIDIA ICD is installed), so switching the GPU at run time cannot be exercised on real hardware here; adapter selection is tested on the null backend's fake adapters, and the Vulkan test will run on the one adapter. A machine with two GPUs is needed for this check. Phase 13 Day 172: done on Windows with Direct3D 12 (Radeon 860M to WARP and back, `adapter_switch_gpu_test.cpp`); still not run with Vulkan on two adapters.
 - Phase 8 Day 103 spike: each Vulkan device creation leaves about 3 allocations (about 2 KiB) held through `libdbus-1.so` (the driver's loader path, covered by `tests/rhi/lsan.supp`'s existing entry); 20 creations under ASan counted 60 suppressed allocations. A 100-reset loop retains about 200 KiB; the loop test budgets for it.
 - Phase 8 Day 103 spike: after an injected device loss, resident memory rose 5.4 MiB (26412 to 31812 KiB) and stayed there for the next two iterations; one sample, not investigated. Day 111: not reproduced; eight injected losses on one process cost 268 KiB resident.
 - Warnings as errors (2026-11-07, CLAUDE.md): verified with Clang on Linux (unity and non-unity, plain/asan/tsan targets) and on Windows with cl (unity and non-unity, plain and asan) and clang-cl (unity; Phase 13 Day 157's first commit fixed the five Windows-only warnings). GCC, the fallback when `clang++` is missing, builds clean in unity and non-unity (2026-11-07).
@@ -213,14 +213,34 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   right after another tree's build; deleting that object and building again fixed it. Not seen in the unity trees. The file was removed on Day 169 (its last placeholders were replaced); not seen with another file so far.
 - Phase 13 Day 168 (2026-11-08), open until the Linux run at the phase close: `shaders/mipgen.comp` and its minted outputs (minted on Windows)
   have not been minted or checked on Linux.
+- Phase 13 Day 173 (2026-11-08), flaky, not understood: in full plain-suite runs a new test process's `D3D12CreateDevice` returned
+  `DXGI_ERROR_DEVICE_REMOVED` three times (16:56 `build-clang-cl`, 18:43 `build-windows-clang-cl-nounity`, 18:49 `build-windows-msvc-nounity`),
+  failing the DX12 test that started then (`DX12 command lists record on several threads ...`, `DX12 root signatures are cached ...`, `Creating every
+  committed pipeline on DX12 ...`). At 16:56 the Vulkan/DX12 backend-switch test (deleted since) read a black frame in another process and then
+  aborted; at 18:48-18:49 the DX12 100-reset loop saw device memory 64 KiB different at reset 8. Not reproduced: three parallel runs of phases 5, 8
+  and 13 (481 tests each), and 25 device creations beside a loop of `InjectDeviceLoss` (`RemoveDevice`). The System log has no display-driver
+  event (4101) from 16:50 to 17:05. Each failing test passes when run again.
+- Phase 13 Day 173, flaky: the DX12 half of `Resets in a loop on a real device ...` (phase 8) failed twice with device memory 65536 bytes below the
+  first reading (70451200 against 70516736), at reset 8 (`build-windows-msvc-nounity` full run, 18:49) and at reset 14 (`build-msvc`,
+  `--affected`, no device removal in that run); object counts were equal. Both times beside other tests; it passes alone (once each, today) and
+  Vulkan's half never showed it.
+- Phase 13 Day 173, observed: on Windows a `SwapchainDesc` size different from the window is used by DX12 (DXGI scales the buffers to the window)
+  and ignored by Vulkan (the Win32 surface reports a fixed current extent): `renderer_demo --set renderer.width=640 --set renderer.height=360`
+  renders 640x360 on DX12 and 2560x1440 on Vulkan.
+- Phase 13 Day 173, not done by a person: `rhi_demo` on DX12 resized by dragging, minimized and restored, fullscreen toggled by hand; the demos'
+  orbit, fly, mouse drag and wheel with real input on Windows; the picture looked at after a GPU switch (Radeon to WARP) in a running
+  `renderer_demo`. All were run by script or ctest only.
 - Phase 13 Day 172 (2026-11-08), open until the Linux run at the phase close: the reset, recovery, material, permutation, frame and mesh GPU
-  tests made per-backend (`reset_rig.h`, `reset_golden_gpu_test.cpp`, `backend_switch_gpu_test.cpp`, `tests/renderer/*`) have not been built or
-  run on Linux (where the backend switch test skips: one backend).
+  tests made per-backend (`reset_rig.h`, `reset_golden_gpu_test.cpp`, `adapter_switch_gpu_test.cpp`, `tests/renderer/*`) have not been built or
+  run on Linux (where the adapter switch test skips: it is DX12 and WARP). Day 173 adds: the demos' and benchmarks' `--rhi`, the
+  restart-required `backend` (`render_settings`, `shared_settings`, their tests, the demo goldens and READMEs), `game/common/rhi_option.h`.
 - Phase 13 Day 171 (2026-11-08), open until the Linux run at the phase close: the renderer GPU tests made per-backend (`gbuffer_rig.h`,
   `*_gpu_test.cpp`) have not been built or run on Linux.
 - Phase 13 Day 171, measured, filed: on the Radeon 860M the DX12 backend records a draw in 0.27 us against Vulkan's 0.19 us (16000
   point-light volume draws: 4.4 ms against 3.15 ms of CPU time), and a 50000-object frame takes 7.1 to 7.3 ms against 6.4 to 7.1. Not
   profiled (PIX is not installed).
+- 2026-11-08 (Windows PC, Phase 13 Day 173), flaky again: `Throughput scales with participant count` (phase 2, plain), once in
+  `scripts/test-phase.sh --affected`.
 - 2026-11-08 (Windows PC, Phase 13 Day 172), flaky again: `Throughput scales with participant count` (phase 2, plain), once in
   `scripts/test-phase.sh --affected`.
 - 2026-11-08 (Windows PC, Phase 13 Day 171), flaky again: `Throughput scales with participant count` (phase 2, plain), a third time in

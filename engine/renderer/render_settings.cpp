@@ -218,7 +218,12 @@ void RegisterBuiltinSettings(SettingsRegistry* registry) {
         const SettingId id = registry->Register(d);
         ENGINE_ASSERT(id == expected, "a built-in setting got an unexpected id");
     };
-    add(MakeEnum("backend", CostClass::DeviceReset, kBackendNames, 3), settings::kBackend);
+    {
+        // The graphics API is chosen when the program starts; a change waits for the next start (no run-time backend switch).
+        SettingDesc d = MakeEnum("backend", CostClass::DeviceReset, kBackendNames, 3);
+        d.restart_required = true;
+        add(d, settings::kBackend);
+    }
     {
         SettingDesc d;
         d.name = "adapter";
@@ -489,6 +494,10 @@ SettingsChange DiffSettings(const RenderSettings& from, const RenderSettings& to
         if (SameValue(from, to, id, *d)) {
             continue;
         }
+        if (d->restart_required) {
+            change.restart[change.restart_count++] = id; // takes effect at the next start
+            continue;
+        }
         // A capability is needed to turn something on, not to put a setting back to its default.
         if (!SameValue(to, defaults, id, *d) && !capabilities.Has(d->capability)) {
             change.unsupported[change.unsupported_count++] = UnsupportedSetting{id, d->capability};
@@ -505,11 +514,13 @@ SettingsChange DiffSettings(const RenderSettings& from, const RenderSettings& to
 RenderSettings ResolveSettings(const RenderSettings& current, const RenderSettings& requested, const Capabilities& capabilities) {
     const SettingsChange change = DiffSettings(current, requested, capabilities);
     RenderSettings result = requested;
-    for (u32 i = 0; i < change.unsupported_count; ++i) {
+    auto put_back = [&](SettingId id) {
         char text[kSettingTextBytes];
-        current.ValueToString(change.unsupported[i].id, text, sizeof(text));
-        result.SetFromString(change.unsupported[i].id, text);
-    }
+        current.ValueToString(id, text, sizeof(text));
+        result.SetFromString(id, text);
+    };
+    for (u32 i = 0; i < change.unsupported_count; ++i) put_back(change.unsupported[i].id);
+    for (u32 i = 0; i < change.restart_count; ++i) put_back(change.restart[i]);
     return result;
 }
 

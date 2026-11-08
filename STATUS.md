@@ -969,3 +969,11 @@ works on DX12. A running renderer switches between Vulkan and DX12 (20 switches,
 after each) and between the Radeon and WARP (`backend_switch_gpu_test.cpp`). `Auto` now means DX12 on Windows (rank 20). The reset, recovery, material,
 permutation and frame GPU tests run per backend. Runs: `ran 1272 of 2483 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (the filed throughput flake, and the DX12 reset loop's handle allowance, fixed), asan `ran 946 of 2483 tests (phases: all; flavors: asan; display: included; crash tests: excluded)`. Review: 7 findings, 5 fixed (one with a regression test), 2 declined (one filed).
 The switches inside a running `renderer_demo` moved to Day 173. Linux: pending until the phase close. **Next: Day 173 (demos, benchmarks, clang-cl).**
+
+Phase 13 **Day 173 (2026-11-08, Windows PC): demos, benchmarks, clang-cl.** The demos take their backend from `renderer.backend` (`--rhi`), the
+benchmarks from `--rhi`; the demo ctests run per backend (55 of 55). **The run-time backend switch is removed** (the user's decision: a game has no
+reason to change its graphics API while it runs): `backend` is restart-required, a change waits for the next start; the GPU switch stays. Both demos
+ran 1000 frames with validation on both backends, silent; the Release build's crash reads back from the symbol store; the benchmark tables and the
+Phase 4 prediction are in the spec (the descriptor copy is not a cost). Full plain suite: clang-cl all pass, clang-cl non-unity and MSVC non-unity one
+and two failures, the intermittent DX12 device removal (filed). Runs: `ran 1281 of 2492 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 946 of 2492 tests (phases: all; flavors: asan; display: included; crash tests: excluded)`.
+Review: 7 findings, 3 fixed, 4 declined (filed). Hand checks of the demos need a person (filed). Linux: pending. **Next: Day 174 (the phase close).**

@@ -368,7 +368,7 @@ Every program built this way understands the same options, and `--help` prints t
 
 - `--set KEY=VALUE` (repeatable), `--settings FILE`, `--save-settings[=FILE]` (writes the settings that differ from their defaults, so `--settings FILE` reproduces the session), `--list-settings` (every setting: its value, its default,
   the layer and line or variable it came from, and what it is for);
-- a flag for each setting that declares one (`--gpu NAME` is `renderer.adapter`, `--backend NAME` is `platform.window_backend`);
+- a flag for each setting that declares one (`--gpu NAME` is `renderer.adapter`, `--rhi NAME` is `renderer.backend`, `--backend NAME` is `platform.window_backend`);
 - the environment: `ENGINE_SETTING_<KEY>` for any setting, and the variables the engine has always read (`ENGINE_RHI_GPU`, `ENGINE_WINDOW_BACKEND`, `ENGINE_RHI_CACHE_DIR`, `ENGINE_RHI_VALIDATION_SYNC`), which now show up with their
   provenance. Some variables are not settings: `ENGINE_JOB_THREADS`, `ENGINE_CRASH_HANDLER`, `ENGINE_RHI_VALIDATION_BEST_PRACTICES` and the window host read them before any `Settings` exists, and nothing in a settings file changes them (the configuration check lists them as exceptions).
 

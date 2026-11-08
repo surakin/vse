@@ -1,8 +1,8 @@
 # rhi_demo
 
 The RHI's reference client: a textured, depth-tested cube lit by one directional light that orbits it, drawn through
-the Vulkan backend into a window (Wayland or X11 on Linux, Win32 on Windows) or offscreen. Nothing here includes a Vulkan header except the
-backend header used to create the device.
+the RHI into a window (Wayland or X11 on Linux, Win32 on Windows) or offscreen. The backend is the `renderer.backend` setting (`--rhi`):
+`auto` is Direct3D 12 on Windows and Vulkan elsewhere, `vulkan` and `dx12` name one. Nothing here includes a backend header.
 
 ## Build and run
 
@@ -35,8 +35,9 @@ terminal its output goes to that terminal. Its settings file is `%APPDATA%\rhi_d
 | `--screenshot FILE` | render offscreen with a fixed camera and light, with no window, and write the last frame to FILE as a binary PPM (N frames with `--frames`) |
 | `--no-vsync` | present with `Immediate` instead of `Fifo` |
 | `--gpu G` | the GPU to use: an id from `--list-gpus`, an index, or part of its name; a GPU that does not exist fails (exit 1) and never falls back |
-| `--list-gpus` | print the GPUs and exit |
-| `--validation` | enable the Vulkan validation layer with synchronization validation |
+| `--list-gpus` | print the backend and its GPUs, and exit |
+| `--rhi NAME` | the graphics backend: `auto` (default), `vulkan`, `dx12` or `null`; the `renderer.backend` setting |
+| `--validation` | enable the backend's validation layer with synchronization validation (Direct3D 12: GPU-based validation) |
 | `--help` | print the options |
 
 Exit codes: 0 success, 1 a runtime failure (no device, window, swapchain, or a failed draw, or memory growth), 2 a
@@ -80,6 +81,7 @@ Settings:
   --list-settings         print every setting: its value, default, where it came from and what it is for, and exit
   --backend NAME          platform.window_backend: the display backend: wayland or x11 on Linux, win32 on Windows (auto picks Wayland, then X11, on Linux)
   --gpu TEXT              renderer.adapter: the GPU: an id from --list-gpus, an index, or part of the name (empty: the best one)
+  --rhi NAME              renderer.backend: the graphics backend: auto (the preferred one this program has and this machine runs), null (no GPU), vulkan or dx12
 Environment: ENGINE_SETTING_<KEY> sets any setting (the key in capitals, dots written as __, e.g. ENGINE_SETTING_RENDERER__PRESENT_MODE); also:
   ENGINE_WINDOW_BACKEND                 platform.window_backend
   ENGINE_RHI_GPU                        renderer.adapter

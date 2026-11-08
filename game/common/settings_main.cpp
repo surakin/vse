@@ -3,11 +3,20 @@
 #include <cstdio>
 
 #include "io/path.h"
+#include "rhi/backend_registry.h"
 #include "renderer/shared_settings.h"
 #include "settings/engine_settings.h"
 #include "settings/report.h"
 
 namespace demo {
+
+const char* BackendLabel(::engine_placeholder::rhi::Backend backend) {
+    // A named backend keeps its name even where it cannot run (no Vulkan loader); auto is what it resolves to here.
+    const ::engine_placeholder::rhi::BackendDescriptor* d = backend == ::engine_placeholder::rhi::Backend::Auto
+                                                               ? ::engine_placeholder::rhi::ResolveBackend(backend, nullptr, 0)
+                                                               : ::engine_placeholder::rhi::FindBackend(backend);
+    return d != nullptr ? d->name : "graphics";
+}
 
 DemoSettings::DemoSettings() = default;
 DemoSettings::~DemoSettings() = default;
@@ -53,6 +62,7 @@ void DemoSettings::SetLegacy(const char* key, const char* text, const char* flag
 void DemoSettings::FillDeviceCreateInfo(::engine_placeholder::rhi::DeviceCreateInfo* info) {
     const SharedPtr<const sset::SettingsSnapshot> shared = settings_->Snapshot();
     auto get = [&](const char* key) -> const sset::Value& { return shared->Get(registry_.Find(StringView(key))); };
+    info->backend = static_cast<::engine_placeholder::rhi::Backend>(get("renderer.backend").AsEnum()); // the names follow rhi::Backend
     info->validation = static_cast<::engine_placeholder::rhi::ValidationSetting>(get("renderer.validation").AsEnum());
     info->sync_validation = get("renderer.sync_validation").AsBool();
     info->frames_in_flight = static_cast<u32>(get("renderer.frames_in_flight").AsInt());

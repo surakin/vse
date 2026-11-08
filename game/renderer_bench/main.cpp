@@ -1,8 +1,10 @@
 // renderer_bench: records the Phase 5 performance baseline. Prints one line per measurement; nothing here is asserted in CI. See
 // docs/guide/renderer.md ("Performance notes") for what the numbers mean.
 //
-//   renderer_bench [--section graph|frame|lights|pool|all] [--device vulkan|null] [--frames N] [--threads N]
+//   renderer_bench [--section graph|frame|lights|pool|all] [--rhi null|vulkan|dx12|auto] [--frames N] [--threads N]
 //             [--objects 1000|10000|50000] [--single]
+//
+// `--rhi` is the graphics backend (default auto: Direct3D 12 on Windows, Vulkan elsewhere); `--device` is its older spelling.
 //
 // `frame` times a whole frame's CPU work (scene preparation, graph build and compile, recording, submission) at 1k, 10k and 50k
 // objects; the device is idled after every frame, outside the timer, so the number is CPU work and not waiting for the GPU.
@@ -20,8 +22,10 @@
 #include "os/os.h"
 #include "renderer/render_graph.h"
 #include "rhi/backends/backends.h"
+#include "rhi/backend_registry.h"
 #include "rhi/null/null_device.h"
 #include "rhi/rhi.h"
+#include "rhi_option.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -53,7 +57,8 @@ struct Samples {
 
 struct Options {
     const char* section = "all";
-    bool null_device = false;
+    rhi::Backend backend = rhi::Backend::Auto; // --rhi
+    bool null_device = false;                  // --rhi null: the validating null device, without the registry
     u32 frames = 30;
     u32 threads = 0; // 0: the scheduler's default
     u32 objects = 0; // 0: the frame section runs 1k, 10k and 50k
@@ -123,7 +128,7 @@ rhi::DevicePtr MakeDevice(const Options& o, rhi::NullDevicePtr* null_holder) {
         return rhi::DevicePtr();
     }
     rhi::DeviceCreateInfo info;
-    info.backend = rhi::Backend::Vulkan; // the benchmarks draw with Vulkan until Phase 13 Day 173 lets them choose
+    info.backend = o.backend;
     info.pipeline_cache = false;
     return rhi::CreateDevice(info);
 }
@@ -131,8 +136,8 @@ rhi::DevicePtr MakeDevice(const Options& o, rhi::NullDevicePtr* null_holder) {
 Run RunScene(const Options& o, u32 objects, u32 lights, bool use_jobs) {
     Run run;
     rhi::NullDevicePtr null_holder;
-    rhi::DevicePtr vulkan = MakeDevice(o, &null_holder);
-    rhi::Device* device = o.null_device ? static_cast<rhi::Device*>(null_holder.Get()) : vulkan.Get();
+    rhi::DevicePtr gpu = MakeDevice(o, &null_holder);
+    rhi::Device* device = o.null_device ? static_cast<rhi::Device*>(null_holder.Get()) : gpu.Get();
     if (device == nullptr) {
         std::printf("no device\n");
         return run;
@@ -262,7 +267,7 @@ bool ParseCount(const char* text, u32* out, u32 max) {
 bool Section(const Options& o, const char* name) { return std::strcmp(o.section, "all") == 0 || std::strcmp(o.section, name) == 0; }
 
 int Usage(const char* program) {
-    std::fprintf(stderr, "usage: %s [--section graph|frame|lights|pool|all] [--device vulkan|null] [--frames 1-500] [--threads 0-64] [--objects 1000|10000|50000] [--single]\n",
+    std::fprintf(stderr, "usage: %s [--section graph|frame|lights|pool|all] [--rhi null|vulkan|dx12|auto] [--frames 1-500] [--threads 0-64] [--objects 1000|10000|50000] [--single]\n",
                  program);
     return 2;
 }
@@ -282,8 +287,9 @@ int main(int argc, char** argv) {
         if (std::strcmp(argv[i], "--section") == 0 && has_value) {
             o.section = argv[++i];
             if (!Section(o, "graph") && !Section(o, "frame") && !Section(o, "lights") && !Section(o, "pool")) return Usage(argv[0]);
-        } else if (std::strcmp(argv[i], "--device") == 0 && has_value) {
-            o.null_device = std::strcmp(argv[++i], "null") == 0;
+        } else if ((std::strcmp(argv[i], "--rhi") == 0 || std::strcmp(argv[i], "--device") == 0) && has_value) {
+            if (!demo::ParseRhiBackend(argv[++i], &o.backend)) return Usage(argv[0]);
+            o.null_device = o.backend == rhi::Backend::Null;
         } else if (std::strcmp(argv[i], "--frames") == 0 && has_value) {
             if (!ParseCount(argv[++i], &o.frames, 500) || o.frames == 0) return Usage(argv[0]);
         } else if (std::strcmp(argv[i], "--objects") == 0 && has_value) {
@@ -295,6 +301,15 @@ int main(int argc, char** argv) {
         } else {
             return Usage(argv[0]);
         }
+    }
+    if (!o.null_device && (Section(o, "frame") || Section(o, "lights") || Section(o, "pool"))) {
+        char why[256] = {};
+        const rhi::BackendDescriptor* backend = rhi::ResolveBackend(o.backend, why, sizeof(why));
+        if (backend == nullptr) {
+            std::fprintf(stderr, "renderer_bench: %s\n", why);
+            return 1;
+        }
+        std::printf("# backend %s\n", backend->name);
     }
     if (Section(o, "graph")) BenchGraph();
     if (Section(o, "frame")) BenchFrame(o);

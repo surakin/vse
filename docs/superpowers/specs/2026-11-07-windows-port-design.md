@@ -215,3 +215,56 @@ from the apply call; the first good frame 243.8 / 262.4 ms. Split (medians): own
 device 56.3, the swapchain 53.5, owners rebuilding 56.1 ms. The same GPU under Linux (RADV, Phase 8 Day 113) took 36 ms (5.9, 9.7, 1.0, 12.3 for
 the same steps): every step is slower here, the swapchain most (54 against 1 ms). A reset still needs no progress display (Phase 8's decision
 asks again at a second or more).
+
+## 9. DX12 beside Vulkan on the Windows PC, and beside Linux (Day 173)
+
+The same machine and build as section 8 (`build-msvc-release`, validation off, two runs each), on 2026-11-08 at the PC itself, not over Remote
+Desktop: its display runs at 120 Hz with 200% scaling, so the demo's default 1280x720 window is 2560x1440 pixels. Each program picks the backend
+with `--rhi`. Linux is the other development machine (NVIDIA RTX 3060, Ryzen 9 7950X3D; Phase 4 Day 67 and the renderer guide's numbers of 2026-11-05), so its column
+compares machines as well as systems.
+
+**`rhi_bench`** (the per-draw figure is a transient bind group's `CreateBindGroup` plus `SetBindGroup` plus the draw with its state):
+
+| Measure | DX12, run 1 / run 2 | Vulkan (Windows), run 1 / run 2 | Linux (Vulkan, RTX 3060) |
+|---|---|---|---|
+| 1000 draws: record per frame (per draw) | 0.441 / 0.394 ms (0.44 / 0.39 us) | 0.728 / 0.863 ms (0.73 / 0.86 us) | 0.50-0.52 ms (0.5 us) |
+| 10000 draws: record per frame (per draw) | 4.515 / 4.112 ms (0.45 / 0.41 us) | 10.672 / 12.955 ms (1.07 / 1.30 us) | 6.2-6.4 ms (0.63 us) |
+| Buffer / texture barrier, per call | 0.198 / 0.176, 0.214 / 0.199 us | 0.156 / 0.239, 0.181 / 0.197 us | 0.15-0.17, 0.17-0.21 us |
+| Upload through the staging ring: 1 MiB x 256 / 64 MiB x 8 | 12980 / 8145, 16733 / 16682 MiB/s | 15465 / 18023, 14617 / 14368 MiB/s | 15.6-18.1 / 13.7-18.6 GiB/s |
+| Cube pipeline: no cache / cold / warm | 1.29-1.40 ms, all three | 20.7-22.1 ms, all three | 5.6-5.8 / 4.9-5.0 / 3.6 ms |
+
+**`renderer_bench`** (CPU time of a whole frame; 16 instanced draws whatever the object count):
+
+| Measure | DX12, run 1 / run 2 | Vulkan (Windows), run 1 / run 2 | Linux (Vulkan, RTX 3060) |
+|---|---|---|---|
+| Graph of 1000 passes: build / compile | 25.9 / 22.7, 25.8 / 22.5 us | 26.0 / 22.6, 25.7 / 22.5 us | about 27 / 27 us |
+| Frame, 1000 objects: single thread / jobs, median | 0.172 / 0.157, 0.204 / 0.173 ms | 0.262 / 0.173, 0.680 / 0.354 ms | 0.11 / 0.15 ms |
+| Frame, 10000 objects | 2.018 / 2.010, 1.998 / 1.947 ms | 1.354 / 1.184, 1.588 / 1.506 ms | 0.78 / 0.8 ms |
+| Frame, 50000 objects | 7.184 / 7.088, 7.783 / 7.391 ms | 6.260 / 6.263, 6.994 / 7.016 ms | 3.9 / 3.9 ms |
+| Lights: 1000 objects with 0 / 1000 / 16000 point lights | 0.183 / 0.564 / 6.331, 0.171 / 0.848 / 6.325 ms | 0.200 / 0.507 / 5.154, 0.126 / 0.549 / 5.127 ms | +0.15 / +3.1 ms over none |
+| Transient pool after 105 frames | 5 created, 520 reused (99.0%) | the same | 5 created, 520 reused |
+
+**The jobs benchmarks** (`jobs_tests "[throughput],[latency]"`, Release; backend-independent): 3000 CPU-bound jobs of about 60 us on 1, 2, 4 and 16
+participants: 0.180, 0.081, 0.050, 0.013 s (speedup 1.00, 2.21, 3.61, 13.80 on 8 cores and 16 threads); the wake-up of an idle worker: median
+85.7 us, 99th percentile 210.2 us, worst 2091 us over 10000 wake-ups.
+
+**The demo scene on the GPU** (`renderer_demo --no-vsync --frames 4000`, Release, 2560x1440 swapchain, 487 objects in 16 draws, about 298 point
+lights): DX12 6.36 to 6.87 ms a frame, Vulkan 6.04 to 6.19 ms (two runs each, the last three one-second averages of each). Section 8's 1.81 to
+1.90 ms was a 1280x720 swapchain over Remote Desktop: a quarter of the pixels. There is no GPU timestamp in the demo, so these are frame times of a
+GPU-bound loop. With `--set renderer.width=640 --set renderer.height=360` DX12 renders 640x360 buffers that DXGI scales to the window (0.60 to
+0.69 ms), while Vulkan keeps the window's size (the Win32 surface reports a fixed current extent, so the requested size is not used): the
+`SwapchainDesc` size is a request, and the two backends answer it differently on Windows (`KNOWN-ISSUES.md`).
+
+**A device reset** (`renderer_demo --script` with 20 `reset` words, Debug, validation off, `--no-vsync`, 2560x1440): DX12 266 ms median (261 to
+309), of which creating the D3D12 device takes 189 to 206 ms; Vulkan 284 ms median (265 to 302), against section 8's 239 ms at a quarter of the
+pixels.
+
+**The Phase 4 prediction checked.** The portability review (`2026-11-04-rhi-portability-review.md`, "Bind groups and descriptor heaps") predicted
+that D3D12's one shader-visible heap would cost a descriptor copy at every `SetBindGroup`, and the Day 67 baseline recorded Vulkan's cost of the same
+call for this comparison. Measured: the copy is not a cost. A draw with its transient bind group records in 0.39 to 0.45 us on DX12 against 0.73
+to 1.30 us on Vulkan on the same machine (and 0.5 to 0.63 us on the Linux machine's Vulkan): `CopyDescriptorsSimple` into the frame's ring is
+cheaper than allocating and writing a Vulkan descriptor set. Where DX12 is slower is the bare draw call: the renderer's light-volume loop sets its
+groups once and then only draws, and there DX12 takes about 0.38 us a light against Vulkan's 0.31 us (the 16000-light rows), so a frame of many
+small draws costs DX12 about 20% more CPU here, and the 10000- and 50000-object frames 50 to 70% and 13% more. Pipeline creation is the other large
+difference: 1.3 ms on DX12 against 21 ms on Vulkan, and neither backend's own cache changes it on this driver (both drivers keep a cache of their
+own).

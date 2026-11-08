@@ -25,15 +25,18 @@ A larger class includes the actions of every smaller one, so the cost of a chang
 | `Dynamic` | the next frame reads a new parameter | `gbuffer_debug_layer`, `render_scale` |
 | `Swapchain` | recreate the swapchain and what depends on its size or format | `present_mode`, `width`, `height`, `fullscreen`, `swapchain_format`, `hdr` |
 | `PipelineRebuild` | recreate pipelines, material bind groups and passes; the device stays | `shader_quality` |
-| `DeviceReset` | destroy and create the device; every device-dependent object is rebuilt | `backend`, `adapter`, `validation`, `sync_validation`, `frames_in_flight` |
+| `DeviceReset` | destroy and create the device; every device-dependent object is rebuilt | `adapter`, `validation`, `sync_validation`, `frames_in_flight` |
 
 `render_scale` and `shader_quality` are marked `mechanism_only`: they exist to exercise the mechanism and nothing reads them yet.
 
-`backend` takes `null`, `vulkan`, `dx12` or `auto` (the default: Direct3D 12 on Windows, Vulkan elsewhere). Changing it at run time
-is an ordinary `DeviceReset`: the device is replaced by one of the other backend and every registered owner rebuilds with that
-backend's shader blobs (on the Windows PC of Phase 13 Day 172, a switch between Vulkan and DX12 with the demo scene took about
-160 ms). A backend the program was not built with, or one that cannot run here, is refused with the reason before anything is torn
-down. `adapter` switches the GPU the same way (for example to WARP with `adapter = Basic Render` on Windows).
+`backend` takes `null`, `vulkan`, `dx12` or `auto` (the default: Direct3D 12 on Windows, Vulkan elsewhere). It is the one setting
+that takes effect only when the program starts (`SettingDesc::restart_required`): there is no run-time switch between graphics APIs,
+since a game has no reason to change its API while it runs. A change at run time is not applied: `DiffSettings` lists it in
+`SettingsChange::restart` instead of `changed`, `ResolveSettings` puts it back, and `Renderer::ApplySettings` applies the rest of the
+request and logs that the backend waits for the next start. Through the settings system (`renderer.backend`, flag `--rhi`) the value is
+stored for the next start and marked `kRestartRequired`. A backend the program was not built with, or one that cannot run here, fails the
+device creation at start with the reason. `adapter` does switch the GPU at run time, as a `DeviceReset` (for example to WARP with
+`adapter = Basic Render` on Windows).
 
 ### Capabilities
 
@@ -156,7 +159,7 @@ value type; `RenderSettingsFromSnapshot` builds one from a `settings::Settings` 
 To change a setting at run time through the shared system, call `settings.Apply(requests, count, &renderer::ApplySharedChange, &renderer)`. The apply function builds the requested `RenderSettings` from the
 renderer's current ones plus the changes and calls `Renderer::ApplySettings`; if that fails the renderer has already restored its previous settings and the settings system rolls the value back too.
 `settings.SetCapabilityCheck(&renderer::RendererCapability, &renderer)` makes a setting that needs a missing capability (fullscreen, HDR) refuse a non-default value instead of silently not applying it.
-A change made while the renderer is inside a frame is queued by the renderer and cannot be rolled back afterwards; if it then fails at the frame boundary, `renderer::SyncSharedFromRenderer(&renderer, &settings)` (call it after `RenderFrame`) makes the settings system hold what the renderer actually runs. The apply function builds the request from the values the settings system holds, so a second change made before the first was applied does not drop it. A renderer started from other settings than the settings system holds (a test rig, a different backend) should be aligned once with `SyncSharedFromRenderer` before the first change, or the first apply would carry the difference too. A text longer than the renderer can hold (63 characters) is refused with `TooLong`, not cut.
+A change made while the renderer is inside a frame is queued by the renderer and cannot be rolled back afterwards; if it then fails at the frame boundary, `renderer::SyncSharedFromRenderer(&renderer, &settings)` (call it after `RenderFrame`) makes the settings system hold what the renderer actually runs. The apply function builds the request from the values the settings system holds, so a second change made before the first was applied does not drop it. A renderer started from other settings than the settings system holds (a test rig) should be aligned once with `SyncSharedFromRenderer` before the first change, or the first apply would carry the difference too. The sync leaves a restart-required setting (`renderer.backend`) as the settings system holds it: that is the value for the next start. A text longer than the renderer can hold (63 characters) is refused with `TooLong`, not cut.
 
 In a settings file the keys are the `[renderer]` section:
 

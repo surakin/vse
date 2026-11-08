@@ -58,6 +58,7 @@ void RegisterSharedSettings(sset::Registry* registry) {
         s.key = SharedKey(i);
         s.type = MapType(d.type);
         s.apply_class = static_cast<u8>(d.cost);
+        if (d.restart_required) s.flags |= sset::kRestartRequired;
         s.capability = d.capability;
         s.policy = d.range_policy == RangePolicy::Reject ? sset::RangePolicy::Reject : sset::RangePolicy::Clamp;
         switch (d.type) {
@@ -83,7 +84,7 @@ void RegisterSharedSettings(sset::Registry* registry) {
         }
         // What a user sees in --list-settings and --help, and the environment variables and flags that were already there.
         static const struct { const char* name; const char* description; const char* env; const char* flag; } kInfo[] = {
-            {"backend", "the graphics backend: auto (the preferred one this program has and this machine runs), null (no GPU), vulkan or dx12", nullptr, nullptr},
+            {"backend", "the graphics backend: auto (the preferred one this program has and this machine runs), null (no GPU), vulkan or dx12", nullptr, "rhi"},
             {"adapter", "the GPU: an id from --list-gpus, an index, or part of the name (empty: the best one)", "ENGINE_RHI_GPU", "gpu"},
             {"validation", "the validation layer: auto, off or on", nullptr, nullptr},
             {"sync_validation", "also run synchronization validation", "ENGINE_RHI_VALIDATION_SYNC", nullptr},
@@ -214,9 +215,19 @@ bool ApplySharedChange(void* renderer_ptr, const sset::ChangeEvent& event) {
 
 bool SyncSharedFromRenderer(Renderer* renderer, sset::Settings* settings) {
     const RenderSettings shared = RenderSettingsFromSnapshot(settings->GetRegistry(), *settings->Snapshot());
-    if (shared == renderer->Settings()) return false;
+    // A setting that takes effect at start keeps what the settings system holds: that is the value for the next start, not a change that failed.
+    RenderSettings actual = renderer->Settings();
+    const SettingsRegistry& builtin = SettingsRegistry::Builtin();
+    for (u32 i = 0; i < builtin.Count(); ++i) {
+        const SettingId id{static_cast<u16>(i + 1)};
+        if (!builtin.Find(id)->restart_required) continue;
+        char text[kSettingTextBytes];
+        shared.ValueToString(id, text, sizeof(text));
+        actual.SetFromString(id, text);
+    }
+    if (shared == actual) return false;
     Vector<sset::ChangeRequest> changes;
-    RenderSettingsToChanges(renderer->Settings(), settings->GetRegistry(), &changes);
+    RenderSettingsToChanges(actual, settings->GetRegistry(), &changes);
     settings->Apply(changes.Data(), changes.Size(), nullptr, nullptr);
     return true;
 }

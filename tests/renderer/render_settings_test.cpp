@@ -217,7 +217,17 @@ TEST_CASE("the diff picks the cost class of the most expensive change", "[render
     for (u32 i = 1; i <= base.Registry().Count(); ++i) {
         const SettingId id{static_cast<u16>(i)};
         const SettingsChange c = DiffSettings(base, changed(id), caps);
+        INFO(base.Registry().Find(id)->name);
+        if (base.Registry().Find(id)->restart_required) {
+            // Takes effect at the next start: listed apart, costs nothing now (Phase 13 Day 173).
+            CHECK(c.changed_count == 0);
+            REQUIRE(c.restart_count == 1);
+            CHECK(c.restart[0] == id);
+            CHECK(c.cost == CostClass::None);
+            continue;
+        }
         REQUIRE(c.changed_count == 1);
+        CHECK(c.restart_count == 0);
         CHECK(c.changed[0] == id);
         CHECK(c.cost == base.Registry().Find(id)->cost);
     }
@@ -507,7 +517,7 @@ TEST_CASE("random pairs: the diff class is the maximum over single changes", "[r
         const SettingsChange ab = DiffSettings(a, b, caps);
         CHECK(DiffSettings(a, a, caps).cost == CostClass::None);
         CHECK(DiffSettings(a, a, caps).changed_count == 0);
-        CHECK((ab.changed_count == 0) == (a == b));
+        CHECK((ab.changed_count == 0 && ab.restart_count == 0) == (a == b));
         CostClass expected = CostClass::None;
         for (u32 i = 0; i < ab.changed_count; ++i) {
             // Each reported change is a real single-setting difference whose class bounds the result.
@@ -529,6 +539,28 @@ TEST_CASE("random pairs: the diff class is the maximum over single changes", "[r
         REQUIRE(ParseSettings(text, std::strlen(text), &back, nullptr));
         CHECK(back == a);
     }
+}
+
+TEST_CASE("only the backend waits for the next start, and resolving puts it back", "[render_settings]") {
+    const SettingsRegistry& r = SettingsRegistry::Builtin();
+    for (u32 i = 1; i <= r.Count(); ++i) {
+        const SettingId id{static_cast<u16>(i)};
+        INFO(r.Find(id)->name);
+        CHECK(r.Find(id)->restart_required == (id == settings::kBackend));
+    }
+    const RenderSettings current;
+    RenderSettings wanted = current;
+    wanted.SetEnum(settings::kBackend, 2);        // dx12
+    wanted.SetInt(settings::kFramesInFlight, 3);  // a device reset, applied now
+    const SettingsChange c = DiffSettings(current, wanted, AllCapabilities());
+    CHECK(c.cost == CostClass::DeviceReset);
+    REQUIRE(c.changed_count == 1);
+    CHECK(c.changed[0] == settings::kFramesInFlight);
+    REQUIRE(c.restart_count == 1);
+    CHECK(c.restart[0] == settings::kBackend);
+    const RenderSettings resolved = ResolveSettings(current, wanted, AllCapabilities());
+    CHECK(resolved.GetEnum(settings::kBackend) == current.GetEnum(settings::kBackend));
+    CHECK(resolved.GetInt(settings::kFramesInFlight) == 3);
 }
 
 TEST_CASE("putting a gated setting back to its default needs no capability", "[render_settings]") {

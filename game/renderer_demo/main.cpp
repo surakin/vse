@@ -24,6 +24,7 @@
 #include "renderer/device_resources.h"
 #include "renderer/render_settings.h"
 #include "renderer/renderer.h"
+#include "rhi/backend_registry.h"
 #include "rhi/backends/backends.h"
 #include "rhi/adapter.h"
 #include "rhi/device_host.h"
@@ -161,8 +162,7 @@ demo::DemoSettings* g_demo_settings = nullptr; // the settings of this run: the 
 
 DeviceCreateInfo DeviceInfo(const Options& options) {
     DeviceCreateInfo info;
-    info.backend = Backend::Vulkan; // the demos and benchmarks draw with Vulkan until Phase 13 Day 173 lets them choose
-    g_demo_settings->FillDeviceCreateInfo(&info); // the validation layer, the GPU, the pipeline cache and the frames in flight come from the settings
+    g_demo_settings->FillDeviceCreateInfo(&info); // the backend, the validation layer, the GPU, the pipeline cache and the frames in flight come from the settings
     info.faults.lose_device_at_frame = static_cast<u32>(options.inject_device_loss);
     info.faults.fail_allocations_from = static_cast<u32>(options.inject_oom);
     return info;
@@ -199,13 +199,20 @@ void BuildSettings(const Options& options, RenderSettings* settings) {
 }
 
 int ListGpus() {
-    DeviceCreateInfo info; // Vulkan, headless: the list does not depend on a window
-    info.backend = Backend::Vulkan; // the demos and benchmarks draw with Vulkan until Phase 13 Day 173 lets them choose
-    AdapterList list;
-    if (!EnumerateAdapters(info, &list)) {
-        std::fprintf(stderr, "renderer_demo: cannot list the GPUs (no Vulkan loader or instance)\n");
+    DeviceCreateInfo info; // headless: the list does not depend on a window
+    g_demo_settings->FillDeviceCreateInfo(&info); // the backend
+    char why[256] = {};
+    const BackendDescriptor* backend = ResolveBackend(info.backend, why, sizeof(why));
+    if (backend == nullptr) {
+        std::fprintf(stderr, "renderer_demo: cannot list the GPUs: %s\n", why);
         return kExitFailure;
     }
+    AdapterList list;
+    if (!EnumerateAdapters(info, &list)) {
+        std::fprintf(stderr, "renderer_demo: cannot list the %s GPUs\n", backend->name);
+        return kExitFailure;
+    }
+    std::printf("backend %s\n", backend->name);
     static const char* const kKinds[] = {"other", "software", "virtual", "integrated", "discrete"};
     std::printf("%u GPU(s):\n", list.count);
     for (u32 i = 0; i < list.count; ++i) {
@@ -243,9 +250,14 @@ bool NextAdapterId(const Device& device, char* out, usize capacity) {
 }
 
 void LogApply(const char* what, const ApplyResult& r) {
+    for (u32 i = 0; i < r.change.restart_count; ++i) { // the backend: chosen at start, stored for the next one
+        RhiLogV(LogVerbosity::Info, "renderer_demo: %s: '%s' takes effect at the next start", what,
+                renderer::SettingsRegistry::Builtin().Find(r.change.restart[i])->name);
+    }
     if (r.queued) {
         RhiLogV(LogVerbosity::Info, "renderer_demo: %s: queued for the next frame", what);
     } else if (!r.change.Any() && r.ok && r.performed == CostClass::None) {
+        if (r.change.restart_count != 0) return;
         RhiLogV(LogVerbosity::Info, "renderer_demo: %s: nothing changed", what);
     } else if (r.ok) {
         RhiLogV(LogVerbosity::Info, "renderer_demo: %s: %s done in %.2f ms (release %.2f, device %.2f, swapchain %.2f, rebuild %.2f)", what,
@@ -267,7 +279,7 @@ int RunScreenshot(const Options& options, const RenderSettings& settings) {
     MakeDeviceCreateInfo(settings, DeviceInfo(options), adapter_buffer, &device_info);
     DevicePtr device = CreateDevice(device_info);
     if (device == nullptr) {
-        RhiLogV(LogVerbosity::Error, "renderer_demo: no Vulkan device");
+        RhiLogV(LogVerbosity::Error, "renderer_demo: no %s device", demo::BackendLabel(device_info.backend));
         return kExitFailure;
     }
     TextureDesc td;
@@ -365,7 +377,7 @@ int RunWindow(const Options& options, RenderSettings settings) {
     DeviceHost host;
     host.AddObserver(&registry, 0);
     if (!host.Create(info, MakeSwapchainDesc(settings))) {
-        RhiLogV(LogVerbosity::Error, "renderer_demo: no Vulkan device can present to this window (%s)", host.LastError());
+        RhiLogV(LogVerbosity::Error, "renderer_demo: no %s device can present to this window (%s)", demo::BackendLabel(info.backend), host.LastError());
         return kExitFailure;
     }
     int exit_code = kExitOk;
@@ -750,7 +762,6 @@ int EngineMain(int argc, char** argv) {
     options.backend = effective.window_backend; // --backend, ENGINE_WINDOW_BACKEND or a file, through the settings
     if (options.list_gpus) return ListGpus();
     RenderSettings settings = renderer::RenderSettingsFromSnapshot(demo_settings.GetRegistry(), *demo_settings.Get().Snapshot());
-    settings.SetEnum(renderer::settings::kBackend, 1); // the demo draws with Vulkan
     BuildSettings(options, &settings);
     if (options.screenshot != nullptr) {
         return RunScreenshot(options, settings);

@@ -3526,92 +3526,95 @@ renderer::SettingDesc::type	variable	renderer	renderer-settingdesc-type	renderer
 renderer::SettingDesc::cost	variable	renderer	renderer-settingdesc-cost	renderer.md	engine/renderer/render_settings.h:84
 renderer::SettingDesc::capability	variable	renderer	renderer-settingdesc-capability	renderer.md	engine/renderer/render_settings.h:89
 renderer::SettingDesc::mechanism_only	variable	renderer	renderer-settingdesc-mechanism-only	renderer.md	engine/renderer/render_settings.h:91
-renderer::SettingDesc::range_policy	variable	renderer	renderer-settingdesc-range-policy	renderer.md	engine/renderer/render_settings.h:93
-renderer::SettingDesc::default_int	variable	renderer	renderer-settingdesc-default-int	renderer.md	engine/renderer/render_settings.h:95
-renderer::SettingDesc::min_int	variable	renderer	renderer-settingdesc-min-int	renderer.md	engine/renderer/render_settings.h:97
-renderer::SettingDesc::max_int	variable	renderer	renderer-settingdesc-max-int	renderer.md	engine/renderer/render_settings.h:99
-renderer::SettingDesc::default_float	variable	renderer	renderer-settingdesc-default-float	renderer.md	engine/renderer/render_settings.h:101
-renderer::SettingDesc::min_float	variable	renderer	renderer-settingdesc-min-float	renderer.md	engine/renderer/render_settings.h:103
-renderer::SettingDesc::max_float	variable	renderer	renderer-settingdesc-max-float	renderer.md	engine/renderer/render_settings.h:105
-renderer::SettingDesc::default_text	variable	renderer	renderer-settingdesc-default-text	renderer.md	engine/renderer/render_settings.h:107
-renderer::SettingDesc::enum_names	variable	renderer	renderer-settingdesc-enum-names	renderer.md	engine/renderer/render_settings.h:109
-renderer::SettingDesc::enum_count	variable	renderer	renderer-settingdesc-enum-count	renderer.md	engine/renderer/render_settings.h:111
-renderer::SettingsRegistry	class	renderer	renderer-settingsregistry	renderer.md	engine/renderer/render_settings.h:121
-renderer::SettingsRegistry::Register(const SettingDesc&)	function	renderer	renderer-settingsregistry-register-const-settingdesc-amp	renderer.md	engine/renderer/render_settings.h:130
-renderer::SettingsRegistry::Count() const	function	renderer	renderer-settingsregistry-count-const	renderer.md	engine/renderer/render_settings.h:134
-renderer::SettingsRegistry::Find(SettingId) const	function	renderer	renderer-settingsregistry-find-settingid-const	renderer.md	engine/renderer/render_settings.h:142
-renderer::SettingsRegistry::FindByName(const char*) const	function	renderer	renderer-settingsregistry-findbyname-const-char-star-const	renderer.md	engine/renderer/render_settings.h:149
-renderer::SettingsRegistry::Builtin()	function	renderer	renderer-settingsregistry-builtin	renderer.md	engine/renderer/render_settings.h:154
-renderer::settings::kBackend	variable	renderer	renderer-settings-kbackend	renderer.md	engine/renderer/render_settings.h:164
-renderer::settings::kAdapter	variable	renderer	renderer-settings-kadapter	renderer.md	engine/renderer/render_settings.h:166
-renderer::settings::kValidation	variable	renderer	renderer-settings-kvalidation	renderer.md	engine/renderer/render_settings.h:168
-renderer::settings::kSyncValidation	variable	renderer	renderer-settings-ksyncvalidation	renderer.md	engine/renderer/render_settings.h:170
-renderer::settings::kFramesInFlight	variable	renderer	renderer-settings-kframesinflight	renderer.md	engine/renderer/render_settings.h:172
-renderer::settings::kPresentMode	variable	renderer	renderer-settings-kpresentmode	renderer.md	engine/renderer/render_settings.h:174
-renderer::settings::kWidth	variable	renderer	renderer-settings-kwidth	renderer.md	engine/renderer/render_settings.h:176
-renderer::settings::kHeight	variable	renderer	renderer-settings-kheight	renderer.md	engine/renderer/render_settings.h:178
-renderer::settings::kFullscreen	variable	renderer	renderer-settings-kfullscreen	renderer.md	engine/renderer/render_settings.h:180
-renderer::settings::kSwapchainFormat	variable	renderer	renderer-settings-kswapchainformat	renderer.md	engine/renderer/render_settings.h:182
-renderer::settings::kHdr	variable	renderer	renderer-settings-khdr	renderer.md	engine/renderer/render_settings.h:184
-renderer::settings::kShaderQuality	variable	renderer	renderer-settings-kshaderquality	renderer.md	engine/renderer/render_settings.h:186
-renderer::settings::kGBufferDebugLayer	variable	renderer	renderer-settings-kgbufferdebuglayer	renderer.md	engine/renderer/render_settings.h:188
-renderer::settings::kRenderScale	variable	renderer	renderer-settings-krenderscale	renderer.md	engine/renderer/render_settings.h:190
-renderer::RegisterBuiltinSettings(SettingsRegistry*)	function	renderer	renderer-registerbuiltinsettings-settingsregistry-star	renderer.md	engine/renderer/render_settings.h:198
-renderer::SetStatus	enum	renderer	renderer-setstatus	renderer.md	engine/renderer/render_settings.h:201
-renderer::SetStatus::Ok	enumerator	renderer	renderer-setstatus-ok	renderer.md	engine/renderer/render_settings.h:202
-renderer::SetStatus::Clamped	enumerator	renderer	renderer-setstatus-clamped	renderer.md	engine/renderer/render_settings.h:203
-renderer::SetStatus::OutOfRange	enumerator	renderer	renderer-setstatus-outofrange	renderer.md	engine/renderer/render_settings.h:204
-renderer::SetStatus::WrongType	enumerator	renderer	renderer-setstatus-wrongtype	renderer.md	engine/renderer/render_settings.h:205
-renderer::SetStatus::UnknownId	enumerator	renderer	renderer-setstatus-unknownid	renderer.md	engine/renderer/render_settings.h:206
-renderer::SetStatus::BadText	enumerator	renderer	renderer-setstatus-badtext	renderer.md	engine/renderer/render_settings.h:207
-renderer::RenderSettings	class	renderer	renderer-rendersettings	renderer.md	engine/renderer/render_settings.h:217
-renderer::RenderSettings::RenderSettings(const SettingsRegistry&)	function	renderer	renderer-rendersettings-rendersettings-const-settingsregistry-amp	renderer.md	engine/renderer/render_settings.h:222
-renderer::RenderSettings::Registry() const	function	renderer	renderer-rendersettings-registry-const	renderer.md	engine/renderer/render_settings.h:226
-renderer::RenderSettings::GetBool(SettingId) const	function	renderer	renderer-rendersettings-getbool-settingid-const	renderer.md	engine/renderer/render_settings.h:232
-renderer::RenderSettings::GetInt(SettingId) const	function	renderer	renderer-rendersettings-getint-settingid-const	renderer.md	engine/renderer/render_settings.h:237
-renderer::RenderSettings::GetEnum(SettingId) const	function	renderer	renderer-rendersettings-getenum-settingid-const	renderer.md	engine/renderer/render_settings.h:242
-renderer::RenderSettings::GetFloat(SettingId) const	function	renderer	renderer-rendersettings-getfloat-settingid-const	renderer.md	engine/renderer/render_settings.h:247
-renderer::RenderSettings::GetText(SettingId) const	function	renderer	renderer-rendersettings-gettext-settingid-const	renderer.md	engine/renderer/render_settings.h:253
-renderer::RenderSettings::SetBool(SettingId,bool)	function	renderer	renderer-rendersettings-setbool-settingid-bool	renderer.md	engine/renderer/render_settings.h:259
-renderer::RenderSettings::SetInt(SettingId,i64)	function	renderer	renderer-rendersettings-setint-settingid-i64	renderer.md	engine/renderer/render_settings.h:264
-renderer::RenderSettings::SetEnum(SettingId,u32)	function	renderer	renderer-rendersettings-setenum-settingid-u32	renderer.md	engine/renderer/render_settings.h:269
-renderer::RenderSettings::SetFloat(SettingId,f32)	function	renderer	renderer-rendersettings-setfloat-settingid-f32	renderer.md	engine/renderer/render_settings.h:274
-renderer::RenderSettings::SetText(SettingId,const char*)	function	renderer	renderer-rendersettings-settext-settingid-const-char-star	renderer.md	engine/renderer/render_settings.h:280
-renderer::RenderSettings::SetFromString(SettingId,const char*)	function	renderer	renderer-rendersettings-setfromstring-settingid-const-char-star	renderer.md	engine/renderer/render_settings.h:286
-renderer::RenderSettings::ValueToString(SettingId,char*,usize) const	function	renderer	renderer-rendersettings-valuetostring-settingid-char-star-usize-const	renderer.md	engine/renderer/render_settings.h:295
-renderer::RenderSettings::Generation() const	function	renderer	renderer-rendersettings-generation-const	renderer.md	engine/renderer/render_settings.h:299
-renderer::RenderSettings::SetGeneration(u64)	function	renderer	renderer-rendersettings-setgeneration-u64	renderer.md	engine/renderer/render_settings.h:302
-renderer::RenderSettings::operator==(const RenderSettings&) const	function	renderer	renderer-rendersettings-operator-eq-eq-const-rendersettings-amp-const	renderer.md	engine/renderer/render_settings.h:308
-renderer::RenderSettings::operator!=(const RenderSettings&) const	function	renderer	renderer-rendersettings-operator-not-eq-const-rendersettings-amp-const	renderer.md	engine/renderer/render_settings.h:311
-renderer::Capabilities	class	renderer	renderer-capabilities	renderer.md	engine/renderer/render_settings.h:334
-renderer::Capabilities::Add(const char*)	function	renderer	renderer-capabilities-add-const-char-star	renderer.md	engine/renderer/render_settings.h:339
-renderer::Capabilities::Has(const char*) const	function	renderer	renderer-capabilities-has-const-char-star-const	renderer.md	engine/renderer/render_settings.h:343
-renderer::Capabilities::SetAdapterCount(u32)	function	renderer	renderer-capabilities-setadaptercount-u32	renderer.md	engine/renderer/render_settings.h:349
-renderer::Capabilities::AdapterCount() const	function	renderer	renderer-capabilities-adaptercount-const	renderer.md	engine/renderer/render_settings.h:351
-renderer::UnsupportedSetting	struct	renderer	renderer-unsupportedsetting	renderer.md	engine/renderer/render_settings.h:362
-renderer::UnsupportedSetting::id	variable	renderer	renderer-unsupportedsetting-id	renderer.md	engine/renderer/render_settings.h:364
-renderer::UnsupportedSetting::capability	variable	renderer	renderer-unsupportedsetting-capability	renderer.md	engine/renderer/render_settings.h:366
-renderer::SettingsChange	struct	renderer	renderer-settingschange	renderer.md	engine/renderer/render_settings.h:372
-renderer::SettingsChange::cost	variable	renderer	renderer-settingschange-cost	renderer.md	engine/renderer/render_settings.h:374
-renderer::SettingsChange::changed_count	variable	renderer	renderer-settingschange-changed-count	renderer.md	engine/renderer/render_settings.h:376
-renderer::SettingsChange::changed	variable	renderer	renderer-settingschange-changed	renderer.md	engine/renderer/render_settings.h:378
-renderer::SettingsChange::unsupported_count	variable	renderer	renderer-settingschange-unsupported-count	renderer.md	engine/renderer/render_settings.h:380
-renderer::SettingsChange::unsupported	variable	renderer	renderer-settingschange-unsupported	renderer.md	engine/renderer/render_settings.h:382
-renderer::SettingsChange::Any() const	function	renderer	renderer-settingschange-any-const	renderer.md	engine/renderer/render_settings.h:386
-renderer::DiffSettings(const RenderSettings&,const RenderSettings&,const Capabilities&)	function	renderer	renderer-diffsettings-const-rendersettings-amp-const-rendersettings-amp-const-capabilities-amp	renderer.md	engine/renderer/render_settings.h:396
-renderer::ResolveSettings(const RenderSettings&,const RenderSettings&,const Capabilities&)	function	renderer	renderer-resolvesettings-const-rendersettings-amp-const-rendersettings-amp-const-capabilities-amp	renderer.md	engine/renderer/render_settings.h:405
-renderer::SerializeSettings(const RenderSettings&,char*,usize)	function	renderer	renderer-serializesettings-const-rendersettings-amp-char-star-usize	renderer.md	engine/renderer/render_settings.h:417
-renderer::SettingsProblem	struct	renderer	renderer-settingsproblem	renderer.md	engine/renderer/render_settings.h:422
-renderer::SettingsProblem::line	variable	renderer	renderer-settingsproblem-line	renderer.md	engine/renderer/render_settings.h:424
-renderer::SettingsProblem::message	variable	renderer	renderer-settingsproblem-message	renderer.md	engine/renderer/render_settings.h:426
-renderer::SettingsParseReport	struct	renderer	renderer-settingsparsereport	renderer.md	engine/renderer/render_settings.h:432
-renderer::SettingsParseReport::version	variable	renderer	renderer-settingsparsereport-version	renderer.md	engine/renderer/render_settings.h:434
-renderer::SettingsParseReport::error_count	variable	renderer	renderer-settingsparsereport-error-count	renderer.md	engine/renderer/render_settings.h:436
-renderer::SettingsParseReport::errors	variable	renderer	renderer-settingsparsereport-errors	renderer.md	engine/renderer/render_settings.h:438
-renderer::SettingsParseReport::warning_count	variable	renderer	renderer-settingsparsereport-warning-count	renderer.md	engine/renderer/render_settings.h:440
-renderer::SettingsParseReport::warnings	variable	renderer	renderer-settingsparsereport-warnings	renderer.md	engine/renderer/render_settings.h:442
-renderer::SettingsKeyMigrationFn	alias	renderer	renderer-settingskeymigrationfn	renderer.md	engine/renderer/render_settings.h:448
-renderer::ParseSettings(const char*,usize,RenderSettings*,SettingsParseReport*,SettingsKeyMigrationFn)	function	renderer	renderer-parsesettings-const-char-star-usize-rendersettings-star-settingsparsereport-star-settingskeymigrationfn	renderer.md	engine/renderer/render_settings.h:464
+renderer::SettingDesc::restart_required	variable	renderer	renderer-settingdesc-restart-required	renderer.md	engine/renderer/render_settings.h:95
+renderer::SettingDesc::range_policy	variable	renderer	renderer-settingdesc-range-policy	renderer.md	engine/renderer/render_settings.h:97
+renderer::SettingDesc::default_int	variable	renderer	renderer-settingdesc-default-int	renderer.md	engine/renderer/render_settings.h:99
+renderer::SettingDesc::min_int	variable	renderer	renderer-settingdesc-min-int	renderer.md	engine/renderer/render_settings.h:101
+renderer::SettingDesc::max_int	variable	renderer	renderer-settingdesc-max-int	renderer.md	engine/renderer/render_settings.h:103
+renderer::SettingDesc::default_float	variable	renderer	renderer-settingdesc-default-float	renderer.md	engine/renderer/render_settings.h:105
+renderer::SettingDesc::min_float	variable	renderer	renderer-settingdesc-min-float	renderer.md	engine/renderer/render_settings.h:107
+renderer::SettingDesc::max_float	variable	renderer	renderer-settingdesc-max-float	renderer.md	engine/renderer/render_settings.h:109
+renderer::SettingDesc::default_text	variable	renderer	renderer-settingdesc-default-text	renderer.md	engine/renderer/render_settings.h:111
+renderer::SettingDesc::enum_names	variable	renderer	renderer-settingdesc-enum-names	renderer.md	engine/renderer/render_settings.h:113
+renderer::SettingDesc::enum_count	variable	renderer	renderer-settingdesc-enum-count	renderer.md	engine/renderer/render_settings.h:115
+renderer::SettingsRegistry	class	renderer	renderer-settingsregistry	renderer.md	engine/renderer/render_settings.h:125
+renderer::SettingsRegistry::Register(const SettingDesc&)	function	renderer	renderer-settingsregistry-register-const-settingdesc-amp	renderer.md	engine/renderer/render_settings.h:134
+renderer::SettingsRegistry::Count() const	function	renderer	renderer-settingsregistry-count-const	renderer.md	engine/renderer/render_settings.h:138
+renderer::SettingsRegistry::Find(SettingId) const	function	renderer	renderer-settingsregistry-find-settingid-const	renderer.md	engine/renderer/render_settings.h:146
+renderer::SettingsRegistry::FindByName(const char*) const	function	renderer	renderer-settingsregistry-findbyname-const-char-star-const	renderer.md	engine/renderer/render_settings.h:153
+renderer::SettingsRegistry::Builtin()	function	renderer	renderer-settingsregistry-builtin	renderer.md	engine/renderer/render_settings.h:158
+renderer::settings::kBackend	variable	renderer	renderer-settings-kbackend	renderer.md	engine/renderer/render_settings.h:168
+renderer::settings::kAdapter	variable	renderer	renderer-settings-kadapter	renderer.md	engine/renderer/render_settings.h:170
+renderer::settings::kValidation	variable	renderer	renderer-settings-kvalidation	renderer.md	engine/renderer/render_settings.h:172
+renderer::settings::kSyncValidation	variable	renderer	renderer-settings-ksyncvalidation	renderer.md	engine/renderer/render_settings.h:174
+renderer::settings::kFramesInFlight	variable	renderer	renderer-settings-kframesinflight	renderer.md	engine/renderer/render_settings.h:176
+renderer::settings::kPresentMode	variable	renderer	renderer-settings-kpresentmode	renderer.md	engine/renderer/render_settings.h:178
+renderer::settings::kWidth	variable	renderer	renderer-settings-kwidth	renderer.md	engine/renderer/render_settings.h:180
+renderer::settings::kHeight	variable	renderer	renderer-settings-kheight	renderer.md	engine/renderer/render_settings.h:182
+renderer::settings::kFullscreen	variable	renderer	renderer-settings-kfullscreen	renderer.md	engine/renderer/render_settings.h:184
+renderer::settings::kSwapchainFormat	variable	renderer	renderer-settings-kswapchainformat	renderer.md	engine/renderer/render_settings.h:186
+renderer::settings::kHdr	variable	renderer	renderer-settings-khdr	renderer.md	engine/renderer/render_settings.h:188
+renderer::settings::kShaderQuality	variable	renderer	renderer-settings-kshaderquality	renderer.md	engine/renderer/render_settings.h:190
+renderer::settings::kGBufferDebugLayer	variable	renderer	renderer-settings-kgbufferdebuglayer	renderer.md	engine/renderer/render_settings.h:192
+renderer::settings::kRenderScale	variable	renderer	renderer-settings-krenderscale	renderer.md	engine/renderer/render_settings.h:194
+renderer::RegisterBuiltinSettings(SettingsRegistry*)	function	renderer	renderer-registerbuiltinsettings-settingsregistry-star	renderer.md	engine/renderer/render_settings.h:202
+renderer::SetStatus	enum	renderer	renderer-setstatus	renderer.md	engine/renderer/render_settings.h:205
+renderer::SetStatus::Ok	enumerator	renderer	renderer-setstatus-ok	renderer.md	engine/renderer/render_settings.h:206
+renderer::SetStatus::Clamped	enumerator	renderer	renderer-setstatus-clamped	renderer.md	engine/renderer/render_settings.h:207
+renderer::SetStatus::OutOfRange	enumerator	renderer	renderer-setstatus-outofrange	renderer.md	engine/renderer/render_settings.h:208
+renderer::SetStatus::WrongType	enumerator	renderer	renderer-setstatus-wrongtype	renderer.md	engine/renderer/render_settings.h:209
+renderer::SetStatus::UnknownId	enumerator	renderer	renderer-setstatus-unknownid	renderer.md	engine/renderer/render_settings.h:210
+renderer::SetStatus::BadText	enumerator	renderer	renderer-setstatus-badtext	renderer.md	engine/renderer/render_settings.h:211
+renderer::RenderSettings	class	renderer	renderer-rendersettings	renderer.md	engine/renderer/render_settings.h:221
+renderer::RenderSettings::RenderSettings(const SettingsRegistry&)	function	renderer	renderer-rendersettings-rendersettings-const-settingsregistry-amp	renderer.md	engine/renderer/render_settings.h:226
+renderer::RenderSettings::Registry() const	function	renderer	renderer-rendersettings-registry-const	renderer.md	engine/renderer/render_settings.h:230
+renderer::RenderSettings::GetBool(SettingId) const	function	renderer	renderer-rendersettings-getbool-settingid-const	renderer.md	engine/renderer/render_settings.h:236
+renderer::RenderSettings::GetInt(SettingId) const	function	renderer	renderer-rendersettings-getint-settingid-const	renderer.md	engine/renderer/render_settings.h:241
+renderer::RenderSettings::GetEnum(SettingId) const	function	renderer	renderer-rendersettings-getenum-settingid-const	renderer.md	engine/renderer/render_settings.h:246
+renderer::RenderSettings::GetFloat(SettingId) const	function	renderer	renderer-rendersettings-getfloat-settingid-const	renderer.md	engine/renderer/render_settings.h:251
+renderer::RenderSettings::GetText(SettingId) const	function	renderer	renderer-rendersettings-gettext-settingid-const	renderer.md	engine/renderer/render_settings.h:257
+renderer::RenderSettings::SetBool(SettingId,bool)	function	renderer	renderer-rendersettings-setbool-settingid-bool	renderer.md	engine/renderer/render_settings.h:263
+renderer::RenderSettings::SetInt(SettingId,i64)	function	renderer	renderer-rendersettings-setint-settingid-i64	renderer.md	engine/renderer/render_settings.h:268
+renderer::RenderSettings::SetEnum(SettingId,u32)	function	renderer	renderer-rendersettings-setenum-settingid-u32	renderer.md	engine/renderer/render_settings.h:273
+renderer::RenderSettings::SetFloat(SettingId,f32)	function	renderer	renderer-rendersettings-setfloat-settingid-f32	renderer.md	engine/renderer/render_settings.h:278
+renderer::RenderSettings::SetText(SettingId,const char*)	function	renderer	renderer-rendersettings-settext-settingid-const-char-star	renderer.md	engine/renderer/render_settings.h:284
+renderer::RenderSettings::SetFromString(SettingId,const char*)	function	renderer	renderer-rendersettings-setfromstring-settingid-const-char-star	renderer.md	engine/renderer/render_settings.h:290
+renderer::RenderSettings::ValueToString(SettingId,char*,usize) const	function	renderer	renderer-rendersettings-valuetostring-settingid-char-star-usize-const	renderer.md	engine/renderer/render_settings.h:299
+renderer::RenderSettings::Generation() const	function	renderer	renderer-rendersettings-generation-const	renderer.md	engine/renderer/render_settings.h:303
+renderer::RenderSettings::SetGeneration(u64)	function	renderer	renderer-rendersettings-setgeneration-u64	renderer.md	engine/renderer/render_settings.h:306
+renderer::RenderSettings::operator==(const RenderSettings&) const	function	renderer	renderer-rendersettings-operator-eq-eq-const-rendersettings-amp-const	renderer.md	engine/renderer/render_settings.h:312
+renderer::RenderSettings::operator!=(const RenderSettings&) const	function	renderer	renderer-rendersettings-operator-not-eq-const-rendersettings-amp-const	renderer.md	engine/renderer/render_settings.h:315
+renderer::Capabilities	class	renderer	renderer-capabilities	renderer.md	engine/renderer/render_settings.h:338
+renderer::Capabilities::Add(const char*)	function	renderer	renderer-capabilities-add-const-char-star	renderer.md	engine/renderer/render_settings.h:343
+renderer::Capabilities::Has(const char*) const	function	renderer	renderer-capabilities-has-const-char-star-const	renderer.md	engine/renderer/render_settings.h:347
+renderer::Capabilities::SetAdapterCount(u32)	function	renderer	renderer-capabilities-setadaptercount-u32	renderer.md	engine/renderer/render_settings.h:353
+renderer::Capabilities::AdapterCount() const	function	renderer	renderer-capabilities-adaptercount-const	renderer.md	engine/renderer/render_settings.h:355
+renderer::UnsupportedSetting	struct	renderer	renderer-unsupportedsetting	renderer.md	engine/renderer/render_settings.h:366
+renderer::UnsupportedSetting::id	variable	renderer	renderer-unsupportedsetting-id	renderer.md	engine/renderer/render_settings.h:368
+renderer::UnsupportedSetting::capability	variable	renderer	renderer-unsupportedsetting-capability	renderer.md	engine/renderer/render_settings.h:370
+renderer::SettingsChange	struct	renderer	renderer-settingschange	renderer.md	engine/renderer/render_settings.h:376
+renderer::SettingsChange::cost	variable	renderer	renderer-settingschange-cost	renderer.md	engine/renderer/render_settings.h:378
+renderer::SettingsChange::changed_count	variable	renderer	renderer-settingschange-changed-count	renderer.md	engine/renderer/render_settings.h:380
+renderer::SettingsChange::changed	variable	renderer	renderer-settingschange-changed	renderer.md	engine/renderer/render_settings.h:382
+renderer::SettingsChange::unsupported_count	variable	renderer	renderer-settingschange-unsupported-count	renderer.md	engine/renderer/render_settings.h:384
+renderer::SettingsChange::unsupported	variable	renderer	renderer-settingschange-unsupported	renderer.md	engine/renderer/render_settings.h:386
+renderer::SettingsChange::restart_count	variable	renderer	renderer-settingschange-restart-count	renderer.md	engine/renderer/render_settings.h:388
+renderer::SettingsChange::restart	variable	renderer	renderer-settingschange-restart	renderer.md	engine/renderer/render_settings.h:392
+renderer::SettingsChange::Any() const	function	renderer	renderer-settingschange-any-const	renderer.md	engine/renderer/render_settings.h:396
+renderer::DiffSettings(const RenderSettings&,const RenderSettings&,const Capabilities&)	function	renderer	renderer-diffsettings-const-rendersettings-amp-const-rendersettings-amp-const-capabilities-amp	renderer.md	engine/renderer/render_settings.h:407
+renderer::ResolveSettings(const RenderSettings&,const RenderSettings&,const Capabilities&)	function	renderer	renderer-resolvesettings-const-rendersettings-amp-const-rendersettings-amp-const-capabilities-amp	renderer.md	engine/renderer/render_settings.h:417
+renderer::SerializeSettings(const RenderSettings&,char*,usize)	function	renderer	renderer-serializesettings-const-rendersettings-amp-char-star-usize	renderer.md	engine/renderer/render_settings.h:429
+renderer::SettingsProblem	struct	renderer	renderer-settingsproblem	renderer.md	engine/renderer/render_settings.h:434
+renderer::SettingsProblem::line	variable	renderer	renderer-settingsproblem-line	renderer.md	engine/renderer/render_settings.h:436
+renderer::SettingsProblem::message	variable	renderer	renderer-settingsproblem-message	renderer.md	engine/renderer/render_settings.h:438
+renderer::SettingsParseReport	struct	renderer	renderer-settingsparsereport	renderer.md	engine/renderer/render_settings.h:444
+renderer::SettingsParseReport::version	variable	renderer	renderer-settingsparsereport-version	renderer.md	engine/renderer/render_settings.h:446
+renderer::SettingsParseReport::error_count	variable	renderer	renderer-settingsparsereport-error-count	renderer.md	engine/renderer/render_settings.h:448
+renderer::SettingsParseReport::errors	variable	renderer	renderer-settingsparsereport-errors	renderer.md	engine/renderer/render_settings.h:450
+renderer::SettingsParseReport::warning_count	variable	renderer	renderer-settingsparsereport-warning-count	renderer.md	engine/renderer/render_settings.h:452
+renderer::SettingsParseReport::warnings	variable	renderer	renderer-settingsparsereport-warnings	renderer.md	engine/renderer/render_settings.h:454
+renderer::SettingsKeyMigrationFn	alias	renderer	renderer-settingskeymigrationfn	renderer.md	engine/renderer/render_settings.h:460
+renderer::ParseSettings(const char*,usize,RenderSettings*,SettingsParseReport*,SettingsKeyMigrationFn)	function	renderer	renderer-parsesettings-const-char-star-usize-rendersettings-star-settingsparsereport-star-settingskeymigrationfn	renderer.md	engine/renderer/render_settings.h:476
 renderer::FrameStatus	enum	renderer	renderer-framestatus	renderer.md	engine/renderer/renderer.h:30
 renderer::FrameStatus::Ok	enumerator	renderer	renderer-framestatus-ok	renderer.md	engine/renderer/renderer.h:31
 renderer::FrameStatus::Skipped	enumerator	renderer	renderer-framestatus-skipped	renderer.md	engine/renderer/renderer.h:32

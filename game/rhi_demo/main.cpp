@@ -1,6 +1,6 @@
-// rhi_demo: opens a window, creates a Vulkan device and swapchain, and draws a textured, depth-tested cube lit by a
-// light that orbits it. Arrow keys or dragging with the left mouse button orbit the camera, the wheel zooms. Closes
-// when the window does; logs the average frame time once a second. See README.md for the options.
+// rhi_demo: opens a window, creates a device (Vulkan or Direct3D 12: the `renderer.backend` setting) and swapchain, and draws a
+// textured, depth-tested cube lit by a light that orbits it. Arrow keys or dragging with the left mouse button orbit the camera,
+// the wheel zooms. Closes when the window does; logs the average frame time once a second. See README.md for the options.
 
 #include <cmath>
 #include <cstdio>
@@ -15,6 +15,7 @@
 #include "platform/entry_point.h"
 #include "platform/input.h"
 #include "platform/window_host.h"
+#include "rhi/backend_registry.h"
 #include "rhi/backends/backends.h"
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
@@ -217,22 +218,28 @@ demo::DemoSettings* g_demo_settings = nullptr; // the settings of this run
 
 DeviceCreateInfo DeviceInfo(const Options& options) {
     DeviceCreateInfo info;
-    info.backend = Backend::Vulkan; // the demos and benchmarks draw with Vulkan until Phase 13 Day 173 lets them choose
-    g_demo_settings->FillDeviceCreateInfo(&info); // the validation layer, the GPU, the pipeline cache and the frames in flight come from the settings
+    g_demo_settings->FillDeviceCreateInfo(&info); // the backend, the validation layer, the GPU, the pipeline cache and the frames in flight come from the settings
     info.faults.lose_device_at_frame = static_cast<u32>(options.inject_device_loss);
     info.faults.fail_allocations_from = static_cast<u32>(options.inject_oom);
     return info;
 }
 
-// Prints the GPUs a Vulkan device can be made on, one per line, and returns the exit code.
+// Prints the GPUs a device of the chosen backend can be made on, one per line, and returns the exit code.
 int ListGpus() {
     DeviceCreateInfo info;
-    info.backend = Backend::Vulkan; // the demos and benchmarks draw with Vulkan until Phase 13 Day 173 lets them choose
-    AdapterList list;
-    if (!EnumerateAdapters(info, &list)) {
-        std::fprintf(stderr, "rhi_demo: cannot list the GPUs (no Vulkan loader or instance)\n");
+    g_demo_settings->FillDeviceCreateInfo(&info); // the backend
+    char why[256] = {};
+    const BackendDescriptor* backend = ResolveBackend(info.backend, why, sizeof(why));
+    if (backend == nullptr) {
+        std::fprintf(stderr, "rhi_demo: cannot list the GPUs: %s\n", why);
         return kExitFailure;
     }
+    AdapterList list;
+    if (!EnumerateAdapters(info, &list)) {
+        std::fprintf(stderr, "rhi_demo: cannot list the %s GPUs\n", backend->name);
+        return kExitFailure;
+    }
+    std::printf("backend %s\n", backend->name);
     static const char* const kKinds[] = {"other", "software", "virtual", "integrated", "discrete"};
     std::printf("%u GPU(s):\n", list.count);
     for (u32 i = 0; i < list.count; ++i) {
@@ -247,9 +254,10 @@ int ListGpus() {
 // Renders `frames` frames offscreen (no window) and saves the last one, with a fixed camera and light.
 int RunScreenshot(const Options& options) {
     constexpr u32 kSize = 256;
-    DevicePtr device = CreateDevice(DeviceInfo(options));
+    const DeviceCreateInfo info = DeviceInfo(options);
+    DevicePtr device = CreateDevice(info);
     if (device == nullptr) {
-        RhiLogV(LogVerbosity::Error, "rhi_demo: no Vulkan device");
+        RhiLogV(LogVerbosity::Error, "rhi_demo: no %s device", demo::BackendLabel(info.backend));
         return kExitFailure;
     }
     TextureDesc td;
@@ -329,7 +337,7 @@ int RunWindow(const Options& options) {
     info.window = window;
     DevicePtr device = CreateDevice(info);
     if (device == nullptr) {
-        RhiLogV(LogVerbosity::Error, "rhi_demo: no Vulkan device can present to this window");
+        RhiLogV(LogVerbosity::Error, "rhi_demo: no %s device can present to this window", demo::BackendLabel(info.backend));
         return kExitFailure;
     }
     SwapchainDesc swapchain_desc;

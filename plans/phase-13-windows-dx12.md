@@ -11,8 +11,9 @@ still small.
 **Definition of done:** on Windows, the foundation, file-layer, settings, job-system and debugging suites pass (plain and ASan); the Win32 window and
 input pass Phase 1's tests; the Phase 4 golden images (triangle, compute, cube, textured cube, lit cube) and the Phase 5 scene tests (render graph,
 materials, deferred lighting, permuted shaders, `renderer_demo.ppm`) pass through **both** the DX12 and the Vulkan backends with the D3D12 debug layer
-and the Vulkan validation layers silent; the DX12 backend passes the lifecycle conformance suite, recovers from an injected device loss, and the
-`backend` setting switches between Vulkan and DX12 at run time; both demos run on DX12 and Vulkan; every gate and `ctest -L docs` pass on Windows; and the
+and the Vulkan validation layers silent; the DX12 backend passes the lifecycle conformance suite and recovers from an injected device loss; the `backend` setting chooses Vulkan or DX12
+when the program starts (a change waits for the next start: no run-time backend switch, the user's decision of 2026-11-08); both demos run on DX12
+and Vulkan; every gate and `ctest -L docs` pass on Windows; and the
 Linux machine still passes its full suite in every flavor.
 
 **Status: planned (2026-11-07), Days 147-174; not started.** Day numbers continue from Phase 12 (which ends at Day 146). Day 147 writes the spec
@@ -148,7 +149,8 @@ Windows PC when the phase was planned. Every day that changes a prerequisite upd
 - **Backend registry (Phase 8 Day 110)** — Day 162.
 - **Device lifecycle (Phase 8 Day 114)** — Day 172: `engine/rhi/BACKEND-LIFECYCLE.md` (fifteen functions), a DX12 factory in
   `tests/rhi/lifecycle_conformance_test.cpp`, `AllocateDeviceSerial`/`GenerationSeed`, `ResizeBuffers` for `Swapchain::Reconfigure`, bounded fence waits
-  after `DXGI_ERROR_DEVICE_REMOVED`, and the run-time backend switch (deferred from Phase 8).
+  after `DXGI_ERROR_DEVICE_REMOVED`. The run-time backend switch deferred from Phase 8 was built on Day 172 and removed on Day 173: a game has
+  no reason to change its graphics API while it runs (the user's decision, 2026-11-08), so `backend` takes effect at the next start.
 - **Fullscreen and session state** — Day 158: `engine/platform/windows/FULLSCREEN.md` and `SESSION.md`.
 - **File layer (Phase 9)** — Days 151-152: `engine/foundation/io/BACKEND.md` for Windows (UTF-16 at the boundary, drive letters and UNC, long paths,
   `CreateFileW`, overlapped I/O, `MoveFileEx`/`ReplaceFile`, known folders), the `File` conformance suite, share modes (filed in Phase 9).

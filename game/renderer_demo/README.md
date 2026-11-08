@@ -3,7 +3,8 @@
 The Phase 5 showcase: a tiled ground, a few hundred spheres and cubes in eight materials, hundreds of point lights, a sun and
 a little ambient light, drawn by the deferred renderer (G-buffer, light volumes, ACES tonemap) into a window (Wayland or X11
 on Linux, Win32 on Windows) or offscreen. `rhi_demo` stays as the RHI's own reference client; this one goes through `renderer::Renderer` and the render
-graph and never names Vulkan except to create the device.
+graph and never names a backend: the device is Vulkan or Direct3D 12 by the `renderer.backend` setting (`--rhi`; `auto` is
+Direct3D 12 on Windows), and the `backend` setting switches it while the demo runs.
 
 ## Build and run
 
@@ -41,10 +42,11 @@ terminal its output goes to that terminal. Its settings file is `%APPDATA%\rende
 | `--gbuffer LAYER` | `albedo`, `normal`, `material`, `depth` or `worldpos` instead of the lit picture |
 | `--no-vsync` | present with `Immediate` instead of `Fifo` (the same as pressing F1 once the window is open) |
 | `--gpu G` | the GPU to use: an id from `--list-gpus`, an index, or part of its name. A GPU that does not exist or cannot present fails (exit 1); it never falls back to another one |
-| `--list-gpus` | print the GPUs (id, name, kind, memory, driver, and why one is unsuitable) and exit |
+| `--list-gpus` | print the backend and its GPUs (id, name, kind, memory, driver, and why one is unsuitable) and exit |
+| `--rhi NAME` | the graphics backend: `auto` (default), `vulkan`, `dx12` or `null`; the `renderer.backend` setting |
 | `--prewarm` | after a device reset rebuild every pipeline at once instead of when it is first used |
 | `--script WORDS` | run the live paths without a keyboard (below) |
-| `--validation` | enable the Vulkan validation layer with synchronization validation |
+| `--validation` | enable the backend's validation layer with synchronization validation (Direct3D 12: GPU-based validation) |
 | `--inject-device-loss F`, `--inject-oom N` | fault injection (see the tests) |
 | `--help` | print the options |
 
@@ -127,7 +129,8 @@ is logged), so a checkout without the files still runs.
 ## Tests
 
 `ctest -L demo` runs the demo's own checks: a screenshot with validation on, every G-buffer layer, device loss at frame 3
-(exit 3), allocation failures (exit 1, no crash), bad options (exit 2), no Vulkan loader, and the asset check.
+(exit 3), allocation failures (exit 1, no crash), bad options (exit 2), no Vulkan loader, and the asset check; on Windows the screenshot, the
+loss, the allocation failure and the scripted run also run with `--rhi dx12`.
 
 ## Settings options
 
@@ -141,6 +144,7 @@ Settings:
   --list-settings         print every setting: its value, default, where it came from and what it is for, and exit
   --backend NAME          platform.window_backend: the display backend: wayland or x11 on Linux, win32 on Windows (auto picks Wayland, then X11, on Linux)
   --gpu TEXT              renderer.adapter: the GPU: an id from --list-gpus, an index, or part of the name (empty: the best one)
+  --rhi NAME              renderer.backend: the graphics backend: auto (the preferred one this program has and this machine runs), null (no GPU), vulkan or dx12
 Environment: ENGINE_SETTING_<KEY> sets any setting (the key in capitals, dots written as __, e.g. ENGINE_SETTING_RENDERER__PRESENT_MODE); also:
   ENGINE_WINDOW_BACKEND                 platform.window_backend
   ENGINE_RHI_GPU                        renderer.adapter

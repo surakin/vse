@@ -3,12 +3,14 @@
 //
 //   rhi_bench [--draws N] [--frames N]     draw throughput for N cubes (default: 1000 and 10000)
 //             [--skip-uploads] [--skip-pipelines]
+//             [--rhi null|vulkan|dx12|auto]  the graphics backend (default auto: Direct3D 12 on Windows, Vulkan elsewhere)
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
 #include "io/file.h"
+#include "rhi_option.h"
 #include "io/file_system.h"
 #include "debug/program_setup.h"
 #include "cube_scene.h"
@@ -221,10 +223,12 @@ void BenchUploads(Device* device) {
     }
 }
 
+Backend g_backend = Backend::Auto; // --rhi
+
 // Creates a device, builds a cube pipeline and returns the time CubeRenderer::Create took (shaders + pipeline + buffers).
 double TimePipeline(bool cache, const char* dir) {
     DeviceCreateInfo info;
-    info.backend = Backend::Vulkan; // the demos and benchmarks draw with Vulkan until Phase 13 Day 173 lets them choose
+    info.backend = g_backend;
     info.validation = ValidationSetting::Off; // a baseline measures the engine, not the layer
     info.pipeline_cache = cache;
     info.pipeline_cache_dir = dir;
@@ -284,8 +288,10 @@ int main(int argc, char** argv) {
             uploads = false;
         } else if (std::strcmp(argv[i], "--skip-pipelines") == 0) {
             pipelines = false;
+        } else if (std::strcmp(argv[i], "--rhi") == 0 && i + 1 < argc && demo::ParseRhiBackend(argv[i + 1], &g_backend)) {
+            ++i;
         } else {
-            std::fprintf(stderr, "usage: %s [--draws N] [--frames N] [--skip-uploads] [--skip-pipelines]\n", argv[0]);
+            std::fprintf(stderr, "usage: %s [--draws N] [--frames N] [--skip-uploads] [--skip-pipelines] [--rhi null|vulkan|dx12|auto]\n", argv[0]);
             return 2;
         }
     }
@@ -297,11 +303,11 @@ int main(int argc, char** argv) {
         return 2;
     }
     DeviceCreateInfo info;
-    info.backend = Backend::Vulkan; // the demos and benchmarks draw with Vulkan until Phase 13 Day 173 lets them choose
+    info.backend = g_backend;
     info.validation = ValidationSetting::Off; // a baseline measures the engine, not the layer
     DevicePtr device = CreateDevice(info);
     if (device == nullptr) {
-        std::fprintf(stderr, "rhi_bench: no Vulkan device\n");
+        std::fprintf(stderr, "rhi_bench: no device for --rhi %s (see the log above)\n", demo::RhiBackendName(g_backend));
         return 1;
     }
     std::printf("backend %s, %ux%u target, %ld frames per draw measurement\n", device->BackendName(), kSize, kSize, frames);

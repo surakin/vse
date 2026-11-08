@@ -254,7 +254,8 @@ table in `PLAN.md`.
   built on their reference client libraries (`libwayland-client`,
   `libX11`/`libxcb`) rather than a hand-rolled wire-protocol client.
 - **The RHI can be reset at run time (Phase 8).** Users must be able to change any rendering setting without restarting
-  the app, so re-initializing the device, swapchain and every device-dependent resource is a supported operation, not
+  the app (except the graphics backend, which is chosen at start: there is no run-time Vulkan/DX12 switch, the user's decision of
+  2026-11-08; the GPU can still be switched), so re-initializing the device, swapchain and every device-dependent resource is a supported operation, not
   a recovery hack. Anything that owns GPU resources must therefore be able to rebuild them (keep its CPU-side source
   or a reload path), and a lost device recovers through the same path. Do not add a GPU-owning type that cannot be
   recreated. The concrete rule (`docs/guide/renderer.md`, "Surviving a reset"): an owner of device objects **keeps its CPU-side

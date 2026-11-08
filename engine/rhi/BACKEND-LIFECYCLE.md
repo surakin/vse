@@ -101,10 +101,8 @@ The color space of the images (`SrgbNonlinear`, `ScRgbLinear`, `Hdr10`).
 unavailable. `Hdr10` stays unsupported until the RHI has a 10-bit format. DX12: scRGB is reported when a float swap chain accepts the
 linear color space.
 
-### Switching backends
+### Not provided: a run-time backend switch
 
-Not a function: a change of the `backend` setting is a device reset like any other (`Renderer::ApplySettings`, cost class
-`DeviceReset`). Every owner registered with `renderer::DeviceResources` releases on the old device and recreates on the new one from
-its CPU-side source, picking its shader blobs by the new device's `DeviceCaps::shader_format`. Nothing a backend does is needed for it
-beyond the functions above. Tested by `tests/rhi/backend_switch_gpu_test.cpp` (Vulkan and DX12, and the GPU switch between a
-hardware adapter and WARP).
+A program chooses its backend when it starts; the renderer's `backend` setting takes effect at the next start (Phase 13 Day 173, the
+user's decision). A backend therefore never has to hand over to another one in the same process. Switching the GPU within a backend
+is a full reset through the functions above (`tests/rhi/adapter_switch_gpu_test.cpp`: a hardware adapter and WARP on DX12).

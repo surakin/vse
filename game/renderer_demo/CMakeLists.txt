@@ -31,22 +31,35 @@ set(RENDERER_NO_GPU "cannot open loader library|no physical devices|no suitable 
 # A normal offscreen run writes the picture and says how much it drew.
 renderer_demo_expect(renderer_demo_screenshot 0 "wrote .*renderer_demo_screenshot.ppm \\(540 objects, [0-9]+ point lights" "${RENDERER_NO_GPU}"
   --screenshot RENDERER_DEMO_SHOT --validation)
+# And once on each backend by name, with the validation layer on and silent.
+renderer_demo_expect(renderer_demo_screenshot_vulkan 0 "wrote .*renderer_demo_screenshot_vulkan.ppm \\(540 objects" "${RENDERER_NO_GPU}"
+  --screenshot RENDERER_DEMO_SHOT --validation --rhi vulkan)
+set(_renderer_demo_dx12_tests)
+if(WIN32)
+  renderer_demo_expect(renderer_demo_screenshot_dx12 0 "wrote .*renderer_demo_screenshot_dx12.ppm \\(540 objects" ""
+    --screenshot RENDERER_DEMO_SHOT --validation --rhi dx12)
+  renderer_demo_expect(renderer_demo_device_loss_trace_dx12 3 "ENSURE FAILED[^\n]*the D3D12 device was lost" ""
+    --screenshot RENDERER_DEMO_SHOT --frames 5 --inject-device-loss 3 --rhi dx12)
+  renderer_demo_expect(renderer_demo_oom_device_dx12 1 "no memory for the resource 'engine staging ring'" ""
+    --screenshot RENDERER_DEMO_SHOT --inject-oom 1 --rhi dx12)
+  set(_renderer_demo_dx12_tests renderer_demo_screenshot_dx12 renderer_demo_device_loss_trace_dx12 renderer_demo_oom_device_dx12)
+endif()
 renderer_demo_expect(renderer_demo_gbuffer_layers 0 "wrote" "${RENDERER_NO_GPU}"
   --screenshot RENDERER_DEMO_SHOT --gbuffer normal --objects 100 --lights 10)
 renderer_demo_expect(renderer_demo_device_loss_screenshot 3 "the GPU device was lost" "${RENDERER_NO_GPU}"
   --screenshot RENDERER_DEMO_SHOT --frames 5 --inject-device-loss 3)
 renderer_demo_expect(renderer_demo_device_loss_trace 3 "ENSURE FAILED[^\n]*the Vulkan device was lost" "${RENDERER_NO_GPU}"
-  --screenshot RENDERER_DEMO_SHOT --frames 5 --inject-device-loss 3)
+  --screenshot RENDERER_DEMO_SHOT --frames 5 --inject-device-loss 3 --rhi vulkan)
 # Device creation allocates a driver-dependent number of times, so the third allocation fails either creation itself or
 # the first resource after it; the demo must report either cleanly (exit 1), never crash.
-renderer_demo_expect(renderer_demo_oom_later 1 "no Vulkan device|could not create the target or the scene" "${RENDERER_NO_GPU}"
+renderer_demo_expect(renderer_demo_oom_later 1 "no [a-z0-9]+ device|could not create the target or the scene" "${RENDERER_NO_GPU}"
   --screenshot RENDERER_DEMO_SHOT --inject-oom 3)
 renderer_demo_expect(renderer_demo_oom_device 1 "cannot set up the staging ring" "${RENDERER_NO_GPU}"
-  --screenshot RENDERER_DEMO_SHOT --inject-oom 1)
+  --screenshot RENDERER_DEMO_SHOT --inject-oom 1 --rhi vulkan)
 # The GPUs are listed (one line each) without a window.
 renderer_demo_expect(renderer_demo_list_gpus 0 "[0-9]+ GPU\\(s\\):" "${RENDERER_NO_GPU}" --list-gpus)
 # A GPU that does not exist fails cleanly and does not fall back to another one.
-renderer_demo_expect(renderer_demo_unknown_gpu 1 "no Vulkan device|could not create the target or the scene" "${RENDERER_NO_GPU}"
+renderer_demo_expect(renderer_demo_unknown_gpu 1 "no [a-z0-9]+ device|could not create the target or the scene" "${RENDERER_NO_GPU}"
   --screenshot RENDERER_DEMO_SHOT --gpu no-such-gpu)
 renderer_demo_expect(renderer_demo_bad_injection 2 "usage" "" --inject-oom abc)
 renderer_demo_expect(renderer_demo_bad_layer 2 "usage" "" --gbuffer sparkles)
@@ -55,22 +68,23 @@ renderer_demo_expect(renderer_demo_bad_objects 2 "usage" "" --objects 3)
 # The live settings paths without a keyboard: a swapchain change, a forced device reset, a pipeline rebuild, a lost device and its
 # recovery, in a real window on each display backend with validation on. The run must end cleanly and report no validation error.
 # These open a window, so they hold the `display` resource like the other window tests and skip without a session.
-function(renderer_demo_scripted name backend)
+function(renderer_demo_scripted name backend rhi)
   add_test(NAME ${name}
-    COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--backend;${backend};--validation;--frames;120;--script;frame:10 set:present_mode=immediate frame:20 reset frame:30 set:shader_quality=low frame:40 loss frame:100 quit"
+    COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--backend;${backend};--rhi;${rhi};--validation;--frames;120;--script;frame:10 set:present_mode=immediate frame:20 reset frame:30 set:shader_quality=low frame:40 loss frame:100 quit"
       -DEXPECT_CODE=0 "-DEXPECT_OUT=swapchain done in.*device-reset done in.*pipeline-rebuild done in.*recovered after 1 attempt"
       "-DSKIP_IF_OUT=${RENDERER_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
-      "-DFORBID_OUT=a Vulkan validation error was reported" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
+      "-DFORBID_OUT=a Vulkan validation error was reported|(ERROR|WARN): D3D12 debug layer" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo;display" RESOURCE_LOCK display SKIP_RETURN_CODE 77
     ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${name};${DEMO_PROFILE_ENV}")
 endfunction()
 if(WIN32)
-  renderer_demo_scripted(renderer_demo_script_win32 win32)
+  renderer_demo_scripted(renderer_demo_script_win32 win32 vulkan)
+  renderer_demo_scripted(renderer_demo_script_win32_dx12 win32 dx12)
   set(_crash_backend win32)
   set(_abort_code 3) # abort() ends a Windows process with exit code 3; the report in the output tells it from exit(3)
 else()
-  renderer_demo_scripted(renderer_demo_script_wayland wayland)
-  renderer_demo_scripted(renderer_demo_script_x11 x11)
+  renderer_demo_scripted(renderer_demo_script_wayland wayland vulkan)
+  renderer_demo_scripted(renderer_demo_script_x11 x11 vulkan)
   set(_crash_backend wayland)
   set(_abort_code "Subprocess aborted")
 endif()
@@ -85,7 +99,7 @@ set_tests_properties(renderer_demo_crash_after_reset PROPERTIES LABELS "gpu;demo
 
 add_test(NAME renderer_demo_no_vulkan
   COMMAND ${CMAKE_COMMAND} -E env ENGINE_VULKAN_LIBRARY=/nonexistent
-    ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--screenshot;${CMAKE_CURRENT_BINARY_DIR}/renderer_demo_no_vulkan.ppm" -DEXPECT_CODE=1 "-DEXPECT_OUT=no Vulkan device"
+    ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--screenshot;${CMAKE_CURRENT_BINARY_DIR}/renderer_demo_no_vulkan.ppm;--rhi;vulkan" -DEXPECT_CODE=1 "-DEXPECT_OUT=no vulkan device"
     -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
 set_tests_properties(renderer_demo_no_vulkan PROPERTIES LABELS demo ENVIRONMENT "${DEMO_PROFILE_ENV}")
 
@@ -95,12 +109,12 @@ add_test(NAME renderer_demo_assets_current
     -DWORK=${CMAKE_CURRENT_BINARY_DIR}/assets-check -P ${CMAKE_CURRENT_SOURCE_DIR}/check_assets.cmake)
 set_tests_properties(renderer_demo_assets_current PROPERTIES LABELS demo)
 if(WIN32)
-  engine_label_tests(renderer_demo_script_win32)
+  engine_label_tests(renderer_demo_script_win32 renderer_demo_script_win32_dx12)
 else()
   engine_label_tests(renderer_demo_script_wayland renderer_demo_script_x11)
 endif()
 engine_label_tests(renderer_demo_crash_after_reset renderer_demo_list_gpus renderer_demo_unknown_gpu renderer_demo_screenshot renderer_demo_gbuffer_layers renderer_demo_device_loss_screenshot renderer_demo_device_loss_trace renderer_demo_oom_later
   renderer_demo_oom_device renderer_demo_bad_injection renderer_demo_bad_layer renderer_demo_bad_objects renderer_demo_no_vulkan
-  renderer_demo_assets_current)
+  renderer_demo_assets_current renderer_demo_screenshot_vulkan ${_renderer_demo_dx12_tests})
 
 demo_settings_tests(renderer_demo)

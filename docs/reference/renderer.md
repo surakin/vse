@@ -7844,6 +7844,16 @@ bool mechanism_only;
 
 True for a setting that exists only to exercise the mechanism and has no visible effect yet.
 
+### `restart_required` {#renderer-settingdesc-restart-required}
+
+`variable renderer::SettingDesc::restart_required` — defined in `engine/renderer/render_settings.h`
+
+```cpp
+bool restart_required;
+```
+
+True for a setting that takes effect only when the program starts (`backend`): a change at run time is not applied but listed in [`renderer::SettingsChange::restart`](#renderer-settingschange-restart), and the value is kept for the next start by whoever stores the settings. `cost` then says what a different value means for a device, not what a run-time change does.
+
 ### `range_policy` {#renderer-settingdesc-range-policy}
 
 `variable renderer::SettingDesc::range_policy` — defined in `engine/renderer/render_settings.h`
@@ -8682,6 +8692,26 @@ UnsupportedSetting unsupported[kMaxSettings];
 
 The changes that need a missing capability; they are not in `changed` and do not raise `cost`.
 
+### `restart_count` {#renderer-settingschange-restart-count}
+
+`variable renderer::SettingsChange::restart_count` — defined in `engine/renderer/render_settings.h`
+
+```cpp
+u32 restart_count;
+```
+
+How many changes wait for the next start.
+
+### `restart` {#renderer-settingschange-restart}
+
+`variable renderer::SettingsChange::restart` — defined in `engine/renderer/render_settings.h`
+
+```cpp
+SettingId restart[kMaxSettings];
+```
+
+The changes to settings that take effect only at start ([`renderer::SettingDesc::restart_required`](#renderer-settingdesc-restart-required)); they are not in `changed` and do not raise `cost`. A request that keeps asking for the new value (the settings system stores it for the next start) lists it again every time, until the program starts with it.
+
 ### `Any()` {#renderer-settingschange-any-const}
 
 `method renderer::SettingsChange::Any` — defined in `engine/renderer/render_settings.h`
@@ -8711,7 +8741,7 @@ Compares two sets of settings.
 | Parameter `from` | the current settings. |
 | Parameter `to` | the requested settings. |
 | Parameter `capabilities` | what the device and window can do. |
-| Returns | the changed settings, the cheapest sufficient cost class, and the changes that need a missing capability. |
+| Returns | the changed settings, the cheapest sufficient cost class, the changes that need a missing capability, and the changes that wait for the next start. |
 | Aborts | the two follow different registries. |
 
 ## `ResolveSettings(const RenderSettings&,const RenderSettings&,const Capabilities&)` {#renderer-resolvesettings-const-rendersettings-amp-const-rendersettings-amp-const-capabilities-amp}
@@ -8722,7 +8752,7 @@ Compares two sets of settings.
 RenderSettings ResolveSettings(const RenderSettings& current, const RenderSettings& requested, const Capabilities& capabilities);
 ```
 
-Returns `requested` with every unsupported change put back to its value in `current`.
+Returns `requested` with every unsupported change, and every change to a setting that takes effect only at start, put back to its value in `current`.
 
 | Field | Value |
 |---|---|

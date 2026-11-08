@@ -278,8 +278,8 @@ Vulkan everywhere, and Direct3D 12 on Windows. Test binaries do it from a Catch2
 `Backend::Auto`, the default of [[rhi::DeviceCreateInfo::backend]], picks the available registered backend with the highest
 rank ([[rhi::PickAutoBackend]]): Direct3D 12 (rank 20) on Windows, Vulkan (10) elsewhere; the null backend has rank 0, so `Auto` never picks it. A named backend that is registered but
 cannot run here (no Vulkan loader, for example) fails with the backend's own reason ([[rhi::ResolveBackend]]). The renderer's
-`backend` setting (`auto`, `null`, `vulkan`, `dx12`) goes through the same rule: a change to a backend the program does not have,
-or that cannot run, is refused with that reason before the device is touched.
+`backend` setting (`auto`, `null`, `vulkan`, `dx12`) goes through the same rule when the program starts; it is not changed at run time
+(a change waits for the next start, see the render settings guide).
 
 ```cpp compile standalone run
 #include <cstdio>

@@ -178,6 +178,10 @@ ApplyResult Renderer::ApplyNow(const RenderSettings& requested, bool force_devic
         return result;
     }
     result.change = DiffSettings(settings_, requested, caps_); // also lists what needs a missing capability
+    for (u32 i = 0; i < result.change.restart_count; ++i) {
+        RenderLogV(LogVerbosity::Info, "settings: the change of '%s' takes effect when the program starts again",
+                   settings_.Registry().Find(result.change.restart[i])->name);
+    }
     RenderSettings resolved = ResolveSettings(settings_, requested, caps_);
     resolved.SetGeneration(settings_.Generation() + 1); // changes only when the change is applied
     if (!result.change.Any() && !force_device_reset) {

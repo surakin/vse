@@ -695,12 +695,12 @@ them from the lowest up (0 textures and samplers, 1 meshes, 2 layouts and shader
 buffers). A `Recreate` that fails stops the sequence, releases everything that was built and names the owner
 ([[renderer::DeviceResources::FailedOwner]]); the host fails the reset and the caller rolls back.
 
-The new device need not be of the same backend: a change of the `backend` setting (Vulkan to Direct3D 12 and back) or of the
-`adapter` is the same reset. So `Recreate` must not assume anything about the device it got: pick shader bytecode by
-[[rhi::DeviceCaps::shader_format]] (a [[rhi::ShaderBlobSet]] or [[renderer::PermutationModule::Blob]]), read limits and alignments
-from its caps again, and expect the object counts to differ where the backends differ (Direct3D 12 adds the renderer's object index
-stream, [[rhi::DeviceCaps::object_index_stream]]). `tests/rhi/backend_switch_gpu_test.cpp` switches 20 times and checks the picture
-against the golden after each switch.
+The new device is of the same backend (the `backend` setting takes effect only at start: there is no run-time switch between
+graphics APIs), but it need not be on the same GPU: a change of `adapter` is the same reset. So `Recreate` reads limits, formats and
+alignments from the new device's caps again rather than keeping the old ones, and still picks shader bytecode by
+[[rhi::DeviceCaps::shader_format]] (a [[rhi::ShaderBlobSet]] or [[renderer::PermutationModule::Blob]]) so the same code runs on either
+backend. `tests/rhi/adapter_switch_gpu_test.cpp` switches a running renderer from the Radeon to WARP and back and checks the picture
+against the golden on each.
 
 [[renderer::GpuMesh]] gets its source with `MakeRecreatable` (a borrowed [[renderer::MeshData]] or a loader) or `AdoptSource` (the mesh
 keeps the data); [[renderer::GpuTexture]] holds a [[renderer::TextureImage]] or a [[renderer::TextureLoader]] (an asset file is read again

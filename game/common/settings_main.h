@@ -17,6 +17,10 @@
 
 namespace demo {
 
+// The name of the backend a device description asks for, for messages: `vulkan` or `dx12`, what `auto` resolves to here, or `graphics` when
+// it resolves to nothing.
+const char* BackendLabel(::engine_placeholder::rhi::Backend backend);
+
 using namespace engine_placeholder;
 namespace sset = ::engine_placeholder::settings;
 
@@ -54,7 +58,7 @@ public:
     // files and the environment, is shown with the flag as its source, is not written to the user's file, and yields to an explicit --set.
     void SetLegacy(const char* key, const char* text, const char* flag);
 
-    // Fills the parts of a device description that are settings: the validation layer, the GPU, the pipeline cache, the frames in flight. The
+    // Fills the parts of a device description that are settings: the backend, the validation layer, the GPU, the pipeline cache, the frames in flight. The
     // strings it points to belong to this object.
     void FillDeviceCreateInfo(::engine_placeholder::rhi::DeviceCreateInfo* info);
 

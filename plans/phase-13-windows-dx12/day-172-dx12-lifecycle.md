@@ -18,7 +18,7 @@ Make DX12 a full participant in the Phase 8 reset model, then switch backends at
 - [x] **Conformance:** a DX12 factory in `lifecycle_conformance_test.cpp` (and WARP as a second one); the whole suite passes; `rhi_lifecycle_lists` passes.
 - [x] **GPU switch at run time:** Radeon 860M ↔ WARP through the `gpu` setting (in a test; in a running `renderer_demo` moved to Day 173) (the first time a real GPU switch is exercised on hardware
       the project owns; Linux has one adapter): the picture before and after matches the golden on each adapter, counts unchanged.
-- [x] **Backend switch at run time** (deferred from Phase 8): Vulkan ↔ DX12 through the `backend` setting in a test (in a running `renderer_demo`: moved to Day 173): every owner
+- [x] **Backend switch at run time** (deferred from Phase 8; **removed on Day 173** at the user's request, see that day): Vulkan ↔ DX12 through the `backend` setting in a test (in a running `renderer_demo`: moved to Day 173): every owner
       registered with `renderer::DeviceResources` rebuilds from its CPU-side source with the other backend's shader blobs; 20 alternating switches leave resource
       counts and process memory flat (record the numbers); the picture matches the golden after each switch. `KNOWN-ISSUES.md` entry removed.
 - [x] **Soak:** `reset_soak_test` on DX12 (100 resets: counts and device memory unchanged); reset time recorded beside Vulkan's on this machine.

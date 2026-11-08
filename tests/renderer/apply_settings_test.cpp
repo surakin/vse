@@ -7,11 +7,11 @@
 #include "backend_fixture.h"
 #include "renderer/device_resources.h"
 #include "renderer/renderer.h"
-#include "rhi/backend_registry.h"
 #include "rhi/backends/backends.h"
 #include "rhi/device_host.h"
 #include "rhi/null/null_device.h"
 #include "rhi/rhi_log.h"
+#include "string_view.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -540,25 +540,41 @@ TEST_CASE("A device reset can be forced with the settings unchanged", "[apply_se
     CHECK(rig.Render() == FrameStatus::Ok);
 }
 
-TEST_CASE("Switching to a backend this program did not register is refused with the reason and keeps the device", "[apply_settings]") {
+// Phase 13 Day 173: there is no run-time backend switch. The backend is chosen at start; a change waits for the next start, and the rest of the
+// same request is applied.
+TEST_CASE("A backend change at run time waits for the next start and the rest of the request is applied", "[apply_settings]") {
     ApplyQuietLog quiet;
     ApplyRig rig;
     REQUIRE(rig.Create());
     REQUIRE(rig.Render() == FrameStatus::Ok);
     const u32 epoch = rig.Epoch();
-    // Leave only the null backend in the registry, so Vulkan is a backend this program "lacks" on every platform (the test listener
-    // registers everything again before the next test).
-    rhi::ClearBackendRegistryForTest();
-    REQUIRE(rhi::RegisterNullBackend());
     RenderSettings wanted = rig.renderer->Settings();
     wanted.SetEnum(kBackend, 1); // vulkan
-    const ApplyResult result = rig.renderer->ApplySettings(wanted);
-    rhi::RegisterCompiledBackends();
-    CHECK_FALSE(result.ok);
-    CHECK(std::strstr(result.reason, "vulkan backend is not registered in this program") != nullptr);
-    CHECK(rig.Epoch() == epoch); // nothing was torn down
-    CHECK(rig.begins == 0);
-    CHECK_FALSE(rig.renderer->IsBroken());
+    ApplyResult result = rig.renderer->ApplySettings(wanted);
+    CHECK(result.ok);
+    CHECK(result.performed == CostClass::None);
+    CHECK(result.change.changed_count == 0);
+    REQUIRE(result.change.restart_count == 1);
+    CHECK(result.change.restart[0] == kBackend);
     CHECK(rig.renderer->Settings().GetEnum(kBackend) == 0);
+    CHECK(rig.Epoch() == epoch); // the device stayed
+    CHECK(rig.begins == 0);
+
+    // With another change in the same request: that one is applied, the backend still waits.
+    wanted.SetFloat(kRenderScale, 0.5f);
+    result = rig.renderer->ApplySettings(wanted);
+    CHECK(result.ok);
+    CHECK(result.performed == CostClass::Dynamic);
+    REQUIRE(result.change.changed_count == 1);
+    CHECK(result.change.changed[0] == kRenderScale);
+    CHECK(result.change.restart_count == 1);
+    CHECK(rig.renderer->Settings().GetFloat(kRenderScale) == 0.5f);
+    CHECK(rig.renderer->Settings().GetEnum(kBackend) == 0);
+    CHECK(rig.Epoch() == epoch);
+
+    // A forced reset recreates on the backend the program started with.
+    REQUIRE(rig.renderer->ForceDeviceReset().ok);
+    CHECK(rig.Epoch() != epoch);
+    CHECK(StringView(rig.host.GetDevice()->BackendName()) == "null");
     CHECK(rig.Render() == FrameStatus::Ok);
 }

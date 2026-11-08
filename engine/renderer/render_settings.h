@@ -89,6 +89,10 @@ struct SettingDesc {
     const char* capability = nullptr;
     /// True for a setting that exists only to exercise the mechanism and has no visible effect yet.
     bool mechanism_only = false;
+    /// True for a setting that takes effect only when the program starts (`backend`): a change at run time is not applied but listed in
+    /// [[renderer::SettingsChange::restart]], and the value is kept for the next start by whoever stores the settings. `cost` then says
+    /// what a different value means for a device, not what a run-time change does.
+    bool restart_required = false;
     /// What an out-of-range number does (`Int` and `Float`).
     RangePolicy range_policy = RangePolicy::Clamp;
     /// The default of a `Bool` (0 or 1), `Enum` (an index) or `Int`.
@@ -380,6 +384,12 @@ struct SettingsChange {
     u32 unsupported_count = 0;
     /// The changes that need a missing capability; they are not in `changed` and do not raise `cost`.
     UnsupportedSetting unsupported[kMaxSettings];
+    /// How many changes wait for the next start.
+    u32 restart_count = 0;
+    /// The changes to settings that take effect only at start ([[renderer::SettingDesc::restart_required]]); they are not in `changed`
+    /// and do not raise `cost`. A request that keeps asking for the new value (the settings system stores it for the next start) lists
+    /// it again every time, until the program starts with it.
+    SettingId restart[kMaxSettings];
 
     /// Returns whether anything supported changed.
     /// Fails: never.
@@ -391,11 +401,13 @@ struct SettingsChange {
 /// Param from: the current settings.
 /// Param to: the requested settings.
 /// Param capabilities: what the device and window can do.
-/// Returns: the changed settings, the cheapest sufficient cost class, and the changes that need a missing capability.
+/// Returns: the changed settings, the cheapest sufficient cost class, the changes that need a missing capability, and the changes that
+///   wait for the next start.
 /// Aborts: the two follow different registries.
 SettingsChange DiffSettings(const RenderSettings& from, const RenderSettings& to, const Capabilities& capabilities);
 
-/// Returns `requested` with every unsupported change put back to its value in `current`.
+/// Returns `requested` with every unsupported change, and every change to a setting that takes effect only at start, put back to its value
+/// in `current`.
 ///
 /// Param current: the settings now in force.
 /// Param requested: what was asked for.
