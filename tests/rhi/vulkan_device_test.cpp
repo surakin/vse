@@ -186,6 +186,7 @@ TEST_CASE("A headless Vulkan device is created through the factory with plausibl
     fx.Require();
 
     DeviceCreateInfo info;
+    info.backend = Backend::Vulkan;
     info.application_name = "device-test";
     info.validation = ValidationSetting::On;
     info.sync_validation = true;

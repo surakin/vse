@@ -20,6 +20,7 @@ namespace {
 
 DeviceCreateInfo Info(const FaultInjection& faults) {
     DeviceCreateInfo info;
+    info.backend = Backend::Vulkan;
     info.validation = ValidationSetting::On;
     info.faults = faults;
     return info;

@@ -3,10 +3,12 @@
 // module chosen by a key really draws the colour its options describe.
 #include <cstdlib>
 #include <cstring>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "backend_fixture.h"
+
+#include "fullscreen.vert.dxil.inc"
 #include "fullscreen.vert.spv.inc"
 #include "permute_test.frag.perm.inc"
 #include "renderer/shader_permutation.h"
@@ -63,20 +65,20 @@ TEST_CASE("Keys are built from option names and found by lookup", "[renderer][pe
 
     // Every built key resolves to a module whose words and reflection are usable.
     for (const char* key_names : {"", "INVERT", "HALF", "INVERT HALF", "TINT", "DEBUG"}) {
-        std::vector<const char*> names;
+        Vector<const char*> names;
         char buffer[64];
         std::strncpy(buffer, key_names, sizeof(buffer) - 1);
         buffer[sizeof(buffer) - 1] = '\0';
         for (char* word = std::strtok(buffer, " "); word != nullptr; word = std::strtok(nullptr, " ")) {
             for (u32 i = 0; i < Table().option_count; ++i) {
                 if (std::strcmp(word, Table().options[i]) == 0) {
-                    names.push_back(Table().options[i]);
+                    names.Push(Table().options[i]);
                 }
             }
         }
         PermutationKey key;
         ReflectionError error;
-        REQUIRE(MakePermutationKey(Table(), names.data(), static_cast<u32>(names.size()), &key, &error));
+        REQUIRE(MakePermutationKey(Table(), names.Data(), static_cast<u32>(names.Size()), &key, &error));
         const PermutationModule* module = FindPermutation(Table(), key, &error);
         INFO(key_names);
         REQUIRE(module != nullptr);
@@ -271,10 +273,10 @@ Pixel DrawWithKey(rhi::Device* device, std::initializer_list<const char*> names)
 
     rhi::ShaderDesc vs;
     vs.stage = rhi::ShaderStage::Vertex;
-    vs.SetCode(rhi::SpirvBlob(shaders::kFullscreenVertSpv, shaders::kFullscreenVertSpvWordCount));
+    vs.SetCode(shaders::kFullscreenVertShader.For(device->Caps().shader_format));
     rhi::ShaderDesc fs;
     fs.stage = rhi::ShaderStage::Fragment;
-    fs.SetCode(module->Blob(rhi::ShaderFormat::Spirv));
+    fs.SetCode(module->Blob(device->Caps().shader_format));
     const rhi::ShaderHandle vshader = device->CreateShader(vs);
     const rhi::ShaderHandle fshader = device->CreateShader(fs);
     REQUIRE(vshader.IsValid());
@@ -315,9 +317,10 @@ Pixel DrawWithKey(rhi::Device* device, std::initializer_list<const char*> names)
     REQUIRE(device->Submit(lists, 1) != 0);
     device->EndFrame();
 
-    std::vector<unsigned char> pixels(8 * 8 * 4);
-    REQUIRE(device->ReadbackTexture(target, 0, 0, pixels.data(), pixels.size(), rhi::ResourceState::ColorAttachment));
-    const unsigned char* p = &pixels[(2 * 8 + 6) * 4];
+    Vector<u8> pixels;
+    pixels.Resize(8 * 8 * 4);
+    REQUIRE(device->ReadbackTexture(target, 0, 0, pixels.Data(), pixels.Size(), rhi::ResourceState::ColorAttachment));
+    const u8* p = &pixels[(2 * 8 + 6) * 4];
     Pixel out = {p[0], p[1], p[2], p[3]};
 
     device->DestroyPipeline(pipeline);
@@ -335,29 +338,33 @@ bool Near(const Pixel& p, int r, int g, int b) {
 } // namespace
 
 TEST_CASE("The module a key selects draws the colour its options describe", "[renderer][permutation][gpu]") {
-    rhi::DeviceCreateInfo info;
-    info.validation = rhi::ValidationSetting::On;
-    info.sync_validation = true;
-    info.pipeline_cache = false;
-    rhi::DevicePtr device = rhi::CreateDevice(info);
-    if (device == nullptr) {
-        const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
-        if (required != nullptr && required[0] == '1') {
-            FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
+    FOR_EACH_GPU_BACKEND(backend) {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DeviceCreateInfo info;
+        info.backend = backend;
+        info.validation = rhi::ValidationSetting::On;
+        info.sync_validation = true;
+        info.pipeline_cache = false;
+        rhi::DevicePtr device = rhi::CreateDevice(info);
+        if (device == nullptr) {
+            const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
+            if (required != nullptr && required[0] == '1') {
+                FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
+            }
+            SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
         }
-        SKIP("no Vulkan device on this machine");
+
+        // The shader's flat colour is (0.8, 0.4, 0.2); each option changes it analytically (see permute_test.frag.slang).
+        CHECK(Near(DrawWithKey(device.Get(), {}), 204, 102, 51));
+        CHECK(Near(DrawWithKey(device.Get(), {"INVERT"}), 51, 153, 204));
+        CHECK(Near(DrawWithKey(device.Get(), {"HALF"}), 102, 51, 26));
+        CHECK(Near(DrawWithKey(device.Get(), {"INVERT", "HALF"}), 26, 77, 102));
+        CHECK(Near(DrawWithKey(device.Get(), {"TINT"}), 204, 102, 26));
+        // DEBUG paints (u, v, 0): pixel (6, 2) of 8x8 is at uv (6.5/8, 2.5/8). The shared DEBUG TINT key draws the same.
+        CHECK(Near(DrawWithKey(device.Get(), {"DEBUG"}), 207, 80, 0));
+        CHECK(Near(DrawWithKey(device.Get(), {"DEBUG", "TINT"}), 207, 80, 0));
+
+        device->WaitIdle();
+        device.Reset();
     }
-
-    // The shader's flat colour is (0.8, 0.4, 0.2); each option changes it analytically (see permute_test.frag.slang).
-    CHECK(Near(DrawWithKey(device.Get(), {}), 204, 102, 51));
-    CHECK(Near(DrawWithKey(device.Get(), {"INVERT"}), 51, 153, 204));
-    CHECK(Near(DrawWithKey(device.Get(), {"HALF"}), 102, 51, 26));
-    CHECK(Near(DrawWithKey(device.Get(), {"INVERT", "HALF"}), 26, 77, 102));
-    CHECK(Near(DrawWithKey(device.Get(), {"TINT"}), 204, 102, 26));
-    // DEBUG paints (u, v, 0): pixel (6, 2) of 8x8 is at uv (6.5/8, 2.5/8). The shared DEBUG TINT key draws the same.
-    CHECK(Near(DrawWithKey(device.Get(), {"DEBUG"}), 207, 80, 0));
-    CHECK(Near(DrawWithKey(device.Get(), {"DEBUG", "TINT"}), 207, 80, 0));
-
-    device->WaitIdle();
-    device.Reset();
 }

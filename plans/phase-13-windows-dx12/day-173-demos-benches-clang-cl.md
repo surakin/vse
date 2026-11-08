@@ -9,6 +9,9 @@ Everything the phase ships, exercised as a user would, measured, and built with 
 
 - [ ] **Moved here from Day 171:** `renderer_demo` on DX12 (1000 frames with `--validation`, the backend setting, a settings round trip), the
       `demo` ctests per backend, and the demo scene's GPU frame time on DX12 against the Windows Vulkan baseline.
+- [ ] **Moved here from Day 172:** the GPU switch (Radeon to WARP and back, through `adapter`) and the backend switch (Vulkan to DX12 and back,
+      through `backend`) in a running `renderer_demo` (settings keys or `--set`), the picture checked by eye after each; the tests of
+      Day 172 did both on the demo frame and scene through `Renderer::ApplySettings`.
 - [ ] **Moved here from Day 169:** `rhi_demo` with the DX12 backend runs 1000 frames with `--validation`, resizes by dragging, minimizes and
       restores, toggles fullscreen; record the checks done by hand (the demos choose their RHI backend on this day; Day 169 tested the
       swapchain through `DeviceHost` on a Win32 window instead).

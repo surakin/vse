@@ -5,6 +5,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "build_defs.h"
 #include "gpu_fixture.h"
 #include "rhi/device_host.h"
 #include "rhi/rhi.h"
@@ -162,4 +163,27 @@ TEST_CASE("The Vulkan backend conforms to the device lifecycle", "[rhi][lifecycl
     }
     probe.Reset();
     RunLifecycleConformance(vulkan_backend);
+}
+
+// Phase 13 Day 172: Direct3D 12 on the first hardware adapter, and on WARP (a second implementation, and a GPU-free check).
+TEST_CASE("The DX12 backend conforms to the device lifecycle, on hardware and on WARP", "[rhi][lifecycle][conformance][dx12][gpu]") {
+#if ENGINE_PLATFORM_WINDOWS
+    ConformanceQuietLog quiet;
+    for (const char* adapter : {"0", "Basic Render"}) {
+        DYNAMIC_SECTION("adapter " << adapter) {
+            Backend_ dx12_backend;
+            dx12_backend.name = "dx12";
+            dx12_backend.info.backend = Backend::Dx12;
+            dx12_backend.info.validation = ValidationSetting::Off;
+            dx12_backend.info.adapter = adapter;
+            dx12_backend.headless_swapchain = false; // a DXGI swap chain needs a window
+            DevicePtr probe = CreateDevice(dx12_backend.info);
+            REQUIRE(probe != nullptr); // every Windows 10 and 11 has Direct3D 12 and WARP
+            probe.Reset();
+            RunLifecycleConformance(dx12_backend);
+        }
+    }
+#else
+    SKIP("Direct3D 12 is the Windows backend");
+#endif
 }

@@ -41,6 +41,12 @@ inline engine_placeholder::Vector<engine_placeholder::rhi::Backend> GpuBackends(
     return out;
 }
 
+// The index of `backend` in the renderer's `backend` setting (null, vulkan, dx12, auto: renderer/render_settings.cpp).
+inline engine_placeholder::u32 BackendSettingIndex(engine_placeholder::rhi::Backend backend) {
+    using engine_placeholder::rhi::Backend;
+    return backend == Backend::Null ? 0 : backend == Backend::Vulkan ? 1 : backend == Backend::Dx12 ? 2 : 3;
+}
+
 // The backend's name as a section name and in messages.
 inline const char* BackendTag(engine_placeholder::rhi::Backend backend) {
     using engine_placeholder::rhi::Backend;

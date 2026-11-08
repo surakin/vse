@@ -36,6 +36,10 @@ constexpr bool kDebugBuild = false;
 constexpr bool kDebugBuild = true;
 #endif
 
+// Live devices that removed themselves on purpose (InjectDeviceLoss, with the debug layer on): while one lives, the debug layer's
+// removal messages are expected. A count of devices, not of messages, so a message that never comes leaves nothing behind.
+std::atomic<u32> g_injected_removals{0};
+
 // The info queue's callback: every debug-layer message. A live-object report at device destruction is not a warning about the
 // application's use of the API: the device naming itself is expected, anything else is a leak.
 void CALLBACK OnDebugMessage(D3D12_MESSAGE_CATEGORY, D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID id, LPCSTR description, void*) {
@@ -51,6 +55,10 @@ void CALLBACK OnDebugMessage(D3D12_MESSAGE_CATEGORY, D3D12_MESSAGE_SEVERITY seve
     // created without knowing what its passes will clear to (Vulkan has no such value), so every clear would warn. Kept as information.
     if (id == D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE || id == D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE) {
         severity = D3D12_MESSAGE_SEVERITY_INFO;
+    }
+    if (id >= D3D12_MESSAGE_ID_DEVICE_REMOVAL_PROCESS_AT_FAULT && id <= D3D12_MESSAGE_ID_DEVICE_REMOVAL_PROCESS_NOT_AT_FAULT &&
+        g_injected_removals.load(std::memory_order_relaxed) != 0) {
+        severity = D3D12_MESSAGE_SEVERITY_INFO; // the removal InjectDeviceLoss asked for
     }
     RecordDebugMessage(severity, id, text);
 }
@@ -186,6 +194,12 @@ bool Dx12Device::Initialize(const DeviceCreateInfo& info) {
         !Check(device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, __uuidof(ID3D12Fence), fence_.PutVoid()), "CreateFence")) {
         return false;
     }
+    if (device_->GetDeviceRemovedReason() != S_OK) {
+        // D3D12 gives one device per adapter to a process: this is a removed one that another device of the process still holds.
+        RhiLog(LogVerbosity::Error, "CreateDevice: the D3D12 device of '%s' was removed and is still held by another device of this process; "
+                                    "release every device of the adapter first", adapter_.name);
+        return false;
+    }
     queue_->SetName(L"engine direct queue");
 
     frames_in_flight_ = info.frames_in_flight < 1 ? 1 : (info.frames_in_flight > 3 ? 3 : info.frames_in_flight);
@@ -194,6 +208,7 @@ bool Dx12Device::Initialize(const DeviceCreateInfo& info) {
     lose_device_at_submit_ = info.faults.lose_device_at_submit;
     lose_device_at_present_ = info.faults.lose_device_at_present;
     strikes_left_ = info.faults.strikes_left;
+    fail_allocations_from_ = info.faults.fail_allocations_from;
     FillCaps();
     epoch_ = AllocateDeviceSerial(); // usable from here on; the handle pools are seeded from it
     if (!InitializeResources() || !InitializeBindings()) {
@@ -252,6 +267,9 @@ Dx12Device::~Dx12Device() {
     fence_.Reset();
     queue_.Reset();
     ReportLiveObjects();
+    if (removal_injected_) {
+        g_injected_removals.fetch_sub(1, std::memory_order_relaxed); // its removal messages have all been delivered by now
+    }
     if (info_queue_) {
         info_queue_->UnregisterMessageCallback(info_callback_cookie_);
         info_queue_.Reset();
@@ -304,19 +322,48 @@ void Dx12Device::NoteRemoved(const char* where) {
     ENGINE_ENSURE(false, "the D3D12 device was removed"); // the same report as Vulkan's loss: a trace, once
 }
 
+void Dx12Device::InjectDeviceLoss() {
+    // A real removal (ID3D12Device5::RemoveDevice), so the loss is found the way a real one is: GetDeviceRemovedReason, fence values,
+    // Present. D3D12 shares one device per adapter in a process, so every device of this adapter is lost with it, as with a real
+    // removal; a device made after they are all released is a new one.
+    if (device_lost_.load(std::memory_order_relaxed)) {
+        return;
+    }
+    ComRef<ID3D12Device5> device5;
+    if (FAILED(device_->QueryInterface(__uuidof(ID3D12Device5), device5.PutVoid()))) {
+        InjectLoss("request", 0); // no RemoveDevice before Windows 10 1809: the loss is only recorded
+        return;
+    }
+    if (!TakeStrike()) {
+        return; // the shared strike limit is spent, as for every injected loss
+    }
+    if (validation_ && !removal_injected_) {
+        removal_injected_ = true;
+        g_injected_removals.fetch_add(1, std::memory_order_relaxed);
+    }
+    device5->RemoveDevice();
+    NoteRemoved("InjectDeviceLoss");
+}
+
+bool Dx12Device::TakeStrike() {
+    if (strikes_left_ == nullptr) {
+        return true;
+    }
+    u32 left = strikes_left_->load(std::memory_order_relaxed);
+    while (left != 0) {
+        if (strikes_left_->compare_exchange_weak(left, left - 1, std::memory_order_relaxed)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool Dx12Device::InjectLoss(const char* where, u32 number) {
     if (device_lost_.load(std::memory_order_relaxed)) {
         return true;
     }
-    if (strikes_left_ != nullptr) {
-        u32 left = strikes_left_->load(std::memory_order_relaxed);
-        bool struck = false;
-        while (left != 0 && !struck) {
-            struck = strikes_left_->compare_exchange_weak(left, left - 1, std::memory_order_relaxed);
-        }
-        if (!struck) {
-            return false;
-        }
+    if (!TakeStrike()) {
+        return false;
     }
     if (!device_lost_.exchange(true, std::memory_order_relaxed)) {
         RhiLog(LogVerbosity::Error, "D3D12: the device was lost (injected at %s %u); further submissions are ignored", where, number);

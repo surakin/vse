@@ -186,8 +186,9 @@ Phase 8 made replacing the device a normal operation, so a test of anything that
 this:
 
 1. Use `tests/renderer/reset_rig.h`: a `Rig` holds a `DeviceHost`, a `DeviceResources` registry, an offscreen target (itself a registered
-   owner) and the deferred demo frame and scene, all registered. `rig.Create(rhi::Backend::Null)` needs no GPU; pass
-   `rhi::Backend::Vulkan` for a `[gpu]` test (it skips without a device).
+   owner) and the deferred demo frame and scene, all registered. `rig.Create(rhi::Backend::Null)` needs no GPU; for a `[gpu]` test
+   run the body once per backend with `FOR_EACH_GPU_BACKEND(backend)` (`tests/rhi/backend_fixture.h`) and pass `backend` (it skips
+   without a device). `rig.Read(&image)` reads the target into a `gpu_test::Image`.
 2. Make the scene or owner under test, render, then `rig.ResetDevice(sync_validation)`, which flips a device-class setting and so replaces
    the device through `Renderer::ApplySettings`; render again.
 3. Assert with the counts, not with timing: `device->Quiesce()` then `device->Resources()` gives the live objects per kind, which must equal
@@ -197,7 +198,7 @@ this:
    strikes with `strikes_left` so the recovery's new device is not lost again.
 
 The phase's tests: `tests/renderer/reset_soak_test.cpp` (100 resets on the null backend, resets during a 50-frame sequence, what each
-cost class leaves alone, a reset with the job scheduler running), `tests/rhi/vulkan_reset_golden_test.cpp` (the picture before and after a
+cost class leaves alone, a reset with the job scheduler running), `tests/rhi/reset_golden_gpu_test.cpp` (the picture before and after a
 reset is byte-identical and matches the blessed golden; 100 resets on the real device, 20 under the sanitizers, with memory and descriptor
 drift reported), `tests/renderer/device_loss_recovery_test.cpp`, `tests/renderer/apply_settings_test.cpp`,
 `tests/renderer/recreatable_renderer_test.cpp`, `tests/renderer/device_resources_test.cpp`. The GPU ones carry the `gpu` tag and run in the

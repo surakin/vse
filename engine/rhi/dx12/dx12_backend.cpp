@@ -44,7 +44,7 @@ bool RegisterDx12Backend() {
     d.enumerate_adapters = &EnumerateDx12Adapters;
     d.available = &Dx12Available;
     d.shader_format = ShaderFormat::Dxil;
-    d.auto_rank = 0; // Auto never picks it until it passes the suites (Day 172): a machine without Vulkan must not land on it
+    d.auto_rank = 20; // above Vulkan (10): Auto means Direct3D 12 on Windows since it passed the suites (Phase 13 Day 172)
     return RegisterBackend(d);
 }
 

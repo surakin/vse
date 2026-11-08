@@ -962,3 +962,10 @@ Vulkan's and matches `renderer_demo.ppm`. Phase 5 on Windows: 403 of 403. `rende
 0.27 against 0.19 us a light-volume draw (filed). The reset tests per backend moved to Day 172, `renderer_demo` on DX12 to Day 173. Runs:
 `ran 1267 of 2473 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (the filed throughput flake once), asan `ran 941 of 2473 tests (phases: all; flavors: asan; display: included; crash tests: excluded)`. Review: 2 findings, both filed.
 Linux: pending until the phase close. **Next: Day 172 (lifecycle, device loss, the backend switch).**
+
+Phase 13 **Day 172 (2026-11-08, Windows PC): lifecycle, device loss and the backend switch.** DX12 passes the lifecycle conformance suite on the
+Radeon and on WARP; `InjectDeviceLoss` is a real `RemoveDevice` and the renderer recovers through `DeviceHost` on both backends; `fail_allocations_from`
+works on DX12. A running renderer switches between Vulkan and DX12 (20 switches, counts flat, memory drift 5 to 13 MiB, about 160 ms a switch, golden
+after each) and between the Radeon and WARP (`backend_switch_gpu_test.cpp`). `Auto` now means DX12 on Windows (rank 20). The reset, recovery, material,
+permutation and frame GPU tests run per backend. Runs: `ran 1272 of 2483 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (the filed throughput flake, and the DX12 reset loop's handle allowance, fixed), asan `ran 946 of 2483 tests (phases: all; flavors: asan; display: included; crash tests: excluded)`. Review: 7 findings, 5 fixed (one with a regression test), 2 declined (one filed).
+The switches inside a running `renderer_demo` moved to Day 173. Linux: pending until the phase close. **Next: Day 173 (demos, benchmarks, clang-cl).**

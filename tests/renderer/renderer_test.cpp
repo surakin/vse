@@ -4,13 +4,16 @@
 #include <atomic>
 #include <chrono>
 #include <cstdlib>
-#include <string>
+#include <cstring>
 #include <thread>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "backend_fixture.h"
+
+#include "fullscreen.vert.dxil.inc"
 #include "fullscreen.vert.spv.inc"
+#include "graph_sample.frag.dxil.inc"
 #include "graph_sample.frag.spv.inc"
 #include "jobs/scheduler.h"
 #include "renderer/renderer.h"
@@ -149,11 +152,11 @@ TEST_CASE("A frame callback that refuses, or a transient the device cannot make,
     NullRenderer r(true);
     r.scene.refuse = true;
     CHECK(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Failed);
-    CHECK(std::string(r.renderer->LastError()) == "the frame callback abandoned the frame");
+    CHECK(StringView(r.renderer->LastError()) == "the frame callback abandoned the frame");
     r.scene.refuse = false;
     r.scene.bad_transient = true; // a zero-size texture: the device refuses to create it
     CHECK(r.renderer->RenderFrame(nullptr, nullptr, nullptr) == FrameStatus::Failed);
-    CHECK(std::string(r.renderer->LastError()) == "transient texture 'mid' could not be allocated");
+    CHECK(StringView(r.renderer->LastError()) == "transient texture 'mid' could not be allocated");
     r.device->ResetErrors();
     r.scene.bad_transient = false;
     // The swapchain image of the failed frames was presented, so rendering simply continues.
@@ -254,13 +257,13 @@ TEST_CASE("Independent passes record on several threads, their lists submitted i
         CHECK(fence != 0);
         CHECK(log.counts.load() == kIndependent);
         CHECK(device->ErrorCount() == 0);
-        std::vector<std::thread::id> distinct;
+        Vector<std::thread::id> distinct;
         for (u32 i = 0; i < kIndependent; ++i) {
             bool seen = false;
-            for (const std::thread::id& d : distinct) seen = seen || d == log.ids[i];
-            if (!seen) distinct.push_back(log.ids[i]);
+            for (usize j = 0; j < distinct.Size(); ++j) seen = seen || distinct[j] == log.ids[i];
+            if (!seen) distinct.Push(log.ids[i]);
         }
-        CHECK(distinct.size() >= 2); // 48 passes of 0.3 ms on 4 participants cannot all land on one thread
+        CHECK(distinct.Size() >= 2); // 48 passes of 0.3 ms on 4 participants cannot all land on one thread
     }
     device.Reset();
 }
@@ -303,7 +306,7 @@ TEST_CASE("A lost device during ExecuteParallel fails it and puts the pool back"
         graph.AddPass("b", nullptr, nullptr).Read(t, GraphUsage::Sampled).Write(out, GraphUsage::ColorAttachment);
         device->BeginFrame(); // the device is lost from here
         CHECK_FALSE(graph.ExecuteParallel(&pool, device.Get(), nullptr, nullptr));
-        CHECK(std::string(graph.ExecuteError()) == "a command list could not be created (the device is lost or out of memory)");
+        CHECK(StringView(graph.ExecuteError()) == "a command list could not be created (the device is lost or out of memory)");
         CHECK(pool.Stats().textures_idle == pool.Stats().textures_live); // nothing stays out of the pool
         device->EndFrame();
         device->DestroyTexture(imported);
@@ -329,10 +332,10 @@ struct SampleScene {
         device = dev;
         rhi::ShaderDesc sd;
         sd.stage = rhi::ShaderStage::Vertex;
-        sd.SetCode(rhi::SpirvBlob(shaders::kFullscreenVertSpv, shaders::kFullscreenVertSpvWordCount));
+        sd.SetCode(shaders::kFullscreenVertShader.For(dev->Caps().shader_format));
         vs = device->CreateShader(sd);
         sd.stage = rhi::ShaderStage::Fragment;
-        sd.SetCode(rhi::SpirvBlob(shaders::kGraphSampleFragSpv, shaders::kGraphSampleFragSpvWordCount));
+        sd.SetCode(shaders::kGraphSampleFragShader.For(dev->Caps().shader_format));
         fs = device->CreateShader(sd);
         rhi::BindingDesc bindings[3] = {{0, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1},
                                         {1, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1},
@@ -432,8 +435,9 @@ bool BuildSample(const FrameContext& context, void* user) {
     return true;
 }
 
-rhi::DevicePtr MakeGpuDevice(u32 fail_allocations_from = 0) {
+rhi::DevicePtr MakeGpuDevice(rhi::Backend backend, u32 fail_allocations_from = 0) {
     rhi::DeviceCreateInfo info;
+    info.backend = backend;
     info.validation = rhi::ValidationSetting::On;
     info.sync_validation = true;
     info.pipeline_cache = false;
@@ -441,15 +445,15 @@ rhi::DevicePtr MakeGpuDevice(u32 fail_allocations_from = 0) {
     return rhi::CreateDevice(info);
 }
 
-bool GpuAvailable(rhi::Device* device) {
+bool GpuAvailable(rhi::Device* device, rhi::Backend backend) {
     if (device != nullptr) return true;
     const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
-    if (required != nullptr && required[0] == '1') FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
+    if (required != nullptr && required[0] == '1') FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
     return false;
 }
 
 struct GpuRun {
-    std::vector<u8> pixels;
+    Vector<u8> pixels;
     FrameStatus status = FrameStatus::Failed;
 };
 
@@ -474,8 +478,8 @@ GpuRun RenderSample(rhi::Device* device, jobs::Scheduler* scheduler) {
             ft.final_state = rhi::ResourceState::CopySrc;
             for (int i = 0; i < 3; ++i) run.status = renderer.RenderFrame(nullptr, nullptr, &ft);
             device->WaitIdle();
-            run.pixels.resize(kSize * kSize * 4);
-            if (run.status == FrameStatus::Ok) device->ReadbackTexture(target, 0, 0, run.pixels.data(), run.pixels.size(), rhi::ResourceState::CopySrc);
+            run.pixels.Resize(kSize * kSize * 4);
+            if (run.status == FrameStatus::Ok) device->ReadbackTexture(target, 0, 0, run.pixels.Data(), run.pixels.Size(), rhi::ResourceState::CopySrc);
         }
         device->DestroyTexture(target);
     }
@@ -487,49 +491,55 @@ GpuRun RenderSample(rhi::Device* device, jobs::Scheduler* scheduler) {
 } // namespace
 
 TEST_CASE("Parallel recording gives the same pixels as serial recording", "[renderer][frame][parallel][gpu]") {
-    rhi::DevicePtr device = MakeGpuDevice();
-    if (!GpuAvailable(device.Get())) SKIP("no Vulkan device on this machine");
-    jobs::Scheduler::Config config;
-    config.participants = 4;
-    config.pin = false;
-    jobs::Scheduler scheduler(config);
-    const GpuRun serial = RenderSample(device.Get(), nullptr);
-    const GpuRun parallel = RenderSample(device.Get(), &scheduler);
-    REQUIRE(serial.status == FrameStatus::Ok);
-    REQUIRE(parallel.status == FrameStatus::Ok);
-    CHECK(serial.pixels == parallel.pixels);
-    // out = (a + a) + (c + c) = (0.2 + 0.6, 0.4 + 0.2, 0.1 + 0.4, 0 + 0) -> (204, 153, 128, 0) in 8 bits.
-    const u8* px = &serial.pixels[(kSize / 2 * kSize + kSize / 2) * 4];
-    CHECK(std::abs(static_cast<int>(px[0]) - 204) <= 2);
-    CHECK(std::abs(static_cast<int>(px[1]) - 153) <= 2);
-    CHECK(std::abs(static_cast<int>(px[2]) - 128) <= 2);
-    device.Reset();
+    FOR_EACH_GPU_BACKEND(backend) {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DevicePtr device = MakeGpuDevice(backend);
+        if (!GpuAvailable(device.Get(), backend)) SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
+        jobs::Scheduler::Config config;
+        config.participants = 4;
+        config.pin = false;
+        jobs::Scheduler scheduler(config);
+        const GpuRun serial = RenderSample(device.Get(), nullptr);
+        const GpuRun parallel = RenderSample(device.Get(), &scheduler);
+        REQUIRE(serial.status == FrameStatus::Ok);
+        REQUIRE(parallel.status == FrameStatus::Ok);
+        CHECK((serial.pixels.Size() == parallel.pixels.Size() &&
+               std::memcmp(serial.pixels.Data(), parallel.pixels.Data(), serial.pixels.Size()) == 0));
+        // out = (a + a) + (c + c) = (0.2 + 0.6, 0.4 + 0.2, 0.1 + 0.4, 0 + 0) -> (204, 153, 128, 0) in 8 bits.
+        const u8* px = &serial.pixels[(kSize / 2 * kSize + kSize / 2) * 4];
+        CHECK(std::abs(static_cast<int>(px[0]) - 204) <= 2);
+        CHECK(std::abs(static_cast<int>(px[1]) - 153) <= 2);
+        CHECK(std::abs(static_cast<int>(px[2]) - 128) <= 2);
+        device.Reset();
+    }
 }
 
 constexpr u32 kSweep = 24;
 
 TEST_CASE("Device allocation failures at any point end frames cleanly", "[renderer][frame][fault][gpu]") {
-    // fail_allocations_from = N makes the Nth device-memory allocation and every later one fail. Whatever the scene was
-    // creating at that moment (a texture, the target, a pooled transient), nothing may crash and the teardown must be clean.
-    rhi::DevicePtr probe = MakeGpuDevice();
-    if (!GpuAvailable(probe.Get())) SKIP("no Vulkan device on this machine");
-    probe.Reset();
-    u32 failed_frames = 0;
-    u32 ok_frames = 0;
-    u32 refused = 0;
-    for (u32 from = 1; from <= kSweep; ++from) {
-        rhi::DevicePtr device = MakeGpuDevice(from);
-        if (device == nullptr) { // the device's own setup (staging memory) hit the failure: creation is refused cleanly
-            ++refused;
-            continue;
+    FOR_EACH_GPU_BACKEND(backend) {
+        // fail_allocations_from = N makes the Nth device-memory allocation and every later one fail. Whatever the scene was
+        // creating at that moment (a texture, the target, a pooled transient), nothing may crash and the teardown must be clean.
+        rhi::DevicePtr probe = MakeGpuDevice(backend);
+        if (!GpuAvailable(probe.Get(), backend)) SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
+        probe.Reset();
+        u32 failed_frames = 0;
+        u32 ok_frames = 0;
+        u32 refused = 0;
+        for (u32 from = 1; from <= kSweep; ++from) {
+            rhi::DevicePtr device = MakeGpuDevice(backend, from);
+            if (device == nullptr) { // the device's own setup (staging memory) hit the failure: creation is refused cleanly
+                ++refused;
+                continue;
+            }
+            const GpuRun run = RenderSample(device.Get(), nullptr);
+            if (run.status == FrameStatus::Ok) ++ok_frames;
+            else ++failed_frames;
+            device.Reset();
         }
-        const GpuRun run = RenderSample(device.Get(), nullptr);
-        if (run.status == FrameStatus::Ok) ++ok_frames;
-        else ++failed_frames;
-        device.Reset();
+        CHECK(failed_frames > 0); // some allocation index must have hit a texture the frame needed
+        CHECK(ok_frames + failed_frames + refused == kSweep);
     }
-    CHECK(failed_frames > 0); // some allocation index must have hit a texture the frame needed
-    CHECK(ok_frames + failed_frames + refused == kSweep);
 }
 
 TEST_CASE("Passes that are only ordering markers record no command list", "[renderer][frame][parallel]") {

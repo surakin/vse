@@ -78,7 +78,7 @@ public:
     const DeviceCaps& Caps() const override { return caps_; }
     ResourceCounts Resources() const override;
     bool InFrame() const override { return frame_open_.load(std::memory_order_acquire); }
-    void InjectDeviceLoss() override { InjectLoss("request", 0); }
+    void InjectDeviceLoss() override;
     bool DeviceLost() const override { return device_lost_.load(std::memory_order_relaxed); }
     BufferHandle CreateBuffer(const BufferDesc& desc) override;
     void DestroyBuffer(BufferHandle buffer) override;
@@ -469,6 +469,8 @@ private:
     bool Initialize(const DeviceCreateInfo& info);
     void FillCaps();
     bool InjectLoss(const char* where, u32 number);
+    // Takes one strike of the shared limit (FaultInjection::strikes_left); false when it is spent. No limit always strikes.
+    bool TakeStrike();
     void NoteRemoved(const char* where);
     void UpdateCompletedFramesLocked();
     void CollectRetiredLocked(bool all);
@@ -671,6 +673,9 @@ private:
     u32 lose_device_at_submit_ = 0;
     u32 lose_device_at_present_ = 0;
     std::atomic<u32>* strikes_left_ = nullptr;
+    u32 fail_allocations_from_ = 0;
+    std::atomic<u32> allocation_count_{0}; // committed resources asked for, for fail_allocations_from
+    bool removal_injected_ = false;        // InjectDeviceLoss removed this device with the debug layer on (owner thread)
     std::atomic<u32> submit_count_{0};
 
     std::atomic<bool> device_lost_{false};

@@ -29,6 +29,12 @@ A larger class includes the actions of every smaller one, so the cost of a chang
 
 `render_scale` and `shader_quality` are marked `mechanism_only`: they exist to exercise the mechanism and nothing reads them yet.
 
+`backend` takes `null`, `vulkan`, `dx12` or `auto` (the default: Direct3D 12 on Windows, Vulkan elsewhere). Changing it at run time
+is an ordinary `DeviceReset`: the device is replaced by one of the other backend and every registered owner rebuilds with that
+backend's shader blobs (on the Windows PC of Phase 13 Day 172, a switch between Vulkan and DX12 with the demo scene took about
+160 ms). A backend the program was not built with, or one that cannot run here, is refused with the reason before anything is torn
+down. `adapter` switches the GPU the same way (for example to WARP with `adapter = Basic Render` on Windows).
+
 ### Capabilities
 
 A setting that needs something the device or window may lack (`fullscreen`, `hdr`) names a capability. `DiffSettings` does

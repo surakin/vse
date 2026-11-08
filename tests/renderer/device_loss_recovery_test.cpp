@@ -5,6 +5,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "backend_fixture.h"
 #include "os/os.h"
 #include "renderer/device_resources.h"
 #include "renderer/renderer.h"
@@ -321,26 +322,105 @@ TEST_CASE("A lost surface on a healthy device is replaced without a device reset
     CHECK(rig.Render() == FrameStatus::Ok);
 }
 
-TEST_CASE("A real device recovers from a loss at the start and at the submit of a frame", "[recovery][vulkan][gpu]") {
-    LossQuietLog quiet;
-    for (const char* where : {"frame", "submit"}) {
-        INFO(where);
+TEST_CASE("A real device recovers from a loss at the start and at the submit of a frame", "[recovery][gpu]") {
+    FOR_EACH_GPU_BACKEND(backend) {
+        LossQuietLog quiet;
+        for (const char* where : {"frame", "submit"}) {
+            INFO(where);
+            DeviceResources registry;
+            rhi::DeviceHost host;
+            host.AddObserver(&registry, 0);
+            std::atomic<u32> strikes{1};
+            rhi::DeviceCreateInfo info;
+            info.backend = backend;
+            info.validation = rhi::ValidationSetting::Off;
+            if (!host.Create(info, rhi::SwapchainDesc{})) {
+                SKIP("no suitable " << gpu_test::BackendTag(backend) << " device");
+            }
+            rhi::DeviceCreateInfo faulty = info;
+            faulty.faults.strikes_left = &strikes;
+            if (std::strcmp(where, "frame") == 0) faulty.faults.lose_device_at_frame = 2;
+            else faulty.faults.lose_device_at_submit = 2;
+            RenderSettings initial;
+            initial.SetEnum(kBackend, gpu_test::BackendSettingIndex(backend));
+            initial.SetEnum(kValidation, 1);
+            struct Frame { GraphResource target; } frame;
+            RendererDesc rd;
+            rd.device = host.GetDevice();
+            rd.host = &host;
+            rd.create_info = faulty;
+            rd.initial_settings = &initial;
+            rd.resources = &registry;
+            rd.build_user = &frame;
+            rd.build = [](const FrameContext& context, void* user) {
+                auto* f = static_cast<Frame*>(user);
+                f->target = context.target;
+                context.graph->AddPass("clear", &LossClear, &f->target).Write(f->target, GraphUsage::ColorAttachment);
+                return true;
+            };
+            Renderer renderer(rd);
+            // Move to a device that carries the fault.
+            RenderSettings wanted = renderer.Settings();
+            wanted.SetBool(kSyncValidation, true);
+            REQUIRE(renderer.ApplySettings(wanted).ok);
+            auto draw = [&]() {
+                rhi::TextureDesc td;
+                td.width = 32;
+                td.height = 32;
+                td.format = rhi::Format::RGBA8_UNorm;
+                td.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
+                const rhi::TextureHandle target = renderer.GetDevice()->CreateTexture(td);
+                FrameTarget ft;
+                ft.texture = target;
+                ft.width = 32;
+                ft.height = 32;
+                ft.format = rhi::Format::RGBA8_UNorm;
+                ft.final_state = rhi::ResourceState::CopySrc;
+                const FrameStatus status = renderer.RenderFrame(nullptr, nullptr, &ft);
+                if (renderer.GetDevice() != nullptr) {
+                    renderer.GetDevice()->WaitIdle();
+                    // The target belongs to the device that drew it; after a recovery that device is gone, so only destroy it when
+                    // the device did not change during this frame.
+                }
+                return std::pair<FrameStatus, rhi::TextureHandle>{status, target};
+            };
+            auto first = draw();
+            CHECK(first.first == FrameStatus::Ok);
+            renderer.GetDevice()->DestroyTexture(first.second);
+            // The second frame loses the device; the recovery makes a new one (the old target went with the old device).
+            rhi::Device* before = renderer.GetDevice();
+            auto second = draw();
+            CHECK(second.first == FrameStatus::DeviceLost);
+            CHECK(renderer.GetDevice() != nullptr);
+            CHECK(renderer.Stats().recoveries == 1);
+            (void)before;
+            auto third = draw();
+            CHECK(third.first == FrameStatus::Ok);
+            renderer.GetDevice()->DestroyTexture(third.second);
+            renderer.GetDevice()->WaitIdle();
+            CHECK(renderer.GetDevice()->Resources().UserObjects() == 0);
+        }
+    }
+}
+
+TEST_CASE("Repeated losses on a real device do not keep growing memory", "[recovery][gpu]") {
+    FOR_EACH_GPU_BACKEND(backend) {
+        LossQuietLog quiet;
         DeviceResources registry;
         rhi::DeviceHost host;
         host.AddObserver(&registry, 0);
-        std::atomic<u32> strikes{1};
+        std::atomic<u32> strikes{16};
         rhi::DeviceCreateInfo info;
-        info.backend = rhi::Backend::Vulkan;
+        info.backend = backend;
         info.validation = rhi::ValidationSetting::Off;
         if (!host.Create(info, rhi::SwapchainDesc{})) {
-            SKIP("no suitable Vulkan device");
+            SKIP("no suitable " << gpu_test::BackendTag(backend) << " device");
         }
         rhi::DeviceCreateInfo faulty = info;
         faulty.faults.strikes_left = &strikes;
-        if (std::strcmp(where, "frame") == 0) faulty.faults.lose_device_at_frame = 2;
-        else faulty.faults.lose_device_at_submit = 2;
+        faulty.faults.lose_device_at_frame = 2;
         RenderSettings initial;
-        initial.SetEnum(kBackend, 1);
+        initial.SetEnum(kBackend, gpu_test::BackendSettingIndex(backend));
         initial.SetEnum(kValidation, 1);
         struct Frame { GraphResource target; } frame;
         RendererDesc rd;
@@ -357,17 +437,18 @@ TEST_CASE("A real device recovers from a loss at the start and at the submit of 
             return true;
         };
         Renderer renderer(rd);
-        // Move to a device that carries the fault.
         RenderSettings wanted = renderer.Settings();
         wanted.SetBool(kSyncValidation, true);
         REQUIRE(renderer.ApplySettings(wanted).ok);
-        auto draw = [&]() {
+        auto frame_once = [&]() {
             rhi::TextureDesc td;
             td.width = 32;
             td.height = 32;
             td.format = rhi::Format::RGBA8_UNorm;
             td.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
-            const rhi::TextureHandle target = renderer.GetDevice()->CreateTexture(td);
+            rhi::Device* device = renderer.GetDevice();
+            const u32 epoch = host.Epoch(); // (a new device can get the old one's address, so compare serials)
+            const rhi::TextureHandle target = device->CreateTexture(td);
             FrameTarget ft;
             ft.texture = target;
             ft.width = 32;
@@ -375,126 +456,50 @@ TEST_CASE("A real device recovers from a loss at the start and at the submit of 
             ft.format = rhi::Format::RGBA8_UNorm;
             ft.final_state = rhi::ResourceState::CopySrc;
             const FrameStatus status = renderer.RenderFrame(nullptr, nullptr, &ft);
-            if (renderer.GetDevice() != nullptr) {
-                renderer.GetDevice()->WaitIdle();
-                // The target belongs to the device that drew it; after a recovery that device is gone, so only destroy it when
-                // the device did not change during this frame.
-            }
-            return std::pair<FrameStatus, rhi::TextureHandle>{status, target};
+            if (host.Epoch() == epoch) {
+                device->WaitIdle();
+                device->DestroyTexture(target);
+            } // otherwise the device (and the target with it) was replaced
+            return status;
         };
-        auto first = draw();
-        CHECK(first.first == FrameStatus::Ok);
-        renderer.GetDevice()->DestroyTexture(first.second);
-        // The second frame loses the device; the recovery makes a new one (the old target went with the old device).
-        rhi::Device* before = renderer.GetDevice();
-        auto second = draw();
-        CHECK(second.first == FrameStatus::DeviceLost);
-        CHECK(renderer.GetDevice() != nullptr);
-        CHECK(renderer.Stats().recoveries == 1);
-        (void)before;
-        auto third = draw();
-        CHECK(third.first == FrameStatus::Ok);
-        renderer.GetDevice()->DestroyTexture(third.second);
-        renderer.GetDevice()->WaitIdle();
-        CHECK(renderer.GetDevice()->Resources().UserObjects() == 0);
-    }
-}
-
-TEST_CASE("Repeated losses on a real device do not keep growing memory", "[recovery][vulkan][gpu]") {
-    LossQuietLog quiet;
-    DeviceResources registry;
-    rhi::DeviceHost host;
-    host.AddObserver(&registry, 0);
-    std::atomic<u32> strikes{16};
-    rhi::DeviceCreateInfo info;
-    info.backend = rhi::Backend::Vulkan;
-    info.validation = rhi::ValidationSetting::Off;
-    if (!host.Create(info, rhi::SwapchainDesc{})) {
-        SKIP("no suitable Vulkan device");
-    }
-    rhi::DeviceCreateInfo faulty = info;
-    faulty.faults.strikes_left = &strikes;
-    faulty.faults.lose_device_at_frame = 2;
-    RenderSettings initial;
-    initial.SetEnum(kBackend, 1);
-    initial.SetEnum(kValidation, 1);
-    struct Frame { GraphResource target; } frame;
-    RendererDesc rd;
-    rd.device = host.GetDevice();
-    rd.host = &host;
-    rd.create_info = faulty;
-    rd.initial_settings = &initial;
-    rd.resources = &registry;
-    rd.build_user = &frame;
-    rd.build = [](const FrameContext& context, void* user) {
-        auto* f = static_cast<Frame*>(user);
-        f->target = context.target;
-        context.graph->AddPass("clear", &LossClear, &f->target).Write(f->target, GraphUsage::ColorAttachment);
-        return true;
-    };
-    Renderer renderer(rd);
-    RenderSettings wanted = renderer.Settings();
-    wanted.SetBool(kSyncValidation, true);
-    REQUIRE(renderer.ApplySettings(wanted).ok);
-    auto frame_once = [&]() {
-        rhi::TextureDesc td;
-        td.width = 32;
-        td.height = 32;
-        td.format = rhi::Format::RGBA8_UNorm;
-        td.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
-        rhi::Device* device = renderer.GetDevice();
-        const u32 epoch = host.Epoch(); // (a new device can get the old one's address, so compare serials)
-        const rhi::TextureHandle target = device->CreateTexture(td);
-        FrameTarget ft;
-        ft.texture = target;
-        ft.width = 32;
-        ft.height = 32;
-        ft.format = rhi::Format::RGBA8_UNorm;
-        ft.final_state = rhi::ResourceState::CopySrc;
-        const FrameStatus status = renderer.RenderFrame(nullptr, nullptr, &ft);
-        if (host.Epoch() == epoch) {
-            device->WaitIdle();
-            device->DestroyTexture(target);
-        } // otherwise the device (and the target with it) was replaced
-        return status;
-    };
-    // The lowest reading after losses 2 to 4 and after losses 14 to 16: a leak per loss raises the low point, by 12 times the leak. A single
-    // reading is not enough: on Windows (AMD Radeon 860M, Day 161) the process holds one to four extra blocks of device memory after some
-    // losses (the old devices', while the device's own count stays at one block) and gives them back losses later, so one reading can land
-    // on a step.
-    i64 early_low = 0;
-    i64 late_low = 0;
-    u64 device_memory_early = 0;
-    u64 device_memory_late = 0;
-    int losses = 0;
-    for (int i = 0; i < 80 && losses < 16; ++i) {
-        if (frame_once() == FrameStatus::DeviceLost) {
-            ++losses;
-            const i64 now = os::ResidentMemoryKiB();
-            const u64 device_memory = renderer.GetDevice()->Resources().device_memory_bytes;
-            if (losses >= 2 && losses <= 4) {
-                early_low = (early_low == 0 || now < early_low) ? now : early_low;
-                device_memory_early = device_memory;
-            } else if (losses >= 14) {
-                late_low = (late_low == 0 || now < late_low) ? now : late_low;
-                device_memory_late = device_memory;
+        // The lowest reading after losses 2 to 4 and after losses 14 to 16: a leak per loss raises the low point, by 12 times the leak. A single
+        // reading is not enough: on Windows (AMD Radeon 860M, Day 161) the process holds one to four extra blocks of device memory after some
+        // losses (the old devices', while the device's own count stays at one block) and gives them back losses later, so one reading can land
+        // on a step.
+        i64 early_low = 0;
+        i64 late_low = 0;
+        u64 device_memory_early = 0;
+        u64 device_memory_late = 0;
+        int losses = 0;
+        for (int i = 0; i < 80 && losses < 16; ++i) {
+            if (frame_once() == FrameStatus::DeviceLost) {
+                ++losses;
+                const i64 now = os::ResidentMemoryKiB();
+                const u64 device_memory = renderer.GetDevice()->Resources().device_memory_bytes;
+                if (losses >= 2 && losses <= 4) {
+                    early_low = (early_low == 0 || now < early_low) ? now : early_low;
+                    device_memory_early = device_memory;
+                } else if (losses >= 14) {
+                    late_low = (late_low == 0 || now < late_low) ? now : late_low;
+                    device_memory_late = device_memory;
+                }
             }
         }
+        WARN("losses " << losses << ", lowest resident " << early_low << " KiB after losses 2-4, " << late_low << " KiB after losses 14-16; device memory "
+                       << device_memory_early << " then " << device_memory_late << " bytes");
+        CHECK(losses == 16);
+        CHECK(renderer.Stats().recoveries == 16);
+        CHECK(device_memory_late == device_memory_early); // each new device allocates what the first one did
+    #if !ENGINE_SANITIZER_ADDRESS // the sanitizer's quarantine makes resident memory meaningless
+        if (early_low != 0 && late_low != 0) {
+            i64 allowed_kib = 40 * 1024; // 12 more losses must not cost 40 MiB
+    #if ENGINE_PLATFORM_WINDOWS
+            allowed_kib += 4 * 64 * 1024; // the old devices' memory Windows still counts in the process: up to four 64 MiB blocks (Day 161)
+    #endif
+            CHECK(late_low - early_low < allowed_kib);
+        }
+    #endif
     }
-    WARN("losses " << losses << ", lowest resident " << early_low << " KiB after losses 2-4, " << late_low << " KiB after losses 14-16; device memory "
-                   << device_memory_early << " then " << device_memory_late << " bytes");
-    CHECK(losses == 16);
-    CHECK(renderer.Stats().recoveries == 16);
-    CHECK(device_memory_late == device_memory_early); // each new device allocates what the first one did
-#if !ENGINE_SANITIZER_ADDRESS // the sanitizer's quarantine makes resident memory meaningless
-    if (early_low != 0 && late_low != 0) {
-        i64 allowed_kib = 40 * 1024; // 12 more losses must not cost 40 MiB
-#if ENGINE_PLATFORM_WINDOWS
-        allowed_kib += 4 * 64 * 1024; // the old devices' memory Windows still counts in the process: up to four 64 MiB blocks (Day 161)
-#endif
-        CHECK(late_low - early_low < allowed_kib);
-    }
-#endif
 }
 
 TEST_CASE("A request queued while recovering does not bring back the abandoned adapter", "[recovery]") {

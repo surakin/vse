@@ -171,7 +171,7 @@ tests/rhi/adapter_test.cpp                      8
 tests/rhi/device_host_test.cpp                  8
 tests/foundation/window_fullscreen_test.cpp     8
 tests/rhi/swapchain_reconfigure_test.cpp        8
-tests/rhi/vulkan_reset_golden_test.cpp          8
+tests/rhi/reset_golden_gpu_test.cpp             8
 test:renderer_demo_script_*                     8
 test:renderer_demo_crash_after_reset            8
 test:rhi_lifecycle_lists                        8
@@ -228,5 +228,6 @@ tests/rhi/dx12_bindings_test.cpp                13
 tests/rhi/dx12_pipeline_test.cpp                13
 tests/rhi/dx12_commands_test.cpp                13
 tests/rhi/dx12_swapchain_test.cpp               13
+tests/rhi/backend_switch_gpu_test.cpp           13
 tests/windows/                                  13
 testopt:windows_*                               13

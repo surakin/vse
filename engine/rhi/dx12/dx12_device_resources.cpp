@@ -194,6 +194,12 @@ void Dx12Device::SetDebugName(ID3D12Object* object, const char* name) {
 
 bool Dx12Device::CreateCommitted(D3D12_HEAP_TYPE heap, const D3D12_RESOURCE_DESC& desc, D3D12_RESOURCE_STATES state, const char* name,
                                  ComRef<ID3D12Resource>* out, u64* bytes) {
+    // Each committed resource is one device-memory allocation: the Nth and every later one fail when a test injects it.
+    const u32 allocation = allocation_count_.fetch_add(1, std::memory_order_relaxed) + 1;
+    if (fail_allocations_from_ != 0 && allocation >= fail_allocations_from_) {
+        RhiLog(LogVerbosity::Error, "D3D12: no memory for the resource '%s' (an injected allocation failure)", name != nullptr ? name : "(unnamed)");
+        return false;
+    }
     D3D12_HEAP_PROPERTIES props{};
     props.Type = heap;
     const HRESULT hr = device_->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, state, nullptr, __uuidof(ID3D12Resource), out->PutVoid());

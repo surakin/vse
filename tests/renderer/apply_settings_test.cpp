@@ -4,6 +4,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "backend_fixture.h"
 #include "renderer/device_resources.h"
 #include "renderer/renderer.h"
 #include "rhi/backend_registry.h"
@@ -368,81 +369,83 @@ TEST_CASE("Without a device host only None and Dynamic changes can be applied", 
     CHECK(rig.renderer->Settings().GetEnum(kPresentMode) == 0);
 }
 
-TEST_CASE("Settings changes on a real device each leave a renderer that draws", "[apply_settings][vulkan][gpu]") {
-    ApplyQuietLog quiet;
-    DeviceResources registry;
-    rhi::DeviceHost host;
-    host.AddObserver(&registry, 0);
-    rhi::DeviceCreateInfo info;
-    info.backend = rhi::Backend::Vulkan;
-    info.validation = rhi::ValidationSetting::Off;
-    if (!host.Create(info, rhi::SwapchainDesc{})) {
-        SKIP("no suitable Vulkan device");
+TEST_CASE("Settings changes on a real device each leave a renderer that draws", "[apply_settings][gpu]") {
+    FOR_EACH_GPU_BACKEND(backend) {
+        ApplyQuietLog quiet;
+        DeviceResources registry;
+        rhi::DeviceHost host;
+        host.AddObserver(&registry, 0);
+        rhi::DeviceCreateInfo info;
+        info.backend = backend;
+        info.validation = rhi::ValidationSetting::Off;
+        if (!host.Create(info, rhi::SwapchainDesc{})) {
+            SKIP("no suitable " << gpu_test::BackendTag(backend) << " device");
+        }
+        RenderSettings initial;
+        initial.SetEnum(kBackend, gpu_test::BackendSettingIndex(backend));
+        initial.SetEnum(kValidation, 1);
+        struct Frame {
+            GraphResource target;
+        } frame;
+        RendererDesc rd;
+        rd.device = host.GetDevice();
+        rd.host = &host;
+        rd.create_info = info;
+        rd.initial_settings = &initial;
+        rd.resources = &registry;
+        rd.build_user = &frame;
+        rd.build = [](const FrameContext& context, void* user) {
+            auto* f = static_cast<Frame*>(user);
+            f->target = context.target;
+            context.graph->AddPass("clear", &ClearTarget, &f->target).Write(f->target, GraphUsage::ColorAttachment);
+            return true;
+        };
+        Renderer renderer(rd);
+
+        auto draw = [&]() {
+            rhi::TextureDesc td;
+            td.width = 32;
+            td.height = 32;
+            td.format = rhi::Format::RGBA8_UNorm;
+            td.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
+            const rhi::TextureHandle target = renderer.GetDevice()->CreateTexture(td);
+            REQUIRE(target.IsValid());
+            FrameTarget ft;
+            ft.texture = target;
+            ft.width = 32;
+            ft.height = 32;
+            ft.format = rhi::Format::RGBA8_UNorm;
+            ft.final_state = rhi::ResourceState::CopySrc;
+            CHECK(renderer.RenderFrame(nullptr, nullptr, &ft) == FrameStatus::Ok);
+            renderer.GetDevice()->WaitIdle();
+            renderer.GetDevice()->DestroyTexture(target);
+        };
+        draw();
+        const u32 epoch = host.Epoch();
+
+        RenderSettings wanted = renderer.Settings();
+        wanted.SetEnum(kValidation, 2); // validation off to on: a device reset
+        ApplyResult result = renderer.ApplySettings(wanted);
+        REQUIRE(result.ok);
+        CHECK(result.performed == CostClass::DeviceReset);
+        CHECK(host.Epoch() != epoch);
+        draw();
+
+        wanted = renderer.Settings();
+        wanted.SetInt(kFramesInFlight, 3);
+        wanted.SetEnum(kValidation, 1); // and back off
+        result = renderer.ApplySettings(wanted);
+        REQUIRE(result.ok);
+        draw();
+
+        wanted = renderer.Settings();
+        wanted.SetEnum(kShaderQuality, 0); // a pipeline rebuild on the real device
+        result = renderer.ApplySettings(wanted);
+        REQUIRE(result.ok);
+        CHECK(result.performed == CostClass::PipelineRebuild);
+        draw();
+        CHECK(renderer.Stats().resets == 2);
     }
-    RenderSettings initial;
-    initial.SetEnum(kBackend, 1);
-    initial.SetEnum(kValidation, 1);
-    struct Frame {
-        GraphResource target;
-    } frame;
-    RendererDesc rd;
-    rd.device = host.GetDevice();
-    rd.host = &host;
-    rd.create_info = info;
-    rd.initial_settings = &initial;
-    rd.resources = &registry;
-    rd.build_user = &frame;
-    rd.build = [](const FrameContext& context, void* user) {
-        auto* f = static_cast<Frame*>(user);
-        f->target = context.target;
-        context.graph->AddPass("clear", &ClearTarget, &f->target).Write(f->target, GraphUsage::ColorAttachment);
-        return true;
-    };
-    Renderer renderer(rd);
-
-    auto draw = [&]() {
-        rhi::TextureDesc td;
-        td.width = 32;
-        td.height = 32;
-        td.format = rhi::Format::RGBA8_UNorm;
-        td.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
-        const rhi::TextureHandle target = renderer.GetDevice()->CreateTexture(td);
-        REQUIRE(target.IsValid());
-        FrameTarget ft;
-        ft.texture = target;
-        ft.width = 32;
-        ft.height = 32;
-        ft.format = rhi::Format::RGBA8_UNorm;
-        ft.final_state = rhi::ResourceState::CopySrc;
-        CHECK(renderer.RenderFrame(nullptr, nullptr, &ft) == FrameStatus::Ok);
-        renderer.GetDevice()->WaitIdle();
-        renderer.GetDevice()->DestroyTexture(target);
-    };
-    draw();
-    const u32 epoch = host.Epoch();
-
-    RenderSettings wanted = renderer.Settings();
-    wanted.SetEnum(kValidation, 2); // validation off to on: a device reset
-    ApplyResult result = renderer.ApplySettings(wanted);
-    REQUIRE(result.ok);
-    CHECK(result.performed == CostClass::DeviceReset);
-    CHECK(host.Epoch() != epoch);
-    draw();
-
-    wanted = renderer.Settings();
-    wanted.SetInt(kFramesInFlight, 3);
-    wanted.SetEnum(kValidation, 1); // and back off
-    result = renderer.ApplySettings(wanted);
-    REQUIRE(result.ok);
-    draw();
-
-    wanted = renderer.Settings();
-    wanted.SetEnum(kShaderQuality, 0); // a pipeline rebuild on the real device
-    result = renderer.ApplySettings(wanted);
-    REQUIRE(result.ok);
-    CHECK(result.performed == CostClass::PipelineRebuild);
-    draw();
-    CHECK(renderer.Stats().resets == 2);
 }
 
 TEST_CASE("A swapchain-class change on a device with no swapchain is only stored", "[apply_settings]") {

@@ -5,6 +5,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "backend_fixture.h"
 #include "demo_frame.h"
 #include "demo_scene.h"
 #include "renderer/device_resources.h"
@@ -244,27 +245,29 @@ TEST_CASE("Several resets in a row leave the counts unchanged", "[recreatable][r
     rig.TearDown();
 }
 
-TEST_CASE("An offscreen frame is pixel-identical before and after a reset on a real device", "[recreatable][renderer][vulkan][gpu]") {
-    RecQuietLog quiet;
-    RendererResetRig rig;
-    if (!rig.Create(false, rhi::Backend::Vulkan)) {
-        rig.host.Destroy();
-        SKIP("no suitable Vulkan device");
+TEST_CASE("An offscreen frame is pixel-identical before and after a reset on a real device", "[recreatable][renderer][gpu]") {
+    FOR_EACH_GPU_BACKEND(backend) {
+        RecQuietLog quiet;
+        RendererResetRig rig;
+        if (!rig.Create(false, backend)) {
+            rig.host.Destroy();
+            SKIP("no suitable " << gpu_test::BackendTag(backend) << " device");
+        }
+        auto render_and_read = [&](std::vector<unsigned char>* out) {
+            REQUIRE(rig.Render() == FrameStatus::Ok);
+            rig.host.GetDevice()->WaitIdle();
+            out->assign(static_cast<usize>(kTargetWidth) * kTargetHeight * 4, 0);
+            REQUIRE(rig.host.GetDevice()->ReadbackTexture(rig.target, 0, 0, out->data(), out->size(), rhi::ResourceState::CopySrc));
+        };
+        std::vector<unsigned char> before;
+        std::vector<unsigned char> after;
+        render_and_read(&before);
+        REQUIRE(rig.Reset());
+        render_and_read(&after);
+        CHECK(before == after);
+        bool any_lit = false;
+        for (usize i = 0; i + 3 < before.size() && !any_lit; i += 4) any_lit = before[i] != 0 || before[i + 1] != 0 || before[i + 2] != 0;
+        CHECK(any_lit);
+        rig.TearDown();
     }
-    auto render_and_read = [&](std::vector<unsigned char>* out) {
-        REQUIRE(rig.Render() == FrameStatus::Ok);
-        rig.host.GetDevice()->WaitIdle();
-        out->assign(static_cast<usize>(kTargetWidth) * kTargetHeight * 4, 0);
-        REQUIRE(rig.host.GetDevice()->ReadbackTexture(rig.target, 0, 0, out->data(), out->size(), rhi::ResourceState::CopySrc));
-    };
-    std::vector<unsigned char> before;
-    std::vector<unsigned char> after;
-    render_and_read(&before);
-    REQUIRE(rig.Reset());
-    render_and_read(&after);
-    CHECK(before == after);
-    bool any_lit = false;
-    for (usize i = 0; i + 3 < before.size() && !any_lit; i += 4) any_lit = before[i] != 0 || before[i + 1] != 0 || before[i + 2] != 0;
-    CHECK(any_lit);
-    rig.TearDown();
 }

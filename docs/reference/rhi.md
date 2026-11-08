@@ -7039,7 +7039,7 @@ struct FaultInjection { ... }
 
 Faults a device injects on purpose, to exercise the error paths that real hardware rarely reaches.
 
-A development and test aid; the defaults inject nothing. The Vulkan backend honors both faults; the null backend honors `lose_device_at_frame` (it also has `SimulateDeviceLoss`) and ignores `fail_allocations_from`, since it has no device memory.
+A development and test aid; the defaults inject nothing. The Vulkan and Direct3D 12 backends honor both faults (Direct3D 12 counts each committed resource as one allocation, Vulkan each memory block); the null backend honors `lose_device_at_frame` (it also has `SimulateDeviceLoss`) and ignores `fail_allocations_from`, since it has no device memory.
 
 | Field | Value |
 |---|---|

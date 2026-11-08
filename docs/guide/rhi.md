@@ -271,12 +271,12 @@ library and reach backends only through this registry, so the renderer links `rh
 
 Registration is one explicit call, never a global constructor: a program calls [[rhi::RegisterCompiledBackends]]
 (`rhi/backends/backends.h`, library `rhi_backends`) at startup, before it creates a device. It registers the null backend and
-Vulkan everywhere, and Direct3D 12 on Windows once that backend is complete. Test binaries do it from a Catch2 listener
+Vulkan everywhere, and Direct3D 12 on Windows. Test binaries do it from a Catch2 listener
 (`tests/support/register_backends.cpp`). Forgetting the call is not a silent "no GPU": the device creation fails with
 `the vulkan backend is not registered in this program (link rhi_backends and call rhi::RegisterCompiledBackends ...)`.
 
 `Backend::Auto`, the default of [[rhi::DeviceCreateInfo::backend]], picks the available registered backend with the highest
-rank ([[rhi::PickAutoBackend]]); the null backend has rank 0, so `Auto` never picks it. A named backend that is registered but
+rank ([[rhi::PickAutoBackend]]): Direct3D 12 (rank 20) on Windows, Vulkan (10) elsewhere; the null backend has rank 0, so `Auto` never picks it. A named backend that is registered but
 cannot run here (no Vulkan loader, for example) fails with the backend's own reason ([[rhi::ResolveBackend]]). The renderer's
 `backend` setting (`auto`, `null`, `vulkan`, `dx12`) goes through the same rule: a change to a backend the program does not have,
 or that cannot run, is refused with that reason before the device is touched.
@@ -934,7 +934,7 @@ The same backend runs on Windows (Phase 13 Day 160). What differs:
 
 Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `rhi_dx12`, registered by
 [[rhi::RegisterCompiledBackends]] as `dx12`. Ask for it with `DeviceCreateInfo::backend = rhi::Backend::Dx12` or the `backend` setting;
-`Auto` never picks it until the backend passes the Phase 4 and Phase 5 suites (Day 172), not even on a machine without Vulkan. Its shaders are the minted DXIL
+`Auto` picks it on Windows (rank 20, above Vulkan's 10) since it passed the Phase 4 and Phase 5 suites (Day 172). Its shaders are the minted DXIL
 ([[rhi::DeviceCaps::shader_format]] `Dxil`), and its devices read the object index from the renderer's index stream
 ([[rhi::DeviceCaps::object_index_stream]]).
 

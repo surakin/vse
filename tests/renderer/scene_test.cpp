@@ -8,6 +8,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "backend_fixture.h"
+
 #include "renderer/frame_data.h"
 #include "renderer/render_scene.h"
 #include "rhi/null/null_device.h"
@@ -232,28 +234,31 @@ TEST_CASE("Culling and packing 100k objects (timing only)", "[renderer][scene][p
 }
 
 TEST_CASE("Creating and destroying 1000 meshes on a GPU leaks nothing", "[renderer][mesh][gpu]") {
-    rhi::DeviceCreateInfo info;
-    info.validation = rhi::ValidationSetting::On;
-    info.pipeline_cache = false;
-    rhi::DevicePtr device = rhi::CreateDevice(info);
-    if (device == nullptr) {
-        const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
-        if (required != nullptr && required[0] == '1') FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
-        SKIP("no Vulkan device on this machine");
-    }
-    MeshData data;
-    REQUIRE(MakeSphereMesh(1.0f, 16, 8, &data) == nullptr);
-    for (int i = 0; i < 1000; ++i) {
-        GpuMesh mesh;
-        REQUIRE(mesh.Create(device.Get(), data, "leak-test"));
-        if (i % 100 == 99) {
-            device->BeginFrame();
-            device->EndFrame();
+    FOR_EACH_GPU_BACKEND(backend) {
+        rhi::DeviceCreateInfo info;
+        info.backend = backend;
+        info.validation = rhi::ValidationSetting::On;
+        info.pipeline_cache = false;
+        rhi::DevicePtr device = rhi::CreateDevice(info);
+        if (device == nullptr) {
+            const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
+            if (required != nullptr && required[0] == '1') FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
+            SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
         }
+        MeshData data;
+        REQUIRE(MakeSphereMesh(1.0f, 16, 8, &data) == nullptr);
+        for (int i = 0; i < 1000; ++i) {
+            GpuMesh mesh;
+            REQUIRE(mesh.Create(device.Get(), data, "leak-test"));
+            if (i % 100 == 99) {
+                device->BeginFrame();
+                device->EndFrame();
+            }
+        }
+        device->WaitIdle();
+        device->BeginFrame();
+        device->EndFrame();
+        device->WaitIdle();
+        device.Reset();
     }
-    device->WaitIdle();
-    device->BeginFrame();
-    device->EndFrame();
-    device->WaitIdle();
-    device.Reset();
 }

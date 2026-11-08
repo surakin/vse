@@ -12,7 +12,8 @@ set(RHI_TEST_SOURCES
   pipeline_cache_file_test.cpp
   device_host_test.cpp
   swapchain_reconfigure_test.cpp
-  vulkan_reset_golden_test.cpp
+  reset_golden_gpu_test.cpp
+  backend_switch_gpu_test.cpp
   lifecycle_conformance_test.cpp
   vulkan_loader_test.cpp
   vulkan_instance_test.cpp

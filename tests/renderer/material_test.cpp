@@ -4,16 +4,20 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "backend_fixture.h"
+
 #include "material_test.frag.perm.inc"
 #include "material_test.vert.refl.inc"
+#include "material_test.vert.dxil.inc"
 #include "material_test.vert.spv.inc"
 #include "lit.frag.refl.inc"
+#include "lit.frag.dxil.inc"
 #include "lit.frag.spv.inc"
 #include "permute_test.frag.refl.inc"
+#include "permute_test.frag.dxil.inc"
 #include "permute_test.frag.spv.inc"
 #include "renderer/camera.h"
 #include "renderer/material.h"
@@ -42,6 +46,8 @@ PermutationModule VertexModule() {
     m.word_count = shaders::kMaterialTestVertSpvWordCount;
     m.reflection = shaders::kMaterialTestVertRefl;
     m.reflection_size = shaders::kMaterialTestVertReflByteCount;
+    m.dxil = shaders::kMaterialTestVertDxil;
+    m.dxil_size = shaders::kMaterialTestVertDxilByteCount;
     return m;
 }
 
@@ -81,7 +87,7 @@ rhi::TextureHandle MakeTexture(rhi::Device* device) {
     td.format = rhi::Format::RGBA8_UNorm;
     td.usage = rhi::TextureUsage::Sampled | rhi::TextureUsage::CopyDst;
     const rhi::TextureHandle t = device->CreateTexture(td);
-    const unsigned char px[4] = {10, 20, 30, 255};
+    const u8 px[4] = {10, 20, 30, 255};
     device->UploadTexture(t, 0, 0, px, 0);
     return t;
 }
@@ -198,6 +204,8 @@ TEST_CASE("Templates and materials that break the conventions are rejected", "[r
         d.fragment.word_count = shaders::kLitFragSpvWordCount;
         d.fragment.reflection = shaders::kLitFragRefl;
         d.fragment.reflection_size = shaders::kLitFragReflByteCount;
+        d.fragment.dxil = shaders::kLitFragDxil;
+        d.fragment.dxil_size = shaders::kLitFragDxilByteCount;
         const TemplateId t = sys.CreateTemplate(d);
         REQUIRE(t.IsValid()); // the vertex stage is fine; the fragment is checked per material
         CHECK_FALSE(sys.CreateMaterial(t, PermutationKey{}, "x").IsValid());
@@ -231,6 +239,8 @@ TEST_CASE("A fragment shader without material resources still makes a material",
     d.fragment.word_count = shaders::kPermuteTestFragSpvWordCount;
     d.fragment.reflection = shaders::kPermuteTestFragRefl;
     d.fragment.reflection_size = shaders::kPermuteTestFragReflByteCount;
+    d.fragment.dxil = shaders::kPermuteTestFragDxil;
+    d.fragment.dxil_size = shaders::kPermuteTestFragDxilByteCount;
     const TemplateId t = sys.CreateTemplate(d);
     REQUIRE(t.IsValid());
     const MaterialId m = sys.CreateMaterial(t, PermutationKey{}, "flat");
@@ -460,166 +470,174 @@ TEST_CASE("Everything the system created is released in order", "[renderer][mate
 }
 
 TEST_CASE("Two objects drawn through two materials show their own transform and parameters", "[renderer][material][gpu]") {
-    rhi::DeviceCreateInfo info;
-    info.validation = rhi::ValidationSetting::On;
-    info.sync_validation = true;
-    info.pipeline_cache = false;
-    rhi::DevicePtr device = rhi::CreateDevice(info);
-    if (device == nullptr) {
-        const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
-        if (required != nullptr && required[0] == '1') FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
-        SKIP("no Vulkan device on this machine");
-    }
-    {
-        MaterialSystem sys(device.Get(), MaterialSystemDesc{});
-        REQUIRE(sys.Valid());
-        const TemplateId tmpl = sys.CreateTemplate(TestTemplate());
-        REQUIRE(tmpl.IsValid());
-        // A: red, half rough. B: the TINT permutation, emissive green, and a user texture in the albedo slot left unset
-        // (so white), a normal slot left unset (so a flat normal: alpha stays base_color.a).
-        const MaterialId a = sys.CreateMaterial(tmpl, Key({}), "red");
-        const MaterialId b = sys.CreateMaterial(tmpl, Key({"TINT"}), "green");
-        REQUIRE(a.IsValid());
-        REQUIRE(b.IsValid());
-        sys.SetVec4(a, "base_color", Vec4(1, 0, 0, 1));
-        sys.SetFloat(a, "roughness", 0.5f);
-        sys.SetMat4(a, "uv_transform", Mat4::Identity());
-        sys.SetVec4(b, "base_color", Vec4(0, 0, 1, 1));
-        sys.SetVec3(b, "emissive", Vec3(0, 0.4f, 0));
-        sys.SetMat4(b, "uv_transform", Mat4::Identity());
-        // C shows its transformed uv (flags bit 1): t = (0.5 u + 0.25, 0.8 v), a scale plus a translation, which a
-        // transposed matrix would get wrong. At the plane's center uv = (0.5, 0.5), so t = (0.5, 0.4).
-        const MaterialId c = sys.CreateMaterial(tmpl, Key({}), "uv");
-        REQUIRE(c.IsValid());
-        sys.SetUInt(c, "flags", 2);
-        sys.SetMat4(c, "uv_transform", Mat4::FromColumns(Vec4(0.5f, 0, 0, 0), Vec4(0, 0.8f, 0, 0), Vec4(0, 0, 1, 0), Vec4(0.25f, 0, 0, 1)));
+    FOR_EACH_GPU_BACKEND(backend) {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DeviceCreateInfo info;
+        info.backend = backend;
+        info.validation = rhi::ValidationSetting::On;
+        info.sync_validation = true;
+        info.pipeline_cache = false;
+        rhi::DevicePtr device = rhi::CreateDevice(info);
+        if (device == nullptr) {
+            const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
+            if (required != nullptr && required[0] == '1') FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
+            SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
+        }
+        {
+            MaterialSystem sys(device.Get(), MaterialSystemDesc{});
+            REQUIRE(sys.Valid());
+            const TemplateId tmpl = sys.CreateTemplate(TestTemplate());
+            REQUIRE(tmpl.IsValid());
+            // A: red, half rough. B: the TINT permutation, emissive green, and a user texture in the albedo slot left unset
+            // (so white), a normal slot left unset (so a flat normal: alpha stays base_color.a).
+            const MaterialId a = sys.CreateMaterial(tmpl, Key({}), "red");
+            const MaterialId b = sys.CreateMaterial(tmpl, Key({"TINT"}), "green");
+            REQUIRE(a.IsValid());
+            REQUIRE(b.IsValid());
+            sys.SetVec4(a, "base_color", Vec4(1, 0, 0, 1));
+            sys.SetFloat(a, "roughness", 0.5f);
+            sys.SetMat4(a, "uv_transform", Mat4::Identity());
+            sys.SetVec4(b, "base_color", Vec4(0, 0, 1, 1));
+            sys.SetVec3(b, "emissive", Vec3(0, 0.4f, 0));
+            sys.SetMat4(b, "uv_transform", Mat4::Identity());
+            // C shows its transformed uv (flags bit 1): t = (0.5 u + 0.25, 0.8 v), a scale plus a translation, which a
+            // transposed matrix would get wrong. At the plane's center uv = (0.5, 0.5), so t = (0.5, 0.4).
+            const MaterialId c = sys.CreateMaterial(tmpl, Key({}), "uv");
+            REQUIRE(c.IsValid());
+            sys.SetUInt(c, "flags", 2);
+            sys.SetMat4(c, "uv_transform", Mat4::FromColumns(Vec4(0.5f, 0, 0, 0), Vec4(0, 0.8f, 0, 0), Vec4(0, 0, 1, 0), Vec4(0.25f, 0, 0, 1)));
 
-        MeshData data;
-        REQUIRE(MakePlaneMesh(2.0f, 2.0f, 1, 1, &data) == nullptr);
-        GpuMesh mesh;
-        REQUIRE(mesh.Create(device.Get(), data, "plane"));
-        RenderScene scene(RenderSceneDesc{});
-        RenderObjectDesc od;
-        od.mesh = &mesh;
-        od.transform = ModelMatrix(Vec3(-3.0f, 0, 0), 1.0f, 0.0f);
-        const ObjectId left = scene.AddObject(od);
-        od.transform = ModelMatrix(Vec3(3.0f, 0, 0), 1.0f, 0.0f);
-        const ObjectId right = scene.AddObject(od);
-        od.transform = ModelMatrix(Vec3(0.0f, 0, 0), 1.0f, 0.0f);
-        const ObjectId middle = scene.AddObject(od);
-        // Draw order is the instance index: left = 0, right = 1, middle = 2.
-        const u32 slots[3] = {left.index, right.index, middle.index};
+            MeshData data;
+            REQUIRE(MakePlaneMesh(2.0f, 2.0f, 1, 1, &data) == nullptr);
+            GpuMesh mesh;
+            REQUIRE(mesh.Create(device.Get(), data, "plane"));
+            RenderScene scene(RenderSceneDesc{});
+            RenderObjectDesc od;
+            od.mesh = &mesh;
+            od.transform = ModelMatrix(Vec3(-3.0f, 0, 0), 1.0f, 0.0f);
+            const ObjectId left = scene.AddObject(od);
+            od.transform = ModelMatrix(Vec3(3.0f, 0, 0), 1.0f, 0.0f);
+            const ObjectId right = scene.AddObject(od);
+            od.transform = ModelMatrix(Vec3(0.0f, 0, 0), 1.0f, 0.0f);
+            const ObjectId middle = scene.AddObject(od);
+            // Draw order is the instance index: left = 0, right = 1, middle = 2.
+            const u32 slots[3] = {left.index, right.index, middle.index};
 
-        Camera camera = MakeLookAtCamera(Vec3(0, 5, 0), Vec3(0, 0, 0), Vec3(0, 0, -1));
-        camera.aspect = 2.0f;
-        FrameResources frame(device.Get(), 16);
-        REQUIRE(frame.Valid());
+            Camera camera = MakeLookAtCamera(Vec3(0, 5, 0), Vec3(0, 0, 0), Vec3(0, 0, -1));
+            camera.aspect = 2.0f;
+            FrameResources frame(device.Get(), 16);
+            REQUIRE(frame.Valid());
 
-        rhi::TextureDesc rt;
-        rt.width = 64;
-        rt.height = 32;
-        rt.format = rhi::Format::RGBA8_UNorm;
-        rt.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
-        const rhi::TextureHandle target = device->CreateTexture(rt);
-        REQUIRE(target.IsValid());
+            rhi::TextureDesc rt;
+            rt.width = 64;
+            rt.height = 32;
+            rt.format = rhi::Format::RGBA8_UNorm;
+            rt.usage = rhi::TextureUsage::ColorAttachment | rhi::TextureUsage::CopySrc;
+            const rhi::TextureHandle target = device->CreateTexture(rt);
+            REQUIRE(target.IsValid());
 
-        device->BeginFrame();
-        sys.BeginFrame(0);
-        sys.FlushMaterials();
-        frame.BeginFrame(0);
-        frame.WriteFrameData(MakeFrameData(camera, 64, 32, 0, 0, 0));
-        frame.WriteObjects(scene, slots, 3);
-        frame.Flush();
+            device->BeginFrame();
+            sys.BeginFrame(0);
+            sys.FlushMaterials();
+            frame.BeginFrame(0);
+            frame.WriteFrameData(MakeFrameData(camera, 64, 32, 0, 0, 0));
+            frame.WriteObjects(scene, slots, 3);
+            frame.Flush();
 
-        const PipelineLookup pa = sys.GetPipeline(a, ColorTarget(), mesh.Layout());
-        const PipelineLookup pb = sys.GetPipeline(b, ColorTarget(), mesh.Layout());
-        const PipelineLookup pc = sys.GetPipeline(c, ColorTarget(), mesh.Layout());
-        REQUIRE(pa.pipeline.IsValid());
-        REQUIRE(pb.pipeline.IsValid());
-        CHECK(pc.pipeline == pa.pipeline); // same template and key as A
+            const PipelineLookup pa = sys.GetPipeline(a, ColorTarget(), mesh.Layout());
+            const PipelineLookup pb = sys.GetPipeline(b, ColorTarget(), mesh.Layout());
+            const PipelineLookup pc = sys.GetPipeline(c, ColorTarget(), mesh.Layout());
+            REQUIRE(pa.pipeline.IsValid());
+            REQUIRE(pb.pipeline.IsValid());
+            CHECK(pc.pipeline == pa.pipeline); // same template and key as A
 
-        const BufferRegion fr = frame.FrameRegion();
-        const BufferRegion orr = frame.ObjectRegion();
-        rhi::BindGroupEntry fe;
-        fe.binding = 0;
-        fe.buffer = fr.buffer;
-        fe.offset = fr.offset;
-        fe.size = fr.size;
-        rhi::BindGroupDesc fd;
-        fd.layout = sys.FrameLayout();
-        fd.entries = rhi::Span<rhi::BindGroupEntry>(&fe, 1);
-        const rhi::BindGroupHandle frame_group = device->CreateBindGroup(fd);
-        rhi::BindGroupEntry oe;
-        oe.binding = 0;
-        oe.buffer = orr.buffer;
-        oe.offset = orr.offset;
-        oe.size = orr.size;
-        rhi::BindGroupDesc od2;
-        od2.layout = sys.ObjectLayout();
-        od2.entries = rhi::Span<rhi::BindGroupEntry>(&oe, 1);
-        const rhi::BindGroupHandle object_group = device->CreateBindGroup(od2);
-        REQUIRE(frame_group.IsValid());
-        REQUIRE(object_group.IsValid());
+            const BufferRegion fr = frame.FrameRegion();
+            const BufferRegion orr = frame.ObjectRegion();
+            rhi::BindGroupEntry fe;
+            fe.binding = 0;
+            fe.buffer = fr.buffer;
+            fe.offset = fr.offset;
+            fe.size = fr.size;
+            rhi::BindGroupDesc fd;
+            fd.layout = sys.FrameLayout();
+            fd.entries = rhi::Span<rhi::BindGroupEntry>(&fe, 1);
+            const rhi::BindGroupHandle frame_group = device->CreateBindGroup(fd);
+            rhi::BindGroupEntry oe;
+            oe.binding = 0;
+            oe.buffer = orr.buffer;
+            oe.offset = orr.offset;
+            oe.size = orr.size;
+            rhi::BindGroupDesc od2;
+            od2.layout = sys.ObjectLayout();
+            od2.entries = rhi::Span<rhi::BindGroupEntry>(&oe, 1);
+            const rhi::BindGroupHandle object_group = device->CreateBindGroup(od2);
+            REQUIRE(frame_group.IsValid());
+            REQUIRE(object_group.IsValid());
 
-        rhi::CommandList* list = device->CreateCommandList();
-        list->Begin();
-        mesh.RecordPrepare(list);
-        list->Barrier(target, rhi::ResourceState::Undefined, rhi::ResourceState::ColorAttachment);
-        rhi::RenderingDesc pass;
-        pass.color_count = 1;
-        pass.color[0].texture = target;
-        list->BeginRendering(pass);
-        list->SetViewport(rhi::Viewport{0, 0, 64, 32, 0, 1});
-        list->SetScissor(rhi::ScissorRect{0, 0, 64, 32});
-        list->SetBindGroup(kFrameSet, frame_group);
-        list->SetBindGroup(kObjectSet, object_group);
-        // Object i is drawn with first_instance = i; the material is the only per-draw bind.
-        list->SetPipeline(pa.pipeline);
-        list->SetBindGroup(kMaterialSet, sys.MaterialBindGroup(a));
-        mesh.Draw(list, 1, 0);
-        list->SetPipeline(pb.pipeline);
-        list->SetBindGroup(kMaterialSet, sys.MaterialBindGroup(b));
-        mesh.Draw(list, 1, 1);
-        list->SetPipeline(pc.pipeline);
-        list->SetBindGroup(kMaterialSet, sys.MaterialBindGroup(c));
-        mesh.Draw(list, 1, 2);
-        list->EndRendering();
-        list->End();
-        rhi::CommandList* lists[] = {list};
-        REQUIRE(device->Submit(lists, 1) != 0);
-        mesh.MarkReady();
-        device->EndFrame();
+            rhi::CommandList* list = device->CreateCommandList();
+            list->Begin();
+            mesh.RecordPrepare(list);
+            list->Barrier(target, rhi::ResourceState::Undefined, rhi::ResourceState::ColorAttachment);
+            rhi::RenderingDesc pass;
+            pass.color_count = 1;
+            pass.color[0].texture = target;
+            list->BeginRendering(pass);
+            list->SetViewport(rhi::Viewport{0, 0, 64, 32, 0, 1});
+            list->SetScissor(rhi::ScissorRect{0, 0, 64, 32});
+            list->SetBindGroup(kFrameSet, frame_group);
+            list->SetBindGroup(kObjectSet, object_group);
+            if (sys.ObjectIndexStream().IsValid()) { // Direct3D 12 reads the object index from the stream, not the instance index
+                list->SetVertexBuffer(MaterialSystem::ObjectIndexSlot(), sys.ObjectIndexStream(), 0);
+            }
+            // Object i is drawn with first_instance = i; the material is the only per-draw bind.
+            list->SetPipeline(pa.pipeline);
+            list->SetBindGroup(kMaterialSet, sys.MaterialBindGroup(a));
+            mesh.Draw(list, 1, 0);
+            list->SetPipeline(pb.pipeline);
+            list->SetBindGroup(kMaterialSet, sys.MaterialBindGroup(b));
+            mesh.Draw(list, 1, 1);
+            list->SetPipeline(pc.pipeline);
+            list->SetBindGroup(kMaterialSet, sys.MaterialBindGroup(c));
+            mesh.Draw(list, 1, 2);
+            list->EndRendering();
+            list->End();
+            rhi::CommandList* lists[] = {list};
+            REQUIRE(device->Submit(lists, 1) != 0);
+            mesh.MarkReady();
+            device->EndFrame();
 
-        std::vector<unsigned char> px(64 * 32 * 4);
-        REQUIRE(device->ReadbackTexture(target, 0, 0, px.data(), px.size(), rhi::ResourceState::ColorAttachment));
-        auto at = [&](int x, int y, int c) { return static_cast<int>(px[(y * 64 + x) * 4 + c]); };
-        auto near = [](int got, int want) { return got - want <= 3 && want - got <= 3; };
-        // Left object, material A: red * (1 - 0.5 * 0.5) = 0.75.
-        CHECK(near(at(15, 16, 0), 191));
-        CHECK(near(at(15, 16, 1), 0));
-        CHECK(near(at(15, 16, 2), 0));
-        CHECK(near(at(15, 16, 3), 255));
-        // Right object, material B with TINT: (0, 0.4, 1) * (1, 0.5, 0.5) = (0, 0.2, 0.5).
-        CHECK(near(at(49, 16, 0), 0));
-        CHECK(near(at(49, 16, 1), 51));
-        CHECK(near(at(49, 16, 2), 128));
-        CHECK(near(at(49, 16, 3), 255));
-        // Middle object, material C: (t, 0) = (0.5, 0.4, 0); a transposed matrix would give (0.25, 0.4, 0). The pixel is
-        // near the plane's center, so uv is close to (0.5, 0.5).
-        auto close = [](int got, int want) { return got - want <= 10 && want - got <= 10; };
-        INFO("middle pixel " << at(32, 16, 0) << " " << at(32, 16, 1) << " " << at(32, 16, 2));
-        CHECK(close(at(32, 16, 0), 128)); // the pixel is a little off the exact center, so allow the uv to differ by ~0.04
-        CHECK(close(at(32, 16, 1), 102));
-        CHECK(near(at(32, 16, 2), 0));
-        // Nothing between the objects or outside.
-        CHECK(near(at(24, 16, 0) + at(24, 16, 1) + at(24, 16, 2), 0));
-        CHECK(near(at(2, 2, 0) + at(2, 2, 1) + at(2, 2, 2), 0));
+            Vector<u8> px;
+            px.Resize(64 * 32 * 4);
+            REQUIRE(device->ReadbackTexture(target, 0, 0, px.Data(), px.Size(), rhi::ResourceState::ColorAttachment));
+            auto at = [&](int x, int y, int c) { return static_cast<int>(px[(y * 64 + x) * 4 + c]); };
+            auto near = [](int got, int want) { return got - want <= 3 && want - got <= 3; };
+            // Left object, material A: red * (1 - 0.5 * 0.5) = 0.75.
+            CHECK(near(at(15, 16, 0), 191));
+            CHECK(near(at(15, 16, 1), 0));
+            CHECK(near(at(15, 16, 2), 0));
+            CHECK(near(at(15, 16, 3), 255));
+            // Right object, material B with TINT: (0, 0.4, 1) * (1, 0.5, 0.5) = (0, 0.2, 0.5).
+            CHECK(near(at(49, 16, 0), 0));
+            CHECK(near(at(49, 16, 1), 51));
+            CHECK(near(at(49, 16, 2), 128));
+            CHECK(near(at(49, 16, 3), 255));
+            // Middle object, material C: (t, 0) = (0.5, 0.4, 0); a transposed matrix would give (0.25, 0.4, 0). The pixel is
+            // near the plane's center, so uv is close to (0.5, 0.5).
+            auto close = [](int got, int want) { return got - want <= 10 && want - got <= 10; };
+            INFO("middle pixel " << at(32, 16, 0) << " " << at(32, 16, 1) << " " << at(32, 16, 2));
+            CHECK(close(at(32, 16, 0), 128)); // the pixel is a little off the exact center, so allow the uv to differ by ~0.04
+            CHECK(close(at(32, 16, 1), 102));
+            CHECK(near(at(32, 16, 2), 0));
+            // Nothing between the objects or outside.
+            CHECK(near(at(24, 16, 0) + at(24, 16, 1) + at(24, 16, 2), 0));
+            CHECK(near(at(2, 2, 0) + at(2, 2, 1) + at(2, 2, 2), 0));
 
+            device->WaitIdle();
+            device->DestroyBindGroup(frame_group);
+            device->DestroyBindGroup(object_group);
+            device->DestroyTexture(target);
+        }
         device->WaitIdle();
-        device->DestroyBindGroup(frame_group);
-        device->DestroyBindGroup(object_group);
-        device->DestroyTexture(target);
+        device.Reset();
     }
-    device->WaitIdle();
-    device.Reset();
 }

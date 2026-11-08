@@ -2,6 +2,7 @@
 // and nothing left alive, capabilities, and bounded fence waits. Windows only.
 #include <cstdio>
 #include <cstdlib>
+#include <atomic>
 #include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
@@ -129,17 +130,24 @@ TEST_CASE("HRESULT names cover the device-loss codes", "[rhi][dx12]") {
     CHECK_FALSE(IsDeviceLostResult(E_INVALIDARG));
 }
 
-TEST_CASE("The dx12 backend is registered, takes DXIL, and is never picked by Auto until it is complete", "[rhi][dx12]") {
+TEST_CASE("The dx12 backend is registered, takes DXIL, and is what Auto picks on Windows", "[rhi][dx12]") {
     const BackendDescriptor* d = FindBackend(Backend::Dx12);
     REQUIRE(d != nullptr);
     CHECK(StringView(d->name) == "dx12");
     CHECK(d->shader_format == ShaderFormat::Dxil);
-    CHECK(d->auto_rank == 0); // Phase 13 Day 172 raises it
-    // With every other backend unavailable, Auto still does not fall back to it.
+    const BackendDescriptor* vulkan = FindBackend(Backend::Vulkan);
+    REQUIRE(vulkan != nullptr);
+    CHECK(d->auto_rank > vulkan->auto_rank); // since Phase 13 Day 172
+    char why[160] = {};
+    const BackendDescriptor* picked = PickAutoBackend(why, sizeof(why));
+    INFO(why);
+    REQUIRE(picked != nullptr);
+    CHECK(picked->backend == Backend::Dx12);
+    // Alone in the registry it is still picked: Vulkan is not needed.
     ClearBackendRegistryForTest();
     REQUIRE(RegisterDx12Backend());
-    char why[160] = {};
-    CHECK(PickAutoBackend(why, sizeof(why)) == nullptr);
+    picked = PickAutoBackend(why, sizeof(why));
+    CHECK((picked != nullptr && picked->backend == Backend::Dx12));
     RegisterCompiledBackends();
     char reason[160] = {};
     CHECK(BackendAvailable(*d, reason, sizeof(reason)));
@@ -300,4 +308,74 @@ TEST_CASE("ENGINE_RHI_GPU picks the DX12 adapter, and the descriptor's adapter b
     } else {
         test_support::UnsetEnv("ENGINE_RHI_GPU");
     }
+}
+
+// Phase 13 Day 172: `fail_allocations_from` on Direct3D 12, where each committed resource is one allocation.
+TEST_CASE("An injected DX12 allocation failure gives invalid handles and the device keeps working", "[rhi][dx12][gpu][fault]") {
+    // Find how many resources creation itself makes (the staging ring and friends), then fail from the next one on.
+    u32 creation_allocations = 0;
+    bool found = false;
+    for (u32 n = 1; n <= 16 && !found; ++n) {
+        DeviceCreateInfo info = Dx12Info();
+        info.faults.fail_allocations_from = n;
+        DevicePtr probe = CreateDevice(info);
+        if (probe != nullptr) {
+            found = true;
+            creation_allocations = n - 1;
+        }
+    }
+    if (!found) SKIP("no Direct3D 12 device");
+    CHECK(creation_allocations > 0); // creation does allocate: a device that could not would hide the failure path
+
+    DeviceCreateInfo info = Dx12Info();
+    info.faults.fail_allocations_from = creation_allocations + 1;
+    DevicePtr device = CreateDevice(info);
+    REQUIRE(device != nullptr);
+    const ResourceCounts before = device->Resources();
+    BufferDesc bd;
+    bd.size = 256;
+    bd.usage = BufferUsage::Uniform;
+    bd.location = MemoryLocation::CpuToGpu;
+    CHECK_FALSE(device->CreateBuffer(bd).IsValid());
+    TextureDesc td;
+    td.width = 16;
+    td.height = 16;
+    td.format = Format::RGBA8_UNorm;
+    td.usage = TextureUsage::Sampled | TextureUsage::CopyDst;
+    CHECK_FALSE(device->CreateTexture(td).IsValid());
+    const ResourceCounts after = device->Resources();
+    CHECK(after.buffers == before.buffers);
+    CHECK(after.textures == before.textures);
+    CHECK(after.internal_objects == before.internal_objects);
+    CHECK(after.device_memory_bytes == before.device_memory_bytes);
+    device->BeginFrame(); // frames still run
+    device->EndFrame();
+    device->WaitIdle();
+    CHECK_FALSE(device->DeviceLost());
+}
+
+// Phase 13 Day 172 review: the explicit loss (a real RemoveDevice) honors the shared strike limit, as every injected loss does.
+TEST_CASE("InjectDeviceLoss on DX12 removes the device only while strikes are left", "[rhi][dx12][gpu][fault]") {
+    std::atomic<u32> strikes{1};
+    DeviceCreateInfo info = Dx12Info();
+    info.faults.strikes_left = &strikes;
+    {
+        DevicePtr device = CreateDevice(info);
+        if (device == nullptr) SKIP("no Direct3D 12 device");
+        device->InjectDeviceLoss();
+        CHECK(device->DeviceLost());
+        CHECK(strikes.load() == 0);
+        device->WaitIdle(); // returns on a removed device
+    }
+    DevicePtr second = CreateDevice(info); // every device of the adapter is released: a new one, not the removed one
+    REQUIRE(second != nullptr);
+    second->InjectDeviceLoss(); // no strike left: nothing happens
+    CHECK_FALSE(second->DeviceLost());
+    BufferDesc bd;
+    bd.size = 256;
+    bd.usage = BufferUsage::Uniform;
+    bd.location = MemoryLocation::CpuToGpu;
+    const BufferHandle buffer = second->CreateBuffer(bd);
+    CHECK(buffer.IsValid());
+    if (buffer.IsValid()) second->DestroyBuffer(buffer);
 }

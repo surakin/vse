@@ -3,9 +3,10 @@
 // A deferred demo frame on a device the host can replace, for the Phase 8 acceptance tests: every device-owning part registers
 // with one registry, the offscreen target is a registered owner too, and the renderer replaces the device through the host.
 
-#include <vector>
-
 #include <catch2/catch_test_macros.hpp>
+
+#include "backend_fixture.h"
+#include "image_compare.h"
 
 #include "demo_frame.h"
 #include "demo_scene.h"
@@ -60,7 +61,7 @@ struct Rig {
         info.validation = validation ? rhi::ValidationSetting::On : rhi::ValidationSetting::Off;
         info.sync_validation = validation;
         info.pipeline_cache = false;
-        initial.SetEnum(renderer::settings::kBackend, backend == rhi::Backend::Null ? 0 : 1);
+        initial.SetEnum(renderer::settings::kBackend, gpu_test::BackendSettingIndex(backend));
         initial.SetEnum(renderer::settings::kValidation, validation ? 2 : 1);
         initial.SetBool(renderer::settings::kSyncValidation, validation);
         host.AddObserver(&registry, 0);
@@ -110,11 +111,13 @@ struct Rig {
         ft.final_state = rhi::ResourceState::CopySrc;
         return frame.Render(&scene.Scene(), &camera, &ft);
     }
-    // Reads the target back (level 0 as RGBA8).
-    bool Read(std::vector<unsigned char>* out) {
+    // Reads the target back (level 0 as RGBA8) into `image`.
+    bool Read(gpu_test::Image* image) {
         host.GetDevice()->WaitIdle();
-        out->assign(static_cast<usize>(target.width) * target.height * 4, 0);
-        return host.GetDevice()->ReadbackTexture(target.handle, 0, 0, out->data(), out->size(), rhi::ResourceState::CopySrc);
+        image->width = target.width;
+        image->height = target.height;
+        image->rgba.assign(static_cast<usize>(target.width) * target.height * 4, 0);
+        return host.GetDevice()->ReadbackTexture(target.handle, 0, 0, image->rgba.data(), image->rgba.size(), rhi::ResourceState::CopySrc);
     }
     // Applies a device reset by setting sync validation to `sync_validation`; the value must differ from the one in force, because
     // a reset only happens for a real change.
