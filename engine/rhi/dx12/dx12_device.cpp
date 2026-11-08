@@ -185,7 +185,10 @@ bool Dx12Device::Initialize(const DeviceCreateInfo& info) {
     lose_device_at_present_ = info.faults.lose_device_at_present;
     strikes_left_ = info.faults.strikes_left;
     FillCaps();
-    epoch_ = AllocateDeviceSerial(); // usable from here on
+    epoch_ = AllocateDeviceSerial(); // usable from here on; the handle pools are seeded from it
+    if (!InitializeResources()) {
+        return false;
+    }
     RhiLog(LogVerbosity::Info, "D3D12: device on '%s' (%s), validation %s%s", adapter_.name, adapter_.id, validation_ ? "on" : "off",
            gpu_validation_ ? " with GPU-based validation" : "");
     return true;
@@ -230,6 +233,7 @@ Dx12Device::~Dx12Device() {
         g_leaked_user_objects.fetch_add(counts.UserObjects(), std::memory_order_relaxed);
         RhiLog(LogVerbosity::Warn, "D3D12: %zu application object(s) were still alive when the device was destroyed", counts.UserObjects());
     }
+    ShutdownResources();
     fence_.Reset();
     queue_.Reset();
     ReportLiveObjects();
@@ -402,8 +406,17 @@ u64 Dx12Device::CompletedFrame() const {
     return completed_frames_;
 }
 
-void Dx12Device::CollectRetiredLocked(bool /*all*/) {
-    // The resource pools arrive with Days 165-167 and are collected here.
+void Dx12Device::CollectRetiredLocked(bool all) {
+    const u64 completed = all ? ~0ull : completed_frames_;
+    buffers_.CollectRetired(completed, [&](BufferRes& b) {
+        ReleaseResourceBytes(b.bytes);
+        b.resource.Reset();
+    });
+    textures_.CollectRetired(completed, [&](TextureRes& t) {
+        ReleaseTextureViews(t);
+        if (!t.external) ReleaseResourceBytes(t.bytes);
+        t.resource.Reset();
+    });
 }
 
 void Dx12Device::BeginFrame() {
@@ -497,6 +510,14 @@ FenceValue Dx12Device::Submit(CommandList* const* lists, usize count) {
 
 ResourceCounts Dx12Device::Resources() const {
     ResourceCounts c;
+    {
+        std::lock_guard<std::mutex> lock(resource_mutex_);
+        c.buffers = buffers_.LiveCount();
+        c.textures = textures_.LiveCount();
+    }
+    // As on Vulkan: every raw resource alive (the application's and the backend's own, such as the staging ring), and their memory.
+    c.internal_objects = raw_resources_.load(std::memory_order_relaxed);
+    c.device_memory_bytes = device_memory_bytes_.load(std::memory_order_relaxed);
     return c;
 }
 

@@ -14,6 +14,7 @@ set(RHI_SOURCES
   desc.cpp
   spirv.cpp
   uniform_ring.cpp
+  staging_ring.cpp
   null/null_device.cpp
   null/null_backend.cpp
 )
@@ -27,7 +28,6 @@ set(RHI_VULKAN_SOURCES
   vulkan/vk_memory.cpp
   vulkan/vk_memory_backend.cpp
   vulkan/vk_device_select.cpp
-  vulkan/vk_ring.cpp
   vulkan/vulkan_device.cpp
   vulkan/vulkan_device_buffers.cpp
   vulkan/vulkan_device_commands.cpp
@@ -57,7 +57,10 @@ set(RHI_DX12_SOURCES
   dx12/dx12_result.cpp
   dx12/dx12_debug.cpp
   dx12/dx12_adapters.cpp
+  dx12/dx12_format.cpp
+  dx12/dx12_descriptor_heap.cpp
   dx12/dx12_device.cpp
+  dx12/dx12_device_resources.cpp
   dx12/dx12_device_later.cpp
   dx12/dx12_backend.cpp
 )

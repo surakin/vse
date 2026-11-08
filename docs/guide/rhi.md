@@ -33,7 +33,7 @@ Full reference: [The Render Hardware Interface](../reference/rhi.md).
 - [[rhi::vulkan::SelectPhysicalDevice]] and [[rhi::vulkan::PlanQueues]] — GPU choice and queue planning
 - [[rhi::vulkan::MemoryAllocator]] — the GPU memory suballocator, with [[rhi::vulkan::MemoryStats]]
 - [[rhi::Device::UploadBuffer]], [[rhi::UploadTicket]] and [[rhi::Device::ReadbackBuffer]] — moving bytes to and from buffers
-- [[rhi::vulkan::RingAllocator]] — the staging ring behind uploads
+- [[rhi::RingAllocator]] — the staging ring behind uploads
 - [[rhi::vulkan::LoadVulkanLoader]] — opens the Vulkan loader at runtime
 - [[rhi::vulkan::VkGlobalFns]], [[rhi::vulkan::VkInstanceFns]], [[rhi::vulkan::VkDeviceFns]] — the function-pointer tables
 - [[rhi::vulkan::VulkanInstance]] and [[rhi::vulkan::VulkanInstanceDesc]] — the instance, its extensions and validation
@@ -948,6 +948,15 @@ Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `
 - **Fences and waits.** One direct queue runs everything, with one fence whose value grows with each submission. Every wait is bounded:
   it waits in slices of 100 ms and checks for a removed device between them, so a hung or removed GPU ends the wait instead of the
   program.
+- **Resources** (Day 165) are committed resources, one heap each. `GpuOnly` buffers live on the default heap, `CpuToGpu` on the upload
+  heap and `GpuToCpu` on the readback heap; both of those are mapped once for the buffer's life (D3D12 allows it, and its upload and
+  readback heaps are coherent, so [[rhi::Device::FlushMappedBuffer]] does nothing), and they keep a fixed state: an upload-heap buffer
+  cannot be a storage (unordered-access) buffer. A buffer with `Uniform` usage is rounded up to 256 bytes, so every constant-buffer view
+  over it fits. A sampled depth texture is created typeless (`R32_TYPELESS` for `D32_Float`) with a typed depth view and a shader view
+  (`R32_FLOAT`). Uploads and readbacks repack rows to and from D3D12's 256-byte row pitch through a 64 MiB staging ring, in 16 MiB parts;
+  a depth level is copied whole, as D3D12 requires. D3D12 has no "undefined" before-state, so the device records each texture's actual
+  state after everything submitted, and uses it where the RHI says `Undefined`. Creating 1000 small buffers takes about 310 ms here
+  against Vulkan's 22 ms (the Vulkan backend sub-allocates); placed resources are filed for when a measurement asks for them.
 
 ## What the RHI reports when something goes wrong
 

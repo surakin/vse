@@ -5,7 +5,7 @@
 
 //! A ring of staging space whose parts are reclaimed when the GPU's timeline passes them.
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi {
 
 /// Hands out ranges of a circular buffer and takes them back in order as fence values complete.
 ///
@@ -26,11 +26,14 @@ public:
     /// Param out_offset: receives the offset of the range.
     /// Returns: true on success.
     /// Fails: returns false if the ring has no contiguous room now; reclaim completed groups and try again.
+    /// Aborts: `size` is zero or `alignment` is not a power of two.
+    /// Ownership: the range belongs to the caller until the group it falls in is retired and reclaimed.
     bool Allocate(u64 size, u64 alignment, u64* out_offset);
 
     /// Tags everything allocated since the last call with `fence`.
     ///
     /// Param fence: the fence value reached when the GPU has finished with those ranges; at least the previous value.
+    /// Aborts: `fence` is lower than the previous value.
     void Retire(u64 fence);
 
     /// Frees every retired group whose fence is at most `completed`.
@@ -59,4 +62,4 @@ private:
     u64 unretired_ = 0; // bytes allocated since the last Retire
 };
 
-} // namespace engine_placeholder::rhi::vulkan
+} // namespace engine_placeholder::rhi

@@ -1,8 +1,8 @@
-#include "rhi/vulkan/vk_ring.h"
+#include "rhi/staging_ring.h"
 
 #include "log/assert.h"
 
-namespace engine_placeholder::rhi::vulkan {
+namespace engine_placeholder::rhi {
 
 RingAllocator::RingAllocator(u64 capacity) : capacity_(capacity) {}
 
@@ -57,4 +57,4 @@ void RingAllocator::Reclaim(u64 completed) {
     groups_.RemoveRange(0, freed);
 }
 
-} // namespace engine_placeholder::rhi::vulkan
+} // namespace engine_placeholder::rhi

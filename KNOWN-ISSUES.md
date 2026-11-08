@@ -192,7 +192,11 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - Phase 13 Day 164 (2026-11-08), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 164 file, "For the
   Linux run") were built and tested only on Windows, among them `rhi/backends/backends.cpp`, `platform_neutral_check` and the regenerated
   reference with the new `rhi-dx12` page.
-- Phase 13 Day 164, until Day 169: the DX12 backend's resources, descriptors, pipelines, command lists and swapchain are placeholders
+- Phase 13 Day 165 (2026-11-08), open until the Linux run at the phase close: the ring allocator moved from `rhi/vulkan/vk_ring.*` to the neutral
+  `rhi/staging_ring.*` (namespace `rhi`) and was built and tested only on Windows.
+- Phase 13 Day 165, measured, deferred: creating 1000 256-byte buffers as D3D12 committed resources takes 311 ms on the Radeon 860M against 22 ms
+  through the Vulkan backend's sub-allocator. Placed resources or a sub-allocator (design spec decision 10) wait for a measurement that matters.
+- Phase 13 Day 164, until Day 169: the DX12 backend's descriptors, pipelines, command lists and swapchain are placeholders
   (`engine/rhi/dx12/dx12_device_later.cpp`) that log "not implemented yet" and fail; `Auto` never picks the backend, and the demos pin Vulkan.
 - Phase 13 Day 163: Windows command lines are quoted by three separate copies of the same rule: `os/windows/debug/death_test.cpp`
   (`AppendQuoted`), `tools/docgen/src/windows/child_process_windows.cpp` and `tools/shader_mint/run_process.cpp` (`AppendWindowsArgument`, the

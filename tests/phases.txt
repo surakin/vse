@@ -218,5 +218,6 @@ test:module_deps_check*                         12
 tests/rhi/backend_registry_test.cpp             13
 tests/renderer/shader_dxil_test.cpp             13
 tests/rhi/dx12_device_test.cpp                  13
+tests/rhi/dx12_resource_test.cpp                13
 tests/windows/                                  13
 testopt:windows_*                               13

@@ -16,7 +16,7 @@
 #include "rhi/vulkan/vk_memory.h"
 #include "rhi/vulkan/vk_memory_backend.h"
 #include "rhi/vulkan/vk_pipeline_policy.h"
-#include "rhi/vulkan/vk_ring.h"
+#include "rhi/staging_ring.h"
 #include "platform/window.h"
 
 //! The Vulkan implementation of [[rhi::Device]].

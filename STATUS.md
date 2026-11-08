@@ -883,3 +883,11 @@ live objects checked at destruction; capabilities from the D3D12 constants; one 
 injection as on Vulkan. Resources, descriptors, pipelines, command lists and the swapchain are placeholders until Days 165-169. Devices were made on
 the Radeon 860M and WARP with the debug layer silent. Runs: `ran 1222 of 2389 tests (phases: all; flavors: plain; display: included; crash tests:
 excluded)`, asan `ran 902 of 2389`. Review: 4 findings, 2 fixed, 2 declined. Linux: pending until the phase close. **Next: Day 165 (DX12 resources).**
+
+Phase 13 **Day 165 (2026-11-08, Windows PC): DX12 resources.** Buffers as committed resources on the default, upload and readback heaps
+(mapped for life, uniform buffers rounded to 256), textures with their views from CPU descriptor heaps (sampled depth typeless with typed depth
+and shader views), a 64 MiB staging ring (the ring allocator moved into the neutral `rhi/staging_ring.h`), and uploads and readbacks repacked to
+256-byte row pitches through `GetCopyableFootprints`, tested in 13 formats at odd sizes, mips, arrays, volumes, depth and BC1/BC7. The device
+records each texture's actual D3D12 state. Counts follow the Vulkan accounting. Committed buffers cost 311 ms per 1000 against Vulkan's 22 ms
+(filed). Runs: `ran 1228 of 2401 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 908 of 2401`. Review: 4
+findings, 2 fixed, 2 declined. Linux: pending until the phase close. **Next: Day 166 (DX12 descriptors and bind groups).**

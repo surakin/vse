@@ -7,7 +7,7 @@
 #include "gpu_fixture.h"
 #include "rhi/null/null_device.h"
 #include "rhi/rhi.h"
-#include "rhi/vulkan/vk_ring.h"
+#include "rhi/staging_ring.h"
 #include "rhi/vulkan/vulkan_device.h"
 
 using namespace engine_placeholder;

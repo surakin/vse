@@ -4,11 +4,15 @@
 #include <mutex>
 
 #include "containers/unique_ptr.h"
+#include "containers/vector.h"
 #include "rhi/device.h"
 #include "rhi/dx12/com_ref.h"
 #include "rhi/dx12/d3d12_api.h"
 #include "rhi/dx12/dx12_adapters.h"
+#include "rhi/dx12/dx12_descriptor_heap.h"
+#include "rhi/handle_pool.h"
 #include "rhi/rhi.h"
+#include "rhi/staging_ring.h"
 
 //! The Direct3D 12 implementation of [[rhi::Device]] (Phase 13, Days 164-172).
 
@@ -141,6 +145,72 @@ public:
     /// Thread-safety: not-thread-safe: call with the submission lock held (Submit and the internal upload path do).
     u64 SignalLocked();
 
+    /// What command recording needs to know about a live buffer.
+    ///
+    /// Thread-safety: thread-compatible plain data (a snapshot).
+    /// Ownership: `resource` is borrowed; it stays valid until the buffer is destroyed and its frame has completed.
+    struct BufferInfo {
+        /// The resource.
+        ID3D12Resource* resource = nullptr;
+        /// Its GPU virtual address.
+        u64 gpu_address = 0;
+        /// The creation descriptor (without the debug name).
+        BufferDesc desc;
+    };
+    /// Looks up a live buffer.
+    ///
+    /// Param buffer: the handle.
+    /// Param out: receives the snapshot.
+    /// Returns: true if the handle is live.
+    /// Fails: false for an invalid or stale handle.
+    /// Thread-safety: thread-safe.
+    bool LookupBuffer(BufferHandle buffer, BufferInfo* out) const;
+
+    /// What command recording needs to know about a live texture.
+    ///
+    /// Thread-safety: thread-compatible plain data (a snapshot).
+    /// Ownership: the resource and descriptors are borrowed; valid until the texture is destroyed and its frame has completed.
+    struct TextureInfo {
+        /// The resource.
+        ID3D12Resource* resource = nullptr;
+        /// The creation descriptor (without the debug name).
+        TextureDesc desc;
+        /// The format the resource was created with (typeless for a sampled depth texture).
+        DXGI_FORMAT resource_format = DXGI_FORMAT_UNKNOWN;
+        /// The render-target view of mip 0, layer 0; `ptr` 0 without `ColorAttachment` usage.
+        D3D12_CPU_DESCRIPTOR_HANDLE rtv{};
+        /// The depth-stencil view of mip 0, layer 0; `ptr` 0 without `DepthAttachment` usage.
+        D3D12_CPU_DESCRIPTOR_HANDLE dsv{};
+        /// The shader-resource view of every mip and layer; `ptr` 0 without `Sampled` usage.
+        D3D12_CPU_DESCRIPTOR_HANDLE srv{};
+        /// The unordered-access view of mip 0; `ptr` 0 without `Storage` usage.
+        D3D12_CPU_DESCRIPTOR_HANDLE uav{};
+    };
+    /// Looks up a live texture.
+    ///
+    /// Param texture: the handle.
+    /// Param out: receives the snapshot.
+    /// Returns: true if the handle is live.
+    /// Fails: false for an invalid or stale handle.
+    /// Thread-safety: thread-safe.
+    bool LookupTexture(TextureHandle texture, TextureInfo* out) const;
+
+    /// Returns the D3D12 state a texture is in after everything submitted so far (D3D12 has no "undefined" before-state, so the
+    /// device keeps this: uploads, readbacks and, from Day 168, each submitted command list update it).
+    ///
+    /// Param texture: a live texture.
+    /// Returns: the state; `COMMON` for an unknown handle.
+    /// Fails: `COMMON`, as described.
+    /// Thread-safety: thread-safe.
+    D3D12_RESOURCE_STATES TextureState(TextureHandle texture) const;
+
+    /// Records the state a texture is in after work just submitted.
+    ///
+    /// Param texture: a live texture; an unknown handle is ignored.
+    /// Param state: the state.
+    /// Thread-safety: thread-safe.
+    void SetTextureState(TextureHandle texture, D3D12_RESOURCE_STATES state);
+
     /// Objects found alive by destroyed devices.
     ///
     /// Thread-safety: thread-compatible plain data (a snapshot).
@@ -164,8 +234,62 @@ private:
     void UpdateCompletedFramesLocked();
     void CollectRetiredLocked(bool all);
     void ReportLiveObjects();
-    // Logs that `what` arrives on a later day of Phase 13 (Days 165-169 replace these).
+    // Logs that `what` arrives on a later day of Phase 13 (Days 166-169 replace these).
     static void NotYet(const char* what, int day);
+
+    // ---- resources (dx12_device_resources.cpp) ----
+    struct BufferRes {
+        ComRef<ID3D12Resource> resource;
+        BufferDesc desc;              // without the debug name
+        u8* mapped = nullptr;         // persistent mapping of an upload or readback heap buffer
+        bool user_mapped = false;     // between MapBuffer and UnmapBuffer
+        u64 bytes = 0;                // the allocation's size
+    };
+    struct TextureRes {
+        ComRef<ID3D12Resource> resource;
+        TextureDesc desc;             // without the debug name
+        DXGI_FORMAT resource_format = DXGI_FORMAT_UNKNOWN;
+        D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON; // actual, after everything submitted
+        ResourceState upload_state = ResourceState::Undefined;     // as UploadTexture leaves it (the RHI's rule)
+        D3D12_CPU_DESCRIPTOR_HANDLE rtv{};
+        D3D12_CPU_DESCRIPTOR_HANDLE dsv{};
+        D3D12_CPU_DESCRIPTOR_HANDLE srv{};
+        D3D12_CPU_DESCRIPTOR_HANDLE uav{};
+        bool external = false;        // a swapchain image (Day 169): the swapchain owns the resource
+        u64 bytes = 0;
+    };
+    struct InternalList {
+        ComRef<ID3D12CommandAllocator> allocator;
+        ComRef<ID3D12GraphicsCommandList> list;
+        u64 fence = 0;                // the value that frees it; ~0 while recording
+    };
+    bool InitializeResources();
+    void ShutdownResources();
+    void FillFormatSupport();
+    bool CreateCommitted(D3D12_HEAP_TYPE heap, const D3D12_RESOURCE_DESC& desc, D3D12_RESOURCE_STATES state, const char* name,
+                         ComRef<ID3D12Resource>* out, u64* bytes);
+    void ReleaseResourceBytes(u64 bytes);
+    void ReleaseTextureViews(TextureRes& t);
+    // Internal submissions (uploads, readbacks) on the queue, under submit_mutex_.
+    ID3D12GraphicsCommandList* BeginInternalLocked(usize* slot);
+    u64 SubmitInternalLocked(usize slot);
+    bool StageLocked(u64 size, u64 alignment, u64* offset);
+    void SetDebugName(ID3D12Object* object, const char* name);
+
+    HandlePool<BufferRes, BufferTag> buffers_;
+    HandlePool<TextureRes, TextureTag> textures_;
+    CpuDescriptorHeap view_heap_;   // CBV/SRV/UAV
+    CpuDescriptorHeap rtv_heap_;
+    CpuDescriptorHeap dsv_heap_;
+    ComRef<ID3D12Resource> staging_;
+    u64 staging_bytes_ = 0;
+    u8* staging_mapped_ = nullptr;
+    UniquePtr<RingAllocator> staging_ring_;
+    Vector<InternalList> internal_lists_;   // under submit_mutex_
+    std::atomic<u64> device_memory_bytes_{0};
+    std::atomic<u32> raw_resources_{0};     // ID3D12Resource objects alive, user and internal
+    u32 format_support_[static_cast<usize>(Format::Count)] = {}; // D3D12_FORMAT_SUPPORT1 of the typed (or view) format
+    bool format_support_ready_ = false;
 
     ComRef<IDXGIFactory6> factory_;
     ComRef<IDXGIAdapter1> dxgi_adapter_;

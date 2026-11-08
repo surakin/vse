@@ -13,7 +13,7 @@ module	platform/os	46	46
 module	platform/window-input	277	277
 module	foundation/debug	208	208
 module	jobs	165	165
-module	rhi	762	762
+module	rhi	770	770
 module	renderer	964	964
-module	rhi-vulkan	446	446
-module	rhi-dx12	112	112
+module	rhi-vulkan	438	438
+module	rhi-dx12	142	142
