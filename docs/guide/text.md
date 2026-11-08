@@ -1,6 +1,6 @@
 # Fonts and text
 
-Status: draft (Phase 14, Days 175-176 so far; the atlas, layout, cursor and the drawing pass follow).
+Status: draft (Phase 14, Days 175-177 so far; layout, cursor and the drawing pass follow).
 
 The text layer lives in `engine/text/` (namespace `engine_placeholder::text`). Design and reasons: `docs/superpowers/specs/2026-11-08-text-design.md`.
 FreeType 2.15.0 (vendored, `third_party/freetype/`) reads and rasterizes the fonts; it is named in one file, `engine/text/font_freetype.cpp`, and every
@@ -29,6 +29,18 @@ text::GlyphId h = font.FindGlyph(U'H');
 text::GlyphMetrics m = font.Metrics(h);          // advance, bearing, box, in pixels
 f32 pull = font.Kerning(font.FindGlyph(U'A'), font.FindGlyph(U'V'));
 ```
+
+## Rasterizing and the glyph atlas
+
+`Font::Render(glyph, &bitmap)` gives 8-bit coverage (`GlyphBitmap`: width, height, the left and top bearings in pixels, the advance, tightly packed rows). A glyph with
+no outline (a space) gives a 0x0 bitmap that still carries the advance. Sizes above `kMaxAtlasPixelSize` (128) are refused with `Error::TooLarge`.
+
+`GlyphAtlas` packs rasterized glyphs into square 8-bit **pages** (1024 pixels by default) in CPU memory with a shelf packer (`ShelfPacker`, one pixel of empty
+padding around every glyph and the page edge, so bilinear sampling does not bleed). `GetOrAdd(font, glyph, &entry)` keys by (font id, pixel size, glyph id): a
+second request returns the same entry. The entry has the page, the pixel rectangle, texture coordinates, the bearings and the advance. A full page adds a page up
+to the maximum given to the constructor; after that a glyph is refused with `Error::AtlasFull` and counted in `Stats().failures` (never a crash; there is **no
+eviction** in this version). `TakeDirty(page, &rect)` returns the rectangle that changed since the last call, so a frame uploads only that. The CPU pages are the
+source of truth: a renderer's GPU copy can be rebuilt from `PagePixels(page)` after a device reset.
 
 ## Hinting
 

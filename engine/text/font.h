@@ -37,6 +37,7 @@ enum class Error : u8 {
     OutOfMemory,     ///< An allocation failed.
     InvalidArgument, ///< A size of 0 or above [[text::kMaxPixelSize]], or an operation on a font that is not open.
     TooLarge,        ///< The pixel size is above [[text::kMaxAtlasPixelSize]] and the operation rasterizes.
+    AtlasFull,       ///< The glyph atlas has no room for the glyph (every page is full, or the glyph is larger than a page).
 };
 
 /// The result of a text operation: an [[text::Error]] and a short message that names the cause.
@@ -107,6 +108,19 @@ struct OutlinePoint {
     i32 y = 0;             ///< Vertical position in font units (y grows up).
     bool on_curve = true;  ///< True for a point on the outline; false for a quadratic or cubic control point.
     bool cubic = false;    ///< True when an off-curve point is a cubic control point (CFF fonts); false for a quadratic (TrueType) one.
+};
+
+/// A rasterized glyph: 8-bit coverage, one byte per pixel, rows top to bottom with no padding (the pitch is `width`).
+///
+/// Thread-safety: thread-compatible.
+/// Ownership: owns its pixels.
+struct GlyphBitmap {
+    u32 width = 0;        ///< Columns; 0 for a glyph with no outline (a space).
+    u32 height = 0;       ///< Rows; 0 for a glyph with no outline.
+    i32 left = 0;         ///< Distance from the pen to the left column of the bitmap (negative when the glyph reaches back past the pen).
+    i32 top = 0;          ///< Distance from the baseline up to the top row of the bitmap.
+    f32 advance = 0;      ///< The glyph's horizontal advance in pixels, the same as [[text::GlyphMetrics::advance]].
+    Vector<byte> pixels;  ///< `width * height` coverage values, 0 (empty) to 255 (full).
 };
 
 /// A glyph outline: closed contours of points, unscaled (the Phase 16 mesh builder's input).
@@ -241,6 +255,12 @@ public:
     ///
     /// Only the font's `kern` table is read (`FT_Get_Kerning`); GPOS pair adjustment is not (the guide lists the limit).
     f32 Kerning(GlyphId left, GlyphId right) const;
+    /// Rasterizes `glyph` at the current size with the font's hinting mode into 8-bit coverage.
+    ///
+    /// Ownership: `out` owns its pixels.
+    /// Fails: `TooLarge` when the pixel size is above [[text::kMaxAtlasPixelSize]] (nothing is rendered), `InvalidArgument` for a glyph id out of range or a font that is not
+    ///   open, `OutOfMemory`; `out` is cleared first.
+    Status Render(GlyphId glyph, GlyphBitmap* out) const;
     /// Loads the unscaled outline of `glyph` in font units.
     ///
     /// Ownership: `out` owns the points and contours; they stay valid after the font closes.

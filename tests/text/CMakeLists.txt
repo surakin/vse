@@ -3,6 +3,7 @@
 set(TEXT_TEST_SOURCES
   library_test.cpp
   font_test.cpp
+  glyph_atlas_test.cpp
 )
 
 find_package(Threads REQUIRED)
@@ -12,7 +13,7 @@ function(engine_add_text_tests target text_lib suffix label)
   add_executable(${target} ${TEXT_TEST_SOURCES})
   target_link_libraries(${target} PRIVATE ${text_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-  target_compile_definitions(${target} PRIVATE TEXT_TEST_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf")
+  target_compile_definitions(${target} PRIVATE TEXT_TEST_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden" TEXT_TEST_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf")
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()

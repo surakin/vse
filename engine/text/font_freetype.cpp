@@ -394,6 +394,33 @@ f32 Font::Kerning(GlyphId left, GlyphId right) const {
     return FromFixed(delta.x);
 }
 
+Status Font::Render(GlyphId glyph, GlyphBitmap* out) const {
+    ENGINE_ASSERT(out != nullptr, "Font::Render: out is null");
+    out->width = out->height = 0;
+    out->left = out->top = 0;
+    out->advance = 0;
+    out->pixels.Clear();
+    if (impl_ == nullptr || glyph >= GlyphCount()) return MakeStatus(Error::InvalidArgument, "the glyph id is out of range");
+    if (impl_->pixel_size > kMaxAtlasPixelSize) return MakeStatus(Error::TooLarge, "the pixel size is above the largest rasterized size");
+    const FT_Error error = FT_Load_Glyph(impl_->face, glyph, LoadFlags(impl_->options.hinting) | FT_LOAD_RENDER);
+    if (error != 0) return FromFreeType(error);
+    const FT_GlyphSlot slot = impl_->face->glyph;
+    out->advance = FromFixed(slot->advance.x);
+    const FT_Bitmap& bitmap = slot->bitmap;
+    if (bitmap.width == 0 || bitmap.rows == 0) return Status{};
+    if (bitmap.pixel_mode != FT_PIXEL_MODE_GRAY || bitmap.pitch < static_cast<int>(bitmap.width)) return MakeStatus(Error::Unsupported, "the glyph did not render as 8-bit coverage");
+    const usize count = usize{bitmap.width} * usize{bitmap.rows};
+    if (!out->pixels.TryResizeUninitialized(count)) return MakeStatus(Error::OutOfMemory, "out of memory rasterizing the glyph");
+    for (u32 row = 0; row < bitmap.rows; ++row) {
+        std::memcpy(out->pixels.Data() + usize{row} * bitmap.width, bitmap.buffer + usize{row} * static_cast<usize>(bitmap.pitch), bitmap.width);
+    }
+    out->width = bitmap.width;
+    out->height = bitmap.rows;
+    out->left = slot->bitmap_left;
+    out->top = slot->bitmap_top;
+    return Status{};
+}
+
 Status Font::LoadOutline(GlyphId glyph, Outline* out) const {
     ENGINE_ASSERT(out != nullptr, "Font::LoadOutline: out is null");
     out->points.Clear();

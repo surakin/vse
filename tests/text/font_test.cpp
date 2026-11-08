@@ -7,18 +7,9 @@
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::text;
+using text_test::Opened;
 
 namespace {
-
-struct Opened {
-    FontLibrary library;
-    Font font;
-    Opened() {
-        REQUIRE(library.Initialize().Ok());
-        const Status status = Font::OpenFile(library, text_test::FontPath(), FontOptions{}, &font);
-        REQUIRE(status.Ok());
-    }
-};
 
 } // namespace
 
