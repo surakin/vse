@@ -3,6 +3,7 @@
 #include "debug/crash_reason.h"
 #include "debug/stack_trace.h"
 #include "types.h"
+#include "build_defs.h"
 
 // The per-platform half of crash reporting (crash_handler_sentry.cpp is the neutral half). Not part of the public API.
 //
@@ -36,7 +37,7 @@ bool CrashReportInProgress();
 // Removes the recorder if it is still the current handler; if something was installed over it, it stays but passes through.
 void RemoveCrashEventHook();
 
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
 // Windows: called before the library is initialized, so the platform's crash gate (crash_hook.cpp) is the filter the library replaces.
 void PrepareCrashEventHook();
 

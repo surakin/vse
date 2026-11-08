@@ -21,3 +21,10 @@ set_tests_properties(platform_neutral_check_planted_count PROPERTIES
 platform_neutral_test(platform_neutral_check_clean ${PLATFORM_NEUTRAL_FIXTURES}/good)
 
 engine_label_tests(platform_neutral_check platform_neutral_check_planted platform_neutral_check_planted_count platform_neutral_check_clean)
+
+# Rule 6: a raw compiler or system macro outside engine/foundation/build_defs.h is reported by file and line (a comment is not).
+platform_neutral_test(platform_neutral_check_raw_defines ${PLATFORM_NEUTRAL_FIXTURES}/bad_build_defs)
+set_tests_properties(platform_neutral_check_raw_defines PROPERTIES
+  PASS_REGULAR_EXPRESSION "engine/raw.cpp:1: a raw compiler or system macro \\(_WIN32\\).*engine/raw.cpp:3: a raw compiler or system macro \\(__linux__\\).*engine/raw.cpp:6: a raw compiler or system macro \\(__has_feature\\).*3 violation"
+  FAIL_REGULAR_EXPRESSION "engine/raw.cpp:2:")
+engine_label_tests(platform_neutral_check_raw_defines)

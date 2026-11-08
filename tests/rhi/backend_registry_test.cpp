@@ -12,6 +12,7 @@
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 #include "string_view.h"
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -213,7 +214,7 @@ TEST_CASE("RegisterCompiledBackends registers null and Vulkan, and Direct3D 12 o
     CHECK(null_backend->auto_rank == 0);
     CHECK(vulkan->auto_rank > 0);
     CHECK(vulkan->shader_format == ShaderFormat::Spirv);
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     const BackendDescriptor* dx12 = FindBackend(Backend::Dx12); // Phase 13 Day 164
     REQUIRE(dx12 != nullptr);
     CHECK(dx12->shader_format == ShaderFormat::Dxil);

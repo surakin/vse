@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <thread>
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -142,7 +143,7 @@ TEST_CASE("Each fault kind ends the child with the matching crash reason", "[dea
         CrashReason expected;
     };
     // A stack overflow is an access violation as far as a POSIX exit status can tell; Windows' exit code says STATUS_STACK_OVERFLOW.
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     constexpr CrashReason kOverflow = CrashReason::StackOverflow;
 #else
     constexpr CrashReason kOverflow = CrashReason::AccessViolation;

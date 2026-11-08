@@ -9,8 +9,9 @@
 #include "platform/window_host.h"
 #include "os/os.h"
 #include "platform/window.h"
+#include "build_defs.h"
 
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
 #include "test_env.h"
 #else
 #include <sys/socket.h>
@@ -28,7 +29,7 @@ namespace window_backend_test {
 using namespace engine_placeholder;
 using namespace engine_placeholder::os;
 
-#if !defined(_WIN32)
+#if !ENGINE_PLATFORM_WINDOWS
 namespace {
 
 // Sets/unsets an env var for a scope, restoring the previous value.
@@ -141,7 +142,7 @@ TEST_CASE("PlanWin32WindowBackends: auto and win32 give Win32, wayland and x11 a
     CHECK(PlanWin32WindowBackends(WindowBackend::Invalid).count == 0);
 }
 
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
 
 namespace {
 

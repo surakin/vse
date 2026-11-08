@@ -9,7 +9,8 @@
 #include "containers/unique_ptr.h"
 #include "test_env.h"
 #include "test_text.h"
-#if defined(_WIN32)
+#include "build_defs.h"
+#if ENGINE_PLATFORM_WINDOWS
 #include "os/windows/win32.h"
 #endif
 
@@ -25,7 +26,7 @@ namespace {
 
 // True when the OS says thread `tid` may run on CPU `cpu` alone.
 bool ThreadPinnedTo(i32 tid, i32 cpu) {
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     // CPU ids are group * 64 + bit (jobs/windows/thread_platform.cpp).
     const HANDLE thread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, static_cast<DWORD>(tid));
     if (thread == nullptr) return false;

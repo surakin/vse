@@ -2,8 +2,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+#include "build_defs.h"
 
-#if !defined(_WIN32)
+#if !ENGINE_PLATFORM_WINDOWS
 #include <unistd.h> // geteuid, chmod for the read-only directory case
 #include <sys/stat.h>
 #endif
@@ -491,7 +492,7 @@ TEST_CASE("A cache directory that cannot be used never stops the device", "[rhi]
         CHECK(t.device->PipelineCache().saved_bytes == 0);
     }
     SECTION("the cache directory cannot be written") {
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
         SUCCEED("not on Windows: a directory's read-only attribute does not stop writes (KNOWN-ISSUES.md, Phase 13 Day 157)");
         return;
 #else

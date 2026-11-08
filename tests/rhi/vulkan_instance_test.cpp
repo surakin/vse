@@ -1,4 +1,5 @@
-#if defined(__SANITIZE_ADDRESS__)
+#include "build_defs.h"
+#if ENGINE_SANITIZER_ADDRESS
 #include <sanitizer/lsan_interface.h>
 #endif
 #include <cstring>
@@ -157,11 +158,11 @@ TEST_CASE("Errors raised while the instance is destroyed are still counted", "[r
         mci.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         mci.pfnUserCallback = &NoopMessenger;
         VkDebugUtilsMessengerEXT leaked = nullptr;
-#if defined(__SANITIZE_ADDRESS__)
+#if ENGINE_SANITIZER_ADDRESS
         __lsan_disable(); // the leak is the point of this test; ignore only what the loader and layer allocate for it
 #endif
         const VkResult created = inner.Fns().CreateDebugUtilsMessengerEXT(inner.Handle(), &mci, nullptr, &leaked);
-#if defined(__SANITIZE_ADDRESS__)
+#if ENGINE_SANITIZER_ADDRESS
         __lsan_enable();
 #endif
         REQUIRE(created == VK_SUCCESS);

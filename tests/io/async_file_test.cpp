@@ -16,13 +16,9 @@
 #include "slow_file.h"
 #include "test_text.h"
 #include "temp_dir.h"
+#include "build_defs.h"
 
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer)
-#define IO_TEST_SANITIZED 1
-#endif
-#endif
-#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
+#if ENGINE_SANITIZED
 #define IO_TEST_SANITIZED 1
 #endif
 
@@ -433,7 +429,7 @@ TEST_CASE("jobs: co_await file reads inside jobs on a scheduler", "[io][async][j
     }
 }
 
-#if !defined(_WIN32) // (only the /proc case below uses these)
+#if !ENGINE_PLATFORM_WINDOWS // (only the /proc case below uses these)
 namespace {
 struct ProcOut {
     std::atomic<int> done{0};
@@ -450,7 +446,7 @@ jobs::Job ReadProcJob(jobs::Scheduler* s, ProcOut* out) {
 #endif
 
 TEST_CASE("jobs::ReadFileAsync reads files whose reported size is wrong (/proc)", "[io][async][jobs]") {
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     SKIP("Windows has no file whose reported size is wrong (Linux: /proc)");
 #else
     jobs::Scheduler::Config cfg;

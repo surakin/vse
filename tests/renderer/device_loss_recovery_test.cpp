@@ -12,6 +12,7 @@
 #include "rhi/device_host.h"
 #include "rhi/null/null_device.h"
 #include "rhi/rhi_log.h"
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -485,17 +486,10 @@ TEST_CASE("Repeated losses on a real device do not keep growing memory", "[recov
     CHECK(losses == 16);
     CHECK(renderer.Stats().recoveries == 16);
     CHECK(device_memory_late == device_memory_early); // each new device allocates what the first one did
-#if defined(__SANITIZE_ADDRESS__) // GCC and MSVC
-#define LOSS_TEST_SANITIZED 1
-#elif defined(__has_feature)
-#if __has_feature(address_sanitizer)
-#define LOSS_TEST_SANITIZED 1
-#endif
-#endif
-#ifndef LOSS_TEST_SANITIZED // the sanitizer's quarantine makes resident memory meaningless
+#if !ENGINE_SANITIZER_ADDRESS // the sanitizer's quarantine makes resident memory meaningless
     if (early_low != 0 && late_low != 0) {
         i64 allowed_kib = 40 * 1024; // 12 more losses must not cost 40 MiB
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
         allowed_kib += 4 * 64 * 1024; // the old devices' memory Windows still counts in the process: up to four 64 MiB blocks (Day 161)
 #endif
         CHECK(late_low - early_low < allowed_kib);

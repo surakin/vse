@@ -501,60 +501,60 @@ io::UserCacheDirectory(StringView,Path*)	function	foundation/io	io-usercachedire
 io::UserDataDirectory(StringView,Path*)	function	foundation/io	io-userdatadirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:182
 io::UserStateDirectory(StringView,Path*)	function	foundation/io	io-userstatedirectory-stringview-path-star	foundation-io.md	engine/foundation/io/file_system.h:187
 io::CrashDumpDirectory(Path*)	function	foundation/io	io-crashdumpdirectory-path-star	foundation-io.md	engine/foundation/io/file_system.h:198
-io::PathStyle	enum	foundation/io	io-pathstyle	foundation-io.md	engine/foundation/io/path.h:18
-io::PathStyle::Posix	enumerator	foundation/io	io-pathstyle-posix	foundation-io.md	engine/foundation/io/path.h:19
-io::PathStyle::Windows	enumerator	foundation/io	io-pathstyle-windows	foundation-io.md	engine/foundation/io/path.h:20
-io::NativePathStyle()	function	foundation/io	io-nativepathstyle	foundation-io.md	engine/foundation/io/path.h:25
-io::kMaxPathBytes	variable	foundation/io	io-kmaxpathbytes	foundation-io.md	engine/foundation/io/path.h:34
-io::Path	class	foundation/io	io-path	foundation-io.md	engine/foundation/io/path.h:48
-io::Path::Path()	function	foundation/io	io-path-path	foundation-io.md	engine/foundation/io/path.h:51
-io::Path::Path(PathStyle)	function	foundation/io	io-path-path-pathstyle	foundation-io.md	engine/foundation/io/path.h:53
-io::Path::Path(StringView,PathStyle)	function	foundation/io	io-path-path-stringview-pathstyle	foundation-io.md	engine/foundation/io/path.h:60
-io::Path::Path(const Path&)	function	foundation/io	io-path-path-const-path-amp	foundation-io.md	engine/foundation/io/path.h:63
-io::Path::operator=(const Path&)	function	foundation/io	io-path-operator-eq-const-path-amp	foundation-io.md	engine/foundation/io/path.h:65
-io::Path::Path(Path&&) noexcept	function	foundation/io	io-path-path-path-amp-amp-noexcept	foundation-io.md	engine/foundation/io/path.h:66
-io::Path::operator=(Path&&) noexcept	function	foundation/io	io-path-operator-eq-path-amp-amp-noexcept	foundation-io.md	engine/foundation/io/path.h:67
-io::Path::Parse(StringView,PathStyle,Path*)	function	foundation/io	io-path-parse-stringview-pathstyle-path-star	foundation-io.md	engine/foundation/io/path.h:75
-io::Path::Style() const	function	foundation/io	io-path-style-const	foundation-io.md	engine/foundation/io/path.h:78
-io::Path::View() const	function	foundation/io	io-path-view-const	foundation-io.md	engine/foundation/io/path.h:81
-io::Path::ToNative(char*,usize) const	function	foundation/io	io-path-tonative-char-star-usize-const	foundation-io.md	engine/foundation/io/path.h:87
-io::Path::IsEmpty() const	function	foundation/io	io-path-isempty-const	foundation-io.md	engine/foundation/io/path.h:90
-io::Path::IsAbsolute() const	function	foundation/io	io-path-isabsolute-const	foundation-io.md	engine/foundation/io/path.h:93
-io::Path::IsRelative() const	function	foundation/io	io-path-isrelative-const	foundation-io.md	engine/foundation/io/path.h:95
-io::Path::HasRoot() const	function	foundation/io	io-path-hasroot-const	foundation-io.md	engine/foundation/io/path.h:97
-io::Path::RootName() const	function	foundation/io	io-path-rootname-const	foundation-io.md	engine/foundation/io/path.h:99
-io::Path::Parent() const	function	foundation/io	io-path-parent-const	foundation-io.md	engine/foundation/io/path.h:103
-io::Path::FileName() const	function	foundation/io	io-path-filename-const	foundation-io.md	engine/foundation/io/path.h:105
-io::Path::Stem() const	function	foundation/io	io-path-stem-const	foundation-io.md	engine/foundation/io/path.h:107
-io::Path::Extension() const	function	foundation/io	io-path-extension-const	foundation-io.md	engine/foundation/io/path.h:110
-io::Path::Components	class	foundation/io	io-path-components	foundation-io.md	engine/foundation/io/path.h:113
-io::Path::Components::Next(StringView*)	function	foundation/io	io-path-components-next-stringview-star	foundation-io.md	engine/foundation/io/path.h:118
-io::Path::GetComponents() const	function	foundation/io	io-path-getcomponents-const	foundation-io.md	engine/foundation/io/path.h:125
-io::Path::Join(const Path&) const	function	foundation/io	io-path-join-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:132
-io::Path::Join(StringView) const	function	foundation/io	io-path-join-stringview-const	foundation-io.md	engine/foundation/io/path.h:134
-io::Path::TryJoin(const Path&,Path*) const	function	foundation/io	io-path-tryjoin-const-path-amp-path-star-const	foundation-io.md	engine/foundation/io/path.h:139
-io::Path::operator/(const Path&) const	function	foundation/io	io-path-operator-slash-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:141
-io::Path::operator/(StringView) const	function	foundation/io	io-path-operator-slash-stringview-const	foundation-io.md	engine/foundation/io/path.h:143
-io::Path::Append(StringView)	function	foundation/io	io-path-append-stringview	foundation-io.md	engine/foundation/io/path.h:147
-io::Path::WithFileName(StringView) const	function	foundation/io	io-path-withfilename-stringview-const	foundation-io.md	engine/foundation/io/path.h:153
-io::Path::WithExtension(StringView) const	function	foundation/io	io-path-withextension-stringview-const	foundation-io.md	engine/foundation/io/path.h:157
-io::Path::WithoutExtension() const	function	foundation/io	io-path-withoutextension-const	foundation-io.md	engine/foundation/io/path.h:159
-io::Path::Normalize() const	function	foundation/io	io-path-normalize-const	foundation-io.md	engine/foundation/io/path.h:163
-io::Path::RelativeTo(const Path&,Path*) const	function	foundation/io	io-path-relativeto-const-path-amp-path-star-const	foundation-io.md	engine/foundation/io/path.h:172
-io::Path::IsInside(const Path&) const	function	foundation/io	io-path-isinside-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:175
-io::Path::StartsWith(const Path&) const	function	foundation/io	io-path-startswith-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:178
-io::Path::Hash() const	function	foundation/io	io-path-hash-const	foundation-io.md	engine/foundation/io/path.h:181
-io::Path::operator==(const Path&) const	function	foundation/io	io-path-operator-eq-eq-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:183
-io::Path::operator!=(const Path&) const	function	foundation/io	io-path-operator-not-eq-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:185
-io::Path::operator<(const Path&) const	function	foundation/io	io-path-operator-lt-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:187
-io::Path::Compare(const Path&) const	function	foundation/io	io-path-compare-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:189
-io::PathBuilder	class	foundation/io	io-pathbuilder	foundation-io.md	engine/foundation/io/path.h:208
-io::PathBuilder::PathBuilder(PathStyle)	function	foundation/io	io-pathbuilder-pathbuilder-pathstyle	foundation-io.md	engine/foundation/io/path.h:214
-io::PathBuilder::Set(StringView)	function	foundation/io	io-pathbuilder-set-stringview	foundation-io.md	engine/foundation/io/path.h:219
-io::PathBuilder::Append(StringView)	function	foundation/io	io-pathbuilder-append-stringview	foundation-io.md	engine/foundation/io/path.h:223
-io::PathBuilder::CStr() const	function	foundation/io	io-pathbuilder-cstr-const	foundation-io.md	engine/foundation/io/path.h:225
-io::PathBuilder::View() const	function	foundation/io	io-pathbuilder-view-const	foundation-io.md	engine/foundation/io/path.h:227
-io::PathBuilder::Style() const	function	foundation/io	io-pathbuilder-style-const	foundation-io.md	engine/foundation/io/path.h:229
+io::PathStyle	enum	foundation/io	io-pathstyle	foundation-io.md	engine/foundation/io/path.h:19
+io::PathStyle::Posix	enumerator	foundation/io	io-pathstyle-posix	foundation-io.md	engine/foundation/io/path.h:20
+io::PathStyle::Windows	enumerator	foundation/io	io-pathstyle-windows	foundation-io.md	engine/foundation/io/path.h:21
+io::NativePathStyle()	function	foundation/io	io-nativepathstyle	foundation-io.md	engine/foundation/io/path.h:26
+io::kMaxPathBytes	variable	foundation/io	io-kmaxpathbytes	foundation-io.md	engine/foundation/io/path.h:35
+io::Path	class	foundation/io	io-path	foundation-io.md	engine/foundation/io/path.h:49
+io::Path::Path()	function	foundation/io	io-path-path	foundation-io.md	engine/foundation/io/path.h:52
+io::Path::Path(PathStyle)	function	foundation/io	io-path-path-pathstyle	foundation-io.md	engine/foundation/io/path.h:54
+io::Path::Path(StringView,PathStyle)	function	foundation/io	io-path-path-stringview-pathstyle	foundation-io.md	engine/foundation/io/path.h:61
+io::Path::Path(const Path&)	function	foundation/io	io-path-path-const-path-amp	foundation-io.md	engine/foundation/io/path.h:64
+io::Path::operator=(const Path&)	function	foundation/io	io-path-operator-eq-const-path-amp	foundation-io.md	engine/foundation/io/path.h:66
+io::Path::Path(Path&&) noexcept	function	foundation/io	io-path-path-path-amp-amp-noexcept	foundation-io.md	engine/foundation/io/path.h:67
+io::Path::operator=(Path&&) noexcept	function	foundation/io	io-path-operator-eq-path-amp-amp-noexcept	foundation-io.md	engine/foundation/io/path.h:68
+io::Path::Parse(StringView,PathStyle,Path*)	function	foundation/io	io-path-parse-stringview-pathstyle-path-star	foundation-io.md	engine/foundation/io/path.h:76
+io::Path::Style() const	function	foundation/io	io-path-style-const	foundation-io.md	engine/foundation/io/path.h:79
+io::Path::View() const	function	foundation/io	io-path-view-const	foundation-io.md	engine/foundation/io/path.h:82
+io::Path::ToNative(char*,usize) const	function	foundation/io	io-path-tonative-char-star-usize-const	foundation-io.md	engine/foundation/io/path.h:88
+io::Path::IsEmpty() const	function	foundation/io	io-path-isempty-const	foundation-io.md	engine/foundation/io/path.h:91
+io::Path::IsAbsolute() const	function	foundation/io	io-path-isabsolute-const	foundation-io.md	engine/foundation/io/path.h:94
+io::Path::IsRelative() const	function	foundation/io	io-path-isrelative-const	foundation-io.md	engine/foundation/io/path.h:96
+io::Path::HasRoot() const	function	foundation/io	io-path-hasroot-const	foundation-io.md	engine/foundation/io/path.h:98
+io::Path::RootName() const	function	foundation/io	io-path-rootname-const	foundation-io.md	engine/foundation/io/path.h:100
+io::Path::Parent() const	function	foundation/io	io-path-parent-const	foundation-io.md	engine/foundation/io/path.h:104
+io::Path::FileName() const	function	foundation/io	io-path-filename-const	foundation-io.md	engine/foundation/io/path.h:106
+io::Path::Stem() const	function	foundation/io	io-path-stem-const	foundation-io.md	engine/foundation/io/path.h:108
+io::Path::Extension() const	function	foundation/io	io-path-extension-const	foundation-io.md	engine/foundation/io/path.h:111
+io::Path::Components	class	foundation/io	io-path-components	foundation-io.md	engine/foundation/io/path.h:114
+io::Path::Components::Next(StringView*)	function	foundation/io	io-path-components-next-stringview-star	foundation-io.md	engine/foundation/io/path.h:119
+io::Path::GetComponents() const	function	foundation/io	io-path-getcomponents-const	foundation-io.md	engine/foundation/io/path.h:126
+io::Path::Join(const Path&) const	function	foundation/io	io-path-join-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:133
+io::Path::Join(StringView) const	function	foundation/io	io-path-join-stringview-const	foundation-io.md	engine/foundation/io/path.h:135
+io::Path::TryJoin(const Path&,Path*) const	function	foundation/io	io-path-tryjoin-const-path-amp-path-star-const	foundation-io.md	engine/foundation/io/path.h:140
+io::Path::operator/(const Path&) const	function	foundation/io	io-path-operator-slash-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:142
+io::Path::operator/(StringView) const	function	foundation/io	io-path-operator-slash-stringview-const	foundation-io.md	engine/foundation/io/path.h:144
+io::Path::Append(StringView)	function	foundation/io	io-path-append-stringview	foundation-io.md	engine/foundation/io/path.h:148
+io::Path::WithFileName(StringView) const	function	foundation/io	io-path-withfilename-stringview-const	foundation-io.md	engine/foundation/io/path.h:154
+io::Path::WithExtension(StringView) const	function	foundation/io	io-path-withextension-stringview-const	foundation-io.md	engine/foundation/io/path.h:158
+io::Path::WithoutExtension() const	function	foundation/io	io-path-withoutextension-const	foundation-io.md	engine/foundation/io/path.h:160
+io::Path::Normalize() const	function	foundation/io	io-path-normalize-const	foundation-io.md	engine/foundation/io/path.h:164
+io::Path::RelativeTo(const Path&,Path*) const	function	foundation/io	io-path-relativeto-const-path-amp-path-star-const	foundation-io.md	engine/foundation/io/path.h:173
+io::Path::IsInside(const Path&) const	function	foundation/io	io-path-isinside-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:176
+io::Path::StartsWith(const Path&) const	function	foundation/io	io-path-startswith-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:179
+io::Path::Hash() const	function	foundation/io	io-path-hash-const	foundation-io.md	engine/foundation/io/path.h:182
+io::Path::operator==(const Path&) const	function	foundation/io	io-path-operator-eq-eq-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:184
+io::Path::operator!=(const Path&) const	function	foundation/io	io-path-operator-not-eq-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:186
+io::Path::operator<(const Path&) const	function	foundation/io	io-path-operator-lt-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:188
+io::Path::Compare(const Path&) const	function	foundation/io	io-path-compare-const-path-amp-const	foundation-io.md	engine/foundation/io/path.h:190
+io::PathBuilder	class	foundation/io	io-pathbuilder	foundation-io.md	engine/foundation/io/path.h:209
+io::PathBuilder::PathBuilder(PathStyle)	function	foundation/io	io-pathbuilder-pathbuilder-pathstyle	foundation-io.md	engine/foundation/io/path.h:215
+io::PathBuilder::Set(StringView)	function	foundation/io	io-pathbuilder-set-stringview	foundation-io.md	engine/foundation/io/path.h:220
+io::PathBuilder::Append(StringView)	function	foundation/io	io-pathbuilder-append-stringview	foundation-io.md	engine/foundation/io/path.h:224
+io::PathBuilder::CStr() const	function	foundation/io	io-pathbuilder-cstr-const	foundation-io.md	engine/foundation/io/path.h:226
+io::PathBuilder::View() const	function	foundation/io	io-pathbuilder-view-const	foundation-io.md	engine/foundation/io/path.h:228
+io::PathBuilder::Style() const	function	foundation/io	io-pathbuilder-style-const	foundation-io.md	engine/foundation/io/path.h:230
 Sqrt(f32)	function	foundation/math	sqrt-f32	foundation-math.md	engine/foundation/math/math_util.h:11
 Sin(f32)	function	foundation/math	sin-f32	foundation-math.md	engine/foundation/math/math_util.h:13
 Cos(f32)	function	foundation/math	cos-f32	foundation-math.md	engine/foundation/math/math_util.h:15
@@ -1408,8 +1408,8 @@ os::SessionStateName(SessionState)	function	platform/os	os-sessionstatename-sess
 os::SessionStateFromFlags(bool,bool,bool,bool)	function	platform/os	os-sessionstatefromflags-bool-bool-bool-bool	platform-os.md	engine/foundation/os/session.h:28
 os::SessionCanShowWindows(SessionState)	function	platform/os	os-sessioncanshowwindows-sessionstate	platform-os.md	engine/foundation/os/session.h:31
 os::QuerySessionState()	function	platform/os	os-querysessionstate	platform-os.md	engine/foundation/os/session.h:41
-os::WindowedProgramEntry	alias	platform/window-input	os-windowedprogramentry	platform-window-input.md	engine/platform/entry_point.h:20
-ENGINE_WINDOWED_PROGRAM	macro	platform/window-input	engine-windowed-program	platform-window-input.md	engine/platform/entry_point.h:42
+os::WindowedProgramEntry	alias	platform/window-input	os-windowedprogramentry	platform-window-input.md	engine/platform/entry_point.h:22
+ENGINE_WINDOWED_PROGRAM	macro	platform/window-input	engine-windowed-program	platform-window-input.md	engine/platform/entry_point.h:44
 os::Key	enum	platform/window-input	os-key	platform-window-input.md	engine/platform/input.h:17
 os::Key::Unknown	enumerator	platform/window-input	os-key-unknown	platform-window-input.md	engine/platform/input.h:18
 os::Key::A	enumerator	platform/window-input	os-key-a	platform-window-input.md	engine/platform/input.h:19
@@ -1709,15 +1709,15 @@ os::win32::Win32Window::IsFullscreen() const	function	platform/window-input	os-w
 os::win32::Win32Window::SetModalLoopCallback(ModalLoopCallback,void*)	function	platform/window-input	os-win32-win32window-setmodalloopcallback-modalloopcallback-void-star	platform-window-input.md	engine/platform/windows/win32_window.h:94
 os::win32::Win32Window::Dpi() const	function	platform/window-input	os-win32-win32window-dpi-const	platform-window-input.md	engine/platform/windows/win32_window.h:97
 os::win32::Win32Window::NativeHandle() const	function	platform/window-input	os-win32-win32window-nativehandle-const	platform-window-input.md	engine/platform/windows/win32_window.h:101
-ENGINE_DEBUG_BREAK	macro	foundation/debug	engine-debug-break	foundation-debug.md	engine/foundation/debug/compiler.h:14
-ENGINE_TRAP	macro	foundation/debug	engine-trap	foundation-debug.md	engine/foundation/debug/compiler.h:32
-ENGINE_PRINTF_FORMAT	macro	foundation/debug	engine-printf-format	foundation-debug.md	engine/foundation/debug/compiler.h:43
-ENGINE_NO_UNIQUE_ADDRESS	macro	foundation/debug	engine-no-unique-address	foundation-debug.md	engine/foundation/debug/compiler.h:53
-ENGINE_UNREACHABLE_HINT	macro	foundation/debug	engine-unreachable-hint	foundation-debug.md	engine/foundation/debug/compiler.h:62
-ENGINE_COLD	macro	foundation/debug	engine-cold	foundation-debug.md	engine/foundation/debug/compiler.h:69
-ENGINE_COMPILER_BARRIER	macro	foundation/debug	engine-compiler-barrier	foundation-debug.md	engine/foundation/debug/compiler.h:78
-ENGINE_NOINLINE_LAMBDA	macro	foundation/debug	engine-noinline-lambda	foundation-debug.md	engine/foundation/debug/compiler.h:87
-ENGINE_NOINLINE	macro	foundation/debug	engine-noinline	foundation-debug.md	engine/foundation/debug/compiler.h:95
+ENGINE_DEBUG_BREAK	macro	foundation/debug	engine-debug-break	foundation-debug.md	engine/foundation/debug/compiler.h:16
+ENGINE_TRAP	macro	foundation/debug	engine-trap	foundation-debug.md	engine/foundation/debug/compiler.h:34
+ENGINE_PRINTF_FORMAT	macro	foundation/debug	engine-printf-format	foundation-debug.md	engine/foundation/debug/compiler.h:45
+ENGINE_NO_UNIQUE_ADDRESS	macro	foundation/debug	engine-no-unique-address	foundation-debug.md	engine/foundation/debug/compiler.h:55
+ENGINE_UNREACHABLE_HINT	macro	foundation/debug	engine-unreachable-hint	foundation-debug.md	engine/foundation/debug/compiler.h:64
+ENGINE_COLD	macro	foundation/debug	engine-cold	foundation-debug.md	engine/foundation/debug/compiler.h:71
+ENGINE_COMPILER_BARRIER	macro	foundation/debug	engine-compiler-barrier	foundation-debug.md	engine/foundation/debug/compiler.h:80
+ENGINE_NOINLINE_LAMBDA	macro	foundation/debug	engine-noinline-lambda	foundation-debug.md	engine/foundation/debug/compiler.h:89
+ENGINE_NOINLINE	macro	foundation/debug	engine-noinline	foundation-debug.md	engine/foundation/debug/compiler.h:97
 debug::kMaxBuildIdText	variable	foundation/debug	debug-kmaxbuildidtext	foundation-debug.md	engine/foundation/debug/crash_context.h:11
 debug::kMaxContextPath	variable	foundation/debug	debug-kmaxcontextpath	foundation-debug.md	engine/foundation/debug/crash_context.h:13
 debug::kMaxContextCommandLine	variable	foundation/debug	debug-kmaxcontextcommandline	foundation-debug.md	engine/foundation/debug/crash_context.h:15
@@ -4035,16 +4035,16 @@ rhi::vulkan::VulkanInstance::Fns() const	function	rhi-vulkan	rhi-vulkan-vulkanin
 rhi::vulkan::VulkanInstance::Loader() const	function	rhi-vulkan	rhi-vulkan-vulkaninstance-loader-const	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:140
 rhi::vulkan::VulkanInstance::ValidationEnabled() const	function	rhi-vulkan	rhi-vulkan-vulkaninstance-validationenabled-const	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:143
 rhi::vulkan::VulkanInstance::Presentable() const	function	rhi-vulkan	rhi-vulkan-vulkaninstance-presentable-const	rhi-vulkan.md	engine/rhi/vulkan/vk_instance.h:146
-rhi::vulkan::kVulkanLibraryEnvVar	variable	rhi-vulkan	rhi-vulkan-kvulkanlibraryenvvar	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:25
-rhi::vulkan::LoaderStatus	enum	rhi-vulkan	rhi-vulkan-loaderstatus	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:28
-rhi::vulkan::LoaderStatus::Ok	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-ok	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:29
-rhi::vulkan::LoaderStatus::NoLoader	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-noloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:30
-rhi::vulkan::LoaderStatus::BadLoader	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-badloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:31
-rhi::vulkan::LoaderStatusName(LoaderStatus)	function	rhi-vulkan	rhi-vulkan-loaderstatusname-loaderstatus	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:36
-rhi::vulkan::VulkanLoader	struct	rhi-vulkan	rhi-vulkan-vulkanloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:47
-rhi::vulkan::VulkanLoader::library	variable	rhi-vulkan	rhi-vulkan-vulkanloader-library	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:49
-rhi::vulkan::VulkanLoader::get_instance_proc_addr	variable	rhi-vulkan	rhi-vulkan-vulkanloader-get-instance-proc-addr	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:51
-rhi::vulkan::LoadVulkanLoader(VulkanLoader*)	function	rhi-vulkan	rhi-vulkan-loadvulkanloader-vulkanloader-star	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:66
+rhi::vulkan::kVulkanLibraryEnvVar	variable	rhi-vulkan	rhi-vulkan-kvulkanlibraryenvvar	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:26
+rhi::vulkan::LoaderStatus	enum	rhi-vulkan	rhi-vulkan-loaderstatus	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:29
+rhi::vulkan::LoaderStatus::Ok	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-ok	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:30
+rhi::vulkan::LoaderStatus::NoLoader	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-noloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:31
+rhi::vulkan::LoaderStatus::BadLoader	enumerator	rhi-vulkan	rhi-vulkan-loaderstatus-badloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:32
+rhi::vulkan::LoaderStatusName(LoaderStatus)	function	rhi-vulkan	rhi-vulkan-loaderstatusname-loaderstatus	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:37
+rhi::vulkan::VulkanLoader	struct	rhi-vulkan	rhi-vulkan-vulkanloader	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:48
+rhi::vulkan::VulkanLoader::library	variable	rhi-vulkan	rhi-vulkan-vulkanloader-library	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:50
+rhi::vulkan::VulkanLoader::get_instance_proc_addr	variable	rhi-vulkan	rhi-vulkan-vulkanloader-get-instance-proc-addr	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:52
+rhi::vulkan::LoadVulkanLoader(VulkanLoader*)	function	rhi-vulkan	rhi-vulkan-loadvulkanloader-vulkanloader-star	rhi-vulkan.md	engine/rhi/vulkan/vk_loader.h:67
 rhi::vulkan::kMaxMemoryTypes	variable	rhi-vulkan	rhi-vulkan-kmaxmemorytypes	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:19
 rhi::vulkan::kMaxMemoryHeaps	variable	rhi-vulkan	rhi-vulkan-kmaxmemoryheaps	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:21
 rhi::vulkan::MemoryTypeInfo	struct	rhi-vulkan	rhi-vulkan-memorytypeinfo	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:26

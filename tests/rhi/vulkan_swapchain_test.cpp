@@ -12,6 +12,7 @@
 #include "rhi/rhi.h"
 #include "rhi/vulkan/vk_swapchain_policy.h"
 #include "rhi/vulkan/vulkan_device.h"
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -265,7 +266,7 @@ TEST_CASE("Vulkan swapchain presents to an X11 window", "[rhi][vulkan][gpu][wind
 
 // Phase 13 Day 160: the same checks through the Win32 window and the VK_KHR_win32_surface surface.
 TEST_CASE("Vulkan swapchain presents to a Win32 window", "[rhi][vulkan][gpu][window][win32]") {
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     SKIP_IF_NO_DISPLAY_SESSION();
     RunPresentationChecks(os::WindowBackend::Win32);
 #else

@@ -3,7 +3,8 @@
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vk_swapchain.h"
-#if defined(_WIN32)
+#include "build_defs.h"
+#if ENGINE_PLATFORM_WINDOWS
 #include "rhi/vulkan/windows/vk_win32_surface.h"
 #else
 #include "rhi/vulkan/vk_xlib_surface.h"
@@ -29,7 +30,7 @@ bool VulkanDevice::CreateSurface(const os::NativeWindowInfo& native) {
 #endif
         break;
     }
-#if !defined(_WIN32)
+#if !ENGINE_PLATFORM_WINDOWS
     case os::NativeWindowKind::Xlib: {
         u64 handle = 0;
         result = static_cast<VkResult>(CreateXlibSurface(reinterpret_cast<void*>(instance_.Loader().get_instance_proc_addr), instance_.Handle(),

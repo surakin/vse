@@ -2,8 +2,9 @@
 
 #include <atomic>
 #include <thread>
+#include "build_defs.h"
 
-#if !defined(_WIN32)
+#if !ENGINE_PLATFORM_WINDOWS
 #include <dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -35,7 +36,7 @@ io::FilePtr MakeLocal(TempDir& dir, StringView content, bool writable) {
 }
 
 size_t CountEntries(const Path& dir) {
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     size_t n = 0;
     io_test::ForEachEntry(io_test::WinPath(dir).text, [&](const wchar_t*, DWORD) { ++n; });
     return n;
@@ -113,7 +114,7 @@ TEST_CASE("io::File: open modes, flags and errors", "[io][file]") {
     // A missing parent.
     CHECK(io::File::Open(dir / "no/such/dir/f", OpenMode::Write, io::kOpenNone, &f).Is(Error::NotFound));
     // An unreadable file.
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     REQUIRE(io_test::WriteText(dir / "secret", "x"));
     REQUIRE(io_test::DenyCurrentUser(dir / "secret", FILE_READ_DATA));
     CHECK(io::File::Open(dir / "secret", OpenMode::Read, io::kOpenNone, &f).Is(Error::PermissionDenied));
@@ -204,7 +205,7 @@ TEST_CASE("io::File: files over 4 GiB and generated files", "[io][file]") {
         REQUIRE(f->Size(&size).Ok());
         CHECK(size == five_gib);
     }
-#if !defined(_WIN32) // Windows has no file that reports a wrong size
+#if !ENGINE_PLATFORM_WINDOWS // Windows has no file that reports a wrong size
     // /proc files report size 0 but have content: ReadAll must not trust the size.
     Vector<u8> status;
     REQUIRE(io::ReadFile(Path("/proc/self/status"), &status).Ok());
@@ -260,7 +261,7 @@ TEST_CASE("io: the read helpers", "[io][file]") {
     REQUIRE(io::ReadFile(dir / "empty", arena, &data, &size).Ok());
     CHECK(size == 0);
     CHECK(data != nullptr);
-#if !defined(_WIN32)
+#if !ENGINE_PLATFORM_WINDOWS
     // A file whose reported size is wrong (a /proc file reports 0) still reads whole through the arena path.
     REQUIRE(io::ReadFile(Path("/proc/self/status"), arena, &data, &size).Ok());
     CHECK(size > 100);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "build_defs.h"
+
 //! The entry point of a windowed program (Phase 13 Day 158), written once in source so no build file chooses it per platform.
 //!
 //! A windowed program (a game, a demo) defines `int EngineMain(int argc, char** argv)` and, in one source file at global scope, writes
@@ -35,7 +37,7 @@ int RunWindowedProgram(int argc, char** argv, WindowedProgramEntry entry);
 } // namespace detail
 } // namespace engine_placeholder::os
 
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
 /// Defines the program's entry point as a call of `entry` (see the file comment). Write it once, at global scope.
 // `wWinMain` with the plain types the C runtime expects (`HINSTANCE` is `HINSTANCE__*`), so the file need not include <windows.h>, and the
 // directive that makes the program a GUI program (cmake/EngineCompilerOptions.cmake says why it is not left to the linker's inference).

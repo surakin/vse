@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <cstring>
 #include <mutex>
+#include "build_defs.h"
 
 namespace engine_placeholder::debug {
 
@@ -139,7 +140,7 @@ void OnCrashEvent(const detail::CrashEvent& event) {
     }
 }
 
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
 // Windows: the library calls this on its handler thread, after it wrote the dump, with the fault's EXCEPTION_POINTERS; the platform turns them
 // into the CrashEvent and calls OnCrashEvent (os/windows/debug/crash_hook.cpp). Keeping the event keeps the envelope with the dump and report.
 sentry_value_t OnLibraryCrash(const sentry_ucontext_t* context, sentry_value_t event, sentry_hint_t*, void*) {
@@ -241,7 +242,7 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
     sentry_options_set_logger_level(sentry, SENTRY_LEVEL_WARNING);
     sentry_options_set_logger(sentry, &RouteSentryLog, nullptr);
     sentry_options_set_logger_enabled_when_crashed(sentry, 0); // our log is not safe to call from a crashing process
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     sentry_options_set_on_crash(sentry, &OnLibraryCrash, nullptr); // the report on Windows (above)
     detail::PrepareCrashEventHook(); // the crash gate goes under the library's filter (crash_hook.cpp)
 #endif

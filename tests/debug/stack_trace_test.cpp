@@ -12,6 +12,7 @@
 #include <atomic>
 #include <cstring>
 #include <thread>
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -52,7 +53,7 @@ ENGINE_NOINLINE u32 Recurse(int depth, StackTrace* trace) {
 
 // A leaf that is always inlined into its caller, so one address belongs to two functions. MSVC's Debug build inlines nothing, even
 // __forceinline: the test below skips when the leaf is a frame of its own.
-#if defined(_MSC_VER) && !defined(__clang__)
+#if ENGINE_COMPILER_MSVC
 #define STACK_TRACE_TEST_ALWAYS_INLINE __forceinline
 #else
 #define STACK_TRACE_TEST_ALWAYS_INLINE __attribute__((always_inline)) inline
@@ -265,7 +266,7 @@ TEST_CASE("The trace text has a fixed layout and names the chain", "[stacktrace]
     options.demangle = true;
     char readable[8192];
     FormatStackTrace(trace, readable, sizeof(readable), options);
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     // The PDB stores the name readable already (no parameter list): demangling changes nothing (os/windows/debug/BACKEND.md).
     CHECK(std::strstr(text, "stack_trace_test::ChainC") != nullptr);
     CHECK(std::strstr(readable, "stack_trace_test::ChainC") != nullptr);
@@ -275,7 +276,7 @@ TEST_CASE("The trace text has a fixed layout and names the chain", "[stacktrace]
 #endif
 }
 
-#if !defined(_WIN32) // Itanium names; Windows decorates the Microsoft way (stack_trace_windows_test.cpp)
+#if !ENGINE_PLATFORM_WINDOWS // Itanium names; Windows decorates the Microsoft way (stack_trace_windows_test.cpp)
 TEST_CASE("DemangleSymbol turns mangled names readable and refuses the rest", "[stacktrace][debug]") {
     char out[128];
     CHECK(DemangleSymbol("_ZN3foo3barEv", out, sizeof(out)));

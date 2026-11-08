@@ -9,6 +9,7 @@
 #include "resolve.h"
 
 #include <cstring>
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 
@@ -187,7 +188,7 @@ TEST_CASE("Report frame lines are parsed into the module and the offset, other l
     CHECK(crash_extract::FindModule("C:\\Git\\other.exe", modules, 1) == nullptr);
 }
 
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
 #include "os/windows/win32.h"
 
 #include "io/file.h"

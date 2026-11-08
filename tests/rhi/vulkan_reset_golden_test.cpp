@@ -11,6 +11,7 @@
 #include "os/os.h"
 #include "reset_rig.h"
 #include "rhi/rhi_log.h"
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -22,14 +23,8 @@ constexpr u32 kResetShotH = 180;
 
 // One return per configuration: code after an unconditional return is a warning (C4702) under /WX.
 bool Sanitized() {
-#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
+#if ENGINE_SANITIZED
     return true;
-#elif defined(__has_feature)
-#if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer)
-    return true;
-#else
-    return false;
-#endif
 #else
     return false;
 #endif
@@ -131,7 +126,7 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
     CHECK(handle_drift <= 2);
     if (!Sanitized() && early_low != 0 && late_low != 0) {
         i64 allowed_kib = 8 * 1024;
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
         allowed_kib += 4 * 64 * 1024; // the old devices' memory Windows still counts in the process: up to four 64 MiB blocks (Day 161)
 #endif
         CHECK(drift_kib < allowed_kib);

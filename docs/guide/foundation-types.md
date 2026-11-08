@@ -74,3 +74,22 @@ std::printf("%d %d\n", ok ? 1 : 0, parsed == u128::Max() ? 1 : 0);
 -170141183460469231731687303715884105727 1
 1 1
 ```
+
+## Platform, compiler, processor and sanitizer (`build_defs.h`)
+
+Code asks which system, compiler, processor or sanitizer it is built for through the macros of `engine/foundation/build_defs.h`, never through
+the compiler's own predefined macros (`_WIN32`, `__linux__`, `__clang__`, `_MSC_VER`, `__x86_64__`, `__SANITIZE_ADDRESS__`, `__has_feature`). A
+port to a new platform or compiler changes that header and nothing else; the `platform_neutral_check` gate (rule 6) fails on a raw macro anywhere
+else. Every macro is always defined, as `1` or `0`, so the test is `#if ENGINE_PLATFORM_WINDOWS`, never `#ifdef`.
+
+| Family | Macros | Notes |
+|---|---|---|
+| operating system | `ENGINE_PLATFORM_WINDOWS`, `_LINUX`, `_MACOS`, `_IOS`, `_ANDROID` | exactly one is 1; Android is not Linux here, though its compiler defines `__linux__` |
+| compiler | `ENGINE_COMPILER_MSVC`, `_CLANG_CL`, `_CLANG`, `_GCC` | exactly one is 1; `_CLANG` is Clang for the GNU ABI, clang-cl is its own |
+| compiler groups | `ENGINE_COMPILER_CLANG_FAMILY`, `ENGINE_COMPILER_MSVC_ABI` | Clang or clang-cl; cl or clang-cl (intrinsics, `__declspec`) |
+| processor | `ENGINE_ARCH_X64`, `_X86`, `_ARM64` | exactly one is 1 |
+| sanitizer | `ENGINE_SANITIZER_ADDRESS`, `ENGINE_SANITIZER_THREAD`, `ENGINE_SANITIZED` | 0 or 1; `ENGINE_SANITIZED` is either |
+| builtin | `ENGINE_HAS_BUILTIN(name)` | `__has_builtin`, or 0 where the compiler has no such query |
+
+Compiler-specific constructs (attributes, intrinsics, inline assembly) are in `debug/compiler.h`, which builds on these macros. Two files are
+exempt from the gate: `tests/windows/discovery/` (toolchain probes built outside the engine) and generated code.

@@ -10,6 +10,7 @@
 #include "io/path.h"
 #include "os/os.h"
 #include "source_file.h"
+#include "build_defs.h"
 
 namespace docgen {
 
@@ -55,7 +56,7 @@ StringView Num(ArenaAllocator& arena, u32 n) {
     return sb.View();
 }
 
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
 StringView Hex(ArenaAllocator& arena, u32 n) {
     char text[16];
     std::snprintf(text, sizeof(text), "0x%08X", n);
@@ -137,7 +138,7 @@ StringView Excerpt(StringView s, u32 max_lines, ArenaAllocator& arena) {
 
 enum class Stage : engine_placeholder::u8 { Pending, Compiling, Compiled, Running, Done };
 
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
 constexpr char kObjectSuffix[] = ".obj";
 #else
 constexpr char kObjectSuffix[] = ".o";
@@ -253,7 +254,7 @@ private:
         a.Push(opt_.compiler);
         for (usize i = 0; i < opt_.flags.Size(); ++i) a.Push(opt_.flags[i]);
         for (usize i = 0; i < opt_.includes.Size(); ++i) a.Push(ArenaCat(arena_, StringView("-I"), opt_.includes[i]));
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
         // cl and clang-cl (the compilers of the Windows build) name their outputs with /Fe and /Fo; arguments after the source that are
         // not options (the libraries) go to the linker, and so does everything after /link.
         if (s.run) {
@@ -350,7 +351,7 @@ private:
             return;
         }
         if (end.killed) {
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
             Fail(t, ArenaCat(arena_, StringView("sample was ended by exception "), Hex(arena_, end.cause)));
 #else
             Fail(t, ArenaCat(arena_, StringView("sample was terminated by signal "), Num(arena_, end.cause)));

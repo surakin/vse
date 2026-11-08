@@ -11,6 +11,7 @@ set(FOUNDATION_BASE_TEST_SOURCES
   stack_allocator_test.cpp
   container_vector_test.cpp
   array_test.cpp
+  build_defs_test.cpp
   unique_ptr_test.cpp
   shared_ptr_test.cpp
   hash_map_test.cpp

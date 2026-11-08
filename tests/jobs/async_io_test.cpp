@@ -4,8 +4,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <thread>
+#include "build_defs.h"
 
-#if !defined(_WIN32)
+#if !ENGINE_PLATFORM_WINDOWS
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -70,7 +71,7 @@ Job ReadJob(Scheduler* s, const Text* path, ReadOutcome* out) {
     out->done.fetch_add(1, std::memory_order_release);
 }
 
-#if !defined(_WIN32) // (only the FIFO case uses it)
+#if !ENGINE_PLATFORM_WINDOWS // (only the FIFO case uses it)
 Job ComputeJob(std::atomic<int>* counter) {
     counter->fetch_add(1, std::memory_order_release);
     co_return;
@@ -196,7 +197,7 @@ TEST_CASE("64 concurrent reads of different files all complete correctly", "[job
 }
 
 TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "[jobs][io]") {
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     SKIP("needs a FIFO whose open blocks until a writer comes (POSIX); Windows has no such file, and opening a busy pipe fails at once");
 #else
     TempDir dir;

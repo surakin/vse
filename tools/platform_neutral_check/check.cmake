@@ -23,6 +23,10 @@
 #   except fixtures; comments are ignored.
 # Rule 5 (Phase 13 Day 158): a windowed program under game/ (a file including platform/window_host.h or platform/window.h) defines no
 #   main, wmain, WinMain or wWinMain; it writes ENGINE_WINDOWED_PROGRAM (platform/entry_point.h).
+# Rule 6 (build_defs): no file names a compiler's or an operating system's own predefined macro (_WIN32, __linux__, __APPLE__, __ANDROID__,
+#   __clang__, __GNUC__, _MSC_VER, __x86_64__, __i386__, __aarch64__, _M_X64, _M_IX86, _M_ARM64, __SANITIZE_ADDRESS__, __SANITIZE_THREAD__,
+#   __has_feature, __has_builtin). Code asks ENGINE_PLATFORM_*, ENGINE_COMPILER_*, ENGINE_ARCH_* and ENGINE_SANITIZER_* (engine/foundation/build_defs.h,
+#   the one file that reads the raw macros). Exempt: tests/windows/discovery/ (toolchain probes built outside the engine) and generated code.
 cmake_minimum_required(VERSION 3.20)
 
 if(NOT ROOT OR NOT BOUNDARY)
@@ -273,6 +277,26 @@ foreach(f IN LISTS all_files)
       gate_problem("${f}:${n}: a windowed program defines its own entry point; write ENGINE_WINDOWED_PROGRAM(EngineMain) (platform/entry_point.h)")
     endforeach()
   endif()
+endforeach()
+
+# --- Rule 6 ------------------------------------------------------------------------------------------------------------
+set(raw_define_re "(^|[^A-Za-z0-9_])(_WIN32|_WIN64|__linux__|__APPLE__|__ANDROID__|__clang__|__GNUC__|_MSC_VER|__x86_64__|__i386__|__aarch64__|_M_X64|_M_IX86|_M_ARM64|__SANITIZE_ADDRESS__|__SANITIZE_THREAD__|__has_feature|__has_builtin)([^A-Za-z0-9_]|$)")
+foreach(f IN LISTS all_files)
+  if(f MATCHES "(^|/)fixtures/" OR f MATCHES "/generated/" OR f MATCHES "^tests/windows/discovery/" OR f STREQUAL "engine/foundation/build_defs.h")
+    continue()
+  endif()
+  read_lines("${ROOT}/${f}" lines)
+  set(n 0)
+  set(in_block FALSE)
+  foreach(l IN LISTS lines)
+    math(EXPR n "${n}+1")
+    strip_comments()
+    if(code MATCHES "${raw_define_re}")
+      set(raw_name "${CMAKE_MATCH_2}")
+      string(STRIP "${l}" shown)
+      gate_problem("${f}:${n}: a raw compiler or system macro (${raw_name}); use ENGINE_PLATFORM_*, ENGINE_COMPILER_*, ENGINE_ARCH_* or ENGINE_SANITIZER_* from build_defs.h: ${shown}")
+    endif()
+  endforeach()
 endforeach()
 
 if(errors GREATER 0)

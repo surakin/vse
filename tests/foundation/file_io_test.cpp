@@ -4,6 +4,7 @@
 #include "io/file_system.h"
 #include "mem/arena_allocator.h"
 #include "types.h"
+#include "build_defs.h"
 
 using engine_placeholder::ArenaAllocator;
 using engine_placeholder::u8;
@@ -22,7 +23,7 @@ TEST_CASE("io::ReadFile reads the running program and finds its executable magic
     REQUIRE(status.Ok());
     REQUIRE(buffer != nullptr);
     REQUIRE(size >= 4);
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     REQUIRE(buffer[0] == 'M');
     REQUIRE(buffer[1] == 'Z');
 #else

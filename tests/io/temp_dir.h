@@ -3,8 +3,9 @@
 #include <atomic>
 #include <cstdlib>
 #include <cstring>
+#include "build_defs.h"
 
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
 #include <cwchar>
 
 #include "os/windows/utf16.h"
@@ -33,7 +34,7 @@ using namespace engine_placeholder;
 
 inline engine_test::Text Str(StringView v) { return engine_test::MakeText(v.Data() == nullptr ? StringView() : v); }
 
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
 
 /// A path in the form Win32 file functions take (UTF-16, `\` separators, the `\\?\` prefix when long); through os/, not the file layer.
 struct WinPath {

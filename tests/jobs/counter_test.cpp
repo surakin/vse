@@ -5,7 +5,8 @@
 
 #include "containers/unique_ptr.h"
 #include "debug/compiler.h"
-#if defined(_MSC_VER) && !defined(__clang__)
+#include "build_defs.h"
+#if ENGINE_COMPILER_MSVC
 #include <intrin.h>
 #endif
 
@@ -89,7 +90,7 @@ Job ParentJob(std::atomic<int>* ok, std::atomic<int>* finished) {
 
 // Where the stack is now: the frame of a function of its own (MSVC has no __builtin_frame_address; Phase 13 Day 153).
 ENGINE_NOINLINE usize StackMark() {
-#if defined(_MSC_VER) && !defined(__clang__)
+#if ENGINE_COMPILER_MSVC
     return reinterpret_cast<usize>(_AddressOfReturnAddress());
 #else
     return reinterpret_cast<usize>(__builtin_frame_address(0));

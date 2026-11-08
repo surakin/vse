@@ -905,3 +905,11 @@ tables in the 2048-entry sampler heap, and root signatures 1.1 per pipeline layo
 (version 2, every `*.refl.inc` re-minted). The `SetBindGroup` measurement and the end-to-end binding tests moved to Day 168, the reflection-against-
 root-signature check to Day 167 (plan amended). Runs: `ran 1237 of 2418 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 916 of 2418`. Review: 8 findings, 6 fixed, 2
 declined. Linux: pending until the phase close. **Next: Day 167 (DX12 pipelines and the pipeline cache).**
+
+Platform and compiler wrappers (2026-11-08, maintenance between Days 165 and 166, no plan day): `engine/foundation/build_defs.h` (base layer) defines `ENGINE_PLATFORM_{WINDOWS,LINUX,MACOS,IOS,ANDROID}`,
+`ENGINE_COMPILER_{MSVC,CLANG_CL,CLANG,GCC}` (+ `_CLANG_FAMILY`, `_MSVC_ABI`), `ENGINE_ARCH_{X64,X86,ARM64}`, `ENGINE_SANITIZER_{ADDRESS,THREAD}`, `ENGINE_SANITIZED` and
+`ENGINE_HAS_BUILTIN`, always 0 or 1. All 135 uses of `_WIN32`, `__linux__`, `__clang__`, `_MSC_VER`, `__x86_64__`, `__SANITIZE_*`, `__has_feature` etc. in engine/, game/, tools/ and tests/
+moved to them (the sanitizer detection blocks in 11 tests collapsed to one line each). Rule 6 of `platform_neutral_check` fails on a raw macro (exempt: the header, `tests/windows/discovery/`,
+generated code); CLAUDE.md, ARCHITECTURE.md and `docs/guide/foundation-types.md` say so; `tests/foundation/build_defs_test.cpp` (phase 0) holds the one-of-each-family rule. Also fixed a non-unity
+`-Wunused-const-variable` in `vulkan_device_bindings.cpp`. Not reviewed with `/code-review` (a mechanical rename, no plan day). Windows (cl, clang-cl) not built: the Windows machine must build once.
+`scripts/test-phase.sh --affected`: ran 1398 of 3582 tests (phases: all; flavors: plain; display: included; crash tests: excluded), asan ran 989 of 3582, tsan ran 701 of 3582 (before the macOS-detection edit; plain and asan after), no failures.

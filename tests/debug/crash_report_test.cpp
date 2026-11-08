@@ -18,6 +18,7 @@
 #include <cstring>
 #include <mutex>
 #include <thread>
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -122,7 +123,7 @@ TEST_CASE("The crash context describes the program and the machine", "[crashrepo
     // The build id is lowercase hex when the binary has one: whole bytes on Linux (the GNU build id); on Windows the PDB's GUID (32 digits)
     // and then its age without leading zeros, the form symbol stores use, so any length from 33 on.
     const usize id_length = std::strlen(c.build_id);
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     CHECK((id_length == 0 || id_length >= 33));
 #else
     CHECK(id_length % 2 == 0);

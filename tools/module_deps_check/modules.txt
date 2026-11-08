@@ -44,6 +44,7 @@ module engine/foundation/string_view.h base 0
 module engine/foundation/int128.h base 0
 module engine/foundation/int128.cpp base 0
 module engine/foundation/foundation.cpp base 0
+module engine/foundation/build_defs.h base 0
 module engine/foundation/debug/compiler.h base 0
 module engine/foundation/log/assert.h base 0
 module engine/foundation/unity/ base 0

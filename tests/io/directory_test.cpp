@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
+#include "build_defs.h"
 
-#if !defined(_WIN32)
+#if !ENGINE_PLATFORM_WINDOWS
 #include <unistd.h>
 #endif
 
@@ -126,7 +127,7 @@ TEST_CASE("io::Directory: empty, entries, types and Info", "[io][dir]") {
 
 TEST_CASE("io::Directory: names with spaces, newlines and Unicode; many entries", "[io][dir]") {
     TempDir dir;
-#if defined(_WIN32) // control characters and `"` are not allowed in Windows names
+#if ENGINE_PLATFORM_WINDOWS // control characters and `"` are not allowed in Windows names
     const char* const odd[] = {"with space", "semi;colon", "日本語.txt", "ünï", ".hidden", "brace{}[]", "percent%20#"};
     for (const char* n : odd) REQUIRE(io_test::WriteText(dir / StringView(n), "x"));
     CHECK(Names(dir.Path()).SameAs({"with space", "semi;colon", "日本語.txt", "ünï", ".hidden", "brace{}[]", "percent%20#"}));

@@ -16,6 +16,7 @@
 #include "rhi/null/null_device.h"
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_swapchain_policy.h"
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -379,7 +380,7 @@ TEST_CASE("An X11 swapchain reconfigures and its surface is replaced", "[rhi][vu
 
 // Phase 13 Day 160: the same checks through the Win32 window and the VK_KHR_win32_surface surface.
 TEST_CASE("A Win32 swapchain reconfigures and its surface is replaced", "[rhi][vulkan][gpu][window][win32][swapchain]") {
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     SKIP_IF_NO_DISPLAY_SESSION();
     RunWindowReconfigure(os::WindowBackend::Win32);
 #else

@@ -5,6 +5,7 @@
 
 #include <cstdlib>
 #include <intrin.h>
+#include "build_defs.h"
 
 namespace engine_placeholder::debug {
 
@@ -31,7 +32,7 @@ __declspec(noinline) unsigned FaultRecurse(unsigned n) {
 bool FaultSupported(FaultKind kind) {
     switch (kind) {
     case FaultKind::DivideByZero:
-#if defined(_M_X64) || defined(_M_IX86)
+#if ENGINE_ARCH_X64 || ENGINE_ARCH_X86
         return true;
 #else
         return false; // arm64: an integer divide by zero returns 0 instead of trapping
@@ -52,7 +53,7 @@ void InjectFault(FaultKind kind) {
     case FaultKind::Abort:
         std::abort();
     case FaultKind::IllegalInstruction:
-#if defined(_M_X64) || defined(_M_IX86)
+#if ENGINE_ARCH_X64 || ENGINE_ARCH_X86
         __ud2();
 #else
         __debugbreak();

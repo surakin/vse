@@ -5,7 +5,8 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
-#if defined(_WIN32)
+#include "build_defs.h"
+#if ENGINE_PLATFORM_WINDOWS
 #include <malloc.h> // _aligned_malloc, _aligned_free
 #endif
 #include <new>
@@ -18,15 +19,10 @@
 
 // Counts every heap allocation in this executable so a test can prove a region allocates none. The ThreadSanitizer runtime
 // defines its own operator new (a second definition fails to link), so that flavor skips the counting test.
-#if defined(__has_feature)
-#if __has_feature(thread_sanitizer)
+#if ENGINE_SANITIZER_THREAD
 #define RENDER_GRAPH_TEST_NO_NEW_COUNTER 1
 #endif
-#if __has_feature(thread_sanitizer) || __has_feature(address_sanitizer)
-#define RENDER_GRAPH_TEST_SANITIZED 1
-#endif
-#endif
-#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__) // GCC and MSVC
+#if ENGINE_SANITIZED
 #define RENDER_GRAPH_TEST_SANITIZED 1
 #endif
 
@@ -38,7 +34,7 @@ static std::atomic<unsigned long> g_heap_allocations{0};
 static void* CountedAlloc(std::size_t size, std::size_t align) {
     g_heap_allocations.fetch_add(1, std::memory_order_relaxed);
     if (size == 0) size = 1;
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     if (align != 0) return _aligned_malloc(size, align);
 #else
     if (align > alignof(std::max_align_t)) return std::aligned_alloc(align, (size + align - 1) / align * align);
@@ -46,7 +42,7 @@ static void* CountedAlloc(std::size_t size, std::size_t align) {
     return std::malloc(size);
 }
 static void AlignedFree(void* p) noexcept {
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     _aligned_free(p);
 #else
     std::free(p);

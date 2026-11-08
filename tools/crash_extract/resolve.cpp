@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include "build_defs.h"
 
 
 namespace crash_extract {
@@ -93,7 +94,7 @@ bool StorePdbPath(const char* store, const DumpModule& module, char* out, std::s
 }
 
 
-#if !defined(_WIN32)
+#if !ENGINE_PLATFORM_WINDOWS
 int ResolveReport(const char*, std::size_t, const DumpModule*, std::size_t, const char*) {
     return -1; // Linux names frames with lldb or minidump-stackwalk (scripts/crash-report.sh)
 }

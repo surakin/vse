@@ -6,8 +6,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include "build_defs.h"
 
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
 #include <process.h> // _getpid
 #else
 #include <unistd.h> // getpid
@@ -172,7 +173,7 @@ std::string TempPath(const char* name) {
     namespace io = engine_placeholder::io;
     io::Path dir;
     if (io::TempDirectory(&dir).Failed()) dir = io::Path("/tmp");
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     const long pid = static_cast<long>(_getpid());
 #else
     const long pid = static_cast<long>(getpid());

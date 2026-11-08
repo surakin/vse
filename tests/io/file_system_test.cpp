@@ -3,7 +3,8 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
-#if !defined(_WIN32)
+#include "build_defs.h"
+#if !ENGINE_PLATFORM_WINDOWS
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -21,7 +22,7 @@ using io_test::TempDir;
 
 namespace {
 
-#if !defined(_WIN32)
+#if !ENGINE_PLATFORM_WINDOWS
 struct EnvGuard { // restores an environment variable at scope exit
     engine_test::Text name;
     engine_test::Text old;
@@ -40,7 +41,7 @@ struct EnvGuard { // restores an environment variable at scope exit
 
 } // namespace
 
-#if !defined(_WIN32) // Windows has its own table (tests/io/io_windows_test.cpp)
+#if !ENGINE_PLATFORM_WINDOWS // Windows has its own table (tests/io/io_windows_test.cpp)
 TEST_CASE("io::Error: the errno table and names", "[io][error]") {
     struct Row { int code; Error error; };
     const Row rows[] = {
@@ -239,7 +240,7 @@ TEST_CASE("io: Rename and Copy", "[io][fs]") {
     CHECK(io_test::ReadText(dir / "b") == "new longer content");
     CHECK(io::Copy(dir / "missing", dir / "mc", false).Is(Error::NotFound));
     // The permission bits travel with the copy (on Windows the one it has, read-only).
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     REQUIRE(io_test::SetReadOnlyFile(dir / "b"));
     const u32 expected = 0444;
 #else
@@ -258,7 +259,7 @@ TEST_CASE("io: CreatePrivateDirectory", "[io][fs]") {
     REQUIRE(io::CreatePrivateDirectory(p).Ok());
     io::FileInfo info;
     REQUIRE(io::Stat(p, &info).Ok());
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     CHECK(io_test::AclIsPrivate(p)); // a protected ACL with one entry, for this user
     CHECK(io_test::AclIsPrivate(p.Parent())); // missing parents are private too
 #else
@@ -267,7 +268,7 @@ TEST_CASE("io: CreatePrivateDirectory", "[io][fs]") {
     // An existing directory with group/other access (on Windows: the inherited ACL) is tightened.
     const Path open_dir = dir / "open";
     REQUIRE(io::CreateDirectory(open_dir).Ok());
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     CHECK_FALSE(io_test::AclIsPrivate(open_dir));
     REQUIRE(io::CreatePrivateDirectory(open_dir).Ok());
     CHECK(io_test::AclIsPrivate(open_dir));
@@ -316,7 +317,7 @@ TEST_CASE("io: current directory, Absolute, Canonical and ReadLink", "[io][fs]")
     REQUIRE(io::Absolute(Path("a/b"), &abs).Ok());
     CHECK(abs == cwd.Join("a/b"));
     REQUIRE(io::Absolute(Path("/x/y"), &abs).Ok());
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     CHECK(abs == Path(cwd.RootName()).Join("/x/y")); // a rooted path takes the current drive
 #else
     CHECK(abs == Path("/x/y"));
@@ -356,7 +357,7 @@ TEST_CASE("io: current directory, Absolute, Canonical and ReadLink", "[io][fs]")
     REQUIRE(io::SetCurrentDirectory(cwd).Ok());
 }
 
-#if !defined(_WIN32) // Windows: tests/io/io_windows_test.cpp ("special folders on Windows")
+#if !ENGINE_PLATFORM_WINDOWS // Windows: tests/io/io_windows_test.cpp ("special folders on Windows")
 TEST_CASE("io: special folders", "[io][fs]") {
     EnvGuard home("HOME"), cfg("XDG_CONFIG_HOME"), cache("XDG_CACHE_HOME"), data("XDG_DATA_HOME"), state("XDG_STATE_HOME"), tmp("TMPDIR");
     ::setenv("HOME", "/home/test", 1);

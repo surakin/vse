@@ -2,6 +2,7 @@
 
 #include "os/os.h"
 #include "types.h"
+#include "build_defs.h"
 
 //! Vulkan loader access: the platform's loader (`libvulkan.so.1`, `vulkan-1.dll`) opened at run time, so nothing links against Vulkan.
 
@@ -14,7 +15,7 @@
 // The Xlib surface header is deliberately NOT enabled: it includes <X11/Xlib.h>, whose `Success`/`None`/
 // `Bool` macros break ordinary C++ enums. Day 56 adds vkCreateXlibSurfaceKHR from an isolated translation unit. Windows enables
 // nothing here either: `vulkan_win32.h` needs <windows.h>, so vkCreateWin32SurfaceKHR comes from windows/vk_win32_surface.cpp.
-#if defined(__linux__) && !defined(VK_USE_PLATFORM_WAYLAND_KHR)
+#if ENGINE_PLATFORM_LINUX && !defined(VK_USE_PLATFORM_WAYLAND_KHR)
 #define VK_USE_PLATFORM_WAYLAND_KHR
 #endif
 #include <vulkan/vulkan.h>

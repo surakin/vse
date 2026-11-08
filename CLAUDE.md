@@ -114,6 +114,14 @@ own flags). **Fix the code; do not silence the warning.** No `-Wno-...`, no `#pr
 if a real exception turns up, it is added here with its reason (and to the CMake file) in the same commit, not decided locally. A change must build clean in unity and
 `-DENGINE_UNITY_BUILD=OFF` (unused-function and unused-field warnings differ between the two), and with both compilers: on Linux CMake picks Clang when `clang++` is installed and GCC otherwise, and GCC reports things Clang does not (`-Wformat-truncation`, `-Wsubobject-linkage`).
 
+## Platform, compiler, processor and sanitizer are asked through `build_defs.h` (required)
+
+Never test a compiler's or system's own predefined macro (`_WIN32`, `__linux__`, `__APPLE__`, `__clang__`, `__GNUC__`, `_MSC_VER`, `__x86_64__`, `__aarch64__`, `_M_X64`,
+`__SANITIZE_ADDRESS__`, `__SANITIZE_THREAD__`, `__has_feature`, `__has_builtin`) in `engine/`, `game/`, `tools/` or `tests/`. Include `build_defs.h` (`engine/foundation/`) and write
+`#if ENGINE_PLATFORM_WINDOWS`, `ENGINE_COMPILER_CLANG`/`_GCC`/`_MSVC`/`_CLANG_CL`, `ENGINE_ARCH_X64`/`_ARM64`, `ENGINE_SANITIZER_ADDRESS`/`_THREAD` (always `#if`, never `#ifdef`).
+A new platform, compiler or processor changes that header only. Rule 6 of the `platform_neutral_check` gate fails on a raw macro; the exceptions are the header itself,
+`tests/windows/discovery/` and generated code. See `docs/guide/foundation-types.md`.
+
 ## End-of-day code review (required)
 
 **Every implementation day ends with a high-effort code review before it

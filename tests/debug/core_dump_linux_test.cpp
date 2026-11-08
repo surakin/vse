@@ -15,16 +15,13 @@
 #include <string>
 #include <sys/resource.h>
 #include <unistd.h>
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
 
-#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
+#if ENGINE_SANITIZED
 #define CORE_TEST_UNDER_SANITIZER 1
-#elif defined(__has_feature)
-#if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer)
-#define CORE_TEST_UNDER_SANITIZER 1
-#endif
 #endif
 
 namespace {

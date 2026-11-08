@@ -9,6 +9,7 @@
 #include "test_text.h"
 #include "temp_dir.h"
 #include "io/file.h"
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::settings;
@@ -158,7 +159,7 @@ TEST_CASE("A secret is not shown by --set provenance and not saved to a session 
     Vector<u8> bytes;
     REQUIRE(io::ReadFile(path, &bytes).Ok());
     CHECK_FALSE(StringView(reinterpret_cast<const char*>(bytes.Data()), bytes.Size()).Contains("hunter2"));
-#if !defined(_WIN32) // Windows has no file modes: a file takes its directory's ACL, private in the user's own folders (io/BACKEND.md, CreateTempFile)
+#if !ENGINE_PLATFORM_WINDOWS // Windows has no file modes: a file takes its directory's ACL, private in the user's own folders (io/BACKEND.md, CreateTempFile)
     io::FileInfo info;
     REQUIRE(io::Stat(path, &info).Ok());
     CHECK((info.permissions & 0777) == 0600);

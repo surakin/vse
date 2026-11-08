@@ -25,8 +25,9 @@
 #include <cstdlib>
 
 #include "os/windows/win32.h"
+#include "build_defs.h"
 
-#if defined(_DEBUG) && !defined(__SANITIZE_ADDRESS__)
+#if defined(_DEBUG) && !ENGINE_SANITIZER_ADDRESS
 #define CRASH_ALLOC_HOOK 1
 #include <crtdbg.h>
 #endif

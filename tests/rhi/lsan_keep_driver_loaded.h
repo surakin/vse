@@ -5,7 +5,8 @@
 // before any other static initializer or test can create an instance; a value already in the environment wins.
 #pragma once
 
-#if defined(__SANITIZE_ADDRESS__)
+#include "build_defs.h"
+#if ENGINE_SANITIZER_ADDRESS
 #include <cstdlib>
 
 namespace {

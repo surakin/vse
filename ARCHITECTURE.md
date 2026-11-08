@@ -13,7 +13,7 @@ From the bottom up. "Platform code" means a per-OS backend directory (`linux/`, 
 
 | Layer | Module (directory) | What it is |
 |---|---|---|
-| 0. Base | `foundation` root headers: `types.h`, `int128.h`, `debug/compiler.h` | Fixed-width types, 128-bit integers, compiler macros. Depends on nothing. |
+| 0. Base | `foundation` root headers: `types.h`, `int128.h`, `build_defs.h`, `debug/compiler.h` | Fixed-width types, 128-bit integers, platform/compiler/processor/sanitizer macros, compiler constructs. Depends on nothing. |
 | 1. OS primitives | `foundation/os/os.h` (+ `os/<platform>/os.cpp`) | Descriptors, memory reservation, clocks, sleep, dynamic libraries, the environment. Base only. |
 | 2. Memory | `foundation/mem` | Heap, arena, pool and stack allocators. Base, OS primitives. |
 | 3. Assert and log core | `foundation/log` | `ENGINE_ASSERT` family, log channels and sinks to descriptors. Layers 0-2. The assert *failure report* (stack trace, crash context) belongs to debugging (layer 7), reached through a hook (section 3, item 1). |

@@ -20,6 +20,7 @@
 
 #include <atomic>
 #include <cstdlib> // _set_abort_behavior
+#include "build_defs.h"
 
 namespace engine_placeholder::debug {
 
@@ -85,9 +86,9 @@ void CopyNameGuarded(const char* from, char* to) {
 }
 
 u64 StackPointerOf(const CONTEXT& context) {
-#if defined(_M_X64)
+#if ENGINE_ARCH_X64
     return context.Rsp;
-#elif defined(_M_ARM64)
+#elif ENGINE_ARCH_ARM64
     return context.Sp;
 #else
     return context.Esp;
@@ -143,7 +144,7 @@ CrashReason ReasonOf(DWORD code) {
 
 // Walks the faulting thread's stack from its CONTEXT; stops at the end of the stack, at the capacity, or when a frame cannot be read.
 void WalkStack(CONTEXT context, StackTrace& trace) {
-#if defined(_M_X64)
+#if ENGINE_ARCH_X64
     __try {
         while (trace.count < kMaxStackFrames) {
             const DWORD64 pc = context.Rip;
@@ -166,7 +167,7 @@ void WalkStack(CONTEXT context, StackTrace& trace) {
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         // A frame pointed into memory that cannot be read: keep what was walked.
     }
-#elif defined(_M_ARM64)
+#elif ENGINE_ARCH_ARM64
     trace.frames[trace.count++] = context.Pc; // the faulting address only, until the arm64 port walks the stack
 #else
     trace.frames[trace.count++] = context.Eip;

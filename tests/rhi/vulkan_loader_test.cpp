@@ -10,6 +10,7 @@
 #include "rhi/vulkan/vk_functions.h"
 #include "rhi/vulkan/vk_loader.h"
 #include "rhi/vulkan/vk_result.h"
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi::vulkan;
@@ -57,7 +58,7 @@ TEST_CASE("Vulkan loader reports NoLoader for a missing library without crashing
 }
 
 TEST_CASE("Vulkan loader reports BadLoader for a library without vkGetInstanceProcAddr", "[rhi][vulkan]") {
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     EnvGuard guard("kernel32.dll"); // a system library that is not a Vulkan loader
 #else
     EnvGuard guard("libm.so.6");

@@ -8,6 +8,7 @@
 #include "platform/window_host.h"
 #include "rhi/rhi.h"
 #include "rhi/vulkan/vulkan_device.h"
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -229,7 +230,7 @@ TEST_CASE("A swapchain survives 200 resize requests including zero sizes on X11"
 
 // Phase 13 Day 160: the same checks through the Win32 window and the VK_KHR_win32_surface surface.
 TEST_CASE("A swapchain survives 200 resize requests including zero sizes on Win32", "[rhi][vulkan][gpu][window][win32][fault]") {
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     SKIP_IF_NO_DISPLAY_SESSION();
     RunResizeStorm(os::WindowBackend::Win32);
 #else

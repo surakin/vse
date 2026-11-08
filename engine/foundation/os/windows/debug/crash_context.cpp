@@ -10,6 +10,7 @@
 #include <cstring>
 #include <ctime>
 #include <intrin.h>
+#include "build_defs.h"
 
 namespace engine_placeholder::debug {
 
@@ -107,7 +108,7 @@ void FillPlatformCrashContext(CrashContext& context) {
     case PROCESSOR_ARCHITECTURE_INTEL: CopyText(context.architecture, sizeof(context.architecture), "x86"); break;
     default: CopyText(context.architecture, sizeof(context.architecture), "unknown"); break;
     }
-#if defined(_M_X64) || defined(__x86_64__)
+#if ENGINE_ARCH_X64
     // The processor brand string: CPUID leaves 0x80000002-0x80000004, 16 bytes each.
     int registers[4] = {};
     __cpuid(registers, static_cast<int>(0x80000000u));

@@ -13,24 +13,17 @@
 #include "jobs/frame_pool.h"
 #include "jobs/scheduler.h"
 #include "jobs/topology.h"
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::jobs;
 using Clock = std::chrono::steady_clock;
 
-#if defined(__SANITIZE_THREAD__)
-#define JOBS_TSAN 1
-#elif defined(__has_feature)
-#if __has_feature(thread_sanitizer)
+#if ENGINE_SANITIZER_THREAD
 #define JOBS_TSAN 1
 #endif
-#endif
-#if defined(__SANITIZE_ADDRESS__)
+#if ENGINE_SANITIZER_ADDRESS
 #define JOBS_ASAN 1
-#elif defined(__has_feature)
-#if __has_feature(address_sanitizer)
-#define JOBS_ASAN 1
-#endif
 #endif
 
 #if defined(JOBS_TSAN)

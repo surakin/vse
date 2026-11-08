@@ -5,6 +5,7 @@
 #include "containers/hash_map.h"
 #include "mem/heap_allocator.h"
 #include "int128.h"
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 
@@ -48,14 +49,8 @@ OracleU RandomValue(Rng& rng) {
     return shift >= 128 ? 0 : v >> shift;
 }
 
-#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__)
+#if ENGINE_SANITIZED
 constexpr long kRandomOps = 1'000'000;
-#elif defined(__has_feature)
-#if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer)
-constexpr long kRandomOps = 1'000'000;
-#else
-constexpr long kRandomOps = 10'000'000;
-#endif
 #else
 constexpr long kRandomOps = 10'000'000;
 #endif

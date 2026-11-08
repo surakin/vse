@@ -27,13 +27,10 @@
 #include <thread>
 #include <unistd.h>
 #include <vector>
+#include "build_defs.h"
 
-#if defined(__SANITIZE_THREAD__)
+#if ENGINE_SANITIZER_THREAD
 #define E2E_UNDER_TSAN 1
-#elif defined(__has_feature)
-#if __has_feature(thread_sanitizer)
-#define E2E_UNDER_TSAN 1
-#endif
 #endif
 
 using namespace engine_placeholder;

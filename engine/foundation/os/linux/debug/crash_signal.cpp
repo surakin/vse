@@ -10,6 +10,7 @@
 #include <cstring>
 #include <sys/mman.h>
 #include <unistd.h>
+#include "build_defs.h"
 
 namespace engine_placeholder::debug {
 
@@ -44,9 +45,9 @@ u64 StackPointer(const void* user_context) {
         return 0;
     }
     const ucontext_t* context = static_cast<const ucontext_t*>(user_context);
-#if defined(__x86_64__)
+#if ENGINE_ARCH_X64
     return static_cast<u64>(context->uc_mcontext.gregs[REG_RSP]);
-#elif defined(__aarch64__)
+#elif ENGINE_ARCH_ARM64
     return static_cast<u64>(context->uc_mcontext.sp);
 #else
     return 0;

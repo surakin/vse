@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <sys/mman.h>
 #include <unistd.h>
+#include "build_defs.h"
 
 namespace engine_placeholder::debug {
 
@@ -43,7 +44,7 @@ volatile unsigned g_fault_depth = 0;
 bool FaultSupported(FaultKind kind) {
     switch (kind) {
     case FaultKind::DivideByZero:
-#if defined(__x86_64__) || defined(__i386__)
+#if ENGINE_ARCH_X64 || ENGINE_ARCH_X86
         return true;
 #else
         return false; // AArch64 integer division by zero returns 0 instead of trapping
@@ -63,9 +64,9 @@ void InjectFault(FaultKind kind) {
         std::abort();
     case FaultKind::IllegalInstruction:
         // An undefined instruction, not __builtin_trap(): on AArch64 that is `brk`, which raises SIGTRAP, not SIGILL.
-#if defined(__x86_64__) || defined(__i386__)
+#if ENGINE_ARCH_X64 || ENGINE_ARCH_X86
         asm volatile("ud2");
-#elif defined(__aarch64__)
+#elif ENGINE_ARCH_ARM64
         asm volatile(".inst 0x00000000"); // udf #0
 #else
         __builtin_trap();

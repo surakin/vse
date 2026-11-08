@@ -5,8 +5,9 @@
 #include "platform/input.h"
 #include "os/os.h"
 #include "platform/window.h"
+#include "build_defs.h"
 
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
 #include "platform/windows/win32_window.h"
 #else
 #include "platform/linux/wayland/wayland_platform_window.h"
@@ -43,7 +44,7 @@ void ToggleFullscreen(os::Window& window) {
 
 } // namespace
 
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
 
 // Phase 13 Day 158: borderless over the window's monitor (platform/windows/FULLSCREEN.md), and back to the size it had.
 TEST_CASE("A Win32 window toggles fullscreen", "[window][fullscreen]") {

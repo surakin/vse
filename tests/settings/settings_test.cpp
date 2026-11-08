@@ -15,6 +15,7 @@
 #include "store_doubles.h"
 #include "temp_dir.h"
 #include "test_text.h"
+#include "build_defs.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::settings;
@@ -366,7 +367,7 @@ TEST_CASE("Save: only the changed lines of the user's file change, the command l
 }
 
 TEST_CASE("Save: a read-only directory is a status, not a crash, and memory is untouched", "[settings][service][save]") {
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     SKIP("needs a directory that refuses writes: on Windows a directory's read-only attribute does not (an ACL would; not built)");
 #else
     if (::geteuid() == 0) {
@@ -552,7 +553,7 @@ TEST_CASE("Without a write layer a change is in memory only; callbacks may read 
 }
 
 TEST_CASE("Save with the command line's values: they join the user's file, and a failed save takes them out again", "[settings][service][regression]") {
-#if defined(_WIN32)
+#if ENGINE_PLATFORM_WINDOWS
     SKIP("needs a directory that refuses writes: on Windows a directory's read-only attribute does not (an ACL would; not built)");
 #else
     if (::geteuid() == 0) {

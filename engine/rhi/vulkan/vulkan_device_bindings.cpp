@@ -22,7 +22,6 @@ bool PoolIsFull(VkResult r) { return r == VK_ERROR_OUT_OF_POOL_MEMORY || r == VK
 // Vulkan (Phase 13 Day 163), so both share slot 1. Every per-type count below has kDescriptorKinds entries.
 namespace {
 
-constexpr u32 kDescriptorKinds = VulkanDevice::kDescriptorKinds;
 static_assert(static_cast<u32>(BindingType::Count) == 6, "a new BindingType needs a descriptor kind in DescriptorKind()");
 
 u32 DescriptorKind(BindingType type) {
