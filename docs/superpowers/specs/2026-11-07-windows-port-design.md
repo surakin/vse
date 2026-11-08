@@ -171,3 +171,45 @@ parameter (decision 9). Bind groups copy their CPU descriptors into the frame's 
 - The debug-layer run of Spike B, once Graphics Tools is installed.
 - The Phase 13 day files' changes from this spec (decision 9 in Days 163, 166, 168, 171; section 3 items in Days 148, 150, 155, 159, 163) are made in the
   same commit as this spec.
+
+## 8. The Vulkan baselines on the Windows PC (Day 161)
+
+What Days 166, 171 and 173 compare the DX12 backend with, on the same machine. **Machine:** the Windows PC of section 1 (AMD Radeon 860M,
+Vulkan driver 26.10.1), reached over **Remote Desktop**: the session's display is the Remote Display Adapter at 32 Hz, so a vsync-paced
+frame takes 31.25 ms there (with or without the validation layer). The benchmarks render offscreen and are not paced. **Build:**
+`build-msvc-release` (the MSVC toolchain file, `CMAKE_BUILD_TYPE=Release`; `cmake -S . -B build-msvc-release -G Ninja
+-DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/windows-msvc.cmake -DCMAKE_BUILD_TYPE=Release`), validation off. Two runs each; the table gives
+both.
+
+**`rhi_bench`** (512x512 offscreen target, 30 frames per draw measurement). Every draw of the cube benchmark creates a transient bind group
+for its uniform slice, sets the pipeline, the viewport and scissor, the bind group and the vertex and index buffers, and draws
+(`CubeRenderer::DrawWith`), so the per-draw figure is `CreateBindGroup` plus `SetBindGroup` plus a draw with its state:
+
+| Measure | Run 1 | Run 2 |
+|---|---|---|
+| 1000 draws: record / submit / wall per frame | 0.822 / 0.027 / 0.878 ms (0.82 us per draw) | 0.734 / 0.024 / 0.788 ms (0.73 us per draw) |
+| 10000 draws: record / submit / wall per frame | 8.704 / 0.034 / 9.232 ms (0.87 us per draw) | 7.858 / 0.028 / 8.376 ms (0.79 us per draw) |
+| Buffer barrier / texture barrier, per call | 0.175 / 0.183 us | 0.143 / 0.164 us |
+| Upload through the staging ring: 1 MiB x 256 / 64 MiB x 8 | 16245 / 14094 MiB/s | 16682 / 14447 MiB/s |
+| Cube pipeline: no cache / cold cache / warm cache | 18.8 / 22.6 / 21.6 ms | 21.7 / 21.7 / 22.6 ms |
+
+**`renderer_bench`** (1280x720, 300 point lights, the device idled outside the timer, so these are CPU times). The scene draws its objects
+instanced: 16 draw calls whatever the object count, so the per-object figure is the instanced-draw cost per instance:
+
+| Measure | Run 1 | Run 2 |
+|---|---|---|
+| Graph of 1000 passes: build / compile | 26.0 / 25.7 us | 22.8 / 22.5 us |
+| Frame, 1000 objects (932 drawn, 16 draws): single thread / jobs, median | 0.247 / 0.442 ms | 0.234 / 0.406 ms |
+| Frame, 10000 objects (9312 drawn, 16 draws) | 1.282 / 1.782 ms | 1.208 / 1.716 ms |
+| Frame, 50000 objects (46374 drawn, 16 draws) | 6.729 / 7.337 ms | 6.749 / 7.536 ms |
+| Lights: 1000 objects with 0 / 1000 / 16000 point lights | 0.126 / 0.323 / 3.323 ms | 0.129 / 0.311 / 3.299 ms |
+| Transient pool after 105 frames | 5 created, 520 reused (99.0%) | the same |
+
+**The demo scene on the GPU:** `renderer_demo --no-vsync --frames 4000` (Release, 1280x720 window, 540 objects of which 487 are drawn in 16
+draws, about 298 point lights in volume draws): 1.81 to 1.90 ms per frame over two runs, about 540 frames per second.
+
+**A device reset** (`renderer_demo --script` with 20 `reset` words, Debug build, validation off, `--no-vsync`): 238.9 ms median, 257.2 ms worst
+from the apply call; the first good frame 243.8 / 262.4 ms. Split (medians): owners releasing 0.0, destroying the old device 70.4, creating the
+device 56.3, the swapchain 53.5, owners rebuilding 56.1 ms. The same GPU under Linux (RADV, Phase 8 Day 113) took 36 ms (5.9, 9.7, 1.0, 12.3 for
+the same steps): every step is slower here, the swapchain most (54 against 1 ms). A reset still needs no progress display (Phase 8's decision
+asks again at a second or more).

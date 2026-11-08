@@ -232,11 +232,26 @@ Status KnownFolder(REFKNOWNFOLDERID id, Path* out) {
     return s;
 }
 
-// `<known folder>/<app>[/<sub>]`, not created.
-Status AppFolder(REFKNOWNFOLDERID id, StringView app_name, const char* sub, Path* out) {
+// The folder a variable names (%APPDATA%, %LOCALAPPDATA%) when it holds an absolute path, else the known folder Windows keeps for the user.
+// The session sets both variables to the known folders; a test or a launcher points them elsewhere, as $XDG_* on Linux (Day 161).
+Status VariableOrKnownFolder(const wchar_t* variable, REFKNOWNFOLDERID id, Path* out) {
+    wchar_t value[kWidePathCapacity];
+    const DWORD n = GetEnvironmentVariableW(variable, value, static_cast<DWORD>(kWidePathCapacity));
+    if (n > 0 && n < kWidePathCapacity) { // 0: not set; a value too long for the buffer is ignored
+        Path named;
+        if (FromWide(value, n, &named).Ok() && named.IsAbsolute()) {
+            *out = static_cast<Path&&>(named);
+            return Status::Success();
+        }
+    }
+    return KnownFolder(id, out);
+}
+
+// `<%variable% or the known folder>/<app>[/<sub>]`, not created.
+Status AppFolder(const wchar_t* variable, REFKNOWNFOLDERID id, StringView app_name, const char* sub, Path* out) {
     if (!ValidLeaf(app_name) || app_name.Length() > 200) return Status::Of(Error::Invalid);
     Path base;
-    if (Status s = KnownFolder(id, &base); s.Failed()) return s;
+    if (Status s = VariableOrKnownFolder(variable, id, &base); s.Failed()) return s;
     Path result;
     if (!base.TryJoin(Path(app_name, PathStyle::Windows), &result)) return Status::Of(Error::TooLong);
     if (sub != nullptr && !result.TryJoin(Path(StringView(sub), PathStyle::Windows), &result)) return Status::Of(Error::TooLong);
@@ -589,10 +604,10 @@ Status ExecutableDirectory(Path* out) {
     return Status::Success();
 }
 
-Status UserConfigDirectory(StringView app_name, Path* out) { return AppFolder(FOLDERID_RoamingAppData, app_name, nullptr, out); }
-Status UserCacheDirectory(StringView app_name, Path* out) { return AppFolder(FOLDERID_LocalAppData, app_name, "cache", out); }
-Status UserDataDirectory(StringView app_name, Path* out) { return AppFolder(FOLDERID_LocalAppData, app_name, nullptr, out); }
-Status UserStateDirectory(StringView app_name, Path* out) { return AppFolder(FOLDERID_LocalAppData, app_name, "state", out); }
+Status UserConfigDirectory(StringView app_name, Path* out) { return AppFolder(L"APPDATA", FOLDERID_RoamingAppData, app_name, nullptr, out); }
+Status UserCacheDirectory(StringView app_name, Path* out) { return AppFolder(L"LOCALAPPDATA", FOLDERID_LocalAppData, app_name, "cache", out); }
+Status UserDataDirectory(StringView app_name, Path* out) { return AppFolder(L"LOCALAPPDATA", FOLDERID_LocalAppData, app_name, nullptr, out); }
+Status UserStateDirectory(StringView app_name, Path* out) { return AppFolder(L"LOCALAPPDATA", FOLDERID_LocalAppData, app_name, "state", out); }
 
 Status CrashDumpDirectory(Path* out) {
     char app[256];
@@ -610,7 +625,7 @@ Status CrashDumpDirectory(Path* out) {
         app[name.Length()] = '\0';
     }
     Path dir;
-    if (Status s = AppFolder(FOLDERID_LocalAppData, StringView(app), "crashes", &dir); s.Failed()) return s; // validates the name
+    if (Status s = AppFolder(L"LOCALAPPDATA", FOLDERID_LocalAppData, StringView(app), "crashes", &dir); s.Failed()) return s; // validates the name
     if (Status s = CreatePrivateDirectory(dir); s.Failed()) return s;
     *out = static_cast<Path&&>(dir);
     return Status::Success();

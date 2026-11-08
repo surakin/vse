@@ -28,7 +28,7 @@ constexpr u32 kTargetWidth = 96;
 constexpr u32 kTargetHeight = 64;
 
 // The deferred frame on a device the host can replace: every part registers with one registry.
-struct ResetRig {
+struct RendererResetRig {
     DeviceResources registry; // declared first: destroyed last, after the host has told its observers
     rhi::DeviceHost host;
     rhi::TextureHandle target; // an offscreen render target; the rig makes it again after a reset (it has no pixels to keep)
@@ -114,7 +114,7 @@ std::vector<unsigned char> ParameterBytes(rhi::NullDevice* device, MaterialSyste
 
 TEST_CASE("The deferred frame renders the same after a reset and every part is rebuilt", "[recreatable][renderer]") {
     RecQuietLog quiet;
-    ResetRig rig;
+    RendererResetRig rig;
     REQUIRE(rig.Create(false));
     REQUIRE(rig.Render() == FrameStatus::Ok);
     const GBufferStats before = rig.frame.GBufferStatistics();
@@ -135,7 +135,7 @@ TEST_CASE("The deferred frame renders the same after a reset and every part is r
 
 TEST_CASE("Material parameters and bindings are identical after a reset; a bound texture follows the owner's new handle", "[recreatable][material]") {
     RecQuietLog quiet;
-    ResetRig rig;
+    RendererResetRig rig;
     REQUIRE(rig.Create(false));
     MaterialSystem* materials = rig.frame.Materials();
     MaterialId bumps;
@@ -182,7 +182,7 @@ TEST_CASE("Pipelines are rebuilt lazily by default and eagerly with prewarm", "[
     RecQuietLog quiet;
     for (const bool prewarm : {false, true}) {
         INFO("prewarm " << prewarm);
-        ResetRig rig;
+        RendererResetRig rig;
         REQUIRE(rig.Create(prewarm));
         REQUIRE(rig.Render() == FrameStatus::Ok);
         const u32 pipelines = rig.frame.Materials()->Stats().pipelines;
@@ -201,7 +201,7 @@ TEST_CASE("Pipelines are rebuilt lazily by default and eagerly with prewarm", "[
 
 TEST_CASE("The transient pool and the frame buffers are rebuilt and the device holds nothing extra", "[recreatable][pool]") {
     RecQuietLog quiet;
-    ResetRig rig;
+    RendererResetRig rig;
     REQUIRE(rig.Create(false));
     REQUIRE(rig.Render() == FrameStatus::Ok);
     CHECK(rig.frame.PoolStats().textures_live > 0);
@@ -227,7 +227,7 @@ TEST_CASE("The transient pool and the frame buffers are rebuilt and the device h
 
 TEST_CASE("Several resets in a row leave the counts unchanged", "[recreatable][renderer]") {
     RecQuietLog quiet;
-    ResetRig rig;
+    RendererResetRig rig;
     REQUIRE(rig.Create(true));
     REQUIRE(rig.Render() == FrameStatus::Ok);
     rig.host.GetDevice()->Quiesce();
@@ -246,7 +246,7 @@ TEST_CASE("Several resets in a row leave the counts unchanged", "[recreatable][r
 
 TEST_CASE("An offscreen frame is pixel-identical before and after a reset on a real device", "[recreatable][renderer][vulkan][gpu]") {
     RecQuietLog quiet;
-    ResetRig rig;
+    RendererResetRig rig;
     if (!rig.Create(false, rhi::Backend::Vulkan)) {
         rig.host.Destroy();
         SKIP("no suitable Vulkan device");

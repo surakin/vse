@@ -251,26 +251,28 @@ Windows and macOS: the parent of ExecutablePath.
 
 ### `UserConfigDirectory`
 
-Windows: FOLDERID_RoamingAppData; macOS: ~/Library/Application Support (or the sandbox container's).
+Windows: `%APPDATA%\<app>` when the variable holds an absolute path, else FOLDERID_RoamingAppData; macOS: ~/Library/Application Support (or the sandbox container's).
 
 
 ### `UserCacheDirectory`
 
-Windows: FOLDERID_LocalAppData\cache; macOS: ~/Library/Caches.
+Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\cache`; macOS: ~/Library/Caches.
 
 
 ### `UserDataDirectory`
 
-Windows: FOLDERID_LocalAppData; macOS: ~/Library/Application Support.
+Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>`; macOS: ~/Library/Application Support.
 
 
 ### `UserStateDirectory`
 
-Windows: FOLDERID_LocalAppData\state; macOS: ~/Library/Application Support/<app>/state.
+Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\state`; macOS: ~/Library/Application Support/<app>/state.
 
 Windows, as built (Day 152): `SHGetKnownFolderPath`; configuration `RoamingAppData\<app>`, data `LocalAppData\<app>`, cache `LocalAppData\<app>\cache`, state
 `LocalAppData\<app>\state` (grouped per application, the Windows convention). Nothing is created. An application name that Windows cannot keep
-(a device name, a colon, a trailing dot or space, `\`) is `Invalid` besides the POSIX rules.
+(a device name, a colon, a trailing dot or space, `\`) is `Invalid` besides the POSIX rules. From Day 161 `%APPDATA%` and `%LOCALAPPDATA%` come first when they
+hold an absolute path (the session sets them to the same folders), so a test or a launcher can point them elsewhere, as `$XDG_*` on Linux; the crash dump
+directory follows `%LOCALAPPDATA%` too.
 
 ### `CrashDumpDirectory`
 

@@ -22,7 +22,7 @@
 #   is exempt: its programs probe the toolchain and are built outside the engine. Anywhere under engine/, game/, tools/ and tests/
 #   except fixtures; comments are ignored.
 # Rule 5 (Phase 13 Day 158): a windowed program under game/ (a file including platform/window_host.h or platform/window.h) defines no
-#   main, wmain, WinMain or wWinMain; it writes ENGINE_WINDOWED_PROGRAM (platform/entry_point.h). The demos are listed until Day 161.
+#   main, wmain, WinMain or wWinMain; it writes ENGINE_WINDOWED_PROGRAM (platform/entry_point.h).
 cmake_minimum_required(VERSION 3.20)
 
 if(NOT ROOT OR NOT BOUNDARY)
@@ -194,7 +194,7 @@ endforeach()
 # The header's name without its folders, so <um/windows.h> counts as windows.h (Day 150 review).
 set(win_sdk_re "^[ \t]*#[ \t]*include[ \t]*[<\"]([A-Za-z0-9_]+/)*([A-Za-z0-9_]+)\\.h[>\"]")
 set(win_sdk_names "^(windows|winternl|wtsapi32|psapi|dbghelp|shlobj|shlobj_core|shellapi|knownfolders|objbase|combaseapi|processthreadsapi|winbase|winuser|winnt|minwindef|fileapi|handleapi|synchapi|libloaderapi|memoryapi|sysinfoapi|debugapi|errhandlingapi|consoleapi|wincon|winreg|winsock2|ws2tcpip|shtypes|propsys|mmdeviceapi|audioclient|xinput|d3d12[a-z0-9_]*|dxgi[a-z0-9_]*|d3dcommon|d3dcompiler|dxcapi)$")
-set(win_dirs_re "^(engine/foundation/(os|io|settings)/windows/|engine/jobs/windows/|engine/platform/windows/|engine/rhi/vulkan/windows/|engine/rhi/dx12/|tests/windows/|tools/crash_extract/windows/)")
+set(win_dirs_re "^(engine/foundation/(os|io|settings)/windows/|engine/jobs/windows/|engine/platform/windows/|engine/rhi/vulkan/windows/|engine/rhi/dx12/|tests/windows/|tools/crash_extract/windows/|tools/docgen/src/windows/)")
 foreach(f IN LISTS all_files)
   if(f MATCHES "(^|/)fixtures/" OR f MATCHES "^tests/windows/discovery/")
     continue()
@@ -240,10 +240,8 @@ endforeach()
 
 # --- Rule 5 ------------------------------------------------------------------------------------------------------------
 # A windowed program under game/ (a file that includes platform/window_host.h or platform/window.h) defines no main, wmain, WinMain or
-# wWinMain of its own: it writes ENGINE_WINDOWED_PROGRAM (platform/entry_point.h), which makes it a GUI program on Windows. The demos
-# move to the macro on Day 161, when they reach Windows; until then they are listed here, and an entry whose file no longer defines
-# an entry point is stale and fails.
-set(windowed_main_until_day161 "game/rhi_demo/main.cpp" "game/renderer_demo/main.cpp")
+# wWinMain of its own: it writes ENGINE_WINDOWED_PROGRAM (platform/entry_point.h), which makes it a GUI program on Windows (the demos
+# moved to it on Day 161).
 set(entry_def_re "^[ \t]*(extern[ \t]+\"C\"[ \t]+)?int[ \t]+(__stdcall[ \t]+|WINAPI[ \t]+)?(main|wmain|WinMain|wWinMain)[ \t]*\\(")
 set(window_include_re "^[ \t]*#[ \t]*include[ \t]*\"platform/(window_host|window)\\.h\"")
 foreach(f IN LISTS all_files)
@@ -265,13 +263,6 @@ foreach(f IN LISTS all_files)
       list(APPEND entry_lines "${n}")
     endif()
   endforeach()
-  list(FIND windowed_main_until_day161 "${f}" waiting)
-  if(waiting GREATER_EQUAL 0)
-    if(entry_lines STREQUAL "")
-      gate_problem("${f}: listed in check.cmake's windowed_main_until_day161 but defines no main of its own; remove the entry")
-    endif()
-    continue()
-  endif()
   if(windowed)
     foreach(n IN LISTS entry_lines)
       gate_problem("${f}:${n}: a windowed program defines its own entry point; write ENGINE_WINDOWED_PROGRAM(EngineMain) (platform/entry_point.h)")

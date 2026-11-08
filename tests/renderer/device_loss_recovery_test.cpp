@@ -5,8 +5,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "io/directory.h"
-#include "io/file.h"
+#include "os/os.h"
 #include "renderer/device_resources.h"
 #include "renderer/renderer.h"
 #include "rhi/adapter.h"
@@ -400,29 +399,12 @@ TEST_CASE("A real device recovers from a loss at the start and at the submit of 
     }
 }
 
-namespace {
-
-// Resident memory in KiB from /proc/self/statm (0 where unavailable).
-long ResidentKiB() {
-    io::Path statm_path("/proc/self/statm", io::PathStyle::Posix);
-    Vector<u8> bytes;
-    if (io::ReadFile(statm_path, &bytes, 4096).Failed() || bytes.Size() == 0) return 0;
-    char text[128] = {};
-    std::memcpy(text, bytes.Data(), bytes.Size() < sizeof(text) - 1 ? bytes.Size() : sizeof(text) - 1);
-    long pages = 0;
-    long resident = 0;
-    const int n = std::sscanf(text, "%ld %ld", &pages, &resident);
-    return n == 2 ? resident * 4 : 0;
-}
-
-} // namespace
-
 TEST_CASE("Repeated losses on a real device do not keep growing memory", "[recovery][vulkan][gpu]") {
     LossQuietLog quiet;
     DeviceResources registry;
     rhi::DeviceHost host;
     host.AddObserver(&registry, 0);
-    std::atomic<u32> strikes{8};
+    std::atomic<u32> strikes{16};
     rhi::DeviceCreateInfo info;
     info.backend = rhi::Backend::Vulkan;
     info.validation = rhi::ValidationSetting::Off;
@@ -475,26 +457,48 @@ TEST_CASE("Repeated losses on a real device do not keep growing memory", "[recov
         } // otherwise the device (and the target with it) was replaced
         return status;
     };
-    long after_first = 0;
+    // The lowest reading after losses 2 to 4 and after losses 14 to 16: a leak per loss raises the low point, by 12 times the leak. A single
+    // reading is not enough: on Windows (AMD Radeon 860M, Day 161) the process holds one to four extra blocks of device memory after some
+    // losses (the old devices', while the device's own count stays at one block) and gives them back losses later, so one reading can land
+    // on a step.
+    i64 early_low = 0;
+    i64 late_low = 0;
+    u64 device_memory_early = 0;
+    u64 device_memory_late = 0;
     int losses = 0;
-    for (int i = 0; i < 40 && losses < 8; ++i) {
+    for (int i = 0; i < 80 && losses < 16; ++i) {
         if (frame_once() == FrameStatus::DeviceLost) {
             ++losses;
-            if (losses == 2) after_first = ResidentKiB();
+            const i64 now = os::ResidentMemoryKiB();
+            const u64 device_memory = renderer.GetDevice()->Resources().device_memory_bytes;
+            if (losses >= 2 && losses <= 4) {
+                early_low = (early_low == 0 || now < early_low) ? now : early_low;
+                device_memory_early = device_memory;
+            } else if (losses >= 14) {
+                late_low = (late_low == 0 || now < late_low) ? now : late_low;
+                device_memory_late = device_memory;
+            }
         }
     }
-    const long after_last = ResidentKiB();
-    WARN("losses " << losses << ", resident " << after_first << " KiB after the 2nd, " << after_last << " KiB after the last");
-    CHECK(losses == 8);
-    CHECK(renderer.Stats().recoveries == 8);
-#if defined(__has_feature)
+    WARN("losses " << losses << ", lowest resident " << early_low << " KiB after losses 2-4, " << late_low << " KiB after losses 14-16; device memory "
+                   << device_memory_early << " then " << device_memory_late << " bytes");
+    CHECK(losses == 16);
+    CHECK(renderer.Stats().recoveries == 16);
+    CHECK(device_memory_late == device_memory_early); // each new device allocates what the first one did
+#if defined(__SANITIZE_ADDRESS__) // GCC and MSVC
+#define LOSS_TEST_SANITIZED 1
+#elif defined(__has_feature)
 #if __has_feature(address_sanitizer)
 #define LOSS_TEST_SANITIZED 1
 #endif
 #endif
 #ifndef LOSS_TEST_SANITIZED // the sanitizer's quarantine makes resident memory meaningless
-    if (after_first != 0) {
-        CHECK(after_last - after_first < 40 * 1024); // 6 more losses must not cost 40 MiB
+    if (early_low != 0 && late_low != 0) {
+        i64 allowed_kib = 40 * 1024; // 12 more losses must not cost 40 MiB
+#if defined(_WIN32)
+        allowed_kib += 4 * 64 * 1024; // the old devices' memory Windows still counts in the process: up to four 64 MiB blocks (Day 161)
+#endif
+        CHECK(late_low - early_low < allowed_kib);
     }
 #endif
 }

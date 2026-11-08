@@ -1,7 +1,7 @@
 # rhi_demo
 
 The RHI's reference client: a textured, depth-tested cube lit by one directional light that orbits it, drawn through
-the Vulkan backend into a Wayland or X11 window (or offscreen). Nothing here includes a Vulkan header except the
+the Vulkan backend into a window (Wayland or X11 on Linux, Win32 on Windows) or offscreen. Nothing here includes a Vulkan header except the
 backend header used to create the device.
 
 ## Build and run
@@ -14,11 +14,23 @@ cmake --build build --target rhi_demo
 ./build/game/rhi_demo/rhi_demo --screenshot out.ppm      # offscreen, no window: writes a 256x256 PPM
 ```
 
+On Windows (Phase 13), from a terminal in the checkout (`BUILD.md` has the prerequisites; `build-msvc` is configured with the MSVC toolchain file):
+
+```
+cmake --build build-msvc --target rhi_demo
+build-msvc\game\rhi_demo\rhi_demo.exe --frames 1000 --validation
+build-msvc\game\rhi_demo\rhi_demo.exe --help              # printed to the terminal it was started from
+```
+
+It is a windowed program (the Windows subsystem, `ENGINE_WINDOWED_PROGRAM`): started from Explorer it opens no console window; started from a
+terminal its output goes to that terminal. Its settings file is `%APPDATA%\rhi_demo\settings.cfg`, its crash dumps go to
+`%LOCALAPPDATA%\rhi_demo\crashes`.
+
 ## Options
 
 | Option | Meaning |
 |---|---|
-| `--backend wayland\|x11` | display backend; default automatic (Wayland first). Same as `ENGINE_WINDOW_BACKEND` |
+| `--backend wayland\|x11\|win32` | display backend; default automatic (Wayland first on Linux, Win32 on Windows). Same as `ENGINE_WINDOW_BACKEND` |
 | `--frames N` | stop after N frames (also `RHI_DEMO_FRAMES=N`); a run of 200 or more frames also checks that memory did not grow by more than 8 MiB between frame 100 and the end |
 | `--screenshot FILE` | render offscreen with a fixed camera and light, with no window, and write the last frame to FILE as a binary PPM (N frames with `--frames`) |
 | `--no-vsync` | present with `Immediate` instead of `Fifo` |

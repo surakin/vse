@@ -10,7 +10,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <ctime>
 
 #include "algorithm.h"
 #include "debug/program_setup.h"
@@ -18,6 +17,7 @@
 #include "demo_scene.h"
 #include "jobs/scheduler.h"
 #include "mem/arena_allocator.h"
+#include "os/os.h"
 #include "renderer/render_graph.h"
 #include "rhi/null/null_device.h"
 #include "rhi/rhi.h"
@@ -30,11 +30,7 @@ namespace {
 constexpr u32 kWidth = 1280;
 constexpr u32 kHeight = 720;
 
-double Now() {
-    timespec ts{};
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return static_cast<double>(ts.tv_sec) + static_cast<double>(ts.tv_nsec) * 1e-9;
-}
+double Now() { return static_cast<double>(os::MonotonicTimeNanos()) * 1e-9; }
 
 struct Samples {
     double v[512];

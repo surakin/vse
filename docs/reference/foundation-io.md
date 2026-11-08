@@ -1986,7 +1986,7 @@ The per-user configuration directory for an application: `$XDG_CONFIG_HOME/<app>
 |---|---|
 | Parameter `app_name` | one path component (no separators, not `.` or `..`). |
 | Fails | `Invalid` (a bad app name), `NotFound` (no home directory is known). |
-| Backend | Windows: FOLDERID_RoamingAppData; macOS: ~/Library/Application Support (or the sandbox container's). |
+| Backend | Windows: `%APPDATA%\<app>` when the variable holds an absolute path, else FOLDERID_RoamingAppData; macOS: ~/Library/Application Support (or the sandbox container's). |
 
 ## `UserCacheDirectory(StringView,Path*)` {#io-usercachedirectory-stringview-path-star}
 
@@ -2001,7 +2001,7 @@ The per-user cache directory: `$XDG_CACHE_HOME/<app>` or `<home>/.cache/<app>` o
 | Field | Value |
 |---|---|
 | Fails | as [`io::UserConfigDirectory`](#io-userconfigdirectory-stringview-path-star). |
-| Backend | Windows: FOLDERID_LocalAppData\<app>\cache; macOS: ~/Library/Caches. |
+| Backend | Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\cache`; macOS: ~/Library/Caches. |
 
 ## `UserDataDirectory(StringView,Path*)` {#io-userdatadirectory-stringview-path-star}
 
@@ -2016,7 +2016,7 @@ The per-user data directory: `$XDG_DATA_HOME/<app>` or `<home>/.local/share/<app
 | Field | Value |
 |---|---|
 | Fails | as [`io::UserConfigDirectory`](#io-userconfigdirectory-stringview-path-star). |
-| Backend | Windows: FOLDERID_LocalAppData; macOS: ~/Library/Application Support. |
+| Backend | Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>`; macOS: ~/Library/Application Support. |
 
 ## `UserStateDirectory(StringView,Path*)` {#io-userstatedirectory-stringview-path-star}
 
@@ -2031,7 +2031,7 @@ The per-user state directory: `$XDG_STATE_HOME/<app>` or `<home>/.local/state/<a
 | Field | Value |
 |---|---|
 | Fails | as [`io::UserConfigDirectory`](#io-userconfigdirectory-stringview-path-star). |
-| Backend | Windows: FOLDERID_LocalAppData\<app>\state; macOS: ~/Library/Application Support/<app>/state. |
+| Backend | Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\state`; macOS: ~/Library/Application Support/<app>/state. |
 
 ## `CrashDumpDirectory(Path*)` {#io-crashdumpdirectory-path-star}
 

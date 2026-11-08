@@ -205,6 +205,12 @@ plain and ASan flavors, not in TSan. **The cross-adapter comparison** (a discret
 **switching adapters on real hardware** need a machine with two GPUs; the development machine has one, so those checks are not written as
 skipped tests but filed in `KNOWN-ISSUES.md`.
 
+**Measuring a leak across resets.** The memory and handle checks read [[os::ResidentMemoryKiB]] and [[os::OpenHandleCount]] (the resident set
+and the file descriptors on Linux, the working set and the kernel handles on Windows). Compare the lowest reading of an early stretch of resets
+with the lowest of a late one, not two single readings: on Windows (AMD Radeon 860M, Phase 13 Day 161) the process holds one to four more 64 MiB
+device-memory blocks after some resets or losses, while the device's own count (`ResourceCounts::device_memory_bytes`) does not change, and
+gives them back later. The checks allow four such blocks on Windows.
+
 ### The RHI boundary gate
 
 `rhi_boundary_check` (label `boundary`, no GPU needed) enforces the rule that only `engine/rhi/vulkan/` may name the

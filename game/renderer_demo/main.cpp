@@ -1,25 +1,23 @@
 // renderer_demo: the Phase 5 showcase. A few hundred lit objects in eight materials, hundreds of point lights and a sun,
-// drawn by the deferred renderer (G-buffer, light volumes, ACES tonemap) into a Wayland or X11 window, or offscreen.
+// drawn by the deferred renderer (G-buffer, light volumes, ACES tonemap) into a window (Wayland, X11 or Win32), or offscreen.
 // Tab switches between the orbit and fly cameras. See README.md for the options and controls.
 
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <ctime>
-
-#include <unistd.h>
 
 #include "settings_main.h"
 #include "renderer/shared_settings.h"
 #include "textures.h"
-#include "io/directory.h"
 #include "io/file.h"
 #include "io/file_system.h"
 #include "debug/program_setup.h"
 #include "containers/vector.h"
 #include "demo_frame.h"
 #include "demo_scene.h"
+#include "os/os.h"
+#include "platform/entry_point.h"
 #include "platform/input.h"
 #include "platform/window_host.h"
 #include "renderer/camera.h"
@@ -54,7 +52,7 @@ constexpr u32 kShotHeight = 360;
 struct Options {
     long frames = 0;                  // 0: until the window closes
     const char* screenshot = nullptr; // render offscreen to this PPM and exit
-    const char* backend = nullptr;    // wayland, x11 or null for automatic
+    const char* backend = "auto";     // the display backend: auto, wayland, x11 or win32 (the setting platform.window_backend)
     bool no_vsync = false;
     bool validation = false;
     long objects = 540;
@@ -68,33 +66,7 @@ struct Options {
     const char* script = nullptr;         // --script: the live paths without a keyboard
 };
 
-double NowSeconds() {
-    timespec ts{};
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return static_cast<double>(ts.tv_sec) + static_cast<double>(ts.tv_nsec) * 1e-9;
-}
-
-long ResidentKiB() {
-    io::Path statm_path("/proc/self/statm", io::PathStyle::Posix);
-    Vector<u8> bytes;
-    if (io::ReadFile(statm_path, &bytes, 4096).Failed() || bytes.Size() == 0) return 0;
-    char text[128] = {};
-    std::memcpy(text, bytes.Data(), bytes.Size() < sizeof(text) - 1 ? bytes.Size() : sizeof(text) - 1);
-    long size = 0, resident = 0;
-    const int read = std::sscanf(text, "%ld %ld", &size, &resident);
-    return read == 2 ? resident * (sysconf(_SC_PAGESIZE) / 1024) : 0;
-}
-
-long OpenDescriptors() {
-    long count = 0;
-    io::Directory fds;
-    if (io::Directory::Open(io::Path("/proc/self/fd", io::PathStyle::Posix), &fds).Ok()) {
-        io::DirectoryEntry entry;
-        bool found = false;
-        while (fds.Next(&entry, &found).Ok() && found) ++count;
-    }
-    return count - 1; // the descriptor of the directory itself
-}
+double NowSeconds() { return static_cast<double>(os::MonotonicTimeNanos()) * 1e-9; }
 
 f32 Clamp(f32 v, f32 lo, f32 hi) { return v < lo ? lo : (v > hi ? hi : v); }
 
@@ -376,7 +348,7 @@ struct Script {
 int RunWindow(const Options& options, RenderSettings settings) {
     os::InputState input;
     os::PlatformWindowHost window_host;
-    if (!window_host.OpenFromEnvironment("renderer_demo", 1280, 720, &input)) {
+    if (!window_host.Open(os::ParseWindowBackend(StringView(options.backend)), "renderer_demo", 1280, 720, &input)) {
         RhiLogV(LogVerbosity::Error, "renderer_demo: could not open a window");
         return kExitFailure;
     }
@@ -472,9 +444,73 @@ int RunWindow(const Options& options, RenderSettings settings) {
                     measure_start = t;
                 }
             };
-            while (!quit && !window->ShouldClose() && (options.frames <= 0 || frames < options.frames)) {
+            bool stop = false; // set by a frame that failed or lost the device for good; the run ends after it
+            // One frame with the scene and the camera as they are. The loop below calls it, and so does the window while Windows holds the
+            // thread in its own loop (the user dragging the window's frame), so the picture follows the size while the frame is dragged.
+            auto draw = [&]() {
+                if (stop || (options.frames > 0 && frames >= options.frames)) return; // (the window's loop may call again after the run ended)
+                const double now_time = NowSeconds();
+                const f32 dt = static_cast<f32>(now_time - previous < 0.1 ? now_time - previous : 0.1);
+                previous = now_time;
+                controller.Update(input, dt);
+                const f32 seconds = static_cast<f32>(now_time - start);
+                scene.Animate(seconds);
+                rhi::Swapchain* swapchain = renderer.GetSwapchain();
+                const f32 aspect = swapchain != nullptr && swapchain->Height() > 0 ? static_cast<f32>(swapchain->Width()) / static_cast<f32>(swapchain->Height()) : 1.0f;
+                Camera camera = controller.Get(aspect);
+                FitCameraDepthRange(scene.Scene(), &camera, 0.1f);
+                frame.SetTime(seconds, dt);
+                const FrameStatus status = frame.Render(&scene.Scene(), &camera, nullptr);
+                if (status == FrameStatus::DeviceLost) {
+                    if (renderer.IsBroken() || options.inject_device_loss != 0) {
+                        RhiLogV(LogVerbosity::Error, "renderer_demo: the GPU device was lost; stopping");
+                        exit_code = kExitDeviceLost;
+                        stop = true;
+                        return;
+                    }
+                    RhiLogV(LogVerbosity::Warn, "renderer_demo: the GPU device was lost; recovering");
+                    ++frames;
+                    return;
+                }
+                if (status == FrameStatus::Failed) {
+                    RhiLogV(LogVerbosity::Error, "renderer_demo: a frame failed: %s", frame.LastError());
+                    exit_code = kExitFailure;
+                    stop = true;
+                    return;
+                }
+                if (status == FrameStatus::Skipped) { // minimized or recovering: wait without spinning; it still counts toward --frames
+                    ++frames;
+                    os::SleepNanos(10 * 1000 * 1000);
+                    return;
+                }
+                if (measure_next_frame) {
+                    RhiLogV(LogVerbosity::Info, "renderer_demo: first good frame %.2f ms after the change was asked for", (NowSeconds() - measure_start) * 1000.0);
+                    measure_next_frame = false;
+                }
+                ++frames;
+                ++window_frames;
+                if (rss_at_start == 0 && frames >= kMemoryCheckStart) rss_at_start = static_cast<long>(os::ResidentMemoryKiB());
+                const double now = NowSeconds();
+                if (now - window_start >= 1.0) {
+                    RhiLogV(LogVerbosity::Info, "renderer_demo: %llu frames, %.3f ms/frame, %u objects drawn in %u draws, %u point lights (%u culled, %u dropped), %u volume draws",
+                            static_cast<unsigned long long>(window_frames), (now - window_start) * 1000.0 / static_cast<double>(window_frames),
+                            frame.GBufferStatistics().drawn_objects, frame.GBufferStatistics().draws, frame.Lights().point_count, frame.Lights().point_culled,
+                            frame.Lights().dropped, frame.PointDraws());
+                    window_start = now;
+                    window_frames = 0;
+                }
+            };
+            using Draw = decltype(draw);
+            window->SetModalLoopCallback(
+                [](void* user) {
+                    Draw& frame_once = *static_cast<Draw*>(user);
+                    frame_once();
+                },
+                &draw);
+            while (!quit && !stop && !window->ShouldClose() && (options.frames <= 0 || frames < options.frames)) {
                 input.BeginFrame();
-                window->PumpEvents();
+                window->PumpEvents(); // may draw frames itself (above), and so end the run
+                if (stop) break;
                 // Script words that are due.
                 while (script.next < script.count && frames >= script.wait_until) {
                     const char* word = script.words[script.next++];
@@ -567,63 +603,16 @@ int RunWindow(const Options& options, RenderSettings settings) {
                         previous_keys[k] = down;
                     }
                 }
-                const double now_time = NowSeconds();
-                const f32 dt = static_cast<f32>(now_time - previous < 0.1 ? now_time - previous : 0.1);
-                previous = now_time;
-                controller.Update(input, dt);
-                const f32 seconds = static_cast<f32>(now_time - start);
-                scene.Animate(seconds);
-                rhi::Swapchain* swapchain = renderer.GetSwapchain();
-                const f32 aspect = swapchain != nullptr && swapchain->Height() > 0 ? static_cast<f32>(swapchain->Width()) / static_cast<f32>(swapchain->Height()) : 1.0f;
-                Camera camera = controller.Get(aspect);
-                FitCameraDepthRange(scene.Scene(), &camera, 0.1f);
-                frame.SetTime(seconds, dt);
-                const FrameStatus status = frame.Render(&scene.Scene(), &camera, nullptr);
-                if (status == FrameStatus::DeviceLost) {
-                    if (renderer.IsBroken() || options.inject_device_loss != 0) {
-                        RhiLogV(LogVerbosity::Error, "renderer_demo: the GPU device was lost; stopping");
-                        exit_code = kExitDeviceLost;
-                        break;
-                    }
-                    RhiLogV(LogVerbosity::Warn, "renderer_demo: the GPU device was lost; recovering");
-                    ++frames;
-                    continue;
-                }
-                if (status == FrameStatus::Failed) {
-                    RhiLogV(LogVerbosity::Error, "renderer_demo: a frame failed: %s", frame.LastError());
-                    exit_code = kExitFailure;
-                    break;
-                }
-                if (status == FrameStatus::Skipped) { // minimized or recovering: wait without spinning; it still counts toward --frames
-                    ++frames;
-                    timespec nap{0, 10 * 1000 * 1000};
-                    nanosleep(&nap, nullptr);
-                    continue;
-                }
-                if (measure_next_frame) {
-                    RhiLogV(LogVerbosity::Info, "renderer_demo: first good frame %.2f ms after the change was asked for", (NowSeconds() - measure_start) * 1000.0);
-                    measure_next_frame = false;
-                }
-                ++frames;
-                ++window_frames;
-                if (rss_at_start == 0 && frames >= kMemoryCheckStart) rss_at_start = ResidentKiB();
-                const double now = NowSeconds();
-                if (now - window_start >= 1.0) {
-                    RhiLogV(LogVerbosity::Info, "renderer_demo: %llu frames, %.3f ms/frame, %u objects drawn in %u draws, %u point lights (%u culled, %u dropped), %u volume draws",
-                            static_cast<unsigned long long>(window_frames), (now - window_start) * 1000.0 / static_cast<double>(window_frames),
-                            frame.GBufferStatistics().drawn_objects, frame.GBufferStatistics().draws, frame.Lights().point_count, frame.Lights().point_culled,
-                            frame.Lights().dropped, frame.PointDraws());
-                    window_start = now;
-                    window_frames = 0;
-                }
+                draw();
             }
+            window->SetModalLoopCallback(nullptr, nullptr); // `draw` ends with this scope
             if (exit_code == kExitOk && options.frames >= kMemoryCheckFrames && rss_at_start == 0) {
                 RhiLogV(LogVerbosity::Warn, "renderer_demo: the memory check did not run (fewer than %ld frames were drawn)", kMemoryCheckStart);
             }
             if (exit_code == kExitOk && options.frames >= kMemoryCheckFrames && rss_at_start > 0) {
-                const long rss_at_end = ResidentKiB();
-                RhiLogV(LogVerbosity::Info, "renderer_demo: resident memory %ld KiB at frame %ld, %ld KiB at frame %ld; %ld open descriptors; %llu resets", rss_at_start, kMemoryCheckStart, rss_at_end, frames,
-                        OpenDescriptors(), static_cast<unsigned long long>(renderer.Stats().resets));
+                const long rss_at_end = static_cast<long>(os::ResidentMemoryKiB());
+                RhiLogV(LogVerbosity::Info, "renderer_demo: resident memory %ld KiB at frame %ld, %ld KiB at frame %ld; %lld open handles; %llu resets", rss_at_start, kMemoryCheckStart, rss_at_end, frames,
+                        static_cast<long long>(os::OpenHandleCount()), static_cast<unsigned long long>(renderer.Stats().resets));
                 if (rss_at_end - rss_at_start > kMemoryGrowthLimitKiB && options.script == nullptr) { // a script resets devices on purpose: report only
                     RhiLogV(LogVerbosity::Error, "renderer_demo: memory grew by %ld KiB over the run", rss_at_end - rss_at_start);
                     exit_code = kExitFailure;
@@ -656,7 +645,7 @@ int ParseLayer(const char* name) {
 }
 
 const char kUsageFormat[] =
-                 "usage: %s [--backend wayland|x11] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
+                 "usage: %s [--backend wayland|x11|win32] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
                  "       [--objects N] [--lights N] [--gbuffer albedo|normal|material|depth|worldpos]\n"
                  "       [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus] [--prewarm]\n"
                  "       [--script WORDS]\n"
@@ -682,7 +671,9 @@ int Usage(const char* program, int code) {
 
 } // namespace
 
-int main(int argc, char** argv) {
+// The program's entry point (platform/entry_point.h): ENGINE_WINDOWED_PROGRAM at the end of the file makes it `main` on Linux and
+// `wWinMain` (the Windows subsystem, no console window of its own) on Windows.
+int EngineMain(int argc, char** argv) {
     const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(argc, argv);
     engine_placeholder::debug::RunCrashTest(debug_setup.crash_test); // --crash-test=segv|abort|assert|ensure, before any window or device
     LogRhi.SetVerbosity(LogVerbosity::Info); // the frame-time line is Info
@@ -752,7 +743,7 @@ int main(int argc, char** argv) {
     if (effective.gpu[0] != '\0') options.gpu = effective.gpu;
     options.no_vsync = effective.immediate;
     options.validation = effective.validation;
-    if (std::strcmp(effective.window_backend, "auto") != 0) setenv("ENGINE_WINDOW_BACKEND", effective.window_backend, 1);
+    options.backend = effective.window_backend; // --backend, ENGINE_WINDOW_BACKEND or a file, through the settings
     if (options.list_gpus) return ListGpus();
     RenderSettings settings = renderer::RenderSettingsFromSnapshot(demo_settings.GetRegistry(), *demo_settings.Get().Snapshot());
     settings.SetEnum(renderer::settings::kBackend, 1); // the demo draws with Vulkan
@@ -762,3 +753,5 @@ int main(int argc, char** argv) {
     }
     return RunWindow(options, settings);
 }
+
+ENGINE_WINDOWED_PROGRAM(EngineMain)

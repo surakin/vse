@@ -5,6 +5,9 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#if defined(_WIN32)
+#include <malloc.h> // _aligned_malloc, _aligned_free
+#endif
 #include <new>
 #include <string>
 #include <vector>
@@ -23,27 +26,42 @@
 #define RENDER_GRAPH_TEST_SANITIZED 1
 #endif
 #endif
+#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_THREAD__) // GCC and MSVC
+#define RENDER_GRAPH_TEST_SANITIZED 1
+#endif
 
 static std::atomic<unsigned long> g_heap_allocations{0};
 
 #ifndef RENDER_GRAPH_TEST_NO_NEW_COUNTER
-// Every form is replaced so allocation and release always pair up (sanitizers check that).
+// Every form is replaced so allocation and release always pair up (sanitizers check that). `align` is 0 for the plain forms. On
+// Windows, memory from _aligned_malloc goes back through _aligned_free, so the aligned forms always take that path there.
 static void* CountedAlloc(std::size_t size, std::size_t align) {
     g_heap_allocations.fetch_add(1, std::memory_order_relaxed);
     if (size == 0) size = 1;
-    if (align <= alignof(std::max_align_t)) return std::malloc(size);
-    return std::aligned_alloc(align, (size + align - 1) / align * align);
+#if defined(_WIN32)
+    if (align != 0) return _aligned_malloc(size, align);
+#else
+    if (align > alignof(std::max_align_t)) return std::aligned_alloc(align, (size + align - 1) / align * align);
+#endif
+    return std::malloc(size);
+}
+static void AlignedFree(void* p) noexcept {
+#if defined(_WIN32)
+    _aligned_free(p);
+#else
+    std::free(p);
+#endif
 }
 void* operator new(std::size_t n) {
-    if (void* p = CountedAlloc(n, 1)) return p;
+    if (void* p = CountedAlloc(n, 0)) return p;
     throw std::bad_alloc();
 }
 void* operator new[](std::size_t n) {
-    if (void* p = CountedAlloc(n, 1)) return p;
+    if (void* p = CountedAlloc(n, 0)) return p;
     throw std::bad_alloc();
 }
-void* operator new(std::size_t n, const std::nothrow_t&) noexcept { return CountedAlloc(n, 1); }
-void* operator new[](std::size_t n, const std::nothrow_t&) noexcept { return CountedAlloc(n, 1); }
+void* operator new(std::size_t n, const std::nothrow_t&) noexcept { return CountedAlloc(n, 0); }
+void* operator new[](std::size_t n, const std::nothrow_t&) noexcept { return CountedAlloc(n, 0); }
 void* operator new(std::size_t n, std::align_val_t a) {
     if (void* p = CountedAlloc(n, static_cast<std::size_t>(a))) return p;
     throw std::bad_alloc();
@@ -60,12 +78,12 @@ void operator delete(void* p, std::size_t) noexcept { std::free(p); }
 void operator delete[](void* p, std::size_t) noexcept { std::free(p); }
 void operator delete(void* p, const std::nothrow_t&) noexcept { std::free(p); }
 void operator delete[](void* p, const std::nothrow_t&) noexcept { std::free(p); }
-void operator delete(void* p, std::align_val_t) noexcept { std::free(p); }
-void operator delete[](void* p, std::align_val_t) noexcept { std::free(p); }
-void operator delete(void* p, std::align_val_t, const std::nothrow_t&) noexcept { std::free(p); }
-void operator delete[](void* p, std::align_val_t, const std::nothrow_t&) noexcept { std::free(p); }
-void operator delete(void* p, std::size_t, std::align_val_t) noexcept { std::free(p); }
-void operator delete[](void* p, std::size_t, std::align_val_t) noexcept { std::free(p); }
+void operator delete(void* p, std::align_val_t) noexcept { AlignedFree(p); }
+void operator delete[](void* p, std::align_val_t) noexcept { AlignedFree(p); }
+void operator delete(void* p, std::align_val_t, const std::nothrow_t&) noexcept { AlignedFree(p); }
+void operator delete[](void* p, std::align_val_t, const std::nothrow_t&) noexcept { AlignedFree(p); }
+void operator delete(void* p, std::size_t, std::align_val_t) noexcept { AlignedFree(p); }
+void operator delete[](void* p, std::size_t, std::align_val_t) noexcept { AlignedFree(p); }
 #endif
 
 using namespace engine_placeholder;

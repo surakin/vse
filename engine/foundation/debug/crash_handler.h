@@ -63,6 +63,9 @@ enum class CrashHandlerResult : u8 {
 /// Install it once, early in `main`, after [[debug::InitDebugFacilities]]. A handler a program installs for the same
 /// signals **after** this call must call the one it replaced (the library's handler runs only if it is called).
 ///
+/// On Windows, while it is installed, `abort()` neither shows the C runtime's "abort() has been called" dialog (Debug builds) nor calls
+/// Windows Error Reporting: the handler writes the report and the dump, and nothing waits for a click.
+///
 /// Param options: how to set it up.
 /// Returns: what happened; on anything but `Installed` or `AlreadyInstalled` the program runs on without a handler.
 /// Fails: see [[debug::CrashHandlerResult]]; a failure is logged as a warning, never fatal.

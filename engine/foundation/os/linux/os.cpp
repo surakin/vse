@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <dirent.h>
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -99,6 +100,32 @@ void* ReserveMemory(usize size) {
 
 void ReleaseMemory(void* addr, usize size) {
     ::munmap(addr, size);
+}
+
+i64 ResidentMemoryKiB() {
+    const int fd = ::open("/proc/self/statm", O_RDONLY | O_CLOEXEC);
+    if (fd < 0) return 0;
+    char text[128];
+    const ssize_t n = ::read(fd, text, sizeof(text) - 1);
+    ::close(fd);
+    if (n <= 0) return 0;
+    text[n] = '\0';
+    long pages = 0;
+    long resident = 0;
+    if (std::sscanf(text, "%ld %ld", &pages, &resident) != 2) return 0;
+    const long page_bytes = ::sysconf(_SC_PAGESIZE);
+    return page_bytes > 0 ? static_cast<i64>(resident) * (page_bytes / 1024) : 0;
+}
+
+i64 OpenHandleCount() {
+    DIR* dir = ::opendir("/proc/self/fd");
+    if (dir == nullptr) return 0;
+    i64 count = 0;
+    while (const dirent* entry = ::readdir(dir)) {
+        if (entry->d_name[0] != '.') ++count; // not . and ..
+    }
+    ::closedir(dir);
+    return count > 0 ? count - 1 : 0; // without the descriptor of the directory itself
 }
 
 u64 MonotonicTimeNanos() {

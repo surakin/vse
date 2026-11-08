@@ -1,26 +1,15 @@
 #include "samples.h"
 
-#if !defined(_WIN32) // the runner starts the compiler and the samples with posix_spawn; on Windows it comes with the libraries (Phase 13 Day 161)
-#include <fcntl.h>
-#include <signal.h>
-#include <spawn.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <time.h>
-#include <unistd.h>
-#endif
-
-#include <cerrno>
+#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
+#include "child_process.h"
 #include "io/file.h"
+#include "io/path.h"
+#include "os/os.h"
 #include "source_file.h"
-
-#if !defined(_WIN32)
-extern char** environ;
-#endif
 
 namespace docgen {
 
@@ -58,12 +47,7 @@ bool BlankBetween(StringView text, const Vector<usize, ArenaAllocator>& starts, 
     return true;
 }
 
-#if !defined(_WIN32)
-double Now() {
-    timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return static_cast<double>(ts.tv_sec) + static_cast<double>(ts.tv_nsec) / 1e9;
-}
+double Now() { return static_cast<double>(engine_placeholder::os::MonotonicTimeNanos()) / 1e9; }
 
 StringView Num(ArenaAllocator& arena, u32 n) {
     engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
@@ -71,7 +55,11 @@ StringView Num(ArenaAllocator& arena, u32 n) {
     return sb.View();
 }
 
-#endif // !_WIN32
+StringView Hex(ArenaAllocator& arena, u32 n) {
+    char text[16];
+    std::snprintf(text, sizeof(text), "0x%08X", n);
+    return ArenaCat(arena, StringView(text, std::strlen(text)), StringView());
+}
 
 // The code with `indent` leading columns removed from every line.
 StringView Dedent(StringView code, u32 indent, ArenaAllocator& arena) {
@@ -89,7 +77,6 @@ StringView Dedent(StringView code, u32 indent, ArenaAllocator& arena) {
     return sb.View();
 }
 
-#if !defined(_WIN32)
 StringView ReadSmall(StringView path, ArenaAllocator& arena) {
     // Captured output can be huge (a template error cascade): the first 1 MiB is kept, the rest dropped.
     constexpr usize kLimit = usize{1} << 20;
@@ -107,6 +94,17 @@ StringView ReadSmall(StringView path, ArenaAllocator& arena) {
         if (file->Read(buf, sizeof(buf), total, &n).Failed() || n == 0) break;
         sb.Append(StringView(buf, n));
         total += n;
+    }
+    return sb.View();
+}
+
+// `s` with the carriage return of every CR LF line end removed: a program's text output on Windows ends its lines with CR LF, and the
+// expected output in the Markdown with LF.
+StringView WithoutCarriageReturns(StringView s, ArenaAllocator& arena) {
+    engine_placeholder::StringBuilder<ArenaAllocator> sb(arena);
+    for (usize i = 0; i < s.Length(); ++i) {
+        if (s[i] == '\r' && i + 1 < s.Length() && s[i + 1] == '\n') continue;
+        sb.Append(s[i]);
     }
     return sb.View();
 }
@@ -137,10 +135,16 @@ StringView Excerpt(StringView s, u32 max_lines, ArenaAllocator& arena) {
 
 enum class Stage : engine_placeholder::u8 { Pending, Compiling, Compiled, Running, Done };
 
+#if defined(_WIN32)
+constexpr char kObjectSuffix[] = ".obj";
+#else
+constexpr char kObjectSuffix[] = ".o";
+#endif
+
 struct Task {
     const Sample* sample = nullptr;
     Stage stage = Stage::Pending;
-    pid_t pid = -1;
+    ChildProcess child;
     double deadline = 0;
     bool ok = false;
     StringView src, exe, obj, cc_out, run_out, run_err;
@@ -160,14 +164,10 @@ public:
         if (samples.Size() == 0) return true;
         if (opt_.compiler.Empty()) return false;
         if (!MakeScratch()) return false;
-        // Children run in their own process groups, so Ctrl-C would not reach them: stop them ourselves.
+        // Children run in their own process groups (Windows: job objects), so Ctrl-C would not reach them: stop them ourselves.
         g_stop = 0;
-        struct sigaction sa, old_int, old_term;
-        std::memset(&sa, 0, sizeof(sa));
-        sa.sa_handler = OnSignal;
-        sigemptyset(&sa.sa_mask);
-        sigaction(SIGINT, &sa, &old_int);
-        sigaction(SIGTERM, &sa, &old_term);
+        void (*const old_int)(int) = std::signal(SIGINT, &OnSignal);
+        void (*const old_term)(int) = std::signal(SIGTERM, &OnSignal);
         for (usize i = 0; i < samples.Size(); ++i) {
             Task* t = static_cast<Task*>(arena_.Alloc(sizeof(Task), alignof(Task)));
             new (t) Task();
@@ -178,7 +178,7 @@ public:
             base.AppendUInt(i);
             StringView b = ArenaCat(arena_, base.View(), StringView());
             t->src = ArenaCat(arena_, b, StringView(".cpp"));
-            t->obj = ArenaCat(arena_, b, StringView(".o"));
+            t->obj = ArenaCat(arena_, b, StringView(kObjectSuffix));
             t->exe = ArenaCat(arena_, b, StringView(".exe"));
             t->cc_out = ArenaCat(arena_, b, StringView(".cc.txt"));
             t->run_out = ArenaCat(arena_, b, StringView(".out.txt"));
@@ -190,8 +190,8 @@ public:
             const Task& t = *tasks_[i];
             if (!t.failure.Empty()) out_.Push(FileDiag{t.sample->path, Diagnostic{Severity::Error, t.sample->line, t.failure}});
         }
-        sigaction(SIGINT, &old_int, nullptr);
-        sigaction(SIGTERM, &old_term, nullptr);
+        std::signal(SIGINT, old_int == SIG_ERR ? SIG_DFL : old_int);
+        std::signal(SIGTERM, old_term == SIG_ERR ? SIG_DFL : old_term);
         Cleanup();
         return true;
     }
@@ -240,31 +240,6 @@ private:
         return sb.View();
     }
 
-    bool Spawn(const Vector<StringView, ArenaAllocator>& args, StringView out_path, StringView err_path, bool merge_err, bool in_scratch,
-               pid_t& pid) {
-        Vector<char*, ArenaAllocator> argv(arena_);
-        for (usize i = 0; i < args.Size(); ++i) argv.Push(const_cast<char*>(args[i].Data()));
-        argv.Push(nullptr);
-        posix_spawn_file_actions_t fa;
-        posix_spawn_file_actions_init(&fa);
-        posix_spawn_file_actions_addopen(&fa, 0, "/dev/null", O_RDONLY, 0);
-        posix_spawn_file_actions_addopen(&fa, 1, out_path.Data(), O_WRONLY | O_CREAT | O_TRUNC, 0600);
-        if (merge_err) posix_spawn_file_actions_adddup2(&fa, 1, 2);
-        else posix_spawn_file_actions_addopen(&fa, 2, err_path.Data(), O_WRONLY | O_CREAT | O_TRUNC, 0600);
-        // Compilers keep the caller's directory (relative compiler/flag paths still work); programs run in the scratch directory.
-        if (in_scratch) posix_spawn_file_actions_addchdir_np(&fa, scratch_.Data());
-        posix_spawnattr_t attr;
-        posix_spawnattr_init(&attr);
-        posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETPGROUP); // own process group: a timeout kills the whole tree
-        posix_spawnattr_setpgroup(&attr, 0);
-        const bool has_slash = args[0].IndexOf('/') != args[0].Length();
-        const int rc = has_slash ? posix_spawn(&pid, args[0].Data(), &fa, &attr, &argv[0], environ)
-                                 : posix_spawnp(&pid, args[0].Data(), &fa, &attr, &argv[0], environ);
-        posix_spawn_file_actions_destroy(&fa);
-        posix_spawnattr_destroy(&attr);
-        return rc == 0;
-    }
-
     void StartCompile(Task& t) {
         const Sample& s = *t.sample;
         if (!WriteText(t.src, Generate(s))) {
@@ -276,6 +251,19 @@ private:
         a.Push(opt_.compiler);
         for (usize i = 0; i < opt_.flags.Size(); ++i) a.Push(opt_.flags[i]);
         for (usize i = 0; i < opt_.includes.Size(); ++i) a.Push(ArenaCat(arena_, StringView("-I"), opt_.includes[i]));
+#if defined(_WIN32)
+        // cl and clang-cl (the compilers of the Windows build) name their outputs with /Fe and /Fo; arguments after the source that are
+        // not options (the libraries) go to the linker, and so does everything after /link.
+        if (s.run) {
+            a.Push(t.src);
+            a.Push(ArenaCat(arena_, StringView("/Fe"), t.exe));
+            for (usize i = 0; i < opt_.links.Size(); ++i) a.Push(opt_.links[i]);
+        } else {
+            a.Push(StringView("/c"));
+            a.Push(t.src);
+            a.Push(ArenaCat(arena_, StringView("/Fo"), t.obj));
+        }
+#else
         if (s.run) {
             a.Push(t.src);
             a.Push(StringView("-o"));
@@ -287,7 +275,9 @@ private:
             a.Push(StringView("-o"));
             a.Push(t.obj);
         }
-        if (!Spawn(a, t.cc_out, StringView(), true, false, t.pid)) {
+#endif
+        // Compilers keep the caller's directory (relative compiler/flag paths still work); programs run in the scratch directory.
+        if (!StartChild(a, t.cc_out, StringView(), StringView(), arena_, &t.child)) {
             t.stage = Stage::Done;
             Fail(t, ArenaCat(arena_, StringView("sample: cannot start the compiler '"), opt_.compiler, StringView("'")));
             return;
@@ -299,7 +289,7 @@ private:
     void StartRun(Task& t) {
         Vector<StringView, ArenaAllocator> a(arena_);
         a.Push(t.exe);
-        if (!Spawn(a, t.run_out, t.run_err, false, true, t.pid)) {
+        if (!StartChild(a, t.run_out, t.run_err, scratch_, arena_, &t.child)) {
             t.stage = Stage::Done;
             Fail(t, StringView("sample: cannot start the compiled program"));
             return;
@@ -333,14 +323,14 @@ private:
         }
     }
 
-    void Finish(Task& t, int status, bool timed_out) {
+    void Finish(Task& t, const ChildEnd& end, bool timed_out) {
         const Sample& s = *t.sample;
         if (t.stage == Stage::Compiling) {
             StringView log = ReadSmall(t.cc_out, arena_);
             if (timed_out) {
                 Fail(t, ArenaCat(arena_, StringView("sample: compiler timed out after "), Num(arena_, opt_.compile_timeout_s), StringView(" s")));
                 t.stage = Stage::Done;
-            } else if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+            } else if (!end.exited || end.exit_code != 0) {
                 Fail(t, ArenaCat(arena_, StringView("sample failed to compile"), Excerpt(log, 25, arena_)));
                 t.stage = Stage::Done;
             } else {
@@ -357,17 +347,21 @@ private:
             Fail(t, ArenaCat(arena_, StringView("sample timed out after "), Num(arena_, opt_.run_timeout_s), StringView(" s")));
             return;
         }
-        if (WIFSIGNALED(status)) {
-            Fail(t, ArenaCat(arena_, StringView("sample was terminated by signal "), Num(arena_, static_cast<u32>(WTERMSIG(status)))));
+        if (end.killed) {
+#if defined(_WIN32)
+            Fail(t, ArenaCat(arena_, StringView("sample was ended by exception "), Hex(arena_, end.cause)));
+#else
+            Fail(t, ArenaCat(arena_, StringView("sample was terminated by signal "), Num(arena_, end.cause)));
+#endif
             return;
         }
-        if (WEXITSTATUS(status) != 0) {
-            Fail(t, ArenaCat(arena_, StringView("sample exited with status "), Num(arena_, static_cast<u32>(WEXITSTATUS(status))),
+        if (!end.exited || end.exit_code != 0) {
+            Fail(t, ArenaCat(arena_, StringView("sample exited with status "), Num(arena_, static_cast<u32>(end.exit_code)),
                              Excerpt(ReadSmall(t.run_err, arena_), 10, arena_)));
             return;
         }
         if (s.has_expected) {
-            StringView got = TrimEnd(ReadSmall(t.run_out, arena_));
+            StringView got = TrimEnd(WithoutCarriageReturns(ReadSmall(t.run_out, arena_), arena_));
             StringView want = TrimEnd(s.expected);
             if (!(got == want)) {
                 Fail(t, ArenaCat(arena_, StringView("sample output does not match the output block: "), FirstDifference(want, got, arena_)));
@@ -380,11 +374,7 @@ private:
     void Interrupt() {
         for (usize i = 0; i < tasks_.Size(); ++i) {
             Task& t = *tasks_[i];
-            if (t.stage == Stage::Compiling || t.stage == Stage::Running) {
-                kill(-t.pid, SIGKILL);
-                int status;
-                waitpid(t.pid, &status, 0);
-            }
+            if (t.stage == Stage::Compiling || t.stage == Stage::Running) KillChild(t.child);
             t.stage = Stage::Done;
         }
         out_.Push(FileDiag{StringView("docgen samples"), Diagnostic{Severity::Error, 0, StringView("interrupted; running samples were killed")}});
@@ -413,35 +403,28 @@ private:
             for (usize i = 0; i < tasks_.Size(); ++i) {
                 Task& t = *tasks_[i];
                 if (t.stage != Stage::Compiling && t.stage != Stage::Running) continue;
-                int status = 0;
+                ChildEnd end;
                 bool timed_out = false;
-                pid_t r = waitpid(t.pid, &status, WNOHANG);
-                if (r < 0) {
-                    if (errno == EINTR) continue;
-                    // The child cannot be waited for (reaped elsewhere, SIGCHLD ignored): never read that as success.
-                    kill(-t.pid, SIGKILL);
+                const ChildPoll polled = PollChild(t.child, &end);
+                if (polled == ChildPoll::Lost) {
                     --running;
                     progress = true;
                     t.stage = Stage::Done;
-                    Fail(t, StringView("sample: lost track of the child process (waitpid failed)"));
+                    Fail(t, StringView("sample: lost track of the child process"));
                     continue;
                 }
-                if (r == 0) {
+                if (polled == ChildPoll::Running) {
                     if (Now() < t.deadline) continue;
-                    kill(-t.pid, SIGKILL);
-                    waitpid(t.pid, &status, 0);
+                    KillChild(t.child);
                     timed_out = true;
                 }
                 --running;
                 progress = true;
-                Finish(t, status, timed_out);
+                Finish(t, end, timed_out);
             }
             done = 0;
             for (usize i = 0; i < tasks_.Size(); ++i) done += tasks_[i]->stage == Stage::Done;
-            if (!progress && done < tasks_.Size()) {
-                timespec ts{0, 2 * 1000 * 1000};
-                nanosleep(&ts, nullptr);
-            }
+            if (!progress && done < tasks_.Size()) engine_placeholder::os::SleepNanos(2 * 1000 * 1000);
         }
     }
 
@@ -452,7 +435,6 @@ private:
     Vector<Task*, ArenaAllocator> tasks_;
     StringView scratch_;
 };
-#endif // !_WIN32
 
 } // namespace
 
@@ -508,7 +490,6 @@ void ExtractSamples(StringView path, StringView text, const MdDoc& doc, ArenaAll
     }
 }
 
-#if !defined(_WIN32)
 void RequestStop() { g_stop = 1; }
 
 bool RunSamples(const SampleOptions& options, const Vector<Sample, ArenaAllocator>& samples, ArenaAllocator& arena,
@@ -516,19 +497,11 @@ bool RunSamples(const SampleOptions& options, const Vector<Sample, ArenaAllocato
     Runner r(options, arena, out, stats);
     return r.Run(samples);
 }
-#else
-void RequestStop() {}
-
-// Phase 13: the samples link the renderer, the RHI and the platform layer, which reach Windows on Days 158-161; the runner (a Windows
-// process helper and the cl command line) comes with them, on Day 161 (KNOWN-ISSUES.md).
-bool RunSamples(const SampleOptions&, const Vector<Sample, ArenaAllocator>&, ArenaAllocator&, Vector<FileDiag, ArenaAllocator>&, SampleStats&) {
-    std::fprintf(stderr, "docgen samples: not available on Windows yet (Phase 13 Day 161 brings the runner with the libraries the samples link)\n");
-    return false;
-}
-#endif
 
 StringView AbsoluteKeepingLinks(StringView path, ArenaAllocator& arena) {
-    if (path.Length() > 0 && path.Data()[0] == '/') {
+    engine_placeholder::io::Path parsed; // (on Windows `C:/...` is absolute too)
+    if ((path.Length() > 0 && path.Data()[0] == '/') ||
+        (engine_placeholder::io::Path::Parse(path, engine_placeholder::io::NativePathStyle(), &parsed) && parsed.IsAbsolute())) {
         return ArenaCat(arena, path, StringView());
     }
     StringView cwd;

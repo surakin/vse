@@ -7,6 +7,8 @@
 #   windows_manifest         an engine-built executable runs with the manifest's UTF-8 code page and per-monitor-v2 DPI awareness
 #   windows_platform_tests   the Win32 window (Day 158), its input (Day 159) and ENGINE_WINDOWED_PROGRAM (subsystem, arguments, output), with
 #                            windows_windowed_probe
+#   windows_docgen_tests     docgen's child processes on Windows (Day 161): arguments, output files, working directory, exit and exception
+#                            status, killing a tree; with windows_child_probe
 
 # --- The header check: generated from the real list of foundation headers, so a new header is covered without an edit here -------
 file(GLOB_RECURSE _foundation_headers RELATIVE "${CMAKE_SOURCE_DIR}/engine/foundation" CONFIGURE_DEPENDS
@@ -97,6 +99,26 @@ endfunction()
 engine_add_windows_platform_tests(windows_platform_tests platform "" "windows")
 if(ENGINE_HAVE_ASAN)
   engine_add_windows_platform_tests(windows_platform_tests_asan platform_asan " [asan]" "asan")
+endif()
+
+# --- docgen's child processes on Windows (Day 161): Catch2 tests plus the program they start --------------------------------------------
+add_executable(windows_child_probe child_probe.cpp)
+target_link_libraries(windows_child_probe PRIVATE foundation_io)
+target_compile_options(windows_child_probe PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
+function(engine_add_windows_docgen_tests target docgen_lib suffix label)
+  add_executable(${target} docgen_child_process_windows_test.cpp)
+  target_link_libraries(${target} PRIVATE ${docgen_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_include_directories(${target} PRIVATE "${CMAKE_SOURCE_DIR}/tests/support" "${CMAKE_SOURCE_DIR}/tests/io")
+  target_compile_definitions(${target} PRIVATE "CHILD_PROBE_PATH_UTF8=\"$<TARGET_FILE:windows_child_probe>\"")
+  add_dependencies(${target} windows_child_probe)
+  if(label STREQUAL "asan")
+    engine_asan_runtime(${target})
+  endif()
+  engine_discover_tests(${target} TEST_SUFFIX "${suffix}" PROPERTIES LABELS "${label}" TIMEOUT 120)
+endfunction()
+engine_add_windows_docgen_tests(windows_docgen_tests docgen_lib "" "windows")
+if(ENGINE_HAVE_ASAN)
+  engine_add_windows_docgen_tests(windows_docgen_tests_asan docgen_lib_asan " [asan]" "asan")
 endif()
 
 # --- Toolchain discovery from a stripped environment -----------------------------------------------------------------------

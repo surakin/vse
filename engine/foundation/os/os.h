@@ -108,6 +108,25 @@ u64 MonotonicTimeNanos();
 /// Param nanos: minimum duration to sleep.
 void SleepNanos(u64 nanos);
 
+/// Returns how much of this process's memory is resident in RAM, in KiB: on Linux the resident set (`/proc/self/statm`), on Windows the
+/// working set.
+///
+/// For leak checks that compare two readings of the same process; the two platforms count shared pages differently, so values are not
+/// comparable between them.
+/// Returns: the resident memory in KiB, or 0 when it cannot be read.
+/// Fails: returns 0 (no `/proc`, or the query failed).
+/// Thread-safety: thread-safe.
+i64 ResidentMemoryKiB();
+
+/// Returns how many operating-system handles this process holds open: on Linux its file descriptors (`/proc/self/fd`), on Windows its
+/// kernel handles (files, events, threads, keys, ...).
+///
+/// For leak checks that compare two readings of the same process. On Windows a driver's own threads and events count too.
+/// Returns: the number of open handles, or 0 when it cannot be read.
+/// Fails: returns 0 (no `/proc`, or the query failed).
+/// Thread-safety: thread-safe; another thread opening or closing handles meanwhile changes the count.
+i64 OpenHandleCount();
+
 /// Opaque per-platform dynamic-library handle; `nullptr` means not loaded.
 using DynamicLibraryHandle = void*;
 

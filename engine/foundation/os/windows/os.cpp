@@ -7,6 +7,10 @@
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
 
+#include "unity/windows_enable.h"
+#include <psapi.h> // GetProcessMemoryInfo (K32GetProcessMemoryInfo in kernel32, PSAPI_VERSION 2)
+#include "unity/windows_disable.h"
+
 // The Windows half of os/os.h (Phase 13 Day 149; spec docs/superpowers/specs/2026-11-07-windows-port-design.md, decision 3).
 //
 // Descriptors are an engine table of HANDLEs behind the `int` the interface keeps: 0, 1 and 2 are the standard handles, looked up when
@@ -238,6 +242,18 @@ void* ReserveMemory(usize size) {
 void ReleaseMemory(void* addr, usize size) {
     (void)size; // MEM_RELEASE frees the whole reservation VirtualAlloc made; it takes no size
     if (addr != nullptr) VirtualFree(addr, 0, MEM_RELEASE);
+}
+
+i64 ResidentMemoryKiB() {
+    PROCESS_MEMORY_COUNTERS counters{};
+    counters.cb = sizeof(counters);
+    if (!GetProcessMemoryInfo(GetCurrentProcess(), &counters, sizeof(counters))) return 0;
+    return static_cast<i64>(counters.WorkingSetSize / 1024);
+}
+
+i64 OpenHandleCount() {
+    DWORD count = 0;
+    return GetProcessHandleCount(GetCurrentProcess(), &count) ? static_cast<i64>(count) : 0;
 }
 
 u64 MonotonicTimeNanos() {

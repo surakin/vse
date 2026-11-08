@@ -13,7 +13,6 @@ set(RENDERER_TEST_SOURCES
   renderer_test.cpp
   gbuffer_test.cpp
   lighting_test.cpp
-  lsan_options.cpp
   renderer_fault_test.cpp
   render_settings_test.cpp
   device_resources_test.cpp
@@ -28,6 +27,10 @@ set(RENDERER_TEST_SOURCES
   ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_assets.cpp
   ${CMAKE_SOURCE_DIR}/game/common/textures.cpp
 )
+# LeakSanitizer's suppressions and its driver-unloading workaround: Linux only (MSVC's AddressSanitizer has no leak checker).
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  list(APPEND RENDERER_TEST_SOURCES lsan_options.cpp)
+endif()
 
 # Header self-containment: one generated translation unit per public renderer header that includes only that header.
 file(GLOB RENDERER_PUBLIC_HEADERS CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/engine/renderer/*.h)
@@ -47,6 +50,9 @@ include(Catch)
 function(engine_add_renderer_tests target suffix label spec)
   string(REGEX REPLACE "^renderer_tests" "" flavor "${target}")
   add_executable(${target} ${RENDERER_TEST_SOURCES} ${RENDERER_HEADER_CHECK_SOURCES})
+  if(label STREQUAL "asan")
+    engine_asan_runtime(${target}) # before the discovery below, which runs the program (Windows: the runtime DLLs beside it)
+  endif()
   # rhi_vulkan is linked only so tests can create a device through rhi::CreateDevice (which lives there); the renderer
   # library itself does not depend on it, and tests/renderer is scanned by rhi_boundary_check, so a test cannot name Vulkan.
   target_link_libraries(${target} PRIVATE renderer_passes${flavor} renderer${flavor} rhi_vulkan${flavor} Catch2::Catch2WithMain Threads::Threads)
@@ -57,5 +63,9 @@ function(engine_add_renderer_tests target suffix label spec)
 endfunction()
 
 engine_add_renderer_tests(renderer_tests "" "renderer" "")
-engine_add_renderer_tests(renderer_tests_asan " [asan]" "asan" "~[x11]")
-engine_add_renderer_tests(renderer_tests_tsan " [tsan]" "tsan" "~[gpu]")
+if(ENGINE_HAVE_ASAN)
+  engine_add_renderer_tests(renderer_tests_asan " [asan]" "asan" "~[x11]")
+endif()
+if(ENGINE_HAVE_TSAN)
+  engine_add_renderer_tests(renderer_tests_tsan " [tsan]" "tsan" "~[gpu]")
+endif()

@@ -168,22 +168,22 @@ Status ExecutableDirectory(Path* out);
 ///
 /// Param app_name: one path component (no separators, not `.` or `..`).
 /// Fails: `Invalid` (a bad app name), `NotFound` (no home directory is known).
-/// Backend: Windows: FOLDERID_RoamingAppData; macOS: ~/Library/Application Support (or the sandbox container's).
+/// Backend: Windows: `%APPDATA%\<app>` when the variable holds an absolute path, else FOLDERID_RoamingAppData; macOS: ~/Library/Application Support (or the sandbox container's).
 Status UserConfigDirectory(StringView app_name, Path* out);
 /// The per-user cache directory: `$XDG_CACHE_HOME/<app>` or `<home>/.cache/<app>` on Linux. Creates nothing.
 ///
 /// Fails: as [[io::UserConfigDirectory]].
-/// Backend: Windows: FOLDERID_LocalAppData\<app>\cache; macOS: ~/Library/Caches.
+/// Backend: Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\cache`; macOS: ~/Library/Caches.
 Status UserCacheDirectory(StringView app_name, Path* out);
 /// The per-user data directory: `$XDG_DATA_HOME/<app>` or `<home>/.local/share/<app>` on Linux. Creates nothing.
 ///
 /// Fails: as [[io::UserConfigDirectory]].
-/// Backend: Windows: FOLDERID_LocalAppData; macOS: ~/Library/Application Support.
+/// Backend: Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>`; macOS: ~/Library/Application Support.
 Status UserDataDirectory(StringView app_name, Path* out);
 /// The per-user state directory: `$XDG_STATE_HOME/<app>` or `<home>/.local/state/<app>` on Linux. Creates nothing.
 ///
 /// Fails: as [[io::UserConfigDirectory]].
-/// Backend: Windows: FOLDERID_LocalAppData\<app>\state; macOS: ~/Library/Application Support/<app>/state.
+/// Backend: Windows: `%LOCALAPPDATA%` (when absolute) or FOLDERID_LocalAppData, then `<app>\state`; macOS: ~/Library/Application Support/<app>/state.
 Status UserStateDirectory(StringView app_name, Path* out);
 
 /// The directory where this program writes crash dumps, created (and made private to this user) if needed: `<user state directory>/<app>/crashes`

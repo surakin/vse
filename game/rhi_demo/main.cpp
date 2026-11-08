@@ -6,15 +6,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <ctime>
 
-#include <unistd.h>
-
-#include "io/directory.h"
 #include "io/file.h"
 #include "io/file_system.h"
 #include "debug/program_setup.h"
 #include "cube_scene.h"
+#include "os/os.h"
+#include "platform/entry_point.h"
 #include "platform/input.h"
 #include "platform/window_host.h"
 #include "rhi/rhi.h"
@@ -42,7 +40,7 @@ constexpr long kMemoryGrowthLimitKiB = 8 * 1024;
 struct Options {
     long frames = 0;                 // 0: until the window closes
     const char* screenshot = nullptr; // render offscreen to this PPM and exit
-    const char* backend = nullptr;   // wayland, x11 or null for automatic
+    const char* backend = "auto";    // the display backend: auto, wayland, x11 or win32 (the setting platform.window_backend)
     bool no_vsync = false;
     bool validation = false;
     long inject_device_loss = 0;     // lose the device at this frame (fault injection), 0 = never
@@ -51,23 +49,7 @@ struct Options {
     bool list_gpus = false;          // --list-gpus
 };
 
-double NowSeconds() {
-    timespec ts{};
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return static_cast<double>(ts.tv_sec) + static_cast<double>(ts.tv_nsec) * 1e-9;
-}
-
-// The resident set size of this process in KiB, or 0 if it cannot be read.
-long ResidentKiB() {
-    io::Path statm_path("/proc/self/statm", io::PathStyle::Posix);
-    Vector<u8> bytes;
-    if (io::ReadFile(statm_path, &bytes, 4096).Failed() || bytes.Size() == 0) return 0;
-    char text[128] = {};
-    std::memcpy(text, bytes.Data(), bytes.Size() < sizeof(text) - 1 ? bytes.Size() : sizeof(text) - 1);
-    long size = 0, resident = 0;
-    const int read = std::sscanf(text, "%ld %ld", &size, &resident);
-    return read == 2 ? resident * (sysconf(_SC_PAGESIZE) / 1024) : 0;
-}
+double NowSeconds() { return static_cast<double>(os::MonotonicTimeNanos()) * 1e-9; }
 
 // The clear color at time `t`: three out-of-phase sine waves, darkened so the cube stands out.
 void BackgroundAt(double t, f32 out[4]) {
@@ -334,7 +316,7 @@ int RunScreenshot(const Options& options) {
 int RunWindow(const Options& options) {
     os::InputState input;
     os::PlatformWindowHost host;
-    if (!host.OpenFromEnvironment("rhi_demo", 960, 540, &input)) {
+    if (!host.Open(os::ParseWindowBackend(StringView(options.backend)), "rhi_demo", 960, 540, &input)) {
         RhiLogV(LogVerbosity::Error, "rhi_demo: could not open a window");
         return kExitFailure;
     }
@@ -378,9 +360,88 @@ int RunWindow(const Options& options) {
     long frames = 0;
     long rss_at_start = 0;
     int exit_code = kExitOk;
-    while (!window->ShouldClose() && (options.frames <= 0 || frames < options.frames)) {
+    bool stop = false; // set by a frame that failed; the run ends after it
+    // One frame, from BeginFrame to Present, with the camera as it is. The loop below calls it, and so does the window while Windows holds
+    // the thread in its own loop (the user dragging the window's frame), so the picture follows the size while the frame is dragged.
+    auto draw = [&]() {
+        if (stop || (options.frames > 0 && frames >= options.frames)) return; // (the window's loop may call again after the run ended)
+        const double now_time = NowSeconds();
+        device->BeginFrame();
+        if (device->DeviceLost()) {
+            RhiLogV(LogVerbosity::Error, "rhi_demo: the GPU device was lost; stopping");
+            device->EndFrame();
+            exit_code = kExitDeviceLost;
+            stop = true;
+            return;
+        }
+        const SwapchainStatus acquired = swapchain->Acquire();
+        if (acquired == SwapchainStatus::Lost) {
+            RhiLogV(LogVerbosity::Error, "rhi_demo: the swapchain was lost");
+            device->EndFrame();
+            exit_code = kExitFailure;
+            stop = true;
+            return;
+        }
+        if (acquired == SwapchainStatus::Minimized) {
+            device->EndFrame();
+            ++frames; // an unpresentable surface still counts toward --frames, so automation terminates
+            os::SleepNanos(10 * 1000 * 1000);
+            return;
+        }
+        if (!scene.depth.Ensure(device.Get(), swapchain->Width(), swapchain->Height())) { // follows a resize
+            RhiLogV(LogVerbosity::Error, "rhi_demo: could not create the depth buffer");
+            device->EndFrame();
+            exit_code = kExitFailure;
+            stop = true;
+            return;
+        }
+        scene.ring->BeginFrame();
+        CommandList* list = device->CreateCommandList();
+        list->Begin();
+        f32 background[4];
+        BackgroundAt(now_time - start, background);
+        if (!RecordFrame(list, &scene, swapchain->CurrentTexture(), swapchain->Width(), swapchain->Height(), background, camera, LightAt(now_time - start),
+                         ResourceState::Present)) {
+            RhiLogV(LogVerbosity::Error, "rhi_demo: the cube could not be drawn");
+            exit_code = kExitFailure;
+        }
+        list->End();
+        scene.ring->Flush();
+        CommandList* lists[] = {list};
+        if (device->Submit(lists, 1) != 0) {
+            scene.cube.Submitted();
+        }
+        device->EndFrame();
+        if (swapchain->Present() == SwapchainStatus::Lost) {
+            RhiLogV(LogVerbosity::Error, "rhi_demo: the swapchain was lost while presenting");
+            exit_code = kExitFailure;
+            stop = true;
+            return;
+        }
+        ++frames;
+        ++window_frames;
+        if (rss_at_start == 0 && frames >= kMemoryCheckStart) {
+            rss_at_start = static_cast<long>(os::ResidentMemoryKiB());
+        }
+        const double now = NowSeconds();
+        if (now - window_start >= 1.0) {
+            RhiLogV(LogVerbosity::Info, "rhi_demo: %llu frames, %.3f ms/frame", static_cast<unsigned long long>(window_frames),
+                    (now - window_start) * 1000.0 / static_cast<double>(window_frames));
+            window_start = now;
+            window_frames = 0;
+        }
+    };
+    using Draw = decltype(draw);
+    window->SetModalLoopCallback(
+        [](void* user) {
+            Draw& frame = *static_cast<Draw*>(user);
+            frame();
+        },
+        &draw);
+    while (!stop && !window->ShouldClose() && (options.frames <= 0 || frames < options.frames)) {
         input.BeginFrame();
-        window->PumpEvents();
+        window->PumpEvents(); // may draw frames itself (above), and so end the run
+        if (stop) break;
         const double now_time = NowSeconds();
         const f32 dt = static_cast<f32>(now_time - previous < 0.1 ? now_time - previous : 0.1); // a stall must not fling the camera
         previous = now_time;
@@ -405,79 +466,19 @@ int RunWindow(const Options& options) {
             // Nothing to draw to; wait for the window to come back without spinning. It still counts toward --frames,
             // so a bounded run on a minimized window terminates.
             ++frames;
-            timespec nap{0, 10 * 1000 * 1000};
-            nanosleep(&nap, nullptr);
+            os::SleepNanos(10 * 1000 * 1000);
             continue;
         }
-        device->BeginFrame();
-        if (device->DeviceLost()) {
-            RhiLogV(LogVerbosity::Error, "rhi_demo: the GPU device was lost; stopping");
-            device->EndFrame();
-            exit_code = kExitDeviceLost;
-            break;
-        }
-        const SwapchainStatus acquired = swapchain->Acquire();
-        if (acquired == SwapchainStatus::Lost) {
-            RhiLogV(LogVerbosity::Error, "rhi_demo: the swapchain was lost");
-            device->EndFrame();
-            exit_code = kExitFailure;
-            break;
-        }
-        if (acquired == SwapchainStatus::Minimized) {
-            device->EndFrame();
-            ++frames; // an unpresentable surface still counts toward --frames, so automation terminates
-            timespec nap{0, 10 * 1000 * 1000};
-            nanosleep(&nap, nullptr);
-            continue;
-        }
-        if (!scene.depth.Ensure(device.Get(), swapchain->Width(), swapchain->Height())) { // follows a resize
-            RhiLogV(LogVerbosity::Error, "rhi_demo: could not create the depth buffer");
-            device->EndFrame();
-            exit_code = kExitFailure;
-            break;
-        }
-        scene.ring->BeginFrame();
-        CommandList* list = device->CreateCommandList();
-        list->Begin();
-        f32 background[4];
-        BackgroundAt(now_time - start, background);
-        if (!RecordFrame(list, &scene, swapchain->CurrentTexture(), swapchain->Width(), swapchain->Height(), background, camera, LightAt(now_time - start),
-                         ResourceState::Present)) {
-            RhiLogV(LogVerbosity::Error, "rhi_demo: the cube could not be drawn");
-            exit_code = kExitFailure;
-        }
-        list->End();
-        scene.ring->Flush();
-        CommandList* lists[] = {list};
-        if (device->Submit(lists, 1) != 0) {
-            scene.cube.Submitted();
-        }
-        device->EndFrame();
-        if (swapchain->Present() == SwapchainStatus::Lost) {
-            RhiLogV(LogVerbosity::Error, "rhi_demo: the swapchain was lost while presenting");
-            exit_code = kExitFailure;
-            break;
-        }
-        ++frames;
-        ++window_frames;
-        if (rss_at_start == 0 && frames >= kMemoryCheckStart) {
-            rss_at_start = ResidentKiB();
-        }
-        const double now = NowSeconds();
-        if (now - window_start >= 1.0) {
-            RhiLogV(LogVerbosity::Info, "rhi_demo: %llu frames, %.3f ms/frame", static_cast<unsigned long long>(window_frames),
-                    (now - window_start) * 1000.0 / static_cast<double>(window_frames));
-            window_start = now;
-            window_frames = 0;
-        }
+        draw();
     }
+    window->SetModalLoopCallback(nullptr, nullptr); // `draw` ends with this scope
 
     // A run of a few hundred frames or more must not grow in memory (a leak per frame would).
     if (exit_code == kExitOk && options.frames >= kMemoryCheckFrames && rss_at_start == 0) {
         RhiLogV(LogVerbosity::Warn, "rhi_demo: the memory check did not run (fewer than %ld frames were drawn)", kMemoryCheckStart);
     }
     if (exit_code == kExitOk && options.frames >= kMemoryCheckFrames && rss_at_start > 0) {
-        const long rss_at_end = ResidentKiB();
+        const long rss_at_end = static_cast<long>(os::ResidentMemoryKiB());
         RhiLogV(LogVerbosity::Info, "rhi_demo: resident memory %ld KiB at frame %ld, %ld KiB at frame %ld", rss_at_start, kMemoryCheckStart, rss_at_end, frames);
         if (rss_at_end - rss_at_start > kMemoryGrowthLimitKiB) {
             RhiLogV(LogVerbosity::Error, "rhi_demo: memory grew by %ld KiB over the run", rss_at_end - rss_at_start);
@@ -505,7 +506,7 @@ bool ParseCount(const char* text, long* out) {
 }
 
 const char kUsageFormat[] =
-                 "usage: %s [--backend wayland|x11] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
+                 "usage: %s [--backend wayland|x11|win32] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
                  "       [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus]\n"
                  "  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)\n"
                  "  --frames N        stop after N frames (also RHI_DEMO_FRAMES=N)\n"
@@ -524,7 +525,9 @@ int Usage(const char* program, int code) {
 
 } // namespace
 
-int main(int argc, char** argv) {
+// The program's entry point (platform/entry_point.h): ENGINE_WINDOWED_PROGRAM at the end of the file makes it `main` on Linux and
+// `wWinMain` (the Windows subsystem, no console window of its own) on Windows.
+int EngineMain(int argc, char** argv) {
     const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(argc, argv);
     engine_placeholder::debug::RunCrashTest(debug_setup.crash_test); // --crash-test=segv|abort|assert|ensure, before any window or device
     LogRhi.SetVerbosity(LogVerbosity::Info); // the frame-time line is Info
@@ -587,7 +590,9 @@ int main(int argc, char** argv) {
     if (effective.gpu[0] != '\0') options.gpu = effective.gpu;
     options.no_vsync = effective.immediate;
     options.validation = effective.validation;
-    if (std::strcmp(effective.window_backend, "auto") != 0) setenv("ENGINE_WINDOW_BACKEND", effective.window_backend, 1);
+    options.backend = effective.window_backend; // --backend, ENGINE_WINDOW_BACKEND or a file, through the settings
     if (options.list_gpus) return ListGpus();
     return options.screenshot != nullptr ? RunScreenshot(options) : RunWindow(options);
 }
+
+ENGINE_WINDOWED_PROGRAM(EngineMain)

@@ -4,19 +4,12 @@
 #include <cstring>
 #include <thread>
 
-#if defined(_WIN32)
-#include "process_memory.h" // tests/windows/support
-#else
-#include <unistd.h>
-#endif
-
 #include <catch2/catch_test_macros.hpp>
 
 #include "containers/vector.h"
 
-#include "io/directory.h"
-#include "io/file.h"
 #include "jobs/frame_pool.h"
+#include "os/os.h"
 
 using namespace engine_placeholder;
 using engine_placeholder::jobs::FramePool;
@@ -250,28 +243,14 @@ TEST_CASE("FramePool does not commit slab memory until blocks are used", "[jobs]
     // set size must stay far below the slab size. (The old PoolAllocator-
     // backed design wrote a link into every slot on first use, committing
     // the whole slab under the central lock.)
-    auto resident_kb = [] {
-#if defined(_WIN32)
-        return test_support::ResidentKb();
-#else
-        io::Path statm_path("/proc/self/statm", io::PathStyle::Posix);
-        Vector<u8> bytes;
-        long total = 0, resident = 0;
-        if (io::ReadFile(statm_path, &bytes, 4096).Ok() && bytes.Size() != 0) {
-            char text[128] = {};
-            std::memcpy(text, bytes.Data(), bytes.Size() < sizeof(text) - 1 ? bytes.Size() : sizeof(text) - 1);
-            if (std::sscanf(text, "%ld %ld", &total, &resident) != 2) resident = 0;
-        }
-        return resident * (sysconf(_SC_PAGESIZE) / 1024);
-#endif
-    };
+    auto resident_kb = [] { return os::ResidentMemoryKiB(); };
     FramePool::Config c;
     for (usize i = 0; i < FramePool::kClassCount; ++i) c.slots_per_class[i] = 0;
     c.slots_per_class[4] = 65536; // 128 MiB of 2 KiB blocks
-    long before = resident_kb();
+    const i64 before = resident_kb();
     FramePool pool(c);
     void* p = pool.Allocate(1500);
-    long after = resident_kb();
+    const i64 after = resident_kb();
     REQUIRE(p != nullptr);
     REQUIRE(pool.GetStats().pooled_allocs[4] == 1);
     REQUIRE(after - before < 8 * 1024); // < 8 MiB of the 128 MiB slab

@@ -173,7 +173,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   `window_backend_test.cpp` and `window_fullscreen_test.cpp`, the portable `file_io_test.cpp` case, and `platform_neutral_check` rule 5.
 - Phase 13 Day 158, check not done: a person starting `hello_window` from Explorer (no console window), resizing it by dragging the frame (the
   modal-loop callback during a real drag; the test drives the loop's messages itself), minimizing, restoring and closing it. Fullscreen has no key
-  until input arrives (Day 159), so the toggle is checked by the tests only.
+  until input arrives (Day 159), so the toggle is checked by the tests only. (Day 161: the same for the demos, below.)
 - Phase 13 Day 158, deferred: `os::Window` has no content scale (DPI) yet; `Win32Window::Dpi` is the Windows backend's own. The UI phase (16)
   adds one for every backend (Wayland's buffer scale, X11's `Xft.dpi`, Windows' DPI).
 - Phase 13 Day 158, deferred: `window.h` models no lifecycle events (focus, suspend, resume), so `WM_ACTIVATEAPP` and `WM_POWERBROADCAST`
@@ -191,12 +191,28 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   Linux run") were built and tested only on Windows, among them `vk_loader.cpp` (the loader name from `os::VulkanLoaderName`),
   `vk_instance.cpp`, `vulkan_device_surface.cpp`, `vulkan_device_buffers.cpp` (`WaitIdle` also waits on the timeline), the RHI and renderer
   CMake (sanitizer flavors only where they exist, the Xlib surface in the Linux list) and the ported `tests/rhi` files.
-- Phase 13 Day 160, until Day 161: on Windows `vulkan_reset_golden_test.cpp`'s resident-memory and descriptor counts read 0 (they come from
-  `/proc`), so its drift checks measure nothing there; Day 161, which brings the reset tests to Windows, gives them a Windows measure.
+- Phase 13 Day 161 (2026-11-08), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 161 file, "For the
+  Linux run") were built and tested only on Windows, among them `os::ResidentMemoryKiB` and `os::OpenHandleCount` in `os/linux/os.cpp` (new, never
+  compiled), both demos on `ENGINE_WINDOWED_PROGRAM` with the modal-loop callback, the demo ctests' `XDG_CONFIG_HOME`/`XDG_STATE_HOME`, the low-point
+  memory checks of `device_loss_recovery_test.cpp` (16 losses) and `vulkan_reset_golden_test.cpp`, and `docgen samples` on the new child-process
+  interface (`tools/docgen/src/child_process_posix.cpp` holds the old `posix_spawn` code).
+- Phase 13 Day 161, observed on Windows (AMD Radeon 860M, driver 26.10.1): after a device loss or a device reset the process holds 0 to 4 more
+  blocks of 64 MiB (the Vulkan allocator's block size) than before, while the new device's own device memory (`ResourceCounts::device_memory_bytes`)
+  equals the first device's; they are mostly given back one or two losses later, once 128 MiB stayed for 16 losses. Seen in the working set and in
+  private bytes alike, over 24 and 30 losses and over 100 resets (788 or 920 MiB, 576 MiB of device memory). Cause not investigated. The memory
+  checks of `device_loss_recovery_test.cpp` and `vulkan_reset_golden_test.cpp` allow four such blocks on Windows, so a host-memory leak below about
+  25 MiB per loss (or 2.8 MiB per reset) is caught only by the Linux run (code review, declined).
+- Phase 13 Day 161, checks not done by a person: dragging a demo's window frame with the mouse (the real modal loop; the script sent only its start and
+  end messages around `SetWindowPos` resizes), the `renderer_demo` F-keys pressed by hand on Windows, and a demo started from Explorer. The session was a
+  Remote Desktop session (32 Hz display).
+- Phase 13 Day 161: `tests/docgen` (the docgen suite, among it the sample runner's tests) is not built on Windows: its fixture and several tests use
+  POSIX calls (`<dirent.h>`, `<ftw.h>`, `symlink`). The Windows child-process code has its own tests (`windows_docgen_tests`), and `docs_samples` runs
+  there.
+- Phase 13 Day 161, known limitation: on Windows a program built in Debug that calls `abort()` without the crash handler installed (`--crash-handler=off`,
+  or a guide sample run by `docgen samples`) still shows the C runtime's "abort() has been called" dialog; a sample that does so is killed at its
+  run timeout (10 s). With the crash handler installed the dialog is off (Day 161).
 - Phase 13 Day 160: `vulkan_pipeline_test.cpp`'s "the cache directory cannot be written" case does not run on Windows (a directory's
   read-only attribute does not stop writes, as for the settings tests of Day 157).
-- Phase 13 Day 157, until Day 161: `docgen samples` (and with it `docs_samples` and the `docs` target's sample step) does not run on Windows: the samples link
-  the renderer, the RHI and the platform layer, which reach Windows on Days 158-161; `ctest -L docs` on Windows is `docs_check`, `docs_links` and `docs_lint`.
 - Phase 13 Day 157, known limitation: on Windows a file has no mode bits, so a settings or session file the engine writes "private" (0600 on Linux) takes its
   directory's ACL (`io/BACKEND.md`, `CreateTempFile`): private in the user's own folders, readable by others in a shared folder. The 0600 checks of
   `file_store_test.cpp` and `engine_settings_test.cpp` run on Linux only.

@@ -7,14 +7,12 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <ctime>
-
-#include <unistd.h>
 
 #include "io/file.h"
 #include "io/file_system.h"
 #include "debug/program_setup.h"
 #include "cube_scene.h"
+#include "os/os.h"
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 #include "rhi/uniform_ring.h"
@@ -26,11 +24,7 @@ namespace {
 
 constexpr u32 kSize = 512;
 
-double Now() {
-    timespec ts{};
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return static_cast<double>(ts.tv_sec) + static_cast<double>(ts.tv_nsec) * 1e-9;
-}
+double Now() { return static_cast<double>(os::MonotonicTimeNanos()) * 1e-9; }
 
 struct Target {
     TextureHandle color;

@@ -25,7 +25,7 @@ function(renderer_demo_expect name code out skip_re)
     COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;${args}" -DEXPECT_CODE=${code} "-DEXPECT_OUT=${out}"
       "-DSKIP_IF_OUT=${skip_re}" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo" SKIP_RETURN_CODE 77
-    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${name}")
+    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${name};${DEMO_PROFILE_ENV}")
 endfunction()
 set(RENDERER_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
 # A normal offscreen run writes the picture and says how much it drew.
@@ -62,31 +62,44 @@ function(renderer_demo_scripted name backend)
       "-DSKIP_IF_OUT=${RENDERER_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
       "-DFORBID_OUT=a Vulkan validation error was reported" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo;display" RESOURCE_LOCK display SKIP_RETURN_CODE 77
-    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${name}")
+    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${name};${DEMO_PROFILE_ENV}")
 endfunction()
-renderer_demo_scripted(renderer_demo_script_wayland wayland)
-renderer_demo_scripted(renderer_demo_script_x11 x11)
+if(WIN32)
+  renderer_demo_scripted(renderer_demo_script_win32 win32)
+  set(_crash_backend win32)
+  set(_abort_code 3) # abort() ends a Windows process with exit code 3; the report in the output tells it from exit(3)
+else()
+  renderer_demo_scripted(renderer_demo_script_wayland wayland)
+  renderer_demo_scripted(renderer_demo_script_x11 x11)
+  set(_crash_backend wayland)
+  set(_abort_code "Subprocess aborted")
+endif()
 
 # A crash after a device reset: the report (Phase 7) shows the device epoch and the reset count in its state section.
 add_test(NAME renderer_demo_crash_after_reset
-  COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--backend;wayland;--frames;60;--script;frame:10 reset frame:20 crash:abort"
-    "-DEXPECT_CODE=Subprocess aborted" "-DEXPECT_OUT=rhi_device: epoch [0-9]+, 1 reset\\(s\\)" "-DSKIP_IF_OUT=${RENDERER_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
+  COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--backend;${_crash_backend};--frames;60;--script;frame:10 reset frame:20 crash:abort"
+    "-DEXPECT_CODE=${_abort_code}" "-DEXPECT_OUT=rhi_device: epoch [0-9]+, 1 reset\\(s\\)" "-DSKIP_IF_OUT=${RENDERER_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
     -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
 set_tests_properties(renderer_demo_crash_after_reset PROPERTIES LABELS "gpu;demo;display;crash" RESOURCE_LOCK display SKIP_RETURN_CODE 77
-  ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-crash_after_reset")
+  ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-crash_after_reset;${DEMO_PROFILE_ENV}")
 
 add_test(NAME renderer_demo_no_vulkan
   COMMAND ${CMAKE_COMMAND} -E env ENGINE_VULKAN_LIBRARY=/nonexistent
     ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--screenshot;${CMAKE_CURRENT_BINARY_DIR}/renderer_demo_no_vulkan.ppm" -DEXPECT_CODE=1 "-DEXPECT_OUT=no Vulkan device"
     -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
-set_tests_properties(renderer_demo_no_vulkan PROPERTIES LABELS demo)
+set_tests_properties(renderer_demo_no_vulkan PROPERTIES LABELS demo ENVIRONMENT "${DEMO_PROFILE_ENV}")
 
 # The committed textures are what the generator writes, byte for byte, and writing is deterministic.
 add_test(NAME renderer_demo_assets_current
   COMMAND ${CMAKE_COMMAND} -DMINT=$<TARGET_FILE:renderer_demo_mint> -DASSETS=${CMAKE_CURRENT_SOURCE_DIR}/assets
     -DWORK=${CMAKE_CURRENT_BINARY_DIR}/assets-check -P ${CMAKE_CURRENT_SOURCE_DIR}/check_assets.cmake)
 set_tests_properties(renderer_demo_assets_current PROPERTIES LABELS demo)
-engine_label_tests(renderer_demo_crash_after_reset renderer_demo_list_gpus renderer_demo_unknown_gpu renderer_demo_script_wayland renderer_demo_script_x11 renderer_demo_screenshot renderer_demo_gbuffer_layers renderer_demo_device_loss_screenshot renderer_demo_device_loss_trace renderer_demo_oom_later
+if(WIN32)
+  engine_label_tests(renderer_demo_script_win32)
+else()
+  engine_label_tests(renderer_demo_script_wayland renderer_demo_script_x11)
+endif()
+engine_label_tests(renderer_demo_crash_after_reset renderer_demo_list_gpus renderer_demo_unknown_gpu renderer_demo_screenshot renderer_demo_gbuffer_layers renderer_demo_device_loss_screenshot renderer_demo_device_loss_trace renderer_demo_oom_later
   renderer_demo_oom_device renderer_demo_bad_injection renderer_demo_bad_layer renderer_demo_bad_objects renderer_demo_no_vulkan
   renderer_demo_assets_current)
 

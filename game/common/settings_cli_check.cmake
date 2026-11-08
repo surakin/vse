@@ -2,6 +2,8 @@
 #   cmake -DEXE=<program> -DMODE=<golden|regex|reproduce> -DARGS="a;b" [-DENV="K=V;..."] [-DGOLDEN=<file>] [-DEXPECT=<regex>] [-DWORK=<dir>] -P settings_cli_check.cmake
 # The program runs with an empty environment (env -i), a private empty XDG_CONFIG_HOME, and only the variables in ENV, so the developer's own settings and
 # variables cannot change the output. WORK is a prefix: the checks of one program run in parallel, so each uses WORK_<hash of what it runs>.
+# On Windows (Day 161) every variable is removed except the few a process needs to start, APPDATA (the user's settings) and LOCALAPPDATA (the crash
+# handler's directory) point into WORK, and the output's line ends are compared as \n.
 cmake_minimum_required(VERSION 3.20)
 if(NOT WORK)
   set(WORK "${CMAKE_CURRENT_BINARY_DIR}/settings_cli_work")
@@ -13,9 +15,45 @@ set(WORK "${WORK}_${work_hash}")
 file(REMOVE_RECURSE "${WORK}")
 file(MAKE_DIRECTORY "${WORK}/xdg")
 
+if(CMAKE_HOST_WIN32)
+  # `cmake -E env` cannot start from an empty environment: remove each variable but these, by name (names starting with `=` are the per-drive
+  # directories Windows keeps, not variables).
+  set(keep "SystemRoot;SystemDrive;windir;TEMP;TMP;NUMBER_OF_PROCESSORS;PROCESSOR_ARCHITECTURE")
+  execute_process(COMMAND ${CMAKE_COMMAND} -E environment OUTPUT_VARIABLE environment_text)
+  string(REPLACE ";" "\\;" environment_text "${environment_text}")
+  string(REPLACE "\n" ";" environment_lines "${environment_text}")
+  set(unset_args "")
+  foreach(line IN LISTS environment_lines)
+    if(line MATCHES "^([^=]+)=")
+      set(name "${CMAKE_MATCH_1}")
+      string(TOUPPER "${name}" upper)
+      set(kept FALSE)
+      foreach(k IN LISTS keep)
+        string(TOUPPER "${k}" k)
+        if(upper STREQUAL k)
+          set(kept TRUE)
+        endif()
+      endforeach()
+      if(NOT kept)
+        list(APPEND unset_args "--unset=${name}")
+      endif()
+    endif()
+  endforeach()
+  file(TO_NATIVE_PATH "${EXE}" native_exe)
+endif()
+
 function(run out_stdout out_code)
-  execute_process(COMMAND /usr/bin/env -i "XDG_CONFIG_HOME=${WORK}/xdg" "HOME=${WORK}" "PATH=/usr/bin:/bin" ${ENV} "${EXE}" ${ARGN}
-                  OUTPUT_VARIABLE so ERROR_VARIABLE se RESULT_VARIABLE rc)
+  if(CMAKE_HOST_WIN32)
+    execute_process(COMMAND ${CMAKE_COMMAND} -E env ${unset_args} "APPDATA=${WORK}/xdg" "LOCALAPPDATA=${WORK}/local" "PATH=$ENV{SystemRoot}/System32" ${ENV}
+                            "${EXE}" ${ARGN}
+                    OUTPUT_VARIABLE so ERROR_VARIABLE se RESULT_VARIABLE rc)
+    string(REPLACE "\r\n" "\n" so "${so}")
+    string(REPLACE "\r\n" "\n" se "${se}")
+    string(REPLACE "${native_exe}" "PROGRAM" so "${so}")
+  else()
+    execute_process(COMMAND /usr/bin/env -i "XDG_CONFIG_HOME=${WORK}/xdg" "HOME=${WORK}" "PATH=/usr/bin:/bin" ${ENV} "${EXE}" ${ARGN}
+                    OUTPUT_VARIABLE so ERROR_VARIABLE se RESULT_VARIABLE rc)
+  endif()
   string(REPLACE "${EXE}" "PROGRAM" so "${so}") # the program's path differs between machines
   string(REGEX REPLACE "\\[LogBuild\\][^\n]*\n" "" so "${so}") # and the build line carries the commit
   set(${out_stdout} "${so}" PARENT_SCOPE)

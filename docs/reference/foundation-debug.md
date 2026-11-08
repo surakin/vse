@@ -542,6 +542,8 @@ Installs the crash handler for the whole process.
 
 Install it once, early in `main`, after [`debug::InitDebugFacilities`](#debug-initdebugfacilities). A handler a program installs for the same signals **after** this call must call the one it replaced (the library's handler runs only if it is called).
 
+On Windows, while it is installed, `abort()` neither shows the C runtime's "abort() has been called" dialog (Debug builds) nor calls Windows Error Reporting: the handler writes the report and the dump, and nothing waits for a click.
+
 | Field | Value |
 |---|---|
 | Parameter `options` | how to set it up. |

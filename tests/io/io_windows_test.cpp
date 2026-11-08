@@ -2,6 +2,7 @@
 // openers, Stat and Lstat over junctions and links, long paths, and that nothing leaks a handle. Windows only.
 #include <catch2/catch_test_macros.hpp>
 
+#include <cstdlib>
 #include <cwchar>
 
 #include "file_conformance.h"
@@ -397,6 +398,47 @@ TEST_CASE("io: special folders on Windows", "[io][fs][windows]") {
     CHECK(io_test::AclIsPrivate(crashes));
     REQUIRE(io::RemoveAll(local / app.View()).Ok());
     CHECK_FALSE(io::Exists(local / app.View()));
+}
+
+// Day 161: %APPDATA% and %LOCALAPPDATA% come first when they hold an absolute path, as $XDG_* on Linux, so a test points the user folders (and
+// the crash dumps) into a directory of its own; a relative value is ignored. The variables are put back afterwards.
+TEST_CASE("io: the user folders follow APPDATA and LOCALAPPDATA when they are absolute", "[io][fs][windows]") {
+    auto get = [](const char* name) {
+        const char* v = std::getenv(name);
+        return engine_test::MakeText(StringView(v != nullptr ? v : ""));
+    };
+    struct Restore {
+        engine_test::Text roaming, local;
+        ~Restore() {
+            test_support::SetEnv("APPDATA", roaming.CStr());
+            test_support::SetEnv("LOCALAPPDATA", local.CStr());
+        }
+    } restore{get("APPDATA"), get("LOCALAPPDATA")};
+    Path known_config;
+    REQUIRE(io::UserConfigDirectory("app", &known_config).Ok()); // the session's own value, which is the known folder
+    TempDir dir;
+    test_support::SetEnv("APPDATA", engine_test::MakeText((dir / "roaming").View()).CStr());
+    test_support::SetEnv("LOCALAPPDATA", engine_test::MakeText((dir / "local").View()).CStr());
+    Path p;
+    REQUIRE(io::UserConfigDirectory("app", &p).Ok());
+    CHECK(p == dir / "roaming/app");
+    REQUIRE(io::UserDataDirectory("app", &p).Ok());
+    CHECK(p == dir / "local/app");
+    REQUIRE(io::UserCacheDirectory("app", &p).Ok());
+    CHECK(p == dir / "local/app/cache");
+    REQUIRE(io::UserStateDirectory("app", &p).Ok());
+    CHECK(p == dir / "local/app/state");
+    test_support::SetEnv("ENGINE_APP_NAME", "crashing_app");
+    Path crashes;
+    const io::Status made = io::CrashDumpDirectory(&crashes);
+    test_support::UnsetEnv("ENGINE_APP_NAME");
+    REQUIRE(made.Ok());
+    CHECK(crashes == dir / "local/crashing_app/crashes");
+    CHECK(io::IsDirectory(crashes));
+    // A relative value is not a place: the known folder is used.
+    test_support::SetEnv("APPDATA", "relative\\roaming");
+    REQUIRE(io::UserConfigDirectory("app", &p).Ok());
+    CHECK(p == known_config);
 }
 
 TEST_CASE("io: RemoveAll does not follow a junction out of the tree", "[io][fs][windows]") {

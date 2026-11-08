@@ -100,7 +100,9 @@ On Windows (`NativePathStyle()` is `PathStyle::Windows`):
 - **Permissions.** Only "read-only" survives on Windows: `SetPermissions(path, 0444)` sets the read-only attribute, and `Stat` reports 0644 or
   0444 for files and 0755 for directories. `CreatePrivateDirectory` gives the directory an ACL that admits only the current user.
 - **Special folders.** Configuration lives in `%APPDATA%\<app>`, data in `%LOCALAPPDATA%\<app>` (cache and state in its `cache` and `state`
-  subfolders), crash dumps in `%LOCALAPPDATA%\<app>\crashes`.
+  subfolders), crash dumps in `%LOCALAPPDATA%\<app>\crashes`. The two variables are read first when they hold an absolute path (Windows sets them
+  to the same folders for every session), else the known folders; a test or a launcher points them elsewhere, as `$XDG_*` on Linux. The demos'
+  ctests do that, so a run leaves nothing in the user's profile.
 - **Links.** Creating a symbolic link needs Developer Mode (or elevation); junctions need nothing and are reported as `Other` (not followed by a
   walk or by `RemoveAll`).
 

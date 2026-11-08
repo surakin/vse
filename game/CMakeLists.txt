@@ -31,6 +31,17 @@ function(demo_settings_tests demo)
     ${demo}_settings_bad_key ${demo}_settings_bad_value ${demo}_settings_save_reproduce ${demo}_settings_legacy_flag_yields ${demo}_settings_flag_beats_user_file)
 endfunction()
 
+# The demos' tests run with a user profile of their own in the build tree: the user's settings file is read from it and the crash handler's
+# directory is made in it, never in the developer's (Day 161). The settings checks above use a private one per test as well.
+set(_profile "${CMAKE_CURRENT_BINARY_DIR}/test-profile")
+if(WIN32)
+  set(DEMO_PROFILE_ENV "APPDATA=${_profile}/roaming;LOCALAPPDATA=${_profile}/local")
+  file(MAKE_DIRECTORY "${_profile}/roaming" "${_profile}/local")
+else()
+  set(DEMO_PROFILE_ENV "XDG_CONFIG_HOME=${_profile}/config;XDG_STATE_HOME=${_profile}/state")
+  file(MAKE_DIRECTORY "${_profile}/config" "${_profile}/state")
+endif()
+
 add_subdirectory(hello_window)
 add_subdirectory(rhi_demo)
 add_subdirectory(rhi_bench)

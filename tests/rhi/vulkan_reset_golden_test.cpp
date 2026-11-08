@@ -1,18 +1,14 @@
 // Phase 8 Day 112: the reset on a real device: the picture before and after a reset is identical and still matches the blessed
 // golden image, and a loop of resets leaves nothing behind.
 
-#if !defined(_WIN32)
-#include <unistd.h> // sysconf
-#endif
 #include <cstdio>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "io/directory.h"
-#include "io/file.h"
 #include "gpu_fixture.h"
 #include "image_compare.h"
+#include "os/os.h"
 #include "reset_rig.h"
 #include "rhi/rhi_log.h"
 
@@ -23,35 +19,6 @@ namespace {
 
 constexpr u32 kResetShotW = 320;
 constexpr u32 kResetShotH = 180;
-
-long OpenDescriptorCount() {
-    long count = 0;
-    io::Directory fds;
-    if (io::Directory::Open(io::Path("/proc/self/fd", io::PathStyle::Posix), &fds).Ok()) {
-        io::DirectoryEntry entry;
-        bool found = false;
-        while (fds.Next(&entry, &found).Ok() && found) ++count;
-    }
-    return count;
-}
-
-// The resident set from /proc on Linux. On Windows there is no /proc: 0 (and so no drift) until the reset tests get a Windows measure
-// on Day 161 (KNOWN-ISSUES.md). The descriptor count above is 0 there for the same reason.
-long ResetResidentKiB() {
-#if defined(_WIN32)
-    return 0;
-#else
-    io::Path statm_path("/proc/self/statm", io::PathStyle::Posix);
-    Vector<u8> bytes;
-    if (io::ReadFile(statm_path, &bytes, 4096).Failed() || bytes.Size() == 0) return 0;
-    char text[128] = {};
-    std::memcpy(text, bytes.Data(), bytes.Size() < sizeof(text) - 1 ? bytes.Size() : sizeof(text) - 1);
-    long pages = 0;
-    long resident = 0;
-    const int n = std::sscanf(text, "%ld %ld", &pages, &resident);
-    return n == 2 ? resident * (sysconf(_SC_PAGESIZE) / 1024) : 0;
-#endif
-}
 
 // One return per configuration: code after an unconditional return is a warning (C4702) under /WX.
 bool Sanitized() {
@@ -132,9 +99,13 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
     rhi::ResourceCounts first = rig.host.GetDevice()->Resources();
     const usize owners = rig.registry.Count();
     const int iterations = Sanitized() ? 20 : 100;
-    // Warm the loop up before the baseline: driver caches and allocator pools settle in the first iterations.
-    long baseline_resident = 0;
-    long baseline_fds = 0;
+    // Warm the loop up before the baseline: driver caches and allocator pools settle in the first iterations. Memory is compared by its
+    // lowest reading over resets 5 to 9 and over the last five: a leak per reset raises the low point. On Windows (AMD Radeon 860M,
+    // Day 161) the process holds about 130 MiB more after some resets and gives it back a few resets later, while the device's own
+    // memory (checked by ExpectSameCounts) does not change, so one reading can land on a step.
+    i64 early_low = 0;
+    i64 late_low = 0;
+    i64 baseline_handles = 0;
     for (int i = 0; i < iterations; ++i) {
         INFO("reset " << i);
         REQUIRE(rig.ResetDevice(i % 2 != 0).ok); // alternates; the first call turns sync validation off
@@ -146,17 +117,24 @@ TEST_CASE("Resets in a loop on a real device leave the counts, memory and descri
         }
         reset_rig::ExpectSameCounts(now, first);
         CHECK(rig.registry.Count() == owners);
-        if (i == 4) {
-            baseline_resident = ResetResidentKiB();
-            baseline_fds = OpenDescriptorCount();
+        if (i == 4) baseline_handles = os::OpenHandleCount();
+        if ((i >= 4 && i < 9) || i >= iterations - 5) {
+            const i64 resident = os::ResidentMemoryKiB();
+            i64& low = i < 9 ? early_low : late_low;
+            low = (low == 0 || resident < low) ? resident : low;
         }
     }
-    const long drift_kib = ResetResidentKiB() - baseline_resident;
-    const long fd_drift = OpenDescriptorCount() - baseline_fds;
-    WARN("after " << iterations << " resets: resident drift " << drift_kib << " KiB since reset 5, descriptor drift " << fd_drift);
-    CHECK(fd_drift <= 2);
-    if (!Sanitized() && baseline_resident != 0) {
-        CHECK(drift_kib < 8 * 1024);
+    const i64 drift_kib = late_low - early_low;
+    const i64 handle_drift = os::OpenHandleCount() - baseline_handles;
+    WARN("after " << iterations << " resets: lowest resident " << early_low << " KiB over resets 5-9, " << late_low << " KiB over the last five (drift "
+                  << drift_kib << " KiB), handle drift " << handle_drift);
+    CHECK(handle_drift <= 2);
+    if (!Sanitized() && early_low != 0 && late_low != 0) {
+        i64 allowed_kib = 8 * 1024;
+#if defined(_WIN32)
+        allowed_kib += 4 * 64 * 1024; // the old devices' memory Windows still counts in the process: up to four 64 MiB blocks (Day 161)
+#endif
+        CHECK(drift_kib < allowed_kib);
     }
     CHECK(rig.R().Stats().resets == static_cast<u64>(iterations));
     CHECK(rig.R().Stats().rollbacks == 0);

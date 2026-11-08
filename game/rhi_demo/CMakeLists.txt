@@ -16,7 +16,7 @@ function(rhi_demo_expect name code out skip_re)
     COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:rhi_demo>;${ARGN}" -DEXPECT_CODE=${code} "-DEXPECT_OUT=${out}"
       "-DSKIP_IF_OUT=${skip_re}" -P ${CMAKE_CURRENT_SOURCE_DIR}/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo" SKIP_RETURN_CODE 77
-    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache")
+    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache;${DEMO_PROFILE_ENV}")
 endfunction()
 set(RHI_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
 rhi_demo_expect(rhi_demo_device_loss_screenshot 3 "the GPU device was lost" "${RHI_NO_GPU}"
@@ -45,7 +45,7 @@ add_test(NAME rhi_demo_no_vulkan
   COMMAND ${CMAKE_COMMAND} -E env ENGINE_VULKAN_LIBRARY=/nonexistent
     ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:rhi_demo>;--screenshot;${RHI_DEMO_SHOT}" -DEXPECT_CODE=1 "-DEXPECT_OUT=no Vulkan device"
     -P ${CMAKE_CURRENT_SOURCE_DIR}/expect_run.cmake)
-set_tests_properties(rhi_demo_no_vulkan PROPERTIES LABELS demo)
+set_tests_properties(rhi_demo_no_vulkan PROPERTIES LABELS demo ENVIRONMENT "${DEMO_PROFILE_ENV}")
 engine_label_tests(rhi_demo_list_gpus rhi_demo_unknown_gpu rhi_demo_device_loss_screenshot rhi_demo_device_loss_trace rhi_demo_oom_later rhi_demo_oom_device rhi_demo_bad_injection
   rhi_demo_negative_injection rhi_demo_no_vulkan)
 

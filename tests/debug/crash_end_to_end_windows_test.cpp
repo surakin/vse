@@ -1,6 +1,8 @@
 // Crash handling end to end on Windows (Phase 13 Day 155): a child process installs the crash handler and faults in various ways; the parent
 // checks the report on standard error, the report file, the envelope with its minidump, and the exception status the process ended with.
 // The Linux counterpart is crash_end_to_end_linux_test.cpp; the cases that differ are noted where they are.
+#include <cstdlib> // _set_abort_behavior
+
 #include <catch2/catch_test_macros.hpp>
 
 #include "debug/crash_context.h"
@@ -174,6 +176,18 @@ ENGINE_DEATH_TEST_FN(dt_e2e_win_abort) {
     InstallInto(argument);
     InjectFault(FaultKind::Abort);
 }
+// The child reports abort()'s flags through its exit code: 1 if installing the handler left the C runtime's message (a dialog in a Debug
+// build) or its Windows Error Reporting call on, 2 if uninstalling did not bring them back, 0 if both held. The death-test child starts
+// with the flags cleared (PlatformPrepareChild), so it sets them first, as a program starts.
+ENGINE_DEATH_TEST_FN(dt_e2e_win_abort_flags) {
+    constexpr unsigned int kFlags = _WRITE_ABORT_MSG | _CALL_REPORTFAULT;
+    _set_abort_behavior(kFlags, kFlags);
+    InstallInto(argument);
+    const unsigned int installed = _set_abort_behavior(0, 0) & kFlags;
+    UninstallCrashHandler();
+    const unsigned int after = _set_abort_behavior(0, 0) & kFlags;
+    std::exit(installed != 0 ? 1 : (after != kFlags ? 2 : 0));
+}
 ENGINE_DEATH_TEST_FN(dt_e2e_win_stack_overflow) {
     InstallInto(argument);
     InjectFault(FaultKind::StackOverflow);
@@ -234,6 +248,17 @@ TEST_CASE("Windows: an illegal instruction, a divide by zero and an abort each r
         CheckReportAndDump(r, dir, "Abort");
         CHECK(TextHas(Stderr(r), "reason: Abort\n")); // no address: an abort has no faulting instruction (as on Linux)
     }
+}
+
+// Day 161: a windowed program's abort() waited on the C runtime's dialog box instead of reaching the crash handler.
+TEST_CASE("Windows: while the crash handler is installed, abort() shows no dialog and calls no error reporting", "[crash][death][debug][windows]") {
+    ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
+    TempDir dir;
+    REQUIRE(dir.Path()[0] != '\0');
+    const ChildResult r = RunCrashChild("dt_e2e_win_abort_flags", dir.Path());
+    INFO("child stderr: " << Catch::Detail::stringify(Stderr(r)));
+    REQUIRE(r.exited);
+    CHECK(r.exit_code == 0);
 }
 
 TEST_CASE("Windows: a stack overflow on the main thread prints a report and leaves a dump", "[crash][crashreport][death][debug][windows]") {

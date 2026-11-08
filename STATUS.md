@@ -843,3 +843,16 @@ matches with the tolerances unchanged. Found on the way: AMD's driver reads the 
 the RHI tests; their own suite is Day 161. Runs: `ran 880 of 1775 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan
 `ran 633 of 1775`; MSVC 1775 of 1775, `windows-clang-cl` 1043 of 1043, non-unity 1774 of 1775 (the known FramePool ASan flake). Review: 5 findings, 2 fixed, 3 declined. Linux:
 pending until the phase close. **Next: Day 161 (the renderer and the demos on Windows through Vulkan).**
+
+Phase 13 **Day 161 (2026-11-08, Windows PC): the renderer, the demos and the baselines on Windows through Vulkan.** The renderer suite runs on Windows
+(236 tests, plain and ASan, validation silent; `renderer_demo.ppm` matches). `rhi_demo` and `renderer_demo` are windowed programs
+(`ENGINE_WINDOWED_PROGRAM`), their POSIX calls go through `os::`, and they draw from the modal-loop callback while the frame is dragged; all 46 demo
+ctests pass on Windows, among them a scripted live-settings run on Win32 and the settings round trip; 1000 frames with validation exit 0 with memory
+flat. New: `os::ResidentMemoryKiB` and `os::OpenHandleCount` (five `/proc` readers removed); the reset and loss memory checks compare low points, as
+the Windows process holds whole 64 MiB blocks after some resets (filed). Found by the runs and fixed: a Debug `abort()` showed a dialog before the
+crash handler ran (now off while it is installed), and test runs wrote into the user's profile (the Windows file layer reads `%APPDATA%` and
+`%LOCALAPPDATA%` first, and the demo ctests use a profile in the build tree). `docgen samples` runs on Windows (a job object per child; 49 of 49 samples).
+Baselines in section 8 of the Windows design spec (Release; `rhi_bench` 0.73-0.87 us per draw, the demo scene 1.8-1.9 ms per frame); a device reset
+takes 239 ms here against 40 ms under Linux on the same GPU. Runs: `ran 1174 of 2316 tests (phases: all; flavors: plain; display: included; crash
+tests: excluded)`, asan `ran 877 of 2316`; MSVC 2316 of 2316, `windows-clang-cl` 1339 of 1339, non-unity 2316 of 2316. Review: 5 findings, 3 fixed,
+2 declined. Not done by a person: a drag with the mouse, the F-keys. Linux: pending until the phase close. **Next: Day 162 (the backend registry and the shader bytecode, the start of DX12).**

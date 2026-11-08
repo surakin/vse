@@ -19,6 +19,7 @@
 #include "os/windows/win32.h"
 
 #include <atomic>
+#include <cstdlib> // _set_abort_behavior
 
 namespace engine_placeholder::debug {
 
@@ -27,6 +28,10 @@ namespace {
 std::atomic<detail::CrashEventFn> g_crash_event_fn{nullptr};
 std::atomic<int> g_reports_in_progress{0};
 PVOID g_observer = nullptr; // the vectored handler, added by InstallCrashEventHook (under the facade's install lock)
+// abort()'s flags before InstallCrashEventHook cleared them, restored by RemoveCrashEventHook (both under the facade's install lock).
+constexpr unsigned int kAbortFlags = _WRITE_ABORT_MSG | _CALL_REPORTFAULT;
+unsigned int g_abort_flags_before = kAbortFlags;
+bool g_abort_flags_saved = false;
 
 // One exception the observer saw: the record's address, the thread it was raised on, and that thread's crash name at the time (the report
 // is written on another thread, which cannot read the faulting thread's thread_local name).
@@ -224,6 +229,12 @@ void PrepareCrashEventHook() {
 bool InstallCrashEventHook(CrashEventFn fn) {
     g_crash_event_fn.store(fn, std::memory_order_release);
     if (g_observer == nullptr) g_observer = AddVectoredExceptionHandler(1, &ObserveException);
+    // abort() reaches the library's SIGABRT handler only after the C runtime's message: a dialog box in a Debug build, which waits for a
+    // click (a windowed program has nowhere else to print it). The report is the message; no dialog and no Windows Error Reporting call.
+    if (!g_abort_flags_saved) {
+        g_abort_flags_before = _set_abort_behavior(0, kAbortFlags) & kAbortFlags;
+        g_abort_flags_saved = true;
+    }
     const LPTOP_LEVEL_EXCEPTION_FILTER library = SetUnhandledExceptionFilter(&CrashGate);
     if (library != &CrashGate) g_library_filter.store(library, std::memory_order_release);
     g_crashing_thread.store(0, std::memory_order_release);
@@ -238,6 +249,10 @@ void RemoveCrashEventHook() {
     g_gate_active.store(false, std::memory_order_release);
     g_library_filter.store(nullptr, std::memory_order_release);
     g_crash_event_fn.store(nullptr, std::memory_order_release);
+    if (g_abort_flags_saved) {
+        _set_abort_behavior(g_abort_flags_before, kAbortFlags);
+        g_abort_flags_saved = false;
+    }
     if (g_observer != nullptr) {
         RemoveVectoredExceptionHandler(g_observer);
         g_observer = nullptr;
