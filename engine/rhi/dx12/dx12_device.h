@@ -21,6 +21,7 @@ namespace engine_placeholder::rhi::dx12 {
 
 class Dx12Device;
 class Dx12CommandList;
+class Dx12Swapchain;
 
 /// Owning pointer to a Direct3D 12 device; destroying it waits for the GPU first (see [[rhi::DeviceDeleter]]).
 using Dx12DevicePtr = UniquePtr<Dx12Device, DeviceDeleter>;
@@ -402,6 +403,44 @@ public:
     /// Thread-safety: thread-safe. A pure function.
     static DXGI_FORMAT MipStorageFormat(Format format);
 
+    /// Waits until the GPU has finished everything submitted so far, without freeing what was destroyed (unlike `WaitIdle`): what the open
+    /// frame destroyed may still be used by its lists that are not submitted yet. For the swapchain, which must not hold a buffer the GPU
+    /// still reads.
+    ///
+    /// Thread-safety: thread-safe.
+    void WaitForGpu();
+    /// Returns the window the device presents to, or null. Ownership: borrowed.
+    const os::Window* Window() const { return window_; }
+    /// Makes a swap chain buffer a device texture: a render-target view in `format` (the sRGB view of a linear buffer), external (the
+    /// swap chain owns it), in `PRESENT`.
+    ///
+    /// Param buffer: the buffer; the texture holds a reference until released.
+    /// Param format: the RHI format of the view.
+    /// Param width: its width.
+    /// Param height: its height.
+    /// Returns: the handle, or invalid when out of descriptors or handles.
+    /// Fails: an invalid handle (logged by the pools).
+    /// Thread-safety: thread-safe.
+    TextureHandle RegisterSwapchainImage(ComRef<ID3D12Resource> buffer, Format format, u32 width, u32 height);
+    /// Frees a swap chain image's texture at once, with its reference to the buffer; the GPU must be done with it.
+    ///
+    /// Param texture: from `RegisterSwapchainImage`.
+    /// Thread-safety: thread-safe.
+    void ReleaseSwapchainImage(TextureHandle texture);
+    /// Counts a present for the fault injection (`FaultInjection::lose_device_at_present`).
+    ///
+    /// Returns: true if the device is lost (now or before).
+    /// Thread-safety: thread-safe.
+    bool CountPresent();
+    /// Presents a swap chain under the submission lock, so it is ordered with the queue's work; a device-loss result marks the device lost.
+    ///
+    /// Param swapchain: the swap chain.
+    /// Param interval: the sync interval.
+    /// Param flags: the present flags.
+    /// Returns: the result of `IDXGISwapChain::Present`.
+    /// Thread-safety: thread-safe.
+    HRESULT PresentSwapchain(IDXGISwapChain3* swapchain, UINT interval, UINT flags);
+
     /// Returns the shader-visible view ring. Ownership: borrowed.
     GpuDescriptorRing& ViewRing() { return view_ring_; }
     /// Returns the shader-visible sampler heap. Ownership: borrowed.
@@ -434,8 +473,6 @@ private:
     void UpdateCompletedFramesLocked();
     void CollectRetiredLocked(bool all);
     void ReportLiveObjects();
-    // Logs that `what` arrives on a later day of Phase 13 (Days 166-169 replace these).
-    static void NotYet(const char* what, int day);
 
     // ---- resources (dx12_device_resources.cpp) ----
     struct BufferRes {
@@ -563,6 +600,9 @@ private:
         usize used = 0;
         u64 frame = 0; // the frame the pool's lists were last handed out in
     };
+    UniquePtr<Dx12Swapchain> swapchain_;    // owner thread (dx12_device_swapchain.cpp)
+    std::atomic<u32> swapchain_live_{0};
+    std::atomic<u32> present_count_{0};
     ListPool list_pools_[kFrameSlots];      // under list_mutex_
     std::mutex list_mutex_;
     void ShutdownCommands();

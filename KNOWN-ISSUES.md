@@ -25,7 +25,7 @@ Seen failing once or intermittently, passing on rerun. Cause not investigated.
   Seen again on Day 156 in `scripts/test-phase.sh --affected --crashes --flavor asan` of the MSVC unity build (passed in the full `ctest -j8`
   run that followed). Seen again on Day 160 in a full `ctest -j8` run of the non-unity MSVC build (1775 tests, the only failure), and then alone: run
   directly, `jobs_tests_asan.exe` failed it on the 14th of 14 runs with `REQUIRE( after - before < 8 * 1024 )`, `33836 < 8192` (the working
-  set grew 33 MiB, against the 8 MiB the test allows, after allocating one block from a 128 MiB slab). Seen only in the ASan flavor. Seen once more on 2026-11-08 (Phase 13 Day 168, `--affected --flavor asan`); three runs of it alone passed right after.
+  set grew 33 MiB, against the 8 MiB the test allows, after allocating one block from a 128 MiB slab). Seen only in the ASan flavor. Seen once more on 2026-11-08 (Phase 13 Day 168, `--affected --flavor asan`); three runs of it alone passed right after. And again later that day (Day 169, `--affected --flavor asan`).
 - Phase 13 Day 153 (2026-11-07, Windows PC): `Skewed load: other participants execute stolen work [asan]` (phase 2) failed once in a full
   `ctest -j8` run of the non-unity MSVC build; it passed 30 times alone and in 5 runs under `-j16` load. The failure output was not captured.
 
@@ -210,11 +210,13 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   `*.perm.inc` (minted by the Windows `slangc` 2026.18.2; whether the Linux one mints them byte-identical is not checked).
 - Phase 13 Days 165 and 166 (2026-11-08, Windows PC), flaky build: the non-unity tree's link of `renderer_tests` failed with
   `LNK1236: corrupt or invalid COFF sections` on `rhi_dx12.lib(dx12_device_later.cpp.obj)`, once on each day, both times in a `cmake --build` that ran
-  right after another tree's build; deleting that object and building again fixed it. Not seen in the unity trees.
+  right after another tree's build; deleting that object and building again fixed it. Not seen in the unity trees. The file was removed on Day 169 (its last placeholders were replaced); not seen with another file so far.
 - Phase 13 Day 168 (2026-11-08), open until the Linux run at the phase close: `shaders/mipgen.comp` and its minted outputs (minted on Windows)
   have not been minted or checked on Linux.
-- Phase 13 Day 164, until Day 169: the DX12 backend's swapchain (descriptors since Day 166, pipelines since Day 167, command lists since Day 168) is a placeholder
-  (`engine/rhi/dx12/dx12_device_later.cpp`) that log "not implemented yet" and fail; `Auto` never picks the backend, and the demos pin Vulkan.
+- Phase 13 Day 169 (2026-11-08), open until the Linux run at the phase close: the Vulkan swapchain's `ReleaseImages` change and the in-frame
+  rebuild check in `RunPresentationChecks` have not run on Wayland or X11.
+- Phase 13, until Days 172-173: `Auto` never picks the DX12 backend, and the demos and benchmarks pin Vulkan (the backend is complete since
+  Day 169).
 - Phase 13 Day 163: Windows command lines are quoted by three separate copies of the same rule: `os/windows/debug/death_test.cpp`
   (`AppendQuoted`), `tools/docgen/src/windows/child_process_windows.cpp` and `tools/shader_mint/run_process.cpp` (`AppendWindowsArgument`, the
   only one with unit tests). A shared `os::` process helper would replace them; not done (code review, declined).

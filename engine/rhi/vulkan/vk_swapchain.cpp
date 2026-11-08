@@ -64,18 +64,19 @@ void VulkanSwapchain::DestroySemaphores() {
     acquire_next_ = 0;
 }
 
-// Drops the device textures that stand for the swapchain images. The device must be idle.
+// Drops the device textures that stand for the swapchain images, at once (their views must go before the swapchain). The device must be
+// idle. Only these: a rebuild may run inside a frame (Acquire), and what that frame destroyed may still be used by its lists that are not
+// submitted yet, so nothing else retired is collected here (Phase 13 Day 169).
 void VulkanSwapchain::ReleaseImages() {
     {
         std::lock_guard<std::mutex> lock(device_->resource_mutex_);
-        const u64 current = device_->frame_number_.load(std::memory_order_relaxed);
         for (u32 i = 0; i < image_count_; ++i) {
-            if (textures_[i].IsValid()) {
-                device_->textures_.Retire(textures_[i], device_->frame_open_ ? current : current + 1);
-                textures_[i] = TextureHandle{};
+            if (VulkanDevice::TextureRes* t = device_->textures_.Get(textures_[i])) {
+                device_->DestroyTextureRes(t);
+                device_->textures_.Free(textures_[i]);
             }
+            textures_[i] = TextureHandle{};
         }
-        device_->CollectRetired(true);
     }
     for (u32 i = 0; i < kMaxImages; ++i) {
         images_[i] = nullptr;

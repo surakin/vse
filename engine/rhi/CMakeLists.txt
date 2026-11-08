@@ -67,7 +67,8 @@ set(RHI_DX12_SOURCES
   dx12/dx12_device_commands.cpp
   dx12/dx12_command_list.cpp
   dx12/dx12_pipeline_cache.cpp
-  dx12/dx12_device_later.cpp
+  dx12/dx12_device_swapchain.cpp
+  dx12/dx12_swapchain.cpp
   dx12/dx12_backend.cpp
 )
 

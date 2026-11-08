@@ -994,6 +994,15 @@ Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `
   with typed storage) is created with unordered access; an sRGB one through a typeless resource, read through its sRGB view and written
   through a linear view with the shader encoding sRGB. 3D, multisampled and depth textures are refused ([[rhi::Device::CanGenerateMips]]
   answers for the format).
+- **The swapchain** (Day 169) is a flip-discard DXGI swap chain of three buffers on the device's Win32 window, with a frame-latency
+  waitable object (at most `FramesInFlight` frames queued) that `Acquire` waits on for at most half a second (a window Windows is not
+  composing then counts as `Minimized`, as on Vulkan; a minimized window returns at once). The buffers are linear (`B8G8R8A8_UNORM` by
+  default) and an sRGB format is their render-target view. `Fifo` presents with a sync interval of 1; `Immediate` with 0 and tearing when
+  the system allows it (`DXGI_FEATURE_PRESENT_ALLOW_TEARING`, so the swap chain is created with tearing from the start); `Mailbox` is not
+  offered and falls back to `Fifo`. scRGB HDR is a 16-bit float buffer in `G10_NONE_P709` when the output takes it (the compositor maps it
+  to an SDR desktop too); HDR10 waits for a 10-bit RHI format. A resize or format change is `ResizeBuffers` after the GPU is idle and every
+  reference to the old buffers is gone; each present is followed by a fence signal, so waiting for the device waits for the presents too.
+  DXGI's Alt+Enter is off: fullscreen is the window's borderless mode. `RecreateSurface` only changes the window (DXGI has no surface object).
 - **The pipeline cache** (Day 167) is an `ID3D12PipelineLibrary` in `<cache dir>/pipelines_<adapter id>_<driver>.bin` (the same
   directory rule as Vulkan's). Each pipeline is stored under a name hashed from its shaders, its root signature's serialized bytes and
   its whole fixed state. The file starts with a header (magic, format version, adapter and driver identity, size, hash) and the list of

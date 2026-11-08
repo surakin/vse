@@ -7,6 +7,9 @@ Everything the phase ships, exercised as a user would, measured, and built with 
 
 ## Tasks
 
+- [ ] **Moved here from Day 169:** `rhi_demo` with the DX12 backend runs 1000 frames with `--validation`, resizes by dragging, minimizes and
+      restores, toggles fullscreen; record the checks done by hand (the demos choose their RHI backend on this day; Day 169 tested the
+      swapchain through `DeviceHost` on a Win32 window instead).
 - [ ] **Demos on both backends:** `rhi_demo` and `renderer_demo` 1000 frames with `--validation` on DX12 and on Vulkan (exit 0, validation silent); every
       command-line option and setting the demos document; `--crash-handler` on and off; record each run.
 - [ ] **Benchmarks:** `rhi_bench`, `renderer_bench` and the jobs benchmarks on Windows, DX12 and Vulkan, in a table in the spec beside the Linux numbers;

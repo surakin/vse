@@ -226,5 +226,6 @@ tests/rhi/dx12_resource_test.cpp                13
 tests/rhi/dx12_bindings_test.cpp                13
 tests/rhi/dx12_pipeline_test.cpp                13
 tests/rhi/dx12_commands_test.cpp                13
+tests/rhi/dx12_swapchain_test.cpp               13
 tests/windows/                                  13
 testopt:windows_*                               13

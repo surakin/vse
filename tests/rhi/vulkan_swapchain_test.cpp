@@ -240,6 +240,34 @@ void RunPresentationChecks(os::WindowBackend backend) {
     CHECK(sc->Resize(0, 0) == SwapchainStatus::Minimized);
     frame(); // the window itself is not minimized, so Acquire rebuilds the swapchain (status Recreated) and renders
 
+    // A rebuild inside a frame (Acquire) keeps what the frame destroyed until the frame is done: a list recorded before it still uses
+    // the buffer (Phase 13 Day 169: the rebuild freed everything retired, so the list ran on a destroyed buffer).
+    BufferDesc bd;
+    bd.size = 4096;
+    bd.usage = BufferUsage::CopySrc | BufferUsage::CopyDst;
+    const BufferHandle a = device->CreateBuffer(bd);
+    const BufferHandle b = device->CreateBuffer(bd);
+    REQUIRE((a.IsValid() && b.IsValid()));
+    CHECK(sc->Resize(0, 0) == SwapchainStatus::Minimized);
+    window->PumpEvents();
+    device->BeginFrame();
+    CommandList* copy = device->CreateCommandList();
+    copy->Begin();
+    copy->CopyBuffer(a, b, 0, 0, 4096);
+    copy->End();
+    device->DestroyBuffer(a);
+    REQUIRE(sc->Acquire() == SwapchainStatus::Recreated);
+    CommandList* present = device->CreateCommandList();
+    present->Begin();
+    present->Barrier(sc->CurrentTexture(), ResourceState::Undefined, ResourceState::Present);
+    present->End();
+    CommandList* both[] = {copy, present};
+    CHECK(device->Submit(both, 2) != 0);
+    device->EndFrame();
+    sc->Present();
+    device->WaitIdle();
+    device->DestroyBuffer(b);
+
     device->DestroySwapchain(sc);
     device->WaitIdle();
     CHECK(device->Counts().textures == 0);

@@ -940,3 +940,11 @@ typeless resource). The triangle matches `triangle.ppm`; fill, saxpy and gradien
 over the DX12 tests. `SetBindGroup` with a draw: 0.40 us on DX12 against 0.74 to 1.00 us on Vulkan. Runs: `ran 1260 of 2459 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan
 `ran 934 of 2459 tests (phases: all; flavors: asan; display: included; crash tests: excluded)` (an earlier run hit the filed FramePool flake once). Review: 4 findings, 2 fixed, 2 declined. Linux: pending until the phase close.
 **Next: Day 169 (the DX12 swapchain).**
+
+Phase 13 **Day 169 (2026-11-08, Windows PC): the DX12 swapchain.** Flip-discard, three linear buffers with sRGB views, Alt+Enter off;
+`Fifo`, `Immediate` with tearing (allowed here), `Mailbox` falling back; the frame-latency object waited on for at most 500 ms; `ResizeBuffers`
+after the GPU is idle and the buffers are freed; scRGB granted (this PC's output is SDR, 270 nits); `Present` errors as device loss, occlusion
+as `Ok`, each present fenced. The review found that a swapchain rebuilt inside a frame freed what the frame destroyed while its lists still
+used it (it hung the GPU here); fixed in both DX12 and Vulkan, with regression tests. The `rhi_demo` item moved to Day 173. Runs:
+`ran 1265 of 2469 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 939 of 2469 tests (phases: all; flavors: asan; display: included; crash tests: excluded)` (the filed FramePool flake once). Review: 5 findings, all fixed.
+Linux: pending until the phase close (the Vulkan swapchain fix included). **Next: Day 170 (DX12 golden images).**

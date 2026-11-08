@@ -3,6 +3,7 @@
 #include "rhi/dx12/dx12_device.h"
 
 #include "rhi/dx12/dx12_command_list.h"
+#include "rhi/dx12/dx12_swapchain.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -242,6 +243,7 @@ Dx12Device::~Dx12Device() {
         g_leaked_user_objects.fetch_add(counts.UserObjects(), std::memory_order_relaxed);
         RhiLog(LogVerbosity::Warn, "D3D12: %zu application object(s) were still alive when the device was destroyed", counts.UserObjects());
     }
+    swapchain_.Reset(); // leaked by the application (counted above); its images go before the resources
     ShutdownPipelines();
     ShutdownBindings();
     ShutdownResources();
@@ -274,10 +276,6 @@ void Dx12Device::ReportLiveObjects() {
         RhiLog(LogVerbosity::Error, "D3D12: %llu D3D12 object(s) besides the device were alive at its destruction (see the warnings above)",
                static_cast<unsigned long long>(live));
     }
-}
-
-void Dx12Device::NotYet(const char* what, int day) {
-    RhiLog(LogVerbosity::Error, "D3D12: %s is not implemented yet (Phase 13 Day %d)", what, day);
 }
 
 // ---- errors and device loss ----
@@ -496,6 +494,15 @@ u64 Dx12Device::FrameNumber() const {
     return frame_number_;
 }
 
+void Dx12Device::WaitForGpu() {
+    u64 last = 0;
+    {
+        std::lock_guard<std::mutex> lock(submit_mutex_);
+        last = last_signaled_;
+    }
+    WaitForValue(last, ~0ull);
+}
+
 void Dx12Device::WaitIdle() {
     // A removed device's fence reports the largest value, so this returns at once then; an injected loss leaves a healthy device that
     // may still run work, so the wait happens in both cases.
@@ -519,6 +526,7 @@ ResourceCounts Dx12Device::Resources() const {
         c.samplers = samplers_.LiveCount();
         c.shaders = shaders_.LiveCount();
         c.pipelines = pipelines_.LiveCount();
+        c.swapchains = swapchain_live_.load(std::memory_order_acquire);
         c.bind_group_layouts = bind_group_layouts_.LiveCount();
         bind_groups_.ForEachLive([&](BindGroupHandle, const BindGroupRes& g) { c.bind_groups += g.transient ? 0 : 1; }); // transient groups end with their frame
     }
