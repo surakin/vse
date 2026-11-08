@@ -184,5 +184,5 @@ frames ok: 3, directional: 1, point: 1, point draws: 1, errors: 0
   regenerate.
 - **See the buffers.** `GBufferDebugView` draws one G-buffer layer (albedo, normal, material, depth, world position) instead
   of the lit picture; `renderer_demo --gbuffer normal` does that.
-- **Check depth.** Draw order must never change the picture: `tests/rhi/vulkan_renderer_demo_test.cpp` renders the demo scene
+- **Check depth.** Draw order must never change the picture: `tests/rhi/renderer_demo_gpu_test.cpp` renders the demo scene
   in shuffled order and crosses two planes to check the intersection line.

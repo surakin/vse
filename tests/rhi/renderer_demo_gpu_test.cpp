@@ -3,8 +3,6 @@
 // Validation and synchronization validation are on and must stay silent.
 #include <cmath>
 #include <cstring>
-#include <string>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -12,7 +10,10 @@
 #include "demo_scene.h"
 #include "gbuffer_rig.h"
 #include "gpu_fixture.h"
+#include "backend_fixture.h"
+#include "cube_fixture.h"
 #include "image_compare.h"
+#include "test_text.h"
 #include "rhi/vulkan/vulkan_device.h"
 
 using namespace engine_placeholder;
@@ -30,7 +31,7 @@ struct DemoShot {
     LightSummary lights;
     u32 volume_draws = 0;
     bool ok = false;
-    std::string error;
+    engine_test::Text error = engine_test::MakeText();
 };
 
 DemoShot RenderDemo(rhi::Device* device, const renderer_demo::SceneOptions& options, int gbuffer_layer = -1) {
@@ -64,7 +65,7 @@ DemoShot RenderDemo(rhi::Device* device, const renderer_demo::SceneOptions& opti
         ft.final_state = rhi::ResourceState::CopySrc;
         frame.SetTime(0.5f, 0.016f);
         const FrameStatus status = frame.Render(&scene.Scene(), &camera, &ft);
-        shot.error = frame.LastError();
+        shot.error = engine_test::MakeText(StringView(frame.LastError()));
         shot.stats = frame.GBufferStatistics();
         shot.lights = frame.Lights();
         shot.volume_draws = frame.PointDraws();
@@ -87,84 +88,73 @@ renderer_demo::SceneOptions DefaultOptions() {
 
 } // namespace
 
-TEST_CASE("The demo scene renders offscreen and matches its golden image", "[rhi][vulkan][gpu][golden][demo]") {
-    gpu_test::GpuFixture fx;
-    fx.RequireValidation();
-    rhi::DevicePtr device = gbuffer_rig::MakeDevice();
-    if (device == nullptr) SKIP("no suitable Vulkan device");
-    fx.ExpectErrors(0);
-    {
-        const DemoShot shot = RenderDemo(device.Get(), DefaultOptions());
-        INFO(shot.error);
-        REQUIRE(shot.ok);
-        // Independent of the golden: the scene is as large as advertised and everything that should be drawn is.
-        CHECK(shot.stats.visible > 100);
-        CHECK(shot.stats.rejected == 0);
-        CHECK(shot.stats.draws < shot.stats.drawn_objects); // instanced runs: fewer draws than objects
-        CHECK(shot.lights.point_count > 50);
-        CHECK(shot.lights.dropped == 0);
-        CHECK(shot.volume_draws == shot.lights.point_count);
-        // The sky stays black (nothing there to light), the ground is lit: the top row is black, the bottom row is not.
-        int top_lit = 0, bottom_lit = 0;
-        for (u32 x = 0; x < kShotW; ++x) {
-            const unsigned char* t = shot.image.Pixel(x, 2);
-            const unsigned char* b = shot.image.Pixel(x, kShotH - 3);
-            top_lit += (t[0] + t[1] + t[2]) > 0;
-            bottom_lit += (b[0] + b[1] + b[2]) > 30;
-        }
-        CHECK(top_lit == 0);
-        CHECK(bottom_lit > static_cast<int>(kShotW) * 9 / 10);
+TEST_CASE("The demo scene renders offscreen and matches its golden image", "[rhi][gpu][golden][demo]") {
+    FOR_EACH_GPU_BACKEND(backend) {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DevicePtr device = gbuffer_rig::MakeDevice(backend);
+        {
+            const DemoShot shot = RenderDemo(device.Get(), DefaultOptions());
+            INFO(shot.error.CStr());
+            REQUIRE(shot.ok);
+            // Independent of the golden: the scene is as large as advertised and everything that should be drawn is.
+            CHECK(shot.stats.visible > 100);
+            CHECK(shot.stats.rejected == 0);
+            CHECK(shot.stats.draws < shot.stats.drawn_objects); // instanced runs: fewer draws than objects
+            CHECK(shot.lights.point_count > 50);
+            CHECK(shot.lights.dropped == 0);
+            CHECK(shot.volume_draws == shot.lights.point_count);
+            // The sky stays black (nothing there to light), the ground is lit: the top row is black, the bottom row is not.
+            int top_lit = 0, bottom_lit = 0;
+            for (u32 x = 0; x < kShotW; ++x) {
+                const u8* t = shot.image.Pixel(x, 2);
+                const u8* b = shot.image.Pixel(x, kShotH - 3);
+                top_lit += (t[0] + t[1] + t[2]) > 0;
+                bottom_lit += (b[0] + b[1] + b[2]) > 30;
+            }
+            CHECK(top_lit == 0);
+            CHECK(bottom_lit > static_cast<int>(kShotW) * 9 / 10);
 
-        if (gpu_test::UpdatingGoldens()) {
-            REQUIRE(gpu_test::WritePpm(gpu_test::GoldenPath("renderer_demo.ppm").c_str(), shot.image));
-            WARN("ENGINE_RHI_UPDATE_GOLDEN=1: tests/rhi/golden/renderer_demo.ppm was rewritten; inspect it before committing");
-        } else {
-            gpu_test::Image golden;
-            REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath("renderer_demo.ppm").c_str(), &golden));
             gpu_test::CompareOptions co;
             co.tolerance = 6;          // GGX highlights and 300 summed lights: a few levels of rounding difference
             co.edge_tolerance = 90;
             co.max_edge_miss = 0.3;
             co.max_interior_miss = 0.002;
-            const gpu_test::CompareResult result = gpu_test::Compare(golden, shot.image, co, "renderer_demo");
-            INFO(result.message);
-            CHECK(result.same);
+            cube_test::CheckGolden(shot.image, "renderer_demo.ppm", "renderer_demo", backend, co);
+            device->WaitIdle();
         }
         device->WaitIdle();
+        device.Reset();
     }
-    device->WaitIdle();
-    device.Reset();
 }
 
-TEST_CASE("The picture does not depend on the order objects were added", "[rhi][vulkan][gpu][demo][depth]") {
-    gpu_test::GpuFixture fx;
-    fx.RequireValidation();
-    rhi::DevicePtr device = gbuffer_rig::MakeDevice();
-    if (device == nullptr) SKIP("no suitable Vulkan device");
-    fx.ExpectErrors(0);
-    {
-        renderer_demo::SceneOptions so = DefaultOptions();
-        so.objects = 200; // smaller than the milestone scene: this test renders it several times
-        so.lights = 60;
-        const DemoShot natural = RenderDemo(device.Get(), so);
-        REQUIRE(natural.ok);
-        for (u32 seed : {3u, 77u, 12345u}) {
-            so.add_order_seed = seed;
-            const DemoShot shuffled = RenderDemo(device.Get(), so);
-            REQUIRE(shuffled.ok);
-            // The same draws (same visible count) and exactly the same picture, pixel for pixel.
-            CHECK(shuffled.stats.visible == natural.stats.visible);
-            size_t differing = 0;
-            for (size_t i = 0; i < natural.image.rgba.size(); i += 4) {
-                if (std::memcmp(&natural.image.rgba[i], &shuffled.image.rgba[i], 3) != 0) ++differing;
+TEST_CASE("The picture does not depend on the order objects were added", "[rhi][gpu][demo][depth]") {
+    FOR_EACH_GPU_BACKEND(backend) {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DevicePtr device = gbuffer_rig::MakeDevice(backend);
+        {
+            renderer_demo::SceneOptions so = DefaultOptions();
+            so.objects = 200; // smaller than the milestone scene: this test renders it several times
+            so.lights = 60;
+            const DemoShot natural = RenderDemo(device.Get(), so);
+            REQUIRE(natural.ok);
+            for (u32 seed : {3u, 77u, 12345u}) {
+                so.add_order_seed = seed;
+                const DemoShot shuffled = RenderDemo(device.Get(), so);
+                REQUIRE(shuffled.ok);
+                // The same draws (same visible count) and exactly the same picture, pixel for pixel.
+                CHECK(shuffled.stats.visible == natural.stats.visible);
+                size_t differing = 0;
+                for (size_t i = 0; i < natural.image.rgba.size(); i += 4) {
+                    if (std::memcmp(&natural.image.rgba[i], &shuffled.image.rgba[i], 3) != 0) ++differing;
+                }
+                INFO("seed " << seed << ": " << differing << " of " << kShotW * kShotH << " pixels differ");
+                CHECK(differing == 0);
             }
-            INFO("seed " << seed << ": " << differing << " of " << kShotW * kShotH << " pixels differ");
-            CHECK(differing == 0);
+            device->WaitIdle();
         }
         device->WaitIdle();
+        device.Reset();
     }
-    device->WaitIdle();
-    device.Reset();
 }
 
 namespace {
@@ -176,92 +166,91 @@ Mat4 PlaneAt(const Vec3& x_axis, const Vec3& y_axis, const Vec3& z_axis) { retur
 
 } // namespace
 
-TEST_CASE("Two crossing planes resolve visibility along their line of intersection, in either draw order", "[rhi][vulkan][gpu][demo][depth]") {
-    gpu_test::GpuFixture fx;
-    fx.RequireValidation();
-    rhi::DevicePtr device = MakeDevice();
-    if (device == nullptr) SKIP("no suitable Vulkan device");
-    fx.ExpectErrors(0);
-    {
-        Rig rig;
-        REQUIRE(rig.Create(device.Get()));
-        MeshData d;
-        REQUIRE(MakePlaneMesh(10.0f, 10.0f, 1, 1, &d) == nullptr);
-        GpuMesh plane;
-        REQUIRE(plane.Create(device.Get(), d, "plane"));
-        rig.Prepare(&plane);
-        const MaterialId mat = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m");
-        REQUIRE(mat.IsValid());
+TEST_CASE("Two crossing planes resolve visibility along their line of intersection, in either draw order", "[rhi][gpu][demo][depth]") {
+    FOR_EACH_GPU_BACKEND(backend) {
+        gpu_test::BackendValidation validation(backend);
+        rhi::DevicePtr device = MakeDevice(backend);
+        {
+            Rig rig;
+            REQUIRE(rig.Create(device.Get()));
+            MeshData d;
+            REQUIRE(MakePlaneMesh(10.0f, 10.0f, 1, 1, &d) == nullptr);
+            GpuMesh plane;
+            REQUIRE(plane.Create(device.Get(), d, "plane"));
+            rig.Prepare(&plane);
+            const MaterialId mat = CreateGBufferMaterial(rig.sys, rig.templates, GBufferOptions{}, "m");
+            REQUIRE(mat.IsValid());
 
-        // A: the floor, normal +Y, at y = 0. B: a wall in the plane x = 0, normal +X (the local Y axis maps to +X).
-        const Mat4 floor = PlaneAt(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1));
-        const Mat4 wall = PlaneAt(Vec3(0, -1, 0), Vec3(1, 0, 0), Vec3(0, 0, 1));
-        Camera cam = MakeLookAtCamera(Vec3(3, 4, 5), Vec3(0, 0, 0), Vec3(0, 1, 0));
-        cam.aspect = 1.0f;
-        cam.near_plane = 0.5f;
-        cam.far_plane = 30.0f;
+            // A: the floor, normal +Y, at y = 0. B: a wall in the plane x = 0, normal +X (the local Y axis maps to +X).
+            const Mat4 floor = PlaneAt(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1));
+            const Mat4 wall = PlaneAt(Vec3(0, -1, 0), Vec3(1, 0, 0), Vec3(0, 0, 1));
+            Camera cam = MakeLookAtCamera(Vec3(3, 4, 5), Vec3(0, 0, 0), Vec3(0, 1, 0));
+            cam.aspect = 1.0f;
+            cam.near_plane = 0.5f;
+            cam.far_plane = 30.0f;
 
-        Layers results[2];
-        for (int order = 0; order < 2; ++order) {
-            RenderScene scene(RenderSceneDesc{});
-            RenderObjectDesc od;
-            od.mesh = &plane;
-            od.material = mat.index;
-            od.transform = order == 0 ? floor : wall;
-            scene.AddObject(od);
-            od.transform = order == 0 ? wall : floor;
-            scene.AddObject(od);
-            results[order] = rig.Render(scene, cam);
-            REQUIRE(results[order].ok);
-        }
+            Layers results[2];
+            for (int order = 0; order < 2; ++order) {
+                RenderScene scene(RenderSceneDesc{});
+                RenderObjectDesc od;
+                od.mesh = &plane;
+                od.material = mat.index;
+                od.transform = order == 0 ? floor : wall;
+                scene.AddObject(od);
+                od.transform = order == 0 ? wall : floor;
+                scene.AddObject(od);
+                results[order] = rig.Render(scene, cam);
+                REQUIRE(results[order].ok);
+            }
 
-        int probes = 0;
-        for (const Layers& L : results) {
-            for (f32 z = -3.0f; z <= 3.0f; z += 1.0f) {
-                struct Probe {
-                    Vec3 point;
-                    Vec3 normal; // what the pixel must show
-                    Vec3 surface_point; // where that surface is hit by the pixel's ray
-                };
-                // Visible floor beside the line, visible wall above it, the floor hidden behind the wall, the wall's lower half
-                // hidden under the floor.
-                const Probe list[] = {
-                    {Vec3(0.6f, 0.0f, z), Vec3(0, 1, 0), Vec3(0.6f, 0.0f, z)},
-                    {Vec3(0.0f, 0.6f, z), Vec3(1, 0, 0), Vec3(0.0f, 0.6f, z)},
-                };
-                for (const Probe& p : list) {
-                    const Pixel px = Project(cam, p.point);
-                    const Vec3 n = L.Normal(px.x, px.y);
-                    INFO("probe " << p.point.x << " " << p.point.y << " " << p.point.z << " normal " << n.x << " " << n.y << " " << n.z);
-                    CHECK(std::fabs(n.x - p.normal.x) < 0.02f);
-                    CHECK(std::fabs(n.y - p.normal.y) < 0.02f);
-                    CHECK(std::fabs(n.z - p.normal.z) < 0.02f);
-                    // The stored depth is the depth of that surface point to within a pixel's worth of slope.
-                    const Pixel on_surface = Project(cam, p.surface_point);
-                    CHECK(std::fabs(L.Depth(px.x, px.y) - on_surface.depth) < 2e-3f);
+            int probes = 0;
+            for (const Layers& L : results) {
+                for (f32 z = -3.0f; z <= 3.0f; z += 1.0f) {
+                    struct Probe {
+                        Vec3 point;
+                        Vec3 normal; // what the pixel must show
+                        Vec3 surface_point; // where that surface is hit by the pixel's ray
+                    };
+                    // Visible floor beside the line, visible wall above it, the floor hidden behind the wall, the wall's lower half
+                    // hidden under the floor.
+                    const Probe list[] = {
+                        {Vec3(0.6f, 0.0f, z), Vec3(0, 1, 0), Vec3(0.6f, 0.0f, z)},
+                        {Vec3(0.0f, 0.6f, z), Vec3(1, 0, 0), Vec3(0.0f, 0.6f, z)},
+                    };
+                    for (const Probe& p : list) {
+                        const Pixel px = Project(cam, p.point);
+                        const Vec3 n = L.Normal(px.x, px.y);
+                        INFO("probe " << p.point.x << " " << p.point.y << " " << p.point.z << " normal " << n.x << " " << n.y << " " << n.z);
+                        CHECK(std::fabs(n.x - p.normal.x) < 0.02f);
+                        CHECK(std::fabs(n.y - p.normal.y) < 0.02f);
+                        CHECK(std::fabs(n.z - p.normal.z) < 0.02f);
+                        // The stored depth is the depth of that surface point to within a pixel's worth of slope.
+                        const Pixel on_surface = Project(cam, p.surface_point);
+                        CHECK(std::fabs(L.Depth(px.x, px.y) - on_surface.depth) < 2e-3f);
+                        ++probes;
+                    }
+                    // Occlusion: the floor point behind the wall (x < 0) shows the wall; the wall point under the floor (y < 0) shows
+                    // the floor.
+                    const Pixel behind = Project(cam, Vec3(-0.6f, 0.0f, z));
+                    const Vec3 nb = L.Normal(behind.x, behind.y);
+                    INFO("behind the wall, z " << z << " normal " << nb.x << " " << nb.y << " " << nb.z);
+                    CHECK(nb.x > 0.98f);
+                    const Pixel under = Project(cam, Vec3(0.0f, -0.6f, z));
+                    const Vec3 nu = L.Normal(under.x, under.y);
+                    INFO("under the floor, z " << z << " normal " << nu.x << " " << nu.y << " " << nu.z);
+                    CHECK(nu.y > 0.98f);
                     ++probes;
                 }
-                // Occlusion: the floor point behind the wall (x < 0) shows the wall; the wall point under the floor (y < 0) shows
-                // the floor.
-                const Pixel behind = Project(cam, Vec3(-0.6f, 0.0f, z));
-                const Vec3 nb = L.Normal(behind.x, behind.y);
-                INFO("behind the wall, z " << z << " normal " << nb.x << " " << nb.y << " " << nb.z);
-                CHECK(nb.x > 0.98f);
-                const Pixel under = Project(cam, Vec3(0.0f, -0.6f, z));
-                const Vec3 nu = L.Normal(under.x, under.y);
-                INFO("under the floor, z " << z << " normal " << nu.x << " " << nu.y << " " << nu.z);
-                CHECK(nu.y > 0.98f);
-                ++probes;
             }
+            CHECK(probes >= 40);
+            // Either draw order gives exactly the same depth and normals.
+            CHECK(gbuffer_rig::Same(results[0].depth, results[1].depth));
+            CHECK(gbuffer_rig::Same(results[0].normal, results[1].normal));
+            device->WaitIdle();
         }
-        CHECK(probes >= 40);
-        // Either draw order gives exactly the same depth and normals.
-        CHECK(results[0].depth == results[1].depth);
-        CHECK(results[0].normal == results[1].normal);
         device->WaitIdle();
+        device.Reset();
     }
-    device->WaitIdle();
-    device.Reset();
 }
 
 #include "demo_assets.h"
@@ -356,6 +345,7 @@ struct LossRun {
 LossRun RunWithLoss(u32 lose_at, u32 frames) {
     LossRun run;
     rhi::DeviceCreateInfo info;
+    info.backend = rhi::Backend::Vulkan; // these two tests count the Vulkan backend's leaks
     info.validation = rhi::ValidationSetting::On;
     info.sync_validation = true;
     info.pipeline_cache = false;
@@ -412,8 +402,7 @@ LossRun RunWithLoss(u32 lose_at, u32 frames) {
 TEST_CASE("Losing the real device in the deferred pipeline ends frames as DeviceLost and tears down clean", "[rhi][vulkan][gpu][demo][fault]") {
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
-    rhi::DevicePtr probe = gbuffer_rig::MakeDevice();
-    if (probe == nullptr) SKIP("no suitable Vulkan device");
+    rhi::DevicePtr probe = gbuffer_rig::MakeDevice(rhi::Backend::Vulkan);
     probe.Reset();
     fx.ExpectErrors(0);
     rhi::vulkan::VulkanDevice::ResetLeakCounts();
@@ -440,8 +429,7 @@ TEST_CASE("Losing the real device in the deferred pipeline ends frames as Device
 TEST_CASE("A long run of the deferred frame neither grows the transient pool nor leaks", "[rhi][vulkan][gpu][demo][fault]") {
     gpu_test::GpuFixture fx;
     fx.RequireValidation();
-    rhi::DevicePtr probe = gbuffer_rig::MakeDevice();
-    if (probe == nullptr) SKIP("no suitable Vulkan device");
+    rhi::DevicePtr probe = gbuffer_rig::MakeDevice(rhi::Backend::Vulkan);
     probe.Reset();
     fx.ExpectErrors(0);
     rhi::vulkan::VulkanDevice::ResetLeakCounts();

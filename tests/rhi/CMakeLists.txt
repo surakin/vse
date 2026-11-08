@@ -32,11 +32,11 @@ set(RHI_TEST_SOURCES
   cube_test.cpp
   textured_cube_test.cpp
   lit_cube_test.cpp
-  vulkan_render_graph_test.cpp
+  render_graph_gpu_test.cpp
   vulkan_strip_test.cpp
-  vulkan_gbuffer_test.cpp
-  vulkan_lighting_test.cpp
-  vulkan_renderer_demo_test.cpp
+  gbuffer_gpu_test.cpp
+  lighting_gpu_test.cpp
+  renderer_demo_gpu_test.cpp
   ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_scene.cpp
   ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_frame.cpp
   ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_assets.cpp

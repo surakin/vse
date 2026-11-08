@@ -78,7 +78,7 @@ Every test carries exactly one phase label: `phase0` (foundation), `phase1` (Lin
 with `ctest -L '^phase5$'`; labels combine as in `ctest -L '^phase4$' -L gpu` (both), `-L 'phase4|phase5'` (either)
 and `-LE gpu` (exclude). The anchors keep `phase2` from matching `phase3`.
 
-`tests/phases.txt` is the only place a test's phase is decided: a line per source file or directory (`tests/rhi/vulkan_cube_test.cpp  3`),
+`tests/phases.txt` is the only place a test's phase is decided: a line per source file or directory (`tests/rhi/cube_test.cpp  3`),
 or `test:<name>` for a test that is not a Catch2 case. Add a line when you add a test file; the build stops,
 naming the file, if a Catch2 test has none. A test that is not a Catch2 case (`add_test`) gets its label from
 `engine_label_tests(<name>)`, called after `add_test`. `test_phase_labels` fails, naming the tests, if any test in the

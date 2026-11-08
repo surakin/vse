@@ -103,7 +103,7 @@ tests/rhi/vulkan_fault_test.cpp                 4
 tests/rhi/vulkan_frame_test.cpp                 4
 tests/rhi/golden_test.cpp                       4
 tests/rhi/vulkan_instance_test.cpp              4
-tests/rhi/lit_cube_test.cpp                     4   # the Phase 4 capstone; deferred lighting is vulkan_lighting_test
+tests/rhi/lit_cube_test.cpp                     4   # the Phase 4 capstone; deferred lighting is lighting_gpu_test
 tests/rhi/vulkan_loader_test.cpp                4
 tests/rhi/vulkan_memory_test.cpp                4
 tests/rhi/vulkan_pipeline_test.cpp              4
@@ -136,10 +136,10 @@ tests/renderer/shader_reflection_test.cpp             5
 tests/renderer/smoke_test.cpp                         5
 tests/shader_mint/                              5
 tests/rhi/shader_interface_test.cpp             5   # asserts the Slang shaders' reflected interface (Days 69-71)
-tests/rhi/vulkan_gbuffer_test.cpp               5
-tests/rhi/vulkan_lighting_test.cpp              5
-tests/rhi/vulkan_render_graph_test.cpp          5
-tests/rhi/vulkan_renderer_demo_test.cpp         5
+tests/rhi/gbuffer_gpu_test.cpp                  5
+tests/rhi/lighting_gpu_test.cpp                 5
+tests/rhi/render_graph_gpu_test.cpp             5
+tests/rhi/renderer_demo_gpu_test.cpp            5
 tests/rhi/vulkan_strip_test.cpp                 5   # an RHI field, added by the renderer's mesh work
 test:raw_new_check*                             5
 test:signal_safety_check*                       7

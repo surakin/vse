@@ -2,22 +2,20 @@
 // passes: a clear (write), a draw that samples it, a compute dispatch that writes a storage image, and a draw that
 // samples both results into an imported target. The graph records every barrier; the test records none, and the
 // validation layers (including the synchronization checks) must stay silent.
-#include <vector>
-
 #include <catch2/catch_test_macros.hpp>
 
-#include "fullscreen.vert.spv.inc"
-#include "gpu_fixture.h"
-#include "gradient.comp.spv.inc"
-#include "graph_sample.frag.spv.inc"
+#include "backend_fixture.h"
+#include "containers/vector.h"
+#include "fullscreen.vert.dxil.inc"
+#include "gradient.comp.dxil.inc"
+#include "graph_sample.frag.dxil.inc"
 #include "renderer/render_graph.h"
 #include "renderer/transient_pool.h"
 #include "rhi/rhi.h"
-#include "rhi/vulkan/vulkan_device.h"
+#include "rhi/vulkan/vk_instance.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::rhi::vulkan;
 using namespace engine_placeholder::renderer;
 
 namespace {
@@ -36,16 +34,9 @@ struct GraphScene {
 
     bool Create(Device* d) {
         device = d;
-        ShaderDesc sd;
-        sd.stage = ShaderStage::Vertex;
-        sd.SetCode(SpirvBlob(shaders::kFullscreenVertSpv, shaders::kFullscreenVertSpvWordCount));
-        vs = device->CreateShader(sd);
-        sd.stage = ShaderStage::Fragment;
-        sd.SetCode(SpirvBlob(shaders::kGraphSampleFragSpv, shaders::kGraphSampleFragSpvWordCount));
-        fs = device->CreateShader(sd);
-        sd.stage = ShaderStage::Compute;
-        sd.SetCode(SpirvBlob(shaders::kGradientCompSpv, shaders::kGradientCompSpvWordCount));
-        cs = device->CreateShader(sd);
+        vs = CreateShaderFromSet(*device, shaders::kFullscreenVertShader, ShaderStage::Vertex);
+        fs = CreateShaderFromSet(*device, shaders::kGraphSampleFragShader, ShaderStage::Fragment);
+        cs = CreateShaderFromSet(*device, shaders::kGradientCompShader, ShaderStage::Compute);
 
         BindingDesc sample_bindings[3] = {{0, BindingType::SampledTexture, ShaderStage::Fragment, 1},
                                           {1, BindingType::SampledTexture, ShaderStage::Fragment, 1},
@@ -168,90 +159,83 @@ void CombinePass(const PassExecuteContext& ctx, void* user) {
 
 } // namespace
 
-TEST_CASE("A four-pass render graph runs on a real device with no validation or synchronization messages", "[rhi][vulkan][gpu][graph]") {
-    gpu_test::GpuFixture fx;
-    fx.RequireValidation();
-    DeviceCreateInfo info;
-    info.validation = ValidationSetting::On;
-    info.sync_validation = true;
-    info.pipeline_cache = false;
-    VulkanDevicePtr device = VulkanDevice::Create(info);
-    if (device == nullptr) {
-        SKIP("no suitable Vulkan device");
-    }
-    fx.ExpectErrors(0);
-    {
-        GraphScene scene;
-        REQUIRE(scene.Create(device.Get()));
-        TransientPool pool(device.Get(), TransientPoolDesc{});
+TEST_CASE("A four-pass render graph runs on a real device with no validation or synchronization messages", "[rhi][gpu][graph]") {
+    FOR_EACH_GPU_BACKEND(backend) {
+        gpu_test::BackendValidation validation(backend);
+        DevicePtr device = gpu_test::CreateTestDevice(backend);
+        {
+            GraphScene scene;
+            REQUIRE(scene.Create(device.Get()));
+            TransientPool pool(device.Get(), TransientPoolDesc{});
 
-        TextureDesc target_desc;
-        target_desc.width = target_desc.height = kVulkanRenderGraphTestSize;
-        target_desc.format = Format::RGBA8_UNorm;
-        target_desc.usage = TextureUsage::ColorAttachment | TextureUsage::CopySrc;
-        target_desc.debug_name = "graph target";
-        const TextureHandle target = device->CreateTexture(target_desc);
-        REQUIRE(target.IsValid());
+            TextureDesc target_desc;
+            target_desc.width = target_desc.height = kVulkanRenderGraphTestSize;
+            target_desc.format = Format::RGBA8_UNorm;
+            target_desc.usage = TextureUsage::ColorAttachment | TextureUsage::CopySrc;
+            target_desc.debug_name = "graph target";
+            const TextureHandle target = device->CreateTexture(target_desc);
+            REQUIRE(target.IsValid());
 
-        // Three frames: the second and third reuse the pooled textures, so their first barriers start from the state the
-        // previous frame left them in.
-        for (u64 frame = 0; frame < 3; ++frame) {
-            ArenaAllocator arena(4u << 20);
-            RenderGraph graph(&arena, RenderGraphDesc{});
-            pool.BeginFrame(frame);
-            TextureDesc rt;
-            rt.width = rt.height = kVulkanRenderGraphTestSize;
-            rt.format = Format::RGBA8_UNorm;
-            rt.usage = TextureUsage::ColorAttachment | TextureUsage::Sampled;
-            TextureDesc st = rt;
-            st.usage = TextureUsage::Storage | TextureUsage::Sampled;
-            scene.a = graph.CreateTexture("a", rt);
-            scene.b = graph.CreateTexture("b", rt);
-            scene.c = graph.CreateTexture("c", st);
-            scene.out = graph.ImportTexture("out", target, ResourceState::Undefined, ResourceState::CopySrc, false);
+            // Three frames: the second and third reuse the pooled textures, so their first barriers start from the state the
+            // previous frame left them in.
+            for (u64 frame = 0; frame < 3; ++frame) {
+                ArenaAllocator arena(4u << 20);
+                RenderGraph graph(&arena, RenderGraphDesc{});
+                pool.BeginFrame(frame);
+                TextureDesc rt;
+                rt.width = rt.height = kVulkanRenderGraphTestSize;
+                rt.format = Format::RGBA8_UNorm;
+                rt.usage = TextureUsage::ColorAttachment | TextureUsage::Sampled;
+                TextureDesc st = rt;
+                st.usage = TextureUsage::Storage | TextureUsage::Sampled;
+                scene.a = graph.CreateTexture("a", rt);
+                scene.b = graph.CreateTexture("b", rt);
+                scene.c = graph.CreateTexture("c", st);
+                scene.out = graph.ImportTexture("out", target, ResourceState::Undefined, ResourceState::CopySrc, false);
 
-            graph.AddPass("clear", &ClearPass, &scene).Write(scene.a, GraphUsage::ColorAttachment);
-            graph.AddPass("double", &DoublePass, &scene).Read(scene.a, GraphUsage::Sampled).Write(scene.b, GraphUsage::ColorAttachment);
-            graph.AddPass("gradient", &ComputePass, &scene).Write(scene.c, GraphUsage::StorageWrite);
-            graph.AddPass("combine", &CombinePass, &scene)
-                .Read(scene.b, GraphUsage::Sampled)
-                .Read(scene.c, GraphUsage::Sampled)
-                .Write(scene.out, GraphUsage::ColorAttachment);
+                graph.AddPass("clear", &ClearPass, &scene).Write(scene.a, GraphUsage::ColorAttachment);
+                graph.AddPass("double", &DoublePass, &scene).Read(scene.a, GraphUsage::Sampled).Write(scene.b, GraphUsage::ColorAttachment);
+                graph.AddPass("gradient", &ComputePass, &scene).Write(scene.c, GraphUsage::StorageWrite);
+                graph.AddPass("combine", &CombinePass, &scene)
+                    .Read(scene.b, GraphUsage::Sampled)
+                    .Read(scene.c, GraphUsage::Sampled)
+                    .Write(scene.out, GraphUsage::ColorAttachment);
 
-            device->BeginFrame();
-            CommandList* list = device->CreateCommandList();
-            list->Begin();
-            REQUIRE(graph.Execute(&pool, list));
-            list->End();
-            CommandList* lists[] = {list};
-            REQUIRE(device->Submit(lists, 1) != 0);
-            device->EndFrame();
-            device->WaitIdle();
-            pool.EndFrame();
+                device->BeginFrame();
+                CommandList* list = device->CreateCommandList();
+                list->Begin();
+                REQUIRE(graph.Execute(&pool, list));
+                list->End();
+                CommandList* lists[] = {list};
+                REQUIRE(device->Submit(lists, 1) != 0);
+                device->EndFrame();
+                device->WaitIdle();
+                pool.EndFrame();
 
-            std::vector<u8> pixels(kVulkanRenderGraphTestSize * kVulkanRenderGraphTestSize * 4);
-            REQUIRE(device->ReadbackTexture(target, 0, 0, pixels.data(), pixels.size(), ResourceState::CopySrc));
-            // out(x, y) = b + c = (0.2 + x / 255, 0.4 + y / 255, 0.1, 1.0), in 8 bits: (51 + x, 102 + y, 26, 255).
-            u32 bad = 0;
-            for (u32 y = 0; y < kVulkanRenderGraphTestSize; ++y) {
-                for (u32 x = 0; x < kVulkanRenderGraphTestSize; ++x) {
-                    const u8* px = &pixels[(y * kVulkanRenderGraphTestSize + x) * 4];
-                    auto off = [](int got, int want) { return got < want - 2 || got > want + 2; };
-                    if (off(px[0], 51 + static_cast<int>(x)) || off(px[1], 102 + static_cast<int>(y)) || off(px[2], 26) || px[3] != 255) ++bad;
+                Vector<u8> pixels;
+                pixels.Resize(kVulkanRenderGraphTestSize * kVulkanRenderGraphTestSize * 4);
+                REQUIRE(device->ReadbackTexture(target, 0, 0, pixels.Data(), pixels.Size(), ResourceState::CopySrc));
+                // out(x, y) = b + c = (0.2 + x / 255, 0.4 + y / 255, 0.1, 1.0), in 8 bits: (51 + x, 102 + y, 26, 255).
+                u32 bad = 0;
+                for (u32 y = 0; y < kVulkanRenderGraphTestSize; ++y) {
+                    for (u32 x = 0; x < kVulkanRenderGraphTestSize; ++x) {
+                        const u8* px = &pixels[(y * kVulkanRenderGraphTestSize + x) * 4];
+                        auto off = [](int got, int want) { return got < want - 2 || got > want + 2; };
+                        if (off(px[0], 51 + static_cast<int>(x)) || off(px[1], 102 + static_cast<int>(y)) || off(px[2], 26) || px[3] != 255) ++bad;
+                    }
                 }
+                CHECK(bad == 0);
             }
-            CHECK(bad == 0);
+            const TransientPoolStats stats = pool.Stats();
+            CHECK(stats.textures_created == 3);
+            CHECK(stats.texture_reuses == 6);
+            device->WaitIdle();
+            device->DestroyTexture(target);
+            scene.Destroy();
         }
-        const TransientPoolStats stats = pool.Stats();
-        CHECK(stats.textures_created == 3);
-        CHECK(stats.texture_reuses == 6);
         device->WaitIdle();
-        device->DestroyTexture(target);
-        scene.Destroy();
+        // Synchronization validation reports hazards as warnings on Vulkan: none either (the DX12 count covers warnings already).
+        if (backend == Backend::Vulkan) CHECK(rhi::vulkan::GetValidationCounts().warnings == 0);
+        device.Reset();
     }
-    device->WaitIdle();
-    for (const gpu_test::CapturedMessage& m : fx.Messages()) {
-        if (m.severity == LogVerbosity::Error || m.severity == LogVerbosity::Warn) FAIL_CHECK(m.id << ": " << m.text);
-    }
-    device.Reset();
 }

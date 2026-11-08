@@ -213,6 +213,13 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   right after another tree's build; deleting that object and building again fixed it. Not seen in the unity trees. The file was removed on Day 169 (its last placeholders were replaced); not seen with another file so far.
 - Phase 13 Day 168 (2026-11-08), open until the Linux run at the phase close: `shaders/mipgen.comp` and its minted outputs (minted on Windows)
   have not been minted or checked on Linux.
+- Phase 13 Day 171 (2026-11-08), open until the Linux run at the phase close: the renderer GPU tests made per-backend (`gbuffer_rig.h`,
+  `*_gpu_test.cpp`) have not been built or run on Linux.
+- Phase 13 Day 171, measured, filed: on the Radeon 860M the DX12 backend records a draw in 0.27 us against Vulkan's 0.19 us (16000
+  point-light volume draws: 4.4 ms against 3.15 ms of CPU time), and a 50000-object frame takes 7.1 to 7.3 ms against 6.4 to 7.1. Not
+  profiled (PIX is not installed).
+- 2026-11-08 (Windows PC, Phase 13 Day 171), flaky again: `Throughput scales with participant count` (phase 2, plain), a third time in
+  `scripts/test-phase.sh --affected` that day.
 - Phase 13 Day 170 (2026-11-08), open until the Linux run at the phase close: the backend-parameterized GPU tests (`backend_fixture.h`, the
   renamed golden tests, `compute_test.cpp`) have not been built or run on Linux (GCC included).
 - 2026-11-08 (Windows PC, Phase 13 Day 170), flaky again: `Throughput scales with participant count` (phase 2, plain) failed once more in

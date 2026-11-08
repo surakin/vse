@@ -1,15 +1,15 @@
 #pragma once
 // Shared by the G-buffer and lighting real-device tests: a device-side rig (materials, frame resources, transient pool,
 // G-buffer templates), the layer readback of one G-buffer frame, and small helpers (half floats, projection of a point).
-#include <algorithm>
 #include <cmath>
 #include <cstring>
-#include <string>
-#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "backend_fixture.h"
+#include "containers/vector.h"
 #include "mem/arena_allocator.h"
+#include "test_text.h"
 #include "renderer/camera.h"
 #include "renderer/frame_data.h"
 #include "renderer/gbuffer.h"
@@ -45,13 +45,13 @@ inline f32 LinearToSrgb(f32 c) { return c <= 0.0031308f ? c * 12.92f : 1.055f * 
 
 // The four layers read back to the host.
 struct Layers {
-    std::vector<u8> albedo;   // RGBA8_SRGB bytes
-    std::vector<u16> normal;  // RG16_Float
-    std::vector<u8> material; // RGBA8_UNorm
-    std::vector<f32> depth;   // D32_Float
+    Vector<u8> albedo;   // RGBA8_SRGB bytes
+    Vector<u16> normal;  // RG16_Float
+    Vector<u8> material; // RGBA8_UNorm
+    Vector<f32> depth;   // D32_Float
     GBufferStats stats;
     bool ok = false;
-    std::string error;
+    engine_test::Text error = engine_test::MakeText();
 
     int Albedo(u32 x, u32 y, u32 c) const { return albedo[(y * kW + x) * 4 + c]; }
     int Material(u32 x, u32 y, u32 c) const { return material[(y * kW + x) * 4 + c]; }
@@ -135,7 +135,7 @@ struct Rig {
     // Renders the scene into the G-buffer and reads every layer back. `debug` adds the debug view of that layer into
     // `debug_out` (RGBA8_UNorm bytes) when it is not null.
     Layers Render(const RenderScene& scene, const Camera& camera, GBufferDebugView* view = nullptr, GBufferLayer layer = GBufferLayer::Albedo,
-                  std::vector<u8>* debug_out = nullptr) {
+                  Vector<u8>* debug_out = nullptr) {
         Layers out;
         GBufferPass pass(device, sys, frame);
         pass.SetExtraTargetUsage(rhi::TextureUsage::CopySrc);
@@ -146,7 +146,7 @@ struct Rig {
         frame->BeginFrame(f);
         frame->WriteFrameData(MakeFrameData(camera, kW, kH, 0, 0, f));
         out.ok = pass.Prepare(scene, Frustum::FromViewProjection(camera.ViewProjection()));
-        out.error = pass.LastError();
+        out.error = engine_test::MakeText(StringView(pass.LastError()));
         out.stats = pass.Stats();
         frame->Flush();
 
@@ -195,17 +195,17 @@ struct Rig {
         }
         device->EndFrame();
         device->WaitIdle();
-        out.albedo.resize(kW * kH * 4);
-        out.normal.resize(kW * kH * 2);
-        out.material.resize(kW * kH * 4);
-        out.depth.resize(kW * kH);
-        REQUIRE(device->ReadbackBuffer(bufs[0], 0, out.albedo.data(), sizes[0]));
-        REQUIRE(device->ReadbackBuffer(bufs[1], 0, out.normal.data(), sizes[1]));
-        REQUIRE(device->ReadbackBuffer(bufs[2], 0, out.material.data(), sizes[2]));
-        REQUIRE(device->ReadbackBuffer(bufs[3], 0, out.depth.data(), sizes[3]));
+        out.albedo.Resize(kW * kH * 4);
+        out.normal.Resize(kW * kH * 2);
+        out.material.Resize(kW * kH * 4);
+        out.depth.Resize(kW * kH);
+        REQUIRE(device->ReadbackBuffer(bufs[0], 0, out.albedo.Data(), sizes[0]));
+        REQUIRE(device->ReadbackBuffer(bufs[1], 0, out.normal.Data(), sizes[1]));
+        REQUIRE(device->ReadbackBuffer(bufs[2], 0, out.material.Data(), sizes[2]));
+        REQUIRE(device->ReadbackBuffer(bufs[3], 0, out.depth.Data(), sizes[3]));
         if (debug_out != nullptr) {
-            debug_out->resize(kW * kH * 4);
-            REQUIRE(device->ReadbackTexture(debug_tex, 0, 0, debug_out->data(), debug_out->size(), rhi::ResourceState::CopySrc));
+            debug_out->Resize(kW * kH * 4);
+            REQUIRE(device->ReadbackTexture(debug_tex, 0, 0, debug_out->Data(), debug_out->Size(), rhi::ResourceState::CopySrc));
         }
         if (debug_tex.IsValid()) device->DestroyTexture(debug_tex);
         for (int i = 0; i < 4; ++i) device->DestroyBuffer(bufs[i]);
@@ -221,15 +221,16 @@ inline Camera TopDownCamera() {
     return cam;
 }
 
-inline rhi::DevicePtr MakeDevice() {
-    rhi::DeviceCreateInfo info;
-    info.validation = rhi::ValidationSetting::On;
-    info.sync_validation = true;
-    info.pipeline_cache = false;
-    return rhi::CreateDevice(info);
-}
+// A validated device on `backend` (gpu_test::CreateTestDevice: skips when there is none).
+inline rhi::DevicePtr MakeDevice(rhi::Backend backend) { return gpu_test::CreateTestDevice(backend); }
 
 inline bool Near(int got, int want, int tol) { return std::abs(got - want) <= tol; }
+
+// Whether two read-back layers are byte for byte the same.
+template <typename T>
+inline bool Same(const Vector<T>& a, const Vector<T>& b) {
+    return a.Size() == b.Size() && (a.Size() == 0 || std::memcmp(a.Data(), b.Data(), a.Size() * sizeof(T)) == 0);
+}
 
 
 } // namespace gbuffer_rig

@@ -13,4 +13,4 @@ tests/docgen/|Older test directory: 331 offending lines, including fs_fixture.h,
 tests/foundation/|Older test directory: 10 offending lines not yet ported.
 tests/jobs/|Older test directory: 33 offending lines not yet ported (102 before Phase 13 Day 153, which converted the four files it touched).
 tests/renderer/|Older test directory: 167 offending lines not yet ported.
-tests/rhi/|Older test directory: 252 offending lines (286 before Phase 13 Day 170, which converted the golden tests it made backend-generic), including image_compare.*, which the rhi golden tests share; they convert together.
+tests/rhi/|Older test directory: 223 offending lines (286 before Phase 13 Days 170-171, which converted the golden and renderer GPU tests they made backend-generic), including image_compare.*, which the rhi golden tests share; they convert together.

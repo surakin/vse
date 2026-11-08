@@ -346,7 +346,7 @@ writes after the old user's. A pooled resource unused for more than `max_idle_fr
 
 The null device is the oracle for all of this: it tracks every resource's state and counts a barrier whose `before` does
 not match as an error, so a graph that executes with `ErrorCount() == 0` has a consistent state machine. The real-device
-test (`tests/rhi/vulkan_render_graph_test.cpp`) runs a clear, a sampling draw, a compute write and a combining draw with
+test (`tests/rhi/render_graph_gpu_test.cpp`) runs a clear, a sampling draw, a compute write and a combining draw with
 validation and synchronization validation on and expects no messages.
 
 ### Frames, parallel recording and the swapchain
@@ -863,7 +863,7 @@ tell the user and offer to restart the program (a driver that cannot create a de
 light, drawn by `Renderer::RenderFrame` through the G-buffer, lighting (with light volumes) and tonemap passes, in a window or
 offscreen. Its README lists the options and controls and the tutorial [From a Scene to a Lit Frame](../tutorials/hello-renderer.md)
 walks through the same steps on the null device. Depth correctness is tested in
-`tests/rhi/vulkan_renderer_demo_test.cpp`: the demo scene rendered with the objects added in three shuffled orders gives the
+`tests/rhi/renderer_demo_gpu_test.cpp`: the demo scene rendered with the objects added in three shuffled orders gives the
 same pixels as the natural order, and two planes crossing at a line show the nearer one on each side of it, in either draw order.
 
 ### Failure behavior
@@ -873,7 +873,7 @@ out-of-range argument, a stale id, a call made out of order (`FrameResources::Wr
 as `Aborts:` and never fires because of what the machine does. Everything that can go wrong at run time because of the **environment**
 (a lost device, memory the device refuses, a shader that does not match the conventions, a full list) is logged through the
 `LogRender` channel, reported through a return value, and leaves the object usable or cleanly destroyable. Each row is exercised by a test: `tests/renderer/renderer_fault_test.cpp` and `renderer_test.cpp` (null device, so a loss can land in the callback or in either pass),
-`gbuffer_test.cpp` and `lighting_test.cpp` (rejected objects, dropped lights), and `tests/rhi/vulkan_renderer_demo_test.cpp` (the real
+`gbuffer_test.cpp` and `lighting_test.cpp` (rejected objects, dropped lights), and `tests/rhi/renderer_demo_gpu_test.cpp` (the real
 device, where the injected loss fires only at the start of a frame).
 
 | What goes wrong | What you get | Afterwards |
@@ -951,12 +951,25 @@ past 100000 objects.
 
 ### Platform notes
 
-The renderer is written and tested on Linux with the Vulkan backend (and the null device, which every non-GPU test uses). Windows
-(D3D12, Phase 13) and macOS (Metal, Phase 14) are planned behind the same RHI; every shader already compiles to HLSL and Metal
-(`ctest -R shaders_portability`). The points that shape code today are in the [renderer portability
-review](../superpowers/specs/2026-11-04-renderer-portability-review.md): the Y flip lives in the projection function, the per-object
-index needs another delivery on D3D12, and a deferred G-buffer is a poor fit for tile-based mobile GPUs unless the passes are
-merged (Phase 22). Sanitizers: the TSan flavor excludes the `[gpu]` tests (the proprietary NVIDIA driver's threads crash it), the ASan
+The renderer is written and tested on Linux with the Vulkan backend (and the null device, which every non-GPU test uses), and on Windows
+with Vulkan and Direct3D 12 (Phase 13); macOS (Metal, Phase 14) is planned behind the same RHI, and every shader already compiles to
+Metal (`ctest -R shaders_portability`). The points that shape code are in the [renderer portability
+review](../superpowers/specs/2026-11-04-renderer-portability-review.md); a deferred G-buffer is a poor fit for tile-based mobile GPUs
+unless the passes are merged (Phase 22).
+
+**On Direct3D 12** (Phase 13 Day 171) the renderer runs unchanged; what differs is below it:
+
+- **Projection.** The projection functions keep Vulkan's clip space; the D3D12 build of each shader negates clip-space Y
+  (`ENGINE_CLIP`, `shaders/target_common.slang`), so the same matrices, viewports and winding work on both.
+- **The object index.** D3D12 shaders have no base instance: they read the index from `MaterialSystem::ObjectIndexStream`, an
+  instance-rate vertex buffer of 0, 1, 2, ... at location 15 that the material pipelines (and the light volumes) bind when
+  [[rhi::DeviceCaps::object_index_stream]] is set; a draw's `first_instance` then offsets into it. A frame has at most 65536 objects there.
+- **Storage buffers** are structured views, so their bindings carry a stride (the object and light buffers do; reflection gives the
+  materials' one), and slices of them start on the lcm of the storage alignment and the element size.
+- **Tested:** the G-buffer, lighting, render-graph and demo-scene GPU tests run on both backends (`tests/rhi/*_gpu_test.cpp`); the demo
+  scene's image on DX12 is within 1 level of Vulkan's on the same GPU, and both match `renderer_demo.ppm`.
+- **Measured** (`renderer_bench`, Release, Radeon 860M): a 50000-object frame takes 7.1 to 7.3 ms of CPU time on DX12 against 6.4 to
+  7.1 on Vulkan; 16000 point-light volume draws 4.4 ms against 3.15 (0.27 against 0.19 us a draw), the D3D12 draw call's own cost. Sanitizers: the TSan flavor excludes the `[gpu]` tests (the proprietary NVIDIA driver's threads crash it), the ASan
 flavor runs them; see [the RHI guide](rhi.md#platform-notes).
 
 ### See also

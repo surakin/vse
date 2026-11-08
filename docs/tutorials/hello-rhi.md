@@ -387,7 +387,7 @@ fragment shader computes, in linear light, `albedo * (ambient + light_color * ma
 light. Both shaders read the same uniform block (model-view-projection, model, normal matrix, the light), which the
 application rewrites every frame in a `UniformRing` slice and binds through a transient bind group - so moving the
 light is just writing different numbers. `rhi_demo` orbits the light around the cube and the camera with the arrow
-keys; `shaders/lit.frag` has the math in its header, and `tests/rhi/vulkan_lit_cube_test.cpp` checks it against pixels.
+keys; `shaders/lit.frag` has the math in its header, and `tests/rhi/lit_cube_test.cpp` checks it against pixels.
 Run it: `./build/game/rhi_demo/rhi_demo --validation`; see `game/rhi_demo/README.md` for the options.
 
 ## Where next

@@ -7,6 +7,8 @@ Make DX12 a full participant in the Phase 8 reset model, then switch backends at
 
 ## Tasks
 
+- [ ] **Moved here from Day 171:** `tests/renderer/reset_rig.h` and the reset tests that create real devices (`apply_settings_test`,
+      `device_loss_recovery_test`, `recreatable_renderer_test`, `vulkan_reset_golden_test`) take the backend of Day 170 and run on both.
 - [ ] **The fifteen lifecycle functions** of `BACKEND-LIFECYCLE.md` on DX12 (`CreateDevice`, `EnumerateAdapters`, `Adapter`, `Epoch`, `Resources`, `Quiesce`,
       `RecreateSurface`, `InjectDeviceLoss`, `Swapchain::Reconfigure`, and the rest as listed); each section of the checklist gets its DX12 note.
 - [ ] **Orderly shutdown and tolerant destruction:** the destructor waits for the GPU, releases deferred destruction, rings and heaps, saves the pipeline cache, then

@@ -955,3 +955,10 @@ through DX12 on the Radeon 860M and on WARP with the tolerances unchanged; DX12 
 identical). Validation silent; GPU-based validation over the suite: 8 s, silent. Phase 4 on Windows: 454 of 454 (18 skipped). The DX12
 backend now reads `ENGINE_RHI_GPU` as Vulkan does (review finding). Runs: `ran 1267 of 2473 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (a filed phase 2 flake once),
 asan `ran 941 of 2473 tests (phases: all; flavors: asan; display: included; crash tests: excluded)`. Review: 3 findings, 2 fixed, 1 declined. Linux: pending until the phase close. **Next: Day 171 (the renderer on DX12).**
+
+Phase 13 **Day 171 (2026-11-08, Windows PC): the renderer on DX12.** The G-buffer, lighting, render-graph and demo-scene GPU tests run per
+backend (`*_gpu_test.cpp`); all pass on DX12 with the debug layer silent and under GPU-based validation; the demo image is within 1 level of
+Vulkan's and matches `renderer_demo.ppm`. Phase 5 on Windows: 403 of 403. `renderer_bench`: DX12 within about 10% of Vulkan on object frames,
+0.27 against 0.19 us a light-volume draw (filed). The reset tests per backend moved to Day 172, `renderer_demo` on DX12 to Day 173. Runs:
+`ran 1267 of 2473 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (the filed throughput flake once), asan `ran 941 of 2473 tests (phases: all; flavors: asan; display: included; crash tests: excluded)`. Review: 2 findings, both filed.
+Linux: pending until the phase close. **Next: Day 172 (lifecycle, device loss, the backend switch).**

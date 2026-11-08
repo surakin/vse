@@ -66,7 +66,7 @@ The offscreen screenshot target is linear (UNORM), so it looks darker than the w
 | `../common/cube_scene.*` | projection, look-at, the cube mesh, `CubeRenderer` (shared with the tests) |
 | `../common/textures.*` | procedural textures, the `.rtex` container |
 | `/shaders/lit.vert`, `lit.frag` | the lighting math |
-| `/tests/rhi/vulkan_lit_cube_test.cpp` | the golden and analytic lighting tests |
+| `/tests/rhi/lit_cube_test.cpp` | the golden and analytic lighting tests |
 
 ## Settings options
 
