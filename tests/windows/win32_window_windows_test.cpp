@@ -170,10 +170,10 @@ TEST_CASE("Windows: a Win32 window opens with the client size asked for and hand
     REQUIRE(window.Valid());
     const HWND hwnd = window.NativeHandle();
     REQUIRE(IsWindow(hwnd));
-    CHECK(window.Width() == 640);
-    CHECK(window.Height() == 360);
-    CHECK(ClientWidth(hwnd) == 640);
-    CHECK(ClientHeight(hwnd) == 360);
+    CHECK(window.Width() == Win32Window::ScaleForDpi(640, window.Dpi()));
+    CHECK(window.Height() == Win32Window::ScaleForDpi(360, window.Dpi()));
+    CHECK(ClientWidth(hwnd) == Win32Window::ScaleForDpi(640, window.Dpi()));
+    CHECK(ClientHeight(hwnd) == Win32Window::ScaleForDpi(360, window.Dpi()));
     CHECK(window.Dpi() == GetDpiForWindow(hwnd));
     CHECK(window.Dpi() >= 96);
     CHECK(StringView(window.BackendName()) == StringView("win32"));
@@ -197,7 +197,7 @@ TEST_CASE("Windows: a Win32 window opens with the client size asked for and hand
     CHECK(window.ResizeSerial() == 0);
     CHECK(window.IsMinimized());
     REQUIRE(window.Open("again", 320, 240, &input)); // a closed window opens again
-    CHECK(window.Width() == 320);
+    CHECK(window.Width() == Win32Window::ScaleForDpi(320, window.Dpi()));
 }
 
 TEST_CASE("Windows: Open refuses a zero size and a second Open", "[window][win32]") {
@@ -237,13 +237,13 @@ TEST_CASE("Windows: minimizing keeps the size and reports minimized; restoring c
     const u64 before = window.ResizeSerial();
     ShowWindow(window.NativeHandle(), SW_MINIMIZE);
     REQUIRE(PumpUntil(window, [&] { return window.IsMinimized(); }));
-    CHECK(window.Width() == 400);
-    CHECK(window.Height() == 300);
+    CHECK(window.Width() == Win32Window::ScaleForDpi(400, window.Dpi()));
+    CHECK(window.Height() == Win32Window::ScaleForDpi(300, window.Dpi()));
     ShowWindow(window.NativeHandle(), SW_RESTORE);
     REQUIRE(PumpUntil(window, [&] { return !window.IsMinimized(); }));
     CHECK(window.ResizeSerial() != before);
-    CHECK(window.Width() == 400);
-    CHECK(window.Height() == 300);
+    CHECK(window.Width() == Win32Window::ScaleForDpi(400, window.Dpi()));
+    CHECK(window.Height() == Win32Window::ScaleForDpi(300, window.Dpi()));
 }
 
 TEST_CASE("Windows: the close button asks to close and leaves the window open", "[window][win32]") {
@@ -281,8 +281,8 @@ TEST_CASE("Windows: two windows on one thread close separately, whichever one pu
     a.PumpEvents(); // dispatches b's message to b
     CHECK_FALSE(a.ShouldClose());
     CHECK(b.ShouldClose());
-    CHECK(a.Width() == 320);
-    CHECK(b.Width() == 300);
+    CHECK(a.Width() == Win32Window::ScaleForDpi(320, a.Dpi()));
+    CHECK(b.Width() == Win32Window::ScaleForDpi(300, b.Dpi()));
 }
 
 TEST_CASE("Windows: a window destroyed with messages still queued is never reached by them", "[window][win32]") {
@@ -303,7 +303,27 @@ TEST_CASE("Windows: a window destroyed with messages still queued is never reach
     CHECK_FALSE(IsWindow(gone_hwnd));
     survivor.PumpEvents(); // drains what is left (ASan reports any use of the destroyed object)
     CHECK_FALSE(survivor.ShouldClose());
-    CHECK(survivor.Width() == 320);
+    CHECK(survivor.Width() == Win32Window::ScaleForDpi(320, survivor.Dpi()));
+}
+
+TEST_CASE("Windows: a window's size is logical, scaled by its DPI", "[window][win32]") {
+    // The user saw tiny windows on a high-DPI monitor (2026-11-08): the size was taken as physical pixels.
+    CHECK(Win32Window::ScaleForDpi(640, 96) == 640);
+    CHECK(Win32Window::ScaleForDpi(640, 144) == 960);
+    CHECK(Win32Window::ScaleForDpi(640, 192) == 1280);
+    CHECK(Win32Window::ScaleForDpi(333, 120) == 416); // 416.25, rounded to nearest
+    CHECK(Win32Window::ScaleForDpi(1, 48) == 1);      // never below 1
+    CHECK(Win32Window::ScaleForDpi(640, 0) == 640);   // 0 counts as 96
+    CHECK(Win32Window::ScaleForDpi(100000, 192) == 0x7FFF);
+    SKIP_IF_NO_DISPLAY_SESSION();
+    os::InputState input;
+    Win32Window window;
+    REQUIRE(window.Open("logical", 400, 300, &input));
+    const u32 dpi = window.Dpi();
+    INFO("window DPI " << dpi);
+    CHECK(window.Width() == ClientWidth(window.NativeHandle()));
+    CHECK(window.Width() == Win32Window::ScaleForDpi(400, dpi));
+    CHECK(window.Height() == Win32Window::ScaleForDpi(300, dpi));
 }
 
 TEST_CASE("Windows: a DPI change applies the suggested rectangle and reports the new DPI", "[window][win32]") {

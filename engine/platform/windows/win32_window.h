@@ -39,11 +39,13 @@ public:
     Win32Window(const Win32Window&) = delete;
     Win32Window& operator=(const Win32Window&) = delete;
 
-    /// Creates and shows a top-level window whose client area is `width` x `height` physical pixels.
+    /// Creates and shows a top-level window whose client area is `width` x `height` logical pixels: pixels at 100% scaling, multiplied
+    /// by the monitor's DPI over 96 ([[os::win32::Win32Window::ScaleForDpi]]), so a window is as large on a high-DPI display as on any
+    /// other. [[os::Window::Width]] and `Height` report the physical pixels, which is what a swapchain needs.
     ///
     /// Param title: the title bar text (UTF-8; cut at 511 UTF-16 code units).
-    /// Param width: client width in pixels (at least 1).
-    /// Param height: client height in pixels (at least 1).
+    /// Param width: client width in logical pixels (at least 1).
+    /// Param height: client height in logical pixels (at least 1).
     /// Param input: receives keyboard and pointer state, or null to ignore input; not owned, must outlive the window.
     /// Returns: true if the window opened.
     /// Fails: returns false (logged on `LogPlatform`), leaving the object invalid, if it is already open, a size is 0, or the class or the
@@ -95,6 +97,14 @@ public:
 
     /// Returns the window's DPI (96 is 100%), as Windows last reported it; 0 if not open.
     u32 Dpi() const { return hwnd_ != nullptr ? dpi_ : 0; }
+
+    /// Converts a size in logical pixels to physical pixels at a DPI, rounding to nearest, never below 1.
+    ///
+    /// Param logical: the size at 100% scaling.
+    /// Param dpi: the DPI (96 is 100%); 0 counts as 96.
+    /// Returns: the size in physical pixels.
+    /// Thread-safety: thread-safe. A pure function.
+    static u32 ScaleForDpi(u32 logical, u32 dpi);
     /// Returns the `HWND`, or null if not open.
     ///
     /// Ownership: borrowed; the window owns it.

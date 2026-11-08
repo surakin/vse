@@ -173,7 +173,11 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   modal-loop callback during a real drag; the test drives the loop's messages itself), minimizing, restoring and closing it. Fullscreen has no key
   until input arrives (Day 159), so the toggle is checked by the tests only. (Day 161: the same for the demos, below.)
 - Phase 13 Day 158, deferred: `os::Window` has no content scale (DPI) yet; `Win32Window::Dpi` is the Windows backend's own. The UI phase (16)
-  adds one for every backend (Wayland's buffer scale, X11's `Xft.dpi`, Windows' DPI).
+  adds one for every backend (Wayland's buffer scale, X11's `Xft.dpi`, Windows' DPI). Since 2026-11-08 (after Day 167) a Win32 window's
+  requested size is logical and scaled by its DPI, so it is no longer tiny on a high-DPI monitor; an X11 window on a high-density display is
+  still sized in physical pixels (not checked on such a display), and Wayland relies on the compositor scaling the buffer.
+- 2026-11-08 (Windows PC, after Phase 13 Day 167), flaky: `Throughput scales with participant count` (phase 2, plain) failed once in a
+  `scripts/test-phase.sh --affected` run and passed in three runs of it alone right after, and in every other run that day.
 - Phase 13 Day 158, deferred: `window.h` models no lifecycle events (focus, suspend, resume), so `WM_ACTIVATEAPP` and `WM_POWERBROADCAST`
   (`PBT_APMSUSPEND`, `PBT_APMRESUMEAUTOMATIC`) are not reported; no phase plans them yet (`PLAN.md` assumption #11: the mobile ports need them).
 - Phase 13 Day 159 (2026-11-08), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 159 file, "For the

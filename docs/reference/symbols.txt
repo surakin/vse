@@ -1676,9 +1676,9 @@ os::PlatformWindowHost::PlatformWindowHost()	function	platform/window-input	os-p
 os::PlatformWindowHost::~PlatformWindowHost()	function	platform/window-input	os-platformwindowhost-tilde-platformwindowhost	platform-window-input.md	engine/platform/window_host.h:27
 os::PlatformWindowHost::PlatformWindowHost(const PlatformWindowHost&)	function	platform/window-input	os-platformwindowhost-platformwindowhost-const-platformwindowhost-amp	platform-window-input.md	engine/platform/window_host.h:28
 os::PlatformWindowHost::operator=(const PlatformWindowHost&)	function	platform/window-input	os-platformwindowhost-operator-eq-const-platformwindowhost-amp	platform-window-input.md	engine/platform/window_host.h:29
-os::PlatformWindowHost::Open(WindowBackend,StringView,u32,u32,InputState*)	function	platform/window-input	os-platformwindowhost-open-windowbackend-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/window_host.h:41
-os::PlatformWindowHost::OpenFromEnvironment(StringView,u32,u32,InputState*)	function	platform/window-input	os-platformwindowhost-openfromenvironment-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/window_host.h:52
-os::PlatformWindowHost::Get()	function	platform/window-input	os-platformwindowhost-get	platform-window-input.md	engine/platform/window_host.h:57
+os::PlatformWindowHost::Open(WindowBackend,StringView,u32,u32,InputState*)	function	platform/window-input	os-platformwindowhost-open-windowbackend-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/window_host.h:42
+os::PlatformWindowHost::OpenFromEnvironment(StringView,u32,u32,InputState*)	function	platform/window-input	os-platformwindowhost-openfromenvironment-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/window_host.h:53
+os::PlatformWindowHost::Get()	function	platform/window-input	os-platformwindowhost-get	platform-window-input.md	engine/platform/window_host.h:58
 os::win32::Win32KeyMessage	struct	platform/window-input	os-win32-win32keymessage	platform-window-input.md	engine/platform/windows/win32_keys.h:20
 os::win32::Win32KeyMessage::virtual_key	variable	platform/window-input	os-win32-win32keymessage-virtual-key	platform-window-input.md	engine/platform/windows/win32_keys.h:22
 os::win32::Win32KeyMessage::scan_code	variable	platform/window-input	os-win32-win32keymessage-scan-code	platform-window-input.md	engine/platform/windows/win32_keys.h:24
@@ -1692,23 +1692,24 @@ os::win32::Win32Window::Win32Window()	function	platform/window-input	os-win32-wi
 os::win32::Win32Window::~Win32Window()	function	platform/window-input	os-win32-win32window-tilde-win32window	platform-window-input.md	engine/platform/windows/win32_window.h:38
 os::win32::Win32Window::Win32Window(const Win32Window&)	function	platform/window-input	os-win32-win32window-win32window-const-win32window-amp	platform-window-input.md	engine/platform/windows/win32_window.h:39
 os::win32::Win32Window::operator=(const Win32Window&)	function	platform/window-input	os-win32-win32window-operator-eq-const-win32window-amp	platform-window-input.md	engine/platform/windows/win32_window.h:40
-os::win32::Win32Window::Open(StringView,u32,u32,InputState*)	function	platform/window-input	os-win32-win32window-open-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/windows/win32_window.h:51
-os::win32::Win32Window::Close()	function	platform/window-input	os-win32-win32window-close	platform-window-input.md	engine/platform/windows/win32_window.h:54
-os::win32::Win32Window::Valid() const	function	platform/window-input	os-win32-win32window-valid-const	platform-window-input.md	engine/platform/windows/win32_window.h:57
-os::win32::Win32Window::PumpEvents()	function	platform/window-input	os-win32-win32window-pumpevents	platform-window-input.md	engine/platform/windows/win32_window.h:61
-os::win32::Win32Window::ShouldClose() const	function	platform/window-input	os-win32-win32window-shouldclose-const	platform-window-input.md	engine/platform/windows/win32_window.h:64
-os::win32::Win32Window::Width() const	function	platform/window-input	os-win32-win32window-width-const	platform-window-input.md	engine/platform/windows/win32_window.h:66
-os::win32::Win32Window::Height() const	function	platform/window-input	os-win32-win32window-height-const	platform-window-input.md	engine/platform/windows/win32_window.h:68
-os::win32::Win32Window::BackendName() const	function	platform/window-input	os-win32-win32window-backendname-const	platform-window-input.md	engine/platform/windows/win32_window.h:70
-os::win32::Win32Window::GetNativeInfo() const	function	platform/window-input	os-win32-win32window-getnativeinfo-const	platform-window-input.md	engine/platform/windows/win32_window.h:72
-os::win32::Win32Window::IsMinimized() const	function	platform/window-input	os-win32-win32window-isminimized-const	platform-window-input.md	engine/platform/windows/win32_window.h:74
-os::win32::Win32Window::ResizeSerial() const	function	platform/window-input	os-win32-win32window-resizeserial-const	platform-window-input.md	engine/platform/windows/win32_window.h:76
-os::win32::Win32Window::SupportsFullscreen() const	function	platform/window-input	os-win32-win32window-supportsfullscreen-const	platform-window-input.md	engine/platform/windows/win32_window.h:78
-os::win32::Win32Window::SetFullscreen(bool)	function	platform/window-input	os-win32-win32window-setfullscreen-bool	platform-window-input.md	engine/platform/windows/win32_window.h:86
-os::win32::Win32Window::IsFullscreen() const	function	platform/window-input	os-win32-win32window-isfullscreen-const	platform-window-input.md	engine/platform/windows/win32_window.h:88
-os::win32::Win32Window::SetModalLoopCallback(ModalLoopCallback,void*)	function	platform/window-input	os-win32-win32window-setmodalloopcallback-modalloopcallback-void-star	platform-window-input.md	engine/platform/windows/win32_window.h:94
-os::win32::Win32Window::Dpi() const	function	platform/window-input	os-win32-win32window-dpi-const	platform-window-input.md	engine/platform/windows/win32_window.h:97
-os::win32::Win32Window::NativeHandle() const	function	platform/window-input	os-win32-win32window-nativehandle-const	platform-window-input.md	engine/platform/windows/win32_window.h:101
+os::win32::Win32Window::Open(StringView,u32,u32,InputState*)	function	platform/window-input	os-win32-win32window-open-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/windows/win32_window.h:53
+os::win32::Win32Window::Close()	function	platform/window-input	os-win32-win32window-close	platform-window-input.md	engine/platform/windows/win32_window.h:56
+os::win32::Win32Window::Valid() const	function	platform/window-input	os-win32-win32window-valid-const	platform-window-input.md	engine/platform/windows/win32_window.h:59
+os::win32::Win32Window::PumpEvents()	function	platform/window-input	os-win32-win32window-pumpevents	platform-window-input.md	engine/platform/windows/win32_window.h:63
+os::win32::Win32Window::ShouldClose() const	function	platform/window-input	os-win32-win32window-shouldclose-const	platform-window-input.md	engine/platform/windows/win32_window.h:66
+os::win32::Win32Window::Width() const	function	platform/window-input	os-win32-win32window-width-const	platform-window-input.md	engine/platform/windows/win32_window.h:68
+os::win32::Win32Window::Height() const	function	platform/window-input	os-win32-win32window-height-const	platform-window-input.md	engine/platform/windows/win32_window.h:70
+os::win32::Win32Window::BackendName() const	function	platform/window-input	os-win32-win32window-backendname-const	platform-window-input.md	engine/platform/windows/win32_window.h:72
+os::win32::Win32Window::GetNativeInfo() const	function	platform/window-input	os-win32-win32window-getnativeinfo-const	platform-window-input.md	engine/platform/windows/win32_window.h:74
+os::win32::Win32Window::IsMinimized() const	function	platform/window-input	os-win32-win32window-isminimized-const	platform-window-input.md	engine/platform/windows/win32_window.h:76
+os::win32::Win32Window::ResizeSerial() const	function	platform/window-input	os-win32-win32window-resizeserial-const	platform-window-input.md	engine/platform/windows/win32_window.h:78
+os::win32::Win32Window::SupportsFullscreen() const	function	platform/window-input	os-win32-win32window-supportsfullscreen-const	platform-window-input.md	engine/platform/windows/win32_window.h:80
+os::win32::Win32Window::SetFullscreen(bool)	function	platform/window-input	os-win32-win32window-setfullscreen-bool	platform-window-input.md	engine/platform/windows/win32_window.h:88
+os::win32::Win32Window::IsFullscreen() const	function	platform/window-input	os-win32-win32window-isfullscreen-const	platform-window-input.md	engine/platform/windows/win32_window.h:90
+os::win32::Win32Window::SetModalLoopCallback(ModalLoopCallback,void*)	function	platform/window-input	os-win32-win32window-setmodalloopcallback-modalloopcallback-void-star	platform-window-input.md	engine/platform/windows/win32_window.h:96
+os::win32::Win32Window::Dpi() const	function	platform/window-input	os-win32-win32window-dpi-const	platform-window-input.md	engine/platform/windows/win32_window.h:99
+os::win32::Win32Window::ScaleForDpi(u32,u32)	function	platform/window-input	os-win32-win32window-scalefordpi-u32-u32	platform-window-input.md	engine/platform/windows/win32_window.h:107
+os::win32::Win32Window::NativeHandle() const	function	platform/window-input	os-win32-win32window-nativehandle-const	platform-window-input.md	engine/platform/windows/win32_window.h:111
 ENGINE_DEBUG_BREAK	macro	foundation/debug	engine-debug-break	foundation-debug.md	engine/foundation/debug/compiler.h:16
 ENGINE_TRAP	macro	foundation/debug	engine-trap	foundation-debug.md	engine/foundation/debug/compiler.h:34
 ENGINE_PRINTF_FORMAT	macro	foundation/debug	engine-printf-format	foundation-debug.md	engine/foundation/debug/compiler.h:45

@@ -53,8 +53,8 @@ TEST_CASE("A Win32 window toggles fullscreen", "[window][fullscreen]") {
     os::win32::Win32Window window;
     REQUIRE(window.Open("fullscreen test", 320, 240, &input));
     ToggleFullscreen(window);
-    CHECK(window.Width() == 320); // the placement it had is given back
-    CHECK(window.Height() == 240);
+    CHECK(window.Width() == os::win32::Win32Window::ScaleForDpi(320, window.Dpi())); // the placement it had is given back
+    CHECK(window.Height() == os::win32::Win32Window::ScaleForDpi(240, window.Dpi()));
 }
 
 TEST_CASE("The default Window reports fullscreen unsupported", "[window][fullscreen]") {

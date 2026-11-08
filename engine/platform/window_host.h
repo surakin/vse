@@ -33,8 +33,9 @@ public:
     /// For `WindowBackend::Auto` it reads the platform's display environment (on Linux `$WAYLAND_DISPLAY` and `$DISPLAY`) to pick candidates.
     /// Param requested: backend to use, or `Auto` to try the platform's backends in order.
     /// Param title: window title.
-    /// Param width: requested client width in pixels (a hint; the compositor may override it).
-    /// Param height: requested client height in pixels (a hint; the compositor may override it).
+    /// Param width: requested client width in logical pixels, pixels at 100% scaling (a hint; the compositor may override it). Windows
+    ///   multiplies it by the monitor's DPI, so [[os::Window::Width]] may be larger; on Wayland the compositor scales the window instead.
+    /// Param height: requested client height in logical pixels, as `width`.
     /// Param input: receives keyboard and pointer state; must outlive the host.
     /// Returns: `true` if a backend opened.
     /// Fails: returns `false` (logged) if no candidate backend opened.
@@ -44,8 +45,8 @@ public:
     ///
     /// The variable accepts `auto`, `wayland` or `x11`; unset or empty means `auto`.
     /// Param title: window title.
-    /// Param width: requested client width in pixels.
-    /// Param height: requested client height in pixels.
+    /// Param width: requested client width in logical pixels, as for [[os::PlatformWindowHost::Open]].
+    /// Param height: requested client height in logical pixels.
     /// Param input: receives keyboard and pointer state; must outlive the host.
     /// Returns: `true` if a backend opened.
     /// Fails: returns `false` (logged) if the variable is unrecognized or no backend opened.

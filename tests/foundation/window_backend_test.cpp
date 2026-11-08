@@ -12,6 +12,7 @@
 #include "build_defs.h"
 
 #if ENGINE_PLATFORM_WINDOWS
+#include "platform/windows/win32_window.h"
 #include "test_env.h"
 #else
 #include <sys/socket.h>
@@ -166,8 +167,9 @@ TEST_CASE("Windows: PlatformWindowHost opens Win32 for auto and for win32", "[wi
         REQUIRE(w != nullptr);
         REQUIRE(w->Valid());
         CHECK(StringView(w->BackendName()) == StringView("win32"));
-        CHECK(w->Width() == 640);
-        CHECK(w->Height() == 480);
+        const u32 dpi = static_cast<os::win32::Win32Window*>(w)->Dpi(); // the size asked for is logical (Win32Window::Open)
+        CHECK(w->Width() == os::win32::Win32Window::ScaleForDpi(640, dpi));
+        CHECK(w->Height() == os::win32::Win32Window::ScaleForDpi(480, dpi));
         CHECK_FALSE(w->ShouldClose());
         CHECK(w->GetNativeInfo().kind == NativeWindowKind::Win32);
         w->PumpEvents();

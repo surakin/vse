@@ -145,11 +145,13 @@ process and never unregistered. The window procedure reaches the object through 
 closing clears before `DestroyWindow`, so a message sent during creation or destruction, or one still queued for a destroyed window,
 never reaches a destroyed object; for the same reason the object cannot move.
 
-- **Sizes are physical pixels.** Every engine program is per-monitor-v2 DPI aware (its manifest; a thread that is not gets the
-  awareness for the window's creation). The client area is exactly the size asked for at the window's DPI; on `WM_DPICHANGED` (a
-  move to a monitor of another scale) the window takes the system's suggested rectangle, so it keeps its size to the eye and its
-  pixel size changes like any resize. `Win32Window::Dpi` gives the DPI; [[os::Window]] has no scale factor yet (the UI phase adds one
-  for every backend).
+- **The size asked for is logical; `Width` and `Height` are physical pixels.** Every engine program is per-monitor-v2 DPI aware (its
+  manifest; a thread that is not gets the awareness for the window's creation), so Windows does not scale the window for it. `Open`
+  therefore multiplies the size by the window's DPI over 96 ([[os::win32::Win32Window::ScaleForDpi]]): 1280 x 720 asked for is 2560 x 1440
+  pixels at 200%, as large to the eye as at 100%, and the swapchain gets every pixel. On `WM_DPICHANGED` (a move to a monitor of another
+  scale) the window takes the system's suggested rectangle, so it keeps its size to the eye and its pixel size changes like any resize.
+  `Win32Window::Dpi` gives the DPI; [[os::Window]] has no scale factor yet (the UI phase adds one for every backend). On Linux the size
+  asked for is used as it is (Wayland's compositor scales the window on a high-density output).
 - **Minimized** is `SIZE_MINIMIZED`; `Width` and `Height` keep the size from before, and leaving the minimized state changes
   `ResizeSerial` even when the size did not change.
 - **Close:** `WM_CLOSE` (the close button, Alt+F4, the taskbar) sets `ShouldClose`; the window stays until its owner closes it.

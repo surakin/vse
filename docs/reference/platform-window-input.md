@@ -2093,8 +2093,8 @@ For `WindowBackend::Auto` it reads the platform's display environment (on Linux 
 |---|---|
 | Parameter `requested` | backend to use, or `Auto` to try the platform's backends in order. |
 | Parameter `title` | window title. |
-| Parameter `width` | requested client width in pixels (a hint; the compositor may override it). |
-| Parameter `height` | requested client height in pixels (a hint; the compositor may override it). |
+| Parameter `width` | requested client width in logical pixels, pixels at 100% scaling (a hint; the compositor may override it). Windows multiplies it by the monitor's DPI, so [`os::Window::Width`](#os-window-width-const) may be larger; on Wayland the compositor scales the window instead. |
+| Parameter `height` | requested client height in logical pixels, as `width`. |
 | Parameter `input` | receives keyboard and pointer state; must outlive the host. |
 | Returns | `true` if a backend opened. |
 | Fails | returns `false` (logged) if no candidate backend opened. |
@@ -2114,8 +2114,8 @@ The variable accepts `auto`, `wayland` or `x11`; unset or empty means `auto`.
 | Field | Value |
 |---|---|
 | Parameter `title` | window title. |
-| Parameter `width` | requested client width in pixels. |
-| Parameter `height` | requested client height in pixels. |
+| Parameter `width` | requested client width in logical pixels, as for [`os::PlatformWindowHost::Open`](#os-platformwindowhost-open-windowbackend-stringview-u32-u32-inputstate-star). |
+| Parameter `height` | requested client height in logical pixels. |
 | Parameter `input` | receives keyboard and pointer state; must outlive the host. |
 | Returns | `true` if a backend opened. |
 | Fails | returns `false` (logged) if the variable is unrecognized or no backend opened. |
@@ -2292,13 +2292,13 @@ _Deleted._
 bool Open(StringView title, u32 width, u32 height, InputState* input);
 ```
 
-Creates and shows a top-level window whose client area is `width` x `height` physical pixels.
+Creates and shows a top-level window whose client area is `width` x `height` logical pixels: pixels at 100% scaling, multiplied by the monitor's DPI over 96 ([`os::win32::Win32Window::ScaleForDpi`](#os-win32-win32window-scalefordpi-u32-u32)), so a window is as large on a high-DPI display as on any other. [`os::Window::Width`](#os-window-width-const) and `Height` report the physical pixels, which is what a swapchain needs.
 
 | Field | Value |
 |---|---|
 | Parameter `title` | the title bar text (UTF-8; cut at 511 UTF-16 code units). |
-| Parameter `width` | client width in pixels (at least 1). |
-| Parameter `height` | client height in pixels (at least 1). |
+| Parameter `width` | client width in logical pixels (at least 1). |
+| Parameter `height` | client height in logical pixels (at least 1). |
 | Parameter `input` | receives keyboard and pointer state, or null to ignore input; not owned, must outlive the window. |
 | Returns | true if the window opened. |
 | Fails | returns false (logged on `LogPlatform`), leaving the object invalid, if it is already open, a size is 0, or the class or the window cannot be created. |
@@ -2467,6 +2467,23 @@ u32 Dpi() const;
 ```
 
 Returns the window's DPI (96 is 100%), as Windows last reported it; 0 if not open.
+
+### `ScaleForDpi(u32,u32)` {#os-win32-win32window-scalefordpi-u32-u32}
+
+`method os::win32::Win32Window::ScaleForDpi` — defined in `engine/platform/windows/win32_window.h`
+
+```cpp
+static u32 ScaleForDpi(u32 logical, u32 dpi);
+```
+
+Converts a size in logical pixels to physical pixels at a DPI, rounding to nearest, never below 1.
+
+| Field | Value |
+|---|---|
+| Parameter `logical` | the size at 100% scaling. |
+| Parameter `dpi` | the DPI (96 is 100%); 0 counts as 96. |
+| Returns | the size in physical pixels. |
+| Thread-safety | thread-safe. A pure function. |
 
 ### `NativeHandle()` {#os-win32-win32window-nativehandle-const}
 

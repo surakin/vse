@@ -368,6 +368,12 @@ LRESULT Win32Window::Proc::Handle(Win32Window& self, HWND hwnd, UINT message, WP
 
 Win32Window::~Win32Window() { Close(); }
 
+u32 Win32Window::ScaleForDpi(u32 logical, u32 dpi) {
+    const u64 d = dpi != 0 ? dpi : USER_DEFAULT_SCREEN_DPI;
+    const u64 scaled = (static_cast<u64>(logical) * d + USER_DEFAULT_SCREEN_DPI / 2) / USER_DEFAULT_SCREEN_DPI;
+    return scaled == 0 ? 1 : (scaled > 0x7FFF ? 0x7FFF : static_cast<u32>(scaled)); // Win32 sizes are 16-bit in WM_SIZE
+}
+
 bool Win32Window::Open(StringView title, u32 width, u32 height, InputState* input) {
     if (hwnd_ != nullptr) {
         Log(LogPlatform, LogVerbosity::Error, "Window: Win32Window::Open on an open window");
@@ -389,9 +395,11 @@ bool Win32Window::Open(StringView title, u32 width, u32 height, InputState* inpu
     const bool switch_awareness = AreDpiAwarenessContextsEqual(previous, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) == FALSE;
     if (switch_awareness) SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
-    // The outer size for the system DPI first (the monitor is not known before the window exists), then corrected below.
-    RECT outer{0, 0, static_cast<LONG>(width), static_cast<LONG>(height)};
-    AdjustWindowRectExForDpi(&outer, kWin32Style, FALSE, kWin32ExStyle, GetDpiForSystem());
+    // The outer size for the system DPI first (the monitor is not known before the window exists), then corrected below. The requested
+    // size is logical: scaled by the DPI, so a window is as large on a high-DPI display as elsewhere.
+    const u32 system_dpi = GetDpiForSystem();
+    RECT outer{0, 0, static_cast<LONG>(ScaleForDpi(width, system_dpi)), static_cast<LONG>(ScaleForDpi(height, system_dpi))};
+    AdjustWindowRectExForDpi(&outer, kWin32Style, FALSE, kWin32ExStyle, system_dpi);
     input_ = input;
     should_close_ = false;
     minimized_ = false;
@@ -409,7 +417,7 @@ bool Win32Window::Open(StringView title, u32 width, u32 height, InputState* inpu
     }
     hwnd_ = hwnd;
     dpi_ = GetDpiForWindow(hwnd);
-    ApplyClientSize(width, height);
+    ApplyClientSize(ScaleForDpi(width, dpi_), ScaleForDpi(height, dpi_));
     RECT client{};
     GetClientRect(hwnd, &client);
     width_ = static_cast<u32>(client.right - client.left);
@@ -419,7 +427,7 @@ bool Win32Window::Open(StringView title, u32 width, u32 height, InputState* inpu
     return true;
 }
 
-// Sets the outer size so the client area is `width` x `height` at the window's own DPI.
+// Sets the outer size so the client area is `width` x `height` physical pixels, the frame at the window's own DPI.
 void Win32Window::ApplyClientSize(u32 width, u32 height) {
     RECT outer{0, 0, static_cast<LONG>(width), static_cast<LONG>(height)};
     AdjustWindowRectExForDpi(&outer, kWin32Style, FALSE, kWin32ExStyle, dpi_);

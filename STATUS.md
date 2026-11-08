@@ -922,3 +922,12 @@ shares (`rhi/pipeline_cache_file.h`, moved out of the Vulkan backend). Every com
 gives; damaged, truncated and foreign cache files are discarded. Measured: 33 pipelines 12.2 ms cold, 10.7 ms warm (the driver's cache is warm
 in both). Runs: `ran 1246 of 2436 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 925 of 2436`. Review: 6 findings, 3 fixed, 3 declined. Linux: pending until the
 phase close. **Next: Day 168 (DX12 command lists, barriers, first images).**
+
+Windows DPI fix (2026-11-08, between Days 167 and 168, asked for by the user, no plan day): the user saw tiny windows on the high-DPI Windows
+PC. Engine programs are per-monitor-v2 aware, and `Win32Window::Open` took the requested size as physical pixels; it is logical now, multiplied by
+the window's DPI over 96 (`Win32Window::ScaleForDpi`), while `Width`/`Height` stay physical (the swapchain's size). The Win32 window tests
+compare against the scaled size, a new test checks the scaling; guide `platform-windowing-and-input.md`, `window_host.h` and
+`win32_window.h` say so. `/code-review high`: 3 findings, all declined (a scaled size larger than the monitor is not clamped, as before for a
+large size; the demos render more pixels at high DPI, no benchmark opens a window; X11 on a high-density display is still physical, filed).
+Runs: `ran 1252 of 2443 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` with one flaky failure in phase 2
+(filed), asan `ran 926 of 2443`; all three Windows trees build clean. Linux: `window_host.h` documentation only.
