@@ -977,3 +977,10 @@ ran 1000 frames with validation on both backends, silent; the Release build's cr
 Phase 4 prediction are in the spec (the descriptor copy is not a cost). Full plain suite: clang-cl all pass, clang-cl non-unity and MSVC non-unity one
 and two failures, the intermittent DX12 device removal (filed). Runs: `ran 1281 of 2492 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 946 of 2492 tests (phases: all; flavors: asan; display: included; crash tests: excluded)`.
 Review: 7 findings, 3 fixed, 4 declined (filed). Hand checks of the demos need a person (filed). Linux: pending. **Next: Day 174 (the phase close).**
+
+Phase 13 **Day 174 (2026-11-08, Windows PC): the Windows half of the phase close.** New `docs/guide/windows.md`; the guide pass, `BUILD.md`, `CLAUDE.md`
+(a Windows section), `PLAN.md` (assumptions 2, 7, 18, 20) and the known-issues sweep done. Closing run on Windows `ran 2492 of 2492 tests (phases: all; flavors: all (plain and asan, no tsan on Windows); display: included; crash tests: included)`
+(one filed timeout of an asan crash test); after the review's fixes the full plain suite again (the throughput flake only); `ctest -L docs` 6 of 6; both
+demos 1000 frames with validation on DX12 and Vulkan, silent. The uncapped whole-phase review: 11 findings, 5 fixed (two would have broken the Linux
+build or label check), 6 declined. **Not done: the Linux machine's checks** (the checklist at the end of the Day 174 file); Phase 13 is complete once
+they pass. **Next: the Linux run of Day 174.**

@@ -1,9 +1,10 @@
 # Guide
 
-Concept pages, one per subsystem. All are currently skeletons.
+Concept pages, one per subsystem, plus the platform pages (`windows`).
 
 - [getting-started](getting-started.md)
 - [building-and-testing](building-and-testing.md)
+- [windows](windows.md)
 - [foundation-memory](foundation-memory.md)
 - [foundation-types](foundation-types.md)
 - [settings](settings.md)

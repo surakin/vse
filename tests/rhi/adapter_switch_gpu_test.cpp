@@ -14,6 +14,7 @@
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
 
+#if ENGINE_PLATFORM_WINDOWS // the helpers serve the DX12 test only: unused, they would be warnings (errors) elsewhere
 namespace {
 
 constexpr u32 kSwitchShotW = 320; // the size of renderer_demo.ppm
@@ -74,6 +75,7 @@ void ExpectSameObjectCounts(const rhi::ResourceCounts& now, const rhi::ResourceC
 }
 
 } // namespace
+#endif
 
 TEST_CASE("The GPU of a running renderer switches between the hardware adapter and WARP and back", "[rhi][gpu][golden][reset][dx12]") {
 #if ENGINE_PLATFORM_WINDOWS

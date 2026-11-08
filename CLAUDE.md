@@ -122,6 +122,24 @@ Never test a compiler's or system's own predefined macro (`_WIN32`, `__linux__`,
 A new platform, compiler or processor changes that header only. Rule 6 of the `platform_neutral_check` gate fails on a raw macro; the exceptions are the header itself,
 `tests/windows/discovery/` and generated code. See `docs/guide/foundation-types.md`.
 
+## Windows is a supported platform (Phase 13, required)
+
+Windows x64 builds and runs everything, with the Vulkan and Direct3D 12 backends (`docs/guide/windows.md`, `BUILD.md`).
+
+- **Build and test** from a plain PowerShell or Git Bash (never a Developer Command Prompt; the toolchain files find MSVC, the SDK and LLVM):
+  `cmake --preset windows-msvc` / `cmake --build --preset windows-msvc` (tree `build-msvc`, plain and asan) and `windows-clang-cl`
+  (`build-clang-cl`, plain only); tests through `scripts/test-phase.sh` under Git Bash, as on Linux. A change must build clean with both compilers
+  and in both unity modes there as well.
+- **Flavors per platform:** Windows runs plain and asan (MSVC has no ThreadSanitizer); tsan runs on Linux only. A phase's closing
+  `--all --flavor all` therefore runs on both machines.
+- **Windows code lives in Windows directories:** Win32, the Windows SDK, D3D12 and DXGI headers only under `*/windows/` (and `engine/rhi/dx12/`),
+  and `windows.h` only through `engine/foundation/os/windows/win32.h` (the `platform_neutral_check`, `module_deps_check` and `rhi_boundary_check`
+  gates enforce it).
+- **Two machines:** a day is built and tested on the machine it is done on; changes to shared code (CMake, the phase map, the gates, the scripts,
+  shared tests) are checked on the other machine no later than the phase's close, and `KNOWN-ISSUES.md` lists what is waiting for that run.
+- **The graphics backend is chosen at start** (`renderer.backend`, `--rhi`; `auto` is Direct3D 12 on Windows): there is no run-time backend
+  switch (the user's decision, 2026-11-08).
+
 ## End-of-day code review (required)
 
 **Every implementation day ends with a high-effort code review before it
@@ -240,8 +258,8 @@ table in `PLAN.md`.
   `PLAN.md` assumption #15.
 - **RHI abstraction is mandatory.** Renderer/gameplay code must never call
   Vulkan, DX12, or Metal directly — only through the common RHI interface
-  defined in Phase 4. Vulkan is the first backend; DX12/Metal follow later
-  behind the same interface.
+  defined in Phase 4. Vulkan (Phase 4) and Direct3D 12 (Phase 13) are the backends; Metal (Phase 14)
+  follows behind the same interface.
 - **Data-oriented ECS**, not an OOP scene graph.
 - **Linux first, Wayland primary / X11 fallback.** Every system is built
   and proven on Linux before porting to Windows/macOS/Android/iOS/consoles.
@@ -343,7 +361,9 @@ table in `PLAN.md`.
   `docs/superpowers/specs/2026-11-06-debugging-design.md`). Vendored as source under `third_party/` and used only through
   the facade in `engine/foundation/debug/`: only its two implementation files include the libraries' headers, enforced by a
   gate. The assert family, crash context, death-test helper and core-dump scripts stay ours. Do not hand-write what these
-  libraries already do, and do not add a network path.
+  libraries already do, and do not add a network path. **On Windows, symbols come from DbgHelp** (the system's own symbol
+  library, reading the PDBs; libbacktrace is not built there: Phase 13 Day 154, `PLAN.md` assumption #20), and the minidump
+  scripts are PowerShell (`scripts/*.ps1`).
 - **Offline tools may use a vetted third-party library** where the job is
   solved and not engine-differentiating - today only nlohmann/json
   (vendored under `third_party/nlohmann_json/`) in `tools/shader_mint`,

@@ -108,7 +108,8 @@ interpretations keep it buildable — flag any that don't match intent:
    performance, and as a learning/portability exercise, not because
    linking libc is forbidden. Where calling libc directly is simpler and
    doesn't duplicate something the foundation layer already owns (e.g.
-   wrapping a raw syscall, calling an OS API), that's fine. **Amendment 2026-11-07 (Phase 10):** the C++ standard library's
+   wrapping a raw syscall, calling an OS API), that's fine. On Windows the C library is the Universal C Runtime (UCRT), linked dynamically
+   like libc on Linux (Phase 13; the phase file's earlier "no CRT" wording was wrong). **Amendment 2026-11-07 (Phase 10):** the C++ standard library's
    containers, strings, smart pointers, `std::function`, algorithms and streams are not used in `engine/`, `game/`, `tools/` or tests; the
    engine's `String`, `Vector`, `HashMap`, `UniquePtr`, `Span`, `Sort` and the `byte`/`u8`..`u128` vocabulary replace them, and the
    `std_container_check` gate enforces it (exceptions: the nlohmann/json boundary of `tools/shader_mint`, the aliases in `types.h`,
@@ -202,9 +203,8 @@ interpretations keep it buildable — flag any that don't match intent:
    project's stated mission is to build a competing engine, the EULA
    terms need an actual review before Phase 24 work starts — don't assume
    this is fine by default.
-7. **First target CPU/ABI: x86-64 Linux, System V ABI.** ARM and the
-   Windows x64 calling convention are handled when those platform phases
-   start. **First target Unreal version: UE 5.3+** (property serialization
+7. **First target CPU/ABI: x86-64 Linux, System V ABI.** Since Phase 13 also **Windows x64** (the Microsoft x64 calling convention,
+   MSVC and `clang-cl` with the MSVC ABI). ARM64 is handled when a platform phase needs it (no Windows ARM64 build yet). **First target Unreal version: UE 5.3+** (property serialization
    has been relatively stable since unversioned properties landed in 4.25).
 8. **Build tooling is a dev-time dependency, not a runtime one — CMake now,
    custom later.** "Zero third-party dependencies" governs what ships
@@ -414,8 +414,11 @@ interpretations keep it buildable — flag any that don't match intent:
     needed).
 
 18. **Shader toolchain: Slang via `slangc` (GLSL retired on Phase 5 Day 70).** Shaders are never compiled at runtime in a shipped
-    build: the engine loads precompiled bytecode (SPIR-V now; DXIL/MSL
-    later), so no shader compiler is linked into the engine/game binary.
+    build: the engine loads precompiled bytecode (SPIR-V, and DXIL since Phase 13; MSL in Phase 14), so no shader compiler is linked
+    into the engine/game binary. **Phase 13:** `slangc` mints DXIL from the same sources (with `dxc`'s `dxcompiler.dll` and `dxil.dll` from
+    the Windows SDK), committed as `*.dxil.inc` beside `*.spv.inc`; shaders carry one blob per format (`rhi::ShaderBlobSet`) and a device
+    takes the one its `DeviceCaps::shader_format` names; the D3D12 build of each shader negates clip-space Y (`ENGINE_CLIP`), and D3D12
+    reads the object index from an instance-rate stream (no base instance).
     The compiler is a dev-time tool in the same boundary category as
     CMake and the C++ compiler (assumption #8) and Catch2 (#16).
     - **Phase 4 (historical, retired):** shaders were GLSL 4.50 sources
@@ -497,8 +500,9 @@ interpretations keep it buildable — flag any that don't match intent:
     developer's disk, and a test fails if a binary links libcurl, a TLS library or winhttp. What stays hand-written because it is engine-specific or small: the
     assert/ensure/verify family, the crash context and recent-log ring buffer, the death-test helper (Catch2 has none), the
     core-dump setup and scripts, and a small dev tool that extracts the minidump from sentry's envelope. Windows and macOS
-    (Phases 13 and 14) reuse the same two libraries; the one known gap is that libbacktrace reads DWARF only, not PDB
-    (Phase 13 decides between building with DWARF and a DbgHelp resolver in the facade). Any further third-party library
+    (Phases 13 and 14) reuse sentry-native with Breakpad. **Phase 13 decided the symbol gap:** libbacktrace reads DWARF only, so on
+    Windows the facade resolves names and lines with **DbgHelp** from the PDBs (the operating system's own symbol library, not a third-party
+    one; Day 154), and libbacktrace is not built there; the minidump scripts are PowerShell and read only a local symbol store. Any further third-party library
     still needs its own justified entry here.
 
 21. **All file and directory access goes through one layer (Phase 9): `io::Path`, `io::File`, `io::Directory`.** `File` is an interface with
@@ -661,7 +665,7 @@ PLAN.md
 | 10 | **Standard types and container hygiene** (complete 2026-11-07) | Linux first | [plans/phase-10-types-and-containers.md](plans/phase-10-types-and-containers.md) | `byte`, portable `i128`/`u128`, `Span`/`ByteSpan`; byte buffers and integer spellings standardized; `game/`, the Phase 9 test helpers and `tools/shader_mint` (outside its JSON boundary) moved onto the engine's containers; a `std_container_check` gate keeps `std::` containers out of `engine/`, `game/` and `tools/` |
 | 11 | **Settings system** | Linux first | [plans/phase-11-settings-system.md](plans/phase-11-settings-system.md) | One engine-wide settings registry, config-file classes (text format with comments, atomic saves), layered sources and precedence, change notification, versioning; the rendering settings of Phase 8 migrate onto it; the demos get `--settings`, `--save-settings` and `--set` |
 | 12 | **Module layering** (complete, Days 140-146) | none (shared code, run on Linux) | [plans/phase-12-module-layering.md](plans/phase-12-module-layering.md) | No dependency cycle: the foundation is one library per layer, windows and input are their own `platform` library under `engine/platform/`, no program includes a per-platform header, and a `module_deps_check` gate keeps it that way (`ARCHITECTURE.md`) |
-| 13 | Windows port + DX12 backend (planned, Days 147-174) | Windows | [plans/phase-13-windows-dx12.md](plans/phase-13-windows-dx12.md) | Everything built so far running on Windows; the Phase 4 golden images and Phase 5 scene tests pass through DX12 and Vulkan with validation silent; DX12 passes the lifecycle suite and the backend switches at run time; Linux still passes |
+| 13 | Windows port + DX12 backend (Days 147-174; closing, the Linux runs pending) | Windows | [plans/phase-13-windows-dx12.md](plans/phase-13-windows-dx12.md) | Everything built so far running on Windows; the Phase 4 golden images and Phase 5 scene tests pass through DX12 and Vulkan with validation silent; DX12 passes the lifecycle suite; the backend is chosen at start (no run-time switch); Linux still passes |
 | 14 | macOS port + Metal backend | macOS | [plans/phase-14-macos-metal.md](plans/phase-14-macos-metal.md) | Phases 1-5's functionality running on macOS through the Metal RHI backend; the same golden images and scene tests pass |
 | 15 | **Font & text rendering** | Linux | [plans/phase-15-font-text-rendering.md](plans/phase-15-font-text-rendering.md) | Arbitrary UTF-8 text (via FreeType-rasterized glyphs, Day 10-12 grapheme clustering for cursor/line-break correctness) renders on screen through the RHI at an interactive frame rate, and the same layout can be built as an extruded 3D mesh from the vector outlines (color emoji via `COLR` v0 and bitmap glyphs) |
 | 16 | **UI system (widgets & viewport)** | Linux | [plans/phase-16-ui-system.md](plans/phase-16-ui-system.md) | Retained widget toolkit (menus, buttons, comboboxes, scrollbars, labels, text fields...) on the RHI and Phase 15 text, with run-time-swappable themes, a viewport widget that renders the 3D world inside a resizable panel and routes input correctly, and UI surfaces that render into a texture (in-world screens) |

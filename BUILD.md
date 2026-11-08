@@ -41,11 +41,11 @@ Arch Linux's, the distribution the development machine uses.
 | `wayland-scanner`, `wayland-protocols` | 1.26.0, 1.49 | Optional | Only to regenerate the vendored protocol code (`engine/platform/linux/wayland/generated/VENDORED.md`). | `wayland`, `wayland-protocols` |
 | A Wayland compositor and an X server (or Xwayland) | | For checks | The `display` test group; it skips on a locked session. | |
 
-## Windows (x86-64): being ported in Phase 13
+## Windows (x86-64): supported (Phase 13)
 
-**Status (2026-11-07, Phase 13 Day 148): the tree configures and builds on Windows, one layer at a time.** Today that is the foundation's base
-layer and the Windows-only tests (`tests/windows/`); each later day of `plans/phase-13-windows-dx12.md` adds its layer. This list is what the phase
-builds against, and the developer PC has the versions shown.
+**Status (2026-11-08, Phase 13 Day 174): every target builds and every test runs on Windows x64**, with MSVC (plain and ASan) and `clang-cl`
+(plain), unity on and off, and the Vulkan and Direct3D 12 backends. The developer PC has the versions shown; `docs/guide/windows.md` is the
+Windows guide.
 
 The toolchain files (`cmake/toolchains/windows-msvc.cmake`, `windows-clang-cl.cmake`) find Visual Studio (through `vswhere`), the Windows SDK
 (registry), `clang-cl` and the Vulkan SDK by themselves. **Configure from a plain PowerShell or Git Bash, never from a Developer Command Prompt or
@@ -76,7 +76,6 @@ Day 163, `ENGINE_SLANGC` (`slangc`; else `PATH`, then `C:\Tools\slang-2026.18.2\
 | Graphics Tools (optional Windows feature) | | For checks | The D3D12 debug layer (`d3d12SDKLayers.dll`): `--validation` on DX12 and the debug-layer-silent checks. | Settings → System → Optional features → "Graphics Tools", or elevated: `Add-WindowsCapability -Online -Name Tools.Graphics.DirectX~~~~0.0.1.0` |
 | Vulkan SDK | 1.4.363.0 | Required | Its headers (`vulkan/vulkan_core.h`) are needed to build; its validation layers serve `--validation`. The loader is already in the driver. | `winget install --id KhronosGroup.VulkanSDK -e` |
 | `slangc` | **exactly v2026.18.2** | For checks | Same version as Linux, so minted SPIR-V and DXIL match byte for byte. winget's `shader-slang.slang` is older (2026.14.1); use the Windows x86-64 zip from https://github.com/shader-slang/slang/releases/tag/v2026.18.2 and put its `bin` on `PATH`, or set `ENGINE_SLANGC`. | GitHub release |
-| WinDbg, or Debugging Tools for Windows (`cdb`) | current | For checks | Reading minidumps with the symbol store (Phase 13 Days 155-156). | `winget install --id Microsoft.WinDbg -e` |
 | Long paths (`HKLM\SYSTEM\CurrentControlSet\Control\FileSystem\LongPathsEnabled = 1`) | off on the developer PC (2026-11-07) | Optional | Lets the manifest's `longPathAware` take effect. The file layer works either way (it adds the `\\?\` prefix past 248 characters; `tests/io/io_windows_test.cpp` checks it with the setting off). The check with it on has not been done. An elevated system change: the developer makes it. | Group Policy "Enable Win32 long paths", or the registry value |
 | Developer Mode | off on the developer PC | Optional | Lets tests create symbolic links without elevation; without it they skip with a reason (Phase 13 Days 151-152: the `Stat`/`Lstat` link checks). | Settings → System → For developers |
 | Windows PowerShell | 5.1 (ships with Windows) | Required for checks | Runs `scripts/store-symbols.ps1`, `crash-report.ps1`, `find-dump.ps1` and `open-dump.ps1`, and the tests of them (Phase 13 Day 156). | part of Windows |

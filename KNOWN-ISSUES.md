@@ -112,8 +112,10 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - **File layer (Phase 9, closed 2026-11-06): deferred on purpose.**
   - Memory-mapped files (a `Map` capability for the asset system's large read-only archives): not built; decided with Phase 20's design.
   - File watching (hot reload of config and shaders): not built; Phase 11 did not build it (see the settings entry above, item 1).
-  - Share modes and locks (Windows share flags, `flock`): only exclusive create and atomic replace exist; revisit with Phase 13.
-  - The Windows and macOS backends (`engine/foundation/io/BACKEND.md`) and the mobile and console ones: Phases 13, 14, 22, 23. The interfaces compile for the Windows and macOS targets (`io_cross_syntax_*`), nothing more is verified.
+  - Locks (`flock`, `LockFileEx`): only exclusive create and atomic replace exist. Share modes were settled in Phase 13: Windows opens every file
+    with `FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE`, so files behave as on POSIX (`io/windows/local_file.cpp`).
+  - The macOS backend (`engine/foundation/io/BACKEND.md`) and the mobile and console ones: Phases 14, 22, 23 (the Windows backend is done, Phase 13).
+    The interfaces compile for the macOS target (`io_cross_syntax_*`), nothing more is verified.
   - Network and pak `File` backends: only the test double `tests/io/slow_file.h` exists; Phase 20 builds the real ones.
   - Windows path comparison folds ASCII case only; non-ASCII names compare exactly (documented in `Path`).
   - Some platform-neutral code still lives under `engine/foundation/io/linux/` (`MatchesWildcard`, `ListDirectory`, `WalkDirectory`, `Exists`/`IsFile`/`IsDirectory`, `ErrorName`); it moves out when the second backend arrives. `WalkDirectory` identifies directories with a Linux `stat`.
@@ -213,6 +215,17 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   right after another tree's build; deleting that object and building again fixed it. Not seen in the unity trees. The file was removed on Day 169 (its last placeholders were replaced); not seen with another file so far.
 - Phase 13 Day 168 (2026-11-08), open until the Linux run at the phase close: `shaders/mipgen.comp` and its minted outputs (minted on Windows)
   have not been minted or checked on Linux.
+- Phase 13 Day 174 (2026-11-08), flaky: the asan copy of `Windows: while the crash handler is installed, abort() shows no dialog and calls no error
+  reporting` (phase 7) failed once in `scripts/test-phase.sh --all --flavor all`: the child did not exit within its 60 s deadline, stderr empty, no
+  dialog seen. It passed three times when run alone.
+- Phase 13 Day 174 (2026-11-08), open until the Linux machine: the phase's closing checks there (the checklist at the end of
+  `plans/phase-13-windows-dx12/day-174-docs-and-closing-run.md`), including the Day 174 changes (`tests/phases.txt`'s `testopt:` lines,
+  `adapter_switch_gpu_test.cpp`'s Windows condition, the guides and project documents).
+- **Phase 13 deferrals (2026-11-08, Day 174), each filed for a later phase:** the DX12 backend uses legacy resource barriers only (no enhanced
+  barriers, no Agility SDK) and committed resources only (placed resources: see the descriptor entry above); fullscreen is borderless (no exclusive
+  fullscreen, `engine/platform/windows/FULLSCREEN.md`); text input takes committed characters only (no IME composition window or candidate list);
+  Windows is x64 only (no ARM64 build); HDR10 is never granted (no 10-bit RHI format) and scRGB has not been seen on an HDR display; fast-fail
+  crashes leave no report (entry below). None blocks a later phase; each waits for a need or a measurement.
 - Phase 13 Day 173 (2026-11-08), flaky, not understood: in full plain-suite runs a new test process's `D3D12CreateDevice` returned
   `DXGI_ERROR_DEVICE_REMOVED` three times (16:56 `build-clang-cl`, 18:43 `build-windows-clang-cl-nounity`, 18:49 `build-windows-msvc-nounity`),
   failing the DX12 test that started then (`DX12 command lists record on several threads ...`, `DX12 root signatures are cached ...`, `Creating every
@@ -239,6 +252,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - Phase 13 Day 171, measured, filed: on the Radeon 860M the DX12 backend records a draw in 0.27 us against Vulkan's 0.19 us (16000
   point-light volume draws: 4.4 ms against 3.15 ms of CPU time), and a 50000-object frame takes 7.1 to 7.3 ms against 6.4 to 7.1. Not
   profiled (PIX is not installed).
+- 2026-11-08 (Windows PC, Phase 13 Day 174), flaky again: `Throughput scales with participant count` (phase 2, plain), once in the full plain run.
 - 2026-11-08 (Windows PC, Phase 13 Day 173), flaky again: `Throughput scales with participant count` (phase 2, plain), once in
   `scripts/test-phase.sh --affected`.
 - 2026-11-08 (Windows PC, Phase 13 Day 172), flaky again: `Throughput scales with participant count` (phase 2, plain), once in

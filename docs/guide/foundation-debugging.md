@@ -1,6 +1,6 @@
 # Foundation: Debugging
 
-> **Status:** complete for Phase 7 (Linux implemented; Windows and macOS are ready, see [porting](porting-debugging.md))  
+> **Status:** complete for Phases 7 and 13 (Linux and Windows implemented; macOS is ready, see [porting](porting-debugging.md))  
 > **Audience:** engine programmers  
 > **Covers:** Phase 7
 

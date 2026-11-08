@@ -1,6 +1,6 @@
 # Getting Started
 
-> **Status:** skeleton — the Windows build and run commands are written (Phase 13 Day 161); the rest is not yet written  
+> **Status:** skeleton — the Windows build and run commands are written (Phase 13), and `windows.md` is the full Windows page; the rest is not yet written  
 > **Audience:** new users  
 > **Covers:** Phases 0-2
 
@@ -50,7 +50,7 @@ build-msvc\game\renderer_demo\renderer_demo.exe --set renderer.fullscreen=true
 ```
 
 A demo's settings file is `%APPDATA%\<demo>\settings.cfg` (`--save-settings` writes it) and its crash dumps go to
-`%LOCALAPPDATA%\<demo>\crashes`. The demos' READMEs (`game/rhi_demo/README.md`, `game/renderer_demo/README.md`) list every option.
+`%LOCALAPPDATA%\<demo>\crashes`. The demos draw with Direct3D 12 by default on Windows; `--rhi vulkan` chooses Vulkan when the program starts. The demos' READMEs (`game/rhi_demo/README.md`, `game/renderer_demo/README.md`) list every option.
 
 ### Running the tests
 

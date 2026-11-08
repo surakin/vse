@@ -388,12 +388,12 @@ TEST_CASE("A real device recovers from a loss at the start and at the submit of 
             CHECK(first.first == FrameStatus::Ok);
             renderer.GetDevice()->DestroyTexture(first.second);
             // The second frame loses the device; the recovery makes a new one (the old target went with the old device).
-            rhi::Device* before = renderer.GetDevice();
+            const u32 epoch_before = renderer.GetDevice()->Epoch(); // a pointer could be reused; the epoch is unique
             auto second = draw();
             CHECK(second.first == FrameStatus::DeviceLost);
             CHECK(renderer.GetDevice() != nullptr);
             CHECK(renderer.Stats().recoveries == 1);
-            (void)before;
+            CHECK(renderer.GetDevice()->Epoch() != epoch_before); // the recovery made a new device
             auto third = draw();
             CHECK(third.first == FrameStatus::Ok);
             renderer.GetDevice()->DestroyTexture(third.second);

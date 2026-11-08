@@ -364,12 +364,13 @@ answer = 42
 
 ### Building and testing on Windows
 
-Phase 13 ports the engine to Windows one layer a day, in dependency order (`ARCHITECTURE.md`), so the Windows build has the layers
-ported so far and their tests; `BUILD.md` lists what to install. CMake finds MSVC, the Windows SDK, LLVM's `clang-cl` and the Vulkan SDK
+Since Phase 13 every layer builds and is tested on Windows x64, with the Vulkan and Direct3D 12 backends; `BUILD.md` lists what to install
+and `docs/guide/windows.md` is the Windows page (building, the demos, validation, crash dumps, where things live). CMake finds MSVC, the Windows SDK, LLVM's `clang-cl` and the Vulkan SDK
 itself (vswhere, the registry, the default install folders), so any terminal works: no Developer Command Prompt and no `vcvars`.
 
 - **Presets.** `cmake --preset windows-msvc` configures `build-msvc` (MSVC, the primary compiler, plain and ASan flavors);
-  `cmake --preset windows-clang-cl` configures `build-clang-cl`, a compile-and-test check with no ASan flavor yet. Build and test with
+  `cmake --preset windows-clang-cl` configures `build-clang-cl`, the second compiler: it builds every day and its full plain suite runs at a
+  phase's close (no ASan flavor). Build and test with
   `cmake --build --preset <name>` and `ctest --preset <name>`. On Linux the preset is `linux` (`build`).
 - **`scripts/test-phase.sh` runs under Git for Windows' `bash`.** It finds the platform from `uname -s`, defaults to `build-msvc`, and
   takes the same options as on Linux. `--flavor tsan` stops with a message (MSVC has no ThreadSanitizer), and `--flavor all` runs
@@ -378,9 +379,10 @@ itself (vswhere, the registry, the default install folders), so any terminal wor
   `MSYS2_ARG_CONV_EXCL='*'` or calls the tool through CMake.
 - **The phase map per platform.** File patterns in `tests/phases.txt` need no platform: every source file is in both checkouts, and only
   the built tests differ. What differs is which phases have tests in which flavors, so every phase has a `flavors <phase> windows: ...`
-  line (`none` for a phase with no Windows tests yet), and the day that ports a layer updates its phases' lines. `test_phase_labels`
+  line (`none` for a phase with no Windows tests), and a change that adds or removes a phase's Windows tests updates its line. `test_phase_labels`
   checks the line for the platform it runs on, and only the flavors the configuration builds (`clang-cl` is not asked for ASan tests).
-  The unused-line check runs on Linux only: a `test:` line for a test Windows does not build yet matches nothing without being stale.
+  The unused-line check runs on Linux only: a `test:` line for a test Windows does not build (a Wayland or X11 test) matches nothing
+  there without being stale.
 - **The `display` group.** `SKIP_IF_NO_DISPLAY_SESSION()` asks `os::QuerySessionState()`, which on Windows asks the Terminal Services
   API whether this session is the active one and checks that the input desktop is `Default` (a locked workstation or a screen saver
   switches it; `engine/foundation/os/windows/session.cpp`), so a locked screen skips the window tests, as on Linux.
@@ -391,9 +393,9 @@ itself (vswhere, the registry, the default install folders), so any terminal wor
   (`file_access_check`, `config_access_check`) and heap, lock and formatting calls in signal-safe code (`signal_safety_check`).
   A gate prints each problem on one line (`message(NOTICE)`), so its self-tests do not depend on the console width or the
   checkout's path.
-- **Two machines.** During Phase 13 the Windows machine runs the Windows build every day; the shared changes (CMake, the phase map, the
-  gates, `scripts/test-phase.sh`) are checked on Linux once, when the phase closes (Day 174), and `KNOWN-ISSUES.md` lists what is
-  waiting for that run.
+- **Two machines.** During Phase 13 the Windows machine ran the Windows build every day, and the shared changes (CMake, the phase map, the
+  gates, `scripts/test-phase.sh`, shared tests) were checked on Linux once, when the phase closed (Day 174); `KNOWN-ISSUES.md` lists what
+  waits for a Linux run.
 
 ### CI expectations
 

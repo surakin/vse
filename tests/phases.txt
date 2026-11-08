@@ -230,10 +230,10 @@ tests/rhi/dx12_commands_test.cpp                13
 tests/rhi/dx12_swapchain_test.cpp               13
 tests/rhi/adapter_switch_gpu_test.cpp           13
 test:rhi_demo_bad_rhi                           13
-test:rhi_demo_*_dx12                            13
+testopt:rhi_demo_*_dx12                         13
 test:renderer_demo_screenshot_vulkan            13
-test:renderer_demo_screenshot_dx12              13
-test:renderer_demo_device_loss_trace_dx12       13
-test:renderer_demo_oom_device_dx12              13
+testopt:renderer_demo_screenshot_dx12           13
+testopt:renderer_demo_device_loss_trace_dx12    13
+testopt:renderer_demo_oom_device_dx12           13
 tests/windows/                                  13
 testopt:windows_*                               13
