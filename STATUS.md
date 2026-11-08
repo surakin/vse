@@ -984,3 +984,8 @@ Phase 13 **Day 174 (2026-11-08, Windows PC): the Windows half of the phase close
 demos 1000 frames with validation on DX12 and Vulkan, silent. The uncapped whole-phase review: 11 findings, 5 fixed (two would have broken the Linux
 build or label check), 6 declined. **Not done: the Linux machine's checks** (the checklist at the end of the Day 174 file); Phase 13 is complete once
 they pass. **Next: the Linux run of Day 174.**
+
+Phase 13 **Day 174 (2026-11-08, Linux machine): the Linux half of the phase close; Phase 13 is complete.** Clang and GCC, unity on and off, build clean. `scripts/test-phase.sh --all --flavor all`:
+`ran 3606 of 3606 tests (phases: all; flavors: all; display: included; crash tests: included) in 105 s`, no failure. Reference regenerated: 4492 of 4492, identical to the committed Windows output; `ctest -L docs` 6 of 6;
+`shaders_check` reproduces every minted shader with `slangc` v2026.18.2. Both demos 1000 frames with validation on Wayland and X11: exit 0, silent. `BUILD.md` Linux versions updated. The 28 "open until the Linux run"
+entries are removed from `KNOWN-ISSUES.md`; one new entry (the `--rhi dx12` refusal wording on Linux). `CURRENT_PHASE` stays 13 until Phase 14 has its day files. **Next: Phase 14 planning (its day files).**

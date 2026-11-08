@@ -20,16 +20,16 @@ Finish the documentation, run everything on both machines, review the whole phas
 - [x] **Known-issues sweep:** every Phase 13 deferral filed (enhanced barriers, placed resources, HDR10, exclusive fullscreen, IME composition, ARM64, fast-fail
       crashes, anything left by a day), every entry this phase fixed removed (the backend registry and switch, the HLSL object index, the D3D12 Y flip, `--permute`
       on Windows, the portable `u128` under MSVC, the Breakpad Windows headers, `env_source.cpp`'s `environ`, share modes).
-- [ ] **The deferred Linux checks** (the two-machine rule as amended on 2026-11-07): everything each day filed for the Linux machine in `KNOWN-ISSUES.md`
+- [x] **The deferred Linux checks** (the two-machine rule as amended on 2026-11-07): everything each day filed for the Linux machine in `KNOWN-ISSUES.md`
       (Days 147 onward): both unity builds, the CMake version, the reference regeneration with `docgen lint`, the phase-label self-tests, the shared-code
       changes of every day; fix what fails, with the day it came from named in the fix.
-- [ ] **Closing full runs (CLAUDE.md, required for a phase's last day):** Windows `scripts/test-phase.sh --all --flavor all` (plain and asan; the summary names tsan
+- [x] **Closing full runs (CLAUDE.md, required for a phase's last day):** Windows `scripts/test-phase.sh --all --flavor all` (plain and asan; the summary names tsan
       as not on Windows), `ctest -L docs`; Linux `scripts/test-phase.sh --all --flavor all`, `ctest -L docs`; both demos 1000 frames with validation on DX12 and
       Vulkan (Windows) and on Wayland and X11 (Linux); record both final `ran X of Y tests (phases ...)` lines in this file; nothing left out on either machine.
 - [x] **End-of-phase review (CLAUDE.md, uncapped):** `/code-review high --max-findings all` over the whole phase's diff (from the commit before Day 147 to the
       working tree); verify, fix or decline each finding with a reason; record the count and outcome under "Post-implementation code review"; fixes re-run on both
       machines.
-- [ ] Update `plans/phase-13-windows-dx12.md` (status complete, days done), `PLAN.md`, `STATUS.md`; `CURRENT_PHASE` stays 13 until Phase 14 has its day files and
+- [x] Update `plans/phase-13-windows-dx12.md` (status complete, days done), `PLAN.md`, `STATUS.md`; `CURRENT_PHASE` stays 13 until Phase 14 has its day files and
       starts (policy); commit and push.
 
 **Done:** `docs/guide/windows.md` and every touched guide are current and identical in output on both machines, the closing lines of the full runs on Windows
@@ -77,7 +77,7 @@ uncapped review is recorded, and Phase 13 is marked complete.
   compute pipeline-cache lookups are near copies; they call different D3D12 functions with different description types, and sharing them would need a
   template for two short functions. `Submit` allocates a small barrier vector per call; one allocation is negligible next to the D3D12 calls in it.
 
-## The Linux checklist (not done: needs the Linux machine)
+## The Linux checklist (done 2026-11-08, Linux machine)
 
 Everything Phase 13 filed for Linux, in one list. Run it from a checkout at this commit, fix what fails (naming the day it came from), and record the
 lines here; then the phase can be marked complete.
@@ -98,3 +98,16 @@ lines here; then the phase can be marked complete.
 8. Then remove the "open until the Linux run" entries of `KNOWN-ISSUES.md` that passed, record the lines in this file, and mark Phase 13 complete in
    `plans/phase-13-windows-dx12.md`, `PLAN.md` (the roadmap row and a progress-log entry) and `STATUS.md`. `CURRENT_PHASE` stays 13 until Phase 14
    has its day files and starts.
+
+### Linux results (2026-11-08)
+
+1. All four configurations build with no error and no warning of ours: Clang unity (`build/`), Clang `-DENGINE_UNITY_BUILD=OFF`, GCC unity, GCC non-unity (Clang 23.1.4, GCC 16.2.1).
+2. `BUILD.md`'s Linux table checked: CMake 4.4.5 (3.21 minimum holds), Clang 23.1.4, wayland-scanner 1.26.0, wayland-protocols 1.50 (the table said 1.49: corrected), `slangc` v2026.18.2, Ninja 1.13.2.
+   `dxc` is not installed on this machine; `shaders_portability` passes without it.
+3. `scripts/test-phase.sh --all --flavor all`: `ran 3606 of 3606 tests (phases: all; flavors: all; display: included; crash tests: included) in 105 s`, no failure.
+4. `cmake --build build --target docs`: 4492 of 4492 documented, `git status docs/reference` clean (identical to the Windows output), `docgen lint` zero; `ctest -L docs` 6 of 6.
+5. `test_phase_labels` and its self-tests pass (the `testopt:` lines hold).
+6. `renderer_demo` and `rhi_demo`, `--frames 1000 --validation`, on `--backend wayland` and `--backend x11`: exit 0, no validation message. `--rhi vulkan` and `--rhi auto` run; `--rhi dx12` is refused
+   (exit 1) with `the dx12 backend is not registered in this program`. That message suggests a missing link step, though on Linux the backend is simply not built; filed as a wording issue.
+7. Shared code of Days 148-173: covered by the full run above; `ctest -R shaders_` (`shaders_check`, with `slangc` v2026.18.2 re-minting every shader byte for byte, and `shaders_portability`) passes.
+8. The "open until the Linux run" entries of `KNOWN-ISSUES.md` (28) are removed.

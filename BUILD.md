@@ -21,8 +21,8 @@ Arch Linux's, the distribution the development machine uses.
 
 | What | Version used | Kind | Notes | Arch package |
 |---|---|---|---|---|
-| CMake | 3.21 or newer | Required | 3.21 for `CMakePresets.json` with toolchain files. | `cmake` |
-| Clang (`clang++`) | C++20 | Required | The compiler CMake picks first on Linux (GCC is the fallback when no `clang++` is installed; it must build clean too). Also runs the cross-target syntax checks (`*_cross_syntax_windows`, `_macos`). | `clang` |
+| CMake | 3.21 or newer (4.4.5 used) | Required | 3.21 for `CMakePresets.json` with toolchain files. | `cmake` |
+| Clang (`clang++`) | C++20 (23.1.4 used) | Required | The compiler CMake picks first on Linux (GCC is the fallback when no `clang++` is installed; it must build clean too). Also runs the cross-target syntax checks (`*_cross_syntax_windows`, `_macos`). | `clang` |
 | Ninja or Make | any | Required | Either generator works. | `ninja` |
 | pkg-config | any | Required | Finds the system libraries below. | `pkgconf` |
 | `libwayland-client` (headers) | any current | Required | Wayland backend. | `wayland` |
@@ -38,7 +38,7 @@ Arch Linux's, the distribution the development machine uses.
 | `objcopy`, `strip`, `readelf` | any current | For checks | Split debug info, the crash-script tests, the no-network check. | `binutils` |
 | `systemd-coredump` | | Optional | Where the system stores core dumps (`scripts/open-core.sh`). | part of `systemd` |
 | Python 3 | 3.x | Optional | `scripts/list-aborts.py` only. | `python` |
-| `wayland-scanner`, `wayland-protocols` | 1.26.0, 1.49 | Optional | Only to regenerate the vendored protocol code (`engine/platform/linux/wayland/generated/VENDORED.md`). | `wayland`, `wayland-protocols` |
+| `wayland-scanner`, `wayland-protocols` | 1.26.0, 1.50 | Optional | Only to regenerate the vendored protocol code (`engine/platform/linux/wayland/generated/VENDORED.md`). | `wayland`, `wayland-protocols` |
 | A Wayland compositor and an X server (or Xwayland) | | For checks | The `display` test group; it skips on a locked session. | |
 
 ## Windows (x86-64): supported (Phase 13)

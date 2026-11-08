@@ -16,7 +16,7 @@ when the program starts (a change waits for the next start: no run-time backend 
 and Vulkan; every gate and `ctest -L docs` pass on Windows; and the
 Linux machine still passes its full suite in every flavor.
 
-**Status: planned (2026-11-07), Days 147-174; not started.** Day numbers continue from Phase 12 (which ends at Day 146). Day 147 writes the spec
+**Status: complete (2026-11-08), Days 147-174; the Linux machine's closing runs passed the same day.** Day numbers continue from Phase 12 (which ends at Day 146). Day 147 writes the spec
 (`docs/superpowers/specs/2026-11-NN-windows-port-design.md`) that confirms or amends the decisions below with experiments.
 
 **Hardware.** Windows: the developer's PC (`archvile-win`), AMD Ryzen AI 7 350 (8 cores, 16 threads), AMD Radeon 860M integrated GPU (driver
