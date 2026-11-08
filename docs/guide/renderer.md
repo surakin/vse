@@ -566,7 +566,10 @@ from the surface toward the light), `Ambient` (`color * intensity` from everywhe
 Per pixel the shader reads the depth; a value of 1.0 is background and is discarded, leaving the cleared black. Otherwise it
 rebuilds the world position from the pixel and the depth: `ndc = (2 (pixel + 0.5) / size - 1, depth)`, then
 `world = inverse_view_projection * (ndc, 1)` divided by `w`. The projection's Y flip (clip Y points down) is already inside
-that inverse, so the pixel row is used as it is: row 0 is the top of the picture, as in Vulkan's framebuffer. Using the
+that inverse, so the pixel row is used as it is: row 0 is the top of the picture, as in Vulkan's framebuffer. On Direct3D 12 the
+same holds: the D3D12 build of every vertex shader negates clip-space Y once more (`ENGINE_CLIP`, `shaders/README.md`), so the
+projection, this reconstruction and the light scissor rectangles keep one convention on every backend, and the renderer never
+chooses a projection per backend. Using the
 OpenGL convention here would mirror the picture, which the world-position debug layer (`GBufferLayer::WorldPosition`) and a
 test against known geometry catch. `ReconstructWorldPosition` is the CPU twin.
 

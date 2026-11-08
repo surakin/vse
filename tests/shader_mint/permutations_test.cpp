@@ -168,7 +168,7 @@ TEST_CASE("The array emitters use the committed layout", "[shader_mint][permutat
                                    "    0x00000006,\n};\n"));
     out = MakeText();
     Vector<u8> bytes;
-    for (u8 b : {1, 2, 3}) bytes.Push(b);
+    for (u8 b : {u8{1}, u8{2}, u8{3}}) bytes.Push(b);
     AppendByteArray(&out, "kXRefl", bytes);
     CHECK(out.View() == StringView("inline constexpr usize kXReflByteCount = 3;\n\n"
                                    "inline constexpr u8 kXRefl[kXReflByteCount] = {\n    1, 2, 3,\n};\n"));

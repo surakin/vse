@@ -2170,6 +2170,7 @@ rhi::DeviceCaps::depth_format	variable	rhi	rhi-devicecaps-depth-format	rhi.md	en
 rhi::DeviceCaps::timestamp_period_ns	variable	rhi	rhi-devicecaps-timestamp-period-ns	rhi.md	engine/rhi/caps.h:50
 rhi::DeviceCaps::supports_bindless	variable	rhi	rhi-devicecaps-supports-bindless	rhi.md	engine/rhi/caps.h:52
 rhi::DeviceCaps::shader_format	variable	rhi	rhi-devicecaps-shader-format	rhi.md	engine/rhi/caps.h:55
+rhi::DeviceCaps::object_index_stream	variable	rhi	rhi-devicecaps-object-index-stream	rhi.md	engine/rhi/caps.h:60
 rhi::Viewport	struct	rhi	rhi-viewport	rhi.md	engine/rhi/command_list.h:15
 rhi::Viewport::x	variable	rhi	rhi-viewport-x	rhi.md	engine/rhi/command_list.h:17
 rhi::Viewport::y	variable	rhi	rhi-viewport-y	rhi.md	engine/rhi/command_list.h:19
@@ -2607,8 +2608,9 @@ rhi::BindingType::StorageBuffer	enumerator	rhi	rhi-bindingtype-storagebuffer	rhi
 rhi::BindingType::SampledTexture	enumerator	rhi	rhi-bindingtype-sampledtexture	rhi.md	engine/rhi/enums.h:327
 rhi::BindingType::Sampler	enumerator	rhi	rhi-bindingtype-sampler	rhi.md	engine/rhi/enums.h:328
 rhi::BindingType::StorageTexture	enumerator	rhi	rhi-bindingtype-storagetexture	rhi.md	engine/rhi/enums.h:329
-rhi::BindingType::Count	enumerator	rhi	rhi-bindingtype-count	rhi.md	engine/rhi/enums.h:330
-rhi::Span	alias	rhi	rhi-span	rhi.md	engine/rhi/enums.h:337
+rhi::BindingType::ReadOnlyStorageBuffer	enumerator	rhi	rhi-bindingtype-readonlystoragebuffer	rhi.md	engine/rhi/enums.h:333
+rhi::BindingType::Count	enumerator	rhi	rhi-bindingtype-count	rhi.md	engine/rhi/enums.h:334
+rhi::Span	alias	rhi	rhi-span	rhi.md	engine/rhi/enums.h:341
 rhi::Format	enum	rhi	rhi-format	rhi.md	engine/rhi/format.h:17
 rhi::Format::Undefined	enumerator	rhi	rhi-format-undefined	rhi.md	engine/rhi/format.h:18
 rhi::Format::R8_UNorm	enumerator	rhi	rhi-format-r8-unorm	rhi.md	engine/rhi/format.h:19
@@ -3064,19 +3066,19 @@ renderer::GBufferPass::AddToGraph(RenderGraph*,u32,u32)	function	renderer	render
 renderer::GBufferPass::SetExtraTargetUsage(rhi::TextureUsage)	function	renderer	renderer-gbufferpass-setextratargetusage-rhi-textureusage	renderer.md	engine/renderer/gbuffer.h:240
 renderer::GBufferPass::LastError() const	function	renderer	renderer-gbufferpass-lasterror-const	renderer.md	engine/renderer/gbuffer.h:245
 renderer::GBufferPass::Stats() const	function	renderer	renderer-gbufferpass-stats-const	renderer.md	engine/renderer/gbuffer.h:248
-renderer::GBufferDebugView	class	renderer	renderer-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:287
-renderer::GBufferDebugView::GBufferDebugView(rhi::Device*)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:294
-renderer::GBufferDebugView::~GBufferDebugView()	function	renderer	renderer-gbufferdebugview-tilde-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:296
-renderer::GBufferDebugView::GBufferDebugView(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:297
-renderer::GBufferDebugView::operator=(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-operator-eq-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:298
-renderer::GBufferDebugView::RegisterWith(DeviceResources*)	function	renderer	renderer-gbufferdebugview-registerwith-deviceresources-star	renderer.md	engine/renderer/gbuffer.h:306
-renderer::GBufferDebugView::Release()	function	renderer	renderer-gbufferdebugview-release	renderer.md	engine/renderer/gbuffer.h:309
-renderer::GBufferDebugView::Recreate(rhi::Device*)	function	renderer	renderer-gbufferdebugview-recreate-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:317
-renderer::GBufferDebugView::Live() const	function	renderer	renderer-gbufferdebugview-live-const	renderer.md	engine/renderer/gbuffer.h:318
-renderer::GBufferDebugView::RecreatableName() const	function	renderer	renderer-gbufferdebugview-recreatablename-const	renderer.md	engine/renderer/gbuffer.h:319
-renderer::GBufferDebugView::Valid() const	function	renderer	renderer-gbufferdebugview-valid-const	renderer.md	engine/renderer/gbuffer.h:323
-renderer::GBufferDebugView::SetInverseViewProjection(const Mat4&)	function	renderer	renderer-gbufferdebugview-setinverseviewprojection-const-mat4-amp	renderer.md	engine/renderer/gbuffer.h:329
-renderer::GBufferDebugView::AddToGraph(RenderGraph*,const GBufferTargets&,GBufferLayer,GraphResource,rhi::Format,f32,f32)	function	renderer	renderer-gbufferdebugview-addtograph-rendergraph-star-const-gbuffertargets-amp-gbufferlayer-graphresource-rhi-format-f32-f32	renderer.md	engine/renderer/gbuffer.h:349
+renderer::GBufferDebugView	class	renderer	renderer-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:288
+renderer::GBufferDebugView::GBufferDebugView(rhi::Device*)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:295
+renderer::GBufferDebugView::~GBufferDebugView()	function	renderer	renderer-gbufferdebugview-tilde-gbufferdebugview	renderer.md	engine/renderer/gbuffer.h:297
+renderer::GBufferDebugView::GBufferDebugView(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-gbufferdebugview-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:298
+renderer::GBufferDebugView::operator=(const GBufferDebugView&)	function	renderer	renderer-gbufferdebugview-operator-eq-const-gbufferdebugview-amp	renderer.md	engine/renderer/gbuffer.h:299
+renderer::GBufferDebugView::RegisterWith(DeviceResources*)	function	renderer	renderer-gbufferdebugview-registerwith-deviceresources-star	renderer.md	engine/renderer/gbuffer.h:307
+renderer::GBufferDebugView::Release()	function	renderer	renderer-gbufferdebugview-release	renderer.md	engine/renderer/gbuffer.h:310
+renderer::GBufferDebugView::Recreate(rhi::Device*)	function	renderer	renderer-gbufferdebugview-recreate-rhi-device-star	renderer.md	engine/renderer/gbuffer.h:318
+renderer::GBufferDebugView::Live() const	function	renderer	renderer-gbufferdebugview-live-const	renderer.md	engine/renderer/gbuffer.h:319
+renderer::GBufferDebugView::RecreatableName() const	function	renderer	renderer-gbufferdebugview-recreatablename-const	renderer.md	engine/renderer/gbuffer.h:320
+renderer::GBufferDebugView::Valid() const	function	renderer	renderer-gbufferdebugview-valid-const	renderer.md	engine/renderer/gbuffer.h:324
+renderer::GBufferDebugView::SetInverseViewProjection(const Mat4&)	function	renderer	renderer-gbufferdebugview-setinverseviewprojection-const-mat4-amp	renderer.md	engine/renderer/gbuffer.h:330
+renderer::GBufferDebugView::AddToGraph(RenderGraph*,const GBufferTargets&,GBufferLayer,GraphResource,rhi::Format,f32,f32)	function	renderer	renderer-gbufferdebugview-addtograph-rendergraph-star-const-gbuffertargets-amp-gbufferlayer-graphresource-rhi-format-f32-f32	renderer.md	engine/renderer/gbuffer.h:350
 renderer::kLightAccumFormat	variable	renderer	renderer-klightaccumformat	renderer.md	engine/renderer/lighting.h:39
 renderer::SurfacePoint	struct	renderer	renderer-surfacepoint	renderer.md	engine/renderer/lighting.h:44
 renderer::SurfacePoint::albedo	variable	renderer	renderer-surfacepoint-albedo	renderer.md	engine/renderer/lighting.h:46
@@ -3111,18 +3113,18 @@ renderer::LightingPass::Prepare(const RenderScene&,const FrameData&)	function	re
 renderer::LightingPass::PointDrawsPlanned() const	function	renderer	renderer-lightingpass-pointdrawsplanned-const	renderer.md	engine/renderer/lighting.h:213
 renderer::LightingPass::PointDrawsRecorded() const	function	renderer	renderer-lightingpass-pointdrawsrecorded-const	renderer.md	engine/renderer/lighting.h:216
 renderer::LightingPass::AddToGraph(RenderGraph*,const GBufferTargets&,u32,u32)	function	renderer	renderer-lightingpass-addtograph-rendergraph-star-const-gbuffertargets-amp-u32-u32	renderer.md	engine/renderer/lighting.h:227
-renderer::TonemapPass	class	renderer	renderer-tonemappass	renderer.md	engine/renderer/lighting.h:271
-renderer::TonemapPass::TonemapPass(rhi::Device*)	function	renderer	renderer-tonemappass-tonemappass-rhi-device-star	renderer.md	engine/renderer/lighting.h:278
-renderer::TonemapPass::~TonemapPass()	function	renderer	renderer-tonemappass-tilde-tonemappass	renderer.md	engine/renderer/lighting.h:280
-renderer::TonemapPass::TonemapPass(const TonemapPass&)	function	renderer	renderer-tonemappass-tonemappass-const-tonemappass-amp	renderer.md	engine/renderer/lighting.h:281
-renderer::TonemapPass::operator=(const TonemapPass&)	function	renderer	renderer-tonemappass-operator-eq-const-tonemappass-amp	renderer.md	engine/renderer/lighting.h:282
-renderer::TonemapPass::RegisterWith(DeviceResources*)	function	renderer	renderer-tonemappass-registerwith-deviceresources-star	renderer.md	engine/renderer/lighting.h:290
-renderer::TonemapPass::Release()	function	renderer	renderer-tonemappass-release	renderer.md	engine/renderer/lighting.h:293
-renderer::TonemapPass::Recreate(rhi::Device*)	function	renderer	renderer-tonemappass-recreate-rhi-device-star	renderer.md	engine/renderer/lighting.h:301
-renderer::TonemapPass::Live() const	function	renderer	renderer-tonemappass-live-const	renderer.md	engine/renderer/lighting.h:302
-renderer::TonemapPass::RecreatableName() const	function	renderer	renderer-tonemappass-recreatablename-const	renderer.md	engine/renderer/lighting.h:303
-renderer::TonemapPass::Valid() const	function	renderer	renderer-tonemappass-valid-const	renderer.md	engine/renderer/lighting.h:307
-renderer::TonemapPass::AddToGraph(RenderGraph*,GraphResource,GraphResource,rhi::Format,f32)	function	renderer	renderer-tonemappass-addtograph-rendergraph-star-graphresource-graphresource-rhi-format-f32	renderer.md	engine/renderer/lighting.h:319
+renderer::TonemapPass	class	renderer	renderer-tonemappass	renderer.md	engine/renderer/lighting.h:272
+renderer::TonemapPass::TonemapPass(rhi::Device*)	function	renderer	renderer-tonemappass-tonemappass-rhi-device-star	renderer.md	engine/renderer/lighting.h:279
+renderer::TonemapPass::~TonemapPass()	function	renderer	renderer-tonemappass-tilde-tonemappass	renderer.md	engine/renderer/lighting.h:281
+renderer::TonemapPass::TonemapPass(const TonemapPass&)	function	renderer	renderer-tonemappass-tonemappass-const-tonemappass-amp	renderer.md	engine/renderer/lighting.h:282
+renderer::TonemapPass::operator=(const TonemapPass&)	function	renderer	renderer-tonemappass-operator-eq-const-tonemappass-amp	renderer.md	engine/renderer/lighting.h:283
+renderer::TonemapPass::RegisterWith(DeviceResources*)	function	renderer	renderer-tonemappass-registerwith-deviceresources-star	renderer.md	engine/renderer/lighting.h:291
+renderer::TonemapPass::Release()	function	renderer	renderer-tonemappass-release	renderer.md	engine/renderer/lighting.h:294
+renderer::TonemapPass::Recreate(rhi::Device*)	function	renderer	renderer-tonemappass-recreate-rhi-device-star	renderer.md	engine/renderer/lighting.h:302
+renderer::TonemapPass::Live() const	function	renderer	renderer-tonemappass-live-const	renderer.md	engine/renderer/lighting.h:303
+renderer::TonemapPass::RecreatableName() const	function	renderer	renderer-tonemappass-recreatablename-const	renderer.md	engine/renderer/lighting.h:304
+renderer::TonemapPass::Valid() const	function	renderer	renderer-tonemappass-valid-const	renderer.md	engine/renderer/lighting.h:308
+renderer::TonemapPass::AddToGraph(RenderGraph*,GraphResource,GraphResource,rhi::Format,f32)	function	renderer	renderer-tonemappass-addtograph-rendergraph-star-graphresource-graphresource-rhi-format-f32	renderer.md	engine/renderer/lighting.h:320
 renderer::kFrameSet	variable	renderer	renderer-kframeset	renderer.md	engine/renderer/material.h:26
 renderer::kMaterialSet	variable	renderer	renderer-kmaterialset	renderer.md	engine/renderer/material.h:28
 renderer::kObjectSet	variable	renderer	renderer-kobjectset	renderer.md	engine/renderer/material.h:30
@@ -3147,81 +3149,86 @@ renderer::DefaultTexture	enum	renderer	renderer-defaulttexture	renderer.md	engin
 renderer::DefaultTexture::White	enumerator	renderer	renderer-defaulttexture-white	renderer.md	engine/renderer/material.h:84
 renderer::DefaultTexture::Black	enumerator	renderer	renderer-defaulttexture-black	renderer.md	engine/renderer/material.h:85
 renderer::DefaultTexture::FlatNormal	enumerator	renderer	renderer-defaulttexture-flatnormal	renderer.md	engine/renderer/material.h:86
-renderer::TextureDefault	struct	renderer	renderer-texturedefault	renderer.md	engine/renderer/material.h:93
-renderer::TextureDefault::slot	variable	renderer	renderer-texturedefault-slot	renderer.md	engine/renderer/material.h:95
-renderer::TextureDefault::texture	variable	renderer	renderer-texturedefault-texture	renderer.md	engine/renderer/material.h:97
-renderer::MaterialTemplateDesc	struct	renderer	renderer-materialtemplatedesc	renderer.md	engine/renderer/material.h:108
-renderer::MaterialTemplateDesc::name	variable	renderer	renderer-materialtemplatedesc-name	renderer.md	engine/renderer/material.h:110
-renderer::MaterialTemplateDesc::vertex	variable	renderer	renderer-materialtemplatedesc-vertex	renderer.md	engine/renderer/material.h:112
-renderer::MaterialTemplateDesc::fragment	variable	renderer	renderer-materialtemplatedesc-fragment	renderer.md	engine/renderer/material.h:114
-renderer::MaterialTemplateDesc::fragment_permutations	variable	renderer	renderer-materialtemplatedesc-fragment-permutations	renderer.md	engine/renderer/material.h:116
-renderer::MaterialTemplateDesc::state	variable	renderer	renderer-materialtemplatedesc-state	renderer.md	engine/renderer/material.h:118
-renderer::MaterialTemplateDesc::texture_defaults	variable	renderer	renderer-materialtemplatedesc-texture-defaults	renderer.md	engine/renderer/material.h:121
-renderer::MaterialTemplateDesc::texture_default_count	variable	renderer	renderer-materialtemplatedesc-texture-default-count	renderer.md	engine/renderer/material.h:123
-renderer::PipelineTarget	struct	renderer	renderer-pipelinetarget	renderer.md	engine/renderer/material.h:129
-renderer::PipelineTarget::color_formats	variable	renderer	renderer-pipelinetarget-color-formats	renderer.md	engine/renderer/material.h:131
-renderer::PipelineTarget::color_count	variable	renderer	renderer-pipelinetarget-color-count	renderer.md	engine/renderer/material.h:133
-renderer::PipelineTarget::depth_format	variable	renderer	renderer-pipelinetarget-depth-format	renderer.md	engine/renderer/material.h:135
-renderer::PipelineLookup	struct	renderer	renderer-pipelinelookup	renderer.md	engine/renderer/material.h:141
-renderer::PipelineLookup::pipeline	variable	renderer	renderer-pipelinelookup-pipeline	renderer.md	engine/renderer/material.h:143
-renderer::PipelineLookup::index	variable	renderer	renderer-pipelinelookup-index	renderer.md	engine/renderer/material.h:145
-renderer::MaterialStats	struct	renderer	renderer-materialstats	renderer.md	engine/renderer/material.h:151
-renderer::MaterialStats::pipeline_hits	variable	renderer	renderer-materialstats-pipeline-hits	renderer.md	engine/renderer/material.h:153
-renderer::MaterialStats::pipeline_misses	variable	renderer	renderer-materialstats-pipeline-misses	renderer.md	engine/renderer/material.h:155
-renderer::MaterialStats::pipelines	variable	renderer	renderer-materialstats-pipelines	renderer.md	engine/renderer/material.h:157
-renderer::MaterialStats::bind_group_rebuilds	variable	renderer	renderer-materialstats-bind-group-rebuilds	renderer.md	engine/renderer/material.h:159
-renderer::MaterialStats::parameter_flushes	variable	renderer	renderer-materialstats-parameter-flushes	renderer.md	engine/renderer/material.h:161
-renderer::MaterialStats::rebuilds	variable	renderer	renderer-materialstats-rebuilds	renderer.md	engine/renderer/material.h:163
-renderer::MaterialSystemDesc	struct	renderer	renderer-materialsystemdesc	renderer.md	engine/renderer/material.h:169
-renderer::MaterialSystemDesc::max_templates	variable	renderer	renderer-materialsystemdesc-max-templates	renderer.md	engine/renderer/material.h:171
-renderer::MaterialSystemDesc::max_materials	variable	renderer	renderer-materialsystemdesc-max-materials	renderer.md	engine/renderer/material.h:173
-renderer::MaterialSystemDesc::max_pipelines	variable	renderer	renderer-materialsystemdesc-max-pipelines	renderer.md	engine/renderer/material.h:175
-renderer::MaterialSystemDesc::resources	variable	renderer	renderer-materialsystemdesc-resources	renderer.md	engine/renderer/material.h:177
-renderer::MaterialSystemDesc::prewarm_pipelines	variable	renderer	renderer-materialsystemdesc-prewarm-pipelines	renderer.md	engine/renderer/material.h:180
-renderer::MakeDrawSortKey(u32,u32,u32)	function	renderer	renderer-makedrawsortkey-u32-u32-u32	renderer.md	engine/renderer/material.h:193
-renderer::MaterialSystem	class	renderer	renderer-materialsystem	renderer.md	engine/renderer/material.h:212
-renderer::MaterialSystem::MaterialSystem(rhi::Device*,const MaterialSystemDesc&)	function	renderer	renderer-materialsystem-materialsystem-rhi-device-star-const-materialsystemdesc-amp	renderer.md	engine/renderer/material.h:221
-renderer::MaterialSystem::~MaterialSystem()	function	renderer	renderer-materialsystem-tilde-materialsystem	renderer.md	engine/renderer/material.h:224
-renderer::MaterialSystem::MaterialSystem(const MaterialSystem&)	function	renderer	renderer-materialsystem-materialsystem-const-materialsystem-amp	renderer.md	engine/renderer/material.h:225
-renderer::MaterialSystem::operator=(const MaterialSystem&)	function	renderer	renderer-materialsystem-operator-eq-const-materialsystem-amp	renderer.md	engine/renderer/material.h:226
-renderer::MaterialSystem::Valid() const	function	renderer	renderer-materialsystem-valid-const	renderer.md	engine/renderer/material.h:230
-renderer::MaterialSystem::CreateTemplate(const MaterialTemplateDesc&)	function	renderer	renderer-materialsystem-createtemplate-const-materialtemplatedesc-amp	renderer.md	engine/renderer/material.h:240
-renderer::MaterialSystem::DestroyTemplate(TemplateId)	function	renderer	renderer-materialsystem-destroytemplate-templateid	renderer.md	engine/renderer/material.h:246
-renderer::MaterialSystem::CreateMaterial(TemplateId,PermutationKey,const char*)	function	renderer	renderer-materialsystem-creatematerial-templateid-permutationkey-const-char-star	renderer.md	engine/renderer/material.h:263
-renderer::MaterialSystem::DestroyMaterial(MaterialId)	function	renderer	renderer-materialsystem-destroymaterial-materialid	renderer.md	engine/renderer/material.h:269
-renderer::MaterialSystem::IsAlive(MaterialId) const	function	renderer	renderer-materialsystem-isalive-materialid-const	renderer.md	engine/renderer/material.h:273
-renderer::MaterialSystem::MaterialAtIndex(u32) const	function	renderer	renderer-materialsystem-materialatindex-u32-const	renderer.md	engine/renderer/material.h:279
-renderer::MaterialSystem::FrameBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-framebindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:291
-renderer::MaterialSystem::ObjectBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-objectbindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:299
-renderer::MaterialSystem::ReadsVertexInput(MaterialId,u32) const	function	renderer	renderer-materialsystem-readsvertexinput-materialid-u32-const	renderer.md	engine/renderer/material.h:306
-renderer::MaterialSystem::SetFloat(MaterialId,const char*,f32)	function	renderer	renderer-materialsystem-setfloat-materialid-const-char-star-f32	renderer.md	engine/renderer/material.h:316
-renderer::MaterialSystem::SetInt(MaterialId,const char*,i32)	function	renderer	renderer-materialsystem-setint-materialid-const-char-star-i32	renderer.md	engine/renderer/material.h:325
-renderer::MaterialSystem::SetUInt(MaterialId,const char*,u32)	function	renderer	renderer-materialsystem-setuint-materialid-const-char-star-u32	renderer.md	engine/renderer/material.h:334
-renderer::MaterialSystem::SetVec2(MaterialId,const char*,const Vec2&)	function	renderer	renderer-materialsystem-setvec2-materialid-const-char-star-const-vec2-amp	renderer.md	engine/renderer/material.h:343
-renderer::MaterialSystem::SetVec3(MaterialId,const char*,const Vec3&)	function	renderer	renderer-materialsystem-setvec3-materialid-const-char-star-const-vec3-amp	renderer.md	engine/renderer/material.h:352
-renderer::MaterialSystem::SetVec4(MaterialId,const char*,const Vec4&)	function	renderer	renderer-materialsystem-setvec4-materialid-const-char-star-const-vec4-amp	renderer.md	engine/renderer/material.h:361
-renderer::MaterialSystem::SetMat4(MaterialId,const char*,const Mat4&)	function	renderer	renderer-materialsystem-setmat4-materialid-const-char-star-const-mat4-amp	renderer.md	engine/renderer/material.h:370
-renderer::MaterialSystem::SetTexture(MaterialId,const char*,rhi::TextureHandle)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-rhi-texturehandle	renderer.md	engine/renderer/material.h:381
-renderer::MaterialSystem::SetTexture(MaterialId,const char*,const GpuTexture*)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-const-gputexture-star	renderer.md	engine/renderer/material.h:392
-renderer::MaterialSystem::SetSampler(MaterialId,const char*,const GpuSampler*)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-const-gpusampler-star	renderer.md	engine/renderer/material.h:403
-renderer::MaterialSystem::SetSampler(MaterialId,const char*,rhi::SamplerHandle)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-rhi-samplerhandle	renderer.md	engine/renderer/material.h:414
-renderer::MaterialSystem::BeginFrame(u64)	function	renderer	renderer-materialsystem-beginframe-u64	renderer.md	engine/renderer/material.h:419
-renderer::MaterialSystem::FlushMaterials()	function	renderer	renderer-materialsystem-flushmaterials	renderer.md	engine/renderer/material.h:425
-renderer::MaterialSystem::MaterialBindGroup(MaterialId) const	function	renderer	renderer-materialsystem-materialbindgroup-materialid-const	renderer.md	engine/renderer/material.h:433
-renderer::MaterialSystem::ParameterRegion(MaterialId) const	function	renderer	renderer-materialsystem-parameterregion-materialid-const	renderer.md	engine/renderer/material.h:440
-renderer::MaterialSystem::FrameLayout() const	function	renderer	renderer-materialsystem-framelayout-const	renderer.md	engine/renderer/material.h:444
-renderer::MaterialSystem::ObjectLayout() const	function	renderer	renderer-materialsystem-objectlayout-const	renderer.md	engine/renderer/material.h:447
-renderer::MaterialSystem::MaterialLayout(MaterialId) const	function	renderer	renderer-materialsystem-materiallayout-materialid-const	renderer.md	engine/renderer/material.h:452
-renderer::MaterialSystem::EffectiveTexture(MaterialId,const char*) const	function	renderer	renderer-materialsystem-effectivetexture-materialid-const-char-star-const	renderer.md	engine/renderer/material.h:462
-renderer::MaterialSystem::GetDefaultTexture(DefaultTexture) const	function	renderer	renderer-materialsystem-getdefaulttexture-defaulttexture-const	renderer.md	engine/renderer/material.h:470
-renderer::MaterialSystem::GetPipeline(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:487
-renderer::MaterialSystem::Warmup(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-warmup-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:500
-renderer::MaterialSystem::BindGroupRebuilds(MaterialId) const	function	renderer	renderer-materialsystem-bindgrouprebuilds-materialid-const	renderer.md	engine/renderer/material.h:507
-renderer::MaterialSystem::Stats() const	function	renderer	renderer-materialsystem-stats-const	renderer.md	engine/renderer/material.h:511
-renderer::MaterialSystem::Release()	function	renderer	renderer-materialsystem-release	renderer.md	engine/renderer/material.h:516
-renderer::MaterialSystem::Recreate(rhi::Device*)	function	renderer	renderer-materialsystem-recreate-rhi-device-star	renderer.md	engine/renderer/material.h:524
-renderer::MaterialSystem::Live() const	function	renderer	renderer-materialsystem-live-const	renderer.md	engine/renderer/material.h:525
-renderer::MaterialSystem::RecreatableName() const	function	renderer	renderer-materialsystem-recreatablename-const	renderer.md	engine/renderer/material.h:526
+renderer::kObjectIndexLocation	variable	renderer	renderer-kobjectindexlocation	renderer.md	engine/renderer/material.h:91
+renderer::kMaxObjectIndices	variable	renderer	renderer-kmaxobjectindices	renderer.md	engine/renderer/material.h:93
+renderer::TextureDefault	struct	renderer	renderer-texturedefault	renderer.md	engine/renderer/material.h:99
+renderer::TextureDefault::slot	variable	renderer	renderer-texturedefault-slot	renderer.md	engine/renderer/material.h:101
+renderer::TextureDefault::texture	variable	renderer	renderer-texturedefault-texture	renderer.md	engine/renderer/material.h:103
+renderer::MaterialTemplateDesc	struct	renderer	renderer-materialtemplatedesc	renderer.md	engine/renderer/material.h:114
+renderer::MaterialTemplateDesc::name	variable	renderer	renderer-materialtemplatedesc-name	renderer.md	engine/renderer/material.h:116
+renderer::MaterialTemplateDesc::vertex	variable	renderer	renderer-materialtemplatedesc-vertex	renderer.md	engine/renderer/material.h:118
+renderer::MaterialTemplateDesc::fragment	variable	renderer	renderer-materialtemplatedesc-fragment	renderer.md	engine/renderer/material.h:120
+renderer::MaterialTemplateDesc::fragment_permutations	variable	renderer	renderer-materialtemplatedesc-fragment-permutations	renderer.md	engine/renderer/material.h:122
+renderer::MaterialTemplateDesc::state	variable	renderer	renderer-materialtemplatedesc-state	renderer.md	engine/renderer/material.h:124
+renderer::MaterialTemplateDesc::texture_defaults	variable	renderer	renderer-materialtemplatedesc-texture-defaults	renderer.md	engine/renderer/material.h:127
+renderer::MaterialTemplateDesc::texture_default_count	variable	renderer	renderer-materialtemplatedesc-texture-default-count	renderer.md	engine/renderer/material.h:129
+renderer::PipelineTarget	struct	renderer	renderer-pipelinetarget	renderer.md	engine/renderer/material.h:135
+renderer::PipelineTarget::color_formats	variable	renderer	renderer-pipelinetarget-color-formats	renderer.md	engine/renderer/material.h:137
+renderer::PipelineTarget::color_count	variable	renderer	renderer-pipelinetarget-color-count	renderer.md	engine/renderer/material.h:139
+renderer::PipelineTarget::depth_format	variable	renderer	renderer-pipelinetarget-depth-format	renderer.md	engine/renderer/material.h:141
+renderer::PipelineLookup	struct	renderer	renderer-pipelinelookup	renderer.md	engine/renderer/material.h:147
+renderer::PipelineLookup::pipeline	variable	renderer	renderer-pipelinelookup-pipeline	renderer.md	engine/renderer/material.h:149
+renderer::PipelineLookup::index	variable	renderer	renderer-pipelinelookup-index	renderer.md	engine/renderer/material.h:151
+renderer::MaterialStats	struct	renderer	renderer-materialstats	renderer.md	engine/renderer/material.h:157
+renderer::MaterialStats::pipeline_hits	variable	renderer	renderer-materialstats-pipeline-hits	renderer.md	engine/renderer/material.h:159
+renderer::MaterialStats::pipeline_misses	variable	renderer	renderer-materialstats-pipeline-misses	renderer.md	engine/renderer/material.h:161
+renderer::MaterialStats::pipelines	variable	renderer	renderer-materialstats-pipelines	renderer.md	engine/renderer/material.h:163
+renderer::MaterialStats::bind_group_rebuilds	variable	renderer	renderer-materialstats-bind-group-rebuilds	renderer.md	engine/renderer/material.h:165
+renderer::MaterialStats::parameter_flushes	variable	renderer	renderer-materialstats-parameter-flushes	renderer.md	engine/renderer/material.h:167
+renderer::MaterialStats::rebuilds	variable	renderer	renderer-materialstats-rebuilds	renderer.md	engine/renderer/material.h:169
+renderer::MaterialSystemDesc	struct	renderer	renderer-materialsystemdesc	renderer.md	engine/renderer/material.h:175
+renderer::MaterialSystemDesc::max_templates	variable	renderer	renderer-materialsystemdesc-max-templates	renderer.md	engine/renderer/material.h:177
+renderer::MaterialSystemDesc::max_materials	variable	renderer	renderer-materialsystemdesc-max-materials	renderer.md	engine/renderer/material.h:179
+renderer::MaterialSystemDesc::max_pipelines	variable	renderer	renderer-materialsystemdesc-max-pipelines	renderer.md	engine/renderer/material.h:181
+renderer::MaterialSystemDesc::resources	variable	renderer	renderer-materialsystemdesc-resources	renderer.md	engine/renderer/material.h:183
+renderer::MaterialSystemDesc::prewarm_pipelines	variable	renderer	renderer-materialsystemdesc-prewarm-pipelines	renderer.md	engine/renderer/material.h:186
+renderer::MakeDrawSortKey(u32,u32,u32)	function	renderer	renderer-makedrawsortkey-u32-u32-u32	renderer.md	engine/renderer/material.h:199
+renderer::MaterialSystem	class	renderer	renderer-materialsystem	renderer.md	engine/renderer/material.h:218
+renderer::MaterialSystem::MaterialSystem(rhi::Device*,const MaterialSystemDesc&)	function	renderer	renderer-materialsystem-materialsystem-rhi-device-star-const-materialsystemdesc-amp	renderer.md	engine/renderer/material.h:227
+renderer::MaterialSystem::~MaterialSystem()	function	renderer	renderer-materialsystem-tilde-materialsystem	renderer.md	engine/renderer/material.h:230
+renderer::MaterialSystem::MaterialSystem(const MaterialSystem&)	function	renderer	renderer-materialsystem-materialsystem-const-materialsystem-amp	renderer.md	engine/renderer/material.h:231
+renderer::MaterialSystem::operator=(const MaterialSystem&)	function	renderer	renderer-materialsystem-operator-eq-const-materialsystem-amp	renderer.md	engine/renderer/material.h:232
+renderer::MaterialSystem::Valid() const	function	renderer	renderer-materialsystem-valid-const	renderer.md	engine/renderer/material.h:236
+renderer::MaterialSystem::CreateTemplate(const MaterialTemplateDesc&)	function	renderer	renderer-materialsystem-createtemplate-const-materialtemplatedesc-amp	renderer.md	engine/renderer/material.h:246
+renderer::MaterialSystem::DestroyTemplate(TemplateId)	function	renderer	renderer-materialsystem-destroytemplate-templateid	renderer.md	engine/renderer/material.h:252
+renderer::MaterialSystem::CreateMaterial(TemplateId,PermutationKey,const char*)	function	renderer	renderer-materialsystem-creatematerial-templateid-permutationkey-const-char-star	renderer.md	engine/renderer/material.h:269
+renderer::MaterialSystem::DestroyMaterial(MaterialId)	function	renderer	renderer-materialsystem-destroymaterial-materialid	renderer.md	engine/renderer/material.h:275
+renderer::MaterialSystem::IsAlive(MaterialId) const	function	renderer	renderer-materialsystem-isalive-materialid-const	renderer.md	engine/renderer/material.h:279
+renderer::MaterialSystem::MaterialAtIndex(u32) const	function	renderer	renderer-materialsystem-materialatindex-u32-const	renderer.md	engine/renderer/material.h:285
+renderer::MaterialSystem::FrameBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-framebindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:297
+renderer::MaterialSystem::ObjectBindGroup(const BufferRegion&)	function	renderer	renderer-materialsystem-objectbindgroup-const-bufferregion-amp	renderer.md	engine/renderer/material.h:305
+renderer::MaterialSystem::ReadsVertexInput(MaterialId,u32) const	function	renderer	renderer-materialsystem-readsvertexinput-materialid-u32-const	renderer.md	engine/renderer/material.h:312
+renderer::MaterialSystem::SetFloat(MaterialId,const char*,f32)	function	renderer	renderer-materialsystem-setfloat-materialid-const-char-star-f32	renderer.md	engine/renderer/material.h:322
+renderer::MaterialSystem::SetInt(MaterialId,const char*,i32)	function	renderer	renderer-materialsystem-setint-materialid-const-char-star-i32	renderer.md	engine/renderer/material.h:331
+renderer::MaterialSystem::SetUInt(MaterialId,const char*,u32)	function	renderer	renderer-materialsystem-setuint-materialid-const-char-star-u32	renderer.md	engine/renderer/material.h:340
+renderer::MaterialSystem::SetVec2(MaterialId,const char*,const Vec2&)	function	renderer	renderer-materialsystem-setvec2-materialid-const-char-star-const-vec2-amp	renderer.md	engine/renderer/material.h:349
+renderer::MaterialSystem::SetVec3(MaterialId,const char*,const Vec3&)	function	renderer	renderer-materialsystem-setvec3-materialid-const-char-star-const-vec3-amp	renderer.md	engine/renderer/material.h:358
+renderer::MaterialSystem::SetVec4(MaterialId,const char*,const Vec4&)	function	renderer	renderer-materialsystem-setvec4-materialid-const-char-star-const-vec4-amp	renderer.md	engine/renderer/material.h:367
+renderer::MaterialSystem::SetMat4(MaterialId,const char*,const Mat4&)	function	renderer	renderer-materialsystem-setmat4-materialid-const-char-star-const-mat4-amp	renderer.md	engine/renderer/material.h:376
+renderer::MaterialSystem::SetTexture(MaterialId,const char*,rhi::TextureHandle)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-rhi-texturehandle	renderer.md	engine/renderer/material.h:387
+renderer::MaterialSystem::SetTexture(MaterialId,const char*,const GpuTexture*)	function	renderer	renderer-materialsystem-settexture-materialid-const-char-star-const-gputexture-star	renderer.md	engine/renderer/material.h:398
+renderer::MaterialSystem::SetSampler(MaterialId,const char*,const GpuSampler*)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-const-gpusampler-star	renderer.md	engine/renderer/material.h:409
+renderer::MaterialSystem::SetSampler(MaterialId,const char*,rhi::SamplerHandle)	function	renderer	renderer-materialsystem-setsampler-materialid-const-char-star-rhi-samplerhandle	renderer.md	engine/renderer/material.h:420
+renderer::MaterialSystem::BeginFrame(u64)	function	renderer	renderer-materialsystem-beginframe-u64	renderer.md	engine/renderer/material.h:425
+renderer::MaterialSystem::FlushMaterials()	function	renderer	renderer-materialsystem-flushmaterials	renderer.md	engine/renderer/material.h:431
+renderer::MaterialSystem::MaterialBindGroup(MaterialId) const	function	renderer	renderer-materialsystem-materialbindgroup-materialid-const	renderer.md	engine/renderer/material.h:439
+renderer::MaterialSystem::ParameterRegion(MaterialId) const	function	renderer	renderer-materialsystem-parameterregion-materialid-const	renderer.md	engine/renderer/material.h:446
+renderer::MaterialSystem::FrameLayout() const	function	renderer	renderer-materialsystem-framelayout-const	renderer.md	engine/renderer/material.h:450
+renderer::MaterialSystem::ObjectLayout() const	function	renderer	renderer-materialsystem-objectlayout-const	renderer.md	engine/renderer/material.h:453
+renderer::MaterialSystem::ObjectIndexStream() const	function	renderer	renderer-materialsystem-objectindexstream-const	renderer.md	engine/renderer/material.h:462
+renderer::MaterialSystem::ObjectIndexSlot()	function	renderer	renderer-materialsystem-objectindexslot	renderer.md	engine/renderer/material.h:467
+renderer::MaterialSystem::AddObjectIndexAttribute(const rhi::Device&,rhi::VertexBindingDesc*,u32*,u32,rhi::VertexAttributeDesc*,u32*,u32,u32)	function	renderer	renderer-materialsystem-addobjectindexattribute-const-rhi-device-amp-rhi-vertexbindingdesc-star-u32-star-u32-rhi-vertexattributedesc-star-u32-star-u32-u32	renderer.md	engine/renderer/material.h:484
+renderer::MaterialSystem::MaterialLayout(MaterialId) const	function	renderer	renderer-materialsystem-materiallayout-materialid-const	renderer.md	engine/renderer/material.h:490
+renderer::MaterialSystem::EffectiveTexture(MaterialId,const char*) const	function	renderer	renderer-materialsystem-effectivetexture-materialid-const-char-star-const	renderer.md	engine/renderer/material.h:500
+renderer::MaterialSystem::GetDefaultTexture(DefaultTexture) const	function	renderer	renderer-materialsystem-getdefaulttexture-defaulttexture-const	renderer.md	engine/renderer/material.h:508
+renderer::MaterialSystem::GetPipeline(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-getpipeline-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:525
+renderer::MaterialSystem::Warmup(MaterialId,const PipelineTarget&,const VertexLayoutData&,rhi::PrimitiveTopology,bool)	function	renderer	renderer-materialsystem-warmup-materialid-const-pipelinetarget-amp-const-vertexlayoutdata-amp-rhi-primitivetopology-bool	renderer.md	engine/renderer/material.h:538
+renderer::MaterialSystem::BindGroupRebuilds(MaterialId) const	function	renderer	renderer-materialsystem-bindgrouprebuilds-materialid-const	renderer.md	engine/renderer/material.h:545
+renderer::MaterialSystem::Stats() const	function	renderer	renderer-materialsystem-stats-const	renderer.md	engine/renderer/material.h:549
+renderer::MaterialSystem::Release()	function	renderer	renderer-materialsystem-release	renderer.md	engine/renderer/material.h:554
+renderer::MaterialSystem::Recreate(rhi::Device*)	function	renderer	renderer-materialsystem-recreate-rhi-device-star	renderer.md	engine/renderer/material.h:562
+renderer::MaterialSystem::Live() const	function	renderer	renderer-materialsystem-live-const	renderer.md	engine/renderer/material.h:563
+renderer::MaterialSystem::RecreatableName() const	function	renderer	renderer-materialsystem-recreatablename-const	renderer.md	engine/renderer/material.h:564
 renderer::StandardVertex	struct	renderer	renderer-standardvertex	renderer.md	engine/renderer/mesh.h:21
 renderer::StandardVertex::position	variable	renderer	renderer-standardvertex-position	renderer.md	engine/renderer/mesh.h:23
 renderer::StandardVertex::normal	variable	renderer	renderer-standardvertex-normal	renderer.md	engine/renderer/mesh.h:25
@@ -4205,128 +4212,129 @@ rhi::vulkan::VulkanDevice::VulkanDevice()	function	rhi-vulkan	rhi-vulkan-vulkand
 rhi::vulkan::VulkanDevice::Create(const DeviceCreateInfo&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-create-const-devicecreateinfo-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:50
 rhi::vulkan::VulkanDevice::EnumerateAdapters(const DeviceCreateInfo&,AdapterList*)	function	rhi-vulkan	rhi-vulkan-vulkandevice-enumerateadapters-const-devicecreateinfo-amp-adapterlist-star	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:57
 rhi::vulkan::VulkanDevice::kFramePools	variable	rhi-vulkan	rhi-vulkan-vulkandevice-kframepools	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:60
-rhi::vulkan::VulkanDevice::kThreadSlots	variable	rhi-vulkan	rhi-vulkan-vulkandevice-kthreadslots	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:62
-rhi::vulkan::VulkanDevice::~VulkanDevice()	function	rhi-vulkan	rhi-vulkan-vulkandevice-tilde-vulkandevice	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:65
-rhi::vulkan::VulkanDevice::BackendName() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-backendname-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:67
-rhi::vulkan::VulkanDevice::Adapter() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-adapter-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:68
-rhi::vulkan::VulkanDevice::ListAdapters(AdapterList*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-listadapters-adapterlist-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:69
-rhi::vulkan::VulkanDevice::Epoch() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-epoch-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:73
-rhi::vulkan::VulkanDevice::Resources() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-resources-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:74
-rhi::vulkan::VulkanDevice::InjectDeviceLoss()	function	rhi-vulkan	rhi-vulkan-vulkandevice-injectdeviceloss	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:75
-rhi::vulkan::VulkanDevice::RecreateSurface(const os::Window*)	function	rhi-vulkan	rhi-vulkan-vulkandevice-recreatesurface-const-os-window-star	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:76
-rhi::vulkan::VulkanDevice::InFrame() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-inframe-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:77
-rhi::vulkan::VulkanDevice::Caps() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-caps-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:78
-rhi::vulkan::VulkanDevice::CreateBuffer(const BufferDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbuffer-const-bufferdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:79
-rhi::vulkan::VulkanDevice::DestroyBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:80
-rhi::vulkan::VulkanDevice::CreateTexture(const TextureDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createtexture-const-texturedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:81
-rhi::vulkan::VulkanDevice::DestroyTexture(TextureHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroytexture-texturehandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:82
-rhi::vulkan::VulkanDevice::CreateSampler(const SamplerDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createsampler-const-samplerdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:83
-rhi::vulkan::VulkanDevice::DestroySampler(SamplerHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroysampler-samplerhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:84
-rhi::vulkan::VulkanDevice::CreateShader(const ShaderDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createshader-const-shaderdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:85
-rhi::vulkan::VulkanDevice::DestroyShader(ShaderHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroyshader-shaderhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:86
-rhi::vulkan::VulkanDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:87
-rhi::vulkan::VulkanDevice::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybindgrouplayout-bindgrouplayouthandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:88
-rhi::vulkan::VulkanDevice::CreateBindGroup(const BindGroupDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbindgroup-const-bindgroupdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:89
-rhi::vulkan::VulkanDevice::DestroyBindGroup(BindGroupHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybindgroup-bindgrouphandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:90
-rhi::vulkan::VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:91
-rhi::vulkan::VulkanDevice::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createcomputepipeline-const-computepipelinedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:92
-rhi::vulkan::VulkanDevice::DestroyPipeline(PipelineHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroypipeline-pipelinehandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:93
-rhi::vulkan::VulkanDevice::MapBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-mapbuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:94
-rhi::vulkan::VulkanDevice::UnmapBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-unmapbuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:95
-rhi::vulkan::VulkanDevice::FlushMappedBuffer(BufferHandle,u64,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-flushmappedbuffer-bufferhandle-u64-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:96
-rhi::vulkan::VulkanDevice::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:97
-rhi::vulkan::VulkanDevice::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-readbackbuffer-bufferhandle-u64-void-star-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:98
-rhi::vulkan::VulkanDevice::CreateSwapchain(const SwapchainDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createswapchain-const-swapchaindesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:99
-rhi::vulkan::VulkanDevice::DestroySwapchain(Swapchain*)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroyswapchain-swapchain-star	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:100
-rhi::vulkan::VulkanDevice::FormatSupport(Format,TextureUsage) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-formatsupport-format-textureusage-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:101
-rhi::vulkan::VulkanDevice::CanGenerateMips(Format) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-cangeneratemips-format-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:102
-rhi::vulkan::VulkanDevice::UploadTexture(TextureHandle,u32,u32,const void*,u32)	function	rhi-vulkan	rhi-vulkan-vulkandevice-uploadtexture-texturehandle-u32-u32-const-void-star-u32	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:103
-rhi::vulkan::VulkanDevice::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi-vulkan	rhi-vulkan-vulkandevice-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:104
-rhi::vulkan::VulkanDevice::CreateCommandList()	function	rhi-vulkan	rhi-vulkan-vulkandevice-createcommandlist	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:105
-rhi::vulkan::VulkanDevice::Submit(CommandList* const*,usize)	function	rhi-vulkan	rhi-vulkan-vulkandevice-submit-commandlist-star-const-star-usize	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:106
-rhi::vulkan::VulkanDevice::WaitFence(FenceValue,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-waitfence-fencevalue-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:107
-rhi::vulkan::VulkanDevice::CompletedFence() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-completedfence-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:108
-rhi::vulkan::VulkanDevice::BeginFrame()	function	rhi-vulkan	rhi-vulkan-vulkandevice-beginframe	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:109
-rhi::vulkan::VulkanDevice::EndFrame()	function	rhi-vulkan	rhi-vulkan-vulkandevice-endframe	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:110
-rhi::vulkan::VulkanDevice::FrameNumber() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-framenumber-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:111
-rhi::vulkan::VulkanDevice::WaitIdle()	function	rhi-vulkan	rhi-vulkan-vulkandevice-waitidle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:112
-rhi::vulkan::VulkanDevice::DeviceLost() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-devicelost-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:113
-rhi::vulkan::VulkanDevice::GpuName() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-gpuname-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:117
-rhi::vulkan::VulkanDevice::GpuInfo() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-gpuinfo-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:120
-rhi::vulkan::VulkanDevice::Queues() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-queues-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:123
-rhi::vulkan::VulkanDevice::Instance() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-instance-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:126
-rhi::vulkan::VulkanDevice::Handle() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-handle-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:129
-rhi::vulkan::VulkanDevice::Fns() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-fns-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:132
-rhi::vulkan::VulkanDevice::MemoryProperties() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-memoryproperties-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:135
-rhi::vulkan::VulkanDevice::Properties() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-properties-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:138
-rhi::vulkan::VulkanDevice::Memory()	function	rhi-vulkan	rhi-vulkan-vulkandevice-memory	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:142
-rhi::vulkan::VulkanDevice::MemoryObjectsAllocated() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-memoryobjectsallocated-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:145
-rhi::vulkan::VulkanDevice::HeapBudget(u32,u64*,u64*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-heapbudget-u32-u64-star-u64-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:154
-rhi::vulkan::VulkanDevice::ObjectCounts	struct	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:159
-rhi::vulkan::VulkanDevice::ObjectCounts::buffers	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-buffers	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:161
-rhi::vulkan::VulkanDevice::ObjectCounts::pending_destruction	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pending-destruction	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:163
-rhi::vulkan::VulkanDevice::ObjectCounts::raw_buffers	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-raw-buffers	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:165
-rhi::vulkan::VulkanDevice::ObjectCounts::textures	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-textures	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:167
-rhi::vulkan::VulkanDevice::ObjectCounts::samplers	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-samplers	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:169
-rhi::vulkan::VulkanDevice::ObjectCounts::pending_image_destruction	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pending-image-destruction	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:171
-rhi::vulkan::VulkanDevice::ObjectCounts::raw_images	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-raw-images	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:173
-rhi::vulkan::VulkanDevice::ObjectCounts::shaders	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-shaders	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:175
-rhi::vulkan::VulkanDevice::ObjectCounts::bind_group_layouts	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-bind-group-layouts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:177
-rhi::vulkan::VulkanDevice::ObjectCounts::pipelines	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pipelines	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:179
-rhi::vulkan::VulkanDevice::ObjectCounts::descriptor_set_layouts	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-descriptor-set-layouts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:181
-rhi::vulkan::VulkanDevice::ObjectCounts::pipeline_layouts	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pipeline-layouts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:183
-rhi::vulkan::VulkanDevice::ObjectCounts::bind_groups	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-bind-groups	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:185
-rhi::vulkan::VulkanDevice::ObjectCounts::descriptor_pools	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-descriptor-pools	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:187
-rhi::vulkan::VulkanDevice::Counts() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-counts-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:191
-rhi::vulkan::VulkanDevice::CompletedFrame() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-completedframe-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:194
-rhi::vulkan::VulkanDevice::FramesInFlight() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-framesinflight-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:197
-rhi::vulkan::VulkanDevice::LeakCounts	struct	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:202
-rhi::vulkan::VulkanDevice::LeakCounts::user_objects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts-user-objects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:205
-rhi::vulkan::VulkanDevice::LeakCounts::internal_objects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts-internal-objects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:207
-rhi::vulkan::VulkanDevice::GetLeakCounts()	function	rhi-vulkan	rhi-vulkan-vulkandevice-getleakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:212
-rhi::vulkan::VulkanDevice::ResetLeakCounts()	function	rhi-vulkan	rhi-vulkan-vulkandevice-resetleakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:215
-rhi::vulkan::VulkanDevice::LookupBuffer(BufferHandle,VkBuffer*,BufferDesc*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupbuffer-bufferhandle-vkbuffer-star-bufferdesc-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:224
-rhi::vulkan::VulkanDevice::TextureInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:229
-rhi::vulkan::VulkanDevice::TextureInfo::image	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-image	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:231
-rhi::vulkan::VulkanDevice::TextureInfo::view	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-view	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:233
-rhi::vulkan::VulkanDevice::TextureInfo::attachment_view	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-attachment-view	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:235
-rhi::vulkan::VulkanDevice::TextureInfo::desc	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-desc	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:237
-rhi::vulkan::VulkanDevice::TextureInfo::aspects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-aspects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:239
-rhi::vulkan::VulkanDevice::LookupTexture(TextureHandle,TextureInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookuptexture-texturehandle-textureinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:248
-rhi::vulkan::VulkanDevice::ShaderInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:255
-rhi::vulkan::VulkanDevice::ShaderInfo::module	variable	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo-module	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:257
-rhi::vulkan::VulkanDevice::ShaderInfo::stage	variable	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo-stage	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:259
-rhi::vulkan::VulkanDevice::ShaderInfo::entry	variable	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo-entry	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:261
-rhi::vulkan::VulkanDevice::LookupSampler(SamplerHandle,VkSampler*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupsampler-samplerhandle-vksampler-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:271
-rhi::vulkan::VulkanDevice::LookupShader(ShaderHandle,ShaderInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupshader-shaderhandle-shaderinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:280
-rhi::vulkan::VulkanDevice::PipelineInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:286
-rhi::vulkan::VulkanDevice::PipelineInfo::pipeline	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-pipeline	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:288
-rhi::vulkan::VulkanDevice::PipelineInfo::layout	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-layout	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:290
-rhi::vulkan::VulkanDevice::PipelineInfo::compute	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-compute	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:292
-rhi::vulkan::VulkanDevice::PipelineInfo::layout_count	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-layout-count	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:294
-rhi::vulkan::VulkanDevice::PipelineInfo::layout_ids	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-layout-ids	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:296
-rhi::vulkan::VulkanDevice::PipelineInfo::push_bytes	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-push-bytes	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:298
-rhi::vulkan::VulkanDevice::PipelineInfo::push_stages	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-push-stages	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:300
-rhi::vulkan::VulkanDevice::PipelineInfo::color_count	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-color-count	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:302
-rhi::vulkan::VulkanDevice::PipelineInfo::color_formats	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-color-formats	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:304
-rhi::vulkan::VulkanDevice::PipelineInfo::depth_format	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-depth-format	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:306
-rhi::vulkan::VulkanDevice::BindGroupInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:314
-rhi::vulkan::VulkanDevice::BindGroupInfo::set	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-set	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:316
-rhi::vulkan::VulkanDevice::BindGroupInfo::layout_id	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-layout-id	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:318
-rhi::vulkan::VulkanDevice::BindGroupInfo::transient	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-transient	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:320
-rhi::vulkan::VulkanDevice::BindGroupInfo::frame	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-frame	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:322
-rhi::vulkan::VulkanDevice::BindGroupInfo::resources_live	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-resources-live	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:324
-rhi::vulkan::VulkanDevice::LookupBindGroup(BindGroupHandle,BindGroupInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupbindgroup-bindgrouphandle-bindgroupinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:334
-rhi::vulkan::VulkanDevice::LookupPipeline(PipelineHandle,PipelineInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookuppipeline-pipelinehandle-pipelineinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:343
-rhi::vulkan::VulkanDevice::PipelineCacheStats	struct	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:348
-rhi::vulkan::VulkanDevice::PipelineCacheStats::enabled	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-enabled	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:350
-rhi::vulkan::VulkanDevice::PipelineCacheStats::loaded_bytes	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-loaded-bytes	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:352
-rhi::vulkan::VulkanDevice::PipelineCacheStats::rejected	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-rejected	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:354
-rhi::vulkan::VulkanDevice::PipelineCacheStats::saved_bytes	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-saved-bytes	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:356
-rhi::vulkan::VulkanDevice::PipelineCache() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecache-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:360
-rhi::vulkan::VulkanDevice::SavePipelineCache()	function	rhi-vulkan	rhi-vulkan-vulkandevice-savepipelinecache	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:368
-rhi::vulkan::VulkanDevice::PipelineCachePath() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachepath-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:371
-rhi::vulkan::VulkanDevice::ReportResult(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-reportresult-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:377
-rhi::vulkan::VulkanDevice::InjectSubmitFailure(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-injectsubmitfailure-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:383
-rhi::vulkan::VulkanDevice::CommandPoolCount() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-commandpoolcount-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:386
+rhi::vulkan::VulkanDevice::kDescriptorKinds	variable	rhi-vulkan	rhi-vulkan-vulkandevice-kdescriptorkinds	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:63
+rhi::vulkan::VulkanDevice::kThreadSlots	variable	rhi-vulkan	rhi-vulkan-vulkandevice-kthreadslots	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:65
+rhi::vulkan::VulkanDevice::~VulkanDevice()	function	rhi-vulkan	rhi-vulkan-vulkandevice-tilde-vulkandevice	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:68
+rhi::vulkan::VulkanDevice::BackendName() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-backendname-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:70
+rhi::vulkan::VulkanDevice::Adapter() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-adapter-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:71
+rhi::vulkan::VulkanDevice::ListAdapters(AdapterList*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-listadapters-adapterlist-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:72
+rhi::vulkan::VulkanDevice::Epoch() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-epoch-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:76
+rhi::vulkan::VulkanDevice::Resources() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-resources-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:77
+rhi::vulkan::VulkanDevice::InjectDeviceLoss()	function	rhi-vulkan	rhi-vulkan-vulkandevice-injectdeviceloss	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:78
+rhi::vulkan::VulkanDevice::RecreateSurface(const os::Window*)	function	rhi-vulkan	rhi-vulkan-vulkandevice-recreatesurface-const-os-window-star	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:79
+rhi::vulkan::VulkanDevice::InFrame() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-inframe-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:80
+rhi::vulkan::VulkanDevice::Caps() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-caps-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:81
+rhi::vulkan::VulkanDevice::CreateBuffer(const BufferDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbuffer-const-bufferdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:82
+rhi::vulkan::VulkanDevice::DestroyBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:83
+rhi::vulkan::VulkanDevice::CreateTexture(const TextureDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createtexture-const-texturedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:84
+rhi::vulkan::VulkanDevice::DestroyTexture(TextureHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroytexture-texturehandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:85
+rhi::vulkan::VulkanDevice::CreateSampler(const SamplerDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createsampler-const-samplerdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:86
+rhi::vulkan::VulkanDevice::DestroySampler(SamplerHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroysampler-samplerhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:87
+rhi::vulkan::VulkanDevice::CreateShader(const ShaderDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createshader-const-shaderdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:88
+rhi::vulkan::VulkanDevice::DestroyShader(ShaderHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroyshader-shaderhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:89
+rhi::vulkan::VulkanDevice::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:90
+rhi::vulkan::VulkanDevice::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybindgrouplayout-bindgrouplayouthandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:91
+rhi::vulkan::VulkanDevice::CreateBindGroup(const BindGroupDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createbindgroup-const-bindgroupdesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:92
+rhi::vulkan::VulkanDevice::DestroyBindGroup(BindGroupHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroybindgroup-bindgrouphandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:93
+rhi::vulkan::VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:94
+rhi::vulkan::VulkanDevice::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createcomputepipeline-const-computepipelinedesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:95
+rhi::vulkan::VulkanDevice::DestroyPipeline(PipelineHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroypipeline-pipelinehandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:96
+rhi::vulkan::VulkanDevice::MapBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-mapbuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:97
+rhi::vulkan::VulkanDevice::UnmapBuffer(BufferHandle)	function	rhi-vulkan	rhi-vulkan-vulkandevice-unmapbuffer-bufferhandle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:98
+rhi::vulkan::VulkanDevice::FlushMappedBuffer(BufferHandle,u64,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-flushmappedbuffer-bufferhandle-u64-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:99
+rhi::vulkan::VulkanDevice::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:100
+rhi::vulkan::VulkanDevice::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-readbackbuffer-bufferhandle-u64-void-star-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:101
+rhi::vulkan::VulkanDevice::CreateSwapchain(const SwapchainDesc&)	function	rhi-vulkan	rhi-vulkan-vulkandevice-createswapchain-const-swapchaindesc-amp	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:102
+rhi::vulkan::VulkanDevice::DestroySwapchain(Swapchain*)	function	rhi-vulkan	rhi-vulkan-vulkandevice-destroyswapchain-swapchain-star	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:103
+rhi::vulkan::VulkanDevice::FormatSupport(Format,TextureUsage) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-formatsupport-format-textureusage-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:104
+rhi::vulkan::VulkanDevice::CanGenerateMips(Format) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-cangeneratemips-format-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:105
+rhi::vulkan::VulkanDevice::UploadTexture(TextureHandle,u32,u32,const void*,u32)	function	rhi-vulkan	rhi-vulkan-vulkandevice-uploadtexture-texturehandle-u32-u32-const-void-star-u32	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:106
+rhi::vulkan::VulkanDevice::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi-vulkan	rhi-vulkan-vulkandevice-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:107
+rhi::vulkan::VulkanDevice::CreateCommandList()	function	rhi-vulkan	rhi-vulkan-vulkandevice-createcommandlist	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:108
+rhi::vulkan::VulkanDevice::Submit(CommandList* const*,usize)	function	rhi-vulkan	rhi-vulkan-vulkandevice-submit-commandlist-star-const-star-usize	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:109
+rhi::vulkan::VulkanDevice::WaitFence(FenceValue,u64)	function	rhi-vulkan	rhi-vulkan-vulkandevice-waitfence-fencevalue-u64	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:110
+rhi::vulkan::VulkanDevice::CompletedFence() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-completedfence-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:111
+rhi::vulkan::VulkanDevice::BeginFrame()	function	rhi-vulkan	rhi-vulkan-vulkandevice-beginframe	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:112
+rhi::vulkan::VulkanDevice::EndFrame()	function	rhi-vulkan	rhi-vulkan-vulkandevice-endframe	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:113
+rhi::vulkan::VulkanDevice::FrameNumber() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-framenumber-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:114
+rhi::vulkan::VulkanDevice::WaitIdle()	function	rhi-vulkan	rhi-vulkan-vulkandevice-waitidle	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:115
+rhi::vulkan::VulkanDevice::DeviceLost() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-devicelost-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:116
+rhi::vulkan::VulkanDevice::GpuName() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-gpuname-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:120
+rhi::vulkan::VulkanDevice::GpuInfo() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-gpuinfo-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:123
+rhi::vulkan::VulkanDevice::Queues() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-queues-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:126
+rhi::vulkan::VulkanDevice::Instance() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-instance-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:129
+rhi::vulkan::VulkanDevice::Handle() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-handle-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:132
+rhi::vulkan::VulkanDevice::Fns() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-fns-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:135
+rhi::vulkan::VulkanDevice::MemoryProperties() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-memoryproperties-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:138
+rhi::vulkan::VulkanDevice::Properties() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-properties-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:141
+rhi::vulkan::VulkanDevice::Memory()	function	rhi-vulkan	rhi-vulkan-vulkandevice-memory	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:145
+rhi::vulkan::VulkanDevice::MemoryObjectsAllocated() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-memoryobjectsallocated-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:148
+rhi::vulkan::VulkanDevice::HeapBudget(u32,u64*,u64*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-heapbudget-u32-u64-star-u64-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:157
+rhi::vulkan::VulkanDevice::ObjectCounts	struct	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:162
+rhi::vulkan::VulkanDevice::ObjectCounts::buffers	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-buffers	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:164
+rhi::vulkan::VulkanDevice::ObjectCounts::pending_destruction	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pending-destruction	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:166
+rhi::vulkan::VulkanDevice::ObjectCounts::raw_buffers	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-raw-buffers	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:168
+rhi::vulkan::VulkanDevice::ObjectCounts::textures	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-textures	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:170
+rhi::vulkan::VulkanDevice::ObjectCounts::samplers	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-samplers	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:172
+rhi::vulkan::VulkanDevice::ObjectCounts::pending_image_destruction	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pending-image-destruction	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:174
+rhi::vulkan::VulkanDevice::ObjectCounts::raw_images	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-raw-images	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:176
+rhi::vulkan::VulkanDevice::ObjectCounts::shaders	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-shaders	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:178
+rhi::vulkan::VulkanDevice::ObjectCounts::bind_group_layouts	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-bind-group-layouts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:180
+rhi::vulkan::VulkanDevice::ObjectCounts::pipelines	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pipelines	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:182
+rhi::vulkan::VulkanDevice::ObjectCounts::descriptor_set_layouts	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-descriptor-set-layouts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:184
+rhi::vulkan::VulkanDevice::ObjectCounts::pipeline_layouts	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-pipeline-layouts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:186
+rhi::vulkan::VulkanDevice::ObjectCounts::bind_groups	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-bind-groups	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:188
+rhi::vulkan::VulkanDevice::ObjectCounts::descriptor_pools	variable	rhi-vulkan	rhi-vulkan-vulkandevice-objectcounts-descriptor-pools	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:190
+rhi::vulkan::VulkanDevice::Counts() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-counts-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:194
+rhi::vulkan::VulkanDevice::CompletedFrame() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-completedframe-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:197
+rhi::vulkan::VulkanDevice::FramesInFlight() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-framesinflight-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:200
+rhi::vulkan::VulkanDevice::LeakCounts	struct	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:205
+rhi::vulkan::VulkanDevice::LeakCounts::user_objects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts-user-objects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:208
+rhi::vulkan::VulkanDevice::LeakCounts::internal_objects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-leakcounts-internal-objects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:210
+rhi::vulkan::VulkanDevice::GetLeakCounts()	function	rhi-vulkan	rhi-vulkan-vulkandevice-getleakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:215
+rhi::vulkan::VulkanDevice::ResetLeakCounts()	function	rhi-vulkan	rhi-vulkan-vulkandevice-resetleakcounts	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:218
+rhi::vulkan::VulkanDevice::LookupBuffer(BufferHandle,VkBuffer*,BufferDesc*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupbuffer-bufferhandle-vkbuffer-star-bufferdesc-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:227
+rhi::vulkan::VulkanDevice::TextureInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:232
+rhi::vulkan::VulkanDevice::TextureInfo::image	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-image	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:234
+rhi::vulkan::VulkanDevice::TextureInfo::view	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-view	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:236
+rhi::vulkan::VulkanDevice::TextureInfo::attachment_view	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-attachment-view	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:238
+rhi::vulkan::VulkanDevice::TextureInfo::desc	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-desc	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:240
+rhi::vulkan::VulkanDevice::TextureInfo::aspects	variable	rhi-vulkan	rhi-vulkan-vulkandevice-textureinfo-aspects	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:242
+rhi::vulkan::VulkanDevice::LookupTexture(TextureHandle,TextureInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookuptexture-texturehandle-textureinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:251
+rhi::vulkan::VulkanDevice::ShaderInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:258
+rhi::vulkan::VulkanDevice::ShaderInfo::module	variable	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo-module	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:260
+rhi::vulkan::VulkanDevice::ShaderInfo::stage	variable	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo-stage	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:262
+rhi::vulkan::VulkanDevice::ShaderInfo::entry	variable	rhi-vulkan	rhi-vulkan-vulkandevice-shaderinfo-entry	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:264
+rhi::vulkan::VulkanDevice::LookupSampler(SamplerHandle,VkSampler*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupsampler-samplerhandle-vksampler-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:274
+rhi::vulkan::VulkanDevice::LookupShader(ShaderHandle,ShaderInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupshader-shaderhandle-shaderinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:283
+rhi::vulkan::VulkanDevice::PipelineInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:289
+rhi::vulkan::VulkanDevice::PipelineInfo::pipeline	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-pipeline	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:291
+rhi::vulkan::VulkanDevice::PipelineInfo::layout	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-layout	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:293
+rhi::vulkan::VulkanDevice::PipelineInfo::compute	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-compute	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:295
+rhi::vulkan::VulkanDevice::PipelineInfo::layout_count	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-layout-count	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:297
+rhi::vulkan::VulkanDevice::PipelineInfo::layout_ids	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-layout-ids	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:299
+rhi::vulkan::VulkanDevice::PipelineInfo::push_bytes	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-push-bytes	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:301
+rhi::vulkan::VulkanDevice::PipelineInfo::push_stages	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-push-stages	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:303
+rhi::vulkan::VulkanDevice::PipelineInfo::color_count	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-color-count	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:305
+rhi::vulkan::VulkanDevice::PipelineInfo::color_formats	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-color-formats	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:307
+rhi::vulkan::VulkanDevice::PipelineInfo::depth_format	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelineinfo-depth-format	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:309
+rhi::vulkan::VulkanDevice::BindGroupInfo	struct	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:317
+rhi::vulkan::VulkanDevice::BindGroupInfo::set	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-set	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:319
+rhi::vulkan::VulkanDevice::BindGroupInfo::layout_id	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-layout-id	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:321
+rhi::vulkan::VulkanDevice::BindGroupInfo::transient	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-transient	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:323
+rhi::vulkan::VulkanDevice::BindGroupInfo::frame	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-frame	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:325
+rhi::vulkan::VulkanDevice::BindGroupInfo::resources_live	variable	rhi-vulkan	rhi-vulkan-vulkandevice-bindgroupinfo-resources-live	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:327
+rhi::vulkan::VulkanDevice::LookupBindGroup(BindGroupHandle,BindGroupInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookupbindgroup-bindgrouphandle-bindgroupinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:337
+rhi::vulkan::VulkanDevice::LookupPipeline(PipelineHandle,PipelineInfo*) const	function	rhi-vulkan	rhi-vulkan-vulkandevice-lookuppipeline-pipelinehandle-pipelineinfo-star-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:346
+rhi::vulkan::VulkanDevice::PipelineCacheStats	struct	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:351
+rhi::vulkan::VulkanDevice::PipelineCacheStats::enabled	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-enabled	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:353
+rhi::vulkan::VulkanDevice::PipelineCacheStats::loaded_bytes	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-loaded-bytes	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:355
+rhi::vulkan::VulkanDevice::PipelineCacheStats::rejected	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-rejected	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:357
+rhi::vulkan::VulkanDevice::PipelineCacheStats::saved_bytes	variable	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachestats-saved-bytes	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:359
+rhi::vulkan::VulkanDevice::PipelineCache() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecache-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:363
+rhi::vulkan::VulkanDevice::SavePipelineCache()	function	rhi-vulkan	rhi-vulkan-vulkandevice-savepipelinecache	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:371
+rhi::vulkan::VulkanDevice::PipelineCachePath() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-pipelinecachepath-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:374
+rhi::vulkan::VulkanDevice::ReportResult(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-reportresult-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:380
+rhi::vulkan::VulkanDevice::InjectSubmitFailure(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-injectsubmitfailure-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:386
+rhi::vulkan::VulkanDevice::CommandPoolCount() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-commandpoolcount-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:389
 rhi::vulkan::CreateWin32Surface(void*,void*,void*,void*,u64*)	function	rhi-vulkan	rhi-vulkan-createwin32surface-void-star-void-star-void-star-void-star-u64-star	rhi-vulkan.md	engine/rhi/vulkan/windows/vk_win32_surface.h:23

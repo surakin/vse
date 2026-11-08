@@ -30,3 +30,11 @@ endfunction()
 function(slang_compile_args stage out)
   set(${out} -target spirv -profile spirv_1_5 -entry main -stage ${stage} -matrix-layout-column-major -O2 PARENT_SCOPE)
 endfunction()
+
+# slang_dxil_args(<stage> <dxc dir> <out var>) -> the slangc arguments of the DXIL build (Phase 13 Day 163): shader model 6.0, the
+# same entry and matrix layout, the D3D12 target define (shaders/target_common.slang), and the directory that holds the dxcompiler.dll
+# and dxil.dll slangc must use (the Windows SDK's, never the first dxc on PATH; dxil.dll signs the container).
+function(slang_dxil_args stage dxc_dir out)
+  set(${out} -target dxil -profile sm_6_0 -entry main -stage ${stage} -matrix-layout-column-major -O2 -DENGINE_TARGET_D3D12=1
+             -dxc-path ${dxc_dir} PARENT_SCOPE)
+endfunction()

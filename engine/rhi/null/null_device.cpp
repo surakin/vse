@@ -906,6 +906,9 @@ private:
                 case BindingType::StorageBuffer:
                     if (!CheckGroupBuffer(ref.buffer, Bit(ResourceState::ShaderRead) | Bit(ResourceState::ShaderWrite), what)) return;
                     break;
+                case BindingType::ReadOnlyStorageBuffer: // a shader resource view on Direct3D 12: never written, so ShaderRead only
+                    if (!CheckGroupBuffer(ref.buffer, Bit(ResourceState::ShaderRead), what)) return;
+                    break;
                 case BindingType::SampledTexture:
                     if (!CheckGroupTexture(ref.texture, Bit(ResourceState::ShaderRead) | Bit(ResourceState::DepthRead), what)) return;
                     break;
@@ -1276,7 +1279,8 @@ BindGroupHandle NullDevice::CreateBindGroup(const BindGroupDesc& desc) {
             ref.type = bd.type;
             switch (bd.type) {
             case BindingType::UniformBuffer:
-            case BindingType::StorageBuffer: {
+            case BindingType::StorageBuffer:
+            case BindingType::ReadOnlyStorageBuffer: {
                 BufferRes* buf = s.Buf(found->buffer);
                 bool uniform = bd.type == BindingType::UniformBuffer;
                 if (buf == nullptr) {

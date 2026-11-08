@@ -86,6 +86,12 @@ enum class DefaultTexture : u8 {
     FlatNormal, ///< 1x1 (0.5, 0.5, 1): a tangent-space normal pointing straight out.
 };
 
+/// The vertex attribute location a material vertex shader reads the object index from on a device with
+/// [[rhi::DeviceCaps::object_index_stream]] (semantic `TEXCOORD15`; `shaders/target_common.slang`).
+inline constexpr u32 kObjectIndexLocation = 15;
+/// How many object indices the object index stream holds: the most objects one pass draws by index.
+inline constexpr u32 kMaxObjectIndices = 65536;
+
 /// Names the default texture of one texture slot, overriding the name-based choice.
 ///
 /// Thread-safety: thread-compatible plain data.
@@ -445,6 +451,38 @@ public:
     /// Returns the layout of the object storage group (set 2).
     /// Fails: never.
     rhi::BindGroupLayoutHandle ObjectLayout() const;
+
+    /// Returns the object index stream: a vertex buffer holding the indices `0 .. kMaxObjectIndices - 1` as `u32`, which a pass binds
+    /// at [[renderer::MaterialSystem::ObjectIndexSlot]] once before drawing objects, on a device whose shaders read the index from an
+    /// instance-rate attribute ([[rhi::DeviceCaps::object_index_stream]], Direct3D 12). Draw `i` with `first_instance = i` then reads `i`.
+    ///
+    /// Returns: the buffer, or an invalid handle on a device that does not need it (Vulkan reads `gl_InstanceIndex`).
+    /// Fails: an invalid handle, as described.
+    /// Ownership: the system owns the buffer and rebuilds it with the device.
+    rhi::BufferHandle ObjectIndexStream() const { return object_index_stream_; }
+
+    /// Returns the vertex-buffer slot the object index stream uses in the material pipelines: 1, after the mesh at slot 0.
+    ///
+    /// Fails: never.
+    static constexpr u32 ObjectIndexSlot() { return 1; }
+
+    /// Adds the object index attribute to a pipeline's vertex input when the device needs it: binding `slot`, instance rate, 4-byte
+    /// stride, attribute location [[renderer::kObjectIndexLocation]] as `UInt1`. Does nothing when
+    /// [[rhi::DeviceCaps::object_index_stream]] is false.
+    ///
+    /// Param device: the device the pipeline is for.
+    /// Param bindings: the pipeline's vertex bindings; `*binding_count` of them are used, and one is appended at index `slot`.
+    /// Param binding_count: in and out.
+    /// Param binding_capacity: the size of `bindings`.
+    /// Param attributes: the pipeline's attributes; `*attribute_count` used, one appended.
+    /// Param attribute_count: in and out.
+    /// Param attribute_capacity: the size of `attributes`.
+    /// Param slot: the vertex-buffer slot, which must equal `*binding_count` (bindings are dense).
+    /// Returns: true if the attribute was added or not needed.
+    /// Fails: returns false when `slot` is not the next binding or an array is full.
+    /// Ownership: the arrays belong to the caller.
+    static bool AddObjectIndexAttribute(const rhi::Device& device, rhi::VertexBindingDesc* bindings, u32* binding_count, u32 binding_capacity,
+                                        rhi::VertexAttributeDesc* attributes, u32* attribute_count, u32 attribute_capacity, u32 slot);
     /// Returns the set-1 layout of a material.
     ///
     /// Param id: a live material.
@@ -556,6 +594,7 @@ private:
     rhi::BindGroupLayoutHandle object_layout_;
     rhi::TextureHandle defaults_[3];
     rhi::SamplerHandle default_sampler_;
+    rhi::BufferHandle object_index_stream_; // only on a device with DeviceCaps::object_index_stream
     u32 slot_ = 0;
     bool begun_ = false;
     bool valid_ = false;

@@ -2,6 +2,7 @@
 // compiler: slangc v2026.18.2
 #pragma once
 
+#include "permute_test.frag.dxil.inc"
 #include "permute_test.frag.refl.inc"
 #include "permute_test.frag.spv.inc"
 #include "renderer/shader_permutation.h"
@@ -155,12 +156,12 @@ inline constexpr u8 kPermuteTestFragPerm5Refl[kPermuteTestFragPerm5ReflByteCount
 inline constexpr const char* kPermuteTestFragOptions[4] = {"INVERT", "HALF", "TINT", "DEBUG", };
 
 inline constexpr renderer::PermutationModule kPermuteTestFragModules[6] = {
-    {kPermuteTestFragSpv, kPermuteTestFragSpvWordCount, kPermuteTestFragRefl, kPermuteTestFragReflByteCount},
-    {kPermuteTestFragPerm1Spv, kPermuteTestFragPerm1SpvWordCount, kPermuteTestFragPerm1Refl, kPermuteTestFragPerm1ReflByteCount},
-    {kPermuteTestFragPerm2Spv, kPermuteTestFragPerm2SpvWordCount, kPermuteTestFragPerm2Refl, kPermuteTestFragPerm2ReflByteCount},
-    {kPermuteTestFragPerm3Spv, kPermuteTestFragPerm3SpvWordCount, kPermuteTestFragPerm3Refl, kPermuteTestFragPerm3ReflByteCount},
-    {kPermuteTestFragPerm4Spv, kPermuteTestFragPerm4SpvWordCount, kPermuteTestFragPerm4Refl, kPermuteTestFragPerm4ReflByteCount},
-    {kPermuteTestFragPerm5Spv, kPermuteTestFragPerm5SpvWordCount, kPermuteTestFragPerm5Refl, kPermuteTestFragPerm5ReflByteCount},
+    {kPermuteTestFragSpv, kPermuteTestFragSpvWordCount, kPermuteTestFragRefl, kPermuteTestFragReflByteCount, kPermuteTestFragDxil, kPermuteTestFragDxilByteCount},
+    {kPermuteTestFragPerm1Spv, kPermuteTestFragPerm1SpvWordCount, kPermuteTestFragPerm1Refl, kPermuteTestFragPerm1ReflByteCount, kPermuteTestFragPerm1Dxil, kPermuteTestFragPerm1DxilByteCount},
+    {kPermuteTestFragPerm2Spv, kPermuteTestFragPerm2SpvWordCount, kPermuteTestFragPerm2Refl, kPermuteTestFragPerm2ReflByteCount, kPermuteTestFragPerm2Dxil, kPermuteTestFragPerm2DxilByteCount},
+    {kPermuteTestFragPerm3Spv, kPermuteTestFragPerm3SpvWordCount, kPermuteTestFragPerm3Refl, kPermuteTestFragPerm3ReflByteCount, kPermuteTestFragPerm3Dxil, kPermuteTestFragPerm3DxilByteCount},
+    {kPermuteTestFragPerm4Spv, kPermuteTestFragPerm4SpvWordCount, kPermuteTestFragPerm4Refl, kPermuteTestFragPerm4ReflByteCount, kPermuteTestFragPerm4Dxil, kPermuteTestFragPerm4DxilByteCount},
+    {kPermuteTestFragPerm5Spv, kPermuteTestFragPerm5SpvWordCount, kPermuteTestFragPerm5Refl, kPermuteTestFragPerm5ReflByteCount, kPermuteTestFragPerm5Dxil, kPermuteTestFragPerm5DxilByteCount},
 };
 
 inline constexpr renderer::PermutationEntry kPermuteTestFragEntries[7] = {

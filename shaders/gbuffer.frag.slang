@@ -32,10 +32,10 @@ struct MaterialParams {
     uint flags;
 };
 
-[[vk::binding(0, 1)]] ConstantBuffer<MaterialParams> material;
-[[vk::binding(1, 1)]] Texture2D albedo_tex;
-[[vk::binding(2, 1)]] Texture2D normal_tex;
-[[vk::binding(3, 1)]] SamplerState linear_sampler;
+[[vk::binding(0, 1)]] ConstantBuffer<MaterialParams> material : register(b0, space1);
+[[vk::binding(1, 1)]] Texture2D albedo_tex : register(t1, space1);
+[[vk::binding(2, 1)]] Texture2D normal_tex : register(t2, space1);
+[[vk::binding(3, 1)]] SamplerState linear_sampler : register(s3, space1);
 
 struct FragmentInput {
     [[vk::location(0)]] float3 normal : NORMAL;

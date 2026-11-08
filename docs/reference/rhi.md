@@ -776,6 +776,16 @@ ShaderFormat shader_format;
 
 The bytecode format `CreateShader` takes: SPIR-V on Vulkan, DXIL on Direct3D 12. Pick the module from a [`rhi::ShaderBlobSet`](#rhi-shaderblobset) with it; the null device takes the format its options name (SPIR-V by default).
 
+### `object_index_stream` {#rhi-devicecaps-object-index-stream}
+
+`variable rhi::DeviceCaps::object_index_stream` — defined in `engine/rhi/caps.h`
+
+```cpp
+bool object_index_stream;
+```
+
+Whether vertex shaders read the per-draw object index from an instance-rate vertex attribute rather than the draw's first instance: true on Direct3D 12, whose shaders have no base instance. When set, a pipeline that draws objects declares the attribute and the pass binds the renderer's index stream (`renderer::ObjectIndexStream`); Vulkan reads `gl_InstanceIndex` and leaves it false.
+
 ## `Viewport` {#rhi-viewport}
 
 `struct rhi::Viewport` — defined in `engine/rhi/command_list.h`
@@ -5052,6 +5062,7 @@ The kind of resource a binding refers to.
 | <a id="rhi-bindingtype-sampledtexture"></a>`SampledTexture` |  | A texture read through a sampler. |
 | <a id="rhi-bindingtype-sampler"></a>`Sampler` |  | A sampler. |
 | <a id="rhi-bindingtype-storagetexture"></a>`StorageTexture` |  | A texture read/written as a storage image. |
+| <a id="rhi-bindingtype-readonlystoragebuffer"></a>`ReadOnlyStorageBuffer` |  | A storage buffer range the shaders only read (`StructuredBuffer` in Slang): a storage buffer to Vulkan, a shader resource view (not an unordered access view) to Direct3D 12, so the buffer is in `ShaderRead` state when bound. Last before `Count` so the values of the older types, which minted reflection stores, do not change. |
 | <a id="rhi-bindingtype-count"></a>`Count` |  | Number of binding types; not a type. |
 
 ## `Span` {#rhi-span}

@@ -145,7 +145,7 @@ TEST_CASE("A compute group size that does not fit 32 bits is rejected", "[shader
 TEST_CASE("Vertex input locations are checked against the SPIR-V Input variables only", "[shader_mint]") {
     // A vertex shader with one float3 input at location 2.
     const char* json = R"({"parameters": [], "entryPoints": [{"name": "main", "stage": "vertex", "bindings": [],
-        "parameters": [{"name": "pos", "binding": {"kind": "varyingInput", "index": 2},
+        "parameters": [{"name": "pos", "binding": {"kind": "varyingInput", "index": 2}, "semanticName": "TEXCOORD", "semanticIndex": 2,
           "type": {"kind": "vector", "elementCount": 3, "elementType": {"kind": "scalar", "scalarType": "float32"}}}]}]})";
     ShaderReflection r;
     Text error = MakeText();

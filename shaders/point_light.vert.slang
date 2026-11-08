@@ -17,6 +17,8 @@
 //   set 1, binding 4: storage buffer of LightData (48 bytes each); the other set 1 bindings belong to the fragment shader
 //   vertex output location 0: flat uint light index
 
+#include "target_common.slang"
+
 struct FrameData {
     float4x4 view;
     float4x4 projection;
@@ -36,12 +38,16 @@ struct LightData {
 #define LIGHT_VOLUME_SEGMENTS 16
 #define LIGHT_VOLUME_RINGS 8
 
-[[vk::binding(0, 0)]] ConstantBuffer<FrameData> frame;
-[[vk::binding(4, 1)]] StructuredBuffer<LightData> lights;
+[[vk::binding(0, 0)]] ConstantBuffer<FrameData> frame : register(b0, space0);
+[[vk::binding(4, 1)]] StructuredBuffer<LightData> lights : register(t4, space1);
 
 struct VertexInput {
-    uint vertex : SV_VulkanVertexID;
+    uint vertex : ENGINE_VERTEX_ID;
+#ifdef ENGINE_OBJECT_INDEX_STREAM
+    [[vk::location(15)]] uint instance : TEXCOORD15; // renderer::ObjectIndexStream (D3D12: no base instance)
+#else
     uint instance : SV_VulkanInstanceID;
+#endif
 };
 
 struct VertexOutput {
@@ -71,6 +77,6 @@ VertexOutput main(VertexInput input) {
     // The volume is drawn without a depth test, so only x and y matter. Pull z into 0..w so that the near and far planes do not
     // clip it: the far side of a large light around the camera may lie beyond the far plane.
     clip.z = clamp(clip.z, 0.0, max(clip.w, 0.0));
-    output.position = clip;
+    output.position = ENGINE_CLIP(clip);
     return output;
 }

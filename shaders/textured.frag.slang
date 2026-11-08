@@ -11,8 +11,8 @@
 //   set 0, binding 1: sampled texture (2D), fragment stage
 //   set 0, binding 2: sampler, fragment stage
 
-[[vk::binding(1, 0)]] Texture2D tex;
-[[vk::binding(2, 0)]] SamplerState smp;
+[[vk::binding(1, 0)]] Texture2D tex : register(t1, space0);
+[[vk::binding(2, 0)]] SamplerState smp : register(s2, space0);
 
 struct FragmentInput {
     [[vk::location(0)]] float3 color : COLOR;

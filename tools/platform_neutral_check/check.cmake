@@ -194,7 +194,7 @@ endforeach()
 # The header's name without its folders, so <um/windows.h> counts as windows.h (Day 150 review).
 set(win_sdk_re "^[ \t]*#[ \t]*include[ \t]*[<\"]([A-Za-z0-9_]+/)*([A-Za-z0-9_]+)\\.h[>\"]")
 set(win_sdk_names "^(windows|winternl|wtsapi32|psapi|dbghelp|shlobj|shlobj_core|shellapi|knownfolders|objbase|combaseapi|processthreadsapi|winbase|winuser|winnt|minwindef|fileapi|handleapi|synchapi|libloaderapi|memoryapi|sysinfoapi|debugapi|errhandlingapi|consoleapi|wincon|winreg|winsock2|ws2tcpip|shtypes|propsys|mmdeviceapi|audioclient|xinput|d3d12[a-z0-9_]*|dxgi[a-z0-9_]*|d3dcommon|d3dcompiler|dxcapi)$")
-set(win_dirs_re "^(engine/foundation/(os|io|settings)/windows/|engine/jobs/windows/|engine/platform/windows/|engine/rhi/vulkan/windows/|engine/rhi/dx12/|tests/windows/|tools/crash_extract/windows/|tools/docgen/src/windows/)")
+set(win_dirs_re "^(engine/foundation/(os|io|settings)/windows/|engine/jobs/windows/|engine/platform/windows/|engine/rhi/vulkan/windows/|engine/rhi/dx12/|tests/windows/|tools/crash_extract/windows/|tools/docgen/src/windows/|tools/shader_mint/windows/)")
 foreach(f IN LISTS all_files)
   if(f MATCHES "(^|/)fixtures/" OR f MATCHES "^tests/windows/discovery/")
     continue()

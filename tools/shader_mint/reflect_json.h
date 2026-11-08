@@ -16,4 +16,10 @@ bool ReflectionFromJson(StringView json_text, renderer::ShaderReflection* out, T
 // against the decorations and execution modes in the SPIR-V words.
 bool CrossCheckSpirv(const renderer::ShaderReflection& reflection, const u32* words, usize word_count, Text* error);
 
+// Checks the register rule of the DXIL build (shaders/target_common.slang) against the reflection of the SPIR-V build: every
+// binding at (set, binding) is the register `binding` of its class (constantBuffer, shaderResource, unorderedAccess or
+// samplerState) in space `set`, and the push constant block, if any, is b0 in space 15. `dxil_json` is the whole
+// `slangc -target dxil -reflection-json` file. Returns false with the reason in `error`.
+bool CheckD3D12Registers(const renderer::ShaderReflection& reflection, StringView dxil_json, Text* error);
+
 } // namespace engine_placeholder::shader_mint

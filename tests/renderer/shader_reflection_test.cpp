@@ -144,7 +144,7 @@ TEST_CASE("Reflection says what the shader sources say", "[renderer][reflection]
 
         ShaderReflection saxpy = LOAD(kSaxpyComp);
         REQUIRE(saxpy.binding_count == 2);
-        CHECK(saxpy.bindings[0].type == BindingType::StorageBuffer);
+        CHECK(saxpy.bindings[0].type == BindingType::ReadOnlyStorageBuffer); // x_buf is a StructuredBuffer (Phase 13 Day 163)
         CHECK(saxpy.bindings[1].type == BindingType::StorageBuffer);
 
         ShaderReflection gradient = LOAD(kGradientComp);

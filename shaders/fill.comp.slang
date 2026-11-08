@@ -9,8 +9,8 @@ struct Push {
     uint k;
 };
 
-[[vk::binding(0, 0)]] RWStructuredBuffer<uint> out_buf;
-[[vk::push_constant]] ConstantBuffer<Push> push;
+[[vk::binding(0, 0)]] RWStructuredBuffer<uint> out_buf : register(u0, space0);
+[[vk::push_constant]] ConstantBuffer<Push> push : register(b0, space15);
 
 [shader("compute")]
 [numthreads(64, 1, 1)]

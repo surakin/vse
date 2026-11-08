@@ -60,7 +60,8 @@ ctest --preset windows-msvc
 
 The override variables for unusual installs (cache variables or environment variables) are `ENGINE_VS_INSTALL_DIR`, `ENGINE_WINDOWS_SDK_DIR`,
 `ENGINE_WINDOWS_SDK_VERSION`, `ENGINE_LLVM_DIR`, `ENGINE_VULKAN_SDK` (then `VULKAN_SDK`, then the newest `C:\VulkanSDK\<version>`), and, from
-Day 163, `ENGINE_SLANGC` and `ENGINE_DXC`.
+Day 163, `ENGINE_SLANGC` (`slangc`; else `PATH`, then `C:\Tools\slang-2026.18.2\bin`) and `ENGINE_DXC` (a `dxc` or its directory, whose
+`dxcompiler.dll` and `dxil.dll` mint DXIL; else the Windows SDK's `bin\<version>\x64`, never the first `dxc` on `PATH`).
 
 | What | Version used | Kind | Notes | Install |
 |---|---|---|---|---|

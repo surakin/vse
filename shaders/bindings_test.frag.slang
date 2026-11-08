@@ -17,10 +17,10 @@ struct Push {
     float4 bias;
 };
 
-[[vk::binding(0, 0)]] ConstantBuffer<Params> params;
-[[vk::binding(1, 0)]] Texture2D tex;
-[[vk::binding(2, 0)]] SamplerState smp;
-[[vk::push_constant]] ConstantBuffer<Push> push;
+[[vk::binding(0, 0)]] ConstantBuffer<Params> params : register(b0, space0);
+[[vk::binding(1, 0)]] Texture2D tex : register(t1, space0);
+[[vk::binding(2, 0)]] SamplerState smp : register(s2, space0);
+[[vk::push_constant]] ConstantBuffer<Push> push : register(b0, space15);
 
 [shader("fragment")]
 float4 main([[vk::location(0)]] float2 uv : TEXCOORD0) : SV_Target0 {

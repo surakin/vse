@@ -6,9 +6,11 @@
 //   vertex output location 0: float3 color (interpolated)
 //   no descriptors, no push constants
 
+#include "target_common.slang"
+
 struct VertexInput {
-    [[vk::location(0)]] float2 position : POSITION;
-    [[vk::location(1)]] float3 color : COLOR;
+    [[vk::location(0)]] float2 position : TEXCOORD0;
+    [[vk::location(1)]] float3 color : TEXCOORD1;
 };
 
 struct VertexOutput {
@@ -19,7 +21,7 @@ struct VertexOutput {
 [shader("vertex")]
 VertexOutput main(VertexInput input) {
     VertexOutput output;
-    output.position = float4(input.position, 0.0, 1.0);
+    output.position = ENGINE_CLIP(float4(input.position, 0.0, 1.0));
     output.color = input.color;
     return output;
 }

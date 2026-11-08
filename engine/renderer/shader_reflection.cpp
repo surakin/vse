@@ -36,6 +36,7 @@ const char* BindingTypeName(rhi::BindingType type) {
     case rhi::BindingType::SampledTexture: return "sampled texture";
     case rhi::BindingType::Sampler: return "sampler";
     case rhi::BindingType::StorageTexture: return "storage texture";
+    case rhi::BindingType::ReadOnlyStorageBuffer: return "read-only storage buffer";
     default: return "unknown";
     }
 }

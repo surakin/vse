@@ -3,13 +3,13 @@
 #include <cmath>
 #include <cstring>
 
-#include "fullscreen.vert.spv.inc"
-#include "lighting.frag.spv.inc"
-#include "point_light.frag.spv.inc"
-#include "point_light.vert.spv.inc"
+#include "fullscreen.vert.dxil.inc"
+#include "lighting.frag.dxil.inc"
+#include "point_light.frag.dxil.inc"
+#include "point_light.vert.dxil.inc"
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
-#include "tonemap.frag.spv.inc"
+#include "tonemap.frag.dxil.inc"
 
 namespace engine_placeholder::renderer {
 
@@ -139,22 +139,13 @@ LightingPass::LightingPass(rhi::Device* device, MaterialSystem* materials, Frame
 void LightingPass::Build() {
     rhi::Device* device = device_;
     MaterialSystem* materials = materials_;
-    rhi::ShaderDesc sd;
-    sd.stage = rhi::ShaderStage::Vertex;
-    sd.SetCode(rhi::SpirvBlob(shaders::kFullscreenVertSpv, shaders::kFullscreenVertSpvWordCount));
-    vertex_ = device->CreateShader(sd);
-    sd.stage = rhi::ShaderStage::Fragment;
-    sd.SetCode(rhi::SpirvBlob(shaders::kLightingFragSpv, shaders::kLightingFragSpvWordCount));
-    fragment_ = device->CreateShader(sd);
-    sd.stage = rhi::ShaderStage::Vertex;
-    sd.SetCode(rhi::SpirvBlob(shaders::kPointLightVertSpv, shaders::kPointLightVertSpvWordCount));
-    volume_vertex_ = device->CreateShader(sd);
-    sd.stage = rhi::ShaderStage::Fragment;
-    sd.SetCode(rhi::SpirvBlob(shaders::kPointLightFragSpv, shaders::kPointLightFragSpvWordCount));
-    volume_fragment_ = device->CreateShader(sd);
+    vertex_ = rhi::CreateShaderFromSet(*device, shaders::kFullscreenVertShader, rhi::ShaderStage::Vertex);
+    fragment_ = rhi::CreateShaderFromSet(*device, shaders::kLightingFragShader, rhi::ShaderStage::Fragment);
+    volume_vertex_ = rhi::CreateShaderFromSet(*device, shaders::kPointLightVertShader, rhi::ShaderStage::Vertex);
+    volume_fragment_ = rhi::CreateShaderFromSet(*device, shaders::kPointLightFragShader, rhi::ShaderStage::Fragment);
     rhi::BindingDesc bindings[5];
     for (u32 i = 0; i < 4; ++i) bindings[i] = {i, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1};
-    bindings[4] = {4, rhi::BindingType::StorageBuffer, rhi::ShaderStage::AllGraphics, 1}; // the light volume's vertex shader reads it too
+    bindings[4] = {4, rhi::BindingType::ReadOnlyStorageBuffer, rhi::ShaderStage::AllGraphics, 1}; // the light volume's vertex shader reads it too
     rhi::BindGroupLayoutDesc ld;
     ld.entries = rhi::Span<rhi::BindingDesc>(bindings, 5);
     layout_ = device->CreateBindGroupLayout(ld);
@@ -192,6 +183,16 @@ void LightingPass::Build() {
     vp.bind_group_layouts[0] = materials->FrameLayout();
     vp.bind_group_layouts[1] = layout_;
     vp.bind_group_layout_count = 2;
+    // Draw i picks light i with first_instance; on Direct3D 12 the index comes from the object index stream at slot 0.
+    rhi::VertexBindingDesc volume_bindings[1];
+    rhi::VertexAttributeDesc volume_attributes[1];
+    u32 volume_binding_count = 0;
+    u32 volume_attribute_count = 0;
+    if (!MaterialSystem::AddObjectIndexAttribute(*device, volume_bindings, &volume_binding_count, 1, volume_attributes, &volume_attribute_count, 1, 0)) {
+        RenderLog(LogVerbosity::Error, "LightingPass: the light volume pipeline has no room for the object index attribute");
+    }
+    vp.vertex_bindings = rhi::Span<rhi::VertexBindingDesc>(volume_bindings, volume_binding_count);
+    vp.vertex_attributes = rhi::Span<rhi::VertexAttributeDesc>(volume_attributes, volume_attribute_count);
     vp.debug_name = "point light volume";
     volume_pipeline_ = device->CreateGraphicsPipeline(vp);
     if (!volume_pipeline_.IsValid()) RenderLog(LogVerbosity::Error, "LightingPass: creating the light volume pipeline failed");
@@ -219,6 +220,7 @@ void LightingPass::Release() {
     fragment_ = {};
     vertex_ = {};
     frame_group_ = {}; // a handle from the old device; Prepare fetches it again
+    object_index_stream_ = {};
 }
 
 bool LightingPass::Recreate(rhi::Device* device) {
@@ -256,6 +258,7 @@ LightSummary LightingPass::Prepare(const RenderScene& scene, const FrameData& vi
     }
     lights_ = frame_->LightRegion();
     frame_group_ = materials_->FrameBindGroup(frame_->FrameRegion());
+    object_index_stream_ = materials_->ObjectIndexStream();
     return summary;
 }
 
@@ -331,6 +334,9 @@ void LightingPass::Record(const PassExecuteContext& context, void* user) {
             list->SetPipeline(self->volume_pipeline_);
             list->SetBindGroup(kFrameSet, self->frame_group_);
             list->SetBindGroup(1, textures);
+            if (self->object_index_stream_.IsValid()) {
+                list->SetVertexBuffer(0, self->object_index_stream_, 0);
+            }
             for (usize i = 0; i < self->point_draws_.Size(); ++i) {
                 list->SetScissor(self->point_draws_[i].rect);
                 list->Draw(kLightVolumeVertexCount, 1, 0, self->point_draws_[i].light_index);
@@ -355,13 +361,8 @@ TonemapPass::TonemapPass(rhi::Device* device) : device_(device) {
 
 void TonemapPass::Build() {
     rhi::Device* device = device_;
-    rhi::ShaderDesc sd;
-    sd.stage = rhi::ShaderStage::Vertex;
-    sd.SetCode(rhi::SpirvBlob(shaders::kFullscreenVertSpv, shaders::kFullscreenVertSpvWordCount));
-    vertex_ = device->CreateShader(sd);
-    sd.stage = rhi::ShaderStage::Fragment;
-    sd.SetCode(rhi::SpirvBlob(shaders::kTonemapFragSpv, shaders::kTonemapFragSpvWordCount));
-    fragment_ = device->CreateShader(sd);
+    vertex_ = rhi::CreateShaderFromSet(*device, shaders::kFullscreenVertShader, rhi::ShaderStage::Vertex);
+    fragment_ = rhi::CreateShaderFromSet(*device, shaders::kTonemapFragShader, rhi::ShaderStage::Fragment);
     rhi::BindingDesc binding = {0, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1};
     rhi::BindGroupLayoutDesc ld;
     ld.entries = rhi::Span<rhi::BindingDesc>(&binding, 1);

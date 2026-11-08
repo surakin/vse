@@ -3791,6 +3791,16 @@ static constexpr usize kFramePools;
 
 How many frames of command pools exist; a pool is reset only after the frame that used it has finished.
 
+### `kDescriptorKinds` {#rhi-vulkan-vulkandevice-kdescriptorkinds}
+
+`variable rhi::vulkan::VulkanDevice::kDescriptorKinds` — defined in `engine/rhi/vulkan/vulkan_device.h`
+
+```cpp
+static constexpr u32 kDescriptorKinds;
+```
+
+How many Vulkan descriptor types the descriptor pools size (uniform buffer, storage buffer, sampled image, sampler, storage image); the RHI's read-only storage buffer counts as a storage buffer.
+
 ### `kThreadSlots` {#rhi-vulkan-vulkandevice-kthreadslots}
 
 `variable rhi::vulkan::VulkanDevice::kThreadSlots` — defined in `engine/rhi/vulkan/vulkan_device.h`

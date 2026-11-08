@@ -4,15 +4,15 @@
 #include <cstddef>
 #include <cstring>
 
-#include "cube.frag.spv.inc"
+#include "cube.frag.dxil.inc"
 #include "cube.vert.refl.inc"
-#include "cube.vert.spv.inc"
+#include "cube.vert.dxil.inc"
 #include "lit.frag.refl.inc"
-#include "lit.frag.spv.inc"
+#include "lit.frag.dxil.inc"
 #include "lit.vert.refl.inc"
-#include "lit.vert.spv.inc"
-#include "textured.frag.spv.inc"
-#include "textured.vert.spv.inc"
+#include "lit.vert.dxil.inc"
+#include "textured.frag.dxil.inc"
+#include "textured.vert.dxil.inc"
 #include "log/assert.h"
 #include "rhi/rhi_log.h"
 
@@ -71,19 +71,12 @@ const u16* CubeIndices() { return Cube().indices; }
 bool CubeRenderer::Create(Device* device, const CubeOptions& options) {
     device_ = device;
     indexed_ = options.indexed;
-    ShaderDesc sd;
     lit_ = options.lit;
     textured_ = options.textured || options.lit;
-    sd.stage = ShaderStage::Vertex;
-    sd.SetCode(lit_ ? SpirvBlob(shaders::kLitVertSpv, shaders::kLitVertSpvWordCount)
-               : textured_ ? SpirvBlob(shaders::kTexturedVertSpv, shaders::kTexturedVertSpvWordCount)
-                           : SpirvBlob(shaders::kCubeVertSpv, shaders::kCubeVertSpvWordCount));
-    vs_ = device->CreateShader(sd);
-    sd.stage = ShaderStage::Fragment;
-    sd.SetCode(lit_ ? SpirvBlob(shaders::kLitFragSpv, shaders::kLitFragSpvWordCount)
-               : textured_ ? SpirvBlob(shaders::kTexturedFragSpv, shaders::kTexturedFragSpvWordCount)
-                           : SpirvBlob(shaders::kCubeFragSpv, shaders::kCubeFragSpvWordCount));
-    fs_ = device->CreateShader(sd);
+    vs_ = CreateShaderFromSet(*device, lit_ ? shaders::kLitVertShader : textured_ ? shaders::kTexturedVertShader : shaders::kCubeVertShader,
+                              ShaderStage::Vertex);
+    fs_ = CreateShaderFromSet(*device, lit_ ? shaders::kLitFragShader : textured_ ? shaders::kTexturedFragShader : shaders::kCubeFragShader,
+                              ShaderStage::Fragment);
 
     BindingDesc bindings[3] = {{0, BindingType::UniformBuffer, lit_ ? ShaderStage::Vertex | ShaderStage::Fragment : ShaderStage::Vertex, 1},
                                {1, BindingType::SampledTexture, ShaderStage::Fragment, 1},

@@ -37,12 +37,12 @@ struct LightData {
     float4 position_radius;
 };
 
-[[vk::binding(0, 0)]] ConstantBuffer<FrameData> frame;
-[[vk::binding(0, 1)]] Texture2D<float4> albedo_tex;
-[[vk::binding(1, 1)]] Texture2D<float4> normal_tex;
-[[vk::binding(2, 1)]] Texture2D<float4> material_tex;
-[[vk::binding(3, 1)]] Texture2D<float4> depth_tex;
-[[vk::binding(4, 1)]] StructuredBuffer<LightData> lights;
+[[vk::binding(0, 0)]] ConstantBuffer<FrameData> frame : register(b0, space0);
+[[vk::binding(0, 1)]] Texture2D<float4> albedo_tex : register(t0, space1);
+[[vk::binding(1, 1)]] Texture2D<float4> normal_tex : register(t1, space1);
+[[vk::binding(2, 1)]] Texture2D<float4> material_tex : register(t2, space1);
+[[vk::binding(3, 1)]] Texture2D<float4> depth_tex : register(t3, space1);
+[[vk::binding(4, 1)]] StructuredBuffer<LightData> lights : register(t4, space1);
 
 struct Push {
     float4 ambient;
@@ -51,7 +51,7 @@ struct Push {
     uint pad1;
     uint pad2;
 };
-[[vk::push_constant]] ConstantBuffer<Push> push;
+[[vk::push_constant]] ConstantBuffer<Push> push : register(b0, space15);
 
 struct FragmentInput {
     [[vk::location(0)]] float2 uv : TEXCOORD0;

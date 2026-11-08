@@ -53,6 +53,11 @@ struct DeviceCaps {
     /// The bytecode format `CreateShader` takes: SPIR-V on Vulkan, DXIL on Direct3D 12. Pick the module from a
     /// [[rhi::ShaderBlobSet]] with it; the null device takes the format its options name (SPIR-V by default).
     ShaderFormat shader_format = ShaderFormat::Spirv;
+    /// Whether vertex shaders read the per-draw object index from an instance-rate vertex attribute rather than the draw's
+    /// first instance: true on Direct3D 12, whose shaders have no base instance. When set, a pipeline that draws objects
+    /// declares the attribute and the pass binds the renderer's index stream (`renderer::ObjectIndexStream`); Vulkan reads
+    /// `gl_InstanceIndex` and leaves it false.
+    bool object_index_stream = false;
 };
 
 } // namespace engine_placeholder::rhi

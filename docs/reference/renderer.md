@@ -3448,6 +3448,26 @@ The kinds of default texture a system provides for slots a material leaves unset
 | <a id="renderer-defaulttexture-black"></a>`Black` |  | 1x1 opaque black: emissive. |
 | <a id="renderer-defaulttexture-flatnormal"></a>`FlatNormal` |  | 1x1 (0.5, 0.5, 1): a tangent-space normal pointing straight out. |
 
+## `kObjectIndexLocation` {#renderer-kobjectindexlocation}
+
+`variable renderer::kObjectIndexLocation` — defined in `engine/renderer/material.h`
+
+```cpp
+inline constexpr u32 kObjectIndexLocation;
+```
+
+The vertex attribute location a material vertex shader reads the object index from on a device with [`rhi::DeviceCaps::object_index_stream`](rhi.md#rhi-devicecaps-object-index-stream) (semantic `TEXCOORD15`; `shaders/target_common.slang`).
+
+## `kMaxObjectIndices` {#renderer-kmaxobjectindices}
+
+`variable renderer::kMaxObjectIndices` — defined in `engine/renderer/material.h`
+
+```cpp
+inline constexpr u32 kMaxObjectIndices;
+```
+
+How many object indices the object index stream holds: the most objects one pass draws by index.
+
 ## `TextureDefault` {#renderer-texturedefault}
 
 `struct renderer::TextureDefault` — defined in `engine/renderer/material.h`
@@ -4341,6 +4361,60 @@ Returns the layout of the object storage group (set 2).
 | Field | Value |
 |---|---|
 | Fails | never. |
+
+### `ObjectIndexStream()` {#renderer-materialsystem-objectindexstream-const}
+
+`method renderer::MaterialSystem::ObjectIndexStream` — defined in `engine/renderer/material.h`
+
+```cpp
+rhi::BufferHandle ObjectIndexStream() const;
+```
+
+Returns the object index stream: a vertex buffer holding the indices `0 .. kMaxObjectIndices - 1` as `u32`, which a pass binds at [`renderer::MaterialSystem::ObjectIndexSlot`](#renderer-materialsystem-objectindexslot) once before drawing objects, on a device whose shaders read the index from an instance-rate attribute ([`rhi::DeviceCaps::object_index_stream`](rhi.md#rhi-devicecaps-object-index-stream), Direct3D 12). Draw `i` with `first_instance = i` then reads `i`.
+
+| Field | Value |
+|---|---|
+| Returns | the buffer, or an invalid handle on a device that does not need it (Vulkan reads `gl_InstanceIndex`). |
+| Fails | an invalid handle, as described. |
+| Ownership | the system owns the buffer and rebuilds it with the device. |
+
+### `ObjectIndexSlot()` {#renderer-materialsystem-objectindexslot}
+
+`method renderer::MaterialSystem::ObjectIndexSlot` — defined in `engine/renderer/material.h`
+
+```cpp
+static constexpr u32 ObjectIndexSlot();
+```
+
+Returns the vertex-buffer slot the object index stream uses in the material pipelines: 1, after the mesh at slot 0.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `AddObjectIndexAttribute(const rhi::Device&,rhi::VertexBindingDesc*,u32*,u32,rhi::VertexAttributeDesc*,u32*,u32,u32)` {#renderer-materialsystem-addobjectindexattribute-const-rhi-device-amp-rhi-vertexbindingdesc-star-u32-star-u32-rhi-vertexattributedesc-star-u32-star-u32-u32}
+
+`method renderer::MaterialSystem::AddObjectIndexAttribute` — defined in `engine/renderer/material.h`
+
+```cpp
+static bool AddObjectIndexAttribute(const rhi::Device& device, rhi::VertexBindingDesc* bindings, u32* binding_count, u32 binding_capacity, rhi::VertexAttributeDesc* attributes, u32* attribute_count, u32 attribute_capacity, u32 slot);
+```
+
+Adds the object index attribute to a pipeline's vertex input when the device needs it: binding `slot`, instance rate, 4-byte stride, attribute location [`renderer::kObjectIndexLocation`](#renderer-kobjectindexlocation) as `UInt1`. Does nothing when [`rhi::DeviceCaps::object_index_stream`](rhi.md#rhi-devicecaps-object-index-stream) is false.
+
+| Field | Value |
+|---|---|
+| Parameter `device` | the device the pipeline is for. |
+| Parameter `bindings` | the pipeline's vertex bindings; `*binding_count` of them are used, and one is appended at index `slot`. |
+| Parameter `binding_count` | in and out. |
+| Parameter `binding_capacity` | the size of `bindings`. |
+| Parameter `attributes` | the pipeline's attributes; `*attribute_count` used, one appended. |
+| Parameter `attribute_count` | in and out. |
+| Parameter `attribute_capacity` | the size of `attributes`. |
+| Parameter `slot` | the vertex-buffer slot, which must equal `*binding_count` (bindings are dense). |
+| Returns | true if the attribute was added or not needed. |
+| Fails | returns false when `slot` is not the next binding or an array is full. |
+| Ownership | the arrays belong to the caller. |
 
 ### `MaterialLayout(MaterialId)` {#renderer-materialsystem-materiallayout-materialid-const}
 

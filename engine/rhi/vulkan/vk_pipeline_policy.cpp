@@ -100,6 +100,7 @@ VkDescriptorType ToVkDescriptorType(BindingType type) {
     case BindingType::SampledTexture: return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     case BindingType::Sampler: return VK_DESCRIPTOR_TYPE_SAMPLER;
     case BindingType::StorageTexture: return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    case BindingType::ReadOnlyStorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     case BindingType::Count: break;
     }
     return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

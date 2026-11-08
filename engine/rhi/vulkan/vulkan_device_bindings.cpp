@@ -17,16 +17,39 @@ bool PoolIsFull(VkResult r) { return r == VK_ERROR_OUT_OF_POOL_MEMORY || r == VK
 } // namespace
 
 // A pool for `max_sets` sets. `exact` (when given) sizes the pool for exactly one set of that layout, for layouts whose
+
+// The Vulkan descriptor type of each pool slot, and the slot of an RHI binding type: a read-only storage buffer is a storage buffer to
+// Vulkan (Phase 13 Day 163), so both share slot 1. Every per-type count below has kDescriptorKinds entries.
+namespace {
+
+constexpr u32 kDescriptorKinds = VulkanDevice::kDescriptorKinds;
+static_assert(static_cast<u32>(BindingType::Count) == 6, "a new BindingType needs a descriptor kind in DescriptorKind()");
+
+u32 DescriptorKind(BindingType type) {
+    switch (type) {
+    case BindingType::UniformBuffer: return 0;
+    case BindingType::StorageBuffer:
+    case BindingType::ReadOnlyStorageBuffer: return 1;
+    case BindingType::SampledTexture: return 2;
+    case BindingType::Sampler: return 3;
+    case BindingType::StorageTexture: return 4;
+    case BindingType::Count: break;
+    }
+    return 0;
+}
+
+} // namespace
+
 // arrays do not fit the default sizing; otherwise every descriptor type gets `per_type` descriptors per set.
 VkDescriptorPool VulkanDevice::MakeDescriptorPoolLocked(u32 max_sets, u32 per_type, bool free_individual, const BindingDesc* exact,
                                                         u32 exact_count) {
-    VkDescriptorPoolSize sizes[5];
-    u32 counts[5] = {};
-    const VkDescriptorType types[5] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+    VkDescriptorPoolSize sizes[kDescriptorKinds];
+    u32 counts[kDescriptorKinds] = {};
+    const VkDescriptorType types[kDescriptorKinds] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                                        VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE};
     if (exact != nullptr) {
         for (u32 i = 0; i < exact_count; ++i) {
-            counts[static_cast<usize>(exact[i].type)] += exact[i].count;
+            counts[DescriptorKind(exact[i].type)] += exact[i].count;
         }
     } else {
         for (u32& c : counts) {
@@ -34,7 +57,7 @@ VkDescriptorPool VulkanDevice::MakeDescriptorPoolLocked(u32 max_sets, u32 per_ty
         }
     }
     u32 size_count = 0;
-    for (u32 t = 0; t < 5; ++t) {
+    for (u32 t = 0; t < kDescriptorKinds; ++t) {
         if (counts[t] != 0) {
             sizes[size_count++] = {types[t], counts[t]};
         }
@@ -83,9 +106,9 @@ bool VulkanDevice::AllocateSetLocked(DescriptorPools& pools, bool persistent, Vk
 
     // A layout needing more descriptors of a type than a default pool holds goes straight to a pool of its own, so the
     // driver (and the validation layer) is never asked for something that cannot fit.
-    u32 needed[5] = {};
+    u32 needed[kDescriptorKinds] = {};
     for (u32 i = 0; i < binding_count; ++i) {
-        needed[static_cast<usize>(bindings[i].type)] += bindings[i].count;
+        needed[DescriptorKind(bindings[i].type)] += bindings[i].count;
     }
     bool fits_default = true;
     for (u32 n : needed) {
@@ -95,7 +118,7 @@ bool VulkanDevice::AllocateSetLocked(DescriptorPools& pools, bool persistent, Vk
     auto allocate_exact = [&]() {
         for (usize i = 0; i < pools.exact.Size() && !hard_failure; ++i) {
             bool covers = true;
-            for (u32 t = 0; t < 5; ++t) {
+            for (u32 t = 0; t < kDescriptorKinds; ++t) {
                 covers = covers && pools.exact[i].counts[t] >= needed[t];
             }
             if (covers && try_pool(pools.exact[i].pool)) {
@@ -110,7 +133,7 @@ bool VulkanDevice::AllocateSetLocked(DescriptorPools& pools, bool persistent, Vk
             return false;
         }
         ExactPool entry{exact, {}};
-        for (u32 t = 0; t < 5; ++t) {
+        for (u32 t = 0; t < kDescriptorKinds; ++t) {
             entry.counts[t] = needed[t];
         }
         pools.exact.Push(entry);
@@ -265,7 +288,8 @@ BindGroupHandle VulkanDevice::CreateBindGroup(const BindGroupDesc& desc) {
             w.descriptorType = ToVkDescriptorType(bd.type);
             switch (bd.type) {
             case BindingType::UniformBuffer:
-            case BindingType::StorageBuffer: {
+            case BindingType::StorageBuffer:
+            case BindingType::ReadOnlyStorageBuffer: {
                 const bool uniform = bd.type == BindingType::UniformBuffer;
                 VkBuffer vk_buffer = nullptr;
                 BufferDesc bdesc;
@@ -401,7 +425,8 @@ bool VulkanDevice::LookupBindGroup(BindGroupHandle group, BindGroupInfo* info) c
     info->resources_live = true;
     for (u32 i = 0; i < g->ref_count; ++i) {
         const GroupRef& ref = g->refs[i];
-        const bool live = ref.type == BindingType::UniformBuffer || ref.type == BindingType::StorageBuffer ? buffers_.Get(ref.buffer) != nullptr
+        const bool live = ref.type == BindingType::UniformBuffer || ref.type == BindingType::StorageBuffer || ref.type == BindingType::ReadOnlyStorageBuffer
+                              ? buffers_.Get(ref.buffer) != nullptr
                           : ref.type == BindingType::Sampler                                              ? samplers_.Get(ref.sampler) != nullptr
                                                                                                           : textures_.Get(ref.texture) != nullptr;
         if (!live) {

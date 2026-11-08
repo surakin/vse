@@ -71,8 +71,8 @@ bool CheckConvention(const ShaderReflection& r, const char* what, ReflectionErro
             SetMessage(error, "%s: set 0 must be a single uniform buffer at binding 0, but '%s' is not", what, b.name);
             return false;
         }
-        if (b.set == kObjectSet && !(b.binding == 0 && b.type == rhi::BindingType::StorageBuffer)) {
-            SetMessage(error, "%s: set 2 must be a single storage buffer at binding 0, but '%s' is not", what, b.name);
+        if (b.set == kObjectSet && !(b.binding == 0 && b.type == rhi::BindingType::ReadOnlyStorageBuffer)) {
+            SetMessage(error, "%s: set 2 must be a single read-only storage buffer (StructuredBuffer) at binding 0, but '%s' is not", what, b.name);
             return false;
         }
         if (b.set == kMaterialSet && b.type != rhi::BindingType::UniformBuffer && b.type != rhi::BindingType::SampledTexture &&
@@ -215,7 +215,7 @@ bool MaterialSystem::CreateDefaults() {
 
     rhi::BindingDesc object_binding;
     object_binding.binding = 0;
-    object_binding.type = rhi::BindingType::StorageBuffer;
+    object_binding.type = rhi::BindingType::ReadOnlyStorageBuffer;
     object_binding.stages = rhi::ShaderStage::AllGraphics;
     rhi::BindGroupLayoutDesc ol;
     ol.entries = rhi::Span<rhi::BindingDesc>(&object_binding, 1);
@@ -241,10 +241,58 @@ bool MaterialSystem::CreateDefaults() {
             ok = false;
         }
     }
+    if (ok && device_->Caps().object_index_stream) {
+        rhi::BufferDesc bd;
+        bd.size = u64{kMaxObjectIndices} * sizeof(u32);
+        bd.usage = rhi::BufferUsage::Vertex | rhi::BufferUsage::CopyDst;
+        bd.debug_name = "object index stream";
+        object_index_stream_ = device_->CreateBuffer(bd);
+        Vector<u32> indices;
+        indices.Resize(kMaxObjectIndices);
+        for (u32 i = 0; i < kMaxObjectIndices; ++i) indices[i] = i;
+        ok = object_index_stream_.IsValid() && device_->UploadBuffer(object_index_stream_, 0, indices.Data(), bd.size).ok;
+        if (ok) {
+            // Into its read state once; nothing writes it again (the same one-shot submit as a mesh's, joining an open frame).
+            const bool own_frame = !device_->InFrame();
+            if (own_frame) device_->BeginFrame();
+            rhi::CommandList* list = device_->CreateCommandList();
+            rhi::FenceValue fence = 0;
+            if (list != nullptr) {
+                list->Begin();
+                list->Barrier(object_index_stream_, rhi::ResourceState::CopyDst, rhi::ResourceState::VertexBuffer);
+                list->End();
+                rhi::CommandList* lists[] = {list};
+                fence = device_->Submit(lists, 1);
+            }
+            if (own_frame) device_->EndFrame();
+            if (own_frame) device_->WaitIdle();
+            else if (fence != 0) device_->WaitFence(fence, ~0ull);
+            ok = fence != 0;
+        }
+    }
     if (!ok) {
         DestroyDefaults();
     }
     return ok;
+}
+
+bool MaterialSystem::AddObjectIndexAttribute(const rhi::Device& device, rhi::VertexBindingDesc* bindings, u32* binding_count, u32 binding_capacity,
+                                             rhi::VertexAttributeDesc* attributes, u32* attribute_count, u32 attribute_capacity, u32 slot) {
+    if (!device.Caps().object_index_stream) {
+        return true;
+    }
+    if (slot != *binding_count || *binding_count >= binding_capacity || *attribute_count >= attribute_capacity) {
+        return false;
+    }
+    bindings[*binding_count] = rhi::VertexBindingDesc{sizeof(u32), true};
+    ++*binding_count;
+    rhi::VertexAttributeDesc a;
+    a.location = kObjectIndexLocation;
+    a.binding = slot;
+    a.format = rhi::VertexFormat::UInt1;
+    a.offset = 0;
+    attributes[(*attribute_count)++] = a;
+    return true;
 }
 
 void MaterialSystem::DestroyDefaults() {
@@ -258,6 +306,8 @@ void MaterialSystem::DestroyDefaults() {
     frame_layout_ = {};
     if (object_layout_.IsValid()) device_->DestroyBindGroupLayout(object_layout_);
     object_layout_ = {};
+    if (object_index_stream_.IsValid()) device_->DestroyBuffer(object_index_stream_);
+    object_index_stream_ = {};
 }
 
 MaterialSystem::~MaterialSystem() {
@@ -1068,15 +1118,24 @@ u32 MaterialSystem::BindGroupRebuilds(MaterialId id) const { return Get(id).rebu
 rhi::PipelineHandle MaterialSystem::MakePipeline(TemplateSlot& t, const Variant& v, const PipelineTarget& target, const VertexLayoutData& vertex_layout,
                                                  rhi::PrimitiveTopology topology, bool primitive_restart) {
     const char* tname = t.name;
-    rhi::VertexBindingDesc binding;
-    binding.stride = vertex_layout.stride;
+    rhi::VertexBindingDesc bindings[2];
+    bindings[0].stride = vertex_layout.stride;
+    u32 binding_count = 1;
+    rhi::VertexAttributeDesc attributes[rhi::kMaxVertexAttributes];
+    u32 attribute_count = vertex_layout.attribute_count;
+    for (u32 i = 0; i < attribute_count; ++i) attributes[i] = vertex_layout.attributes[i];
+    // On Direct3D 12 the object index arrives as an instance-rate attribute from the stream at slot 1 (DeviceCaps::object_index_stream).
+    if (!AddObjectIndexAttribute(*device_, bindings, &binding_count, 2, attributes, &attribute_count, rhi::kMaxVertexAttributes, ObjectIndexSlot())) {
+        RenderLog(LogVerbosity::Error, "MaterialSystem: template '%s': no room for the object index attribute (%u attributes)", tname, attribute_count);
+        return {};
+    }
     rhi::GraphicsPipelineDesc pd;
     pd.topology = topology;
     pd.primitive_restart = primitive_restart;
     pd.vertex_shader = t.vertex;
     pd.fragment_shader = v.fragment;
-    pd.vertex_bindings = rhi::Span<rhi::VertexBindingDesc>(&binding, 1);
-    pd.vertex_attributes = rhi::Span<rhi::VertexAttributeDesc>(vertex_layout.attributes, vertex_layout.attribute_count);
+    pd.vertex_bindings = rhi::Span<rhi::VertexBindingDesc>(bindings, binding_count);
+    pd.vertex_attributes = rhi::Span<rhi::VertexAttributeDesc>(attributes, attribute_count);
     pd.cull_mode = t.desc.state.cull;
     pd.depth_format = target.depth_format;
     pd.depth_test = t.desc.state.depth_test && target.depth_format != rhi::Format::Undefined;

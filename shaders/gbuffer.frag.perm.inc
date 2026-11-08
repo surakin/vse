@@ -2,6 +2,7 @@
 // compiler: slangc v2026.18.2
 #pragma once
 
+#include "gbuffer.frag.dxil.inc"
 #include "gbuffer.frag.refl.inc"
 #include "gbuffer.frag.spv.inc"
 #include "renderer/shader_permutation.h"
@@ -1400,14 +1401,14 @@ inline constexpr u8 kGbufferFragPerm7Refl[kGbufferFragPerm7ReflByteCount] = {
 inline constexpr const char* kGbufferFragOptions[3] = {"NORMAL_MAP", "ALPHA_TEST", "VERTEX_COLOR", };
 
 inline constexpr renderer::PermutationModule kGbufferFragModules[8] = {
-    {kGbufferFragSpv, kGbufferFragSpvWordCount, kGbufferFragRefl, kGbufferFragReflByteCount},
-    {kGbufferFragPerm1Spv, kGbufferFragPerm1SpvWordCount, kGbufferFragPerm1Refl, kGbufferFragPerm1ReflByteCount},
-    {kGbufferFragPerm2Spv, kGbufferFragPerm2SpvWordCount, kGbufferFragPerm2Refl, kGbufferFragPerm2ReflByteCount},
-    {kGbufferFragPerm3Spv, kGbufferFragPerm3SpvWordCount, kGbufferFragPerm3Refl, kGbufferFragPerm3ReflByteCount},
-    {kGbufferFragPerm4Spv, kGbufferFragPerm4SpvWordCount, kGbufferFragPerm4Refl, kGbufferFragPerm4ReflByteCount},
-    {kGbufferFragPerm5Spv, kGbufferFragPerm5SpvWordCount, kGbufferFragPerm5Refl, kGbufferFragPerm5ReflByteCount},
-    {kGbufferFragPerm6Spv, kGbufferFragPerm6SpvWordCount, kGbufferFragPerm6Refl, kGbufferFragPerm6ReflByteCount},
-    {kGbufferFragPerm7Spv, kGbufferFragPerm7SpvWordCount, kGbufferFragPerm7Refl, kGbufferFragPerm7ReflByteCount},
+    {kGbufferFragSpv, kGbufferFragSpvWordCount, kGbufferFragRefl, kGbufferFragReflByteCount, kGbufferFragDxil, kGbufferFragDxilByteCount},
+    {kGbufferFragPerm1Spv, kGbufferFragPerm1SpvWordCount, kGbufferFragPerm1Refl, kGbufferFragPerm1ReflByteCount, kGbufferFragPerm1Dxil, kGbufferFragPerm1DxilByteCount},
+    {kGbufferFragPerm2Spv, kGbufferFragPerm2SpvWordCount, kGbufferFragPerm2Refl, kGbufferFragPerm2ReflByteCount, kGbufferFragPerm2Dxil, kGbufferFragPerm2DxilByteCount},
+    {kGbufferFragPerm3Spv, kGbufferFragPerm3SpvWordCount, kGbufferFragPerm3Refl, kGbufferFragPerm3ReflByteCount, kGbufferFragPerm3Dxil, kGbufferFragPerm3DxilByteCount},
+    {kGbufferFragPerm4Spv, kGbufferFragPerm4SpvWordCount, kGbufferFragPerm4Refl, kGbufferFragPerm4ReflByteCount, kGbufferFragPerm4Dxil, kGbufferFragPerm4DxilByteCount},
+    {kGbufferFragPerm5Spv, kGbufferFragPerm5SpvWordCount, kGbufferFragPerm5Refl, kGbufferFragPerm5ReflByteCount, kGbufferFragPerm5Dxil, kGbufferFragPerm5DxilByteCount},
+    {kGbufferFragPerm6Spv, kGbufferFragPerm6SpvWordCount, kGbufferFragPerm6Refl, kGbufferFragPerm6ReflByteCount, kGbufferFragPerm6Dxil, kGbufferFragPerm6DxilByteCount},
+    {kGbufferFragPerm7Spv, kGbufferFragPerm7SpvWordCount, kGbufferFragPerm7Refl, kGbufferFragPerm7ReflByteCount, kGbufferFragPerm7Dxil, kGbufferFragPerm7DxilByteCount},
 };
 
 inline constexpr renderer::PermutationEntry kGbufferFragEntries[8] = {

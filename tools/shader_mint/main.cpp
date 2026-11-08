@@ -17,14 +17,18 @@
 //   shader_mint --permute --manifest lit.frag.perm --slangc /usr/bin/slangc --slang-arg ... --work-dir DIR ...
 //               --perm-out lit.frag.perm.inc   (plus the arguments above except --spv/--reflection)
 //
+// DXIL for Direct3D 12 (Phase 13 Day 163) is minted beside it into `<name>.dxil.inc`: the container bytes `<Base>Dxil` and
+// `<Base>DxilByteCount`, `<Base>DxilSpirvFnv` (the FNV-1a hash of the SPIR-V it was minted beside, which a test compares so a
+// shader changed on a machine without dxc is found), and the shader's blob set `<Base>Shader` (rhi::ShaderBlobSet). Plain mode
+// takes the DXIL slangc wrote (`--dxil FILE --dxil-reflection FILE --dxil-out FILE --dxil-compiler TEXT`); permute mode runs
+// slangc for DXIL too (`--dxil-arg ARG`... plus `--dxil-out` and `--dxil-compiler`) and adds every module's DXIL. The DXIL build's
+// reflection must follow the register rule (reflect_json.h, CheckD3D12Registers) and the container must be signed by the
+// validator. Without the DXIL options nothing DXIL is written and the committed `.dxil.inc` stays.
+//
 // It fails (non-zero exit, message on stderr) if the reflection cannot be built or disagrees with the SPIR-V. It is a
 // dev-time tool (PLAN.md assumptions #18 and #19): the generated files are committed, so building the engine never
 // needs it, slangc or the JSON library.
 
-#include <spawn.h>
-#include <sys/wait.h>
-
-#include <cerrno>
 #include <cstdio>
 #include <cstring>
 
@@ -33,6 +37,7 @@
 #include "io/file_system.h"
 #include "permutations.h"
 #include "reflect_json.h"
+#include "run_process.h"
 #include "renderer/shader_reflection.h"
 #include "types.h"
 #include "debug/failure_hooks.h"
@@ -40,18 +45,19 @@
 using namespace engine_placeholder;
 using shader_mint::Appendf;
 using shader_mint::MakeText;
+using shader_mint::RunProcess;
 using shader_mint::Text;
-
-extern char** environ;
 
 namespace {
 
 int Usage() {
     std::fputs("usage: shader_mint --name IDENT --source FILE --compiler TEXT --spv FILE --reflection FILE "
                "--spv-out FILE --refl-out FILE\n"
+               "                   [--dxil FILE --dxil-reflection FILE --dxil-out FILE --dxil-compiler TEXT]\n"
                "       shader_mint --permute --name IDENT --source LABEL --source-path FILE --manifest FILE --compiler TEXT\n"
                "                   --slangc PATH [--slang-arg ARG]... [--spirv-val PATH] --work-dir DIR\n"
-               "                   --spv-out FILE --refl-out FILE --perm-out FILE\n",
+               "                   --spv-out FILE --refl-out FILE --perm-out FILE\n"
+               "                   [--dxil-arg ARG... --dxil-out FILE --dxil-compiler TEXT]\n",
                stderr);
     return 2;
 }
@@ -140,6 +146,7 @@ struct Minted {
     Vector<u32> words;
     renderer::ShaderReflection reflection;
     Vector<u8> blob;
+    Vector<u8> dxil; // empty when no DXIL was minted
 };
 
 // Reads slangc's SPIR-V and reflection JSON, cross-checks them and serializes the reflection (parsing it back as a
@@ -195,37 +202,85 @@ bool MintModule(const char* spv_path, const char* json_path, const char* source,
     return true;
 }
 
-// Runs `args[0]` (looked up on PATH if it has no slash) with the given arguments and waits. Returns true if it exited
-// with status 0; otherwise prints how it failed.
-bool RunProcess(const Vector<Text>& args) {
-    Vector<char*> argv;
-    for (usize i = 0; i < args.Size(); ++i) {
-        argv.Push(const_cast<char*>(args[i].CStr()));
+// FNV-1a, 64 bits, over the SPIR-V as little-endian bytes: recorded beside the DXIL so a test can tell that the two were
+// minted from the same source.
+u64 SpirvFnv(const Vector<u32>& words) {
+    u64 hash = 0xcbf29ce484222325ull;
+    for (usize i = 0; i < words.Size(); ++i) {
+        for (u32 b = 0; b < 4; ++b) {
+            hash ^= static_cast<u64>((words[i] >> (8 * b)) & 0xffu);
+            hash *= 0x100000001b3ull;
+        }
     }
-    argv.Push(nullptr);
-    pid_t pid = 0;
-    if (posix_spawnp(&pid, argv[0], nullptr, nullptr, argv.Data(), environ) != 0) {
-        std::fprintf(stderr, "shader_mint: cannot run %s\n", argv[0]);
+    return hash;
+}
+
+// Reads the DXIL slangc wrote, checks the container and the register rule of its reflection. Prints why and returns false
+// on any problem.
+bool ReadDxil(const char* dxil_path, const char* json_path, const renderer::ShaderReflection& reflection, const char* source, Vector<u8>* out) {
+    Vector<byte> bytes;
+    Vector<byte> json_bytes;
+    if (!ReadAll(dxil_path, &bytes) || !ReadAll(json_path, &json_bytes)) {
+        std::fprintf(stderr, "shader_mint: cannot read %s or %s\n", dxil_path, json_path);
         return false;
     }
-    int status = 0;
-    pid_t waited;
-    do {
-        waited = waitpid(pid, &status, 0);
-    } while (waited < 0 && errno == EINTR);
-    if (waited < 0) {
-        std::fprintf(stderr, "shader_mint: waiting for %s failed\n", argv[0]);
+    // A DXBC container: "DXBC", a 16-byte digest the validator writes (all zero when unsigned), a version, the total size.
+    if (bytes.Size() < 32 || bytes[0] != 'D' || bytes[1] != 'X' || bytes[2] != 'B' || bytes[3] != 'C') {
+        std::fprintf(stderr, "shader_mint: %s: %s is not a DXIL container\n", source, dxil_path);
         return false;
     }
-    if (WIFSIGNALED(status)) {
-        std::fprintf(stderr, "shader_mint: %s was killed by signal %d\n", argv[0], WTERMSIG(status));
+    const u32 recorded = static_cast<u32>(bytes[24]) | (static_cast<u32>(bytes[25]) << 8) | (static_cast<u32>(bytes[26]) << 16) |
+                         (static_cast<u32>(bytes[27]) << 24);
+    if (recorded != bytes.Size()) {
+        std::fprintf(stderr, "shader_mint: %s: %s records %u bytes but has %zu\n", source, dxil_path, recorded, bytes.Size());
         return false;
     }
-    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-        std::fprintf(stderr, "shader_mint: %s exited with status %d\n", argv[0], WIFEXITED(status) ? WEXITSTATUS(status) : -1);
+    bool signed_container = false;
+    for (usize i = 4; i < 20; ++i) {
+        signed_container = signed_container || bytes[i] != 0;
+    }
+    if (!signed_container) {
+        std::fprintf(stderr, "shader_mint: %s: the DXIL is not signed by the validator (slangc needs dxil.dll beside dxcompiler.dll)\n", source);
         return false;
+    }
+    Text error = MakeText();
+    if (!shader_mint::CheckD3D12Registers(reflection, ToStringView(json_bytes), &error)) {
+        std::fprintf(stderr, "shader_mint: %s: %s\n", source, error.CStr());
+        return false;
+    }
+    out->Resize(bytes.Size());
+    for (usize i = 0; i < bytes.Size(); ++i) {
+        (*out)[i] = bytes[i];
     }
     return true;
+}
+
+// The `.dxil.inc` text: the base module's DXIL, each extra module's DXIL (permuted shaders; `module_dxil[m]` with the SPIR-V
+// `module_words[m]` it was minted beside, module 0 being the base), and the base module's blob set.
+Text DxilText(StringView base, StringView shader_file, const char* source, const char* compiler, const Vector<const Vector<u32>*>& module_words,
+              const Vector<const Vector<u8>*>& module_dxil) {
+    const Text b = MakeText(base);
+    const Text file = MakeText(shader_file);
+    Text text = MakeText();
+    Appendf(&text, "// Generated by tools/shader_mint from %s. Do not edit; run the `shaders` target on a machine with dxc to regenerate.\n", source);
+    Appendf(&text, "// compiler: %s\n", compiler);
+    Appendf(&text, "#pragma once\n\n#include \"%s.spv.inc\"\n#include \"rhi/desc.h\"\n#include \"types.h\"\n\nnamespace engine_placeholder::shaders {\n\n",
+            file.CStr());
+    for (usize m = 0; m < module_dxil.Size(); ++m) {
+        Text name = MakeText(base);
+        if (m != 0) {
+            Appendf(&name, "Perm%zu", m);
+        }
+        name.Append("Dxil");
+        shader_mint::AppendByteArray(&text, name.View(), *module_dxil[m]);
+        Appendf(&text, "\n// The FNV-1a hash of the SPIR-V this DXIL was minted beside: a test compares it with the SPIR-V that is committed now.\n");
+        Appendf(&text, "inline constexpr u64 %sSpirvFnv = 0x%016llxull;\n\n", name.CStr(), static_cast<unsigned long long>(SpirvFnv(*module_words[m])));
+    }
+    Appendf(&text, "// The shader in every format it was minted in.\n");
+    Appendf(&text, "inline constexpr rhi::ShaderBlobSet %sShader = {\"%s\", rhi::SpirvBlob(%sSpv, %sSpvWordCount), rhi::DxilBlob(%sDxil, %sDxilByteCount)};\n",
+            b.CStr(), file.CStr(), b.CStr(), b.CStr(), b.CStr(), b.CStr());
+    text.Append("\n} // namespace engine_placeholder::shaders\n");
+    return text;
 }
 
 Text SpvText(StringView name, const char* source, const char* compiler, const Vector<u32>& words) {
@@ -294,7 +349,12 @@ int main(int argc, char** argv) {
     const char* slangc = nullptr;
     const char* spirv_val = nullptr;
     const char* work_dir = nullptr;
+    const char* dxil_path = nullptr;
+    const char* dxil_json_path = nullptr;
+    const char* dxil_out = nullptr;
+    const char* dxil_compiler = nullptr;
     Vector<Text> slang_args;
+    Vector<Text> dxil_args;
     bool permute = false;
     for (int i = 1; i < argc; ++i) {
         const bool has_value = i + 1 < argc;
@@ -328,6 +388,16 @@ int main(int argc, char** argv) {
             spirv_val = argv[++i];
         } else if (std::strcmp(argv[i], "--work-dir") == 0 && has_value) {
             work_dir = argv[++i];
+        } else if (std::strcmp(argv[i], "--dxil") == 0 && has_value) {
+            dxil_path = argv[++i];
+        } else if (std::strcmp(argv[i], "--dxil-reflection") == 0 && has_value) {
+            dxil_json_path = argv[++i];
+        } else if (std::strcmp(argv[i], "--dxil-out") == 0 && has_value) {
+            dxil_out = argv[++i];
+        } else if (std::strcmp(argv[i], "--dxil-compiler") == 0 && has_value) {
+            dxil_compiler = argv[++i];
+        } else if (std::strcmp(argv[i], "--dxil-arg") == 0 && has_value) {
+            dxil_args.Push(MakeText(StringView(argv[++i])));
         } else {
             return Usage();
         }
@@ -340,7 +410,16 @@ int main(int argc, char** argv) {
                 : (spv_path == nullptr || json_path == nullptr || perm_out != nullptr || manifest_path != nullptr)) {
         return Usage();
     }
+    // DXIL: all of its options or none (plain mode: the files slangc wrote; permute mode: slangc's DXIL arguments).
+    const bool want_dxil = permute ? !dxil_args.Empty() : dxil_path != nullptr;
+    if (want_dxil ? (dxil_out == nullptr || dxil_compiler == nullptr || (!permute && dxil_json_path == nullptr) || (permute && dxil_path != nullptr))
+                  : (dxil_out != nullptr || dxil_json_path != nullptr || dxil_compiler != nullptr)) {
+        return Usage();
+    }
     const Text base = MakeText(StringView(name));
+    const StringView label(source);
+    const usize slang_at = label.EndsWith(".slang") ? label.Length() - 6 : label.Length(); // drop only a trailing ".slang"
+    const Text shader_file = MakeText(label.Substring(0, slang_at));
 
     Minted plain;
     Vector<u32> keys;
@@ -348,6 +427,9 @@ int main(int argc, char** argv) {
     Vector<Minted> minted_keys; // permute mode: one per manifest key, in key order
     if (!permute) {
         if (!MintModule(spv_path, json_path, source, &plain)) {
+            return 1;
+        }
+        if (want_dxil && !ReadDxil(dxil_path, dxil_json_path, plain.reflection, source, &plain.dxil)) {
             return 1;
         }
     } else {
@@ -408,11 +490,39 @@ int main(int argc, char** argv) {
                 std::fprintf(stderr, "shader_mint: (while minting key %s)\n", shader_mint::DescribeKey(options, key).CStr());
                 return 1;
             }
+            if (want_dxil) {
+                Vector<Text> dxil_command;
+                dxil_command.Push(MakeText(StringView(slangc)));
+                dxil_command.Push(MakeText(StringView(source_path)));
+                for (usize s2 = 0; s2 < dxil_args.Size(); ++s2) {
+                    dxil_command.Push(MakeText(dxil_args[s2].View()));
+                }
+                for (usize o = 0; o < options.Size(); ++o) {
+                    if ((key >> o) & 1u) {
+                        dxil_command.Push(Join("-D", options[o].View(), "=1"));
+                    }
+                }
+                const Text dxil_file = Join(stem.View(), ".dxil");
+                const Text dxil_json = Join(stem.View(), ".dxil.json");
+                dxil_command.Push(MakeText("-o"));
+                dxil_command.Push(MakeText(dxil_file.View()));
+                dxil_command.Push(MakeText("-reflection-json"));
+                dxil_command.Push(MakeText(dxil_json.View()));
+                if (!RunProcess(dxil_command)) {
+                    std::fprintf(stderr, "shader_mint: %s: slangc failed to build DXIL for key %s\n", source, shader_mint::DescribeKey(options, key).CStr());
+                    return 1;
+                }
+                if (!ReadDxil(dxil_file.CStr(), dxil_json.CStr(), m.reflection, source, &m.dxil)) {
+                    std::fprintf(stderr, "shader_mint: (while minting the DXIL of key %s)\n", shader_mint::DescribeKey(options, key).CStr());
+                    return 1;
+                }
+            }
             minted_keys.Push(static_cast<Minted&&>(m));
         }
         // keys are sorted and the manifest requires key 0, so this is the base module
         Assign(plain.words, Span<const u32>(minted_keys[0].words));
         Assign(plain.blob, Span<const u8>(minted_keys[0].blob));
+        Assign(plain.dxil, Span<const u8>(minted_keys[0].dxil));
         plain.reflection = minted_keys[0].reflection;
     }
 
@@ -422,15 +532,22 @@ int main(int argc, char** argv) {
         return 1;
     }
     if (!permute) {
-        const OutputFile files[] = {{spv_out, &spv_text}, {refl_out, &refl_text}};
-        if (!WriteFiles(files, 2)) {
-            std::fprintf(stderr, "shader_mint: failed writing %s or %s\n", spv_out, refl_out);
+        Vector<const Vector<u32>*> module_words;
+        Vector<const Vector<u8>*> module_dxil;
+        module_words.Push(&plain.words);
+        module_dxil.Push(&plain.dxil);
+        const Text dxil_text = want_dxil ? DxilText(base.View(), shader_file.View(), source, dxil_compiler, module_words, module_dxil) : MakeText();
+        const OutputFile files[] = {{spv_out, &spv_text}, {refl_out, &refl_text}, {dxil_out, &dxil_text}};
+        if (!WriteFiles(files, want_dxil ? 3 : 2)) {
+            std::fprintf(stderr, "shader_mint: failed writing %s, %s or the DXIL\n", spv_out, refl_out);
             return 1;
         }
         return 0;
     }
 
     // Dedupe: modules with identical words and reflection share one table entry.
+    // The DXIL is not part of the comparison, so a machine without dxc dedupes exactly as one with it and writes the same table: two
+    // keys whose SPIR-V and reflection are identical compile from equivalent code, and the module keeps its first key's DXIL.
     Vector<shader_mint::BuiltModule> per_key;
     for (usize i = 0; i < minted_keys.Size(); ++i) {
         shader_mint::BuiltModule built;
@@ -441,13 +558,22 @@ int main(int argc, char** argv) {
     Vector<shader_mint::BuiltModule> modules;
     Vector<u32> key_module;
     shader_mint::DedupeModules(per_key, &modules, &key_module);
-    const StringView label(source);
-    const usize slang_at = label.EndsWith(".slang") ? label.Length() - 6 : label.Length(); // drop only a trailing ".slang"
-    const Text shader_file = MakeText(label.Substring(0, slang_at));
     const Text perm_text = shader_mint::EmitPermutationInc(base.View(), shader_file.View(), label, StringView(compiler), options, keys, key_module, modules);
-    const OutputFile files[] = {{spv_out, &spv_text}, {refl_out, &refl_text}, {perm_out, &perm_text}};
-    if (!WriteFiles(files, 3)) {
-        std::fprintf(stderr, "shader_mint: failed writing %s, %s or %s\n", spv_out, refl_out, perm_out);
+    Text dxil_text = MakeText();
+    if (want_dxil) {
+        Vector<const Vector<u32>*> module_words;
+        Vector<const Vector<u8>*> module_dxil;
+        for (usize m = 0; m < modules.Size(); ++m) {
+            usize first = 0;
+            while (key_module[first] != m) ++first; // every module has a key: DedupeModules made it from one
+            module_words.Push(&modules[m].words);
+            module_dxil.Push(&minted_keys[first].dxil);
+        }
+        dxil_text = DxilText(base.View(), shader_file.View(), source, dxil_compiler, module_words, module_dxil);
+    }
+    const OutputFile files[] = {{spv_out, &spv_text}, {refl_out, &refl_text}, {perm_out, &perm_text}, {dxil_out, &dxil_text}};
+    if (!WriteFiles(files, want_dxil ? 4 : 3)) {
+        std::fprintf(stderr, "shader_mint: failed writing %s, %s, %s or the DXIL\n", spv_out, refl_out, perm_out);
         return 1;
     }
     return 0;

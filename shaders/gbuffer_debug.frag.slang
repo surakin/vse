@@ -15,11 +15,11 @@
 
 #include "gbuffer_common.slang"
 
-[[vk::binding(0, 0)]] Texture2D<float4> albedo_tex;
-[[vk::binding(1, 0)]] Texture2D<float4> normal_tex;
-[[vk::binding(2, 0)]] Texture2D<float4> material_tex;
-[[vk::binding(3, 0)]] Texture2D<float4> depth_tex;
-[[vk::binding(4, 0)]] SamplerState point_sampler;
+[[vk::binding(0, 0)]] Texture2D<float4> albedo_tex : register(t0, space0);
+[[vk::binding(1, 0)]] Texture2D<float4> normal_tex : register(t1, space0);
+[[vk::binding(2, 0)]] Texture2D<float4> material_tex : register(t2, space0);
+[[vk::binding(3, 0)]] Texture2D<float4> depth_tex : register(t3, space0);
+[[vk::binding(4, 0)]] SamplerState point_sampler : register(s4, space0);
 
 struct Push {
     float4x4 inverse_view_projection;
@@ -28,7 +28,7 @@ struct Push {
     float far_plane;
     uint pad;
 };
-[[vk::push_constant]] ConstantBuffer<Push> push;
+[[vk::push_constant]] ConstantBuffer<Push> push : register(b0, space15);
 
 struct FragmentInput {
     [[vk::location(0)]] float2 uv : TEXCOORD0;

@@ -327,6 +327,10 @@ enum class BindingType : u8 {
     SampledTexture,    ///< A texture read through a sampler.
     Sampler,           ///< A sampler.
     StorageTexture,    ///< A texture read/written as a storage image.
+    /// A storage buffer range the shaders only read (`StructuredBuffer` in Slang): a storage buffer to Vulkan, a shader
+    /// resource view (not an unordered access view) to Direct3D 12, so the buffer is in `ShaderRead` state when bound.
+    /// Last before `Count` so the values of the older types, which minted reflection stores, do not change.
+    ReadOnlyStorageBuffer,
     Count,             ///< Number of binding types; not a type.
 };
 

@@ -2,6 +2,7 @@
 // compiler: slangc v2026.18.2
 #pragma once
 
+#include "gbuffer.vert.dxil.inc"
 #include "gbuffer.vert.refl.inc"
 #include "gbuffer.vert.spv.inc"
 #include "renderer/shader_permutation.h"
@@ -149,7 +150,7 @@ inline constexpr u8 kGbufferVertPerm1Refl[kGbufferVertPerm1ReflByteCount] = {
     110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0,
     0, 5, 102, 114, 97, 109, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 7, 111, 98, 106,
-    101, 99, 116, 115, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
+    101, 99, 116, 115, 2, 0, 0, 0, 0, 0, 0, 0, 5, 1, 0, 0,
     0, 1, 0, 0, 0, 255, 255, 255, 255, 1, 0, 0, 0, 9, 70, 114,
     97, 109, 101, 68, 97, 116, 97, 48, 1, 0, 0, 7, 0, 0, 0, 4,
     118, 105, 101, 119, 0, 0, 0, 0, 64, 0, 0, 0, 2, 0, 4, 4,
@@ -176,8 +177,8 @@ inline constexpr u8 kGbufferVertPerm1Refl[kGbufferVertPerm1ReflByteCount] = {
 inline constexpr const char* kGbufferVertOptions[1] = {"VERTEX_COLOR", };
 
 inline constexpr renderer::PermutationModule kGbufferVertModules[2] = {
-    {kGbufferVertSpv, kGbufferVertSpvWordCount, kGbufferVertRefl, kGbufferVertReflByteCount},
-    {kGbufferVertPerm1Spv, kGbufferVertPerm1SpvWordCount, kGbufferVertPerm1Refl, kGbufferVertPerm1ReflByteCount},
+    {kGbufferVertSpv, kGbufferVertSpvWordCount, kGbufferVertRefl, kGbufferVertReflByteCount, kGbufferVertDxil, kGbufferVertDxilByteCount},
+    {kGbufferVertPerm1Spv, kGbufferVertPerm1SpvWordCount, kGbufferVertPerm1Refl, kGbufferVertPerm1ReflByteCount, kGbufferVertPerm1Dxil, kGbufferVertPerm1DxilByteCount},
 };
 
 inline constexpr renderer::PermutationEntry kGbufferVertEntries[2] = {

@@ -148,6 +148,9 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tests/rhi)  # Day 160: the Phase 4 RHI suite through Vulkan
   add_subdirectory(tests/renderer)  # Day 161
   add_subdirectory(game)  # hello_window (Day 158), the demos and the benchmarks (Day 161)
+  add_subdirectory(tools/shader_mint)  # Day 163: the shader minter, with DXIL
+  add_subdirectory(tests/shader_mint)
+  add_subdirectory(shaders)  # the `shaders` target and shaders_check / shaders_portability, when slangc is found
   # The source gates are CMake scripts over the tree, the same on every platform (Day 150).
   foreach(gate rhi_boundary_check raw_new_check file_access_check std_container_check settings_fixtures_check config_access_check
                signal_safety_check platform_neutral_check module_deps_check)
@@ -156,8 +159,8 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(tests/phase_labels)
   add_subdirectory(tests/test_phase_script)
   message(STATUS "Windows (Phase 13): building the foundation, jobs, the platform layer, the RHI with its Vulkan backend, the renderer, "
-                 "hello_window, the demos and the benchmarks, docgen, crash_extract, the gates and their tests. Not yet ported, so not configured: "
-                 "DX12 (Days 162-172) and shader_mint (Day 163). See plans/phase-13-windows-dx12.md.")
+                 "hello_window, the demos and the benchmarks, docgen, crash_extract, shader_mint and the shaders, the gates and their tests. Not yet "
+                 "ported, so not configured: DX12 (Days 164-172). See plans/phase-13-windows-dx12.md.")
   return()
 endif()
 

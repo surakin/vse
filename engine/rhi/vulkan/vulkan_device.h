@@ -58,6 +58,9 @@ public:
 
     /// How many frames of command pools exist; a pool is reset only after the frame that used it has finished.
     static constexpr usize kFramePools = 3;
+    /// How many Vulkan descriptor types the descriptor pools size (uniform buffer, storage buffer, sampled image, sampler, storage
+    /// image); the RHI's read-only storage buffer counts as a storage buffer.
+    static constexpr u32 kDescriptorKinds = 5;
     /// How many threads can hold a command-pool slot at once; a thread releases its slot when it exits.
     static constexpr usize kThreadSlots = jobs::kMaxParticipants + 64;
 
@@ -477,7 +480,7 @@ private:
     // A pool made for one set of a layout too large for the default sizing; `counts` is what it can hold per type.
     struct ExactPool {
         VkDescriptorPool pool;
-        u32 counts[5];
+        u32 counts[kDescriptorKinds];
     };
     struct DescriptorPools {
         Vector<VkDescriptorPool> pools;

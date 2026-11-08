@@ -270,6 +270,7 @@ private:
     Vector<SortEntry> sort_scratch_;
     rhi::BindGroupHandle frame_group_;
     rhi::BindGroupHandle object_group_;
+    rhi::BufferHandle object_index_stream_; // MaterialSystem::ObjectIndexStream of this frame; invalid on Vulkan
     GBufferTargets targets_;
     rhi::TextureUsage extra_usage_ = rhi::TextureUsage::None;
     u32 width_ = 0;

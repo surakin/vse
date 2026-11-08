@@ -157,7 +157,7 @@ struct DeferredRig {
     renderer_demo::DemoScene scene;
     Camera camera;
 
-    bool Create(u32 lose_at_frame, const char* asset_dir, const rhi::NullDeviceOptions* base = nullptr) {
+    bool Create(u32 lose_at_frame, const char* asset_dir, const rhi::NullDeviceOptions* base = nullptr, u32 max_objects = 128) {
         rhi::NullDeviceOptions options = base != nullptr ? *base : rhi::NullDeviceOptions{};
         options.lose_device_at_frame = lose_at_frame;
         device = rhi::CreateNullDevice(options);
@@ -169,7 +169,7 @@ struct DeferredRig {
         target = device->CreateTexture(td);
         renderer_demo::FrameSetup fs;
         fs.device = device.Get();
-        fs.max_objects = 128;
+        fs.max_objects = max_objects;
         fs.max_lights = 32;
         if (!frame.Create(fs)) return false;
         renderer_demo::SceneOptions so;
@@ -223,6 +223,55 @@ TEST_CASE("Losing the device in the deferred pipeline's frames ends each frame a
         CHECK((status == FrameStatus::DeviceLost) == lost);
     }
     CHECK(lost);
+    CHECK(rig.TearDown());
+}
+
+TEST_CASE("The deferred frame renders on a device shaped like Direct3D 12: DXIL and the object index stream", "[renderer][fault][dxil]") {
+    // The null device takes the format and the index delivery its caps name, as the DX12 backend will (Phase 13 Day 163): every
+    // shader module is then the DXIL one, every material and light-volume pipeline declares the index attribute, and the passes
+    // bind the stream; a missing binding or a SPIR-V module would be a contract error the device counts.
+    rhi::NullDeviceOptions options;
+    options.caps.shader_format = rhi::ShaderFormat::Dxil;
+    options.caps.object_index_stream = true;
+    DeferredRig rig;
+    REQUIRE(rig.Create(0, nullptr, &options));
+    CHECK(rig.frame.Materials()->ObjectIndexStream().IsValid());
+    for (int i = 0; i < 3; ++i) {
+        CHECK(rig.Render() == FrameStatus::Ok);
+    }
+    CHECK(rig.frame.LastGBufferOk());
+    CHECK(rig.device->ErrorCount() == 0);
+    CHECK(rig.TearDown());
+}
+
+TEST_CASE("Only a device that reads the object index stream limits a frame's objects to the stream's size", "[renderer][fault][dxil]") {
+    // More objects per frame than the stream holds: fine on Vulkan, which reads gl_InstanceIndex; refused on a Direct3D 12-shaped
+    // device, where draw i would read past the stream.
+    DeferredRig vulkan_shaped;
+    REQUIRE(vulkan_shaped.Create(0, nullptr, nullptr, kMaxObjectIndices + 1));
+    CHECK(vulkan_shaped.Render() == FrameStatus::Ok);
+    CHECK(vulkan_shaped.frame.LastGBufferOk());
+    CHECK(vulkan_shaped.TearDown());
+
+    rhi::NullDeviceOptions options;
+    options.caps.shader_format = rhi::ShaderFormat::Dxil;
+    options.caps.object_index_stream = true;
+    DeferredRig d3d12_shaped;
+    REQUIRE(d3d12_shaped.Create(0, nullptr, &options, kMaxObjectIndices + 1));
+    const bool was = LogRender.Enabled();
+    LogRender.SetEnabled(false);
+    d3d12_shaped.Render(); // the frame completes; the G-buffer pass refuses to draw and says why
+    LogRender.SetEnabled(was);
+    CHECK_FALSE(d3d12_shaped.frame.LastGBufferOk());
+    CHECK(d3d12_shaped.TearDown());
+}
+
+TEST_CASE("On a Vulkan-shaped device the material system makes no object index stream", "[renderer][fault]") {
+    DeferredRig rig;
+    REQUIRE(rig.Create(0, nullptr));
+    CHECK_FALSE(rig.frame.Materials()->ObjectIndexStream().IsValid());
+    CHECK(rig.Render() == FrameStatus::Ok);
+    CHECK(rig.device->ErrorCount() == 0);
     CHECK(rig.TearDown());
 }
 

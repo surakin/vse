@@ -25,9 +25,9 @@ struct Params {
     float4 ambient;
 };
 
-[[vk::binding(0, 0)]] ConstantBuffer<Params> params;
-[[vk::binding(1, 0)]] Texture2D tex;
-[[vk::binding(2, 0)]] SamplerState smp;
+[[vk::binding(0, 0)]] ConstantBuffer<Params> params : register(b0, space0);
+[[vk::binding(1, 0)]] Texture2D tex : register(t1, space0);
+[[vk::binding(2, 0)]] SamplerState smp : register(s2, space0);
 
 struct FragmentInput {
     [[vk::location(0)]] float3 normal : NORMAL;

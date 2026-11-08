@@ -273,7 +273,27 @@ Code that creates shaders names each shader once and picks the device's blob. [[
 format it was minted in, and [[rhi::CreateShaderFromSet]] creates the module from the blob of the device's format, failing
 with the shader's name when that format was not minted. The renderer's [[renderer::PermutationModule]] does the same for
 permuted and material shaders (`Blob(format)`), with one reflection blob for every format, since all formats come from the
-same Slang source. `*.spv.inc` files are minted today; Phase 13 Day 163 adds DXIL (`*.dxil.inc`) from the same sources.
+same Slang source.
+
+## DXIL
+
+Every shader and every permutation key is also minted to DXIL for Direct3D 12 (Phase 13 Day 163): `slangc -target dxil -profile
+sm_6_0 -DENGINE_TARGET_D3D12=1`, signed by the Windows SDK's `dxil.dll`, committed as `shaders/<name>.dxil.inc` beside the
+`.spv.inc`. That file also defines the shader's blob set, `shaders::k<Base>Shader`, which is what code passes to
+[[rhi::CreateShaderFromSet]]:
+
+```cpp
+#include "lighting.frag.dxil.inc" // the DXIL, the SPIR-V it includes, and kLightingFragShader
+
+rhi::ShaderHandle fragment = rhi::CreateShaderFromSet(*device, shaders::kLightingFragShader, rhi::ShaderStage::Fragment);
+```
+
+One source serves both targets through `shaders/target_common.slang` (the clip-space flip, the vertex index, the object index
+stream) and two rules `shader_mint` checks: a vertex input at location N has the semantic `TEXCOORD<N>`, and a resource at
+`[[vk::binding(b, g)]]` is declared with `register(<class><b>, space<g>)` (push constants `register(b0, space15)`). The details,
+and how the build finds `slangc` and the SDK's `dxcompiler.dll`, are in `shaders/README.md` ("Targets"). DXIL is minted on
+Windows only (the Linux `dxc` aborts); `shader_dxil_test` checks on every machine that each DXIL module was minted beside the
+committed SPIR-V.
 
 ```cpp compile standalone run
 #include <cstdio>

@@ -2,6 +2,7 @@
 // compiler: slangc v2026.18.2
 #pragma once
 
+#include "material_test.frag.dxil.inc"
 #include "material_test.frag.refl.inc"
 #include "material_test.frag.spv.inc"
 #include "renderer/shader_permutation.h"
@@ -152,8 +153,8 @@ inline constexpr u8 kMaterialTestFragPerm1Refl[kMaterialTestFragPerm1ReflByteCou
 inline constexpr const char* kMaterialTestFragOptions[1] = {"TINT", };
 
 inline constexpr renderer::PermutationModule kMaterialTestFragModules[2] = {
-    {kMaterialTestFragSpv, kMaterialTestFragSpvWordCount, kMaterialTestFragRefl, kMaterialTestFragReflByteCount},
-    {kMaterialTestFragPerm1Spv, kMaterialTestFragPerm1SpvWordCount, kMaterialTestFragPerm1Refl, kMaterialTestFragPerm1ReflByteCount},
+    {kMaterialTestFragSpv, kMaterialTestFragSpvWordCount, kMaterialTestFragRefl, kMaterialTestFragReflByteCount, kMaterialTestFragDxil, kMaterialTestFragDxilByteCount},
+    {kMaterialTestFragPerm1Spv, kMaterialTestFragPerm1SpvWordCount, kMaterialTestFragPerm1Refl, kMaterialTestFragPerm1ReflByteCount, kMaterialTestFragPerm1Dxil, kMaterialTestFragPerm1DxilByteCount},
 };
 
 inline constexpr renderer::PermutationEntry kMaterialTestFragEntries[2] = {

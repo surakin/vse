@@ -1,11 +1,15 @@
 # Recompiles every shader and compares the result with the committed .spv.inc file. Run through ctest as
-# `shaders_check`; arguments: SLANGC, SPIRV_VAL (optional), SHADER_MINT, SHADER_DIR, WORK_DIR, SHADERS (a ;-list).
+# `shaders_check`; arguments: SLANGC, SPIRV_VAL (optional), SHADER_MINT, SHADER_DIR, WORK_DIR, SHADERS (a ;-list), and for
+# DXIL (Phase 13 Day 163) DXIL_DIR and DXIL_COMPILER (both empty on a machine without dxc: the .dxil.inc files are then not
+# compared, and shader_dxil_test still checks that each was minted beside the committed SPIR-V).
 # A shader whose recorded compiler version differs from the installed one is reported as a note and not compared; the
 # test prints "SKIP:" (its SKIP_REGULAR_EXPRESSION) only if no shader could be compared at all.
 include(${SHADER_DIR}/names.cmake)
 execute_process(COMMAND ${SLANGC} -v OUTPUT_VARIABLE version_text ERROR_VARIABLE version_err
                 OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE)
 string(REGEX REPLACE "\n.*" "" slangc_version "${version_text}${version_err}")
+string(REGEX REPLACE "^v" "" slangc_version "${slangc_version}") # as the shaders CMakeLists.txt records it: "v<version>" everywhere
+set(slangc_version "v${slangc_version}")
 file(MAKE_DIRECTORY ${WORK_DIR})
 set(checked 0)
 foreach(shader ${SHADERS})
@@ -22,6 +26,20 @@ foreach(shader ${SHADERS})
   shader_stage(${shader} stage)
   slang_compile_args(${stage} slang_args)
   shader_base_symbol(${shader} symbol)
+  set(committed_dxil ${SHADER_DIR}/${shader}.dxil.inc)
+  set(check_dxil FALSE)
+  if(DXIL_DIR)
+    if(NOT EXISTS ${committed_dxil})
+      message(FATAL_ERROR "${shader}.dxil.inc is missing: run `cmake --build build --target shaders` on a machine with dxc")
+    endif()
+    file(STRINGS ${committed_dxil} recorded_dxil REGEX "^// compiler: ")
+    if(recorded_dxil STREQUAL "// compiler: ${DXIL_COMPILER}")
+      set(check_dxil TRUE)
+      slang_dxil_args(${stage} "${DXIL_DIR}" dxil_args)
+    else()
+      message("note: ${shader}: DXIL committed with '${recorded_dxil}', installed is '${DXIL_COMPILER}'; its DXIL not checked")
+    endif()
+  endif()
   set(manifest ${SHADER_DIR}/${shader}.perm)
   if(EXISTS ${manifest})
     set(perm_args "")
@@ -30,6 +48,12 @@ foreach(shader ${SHADERS})
     endforeach()
     if(SPIRV_VAL)
       list(APPEND perm_args --spirv-val ${SPIRV_VAL})
+    endif()
+    if(check_dxil)
+      foreach(arg ${dxil_args})
+        list(APPEND perm_args --dxil-arg ${arg})
+      endforeach()
+      list(APPEND perm_args --dxil-out ${WORK_DIR}/${shader}.dxil.inc --dxil-compiler "${DXIL_COMPILER}")
     endif()
     execute_process(COMMAND ${SHADER_MINT} --permute --name ${symbol} --source ${shader}.slang
                             --source-path ${SHADER_DIR}/${shader}.slang --manifest ${manifest}
@@ -60,9 +84,19 @@ foreach(shader ${SHADERS})
         message(FATAL_ERROR "spirv-val rejected ${shader}: ${err}")
       endif()
     endif()
+    set(dxil_mint_args "")
+    if(check_dxil)
+      execute_process(COMMAND ${SLANGC} ${SHADER_DIR}/${shader}.slang ${dxil_args} -o ${WORK_DIR}/${shader}.dxil
+                              -reflection-json ${WORK_DIR}/${shader}.dxil.json RESULT_VARIABLE rc ERROR_VARIABLE err)
+      if(NOT rc EQUAL 0)
+        message(FATAL_ERROR "slangc failed to build the DXIL of ${shader}: ${err}")
+      endif()
+      set(dxil_mint_args --dxil ${WORK_DIR}/${shader}.dxil --dxil-reflection ${WORK_DIR}/${shader}.dxil.json
+                         --dxil-out ${WORK_DIR}/${shader}.dxil.inc --dxil-compiler "${DXIL_COMPILER}")
+    endif()
     execute_process(COMMAND ${SHADER_MINT} --name ${symbol} --source ${shader}.slang --compiler "slangc ${slangc_version}"
                             --spv ${WORK_DIR}/${shader}.spv --reflection ${WORK_DIR}/${shader}.json
-                            --spv-out ${WORK_DIR}/${shader}.spv.inc --refl-out ${WORK_DIR}/${shader}.refl.inc
+                            --spv-out ${WORK_DIR}/${shader}.spv.inc --refl-out ${WORK_DIR}/${shader}.refl.inc ${dxil_mint_args}
                     RESULT_VARIABLE rc ERROR_VARIABLE err)
     if(NOT rc EQUAL 0)
       message(FATAL_ERROR "shader_mint failed on ${shader}: ${err}")
@@ -78,6 +112,12 @@ foreach(shader ${SHADERS})
   execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${committed_refl} ${WORK_DIR}/${shader}.refl.inc RESULT_VARIABLE same)
   if(NOT same EQUAL 0)
     message(FATAL_ERROR "${shader}.refl.inc is out of date: run `cmake --build build --target shaders`")
+  endif()
+  if(check_dxil)
+    execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files ${committed_dxil} ${WORK_DIR}/${shader}.dxil.inc RESULT_VARIABLE same)
+    if(NOT same EQUAL 0)
+      message(FATAL_ERROR "${shader}.dxil.inc is out of date: run `cmake --build build --target shaders` (on a machine with dxc)")
+    endif()
   endif()
   math(EXPR checked "${checked} + 1")
 endforeach()

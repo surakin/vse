@@ -865,3 +865,13 @@ available backend of highest rank); the `backend` setting has `dx12` and `auto`,
 `PermutationModule::Blob` pick the device's format (`DeviceCaps::shader_format`). `MatchAdapter` accepts a LUID (`AdapterInfo::luid`). Runs: `ran 1185 of
 2338 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 888 of 2338`; all three Windows trees build clean. Review: 6
 findings, 4 fixed, 2 declined. Linux: pending until the phase close. **Next: Day 163 (DXIL minting, the object index stream, the clip-space flip).**
+
+Phase 13 **Day 163 (2026-11-08, Windows PC): the shader path for D3D12.** Every shader and permutation key is minted to signed DXIL
+(`shaders/*.dxil.inc`, shader model 6.0, `slangc` with the Windows SDK's `dxcompiler` 1.9.2602.17 found by the build), with the blob set
+`k<Base>Shader` and the hash of the SPIR-V it was minted beside (`shader_dxil_test`). One source serves both targets (`target_common.slang`): the
+D3D12 build flips clip-space Y in the shader (amended from a D3D projection), uses `SV_VertexID`, and reads the object index from an instance-rate
+stream (`MaterialSystem::ObjectIndexStream`, `DeviceCaps::object_index_stream`); vertex inputs are `TEXCOORD<location>` and registers follow the
+bindings, both checked by `shader_mint`. New `BindingType::ReadOnlyStorageBuffer`. `shader_mint --permute` runs on Windows (`run_process.h`). The
+SPIR-V of all 24 shaders is unchanged. Runs: `ran 1212 of 2369 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan
+`ran 892 of 2369` (it found a descriptor-pool overflow, fixed). Review: 5 findings, 3 fixed, 2 declined. Linux: pending until the phase close.
+**Next: Day 164 (the DX12 device).**

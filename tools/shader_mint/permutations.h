@@ -39,8 +39,8 @@ struct BuiltModule {
 void DedupeModules(const Vector<BuiltModule>& per_key, Vector<BuiltModule>* modules, Vector<u32>* key_module);
 
 // Writes the `.perm.inc` text. `base` is the symbol base (`kPermuteTestFrag`); module 0 must be the base module and is
-// referenced through the plain `.spv.inc`/`.refl.inc` symbols instead of being repeated. `key_module[i]` is the module
-// of `keys[i]`.
+// referenced through the plain `.spv.inc`/`.refl.inc`/`.dxil.inc` symbols instead of being repeated. `key_module[i]` is the
+// module of `keys[i]`. Each module's DXIL (`<base>Perm<m>Dxil`) comes from the `.dxil.inc`, which the text includes.
 Text EmitPermutationInc(StringView base, StringView shader_file, StringView source_label, StringView compiler,
                         const Vector<Text>& options, const Vector<u32>& keys, const Vector<u32>& key_module,
                         const Vector<BuiltModule>& modules);

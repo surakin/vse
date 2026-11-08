@@ -19,6 +19,8 @@
 //   set 0, binding 0: uniform buffer FrameData (renderer::FrameData, 304 bytes)
 //   set 2, binding 0: storage buffer of ObjectData (renderer::ObjectData, 128 bytes each)
 
+#include "target_common.slang"
+
 struct FrameData {
     float4x4 view;
     float4x4 projection;
@@ -34,15 +36,19 @@ struct ObjectData {
     float4x4 normal;
 };
 
-[[vk::binding(0, 0)]] ConstantBuffer<FrameData> frame;
-[[vk::binding(0, 2)]] StructuredBuffer<ObjectData> objects;
+[[vk::binding(0, 0)]] ConstantBuffer<FrameData> frame : register(b0, space0);
+[[vk::binding(0, 2)]] StructuredBuffer<ObjectData> objects : register(t0, space2);
 
 struct VertexInput {
-    [[vk::location(0)]] float3 position : POSITION;
-    [[vk::location(1)]] float3 normal : NORMAL;
-    [[vk::location(2)]] float4 tangent : TANGENT;
-    [[vk::location(3)]] float2 uv : TEXCOORD0;
+    [[vk::location(0)]] float3 position : TEXCOORD0;
+    [[vk::location(1)]] float3 normal : TEXCOORD1;
+    [[vk::location(2)]] float4 tangent : TEXCOORD2;
+    [[vk::location(3)]] float2 uv : TEXCOORD3;
+#ifdef ENGINE_OBJECT_INDEX_STREAM
+    [[vk::location(15)]] uint instance : TEXCOORD15; // renderer::ObjectIndexStream (D3D12: no base instance)
+#else
     uint instance : SV_VulkanInstanceID;
+#endif
 };
 
 struct VertexOutput {
@@ -58,7 +64,7 @@ VertexOutput main(VertexInput input) {
     // and its base-instance subtraction needs the shaderDrawParameters feature).
     ObjectData object = objects[input.instance];
     VertexOutput output;
-    output.position = mul(frame.view_projection, mul(object.world, float4(input.position, 1.0)));
+    output.position = ENGINE_CLIP(mul(frame.view_projection, mul(object.world, float4(input.position, 1.0))));
     output.normal = mul((float3x3)object.normal, input.normal);
     output.uv = input.uv;
     output.tangent = input.tangent;

@@ -251,6 +251,7 @@ private:
     rhi::PipelineHandle pipeline_;
     rhi::PipelineHandle volume_pipeline_;
     rhi::BindGroupHandle frame_group_;
+    rhi::BufferHandle object_index_stream_; // MaterialSystem::ObjectIndexStream of this frame; invalid on Vulkan
     BufferRegion lights_;
     Vector<PointDraw> point_draws_;
     std::atomic<u32> point_draws_recorded_{0};

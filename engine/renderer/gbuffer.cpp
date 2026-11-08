@@ -7,10 +7,10 @@
 #include <cstring>
 #include <new>
 
-#include "fullscreen.vert.spv.inc"
+#include "fullscreen.vert.dxil.inc"
 #include "gbuffer.frag.perm.inc"
 #include "gbuffer.vert.perm.inc"
-#include "gbuffer_debug.frag.spv.inc"
+#include "gbuffer_debug.frag.dxil.inc"
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 
@@ -260,6 +260,12 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
     // The per-frame groups are cached by the material system; creating them is rare.
     frame_group_ = materials_->FrameBindGroup(frame_->FrameRegion());
     object_group_ = materials_->ObjectBindGroup(frame_->ObjectRegion());
+    object_index_stream_ = materials_->ObjectIndexStream(); // valid only where shaders read the index from it (Direct3D 12)
+    if (object_index_stream_.IsValid() && cap > kMaxObjectIndices) {
+        // Draw i reads entry i of the stream: a frame with more objects than it holds would read past it (Vulkan has no such limit).
+        std::snprintf(error_, sizeof(error_), "G-buffer: %u objects per frame is more than the object index stream holds (%u)", cap, kMaxObjectIndices);
+        return false;
+    }
     if (!frame_group_.IsValid() || !object_group_.IsValid()) {
         std::snprintf(error_, sizeof(error_), "G-buffer: the frame or object bind group could not be created");
         return false;
@@ -422,6 +428,10 @@ void GBufferPass::Record(const PassExecuteContext& context, void* user) {
     if (self->draw_count_ > 0) {
         list->SetBindGroup(kFrameSet, self->frame_group_);
         list->SetBindGroup(kObjectSet, self->object_group_);
+        if (self->object_index_stream_.IsValid()) {
+            // Draw i is issued with first_instance = i; Direct3D 12 fetches this instance-rate stream at that index.
+            list->SetVertexBuffer(MaterialSystem::ObjectIndexSlot(), self->object_index_stream_, 0);
+        }
     }
     rhi::PipelineHandle pipeline;
     rhi::BindGroupHandle group;
@@ -450,13 +460,8 @@ GBufferDebugView::GBufferDebugView(rhi::Device* device) : device_(device) {
 
 void GBufferDebugView::Build() {
     rhi::Device* device = device_;
-    rhi::ShaderDesc sd;
-    sd.stage = rhi::ShaderStage::Vertex;
-    sd.SetCode(rhi::SpirvBlob(shaders::kFullscreenVertSpv, shaders::kFullscreenVertSpvWordCount));
-    vertex_ = device->CreateShader(sd);
-    sd.stage = rhi::ShaderStage::Fragment;
-    sd.SetCode(rhi::SpirvBlob(shaders::kGbufferDebugFragSpv, shaders::kGbufferDebugFragSpvWordCount));
-    fragment_ = device->CreateShader(sd);
+    vertex_ = rhi::CreateShaderFromSet(*device, shaders::kFullscreenVertShader, rhi::ShaderStage::Vertex);
+    fragment_ = rhi::CreateShaderFromSet(*device, shaders::kGbufferDebugFragShader, rhi::ShaderStage::Fragment);
     rhi::SamplerDesc smp;
     smp.mag_filter = rhi::FilterMode::Nearest;
     smp.min_filter = rhi::FilterMode::Nearest;

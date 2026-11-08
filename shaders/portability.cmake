@@ -1,6 +1,8 @@
 # Compiles every engine shader (and every permutation key of the permuted ones) to HLSL and Metal Shading Language with slangc,
 # the proof that the sources are not Vulkan in disguise (Phases 13-14 take the D3D12 and Metal backends from these same sources).
-# Run through ctest as `shaders_portability`; arguments: SLANGC, SHADER_DIR, WORK_DIR, SHADERS (a ;-list), DXC (optional).
+# Run through ctest as `shaders_portability`; arguments: SLANGC, SHADER_DIR, WORK_DIR, SHADERS (a ;-list), DXC (optional),
+# DXC_REQUIRED (ON on Windows with the SDK's dxc: a rejected HLSL then fails the test). The HLSL is built with the D3D12 target
+# define (shaders/target_common.slang), as the minted DXIL is.
 # A shader fails the test if slangc exits non-zero, writes an `error`, or produces an empty file. Warnings are expected and
 # listed (Metal renames `main`). `dxc`, if installed, additionally compiles the HLSL to DXIL and reports what it rejects without
 # failing (the instance-index semantic is a known Phase 13 gap); the Metal compiler needs macOS and is not run here. See README.md, "Other targets".
@@ -55,9 +57,13 @@ foreach(shader ${SHADERS})
       endif()
       set(out ${WORK_DIR}/${shader}${tag}.${ext})
       file(REMOVE ${out})
+      set(target_defines "")
+      if(target STREQUAL "hlsl")
+        set(target_defines -DENGINE_TARGET_D3D12=1)
+      endif()
       execute_process(
         COMMAND ${SLANGC} ${SHADER_DIR}/${shader}.slang -target ${target} -entry main -stage ${stage} -matrix-layout-column-major
-                ${defines} -o ${out}
+                ${defines} ${target_defines} -o ${out}
         RESULT_VARIABLE rc OUTPUT_VARIABLE stdout ERROR_VARIABLE stderr)
       set(text "${stdout}${stderr}")
       set(failed FALSE)
@@ -104,9 +110,10 @@ foreach(shader ${SHADERS})
                         RESULT_VARIABLE dxc_rc ERROR_VARIABLE dxc_err OUTPUT_QUIET)
         if(dxc_rc EQUAL 0)
           math(EXPR dxc_checked "${dxc_checked} + 1")
+        elseif(DXC_REQUIRED)
+          message(FATAL_ERROR "dxc rejected the HLSL of ${shader}${tag}: ${dxc_err}")
         else()
-          # Expected until Phase 13: the per-object index is read from SV_VulkanInstanceID, which D3D12 does not have (see the
-          # renderer portability review). Reported, not fatal, so installing dxc does not turn the test red.
+          # Off Windows dxc is optional and the Linux package aborts (KNOWN-ISSUES.md): reported, not fatal.
           message("note: dxc rejected the HLSL of ${shader}${tag}: ${dxc_err}")
         endif()
       endif()

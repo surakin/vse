@@ -16,6 +16,8 @@
 //   set 0, binding 0: uniform buffer Params (std140, vertex and fragment stages), shared with lit.frag:
 //       float4x4 mvp; float4x4 normal_matrix; float4 to_light; float4 light_color; float4 ambient;   (176 bytes)
 
+#include "target_common.slang"
+
 struct Params {
     float4x4 mvp;
     float4x4 normal_matrix;
@@ -24,12 +26,12 @@ struct Params {
     float4 ambient;
 };
 
-[[vk::binding(0, 0)]] ConstantBuffer<Params> params;
+[[vk::binding(0, 0)]] ConstantBuffer<Params> params : register(b0, space0);
 
 struct VertexInput {
-    [[vk::location(0)]] float3 position : POSITION;
-    [[vk::location(1)]] float3 normal : NORMAL;
-    [[vk::location(2)]] float2 uv : TEXCOORD0;
+    [[vk::location(0)]] float3 position : TEXCOORD0;
+    [[vk::location(1)]] float3 normal : TEXCOORD1;
+    [[vk::location(2)]] float2 uv : TEXCOORD2;
 };
 
 struct VertexOutput {
@@ -41,7 +43,7 @@ struct VertexOutput {
 [shader("vertex")]
 VertexOutput main(VertexInput input) {
     VertexOutput output;
-    output.position = mul(params.mvp, float4(input.position, 1.0));
+    output.position = ENGINE_CLIP(mul(params.mvp, float4(input.position, 1.0)));
     output.normal = mul((float3x3)params.normal_matrix, input.normal);
     output.uv = input.uv;
     return output;

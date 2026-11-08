@@ -236,7 +236,8 @@ bool ClassifyBinding(const json& parameter_type, const std::string& name, Bindin
         const std::string shape = JsonText(*type, "baseShape");
         const std::string access = JsonText(*type, "access");
         if (shape == "structuredBuffer" || shape == "byteAddressBuffer") {
-            out->type = rhi::BindingType::StorageBuffer;
+            // StructuredBuffer (read) is a shader resource view to Direct3D 12, RWStructuredBuffer (readWrite) an unordered access view.
+            out->type = access.empty() || access == "read" ? rhi::BindingType::ReadOnlyStorageBuffer : rhi::BindingType::StorageBuffer;
             return true;
         }
         if (shape == "texture2D") {
@@ -289,6 +290,16 @@ bool AddVertexInput(const json& item, renderer::ShaderReflection* out, std::stri
         return false;
     }
     if (!Required(*binding, "index", ("vertex input '" + name + "'").c_str(), &in.location, error)) {
+        return false;
+    }
+    // Direct3D 12 matches input elements by semantic, the engine's D3D12 backend names location N `TEXCOORD<N>`
+    // (shaders/target_common.slang), so every location-bound vertex input must be declared that way.
+    const std::string semantic = JsonText(item, "semanticName");
+    const u32 semantic_index = Number(item, "semanticIndex", 0);
+    if (semantic != "TEXCOORD" || semantic_index != in.location) {
+        *error = "vertex input '" + name + "' at location " + std::to_string(in.location) + " has the semantic " +
+                 (semantic.empty() ? std::string("(none)") : semantic + (semantic_index != 0 ? std::to_string(semantic_index) : std::string())) +
+                 "; it must be TEXCOORD" + std::to_string(in.location) + " (the location's number; shaders/target_common.slang)";
         return false;
     }
     if (!VertexFormatFrom(*type, &in.format)) {
@@ -350,7 +361,19 @@ static bool ReflectionFromJsonImpl(const std::string& json_text, renderer::Shade
         for (const json& use : *used) {
             const std::string name = JsonText(use, "name");
             const json* use_binding = Field(use, "binding");
-            if (use_binding == nullptr || Number(*use_binding, "used", 1) == 0) {
+            bool use_flag = use_binding != nullptr && Number(*use_binding, "used", 1) != 0;
+            // A push constant block that also names its D3D12 register (`register(b0, space15)`, shaders/target_common.slang) is
+            // reported with two bindings, the push constant range and that register; the SPIR-V is the push constant range alone.
+            const json* several = Field(use, "bindings");
+            if (use_binding == nullptr && several != nullptr && several->is_array()) {
+                for (const json& candidate : *several) {
+                    use_flag = use_flag || Number(candidate, "used", 1) != 0;
+                    if (JsonText(candidate, "kind") == "pushConstantBuffer") {
+                        use_binding = &candidate;
+                    }
+                }
+            }
+            if (use_binding == nullptr || !use_flag) {
                 continue;
             }
             const json* parameter = nullptr;
@@ -535,6 +558,76 @@ static bool CrossCheckSpirvImpl(const renderer::ShaderReflection& reflection, co
         }
     }
     return true;
+}
+
+static const char* ExpectedD3D12Kind(rhi::BindingType type) {
+    switch (type) {
+    case rhi::BindingType::UniformBuffer: return "constantBuffer";
+    case rhi::BindingType::SampledTexture:
+    case rhi::BindingType::ReadOnlyStorageBuffer: return "shaderResource";
+    case rhi::BindingType::StorageBuffer:
+    case rhi::BindingType::StorageTexture: return "unorderedAccess";
+    case rhi::BindingType::Sampler: return "samplerState";
+    case rhi::BindingType::Count: break;
+    }
+    return "";
+}
+
+static bool CheckD3D12RegistersImpl(const renderer::ShaderReflection& reflection, const std::string& dxil_json, std::string* error) {
+    const json root = json::parse(dxil_json, nullptr, /*allow_exceptions=*/false);
+    const json* parameters = root.is_object() ? Field(root, "parameters") : nullptr;
+    if (parameters == nullptr || !parameters->is_array()) {
+        *error = "the DXIL reflection file is not valid JSON or has no parameter list";
+        return false;
+    }
+    bool push_seen = false;
+    for (u32 i = 0; i < reflection.binding_count; ++i) {
+        const renderer::ReflectedBinding& b = reflection.bindings[i];
+        const json* found = nullptr;
+        for (const json& p : *parameters) {
+            if (JsonText(p, "name") == b.name) {
+                found = &p;
+            }
+        }
+        const json* binding = found == nullptr ? nullptr : Field(*found, "binding");
+        if (binding == nullptr) {
+            *error = std::string("binding '") + b.name + "' is missing from the DXIL build's reflection";
+            return false;
+        }
+        const std::string kind = JsonText(*binding, "kind");
+        const u32 index = Number(*binding, "index", 0xffffffffu);
+        const u32 space = Number(*binding, "space", 0);
+        const std::string want = ExpectedD3D12Kind(b.type);
+        if (kind != want || index != b.binding || space != b.set) {
+            *error = std::string("binding '") + b.name + "' (set " + std::to_string(b.set) + ", binding " + std::to_string(b.binding) +
+                     ") is " + kind + " register " + std::to_string(index) + " in space " + std::to_string(space) +
+                     " in the DXIL build; it must be " + want + " register " + std::to_string(b.binding) + " in space " + std::to_string(b.set) +
+                     " (declare it with register(...); shaders/target_common.slang)";
+            return false;
+        }
+    }
+    for (const json& p : *parameters) {
+        const json* binding = Field(p, "binding");
+        if (binding != nullptr && JsonText(*binding, "kind") == "constantBuffer" && Number(*binding, "space", 0) == 15) {
+            if (Number(*binding, "index", 0xffffffffu) != 0) {
+                *error = "the push constant block '" + JsonText(p, "name") + "' must be register b0 in space 15";
+                return false;
+            }
+            push_seen = true;
+        }
+    }
+    if (reflection.has_push_constants && !push_seen) {
+        *error = "the push constant block is not register b0 in space 15 in the DXIL build (declare it with register(b0, space15))";
+        return false;
+    }
+    return true;
+}
+
+bool CheckD3D12Registers(const renderer::ShaderReflection& reflection, StringView dxil_json, Text* error) {
+    std::string message;
+    const bool ok = CheckD3D12RegistersImpl(reflection, std::string(dxil_json.Data(), dxil_json.Length()), &message);
+    *error = MakeText(StringView(message.data(), message.size()));
+    return ok;
 }
 
 bool ReflectionFromJson(StringView json_text, renderer::ShaderReflection* out, Text* error) {

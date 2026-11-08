@@ -1,5 +1,5 @@
-# Shaders are written in Slang, compiled offline to SPIR-V and embedded as committed *.spv.inc files (PLAN.md
-# assumption #18). The compiler is an optional dev-time tool: without it the committed files are used as they are.
+# Shaders are written in Slang, compiled offline to SPIR-V and DXIL and embedded as committed *.spv.inc and *.dxil.inc files
+# (PLAN.md assumption #18). The compilers are optional dev-time tools: without them the committed files are used as they are.
 # `cmake --build build --target shaders` recompiles and regenerates them; the `shaders_check` ctest recompiles and
 # compares when `slangc` is installed. See README.md.
 #
@@ -39,16 +39,59 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/names.cmake)
 # Slang sources that shaders include (not compiled alone); a change to one rebuilds every shader.
 file(GLOB SHADER_COMMON_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*_common.slang)
 
-find_program(SLANGC slangc)
+# slangc: ENGINE_SLANGC (a cache or environment variable), then PATH, then the location BUILD.md records for the Windows PC.
+# DXIL (Phase 13 Day 163): the directory with dxcompiler.dll and dxil.dll, from ENGINE_DXC (a dxc executable or its directory), else
+# the Windows SDK the toolchain found (ENGINE_SDK_BIN); never the first dxc on PATH, which may be the Vulkan SDK's older build.
+if(NOT ENGINE_SLANGC AND DEFINED ENV{ENGINE_SLANGC})
+  set(ENGINE_SLANGC "$ENV{ENGINE_SLANGC}")
+endif()
+set(ENGINE_SLANGC "${ENGINE_SLANGC}" CACHE FILEPATH "slangc to mint shaders with (empty: PATH, then the recorded install location)")
+if(ENGINE_SLANGC)
+  set(SLANGC "${ENGINE_SLANGC}")
+else()
+  find_program(SLANGC slangc HINTS "C:/Tools/slang-2026.18.2/bin")
+endif()
 find_program(SPIRV_VAL spirv-val)
+if(NOT ENGINE_DXC AND DEFINED ENV{ENGINE_DXC})
+  set(ENGINE_DXC "$ENV{ENGINE_DXC}")
+endif()
+set(ENGINE_DXC "${ENGINE_DXC}" CACHE PATH "dxc (or its directory) whose dxcompiler.dll and dxil.dll mint DXIL (empty: the Windows SDK's)")
+set(DXIL_DIR "")
+if(ENGINE_DXC)
+  if(IS_DIRECTORY "${ENGINE_DXC}")
+    set(DXIL_DIR "${ENGINE_DXC}")
+  else()
+    get_filename_component(DXIL_DIR "${ENGINE_DXC}" DIRECTORY)
+  endif()
+elseif(WIN32 AND ENGINE_SDK_BIN AND EXISTS "${ENGINE_SDK_BIN}/dxcompiler.dll" AND EXISTS "${ENGINE_SDK_BIN}/dxil.dll")
+  set(DXIL_DIR "${ENGINE_SDK_BIN}")
+endif()
+set(DXC_VERSION "")
+if(DXIL_DIR)
+  find_program(DXC NAMES dxc PATHS "${DXIL_DIR}" NO_DEFAULT_PATH NO_CACHE)
+  if(DXC)
+    execute_process(COMMAND ${DXC} --version OUTPUT_VARIABLE _dxc_version ERROR_VARIABLE _dxc_version_err)
+    string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+" DXC_VERSION "${_dxc_version}${_dxc_version_err}")
+  endif()
+  if(NOT DXC OR NOT DXC_VERSION)
+    message(STATUS "DXIL: no usable dxc in ${DXIL_DIR}; the committed shaders/*.dxil.inc are used as they are")
+    set(DXIL_DIR "")
+  else()
+    message(STATUS "DXIL: minting with dxcompiler ${DXC_VERSION} from ${DXIL_DIR}")
+  endif()
+endif()
 
 if(SLANGC)
   execute_process(COMMAND ${SLANGC} -v OUTPUT_VARIABLE SLANGC_VERSION_TEXT ERROR_VARIABLE SLANGC_VERSION_ERR
                   OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE)
   string(REGEX REPLACE "\n.*" "" SLANGC_VERSION "${SLANGC_VERSION_TEXT}${SLANGC_VERSION_ERR}")
+  # The Linux build prints "v2026.18.2", the Windows build "2026.18.2": recorded as "v<version>" on both, so the minted files match.
+  string(REGEX REPLACE "^v" "" SLANGC_VERSION "${SLANGC_VERSION}")
+  set(SLANGC_VERSION "v${SLANGC_VERSION}")
   set(SHADER_WORK_DIR ${CMAKE_CURRENT_BINARY_DIR}/spv)
   file(MAKE_DIRECTORY ${SHADER_WORK_DIR})
 
+  set(DXIL_COMPILER "slangc ${SLANGC_VERSION}, dxcompiler ${DXC_VERSION}")
   set(SHADER_INCS "")
   foreach(shader ${ENGINE_SHADERS})
     shader_base_symbol(${shader} symbol)
@@ -59,6 +102,14 @@ if(SLANGC)
     set(json ${SHADER_WORK_DIR}/${shader}.json)
     set(inc ${CMAKE_CURRENT_SOURCE_DIR}/${shader}.spv.inc)
     set(refl_inc ${CMAKE_CURRENT_SOURCE_DIR}/${shader}.refl.inc)
+    set(dxil_inc ${CMAKE_CURRENT_SOURCE_DIR}/${shader}.dxil.inc)
+    set(dxil_outputs "")
+    set(dxil_mint_args "")
+    set(dxil_compile_cmd ${CMAKE_COMMAND} -E true)
+    if(DXIL_DIR)
+      slang_dxil_args(${stage} "${DXIL_DIR}" dxil_args)
+      set(dxil_outputs ${dxil_inc})
+    endif()
     set(validate_cmd ${CMAKE_COMMAND} -E true)
     if(SPIRV_VAL)
       set(validate_cmd ${SPIRV_VAL} --target-env vulkan1.3 ${spv})
@@ -73,42 +124,63 @@ if(SLANGC)
       if(SPIRV_VAL)
         list(APPEND perm_args --spirv-val ${SPIRV_VAL})
       endif()
+      if(DXIL_DIR)
+        foreach(arg ${dxil_args})
+          list(APPEND perm_args --dxil-arg ${arg})
+        endforeach()
+        list(APPEND perm_args --dxil-out ${dxil_inc} --dxil-compiler "${DXIL_COMPILER}")
+      endif()
       add_custom_command(
-        OUTPUT ${inc} ${refl_inc} ${perm_inc}
-        COMMAND shader_mint --permute --name ${symbol} --source ${shader}.slang --source-path ${source}
+        OUTPUT ${inc} ${refl_inc} ${perm_inc} ${dxil_outputs}
+        COMMAND $<TARGET_FILE:shader_mint> --permute --name ${symbol} --source ${shader}.slang --source-path ${source}
                 --manifest ${manifest} --compiler "slangc ${SLANGC_VERSION}" --slangc ${SLANGC} ${perm_args}
                 --work-dir ${SHADER_WORK_DIR} --spv-out ${inc} --refl-out ${refl_inc} --perm-out ${perm_inc}
         DEPENDS ${source} ${SHADER_COMMON_SOURCES} ${manifest} ${CMAKE_CURRENT_SOURCE_DIR}/names.cmake shader_mint
         COMMENT "Compiling ${shader}.slang (permuted)"
         VERBATIM)
-      list(APPEND SHADER_INCS ${inc} ${refl_inc} ${perm_inc})
+      list(APPEND SHADER_INCS ${inc} ${refl_inc} ${perm_inc} ${dxil_outputs})
       continue()
     endif()
+    if(DXIL_DIR)
+      set(dxil ${SHADER_WORK_DIR}/${shader}.dxil)
+      set(dxil_json ${SHADER_WORK_DIR}/${shader}.dxil.json)
+      set(dxil_compile_cmd ${SLANGC} ${source} ${dxil_args} -o ${dxil} -reflection-json ${dxil_json})
+      set(dxil_mint_args --dxil ${dxil} --dxil-reflection ${dxil_json} --dxil-out ${dxil_inc} --dxil-compiler "${DXIL_COMPILER}")
+    endif()
     add_custom_command(
-      OUTPUT ${inc} ${refl_inc}
+      OUTPUT ${inc} ${refl_inc} ${dxil_outputs}
       COMMAND ${SLANGC} ${source} ${slang_args} -o ${spv} -reflection-json ${json}
       COMMAND ${validate_cmd}
-      COMMAND shader_mint --name ${symbol} --source ${shader}.slang --compiler "slangc ${SLANGC_VERSION}" --spv ${spv}
-              --reflection ${json} --spv-out ${inc} --refl-out ${refl_inc}
-      DEPENDS ${source} ${CMAKE_CURRENT_SOURCE_DIR}/names.cmake shader_mint
+      COMMAND ${dxil_compile_cmd}
+      COMMAND $<TARGET_FILE:shader_mint> --name ${symbol} --source ${shader}.slang --compiler "slangc ${SLANGC_VERSION}" --spv ${spv}
+              --reflection ${json} --spv-out ${inc} --refl-out ${refl_inc} ${dxil_mint_args}
+      DEPENDS ${source} ${SHADER_COMMON_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/names.cmake shader_mint
       COMMENT "Compiling ${shader}.slang"
       VERBATIM)
-    list(APPEND SHADER_INCS ${inc} ${refl_inc})
+    list(APPEND SHADER_INCS ${inc} ${refl_inc} ${dxil_outputs})
   endforeach()
   add_custom_target(shaders DEPENDS ${SHADER_INCS})
 
   add_test(NAME shaders_check
     COMMAND ${CMAKE_COMMAND}
       -DSLANGC=${SLANGC} -DSPIRV_VAL=${SPIRV_VAL} -DSHADER_MINT=$<TARGET_FILE:shader_mint>
+      -DDXIL_DIR=${DXIL_DIR} "-DDXIL_COMPILER=${DXIL_COMPILER}"
       -DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR} -DWORK_DIR=${SHADER_WORK_DIR}/check
       "-DSHADERS=${ENGINE_SHADERS}" -P ${CMAKE_CURRENT_SOURCE_DIR}/check.cmake)
   set_tests_properties(shaders_check PROPERTIES LABELS "shaders" SKIP_REGULAR_EXPRESSION "SKIP:")
 
-  # Every shader (and permutation key) must also compile to HLSL and Metal Shading Language; `dxc` adds a DXIL check if installed.
-  find_program(DXC dxc)
+  # Every shader (and permutation key) must also compile to HLSL and Metal Shading Language; `dxc` adds a DXIL check of the HLSL,
+  # required to pass on Windows (the SDK's dxc) and a note elsewhere (the Linux package aborts; KNOWN-ISSUES.md).
+  if(NOT DXC)
+    find_program(DXC dxc)
+  endif()
+  set(DXC_REQUIRED OFF)
+  if(WIN32 AND DXIL_DIR)
+    set(DXC_REQUIRED ON)
+  endif()
   add_test(NAME shaders_portability
     COMMAND ${CMAKE_COMMAND}
-      -DSLANGC=${SLANGC} -DDXC=${DXC} -DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR} -DWORK_DIR=${SHADER_WORK_DIR}/portability
+      -DSLANGC=${SLANGC} -DDXC=${DXC} -DDXC_REQUIRED=${DXC_REQUIRED} -DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR} -DWORK_DIR=${SHADER_WORK_DIR}/portability
       "-DSHADERS=${ENGINE_SHADERS}" -P ${CMAKE_CURRENT_SOURCE_DIR}/portability.cmake)
   set_tests_properties(shaders_portability PROPERTIES LABELS "shaders")
   engine_label_tests(shaders_check shaders_portability)
