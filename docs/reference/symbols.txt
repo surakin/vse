@@ -1938,78 +1938,79 @@ text::Status::error	variable	text	text-status-error	text.md	engine/text/font.h:4
 text::Status::message	variable	text	text-status-message	text.md	engine/text/font.h:49
 text::Status::io_error	variable	text	text-status-io-error	text.md	engine/text/font.h:50
 text::Status::Ok() const	function	text	text-status-ok-const	text.md	engine/text/font.h:55
-text::Status::Is(Error) const	function	text	text-status-is-error-const	text.md	engine/text/font.h:59
-text::Hinting	enum	text	text-hinting	text.md	engine/text/font.h:63
-text::Hinting::None	enumerator	text	text-hinting-none	text.md	engine/text/font.h:64
-text::Hinting::Light	enumerator	text	text-hinting-light	text.md	engine/text/font.h:65
-text::Hinting::Normal	enumerator	text	text-hinting-normal	text.md	engine/text/font.h:66
-text::Hinting::Bytecode	enumerator	text	text-hinting-bytecode	text.md	engine/text/font.h:67
-text::FontOptions	struct	text	text-fontoptions	text.md	engine/text/font.h:74
-text::FontOptions::face_index	variable	text	text-fontoptions-face-index	text.md	engine/text/font.h:75
-text::FontOptions::hinting	variable	text	text-fontoptions-hinting	text.md	engine/text/font.h:76
-text::FontMetrics	struct	text	text-fontmetrics	text.md	engine/text/font.h:83
-text::FontMetrics::ascent	variable	text	text-fontmetrics-ascent	text.md	engine/text/font.h:84
-text::FontMetrics::descent	variable	text	text-fontmetrics-descent	text.md	engine/text/font.h:85
-text::FontMetrics::line_height	variable	text	text-fontmetrics-line-height	text.md	engine/text/font.h:86
-text::FontMetrics::units_per_em	variable	text	text-fontmetrics-units-per-em	text.md	engine/text/font.h:87
-text::GlyphMetrics	struct	text	text-glyphmetrics	text.md	engine/text/font.h:94
-text::GlyphMetrics::advance	variable	text	text-glyphmetrics-advance	text.md	engine/text/font.h:95
-text::GlyphMetrics::bearing_x	variable	text	text-glyphmetrics-bearing-x	text.md	engine/text/font.h:96
-text::GlyphMetrics::bearing_y	variable	text	text-glyphmetrics-bearing-y	text.md	engine/text/font.h:97
-text::GlyphMetrics::width	variable	text	text-glyphmetrics-width	text.md	engine/text/font.h:98
-text::GlyphMetrics::height	variable	text	text-glyphmetrics-height	text.md	engine/text/font.h:99
-text::OutlinePoint	struct	text	text-outlinepoint	text.md	engine/text/font.h:106
-text::OutlinePoint::x	variable	text	text-outlinepoint-x	text.md	engine/text/font.h:107
-text::OutlinePoint::y	variable	text	text-outlinepoint-y	text.md	engine/text/font.h:108
-text::OutlinePoint::on_curve	variable	text	text-outlinepoint-on-curve	text.md	engine/text/font.h:109
-text::OutlinePoint::cubic	variable	text	text-outlinepoint-cubic	text.md	engine/text/font.h:110
-text::GlyphBitmap	struct	text	text-glyphbitmap	text.md	engine/text/font.h:117
-text::GlyphBitmap::width	variable	text	text-glyphbitmap-width	text.md	engine/text/font.h:118
-text::GlyphBitmap::height	variable	text	text-glyphbitmap-height	text.md	engine/text/font.h:119
-text::GlyphBitmap::left	variable	text	text-glyphbitmap-left	text.md	engine/text/font.h:120
-text::GlyphBitmap::top	variable	text	text-glyphbitmap-top	text.md	engine/text/font.h:121
-text::GlyphBitmap::advance	variable	text	text-glyphbitmap-advance	text.md	engine/text/font.h:122
-text::GlyphBitmap::pixels	variable	text	text-glyphbitmap-pixels	text.md	engine/text/font.h:123
-text::Outline	struct	text	text-outline	text.md	engine/text/font.h:130
-text::Outline::points	variable	text	text-outline-points	text.md	engine/text/font.h:131
-text::Outline::contour_ends	variable	text	text-outline-contour-ends	text.md	engine/text/font.h:132
-text::Outline::x_min	variable	text	text-outline-x-min	text.md	engine/text/font.h:133
-text::Outline::y_min	variable	text	text-outline-y-min	text.md	engine/text/font.h:134
-text::Outline::x_max	variable	text	text-outline-x-max	text.md	engine/text/font.h:135
-text::Outline::y_max	variable	text	text-outline-y-max	text.md	engine/text/font.h:136
-text::FontLibrary	class	text	text-fontlibrary	text.md	engine/text/font.h:146
-text::FontLibrary::FontLibrary()	function	text	text-fontlibrary-fontlibrary	text.md	engine/text/font.h:149
-text::FontLibrary::~FontLibrary()	function	text	text-fontlibrary-tilde-fontlibrary	text.md	engine/text/font.h:153
-text::FontLibrary::FontLibrary(const FontLibrary&)	function	text	text-fontlibrary-fontlibrary-const-fontlibrary-amp	text.md	engine/text/font.h:154
-text::FontLibrary::operator=(const FontLibrary&)	function	text	text-fontlibrary-operator-eq-const-fontlibrary-amp	text.md	engine/text/font.h:155
-text::FontLibrary::Initialize()	function	text	text-fontlibrary-initialize	text.md	engine/text/font.h:160
-text::FontLibrary::IsInitialized() const	function	text	text-fontlibrary-isinitialized-const	text.md	engine/text/font.h:164
-text::FontLibrary::Version() const	function	text	text-fontlibrary-version-const	text.md	engine/text/font.h:166
-text::FontLibrary::Stats() const	function	text	text-fontlibrary-stats-const	text.md	engine/text/font.h:168
-text::FontLibrary::FailAllocationsAfter(u64)	function	text	text-fontlibrary-failallocationsafter-u64	text.md	engine/text/font.h:172
-text::Font	class	text	text-font	text.md	engine/text/font.h:189
-text::Font::Font()	function	text	text-font-font	text.md	engine/text/font.h:192
-text::Font::~Font()	function	text	text-font-tilde-font	text.md	engine/text/font.h:194
-text::Font::Font(const Font&)	function	text	text-font-font-const-font-amp	text.md	engine/text/font.h:195
-text::Font::operator=(const Font&)	function	text	text-font-operator-eq-const-font-amp	text.md	engine/text/font.h:196
-text::Font::Font(Font&&) noexcept	function	text	text-font-font-font-amp-amp-noexcept	text.md	engine/text/font.h:198
-text::Font::operator=(Font&&) noexcept	function	text	text-font-operator-eq-font-amp-amp-noexcept	text.md	engine/text/font.h:200
-text::Font::Open(FontLibrary&,ByteSpan,const FontOptions&,Font*)	function	text	text-font-open-fontlibrary-amp-bytespan-const-fontoptions-amp-font-star	text.md	engine/text/font.h:212
-text::Font::OpenFile(FontLibrary&,const io::Path&,const FontOptions&,Font*)	function	text	text-font-openfile-fontlibrary-amp-const-io-path-amp-const-fontoptions-amp-font-star	text.md	engine/text/font.h:217
-text::Font::IsOpen() const	function	text	text-font-isopen-const	text.md	engine/text/font.h:222
-text::Font::Close()	function	text	text-font-close	text.md	engine/text/font.h:224
-text::Font::SetPixelSize(u32)	function	text	text-font-setpixelsize-u32	text.md	engine/text/font.h:230
-text::Font::PixelSize() const	function	text	text-font-pixelsize-const	text.md	engine/text/font.h:232
-text::Font::Metrics() const	function	text	text-font-metrics-const	text.md	engine/text/font.h:234
-text::Font::Options() const	function	text	text-font-options-const	text.md	engine/text/font.h:236
-text::Font::GlyphCount() const	function	text	text-font-glyphcount-const	text.md	engine/text/font.h:238
-text::Font::Id() const	function	text	text-font-id-const	text.md	engine/text/font.h:240
-text::Font::FindGlyph(char32) const	function	text	text-font-findglyph-char32-const	text.md	engine/text/font.h:245
-text::Font::HasGlyph(char32) const	function	text	text-font-hasglyph-char32-const	text.md	engine/text/font.h:249
-text::Font::Metrics(GlyphId) const	function	text	text-font-metrics-glyphid-const	text.md	engine/text/font.h:251
-text::Font::Kerning(GlyphId,GlyphId) const	function	text	text-font-kerning-glyphid-glyphid-const	text.md	engine/text/font.h:257
-text::Font::Render(GlyphId,GlyphBitmap*) const	function	text	text-font-render-glyphid-glyphbitmap-star-const	text.md	engine/text/font.h:263
-text::Font::LoadOutline(GlyphId,Outline*) const	function	text	text-font-loadoutline-glyphid-outline-star-const	text.md	engine/text/font.h:268
+text::Status::Of(Error,const char*)	function	text	text-status-of-error-const-char-star	text.md	engine/text/font.h:61
+text::Status::Is(Error) const	function	text	text-status-is-error-const	text.md	engine/text/font.h:70
+text::Hinting	enum	text	text-hinting	text.md	engine/text/font.h:74
+text::Hinting::None	enumerator	text	text-hinting-none	text.md	engine/text/font.h:75
+text::Hinting::Light	enumerator	text	text-hinting-light	text.md	engine/text/font.h:76
+text::Hinting::Normal	enumerator	text	text-hinting-normal	text.md	engine/text/font.h:77
+text::Hinting::Bytecode	enumerator	text	text-hinting-bytecode	text.md	engine/text/font.h:78
+text::FontOptions	struct	text	text-fontoptions	text.md	engine/text/font.h:85
+text::FontOptions::face_index	variable	text	text-fontoptions-face-index	text.md	engine/text/font.h:86
+text::FontOptions::hinting	variable	text	text-fontoptions-hinting	text.md	engine/text/font.h:87
+text::FontMetrics	struct	text	text-fontmetrics	text.md	engine/text/font.h:94
+text::FontMetrics::ascent	variable	text	text-fontmetrics-ascent	text.md	engine/text/font.h:95
+text::FontMetrics::descent	variable	text	text-fontmetrics-descent	text.md	engine/text/font.h:96
+text::FontMetrics::line_height	variable	text	text-fontmetrics-line-height	text.md	engine/text/font.h:97
+text::FontMetrics::units_per_em	variable	text	text-fontmetrics-units-per-em	text.md	engine/text/font.h:98
+text::GlyphMetrics	struct	text	text-glyphmetrics	text.md	engine/text/font.h:105
+text::GlyphMetrics::advance	variable	text	text-glyphmetrics-advance	text.md	engine/text/font.h:106
+text::GlyphMetrics::bearing_x	variable	text	text-glyphmetrics-bearing-x	text.md	engine/text/font.h:107
+text::GlyphMetrics::bearing_y	variable	text	text-glyphmetrics-bearing-y	text.md	engine/text/font.h:108
+text::GlyphMetrics::width	variable	text	text-glyphmetrics-width	text.md	engine/text/font.h:109
+text::GlyphMetrics::height	variable	text	text-glyphmetrics-height	text.md	engine/text/font.h:110
+text::OutlinePoint	struct	text	text-outlinepoint	text.md	engine/text/font.h:117
+text::OutlinePoint::x	variable	text	text-outlinepoint-x	text.md	engine/text/font.h:118
+text::OutlinePoint::y	variable	text	text-outlinepoint-y	text.md	engine/text/font.h:119
+text::OutlinePoint::on_curve	variable	text	text-outlinepoint-on-curve	text.md	engine/text/font.h:120
+text::OutlinePoint::cubic	variable	text	text-outlinepoint-cubic	text.md	engine/text/font.h:121
+text::GlyphBitmap	struct	text	text-glyphbitmap	text.md	engine/text/font.h:128
+text::GlyphBitmap::width	variable	text	text-glyphbitmap-width	text.md	engine/text/font.h:129
+text::GlyphBitmap::height	variable	text	text-glyphbitmap-height	text.md	engine/text/font.h:130
+text::GlyphBitmap::left	variable	text	text-glyphbitmap-left	text.md	engine/text/font.h:131
+text::GlyphBitmap::top	variable	text	text-glyphbitmap-top	text.md	engine/text/font.h:132
+text::GlyphBitmap::advance	variable	text	text-glyphbitmap-advance	text.md	engine/text/font.h:133
+text::GlyphBitmap::pixels	variable	text	text-glyphbitmap-pixels	text.md	engine/text/font.h:134
+text::Outline	struct	text	text-outline	text.md	engine/text/font.h:141
+text::Outline::points	variable	text	text-outline-points	text.md	engine/text/font.h:142
+text::Outline::contour_ends	variable	text	text-outline-contour-ends	text.md	engine/text/font.h:143
+text::Outline::x_min	variable	text	text-outline-x-min	text.md	engine/text/font.h:144
+text::Outline::y_min	variable	text	text-outline-y-min	text.md	engine/text/font.h:145
+text::Outline::x_max	variable	text	text-outline-x-max	text.md	engine/text/font.h:146
+text::Outline::y_max	variable	text	text-outline-y-max	text.md	engine/text/font.h:147
+text::FontLibrary	class	text	text-fontlibrary	text.md	engine/text/font.h:157
+text::FontLibrary::FontLibrary()	function	text	text-fontlibrary-fontlibrary	text.md	engine/text/font.h:160
+text::FontLibrary::~FontLibrary()	function	text	text-fontlibrary-tilde-fontlibrary	text.md	engine/text/font.h:164
+text::FontLibrary::FontLibrary(const FontLibrary&)	function	text	text-fontlibrary-fontlibrary-const-fontlibrary-amp	text.md	engine/text/font.h:165
+text::FontLibrary::operator=(const FontLibrary&)	function	text	text-fontlibrary-operator-eq-const-fontlibrary-amp	text.md	engine/text/font.h:166
+text::FontLibrary::Initialize()	function	text	text-fontlibrary-initialize	text.md	engine/text/font.h:171
+text::FontLibrary::IsInitialized() const	function	text	text-fontlibrary-isinitialized-const	text.md	engine/text/font.h:175
+text::FontLibrary::Version() const	function	text	text-fontlibrary-version-const	text.md	engine/text/font.h:177
+text::FontLibrary::Stats() const	function	text	text-fontlibrary-stats-const	text.md	engine/text/font.h:179
+text::FontLibrary::FailAllocationsAfter(u64)	function	text	text-fontlibrary-failallocationsafter-u64	text.md	engine/text/font.h:183
+text::Font	class	text	text-font	text.md	engine/text/font.h:200
+text::Font::Font()	function	text	text-font-font	text.md	engine/text/font.h:203
+text::Font::~Font()	function	text	text-font-tilde-font	text.md	engine/text/font.h:205
+text::Font::Font(const Font&)	function	text	text-font-font-const-font-amp	text.md	engine/text/font.h:206
+text::Font::operator=(const Font&)	function	text	text-font-operator-eq-const-font-amp	text.md	engine/text/font.h:207
+text::Font::Font(Font&&) noexcept	function	text	text-font-font-font-amp-amp-noexcept	text.md	engine/text/font.h:209
+text::Font::operator=(Font&&) noexcept	function	text	text-font-operator-eq-font-amp-amp-noexcept	text.md	engine/text/font.h:211
+text::Font::Open(FontLibrary&,ByteSpan,const FontOptions&,Font*)	function	text	text-font-open-fontlibrary-amp-bytespan-const-fontoptions-amp-font-star	text.md	engine/text/font.h:223
+text::Font::OpenFile(FontLibrary&,const io::Path&,const FontOptions&,Font*)	function	text	text-font-openfile-fontlibrary-amp-const-io-path-amp-const-fontoptions-amp-font-star	text.md	engine/text/font.h:228
+text::Font::IsOpen() const	function	text	text-font-isopen-const	text.md	engine/text/font.h:233
+text::Font::Close()	function	text	text-font-close	text.md	engine/text/font.h:235
+text::Font::SetPixelSize(u32)	function	text	text-font-setpixelsize-u32	text.md	engine/text/font.h:241
+text::Font::PixelSize() const	function	text	text-font-pixelsize-const	text.md	engine/text/font.h:243
+text::Font::Metrics() const	function	text	text-font-metrics-const	text.md	engine/text/font.h:245
+text::Font::Options() const	function	text	text-font-options-const	text.md	engine/text/font.h:247
+text::Font::GlyphCount() const	function	text	text-font-glyphcount-const	text.md	engine/text/font.h:249
+text::Font::Id() const	function	text	text-font-id-const	text.md	engine/text/font.h:251
+text::Font::FindGlyph(char32) const	function	text	text-font-findglyph-char32-const	text.md	engine/text/font.h:256
+text::Font::HasGlyph(char32) const	function	text	text-font-hasglyph-char32-const	text.md	engine/text/font.h:260
+text::Font::Metrics(GlyphId) const	function	text	text-font-metrics-glyphid-const	text.md	engine/text/font.h:262
+text::Font::Kerning(GlyphId,GlyphId) const	function	text	text-font-kerning-glyphid-glyphid-const	text.md	engine/text/font.h:268
+text::Font::Render(GlyphId,GlyphBitmap*) const	function	text	text-font-render-glyphid-glyphbitmap-star-const	text.md	engine/text/font.h:274
+text::Font::LoadOutline(GlyphId,Outline*) const	function	text	text-font-loadoutline-glyphid-outline-star-const	text.md	engine/text/font.h:279
 text::GlyphEntry	struct	text	text-glyphentry	text.md	engine/text/glyph_atlas.h:18
 text::GlyphEntry::valid	variable	text	text-glyphentry-valid	text.md	engine/text/glyph_atlas.h:19
 text::GlyphEntry::has_pixels	variable	text	text-glyphentry-has-pixels	text.md	engine/text/glyph_atlas.h:20
@@ -2038,6 +2039,54 @@ text::GlyphAtlas::PageSize() const	function	text	text-glyphatlas-pagesize-const	
 text::GlyphAtlas::PagePixels(u32) const	function	text	text-glyphatlas-pagepixels-u32-const	text.md	engine/text/glyph_atlas.h:83
 text::GlyphAtlas::TakeDirty(u32,Rect*)	function	text	text-glyphatlas-takedirty-u32-rect-star	text.md	engine/text/glyph_atlas.h:91
 text::GlyphAtlas::Stats() const	function	text	text-glyphatlas-stats-const	text.md	engine/text/glyph_atlas.h:95
+text::TextStyle	struct	text	text-textstyle	text.md	engine/text/layout.h:18
+text::TextStyle::font	variable	text	text-textstyle-font	text.md	engine/text/layout.h:19
+text::TextStyle::pixel_size	variable	text	text-textstyle-pixel-size	text.md	engine/text/layout.h:20
+text::TextStyle::color	variable	text	text-textstyle-color	text.md	engine/text/layout.h:21
+text::Align	enum	text	text-align	text.md	engine/text/layout.h:25
+text::Align::Left	enumerator	text	text-align-left	text.md	engine/text/layout.h:26
+text::Align::Center	enumerator	text	text-align-center	text.md	engine/text/layout.h:27
+text::Align::Right	enumerator	text	text-align-right	text.md	engine/text/layout.h:28
+text::LayoutOptions	struct	text	text-layoutoptions	text.md	engine/text/layout.h:35
+text::LayoutOptions::max_width	variable	text	text-layoutoptions-max-width	text.md	engine/text/layout.h:36
+text::LayoutOptions::line_height_scale	variable	text	text-layoutoptions-line-height-scale	text.md	engine/text/layout.h:37
+text::LayoutOptions::tab_width_in_spaces	variable	text	text-layoutoptions-tab-width-in-spaces	text.md	engine/text/layout.h:38
+text::LayoutOptions::align	variable	text	text-layoutoptions-align	text.md	engine/text/layout.h:39
+text::PositionedGlyph	struct	text	text-positionedglyph	text.md	engine/text/layout.h:46
+text::PositionedGlyph::glyph	variable	text	text-positionedglyph-glyph	text.md	engine/text/layout.h:47
+text::PositionedGlyph::x	variable	text	text-positionedglyph-x	text.md	engine/text/layout.h:48
+text::PositionedGlyph::y	variable	text	text-positionedglyph-y	text.md	engine/text/layout.h:49
+text::PositionedGlyph::advance	variable	text	text-positionedglyph-advance	text.md	engine/text/layout.h:50
+text::PositionedGlyph::source_byte_offset	variable	text	text-positionedglyph-source-byte-offset	text.md	engine/text/layout.h:51
+text::PositionedGlyph::grapheme_index	variable	text	text-positionedglyph-grapheme-index	text.md	engine/text/layout.h:52
+text::PositionedGlyph::line	variable	text	text-positionedglyph-line	text.md	engine/text/layout.h:53
+text::ClusterInfo	struct	text	text-clusterinfo	text.md	engine/text/layout.h:60
+text::ClusterInfo::byte_begin	variable	text	text-clusterinfo-byte-begin	text.md	engine/text/layout.h:61
+text::ClusterInfo::byte_end	variable	text	text-clusterinfo-byte-end	text.md	engine/text/layout.h:62
+text::ClusterInfo::line	variable	text	text-clusterinfo-line	text.md	engine/text/layout.h:63
+text::ClusterInfo::x	variable	text	text-clusterinfo-x	text.md	engine/text/layout.h:64
+text::ClusterInfo::width	variable	text	text-clusterinfo-width	text.md	engine/text/layout.h:65
+text::ClusterInfo::first_glyph	variable	text	text-clusterinfo-first-glyph	text.md	engine/text/layout.h:66
+text::ClusterInfo::glyph_count	variable	text	text-clusterinfo-glyph-count	text.md	engine/text/layout.h:67
+text::LineInfo	struct	text	text-lineinfo	text.md	engine/text/layout.h:74
+text::LineInfo::first_cluster	variable	text	text-lineinfo-first-cluster	text.md	engine/text/layout.h:75
+text::LineInfo::cluster_count	variable	text	text-lineinfo-cluster-count	text.md	engine/text/layout.h:76
+text::LineInfo::byte_begin	variable	text	text-lineinfo-byte-begin	text.md	engine/text/layout.h:77
+text::LineInfo::byte_end	variable	text	text-lineinfo-byte-end	text.md	engine/text/layout.h:78
+text::LineInfo::x	variable	text	text-lineinfo-x	text.md	engine/text/layout.h:79
+text::LineInfo::width	variable	text	text-lineinfo-width	text.md	engine/text/layout.h:80
+text::LineInfo::top	variable	text	text-lineinfo-top	text.md	engine/text/layout.h:81
+text::LineInfo::height	variable	text	text-lineinfo-height	text.md	engine/text/layout.h:82
+text::LineInfo::baseline	variable	text	text-lineinfo-baseline	text.md	engine/text/layout.h:83
+text::TextLayout	struct	text	text-textlayout	text.md	engine/text/layout.h:90
+text::TextLayout::glyphs	variable	text	text-textlayout-glyphs	text.md	engine/text/layout.h:91
+text::TextLayout::clusters	variable	text	text-textlayout-clusters	text.md	engine/text/layout.h:92
+text::TextLayout::lines	variable	text	text-textlayout-lines	text.md	engine/text/layout.h:93
+text::TextLayout::width	variable	text	text-textlayout-width	text.md	engine/text/layout.h:94
+text::TextLayout::height	variable	text	text-textlayout-height	text.md	engine/text/layout.h:95
+text::TextLayout::byte_length	variable	text	text-textlayout-byte-length	text.md	engine/text/layout.h:96
+text::TextLayout::invalid_sequences	variable	text	text-textlayout-invalid-sequences	text.md	engine/text/layout.h:97
+text::Layout(StringView,const TextStyle&,const LayoutOptions&,TextLayout*)	function	text	text-layout-stringview-const-textstyle-amp-const-layoutoptions-amp-textlayout-star	text.md	engine/text/layout.h:113
 text::LibraryVersion	struct	text	text-libraryversion	text.md	engine/text/library.h:16
 text::LibraryVersion::major	variable	text	text-libraryversion-major	text.md	engine/text/library.h:18
 text::LibraryVersion::minor	variable	text	text-libraryversion-minor	text.md	engine/text/library.h:20

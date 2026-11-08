@@ -53,6 +53,17 @@ struct Status {
     ///
     /// Fails: never.
     bool Ok() const { return error == Error::None; }
+    /// Returns a failure with `e` and `message`.
+    ///
+    /// Param e: the error.
+    /// Param message: a string literal (or other string that outlives the status) naming the cause.
+    /// Fails: never.
+    static Status Of(Error e, const char* message) {
+        Status status;
+        status.error = e;
+        status.message = message;
+        return status;
+    }
     /// Returns true when the status is exactly `e`.
     ///
     /// Fails: never.

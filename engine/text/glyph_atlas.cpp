@@ -17,13 +17,6 @@ u64 Mix(u64 x) {
     return x ^ (x >> 31);
 }
 
-Status Fail(Error error, const char* message) {
-    Status status;
-    status.error = error;
-    status.message = message;
-    return status;
-}
-
 } // namespace
 
 GlyphAtlas::GlyphAtlas(u32 page_size, u32 max_pages) : page_size_(page_size), max_pages_(max_pages) {
@@ -99,10 +92,10 @@ void GlyphAtlas::MarkDirty(Page& page, const Rect& rect) {
 Status GlyphAtlas::GetOrAdd(Font& font, GlyphId glyph, GlyphEntry* out) {
     ENGINE_ASSERT(out != nullptr, "GlyphAtlas::GetOrAdd: out is null");
     *out = GlyphEntry{};
-    if (!font.IsOpen()) return Fail(Error::InvalidArgument, "the font is not open");
+    if (!font.IsOpen()) return Status::Of(Error::InvalidArgument, "the font is not open");
     if (font.PixelSize() > kMaxAtlasPixelSize) {
         ++stats_.too_large;
-        return Fail(Error::TooLarge, "the pixel size is above the largest rasterized size");
+        return Status::Of(Error::TooLarge, "the pixel size is above the largest rasterized size");
     }
     Key key;
     key.font = font.Id();
@@ -115,7 +108,7 @@ Status GlyphAtlas::GetOrAdd(Font& font, GlyphId glyph, GlyphEntry* out) {
     }
     if (!EnsureSlot()) { // make room in the index first, so a glyph is never placed in a page without an entry to find it
         ++stats_.failures;
-        return Fail(Error::OutOfMemory, "out of memory growing the atlas index");
+        return Status::Of(Error::OutOfMemory, "out of memory growing the atlas index");
     }
     GlyphBitmap bitmap;
     const Status rendered = font.Render(glyph, &bitmap);
@@ -142,7 +135,7 @@ Status GlyphAtlas::GetOrAdd(Font& font, GlyphId glyph, GlyphEntry* out) {
         }
         if (!placed) {
             ++stats_.failures;
-            return Fail(Error::AtlasFull, "the glyph does not fit in the atlas");
+            return Status::Of(Error::AtlasFull, "the glyph does not fit in the atlas");
         }
         Page& target = pages_[page];
         for (u32 row = 0; row < bitmap.height; ++row) {

@@ -5,6 +5,7 @@ set(TEXT_SOURCES
   font_freetype.cpp
   shelf_packer.cpp
   glyph_atlas.cpp
+  layout.cpp
 )
 set(TEXT_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

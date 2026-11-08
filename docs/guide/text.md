@@ -1,6 +1,6 @@
 # Fonts and text
 
-Status: draft (Phase 14, Days 175-177 so far; layout, cursor and the drawing pass follow).
+Status: draft (Phase 14, Days 175-178 so far; cursor and the drawing pass follow).
 
 The text layer lives in `engine/text/` (namespace `engine_placeholder::text`). Design and reasons: `docs/superpowers/specs/2026-11-08-text-design.md`.
 FreeType 2.15.0 (vendored, `third_party/freetype/`) reads and rasterizes the fonts; it is named in one file, `engine/text/font_freetype.cpp`, and every
@@ -41,6 +41,23 @@ second request returns the same entry. The entry has the page, the pixel rectang
 to the maximum given to the constructor; after that a glyph is refused with `Error::AtlasFull` and counted in `Stats().failures` (never a crash; there is **no
 eviction** in this version). `TakeDirty(page, &rect)` returns the rectangle that changed since the last call, so a frame uploads only that. The CPU pages are the
 source of truth: a renderer's GPU copy can be rebuilt from `PagePixels(page)` after a device reset.
+
+## Layout
+
+`Layout(utf8, style, options, &layout)` turns UTF-8 into a `TextLayout`: positioned glyphs (`glyph`, pen `x`, baseline `y`, `advance`, the byte offset and the
+grapheme index of its source), grapheme **clusters** (byte range, line, left edge, width: what the cursor moves by) and **lines**. Coordinates are pixels, origin at
+the top-left of the first line, y down. `TextStyle` names the font, the pixel size and a color the drawing pass uses; `LayoutOptions` the soft-wrap width
+(0 = none), the line-height scale, the tab width in spaces and the alignment of each line.
+
+- A cluster of several code points yields one glyph per code point; combining marks, joiners and variation selectors have zero advance and are drawn at the pen
+  after their base glyph (a font gives such marks a negative bearing). That is the whole of "complex text": **no shaping**, so scripts that need it (Arabic,
+  Indic) draw their isolated forms, and there is no bidirectional or vertical text.
+- Kerning from the `kern` table applies between neighbouring clusters on a line, never across a break or a tab.
+- `\n`, `\r\n` and `\r` end a line (the break is a cluster with no glyph); a text ending in a break has an empty last line; the empty string is one empty line.
+  A tab goes to the next multiple of `tab_width_in_spaces` space widths.
+- With a wrap width, a line breaks after the last space that fits, or between clusters when a word is wider than the line; never inside a cluster. Trailing
+  spaces never trigger a wrap and do not count towards a line's width.
+- Malformed UTF-8 draws U+FFFD and is counted in `invalid_sequences`. The same input always gives the same layout.
 
 ## Hinting
 
