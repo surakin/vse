@@ -979,6 +979,21 @@ Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `
   Vulkan. D3D12 refuses color factors in an alpha blend; on the alpha channel they mean their alpha counterparts, as Vulkan treats them.
   A strip with `primitive_restart` gets two states, cutting at `0xFFFFFFFF` and at `0xFFFF`, because D3D12 fixes the cut value in the
   pipeline and the index size comes with the draw.
+- **Command lists** (Day 168). Each list has its own command allocator; the lists of a frame slot are handed out again once that slot's
+  frame has finished, so lists record on any number of threads at once. `Submit` runs each list in its own `ExecuteCommandLists`, which
+  returns every buffer to `COMMON`: a list tracks its buffers from there (promoted implicitly on use, transitioned explicitly from the
+  tracked state), so a buffer barrier's `before` is not needed. Textures keep their state between lists: a list records the state its
+  first barrier on each texture needs, and `Submit` first transitions the texture there from the state the device recorded, so a barrier
+  from `Undefined` works whatever the texture went through before. `ShaderWrite` to `ShaderWrite` is a UAV barrier. A pass clears with
+  `ClearRenderTargetView`/`ClearDepthStencilView`, a don't-care color load or store discards; the viewport is Vulkan's (the shaders flip
+  Y). Debug labels are `BeginEvent` with PIX's ANSI string encoding. The debug layer's "clear value does not match" hint is logged as
+  information: a texture is created without knowing what its passes clear to. Measured (Release, validation off): a cube draw with its
+  transient bind group records in 0.40 us on DX12 against 0.74 to 1.00 us on Vulkan on the same PC.
+- **`GenerateMips`** (Day 168) runs `shaders/mipgen.comp` once per level: a bilinear sample of the level above at each texel centre, every
+  layer at once. A texture that can have mips generated (`Sampled`, `CopySrc` and `CopyDst`, more than one level, 2D, one sample, a format
+  with typed storage) is created with unordered access; an sRGB one through a typeless resource, read through its sRGB view and written
+  through a linear view with the shader encoding sRGB. 3D, multisampled and depth textures are refused ([[rhi::Device::CanGenerateMips]]
+  answers for the format).
 - **The pipeline cache** (Day 167) is an `ID3D12PipelineLibrary` in `<cache dir>/pipelines_<adapter id>_<driver>.bin` (the same
   directory rule as Vulkan's). Each pipeline is stored under a name hashed from its shaders, its root signature's serialized bytes and
   its whole fixed state. The file starts with a header (magic, format version, adapter and driver identity, size, hash) and the list of

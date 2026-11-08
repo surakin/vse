@@ -32,6 +32,7 @@ set(ENGINE_SHADERS
   point_light.vert
   point_light.frag
   tonemap.frag
+  mipgen.comp
 )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/names.cmake)

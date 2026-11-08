@@ -2,6 +2,8 @@
 
 #include "rhi/dx12/dx12_device.h"
 
+#include "rhi/dx12/dx12_command_list.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -43,6 +45,11 @@ void CALLBACK OnDebugMessage(D3D12_MESSAGE_CATEGORY, D3D12_MESSAGE_SEVERITY seve
             RhiLog(LogVerbosity::Warn, "D3D12 debug layer: %s", text);
         }
         return;
+    }
+    // A clear whose color differs from the resource's optimized clear value is a performance hint the RHI cannot act on: a texture is
+    // created without knowing what its passes will clear to (Vulkan has no such value), so every clear would warn. Kept as information.
+    if (id == D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE || id == D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE) {
+        severity = D3D12_MESSAGE_SEVERITY_INFO;
     }
     RecordDebugMessage(severity, id, text);
 }
@@ -225,6 +232,7 @@ Dx12Device::~Dx12Device() {
         return; // never initialized
     }
     WaitIdle();
+    ShutdownCommands(); // the lists hold nothing else; the GPU is done with them
     {
         std::lock_guard<std::mutex> lock(resource_mutex_);
         CollectRetiredLocked(true);
@@ -500,24 +508,6 @@ void Dx12Device::WaitIdle() {
     std::lock_guard<std::mutex> lock(resource_mutex_);
     UpdateCompletedFramesLocked();
     CollectRetiredLocked(true);
-}
-
-FenceValue Dx12Device::Submit(CommandList* const* lists, usize count) {
-    ENGINE_ASSERT(frame_open_.load(std::memory_order_acquire), "Submit: no frame is open (call BeginFrame first)");
-    ENGINE_ASSERT(count == 0 || lists != nullptr, "Submit: lists is null but count is not zero");
-    std::lock_guard<std::mutex> lock(submit_mutex_);
-    if (device_lost_.load(std::memory_order_relaxed)) {
-        return 0;
-    }
-    if (count == 0) {
-        return last_signaled_; // nothing new: the fence for everything submitted so far
-    }
-    if (lose_device_at_submit_ != 0 && submit_count_.fetch_add(1, std::memory_order_relaxed) + 1 == lose_device_at_submit_ &&
-        InjectLoss("submit", lose_device_at_submit_)) {
-        return 0;
-    }
-    NotYet("submitting command lists", 168);
-    return 0;
 }
 
 ResourceCounts Dx12Device::Resources() const {

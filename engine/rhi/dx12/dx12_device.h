@@ -20,6 +20,7 @@
 namespace engine_placeholder::rhi::dx12 {
 
 class Dx12Device;
+class Dx12CommandList;
 
 /// Owning pointer to a Direct3D 12 device; destroying it waits for the GPU first (see [[rhi::DeviceDeleter]]).
 using Dx12DevicePtr = UniquePtr<Dx12Device, DeviceDeleter>;
@@ -217,6 +218,17 @@ public:
     /// Thread-safety: thread-safe.
     void SetTextureState(TextureHandle texture, D3D12_RESOURCE_STATES state);
 
+    /// A GPU-only buffer a bind group reads or writes, and the state that use needs; the command list tracks buffer states with it.
+    ///
+    /// Thread-safety: thread-compatible plain data.
+    /// Ownership: `resource` is borrowed, valid while the group's buffer lives.
+    struct GroupBufferUse {
+        /// The buffer's resource.
+        ID3D12Resource* resource = nullptr;
+        /// `VERTEX_AND_CONSTANT_BUFFER`, a shader-resource state or `UNORDERED_ACCESS`.
+        D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
+    };
+
     /// What command recording needs to know about a live bind group.
     ///
     /// Thread-safety: thread-compatible plain data (a snapshot).
@@ -238,6 +250,10 @@ public:
         u64 frame = 0;
         /// False if a resource the group was built from has since been destroyed.
         bool resources_live = true;
+        /// The GPU-only buffers the group uses (borrowed from the group; valid until it is collected).
+        const GroupBufferUse* buffer_uses = nullptr;
+        /// How many.
+        u32 buffer_use_count = 0;
     };
     /// Looks up a bind group and checks that the resources it refers to are still alive.
     ///
@@ -353,6 +369,39 @@ public:
     /// Returns the pipeline cache file's path, or an empty string when no cache is in use.
     const char* PipelineCachePath() const { return cache_path_; }
 
+    /// The compute pipeline `GenerateMips` runs (shaders/mipgen.comp), with its own root signature: a table of the source level's
+    /// view and the written level's storage view, a static linear clamp sampler, and four root constants.
+    ///
+    /// Thread-safety: thread-compatible plain data.
+    /// Ownership: borrowed; the device keeps both for its life.
+    struct MipPipeline {
+        /// The root signature.
+        ID3D12RootSignature* root = nullptr;
+        /// The pipeline state.
+        ID3D12PipelineState* state = nullptr;
+    };
+    /// Returns the mip pipeline, making it on first use.
+    ///
+    /// Param out: receives it.
+    /// Returns: true on success.
+    /// Fails: false (logged) if D3D12 refuses the root signature or the pipeline.
+    /// Thread-safety: thread-safe.
+    bool MipPipelineFor(MipPipeline* out);
+    /// Returns whether a texture of this description is created so `GenerateMips` can write its levels: `Sampled`, `CopySrc` and
+    /// `CopyDst` usage, more than one level, 2D, one sample, and a format [[rhi::Device::CanGenerateMips]] accepts. Such a texture gets
+    /// unordered access, through a typeless resource for an sRGB format.
+    ///
+    /// Param desc: the texture's description.
+    /// Returns: true if it qualifies.
+    /// Thread-safety: thread-safe.
+    bool MipGenCapable(const TextureDesc& desc) const;
+    /// Returns the format of the storage view `GenerateMips` writes a level through: the format itself, or its linear twin for sRGB.
+    ///
+    /// Param format: the texture's format.
+    /// Returns: the DXGI format.
+    /// Thread-safety: thread-safe. A pure function.
+    static DXGI_FORMAT MipStorageFormat(Format format);
+
     /// Returns the shader-visible view ring. Ownership: borrowed.
     GpuDescriptorRing& ViewRing() { return view_ring_; }
     /// Returns the shader-visible sampler heap. Ownership: borrowed.
@@ -458,6 +507,7 @@ private:
         bool transient = false;
         u64 frame = 0;
         Vector<GroupRef> refs;
+        Vector<GroupBufferUse> buffer_uses;
     };
     // A table of samplers in the shader-visible heap, shared by every group with the same samplers in the same order.
     struct SamplerTable {
@@ -506,6 +556,20 @@ private:
     ComRef<ID3D12PipelineState> CachedComputeState(u64 key, const D3D12_COMPUTE_PIPELINE_STATE_DESC& desc, const char* name);
     void StoreInLibrary(u64 key, ID3D12PipelineState* state);
     PipelineHandle AddPipeline(PipelineRes&& res, const char* what);
+
+    // ---- command lists and submission (dx12_device_commands.cpp) ----
+    struct ListPool {
+        Vector<UniquePtr<Dx12CommandList>> lists;
+        usize used = 0;
+        u64 frame = 0; // the frame the pool's lists were last handed out in
+    };
+    ListPool list_pools_[kFrameSlots];      // under list_mutex_
+    std::mutex list_mutex_;
+    void ShutdownCommands();
+    ComRef<ID3D12RootSignature> mip_root_;  // under mip_mutex_
+    ComRef<ID3D12PipelineState> mip_state_;
+    std::mutex mip_mutex_;
+    bool mip_support_[static_cast<usize>(Format::Count)] = {};
 
     HandlePool<ShaderRes, ShaderTag> shaders_;
     HandlePool<PipelineRes, PipelineTag> pipelines_;

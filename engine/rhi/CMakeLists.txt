@@ -64,6 +64,8 @@ set(RHI_DX12_SOURCES
   dx12/dx12_device_resources.cpp
   dx12/dx12_device_bindings.cpp
   dx12/dx12_device_pipelines.cpp
+  dx12/dx12_device_commands.cpp
+  dx12/dx12_command_list.cpp
   dx12/dx12_pipeline_cache.cpp
   dx12/dx12_device_later.cpp
   dx12/dx12_backend.cpp
@@ -86,6 +88,7 @@ function(engine_add_rhi_libs suffix foundation_lib jobs_lib platform_lib)
   if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(rhi_dx12${suffix} STATIC ${RHI_DX12_SOURCES})
     target_include_directories(rhi_dx12${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
+    target_include_directories(rhi_dx12${suffix} PRIVATE ${CMAKE_SOURCE_DIR}/shaders) # mipgen.comp.dxil.inc (GenerateMips)
     target_compile_options(rhi_dx12${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
     target_link_libraries(rhi_dx12${suffix} PUBLIC rhi${suffix} d3d12 dxgi dxguid)
   endif()

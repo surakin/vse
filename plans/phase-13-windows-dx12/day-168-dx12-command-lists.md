@@ -8,31 +8,88 @@ Recording and submission: command allocators per frame, `ResourceState` transiti
 
 ## Tasks
 
-- [ ] **Allocators and lists:** a command allocator per frame in flight per recording thread (the RHI's threading rule), reset after the frame's fence; command
+- [x] **Allocators and lists:** a command allocator per frame in flight per recording thread (the RHI's threading rule), reset after the frame's fence; command
       lists from a pool; submission with `ExecuteCommandLists` and a fence signal; recording from several job-system threads at once if the RHI allows it (test).
-- [ ] **Barriers:** each RHI `ResourceState` transition maps to `D3D12_RESOURCE_STATES` (table test over every pair the render graph emits), batched per
+- [x] **Barriers:** each RHI `ResourceState` transition maps to `D3D12_RESOURCE_STATES` (table test over every pair the render graph emits), batched per
       `Barrier` call; UAV barriers for storage writes; subresource transitions for mips and array layers; split barriers not used. Enhanced barriers stay out
       (decision 10).
-- [ ] **Rendering passes:** begin/end with `OMSetRenderTargets` plus clears (or `BeginRenderPass` on `ID3D12GraphicsCommandList4` — the spec's choice, measured
+- [x] **Rendering passes:** begin/end with `OMSetRenderTargets` plus clears (or `BeginRenderPass` on `ID3D12GraphicsCommandList4` — the spec's choice, measured
       once on this GPU); load and store ops honored as far as D3D12 can (discard via `DiscardResource` where the RHI says don't-care); viewport and scissor with the
       Y convention of Day 163.
-- [ ] **Commands:** draws, indexed draws, instanced draws with the object index per Day 163's delivery, dispatch, buffer and texture copies (with the footprint rules
+- [x] **Commands:** draws, indexed draws, instanced draws with the object index per Day 163's delivery, dispatch, buffer and texture copies (with the footprint rules
       of Day 165), clears of storage resources, debug markers (`PIXBeginEvent`-compatible `BeginEvent`/`EndEvent` if the RHI has markers — through the plain
       `ID3D12GraphicsCommandList::BeginEvent` API, no PIX library), timestamp queries if the RHI exposes them.
-- [ ] **`GenerateMips`:** a compute shader (Slang, minted to SPIR-V and DXIL like the rest; Vulkan keeps its blit path unless the spec unifies them) that
+- [x] **`GenerateMips`:** a compute shader (Slang, minted to SPIR-V and DXIL like the rest; Vulkan keeps its blit path unless the spec unifies them) that
       downsamples each level, with sRGB handled by reading/writing linear views; tested against a CPU reference within tolerance.
-- [ ] **First images:** the triangle and the compute test rendered offscreen on DX12 and compared with `triangle.ppm` and the compute expectation (the full
+- [x] **First images:** the triangle and the compute test rendered offscreen on DX12 and compared with `triangle.ppm` and the compute expectation (the full
       golden suite is Day 170).
-- [ ] **Tests** (`tests/rhi/dx12_commands_test.cpp`, phase 13; shared command tests by backend): barriers table, a pass that clears and draws, multi-threaded
+- [x] **Tests** (`tests/rhi/dx12_commands_test.cpp`, phase 13; shared command tests by backend): barriers table, a pass that clears and draws, multi-threaded
       recording, copies at odd sizes, mips, debug layer silent (including GPU-based validation once for the whole set, recorded). Moved here from
       Day 166: every binding type reaches a compute shader and reads back correctly, many groups per frame, the shader-visible ring wrapping across
       3 frames of real submissions, and whether the `DATA_STATIC_WHILE_SET_AT_EXECUTE` range flags hold under GPU-based validation (else `DATA_VOLATILE`).
-- [ ] **Measure `SetBindGroup`** (moved from Day 166) with `rhi_bench` on DX12 versus Vulkan on the same PC (Day 161 baseline) and record both; if DX12 is
+- [x] **Measure `SetBindGroup`** (moved from Day 166) with `rhi_bench` on DX12 versus Vulkan on the same PC (Day 161 baseline) and record both; if DX12 is
       much slower, try caching a group's GPU copy across frames when unchanged (and record the result).
-- [ ] **Runs:** Windows `--affected` plain and asan; Linux `--affected` if the mip shader or shared tests changed.
-- [ ] **End-of-day review:** `/code-review high`. Extra scrutiny: allocator reuse before its fence completes, a barrier missing between a copy and a draw,
+- [x] **Runs:** Windows `--affected` plain and asan; Linux `--affected` if the mip shader or shared tests changed.
+- [x] **End-of-day review:** `/code-review high`. Extra scrutiny: allocator reuse before its fence completes, a barrier missing between a copy and a draw,
       state tracking per subresource.
-- [ ] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.
+- [x] Update `STATUS.md`, `KNOWN-ISSUES.md`; commit and push.
 
 **Done:** command lists record and submit every RHI command on D3D12 with correct barriers, mips are generated by compute, and the triangle and compute results
 match their expectations offscreen.
+
+## Notes
+
+- **Allocators per list, not per thread.** Each command list owns its allocator, and the lists of a frame slot (three, as the view ring)
+  are handed out again when that slot's frame comes round, after `BeginFrame` waited for it. That serves any number of recording threads
+  without a thread table (tested with four threads recording at once). A list begun and dropped without `End` is closed when it is handed
+  out again (review finding).
+- **States.** `Submit` runs each list in its own `ExecuteCommandLists`. Buffers return to `COMMON` after each, so a list tracks them from
+  there: implicit promotion on use (vertex, index, copy, the bind groups' buffers at the draw), explicit transitions from the tracked state,
+  a UAV barrier for write after write; a buffer barrier's `before` is not needed. Textures keep their state: a list records the state its
+  first barrier on each texture needs and the state it leaves, and `Submit` transitions the texture into the first in a prologue list
+  from the state the device recorded (`TextureRes::state`), then records the second. Enhanced and split barriers are not used.
+- **Passes** use `OMSetRenderTargets` with `ClearRenderTargetView`/`ClearDepthStencilView` (the spec's choice; `BeginRenderPass` was not
+  measured, it offers nothing on a desktop GPU that these do not). A don't-care color load or store discards mip 0, layer 0 (the part a
+  pass renders; review finding); a don't-care depth is left alone, because a read-only depth attachment cannot be discarded. The debug
+  layer's "clear value does not match" hint is logged as information: a texture is created without knowing what its passes clear to.
+- **Not in the RHI, so not here:** timestamp queries and clears of storage resources (the plan's "if the RHI has them").
+- **`GenerateMips`** runs `shaders/mipgen.comp` (minted to SPIR-V and DXIL; Vulkan keeps its blit) with its own root signature (a static
+  linear clamp sampler). A texture that qualifies gets unordered access at creation, an sRGB one through a typeless resource; 3D,
+  multisampled and depth textures are refused. Matches a CPU reference within 2 levels for RGBA8 and RGBA8 sRGB, 37x23 with two layers.
+- **Test scope, amended:** the storage types reach compute shaders (fill, saxpy, gradient), the uniform buffer, sampled texture and sampler
+  a fragment shader (bindings_test.frag; no committed compute shader samples a texture). The shared command tests are not parameterized
+  by backend: `dx12_commands_test.cpp` mirrors the Vulkan ones (the golden triangle, fill and saxpy, gradient), as Day 170 does for the
+  golden suite.
+- **GPU-based validation** (`ENGINE_RHI_VALIDATION_SYNC=1`) over every DX12 test but the benchmarks: 33 test cases passed, the layer silent,
+  21 s. So the `DATA_STATIC_WHILE_SET_AT_EXECUTE` range flags hold for these tests (the Day 166 question).
+- **Measured** (`rhi_bench`, Release, validation off, the backend switched to DX12 by a local edit that was not committed; Day 173 lets the
+  benchmarks choose): a cube draw with its transient bind group records in 0.40 to 0.41 us on DX12 against 0.74 to 1.00 us on Vulkan on the
+  same PC, so caching a group's shader-visible copy across frames was not tried; barriers 0.18 / 0.19 us (buffer / texture) against
+  0.22 / 0.18 to 0.25 us.
+
+## For the Linux run
+
+Shared: `shaders/mipgen.comp.slang` with its minted `*.spv.inc`, `*.refl.inc` and `*.dxil.inc` (minted on Windows) and the `shaders/CMakeLists.txt`
+list. Run: both unity modes, `--affected` (the shader checks: the Linux `slangc` must mint the same SPIR-V and reflection), `ctest -L docs`.
+
+## Runs
+
+Windows PC:
+
+- `scripts/test-phase.sh --affected`: `ran 1260 of 2459 tests (phases: all; flavors: plain; display: included; crash tests: excluded) in 144 s; the last full run took 13 s`.
+- `scripts/test-phase.sh --affected --flavor asan`: `ran 934 of 2459 tests (phases: all; flavors: asan; display: included; crash tests: excluded) in 70 s; the last full run took 13 s`.
+- `rhi_tests "[dx12]"`: 36 test cases, the debug layer silent; once more under GPU-based validation (above). All three trees build clean;
+  docs 51 samples, 0 failed; lint 4464 of 4464; `ctest -L docs` 6 of 6.
+- Linux: not run; pending until the phase close (Day 174).
+
+## Post-implementation code review
+
+`/code-review high` on the day's diff: 4 findings, 2 fixed, 2 declined.
+
+- **Fixed (regression test, fails without the fix):** a list begun and dropped without `End` stayed open, so resetting its allocator when its
+  slot came round failed and `CreateCommandList` returned null ("A DX12 list begun and dropped without End is handed out again ...").
+- **Fixed (no test):** a don't-care load or store discarded every level and layer of the attachment; it discards mip 0, layer 0 now. A test
+  cannot tell: a discard leaves the contents undefined, and this GPU leaves them as they were.
+- **Declined:** the per-list trackers search linearly; a list with a thousand distinct buffers would cost about half a million comparisons.
+  To be measured with the renderer on Day 171.
+- **Declined:** the clear-value hint is information, not a warning (above).

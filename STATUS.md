@@ -931,3 +931,12 @@ compare against the scaled size, a new test checks the scaling; guide `platform-
 large size; the demos render more pixels at high DPI, no benchmark opens a window; X11 on a high-density display is still physical, filed).
 Runs: `ran 1252 of 2443 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` with one flaky failure in phase 2
 (filed), asan `ran 926 of 2443`; all three Windows trees build clean. Linux: `window_host.h` documentation only.
+
+Phase 13 **Day 168 (2026-11-08, Windows PC): DX12 command lists.** A command list per allocator, pooled per frame slot (recording on any
+number of threads); `Submit` runs each list on its own, buffers tracked within a list from `COMMON`, textures moved into the state a list needs
+by a prologue built from the device's recorded states. Passes with clears and discards, draws (the cut-at-0xFFFF state for 16-bit restart
+strips), dispatches, copies through footprints, debug labels, and `GenerateMips` by a compute shader (`shaders/mipgen.comp`, sRGB through a
+typeless resource). The triangle matches `triangle.ppm`; fill, saxpy and gradient match; mips match a CPU reference. GPU-based validation silent
+over the DX12 tests. `SetBindGroup` with a draw: 0.40 us on DX12 against 0.74 to 1.00 us on Vulkan. Runs: `ran 1260 of 2459 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan
+`ran 934 of 2459 tests (phases: all; flavors: asan; display: included; crash tests: excluded)` (an earlier run hit the filed FramePool flake once). Review: 4 findings, 2 fixed, 2 declined. Linux: pending until the phase close.
+**Next: Day 169 (the DX12 swapchain).**

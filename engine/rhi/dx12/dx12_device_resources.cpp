@@ -144,6 +144,17 @@ void Dx12Device::FillFormatSupport() {
         format_support_[i] = bits;
     }
     format_support_ready_ = true;
+    // GenerateMips (shaders/mipgen.comp): filtered sampling of the format's shader view and typed stores through its storage view.
+    for (usize i = 1; i < static_cast<usize>(Format::Count); ++i) {
+        const Format f = static_cast<Format>(i);
+        const FormatProperties& fp = FormatInfo(f);
+        if (fp.is_depth || fp.is_compressed || (format_support_[i] & D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE) == 0) continue;
+        D3D12_FEATURE_DATA_FORMAT_SUPPORT storage{};
+        storage.Format = MipStorageFormat(f);
+        mip_support_[i] = SUCCEEDED(device_->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &storage, sizeof(storage))) &&
+                          (storage.Support1 & D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW) != 0 &&
+                          (storage.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE) != 0;
+    }
 }
 
 bool Dx12Device::FormatSupport(Format format, TextureUsage usage) const {
@@ -169,10 +180,6 @@ bool Dx12Device::FormatSupport(Format format, TextureUsage usage) const {
         return false;
     }
     return true;
-}
-
-bool Dx12Device::CanGenerateMips(Format) const {
-    return false; // the compute-shader mip path arrives on Day 168
 }
 
 void Dx12Device::SetDebugName(ID3D12Object* object, const char* name) {
@@ -519,6 +526,13 @@ TextureHandle Dx12Device::CreateTexture(const TextureDesc& desc) {
         if (!Has(desc.usage, TextureUsage::Sampled)) rd.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
     }
     if (Has(desc.usage, TextureUsage::Storage)) rd.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    if (MipGenCapable(desc)) {
+        // GenerateMips writes the levels through storage views (shaders/mipgen.comp). An sRGB format cannot have one, so the resource is
+        // typeless with sRGB shader views and render targets and a linear storage view.
+        rd.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        if (desc.format == Format::RGBA8_SRGB) rd.Format = DXGI_FORMAT_R8G8B8A8_TYPELESS;
+        if (desc.format == Format::BGRA8_SRGB) rd.Format = DXGI_FORMAT_B8G8R8A8_TYPELESS;
+    }
     if (desc.samples > 1) {
         D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS ms{};
         ms.Format = ToDxgi(desc.format);

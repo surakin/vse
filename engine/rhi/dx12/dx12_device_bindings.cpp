@@ -417,6 +417,14 @@ BindGroupHandle Dx12Device::CreateBindGroup(const BindGroupDesc& desc) {
                     }
                 }
                 ref.buffer = found->buffer;
+                if (buf->desc.location == MemoryLocation::GpuOnly) {
+                    // The state the command list's tracking needs for it (dx12_command_list.h); upload-heap buffers have one fixed state.
+                    const D3D12_RESOURCE_STATES state = uniform ? D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER
+                                                        : bd.type == BindingType::ReadOnlyStorageBuffer
+                                                            ? D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
+                                                            : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+                    res.buffer_uses.Push(GroupBufferUse{buf->resource.Get(), state});
+                }
                 break;
             }
             case BindingType::SampledTexture:
@@ -491,6 +499,7 @@ void Dx12Device::ReleaseBindGroupLocked(BindGroupRes& group) {
     ReleaseSamplerTableLocked(group.sampler_table);
     group.sampler_table = ~0u;
     group.refs.Clear();
+    group.buffer_uses.Clear();
 }
 
 void Dx12Device::RetireFrameGroupsLocked(u32 slot) {
@@ -521,6 +530,8 @@ bool Dx12Device::LookupBindGroup(BindGroupHandle group, BindGroupInfo* out) cons
     out->layout_id = g->layout_id;
     out->transient = g->transient;
     out->frame = g->frame;
+    out->buffer_uses = g->buffer_uses.Data();
+    out->buffer_use_count = static_cast<u32>(g->buffer_uses.Size());
     out->resources_live = true;
     for (usize i = 0; i < g->refs.Size() && out->resources_live; ++i) {
         const GroupRef& ref = g->refs[i];

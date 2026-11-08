@@ -22,22 +22,6 @@ namespace {
 
 const char* NameOr(const char* name) { return name != nullptr ? name : ""; }
 
-DXGI_FORMAT VertexDxgi(VertexFormat f) {
-    switch (f) {
-    case VertexFormat::Float1: return DXGI_FORMAT_R32_FLOAT;
-    case VertexFormat::Float2: return DXGI_FORMAT_R32G32_FLOAT;
-    case VertexFormat::Float3: return DXGI_FORMAT_R32G32B32_FLOAT;
-    case VertexFormat::Float4: return DXGI_FORMAT_R32G32B32A32_FLOAT;
-    case VertexFormat::UInt1: return DXGI_FORMAT_R32_UINT;
-    case VertexFormat::UInt2: return DXGI_FORMAT_R32G32_UINT;
-    case VertexFormat::UInt3: return DXGI_FORMAT_R32G32B32_UINT;
-    case VertexFormat::UInt4: return DXGI_FORMAT_R32G32B32A32_UINT;
-    case VertexFormat::UNorm8x4: return DXGI_FORMAT_R8G8B8A8_UNORM;
-    case VertexFormat::Count: break;
-    }
-    return DXGI_FORMAT_UNKNOWN;
-}
-
 D3D12_PRIMITIVE_TOPOLOGY_TYPE TopologyType(PrimitiveTopology t) {
     switch (t) {
     case PrimitiveTopology::TriangleList:
@@ -434,7 +418,7 @@ PipelineHandle Dx12Device::CreateGraphicsPipeline(const GraphicsPipelineDesc& de
             const bool instance = desc.vertex_bindings[a.binding].per_instance;
             e.SemanticName = "TEXCOORD";
             e.SemanticIndex = a.location;
-            e.Format = VertexDxgi(a.format);
+            e.Format = ToDxgiVertex(a.format);
             e.InputSlot = a.binding;
             e.AlignedByteOffset = a.offset;
             e.InputSlotClass = instance ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
