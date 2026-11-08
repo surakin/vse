@@ -6,24 +6,25 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "io/file.h"
-#include "gpu_fixture.h"
+#include "backend_fixture.h"
+#include "cube_fixture.h"
 #include "image_compare.h"
 #include "render_target.h"
+#include "build_defs.h"
+#include "rhi/backend_registry.h"
 #include "rhi/rhi.h"
-#include "rhi/vulkan/vulkan_device.h"
-#include "triangle.frag.spv.inc"
-#include "triangle.vert.spv.inc"
+#include "triangle.frag.dxil.inc"
+#include "triangle.vert.dxil.inc"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::rhi::vulkan;
 using gpu_test::CompareOptions;
 using gpu_test::Image;
 
 namespace {
 
-Image Solid(unsigned w, unsigned h, unsigned char r, unsigned char g,
-            unsigned char b) {
+Image Solid(unsigned w, unsigned h, u8 r, u8 g,
+            u8 b) {
   Image img;
   img.width = w;
   img.height = h;
@@ -38,11 +39,11 @@ Image Solid(unsigned w, unsigned h, unsigned char r, unsigned char g,
 }
 
 // A half-and-half image: the left half is `a`, the right half `b`.
-Image Split(unsigned w, unsigned h, unsigned char a, unsigned char b) {
+Image Split(unsigned w, unsigned h, u8 a, u8 b) {
   Image img = Solid(w, h, a, a, a);
   for (unsigned y = 0; y < h; ++y) {
     for (unsigned x = w / 2; x < w; ++x) {
-      unsigned char *p = &img.rgba[(static_cast<size_t>(y) * w + x) * 4];
+      u8 *p = &img.rgba[(static_cast<size_t>(y) * w + x) * 4];
       p[0] = p[1] = p[2] = b;
     }
   }
@@ -85,25 +86,16 @@ bool ExpectedColor(u32 x, u32 y, float out[3]) {
 // Owns the device and everything the triangle scene creates, so a failed REQUIRE still cleans up (the GPU is
 // idled first, then the resources are destroyed, then the device).
 struct TriangleScene {
-    gpu_test::GpuFixture fx;
-    VulkanDevicePtr device;
+    gpu_test::BackendValidation validation;
+    DevicePtr device;
     ShaderHandle vs;
     ShaderHandle fs;
     PipelineHandle pipeline;
     BufferHandle vb;
 
-    TriangleScene() {
-        fx.RequireValidation();
-        DeviceCreateInfo info;
-        info.validation = ValidationSetting::On;
-        info.sync_validation = true;
-        device = VulkanDevice::Create(info);
-        if (device == nullptr) {
-            SKIP("no suitable Vulkan device");
-        }
-    }
+    explicit TriangleScene(Backend backend) : validation(backend) { device = gpu_test::CreateTestDevice(backend); }
     ~TriangleScene() {
-        if (device == nullptr) {
+        if (!device) {
             return;
         }
         device->WaitIdle();
@@ -116,16 +108,11 @@ struct TriangleScene {
 };
 
 // Renders the red-green-blue triangle on a dark gray background into `image`.
-bool RenderTriangle(Image* image) {
-    TriangleScene scene;
-    VulkanDevice* device = scene.device.Get();
-    ShaderDesc sd;
-    sd.stage = ShaderStage::Vertex;
-    sd.SetCode(SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount));
-    scene.vs = device->CreateShader(sd);
-    sd.stage = ShaderStage::Fragment;
-    sd.SetCode(SpirvBlob(shaders::kTriangleFragSpv, shaders::kTriangleFragSpvWordCount));
-    scene.fs = device->CreateShader(sd);
+bool RenderTriangle(Backend backend, Image* image) {
+    TriangleScene scene(backend);
+    Device* device = scene.device.Get();
+    scene.vs = CreateShaderFromSet(*device, shaders::kTriangleVertShader, ShaderStage::Vertex);
+    scene.fs = CreateShaderFromSet(*device, shaders::kTriangleFragShader, ShaderStage::Fragment);
 
     VertexBindingDesc binding = {20, false};
     VertexAttributeDesc attributes[2] = {{0, 0, VertexFormat::Float2, 0}, {1, 0, VertexFormat::Float3, 8}};
@@ -203,7 +190,7 @@ TEST_CASE("Image comparison applies the interior and edge tolerances",
         gray, Solid(16, 16, 103, 100, 100), options, "unit_beyond");
     CHECK_FALSE(r.same);
     CHECK(r.interior_misses == 256);
-    CHECK(r.message.find("diff image") != std::string::npos);
+    CHECK(StringView(r.message.c_str()).Contains(StringView("diff image")));
     gpu_test::Image diff;
     CHECK(gpu_test::ReadPpm(gpu_test::DiffPath("unit_beyond").c_str(), &diff));
   }
@@ -211,7 +198,7 @@ TEST_CASE("Image comparison applies the interior and edge tolerances",
     const gpu_test::CompareResult r = gpu_test::Compare(
         gray, Solid(8, 16, 100, 100, 100), options, "unit_size");
     CHECK_FALSE(r.same);
-    CHECK(r.message.find("size differs") != std::string::npos);
+    CHECK(StringView(r.message.c_str()).Contains(StringView("size differs")));
   }
   SECTION("edge pixels get the wider tolerance") {
     const Image golden =
@@ -251,47 +238,53 @@ TEST_CASE("PPM files round-trip and malformed ones are refused",
   CHECK_FALSE(gpu_test::ReadPpm(gpu_test::TempPath("rhi_ppm_bad.ppm").c_str(), &back));
 }
 
-TEST_CASE("The triangle renders offscreen and matches its golden image",
-          "[rhi][vulkan][gpu][golden]") {
-  Image rendered;
-  const bool rendered_ok = RenderTriangle(&rendered); // a SKIP inside must not be nested in an assertion
-  REQUIRE(rendered_ok);
-  REQUIRE(rendered.width == kSize);
+TEST_CASE("The triangle renders offscreen and matches its golden image", "[rhi][gpu][golden]") {
+    FOR_EACH_GPU_BACKEND(backend) {
+        Image rendered;
+        const bool rendered_ok = RenderTriangle(backend, &rendered); // a SKIP inside must not be nested in an assertion
+        REQUIRE(rendered_ok);
+        REQUIRE(rendered.width == kSize);
 
-  // Independent of the golden: the background is the clear color, and interior
-  // pixels have the color the vertex colors interpolate to at the pixel center.
-  // A wrong golden cannot hide a broken pipeline from these.
-  const unsigned char *corner = rendered.Pixel(1, 1);
-  CHECK(std::abs(corner[0] - 51) <= 1); // 0.2 * 255
-  CHECK(std::abs(corner[1] - 51) <= 1);
-  CHECK(std::abs(corner[2] - 51) <= 1);
-  const u32 probes[][2] = {{32, 14}, {32, 40}, {50, 54}, {14, 54},
-                           {32, 30}, {40, 48}, {24, 48}};
-  for (const auto &probe : probes) {
-    float want[3];
-    REQUIRE(ExpectedColor(probe[0], probe[1], want));
-    const unsigned char *got = rendered.Pixel(probe[0], probe[1]);
-    for (int c = 0; c < 3; ++c) {
-      INFO("pixel " << probe[0] << "," << probe[1] << " channel " << c);
-      CHECK(std::abs(got[c] - static_cast<int>(want[c] * 255.0f + 0.5f)) <= 3);
+        // Independent of the golden: the background is the clear color, and interior pixels have the color the vertex colors
+        // interpolate to at the pixel center. A wrong golden cannot hide a broken pipeline from these.
+        const u8* corner = rendered.Pixel(1, 1);
+        CHECK(std::abs(corner[0] - 51) <= 1); // 0.2 * 255
+        CHECK(std::abs(corner[1] - 51) <= 1);
+        CHECK(std::abs(corner[2] - 51) <= 1);
+        const u32 probes[][2] = {{32, 14}, {32, 40}, {50, 54}, {14, 54}, {32, 30}, {40, 48}, {24, 48}};
+        for (const auto& probe : probes) {
+            float want[3];
+            REQUIRE(ExpectedColor(probe[0], probe[1], want));
+            const u8* got = rendered.Pixel(probe[0], probe[1]);
+            for (int c = 0; c < 3; ++c) {
+                INFO("pixel " << probe[0] << "," << probe[1] << " channel " << c);
+                CHECK(std::abs(got[c] - static_cast<int>(want[c] * 255.0f + 0.5f)) <= 3);
+            }
+        }
+        // The pixel just outside the triangle's left edge at mid-height is background, not triangle.
+        CHECK(std::abs(rendered.Pixel(6, 40)[0] - 51) <= 1);
+        cube_test::CheckGolden(rendered, "triangle.ppm", "triangle", backend);
     }
-  }
-  // The pixel just outside the triangle's left edge at mid-height is
-  // background, not triangle.
-  CHECK(std::abs(rendered.Pixel(6, 40)[0] - 51) <= 1);
+}
 
-  if (gpu_test::UpdatingGoldens()) {
-    REQUIRE(gpu_test::WritePpm(gpu_test::GoldenPath("triangle.ppm").c_str(),
-                               rendered));
-    WARN("ENGINE_RHI_UPDATE_GOLDEN=1: tests/rhi/golden/triangle.ppm was "
-         "rewritten; inspect it before committing");
-    return;
-  }
-  Image golden;
-  REQUIRE(
-      gpu_test::ReadPpm(gpu_test::GoldenPath("triangle.ppm").c_str(), &golden));
-  const gpu_test::CompareResult result =
-      gpu_test::Compare(golden, rendered, CompareOptions{}, "triangle");
-  INFO(result.message);
-  CHECK(result.same);
+TEST_CASE("The per-backend GPU tests run on every GPU backend this machine has", "[rhi][gpu][golden]") {
+    // A parameterized test that silently ran one backend would pass for the other: the list must hold what the registry offers.
+    const engine_placeholder::Vector<Backend> backends = gpu_test::GpuBackends();
+    usize available = 0;
+    for (usize i = 0; i < RegisteredBackendCount(); ++i) {
+        char reason[256];
+        const BackendDescriptor& d = RegisteredBackend(i);
+        if (d.backend != Backend::Null && BackendAvailable(d, reason, sizeof(reason))) ++available;
+    }
+    CHECK(backends.Size() == available);
+    bool dx12 = false;
+    for (usize i = 0; i < backends.Size(); ++i) dx12 = dx12 || backends[i] == Backend::Dx12;
+#if ENGINE_PLATFORM_WINDOWS
+    CHECK(dx12); // every Windows 10 and 11 has Direct3D 12
+#else
+    CHECK_FALSE(dx12);
+#endif
+    if (gpu_test::GpuRequired()) {
+        CHECK(backends.Size() == (ENGINE_PLATFORM_WINDOWS ? 2u : 1u)); // Vulkan, and Direct3D 12 on Windows
+    }
 }

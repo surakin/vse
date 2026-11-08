@@ -96,18 +96,19 @@ tests/rhi/vulkan_bindings_test.cpp              4
 tests/rhi/vulkan_buffer_test.cpp                4
 tests/rhi/vulkan_commands_test.cpp              4
 tests/rhi/vulkan_compute_test.cpp               4
-tests/rhi/vulkan_cube_test.cpp                  4
+tests/rhi/compute_test.cpp                      4   # once per GPU backend (Phase 13 Day 170)
+tests/rhi/cube_test.cpp                         4
 tests/rhi/vulkan_device_test.cpp                4
 tests/rhi/vulkan_fault_test.cpp                 4
 tests/rhi/vulkan_frame_test.cpp                 4
-tests/rhi/vulkan_golden_test.cpp                4
+tests/rhi/golden_test.cpp                       4
 tests/rhi/vulkan_instance_test.cpp              4
-tests/rhi/vulkan_lit_cube_test.cpp              4   # the Phase 4 capstone; deferred lighting is vulkan_lighting_test
+tests/rhi/lit_cube_test.cpp                     4   # the Phase 4 capstone; deferred lighting is vulkan_lighting_test
 tests/rhi/vulkan_loader_test.cpp                4
 tests/rhi/vulkan_memory_test.cpp                4
 tests/rhi/vulkan_pipeline_test.cpp              4
 tests/rhi/vulkan_swapchain_test.cpp             4
-tests/rhi/vulkan_textured_cube_test.cpp         4
+tests/rhi/textured_cube_test.cpp                4
 tests/rhi/vulkan_texture_test.cpp               4
 test:rhi_boundary_check*                        4
 test:rhi_demo_device_loss_screenshot            4

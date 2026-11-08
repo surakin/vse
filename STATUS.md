@@ -948,3 +948,10 @@ as `Ok`, each present fenced. The review found that a swapchain rebuilt inside a
 used it (it hung the GPU here); fixed in both DX12 and Vulkan, with regression tests. The `rhi_demo` item moved to Day 173. Runs:
 `ran 1265 of 2469 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 939 of 2469 tests (phases: all; flavors: asan; display: included; crash tests: excluded)` (the filed FramePool flake once). Review: 5 findings, all fixed.
 Linux: pending until the phase close (the Vulkan swapchain fix included). **Next: Day 170 (DX12 golden images).**
+
+Phase 13 **Day 170 (2026-11-08, Windows PC): golden images on DX12.** The golden tests run once per GPU backend (`tests/rhi/backend_fixture.h`,
+`FOR_EACH_GPU_BACKEND`, a section per backend), through the RHI only; the Vulkan-internal checks stay in `vulkan_*`. Every Phase 4 golden matches
+through DX12 on the Radeon 860M and on WARP with the tolerances unchanged; DX12 and Vulkan agree to within 7 levels (triangle and cube
+identical). Validation silent; GPU-based validation over the suite: 8 s, silent. Phase 4 on Windows: 454 of 454 (18 skipped). The DX12
+backend now reads `ENGINE_RHI_GPU` as Vulkan does (review finding). Runs: `ran 1267 of 2473 tests (phases: all; flavors: plain; display: included; crash tests: excluded)` (a filed phase 2 flake once),
+asan `ran 941 of 2473 tests (phases: all; flavors: asan; display: included; crash tests: excluded)`. Review: 3 findings, 2 fixed, 1 declined. Linux: pending until the phase close. **Next: Day 171 (the renderer on DX12).**

@@ -255,6 +255,35 @@ Time budget for the RHI suite (`ctest -L rhi -j4`): about 15 seconds with a GPU,
 Vulkan, where every `[gpu]` test skips (check with `ENGINE_VULKAN_LIBRARY=/nonexistent ctest -L rhi`). A GPU test that takes
 more than a few seconds belongs in a stress label, not in the default run.
 
+### GPU tests per backend
+
+The golden-image tests and the checks around them (`golden_test.cpp`, `compute_test.cpp`, `cube_test.cpp`, `textured_cube_test.cpp`,
+`lit_cube_test.cpp` in `tests/rhi/`) run once per GPU backend the machine has: Vulkan on Linux, Vulkan and Direct3D 12 on Windows
+(Phase 13 Day 170). They use only the RHI interface, through `tests/rhi/backend_fixture.h`:
+
+```
+FOR_EACH_GPU_BACKEND(backend) {
+    gpu_test::BackendValidation validation(backend);           // before the device: fails on its validation errors
+    rhi::DevicePtr device = gpu_test::CreateTestDevice(backend); // validated; skips (or fails) when it cannot be made
+    ...
+}
+```
+
+Each backend is a Catch2 section named after it (`vulkan`, `dx12`), so a failure names the backend, and one backend runs alone with
+`-c`: `rhi_tests "[golden]" -c dx12`. `gpu_test::GpuBackends` lists the registered backends but null that are available; the test "The
+per-backend GPU tests run on every GPU backend this machine has" checks the list against the registry (and that Windows has Direct3D 12),
+so a test cannot quietly run one backend. Shaders come from the minted blob sets (`CreateShaderFromSet`), so each backend gets its own
+format. `BackendValidation` counts Vulkan's validation errors, and Direct3D 12's debug-layer errors and warnings. Tests of one backend's
+internals (the loader, the instance, memory policy, SPIR-V checks) stay in the `vulkan_*` and `dx12_*` files.
+
+- **Another adapter:** `ENGINE_RHI_GPU` picks it on either backend (an id from `--list-gpus`, an index, or part of the name):
+  `ENGINE_RHI_GPU="Basic Render" rhi_tests "[golden]" -c dx12` runs the goldens on WARP, Direct3D 12's software rasterizer.
+- **GPU-based validation** on Direct3D 12: `ENGINE_RHI_VALIDATION_SYNC=1`.
+- **How far from the golden:** `ENGINE_RHI_GOLDEN_REPORT=1` makes each golden check warn with its largest difference from the golden
+  and from the other backend's image of the same test, which tells a driver's differences from a backend's.
+- **Regenerating** with `ENGINE_RHI_UPDATE_GOLDEN=1` writes only from the Vulkan section: the goldens were made through it, and the
+  other backends are checked against them.
+
 ### Golden-image rendering tests
 
 Rendering tests draw offscreen, read the pixels back and compare them with a golden image, so no window or

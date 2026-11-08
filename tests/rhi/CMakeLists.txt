@@ -26,11 +26,12 @@ set(RHI_TEST_SOURCES
   vulkan_frame_test.cpp
   vulkan_pipeline_test.cpp
   vulkan_bindings_test.cpp
-  vulkan_golden_test.cpp
+  golden_test.cpp
   vulkan_compute_test.cpp
-  vulkan_cube_test.cpp
-  vulkan_textured_cube_test.cpp
-  vulkan_lit_cube_test.cpp
+  compute_test.cpp
+  cube_test.cpp
+  textured_cube_test.cpp
+  lit_cube_test.cpp
   vulkan_render_graph_test.cpp
   vulkan_strip_test.cpp
   vulkan_gbuffer_test.cpp

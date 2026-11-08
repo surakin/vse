@@ -1003,6 +1003,11 @@ Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `
   to an SDR desktop too); HDR10 waits for a 10-bit RHI format. A resize or format change is `ResizeBuffers` after the GPU is idle and every
   reference to the old buffers is gone; each present is followed by a fence signal, so waiting for the device waits for the presents too.
   DXGI's Alt+Enter is off: fullscreen is the window's borderless mode. `RecreateSurface` only changes the window (DXGI has no surface object).
+- **Golden images** (Day 170): every Phase 4 golden (triangle, cube, textured cube, lit cube, the compute results) matches through
+  Direct3D 12 with the tolerances unchanged, on the Radeon 860M and on WARP. On the 860M the triangle and the cube are pixel-identical to
+  Vulkan's images; the textured and lit cubes differ from them by at most 7 and 6 levels on a few pixels, and both backends are equally
+  far from the NVIDIA-made goldens, so the remaining differences are the driver's, not the backend's. `ENGINE_RHI_GPU` picks the adapter
+  as on Vulkan.
 - **The pipeline cache** (Day 167) is an `ID3D12PipelineLibrary` in `<cache dir>/pipelines_<adapter id>_<driver>.bin` (the same
   directory rule as Vulkan's). Each pipeline is stored under a name hashed from its shaders, its root signature's serialized bytes and
   its whole fixed state. The file starts with a header (magic, format version, adapter and driver identity, size, hash) and the list of

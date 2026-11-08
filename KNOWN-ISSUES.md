@@ -213,6 +213,10 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   right after another tree's build; deleting that object and building again fixed it. Not seen in the unity trees. The file was removed on Day 169 (its last placeholders were replaced); not seen with another file so far.
 - Phase 13 Day 168 (2026-11-08), open until the Linux run at the phase close: `shaders/mipgen.comp` and its minted outputs (minted on Windows)
   have not been minted or checked on Linux.
+- Phase 13 Day 170 (2026-11-08), open until the Linux run at the phase close: the backend-parameterized GPU tests (`backend_fixture.h`, the
+  renamed golden tests, `compute_test.cpp`) have not been built or run on Linux (GCC included).
+- 2026-11-08 (Windows PC, Phase 13 Day 170), flaky again: `Throughput scales with participant count` (phase 2, plain) failed once more in
+  `scripts/test-phase.sh --affected`.
 - Phase 13 Day 169 (2026-11-08), open until the Linux run at the phase close: the Vulkan swapchain's `ReleaseImages` change and the in-frame
   rebuild check in `RunPresentationChecks` have not run on Wayland or X11.
 - Phase 13, until Days 172-173: `Auto` never picks the DX12 backend, and the demos and benchmarks pin Vulkan (the backend is complete since

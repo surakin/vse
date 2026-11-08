@@ -1,5 +1,7 @@
 // The Direct3D 12 backend's device (Phase 13 Day 164): COM ownership, adapters, devices on every adapter with the debug layer silent
 // and nothing left alive, capabilities, and bounded fence waits. Windows only.
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
@@ -17,6 +19,7 @@
 #include "rhi/rhi_log.h"
 #include "string_view.h"
 #include "gpu_fixture.h"
+#include "test_env.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -269,4 +272,32 @@ TEST_CASE("With validation on, a D3D12 error reaches the RHI log and is counted"
     CHECK(seen.errors >= 1);
     CHECK(GetDebugMessageCounts().errors >= 1);
     ResetDebugMessageCounts();
+}
+
+TEST_CASE("ENGINE_RHI_GPU picks the DX12 adapter, and the descriptor's adapter beats it, as on Vulkan", "[rhi][dx12][gpu]") {
+    // Phase 13 Day 170: the DX12 backend ignored the variable, so the golden run meant for WARP ran on the hardware adapter.
+    const char* before = std::getenv("ENGINE_RHI_GPU");
+    char saved[256] = {};
+    if (before != nullptr) std::snprintf(saved, sizeof(saved), "%s", before);
+    test_support::SetEnv("ENGINE_RHI_GPU", "Basic Render");
+    DeviceCreateInfo info;
+    info.backend = Backend::Dx12;
+    info.application_name = "dx12-env-adapter";
+    {
+        Dx12DevicePtr device = Dx12Device::Create(info);
+        REQUIRE(device);
+        CHECK(StringView(device->Adapter().name).Contains(StringView("Basic Render")));
+    }
+    // An index in the descriptor wins over the variable: adapter 0 is the first hardware adapter (WARP comes last).
+    info.adapter = "0";
+    {
+        Dx12DevicePtr device = Dx12Device::Create(info);
+        REQUIRE(device);
+        CHECK(device->Adapter().kind != AdapterKind::Software);
+    }
+    if (before != nullptr) {
+        test_support::SetEnv("ENGINE_RHI_GPU", saved);
+    } else {
+        test_support::UnsetEnv("ENGINE_RHI_GPU");
+    }
 }

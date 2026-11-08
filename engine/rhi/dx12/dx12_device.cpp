@@ -148,7 +148,9 @@ bool Dx12Device::Initialize(const DeviceCreateInfo& info) {
     dx12::ListAdapters(factory_.Get(), info.window != nullptr, &set);
     adapters_ = set.list;
     char reason[256] = {};
-    const int pick = PickAdapter(set, info.adapter, reason, sizeof(reason));
+    // The descriptor's adapter, else ENGINE_RHI_GPU, as the Vulkan backend picks (Phase 8; the setting renderer.adapter fills the descriptor).
+    const char* requested = info.adapter != nullptr && info.adapter[0] != '\0' ? info.adapter : std::getenv("ENGINE_RHI_GPU");
+    const int pick = PickAdapter(set, requested, reason, sizeof(reason));
     if (pick < 0) {
         RhiLog(LogVerbosity::Error, "CreateDevice: %s", reason);
         return false;

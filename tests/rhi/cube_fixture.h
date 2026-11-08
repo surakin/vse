@@ -1,26 +1,28 @@
 #pragma once
 
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
-#include <memory>
-#include <vector>
+#include <initializer_list>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "backend_fixture.h"
+#include "containers/unique_ptr.h"
+#include "containers/vector.h"
 #include "cube_scene.h"
-#include "gpu_fixture.h"
 #include "image_compare.h"
 #include "render_target.h"
 #include "rhi/rhi.h"
 #include "rhi/uniform_ring.h"
-#include "rhi/vulkan/vulkan_device.h"
 
-// A device with a color target and a depth buffer, and a way to render cubes into them, for the cube tests.
+// The scene of the cube golden tests: a device on one backend, an offscreen target with depth, a uniform ring and a camera (Phase 13
+// Day 170: any backend, through the RHI interface).
 namespace cube_test {
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
-using namespace engine_placeholder::rhi::vulkan;
 using gpu_test::Image;
 
 struct Draw {
@@ -29,44 +31,35 @@ struct Draw {
     const demo::Lighting* lighting = nullptr; // set for a lit renderer
 };
 
-// A device with a 128x128 color target and a depth buffer, and a way to render cubes into them.
 struct CubeScene {
     u32 size;
-    gpu_test::GpuFixture fx;
-    VulkanDevicePtr device;
-    std::unique_ptr<gpu_test::RenderTarget> target;
+    gpu_test::BackendValidation validation; // before the device, so its creation's messages count
+    DevicePtr device;
+    UniquePtr<gpu_test::RenderTarget> target;
     TextureHandle depth;
-    std::unique_ptr<UniformRing> ring;
+    UniquePtr<UniformRing> ring;
     Mat4 view_projection;
 
-    explicit CubeScene(const Vec3& eye = Vec3(0, 0, 3), u32 target_size = 128) : size(target_size) {
-        fx.RequireValidation();
-        DeviceCreateInfo info;
-        info.validation = ValidationSetting::On;
-        info.sync_validation = true;
-        info.pipeline_cache = false;
-        device = VulkanDevice::Create(info);
-        if (device == nullptr) {
-            SKIP("no suitable Vulkan device");
-        }
-        target = std::make_unique<gpu_test::RenderTarget>(device.Get(), size, size);
+    explicit CubeScene(Backend backend, const Vec3& eye = Vec3(0, 0, 3), u32 target_size = 128) : size(target_size), validation(backend) {
+        device = gpu_test::CreateTestDevice(backend);
+        target = MakeUnique<gpu_test::RenderTarget>(device.Get(), size, size);
         TextureDesc td;
         td.width = size;
         td.height = size;
         td.format = device->Caps().depth_format;
         td.usage = TextureUsage::DepthAttachment;
         depth = device->CreateTexture(td);
-        ring = std::make_unique<UniformRing>(device.Get(), 4096);
+        ring = MakeUnique<UniformRing>(device.Get(), 4096);
         SetCamera(eye);
     }
     ~CubeScene() {
-        if (device == nullptr) {
+        if (!device) {
             return;
         }
         device->WaitIdle();
-        ring.reset();
+        ring.Reset();
         if (depth.IsValid()) device->DestroyTexture(depth);
-        target.reset();
+        target.Reset();
         device.Reset();
     }
 
@@ -76,8 +69,13 @@ struct CubeScene {
 
     Format DepthFormat() const { return device->Caps().depth_format; }
 
-    // Renders the draws in order over a gray background; returns the image.
-    Image Render(const std::vector<Draw>& draws) {
+    Image Render(std::initializer_list<Draw> draws) {
+        Vector<Draw> list;
+        for (const Draw& d : draws) list.Push(d);
+        return Render(list);
+    }
+
+    Image Render(const Vector<Draw>& draws) {
         REQUIRE(target->Valid());
         REQUIRE(depth.IsValid());
         REQUIRE(ring->Valid());
@@ -85,8 +83,7 @@ struct CubeScene {
         ring->BeginFrame();
         CommandList* list = device->CreateCommandList();
         list->Begin();
-        // Each renderer is prepared once per list, however many cubes it draws.
-        for (usize i = 0; i < draws.size(); ++i) {
+        for (usize i = 0; i < draws.Size(); ++i) {
             bool seen = false;
             for (usize j = 0; j < i; ++j) seen = seen || draws[j].cube == draws[i].cube;
             if (!seen) draws[i].cube->Prepare(list);
@@ -101,11 +98,12 @@ struct CubeScene {
         pass.depth.clear_depth = 1.0f;
         pass.depth.store = StoreOp::DontCare;
         list->BeginRendering(pass);
-        for (const Draw& d : draws) {
+        for (usize i = 0; i < draws.Size(); ++i) {
+            const Draw& d = draws[i];
             if (d.lighting != nullptr) {
-                REQUIRE(d.cube->DrawLit(list, ring.get(), view_projection, d.model, *d.lighting, size, size));
+                REQUIRE(d.cube->DrawLit(list, ring.Get(), view_projection, d.model, *d.lighting, size, size));
             } else {
-                REQUIRE(d.cube->Draw(list, ring.get(), view_projection * d.model, size, size));
+                REQUIRE(d.cube->Draw(list, ring.Get(), view_projection * d.model, size, size));
             }
         }
         list->EndRendering();
@@ -115,7 +113,7 @@ struct CubeScene {
         const bool submitted = device->Submit(lists, 1) != 0;
         device->EndFrame();
         REQUIRE(submitted);
-        for (const Draw& d : draws) d.cube->Submitted();
+        for (usize i = 0; i < draws.Size(); ++i) draws[i].cube->Submitted();
         device->WaitIdle();
         Image image;
         REQUIRE(target->Readback(&image));
@@ -135,10 +133,55 @@ struct CubeScene {
 };
 
 inline bool PixelIs(const Image& image, u32 x, u32 y, int r, int g, int b) {
-    const unsigned char* p = image.Pixel(x, y);
+    const u8* p = image.Pixel(x, y);
     return std::abs(p[0] - r) <= 2 && std::abs(p[1] - g) <= 2 && std::abs(p[2] - b) <= 2;
 }
 
-
+// Compares a rendered image with a committed golden (or rewrites the golden under ENGINE_RHI_UPDATE_GOLDEN=1), naming the backend.
+// Returns the largest per-channel difference from the golden (0 when updating).
+inline int CheckGolden(const Image& image, const char* golden_file, const char* name, Backend backend,
+                        const gpu_test::CompareOptions& options = gpu_test::CompareOptions{}) {
+    if (gpu_test::UpdatingGoldens()) {
+        // Only Vulkan writes goldens: the images were blessed through it, and Direct3D 12 is checked against them (decision 11).
+        if (backend == Backend::Vulkan) {
+            REQUIRE(gpu_test::WritePpm(gpu_test::GoldenPath(golden_file).c_str(), image));
+            WARN("ENGINE_RHI_UPDATE_GOLDEN=1: tests/rhi/golden/" << golden_file << " was rewritten; inspect it before committing");
+        }
+        return 0;
+    }
+    Image golden;
+    REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath(golden_file).c_str(), &golden));
+    char diff_name[96];
+    std::snprintf(diff_name, sizeof(diff_name), "%s_%s", name, gpu_test::BackendTag(backend));
+    const gpu_test::CompareResult result = gpu_test::Compare(golden, image, options, diff_name);
+    INFO(gpu_test::BackendTag(backend) << ": " << result.message);
+    CHECK(result.same);
+    // ENGINE_RHI_GOLDEN_REPORT=1: say how far the image is from the golden and from the other backend's image of the same test (both
+    // run in one process), which separates a driver's differences from a backend's.
+    const char* report = std::getenv("ENGINE_RHI_GOLDEN_REPORT");
+    if (report != nullptr && report[0] == '1') {
+        char own[96], other[96];
+        std::snprintf(own, sizeof(own), "golden_%s_%s.ppm", name, gpu_test::BackendTag(backend));
+        std::snprintf(other, sizeof(other), "golden_%s_%s.ppm", name, backend == Backend::Vulkan ? "dx12" : "vulkan");
+        gpu_test::WritePpm(gpu_test::TempPath(own).c_str(), image);
+        int between = -1;
+        Image theirs;
+        if (gpu_test::ReadPpm(gpu_test::TempPath(other).c_str(), &theirs) && theirs.width == image.width && theirs.height == image.height) {
+            between = 0;
+            for (usize i = 0; i < image.rgba.size(); ++i) {
+                const int d = std::abs(static_cast<int>(image.rgba[i]) - static_cast<int>(theirs.rgba[i]));
+                between = d > between ? d : between;
+            }
+        }
+        if (between >= 0) {
+            WARN(name << " on " << gpu_test::BackendTag(backend) << ": largest difference " << result.max_difference << " from the golden ("
+                      << result.interior_misses << " interior pixels over the tolerance), " << between << " from the other backend");
+        } else {
+            WARN(name << " on " << gpu_test::BackendTag(backend) << ": largest difference " << result.max_difference << " from the golden ("
+                      << result.interior_misses << " interior pixels over the tolerance)");
+        }
+    }
+    return result.max_difference;
+}
 
 } // namespace cube_test
