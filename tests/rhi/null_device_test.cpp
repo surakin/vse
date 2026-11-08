@@ -48,8 +48,7 @@ struct Fixture {
         ShaderDesc d;
         d.stage = stage;
         const std::vector<u32> words = spirv_test::MinimalModule(stage);
-        d.words = words.data();
-        d.word_count = words.size();
+        d.SetCode(SpirvBlob(words.data(), words.size()));
         return dev->CreateShader(d);
     }
     CommandList* List() {

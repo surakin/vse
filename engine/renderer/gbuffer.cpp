@@ -452,12 +452,10 @@ void GBufferDebugView::Build() {
     rhi::Device* device = device_;
     rhi::ShaderDesc sd;
     sd.stage = rhi::ShaderStage::Vertex;
-    sd.words = shaders::kFullscreenVertSpv;
-    sd.word_count = shaders::kFullscreenVertSpvWordCount;
+    sd.SetCode(rhi::SpirvBlob(shaders::kFullscreenVertSpv, shaders::kFullscreenVertSpvWordCount));
     vertex_ = device->CreateShader(sd);
     sd.stage = rhi::ShaderStage::Fragment;
-    sd.words = shaders::kGbufferDebugFragSpv;
-    sd.word_count = shaders::kGbufferDebugFragSpvWordCount;
+    sd.SetCode(rhi::SpirvBlob(shaders::kGbufferDebugFragSpv, shaders::kGbufferDebugFragSpvWordCount));
     fragment_ = device->CreateShader(sd);
     rhi::SamplerDesc smp;
     smp.mag_filter = rhi::FilterMode::Nearest;

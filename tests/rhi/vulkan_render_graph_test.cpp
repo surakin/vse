@@ -38,16 +38,13 @@ struct GraphScene {
         device = d;
         ShaderDesc sd;
         sd.stage = ShaderStage::Vertex;
-        sd.words = shaders::kFullscreenVertSpv;
-        sd.word_count = shaders::kFullscreenVertSpvWordCount;
+        sd.SetCode(SpirvBlob(shaders::kFullscreenVertSpv, shaders::kFullscreenVertSpvWordCount));
         vs = device->CreateShader(sd);
         sd.stage = ShaderStage::Fragment;
-        sd.words = shaders::kGraphSampleFragSpv;
-        sd.word_count = shaders::kGraphSampleFragSpvWordCount;
+        sd.SetCode(SpirvBlob(shaders::kGraphSampleFragSpv, shaders::kGraphSampleFragSpvWordCount));
         fs = device->CreateShader(sd);
         sd.stage = ShaderStage::Compute;
-        sd.words = shaders::kGradientCompSpv;
-        sd.word_count = shaders::kGradientCompSpvWordCount;
+        sd.SetCode(SpirvBlob(shaders::kGradientCompSpv, shaders::kGradientCompSpvWordCount));
         cs = device->CreateShader(sd);
 
         BindingDesc sample_bindings[3] = {{0, BindingType::SampledTexture, ShaderStage::Fragment, 1},

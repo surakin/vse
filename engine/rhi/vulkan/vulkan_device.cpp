@@ -51,6 +51,8 @@ void DescribeDevice(const VkInstanceFns& fns, VkPhysicalDevice device, VkSurface
         props2.pNext = &id_props;
         fns.GetPhysicalDeviceProperties2(device, &props2);
         std::memcpy(out->uuid, id_props.deviceUUID, sizeof(out->uuid));
+        std::memcpy(out->luid, id_props.deviceLUID, sizeof(out->luid));
+        out->luid_valid = id_props.deviceLUIDValid == VK_TRUE;
     }
     {
         VkPhysicalDeviceMemoryProperties memory{};
@@ -517,8 +519,13 @@ ResourceCounts VulkanDevice::Resources() const {
 
 ShaderHandle VulkanDevice::CreateShader(const ShaderDesc& desc) {
     const char* why = desc.Validate();
+    if (why == nullptr && desc.format != ShaderFormat::Spirv) {
+        RhiLog(LogVerbosity::Error, "CreateShader: '%s' is %s bytecode; the Vulkan backend takes SPIR-V",
+               desc.debug_name != nullptr ? desc.debug_name : "(unnamed)", ShaderFormatName(desc.format));
+        return {};
+    }
     if (why == nullptr) {
-        why = ValidateSpirv(desc.words, desc.word_count, desc.stage, desc.entry);
+        why = ValidateSpirv(static_cast<const u32*>(desc.bytes), desc.size / sizeof(u32), desc.stage, desc.entry);
     }
     if (why != nullptr) {
         RhiLog(LogVerbosity::Error, "CreateShader: %s", why);
@@ -534,8 +541,8 @@ ShaderHandle VulkanDevice::CreateShader(const ShaderDesc& desc) {
 
     VkShaderModuleCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    info.codeSize = desc.word_count * sizeof(u32);
-    info.pCode = desc.words;
+    info.codeSize = desc.size;
+    info.pCode = static_cast<const u32*>(desc.bytes);
     const VkResult result = fns_.CreateShaderModule(device_, &info, nullptr, &res.module);
     if (result != VK_SUCCESS) {
         NoteDeviceLost(result);

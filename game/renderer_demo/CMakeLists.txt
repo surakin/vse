@@ -9,7 +9,7 @@ add_executable(renderer_demo main.cpp ../common/settings_main.cpp)
 engine_split_debug_info(renderer_demo)
 target_compile_options(renderer_demo PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_compile_definitions(renderer_demo PRIVATE RENDERER_DEMO_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
-target_link_libraries(renderer_demo PRIVATE renderer_demo_lib rhi_vulkan)
+target_link_libraries(renderer_demo PRIVATE renderer_demo_lib rhi_backends)
 
 # Writes the texture files under assets/ (see README.md); a test compares them with the committed ones.
 add_executable(renderer_demo_mint mint_assets.cpp)

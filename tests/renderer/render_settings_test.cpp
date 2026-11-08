@@ -52,7 +52,7 @@ TEST_CASE("built-in settings have the ids, classes and defaults of the plan", "[
         CHECK(r.FindByName(row.name) == row.id);
     }
     RenderSettings s;
-    CHECK(s.GetEnum(settings::kBackend) == 1);
+    CHECK(s.GetEnum(settings::kBackend) == 3); // auto
     CHECK(s.GetInt(settings::kFramesInFlight) == 2);
     CHECK(s.GetFloat(settings::kRenderScale) == 1.0f);
     CHECK(std::strcmp(s.GetText(settings::kAdapter), "") == 0);

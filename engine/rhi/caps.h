@@ -1,5 +1,6 @@
 #pragma once
 
+#include "rhi/enums.h"
 #include "rhi/format.h"
 #include "rhi/limits.h"
 #include "types.h"
@@ -49,6 +50,9 @@ struct DeviceCaps {
     f32 timestamp_period_ns = 0.0f;
     /// Whether bindless (descriptor-indexed) resources are supported; reserved, always false in Phase 4.
     bool supports_bindless = false;
+    /// The bytecode format `CreateShader` takes: SPIR-V on Vulkan, DXIL on Direct3D 12. Pick the module from a
+    /// [[rhi::ShaderBlobSet]] with it; the null device takes the format its options name (SPIR-V by default).
+    ShaderFormat shader_format = ShaderFormat::Spirv;
 };
 
 } // namespace engine_placeholder::rhi

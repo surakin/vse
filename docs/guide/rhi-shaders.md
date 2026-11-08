@@ -203,7 +203,7 @@ INVERT HALF: found, 93 words
 shader 'permute_test.frag' has no permutation {INVERT, TINT} (add the key to its .perm manifest)
 ```
 
-The module's `words` go into [[rhi::ShaderDesc]] and its `reflection` blob into [[renderer::ParseShaderReflection]],
+The module's bytecode (`module->Blob(device->Caps().shader_format)`) goes into [[rhi::ShaderDesc]] and its `reflection` blob into [[renderer::ParseShaderReflection]],
 exactly as for a plain shader; each module has its own reflection, because a variant can use different resources.
 Keys that build identical SPIR-V share one module (`key DEBUG` and `key DEBUG TINT` in the test shader), so the
 binary pays for distinct code only.
@@ -234,13 +234,11 @@ int main() {
 
     ShaderDesc vs;
     vs.stage = ShaderStage::Vertex;
-    vs.words = shaders::kTriangleVertSpv;
-    vs.word_count = shaders::kTriangleVertSpvWordCount;
+    vs.SetCode(SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount));
 
     ShaderDesc fs;
     fs.stage = ShaderStage::Fragment;
-    fs.words = shaders::kTriangleFragSpv;
-    fs.word_count = shaders::kTriangleFragSpvWordCount;
+    fs.SetCode(SpirvBlob(shaders::kTriangleFragSpv, shaders::kTriangleFragSpvWordCount));
 
     ShaderHandle vertex = device->CreateShader(vs);
     ShaderHandle fragment = device->CreateShader(fs);
@@ -261,6 +259,54 @@ driver, so garbage, a truncated module or a module for another stage fails with 
 instead of reaching the driver. The default entry point name is `main`; names may be up to 63 bytes. A shader handle
 follows the usual deferred rule: after `DestroyShader` the module lives until the GPU has finished the frames that
 could have used it.
+
+## Bytecode formats
+
+A [[rhi::ShaderDesc]] carries a format-tagged blob: `format` ([[rhi::ShaderFormat]]: `Spirv`, `Dxil`, and `Msl` reserved for
+the Metal backend), `bytes` and `size`. Each device takes one format, [[rhi::DeviceCaps::shader_format]]: SPIR-V on Vulkan,
+DXIL on Direct3D 12. A module in another format is refused with an error that names both, before any driver sees it.
+`Validate` checks the shape the format promises without a device: SPIR-V is 4-byte aligned, a whole number of words and at
+least a header; DXIL starts with the `DXBC` container tag and its size matches the one its header records; MSL is refused
+until a backend takes it.
+
+Code that creates shaders names each shader once and picks the device's blob. [[rhi::ShaderBlobSet]] holds a shader in every
+format it was minted in, and [[rhi::CreateShaderFromSet]] creates the module from the blob of the device's format, failing
+with the shader's name when that format was not minted. The renderer's [[renderer::PermutationModule]] does the same for
+permuted and material shaders (`Blob(format)`), with one reflection blob for every format, since all formats come from the
+same Slang source. `*.spv.inc` files are minted today; Phase 13 Day 163 adds DXIL (`*.dxil.inc`) from the same sources.
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "rhi/null/null_device.h"
+#include "rhi/rhi_log.h"
+#include "triangle.vert.spv.inc"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::rhi;
+
+int main() {
+    const ShaderBlobSet triangle{"triangle.vert", SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount), {}};
+
+    NullDevicePtr spirv_device = CreateNullDevice();
+    ShaderHandle module = CreateShaderFromSet(*spirv_device, triangle, ShaderStage::Vertex);
+    std::printf("SPIR-V device: %s\n", module.IsValid() ? "created" : "refused");
+    spirv_device->DestroyShader(module);
+
+    NullDeviceOptions options;
+    options.caps.shader_format = ShaderFormat::Dxil; // a device that takes DXIL, as Direct3D 12 does
+    NullDevicePtr dxil_device = CreateNullDevice(options);
+    LogRhi.SetEnabled(false); // the refusal is logged as an error; this sample expects it
+    module = CreateShaderFromSet(*dxil_device, triangle, ShaderStage::Vertex);
+    std::printf("DXIL device: %s\n", module.IsValid() ? "created" : "refused (no dxil blob)");
+    return 0;
+}
+```
+
+```output
+SPIR-V device: created
+DXIL device: refused (no dxil blob)
+```
 
 ## What the engine accepts
 

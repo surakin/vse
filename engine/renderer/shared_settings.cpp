@@ -83,7 +83,7 @@ void RegisterSharedSettings(sset::Registry* registry) {
         }
         // What a user sees in --list-settings and --help, and the environment variables and flags that were already there.
         static const struct { const char* name; const char* description; const char* env; const char* flag; } kInfo[] = {
-            {"backend", "the graphics backend: null (no GPU) or vulkan", nullptr, nullptr},
+            {"backend", "the graphics backend: auto (the preferred one this program has and this machine runs), null (no GPU), vulkan or dx12", nullptr, nullptr},
             {"adapter", "the GPU: an id from --list-gpus, an index, or part of the name (empty: the best one)", "ENGINE_RHI_GPU", "gpu"},
             {"validation", "the validation layer: auto, off or on", nullptr, nullptr},
             {"sync_validation", "also run synchronization validation", "ENGINE_RHI_VALIDATION_SYNC", nullptr},

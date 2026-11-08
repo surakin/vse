@@ -79,7 +79,8 @@ struct ResetTimings {
 ///
 /// Thread-safety: owner-thread-only: every call comes from the thread that called `Create`, outside `BeginFrame`/`EndFrame`.
 /// Ownership: owns the device and the swapchain; observers are borrowed and must outlive their registration (the
-///   destructor still notifies them). Defined in the Vulkan backend library, which creates the devices: link `rhi_vulkan`.
+///   destructor still notifies them). Defined in the neutral `rhi` library; devices come from the backends the program
+///   registered ([[rhi::RegisterCompiledBackends]]).
 class DeviceHost {
 public:
     /// The most observers.

@@ -69,6 +69,10 @@ struct PhysicalDeviceInfo {
     u32 device_id = 0;
     /// The device UUID (`VkPhysicalDeviceIDProperties::deviceUUID`); all zero when the driver gives none.
     u8 uuid[16] = {};
+    /// The device LUID (`VkPhysicalDeviceIDProperties::deviceLUID`, Windows' 8-byte LUID: low part then high part, little-endian).
+    u8 luid[8] = {};
+    /// Whether the driver reported a LUID (`deviceLUIDValid`; Windows drivers only).
+    bool luid_valid = false;
     /// The driver version, already decoded to text (for example `575.57.8`), null-terminated.
     char driver[64] = {};
     /// The size in bytes of the largest device-local memory heap; 0 if unknown.

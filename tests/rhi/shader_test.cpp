@@ -173,8 +173,7 @@ TEST_CASE("The null device checks shader contents", "[rhi][null][spirv]") {
     NullDevicePtr device = CreateNullDevice();
     ShaderDesc desc;
     desc.stage = ShaderStage::Vertex;
-    desc.words = shaders::kTriangleVertSpv;
-    desc.word_count = shaders::kTriangleVertSpvWordCount;
+    desc.SetCode(SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount));
     ShaderHandle ok = device->CreateShader(desc);
     CHECK(ok.IsValid());
     CHECK(device->ErrorCount() == 0);
@@ -185,8 +184,7 @@ TEST_CASE("The null device checks shader contents", "[rhi][null][spirv]") {
 
     std::vector<u32> garbage(16, 0xdeadbeefu);
     desc.stage = ShaderStage::Vertex;
-    desc.words = garbage.data();
-    desc.word_count = garbage.size();
+    desc.SetCode(SpirvBlob(garbage.data(), garbage.size()));
     CHECK_FALSE(device->CreateShader(desc).IsValid());
     CHECK(device->ErrorCount() == 2);
 
@@ -205,13 +203,11 @@ TEST_CASE("Vulkan creates shader modules from the committed triangle shaders", "
     }
     ShaderDesc vs;
     vs.stage = ShaderStage::Vertex;
-    vs.words = shaders::kTriangleVertSpv;
-    vs.word_count = shaders::kTriangleVertSpvWordCount;
+    vs.SetCode(SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount));
     vs.debug_name = "triangle.vert";
     ShaderDesc fs;
     fs.stage = ShaderStage::Fragment;
-    fs.words = shaders::kTriangleFragSpv;
-    fs.word_count = shaders::kTriangleFragSpvWordCount;
+    fs.SetCode(SpirvBlob(shaders::kTriangleFragSpv, shaders::kTriangleFragSpvWordCount));
     fs.debug_name = "triangle.frag";
 
     const ShaderHandle v = device->CreateShader(vs);
@@ -232,8 +228,7 @@ TEST_CASE("Vulkan creates shader modules from the committed triangle shaders", "
     wrong.stage = ShaderStage::Vertex;
     std::vector<u32> garbage(32, 1u);
     ShaderDesc bad = vs;
-    bad.words = garbage.data();
-    bad.word_count = garbage.size();
+    bad.SetCode(SpirvBlob(garbage.data(), garbage.size()));
     {
         QuietLog quiet;
         CHECK_FALSE(device->CreateShader(wrong).IsValid());
@@ -267,8 +262,7 @@ TEST_CASE("Vulkan frees a shader the application forgot", "[rhi][vulkan][gpu][sp
     }
     ShaderDesc vs;
     vs.stage = ShaderStage::Vertex;
-    vs.words = shaders::kTriangleVertSpv;
-    vs.word_count = shaders::kTriangleVertSpvWordCount;
+    vs.SetCode(SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount));
     REQUIRE(device->CreateShader(vs).IsValid());
     vulkan::VulkanDevice::ResetLeakCounts();
     {

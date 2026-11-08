@@ -856,3 +856,12 @@ Baselines in section 8 of the Windows design spec (Release; `rhi_bench` 0.73-0.8
 takes 239 ms here against 40 ms under Linux on the same GPU. Runs: `ran 1174 of 2316 tests (phases: all; flavors: plain; display: included; crash
 tests: excluded)`, asan `ran 877 of 2316`; MSVC 2316 of 2316, `windows-clang-cl` 1339 of 1339, non-unity 2316 of 2316. Review: 5 findings, 3 fixed,
 2 declined. Not done by a person: a drag with the mouse, the F-keys. Linux: pending until the phase close. **Next: Day 162 (the backend registry and the shader bytecode, the start of DX12).**
+
+Phase 13 **Day 162 (2026-11-08, Windows PC): the RHI backend registry and bytecode blobs.** `CreateDevice`, `EnumerateAdapters` and `DeviceHost` live in the
+neutral `rhi` and reach backends through a registry (`rhi/backend_registry.h`); programs call `rhi::RegisterCompiledBackends()` (library `rhi_backends`), test
+binaries from a Catch2 listener, and the renderer links `rhi` only (the module allow list is empty). `Backend` gains `Dx12` and `Auto` (the default, the
+available backend of highest rank); the `backend` setting has `dx12` and `auto`, and a backend a program does not have is refused with the reason.
+`ShaderDesc` carries a format-tagged blob (`ShaderFormat` SPIR-V, DXIL, MSL reserved); `ShaderBlobSet`, `CreateShaderFromSet` and
+`PermutationModule::Blob` pick the device's format (`DeviceCaps::shader_format`). `MatchAdapter` accepts a LUID (`AdapterInfo::luid`). Runs: `ran 1185 of
+2338 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan `ran 888 of 2338`; all three Windows trees build clean. Review: 6
+findings, 4 fixed, 2 declined. Linux: pending until the phase close. **Next: Day 163 (DXIL minting, the object index stream, the clip-space flip).**

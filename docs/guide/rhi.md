@@ -261,11 +261,53 @@ draws. See the Phase 5 notes in `plans/phase-05-renderer-core.md`.
   layer under the swapchain.
 - `docs/superpowers/specs/2026-11-04-rhi-design.md` and `2026-11-04-rhi-portability-review.md` - why it is shaped this way.
 
+### Backends and the registry
+
+A program has the backends it registered, and no others. Each backend library describes itself with a
+[[rhi::BackendDescriptor]] (its [[rhi::Backend]] value, a name such as `vulkan`, a device factory, an adapter lister, an
+availability probe, its shader format and how strongly `Auto` prefers it) and registers it with
+[[rhi::RegisterBackend]]. [[rhi::CreateDevice]], [[rhi::EnumerateAdapters]] and [[rhi::DeviceHost]] live in the neutral `rhi`
+library and reach backends only through this registry, so the renderer links `rhi` alone and never a backend.
+
+Registration is one explicit call, never a global constructor: a program calls [[rhi::RegisterCompiledBackends]]
+(`rhi/backends/backends.h`, library `rhi_backends`) at startup, before it creates a device. It registers the null backend and
+Vulkan everywhere, and Direct3D 12 on Windows once that backend is complete. Test binaries do it from a Catch2 listener
+(`tests/support/register_backends.cpp`). Forgetting the call is not a silent "no GPU": the device creation fails with
+`the vulkan backend is not registered in this program (link rhi_backends and call rhi::RegisterCompiledBackends ...)`.
+
+`Backend::Auto`, the default of [[rhi::DeviceCreateInfo::backend]], picks the available registered backend with the highest
+rank ([[rhi::PickAutoBackend]]); the null backend has rank 0, so `Auto` never picks it. A named backend that is registered but
+cannot run here (no Vulkan loader, for example) fails with the backend's own reason ([[rhi::ResolveBackend]]). The renderer's
+`backend` setting (`auto`, `null`, `vulkan`, `dx12`) goes through the same rule: a change to a backend the program does not have,
+or that cannot run, is refused with that reason before the device is touched.
+
+```cpp compile standalone run
+#include <cstdio>
+
+#include "rhi/backend_registry.h"
+#include "rhi/backends/backends.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    rhi::RegisterCompiledBackends();
+    for (usize i = 0; i < rhi::RegisteredBackendCount(); ++i) {
+        const rhi::BackendDescriptor& backend = rhi::RegisteredBackend(i);
+        std::printf("%s takes %s\n", backend.name, rhi::ShaderFormatName(backend.shader_format));
+    }
+    return 0;
+}
+```
+```output
+null takes spirv
+vulkan takes spirv
+```
+
 ### Creating a device
 
 [[rhi::CreateDevice]] takes a [[rhi::DeviceCreateInfo]] and returns a device for the requested [[rhi::Backend]]
-(`Null` or `Vulkan`), or null with the reason logged. The device is headless; a presentation window is added
-with the swapchain.
+(`Null`, `Vulkan`, `Dx12`, or `Auto` for the preferred one), or null with the reason logged. The device is headless; a
+presentation window is added with the swapchain.
 
 For Vulkan, the GPU is chosen by [[rhi::vulkan::SelectPhysicalDevice]]. A GPU qualifies if it supports Vulkan 1.3,
 dynamic rendering, synchronization2, timeline semaphores and has a graphics+compute queue family; qualifying GPUs
@@ -289,8 +331,9 @@ enumeration index), a name, a kind, device-local memory, whether it can present 
 is suitable; an unsuitable adapter says why in `unsuitable_reason`. Save the id, not the index: it survives another GPU
 being added.
 
-The request is matched by [[rhi::MatchAdapter]]: an id first, then a decimal index, then a case-insensitive part of the
-name. The order of precedence is `DeviceCreateInfo::adapter`, then the `ENGINE_RHI_GPU` environment variable (Vulkan), then
+The request is matched by [[rhi::MatchAdapter]]: an id first, then a LUID (Windows' locally unique adapter identifier, 16
+hexadecimal digits, which names the same GPU to Vulkan and Direct3D 12 until the next reboot), then a decimal index, then a
+case-insensitive part of the name. The order of precedence is `DeviceCreateInfo::adapter`, then the `ENGINE_RHI_GPU` environment variable (Vulkan), then
 the ranking (discrete before integrated before virtual before software). A request that names nothing, or an adapter that
 is not suitable, makes [[rhi::CreateDevice]] fail with a log line that names the reason. It never falls back to another
 GPU: the caller decides whether to try the best one instead.
@@ -298,11 +341,13 @@ GPU: the caller decides whether to try the best one instead.
 ```cpp compile standalone run
 #include <cstdio>
 
+#include "rhi/backends/backends.h"
 #include "rhi/rhi.h"
 
 using namespace engine_placeholder;
 
 int main() {
+    rhi::RegisterCompiledBackends();     // once, before any device
     rhi::DeviceCreateInfo info;
     info.backend = rhi::Backend::Null;   // the null backend lists two fake adapters, so this runs without a GPU
     rhi::AdapterList adapters;
@@ -353,6 +398,7 @@ another thread it aborts.
 ```cpp compile standalone run
 #include <cstdio>
 
+#include "rhi/backends/backends.h"
 #include "rhi/device_host.h"
 
 using namespace engine_placeholder;
@@ -377,6 +423,7 @@ struct CubeOwner final : rhi::DeviceObserver {
 };
 
 int main() {
+    rhi::RegisterCompiledBackends(); // once, before any device
     CubeOwner owner;
     rhi::DeviceHost host;
     host.AddObserver(&owner, 1);

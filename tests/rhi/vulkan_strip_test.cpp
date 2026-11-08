@@ -54,12 +54,10 @@ struct StripScene {
         if (device == nullptr) SKIP("no suitable Vulkan device");
         ShaderDesc sd;
         sd.stage = ShaderStage::Vertex;
-        sd.words = shaders::kTriangleVertSpv;
-        sd.word_count = shaders::kTriangleVertSpvWordCount;
+        sd.SetCode(SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount));
         vs = device->CreateShader(sd);
         sd.stage = ShaderStage::Fragment;
-        sd.words = shaders::kTriangleFragSpv;
-        sd.word_count = shaders::kTriangleFragSpvWordCount;
+        sd.SetCode(SpirvBlob(shaders::kTriangleFragSpv, shaders::kTriangleFragSpvWordCount));
         fs = device->CreateShader(sd);
         VertexBindingDesc binding = {sizeof(Vertex), false};
         VertexAttributeDesc attributes[2] = {{0, 0, VertexFormat::Float2, 0}, {1, 0, VertexFormat::Float3, 8}};

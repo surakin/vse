@@ -8,6 +8,7 @@
 #include "log/assert.h"
 #include "os/os.h"
 #include "renderer/renderer_log.h"
+#include "rhi/backend_registry.h"
 
 namespace engine_placeholder::renderer {
 
@@ -43,7 +44,7 @@ Renderer::Renderer(const RendererDesc& desc)
     if (desc.initial_settings == nullptr) {
         // The host's device was made from create_info: the settings in force must say so, or the next reset would switch
         // backend, adapter or validation to the defaults.
-        settings_.SetEnum(settings::kBackend, desc.create_info.backend == rhi::Backend::Null ? 0 : 1);
+        settings_.SetEnum(settings::kBackend, static_cast<u32>(desc.create_info.backend)); // kBackendNames follows rhi::Backend
         settings_.SetEnum(settings::kValidation, desc.create_info.validation == rhi::ValidationSetting::Off ? 1 : desc.create_info.validation == rhi::ValidationSetting::On ? 2 : 0);
         settings_.SetBool(settings::kSyncValidation, desc.create_info.sync_validation);
         settings_.SetInt(settings::kFramesInFlight, desc.create_info.frames_in_flight);
@@ -73,7 +74,7 @@ void SetReason(ApplyResult* r, const char* text) { std::snprintf(r->reason, size
 
 void MakeDeviceCreateInfo(const RenderSettings& settings, const rhi::DeviceCreateInfo& base, char* adapter_buffer, rhi::DeviceCreateInfo* out) {
     *out = base;
-    out->backend = settings.GetEnum(settings::kBackend) == 0 ? rhi::Backend::Null : rhi::Backend::Vulkan;
+    out->backend = static_cast<rhi::Backend>(settings.GetEnum(settings::kBackend)); // kBackendNames follows rhi::Backend
     const char* adapter = settings.GetText(settings::kAdapter);
     if (adapter != nullptr && adapter[0] != '\0') {
         std::snprintf(adapter_buffer, 64, "%s", adapter);
@@ -195,6 +196,14 @@ ApplyResult Renderer::ApplyNow(const RenderSettings& requested, bool force_devic
     }
     if (cost == CostClass::PipelineRebuild && desc_.resources == nullptr) {
         cost = CostClass::DeviceReset; // nothing registered to rebuild selectively: do the full thing
+    }
+    if (cost == CostClass::DeviceReset) {
+        // A backend this program did not register, or one that cannot run here, is refused before anything is torn down.
+        char why[sizeof(result.reason)];
+        if (rhi::ResolveBackend(static_cast<rhi::Backend>(resolved.GetEnum(settings::kBackend)), why, sizeof(why)) == nullptr) {
+            SetReason(&result, why);
+            return result;
+        }
     }
     result.performed = cost;
 

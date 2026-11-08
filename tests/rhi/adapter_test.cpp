@@ -111,6 +111,38 @@ TEST_CASE("MatchAdapter finds an adapter by id, index or name", "[rhi][adapter]"
     CHECK(MatchAdapter(list.items, list.count, nullptr) == -1);
 }
 
+TEST_CASE("MatchAdapter accepts a LUID, in either case, and only as all 16 digits", "[rhi][adapter]") {
+    AdapterList list;
+    REQUIRE(EnumerateAdapters(NullInfo(), &list));
+    CHECK(std::strcmp(list.items[0].luid, "00000000000a0001") == 0);
+    CHECK(std::strcmp(list.items[1].luid, "00000000000a0002") == 0);
+    CHECK(MatchAdapter(list.items, list.count, "00000000000a0002") == 1);
+    CHECK(MatchAdapter(list.items, list.count, "00000000000A0001") == 0);
+    CHECK(MatchAdapter(list.items, list.count, "00000000000a000") == -1);  // 15 digits: not a LUID, not a name
+    CHECK(MatchAdapter(list.items, list.count, "00000000000a00010") == -1); // 17 digits
+    CHECK(MatchAdapter(list.items, list.count, "00000000000a0003") == -1);  // no such adapter
+    // An adapter without a LUID is never matched by one.
+    NullAdaptersGuard guard;
+    AdapterList blank;
+    DefaultNullAdapters(&blank);
+    blank.items[0].luid[0] = '\0';
+    blank.items[1].luid[0] = '\0';
+    SetNullAdapters(&blank);
+    AdapterList got;
+    REQUIRE(EnumerateAdapters(NullInfo(), &got));
+    CHECK(MatchAdapter(got.items, got.count, "00000000000a0001") == -1);
+    // A LUID-shaped request that matches no LUID fails, even when its digits would read as a valid index (a stale LUID).
+    CHECK(MatchAdapter(got.items, got.count, "0000000000000001") == -1);
+    CHECK(MatchAdapter(got.items, got.count, "1") == 1); // the index rule is unchanged for a short request
+    // CreateDevice takes the LUID form too.
+    SetNullAdapters(nullptr);
+    DeviceCreateInfo info = NullInfo();
+    info.adapter = "00000000000a0002";
+    DevicePtr device = CreateDevice(info);
+    REQUIRE(device);
+    CHECK(std::strcmp(device->Adapter().id, "null-integrated") == 0);
+}
+
 TEST_CASE("The null backend fails when no adapter is suitable", "[rhi][adapter]") {
     NullAdaptersGuard guard;
     AdapterQuietLog quiet;
@@ -204,6 +236,19 @@ TEST_CASE("Vulkan adapter ids come from vendor, device and UUID, not from the or
     PhysicalDeviceInfo after[3] = {GoodGpu("GPU C", GpuKind::Discrete, 0x1002, 0x73bf, 90), a, b};
     CHECK(vulkan::SelectPhysicalDeviceFor(before, 2, false, ib.id, "test") == 1);
     CHECK(vulkan::SelectPhysicalDeviceFor(after, 3, false, ib.id, "test") == 2);
+}
+
+TEST_CASE("A Vulkan adapter with a valid deviceLUID reports it as high part then low part, and matches by it", "[rhi][adapter][vulkan][select]") {
+    PhysicalDeviceInfo a = GoodGpu("GPU A", GpuKind::Discrete, 0x1002, 0x150e, 1);
+    PhysicalDeviceInfo b = GoodGpu("GPU B", GpuKind::Integrated, 0x8086, 0x9a49, 2);
+    CHECK(vulkan::MakeAdapterInfo(a, false).luid[0] == '\0'); // no valid LUID: empty (every Linux driver)
+    const u8 luid[8] = {0x78, 0x56, 0x34, 0x12, 0x02, 0x00, 0x00, 0x00}; // LowPart 0x12345678, HighPart 2
+    for (usize i = 0; i < 8; ++i) b.luid[i] = luid[i];
+    b.luid_valid = true;
+    const AdapterInfo ib = vulkan::MakeAdapterInfo(b, false);
+    CHECK(std::strcmp(ib.luid, "0000000212345678") == 0);
+    PhysicalDeviceInfo both[2] = {a, b};
+    CHECK(vulkan::SelectPhysicalDeviceFor(both, 2, false, "0000000212345678", "test") == 1);
 }
 
 TEST_CASE("Unsuitable Vulkan adapters carry a reason, and presentability follows the window", "[rhi][adapter][vulkan][select]") {

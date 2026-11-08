@@ -1177,7 +1177,14 @@ ShaderHandle NullDevice::CreateShader(const ShaderDesc& desc) {
         s.Error("CreateShader: %s", why);
         return ShaderHandle{};
     }
-    const char* bad = ValidateSpirv(desc.words, desc.word_count, desc.stage, desc.entry);
+    if (desc.format != s.options.caps.shader_format) {
+        s.Error("CreateShader: '%s' is %s bytecode; this device takes %s", desc.debug_name != nullptr ? desc.debug_name : "(unnamed)",
+                ShaderFormatName(desc.format), ShaderFormatName(s.options.caps.shader_format));
+        return ShaderHandle{};
+    }
+    const char* bad = desc.format == ShaderFormat::Spirv
+                          ? ValidateSpirv(static_cast<const u32*>(desc.bytes), desc.size / sizeof(u32), desc.stage, desc.entry)
+                          : nullptr;
     if (bad != nullptr) {
         s.Error("CreateShader: %s", bad);
         return ShaderHandle{};

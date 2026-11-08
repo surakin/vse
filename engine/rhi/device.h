@@ -478,4 +478,16 @@ struct DeviceDeleter {
 /// Owning pointer to a device; destroying or resetting it waits for the GPU and releases the device.
 using DevicePtr = UniquePtr<Device, DeviceDeleter>;
 
+/// Creates a shader module from the blob of the device's format ([[rhi::DeviceCaps::shader_format]]) in a set.
+///
+/// Param device: the device.
+/// Param set: the shader in every format it was minted in; `set.name` is the debug name unless `debug_name` is given.
+/// Param stage: the module's stage.
+/// Param debug_name: the name shown in debuggers and logs; null for `set.name`.
+/// Returns: the shader, or an invalid handle.
+/// Fails: returns an invalid handle, logging an error that names the shader and the format, when the set has no blob in the
+///   device's format; otherwise as `Device::CreateShader`.
+/// Thread-safety: thread-safe, as `Device::CreateShader` is.
+ShaderHandle CreateShaderFromSet(Device& device, const ShaderBlobSet& set, ShaderStage stage, const char* debug_name = nullptr);
+
 } // namespace engine_placeholder::rhi

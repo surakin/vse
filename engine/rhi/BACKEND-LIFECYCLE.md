@@ -17,6 +17,11 @@ The rules that apply to the backend as a whole:
   not hang; waits on a lost device return as soon as the API reports the loss.
 - **Pipeline cache identity.** The cache file name carries vendor, device and driver identity; a different adapter writes its own file.
 - **Thread rule.** `DeviceHost::Recreate` runs on one thread between frames; the backend needs no extra locking for it.
+- **Registration (Phase 13 Day 162).** `rhi::CreateDevice`, `rhi::EnumerateAdapters` and `rhi::DeviceHost` live in the neutral `rhi`
+  library and reach a backend through the registry (`rhi/backend_registry.h`): the backend library exports one
+  `Register<Name>Backend()` that fills a `BackendDescriptor` (its factory, adapter lister, availability probe, shader format and `Auto`
+  rank) and calls `RegisterBackend`, and `engine/rhi/backends/backends.cpp` (`rhi::RegisterCompiledBackends`) calls it. The two
+  sections below are those two function pointers.
 
 ### `CreateDevice`
 Creates the backend's device from `DeviceCreateInfo`. Honors `adapter` (an id from `EnumerateAdapters`, an index or part of the name)
@@ -28,7 +33,7 @@ Metal: `MTLCopyAllDevices` (macOS) or `MTLCreateSystemDefaultDevice` (iOS), `MTL
 ### `EnumerateAdapters`
 Lists the adapters without creating a device: stable id, name, kind, device-local memory, driver text, whether it can present to the
 window, whether it is suitable and why not. DX12: a throwaway `IDXGIFactory6`; id from vendor, device, subsystem and revision ids (the
-LUID is valid only until reboot, so `MatchAdapter` must also accept it), `DXGI_ADAPTER_FLAG_SOFTWARE` is `Software` (WARP), UMA from
+LUID is valid only until reboot, so it goes in `AdapterInfo::luid`, which `MatchAdapter` accepts since Day 162), `DXGI_ADAPTER_FLAG_SOFTWARE` is `Software` (WARP), UMA from
 `D3D12_FEATURE_DATA_ARCHITECTURE`. Metal: `MTLCopyAllDevices`; id from `registryID`; `hasUnifiedMemory` / `isLowPower` give the kind.
 
 ### `Adapter`

@@ -43,7 +43,7 @@ const char* ValidateShaderPermutations(const ShaderPermutations& t) {
         return "permutations: the base key (no option on) must be present and use module 0";
     }
     for (u32 m = 0; m < t.module_count; ++m) {
-        if (t.modules[m].words == nullptr || t.modules[m].word_count == 0 || t.modules[m].reflection == nullptr ||
+        if (!t.modules[m].HasCode() || t.modules[m].reflection == nullptr ||
             t.modules[m].reflection_size == 0) {
             return "permutations: a module has no SPIR-V or no reflection";
         }

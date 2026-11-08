@@ -10022,12 +10022,12 @@ Returns whether two keys switch on the same options.
 struct PermutationModule { ... }
 ```
 
-One compiled module of a permuted shader: its SPIR-V and its reflection blob.
+One compiled shader module in every bytecode format it was minted in, and its reflection blob (the reflection is the same for every format: it comes from the one Slang source).
 
 | Field | Value |
 |---|---|
 | Thread-safety | thread-compatible plain data. |
-| Ownership | the pointers refer to static data in a generated `*.perm.inc`. |
+| Ownership | the pointers refer to static data in a generated `*.perm.inc` or `*.spv.inc` / `*.dxil.inc`. |
 
 ### `words` {#renderer-permutationmodule-words}
 
@@ -10037,7 +10037,7 @@ One compiled module of a permuted shader: its SPIR-V and its reflection blob.
 const u32* words;
 ```
 
-The SPIR-V words.
+The SPIR-V words, or null.
 
 ### `word_count` {#renderer-permutationmodule-word-count}
 
@@ -10068,6 +10068,56 @@ usize reflection_size;
 ```
 
 Size of the reflection blob in bytes.
+
+### `dxil` {#renderer-permutationmodule-dxil}
+
+`variable renderer::PermutationModule::dxil` — defined in `engine/renderer/shader_permutation.h`
+
+```cpp
+const u8* dxil;
+```
+
+The DXIL container, or null when the module was not minted for Direct3D 12.
+
+### `dxil_size` {#renderer-permutationmodule-dxil-size}
+
+`variable renderer::PermutationModule::dxil_size` — defined in `engine/renderer/shader_permutation.h`
+
+```cpp
+usize dxil_size;
+```
+
+Size of the DXIL container in bytes.
+
+### `Blob(rhi::ShaderFormat)` {#renderer-permutationmodule-blob-rhi-shaderformat-const}
+
+`method renderer::PermutationModule::Blob` — defined in `engine/renderer/shader_permutation.h`
+
+```cpp
+constexpr rhi::ShaderBlob Blob(rhi::ShaderFormat format) const;
+```
+
+Returns the module's bytecode in one format.
+
+| Field | Value |
+|---|---|
+| Parameter `format` | the device's format ([`rhi::DeviceCaps::shader_format`](rhi.md#rhi-devicecaps-shader-format)). |
+| Returns | the blob, empty when the module has none in that format. |
+| Fails | an empty blob, as described. |
+
+### `HasCode()` {#renderer-permutationmodule-hascode-const}
+
+`method renderer::PermutationModule::HasCode` — defined in `engine/renderer/shader_permutation.h`
+
+```cpp
+constexpr bool HasCode() const;
+```
+
+Returns whether the module has bytecode in at least one format.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ## `PermutationEntry` {#renderer-permutationentry}
 

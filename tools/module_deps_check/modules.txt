@@ -93,10 +93,17 @@ module engine/rhi/null/ rhi/null 11
 module engine/rhi/vulkan/ rhi/vulkan 11
 module engine/rhi/dx12/ rhi/dx12 11
 module engine/rhi/metal/ rhi/metal 11
+# rhi_backends (Phase 13 Day 162): the one place that names every backend, to register them; programs link it, the renderer never does
+module engine/rhi/backends/ rhi/backends 11
 allow rhi/null rhi
 allow rhi/vulkan rhi
 allow rhi/dx12 rhi
 allow rhi/metal rhi
+allow rhi/backends rhi
+allow rhi/backends rhi/null
+allow rhi/backends rhi/vulkan
+allow rhi/backends rhi/dx12
+allow rhi/backends rhi/metal
 forbid rhi/vulkan rhi/null
 forbid rhi/null rhi/vulkan
 forbid rhi/dx12 rhi/vulkan
@@ -105,12 +112,16 @@ forbid rhi/metal rhi/vulkan
 forbid rhi/metal rhi/null
 forbid rhi rhi/vulkan
 forbid rhi rhi/null
+forbid rhi rhi/backends
+forbid rhi/null rhi/backends
+forbid rhi/vulkan rhi/backends
 # 12 renderer
 module engine/renderer/ renderer 12
 forbid renderer rhi/vulkan
 forbid renderer rhi/null
 forbid renderer rhi/dx12
 forbid renderer rhi/metal
+forbid renderer rhi/backends
 # 13 programs: demos, benchmarks, tools
 module game/hello_window/ game/hello_window 13
 module game/common/ game/common 13
@@ -173,6 +184,7 @@ target jobs jobs
 target platform platform
 target rhi rhi
 target rhi_vulkan rhi/vulkan
+target rhi_backends rhi/backends
 target renderer renderer
 target renderer_passes renderer
 target rhi_demo game/rhi_demo

@@ -162,7 +162,7 @@ int main() {
 
         MaterialTemplateDesc desc;
         desc.name = "material_test";
-        desc.vertex.words = shaders::kMaterialTestVertSpv;
+        desc.vertex.words = shaders::kMaterialTestVertSpv; // the SPIR-V of the module; `dxil` holds its DXIL when minted
         desc.vertex.word_count = shaders::kMaterialTestVertSpvWordCount;
         desc.vertex.reflection = shaders::kMaterialTestVertRefl;
         desc.vertex.reflection_size = shaders::kMaterialTestVertReflByteCount;
@@ -701,6 +701,7 @@ generated falls back to the levels its source holds.
 ```cpp compile standalone run
 #include <cstdio>
 
+#include "rhi/backends/backends.h"
 #include "renderer/device_resources.h"
 #include "renderer/texture.h"
 #include "rhi/device_host.h"
@@ -708,6 +709,7 @@ generated falls back to the levels its source holds.
 using namespace engine_placeholder;
 
 int main() {
+    rhi::RegisterCompiledBackends(); // once, before any device
     renderer::DeviceResources registry;
     rhi::DeviceHost host;
     host.AddObserver(&registry, 0);
@@ -784,6 +786,7 @@ and listed in `ApplyResult::change.unsupported`. A renderer built without a `Dev
 ```cpp compile standalone run
 #include <cstdio>
 
+#include "rhi/backends/backends.h"
 #include "renderer/renderer.h"
 #include "rhi/device_host.h"
 
@@ -792,6 +795,7 @@ using namespace engine_placeholder;
 static bool Build(const renderer::FrameContext&, void*) { return true; }
 
 int main() {
+    rhi::RegisterCompiledBackends(); // once, before any device
     renderer::DeviceResources registry;
     rhi::DeviceHost host;
     host.AddObserver(&registry, 0);

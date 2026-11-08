@@ -338,8 +338,7 @@ bool MaterialSystem::Recreate(rhi::Device* device) {
         if (!t.alive) continue;
         rhi::ShaderDesc sd;
         sd.stage = rhi::ShaderStage::Vertex;
-        sd.words = t.desc.vertex.words;
-        sd.word_count = t.desc.vertex.word_count;
+        sd.SetCode(t.desc.vertex.Blob(device_->Caps().shader_format));
         sd.debug_name = t.name;
         t.vertex = device_->CreateShader(sd);
         if (!t.vertex.IsValid()) {
@@ -418,11 +417,11 @@ TemplateId MaterialSystem::CreateTemplate(const MaterialTemplateDesc& desc) {
         RenderLog(LogVerbosity::Error, "MaterialSystem: template '%s' not created: more texture defaults than texture slots", name);
         return TemplateId{};
     }
-    if (desc.vertex.words == nullptr || desc.vertex.word_count == 0 || desc.vertex.reflection == nullptr) {
+    if (!desc.vertex.HasCode() || desc.vertex.reflection == nullptr) {
         RenderLog(LogVerbosity::Error, "MaterialSystem: template '%s' not created: the vertex module or its reflection is missing", name);
         return TemplateId{};
     }
-    if (desc.fragment_permutations == nullptr && (desc.fragment.words == nullptr || desc.fragment.word_count == 0 || desc.fragment.reflection == nullptr)) {
+    if (desc.fragment_permutations == nullptr && (!desc.fragment.HasCode() || desc.fragment.reflection == nullptr)) {
         RenderLog(LogVerbosity::Error, "MaterialSystem: template '%s' not created: the fragment module or its reflection is missing", name);
         return TemplateId{};
     }
@@ -449,10 +448,15 @@ TemplateId MaterialSystem::CreateTemplate(const MaterialTemplateDesc& desc) {
         return TemplateId{};
     }
 
+    const rhi::ShaderFormat format = device_->Caps().shader_format;
+    if (desc.vertex.Blob(format).Empty()) {
+        RenderLog(LogVerbosity::Error, "MaterialSystem: template '%s' not created: the vertex shader has no %s bytecode, which the %s device takes",
+                  name, rhi::ShaderFormatName(format), device_->BackendName());
+        return TemplateId{};
+    }
     rhi::ShaderDesc sd;
     sd.stage = rhi::ShaderStage::Vertex;
-    sd.words = desc.vertex.words;
-    sd.word_count = desc.vertex.word_count;
+    sd.SetCode(desc.vertex.Blob(format));
     sd.debug_name = name;
     const rhi::ShaderHandle vertex = device_->CreateShader(sd);
     if (!vertex.IsValid()) {
@@ -621,11 +625,16 @@ MaterialSystem::Variant* MaterialSystem::BuildVariant(TemplateSlot& t, Permutati
         RenderLog(LogVerbosity::Error, "MaterialSystem: template '%s': set 1 does not merge: %s", tname, error.message);
         return nullptr;
     }
+    const rhi::ShaderFormat format = device_->Caps().shader_format;
+    if (module->Blob(format).Empty()) {
+        RenderLog(LogVerbosity::Error, "MaterialSystem: template '%s': the fragment shader has no %s bytecode, which the %s device takes", tname,
+                  rhi::ShaderFormatName(format), device_->BackendName());
+        return nullptr;
+    }
     v.layout = device_->CreateBindGroupLayout(layout_data.Desc(tname));
     rhi::ShaderDesc sd;
     sd.stage = rhi::ShaderStage::Fragment;
-    sd.words = module->words;
-    sd.word_count = module->word_count;
+    sd.SetCode(module->Blob(format));
     sd.debug_name = tname;
     v.fragment = device_->CreateShader(sd);
     if (!v.layout.IsValid() || !v.fragment.IsValid()) {

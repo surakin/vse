@@ -89,6 +89,14 @@ void MakeAdapterId(const PhysicalDeviceInfo& info, char* out, usize capacity) {
 AdapterInfo MakeAdapterInfo(const PhysicalDeviceInfo& info, bool presentable) {
     AdapterInfo out;
     MakeAdapterId(info, out.id, sizeof(out.id));
+    if (info.luid_valid) {
+        // A LUID is { DWORD LowPart; LONG HighPart; }: the text is the high part, then the low part.
+        const u32 low = static_cast<u32>(info.luid[0]) | (static_cast<u32>(info.luid[1]) << 8) | (static_cast<u32>(info.luid[2]) << 16) |
+                        (static_cast<u32>(info.luid[3]) << 24);
+        const u32 high = static_cast<u32>(info.luid[4]) | (static_cast<u32>(info.luid[5]) << 8) | (static_cast<u32>(info.luid[6]) << 16) |
+                         (static_cast<u32>(info.luid[7]) << 24);
+        std::snprintf(out.luid, sizeof(out.luid), "%08x%08x", high, low);
+    }
     std::strncpy(out.name, info.name, sizeof(out.name) - 1);
     switch (info.kind) {
     case GpuKind::Discrete: out.kind = AdapterKind::Discrete; break;

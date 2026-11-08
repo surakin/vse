@@ -75,12 +75,14 @@ bool CubeRenderer::Create(Device* device, const CubeOptions& options) {
     lit_ = options.lit;
     textured_ = options.textured || options.lit;
     sd.stage = ShaderStage::Vertex;
-    sd.words = lit_ ? shaders::kLitVertSpv : textured_ ? shaders::kTexturedVertSpv : shaders::kCubeVertSpv;
-    sd.word_count = lit_ ? shaders::kLitVertSpvWordCount : textured_ ? shaders::kTexturedVertSpvWordCount : shaders::kCubeVertSpvWordCount;
+    sd.SetCode(lit_ ? SpirvBlob(shaders::kLitVertSpv, shaders::kLitVertSpvWordCount)
+               : textured_ ? SpirvBlob(shaders::kTexturedVertSpv, shaders::kTexturedVertSpvWordCount)
+                           : SpirvBlob(shaders::kCubeVertSpv, shaders::kCubeVertSpvWordCount));
     vs_ = device->CreateShader(sd);
     sd.stage = ShaderStage::Fragment;
-    sd.words = lit_ ? shaders::kLitFragSpv : textured_ ? shaders::kTexturedFragSpv : shaders::kCubeFragSpv;
-    sd.word_count = lit_ ? shaders::kLitFragSpvWordCount : textured_ ? shaders::kTexturedFragSpvWordCount : shaders::kCubeFragSpvWordCount;
+    sd.SetCode(lit_ ? SpirvBlob(shaders::kLitFragSpv, shaders::kLitFragSpvWordCount)
+               : textured_ ? SpirvBlob(shaders::kTexturedFragSpv, shaders::kTexturedFragSpvWordCount)
+                           : SpirvBlob(shaders::kCubeFragSpv, shaders::kCubeFragSpvWordCount));
     fs_ = device->CreateShader(sd);
 
     BindingDesc bindings[3] = {{0, BindingType::UniformBuffer, lit_ ? ShaderStage::Vertex | ShaderStage::Fragment : ShaderStage::Vertex, 1},

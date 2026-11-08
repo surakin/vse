@@ -122,24 +122,103 @@ struct SamplerDesc {
     const char* Validate() const;
 };
 
-/// Describes a shader module to create from precompiled bytecode (SPIR-V words for the Vulkan backend).
-///
-/// The engine compiles shaders offline and never at runtime (`PLAN.md` assumption #18); other backends will take
-/// their own bytecode in this descriptor.
+/// One shader module's bytecode in one format: a pointer and a size, normally into a minted `*.spv.inc` or `*.dxil.inc`.
 ///
 /// Thread-safety: thread-compatible plain data.
-/// Ownership: `words` and `entry` are borrowed for the duration of the call; the device copies what it keeps.
+/// Ownership: `bytes` is borrowed; minted blobs are static.
+struct ShaderBlob {
+    /// The format of `bytes`.
+    ShaderFormat format = ShaderFormat::Spirv;
+    /// The bytecode, or null for no blob. SPIR-V must be 4-byte aligned.
+    const void* bytes = nullptr;
+    /// Size of `bytes` in bytes; 0 for no blob.
+    usize size = 0;
+
+    /// Returns whether the blob holds no bytecode.
+    ///
+    /// Fails: never.
+    constexpr bool Empty() const { return bytes == nullptr || size == 0; }
+};
+
+/// Returns the blob of a SPIR-V module given as 32-bit words.
+///
+/// Param words: the words; borrowed.
+/// Param word_count: number of words.
+/// Returns: a SPIR-V blob of `word_count * 4` bytes.
+/// Fails: never.
+/// Thread-safety: thread-safe.
+constexpr ShaderBlob SpirvBlob(const u32* words, usize word_count) {
+    return ShaderBlob{ShaderFormat::Spirv, words, word_count * sizeof(u32)};
+}
+
+/// Returns the blob of a DXIL container given as bytes.
+///
+/// Param bytes: the container; borrowed.
+/// Param size: its size in bytes.
+/// Returns: a DXIL blob.
+/// Fails: never.
+/// Thread-safety: thread-safe.
+constexpr ShaderBlob DxilBlob(const u8* bytes, usize size) { return ShaderBlob{ShaderFormat::Dxil, bytes, size}; }
+
+/// One shader in every format it was minted in; code that creates shaders names the set once and picks the device's
+/// format with `For` (`device->Caps().shader_format`).
+///
+/// Thread-safety: thread-compatible plain data.
+/// Ownership: the blobs and `name` are borrowed; minted sets are static.
+struct ShaderBlobSet {
+    /// The shader's file name (for example `lighting.frag`), for the error when a format is missing.
+    const char* name = "";
+    /// The SPIR-V module, or empty.
+    ShaderBlob spirv{ShaderFormat::Spirv, nullptr, 0};
+    /// The DXIL module, or empty.
+    ShaderBlob dxil{ShaderFormat::Dxil, nullptr, 0};
+
+    /// Returns the blob of one format.
+    ///
+    /// Param format: the format the device takes.
+    /// Returns: the blob, or an empty blob of that format when the set has none (always for `Msl` today).
+    /// Fails: an empty blob, as described.
+    constexpr ShaderBlob For(ShaderFormat format) const {
+        // The returned blob always carries `format`, even when a member was initialized with `{}`.
+        switch (format) {
+        case ShaderFormat::Spirv: return ShaderBlob{format, spirv.bytes, spirv.size};
+        case ShaderFormat::Dxil: return ShaderBlob{format, dxil.bytes, dxil.size};
+        case ShaderFormat::Msl: break;
+        }
+        return ShaderBlob{format, nullptr, 0};
+    }
+};
+
+/// Describes a shader module to create from precompiled bytecode: SPIR-V for the Vulkan backend, DXIL for Direct3D 12.
+///
+/// The engine compiles shaders offline and never at runtime (`PLAN.md` assumption #18). A backend refuses a module in
+/// another format than its [[rhi::DeviceCaps::shader_format]] with an error naming both.
+///
+/// Thread-safety: thread-compatible plain data.
+/// Ownership: `bytes` and `entry` are borrowed for the duration of the call; the device copies what it keeps.
 struct ShaderDesc {
     /// The single stage this module's entry point implements.
     ShaderStage stage = ShaderStage::None;
-    /// The SPIR-V module as 32-bit words.
-    const u32* words = nullptr;
-    /// Number of 32-bit words in `words`.
-    usize word_count = 0;
+    /// The format of `bytes`.
+    ShaderFormat format = ShaderFormat::Spirv;
+    /// The module's bytecode. SPIR-V must be 4-byte aligned.
+    const void* bytes = nullptr;
+    /// Size of `bytes` in bytes.
+    usize size = 0;
     /// Name of the entry point.
     const char* entry = "main";
     /// Optional name shown in debuggers and logs; null for none.
     const char* debug_name = nullptr;
+
+    /// Sets `format`, `bytes` and `size` from a blob.
+    ///
+    /// Param blob: the module; borrowed like `bytes`.
+    /// Fails: never.
+    void SetCode(const ShaderBlob& blob) {
+        format = blob.format;
+        bytes = blob.bytes;
+        size = blob.size;
+    }
 
     /// Checks the descriptor without a device.
     ///
@@ -147,8 +226,10 @@ struct ShaderDesc {
     /// Fails: reported through the return value, never by aborting.
     /// Ownership: the returned string is static and is never freed by the caller.
     ///
-    /// Checks the stage, the entry name (at most 63 bytes) and that the module is at least as large as a SPIR-V
-    /// header; the module's contents are checked by [[rhi::ValidateSpirv]] when the shader is created.
+    /// Checks the stage, the entry name (at most 63 bytes) and the module's shape for its format: SPIR-V is 4-byte aligned, a
+    /// whole number of words and at least a header (its contents are checked by [[rhi::ValidateSpirv]] when the shader is
+    /// created); DXIL starts with the `DXBC` container tag, is at least a container header and its size matches the one the
+    /// header records; MSL is refused.
     const char* Validate() const;
 };
 

@@ -48,8 +48,7 @@ struct ComputeDevice {
     ShaderHandle Shader(const u32* words, usize count) {
         ShaderDesc d;
         d.stage = ShaderStage::Compute;
-        d.words = words;
-        d.word_count = count;
+        d.SetCode(SpirvBlob(words, count));
         return device->CreateShader(d);
     }
 
@@ -187,15 +186,13 @@ TEST_CASE("Compute pipeline creation refuses bad input", "[rhi][vulkan][gpu][com
 
     ShaderDesc vd;
     vd.stage = ShaderStage::Vertex; // a compute module declared as a vertex shader is refused by the module check
-    vd.words = shaders::kFillCompSpv;
-    vd.word_count = shaders::kFillCompSpvWordCount;
+    vd.SetCode(SpirvBlob(shaders::kFillCompSpv, shaders::kFillCompSpvWordCount));
     CHECK_FALSE(t.device->CreateShader(vd).IsValid());
 
     // A shader of another stage is not a compute shader.
     ShaderDesc vertex;
     vertex.stage = ShaderStage::Vertex;
-    vertex.words = shaders::kTriangleVertSpv;
-    vertex.word_count = shaders::kTriangleVertSpvWordCount;
+    vertex.SetCode(SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount));
     const ShaderHandle vs = t.device->CreateShader(vertex);
     REQUIRE(vs.IsValid());
     cp.shader = vs;

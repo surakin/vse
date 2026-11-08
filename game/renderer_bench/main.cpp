@@ -19,6 +19,7 @@
 #include "mem/arena_allocator.h"
 #include "os/os.h"
 #include "renderer/render_graph.h"
+#include "rhi/backends/backends.h"
 #include "rhi/null/null_device.h"
 #include "rhi/rhi.h"
 
@@ -268,6 +269,7 @@ int Usage(const char* program) {
 } // namespace
 
 int main(int argc, char** argv) {
+    ::engine_placeholder::rhi::RegisterCompiledBackends(); // before any device: the backends this build has
     const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(argc, argv);
     engine_placeholder::debug::RunCrashTest(debug_setup.crash_test); // --crash-test=segv|abort|assert|ensure, before any window or device
     Options o;

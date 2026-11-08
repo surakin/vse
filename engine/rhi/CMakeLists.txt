@@ -1,16 +1,21 @@
 # Phase 4: the Render Hardware Interface (docs/superpowers/specs/
-# 2026-11-04-rhi-design.md). `rhi` holds the backend-agnostic interface and
+# 2026-11-04-rhi-design.md). `rhi` holds the backend-agnostic interface, the
+# backend registry (with CreateDevice, EnumerateAdapters and DeviceHost) and
 # the validating null backend; `rhi_vulkan` is the only place Vulkan is
-# named. Built plain and under ASan/UBSan from one source list, each linked
+# named; `rhi_backends` registers every backend the build has (Phase 13 Day
+# 162) and is linked by programs, never by the renderer. Built plain and under ASan/UBSan from one source list, each linked
 # against the matching foundation/jobs variant (the TSan flavor arrived on
 # Day 54, with multithreaded command recording).
 set(RHI_SOURCES
   rhi.cpp
   adapter.cpp
+  create_device.cpp
+  device_host.cpp
   desc.cpp
   spirv.cpp
   uniform_ring.cpp
   null/null_device.cpp
+  null/null_backend.cpp
 )
 
 set(RHI_VULKAN_SOURCES
@@ -35,8 +40,7 @@ set(RHI_VULKAN_SOURCES
   vulkan/vulkan_device_bindings.cpp
   vulkan/vk_barrier.cpp
   vulkan/vk_command_list.cpp
-  vulkan/create_device.cpp
-  vulkan/device_host.cpp
+  vulkan/vulkan_backend.cpp
 )
 
 # The presentation surface of each platform's windows (Phase 13 Day 160): Xlib in its own translation unit on Linux (Wayland's is in
@@ -60,6 +64,11 @@ function(engine_add_rhi_libs suffix foundation_lib jobs_lib platform_lib)
   target_include_directories(rhi_vulkan${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
   target_compile_options(rhi_vulkan${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   target_link_libraries(rhi_vulkan${suffix} PUBLIC rhi${suffix})
+
+  add_library(rhi_backends${suffix} STATIC backends/backends.cpp)
+  target_include_directories(rhi_backends${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
+  target_compile_options(rhi_backends${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
+  target_link_libraries(rhi_backends${suffix} PUBLIC rhi_vulkan${suffix} rhi${suffix})
 endfunction()
 
 engine_add_rhi_libs("" foundation jobs platform)

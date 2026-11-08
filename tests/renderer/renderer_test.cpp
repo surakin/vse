@@ -329,12 +329,10 @@ struct SampleScene {
         device = dev;
         rhi::ShaderDesc sd;
         sd.stage = rhi::ShaderStage::Vertex;
-        sd.words = shaders::kFullscreenVertSpv;
-        sd.word_count = shaders::kFullscreenVertSpvWordCount;
+        sd.SetCode(rhi::SpirvBlob(shaders::kFullscreenVertSpv, shaders::kFullscreenVertSpvWordCount));
         vs = device->CreateShader(sd);
         sd.stage = rhi::ShaderStage::Fragment;
-        sd.words = shaders::kGraphSampleFragSpv;
-        sd.word_count = shaders::kGraphSampleFragSpvWordCount;
+        sd.SetCode(rhi::SpirvBlob(shaders::kGraphSampleFragSpv, shaders::kGraphSampleFragSpvWordCount));
         fs = device->CreateShader(sd);
         rhi::BindingDesc bindings[3] = {{0, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1},
                                         {1, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1},

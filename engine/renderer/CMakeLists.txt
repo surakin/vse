@@ -35,8 +35,8 @@ function(engine_add_renderer_lib suffix)
   add_library(renderer${suffix} STATIC ${RENDERER_SOURCES})
   target_include_directories(renderer${suffix} PUBLIC ${RENDERER_INCLUDE_ROOT})
   target_compile_options(renderer${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-  # rhi_vulkan comes with the RHI the renderer sits on: the settings layer creates devices through rhi::DeviceHost.
-  target_link_libraries(renderer${suffix} PUBLIC rhi_vulkan${suffix} rhi${suffix} jobs${suffix} foundation${suffix})
+  # Only the neutral RHI: devices come through the backend registry, and the program links rhi_backends (Phase 13 Day 162).
+  target_link_libraries(renderer${suffix} PUBLIC rhi${suffix} jobs${suffix} foundation${suffix})
   add_library(renderer_passes${suffix} STATIC ${RENDERER_PASS_SOURCES})
   target_include_directories(renderer_passes${suffix} PRIVATE ${CMAKE_SOURCE_DIR}/shaders)
   target_compile_options(renderer_passes${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})

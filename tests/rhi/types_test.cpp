@@ -314,8 +314,7 @@ TEST_CASE("ShaderDesc validation", "[rhi][desc]") {
     const u32 words[8] = {0x07230203, 0x00010000, 0, 1, 0, 0, 0, 0};
     ShaderDesc d;
     d.stage = ShaderStage::Vertex;
-    d.words = words;
-    d.word_count = 8;
+    d.SetCode(SpirvBlob(words, 8));
     CHECK(d.Validate() == nullptr);
 
     ShaderDesc multi = d;
@@ -325,11 +324,18 @@ TEST_CASE("ShaderDesc validation", "[rhi][desc]") {
     nostage.stage = ShaderStage::None;
     CHECK(Rejects(nostage.Validate(), "ShaderDesc: stage"));
     ShaderDesc nowords = d;
-    nowords.words = nullptr;
-    CHECK(Rejects(nowords.Validate(), "ShaderDesc: no SPIR-V words"));
+    nowords.bytes = nullptr;
+    CHECK(Rejects(nowords.Validate(), "ShaderDesc: no bytecode"));
     ShaderDesc tiny = d;
-    tiny.word_count = 4;
+    tiny.size = 4 * sizeof(u32);
     CHECK(Rejects(tiny.Validate(), "ShaderDesc: module is smaller"));
+    ShaderDesc ragged = d;
+    ragged.size = 6 * sizeof(u32) + 2;
+    CHECK(Rejects(ragged.Validate(), "ShaderDesc: SPIR-V size is not a whole number"));
+    ShaderDesc misaligned = d;
+    misaligned.bytes = reinterpret_cast<const u8*>(words) + 2;
+    misaligned.size = 6 * sizeof(u32);
+    CHECK(Rejects(misaligned.Validate(), "ShaderDesc: SPIR-V bytecode is not 4-byte aligned"));
     ShaderDesc noentry = d;
     noentry.entry = "";
     CHECK(Rejects(noentry.Validate(), "ShaderDesc: entry"));
@@ -340,6 +346,58 @@ TEST_CASE("ShaderDesc validation", "[rhi][desc]") {
     CHECK(Rejects(longname.Validate(), "ShaderDesc: entry point name is longer"));
     longname.entry = "012345678901234567890123456789012345678901234567890123456789012"; // 63 bytes
     CHECK(longname.Validate() == nullptr);
+}
+
+TEST_CASE("ShaderDesc validation checks a DXIL container's tag and size and refuses MSL", "[rhi][desc]") {
+    // A DXBC container header: tag, 16-byte digest, version 1.0, total size 40, one part; then 8 bytes of part data.
+    u8 dxil[40] = {'D', 'X', 'B', 'C'};
+    dxil[20] = 1;
+    dxil[24] = 40;
+    dxil[28] = 1;
+    ShaderDesc d;
+    d.stage = ShaderStage::Fragment;
+    d.SetCode(DxilBlob(dxil, sizeof(dxil)));
+    CHECK(d.format == ShaderFormat::Dxil);
+    CHECK(d.Validate() == nullptr);
+
+    ShaderDesc short_header = d;
+    short_header.size = 31;
+    CHECK(Rejects(short_header.Validate(), "ShaderDesc: module is smaller than a DXIL container header"));
+    ShaderDesc wrong_size = d;
+    wrong_size.size = 36;
+    CHECK(Rejects(wrong_size.Validate(), "ShaderDesc: DXIL size differs"));
+    u8 bad_tag[40];
+    for (usize i = 0; i < sizeof(bad_tag); ++i) bad_tag[i] = dxil[i];
+    bad_tag[0] = 'Q';
+    ShaderDesc not_dxbc = d;
+    not_dxbc.bytes = bad_tag;
+    CHECK(Rejects(not_dxbc.Validate(), "ShaderDesc: DXIL bytecode does not start with the DXBC"));
+    // SPIR-V words are not DXIL: the format decides which checks apply.
+    const u32 words[8] = {0x07230203, 0x00010000, 0, 1, 0, 0, 0, 0};
+    ShaderDesc spirv_as_dxil = d;
+    spirv_as_dxil.bytes = words;
+    spirv_as_dxil.size = sizeof(words);
+    CHECK(Rejects(spirv_as_dxil.Validate(), "ShaderDesc: DXIL bytecode does not start with the DXBC"));
+
+    ShaderDesc msl = d;
+    msl.format = ShaderFormat::Msl;
+    CHECK(Rejects(msl.Validate(), "ShaderDesc: MSL is not supported"));
+    CHECK(StringView(ShaderFormatName(ShaderFormat::Spirv)) == "spirv");
+    CHECK(StringView(ShaderFormatName(ShaderFormat::Dxil)) == "dxil");
+    CHECK(StringView(ShaderFormatName(ShaderFormat::Msl)) == "msl");
+}
+
+TEST_CASE("ShaderBlobSet picks the blob of a format and is empty where a format was not minted", "[rhi][desc]") {
+    static const u32 words[6] = {0x07230203, 0x00010000, 0, 1, 0, 0};
+    static const u8 dxil[4] = {'D', 'X', 'B', 'C'};
+    ShaderBlobSet set{"sample.frag", SpirvBlob(words, 6), {}};
+    CHECK(set.For(ShaderFormat::Spirv).size == 24);
+    CHECK(set.For(ShaderFormat::Spirv).format == ShaderFormat::Spirv);
+    CHECK(set.For(ShaderFormat::Dxil).Empty());
+    CHECK(set.For(ShaderFormat::Dxil).format == ShaderFormat::Dxil);
+    CHECK(set.For(ShaderFormat::Msl).Empty());
+    set.dxil = DxilBlob(dxil, 4);
+    CHECK(set.For(ShaderFormat::Dxil).bytes == dxil);
 }
 
 TEST_CASE("BindGroupLayoutDesc validation", "[rhi][desc]") {

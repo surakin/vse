@@ -8,6 +8,7 @@ set(RHI_TEST_SOURCES
   handle_pool_test.cpp
   null_device_test.cpp
   adapter_test.cpp
+  backend_registry_test.cpp
   device_host_test.cpp
   swapchain_reconfigure_test.cpp
   vulkan_reset_golden_test.cpp
@@ -74,15 +75,15 @@ include(Catch)
 # NVIDIA driver starts threads that ThreadSanitizer cannot track and crashes inside its allocator interceptor, so
 # GPU threading is covered by the ASan flavor plus validation layers, and TSan covers the GPU-free
 # multithreaded tests (null device) and the pure logic. With a Mesa software driver, run the whole binary by hand.
-function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib suffix label spec)
-  add_executable(${target} ${RHI_TEST_SOURCES} ${RHI_HEADER_CHECK_SOURCES})
+function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib rhi_backends_lib suffix label spec)
+  add_executable(${target} ${RHI_TEST_SOURCES} ${RHI_HEADER_CHECK_SOURCES} ${CMAKE_SOURCE_DIR}/tests/support/register_backends.cpp)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target}) # before the discovery below, which runs the program (Windows: the runtime DLLs beside it)
   endif()
   # cube_scene.cpp (compiled into this executable) uses the renderer's camera helpers; same sanitizer flavor as rhi_lib.
   string(REGEX REPLACE "^rhi" "renderer" renderer_lib "${rhi_lib}")
   string(REGEX REPLACE "^rhi" "renderer_passes" passes_lib "${rhi_lib}")
-  target_link_libraries(${target} PRIVATE ${passes_lib} ${renderer_lib} ${rhi_lib} ${rhi_vulkan_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_link_libraries(${target} PRIVATE ${passes_lib} ${renderer_lib} ${rhi_lib} ${rhi_vulkan_lib} ${rhi_backends_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/tests/renderer ${CMAKE_SOURCE_DIR}/tests/io ${CMAKE_SOURCE_DIR}/tests/support)
   target_compile_definitions(${target} PRIVATE ENGINE_RHI_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
     ENGINE_RHI_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/rhi_demo/assets"
@@ -98,15 +99,15 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib suffix label spec)
     ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${label}")
 endfunction()
 
-engine_add_rhi_tests(rhi_tests rhi rhi_vulkan "" "rhi" "")
+engine_add_rhi_tests(rhi_tests rhi rhi_vulkan rhi_backends "" "rhi" "")
 # The X11 presentation test is left out of the ASan flavor: the NVIDIA driver's Xlib WSI path leaks inside a library
 # it unloads before exit (every frame of the report is an anonymous module, so no suppression can name it), and the
 # Wayland presentation test, which runs the same code of ours, is clean.
 if(ENGINE_HAVE_ASAN)
-  engine_add_rhi_tests(rhi_tests_asan rhi_asan rhi_vulkan_asan " [asan]" "asan" "~[x11]")
+  engine_add_rhi_tests(rhi_tests_asan rhi_asan rhi_vulkan_asan rhi_backends_asan " [asan]" "asan" "~[x11]")
 endif()
 if(ENGINE_HAVE_TSAN)
-  engine_add_rhi_tests(rhi_tests_tsan rhi_tsan rhi_vulkan_tsan " [tsan]" "tsan" "~[gpu]")
+  engine_add_rhi_tests(rhi_tests_tsan rhi_tsan rhi_vulkan_tsan rhi_backends_tsan " [tsan]" "tsan" "~[gpu]")
 endif()
 
 # Phase 8 Day 114: the lifecycle checklist for the DX12 and Metal backends stays in step with the interfaces, and the neutral RHI

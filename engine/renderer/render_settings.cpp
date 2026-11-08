@@ -8,6 +8,7 @@
 
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
+#include "rhi/rhi.h"
 
 namespace engine_placeholder::renderer {
 
@@ -70,7 +71,11 @@ bool SameValue(const RenderSettings& a, const RenderSettings& b, SettingId id, c
     return false;
 }
 
-const char* const kBackendNames[] = {"null", "vulkan"};
+// In rhi::Backend's order, so a value converts by a cast (renderer.cpp).
+const char* const kBackendNames[] = {"null", "vulkan", "dx12", "auto"};
+static_assert(static_cast<u32>(rhi::Backend::Null) == 0 && static_cast<u32>(rhi::Backend::Vulkan) == 1 &&
+                  static_cast<u32>(rhi::Backend::Dx12) == 2 && static_cast<u32>(rhi::Backend::Auto) == 3,
+              "kBackendNames follows rhi::Backend");
 const char* const kValidationNames[] = {"auto", "off", "on"};
 const char* const kPresentNames[] = {"fifo", "mailbox", "immediate"};
 const char* const kFormatNames[] = {"auto", "srgb8", "rgba16f", "rgb10a2"};
@@ -213,7 +218,7 @@ void RegisterBuiltinSettings(SettingsRegistry* registry) {
         const SettingId id = registry->Register(d);
         ENGINE_ASSERT(id == expected, "a built-in setting got an unexpected id");
     };
-    add(MakeEnum("backend", CostClass::DeviceReset, kBackendNames, 1), settings::kBackend);
+    add(MakeEnum("backend", CostClass::DeviceReset, kBackendNames, 3), settings::kBackend);
     {
         SettingDesc d;
         d.name = "adapter";

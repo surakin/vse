@@ -534,3 +534,21 @@ TEST_CASE("A device reset can be forced with the settings unchanged", "[apply_se
     CHECK(rig.renderer->Settings().Generation() == generation + 1); // a reset on request is still a settings event
     CHECK(rig.Render() == FrameStatus::Ok);
 }
+
+TEST_CASE("Switching to a backend this program did not register is refused with the reason and keeps the device", "[apply_settings]") {
+    ApplyQuietLog quiet;
+    ApplyRig rig;
+    REQUIRE(rig.Create());
+    REQUIRE(rig.Render() == FrameStatus::Ok);
+    const u32 epoch = rig.Epoch();
+    RenderSettings wanted = rig.renderer->Settings();
+    wanted.SetEnum(kBackend, 2); // dx12: no backend of that kind is registered in this test binary yet (Phase 13 Day 162)
+    const ApplyResult result = rig.renderer->ApplySettings(wanted);
+    CHECK_FALSE(result.ok);
+    CHECK(std::strstr(result.reason, "dx12 backend is not registered in this program") != nullptr);
+    CHECK(rig.Epoch() == epoch); // nothing was torn down
+    CHECK(rig.begins == 0);
+    CHECK_FALSE(rig.renderer->IsBroken());
+    CHECK(rig.renderer->Settings().GetEnum(kBackend) == 0);
+    CHECK(rig.Render() == FrameStatus::Ok);
+}

@@ -24,7 +24,7 @@ From the bottom up. "Platform code" means a per-OS backend directory (`linux/`, 
 | 8. Settings | `foundation/settings` | Registry, stores, layers, the `Settings` service. Layers 0-7. |
 | 9. Platform: windows and input | `engine/platform` (`window.h`, `input.h`, `window_host.h`, `platform/<platform>/` backends) | Windows, input state, display backends (Wayland, X11, Win32), the CMake library `platform`, the only one that links the display libraries. Layers 0-8. Moved here from the foundation on Phase 12 Day 144. |
 | 10. Jobs | `engine/jobs` | Scheduler, coroutines, frame pool, async I/O. Foundation (layers 0-8). |
-| 11. RHI | `engine/rhi` (neutral), `engine/rhi/null`, `engine/rhi/vulkan`, later `rhi/dx12`, `rhi/metal` | The neutral RHI, and one library per backend. Backends depend on `rhi`, jobs and foundation, never on each other. Graphics API headers only inside their backend (`rhi_boundary_check`). |
+| 11. RHI | `engine/rhi` (neutral, with the backend registry, `CreateDevice` and `DeviceHost`), `engine/rhi/null`, `engine/rhi/vulkan`, later `rhi/dx12`, `rhi/metal`; `engine/rhi/backends` | The neutral RHI, and one library per backend. Backends depend on `rhi`, jobs and foundation, never on each other; each registers with the neutral registry. `rhi/backends` (library `rhi_backends`, Phase 13 Day 162) is the only module that names every backend, to register them; programs link it, the renderer never does. Graphics API headers only inside their backend (`rhi_boundary_check`). |
 | 12. Renderer | `engine/renderer` (+ `renderer_passes`) | Render graph, materials, passes. RHI (neutral only), jobs, foundation including settings. |
 | 13. Programs | `game/*`, `tools/*`, `tests/*` | Demos, benches, tools and tests. Anything below. Neutral headers only: no `os/<platform>/` include (section 3, item 6). |
 
@@ -34,19 +34,16 @@ editor); each gets its row here when its phase is broken into days.
 ## 2. The measured graph (after Phase 12, 2026-11-07)
 
 Measured by `module_deps_check` on the whole tree: **136 distinct module edges from includes, plus the CMake link lines, 0 problems.** There is no cycle and no
-upward edge. Two allow-listed edges remain, both for Phase 13 Day 162 (the RHI backend registry):
-
-| Edge | Where | Why it stays |
-|---|---|---|
-| rhi/vulkan → rhi/null | `rhi/vulkan/create_device.cpp` includes `rhi/null/null_device.h` | `CreateDevice` dispatches to the null backend from inside the Vulkan library; the registry needs the DX12 backend's shape to design well. |
-| renderer → rhi/vulkan | `engine/renderer/CMakeLists.txt` links `rhi_vulkan` | The renderer reaches `CreateDevice`, `EnumerateAdapters` and `DeviceHost` through it. Consequence: `shader_mint` (which links `renderer`) still links the display libraries (`KNOWN-ISSUES.md`). |
+upward edge. The last two allow-listed edges (rhi/vulkan → rhi/null and renderer → rhi/vulkan) were removed by the RHI backend registry on Phase 13 Day 162;
+the allow list is empty.
 
 The libraries follow the layers; each links only the ones below it (`docs/guide/building-and-testing.md`, "Libraries and layers"):
 
 ```
-game/*, tools/*   ->  renderer, rhi, jobs, platform, foundation
-renderer          ->  rhi, jobs, foundation (incl. settings, math)           (+ rhi/vulkan: allow list)
-rhi/vulkan        ->  rhi, jobs, platform, foundation                        (+ rhi/null: allow list)
+game/*, tools/*   ->  renderer, rhi_backends, rhi, jobs, platform, foundation
+renderer          ->  rhi, jobs, foundation (incl. settings, math)
+rhi_backends      ->  rhi/vulkan, rhi/null (in rhi), later rhi/dx12          (registers each backend; linked by programs)
+rhi/vulkan        ->  rhi, jobs, platform, foundation
 rhi/null          ->  rhi, foundation
 rhi               ->  platform, foundation
 jobs              ->  foundation
@@ -72,8 +69,9 @@ The numbers are the items of the original table; the plan is `plans/phase-12-mod
 5. **[Day 144, done] Windows and input are the platform layer** in `engine/platform/` (`platform/window.h`, `input.h`, `window_host.h`; namespace still `os::`), library
    `platform`, which alone links the display libraries; `PlatformWindowHost` has a neutral header. Removed items 5, 9 and 10 (except `shader_mint`, see above).
 6. **[Day 143, done] `engine_main` moved** to `game/hello_window/`. Removed item 6.
-7. **[Phase 13 Day 162] The RHI backend registry**: backends register with the neutral `rhi`; the renderer and `DeviceHost` stop linking `rhi_vulkan`, and `rhi/vulkan`
-   stops including `rhi/null`. Removes items 7 and 8 (the two allow-list entries).
+7. **[Phase 13 Day 162, done] The RHI backend registry** (`rhi/backend_registry.h`): backends register with the neutral `rhi` through an explicit call
+   (`rhi::RegisterCompiledBackends`, library `rhi_backends`), `CreateDevice`, `EnumerateAdapters` and `DeviceHost` live in `rhi`, the renderer links `rhi` only,
+   and `rhi/vulkan` no longer includes `rhi/null`. Removed items 7 and 8 (the two allow-list entries).
 8. **[Day 145, done] One library per layer** (see section 2).
 9. **[Day 141, done] The gate** keeps it this way (section 6).
 

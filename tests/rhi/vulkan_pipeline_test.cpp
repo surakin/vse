@@ -177,12 +177,10 @@ struct TriangleDevice {
         }
         ShaderDesc d;
         d.stage = ShaderStage::Vertex;
-        d.words = shaders::kTriangleVertSpv;
-        d.word_count = shaders::kTriangleVertSpvWordCount;
+        d.SetCode(SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount));
         vs = device->CreateShader(d);
         d.stage = ShaderStage::Fragment;
-        d.words = shaders::kTriangleFragSpv;
-        d.word_count = shaders::kTriangleFragSpvWordCount;
+        d.SetCode(SpirvBlob(shaders::kTriangleFragSpv, shaders::kTriangleFragSpvWordCount));
         fs = device->CreateShader(d);
     }
     ~TriangleDevice() {
@@ -245,8 +243,7 @@ TEST_CASE("Graphics pipeline creation refuses bad input before the driver sees i
     SECTION("a destroyed shader") {
         ShaderDesc d;
         d.stage = ShaderStage::Vertex;
-        d.words = shaders::kTriangleVertSpv;
-        d.word_count = shaders::kTriangleVertSpvWordCount;
+        d.SetCode(SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount));
         ShaderHandle gone = t.device->CreateShader(d);
         t.device->DestroyShader(gone);
         t.device->BeginFrame();

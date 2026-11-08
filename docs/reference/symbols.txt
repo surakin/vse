@@ -2110,44 +2110,66 @@ jobs::WorkerPool::CurrentParticipantIndex()	function	jobs	jobs-workerpool-curren
 rhi::kMaxAdapters	variable	rhi	rhi-kmaxadapters	rhi.md	engine/rhi/adapter.h:13
 rhi::kAdapterIdBytes	variable	rhi	rhi-kadapteridbytes	rhi.md	engine/rhi/adapter.h:15
 rhi::kAdapterNameBytes	variable	rhi	rhi-kadapternamebytes	rhi.md	engine/rhi/adapter.h:17
-rhi::AdapterKind	enum	rhi	rhi-adapterkind	rhi.md	engine/rhi/adapter.h:20
-rhi::AdapterKind::Other	enumerator	rhi	rhi-adapterkind-other	rhi.md	engine/rhi/adapter.h:21
-rhi::AdapterKind::Software	enumerator	rhi	rhi-adapterkind-software	rhi.md	engine/rhi/adapter.h:22
-rhi::AdapterKind::Virtual	enumerator	rhi	rhi-adapterkind-virtual	rhi.md	engine/rhi/adapter.h:23
-rhi::AdapterKind::Integrated	enumerator	rhi	rhi-adapterkind-integrated	rhi.md	engine/rhi/adapter.h:24
-rhi::AdapterKind::Discrete	enumerator	rhi	rhi-adapterkind-discrete	rhi.md	engine/rhi/adapter.h:25
-rhi::AdapterInfo	struct	rhi	rhi-adapterinfo	rhi.md	engine/rhi/adapter.h:31
-rhi::AdapterInfo::id	variable	rhi	rhi-adapterinfo-id	rhi.md	engine/rhi/adapter.h:35
-rhi::AdapterInfo::name	variable	rhi	rhi-adapterinfo-name	rhi.md	engine/rhi/adapter.h:37
-rhi::AdapterInfo::kind	variable	rhi	rhi-adapterinfo-kind	rhi.md	engine/rhi/adapter.h:39
-rhi::AdapterInfo::dedicated_memory_bytes	variable	rhi	rhi-adapterinfo-dedicated-memory-bytes	rhi.md	engine/rhi/adapter.h:41
-rhi::AdapterInfo::driver	variable	rhi	rhi-adapterinfo-driver	rhi.md	engine/rhi/adapter.h:43
-rhi::AdapterInfo::can_present	variable	rhi	rhi-adapterinfo-can-present	rhi.md	engine/rhi/adapter.h:45
-rhi::AdapterInfo::suitable	variable	rhi	rhi-adapterinfo-suitable	rhi.md	engine/rhi/adapter.h:47
-rhi::AdapterInfo::unsuitable_reason	variable	rhi	rhi-adapterinfo-unsuitable-reason	rhi.md	engine/rhi/adapter.h:49
-rhi::AdapterList	struct	rhi	rhi-adapterlist	rhi.md	engine/rhi/adapter.h:55
-rhi::AdapterList::items	variable	rhi	rhi-adapterlist-items	rhi.md	engine/rhi/adapter.h:57
-rhi::AdapterList::count	variable	rhi	rhi-adapterlist-count	rhi.md	engine/rhi/adapter.h:59
-rhi::EnumerateAdapters(const DeviceCreateInfo&,AdapterList*)	function	rhi	rhi-enumerateadapters-const-devicecreateinfo-amp-adapterlist-star	rhi.md	engine/rhi/adapter.h:78
-rhi::MatchAdapter(const AdapterInfo*,usize,const char*)	function	rhi	rhi-matchadapter-const-adapterinfo-star-usize-const-char-star	rhi.md	engine/rhi/adapter.h:90
-rhi::SetNullAdapters(const AdapterList*)	function	rhi	rhi-setnulladapters-const-adapterlist-star	rhi.md	engine/rhi/adapter.h:96
-rhi::DefaultNullAdapters(AdapterList*)	function	rhi	rhi-defaultnulladapters-adapterlist-star	rhi.md	engine/rhi/adapter.h:102
-rhi::DeviceCaps	struct	rhi	rhi-devicecaps	rhi.md	engine/rhi/caps.h:17
-rhi::DeviceCaps::max_texture_dimension_2d	variable	rhi	rhi-devicecaps-max-texture-dimension-2d	rhi.md	engine/rhi/caps.h:19
-rhi::DeviceCaps::max_texture_dimension_3d	variable	rhi	rhi-devicecaps-max-texture-dimension-3d	rhi.md	engine/rhi/caps.h:21
-rhi::DeviceCaps::max_texture_array_layers	variable	rhi	rhi-devicecaps-max-texture-array-layers	rhi.md	engine/rhi/caps.h:23
-rhi::DeviceCaps::max_bind_groups	variable	rhi	rhi-devicecaps-max-bind-groups	rhi.md	engine/rhi/caps.h:25
-rhi::DeviceCaps::max_color_attachments	variable	rhi	rhi-devicecaps-max-color-attachments	rhi.md	engine/rhi/caps.h:27
-rhi::DeviceCaps::max_push_constant_bytes	variable	rhi	rhi-devicecaps-max-push-constant-bytes	rhi.md	engine/rhi/caps.h:29
-rhi::DeviceCaps::min_uniform_buffer_offset_alignment	variable	rhi	rhi-devicecaps-min-uniform-buffer-offset-alignment	rhi.md	engine/rhi/caps.h:31
-rhi::DeviceCaps::min_storage_buffer_offset_alignment	variable	rhi	rhi-devicecaps-min-storage-buffer-offset-alignment	rhi.md	engine/rhi/caps.h:33
-rhi::DeviceCaps::buffer_texture_copy_offset_alignment	variable	rhi	rhi-devicecaps-buffer-texture-copy-offset-alignment	rhi.md	engine/rhi/caps.h:37
-rhi::DeviceCaps::buffer_texture_copy_row_pitch_alignment	variable	rhi	rhi-devicecaps-buffer-texture-copy-row-pitch-alignment	rhi.md	engine/rhi/caps.h:41
-rhi::DeviceCaps::max_sampler_anisotropy	variable	rhi	rhi-devicecaps-max-sampler-anisotropy	rhi.md	engine/rhi/caps.h:43
-rhi::DeviceCaps::max_compute_work_group_count	variable	rhi	rhi-devicecaps-max-compute-work-group-count	rhi.md	engine/rhi/caps.h:45
-rhi::DeviceCaps::depth_format	variable	rhi	rhi-devicecaps-depth-format	rhi.md	engine/rhi/caps.h:47
-rhi::DeviceCaps::timestamp_period_ns	variable	rhi	rhi-devicecaps-timestamp-period-ns	rhi.md	engine/rhi/caps.h:49
-rhi::DeviceCaps::supports_bindless	variable	rhi	rhi-devicecaps-supports-bindless	rhi.md	engine/rhi/caps.h:51
+rhi::kAdapterLuidBytes	variable	rhi	rhi-kadapterluidbytes	rhi.md	engine/rhi/adapter.h:19
+rhi::AdapterKind	enum	rhi	rhi-adapterkind	rhi.md	engine/rhi/adapter.h:22
+rhi::AdapterKind::Other	enumerator	rhi	rhi-adapterkind-other	rhi.md	engine/rhi/adapter.h:23
+rhi::AdapterKind::Software	enumerator	rhi	rhi-adapterkind-software	rhi.md	engine/rhi/adapter.h:24
+rhi::AdapterKind::Virtual	enumerator	rhi	rhi-adapterkind-virtual	rhi.md	engine/rhi/adapter.h:25
+rhi::AdapterKind::Integrated	enumerator	rhi	rhi-adapterkind-integrated	rhi.md	engine/rhi/adapter.h:26
+rhi::AdapterKind::Discrete	enumerator	rhi	rhi-adapterkind-discrete	rhi.md	engine/rhi/adapter.h:27
+rhi::AdapterInfo	struct	rhi	rhi-adapterinfo	rhi.md	engine/rhi/adapter.h:33
+rhi::AdapterInfo::id	variable	rhi	rhi-adapterinfo-id	rhi.md	engine/rhi/adapter.h:37
+rhi::AdapterInfo::name	variable	rhi	rhi-adapterinfo-name	rhi.md	engine/rhi/adapter.h:39
+rhi::AdapterInfo::luid	variable	rhi	rhi-adapterinfo-luid	rhi.md	engine/rhi/adapter.h:44
+rhi::AdapterInfo::kind	variable	rhi	rhi-adapterinfo-kind	rhi.md	engine/rhi/adapter.h:46
+rhi::AdapterInfo::dedicated_memory_bytes	variable	rhi	rhi-adapterinfo-dedicated-memory-bytes	rhi.md	engine/rhi/adapter.h:48
+rhi::AdapterInfo::driver	variable	rhi	rhi-adapterinfo-driver	rhi.md	engine/rhi/adapter.h:50
+rhi::AdapterInfo::can_present	variable	rhi	rhi-adapterinfo-can-present	rhi.md	engine/rhi/adapter.h:52
+rhi::AdapterInfo::suitable	variable	rhi	rhi-adapterinfo-suitable	rhi.md	engine/rhi/adapter.h:54
+rhi::AdapterInfo::unsuitable_reason	variable	rhi	rhi-adapterinfo-unsuitable-reason	rhi.md	engine/rhi/adapter.h:56
+rhi::AdapterList	struct	rhi	rhi-adapterlist	rhi.md	engine/rhi/adapter.h:62
+rhi::AdapterList::items	variable	rhi	rhi-adapterlist-items	rhi.md	engine/rhi/adapter.h:64
+rhi::AdapterList::count	variable	rhi	rhi-adapterlist-count	rhi.md	engine/rhi/adapter.h:66
+rhi::EnumerateAdapters(const DeviceCreateInfo&,AdapterList*)	function	rhi	rhi-enumerateadapters-const-devicecreateinfo-amp-adapterlist-star	rhi.md	engine/rhi/adapter.h:85
+rhi::MatchAdapter(const AdapterInfo*,usize,const char*)	function	rhi	rhi-matchadapter-const-adapterinfo-star-usize-const-char-star	rhi.md	engine/rhi/adapter.h:100
+rhi::SetNullAdapters(const AdapterList*)	function	rhi	rhi-setnulladapters-const-adapterlist-star	rhi.md	engine/rhi/adapter.h:106
+rhi::DefaultNullAdapters(AdapterList*)	function	rhi	rhi-defaultnulladapters-adapterlist-star	rhi.md	engine/rhi/adapter.h:113
+rhi::kMaxRegisteredBackends	variable	rhi	rhi-kmaxregisteredbackends	rhi.md	engine/rhi/backend_registry.h:22
+rhi::BackendDescriptor	struct	rhi	rhi-backenddescriptor	rhi.md	engine/rhi/backend_registry.h:28
+rhi::BackendDescriptor::backend	variable	rhi	rhi-backenddescriptor-backend	rhi.md	engine/rhi/backend_registry.h:30
+rhi::BackendDescriptor::name	variable	rhi	rhi-backenddescriptor-name	rhi.md	engine/rhi/backend_registry.h:32
+rhi::BackendDescriptor::create	variable	rhi	rhi-backenddescriptor-create	rhi.md	engine/rhi/backend_registry.h:34
+rhi::BackendDescriptor::enumerate_adapters	variable	rhi	rhi-backenddescriptor-enumerate-adapters	rhi.md	engine/rhi/backend_registry.h:36
+rhi::BackendDescriptor::available	variable	rhi	rhi-backenddescriptor-available	rhi.md	engine/rhi/backend_registry.h:40
+rhi::BackendDescriptor::shader_format	variable	rhi	rhi-backenddescriptor-shader-format	rhi.md	engine/rhi/backend_registry.h:42
+rhi::BackendDescriptor::auto_rank	variable	rhi	rhi-backenddescriptor-auto-rank	rhi.md	engine/rhi/backend_registry.h:45
+rhi::RegisterBackend(const BackendDescriptor&)	function	rhi	rhi-registerbackend-const-backenddescriptor-amp	rhi.md	engine/rhi/backend_registry.h:58
+rhi::FindBackend(Backend)	function	rhi	rhi-findbackend-backend	rhi.md	engine/rhi/backend_registry.h:67
+rhi::FindBackendByName(StringView)	function	rhi	rhi-findbackendbyname-stringview	rhi.md	engine/rhi/backend_registry.h:76
+rhi::RegisteredBackendCount()	function	rhi	rhi-registeredbackendcount	rhi.md	engine/rhi/backend_registry.h:81
+rhi::RegisteredBackend(usize)	function	rhi	rhi-registeredbackend-usize	rhi.md	engine/rhi/backend_registry.h:90
+rhi::BackendAvailable(const BackendDescriptor&,char*,usize)	function	rhi	rhi-backendavailable-const-backenddescriptor-amp-char-star-usize	rhi.md	engine/rhi/backend_registry.h:101
+rhi::PickAutoBackend(char*,usize)	function	rhi	rhi-pickautobackend-char-star-usize	rhi.md	engine/rhi/backend_registry.h:112
+rhi::ResolveBackend(Backend,char*,usize)	function	rhi	rhi-resolvebackend-backend-char-star-usize	rhi.md	engine/rhi/backend_registry.h:125
+rhi::ClearBackendRegistryForTest()	function	rhi	rhi-clearbackendregistryfortest	rhi.md	engine/rhi/backend_registry.h:132
+rhi::RegisterCompiledBackends()	function	rhi	rhi-registercompiledbackends	rhi.md	engine/rhi/backends/backends.h:17
+rhi::DeviceCaps	struct	rhi	rhi-devicecaps	rhi.md	engine/rhi/caps.h:18
+rhi::DeviceCaps::max_texture_dimension_2d	variable	rhi	rhi-devicecaps-max-texture-dimension-2d	rhi.md	engine/rhi/caps.h:20
+rhi::DeviceCaps::max_texture_dimension_3d	variable	rhi	rhi-devicecaps-max-texture-dimension-3d	rhi.md	engine/rhi/caps.h:22
+rhi::DeviceCaps::max_texture_array_layers	variable	rhi	rhi-devicecaps-max-texture-array-layers	rhi.md	engine/rhi/caps.h:24
+rhi::DeviceCaps::max_bind_groups	variable	rhi	rhi-devicecaps-max-bind-groups	rhi.md	engine/rhi/caps.h:26
+rhi::DeviceCaps::max_color_attachments	variable	rhi	rhi-devicecaps-max-color-attachments	rhi.md	engine/rhi/caps.h:28
+rhi::DeviceCaps::max_push_constant_bytes	variable	rhi	rhi-devicecaps-max-push-constant-bytes	rhi.md	engine/rhi/caps.h:30
+rhi::DeviceCaps::min_uniform_buffer_offset_alignment	variable	rhi	rhi-devicecaps-min-uniform-buffer-offset-alignment	rhi.md	engine/rhi/caps.h:32
+rhi::DeviceCaps::min_storage_buffer_offset_alignment	variable	rhi	rhi-devicecaps-min-storage-buffer-offset-alignment	rhi.md	engine/rhi/caps.h:34
+rhi::DeviceCaps::buffer_texture_copy_offset_alignment	variable	rhi	rhi-devicecaps-buffer-texture-copy-offset-alignment	rhi.md	engine/rhi/caps.h:38
+rhi::DeviceCaps::buffer_texture_copy_row_pitch_alignment	variable	rhi	rhi-devicecaps-buffer-texture-copy-row-pitch-alignment	rhi.md	engine/rhi/caps.h:42
+rhi::DeviceCaps::max_sampler_anisotropy	variable	rhi	rhi-devicecaps-max-sampler-anisotropy	rhi.md	engine/rhi/caps.h:44
+rhi::DeviceCaps::max_compute_work_group_count	variable	rhi	rhi-devicecaps-max-compute-work-group-count	rhi.md	engine/rhi/caps.h:46
+rhi::DeviceCaps::depth_format	variable	rhi	rhi-devicecaps-depth-format	rhi.md	engine/rhi/caps.h:48
+rhi::DeviceCaps::timestamp_period_ns	variable	rhi	rhi-devicecaps-timestamp-period-ns	rhi.md	engine/rhi/caps.h:50
+rhi::DeviceCaps::supports_bindless	variable	rhi	rhi-devicecaps-supports-bindless	rhi.md	engine/rhi/caps.h:52
+rhi::DeviceCaps::shader_format	variable	rhi	rhi-devicecaps-shader-format	rhi.md	engine/rhi/caps.h:55
 rhi::Viewport	struct	rhi	rhi-viewport	rhi.md	engine/rhi/command_list.h:15
 rhi::Viewport::x	variable	rhi	rhi-viewport-x	rhi.md	engine/rhi/command_list.h:17
 rhi::Viewport::y	variable	rhi	rhi-viewport-y	rhi.md	engine/rhi/command_list.h:19
@@ -2237,86 +2259,100 @@ rhi::SamplerDesc::min_lod	variable	rhi	rhi-samplerdesc-min-lod	rhi.md	engine/rhi
 rhi::SamplerDesc::max_lod	variable	rhi	rhi-samplerdesc-max-lod	rhi.md	engine/rhi/desc.h:113
 rhi::SamplerDesc::debug_name	variable	rhi	rhi-samplerdesc-debug-name	rhi.md	engine/rhi/desc.h:115
 rhi::SamplerDesc::Validate() const	function	rhi	rhi-samplerdesc-validate-const	rhi.md	engine/rhi/desc.h:122
-rhi::ShaderDesc	struct	rhi	rhi-shaderdesc	rhi.md	engine/rhi/desc.h:132
-rhi::ShaderDesc::stage	variable	rhi	rhi-shaderdesc-stage	rhi.md	engine/rhi/desc.h:134
-rhi::ShaderDesc::words	variable	rhi	rhi-shaderdesc-words	rhi.md	engine/rhi/desc.h:136
-rhi::ShaderDesc::word_count	variable	rhi	rhi-shaderdesc-word-count	rhi.md	engine/rhi/desc.h:138
-rhi::ShaderDesc::entry	variable	rhi	rhi-shaderdesc-entry	rhi.md	engine/rhi/desc.h:140
-rhi::ShaderDesc::debug_name	variable	rhi	rhi-shaderdesc-debug-name	rhi.md	engine/rhi/desc.h:142
-rhi::ShaderDesc::Validate() const	function	rhi	rhi-shaderdesc-validate-const	rhi.md	engine/rhi/desc.h:152
-rhi::BindingDesc	struct	rhi	rhi-bindingdesc	rhi.md	engine/rhi/desc.h:158
-rhi::BindingDesc::binding	variable	rhi	rhi-bindingdesc-binding	rhi.md	engine/rhi/desc.h:160
-rhi::BindingDesc::type	variable	rhi	rhi-bindingdesc-type	rhi.md	engine/rhi/desc.h:162
-rhi::BindingDesc::stages	variable	rhi	rhi-bindingdesc-stages	rhi.md	engine/rhi/desc.h:164
-rhi::BindingDesc::count	variable	rhi	rhi-bindingdesc-count	rhi.md	engine/rhi/desc.h:166
-rhi::BindGroupLayoutDesc	struct	rhi	rhi-bindgrouplayoutdesc	rhi.md	engine/rhi/desc.h:173
-rhi::BindGroupLayoutDesc::entries	variable	rhi	rhi-bindgrouplayoutdesc-entries	rhi.md	engine/rhi/desc.h:175
-rhi::BindGroupLayoutDesc::debug_name	variable	rhi	rhi-bindgrouplayoutdesc-debug-name	rhi.md	engine/rhi/desc.h:177
-rhi::BindGroupLayoutDesc::Validate() const	function	rhi	rhi-bindgrouplayoutdesc-validate-const	rhi.md	engine/rhi/desc.h:184
-rhi::BindGroupEntry	struct	rhi	rhi-bindgroupentry	rhi.md	engine/rhi/desc.h:190
-rhi::BindGroupEntry::binding	variable	rhi	rhi-bindgroupentry-binding	rhi.md	engine/rhi/desc.h:192
-rhi::BindGroupEntry::array_element	variable	rhi	rhi-bindgroupentry-array-element	rhi.md	engine/rhi/desc.h:194
-rhi::BindGroupEntry::buffer	variable	rhi	rhi-bindgroupentry-buffer	rhi.md	engine/rhi/desc.h:196
-rhi::BindGroupEntry::offset	variable	rhi	rhi-bindgroupentry-offset	rhi.md	engine/rhi/desc.h:198
-rhi::BindGroupEntry::size	variable	rhi	rhi-bindgroupentry-size	rhi.md	engine/rhi/desc.h:200
-rhi::BindGroupEntry::texture	variable	rhi	rhi-bindgroupentry-texture	rhi.md	engine/rhi/desc.h:202
-rhi::BindGroupEntry::sampler	variable	rhi	rhi-bindgroupentry-sampler	rhi.md	engine/rhi/desc.h:204
-rhi::BindGroupDesc	struct	rhi	rhi-bindgroupdesc	rhi.md	engine/rhi/desc.h:215
-rhi::BindGroupDesc::layout	variable	rhi	rhi-bindgroupdesc-layout	rhi.md	engine/rhi/desc.h:217
-rhi::BindGroupDesc::transient	variable	rhi	rhi-bindgroupdesc-transient	rhi.md	engine/rhi/desc.h:220
-rhi::BindGroupDesc::entries	variable	rhi	rhi-bindgroupdesc-entries	rhi.md	engine/rhi/desc.h:222
-rhi::BindGroupDesc::debug_name	variable	rhi	rhi-bindgroupdesc-debug-name	rhi.md	engine/rhi/desc.h:224
-rhi::BindGroupDesc::Validate() const	function	rhi	rhi-bindgroupdesc-validate-const	rhi.md	engine/rhi/desc.h:231
-rhi::VertexBindingDesc	struct	rhi	rhi-vertexbindingdesc	rhi.md	engine/rhi/desc.h:237
-rhi::VertexBindingDesc::stride	variable	rhi	rhi-vertexbindingdesc-stride	rhi.md	engine/rhi/desc.h:239
-rhi::VertexBindingDesc::per_instance	variable	rhi	rhi-vertexbindingdesc-per-instance	rhi.md	engine/rhi/desc.h:241
-rhi::VertexAttributeDesc	struct	rhi	rhi-vertexattributedesc	rhi.md	engine/rhi/desc.h:247
-rhi::VertexAttributeDesc::location	variable	rhi	rhi-vertexattributedesc-location	rhi.md	engine/rhi/desc.h:249
-rhi::VertexAttributeDesc::binding	variable	rhi	rhi-vertexattributedesc-binding	rhi.md	engine/rhi/desc.h:251
-rhi::VertexAttributeDesc::format	variable	rhi	rhi-vertexattributedesc-format	rhi.md	engine/rhi/desc.h:253
-rhi::VertexAttributeDesc::offset	variable	rhi	rhi-vertexattributedesc-offset	rhi.md	engine/rhi/desc.h:255
-rhi::BlendState	struct	rhi	rhi-blendstate	rhi.md	engine/rhi/desc.h:261
-rhi::BlendState::enable	variable	rhi	rhi-blendstate-enable	rhi.md	engine/rhi/desc.h:263
-rhi::BlendState::src_color	variable	rhi	rhi-blendstate-src-color	rhi.md	engine/rhi/desc.h:265
-rhi::BlendState::dst_color	variable	rhi	rhi-blendstate-dst-color	rhi.md	engine/rhi/desc.h:267
-rhi::BlendState::color_op	variable	rhi	rhi-blendstate-color-op	rhi.md	engine/rhi/desc.h:269
-rhi::BlendState::src_alpha	variable	rhi	rhi-blendstate-src-alpha	rhi.md	engine/rhi/desc.h:271
-rhi::BlendState::dst_alpha	variable	rhi	rhi-blendstate-dst-alpha	rhi.md	engine/rhi/desc.h:273
-rhi::BlendState::alpha_op	variable	rhi	rhi-blendstate-alpha-op	rhi.md	engine/rhi/desc.h:275
-rhi::ColorTargetDesc	struct	rhi	rhi-colortargetdesc	rhi.md	engine/rhi/desc.h:281
-rhi::ColorTargetDesc::format	variable	rhi	rhi-colortargetdesc-format	rhi.md	engine/rhi/desc.h:283
-rhi::ColorTargetDesc::blend	variable	rhi	rhi-colortargetdesc-blend	rhi.md	engine/rhi/desc.h:285
-rhi::ColorTargetDesc::write_mask	variable	rhi	rhi-colortargetdesc-write-mask	rhi.md	engine/rhi/desc.h:287
-rhi::GraphicsPipelineDesc	struct	rhi	rhi-graphicspipelinedesc	rhi.md	engine/rhi/desc.h:297
-rhi::GraphicsPipelineDesc::vertex_shader	variable	rhi	rhi-graphicspipelinedesc-vertex-shader	rhi.md	engine/rhi/desc.h:299
-rhi::GraphicsPipelineDesc::fragment_shader	variable	rhi	rhi-graphicspipelinedesc-fragment-shader	rhi.md	engine/rhi/desc.h:301
-rhi::GraphicsPipelineDesc::vertex_bindings	variable	rhi	rhi-graphicspipelinedesc-vertex-bindings	rhi.md	engine/rhi/desc.h:303
-rhi::GraphicsPipelineDesc::vertex_attributes	variable	rhi	rhi-graphicspipelinedesc-vertex-attributes	rhi.md	engine/rhi/desc.h:305
-rhi::GraphicsPipelineDesc::topology	variable	rhi	rhi-graphicspipelinedesc-topology	rhi.md	engine/rhi/desc.h:307
-rhi::GraphicsPipelineDesc::primitive_restart	variable	rhi	rhi-graphicspipelinedesc-primitive-restart	rhi.md	engine/rhi/desc.h:312
-rhi::GraphicsPipelineDesc::cull_mode	variable	rhi	rhi-graphicspipelinedesc-cull-mode	rhi.md	engine/rhi/desc.h:314
-rhi::GraphicsPipelineDesc::front_face	variable	rhi	rhi-graphicspipelinedesc-front-face	rhi.md	engine/rhi/desc.h:316
-rhi::GraphicsPipelineDesc::wireframe	variable	rhi	rhi-graphicspipelinedesc-wireframe	rhi.md	engine/rhi/desc.h:318
-rhi::GraphicsPipelineDesc::depth_test	variable	rhi	rhi-graphicspipelinedesc-depth-test	rhi.md	engine/rhi/desc.h:320
-rhi::GraphicsPipelineDesc::depth_write	variable	rhi	rhi-graphicspipelinedesc-depth-write	rhi.md	engine/rhi/desc.h:322
-rhi::GraphicsPipelineDesc::depth_compare	variable	rhi	rhi-graphicspipelinedesc-depth-compare	rhi.md	engine/rhi/desc.h:324
-rhi::GraphicsPipelineDesc::color_targets	variable	rhi	rhi-graphicspipelinedesc-color-targets	rhi.md	engine/rhi/desc.h:326
-rhi::GraphicsPipelineDesc::color_target_count	variable	rhi	rhi-graphicspipelinedesc-color-target-count	rhi.md	engine/rhi/desc.h:328
-rhi::GraphicsPipelineDesc::depth_format	variable	rhi	rhi-graphicspipelinedesc-depth-format	rhi.md	engine/rhi/desc.h:330
-rhi::GraphicsPipelineDesc::bind_group_layouts	variable	rhi	rhi-graphicspipelinedesc-bind-group-layouts	rhi.md	engine/rhi/desc.h:332
-rhi::GraphicsPipelineDesc::bind_group_layout_count	variable	rhi	rhi-graphicspipelinedesc-bind-group-layout-count	rhi.md	engine/rhi/desc.h:334
-rhi::GraphicsPipelineDesc::push_constant_bytes	variable	rhi	rhi-graphicspipelinedesc-push-constant-bytes	rhi.md	engine/rhi/desc.h:336
-rhi::GraphicsPipelineDesc::push_constant_stages	variable	rhi	rhi-graphicspipelinedesc-push-constant-stages	rhi.md	engine/rhi/desc.h:338
-rhi::GraphicsPipelineDesc::samples	variable	rhi	rhi-graphicspipelinedesc-samples	rhi.md	engine/rhi/desc.h:340
-rhi::GraphicsPipelineDesc::debug_name	variable	rhi	rhi-graphicspipelinedesc-debug-name	rhi.md	engine/rhi/desc.h:342
-rhi::GraphicsPipelineDesc::Validate() const	function	rhi	rhi-graphicspipelinedesc-validate-const	rhi.md	engine/rhi/desc.h:349
-rhi::ComputePipelineDesc	struct	rhi	rhi-computepipelinedesc	rhi.md	engine/rhi/desc.h:357
-rhi::ComputePipelineDesc::shader	variable	rhi	rhi-computepipelinedesc-shader	rhi.md	engine/rhi/desc.h:359
-rhi::ComputePipelineDesc::bind_group_layouts	variable	rhi	rhi-computepipelinedesc-bind-group-layouts	rhi.md	engine/rhi/desc.h:361
-rhi::ComputePipelineDesc::bind_group_layout_count	variable	rhi	rhi-computepipelinedesc-bind-group-layout-count	rhi.md	engine/rhi/desc.h:363
-rhi::ComputePipelineDesc::push_constant_bytes	variable	rhi	rhi-computepipelinedesc-push-constant-bytes	rhi.md	engine/rhi/desc.h:365
-rhi::ComputePipelineDesc::debug_name	variable	rhi	rhi-computepipelinedesc-debug-name	rhi.md	engine/rhi/desc.h:367
-rhi::ComputePipelineDesc::Validate() const	function	rhi	rhi-computepipelinedesc-validate-const	rhi.md	engine/rhi/desc.h:374
+rhi::ShaderBlob	struct	rhi	rhi-shaderblob	rhi.md	engine/rhi/desc.h:129
+rhi::ShaderBlob::format	variable	rhi	rhi-shaderblob-format	rhi.md	engine/rhi/desc.h:131
+rhi::ShaderBlob::bytes	variable	rhi	rhi-shaderblob-bytes	rhi.md	engine/rhi/desc.h:133
+rhi::ShaderBlob::size	variable	rhi	rhi-shaderblob-size	rhi.md	engine/rhi/desc.h:135
+rhi::ShaderBlob::Empty() const	function	rhi	rhi-shaderblob-empty-const	rhi.md	engine/rhi/desc.h:140
+rhi::SpirvBlob(const u32*,usize)	function	rhi	rhi-spirvblob-const-u32-star-usize	rhi.md	engine/rhi/desc.h:150
+rhi::DxilBlob(const u8*,usize)	function	rhi	rhi-dxilblob-const-u8-star-usize	rhi.md	engine/rhi/desc.h:161
+rhi::ShaderBlobSet	struct	rhi	rhi-shaderblobset	rhi.md	engine/rhi/desc.h:168
+rhi::ShaderBlobSet::name	variable	rhi	rhi-shaderblobset-name	rhi.md	engine/rhi/desc.h:170
+rhi::ShaderBlobSet::spirv	variable	rhi	rhi-shaderblobset-spirv	rhi.md	engine/rhi/desc.h:172
+rhi::ShaderBlobSet::dxil	variable	rhi	rhi-shaderblobset-dxil	rhi.md	engine/rhi/desc.h:174
+rhi::ShaderBlobSet::For(ShaderFormat) const	function	rhi	rhi-shaderblobset-for-shaderformat-const	rhi.md	engine/rhi/desc.h:181
+rhi::ShaderDesc	struct	rhi	rhi-shaderdesc	rhi.md	engine/rhi/desc.h:199
+rhi::ShaderDesc::stage	variable	rhi	rhi-shaderdesc-stage	rhi.md	engine/rhi/desc.h:201
+rhi::ShaderDesc::format	variable	rhi	rhi-shaderdesc-format	rhi.md	engine/rhi/desc.h:203
+rhi::ShaderDesc::bytes	variable	rhi	rhi-shaderdesc-bytes	rhi.md	engine/rhi/desc.h:205
+rhi::ShaderDesc::size	variable	rhi	rhi-shaderdesc-size	rhi.md	engine/rhi/desc.h:207
+rhi::ShaderDesc::entry	variable	rhi	rhi-shaderdesc-entry	rhi.md	engine/rhi/desc.h:209
+rhi::ShaderDesc::debug_name	variable	rhi	rhi-shaderdesc-debug-name	rhi.md	engine/rhi/desc.h:211
+rhi::ShaderDesc::SetCode(const ShaderBlob&)	function	rhi	rhi-shaderdesc-setcode-const-shaderblob-amp	rhi.md	engine/rhi/desc.h:217
+rhi::ShaderDesc::Validate() const	function	rhi	rhi-shaderdesc-validate-const	rhi.md	engine/rhi/desc.h:233
+rhi::BindingDesc	struct	rhi	rhi-bindingdesc	rhi.md	engine/rhi/desc.h:239
+rhi::BindingDesc::binding	variable	rhi	rhi-bindingdesc-binding	rhi.md	engine/rhi/desc.h:241
+rhi::BindingDesc::type	variable	rhi	rhi-bindingdesc-type	rhi.md	engine/rhi/desc.h:243
+rhi::BindingDesc::stages	variable	rhi	rhi-bindingdesc-stages	rhi.md	engine/rhi/desc.h:245
+rhi::BindingDesc::count	variable	rhi	rhi-bindingdesc-count	rhi.md	engine/rhi/desc.h:247
+rhi::BindGroupLayoutDesc	struct	rhi	rhi-bindgrouplayoutdesc	rhi.md	engine/rhi/desc.h:254
+rhi::BindGroupLayoutDesc::entries	variable	rhi	rhi-bindgrouplayoutdesc-entries	rhi.md	engine/rhi/desc.h:256
+rhi::BindGroupLayoutDesc::debug_name	variable	rhi	rhi-bindgrouplayoutdesc-debug-name	rhi.md	engine/rhi/desc.h:258
+rhi::BindGroupLayoutDesc::Validate() const	function	rhi	rhi-bindgrouplayoutdesc-validate-const	rhi.md	engine/rhi/desc.h:265
+rhi::BindGroupEntry	struct	rhi	rhi-bindgroupentry	rhi.md	engine/rhi/desc.h:271
+rhi::BindGroupEntry::binding	variable	rhi	rhi-bindgroupentry-binding	rhi.md	engine/rhi/desc.h:273
+rhi::BindGroupEntry::array_element	variable	rhi	rhi-bindgroupentry-array-element	rhi.md	engine/rhi/desc.h:275
+rhi::BindGroupEntry::buffer	variable	rhi	rhi-bindgroupentry-buffer	rhi.md	engine/rhi/desc.h:277
+rhi::BindGroupEntry::offset	variable	rhi	rhi-bindgroupentry-offset	rhi.md	engine/rhi/desc.h:279
+rhi::BindGroupEntry::size	variable	rhi	rhi-bindgroupentry-size	rhi.md	engine/rhi/desc.h:281
+rhi::BindGroupEntry::texture	variable	rhi	rhi-bindgroupentry-texture	rhi.md	engine/rhi/desc.h:283
+rhi::BindGroupEntry::sampler	variable	rhi	rhi-bindgroupentry-sampler	rhi.md	engine/rhi/desc.h:285
+rhi::BindGroupDesc	struct	rhi	rhi-bindgroupdesc	rhi.md	engine/rhi/desc.h:296
+rhi::BindGroupDesc::layout	variable	rhi	rhi-bindgroupdesc-layout	rhi.md	engine/rhi/desc.h:298
+rhi::BindGroupDesc::transient	variable	rhi	rhi-bindgroupdesc-transient	rhi.md	engine/rhi/desc.h:301
+rhi::BindGroupDesc::entries	variable	rhi	rhi-bindgroupdesc-entries	rhi.md	engine/rhi/desc.h:303
+rhi::BindGroupDesc::debug_name	variable	rhi	rhi-bindgroupdesc-debug-name	rhi.md	engine/rhi/desc.h:305
+rhi::BindGroupDesc::Validate() const	function	rhi	rhi-bindgroupdesc-validate-const	rhi.md	engine/rhi/desc.h:312
+rhi::VertexBindingDesc	struct	rhi	rhi-vertexbindingdesc	rhi.md	engine/rhi/desc.h:318
+rhi::VertexBindingDesc::stride	variable	rhi	rhi-vertexbindingdesc-stride	rhi.md	engine/rhi/desc.h:320
+rhi::VertexBindingDesc::per_instance	variable	rhi	rhi-vertexbindingdesc-per-instance	rhi.md	engine/rhi/desc.h:322
+rhi::VertexAttributeDesc	struct	rhi	rhi-vertexattributedesc	rhi.md	engine/rhi/desc.h:328
+rhi::VertexAttributeDesc::location	variable	rhi	rhi-vertexattributedesc-location	rhi.md	engine/rhi/desc.h:330
+rhi::VertexAttributeDesc::binding	variable	rhi	rhi-vertexattributedesc-binding	rhi.md	engine/rhi/desc.h:332
+rhi::VertexAttributeDesc::format	variable	rhi	rhi-vertexattributedesc-format	rhi.md	engine/rhi/desc.h:334
+rhi::VertexAttributeDesc::offset	variable	rhi	rhi-vertexattributedesc-offset	rhi.md	engine/rhi/desc.h:336
+rhi::BlendState	struct	rhi	rhi-blendstate	rhi.md	engine/rhi/desc.h:342
+rhi::BlendState::enable	variable	rhi	rhi-blendstate-enable	rhi.md	engine/rhi/desc.h:344
+rhi::BlendState::src_color	variable	rhi	rhi-blendstate-src-color	rhi.md	engine/rhi/desc.h:346
+rhi::BlendState::dst_color	variable	rhi	rhi-blendstate-dst-color	rhi.md	engine/rhi/desc.h:348
+rhi::BlendState::color_op	variable	rhi	rhi-blendstate-color-op	rhi.md	engine/rhi/desc.h:350
+rhi::BlendState::src_alpha	variable	rhi	rhi-blendstate-src-alpha	rhi.md	engine/rhi/desc.h:352
+rhi::BlendState::dst_alpha	variable	rhi	rhi-blendstate-dst-alpha	rhi.md	engine/rhi/desc.h:354
+rhi::BlendState::alpha_op	variable	rhi	rhi-blendstate-alpha-op	rhi.md	engine/rhi/desc.h:356
+rhi::ColorTargetDesc	struct	rhi	rhi-colortargetdesc	rhi.md	engine/rhi/desc.h:362
+rhi::ColorTargetDesc::format	variable	rhi	rhi-colortargetdesc-format	rhi.md	engine/rhi/desc.h:364
+rhi::ColorTargetDesc::blend	variable	rhi	rhi-colortargetdesc-blend	rhi.md	engine/rhi/desc.h:366
+rhi::ColorTargetDesc::write_mask	variable	rhi	rhi-colortargetdesc-write-mask	rhi.md	engine/rhi/desc.h:368
+rhi::GraphicsPipelineDesc	struct	rhi	rhi-graphicspipelinedesc	rhi.md	engine/rhi/desc.h:378
+rhi::GraphicsPipelineDesc::vertex_shader	variable	rhi	rhi-graphicspipelinedesc-vertex-shader	rhi.md	engine/rhi/desc.h:380
+rhi::GraphicsPipelineDesc::fragment_shader	variable	rhi	rhi-graphicspipelinedesc-fragment-shader	rhi.md	engine/rhi/desc.h:382
+rhi::GraphicsPipelineDesc::vertex_bindings	variable	rhi	rhi-graphicspipelinedesc-vertex-bindings	rhi.md	engine/rhi/desc.h:384
+rhi::GraphicsPipelineDesc::vertex_attributes	variable	rhi	rhi-graphicspipelinedesc-vertex-attributes	rhi.md	engine/rhi/desc.h:386
+rhi::GraphicsPipelineDesc::topology	variable	rhi	rhi-graphicspipelinedesc-topology	rhi.md	engine/rhi/desc.h:388
+rhi::GraphicsPipelineDesc::primitive_restart	variable	rhi	rhi-graphicspipelinedesc-primitive-restart	rhi.md	engine/rhi/desc.h:393
+rhi::GraphicsPipelineDesc::cull_mode	variable	rhi	rhi-graphicspipelinedesc-cull-mode	rhi.md	engine/rhi/desc.h:395
+rhi::GraphicsPipelineDesc::front_face	variable	rhi	rhi-graphicspipelinedesc-front-face	rhi.md	engine/rhi/desc.h:397
+rhi::GraphicsPipelineDesc::wireframe	variable	rhi	rhi-graphicspipelinedesc-wireframe	rhi.md	engine/rhi/desc.h:399
+rhi::GraphicsPipelineDesc::depth_test	variable	rhi	rhi-graphicspipelinedesc-depth-test	rhi.md	engine/rhi/desc.h:401
+rhi::GraphicsPipelineDesc::depth_write	variable	rhi	rhi-graphicspipelinedesc-depth-write	rhi.md	engine/rhi/desc.h:403
+rhi::GraphicsPipelineDesc::depth_compare	variable	rhi	rhi-graphicspipelinedesc-depth-compare	rhi.md	engine/rhi/desc.h:405
+rhi::GraphicsPipelineDesc::color_targets	variable	rhi	rhi-graphicspipelinedesc-color-targets	rhi.md	engine/rhi/desc.h:407
+rhi::GraphicsPipelineDesc::color_target_count	variable	rhi	rhi-graphicspipelinedesc-color-target-count	rhi.md	engine/rhi/desc.h:409
+rhi::GraphicsPipelineDesc::depth_format	variable	rhi	rhi-graphicspipelinedesc-depth-format	rhi.md	engine/rhi/desc.h:411
+rhi::GraphicsPipelineDesc::bind_group_layouts	variable	rhi	rhi-graphicspipelinedesc-bind-group-layouts	rhi.md	engine/rhi/desc.h:413
+rhi::GraphicsPipelineDesc::bind_group_layout_count	variable	rhi	rhi-graphicspipelinedesc-bind-group-layout-count	rhi.md	engine/rhi/desc.h:415
+rhi::GraphicsPipelineDesc::push_constant_bytes	variable	rhi	rhi-graphicspipelinedesc-push-constant-bytes	rhi.md	engine/rhi/desc.h:417
+rhi::GraphicsPipelineDesc::push_constant_stages	variable	rhi	rhi-graphicspipelinedesc-push-constant-stages	rhi.md	engine/rhi/desc.h:419
+rhi::GraphicsPipelineDesc::samples	variable	rhi	rhi-graphicspipelinedesc-samples	rhi.md	engine/rhi/desc.h:421
+rhi::GraphicsPipelineDesc::debug_name	variable	rhi	rhi-graphicspipelinedesc-debug-name	rhi.md	engine/rhi/desc.h:423
+rhi::GraphicsPipelineDesc::Validate() const	function	rhi	rhi-graphicspipelinedesc-validate-const	rhi.md	engine/rhi/desc.h:430
+rhi::ComputePipelineDesc	struct	rhi	rhi-computepipelinedesc	rhi.md	engine/rhi/desc.h:438
+rhi::ComputePipelineDesc::shader	variable	rhi	rhi-computepipelinedesc-shader	rhi.md	engine/rhi/desc.h:440
+rhi::ComputePipelineDesc::bind_group_layouts	variable	rhi	rhi-computepipelinedesc-bind-group-layouts	rhi.md	engine/rhi/desc.h:442
+rhi::ComputePipelineDesc::bind_group_layout_count	variable	rhi	rhi-computepipelinedesc-bind-group-layout-count	rhi.md	engine/rhi/desc.h:444
+rhi::ComputePipelineDesc::push_constant_bytes	variable	rhi	rhi-computepipelinedesc-push-constant-bytes	rhi.md	engine/rhi/desc.h:446
+rhi::ComputePipelineDesc::debug_name	variable	rhi	rhi-computepipelinedesc-debug-name	rhi.md	engine/rhi/desc.h:448
+rhi::ComputePipelineDesc::Validate() const	function	rhi	rhi-computepipelinedesc-validate-const	rhi.md	engine/rhi/desc.h:455
 rhi::FenceValue	alias	rhi	rhi-fencevalue	rhi.md	engine/rhi/device.h:19
 rhi::UploadTicket	struct	rhi	rhi-uploadticket	rhi.md	engine/rhi/device.h:24
 rhi::UploadTicket::fence	variable	rhi	rhi-uploadticket-fence	rhi.md	engine/rhi/device.h:27
@@ -2386,6 +2422,7 @@ rhi::Device::DeviceLost() const	function	rhi	rhi-device-devicelost-const	rhi.md	
 rhi::DeviceDeleter	struct	rhi	rhi-devicedeleter	rhi.md	engine/rhi/device.h:464
 rhi::DeviceDeleter::operator()(Device*) const	function	rhi	rhi-devicedeleter-operator-call-device-star-const	rhi.md	engine/rhi/device.h:469
 rhi::DevicePtr	alias	rhi	rhi-deviceptr	rhi.md	engine/rhi/device.h:479
+rhi::CreateShaderFromSet(Device&,const ShaderBlobSet&,ShaderStage,const char*)	function	rhi	rhi-createshaderfromset-device-amp-const-shaderblobset-amp-shaderstage-const-char-star	rhi.md	engine/rhi/device.h:491
 rhi::DeviceObserver	class	rhi	rhi-deviceobserver	rhi.md	engine/rhi/device_host.h:18
 rhi::DeviceObserver::~DeviceObserver()	function	rhi	rhi-deviceobserver-tilde-deviceobserver	rhi.md	engine/rhi/device_host.h:20
 rhi::DeviceObserver::OnDeviceReleasing(u32)	function	rhi	rhi-deviceobserver-ondevicereleasing-u32	rhi.md	engine/rhi/device_host.h:27
@@ -2398,27 +2435,27 @@ rhi::ResetTimings::destroy_ms	variable	rhi	rhi-resettimings-destroy-ms	rhi.md	en
 rhi::ResetTimings::create_device_ms	variable	rhi	rhi-resettimings-create-device-ms	rhi.md	engine/rhi/device_host.h:65
 rhi::ResetTimings::create_swapchain_ms	variable	rhi	rhi-resettimings-create-swapchain-ms	rhi.md	engine/rhi/device_host.h:67
 rhi::ResetTimings::rebuild_ms	variable	rhi	rhi-resettimings-rebuild-ms	rhi.md	engine/rhi/device_host.h:69
-rhi::DeviceHost	class	rhi	rhi-devicehost	rhi.md	engine/rhi/device_host.h:83
-rhi::DeviceHost::kMaxObservers	variable	rhi	rhi-devicehost-kmaxobservers	rhi.md	engine/rhi/device_host.h:86
-rhi::DeviceHost::DeviceHost()	function	rhi	rhi-devicehost-devicehost	rhi.md	engine/rhi/device_host.h:89
-rhi::DeviceHost::DeviceHost(const DeviceHost&)	function	rhi	rhi-devicehost-devicehost-const-devicehost-amp	rhi.md	engine/rhi/device_host.h:91
-rhi::DeviceHost::operator=(const DeviceHost&)	function	rhi	rhi-devicehost-operator-eq-const-devicehost-amp	rhi.md	engine/rhi/device_host.h:92
-rhi::DeviceHost::~DeviceHost()	function	rhi	rhi-devicehost-tilde-devicehost	rhi.md	engine/rhi/device_host.h:95
-rhi::DeviceHost::Create(const DeviceCreateInfo&,const SwapchainDesc&)	function	rhi	rhi-devicehost-create-const-devicecreateinfo-amp-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:105
-rhi::DeviceHost::Recreate(const DeviceCreateInfo&,const SwapchainDesc&)	function	rhi	rhi-devicehost-recreate-const-devicecreateinfo-amp-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:114
-rhi::DeviceHost::ReconfigureSwapchain(const SwapchainDesc&)	function	rhi	rhi-devicehost-reconfigureswapchain-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:125
-rhi::DeviceHost::RecreateSurface(const os::Window*,const SwapchainDesc&)	function	rhi	rhi-devicehost-recreatesurface-const-os-window-star-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:138
-rhi::DeviceHost::LeakedObjects() const	function	rhi	rhi-devicehost-leakedobjects-const	rhi.md	engine/rhi/device_host.h:143
-rhi::DeviceHost::SurfaceFallbackCount() const	function	rhi	rhi-devicehost-surfacefallbackcount-const	rhi.md	engine/rhi/device_host.h:146
-rhi::DeviceHost::Destroy()	function	rhi	rhi-devicehost-destroy	rhi.md	engine/rhi/device_host.h:151
-rhi::DeviceHost::GetDevice() const	function	rhi	rhi-devicehost-getdevice-const	rhi.md	engine/rhi/device_host.h:157
-rhi::DeviceHost::GetSwapchain() const	function	rhi	rhi-devicehost-getswapchain-const	rhi.md	engine/rhi/device_host.h:162
-rhi::DeviceHost::Epoch() const	function	rhi	rhi-devicehost-epoch-const	rhi.md	engine/rhi/device_host.h:164
-rhi::DeviceHost::ResetCount() const	function	rhi	rhi-devicehost-resetcount-const	rhi.md	engine/rhi/device_host.h:166
-rhi::DeviceHost::LastTimings() const	function	rhi	rhi-devicehost-lasttimings-const	rhi.md	engine/rhi/device_host.h:169
-rhi::DeviceHost::LastError() const	function	rhi	rhi-devicehost-lasterror-const	rhi.md	engine/rhi/device_host.h:175
-rhi::DeviceHost::AddObserver(DeviceObserver*,u32)	function	rhi	rhi-devicehost-addobserver-deviceobserver-star-u32	rhi.md	engine/rhi/device_host.h:185
-rhi::DeviceHost::RemoveObserver(DeviceObserver*)	function	rhi	rhi-devicehost-removeobserver-deviceobserver-star	rhi.md	engine/rhi/device_host.h:192
+rhi::DeviceHost	class	rhi	rhi-devicehost	rhi.md	engine/rhi/device_host.h:84
+rhi::DeviceHost::kMaxObservers	variable	rhi	rhi-devicehost-kmaxobservers	rhi.md	engine/rhi/device_host.h:87
+rhi::DeviceHost::DeviceHost()	function	rhi	rhi-devicehost-devicehost	rhi.md	engine/rhi/device_host.h:90
+rhi::DeviceHost::DeviceHost(const DeviceHost&)	function	rhi	rhi-devicehost-devicehost-const-devicehost-amp	rhi.md	engine/rhi/device_host.h:92
+rhi::DeviceHost::operator=(const DeviceHost&)	function	rhi	rhi-devicehost-operator-eq-const-devicehost-amp	rhi.md	engine/rhi/device_host.h:93
+rhi::DeviceHost::~DeviceHost()	function	rhi	rhi-devicehost-tilde-devicehost	rhi.md	engine/rhi/device_host.h:96
+rhi::DeviceHost::Create(const DeviceCreateInfo&,const SwapchainDesc&)	function	rhi	rhi-devicehost-create-const-devicecreateinfo-amp-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:106
+rhi::DeviceHost::Recreate(const DeviceCreateInfo&,const SwapchainDesc&)	function	rhi	rhi-devicehost-recreate-const-devicecreateinfo-amp-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:115
+rhi::DeviceHost::ReconfigureSwapchain(const SwapchainDesc&)	function	rhi	rhi-devicehost-reconfigureswapchain-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:126
+rhi::DeviceHost::RecreateSurface(const os::Window*,const SwapchainDesc&)	function	rhi	rhi-devicehost-recreatesurface-const-os-window-star-const-swapchaindesc-amp	rhi.md	engine/rhi/device_host.h:139
+rhi::DeviceHost::LeakedObjects() const	function	rhi	rhi-devicehost-leakedobjects-const	rhi.md	engine/rhi/device_host.h:144
+rhi::DeviceHost::SurfaceFallbackCount() const	function	rhi	rhi-devicehost-surfacefallbackcount-const	rhi.md	engine/rhi/device_host.h:147
+rhi::DeviceHost::Destroy()	function	rhi	rhi-devicehost-destroy	rhi.md	engine/rhi/device_host.h:152
+rhi::DeviceHost::GetDevice() const	function	rhi	rhi-devicehost-getdevice-const	rhi.md	engine/rhi/device_host.h:158
+rhi::DeviceHost::GetSwapchain() const	function	rhi	rhi-devicehost-getswapchain-const	rhi.md	engine/rhi/device_host.h:163
+rhi::DeviceHost::Epoch() const	function	rhi	rhi-devicehost-epoch-const	rhi.md	engine/rhi/device_host.h:165
+rhi::DeviceHost::ResetCount() const	function	rhi	rhi-devicehost-resetcount-const	rhi.md	engine/rhi/device_host.h:167
+rhi::DeviceHost::LastTimings() const	function	rhi	rhi-devicehost-lasttimings-const	rhi.md	engine/rhi/device_host.h:170
+rhi::DeviceHost::LastError() const	function	rhi	rhi-devicehost-lasterror-const	rhi.md	engine/rhi/device_host.h:176
+rhi::DeviceHost::AddObserver(DeviceObserver*,u32)	function	rhi	rhi-devicehost-addobserver-deviceobserver-star-u32	rhi.md	engine/rhi/device_host.h:186
+rhi::DeviceHost::RemoveObserver(DeviceObserver*)	function	rhi	rhi-devicehost-removeobserver-deviceobserver-star	rhi.md	engine/rhi/device_host.h:193
 rhi::EnableFlagOperators	struct	rhi	rhi-enableflagoperators	rhi.md	engine/rhi/enums.h:16
 rhi::EnableFlagOperators::value	variable	rhi	rhi-enableflagoperators-value	rhi.md	engine/rhi/enums.h:19
 rhi::operator|(E,E)	function	rhi	rhi-operator-pipe-e-e	rhi.md	engine/rhi/enums.h:26
@@ -2455,118 +2492,123 @@ rhi::ShaderStage::AllGraphics	enumerator	rhi	rhi-shaderstage-allgraphics	rhi.md	
 rhi::ShaderStage::All	enumerator	rhi	rhi-shaderstage-all	rhi.md	engine/rhi/enums.h:109
 rhi::EnableFlagOperators<ShaderStage>	struct	rhi	rhi-enableflagoperators-lt-shaderstage-gt	rhi.md	engine/rhi/enums.h:114
 rhi::EnableFlagOperators<ShaderStage>::value	variable	rhi	rhi-enableflagoperators-lt-shaderstage-gt-value	rhi.md	engine/rhi/enums.h:117
-rhi::ColorWriteMask	enum	rhi	rhi-colorwritemask	rhi.md	engine/rhi/enums.h:121
-rhi::ColorWriteMask::None	enumerator	rhi	rhi-colorwritemask-none	rhi.md	engine/rhi/enums.h:122
-rhi::ColorWriteMask::R	enumerator	rhi	rhi-colorwritemask-r	rhi.md	engine/rhi/enums.h:123
-rhi::ColorWriteMask::G	enumerator	rhi	rhi-colorwritemask-g	rhi.md	engine/rhi/enums.h:124
-rhi::ColorWriteMask::B	enumerator	rhi	rhi-colorwritemask-b	rhi.md	engine/rhi/enums.h:125
-rhi::ColorWriteMask::A	enumerator	rhi	rhi-colorwritemask-a	rhi.md	engine/rhi/enums.h:126
-rhi::ColorWriteMask::All	enumerator	rhi	rhi-colorwritemask-all	rhi.md	engine/rhi/enums.h:127
-rhi::EnableFlagOperators<ColorWriteMask>	struct	rhi	rhi-enableflagoperators-lt-colorwritemask-gt	rhi.md	engine/rhi/enums.h:132
-rhi::EnableFlagOperators<ColorWriteMask>::value	variable	rhi	rhi-enableflagoperators-lt-colorwritemask-gt-value	rhi.md	engine/rhi/enums.h:135
-rhi::MemoryLocation	enum	rhi	rhi-memorylocation	rhi.md	engine/rhi/enums.h:139
-rhi::MemoryLocation::GpuOnly	enumerator	rhi	rhi-memorylocation-gpuonly	rhi.md	engine/rhi/enums.h:140
-rhi::MemoryLocation::CpuToGpu	enumerator	rhi	rhi-memorylocation-cputogpu	rhi.md	engine/rhi/enums.h:141
-rhi::MemoryLocation::GpuToCpu	enumerator	rhi	rhi-memorylocation-gputocpu	rhi.md	engine/rhi/enums.h:142
-rhi::ResourceState	enum	rhi	rhi-resourcestate	rhi.md	engine/rhi/enums.h:149
-rhi::ResourceState::Undefined	enumerator	rhi	rhi-resourcestate-undefined	rhi.md	engine/rhi/enums.h:150
-rhi::ResourceState::VertexBuffer	enumerator	rhi	rhi-resourcestate-vertexbuffer	rhi.md	engine/rhi/enums.h:151
-rhi::ResourceState::IndexBuffer	enumerator	rhi	rhi-resourcestate-indexbuffer	rhi.md	engine/rhi/enums.h:152
-rhi::ResourceState::UniformBuffer	enumerator	rhi	rhi-resourcestate-uniformbuffer	rhi.md	engine/rhi/enums.h:153
-rhi::ResourceState::ShaderRead	enumerator	rhi	rhi-resourcestate-shaderread	rhi.md	engine/rhi/enums.h:154
-rhi::ResourceState::ShaderWrite	enumerator	rhi	rhi-resourcestate-shaderwrite	rhi.md	engine/rhi/enums.h:155
-rhi::ResourceState::CopySrc	enumerator	rhi	rhi-resourcestate-copysrc	rhi.md	engine/rhi/enums.h:156
-rhi::ResourceState::CopyDst	enumerator	rhi	rhi-resourcestate-copydst	rhi.md	engine/rhi/enums.h:157
-rhi::ResourceState::ColorAttachment	enumerator	rhi	rhi-resourcestate-colorattachment	rhi.md	engine/rhi/enums.h:158
-rhi::ResourceState::DepthAttachment	enumerator	rhi	rhi-resourcestate-depthattachment	rhi.md	engine/rhi/enums.h:159
-rhi::ResourceState::DepthRead	enumerator	rhi	rhi-resourcestate-depthread	rhi.md	engine/rhi/enums.h:160
-rhi::ResourceState::Present	enumerator	rhi	rhi-resourcestate-present	rhi.md	engine/rhi/enums.h:161
-rhi::ResourceState::Count	enumerator	rhi	rhi-resourcestate-count	rhi.md	engine/rhi/enums.h:162
-rhi::PrimitiveTopology	enum	rhi	rhi-primitivetopology	rhi.md	engine/rhi/enums.h:166
-rhi::PrimitiveTopology::TriangleList	enumerator	rhi	rhi-primitivetopology-trianglelist	rhi.md	engine/rhi/enums.h:167
-rhi::PrimitiveTopology::TriangleStrip	enumerator	rhi	rhi-primitivetopology-trianglestrip	rhi.md	engine/rhi/enums.h:168
-rhi::PrimitiveTopology::LineList	enumerator	rhi	rhi-primitivetopology-linelist	rhi.md	engine/rhi/enums.h:169
-rhi::PrimitiveTopology::LineStrip	enumerator	rhi	rhi-primitivetopology-linestrip	rhi.md	engine/rhi/enums.h:170
-rhi::PrimitiveTopology::PointList	enumerator	rhi	rhi-primitivetopology-pointlist	rhi.md	engine/rhi/enums.h:171
-rhi::CullMode	enum	rhi	rhi-cullmode	rhi.md	engine/rhi/enums.h:175
-rhi::CullMode::None	enumerator	rhi	rhi-cullmode-none	rhi.md	engine/rhi/enums.h:176
-rhi::CullMode::Front	enumerator	rhi	rhi-cullmode-front	rhi.md	engine/rhi/enums.h:177
-rhi::CullMode::Back	enumerator	rhi	rhi-cullmode-back	rhi.md	engine/rhi/enums.h:178
-rhi::FrontFace	enum	rhi	rhi-frontface	rhi.md	engine/rhi/enums.h:182
-rhi::FrontFace::CounterClockwise	enumerator	rhi	rhi-frontface-counterclockwise	rhi.md	engine/rhi/enums.h:183
-rhi::FrontFace::Clockwise	enumerator	rhi	rhi-frontface-clockwise	rhi.md	engine/rhi/enums.h:184
-rhi::CompareOp	enum	rhi	rhi-compareop	rhi.md	engine/rhi/enums.h:188
-rhi::CompareOp::Never	enumerator	rhi	rhi-compareop-never	rhi.md	engine/rhi/enums.h:189
-rhi::CompareOp::Less	enumerator	rhi	rhi-compareop-less	rhi.md	engine/rhi/enums.h:190
-rhi::CompareOp::Equal	enumerator	rhi	rhi-compareop-equal	rhi.md	engine/rhi/enums.h:191
-rhi::CompareOp::LessEqual	enumerator	rhi	rhi-compareop-lessequal	rhi.md	engine/rhi/enums.h:192
-rhi::CompareOp::Greater	enumerator	rhi	rhi-compareop-greater	rhi.md	engine/rhi/enums.h:193
-rhi::CompareOp::NotEqual	enumerator	rhi	rhi-compareop-notequal	rhi.md	engine/rhi/enums.h:194
-rhi::CompareOp::GreaterEqual	enumerator	rhi	rhi-compareop-greaterequal	rhi.md	engine/rhi/enums.h:195
-rhi::CompareOp::Always	enumerator	rhi	rhi-compareop-always	rhi.md	engine/rhi/enums.h:196
-rhi::BlendFactor	enum	rhi	rhi-blendfactor	rhi.md	engine/rhi/enums.h:200
-rhi::BlendFactor::Zero	enumerator	rhi	rhi-blendfactor-zero	rhi.md	engine/rhi/enums.h:201
-rhi::BlendFactor::One	enumerator	rhi	rhi-blendfactor-one	rhi.md	engine/rhi/enums.h:202
-rhi::BlendFactor::SrcColor	enumerator	rhi	rhi-blendfactor-srccolor	rhi.md	engine/rhi/enums.h:203
-rhi::BlendFactor::OneMinusSrcColor	enumerator	rhi	rhi-blendfactor-oneminussrccolor	rhi.md	engine/rhi/enums.h:204
-rhi::BlendFactor::DstColor	enumerator	rhi	rhi-blendfactor-dstcolor	rhi.md	engine/rhi/enums.h:205
-rhi::BlendFactor::OneMinusDstColor	enumerator	rhi	rhi-blendfactor-oneminusdstcolor	rhi.md	engine/rhi/enums.h:206
-rhi::BlendFactor::SrcAlpha	enumerator	rhi	rhi-blendfactor-srcalpha	rhi.md	engine/rhi/enums.h:207
-rhi::BlendFactor::OneMinusSrcAlpha	enumerator	rhi	rhi-blendfactor-oneminussrcalpha	rhi.md	engine/rhi/enums.h:208
-rhi::BlendFactor::DstAlpha	enumerator	rhi	rhi-blendfactor-dstalpha	rhi.md	engine/rhi/enums.h:209
-rhi::BlendFactor::OneMinusDstAlpha	enumerator	rhi	rhi-blendfactor-oneminusdstalpha	rhi.md	engine/rhi/enums.h:210
-rhi::BlendOp	enum	rhi	rhi-blendop	rhi.md	engine/rhi/enums.h:214
-rhi::BlendOp::Add	enumerator	rhi	rhi-blendop-add	rhi.md	engine/rhi/enums.h:215
-rhi::BlendOp::Subtract	enumerator	rhi	rhi-blendop-subtract	rhi.md	engine/rhi/enums.h:216
-rhi::BlendOp::ReverseSubtract	enumerator	rhi	rhi-blendop-reversesubtract	rhi.md	engine/rhi/enums.h:217
-rhi::BlendOp::Min	enumerator	rhi	rhi-blendop-min	rhi.md	engine/rhi/enums.h:218
-rhi::BlendOp::Max	enumerator	rhi	rhi-blendop-max	rhi.md	engine/rhi/enums.h:219
-rhi::FilterMode	enum	rhi	rhi-filtermode	rhi.md	engine/rhi/enums.h:223
-rhi::FilterMode::Nearest	enumerator	rhi	rhi-filtermode-nearest	rhi.md	engine/rhi/enums.h:224
-rhi::FilterMode::Linear	enumerator	rhi	rhi-filtermode-linear	rhi.md	engine/rhi/enums.h:225
-rhi::AddressMode	enum	rhi	rhi-addressmode	rhi.md	engine/rhi/enums.h:229
-rhi::AddressMode::Repeat	enumerator	rhi	rhi-addressmode-repeat	rhi.md	engine/rhi/enums.h:230
-rhi::AddressMode::MirrorRepeat	enumerator	rhi	rhi-addressmode-mirrorrepeat	rhi.md	engine/rhi/enums.h:231
-rhi::AddressMode::ClampToEdge	enumerator	rhi	rhi-addressmode-clamptoedge	rhi.md	engine/rhi/enums.h:232
-rhi::AddressMode::ClampToBorder	enumerator	rhi	rhi-addressmode-clamptoborder	rhi.md	engine/rhi/enums.h:233
-rhi::BorderColor	enum	rhi	rhi-bordercolor	rhi.md	engine/rhi/enums.h:237
-rhi::BorderColor::TransparentBlack	enumerator	rhi	rhi-bordercolor-transparentblack	rhi.md	engine/rhi/enums.h:238
-rhi::BorderColor::OpaqueBlack	enumerator	rhi	rhi-bordercolor-opaqueblack	rhi.md	engine/rhi/enums.h:239
-rhi::BorderColor::OpaqueWhite	enumerator	rhi	rhi-bordercolor-opaquewhite	rhi.md	engine/rhi/enums.h:240
-rhi::LoadOp	enum	rhi	rhi-loadop	rhi.md	engine/rhi/enums.h:244
-rhi::LoadOp::Load	enumerator	rhi	rhi-loadop-load	rhi.md	engine/rhi/enums.h:245
-rhi::LoadOp::Clear	enumerator	rhi	rhi-loadop-clear	rhi.md	engine/rhi/enums.h:246
-rhi::LoadOp::DontCare	enumerator	rhi	rhi-loadop-dontcare	rhi.md	engine/rhi/enums.h:247
-rhi::StoreOp	enum	rhi	rhi-storeop	rhi.md	engine/rhi/enums.h:251
-rhi::StoreOp::Store	enumerator	rhi	rhi-storeop-store	rhi.md	engine/rhi/enums.h:252
-rhi::StoreOp::DontCare	enumerator	rhi	rhi-storeop-dontcare	rhi.md	engine/rhi/enums.h:253
-rhi::IndexType	enum	rhi	rhi-indextype	rhi.md	engine/rhi/enums.h:257
-rhi::IndexType::UInt16	enumerator	rhi	rhi-indextype-uint16	rhi.md	engine/rhi/enums.h:258
-rhi::IndexType::UInt32	enumerator	rhi	rhi-indextype-uint32	rhi.md	engine/rhi/enums.h:259
-rhi::TextureDimension	enum	rhi	rhi-texturedimension	rhi.md	engine/rhi/enums.h:263
-rhi::TextureDimension::Tex2D	enumerator	rhi	rhi-texturedimension-tex2d	rhi.md	engine/rhi/enums.h:264
-rhi::TextureDimension::Tex3D	enumerator	rhi	rhi-texturedimension-tex3d	rhi.md	engine/rhi/enums.h:265
-rhi::TextureDimension::Cube	enumerator	rhi	rhi-texturedimension-cube	rhi.md	engine/rhi/enums.h:266
-rhi::VertexFormat	enum	rhi	rhi-vertexformat	rhi.md	engine/rhi/enums.h:270
-rhi::VertexFormat::Float1	enumerator	rhi	rhi-vertexformat-float1	rhi.md	engine/rhi/enums.h:271
-rhi::VertexFormat::Float2	enumerator	rhi	rhi-vertexformat-float2	rhi.md	engine/rhi/enums.h:272
-rhi::VertexFormat::Float3	enumerator	rhi	rhi-vertexformat-float3	rhi.md	engine/rhi/enums.h:273
-rhi::VertexFormat::Float4	enumerator	rhi	rhi-vertexformat-float4	rhi.md	engine/rhi/enums.h:274
-rhi::VertexFormat::UInt1	enumerator	rhi	rhi-vertexformat-uint1	rhi.md	engine/rhi/enums.h:275
-rhi::VertexFormat::UInt2	enumerator	rhi	rhi-vertexformat-uint2	rhi.md	engine/rhi/enums.h:276
-rhi::VertexFormat::UInt3	enumerator	rhi	rhi-vertexformat-uint3	rhi.md	engine/rhi/enums.h:277
-rhi::VertexFormat::UInt4	enumerator	rhi	rhi-vertexformat-uint4	rhi.md	engine/rhi/enums.h:278
-rhi::VertexFormat::UNorm8x4	enumerator	rhi	rhi-vertexformat-unorm8x4	rhi.md	engine/rhi/enums.h:279
-rhi::VertexFormat::Count	enumerator	rhi	rhi-vertexformat-count	rhi.md	engine/rhi/enums.h:280
-rhi::VertexFormatSize(VertexFormat)	function	rhi	rhi-vertexformatsize-vertexformat	rhi.md	engine/rhi/enums.h:286
-rhi::BindingType	enum	rhi	rhi-bindingtype	rhi.md	engine/rhi/enums.h:308
-rhi::BindingType::UniformBuffer	enumerator	rhi	rhi-bindingtype-uniformbuffer	rhi.md	engine/rhi/enums.h:309
-rhi::BindingType::StorageBuffer	enumerator	rhi	rhi-bindingtype-storagebuffer	rhi.md	engine/rhi/enums.h:310
-rhi::BindingType::SampledTexture	enumerator	rhi	rhi-bindingtype-sampledtexture	rhi.md	engine/rhi/enums.h:311
-rhi::BindingType::Sampler	enumerator	rhi	rhi-bindingtype-sampler	rhi.md	engine/rhi/enums.h:312
-rhi::BindingType::StorageTexture	enumerator	rhi	rhi-bindingtype-storagetexture	rhi.md	engine/rhi/enums.h:313
-rhi::BindingType::Count	enumerator	rhi	rhi-bindingtype-count	rhi.md	engine/rhi/enums.h:314
-rhi::Span	alias	rhi	rhi-span	rhi.md	engine/rhi/enums.h:321
+rhi::ShaderFormat	enum	rhi	rhi-shaderformat	rhi.md	engine/rhi/enums.h:121
+rhi::ShaderFormat::Spirv	enumerator	rhi	rhi-shaderformat-spirv	rhi.md	engine/rhi/enums.h:122
+rhi::ShaderFormat::Dxil	enumerator	rhi	rhi-shaderformat-dxil	rhi.md	engine/rhi/enums.h:123
+rhi::ShaderFormat::Msl	enumerator	rhi	rhi-shaderformat-msl	rhi.md	engine/rhi/enums.h:124
+rhi::ShaderFormatName(ShaderFormat)	function	rhi	rhi-shaderformatname-shaderformat	rhi.md	engine/rhi/enums.h:134
+rhi::ColorWriteMask	enum	rhi	rhi-colorwritemask	rhi.md	engine/rhi/enums.h:137
+rhi::ColorWriteMask::None	enumerator	rhi	rhi-colorwritemask-none	rhi.md	engine/rhi/enums.h:138
+rhi::ColorWriteMask::R	enumerator	rhi	rhi-colorwritemask-r	rhi.md	engine/rhi/enums.h:139
+rhi::ColorWriteMask::G	enumerator	rhi	rhi-colorwritemask-g	rhi.md	engine/rhi/enums.h:140
+rhi::ColorWriteMask::B	enumerator	rhi	rhi-colorwritemask-b	rhi.md	engine/rhi/enums.h:141
+rhi::ColorWriteMask::A	enumerator	rhi	rhi-colorwritemask-a	rhi.md	engine/rhi/enums.h:142
+rhi::ColorWriteMask::All	enumerator	rhi	rhi-colorwritemask-all	rhi.md	engine/rhi/enums.h:143
+rhi::EnableFlagOperators<ColorWriteMask>	struct	rhi	rhi-enableflagoperators-lt-colorwritemask-gt	rhi.md	engine/rhi/enums.h:148
+rhi::EnableFlagOperators<ColorWriteMask>::value	variable	rhi	rhi-enableflagoperators-lt-colorwritemask-gt-value	rhi.md	engine/rhi/enums.h:151
+rhi::MemoryLocation	enum	rhi	rhi-memorylocation	rhi.md	engine/rhi/enums.h:155
+rhi::MemoryLocation::GpuOnly	enumerator	rhi	rhi-memorylocation-gpuonly	rhi.md	engine/rhi/enums.h:156
+rhi::MemoryLocation::CpuToGpu	enumerator	rhi	rhi-memorylocation-cputogpu	rhi.md	engine/rhi/enums.h:157
+rhi::MemoryLocation::GpuToCpu	enumerator	rhi	rhi-memorylocation-gputocpu	rhi.md	engine/rhi/enums.h:158
+rhi::ResourceState	enum	rhi	rhi-resourcestate	rhi.md	engine/rhi/enums.h:165
+rhi::ResourceState::Undefined	enumerator	rhi	rhi-resourcestate-undefined	rhi.md	engine/rhi/enums.h:166
+rhi::ResourceState::VertexBuffer	enumerator	rhi	rhi-resourcestate-vertexbuffer	rhi.md	engine/rhi/enums.h:167
+rhi::ResourceState::IndexBuffer	enumerator	rhi	rhi-resourcestate-indexbuffer	rhi.md	engine/rhi/enums.h:168
+rhi::ResourceState::UniformBuffer	enumerator	rhi	rhi-resourcestate-uniformbuffer	rhi.md	engine/rhi/enums.h:169
+rhi::ResourceState::ShaderRead	enumerator	rhi	rhi-resourcestate-shaderread	rhi.md	engine/rhi/enums.h:170
+rhi::ResourceState::ShaderWrite	enumerator	rhi	rhi-resourcestate-shaderwrite	rhi.md	engine/rhi/enums.h:171
+rhi::ResourceState::CopySrc	enumerator	rhi	rhi-resourcestate-copysrc	rhi.md	engine/rhi/enums.h:172
+rhi::ResourceState::CopyDst	enumerator	rhi	rhi-resourcestate-copydst	rhi.md	engine/rhi/enums.h:173
+rhi::ResourceState::ColorAttachment	enumerator	rhi	rhi-resourcestate-colorattachment	rhi.md	engine/rhi/enums.h:174
+rhi::ResourceState::DepthAttachment	enumerator	rhi	rhi-resourcestate-depthattachment	rhi.md	engine/rhi/enums.h:175
+rhi::ResourceState::DepthRead	enumerator	rhi	rhi-resourcestate-depthread	rhi.md	engine/rhi/enums.h:176
+rhi::ResourceState::Present	enumerator	rhi	rhi-resourcestate-present	rhi.md	engine/rhi/enums.h:177
+rhi::ResourceState::Count	enumerator	rhi	rhi-resourcestate-count	rhi.md	engine/rhi/enums.h:178
+rhi::PrimitiveTopology	enum	rhi	rhi-primitivetopology	rhi.md	engine/rhi/enums.h:182
+rhi::PrimitiveTopology::TriangleList	enumerator	rhi	rhi-primitivetopology-trianglelist	rhi.md	engine/rhi/enums.h:183
+rhi::PrimitiveTopology::TriangleStrip	enumerator	rhi	rhi-primitivetopology-trianglestrip	rhi.md	engine/rhi/enums.h:184
+rhi::PrimitiveTopology::LineList	enumerator	rhi	rhi-primitivetopology-linelist	rhi.md	engine/rhi/enums.h:185
+rhi::PrimitiveTopology::LineStrip	enumerator	rhi	rhi-primitivetopology-linestrip	rhi.md	engine/rhi/enums.h:186
+rhi::PrimitiveTopology::PointList	enumerator	rhi	rhi-primitivetopology-pointlist	rhi.md	engine/rhi/enums.h:187
+rhi::CullMode	enum	rhi	rhi-cullmode	rhi.md	engine/rhi/enums.h:191
+rhi::CullMode::None	enumerator	rhi	rhi-cullmode-none	rhi.md	engine/rhi/enums.h:192
+rhi::CullMode::Front	enumerator	rhi	rhi-cullmode-front	rhi.md	engine/rhi/enums.h:193
+rhi::CullMode::Back	enumerator	rhi	rhi-cullmode-back	rhi.md	engine/rhi/enums.h:194
+rhi::FrontFace	enum	rhi	rhi-frontface	rhi.md	engine/rhi/enums.h:198
+rhi::FrontFace::CounterClockwise	enumerator	rhi	rhi-frontface-counterclockwise	rhi.md	engine/rhi/enums.h:199
+rhi::FrontFace::Clockwise	enumerator	rhi	rhi-frontface-clockwise	rhi.md	engine/rhi/enums.h:200
+rhi::CompareOp	enum	rhi	rhi-compareop	rhi.md	engine/rhi/enums.h:204
+rhi::CompareOp::Never	enumerator	rhi	rhi-compareop-never	rhi.md	engine/rhi/enums.h:205
+rhi::CompareOp::Less	enumerator	rhi	rhi-compareop-less	rhi.md	engine/rhi/enums.h:206
+rhi::CompareOp::Equal	enumerator	rhi	rhi-compareop-equal	rhi.md	engine/rhi/enums.h:207
+rhi::CompareOp::LessEqual	enumerator	rhi	rhi-compareop-lessequal	rhi.md	engine/rhi/enums.h:208
+rhi::CompareOp::Greater	enumerator	rhi	rhi-compareop-greater	rhi.md	engine/rhi/enums.h:209
+rhi::CompareOp::NotEqual	enumerator	rhi	rhi-compareop-notequal	rhi.md	engine/rhi/enums.h:210
+rhi::CompareOp::GreaterEqual	enumerator	rhi	rhi-compareop-greaterequal	rhi.md	engine/rhi/enums.h:211
+rhi::CompareOp::Always	enumerator	rhi	rhi-compareop-always	rhi.md	engine/rhi/enums.h:212
+rhi::BlendFactor	enum	rhi	rhi-blendfactor	rhi.md	engine/rhi/enums.h:216
+rhi::BlendFactor::Zero	enumerator	rhi	rhi-blendfactor-zero	rhi.md	engine/rhi/enums.h:217
+rhi::BlendFactor::One	enumerator	rhi	rhi-blendfactor-one	rhi.md	engine/rhi/enums.h:218
+rhi::BlendFactor::SrcColor	enumerator	rhi	rhi-blendfactor-srccolor	rhi.md	engine/rhi/enums.h:219
+rhi::BlendFactor::OneMinusSrcColor	enumerator	rhi	rhi-blendfactor-oneminussrccolor	rhi.md	engine/rhi/enums.h:220
+rhi::BlendFactor::DstColor	enumerator	rhi	rhi-blendfactor-dstcolor	rhi.md	engine/rhi/enums.h:221
+rhi::BlendFactor::OneMinusDstColor	enumerator	rhi	rhi-blendfactor-oneminusdstcolor	rhi.md	engine/rhi/enums.h:222
+rhi::BlendFactor::SrcAlpha	enumerator	rhi	rhi-blendfactor-srcalpha	rhi.md	engine/rhi/enums.h:223
+rhi::BlendFactor::OneMinusSrcAlpha	enumerator	rhi	rhi-blendfactor-oneminussrcalpha	rhi.md	engine/rhi/enums.h:224
+rhi::BlendFactor::DstAlpha	enumerator	rhi	rhi-blendfactor-dstalpha	rhi.md	engine/rhi/enums.h:225
+rhi::BlendFactor::OneMinusDstAlpha	enumerator	rhi	rhi-blendfactor-oneminusdstalpha	rhi.md	engine/rhi/enums.h:226
+rhi::BlendOp	enum	rhi	rhi-blendop	rhi.md	engine/rhi/enums.h:230
+rhi::BlendOp::Add	enumerator	rhi	rhi-blendop-add	rhi.md	engine/rhi/enums.h:231
+rhi::BlendOp::Subtract	enumerator	rhi	rhi-blendop-subtract	rhi.md	engine/rhi/enums.h:232
+rhi::BlendOp::ReverseSubtract	enumerator	rhi	rhi-blendop-reversesubtract	rhi.md	engine/rhi/enums.h:233
+rhi::BlendOp::Min	enumerator	rhi	rhi-blendop-min	rhi.md	engine/rhi/enums.h:234
+rhi::BlendOp::Max	enumerator	rhi	rhi-blendop-max	rhi.md	engine/rhi/enums.h:235
+rhi::FilterMode	enum	rhi	rhi-filtermode	rhi.md	engine/rhi/enums.h:239
+rhi::FilterMode::Nearest	enumerator	rhi	rhi-filtermode-nearest	rhi.md	engine/rhi/enums.h:240
+rhi::FilterMode::Linear	enumerator	rhi	rhi-filtermode-linear	rhi.md	engine/rhi/enums.h:241
+rhi::AddressMode	enum	rhi	rhi-addressmode	rhi.md	engine/rhi/enums.h:245
+rhi::AddressMode::Repeat	enumerator	rhi	rhi-addressmode-repeat	rhi.md	engine/rhi/enums.h:246
+rhi::AddressMode::MirrorRepeat	enumerator	rhi	rhi-addressmode-mirrorrepeat	rhi.md	engine/rhi/enums.h:247
+rhi::AddressMode::ClampToEdge	enumerator	rhi	rhi-addressmode-clamptoedge	rhi.md	engine/rhi/enums.h:248
+rhi::AddressMode::ClampToBorder	enumerator	rhi	rhi-addressmode-clamptoborder	rhi.md	engine/rhi/enums.h:249
+rhi::BorderColor	enum	rhi	rhi-bordercolor	rhi.md	engine/rhi/enums.h:253
+rhi::BorderColor::TransparentBlack	enumerator	rhi	rhi-bordercolor-transparentblack	rhi.md	engine/rhi/enums.h:254
+rhi::BorderColor::OpaqueBlack	enumerator	rhi	rhi-bordercolor-opaqueblack	rhi.md	engine/rhi/enums.h:255
+rhi::BorderColor::OpaqueWhite	enumerator	rhi	rhi-bordercolor-opaquewhite	rhi.md	engine/rhi/enums.h:256
+rhi::LoadOp	enum	rhi	rhi-loadop	rhi.md	engine/rhi/enums.h:260
+rhi::LoadOp::Load	enumerator	rhi	rhi-loadop-load	rhi.md	engine/rhi/enums.h:261
+rhi::LoadOp::Clear	enumerator	rhi	rhi-loadop-clear	rhi.md	engine/rhi/enums.h:262
+rhi::LoadOp::DontCare	enumerator	rhi	rhi-loadop-dontcare	rhi.md	engine/rhi/enums.h:263
+rhi::StoreOp	enum	rhi	rhi-storeop	rhi.md	engine/rhi/enums.h:267
+rhi::StoreOp::Store	enumerator	rhi	rhi-storeop-store	rhi.md	engine/rhi/enums.h:268
+rhi::StoreOp::DontCare	enumerator	rhi	rhi-storeop-dontcare	rhi.md	engine/rhi/enums.h:269
+rhi::IndexType	enum	rhi	rhi-indextype	rhi.md	engine/rhi/enums.h:273
+rhi::IndexType::UInt16	enumerator	rhi	rhi-indextype-uint16	rhi.md	engine/rhi/enums.h:274
+rhi::IndexType::UInt32	enumerator	rhi	rhi-indextype-uint32	rhi.md	engine/rhi/enums.h:275
+rhi::TextureDimension	enum	rhi	rhi-texturedimension	rhi.md	engine/rhi/enums.h:279
+rhi::TextureDimension::Tex2D	enumerator	rhi	rhi-texturedimension-tex2d	rhi.md	engine/rhi/enums.h:280
+rhi::TextureDimension::Tex3D	enumerator	rhi	rhi-texturedimension-tex3d	rhi.md	engine/rhi/enums.h:281
+rhi::TextureDimension::Cube	enumerator	rhi	rhi-texturedimension-cube	rhi.md	engine/rhi/enums.h:282
+rhi::VertexFormat	enum	rhi	rhi-vertexformat	rhi.md	engine/rhi/enums.h:286
+rhi::VertexFormat::Float1	enumerator	rhi	rhi-vertexformat-float1	rhi.md	engine/rhi/enums.h:287
+rhi::VertexFormat::Float2	enumerator	rhi	rhi-vertexformat-float2	rhi.md	engine/rhi/enums.h:288
+rhi::VertexFormat::Float3	enumerator	rhi	rhi-vertexformat-float3	rhi.md	engine/rhi/enums.h:289
+rhi::VertexFormat::Float4	enumerator	rhi	rhi-vertexformat-float4	rhi.md	engine/rhi/enums.h:290
+rhi::VertexFormat::UInt1	enumerator	rhi	rhi-vertexformat-uint1	rhi.md	engine/rhi/enums.h:291
+rhi::VertexFormat::UInt2	enumerator	rhi	rhi-vertexformat-uint2	rhi.md	engine/rhi/enums.h:292
+rhi::VertexFormat::UInt3	enumerator	rhi	rhi-vertexformat-uint3	rhi.md	engine/rhi/enums.h:293
+rhi::VertexFormat::UInt4	enumerator	rhi	rhi-vertexformat-uint4	rhi.md	engine/rhi/enums.h:294
+rhi::VertexFormat::UNorm8x4	enumerator	rhi	rhi-vertexformat-unorm8x4	rhi.md	engine/rhi/enums.h:295
+rhi::VertexFormat::Count	enumerator	rhi	rhi-vertexformat-count	rhi.md	engine/rhi/enums.h:296
+rhi::VertexFormatSize(VertexFormat)	function	rhi	rhi-vertexformatsize-vertexformat	rhi.md	engine/rhi/enums.h:302
+rhi::BindingType	enum	rhi	rhi-bindingtype	rhi.md	engine/rhi/enums.h:324
+rhi::BindingType::UniformBuffer	enumerator	rhi	rhi-bindingtype-uniformbuffer	rhi.md	engine/rhi/enums.h:325
+rhi::BindingType::StorageBuffer	enumerator	rhi	rhi-bindingtype-storagebuffer	rhi.md	engine/rhi/enums.h:326
+rhi::BindingType::SampledTexture	enumerator	rhi	rhi-bindingtype-sampledtexture	rhi.md	engine/rhi/enums.h:327
+rhi::BindingType::Sampler	enumerator	rhi	rhi-bindingtype-sampler	rhi.md	engine/rhi/enums.h:328
+rhi::BindingType::StorageTexture	enumerator	rhi	rhi-bindingtype-storagetexture	rhi.md	engine/rhi/enums.h:329
+rhi::BindingType::Count	enumerator	rhi	rhi-bindingtype-count	rhi.md	engine/rhi/enums.h:330
+rhi::Span	alias	rhi	rhi-span	rhi.md	engine/rhi/enums.h:337
 rhi::Format	enum	rhi	rhi-format	rhi.md	engine/rhi/format.h:17
 rhi::Format::Undefined	enumerator	rhi	rhi-format-undefined	rhi.md	engine/rhi/format.h:18
 rhi::Format::R8_UNorm	enumerator	rhi	rhi-format-r8-unorm	rhi.md	engine/rhi/format.h:19
@@ -2738,34 +2780,37 @@ rhi::NullDevice::CountPresent()	function	rhi	rhi-nulldevice-countpresent	rhi.md	
 rhi::NullDevice::SimulateSurfaceLoss()	function	rhi	rhi-nulldevice-simulatesurfaceloss	rhi.md	engine/rhi/null/null_device.h:202
 rhi::NullDevice::RecreateSurface(const os::Window*)	function	rhi	rhi-nulldevice-recreatesurface-const-os-window-star	rhi.md	engine/rhi/null/null_device.h:204
 rhi::CreateNullDevice(const NullDeviceOptions&)	function	rhi	rhi-createnulldevice-const-nulldeviceoptions-amp	rhi.md	engine/rhi/null/null_device.h:216
-rhi::Backend	enum	rhi	rhi-backend	rhi.md	engine/rhi/rhi.h:15
-rhi::Backend::Null	enumerator	rhi	rhi-backend-null	rhi.md	engine/rhi/rhi.h:16
-rhi::Backend::Vulkan	enumerator	rhi	rhi-backend-vulkan	rhi.md	engine/rhi/rhi.h:17
-rhi::ValidationSetting	enum	rhi	rhi-validationsetting	rhi.md	engine/rhi/rhi.h:21
-rhi::ValidationSetting::Auto	enumerator	rhi	rhi-validationsetting-auto	rhi.md	engine/rhi/rhi.h:22
-rhi::ValidationSetting::Off	enumerator	rhi	rhi-validationsetting-off	rhi.md	engine/rhi/rhi.h:23
-rhi::ValidationSetting::On	enumerator	rhi	rhi-validationsetting-on	rhi.md	engine/rhi/rhi.h:24
-rhi::FaultInjection	struct	rhi	rhi-faultinjection	rhi.md	engine/rhi/rhi.h:34
-rhi::FaultInjection::lose_device_at_frame	variable	rhi	rhi-faultinjection-lose-device-at-frame	rhi.md	engine/rhi/rhi.h:37
-rhi::FaultInjection::lose_device_at_submit	variable	rhi	rhi-faultinjection-lose-device-at-submit	rhi.md	engine/rhi/rhi.h:40
-rhi::FaultInjection::lose_device_at_present	variable	rhi	rhi-faultinjection-lose-device-at-present	rhi.md	engine/rhi/rhi.h:42
-rhi::FaultInjection::strikes_left	variable	rhi	rhi-faultinjection-strikes-left	rhi.md	engine/rhi/rhi.h:46
-rhi::FaultInjection::fail_allocations_from	variable	rhi	rhi-faultinjection-fail-allocations-from	rhi.md	engine/rhi/rhi.h:49
-rhi::FaultInjection::fail_surface_recreate	variable	rhi	rhi-faultinjection-fail-surface-recreate	rhi.md	engine/rhi/rhi.h:52
-rhi::FaultInjection::fail_swapchain_create	variable	rhi	rhi-faultinjection-fail-swapchain-create	rhi.md	engine/rhi/rhi.h:55
-rhi::DeviceCreateInfo	struct	rhi	rhi-devicecreateinfo	rhi.md	engine/rhi/rhi.h:63
-rhi::DeviceCreateInfo::backend	variable	rhi	rhi-devicecreateinfo-backend	rhi.md	engine/rhi/rhi.h:65
-rhi::DeviceCreateInfo::application_name	variable	rhi	rhi-devicecreateinfo-application-name	rhi.md	engine/rhi/rhi.h:67
-rhi::DeviceCreateInfo::validation	variable	rhi	rhi-devicecreateinfo-validation	rhi.md	engine/rhi/rhi.h:69
-rhi::DeviceCreateInfo::sync_validation	variable	rhi	rhi-devicecreateinfo-sync-validation	rhi.md	engine/rhi/rhi.h:71
-rhi::DeviceCreateInfo::adapter	variable	rhi	rhi-devicecreateinfo-adapter	rhi.md	engine/rhi/rhi.h:78
-rhi::DeviceCreateInfo::window	variable	rhi	rhi-devicecreateinfo-window	rhi.md	engine/rhi/rhi.h:83
-rhi::DeviceCreateInfo::frames_in_flight	variable	rhi	rhi-devicecreateinfo-frames-in-flight	rhi.md	engine/rhi/rhi.h:86
-rhi::DeviceCreateInfo::pipeline_cache	variable	rhi	rhi-devicecreateinfo-pipeline-cache	rhi.md	engine/rhi/rhi.h:91
-rhi::DeviceCreateInfo::descriptor_sets_per_pool	variable	rhi	rhi-devicecreateinfo-descriptor-sets-per-pool	rhi.md	engine/rhi/rhi.h:94
-rhi::DeviceCreateInfo::pipeline_cache_dir	variable	rhi	rhi-devicecreateinfo-pipeline-cache-dir	rhi.md	engine/rhi/rhi.h:98
-rhi::DeviceCreateInfo::faults	variable	rhi	rhi-devicecreateinfo-faults	rhi.md	engine/rhi/rhi.h:100
-rhi::CreateDevice(const DeviceCreateInfo&)	function	rhi	rhi-createdevice-const-devicecreateinfo-amp	rhi.md	engine/rhi/rhi.h:121
+rhi::RegisterNullBackend()	function	rhi	rhi-registernullbackend	rhi.md	engine/rhi/null/null_device.h:225
+rhi::Backend	enum	rhi	rhi-backend	rhi.md	engine/rhi/rhi.h:18
+rhi::Backend::Null	enumerator	rhi	rhi-backend-null	rhi.md	engine/rhi/rhi.h:19
+rhi::Backend::Vulkan	enumerator	rhi	rhi-backend-vulkan	rhi.md	engine/rhi/rhi.h:20
+rhi::Backend::Dx12	enumerator	rhi	rhi-backend-dx12	rhi.md	engine/rhi/rhi.h:21
+rhi::Backend::Auto	enumerator	rhi	rhi-backend-auto	rhi.md	engine/rhi/rhi.h:22
+rhi::ValidationSetting	enum	rhi	rhi-validationsetting	rhi.md	engine/rhi/rhi.h:26
+rhi::ValidationSetting::Auto	enumerator	rhi	rhi-validationsetting-auto	rhi.md	engine/rhi/rhi.h:27
+rhi::ValidationSetting::Off	enumerator	rhi	rhi-validationsetting-off	rhi.md	engine/rhi/rhi.h:28
+rhi::ValidationSetting::On	enumerator	rhi	rhi-validationsetting-on	rhi.md	engine/rhi/rhi.h:29
+rhi::FaultInjection	struct	rhi	rhi-faultinjection	rhi.md	engine/rhi/rhi.h:39
+rhi::FaultInjection::lose_device_at_frame	variable	rhi	rhi-faultinjection-lose-device-at-frame	rhi.md	engine/rhi/rhi.h:42
+rhi::FaultInjection::lose_device_at_submit	variable	rhi	rhi-faultinjection-lose-device-at-submit	rhi.md	engine/rhi/rhi.h:45
+rhi::FaultInjection::lose_device_at_present	variable	rhi	rhi-faultinjection-lose-device-at-present	rhi.md	engine/rhi/rhi.h:47
+rhi::FaultInjection::strikes_left	variable	rhi	rhi-faultinjection-strikes-left	rhi.md	engine/rhi/rhi.h:51
+rhi::FaultInjection::fail_allocations_from	variable	rhi	rhi-faultinjection-fail-allocations-from	rhi.md	engine/rhi/rhi.h:54
+rhi::FaultInjection::fail_surface_recreate	variable	rhi	rhi-faultinjection-fail-surface-recreate	rhi.md	engine/rhi/rhi.h:57
+rhi::FaultInjection::fail_swapchain_create	variable	rhi	rhi-faultinjection-fail-swapchain-create	rhi.md	engine/rhi/rhi.h:60
+rhi::DeviceCreateInfo	struct	rhi	rhi-devicecreateinfo	rhi.md	engine/rhi/rhi.h:68
+rhi::DeviceCreateInfo::backend	variable	rhi	rhi-devicecreateinfo-backend	rhi.md	engine/rhi/rhi.h:70
+rhi::DeviceCreateInfo::application_name	variable	rhi	rhi-devicecreateinfo-application-name	rhi.md	engine/rhi/rhi.h:72
+rhi::DeviceCreateInfo::validation	variable	rhi	rhi-devicecreateinfo-validation	rhi.md	engine/rhi/rhi.h:74
+rhi::DeviceCreateInfo::sync_validation	variable	rhi	rhi-devicecreateinfo-sync-validation	rhi.md	engine/rhi/rhi.h:76
+rhi::DeviceCreateInfo::adapter	variable	rhi	rhi-devicecreateinfo-adapter	rhi.md	engine/rhi/rhi.h:83
+rhi::DeviceCreateInfo::window	variable	rhi	rhi-devicecreateinfo-window	rhi.md	engine/rhi/rhi.h:88
+rhi::DeviceCreateInfo::frames_in_flight	variable	rhi	rhi-devicecreateinfo-frames-in-flight	rhi.md	engine/rhi/rhi.h:91
+rhi::DeviceCreateInfo::pipeline_cache	variable	rhi	rhi-devicecreateinfo-pipeline-cache	rhi.md	engine/rhi/rhi.h:96
+rhi::DeviceCreateInfo::descriptor_sets_per_pool	variable	rhi	rhi-devicecreateinfo-descriptor-sets-per-pool	rhi.md	engine/rhi/rhi.h:99
+rhi::DeviceCreateInfo::pipeline_cache_dir	variable	rhi	rhi-devicecreateinfo-pipeline-cache-dir	rhi.md	engine/rhi/rhi.h:103
+rhi::DeviceCreateInfo::faults	variable	rhi	rhi-devicecreateinfo-faults	rhi.md	engine/rhi/rhi.h:105
+rhi::CreateDevice(const DeviceCreateInfo&)	function	rhi	rhi-createdevice-const-devicecreateinfo-amp	rhi.md	engine/rhi/rhi.h:126
 rhi::LogRhi	variable	rhi	rhi-logrhi	rhi.md	engine/rhi/rhi_log.h:14
 rhi::RhiLogV(LogVerbosity,const char*,...)	function	rhi	rhi-rhilogv-logverbosity-const-char-star	rhi.md	engine/rhi/rhi_log.h:25
 RhiLog	macro	rhi	rhilog	rhi.md	engine/rhi/rhi_log.h:45
@@ -3639,33 +3684,37 @@ renderer::Renderer::FrameIndex() const	function	renderer	renderer-renderer-frame
 renderer::RendererName()	function	renderer	renderer-renderername	renderer.md	engine/renderer/renderer_info.h:12
 renderer::RenderLogV(LogVerbosity,const char*,...)	function	renderer	renderer-renderlogv-logverbosity-const-char-star	renderer.md	engine/renderer/renderer_log.h:22
 RenderLog	macro	renderer	renderlog	renderer.md	engine/renderer/renderer_log.h:42
-renderer::kMaxPermutationOptions	variable	renderer	renderer-kmaxpermutationoptions	renderer.md	engine/renderer/shader_permutation.h:17
-renderer::kMaxPermutationKeys	variable	renderer	renderer-kmaxpermutationkeys	renderer.md	engine/renderer/shader_permutation.h:19
-renderer::PermutationKey	struct	renderer	renderer-permutationkey	renderer.md	engine/renderer/shader_permutation.h:24
-renderer::PermutationKey::bits	variable	renderer	renderer-permutationkey-bits	renderer.md	engine/renderer/shader_permutation.h:26
-renderer::PermutationKey::Has(u32) const	function	renderer	renderer-permutationkey-has-u32-const	renderer.md	engine/renderer/shader_permutation.h:33
-renderer::PermutationKey::With(u32) const	function	renderer	renderer-permutationkey-with-u32-const	renderer.md	engine/renderer/shader_permutation.h:40
-renderer::PermutationKey::operator==(const PermutationKey&) const	function	renderer	renderer-permutationkey-operator-eq-eq-const-permutationkey-amp-const	renderer.md	engine/renderer/shader_permutation.h:53
-renderer::PermutationModule	struct	renderer	renderer-permutationmodule	renderer.md	engine/renderer/shader_permutation.h:60
-renderer::PermutationModule::words	variable	renderer	renderer-permutationmodule-words	renderer.md	engine/renderer/shader_permutation.h:62
-renderer::PermutationModule::word_count	variable	renderer	renderer-permutationmodule-word-count	renderer.md	engine/renderer/shader_permutation.h:64
-renderer::PermutationModule::reflection	variable	renderer	renderer-permutationmodule-reflection	renderer.md	engine/renderer/shader_permutation.h:66
-renderer::PermutationModule::reflection_size	variable	renderer	renderer-permutationmodule-reflection-size	renderer.md	engine/renderer/shader_permutation.h:68
-renderer::PermutationEntry	struct	renderer	renderer-permutationentry	renderer.md	engine/renderer/shader_permutation.h:74
-renderer::PermutationEntry::key_bits	variable	renderer	renderer-permutationentry-key-bits	renderer.md	engine/renderer/shader_permutation.h:76
-renderer::PermutationEntry::module	variable	renderer	renderer-permutationentry-module	renderer.md	engine/renderer/shader_permutation.h:78
-renderer::ShaderPermutations	struct	renderer	renderer-shaderpermutations	renderer.md	engine/renderer/shader_permutation.h:87
-renderer::ShaderPermutations::shader	variable	renderer	renderer-shaderpermutations-shader	renderer.md	engine/renderer/shader_permutation.h:89
-renderer::ShaderPermutations::options	variable	renderer	renderer-shaderpermutations-options	renderer.md	engine/renderer/shader_permutation.h:91
-renderer::ShaderPermutations::option_count	variable	renderer	renderer-shaderpermutations-option-count	renderer.md	engine/renderer/shader_permutation.h:93
-renderer::ShaderPermutations::modules	variable	renderer	renderer-shaderpermutations-modules	renderer.md	engine/renderer/shader_permutation.h:95
-renderer::ShaderPermutations::module_count	variable	renderer	renderer-shaderpermutations-module-count	renderer.md	engine/renderer/shader_permutation.h:97
-renderer::ShaderPermutations::entries	variable	renderer	renderer-shaderpermutations-entries	renderer.md	engine/renderer/shader_permutation.h:99
-renderer::ShaderPermutations::entry_count	variable	renderer	renderer-shaderpermutations-entry-count	renderer.md	engine/renderer/shader_permutation.h:101
-renderer::ValidateShaderPermutations(const ShaderPermutations&)	function	renderer	renderer-validateshaderpermutations-const-shaderpermutations-amp	renderer.md	engine/renderer/shader_permutation.h:115
-renderer::MakePermutationKey(const ShaderPermutations&,const char* const*,u32,PermutationKey*,ReflectionError*)	function	renderer	renderer-makepermutationkey-const-shaderpermutations-amp-const-char-star-const-star-u32-permutationkey-star-reflectionerror-star	renderer.md	engine/renderer/shader_permutation.h:128
-renderer::FindPermutation(const ShaderPermutations&,PermutationKey,ReflectionError*)	function	renderer	renderer-findpermutation-const-shaderpermutations-amp-permutationkey-reflectionerror-star	renderer.md	engine/renderer/shader_permutation.h:141
-renderer::DescribePermutationKey(const ShaderPermutations&,PermutationKey,char*,usize)	function	renderer	renderer-describepermutationkey-const-shaderpermutations-amp-permutationkey-char-star-usize	renderer.md	engine/renderer/shader_permutation.h:151
+renderer::kMaxPermutationOptions	variable	renderer	renderer-kmaxpermutationoptions	renderer.md	engine/renderer/shader_permutation.h:18
+renderer::kMaxPermutationKeys	variable	renderer	renderer-kmaxpermutationkeys	renderer.md	engine/renderer/shader_permutation.h:20
+renderer::PermutationKey	struct	renderer	renderer-permutationkey	renderer.md	engine/renderer/shader_permutation.h:25
+renderer::PermutationKey::bits	variable	renderer	renderer-permutationkey-bits	renderer.md	engine/renderer/shader_permutation.h:27
+renderer::PermutationKey::Has(u32) const	function	renderer	renderer-permutationkey-has-u32-const	renderer.md	engine/renderer/shader_permutation.h:34
+renderer::PermutationKey::With(u32) const	function	renderer	renderer-permutationkey-with-u32-const	renderer.md	engine/renderer/shader_permutation.h:41
+renderer::PermutationKey::operator==(const PermutationKey&) const	function	renderer	renderer-permutationkey-operator-eq-eq-const-permutationkey-amp-const	renderer.md	engine/renderer/shader_permutation.h:54
+renderer::PermutationModule	struct	renderer	renderer-permutationmodule	renderer.md	engine/renderer/shader_permutation.h:62
+renderer::PermutationModule::words	variable	renderer	renderer-permutationmodule-words	renderer.md	engine/renderer/shader_permutation.h:64
+renderer::PermutationModule::word_count	variable	renderer	renderer-permutationmodule-word-count	renderer.md	engine/renderer/shader_permutation.h:66
+renderer::PermutationModule::reflection	variable	renderer	renderer-permutationmodule-reflection	renderer.md	engine/renderer/shader_permutation.h:68
+renderer::PermutationModule::reflection_size	variable	renderer	renderer-permutationmodule-reflection-size	renderer.md	engine/renderer/shader_permutation.h:70
+renderer::PermutationModule::dxil	variable	renderer	renderer-permutationmodule-dxil	renderer.md	engine/renderer/shader_permutation.h:72
+renderer::PermutationModule::dxil_size	variable	renderer	renderer-permutationmodule-dxil-size	renderer.md	engine/renderer/shader_permutation.h:74
+renderer::PermutationModule::Blob(rhi::ShaderFormat) const	function	renderer	renderer-permutationmodule-blob-rhi-shaderformat-const	renderer.md	engine/renderer/shader_permutation.h:81
+renderer::PermutationModule::HasCode() const	function	renderer	renderer-permutationmodule-hascode-const	renderer.md	engine/renderer/shader_permutation.h:93
+renderer::PermutationEntry	struct	renderer	renderer-permutationentry	renderer.md	engine/renderer/shader_permutation.h:99
+renderer::PermutationEntry::key_bits	variable	renderer	renderer-permutationentry-key-bits	renderer.md	engine/renderer/shader_permutation.h:101
+renderer::PermutationEntry::module	variable	renderer	renderer-permutationentry-module	renderer.md	engine/renderer/shader_permutation.h:103
+renderer::ShaderPermutations	struct	renderer	renderer-shaderpermutations	renderer.md	engine/renderer/shader_permutation.h:112
+renderer::ShaderPermutations::shader	variable	renderer	renderer-shaderpermutations-shader	renderer.md	engine/renderer/shader_permutation.h:114
+renderer::ShaderPermutations::options	variable	renderer	renderer-shaderpermutations-options	renderer.md	engine/renderer/shader_permutation.h:116
+renderer::ShaderPermutations::option_count	variable	renderer	renderer-shaderpermutations-option-count	renderer.md	engine/renderer/shader_permutation.h:118
+renderer::ShaderPermutations::modules	variable	renderer	renderer-shaderpermutations-modules	renderer.md	engine/renderer/shader_permutation.h:120
+renderer::ShaderPermutations::module_count	variable	renderer	renderer-shaderpermutations-module-count	renderer.md	engine/renderer/shader_permutation.h:122
+renderer::ShaderPermutations::entries	variable	renderer	renderer-shaderpermutations-entries	renderer.md	engine/renderer/shader_permutation.h:124
+renderer::ShaderPermutations::entry_count	variable	renderer	renderer-shaderpermutations-entry-count	renderer.md	engine/renderer/shader_permutation.h:126
+renderer::ValidateShaderPermutations(const ShaderPermutations&)	function	renderer	renderer-validateshaderpermutations-const-shaderpermutations-amp	renderer.md	engine/renderer/shader_permutation.h:140
+renderer::MakePermutationKey(const ShaderPermutations&,const char* const*,u32,PermutationKey*,ReflectionError*)	function	renderer	renderer-makepermutationkey-const-shaderpermutations-amp-const-char-star-const-star-u32-permutationkey-star-reflectionerror-star	renderer.md	engine/renderer/shader_permutation.h:153
+renderer::FindPermutation(const ShaderPermutations&,PermutationKey,ReflectionError*)	function	renderer	renderer-findpermutation-const-shaderpermutations-amp-permutationkey-reflectionerror-star	renderer.md	engine/renderer/shader_permutation.h:166
+renderer::DescribePermutationKey(const ShaderPermutations&,PermutationKey,char*,usize)	function	renderer	renderer-describepermutationkey-const-shaderpermutations-amp-permutationkey-char-star-usize	renderer.md	engine/renderer/shader_permutation.h:176
 renderer::kReflectionVersion	variable	renderer	renderer-kreflectionversion	renderer.md	engine/renderer/shader_reflection.h:16
 renderer::kMaxReflectionName	variable	renderer	renderer-kmaxreflectionname	renderer.md	engine/renderer/shader_reflection.h:18
 renderer::kMaxReflectedBindings	variable	renderer	renderer-kmaxreflectedbindings	renderer.md	engine/renderer/shader_reflection.h:20
@@ -3904,19 +3953,21 @@ rhi::vulkan::PhysicalDeviceInfo::memory_budget_extension	variable	rhi-vulkan	rhi
 rhi::vulkan::PhysicalDeviceInfo::vendor_id	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-vendor-id	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:67
 rhi::vulkan::PhysicalDeviceInfo::device_id	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-device-id	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:69
 rhi::vulkan::PhysicalDeviceInfo::uuid	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-uuid	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:71
-rhi::vulkan::PhysicalDeviceInfo::driver	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-driver	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:73
-rhi::vulkan::PhysicalDeviceInfo::dedicated_memory_bytes	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-dedicated-memory-bytes	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:75
-rhi::vulkan::PhysicalDeviceInfo::families	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-families	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:77
-rhi::vulkan::PhysicalDeviceInfo::queue_family_count	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-queue-family-count	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:79
-rhi::vulkan::RejectionReason(const PhysicalDeviceInfo&,bool)	function	rhi-vulkan	rhi-vulkan-rejectionreason-const-physicaldeviceinfo-amp-bool	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:92
-rhi::vulkan::MakeAdapterId(const PhysicalDeviceInfo&,char*,usize)	function	rhi-vulkan	rhi-vulkan-makeadapterid-const-physicaldeviceinfo-amp-char-star-usize	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:101
-rhi::vulkan::MakeAdapterInfo(const PhysicalDeviceInfo&,bool)	function	rhi-vulkan	rhi-vulkan-makeadapterinfo-const-physicaldeviceinfo-amp-bool	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:108
-rhi::vulkan::SelectPhysicalDevice(const PhysicalDeviceInfo*,usize,bool,const char*)	function	rhi-vulkan	rhi-vulkan-selectphysicaldevice-const-physicaldeviceinfo-star-usize-bool-const-char-star	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:124
-rhi::vulkan::SelectPhysicalDeviceFor(const PhysicalDeviceInfo*,usize,bool,const char*,const char*)	function	rhi-vulkan	rhi-vulkan-selectphysicaldevicefor-const-physicaldeviceinfo-star-usize-bool-const-char-star-const-char-star	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:129
-rhi::vulkan::QueuePlan	struct	rhi-vulkan	rhi-vulkan-queueplan	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:135
-rhi::vulkan::QueuePlan::graphics_family	variable	rhi-vulkan	rhi-vulkan-queueplan-graphics-family	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:137
-rhi::vulkan::QueuePlan::transfer_family	variable	rhi-vulkan	rhi-vulkan-queueplan-transfer-family	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:142
-rhi::vulkan::PlanQueues(const PhysicalDeviceInfo&,bool)	function	rhi-vulkan	rhi-vulkan-planqueues-const-physicaldeviceinfo-amp-bool	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:151
+rhi::vulkan::PhysicalDeviceInfo::luid	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-luid	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:73
+rhi::vulkan::PhysicalDeviceInfo::luid_valid	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-luid-valid	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:75
+rhi::vulkan::PhysicalDeviceInfo::driver	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-driver	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:77
+rhi::vulkan::PhysicalDeviceInfo::dedicated_memory_bytes	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-dedicated-memory-bytes	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:79
+rhi::vulkan::PhysicalDeviceInfo::families	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-families	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:81
+rhi::vulkan::PhysicalDeviceInfo::queue_family_count	variable	rhi-vulkan	rhi-vulkan-physicaldeviceinfo-queue-family-count	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:83
+rhi::vulkan::RejectionReason(const PhysicalDeviceInfo&,bool)	function	rhi-vulkan	rhi-vulkan-rejectionreason-const-physicaldeviceinfo-amp-bool	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:96
+rhi::vulkan::MakeAdapterId(const PhysicalDeviceInfo&,char*,usize)	function	rhi-vulkan	rhi-vulkan-makeadapterid-const-physicaldeviceinfo-amp-char-star-usize	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:105
+rhi::vulkan::MakeAdapterInfo(const PhysicalDeviceInfo&,bool)	function	rhi-vulkan	rhi-vulkan-makeadapterinfo-const-physicaldeviceinfo-amp-bool	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:112
+rhi::vulkan::SelectPhysicalDevice(const PhysicalDeviceInfo*,usize,bool,const char*)	function	rhi-vulkan	rhi-vulkan-selectphysicaldevice-const-physicaldeviceinfo-star-usize-bool-const-char-star	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:128
+rhi::vulkan::SelectPhysicalDeviceFor(const PhysicalDeviceInfo*,usize,bool,const char*,const char*)	function	rhi-vulkan	rhi-vulkan-selectphysicaldevicefor-const-physicaldeviceinfo-star-usize-bool-const-char-star-const-char-star	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:133
+rhi::vulkan::QueuePlan	struct	rhi-vulkan	rhi-vulkan-queueplan	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:139
+rhi::vulkan::QueuePlan::graphics_family	variable	rhi-vulkan	rhi-vulkan-queueplan-graphics-family	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:141
+rhi::vulkan::QueuePlan::transfer_family	variable	rhi-vulkan	rhi-vulkan-queueplan-transfer-family	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:146
+rhi::vulkan::PlanQueues(const PhysicalDeviceInfo&,bool)	function	rhi-vulkan	rhi-vulkan-planqueues-const-physicaldeviceinfo-amp-bool	rhi-vulkan.md	engine/rhi/vulkan/vk_device_select.h:155
 rhi::vulkan::ToVkFormat(Format)	function	rhi-vulkan	rhi-vulkan-tovkformat-format	rhi-vulkan.md	engine/rhi/vulkan/vk_format.h:11
 rhi::vulkan::FromVkFormat(VkFormat)	function	rhi-vulkan	rhi-vulkan-fromvkformat-vkformat	rhi-vulkan.md	engine/rhi/vulkan/vk_format.h:14
 rhi::vulkan::AspectsOf(Format)	function	rhi-vulkan	rhi-vulkan-aspectsof-format	rhi-vulkan.md	engine/rhi/vulkan/vk_format.h:17
@@ -4147,6 +4198,7 @@ rhi::vulkan::ChooseExtent(const VkSurfaceCapabilitiesKHR&,u32,u32)	function	rhi-
 rhi::vulkan::ChooseCompositeAlpha(VkCompositeAlphaFlagsKHR)	function	rhi-vulkan	rhi-vulkan-choosecompositealpha-vkcompositealphaflagskhr	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:101
 rhi::vulkan::ChooseImageUsage(VkImageUsageFlags)	function	rhi-vulkan	rhi-vulkan-chooseimageusage-vkimageusageflags	rhi-vulkan.md	engine/rhi/vulkan/vk_swapchain_policy.h:107
 rhi::vulkan::CreateXlibSurface(void*,void*,void*,u64,u64*)	function	rhi-vulkan	rhi-vulkan-createxlibsurface-void-star-void-star-void-star-u64-u64-star	rhi-vulkan.md	engine/rhi/vulkan/vk_xlib_surface.h:21
+rhi::RegisterVulkanBackend()	function	rhi-vulkan	rhi-registervulkanbackend	rhi-vulkan.md	engine/rhi/vulkan/vulkan_backend.h:16
 rhi::vulkan::VulkanDevicePtr	alias	rhi-vulkan	rhi-vulkan-vulkandeviceptr	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:29
 rhi::vulkan::VulkanDevice	class	rhi-vulkan	rhi-vulkan-vulkandevice	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:39
 rhi::vulkan::VulkanDevice::VulkanDevice()	function	rhi-vulkan	rhi-vulkan-vulkandevice-vulkandevice	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:42

@@ -169,15 +169,53 @@ const char* SamplerDesc::Validate() const {
     return nullptr;
 }
 
+const char* ShaderFormatName(ShaderFormat format) {
+    switch (format) {
+    case ShaderFormat::Spirv: return "spirv";
+    case ShaderFormat::Dxil: return "dxil";
+    case ShaderFormat::Msl: return "msl";
+    }
+    return "unknown";
+}
+
 const char* ShaderDesc::Validate() const {
     if (!IsSingleStage(stage)) {
         return "ShaderDesc: stage must be exactly one of vertex, fragment or compute";
     }
-    if (words == nullptr || word_count == 0) {
-        return "ShaderDesc: no SPIR-V words";
+    if (bytes == nullptr || size == 0) {
+        return "ShaderDesc: no bytecode";
     }
-    if (word_count < 5) {
-        return "ShaderDesc: module is smaller than a SPIR-V header";
+    switch (format) {
+    case ShaderFormat::Spirv:
+        if (reinterpret_cast<usize>(bytes) % alignof(u32) != 0) {
+            return "ShaderDesc: SPIR-V bytecode is not 4-byte aligned";
+        }
+        if (size % sizeof(u32) != 0) {
+            return "ShaderDesc: SPIR-V size is not a whole number of 32-bit words";
+        }
+        if (size < 5 * sizeof(u32)) {
+            return "ShaderDesc: module is smaller than a SPIR-V header";
+        }
+        break;
+    case ShaderFormat::Dxil: {
+        // A DXBC container: "DXBC", a 16-byte digest, a version (2 x u16), the total size (u32), the part count (u32).
+        constexpr usize kHeader = 32;
+        if (size < kHeader) {
+            return "ShaderDesc: module is smaller than a DXIL container header";
+        }
+        const u8* b = static_cast<const u8*>(bytes);
+        if (b[0] != 'D' || b[1] != 'X' || b[2] != 'B' || b[3] != 'C') {
+            return "ShaderDesc: DXIL bytecode does not start with the DXBC container tag";
+        }
+        const u32 recorded = static_cast<u32>(b[24]) | (static_cast<u32>(b[25]) << 8) | (static_cast<u32>(b[26]) << 16) |
+                             (static_cast<u32>(b[27]) << 24);
+        if (recorded != size) {
+            return "ShaderDesc: DXIL size differs from the size its container header records";
+        }
+        break;
+    }
+    case ShaderFormat::Msl: return "ShaderDesc: MSL is not supported by any backend yet";
+    default: return "ShaderDesc: unknown bytecode format";
     }
     if (entry == nullptr || entry[0] == '\0') {
         return "ShaderDesc: entry point name is empty";

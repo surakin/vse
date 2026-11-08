@@ -121,12 +121,10 @@ bool RenderTriangle(Image* image) {
     VulkanDevice* device = scene.device.Get();
     ShaderDesc sd;
     sd.stage = ShaderStage::Vertex;
-    sd.words = shaders::kTriangleVertSpv;
-    sd.word_count = shaders::kTriangleVertSpvWordCount;
+    sd.SetCode(SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount));
     scene.vs = device->CreateShader(sd);
     sd.stage = ShaderStage::Fragment;
-    sd.words = shaders::kTriangleFragSpv;
-    sd.word_count = shaders::kTriangleFragSpvWordCount;
+    sd.SetCode(SpirvBlob(shaders::kTriangleFragSpv, shaders::kTriangleFragSpvWordCount));
     scene.fs = device->CreateShader(sd);
 
     VertexBindingDesc binding = {20, false};

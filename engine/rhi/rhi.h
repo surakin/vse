@@ -12,9 +12,14 @@
 namespace engine_placeholder::rhi {
 
 /// Which backend [[rhi::CreateDevice]] creates.
+///
+/// A backend exists in a program only once its library registered it ([[rhi::RegisterCompiledBackends]]); see
+/// `rhi/backend_registry.h`.
 enum class Backend : u8 {
     Null = 0, ///< The validating no-GPU device ([[rhi::NullDevice]]).
     Vulkan,   ///< The Vulkan 1.3 backend, loaded at run time from the system's Vulkan loader.
+    Dx12,     ///< The Direct3D 12 backend (Windows).
+    Auto,     ///< The platform's preferred backend among those registered and available ([[rhi::PickAutoBackend]]).
 };
 
 /// Whether the backend's validation layers are wanted (a development aid, never a requirement).
@@ -61,8 +66,8 @@ struct FaultInjection {
 ///
 /// Thread-safety: thread-compatible plain data.
 struct DeviceCreateInfo {
-    /// The backend to create.
-    Backend backend = Backend::Vulkan;
+    /// The backend to create; `Auto` picks the preferred registered backend that is available here.
+    Backend backend = Backend::Auto;
     /// The application name reported to the driver; a static string, must not be null.
     const char* application_name = "engine";
     /// Whether to enable the backend's validation layers; see [[rhi::ValidationSetting]].
@@ -105,17 +110,17 @@ namespace detail {
 void NullAdapters(AdapterList* out);
 } // namespace detail
 
-/// Creates a device for the requested backend.
+/// Creates a device for the requested backend, through the backend registry (`rhi/backend_registry.h`).
 ///
-/// For the Vulkan backend the physical device is chosen by a ranking (discrete before integrated before virtual
+/// `Auto` resolves to the available registered backend with the highest rank. For the Vulkan backend the physical device is chosen by a ranking (discrete before integrated before virtual
 /// before software), among those that have Vulkan 1.3, dynamic rendering, synchronization2, timeline semaphores
 /// and a graphics+compute queue. `ENGINE_RHI_GPU=<index or name substring>` overrides the choice; the full ranking
 /// is logged on [[rhi::LogRhi]]. `DeviceCreateInfo::adapter` overrides both.
 ///
 /// Param info: what to create.
 /// Returns: the device, or an empty pointer.
-/// Fails: returns an empty pointer, logging the reason, if there is no Vulkan loader, no suitable GPU, the override matches
-///   nothing suitable, or device creation fails.
+/// Fails: returns an empty pointer, logging the reason, if the backend is not registered in this program or not available
+///   here, there is no Vulkan loader, no suitable GPU, the override matches nothing suitable, or device creation fails.
 /// Ownership: the caller owns the device through the returned [[rhi::DevicePtr]].
 /// Thread-safety: thread-safe.
 DevicePtr CreateDevice(const DeviceCreateInfo& info);

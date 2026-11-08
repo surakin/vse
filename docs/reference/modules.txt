@@ -63,6 +63,7 @@ module jobs "The Job System"
 module rhi "The Render Hardware Interface"
   header engine/rhi/*.h
   header engine/rhi/null/*.h
+  header engine/rhi/backends/*.h
   strict thread-safety
   strict ownership
   strict failure

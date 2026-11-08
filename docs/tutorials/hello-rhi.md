@@ -109,12 +109,10 @@ int main() {
 
     ShaderDesc sd;
     sd.stage = ShaderStage::Vertex;
-    sd.words = shaders::kTriangleVertSpv;
-    sd.word_count = shaders::kTriangleVertSpvWordCount;
+    sd.SetCode(rhi::SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount));
     const ShaderHandle vs = device->CreateShader(sd);
     sd.stage = ShaderStage::Fragment;
-    sd.words = shaders::kTriangleFragSpv;
-    sd.word_count = shaders::kTriangleFragSpvWordCount;
+    sd.SetCode(rhi::SpirvBlob(shaders::kTriangleFragSpv, shaders::kTriangleFragSpvWordCount));
     const ShaderHandle fs = device->CreateShader(sd);
 
     VertexBindingDesc binding = {20, false};
@@ -212,12 +210,10 @@ int main() {
     NullDevicePtr device = CreateNullDevice();
     ShaderDesc sd;
     sd.stage = ShaderStage::Vertex;
-    sd.words = shaders::kTriangleVertSpv;
-    sd.word_count = shaders::kTriangleVertSpvWordCount;
+    sd.SetCode(rhi::SpirvBlob(shaders::kTriangleVertSpv, shaders::kTriangleVertSpvWordCount));
     const ShaderHandle vs = device->CreateShader(sd);
     sd.stage = ShaderStage::Fragment;
-    sd.words = shaders::kTriangleFragSpv;
-    sd.word_count = shaders::kTriangleFragSpvWordCount;
+    sd.SetCode(rhi::SpirvBlob(shaders::kTriangleFragSpv, shaders::kTriangleFragSpvWordCount));
     const ShaderHandle fs = device->CreateShader(sd);
 
     VertexBindingDesc binding = {20, false};

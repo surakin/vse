@@ -22,6 +22,28 @@ bool ContainsIgnoreCase(const char* haystack, const char* needle) {
     return false;
 }
 
+bool EqualIgnoreCase(const char* a, const char* b) {
+    usize i = 0;
+    for (; a[i] != '\0' && b[i] != '\0'; ++i) {
+        if (Lower(a[i]) != Lower(b[i])) {
+            return false;
+        }
+    }
+    return a[i] == b[i];
+}
+
+// Exactly 16 hexadecimal digits: the text form of a LUID.
+bool IsLuidText(const char* text) {
+    usize n = 0;
+    for (; text[n] != '\0'; ++n) {
+        const char c = Lower(text[n]);
+        if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) || n == kAdapterLuidBytes - 1) {
+            return false;
+        }
+    }
+    return n == kAdapterLuidBytes - 1;
+}
+
 // Parses a non-empty all-digit string; returns -1 if it is not one.
 long ParseIndex(const char* text) {
     long value = 0;
@@ -60,6 +82,15 @@ int MatchAdapter(const AdapterInfo* items, usize count, const char* request) {
             return static_cast<int>(i);
         }
     }
+    if (IsLuidText(request)) {
+        for (usize i = 0; i < count; ++i) {
+            if (items[i].luid[0] != '\0' && EqualIgnoreCase(items[i].luid, request)) {
+                return static_cast<int>(i);
+            }
+        }
+        // A LUID changes on reboot: a stale one must fail, not fall through to the index rule ("0000000000000001" is all digits).
+        return -1;
+    }
     const long index = ParseIndex(request);
     if (index >= 0 && static_cast<usize>(index) < count) {
         return static_cast<int>(index);
@@ -77,6 +108,7 @@ void DefaultNullAdapters(AdapterList* out) {
     AdapterInfo& discrete = out->items[0];
     SetText(discrete.id, sizeof(discrete.id), "null-discrete");
     SetText(discrete.name, sizeof(discrete.name), "Null Discrete GPU");
+    SetText(discrete.luid, sizeof(discrete.luid), "00000000000a0001");
     discrete.kind = AdapterKind::Discrete;
     discrete.dedicated_memory_bytes = 8ull << 30;
     SetText(discrete.driver, sizeof(discrete.driver), "null 1.0");
@@ -84,6 +116,7 @@ void DefaultNullAdapters(AdapterList* out) {
     AdapterInfo& integrated = out->items[1];
     SetText(integrated.id, sizeof(integrated.id), "null-integrated");
     SetText(integrated.name, sizeof(integrated.name), "Null Integrated GPU");
+    SetText(integrated.luid, sizeof(integrated.luid), "00000000000a0002");
     integrated.kind = AdapterKind::Integrated;
     integrated.dedicated_memory_bytes = 0;
     SetText(integrated.driver, sizeof(integrated.driver), "null 1.0");

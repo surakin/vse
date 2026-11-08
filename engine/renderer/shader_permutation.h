@@ -9,6 +9,7 @@
 //! built is an error naming the shader and the key, never a silent fallback.
 
 #include "renderer/shader_reflection.h"
+#include "rhi/desc.h"
 #include "types.h"
 
 namespace engine_placeholder::renderer {
@@ -53,12 +54,13 @@ struct PermutationKey {
     constexpr bool operator==(const PermutationKey& other) const { return bits == other.bits; }
 };
 
-/// One compiled module of a permuted shader: its SPIR-V and its reflection blob.
+/// One compiled shader module in every bytecode format it was minted in, and its reflection blob (the reflection is the same
+/// for every format: it comes from the one Slang source).
 ///
 /// Thread-safety: thread-compatible plain data.
-/// Ownership: the pointers refer to static data in a generated `*.perm.inc`.
+/// Ownership: the pointers refer to static data in a generated `*.perm.inc` or `*.spv.inc` / `*.dxil.inc`.
 struct PermutationModule {
-    /// The SPIR-V words.
+    /// The SPIR-V words, or null.
     const u32* words = nullptr;
     /// Number of SPIR-V words.
     usize word_count = 0;
@@ -66,6 +68,29 @@ struct PermutationModule {
     const u8* reflection = nullptr;
     /// Size of the reflection blob in bytes.
     usize reflection_size = 0;
+    /// The DXIL container, or null when the module was not minted for Direct3D 12.
+    const u8* dxil = nullptr;
+    /// Size of the DXIL container in bytes.
+    usize dxil_size = 0;
+
+    /// Returns the module's bytecode in one format.
+    ///
+    /// Param format: the device's format ([[rhi::DeviceCaps::shader_format]]).
+    /// Returns: the blob, empty when the module has none in that format.
+    /// Fails: an empty blob, as described.
+    constexpr rhi::ShaderBlob Blob(rhi::ShaderFormat format) const {
+        switch (format) {
+        case rhi::ShaderFormat::Spirv: return rhi::SpirvBlob(words, word_count);
+        case rhi::ShaderFormat::Dxil: return rhi::DxilBlob(dxil, dxil_size);
+        case rhi::ShaderFormat::Msl: break;
+        }
+        return rhi::ShaderBlob{format, nullptr, 0};
+    }
+
+    /// Returns whether the module has bytecode in at least one format.
+    ///
+    /// Fails: never.
+    constexpr bool HasCode() const { return (words != nullptr && word_count != 0) || (dxil != nullptr && dxil_size != 0); }
 };
 
 /// Which module a key uses. Keys that compile to identical SPIR-V share a module.

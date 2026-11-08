@@ -24,6 +24,7 @@
 #include "renderer/device_resources.h"
 #include "renderer/render_settings.h"
 #include "renderer/renderer.h"
+#include "rhi/backends/backends.h"
 #include "rhi/adapter.h"
 #include "rhi/device_host.h"
 #include "rhi/rhi.h"
@@ -674,6 +675,7 @@ int Usage(const char* program, int code) {
 // The program's entry point (platform/entry_point.h): ENGINE_WINDOWED_PROGRAM at the end of the file makes it `main` on Linux and
 // `wWinMain` (the Windows subsystem, no console window of its own) on Windows.
 int EngineMain(int argc, char** argv) {
+    ::engine_placeholder::rhi::RegisterCompiledBackends(); // before any device: the backends this build has
     const engine_placeholder::debug::ProgramDebugSetup debug_setup = engine_placeholder::debug::StartProgramDebugging(argc, argv);
     engine_placeholder::debug::RunCrashTest(debug_setup.crash_test); // --crash-test=segv|abort|assert|ensure, before any window or device
     LogRhi.SetVerbosity(LogVerbosity::Info); // the frame-time line is Info

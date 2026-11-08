@@ -2,3 +2,4 @@
 # An entry that no longer needs its exemption fails the gate (remove it).
 engine/foundation/os/gpu_driver_probe.cpp|Phase 1 GPU driver probe: loads libvulkan to enumerate devices before any RHI exists.
 engine/foundation/os/gpu_driver_probe.h|Phase 1 GPU driver probe interface.
+engine/rhi/backends/backends.cpp|Phase 13 Day 162 backend registry: the one file that names every backend library, to call its registration function (rhi/vulkan/vulkan_backend.h declares only that call; it names no Vulkan type).

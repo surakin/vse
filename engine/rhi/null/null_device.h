@@ -215,4 +215,13 @@ private:
 /// Ownership: the caller owns the device through the returned pointer.
 NullDevicePtr CreateNullDevice(const NullDeviceOptions& options = NullDeviceOptions());
 
+/// Registers the null backend (`Backend::Null`, name `null`) with the backend registry; `Auto` never picks it.
+///
+/// Called by [[rhi::RegisterCompiledBackends]]; calling it again changes nothing.
+///
+/// Returns: true if the backend is registered.
+/// Fails: returns false when the registry is full.
+/// Thread-safety: thread-safe.
+bool RegisterNullBackend();
+
 } // namespace engine_placeholder::rhi

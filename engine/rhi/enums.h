@@ -117,6 +117,22 @@ struct EnableFlagOperators<ShaderStage> {
     static constexpr bool value = true;
 };
 
+/// The bytecode format of a shader module ([[rhi::ShaderDesc]]); each backend takes one (see [[rhi::DeviceCaps::shader_format]]).
+enum class ShaderFormat : u8 {
+    Spirv = 0, ///< SPIR-V words (Vulkan).
+    Dxil,      ///< A DXIL container (Direct3D 12).
+    Msl,       ///< Metal Shading Language; reserved for the Metal backend (Phase 14), refused by every backend today.
+};
+
+/// Returns the lowercase name of a shader format (`spirv`, `dxil`, `msl`), for logs.
+///
+/// Param format: the format.
+/// Returns: a static string; `unknown` for a value outside the enum.
+/// Fails: never.
+/// Ownership: the string is static.
+/// Thread-safety: thread-safe.
+const char* ShaderFormatName(ShaderFormat format);
+
 /// Which color channels a render target write updates. Combine with `|`.
 enum class ColorWriteMask : u32 {
     None = 0,       ///< Write nothing.

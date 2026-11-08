@@ -271,12 +271,10 @@ Pixel DrawWithKey(rhi::Device* device, std::initializer_list<const char*> names)
 
     rhi::ShaderDesc vs;
     vs.stage = rhi::ShaderStage::Vertex;
-    vs.words = shaders::kFullscreenVertSpv;
-    vs.word_count = shaders::kFullscreenVertSpvWordCount;
+    vs.SetCode(rhi::SpirvBlob(shaders::kFullscreenVertSpv, shaders::kFullscreenVertSpvWordCount));
     rhi::ShaderDesc fs;
     fs.stage = rhi::ShaderStage::Fragment;
-    fs.words = module->words;
-    fs.word_count = module->word_count;
+    fs.SetCode(module->Blob(rhi::ShaderFormat::Spirv));
     const rhi::ShaderHandle vshader = device->CreateShader(vs);
     const rhi::ShaderHandle fshader = device->CreateShader(fs);
     REQUIRE(vshader.IsValid());

@@ -285,12 +285,10 @@ TEST_CASE("A uniform, texture and sampler bind group and a push constant reach t
 
     ShaderDesc vs;
     vs.stage = ShaderStage::Vertex;
-    vs.words = shaders::kFullscreenVertSpv;
-    vs.word_count = shaders::kFullscreenVertSpvWordCount;
+    vs.SetCode(SpirvBlob(shaders::kFullscreenVertSpv, shaders::kFullscreenVertSpvWordCount));
     ShaderDesc fs;
     fs.stage = ShaderStage::Fragment;
-    fs.words = shaders::kBindingsTestFragSpv;
-    fs.word_count = shaders::kBindingsTestFragSpvWordCount;
+    fs.SetCode(SpirvBlob(shaders::kBindingsTestFragSpv, shaders::kBindingsTestFragSpvWordCount));
     const ShaderHandle vshader = device->CreateShader(vs);
     const ShaderHandle fshader = device->CreateShader(fs);
     REQUIRE(vshader.IsValid());
