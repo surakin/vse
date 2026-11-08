@@ -12,7 +12,7 @@
 #   would have different bodies in different translation units (an ODR violation). Headers use ENGINE_ASSERT or
 #   ENGINE_ENSURE; the definitions in engine/foundation/log/assert.h are the one exception.
 # Rule 2: the third-party library headers are included only by the one implementation file named for each library in the
-#   BOUNDARY table (`header|path|reason` lines): `backtrace.h` (libbacktrace) and `sentry.h` (sentry-native). Anywhere
+#   BOUNDARY table (`header|path|reason` lines): `backtrace.h` (libbacktrace), `sentry.h` (sentry-native) and `ft2build.h` (FreeType, Phase 14 Day 175: every other FreeType header is reached through it). Anywhere
 #   under engine/, game/, tools/ and tests/ except fixtures. Until Days 94 and 95 add the files, nobody may include them.
 # Rule 4 (Phase 13 Day 150): the Windows SDK headers (windows.h, winternl.h, wtsapi32.h, shlobj.h, dbghelp.h and the rest of the list
 #   below, d3d12*.h, dxgi*.h) appear only under the Windows directories (engine/foundation/{os,io,settings}/windows/, engine/jobs/windows/,
@@ -60,6 +60,7 @@ endfunction()
 # The library boundary table: allowed[<header>] lists the files that may include it.
 set(allowed_backtrace "")
 set(allowed_sentry "")
+set(allowed_ft2build "")
 read_lines("${BOUNDARY}" boundary_lines)
 foreach(line IN LISTS boundary_lines)
   string(STRIP "${line}" line)
@@ -81,6 +82,8 @@ foreach(line IN LISTS boundary_lines)
     list(APPEND allowed_backtrace "${path}")
   elseif(header STREQUAL "sentry.h")
     list(APPEND allowed_sentry "${path}")
+  elseif(header STREQUAL "ft2build.h")
+    list(APPEND allowed_ft2build "${path}")
   else()
     gate_problem("boundary entry names an unknown header: ${header}")
   endif()
@@ -90,7 +93,7 @@ endforeach()
 set(ident_re "(^|[^A-Za-z0-9_])(ucontext_t|siginfo_t|pid_t|HANDLE|SIG[A-Z0-9]+|(fork|waitpid|sigaction)[ \t]*\\()([^A-Za-z0-9_]|$)")
 set(platform_include_re "^[ \t]*#[ \t]*include[ \t]*[<\"](unistd\\.h|windows\\.h|signal\\.h|csignal|sys/[A-Za-z0-9_/]+\\.h|poll\\.h|spawn\\.h|fcntl\\.h|dirent\\.h)[>\"]")
 set(proc_re "/proc")
-set(lib_include_re "^[ \t]*#[ \t]*include[ \t]*[<\"]([A-Za-z0-9_/]*/)?(backtrace|sentry)\\.h[>\"]")
+set(lib_include_re "^[ \t]*#[ \t]*include[ \t]*[<\"]([A-Za-z0-9_/]*/)?(backtrace|sentry|ft2build)\\.h[>\"]")
 
 # Strips comments from the line in `l`; `in_block` tracks /* ... */ across lines. Sets `code` (strings kept) in the caller.
 # It reads the caller's variable instead of taking an argument: macro arguments are parsed again, which mangles backslashes.
@@ -166,8 +169,13 @@ foreach(f IN LISTS all_files)
   foreach(l IN LISTS lines)
     math(EXPR n "${n}+1")
     strip_comments()
+    set(which "")
     if(code MATCHES "${lib_include_re}")
       set(which "${CMAKE_MATCH_2}")
+    elseif(code MATCHES "^[ \t]*#[ \t]*include[ \t]*[<\"]freetype/[A-Za-z0-9_/]+\\.h[>\"]")
+      set(which "ft2build") # a <freetype/...> include counts as ft2build.h: FreeType's own headers are the same library: they need no ft2build.h to be reached
+    endif()
+    if(NOT which STREQUAL "")
       list(FIND allowed_${which} "${f}" idx)
       if(idx LESS 0)
         gate_problem("${f}:${n}: includes ${which}.h, which only its one implementation file may include: ${l}")

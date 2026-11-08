@@ -1918,6 +1918,16 @@ debug::kMaxThreadNameBytes	variable	foundation/debug	debug-kmaxthreadnamebytes	f
 debug::CurrentThreadId()	function	foundation/debug	debug-currentthreadid	foundation-debug.md	engine/foundation/debug/thread_info.h:14
 debug::SetCrashThreadName(const char*)	function	foundation/debug	debug-setcrashthreadname-const-char-star	foundation-debug.md	engine/foundation/debug/thread_info.h:20
 debug::CrashThreadName()	function	foundation/debug	debug-crashthreadname	foundation-debug.md	engine/foundation/debug/thread_info.h:26
+text::LibraryVersion	struct	text	text-libraryversion	text.md	engine/text/library.h:16
+text::LibraryVersion::major	variable	text	text-libraryversion-major	text.md	engine/text/library.h:18
+text::LibraryVersion::minor	variable	text	text-libraryversion-minor	text.md	engine/text/library.h:20
+text::LibraryVersion::patch	variable	text	text-libraryversion-patch	text.md	engine/text/library.h:22
+text::LibraryAllocationStats	struct	text	text-libraryallocationstats	text.md	engine/text/library.h:29
+text::LibraryAllocationStats::allocations	variable	text	text-libraryallocationstats-allocations	text.md	engine/text/library.h:31
+text::LibraryAllocationStats::frees	variable	text	text-libraryallocationstats-frees	text.md	engine/text/library.h:33
+text::LibraryAllocationStats::peak_bytes	variable	text	text-libraryallocationstats-peak-bytes	text.md	engine/text/library.h:35
+text::LibraryAllocationStats::live_bytes_at_end	variable	text	text-libraryallocationstats-live-bytes-at-end	text.md	engine/text/library.h:37
+text::ProbeLibrary(LibraryVersion*,LibraryAllocationStats*)	function	text	text-probelibrary-libraryversion-star-libraryallocationstats-star	text.md	engine/text/library.h:48
 jobs::IoRequest	alias	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:52
 jobs::IoThread	class	jobs	jobs-iothread	jobs.md	engine/jobs/async_io.h:64
 jobs::IoThread::IoThread()	function	jobs	jobs-iothread-iothread	jobs.md	engine/jobs/async_io.h:67

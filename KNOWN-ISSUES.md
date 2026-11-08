@@ -46,6 +46,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - Phase 8 Day 103 spike: each Vulkan device creation leaves about 3 allocations (about 2 KiB) held through `libdbus-1.so` (the driver's loader path, covered by `tests/rhi/lsan.supp`'s existing entry); 20 creations under ASan counted 60 suppressed allocations. A 100-reset loop retains about 200 KiB; the loop test budgets for it.
 - Phase 8 Day 103 spike: after an injected device loss, resident memory rose 5.4 MiB (26412 to 31812 KiB) and stayed there for the next two iterations; one sample, not investigated. Day 111: not reproduced; eight injected losses on one process cost 268 KiB resident.
 - Warnings as errors (2026-11-07, CLAUDE.md): verified with Clang on Linux (unity and non-unity, plain/asan/tsan targets) and on Windows with cl (unity and non-unity, plain and asan) and clang-cl (unity; Phase 13 Day 157's first commit fixed the five Windows-only warnings). GCC, the fallback when `clang++` is missing, builds clean in unity and non-unity (2026-11-07).
+- Phase 14 Day 175 (2026-11-08, Linux machine): **open until the Windows PC runs it.** `third_party/freetype/CMakeLists.txt` (the quoted `FT_CONFIG_OPTIONS_H` definition, `/W0`, the module list), `engine/text`, `tests/text` and the extended `platform_neutral_check` (the `<freetype/...>` rule) were built and tested only on Linux (Clang and GCC, unity on and off; plain, asan, tsan). Not built with cl or clang-cl, and the text tests were not run there (Windows flavors for phase 14: plain, asan).
 
 ## Deferred items
 
@@ -55,6 +56,8 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 
 | Item | Needed by | Where recorded |
 |---|---|---|
+| A shipped-notices file with the FreeType credit line the FTL requires ("Portions of this software are copyright (c) <year> The FreeType Project (www.freetype.org). All rights reserved."); the engine has no such file yet | The first release | `third_party/freetype/VENDORED.md`, `PLAN.md` assumption #17 |
+| The optimized (release) binary-size cost of FreeType (Day 175 measured only the default configuration: `libfreetype.a` 2.9 MB) | The first release build | `docs/superpowers/specs/2026-11-08-text-design.md` section 9 |
 | Pipeline creation time for permuted shaders was not measured; specialization constants are the Vulkan-only escape hatch if profiling asks for it | Only if profiling shows a problem | `docs/superpowers/specs/2026-11-04-renderer-design.md` R10.1 |
 | Clip-space Y flip for Metal (D3D12's is `ENGINE_CLIP` in the D3D12 build since Phase 13 Day 163, `shaders/target_common.slang`) | Phase 22 | `shaders/README.md`, RHI portability review |
 | Metal renames an entry point called `main` | Phase 22 | `shaders/README.md` |

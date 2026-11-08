@@ -397,6 +397,11 @@ interpretations keep it buildable — flag any that don't match intent:
     present the same way on every platform in this project's roadmap
     (Android, iOS, consoles — Phases 23-24) — the same reasoning that
     put LuaJIT under vendored/embedded rather than system-linked.
+    **Pinned (Phase 14 Day 175): FreeType 2.15.0** (`freetype-2.15.0.tar.xz`, SHA-256 `93cd47eb719c325107f2d3cf087d06299e944c3b48a40b55537302304dea1dd5`),
+    used under the **FreeType License (FTL, BSD-style with a credit clause; the license text is `third_party/freetype/docs/FTL.TXT`; the credit line goes into the notices file a first release adds, filed in `KNOWN-ISSUES.md`)**, not the GPLv2
+    alternative. The engine builds TrueType and OpenType/CFF outlines, the smooth rasterizer and the auto-hinter only (no Type 1, PCF, BDF, SVG, WOFF/zlib,
+    PNG, HarfBuzz); every block FreeType allocates comes from the engine's heap through a counting `FT_Memory`; and one file, `engine/text/font_freetype.cpp`,
+    names FreeType (the `platform_neutral_check` library boundary). The font the engine ships is Liberation Sans Regular (SIL OFL 1.1, `assets/fonts/`).
     **Scope for Phase 14:** font parsing, glyph rasterization/hinting,
     and glyph-atlas packing (uploaded through the Phase 4 RHI as a
     texture) are FreeType's job. Text *shaping* for complex scripts

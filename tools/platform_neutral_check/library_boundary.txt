@@ -2,3 +2,4 @@
 # Each library's header is included by exactly one engine file.
 backtrace.h|engine/foundation/debug/stack_trace_backtrace.cpp|The facade over libbacktrace (Phase 7 Day 94); everything else uses debug/stack_trace.h.
 sentry.h|engine/foundation/debug/crash_handler_sentry.cpp|The facade over sentry-native (Phase 7 Day 95); everything else uses debug/crash_handler.h.
+ft2build.h|engine/text/font_freetype.cpp|The facade over FreeType (Phase 14 Day 175); everything else uses the text module's own types (text/library.h, and from Day 176 text/font.h).

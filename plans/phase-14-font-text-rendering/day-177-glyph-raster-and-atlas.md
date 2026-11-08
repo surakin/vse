@@ -21,7 +21,7 @@ Turn glyphs into coverage bitmaps and pack them into atlas pages, entirely on th
       range (not a golden picture: a property test that the sum of coverage is close to the glyph's area).
 - [ ] **Tests** (`tests/text/glyph_atlas_test.cpp`, phase 14): the packer never overlaps two rectangles (randomized, 10k rectangles, fixed seed), respects padding and bounds, fills a page to a known
       fraction; the atlas returns the same entry for the same key, adds a page when full, counts failures, tracks dirty rectangles exactly (a placed glyph dirties exactly its rectangle); the 94 printable
-      ASCII glyphs at 16 px pack into one 256x256 page; rasterized "Hello" bitmaps match the PGM samples of Day 175 byte for byte (the FreeType version is pinned, so they are stable).
+      ASCII glyphs at 16 px pack into one 256x256 page; rasterized "Hello" bitmaps match PGM goldens committed by this day under `tests/text/golden/` (written from the new `Font::Render` and checked by eye against `docs/superpowers/specs/2026-11-08-text-hinting-samples.png`; the FreeType version is pinned, so they are stable).
 - [ ] **Runs (CLAUDE.md "Tests run by phase"):** `scripts/test-phase.sh --affected` plain; then the asan and tsan flavors if the day touched lifetime, memory or concurrency code;
       quote each run's final `ran X of Y tests (phases ...)` line in this file. `ctest -L docs` when a public header or a guide changed. Build clean (warnings are errors) with
       Clang and GCC, unity on and off.

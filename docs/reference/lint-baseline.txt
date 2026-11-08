@@ -12,8 +12,9 @@ module	foundation/settings	507	507
 module	platform/os	46	46
 module	platform/window-input	278	278
 module	foundation/debug	208	208
+module	text	10	10
 module	jobs	165	165
 module	rhi	780	780
-module	renderer	965	965
+module	renderer	968	968
 module	rhi-vulkan	432	432
 module	rhi-dx12	310	310

@@ -997,3 +997,9 @@ the UI); every phase from the old 16 up moved up by one (ECS 17, physics 18, aud
 
 Plan amendment (2026-11-08): Phase 14 gets a **maximum rasterized pixel size** (value fixed by Day 175's measurements, starting from 128 px; Days 175, 176, 177, 181, 183). Text above it still draws (scaled from the
 maximum raster, counted and logged) until **Phase 16** draws it sharp as filled 2D meshes from the glyph outlines, sharing the flatten-and-triangulate code with the 3D text; Phase 16 is now "3D text, large 2D text & colored glyphs".
+
+Phase 14 **Day 175 (2026-11-08, Linux machine): design spec, FreeType, the font, the module.** `CURRENT_PHASE` is 14. Spec with experiments a-d (`kMaxAtlasPixelSize = 128`, light hinting); FreeType 2.15.0
+vendored (`third_party/freetype`, FTL), Liberation Sans in `assets/fonts/`, `engine/text` (a probe that starts FreeType through the engine heap and counts every block) and `tests/text`, the boundary gate extended. Runs (reduced):
+`ran 1411 of 3612 tests (phases: all; flavors: plain; display: included; crash tests: excluded) in 57 s`, asan `ran 999 of 3612 tests (phases: all; flavors: asan; display: included; crash tests: excluded) in 42 s`,
+tsan `ran 708 of 3612 tests (phases: all; flavors: tsan; display: included; crash tests: excluded) in 12 s`; `ctest -L docs` 6 of 6. Code review (high): 8 findings, all fixed. **Not done: the Windows build of the day's code**
+(`KNOWN-ISSUES.md`). **Next: Day 176 (the font face).**

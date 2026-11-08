@@ -88,6 +88,8 @@ module engine/foundation/settings/ settings 8
 module engine/platform/ platform 9
 # 10 jobs
 module engine/jobs/ jobs 10
+# 10 text (Phase 14 Day 175): fonts, glyph atlas packing, layout and cursor; the foundation only, FreeType through one file (platform_neutral_check)
+module engine/text/ text 10
 # 11 RHI: the neutral interface and one module per backend
 module engine/rhi/ rhi 11
 module engine/rhi/null/ rhi/null 11
@@ -185,6 +187,7 @@ target foundation_settings foundation_settings
 target foundation foundation
 target hello_window game/hello_window
 target jobs jobs
+target text text
 target platform platform
 target rhi rhi
 target rhi_vulkan rhi/vulkan

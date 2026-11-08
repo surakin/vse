@@ -9,6 +9,7 @@
 *.dmp      binary
 *.bin      binary
 *.spv      binary
+*.ttf      binary
 
 # Kept byte for byte as stored.
 # The docgen fixture tests CRLF input on purpose.

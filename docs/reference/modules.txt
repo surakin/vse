@@ -54,6 +54,12 @@ module foundation/debug "Foundation: Debugging"
   strict ownership
   strict failure
 
+module text "Text"
+  header engine/text/*.h
+  strict thread-safety
+  strict ownership
+  strict failure
+
 module jobs "The Job System"
   header engine/jobs/*.h
   strict thread-safety

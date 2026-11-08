@@ -2,10 +2,10 @@
 #
 # `<pattern>  <phase>`: a source path relative to the repo root (`*` inside one segment; a trailing `/` is a whole
 # directory), or `test:<glob>` for a test that is not a Catch2 test case. Phases: 0 foundation, 1 Linux platform,
-# 2 jobs, 3 docs tooling, 4 RHI, 5 renderer, 6 test scoping, 7 debugging facilities, 8 RHI reset, 9 file handling, 10 standard types and containers, 11 settings system, 12 module layering, 13 Windows port. The rule is the phase that owns the behavior, not the directory.
+# 2 jobs, 3 docs tooling, 4 RHI, 5 renderer, 6 test scoping, 7 debugging facilities, 8 RHI reset, 9 file handling, 10 standard types and containers, 11 settings system, 12 module layering, 13 Windows port, 14 font and text. The rule is the phase that owns the behavior, not the directory.
 #
 # Adding a Catch2 test file: add a line here, or the build stops naming the file. Adding another kind of test: add a
-# `test:` line and call engine_label_tests() after add_test. Labels are `phase0` ... `phase13`.
+# `test:` line and call engine_label_tests() after add_test. Labels are `phase0` ... `phase14`.
 # `flavors <phase> plain,asan,tsan` lines (below) list the sanitizer flavors each phase has tests in; a new phase needs one.
 
 # Which flavors have tests of each phase (plain = neither asan nor tsan). test_phase_labels fails if a phase gains or
@@ -28,6 +28,8 @@ flavors 12  plain
 # or macos) applies on that platform only; with no line for the platform it is running on, a phase must have no tests there.
 flavors 13  linux: plain,asan,tsan
 flavors 13  windows: plain,asan
+flavors 14  linux: plain,asan,tsan
+flavors 14  windows: plain,asan
 # What the Windows build has of each phase (Phase 13 ports one layer per day; each day updates its phases here; `none` = no tests yet).
 # MSVC has no ThreadSanitizer, so no Windows line lists tsan.
 flavors 0   windows: plain,asan
@@ -237,3 +239,6 @@ testopt:renderer_demo_device_loss_trace_dx12    13
 testopt:renderer_demo_oom_device_dx12           13
 tests/windows/                                  13
 testopt:windows_*                               13
+
+# --- Phase 14: font and text (FreeType, glyph atlas, layout, cursor, the overlay text pass) ---
+tests/text/                                     14
