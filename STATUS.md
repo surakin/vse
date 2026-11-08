@@ -875,3 +875,11 @@ bindings, both checked by `shader_mint`. New `BindingType::ReadOnlyStorageBuffer
 SPIR-V of all 24 shaders is unchanged. Runs: `ran 1212 of 2369 tests (phases: all; flavors: plain; display: included; crash tests: excluded)`, asan
 `ran 892 of 2369` (it found a descriptor-pool overflow, fixed). Review: 5 findings, 3 fixed, 2 declined. Linux: pending until the phase close.
 **Next: Day 164 (the DX12 device).**
+
+Phase 13 **Day 164 (2026-11-08, Windows PC): the DX12 device.** New library `rhi_dx12` (`engine/rhi/dx12/`), registered as `dx12` (`Auto` never
+picks it until Day 172): adapters from DXGI in high-performance order plus WARP, with stable ids (`dx12-<vendor>-<device>-<subsystem>-<revision>`)
+and LUIDs; devices at feature level 12_0 with the debug layer routed to `LogRhi` and counted, GPU-based validation for `sync_validation`, and
+live objects checked at destruction; capabilities from the D3D12 constants; one direct queue and fence with bounded waits; frames and fault
+injection as on Vulkan. Resources, descriptors, pipelines, command lists and the swapchain are placeholders until Days 165-169. Devices were made on
+the Radeon 860M and WARP with the debug layer silent. Runs: `ran 1222 of 2389 tests (phases: all; flavors: plain; display: included; crash tests:
+excluded)`, asan `ran 902 of 2389`. Review: 4 findings, 2 fixed, 2 declined. Linux: pending until the phase close. **Next: Day 165 (DX12 resources).**

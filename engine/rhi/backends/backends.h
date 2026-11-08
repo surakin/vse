@@ -5,7 +5,7 @@
 namespace engine_placeholder::rhi {
 
 /// Registers every backend compiled into this build with the backend registry: the null backend and Vulkan everywhere,
-/// Direct3D 12 on Windows once its library exists.
+/// Direct3D 12 on Windows (Phase 13 Day 164).
 ///
 /// A program calls this once at startup, before [[rhi::CreateDevice]], [[rhi::EnumerateAdapters]] or a
 /// [[rhi::DeviceHost]]; calling it again changes nothing. Registration is explicit, never a global constructor, so a

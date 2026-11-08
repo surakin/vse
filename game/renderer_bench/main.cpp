@@ -123,6 +123,7 @@ rhi::DevicePtr MakeDevice(const Options& o, rhi::NullDevicePtr* null_holder) {
         return rhi::DevicePtr();
     }
     rhi::DeviceCreateInfo info;
+    info.backend = rhi::Backend::Vulkan; // the benchmarks draw with Vulkan until Phase 13 Day 173 lets them choose
     info.pipeline_cache = false;
     return rhi::CreateDevice(info);
 }

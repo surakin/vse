@@ -21,3 +21,4 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [The Render Hardware Interface](rhi.md) | 19 | 774 |
 | [The renderer](renderer.md) | 20 | 1003 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 18 | 454 |
+| [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 7 | 116 |

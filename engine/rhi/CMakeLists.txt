@@ -51,6 +51,17 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   list(APPEND RHI_VULKAN_SOURCES vulkan/windows/vk_win32_surface.cpp)
 endif()
 
+# The Direct3D 12 backend (Phase 13, Days 164-172), Windows only: the one place D3D12 and DXGI are named (rhi_boundary_check). It links
+# the OS's own d3d12.dll and dxgi.dll through their import libraries.
+set(RHI_DX12_SOURCES
+  dx12/dx12_result.cpp
+  dx12/dx12_debug.cpp
+  dx12/dx12_adapters.cpp
+  dx12/dx12_device.cpp
+  dx12/dx12_device_later.cpp
+  dx12/dx12_backend.cpp
+)
+
 # Headers are included as "rhi/<name>.h", rooted at engine/.
 set(RHI_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -65,10 +76,21 @@ function(engine_add_rhi_libs suffix foundation_lib jobs_lib platform_lib)
   target_compile_options(rhi_vulkan${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   target_link_libraries(rhi_vulkan${suffix} PUBLIC rhi${suffix})
 
+  if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    add_library(rhi_dx12${suffix} STATIC ${RHI_DX12_SOURCES})
+    target_include_directories(rhi_dx12${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
+    target_compile_options(rhi_dx12${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
+    target_link_libraries(rhi_dx12${suffix} PUBLIC rhi${suffix} d3d12 dxgi dxguid)
+  endif()
+
   add_library(rhi_backends${suffix} STATIC backends/backends.cpp)
   target_include_directories(rhi_backends${suffix} PUBLIC ${RHI_INCLUDE_ROOT})
   target_compile_options(rhi_backends${suffix} PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
   target_link_libraries(rhi_backends${suffix} PUBLIC rhi_vulkan${suffix} rhi${suffix})
+  if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    target_link_libraries(rhi_backends${suffix} PUBLIC rhi_dx12${suffix})
+    target_compile_definitions(rhi_backends${suffix} PRIVATE ENGINE_RHI_HAVE_DX12=1) # the table in backends.cpp lists it
+  endif()
 endfunction()
 
 engine_add_rhi_libs("" foundation jobs platform)

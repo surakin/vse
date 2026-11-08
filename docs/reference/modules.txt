@@ -77,3 +77,6 @@ module renderer "The renderer"
 module rhi-vulkan "The Vulkan backend (loader, function tables, result helpers)"
   header engine/rhi/vulkan/*.h
   header engine/rhi/vulkan/windows/*.h
+
+module rhi-dx12 "The Direct3D 12 backend (Windows)"
+  header engine/rhi/dx12/*.h

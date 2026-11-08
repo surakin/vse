@@ -224,6 +224,7 @@ void BenchUploads(Device* device) {
 // Creates a device, builds a cube pipeline and returns the time CubeRenderer::Create took (shaders + pipeline + buffers).
 double TimePipeline(bool cache, const char* dir) {
     DeviceCreateInfo info;
+    info.backend = Backend::Vulkan; // the demos and benchmarks draw with Vulkan until Phase 13 Day 173 lets them choose
     info.validation = ValidationSetting::Off; // a baseline measures the engine, not the layer
     info.pipeline_cache = cache;
     info.pipeline_cache_dir = dir;
@@ -296,6 +297,7 @@ int main(int argc, char** argv) {
         return 2;
     }
     DeviceCreateInfo info;
+    info.backend = Backend::Vulkan; // the demos and benchmarks draw with Vulkan until Phase 13 Day 173 lets them choose
     info.validation = ValidationSetting::Off; // a baseline measures the engine, not the layer
     DevicePtr device = CreateDevice(info);
     if (device == nullptr) {

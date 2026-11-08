@@ -217,6 +217,7 @@ demo::DemoSettings* g_demo_settings = nullptr; // the settings of this run
 
 DeviceCreateInfo DeviceInfo(const Options& options) {
     DeviceCreateInfo info;
+    info.backend = Backend::Vulkan; // the demos and benchmarks draw with Vulkan until Phase 13 Day 173 lets them choose
     g_demo_settings->FillDeviceCreateInfo(&info); // the validation layer, the GPU, the pipeline cache and the frames in flight come from the settings
     info.faults.lose_device_at_frame = static_cast<u32>(options.inject_device_loss);
     info.faults.fail_allocations_from = static_cast<u32>(options.inject_oom);
@@ -226,6 +227,7 @@ DeviceCreateInfo DeviceInfo(const Options& options) {
 // Prints the GPUs a Vulkan device can be made on, one per line, and returns the exit code.
 int ListGpus() {
     DeviceCreateInfo info;
+    info.backend = Backend::Vulkan; // the demos and benchmarks draw with Vulkan until Phase 13 Day 173 lets them choose
     AdapterList list;
     if (!EnumerateAdapters(info, &list)) {
         std::fprintf(stderr, "rhi_demo: cannot list the GPUs (no Vulkan loader or instance)\n");

@@ -10,6 +10,7 @@ engine/platform/windows/window_host_windows.cpp|ENGINE_WINDOW_BACKEND is read wh
 engine/platform/windows/entry_point_windows.cpp|The windowed programs' entry point reads the process command line (GetCommandLineW, CommandLineToArgvW) to build UTF-8 argv before any Settings exist; the settings system parses it from there.
 engine/jobs/topology.cpp|ENGINE_JOB_THREADS is read when the scheduler starts, which can be before any Settings exists.
 engine/rhi/vulkan/vk_instance.cpp|The validation variables (ENGINE_RHI_VALIDATION*, _FATAL) are read at Vulkan instance creation, a process-wide switch for tests and CI; ENGINE_RHI_VALIDATION_SYNC is also renderer.sync_validation.
+engine/rhi/dx12/dx12_device.cpp|ENGINE_RHI_VALIDATION and ENGINE_RHI_VALIDATION_SYNC are read at D3D12 device creation, the same process-wide switches as the Vulkan backend's (vk_instance.cpp); the debug layer is process-wide too.
 engine/rhi/vulkan/vk_loader.cpp|The Vulkan library path override is read while loading the loader, before a device or any Settings exists.
 engine/rhi/vulkan/vulkan_device.cpp|ENGINE_RHI_GPU is read when a device picks its adapter (the same value is renderer.adapter, which fills DeviceCreateInfo in programs that have Settings).
 engine/rhi/vulkan/vulkan_device_pipelines.cpp|ENGINE_RHI_CACHE_DIR is read when the pipeline cache is opened (the same value is rhi.pipeline_cache_dir, which fills DeviceCreateInfo in programs that have Settings).

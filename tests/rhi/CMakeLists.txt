@@ -49,6 +49,10 @@ set(RHI_TEST_SOURCES
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND RHI_TEST_SOURCES lsan_options.cpp)
 endif()
+# The Direct3D 12 backend's own tests (Phase 13, Days 164-172): Windows only, linked through rhi_backends (which links rhi_dx12).
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  list(APPEND RHI_TEST_SOURCES dx12_device_test.cpp)
+endif()
 
 # Header self-containment: one generated translation unit per public RHI
 # header that includes only that header, so a header that relies on another

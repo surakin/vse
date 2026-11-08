@@ -189,6 +189,11 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   Linux run") were built and tested only on Windows, among them `vk_loader.cpp` (the loader name from `os::VulkanLoaderName`),
   `vk_instance.cpp`, `vulkan_device_surface.cpp`, `vulkan_device_buffers.cpp` (`WaitIdle` also waits on the timeline), the RHI and renderer
   CMake (sanitizer flavors only where they exist, the Xlib surface in the Linux list) and the ported `tests/rhi` files.
+- Phase 13 Day 164 (2026-11-08), open until the Linux run at the phase close: the shared changes of the day (listed in the Day 164 file, "For the
+  Linux run") were built and tested only on Windows, among them `rhi/backends/backends.cpp`, `platform_neutral_check` and the regenerated
+  reference with the new `rhi-dx12` page.
+- Phase 13 Day 164, until Day 169: the DX12 backend's resources, descriptors, pipelines, command lists and swapchain are placeholders
+  (`engine/rhi/dx12/dx12_device_later.cpp`) that log "not implemented yet" and fail; `Auto` never picks the backend, and the demos pin Vulkan.
 - Phase 13 Day 163: Windows command lines are quoted by three separate copies of the same rule: `os/windows/debug/death_test.cpp`
   (`AppendQuoted`), `tools/docgen/src/windows/child_process_windows.cpp` and `tools/shader_mint/run_process.cpp` (`AppendWindowsArgument`, the
   only one with unit tests). A shared `os::` process helper would replace them; not done (code review, declined).

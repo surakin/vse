@@ -4338,3 +4338,119 @@ rhi::vulkan::VulkanDevice::ReportResult(VkResult)	function	rhi-vulkan	rhi-vulkan
 rhi::vulkan::VulkanDevice::InjectSubmitFailure(VkResult)	function	rhi-vulkan	rhi-vulkan-vulkandevice-injectsubmitfailure-vkresult	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:386
 rhi::vulkan::VulkanDevice::CommandPoolCount() const	function	rhi-vulkan	rhi-vulkan-vulkandevice-commandpoolcount-const	rhi-vulkan.md	engine/rhi/vulkan/vulkan_device.h:389
 rhi::vulkan::CreateWin32Surface(void*,void*,void*,void*,u64*)	function	rhi-vulkan	rhi-vulkan-createwin32surface-void-star-void-star-void-star-void-star-u64-star	rhi-vulkan.md	engine/rhi/vulkan/windows/vk_win32_surface.h:23
+rhi::dx12::ComRef	class	rhi-dx12	rhi-dx12-comref	rhi-dx12.md	engine/rhi/dx12/com_ref.h:13
+rhi::dx12::ComRef::ComRef()	function	rhi-dx12	rhi-dx12-comref-comref	rhi-dx12.md	engine/rhi/dx12/com_ref.h:17
+rhi::dx12::ComRef::ComRef(T*)	function	rhi-dx12	rhi-dx12-comref-comref-t-star	rhi-dx12.md	engine/rhi/dx12/com_ref.h:21
+rhi::dx12::ComRef::ComRef(const ComRef&)	function	rhi-dx12	rhi-dx12-comref-comref-const-comref-amp	rhi-dx12.md	engine/rhi/dx12/com_ref.h:22
+rhi::dx12::ComRef::operator=(const ComRef&)	function	rhi-dx12	rhi-dx12-comref-operator-eq-const-comref-amp	rhi-dx12.md	engine/rhi/dx12/com_ref.h:23
+rhi::dx12::ComRef::ComRef(ComRef&&) noexcept	function	rhi-dx12	rhi-dx12-comref-comref-comref-amp-amp-noexcept	rhi-dx12.md	engine/rhi/dx12/com_ref.h:25
+rhi::dx12::ComRef::operator=(ComRef&&) noexcept	function	rhi-dx12	rhi-dx12-comref-operator-eq-comref-amp-amp-noexcept	rhi-dx12.md	engine/rhi/dx12/com_ref.h:27
+rhi::dx12::ComRef::~ComRef()	function	rhi-dx12	rhi-dx12-comref-tilde-comref	rhi-dx12.md	engine/rhi/dx12/com_ref.h:36
+rhi::dx12::ComRef::Reset()	function	rhi-dx12	rhi-dx12-comref-reset	rhi-dx12.md	engine/rhi/dx12/com_ref.h:39
+rhi::dx12::ComRef::Share() const	function	rhi-dx12	rhi-dx12-comref-share-const	rhi-dx12.md	engine/rhi/dx12/com_ref.h:49
+rhi::dx12::ComRef::Detach()	function	rhi-dx12	rhi-dx12-comref-detach	rhi-dx12.md	engine/rhi/dx12/com_ref.h:58
+rhi::dx12::ComRef::Put()	function	rhi-dx12	rhi-dx12-comref-put	rhi-dx12.md	engine/rhi/dx12/com_ref.h:66
+rhi::dx12::ComRef::PutVoid()	function	rhi-dx12	rhi-dx12-comref-putvoid	rhi-dx12.md	engine/rhi/dx12/com_ref.h:73
+rhi::dx12::ComRef::Get() const	function	rhi-dx12	rhi-dx12-comref-get-const	rhi-dx12.md	engine/rhi/dx12/com_ref.h:75
+rhi::dx12::ComRef::operator->() const	function	rhi-dx12	rhi-dx12-comref-operator-minus-gt-const	rhi-dx12.md	engine/rhi/dx12/com_ref.h:77
+rhi::dx12::ComRef::operator bool() const	function	rhi-dx12	rhi-dx12-comref-operator-bool-const	rhi-dx12.md	engine/rhi/dx12/com_ref.h:79
+rhi::dx12::AdapterFacts	struct	rhi-dx12	rhi-dx12-adapterfacts	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:16
+rhi::dx12::AdapterFacts::name	variable	rhi-dx12	rhi-dx12-adapterfacts-name	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:18
+rhi::dx12::AdapterFacts::vendor_id	variable	rhi-dx12	rhi-dx12-adapterfacts-vendor-id	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:20
+rhi::dx12::AdapterFacts::device_id	variable	rhi-dx12	rhi-dx12-adapterfacts-device-id	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:22
+rhi::dx12::AdapterFacts::subsystem_id	variable	rhi-dx12	rhi-dx12-adapterfacts-subsystem-id	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:24
+rhi::dx12::AdapterFacts::revision	variable	rhi-dx12	rhi-dx12-adapterfacts-revision	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:26
+rhi::dx12::AdapterFacts::luid_low	variable	rhi-dx12	rhi-dx12-adapterfacts-luid-low	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:28
+rhi::dx12::AdapterFacts::luid_high	variable	rhi-dx12	rhi-dx12-adapterfacts-luid-high	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:30
+rhi::dx12::AdapterFacts::dedicated_video_memory	variable	rhi-dx12	rhi-dx12-adapterfacts-dedicated-video-memory	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:32
+rhi::dx12::AdapterFacts::software	variable	rhi-dx12	rhi-dx12-adapterfacts-software	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:34
+rhi::dx12::AdapterFacts::driver_version	variable	rhi-dx12	rhi-dx12-adapterfacts-driver-version	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:36
+rhi::dx12::AdapterFacts::feature_level_ok	variable	rhi-dx12	rhi-dx12-adapterfacts-feature-level-ok	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:38
+rhi::dx12::AdapterFacts::binding_tier	variable	rhi-dx12	rhi-dx12-adapterfacts-binding-tier	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:40
+rhi::dx12::AdapterFacts::uma	variable	rhi-dx12	rhi-dx12-adapterfacts-uma	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:42
+rhi::dx12::MakeAdapterInfo(const AdapterFacts&,bool)	function	rhi-dx12	rhi-dx12-makeadapterinfo-const-adapterfacts-amp-bool	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:56
+rhi::dx12::AdapterSet	struct	rhi-dx12	rhi-dx12-adapterset	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:61
+rhi::dx12::AdapterSet::adapters	variable	rhi-dx12	rhi-dx12-adapterset-adapters	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:63
+rhi::dx12::AdapterSet::facts	variable	rhi-dx12	rhi-dx12-adapterset-facts	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:65
+rhi::dx12::AdapterSet::list	variable	rhi-dx12	rhi-dx12-adapterset-list	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:67
+rhi::dx12::ListAdapters(IDXGIFactory6*,bool,AdapterSet*)	function	rhi-dx12	rhi-dx12-listadapters-idxgifactory6-star-bool-adapterset-star	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:83
+rhi::dx12::PickAdapter(const AdapterSet&,const char*,char*,usize)	function	rhi-dx12	rhi-dx12-pickadapter-const-adapterset-amp-const-char-star-char-star-usize	rhi-dx12.md	engine/rhi/dx12/dx12_adapters.h:95
+rhi::RegisterDx12Backend()	function	rhi-dx12	rhi-registerdx12backend	rhi-dx12.md	engine/rhi/dx12/dx12_backend.h:16
+rhi::dx12::DebugMessageCounts	struct	rhi-dx12	rhi-dx12-debugmessagecounts	rhi-dx12.md	engine/rhi/dx12/dx12_debug.h:14
+rhi::dx12::DebugMessageCounts::errors	variable	rhi-dx12	rhi-dx12-debugmessagecounts-errors	rhi-dx12.md	engine/rhi/dx12/dx12_debug.h:16
+rhi::dx12::DebugMessageCounts::warnings	variable	rhi-dx12	rhi-dx12-debugmessagecounts-warnings	rhi-dx12.md	engine/rhi/dx12/dx12_debug.h:18
+rhi::dx12::DebugMessageCounts::live_objects	variable	rhi-dx12	rhi-dx12-debugmessagecounts-live-objects	rhi-dx12.md	engine/rhi/dx12/dx12_debug.h:20
+rhi::dx12::GetDebugMessageCounts()	function	rhi-dx12	rhi-dx12-getdebugmessagecounts	rhi-dx12.md	engine/rhi/dx12/dx12_debug.h:26
+rhi::dx12::ResetDebugMessageCounts()	function	rhi-dx12	rhi-dx12-resetdebugmessagecounts	rhi-dx12.md	engine/rhi/dx12/dx12_debug.h:31
+rhi::dx12::DebugMessageCaptureFn	alias	rhi-dx12	rhi-dx12-debugmessagecapturefn	rhi-dx12.md	engine/rhi/dx12/dx12_debug.h:35
+rhi::dx12::SetDebugMessageCapture(DebugMessageCaptureFn,void*)	function	rhi-dx12	rhi-dx12-setdebugmessagecapture-debugmessagecapturefn-void-star	rhi-dx12.md	engine/rhi/dx12/dx12_debug.h:42
+rhi::dx12::RecordDebugMessage(D3D12_MESSAGE_SEVERITY,D3D12_MESSAGE_ID,const char*)	function	rhi-dx12	rhi-dx12-recorddebugmessage-d3d12-message-severity-d3d12-message-id-const-char-star	rhi-dx12.md	engine/rhi/dx12/dx12_debug.h:50
+rhi::dx12::NoteLiveObject()	function	rhi-dx12	rhi-dx12-noteliveobject	rhi-dx12.md	engine/rhi/dx12/dx12_debug.h:55
+rhi::dx12::Dx12DevicePtr	alias	rhi-dx12	rhi-dx12-dx12deviceptr	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:20
+rhi::dx12::Dx12Device	class	rhi-dx12	rhi-dx12-dx12device	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:31
+rhi::dx12::Dx12Device::Dx12Device()	function	rhi-dx12	rhi-dx12-dx12device-dx12device	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:34
+rhi::dx12::Dx12Device::Create(const DeviceCreateInfo&)	function	rhi-dx12	rhi-dx12-dx12device-create-const-devicecreateinfo-amp	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:42
+rhi::dx12::Dx12Device::EnumerateAdapters(const DeviceCreateInfo&,AdapterList*)	function	rhi-dx12	rhi-dx12-dx12device-enumerateadapters-const-devicecreateinfo-amp-adapterlist-star	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:49
+rhi::dx12::Dx12Device::kTrackedFrames	variable	rhi-dx12	rhi-dx12-dx12device-ktrackedframes	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:52
+rhi::dx12::Dx12Device::kWaitSliceMs	variable	rhi-dx12	rhi-dx12-dx12device-kwaitslicems	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:54
+rhi::dx12::Dx12Device::~Dx12Device()	function	rhi-dx12	rhi-dx12-dx12device-tilde-dx12device	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:57
+rhi::dx12::Dx12Device::BackendName() const	function	rhi-dx12	rhi-dx12-dx12device-backendname-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:59
+rhi::dx12::Dx12Device::Adapter() const	function	rhi-dx12	rhi-dx12-dx12device-adapter-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:60
+rhi::dx12::Dx12Device::ListAdapters(AdapterList*) const	function	rhi-dx12	rhi-dx12-dx12device-listadapters-adapterlist-star-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:61
+rhi::dx12::Dx12Device::Epoch() const	function	rhi-dx12	rhi-dx12-dx12device-epoch-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:65
+rhi::dx12::Dx12Device::Caps() const	function	rhi-dx12	rhi-dx12-dx12device-caps-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:66
+rhi::dx12::Dx12Device::Resources() const	function	rhi-dx12	rhi-dx12-dx12device-resources-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:67
+rhi::dx12::Dx12Device::InFrame() const	function	rhi-dx12	rhi-dx12-dx12device-inframe-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:68
+rhi::dx12::Dx12Device::InjectDeviceLoss()	function	rhi-dx12	rhi-dx12-dx12device-injectdeviceloss	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:69
+rhi::dx12::Dx12Device::DeviceLost() const	function	rhi-dx12	rhi-dx12-dx12device-devicelost-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:70
+rhi::dx12::Dx12Device::CreateBuffer(const BufferDesc&)	function	rhi-dx12	rhi-dx12-dx12device-createbuffer-const-bufferdesc-amp	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:71
+rhi::dx12::Dx12Device::DestroyBuffer(BufferHandle)	function	rhi-dx12	rhi-dx12-dx12device-destroybuffer-bufferhandle	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:72
+rhi::dx12::Dx12Device::CreateTexture(const TextureDesc&)	function	rhi-dx12	rhi-dx12-dx12device-createtexture-const-texturedesc-amp	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:73
+rhi::dx12::Dx12Device::DestroyTexture(TextureHandle)	function	rhi-dx12	rhi-dx12-dx12device-destroytexture-texturehandle	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:74
+rhi::dx12::Dx12Device::CreateSampler(const SamplerDesc&)	function	rhi-dx12	rhi-dx12-dx12device-createsampler-const-samplerdesc-amp	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:75
+rhi::dx12::Dx12Device::DestroySampler(SamplerHandle)	function	rhi-dx12	rhi-dx12-dx12device-destroysampler-samplerhandle	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:76
+rhi::dx12::Dx12Device::CreateShader(const ShaderDesc&)	function	rhi-dx12	rhi-dx12-dx12device-createshader-const-shaderdesc-amp	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:77
+rhi::dx12::Dx12Device::DestroyShader(ShaderHandle)	function	rhi-dx12	rhi-dx12-dx12device-destroyshader-shaderhandle	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:78
+rhi::dx12::Dx12Device::CreateBindGroupLayout(const BindGroupLayoutDesc&)	function	rhi-dx12	rhi-dx12-dx12device-createbindgrouplayout-const-bindgrouplayoutdesc-amp	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:79
+rhi::dx12::Dx12Device::DestroyBindGroupLayout(BindGroupLayoutHandle)	function	rhi-dx12	rhi-dx12-dx12device-destroybindgrouplayout-bindgrouplayouthandle	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:80
+rhi::dx12::Dx12Device::CreateBindGroup(const BindGroupDesc&)	function	rhi-dx12	rhi-dx12-dx12device-createbindgroup-const-bindgroupdesc-amp	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:81
+rhi::dx12::Dx12Device::DestroyBindGroup(BindGroupHandle)	function	rhi-dx12	rhi-dx12-dx12device-destroybindgroup-bindgrouphandle	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:82
+rhi::dx12::Dx12Device::CreateGraphicsPipeline(const GraphicsPipelineDesc&)	function	rhi-dx12	rhi-dx12-dx12device-creategraphicspipeline-const-graphicspipelinedesc-amp	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:83
+rhi::dx12::Dx12Device::CreateComputePipeline(const ComputePipelineDesc&)	function	rhi-dx12	rhi-dx12-dx12device-createcomputepipeline-const-computepipelinedesc-amp	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:84
+rhi::dx12::Dx12Device::DestroyPipeline(PipelineHandle)	function	rhi-dx12	rhi-dx12-dx12device-destroypipeline-pipelinehandle	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:85
+rhi::dx12::Dx12Device::CreateSwapchain(const SwapchainDesc&)	function	rhi-dx12	rhi-dx12-dx12device-createswapchain-const-swapchaindesc-amp	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:86
+rhi::dx12::Dx12Device::DestroySwapchain(Swapchain*)	function	rhi-dx12	rhi-dx12-dx12device-destroyswapchain-swapchain-star	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:87
+rhi::dx12::Dx12Device::FormatSupport(Format,TextureUsage) const	function	rhi-dx12	rhi-dx12-dx12device-formatsupport-format-textureusage-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:88
+rhi::dx12::Dx12Device::CanGenerateMips(Format) const	function	rhi-dx12	rhi-dx12-dx12device-cangeneratemips-format-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:89
+rhi::dx12::Dx12Device::UploadTexture(TextureHandle,u32,u32,const void*,u32)	function	rhi-dx12	rhi-dx12-dx12device-uploadtexture-texturehandle-u32-u32-const-void-star-u32	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:90
+rhi::dx12::Dx12Device::ReadbackTexture(TextureHandle,u32,u32,void*,u64,ResourceState)	function	rhi-dx12	rhi-dx12-dx12device-readbacktexture-texturehandle-u32-u32-void-star-u64-resourcestate	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:91
+rhi::dx12::Dx12Device::MapBuffer(BufferHandle)	function	rhi-dx12	rhi-dx12-dx12device-mapbuffer-bufferhandle	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:92
+rhi::dx12::Dx12Device::UnmapBuffer(BufferHandle)	function	rhi-dx12	rhi-dx12-dx12device-unmapbuffer-bufferhandle	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:93
+rhi::dx12::Dx12Device::UploadBuffer(BufferHandle,u64,const void*,u64)	function	rhi-dx12	rhi-dx12-dx12device-uploadbuffer-bufferhandle-u64-const-void-star-u64	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:94
+rhi::dx12::Dx12Device::ReadbackBuffer(BufferHandle,u64,void*,u64)	function	rhi-dx12	rhi-dx12-dx12device-readbackbuffer-bufferhandle-u64-void-star-u64	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:95
+rhi::dx12::Dx12Device::CreateCommandList()	function	rhi-dx12	rhi-dx12-dx12device-createcommandlist	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:96
+rhi::dx12::Dx12Device::Submit(CommandList* const*,usize)	function	rhi-dx12	rhi-dx12-dx12device-submit-commandlist-star-const-star-usize	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:97
+rhi::dx12::Dx12Device::WaitFence(FenceValue,u64)	function	rhi-dx12	rhi-dx12-dx12device-waitfence-fencevalue-u64	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:98
+rhi::dx12::Dx12Device::CompletedFence() const	function	rhi-dx12	rhi-dx12-dx12device-completedfence-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:99
+rhi::dx12::Dx12Device::BeginFrame()	function	rhi-dx12	rhi-dx12-dx12device-beginframe	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:100
+rhi::dx12::Dx12Device::EndFrame()	function	rhi-dx12	rhi-dx12-dx12device-endframe	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:101
+rhi::dx12::Dx12Device::FrameNumber() const	function	rhi-dx12	rhi-dx12-dx12device-framenumber-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:102
+rhi::dx12::Dx12Device::WaitIdle()	function	rhi-dx12	rhi-dx12-dx12device-waitidle	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:103
+rhi::dx12::Dx12Device::RecreateSurface(const os::Window*)	function	rhi-dx12	rhi-dx12-dx12device-recreatesurface-const-os-window-star	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:104
+rhi::dx12::Dx12Device::D3D() const	function	rhi-dx12	rhi-dx12-dx12device-d3d-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:107
+rhi::dx12::Dx12Device::Queue() const	function	rhi-dx12	rhi-dx12-dx12device-queue-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:109
+rhi::dx12::Dx12Device::Factory() const	function	rhi-dx12	rhi-dx12-dx12device-factory-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:111
+rhi::dx12::Dx12Device::ValidationEnabled() const	function	rhi-dx12	rhi-dx12-dx12device-validationenabled-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:113
+rhi::dx12::Dx12Device::GpuValidationEnabled() const	function	rhi-dx12	rhi-dx12-dx12device-gpuvalidationenabled-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:115
+rhi::dx12::Dx12Device::FramesInFlight() const	function	rhi-dx12	rhi-dx12-dx12device-framesinflight-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:117
+rhi::dx12::Dx12Device::CompletedFrame() const	function	rhi-dx12	rhi-dx12-dx12device-completedframe-const	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:119
+rhi::dx12::Dx12Device::Check(HRESULT,const char*)	function	rhi-dx12	rhi-dx12-dx12device-check-hresult-const-char-star	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:127
+rhi::dx12::Dx12Device::WaitForValue(u64,u64)	function	rhi-dx12	rhi-dx12-dx12device-waitforvalue-u64-u64	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:136
+rhi::dx12::Dx12Device::SignalLocked()	function	rhi-dx12	rhi-dx12-dx12device-signallocked	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:142
+rhi::dx12::Dx12Device::LeakCounts	struct	rhi-dx12	rhi-dx12-dx12device-leakcounts	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:147
+rhi::dx12::Dx12Device::LeakCounts::user_objects	variable	rhi-dx12	rhi-dx12-dx12device-leakcounts-user-objects	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:149
+rhi::dx12::Dx12Device::LeakCounts::live_d3d12_objects	variable	rhi-dx12	rhi-dx12-dx12device-leakcounts-live-d3d12-objects	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:151
+rhi::dx12::Dx12Device::GetLeakCounts()	function	rhi-dx12	rhi-dx12-dx12device-getleakcounts	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:155
+rhi::dx12::Dx12Device::ResetLeakCounts()	function	rhi-dx12	rhi-dx12-dx12device-resetleakcounts	rhi-dx12.md	engine/rhi/dx12/dx12_device.h:157
+rhi::dx12::HresultName(HRESULT)	function	rhi-dx12	rhi-dx12-hresultname-hresult	rhi-dx12.md	engine/rhi/dx12/dx12_result.h:18
+rhi::dx12::IsDeviceLostResult(HRESULT)	function	rhi-dx12	rhi-dx12-isdevicelostresult-hresult	rhi-dx12.md	engine/rhi/dx12/dx12_result.h:26

@@ -6,6 +6,8 @@
 
 #include "renderer/device_resources.h"
 #include "renderer/renderer.h"
+#include "rhi/backend_registry.h"
+#include "rhi/backends/backends.h"
 #include "rhi/device_host.h"
 #include "rhi/null/null_device.h"
 #include "rhi/rhi_log.h"
@@ -541,11 +543,16 @@ TEST_CASE("Switching to a backend this program did not register is refused with 
     REQUIRE(rig.Create());
     REQUIRE(rig.Render() == FrameStatus::Ok);
     const u32 epoch = rig.Epoch();
+    // Leave only the null backend in the registry, so Vulkan is a backend this program "lacks" on every platform (the test listener
+    // registers everything again before the next test).
+    rhi::ClearBackendRegistryForTest();
+    REQUIRE(rhi::RegisterNullBackend());
     RenderSettings wanted = rig.renderer->Settings();
-    wanted.SetEnum(kBackend, 2); // dx12: no backend of that kind is registered in this test binary yet (Phase 13 Day 162)
+    wanted.SetEnum(kBackend, 1); // vulkan
     const ApplyResult result = rig.renderer->ApplySettings(wanted);
+    rhi::RegisterCompiledBackends();
     CHECK_FALSE(result.ok);
-    CHECK(std::strstr(result.reason, "dx12 backend is not registered in this program") != nullptr);
+    CHECK(std::strstr(result.reason, "vulkan backend is not registered in this program") != nullptr);
     CHECK(rig.Epoch() == epoch); // nothing was torn down
     CHECK(rig.begins == 0);
     CHECK_FALSE(rig.renderer->IsBroken());

@@ -200,7 +200,7 @@ TEST_CASE("A backend this program never registered fails loudly, never as a miss
     LogRhi.SetEnabled(was);
 }
 
-TEST_CASE("RegisterCompiledBackends registers null and Vulkan; Auto never picks null", "[rhi][registry]") {
+TEST_CASE("RegisterCompiledBackends registers null and Vulkan, and Direct3D 12 on Windows; Auto never picks null", "[rhi][registry]") {
     Reset reset;
     CHECK(RegisterCompiledBackends());
     CHECK(RegisterCompiledBackends()); // again: nothing changes
@@ -213,7 +213,14 @@ TEST_CASE("RegisterCompiledBackends registers null and Vulkan; Auto never picks 
     CHECK(null_backend->auto_rank == 0);
     CHECK(vulkan->auto_rank > 0);
     CHECK(vulkan->shader_format == ShaderFormat::Spirv);
+#if defined(_WIN32)
+    const BackendDescriptor* dx12 = FindBackend(Backend::Dx12); // Phase 13 Day 164
+    REQUIRE(dx12 != nullptr);
+    CHECK(dx12->shader_format == ShaderFormat::Dxil);
+    CHECK(RegisteredBackendCount() == 3);
+#else
     CHECK(RegisteredBackendCount() == 2);
+#endif
     // With only the null backend registered, Auto has nothing to pick.
     ClearBackendRegistryForTest();
     REQUIRE(RegisterNullBackend());

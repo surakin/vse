@@ -286,14 +286,16 @@ or that cannot run, is refused with that reason before the device is touched.
 
 #include "rhi/backend_registry.h"
 #include "rhi/backends/backends.h"
+#include "rhi/rhi.h"
 
 using namespace engine_placeholder;
 
 int main() {
     rhi::RegisterCompiledBackends();
-    for (usize i = 0; i < rhi::RegisteredBackendCount(); ++i) {
-        const rhi::BackendDescriptor& backend = rhi::RegisteredBackend(i);
-        std::printf("%s takes %s\n", backend.name, rhi::ShaderFormatName(backend.shader_format));
+    // Every platform has these two; Windows also registers dx12, which takes dxil.
+    for (rhi::Backend which : {rhi::Backend::Null, rhi::Backend::Vulkan}) {
+        const rhi::BackendDescriptor* backend = rhi::FindBackend(which);
+        std::printf("%s takes %s\n", backend->name, rhi::ShaderFormatName(backend->shader_format));
     }
     return 0;
 }
@@ -919,6 +921,33 @@ The same backend runs on Windows (Phase 13 Day 160). What differs:
   this integrated GPU, which reports a device-local heap and a host heap: GPU-only memory from the device-local type that is not host
   visible, uploads from the host-visible, coherent type of the host heap, readbacks from the host-cached type; AMD's uncached
   device-coherent types are never chosen.
+
+### The DX12 backend
+
+Direct3D 12 is the native backend on Windows (Phase 13, Days 164-172), library `rhi_dx12`, registered by
+[[rhi::RegisterCompiledBackends]] as `dx12`. Ask for it with `DeviceCreateInfo::backend = rhi::Backend::Dx12` or the `backend` setting;
+`Auto` never picks it until the backend passes the Phase 4 and Phase 5 suites (Day 172), not even on a machine without Vulkan. Its shaders are the minted DXIL
+([[rhi::DeviceCaps::shader_format]] `Dxil`), and its devices read the object index from the renderer's index stream
+([[rhi::DeviceCaps::object_index_stream]]).
+
+- **Requirements.** Windows 10 or 11 and an adapter with Direct3D 12 at feature level 12_0 and resource binding tier 2. The backend uses
+  the OS's own `d3d12.dll` and `dxgi.dll`: no Agility SDK, no D3D12MA, no DirectX-Headers package and no WRL (it has its own
+  [[rhi::dx12::ComRef]]).
+- **Adapters.** [[rhi::EnumerateAdapters]] lists DXGI's adapters in high-performance order and adds WARP, the software rasterizer, which
+  every Windows has. An adapter's id is `dx12-<vendor>-<device>-<subsystem>-<revision>` in hex, stable across runs; its LUID is the second
+  form [[rhi::MatchAdapter]] accepts. Reading the binding tier and whether memory is unified needs a device: enumeration makes a
+  temporary one per adapter (D3D12 hands back the process's existing device on that adapter, so a live device is not disturbed). With no
+  request the device takes the first suitable hardware adapter, else WARP.
+- **The debug layer.** Validation `On` needs the Graphics Tools optional feature (`d3d12SDKLayers.dll`, `BUILD.md`); without it device
+  creation fails with that reason instead of running unvalidated. `Auto` follows `ENGINE_RHI_VALIDATION`, else turns it on in Debug
+  builds when the layer is installed. `sync_validation` (or `ENGINE_RHI_VALIDATION_SYNC=1`) adds GPU-based validation, the closest
+  counterpart of Vulkan's synchronization validation, and much slower. The layer is process-wide: once a device turned it on, every
+  later device of the process has it. Messages go to `LogRhi` through `ID3D12InfoQueue1`'s callback and are counted
+  ([[rhi::dx12::GetDebugMessageCounts]]); a debugger, if attached, breaks on errors. At destruction a validated device asks the layer for
+  its live objects: anything but the device itself is a leak, logged and counted ([[rhi::dx12::Dx12Device::GetLeakCounts]]).
+- **Fences and waits.** One direct queue runs everything, with one fence whose value grows with each submission. Every wait is bounded:
+  it waits in slices of 100 ms and checks for a removed device between them, so a hung or removed GPU ends the wait instead of the
+  program.
 
 ## What the RHI reports when something goes wrong
 

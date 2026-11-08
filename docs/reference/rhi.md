@@ -590,7 +590,7 @@ Must not be called while a device exists.
 bool RegisterCompiledBackends();
 ```
 
-Registers every backend compiled into this build with the backend registry: the null backend and Vulkan everywhere, Direct3D 12 on Windows once its library exists.
+Registers every backend compiled into this build with the backend registry: the null backend and Vulkan everywhere, Direct3D 12 on Windows (Phase 13 Day 164).
 
 A program calls this once at startup, before [`rhi::CreateDevice`](#rhi-createdevice-const-devicecreateinfo-amp), [`rhi::EnumerateAdapters`](#rhi-enumerateadapters-const-devicecreateinfo-amp-adapterlist-star) or a [`rhi::DeviceHost`](#rhi-devicehost); calling it again changes nothing. Registration is explicit, never a global constructor, so a program that does not link a backend cannot pick it by accident and one that forgets the call fails with a clear error.
 
