@@ -24,6 +24,7 @@ From the bottom up. "Platform code" means a per-OS backend directory (`linux/`, 
 | 8. Settings | `foundation/settings` | Registry, stores, layers, the `Settings` service. Layers 0-7. |
 | 9. Platform: windows and input | `engine/platform` (`window.h`, `input.h`, `window_host.h`, `platform/<platform>/` backends) | Windows, input state, display backends (Wayland, X11, Win32), the CMake library `platform`, the only one that links the display libraries. Layers 0-8. Moved here from the foundation on Phase 12 Day 144. |
 | 10. Jobs, text | `engine/jobs`; `engine/text` (Phase 14) | Jobs: scheduler, coroutines, frame pool, async I/O. Text: font faces, glyph rasterization and atlas packing, layout, cursor and hit-testing; FreeType (vendored) only in `text/font_freetype.cpp`, the CPU side only (the atlas texture and the text pass are in the renderer). Both depend on the foundation (layers 0-8) and not on each other. |
+| 11. UI toolkit (CPU) | `engine/ui` (Phase 15) | Widget tree, surfaces, layout, themes, input routing and the 2D draw list; no RHI type (the renderer turns the draw list into a pass; images are opaque `ImageId`s). Depends on text, the platform's input headers (the header-only `platform_input`, no display library) and the foundation. Sits beside the RHI and depends on none of it. |
 | 11. RHI | `engine/rhi` (neutral, with the backend registry, `CreateDevice` and `DeviceHost`), `engine/rhi/null`, `engine/rhi/vulkan`, later `rhi/dx12`, `rhi/metal`; `engine/rhi/backends` | The neutral RHI, and one library per backend. Backends depend on `rhi`, jobs and foundation, never on each other; each registers with the neutral registry. `rhi/backends` (library `rhi_backends`, Phase 13 Day 162) is the only module that names every backend, to register them; programs link it, the renderer never does. Graphics API headers only inside their backend (`rhi_boundary_check`). |
 | 12. Renderer | `engine/renderer` (+ `renderer_passes`) | Render graph, materials, passes, and from Phase 14 the glyph atlas texture and the text renderer. RHI (neutral only), jobs, text (the CPU atlas and layout types), foundation including settings. |
 | 13. Programs | `game/*`, `tools/*`, `tests/*` | Demos, benches, tools and tests. Anything below. Neutral headers only: no `os/<platform>/` include (section 3, item 6). |
@@ -41,7 +42,8 @@ The libraries follow the layers; each links only the ones below it (`docs/guide/
 
 ```
 game/*, tools/*   ->  renderer, rhi_backends, rhi, jobs, platform, foundation
-renderer          ->  rhi, jobs, text, foundation (incl. settings, math)
+renderer          ->  rhi, jobs, text, ui (from Phase 15 Day 190), foundation (incl. settings, math)
+ui                ->  text, platform_input (header-only), foundation
 rhi_backends      ->  rhi/vulkan, rhi/null (in rhi), later rhi/dx12          (registers each backend; linked by programs)
 rhi/vulkan        ->  rhi, jobs, platform, foundation
 rhi/null          ->  rhi, foundation

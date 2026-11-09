@@ -2133,6 +2133,8 @@ text::ShelfPacker::Place(u32,u32,Rect*)	function	text	text-shelfpacker-place-u32
 text::ShelfPacker::UsedArea() const	function	text	text-shelfpacker-usedarea-const	text.md	engine/text/shelf_packer.h:49
 text::ShelfPacker::Width() const	function	text	text-shelfpacker-width-const	text.md	engine/text/shelf_packer.h:53
 text::ShelfPacker::Height() const	function	text	text-shelfpacker-height-const	text.md	engine/text/shelf_packer.h:57
+ui::kUiLayoutVersion	variable	ui	ui-kuilayoutversion	ui.md	engine/ui/version.h:10
+ui::LayoutVersion()	function	ui	ui-layoutversion	ui.md	engine/ui/version.h:15
 jobs::IoRequest	alias	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:52
 jobs::IoThread	class	jobs	jobs-iothread	jobs.md	engine/jobs/async_io.h:64
 jobs::IoThread::IoThread()	function	jobs	jobs-iothread-iothread	jobs.md	engine/jobs/async_io.h:67

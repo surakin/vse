@@ -60,6 +60,12 @@ module text "Text"
   strict ownership
   strict failure
 
+module ui "The UI Toolkit"
+  header engine/ui/*.h
+  strict thread-safety
+  strict ownership
+  strict failure
+
 module jobs "The Job System"
   header engine/jobs/*.h
   strict thread-safety

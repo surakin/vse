@@ -140,6 +140,8 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(engine/jobs)  # Day 153
   add_subdirectory(engine/text)  # Phase 14 Day 175
   add_subdirectory(tests/text)
+  add_subdirectory(engine/ui)  # Phase 15 Day 184
+  add_subdirectory(tests/ui)
   add_subdirectory(tests/io)  # the file layer, Days 151-152 (its asynchronous tests need jobs)
   add_subdirectory(tests/jobs)
   add_subdirectory(tools/crash_extract)  # Day 156: the dump reader the crash scripts use
@@ -196,6 +198,7 @@ add_subdirectory(engine/foundation)
 add_subdirectory(engine/platform)
 add_subdirectory(engine/jobs)
 add_subdirectory(engine/text)  # Phase 14 Day 175
+add_subdirectory(engine/ui)  # Phase 15 Day 184
 add_subdirectory(engine/rhi)
 add_subdirectory(engine/renderer)
 add_subdirectory(tools/docgen)
@@ -215,6 +218,7 @@ add_subdirectory(tests/jobs)
 add_subdirectory(tests/io)
 add_subdirectory(tests/types)
 add_subdirectory(tests/text)  # Phase 14 Day 175
+add_subdirectory(tests/ui)  # Phase 15 Day 184
 add_subdirectory(tests/settings)
 add_subdirectory(tests/foundation_sanitized)
 add_subdirectory(tests/rhi)

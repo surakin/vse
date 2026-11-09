@@ -47,6 +47,10 @@ else()
   message(FATAL_ERROR "No window backend for this platform yet")
 endif()
 
+# The pure-data input headers (input.h, later input_event.h) without the display libraries, for the modules that only need the types (ui).
+add_library(platform_input INTERFACE)
+target_include_directories(platform_input INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
 # One library per sanitizer flavor, each on the matching foundation_debug (crash state, the lowest layer it uses; the flags come with it, as for jobs and the RHI).
 function(engine_add_platform_lib suffix foundation_lib)
   add_library(platform${suffix} STATIC ${PLATFORM_SOURCES})
