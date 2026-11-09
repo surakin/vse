@@ -77,4 +77,31 @@ canvas.DrawRoundedRect(rect, ui::CornerRadii(s.radius), s.background);
 canvas.DrawBorder(rect, ui::CornerRadii(s.radius), s.border_width, s.border_color);
 ```
 
-More sections arrive with the days that build them (tree, layout, input, widgets, popups, drag and drop, viewport, surfaces).
+## The widget tree, the surface and the test harness
+
+A **`ui::Widget`** (`ui/widget.h`) owns its children (`UniquePtr`), draws on a `ui::Canvas`, and is addressed by a stable **id**: a hash of its parent's id and its name (its index among the siblings when the name is empty), so a tree built the
+same way twice has the same ids. Bounds are in surface coordinates, in logical units. Children draw in order (the last is on top) and are hit-tested in reverse; a widget clips its children to its bounds by default, in drawing and in hit testing, and
+`SetPassThrough(true)` lets hits go through the widget itself to what is under it. `MarkDirty(kLayoutDirty | kDrawDirty)` flags the widget and its ancestors and tells the surface; layout implies draw.
+
+A **`ui::Surface`** (`ui/surface.h`) is the root of a tree plus what the widgets share: size, scale, clock, `ThemeSet`, `FontProvider`, the focus owner, the pointer-capture owner, the hover widget and a popup layer (hit first, drawn last). **It names no
+window**: a window adapter, a test or an in-world screen feeds it `ui::Event`s with `Post` and runs `Frame(dt, &draw_list, &atlas)`: apply the queued events, call `Update` on the widgets whose `WantsUpdate()` is true, run layout if dirty, rebuild the
+draw list if anything looks different or the list is empty (it returns whether it did; `NeedsRedraw()` is what an on-demand offscreen surface reads).
+
+- **Routing:** pointer events go to the capture owner, else to the deepest widget under the pointer; a press captures the pointer to the widget it hit until the last button is up, and sets its pressed bit. Key and text events go to the focus owner
+  (`SetFocus`, which sends `FocusLost`/`FocusGained`). An event a widget does not mark `handled` bubbles to its parents; it arrives with its position in the receiving widget's local space. Enter, leave and focus events go to one widget only. A
+  disabled widget takes an event and does nothing with it.
+- **Removal is safe in a handler:** while the surface dispatches, `RemoveChild`/`RemoveFromParent` queue the removal and the widget dies when the dispatch ends. Destroying a widget clears the focus, capture and hover references to it first.
+- **Layout** is a hook only here: `Widget::Arrange()` runs parent before children when layout is dirty (Day 193 adds the containers).
+
+**`ui::Harness`** (`ui/testing/harness.h`) is the offscreen surface every widget test uses: a font provider serving one TrueType file, a glyph atlas, the last draw list, input helpers (`PointerMove`, `Click`, `Key`, `TypeText`, `Wheel`; each runs a frame),
+`Find`/`RectOf`, and `Render`, which draws the list with a small software rasteriser that follows the UI shader (rectangles, rounded boxes, rings, shadows, glyphs; images are skipped). A widget test compares rectangles or pixels without a GPU.
+
+```cpp
+ui::Harness h(200, 100, 2.0f, font_file);          // 200x100 logical units at scale 2
+h.GetSurface().Root()->AddChild(MakeMyButton("ok", {10, 10, 80, 24}));
+h.Click(20, 20);                                    // pointer move, press, release; frames run
+ui::RasterImage image;
+h.Render(&image);                                   // 400x200 pixels, compare what you expect
+```
+
+More sections arrive with the days that build them (layout, layout, input, widgets, popups, drag and drop, viewport, surfaces).

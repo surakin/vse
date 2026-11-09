@@ -5,6 +5,10 @@ set(UI_SOURCES
   version.cpp
   draw_list_canvas.cpp
   theme.cpp
+  widget.cpp
+  surface.cpp
+  testing/software_raster.cpp
+  testing/harness.cpp
   testing/recording_canvas.cpp
 )
 set(UI_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
