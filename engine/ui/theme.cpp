@@ -26,7 +26,7 @@ public:
     // `builtin`: seed the ids of `widget_kind` (1 to 10, in this order).
     explicit NameTable(bool builtin) {
         if (builtin) {
-            const char* const names[] = {"label", "button", "checkbox", "radio", "slider", "textfield", "scrollbar", "panel", "menu", "tooltip"};
+            const char* const names[] = {"label", "button", "checkbox", "radio", "slider", "textfield", "scrollbar", "panel", "menu", "tooltip", "tab", "splitter", "window", "titlebar", "modaldim"};
             for (const char* name : names) Register(StringView(name));
         }
     }
@@ -228,6 +228,45 @@ Theme BuildTheme(const Palette& p) {
     tooltip.At(StateKind::Normal).padding_x = 6.0f;
     tooltip.At(StateKind::Normal).padding_y = 4.0f;
     b.SetStyle(widget_kind::kTooltip, 0, tooltip);
+
+    Style tab; // a tab header cell: transparent, hover shade, the selected tab on the panel color with a border
+    tab.At(StateKind::Normal).text_color = p.text;
+    tab.At(StateKind::Normal).padding_x = 10.0f;
+    tab.At(StateKind::Normal).padding_y = 5.0f;
+    tab.At(StateKind::Hover).background = p.hover;
+    tab.At(StateKind::Pressed).background = p.pressed;
+    tab.At(StateKind::Checked).background = p.panel;
+    tab.At(StateKind::Checked).border_color = p.border;
+    tab.At(StateKind::Checked).border_width = 1.0f;
+    tab.At(StateKind::Disabled).text_color = p.text_disabled;
+    b.SetStyle(widget_kind::kTab, 0, tab);
+
+    Style splitter;
+    splitter.At(StateKind::Hover).background = p.border;
+    splitter.At(StateKind::Pressed).background = p.accent;
+    b.SetStyle(widget_kind::kSplitter, 0, splitter);
+
+    Style window;
+    window.At(StateKind::Normal).background = p.panel;
+    window.At(StateKind::Normal).border_color = p.border;
+    window.At(StateKind::Normal).border_width = 1.0f;
+    window.At(StateKind::Normal).radius = 6.0f;
+    window.At(StateKind::Normal).padding_x = 12.0f;
+    window.At(StateKind::Normal).padding_y = 12.0f;
+    window.At(StateKind::Focused).border_color = p.accent;
+    b.SetStyle(widget_kind::kWindow, 0, window);
+
+    Style title;
+    title.At(StateKind::Normal).background = p.window;
+    title.At(StateKind::Normal).text_color = p.text;
+    title.At(StateKind::Normal).padding_x = 10.0f;
+    title.At(StateKind::Normal).padding_y = 6.0f;
+    title.At(StateKind::Hover).background = p.danger; // the close button under the pointer
+    b.SetStyle(widget_kind::kTitleBar, 0, title);
+
+    Style dim;
+    dim.At(StateKind::Normal).background = 0x80000000u; // half-transparent black, 0xAABBGGRR
+    b.SetStyle(widget_kind::kModalDim, 0, dim);
 
     Style scrollbar;
     scrollbar.At(StateKind::Normal).background = p.border;

@@ -17,6 +17,8 @@ set(UI_TEST_SOURCES
   popup_test.cpp
   menu_test.cpp
   combobox_test.cpp
+  tab_splitter_test.cpp
+  dialog_test.cpp
 )
 
 find_package(Threads REQUIRED)

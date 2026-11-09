@@ -37,6 +37,10 @@ struct Rect {
     ///
     /// Fails: never.
     f32 Bottom() const { return y + h; }
+    /// Returns whether `p` lies inside the rectangle (the left and top edges count, the right and bottom edges do not).
+    ///
+    /// Fails: never.
+    bool Contains(const Point& p) const { return p.x >= x && p.y >= y && p.x < x + w && p.y < y + h; }
 };
 
 /// Corner radii of a rounded rectangle.

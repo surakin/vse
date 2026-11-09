@@ -234,4 +234,21 @@ bar->AddMenu("&File", &file);
 surface.SetMenuKeyTarget(bar);
 ```
 
+## Tab views, splitters, windows and modal dialogs
+
+**`TabView`** (`ui/widgets/tab_view.h`) shows tab headers over pages. `AddTab(title, page)` adds a ready page, `AddLazyTab(title, factory, user)` builds its page the first time the tab is selected (once). Only the selected page is shown; the others are collapsed, not destroyed, so a text field keeps what was typed. A click, Left/Right/Home/End on the focused view, and Ctrl+Tab / Ctrl+Shift+Tab / Ctrl+PageUp/PageDown (also from inside a page) select; those user actions run `OnSelectionChanged`, `Select` does not. `SetClosable(true)` gives new tabs a close button that asks `OnCloseRequested`; the program calls `CloseTab`, which destroys the page and moves the selection to the neighbour. Headers wider than the view show two arrows at the right end, the wheel over the headers scrolls them, and selecting a tab scrolls it into view.
+
+**`Splitter`** (`ui/widgets/splitter.h`) lays panes along one axis (`Orientation::Horizontal`: left to right, vertical handles) with draggable handles `kHandle` wide. Every pane has a relative size (`AddPane(pane, weight)`) that survives resizing in proportion; `SetMinSize` keeps a pane from being dragged or squeezed below a size; a double click on a handle restores the starting sizes; a pane marked `SetCollapsible` collapses when a drag takes it below half its minimum and opens when a drag takes it back, and `SetPaneCollapsed` does it from code. The resize cursor shows over a handle. The layout is numbers: `Fractions` and `SetFractions` (plus `PaneCollapsed`) are what a layout file stores. Docking is not implemented (the splitter and the tab view are its building blocks, Phase 27).
+
+**`WindowFrame` and `Dialog`** (`ui/widgets/window_frame.h`, `dialog.h`). A `WindowFrame` is a panel with a title bar (the `titlebar` style), content, an optional footer, and an optional close button. Dragging the title bar moves it, clamped to its parent's bounds (the surface, when it is in a layer); `SetResizable(true)` resizes from the edges and corners (diagonal and straight cursors) down to `SetMinSize`. Put a frame where its bounds are left alone (the root, a layer), not in a layout container. A `Dialog` is a frame with a button row: `AddButton(text, result, is_default)`; Enter (when the focus owner does not take it) presses the default button, Escape and the close button close with the cancel result, and `Close(result)` runs `OnClosed` and removes the dialog. A focused text field takes Enter for itself (its `OnSubmit`), so Enter does not reach the default button from a field.
+
+**Modal dialogs.** `Surface::ShowModal(dialog)` puts the dialog above everything but the popups, centers it, gives its first Tab stop the focus and covers the rest with the `modaldim` shade. Under it nothing is hit or hovered (the shade takes the pointer), Tab stays inside, keys go to the dialog while the focus is outside it, and accelerators and the menu bar do not run. Dialogs stack (each covers the one below); `CloseModal(dialog)` closes it and the ones above, closes the popups, and gives the focus back to whoever had it when the dialog opened (nobody when that widget is gone). A dialog the program removes itself takes its shade with it. Popups opened from the dialog work as usual.
+
+**Message boxes.** `ShowMessageBox(surface, title, text, buttons, function, user)` shows wrapped text with OK, OK/Cancel, Yes/No or Yes/No/Cancel and calls `function(user, result)` (`dialog_result::kOk`, `kCancel`, `kYes`, `kNo`) when it closes; the first button is the default, Escape gives the set's cancel result. `ShowConfirm(surface, title, text, confirm_text, function, user)` is a named default button plus Cancel (the settings screen's restart prompt). There are no file dialogs this phase.
+
+```cpp
+ui::Dialog* d = ui::ShowConfirm(&surface, "Restart", "The change needs a restart.", "Restart now", &OnAnswer, app);
+// OnAnswer(app, ui::dialog_result::kOk) when Enter or the button is pressed.
+```
+
 More sections arrive with the days that build them (drag and drop, viewport, surfaces).

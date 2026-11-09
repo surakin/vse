@@ -31,6 +31,11 @@ constexpr WidgetKind kScrollbar = 7; ///< A scroll bar.
 constexpr WidgetKind kPanel = 8;     ///< A container with a background.
 constexpr WidgetKind kMenu = 9;      ///< A menu or popup list.
 constexpr WidgetKind kTooltip = 10;  ///< A tooltip.
+constexpr WidgetKind kTab = 11;      ///< A tab header cell (the checked state is the selected tab).
+constexpr WidgetKind kSplitter = 12; ///< A splitter handle.
+constexpr WidgetKind kWindow = 13;   ///< The frame of a window or dialog.
+constexpr WidgetKind kTitleBar = 14; ///< The title bar of a window or dialog.
+constexpr WidgetKind kModalDim = 15; ///< The shade drawn over everything beneath a modal dialog.
 } // namespace widget_kind
 
 /// Returns the id of the widget kind called `name`, registering it on first use. Ids are stable for the life of the process and the same for the same name.

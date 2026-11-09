@@ -168,7 +168,7 @@ TEST_CASE("Theme: the built-in themes are readable and different", "[ui][theme]"
 TEST_CASE("Theme: kind and variant ids are stable and custom kinds read theme data", "[ui][theme]") {
     CHECK(RegisterWidgetKind("button") == widget_kind::kButton);
     const WidgetKind gauge = RegisterWidgetKind("test-gauge");
-    CHECK(gauge > widget_kind::kTooltip);
+    CHECK(gauge > widget_kind::kModalDim);
     CHECK(RegisterWidgetKind("test-gauge") == gauge);
     CHECK(RegisterWidgetKind("test-gauge-2") != gauge);
     CHECK(WidgetKindName(gauge) == StringView("test-gauge"));

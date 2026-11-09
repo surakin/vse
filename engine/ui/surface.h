@@ -147,6 +147,42 @@ public:
     /// Ownership: borrowed; cleared when the widget dies.
     void SetMenuKeyTarget(Widget* widget) { menu_key_target_ = widget; }
 
+    // ---- Modal dialogs ----
+
+    /// Shows `dialog` as a modal dialog: a shade (the `modaldim` style) covers everything beneath, the pointer cannot reach what lies under it, and Tab stays inside it.
+    ///
+    /// The dialog is measured, centered in the surface and given the keyboard focus (its first Tab stop); the previous focus owner gets the focus back when the dialog closes. Dialogs stack: a
+    /// dialog shown while another is open covers it. Keys go to the top dialog while the focus is outside it, and accelerators and the menu bar's keys do not run. Popups opened from the
+    /// dialog work as usual (they are above it). Opening a dialog closes the popups and releases the pointer capture.
+    ///
+    /// Param dialog: the dialog's root widget; it should be sized by its own `Measure`.
+    /// Returns: the dialog, for `CloseModal`.
+    /// Ownership: ownership passes to the surface.
+    /// Aborts: `dialog` is null.
+    Widget* ShowModal(UniquePtr<Widget> dialog);
+    /// Closes `dialog` and the dialogs opened after it, removes their shades, closes the popups and gives the focus back to the owner it had when `dialog` opened (the deferral rule applies
+    /// during event delivery). Does nothing for a widget that is not a modal dialog.
+    /// Param dialog: a widget `ShowModal` returned.
+    /// Ownership: borrowed for the call.
+    /// Fails: never.
+    void CloseModal(Widget* dialog);
+    /// Returns how many modal dialogs are open.
+    /// Fails: never.
+    usize ModalCount() const { return modal_infos_.Size(); }
+    /// Returns the newest modal dialog, or null.
+    /// Ownership: borrowed; the surface owns it.
+    /// Fails: returns null when none is open.
+    Widget* TopModal() const { return modal_infos_.Empty() ? nullptr : modal_infos_[modal_infos_.Size() - 1].dialog; }
+    /// Returns whether `dialog` is an open modal dialog.
+    /// Param dialog: a widget; may be null or dead (it is only compared).
+    /// Ownership: borrowed for the call.
+    /// Fails: never.
+    bool IsModalOpen(const Widget* dialog) const;
+    /// Returns the modal layer: above the root and below the popups, it holds the shades and the dialogs.
+    /// Ownership: borrowed; the surface keeps it.
+    /// Fails: returns null when there is none.
+    Widget* ModalLayer() const { return modals_.Get(); }
+
     // ---- Tooltips ----
 
     /// Seconds a widget with a tooltip text must stay under a still pointer before its tooltip shows.
@@ -261,6 +297,11 @@ private:
         bool take_focus = true;
         bool orphaned = false; // the owner died: closed at the next boundary
     };
+    struct ModalInfo {
+        Widget* dialog = nullptr; // null once it died: the entry is closed at the next boundary
+        Widget* dim = nullptr;
+        Widget* saved_focus = nullptr;
+    };
     struct Accelerator {
         u32 id = 0;
         KeyChord chord;
@@ -310,6 +351,9 @@ private:
     Clipboard* clipboard_ = &local_clipboard_;
     UniquePtr<DrawListCanvas> canvas_; // kept between frames so that its clip and layer stacks keep their storage
     Vector<PopupInfo> popup_infos_;
+    Vector<ModalInfo> modal_infos_;
+    void CloseModalAt(usize index);
+    Widget* KeyTarget() const;
     Vector<Accelerator> accelerators_;
     u32 next_accelerator_ = 0;
     Widget* menu_key_target_ = nullptr;
@@ -321,6 +365,7 @@ private:
     f64 hover_since_ = 0;
     Vector<Widget*> removals_;
     UniquePtr<Widget> root_;
+    UniquePtr<Widget> modals_;
     UniquePtr<Widget> popups_;
     UniquePtr<Widget> tips_;
 };

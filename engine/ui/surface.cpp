@@ -5,6 +5,7 @@
 #include "algorithm.h"
 #include "log/assert.h"
 #include "ui/draw_list_canvas.h"
+#include "ui/widgets/modal_dim.h"
 #include "ui/widgets/tooltip.h"
 
 namespace engine_placeholder::ui {
@@ -18,6 +19,9 @@ bool IsPointer(EventType t) { return t == EventType::PointerMove || t == EventTy
 Surface::Surface(f32 width, f32 height, f32 scale) : width_(width), height_(height), scale_(scale) {
     ENGINE_ASSERT(scale > 0, "Surface: the scale must be above 0");
     root_ = MakeUnique<Widget>(StringView("root"));
+    modals_ = MakeUnique<Widget>(StringView("modals"));
+    modals_->SetPassThrough(true);
+    modals_->SetClipsChildren(false);
     popups_ = MakeUnique<Widget>(StringView("popups"));
     popups_->SetPassThrough(true);
     popups_->SetClipsChildren(false);
@@ -25,18 +29,21 @@ Surface::Surface(f32 width, f32 height, f32 scale) : width_(width), height_(heig
     tips_->SetPassThrough(true);
     tips_->SetClipsChildren(false);
     root_->AttachSurface(this);
+    modals_->AttachSurface(this);
     popups_->AttachSurface(this);
     tips_->AttachSurface(this);
     Rect all;
     all.w = width;
     all.h = height;
     root_->SetBounds(all);
+    modals_->SetBounds(all);
     popups_->SetBounds(all);
     tips_->SetBounds(all);
 }
 
 Surface::~Surface() {
     root_.Reset();
+    modals_.Reset();
     popups_.Reset();
     tips_.Reset();
 }
@@ -51,8 +58,19 @@ void Surface::Resize(f32 width, f32 height, f32 scale) {
     all.w = width;
     all.h = height;
     root_->SetBounds(all);
+    modals_->SetBounds(all);
     popups_->SetBounds(all);
     tips_->SetBounds(all);
+    for (usize i = 0; i < modal_infos_.Size(); ++i) { // keep the dialogs inside the smaller surface
+        Widget* d = modal_infos_[i].dialog;
+        if (d == nullptr) continue;
+        Rect r = d->Bounds();
+        if (r.x + r.w > width) r.x = width - r.w;
+        if (r.y + r.h > height) r.y = height - r.h;
+        if (r.x < 0) r.x = 0;
+        if (r.y < 0) r.y = 0;
+        d->Arrange(r);
+    }
     NoteDirty(kLayoutDirty | kDrawDirty);
 }
 
@@ -81,6 +99,11 @@ void Surface::WidgetDestroyed(Widget* widget) {
     if (hover_ == widget) hover_ = nullptr;
     if (saved_focus_ == widget) saved_focus_ = nullptr;
     if (menu_saved_focus_ == widget) menu_saved_focus_ = nullptr;
+    for (usize i = 0; i < modal_infos_.Size(); ++i) {
+        if (modal_infos_[i].dialog == widget) modal_infos_[i].dialog = nullptr; // closed at the next boundary
+        if (modal_infos_[i].dim == widget) modal_infos_[i].dim = nullptr;
+        if (modal_infos_[i].saved_focus == widget) modal_infos_[i].saved_focus = nullptr;
+    }
     if (menu_key_target_ == widget) menu_key_target_ = nullptr;
     if (tooltip_ == widget) tooltip_ = nullptr;
     if (tooltip_target_ == widget) {
@@ -118,6 +141,7 @@ void Surface::FlushRemovals() {
 
 Widget* Surface::HitTestAll(Point point) {
     if (Widget* hit = popups_->HitTest(point)) return hit;
+    if (!modal_infos_.Empty()) return modals_->HitTest(point); // the shade covers everything, so nothing beneath is reached
     return root_->HitTest(point);
 }
 
@@ -238,7 +262,7 @@ void CollectTabStops(Widget* widget, Vector<Widget*>& out) {
 
 bool Surface::FocusNext(bool backwards) {
     Vector<Widget*> stops;
-    CollectTabStops(popups_->ChildCount() > 0 ? popups_.Get() : root_.Get(), stops);
+    CollectTabStops(popups_->ChildCount() > 0 ? popups_.Get() : (TopModal() != nullptr ? TopModal() : root_.Get()), stops);
     if (stops.Empty()) return false;
     // Positive indices first (ascending), then the zeros; the sort is stable, so the tree order breaks ties.
     StableSort(Span<Widget*>(stops.Data(), stops.Size()), [](Widget* a, Widget* b) {
@@ -290,6 +314,14 @@ void Surface::TrackPopups() {
         ClosePopup(popup_infos_[orphan].popup);
     }
     const usize n = popups_->ChildCount();
+    for (;;) { // a modal dialog that died takes the dialogs above it with it
+        usize dead = modal_infos_.Size();
+        for (usize i = 0; i < modal_infos_.Size() && dead == modal_infos_.Size(); ++i) {
+            if (modal_infos_[i].dialog == nullptr) dead = i;
+        }
+        if (dead == modal_infos_.Size()) break;
+        CloseModalAt(dead);
+    }
     if (n == popup_count_) return;
     const usize before = popup_count_;
     popup_count_ = n;
@@ -339,7 +371,7 @@ void Surface::Dispatch(Event e) {
                     // Click to focus: the nearest focusable widget under the pointer takes the keyboard focus, and a click on nothing focusable clears it.
                     Widget* focus_target = hit;
                     while (focus_target != nullptr && !(focus_target->Focusable() && focus_target->EffectivelyEnabled())) focus_target = focus_target->Parent();
-                    SetFocus(focus_target);
+                    if (focus_target != nullptr || modal_infos_.Empty()) SetFocus(focus_target); // a click on the shade or on a dialog's background keeps the focus
                     if (hit != nullptr) {
                         capture_ = hit;
                         hit->state_ |= kStatePressed;
@@ -384,7 +416,8 @@ void Surface::Dispatch(Event e) {
         const bool is_alt = e.key == Key::LeftAlt || e.key == Key::RightAlt;
         if (e.type == EventType::KeyDown) alt_alone_ = is_alt && !e.repeat;
         bool handled = false;
-        if (window_focused_ && focus_ != nullptr && (e.type != EventType::Text || focus_->AcceptsText())) handled = Deliver(focus_, e, true);
+        Widget* key_target = KeyTarget();
+        if (window_focused_ && key_target != nullptr && (e.type != EventType::Text || key_target->AcceptsText())) handled = Deliver(key_target, e, true);
         if (window_focused_ && !handled && e.type == EventType::KeyDown) RunKeyFallbacks(e);
         if (window_focused_ && !handled && e.type == EventType::KeyUp && is_alt && alt_alone_ && menu_key_target_ != nullptr) {
             alt_alone_ = false;
@@ -425,6 +458,7 @@ bool Surface::RunKeyFallbacks(const Event& e) {
         ClosePopup(popup_infos_[popup_infos_.Size() - 1].popup);
         return true;
     }
+    if (!modal_infos_.Empty()) return false; // a modal dialog blocks the accelerators and the menu bar
     const u32 mask = e.modifiers & (os::kModCtrl | os::kModShift | os::kModAlt);
     for (usize i = 0; i < accelerators_.Size(); ++i) {
         const Accelerator& a = accelerators_[i];
@@ -496,6 +530,86 @@ void Surface::ClosePopup(Widget* popup) {
         Widget* below = popup_infos_[popup_infos_.Size() - 1].popup;
         if (popup_infos_[popup_infos_.Size() - 1].take_focus && below->Focusable()) SetFocus(below);
     }
+}
+
+Widget* Surface::KeyTarget() const {
+    Widget* top = TopModal();
+    if (top == nullptr) return focus_;
+    for (const Widget* w = focus_; w != nullptr; w = w->parent_) {
+        if (w == top) return focus_;
+    }
+    return InsidePopups(focus_) ? focus_ : top; // keys never reach what lies beneath a modal dialog
+}
+
+Widget* Surface::ShowModal(UniquePtr<Widget> dialog) {
+    ENGINE_ASSERT(dialog.Get() != nullptr, "Surface::ShowModal: the dialog is null");
+    HideTooltip();
+    CloseAllPopups();
+    ReleasePointer();
+    ModalInfo info;
+    info.saved_focus = focus_;
+    UniquePtr<ModalDim> dim = MakeUnique<ModalDim>();
+    info.dim = dim.Get();
+    modals_->AddChild(UniquePtr<Widget>(dim.Release()));
+    Widget* raw = dialog.Get();
+    modals_->AddChild(static_cast<UniquePtr<Widget>&&>(dialog));
+    info.dialog = raw;
+    Constraints limits;
+    limits.max_w = width_;
+    limits.max_h = height_;
+    const Size size = raw->MeasureTotal(limits);
+    Rect at;
+    at.w = size.w;
+    at.h = size.h;
+    at.x = (width_ - size.w) / 2;
+    at.y = (height_ - size.h) / 2;
+    if (at.x < 0) at.x = 0;
+    if (at.y < 0) at.y = 0;
+    raw->Arrange(at);
+    modal_infos_.Push(info);
+    Vector<Widget*> stops;
+    CollectTabStops(raw, stops);
+    SetFocus(!stops.Empty() ? stops[0] : (raw->Focusable() ? raw : nullptr));
+    RefreshHover();
+    return raw;
+}
+
+bool Surface::IsModalOpen(const Widget* dialog) const {
+    if (dialog == nullptr) return false;
+    for (usize i = 0; i < modal_infos_.Size(); ++i) {
+        if (modal_infos_[i].dialog == dialog) return true;
+    }
+    return false;
+}
+
+void Surface::CloseModal(Widget* dialog) {
+    for (usize i = 0; i < modal_infos_.Size(); ++i) {
+        if (modal_infos_[i].dialog == dialog && dialog != nullptr) {
+            CloseModalAt(i);
+            return;
+        }
+    }
+}
+
+void Surface::CloseModalAt(usize index) {
+    Widget* back = modal_infos_[index].saved_focus;
+    bool focus_inside = focus_ == nullptr;
+    Vector<Widget*> gone;
+    for (usize i = modal_infos_.Size(); i > index; --i) {
+        const ModalInfo& m = modal_infos_[i - 1];
+        if (m.dialog != nullptr) {
+            for (const Widget* w = focus_; w != nullptr && !focus_inside; w = w->parent_) focus_inside = w == m.dialog;
+            gone.Push(m.dialog);
+        }
+        if (m.dim != nullptr) gone.Push(m.dim);
+    }
+    modal_infos_.RemoveRange(index, modal_infos_.Size() - index);
+    CloseAllPopups();
+    for (usize i = 0; i < gone.Size(); ++i) modals_->RemoveChild(gone[i]);
+    if (focus_inside) {
+        SetFocus(back != nullptr && back->Shown() && back->EffectivelyEnabled() ? back : nullptr);
+    }
+    RefreshHover();
 }
 
 void Surface::CloseAllPopups() {
@@ -606,6 +720,7 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
     for (usize i = 0; i < processing_.Size(); ++i) Dispatch(processing_[i]);
     processing_.Clear();
     UpdateWidgets(root_.Get(), dt);
+    UpdateWidgets(modals_.Get(), dt);
     UpdateWidgets(popups_.Get(), dt);
     if (--depth_ == 0) FlushRemovals();
     TrackPopups();
@@ -619,10 +734,12 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
         for (int pass = 0; pass < 2; ++pass) {
             layout_dirty_ = false;
             root_->ClearDirtyTree(kLayoutDirty);
+            modals_->ClearDirtyTree(kLayoutDirty);
             popups_->ClearDirtyTree(kLayoutDirty);
             tips_->ClearDirtyTree(kLayoutDirty);
             ++layout_generation_;
             root_->Arrange(all);
+            modals_->Arrange(all);
             popups_->Arrange(all);
             tips_->Arrange(all);
             if (!layout_dirty_) break;
@@ -631,6 +748,7 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
             ++layout_overruns_;
             layout_dirty_ = false;
             root_->ClearDirtyTree(kLayoutDirty);
+            modals_->ClearDirtyTree(kLayoutDirty);
             popups_->ClearDirtyTree(kLayoutDirty);
             tips_->ClearDirtyTree(kLayoutDirty);
         }
@@ -648,10 +766,12 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
     DrawListCanvas& canvas = *canvas_;
     canvas.Begin(scale_, static_cast<u32>(std::ceil(width_ * scale_)), static_cast<u32>(std::ceil(height_ * scale_)));
     root_->DrawTree(canvas);
+    modals_->DrawTree(canvas);
     popups_->DrawTree(canvas);
     tips_->DrawTree(canvas);
     list->SortLayers();
     root_->ClearDirtyTree(kDrawDirty);
+    modals_->ClearDirtyTree(kDrawDirty);
     popups_->ClearDirtyTree(kDrawDirty);
     tips_->ClearDirtyTree(kDrawDirty);
     draw_dirty_ = false;

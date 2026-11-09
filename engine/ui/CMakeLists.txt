@@ -17,6 +17,12 @@ set(UI_SOURCES
   clipboard.cpp
   popup.cpp
   widgets/tooltip.cpp
+  widgets/modal_dim.cpp
+  widgets/tab_view.cpp
+  widgets/splitter.cpp
+  widgets/window_frame.cpp
+  widgets/dialog.cpp
+  widgets/message_box.cpp
   widgets/menu.cpp
   widgets/menu_bar.cpp
   widgets/combobox.cpp
