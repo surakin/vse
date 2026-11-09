@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <atomic>
-#include <thread>
+#include "sync/atomic.h"
+#include "sync/thread.h"
 #include "build_defs.h"
 
 #if !ENGINE_PLATFORM_WINDOWS
@@ -227,11 +227,11 @@ TEST_CASE("io::File: concurrent offset reads of one file", "[io][file]") {
     TempDir dir;
     const engine_test::Text content = io_test::PatternBytes(256 * 1024);
     io::FilePtr f = MakeLocal(dir, content.View(), false);
-    std::atomic<int> bad{0};
-    Vector<std::thread> threads;
+    Atomic<int> bad{0};
+    Vector<Thread> threads;
     threads.Resize(4);
     for (int t = 0; t < 4; ++t) {
-        threads[t] = std::thread([&, t] {
+        threads[t] = Thread([&, t] {
             Vector<char> got = engine_test::Chars(8192);
             for (int i = 0; i < 200; ++i) {
                 const u64 off = static_cast<u64>((t * 7919 + i * 1237) % (content.Length() - 8192));
@@ -240,8 +240,8 @@ TEST_CASE("io::File: concurrent offset reads of one file", "[io][file]") {
             }
         });
     }
-    for (usize i = 0; i < threads.Size(); ++i) threads[i].join();
-    CHECK(bad.load() == 0);
+    for (usize i = 0; i < threads.Size(); ++i) threads[i].Join();
+    CHECK(bad.Load() == 0);
 }
 
 TEST_CASE("io: the read helpers", "[io][file]") {

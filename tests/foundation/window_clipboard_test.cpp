@@ -14,6 +14,7 @@
 #include "platform/linux/wayland/wayland_platform_window.h"
 #include "platform/linux/x11/x11_window.h"
 #include "platform/window.h"
+#include "lang/initializer_list.h"
 
 // Day 187: the clipboard value rules (UTF-8, Latin-1, file lists, request bookkeeping), the non-blocking pipes, and the X11 selection protocol between two connections.
 namespace window_clipboard_test {
@@ -29,7 +30,7 @@ Vector<byte> Bytes(const char* text) {
     return out;
 }
 
-Vector<byte> Raw(std::initializer_list<unsigned> values) {
+Vector<byte> Raw(InitializerList<unsigned> values) {
     Vector<byte> out;
     for (unsigned v : values) out.Push(static_cast<byte>(v));
     return out;

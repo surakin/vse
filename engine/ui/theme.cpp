@@ -3,7 +3,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-#include <mutex>
+#include "sync/mutex.h"
 
 #include "log/assert.h"
 #include "log/log.h"
@@ -32,7 +32,7 @@ public:
     }
     u32 Register(StringView name) {
         if (name.Length() == 0 || name.Length() > kMaxName) return 0;
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         for (usize i = 0; i < names_.Size(); ++i) {
             if (names_[i].length == name.Length() && std::memcmp(names_[i].text, name.Data(), name.Length()) == 0) return static_cast<u32>(i + 1);
         }
@@ -44,13 +44,13 @@ public:
         return static_cast<u32>(names_.Size());
     }
     String<HeapAllocator> Get(u32 id) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         if (id == 0 || id > names_.Size()) return String<HeapAllocator>(HeapAllocator::Default());
         return String<HeapAllocator>(HeapAllocator::Default(), StringView(names_[id - 1].text, names_[id - 1].length));
     }
 
 private:
-    std::mutex mutex_;
+    Mutex mutex_;
     Vector<Name> names_;
 };
 

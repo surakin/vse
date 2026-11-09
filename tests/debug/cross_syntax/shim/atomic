@@ -20,7 +20,13 @@ struct atomic {
     }
     T fetch_add(T v, memory_order = memory_order_seq_cst) { T old = value; value += v; return old; }
     T fetch_sub(T v, memory_order = memory_order_seq_cst) { T old = value; value -= v; return old; }
+    T fetch_and(T v, memory_order = memory_order_seq_cst) { T old = value; value &= v; return old; }
+    T fetch_or(T v, memory_order = memory_order_seq_cst) { T old = value; value |= v; return old; }
+    T fetch_xor(T v, memory_order = memory_order_seq_cst) { T old = value; value ^= v; return old; }
+    static constexpr bool is_always_lock_free = true;
     atomic& operator=(T v) { value = v; return *this; }
     operator T() const { return value; }
 };
+inline void atomic_thread_fence(memory_order) {}
+inline void atomic_signal_fence(memory_order) {}
 } // namespace std

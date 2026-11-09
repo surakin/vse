@@ -1,5 +1,5 @@
-#include <limits>
-#include <type_traits>
+#include "lang/limits.h"
+#include "lang/traits.h"
 #include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
@@ -45,8 +45,8 @@ TEST_CASE("Handles compare by index and generation", "[rhi][handle]") {
 }
 
 TEST_CASE("Handle kinds are distinct types", "[rhi][handle]") {
-    static_assert(!std::is_same_v<BufferHandle, TextureHandle>);
-    static_assert(!std::is_same_v<ShaderHandle, PipelineHandle>);
+    static_assert(!IsSame<BufferHandle, TextureHandle>);
+    static_assert(!IsSame<ShaderHandle, PipelineHandle>);
     static_assert(sizeof(BufferHandle) == 8);
     SUCCEED();
 }
@@ -289,7 +289,7 @@ TEST_CASE("SamplerDesc validation", "[rhi][desc]") {
     CHECK(Rejects(d.Validate(), "SamplerDesc: max_anisotropy"));
     d.max_anisotropy = 17.0f;
     CHECK(Rejects(d.Validate(), "SamplerDesc: max_anisotropy"));
-    d.max_anisotropy = std::numeric_limits<f32>::quiet_NaN();  // NaN must not slip through the range check
+    d.max_anisotropy = Limits<f32>::QuietNaN();  // NaN must not slip through the range check
     CHECK(Rejects(d.Validate(), "SamplerDesc: max_anisotropy"));
 
     SamplerDesc garbage;

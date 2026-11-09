@@ -4,7 +4,7 @@
 #include "debug/thread_info.h"
 #include "log/log.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 
 namespace engine_placeholder::debug {
 
@@ -15,11 +15,11 @@ struct ProviderEntry {
     const char* name;
     CrashStateFn fn;
     void* context;
-    std::atomic<bool> ready; // set (release) once the three fields above are written; a report skips an entry not ready
+    Atomic<bool> ready; // set (release) once the three fields above are written; a report skips an entry not ready
 };
 
 ProviderEntry g_providers[kMaxCrashStateProviders];
-std::atomic<usize> g_provider_count{0};
+Atomic<usize> g_provider_count{0};
 
 // Builds one line (or a few) in a small buffer on the stack and hands it to the sink in one call, so each piece that has
 // been written is whole.
@@ -97,25 +97,25 @@ bool RegisterCrashStateProvider(const char* name, CrashStateFn fn, void* context
         return false;
     }
     // Claim a slot, fill it, then publish it by the count; a report only reads entries below the count.
-    usize slot = g_provider_count.load(std::memory_order_relaxed);
+    usize slot = g_provider_count.Load(MemoryOrder::Relaxed);
     do {
         if (slot >= kMaxCrashStateProviders) {
             return false;
         }
-    } while (!g_provider_count.compare_exchange_weak(slot, slot + 1, std::memory_order_relaxed, std::memory_order_relaxed));
+    } while (!g_provider_count.CompareExchangeWeak(slot, slot + 1, MemoryOrder::Relaxed, MemoryOrder::Relaxed));
     ProviderEntry& entry = g_providers[slot];
     entry.name = name;
     entry.fn = fn;
     entry.context = context;
-    entry.ready.store(true, std::memory_order_release);
+    entry.ready.Store(true, MemoryOrder::Release);
     return true;
 }
 
 // SIGNAL-SAFE-BEGIN
 void ResetCrashStateProvidersForTesting() {
-    g_provider_count.store(0, std::memory_order_relaxed);
+    g_provider_count.Store(0, MemoryOrder::Relaxed);
     for (ProviderEntry& entry : g_providers) {
-        entry.ready.store(false, std::memory_order_relaxed);
+        entry.ready.Store(false, MemoryOrder::Relaxed);
     }
 }
 
@@ -152,10 +152,10 @@ void WriteCrashContext(const CrashReportSink& sink) {
     }
     // A provider that fails a check while running would come back here through the assert handler; the inner report skips them.
     static thread_local bool in_providers = false;
-    const usize providers = in_providers ? 0 : g_provider_count.load(std::memory_order_relaxed);
+    const usize providers = in_providers ? 0 : g_provider_count.Load(MemoryOrder::Relaxed);
     in_providers = true;
     for (usize i = 0; i < providers && i < kMaxCrashStateProviders; ++i) {
-        if (!g_providers[i].ready.load(std::memory_order_acquire)) {
+        if (!g_providers[i].ready.Load(MemoryOrder::Acquire)) {
             continue; // being registered right now
         }
         char text[kCrashStateTextBytes];

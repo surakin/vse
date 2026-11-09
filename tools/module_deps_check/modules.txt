@@ -49,6 +49,9 @@ module engine/foundation/build_defs.h base 0
 module engine/foundation/debug/compiler.h base 0
 module engine/foundation/log/assert.h base 0
 module engine/foundation/unity/ base 0
+module engine/foundation/cstr/ base 0   # Phase 16: wrappers of the C library's memory, string, format and number functions
+module engine/foundation/sync/ base 0   # Phase 16: wrappers of <atomic>, <mutex>, <condition_variable>, <thread>
+module engine/foundation/lang/ base 0   # Phase 16: wrappers of the language-support headers (same module as the base: types.h and int128.h include them)
 module shaders/ shaders 0
 module third_party/ external 0
 # 1 OS primitives

@@ -7,6 +7,7 @@ Concept pages, one per subsystem, plus the platform pages (`windows`).
 - [windows](windows.md)
 - [foundation-memory](foundation-memory.md)
 - [foundation-types](foundation-types.md)
+- [foundation-sync](foundation-sync.md)
 - [settings](settings.md)
 - [foundation-containers](foundation-containers.md)
 - [foundation-strings](foundation-strings.md)

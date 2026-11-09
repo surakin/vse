@@ -1,8 +1,8 @@
 // Regression tests for the Phase 11 end-of-phase code review (Day 139): each case fails without its fix.
 #include <catch2/catch_test_macros.hpp>
 
-#include <atomic>
-#include <thread>
+#include "sync/atomic.h"
+#include "sync/thread.h"
 
 #include "catch_engine_types.h"
 #include "io/file.h"
@@ -235,22 +235,22 @@ TEST_CASE("LastSaveStatus can be read while another thread saves", "[settings][r
     options.user_file = &user;
     options.use_environment = false;
     settings.Load(options);
-    std::atomic<bool> stop{false};
-    std::atomic<int> reads{0};
-    std::thread reader([&] {
-        while (!stop.load()) {
+    Atomic<bool> stop{false};
+    Atomic<int> reads{0};
+    Thread reader([&] {
+        while (!stop.Load()) {
             const Status s = settings.LastSaveStatus();
             (void)s;
-            reads.fetch_add(1);
+            reads.FetchAdd(1);
         }
     });
     for (int i = 0; i < 50; ++i) {
         settings.Set(id, Value::FromInt(2 + i));
         settings.Save();
     }
-    stop.store(true);
-    reader.join();
-    CHECK(reads.load() > 0);
+    stop.Store(true);
+    reader.Join();
+    CHECK(reads.Load() > 0);
 }
 
 TEST_CASE("A value set from the command line by the program outranks the user's file, is not saved, and yields to --set", "[settings][review]") {

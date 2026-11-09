@@ -5993,7 +5993,7 @@ Reports the device lost at the Nth swapchain present; 0 never does.
 `variable rhi::NullDeviceOptions::strikes_left` — defined in `engine/rhi/null/null_device.h`
 
 ```cpp
-std::atomic<u32>* strikes_left;
+Atomic<u32>* strikes_left;
 ```
 
 Limits how many injected losses strike (see [`rhi::FaultInjection::strikes_left`](#rhi-faultinjection-strikes-left)); null for no limit.
@@ -7080,7 +7080,7 @@ Report the device lost at the Nth swapchain `Present` (1 is the first); that pre
 `variable rhi::FaultInjection::strikes_left` — defined in `engine/rhi/rhi.h`
 
 ```cpp
-std::atomic<u32>* strikes_left;
+Atomic<u32>* strikes_left;
 ```
 
 How many devices an injected loss may strike, counted across devices that share this pointer (a recreated device is built from the same description): each injected loss decrements it, and at 0 no loss is injected any more. Null means no limit. Lets a test lose the device twice and then let a recovery succeed. Borrowed; must outlive the devices.

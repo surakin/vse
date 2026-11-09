@@ -7,6 +7,8 @@
 #include "rhi/vulkan/vk_pipeline_policy.h"
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vulkan_device.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
@@ -189,7 +191,7 @@ void VulkanDevice::ResetFrameDescriptorsLocked(usize frame_slot) {
     // The frame's transient groups ended with it: invalidate their handles. The stamp is the open frame, which no
     // earlier destroy exceeds, so the pool's retirement order holds.
     Vector<BindGroupHandle>& groups = frame_groups_[frame_slot];
-    const u64 current = frame_number_.load(std::memory_order_relaxed);
+    const u64 current = frame_number_.Load(MemoryOrder::Relaxed);
     for (usize i = 0; i < groups.Size(); ++i) {
         bind_groups_.Retire(groups[i], current);
     }
@@ -225,7 +227,7 @@ BindGroupHandle VulkanDevice::CreateBindGroup(const BindGroupDesc& desc) {
         RhiLog(LogVerbosity::Error, "CreateBindGroup: %s", why);
         return {};
     }
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     if (desc.transient) {
         ENGINE_ASSERT(frame_open_, "CreateBindGroup: a transient group can only be created inside a frame");
     }
@@ -247,7 +249,7 @@ BindGroupHandle VulkanDevice::CreateBindGroup(const BindGroupDesc& desc) {
     BindGroupRes res;
     res.layout_id = layout->id;
     res.transient = desc.transient;
-    res.frame = frame_number_.load(std::memory_order_relaxed);
+    res.frame = frame_number_.Load(MemoryOrder::Relaxed);
     const usize slots = total == 0 ? 1 : total;
     Vector<VkWriteDescriptorSet> write_storage;
     Vector<VkDescriptorBufferInfo> buffer_info_storage;
@@ -397,7 +399,7 @@ BindGroupHandle VulkanDevice::CreateBindGroup(const BindGroupDesc& desc) {
 }
 
 void VulkanDevice::DestroyBindGroup(BindGroupHandle group) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const BindGroupRes* g = bind_groups_.Get(group);
     ENGINE_ASSERT(g != nullptr, "DestroyBindGroup: handle is invalid or already destroyed");
     if (g == nullptr) {
@@ -407,12 +409,12 @@ void VulkanDevice::DestroyBindGroup(BindGroupHandle group) {
     if (g->transient) {
         return;
     }
-    const u64 current = frame_number_.load(std::memory_order_relaxed);
+    const u64 current = frame_number_.Load(MemoryOrder::Relaxed);
     bind_groups_.Retire(group, frame_open_ ? current : current + 1);
 }
 
 bool VulkanDevice::LookupBindGroup(BindGroupHandle group, BindGroupInfo* info) const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const BindGroupRes* g = bind_groups_.Get(group);
     if (g == nullptr) {
         return false;
@@ -437,7 +439,7 @@ bool VulkanDevice::LookupBindGroup(BindGroupHandle group, BindGroupInfo* info) c
 }
 
 bool VulkanDevice::LookupSampler(SamplerHandle sampler, VkSampler* vk_sampler) const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const SamplerRes* s = samplers_.Get(sampler);
     if (s == nullptr) {
         return false;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <mutex>
+#include "sync/mutex.h"
 
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
@@ -342,7 +342,7 @@ private:
     MemoryLayout layout_;
     MemoryAllocatorConfig config_;
     MemoryBackend* backend_;
-    mutable std::mutex mutex_;
+    mutable Mutex mutex_;
     Pool pools_[kMaxMemoryTypes * 2];
     struct Dedicated {
         u64 memory;

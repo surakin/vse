@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstddef>
+#include "types.h"
 
 #include "minidump.h"
 
@@ -13,18 +13,18 @@
 namespace crash_extract {
 
 // Parses a report line "#N  0x<address>  <module>+0x<offset>" into the frame number, the module text and the offset; false for any other.
-bool ParseFrame(const char* line, std::size_t length, unsigned* number, char* module, std::size_t module_capacity, u64* offset);
+bool ParseFrame(const char* line, engine_placeholder::usize length, unsigned* number, char* module, engine_placeholder::usize module_capacity, u64* offset);
 
 // The dump's module whose file name matches the last component of `module_text` (case ignored, as Windows file names); null if none.
-const DumpModule* FindModule(const char* module_text, const DumpModule* modules, std::size_t count);
+const DumpModule* FindModule(const char* module_text, const DumpModule* modules, engine_placeholder::usize count);
 
 // The store path of a module's PDB, `<store>\<pdb>\<ID>\<pdb>` with the ID in upper case; false if the module has no usable record.
-bool StorePdbPath(const char* store, const DumpModule& module, char* out, std::size_t capacity);
+bool StorePdbPath(const char* store, const DumpModule& module, char* out, engine_placeholder::usize capacity);
 
 // True if `name` can be used as one path component: not empty, not "." or "..", no separator, drive colon or control character.
 bool SafeFileName(const char* name);
 
 // Writes the report with its frames named. Returns the number of frames named; -1 where symbols cannot be read (not Windows).
-int ResolveReport(const char* report, std::size_t report_size, const DumpModule* modules, std::size_t module_count, const char* store);
+int ResolveReport(const char* report, engine_placeholder::usize report_size, const DumpModule* modules, engine_placeholder::usize module_count, const char* store);
 
 } // namespace crash_extract

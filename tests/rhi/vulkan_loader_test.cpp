@@ -11,6 +11,7 @@
 #include "rhi/vulkan/vk_loader.h"
 #include "rhi/vulkan/vk_result.h"
 #include "build_defs.h"
+#include "lang/initializer_list.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi::vulkan;
@@ -191,7 +192,7 @@ PFN_vkVoidFunction VKAPI_PTR FakeGetInstanceProcAddr(VkInstance, const char* nam
     }
     return &DummyFn;
 }
-VulkanLoader FakeLoader(std::initializer_list<const char*> missing) {
+VulkanLoader FakeLoader(InitializerList<const char*> missing) {
     g_missing_count = 0;
     for (const char* name : missing) {
         g_missing[g_missing_count++] = name;

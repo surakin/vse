@@ -8,6 +8,7 @@
 #include "log/assert.h"
 #include "string_view.h"
 #include "types.h"
+#include "lang/traits.h"
 
 //! Non-owning views of contiguous elements: [[Span]], [[ByteSpan]] and [[MutableByteSpan]].
 //!
@@ -37,27 +38,27 @@ public:
     }
     /// Creates a span of a C array.
     template <typename U, usize N>
-        requires std::is_convertible_v<U (*)[], T (*)[]>
+        requires IsConvertible<U (*)[], T (*)[]>
     constexpr Span(U (&array)[N]) : data_(array), size_(N) {}
     /// Converts a span of `U` to a span of `T` when only `const` is added.
     template <typename U>
-        requires(std::is_convertible_v<U (*)[], T (*)[]> && !std::is_same_v<U, T>)
+        requires(IsConvertible<U (*)[], T (*)[]> && !IsSame<U, T>)
     constexpr Span(const Span<U>& other) : data_(other.Data()), size_(other.Size()) {}
     /// Creates a span of the elements of a vector.
     template <typename U, typename A>
-        requires std::is_convertible_v<U (*)[], T (*)[]>
+        requires IsConvertible<U (*)[], T (*)[]>
     Span(Vector<U, A>& vector) : data_(vector.Data()), size_(vector.Size()) {}
     /// Creates a read-only span of the elements of a const vector.
     template <typename U, typename A>
-        requires(std::is_const_v<T> && std::is_convertible_v<const U (*)[], T (*)[]>)
+        requires(IsConst<T> && IsConvertible<const U (*)[], T (*)[]>)
     Span(const Vector<U, A>& vector) : data_(vector.Data()), size_(vector.Size()) {}
     /// Creates a span of the elements of an array.
     template <typename U, usize N>
-        requires std::is_convertible_v<U (*)[], T (*)[]>
+        requires IsConvertible<U (*)[], T (*)[]>
     constexpr Span(Array<U, N>& array) : data_(array.items), size_(N) {}
     /// Creates a read-only span of the elements of a const array.
     template <typename U, usize N>
-        requires(std::is_const_v<T> && std::is_convertible_v<const U (*)[], T (*)[]>)
+        requires(IsConst<T> && IsConvertible<const U (*)[], T (*)[]>)
     constexpr Span(const Array<U, N>& array) : data_(array.items), size_(N) {}
 
     /// Returns the pointer to the first element (null for a default span).
@@ -132,14 +133,14 @@ using MutableByteSpan = Span<byte>;
 /// Param value: the object; it must outlive the span.
 template <typename T>
 ByteSpan AsBytes(const T& value) {
-    static_assert(std::is_trivially_copyable_v<T>, "AsBytes: the type must be trivially copyable");
+    static_assert(IsTriviallyCopyable<T>, "AsBytes: the type must be trivially copyable");
     return ByteSpan(reinterpret_cast<const byte*>(&value), sizeof(T));
 }
 
 /// Views the elements of a span of trivially copyable values as bytes.
 template <typename T>
 ByteSpan AsBytes(Span<T> elements) {
-    static_assert(std::is_trivially_copyable_v<std::remove_const_t<T>>, "AsBytes: the element type must be trivially copyable");
+    static_assert(IsTriviallyCopyable<RemoveConst<T>>, "AsBytes: the element type must be trivially copyable");
     return ByteSpan(reinterpret_cast<const byte*>(elements.Data()), elements.SizeBytes());
 }
 
@@ -164,7 +165,7 @@ void Append(Vector<T, A>& target, std::type_identity_t<Span<const T>> items) {
         const usize doubled = target.Capacity() * 2;
         target.Reserve(needed > doubled ? needed : doubled);
     }
-    if constexpr (std::is_trivially_copyable_v<T>) {
+    if constexpr (IsTriviallyCopyable<T>) {
         if (items.Size() != 0) {
             const usize old_size = target.Size();
             target.Resize(old_size + items.Size());

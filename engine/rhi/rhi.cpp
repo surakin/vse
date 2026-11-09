@@ -1,4 +1,4 @@
-#include <atomic>
+#include "sync/atomic.h"
 
 #include "rhi/desc.h"
 #include "rhi/device.h"
@@ -25,8 +25,8 @@ ShaderHandle CreateShaderFromSet(Device& device, const ShaderBlobSet& set, Shade
 }
 
 u32 AllocateDeviceSerial() {
-    static std::atomic<u32> next{1};
-    return next.fetch_add(1, std::memory_order_relaxed);
+    static Atomic<u32> next{1};
+    return next.FetchAdd(1, MemoryOrder::Relaxed);
 }
 
 } // namespace engine_placeholder::rhi

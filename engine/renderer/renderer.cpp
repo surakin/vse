@@ -1,6 +1,6 @@
 #include "renderer/renderer.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstdarg>
 #include <cstdio>
 
@@ -319,9 +319,9 @@ ApplyResult Renderer::ApplyNow(const RenderSettings& requested, bool force_devic
     }
     if (result.ok) {
         ++stats_.applies[static_cast<usize>(result.performed)];
-        static std::atomic<u64>* const generation = debug::CrashStateCounter("settings_generation");
+        static Atomic<u64>* const generation = debug::CrashStateCounter("settings_generation");
         if (generation != nullptr) {
-            generation->store(settings_.Generation(), std::memory_order_relaxed);
+            generation->Store(settings_.Generation(), MemoryOrder::Relaxed);
         }
     }
     result.total_ms = NowMs() - start;
@@ -476,8 +476,8 @@ bool Renderer::RecoveryAttempt() {
             RenderSettings kept = attempt_settings;
             kept.SetGeneration(settings_.Generation() + 1);
             settings_ = kept;
-            static std::atomic<u64>* const generation = debug::CrashStateCounter("settings_generation");
-            if (generation != nullptr) generation->store(settings_.Generation(), std::memory_order_relaxed);
+            static Atomic<u64>* const generation = debug::CrashStateCounter("settings_generation");
+            if (generation != nullptr) generation->Store(settings_.Generation(), MemoryOrder::Relaxed);
         }
         recovering_ = false;
         force_full_recovery_ = false;
@@ -566,9 +566,9 @@ FrameStatus Renderer::RenderFrameImpl(const RenderScene* scene, const Camera* ca
     context.frame_index = frame_;
     {
         // The crash report shows which frame was being built.
-        static std::atomic<u64>* const frame_counter = debug::CrashStateCounter("frame");
+        static Atomic<u64>* const frame_counter = debug::CrashStateCounter("frame");
         if (frame_counter != nullptr) {
-            frame_counter->store(frame_, std::memory_order_relaxed);
+            frame_counter->Store(frame_, MemoryOrder::Relaxed);
         }
     }
     if (!desc_.build(context, desc_.build_user)) {

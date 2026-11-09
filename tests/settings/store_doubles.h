@@ -6,9 +6,8 @@
 
 #include <chrono>
 #include <cstdio>
-#include <condition_variable>
-#include <mutex>
-#include <thread>
+#include "sync/mutex.h"
+#include "sync/thread.h"
 
 #include "settings/config_store.h"
 #include "test_text.h"
@@ -69,11 +68,11 @@ public:
         : owned_(static_cast<ConfigStorePtr&&>(inner)), inner_(owned_.Get()), delay_us_(delay_us), thread_([this] { Loop(); }) {}
     ~SlowConfigStore() override {
         {
-            std::lock_guard<std::mutex> lock(mutex_);
+            LockGuard<Mutex> lock(mutex_);
             stopping_ = true;
         }
-        cv_.notify_all();
-        thread_.join();
+        cv_.NotifyAll();
+        thread_.Join();
     }
 
     u32 Capabilities() const override { return inner_->Capabilities(); }
@@ -87,7 +86,7 @@ public:
     Status SetChangeListener(ChangeListener listener, void* user) override { return Run([&] { return inner_->SetChangeListener(listener, user); }); }
 
     /// The id of the thread that ran the last call (differs from the caller's).
-    std::thread::id last_thread() const { return last_thread_; }
+    ThreadId last_thread() const { return last_thread_; }
 
 private:
     template <typename F>
@@ -96,45 +95,45 @@ private:
             F* fn;
             Status result;
         } job{&f, Status()};
-        std::unique_lock<std::mutex> lock(mutex_);
+        UniqueLock<Mutex> lock(mutex_);
         task_ = [](void* p) {
             Job* j = static_cast<Job*>(p);
             j->result = (*j->fn)();
         };
         arg_ = &job;
         done_ = false;
-        cv_.notify_all();
-        cv_.wait(lock, [&] { return done_; });
+        cv_.NotifyAll();
+        cv_.Wait(lock, [&] { return done_; });
         return job.result;
     }
     void Loop() {
-        std::unique_lock<std::mutex> lock(mutex_);
+        UniqueLock<Mutex> lock(mutex_);
         for (;;) {
-            cv_.wait(lock, [&] { return stopping_ || (task_ != nullptr && !done_); });
+            cv_.Wait(lock, [&] { return stopping_ || (task_ != nullptr && !done_); });
             if (stopping_) return;
             void (*task)(void*) = task_;
             void* arg = arg_;
-            lock.unlock();
-            std::this_thread::sleep_for(std::chrono::microseconds(delay_us_));
-            last_thread_ = std::this_thread::get_id();
+            lock.Unlock();
+            ThisThread::SleepForMicroseconds(delay_us_);
+            last_thread_ = ThisThread::Id();
             task(arg);
-            lock.lock();
+            lock.Lock();
             task_ = nullptr;
             done_ = true;
-            cv_.notify_all();
+            cv_.NotifyAll();
         }
     }
     ConfigStorePtr owned_;
     ConfigStore* inner_;
     int delay_us_;
-    std::mutex mutex_;
-    std::condition_variable cv_;
+    Mutex mutex_;
+    ConditionVariable cv_;
     void (*task_)(void*) = nullptr;
     void* arg_ = nullptr;
     bool done_ = true;
     bool stopping_ = false;
-    std::thread::id last_thread_;
-    std::thread thread_;
+    ThreadId last_thread_;
+    Thread thread_;
 };
 
 /// Enumerates in a different order on every call (rotated, and reversed on odd calls), and does not claim to preserve order: models a registry.
@@ -244,11 +243,11 @@ public:
     RegistryHive() : worker_([this] { Loop(); }) {}
     ~RegistryHive() {
         {
-            std::lock_guard<std::mutex> lock(mutex_);
+            LockGuard<Mutex> lock(mutex_);
             stopping_ = true;
         }
-        cv_.notify_all();
-        worker_.join();
+        cv_.NotifyAll();
+        worker_.Join();
     }
     RegistryHive(const RegistryHive&) = delete;
     RegistryHive& operator=(const RegistryHive&) = delete;
@@ -265,14 +264,14 @@ private:
         void* user;
     };
     void Notify(const void* writer) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         pending_writers_.Push(writer);
-        cv_.notify_all();
+        cv_.NotifyAll();
     }
     void Loop() {
-        std::unique_lock<std::mutex> lock(mutex_);
+        UniqueLock<Mutex> lock(mutex_);
         for (;;) {
-            cv_.wait(lock, [&] { return stopping_ || !pending_writers_.Empty(); });
+            cv_.Wait(lock, [&] { return stopping_ || !pending_writers_.Empty(); });
             if (pending_writers_.Empty()) return;
             const void* writer = pending_writers_[0];
             pending_writers_.Remove(0);
@@ -283,13 +282,13 @@ private:
             }
         }
     }
-    std::mutex mutex_;
-    std::condition_variable cv_;
+    Mutex mutex_;
+    ConditionVariable cv_;
     Vector<Entry> entries_;
     Vector<Watcher> watchers_;
     Vector<const void*> pending_writers_;
     bool stopping_ = false;
-    std::thread worker_;
+    Thread worker_;
 };
 
 class RegistryShapedStore final : public ConfigStore {
@@ -305,7 +304,7 @@ public:
     Status Get(StringView key, StoredValue* out) override {
         Key k;
         if (Key::Parse(key, &k) != KeyError::None) return Status::Of(StoreError::Invalid);
-        std::lock_guard<std::mutex> lock(hive_->mutex_);
+        LockGuard<Mutex> lock(hive_->mutex_);
         for (usize i = 0; i < hive_->entries_.Size(); ++i) {
             if (hive_->entries_[i].key == k) {
                 *out = hive_->entries_[i].value;
@@ -318,7 +317,7 @@ public:
         Key k;
         if (Key::Parse(key, &k) != KeyError::None) return Status::Of(StoreError::Invalid);
         {
-            std::lock_guard<std::mutex> lock(hive_->mutex_);
+            LockGuard<Mutex> lock(hive_->mutex_);
             usize at = 0;
             while (at < hive_->entries_.Size() && !(hive_->entries_[at].key == k)) ++at;
             if (at == hive_->entries_.Size()) {
@@ -337,7 +336,7 @@ public:
         Key k;
         if (Key::Parse(key, &k) != KeyError::None) return Status::Of(StoreError::Invalid);
         {
-            std::lock_guard<std::mutex> lock(hive_->mutex_);
+            LockGuard<Mutex> lock(hive_->mutex_);
             usize at = 0;
             while (at < hive_->entries_.Size() && !(hive_->entries_[at].key == k)) ++at;
             if (at == hive_->entries_.Size()) return Status::Of(StoreError::NotFound);
@@ -348,7 +347,7 @@ public:
     }
     Status Enumerate(StringView prefix, Vector<Key>* out) override {
         if (prefix.Length() != 0 && Key::Parse(prefix, nullptr) != KeyError::None) return Status::Of(StoreError::Invalid);
-        std::lock_guard<std::mutex> lock(hive_->mutex_);
+        LockGuard<Mutex> lock(hive_->mutex_);
         for (usize i = hive_->entries_.Size(); i-- > 0;) { // no order: backwards, which is not the order they were written in
             const StringView k = hive_->entries_[i].key.View();
             if (prefix.Length() == 0 || k == prefix || (k.Length() > prefix.Length() && k.StartsWith(prefix) && k[prefix.Length()] == '.')) out->Push(hive_->entries_[i].key);
@@ -357,7 +356,7 @@ public:
     }
     Status Commit(const CommitOptions&) override { return Status(); } // every write was durable when it returned
     Status SetChangeListener(ChangeListener listener, void* user) override {
-        std::lock_guard<std::mutex> lock(hive_->mutex_);
+        LockGuard<Mutex> lock(hive_->mutex_);
         for (usize i = 0; i < hive_->watchers_.Size(); ++i) {
             if (hive_->watchers_[i].owner == this) {
                 if (listener == nullptr) hive_->watchers_.Remove(i);

@@ -1,8 +1,8 @@
-#include <atomic>
-#include <cstdint>
+#include "sync/atomic.h"
+#include "types.h"
 #include <cstdio>
 #include <cstring>
-#include <thread>
+#include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -57,7 +57,7 @@ TEST_CASE("FramePool routes requests to the smallest class that fits and aligns 
         FramePool::Stats before = pool.GetStats();
         void* p = pool.Allocate(c.size);
         REQUIRE(p != nullptr);
-        REQUIRE(reinterpret_cast<std::uintptr_t>(p) % 16 == 0);
+        REQUIRE(reinterpret_cast<usize>(p) % 16 == 0);
         FramePool::Stats during = pool.GetStats();
         REQUIRE(during.pooled_allocs[c.expected_class] == before.pooled_allocs[c.expected_class] + 1);
         REQUIRE(during.fallback_allocs == before.fallback_allocs);
@@ -91,7 +91,7 @@ TEST_CASE("FramePool oversize requests take the counted malloc fallback", "[jobs
     FramePool pool(LocalConfig());
     void* p = pool.Allocate(FramePool::kMaxPooledRequest + 1);
     REQUIRE(p != nullptr);
-    REQUIRE(reinterpret_cast<std::uintptr_t>(p) % 16 == 0);
+    REQUIRE(reinterpret_cast<usize>(p) % 16 == 0);
     Fill(p, FramePool::kMaxPooledRequest + 1, 3);
     REQUIRE(Check(p, FramePool::kMaxPooledRequest + 1, 3));
 
@@ -140,10 +140,10 @@ TEST_CASE("FramePool global instance: blocks freed on another thread are reusabl
 
     Vector<void*> blocks;
     for (int i = 0; i < 1000; ++i) blocks.Push(pool.Allocate(100));
-    std::thread freer([&] {
+    Thread freer([&] {
         for (usize i = 0; i < blocks.Size(); ++i) pool.Deallocate(blocks[i]);
     });
-    freer.join();
+    freer.Join();
 
     // The freeing thread exited and flushed its cache; everything is
     // allocatable again with no fallback.
@@ -168,10 +168,10 @@ TEST_CASE("FramePool survives 8-thread cross-thread alloc/free churn with no ove
 
     // Mailbox: a block parked here by one thread is freed by whichever
     // thread takes it, so allocation and free routinely cross threads.
-    Vector<std::atomic<void*>> mailbox; // sized once while empty, so the atomics never move
+    Vector<Atomic<void*>> mailbox; // sized once while empty, so the atomics never move
     mailbox.Resize(kSlots);
-    for (usize i = 0; i < mailbox.Size(); ++i) mailbox[i].store(nullptr);
-    std::atomic<int> corruption{0};
+    for (usize i = 0; i < mailbox.Size(); ++i) mailbox[i].Store(nullptr);
+    Atomic<int> corruption{0};
 
     // Each block: [0..8) = tag, [8..16) = size, [size-8..size) = tag.
     auto stamp = [](void* p, usize size, u64 tag) {
@@ -202,36 +202,36 @@ TEST_CASE("FramePool survives 8-thread cross-thread alloc/free churn with no ove
         u64 counter = 0;
         for (int op = 0; op < kOpsPerThread; ++op) {
             usize slot = next() % kSlots;
-            void* got = mailbox[slot].exchange(nullptr, std::memory_order_acq_rel);
+            void* got = mailbox[slot].Exchange(nullptr, MemoryOrder::AcqRel);
             if (got != nullptr) {
-                if (!verify(got)) corruption.fetch_add(1);
+                if (!verify(got)) corruption.FetchAdd(1);
                 pool.Deallocate(got);
             } else {
                 usize size = kSizes[next() % (sizeof(kSizes) / sizeof(kSizes[0]))];
                 void* p = pool.Allocate(size);
                 stamp(p, size, (static_cast<u64>(id) << 40) | ++counter);
                 void* expected = nullptr;
-                if (!mailbox[slot].compare_exchange_strong(expected, p, std::memory_order_acq_rel)) {
-                    if (!verify(p)) corruption.fetch_add(1);
+                if (!mailbox[slot].CompareExchangeStrong(expected, p, MemoryOrder::AcqRel)) {
+                    if (!verify(p)) corruption.FetchAdd(1);
                     pool.Deallocate(p);
                 }
             }
         }
     };
 
-    Vector<std::thread> threads;
-    for (int i = 0; i < kThreads; ++i) threads.Push(std::thread(worker, i));
-    for (usize i = 0; i < threads.Size(); ++i) threads[i].join();
+    Vector<Thread> threads;
+    for (int i = 0; i < kThreads; ++i) threads.Push(Thread(worker, i));
+    for (usize i = 0; i < threads.Size(); ++i) threads[i].Join();
 
     for (usize i = 0; i < mailbox.Size(); ++i) {
-        void* p = mailbox[i].exchange(nullptr);
+        void* p = mailbox[i].Exchange(nullptr);
         if (p != nullptr) {
-            if (!verify(p)) corruption.fetch_add(1);
+            if (!verify(p)) corruption.FetchAdd(1);
             pool.Deallocate(p);
         }
     }
 
-    REQUIRE(corruption.load() == 0);
+    REQUIRE(corruption.Load() == 0);
     const FramePool::Stats after = pool.GetStats();
     REQUIRE(after.Live() == before.Live());
     REQUIRE(after.TotalPooledAllocs() > before.TotalPooledAllocs());
@@ -265,7 +265,7 @@ TEST_CASE("FramePool: a free after the thread's cache was destroyed still reache
     const usize available_before = pool.CentralAvailableForTesting(cls);
     const FramePool::Stats before = pool.GetStats();
 
-    std::thread t([&] {
+    Thread t([&] {
         // Constructed first => destroyed LAST. Its destructor runs after
         // the FramePool's per-thread cache has already been destroyed.
         struct LateFree {
@@ -280,7 +280,7 @@ TEST_CASE("FramePool: a free after the thread's cache was destroyed still reache
         thread_local LateFree late{&pool};
         late.block = pool.Allocate(200); // first pool use => cache constructed after `late`
     });
-    t.join();
+    t.Join();
 
     const FramePool::Stats after = pool.GetStats();
     REQUIRE(after.Live() == before.Live());

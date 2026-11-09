@@ -1,10 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <chrono>
 #include <cstdlib>
-#include <new>
-#include <thread>
+#include "sync/thread.h"
 
 #include "file_conformance.h"
 #include "io/file.h"
@@ -17,6 +16,8 @@
 #include "test_text.h"
 #include "temp_dir.h"
 #include "build_defs.h"
+#include "types.h"
+#include "sync/mutex.h"
 
 #if ENGINE_SANITIZED
 #define IO_TEST_SANITIZED 1
@@ -25,19 +26,19 @@
 // --- an allocation counter (this test executable only), to prove the local completion path allocates nothing -----------------
 #ifndef IO_TEST_SANITIZED // the sanitizer runtimes define their own operator new
 namespace {
-std::atomic<long> g_allocs{0};
-std::atomic<bool> g_counting{false};
+Atomic<long> g_allocs{0};
+Atomic<bool> g_counting{false};
 } // namespace
-void* operator new(std::size_t n) {
-    if (g_counting.load(std::memory_order_relaxed)) g_allocs.fetch_add(1, std::memory_order_relaxed);
+void* operator new(usize n) {
+    if (g_counting.Load(MemoryOrder::Relaxed)) g_allocs.FetchAdd(1, MemoryOrder::Relaxed);
     if (void* p = std::malloc(n == 0 ? 1 : n)) return p;
     std::abort();
 }
-void* operator new[](std::size_t n) { return operator new(n); }
+void* operator new[](usize n) { return operator new(n); }
 void operator delete(void* p) noexcept { std::free(p); }
 void operator delete[](void* p) noexcept { std::free(p); }
-void operator delete(void* p, std::size_t) noexcept { std::free(p); }
-void operator delete[](void* p, std::size_t) noexcept { std::free(p); }
+void operator delete(void* p, usize) noexcept { std::free(p); }
+void operator delete[](void* p, usize) noexcept { std::free(p); }
 #endif
 
 using namespace engine_placeholder;
@@ -65,21 +66,21 @@ struct ScopedDefaultExecutor {
 };
 
 struct Gate { // waits for N completions and records their order
-    std::mutex m;
-    std::condition_variable cv;
+    Mutex m;
+    ConditionVariable cv;
     int count = 0;
     Vector<int> order;
     Vector<io::Status> statuses;
     void Add(int id, io::Status s) {
-        std::lock_guard<std::mutex> lock(m);
+        LockGuard<Mutex> lock(m);
         order.Push(id);
         statuses.Push(s);
         ++count;
-        cv.notify_all();
+        cv.NotifyAll();
     }
     void WaitFor(int n) {
-        std::unique_lock<std::mutex> lock(m);
-        cv.wait(lock, [&] { return count >= n; });
+        UniqueLock<Mutex> lock(m);
+        cv.Wait(lock, [&] { return count >= n; });
     }
 };
 struct Tagged {
@@ -212,7 +213,7 @@ TEST_CASE("io::File: a completion may destroy the file", "[io][async]") {
     struct Ctx {
         io::FilePtr file;
         io::AsyncRequest request;
-        std::atomic<int> done{0};
+        Atomic<int> done{0};
         char buf[8];
     } ctx;
     ctx.file = OpenWith(dir, "contents!");
@@ -220,15 +221,15 @@ TEST_CASE("io::File: a completion may destroy the file", "[io][async]") {
         Ctx* c = static_cast<Ctx*>(u);
         CHECK(r.status.Ok());
         c->file.Reset(); // destroys the file from inside its own completion
-        c->done.store(1);
+        c->done.Store(1);
     }, &ctx);
-    while (ctx.done.load() == 0) std::this_thread::yield();
+    while (ctx.done.Load() == 0) ThisThread::Yield();
     CHECK_FALSE(ctx.file);
 }
 
 TEST_CASE("io::File: destroying a file waits for its requests", "[io][async]") {
     TempDir dir;
-    std::atomic<int> completed{0};
+    Atomic<int> completed{0};
     constexpr int kN = 50;
     Vector<io::AsyncRequest> reqs;
     reqs.Resize(kN);
@@ -236,13 +237,13 @@ TEST_CASE("io::File: destroying a file waits for its requests", "[io][async]") {
     {
         io::FilePtr f = OpenWith(dir, io_test::PatternBytes(10000).View());
         for (int i = 0; i < kN; ++i) {
-            f->ReadAsync(&reqs[i], bufs.Data() + i * 64, 64, 0, [](void* u, const io::AsyncResult&) { static_cast<std::atomic<int>*>(u)->fetch_add(1); }, &completed);
+            f->ReadAsync(&reqs[i], bufs.Data() + i * 64, 64, 0, [](void* u, const io::AsyncResult&) { static_cast<Atomic<int>*>(u)->FetchAdd(1); }, &completed);
         }
     } // ~LocalFile waits until every request has begun completing
-    while (completed.load() < kN) std::this_thread::yield();
-    CHECK(completed.load() == kN);
+    while (completed.Load() < kN) ThisThread::Yield();
+    CHECK(completed.Load() == kN);
     // The double completes queued requests with Interrupted when it is destroyed.
-    std::atomic<int> interrupted{0};
+    Atomic<int> interrupted{0};
     Vector<io::AsyncRequest> r2;
     r2.Resize(10);
     char tmp[10][8];
@@ -250,11 +251,11 @@ TEST_CASE("io::File: destroying a file waits for its requests", "[io][async]") {
         SlowFile slow(engine_test::Repeated(100, 'y').View(), SlowFile::Options{20000, 100, 0});
         for (int i = 0; i < 10; ++i) {
             slow.ReadAsync(&r2[i], tmp[i], 8, 0, [](void* u, const io::AsyncResult& r) {
-                if (r.status.Is(Error::Interrupted)) static_cast<std::atomic<int>*>(u)->fetch_add(1);
+                if (r.status.Is(Error::Interrupted)) static_cast<Atomic<int>*>(u)->FetchAdd(1);
             }, &interrupted);
         }
     }
-    CHECK(interrupted.load() >= 8); // the first may already be running
+    CHECK(interrupted.Load() >= 8); // the first may already be running
 }
 
 TEST_CASE("io::File: an error in the middle of a chain", "[io][async]") {
@@ -329,15 +330,15 @@ TEST_CASE("io::File: the local completion path allocates nothing", "[io][async]"
     Tagged wt{&gate, -1};
     f->ReadAsync(&warm, buf, 64, 0, &TaggedDone, &wt);
     gate.WaitFor(1);
-    g_allocs.store(0);
-    g_counting.store(true);
+    g_allocs.Store(0);
+    g_counting.Store(true);
     for (int i = 0; i < kN; ++i) {
         tags[i] = {&gate, i};
         f->ReadAsync(&reqs[i], buf, 64, 0, &TaggedDone, &tags[i]);
     }
     gate.WaitFor(kN + 1);
-    g_counting.store(false);
-    CHECK(g_allocs.load() == 0);
+    g_counting.Store(false);
+    CHECK(g_allocs.Load() == 0);
 #endif
 }
 
@@ -346,7 +347,7 @@ TEST_CASE("io::File: the local completion path allocates nothing", "[io][async]"
 namespace {
 
 struct JobOut {
-    std::atomic<int> done{0};
+    Atomic<int> done{0};
     bool ok = false;
     bool on_participant = false;
     engine_test::Text text = engine_test::MakeText();
@@ -359,7 +360,7 @@ jobs::Job ReadInJob(jobs::Scheduler* s, io::File* f, JobOut* out) {
     out->ok = r.status.Ok();
     out->text = engine_test::MakeText(StringView(buf, r.bytes));
     out->on_participant = jobs::WorkerPool::IsParticipantThread();
-    out->done.fetch_add(1, std::memory_order_release);
+    out->done.FetchAdd(1, MemoryOrder::Release);
 }
 
 jobs::Job ReadAllInJob(jobs::Scheduler* s, io::File* f, JobOut* out) {
@@ -367,14 +368,14 @@ jobs::Job ReadAllInJob(jobs::Scheduler* s, io::File* f, JobOut* out) {
     out->status = r.status;
     out->text = engine_test::MakeText(StringView(reinterpret_cast<const char*>(r.bytes.Data()), r.bytes.Size()));
     out->on_participant = jobs::WorkerPool::IsParticipantThread();
-    out->done.fetch_add(1, std::memory_order_release);
+    out->done.FetchAdd(1, MemoryOrder::Release);
 }
 
 jobs::Job WriteInJob(jobs::Scheduler* s, io::File* f, JobOut* out) {
     const io::AsyncResult w = co_await jobs::WriteAsync(*s, *f, "XY", 2, 0);
     const io::AsyncResult fl = co_await jobs::FlushAsync(*s, *f);
     out->ok = w.status.Ok() && w.bytes == 2 && fl.status.Ok();
-    out->done.fetch_add(1, std::memory_order_release);
+    out->done.FetchAdd(1, MemoryOrder::Release);
 }
 
 } // namespace
@@ -432,7 +433,7 @@ TEST_CASE("jobs: co_await file reads inside jobs on a scheduler", "[io][async][j
 #if !ENGINE_PLATFORM_WINDOWS // (only the /proc case below uses these)
 namespace {
 struct ProcOut {
-    std::atomic<int> done{0};
+    Atomic<int> done{0};
     bool ok = false;
     usize size = 0;
 };
@@ -440,7 +441,7 @@ jobs::Job ReadProcJob(jobs::Scheduler* s, ProcOut* out) {
     jobs::FileReadResult r = co_await jobs::ReadFileAsync(*s, "/proc/self/status");
     out->ok = r.ok;
     out->size = r.size;
-    out->done.fetch_add(1, std::memory_order_release);
+    out->done.FetchAdd(1, MemoryOrder::Release);
 }
 } // namespace
 #endif

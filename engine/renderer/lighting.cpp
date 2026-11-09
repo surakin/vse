@@ -10,6 +10,7 @@
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 #include "tonemap.frag.dxil.inc"
+#include "sync/atomic.h"
 
 namespace engine_placeholder::renderer {
 
@@ -346,7 +347,7 @@ void LightingPass::Record(const PassExecuteContext& context, void* user) {
         } else if (self->point_draws_.Size() > 0) {
             RenderLog(LogVerbosity::Error, "LightingPass: the light volume pipeline is missing; point lights are not drawn");
         }
-        self->point_draws_recorded_.store(recorded, std::memory_order_relaxed);
+        self->point_draws_recorded_.Store(recorded, MemoryOrder::Relaxed);
     } else {
         RenderLog(LogVerbosity::Error, "LightingPass: the pipeline or a bind group is missing; the accumulation target stays black");
     }

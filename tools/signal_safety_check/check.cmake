@@ -3,7 +3,7 @@
 # Code that runs inside a crashing process (the signal recorder, the crash report writer, the log ring reader) may call only
 # raw system calls, atomics and a few memory functions: no allocation, no stdio formatting, no locks, no engine log. Such code
 # sits between the marker comments `// SIGNAL-SAFE-BEGIN` and `// SIGNAL-SAFE-END`; between them these are forbidden:
-#   malloc calloc realloc free new delete, printf-family, FILE I/O, strdup, mutex and lock types, Log(, std:: names other than
+#   malloc calloc realloc free new delete, printf-family, FILE I/O, strdup, mutex and lock types (the standard ones and the sync wrappers), the mem and format wrappers, Log(, std:: names other than
 #   the allowed few (atomic, atomic_thread_fence, memory_order_*, memset, memcpy, strlen, strncmp).
 # On Windows (Phase 13 Day 150) "signal-safe" means code that runs inside a crashed process's exception handler (the vectored or
 # unhandled-exception filter): the heap and the loader lock may be held by the thread that crashed, so the same rules apply and these
@@ -42,7 +42,7 @@ function(read_lines path out)
 endfunction()
 
 set(ident "(^|[^A-Za-z0-9_])")
-set(forbidden_re "${ident}(malloc|calloc|realloc|free|strdup|printf|snprintf|sprintf|vsnprintf|vprintf|fprintf|fopen|fclose|fwrite|fread|fputs|puts|new|delete|pthread_mutex_lock|pthread_mutex_unlock|mutex|lock_guard|unique_lock|scoped_lock|condition_variable)([^A-Za-z0-9_]|$)")
+set(forbidden_re "${ident}(malloc|calloc|realloc|free|strdup|printf|snprintf|sprintf|vsnprintf|vprintf|fprintf|fopen|fclose|fwrite|fread|fputs|puts|new|delete|pthread_mutex_lock|pthread_mutex_unlock|mutex|lock_guard|unique_lock|scoped_lock|condition_variable|Mutex|RecursiveMutex|LockGuard|UniqueLock|ConditionVariable|MemAllocate|MemAllocateZeroed|MemReallocate|MemFree|FormatTo|VFormatTo|WFormatTo)([^A-Za-z0-9_]|$)")
 set(win_forbidden_re "${ident}(HeapAlloc|HeapReAlloc|HeapFree|LocalAlloc|LocalReAlloc|LocalFree|GlobalAlloc|GlobalReAlloc|GlobalFree|CoTaskMemAlloc|EnterCriticalSection|TryEnterCriticalSection|LeaveCriticalSection|AcquireSRWLockExclusive|AcquireSRWLockShared|TryAcquireSRWLockExclusive|TryAcquireSRWLockShared|ReleaseSRWLockExclusive|ReleaseSRWLockShared|wsprintfA|wsprintfW|wvsprintfA|wvsprintfW|swprintf|_snprintf|_snwprintf|sprintf_s|swprintf_s|_vsnprintf|_vsnwprintf|FormatMessageA|FormatMessageW|_wfopen|fopen_s|_wfopen_s|OutputDebugStringA|OutputDebugStringW|LoadLibraryA|LoadLibraryW|LoadLibraryExA|LoadLibraryExW)([^A-Za-z0-9_]|$)")
 set(log_re "${ident}Log[ \t]*\\(")
 set(std_re "std::([A-Za-z_0-9]+)")

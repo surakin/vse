@@ -4,7 +4,7 @@
 // buffer, and a few builders, so a test never needs std::string or std::vector.
 
 #include <cstdarg>
-#include <initializer_list>
+#include "lang/initializer_list.h"
 #include <cstdio>
 
 #include "containers/vector.h"
@@ -81,7 +81,7 @@ public:
     const Text& operator[](usize i) const { return items_[i]; }
     const Text& Back() const { return items_[items_.Size() - 1]; }
     /// True if the list holds exactly `expected`, in order.
-    bool SameAs(std::initializer_list<const char*> expected) const {
+    bool SameAs(engine_placeholder::InitializerList<const char*> expected) const {
         if (items_.Size() != expected.size()) return false;
         usize i = 0;
         for (const char* e : expected) {
@@ -117,7 +117,7 @@ public:
     usize Size() const { return items_.Size(); }
     bool Empty() const { return items_.Empty(); }
     /// True if the set holds exactly `expected` (in any order, without repeats).
-    bool SameAs(std::initializer_list<const char*> expected) const {
+    bool SameAs(engine_placeholder::InitializerList<const char*> expected) const {
         if (items_.Size() != expected.size()) return false;
         TextSet seen; // the expected names must be distinct, or a repeat could hide a missing entry
         for (const char* e : expected) {

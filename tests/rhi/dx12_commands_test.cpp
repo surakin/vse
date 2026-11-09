@@ -3,7 +3,7 @@
 // frame across the shader-visible ring's wrap, and a list that fails cleanly. Windows only.
 #include <cmath>
 #include <cstring>
-#include <thread>
+#include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -550,9 +550,9 @@ TEST_CASE("DX12 command lists record on several threads at once and run in one s
     }
     device->BeginFrame();
     CommandList* lists[kThreads] = {};
-    std::thread threads[kThreads];
+    Thread threads[kThreads];
     for (u32 i = 0; i < kThreads; ++i) {
-        threads[i] = std::thread([&, i] {
+        threads[i] = Thread([&, i] {
             CommandList* list = device->CreateCommandList();
             if (list == nullptr) return;
             list->Begin();
@@ -568,7 +568,7 @@ TEST_CASE("DX12 command lists record on several threads at once and run in one s
             lists[i] = list;
         });
     }
-    for (std::thread& t : threads) t.join();
+    for (Thread& t : threads) t.Join();
     for (CommandList* l : lists) REQUIRE(l != nullptr);
     REQUIRE(device->Submit(lists, kThreads) != 0);
     device->EndFrame();

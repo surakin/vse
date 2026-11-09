@@ -656,7 +656,7 @@ Reference count safe to change from several threads at once; the default policy 
 `variable AtomicRefCount::count` — defined in `engine/foundation/containers/shared_ptr.h`
 
 ```cpp
-std::atomic<usize> count;
+Atomic<usize> count;
 ```
 
 Number of owners; starts at one (the creator).
@@ -825,7 +825,7 @@ Becomes another owner of `other`'s object.
 `constructor SharedPtr::SharedPtr` — defined in `engine/foundation/containers/shared_ptr.h`
 
 ```cpp
-template <typename U> requires std::is_convertible_v<U*, T*>
+template <typename U> requires IsConvertible<U*, T*>
 SharedPtr(const SharedPtr<U, Count>& other);
 ```
 
@@ -846,7 +846,7 @@ Takes over `other`'s share, leaving `other` empty.
 `constructor SharedPtr::SharedPtr` — defined in `engine/foundation/containers/shared_ptr.h`
 
 ```cpp
-template <typename U> requires std::is_convertible_v<U*, T*>
+template <typename U> requires IsConvertible<U*, T*>
 SharedPtr(SharedPtr<U, Count>&& other) noexcept;
 ```
 
@@ -1034,7 +1034,7 @@ Creates a span of `size` elements starting at `data`.
 `constructor Span::Span` — defined in `engine/foundation/containers/span.h`
 
 ```cpp
-template <typename U, usize N> requires std::is_convertible_v<U (*)[], T (*)[]>
+template <typename U, usize N> requires IsConvertible<U (*)[], T (*)[]>
 constexpr Span(U (&array)[N]);
 ```
 
@@ -1045,7 +1045,7 @@ Creates a span of a C array.
 `constructor Span::Span` — defined in `engine/foundation/containers/span.h`
 
 ```cpp
-template <typename U> requires(std::is_convertible_v<U (*)[], T (*)[]> && !std::is_same_v<U, T>)
+template <typename U> requires(IsConvertible<U (*)[], T (*)[]> && !IsSame<U, T>)
 constexpr Span(const Span<U>& other);
 ```
 
@@ -1056,7 +1056,7 @@ Converts a span of `U` to a span of `T` when only `const` is added.
 `constructor Span::Span` — defined in `engine/foundation/containers/span.h`
 
 ```cpp
-template <typename U, typename A> requires std::is_convertible_v<U (*)[], T (*)[]>
+template <typename U, typename A> requires IsConvertible<U (*)[], T (*)[]>
 Span(Vector<U, A>& vector);
 ```
 
@@ -1067,7 +1067,7 @@ Creates a span of the elements of a vector.
 `constructor Span::Span` — defined in `engine/foundation/containers/span.h`
 
 ```cpp
-template <typename U, typename A> requires(std::is_const_v<T> && std::is_convertible_v<const U (*)[], T (*)[]>)
+template <typename U, typename A> requires(IsConst<T> && IsConvertible<const U (*)[], T (*)[]>)
 Span(const Vector<U, A>& vector);
 ```
 
@@ -1078,7 +1078,7 @@ Creates a read-only span of the elements of a const vector.
 `constructor Span::Span` — defined in `engine/foundation/containers/span.h`
 
 ```cpp
-template <typename U, usize N> requires std::is_convertible_v<U (*)[], T (*)[]>
+template <typename U, usize N> requires IsConvertible<U (*)[], T (*)[]>
 constexpr Span(Array<U, N>& array);
 ```
 
@@ -1089,7 +1089,7 @@ Creates a span of the elements of an array.
 `constructor Span::Span` — defined in `engine/foundation/containers/span.h`
 
 ```cpp
-template <typename U, usize N> requires(std::is_const_v<T> && std::is_convertible_v<const U (*)[], T (*)[]>)
+template <typename U, usize N> requires(IsConst<T> && IsConvertible<const U (*)[], T (*)[]>)
 constexpr Span(const Array<U, N>& array);
 ```
 
@@ -1362,7 +1362,7 @@ Creates the deleter.
 `constructor DefaultDelete::DefaultDelete` — defined in `engine/foundation/containers/unique_ptr.h`
 
 ```cpp
-template <typename U> requires std::is_convertible_v<U*, T*>
+template <typename U> requires IsConvertible<U*, T*>
 constexpr DefaultDelete(const DefaultDelete<U>&);
 ```
 
@@ -1481,7 +1481,7 @@ Takes over `other`'s object, leaving `other` empty.
 `constructor UniquePtr::UniquePtr` — defined in `engine/foundation/containers/unique_ptr.h`
 
 ```cpp
-template <typename U, typename E> requires(std::is_convertible_v<U*, T*> && std::is_constructible_v<Deleter, E &&>)
+template <typename U, typename E> requires(IsConvertible<U*, T*> && IsConstructible<Deleter, E &&>)
 UniquePtr(UniquePtr<U, E>&& other) noexcept;
 ```
 

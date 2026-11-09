@@ -1,10 +1,9 @@
 #pragma once
 
-#include <condition_variable>
+#include "sync/mutex.h"
 #include <coroutine>
 #include <utility>
-#include <mutex>
-#include <thread>
+#include "sync/thread.h"
 
 #include "containers/unique_ptr.h"
 #include "io/file.h"
@@ -105,20 +104,20 @@ public:
     /// Gives the id of the I/O thread, for telling it apart from other threads.
     ///
     /// Returns: the thread id recorded at construction.
-    std::thread::id ThreadId() const { return thread_id_; }
+    engine_placeholder::ThreadId ThreadId() const { return thread_id_; }
 
 private:
     void Loop();
 
-    std::mutex shutdown_mutex_; // serializes Shutdown() callers through the join
-    std::mutex mutex_;
-    std::condition_variable cv_;
+    Mutex shutdown_mutex_; // serializes Shutdown() callers through the join
+    Mutex mutex_;
+    ConditionVariable cv_;
     IoRequest* head_ = nullptr;
     IoRequest* tail_ = nullptr;
     bool stopping_ = false;
     bool joined_ = false;
-    std::thread thread_;
-    std::thread::id thread_id_;
+    Thread thread_;
+    engine_placeholder::ThreadId thread_id_;
 };
 
 struct ReadState; // heap-allocated per request (defined in async_io.cpp)

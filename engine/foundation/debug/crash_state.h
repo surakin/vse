@@ -2,7 +2,7 @@
 
 #include "types.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 
 //! Two ready-made kinds of engine state for the crash report, so a subsystem does not have to write a provider function:
 //! a line of text set once ("gpu: NVIDIA ..., driver 1.2.3") and a counter that is kept up to date ("frame: 41231").
@@ -32,7 +32,7 @@ bool SetCrashStateText(const char* name, const char* text);
 /// Fails: returns null as described.
 /// Ownership: the counter belongs to the crash state table; the caller keeps the pointer and never frees it.
 /// Thread-safety: thread-safe. Storing to the returned counter is lock-free.
-std::atomic<u64>* CrashStateCounter(const char* name);
+Atomic<u64>* CrashStateCounter(const char* name);
 
 /// Removes every entry made by [[debug::SetCrashStateText]] and [[debug::CrashStateCounter]] and every crash state provider.
 /// Counters handed out before are no longer shown (they stay valid memory but belong to no entry). For tests.

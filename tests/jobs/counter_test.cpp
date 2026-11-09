@@ -1,5 +1,4 @@
-#include <atomic>
-#include <thread>
+#include "sync/atomic.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -14,6 +13,7 @@
 #include "jobs/counter.h"
 #include "jobs/frame_pool.h"
 #include "jobs/scheduler.h"
+#include "lang/utility.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::jobs;
@@ -39,24 +39,24 @@ struct RaceCell {
     explicit RaceCell(Scheduler& s) : counter(s) {}
 };
 
-std::atomic<int> g_race_resumes{0};
+Atomic<int> g_race_resumes{0};
 
 // The awaiter FREES the cell (and its Counter) right after being
 // resumed, while the decrementer may still be inside Decrement(): any
 // touch of the Counter after the wake-up is a use-after-free that ASan
 // reports.
-Job AwaiterJob(RaceCell* cell, u32 spin, std::atomic<int>* done) {
+Job AwaiterJob(RaceCell* cell, u32 spin, Atomic<int>* done) {
     SpinFor(spin);
     co_await cell->counter;
     engine_placeholder::DefaultDelete<RaceCell>()(cell); // frees the cell made by MakeUnique(...).Release()
-    g_race_resumes.fetch_add(1, std::memory_order_acq_rel);
-    done->fetch_add(1, std::memory_order_acq_rel);
+    g_race_resumes.FetchAdd(1, MemoryOrder::AcqRel);
+    done->FetchAdd(1, MemoryOrder::AcqRel);
 }
 
-Job DecrementerJob(RaceCell* cell, u32 spin, std::atomic<int>* done) {
+Job DecrementerJob(RaceCell* cell, u32 spin, Atomic<int>* done) {
     SpinFor(spin);
     cell->counter.Decrement();
-    done->fetch_add(1, std::memory_order_acq_rel);
+    done->FetchAdd(1, MemoryOrder::AcqRel);
     co_return;
 }
 
@@ -75,15 +75,15 @@ Job SetFlagJob(bool* flag, u32 spin) {
     co_return;
 }
 
-Job ParentJob(std::atomic<int>* ok, std::atomic<int>* finished) {
+Job ParentJob(Atomic<int>* ok, Atomic<int>* finished) {
     Counter c; // bound to this participant's scheduler; lives in this frame
     bool flags[8] = {};
     for (int i = 0; i < 8; ++i) Spawn(c, SetFlagJob(&flags[i], static_cast<u32>(i * 37)));
     co_await c;
     bool all = true;
     for (bool f : flags) all = all && f;
-    if (all) ok->fetch_add(1, std::memory_order_acq_rel);
-    finished->fetch_add(1, std::memory_order_acq_rel);
+    if (all) ok->FetchAdd(1, MemoryOrder::AcqRel);
+    finished->FetchAdd(1, MemoryOrder::AcqRel);
 }
 
 // ---- deep chain ----------------------------------------------------------
@@ -100,7 +100,7 @@ ENGINE_NOINLINE usize StackMark() {
 struct ChainStats {
     usize lowest = ~usize{0};
     usize highest = 0;
-    std::atomic<int> finished{0};
+    Atomic<int> finished{0};
 };
 
 Job ChainJob(int depth, ChainStats* stats) {
@@ -113,47 +113,47 @@ Job ChainJob(int depth, ChainStats* stats) {
     usize m = StackMark();
     if (m < stats->lowest) stats->lowest = m;
     if (m > stats->highest) stats->highest = m;
-    stats->finished.fetch_add(1, std::memory_order_acq_rel);
+    stats->finished.FetchAdd(1, MemoryOrder::AcqRel);
 }
 
 } // namespace
 
 TEST_CASE("Awaiting an already-zero counter does not suspend", "[jobs][counter]") {
     auto s = CounterTestMakeScheduler(1);
-    static std::atomic<int> reached;
+    static Atomic<int> reached;
     reached = 0;
     struct Local {
-        static Job Run(std::atomic<int>* r) {
+        static Job Run(Atomic<int>* r) {
             Counter c;
             co_await c; // count is zero
-            r->fetch_add(1);
+            r->FetchAdd(1);
         }
     };
     s->Submit(Local::Run(&reached));
     s->HelpUntil(reached, 1);
-    REQUIRE(reached.load() == 1);
+    REQUIRE(reached.Load() == 1);
 }
 
 TEST_CASE("Counter counts back to zero and is reusable for a second round", "[jobs][counter]") {
     auto s = CounterTestMakeScheduler(2);
-    static std::atomic<int> rounds;
+    static Atomic<int> rounds;
     rounds = 0;
     struct Local {
         static Job Child(bool* f) { *f = true; co_return; }
-        static Job Run(std::atomic<int>* r) {
+        static Job Run(Atomic<int>* r) {
             Counter c;
             for (int round = 0; round < 3; ++round) {
                 bool f1 = false, f2 = false;
                 Spawn(c, Child(&f1));
                 Spawn(c, Child(&f2));
                 co_await c;
-                if (f1 && f2 && c.IsZero()) r->fetch_add(1);
+                if (f1 && f2 && c.IsZero()) r->FetchAdd(1);
             }
         }
     };
     s->Submit(Local::Run(&rounds));
     s->HelpUntil(rounds, 3);
-    REQUIRE(rounds.load() == 3);
+    REQUIRE(rounds.Load() == 3);
 }
 
 TEST_CASE("Job::SetCompletion(Counter&) decrements after the frame is freed", "[jobs][counter]") {
@@ -164,7 +164,7 @@ TEST_CASE("Job::SetCompletion(Counter&) decrements after the frame is freed", "[
     bool flag = false;
     Job j = SetFlagJob(&flag, 0);
     j.SetCompletion(c);
-    s->Submit(std::move(j));
+    s->Submit(Move(j));
     s->HelpUntil(c);
     REQUIRE(c.IsZero());
     REQUIRE(flag);
@@ -177,11 +177,11 @@ TEST_CASE("Await/decrement race: exactly-once resumption over 100,000 iterations
         constexpr int kBatches = 100, kPerBatch = 1000;
         u64 rng = 0x1234567ull + n;
         int total_iterations = 0;
-        const u64 inline_before = Counter::PathStats().inline_continues.load();
-        const u64 parked_before = Counter::PathStats().parked.load();
+        const u64 inline_before = Counter::PathStats().inline_continues.Load();
+        const u64 parked_before = Counter::PathStats().parked.Load();
         g_race_resumes = 0;
         for (int b = 0; b < kBatches; ++b) {
-            std::atomic<int> done{0};
+            Atomic<int> done{0};
             for (int i = 0; i < kPerBatch; ++i) {
                 auto* cell = engine_placeholder::MakeUnique<RaceCell>(*s).Release();
                 cell->counter.Increment();
@@ -189,11 +189,11 @@ TEST_CASE("Await/decrement race: exactly-once resumption over 100,000 iterations
                 Job a = AwaiterJob(cell, r % 400, &done);
                 Job d = DecrementerJob(cell, (r >> 9) % 400, &done);
                 if (r & 0x80000) {
-                    s->Submit(std::move(a));
-                    s->Submit(std::move(d));
+                    s->Submit(Move(a));
+                    s->Submit(Move(d));
                 } else {
-                    s->Submit(std::move(d));
-                    s->Submit(std::move(a));
+                    s->Submit(Move(d));
+                    s->Submit(Move(a));
                 }
             }
             s->HelpUntil(done, 2 * kPerBatch);
@@ -203,9 +203,9 @@ TEST_CASE("Await/decrement race: exactly-once resumption over 100,000 iterations
         // path's window (between await_ready and await_suspend) is a few
         // nanoseconds, so it is covered deterministically by the manual
         // protocol test below, not asserted here.
-        REQUIRE(g_race_resumes.load() == total_iterations);
-        const u64 inl = Counter::PathStats().inline_continues.load() - inline_before;
-        const u64 prk = Counter::PathStats().parked.load() - parked_before;
+        REQUIRE(g_race_resumes.Load() == total_iterations);
+        const u64 inl = Counter::PathStats().inline_continues.Load() - inline_before;
+        const u64 prk = Counter::PathStats().parked.Load() - parked_before;
         REQUIRE(prk > 0);
         REQUIRE(inl + prk <= static_cast<u64>(total_iterations));
         REQUIRE(total_iterations == 100'000);
@@ -216,14 +216,14 @@ TEST_CASE("A parent proceeds past co_await only after all 8 children finished", 
     for (usize n : {usize{1}, usize{2}, usize{0}}) {
         auto s = CounterTestMakeScheduler(n);
         const u64 live_before = Live();
-        std::atomic<int> ok{0}, finished{0};
+        Atomic<int> ok{0}, finished{0};
         constexpr int kBatches = 100, kParents = 100; // 10,000 parents per configuration
         for (int b = 0; b < kBatches; ++b) {
             for (int p = 0; p < kParents; ++p) s->Submit(ParentJob(&ok, &finished));
             s->HelpUntil(finished, (b + 1) * kParents);
         }
-        REQUIRE(finished.load() == kBatches * kParents);
-        REQUIRE(ok.load() == kBatches * kParents);
+        REQUIRE(finished.Load() == kBatches * kParents);
+        REQUIRE(ok.Load() == kBatches * kParents);
         s->Shutdown();
         REQUIRE(Live() == live_before);
     }
@@ -235,7 +235,7 @@ TEST_CASE("A deep chain of dependent jobs does not grow the native stack", "[job
     ChainStats stats;
     s->Submit(ChainJob(kDepth, &stats));
     s->HelpUntil(stats.finished, kDepth + 1);
-    REQUIRE(stats.finished.load() == kDepth + 1);
+    REQUIRE(stats.finished.Load() == kDepth + 1);
     // Inline resumption of each parent from the child's completion would
     // nest ~kDepth levels (hundreds of KiB+); requeuing keeps it flat.
     REQUIRE(stats.highest - stats.lowest < 64 * 1024);
@@ -274,7 +274,7 @@ TEST_CASE("Awaitable protocol, both orderings driven by hand", "[jobs][counter]"
         REQUIRE(aw.await_suspend(h)); // parked
         REQUIRE_FALSE(ran);
         c.Decrement(); // owns the wake-up: schedules h
-        std::atomic<int> sentinel{0};
+        Atomic<int> sentinel{0};
         struct Ctx { bool* ran; } ctx{&ran};
         s->HelpUntil([](void* u) { return *static_cast<Ctx*>(u)->ran; }, &ctx);
         REQUIRE(ran);

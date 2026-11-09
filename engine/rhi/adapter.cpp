@@ -1,7 +1,7 @@
 #include "rhi/adapter.h"
 
 #include <cstring>
-#include <mutex>
+#include "sync/mutex.h"
 
 namespace engine_placeholder::rhi {
 
@@ -59,7 +59,7 @@ long ParseIndex(const char* text) {
     return value;
 }
 
-std::mutex g_null_adapters_mutex;
+Mutex g_null_adapters_mutex;
 bool g_null_adapters_set = false;
 AdapterList g_null_adapters;
 
@@ -125,7 +125,7 @@ void DefaultNullAdapters(AdapterList* out) {
 }
 
 void SetNullAdapters(const AdapterList* list) {
-    std::lock_guard<std::mutex> lock(g_null_adapters_mutex);
+    LockGuard<Mutex> lock(g_null_adapters_mutex);
     if (list == nullptr) {
         g_null_adapters_set = false;
         return;
@@ -141,7 +141,7 @@ namespace detail {
 
 // The null backend's enumeration; create_device.cpp dispatches here for Backend::Null.
 void NullAdapters(AdapterList* out) {
-    std::lock_guard<std::mutex> lock(g_null_adapters_mutex);
+    LockGuard<Mutex> lock(g_null_adapters_mutex);
     if (g_null_adapters_set) {
         *out = g_null_adapters;
     } else {

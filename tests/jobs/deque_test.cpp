@@ -1,5 +1,5 @@
-#include <atomic>
-#include <thread>
+#include "sync/atomic.h"
+#include "sync/thread.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -20,12 +20,12 @@ u64 IdOf(std::coroutine_handle<> h) { return (reinterpret_cast<u64>(h.address())
 
 // Thief threads must not use Catch macros (not thread-safe); they record
 // into the tally and the main thread asserts afterwards.
-std::atomic<u64> g_bad_ids{0}; // out-of-range / garbage handles seen
+Atomic<u64> g_bad_ids{0}; // out-of-range / garbage handles seen
 
-void RecordRaw(std::vector<std::atomic<u32>>& counts, std::coroutine_handle<> h) {
+void RecordRaw(std::vector<Atomic<u32>>& counts, std::coroutine_handle<> h) {
     u64 id = IdOf(h);
-    if (id < counts.size()) counts[id].fetch_add(1, std::memory_order_relaxed);
-    else g_bad_ids.fetch_add(1, std::memory_order_relaxed);
+    if (id < counts.size()) counts[id].FetchAdd(1, MemoryOrder::Relaxed);
+    else g_bad_ids.FetchAdd(1, MemoryOrder::Relaxed);
 }
 
 // Runs `total` pushes with `thieves` stealing concurrently; the owner
@@ -39,12 +39,12 @@ struct Outcome {
 
 Outcome RunSession(usize total, usize thieves, u32 pop_every) {
     WorkStealingDeque dq;
-    std::vector<std::atomic<u32>> counts(total);
-    for (auto& c : counts) c.store(0, std::memory_order_relaxed);
-    std::atomic<bool> producer_done{false};
-    std::atomic<u64> stolen{0};
+    std::vector<Atomic<u32>> counts(total);
+    for (auto& c : counts) c.Store(0, MemoryOrder::Relaxed);
+    Atomic<bool> producer_done{false};
+    Atomic<u64> stolen{0};
 
-    std::vector<std::thread> ts;
+    std::vector<Thread> ts;
     for (usize i = 0; i < thieves; ++i) {
         ts.emplace_back([&] {
             for (;;) {
@@ -52,13 +52,13 @@ Outcome RunSession(usize total, usize thieves, u32 pop_every) {
                 StealStatus st = dq.StealTop(h);
                 if (st == StealStatus::Success) {
                     RecordRaw(counts, h);
-                    stolen.fetch_add(1, std::memory_order_relaxed);
+                    stolen.FetchAdd(1, MemoryOrder::Relaxed);
                 } else if (st == StealStatus::Empty) {
-                    if (producer_done.load(std::memory_order_acquire)) {
+                    if (producer_done.Load(MemoryOrder::Acquire)) {
                         // The owner finished and drained: nothing more arrives.
                         return;
                     }
-                    std::this_thread::yield();
+                    ThisThread::Yield();
                 }
                 // Lost: retry immediately.
             }
@@ -83,13 +83,13 @@ Outcome RunSession(usize total, usize thieves, u32 pop_every) {
         if (!h) break;
         RecordRaw(counts, h);
     }
-    producer_done.store(true, std::memory_order_release);
-    for (auto& t : ts) t.join();
+    producer_done.Store(true, MemoryOrder::Release);
+    for (auto& t : ts) t.Join();
 
     Outcome out;
-    out.stolen = stolen.load();
+    out.stolen = stolen.Load();
     for (auto& c : counts) {
-        u32 v = c.load();
+        u32 v = c.Load();
         if (v == 0) ++out.missing;
         if (v > 1) ++out.duplicated;
     }
@@ -141,7 +141,7 @@ TEST_CASE("Deque: owner plus one thief, 1M ops, each handle consumed exactly onc
     Outcome o = RunSession(1'000'000, 1, 3);
     REQUIRE(o.missing == 0);
     REQUIRE(o.duplicated == 0);
-    REQUIRE(g_bad_ids.load() == 0);
+    REQUIRE(g_bad_ids.Load() == 0);
     REQUIRE(o.stolen > 0); // the thief paths really ran
 }
 
@@ -149,7 +149,7 @@ TEST_CASE("Deque: owner plus four thieves, 1M ops, each handle consumed exactly 
     Outcome o = RunSession(1'000'000, 4, 3);
     REQUIRE(o.missing == 0);
     REQUIRE(o.duplicated == 0);
-    REQUIRE(g_bad_ids.load() == 0);
+    REQUIRE(g_bad_ids.Load() == 0);
     REQUIRE(o.stolen > 0); // the thief paths really ran
 }
 
@@ -158,18 +158,18 @@ TEST_CASE("Deque: single-element contention between PopBottom and four thieves",
     // the owner's pop and four thieves (the last-element race).
     constexpr usize kRounds = 300'000;
     WorkStealingDeque dq;
-    std::vector<std::atomic<u32>> counts(kRounds);
-    for (auto& c : counts) c.store(0, std::memory_order_relaxed);
-    std::atomic<bool> done{false};
-    std::atomic<u64> steals{0};
-    std::vector<std::thread> ts;
+    std::vector<Atomic<u32>> counts(kRounds);
+    for (auto& c : counts) c.Store(0, MemoryOrder::Relaxed);
+    Atomic<bool> done{false};
+    Atomic<u64> steals{0};
+    std::vector<Thread> ts;
     for (int i = 0; i < 4; ++i) {
         ts.emplace_back([&] {
-            while (!done.load(std::memory_order_acquire)) {
+            while (!done.Load(MemoryOrder::Acquire)) {
                 std::coroutine_handle<> h;
                 if (dq.StealTop(h) == StealStatus::Success) {
                     RecordRaw(counts, h);
-                    steals.fetch_add(1, std::memory_order_relaxed);
+                    steals.FetchAdd(1, MemoryOrder::Relaxed);
                 }
             }
         });
@@ -181,13 +181,13 @@ TEST_CASE("Deque: single-element contention between PopBottom and four thieves",
     }
     // Anything still sitting in the deque after the loop is taken here.
     for (auto h = dq.PopBottom(); h; h = dq.PopBottom()) RecordRaw(counts, h);
-    done.store(true, std::memory_order_release);
-    for (auto& t : ts) t.join();
+    done.Store(true, MemoryOrder::Release);
+    for (auto& t : ts) t.Join();
     // A thief may have stolen the final element between our last pop and
     // the stop flag; either way every id must be consumed exactly once.
     usize bad = 0;
-    for (auto& c : counts) bad += c.load() != 1;
+    for (auto& c : counts) bad += c.Load() != 1;
     REQUIRE(bad == 0);
-    REQUIRE(g_bad_ids.load() == 0);
-    REQUIRE(steals.load() > 0);
+    REQUIRE(g_bad_ids.Load() == 0);
+    REQUIRE(steals.Load() > 0);
 }

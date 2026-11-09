@@ -4,6 +4,8 @@
 
 #include "log/assert.h"
 #include "settings/setting.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 namespace engine_placeholder::settings {
 
@@ -85,7 +87,7 @@ usize Registry::LowerBound(StringView key) const {
 }
 
 SettingId Registry::Register(const SettingDesc& desc, RegisterError* error) {
-    ENGINE_ASSERT(!frozen_.load(std::memory_order_relaxed), "settings::Registry::Register: the registry is frozen");
+    ENGINE_ASSERT(!frozen_.Load(MemoryOrder::Relaxed), "settings::Registry::Register: the registry is frozen");
     auto fail = [&](RegisterError e) {
         if (error != nullptr) *error = e;
         return SettingId{};
@@ -140,7 +142,7 @@ SettingId Registry::Register(const SettingDesc& desc, RegisterError* error) {
     slot->desc = desc;
     slot->key = key;
     slot->text = def;
-    slot->cell.bits.store(detail::Encode(def), std::memory_order_relaxed);
+    slot->cell.bits.Store(detail::Encode(def), MemoryOrder::Relaxed);
     slots_.Push(static_cast<UniquePtr<Slot>&&>(slot));
     const SettingId id{static_cast<u16>(slots_.Size())};
     sorted_.Insert(LowerBound(key.View()), id.value);
@@ -149,7 +151,7 @@ SettingId Registry::Register(const SettingDesc& desc, RegisterError* error) {
 }
 
 void Registry::SetSchemaVersion(StringView section, u32 version) {
-    ENGINE_ASSERT(!frozen_.load(std::memory_order_relaxed), "settings::Registry::SetSchemaVersion: the registry is frozen");
+    ENGINE_ASSERT(!frozen_.Load(MemoryOrder::Relaxed), "settings::Registry::SetSchemaVersion: the registry is frozen");
     Key key;
     ENGINE_ASSERT(version != 0 && Key::Parse(section, &key) == KeyError::None, "settings::Registry::SetSchemaVersion: a valid section and a version of at least 1 are needed");
     for (usize i = 0; i < schemas_.Size(); ++i) {
@@ -177,7 +179,7 @@ StringView Registry::SchemaAt(u32 index, u32* version) const {
     return schemas_[index].section.View();
 }
 
-void Registry::Freeze() { frozen_.store(true, std::memory_order_relaxed); }
+void Registry::Freeze() { frozen_.Store(true, MemoryOrder::Relaxed); }
 
 SettingId Registry::Find(StringView key) const {
     const usize at = LowerBound(key);
@@ -218,10 +220,10 @@ Value Registry::Current(SettingId id) const {
     ENGINE_ASSERT(id.value >= 1 && id.value <= slots_.Size(), "settings::Registry::Current: unknown id");
     const Slot& s = *slots_[id.value - 1u];
     if (s.desc.type == Type::Text) {
-        std::lock_guard<std::mutex> lock(text_mutex_);
+        LockGuard<Mutex> lock(text_mutex_);
         return s.text;
     }
-    const u64 bits = s.cell.bits.load(std::memory_order_relaxed);
+    const u64 bits = s.cell.bits.Load(MemoryOrder::Relaxed);
     switch (s.desc.type) {
     case Type::Bool: return Value::FromBool(bits != 0);
     case Type::Int: return Value::FromInt(detail::Decode<i64>(bits));
@@ -238,17 +240,17 @@ void Registry::Publish(SettingId id, const Value& value) {
     ENGINE_ASSERT(value.GetType() == s.desc.type, "settings::Registry::Publish: the value has another type than the setting");
     ENGINE_ASSERT(s.desc.type != Type::Enum || value.AsEnum() < s.desc.enum_count, "settings::Registry::Publish: the enum index is outside the names");
     if (s.desc.type == Type::Text) {
-        std::lock_guard<std::mutex> lock(text_mutex_);
+        LockGuard<Mutex> lock(text_mutex_);
         s.text = value;
         return;
     }
-    s.cell.bits.store(detail::Encode(value), std::memory_order_relaxed);
+    s.cell.bits.Store(detail::Encode(value), MemoryOrder::Relaxed);
 }
 
 usize Registry::CurrentText(SettingId id, char* out, usize capacity) const {
     ENGINE_ASSERT(id.value >= 1 && id.value <= slots_.Size() && slots_[id.value - 1u]->desc.type == Type::Text,
                   "settings::Registry::CurrentText: not a registered text setting");
-    std::lock_guard<std::mutex> lock(text_mutex_);
+    LockGuard<Mutex> lock(text_mutex_);
     const StringView t = slots_[id.value - 1u]->text.AsText();
     if (t.Length() + 1 <= capacity) {
         std::memcpy(out, t.Data(), t.Length());

@@ -1,13 +1,12 @@
 #include "rhi/null/null_device.h"
 #include "rhi/rhi.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <mutex>
-#include <new>
+#include "sync/mutex.h"
 
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
@@ -17,6 +16,7 @@
 #include "rhi/handle_pool.h"
 #include "containers/vector.h"
 #include "rhi/rhi_log.h"
+#include "lang/utility.h"
 
 namespace engine_placeholder::rhi {
 
@@ -198,7 +198,7 @@ class NullCommandList;
 
 struct NullDeviceState {
     NullDeviceOptions options;
-    mutable std::mutex mu;
+    mutable Mutex mu;
 
     HandlePool<BufferRes, BufferTag> buffers;
     HandlePool<TextureRes, TextureTag> textures;
@@ -216,8 +216,8 @@ struct NullDeviceState {
     FenceValue submitted = 0;
     bool lost = false;
 
-    std::atomic<u32> errors{0};
-    mutable std::mutex err_mu;
+    Atomic<u32> errors{0};
+    mutable Mutex err_mu;
     char last_error[256] = {};
 
     // Command lists are pooled and recycled at BeginFrame, never freed before the device: a pointer kept
@@ -231,9 +231,9 @@ struct NullDeviceState {
     // Returns whether an injected loss may strike now (and counts it against `strikes_left`).
     bool Strike() {
         if (options.strikes_left == nullptr) return true;
-        u32 left = options.strikes_left->load(std::memory_order_relaxed);
+        u32 left = options.strikes_left->Load(MemoryOrder::Relaxed);
         while (left != 0) {
-            if (options.strikes_left->compare_exchange_weak(left, left - 1, std::memory_order_relaxed)) return true;
+            if (options.strikes_left->CompareExchangeWeak(left, left - 1, MemoryOrder::Relaxed)) return true;
         }
         return false;
     }
@@ -270,9 +270,9 @@ void NullDeviceState::Error(const char* fmt, ...) {
     va_start(ap, fmt);
     std::vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
-    errors.fetch_add(1, std::memory_order_relaxed);
+    errors.FetchAdd(1, MemoryOrder::Relaxed);
     {
-        std::lock_guard<std::mutex> lock(err_mu);
+        LockGuard<Mutex> lock(err_mu);
         usize n = strnlen(buf, sizeof(buf) - 1);
         std::memcpy(last_error, buf, n);
         last_error[n] = '\0';
@@ -317,7 +317,7 @@ public:
     NullDeviceState* Owner() const { return s_; }
 
     void Begin() override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (phase_ != Phase::Idle) {
             s_->Error("Begin: the list is already recording, ended or submitted");
             return;
@@ -328,7 +328,7 @@ public:
     }
 
     void End() override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("End")) {
             return;
         }
@@ -342,7 +342,7 @@ public:
     }
 
     void CopyBuffer(BufferHandle src, BufferHandle dst, u64 src_offset, u64 dst_offset, u64 size) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("CopyBuffer") || !OutsidePass("CopyBuffer")) {
             return;
         }
@@ -378,7 +378,7 @@ public:
     }
 
     void CopyBufferToTexture(BufferHandle src, TextureHandle dst, const BufferTextureCopy& region) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("CopyBufferToTexture") || !OutsidePass("CopyBufferToTexture")) {
             return;
         }
@@ -400,7 +400,7 @@ public:
     }
 
     void CopyTextureToBuffer(TextureHandle src, BufferHandle dst, const BufferTextureCopy& region) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("CopyTextureToBuffer") || !OutsidePass("CopyTextureToBuffer")) {
             return;
         }
@@ -422,7 +422,7 @@ public:
     }
 
     void Barrier(BufferHandle buffer, ResourceState before, ResourceState after) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("Barrier") || !OutsidePass("Barrier")) {
             return;
         }
@@ -449,7 +449,7 @@ public:
     }
 
     void Barrier(TextureHandle texture, ResourceState before, ResourceState after) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("Barrier") || !OutsidePass("Barrier")) {
             return;
         }
@@ -472,7 +472,7 @@ public:
     }
 
     void GenerateMips(TextureHandle texture) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("GenerateMips") || !OutsidePass("GenerateMips")) {
             return;
         }
@@ -491,7 +491,7 @@ public:
     }
 
     void BeginRendering(const RenderingDesc& desc) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("BeginRendering")) {
             return;
         }
@@ -566,7 +566,7 @@ public:
     }
 
     void EndRendering() override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("EndRendering")) {
             return;
         }
@@ -579,7 +579,7 @@ public:
     }
 
     void SetPipeline(PipelineHandle pipeline) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("SetPipeline")) {
             return;
         }
@@ -612,7 +612,7 @@ public:
     }
 
     void SetBindGroup(u32 slot, BindGroupHandle group) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("SetBindGroup")) {
             return;
         }
@@ -628,7 +628,7 @@ public:
     }
 
     void SetPushConstants(u32 offset, const void* data, u32 size) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("SetPushConstants")) {
             return;
         }
@@ -647,7 +647,7 @@ public:
     }
 
     void SetViewport(const Viewport& viewport) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("SetViewport")) {
             return;
         }
@@ -657,12 +657,12 @@ public:
     }
 
     void SetScissor(const ScissorRect&) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         Recording("SetScissor");
     }
 
     void SetVertexBuffer(u32 slot, BufferHandle buffer, u64 offset) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("SetVertexBuffer")) {
             return;
         }
@@ -687,7 +687,7 @@ public:
     }
 
     void SetIndexBuffer(BufferHandle buffer, u64 offset, IndexType type) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("SetIndexBuffer")) {
             return;
         }
@@ -709,7 +709,7 @@ public:
     }
 
     void Draw(u32, u32, u32, u32) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("Draw")) {
             return;
         }
@@ -717,7 +717,7 @@ public:
     }
 
     void DrawIndexed(u32, u32, u32, i32, u32) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("DrawIndexed")) {
             return;
         }
@@ -725,7 +725,7 @@ public:
     }
 
     void Dispatch(u32 x, u32 y, u32 z) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("Dispatch")) {
             return;
         }
@@ -750,7 +750,7 @@ public:
     }
 
     void PushDebugLabel(const char* name) override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("PushDebugLabel")) {
             return;
         }
@@ -762,7 +762,7 @@ public:
     }
 
     void PopDebugLabel() override {
-        std::lock_guard<std::mutex> lock(s_->mu);
+        LockGuard<Mutex> lock(s_->mu);
         if (!Recording("PopDebugLabel")) {
             return;
         }
@@ -1045,7 +1045,7 @@ u32 NullDevice::Epoch() const {
 
 ResourceCounts NullDevice::Resources() const {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     ResourceCounts c;
     c.buffers = s.buffers.LiveCount();
     c.textures = s.textures.LiveCount();
@@ -1061,7 +1061,7 @@ ResourceCounts NullDevice::Resources() const {
 
 bool NullDevice::InFrame() const {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     return s.in_frame;
 }
 
@@ -1088,8 +1088,8 @@ BufferHandle NullDevice::CreateBuffer(const BufferDesc& desc) {
         s.Error("CreateBuffer: out of host memory");
         return BufferHandle{};
     }
-    std::lock_guard<std::mutex> lock(s.mu);
-    BufferHandle h = s.buffers.Allocate(std::move(res));
+    LockGuard<Mutex> lock(s.mu);
+    BufferHandle h = s.buffers.Allocate(Move(res));
     if (!h.IsValid()) {
         s.Error("CreateBuffer: out of buffer slots");
     }
@@ -1098,7 +1098,7 @@ BufferHandle NullDevice::CreateBuffer(const BufferDesc& desc) {
 
 void NullDevice::DestroyBuffer(BufferHandle buffer) {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     BufferRes* b = s.Buf(buffer);
     if (b == nullptr) {
         s.Error("DestroyBuffer: handle is invalid or already destroyed");
@@ -1131,8 +1131,8 @@ TextureHandle NullDevice::CreateTexture(const TextureDesc& desc) {
     TextureRes res;
     res.desc = desc;
     res.desc.debug_name = nullptr;
-    std::lock_guard<std::mutex> lock(s.mu);
-    TextureHandle h = s.textures.Allocate(std::move(res));
+    LockGuard<Mutex> lock(s.mu);
+    TextureHandle h = s.textures.Allocate(Move(res));
     if (!h.IsValid()) {
         s.Error("CreateTexture: out of texture slots");
     }
@@ -1141,7 +1141,7 @@ TextureHandle NullDevice::CreateTexture(const TextureDesc& desc) {
 
 void NullDevice::DestroyTexture(TextureHandle texture) {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     if (!s.textures.Retire(texture, s.frame)) {
         s.Error("DestroyTexture: handle is invalid or already destroyed");
     }
@@ -1157,8 +1157,8 @@ SamplerHandle NullDevice::CreateSampler(const SamplerDesc& desc) {
     SamplerRes res;
     res.desc = desc;
     res.desc.debug_name = nullptr;
-    std::lock_guard<std::mutex> lock(s.mu);
-    SamplerHandle h = s.samplers.Allocate(std::move(res));
+    LockGuard<Mutex> lock(s.mu);
+    SamplerHandle h = s.samplers.Allocate(Move(res));
     if (!h.IsValid()) {
         s.Error("CreateSampler: out of sampler slots");
     }
@@ -1167,7 +1167,7 @@ SamplerHandle NullDevice::CreateSampler(const SamplerDesc& desc) {
 
 void NullDevice::DestroySampler(SamplerHandle sampler) {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     if (!s.samplers.Retire(sampler, s.frame)) {
         s.Error("DestroySampler: handle is invalid or already destroyed");
     }
@@ -1194,8 +1194,8 @@ ShaderHandle NullDevice::CreateShader(const ShaderDesc& desc) {
     }
     ShaderRes res;
     res.stage = desc.stage;
-    std::lock_guard<std::mutex> lock(s.mu);
-    ShaderHandle h = s.shaders.Allocate(std::move(res));
+    LockGuard<Mutex> lock(s.mu);
+    ShaderHandle h = s.shaders.Allocate(Move(res));
     if (!h.IsValid()) {
         s.Error("CreateShader: out of shader slots");
     }
@@ -1204,7 +1204,7 @@ ShaderHandle NullDevice::CreateShader(const ShaderDesc& desc) {
 
 void NullDevice::DestroyShader(ShaderHandle shader) {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     if (!s.shaders.Retire(shader, s.frame)) {
         s.Error("DestroyShader: handle is invalid or already destroyed");
     }
@@ -1228,8 +1228,8 @@ BindGroupLayoutHandle NullDevice::CreateBindGroupLayout(const BindGroupLayoutDes
         s.Error("CreateBindGroupLayout: more than %u binding elements", kMaxGroupElements);
         return BindGroupLayoutHandle{};
     }
-    std::lock_guard<std::mutex> lock(s.mu);
-    BindGroupLayoutHandle h = s.layouts.Allocate(std::move(res));
+    LockGuard<Mutex> lock(s.mu);
+    BindGroupLayoutHandle h = s.layouts.Allocate(Move(res));
     if (!h.IsValid()) {
         s.Error("CreateBindGroupLayout: out of layout slots");
     }
@@ -1238,7 +1238,7 @@ BindGroupLayoutHandle NullDevice::CreateBindGroupLayout(const BindGroupLayoutDes
 
 void NullDevice::DestroyBindGroupLayout(BindGroupLayoutHandle layout) {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     if (!s.layouts.Retire(layout, s.frame)) {
         s.Error("DestroyBindGroupLayout: handle is invalid or already destroyed");
     }
@@ -1251,7 +1251,7 @@ BindGroupHandle NullDevice::CreateBindGroup(const BindGroupDesc& desc) {
         s.Error("CreateBindGroup: %s", why);
         return BindGroupHandle{};
     }
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     LayoutRes* layout = s.layouts.Get(desc.layout);
     if (layout == nullptr) {
         s.Error("CreateBindGroup: layout handle is invalid or destroyed");
@@ -1343,7 +1343,7 @@ BindGroupHandle NullDevice::CreateBindGroup(const BindGroupDesc& desc) {
                 static_cast<u32>(desc.entries.Size()), expected);
         return BindGroupHandle{};
     }
-    BindGroupHandle h = s.groups.Allocate(std::move(res));
+    BindGroupHandle h = s.groups.Allocate(Move(res));
     if (h.IsValid() && desc.transient) {
         s.transient_groups.Push(h);
     }
@@ -1355,7 +1355,7 @@ BindGroupHandle NullDevice::CreateBindGroup(const BindGroupDesc& desc) {
 
 void NullDevice::DestroyBindGroup(BindGroupHandle group) {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     const GroupRes* g = s.groups.Get(group);
     if (g != nullptr && g->transient) {
         s.Error("DestroyBindGroup: a transient group is released by the device, not destroyed by the application");
@@ -1379,7 +1379,7 @@ PipelineHandle NullDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& de
         s.Error("CreateGraphicsPipeline: exceeds a device limit (color targets, bind groups or push constants)");
         return PipelineHandle{};
     }
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     ShaderRes* vs = s.shaders.Get(desc.vertex_shader);
     if (vs == nullptr || vs->stage != ShaderStage::Vertex) {
         s.Error("CreateGraphicsPipeline: vertex shader is invalid, destroyed or not a vertex stage");
@@ -1409,7 +1409,7 @@ PipelineHandle NullDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& de
         res.color_formats[i] = desc.color_targets[i].format;
     }
     res.depth_format = desc.depth_format;
-    PipelineHandle h = s.pipelines.Allocate(std::move(res));
+    PipelineHandle h = s.pipelines.Allocate(Move(res));
     if (!h.IsValid()) {
         s.Error("CreateGraphicsPipeline: out of pipeline slots");
     }
@@ -1428,7 +1428,7 @@ PipelineHandle NullDevice::CreateComputePipeline(const ComputePipelineDesc& desc
         s.Error("CreateComputePipeline: exceeds a device limit (bind groups or push constants)");
         return PipelineHandle{};
     }
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     ShaderRes* cs = s.shaders.Get(desc.shader);
     if (cs == nullptr || cs->stage != ShaderStage::Compute) {
         s.Error("CreateComputePipeline: shader is invalid, destroyed or not a compute stage");
@@ -1445,7 +1445,7 @@ PipelineHandle NullDevice::CreateComputePipeline(const ComputePipelineDesc& desc
         res.layouts[i] = desc.bind_group_layouts[i];
     }
     res.push_bytes = desc.push_constant_bytes;
-    PipelineHandle h = s.pipelines.Allocate(std::move(res));
+    PipelineHandle h = s.pipelines.Allocate(Move(res));
     if (!h.IsValid()) {
         s.Error("CreateComputePipeline: out of pipeline slots");
     }
@@ -1454,7 +1454,7 @@ PipelineHandle NullDevice::CreateComputePipeline(const ComputePipelineDesc& desc
 
 void NullDevice::DestroyPipeline(PipelineHandle pipeline) {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     if (!s.pipelines.Retire(pipeline, s.frame)) {
         s.Error("DestroyPipeline: handle is invalid or already destroyed");
     }
@@ -1462,7 +1462,7 @@ void NullDevice::DestroyPipeline(PipelineHandle pipeline) {
 
 void* NullDevice::MapBuffer(BufferHandle buffer) {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     BufferRes* b = s.Buf(buffer);
     if (b == nullptr) {
         s.Error("MapBuffer: handle is invalid or destroyed");
@@ -1482,7 +1482,7 @@ void* NullDevice::MapBuffer(BufferHandle buffer) {
 
 UploadTicket NullDevice::UploadBuffer(BufferHandle dst, u64 offset, const void* data, u64 size) {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     BufferRes* b = s.Buf(dst);
     if (b == nullptr) {
         s.Error("UploadBuffer: handle is invalid or already destroyed");
@@ -1699,7 +1699,7 @@ bool NullDevice::CanGenerateMips(Format format) const {
 
 UploadTicket NullDevice::UploadTexture(TextureHandle dst, u32 mip, u32 layer, const void* data, u32 row_pitch) {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     TextureRes* t = s.Tex(dst);
     if (t == nullptr) {
         s.Error("UploadTexture: handle is invalid or already destroyed");
@@ -1733,7 +1733,7 @@ UploadTicket NullDevice::UploadTexture(TextureHandle dst, u32 mip, u32 layer, co
 
 bool NullDevice::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* dst, u64 dst_size, ResourceState state) {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     TextureRes* t = s.Tex(src);
     if (t == nullptr) {
         s.Error("ReadbackTexture: handle is invalid or already destroyed");
@@ -1768,7 +1768,7 @@ bool NullDevice::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* ds
 
 bool NullDevice::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     BufferRes* b = s.Buf(src);
     if (b == nullptr) {
         s.Error("ReadbackBuffer: handle is invalid or already destroyed");
@@ -1791,7 +1791,7 @@ bool NullDevice::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 siz
 
 void NullDevice::UnmapBuffer(BufferHandle buffer) {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     BufferRes* b = s.Buf(buffer);
     if (b == nullptr) {
         s.Error("UnmapBuffer: handle is invalid or destroyed");
@@ -1806,7 +1806,7 @@ void NullDevice::UnmapBuffer(BufferHandle buffer) {
 
 CommandList* NullDevice::CreateCommandList() {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     if (!s.in_frame) {
         s.Error("CreateCommandList: no frame is open (call BeginFrame first)");
         return nullptr;
@@ -1817,7 +1817,7 @@ CommandList* NullDevice::CreateCommandList() {
     if (s.lists_in_use == s.lists.Size()) {
         UniquePtr<NullCommandList> fresh = MakeUnique<NullCommandList>(&s);
         ENGINE_ASSERT(fresh, "NullDevice: out of host memory for command lists");
-        s.lists.Push(std::move(fresh));
+        s.lists.Push(Move(fresh));
     }
     NullCommandList* list = s.lists[s.lists_in_use++].Get();
     list->Recycle(s.frame);
@@ -1826,7 +1826,7 @@ CommandList* NullDevice::CreateCommandList() {
 
 FenceValue NullDevice::Submit(CommandList* const* lists, usize count) {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     if (s.lost) {
         return 0;
     }
@@ -1940,18 +1940,18 @@ FenceValue NullDevice::Submit(CommandList* const* lists, usize count) {
 }
 
 bool NullDevice::WaitFence(FenceValue value, u64) {
-    std::lock_guard<std::mutex> lock(state_->mu);
+    LockGuard<Mutex> lock(state_->mu);
     return !state_->lost && value <= state_->submitted;
 }
 
 FenceValue NullDevice::CompletedFence() const {
-    std::lock_guard<std::mutex> lock(state_->mu);
+    LockGuard<Mutex> lock(state_->mu);
     return state_->submitted;
 }
 
 void NullDevice::BeginFrame() {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     if (s.in_frame) {
         s.Error("BeginFrame: the previous frame was not ended");
     }
@@ -1970,7 +1970,7 @@ void NullDevice::BeginFrame() {
 
 void NullDevice::EndFrame() {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     if (!s.in_frame) {
         s.Error("EndFrame: no frame is open");
         return;
@@ -1984,24 +1984,24 @@ void NullDevice::EndFrame() {
 }
 
 u64 NullDevice::FrameNumber() const {
-    std::lock_guard<std::mutex> lock(state_->mu);
+    LockGuard<Mutex> lock(state_->mu);
     return state_->frame;
 }
 
 void NullDevice::WaitIdle() {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     s.Collect(~0ull);
 }
 
 bool NullDevice::DeviceLost() const {
-    std::lock_guard<std::mutex> lock(state_->mu);
+    LockGuard<Mutex> lock(state_->mu);
     return state_->lost;
 }
 
 bool NullDevice::CountPresent() {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     if (!s.lost && s.options.lose_device_at_present != 0 && ++s.presents == s.options.lose_device_at_present && s.Strike()) {
         s.lost = true;
         RhiLog(LogVerbosity::Error, "NullDevice: device lost (injected at present %u)", s.presents);
@@ -2010,7 +2010,7 @@ bool NullDevice::CountPresent() {
 }
 
 void NullDevice::SimulateDeviceLoss() {
-    std::lock_guard<std::mutex> lock(state_->mu);
+    LockGuard<Mutex> lock(state_->mu);
     if (!state_->lost) {
         state_->lost = true;
         RhiLog(LogVerbosity::Error, "NullDevice: device lost (simulated)");
@@ -2018,14 +2018,14 @@ void NullDevice::SimulateDeviceLoss() {
 }
 
 u32 NullDevice::ErrorCount() const {
-    return state_->errors.load(std::memory_order_relaxed);
+    return state_->errors.Load(MemoryOrder::Relaxed);
 }
 
 usize NullDevice::LastError(char* out, usize capacity) const {
     if (capacity == 0) {
         return 0;
     }
-    std::lock_guard<std::mutex> lock(state_->err_mu);
+    LockGuard<Mutex> lock(state_->err_mu);
     usize len = std::strlen(state_->last_error);
     if (len >= capacity) {
         len = capacity - 1;
@@ -2036,14 +2036,14 @@ usize NullDevice::LastError(char* out, usize capacity) const {
 }
 
 void NullDevice::ResetErrors() {
-    std::lock_guard<std::mutex> lock(state_->err_mu);
-    state_->errors.store(0, std::memory_order_relaxed);
+    LockGuard<Mutex> lock(state_->err_mu);
+    state_->errors.Store(0, MemoryOrder::Relaxed);
     state_->last_error[0] = '\0';
 }
 
 NullDeviceStats NullDevice::Statistics() const {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     NullDeviceStats st;
     st.buffers = s.buffers.LiveCount();
     st.textures = s.textures.LiveCount();
@@ -2061,7 +2061,7 @@ NullDeviceStats NullDevice::Statistics() const {
 
 bool NullDevice::PeekBuffer(BufferHandle buffer, u64 offset, void* out, u64 size) const {
     State& s = *state_;
-    std::lock_guard<std::mutex> lock(s.mu);
+    LockGuard<Mutex> lock(s.mu);
     const BufferRes* b = s.buffers.Get(buffer);
     if (b == nullptr || size > b->desc.size || offset > b->desc.size - size) {
         return false;
@@ -2071,13 +2071,13 @@ bool NullDevice::PeekBuffer(BufferHandle buffer, u64 offset, void* out, u64 size
 }
 
 ResourceState NullDevice::StateOf(BufferHandle buffer) const {
-    std::lock_guard<std::mutex> lock(state_->mu);
+    LockGuard<Mutex> lock(state_->mu);
     const BufferRes* b = state_->buffers.Get(buffer);
     return b != nullptr ? b->state : ResourceState::Undefined;
 }
 
 ResourceState NullDevice::StateOf(TextureHandle texture) const {
-    std::lock_guard<std::mutex> lock(state_->mu);
+    LockGuard<Mutex> lock(state_->mu);
     const TextureRes* t = state_->textures.Get(texture);
     return t != nullptr ? t->state : ResourceState::Undefined;
 }

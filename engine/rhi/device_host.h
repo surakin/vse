@@ -1,6 +1,6 @@
 #pragma once
 
-#include <thread>
+#include "sync/thread.h"
 
 #include "rhi/rhi.h"
 #include "rhi/swapchain.h"
@@ -219,7 +219,7 @@ private:
     DeviceCreateInfo last_info_;
     bool resetting_ = false;
     bool has_owner_ = false;
-    std::thread::id owner_;
+    ThreadId owner_;
     char error_[160] = {};
 };
 

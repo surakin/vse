@@ -1,4 +1,4 @@
-#include <utility>
+#include "lang/utility.h"
 #include <vector>
 
 #include "platform/input_event.h" // before the X11 headers: they define `None`
@@ -133,13 +133,13 @@ TEST_CASE("X11Window move transfers ownership without double-close", "[x11][os]"
     REQUIRE(a.Valid());
     unsigned long native = a.NativeWindow();
 
-    X11Window b(std::move(a));
+    X11Window b(Move(a));
     REQUIRE_FALSE(a.Valid());
     REQUIRE(b.Valid());
     REQUIRE(b.NativeWindow() == native);
 
     X11Window c;
-    c = std::move(b);
+    c = Move(b);
     REQUIRE_FALSE(b.Valid());
     REQUIRE(c.Valid());
     REQUIRE(c.NativeWindow() == native);
@@ -492,7 +492,7 @@ TEST_CASE("X11Window reports native info, and none once invalid or moved from", 
     REQUIRE(info.surface == nullptr);
     REQUIRE_FALSE(window.IsMinimized());
 
-    X11Window moved(std::move(window));
+    X11Window moved(Move(window));
     REQUIRE(moved.GetNativeInfo().window_id == info.window_id);
     REQUIRE(window.GetNativeInfo().kind == NativeWindowKind::Invalid);
 }
@@ -540,7 +540,7 @@ TEST_CASE("X11Window's resize serial changes on every size change and never repe
     REQUIRE(second.Valid());
     REQUIRE(second.ResizeSerial() != window.ResizeSerial());
 
-    X11Window moved(std::move(window));
+    X11Window moved(Move(window));
     REQUIRE(moved.ResizeSerial() != 0);
     REQUIRE(window.ResizeSerial() == 0);
     REQUIRE(window.IsMinimized());

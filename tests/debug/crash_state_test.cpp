@@ -10,6 +10,7 @@
 
 #include <cstring>
 #include <string>
+#include "sync/atomic.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -52,13 +53,13 @@ TEST_CASE("A text entry appears in the crash report and can be replaced", "[cras
 
 TEST_CASE("A counter entry shows its current value", "[crashstate][debug]") {
     ResetCrashStateForTesting();
-    std::atomic<u64>* counter = CrashStateCounter("test-frame");
+    Atomic<u64>* counter = CrashStateCounter("test-frame");
     REQUIRE(counter != nullptr);
-    counter->store(0);
+    counter->Store(0);
     CHECK(StateSection().find("test-frame: 0\n") != std::string::npos);
-    counter->store(18446744073709551615ull);
+    counter->Store(18446744073709551615ull);
     CHECK(StateSection().find("test-frame: 18446744073709551615\n") != std::string::npos);
-    counter->store(41231);
+    counter->Store(41231);
     CHECK(StateSection().find("test-frame: 41231\n") != std::string::npos);
     CHECK(CrashStateCounter("test-frame") == counter); // the same entry on a second call
     ResetCrashStateForTesting();

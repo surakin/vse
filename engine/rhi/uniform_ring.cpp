@@ -2,6 +2,7 @@
 
 #include "log/assert.h"
 #include "rhi/rhi_log.h"
+#include "sync/atomic.h"
 
 namespace engine_placeholder::rhi {
 
@@ -36,12 +37,12 @@ void UniformRing::BeginFrame() {
     const u64 frame = device_->FrameNumber();
     ENGINE_ASSERT(frame != 0, "UniformRing::BeginFrame: no frame has begun");
     region_base_ = (frame % kSlots) * region_bytes_;
-    used_.store(0, std::memory_order_relaxed);
-    reported_full_.store(false, std::memory_order_relaxed);
+    used_.Store(0, MemoryOrder::Relaxed);
+    reported_full_.Store(false, MemoryOrder::Relaxed);
 }
 
 void UniformRing::Flush() {
-    const u64 used = used_.load(std::memory_order_relaxed);
+    const u64 used = used_.Load(MemoryOrder::Relaxed);
     if (mapped_ != nullptr && used > 0) {
         device_->FlushMappedBuffer(buffer_, region_base_, used < region_bytes_ ? used : region_bytes_);
     }
@@ -54,16 +55,16 @@ UniformAllocation UniformRing::Allocate(u64 size) {
         return out;
     }
     const u64 reserve = (size + alignment_ - 1) / alignment_ * alignment_;
-    u64 at = used_.load(std::memory_order_relaxed);
+    u64 at = used_.Load(MemoryOrder::Relaxed);
     do {
         if (reserve > region_bytes_ || at > region_bytes_ - reserve) {
-            if (!reported_full_.exchange(true, std::memory_order_relaxed)) {
+            if (!reported_full_.Exchange(true, MemoryOrder::Relaxed)) {
                 RhiLogV(LogVerbosity::Error, "UniformRing: the frame's region of %llu bytes is full",
                         static_cast<unsigned long long>(region_bytes_));
             }
             return out;
         }
-    } while (!used_.compare_exchange_weak(at, at + reserve, std::memory_order_relaxed));
+    } while (!used_.CompareExchangeWeak(at, at + reserve, MemoryOrder::Relaxed));
     out.buffer = buffer_;
     out.offset = region_base_ + at;
     out.size = size;

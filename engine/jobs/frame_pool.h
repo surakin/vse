@@ -1,7 +1,7 @@
 #pragma once
 
-#include <atomic>
-#include <mutex>
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 #include "types.h"
 
@@ -199,7 +199,7 @@ private:
     void FlushCache(ThreadCache& cache);
 
     Config config_;
-    std::mutex mutex_;
+    Mutex mutex_;
 
     // Per-class central state, guarded by mutex_.
     struct ClassState {
@@ -210,10 +210,10 @@ private:
     };
     ClassState classes_[kClassCount];
 
-    std::atomic<u64> pooled_allocs_[kClassCount] = {};
-    std::atomic<u64> pooled_frees_[kClassCount] = {};
-    std::atomic<u64> fallback_allocs_{0};
-    std::atomic<u64> fallback_frees_{0};
+    Atomic<u64> pooled_allocs_[kClassCount] = {};
+    Atomic<u64> pooled_frees_[kClassCount] = {};
+    Atomic<u64> fallback_allocs_{0};
+    Atomic<u64> fallback_frees_{0};
 };
 
 } // namespace engine_placeholder::jobs

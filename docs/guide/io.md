@@ -274,10 +274,10 @@ file->ReadAsync(&request, buffer, length, offset, &OnDone, user);   // returns a
 #include "jobs/scheduler.h"
 using namespace engine_placeholder;
 
-static jobs::Job Load(jobs::Scheduler* s, io::File* f, std::atomic<int>* done) {
+static jobs::Job Load(jobs::Scheduler* s, io::File* f, Atomic<int>* done) {
     jobs::FileReadAllResult r = co_await jobs::ReadAllAsync(*s, *f);
     std::printf("%d %zu\n", r.status.Ok() ? 1 : 0, static_cast<size_t>(r.bytes.Size()));
-    done->store(1);
+    done->Store(1);
 }
 
 int main() {
@@ -295,7 +295,7 @@ int main() {
     {
         io::FilePtr file;
         io::File::Open(path, io::OpenMode::Read, io::kOpenNone, &file);
-        std::atomic<int> done{0};
+        Atomic<int> done{0};
         scheduler.Submit(Load(&scheduler, file.Get(), &done));
         scheduler.HelpUntil(done, 1);
     }

@@ -930,7 +930,7 @@ Call during startup (when the adapter is chosen, when the window opens). Setting
 `function debug::CrashStateCounter` — defined in `engine/foundation/debug/crash_state.h`
 
 ```cpp
-std::atomic<u64>* CrashStateCounter(const char* name);
+Atomic<u64>* CrashStateCounter(const char* name);
 ```
 
 Returns the counter shown for `name` in the crash report, creating the entry on first use. Store to it as often as needed.

@@ -3,7 +3,7 @@
 #include "log/diagnostics_hooks.h"
 #include "os/os.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstdlib>
 #include <cstring>
 
@@ -42,32 +42,32 @@ WriteSinkFn g_write_sink = &os::Write;
 constexpr usize kRingWords = kLogRingLineBytes / sizeof(u64);
 
 struct RingSlot {
-    std::atomic<u64> sequence{0};
-    std::atomic<u32> length{0};
-    std::atomic<u64> words[kRingWords];
+    Atomic<u64> sequence{0};
+    Atomic<u32> length{0};
+    Atomic<u64> words[kRingWords];
 };
 
 RingSlot g_log_ring[kLogRingSlots];
-std::atomic<u64> g_log_ring_head{0}; // number of lines ever written
+Atomic<u64> g_log_ring_head{0}; // number of lines ever written
 
 // SIGNAL-SAFE-BEGIN
 void RingAppend(const char* text, usize length) {
     if (length > kLogRingLineBytes) {
         length = kLogRingLineBytes;
     }
-    const u64 line = g_log_ring_head.fetch_add(1, std::memory_order_relaxed);
+    const u64 line = g_log_ring_head.FetchAdd(1, MemoryOrder::Relaxed);
     RingSlot& slot = g_log_ring[line % kLogRingSlots];
     // Odd means being written. The data stores below are release stores, so the odd mark is visible before any of the new data
     // on weakly ordered CPUs (an acquire RMW alone does not order later stores; a fence would, but TSan does not model fences).
     // Only one writer at a time may own a slot, or a writer that was descheduled and lapped by 256 newer lines would later
     // overwrite the text of the newer line while the slot still says it holds that newer line. So claim the slot only if it is
     // idle (even) and does not already hold a newer line; otherwise leave this line out of the ring (it is still logged).
-    u64 current = slot.sequence.load(std::memory_order_relaxed);
+    u64 current = slot.sequence.Load(MemoryOrder::Relaxed);
     if ((current & 1) != 0 || current > 2 * line + 1 ||
-        !slot.sequence.compare_exchange_strong(current, 2 * line + 1, std::memory_order_acquire, std::memory_order_relaxed)) {
+        !slot.sequence.CompareExchangeStrong(current, 2 * line + 1, MemoryOrder::Acquire, MemoryOrder::Relaxed)) {
         return;
     }
-    slot.length.store(static_cast<u32>(length), std::memory_order_release);
+    slot.length.Store(static_cast<u32>(length), MemoryOrder::Release);
     for (usize w = 0; w < kRingWords; ++w) {
         u64 word = 0;
         const usize offset = w * sizeof(u64);
@@ -75,9 +75,9 @@ void RingAppend(const char* text, usize length) {
             const usize n = length - offset < sizeof(u64) ? length - offset : sizeof(u64);
             std::memcpy(&word, text + offset, n);
         }
-        slot.words[w].store(word, std::memory_order_release);
+        slot.words[w].Store(word, MemoryOrder::Release);
     }
-    slot.sequence.store(2 * line + 2, std::memory_order_release); // even: holds line `line`
+    slot.sequence.Store(2 * line + 2, MemoryOrder::Release); // even: holds line `line`
 }
 
 // SIGNAL-SAFE-END
@@ -134,15 +134,15 @@ void SetWriteSinkForTesting(WriteSinkFn sink) {
 }
 
 namespace {
-std::atomic<bool> g_log_error_traces{false};
+Atomic<bool> g_log_error_traces{false};
 }
 
 void SetLogErrorTraces(bool enabled) {
-    g_log_error_traces.store(enabled, std::memory_order_relaxed);
+    g_log_error_traces.Store(enabled, MemoryOrder::Relaxed);
 }
 
 bool LogErrorTraces() {
-    return g_log_error_traces.load(std::memory_order_relaxed);
+    return g_log_error_traces.Load(MemoryOrder::Relaxed);
 }
 
 void Log(LogChannel& channel, LogVerbosity level, StringView message) {
@@ -161,7 +161,7 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message) {
     offset = AppendStrToBuffer(buf, kText, offset, message);
     buf[offset++] = '\n';
     RingAppend(buf, offset);
-    if (level == LogVerbosity::Error && g_log_error_traces.load(std::memory_order_relaxed)) {
+    if (level == LogVerbosity::Error && g_log_error_traces.Load(MemoryOrder::Relaxed)) {
         // Where the error came from, under the line, in the same write so another thread's output cannot come between them
         // (names stay mangled: demangling allocates).
         char text[sizeof(buf) + 4096];
@@ -192,7 +192,7 @@ u64 ReadRingRange(u64 first, u64 head, RecentLogLineFn callback, void* context, 
     // drift past that look.
     for (u64 line = first; line < head; ++line) {
         RingSlot& slot = g_log_ring[line % kLogRingSlots];
-        const u64 before = slot.sequence.load(std::memory_order_acquire);
+        const u64 before = slot.sequence.Load(MemoryOrder::Acquire);
         if (before != 2 * line + 2) {
             // A writer that took its number and was descheduled before it claimed the slot leaves the slot holding an older line while newer lines complete after it, so
             // "pending" is not only the newest line: any recent line whose slot still holds an older one may be on its way. A line older than the window is taken as left out.
@@ -203,11 +203,11 @@ u64 ReadRingRange(u64 first, u64 head, RecentLogLineFn callback, void* context, 
         }
         char text[kLogRingLineBytes + 1];
         u64 words[kRingWords];
-        const u32 length = slot.length.load(std::memory_order_acquire);
+        const u32 length = slot.length.Load(MemoryOrder::Acquire);
         for (usize w = 0; w < kRingWords; ++w) {
-            words[w] = slot.words[w].load(std::memory_order_acquire);
+            words[w] = slot.words[w].Load(MemoryOrder::Acquire);
         }
-        if (slot.sequence.fetch_add(0, std::memory_order_release) != before || length > kLogRingLineBytes) {
+        if (slot.sequence.FetchAdd(0, MemoryOrder::Release) != before || length > kLogRingLineBytes) {
             continue; // changed while we copied: torn, drop it
         }
         std::memcpy(text, words, kLogRingLineBytes);
@@ -220,7 +220,7 @@ u64 ReadRingRange(u64 first, u64 head, RecentLogLineFn callback, void* context, 
 } // namespace
 
 void ReadRecentLogLines(RecentLogLineFn callback, void* context, usize max_lines) {
-    const u64 head = g_log_ring_head.load(std::memory_order_acquire);
+    const u64 head = g_log_ring_head.Load(MemoryOrder::Acquire);
     u64 first = head > kLogRingSlots ? head - kLogRingSlots : 0;
     if (max_lines != 0 && head - first > max_lines) {
         first = head - max_lines;
@@ -228,10 +228,10 @@ void ReadRecentLogLines(RecentLogLineFn callback, void* context, usize max_lines
     ReadRingRange(first, head, callback, context, false);
 }
 
-u64 LogLinesWritten() { return g_log_ring_head.load(std::memory_order_acquire); }
+u64 LogLinesWritten() { return g_log_ring_head.Load(MemoryOrder::Acquire); }
 
 u64 ReadLogLinesSince(u64 next, RecentLogLineFn callback, void* context) {
-    const u64 head = g_log_ring_head.load(std::memory_order_acquire);
+    const u64 head = g_log_ring_head.Load(MemoryOrder::Acquire);
     u64 first = head > kLogRingSlots ? head - kLogRingSlots : 0;
     if (next > first) {
         first = next < head ? next : head;
@@ -241,10 +241,10 @@ u64 ReadLogLinesSince(u64 next, RecentLogLineFn callback, void* context) {
 
 // SIGNAL-SAFE-END
 void ResetLogRingForTesting() {
-    g_log_ring_head.store(0, std::memory_order_relaxed);
+    g_log_ring_head.Store(0, MemoryOrder::Relaxed);
     for (RingSlot& slot : g_log_ring) {
-        slot.sequence.store(0, std::memory_order_relaxed);
-        slot.length.store(0, std::memory_order_relaxed);
+        slot.sequence.Store(0, MemoryOrder::Relaxed);
+        slot.length.Store(0, MemoryOrder::Relaxed);
     }
 }
 
@@ -261,10 +261,10 @@ const char* AssertKindLabel(AssertKind kind) {
     return "ASSERT FAILED: ";
 }
 
-std::atomic<AssertHandler> g_assert_handler{&DefaultAssertHandler};
+Atomic<AssertHandler> g_assert_handler{&DefaultAssertHandler};
 
 // Head of the list of ENGINE_ENSURE call sites that have failed.
-std::atomic<detail::EnsureSite*> g_ensure_head{nullptr};
+Atomic<detail::EnsureSite*> g_ensure_head{nullptr};
 
 } // namespace
 
@@ -327,31 +327,31 @@ AssertAction DefaultAssertHandler(const AssertInfo& info) {
 }
 
 namespace {
-std::atomic<const FailureReportHooks*> g_failure_hooks{nullptr};
-std::atomic<ThreadStartHook> g_thread_start_hook{nullptr};
+Atomic<const FailureReportHooks*> g_failure_hooks{nullptr};
+Atomic<ThreadStartHook> g_thread_start_hook{nullptr};
 } // namespace
 
 const FailureReportHooks* SetFailureReportHooks(const FailureReportHooks* hooks) {
-    return g_failure_hooks.exchange(hooks, std::memory_order_acq_rel);
+    return g_failure_hooks.Exchange(hooks, MemoryOrder::AcqRel);
 }
 
 const FailureReportHooks* GetFailureReportHooks() {
-    return g_failure_hooks.load(std::memory_order_acquire);
+    return g_failure_hooks.Load(MemoryOrder::Acquire);
 }
 
 ThreadStartHook SetThreadStartHook(ThreadStartHook hook) {
-    return g_thread_start_hook.exchange(hook, std::memory_order_acq_rel);
+    return g_thread_start_hook.Exchange(hook, MemoryOrder::AcqRel);
 }
 
 void NotifyThreadStart(const char* name) {
-    ThreadStartHook hook = g_thread_start_hook.load(std::memory_order_acquire);
+    ThreadStartHook hook = g_thread_start_hook.Load(MemoryOrder::Acquire);
     if (hook != nullptr) {
         hook(name);
     }
 }
 
 AssertHandler SetAssertHandler(AssertHandler handler) {
-    return g_assert_handler.exchange(handler != nullptr ? handler : &DefaultAssertHandler, std::memory_order_acq_rel);
+    return g_assert_handler.Exchange(handler != nullptr ? handler : &DefaultAssertHandler, MemoryOrder::AcqRel);
 }
 
 [[noreturn]] void AssertFail(const char* file, int line, const char* message) {
@@ -364,7 +364,7 @@ namespace detail {
 AssertAction AssertFailed(AssertKind kind, const char* file, int line, const char* function, const char* condition,
                           const char* message) {
     const AssertInfo info{kind, file, line, function, condition, message};
-    AssertAction action = g_assert_handler.load(std::memory_order_acquire)(info);
+    AssertAction action = g_assert_handler.Load(MemoryOrder::Acquire)(info);
     // Control cannot continue past a place declared unreachable.
     if (action == AssertAction::Continue && kind == AssertKind::Unreachable) {
         action = AssertAction::Abort;
@@ -380,17 +380,17 @@ void UnreachableAbort() {
 }
 
 AssertAction EnsureFailed(EnsureSite& site, const char* function) {
-    site.count.fetch_add(1, std::memory_order_relaxed);
+    site.count.FetchAdd(1, MemoryOrder::Relaxed);
     // `reported`, not the count, decides who is first: the count is only a statistic and may wrap.
-    if (site.reported.exchange(true, std::memory_order_acq_rel)) {
+    if (site.reported.Exchange(true, MemoryOrder::AcqRel)) {
         return AssertAction::Continue; // already reported; only counted
     }
     // The first failure at this site: publish it in the list, then report. Only one thread gets here per site.
     site.function = function;
-    EnsureSite* head = g_ensure_head.load(std::memory_order_relaxed);
+    EnsureSite* head = g_ensure_head.Load(MemoryOrder::Relaxed);
     do {
         site.next = head;
-    } while (!g_ensure_head.compare_exchange_weak(head, &site, std::memory_order_release, std::memory_order_relaxed));
+    } while (!g_ensure_head.CompareExchangeWeak(head, &site, MemoryOrder::Release, MemoryOrder::Relaxed));
     const AssertAction action = AssertFailed(AssertKind::Ensure, site.file, site.line, function, site.condition, site.message);
     // Not a tail call: the stack trace the default handler prints counts this frame, and an optimizing compiler would drop it.
     ENGINE_COMPILER_BARRIER();
@@ -400,27 +400,27 @@ AssertAction EnsureFailed(EnsureSite& site, const char* function) {
 } // namespace detail
 
 void ForEachFailedEnsure(EnsureVisitor visitor, void* context) {
-    for (const detail::EnsureSite* s = g_ensure_head.load(std::memory_order_acquire); s != nullptr; s = s->next) {
+    for (const detail::EnsureSite* s = g_ensure_head.Load(MemoryOrder::Acquire); s != nullptr; s = s->next) {
         const EnsureSiteInfo info{s->file, s->line, s->function != nullptr ? s->function : "", s->condition, s->message,
-                                  s->count.load(std::memory_order_relaxed)};
+                                  s->count.Load(MemoryOrder::Relaxed)};
         visitor(info, context);
     }
 }
 
 u32 EnsureFailedSiteCount() {
     u32 n = 0;
-    for (const detail::EnsureSite* s = g_ensure_head.load(std::memory_order_acquire); s != nullptr; s = s->next) {
+    for (const detail::EnsureSite* s = g_ensure_head.Load(MemoryOrder::Acquire); s != nullptr; s = s->next) {
         ++n;
     }
     return n;
 }
 
 void ResetEnsureStateForTesting() {
-    detail::EnsureSite* s = g_ensure_head.exchange(nullptr, std::memory_order_acq_rel);
+    detail::EnsureSite* s = g_ensure_head.Exchange(nullptr, MemoryOrder::AcqRel);
     while (s != nullptr) {
         detail::EnsureSite* next = s->next;
-        s->count.store(0, std::memory_order_relaxed);
-        s->reported.store(false, std::memory_order_relaxed);
+        s->count.Store(0, MemoryOrder::Relaxed);
+        s->reported.Store(false, MemoryOrder::Relaxed);
         s->next = nullptr;
         s = next;
     }

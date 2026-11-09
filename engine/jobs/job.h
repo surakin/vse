@@ -1,7 +1,7 @@
 #pragma once
 
 #include <coroutine>
-#include <new>
+#include "lang/new.h"
 
 #include "debug/compiler.h"
 #include "jobs/frame_pool.h"
@@ -99,7 +99,7 @@ public:
         static void* operator new(usize size) { return FramePool::Global().Allocate(size); }
         // Over-aligned frames (a local with alignas > 16 live across a
         // suspension) select this overload; the pool only guarantees 16.
-        static void* operator new(usize, std::align_val_t) {
+        static void* operator new(usize, AlignVal) {
             ENGINE_ASSERT(false, "Job frame requires over-aligned storage (>16 bytes) which FramePool cannot provide");
             ENGINE_TRAP(); // never hand out misaligned storage, even where the assert is compiled out
         }

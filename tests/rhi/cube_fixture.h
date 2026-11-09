@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <initializer_list>
+#include "lang/initializer_list.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -69,7 +69,7 @@ struct CubeScene {
 
     Format DepthFormat() const { return device->Caps().depth_format; }
 
-    Image Render(std::initializer_list<Draw> draws) {
+    Image Render(InitializerList<Draw> draws) {
         Vector<Draw> list;
         for (const Draw& d : draws) list.Push(d);
         return Render(list);

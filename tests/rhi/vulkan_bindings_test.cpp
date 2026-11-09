@@ -1,6 +1,6 @@
 #include <cstring>
 #include <memory>
-#include <thread>
+#include "sync/thread.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -117,7 +117,7 @@ TEST_CASE("UniformRing allocations from several threads are disjoint", "[rhi][nu
     constexpr int kThreads = 4;
     constexpr int kPerThread = 300;
     std::vector<UniformAllocation> results(kThreads * kPerThread);
-    std::vector<std::thread> threads;
+    std::vector<Thread> threads;
     for (int t = 0; t < kThreads; ++t) {
         threads.emplace_back([&, t]() {
             for (int i = 0; i < kPerThread; ++i) {
@@ -125,7 +125,7 @@ TEST_CASE("UniformRing allocations from several threads are disjoint", "[rhi][nu
             }
         });
     }
-    for (std::thread& th : threads) th.join();
+    for (Thread& th : threads) th.Join();
     std::vector<unsigned char> seen(ring.BytesPerFrame() * UniformRing::kSlots, 0);
     for (const UniformAllocation& a : results) {
         REQUIRE(a.Valid());

@@ -13,6 +13,7 @@
 #include "fs_fixture.h"
 #include "links.h"
 #include "reference.h"
+#include "lang/utility.h"
 
 using namespace docgen;
 
@@ -78,7 +79,7 @@ struct LinksTestScanned {
     std::string text; // the scanned views point into it
     ArenaAllocator arena{usize{1} << 24};
     MdDoc doc{arena};
-    explicit LinksTestScanned(std::string t) : text(std::move(t)) { ScanMarkdown(Sv(text), arena, doc); }
+    explicit LinksTestScanned(std::string t) : text(engine_placeholder::Move(t)) { ScanMarkdown(Sv(text), arena, doc); }
 };
 
 } // namespace

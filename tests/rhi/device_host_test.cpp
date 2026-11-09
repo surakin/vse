@@ -1,6 +1,6 @@
 #include <cstring>
 #include <string>
-#include <thread>
+#include "sync/thread.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -326,14 +326,14 @@ TEST_CASE("DeviceHost refuses Recreate inside a frame or off the owning thread",
     host.GetDevice()->EndFrame();
 
     bool other_threw = false;
-    std::thread other([&] {
+    Thread other([&] {
         try {
             host.Recreate(info, SwapchainDesc{});
         } catch (const AssertThrown& e) {
             other_threw = e.message.find("thread") != std::string::npos;
         }
     });
-    other.join();
+    other.Join();
     CHECK(other_threw);
     CHECK(host.Epoch() == epoch);
     CHECK(host.Recreate(info, SwapchainDesc{}));

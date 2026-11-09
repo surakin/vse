@@ -2,7 +2,7 @@
 // and nothing left alive, capabilities, and bounded fence waits. Windows only.
 #include <cstdio>
 #include <cstdlib>
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
@@ -356,7 +356,7 @@ TEST_CASE("An injected DX12 allocation failure gives invalid handles and the dev
 
 // Phase 13 Day 172 review: the explicit loss (a real RemoveDevice) honors the shared strike limit, as every injected loss does.
 TEST_CASE("InjectDeviceLoss on DX12 removes the device only while strikes are left", "[rhi][dx12][gpu][fault]") {
-    std::atomic<u32> strikes{1};
+    Atomic<u32> strikes{1};
     DeviceCreateInfo info = Dx12Info();
     info.faults.strikes_left = &strikes;
     {
@@ -364,7 +364,7 @@ TEST_CASE("InjectDeviceLoss on DX12 removes the device only while strikes are le
         if (device == nullptr) SKIP("no Direct3D 12 device");
         device->InjectDeviceLoss();
         CHECK(device->DeviceLost());
-        CHECK(strikes.load() == 0);
+        CHECK(strikes.Load() == 0);
         device->WaitIdle(); // returns on a removed device
     }
     DevicePtr second = CreateDevice(info); // every device of the adapter is released: a new one, not the removed one

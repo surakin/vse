@@ -1,0 +1,20 @@
+// Stand-in for the standard header (see cstddef): numeric_limits with well-formed but unspecific values (syntax checks only).
+#pragma once
+namespace std {
+template <class T>
+struct numeric_limits {
+    static constexpr bool is_specialized = __is_arithmetic(T);
+    static constexpr bool is_signed = __is_signed(T);
+    static constexpr bool is_integer = __is_integral(T);
+    static constexpr bool is_iec559 = __is_floating_point(T);
+    static constexpr int digits = static_cast<int>(sizeof(T) * 8);
+    static constexpr int digits10 = digits / 4;
+    static constexpr T min() noexcept { return T(); }
+    static constexpr T max() noexcept { return T(); }
+    static constexpr T lowest() noexcept { return T(); }
+    static constexpr T epsilon() noexcept { return T(); }
+    static constexpr T infinity() noexcept { return T(); }
+    static constexpr T quiet_NaN() noexcept { return T(); }
+    static constexpr T denorm_min() noexcept { return T(); }
+};
+} // namespace std

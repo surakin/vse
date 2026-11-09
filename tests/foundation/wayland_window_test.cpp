@@ -1,4 +1,4 @@
-#include <utility>
+#include "lang/utility.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
@@ -74,13 +74,13 @@ TEST_CASE("WaylandWindow move construction/assignment transfers ownership withou
     REQUIRE(a.Valid());
     wl_surface* surface = a.Surface();
 
-    WaylandWindow b(std::move(a));
+    WaylandWindow b(engine_placeholder::Move(a));
     REQUIRE_FALSE(a.Valid());
     REQUIRE(b.Valid());
     REQUIRE(b.Surface() == surface);
 
     WaylandWindow c;
-    c = std::move(b);
+    c = engine_placeholder::Move(b);
     REQUIRE_FALSE(b.Valid());
     REQUIRE(c.Valid());
     REQUIRE(c.Surface() == surface);
@@ -99,7 +99,7 @@ TEST_CASE("WaylandWindow gets server-side decorations when the compositor offers
     REQUIRE(window.ServerSideDecorated());
 
     // Survives a move (listener user data re-pointed).
-    WaylandWindow moved(std::move(window));
+    WaylandWindow moved(engine_placeholder::Move(window));
     REQUIRE(moved.ServerSideDecorated());
 }
 
@@ -163,7 +163,7 @@ TEST_CASE("WaylandWindow's resize serial survives a move and is non-zero once si
     REQUIRE(window.Valid());
     const engine_placeholder::u64 serial = window.ResizeSerial();
     REQUIRE(serial != 0);  // the initial configure sized it
-    WaylandWindow moved(std::move(window));
+    WaylandWindow moved(engine_placeholder::Move(window));
     REQUIRE(moved.ResizeSerial() == serial);
     REQUIRE(window.ResizeSerial() == 0);
 

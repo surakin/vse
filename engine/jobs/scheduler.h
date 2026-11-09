@@ -1,9 +1,8 @@
 #pragma once
 
-#include <atomic>
-#include <condition_variable>
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 #include <coroutine>
-#include <mutex>
 
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
@@ -153,7 +152,7 @@ public:
     /// Param target: the wait ends once `value >= target`.
     /// Aborts: not called from participant 0 (the main thread), or called from inside a running job.
     /// Thread-safety: owner-thread-only. Participant 0, outside any job.
-    void HelpUntil(const std::atomic<int>& value, int target);
+    void HelpUntil(const Atomic<int>& value, int target);
 
     /// Stops the I/O thread and the workers and destroys jobs that never ran.
     ///
@@ -228,7 +227,7 @@ public:
     ///
     /// Returns: number of parked workers at the moment of the call.
     /// Thread-safety: thread-safe.
-    u32 ParkedWorkersForTesting() const { return parked_.load(std::memory_order_seq_cst); }
+    u32 ParkedWorkersForTesting() const { return parked_.Load(MemoryOrder::SeqCst); }
     /// Counts the entries in the injection queue; a testing aid.
     ///
     /// Returns: the current queue length.
@@ -248,8 +247,8 @@ private:
     struct Lane {
         WorkStealingDeque deque;
         u32 rng = 1;
-        std::atomic<u64> resumes{0};
-        std::atomic<u64> steals{0};
+        Atomic<u64> resumes{0};
+        Atomic<u64> steals{0};
     };
 
     static void WorkerMain(void* user, Participant& self);
@@ -275,11 +274,11 @@ private:
     UniquePtr<IoThread> io_;
 
     // Injection queue (ring), guarded by injection_mutex_.
-    std::mutex injection_mutex_;
+    Mutex injection_mutex_;
     std::coroutine_handle<> injection_[kInjectionCapacity];
     usize injection_head_ = 0;
     usize injection_count_ = 0;
-    std::atomic<usize> injection_hint_{0}; // lock-free "maybe non-empty"
+    Atomic<usize> injection_hint_{0}; // lock-free "maybe non-empty"
 
     // LOST-WAKEUP PROTOCOL. `submit_seq_` is bumped by every submission AFTER
     // the work is made visible. A worker about to park (1) reads
@@ -297,13 +296,13 @@ private:
     // then notifies). A submission racing a worker deciding to park therefore
     // cannot be stranded.
     // Idle parking.
-    std::mutex park_mutex_;
-    std::condition_variable park_cv_;
-    std::atomic<u64> submit_seq_{0};
-    std::atomic<u32> parked_{0};
-    std::atomic<bool> shutdown_{false};
+    Mutex park_mutex_;
+    ConditionVariable park_cv_;
+    Atomic<u64> submit_seq_{0};
+    Atomic<u32> parked_{0};
+    Atomic<bool> shutdown_{false};
     bool shut_down_ = false;               // Shutdown() entered (owner thread)
-    std::atomic<bool> drained_{false};     // Shutdown() finished sweeping
+    Atomic<bool> drained_{false};     // Shutdown() finished sweeping
 };
 
 } // namespace engine_placeholder::jobs

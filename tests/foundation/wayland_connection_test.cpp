@@ -8,6 +8,7 @@
 #include "os/os.h"
 #include "string/string.h"
 #include "types.h"
+#include "lang/utility.h"
 
 using engine_placeholder::Log;
 using engine_placeholder::LogPlatform;
@@ -90,13 +91,13 @@ TEST_CASE("WaylandConnection move construction/assignment transfers ownership wi
     REQUIRE(a.Valid());
     wl_display* display = a.Display();
 
-    WaylandConnection b(std::move(a));
+    WaylandConnection b(engine_placeholder::Move(a));
     REQUIRE_FALSE(a.Valid());
     REQUIRE(b.Valid());
     REQUIRE(b.Display() == display);
 
     WaylandConnection c;
-    c = std::move(b);
+    c = engine_placeholder::Move(b);
     REQUIRE_FALSE(b.Valid());
     REQUIRE(c.Valid());
     REQUIRE(c.Display() == display);

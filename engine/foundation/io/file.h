@@ -1,6 +1,6 @@
 #pragma once
 
-#include <atomic>
+#include "sync/atomic.h"
 
 #include "containers/span.h"
 #include "containers/unique_ptr.h"
@@ -127,7 +127,7 @@ struct AsyncRequest {
     u64 offset = 0;                 ///< File offset.
     Completion done = nullptr;      ///< Called once with `user` and the result.
     void* user = nullptr;           ///< Passed to `done`.
-    std::atomic<u8> state{kAsyncPending}; ///< An [[io::AsyncState]], managed by the file layer.
+    Atomic<u8> state{kAsyncPending}; ///< An [[io::AsyncState]], managed by the file layer.
 };
 
 /// An open file. Implemented per backend; use [[io::File::Open]] to get one.
@@ -272,7 +272,7 @@ private:
     static void RunOnExecutor(IoWork* work);
 
     u64 position_ = 0;
-    std::atomic<u32> in_flight_{0};
+    Atomic<u32> in_flight_{0};
 };
 
 /// Creates the backend object for a URL scheme: `location` is the whole text (`scheme://rest`).

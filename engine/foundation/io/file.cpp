@@ -1,12 +1,11 @@
 #include "io/file.h"
 
 #include <cstdio>
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstring>
 #include <chrono>
-#include <condition_variable>
-#include <mutex>
-#include <thread>
+#include "sync/mutex.h"
+#include "sync/thread.h"
 
 #include "log/diagnostics_hooks.h"
 #include "io/file_system.h"
@@ -59,21 +58,21 @@ public:
     ThreadExecutor() : thread_([this] { Loop(); }) {}
     ~ThreadExecutor() override {
         {
-            std::lock_guard<std::mutex> lock(mutex_);
+            LockGuard<Mutex> lock(mutex_);
             stopping_ = true;
         }
-        cv_.notify_all();
-        thread_.join();
+        cv_.NotifyAll();
+        thread_.Join();
     }
     bool Submit(IoWork* work) override {
         work->next = nullptr;
         {
-            std::lock_guard<std::mutex> lock(mutex_);
+            LockGuard<Mutex> lock(mutex_);
             if (stopping_) return false;
             (tail_ != nullptr ? tail_->next : head_) = work;
             tail_ = work;
         }
-        cv_.notify_one();
+        cv_.NotifyOne();
         return true;
     }
 
@@ -83,8 +82,8 @@ private:
         for (;;) {
             IoWork* work = nullptr;
             {
-                std::unique_lock<std::mutex> lock(mutex_);
-                cv_.wait(lock, [&] { return head_ != nullptr || stopping_; });
+                UniqueLock<Mutex> lock(mutex_);
+                cv_.Wait(lock, [&] { return head_ != nullptr || stopping_; });
                 if (head_ == nullptr) return;
                 work = head_;
                 head_ = work->next;
@@ -93,62 +92,62 @@ private:
             work->run(work);
         }
     }
-    std::mutex mutex_;
-    std::condition_variable cv_;
+    Mutex mutex_;
+    ConditionVariable cv_;
     IoWork* head_ = nullptr;
     IoWork* tail_ = nullptr;
     bool stopping_ = false;
-    std::thread thread_;
+    Thread thread_;
 };
 
-std::atomic<IoExecutor*> g_executor{nullptr};
+Atomic<IoExecutor*> g_executor{nullptr};
 
 } // namespace
 
-void SetDefaultExecutor(IoExecutor* executor) { g_executor.store(executor, std::memory_order_release); }
+void SetDefaultExecutor(IoExecutor* executor) { g_executor.Store(executor, MemoryOrder::Release); }
 
 void ClearDefaultExecutorIf(IoExecutor* executor) {
     IoExecutor* expected = executor;
-    g_executor.compare_exchange_strong(expected, nullptr, std::memory_order_acq_rel);
+    g_executor.CompareExchangeStrong(expected, nullptr, MemoryOrder::AcqRel);
 }
 
 IoExecutor& DefaultExecutor() {
-    if (IoExecutor* e = g_executor.load(std::memory_order_acquire)) return *e;
+    if (IoExecutor* e = g_executor.Load(MemoryOrder::Acquire)) return *e;
     static ThreadExecutor builtin; // created on first use, drained and joined at exit
     return builtin;
 }
 
 void File::CheckNoRequestsInFlight() {
-    ENGINE_ENSURE(in_flight_.load() == 0, "io::File destroyed with asynchronous requests in flight (the backend must call WaitForAsyncRequests)");
+    ENGINE_ENSURE(in_flight_.Load() == 0, "io::File destroyed with asynchronous requests in flight (the backend must call WaitForAsyncRequests)");
 }
 
 void File::WaitForAsyncRequests() {
     // Normally short. Yield first, then back off so a long wait does not burn a core.
-    for (int spins = 0; in_flight_.load(std::memory_order_acquire) != 0; ++spins) {
+    for (int spins = 0; in_flight_.Load(MemoryOrder::Acquire) != 0; ++spins) {
         if (spins < 100) {
-            std::this_thread::yield();
+            ThisThread::Yield();
         } else {
-            std::this_thread::sleep_for(std::chrono::microseconds(50));
+            ThisThread::SleepForMicroseconds(50);
         }
     }
 }
 
 bool File::ClaimAsync(AsyncRequest* request) {
     u8 expected = kAsyncPending;
-    return request->state.compare_exchange_strong(expected, kAsyncRunning);
+    return request->state.CompareExchangeStrong(expected, kAsyncRunning);
 }
 
 bool File::CancelPending(AsyncRequest* request) {
     u8 expected = kAsyncPending;
-    return request->state.compare_exchange_strong(expected, kAsyncCancelled);
+    return request->state.CompareExchangeStrong(expected, kAsyncCancelled);
 }
 
 void File::CompleteAsync(AsyncRequest* request, const AsyncResult& result) {
-    request->state.store(kAsyncDone, std::memory_order_release);
+    request->state.Store(kAsyncDone, MemoryOrder::Release);
     const Completion done = request->done;
     void* const user = request->user;
     // Count the request out before the callback: the callback may destroy this file.
-    in_flight_.fetch_sub(1, std::memory_order_acq_rel);
+    in_flight_.FetchSub(1, MemoryOrder::AcqRel);
     done(user, result);
 }
 
@@ -187,7 +186,7 @@ void Prepare(File* file, AsyncRequest* r, AsyncKind kind, Completion done, void*
     r->kind = kind;
     r->done = done;
     r->user = user;
-    r->state.store(kAsyncPending, std::memory_order_relaxed);
+    r->state.Store(kAsyncPending, MemoryOrder::Relaxed);
 }
 } // namespace
 
@@ -197,7 +196,7 @@ void File::ReadAsync(AsyncRequest* request, void* buffer, usize length, u64 offs
     request->data = nullptr;
     request->length = length;
     request->offset = offset;
-    in_flight_.fetch_add(1, std::memory_order_acq_rel);
+    in_flight_.FetchAdd(1, MemoryOrder::AcqRel);
     StartAsync(request);
 }
 
@@ -207,7 +206,7 @@ void File::WriteAsync(AsyncRequest* request, const void* data, usize length, u64
     request->data = data;
     request->length = length;
     request->offset = offset;
-    in_flight_.fetch_add(1, std::memory_order_acq_rel);
+    in_flight_.FetchAdd(1, MemoryOrder::AcqRel);
     StartAsync(request);
 }
 
@@ -217,7 +216,7 @@ void File::FlushAsync(AsyncRequest* request, Completion done, void* user) {
     request->data = nullptr;
     request->length = 0;
     request->offset = 0;
-    in_flight_.fetch_add(1, std::memory_order_acq_rel);
+    in_flight_.FetchAdd(1, MemoryOrder::AcqRel);
     StartAsync(request);
 }
 
@@ -234,7 +233,7 @@ struct SchemeEntry {
     FileFactory factory;
 };
 
-std::mutex g_scheme_mutex;
+Mutex g_scheme_mutex;
 SchemeEntry g_schemes[kMaxSchemes];
 usize g_scheme_count = 0;
 
@@ -252,7 +251,7 @@ bool ValidScheme(StringView s) {
 }
 
 FileFactory FindFactory(StringView scheme) {
-    std::lock_guard<std::mutex> lock(g_scheme_mutex);
+    LockGuard<Mutex> lock(g_scheme_mutex);
     for (usize i = 0; i < g_scheme_count; ++i) {
         if (StringView(g_schemes[i].name, g_schemes[i].length) == scheme) {
             return g_schemes[i].factory;
@@ -267,7 +266,7 @@ Status RegisterFileScheme(StringView scheme, FileFactory factory) {
     if (!ValidScheme(scheme) || factory == nullptr || scheme == StringView("file")) {
         return Status::Of(Error::Invalid);
     }
-    std::lock_guard<std::mutex> lock(g_scheme_mutex);
+    LockGuard<Mutex> lock(g_scheme_mutex);
     for (usize i = 0; i < g_scheme_count; ++i) {
         if (StringView(g_schemes[i].name, g_schemes[i].length) == scheme) {
             return Status::Of(Error::AlreadyExists);
@@ -285,7 +284,7 @@ Status RegisterFileScheme(StringView scheme, FileFactory factory) {
 }
 
 void UnregisterFileScheme(StringView scheme) {
-    std::lock_guard<std::mutex> lock(g_scheme_mutex);
+    LockGuard<Mutex> lock(g_scheme_mutex);
     for (usize i = 0; i < g_scheme_count; ++i) {
         if (StringView(g_schemes[i].name, g_schemes[i].length) == scheme) {
             g_schemes[i] = g_schemes[--g_scheme_count];
@@ -460,10 +459,10 @@ Status WriteFile(const Path& path, const void* data, usize length) {
 }
 
 namespace {
-std::atomic<int> g_atomic_failure_step{0}; // set only by tests
+Atomic<int> g_atomic_failure_step{0}; // set only by tests
 }
 namespace detail {
-void SetAtomicWriteFailureStep(int step) { g_atomic_failure_step.store(step, std::memory_order_relaxed); }
+void SetAtomicWriteFailureStep(int step) { g_atomic_failure_step.Store(step, MemoryOrder::Relaxed); }
 } // namespace detail
 
 Status WriteFileAtomic(const Path& requested, const void* data, usize length, u32 new_file_permissions) {
@@ -480,7 +479,7 @@ Status WriteFileAtomic(const Path& requested, const void* data, usize length, u3
     if (dir.IsEmpty()) dir = Path(".", path.Style());
     Path temp;
     if (Status s = CreateTempFile(dir, ".atomic", &temp); s.Failed()) return s;
-    auto fail_at = [](int step) { return g_atomic_failure_step.load(std::memory_order_relaxed) == step ? Status::Of(Error::Io) : Status::Success(); };
+    auto fail_at = [](int step) { return g_atomic_failure_step.Load(MemoryOrder::Relaxed) == step ? Status::Of(Error::Io) : Status::Success(); };
 
     Status result;
     {

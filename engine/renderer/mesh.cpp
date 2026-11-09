@@ -1,6 +1,6 @@
 #include "renderer/mesh.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
@@ -651,8 +651,8 @@ bool GpuMesh::Create(rhi::Device* device, const MeshData& data, const char* debu
     has_restart_ = data.HasPrimitiveRestart();
     layout_ = data.Layout();
     bounds_ = data.GetBounds();
-    static std::atomic<u32> next_sort_id{1};
-    sort_id_ = next_sort_id.fetch_add(1, std::memory_order_relaxed) % 0xffffffu + 1; // 1 to 2^24 - 1, never 0
+    static Atomic<u32> next_sort_id{1};
+    sort_id_ = next_sort_id.FetchAdd(1, MemoryOrder::Relaxed) % 0xffffffu + 1; // 1 to 2^24 - 1, never 0
     ready_ = false;
     prepared_ = false;
     return true;

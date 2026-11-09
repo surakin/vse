@@ -8,10 +8,10 @@
 #include "resource_guard.h"
 #include "support/death_test_skip.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstring>
 #include <string>
-#include <thread>
+#include "sync/thread.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -21,7 +21,7 @@ namespace {
 // The failure the capture handler saw last, and how many it has seen. The counters are atomic because some tests fail
 // checks from several threads; the strings are literals, so copying the pointers is safe.
 struct FamilyCapture {
-    std::atomic<int> calls{0};
+    Atomic<int> calls{0};
     AssertKind kind = AssertKind::Assert;
     const char* file = nullptr;
     int line = 0;
@@ -38,12 +38,12 @@ AssertAction FamilyCaptureContinue(const AssertInfo& info) {
     g_family.function = info.function;
     g_family.condition = info.condition;
     g_family.message = info.message;
-    g_family.calls.fetch_add(1, std::memory_order_relaxed);
+    g_family.calls.FetchAdd(1, MemoryOrder::Relaxed);
     return AssertAction::Continue;
 }
 
 AssertAction FamilyCountOnly(const AssertInfo&) {
-    g_family.calls.fetch_add(1, std::memory_order_relaxed);
+    g_family.calls.FetchAdd(1, MemoryOrder::Relaxed);
     return AssertAction::Continue;
 }
 
@@ -186,8 +186,8 @@ TEST_CASE("SetAssertHandler returns the previous handler and nullptr restores th
 
 TEST_CASE("A handler installed on one thread is used by a failure on another", "[assert][debug]") {
     FamilyHandlerScope scope(&FamilyCountOnly);
-    std::thread other([] { ENGINE_ASSERT(false, "from another thread"); });
-    other.join();
+    Thread other([] { ENGINE_ASSERT(false, "from another thread"); });
+    other.Join();
     CHECK(g_family.calls == 1);
 }
 
@@ -306,26 +306,26 @@ TEST_CASE("After the ensure state is reset a site is reported again", "[ensure][
 TEST_CASE("Eight threads failing the same ENGINE_ENSURE for the first time produce exactly one report", "[ensure][debug]") {
     for (int round = 0; round < 20; ++round) {
         FamilyHandlerScope scope(&FamilyCountOnly);
-        std::atomic<int> ready{0};
-        std::atomic<bool> go{false};
-        std::thread threads[8];
-        for (std::thread& t : threads) {
-            t = std::thread([&] {
-                ready.fetch_add(1);
-                while (!go.load()) {
-                    std::this_thread::yield();
+        Atomic<int> ready{0};
+        Atomic<bool> go{false};
+        Thread threads[8];
+        for (Thread& t : threads) {
+            t = Thread([&] {
+                ready.FetchAdd(1);
+                while (!go.Load()) {
+                    ThisThread::Yield();
                 }
                 for (int i = 0; i < 100; ++i) {
                     FamilyEnsureSiteC(false);
                 }
             });
         }
-        while (ready.load() < 8) {
-            std::this_thread::yield();
+        while (ready.Load() < 8) {
+            ThisThread::Yield();
         }
         go = true;
-        for (std::thread& t : threads) {
-            t.join();
+        for (Thread& t : threads) {
+            t.Join();
         }
         REQUIRE(g_family.calls == 1);
         FamilySiteList sites;

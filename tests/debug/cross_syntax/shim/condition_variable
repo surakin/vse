@@ -1,0 +1,19 @@
+// Stand-in for the standard header (see cstddef): the condition variable, declarations only.
+#pragma once
+#include <mutex>
+#include <chrono>
+namespace std {
+enum class cv_status { no_timeout, timeout };
+class condition_variable {
+public:
+    condition_variable() = default;
+    condition_variable(const condition_variable&) = delete;
+    condition_variable& operator=(const condition_variable&) = delete;
+    void notify_one() noexcept;
+    void notify_all() noexcept;
+    void wait(unique_lock<mutex>& lock);
+    template <class Predicate> void wait(unique_lock<mutex>& lock, Predicate pred) { while (!pred()) wait(lock); }
+    template <class Rep, class Period> cv_status wait_for(unique_lock<mutex>& lock, const chrono::duration<Rep, Period>& d);
+    template <class Rep, class Period, class Predicate> bool wait_for(unique_lock<mutex>& lock, const chrono::duration<Rep, Period>& d, Predicate pred) { return pred(); }
+};
+} // namespace std

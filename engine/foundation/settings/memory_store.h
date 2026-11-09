@@ -2,7 +2,7 @@
 
 //! Stores that live in memory: [[settings::MemoryConfigStore]] (full-featured) and [[settings::ReadOnlyConfigStore]] (shipped defaults).
 
-#include <mutex>
+#include "sync/mutex.h"
 
 #include "containers/shared_ptr.h"
 #include "settings/config_store.h"
@@ -35,9 +35,9 @@ public:
 
 private:
     friend class MemoryConfigStore;
-    mutable std::mutex mutex_;
+    mutable Mutex mutex_;
     Vector<Entry> entries_;
-    std::recursive_mutex notify_mutex_; // held while listeners are called and while one is added or removed
+    RecursiveMutex notify_mutex_; // held while listeners are called and while one is added or removed
     Vector<MemoryConfigStore*> stores_;
 };
 

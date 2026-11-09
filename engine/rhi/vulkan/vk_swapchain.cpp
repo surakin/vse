@@ -5,6 +5,7 @@
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vk_swapchain_policy.h"
 #include "rhi/vulkan/vulkan_device.h"
+#include "sync/mutex.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
@@ -69,7 +70,7 @@ void VulkanSwapchain::DestroySemaphores() {
 // submitted yet, so nothing else retired is collected here (Phase 13 Day 169).
 void VulkanSwapchain::ReleaseImages() {
     {
-        std::lock_guard<std::mutex> lock(device_->resource_mutex_);
+        LockGuard<Mutex> lock(device_->resource_mutex_);
         for (u32 i = 0; i < image_count_; ++i) {
             if (VulkanDevice::TextureRes* t = device_->textures_.Get(textures_[i])) {
                 device_->DestroyTextureRes(t);
@@ -235,7 +236,7 @@ SwapchainStatus VulkanSwapchain::Build(u32 width, u32 height) {
         res.image = images_[i];
         res.external = true;
         res.desc = desc;
-        std::lock_guard<std::mutex> lock(d.resource_mutex_);
+        LockGuard<Mutex> lock(d.resource_mutex_);
         textures_[i] = d.textures_.Allocate(VulkanDevice::TextureRes(res));
     }
 
@@ -342,7 +343,7 @@ SwapchainStatus VulkanSwapchain::Acquire() {
             wait.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
             u64 value = 0;
             {
-                std::lock_guard<std::mutex> lock(d.submit_mutex_);
+                LockGuard<Mutex> lock(d.submit_mutex_);
                 value = d.SubmitRawLocked([](void*, VkCommandBuffer) {}, nullptr, &wait, 1, nullptr, 0);
             }
             if (value == 0) {
@@ -382,7 +383,7 @@ SwapchainStatus VulkanSwapchain::Present() {
     }
     VkResult r;
     {
-        std::lock_guard<std::mutex> lock(d.submit_mutex_);
+        LockGuard<Mutex> lock(d.submit_mutex_);
         // An empty batch after everything submitted so far: it signals the binary semaphore the present waits on.
         VkSemaphoreSubmitInfo signal{};
         signal.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;

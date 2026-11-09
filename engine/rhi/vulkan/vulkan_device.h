@@ -1,7 +1,7 @@
 #pragma once
 
-#include <atomic>
-#include <mutex>
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 #include "containers/vector.h"
 #include "rhi/device.h"
@@ -77,7 +77,7 @@ public:
     ResourceCounts Resources() const override;
     void InjectDeviceLoss() override { InjectLoss("request", 0); }
     bool RecreateSurface(const os::Window* window) override;
-    bool InFrame() const override { return frame_open_.load(std::memory_order_acquire); }
+    bool InFrame() const override { return frame_open_.Load(MemoryOrder::Acquire); }
     const DeviceCaps& Caps() const override;
     BufferHandle CreateBuffer(const BufferDesc& desc) override;
     void DestroyBuffer(BufferHandle buffer) override;
@@ -383,7 +383,7 @@ public:
     /// device-lost and error paths. Pass `VK_SUCCESS` to clear a pending fault.
     ///
     /// Param result: the result the next submission reports, such as `VK_ERROR_DEVICE_LOST`.
-    void InjectSubmitFailure(VkResult result) { inject_submit_result_.store(static_cast<i32>(result), std::memory_order_relaxed); }
+    void InjectSubmitFailure(VkResult result) { inject_submit_result_.Store(static_cast<i32>(result), MemoryOrder::Relaxed); }
 
     /// Returns how many command pools exist, for tests of the per-thread pool policy.
     usize CommandPoolCount() const;
@@ -570,22 +570,22 @@ private:
     AdapterInfo adapter_;
     AdapterList adapters_; // every adapter Discover found, kept so a live device never needs a second instance to list them
     u32 epoch_ = 0; // assigned once the device is known to be usable, so scratch devices do not use up serials
-    std::atomic<u32> swapchain_live_{0};
+    Atomic<u32> swapchain_live_{0};
     bool anisotropy_enabled_ = false;
     bool memory_budget_enabled_ = false;
     UniquePtr<VulkanMemoryBackend> memory_backend_;
     UniquePtr<MemoryAllocator> memory_;
-    std::atomic<bool> device_lost_{false};
+    Atomic<bool> device_lost_{false};
     u32 lose_device_at_submit_ = 0; // fault injection: the Nth submit that submits something loses the device
     u32 lose_device_at_present_ = 0; // fault injection: the Nth present loses the device
-    std::atomic<u32>* strikes_left_ = nullptr;    // fault injection: limit on injected losses across devices, null = none
-    std::atomic<u32> submit_count_{0};
-    std::atomic<u32> present_count_{0};
+    Atomic<u32>* strikes_left_ = nullptr;    // fault injection: limit on injected losses across devices, null = none
+    Atomic<u32> submit_count_{0};
+    Atomic<u32> present_count_{0};
     u32 lose_device_at_frame_ = 0; // fault injection: the frame at which to report the device lost, 0 = never
-    std::atomic<u64> frame_number_{0};
+    Atomic<u64> frame_number_{0};
 
     // Resources and deferred destruction (guarded by resource_mutex_).
-    mutable std::mutex resource_mutex_;
+    mutable Mutex resource_mutex_;
     HandlePool<BufferRes, BufferTag> buffers_;
     HandlePool<TextureRes, TextureTag> textures_;
     HandlePool<SamplerRes, SamplerTag> samplers_;
@@ -603,20 +603,20 @@ private:
     VkPipelineCache pipeline_cache_ = nullptr;
     char cache_path_[512] = {};
     PipelineCacheStats cache_stats_;
-    std::mutex cache_save_mutex_;
+    Mutex cache_save_mutex_;
     bool fill_mode_non_solid_ = false;
     VkFormatFeatureFlags format_features_[static_cast<usize>(Format::Count)] = {};
-    std::atomic<usize> raw_image_count_{0};
+    Atomic<usize> raw_image_count_{0};
     u32 frames_in_flight_ = 2;
-    std::atomic<bool> frame_open_{false};
+    Atomic<bool> frame_open_{false};
     u64 ended_frames_ = 0;
     u64 completed_frames_ = 0;
     static constexpr u64 kTrackedFrames = 64;
     u64 frame_fences_[kTrackedFrames] = {};
-    std::atomic<usize> raw_buffer_count_{0};
+    Atomic<usize> raw_buffer_count_{0};
 
     // Timeline and submission (guarded by submit_mutex_).
-    std::mutex submit_mutex_;
+    Mutex submit_mutex_;
     VkSemaphore timeline_ = nullptr;
     u64 last_submit_value_ = 0;
     VkCommandPool upload_pool_ = nullptr;
@@ -624,13 +624,13 @@ private:
     UniquePtr<RingAllocator> staging_ring_;
     RawBuffer staging_;
     Vector<VkCommandBufferSubmitInfo> submit_scratch_;
-    std::atomic<i32> inject_submit_result_{0};
+    Atomic<i32> inject_submit_result_{0};
 
     // Per-thread command pools, a ring of kFramePools frames deep, indexed by the thread's slot.
     // The pools are owned here; the atomic slots publish them to other threads without a lock (a null slot is
     // "not made yet"). Only the thread holding a slot makes or fills its pool.
     UniquePtr<ThreadPool> owned_pools_[kFramePools][kThreadSlots];
-    std::atomic<ThreadPool*> thread_pools_[kFramePools][kThreadSlots] = {};
+    Atomic<ThreadPool*> thread_pools_[kFramePools][kThreadSlots] = {};
 };
 
 } // namespace engine_placeholder::rhi::vulkan

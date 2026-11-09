@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <chrono>
-#include <thread>
+#include "sync/thread.h"
 
 #include "catch_engine_types.h"
 #include "debug/crash_report.h"
@@ -290,14 +290,14 @@ TEST_CASE("Snapshot: a reader on another thread never sees a half-applied batch"
     App app;
     Settings settings(app.registry);
     settings.Load(Options(dir / "u.cfg"));
-    std::atomic<bool> stop{false};
-    std::atomic<int> torn{0};
-    std::atomic<u64> reads{0};
-    Vector<std::thread> readers;
+    Atomic<bool> stop{false};
+    Atomic<int> torn{0};
+    Atomic<u64> reads{0};
+    Vector<Thread> readers;
     readers.Resize(3);
     for (usize t = 0; t < readers.Size(); ++t) {
-        readers[t] = std::thread([&] {
-            while (!stop.load()) {
+        readers[t] = Thread([&] {
+            while (!stop.Load()) {
                 SharedPtr<const SettingsSnapshot> s = settings.Snapshot();
                 if (s->Get(app.a).AsInt() + s->Get(app.b).AsInt() != 100) torn++;
                 reads++;
@@ -309,9 +309,9 @@ TEST_CASE("Snapshot: a reader on another thread never sees a half-applied batch"
         settings.Apply(batch, 2, nullptr, nullptr);
     }
     stop = true;
-    for (usize t = 0; t < readers.Size(); ++t) readers[t].join();
-    CHECK(torn.load() == 0);
-    CHECK(reads.load() > 0);
+    for (usize t = 0; t < readers.Size(); ++t) readers[t].Join();
+    CHECK(torn.Load() == 0);
+    CHECK(reads.Load() > 0);
 }
 
 TEST_CASE("Set from several threads: ten thousand changes, handles always see a value some thread set", "[settings][service][threads]") {
@@ -319,11 +319,11 @@ TEST_CASE("Set from several threads: ten thousand changes, handles always see a 
     App app;
     Settings settings(app.registry);
     settings.Load(Options(dir / "u.cfg"));
-    std::atomic<int> bad{0};
-    Vector<std::thread> threads;
+    Atomic<int> bad{0};
+    Vector<Thread> threads;
     threads.Resize(4);
     for (usize t = 0; t < threads.Size(); ++t) {
-        threads[t] = std::thread([&, t] {
+        threads[t] = Thread([&, t] {
             Setting<i64> width(app.registry, app.width);
             for (int i = 0; i < 2500; ++i) {
                 const i64 v = static_cast<i64>(t) * 3000 + i;
@@ -333,8 +333,8 @@ TEST_CASE("Set from several threads: ten thousand changes, handles always see a 
             }
         });
     }
-    for (usize t = 0; t < threads.Size(); ++t) threads[t].join();
-    CHECK(bad.load() == 0);
+    for (usize t = 0; t < threads.Size(); ++t) threads[t].Join();
+    CHECK(bad.Load() == 0);
     CHECK(settings.Snapshot()->generation >= 1);
 }
 
@@ -445,7 +445,7 @@ TEST_CASE("Autosave: off by default, saves after the quiet time, and SaveOnExit 
     CHECK_FALSE(settings.PollAutosave()); // off
     settings.SetAutosaveQuietSeconds(0.05);
     CHECK_FALSE(settings.PollAutosave()); // too soon
-    std::this_thread::sleep_for(std::chrono::milliseconds(80));
+    ThisThread::SleepForMilliseconds(80);
     CHECK(settings.PollAutosave());
     CHECK(SlurpText(user).View() == "version = 1\n\n[renderer]\nwidth = 1111\n");
     CHECK_FALSE(settings.PollAutosave()); // nothing new
@@ -592,7 +592,7 @@ TEST_CASE("Autosave does not retry a failing save on every poll", "[settings][se
     settings.LoadFromLayers();
     REQUIRE(settings.Set(app.width, Value::FromInt(1500)).Ok());
     settings.SetAutosaveQuietSeconds(0.05);
-    std::this_thread::sleep_for(std::chrono::milliseconds(80));
+    ThisThread::SleepForMilliseconds(80);
     raw->FailFromNextCall();
     const u32 before = raw->calls();
     CHECK_FALSE(settings.PollAutosave()); // the save is attempted and fails
@@ -601,7 +601,7 @@ TEST_CASE("Autosave does not retry a failing save on every poll", "[settings][se
     for (int i = 0; i < 5; ++i) CHECK_FALSE(settings.PollAutosave());
     CHECK(raw->calls() == after_first); // not retried until another quiet period has passed
     CHECK(settings.HasUnsavedChanges());
-    std::this_thread::sleep_for(std::chrono::milliseconds(80));
+    ThisThread::SleepForMilliseconds(80);
     CHECK_FALSE(settings.PollAutosave());
     CHECK(raw->calls() > after_first);
 }

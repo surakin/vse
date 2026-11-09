@@ -1,6 +1,6 @@
 #pragma once
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <coroutine>
 
 #include "log/assert.h"
@@ -75,17 +75,17 @@ public:
     /// Thread-safety: owner-thread-only.
     bool PushBottom(std::coroutine_handle<> h) {
         ENGINE_ASSERT(h.address() != nullptr, "WorkStealingDeque: null handle");
-        const i64 b = bottom_.load(std::memory_order_relaxed);
+        const i64 b = bottom_.Load(MemoryOrder::Relaxed);
         // acquire is enough: a stale (smaller) top only makes the deque look
         // fuller than it is.
-        const i64 t = top_.load(std::memory_order_acquire);
+        const i64 t = top_.Load(MemoryOrder::Acquire);
         if (b - t >= static_cast<i64>(kDefaultCapacity)) {
             return false;
         }
-        slots_[static_cast<usize>(b) & kMask].store(h.address(), std::memory_order_relaxed);
+        slots_[static_cast<usize>(b) & kMask].Store(h.address(), MemoryOrder::Relaxed);
         // Publishes the slot write to thieves (their seq_cst load of
         // bottom_ acquires it).
-        bottom_.store(b + 1, std::memory_order_seq_cst);
+        bottom_.Store(b + 1, MemoryOrder::SeqCst);
         return true;
     }
 
@@ -94,27 +94,27 @@ public:
     /// Returns: the handle, or a null handle if the deque is empty or a thief won the race for the last entry.
     /// Thread-safety: owner-thread-only.
     std::coroutine_handle<> PopBottom() {
-        const i64 b = bottom_.load(std::memory_order_relaxed) - 1;
+        const i64 b = bottom_.Load(MemoryOrder::Relaxed) - 1;
         // seq_cst store then seq_cst load of top_: the Dekker-style pair
         // that makes the owner and a thief agree on who gets the last
         // element (the published algorithm uses a fence here).
-        bottom_.store(b, std::memory_order_seq_cst);
-        i64 t = top_.load(std::memory_order_seq_cst);
+        bottom_.Store(b, MemoryOrder::SeqCst);
+        i64 t = top_.Load(MemoryOrder::SeqCst);
         if (t > b) {
             // Was empty: restore bottom. Must be a release (seq_cst) store:
             // a thief that later reads THIS value must still synchronize
             // with the slot writes of the pushes that preceded it (a plain
             // store continues no release sequence in C++20).
-            bottom_.store(b + 1, std::memory_order_seq_cst);
+            bottom_.Store(b + 1, MemoryOrder::SeqCst);
             return {};
         }
-        void* addr = slots_[static_cast<usize>(b) & kMask].load(std::memory_order_relaxed);
+        void* addr = slots_[static_cast<usize>(b) & kMask].Load(MemoryOrder::Relaxed);
         if (t == b) {
             // Last element: race the thieves for it.
-            if (!top_.compare_exchange_strong(t, t + 1, std::memory_order_seq_cst, std::memory_order_relaxed)) {
+            if (!top_.CompareExchangeStrong(t, t + 1, MemoryOrder::SeqCst, MemoryOrder::Relaxed)) {
                 addr = nullptr; // a thief won
             }
-            bottom_.store(b + 1, std::memory_order_seq_cst); // release: see above
+            bottom_.Store(b + 1, MemoryOrder::SeqCst); // release: see above
         }
         return std::coroutine_handle<>::from_address(addr);
     }
@@ -125,15 +125,15 @@ public:
     /// Returns: `Success`, `Empty` (nothing to steal) or `Lost` (raced with another thief or the owner; worth retrying).
     /// Thread-safety: thread-safe. Any thread.
     StealStatus StealTop(std::coroutine_handle<>& out) {
-        i64 t = top_.load(std::memory_order_seq_cst);
-        const i64 b = bottom_.load(std::memory_order_seq_cst);
+        i64 t = top_.Load(MemoryOrder::SeqCst);
+        const i64 b = bottom_.Load(MemoryOrder::SeqCst);
         if (t >= b) {
             return StealStatus::Empty;
         }
         // Read before the CAS: if the CAS succeeds, `top_` was still `t`
         // when we read, so the owner could not have reused this slot.
-        void* addr = slots_[static_cast<usize>(t) & kMask].load(std::memory_order_relaxed);
-        if (!top_.compare_exchange_strong(t, t + 1, std::memory_order_seq_cst, std::memory_order_relaxed)) {
+        void* addr = slots_[static_cast<usize>(t) & kMask].Load(MemoryOrder::Relaxed);
+        if (!top_.CompareExchangeStrong(t, t + 1, MemoryOrder::SeqCst, MemoryOrder::Relaxed)) {
             return StealStatus::Lost;
         }
         out = std::coroutine_handle<>::from_address(addr);
@@ -147,8 +147,8 @@ public:
     /// Returns: an approximate entry count, never negative.
     /// Thread-safety: thread-safe.
     i64 ApproxSize() const {
-        const i64 b = bottom_.load(std::memory_order_relaxed);
-        const i64 t = top_.load(std::memory_order_relaxed);
+        const i64 b = bottom_.Load(MemoryOrder::Relaxed);
+        const i64 t = top_.Load(MemoryOrder::Relaxed);
         return b > t ? b - t : 0;
     }
 
@@ -156,9 +156,9 @@ private:
     static constexpr usize kMask = kDefaultCapacity - 1;
     static_assert((kDefaultCapacity & kMask) == 0, "capacity must be a power of two");
 
-    alignas(64) std::atomic<i64> top_{0};
-    alignas(64) std::atomic<i64> bottom_{0};
-    alignas(64) std::atomic<void*> slots_[kDefaultCapacity];
+    alignas(64) Atomic<i64> top_{0};
+    alignas(64) Atomic<i64> bottom_{0};
+    alignas(64) Atomic<void*> slots_[kDefaultCapacity];
 };
 
 } // namespace engine_placeholder::jobs

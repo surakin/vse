@@ -1,10 +1,9 @@
 // Phase 2 Day 35: stress & throughput suite for the whole job system.
-#include <atomic>
+#include "sync/atomic.h"
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
-#include <thread>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -81,9 +80,9 @@ struct GraphNode {
 struct Graph {
     std::vector<GraphNode> nodes;
     std::vector<u32> children; // child ids, referenced by ranges
-    std::unique_ptr<std::atomic<u32>[]> exec;
-    std::unique_ptr<std::atomic<u32>[]> post;
-    std::atomic<u32> violations{0};
+    std::unique_ptr<Atomic<u32>[]> exec;
+    std::unique_ptr<Atomic<u32>[]> post;
+    Atomic<u32> violations{0};
 };
 
 void BuildGraph(Graph& g, u64 seed, u32 max_nodes) {
@@ -126,11 +125,11 @@ void BuildGraph(Graph& g, u64 seed, u32 max_nodes) {
             queue.push_back({cid, it.depth + 1});
         }
     }
-    g.exec = std::make_unique<std::atomic<u32>[]>(g.nodes.size());
-    g.post = std::make_unique<std::atomic<u32>[]>(g.nodes.size());
+    g.exec = std::make_unique<Atomic<u32>[]>(g.nodes.size());
+    g.post = std::make_unique<Atomic<u32>[]>(g.nodes.size());
     for (usize i = 0; i < g.nodes.size(); ++i) {
-        g.exec[i].store(0);
-        g.post[i].store(0);
+        g.exec[i].Store(0);
+        g.post[i].Store(0);
     }
 }
 
@@ -142,14 +141,14 @@ void Spin(u32 n) {
 bool GroupComplete(Graph* g, u32 first, u32 count) {
     for (u32 i = 0; i < count; ++i) {
         u32 c = g->children[first + i];
-        if (g->exec[c].load(std::memory_order_acquire) != 1 || g->post[c].load(std::memory_order_acquire) != 1)
+        if (g->exec[c].Load(MemoryOrder::Acquire) != 1 || g->post[c].Load(MemoryOrder::Acquire) != 1)
             return false;
     }
     return true;
 }
 
 Job NodeJob(Graph* g, u32 id) {
-    g->exec[id].fetch_add(1, std::memory_order_acq_rel);
+    g->exec[id].FetchAdd(1, MemoryOrder::AcqRel);
     const GraphNode n = g->nodes[id];
     Spin(n.spin);
     if (n.count_a > 0) {
@@ -157,16 +156,16 @@ Job NodeJob(Graph* g, u32 id) {
         for (u32 i = 0; i < n.count_a; ++i) Spawn(c, NodeJob(g, g->children[n.first_a + i]));
         co_await c;
         // Dependency check: everything in group A finished before we continue.
-        if (!GroupComplete(g, n.first_a, n.count_a)) g->violations.fetch_add(1);
+        if (!GroupComplete(g, n.first_a, n.count_a)) g->violations.FetchAdd(1);
     }
     if (n.count_b > 0) {
         Counter c;
         for (u32 i = 0; i < n.count_b; ++i) Spawn(c, NodeJob(g, g->children[n.first_b + i]));
         co_await c;
         if (!GroupComplete(g, n.first_b, n.count_b) || !GroupComplete(g, n.first_a, n.count_a))
-            g->violations.fetch_add(1);
+            g->violations.FetchAdd(1);
     }
-    g->post[id].fetch_add(1, std::memory_order_acq_rel);
+    g->post[id].FetchAdd(1, MemoryOrder::AcqRel);
 }
 
 // Helping wait with a watchdog: a deadlock/lost wakeup must fail the test
@@ -202,12 +201,12 @@ void HelpOrAbort(Scheduler& s, bool (*done)(void*), void* user, int seconds, con
 
 bool CounterZero(void* c) { return static_cast<Counter*>(c)->IsZero(); }
 bool AtomicAtLeast(void* p) {
-    auto* pr = static_cast<std::pair<std::atomic<int>*, int>*>(p);
-    return pr->first->load(std::memory_order_acquire) >= pr->second;
+    auto* pr = static_cast<std::pair<Atomic<int>*, int>*>(p);
+    return pr->first->Load(MemoryOrder::Acquire) >= pr->second;
 }
 void HelpCounter(Scheduler& s, Counter& c, int seconds, const char* what) { HelpOrAbort(s, CounterZero, &c, seconds, what); }
-void HelpAtLeast(Scheduler& s, std::atomic<int>& v, int target, int seconds, const char* what) {
-    std::pair<std::atomic<int>*, int> pr{&v, target};
+void HelpAtLeast(Scheduler& s, Atomic<int>& v, int target, int seconds, const char* what) {
+    std::pair<Atomic<int>*, int> pr{&v, target};
     HelpOrAbort(s, AtomicAtLeast, &pr, seconds, what);
 }
 
@@ -256,18 +255,18 @@ u64 Calibrate(u64 micros) {
 struct SkewCtx {
     Counter* counter;
     u64 iters;
-    std::atomic<u64>* sink;
-    std::atomic<i32>* producer_index;
+    Atomic<u64>* sink;
+    Atomic<i32>* producer_index;
 };
 
-Job WorkJob(u64 iters, std::atomic<u64>* sink) {
-    sink->fetch_xor(Burn(iters), std::memory_order_relaxed);
+Job WorkJob(u64 iters, Atomic<u64>* sink) {
+    sink->FetchXor(Burn(iters), MemoryOrder::Relaxed);
     co_return;
 }
 
 // Everything is spawned from ONE participant's deque: the producer.
 Job ProducerJob(SkewCtx ctx, int jobs) {
-    ctx.producer_index->store(WorkerPool::CurrentParticipantIndex());
+    ctx.producer_index->Store(WorkerPool::CurrentParticipantIndex());
     for (int i = 0; i < jobs; ++i) Spawn(*ctx.counter, WorkJob(ctx.iters, ctx.sink));
     co_return;
 }
@@ -281,8 +280,8 @@ struct SkewRun {
 
 SkewRun RunSkew(usize participants, int jobs, u64 iters) {
     auto s = MakeScheduler(participants);
-    std::atomic<u64> sink{0};
-    std::atomic<i32> producer{-1};
+    Atomic<u64> sink{0};
+    Atomic<i32> producer{-1};
     Counter c(*s);
     SkewCtx ctx{&c, iters, &sink, &producer};
     auto t0 = Clock::now();
@@ -295,52 +294,52 @@ SkewRun RunSkew(usize participants, int jobs, u64 iters) {
         r.resumes.push_back(s->ResumesBy(i));
         r.steals.push_back(s->StealsBy(i));
     }
-    r.producer = producer.load();
+    r.producer = producer.Load();
     return r;
 }
 
 // ---- nested co_await ordering ---------------------------------------------------
 
 struct Pipeline {
-    std::atomic<u32> slot[5];
-    std::atomic<u32> seq[5];
-    std::atomic<u32> next{0};
-    std::atomic<u32> inner_hits{0};
-    std::atomic<u32> bad{0};
+    Atomic<u32> slot[5];
+    Atomic<u32> seq[5];
+    Atomic<u32> next{0};
+    Atomic<u32> inner_hits{0};
+    Atomic<u32> bad{0};
     Pipeline() {
-        for (auto& s : slot) s.store(0);
-        for (auto& s : seq) s.store(~0u);
+        for (auto& s : slot) s.Store(0);
+        for (auto& s : seq) s.Store(~0u);
     }
 };
 
 Job InnerJob(Pipeline* p) {
-    p->inner_hits.fetch_add(1, std::memory_order_acq_rel);
+    p->inner_hits.FetchAdd(1, MemoryOrder::AcqRel);
     co_return;
 }
 
 Job StepJob(Pipeline* p, int step, u32 fanout) {
     // Reads the previous step's output slot: must already be written.
-    if (step > 0 && p->slot[step - 1].load(std::memory_order_acquire) != static_cast<u32>(step)) p->bad.fetch_add(1);
-    p->seq[step].store(p->next.fetch_add(1, std::memory_order_acq_rel), std::memory_order_release);
+    if (step > 0 && p->slot[step - 1].Load(MemoryOrder::Acquire) != static_cast<u32>(step)) p->bad.FetchAdd(1);
+    p->seq[step].Store(p->next.FetchAdd(1, MemoryOrder::AcqRel), MemoryOrder::Release);
     if (fanout > 0) {
         Counter c;
-        u32 before = p->inner_hits.load(std::memory_order_acquire);
+        u32 before = p->inner_hits.Load(MemoryOrder::Acquire);
         for (u32 i = 0; i < fanout; ++i) Spawn(c, InnerJob(p));
         co_await c;
-        if (p->inner_hits.load(std::memory_order_acquire) < before + fanout) p->bad.fetch_add(1);
+        if (p->inner_hits.Load(MemoryOrder::Acquire) < before + fanout) p->bad.FetchAdd(1);
     }
-    p->slot[step].store(static_cast<u32>(step) + 1, std::memory_order_release);
+    p->slot[step].Store(static_cast<u32>(step) + 1, MemoryOrder::Release);
 }
 
-Job PipelineJob(Pipeline* p, u32 variant, std::atomic<int>* done) {
+Job PipelineJob(Pipeline* p, u32 variant, Atomic<int>* done) {
     for (int step = 0; step < 5; ++step) {
         Counter c;
         u32 fanout = ((variant >> step) & 1u) ? 3 : 0; // some steps fan out and join
         Spawn(c, StepJob(p, step, fanout));
         co_await c;
-        if (p->slot[step].load(std::memory_order_acquire) != static_cast<u32>(step) + 1) p->bad.fetch_add(1);
+        if (p->slot[step].Load(MemoryOrder::Acquire) != static_cast<u32>(step) + 1) p->bad.FetchAdd(1);
     }
-    done->fetch_add(1, std::memory_order_acq_rel);
+    done->FetchAdd(1, MemoryOrder::AcqRel);
 }
 
 } // namespace
@@ -360,12 +359,12 @@ TEST_CASE("Randomized dependency graphs: exactly-once, ordered joins, no deadloc
             RunGraph(*s, g.get(), seed);
             u32 bad_exec = 0, bad_post = 0;
             for (usize k = 0; k < g->nodes.size(); ++k) {
-                bad_exec += g->exec[k].load() != 1;
-                bad_post += g->post[k].load() != 1;
+                bad_exec += g->exec[k].Load() != 1;
+                bad_post += g->post[k].Load() != 1;
             }
             REQUIRE(bad_exec == 0);
             REQUIRE(bad_post == 0);
-            REQUIRE(g->violations.load() == 0);
+            REQUIRE(g->violations.Load() == 0);
             total_jobs += g->nodes.size();
         }
         s->Shutdown();
@@ -453,7 +452,7 @@ TEST_CASE("Nested co_await chain of 5 dependent steps keeps strict order, 10,000
         for (int b = 0; b < kPipelineBatches; ++b) {
             constexpr int kPerBatch = 100;
             std::vector<std::unique_ptr<Pipeline>> ps;
-            std::atomic<int> done{0};
+            Atomic<int> done{0};
             for (int i = 0; i < kPerBatch; ++i) {
                 ps.push_back(std::make_unique<Pipeline>());
                 s->Submit(PipelineJob(ps.back().get(), static_cast<u32>(NextRand(rng)), &done));
@@ -461,9 +460,9 @@ TEST_CASE("Nested co_await chain of 5 dependent steps keeps strict order, 10,000
             HelpAtLeast(*s, done, kPerBatch, 60, "co_await pipeline batch");
             u32 bad = 0;
             for (auto& p : ps) {
-                bad += p->bad.load();
+                bad += p->bad.Load();
                 // Strict order: step k's sequence stamp precedes step k+1's.
-                for (int step = 1; step < 5; ++step) bad += !(p->seq[step - 1].load() < p->seq[step].load());
+                for (int step = 1; step < 5; ++step) bad += !(p->seq[step - 1].Load() < p->seq[step].Load());
             }
             REQUIRE(bad == 0);
         }

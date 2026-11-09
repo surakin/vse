@@ -8,6 +8,8 @@
 #include "rhi/vulkan/vk_pipeline_policy.h"
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vulkan_device.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
@@ -189,7 +191,7 @@ TextureHandle VulkanDevice::CreateTexture(const TextureDesc& desc) {
         return {};
     }
     res.image = image;
-    raw_image_count_.fetch_add(1, std::memory_order_relaxed);
+    raw_image_count_.FetchAdd(1, MemoryOrder::Relaxed);
     res.desc = desc;
     res.desc.debug_name = nullptr;
 
@@ -226,7 +228,7 @@ TextureHandle VulkanDevice::CreateTexture(const TextureDesc& desc) {
 
     TextureHandle handle;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         handle = textures_.Allocate(TextureRes(res));
     }
     if (!handle.IsValid()) {
@@ -252,7 +254,7 @@ void VulkanDevice::DestroyTextureRes(TextureRes* t) {
     }
     if (t->image != nullptr) {
         fns_.DestroyImage(device_, t->image, nullptr);
-        raw_image_count_.fetch_sub(1, std::memory_order_relaxed);
+        raw_image_count_.FetchSub(1, MemoryOrder::Relaxed);
     }
     if (t->memory.Valid()) {
         memory_->Free(t->memory);
@@ -261,18 +263,18 @@ void VulkanDevice::DestroyTextureRes(TextureRes* t) {
 }
 
 void VulkanDevice::DestroyTexture(TextureHandle texture) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     TextureRes* t = textures_.Get(texture);
     ENGINE_ASSERT(t != nullptr, "DestroyTexture: handle is invalid or already destroyed");
     if (t == nullptr) {
         return;
     }
-    const u64 current = frame_number_.load(std::memory_order_relaxed);
+    const u64 current = frame_number_.Load(MemoryOrder::Relaxed);
     textures_.Retire(texture, frame_open_ ? current : current + 1);
 }
 
 bool VulkanDevice::LookupTexture(TextureHandle texture, TextureInfo* info) const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const TextureRes* t = textures_.Get(texture);
     if (t == nullptr) {
         return false;
@@ -299,7 +301,7 @@ SamplerHandle VulkanDevice::CreateSampler(const SamplerDesc& desc) {
         normalized.max_anisotropy = caps_.max_sampler_anisotropy;
     }
 
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     SamplerHandle shared;
     samplers_.ForEachLive([&](SamplerHandle h, SamplerRes& s) {
         if (!shared.IsValid() && SameSampler(s.desc, normalized)) {
@@ -345,7 +347,7 @@ SamplerHandle VulkanDevice::CreateSampler(const SamplerDesc& desc) {
 }
 
 void VulkanDevice::DestroySampler(SamplerHandle sampler) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     SamplerRes* s = samplers_.Get(sampler);
     ENGINE_ASSERT(s != nullptr, "DestroySampler: handle is invalid or already destroyed");
     if (s == nullptr) {
@@ -354,7 +356,7 @@ void VulkanDevice::DestroySampler(SamplerHandle sampler) {
     if (--s->refs > 0) {
         return;
     }
-    const u64 current = frame_number_.load(std::memory_order_relaxed);
+    const u64 current = frame_number_.Load(MemoryOrder::Relaxed);
     samplers_.Retire(sampler, frame_open_ ? current : current + 1);
 }
 
@@ -377,7 +379,7 @@ bool VulkanDevice::StageChunkLocked(u64 alloc_bytes, u64 align, u64* ring_offset
 UploadTicket VulkanDevice::UploadTexture(TextureHandle dst, u32 mip, u32 layer, const void* data, u32 row_pitch) {
     TextureRes snapshot;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         TextureRes* t = textures_.Get(dst);
         ENGINE_ASSERT(t != nullptr, "UploadTexture: handle is invalid or already destroyed");
         if (t == nullptr) {
@@ -425,7 +427,7 @@ UploadTicket VulkanDevice::UploadTexture(TextureHandle dst, u32 mip, u32 layer, 
             const bool first = chunk_index == 0;
             const bool last = chunk_index + 1 == total_chunks;
 
-            std::lock_guard<std::mutex> lock(submit_mutex_);
+            LockGuard<Mutex> lock(submit_mutex_);
             // A failure after the first chunk left the image in TRANSFER_DST: put it in ShaderRead anyway, so the
             // texture is in the state the caller expects (with the level only partly written), then report failure.
             auto fail = [&]() {
@@ -434,7 +436,7 @@ UploadTicket VulkanDevice::UploadTexture(TextureHandle dst, u32 mip, u32 layer, 
                         CmdImageBarrier(fns_, cb, snapshot.image, aspects, 0, snapshot.desc.mip_levels, 0, snapshot.desc.array_layers,
                                         ResourceState::CopyDst, ResourceState::ShaderRead);
                     });
-                    std::lock_guard<std::mutex> state_lock(resource_mutex_);
+                    LockGuard<Mutex> state_lock(resource_mutex_);
                     if (TextureRes* t = textures_.Get(dst)) {
                         t->state = ResourceState::ShaderRead;
                     }
@@ -442,7 +444,7 @@ UploadTicket VulkanDevice::UploadTexture(TextureHandle dst, u32 mip, u32 layer, 
                 ticket.ok = false;
                 return ticket;
             };
-            if (device_lost_.load(std::memory_order_relaxed)) {
+            if (device_lost_.Load(MemoryOrder::Relaxed)) {
                 return fail();
             }
             u64 ring_offset = 0;
@@ -481,7 +483,7 @@ UploadTicket VulkanDevice::UploadTexture(TextureHandle dst, u32 mip, u32 layer, 
             ticket.fence = value;
         }
     }
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     if (TextureRes* t = textures_.Get(dst)) {
         t->state = ResourceState::ShaderRead;
     }
@@ -491,7 +493,7 @@ UploadTicket VulkanDevice::UploadTexture(TextureHandle dst, u32 mip, u32 layer, 
 bool VulkanDevice::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* dst, u64 dst_size, ResourceState state) {
     TextureRes snapshot;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         TextureRes* t = textures_.Get(src);
         ENGINE_ASSERT(t != nullptr, "ReadbackTexture: handle is invalid or already destroyed");
         if (t == nullptr) {
@@ -510,7 +512,7 @@ bool VulkanDevice::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* 
     const u32 depth = snapshot.desc.dimension == TextureDimension::Tex3D ? MipExtent(snapshot.desc.depth, mip) : 1;
     const u64 bytes = FormatSliceBytes(format, width, height) * depth;
     ENGINE_ASSERT(dst_size >= bytes, "ReadbackTexture: dst is smaller than the level");
-    if (device_lost_.load(std::memory_order_relaxed)) {
+    if (device_lost_.Load(MemoryOrder::Relaxed)) {
         return false;
     }
     RawBuffer temp;
@@ -521,7 +523,7 @@ bool VulkanDevice::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* 
     const VkImageAspectFlags aspects = AspectsOf(format);
     u64 value = 0;
     {
-        std::lock_guard<std::mutex> lock(submit_mutex_);
+        LockGuard<Mutex> lock(submit_mutex_);
         value = SubmitInternalLocked([&](VkCommandBuffer cb) {
             if (state != ResourceState::CopySrc) {
                 CmdImageBarrier(fns_, cb, snapshot.image, aspects, 0, snapshot.desc.mip_levels, 0, snapshot.desc.array_layers, state,

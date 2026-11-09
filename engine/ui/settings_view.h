@@ -1,6 +1,6 @@
 #pragma once
 
-#include <atomic>
+#include "sync/atomic.h"
 
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
@@ -118,7 +118,7 @@ public:
     /// Returns true only while a change waits to be shown, so an idle screen costs nothing.
     ///
     /// Fails: never.
-    bool WantsUpdate() const override { return changed_.load(std::memory_order_relaxed); }
+    bool WantsUpdate() const override { return changed_.Load(MemoryOrder::Relaxed); }
 
 private:
     struct Row {
@@ -160,7 +160,7 @@ private:
     settings::ApplyFn apply_ = nullptr;
     void* apply_user_ = nullptr;
     u32 listener_ = 0;
-    std::atomic<bool> changed_{false};
+    Atomic<bool> changed_{false};
     bool syncing_ = false;
     bool restart_pending_ = false;
     u64 refreshes_ = 0;

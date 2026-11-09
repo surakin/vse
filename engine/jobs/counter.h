@@ -1,8 +1,8 @@
 #pragma once
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <coroutine>
-#include <utility>
+#include "lang/utility.h"
 
 #include "jobs/job.h"
 #include "jobs/scheduler.h"
@@ -74,7 +74,7 @@ public:
     ///
     /// Param n: how many units to add.
     /// Thread-safety: thread-safe.
-    void Increment(u64 n = 1) { state_.fetch_add(n << 1, std::memory_order_acq_rel); }
+    void Increment(u64 n = 1) { state_.FetchAdd(n << 1, MemoryOrder::AcqRel); }
 
     /// Marks one unit of work done and, if it was the last one and a waiter is parked, schedules the waiter.
     ///
@@ -84,7 +84,7 @@ public:
     /// Aborts: the count is already zero.
     /// Thread-safety: thread-safe. Callable from any thread, including non-participants such as the I/O thread.
     void Decrement() {
-        const u64 old = state_.fetch_sub(2, std::memory_order_acq_rel);
+        const u64 old = state_.FetchSub(2, MemoryOrder::AcqRel);
         ENGINE_ASSERT((old >> 1) >= 1, "Counter::Decrement below zero");
         if ((old >> 1) == 1 && (old & 1) != 0) {
             // We took the count to zero with a waiter parked: we own the
@@ -101,21 +101,21 @@ public:
     ///
     /// Returns: `true` if the count is zero at the moment of the call.
     /// Thread-safety: thread-safe.
-    bool IsZero() const { return (state_.load(std::memory_order_acquire) >> 1) == 0; }
+    bool IsZero() const { return (state_.Load(MemoryOrder::Acquire) >> 1) == 0; }
     /// Reads the number of outstanding units of work.
     ///
     /// Returns: the current count; may be stale by the time the caller uses it.
     /// Thread-safety: thread-safe.
-    u64 Value() const { return state_.load(std::memory_order_acquire) >> 1; }
+    u64 Value() const { return state_.Load(MemoryOrder::Acquire) >> 1; }
 
     /// Process-wide tallies of which await path was taken, so tests can show both halves of the race ran.
     ///
     /// Thread-safety: thread-safe. Relaxed atomic counters.
     struct PathCounters {
         /// Awaits that found the count already zero and continued inline.
-        std::atomic<u64> inline_continues{0};
+        Atomic<u64> inline_continues{0};
         /// Awaits that suspended and were woken by a decrementer.
-        std::atomic<u64> parked{0};
+        Atomic<u64> parked{0};
     };
 
     /// Gives the process-wide await-path tallies.
@@ -155,18 +155,18 @@ public:
         bool await_suspend(std::coroutine_handle<> h) noexcept {
             // Check BEFORE touching slot_: a second awaiter must not
             // clobber the first one's handle (ENGINE_ASSERT is always on).
-            ENGINE_ASSERT((counter->state_.load(std::memory_order_acquire) & 1) == 0,
+            ENGINE_ASSERT((counter->state_.Load(MemoryOrder::Acquire) & 1) == 0,
                           "Counter awaited by more than one coroutine");
             counter->slot_ = h.address();
-            const u64 old = counter->state_.fetch_or(1, std::memory_order_acq_rel);
+            const u64 old = counter->state_.FetchOr(1, MemoryOrder::AcqRel);
             ENGINE_ASSERT((old & 1) == 0, "Counter awaited by more than one coroutine");
             if ((old >> 1) == 0) {
                 // Work finished between await_ready and here; no
                 // decrementer will resume us. Continue inline.
-                PathStats().inline_continues.fetch_add(1, std::memory_order_relaxed);
+                PathStats().inline_continues.FetchAdd(1, MemoryOrder::Relaxed);
                 return false;
             }
-            PathStats().parked.fetch_add(1, std::memory_order_relaxed);
+            PathStats().parked.FetchAdd(1, MemoryOrder::Relaxed);
             return true; // the decrementer that reaches zero resumes us
         }
 
@@ -174,7 +174,7 @@ public:
         void await_resume() noexcept {
             // Single awaiter, count is zero: clear the waiter bit so the
             // Counter can be reused for another round.
-            counter->state_.fetch_and(~u64{1}, std::memory_order_acq_rel);
+            counter->state_.FetchAnd(~u64{1}, MemoryOrder::AcqRel);
         }
     };
 
@@ -200,7 +200,7 @@ private:
     // RMW unless it owns the wake-up, so the awaiter can never destroy the
     // Counter while a decrementer still reads it. Any edit to Increment,
     // Decrement or await_suspend must preserve this.
-    std::atomic<u64> state_{0};
+    Atomic<u64> state_{0};
     void* slot_ = nullptr;
 };
 
@@ -216,7 +216,7 @@ inline void Job::SetCompletion(Counter& counter) { SetCompletion(&Counter::Decre
 inline void Spawn(Counter& counter, Job&& job) {
     counter.Increment();
     job.SetCompletion(counter);
-    counter.GetScheduler().Submit(std::move(job));
+    counter.GetScheduler().Submit(Move(job));
 }
 
 } // namespace engine_placeholder::jobs

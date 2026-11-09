@@ -20,7 +20,7 @@
 //!
 //! The functions below are the CPU twins of the shader code, used by tests and tools; the real-device tests compare them with
 //! the GPU output.
-#include <atomic>
+#include "sync/atomic.h"
 
 #include "containers/vector.h"
 #include "math/matrix.h"
@@ -213,7 +213,7 @@ public:
     u32 PointDrawsPlanned() const { return static_cast<u32>(point_draws_.Size()); }
     /// Returns the number of light volume draws the last executed graph recorded (0 before the first execution).
     /// Fails: never.
-    u32 PointDrawsRecorded() const { return point_draws_recorded_.load(std::memory_order_relaxed); }
+    u32 PointDrawsRecorded() const { return point_draws_recorded_.Load(MemoryOrder::Relaxed); }
 
     /// Declares the accumulation target and the lighting pass.
     ///
@@ -254,7 +254,7 @@ private:
     rhi::BufferHandle object_index_stream_; // MaterialSystem::ObjectIndexStream of this frame; invalid on Vulkan
     BufferRegion lights_;
     Vector<PointDraw> point_draws_;
-    std::atomic<u32> point_draws_recorded_{0};
+    Atomic<u32> point_draws_recorded_{0};
     u32 prepared_width_ = 0;
     u32 prepared_height_ = 0;
     GBufferTargets targets_;

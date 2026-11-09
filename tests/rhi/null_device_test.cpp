@@ -1,4 +1,4 @@
-#include <thread>
+#include "sync/thread.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -1005,7 +1005,7 @@ TEST_CASE("Concurrent creation, destruction and recording is safe", "[rhi][null]
     Fixture f;
     constexpr int kThreads = 4;
     constexpr int kIterations = 200;
-    std::vector<std::thread> threads;
+    std::vector<Thread> threads;
     CommandList* lists[kThreads] = {};
     for (int t = 0; t < kThreads; ++t) {
         threads.emplace_back([&, t]() {
@@ -1033,8 +1033,8 @@ TEST_CASE("Concurrent creation, destruction and recording is safe", "[rhi][null]
             lists[t] = l;
         });
     }
-    for (std::thread& th : threads) {
-        th.join();
+    for (Thread& th : threads) {
+        th.Join();
     }
     FenceValue v = f.dev->Submit(lists, kThreads);
     CHECK(v == 1);

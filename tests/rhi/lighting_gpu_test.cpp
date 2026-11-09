@@ -4,7 +4,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdio>
-#include <initializer_list>
+#include "lang/initializer_list.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -145,7 +145,7 @@ Vec3 Expected(const SurfacePoint& s, const Vec3& eye, const Vec3& world, engine_
     return color;
 }
 
-Vec3 Expected(const SurfacePoint& s, const Vec3& eye, const Vec3& world, std::initializer_list<Light> lights) {
+Vec3 Expected(const SurfacePoint& s, const Vec3& eye, const Vec3& world, InitializerList<Light> lights) {
     Vector<Light> list;
     for (const Light& l : lights) list.Push(l);
     return Expected(s, eye, world, engine_placeholder::Span<const Light>(list));

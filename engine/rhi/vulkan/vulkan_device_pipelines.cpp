@@ -13,6 +13,8 @@
 #include "rhi/vulkan/vk_pipeline_policy.h"
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vulkan_device.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
@@ -92,7 +94,7 @@ void VulkanDevice::InitializePipelineCache(const DeviceCreateInfo& info) {
 }
 
 VulkanDevice::PipelineCacheStats VulkanDevice::PipelineCache() const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     return cache_stats_;
 }
 
@@ -100,7 +102,7 @@ bool VulkanDevice::SavePipelineCache() {
     if (pipeline_cache_ == nullptr || cache_path_[0] == '\0') {
         return false;
     }
-    std::lock_guard<std::mutex> save_lock(cache_save_mutex_);
+    LockGuard<Mutex> save_lock(cache_save_mutex_);
     usize size = 0;
     if (fns_.GetPipelineCacheData(device_, pipeline_cache_, &size, nullptr) != VK_SUCCESS || size == 0) {
         return false;
@@ -112,7 +114,7 @@ bool VulkanDevice::SavePipelineCache() {
     bool saved = false;
     if (fns_.GetPipelineCacheData(device_, pipeline_cache_, &size, data.Data()) == VK_SUCCESS) {
         if (WritePipelineCacheFile(cache_path_, data.Data(), size)) {
-            std::lock_guard<std::mutex> lock(resource_mutex_);
+            LockGuard<Mutex> lock(resource_mutex_);
             cache_stats_.saved_bytes = size;
             saved = true;
         } else {
@@ -162,7 +164,7 @@ BindGroupLayoutHandle VulkanDevice::CreateBindGroupLayout(const BindGroupLayoutD
         res.bindings[at] = desc.entries[i];
     }
 
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     u32 slot = static_cast<u32>(kMaxSetLayouts);
     u32 free_slot = static_cast<u32>(kMaxSetLayouts);
     for (u32 i = 0; i < kMaxSetLayouts; ++i) {
@@ -236,12 +238,12 @@ void VulkanDevice::ReleaseSetLayoutLocked(u32 slot) {
 }
 
 void VulkanDevice::DestroyBindGroupLayout(BindGroupLayoutHandle layout) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     ENGINE_ASSERT(bind_group_layouts_.Get(layout) != nullptr, "DestroyBindGroupLayout: handle is invalid or already destroyed");
     if (bind_group_layouts_.Get(layout) == nullptr) {
         return;
     }
-    const u64 current = frame_number_.load(std::memory_order_relaxed);
+    const u64 current = frame_number_.Load(MemoryOrder::Relaxed);
     bind_group_layouts_.Retire(layout, frame_open_ ? current : current + 1);
 }
 
@@ -358,7 +360,7 @@ PipelineHandle VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& 
     PipelineRes res;
     VkPipelineLayout layout = nullptr;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         u32 slots[kMaxBindGroups];
         for (u32 i = 0; i < desc.bind_group_layout_count; ++i) {
             const BindGroupLayoutRes* l = bind_group_layouts_.Get(desc.bind_group_layouts[i]);
@@ -499,7 +501,7 @@ PipelineHandle VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& 
         NoteDeviceLost(result);
         RhiLog(LogVerbosity::Error, "Vulkan: cannot create the graphics pipeline '%s' (%s)", desc.debug_name != nullptr ? desc.debug_name : "",
                VkResultName(result));
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         ReleasePipelineLayoutLocked(res.layout_slot);
         return {};
     }
@@ -507,13 +509,13 @@ PipelineHandle VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& 
 
     PipelineHandle handle;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         handle = pipelines_.Allocate(PipelineRes(res));
     }
     if (!handle.IsValid()) {
         RhiLog(LogVerbosity::Error, "CreateGraphicsPipeline: out of pipeline handles");
         fns_.DestroyPipeline(device_, res.pipeline, nullptr);
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         ReleasePipelineLayoutLocked(res.layout_slot);
     }
     return handle;
@@ -538,7 +540,7 @@ PipelineHandle VulkanDevice::CreateComputePipeline(const ComputePipelineDesc& de
     PipelineRes res;
     res.compute = true;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         u32 slots[kMaxBindGroups];
         for (u32 i = 0; i < desc.bind_group_layout_count; ++i) {
             const BindGroupLayoutRes* l = bind_group_layouts_.Get(desc.bind_group_layouts[i]);
@@ -571,7 +573,7 @@ PipelineHandle VulkanDevice::CreateComputePipeline(const ComputePipelineDesc& de
         NoteDeviceLost(result);
         RhiLog(LogVerbosity::Error, "Vulkan: cannot create the compute pipeline '%s' (%s)", desc.debug_name != nullptr ? desc.debug_name : "",
                VkResultName(result));
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         ReleasePipelineLayoutLocked(res.layout_slot);
         return {};
     }
@@ -579,30 +581,30 @@ PipelineHandle VulkanDevice::CreateComputePipeline(const ComputePipelineDesc& de
 
     PipelineHandle handle;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         handle = pipelines_.Allocate(PipelineRes(res));
     }
     if (!handle.IsValid()) {
         RhiLog(LogVerbosity::Error, "CreateComputePipeline: out of pipeline handles");
         fns_.DestroyPipeline(device_, res.pipeline, nullptr);
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         ReleasePipelineLayoutLocked(res.layout_slot);
     }
     return handle;
 }
 
 void VulkanDevice::DestroyPipeline(PipelineHandle pipeline) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     ENGINE_ASSERT(pipelines_.Get(pipeline) != nullptr, "DestroyPipeline: handle is invalid or already destroyed");
     if (pipelines_.Get(pipeline) == nullptr) {
         return;
     }
-    const u64 current = frame_number_.load(std::memory_order_relaxed);
+    const u64 current = frame_number_.Load(MemoryOrder::Relaxed);
     pipelines_.Retire(pipeline, frame_open_ ? current : current + 1);
 }
 
 bool VulkanDevice::LookupPipeline(PipelineHandle pipeline, PipelineInfo* info) const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const PipelineRes* p = pipelines_.Get(pipeline);
     if (p == nullptr) {
         return false;

@@ -138,6 +138,9 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(engine/platform)  # Day 158: the Win32 window and the windowed programs' entry point (input: Day 159)
   add_subdirectory(tests/foundation)  # foundation_base_tests, and from Day 158 the file-layer and window tests (foundation_tests)
   add_subdirectory(tests/types)
+  add_subdirectory(tests/lang)  # Phase 16 Day 208
+  add_subdirectory(tests/sync)  # Phase 16 Day 209
+  add_subdirectory(tests/cstr)  # Phase 16 Day 211
   add_subdirectory(tests/foundation_sanitized)
   add_subdirectory(tests/windows)
   include(cmake/EngineDeathTests.cmake)
@@ -228,6 +231,9 @@ add_subdirectory(tests/foundation)
 add_subdirectory(tests/jobs)
 add_subdirectory(tests/io)
 add_subdirectory(tests/types)
+add_subdirectory(tests/lang)  # Phase 16 Day 208
+add_subdirectory(tests/sync)  # Phase 16 Day 209
+add_subdirectory(tests/cstr)  # Phase 16 Day 211
 add_subdirectory(tests/text)  # Phase 14 Day 175
 add_subdirectory(tests/ui)  # Phase 15 Day 184
 add_subdirectory(tests/settings)

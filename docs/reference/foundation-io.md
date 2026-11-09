@@ -1007,7 +1007,7 @@ Passed to `done`.
 `variable io::AsyncRequest::state` — defined in `engine/foundation/io/file.h`
 
 ```cpp
-std::atomic<u8> state;
+Atomic<u8> state;
 ```
 
 An [`io::AsyncState`](#io-asyncstate), managed by the file layer.

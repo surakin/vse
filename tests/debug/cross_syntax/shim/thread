@@ -1,5 +1,7 @@
-// Stand-in for the standard header (see cstddef): the thread id the device host compares, declarations only.
+// Stand-in for the standard header (see cstddef): threads and their ids, declarations only.
 #pragma once
+#include <chrono>
+#include <cstddef>
 namespace std {
 class thread {
 public:
@@ -13,8 +15,23 @@ public:
         unsigned long value_ = 0;
         friend id get_id_impl();
     };
+    thread() noexcept = default;
+    template <class F, class... Args> explicit thread(F&& f, Args&&... args);
+    thread(thread&&) noexcept = default;
+    thread& operator=(thread&&) noexcept = default;
+    thread(const thread&) = delete;
+    bool joinable() const noexcept;
+    void join();
+    void detach();
+    id get_id() const noexcept;
+    void swap(thread&) noexcept;
+    static unsigned hardware_concurrency() noexcept;
 };
+template <class T> struct hash;
+template <> struct hash<thread::id> { size_t operator()(thread::id) const noexcept { return 0; } };
 namespace this_thread {
 thread::id get_id() noexcept;
+void yield() noexcept;
+template <class Rep, class Period> void sleep_for(const chrono::duration<Rep, Period>&);
 } // namespace this_thread
 } // namespace std

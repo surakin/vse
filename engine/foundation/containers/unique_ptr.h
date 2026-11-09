@@ -1,8 +1,7 @@
 #pragma once
 
-#include <new>
-#include <type_traits>
-#include <utility>
+#include "lang/traits.h"
+#include "lang/utility.h"
 
 #include "debug/compiler.h"
 #include "mem/heap_allocator.h"
@@ -26,9 +25,9 @@ struct DefaultDelete {
     constexpr DefaultDelete() = default;
     /// Converts from the deleter of a derived type, so `UniquePtr<Derived>` moves into `UniquePtr<Base>`.
     template <typename U>
-        requires std::is_convertible_v<U*, T*>
+        requires IsConvertible<U*, T*>
     constexpr DefaultDelete(const DefaultDelete<U>&) {
-        static_assert(std::is_same_v<T, U> || std::has_virtual_destructor_v<T>, "DefaultDelete<Base>: deleting a derived object needs a virtual destructor on Base");
+        static_assert(IsSame<T, U> || std::has_virtual_destructor_v<T>, "DefaultDelete<Base>: deleting a derived object needs a virtual destructor on Base");
         static_assert(alignof(U) <= 16, "DefaultDelete<Base>: a derived type aligned beyond 16 bytes would be released with the wrong alignment");
     }
 
@@ -64,7 +63,7 @@ public:
     ///
     /// Param ptr: object to own, or null.
     /// Param deleter: releases the object; copied into the pointer.
-    explicit UniquePtr(T* ptr, Deleter deleter = Deleter()) : deleter_(std::move(deleter)), ptr_(ptr) {}
+    explicit UniquePtr(T* ptr, Deleter deleter = Deleter()) : deleter_(Move(deleter)), ptr_(ptr) {}
 
     /// Destroys the owned object, if any.
     ~UniquePtr() { Reset(); }
@@ -73,18 +72,18 @@ public:
     UniquePtr& operator=(const UniquePtr&) = delete;
 
     /// Takes over `other`'s object, leaving `other` empty.
-    UniquePtr(UniquePtr&& other) noexcept : deleter_(std::move(other.deleter_)), ptr_(other.Release()) {}
+    UniquePtr(UniquePtr&& other) noexcept : deleter_(Move(other.deleter_)), ptr_(other.Release()) {}
 
     /// Takes over the object of a pointer to a derived type, leaving `other` empty.
     template <typename U, typename E>
-        requires(std::is_convertible_v<U*, T*> && std::is_constructible_v<Deleter, E &&>)
-    UniquePtr(UniquePtr<U, E>&& other) noexcept : deleter_(std::move(other.GetDeleter())), ptr_(other.Release()) {}
+        requires(IsConvertible<U*, T*> && IsConstructible<Deleter, E &&>)
+    UniquePtr(UniquePtr<U, E>&& other) noexcept : deleter_(Move(other.GetDeleter())), ptr_(other.Release()) {}
 
     /// Destroys the current object, then takes over `other`'s, leaving `other` empty.
     UniquePtr& operator=(UniquePtr&& other) noexcept {
         if (this != &other) {
             Reset();
-            deleter_ = std::move(other.deleter_);
+            deleter_ = Move(other.deleter_);
             ptr_ = other.Release();
         }
         return *this;
@@ -153,7 +152,7 @@ UniquePtr<T, Deleter> MakeUnique(Args&&... args) {
     if (mem == nullptr) {
         return UniquePtr<T, Deleter>();
     }
-    return UniquePtr<T, Deleter>(new (mem) T(std::forward<Args>(args)...));
+    return UniquePtr<T, Deleter>(new (mem) T(Forward<Args>(args)...));
 }
 
 } // namespace engine_placeholder

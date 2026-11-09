@@ -9,7 +9,7 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <thread>
+#include "sync/thread.h"
 #include "build_defs.h"
 
 using namespace engine_placeholder;
@@ -93,9 +93,9 @@ ENGINE_DEATH_TEST_FN(dt_flood_forever) {
             os::Write(2, block, sizeof(block));
         }
     };
-    std::thread a(flood);
-    std::thread b(flood);
-    std::thread c(flood);
+    Thread a(flood);
+    Thread b(flood);
+    Thread c(flood);
     flood();
 }
 

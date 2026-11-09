@@ -1,6 +1,6 @@
 #include "renderer/render_graph.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
@@ -1012,7 +1012,7 @@ struct RenderGraph::ParallelRecord {
     const RenderGraph* graph;
     rhi::Device* device;
     rhi::CommandList** lists;
-    std::atomic<bool> failed;
+    Atomic<bool> failed;
 };
 
 void RenderGraph::RecordRange(void* user, usize begin, usize end) {
@@ -1024,7 +1024,7 @@ void RenderGraph::RecordRange(void* user, usize begin, usize end) {
         rhi::CommandList* list = job->device->CreateCommandList();
         job->lists[i] = list;
         if (list == nullptr) {
-            job->failed.store(true, std::memory_order_relaxed);
+            job->failed.Store(true, MemoryOrder::Relaxed);
             continue;
         }
         list->Begin();
@@ -1049,10 +1049,10 @@ bool RenderGraph::ExecuteParallel(TransientPool* pool, rhi::Device* device, jobs
     if (scheduler != nullptr && passes > 1) jobs::ParallelForBlocking(*scheduler, passes, 1, &RenderGraph::RecordRange, &job);
     else RecordRange(&job, 0, passes);
     list_scratch_[passes] = nullptr;
-    if (!job.failed.load(std::memory_order_relaxed) && exit_list) {
+    if (!job.failed.Load(MemoryOrder::Relaxed) && exit_list) {
         rhi::CommandList* list = device->CreateCommandList();
         if (list == nullptr) {
-            job.failed.store(true, std::memory_order_relaxed);
+            job.failed.Store(true, MemoryOrder::Relaxed);
         } else {
             list->Begin();
             RecordBarriers(passes, list);
@@ -1065,7 +1065,7 @@ bool RenderGraph::ExecuteParallel(TransientPool* pool, rhi::Device* device, jobs
     for (u32 i = 0; i <= passes; ++i) {
         if (list_scratch_[i] != nullptr) list_scratch_[count++] = list_scratch_[i];
     }
-    if (job.failed.load(std::memory_order_relaxed)) {
+    if (job.failed.Load(MemoryOrder::Relaxed)) {
         SetExecuteError("a command list could not be created (the device is lost or out of memory)");
         RollbackTransients(pool);
         return false;

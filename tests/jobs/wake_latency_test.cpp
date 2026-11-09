@@ -1,10 +1,10 @@
 // Wake latency of an idle worker (Phase 13 Day 153): how long a job submitted while every worker sleeps waits before a worker starts it.
 // A measurement, not a check: hidden ([.]), run by hand on each machine and recorded in the day file:
 //   jobs_tests "[latency]"
-#include <atomic>
+#include "sync/atomic.h"
 #include <chrono>
 #include <cstdio>
-#include <thread>
+#include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -23,8 +23,8 @@ i64 NowNs() {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
-Job Stamp(std::atomic<i64>* started) {
-    started->store(NowNs(), std::memory_order_release);
+Job Stamp(Atomic<i64>* started) {
+    started->Store(NowNs(), MemoryOrder::Release);
     co_return;
 }
 
@@ -38,12 +38,12 @@ TEST_CASE("Wake latency of an idle worker: median and 99th percentile of 10000 w
     Vector<i64> waits;
     waits.Reserve(kSamples);
     for (usize i = 0; i < kSamples; ++i) {
-        std::this_thread::sleep_for(std::chrono::microseconds(500)); // long enough for the worker to go back to sleep
-        std::atomic<i64> started{0};
+        ThisThread::SleepForMicroseconds(500); // long enough for the worker to go back to sleep
+        Atomic<i64> started{0};
         const i64 submitted = NowNs();
         s.Submit(Stamp(&started));
-        while (started.load(std::memory_order_acquire) == 0) std::this_thread::yield();
-        waits.Push(started.load() - submitted);
+        while (started.Load(MemoryOrder::Acquire) == 0) ThisThread::Yield();
+        waits.Push(started.Load() - submitted);
     }
     Sort(Span<i64>(waits.Data(), waits.Size()));
     const double median_us = static_cast<double>(waits[kSamples / 2]) / 1000.0;

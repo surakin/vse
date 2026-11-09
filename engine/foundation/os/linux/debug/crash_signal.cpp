@@ -5,7 +5,7 @@
 #include "debug/thread_info.h"
 #include "os/os.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <csignal>
 #include <cstring>
 #include <sys/mman.h>
@@ -21,10 +21,10 @@ constexpr usize kAlternateStackBytes = 128 * 1024;
 // A fault this close below the stack pointer is the stack running out, not a wild pointer.
 constexpr u64 kStackOverflowWindow = 64 * 1024;
 
-std::atomic<detail::CrashEventFn> g_event_fn{nullptr};
-std::atomic<bool> g_reported{false}; // a report was written in this process; a fatal signal does not need a second
-std::atomic<u64> g_chaining_thread{0};  // the thread that finished its report and is inside the library's handler
-std::atomic<u64> g_reporting_thread{0}; // thread id of the fault being reported, 0 when none
+Atomic<detail::CrashEventFn> g_event_fn{nullptr};
+Atomic<bool> g_reported{false}; // a report was written in this process; a fatal signal does not need a second
+Atomic<u64> g_chaining_thread{0};  // the thread that finished its report and is inside the library's handler
+Atomic<u64> g_reporting_thread{0}; // thread id of the fault being reported, 0 when none
 struct sigaction g_previous[NSIG];
 bool g_installed_signal[NSIG];
 detail::CrashEvent g_event; // used only by the thread that owns g_reporting_thread
@@ -76,12 +76,12 @@ void Chain(int signal_number, siginfo_t* info, void* user_context) {
 }
 
 void Recorder(int signal_number, siginfo_t* info, void* user_context) {
-    detail::CrashEventFn fn = g_event_fn.load(std::memory_order_acquire);
+    detail::CrashEventFn fn = g_event_fn.Load(MemoryOrder::Acquire);
     if (fn != nullptr) {
         const u64 thread = CurrentThreadId();
-        const u64 owner = g_reporting_thread.load(std::memory_order_acquire);
+        const u64 owner = g_reporting_thread.Load(MemoryOrder::Acquire);
         u64 expected = 0;
-        if (owner == thread && g_chaining_thread.load(std::memory_order_acquire) == thread) {
+        if (owner == thread && g_chaining_thread.Load(MemoryOrder::Acquire) == thread) {
             // A fault inside the library's own handler (it already has the lock this fault would wait for): give up. The
             // default action ends the process when the faulting instruction runs again.
             static const char kText[] = "double fault: the crash library's handler faulted; giving up\n";
@@ -95,9 +95,9 @@ void Recorder(int signal_number, siginfo_t* info, void* user_context) {
             // A fault inside the report this thread is writing: no second report, but the library still gets the fault.
             static const char kText[] = "double fault: the crash report itself faulted; continuing to the crash dump\n";
             os::Write(2, kText, sizeof(kText) - 1);
-        } else if (owner == 0 && !g_reported.load(std::memory_order_acquire) &&
-                   g_reporting_thread.compare_exchange_strong(expected, thread, std::memory_order_acq_rel)) {
-            g_reported.store(true, std::memory_order_release);
+        } else if (owner == 0 && !g_reported.Load(MemoryOrder::Acquire) &&
+                   g_reporting_thread.CompareExchangeStrong(expected, thread, MemoryOrder::AcqRel)) {
+            g_reported.Store(true, MemoryOrder::Release);
             detail::CrashEvent& event = g_event;
             event = detail::CrashEvent();
             event.reason = ReasonFor(signal_number);
@@ -114,17 +114,17 @@ void Recorder(int signal_number, siginfo_t* info, void* user_context) {
             // Skip the recorder itself and the kernel's signal trampoline; the first frame is the one that faulted.
             CaptureStackTrace(event.trace, 2);
             fn(event);
-            g_chaining_thread.store(thread, std::memory_order_release);
+            g_chaining_thread.Store(thread, MemoryOrder::Release);
             Chain(signal_number, info, user_context);
-            g_chaining_thread.store(0, std::memory_order_release);
-            g_reporting_thread.store(0, std::memory_order_release);
+            g_chaining_thread.Store(0, MemoryOrder::Release);
+            g_reporting_thread.Store(0, MemoryOrder::Release);
             return;
-        } else if (g_reporting_thread.load(std::memory_order_acquire) != 0) { // read again: it may have been claimed since `owner`
+        } else if (g_reporting_thread.Load(MemoryOrder::Acquire) != 0) { // read again: it may have been claimed since `owner`
             // Another thread is writing the report. Calling the library now would end the process (it writes the dump and the
             // fault is delivered again) in the middle of that report, so wait for the reporting thread to finish; it calls the
             // library itself and the process ends there. Bounded, in case that thread is stuck.
             const u64 give_up = os::MonotonicTimeNanos() + 20ull * 1000 * 1000 * 1000;
-            while (g_reporting_thread.load(std::memory_order_acquire) != 0 && os::MonotonicTimeNanos() < give_up) {
+            while (g_reporting_thread.Load(MemoryOrder::Acquire) != 0 && os::MonotonicTimeNanos() < give_up) {
                 os::SleepNanos(1000 * 1000);
             }
         }
@@ -156,7 +156,7 @@ namespace detail {
 
 bool InstallCrashEventHook(CrashEventFn fn) {
     bool any = false;
-    g_reported.store(false, std::memory_order_release);
+    g_reported.Store(false, MemoryOrder::Release);
     for (int signal_number : kFatalSignals) {
         if (g_installed_signal[signal_number]) {
             any = true; // the recorder is still in the chain (something was installed over it when it was removed): reuse it
@@ -172,17 +172,17 @@ bool InstallCrashEventHook(CrashEventFn fn) {
         g_installed_signal[signal_number] = ::sigaction(signal_number, &action, &g_previous[signal_number]) == 0;
         any = any || g_installed_signal[signal_number];
     }
-    g_event_fn.store(any ? fn : nullptr, std::memory_order_release);
+    g_event_fn.Store(any ? fn : nullptr, MemoryOrder::Release);
     return any;
 }
 
 bool CrashReportInProgress() {
-    return g_reporting_thread.load(std::memory_order_acquire) != 0;
+    return g_reporting_thread.Load(MemoryOrder::Acquire) != 0;
 }
 
 void RemoveCrashEventHook() {
-    g_event_fn.store(nullptr, std::memory_order_release);
-    g_reported.store(false, std::memory_order_release); // a later install may report again
+    g_event_fn.Store(nullptr, MemoryOrder::Release);
+    g_reported.Store(false, MemoryOrder::Release); // a later install may report again
     for (int signal_number : kFatalSignals) {
         if (!g_installed_signal[signal_number]) {
             continue;

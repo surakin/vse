@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <atomic>
-#include <thread>
+#include "sync/atomic.h"
+#include "sync/thread.h"
 
 #include "catch_engine_types.h"
 #include "config_store_conformance.h"
@@ -73,7 +73,7 @@ TEST_CASE("ConfigStore conformance: a store whose calls run on another thread af
     CHECK(store->Load().Ok());
     // (the durability suite runs on the memory store; here the point is that every call completed from the worker thread)
     auto* slow = static_cast<SlowConfigStore*>(store.Get());
-    CHECK(slow->last_thread() != std::this_thread::get_id());
+    CHECK(slow->last_thread() != ThisThread::Id());
 }
 
 TEST_CASE("FailingConfigStore fails exactly the Nth call and the store keeps working after", "[settings][store][doubles]") {
@@ -109,28 +109,28 @@ TEST_CASE("Memory stores sharing a backing merge commits and notify each other f
     const ConformanceDescs d;
     MemoryConfigStore a(backing), b(backing);
     struct Seen {
-        std::atomic<int> calls{0};
-        std::thread::id thread;
+        Atomic<int> calls{0};
+        ThreadId thread;
     } seen_by_b, seen_by_a;
     auto listener = [](void* user) {
         Seen* s = static_cast<Seen*>(user);
-        s->thread = std::this_thread::get_id();
-        s->calls.fetch_add(1);
+        s->thread = ThisThread::Id();
+        s->calls.FetchAdd(1);
     };
     REQUIRE(b.SetChangeListener(listener, &seen_by_b).Ok());
     REQUIRE(a.SetChangeListener(listener, &seen_by_a).Ok());
-    std::atomic<int> writer_failures{0}; // Catch2 assertions stay on the main thread: a REQUIRE that throws in a std::thread would terminate
-    std::thread writer([&] {
+    Atomic<int> writer_failures{0}; // Catch2 assertions stay on the main thread: a REQUIRE that throws in a std::thread would terminate
+    Thread writer([&] {
         StoredValue sv;
         if (ToStored(d.i, Value::FromInt(1), true, &sv) != StoreError::None) writer_failures++;
         if (a.Set("s.x", sv).Failed()) writer_failures++;
         if (a.Commit(CommitOptions()).Failed()) writer_failures++;
     });
-    writer.join();
-    CHECK(writer_failures.load() == 0);
-    CHECK(seen_by_b.calls.load() == 1);
-    CHECK(seen_by_b.thread != std::this_thread::get_id()); // called on the committing (writer) thread, not this one
-    CHECK(seen_by_a.calls.load() == 0); // the committer is not told about its own commit
+    writer.Join();
+    CHECK(writer_failures.Load() == 0);
+    CHECK(seen_by_b.calls.Load() == 1);
+    CHECK(seen_by_b.thread != ThisThread::Id()); // called on the committing (writer) thread, not this one
+    CHECK(seen_by_a.calls.Load() == 0); // the committer is not told about its own commit
     // b has not reloaded: it sees nothing until it does, then sees a's change; its own commit merges instead of replacing.
     CHECK(CountKeys(b) == 0);
     REQUIRE(b.Load().Ok());
@@ -141,26 +141,26 @@ TEST_CASE("Memory stores sharing a backing merge commits and notify each other f
     REQUIRE(a.Commit(CommitOptions()).Ok());
     MemoryConfigStore c(backing);
     CHECK(CountKeys(c) == 3);
-    CHECK(seen_by_b.calls.load() == 2);
+    CHECK(seen_by_b.calls.Load() == 2);
     // Removing the listener stops the calls; destroying a store removes it from the backing (no call after the destructor).
     REQUIRE(b.SetChangeListener(nullptr, nullptr).Ok());
     REQUIRE(a.Set("s.w", Stored(a, d.i, Value::FromInt(4))).Ok());
     REQUIRE(a.Commit(CommitOptions()).Ok());
-    CHECK(seen_by_b.calls.load() == 2);
+    CHECK(seen_by_b.calls.Load() == 2);
 }
 
 TEST_CASE("Listeners and commits from many threads do not race", "[settings][store][notify][threads]") {
     MemoryBackingPtr backing = MakeMemoryBacking();
     const ConformanceDescs d;
-    std::atomic<int> total{0};
-    auto listener = [](void* user) { static_cast<std::atomic<int>*>(user)->fetch_add(1); };
+    Atomic<int> total{0};
+    auto listener = [](void* user) { static_cast<Atomic<int>*>(user)->FetchAdd(1); };
     MemoryConfigStore watcher(backing);
     REQUIRE(watcher.SetChangeListener(listener, &total).Ok());
-    std::atomic<int> failures{0};
-    Vector<std::thread> writers;
+    Atomic<int> failures{0};
+    Vector<Thread> writers;
     writers.Resize(4);
     for (usize t = 0; t < writers.Size(); ++t) {
-        writers[t] = std::thread([&, t] {
+        writers[t] = Thread([&, t] {
             for (int i = 0; i < 50; ++i) {
                 MemoryConfigStore w(backing);
                 const engine_test::Text key = engine_test::Format("t%d.k%d", static_cast<int>(t), i);
@@ -169,9 +169,9 @@ TEST_CASE("Listeners and commits from many threads do not race", "[settings][sto
             }
         });
     }
-    for (usize t = 0; t < writers.Size(); ++t) writers[t].join();
-    CHECK(failures.load() == 0);
-    CHECK(total.load() == 200);
+    for (usize t = 0; t < writers.Size(); ++t) writers[t].Join();
+    CHECK(failures.Load() == 0);
+    CHECK(total.Load() == 200);
     MemoryConfigStore reader(backing);
     CHECK(CountKeys(reader) == 200);
 }
@@ -297,25 +297,25 @@ TEST_CASE("A registry-shaped store notifies other stores from another thread, ne
     const ConformanceDescs d;
     RegistryShapedStore a(&hive), b(&hive);
     struct Seen {
-        std::atomic<int> calls{0};
-        std::atomic<bool> other_thread{false};
-        std::thread::id main;
+        Atomic<int> calls{0};
+        Atomic<bool> other_thread{false};
+        ThreadId main;
     } seen_a, seen_b;
-    seen_a.main = seen_b.main = std::this_thread::get_id();
+    seen_a.main = seen_b.main = ThisThread::Id();
     auto listener = [](void* user) {
         Seen* s = static_cast<Seen*>(user);
-        s->other_thread = std::this_thread::get_id() != s->main;
-        s->calls.fetch_add(1);
+        s->other_thread = ThisThread::Id() != s->main;
+        s->calls.FetchAdd(1);
     };
     REQUIRE(a.SetChangeListener(listener, &seen_a).Ok());
     REQUIRE(b.SetChangeListener(listener, &seen_b).Ok());
     REQUIRE(a.Set("n.x", Stored(a, d.i, Value::FromInt(1))).Ok());
-    for (int i = 0; i < 200 && seen_b.calls.load() == 0; ++i) std::this_thread::sleep_for(std::chrono::milliseconds(5));
-    CHECK(seen_b.calls.load() == 1);
-    CHECK(seen_b.other_thread.load());
-    CHECK(seen_a.calls.load() == 0);
+    for (int i = 0; i < 200 && seen_b.calls.Load() == 0; ++i) ThisThread::SleepForMilliseconds(5);
+    CHECK(seen_b.calls.Load() == 1);
+    CHECK(seen_b.other_thread.Load());
+    CHECK(seen_a.calls.Load() == 0);
     REQUIRE(b.SetChangeListener(nullptr, nullptr).Ok());
     REQUIRE(a.Set("n.y", Stored(a, d.i, Value::FromInt(2))).Ok());
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    CHECK(seen_b.calls.load() == 1); // removed
+    ThisThread::SleepForMilliseconds(50);
+    CHECK(seen_b.calls.Load() == 1); // removed
 }

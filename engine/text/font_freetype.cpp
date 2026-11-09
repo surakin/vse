@@ -1,5 +1,5 @@
 // The one file that names FreeType (platform_neutral_check, tools/platform_neutral_check/library_boundary.txt).
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstring>
 #include <new>
 
@@ -20,12 +20,12 @@ namespace engine_placeholder::text {
 namespace internal {
 
 struct Counters {
-    std::atomic<u64> allocations{0};
-    std::atomic<u64> frees{0};
-    std::atomic<u64> live{0};
-    std::atomic<u64> peak{0};
-    std::atomic<u64> refused{0};         // allocations that returned null (injected or real)
-    std::atomic<i64> succeed_count{-1}; // allocations that still succeed; negative: no injection
+    Atomic<u64> allocations{0};
+    Atomic<u64> frees{0};
+    Atomic<u64> live{0};
+    Atomic<u64> peak{0};
+    Atomic<u64> refused{0};         // allocations that returned null (injected or real)
+    Atomic<i64> succeed_count{-1}; // allocations that still succeed; negative: no injection
 };
 
 } // namespace internal
@@ -38,24 +38,24 @@ using internal::Counters;
 constexpr usize kHeader = 16;
 
 void* AllocBlock(Counters& c, usize size) {
-    i64 left = c.succeed_count.load(std::memory_order_relaxed);
+    i64 left = c.succeed_count.Load(MemoryOrder::Relaxed);
     while (left >= 0) {
         if (left == 0) {
-            c.refused.fetch_add(1, std::memory_order_relaxed);
+            c.refused.FetchAdd(1, MemoryOrder::Relaxed);
             return nullptr;
         }
-        if (c.succeed_count.compare_exchange_weak(left, left - 1, std::memory_order_relaxed)) break;
+        if (c.succeed_count.CompareExchangeWeak(left, left - 1, MemoryOrder::Relaxed)) break;
     }
     void* base = HeapAllocator::Default().Alloc(size + kHeader, 16);
     if (base == nullptr) {
-        c.refused.fetch_add(1, std::memory_order_relaxed);
+        c.refused.FetchAdd(1, MemoryOrder::Relaxed);
         return nullptr;
     }
     *static_cast<usize*>(base) = size;
-    c.allocations.fetch_add(1, std::memory_order_relaxed);
-    const u64 live = c.live.fetch_add(size, std::memory_order_relaxed) + size;
-    u64 peak = c.peak.load(std::memory_order_relaxed);
-    while (live > peak && !c.peak.compare_exchange_weak(peak, live, std::memory_order_relaxed)) {}
+    c.allocations.FetchAdd(1, MemoryOrder::Relaxed);
+    const u64 live = c.live.FetchAdd(size, MemoryOrder::Relaxed) + size;
+    u64 peak = c.peak.Load(MemoryOrder::Relaxed);
+    while (live > peak && !c.peak.CompareExchangeWeak(peak, live, MemoryOrder::Relaxed)) {}
     return static_cast<byte*>(base) + kHeader;
 }
 
@@ -63,8 +63,8 @@ void FreeBlock(Counters& c, void* block) {
     if (block == nullptr) return;
     void* base = static_cast<byte*>(block) - kHeader;
     const usize size = *static_cast<usize*>(base);
-    c.frees.fetch_add(1, std::memory_order_relaxed);
-    c.live.fetch_sub(size, std::memory_order_relaxed);
+    c.frees.FetchAdd(1, MemoryOrder::Relaxed);
+    c.live.FetchSub(size, MemoryOrder::Relaxed);
     HeapAllocator::Default().Free(base, size + kHeader, 16);
 }
 
@@ -88,10 +88,10 @@ void* FtRealloc(FT_Memory memory, long cur_size, long new_size, void* block) {
 
 LibraryAllocationStats Snapshot(const Counters& c) {
     LibraryAllocationStats stats;
-    stats.allocations = c.allocations.load();
-    stats.frees = c.frees.load();
-    stats.peak_bytes = c.peak.load();
-    stats.live_bytes_at_end = c.live.load();
+    stats.allocations = c.allocations.Load();
+    stats.frees = c.frees.Load();
+    stats.peak_bytes = c.peak.Load();
+    stats.live_bytes_at_end = c.live.Load();
     return stats;
 }
 
@@ -139,7 +139,7 @@ u32 LoadFlags(Hinting hinting) {
     return FT_LOAD_NO_BITMAP;
 }
 
-std::atomic<u64> g_next_font_id{1};
+Atomic<u64> g_next_font_id{1};
 
 u32 ReadBe32(const byte* p) { return (u32{p[0]} << 24) | (u32{p[1]} << 16) | (u32{p[2]} << 8) | u32{p[3]}; }
 
@@ -168,14 +168,14 @@ struct FontLibrary::Impl {
     Counters counters;
     FT_MemoryRec_ memory{};
     FT_Library library = nullptr;
-    std::atomic<u32> open_fonts{0};
+    Atomic<u32> open_fonts{0};
 };
 
 FontLibrary::FontLibrary() = default;
 
 FontLibrary::~FontLibrary() {
     if (impl_ == nullptr) return;
-    ENGINE_ASSERT(impl_->open_fonts.load() == 0, "FontLibrary destroyed while a Font opened from it is still alive");
+    ENGINE_ASSERT(impl_->open_fonts.Load() == 0, "FontLibrary destroyed while a Font opened from it is still alive");
     if (impl_->library != nullptr) FT_Done_Library(impl_->library);
     DeleteObject(impl_);
 }
@@ -218,7 +218,7 @@ LibraryAllocationStats FontLibrary::Stats() const {
 
 void FontLibrary::FailAllocationsAfter(u64 count) {
     if (impl_ == nullptr) return;
-    impl_->counters.succeed_count.store(count == ~u64{0} ? -1 : static_cast<i64>(count));
+    impl_->counters.succeed_count.Store(count == ~u64{0} ? -1 : static_cast<i64>(count));
 }
 
 bool ProbeLibrary(LibraryVersion* version, LibraryAllocationStats* stats) {
@@ -260,7 +260,7 @@ Font& Font::operator=(Font&& other) noexcept {
 void Font::Close() {
     if (impl_ == nullptr) return;
     if (impl_->face != nullptr) FT_Done_Face(impl_->face);
-    impl_->library->open_fonts.fetch_sub(1);
+    impl_->library->open_fonts.FetchSub(1);
     DeleteObject(impl_);
     impl_ = nullptr;
 }
@@ -293,10 +293,10 @@ Status Font::OpenOwned(FontLibrary& library, Vector<byte>&& bytes, const FontOpt
     impl->options = options;
     impl->data = static_cast<Vector<byte>&&>(bytes);
 
-    const u64 refused_before = impl->library->counters.refused.load();
+    const u64 refused_before = impl->library->counters.refused.Load();
     FT_Error error = FT_New_Memory_Face(impl->library->library, impl->data.Data(), static_cast<FT_Long>(impl->data.Size()),
                                         static_cast<FT_Long>(options.face_index), &impl->face);
-    if (error == 0 && impl->library->counters.refused.load() != refused_before) {
+    if (error == 0 && impl->library->counters.refused.Load() != refused_before) {
         // FreeType shrugs off some failed allocations while opening (an optional table is left unset) and then crashes in a later call that needs it.
         FT_Done_Face(impl->face);
         impl->face = nullptr;
@@ -317,8 +317,8 @@ Status Font::OpenOwned(FontLibrary& library, Vector<byte>&& bytes, const FontOpt
         DeleteObject(impl);
         return MakeStatus(Error::Unsupported, "the font has no scalable outlines");
     }
-    impl->library->open_fonts.fetch_add(1);
-    impl->id = g_next_font_id.fetch_add(1);
+    impl->library->open_fonts.FetchAdd(1);
+    impl->id = g_next_font_id.FetchAdd(1);
     out->impl_ = impl;
     const Status size = out->SetPixelSize(16);
     if (!size.Ok()) {

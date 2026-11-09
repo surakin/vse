@@ -93,3 +93,8 @@ else. Every macro is always defined, as `1` or `0`, so the test is `#if ENGINE_P
 
 Compiler-specific constructs (attributes, intrinsics, inline assembly) are in `debug/compiler.h`, which builds on these macros. Two files are
 exempt from the gate: `tests/windows/discovery/` (toolchain probes built outside the engine) and generated code.
+
+## Language support: `lang/`
+
+Phase 16 wraps the standard library's language-support headers in `engine/foundation/lang/` (layer 0): `utility.h` (`Move`, `Forward`, `Exchange`, `Swap`, `AsConst`, `Declval`), `traits.h` (`IsSame<A, B>`, `IsConvertible`, `IsIntegral`, `EnableIf`, `Conditional`, `RemoveReference`, `Decay`, ...: variable templates for the `_v` forms, aliases for the `_t` forms), `limits.h` (`Limits<T>::Max()`, `Min()`, `Lowest()`, `Epsilon()`, `Infinity()`, `QuietNaN()`), `ordering.h` (`Ordering`, the result of `operator<=>`), `initializer_list.h` (`InitializerList<T>`) and `new.h` (`AlignVal`, `NoThrowTag`, `kNoThrow`, `ConstructAt`, `Launder`, `AlignedNew`). Where the compiler requires the standard type by name (`std::initializer_list`, `std::strong_ordering`, `std::align_val_t`), the engine name is an alias of it.
+

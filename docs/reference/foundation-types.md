@@ -146,7 +146,7 @@ Creates zero.
 `constructor ENGINE_INT128_NAMESPACE::u128::u128` — defined in `engine/foundation/int128.h`
 
 ```cpp
-template <typename T> requires(std::is_integral_v<T> && std::is_unsigned_v<T> && sizeof(T) <= 8 && !std::is_same_v<T, bool>)
+template <typename T> requires(IsIntegral<T> && IsUnsigned<T> && sizeof(T) <= 8 && !IsSame<T, bool>)
 constexpr u128(T value);
 ```
 
@@ -177,7 +177,7 @@ Returns the largest value, 2^128 - 1.
 `operator ENGINE_INT128_NAMESPACE::u128::operator T` — defined in `engine/foundation/int128.h`
 
 ```cpp
-template <typename T> requires(std::is_integral_v<T> && !std::is_same_v<T, bool>)
+template <typename T> requires(IsIntegral<T> && !IsSame<T, bool>)
 explicit constexpr operator T() const;
 ```
 
@@ -559,7 +559,7 @@ Creates zero.
 `constructor ENGINE_INT128_NAMESPACE::i128::i128` — defined in `engine/foundation/int128.h`
 
 ```cpp
-template <typename T> requires(std::is_integral_v<T> && std::is_signed_v<T> && sizeof(T) <= 8)
+template <typename T> requires(IsIntegral<T> && IsSigned<T> && sizeof(T) <= 8)
 constexpr i128(T value);
 ```
 
@@ -640,7 +640,7 @@ Returns the magnitude (for the minimum value, 2^127).
 `operator ENGINE_INT128_NAMESPACE::i128::operator T` — defined in `engine/foundation/int128.h`
 
 ```cpp
-template <typename T> requires(std::is_integral_v<T> && !std::is_same_v<T, bool>)
+template <typename T> requires(IsIntegral<T> && !IsSame<T, bool>)
 explicit constexpr operator T() const;
 ```
 

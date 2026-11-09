@@ -1,9 +1,8 @@
 #pragma once
 
-#include <atomic>
-#include <condition_variable>
-#include <mutex>
-#include <thread>
+#include "sync/atomic.h"
+#include "sync/mutex.h"
+#include "sync/thread.h"
 
 #include "jobs/topology.h"
 #include "types.h"
@@ -117,7 +116,7 @@ public:
     ///
     /// Returns: `true` once [[jobs::WorkerPool::RequestStop]] has been called.
     /// Thread-safety: thread-safe.
-    bool StopRequested() const { return stop_.load(std::memory_order_acquire); }
+    bool StopRequested() const { return stop_.Load(MemoryOrder::Acquire); }
 
     /// Joins every spawned worker.
     ///
@@ -152,16 +151,16 @@ private:
     usize count_ = 1;
     Config config_;
     Participant participants_[kMaxParticipants];
-    std::thread threads_[kMaxParticipants];
+    Thread threads_[kMaxParticipants];
     u32 allowed_[kMaxParticipants];
     usize allowed_count_ = 0;
 
-    std::mutex mutex_;
-    std::condition_variable cv_;
+    Mutex mutex_;
+    ConditionVariable cv_;
     usize registered_ = 0; // guarded by mutex_
-    std::atomic<bool> stop_{false};
-    std::atomic<bool> joined_{false};
-    std::thread::id constructor_thread_;
+    Atomic<bool> stop_{false};
+    Atomic<bool> joined_{false};
+    ThreadId constructor_thread_;
     const Participant* saved_main_identity_ = nullptr;
 };
 

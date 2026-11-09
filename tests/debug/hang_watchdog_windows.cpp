@@ -5,7 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <thread>
+#include "sync/thread.h"
 
 #include "os/windows/win32.h"
 
@@ -77,11 +77,11 @@ void DumpThreads() {
 } // namespace
 
 void Start(unsigned seconds) {
-    std::thread([seconds] {
+    Thread([seconds] {
         Sleep(seconds * 1000);
         DumpThreads();
         TerminateProcess(GetCurrentProcess(), 0xDEAD0002u);
-    }).detach();
+    }).Detach();
 }
 
 void NameFrames(const char* text, unsigned long long length) {

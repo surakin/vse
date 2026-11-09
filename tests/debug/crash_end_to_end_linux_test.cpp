@@ -13,7 +13,7 @@
 #include "os/os.h"
 #include "support/death_test_skip.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <csignal>
 #include <cstdio>
 #include <cctype>
@@ -24,7 +24,7 @@
 #include <ftw.h>
 #include <string>
 #include <sys/stat.h>
-#include <thread>
+#include "sync/thread.h"
 #include <unistd.h>
 #include <vector>
 #include "build_defs.h"
@@ -231,14 +231,14 @@ TEST_CASE("A stack overflow on the main thread prints a report and leaves a dump
 namespace {
 
 void WorkerFault(FaultKind kind, bool register_thread) {
-    std::thread worker([kind, register_thread] {
+    Thread worker([kind, register_thread] {
         if (register_thread) {
             RegisterThreadForCrashHandling();
         }
         SetCrashThreadName("worker-7");
         InjectFault(kind);
     });
-    worker.join();
+    worker.Join();
 }
 
 } // namespace
@@ -274,18 +274,18 @@ TEST_CASE("A stack overflow on a registered worker thread still produces a repor
 
 ENGINE_DEATH_TEST_FN(dt_e2e_two_threads_fault) {
     InstallInto(argument);
-    std::atomic<int> ready{0};
+    Atomic<int> ready{0};
     auto body = [&ready] {
-        ready.fetch_add(1);
-        while (ready.load() < 2) {
-            std::this_thread::yield();
+        ready.FetchAdd(1);
+        while (ready.Load() < 2) {
+            ThisThread::Yield();
         }
         InjectFault(FaultKind::NullWrite);
     };
-    std::thread a(body);
-    std::thread b(body);
-    a.join();
-    b.join();
+    Thread a(body);
+    Thread b(body);
+    a.Join();
+    b.Join();
 }
 
 TEST_CASE("Two threads faulting at once produce one report and one dump", "[crash][crashreport][death][debug][linux]") {
@@ -298,7 +298,7 @@ TEST_CASE("Two threads faulting at once produce one report and one dump", "[cras
 }
 
 namespace {
-std::atomic<bool> g_slow_provider_started{false};
+Atomic<bool> g_slow_provider_started{false};
 void SlowProvider(void*, char* out, usize capacity) {
     g_slow_provider_started = true;
     os::SleepNanos(400ull * 1000 * 1000); // long enough for the other thread to fault in the middle of the report
@@ -309,15 +309,15 @@ void SlowProvider(void*, char* out, usize capacity) {
 ENGINE_DEATH_TEST_FN(dt_e2e_second_fault_during_report) {
     InstallInto(argument);
     RegisterCrashStateProvider("slow", &SlowProvider, nullptr);
-    std::thread second([] {
-        while (!g_slow_provider_started.load()) {
-            std::this_thread::yield();
+    Thread second([] {
+        while (!g_slow_provider_started.Load()) {
+            ThisThread::Yield();
         }
         os::SleepNanos(50ull * 1000 * 1000);
         InjectFault(FaultKind::NullWrite);
     });
     InjectFault(FaultKind::NullWrite); // the main thread reports first, slowly
-    second.join();
+    second.Join();
 }
 
 TEST_CASE("A second thread faulting while the first is writing the report does not cut the report short", "[crash][crashreport][death][debug][linux]") {

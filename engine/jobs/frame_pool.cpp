@@ -6,6 +6,8 @@
 
 #include "log/assert.h"
 #include "os/os.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 namespace engine_placeholder::jobs {
 
@@ -20,7 +22,7 @@ thread_local bool t_cache_destroyed = false;
 
 // Guards "at most one pool uses thread caches" (a thread_local cache is
 // keyed to a single pool).
-std::atomic<bool> g_thread_cached_pool_exists{false};
+Atomic<bool> g_thread_cached_pool_exists{false};
 
 void* BlockToUser(void* block) {
     return static_cast<byte*>(block) + FramePool::kHeaderBytes;
@@ -47,7 +49,7 @@ u64 FramePool::Stats::Live() const {
 FramePool::FramePool(const Config& config) : config_(config) {
     if (config_.thread_caches) {
         bool expected = false;
-        ENGINE_ASSERT(g_thread_cached_pool_exists.compare_exchange_strong(expected, true),
+        ENGINE_ASSERT(g_thread_cached_pool_exists.CompareExchangeStrong(expected, true),
                       "FramePool: only one pool per process may use thread caches");
     }
     // Reserve every slab now: it only claims address space, so there is
@@ -77,7 +79,7 @@ FramePool::~FramePool() {
         }
     }
     if (config_.thread_caches) {
-        g_thread_cached_pool_exists.store(false);
+        g_thread_cached_pool_exists.Store(false);
     }
 }
 
@@ -122,7 +124,7 @@ void FramePool::CentralPushLocked(usize class_index, void* block) {
 }
 
 usize FramePool::CentralAvailableForTesting(usize class_index) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     ClassState& cs = classes_[class_index];
     usize n = cs.slots - cs.next_unused;
     for (void* b = cs.free_list; b != nullptr; b = *static_cast<void**>(b)) {
@@ -138,7 +140,7 @@ void* FramePool::AllocateFallback(usize size) {
     header->class_index = kFallbackClass;
     header->magic = kHeaderMagic;
     header->reserved = 0;
-    fallback_allocs_.fetch_add(1, std::memory_order_relaxed);
+    fallback_allocs_.FetchAdd(1, MemoryOrder::Relaxed);
     return BlockToUser(block);
 }
 
@@ -156,7 +158,7 @@ void* FramePool::Allocate(usize size) {
         cache.owner = this;
         if (cache.head[c] == nullptr) {
             // Refill a batch from the central pool under one lock.
-            std::lock_guard<std::mutex> lock(mutex_);
+            LockGuard<Mutex> lock(mutex_);
             for (u32 i = 0; i < kRefillBatch; ++i) {
                 void* b = CentralPopLocked(c);
                 if (b == nullptr) break;
@@ -173,7 +175,7 @@ void* FramePool::Allocate(usize size) {
     } else {
         // Uncached pool, or a late allocation after this thread's cache
         // was destroyed: straight to the central pool.
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         block = CentralPopLocked(c);
     }
 
@@ -184,7 +186,7 @@ void* FramePool::Allocate(usize size) {
     header->class_index = static_cast<u32>(c);
     header->magic = kHeaderMagic;
     header->reserved = 0;
-    pooled_allocs_[c].fetch_add(1, std::memory_order_relaxed);
+    pooled_allocs_[c].FetchAdd(1, MemoryOrder::Relaxed);
     return BlockToUser(block);
 }
 
@@ -197,16 +199,16 @@ void FramePool::Deallocate(void* ptr) {
     u32 cls = header->class_index;
     header->magic = 0; // catches double free of the same block
     if (cls == kFallbackClass) {
-        fallback_frees_.fetch_add(1, std::memory_order_relaxed);
+        fallback_frees_.FetchAdd(1, MemoryOrder::Relaxed);
         std::free(block);
         return;
     }
     ENGINE_ASSERT(cls < kClassCount, "FramePool::Deallocate: corrupt header");
-    pooled_frees_[cls].fetch_add(1, std::memory_order_relaxed);
+    pooled_frees_[cls].FetchAdd(1, MemoryOrder::Relaxed);
 
     ThreadCache& cache = t_cache;
     if (!config_.thread_caches || t_cache_destroyed) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         CentralPushLocked(cls, block);
         return;
     }
@@ -216,7 +218,7 @@ void FramePool::Deallocate(void* ptr) {
     cache.head[cls] = block;
     ++cache.count[cls];
     if (cache.count[cls] > kSpillThreshold) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         for (u32 i = 0; i < kSpillThreshold / 2; ++i) {
             void* b = cache.head[cls];
             cache.head[cls] = *static_cast<void**>(b);
@@ -227,7 +229,7 @@ void FramePool::Deallocate(void* ptr) {
 }
 
 void FramePool::FlushCache(ThreadCache& cache) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     for (usize c = 0; c < kClassCount; ++c) {
         while (cache.head[c] != nullptr) {
             void* b = cache.head[c];
@@ -250,11 +252,11 @@ FramePool::ThreadCache::~ThreadCache() {
 FramePool::Stats FramePool::GetStats() const {
     Stats s;
     for (usize i = 0; i < kClassCount; ++i) {
-        s.pooled_allocs[i] = pooled_allocs_[i].load(std::memory_order_relaxed);
-        s.pooled_frees[i] = pooled_frees_[i].load(std::memory_order_relaxed);
+        s.pooled_allocs[i] = pooled_allocs_[i].Load(MemoryOrder::Relaxed);
+        s.pooled_frees[i] = pooled_frees_[i].Load(MemoryOrder::Relaxed);
     }
-    s.fallback_allocs = fallback_allocs_.load(std::memory_order_relaxed);
-    s.fallback_frees = fallback_frees_.load(std::memory_order_relaxed);
+    s.fallback_allocs = fallback_allocs_.Load(MemoryOrder::Relaxed);
+    s.fallback_frees = fallback_frees_.Load(MemoryOrder::Relaxed);
     return s;
 }
 

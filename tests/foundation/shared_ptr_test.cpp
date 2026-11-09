@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <atomic>
-#include <thread>
-#include <utility>
+#include "sync/atomic.h"
+#include "sync/thread.h"
+#include "lang/utility.h"
 #include <vector>
 
 #include "containers/shared_ptr.h"
@@ -17,7 +17,7 @@ using engine_placeholder::usize;
 namespace {
 
 struct SharedPtrTestCounted {
-    static inline std::atomic<int> alive{0};
+    static inline engine_placeholder::Atomic<int> alive{0};
     int value;
     explicit SharedPtrTestCounted(int v = 0) : value(v) { ++alive; }
     SharedPtrTestCounted(const SharedPtrTestCounted&) = delete;
@@ -53,7 +53,7 @@ TEST_CASE("SharedPtr: the object lives until the last owner goes", "[containers]
 
 TEST_CASE("SharedPtr: move transfers the share without touching the count; assignment releases the old object", "[containers][shared_ptr]") {
     SharedPtr<SharedPtrTestCounted> a = MakeShared<SharedPtrTestCounted>(1);
-    SharedPtr<SharedPtrTestCounted> b = std::move(a);
+    SharedPtr<SharedPtrTestCounted> b = engine_placeholder::Move(a);
     REQUIRE_FALSE(a);
     REQUIRE(b.UseCount() == 1);
 
@@ -96,7 +96,7 @@ TEST_CASE("SharedPtr: owners on many threads copy and release concurrently, and 
     SharedPtr<SharedPtrTestCounted> shared = MakeShared<SharedPtrTestCounted>(1);
     constexpr int kThreads = 8;
     constexpr int kRounds = 20000;
-    std::vector<std::thread> threads;
+    std::vector<engine_placeholder::Thread> threads;
     for (int t = 0; t < kThreads; ++t) {
         threads.emplace_back([&shared] {
             for (int i = 0; i < kRounds; ++i) {
@@ -106,7 +106,7 @@ TEST_CASE("SharedPtr: owners on many threads copy and release concurrently, and 
             }
         });
     }
-    for (std::thread& th : threads) th.join();
+    for (engine_placeholder::Thread& th : threads) th.Join();
     REQUIRE(shared.UseCount() == 1);
     REQUIRE(SharedPtrTestCounted::alive == 1);
     shared.Reset();
@@ -115,7 +115,7 @@ TEST_CASE("SharedPtr: owners on many threads copy and release concurrently, and 
 
 TEST_CASE("SharedPtr: the last owner may be released on another thread", "[containers][shared_ptr][threads]") {
     SharedPtr<SharedPtrTestCounted> shared = MakeShared<SharedPtrTestCounted>(1);
-    std::thread t([p = std::move(shared)]() mutable { p.Reset(); });
-    t.join();
+    engine_placeholder::Thread t([p = engine_placeholder::Move(shared)]() mutable { p.Reset(); });
+    t.Join();
     REQUIRE(SharedPtrTestCounted::alive == 0);
 }

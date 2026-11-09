@@ -3,7 +3,8 @@
 #include "debug/crash_report.h"
 
 #include <cstring>
-#include <mutex>
+#include "sync/mutex.h"
+#include "sync/atomic.h"
 
 namespace engine_placeholder::debug {
 
@@ -14,13 +15,13 @@ constexpr usize kMaxEntries = 8;
 struct Entry {
     char name[32] = {};
     bool is_counter = false;
-    std::atomic<u64> counter{0};
+    Atomic<u64> counter{0};
     char text[kCrashStateEntryTextBytes] = {};
 };
 
 Entry g_entries[kMaxEntries];
 usize g_entry_count = 0; // guarded by g_mutex
-std::mutex g_mutex;
+Mutex g_mutex;
 
 // SIGNAL-SAFE-BEGIN
 // Runs inside a crashing process: plain reads only, no formatting library.
@@ -32,7 +33,7 @@ void ProvideEntry(void* context, char* out, usize capacity) {
     if (entry.is_counter) {
         char digits[24];
         usize count = 0;
-        u64 value = entry.counter.load(std::memory_order_relaxed);
+        u64 value = entry.counter.Load(MemoryOrder::Relaxed);
         do {
             digits[count++] = static_cast<char>('0' + value % 10);
             value /= 10;
@@ -57,7 +58,7 @@ Entry* FindOrCreate(const char* name, bool counter) {
     if (name == nullptr) {
         return nullptr;
     }
-    std::lock_guard<std::mutex> lock(g_mutex);
+    LockGuard<Mutex> lock(g_mutex);
     for (usize i = 0; i < g_entry_count; ++i) {
         if (std::strcmp(g_entries[i].name, name) == 0) {
             return g_entries[i].is_counter == counter ? &g_entries[i] : nullptr;
@@ -82,12 +83,12 @@ Entry* FindOrCreate(const char* name, bool counter) {
 } // namespace
 
 void ResetCrashStateForTesting() {
-    std::lock_guard<std::mutex> lock(g_mutex);
+    LockGuard<Mutex> lock(g_mutex);
     ResetCrashStateProvidersForTesting();
     for (usize i = 0; i < g_entry_count; ++i) {
         g_entries[i].name[0] = '\0';
         g_entries[i].text[0] = '\0';
-        g_entries[i].counter.store(0, std::memory_order_relaxed);
+        g_entries[i].counter.Store(0, MemoryOrder::Relaxed);
     }
     g_entry_count = 0;
 }
@@ -97,7 +98,7 @@ bool SetCrashStateText(const char* name, const char* text) {
     if (entry == nullptr) {
         return false;
     }
-    std::lock_guard<std::mutex> lock(g_mutex);
+    LockGuard<Mutex> lock(g_mutex);
     usize n = 0;
     for (; text != nullptr && n + 1 < kCrashStateEntryTextBytes && text[n] != '\0'; ++n) {
         entry->text[n] = text[n];
@@ -106,7 +107,7 @@ bool SetCrashStateText(const char* name, const char* text) {
     return true;
 }
 
-std::atomic<u64>* CrashStateCounter(const char* name) {
+Atomic<u64>* CrashStateCounter(const char* name) {
     Entry* entry = FindOrCreate(name, true);
     return entry != nullptr ? &entry->counter : nullptr;
 }

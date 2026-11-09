@@ -7,7 +7,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <string>
-#include <thread>
+#include "sync/thread.h"
 #include <utility>
 #include <vector>
 
@@ -273,13 +273,13 @@ TEST_CASE("Samples: [review] jobs = 0 does not hang", "[docgen][samples]") {
 TEST_CASE("Samples: [review] a stop request kills running samples and removes the scratch directory", "[docgen][samples]") {
     SamplesTestTree t;
     t.Put("docs/a.md", "```cpp compile run\nvolatile int spin = 1;\nwhile (spin) {}\n```\n");
-    std::thread stopper([] {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+    engine_placeholder::Thread stopper([] {
+        engine_placeholder::ThisThread::SleepForMilliseconds(1500);
         RequestStop();
     });
     const auto start = std::chrono::steady_clock::now();
     Result r(t, "docs/a.md", 1, 60);
-    stopper.join();
+    stopper.Join();
     CHECK(std::chrono::steady_clock::now() - start < std::chrono::seconds(20));
     CHECK(r.Has("interrupted"));
     CHECK(t.ScratchEntries() == 0);

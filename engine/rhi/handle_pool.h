@@ -2,8 +2,8 @@
 
 #include <cstddef>
 #include <cstdlib>
-#include <new>
-#include <utility>
+#include "lang/new.h"
+#include "lang/utility.h"
 
 #include "log/assert.h"
 #include "rhi/handle.h"
@@ -82,7 +82,7 @@ public:
         u32 index = free_head_;
         Slot& s = SlotAt(index);
         free_head_ = s.next;
-        new (s.storage) T(std::move(value));
+        new (s.storage) T(Move(value));
         s.state = SlotState::Live;
         s.next = kNone;
         ++live_count_;
@@ -196,7 +196,7 @@ public:
     /// Returns: the number of values released.
     template <typename F>
     usize CollectAllRetired(F&& on_release) {
-        return CollectRetired(~0ull, std::forward<F>(on_release));
+        return CollectRetired(~0ull, Forward<F>(on_release));
     }
 
     /// Calls `fn(HandleType, T&)` for every live value, in slot order.
@@ -255,8 +255,8 @@ private:
         return g == 0 ? 1 : g;  // 0 is the invalid generation
     }
 
-    static T* ValuePtr(Slot& s) { return std::launder(reinterpret_cast<T*>(s.storage)); }
-    static const T* ValuePtr(const Slot& s) { return std::launder(reinterpret_cast<const T*>(s.storage)); }
+    static T* ValuePtr(Slot& s) { return Launder(reinterpret_cast<T*>(s.storage)); }
+    static const T* ValuePtr(const Slot& s) { return Launder(reinterpret_cast<const T*>(s.storage)); }
 
     Slot& SlotAt(u32 index) { return chunks_[index / kChunkSlots][index % kChunkSlots]; }
 

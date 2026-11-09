@@ -1,7 +1,7 @@
-#include <atomic>
+#include "sync/atomic.h"
 #include <cmath>
 #include <cstdlib>
-#include <new>
+#include "lang/new.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -16,17 +16,18 @@
 #include "ui/testing/recording_canvas.h"
 #include "ui/widgets/list_box.h"
 #include "ui/widgets/scroll.h"
+#include "types.h"
 
 // --- an allocation counter (this test executable only), to prove that scrolling a long list allocates nothing once warm ---------------
 #if !ENGINE_SANITIZED // the sanitizer runtimes define their own operator new
 namespace {
-std::atomic<long> g_ui_allocs{0};
-std::atomic<bool> g_ui_counting{false};
+Atomic<long> g_ui_allocs{0};
+Atomic<bool> g_ui_counting{false};
 // Every form is replaced so allocation and release always pair up. `align` is 0 for the plain forms. Windows' C library has no
 // aligned_alloc: memory from _aligned_malloc goes back through _aligned_free, so the aligned forms take that path there (as in
 // tests/renderer/render_graph_test.cpp).
-void* UiCountedAlloc(std::size_t n, std::size_t align) {
-    if (g_ui_counting.load(std::memory_order_relaxed)) g_ui_allocs.fetch_add(1, std::memory_order_relaxed);
+void* UiCountedAlloc(usize n, usize align) {
+    if (g_ui_counting.Load(MemoryOrder::Relaxed)) g_ui_allocs.FetchAdd(1, MemoryOrder::Relaxed);
     if (n == 0) n = 1;
 #if ENGINE_PLATFORM_WINDOWS
     if (align != 0) return _aligned_malloc(n, align);
@@ -43,28 +44,28 @@ void UiAlignedFree(void* p) noexcept {
 #endif
 }
 } // namespace
-void* operator new(std::size_t n) {
+void* operator new(usize n) {
     if (void* p = UiCountedAlloc(n, 0)) return p;
     std::abort();
 }
-void* operator new(std::size_t n, std::align_val_t a) {
-    if (void* p = UiCountedAlloc(n, static_cast<std::size_t>(a))) return p;
+void* operator new(usize n, AlignVal a) {
+    if (void* p = UiCountedAlloc(n, static_cast<usize>(a))) return p;
     std::abort();
 }
-void* operator new[](std::size_t n) { return operator new(n); }
-void* operator new[](std::size_t n, std::align_val_t a) { return operator new(n, a); }
-void* operator new(std::size_t n, const std::nothrow_t&) noexcept { return UiCountedAlloc(n, 0); }
-void* operator new(std::size_t n, std::align_val_t a, const std::nothrow_t&) noexcept { return UiCountedAlloc(n, static_cast<std::size_t>(a)); }
+void* operator new[](usize n) { return operator new(n); }
+void* operator new[](usize n, AlignVal a) { return operator new(n, a); }
+void* operator new(usize n, const NoThrowTag&) noexcept { return UiCountedAlloc(n, 0); }
+void* operator new(usize n, AlignVal a, const NoThrowTag&) noexcept { return UiCountedAlloc(n, static_cast<usize>(a)); }
 void operator delete(void* p) noexcept { std::free(p); }
 void operator delete[](void* p) noexcept { std::free(p); }
-void operator delete(void* p, std::size_t) noexcept { std::free(p); }
-void operator delete[](void* p, std::size_t) noexcept { std::free(p); }
-void operator delete(void* p, std::align_val_t) noexcept { UiAlignedFree(p); }
-void operator delete(void* p, std::size_t, std::align_val_t) noexcept { UiAlignedFree(p); }
-void operator delete[](void* p, std::align_val_t) noexcept { UiAlignedFree(p); }
-void operator delete[](void* p, std::size_t, std::align_val_t) noexcept { UiAlignedFree(p); }
-void operator delete(void* p, std::align_val_t, const std::nothrow_t&) noexcept { UiAlignedFree(p); }
-void operator delete(void* p, const std::nothrow_t&) noexcept { std::free(p); }
+void operator delete(void* p, usize) noexcept { std::free(p); }
+void operator delete[](void* p, usize) noexcept { std::free(p); }
+void operator delete(void* p, AlignVal) noexcept { UiAlignedFree(p); }
+void operator delete(void* p, usize, AlignVal) noexcept { UiAlignedFree(p); }
+void operator delete[](void* p, AlignVal) noexcept { UiAlignedFree(p); }
+void operator delete[](void* p, usize, AlignVal) noexcept { UiAlignedFree(p); }
+void operator delete(void* p, AlignVal, const NoThrowTag&) noexcept { UiAlignedFree(p); }
+void operator delete(void* p, const NoThrowTag&) noexcept { std::free(p); }
 #endif
 
 using namespace engine_placeholder;
@@ -631,14 +632,14 @@ TEST_CASE("ListBox: frames that scroll within the laid-out rows allocate nothing
         h.Advance(0.016f);
     }
     const u64 layouts = list->RowLayouts();
-    g_ui_allocs.store(0);
-    g_ui_counting.store(true);
+    g_ui_allocs.Store(0);
+    g_ui_counting.Store(true);
     for (int i = 0; i < 100; ++i) {
         list->SetOffset(row * 1000 + row * static_cast<f32>(i % 10) / 20.0f);
         h.Advance(0.016f);
     }
-    g_ui_counting.store(false);
-    CHECK(g_ui_allocs.load() == 0);
+    g_ui_counting.Store(false);
+    CHECK(g_ui_allocs.Load() == 0);
     CHECK(list->RowLayouts() == layouts);
     CHECK(list->Offset() >= row * 1000);
 #endif

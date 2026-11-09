@@ -1,7 +1,6 @@
 // Phase 5 Day 74: the material system. Templates and materials are validated against the shaders' reflection; pipelines
 // are cached; bind groups are rebuilt only for the material whose texture changed. A GPU test draws two objects through
 // two materials and reads the pixels back, which also proves the per-object data is indexed by first_instance.
-#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 
@@ -23,6 +22,7 @@
 #include "renderer/material.h"
 #include "renderer/render_scene.h"
 #include "rhi/null/null_device.h"
+#include "lang/initializer_list.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -62,7 +62,7 @@ MaterialTemplateDesc TestTemplate() {
     return d;
 }
 
-PermutationKey Key(std::initializer_list<const char*> names) {
+PermutationKey Key(InitializerList<const char*> names) {
     PermutationKey key;
     ReflectionError error;
     REQUIRE(MakePermutationKey(shaders::kMaterialTestFragPermutations, names.begin(), static_cast<u32>(names.size()), &key, &error));

@@ -8,18 +8,18 @@
 
 #include <backtrace.h>
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstdlib>
 #include <cstring>
 #include <cxxabi.h>
-#include <mutex>
+#include "sync/mutex.h"
 
 namespace engine_placeholder::debug {
 
 namespace {
 
-std::atomic<backtrace_state*> g_trace_state{nullptr};
-std::mutex g_trace_init_mutex; // serializes Init and Reload (never taken by the capture and resolve paths)
+Atomic<backtrace_state*> g_trace_state{nullptr};
+Mutex g_trace_init_mutex; // serializes Init and Reload (never taken by the capture and resolve paths)
 
 // libbacktrace reports problems (a file it cannot read, bad debug information) through this callback. There is nothing
 // useful to do with them: the facade carries on with what the library has, and an address it cannot explain is shown as
@@ -54,10 +54,10 @@ void WarmUp(backtrace_state* state) {
 }
 
 backtrace_state* State() {
-    backtrace_state* state = g_trace_state.load(std::memory_order_acquire);
+    backtrace_state* state = g_trace_state.Load(MemoryOrder::Acquire);
     if (state == nullptr) {
         InitDebugFacilities();
-        state = g_trace_state.load(std::memory_order_acquire);
+        state = g_trace_state.Load(MemoryOrder::Acquire);
     }
     return state;
 }
@@ -175,11 +175,11 @@ constexpr usize kPrimeEntriesPerAddress = 8; // entries resolved per address whi
 
 void InitDebugFacilities() {
     InstallDiagnosticsHooks();
-    if (g_trace_state.load(std::memory_order_acquire) != nullptr) {
+    if (g_trace_state.Load(MemoryOrder::Acquire) != nullptr) {
         return;
     }
-    std::lock_guard<std::mutex> lock(g_trace_init_mutex);
-    if (g_trace_state.load(std::memory_order_acquire) != nullptr) {
+    LockGuard<Mutex> lock(g_trace_init_mutex);
+    if (g_trace_state.Load(MemoryOrder::Acquire) != nullptr) {
         return; // another thread finished first
     }
     RefreshLoadedModules();
@@ -193,15 +193,15 @@ void InitDebugFacilities() {
     backtrace_simple(created, 0, &CaptureFrame, &TraceError, &ctx);
     FrameInfo entries[kPrimeEntriesPerAddress * 4];
     ResolveWithState(created, trace, entries, sizeof(entries) / sizeof(entries[0]));
-    g_trace_state.store(created, std::memory_order_release);
+    g_trace_state.Store(created, MemoryOrder::Release);
 }
 
 void ReloadDebugModules() {
-    std::lock_guard<std::mutex> lock(g_trace_init_mutex);
+    LockGuard<Mutex> lock(g_trace_init_mutex);
     RefreshLoadedModules();
     backtrace_state* created = CreateState();
     WarmUp(created); // before it is published, like in InitDebugFacilities
-    g_trace_state.store(created, std::memory_order_release); // the old state stays allocated: a reader may be using it
+    g_trace_state.Store(created, MemoryOrder::Release); // the old state stays allocated: a reader may be using it
 }
 
 bool CaptureStackTrace(StackTrace& trace, u32 skip_frames) {

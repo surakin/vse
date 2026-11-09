@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include "sync/mutex.h"
 
 namespace engine_placeholder::settings {
 
@@ -21,27 +22,27 @@ void CopyDescription(const char* text, char* out, usize capacity) {
 } // namespace
 
 usize MemoryBacking::Size() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     return entries_.Size();
 }
 
 MemoryBackingPtr MakeMemoryBacking() { return MakeShared<MemoryBacking>(); }
 
 MemoryConfigStore::MemoryConfigStore() : backing_(MakeMemoryBacking()) {
-    std::lock_guard<std::recursive_mutex> lock(backing_->notify_mutex_);
+    LockGuard<RecursiveMutex> lock(backing_->notify_mutex_);
     backing_->stores_.Push(this);
 }
 
 MemoryConfigStore::MemoryConfigStore(MemoryBackingPtr backing) : backing_(static_cast<MemoryBackingPtr&&>(backing)) {
-    std::lock_guard<std::recursive_mutex> lock(backing_->notify_mutex_);
+    LockGuard<RecursiveMutex> lock(backing_->notify_mutex_);
     backing_->stores_.Push(this);
     // The working copy starts from the durable state, as after a Load.
-    std::lock_guard<std::mutex> data(backing_->mutex_);
+    LockGuard<Mutex> data(backing_->mutex_);
     for (usize i = 0; i < backing_->entries_.Size(); ++i) working_.Push(backing_->entries_[i]);
 }
 
 MemoryConfigStore::~MemoryConfigStore() {
-    std::lock_guard<std::recursive_mutex> lock(backing_->notify_mutex_); // no listener call is running on this store after this returns
+    LockGuard<RecursiveMutex> lock(backing_->notify_mutex_); // no listener call is running on this store after this returns
     for (usize i = 0; i < backing_->stores_.Size(); ++i) {
         if (backing_->stores_[i] == this) {
             backing_->stores_.Remove(i);
@@ -76,7 +77,7 @@ void MemoryConfigStore::Stage(const Op& op) {
 
 Status MemoryConfigStore::Load() {
     working_.Clear();
-    std::lock_guard<std::mutex> lock(backing_->mutex_);
+    LockGuard<Mutex> lock(backing_->mutex_);
     for (usize i = 0; i < backing_->entries_.Size(); ++i) working_.Push(backing_->entries_[i]);
     staged_.Clear();
     return Status();
@@ -137,7 +138,7 @@ Status MemoryConfigStore::Commit(const CommitOptions&) {
     s.done = s.total;
     if (staged_.Empty()) return s;
     {
-        std::lock_guard<std::mutex> lock(backing_->mutex_);
+        LockGuard<Mutex> lock(backing_->mutex_);
         for (usize i = 0; i < staged_.Size(); ++i) {
             const Op& op = staged_[i];
             usize at = 0;
@@ -153,7 +154,7 @@ Status MemoryConfigStore::Commit(const CommitOptions&) {
     }
     staged_.Clear();
     // Tell the other stores on this backing (not this one) that the durable state changed.
-    std::lock_guard<std::recursive_mutex> lock(backing_->notify_mutex_);
+    LockGuard<RecursiveMutex> lock(backing_->notify_mutex_);
     for (usize i = 0; i < backing_->stores_.Size(); ++i) {
         MemoryConfigStore* other = backing_->stores_[i];
         if (other != this && other->listener_ != nullptr) other->listener_(other->listener_user_);
@@ -162,7 +163,7 @@ Status MemoryConfigStore::Commit(const CommitOptions&) {
 }
 
 Status MemoryConfigStore::SetChangeListener(ChangeListener listener, void* user) {
-    std::lock_guard<std::recursive_mutex> lock(backing_->notify_mutex_);
+    LockGuard<RecursiveMutex> lock(backing_->notify_mutex_);
     listener_ = listener;
     listener_user_ = user;
     return Status();

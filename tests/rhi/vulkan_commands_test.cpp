@@ -1,6 +1,6 @@
 #include <cstring>
 #include <memory>
-#include <thread>
+#include "sync/thread.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -317,17 +317,17 @@ TEST_CASE("Vulkan: plain threads can record, and thread slots are recycled", "[r
 
     device->BeginFrame();
     CommandList* lists[kThreads] = {};
-    std::thread threads[kThreads];
+    Thread threads[kThreads];
     for (int t = 0; t < kThreads; ++t) {
-        threads[t] = std::thread([&, t] {
+        threads[t] = Thread([&, t] {
             lists[t] = device->CreateCommandList();
             lists[t]->Begin();
             lists[t]->Barrier(dst[t], ResourceState::Undefined, ResourceState::CopyDst);
             lists[t]->End();
         });
     }
-    for (std::thread& th : threads) {
-        th.join();
+    for (Thread& th : threads) {
+        th.Join();
     }
     for (int t = 0; t < kThreads; ++t) {
         REQUIRE(lists[t] != nullptr);
@@ -341,7 +341,7 @@ TEST_CASE("Vulkan: plain threads can record, and thread slots are recycled", "[r
     device->BeginFrame();
     for (usize i = 0; i < VulkanDevice::kThreadSlots * 2; ++i) {
         CommandList* got = nullptr;
-        std::thread([&] { got = device->CreateCommandList(); }).join();
+        Thread([&] { got = device->CreateCommandList(); }).Join();
         REQUIRE(got != nullptr);
     }
     // The lists above were never begun or submitted, which is fine: the pools are reset when their frame slot comes round.

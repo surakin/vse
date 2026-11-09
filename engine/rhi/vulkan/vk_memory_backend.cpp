@@ -1,16 +1,17 @@
 #include "rhi/vulkan/vk_memory_backend.h"
 
 #include "rhi/vulkan/vk_result.h"
+#include "sync/atomic.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
-VulkanMemoryBackend::VulkanMemoryBackend(const VkDeviceFns* fns, VkDevice device, std::atomic<bool>* device_lost)
+VulkanMemoryBackend::VulkanMemoryBackend(const VkDeviceFns* fns, VkDevice device, Atomic<bool>* device_lost)
     : fns_(fns), device_(device), device_lost_(device_lost) {}
 
 MemoryResult VulkanMemoryBackend::Allocate(u32 memory_type, u64 size, bool map, u64 dedicated_buffer, u64 dedicated_image,
                                            BackendAllocation* out) {
-    const u64 attempt = attempts_.fetch_add(1, std::memory_order_relaxed) + 1;
-    const u32 fail_from = fail_from_.load(std::memory_order_relaxed);
+    const u64 attempt = attempts_.FetchAdd(1, MemoryOrder::Relaxed) + 1;
+    const u32 fail_from = fail_from_.Load(MemoryOrder::Relaxed);
     if (fail_from != 0 && attempt >= fail_from) {
         return MemoryResult::OutOfDeviceMemory; // injected
     }
@@ -29,7 +30,7 @@ MemoryResult VulkanMemoryBackend::Allocate(u32 memory_type, u64 size, bool map, 
     VkResult result = fns_->AllocateMemory(device_, &info, nullptr, &memory);
     if (result != VK_SUCCESS) {
         if (result == VK_ERROR_DEVICE_LOST && device_lost_ != nullptr) {
-            device_lost_->store(true, std::memory_order_relaxed);
+            device_lost_->Store(true, MemoryOrder::Relaxed);
         }
         // Failures here are expected under memory pressure; the allocator logs them with the heap breakdown.
         if (result == VK_ERROR_OUT_OF_DEVICE_MEMORY) {
@@ -48,7 +49,7 @@ MemoryResult VulkanMemoryBackend::Allocate(u32 memory_type, u64 size, bool map, 
         if (result != VK_SUCCESS) {
             fns_->FreeMemory(device_, memory, nullptr);
             if (result == VK_ERROR_DEVICE_LOST && device_lost_ != nullptr) {
-                device_lost_->store(true, std::memory_order_relaxed);
+                device_lost_->Store(true, MemoryOrder::Relaxed);
             }
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
                 return MemoryResult::OutOfHostMemory;
@@ -60,8 +61,8 @@ MemoryResult VulkanMemoryBackend::Allocate(u32 memory_type, u64 size, bool map, 
             return MemoryResult::Failed;
         }
     }
-    allocate_calls_.fetch_add(1, std::memory_order_relaxed);
-    live_.fetch_add(1, std::memory_order_relaxed);
+    allocate_calls_.FetchAdd(1, MemoryOrder::Relaxed);
+    live_.FetchAdd(1, MemoryOrder::Relaxed);
     out->handle = HandleToU64(memory);
     out->mapped = mapped;
     return MemoryResult::Ok;
@@ -73,7 +74,7 @@ void VulkanMemoryBackend::Free(const BackendAllocation& allocation) {
         fns_->UnmapMemory(device_, memory);
     }
     fns_->FreeMemory(device_, memory, nullptr);
-    live_.fetch_sub(1, std::memory_order_relaxed);
+    live_.FetchSub(1, MemoryOrder::Relaxed);
 }
 
 } // namespace engine_placeholder::rhi::vulkan

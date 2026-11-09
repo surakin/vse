@@ -4,6 +4,15 @@
 module foundation/memory "Foundation: Memory"
   header engine/foundation/mem/*.h
 
+module foundation/lang "Foundation: Language support"
+  header engine/foundation/lang/*.h
+
+module foundation/cstr "Foundation: C library"
+  header engine/foundation/cstr/*.h
+
+module foundation/sync "Foundation: Synchronization"
+  header engine/foundation/sync/*.h
+
 module foundation/containers "Foundation: Containers"
   header engine/foundation/containers/*.h
   header engine/foundation/algorithm.h

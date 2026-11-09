@@ -10,6 +10,7 @@
 #include "rhi/vulkan/vk_xlib_surface.h"
 #endif
 #include "rhi/vulkan/vulkan_device.h"
+#include "sync/atomic.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
@@ -66,7 +67,7 @@ bool VulkanDevice::CreateSurface(const os::NativeWindowInfo& native) {
 
 bool VulkanDevice::RecreateSurface(const os::Window* window) {
     ENGINE_ASSERT(!swapchain_, "RecreateSurface: destroy the swapchain first");
-    ENGINE_ASSERT(!frame_open_.load(std::memory_order_acquire), "RecreateSurface: called between BeginFrame and EndFrame");
+    ENGINE_ASSERT(!frame_open_.Load(MemoryOrder::Acquire), "RecreateSurface: called between BeginFrame and EndFrame");
     if (window == nullptr) {
         RhiLog(LogVerbosity::Error, "RecreateSurface: no window");
         return false;
@@ -101,7 +102,7 @@ Swapchain* VulkanDevice::CreateSwapchain(const SwapchainDesc& desc) {
         return nullptr;
     }
     swapchain_ = VulkanSwapchain::Create(this, desc);
-    swapchain_live_.store(swapchain_ ? 1 : 0, std::memory_order_release);
+    swapchain_live_.Store(swapchain_ ? 1 : 0, MemoryOrder::Release);
     return swapchain_.Get();
 }
 
@@ -111,7 +112,7 @@ void VulkanDevice::DestroySwapchain(Swapchain* swapchain) {
     }
     ENGINE_ASSERT(swapchain == swapchain_.Get(), "DestroySwapchain: not this device's swapchain");
     swapchain_.Reset();
-    swapchain_live_.store(0, std::memory_order_release);
+    swapchain_live_.Store(0, MemoryOrder::Release);
 }
 
 } // namespace engine_placeholder::rhi::vulkan

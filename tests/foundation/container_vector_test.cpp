@@ -6,6 +6,7 @@
 #include "mem/heap_allocator.h"
 #include "os/os.h"
 #include "types.h"
+#include "lang/utility.h"
 
 using engine_placeholder::ArenaAllocator;
 using engine_placeholder::Vector;
@@ -267,7 +268,7 @@ TEST_CASE("Vector: a Free-capable allocator gets every block back on growth, mov
 
         Vector<usize, CountingHeap> other(heap);
         other.Push(1);
-        v = std::move(other); // the old 1000-element block must be released here
+        v = engine_placeholder::Move(other); // the old 1000-element block must be released here
         REQUIRE(heap.allocs == heap.frees + 1);
         REQUIRE(v.Size() == 1);
     }

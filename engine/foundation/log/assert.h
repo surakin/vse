@@ -3,7 +3,7 @@
 #include "debug/compiler.h"
 #include "types.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 
 //! The assertion family and its failure handler, split out of log.h so low-level headers can assert without depending
 //! on the string module.
@@ -178,8 +178,8 @@ struct EnsureSite {
     const char* condition;
     const char* message;
     const char* function = nullptr;
-    std::atomic<u32> count{0};       // every failure; may wrap, which is harmless
-    std::atomic<bool> reported{false}; // set by the first failure; decides who links and reports, whatever `count` does
+    Atomic<u32> count{0};       // every failure; may wrap, which is harmless
+    Atomic<bool> reported{false}; // set by the first failure; decides who links and reports, whatever `count` does
     EnsureSite* next = nullptr;
 };
 

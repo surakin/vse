@@ -1,9 +1,9 @@
-#include <atomic>
+#include "sync/atomic.h"
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <thread>
+#include "sync/thread.h"
 #include "build_defs.h"
 
 #if !ENGINE_PLATFORM_WINDOWS
@@ -55,7 +55,7 @@ struct ReadOutcome {
     bool data_non_null = false;
     bool on_participant = false;
     bool on_io_thread = true;
-    std::atomic<int> done{0};
+    Atomic<int> done{0};
 };
 
 Job ReadJob(Scheduler* s, const Text* path, ReadOutcome* out) {
@@ -67,13 +67,13 @@ Job ReadJob(Scheduler* s, const Text* path, ReadOutcome* out) {
     for (usize i = 0; match && i < r.size; ++i) match = r.data[i] == PatternByte(i);
     out->content_matches = match;
     out->on_participant = WorkerPool::IsParticipantThread();
-    out->on_io_thread = std::this_thread::get_id() == s->Io().ThreadId();
-    out->done.fetch_add(1, std::memory_order_release);
+    out->on_io_thread = ThisThread::Id() == s->Io().ThreadId();
+    out->done.FetchAdd(1, MemoryOrder::Release);
 }
 
 #if !ENGINE_PLATFORM_WINDOWS // (only the FIFO case uses it)
-Job ComputeJob(std::atomic<int>* counter) {
-    counter->fetch_add(1, std::memory_order_release);
+Job ComputeJob(Atomic<int>* counter) {
+    counter->FetchAdd(1, MemoryOrder::Release);
     co_return;
 }
 #endif
@@ -84,7 +84,7 @@ void HelpUntilAllDone(Scheduler& s, Vector<ReadOutcome>& outs) {
         [](void* u) {
             Vector<ReadOutcome>& all = *static_cast<Vector<ReadOutcome>*>(u);
             for (usize i = 0; i < all.Size(); ++i) {
-                if (all[i].done.load(std::memory_order_acquire) == 0) return false;
+                if (all[i].done.Load(MemoryOrder::Acquire) == 0) return false;
             }
             return true;
         },
@@ -149,10 +149,10 @@ TEST_CASE("A missing file, an over-long path and an oversized file fail cleanly"
 }
 
 namespace {
-Job ReadTinyArena(Scheduler* s, const Text* path, bool* ok, std::atomic<int>* done) {
+Job ReadTinyArena(Scheduler* s, const Text* path, bool* ok, Atomic<int>* done) {
     FileReadResult r = co_await ReadFileAsync(*s, path->View(), 4096);
     *ok = r.ok;
-    done->fetch_add(1, std::memory_order_release);
+    done->FetchAdd(1, MemoryOrder::Release);
 }
 } // namespace
 
@@ -162,7 +162,7 @@ TEST_CASE("A file bigger than max_bytes fails instead of overrunning", "[jobs][i
     WriteFile(path, 100'000);
     auto s = AsyncIoTestMakeScheduler(2);
     bool ok = true;
-    std::atomic<int> done{0};
+    Atomic<int> done{0};
     s->Submit(ReadTinyArena(s.Get(), &path, &ok, &done));
     s->HelpUntil(done, 1);
     REQUIRE_FALSE(ok);
@@ -231,12 +231,12 @@ TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "
                      &clock);
 
         // Unrelated compute work completes while the read is in flight.
-        std::atomic<int> counter{0};
+        Atomic<int> counter{0};
         constexpr int kJobs = 2000;
         for (int i = 0; i < kJobs; ++i) s->Submit(ComputeJob(&counter));
         s->HelpUntil(counter, kJobs);
-        REQUIRE(counter.load() == kJobs);
-        REQUIRE(blocked.done.load() == 0); // the read is still stuck in the OS
+        REQUIRE(counter.Load() == kJobs);
+        REQUIRE(blocked.done.Load() == 0); // the read is still stuck in the OS
 
         // Release it. O_NONBLOCK|O_WRONLY fails with ENXIO until a reader
         // has the FIFO open, so retrying doubles as "the I/O thread
@@ -265,17 +265,17 @@ TEST_CASE("Compute jobs keep running while a slow read blocks the I/O thread", "
 TEST_CASE("The I/O thread is not a participant", "[jobs][io]") {
     auto s = AsyncIoTestMakeScheduler(2);
     struct Probe : IoRequest {
-        std::atomic<int> is_participant{-1};
-        std::atomic<int> done{0};
+        Atomic<int> is_participant{-1};
+        Atomic<int> done{0};
     } probe;
     probe.run = [](IoRequest* r) {
         auto* p = static_cast<Probe*>(r);
-        p->is_participant.store(WorkerPool::IsParticipantThread() ? 1 : 0);
-        p->done.store(1, std::memory_order_release);
+        p->is_participant.Store(WorkerPool::IsParticipantThread() ? 1 : 0);
+        p->done.Store(1, MemoryOrder::Release);
     };
     REQUIRE(s->Io().Enqueue(&probe));
     s->HelpUntil(probe.done, 1);
-    REQUIRE(probe.is_participant.load() == 0);
+    REQUIRE(probe.is_participant.Load() == 0);
 }
 
 TEST_CASE("Shutdown drains queued reads and frame stats balance", "[jobs][io]") {
@@ -295,19 +295,19 @@ TEST_CASE("Shutdown drains queued reads and frame stats balance", "[jobs][io]") 
 
 TEST_CASE("IoThread::Shutdown runs everything already queued, then rejects new requests", "[jobs][io]") {
     struct Req : IoRequest {
-        std::atomic<int>* ran;
+        Atomic<int>* ran;
     };
-    std::atomic<int> ran{0};
+    Atomic<int> ran{0};
     Req reqs[50];
     {
         IoThread io;
         for (auto& r : reqs) {
             r.ran = &ran;
-            r.run = [](IoRequest* x) { static_cast<Req*>(x)->ran->fetch_add(1); };
+            r.run = [](IoRequest* x) { static_cast<Req*>(x)->ran->FetchAdd(1); };
             REQUIRE(io.Enqueue(&r));
         }
         io.Shutdown();
-        REQUIRE(ran.load() == 50);
+        REQUIRE(ran.Load() == 50);
         io.Shutdown(); // idempotent
         Req late;
         late.ran = &ran;
@@ -319,10 +319,10 @@ TEST_CASE("IoThread::Shutdown runs everything already queued, then rejects new r
 TEST_CASE("Concurrent IoThread::Shutdown callers both return only after the join", "[jobs][io]") {
     for (int round = 0; round < 50; ++round) {
         IoThread io;
-        std::thread a([&] { io.Shutdown(); });
-        std::thread b([&] { io.Shutdown(); });
-        a.join();
-        b.join();
+        Thread a([&] { io.Shutdown(); });
+        Thread b([&] { io.Shutdown(); });
+        a.Join();
+        b.Join();
     }
 }
 

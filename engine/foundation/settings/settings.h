@@ -13,7 +13,7 @@
 //! settings::SaveOnExit save(settings);                 // writes the user's file at the end of the scope if anything changed
 //! ```
 
-#include <mutex>
+#include "sync/mutex.h"
 
 #include "containers/shared_ptr.h"
 #include "io/path.h"
@@ -266,7 +266,7 @@ public:
     /// Returns the result of the most recent `Save` (including the ones `SaveIfChanged`, `SaveOnExit` and autosave make), so an application can tell the
     /// user that saving is failing (`TooNew`, `PermissionDenied`, ...). Success until a save has failed.
     Status LastSaveStatus() const {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         return last_save_status_;
     }
     /// Saves only if a change was made since the last load or save.
@@ -289,8 +289,8 @@ private:
     Registry* registry_;
     // `op_` serializes every operation that changes or reads the layer stack (it is recursive, so a listener or apply function may call Set);
     // `mutex_` guards only the published snapshot and the dirty flag, so Snapshot() never waits behind an operation.
-    mutable std::recursive_mutex op_;
-    mutable std::mutex mutex_;
+    mutable RecursiveMutex op_;
+    mutable Mutex mutex_;
     LayerStack stack_;
     CommandLineResult command_line_;
     SharedPtr<const SettingsSnapshot> snapshot_;

@@ -3,7 +3,7 @@
 #include "containers/vector.h"
 #include "envelope.h"
 
-#include <cstdint>
+#include "types.h"
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -118,8 +118,8 @@ TEST_CASE("Damaged envelopes are rejected, never read out of range", "[crash-ext
 
 TEST_CASE("Cutting a real envelope at every length never reads outside it and only a whole minidump is accepted", "[crash-extract][debug]") {
     const std::string full = ExtractEnvelope();
-    const std::size_t dump_end = full.size() - 1; // the payload ends before the final newline
-    for (std::size_t length = 0; length <= full.size(); ++length) {
+    const engine_placeholder::usize dump_end = full.size() - 1; // the payload ends before the final newline
+    for (engine_placeholder::usize length = 0; length <= full.size(); ++length) {
         // A copy of exactly `length` bytes, so any read past its end is outside an allocation (ASan reports it).
         std::string cut(full.data(), length);
         Vector<char> storage; // reserved to exactly the length, so the capacity ends where the data does
@@ -142,7 +142,7 @@ TEST_CASE("Cutting a real envelope at every length never reads outside it and on
 
 TEST_CASE("Flipping any byte of a real envelope never reads outside it", "[crash-extract][debug]") {
     const std::string full = ExtractEnvelope();
-    for (std::size_t i = 0; i < full.size(); ++i) {
+    for (engine_placeholder::usize i = 0; i < full.size(); ++i) {
         for (unsigned char flip : {static_cast<unsigned char>(0xff), static_cast<unsigned char>(0x20), static_cast<unsigned char>(0x01)}) {
             Vector<char> storage;
             storage.Reserve(full.size());
@@ -161,7 +161,7 @@ TEST_CASE("Flipping any byte of a real envelope never reads outside it", "[crash
 }
 
 TEST_CASE("Random bytes are rejected without a crash", "[crash-extract][debug]") {
-    std::uint32_t state = 12345;
+    engine_placeholder::u32 state = 12345;
     for (int round = 0; round < 200; ++round) {
         Vector<char> storage;
         storage.Reserve(257);

@@ -2,7 +2,6 @@
 
 #include <cstdio>
 #include <cstring>
-#include <new>
 
 #include "log/diagnostics_hooks.h"
 #include "jobs/jobs_log.h"
@@ -11,14 +10,17 @@
 #include "log/assert.h"
 #include "io/file.h"
 #include "os/os.h"
+#include "lang/utility.h"
+#include "sync/mutex.h"
+#include "sync/thread.h"
 
 namespace engine_placeholder::jobs {
 
 // ---- IoThread -----------------------------------------------------------
 
 IoThread::IoThread() {
-    thread_ = std::thread([this] { Loop(); });
-    thread_id_ = thread_.get_id();
+    thread_ = Thread([this] { Loop(); });
+    thread_id_ = thread_.Id();
 }
 
 IoThread::~IoThread() { Shutdown(); } // Shutdown also withdraws this thread as the default file executor
@@ -26,7 +28,7 @@ IoThread::~IoThread() { Shutdown(); } // Shutdown also withdraws this thread as 
 bool IoThread::Enqueue(IoRequest* request) {
     request->next = nullptr;
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         if (stopping_) return false;
         if (tail_ != nullptr) {
             tail_->next = request;
@@ -35,21 +37,21 @@ bool IoThread::Enqueue(IoRequest* request) {
         }
         tail_ = request;
     }
-    cv_.notify_one();
+    cv_.NotifyOne();
     return true;
 }
 
 void IoThread::Shutdown() {
     io::ClearDefaultExecutorIf(this); // files must not be handed to a stopped executor
-    std::lock_guard<std::mutex> serialize(shutdown_mutex_);
+    LockGuard<Mutex> serialize(shutdown_mutex_);
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         if (joined_) return;
         joined_ = true;
         stopping_ = true;
     }
-    cv_.notify_all();
-    if (thread_.joinable()) thread_.join();
+    cv_.NotifyAll();
+    if (thread_.Joinable()) thread_.Join();
 }
 
 void IoThread::Loop() {
@@ -57,8 +59,8 @@ void IoThread::Loop() {
     for (;;) {
         IoRequest* req = nullptr;
         {
-            std::unique_lock<std::mutex> lock(mutex_);
-            cv_.wait(lock, [&] { return head_ != nullptr || stopping_; });
+            UniqueLock<Mutex> lock(mutex_);
+            cv_.Wait(lock, [&] { return head_ != nullptr || stopping_; });
             if (head_ == nullptr) return; // stopping and drained
             req = head_;
             head_ = req->next;
@@ -146,12 +148,12 @@ ReadFileAwaitable ReadFileAsync(Scheduler& scheduler, StringView path, usize max
         st->path[path.Length()] = '\0';
         st->path_len = path.Length();
     }
-    return ReadFileAwaitable(std::move(st));
+    return ReadFileAwaitable(Move(st));
 }
 
-ReadFileAwaitable::ReadFileAwaitable(UniquePtr<ReadState> state) : state_(std::move(state)) {}
+ReadFileAwaitable::ReadFileAwaitable(UniquePtr<ReadState> state) : state_(Move(state)) {}
 
-ReadFileAwaitable::ReadFileAwaitable(ReadFileAwaitable&& other) noexcept : state_(std::move(other.state_)) {}
+ReadFileAwaitable::ReadFileAwaitable(ReadFileAwaitable&& other) noexcept : state_(Move(other.state_)) {}
 
 ReadFileAwaitable::~ReadFileAwaitable() = default;
 
@@ -188,7 +190,7 @@ FileReadResult ReadFileAwaitable::await_resume() noexcept {
     r.ok = st->ok;
     r.data = st->data;
     r.size = st->size;
-    r.state_ = std::move(state_); // ownership of the state moves into the result
+    r.state_ = Move(state_); // ownership of the state moves into the result
     return r;
 }
 
@@ -197,7 +199,7 @@ FileReadResult ReadFileAwaitable::await_resume() noexcept {
 FileReadResult::~FileReadResult() = default;
 
 FileReadResult::FileReadResult(FileReadResult&& o) noexcept
-    : ok(o.ok), data(o.data), size(o.size), state_(std::move(o.state_)) {
+    : ok(o.ok), data(o.data), size(o.size), state_(Move(o.state_)) {
     o.data = nullptr;
     o.ok = false;
     o.size = 0;
@@ -208,7 +210,7 @@ FileReadResult& FileReadResult::operator=(FileReadResult&& o) noexcept {
         ok = o.ok;
         data = o.data;
         size = o.size;
-        state_ = std::move(o.state_);
+        state_ = Move(o.state_);
         o.data = nullptr;
         o.ok = false;
         o.size = 0;

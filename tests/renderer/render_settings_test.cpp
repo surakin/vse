@@ -3,7 +3,7 @@
 
 #include <cstdio>
 #include <cstring>
-#include <limits>
+#include "lang/limits.h"
 #include <string>
 
 #include "renderer/render_settings.h"
@@ -99,7 +99,7 @@ TEST_CASE("registration rejects bad declarations", "[render_settings]") {
     bad = SettingDesc{};
     bad.name = "nan_float";
     bad.type = SettingType::Float;
-    bad.max_float = std::numeric_limits<f32>::infinity();
+    bad.max_float = Limits<f32>::Infinity();
     CHECK_FALSE(r.Register(bad).IsValid());
     CHECK(r.Count() == 1);
 }
@@ -135,8 +135,8 @@ TEST_CASE("typed setters validate type, range and text", "[render_settings]") {
     CHECK(s.SetBool(SettingId{}, true) == SetStatus::UnknownId);
     CHECK(s.SetFloat(settings::kRenderScale, 5.0f) == SetStatus::Clamped);
     CHECK(s.GetFloat(settings::kRenderScale) == 2.0f);
-    CHECK(s.SetFloat(settings::kRenderScale, std::numeric_limits<f32>::quiet_NaN()) == SetStatus::OutOfRange);
-    CHECK(s.SetFloat(settings::kRenderScale, std::numeric_limits<f32>::infinity()) == SetStatus::OutOfRange);
+    CHECK(s.SetFloat(settings::kRenderScale, Limits<f32>::QuietNaN()) == SetStatus::OutOfRange);
+    CHECK(s.SetFloat(settings::kRenderScale, Limits<f32>::Infinity()) == SetStatus::OutOfRange);
     CHECK(s.GetFloat(settings::kRenderScale) == 2.0f);
     CHECK(s.SetText(settings::kAdapter, "10de:2504") == SetStatus::Ok);
     CHECK(std::strcmp(s.GetText(settings::kAdapter), "10de:2504") == 0);

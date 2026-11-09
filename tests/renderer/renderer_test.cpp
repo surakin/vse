@@ -1,11 +1,11 @@
 // Phase 5 Day 77: the frame loop and parallel recording. The null device is the oracle for ordering (it validates every
 // barrier's `before` state against the lists submitted so far, in order) and counts live objects; a GPU test compares
 // serial and parallel recording pixel for pixel and sweeps allocation failures.
-#include <atomic>
+#include "sync/atomic.h"
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
-#include <thread>
+#include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -195,8 +195,8 @@ namespace {
 constexpr u32 kIndependent = 48;
 
 struct ThreadLog {
-    std::atomic<u32> counts{0};
-    std::thread::id ids[kIndependent];
+    Atomic<u32> counts{0};
+    ThreadId ids[kIndependent];
 };
 
 struct IndependentPass {
@@ -206,8 +206,8 @@ struct IndependentPass {
 
 void RecordThread(const PassExecuteContext& context, void* user) {
     IndependentPass* pass = static_cast<IndependentPass*>(user);
-    pass->log->ids[pass->index] = std::this_thread::get_id();
-    pass->log->counts.fetch_add(1);
+    pass->log->ids[pass->index] = ThisThread::Id();
+    pass->log->counts.FetchAdd(1);
     // A little work so the other participants get to steal passes.
     const auto until = std::chrono::steady_clock::now() + std::chrono::microseconds(300);
     while (std::chrono::steady_clock::now() < until) {
@@ -255,9 +255,9 @@ TEST_CASE("Independent passes record on several threads, their lists submitted i
         REQUIRE(graph.ExecuteParallel(&pool, device.Get(), &scheduler, &fence));
         device->EndFrame();
         CHECK(fence != 0);
-        CHECK(log.counts.load() == kIndependent);
+        CHECK(log.counts.Load() == kIndependent);
         CHECK(device->ErrorCount() == 0);
-        Vector<std::thread::id> distinct;
+        Vector<ThreadId> distinct;
         for (u32 i = 0; i < kIndependent; ++i) {
             bool seen = false;
             for (usize j = 0; j < distinct.Size(); ++j) seen = seen || distinct[j] == log.ids[i];

@@ -2,7 +2,8 @@
 
 #include "debug/crash_handler.h"
 
-#include <type_traits>
+#include "lang/traits.h"
+#include "lang/utility.h"
 
 using namespace engine_placeholder::debug;
 
@@ -11,25 +12,25 @@ using namespace engine_placeholder::debug;
 namespace {
 
 template <typename T, typename = void>
-struct HasDsn : std::false_type {};
+struct HasDsn : FalseType {};
 template <typename T>
-struct HasDsn<T, std::void_t<decltype(std::declval<T&>().dsn)>> : std::true_type {};
+struct HasDsn<T, VoidType<decltype(Declval<T&>().dsn)>> : TrueType {};
 template <typename T, typename = void>
-struct HasUrl : std::false_type {};
+struct HasUrl : FalseType {};
 template <typename T>
-struct HasUrl<T, std::void_t<decltype(std::declval<T&>().url)>> : std::true_type {};
+struct HasUrl<T, VoidType<decltype(Declval<T&>().url)>> : TrueType {};
 template <typename T, typename = void>
-struct HasEndpoint : std::false_type {};
+struct HasEndpoint : FalseType {};
 template <typename T>
-struct HasEndpoint<T, std::void_t<decltype(std::declval<T&>().endpoint)>> : std::true_type {};
+struct HasEndpoint<T, VoidType<decltype(Declval<T&>().endpoint)>> : TrueType {};
 template <typename T, typename = void>
-struct HasTransport : std::false_type {};
+struct HasTransport : FalseType {};
 template <typename T>
-struct HasTransport<T, std::void_t<decltype(std::declval<T&>().transport)>> : std::true_type {};
+struct HasTransport<T, VoidType<decltype(Declval<T&>().transport)>> : TrueType {};
 template <typename T, typename = void>
-struct HasUpload : std::false_type {};
+struct HasUpload : FalseType {};
 template <typename T>
-struct HasUpload<T, std::void_t<decltype(std::declval<T&>().upload)>> : std::true_type {};
+struct HasUpload<T, VoidType<decltype(Declval<T&>().upload)>> : TrueType {};
 
 static_assert(!HasDsn<CrashHandlerOptions>::value, "crash handler options must not carry a DSN");
 static_assert(!HasUrl<CrashHandlerOptions>::value, "crash handler options must not carry a URL");

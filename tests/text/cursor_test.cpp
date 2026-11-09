@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cstring>
-#include <limits>
+#include "lang/limits.h"
 
 #include "font_support.h"
 #include "text/cursor.h"
@@ -269,11 +269,11 @@ TEST_CASE("Extreme and not-a-number points are clamped, not converted", "[text][
     Opened o;
     const TextLayout layout = CLay(o, "ab\ncd");
     const f32 huge = 1.0e30f;
-    const f32 nan = std::numeric_limits<f32>::quiet_NaN(); // constant arithmetic that overflows is an error on MSVC (C4056)
+    const f32 nan = Limits<f32>::QuietNaN(); // constant arithmetic that overflows is an error on MSVC (C4056)
     CHECK(OffsetAtPoint(layout, 0, huge) == 3);
     CHECK(OffsetAtPoint(layout, huge, huge) == layout.byte_length);
     CHECK(OffsetAtPoint(layout, 0, -huge) == 0);
     CHECK(OffsetAtPoint(layout, 0, nan) == 0);
-    const f32 inf = std::numeric_limits<f32>::infinity();
+    const f32 inf = Limits<f32>::Infinity();
     CHECK(OffsetAtPoint(layout, inf, inf) == layout.byte_length);
 }

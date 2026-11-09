@@ -2,10 +2,10 @@
 
 #include "os/os.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstring>
 #include <link.h>
-#include <mutex>
+#include "sync/mutex.h"
 #include <unistd.h>
 
 namespace engine_placeholder::debug {
@@ -22,8 +22,8 @@ struct ModuleTable {
     const LoadedModule* Entries() const { return reinterpret_cast<const LoadedModule*>(this + 1); }
 };
 
-std::atomic<const ModuleTable*> g_module_table{nullptr};
-std::mutex g_module_refresh_mutex;
+Atomic<const ModuleTable*> g_module_table{nullptr};
+Mutex g_module_refresh_mutex;
 
 int CountModule(struct dl_phdr_info*, size_t, void* data) {
     ++*static_cast<u32*>(data);
@@ -70,7 +70,7 @@ int CollectModule(struct dl_phdr_info* info, size_t, void* data) {
 } // namespace
 
 void RefreshLoadedModules() {
-    std::lock_guard<std::mutex> lock(g_module_refresh_mutex);
+    LockGuard<Mutex> lock(g_module_refresh_mutex);
     // Count first so the table holds every loaded object, however many there are (a graphics driver pulls in dozens).
     u32 objects = 0;
     ::dl_iterate_phdr(&CountModule, &objects);
@@ -84,11 +84,11 @@ void RefreshLoadedModules() {
     table->count = 0;
     table->capacity = objects;
     ::dl_iterate_phdr(&CollectModule, table);
-    g_module_table.store(table, std::memory_order_release);
+    g_module_table.Store(table, MemoryOrder::Release);
 }
 
 bool FindLoadedModule(u64 address, LoadedModule* out) {
-    const ModuleTable* table = g_module_table.load(std::memory_order_acquire);
+    const ModuleTable* table = g_module_table.Load(MemoryOrder::Acquire);
     if (table == nullptr) {
         return false;
     }

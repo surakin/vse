@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstdio>
-#include <thread>
+#include "sync/thread.h"
 
 #include "font_support.h"
 #include "log/log.h"
@@ -88,14 +88,14 @@ TEST_CASE("The log capture copies new lines and drops the oldest past its limit"
 TEST_CASE("The log capture follows a thread that logs while the UI reads", "[ui][debug_overlay]") {
     OverlayQuiet quiet;
     LogCapture c;
-    std::atomic<bool> done{false};
-    std::thread writer([&done] {
+    Atomic<bool> done{false};
+    Thread writer([&done] {
         for (int i = 0; i < 200; ++i) OverlayLog("from another thread");
-        done.store(true);
+        done.Store(true);
     });
     usize seen = 0;
-    while (!done.load()) seen += c.Poll();
-    writer.join();
+    while (!done.Load()) seen += c.Poll();
+    writer.Join();
     seen += c.Poll();
     CHECK(seen == 200); // fewer than the ring holds, so none may be lost to a poll that meets a line half written
     CHECK(c.Count() <= LogCapture::kMaxLines);

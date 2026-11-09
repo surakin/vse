@@ -4,6 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "rhi/handle_pool.h"
+#include "lang/utility.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -167,10 +168,10 @@ TEST_CASE("Allocation fails cleanly at the capacity limit", "[rhi][pool]") {
     HandlePool<u32, TestTag> pool;
     for (u32 i = 0; i < (HandlePool<u32, TestTag>::kMaxCapacity); ++i) {
         u32 v = i;
-        REQUIRE(pool.Allocate(std::move(v)).IsValid());
+        REQUIRE(pool.Allocate(Move(v)).IsValid());
     }
     u32 extra = 1;
-    CHECK_FALSE(pool.Allocate(std::move(extra)).IsValid());
+    CHECK_FALSE(pool.Allocate(Move(extra)).IsValid());
     CHECK(pool.LiveCount() == HandlePool<u32, TestTag>::kMaxCapacity);
 }
 

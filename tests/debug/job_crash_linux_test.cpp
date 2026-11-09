@@ -9,7 +9,7 @@
 #include "os/os.h"
 #include "support/death_test_skip.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -19,8 +19,8 @@ using namespace engine_placeholder::debug;
 
 namespace {
 
-jobs::Job AssertingJob(std::atomic<int>* started) {
-    started->store(1, std::memory_order_release);
+jobs::Job AssertingJob(Atomic<int>* started) {
+    started->Store(1, MemoryOrder::Release);
     ENGINE_ASSERT(false, "assert inside a job");
     co_return;
 }
@@ -34,10 +34,10 @@ ENGINE_DEATH_TEST_FN(dt_job_assert) {
     jobs::Scheduler::Config config;
     config.participants = 2;
     jobs::Scheduler scheduler(config);
-    std::atomic<int> started{0};
+    Atomic<int> started{0};
     scheduler.Submit(AssertingJob(&started));
     // The main thread only waits; the job runs on a worker, which aborts.
-    for (int i = 0; i < 10000 && started.load() == 0; ++i) {
+    for (int i = 0; i < 10000 && started.Load() == 0; ++i) {
         os::SleepNanos(1000 * 1000);
     }
     os::SleepNanos(5ull * 1000 * 1000 * 1000);

@@ -1,13 +1,13 @@
 #include "platform/window.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 
 namespace engine_placeholder::os {
 
 namespace detail {
 u64 NextResizeSerial() {
-    static std::atomic<u64> counter{0};
-    return counter.fetch_add(1, std::memory_order_relaxed) + 1;
+    static Atomic<u64> counter{0};
+    return counter.FetchAdd(1, MemoryOrder::Relaxed) + 1;
 }
 } // namespace detail
 

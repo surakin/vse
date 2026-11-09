@@ -63,7 +63,7 @@ Tests use the engine's own types, like the code they test: `String`, `StringView
   `i128` and `Span`, so `CHECK(path == other)` and `CHECK(text == "abc")` show readable values. `String` compares with a `StringView`
   or a string literal directly. `INFO` takes a stream expression, so pass `Catch::Detail::stringify(value)` for an engine type.
 - Pass a callable with a template parameter or a function pointer plus a `void*`, not `std::function`.
-- `std::thread`, `std::mutex`, `std::condition_variable` and `std::atomic` are allowed (the engine uses them too).
+- Use the wrappers of `sync/`: `Thread`, `Mutex`, `ConditionVariable` and `Atomic<T>` (Phase 16; [Synchronization](foundation-sync.md)), not the `std::` ones.
 - Where Catch2 itself needs `std::` (the text it returns from a printer, `GENERATE` ranges), the use stays local and has a comment.
 
 The `std_container_check` gate (ctest `std_container_check`, added by Phase 10 Day 129) fails on a banned `std::` name in `engine/`, `game/`, `tools/` and the test

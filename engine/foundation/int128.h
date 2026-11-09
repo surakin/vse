@@ -1,7 +1,7 @@
 #pragma once
 
-#include <compare>
-#include <type_traits>
+#include "lang/ordering.h"
+#include "lang/traits.h"
 
 #include "string_view.h"
 #include "types.h"
@@ -72,7 +72,7 @@ struct alignas(16) u128 {
     constexpr u128() = default;
     /// Creates a value from an unsigned integer of up to 64 bits.
     template <typename T>
-        requires(std::is_integral_v<T> && std::is_unsigned_v<T> && sizeof(T) <= 8 && !std::is_same_v<T, bool>)
+        requires(IsIntegral<T> && IsUnsigned<T> && sizeof(T) <= 8 && !IsSame<T, bool>)
     constexpr u128(T value) : lo(static_cast<u64>(value)), hi(0) {}
     /// Creates a value from its high and low halves.
     static constexpr u128 FromParts(u64 high, u64 low) {
@@ -86,7 +86,7 @@ struct alignas(16) u128 {
 
     /// Converts to a built-in integer type, keeping the low bits (like a narrowing cast).
     template <typename T>
-        requires(std::is_integral_v<T> && !std::is_same_v<T, bool>)
+        requires(IsIntegral<T> && !IsSame<T, bool>)
     explicit constexpr operator T() const {
         return static_cast<T>(lo);
     }
@@ -286,7 +286,7 @@ struct alignas(16) u128 {
     /// Returns true if `a` is at least `b`.
     friend constexpr bool operator>=(u128 a, u128 b) { return !(a < b); }
     /// Three-way comparison (the order of `<`).
-    friend constexpr std::strong_ordering operator<=>(u128 a, u128 b) { return a < b ? std::strong_ordering::less : (a == b ? std::strong_ordering::equal : std::strong_ordering::greater); }
+    friend constexpr Ordering operator<=>(u128 a, u128 b) { return a < b ? Ordering::less : (a == b ? Ordering::equal : Ordering::greater); }
 
 #if ENGINE_HAS_NATIVE_INT128
     /// Returns the value as the compiler's native type (only where `ENGINE_HAS_NATIVE_INT128`).
@@ -351,11 +351,11 @@ struct alignas(16) i128 {
     constexpr i128() = default;
     /// Creates a value from a signed integer of up to 64 bits (sign-extended).
     template <typename T>
-        requires(std::is_integral_v<T> && std::is_signed_v<T> && sizeof(T) <= 8)
+        requires(IsIntegral<T> && IsSigned<T> && sizeof(T) <= 8)
     constexpr i128(T value) : lo(static_cast<u64>(static_cast<i64>(value))), hi(value < 0 ? ~u64{0} : 0) {}
     /// Creates a value from an unsigned integer of up to 64 bits.
     template <typename T>
-        requires(std::is_integral_v<T> && std::is_unsigned_v<T> && sizeof(T) <= 8 && !std::is_same_v<T, bool>)
+        requires(IsIntegral<T> && IsUnsigned<T> && sizeof(T) <= 8 && !IsSame<T, bool>)
     constexpr i128(T value) : lo(static_cast<u64>(value)), hi(0) {}
     /// Reinterprets the bits of an unsigned value.
     explicit constexpr i128(u128 value) : lo(value.lo), hi(value.hi) {}
@@ -379,7 +379,7 @@ struct alignas(16) i128 {
     constexpr u128 Magnitude() const { return IsNegative() ? -ToBits() : ToBits(); }
     /// Converts to a built-in integer type, keeping the low bits.
     template <typename T>
-        requires(std::is_integral_v<T> && !std::is_same_v<T, bool>)
+        requires(IsIntegral<T> && !IsSame<T, bool>)
     explicit constexpr operator T() const {
         return static_cast<T>(lo);
     }
@@ -499,13 +499,13 @@ struct alignas(16) i128 {
     /// Returns true if `a` is at least `b`.
     friend constexpr bool operator>=(i128 a, i128 b) { return !(a < b); }
     /// Three-way comparison (the order of `<`, signed).
-    friend constexpr std::strong_ordering operator<=>(i128 a, i128 b) { return a < b ? std::strong_ordering::less : (a == b ? std::strong_ordering::equal : std::strong_ordering::greater); }
+    friend constexpr Ordering operator<=>(i128 a, i128 b) { return a < b ? Ordering::less : (a == b ? Ordering::equal : Ordering::greater); }
 };
 
 static_assert(sizeof(u128) == 16 && sizeof(i128) == 16, "the 128-bit types are 16 bytes");
 static_assert(alignof(u128) == 16 && alignof(i128) == 16, "the 128-bit types are 16-byte aligned");
-static_assert(std::is_trivially_copyable_v<u128> && std::is_trivially_copyable_v<i128>, "the 128-bit types are plain data");
-static_assert(std::is_standard_layout_v<u128> && std::is_standard_layout_v<i128>, "the 128-bit types have a defined layout");
+static_assert(IsTriviallyCopyable<u128> && IsTriviallyCopyable<i128>, "the 128-bit types are plain data");
+static_assert(IsStandardLayout<u128> && IsStandardLayout<i128>, "the 128-bit types have a defined layout");
 
 } // inline namespace (native or portable implementation)
 

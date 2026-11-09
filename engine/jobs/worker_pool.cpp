@@ -7,6 +7,9 @@
 #include "log/diagnostics_hooks.h"
 #include "jobs/jobs_log.h"
 #include "log/assert.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
+#include "sync/thread.h"
 
 namespace engine_placeholder::jobs {
 
@@ -38,7 +41,7 @@ WorkerPool::WorkerPool(const Config& config) : config_(config) {
     participants_[0].cpu = -1;
     participants_[0].tid = detail::CurrentThreadId();
     participants_[0].owner = this;
-    constructor_thread_ = std::this_thread::get_id();
+    constructor_thread_ = ThisThread::Id();
     saved_main_identity_ = tls_current;
     tls_current = &participants_[0];
 
@@ -60,12 +63,12 @@ WorkerPool::WorkerPool(const Config& config) : config_(config) {
     }
 
     for (usize i = 1; i < count_; ++i) {
-        threads_[i] = std::thread(&WorkerPool::ThreadMain, this, i);
+        threads_[i] = Thread(&WorkerPool::ThreadMain, this, i);
     }
     // Wait until every worker has registered its identity.
     {
-        std::unique_lock<std::mutex> lock(mutex_);
-        cv_.wait(lock, [&] { return registered_ == workers; });
+        UniqueLock<Mutex> lock(mutex_);
+        cv_.Wait(lock, [&] { return registered_ == workers; });
     }
     JobsLog(LogVerbosity::Info, "job pool started: %zu participants = %zu spawned workers + main",
             static_cast<size_t>(count_), static_cast<size_t>(workers));
@@ -74,7 +77,7 @@ WorkerPool::WorkerPool(const Config& config) : config_(config) {
 WorkerPool::~WorkerPool() {
     RequestStop();
     Join();
-    ENGINE_ASSERT(std::this_thread::get_id() == constructor_thread_,
+    ENGINE_ASSERT(ThisThread::Id() == constructor_thread_,
                   "WorkerPool must be destroyed on the thread that constructed it");
     ENGINE_ASSERT(tls_current == &participants_[0], "overlapping WorkerPools must be destroyed in reverse order");
     tls_current = saved_main_identity_;
@@ -98,35 +101,35 @@ void WorkerPool::ThreadMain(WorkerPool* pool, usize index) {
     }
     tls_current = &self;
     {
-        std::lock_guard<std::mutex> lock(pool->mutex_);
+        LockGuard<Mutex> lock(pool->mutex_);
         ++pool->registered_;
     }
-    pool->cv_.notify_all();
+    pool->cv_.NotifyAll();
 
     if (pool->config_.worker_fn != nullptr) {
         pool->config_.worker_fn(pool->config_.user, self);
     } else {
-        std::unique_lock<std::mutex> lock(pool->mutex_);
-        pool->cv_.wait(lock, [&] { return pool->stop_.load(std::memory_order_acquire); });
+        UniqueLock<Mutex> lock(pool->mutex_);
+        pool->cv_.Wait(lock, [&] { return pool->stop_.Load(MemoryOrder::Acquire); });
     }
     tls_current = nullptr;
 }
 
 void WorkerPool::RequestStop() {
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        stop_.store(true, std::memory_order_release);
+        LockGuard<Mutex> lock(mutex_);
+        stop_.Store(true, MemoryOrder::Release);
     }
-    cv_.notify_all();
+    cv_.NotifyAll();
 }
 
 void WorkerPool::Join() {
-    if (joined_.exchange(true)) {
+    if (joined_.Exchange(true)) {
         return;
     }
     for (usize i = 1; i < count_; ++i) {
-        if (threads_[i].joinable()) {
-            threads_[i].join();
+        if (threads_[i].Joinable()) {
+            threads_[i].Join();
         }
     }
 }

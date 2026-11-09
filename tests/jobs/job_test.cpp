@@ -1,6 +1,6 @@
-#include <atomic>
-#include <thread>
-#include <utility>
+#include "sync/atomic.h"
+#include "sync/thread.h"
+#include "lang/utility.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -110,7 +110,7 @@ TEST_CASE("Job is move-only and moving transfers or destroys frames correctly", 
     bool a_flag = false, b_flag = false;
 
     Job a = SetFlag(&a_flag);
-    Job b = std::move(a);
+    Job b = Move(a);
     REQUIRE_FALSE(a.Valid());
     REQUIRE(b.Valid());
     REQUIRE(Snap().Live() == before.Live() + 1);
@@ -118,7 +118,7 @@ TEST_CASE("Job is move-only and moving transfers or destroys frames correctly", 
     // Move-assigning over a valid, never-started Job destroys its frame.
     Job c = SetFlag(&b_flag);
     REQUIRE(Snap().Live() == before.Live() + 2);
-    b = std::move(c);
+    b = Move(c);
     REQUIRE(Snap().Live() == before.Live() + 1);
     REQUIRE_FALSE(c.Valid());
 
@@ -130,7 +130,7 @@ TEST_CASE("Job is move-only and moving transfers or destroys frames correctly", 
     // Self-move-assign leaves a valid Job alone.
     Job d = SetFlag(&a_flag);
     Job& d_ref = d;
-    d = std::move(d_ref);
+    d = Move(d_ref);
     REQUIRE(d.Valid());
 }
 
@@ -201,7 +201,7 @@ TEST_CASE("Jobs created on one thread can finish on another with balanced frame 
           "[jobs][job]") {
     const FramePool::Stats before = Snap();
     constexpr int kJobs = 2000;
-    std::atomic<int> ran{0};
+    Atomic<int> ran{0};
 
     std::vector<std::coroutine_handle<>> handles;
     static bool flags[kJobs];
@@ -212,15 +212,15 @@ TEST_CASE("Jobs created on one thread can finish on another with balanced frame 
     }
     REQUIRE(Snap().Live() == before.Live() + kJobs);
 
-    std::thread runner([&] {
+    Thread runner([&] {
         for (auto h : handles) {
             h.resume();
-            ran.fetch_add(1);
+            ran.FetchAdd(1);
         }
     });
-    runner.join();
+    runner.Join();
 
-    REQUIRE(ran.load() == kJobs);
+    REQUIRE(ran.Load() == kJobs);
     for (int i = 0; i < kJobs; ++i) {
         REQUIRE(flags[i]);
     }
@@ -228,29 +228,29 @@ TEST_CASE("Jobs created on one thread can finish on another with balanced frame 
 }
 
 namespace {
-Job SuspendOnce(std::atomic<int>* stage) {
-    stage->store(1, std::memory_order_relaxed);
+Job SuspendOnce(Atomic<int>* stage) {
+    stage->Store(1, MemoryOrder::Relaxed);
     co_await std::suspend_always{};
-    stage->store(2, std::memory_order_relaxed);
+    stage->Store(2, MemoryOrder::Relaxed);
 }
 } // namespace
 
 TEST_CASE("A job started on one thread, resumed on another, fires its hook once", "[jobs][job]") {
     const FramePool::Stats before = Snap();
-    std::atomic<int> stage{0};
+    Atomic<int> stage{0};
     HookRecord rec;
     Job job = SuspendOnce(&stage);
     job.SetCompletion(RecordingHook, &rec);
     std::coroutine_handle<> h = job.Release();
 
-    std::thread first([&] { h.resume(); });
-    first.join();
-    REQUIRE(stage.load() == 1);
+    Thread first([&] { h.resume(); });
+    first.Join();
+    REQUIRE(stage.Load() == 1);
     REQUIRE(rec.calls == 0);
 
-    std::thread second([&] { h.resume(); });
-    second.join();
-    REQUIRE(stage.load() == 2);
+    Thread second([&] { h.resume(); });
+    second.Join();
+    REQUIRE(stage.Load() == 2);
     REQUIRE(rec.calls == 1);
     REQUIRE(Snap().Live() == before.Live());
 }

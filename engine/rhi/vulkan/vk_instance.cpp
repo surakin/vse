@@ -1,11 +1,11 @@
 #include "containers/vector.h"
 #include "rhi/vulkan/vk_instance.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <mutex>
+#include "sync/mutex.h"
 
 #include "log/assert.h"
 #include "rhi/rhi_log.h"
@@ -17,11 +17,11 @@ namespace {
 
 constexpr const char* kValidationLayer = "VK_LAYER_KHRONOS_validation";
 
-std::atomic<u64> g_error_count{0};
-std::atomic<u64> g_warning_count{0};
-std::atomic<bool> g_warned_missing_layer{false};
+Atomic<u64> g_error_count{0};
+Atomic<u64> g_warning_count{0};
+Atomic<bool> g_warned_missing_layer{false};
 
-std::mutex g_capture_mutex;
+Mutex g_capture_mutex;
 ValidationCaptureFn g_capture_fn = nullptr;
 void* g_capture_user = nullptr;
 
@@ -55,9 +55,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessengerCallback(VkDebugUtilsMessageSeverit
     const bool fatal = user != nullptr;
     LogVerbosity level = SeverityToVerbosity(severity);
     if (level == LogVerbosity::Error) {
-        g_error_count.fetch_add(1, std::memory_order_relaxed);
+        g_error_count.FetchAdd(1, MemoryOrder::Relaxed);
     } else if (level == LogVerbosity::Warn) {
-        g_warning_count.fetch_add(1, std::memory_order_relaxed);
+        g_warning_count.FetchAdd(1, MemoryOrder::Relaxed);
     }
     const char* id = (data->pMessageIdName != nullptr) ? data->pMessageIdName : "";
     const char* message = (data->pMessage != nullptr) ? data->pMessage : "";
@@ -70,7 +70,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessengerCallback(VkDebugUtilsMessageSeverit
     ValidationCaptureFn capture = nullptr;
     void* capture_user = nullptr;
     {
-        std::lock_guard<std::mutex> lock(g_capture_mutex);
+        LockGuard<Mutex> lock(g_capture_mutex);
         capture = g_capture_fn;
         capture_user = g_capture_user;
     }
@@ -155,18 +155,18 @@ ValidationPolicy ResolveValidationPolicy(const VulkanInstanceDesc& desc, const c
 
 ValidationCounts GetValidationCounts() {
     ValidationCounts counts;
-    counts.errors = g_error_count.load(std::memory_order_relaxed);
-    counts.warnings = g_warning_count.load(std::memory_order_relaxed);
+    counts.errors = g_error_count.Load(MemoryOrder::Relaxed);
+    counts.warnings = g_warning_count.Load(MemoryOrder::Relaxed);
     return counts;
 }
 
 void ResetValidationCounts() {
-    g_error_count.store(0, std::memory_order_relaxed);
-    g_warning_count.store(0, std::memory_order_relaxed);
+    g_error_count.Store(0, MemoryOrder::Relaxed);
+    g_warning_count.Store(0, MemoryOrder::Relaxed);
 }
 
 void SetValidationCapture(ValidationCaptureFn fn, void* user) {
-    std::lock_guard<std::mutex> lock(g_capture_mutex);
+    LockGuard<Mutex> lock(g_capture_mutex);
     g_capture_fn = fn;
     g_capture_user = user;
 }
@@ -242,7 +242,7 @@ VulkanInstance VulkanInstance::Create(const VulkanLoader& loader, const VulkanIn
     // Validation needs the layer and VK_EXT_debug_utils; without either, say so once and carry on without it.
     bool use_validation = policy.enable;
     if (use_validation && !HasLayer(global, kValidationLayer)) {
-        if (!g_warned_missing_layer.exchange(true)) {
+        if (!g_warned_missing_layer.Exchange(true)) {
             RhiLog(LogVerbosity::Warn, "Vulkan: validation requested but %s is not installed; continuing without it",
                    kValidationLayer);
         }

@@ -1,7 +1,7 @@
 // Phase 5 Day 75: render graph declaration and compilation. Pure CPU: no device is created (resources are described, not
 // allocated; imports use a made-up handle).
 #include <algorithm>
-#include <atomic>
+#include "sync/atomic.h"
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
@@ -9,13 +9,14 @@
 #if ENGINE_PLATFORM_WINDOWS
 #include <malloc.h> // _aligned_malloc, _aligned_free
 #endif
-#include <new>
+#include "lang/new.h"
 #include <string>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
 #include "renderer/render_graph.h"
+#include "types.h"
 
 // Counts every heap allocation in this executable so a test can prove a region allocates none. The ThreadSanitizer runtime
 // defines its own operator new (a second definition fails to link), so that flavor skips the counting test.
@@ -26,7 +27,7 @@
 #define RENDER_GRAPH_TEST_SANITIZED 1
 #endif
 
-static std::atomic<unsigned long> g_heap_allocations{0};
+static Atomic<unsigned long> g_heap_allocations{0};
 
 // Read by text_pass_test.cpp, which proves the text path allocates nothing per glyph once it is warm. False where the sanitizer's runtime owns operator new.
 #ifdef RENDER_GRAPH_TEST_NO_NEW_COUNTER
@@ -34,13 +35,13 @@ bool RenderTestCountsAllocations() { return false; }
 #else
 bool RenderTestCountsAllocations() { return true; }
 #endif
-unsigned long RenderTestHeapAllocations() { return g_heap_allocations.load(); }
+unsigned long RenderTestHeapAllocations() { return g_heap_allocations.Load(); }
 
 #ifndef RENDER_GRAPH_TEST_NO_NEW_COUNTER
 // Every form is replaced so allocation and release always pair up (sanitizers check that). `align` is 0 for the plain forms. On
 // Windows, memory from _aligned_malloc goes back through _aligned_free, so the aligned forms always take that path there.
-static void* CountedAlloc(std::size_t size, std::size_t align) {
-    g_heap_allocations.fetch_add(1, std::memory_order_relaxed);
+static void* CountedAlloc(usize size, usize align) {
+    g_heap_allocations.FetchAdd(1, MemoryOrder::Relaxed);
     if (size == 0) size = 1;
 #if ENGINE_PLATFORM_WINDOWS
     if (align != 0) return _aligned_malloc(size, align);
@@ -56,38 +57,38 @@ static void AlignedFree(void* p) noexcept {
     std::free(p);
 #endif
 }
-void* operator new(std::size_t n) {
+void* operator new(usize n) {
     if (void* p = CountedAlloc(n, 0)) return p;
-    throw std::bad_alloc();
+    throw BadAlloc();
 }
-void* operator new[](std::size_t n) {
+void* operator new[](usize n) {
     if (void* p = CountedAlloc(n, 0)) return p;
-    throw std::bad_alloc();
+    throw BadAlloc();
 }
-void* operator new(std::size_t n, const std::nothrow_t&) noexcept { return CountedAlloc(n, 0); }
-void* operator new[](std::size_t n, const std::nothrow_t&) noexcept { return CountedAlloc(n, 0); }
-void* operator new(std::size_t n, std::align_val_t a) {
-    if (void* p = CountedAlloc(n, static_cast<std::size_t>(a))) return p;
-    throw std::bad_alloc();
+void* operator new(usize n, const NoThrowTag&) noexcept { return CountedAlloc(n, 0); }
+void* operator new[](usize n, const NoThrowTag&) noexcept { return CountedAlloc(n, 0); }
+void* operator new(usize n, AlignVal a) {
+    if (void* p = CountedAlloc(n, static_cast<usize>(a))) return p;
+    throw BadAlloc();
 }
-void* operator new[](std::size_t n, std::align_val_t a) {
-    if (void* p = CountedAlloc(n, static_cast<std::size_t>(a))) return p;
-    throw std::bad_alloc();
+void* operator new[](usize n, AlignVal a) {
+    if (void* p = CountedAlloc(n, static_cast<usize>(a))) return p;
+    throw BadAlloc();
 }
-void* operator new(std::size_t n, std::align_val_t a, const std::nothrow_t&) noexcept { return CountedAlloc(n, static_cast<std::size_t>(a)); }
-void* operator new[](std::size_t n, std::align_val_t a, const std::nothrow_t&) noexcept { return CountedAlloc(n, static_cast<std::size_t>(a)); }
+void* operator new(usize n, AlignVal a, const NoThrowTag&) noexcept { return CountedAlloc(n, static_cast<usize>(a)); }
+void* operator new[](usize n, AlignVal a, const NoThrowTag&) noexcept { return CountedAlloc(n, static_cast<usize>(a)); }
 void operator delete(void* p) noexcept { std::free(p); }
 void operator delete[](void* p) noexcept { std::free(p); }
-void operator delete(void* p, std::size_t) noexcept { std::free(p); }
-void operator delete[](void* p, std::size_t) noexcept { std::free(p); }
-void operator delete(void* p, const std::nothrow_t&) noexcept { std::free(p); }
-void operator delete[](void* p, const std::nothrow_t&) noexcept { std::free(p); }
-void operator delete(void* p, std::align_val_t) noexcept { AlignedFree(p); }
-void operator delete[](void* p, std::align_val_t) noexcept { AlignedFree(p); }
-void operator delete(void* p, std::align_val_t, const std::nothrow_t&) noexcept { AlignedFree(p); }
-void operator delete[](void* p, std::align_val_t, const std::nothrow_t&) noexcept { AlignedFree(p); }
-void operator delete(void* p, std::size_t, std::align_val_t) noexcept { AlignedFree(p); }
-void operator delete[](void* p, std::size_t, std::align_val_t) noexcept { AlignedFree(p); }
+void operator delete(void* p, usize) noexcept { std::free(p); }
+void operator delete[](void* p, usize) noexcept { std::free(p); }
+void operator delete(void* p, const NoThrowTag&) noexcept { std::free(p); }
+void operator delete[](void* p, const NoThrowTag&) noexcept { std::free(p); }
+void operator delete(void* p, AlignVal) noexcept { AlignedFree(p); }
+void operator delete[](void* p, AlignVal) noexcept { AlignedFree(p); }
+void operator delete(void* p, AlignVal, const NoThrowTag&) noexcept { AlignedFree(p); }
+void operator delete[](void* p, AlignVal, const NoThrowTag&) noexcept { AlignedFree(p); }
+void operator delete(void* p, usize, AlignVal) noexcept { AlignedFree(p); }
+void operator delete[](void* p, usize, AlignVal) noexcept { AlignedFree(p); }
 #endif
 
 using namespace engine_placeholder;
@@ -467,7 +468,7 @@ TEST_CASE("Building and compiling a graph allocates nothing from the heap", "[re
     desc.max_passes = 600;
     desc.max_resources = 600;
     desc.max_accesses = 4000;
-    const unsigned long before = g_heap_allocations.load();
+    const unsigned long before = g_heap_allocations.Load();
     RenderGraph graph(&arena, desc);
     GraphResource previous = graph.CreateTexture("t0", AnyTexture());
     graph.AddPass("p0", nullptr, nullptr, PassFlags::SideEffects).Write(previous, GraphUsage::ColorAttachment);
@@ -479,13 +480,13 @@ TEST_CASE("Building and compiling a graph allocates nothing from the heap", "[re
     const bool ok = graph.Compile();
     char text[64];
     graph.Dump(text, sizeof(text));
-    const unsigned long after = g_heap_allocations.load();
+    const unsigned long after = g_heap_allocations.Load();
     REQUIRE(ok);
     CHECK(after == before);
     // The counter itself works: a heap allocation is seen.
     void* volatile canary = ::operator new(sizeof(int)); // volatile: the compiler may not elide the pair
     ::operator delete(canary);
-    CHECK(g_heap_allocations.load() > after);
+    CHECK(g_heap_allocations.Load() > after);
 }
 
 namespace {

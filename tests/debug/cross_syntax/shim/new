@@ -2,8 +2,10 @@
 #pragma once
 #include <stddef.h>
 namespace std {
-struct nothrow_t {};
+struct nothrow_t { explicit nothrow_t() = default; };
 inline constexpr nothrow_t nothrow{};
+struct bad_alloc {};
+template <class T> constexpr T* launder(T* p) noexcept { return p; }
 enum class align_val_t : size_t {};
 } // namespace std
 inline void* operator new(size_t, void* where) noexcept { return where; }

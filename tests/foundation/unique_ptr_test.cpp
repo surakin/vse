@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <utility>
+#include "lang/utility.h"
 
 #include "containers/unique_ptr.h"
 #include "types.h"
@@ -56,13 +56,13 @@ TEST_CASE("UniquePtr: owns one object and destroys it once", "[containers][uniqu
 
 TEST_CASE("UniquePtr: move leaves the source empty; assignment destroys the old object", "[containers][unique_ptr]") {
     UniquePtr<Counted> a = MakeUnique<Counted>(1);
-    UniquePtr<Counted> b = std::move(a);
+    UniquePtr<Counted> b = engine_placeholder::Move(a);
     REQUIRE_FALSE(a);
     REQUIRE(b->value == 1);
 
     UniquePtr<Counted> c = MakeUnique<Counted>(2);
     REQUIRE(Counted::alive == 2);
-    c = std::move(b); // the object c held is destroyed
+    c = engine_placeholder::Move(b); // the object c held is destroyed
     REQUIRE(Counted::alive == 1);
     REQUIRE(c->value == 1);
     c = nullptr;

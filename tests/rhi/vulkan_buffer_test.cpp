@@ -1,5 +1,5 @@
 #include <cstring>
-#include <thread>
+#include "sync/thread.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -277,16 +277,16 @@ TEST_CASE("Vulkan uploads from two threads serialize correctly", "[rhi][vulkan][
             data[t][i] = Pattern(kSize, static_cast<unsigned>(t * 100 + i));
         }
     }
-    std::thread threads[2];
+    Thread threads[2];
     for (int t = 0; t < 2; ++t) {
-        threads[t] = std::thread([&, t] {
+        threads[t] = Thread([&, t] {
             for (int i = 0; i < kBuffers; ++i) {
                 device->UploadBuffer(buffers[t][i], 0, data[t][i].data(), kSize);
             }
         });
     }
-    for (std::thread& th : threads) {
-        th.join();
+    for (Thread& th : threads) {
+        th.Join();
     }
     for (int t = 0; t < 2; ++t) {
         for (int i = 0; i < kBuffers; ++i) {

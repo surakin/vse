@@ -14,6 +14,7 @@
 #include "renderer/shader_permutation.h"
 #include "renderer/shader_reflection.h"
 #include "rhi/rhi.h"
+#include "lang/initializer_list.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -22,14 +23,14 @@ namespace {
 
 const ShaderPermutations& Table() { return shaders::kPermuteTestFragPermutations; }
 
-PermutationKey KeyOf(std::initializer_list<const char*> names) {
+PermutationKey KeyOf(InitializerList<const char*> names) {
     PermutationKey key;
     ReflectionError error;
     REQUIRE(MakePermutationKey(Table(), names.begin(), static_cast<u32>(names.size()), &key, &error));
     return key;
 }
 
-const PermutationModule* Find(std::initializer_list<const char*> names) {
+const PermutationModule* Find(InitializerList<const char*> names) {
     ReflectionError error;
     const PermutationModule* module = FindPermutation(Table(), KeyOf(names), &error);
     INFO(error.message);
@@ -268,7 +269,7 @@ struct Pixel {
     int r, g, b, a;
 };
 
-Pixel DrawWithKey(rhi::Device* device, std::initializer_list<const char*> names) {
+Pixel DrawWithKey(rhi::Device* device, InitializerList<const char*> names) {
     const PermutationModule* module = Find(names);
 
     rhi::ShaderDesc vs;

@@ -1,8 +1,7 @@
 #pragma once
 
-#include <new>
-#include <type_traits>
-#include <utility>
+#include "lang/traits.h"
+#include "lang/utility.h"
 
 #include "log/assert.h"
 #include "mem/heap_allocator.h"
@@ -102,7 +101,7 @@ public:
         if (new_capacity > static_cast<usize>(-1) / sizeof(T)) {
             return false;
         }
-        if constexpr (!std::is_move_constructible_v<T>) {
+        if constexpr (!IsMoveConstructible<T>) {
             if (size_ != 0) {
                 return false; // the elements cannot be carried to a new block
             }
@@ -112,9 +111,9 @@ public:
             return false;
         }
         T* new_data = static_cast<T*>(mem);
-        if constexpr (std::is_move_constructible_v<T>) {
+        if constexpr (IsMoveConstructible<T>) {
             for (usize i = 0; i < size_; ++i) {
-                new (new_data + i) T(std::move(data_[i]));
+                new (new_data + i) T(Move(data_[i]));
                 data_[i].~T();
             }
         }
@@ -162,7 +161,7 @@ public:
     /// Param new_size: the new element count.
     /// Returns: true on success; false if the allocator is out of memory (the vector is unchanged).
     bool TryResizeUninitialized(usize new_size) {
-        static_assert(std::is_trivially_default_constructible_v<T> && std::is_trivially_destructible_v<T>,
+        static_assert(IsTriviallyDefaultConstructible<T> && IsTriviallyDestructible<T>,
                       "Vector::TryResizeUninitialized: only trivial element types may be left uninitialized");
         if (new_size <= size_) {
             size_ = new_size;
@@ -199,7 +198,7 @@ public:
             // `value` may be an element of this vector (`v.Push(v[0])`), which growing frees: copy it first.
             T copy(value);
             GrowIfNeeded();
-            new (data_ + size_) T(std::move(copy));
+            new (data_ + size_) T(Move(copy));
         } else {
             GrowIfNeeded();
             new (data_ + size_) T(value);
@@ -213,12 +212,12 @@ public:
     /// Aborts: growth is needed and the allocator is out of memory.
     void Push(T&& value) {
         if (size_ == capacity_ && InStorage(&value)) {
-            T moved(std::move(value)); // as above: `value` may live in the storage growing frees
+            T moved(Move(value)); // as above: `value` may live in the storage growing frees
             GrowIfNeeded();
-            new (data_ + size_) T(std::move(moved));
+            new (data_ + size_) T(Move(moved));
         } else {
             GrowIfNeeded();
-            new (data_ + size_) T(std::move(value));
+            new (data_ + size_) T(Move(value));
         }
         ++size_;
     }
@@ -244,13 +243,13 @@ public:
         T copy(value);
         GrowIfNeeded();
         if (size_ > index) {
-            new (data_ + size_) T(std::move(data_[size_ - 1]));
+            new (data_ + size_) T(Move(data_[size_ - 1]));
             for (usize i = size_ - 1; i > index; --i) {
-                data_[i] = std::move(data_[i - 1]);
+                data_[i] = Move(data_[i - 1]);
             }
-            data_[index] = std::move(copy);
+            data_[index] = Move(copy);
         } else {
-            new (data_ + size_) T(std::move(copy));
+            new (data_ + size_) T(Move(copy));
         }
         ++size_;
     }
@@ -262,16 +261,16 @@ public:
     /// Aborts: `index` is greater than `Size()`, or growth is needed and the allocator is out of memory.
     void Insert(usize index, T&& value) {
         ENGINE_ASSERT(index <= size_, "Vector::Insert: index is past the end");
-        T moved(std::move(value));
+        T moved(Move(value));
         GrowIfNeeded();
         if (size_ > index) {
-            new (data_ + size_) T(std::move(data_[size_ - 1]));
+            new (data_ + size_) T(Move(data_[size_ - 1]));
             for (usize i = size_ - 1; i > index; --i) {
-                data_[i] = std::move(data_[i - 1]);
+                data_[i] = Move(data_[i - 1]);
             }
-            data_[index] = std::move(moved);
+            data_[index] = Move(moved);
         } else {
-            new (data_ + size_) T(std::move(moved));
+            new (data_ + size_) T(Move(moved));
         }
         ++size_;
     }
@@ -281,7 +280,7 @@ public:
     /// Param index: position to remove; must be less than `Size()` (not checked).
     void Remove(usize index) {
         for (usize i = index; i + 1 < size_; ++i) {
-            data_[i] = std::move(data_[i + 1]);
+            data_[i] = Move(data_[i + 1]);
         }
         --size_;
         data_[size_].~T();
@@ -296,7 +295,7 @@ public:
         ENGINE_ASSERT(first <= size_ && count <= size_ - first, "Vector::RemoveRange: the range is past the end");
         if (count == 0) return;
         for (usize i = first; i + count < size_; ++i) {
-            data_[i] = std::move(data_[i + count]);
+            data_[i] = Move(data_[i + count]);
         }
         DestroyRange(size_ - count, size_);
         size_ -= count;

@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <type_traits>
+#include "lang/traits.h"
 
 #include "string/string.h"
 #include "containers/span.h"
@@ -57,11 +57,11 @@ TEST_CASE("Span: conversions from Vector, Array, C arrays and other spans", "[ty
     ByteSpan r = m;                        // mutable -> const
     CHECK(Sum(r) == 18);
     // The conversions that must NOT compile: const to mutable.
-    STATIC_REQUIRE_FALSE(std::is_convertible_v<ByteSpan, MutableByteSpan>);
-    STATIC_REQUIRE_FALSE(std::is_convertible_v<const Vector<byte>&, MutableByteSpan>);
-    STATIC_REQUIRE_FALSE(std::is_convertible_v<const Array<byte, 4>&, MutableByteSpan>);
-    STATIC_REQUIRE(std::is_convertible_v<MutableByteSpan, ByteSpan>);
-    STATIC_REQUIRE(std::is_trivially_copyable_v<ByteSpan>);
+    STATIC_REQUIRE_FALSE(IsConvertible<ByteSpan, MutableByteSpan>);
+    STATIC_REQUIRE_FALSE(IsConvertible<const Vector<byte>&, MutableByteSpan>);
+    STATIC_REQUIRE_FALSE(IsConvertible<const Array<byte, 4>&, MutableByteSpan>);
+    STATIC_REQUIRE(IsConvertible<MutableByteSpan, ByteSpan>);
+    STATIC_REQUIRE(IsTriviallyCopyable<ByteSpan>);
 }
 
 TEST_CASE("Span: First, Last and Subspan", "[types][span]") {
@@ -102,11 +102,11 @@ TEST_CASE("Span: bytes of values, text and structs", "[types][span]") {
 }
 
 TEST_CASE("byte is u8 and the standard widths hold", "[types]") {
-    STATIC_REQUIRE(std::is_same_v<byte, u8>);
-    STATIC_REQUIRE(std::is_same_v<byte, u8> && std::is_unsigned_v<byte> && sizeof(byte) == 1);
+    STATIC_REQUIRE(IsSame<byte, u8>);
+    STATIC_REQUIRE(IsSame<byte, u8> && IsUnsigned<byte> && sizeof(byte) == 1);
     STATIC_REQUIRE(sizeof(isize) == sizeof(usize));
-    STATIC_REQUIRE(std::is_signed_v<isize>);
-    STATIC_REQUIRE(std::is_unsigned_v<usize>);
+    STATIC_REQUIRE(IsSigned<isize>);
+    STATIC_REQUIRE(IsUnsigned<usize>);
     byte b = 0xff;
     CHECK(static_cast<int>(b) == 255);
 }

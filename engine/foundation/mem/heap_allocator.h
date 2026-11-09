@@ -1,6 +1,6 @@
 #pragma once
 
-#include <new>
+#include "lang/new.h"
 
 #include "types.h"
 
@@ -30,7 +30,7 @@ public:
     /// Param align: power-of-two alignment.
     /// Returns: the block, or nullptr if the heap is exhausted.
     void* Alloc(usize size, usize align) {
-        return ::operator new(size == 0 ? 1 : size, std::align_val_t(Aligned(align)), std::nothrow);
+        return ::operator new(size == 0 ? 1 : size, AlignVal(Aligned(align)), kNoThrow);
     }
 
     /// Releases a block returned by `Alloc`.
@@ -40,7 +40,7 @@ public:
     /// Param align: the alignment passed to `Alloc`.
     void Free(void* ptr, usize size, usize align) {
         (void)size;
-        ::operator delete(ptr, std::align_val_t(Aligned(align)));
+        ::operator delete(ptr, AlignVal(Aligned(align)));
     }
 
 private:

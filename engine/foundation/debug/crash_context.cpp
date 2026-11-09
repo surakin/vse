@@ -2,16 +2,16 @@
 
 #include "debug/crash_context_platform.h"
 
-#include <atomic>
-#include <mutex>
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 namespace engine_placeholder::debug {
 
 namespace {
 
 CrashContext g_crash_context;
-std::atomic<bool> g_crash_context_ready{false};
-std::mutex g_crash_context_mutex;
+Atomic<bool> g_crash_context_ready{false};
+Mutex g_crash_context_mutex;
 
 void CopyBounded(char* dest, usize capacity, const char* source) {
     usize n = 0;
@@ -24,8 +24,8 @@ void CopyBounded(char* dest, usize capacity, const char* source) {
 } // namespace
 
 void InitCrashContext(int argc, const char* const* argv) {
-    std::lock_guard<std::mutex> lock(g_crash_context_mutex);
-    const bool first = !g_crash_context_ready.load(std::memory_order_acquire);
+    LockGuard<Mutex> lock(g_crash_context_mutex);
+    const bool first = !g_crash_context_ready.Load(MemoryOrder::Acquire);
     if (!first && (g_crash_context.command_line[0] != '\0' || argc <= 0)) {
         return;
     }
@@ -45,16 +45,16 @@ void InitCrashContext(int argc, const char* const* argv) {
         }
     }
     g_crash_context.command_line[used] = '\0';
-    g_crash_context_ready.store(true, std::memory_order_release);
+    g_crash_context_ready.Store(true, MemoryOrder::Release);
 }
 
 void SetCoreDumpDescription(const char* text) {
-    std::lock_guard<std::mutex> lock(g_crash_context_mutex);
+    LockGuard<Mutex> lock(g_crash_context_mutex);
     CopyBounded(g_crash_context.core_dumps, sizeof(g_crash_context.core_dumps), text != nullptr ? text : "");
 }
 
 bool CrashContextInitialized() {
-    return g_crash_context_ready.load(std::memory_order_acquire);
+    return g_crash_context_ready.Load(MemoryOrder::Acquire);
 }
 
 const CrashContext& GetCrashContext() {

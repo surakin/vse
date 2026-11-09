@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include "sync/atomic.h"
 
 namespace engine_placeholder::ui {
 
@@ -66,7 +67,7 @@ SettingsView::~SettingsView() {
     if (listener_ != 0) settings_->RemoveListener(listener_);
 }
 
-void SettingsView::Heard(void* user, const settings::ChangeEvent&) { static_cast<SettingsView*>(user)->changed_.store(true, std::memory_order_relaxed); }
+void SettingsView::Heard(void* user, const settings::ChangeEvent&) { static_cast<SettingsView*>(user)->changed_.Store(true, MemoryOrder::Relaxed); }
 
 void SettingsView::SetApply(settings::ApplyFn apply, void* user) {
     apply_ = apply;
@@ -249,12 +250,12 @@ void SettingsView::ShowMessage() {
 }
 
 void SettingsView::Update(f32) {
-    if (changed_.exchange(false, std::memory_order_relaxed)) Refresh();
+    if (changed_.Exchange(false, MemoryOrder::Relaxed)) Refresh();
 }
 
 void SettingsView::Refresh() {
     ++refreshes_;
-    changed_.store(false, std::memory_order_relaxed);
+    changed_.Store(false, MemoryOrder::Relaxed);
     const SharedPtr<const settings::SettingsSnapshot> snapshot = settings_->Snapshot();
     for (usize i = 0; i < rows_.Size(); ++i) ShowRow(i, *snapshot);
 }

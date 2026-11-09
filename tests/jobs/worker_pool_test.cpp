@@ -1,8 +1,8 @@
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <thread>
+#include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -138,11 +138,11 @@ TEST_CASE("Participant identity: main is 0, plain threads are not participants",
         REQUIRE(WorkerPool::CurrentParticipantIndex() == 0);
         bool other_is_participant = true;
         i32 other_index = 0;
-        std::thread t([&] {
+        Thread t([&] {
             other_is_participant = WorkerPool::IsParticipantThread();
             other_index = WorkerPool::CurrentParticipantIndex();
         });
-        t.join();
+        t.Join();
         REQUIRE_FALSE(other_is_participant);
         REQUIRE(other_index == -1);
     }
@@ -152,16 +152,16 @@ TEST_CASE("Participant identity: main is 0, plain threads are not participants",
 
 namespace {
 struct IdentityProbe {
-    std::atomic<u32> seen_mask{0};
-    std::atomic<int> mismatches{0};
+    Atomic<u32> seen_mask{0};
+    Atomic<int> mismatches{0};
 };
 void ProbeBody(void* user, Participant& self) {
     auto* probe = static_cast<IdentityProbe*>(user);
     const Participant* cur = WorkerPool::Current();
     if (cur != &self || WorkerPool::CurrentParticipantIndex() != static_cast<i32>(self.index)) {
-        probe->mismatches.fetch_add(1);
+        probe->mismatches.FetchAdd(1);
     }
-    probe->seen_mask.fetch_or(1u << self.index);
+    probe->seen_mask.FetchOr(1u << self.index);
 }
 } // namespace
 
@@ -173,8 +173,8 @@ TEST_CASE("Each spawned worker registers a thread-local identity", "[jobs][pool]
     cfg.user = &probe;
     auto pool = MakeUnique<WorkerPool>(cfg);
     pool->Join();
-    REQUIRE(probe.mismatches.load() == 0);
-    REQUIRE(probe.seen_mask.load() == 0b1110); // workers 1..3, not main
+    REQUIRE(probe.mismatches.Load() == 0);
+    REQUIRE(probe.seen_mask.Load() == 0b1110); // workers 1..3, not main
 }
 
 TEST_CASE("Spawned workers are each pinned to one distinct CPU", "[jobs][pool]") {

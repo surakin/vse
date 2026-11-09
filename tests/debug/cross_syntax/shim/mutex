@@ -30,4 +30,26 @@ public:
 private:
     M& m_;
 };
+struct defer_lock_t { explicit defer_lock_t() = default; };
+inline constexpr defer_lock_t defer_lock{};
+template <class M>
+class unique_lock {
+public:
+    unique_lock() noexcept = default;
+    explicit unique_lock(M& m) : m_(&m), owns_(true) { m.lock(); }
+    unique_lock(M& m, defer_lock_t) noexcept : m_(&m), owns_(false) {}
+    unique_lock(unique_lock&&) noexcept = default;
+    unique_lock& operator=(unique_lock&&) noexcept = default;
+    ~unique_lock() { if (owns_) m_->unlock(); }
+    void lock() { m_->lock(); owns_ = true; }
+    bool try_lock() { owns_ = m_->try_lock(); return owns_; }
+    void unlock() { m_->unlock(); owns_ = false; }
+    bool owns_lock() const noexcept { return owns_; }
+    M* mutex() const noexcept { return m_; }
+private:
+    M* m_ = nullptr;
+    bool owns_ = false;
+};
+struct once_flag { constexpr once_flag() noexcept = default; once_flag(const once_flag&) = delete; once_flag& operator=(const once_flag&) = delete; };
+template <class F, class... Args> void call_once(once_flag&, F&& f, Args&&... args) { f(args...); }
 } // namespace std

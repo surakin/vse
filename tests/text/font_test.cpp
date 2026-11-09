@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
-#include <atomic>
-#include <thread>
+#include "sync/atomic.h"
+#include "sync/thread.h"
 
 #include "font_support.h"
 #include "text/font.h"
@@ -207,10 +207,10 @@ TEST_CASE("A failed allocation at any point leaves nothing behind", "[text][font
 
 TEST_CASE("Separate libraries and fonts work in parallel from several threads", "[text][font]") {
     Vector<byte> good = text_test::FontBytes();
-    std::atomic<u32> ok{0};
-    Vector<std::thread> threads;
+    Atomic<u32> ok{0};
+    Vector<Thread> threads;
     for (u32 t = 0; t < 4; ++t) {
-        threads.Push(std::thread([&good, &ok, t] {
+        threads.Push(Thread([&good, &ok, t] {
             FontLibrary library;
             if (!library.Initialize().Ok()) return;
             Font font;
@@ -219,11 +219,11 @@ TEST_CASE("Separate libraries and fonts work in parallel from several threads", 
                 if (!font.SetPixelSize(10 + t + i).Ok()) return;
                 (void)font.Metrics(font.FindGlyph(U'a' + (i % 26)));
             }
-            ok.fetch_add(1);
+            ok.FetchAdd(1);
         }));
     }
-    for (usize i = 0; i < threads.Size(); ++i) threads[i].join();
-    CHECK(ok.load() == 4);
+    for (usize i = 0; i < threads.Size(); ++i) threads[i].Join();
+    CHECK(ok.Load() == 4);
 }
 
 TEST_CASE("A glyph's pixel box contains its whole outline, fractional bearing included", "[text][font]") {

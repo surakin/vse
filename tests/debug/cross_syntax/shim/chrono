@@ -1,0 +1,19 @@
+// Stand-in for the standard header (see cstddef): durations and the steady clock, just enough for the neutral headers.
+#pragma once
+#include <ratio>
+namespace std::chrono {
+template <class Rep, class Period = ratio<1>> class duration {
+public:
+    using rep = Rep;
+    using period = Period;
+    constexpr duration() = default;
+    constexpr explicit duration(const Rep& r) : r_(r) {}
+    constexpr Rep count() const { return r_; }
+private:
+    Rep r_{};
+};
+using nanoseconds = duration<long long, nano>;
+using microseconds = duration<long long, micro>;
+using milliseconds = duration<long long, milli>;
+using seconds = duration<long long>;
+} // namespace std::chrono

@@ -1,9 +1,8 @@
 #pragma once
 
-#include <atomic>
-#include <new>
-#include <type_traits>
-#include <utility>
+#include "sync/atomic.h"
+#include "lang/traits.h"
+#include "lang/utility.h"
 
 #include "mem/heap_allocator.h"
 #include "types.h"
@@ -15,13 +14,13 @@ namespace engine_placeholder {
 /// Reference count safe to change from several threads at once; the default policy of [[SharedPtr]].
 struct AtomicRefCount {
     /// Number of owners; starts at one (the creator).
-    std::atomic<usize> count{1};
+    Atomic<usize> count{1};
     /// Adds an owner.
-    void Increment() { count.fetch_add(1, std::memory_order_relaxed); }
+    void Increment() { count.FetchAdd(1, MemoryOrder::Relaxed); }
     /// Removes an owner; returns true if it was the last.
-    bool Decrement() { return count.fetch_sub(1, std::memory_order_acq_rel) == 1; }
+    bool Decrement() { return count.FetchSub(1, MemoryOrder::AcqRel) == 1; }
     /// Returns the current number of owners (a snapshot).
-    usize Load() const { return count.load(std::memory_order_relaxed); }
+    usize Load() const { return count.Load(MemoryOrder::Relaxed); }
 };
 
 /// Reference count for pointers that never leave one thread; no atomic operations.
@@ -77,7 +76,7 @@ public:
 
     /// Becomes another owner of the object of a pointer to a derived type.
     template <typename U>
-        requires std::is_convertible_v<U*, T*>
+        requires IsConvertible<U*, T*>
     SharedPtr(const SharedPtr<U, Count>& other) : ptr_(other.ptr_), block_(other.block_) {
         Retain();
     }
@@ -90,7 +89,7 @@ public:
 
     /// Takes over the share of a pointer to a derived type, leaving `other` empty.
     template <typename U>
-        requires std::is_convertible_v<U*, T*>
+        requires IsConvertible<U*, T*>
     SharedPtr(SharedPtr<U, Count>&& other) noexcept : ptr_(other.ptr_), block_(other.block_) {
         other.ptr_ = nullptr;
         other.block_ = nullptr;
@@ -105,7 +104,7 @@ public:
 
     /// Releases the current share, then takes over `other`'s, leaving `other` empty.
     SharedPtr& operator=(SharedPtr&& other) noexcept {
-        SharedPtr moved(std::move(other));
+        SharedPtr moved(Move(other));
         Swap(moved);
         return *this;
     }
@@ -179,7 +178,7 @@ template <typename T, typename Count>
 struct SharedStorage : SharedBlock<Count> {
     T value;
     template <typename... Args>
-    explicit SharedStorage(Args&&... args) : value(std::forward<Args>(args)...) {
+    explicit SharedStorage(Args&&... args) : value(Forward<Args>(args)...) {
         this->destroy = &Destroy;
     }
     static void Destroy(SharedBlock<Count>* block) {
@@ -202,7 +201,7 @@ SharedPtr<T, Count> MakeShared(Args&&... args) {
     if (mem == nullptr) {
         return SharedPtr<T, Count>();
     }
-    Storage* storage = new (mem) Storage(std::forward<Args>(args)...);
+    Storage* storage = new (mem) Storage(Forward<Args>(args)...);
     return SharedPtr<T, Count>(detail::SharedAdopt(), &storage->value, storage);
 }
 

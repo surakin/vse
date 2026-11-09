@@ -1,10 +1,9 @@
 #pragma once
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <chrono>
-#include <condition_variable>
-#include <mutex>
-#include <thread>
+#include "sync/mutex.h"
+#include "sync/thread.h"
 
 #include "algorithm.h"
 #include "io/file.h"
@@ -30,21 +29,21 @@ public:
 
     ~SlowFile() override {
         {
-            std::lock_guard<std::mutex> lock(mutex_);
+            LockGuard<Mutex> lock(mutex_);
             stopping_ = true;
         }
-        cv_.notify_all();
-        thread_.join(); // requests still queued are completed with Interrupted by Loop
+        cv_.NotifyAll();
+        thread_.Join(); // requests still queued are completed with Interrupted by Loop
         WaitForAsyncRequests();
     }
 
-    bool IsOpen() const override { return !closed_.load(); }
-    u32 Capabilities() const override { return io::kCapSeekable | io::kCapWritable | io::kCapNativelyAsync | (size_known_.load() ? io::kCapSizeKnown : 0u); }
+    bool IsOpen() const override { return !closed_.Load(); }
+    u32 Capabilities() const override { return io::kCapSeekable | io::kCapWritable | io::kCapNativelyAsync | (size_known_.Load() ? io::kCapSizeKnown : 0u); }
 
     io::Status Size(u64* out) override {
-        if (closed_.load()) return io::Status::Of(io::Error::Invalid);
-        if (!size_known_.load()) return io::Status::Of(io::Error::Unsupported);
-        std::lock_guard<std::mutex> lock(mutex_);
+        if (closed_.Load()) return io::Status::Of(io::Error::Invalid);
+        if (!size_known_.Load()) return io::Status::Of(io::Error::Unsupported);
+        LockGuard<Mutex> lock(mutex_);
         *out = data_.Size();
         return io::Status::Success();
     }
@@ -72,49 +71,49 @@ public:
     }
     io::Status Sync() override { return Flush(); }
     io::Status Truncate(u64 size) override {
-        if (closed_.load()) return io::Status::Of(io::Error::Invalid);
-        std::lock_guard<std::mutex> lock(mutex_);
+        if (closed_.Load()) return io::Status::Of(io::Error::Invalid);
+        LockGuard<Mutex> lock(mutex_);
         data_.Resize(static_cast<usize>(size));
         return io::Status::Success();
     }
     io::Status Close() override {
-        closed_.store(true);
+        closed_.Store(true);
         return io::Status::Success();
     }
 
-    int CompletedRequests() const { return completed_.load(); }
+    int CompletedRequests() const { return completed_.Load(); }
     engine_test::Text Contents() {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         return engine_test::MakeText(StringView(data_.Data(), data_.Size()));
     }
 
 protected:
     void StartAsync(io::AsyncRequest* r) override {
         {
-            std::lock_guard<std::mutex> lock(mutex_);
+            LockGuard<Mutex> lock(mutex_);
             queue_.Push(r);
         }
-        cv_.notify_one();
+        cv_.NotifyOne();
     }
 
 private:
     struct Waiter {
-        std::mutex m;
-        std::condition_variable cv;
+        Mutex m;
+        ConditionVariable cv;
         bool done = false;
         io::Status status;
         usize bytes = 0;
         static void Done(void* user, const io::AsyncResult& result) {
             Waiter* w = static_cast<Waiter*>(user);
-            std::lock_guard<std::mutex> lock(w->m);
+            LockGuard<Mutex> lock(w->m);
             w->status = result.status;
             w->bytes = result.bytes;
             w->done = true;
-            w->cv.notify_all();
+            w->cv.NotifyAll();
         }
         io::Status Wait() {
-            std::unique_lock<std::mutex> lock(m);
-            cv.wait(lock, [&] { return done; });
+            UniqueLock<Mutex> lock(m);
+            cv.Wait(lock, [&] { return done; });
             return status;
         }
     };
@@ -124,8 +123,8 @@ private:
             io::AsyncRequest* r = nullptr;
             bool stop = false;
             {
-                std::unique_lock<std::mutex> lock(mutex_);
-                cv_.wait(lock, [&] { return stopping_ || head_ < queue_.Size(); });
+                UniqueLock<Mutex> lock(mutex_);
+                cv_.Wait(lock, [&] { return stopping_ || head_ < queue_.Size(); });
                 if (head_ >= queue_.Size()) return;
                 r = queue_[head_++];
                 if (head_ == queue_.Size()) {
@@ -138,10 +137,10 @@ private:
             if (stop || !ClaimAsync(r)) {
                 result.status = io::Status::Of(io::Error::Interrupted);
             } else {
-                std::this_thread::sleep_for(std::chrono::microseconds(options_.delay_us));
+                ThisThread::SleepForMicroseconds(options_.delay_us);
                 result = Execute(r);
             }
-            completed_.fetch_add(1);
+            completed_.FetchAdd(1);
             CompleteAsync(r, result); // may destroy the file: touch nothing of it afterwards (the loop ends with the thread)
         }
     }
@@ -150,7 +149,7 @@ private:
     io::AsyncResult Execute(io::AsyncRequest* r) {
         io::AsyncResult result;
         const int n = ++requests_;
-        if (closed_.load()) {
+        if (closed_.Load()) {
             result.status = io::Status::Of(io::Error::Invalid);
             return result;
         }
@@ -158,17 +157,17 @@ private:
             result.status = io::Status::Of(io::Error::Io);
             return result;
         }
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         switch (r->kind) {
         case io::AsyncKind::Read: {
             if (r->offset >= data_.Size()) {
-                size_known_.store(true);
+                size_known_.Store(true);
                 break;
             }
             const usize n_bytes = Min(Min(r->length, options_.chunk), data_.Size() - static_cast<usize>(r->offset));
             std::memcpy(r->buffer, data_.Data() + r->offset, n_bytes);
             result.bytes = n_bytes;
-            size_known_.store(true);
+            size_known_.Store(true);
             break;
         }
         case io::AsyncKind::Write: {
@@ -192,16 +191,16 @@ private:
 
     Options options_;
     Vector<char> data_;
-    std::mutex mutex_;
-    std::condition_variable cv_;
+    Mutex mutex_;
+    ConditionVariable cv_;
     Vector<io::AsyncRequest*> queue_; // a FIFO: `head_` is the next one to run
     usize head_ = 0;
     bool stopping_ = false;
-    std::atomic<bool> closed_{false};
-    std::atomic<bool> size_known_{false};
-    std::atomic<int> completed_{0};
+    Atomic<bool> closed_{false};
+    Atomic<bool> size_known_{false};
+    Atomic<int> completed_{0};
     int requests_ = 0;
-    std::thread thread_;
+    Thread thread_;
 };
 
 } // namespace io_test

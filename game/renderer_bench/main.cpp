@@ -9,11 +9,10 @@
 // `frame` times a whole frame's CPU work (scene preparation, graph build and compile, recording, submission) at 1k, 10k and 50k
 // objects; the device is idled after every frame, outside the timer, so the number is CPU work and not waiting for the GPU.
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <new>
 
 #include "algorithm.h"
 #include "debug/program_setup.h"
@@ -41,6 +40,7 @@
 #include "ui/testing/harness.h"
 #include "ui/widgets/buttons.h"
 #include "ui/widgets/list_box.h"
+#include "types.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -370,8 +370,8 @@ void BenchText() {
 
 
 // Counts every operator new while `g_counting` is set (the ui section's steady-state allocation check). The bench is never built with a sanitizer.
-std::atomic<long> g_new_count{0};
-std::atomic<bool> g_counting{false};
+Atomic<long> g_new_count{0};
+Atomic<bool> g_counting{false};
 
 class NumberItems : public ui::ListModel {
 public:
@@ -438,17 +438,17 @@ void BenchUiTree(u32 count) {
                 (b1 - b0) * 1e3, (b2 - b1) * 1e3, layout.Median() * 1e3, paint.Median() * 1e3, static_cast<size_t>(list.vertices.Size()), static_cast<size_t>(list.indices.Size()));
 
     // Steady state: an idle frame (nothing dirty) and a repaint frame, after the warm-up above.
-    g_new_count.store(0);
-    g_counting.store(true);
+    g_new_count.Store(0);
+    g_counting.Store(true);
     for (int rep = 0; rep < 20; ++rep) h.Advance(0.016f);
-    const long idle = g_new_count.load();
-    g_new_count.store(0);
+    const long idle = g_new_count.Load();
+    g_new_count.Store(0);
     for (int rep = 0; rep < 20; ++rep) {
         column_raw->MarkDirty(ui::kDrawDirty);
         h.Advance(0.016f);
     }
-    const long repaint = g_new_count.load();
-    g_counting.store(false);
+    const long repaint = g_new_count.Load();
+    g_counting.Store(false);
     std::printf("ui     %5u widgets: allocations over 20 idle frames %ld, over 20 repaint frames %ld\n", count, idle, repaint);
 }
 
@@ -479,17 +479,17 @@ void BenchUi() {
             h.Advance(0.016f);
         }
         Samples frame;
-        g_new_count.store(0);
-        g_counting.store(true);
+        g_new_count.Store(0);
+        g_counting.Store(true);
         for (int i = 0; i < 200; ++i) {
             list->SetOffset(row * 50000 + row * static_cast<f32>(i % 10) / 20.0f);
             const double t0 = Now();
             h.Advance(0.016f);
             frame.Add(Now() - t0);
         }
-        g_counting.store(false);
+        g_counting.Store(false);
         std::printf("ui     list box, 100000 items, scrolling inside the laid-out rows: %8.1f us per frame, %ld allocations over 200 frames  (%zu vertices)\n", frame.Median() * 1e6,
-                    g_new_count.load(), static_cast<size_t>(h.List().vertices.Size()));
+                    g_new_count.Load(), static_cast<size_t>(h.List().vertices.Size()));
         // Scrolling by whole rows brings new rows into view (their text is laid out the first time).
         Samples scroll;
         for (int i = 0; i < 200; ++i) {
@@ -624,14 +624,14 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-void* operator new(std::size_t n) {
-    if (g_counting.load(std::memory_order_relaxed)) g_new_count.fetch_add(1, std::memory_order_relaxed);
+void* operator new(usize n) {
+    if (g_counting.Load(MemoryOrder::Relaxed)) g_new_count.FetchAdd(1, MemoryOrder::Relaxed);
     void* p = std::malloc(n != 0 ? n : 1);
     if (p == nullptr) std::abort();
     return p;
 }
-void* operator new[](std::size_t n) { return operator new(n); }
+void* operator new[](usize n) { return operator new(n); }
 void operator delete(void* p) noexcept { std::free(p); }
-void operator delete(void* p, std::size_t) noexcept { std::free(p); }
+void operator delete(void* p, usize) noexcept { std::free(p); }
 void operator delete[](void* p) noexcept { std::free(p); }
-void operator delete[](void* p, std::size_t) noexcept { std::free(p); }
+void operator delete[](void* p, usize) noexcept { std::free(p); }

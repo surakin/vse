@@ -1,11 +1,13 @@
 #include "jobs/scheduler.h"
 
-#include <thread>
+#include "sync/thread.h"
 
 #include "jobs/async_io.h"
 #include "jobs/counter.h"
 #include "jobs/jobs_log.h"
 #include "log/assert.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 namespace engine_placeholder::jobs {
 
@@ -68,27 +70,27 @@ u32 Scheduler::NextRandom(Lane& lane) {
 }
 
 bool Scheduler::PushInjection(std::coroutine_handle<> h) {
-    std::lock_guard<std::mutex> lock(injection_mutex_);
+    LockGuard<Mutex> lock(injection_mutex_);
     if (injection_count_ == kInjectionCapacity) return false;
     injection_[(injection_head_ + injection_count_) % kInjectionCapacity] = h;
     ++injection_count_;
-    injection_hint_.store(injection_count_, std::memory_order_seq_cst);
+    injection_hint_.Store(injection_count_, MemoryOrder::SeqCst);
     return true;
 }
 
 std::coroutine_handle<> Scheduler::PopInjection() {
-    if (injection_hint_.load(std::memory_order_seq_cst) == 0) return {};
-    std::lock_guard<std::mutex> lock(injection_mutex_);
+    if (injection_hint_.Load(MemoryOrder::SeqCst) == 0) return {};
+    LockGuard<Mutex> lock(injection_mutex_);
     if (injection_count_ == 0) return {};
     std::coroutine_handle<> h = injection_[injection_head_];
     injection_head_ = (injection_head_ + 1) % kInjectionCapacity;
     --injection_count_;
-    injection_hint_.store(injection_count_, std::memory_order_seq_cst);
+    injection_hint_.Store(injection_count_, MemoryOrder::SeqCst);
     return h;
 }
 
 usize Scheduler::InjectionQueueSizeForTesting() {
-    std::lock_guard<std::mutex> lock(injection_mutex_);
+    LockGuard<Mutex> lock(injection_mutex_);
     return injection_count_;
 }
 
@@ -103,7 +105,7 @@ std::coroutine_handle<> Scheduler::TrySteal(usize index) {
         std::coroutine_handle<> h;
         StealStatus st = lanes_[victim].deque.StealTop(h);
         if (st == StealStatus::Success) {
-            me.steals.fetch_add(1, std::memory_order_relaxed);
+            me.steals.FetchAdd(1, MemoryOrder::Relaxed);
             return h;
         }
     }
@@ -122,16 +124,16 @@ void Scheduler::Run(usize index, std::coroutine_handle<> h) {
     ++tls_job_depth;
     h.resume(); // may destroy the frame; do not touch `h` afterwards
     --tls_job_depth;
-    lanes_[index].resumes.fetch_add(1, std::memory_order_relaxed);
+    lanes_[index].resumes.FetchAdd(1, MemoryOrder::Relaxed);
 }
 
 void Scheduler::NotifyWork() {
-    submit_seq_.fetch_add(1, std::memory_order_seq_cst);
-    if (parked_.load(std::memory_order_seq_cst) > 0) {
+    submit_seq_.FetchAdd(1, MemoryOrder::SeqCst);
+    if (parked_.Load(MemoryOrder::SeqCst) > 0) {
         // Taking the mutex orders this notify after a worker that has
         // decided to wait is really waiting (see the protocol above).
-        { std::lock_guard<std::mutex> lock(park_mutex_); }
-        park_cv_.notify_one();
+        { LockGuard<Mutex> lock(park_mutex_); }
+        park_cv_.NotifyOne();
     }
 }
 
@@ -144,7 +146,7 @@ std::coroutine_handle<> Scheduler::SweepAll(usize index) {
             std::coroutine_handle<> h;
             StealStatus st = lanes_[v].deque.StealTop(h);
             if (st == StealStatus::Success) {
-                lanes_[index].steals.fetch_add(1, std::memory_order_relaxed);
+                lanes_[index].steals.FetchAdd(1, MemoryOrder::Relaxed);
                 return h;
             }
             if (st == StealStatus::Empty) break;
@@ -159,7 +161,7 @@ std::coroutine_handle<> Scheduler::SweepAll(usize index) {
 void Scheduler::MakeRoom() {
     for (;;) {
         {
-            std::lock_guard<std::mutex> lock(injection_mutex_);
+            LockGuard<Mutex> lock(injection_mutex_);
             if (kInjectionCapacity - injection_count_ >= kBackpressureSlack) return;
         }
         std::coroutine_handle<> w = PopInjection();
@@ -167,14 +169,14 @@ void Scheduler::MakeRoom() {
         if (w) {
             Run(0, w);
         } else {
-            std::this_thread::yield();
+            ThisThread::Yield();
         }
     }
 }
 
 void Scheduler::Schedule(std::coroutine_handle<> h) {
     ENGINE_ASSERT(h.address() != nullptr, "Scheduler::Schedule: null handle");
-    ENGINE_ASSERT(!drained_.load(std::memory_order_acquire), "Scheduler::Schedule after Shutdown completed");
+    ENGINE_ASSERT(!drained_.Load(MemoryOrder::Acquire), "Scheduler::Schedule after Shutdown completed");
     const int own = OwnIndex();
     if (own >= 0 && lanes_[own].deque.PushBottom(h)) {
         NotifyWork();
@@ -205,7 +207,7 @@ void Scheduler::HelpUntil(bool (*done)(void* user), void* user) {
         if (h) {
             Run(0, h);
         } else {
-            std::this_thread::yield();
+            ThisThread::Yield();
         }
     }
 }
@@ -214,12 +216,12 @@ void Scheduler::HelpUntil(Counter& counter) {
     HelpUntil([](void* c) { return static_cast<Counter*>(c)->IsZero(); }, &counter);
 }
 
-void Scheduler::HelpUntil(const std::atomic<int>& value, int target) {
+void Scheduler::HelpUntil(const Atomic<int>& value, int target) {
     struct Ctx {
-        const std::atomic<int>* v;
+        const Atomic<int>* v;
         int target;
     } ctx{&value, target};
-    HelpUntil([](void* u) { auto* c = static_cast<Ctx*>(u); return c->v->load(std::memory_order_acquire) >= c->target; },
+    HelpUntil([](void* u) { auto* c = static_cast<Ctx*>(u); return c->v->Load(MemoryOrder::Acquire) >= c->target; },
               &ctx);
 }
 
@@ -227,8 +229,8 @@ void Scheduler::WorkerMain(void* user, Participant& self) { static_cast<Schedule
 
 void Scheduler::WorkerLoop(Participant& self) {
     const usize index = self.index;
-    while (!shutdown_.load(std::memory_order_acquire)) {
-        const u64 seq = submit_seq_.load(std::memory_order_seq_cst);
+    while (!shutdown_.Load(MemoryOrder::Acquire)) {
+        const u64 seq = submit_seq_.Load(MemoryOrder::SeqCst);
         std::coroutine_handle<> h = FindWork(index);
         if (h) {
             Run(index, h);
@@ -236,8 +238,8 @@ void Scheduler::WorkerLoop(Participant& self) {
         }
         // Bounded yield backoff before parking.
         bool found = false;
-        for (int r = 0; r < kYieldRounds && !shutdown_.load(std::memory_order_acquire); ++r) {
-            std::this_thread::yield();
+        for (int r = 0; r < kYieldRounds && !shutdown_.Load(MemoryOrder::Acquire); ++r) {
+            ThisThread::Yield();
             h = FindWork(index);
             if (h) {
                 found = true;
@@ -255,12 +257,12 @@ void Scheduler::WorkerLoop(Participant& self) {
         }
         // Park (protocol in scheduler.h). `seq` was read before the
         // rounds above, so any submission after it changes submit_seq_.
-        std::unique_lock<std::mutex> lock(park_mutex_);
-        parked_.fetch_add(1, std::memory_order_seq_cst);
-        park_cv_.wait(lock, [&] {
-            return submit_seq_.load(std::memory_order_seq_cst) != seq || shutdown_.load(std::memory_order_acquire);
+        UniqueLock<Mutex> lock(park_mutex_);
+        parked_.FetchAdd(1, MemoryOrder::SeqCst);
+        park_cv_.Wait(lock, [&] {
+            return submit_seq_.Load(MemoryOrder::SeqCst) != seq || shutdown_.Load(MemoryOrder::Acquire);
         });
-        parked_.fetch_sub(1, std::memory_order_seq_cst);
+        parked_.FetchSub(1, MemoryOrder::SeqCst);
     }
 }
 
@@ -271,10 +273,10 @@ usize Scheduler::Shutdown() {
     // continuations are scheduled while the workers still run.
     io_->Shutdown();
     {
-        std::lock_guard<std::mutex> lock(park_mutex_);
-        shutdown_.store(true, std::memory_order_seq_cst);
+        LockGuard<Mutex> lock(park_mutex_);
+        shutdown_.Store(true, MemoryOrder::SeqCst);
     }
-    park_cv_.notify_all();
+    park_cv_.NotifyAll();
     pool_->Join();
 
     // Workers are gone: destroy whatever never ran.
@@ -299,7 +301,7 @@ usize Scheduler::Shutdown() {
             ++dropped;
         }
     }
-    drained_.store(true, std::memory_order_release);
+    drained_.Store(true, MemoryOrder::Release);
     if (dropped != 0) {
         JobsLog(LogVerbosity::Warn, "scheduler shutdown destroyed %zu queued job(s) that never ran",
                 static_cast<size_t>(dropped));
@@ -307,8 +309,8 @@ usize Scheduler::Shutdown() {
     return dropped;
 }
 
-u64 Scheduler::ResumesBy(usize p) const { return lanes_[p].resumes.load(std::memory_order_relaxed); }
-u64 Scheduler::StealsBy(usize p) const { return lanes_[p].steals.load(std::memory_order_relaxed); }
+u64 Scheduler::ResumesBy(usize p) const { return lanes_[p].resumes.Load(MemoryOrder::Relaxed); }
+u64 Scheduler::StealsBy(usize p) const { return lanes_[p].steals.Load(MemoryOrder::Relaxed); }
 u64 Scheduler::TotalResumes() const {
     u64 t = 0;
     for (usize i = 0; i < count_; ++i) t += ResumesBy(i);

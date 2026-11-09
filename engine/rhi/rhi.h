@@ -1,6 +1,6 @@
 #pragma once
 
-#include <atomic>
+#include "sync/atomic.h"
 
 #include "platform/window.h"
 #include "rhi/adapter.h"
@@ -48,7 +48,7 @@ struct FaultInjection {
     /// How many devices an injected loss may strike, counted across devices that share this pointer (a recreated device is
     /// built from the same description): each injected loss decrements it, and at 0 no loss is injected any more. Null means no
     /// limit. Lets a test lose the device twice and then let a recovery succeed. Borrowed; must outlive the devices.
-    std::atomic<u32>* strikes_left = nullptr;
+    Atomic<u32>* strikes_left = nullptr;
     /// Make the Nth device-memory allocation, counted from device creation (1 is the first), and every one after it
     /// fail as if the device ran out of memory; 0 never does. Resource creation then returns an invalid handle.
     u32 fail_allocations_from = 0;

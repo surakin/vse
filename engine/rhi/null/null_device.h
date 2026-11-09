@@ -1,6 +1,6 @@
 #pragma once
 
-#include <atomic>
+#include "sync/atomic.h"
 
 #include "rhi/device.h"
 #include "types.h"
@@ -40,7 +40,7 @@ struct NullDeviceOptions {
     /// Reports the device lost at the Nth swapchain present; 0 never does.
     u32 lose_device_at_present = 0;
     /// Limits how many injected losses strike (see [[rhi::FaultInjection::strikes_left]]); null for no limit.
-    std::atomic<u32>* strikes_left = nullptr;
+    Atomic<u32>* strikes_left = nullptr;
     /// Makes `RecreateSurface` fail, to exercise the fallback to a full reset.
     bool fail_surface_recreate = false;
     /// Makes `CreateSwapchain` fail.

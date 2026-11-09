@@ -7,6 +7,7 @@
 #include "log/assert.h"
 #include "os/os.h"
 #include "rhi/rhi_log.h"
+#include "sync/thread.h"
 
 namespace engine_placeholder::rhi {
 
@@ -156,7 +157,7 @@ void DeviceHost::NotifySwapchainChanged() {
 }
 
 SwapchainStatus DeviceHost::ReconfigureSwapchain(const SwapchainDesc& swapchain) {
-    ENGINE_ASSERT(!has_owner_ || owner_ == std::this_thread::get_id(), "DeviceHost::ReconfigureSwapchain: called off the owning thread");
+    ENGINE_ASSERT(!has_owner_ || owner_ == ThisThread::Id(), "DeviceHost::ReconfigureSwapchain: called off the owning thread");
     ENGINE_ASSERT(!device_ || !device_->InFrame(), "DeviceHost::ReconfigureSwapchain: called between BeginFrame and EndFrame");
     if (!device_ || swapchain_ == nullptr) {
         return SwapchainStatus::Lost;
@@ -174,7 +175,7 @@ SwapchainStatus DeviceHost::ReconfigureSwapchain(const SwapchainDesc& swapchain)
 }
 
 bool DeviceHost::RecreateSurface(const os::Window* window, const SwapchainDesc& swapchain) {
-    ENGINE_ASSERT(!has_owner_ || owner_ == std::this_thread::get_id(), "DeviceHost::RecreateSurface: called off the owning thread");
+    ENGINE_ASSERT(!has_owner_ || owner_ == ThisThread::Id(), "DeviceHost::RecreateSurface: called off the owning thread");
     ENGINE_ASSERT(!device_ || !device_->InFrame(), "DeviceHost::RecreateSurface: called between BeginFrame and EndFrame");
     DeviceCreateInfo info = last_info_;
     info.window = window;
@@ -206,7 +207,7 @@ bool DeviceHost::RecreateSurface(const os::Window* window, const SwapchainDesc& 
 bool DeviceHost::Create(const DeviceCreateInfo& info, const SwapchainDesc& swapchain) {
     ENGINE_ASSERT(!device_, "DeviceHost::Create: the host already holds a device");
     timings_ = ResetTimings{};
-    owner_ = std::this_thread::get_id();
+    owner_ = ThisThread::Id();
     has_owner_ = true;
     resetting_ = true;
     const bool ok = CreateInternal(info, swapchain);
@@ -215,10 +216,10 @@ bool DeviceHost::Create(const DeviceCreateInfo& info, const SwapchainDesc& swapc
 }
 
 bool DeviceHost::Recreate(const DeviceCreateInfo& info, const SwapchainDesc& swapchain) {
-    ENGINE_ASSERT(!has_owner_ || owner_ == std::this_thread::get_id(), "DeviceHost::Recreate: called off the owning thread");
+    ENGINE_ASSERT(!has_owner_ || owner_ == ThisThread::Id(), "DeviceHost::Recreate: called off the owning thread");
     ENGINE_ASSERT(!device_ || !device_->InFrame(), "DeviceHost::Recreate: called between BeginFrame and EndFrame");
     if (!has_owner_) {
-        owner_ = std::this_thread::get_id();
+        owner_ = ThisThread::Id();
         has_owner_ = true;
     }
     resetting_ = true;
@@ -241,7 +242,7 @@ bool DeviceHost::Recreate(const DeviceCreateInfo& info, const SwapchainDesc& swa
 }
 
 void DeviceHost::Destroy() {
-    ENGINE_ASSERT(!has_owner_ || owner_ == std::this_thread::get_id(), "DeviceHost::Destroy: called off the owning thread");
+    ENGINE_ASSERT(!has_owner_ || owner_ == ThisThread::Id(), "DeviceHost::Destroy: called off the owning thread");
     ENGINE_ASSERT(!device_ || !device_->InFrame(), "DeviceHost::Destroy: called between BeginFrame and EndFrame");
     resetting_ = true;
     if (device_) {

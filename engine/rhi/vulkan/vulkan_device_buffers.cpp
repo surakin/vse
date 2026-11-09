@@ -6,6 +6,8 @@
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vulkan_device.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
@@ -83,7 +85,7 @@ bool VulkanDevice::CreateRawBuffer(u64 size, VkBufferUsageFlags usage, MemoryLoc
     out->buffer = buffer;
     out->memory = allocation;
     out->size = size;
-    raw_buffer_count_.fetch_add(1, std::memory_order_relaxed);
+    raw_buffer_count_.FetchAdd(1, MemoryOrder::Relaxed);
     return true;
 }
 
@@ -93,7 +95,7 @@ void VulkanDevice::DestroyRawBuffer(RawBuffer* raw) {
     }
     fns_.DestroyBuffer(device_, raw->buffer, nullptr);
     memory_->Free(raw->memory);
-    raw_buffer_count_.fetch_sub(1, std::memory_order_relaxed);
+    raw_buffer_count_.FetchSub(1, MemoryOrder::Relaxed);
     *raw = RawBuffer{};
 }
 
@@ -110,20 +112,20 @@ void VulkanDevice::SetDebugName(u64 handle, VkObjectType type, const char* name)
 }
 
 bool VulkanDevice::InjectLoss(const char* where, u32 number) {
-    if (device_lost_.load(std::memory_order_relaxed)) {
+    if (device_lost_.Load(MemoryOrder::Relaxed)) {
         return true;
     }
     if (strikes_left_ != nullptr) {
-        u32 left = strikes_left_->load(std::memory_order_relaxed);
+        u32 left = strikes_left_->Load(MemoryOrder::Relaxed);
         bool struck = false;
         while (left != 0 && !struck) {
-            struck = strikes_left_->compare_exchange_weak(left, left - 1, std::memory_order_relaxed);
+            struck = strikes_left_->CompareExchangeWeak(left, left - 1, MemoryOrder::Relaxed);
         }
         if (!struck) {
             return false;
         }
     }
-    if (!device_lost_.exchange(true, std::memory_order_relaxed)) {
+    if (!device_lost_.Exchange(true, MemoryOrder::Relaxed)) {
         RhiLog(LogVerbosity::Error, "Vulkan: the device was lost (injected at %s %u); further submissions are ignored", where, number);
         ENGINE_ENSURE(false, "the Vulkan device was lost"); // the same report as a real loss: a trace, once
     }
@@ -131,15 +133,15 @@ bool VulkanDevice::InjectLoss(const char* where, u32 number) {
 }
 
 bool VulkanDevice::CountPresent() {
-    const u32 n = present_count_.fetch_add(1, std::memory_order_relaxed) + 1;
+    const u32 n = present_count_.FetchAdd(1, MemoryOrder::Relaxed) + 1;
     if (lose_device_at_present_ != 0 && n == lose_device_at_present_) {
         InjectLoss("present", n);
     }
-    return device_lost_.load(std::memory_order_relaxed);
+    return device_lost_.Load(MemoryOrder::Relaxed);
 }
 
 void VulkanDevice::NoteDeviceLost(VkResult result) {
-    if (result == VK_ERROR_DEVICE_LOST && !device_lost_.exchange(true, std::memory_order_relaxed)) {
+    if (result == VK_ERROR_DEVICE_LOST && !device_lost_.Exchange(true, MemoryOrder::Relaxed)) {
         RhiLog(LogVerbosity::Error, "Vulkan: the device was lost; further submissions are ignored");
         // A trace of what the program was doing when the loss was noticed, once (the first loss); the frame goes on to end as
         // DeviceLost. The crash report's `gpu` line names the adapter.
@@ -273,7 +275,7 @@ VkCommandBuffer VulkanDevice::AcquireUploadCommandBufferLocked() {
 
 u64 VulkanDevice::SubmitRawLocked(void (*fill_fn)(void*, VkCommandBuffer), void* fill_context, const VkSemaphoreSubmitInfo* waits,
                                   u32 wait_count, const VkSemaphoreSubmitInfo* extra_signals, u32 extra_signal_count) {
-    if (device_lost_.load(std::memory_order_relaxed)) {
+    if (device_lost_.Load(MemoryOrder::Relaxed)) {
         return 0;
     }
     VkCommandBuffer cb = AcquireUploadCommandBufferLocked();
@@ -352,7 +354,7 @@ BufferHandle VulkanDevice::CreateBuffer(const BufferDesc& desc) {
         return {};
     }
     SetDebugName(HandleToU64(res.raw.buffer), VK_OBJECT_TYPE_BUFFER, desc.debug_name);
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     BufferHandle handle = buffers_.Allocate(static_cast<BufferRes&&>(res));
     if (!handle.IsValid()) {
         RhiLog(LogVerbosity::Error, "CreateBuffer: out of buffer handles");
@@ -362,7 +364,7 @@ BufferHandle VulkanDevice::CreateBuffer(const BufferDesc& desc) {
 }
 
 void VulkanDevice::DestroyBuffer(BufferHandle buffer) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     BufferRes* b = buffers_.Get(buffer);
     ENGINE_ASSERT(b != nullptr, "DestroyBuffer: handle is invalid or already destroyed");
     if (b == nullptr) {
@@ -370,13 +372,13 @@ void VulkanDevice::DestroyBuffer(BufferHandle buffer) {
     }
     ENGINE_ASSERT(!b->mapped, "DestroyBuffer: the buffer is still mapped");
     // Work in the open frame may still use it; outside a frame, the next frame is the earliest that can have used it.
-    const u64 current = frame_number_.load(std::memory_order_relaxed);
+    const u64 current = frame_number_.Load(MemoryOrder::Relaxed);
     const u64 stamp = frame_open_ ? current : current + 1;
     buffers_.Retire(buffer, stamp);
 }
 
 void* VulkanDevice::MapBuffer(BufferHandle buffer) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     BufferRes* b = buffers_.Get(buffer);
     ENGINE_ASSERT(b != nullptr, "MapBuffer: handle is invalid or already destroyed");
     if (b == nullptr) {
@@ -393,7 +395,7 @@ void* VulkanDevice::MapBuffer(BufferHandle buffer) {
 }
 
 void VulkanDevice::UnmapBuffer(BufferHandle buffer) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     BufferRes* b = buffers_.Get(buffer);
     ENGINE_ASSERT(b != nullptr, "UnmapBuffer: handle is invalid or already destroyed");
     if (b == nullptr) {
@@ -407,7 +409,7 @@ void VulkanDevice::UnmapBuffer(BufferHandle buffer) {
 }
 
 void VulkanDevice::FlushMappedBuffer(BufferHandle buffer, u64 offset, u64 size) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     BufferRes* b = buffers_.Get(buffer);
     ENGINE_ASSERT(b != nullptr, "FlushMappedBuffer: handle is invalid or already destroyed");
     if (b == nullptr) {
@@ -423,7 +425,7 @@ UploadTicket VulkanDevice::UploadBuffer(BufferHandle dst, u64 offset, const void
     VkBuffer vk_buffer = nullptr;
     BufferRes snapshot;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         BufferRes* b = buffers_.Get(dst);
         ENGINE_ASSERT(b != nullptr, "UploadBuffer: handle is invalid or already destroyed");
         if (b == nullptr) {
@@ -449,8 +451,8 @@ UploadTicket VulkanDevice::UploadBuffer(BufferHandle dst, u64 offset, const void
     u64 done = 0;
     while (done < size) {
         const u64 chunk = size - done < kUploadChunkBytes ? size - done : kUploadChunkBytes;
-        std::lock_guard<std::mutex> lock(submit_mutex_);
-        if (device_lost_.load(std::memory_order_relaxed)) {
+        LockGuard<Mutex> lock(submit_mutex_);
+        if (device_lost_.Load(MemoryOrder::Relaxed)) {
             ticket.ok = false;
             return ticket;
         }
@@ -502,7 +504,7 @@ UploadTicket VulkanDevice::UploadBuffer(BufferHandle dst, u64 offset, const void
 bool VulkanDevice::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 size) {
     BufferRes snapshot;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         BufferRes* b = buffers_.Get(src);
         ENGINE_ASSERT(b != nullptr, "ReadbackBuffer: handle is invalid or already destroyed");
         if (b == nullptr) {
@@ -517,7 +519,7 @@ bool VulkanDevice::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 s
     if (size == 0) {
         return true;
     }
-    if (device_lost_.load(std::memory_order_relaxed)) {
+    if (device_lost_.Load(MemoryOrder::Relaxed)) {
         return false;
     }
 
@@ -526,7 +528,7 @@ bool VulkanDevice::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 s
         // needs no such wait: its copy is ordered after earlier work on the queue.)
         u64 last = 0;
         {
-            std::lock_guard<std::mutex> lock(submit_mutex_);
+            LockGuard<Mutex> lock(submit_mutex_);
             last = last_submit_value_;
         }
         if (!WaitTimeline(last, ~0ull)) {
@@ -548,7 +550,7 @@ bool VulkanDevice::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 s
         }
         u64 value = 0;
         {
-            std::lock_guard<std::mutex> lock(submit_mutex_);
+            LockGuard<Mutex> lock(submit_mutex_);
             value = SubmitInternalLocked([&](VkCommandBuffer cb) {
                 VkMemoryBarrier2 before{};
                 before.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2;
@@ -594,7 +596,7 @@ bool VulkanDevice::WaitFence(FenceValue value, u64 timeout_ns) {
     if (value == 0) {
         return true;
     }
-    if (device_lost_.load(std::memory_order_relaxed)) {
+    if (device_lost_.Load(MemoryOrder::Relaxed)) {
         return false;
     }
     return WaitTimeline(value, timeout_ns);
@@ -624,20 +626,20 @@ void VulkanDevice::CollectRetired(bool all) {
 }
 
 u64 VulkanDevice::CompletedFrame() const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     return completed_frames_;
 }
 
 VulkanDevice::ObjectCounts VulkanDevice::Counts() const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     ObjectCounts counts;
     counts.buffers = buffers_.LiveCount();
     counts.pending_destruction = buffers_.RetiredCount();
-    counts.raw_buffers = raw_buffer_count_.load(std::memory_order_relaxed);
+    counts.raw_buffers = raw_buffer_count_.Load(MemoryOrder::Relaxed);
     counts.textures = textures_.LiveCount();
     counts.samplers = samplers_.LiveCount();
     counts.pending_image_destruction = textures_.RetiredCount() + samplers_.RetiredCount();
-    counts.raw_images = raw_image_count_.load(std::memory_order_relaxed);
+    counts.raw_images = raw_image_count_.Load(MemoryOrder::Relaxed);
     counts.shaders = shaders_.LiveCount();
     counts.bind_group_layouts = bind_group_layouts_.LiveCount();
     counts.pipelines = pipelines_.LiveCount();
@@ -662,7 +664,7 @@ void VulkanDevice::BeginFrame() {
     for (;;) {
         u64 wait_for = 0;
         {
-            std::lock_guard<std::mutex> lock(resource_mutex_);
+            LockGuard<Mutex> lock(resource_mutex_);
             UpdateCompletedFrames();
             if (ended_frames_ - completed_frames_ >= kTrackedFrames - 2) {
                 wait_for = frame_fences_[(completed_frames_ + 1) % kTrackedFrames];
@@ -683,23 +685,23 @@ void VulkanDevice::BeginFrame() {
     }
     u64 frame = 0;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         ENGINE_ASSERT(!frame_open_, "BeginFrame: the previous frame was not ended");
         UpdateCompletedFrames();
-        frame = frame_number_.load(std::memory_order_relaxed) + 1;
-        frame_number_.store(frame, std::memory_order_relaxed);
+        frame = frame_number_.Load(MemoryOrder::Relaxed) + 1;
+        frame_number_.Store(frame, MemoryOrder::Relaxed);
         frame_open_ = true;
         if (lose_device_at_frame_ != 0 && frame == lose_device_at_frame_) {
             InjectLoss("frame", static_cast<u32>(frame));
         }
-        if (waited && !device_lost_.load(std::memory_order_relaxed)) {
+        if (waited && !device_lost_.Load(MemoryOrder::Relaxed)) {
             ResetFrameDescriptorsLocked(frame % kFramePools); // the frame that last used these pools has finished
         }
         CollectRetired(false);
     }
     // The frame that last used these pools has finished (waited for above), so they can be reset. This is outside the
     // lock: it makes a driver call per pool, and no list of this frame exists yet.
-    if (waited && !device_lost_.load(std::memory_order_relaxed)) {
+    if (waited && !device_lost_.Load(MemoryOrder::Relaxed)) {
         ResetFramePools(frame % kFramePools);
     }
 }
@@ -707,7 +709,7 @@ void VulkanDevice::BeginFrame() {
 void VulkanDevice::EndFrame() {
     u64 frame = 0;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         ENGINE_ASSERT(frame_open_, "EndFrame: no frame is open");
         frame_open_ = false; // later destroys now belong to the next frame
         frame = frame_number_;
@@ -716,16 +718,16 @@ void VulkanDevice::EndFrame() {
     // submission made before the close, and this value covers all of them.
     u64 last = 0;
     {
-        std::lock_guard<std::mutex> lock(submit_mutex_);
+        LockGuard<Mutex> lock(submit_mutex_);
         last = last_submit_value_;
     }
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     ended_frames_ = frame;
     frame_fences_[frame % kTrackedFrames] = last;
 }
 
 u64 VulkanDevice::FrameNumber() const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     return frame_number_;
 }
 
@@ -737,10 +739,10 @@ void VulkanDevice::WaitIdle() {
     // should be enough (every signal operation has completed), but AMD's Windows driver (26.10.1, Radeon 860M) reads one value short for
     // about 100 us after vkDeviceWaitIdle returns, in 79 of 80 runs without validation (measured on Phase 13 Day 160). On other drivers
     // the wait returns at once.
-    if (!device_lost_.load(std::memory_order_relaxed)) {
+    if (!device_lost_.Load(MemoryOrder::Relaxed)) {
         WaitTimeline(last_submit_value_, ~0ull);
     }
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     UpdateCompletedFrames();
     CollectRetired(true); // the device is idle (or lost), so everything retired is free to release
 }

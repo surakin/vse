@@ -63,6 +63,7 @@ add_executable(tsan_canary tsan_canary.cpp)
 target_compile_options(tsan_canary PRIVATE -fsanitize=thread -g)
 target_link_options(tsan_canary PRIVATE -fsanitize=thread)
 target_link_libraries(tsan_canary PRIVATE Threads::Threads)
+target_include_directories(tsan_canary PRIVATE ${CMAKE_SOURCE_DIR}/engine/foundation)  # sync/thread.h (Phase 16): header-only, so the canary still needs no library
 add_test(NAME tsan_canary_detects_race COMMAND tsan_canary)
 set_tests_properties(tsan_canary_detects_race PROPERTIES
   PASS_REGULAR_EXPRESSION "ThreadSanitizer: data race"

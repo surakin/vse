@@ -1,6 +1,6 @@
 #include <cstdio>
 #include <cstring>
-#include <mutex>
+#include "sync/mutex.h"
 
 #include "log/assert.h"
 #include "rhi/backend_registry.h"
@@ -12,7 +12,7 @@ namespace engine_placeholder::rhi {
 namespace {
 
 struct Registry {
-    std::mutex mu;
+    Mutex mu;
     BackendDescriptor items[kMaxRegisteredBackends];
     usize count = 0;
 };
@@ -53,7 +53,7 @@ bool RegisterBackend(const BackendDescriptor& descriptor) {
         return false;
     }
     Registry& r = TheRegistry();
-    std::lock_guard<std::mutex> lock(r.mu);
+    LockGuard<Mutex> lock(r.mu);
     for (usize i = 0; i < r.count; ++i) {
         const BackendDescriptor& e = r.items[i];
         if (Same(e, descriptor)) {
@@ -75,7 +75,7 @@ bool RegisterBackend(const BackendDescriptor& descriptor) {
 
 const BackendDescriptor* FindBackend(Backend backend) {
     Registry& r = TheRegistry();
-    std::lock_guard<std::mutex> lock(r.mu);
+    LockGuard<Mutex> lock(r.mu);
     for (usize i = 0; i < r.count; ++i) {
         if (r.items[i].backend == backend) {
             return &r.items[i];
@@ -86,7 +86,7 @@ const BackendDescriptor* FindBackend(Backend backend) {
 
 const BackendDescriptor* FindBackendByName(StringView name) {
     Registry& r = TheRegistry();
-    std::lock_guard<std::mutex> lock(r.mu);
+    LockGuard<Mutex> lock(r.mu);
     for (usize i = 0; i < r.count; ++i) {
         if (StringView(r.items[i].name) == name) {
             return &r.items[i];
@@ -97,13 +97,13 @@ const BackendDescriptor* FindBackendByName(StringView name) {
 
 usize RegisteredBackendCount() {
     Registry& r = TheRegistry();
-    std::lock_guard<std::mutex> lock(r.mu);
+    LockGuard<Mutex> lock(r.mu);
     return r.count;
 }
 
 const BackendDescriptor& RegisteredBackend(usize index) {
     Registry& r = TheRegistry();
-    std::lock_guard<std::mutex> lock(r.mu);
+    LockGuard<Mutex> lock(r.mu);
     ENGINE_ASSERT(index < r.count, "RegisteredBackend: the index is out of range");
     return r.items[index];
 }
@@ -128,7 +128,7 @@ const BackendDescriptor* PickAutoBackend(char* reason, usize reason_size) {
     usize count = 0;
     {
         Registry& r = TheRegistry();
-        std::lock_guard<std::mutex> lock(r.mu);
+        LockGuard<Mutex> lock(r.mu);
         count = r.count;
         for (usize i = 0; i < count; ++i) {
             items[i] = r.items[i];
@@ -182,7 +182,7 @@ const BackendDescriptor* ResolveBackend(Backend backend, char* reason, usize rea
 
 void ClearBackendRegistryForTest() {
     Registry& r = TheRegistry();
-    std::lock_guard<std::mutex> lock(r.mu);
+    LockGuard<Mutex> lock(r.mu);
     r.count = 0;
 }
 

@@ -27,6 +27,181 @@ StackAllocator::operator=(const StackAllocator&)	function	foundation/memory	stac
 StackAllocator::Push(usize,usize)	function	foundation/memory	stackallocator-push-usize-usize	foundation-memory.md	engine/foundation/mem/stack_allocator.h:45
 StackAllocator::CurrentMarker() const	function	foundation/memory	stackallocator-currentmarker-const	foundation-memory.md	engine/foundation/mem/stack_allocator.h:48
 StackAllocator::PopToMarker(Marker)	function	foundation/memory	stackallocator-poptomarker-marker	foundation-memory.md	engine/foundation/mem/stack_allocator.h:54
+InitializerList	alias	foundation/lang	initializerlist	foundation-lang.md	engine/foundation/lang/initializer_list.h:10
+Limits	struct	foundation/lang	limits	foundation-lang.md	engine/foundation/lang/limits.h:13
+Limits::kSpecialized	variable	foundation/lang	limits-kspecialized	foundation-lang.md	engine/foundation/lang/limits.h:16
+Limits::kIsSigned	variable	foundation/lang	limits-kissigned	foundation-lang.md	engine/foundation/lang/limits.h:18
+Limits::kIsInteger	variable	foundation/lang	limits-kisinteger	foundation-lang.md	engine/foundation/lang/limits.h:20
+Limits::kIsIec559	variable	foundation/lang	limits-kisiec559	foundation-lang.md	engine/foundation/lang/limits.h:22
+Limits::kDigits	variable	foundation/lang	limits-kdigits	foundation-lang.md	engine/foundation/lang/limits.h:24
+Limits::kDigits10	variable	foundation/lang	limits-kdigits10	foundation-lang.md	engine/foundation/lang/limits.h:26
+Limits::Min() noexcept	function	foundation/lang	limits-min-noexcept	foundation-lang.md	engine/foundation/lang/limits.h:29
+Limits::Max() noexcept	function	foundation/lang	limits-max-noexcept	foundation-lang.md	engine/foundation/lang/limits.h:31
+Limits::Lowest() noexcept	function	foundation/lang	limits-lowest-noexcept	foundation-lang.md	engine/foundation/lang/limits.h:33
+Limits::Epsilon() noexcept	function	foundation/lang	limits-epsilon-noexcept	foundation-lang.md	engine/foundation/lang/limits.h:35
+Limits::Infinity() noexcept	function	foundation/lang	limits-infinity-noexcept	foundation-lang.md	engine/foundation/lang/limits.h:37
+Limits::QuietNaN() noexcept	function	foundation/lang	limits-quietnan-noexcept	foundation-lang.md	engine/foundation/lang/limits.h:39
+Limits::DenormMin() noexcept	function	foundation/lang	limits-denormmin-noexcept	foundation-lang.md	engine/foundation/lang/limits.h:41
+AlignVal	alias	foundation/lang	alignval	foundation-lang.md	engine/foundation/lang/new.h:11
+NoThrowTag	alias	foundation/lang	nothrowtag	foundation-lang.md	engine/foundation/lang/new.h:13
+kNoThrow	variable	foundation/lang	knothrow	foundation-lang.md	engine/foundation/lang/new.h:15
+BadAlloc	alias	foundation/lang	badalloc	foundation-lang.md	engine/foundation/lang/new.h:18
+ConstructAt(void*,Args&&...)	function	foundation/lang	constructat-void-star-args-amp-amp	foundation-lang.md	engine/foundation/lang/new.h:23
+Launder(T*) noexcept	function	foundation/lang	launder-t-star-noexcept	foundation-lang.md	engine/foundation/lang/new.h:29
+AlignedNew(usize,usize) noexcept	function	foundation/lang	alignednew-usize-usize-noexcept	foundation-lang.md	engine/foundation/lang/new.h:35
+AlignedDelete(void*,usize) noexcept	function	foundation/lang	aligneddelete-void-star-usize-noexcept	foundation-lang.md	engine/foundation/lang/new.h:40
+Ordering	alias	foundation/lang	ordering	foundation-lang.md	engine/foundation/lang/ordering.h:9
+IntegralConstant	alias	foundation/lang	integralconstant	foundation-lang.md	engine/foundation/lang/traits.h:10
+TrueType	alias	foundation/lang	truetype	foundation-lang.md	engine/foundation/lang/traits.h:13
+FalseType	alias	foundation/lang	falsetype	foundation-lang.md	engine/foundation/lang/traits.h:15
+VoidType	alias	foundation/lang	voidtype	foundation-lang.md	engine/foundation/lang/traits.h:17
+IsSame	variable	foundation/lang	issame	foundation-lang.md	engine/foundation/lang/traits.h:21
+IsConvertible	variable	foundation/lang	isconvertible	foundation-lang.md	engine/foundation/lang/traits.h:24
+IsConstructible	variable	foundation/lang	isconstructible	foundation-lang.md	engine/foundation/lang/traits.h:27
+IsIntegral	variable	foundation/lang	isintegral	foundation-lang.md	engine/foundation/lang/traits.h:30
+IsFloatingPoint	variable	foundation/lang	isfloatingpoint	foundation-lang.md	engine/foundation/lang/traits.h:33
+IsSigned	variable	foundation/lang	issigned	foundation-lang.md	engine/foundation/lang/traits.h:36
+IsUnsigned	variable	foundation/lang	isunsigned	foundation-lang.md	engine/foundation/lang/traits.h:39
+IsEnum	variable	foundation/lang	isenum	foundation-lang.md	engine/foundation/lang/traits.h:42
+IsPointer	variable	foundation/lang	ispointer	foundation-lang.md	engine/foundation/lang/traits.h:45
+IsConst	variable	foundation/lang	isconst	foundation-lang.md	engine/foundation/lang/traits.h:48
+IsTriviallyCopyable	variable	foundation/lang	istriviallycopyable	foundation-lang.md	engine/foundation/lang/traits.h:51
+IsTriviallyDestructible	variable	foundation/lang	istriviallydestructible	foundation-lang.md	engine/foundation/lang/traits.h:54
+IsTriviallyDefaultConstructible	variable	foundation/lang	istriviallydefaultconstructible	foundation-lang.md	engine/foundation/lang/traits.h:57
+IsStandardLayout	variable	foundation/lang	isstandardlayout	foundation-lang.md	engine/foundation/lang/traits.h:60
+IsMoveConstructible	variable	foundation/lang	ismoveconstructible	foundation-lang.md	engine/foundation/lang/traits.h:63
+IsCopyConstructible	variable	foundation/lang	iscopyconstructible	foundation-lang.md	engine/foundation/lang/traits.h:66
+IsNothrowMoveConstructible	variable	foundation/lang	isnothrowmoveconstructible	foundation-lang.md	engine/foundation/lang/traits.h:69
+IsBaseOf	variable	foundation/lang	isbaseof	foundation-lang.md	engine/foundation/lang/traits.h:72
+IsEmpty	variable	foundation/lang	isempty	foundation-lang.md	engine/foundation/lang/traits.h:75
+EnableIf	alias	foundation/lang	enableif	foundation-lang.md	engine/foundation/lang/traits.h:79
+Conditional	alias	foundation/lang	conditional	foundation-lang.md	engine/foundation/lang/traits.h:82
+RemoveReference	alias	foundation/lang	removereference	foundation-lang.md	engine/foundation/lang/traits.h:85
+RemoveConst	alias	foundation/lang	removeconst	foundation-lang.md	engine/foundation/lang/traits.h:88
+RemoveCV	alias	foundation/lang	removecv	foundation-lang.md	engine/foundation/lang/traits.h:91
+RemoveCVRef	alias	foundation/lang	removecvref	foundation-lang.md	engine/foundation/lang/traits.h:94
+RemovePointer	alias	foundation/lang	removepointer	foundation-lang.md	engine/foundation/lang/traits.h:97
+Decay	alias	foundation/lang	decay	foundation-lang.md	engine/foundation/lang/traits.h:100
+UnderlyingType	alias	foundation/lang	underlyingtype	foundation-lang.md	engine/foundation/lang/traits.h:103
+MakeSigned	alias	foundation/lang	makesigned	foundation-lang.md	engine/foundation/lang/traits.h:106
+MakeUnsigned	alias	foundation/lang	makeunsigned	foundation-lang.md	engine/foundation/lang/traits.h:109
+AddLvalueReference	alias	foundation/lang	addlvaluereference	foundation-lang.md	engine/foundation/lang/traits.h:112
+AddPointer	alias	foundation/lang	addpointer	foundation-lang.md	engine/foundation/lang/traits.h:115
+InvokeResult	alias	foundation/lang	invokeresult	foundation-lang.md	engine/foundation/lang/traits.h:118
+IsInvocable	variable	foundation/lang	isinvocable	foundation-lang.md	engine/foundation/lang/traits.h:121
+IsConstantEvaluated() noexcept	function	foundation/lang	isconstantevaluated-noexcept	foundation-lang.md	engine/foundation/lang/traits.h:125
+Move(T&&) noexcept	function	foundation/lang	move-t-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:12
+Forward(U&&) noexcept	function	foundation/lang	forward-u-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:20
+Exchange(T&,U&&)	function	foundation/lang	exchange-t-amp-u-amp-amp	foundation-lang.md	engine/foundation/lang/utility.h:28
+Swap(T&,T&)	function	foundation/lang	swap-t-amp-t-amp	foundation-lang.md	engine/foundation/lang/utility.h:38
+AsConst(T&) noexcept	function	foundation/lang	asconst-t-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:46
+Declval() noexcept	function	foundation/lang	declval-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:52
+MemoryOrder	enum	foundation/sync	memoryorder	foundation-sync.md	engine/foundation/sync/atomic.h:18
+MemoryOrder::Relaxed	enumerator	foundation/sync	memoryorder-relaxed	foundation-sync.md	engine/foundation/sync/atomic.h:20
+MemoryOrder::Consume	enumerator	foundation/sync	memoryorder-consume	foundation-sync.md	engine/foundation/sync/atomic.h:22
+MemoryOrder::Acquire	enumerator	foundation/sync	memoryorder-acquire	foundation-sync.md	engine/foundation/sync/atomic.h:24
+MemoryOrder::Release	enumerator	foundation/sync	memoryorder-release	foundation-sync.md	engine/foundation/sync/atomic.h:26
+MemoryOrder::AcqRel	enumerator	foundation/sync	memoryorder-acqrel	foundation-sync.md	engine/foundation/sync/atomic.h:28
+MemoryOrder::SeqCst	enumerator	foundation/sync	memoryorder-seqcst	foundation-sync.md	engine/foundation/sync/atomic.h:30
+detail_sync::ToStd(MemoryOrder) noexcept	function	foundation/sync	detail-sync-tostd-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:36
+detail_sync::FailureOrder(MemoryOrder) noexcept	function	foundation/sync	detail-sync-failureorder-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:49
+Atomic	class	foundation/sync	atomic	foundation-sync.md	engine/foundation/sync/atomic.h:66
+Atomic::kAlwaysLockFree	variable	foundation/sync	atomic-kalwayslockfree	foundation-sync.md	engine/foundation/sync/atomic.h:70
+Atomic::Atomic() noexcept	function	foundation/sync	atomic-atomic-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:73
+Atomic::Atomic(T) noexcept	function	foundation/sync	atomic-atomic-t-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:75
+Atomic::Atomic(const Atomic&)	function	foundation/sync	atomic-atomic-const-atomic-amp	foundation-sync.md	engine/foundation/sync/atomic.h:76
+Atomic::operator=(const Atomic&)	function	foundation/sync	atomic-operator-eq-const-atomic-amp	foundation-sync.md	engine/foundation/sync/atomic.h:77
+Atomic::Load(MemoryOrder) const noexcept	function	foundation/sync	atomic-load-memoryorder-const-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:80
+Atomic::Store(T,MemoryOrder) noexcept	function	foundation/sync	atomic-store-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:82
+Atomic::Exchange(T,MemoryOrder) noexcept	function	foundation/sync	atomic-exchange-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:84
+Atomic::CompareExchangeWeak(T&,T,MemoryOrder,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangeweak-t-amp-t-memoryorder-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:91
+Atomic::CompareExchangeWeak(T&,T,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangeweak-t-amp-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:95
+Atomic::CompareExchangeStrong(T&,T,MemoryOrder,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangestrong-t-amp-t-memoryorder-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:99
+Atomic::CompareExchangeStrong(T&,T,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangestrong-t-amp-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:103
+Atomic::FetchAdd(D,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchadd-d-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:108
+Atomic::FetchSub(D,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchsub-d-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:113
+Atomic::FetchAnd(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchand-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:118
+Atomic::FetchOr(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchor-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:120
+Atomic::FetchXor(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchxor-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:122
+Atomic::operator T() const noexcept	function	foundation/sync	atomic-operator-t-const-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:125
+Atomic::operator=(T) noexcept	function	foundation/sync	atomic-operator-eq-t-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:127
+Atomic::operator++() noexcept	function	foundation/sync	atomic-operator-plus-plus-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:132
+Atomic::operator++(int) noexcept	function	foundation/sync	atomic-operator-plus-plus-int-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:134
+Atomic::operator--() noexcept	function	foundation/sync	atomic-operator-minus-minus-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:136
+Atomic::operator--(int) noexcept	function	foundation/sync	atomic-operator-minus-minus-int-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:138
+AtomicThreadFence(MemoryOrder) noexcept	function	foundation/sync	atomicthreadfence-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:146
+AtomicSignalFence(MemoryOrder) noexcept	function	foundation/sync	atomicsignalfence-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:151
+Mutex	class	foundation/sync	mutex	foundation-sync.md	engine/foundation/sync/mutex.h:17
+Mutex::Native	alias	foundation/sync	mutex-native	foundation-sync.md	engine/foundation/sync/mutex.h:20
+Mutex::Mutex() noexcept	function	foundation/sync	mutex-mutex-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:22
+Mutex::Mutex(const Mutex&)	function	foundation/sync	mutex-mutex-const-mutex-amp	foundation-sync.md	engine/foundation/sync/mutex.h:23
+Mutex::operator=(const Mutex&)	function	foundation/sync	mutex-operator-eq-const-mutex-amp	foundation-sync.md	engine/foundation/sync/mutex.h:24
+Mutex::Lock()	function	foundation/sync	mutex-lock	foundation-sync.md	engine/foundation/sync/mutex.h:27
+Mutex::TryLock()	function	foundation/sync	mutex-trylock	foundation-sync.md	engine/foundation/sync/mutex.h:29
+Mutex::Unlock()	function	foundation/sync	mutex-unlock	foundation-sync.md	engine/foundation/sync/mutex.h:31
+Mutex::NativeMutex()	function	foundation/sync	mutex-nativemutex	foundation-sync.md	engine/foundation/sync/mutex.h:33
+RecursiveMutex	class	foundation/sync	recursivemutex	foundation-sync.md	engine/foundation/sync/mutex.h:42
+RecursiveMutex::Native	alias	foundation/sync	recursivemutex-native	foundation-sync.md	engine/foundation/sync/mutex.h:45
+RecursiveMutex::RecursiveMutex()	function	foundation/sync	recursivemutex-recursivemutex	foundation-sync.md	engine/foundation/sync/mutex.h:47
+RecursiveMutex::RecursiveMutex(const RecursiveMutex&)	function	foundation/sync	recursivemutex-recursivemutex-const-recursivemutex-amp	foundation-sync.md	engine/foundation/sync/mutex.h:48
+RecursiveMutex::operator=(const RecursiveMutex&)	function	foundation/sync	recursivemutex-operator-eq-const-recursivemutex-amp	foundation-sync.md	engine/foundation/sync/mutex.h:49
+RecursiveMutex::Lock()	function	foundation/sync	recursivemutex-lock	foundation-sync.md	engine/foundation/sync/mutex.h:52
+RecursiveMutex::TryLock()	function	foundation/sync	recursivemutex-trylock	foundation-sync.md	engine/foundation/sync/mutex.h:54
+RecursiveMutex::Unlock()	function	foundation/sync	recursivemutex-unlock	foundation-sync.md	engine/foundation/sync/mutex.h:56
+RecursiveMutex::NativeMutex()	function	foundation/sync	recursivemutex-nativemutex	foundation-sync.md	engine/foundation/sync/mutex.h:58
+LockGuard	class	foundation/sync	lockguard	foundation-sync.md	engine/foundation/sync/mutex.h:67
+LockGuard::LockGuard(M&)	function	foundation/sync	lockguard-lockguard-m-amp	foundation-sync.md	engine/foundation/sync/mutex.h:71
+LockGuard::LockGuard(const LockGuard&)	function	foundation/sync	lockguard-lockguard-const-lockguard-amp	foundation-sync.md	engine/foundation/sync/mutex.h:72
+LockGuard::operator=(const LockGuard&)	function	foundation/sync	lockguard-operator-eq-const-lockguard-amp	foundation-sync.md	engine/foundation/sync/mutex.h:73
+UniqueLock	class	foundation/sync	uniquelock	foundation-sync.md	engine/foundation/sync/mutex.h:82
+UniqueLock::UniqueLock() noexcept	function	foundation/sync	uniquelock-uniquelock-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:86
+UniqueLock::UniqueLock(M&)	function	foundation/sync	uniquelock-uniquelock-m-amp	foundation-sync.md	engine/foundation/sync/mutex.h:88
+UniqueLock::UniqueLock(M&,bool)	function	foundation/sync	uniquelock-uniquelock-m-amp-bool	foundation-sync.md	engine/foundation/sync/mutex.h:90
+UniqueLock::UniqueLock(UniqueLock&&) noexcept	function	foundation/sync	uniquelock-uniquelock-uniquelock-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:93
+UniqueLock::operator=(UniqueLock&&) noexcept	function	foundation/sync	uniquelock-operator-eq-uniquelock-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:94
+UniqueLock::Lock()	function	foundation/sync	uniquelock-lock	foundation-sync.md	engine/foundation/sync/mutex.h:97
+UniqueLock::TryLock()	function	foundation/sync	uniquelock-trylock	foundation-sync.md	engine/foundation/sync/mutex.h:99
+UniqueLock::Unlock()	function	foundation/sync	uniquelock-unlock	foundation-sync.md	engine/foundation/sync/mutex.h:101
+UniqueLock::OwnsLock() const noexcept	function	foundation/sync	uniquelock-ownslock-const-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:103
+UniqueLock::NativeLock()	function	foundation/sync	uniquelock-nativelock	foundation-sync.md	engine/foundation/sync/mutex.h:105
+ConditionVariable	class	foundation/sync	conditionvariable	foundation-sync.md	engine/foundation/sync/mutex.h:116
+ConditionVariable::ConditionVariable()	function	foundation/sync	conditionvariable-conditionvariable	foundation-sync.md	engine/foundation/sync/mutex.h:118
+ConditionVariable::ConditionVariable(const ConditionVariable&)	function	foundation/sync	conditionvariable-conditionvariable-const-conditionvariable-amp	foundation-sync.md	engine/foundation/sync/mutex.h:119
+ConditionVariable::operator=(const ConditionVariable&)	function	foundation/sync	conditionvariable-operator-eq-const-conditionvariable-amp	foundation-sync.md	engine/foundation/sync/mutex.h:120
+ConditionVariable::Wait(UniqueLock<Mutex>&)	function	foundation/sync	conditionvariable-wait-uniquelock-lt-mutex-gt-amp	foundation-sync.md	engine/foundation/sync/mutex.h:123
+ConditionVariable::Wait(UniqueLock<Mutex>&,Predicate)	function	foundation/sync	conditionvariable-wait-uniquelock-lt-mutex-gt-amp-predicate	foundation-sync.md	engine/foundation/sync/mutex.h:125
+ConditionVariable::WaitForMilliseconds(UniqueLock<Mutex>&,u64,Predicate)	function	foundation/sync	conditionvariable-waitformilliseconds-uniquelock-lt-mutex-gt-amp-u64-predicate	foundation-sync.md	engine/foundation/sync/mutex.h:130
+ConditionVariable::WaitForMilliseconds(UniqueLock<Mutex>&,u64)	function	foundation/sync	conditionvariable-waitformilliseconds-uniquelock-lt-mutex-gt-amp-u64	foundation-sync.md	engine/foundation/sync/mutex.h:135
+ConditionVariable::NotifyOne() noexcept	function	foundation/sync	conditionvariable-notifyone-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:139
+ConditionVariable::NotifyAll() noexcept	function	foundation/sync	conditionvariable-notifyall-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:141
+OnceFlag	class	foundation/sync	onceflag	foundation-sync.md	engine/foundation/sync/mutex.h:148
+OnceFlag::OnceFlag() noexcept	function	foundation/sync	onceflag-onceflag-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:150
+OnceFlag::OnceFlag(const OnceFlag&)	function	foundation/sync	onceflag-onceflag-const-onceflag-amp	foundation-sync.md	engine/foundation/sync/mutex.h:151
+OnceFlag::operator=(const OnceFlag&)	function	foundation/sync	onceflag-operator-eq-const-onceflag-amp	foundation-sync.md	engine/foundation/sync/mutex.h:152
+OnceFlag::NativeFlag()	function	foundation/sync	onceflag-nativeflag	foundation-sync.md	engine/foundation/sync/mutex.h:154
+CallOnce(OnceFlag&,F&&,Args&&...)	function	foundation/sync	callonce-onceflag-amp-f-amp-amp-args-amp-amp	foundation-sync.md	engine/foundation/sync/mutex.h:161
+ThreadId	class	foundation/sync	threadid	foundation-sync.md	engine/foundation/sync/thread.h:15
+ThreadId::ThreadId() noexcept	function	foundation/sync	threadid-threadid-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:18
+ThreadId::ThreadId(std::thread::id) noexcept	function	foundation/sync	threadid-threadid-std-thread-id-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:20
+ThreadId::Hash() const noexcept	function	foundation/sync	threadid-hash-const-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:24
+ThreadId::Native() const noexcept	function	foundation/sync	threadid-native-const-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:26
+Thread	class	foundation/sync	thread	foundation-sync.md	engine/foundation/sync/thread.h:38
+Thread::Thread() noexcept	function	foundation/sync	thread-thread-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:41
+Thread::Thread(F&&,Args&&...)	function	foundation/sync	thread-thread-f-amp-amp-args-amp-amp	foundation-sync.md	engine/foundation/sync/thread.h:43
+Thread::Thread(Thread&&) noexcept	function	foundation/sync	thread-thread-thread-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:45
+Thread::operator=(Thread&&) noexcept	function	foundation/sync	thread-operator-eq-thread-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:46
+Thread::Thread(const Thread&)	function	foundation/sync	thread-thread-const-thread-amp	foundation-sync.md	engine/foundation/sync/thread.h:47
+Thread::operator=(const Thread&)	function	foundation/sync	thread-operator-eq-const-thread-amp	foundation-sync.md	engine/foundation/sync/thread.h:48
+Thread::Joinable() const noexcept	function	foundation/sync	thread-joinable-const-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:51
+Thread::Join()	function	foundation/sync	thread-join	foundation-sync.md	engine/foundation/sync/thread.h:53
+Thread::Detach()	function	foundation/sync	thread-detach	foundation-sync.md	engine/foundation/sync/thread.h:55
+Thread::Id() const noexcept	function	foundation/sync	thread-id-const-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:57
+Thread::Swap(Thread&) noexcept	function	foundation/sync	thread-swap-thread-amp-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:59
+Thread::HardwareConcurrency() noexcept	function	foundation/sync	thread-hardwareconcurrency-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:62
+ThisThread::Id() noexcept	function	foundation/sync	thisthread-id-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:72
+ThisThread::Yield() noexcept	function	foundation/sync	thisthread-yield-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:74
+ThisThread::SleepForMilliseconds(u64)	function	foundation/sync	thisthread-sleepformilliseconds-u64	foundation-sync.md	engine/foundation/sync/thread.h:76
+ThisThread::SleepForMicroseconds(u64)	function	foundation/sync	thisthread-sleepformicroseconds-u64	foundation-sync.md	engine/foundation/sync/thread.h:78
 Min(const T&,const T&)	function	foundation/containers	min-const-t-amp-const-t-amp	foundation-containers.md	engine/foundation/algorithm.h:16
 Max(const T&,const T&)	function	foundation/containers	max-const-t-amp-const-t-amp	foundation-containers.md	engine/foundation/algorithm.h:22
 Clamp(T,T,T)	function	foundation/containers	clamp-t-t-t	foundation-containers.md	engine/foundation/algorithm.h:30
@@ -79,119 +254,119 @@ HashMap::Remove(const K&)	function	foundation/containers	hashmap-remove-const-k-
 HashMap::Size() const	function	foundation/containers	hashmap-size-const	foundation-containers.md	engine/foundation/containers/hash_map.h:188
 HashMap::SlotCapacity() const	function	foundation/containers	hashmap-slotcapacity-const	foundation-containers.md	engine/foundation/containers/hash_map.h:193
 HashMap::TombstoneCount() const	function	foundation/containers	hashmap-tombstonecount-const	foundation-containers.md	engine/foundation/containers/hash_map.h:199
-AtomicRefCount	struct	foundation/containers	atomicrefcount	foundation-containers.md	engine/foundation/containers/shared_ptr.h:16
-AtomicRefCount::count	variable	foundation/containers	atomicrefcount-count	foundation-containers.md	engine/foundation/containers/shared_ptr.h:18
-AtomicRefCount::Increment()	function	foundation/containers	atomicrefcount-increment	foundation-containers.md	engine/foundation/containers/shared_ptr.h:20
-AtomicRefCount::Decrement()	function	foundation/containers	atomicrefcount-decrement	foundation-containers.md	engine/foundation/containers/shared_ptr.h:22
-AtomicRefCount::Load() const	function	foundation/containers	atomicrefcount-load-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:24
-PlainRefCount	struct	foundation/containers	plainrefcount	foundation-containers.md	engine/foundation/containers/shared_ptr.h:28
-PlainRefCount::count	variable	foundation/containers	plainrefcount-count	foundation-containers.md	engine/foundation/containers/shared_ptr.h:30
-PlainRefCount::Increment()	function	foundation/containers	plainrefcount-increment	foundation-containers.md	engine/foundation/containers/shared_ptr.h:32
-PlainRefCount::Decrement()	function	foundation/containers	plainrefcount-decrement	foundation-containers.md	engine/foundation/containers/shared_ptr.h:34
-PlainRefCount::Load() const	function	foundation/containers	plainrefcount-load-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:36
-SharedBlock	struct	foundation/containers	sharedblock	foundation-containers.md	engine/foundation/containers/shared_ptr.h:48
-SharedBlock::refs	variable	foundation/containers	sharedblock-refs	foundation-containers.md	engine/foundation/containers/shared_ptr.h:51
-SharedBlock::destroy	variable	foundation/containers	sharedblock-destroy	foundation-containers.md	engine/foundation/containers/shared_ptr.h:53
-SharedPtr	class	foundation/containers	sharedptr	foundation-containers.md	engine/foundation/containers/shared_ptr.h:67
-SharedPtr::SharedPtr()	function	foundation/containers	sharedptr-sharedptr	foundation-containers.md	engine/foundation/containers/shared_ptr.h:71
-SharedPtr::SharedPtr(decltype(nullptr))	function	foundation/containers	sharedptr-sharedptr-decltype-nullptr	foundation-containers.md	engine/foundation/containers/shared_ptr.h:73
-SharedPtr::SharedPtr(const SharedPtr&)	function	foundation/containers	sharedptr-sharedptr-const-sharedptr-amp	foundation-containers.md	engine/foundation/containers/shared_ptr.h:76
-SharedPtr::SharedPtr(const SharedPtr<U,Count>&)	function	foundation/containers	sharedptr-sharedptr-const-sharedptr-lt-u-count-gt-amp	foundation-containers.md	engine/foundation/containers/shared_ptr.h:79
-SharedPtr::SharedPtr(SharedPtr&&) noexcept	function	foundation/containers	sharedptr-sharedptr-sharedptr-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/shared_ptr.h:86
-SharedPtr::SharedPtr(SharedPtr<U,Count>&&) noexcept	function	foundation/containers	sharedptr-sharedptr-sharedptr-lt-u-count-gt-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/shared_ptr.h:92
-SharedPtr::operator=(const SharedPtr&)	function	foundation/containers	sharedptr-operator-eq-const-sharedptr-amp	foundation-containers.md	engine/foundation/containers/shared_ptr.h:100
-SharedPtr::operator=(SharedPtr&&) noexcept	function	foundation/containers	sharedptr-operator-eq-sharedptr-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/shared_ptr.h:107
-SharedPtr::SharedPtr(detail::SharedAdopt,T*,SharedBlock<Count>*)	function	foundation/containers	sharedptr-sharedptr-detail-sharedadopt-t-star-sharedblock-lt-count-gt-star	foundation-containers.md	engine/foundation/containers/shared_ptr.h:118
-SharedPtr::~SharedPtr()	function	foundation/containers	sharedptr-tilde-sharedptr	foundation-containers.md	engine/foundation/containers/shared_ptr.h:121
-SharedPtr::Reset()	function	foundation/containers	sharedptr-reset	foundation-containers.md	engine/foundation/containers/shared_ptr.h:124
-SharedPtr::Get() const	function	foundation/containers	sharedptr-get-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:139
-SharedPtr::operator->() const	function	foundation/containers	sharedptr-operator-minus-gt-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:141
-SharedPtr::operator*() const	function	foundation/containers	sharedptr-operator-star-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:143
-SharedPtr::operator bool() const	function	foundation/containers	sharedptr-operator-bool-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:145
-SharedPtr::UseCount() const	function	foundation/containers	sharedptr-usecount-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:147
-LocalSharedPtr	alias	foundation/containers	localsharedptr	foundation-containers.md	engine/foundation/containers/shared_ptr.h:172
-MakeShared(Args&&...)	function	foundation/containers	makeshared-args-amp-amp	foundation-containers.md	engine/foundation/containers/shared_ptr.h:198
-Span	class	foundation/containers	span	foundation-containers.md	engine/foundation/containers/span.h:25
-Span::Span()	function	foundation/containers	span-span	foundation-containers.md	engine/foundation/containers/span.h:29
-Span::Span(T*,usize)	function	foundation/containers	span-span-t-star-usize	foundation-containers.md	engine/foundation/containers/span.h:35
-Span::Span(U(&)[N])	function	foundation/containers	span-span-u-amp-n	foundation-containers.md	engine/foundation/containers/span.h:39
-Span::Span(const Span<U>&)	function	foundation/containers	span-span-const-span-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:43
-Span::Span(Vector<U,A>&)	function	foundation/containers	span-span-vector-lt-u-a-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:47
-Span::Span(const Vector<U,A>&)	function	foundation/containers	span-span-const-vector-lt-u-a-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:51
-Span::Span(Array<U,N>&)	function	foundation/containers	span-span-array-lt-u-n-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:55
-Span::Span(const Array<U,N>&)	function	foundation/containers	span-span-const-array-lt-u-n-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:59
-Span::Data() const	function	foundation/containers	span-data-const	foundation-containers.md	engine/foundation/containers/span.h:64
-Span::Size() const	function	foundation/containers	span-size-const	foundation-containers.md	engine/foundation/containers/span.h:66
-Span::SizeBytes() const	function	foundation/containers	span-sizebytes-const	foundation-containers.md	engine/foundation/containers/span.h:68
-Span::Empty() const	function	foundation/containers	span-empty-const	foundation-containers.md	engine/foundation/containers/span.h:70
-Span::operator[](usize) const	function	foundation/containers	span-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/span.h:76
-Span::begin() const	function	foundation/containers	span-begin-const	foundation-containers.md	engine/foundation/containers/span.h:82
-Span::end() const	function	foundation/containers	span-end-const	foundation-containers.md	engine/foundation/containers/span.h:84
-Span::First(usize) const	function	foundation/containers	span-first-usize-const	foundation-containers.md	engine/foundation/containers/span.h:90
-Span::Last(usize) const	function	foundation/containers	span-last-usize-const	foundation-containers.md	engine/foundation/containers/span.h:98
-Span::Subspan(usize,usize) const	function	foundation/containers	span-subspan-usize-usize-const	foundation-containers.md	engine/foundation/containers/span.h:107
-Span::Subspan(usize) const	function	foundation/containers	span-subspan-usize-const	foundation-containers.md	engine/foundation/containers/span.h:115
-ByteSpan	alias	foundation/containers	bytespan	foundation-containers.md	engine/foundation/containers/span.h:126
-MutableByteSpan	alias	foundation/containers	mutablebytespan	foundation-containers.md	engine/foundation/containers/span.h:128
-AsBytes(const T&)	function	foundation/containers	asbytes-const-t-amp	foundation-containers.md	engine/foundation/containers/span.h:133
-AsBytes(Span<T>)	function	foundation/containers	asbytes-span-lt-t-gt	foundation-containers.md	engine/foundation/containers/span.h:140
-AsByteSpan(StringView)	function	foundation/containers	asbytespan-stringview	foundation-containers.md	engine/foundation/containers/span.h:147
-ToStringView(ByteSpan)	function	foundation/containers	tostringview-bytespan	foundation-containers.md	engine/foundation/containers/span.h:150
-Append(Vector<T,A>&,std::type_identity_t<Span<const T>>)	function	foundation/containers	append-vector-lt-t-a-gt-amp-std-type-identity-t-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:157
-Assign(Vector<T,A>&,std::type_identity_t<Span<const T>>)	function	foundation/containers	assign-vector-lt-t-a-gt-amp-std-type-identity-t-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:182
-DefaultDelete	struct	foundation/containers	defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:23
-DefaultDelete::DefaultDelete()	function	foundation/containers	defaultdelete-defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:26
-DefaultDelete::DefaultDelete(const DefaultDelete<U>&)	function	foundation/containers	defaultdelete-defaultdelete-const-defaultdelete-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:28
-DefaultDelete::operator()(T*) const	function	foundation/containers	defaultdelete-operator-call-t-star-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:39
-UniquePtr	class	foundation/containers	uniqueptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:55
-UniquePtr::UniquePtr()	function	foundation/containers	uniqueptr-uniqueptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:59
-UniquePtr::UniquePtr(decltype(nullptr))	function	foundation/containers	uniqueptr-uniqueptr-decltype-nullptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:61
-UniquePtr::UniquePtr(T*,Deleter)	function	foundation/containers	uniqueptr-uniqueptr-t-star-deleter	foundation-containers.md	engine/foundation/containers/unique_ptr.h:67
-UniquePtr::~UniquePtr()	function	foundation/containers	uniqueptr-tilde-uniqueptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:70
-UniquePtr::UniquePtr(const UniquePtr&)	function	foundation/containers	uniqueptr-uniqueptr-const-uniqueptr-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:72
-UniquePtr::operator=(const UniquePtr&)	function	foundation/containers	uniqueptr-operator-eq-const-uniqueptr-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:73
-UniquePtr::UniquePtr(UniquePtr&&) noexcept	function	foundation/containers	uniqueptr-uniqueptr-uniqueptr-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/unique_ptr.h:76
-UniquePtr::UniquePtr(UniquePtr<U,E>&&) noexcept	function	foundation/containers	uniqueptr-uniqueptr-uniqueptr-lt-u-e-gt-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/unique_ptr.h:79
-UniquePtr::operator=(UniquePtr&&) noexcept	function	foundation/containers	uniqueptr-operator-eq-uniqueptr-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/unique_ptr.h:84
-UniquePtr::operator=(decltype(nullptr))	function	foundation/containers	uniqueptr-operator-eq-decltype-nullptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:94
-UniquePtr::Get() const	function	foundation/containers	uniqueptr-get-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:105
-UniquePtr::operator->() const	function	foundation/containers	uniqueptr-operator-minus-gt-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:109
-UniquePtr::operator*() const	function	foundation/containers	uniqueptr-operator-star-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:111
-UniquePtr::operator bool() const	function	foundation/containers	uniqueptr-operator-bool-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:113
-UniquePtr::Release()	function	foundation/containers	uniqueptr-release	foundation-containers.md	engine/foundation/containers/unique_ptr.h:116
-UniquePtr::Reset(T*)	function	foundation/containers	uniqueptr-reset-t-star	foundation-containers.md	engine/foundation/containers/unique_ptr.h:125
-UniquePtr::GetDeleter()	function	foundation/containers	uniqueptr-getdeleter	foundation-containers.md	engine/foundation/containers/unique_ptr.h:134
-UniquePtr::GetDeleter() const	function	foundation/containers	uniqueptr-getdeleter-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:136
-MakeUnique(Args&&...)	function	foundation/containers	makeunique-args-amp-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:150
-Vector	class	foundation/containers	vector	foundation-containers.md	engine/foundation/containers/vector.h:30
-Vector::Vector(Allocator&)	function	foundation/containers	vector-vector-allocator-amp	foundation-containers.md	engine/foundation/containers/vector.h:37
-Vector::Vector()	function	foundation/containers	vector-vector	foundation-containers.md	engine/foundation/containers/vector.h:42
-Vector::~Vector()	function	foundation/containers	vector-tilde-vector	foundation-containers.md	engine/foundation/containers/vector.h:45
-Vector::Vector(const Vector&)	function	foundation/containers	vector-vector-const-vector-amp	foundation-containers.md	engine/foundation/containers/vector.h:50
-Vector::operator=(const Vector&)	function	foundation/containers	vector-operator-eq-const-vector-amp	foundation-containers.md	engine/foundation/containers/vector.h:51
-Vector::Vector(Vector&&) noexcept	function	foundation/containers	vector-vector-vector-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/vector.h:54
-Vector::operator=(Vector&&) noexcept	function	foundation/containers	vector-operator-eq-vector-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/vector.h:65
-Vector::Reserve(usize)	function	foundation/containers	vector-reserve-usize	foundation-containers.md	engine/foundation/containers/vector.h:88
-Vector::TryReserve(usize)	function	foundation/containers	vector-tryreserve-usize	foundation-containers.md	engine/foundation/containers/vector.h:98
-Vector::Resize(usize)	function	foundation/containers	vector-resize-usize	foundation-containers.md	engine/foundation/containers/vector.h:134
-Vector::TryResize(usize)	function	foundation/containers	vector-tryresize-usize	foundation-containers.md	engine/foundation/containers/vector.h:143
-Vector::TryResizeUninitialized(usize)	function	foundation/containers	vector-tryresizeuninitialized-usize	foundation-containers.md	engine/foundation/containers/vector.h:164
-Vector::Clear()	function	foundation/containers	vector-clear	foundation-containers.md	engine/foundation/containers/vector.h:179
-Vector::Reset()	function	foundation/containers	vector-reset	foundation-containers.md	engine/foundation/containers/vector.h:185
-Vector::Push(const T&)	function	foundation/containers	vector-push-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:197
-Vector::Push(T&&)	function	foundation/containers	vector-push-t-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:214
-Vector::Pop()	function	foundation/containers	vector-pop	foundation-containers.md	engine/foundation/containers/vector.h:229
-Vector::Insert(usize,const T&)	function	foundation/containers	vector-insert-usize-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:242
-Vector::Insert(usize,T&&)	function	foundation/containers	vector-insert-usize-t-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:263
-Vector::Remove(usize)	function	foundation/containers	vector-remove-usize	foundation-containers.md	engine/foundation/containers/vector.h:282
-Vector::RemoveRange(usize,usize)	function	foundation/containers	vector-removerange-usize-usize	foundation-containers.md	engine/foundation/containers/vector.h:295
-Vector::operator[](usize)	function	foundation/containers	vector-operator-index-usize	foundation-containers.md	engine/foundation/containers/vector.h:308
-Vector::operator[](usize) const	function	foundation/containers	vector-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/vector.h:312
-Vector::Data()	function	foundation/containers	vector-data	foundation-containers.md	engine/foundation/containers/vector.h:315
-Vector::Data() const	function	foundation/containers	vector-data-const	foundation-containers.md	engine/foundation/containers/vector.h:317
-Vector::Size() const	function	foundation/containers	vector-size-const	foundation-containers.md	engine/foundation/containers/vector.h:320
-Vector::Empty() const	function	foundation/containers	vector-empty-const	foundation-containers.md	engine/foundation/containers/vector.h:322
-Vector::Capacity() const	function	foundation/containers	vector-capacity-const	foundation-containers.md	engine/foundation/containers/vector.h:324
+AtomicRefCount	struct	foundation/containers	atomicrefcount	foundation-containers.md	engine/foundation/containers/shared_ptr.h:15
+AtomicRefCount::count	variable	foundation/containers	atomicrefcount-count	foundation-containers.md	engine/foundation/containers/shared_ptr.h:17
+AtomicRefCount::Increment()	function	foundation/containers	atomicrefcount-increment	foundation-containers.md	engine/foundation/containers/shared_ptr.h:19
+AtomicRefCount::Decrement()	function	foundation/containers	atomicrefcount-decrement	foundation-containers.md	engine/foundation/containers/shared_ptr.h:21
+AtomicRefCount::Load() const	function	foundation/containers	atomicrefcount-load-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:23
+PlainRefCount	struct	foundation/containers	plainrefcount	foundation-containers.md	engine/foundation/containers/shared_ptr.h:27
+PlainRefCount::count	variable	foundation/containers	plainrefcount-count	foundation-containers.md	engine/foundation/containers/shared_ptr.h:29
+PlainRefCount::Increment()	function	foundation/containers	plainrefcount-increment	foundation-containers.md	engine/foundation/containers/shared_ptr.h:31
+PlainRefCount::Decrement()	function	foundation/containers	plainrefcount-decrement	foundation-containers.md	engine/foundation/containers/shared_ptr.h:33
+PlainRefCount::Load() const	function	foundation/containers	plainrefcount-load-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:35
+SharedBlock	struct	foundation/containers	sharedblock	foundation-containers.md	engine/foundation/containers/shared_ptr.h:47
+SharedBlock::refs	variable	foundation/containers	sharedblock-refs	foundation-containers.md	engine/foundation/containers/shared_ptr.h:50
+SharedBlock::destroy	variable	foundation/containers	sharedblock-destroy	foundation-containers.md	engine/foundation/containers/shared_ptr.h:52
+SharedPtr	class	foundation/containers	sharedptr	foundation-containers.md	engine/foundation/containers/shared_ptr.h:66
+SharedPtr::SharedPtr()	function	foundation/containers	sharedptr-sharedptr	foundation-containers.md	engine/foundation/containers/shared_ptr.h:70
+SharedPtr::SharedPtr(decltype(nullptr))	function	foundation/containers	sharedptr-sharedptr-decltype-nullptr	foundation-containers.md	engine/foundation/containers/shared_ptr.h:72
+SharedPtr::SharedPtr(const SharedPtr&)	function	foundation/containers	sharedptr-sharedptr-const-sharedptr-amp	foundation-containers.md	engine/foundation/containers/shared_ptr.h:75
+SharedPtr::SharedPtr(const SharedPtr<U,Count>&)	function	foundation/containers	sharedptr-sharedptr-const-sharedptr-lt-u-count-gt-amp	foundation-containers.md	engine/foundation/containers/shared_ptr.h:78
+SharedPtr::SharedPtr(SharedPtr&&) noexcept	function	foundation/containers	sharedptr-sharedptr-sharedptr-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/shared_ptr.h:85
+SharedPtr::SharedPtr(SharedPtr<U,Count>&&) noexcept	function	foundation/containers	sharedptr-sharedptr-sharedptr-lt-u-count-gt-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/shared_ptr.h:91
+SharedPtr::operator=(const SharedPtr&)	function	foundation/containers	sharedptr-operator-eq-const-sharedptr-amp	foundation-containers.md	engine/foundation/containers/shared_ptr.h:99
+SharedPtr::operator=(SharedPtr&&) noexcept	function	foundation/containers	sharedptr-operator-eq-sharedptr-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/shared_ptr.h:106
+SharedPtr::SharedPtr(detail::SharedAdopt,T*,SharedBlock<Count>*)	function	foundation/containers	sharedptr-sharedptr-detail-sharedadopt-t-star-sharedblock-lt-count-gt-star	foundation-containers.md	engine/foundation/containers/shared_ptr.h:117
+SharedPtr::~SharedPtr()	function	foundation/containers	sharedptr-tilde-sharedptr	foundation-containers.md	engine/foundation/containers/shared_ptr.h:120
+SharedPtr::Reset()	function	foundation/containers	sharedptr-reset	foundation-containers.md	engine/foundation/containers/shared_ptr.h:123
+SharedPtr::Get() const	function	foundation/containers	sharedptr-get-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:138
+SharedPtr::operator->() const	function	foundation/containers	sharedptr-operator-minus-gt-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:140
+SharedPtr::operator*() const	function	foundation/containers	sharedptr-operator-star-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:142
+SharedPtr::operator bool() const	function	foundation/containers	sharedptr-operator-bool-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:144
+SharedPtr::UseCount() const	function	foundation/containers	sharedptr-usecount-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:146
+LocalSharedPtr	alias	foundation/containers	localsharedptr	foundation-containers.md	engine/foundation/containers/shared_ptr.h:171
+MakeShared(Args&&...)	function	foundation/containers	makeshared-args-amp-amp	foundation-containers.md	engine/foundation/containers/shared_ptr.h:197
+Span	class	foundation/containers	span	foundation-containers.md	engine/foundation/containers/span.h:26
+Span::Span()	function	foundation/containers	span-span	foundation-containers.md	engine/foundation/containers/span.h:30
+Span::Span(T*,usize)	function	foundation/containers	span-span-t-star-usize	foundation-containers.md	engine/foundation/containers/span.h:36
+Span::Span(U(&)[N])	function	foundation/containers	span-span-u-amp-n	foundation-containers.md	engine/foundation/containers/span.h:40
+Span::Span(const Span<U>&)	function	foundation/containers	span-span-const-span-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:44
+Span::Span(Vector<U,A>&)	function	foundation/containers	span-span-vector-lt-u-a-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:48
+Span::Span(const Vector<U,A>&)	function	foundation/containers	span-span-const-vector-lt-u-a-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:52
+Span::Span(Array<U,N>&)	function	foundation/containers	span-span-array-lt-u-n-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:56
+Span::Span(const Array<U,N>&)	function	foundation/containers	span-span-const-array-lt-u-n-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:60
+Span::Data() const	function	foundation/containers	span-data-const	foundation-containers.md	engine/foundation/containers/span.h:65
+Span::Size() const	function	foundation/containers	span-size-const	foundation-containers.md	engine/foundation/containers/span.h:67
+Span::SizeBytes() const	function	foundation/containers	span-sizebytes-const	foundation-containers.md	engine/foundation/containers/span.h:69
+Span::Empty() const	function	foundation/containers	span-empty-const	foundation-containers.md	engine/foundation/containers/span.h:71
+Span::operator[](usize) const	function	foundation/containers	span-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/span.h:77
+Span::begin() const	function	foundation/containers	span-begin-const	foundation-containers.md	engine/foundation/containers/span.h:83
+Span::end() const	function	foundation/containers	span-end-const	foundation-containers.md	engine/foundation/containers/span.h:85
+Span::First(usize) const	function	foundation/containers	span-first-usize-const	foundation-containers.md	engine/foundation/containers/span.h:91
+Span::Last(usize) const	function	foundation/containers	span-last-usize-const	foundation-containers.md	engine/foundation/containers/span.h:99
+Span::Subspan(usize,usize) const	function	foundation/containers	span-subspan-usize-usize-const	foundation-containers.md	engine/foundation/containers/span.h:108
+Span::Subspan(usize) const	function	foundation/containers	span-subspan-usize-const	foundation-containers.md	engine/foundation/containers/span.h:116
+ByteSpan	alias	foundation/containers	bytespan	foundation-containers.md	engine/foundation/containers/span.h:127
+MutableByteSpan	alias	foundation/containers	mutablebytespan	foundation-containers.md	engine/foundation/containers/span.h:129
+AsBytes(const T&)	function	foundation/containers	asbytes-const-t-amp	foundation-containers.md	engine/foundation/containers/span.h:134
+AsBytes(Span<T>)	function	foundation/containers	asbytes-span-lt-t-gt	foundation-containers.md	engine/foundation/containers/span.h:141
+AsByteSpan(StringView)	function	foundation/containers	asbytespan-stringview	foundation-containers.md	engine/foundation/containers/span.h:148
+ToStringView(ByteSpan)	function	foundation/containers	tostringview-bytespan	foundation-containers.md	engine/foundation/containers/span.h:151
+Append(Vector<T,A>&,std::type_identity_t<Span<const T>>)	function	foundation/containers	append-vector-lt-t-a-gt-amp-std-type-identity-t-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:158
+Assign(Vector<T,A>&,std::type_identity_t<Span<const T>>)	function	foundation/containers	assign-vector-lt-t-a-gt-amp-std-type-identity-t-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:183
+DefaultDelete	struct	foundation/containers	defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:22
+DefaultDelete::DefaultDelete()	function	foundation/containers	defaultdelete-defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:25
+DefaultDelete::DefaultDelete(const DefaultDelete<U>&)	function	foundation/containers	defaultdelete-defaultdelete-const-defaultdelete-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:27
+DefaultDelete::operator()(T*) const	function	foundation/containers	defaultdelete-operator-call-t-star-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:38
+UniquePtr	class	foundation/containers	uniqueptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:54
+UniquePtr::UniquePtr()	function	foundation/containers	uniqueptr-uniqueptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:58
+UniquePtr::UniquePtr(decltype(nullptr))	function	foundation/containers	uniqueptr-uniqueptr-decltype-nullptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:60
+UniquePtr::UniquePtr(T*,Deleter)	function	foundation/containers	uniqueptr-uniqueptr-t-star-deleter	foundation-containers.md	engine/foundation/containers/unique_ptr.h:66
+UniquePtr::~UniquePtr()	function	foundation/containers	uniqueptr-tilde-uniqueptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:69
+UniquePtr::UniquePtr(const UniquePtr&)	function	foundation/containers	uniqueptr-uniqueptr-const-uniqueptr-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:71
+UniquePtr::operator=(const UniquePtr&)	function	foundation/containers	uniqueptr-operator-eq-const-uniqueptr-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:72
+UniquePtr::UniquePtr(UniquePtr&&) noexcept	function	foundation/containers	uniqueptr-uniqueptr-uniqueptr-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/unique_ptr.h:75
+UniquePtr::UniquePtr(UniquePtr<U,E>&&) noexcept	function	foundation/containers	uniqueptr-uniqueptr-uniqueptr-lt-u-e-gt-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/unique_ptr.h:78
+UniquePtr::operator=(UniquePtr&&) noexcept	function	foundation/containers	uniqueptr-operator-eq-uniqueptr-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/unique_ptr.h:83
+UniquePtr::operator=(decltype(nullptr))	function	foundation/containers	uniqueptr-operator-eq-decltype-nullptr	foundation-containers.md	engine/foundation/containers/unique_ptr.h:93
+UniquePtr::Get() const	function	foundation/containers	uniqueptr-get-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:104
+UniquePtr::operator->() const	function	foundation/containers	uniqueptr-operator-minus-gt-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:108
+UniquePtr::operator*() const	function	foundation/containers	uniqueptr-operator-star-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:110
+UniquePtr::operator bool() const	function	foundation/containers	uniqueptr-operator-bool-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:112
+UniquePtr::Release()	function	foundation/containers	uniqueptr-release	foundation-containers.md	engine/foundation/containers/unique_ptr.h:115
+UniquePtr::Reset(T*)	function	foundation/containers	uniqueptr-reset-t-star	foundation-containers.md	engine/foundation/containers/unique_ptr.h:124
+UniquePtr::GetDeleter()	function	foundation/containers	uniqueptr-getdeleter	foundation-containers.md	engine/foundation/containers/unique_ptr.h:133
+UniquePtr::GetDeleter() const	function	foundation/containers	uniqueptr-getdeleter-const	foundation-containers.md	engine/foundation/containers/unique_ptr.h:135
+MakeUnique(Args&&...)	function	foundation/containers	makeunique-args-amp-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:149
+Vector	class	foundation/containers	vector	foundation-containers.md	engine/foundation/containers/vector.h:29
+Vector::Vector(Allocator&)	function	foundation/containers	vector-vector-allocator-amp	foundation-containers.md	engine/foundation/containers/vector.h:36
+Vector::Vector()	function	foundation/containers	vector-vector	foundation-containers.md	engine/foundation/containers/vector.h:41
+Vector::~Vector()	function	foundation/containers	vector-tilde-vector	foundation-containers.md	engine/foundation/containers/vector.h:44
+Vector::Vector(const Vector&)	function	foundation/containers	vector-vector-const-vector-amp	foundation-containers.md	engine/foundation/containers/vector.h:49
+Vector::operator=(const Vector&)	function	foundation/containers	vector-operator-eq-const-vector-amp	foundation-containers.md	engine/foundation/containers/vector.h:50
+Vector::Vector(Vector&&) noexcept	function	foundation/containers	vector-vector-vector-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/vector.h:53
+Vector::operator=(Vector&&) noexcept	function	foundation/containers	vector-operator-eq-vector-amp-amp-noexcept	foundation-containers.md	engine/foundation/containers/vector.h:64
+Vector::Reserve(usize)	function	foundation/containers	vector-reserve-usize	foundation-containers.md	engine/foundation/containers/vector.h:87
+Vector::TryReserve(usize)	function	foundation/containers	vector-tryreserve-usize	foundation-containers.md	engine/foundation/containers/vector.h:97
+Vector::Resize(usize)	function	foundation/containers	vector-resize-usize	foundation-containers.md	engine/foundation/containers/vector.h:133
+Vector::TryResize(usize)	function	foundation/containers	vector-tryresize-usize	foundation-containers.md	engine/foundation/containers/vector.h:142
+Vector::TryResizeUninitialized(usize)	function	foundation/containers	vector-tryresizeuninitialized-usize	foundation-containers.md	engine/foundation/containers/vector.h:163
+Vector::Clear()	function	foundation/containers	vector-clear	foundation-containers.md	engine/foundation/containers/vector.h:178
+Vector::Reset()	function	foundation/containers	vector-reset	foundation-containers.md	engine/foundation/containers/vector.h:184
+Vector::Push(const T&)	function	foundation/containers	vector-push-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:196
+Vector::Push(T&&)	function	foundation/containers	vector-push-t-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:213
+Vector::Pop()	function	foundation/containers	vector-pop	foundation-containers.md	engine/foundation/containers/vector.h:228
+Vector::Insert(usize,const T&)	function	foundation/containers	vector-insert-usize-const-t-amp	foundation-containers.md	engine/foundation/containers/vector.h:241
+Vector::Insert(usize,T&&)	function	foundation/containers	vector-insert-usize-t-amp-amp	foundation-containers.md	engine/foundation/containers/vector.h:262
+Vector::Remove(usize)	function	foundation/containers	vector-remove-usize	foundation-containers.md	engine/foundation/containers/vector.h:281
+Vector::RemoveRange(usize,usize)	function	foundation/containers	vector-removerange-usize-usize	foundation-containers.md	engine/foundation/containers/vector.h:294
+Vector::operator[](usize)	function	foundation/containers	vector-operator-index-usize	foundation-containers.md	engine/foundation/containers/vector.h:307
+Vector::operator[](usize) const	function	foundation/containers	vector-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/vector.h:311
+Vector::Data()	function	foundation/containers	vector-data	foundation-containers.md	engine/foundation/containers/vector.h:314
+Vector::Data() const	function	foundation/containers	vector-data-const	foundation-containers.md	engine/foundation/containers/vector.h:316
+Vector::Size() const	function	foundation/containers	vector-size-const	foundation-containers.md	engine/foundation/containers/vector.h:319
+Vector::Empty() const	function	foundation/containers	vector-empty-const	foundation-containers.md	engine/foundation/containers/vector.h:321
+Vector::Capacity() const	function	foundation/containers	vector-capacity-const	foundation-containers.md	engine/foundation/containers/vector.h:323
 GraphemeBreakProperty	enum	foundation/strings	graphemebreakproperty	foundation-strings.md	engine/foundation/string/grapheme.h:13
 GraphemeBreakProperty::Other	enumerator	foundation/strings	graphemebreakproperty-other	foundation-strings.md	engine/foundation/string/grapheme.h:14
 GraphemeBreakProperty::CR	enumerator	foundation/strings	graphemebreakproperty-cr	foundation-strings.md	engine/foundation/string/grapheme.h:15
@@ -1207,18 +1382,18 @@ settings::Registry::CurrentText(SettingId,char*,usize) const	function	foundation
 settings::FormatSettingsListing(Settings&,String<HeapAllocator>*)	function	foundation/settings	settings-formatsettingslisting-settings-amp-string-lt-heapallocator-gt-star	foundation-settings.md	engine/foundation/settings/report.h:20
 settings::FormatSettingsHelp(const Registry&,String<HeapAllocator>*)	function	foundation/settings	settings-formatsettingshelp-const-registry-amp-string-lt-heapallocator-gt-star	foundation-settings.md	engine/foundation/settings/report.h:28
 settings::SaveSettingsTo(Settings&,const io::Path&)	function	foundation/settings	settings-savesettingsto-settings-amp-const-io-path-amp	foundation-settings.md	engine/foundation/settings/report.h:41
-settings::Setting	class	foundation/settings	settings-setting	foundation-settings.md	engine/foundation/settings/setting.h:56
-settings::Setting::Setting()	function	foundation/settings	settings-setting-setting	foundation-settings.md	engine/foundation/settings/setting.h:60
-settings::Setting::Setting(const Registry&,SettingId)	function	foundation/settings	settings-setting-setting-const-registry-amp-settingid	foundation-settings.md	engine/foundation/settings/setting.h:67
-settings::Setting::Find(const Registry&,StringView)	function	foundation/settings	settings-setting-find-const-registry-amp-stringview	foundation-settings.md	engine/foundation/settings/setting.h:77
-settings::Setting::Get() const	function	foundation/settings	settings-setting-get-const	foundation-settings.md	engine/foundation/settings/setting.h:82
-settings::Setting::Default() const	function	foundation/settings	settings-setting-default-const	foundation-settings.md	engine/foundation/settings/setting.h:89
-settings::Setting::Desc() const	function	foundation/settings	settings-setting-desc-const	foundation-settings.md	engine/foundation/settings/setting.h:93
-settings::Setting::Id() const	function	foundation/settings	settings-setting-id-const	foundation-settings.md	engine/foundation/settings/setting.h:98
-settings::TextSetting	class	foundation/settings	settings-textsetting	foundation-settings.md	engine/foundation/settings/setting.h:110
-settings::TextSetting::TextSetting(const Registry&,SettingId)	function	foundation/settings	settings-textsetting-textsetting-const-registry-amp-settingid	foundation-settings.md	engine/foundation/settings/setting.h:115
-settings::TextSetting::Get(char*,usize) const	function	foundation/settings	settings-textsetting-get-char-star-usize-const	foundation-settings.md	engine/foundation/settings/setting.h:120
-settings::TextSetting::Id() const	function	foundation/settings	settings-textsetting-id-const	foundation-settings.md	engine/foundation/settings/setting.h:122
+settings::Setting	class	foundation/settings	settings-setting	foundation-settings.md	engine/foundation/settings/setting.h:57
+settings::Setting::Setting()	function	foundation/settings	settings-setting-setting	foundation-settings.md	engine/foundation/settings/setting.h:61
+settings::Setting::Setting(const Registry&,SettingId)	function	foundation/settings	settings-setting-setting-const-registry-amp-settingid	foundation-settings.md	engine/foundation/settings/setting.h:68
+settings::Setting::Find(const Registry&,StringView)	function	foundation/settings	settings-setting-find-const-registry-amp-stringview	foundation-settings.md	engine/foundation/settings/setting.h:78
+settings::Setting::Get() const	function	foundation/settings	settings-setting-get-const	foundation-settings.md	engine/foundation/settings/setting.h:83
+settings::Setting::Default() const	function	foundation/settings	settings-setting-default-const	foundation-settings.md	engine/foundation/settings/setting.h:90
+settings::Setting::Desc() const	function	foundation/settings	settings-setting-desc-const	foundation-settings.md	engine/foundation/settings/setting.h:94
+settings::Setting::Id() const	function	foundation/settings	settings-setting-id-const	foundation-settings.md	engine/foundation/settings/setting.h:99
+settings::TextSetting	class	foundation/settings	settings-textsetting	foundation-settings.md	engine/foundation/settings/setting.h:111
+settings::TextSetting::TextSetting(const Registry&,SettingId)	function	foundation/settings	settings-textsetting-textsetting-const-registry-amp-settingid	foundation-settings.md	engine/foundation/settings/setting.h:116
+settings::TextSetting::Get(char*,usize) const	function	foundation/settings	settings-textsetting-get-char-star-usize-const	foundation-settings.md	engine/foundation/settings/setting.h:121
+settings::TextSetting::Id() const	function	foundation/settings	settings-textsetting-id-const	foundation-settings.md	engine/foundation/settings/setting.h:123
 settings::Change	struct	foundation/settings	settings-change	foundation-settings.md	engine/foundation/settings/settings.h:30
 settings::Change::id	variable	foundation/settings	settings-change-id	foundation-settings.md	engine/foundation/settings/settings.h:32
 settings::Change::old_value	variable	foundation/settings	settings-change-old-value	foundation-settings.md	engine/foundation/settings/settings.h:34
@@ -3953,37 +4128,37 @@ ui::WindowAdapter::CursorChanges() const	function	ui_window	ui-windowadapter-cur
 ui::WindowAdapter::SetClipboard(OsClipboard*)	function	ui_window	ui-windowadapter-setclipboard-osclipboard-star	ui_window.md	engine/ui_window/window_adapter.h:61
 ui::WindowAdapter::ClipboardChanges() const	function	ui_window	ui-windowadapter-clipboardchanges-const	ui_window.md	engine/ui_window/window_adapter.h:63
 ui::WindowAdapter::EnableDrops(os::Window&,StringView)	function	ui_window	ui-windowadapter-enabledrops-os-window-amp-stringview	ui_window.md	engine/ui_window/window_adapter.h:67
-jobs::IoRequest	alias	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:52
-jobs::IoThread	class	jobs	jobs-iothread	jobs.md	engine/jobs/async_io.h:64
-jobs::IoThread::IoThread()	function	jobs	jobs-iothread-iothread	jobs.md	engine/jobs/async_io.h:67
-jobs::IoThread::~IoThread()	function	jobs	jobs-iothread-tilde-iothread	jobs.md	engine/jobs/async_io.h:72
-jobs::IoThread::IoThread(const IoThread&)	function	jobs	jobs-iothread-iothread-const-iothread-amp	jobs.md	engine/jobs/async_io.h:74
-jobs::IoThread::operator=(const IoThread&)	function	jobs	jobs-iothread-operator-eq-const-iothread-amp	jobs.md	engine/jobs/async_io.h:75
-jobs::IoThread::Enqueue(IoRequest*)	function	jobs	jobs-iothread-enqueue-iorequest-star	jobs.md	engine/jobs/async_io.h:86
-jobs::IoThread::Submit(io::IoWork*)	function	jobs	jobs-iothread-submit-io-iowork-star	jobs.md	engine/jobs/async_io.h:94
-jobs::IoThread::Shutdown()	function	jobs	jobs-iothread-shutdown	jobs.md	engine/jobs/async_io.h:103
-jobs::IoThread::ThreadId() const	function	jobs	jobs-iothread-threadid-const	jobs.md	engine/jobs/async_io.h:108
-jobs::FileReadResult	class	jobs	jobs-filereadresult	jobs.md	engine/jobs/async_io.h:133
-jobs::FileReadResult::FileReadResult()	function	jobs	jobs-filereadresult-filereadresult	jobs.md	engine/jobs/async_io.h:135
-jobs::FileReadResult::~FileReadResult()	function	jobs	jobs-filereadresult-tilde-filereadresult	jobs.md	engine/jobs/async_io.h:140
-jobs::FileReadResult::FileReadResult(FileReadResult&&) noexcept	function	jobs	jobs-filereadresult-filereadresult-filereadresult-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:144
-jobs::FileReadResult::operator=(FileReadResult&&) noexcept	function	jobs	jobs-filereadresult-operator-eq-filereadresult-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:148
-jobs::FileReadResult::FileReadResult(const FileReadResult&)	function	jobs	jobs-filereadresult-filereadresult-const-filereadresult-amp	jobs.md	engine/jobs/async_io.h:149
-jobs::FileReadResult::operator=(const FileReadResult&)	function	jobs	jobs-filereadresult-operator-eq-const-filereadresult-amp	jobs.md	engine/jobs/async_io.h:150
-jobs::FileReadResult::ok	variable	jobs	jobs-filereadresult-ok	jobs.md	engine/jobs/async_io.h:153
-jobs::FileReadResult::data	variable	jobs	jobs-filereadresult-data	jobs.md	engine/jobs/async_io.h:155
-jobs::FileReadResult::size	variable	jobs	jobs-filereadresult-size	jobs.md	engine/jobs/async_io.h:157
-jobs::ReadFileAwaitable	class	jobs	jobs-readfileawaitable	jobs.md	engine/jobs/async_io.h:172
-jobs::ReadFileAwaitable::ReadFileAwaitable(ReadFileAwaitable&&) noexcept	function	jobs	jobs-readfileawaitable-readfileawaitable-readfileawaitable-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:176
-jobs::ReadFileAwaitable::ReadFileAwaitable(const ReadFileAwaitable&)	function	jobs	jobs-readfileawaitable-readfileawaitable-const-readfileawaitable-amp	jobs.md	engine/jobs/async_io.h:177
-jobs::ReadFileAwaitable::operator=(const ReadFileAwaitable&)	function	jobs	jobs-readfileawaitable-operator-eq-const-readfileawaitable-amp	jobs.md	engine/jobs/async_io.h:178
-jobs::ReadFileAwaitable::~ReadFileAwaitable()	function	jobs	jobs-readfileawaitable-tilde-readfileawaitable	jobs.md	engine/jobs/async_io.h:183
-jobs::ReadFileAwaitable::await_ready() const noexcept	function	jobs	jobs-readfileawaitable-await-ready-const-noexcept	jobs.md	engine/jobs/async_io.h:188
-jobs::ReadFileAwaitable::await_suspend(std::coroutine_handle<>) noexcept	function	jobs	jobs-readfileawaitable-await-suspend-std-coroutine-handle-lt-gt-noexcept	jobs.md	engine/jobs/async_io.h:194
-jobs::ReadFileAwaitable::await_resume() noexcept	function	jobs	jobs-readfileawaitable-await-resume-noexcept	jobs.md	engine/jobs/async_io.h:201
-jobs::kDefaultMaxReadBytes	variable	jobs	jobs-kdefaultmaxreadbytes	jobs.md	engine/jobs/async_io.h:211
-jobs::kMaxAsyncPathBytes	variable	jobs	jobs-kmaxasyncpathbytes	jobs.md	engine/jobs/async_io.h:214
-jobs::ReadFileAsync(Scheduler&,StringView,usize)	function	jobs	jobs-readfileasync-scheduler-amp-stringview-usize	jobs.md	engine/jobs/async_io.h:228
+jobs::IoRequest	alias	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:51
+jobs::IoThread	class	jobs	jobs-iothread	jobs.md	engine/jobs/async_io.h:63
+jobs::IoThread::IoThread()	function	jobs	jobs-iothread-iothread	jobs.md	engine/jobs/async_io.h:66
+jobs::IoThread::~IoThread()	function	jobs	jobs-iothread-tilde-iothread	jobs.md	engine/jobs/async_io.h:71
+jobs::IoThread::IoThread(const IoThread&)	function	jobs	jobs-iothread-iothread-const-iothread-amp	jobs.md	engine/jobs/async_io.h:73
+jobs::IoThread::operator=(const IoThread&)	function	jobs	jobs-iothread-operator-eq-const-iothread-amp	jobs.md	engine/jobs/async_io.h:74
+jobs::IoThread::Enqueue(IoRequest*)	function	jobs	jobs-iothread-enqueue-iorequest-star	jobs.md	engine/jobs/async_io.h:85
+jobs::IoThread::Submit(io::IoWork*)	function	jobs	jobs-iothread-submit-io-iowork-star	jobs.md	engine/jobs/async_io.h:93
+jobs::IoThread::Shutdown()	function	jobs	jobs-iothread-shutdown	jobs.md	engine/jobs/async_io.h:102
+jobs::IoThread::ThreadId() const	function	jobs	jobs-iothread-threadid-const	jobs.md	engine/jobs/async_io.h:107
+jobs::FileReadResult	class	jobs	jobs-filereadresult	jobs.md	engine/jobs/async_io.h:132
+jobs::FileReadResult::FileReadResult()	function	jobs	jobs-filereadresult-filereadresult	jobs.md	engine/jobs/async_io.h:134
+jobs::FileReadResult::~FileReadResult()	function	jobs	jobs-filereadresult-tilde-filereadresult	jobs.md	engine/jobs/async_io.h:139
+jobs::FileReadResult::FileReadResult(FileReadResult&&) noexcept	function	jobs	jobs-filereadresult-filereadresult-filereadresult-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:143
+jobs::FileReadResult::operator=(FileReadResult&&) noexcept	function	jobs	jobs-filereadresult-operator-eq-filereadresult-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:147
+jobs::FileReadResult::FileReadResult(const FileReadResult&)	function	jobs	jobs-filereadresult-filereadresult-const-filereadresult-amp	jobs.md	engine/jobs/async_io.h:148
+jobs::FileReadResult::operator=(const FileReadResult&)	function	jobs	jobs-filereadresult-operator-eq-const-filereadresult-amp	jobs.md	engine/jobs/async_io.h:149
+jobs::FileReadResult::ok	variable	jobs	jobs-filereadresult-ok	jobs.md	engine/jobs/async_io.h:152
+jobs::FileReadResult::data	variable	jobs	jobs-filereadresult-data	jobs.md	engine/jobs/async_io.h:154
+jobs::FileReadResult::size	variable	jobs	jobs-filereadresult-size	jobs.md	engine/jobs/async_io.h:156
+jobs::ReadFileAwaitable	class	jobs	jobs-readfileawaitable	jobs.md	engine/jobs/async_io.h:171
+jobs::ReadFileAwaitable::ReadFileAwaitable(ReadFileAwaitable&&) noexcept	function	jobs	jobs-readfileawaitable-readfileawaitable-readfileawaitable-amp-amp-noexcept	jobs.md	engine/jobs/async_io.h:175
+jobs::ReadFileAwaitable::ReadFileAwaitable(const ReadFileAwaitable&)	function	jobs	jobs-readfileawaitable-readfileawaitable-const-readfileawaitable-amp	jobs.md	engine/jobs/async_io.h:176
+jobs::ReadFileAwaitable::operator=(const ReadFileAwaitable&)	function	jobs	jobs-readfileawaitable-operator-eq-const-readfileawaitable-amp	jobs.md	engine/jobs/async_io.h:177
+jobs::ReadFileAwaitable::~ReadFileAwaitable()	function	jobs	jobs-readfileawaitable-tilde-readfileawaitable	jobs.md	engine/jobs/async_io.h:182
+jobs::ReadFileAwaitable::await_ready() const noexcept	function	jobs	jobs-readfileawaitable-await-ready-const-noexcept	jobs.md	engine/jobs/async_io.h:187
+jobs::ReadFileAwaitable::await_suspend(std::coroutine_handle<>) noexcept	function	jobs	jobs-readfileawaitable-await-suspend-std-coroutine-handle-lt-gt-noexcept	jobs.md	engine/jobs/async_io.h:193
+jobs::ReadFileAwaitable::await_resume() noexcept	function	jobs	jobs-readfileawaitable-await-resume-noexcept	jobs.md	engine/jobs/async_io.h:200
+jobs::kDefaultMaxReadBytes	variable	jobs	jobs-kdefaultmaxreadbytes	jobs.md	engine/jobs/async_io.h:210
+jobs::kMaxAsyncPathBytes	variable	jobs	jobs-kmaxasyncpathbytes	jobs.md	engine/jobs/async_io.h:213
+jobs::ReadFileAsync(Scheduler&,StringView,usize)	function	jobs	jobs-readfileasync-scheduler-amp-stringview-usize	jobs.md	engine/jobs/async_io.h:227
 jobs::Counter	class	jobs	jobs-counter	jobs.md	engine/jobs/counter.h:51
 jobs::Counter::Counter(Scheduler&)	function	jobs	jobs-counter-counter-scheduler-amp	jobs.md	engine/jobs/counter.h:55
 jobs::Counter::Counter()	function	jobs	jobs-counter-counter	jobs.md	engine/jobs/counter.h:59
@@ -4087,62 +4262,62 @@ jobs::EffectiveChunkSize(usize,usize)	function	jobs	jobs-effectivechunksize-usiz
 jobs::ParallelFor(usize,usize,ParallelForFn,void*)	function	jobs	jobs-parallelfor-usize-usize-parallelforfn-void-star	jobs.md	engine/jobs/parallel_for.h:106
 jobs::ParallelForBlocking(Scheduler&,usize,usize,ParallelForFn,void*)	function	jobs	jobs-parallelforblocking-scheduler-amp-usize-usize-parallelforfn-void-star	jobs.md	engine/jobs/parallel_for.h:127
 jobs::ParallelForBlocking(Scheduler&,usize,usize,F&)	function	jobs	jobs-parallelforblocking-scheduler-amp-usize-usize-f-amp	jobs.md	engine/jobs/parallel_for.h:148
-jobs::Scheduler	class	jobs	jobs-scheduler	jobs.md	engine/jobs/scheduler.h:73
-jobs::Scheduler::Config	struct	jobs	jobs-scheduler-config	jobs.md	engine/jobs/scheduler.h:78
-jobs::Scheduler::Config::participants	variable	jobs	jobs-scheduler-config-participants	jobs.md	engine/jobs/scheduler.h:83
-jobs::Scheduler::Config::pin	variable	jobs	jobs-scheduler-config-pin	jobs.md	engine/jobs/scheduler.h:85
-jobs::Scheduler::Scheduler(const Config&)	function	jobs	jobs-scheduler-scheduler-const-config-amp	jobs.md	engine/jobs/scheduler.h:93
-jobs::Scheduler::~Scheduler()	function	jobs	jobs-scheduler-tilde-scheduler	jobs.md	engine/jobs/scheduler.h:101
-jobs::Scheduler::Scheduler(const Scheduler&)	function	jobs	jobs-scheduler-scheduler-const-scheduler-amp	jobs.md	engine/jobs/scheduler.h:103
-jobs::Scheduler::operator=(const Scheduler&)	function	jobs	jobs-scheduler-operator-eq-const-scheduler-amp	jobs.md	engine/jobs/scheduler.h:104
-jobs::Scheduler::Submit(Job&&)	function	jobs	jobs-scheduler-submit-job-amp-amp	jobs.md	engine/jobs/scheduler.h:116
-jobs::Scheduler::Schedule(std::coroutine_handle<>)	function	jobs	jobs-scheduler-schedule-std-coroutine-handle-lt-gt	jobs.md	engine/jobs/scheduler.h:129
-jobs::Scheduler::HelpUntil(bool(*)(void*),void*)	function	jobs	jobs-scheduler-helpuntil-bool-star-void-star-void-star	jobs.md	engine/jobs/scheduler.h:141
-jobs::Scheduler::HelpUntil(Counter&)	function	jobs	jobs-scheduler-helpuntil-counter-amp	jobs.md	engine/jobs/scheduler.h:148
-jobs::Scheduler::HelpUntil(const std::atomic<int>&,int)	function	jobs	jobs-scheduler-helpuntil-const-std-atomic-lt-int-gt-amp-int	jobs.md	engine/jobs/scheduler.h:156
-jobs::Scheduler::Shutdown()	function	jobs	jobs-scheduler-shutdown	jobs.md	engine/jobs/scheduler.h:172
-jobs::Scheduler::Io()	function	jobs	jobs-scheduler-io	jobs.md	engine/jobs/scheduler.h:181
-jobs::Scheduler::ParticipantCount() const	function	jobs	jobs-scheduler-participantcount-const	jobs.md	engine/jobs/scheduler.h:186
-jobs::Scheduler::Pool() const	function	jobs	jobs-scheduler-pool-const	jobs.md	engine/jobs/scheduler.h:190
-jobs::Scheduler::Current()	function	jobs	jobs-scheduler-current	jobs.md	engine/jobs/scheduler.h:197
-jobs::Scheduler::InsideJob()	function	jobs	jobs-scheduler-insidejob	jobs.md	engine/jobs/scheduler.h:203
-jobs::Scheduler::ResumesBy(usize) const	function	jobs	jobs-scheduler-resumesby-usize-const	jobs.md	engine/jobs/scheduler.h:212
-jobs::Scheduler::StealsBy(usize) const	function	jobs	jobs-scheduler-stealsby-usize-const	jobs.md	engine/jobs/scheduler.h:219
-jobs::Scheduler::TotalResumes() const	function	jobs	jobs-scheduler-totalresumes-const	jobs.md	engine/jobs/scheduler.h:225
-jobs::Scheduler::ParkedWorkersForTesting() const	function	jobs	jobs-scheduler-parkedworkersfortesting-const	jobs.md	engine/jobs/scheduler.h:231
-jobs::Scheduler::InjectionQueueSizeForTesting()	function	jobs	jobs-scheduler-injectionqueuesizefortesting	jobs.md	engine/jobs/scheduler.h:236
-jobs::Scheduler::InjectionCapacity()	function	jobs	jobs-scheduler-injectioncapacity	jobs.md	engine/jobs/scheduler.h:241
+jobs::Scheduler	class	jobs	jobs-scheduler	jobs.md	engine/jobs/scheduler.h:72
+jobs::Scheduler::Config	struct	jobs	jobs-scheduler-config	jobs.md	engine/jobs/scheduler.h:77
+jobs::Scheduler::Config::participants	variable	jobs	jobs-scheduler-config-participants	jobs.md	engine/jobs/scheduler.h:82
+jobs::Scheduler::Config::pin	variable	jobs	jobs-scheduler-config-pin	jobs.md	engine/jobs/scheduler.h:84
+jobs::Scheduler::Scheduler(const Config&)	function	jobs	jobs-scheduler-scheduler-const-config-amp	jobs.md	engine/jobs/scheduler.h:92
+jobs::Scheduler::~Scheduler()	function	jobs	jobs-scheduler-tilde-scheduler	jobs.md	engine/jobs/scheduler.h:100
+jobs::Scheduler::Scheduler(const Scheduler&)	function	jobs	jobs-scheduler-scheduler-const-scheduler-amp	jobs.md	engine/jobs/scheduler.h:102
+jobs::Scheduler::operator=(const Scheduler&)	function	jobs	jobs-scheduler-operator-eq-const-scheduler-amp	jobs.md	engine/jobs/scheduler.h:103
+jobs::Scheduler::Submit(Job&&)	function	jobs	jobs-scheduler-submit-job-amp-amp	jobs.md	engine/jobs/scheduler.h:115
+jobs::Scheduler::Schedule(std::coroutine_handle<>)	function	jobs	jobs-scheduler-schedule-std-coroutine-handle-lt-gt	jobs.md	engine/jobs/scheduler.h:128
+jobs::Scheduler::HelpUntil(bool(*)(void*),void*)	function	jobs	jobs-scheduler-helpuntil-bool-star-void-star-void-star	jobs.md	engine/jobs/scheduler.h:140
+jobs::Scheduler::HelpUntil(Counter&)	function	jobs	jobs-scheduler-helpuntil-counter-amp	jobs.md	engine/jobs/scheduler.h:147
+jobs::Scheduler::HelpUntil(const Atomic<int>&,int)	function	jobs	jobs-scheduler-helpuntil-const-atomic-lt-int-gt-amp-int	jobs.md	engine/jobs/scheduler.h:155
+jobs::Scheduler::Shutdown()	function	jobs	jobs-scheduler-shutdown	jobs.md	engine/jobs/scheduler.h:171
+jobs::Scheduler::Io()	function	jobs	jobs-scheduler-io	jobs.md	engine/jobs/scheduler.h:180
+jobs::Scheduler::ParticipantCount() const	function	jobs	jobs-scheduler-participantcount-const	jobs.md	engine/jobs/scheduler.h:185
+jobs::Scheduler::Pool() const	function	jobs	jobs-scheduler-pool-const	jobs.md	engine/jobs/scheduler.h:189
+jobs::Scheduler::Current()	function	jobs	jobs-scheduler-current	jobs.md	engine/jobs/scheduler.h:196
+jobs::Scheduler::InsideJob()	function	jobs	jobs-scheduler-insidejob	jobs.md	engine/jobs/scheduler.h:202
+jobs::Scheduler::ResumesBy(usize) const	function	jobs	jobs-scheduler-resumesby-usize-const	jobs.md	engine/jobs/scheduler.h:211
+jobs::Scheduler::StealsBy(usize) const	function	jobs	jobs-scheduler-stealsby-usize-const	jobs.md	engine/jobs/scheduler.h:218
+jobs::Scheduler::TotalResumes() const	function	jobs	jobs-scheduler-totalresumes-const	jobs.md	engine/jobs/scheduler.h:224
+jobs::Scheduler::ParkedWorkersForTesting() const	function	jobs	jobs-scheduler-parkedworkersfortesting-const	jobs.md	engine/jobs/scheduler.h:230
+jobs::Scheduler::InjectionQueueSizeForTesting()	function	jobs	jobs-scheduler-injectionqueuesizefortesting	jobs.md	engine/jobs/scheduler.h:235
+jobs::Scheduler::InjectionCapacity()	function	jobs	jobs-scheduler-injectioncapacity	jobs.md	engine/jobs/scheduler.h:240
 jobs::kMaxParticipants	variable	jobs	jobs-kmaxparticipants	jobs.md	engine/jobs/topology.h:12
 jobs::GetAllowedCpus(u32*,usize)	function	jobs	jobs-getallowedcpus-u32-star-usize	jobs.md	engine/jobs/topology.h:26
 jobs::ParseParticipantOverride(const char*,usize,bool*)	function	jobs	jobs-parseparticipantoverride-const-char-star-usize-bool-star	jobs.md	engine/jobs/topology.h:40
 jobs::DefaultParticipantCount()	function	jobs	jobs-defaultparticipantcount	jobs.md	engine/jobs/topology.h:49
-jobs::Participant	struct	jobs	jobs-participant	jobs.md	engine/jobs/worker_pool.h:24
-jobs::Participant::index	variable	jobs	jobs-participant-index	jobs.md	engine/jobs/worker_pool.h:26
-jobs::Participant::cpu	variable	jobs	jobs-participant-cpu	jobs.md	engine/jobs/worker_pool.h:28
-jobs::Participant::tid	variable	jobs	jobs-participant-tid	jobs.md	engine/jobs/worker_pool.h:30
-jobs::Participant::owner	variable	jobs	jobs-participant-owner	jobs.md	engine/jobs/worker_pool.h:32
-jobs::WorkerPool	class	jobs	jobs-workerpool	jobs.md	engine/jobs/worker_pool.h:48
-jobs::WorkerPool::WorkerFn	alias	jobs	jobs-workerpool-workerfn	jobs.md	engine/jobs/worker_pool.h:54
-jobs::WorkerPool::Config	struct	jobs	jobs-workerpool-config	jobs.md	engine/jobs/worker_pool.h:59
-jobs::WorkerPool::Config::participants	variable	jobs	jobs-workerpool-config-participants	jobs.md	engine/jobs/worker_pool.h:61
-jobs::WorkerPool::Config::pin	variable	jobs	jobs-workerpool-config-pin	jobs.md	engine/jobs/worker_pool.h:63
-jobs::WorkerPool::Config::worker_fn	variable	jobs	jobs-workerpool-config-worker-fn	jobs.md	engine/jobs/worker_pool.h:65
-jobs::WorkerPool::Config::user	variable	jobs	jobs-workerpool-config-user	jobs.md	engine/jobs/worker_pool.h:67
-jobs::WorkerPool::WorkerPool(const Config&)	function	jobs	jobs-workerpool-workerpool-const-config-amp	jobs.md	engine/jobs/worker_pool.h:73
-jobs::WorkerPool::~WorkerPool()	function	jobs	jobs-workerpool-tilde-workerpool	jobs.md	engine/jobs/worker_pool.h:79
-jobs::WorkerPool::WorkerPool(const WorkerPool&)	function	jobs	jobs-workerpool-workerpool-const-workerpool-amp	jobs.md	engine/jobs/worker_pool.h:81
-jobs::WorkerPool::operator=(const WorkerPool&)	function	jobs	jobs-workerpool-operator-eq-const-workerpool-amp	jobs.md	engine/jobs/worker_pool.h:82
-jobs::WorkerPool::User() const	function	jobs	jobs-workerpool-user-const	jobs.md	engine/jobs/worker_pool.h:88
-jobs::WorkerPool::WorkerFunction() const	function	jobs	jobs-workerpool-workerfunction-const	jobs.md	engine/jobs/worker_pool.h:92
-jobs::WorkerPool::ParticipantCount() const	function	jobs	jobs-workerpool-participantcount-const	jobs.md	engine/jobs/worker_pool.h:96
-jobs::WorkerPool::SpawnedWorkerCount() const	function	jobs	jobs-workerpool-spawnedworkercount-const	jobs.md	engine/jobs/worker_pool.h:100
-jobs::WorkerPool::GetParticipant(usize) const	function	jobs	jobs-workerpool-getparticipant-usize-const	jobs.md	engine/jobs/worker_pool.h:106
-jobs::WorkerPool::RequestStop()	function	jobs	jobs-workerpool-requeststop	jobs.md	engine/jobs/worker_pool.h:115
-jobs::WorkerPool::StopRequested() const	function	jobs	jobs-workerpool-stoprequested-const	jobs.md	engine/jobs/worker_pool.h:120
-jobs::WorkerPool::Join()	function	jobs	jobs-workerpool-join	jobs.md	engine/jobs/worker_pool.h:132
-jobs::WorkerPool::Current()	function	jobs	jobs-workerpool-current	jobs.md	engine/jobs/worker_pool.h:138
-jobs::WorkerPool::IsParticipantThread()	function	jobs	jobs-workerpool-isparticipantthread	jobs.md	engine/jobs/worker_pool.h:143
-jobs::WorkerPool::CurrentParticipantIndex()	function	jobs	jobs-workerpool-currentparticipantindex	jobs.md	engine/jobs/worker_pool.h:147
+jobs::Participant	struct	jobs	jobs-participant	jobs.md	engine/jobs/worker_pool.h:23
+jobs::Participant::index	variable	jobs	jobs-participant-index	jobs.md	engine/jobs/worker_pool.h:25
+jobs::Participant::cpu	variable	jobs	jobs-participant-cpu	jobs.md	engine/jobs/worker_pool.h:27
+jobs::Participant::tid	variable	jobs	jobs-participant-tid	jobs.md	engine/jobs/worker_pool.h:29
+jobs::Participant::owner	variable	jobs	jobs-participant-owner	jobs.md	engine/jobs/worker_pool.h:31
+jobs::WorkerPool	class	jobs	jobs-workerpool	jobs.md	engine/jobs/worker_pool.h:47
+jobs::WorkerPool::WorkerFn	alias	jobs	jobs-workerpool-workerfn	jobs.md	engine/jobs/worker_pool.h:53
+jobs::WorkerPool::Config	struct	jobs	jobs-workerpool-config	jobs.md	engine/jobs/worker_pool.h:58
+jobs::WorkerPool::Config::participants	variable	jobs	jobs-workerpool-config-participants	jobs.md	engine/jobs/worker_pool.h:60
+jobs::WorkerPool::Config::pin	variable	jobs	jobs-workerpool-config-pin	jobs.md	engine/jobs/worker_pool.h:62
+jobs::WorkerPool::Config::worker_fn	variable	jobs	jobs-workerpool-config-worker-fn	jobs.md	engine/jobs/worker_pool.h:64
+jobs::WorkerPool::Config::user	variable	jobs	jobs-workerpool-config-user	jobs.md	engine/jobs/worker_pool.h:66
+jobs::WorkerPool::WorkerPool(const Config&)	function	jobs	jobs-workerpool-workerpool-const-config-amp	jobs.md	engine/jobs/worker_pool.h:72
+jobs::WorkerPool::~WorkerPool()	function	jobs	jobs-workerpool-tilde-workerpool	jobs.md	engine/jobs/worker_pool.h:78
+jobs::WorkerPool::WorkerPool(const WorkerPool&)	function	jobs	jobs-workerpool-workerpool-const-workerpool-amp	jobs.md	engine/jobs/worker_pool.h:80
+jobs::WorkerPool::operator=(const WorkerPool&)	function	jobs	jobs-workerpool-operator-eq-const-workerpool-amp	jobs.md	engine/jobs/worker_pool.h:81
+jobs::WorkerPool::User() const	function	jobs	jobs-workerpool-user-const	jobs.md	engine/jobs/worker_pool.h:87
+jobs::WorkerPool::WorkerFunction() const	function	jobs	jobs-workerpool-workerfunction-const	jobs.md	engine/jobs/worker_pool.h:91
+jobs::WorkerPool::ParticipantCount() const	function	jobs	jobs-workerpool-participantcount-const	jobs.md	engine/jobs/worker_pool.h:95
+jobs::WorkerPool::SpawnedWorkerCount() const	function	jobs	jobs-workerpool-spawnedworkercount-const	jobs.md	engine/jobs/worker_pool.h:99
+jobs::WorkerPool::GetParticipant(usize) const	function	jobs	jobs-workerpool-getparticipant-usize-const	jobs.md	engine/jobs/worker_pool.h:105
+jobs::WorkerPool::RequestStop()	function	jobs	jobs-workerpool-requeststop	jobs.md	engine/jobs/worker_pool.h:114
+jobs::WorkerPool::StopRequested() const	function	jobs	jobs-workerpool-stoprequested-const	jobs.md	engine/jobs/worker_pool.h:119
+jobs::WorkerPool::Join()	function	jobs	jobs-workerpool-join	jobs.md	engine/jobs/worker_pool.h:131
+jobs::WorkerPool::Current()	function	jobs	jobs-workerpool-current	jobs.md	engine/jobs/worker_pool.h:137
+jobs::WorkerPool::IsParticipantThread()	function	jobs	jobs-workerpool-isparticipantthread	jobs.md	engine/jobs/worker_pool.h:142
+jobs::WorkerPool::CurrentParticipantIndex()	function	jobs	jobs-workerpool-currentparticipantindex	jobs.md	engine/jobs/worker_pool.h:146
 rhi::kMaxAdapters	variable	rhi	rhi-kmaxadapters	rhi.md	engine/rhi/adapter.h:13
 rhi::kAdapterIdBytes	variable	rhi	rhi-kadapteridbytes	rhi.md	engine/rhi/adapter.h:15
 rhi::kAdapterNameBytes	variable	rhi	rhi-kadapternamebytes	rhi.md	engine/rhi/adapter.h:17
@@ -6299,15 +6474,15 @@ rhi::vulkan::MemoryAllocator::Allocate(const MemoryRequest&,MemoryResult*)	funct
 rhi::vulkan::MemoryAllocator::Free(const MemoryAllocation&)	function	rhi-vulkan	rhi-vulkan-memoryallocator-free-const-memoryallocation-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:314
 rhi::vulkan::MemoryAllocator::Stats() const	function	rhi-vulkan	rhi-vulkan-memoryallocator-stats-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:317
 rhi::vulkan::MemoryAllocator::LogStats() const	function	rhi-vulkan	rhi-vulkan-memoryallocator-logstats-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory.h:320
-rhi::vulkan::HandleToU64(H)	function	rhi-vulkan	rhi-vulkan-handletou64-h	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:15
-rhi::vulkan::HandleFromU64(u64)	function	rhi-vulkan	rhi-vulkan-handlefromu64-u64	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:25
-rhi::vulkan::VulkanMemoryBackend	class	rhi-vulkan	rhi-vulkan-vulkanmemorybackend	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:38
-rhi::vulkan::VulkanMemoryBackend::VulkanMemoryBackend(const VkDeviceFns*,VkDevice,std::atomic<bool>*)	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-vulkanmemorybackend-const-vkdevicefns-star-vkdevice-std-atomic-lt-bool-gt-star	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:45
-rhi::vulkan::VulkanMemoryBackend::Allocate(u32,u64,bool,u64,u64,BackendAllocation*)	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-allocate-u32-u64-bool-u64-u64-backendallocation-star	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:47
-rhi::vulkan::VulkanMemoryBackend::Free(const BackendAllocation&)	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-free-const-backendallocation-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:49
-rhi::vulkan::VulkanMemoryBackend::FailAllocationsFrom(u32)	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-failallocationsfrom-u32	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:53
-rhi::vulkan::VulkanMemoryBackend::AllocateCalls() const	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-allocatecalls-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:56
-rhi::vulkan::VulkanMemoryBackend::LiveObjects() const	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-liveobjects-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:58
+rhi::vulkan::HandleToU64(H)	function	rhi-vulkan	rhi-vulkan-handletou64-h	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:14
+rhi::vulkan::HandleFromU64(u64)	function	rhi-vulkan	rhi-vulkan-handlefromu64-u64	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:24
+rhi::vulkan::VulkanMemoryBackend	class	rhi-vulkan	rhi-vulkan-vulkanmemorybackend	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:37
+rhi::vulkan::VulkanMemoryBackend::VulkanMemoryBackend(const VkDeviceFns*,VkDevice,Atomic<bool>*)	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-vulkanmemorybackend-const-vkdevicefns-star-vkdevice-atomic-lt-bool-gt-star	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:44
+rhi::vulkan::VulkanMemoryBackend::Allocate(u32,u64,bool,u64,u64,BackendAllocation*)	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-allocate-u32-u64-bool-u64-u64-backendallocation-star	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:46
+rhi::vulkan::VulkanMemoryBackend::Free(const BackendAllocation&)	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-free-const-backendallocation-amp	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:48
+rhi::vulkan::VulkanMemoryBackend::FailAllocationsFrom(u32)	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-failallocationsfrom-u32	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:52
+rhi::vulkan::VulkanMemoryBackend::AllocateCalls() const	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-allocatecalls-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:55
+rhi::vulkan::VulkanMemoryBackend::LiveObjects() const	function	rhi-vulkan	rhi-vulkan-vulkanmemorybackend-liveobjects-const	rhi-vulkan.md	engine/rhi/vulkan/vk_memory_backend.h:57
 rhi::vulkan::ToVkTopology(PrimitiveTopology)	function	rhi-vulkan	rhi-vulkan-tovktopology-primitivetopology	rhi-vulkan.md	engine/rhi/vulkan/vk_pipeline_policy.h:14
 rhi::vulkan::ToVkCullMode(CullMode)	function	rhi-vulkan	rhi-vulkan-tovkcullmode-cullmode	rhi-vulkan.md	engine/rhi/vulkan/vk_pipeline_policy.h:19
 rhi::vulkan::ToVkFrontFace(FrontFace)	function	rhi-vulkan	rhi-vulkan-tovkfrontface-frontface	rhi-vulkan.md	engine/rhi/vulkan/vk_pipeline_policy.h:24

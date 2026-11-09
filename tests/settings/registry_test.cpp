@@ -1,9 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <limits>
+#include "lang/limits.h"
 
-#include <atomic>
-#include <thread>
+#include "sync/atomic.h"
+#include "sync/thread.h"
 
 #include "catch_engine_types.h"
 #include "settings/registry.h"
@@ -66,7 +66,7 @@ TEST_CASE("Registry: every registration failure has a reason and changes nothing
     CHECK(TryRegister(r, MakeInt("y.c", -1, 0, 10)) == RegisterError::BadDefault);
     CHECK(TryRegister(r, MakeFloat("y.d", 0, 2.0, 1.0)) == RegisterError::BadRange);
     CHECK(TryRegister(r, MakeFloat("y.e", 5.0, 0.0, 1.0)) == RegisterError::BadDefault);
-    CHECK(TryRegister(r, MakeFloat("y.f", 0.0, 0.0, std::numeric_limits<f64>::infinity())) == RegisterError::BadRange);
+    CHECK(TryRegister(r, MakeFloat("y.f", 0.0, 0.0, Limits<f64>::Infinity())) == RegisterError::BadRange);
     CHECK(TryRegister(r, MakeEnum("y.g", kRegistryModes, 0, 0)) == RegisterError::BadEnum);
     CHECK(TryRegister(r, MakeEnum("y.h", nullptr, 3, 0)) == RegisterError::BadEnum);
     CHECK(TryRegister(r, MakeEnum("y.i", kRegistryModes, 3, 3)) == RegisterError::BadDefault);
@@ -183,14 +183,14 @@ TEST_CASE("Setting reads are safe while another thread publishes", "[settings][r
     r.Freeze();
     Setting<i64> n(r, id);
     Setting<f64> f(r, fid);
-    std::atomic<bool> stop{false};
-    std::atomic<int> torn{0};
-    Vector<std::thread> readers;
+    Atomic<bool> stop{false};
+    Atomic<int> torn{0};
+    Vector<Thread> readers;
     readers.Resize(3);
     for (usize t = 0; t < readers.Size(); ++t) {
-        readers[t] = std::thread([&] {
+        readers[t] = Thread([&] {
             i64 last = 0;
-            while (!stop.load()) {
+            while (!stop.Load()) {
                 const i64 v = n.Get();
                 // The writer publishes n, then f: when n is read, f is at most one step behind it (and may be ahead by the time f is read).
                 if (v < last || f.Get() < static_cast<f64>(v) - 1.0) torn++;
@@ -203,7 +203,7 @@ TEST_CASE("Setting reads are safe while another thread publishes", "[settings][r
         r.Publish(fid, Value::FromFloat(static_cast<f64>(v)));
     }
     stop = true;
-    for (usize t = 0; t < readers.Size(); ++t) readers[t].join();
-    CHECK(torn.load() == 0);
+    for (usize t = 0; t < readers.Size(); ++t) readers[t].Join();
+    CHECK(torn.Load() == 0);
     CHECK(n.Get() == 20000);
 }

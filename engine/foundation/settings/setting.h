@@ -7,10 +7,11 @@
 //! it sees a published value on the next call after `Registry::Publish` returns. A handle made for the wrong type aborts at creation.
 
 #include <cstring>
-#include <type_traits>
+#include "lang/traits.h"
 
 #include "log/assert.h"
 #include "settings/registry.h"
+#include "sync/atomic.h"
 
 namespace engine_placeholder::settings {
 
@@ -18,24 +19,24 @@ namespace detail {
 
 template <typename T>
 constexpr Type TypeOf() {
-    if constexpr (std::is_same_v<T, bool>) return Type::Bool;
-    else if constexpr (std::is_same_v<T, i64>) return Type::Int;
-    else if constexpr (std::is_same_v<T, f32> || std::is_same_v<T, f64>) return Type::Float;
+    if constexpr (IsSame<T, bool>) return Type::Bool;
+    else if constexpr (IsSame<T, i64>) return Type::Int;
+    else if constexpr (IsSame<T, f32> || IsSame<T, f64>) return Type::Float;
     else {
-        static_assert(std::is_enum_v<T>, "Setting<T>: T must be bool, i64, f32, f64 or an enum type");
+        static_assert(IsEnum<T>, "Setting<T>: T must be bool, i64, f32, f64 or an enum type");
         return Type::Enum;
     }
 }
 
 template <typename T>
 T Decode(u64 bits) {
-    if constexpr (std::is_same_v<T, bool>) {
+    if constexpr (IsSame<T, bool>) {
         return bits != 0;
-    } else if constexpr (std::is_same_v<T, i64>) {
+    } else if constexpr (IsSame<T, i64>) {
         i64 v;
         std::memcpy(&v, &bits, sizeof(v));
         return v;
-    } else if constexpr (std::is_same_v<T, f32> || std::is_same_v<T, f64>) {
+    } else if constexpr (IsSame<T, f32> || IsSame<T, f64>) {
         f64 v;
         std::memcpy(&v, &bits, sizeof(v));
         return static_cast<T>(v);
@@ -81,7 +82,7 @@ public:
     /// Aborts: the handle is empty.
     T Get() const {
         ENGINE_ASSERT(cell_ != nullptr, "settings::Setting::Get: empty handle");
-        return detail::Decode<T>(cell_->bits.load(std::memory_order_relaxed));
+        return detail::Decode<T>(cell_->bits.Load(MemoryOrder::Relaxed));
     }
     /// Returns the default.
     ///

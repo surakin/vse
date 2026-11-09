@@ -2,6 +2,8 @@
 
 #include "log/assert.h"
 #include "rhi/rhi_log.h"
+#include "lang/utility.h"
+#include "sync/mutex.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
@@ -183,7 +185,7 @@ u64 MemoryAllocator::BlockSizeFor(u32 memory_type) const {
 }
 
 MemoryAllocation MemoryAllocator::Allocate(const MemoryRequest& request, MemoryResult* result) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     MemoryResult local = MemoryResult::Ok;
     MemoryAllocation allocation = AllocateLocked(request, result != nullptr ? result : &local);
     return allocation;
@@ -313,13 +315,13 @@ MemoryAllocation MemoryAllocator::AllocateLocked(const MemoryRequest& request_in
     usize slot = pool.blocks.Size();
     for (usize i = 0; i < pool.blocks.Size(); ++i) {
         if (!pool.blocks[i]->alive) {
-            pool.blocks[i] = std::move(owned); // the dead block's record is destroyed here
+            pool.blocks[i] = Move(owned); // the dead block's record is destroyed here
             slot = i;
             break;
         }
     }
     if (slot == pool.blocks.Size()) {
-        pool.blocks.Push(std::move(owned));
+        pool.blocks.Push(Move(owned));
     }
     u64 offset = 0;
     if (!block->free_list->Allocate(request.size, request.alignment, &offset)) {
@@ -344,7 +346,7 @@ void MemoryAllocator::Free(const MemoryAllocation& allocation) {
     if (!allocation.Valid()) {
         return;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     FreeLocked(allocation);
 }
 
@@ -397,7 +399,7 @@ void MemoryAllocator::FreeLocked(const MemoryAllocation& allocation) {
 }
 
 MemoryStats MemoryAllocator::Stats() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     return StatsLocked();
 }
 
@@ -441,7 +443,7 @@ MemoryStats MemoryAllocator::StatsLocked() const {
 }
 
 void MemoryAllocator::LogStats() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     LogStatsLocked();
 }
 

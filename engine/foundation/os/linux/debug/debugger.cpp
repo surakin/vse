@@ -3,7 +3,7 @@
 
 #include "os/os.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <fcntl.h>
 
 namespace engine_placeholder::debug {
@@ -49,7 +49,7 @@ namespace {
 constexpr u64 kCacheNanos = 1000ull * 1000 * 1000;
 // One word holds both the time of the last check and the answer (time << 1 | attached), so a reader never pairs a fresh
 // time with a stale answer. 0 means never checked.
-std::atomic<u64> g_debugger_state{0};
+Atomic<u64> g_debugger_state{0};
 
 bool ReadTracerState() {
     const int fd = os::Open("/proc/self/status", O_RDONLY);
@@ -76,12 +76,12 @@ bool ReadTracerState() {
 
 bool IsDebuggerAttached() {
     const u64 now = os::MonotonicTimeNanos() | 1; // never 0, so a stored state is never mistaken for "never checked"
-    const u64 state = g_debugger_state.load(std::memory_order_relaxed);
+    const u64 state = g_debugger_state.Load(MemoryOrder::Relaxed);
     if (state != 0 && now - (state >> 1) < kCacheNanos) {
         return (state & 1) != 0;
     }
     const bool attached = ReadTracerState();
-    g_debugger_state.store((now << 1) | (attached ? 1ull : 0ull), std::memory_order_relaxed);
+    g_debugger_state.Store((now << 1) | (attached ? 1ull : 0ull), MemoryOrder::Relaxed);
     return attached;
 }
 

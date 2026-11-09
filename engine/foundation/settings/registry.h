@@ -6,8 +6,8 @@
 //! current values change through [[settings::Registry::Publish]] (the settings service does this) and are read by typed handles
 //! ([[settings::Setting]]) at the cost of one relaxed atomic load.
 
-#include <atomic>
-#include <mutex>
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 #include "containers/unique_ptr.h"
 #include "containers/vector.h"
@@ -63,7 +63,7 @@ public:
     /// One setting's storage; public so a handle can point at it.
     struct Cell {
         /// The current value of a bool, int, float or enum, encoded (see `Setting`). Text values live in the registry under a lock.
-        std::atomic<u64> bits{0};
+        Atomic<u64> bits{0};
     };
 
     /// Creates an empty registry.
@@ -92,7 +92,7 @@ public:
     /// Ends registration; later `Register` calls abort. Calling it twice does nothing.
     void Freeze();
     /// Returns whether [[settings::Registry::Freeze]] was called.
-    bool IsFrozen() const { return frozen_.load(std::memory_order_relaxed); }
+    bool IsFrozen() const { return frozen_.Load(MemoryOrder::Relaxed); }
     /// Returns the number of registered settings.
     u32 Count() const { return static_cast<u32>(slots_.Size()); }
 
@@ -156,8 +156,8 @@ private:
     };
     Vector<Schema> schemas_;
     Vector<u16> aliases_sorted_; // ids of settings that have deprecated keys, searched linearly (rare)
-    mutable std::mutex text_mutex_;
-    std::atomic<bool> frozen_{false};
+    mutable Mutex text_mutex_;
+    Atomic<bool> frozen_{false};
     usize LowerBound(StringView key) const;
 };
 

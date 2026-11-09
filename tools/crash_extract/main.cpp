@@ -24,6 +24,7 @@
 #include <cstring>
 
 #include "io/file.h"
+#include "types.h"
 
 namespace {
 
@@ -39,7 +40,7 @@ bool ReadWholeFile(const char* path, Vector<u8>* bytes) {
 }
 
 // The minidump in a file that is either a minidump itself or an envelope holding one.
-bool DumpOf(const Vector<u8>& bytes, const char** data, std::size_t* size) {
+bool DumpOf(const Vector<u8>& bytes, const char** data, engine_placeholder::usize* size) {
     const char* p = reinterpret_cast<const char*>(bytes.Data());
     if (bytes.Size() >= 4 && std::memcmp(p, "MDMP", 4) == 0) {
         *data = p;
@@ -53,19 +54,19 @@ bool DumpOf(const Vector<u8>& bytes, const char** data, std::size_t* size) {
     return true;
 }
 
-constexpr std::size_t kMaxModules = 512;
+constexpr engine_placeholder::usize kMaxModules = 512;
 crash_extract::DumpModule g_modules[kMaxModules]; // ~800 KiB: static, not on the stack
 
 int ListModules(const char* path) {
     Vector<u8> bytes;
     const char* dump = nullptr;
-    std::size_t size = 0;
+    engine_placeholder::usize size = 0;
     if (!ReadWholeFile(path, &bytes) || !DumpOf(bytes, &dump, &size)) {
         std::fprintf(stderr, "crash_extract: %s is not a minidump or an envelope holding one\n", path);
         return 2;
     }
     crash_extract::DumpException exception;
-    std::size_t count = 0;
+    engine_placeholder::usize count = 0;
     if (crash_extract::ReadDumpException(dump, size, &exception) != crash_extract::DumpResult::Ok ||
         crash_extract::ReadDumpModules(dump, size, g_modules, kMaxModules, &count) != crash_extract::DumpResult::Ok) {
         std::fprintf(stderr, "crash_extract: %s is a damaged minidump\n", path);
@@ -75,7 +76,7 @@ int ListModules(const char* path) {
         std::printf("exception: thread %u, code 0x%08x, address 0x%016llx\n", exception.thread_id, exception.code,
                     static_cast<unsigned long long>(exception.address));
     }
-    for (std::size_t i = 0; i < count && i < kMaxModules; ++i) {
+    for (engine_placeholder::usize i = 0; i < count && i < kMaxModules; ++i) {
         const crash_extract::DumpModule& m = g_modules[i];
         std::printf("module: 0x%016llx 0x%08x %s %s\n", static_cast<unsigned long long>(m.base), m.size, m.build_id[0] != '\0' ? m.build_id : "-", m.name);
     }
@@ -111,7 +112,7 @@ int DescribeImage(const char* path) {
         return 2;
     }
     char id[sizeof(info.build_id)];
-    std::size_t n = 0;
+    engine_placeholder::usize n = 0;
     for (; info.build_id[n] != '\0'; ++n) id[n] = info.build_id[n] >= 'a' && info.build_id[n] <= 'f' ? static_cast<char>(info.build_id[n] - 32) : info.build_id[n];
     id[n] = '\0';
     const char* pdb = crash_extract::BaseName(info.debug_file);
@@ -125,19 +126,19 @@ int DescribeImage(const char* path) {
 int Resolve(const char* store, const char* dump_path, const char* report_path) {
     Vector<u8> bytes;
     const char* dump = nullptr;
-    std::size_t size = 0;
+    engine_placeholder::usize size = 0;
     if (!ReadWholeFile(dump_path, &bytes) || !DumpOf(bytes, &dump, &size)) {
         std::fprintf(stderr, "crash_extract: %s is not a minidump or an envelope holding one\n", dump_path);
         return 2;
     }
-    std::size_t count = 0;
+    engine_placeholder::usize count = 0;
     if (crash_extract::ReadDumpModules(dump, size, g_modules, kMaxModules, &count) != crash_extract::DumpResult::Ok) {
         std::fprintf(stderr, "crash_extract: %s is a damaged minidump\n", dump_path);
         return 2;
     }
     Vector<u8> report_bytes;
     const char* report = nullptr;
-    std::size_t report_size = 0;
+    engine_placeholder::usize report_size = 0;
     if (report_path != nullptr) {
         if (!ReadWholeFile(report_path, &report_bytes)) {
             std::fprintf(stderr, "crash_extract: cannot read %s\n", report_path);
@@ -171,14 +172,14 @@ int Extract(const char* envelope_path, const char* output_path) {
     char default_output[4096];
     if (output_path == nullptr) {
         // Only an input named *.envelope gets a derived name; anything else would end up as foo.dmp.dmp or overwrite the input.
-        const std::size_t length = std::strlen(envelope_path);
+        const engine_placeholder::usize length = std::strlen(envelope_path);
         const char* extension = ".envelope";
-        const std::size_t extension_length = std::strlen(extension);
+        const engine_placeholder::usize extension_length = std::strlen(extension);
         if (length <= extension_length || std::strcmp(envelope_path + length - extension_length, extension) != 0) {
             std::fprintf(stderr, "crash_extract: %s does not end in .envelope; name the output file\n", envelope_path);
             return 2;
         }
-        const std::size_t stem = length - extension_length;
+        const engine_placeholder::usize stem = length - extension_length;
         if (stem + 5 > sizeof(default_output)) {
             std::fprintf(stderr, "crash_extract: the path is too long\n");
             return 2;
@@ -198,7 +199,7 @@ int Extract(const char* envelope_path, const char* output_path) {
         return 2;
     }
     const char* data = reinterpret_cast<const char*>(envelope.Data());
-    const std::size_t size = envelope.Size();
+    const engine_placeholder::usize size = envelope.Size();
     crash_extract::Minidump dump;
     const crash_extract::EnvelopeResult result = crash_extract::FindMinidump(data, size, &dump);
     if (result == crash_extract::EnvelopeResult::Malformed) {

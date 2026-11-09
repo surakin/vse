@@ -10,6 +10,8 @@
 #include "rhi/vulkan/vk_format.h"
 #include "rhi/vulkan/vk_result.h"
 #include "rhi/vulkan/vk_swapchain.h"
+#include "sync/atomic.h"
+#include "sync/mutex.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
@@ -408,20 +410,20 @@ bool VulkanDevice::HeapBudget(u32 heap, u64* budget, u64* usage) const {
 }
 
 namespace {
-std::atomic<u64> g_leaked_user_objects{0};
-std::atomic<u64> g_leaked_internal_objects{0};
+Atomic<u64> g_leaked_user_objects{0};
+Atomic<u64> g_leaked_internal_objects{0};
 } // namespace
 
 VulkanDevice::LeakCounts VulkanDevice::GetLeakCounts() {
     LeakCounts counts;
-    counts.user_objects = g_leaked_user_objects.load(std::memory_order_relaxed);
-    counts.internal_objects = g_leaked_internal_objects.load(std::memory_order_relaxed);
+    counts.user_objects = g_leaked_user_objects.Load(MemoryOrder::Relaxed);
+    counts.internal_objects = g_leaked_internal_objects.Load(MemoryOrder::Relaxed);
     return counts;
 }
 
 void VulkanDevice::ResetLeakCounts() {
-    g_leaked_user_objects.store(0, std::memory_order_relaxed);
-    g_leaked_internal_objects.store(0, std::memory_order_relaxed);
+    g_leaked_user_objects.Store(0, MemoryOrder::Relaxed);
+    g_leaked_internal_objects.Store(0, MemoryOrder::Relaxed);
 }
 
 VulkanDevice::~VulkanDevice() {
@@ -435,7 +437,7 @@ VulkanDevice::~VulkanDevice() {
         }
         user_leaks += buffers_.LiveCount() + textures_.LiveCount() + samplers_.LiveCount() + shaders_.LiveCount() + bind_group_layouts_.LiveCount() + pipelines_.LiveCount();
         bind_groups_.ForEachLive([&](BindGroupHandle, BindGroupRes& g) { user_leaks += g.transient ? 0 : 1; }); // transient ones end with their frame
-        g_leaked_user_objects.fetch_add(user_leaks, std::memory_order_relaxed);
+        g_leaked_user_objects.FetchAdd(user_leaks, MemoryOrder::Relaxed);
         // Buffers the application never destroyed are released here, with a warning.
         if (buffers_.LiveCount() > 0) {
             RhiLog(LogVerbosity::Warn, "Vulkan: %zu buffer(s) were still alive when the device was destroyed", buffers_.LiveCount());
@@ -467,11 +469,11 @@ VulkanDevice::~VulkanDevice() {
         ShutdownCommands();
         ShutdownUpload();
         // Everything is released now: any raw Vulkan object still counted is the backend's own leak.
-        const u64 internal = raw_buffer_count_.load(std::memory_order_relaxed) + raw_image_count_.load(std::memory_order_relaxed);
+        const u64 internal = raw_buffer_count_.Load(MemoryOrder::Relaxed) + raw_image_count_.Load(MemoryOrder::Relaxed);
         if (internal != 0) {
             RhiLog(LogVerbosity::Error, "Vulkan: %llu internal object(s) were not released at shutdown (%zu buffers, %zu images)",
-                   static_cast<unsigned long long>(internal), raw_buffer_count_.load(), raw_image_count_.load());
-            g_leaked_internal_objects.fetch_add(internal, std::memory_order_relaxed);
+                   static_cast<unsigned long long>(internal), raw_buffer_count_.Load(), raw_image_count_.Load());
+            g_leaked_internal_objects.FetchAdd(internal, MemoryOrder::Relaxed);
         }
     }
     memory_.Reset(); // frees every block, so the GPU must be idle first
@@ -497,7 +499,7 @@ const DeviceCaps& VulkanDevice::Caps() const { return caps_; }
 ResourceCounts VulkanDevice::Resources() const {
     ResourceCounts c;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         c.buffers = buffers_.LiveCount();
         c.textures = textures_.LiveCount();
         c.samplers = samplers_.LiveCount();
@@ -505,9 +507,9 @@ ResourceCounts VulkanDevice::Resources() const {
         c.bind_group_layouts = bind_group_layouts_.LiveCount();
         bind_groups_.ForEachLive([&](BindGroupHandle, const BindGroupRes& g) { c.bind_groups += g.transient ? 0 : 1; }); // transient groups end with their frame
         c.pipelines = pipelines_.LiveCount();
-        c.swapchains = swapchain_live_.load(std::memory_order_acquire);
+        c.swapchains = swapchain_live_.Load(MemoryOrder::Acquire);
     }
-    c.internal_objects = raw_buffer_count_.load(std::memory_order_relaxed) + raw_image_count_.load(std::memory_order_relaxed);
+    c.internal_objects = raw_buffer_count_.Load(MemoryOrder::Relaxed) + raw_image_count_.Load(MemoryOrder::Relaxed);
     if (memory_) {
         const MemoryStats stats = memory_->Stats();
         for (u32 i = 0; i < stats.heap_count; ++i) {
@@ -552,7 +554,7 @@ ShaderHandle VulkanDevice::CreateShader(const ShaderDesc& desc) {
     SetDebugName(HandleToU64(res.module), VK_OBJECT_TYPE_SHADER_MODULE, desc.debug_name);
     ShaderHandle handle;
     {
-        std::lock_guard<std::mutex> lock(resource_mutex_);
+        LockGuard<Mutex> lock(resource_mutex_);
         handle = shaders_.Allocate(ShaderRes(res));
     }
     if (!handle.IsValid()) {
@@ -563,18 +565,18 @@ ShaderHandle VulkanDevice::CreateShader(const ShaderDesc& desc) {
 }
 
 void VulkanDevice::DestroyShader(ShaderHandle shader) {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     ENGINE_ASSERT(shaders_.Get(shader) != nullptr, "DestroyShader: handle is invalid or already destroyed");
     if (shaders_.Get(shader) == nullptr) {
         return;
     }
     // A module is only read while a pipeline is created from it, but the handle follows the same deferred rule as every other resource.
-    const u64 current = frame_number_.load(std::memory_order_relaxed);
+    const u64 current = frame_number_.Load(MemoryOrder::Relaxed);
     shaders_.Retire(shader, frame_open_ ? current : current + 1);
 }
 
 bool VulkanDevice::LookupShader(ShaderHandle shader, ShaderInfo* out) const {
-    std::lock_guard<std::mutex> lock(resource_mutex_);
+    LockGuard<Mutex> lock(resource_mutex_);
     const ShaderRes* s = shaders_.Get(shader);
     if (s == nullptr) {
         return false;
@@ -585,6 +587,6 @@ bool VulkanDevice::LookupShader(ShaderHandle shader, ShaderInfo* out) const {
     return true;
 }
 
-bool VulkanDevice::DeviceLost() const { return device_lost_.load(std::memory_order_relaxed); }
+bool VulkanDevice::DeviceLost() const { return device_lost_.Load(MemoryOrder::Relaxed); }
 
 } // namespace engine_placeholder::rhi::vulkan

@@ -31,6 +31,8 @@ flavors 13  windows: plain,asan
 flavors 14  linux: plain,asan,tsan
 flavors 14  windows: plain,asan
 flavors 15  linux: plain,asan,tsan
+flavors 16  linux: plain,asan,tsan
+flavors 16  windows: plain,asan
 flavors 15  windows: plain,asan
 # What the Windows build has of each phase (Phase 13 ports one layer per day; each day updates its phases here; `none` = no tests yet).
 # MSVC has no ThreadSanitizer, so no Windows line lists tsan.
@@ -211,6 +213,9 @@ test:io_cross_syntax_*                          9
 
 # --- Phase 10: standard types and containers ---
 tests/types/                                    10
+tests/cstr/                                     16   # the cstr module, scalar math and the os console wrappers (Phase 16 Days 211-214)
+tests/sync/                                     16   # the sync module: Atomic, Mutex, ConditionVariable, Thread (Phase 16 Day 209)
+tests/lang/                                     16   # the lang module: traits, Move, Limits, Ordering, new helpers (Phase 16 Day 208)
 test:types_cross_syntax_*                       10
 test:std_container_check*                        10
 test:settings_fixtures*                          11

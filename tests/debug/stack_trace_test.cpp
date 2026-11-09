@@ -9,9 +9,9 @@
 #include "support/death_test_skip.h"
 #include "test_text.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstring>
-#include <thread>
+#include "sync/thread.h"
 #include "build_defs.h"
 
 using namespace engine_placeholder;
@@ -175,8 +175,8 @@ TEST_CASE("skip_frames leaves out the innermost frames", "[stacktrace][debug]") 
 TEST_CASE("A trace taken on another thread contains that thread's entry function", "[stacktrace][debug]") {
     InitDebugFacilities();
     StackTrace trace;
-    std::thread t([&] { ChainA(&trace, 0); });
-    t.join();
+    Thread t([&] { ChainA(&trace, 0); });
+    t.Join();
     REQUIRE(trace.count >= 4);
     FrameInfo entries[kMaxStackFrames * 2];
     const usize n = ResolveStackTrace(trace, entries, sizeof(entries) / sizeof(entries[0]));
@@ -186,9 +186,9 @@ TEST_CASE("A trace taken on another thread contains that thread's entry function
 
 namespace {
 
-jobs::Job StackTraceCaptureJob(StackTrace* trace, std::atomic<int>* done) {
+jobs::Job StackTraceCaptureJob(StackTrace* trace, Atomic<int>* done) {
     stack_trace_test::ChainA(trace, 0);
-    done->store(1, std::memory_order_release);
+    done->Store(1, MemoryOrder::Release);
     co_return;
 }
 
@@ -200,7 +200,7 @@ TEST_CASE("A trace taken inside a job on a worker thread reaches the job's funct
     config.participants = 2;
     jobs::Scheduler scheduler(config);
     StackTrace trace;
-    std::atomic<int> done{0};
+    Atomic<int> done{0};
     scheduler.Submit(StackTraceCaptureJob(&trace, &done));
     scheduler.HelpUntil(done, 1);
     scheduler.Shutdown();
@@ -371,35 +371,35 @@ TEST_CASE("A library loaded after startup is symbolized once the modules are rel
 // ---- initialization from many threads, in a fresh process -----------------------------------------------------------------
 
 ENGINE_DEATH_TEST_FN(dt_stack_concurrent_init) {
-    std::atomic<int> ready{0};
-    std::atomic<bool> go{false};
-    std::atomic<int> failures{0};
-    std::thread threads[8];
-    for (std::thread& t : threads) {
-        t = std::thread([&] {
-            ready.fetch_add(1);
-            while (!go.load()) {
-                std::this_thread::yield(); // other tests run at the same time: do not hog the CPU while waiting
+    Atomic<int> ready{0};
+    Atomic<bool> go{false};
+    Atomic<int> failures{0};
+    Thread threads[8];
+    for (Thread& t : threads) {
+        t = Thread([&] {
+            ready.FetchAdd(1);
+            while (!go.Load()) {
+                ThisThread::Yield(); // other tests run at the same time: do not hog the CPU while waiting
             }
             InitDebugFacilities(); // all at once, the first call of the process
             StackTrace trace;
             if (!CaptureStackTrace(trace, 0) || trace.count == 0) {
-                failures.fetch_add(1);
+                failures.FetchAdd(1);
             }
             FrameInfo entries[16];
             if (ResolveStackTrace(trace, entries, 16) == 0) {
-                failures.fetch_add(1);
+                failures.FetchAdd(1);
             }
         });
     }
-    while (ready.load() < 8) {
-        std::this_thread::yield();
+    while (ready.Load() < 8) {
+        ThisThread::Yield();
     }
     go = true;
-    for (std::thread& t : threads) {
-        t.join();
+    for (Thread& t : threads) {
+        t.Join();
     }
-    os::Write(1, failures.load() == 0 ? "INIT-OK\n" : "INIT-FAILED\n", failures.load() == 0 ? 8 : 12);
+    os::Write(1, failures.Load() == 0 ? "INIT-OK\n" : "INIT-FAILED\n", failures.Load() == 0 ? 8 : 12);
 }
 
 TEST_CASE("Eight threads starting the facilities at once all get a working trace", "[stacktrace][death][debug]") {

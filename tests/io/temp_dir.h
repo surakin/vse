@@ -1,6 +1,6 @@
 #pragma once
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstdlib>
 #include <cstring>
 #include "build_defs.h"
@@ -371,8 +371,8 @@ public:
         if (io::CreateTempDirectory(tmp, "re_io_test", &path_).Failed()) {
             std::abort();
         }
-        static std::atomic<bool> swept{false}; // the first directory of the process cleans up after earlier, interrupted runs
-        if (!swept.exchange(true)) SweepStaleTempDirs(tmp, path_);
+        static Atomic<bool> swept{false}; // the first directory of the process cleans up after earlier, interrupted runs
+        if (!swept.Exchange(true)) SweepStaleTempDirs(tmp, path_);
     }
     ~TempDir() {
         MakeWritable(Native());

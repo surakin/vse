@@ -3454,7 +3454,7 @@ One setting's storage; public so a handle can point at it.
 `variable settings::Registry::Cell::bits` — defined in `engine/foundation/settings/registry.h`
 
 ```cpp
-std::atomic<u64> bits;
+Atomic<u64> bits;
 ```
 
 The current value of a bool, int, float or enum, encoded (see `Setting`). Text values live in the registry under a lock.

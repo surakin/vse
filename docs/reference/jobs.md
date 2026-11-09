@@ -233,7 +233,7 @@ Idempotent and safe to call concurrently: every caller returns only after the th
 `method jobs::IoThread::ThreadId` — defined in `engine/jobs/async_io.h`
 
 ```cpp
-std::thread::id ThreadId() const;
+engine_placeholder::ThreadId ThreadId() const;
 ```
 
 Gives the id of the I/O thread, for telling it apart from other threads.
@@ -679,7 +679,7 @@ Process-wide tallies of which await path was taken, so tests can show both halve
 `variable jobs::Counter::PathCounters::inline_continues` — defined in `engine/jobs/counter.h`
 
 ```cpp
-std::atomic<u64> inline_continues;
+Atomic<u64> inline_continues;
 ```
 
 Awaits that found the count already zero and continued inline.
@@ -689,7 +689,7 @@ Awaits that found the count already zero and continued inline.
 `variable jobs::Counter::PathCounters::parked` — defined in `engine/jobs/counter.h`
 
 ```cpp
-std::atomic<u64> parked;
+Atomic<u64> parked;
 ```
 
 Awaits that suspended and were woken by a decrementer.
@@ -2070,12 +2070,12 @@ Runs jobs on the calling thread until a counter reaches zero.
 | Aborts | not called from participant 0 (the main thread), or called from inside a running job. |
 | Thread-safety | owner-thread-only. Participant 0, outside any job. |
 
-### `HelpUntil(const std::atomic<int>&,int)` {#jobs-scheduler-helpuntil-const-std-atomic-lt-int-gt-amp-int}
+### `HelpUntil(const Atomic<int>&,int)` {#jobs-scheduler-helpuntil-const-atomic-lt-int-gt-amp-int}
 
 `method jobs::Scheduler::HelpUntil` — defined in `engine/jobs/scheduler.h`
 
 ```cpp
-void HelpUntil(const std::atomic<int>& value, int target);
+void HelpUntil(const Atomic<int>& value, int target);
 ```
 
 Runs jobs on the calling thread until an atomic reaches a target value.

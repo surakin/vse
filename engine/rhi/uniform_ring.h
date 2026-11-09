@@ -1,6 +1,6 @@
 #pragma once
 
-#include <atomic>
+#include "sync/atomic.h"
 
 #include "rhi/device.h"
 
@@ -79,7 +79,7 @@ public:
     /// Returns the capacity of one frame's region in bytes.
     u64 BytesPerFrame() const { return region_bytes_; }
     /// Returns the bytes reserved so far in the current frame's region, including alignment padding.
-    u64 BytesUsed() const { return used_.load(std::memory_order_relaxed); }
+    u64 BytesUsed() const { return used_.Load(MemoryOrder::Relaxed); }
     /// Returns the buffer all allocations come from.
     BufferHandle Buffer() const { return buffer_; }
 
@@ -90,8 +90,8 @@ private:
     u64 region_bytes_ = 0;
     u64 alignment_ = 256;
     u64 region_base_ = 0;
-    std::atomic<u64> used_{0};
-    std::atomic<bool> reported_full_{false};
+    Atomic<u64> used_{0};
+    Atomic<bool> reported_full_{false};
 };
 
 } // namespace engine_placeholder::rhi

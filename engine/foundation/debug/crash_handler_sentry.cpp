@@ -18,19 +18,19 @@
 #include <sentry.h>
 #include "unity/windows_disable.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
-#include <mutex>
+#include "sync/mutex.h"
 #include "build_defs.h"
 
 namespace engine_placeholder::debug {
 
 namespace {
 
-std::mutex g_crash_handler_mutex;
-std::atomic<bool> g_crash_handler_installed{false};
+Mutex g_crash_handler_mutex;
+Atomic<bool> g_crash_handler_installed{false};
 
 LogChannel LogCrash("LogCrash", LogVerbosity::Warn);
 
@@ -156,8 +156,8 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
     if (!options.enabled) {
         return CrashHandlerResult::Disabled;
     }
-    std::lock_guard<std::mutex> lock(g_crash_handler_mutex);
-    if (g_crash_handler_installed.load(std::memory_order_acquire)) {
+    LockGuard<Mutex> lock(g_crash_handler_mutex);
+    if (g_crash_handler_installed.Load(MemoryOrder::Acquire)) {
         return CrashHandlerResult::AlreadyInstalled;
     }
 
@@ -256,7 +256,7 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
     if (!detail::InstallCrashEventHook(&OnCrashEvent)) {
         Log(LogCrash, LogVerbosity::Warn, "the crash report hook could not be installed; crashes leave a dump but no report");
     }
-    g_crash_handler_installed.store(true, std::memory_order_release); // before the registration below, which needs it
+    g_crash_handler_installed.Store(true, MemoryOrder::Release); // before the registration below, which needs it
     RegisterThreadForCrashHandling();
     // Last, so a failed install leaves the process's core settings alone. The report says where a core goes, or why none will.
     SetCoreDumpDescription("");
@@ -275,8 +275,8 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
 }
 
 void UninstallCrashHandler() {
-    std::lock_guard<std::mutex> lock(g_crash_handler_mutex);
-    if (!g_crash_handler_installed.load(std::memory_order_acquire)) {
+    LockGuard<Mutex> lock(g_crash_handler_mutex);
+    if (!g_crash_handler_installed.Load(MemoryOrder::Acquire)) {
         return;
     }
     detail::RemoveCrashEventHook();
@@ -285,11 +285,11 @@ void UninstallCrashHandler() {
         os::SleepNanos(1000 * 1000);
     }
     sentry_close();
-    g_crash_handler_installed.store(false, std::memory_order_release);
+    g_crash_handler_installed.Store(false, MemoryOrder::Release);
 }
 
 bool CrashHandlerInstalled() {
-    return g_crash_handler_installed.load(std::memory_order_acquire);
+    return g_crash_handler_installed.Load(MemoryOrder::Acquire);
 }
 
 } // namespace engine_placeholder::debug

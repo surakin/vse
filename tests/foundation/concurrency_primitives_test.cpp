@@ -1,7 +1,6 @@
-#include <atomic>
-#include <condition_variable>
-#include <mutex>
-#include <thread>
+#include "sync/atomic.h"
+#include "sync/mutex.h"
+#include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -19,61 +18,61 @@ constexpr i32 kIncrementsPerThread = 500'000;
 
 TEST_CASE("std::mutex guards a shared counter incremented from two threads", "[concurrency]") {
     int counter = 0;
-    std::mutex mutex;
+    engine_placeholder::Mutex mutex;
 
-    std::thread worker([&]() {
+    engine_placeholder::Thread worker([&]() {
         for (i32 i = 0; i < kIncrementsPerThread; ++i) {
-            std::lock_guard<std::mutex> lock(mutex);
+            engine_placeholder::LockGuard<engine_placeholder::Mutex> lock(mutex);
             ++counter;
         }
     });
 
     for (i32 i = 0; i < kIncrementsPerThread; ++i) {
-        std::lock_guard<std::mutex> lock(mutex);
+        engine_placeholder::LockGuard<engine_placeholder::Mutex> lock(mutex);
         ++counter;
     }
 
-    worker.join();
+    worker.Join();
     REQUIRE(counter == kIncrementsPerThread * 2);
 }
 
 TEST_CASE("std::atomic<int> survives concurrent increment from two threads with no mutex", "[concurrency]") {
-    std::atomic<int> counter{0};
+    engine_placeholder::Atomic<int> counter{0};
 
-    std::thread worker([&]() {
+    engine_placeholder::Thread worker([&]() {
         for (i32 i = 0; i < kIncrementsPerThread; ++i) {
-            counter.fetch_add(1, std::memory_order_relaxed);
+            counter.FetchAdd(1, engine_placeholder::MemoryOrder::Relaxed);
         }
     });
 
     for (i32 i = 0; i < kIncrementsPerThread; ++i) {
-        counter.fetch_add(1, std::memory_order_relaxed);
+        counter.FetchAdd(1, engine_placeholder::MemoryOrder::Relaxed);
     }
 
-    worker.join();
-    REQUIRE(counter.load() == kIncrementsPerThread * 2);
+    worker.Join();
+    REQUIRE(counter.Load() == kIncrementsPerThread * 2);
 }
 
 TEST_CASE("std::condition_variable hands off data from a producer to a consumer thread", "[concurrency]") {
-    std::mutex mutex;
-    std::condition_variable cv;
+    engine_placeholder::Mutex mutex;
+    engine_placeholder::ConditionVariable cv;
     bool data_ready = false;
     int payload = 0;
     int consumed = 0;
 
-    std::thread consumer([&]() {
-        std::unique_lock<std::mutex> lock(mutex);
-        cv.wait(lock, [&] { return data_ready; });
+    engine_placeholder::Thread consumer([&]() {
+        engine_placeholder::UniqueLock<engine_placeholder::Mutex> lock(mutex);
+        cv.Wait(lock, [&] { return data_ready; });
         consumed = payload;
     });
 
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        engine_placeholder::LockGuard<engine_placeholder::Mutex> lock(mutex);
         payload = 42;
         data_ready = true;
     }
-    cv.notify_one();
+    cv.NotifyOne();
 
-    consumer.join();
+    consumer.Join();
     REQUIRE(consumed == 42);
 }

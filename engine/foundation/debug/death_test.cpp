@@ -4,7 +4,7 @@
 #include "os/os.h"
 #include "string/string.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 
 namespace engine_placeholder::debug {
 
@@ -13,7 +13,7 @@ namespace {
 // Head of the intrusive list of registered death tests; constant-initialized so registration works from any static
 // initializer.
 DeathTestEntry* g_death_test_head = nullptr;
-std::atomic<bool> g_death_tests_supported_override{true};
+Atomic<bool> g_death_tests_supported_override{true};
 
 bool CaptureContains(const char* haystack, usize length, const char* needle) {
     return StringView(haystack, length).Contains(StringView(needle));

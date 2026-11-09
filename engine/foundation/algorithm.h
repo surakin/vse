@@ -1,6 +1,6 @@
 #pragma once
 
-#include <type_traits>
+#include "lang/traits.h"
 
 #include "containers/span.h"
 #include "mem/heap_allocator.h"
@@ -153,7 +153,7 @@ void Sort(Span<T> items) {
 /// Fails: the scratch buffer cannot be allocated; the span is then sorted by insertion, which is stable and slow.
 template <typename T, typename Less>
 void StableSort(Span<T> items, Less less) {
-    static_assert(std::is_trivially_copyable_v<T>, "StableSort: elements are moved through raw scratch memory");
+    static_assert(IsTriviallyCopyable<T>, "StableSort: elements are moved through raw scratch memory");
     const usize n = items.Size();
     // Bottom-up merge sort with insertion-sorted runs of 8.
     constexpr usize kRun = 8;

@@ -1,6 +1,7 @@
 #include "envelope.h"
 
 #include <cstring>
+#include "types.h"
 
 namespace crash_extract {
 
@@ -8,15 +9,15 @@ namespace {
 
 struct Cursor {
     const char* data;
-    std::size_t size;
-    std::size_t pos;
+    engine_placeholder::usize size;
+    engine_placeholder::usize pos;
 };
 
 bool IsSpace(char c) {
     return c == ' ' || c == '\t' || c == '\r';
 }
 
-void SkipSpace(const char* line, std::size_t length, std::size_t& i) {
+void SkipSpace(const char* line, engine_placeholder::usize length, engine_placeholder::usize& i) {
     while (i < length && IsSpace(line[i])) {
         ++i;
     }
@@ -24,7 +25,7 @@ void SkipSpace(const char* line, std::size_t length, std::size_t& i) {
 
 // Reads a JSON string starting at line[i] == '"'; leaves i after the closing quote. Returns false if it does not close.
 // The text (without quotes, escapes left as they are) is [begin, begin + length).
-bool ReadString(const char* line, std::size_t length, std::size_t& i, const char*& begin, std::size_t& text_length) {
+bool ReadString(const char* line, engine_placeholder::usize length, engine_placeholder::usize& i, const char*& begin, engine_placeholder::usize& text_length) {
     if (i >= length || line[i] != '"') {
         return false;
     }
@@ -36,7 +37,7 @@ bool ReadString(const char* line, std::size_t length, std::size_t& i, const char
             continue;
         }
         if (line[i] == '"') {
-            text_length = static_cast<std::size_t>(line + i - begin);
+            text_length = static_cast<engine_placeholder::usize>(line + i - begin);
             ++i;
             return true;
         }
@@ -46,13 +47,13 @@ bool ReadString(const char* line, std::size_t length, std::size_t& i, const char
 }
 
 // Skips one JSON value (a string, a number, a literal, or a nested object or array) starting at line[i].
-bool SkipValue(const char* line, std::size_t length, std::size_t& i) {
+bool SkipValue(const char* line, engine_placeholder::usize length, engine_placeholder::usize& i) {
     if (i >= length) {
         return false;
     }
     if (line[i] == '"') {
         const char* unused = nullptr;
-        std::size_t unused_length = 0;
+        engine_placeholder::usize unused_length = 0;
         return ReadString(line, length, i, unused, unused_length);
     }
     if (line[i] == '{' || line[i] == '[') {
@@ -61,7 +62,7 @@ bool SkipValue(const char* line, std::size_t length, std::size_t& i) {
             const char c = line[i];
             if (c == '"') {
                 const char* unused = nullptr;
-                std::size_t unused_length = 0;
+                engine_placeholder::usize unused_length = 0;
                 if (!ReadString(line, length, i, unused, unused_length)) {
                     return false;
                 }
@@ -81,7 +82,7 @@ bool SkipValue(const char* line, std::size_t length, std::size_t& i) {
         return false;
     }
     // A number or a literal: runs to the next delimiter.
-    const std::size_t start = i;
+    const engine_placeholder::usize start = i;
     while (i < length && line[i] != ',' && line[i] != '}' && !IsSpace(line[i])) {
         ++i;
     }
@@ -90,15 +91,15 @@ bool SkipValue(const char* line, std::size_t length, std::size_t& i) {
 
 struct ItemHeader {
     bool has_length = false;
-    std::size_t payload_length = 0;
+    engine_placeholder::usize payload_length = 0;
     bool is_minidump = false;
     const char* filename = nullptr; // the attachment's file name, escapes left as they are; null if the header names none
-    std::size_t filename_length = 0;
+    engine_placeholder::usize filename_length = 0;
 };
 
 // Parses a flat item header line such as {"type":"attachment","length":123,"attachment_type":"event.minidump"}.
-bool ParseItemHeader(const char* line, std::size_t length, ItemHeader& header) {
-    std::size_t i = 0;
+bool ParseItemHeader(const char* line, engine_placeholder::usize length, ItemHeader& header) {
+    engine_placeholder::usize i = 0;
     SkipSpace(line, length, i);
     if (i >= length || line[i] != '{') {
         return false;
@@ -110,7 +111,7 @@ bool ParseItemHeader(const char* line, std::size_t length, ItemHeader& header) {
             return true;
         }
         const char* key = nullptr;
-        std::size_t key_length = 0;
+        engine_placeholder::usize key_length = 0;
         if (!ReadString(line, length, i, key, key_length)) {
             return false;
         }
@@ -122,11 +123,11 @@ bool ParseItemHeader(const char* line, std::size_t length, ItemHeader& header) {
         SkipSpace(line, length, i);
         if (key_length == 6 && std::memcmp(key, "length", 6) == 0) {
             // A non-negative integer that fits; anything else makes the item unusable.
-            std::size_t value = 0;
-            std::size_t digits = 0;
+            engine_placeholder::usize value = 0;
+            engine_placeholder::usize digits = 0;
             while (i < length && line[i] >= '0' && line[i] <= '9') {
-                const std::size_t digit = static_cast<std::size_t>(line[i] - '0');
-                if (value > (static_cast<std::size_t>(-1) - digit) / 10) {
+                const engine_placeholder::usize digit = static_cast<engine_placeholder::usize>(line[i] - '0');
+                if (value > (static_cast<engine_placeholder::usize>(-1) - digit) / 10) {
                     return false; // overflow
                 }
                 value = value * 10 + digit;
@@ -140,7 +141,7 @@ bool ParseItemHeader(const char* line, std::size_t length, ItemHeader& header) {
             header.payload_length = value;
         } else if (key_length == 15 && std::memcmp(key, "attachment_type", 15) == 0) {
             const char* text = nullptr;
-            std::size_t text_length = 0;
+            engine_placeholder::usize text_length = 0;
             if (!ReadString(line, length, i, text, text_length)) {
                 return false;
             }
@@ -166,8 +167,8 @@ bool ParseItemHeader(const char* line, std::size_t length, ItemHeader& header) {
 }
 
 // The index of the first '\n' at or after `from`, or `size` if there is none.
-std::size_t FindNewline(const char* data, std::size_t size, std::size_t from) {
-    for (std::size_t i = from; i < size; ++i) {
+engine_placeholder::usize FindNewline(const char* data, engine_placeholder::usize size, engine_placeholder::usize from) {
+    for (engine_placeholder::usize i = from; i < size; ++i) {
         if (data[i] == '\n') {
             return i;
         }
@@ -177,21 +178,21 @@ std::size_t FindNewline(const char* data, std::size_t size, std::size_t from) {
 
 // Walks every item; the first that `wanted` accepts is returned in `out_data`/`out_size`. The whole envelope is checked either way.
 template <typename Wanted>
-EnvelopeResult FindItem(const char* data, std::size_t size, Wanted wanted, const char** out_data, std::size_t* out_size) {
+EnvelopeResult FindItem(const char* data, engine_placeholder::usize size, Wanted wanted, const char** out_data, engine_placeholder::usize* out_size) {
     *out_data = nullptr;
     *out_size = 0;
     if (data == nullptr || size == 0) {
         return EnvelopeResult::Malformed;
     }
     // The envelope header line: skipped (it has nested JSON we do not need).
-    std::size_t pos = FindNewline(data, size, 0);
+    engine_placeholder::usize pos = FindNewline(data, size, 0);
     if (pos >= size) {
         return EnvelopeResult::Malformed; // no newline at all
     }
     ++pos;
     bool found = false;
     while (pos < size) {
-        const std::size_t line_end = FindNewline(data, size, pos);
+        const engine_placeholder::usize line_end = FindNewline(data, size, pos);
         if (line_end >= size) {
             return EnvelopeResult::Malformed; // an item header with no end of line
         }
@@ -199,8 +200,8 @@ EnvelopeResult FindItem(const char* data, std::size_t size, Wanted wanted, const
         if (!ParseItemHeader(data + pos, line_end - pos, header)) {
             return EnvelopeResult::Malformed;
         }
-        std::size_t payload_start = line_end + 1;
-        std::size_t payload_length = 0;
+        engine_placeholder::usize payload_start = line_end + 1;
+        engine_placeholder::usize payload_length = 0;
         if (header.has_length) {
             if (header.payload_length > size - payload_start) {
                 return EnvelopeResult::Malformed; // the payload is longer than the data
@@ -227,12 +228,12 @@ EnvelopeResult FindItem(const char* data, std::size_t size, Wanted wanted, const
 
 } // namespace
 
-EnvelopeResult FindMinidump(const char* data, std::size_t size, Minidump* out) {
+EnvelopeResult FindMinidump(const char* data, engine_placeholder::usize size, Minidump* out) {
     return FindItem(data, size, [](const ItemHeader& h) { return h.is_minidump; }, &out->data, &out->size);
 }
 
-EnvelopeResult FindAttachment(const char* data, std::size_t size, const char* filename, Attachment* out) {
-    const std::size_t name_length = filename != nullptr ? std::strlen(filename) : 0;
+EnvelopeResult FindAttachment(const char* data, engine_placeholder::usize size, const char* filename, Attachment* out) {
+    const engine_placeholder::usize name_length = filename != nullptr ? std::strlen(filename) : 0;
     return FindItem(
         data, size,
         [&](const ItemHeader& h) {

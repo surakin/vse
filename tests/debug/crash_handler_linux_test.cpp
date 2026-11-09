@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <vector>
+#include "types.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -79,7 +80,7 @@ std::string ReadFile(const std::string& path) {
     std::string content;
     if (std::FILE* file = std::fopen(path.c_str(), "rb")) {
         char chunk[4096];
-        std::size_t n;
+        usize n;
         while ((n = std::fread(chunk, 1, sizeof(chunk), file)) > 0) {
             content.append(chunk, n);
         }

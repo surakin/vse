@@ -2717,12 +2717,12 @@ Allocates and frees `VkDeviceMemory` for the allocator, mapping host-visible obj
 | Thread-safety | thread-compatible; the allocator serializes calls. The counters are atomic. |
 | Ownership | borrows the device table and device, which must outlive it. |
 
-### `VulkanMemoryBackend(const VkDeviceFns*,VkDevice,std::atomic<bool>*)` {#rhi-vulkan-vulkanmemorybackend-vulkanmemorybackend-const-vkdevicefns-star-vkdevice-std-atomic-lt-bool-gt-star}
+### `VulkanMemoryBackend(const VkDeviceFns*,VkDevice,Atomic<bool>*)` {#rhi-vulkan-vulkanmemorybackend-vulkanmemorybackend-const-vkdevicefns-star-vkdevice-atomic-lt-bool-gt-star}
 
 `constructor rhi::vulkan::VulkanMemoryBackend::VulkanMemoryBackend` — defined in `engine/rhi/vulkan/vk_memory_backend.h`
 
 ```cpp
-VulkanMemoryBackend(const VkDeviceFns* fns, VkDevice device, std::atomic<bool>* device_lost);
+VulkanMemoryBackend(const VkDeviceFns* fns, VkDevice device, Atomic<bool>* device_lost);
 ```
 
 Creates a backend for `device`.

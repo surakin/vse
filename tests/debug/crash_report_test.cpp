@@ -13,11 +13,11 @@
 #include "support/death_test_skip.h"
 #include "test_text.h"
 
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstdio>
 #include <cstring>
-#include <mutex>
-#include <thread>
+#include "sync/mutex.h"
+#include "sync/thread.h"
 #include "build_defs.h"
 
 using namespace engine_placeholder;
@@ -236,14 +236,14 @@ TEST_CASE("Lines suppressed by the channel's verbosity are not kept", "[crashrep
 TEST_CASE("Eight threads logging while another reads: every line delivered is whole and each thread's lines stay in order", "[crashreport][log][debug]") {
     QuietLog quiet;
     ResetLogRingForTesting();
-    std::atomic<bool> stop{false};
-    std::atomic<int> bad{0};
-    std::mutex bad_mutex;
+    Atomic<bool> stop{false};
+    Atomic<int> bad{0};
+    Mutex bad_mutex;
     Text first_bad = MakeText();
-    std::atomic<long> delivered{0};
-    std::atomic<long> passes{0};
-    std::thread reader([&] {
-        while (!stop.load()) {
+    Atomic<long> delivered{0};
+    Atomic<long> passes{0};
+    Thread reader([&] {
+        while (!stop.Load()) {
             const TextList lines = RecentLines();
             Array<int, 8> last;
             for (int& l : last) l = -1;
@@ -255,33 +255,33 @@ TEST_CASE("Eight threads logging while another reads: every line delivered is wh
                 int n = -1;
                 if (t == kNotFound || std::sscanf(line.CStr() + t, "INFO: T%d-%d", &thread_id, &n) != 2 || thread_id < 0 || thread_id > 7 ||
                     line.Length() == 0 || line.CStr()[line.Length() - 1] != '\n') {
-                    bad.fetch_add(1);
-                    std::lock_guard<std::mutex> lock(bad_mutex);
+                    bad.FetchAdd(1);
+                    LockGuard<Mutex> lock(bad_mutex);
                     if (first_bad.Length() == 0) {
                         first_bad = engine_test::Concat("malformed: [", line, "]");
                     }
                     continue;
                 }
                 if (n <= last[static_cast<usize>(thread_id)]) {
-                    bad.fetch_add(1); // a thread's own lines went backwards
-                    std::lock_guard<std::mutex> lock(bad_mutex);
+                    bad.FetchAdd(1); // a thread's own lines went backwards
+                    LockGuard<Mutex> lock(bad_mutex);
                     if (first_bad.Length() == 0) {
                         first_bad = engine_test::Format("backwards: thread %d n=%d after %d", thread_id, n, last[static_cast<usize>(thread_id)]);
                     }
                 }
                 last[static_cast<usize>(thread_id)] = n;
-                delivered.fetch_add(1);
+                delivered.FetchAdd(1);
             }
-            passes.fetch_add(1);
-            std::this_thread::yield();
+            passes.FetchAdd(1);
+            ThisThread::Yield();
         }
     });
-    while (passes.load() == 0) {
-        std::this_thread::yield(); // the writers start once the reader is running, so the two overlap
+    while (passes.Load() == 0) {
+        ThisThread::Yield(); // the writers start once the reader is running, so the two overlap
     }
-    Array<std::thread, 8> writers;
+    Array<Thread, 8> writers;
     for (int t = 0; t < 8; ++t) {
-        writers[static_cast<usize>(t)] = std::thread([t] {
+        writers[static_cast<usize>(t)] = Thread([t] {
             for (int n = 0; n < 2000; ++n) {
                 char text[32];
                 std::snprintf(text, sizeof(text), "T%d-%d", t, n);
@@ -289,14 +289,14 @@ TEST_CASE("Eight threads logging while another reads: every line delivered is wh
             }
         });
     }
-    for (std::thread& w : writers) {
-        w.join();
+    for (Thread& w : writers) {
+        w.Join();
     }
     stop = true;
-    reader.join();
+    reader.Join();
     INFO(first_bad.CStr());
-    CHECK(bad.load() == 0);
-    CHECK(passes.load() > 0);
+    CHECK(bad.Load() == 0);
+    CHECK(passes.Load() > 0);
     // At rest: the ring holds the last 256 lines, all whole.
     const TextList lines = RecentLines();
     // A writer descheduled in the middle of its slot and then lapped by 256 newer lines leaves that one slot skipped, so

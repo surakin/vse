@@ -1,4 +1,4 @@
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstdlib>
 
 #include <catch2/catch_test_macros.hpp>
@@ -34,7 +34,7 @@ struct SumCtx {
     const u64* data;
     u64* partials;  // one slot per chunk
     usize chunk;
-    std::atomic<u64> invocations{0};
+    Atomic<u64> invocations{0};
 };
 
 void SumChunk(void* user, usize begin, usize end) {
@@ -42,7 +42,7 @@ void SumChunk(void* user, usize begin, usize end) {
     u64 sum = 0;
     for (usize i = begin; i < end; ++i) sum += c->data[i];
     c->partials[begin / c->chunk] = sum; // each chunk owns its own slot
-    c->invocations.fetch_add(1, std::memory_order_relaxed);
+    c->invocations.FetchAdd(1, MemoryOrder::Relaxed);
 }
 
 // Runs the sum with the given scheduler/chunk; returns the combined sum
@@ -55,7 +55,7 @@ u64 ParallelSum(Scheduler& s, const Vector<u64>& data, usize chunk, u64* invocat
     ParallelForBlocking(s, data.Size(), chunk, SumChunk, &ctx);
     u64 total = 0;
     for (usize i = 0; i < chunks; ++i) total += partials[i];
-    if (invocations) *invocations = ctx.invocations.load();
+    if (invocations) *invocations = ctx.invocations.Load();
     return total;
 }
 
@@ -142,7 +142,7 @@ TEST_CASE("parallel_for edge cases", "[jobs][parallel_for]") {
 
 TEST_CASE("The Job-returning ParallelFor joins inside a job and via Spawn", "[jobs][parallel_for]") {
     struct Local {
-        static Job Parent(const Vector<u64>* data, u64* out, std::atomic<int>* done) {
+        static Job Parent(const Vector<u64>* data, u64* out, Atomic<int>* done) {
             Vector<u64> partials = Zeros((data->Size() + 99) / 100);
             SumCtx ctx{data->Data(), partials.Data(), 100, {0}};
             Counter c;
@@ -151,14 +151,14 @@ TEST_CASE("The Job-returning ParallelFor joins inside a job and via Spawn", "[jo
             u64 t = 0;
             for (usize i = 0; i < partials.Size(); ++i) t += partials[i];
             *out = t;
-            done->fetch_add(1);
+            done->FetchAdd(1);
         }
     };
     for (usize workers : {usize{1}, usize{2}, usize{0}}) {
         auto s = ParallelForTestMakeScheduler(workers);
         auto data = MakeData(10'000);
         u64 out = 0;
-        std::atomic<int> done{0};
+        Atomic<int> done{0};
         s->Submit(Local::Parent(&data, &out, &done));
         s->HelpUntil(done, 1);
         REQUIRE(out == 10'000ull * 9'999 / 2);
@@ -167,14 +167,14 @@ TEST_CASE("The Job-returning ParallelFor joins inside a job and via Spawn", "[jo
 
 TEST_CASE("The typed callable wrapper forwards (begin, end)", "[jobs][parallel_for]") {
     auto s = ParallelForTestMakeScheduler(2);
-    Vector<std::atomic<u8>> hit; // sized once while empty, so the atomics never move
+    Vector<Atomic<u8>> hit; // sized once while empty, so the atomics never move
     hit.Resize(5000);
-    for (usize i = 0; i < hit.Size(); ++i) hit[i].store(0);
+    for (usize i = 0; i < hit.Size(); ++i) hit[i].Store(0);
     auto fn = [&](usize begin, usize end) {
-        for (usize i = begin; i < end; ++i) hit[i].fetch_add(1);
+        for (usize i = begin; i < end; ++i) hit[i].FetchAdd(1);
     };
     ParallelForBlocking(*s, hit.Size(), 64, fn);
-    for (usize i = 0; i < hit.Size(); ++i) REQUIRE(hit[i].load() == 1);
+    for (usize i = 0; i < hit.Size(); ++i) REQUIRE(hit[i].Load() == 1);
 }
 
 TEST_CASE("Frame stats balance after parallel_for", "[jobs][parallel_for]") {
@@ -206,7 +206,7 @@ JobFormResult RunJobForm(Scheduler& s, usize n, usize chunk) {
     s.HelpUntil(c);
     JobFormResult r;
     for (usize i = 0; i < partials.Size(); ++i) r.sum += partials[i];
-    r.invocations = ctx.invocations.load();
+    r.invocations = ctx.invocations.Load();
     return r;
 }
 } // namespace
@@ -242,7 +242,7 @@ TEST_CASE("A huge chunk count is clamped instead of overflowing the queues", "[j
         REQUIRE(r.invocations <= kMaxChunks);
         // And the Job form really spawning from a worker: run it inside a job.
         struct Local {
-            static Job Parent(usize n, u64* out, std::atomic<int>* done) {
+            static Job Parent(usize n, u64* out, Atomic<int>* done) {
                 Vector<u64> data = MakeData(n);
                 usize eff = EffectiveChunkSize(n, 1);
                 Vector<u64> partials = Zeros((n + eff - 1) / eff);
@@ -253,11 +253,11 @@ TEST_CASE("A huge chunk count is clamped instead of overflowing the queues", "[j
                 u64 t = 0;
                 for (usize i = 0; i < partials.Size(); ++i) t += partials[i];
                 *out = t;
-                done->fetch_add(1);
+                done->FetchAdd(1);
             }
         };
         u64 out = 0;
-        std::atomic<int> done{0};
+        Atomic<int> done{0};
         s->Submit(Local::Parent(200'000, &out, &done));
         s->HelpUntil(done, 1);
         REQUIRE(out == 200'000ull * 199'999 / 2);

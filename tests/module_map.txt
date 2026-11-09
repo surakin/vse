@@ -42,6 +42,9 @@ tests/foundation    0,1
 tests/jobs          2
 tests/io            4,5,9   # temp_dir.h is shared with the rhi and renderer tests
 tests/types         10
+tests/lang          16
+tests/sync          16
+tests/cstr          16
 tests/settings      11
 tests/debug         7
 tests/docgen        3

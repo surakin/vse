@@ -1,0 +1,18 @@
+// Stand-in for the standard header (see cstddef): the list type the compiler builds for a braced initializer.
+#pragma once
+namespace std {
+template <class E>
+class initializer_list {
+public:
+    using value_type = E;
+    using const_iterator = const E*;
+    constexpr initializer_list() noexcept : begin_(nullptr), size_(0) {}
+    constexpr const E* begin() const noexcept { return begin_; }
+    constexpr const E* end() const noexcept { return begin_ + size_; }
+    constexpr decltype(sizeof(0)) size() const noexcept { return size_; }
+private:
+    constexpr initializer_list(const E* b, decltype(sizeof(0)) n) noexcept : begin_(b), size_(n) {}
+    const E* begin_;
+    decltype(sizeof(0)) size_;
+};
+} // namespace std

@@ -1,5 +1,5 @@
 // Phase 8 Day 111: a lost device recovers through the settings path, with a retry limit, a fallback adapter and reporting.
-#include <atomic>
+#include "sync/atomic.h"
 #include <cstring>
 #include <vector>
 
@@ -69,7 +69,7 @@ struct LossRig {
     RenderSettings initial;
     GraphResource target;
     UniquePtr<Renderer> renderer;
-    std::atomic<u32> strikes{1};
+    Atomic<u32> strikes{1};
     bool ask_during_frame = false;
     RenderSettings asked;
     int begins = 0;
@@ -151,7 +151,7 @@ TEST_CASE("A device lost at the start of frame 3 is replaced and the next frame 
     CHECK_FALSE(rig.renderer->IsRecovering());
     CHECK(rig.renderer->Stats().recoveries == 1);
     CHECK(rig.renderer->Stats().frames_lost == 1);
-    CHECK(rig.strikes.load() == 0);                           // the one allowed loss was used
+    CHECK(rig.strikes.Load() == 0);                           // the one allowed loss was used
     CHECK(rig.owner.recreates >= 1);
     CHECK(rig.Render() == FrameStatus::Ok);            // and rendering works again
     CHECK(rig.renderer->GetDevice() == rig.host.GetDevice());
@@ -330,7 +330,7 @@ TEST_CASE("A real device recovers from a loss at the start and at the submit of 
             DeviceResources registry;
             rhi::DeviceHost host;
             host.AddObserver(&registry, 0);
-            std::atomic<u32> strikes{1};
+            Atomic<u32> strikes{1};
             rhi::DeviceCreateInfo info;
             info.backend = backend;
             info.validation = rhi::ValidationSetting::Off;
@@ -409,7 +409,7 @@ TEST_CASE("Repeated losses on a real device do not keep growing memory", "[recov
         DeviceResources registry;
         rhi::DeviceHost host;
         host.AddObserver(&registry, 0);
-        std::atomic<u32> strikes{16};
+        Atomic<u32> strikes{16};
         rhi::DeviceCreateInfo info;
         info.backend = backend;
         info.validation = rhi::ValidationSetting::Off;

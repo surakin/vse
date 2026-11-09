@@ -9,6 +9,7 @@
 #include "log/assert.h"
 #include "settings/file_store.h"
 #include "settings/policy_layers.h"
+#include "sync/mutex.h"
 
 namespace engine_placeholder::settings {
 
@@ -59,7 +60,7 @@ struct Settings::Subscription {
 
 Settings::Settings(Registry& registry) : registry_(&registry) {
     registry.Freeze();
-    std::lock_guard<std::recursive_mutex> op(op_);
+    LockGuard<RecursiveMutex> op(op_);
     RebuildSnapshotLocked();
 }
 
@@ -68,7 +69,7 @@ Settings::~Settings() = default;
 void Settings::RebuildSnapshotLocked() {
     auto snap = MakeShared<SettingsSnapshot>();
     for (u32 i = 0; i < registry_->Count(); ++i) snap->values.Push(MakeShared<const Value>(registry_->Current(SettingId{static_cast<u16>(i + 1)})));
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     snap->generation = ++generation_;
     snapshot_ = SharedPtr<const SettingsSnapshot>(static_cast<SharedPtr<SettingsSnapshot>&&>(snap));
 }
@@ -76,12 +77,12 @@ void Settings::RebuildSnapshotLocked() {
 void Settings::PublishChangesLocked(const Change* changes, usize count) {
     auto snap = MakeShared<SettingsSnapshot>();
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         snap->values.Reserve(snapshot_->values.Size());
         for (usize i = 0; i < snapshot_->values.Size(); ++i) snap->values.Push(snapshot_->values[i]); // pointers, shared with the previous snapshot
     }
     for (usize k = 0; k < count; ++k) snap->values[changes[k].id.value - 1u] = MakeShared<const Value>(changes[k].new_value);
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     snap->generation = ++generation_;
     snapshot_ = SharedPtr<const SettingsSnapshot>(static_cast<SharedPtr<SettingsSnapshot>&&>(snap));
 }
@@ -89,7 +90,7 @@ void Settings::PublishChangesLocked(const Change* changes, usize count) {
 LoadReport Settings::Load(const LoadOptions& options) {
     CommandLineResult parsed_command_line;
     {
-        std::lock_guard<std::recursive_mutex> op(op_);
+        LockGuard<RecursiveMutex> op(op_);
         stack_.Clear();
         cli_from_load_ = false;
         minimal_ = options.minimal_writes;
@@ -168,7 +169,7 @@ LoadReport Settings::Load(const LoadOptions& options) {
 
 LoadReport Settings::LoadFromLayers() {
     LoadReport report;
-    std::lock_guard<std::recursive_mutex> op(op_);
+    LockGuard<RecursiveMutex> op(op_);
     stack_.LoadAll(&report.problems);
     for (usize i = 0; i < stack_.Size(); ++i) {
         LoadReport::LayerInfo info;
@@ -229,7 +230,7 @@ LoadReport Settings::LoadFromLayers() {
     }
     RebuildSnapshotLocked();
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         dirty_ = false;
     }
     UpdateCrashState();
@@ -237,12 +238,12 @@ LoadReport Settings::LoadFromLayers() {
 }
 
 SharedPtr<const SettingsSnapshot> Settings::Snapshot() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     return snapshot_;
 }
 
 Resolution Settings::Provenance(SettingId id) {
-    std::lock_guard<std::recursive_mutex> op(op_);
+    LockGuard<RecursiveMutex> op(op_);
     Resolution r;
     stack_.Resolve(*registry_, id, &r, nullptr);
     const Value current = registry_->Current(id);
@@ -256,7 +257,7 @@ Resolution Settings::Provenance(SettingId id) {
 }
 
 SetResult Settings::SetFromCommandLine(StringView key, StringView text, StringView origin) {
-    std::lock_guard<std::recursive_mutex> op(op_);
+    LockGuard<RecursiveMutex> op(op_);
     const usize cli = stack_.Find(LayerRole::CommandLine);
     Key parsed;
     if (cli >= stack_.Size() || !cli_from_load_ || Key::Parse(key, &parsed) != KeyError::None || !registry_->Find(key).IsValid()) return SetText(key, text);
@@ -315,7 +316,7 @@ SetResult Settings::DoApply(const ChangeRequest* requests, usize count, ApplyFn 
     }
     // The whole operation, apply function and listeners included, is one critical section on a recursive lock: changes are announced in
     // the order they were made, and a rejected batch is undone before anyone else can change anything.
-    std::lock_guard<std::recursive_mutex> op(op_);
+    LockGuard<RecursiveMutex> op(op_);
     struct Pending {
         Change change;
         bool had_write = false;
@@ -418,7 +419,7 @@ SetResult Settings::DoApply(const ChangeRequest* requests, usize count, ApplyFn 
     for (usize k = 0; k < pending.Size(); ++k) registry_->Publish(pending[k].change.id, pending[k].change.new_value);
     PublishChangesLocked(changes.Data(), changes.Size());
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         dirty_ = true;
         last_change_ = NowSeconds();
     }
@@ -457,7 +458,7 @@ SetResult Settings::DoApply(const ChangeRequest* requests, usize count, ApplyFn 
 }
 
 u32 Settings::AddListener(StringView prefix, SettingsListener listener, void* user) {
-    std::lock_guard<std::recursive_mutex> op(op_);
+    LockGuard<RecursiveMutex> op(op_);
     UniquePtr<Subscription> s = MakeUnique<Subscription>();
     s->id = next_listener_++;
     s->prefix = String<HeapAllocator>(HeapAllocator::Default(), prefix);
@@ -469,7 +470,7 @@ u32 Settings::AddListener(StringView prefix, SettingsListener listener, void* us
 }
 
 void Settings::RemoveListener(u32 id) {
-    std::lock_guard<std::recursive_mutex> op(op_);
+    LockGuard<RecursiveMutex> op(op_);
     for (usize i = 0; i < subscriptions_.Size(); ++i) {
         if (subscriptions_[i]->id == id) {
             subscriptions_.Remove(i);
@@ -479,18 +480,18 @@ void Settings::RemoveListener(u32 id) {
 }
 
 void Settings::SetCapabilityCheck(CapabilityFn check, void* user) {
-    std::lock_guard<std::recursive_mutex> op(op_);
+    LockGuard<RecursiveMutex> op(op_);
     capability_ = check;
     capability_user_ = user;
 }
 
 Status Settings::Save(const SaveOptions& options) {
-    std::lock_guard<std::recursive_mutex> op(op_);
+    LockGuard<RecursiveMutex> op(op_);
     const usize w = stack_.WriteLayer();
     if (w >= stack_.Size()) return Status::Of(StoreError::NotFound);
     if (newer_file_ && !options.replace_newer) {
         const Status too_new = Status::Of(StoreError::TooNew);
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         last_save_status_ = too_new;
         return too_new;
     }
@@ -521,13 +522,13 @@ Status Settings::Save(const SaveOptions& options) {
     commit.replace_damaged = options.replace_damaged;
     const Status s = stack_.Store(w).Commit(commit);
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         last_save_status_ = s;
     }
     if (s.Ok()) {
         newer_file_ = false; // the file now carries this program's versions
         stamp_versions_ = false;
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         dirty_ = false;
     } else {
         for (usize i = undo.Size(); i-- > 0;) { // a failed save leaves no command-line values behind in the write layer
@@ -544,23 +545,23 @@ Status Settings::SaveIfChanged() {
 }
 
 bool Settings::HasUnsavedChanges() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     return dirty_;
 }
 
 void Settings::SetAutosaveQuietSeconds(double seconds) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    LockGuard<Mutex> lock(mutex_);
     autosave_quiet_ = seconds;
 }
 
 bool Settings::PollAutosave() {
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         if (autosave_quiet_ <= 0 || !dirty_ || NowSeconds() - last_change_ < autosave_quiet_) return false;
     }
     const bool saved = Save().Ok();
     if (!saved) { // try again after another quiet period, not on every call
-        std::lock_guard<std::mutex> lock(mutex_);
+        LockGuard<Mutex> lock(mutex_);
         last_change_ = NowSeconds();
     }
     return saved;
