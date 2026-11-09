@@ -3,6 +3,7 @@
 #include "platform/input.h"
 #include "platform/clipboard.h"
 #include "platform/cursor.h"
+#include "platform/drag_drop.h"
 #include "platform/input_event.h"
 #include "string/string.h"
 #include "types.h"
@@ -172,6 +173,49 @@ public:
 
     /// Returns whether the selection currently offers a format, as far as the last `ClipboardChanged` told (for enabling a Paste command).
     virtual bool ClipboardHasFormat([[maybe_unused]] ClipboardKind kind, [[maybe_unused]] ClipboardFormat format, [[maybe_unused]] StringView custom_name) const { return false; }
+
+    /// Returns whether this window can take part in drag and drop with other programs (the default is false).
+    virtual bool SupportsDragAndDrop() const { return false; }
+
+    /// Sets what drags from other programs the window accepts; the default accepts none.
+    ///
+    /// Param accept: the formats wanted; `formats == 0` refuses every drag. The name is copied.
+    virtual void SetDropAccept([[maybe_unused]] const DropAccept& accept) {}
+
+    /// Answers the drag over the window with the action the program would take (feeds the cursor the user sees); call it after a `DragEnter` or `DragOver` event.
+    ///
+    /// Until it is called the backend answers `Copy` when a format matches and the source allows it, else `Nothing`.
+    /// Param action: `Nothing` refuses the drop at this position.
+    virtual void SetDropAction([[maybe_unused]] DragAction action) {}
+
+    /// Reads one format of the data being dropped; call it after a `Drop` event.
+    ///
+    /// The answer is asynchronous like [[os::Window::RequestClipboard]]: a `DropData` event with the returned id, then [[os::Window::TakeClipboardResult]]. The same safety rules apply
+    /// (valid UTF-8, local `file://` paths only, a file list cut at [[os::kMaxDropFileEntries]] entries with the rest counted in `rejected_entries`).
+    /// Param format: what to read.
+    /// Param custom_name: `Custom`: the MIME type or atom name.
+    /// Returns: the request id (never 0).
+    /// Fails: returns 0 if no drop is waiting or too many requests are open.
+    virtual u32 RequestDropData([[maybe_unused]] ClipboardFormat format, [[maybe_unused]] StringView custom_name) { return 0; }
+
+    /// Tells the source that the drop has been handled (the data was read, or is not wanted). Without it the drop ends by itself after [[os::kDropSessionTimeoutNs]].
+    /// Param taken: what the program did with the data; `Nothing` reports that it was refused.
+    virtual void FinishDrop([[maybe_unused]] DragAction taken) {}
+
+    /// Starts dragging data out of the window; the drag follows the pointer until the button is released.
+    ///
+    /// Call it from the handler of a button press or a pointer move with the button held (Wayland needs that input's serial). The bytes are copied. The end is reported by a
+    /// `DragEnded` event.
+    /// Param source: the offered formats, allowed actions and optional image.
+    /// Returns: true if the drag started.
+    /// Fails: returns false if drag and drop is unsupported, a drag is already running, there are no offers or too many, or (X11) the pointer could not be grabbed.
+    virtual bool BeginDrag([[maybe_unused]] const DragSource& source) { return false; }
+
+    /// Cancels the drag this window started; a `DragEnded` event with `Nothing` follows.
+    virtual void CancelDrag() {}
+
+    /// Returns whether a drag started by this window is running.
+    virtual bool Dragging() const { return false; }
 
     /// Returns whether this window can be made fullscreen (the platform and, where it can be known, the compositor allow it).
     ///

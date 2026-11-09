@@ -11,6 +11,10 @@
 
 namespace engine_placeholder::os::wayland {
 
+/// Builds a premultiplied ARGB8888 `wl_shm` buffer from RGBA8 pixels (a cursor image, a drag icon). Returns null on failure.
+/// Ownership: the caller destroys the buffer.
+wl_buffer* CreateArgbShmBuffer(wl_shm* shm, const byte* rgba, u32 width, u32 height);
+
 /// Everything about the mouse cursor on one Wayland seat: the standard shapes (`wp_cursor_shape_v1`), a custom image (a `wl_shm` buffer on a cursor surface), and the
 /// pointer lock with relative motion (`zwp_pointer_constraints_v1`, `zwp_relative_pointer_v1`).
 ///

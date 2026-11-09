@@ -70,6 +70,22 @@ public:
     bool PointerLocked() const override { return input_.Cursor().Locked(); }
     /// Returns whether the compositor offers the data device (and, for the primary selection, the primary selection protocol).
     bool SupportsClipboard(ClipboardKind kind) const override { return input_.Clipboard().Supports(kind); }
+    /// Returns whether the compositor offers the data device (drag and drop uses it).
+    bool SupportsDragAndDrop() const override { return input_.Clipboard().SupportsDnd(); }
+    /// Sets the accepted drop formats.
+    void SetDropAccept(const DropAccept& accept) override { input_.Clipboard().SetDropAccept(accept); }
+    /// Answers the drag over the window (`wl_data_offer.accept` and `set_actions`).
+    void SetDropAction(DragAction action) override { input_.Clipboard().SetDropAction(action); }
+    /// Reads one format of the dropped data.
+    u32 RequestDropData(ClipboardFormat format, StringView custom_name) override { return input_.Clipboard().RequestDropData(format, custom_name); }
+    /// Ends the drop.
+    void FinishDrop(DragAction taken) override { input_.Clipboard().FinishDrop(taken); }
+    /// Starts a drag with the serial of the last button or key press; fails before the first.
+    bool BeginDrag(const DragSource& source) override { return Valid() && input_.Clipboard().BeginDrag(source); }
+    /// Cancels the running drag.
+    void CancelDrag() override { input_.Clipboard().CancelDrag(); }
+    /// Returns whether a drag started by this window is running.
+    bool Dragging() const override { return input_.Clipboard().Dragging(); }
     /// Takes the selection; fails before the first key or button event (Wayland demands that serial).
     bool SetClipboard(ClipboardKind kind, const ClipboardOffer& offer) override { return Valid() && input_.Clipboard().Set(kind, offer); }
     /// Starts a read of the selection.

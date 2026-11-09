@@ -6,6 +6,7 @@
 //   P  paste: request the clipboard text and print it when it arrives (copy something in another program first)
 //   O  like P for the primary selection (the middle-click one)
 //   F  show which formats the clipboard offers
+//   D  start a drag of a test string (drop it into another program); drops on this window are printed (text and files accepted)
 //   Esc quit
 // Options: --backend=wayland|x11|auto, --run-seconds=N (default 60).
 #include "log/log.h"
@@ -13,6 +14,7 @@
 #include "os/command_line.h"
 #include "os/os.h"
 #include "platform/cursor.h"
+#include "platform/drag_drop.h"
 #include "platform/entry_point.h"
 #include "platform/input.h"
 #include "platform/input_event.h"
@@ -40,6 +42,12 @@ const char* TypeName(os::InputEventType type) {
     case os::InputEventType::RelativeMotion: return "RelativeMotion";
     case os::InputEventType::ClipboardData: return "ClipboardData";
     case os::InputEventType::ClipboardChanged: return "ClipboardChanged";
+    case os::InputEventType::DragEnter: return "DragEnter";
+    case os::InputEventType::DragOver: return "DragOver";
+    case os::InputEventType::DragLeave: return "DragLeave";
+    case os::InputEventType::Drop: return "Drop";
+    case os::InputEventType::DropData: return "DropData";
+    case os::InputEventType::DragEnded: return "DragEnded";
     default: return "None";
     }
 }
@@ -54,6 +62,12 @@ void Print(const os::InputEvent& e) {
     case os::InputEventType::Text: line.Append(" \"").Append(StringView(e.text, e.text_length)).Append('"'); break;
     case os::InputEventType::PointerButton: line.Append(" button=0x").AppendHex(e.button).Append(e.down ? " down" : " up"); break;
     case os::InputEventType::ClipboardData: line.Append(" id=").AppendUInt(e.request_id).Append(" status=").AppendUInt(e.clipboard_status); break;
+    case os::InputEventType::DragEnter:
+    case os::InputEventType::DragOver:
+    case os::InputEventType::Drop: line.Append(" formats=").AppendUInt(e.drag_formats).Append(" actions=").AppendUInt(e.drag_actions).Append(" action=").AppendUInt(e.drag_action).Append(" at (").AppendFloat(e.x, 1).Append(", ").AppendFloat(e.y, 1).Append(')'); break;
+    case os::InputEventType::DropData: line.Append(" id=").AppendUInt(e.request_id).Append(" status=").AppendUInt(e.clipboard_status); break;
+    case os::InputEventType::DragEnded: line.Append(" action=").AppendUInt(e.drag_action); break;
+    case os::InputEventType::DragLeave: break;
     case os::InputEventType::ClipboardChanged: line.Append(" kind=").AppendUInt(e.clipboard_kind); break;
     case os::InputEventType::Resize: line.Append(' ').AppendUInt(e.width).Append('x').AppendUInt(e.height); break;
     case os::InputEventType::None:
@@ -129,9 +143,18 @@ int EngineMain(int, char**) {
         ArenaAllocator scratch(256);
         StringBuilder<ArenaAllocator> line(scratch);
         line.Append("backend ").Append(window->BackendName()).Append(": shapes=").AppendUInt(window->SupportsCursorShape()).Append(" image=").AppendUInt(window->SupportsCursorImage());
-        line.Append(" lock=").AppendUInt(window->SupportsPointerLock()).Append("  keys: L lock, C shape, I image, Y copy, P paste, O paste primary, F formats, Esc quit\n");
+        line.Append(" lock=").AppendUInt(window->SupportsPointerLock()).Append("  keys: L lock, C shape, I image, Y copy, P paste, O paste primary, F formats, D drag, Esc quit\n");
         os::Write(1, line.CStr(), line.View().Length());
     }
+
+    if (window->SupportsDragAndDrop()) {
+        os::DropAccept accept;
+        accept.formats = os::kDropText | os::kDropFiles;
+        window->SetDropAccept(accept);
+        window->SetDropAction(os::DragAction::Copy);
+    }
+    u32 drop_text_id = 0;
+    u32 drop_files_id = 0;
 
     Vector<byte> ring;
     MakeRing(ring);
@@ -167,6 +190,25 @@ int EngineMain(int, char**) {
                 }
                 paste_id = 0;
             }
+            if (e.type == os::InputEventType::Drop) {
+                if ((e.drag_formats & os::kDropFiles) != 0) drop_files_id = window->RequestDropData(os::ClipboardFormat::FileList, StringView());
+                if ((e.drag_formats & os::kDropText) != 0) drop_text_id = window->RequestDropData(os::ClipboardFormat::Text, StringView());
+                if (drop_files_id == 0 && drop_text_id == 0) window->FinishDrop(os::DragAction::Nothing);
+            }
+            if (e.type == os::InputEventType::DropData) {
+                os::ClipboardResult result;
+                if (window->TakeClipboardResult(e.request_id, &result) && result.status == os::ClipboardStatus::Ok) {
+                    Say(e.request_id == drop_files_id ? "dropped files:" : "dropped text:");
+                    os::Write(1, result.bytes.Data(), result.bytes.Size());
+                    os::Write(1, "\n", 1);
+                    if (result.rejected_entries != 0) Say("(some entries were rejected)");
+                } else {
+                    Say("reading the dropped data failed");
+                }
+                if (e.request_id == drop_files_id) drop_files_id = 0;
+                if (e.request_id == drop_text_id) drop_text_id = 0;
+                if (drop_files_id == 0 && drop_text_id == 0) window->FinishDrop(os::DragAction::Copy);
+            }
             if (e.type != os::InputEventType::KeyDown || e.repeat) continue;
             if (e.key == os::Key::Escape) return 0;
             if (e.key == os::Key::L) {
@@ -201,6 +243,16 @@ int EngineMain(int, char**) {
                     line.Append(" files=").AppendUInt(window->ClipboardHasFormat(kind, os::ClipboardFormat::FileList, StringView())).Append('\n');
                     os::Write(1, line.CStr(), line.View().Length());
                 }
+            } else if (e.key == os::Key::D) {
+                static const char kDrag[] = "dragged from input_probe \xF0\x9F\x8E\x89";
+                os::ClipboardOffer offer;
+                offer.data = reinterpret_cast<const byte*>(kDrag);
+                offer.size = sizeof(kDrag) - 1;
+                os::DragSource source;
+                source.offers = &offer;
+                source.offer_count = 1;
+                source.allowed_actions = os::kAllDragActions;
+                Say(window->BeginDrag(source) ? "drag started: move the pointer and release over another program" : "drag refused (hold a button first on Wayland, or one is running)");
             } else if (e.key == os::Key::I) {
                 image_on = !image_on;
                 if (image_on) {

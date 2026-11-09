@@ -15,7 +15,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 17 | 524 |
 | [Platform: OS Services](platform-os.md) | 4 | 50 |
-| [Platform: Windowing and Input](platform-window-input.md) | 20 | 563 |
+| [Platform: Windowing and Input](platform-window-input.md) | 21 | 638 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 208 |
 | [Text](text.md) | 6 | 215 |
 | [The UI Toolkit](ui.md) | 1 | 2 |

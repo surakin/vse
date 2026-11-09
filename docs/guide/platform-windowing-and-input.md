@@ -111,6 +111,30 @@ The system clipboard and, on Linux, the primary (middle-click) selection:
 - **Wayland** accepts a selection only with the serial of a recent key or button press in your window, so `SetClipboard` fails until the user has pressed a key or button there; call it from the handler of the copy command. **X11** has no such rule. Both keep the data in the window, so the selection ends with the window (no clipboard manager keeps it).
 - The `input_probe` keys `Y` (copy a test string), `P` (paste), `O` (paste primary) and `F` (formats) check it against other programs by eye.
 
+### Drag and drop between programs
+
+Dropping onto your window and dragging out of it (Wayland, X11):
+
+    os::DropAccept accept;
+    accept.formats = os::kDropText | os::kDropFiles;                    // nothing accepted means the window refuses every drag
+    window.SetDropAccept(accept);
+    // PollEvent: DragEnter / DragOver carry x, y, drag_formats and drag_actions; answer with
+    window.SetDropAction(os::DragAction::Copy);                         // Nothing refuses at this position
+    // on Drop: read the data, then finish
+    const u32 id = window.RequestDropData(os::ClipboardFormat::FileList, StringView());
+    // when the DropData event arrives: window.TakeClipboardResult(id, &result), then
+    window.FinishDrop(os::DragAction::Copy);
+
+    os::DragSource source;                                              // dragging out: the bytes are copied now
+    source.offers = &offer; source.offer_count = 1; source.allowed_actions = os::kAllDragActions;
+    window.BeginDrag(source);                                           // later: a DragEnded event with the action taken
+
+- **Same rules as the clipboard**: dropped text is checked UTF-8, dropped files become absolute local paths through the same `file://` rules, and a list is cut at 10,000 entries with the rest counted in `rejected_entries`. A source offering more than 64 types is read only up to the 64th.
+- **A drag no format of which is accepted** gets a refusing answer and no events. A drop the program never finishes is finished for it after 5 s; a target that never answers a drag we started cancels it after 1 s (`DragEnded` with `Nothing`).
+- **Actions**: Shift asks for move and Ctrl for copy where the platform reports modifiers; Escape cancels a drag we started. Wayland has copy and move only.
+- **X11** does not draw the drag image (`DragSource::image` is ignored); **Wayland** shows it as the drag icon. Lazy data is not supported: the bytes are copied at `BeginDrag`.
+- The `input_probe` key `D` starts a drag of a test string; drops on its window are printed.
+
 ### Resize, close, focus
 
 _TODO_

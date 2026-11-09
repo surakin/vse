@@ -191,7 +191,7 @@ void BuildUriList(const byte* paths, usize size, Vector<byte>& out) {
     }
 }
 
-u32 ClipboardRequests::Begin(ClipboardKind kind, ClipboardFormat format, u64 now_ns) {
+u32 ClipboardRequests::Begin(ClipboardKind kind, ClipboardFormat format, u64 now_ns, InputEventType type) {
     for (Open& slot : open_) {
         if (!slot.used) {
             slot.used = true;
@@ -199,6 +199,7 @@ u32 ClipboardRequests::Begin(ClipboardKind kind, ClipboardFormat format, u64 now
             if (next_id_ == 0) next_id_ = 1;
             slot.kind = kind;
             slot.format = format;
+            slot.event_type = type;
             slot.deadline_ns = now_ns + kClipboardTimeoutNs;
             ++open_count_;
             return slot.id;
@@ -261,7 +262,7 @@ bool ClipboardRequests::Complete(u32 id, ClipboardStatus status, Vector<byte>&& 
     done->result.rejected_entries = rejected;
     if (queue_ != nullptr) {
         InputEvent event;
-        event.type = InputEventType::ClipboardData;
+        event.type = open->event_type;
         event.request_id = id;
         event.clipboard_status = static_cast<u8>(status);
         event.clipboard_kind = static_cast<u8>(open->kind);
@@ -300,6 +301,29 @@ bool ClipboardRequests::Take(u32 id, ClipboardResult* out) {
         }
     }
     return false;
+}
+
+u32 LimitPathList(Vector<byte>& paths, usize max_entries) {
+    // An entry is a run of bytes between separators; the list holds no empty entries (ParseUriList drops them).
+    usize entries = 0;
+    usize cut = paths.Size(); // where the first removed byte is (the separator before the first removed entry)
+    u32 removed = 0;
+    bool in_entry = false;
+    for (usize i = 0; i < paths.Size(); ++i) {
+        if (paths[i] == '\n') {
+            in_entry = false;
+            continue;
+        }
+        if (!in_entry) {
+            in_entry = true;
+            ++entries;
+            if (entries == max_entries + 1) cut = (i == 0) ? 0 : i - 1;
+            if (entries > max_entries) ++removed;
+        }
+    }
+    if (removed == 0) return 0;
+    paths.Resize(cut);
+    return removed;
 }
 
 } // namespace engine_placeholder::os

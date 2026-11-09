@@ -2,6 +2,7 @@
 
 #include "containers/vector.h"
 #include "platform/clipboard.h"
+#include "platform/drag_drop.h"
 #include "platform/input_event.h"
 #include "types.h"
 
@@ -29,6 +30,8 @@ struct X11Incoming {
     unsigned long target = 0;      ///< The target asked for.
     unsigned long property = 0;    ///< Where the owner puts it.
     bool incr = false;             ///< The owner is sending in pieces.
+    bool drop = false;             ///< Reads the data of a drop (selection `XdndSelection`) rather than a clipboard.
+    unsigned long time = 0;        ///< `drop`: the timestamp of the `XdndDrop` message.
     bool retried_string = false;   ///< `UTF8_STRING` was refused and `STRING` was asked.
     u64 deadline_ns = 0;           ///< For the internal query (user requests use [[os::ClipboardRequests]]).
     Vector<byte> data;             ///< The pieces so far.
@@ -59,12 +62,16 @@ struct X11ClipboardState {
     unsigned long atom_uri_list = 0;
     unsigned long atom_incr = 0;
     unsigned long atom_timestamp = 0;
+    unsigned long atom_xdnd_selection = 0;
     unsigned long atom_property[kSlots] = {};
     X11Owned owned[static_cast<usize>(ClipboardKind::Count)];
     X11Incoming incoming[kSlots];
     X11Outgoing outgoing[kOutgoing];
     Vector<unsigned long> cache[static_cast<usize>(ClipboardKind::Count)]; ///< The targets the other owner offers.
     bool cache_valid[static_cast<usize>(ClipboardKind::Count)] = {};
+    X11Owned drag_offers[kMaxDragOffers]; ///< What a drag started by this window offers (selection `XdndSelection`).
+    usize drag_offer_count = 0;
+    bool drag_active = false;
     bool xfixes = false;
     int xfixes_event_base = 0;
     ClipboardRequests requests;

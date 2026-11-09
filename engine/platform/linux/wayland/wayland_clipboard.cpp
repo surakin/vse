@@ -6,6 +6,7 @@
 
 #include "log/log.h"
 #include "os/os.h"
+#include "platform/linux/wayland/wayland_cursor.h"
 
 namespace engine_placeholder::os::wayland {
 
@@ -48,6 +49,7 @@ bool WaylandClipboard::Init(WaylandConnection& connection, InputEventQueue* queu
     queue_ = queue;
     requests_.Init(queue);
     display_ = connection.Display();
+    connection_ = &connection;
     manager_ = connection.DataDeviceManager();
     primary_manager_ = connection.PrimarySelectionManager();
     if (manager_ == nullptr || connection.Seat() == nullptr) return false;
@@ -83,6 +85,8 @@ void WaylandClipboard::Shutdown() {
         r.pipe.Close();
         r.active = false;
     }
+    if (drag_active_) EndDrag(DragAction::Nothing);
+    ResetDrop();
     DestroySource(ClipboardKind::Clipboard);
     DestroySource(ClipboardKind::Primary);
     for (OfferSlot& slot : offers_) {
@@ -129,7 +133,7 @@ WaylandClipboard::OfferSlot* WaylandClipboard::NewOffer(ClipboardKind kind, void
     // Full: reclaim an offer that is not the current selection (a compositor that never sends `selection` for an offer would otherwise fill the pool).
     for (OfferSlot& slot : offers_) {
         const i32 index = static_cast<i32>(&slot - offers_);
-        if (index == current_[0] || index == current_[1]) continue;
+        if (index == current_[0] || index == current_[1] || index == dnd_slot_) continue;
         DestroyOffer(slot);
         slot = OfferSlot();
         slot.owner = this;
@@ -196,12 +200,52 @@ void WaylandClipboard::HandleOfferOffer(void* data, wl_data_offer*, const char* 
     slot->owner->AddMime(*slot, mime);
 }
 
-void WaylandClipboard::HandleOfferSourceActions(void*, wl_data_offer*, u32) {}
-void WaylandClipboard::HandleOfferAction(void*, wl_data_offer*, u32) {}
-void WaylandClipboard::HandleDeviceEnter(void*, wl_data_device*, u32, wl_surface*, wl_fixed_t, wl_fixed_t, wl_data_offer*) {}
-void WaylandClipboard::HandleDeviceLeave(void*, wl_data_device*) {}
-void WaylandClipboard::HandleDeviceMotion(void*, wl_data_device*, u32, wl_fixed_t, wl_fixed_t) {}
-void WaylandClipboard::HandleDeviceDrop(void*, wl_data_device*) {}
+void WaylandClipboard::HandleOfferSourceActions(void* data, wl_data_offer*, u32 actions) { static_cast<OfferSlot*>(data)->source_actions = actions; }
+void WaylandClipboard::HandleOfferAction(void* data, wl_data_offer*, u32 action) { static_cast<OfferSlot*>(data)->action = action; }
+
+void WaylandClipboard::HandleDeviceEnter(void* data, wl_data_device*, u32 serial, wl_surface*, wl_fixed_t x, wl_fixed_t y, wl_data_offer* offer) {
+    auto* self = static_cast<WaylandClipboard*>(data);
+    self->ResetDrop(); // a drag still open from before is over
+    self->dnd_serial_ = serial;
+    if (offer == nullptr) return;
+    for (u32 i = 0; i < kOfferSlots; ++i) {
+        if (self->offers_[i].used && self->offers_[i].proxy == offer) self->dnd_slot_ = static_cast<i32>(i);
+    }
+    if (self->dnd_slot_ < 0) return;
+    self->dnd_x_ = wl_fixed_to_double(x);
+    self->dnd_y_ = wl_fixed_to_double(y);
+    self->DndPosition(true);
+}
+
+void WaylandClipboard::HandleDeviceMotion(void* data, wl_data_device*, u32, wl_fixed_t x, wl_fixed_t y) {
+    auto* self = static_cast<WaylandClipboard*>(data);
+    if (self->dnd_slot_ < 0 || self->dnd_dropped_) return;
+    self->dnd_x_ = wl_fixed_to_double(x);
+    self->dnd_y_ = wl_fixed_to_double(y);
+    self->DndPosition(false);
+}
+
+void WaylandClipboard::HandleDeviceLeave(void* data, wl_data_device*) {
+    auto* self = static_cast<WaylandClipboard*>(data);
+    if (self->dnd_slot_ < 0 || self->dnd_dropped_) return; // after a drop the offer lives until it is finished
+    if (self->dnd_entered_) self->DragEvent(InputEventType::DragLeave, 0, 0, 0, 0, DragAction::Nothing);
+    self->ResetDrop();
+}
+
+void WaylandClipboard::HandleDeviceDrop(void* data, wl_data_device*) {
+    auto* self = static_cast<WaylandClipboard*>(data);
+    if (self->dnd_slot_ < 0 || !self->dnd_entered_) return;
+    const OfferSlot& slot = self->offers_[self->dnd_slot_];
+    const u8 formats = self->DropFormats(slot) & self->accept_.formats;
+    if (formats == 0 || self->dnd_answer_ == DragAction::Nothing) {
+        self->ResetDrop();
+        return;
+    }
+    self->dnd_dropped_ = true;
+    self->dnd_deadline_ns_ = self->now_ns_ + kDropSessionTimeoutNs;
+    DragAction action = slot.action == 2 ? DragAction::Move : slot.action == 1 ? DragAction::Copy : self->dnd_answer_;
+    self->DragEvent(InputEventType::Drop, self->dnd_x_, self->dnd_y_, formats, static_cast<u8>(((slot.source_actions & 1) ? 1 : 0) | ((slot.source_actions & 2) ? 2 : 0)), action);
+}
 
 void WaylandClipboard::HandleDeviceSelection(void* data, wl_data_device*, wl_data_offer* offer) {
     static_cast<WaylandClipboard*>(data)->Selection(ClipboardKind::Clipboard, offer);
@@ -247,18 +291,33 @@ void WaylandClipboard::Lost(ClipboardKind kind, void* source_proxy) {
 }
 
 void WaylandClipboard::HandleSourceTarget(void*, wl_data_source*, const char*) {}
-void WaylandClipboard::HandleSourceDropPerformed(void*, wl_data_source*) {}
-void WaylandClipboard::HandleSourceFinished(void*, wl_data_source*) {}
-void WaylandClipboard::HandleSourceAction(void*, wl_data_source*, u32) {}
+
+void WaylandClipboard::HandleSourceDropPerformed(void* data, wl_data_source*) {
+    auto* source = static_cast<Source*>(data);
+    if (source->drag) source->owner->drag_performed_ = true;
+}
+
+void WaylandClipboard::HandleSourceFinished(void* data, wl_data_source*) {
+    auto* source = static_cast<Source*>(data);
+    if (!source->drag) return;
+    WaylandClipboard* self = source->owner;
+    self->EndDrag(self->drag_wl_action_ == 2 ? DragAction::Move : self->drag_wl_action_ == 1 ? DragAction::Copy : DragAction::Nothing);
+}
+
+void WaylandClipboard::HandleSourceAction(void* data, wl_data_source*, u32 action) {
+    auto* source = static_cast<Source*>(data);
+    if (source->drag) source->owner->drag_wl_action_ = action;
+}
 
 void WaylandClipboard::HandleSourceSend(void* data, wl_data_source*, const char* mime, i32 fd) {
     auto* source = static_cast<Source*>(data);
-    source->owner->Send(source->kind, mime, fd);
+    source->owner->SendFrom(*source, mime, fd);
 }
 
 void WaylandClipboard::HandleSourceCancelled(void* data, wl_data_source* proxy) {
     auto* source = static_cast<Source*>(data);
-    source->owner->Lost(source->kind, proxy);
+    if (source->drag) source->owner->EndDrag(DragAction::Nothing);
+    else source->owner->Lost(source->kind, proxy);
 }
 
 void WaylandClipboard::HandlePrimarySourceSend(void* data, zwp_primary_selection_source_v1*, const char* mime, i32 fd) {
@@ -271,25 +330,36 @@ void WaylandClipboard::HandlePrimarySourceCancelled(void* data, zwp_primary_sele
     source->owner->Lost(source->kind, proxy);
 }
 
-void WaylandClipboard::Send(ClipboardKind kind, const char* mime, int fd) {
-    Source& source = sources_[KindIdx(kind)];
+void WaylandClipboard::Send(ClipboardKind kind, const char* mime, int fd) { SendFrom(sources_[KindIdx(kind)], mime, fd); }
+
+bool WaylandClipboard::PayloadForMime(const Source& source, const char* mime, Vector<byte>& payload) const {
+    if (source.proxy == nullptr) return false;
+    bool ok = false;
+    if (source.format == ClipboardFormat::Text) {
+        ok = Same(mime, kMimeUtf8) || Same(mime, kMimePlain) || Same(mime, kMimeUtf8String);
+        if (ok) {
+            for (usize i = 0; i < source.bytes.Size(); ++i) payload.Push(source.bytes[i]);
+        }
+    } else if (source.format == ClipboardFormat::FileList) {
+        ok = Same(mime, kMimeUriList);
+        if (ok) BuildUriList(source.bytes.Data(), source.bytes.Size(), payload);
+    } else {
+        ok = Same(mime, source.custom_name);
+        if (ok) {
+            for (usize i = 0; i < source.bytes.Size(); ++i) payload.Push(source.bytes[i]);
+        }
+    }
+    return ok;
+}
+
+void WaylandClipboard::SendFrom(Source& source, const char* mime, int fd) {
     Vector<byte> payload;
     bool ok = false;
-    if (source.proxy != nullptr) {
-        if (source.format == ClipboardFormat::Text) {
-            ok = Same(mime, kMimeUtf8) || Same(mime, kMimePlain) || Same(mime, kMimeUtf8String);
-            if (ok) {
-                for (usize i = 0; i < source.bytes.Size(); ++i) payload.Push(source.bytes[i]);
-            }
-        } else if (source.format == ClipboardFormat::FileList) {
-            ok = Same(mime, kMimeUriList);
-            if (ok) BuildUriList(source.bytes.Data(), source.bytes.Size(), payload);
-        } else {
-            ok = Same(mime, source.custom_name);
-            if (ok) {
-                for (usize i = 0; i < source.bytes.Size(); ++i) payload.Push(source.bytes[i]);
-            }
-        }
+    if (source.drag) {
+        // The offers of a drag share one wl_data_source: the first that serves the type answers.
+        for (usize i = 0; i < kMaxDragOffers && !ok; ++i) ok = PayloadForMime(drag_offers_[i], mime, payload);
+    } else {
+        ok = PayloadForMime(source, mime, payload);
     }
     Writer* slot = nullptr;
     for (Writer& w : writers_) {
@@ -336,16 +406,8 @@ bool WaylandClipboard::Set(ClipboardKind kind, const ClipboardOffer& offer) {
         mimes[count++] = source.custom_name;
     }
     if (kind == ClipboardKind::Clipboard) {
-        static const wl_data_source_listener kListener = {
-            .target = HandleSourceTarget,
-            .send = HandleSourceSend,
-            .cancelled = HandleSourceCancelled,
-            .dnd_drop_performed = HandleSourceDropPerformed,
-            .dnd_finished = HandleSourceFinished,
-            .action = HandleSourceAction,
-        };
         wl_data_source* proxy = wl_data_device_manager_create_data_source(manager_);
-        wl_data_source_add_listener(proxy, &kListener, &source);
+        wl_data_source_add_listener(proxy, &SourceListener(), &source);
         for (u32 i = 0; i < count; ++i) wl_data_source_offer(proxy, mimes[i]);
         wl_data_device_set_selection(device_, proxy, last_serial_);
         source.proxy = proxy;
@@ -481,7 +543,10 @@ void WaylandClipboard::Tick(u64 now_ns) {
             u32 rejected = 0;
             Vector<byte>& raw = r.pipe.Bytes();
             if (r.format == ClipboardFormat::Text) SanitizeUtf8(raw.Data(), raw.Size(), out, &replaced);
-            else if (r.format == ClipboardFormat::FileList) ParseUriList(raw.Data(), raw.Size(), out, &rejected);
+            else if (r.format == ClipboardFormat::FileList) {
+                ParseUriList(raw.Data(), raw.Size(), out, &rejected);
+                rejected += LimitPathList(out, kMaxDropFileEntries);
+            }
             else out = static_cast<Vector<byte>&&>(raw);
             requests_.Complete(r.id, ClipboardStatus::Ok, static_cast<Vector<byte>&&>(out), replaced, rejected, now_ns);
         } else if (state == PipeReader::State::TooLarge) {
@@ -494,7 +559,229 @@ void WaylandClipboard::Tick(u64 now_ns) {
         r.pipe.Close();
     }
     requests_.Expire(now_ns);
+    if (dnd_dropped_ && now_ns >= dnd_deadline_ns_) FinishDrop(DragAction::Nothing); // the program never finished the drop
 }
+
+// ---- drag and drop ------------------------------------------------------------------------------------------------
+
+const wl_data_source_listener& WaylandClipboard::SourceListener() {
+    static const wl_data_source_listener kListener = {
+        .target = HandleSourceTarget,
+        .send = HandleSourceSend,
+        .cancelled = HandleSourceCancelled,
+        .dnd_drop_performed = HandleSourceDropPerformed,
+        .dnd_finished = HandleSourceFinished,
+        .action = HandleSourceAction,
+    };
+    return kListener;
+}
+
+void WaylandClipboard::DragEvent(InputEventType type, f64 x, f64 y, u8 formats, u8 actions, DragAction action) {
+    if (queue_ == nullptr) return;
+    InputEvent event;
+    event.type = type;
+    event.x = x;
+    event.y = y;
+    event.drag_formats = formats;
+    event.drag_actions = actions;
+    event.drag_action = static_cast<u8>(action);
+    event.time_ns = now_ns_;
+    queue_->Push(event);
+}
+
+u8 WaylandClipboard::DropFormats(const OfferSlot& slot) const {
+    u8 formats = 0;
+    bool plain = false;
+    if (SelectMime(slot, ClipboardFormat::Text, StringView(), &plain) != nullptr) formats |= kDropText;
+    if (SelectMime(slot, ClipboardFormat::FileList, StringView(), &plain) != nullptr) formats |= kDropFiles;
+    if ((accept_.formats & kDropCustom) != 0 && SelectMime(slot, ClipboardFormat::Custom, StringView(accept_custom_), &plain) != nullptr) formats |= kDropCustom;
+    return formats;
+}
+
+void WaylandClipboard::SetDropAccept(const DropAccept& accept) {
+    accept_.formats = accept.formats & (kDropText | kDropFiles | kDropCustom);
+    accept_custom_[0] = '\0';
+    if ((accept_.formats & kDropCustom) != 0) {
+        if (accept.custom_name.Length() == 0 || accept.custom_name.Length() >= kMimeLength) accept_.formats &= static_cast<u8>(~kDropCustom);
+        else CopyName(accept_custom_, kMimeLength, accept.custom_name);
+    }
+}
+
+void WaylandClipboard::ReplyToDrag() {
+    if (dnd_slot_ < 0 || !offers_[dnd_slot_].used) return;
+    const OfferSlot& slot = offers_[dnd_slot_];
+    auto* offer = static_cast<wl_data_offer*>(slot.proxy);
+    const u8 formats = DropFormats(slot) & accept_.formats;
+    const bool accepted = formats != 0 && dnd_answer_ != DragAction::Nothing;
+    const char* mime = nullptr;
+    bool plain = false;
+    if (accepted) {
+        if ((formats & kDropText) != 0) mime = SelectMime(slot, ClipboardFormat::Text, StringView(), &plain);
+        else if ((formats & kDropFiles) != 0) mime = SelectMime(slot, ClipboardFormat::FileList, StringView(), &plain);
+        else mime = SelectMime(slot, ClipboardFormat::Custom, StringView(accept_custom_), &plain);
+    }
+    wl_data_offer_accept(offer, dnd_serial_, mime);
+    if (wl_data_offer_get_version(offer) >= 3) {
+        const u32 wanted = dnd_answer_ == DragAction::Move ? 2u : 1u; // Wayland has copy and move (and ask, unused); a link is a copy
+        wl_data_offer_set_actions(offer, accepted ? 3u : 0u, accepted ? wanted : 0u);
+    }
+    wl_display_flush(display_);
+}
+
+void WaylandClipboard::DndPosition(bool first) {
+    const OfferSlot& slot = offers_[dnd_slot_];
+    const u8 formats = DropFormats(slot) & accept_.formats;
+    const u8 actions = static_cast<u8>(((slot.source_actions & 1) ? 1 : 0) | ((slot.source_actions & 2) ? 2 : 0));
+    if (first) {
+        dnd_answer_set_ = false;
+    }
+    if (!dnd_answer_set_) {
+        if (formats == 0) dnd_answer_ = DragAction::Nothing;
+        else if (actions == 0 || (actions & 1) != 0) dnd_answer_ = DragAction::Copy;
+        else dnd_answer_ = DragAction::Move;
+    }
+    if (formats == 0) dnd_answer_ = DragAction::Nothing;
+    ReplyToDrag();
+    if (!dnd_entered_) {
+        dnd_entered_ = true;
+        DragEvent(InputEventType::DragEnter, dnd_x_, dnd_y_, formats, actions, dnd_answer_);
+    } else {
+        DragEvent(InputEventType::DragOver, dnd_x_, dnd_y_, formats, actions, dnd_answer_);
+    }
+}
+
+void WaylandClipboard::SetDropAction(DragAction action) {
+    if (dnd_slot_ < 0 || dnd_dropped_) return;
+    dnd_answer_ = action;
+    dnd_answer_set_ = true;
+    ReplyToDrag();
+}
+
+void WaylandClipboard::ResetDrop() {
+    if (dnd_slot_ >= 0) DestroyOffer(offers_[dnd_slot_]);
+    dnd_slot_ = -1;
+    dnd_entered_ = false;
+    dnd_dropped_ = false;
+    dnd_answer_set_ = false;
+}
+
+void WaylandClipboard::FinishDrop(DragAction taken) {
+    if (!dnd_dropped_ || dnd_slot_ < 0) return;
+    auto* offer = static_cast<wl_data_offer*>(offers_[dnd_slot_].proxy);
+    // `finish` is a protocol error unless the compositor has chosen an action (offer.action) for this drop.
+    if (taken != DragAction::Nothing && offers_[dnd_slot_].action != 0 && wl_data_offer_get_version(offer) >= 3) wl_data_offer_finish(offer);
+    ResetDrop();
+    wl_display_flush(display_);
+}
+
+u32 WaylandClipboard::StartRead(ClipboardKind kind, void* offer_proxy, const char* mime, ClipboardFormat format, InputEventType event_type) {
+    Reader* slot = nullptr;
+    for (Reader& r : readers_) {
+        if (!r.active) {
+            slot = &r;
+            break;
+        }
+    }
+    if (slot == nullptr) return 0;
+    int fds[2];
+    if (::pipe2(fds, O_CLOEXEC) != 0) return 0;
+    const u32 id = requests_.Begin(kind, format, now_ns_, event_type);
+    if (id == 0) {
+        ::close(fds[0]);
+        ::close(fds[1]);
+        return 0;
+    }
+    wl_data_offer_receive(static_cast<wl_data_offer*>(offer_proxy), mime, fds[1]);
+    wl_display_flush(display_);
+    ::close(fds[1]);
+    slot->active = true;
+    slot->id = id;
+    slot->format = format;
+    slot->last_size = 0;
+    slot->pipe.Start(fds[0], kMaxClipboardBytes, now_ns_, kClipboardTimeoutNs);
+    return id;
+}
+
+u32 WaylandClipboard::RequestDropData(ClipboardFormat format, StringView custom_name) {
+    if (!dnd_dropped_ || dnd_slot_ < 0) return 0;
+    if (format == ClipboardFormat::Custom && (custom_name.Length() == 0 || !Same(accept_custom_, custom_name))) return 0;
+    bool plain = false;
+    const char* mime = SelectMime(offers_[dnd_slot_], format, custom_name, &plain);
+    if (mime == nullptr) return 0;
+    return StartRead(ClipboardKind::Clipboard, offers_[dnd_slot_].proxy, mime, format, InputEventType::DropData);
+}
+
+bool WaylandClipboard::BeginDrag(const DragSource& source) {
+    if (device_ == nullptr || manager_ == nullptr || surface_ == nullptr || last_serial_ == 0 || drag_active_) return false;
+    if (source.offers == nullptr || source.offer_count == 0 || source.offer_count > kMaxDragOffers) return false;
+    for (usize i = 0; i < source.offer_count; ++i) {
+        const ClipboardOffer& o = source.offers[i];
+        if (o.size > kMaxClipboardBytes || (o.size > 0 && o.data == nullptr)) return false;
+        if (o.format == ClipboardFormat::Custom && (o.custom_name.Length() == 0 || o.custom_name.Length() >= kMimeLength)) return false;
+    }
+    for (Source& s : drag_offers_) s = Source();
+    wl_data_source* proxy = wl_data_device_manager_create_data_source(manager_);
+    for (usize i = 0; i < source.offer_count; ++i) {
+        const ClipboardOffer& o = source.offers[i];
+        Source& s = drag_offers_[i];
+        s.owner = this;
+        s.drag = true;
+        s.format = o.format;
+        s.proxy = proxy; // marks the offer as live; the one proxy serves all of them
+        if (o.format == ClipboardFormat::Text) {
+            SanitizeUtf8(o.data, o.size, s.bytes, nullptr);
+            wl_data_source_offer(proxy, kMimeUtf8);
+            wl_data_source_offer(proxy, kMimePlain);
+            wl_data_source_offer(proxy, kMimeUtf8String);
+        } else if (o.format == ClipboardFormat::FileList) {
+            for (usize k = 0; k < o.size; ++k) s.bytes.Push(o.data[k]);
+            wl_data_source_offer(proxy, kMimeUriList);
+        } else {
+            for (usize k = 0; k < o.size; ++k) s.bytes.Push(o.data[k]);
+            CopyName(s.custom_name, kMimeLength, o.custom_name);
+            wl_data_source_offer(proxy, s.custom_name);
+        }
+    }
+    wl_data_source_add_listener(proxy, &SourceListener(), &drag_offers_[0]);
+    const u8 allowed = source.allowed_actions & kAllDragActions;
+    wl_data_source_set_actions(proxy, (((allowed & 1) != 0) ? 1u : 0u) | (((allowed & 2) != 0) ? 2u : 0u));
+    // The image: a surface with a shm buffer, offset so that the hotspot is under the pointer.
+    drag_icon_ = nullptr;
+    drag_icon_buffer_ = nullptr;
+    const DragImage& image = source.image;
+    if (image.rgba != nullptr && image.width > 0 && image.height > 0 && image.width <= 128 && image.height <= 128 && connection_ != nullptr && connection_->Shm() != nullptr) {
+        drag_icon_buffer_ = CreateArgbShmBuffer(connection_->Shm(), image.rgba, image.width, image.height);
+        if (drag_icon_buffer_ != nullptr) {
+            drag_icon_ = wl_compositor_create_surface(connection_->Compositor());
+            wl_surface_attach(drag_icon_, drag_icon_buffer_, -image.hotspot_x, -image.hotspot_y);
+            wl_surface_commit(drag_icon_);
+        }
+    }
+    drag_active_ = true;
+    drag_performed_ = false;
+    drag_wl_action_ = 0;
+    wl_data_device_start_drag(device_, proxy, surface_, drag_icon_, last_serial_);
+    wl_display_flush(display_);
+    return true;
+}
+
+void WaylandClipboard::EndDrag(DragAction action) {
+    if (!drag_active_) return;
+    drag_active_ = false;
+    if (drag_offers_[0].proxy != nullptr) wl_data_source_destroy(static_cast<wl_data_source*>(drag_offers_[0].proxy));
+    for (Source& s : drag_offers_) s = Source();
+    if (drag_icon_ != nullptr) {
+        wl_surface_destroy(drag_icon_);
+        drag_icon_ = nullptr;
+    }
+    if (drag_icon_buffer_ != nullptr) {
+        wl_buffer_destroy(drag_icon_buffer_);
+        drag_icon_buffer_ = nullptr;
+    }
+    DragEvent(InputEventType::DragEnded, 0, 0, 0, 0, action);
+}
+
+void WaylandClipboard::CancelDrag() { EndDrag(DragAction::Nothing); }
 
 bool WaylandClipboard::ListenersComplete() {
     // The initialisers above name every member of each listener struct; a protocol version that adds an event fails to compile there (designated initialisers

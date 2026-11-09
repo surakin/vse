@@ -25,7 +25,15 @@ wp_cursor_shape_device_v1_shape WireShape(CursorShape shape) {
 }
 
 // Builds an ARGB8888 premultiplied wl_shm buffer from RGBA bytes. Returns null on failure.
-wl_buffer* MakeCursorBuffer(wl_shm* shm, const CursorImage& image) {
+wl_buffer* MakeCursorBuffer(wl_shm* shm, const CursorImage& image) { return CreateArgbShmBuffer(shm, image.rgba, image.width, image.height); }
+
+} // namespace
+
+wl_buffer* CreateArgbShmBuffer(wl_shm* shm, const byte* rgba, u32 width, u32 height) {
+    CursorImage image;
+    image.rgba = rgba;
+    image.width = width;
+    image.height = height;
     const usize size = static_cast<usize>(image.width) * image.height * 4;
     const int fd = ::memfd_create("engine_wayland_cursor", MFD_CLOEXEC);
     if (fd < 0) {
@@ -55,8 +63,6 @@ wl_buffer* MakeCursorBuffer(wl_shm* shm, const CursorImage& image) {
     wl_shm_pool_destroy(pool);
     return buffer;
 }
-
-} // namespace
 
 const zwp_relative_pointer_v1_listener WaylandCursor::kRelativeListener = {
     .relative_motion = WaylandCursor::HandleRelativeMotion,

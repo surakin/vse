@@ -26,6 +26,12 @@ enum class InputEventType : u8 {
     FocusLost,     ///< The window lost keyboard focus; held keys were released by `KeyUp` events just before.
     Resize,        ///< The window size changed to (`width`, `height`) pixels.
     ClipboardData,    ///< A clipboard request finished: `request_id`, `clipboard_status`, `clipboard_kind`; fetch the bytes with `Window::TakeClipboardResult`.
+    DragEnter,        ///< A drag from another program entered the window at (`x`, `y`) (the first position): `drag_formats`, `drag_actions` (the source's allowed actions).
+    DragOver,         ///< The drag moved to (`x`, `y`); answer with `Window::SetDropAction`.
+    DragLeave,        ///< The drag left the window without dropping.
+    Drop,             ///< The drag was dropped at (`x`, `y`) with `drag_action`; read it with `Window::RequestDropData`, then call `Window::FinishDrop`.
+    DropData,         ///< A `RequestDropData` finished: `request_id`, `clipboard_status`; fetch the bytes with `Window::TakeClipboardResult`.
+    DragEnded,        ///< A drag this window started ended: `drag_action` is what the target did, `Nothing` if it was cancelled or refused.
     ClipboardChanged, ///< The owner of a selection changed (`clipboard_kind`): a Paste command may need enabling or disabling.
     RelativeMotion, ///< While the pointer is locked: it moved by (`x`, `y`) device units, unaccelerated where the server says so. Never sent unlocked.
 };
@@ -36,22 +42,26 @@ enum class InputEventType : u8 {
 ///
 /// Thread-safety: thread-compatible plain data.
 struct InputEvent {
+    // The small fields come first so that the struct stays within 64 bytes.
     InputEventType type = InputEventType::None; ///< What happened.
     bool repeat = false;                        ///< `KeyDown`: true for an auto-repeat of a key that is already down.
     bool down = false;                          ///< `PointerButton`: true for a press, false for a release.
     u8 text_length = 0;                         ///< `Text`: bytes used in `text` (1 to 4).
     Key key = Key::Unknown;                     ///< `KeyDown`, `KeyUp`: the layout-aware key.
+    u8 clipboard_status = 0;                    ///< `ClipboardData`, `DropData`: a [[os::ClipboardStatus]] value.
+    u8 clipboard_kind = 0;                      ///< `ClipboardData`, `ClipboardChanged`: a [[os::ClipboardKind]] value.
+    u8 drag_formats = 0;                        ///< `DragEnter`, `Drop`: the formats on offer, bits `kDropText`, `kDropFiles`, `kDropCustom`.
+    u8 drag_actions = 0;                        ///< `DragEnter`, `DragOver`, `Drop`: the actions the source allows, bits of [[os::DragAction]].
+    u8 drag_action = 0;                         ///< `Drop`, `DragEnded`: the [[os::DragAction]] chosen.
+    char text[4] = {0, 0, 0, 0};                ///< `Text`: the scalar as UTF-8, not NUL-terminated.
     u32 modifiers = 0;                          ///< Mask of [[os::ModifierBit]] values when the event happened.
     u32 button = 0;                             ///< `PointerButton`: a [[os::MouseButtonBit]] value.
     u32 width = 0;                              ///< `Resize`: the new width in pixels.
     u32 height = 0;                             ///< `Resize`: the new height in pixels.
-    f64 x = 0.0;                                ///< `PointerMove`, `PointerEnter`: x in window pixels; `Wheel`: horizontal notches; `RelativeMotion`: dx.
-    f64 y = 0.0;                                ///< `PointerMove`, `PointerEnter`: y in window pixels; `Wheel`: vertical notches; `RelativeMotion`: dy.
-    u32 request_id = 0;                         ///< `ClipboardData`: the id [[os::Window::RequestClipboard]] returned.
-    u8 clipboard_status = 0;                    ///< `ClipboardData`: a [[os::ClipboardStatus]] value.
-    u8 clipboard_kind = 0;                      ///< `ClipboardData`, `ClipboardChanged`: a [[os::ClipboardKind]] value.
+    f64 x = 0.0;                                ///< `PointerMove`, `PointerEnter`, drag events: x in window pixels; `Wheel`: horizontal notches; `RelativeMotion`: dx.
+    f64 y = 0.0;                                ///< `PointerMove`, `PointerEnter`, drag events: y in window pixels; `Wheel`: vertical notches; `RelativeMotion`: dy.
+    u32 request_id = 0;                         ///< `ClipboardData`, `DropData`: the id the request returned.
     u64 time_ns = 0;                            ///< Monotonic time (`os::MonotonicTimeNanos`) when the backend queued the event.
-    char text[4] = {0, 0, 0, 0};                ///< `Text`: the scalar as UTF-8, not NUL-terminated.
 };
 
 static_assert(sizeof(InputEvent) <= 64, "an input event stays small: the queue holds a thousand of them");

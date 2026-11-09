@@ -4,6 +4,7 @@
 
 #include "containers/vector.h"
 #include "platform/clipboard.h"
+#include "platform/drag_drop.h"
 #include "platform/input_event.h"
 #include "platform/linux/clipboard_pipe.h"
 #include "platform/linux/wayland/generated/primary-selection-unstable-v1-client-protocol.h"
@@ -54,6 +55,26 @@ public:
     /// Hands over a finished result once.
     bool Take(u32 id, ClipboardResult* out) { return requests_.Take(id, out); }
 
+    /// The surface of the window: the origin of drags this window starts.
+    void SetSurface(wl_surface* surface) { surface_ = surface; }
+
+    /// Drag and drop: the data device also carries drags (see the same-named [[os::Window]] operations).
+    bool SupportsDnd() const { return device_ != nullptr; }
+    /// Sets what drops are accepted.
+    void SetDropAccept(const DropAccept& accept);
+    /// The program's answer to the drag over the window.
+    void SetDropAction(DragAction action);
+    /// Reads one format of the dropped data; returns the request id or 0.
+    u32 RequestDropData(ClipboardFormat format, StringView custom_name);
+    /// Ends the drop (`wl_data_offer.finish` when something was taken).
+    void FinishDrop(DragAction taken);
+    /// Starts a drag with the serial of the last button or key event.
+    bool BeginDrag(const DragSource& source);
+    /// Cancels the drag this window started.
+    void CancelDrag();
+    /// Whether a drag started by this window is running.
+    bool Dragging() const { return drag_active_; }
+
     /// Whether every event of the `wl_data_device`, `wl_data_offer`, `wl_data_source` and the primary selection objects has a listener function (libwayland aborts on a null slot).
     static bool ListenersComplete();
 
@@ -70,6 +91,8 @@ private:
         void* proxy = nullptr;
         u32 count = 0;
         char mimes[kMaxMimes][kMimeLength] = {};
+        u32 source_actions = 0; ///< `wl_data_offer.source_actions` (bits of `wl_data_device_manager.dnd_action`).
+        u32 action = 0;         ///< `wl_data_offer.action`: the action the compositor chose.
     };
     struct Source {
         void* proxy = nullptr;
@@ -78,6 +101,7 @@ private:
         Vector<byte> bytes;
         WaylandClipboard* owner = nullptr;
         ClipboardKind kind = ClipboardKind::Clipboard;
+        bool drag = false; ///< The source of a drag, not of a selection.
     };
     struct Writer {
         bool active = false;
@@ -112,6 +136,16 @@ private:
     static void HandlePrimarySourceSend(void* data, zwp_primary_selection_source_v1* source, const char* mime, i32 fd);
     static void HandlePrimarySourceCancelled(void* data, zwp_primary_selection_source_v1* source);
 
+    void SendFrom(Source& source, const char* mime, int fd);
+    void DragEvent(InputEventType type, f64 x, f64 y, u8 formats, u8 actions, DragAction action);
+    void ReplyToDrag();
+    void DndPosition(bool first);
+    bool PayloadForMime(const Source& source, const char* mime, Vector<byte>& payload) const;
+    static const wl_data_source_listener& SourceListener();
+    void ResetDrop();
+    void EndDrag(DragAction action);
+    u32 StartRead(ClipboardKind kind, void* offer_proxy, const char* mime, ClipboardFormat format, InputEventType event_type);
+    u8 DropFormats(const OfferSlot& slot) const;
     OfferSlot* NewOffer(ClipboardKind kind, void* proxy);
     void DestroyOffer(OfferSlot& slot);
     void AddMime(OfferSlot& slot, const char* mime);
@@ -137,6 +171,27 @@ private:
     Reader readers_[kReaders];
     ClipboardRequests requests_;
     u64 now_ns_ = 0;
+    wl_surface* surface_ = nullptr;
+    WaylandConnection* connection_ = nullptr;
+    // Receiving a drag.
+    DropAccept accept_;
+    char accept_custom_[kMimeLength] = {};
+    i32 dnd_slot_ = -1;
+    u32 dnd_serial_ = 0;
+    bool dnd_entered_ = false;
+    bool dnd_dropped_ = false;
+    DragAction dnd_answer_ = DragAction::Copy;
+    bool dnd_answer_set_ = false;
+    f64 dnd_x_ = 0.0;
+    f64 dnd_y_ = 0.0;
+    u64 dnd_deadline_ns_ = 0;
+    // Sending a drag.
+    Source drag_offers_[kMaxDragOffers];
+    bool drag_active_ = false;
+    bool drag_performed_ = false;
+    u32 drag_wl_action_ = 0;
+    wl_surface* drag_icon_ = nullptr;
+    wl_buffer* drag_icon_buffer_ = nullptr;
 };
 
 } // namespace engine_placeholder::os::wayland

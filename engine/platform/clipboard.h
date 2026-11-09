@@ -114,7 +114,8 @@ public:
 
     /// Opens a request.
     /// Returns: its id (never 0), or 0 if [[os::ClipboardRequests::kMaxInFlight]] are already open.
-    u32 Begin(ClipboardKind kind, ClipboardFormat format, u64 now_ns);
+    /// Param type: the event queued when the request finishes (`ClipboardData`, or `DropData` for a drop).
+    u32 Begin(ClipboardKind kind, ClipboardFormat format, u64 now_ns, InputEventType type = InputEventType::ClipboardData);
 
     /// Returns whether the request is open.
     bool Pending(u32 id) const;
@@ -151,6 +152,7 @@ private:
         u32 id = 0;
         ClipboardKind kind = ClipboardKind::Clipboard;
         ClipboardFormat format = ClipboardFormat::Text;
+        InputEventType event_type = InputEventType::ClipboardData;
         u64 deadline_ns = 0;
         bool used = false;
     };

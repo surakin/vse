@@ -3,6 +3,7 @@
 #include "platform/input.h"
 #include "platform/linux/x11/x11_clipboard.h"
 #include "platform/linux/x11/x11_cursor.h"
+#include "platform/linux/x11/x11_dnd.h"
 #include "platform/window.h"
 #include "string/string.h"
 #include "types.h"
@@ -133,6 +134,28 @@ public:
     /// Returns whether the selection offers the format (from our own data, or from the targets of the other owner read at the last `ClipboardChanged`).
     bool ClipboardHasFormat(ClipboardKind kind, ClipboardFormat format, StringView custom_name) const override { return ClipboardHas(display_, clipboard_, kind, format, custom_name); }
 
+    /// Returns true on a valid window: XDND version 5.
+    bool SupportsDragAndDrop() const override { return display_ != nullptr; }
+    /// Sets the accepted drop formats and advertises `XdndAware` (removed when nothing is accepted).
+    void SetDropAccept(const DropAccept& accept) override { DndSetAccept(display_, window_, dnd_, accept); }
+    /// Answers the drag over the window; an extra `XdndStatus` is sent at once.
+    void SetDropAction(DragAction action) override { DndSetAction(display_, window_, dnd_, action); }
+    /// Reads one format of the dropped data through `XdndSelection`.
+    u32 RequestDropData(ClipboardFormat format, StringView custom_name) override;
+    /// Sends `XdndFinished`.
+    void FinishDrop(DragAction taken) override { DndFinish(display_, window_, dnd_, taken); }
+    /// Starts a drag: grabs the pointer (and keyboard, for Escape), owns `XdndSelection`, and follows the pointer from `PumpEvents`. The drag image is not drawn on X11.
+    bool BeginDrag(const DragSource& source) override;
+    /// Cancels the running drag.
+    void CancelDrag() override;
+    /// Returns whether a drag started by this window is running.
+    bool Dragging() const override { return dnd_.source.active; }
+    /// The pointer moved to (`root_x`, `root_y`) in root coordinates with the modifier `state` while this window drags; `PumpEvents` calls it for each grabbed motion.
+    /// Public so that a test can drive a drag without a pointer. Does nothing when no drag is running.
+    void DragPointerMoved(int root_x, int root_y, unsigned long state);
+    /// The button was released while this window drags: drops on the target under the pointer, or ends the drag. `PumpEvents` calls it; public for the same reason.
+    void DragButtonReleased();
+
     /// Returns the underlying Xlib `Display*`, or null if invalid.
     ///
     /// Ownership: borrowed; owned by this window and closed with it.
@@ -169,6 +192,7 @@ private:
     bool focused_ = false;
     X11CursorState cursor_;
     X11ClipboardState clipboard_;
+    X11DndState dnd_;
 };
 
 } // namespace engine_placeholder::os::x11

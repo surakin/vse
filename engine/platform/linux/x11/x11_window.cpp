@@ -20,6 +20,7 @@
 #include "os/os.h"
 #include "platform/linux/key_translate.h"
 #include "platform/linux/x11/x11_clipboard_impl.inc"
+#include "platform/linux/x11/x11_dnd_impl.inc"
 #include "platform/linux/x11/x11_cursor_impl.inc" // x11_cursor.h's functions: see the note at the top of that file
 
 namespace engine_placeholder::os::x11 {
@@ -206,6 +207,7 @@ X11Window X11Window::Create(StringView title, u32 width, u32 height) {
     result.resize_serial_ = detail::NextResizeSerial();
     CursorInit(display, result.cursor_);
     ClipboardInit(display, window, result.clipboard_, &result.events_);
+    DndInit(display, window, result.dnd_, &result.events_);
     return result;
 }
 
@@ -228,7 +230,8 @@ X11Window::X11Window(X11Window&& other) noexcept
       events_(other.events_),
       focused_(other.focused_),
       cursor_(other.cursor_),
-      clipboard_(static_cast<X11ClipboardState&&>(other.clipboard_)) {
+      clipboard_(static_cast<X11ClipboardState&&>(other.clipboard_)),
+      dnd_(static_cast<X11DndState&&>(other.dnd_)) {
     std::memcpy(held_, other.held_, sizeof(held_));
     other.display_ = nullptr;
     other.window_ = 0;
@@ -246,6 +249,7 @@ X11Window::X11Window(X11Window&& other) noexcept
     other.cursor_ = X11CursorState();
     clipboard_.requests.Init(&events_); // the queue moved with the window
     clipboard_.queue = &events_;
+    dnd_.queue = &events_;
 }
 
 X11Window& X11Window::operator=(X11Window&& other) noexcept {
@@ -266,11 +270,13 @@ X11Window& X11Window::operator=(X11Window&& other) noexcept {
         focused_ = other.focused_;
         cursor_ = other.cursor_;
         clipboard_ = static_cast<X11ClipboardState&&>(other.clipboard_);
+        dnd_ = static_cast<X11DndState&&>(other.dnd_);
         other.events_.Clear();
         other.focused_ = false;
         other.cursor_ = X11CursorState();
         clipboard_.requests.Init(&events_);
         clipboard_.queue = &events_;
+        dnd_.queue = &events_;
         std::memcpy(held_, other.held_, sizeof(held_));
         other.display_ = nullptr;
         other.window_ = 0;
@@ -290,10 +296,12 @@ X11Window& X11Window::operator=(X11Window&& other) noexcept {
 void X11Window::ReleaseAll() {
     if (display_ != nullptr) {
         CursorRelease(display_, window_, cursor_); // the grab and the cursors go before the display closes
+        DndRelease(display_, window_, clipboard_, dnd_, MonotonicTimeNanos());
         ClipboardRelease(display_, clipboard_, MonotonicTimeNanos()); // selections are given up: the contents die with the window
     }
     cursor_ = X11CursorState();
     clipboard_ = X11ClipboardState();
+    dnd_ = X11DndState();
     if (input_context_ != nullptr) {
         XDestroyIC(reinterpret_cast<XIC>(input_context_));
         input_context_ = nullptr;
@@ -376,6 +384,26 @@ void X11Window::PumpEvents(InputState* input) {
         if (XFilterEvent(&event, None) != 0) {
             continue;
         }
+        if (dnd_.source.active) {
+            // While this window drags, the pointer grab sends every motion and the release here: they steer the drag and are not input.
+            if (event.type == MotionNotify) {
+                DragPointerMoved(event.xmotion.x_root, event.xmotion.y_root, event.xmotion.state);
+                continue;
+            }
+            if (event.type == ButtonRelease && event.xbutton.button >= Button1 && event.xbutton.button <= Button3) {
+                DragButtonReleased();
+                continue;
+            }
+            if (event.type == ButtonPress) {
+                continue;
+            }
+            if (event.type == KeyPress || event.type == KeyRelease) {
+                if (event.type == KeyPress && XLookupKeysym(&event.xkey, 0) == XK_Escape) {
+                    DndCancel(display_, window_, clipboard_, dnd_, MonotonicTimeNanos());
+                }
+                continue;
+            }
+        }
         switch (event.type) {
         case ConfigureNotify: {
             u32 w = static_cast<u32>(event.xconfigure.width);
@@ -404,6 +432,9 @@ void X11Window::PumpEvents(InputState* input) {
             }
             break;
         case ClientMessage:
+            if (DndHandleClientMessage(display_, window_, clipboard_, dnd_, &event, MonotonicTimeNanos())) {
+                break;
+            }
             if (static_cast<unsigned long>(event.xclient.data.l[0]) == wm_delete_window_ &&
                 event.xclient.message_type == XInternAtom(display_, "WM_PROTOCOLS", False)) {
                 should_close_ = true;
@@ -540,7 +571,25 @@ void X11Window::PumpEvents(InputState* input) {
         }
     }
     ClipboardTick(display_, clipboard_, MonotonicTimeNanos());
+    DndTick(display_, window_, clipboard_, dnd_, MonotonicTimeNanos());
 }
+
+u32 X11Window::RequestDropData(ClipboardFormat format, StringView custom_name) {
+    return DndRequestData(display_, window_, clipboard_, dnd_, format, custom_name, MonotonicTimeNanos());
+}
+
+bool X11Window::BeginDrag(const DragSource& source) {
+    if (cursor_.lock.Active()) return false; // the pointer grab of the lock is in use
+    return DndBegin(display_, window_, clipboard_, dnd_, source, MonotonicTimeNanos());
+}
+
+void X11Window::DragPointerMoved(int root_x, int root_y, unsigned long state) {
+    DndSourceMotion(display_, window_, clipboard_, dnd_, root_x, root_y, state, MonotonicTimeNanos());
+}
+
+void X11Window::DragButtonReleased() { DndSourceRelease(display_, window_, clipboard_, dnd_, MonotonicTimeNanos()); }
+
+void X11Window::CancelDrag() { DndCancel(display_, window_, clipboard_, dnd_, MonotonicTimeNanos()); }
 
 bool X11Window::SetClipboard(ClipboardKind kind, const ClipboardOffer& offer) {
     return ClipboardSet(display_, window_, clipboard_, kind, offer, MonotonicTimeNanos());

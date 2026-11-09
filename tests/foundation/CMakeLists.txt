@@ -50,6 +50,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     window_events_test.cpp
     window_cursor_test.cpp
     window_clipboard_test.cpp
+    window_dragdrop_test.cpp
   )
 endif()
 

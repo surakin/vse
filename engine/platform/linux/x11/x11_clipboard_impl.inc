@@ -108,27 +108,39 @@ void SendChunk(Display* display, X11Outgoing& out) {
 
 void HandleSelectionRequest(Display* display, unsigned long own_window, X11ClipboardState& state, const XSelectionRequestEvent& request, u64 now_ns) {
     XErrorScope errors(display);
-    ClipboardKind kind;
+    ClipboardKind kind = ClipboardKind::Clipboard;
     unsigned long property = request.property != None ? request.property : request.target;
-    if (!KindOf(state, request.selection, &kind) || !state.owned[KindIndex(kind)].owned) {
+    // What is on offer on this selection: the clipboard's one offer, or the offers of a running drag (XdndSelection).
+    const X11Owned* offers[kMaxDragOffers];
+    usize offer_count = 0;
+    if (request.selection == state.atom_xdnd_selection) {
+        if (state.drag_active) {
+            for (usize i = 0; i < state.drag_offer_count; ++i) offers[offer_count++] = &state.drag_offers[i];
+        }
+    } else if (KindOf(state, request.selection, &kind) && state.owned[KindIndex(kind)].owned) {
+        offers[offer_count++] = &state.owned[KindIndex(kind)];
+    }
+    if (offer_count == 0) {
         SendNotify(display, request, None);
         return;
     }
-    X11Owned& owned = state.owned[KindIndex(kind)];
     if (request.target == state.atom_targets) {
-        unsigned long atoms[8];
+        unsigned long atoms[2 + 6 * kMaxDragOffers];
         int count = 0;
         atoms[count++] = state.atom_targets;
         atoms[count++] = state.atom_timestamp;
-        if (owned.format == ClipboardFormat::Text) {
-            atoms[count++] = state.atom_utf8;
-            atoms[count++] = XA_STRING;
-            atoms[count++] = state.atom_text_plain_utf8;
-            atoms[count++] = state.atom_text_plain;
-        } else if (owned.format == ClipboardFormat::FileList) {
-            atoms[count++] = state.atom_uri_list;
-        } else {
-            atoms[count++] = owned.custom_atom;
+        for (usize i = 0; i < offer_count; ++i) {
+            const X11Owned& owned = *offers[i];
+            if (owned.format == ClipboardFormat::Text) {
+                atoms[count++] = state.atom_utf8;
+                atoms[count++] = XA_STRING;
+                atoms[count++] = state.atom_text_plain_utf8;
+                atoms[count++] = state.atom_text_plain;
+            } else if (owned.format == ClipboardFormat::FileList) {
+                atoms[count++] = state.atom_uri_list;
+            } else {
+                atoms[count++] = owned.custom_atom;
+            }
         }
         XChangeProperty(display, request.requestor, property, XA_ATOM, 32, PropModeReplace, reinterpret_cast<const unsigned char*>(atoms), count);
         SendNotify(display, request, property);
@@ -142,7 +154,9 @@ void HandleSelectionRequest(Display* display, unsigned long own_window, X11Clipb
     }
     Vector<byte> payload;
     unsigned long type = 0;
-    if (!PayloadFor(display, state, owned, request.target, payload, &type) || payload.Size() > kMaxClipboardBytes) {
+    bool found = false;
+    for (usize i = 0; i < offer_count && !found; ++i) found = PayloadFor(display, state, *offers[i], request.target, payload, &type);
+    if (!found || payload.Size() > kMaxClipboardBytes) {
         SendNotify(display, request, None);
         return;
     }
@@ -211,7 +225,7 @@ X11Incoming* FindIncoming(X11ClipboardState& state, unsigned long selection, uns
     ClipboardKind kind;
     if (!KindOf(state, selection, &kind)) return nullptr;
     for (X11Incoming& in : state.incoming) {
-        if (in.active && in.kind == kind && in.property == property && (in.target == target || in.incr)) return &in;
+        if (in.active && !in.drop && in.kind == kind && in.property == property && (in.target == target || in.incr)) return &in;
     }
     return nullptr;
 }
@@ -261,6 +275,7 @@ void FinishIncoming(Display* display, X11ClipboardState& state, X11Incoming& in,
         }
     } else if (format == ClipboardFormat::FileList) {
         ParseUriList(data.Data(), data.Size(), out, &rejected);
+        rejected += LimitPathList(out, kMaxDropFileEntries); // a hostile owner may list millions of files
     } else {
         out = static_cast<Vector<byte>&&>(data);
     }
@@ -300,12 +315,20 @@ bool ReadProperty(Display* display, unsigned long window, unsigned long property
 }
 
 void StartRequest(Display* display, unsigned long window, X11ClipboardState& state, X11Incoming& in) {
-    XConvertSelection(display, state.atom_selection[KindIndex(in.kind)], in.target, in.property, window, CurrentTime);
+    XConvertSelection(display, in.drop ? state.atom_xdnd_selection : state.atom_selection[KindIndex(in.kind)], in.target, in.property, window, in.drop ? in.time : CurrentTime);
     XFlush(display);
 }
 
 void HandleSelectionNotify(Display* display, unsigned long window, X11ClipboardState& state, const XSelectionEvent& event, u64 now_ns) {
-    X11Incoming* in = FindIncoming(state, event.selection, event.target, event.property != None ? event.property : 0);
+    X11Incoming* in = nullptr;
+    if (event.selection == state.atom_xdnd_selection) {
+        for (X11Incoming& candidate : state.incoming) {
+            if (candidate.active && candidate.drop && (candidate.target == event.target || candidate.incr) && (event.property == None || candidate.property == event.property)) in = &candidate;
+        }
+        if (in == nullptr) return;
+    } else {
+        in = FindIncoming(state, event.selection, event.target, event.property != None ? event.property : 0);
+    }
     if (in == nullptr) {
         // A refusal carries property None: find the request by selection and target.
         ClipboardKind kind;
@@ -418,6 +441,7 @@ void ClipboardInit(_XDisplay* display, unsigned long window, X11ClipboardState& 
     state.atom_uri_list = XInternAtom(display, "text/uri-list", False);
     state.atom_incr = XInternAtom(display, "INCR", False);
     state.atom_timestamp = XInternAtom(display, "TIMESTAMP", False);
+    state.atom_xdnd_selection = XInternAtom(display, "XdndSelection", False);
     for (u32 i = 0; i < X11ClipboardState::kSlots; ++i) {
         char name[32] = "RE_CLIPBOARD_0";
         name[13] = static_cast<char>('0' + i);
