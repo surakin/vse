@@ -9,6 +9,7 @@
 #include "os/os.h"
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
+#include "platform/windows/win32_transfer.h"
 
 #include "unity/windows_enable.h"
 #include <shellapi.h> // DragQueryFileW
@@ -17,18 +18,8 @@
 
 namespace engine_placeholder::os::win32 {
 
-namespace {
+namespace detail {
 
-// Another program may hold the clipboard open for a moment (a clipboard manager copying it): try a few times before giving up.
-bool OpenClipboardRetrying(HWND hwnd) {
-    for (int attempt = 0; attempt < 10; ++attempt) {
-        if (OpenClipboard(hwnd)) return true;
-        Sleep(1);
-    }
-    return false;
-}
-
-// The registered format of a custom name, or 0 for an empty or unusable name.
 UINT CustomFormat(StringView name) {
     if (name.Length() == 0 || name.Length() > 255) return 0;
     Array<wchar_t, 256> wide = {};
@@ -36,7 +27,6 @@ UINT CustomFormat(StringView name) {
     return RegisterClipboardFormatW(wide.Data());
 }
 
-// Copies bytes into a movable global block for SetClipboardData; null on failure.
 HGLOBAL GlobalCopy(const void* data, usize size) {
     HGLOBAL block = GlobalAlloc(GMEM_MOVEABLE, size == 0 ? 1 : size);
     if (block == nullptr) return nullptr;
@@ -50,7 +40,6 @@ HGLOBAL GlobalCopy(const void* data, usize size) {
     return block;
 }
 
-// UTF-8 to a NUL-terminated UTF-16 buffer.
 void ToWide(StringView utf8, Vector<wchar_t>* out) {
     out->Resize(utf8.Length() + 1); // a UTF-16 text never has more code units than its UTF-8 has bytes
     const usize n = windows::Utf8ToUtf16(utf8, out->Data(), out->Size());
@@ -58,15 +47,13 @@ void ToWide(StringView utf8, Vector<wchar_t>* out) {
     (*out)[n] = 0;
 }
 
-// UTF-16 code units to UTF-8 bytes.
 void ToUtf8(const wchar_t* text, usize length, Vector<byte>* out) {
     out->Resize(length * 3 + 1);
     const usize n = windows::Utf16ToUtf8(text, length, reinterpret_cast<char*>(out->Data()), out->Size());
     out->Resize(n);
 }
 
-// A CF_HDROP block from paths separated by '\n' (DROPFILES, then the wide paths, each NUL-terminated, then one more NUL). Null when a path is
-// refused or the block cannot be made.
+// DROPFILES, then the wide paths, each NUL-terminated, then one more NUL.
 HGLOBAL MakeHdrop(const byte* paths, usize size) {
     Vector<wchar_t> list;
     usize start = 0;
@@ -92,6 +79,54 @@ HGLOBAL MakeHdrop(const byte* paths, usize size) {
     std::memcpy(block.Data(), &header, sizeof(header));
     std::memcpy(block.Data() + sizeof(DROPFILES), list.Data(), list.Size() * sizeof(wchar_t));
     return GlobalCopy(block.Data(), block.Size());
+}
+
+bool ReadHdrop(HDROP drop, Vector<byte>* out, u32* rejected) {
+    out->Clear();
+    const UINT count = DragQueryFileW(drop, 0xFFFFFFFF, nullptr, 0);
+    for (UINT i = 0; i < count; ++i) {
+        const UINT length = DragQueryFileW(drop, i, nullptr, 0);
+        Vector<wchar_t> wide;
+        wide.Resize(static_cast<usize>(length) + 1);
+        DragQueryFileW(drop, i, wide.Data(), length + 1);
+        Vector<byte> path;
+        ToUtf8(wide.Data(), length, &path);
+        if (!AcceptLocalPath(StringView(reinterpret_cast<const char*>(path.Data()), path.Size()))) {
+            ++*rejected;
+            continue;
+        }
+        if (out->Size() + path.Size() + 1 > kMaxClipboardBytes) return false;
+        if (out->Size() != 0) out->Push('\n');
+        for (usize k = 0; k < path.Size(); ++k) out->Push(path[k]);
+    }
+    return true;
+}
+
+bool ReadUnicodeText(const void* block, usize size, Vector<byte>* out, u32* replaced) {
+    const wchar_t* text = static_cast<const wchar_t*>(block);
+    usize length = 0;
+    const usize max_units = size / sizeof(wchar_t);
+    while (length < max_units && text[length] != 0) ++length; // up to the NUL, never past the block
+    if (length * 3 > kMaxClipboardBytes) return false;
+    Vector<byte> utf8;
+    ToUtf8(text, length, &utf8);
+    SanitizeUtf8(utf8.Data(), utf8.Size(), *out, replaced);
+    return true;
+}
+
+} // namespace detail
+
+using namespace detail;
+
+namespace {
+
+// Another program may hold the clipboard open for a moment (a clipboard manager copying it): try a few times before giving up.
+bool OpenClipboardRetrying(HWND hwnd) {
+    for (int attempt = 0; attempt < 20; ++attempt) { // the system's clipboard history opens it right after every change
+        if (OpenClipboard(hwnd)) return true;
+        Sleep(5);
+    }
+    return false;
 }
 
 } // namespace
@@ -178,38 +213,10 @@ u32 Win32Window::RequestClipboard(ClipboardKind kind, ClipboardFormat format, St
     } else {
         const usize size = GlobalSize(data);
         if (format == ClipboardFormat::Text) {
-            const wchar_t* text = static_cast<const wchar_t*>(p);
-            usize length = 0;
-            const usize max_units = size / sizeof(wchar_t);
-            while (length < max_units && text[length] != 0) ++length; // up to the NUL, never past the block
-            if (length * 3 > kMaxClipboardBytes) {
-                status = ClipboardStatus::TooLarge;
-            } else {
-                Vector<byte> utf8;
-                ToUtf8(text, length, &utf8);
-                SanitizeUtf8(utf8.Data(), utf8.Size(), bytes, &replaced);
-            }
+            if (!ReadUnicodeText(p, size, &bytes, &replaced)) status = ClipboardStatus::TooLarge;
         } else if (format == ClipboardFormat::FileList) {
-            HDROP drop = static_cast<HDROP>(data);
-            const UINT count = DragQueryFileW(drop, 0xFFFFFFFF, nullptr, 0);
-            for (UINT i = 0; i < count; ++i) {
-                const UINT length = DragQueryFileW(drop, i, nullptr, 0);
-                Vector<wchar_t> wide;
-                wide.Resize(static_cast<usize>(length) + 1);
-                DragQueryFileW(drop, i, wide.Data(), length + 1);
-                Vector<byte> path;
-                ToUtf8(wide.Data(), length, &path);
-                if (!AcceptLocalPath(StringView(reinterpret_cast<const char*>(path.Data()), path.Size()))) {
-                    ++rejected;
-                    continue;
-                }
-                if (bytes.Size() + path.Size() + 1 > kMaxClipboardBytes) {
-                    status = ClipboardStatus::TooLarge;
-                    break;
-                }
-                if (bytes.Size() != 0) bytes.Push('\n');
-                for (usize k = 0; k < path.Size(); ++k) bytes.Push(path[k]);
-            }
+            if (!ReadHdrop(static_cast<HDROP>(data), &bytes, &rejected)) status = ClipboardStatus::TooLarge;
+            else rejected += LimitPathList(bytes, kMaxDropFileEntries);
         } else if (size > kMaxClipboardBytes) {
             status = ClipboardStatus::TooLarge;
         } else {

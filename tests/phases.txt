@@ -253,6 +253,7 @@ tests/windows/win32_input_windows_test.cpp      13
 tests/windows/docgen_child_process_windows_test.cpp 13
 tests/windows/win32_events_windows_test.cpp     15   # the Win32 input event stream (Phase 15 Day 205)
 tests/windows/win32_clipboard_windows_test.cpp  15   # the Win32 clipboard (Day 205)
+tests/windows/win32_dragdrop_windows_test.cpp   15   # OLE drag and drop (Day 205)
 testopt:windows_*                               13
 
 # --- Phase 14: font and text (FreeType, glyph atlas, layout, cursor, the overlay text pass) ---

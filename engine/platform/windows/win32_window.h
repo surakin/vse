@@ -1,8 +1,10 @@
 #pragma once
 
 #include "containers/array.h"
+#include "containers/unique_ptr.h"
 #include "platform/clipboard.h"
 #include "platform/cursor.h"
+#include "platform/drag_drop.h"
 #include "platform/input.h"
 #include "platform/input_event.h"
 #include "platform/window.h"
@@ -26,6 +28,9 @@ struct HICON__; // HCURSOR is HICON
 
 
 namespace engine_placeholder::os::win32 {
+
+struct Win32Dnd;       // OLE drag and drop state (win32_dragdrop.h)
+struct Win32DndAccess; // its window-side handlers
 
 /// Returns whether a path from another program (a `CF_HDROP` file list, the clipboard or a drop) is one the engine accepts: an absolute local
 /// path on a drive (`C:\...`), with no `.` or `..` segment and no control character. A UNC path (`\\server\share`), a device or `\\?\` path,
@@ -168,6 +173,39 @@ public:
     bool TakeClipboardResult(u32 request_id, ClipboardResult* out) override { return clipboard_requests_.Take(request_id, out); }
     /// Returns whether the clipboard offers the format now (`IsClipboardFormatAvailable`).
     bool ClipboardHasFormat(ClipboardKind kind, ClipboardFormat format, StringView custom_name) const override;
+    /// Returns whether OLE drag and drop works on this window (`OleInitialize` and `RegisterDragDrop` succeeded on its thread).
+    bool SupportsDragAndDrop() const override;
+    /// Sets what drags from other programs the window accepts; a drag offering none of it is refused without any event.
+    void SetDropAccept(const DropAccept& accept) override;
+    /// Answers the drag over the window with the action the program would take (OLE asks again on every move).
+    void SetDropAction(DragAction action) override;
+    /// Reads one format of the last drop. OLE's data object is valid only during its `Drop` call, so every accepted format was read then; the
+    /// answer comes from that copy as a `DropData` event.
+    ///
+    /// Param format: what to read.
+    /// Param custom_name: `Custom`: the accepted custom name.
+    /// Returns: the request id (never 0).
+    /// Fails: returns 0 if no drop is waiting or too many results are open.
+    u32 RequestDropData(ClipboardFormat format, StringView custom_name) override;
+    /// Drops the copy of the last drop's data (OLE already took the answer when the drop happened).
+    void FinishDrop(DragAction taken) override;
+    /// Drags data out of the window with OLE's `DoDragDrop`, which is modal: the call returns when the drag is over, after queueing `DragEnded`.
+    /// The modal-loop callback keeps running meanwhile.
+    ///
+    /// Param source: the offers (copied), allowed actions; the image is not drawn on Windows.
+    /// Returns: true if the drag ran.
+    /// Fails: returns false if drag and drop is unsupported, a drag is running, the offers are missing, too many or bad, or no mouse button is
+    ///   down (OLE would drop at once on whatever window is under the cursor).
+    bool BeginDrag(const DragSource& source) override;
+    /// Cancels the running drag (from the modal-loop callback); `DragEnded` with `Nothing` follows.
+    void CancelDrag() override;
+    /// Returns whether a drag started by this window is running.
+    bool Dragging() const override;
+    /// Returns the window's OLE drop target (an `IDropTarget*`, untyped so this header needs no OLE type), or null without drag and drop. For
+    /// tests, which play OLE's part with a data object of their own: a real OLE drag needs the user's mouse.
+    ///
+    /// Ownership: borrowed; the window owns it.
+    void* DropTargetForTest() const;
     /// Calls `callback` about every 10 ms while Windows runs a move, resize or menu loop of its own (the user dragging the frame).
     ///
     /// Param callback: the function, or null to stop; it must not close or destroy the window. A call to `PumpEvents` of any window from
@@ -192,6 +230,7 @@ public:
 
 private:
     struct Proc; // the window procedure (win32_window.cpp), which reaches the private members
+    friend struct Win32DndAccess;
 
     void ApplyClientSize(u32 width, u32 height);
     void UpdateFullscreenState();
@@ -200,6 +239,9 @@ private:
     void ApplyLock(PointerLockState::Action action);
     void ClipToCentre();                // keeps the locked pointer at the client area's centre
     void ClipboardUpdated();            // WM_CLIPBOARDUPDATE: another program's change queues ClipboardChanged
+    void DndOpen();                     // OleInitialize and RegisterDragDrop
+    void DndClose();                    // RevokeDragDrop and OleUninitialize
+    void DndTick(u64 now_ns);           // a drop the program never finished is finished after kDropSessionTimeoutNs
 
     HWND__* hwnd_ = nullptr;
     HINSTANCE__* instance_ = nullptr;
@@ -218,6 +260,8 @@ private:
     ClipboardRequests clipboard_requests_;
     u32 own_clipboard_sequence_ = 0; // GetClipboardSequenceNumber after this window's own SetClipboard: its update is not a change by another
     bool clipboard_listener_ = false;
+    // Drag and drop (Day 205).
+    UniquePtr<Win32Dnd> dnd_;
     u32 width_ = 0;
     u32 height_ = 0;
     u32 dpi_ = 96;

@@ -83,7 +83,7 @@ target_link_libraries(windows_windowed_probe PRIVATE platform)
 target_compile_options(windows_windowed_probe PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 function(engine_add_windows_platform_tests target platform_lib suffix label)
   add_executable(${target} win32_window_windows_test.cpp win32_input_windows_test.cpp win32_events_windows_test.cpp
-                           win32_clipboard_windows_test.cpp)
+                           win32_clipboard_windows_test.cpp win32_dragdrop_windows_test.cpp)
   target_link_libraries(${target} PRIVATE ${platform_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE "${CMAKE_SOURCE_DIR}/tests/support")
   target_compile_definitions(${target} PRIVATE "WINDOWED_PROBE_PATH=L\"$<TARGET_FILE:windows_windowed_probe>\""

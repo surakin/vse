@@ -1,6 +1,8 @@
 // The Win32 window backend (Phase 13 Day 158): window class, window procedure, size, DPI, fullscreen and the modal-loop callback.
 #include "platform/windows/win32_window.h"
 
+#include "platform/windows/win32_dragdrop.h" // complete Win32Dnd for the UniquePtr member
+
 #include <cstring>
 #include <mutex>
 
@@ -604,6 +606,7 @@ bool Win32Window::Open(StringView title, u32 width, u32 height, InputState* inpu
     width_ = static_cast<u32>(client.right - client.left);
     height_ = static_cast<u32>(client.bottom - client.top);
     resize_serial_ = detail::NextResizeSerial();
+    DndOpen();
     // The clipboard: requests announce themselves in this window's stream; another program's change queues ClipboardChanged.
     clipboard_requests_.Init(&events_);
     clipboard_listener_ = AddClipboardFormatListener(hwnd) != FALSE;
@@ -631,6 +634,7 @@ void Win32Window::ApplyClientSize(u32 width, u32 height) {
 void Win32Window::Close() {
     if (hwnd_ == nullptr) return;
     KillTimer(hwnd_, kWin32ModalTimer);
+    DndClose();
     if (clipboard_listener_) {
         RemoveClipboardFormatListener(hwnd_);
         clipboard_listener_ = false;
@@ -664,6 +668,7 @@ void Win32Window::Close() {
 
 void Win32Window::PumpEvents() {
     if (t_in_modal_callback) return; // inside a modal-loop callback (of any window): the platform's loop is pumping
+    DndTick(MonotonicTimeNanos());
     MSG msg;
     while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT) {
