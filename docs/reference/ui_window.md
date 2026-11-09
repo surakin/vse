@@ -175,6 +175,60 @@ Callback<OsClipboard*, os::ClipboardStatus>& OnFailed();
 
 Returns the listeners called when a request ended without text (with the clipboard and the status).
 
+## `WindowPointerLock` {#ui-windowpointerlock}
+
+`class ui::WindowPointerLock` — defined in `engine/ui_window/window_adapter.h`
+
+```cpp
+class WindowPointerLock final : public PointerLockHost { ... }
+```
+
+The pointer lock of a window, offered to a surface (`Surface::SetPointerLockHost`) so a viewport can do mouse look.
+
+| Field | Value |
+|---|---|
+| Thread-safety | owner-thread-only. |
+| Ownership | borrows the window, which must outlive this object. |
+
+### `WindowPointerLock(os::Window*)` {#ui-windowpointerlock-windowpointerlock-os-window-star}
+
+`constructor ui::WindowPointerLock::WindowPointerLock` — defined in `engine/ui_window/window_adapter.h`
+
+```cpp
+explicit WindowPointerLock(os::Window* window);
+```
+
+Makes a lock host over `window`.
+
+| Field | Value |
+|---|---|
+| Parameter `window` | the window; borrowed. |
+| Ownership | borrows `window`. |
+
+### `LockSupported()` {#ui-windowpointerlock-locksupported-const}
+
+`method ui::WindowPointerLock::LockSupported` — defined in `engine/ui_window/window_adapter.h`
+
+```cpp
+bool LockSupported() const override;
+```
+
+Returns whether the window can lock the pointer at all.
+
+_Inherited from [`ui::PointerLockHost::LockSupported() const`](ui.md#ui-pointerlockhost-locksupported-const)._
+
+### `SetLocked(bool)` {#ui-windowpointerlock-setlocked-bool}
+
+`method ui::WindowPointerLock::SetLocked` — defined in `engine/ui_window/window_adapter.h`
+
+```cpp
+bool SetLocked(bool locked) override;
+```
+
+Asks the window to lock (true) or free (false) the pointer; returns whether the request was accepted (a lock may take effect a moment later).
+
+_Inherited from [`ui::PointerLockHost::SetLocked(bool)`](ui.md#ui-pointerlockhost-setlocked-bool)._
+
 ## `WindowAdapter` {#ui-windowadapter}
 
 `class ui::WindowAdapter` — defined in `engine/ui_window/window_adapter.h`

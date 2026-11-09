@@ -1,5 +1,6 @@
 #pragma once
 
+#include "containers/span.h"
 #include "containers/vector.h"
 #include "renderer/device_resources.h"
 #include "renderer/glyph_atlas_texture.h"
@@ -133,10 +134,13 @@ public:
     /// Param format: the target's format.
     /// Param width: the target's width in pixels.
     /// Param height: the target's height in pixels.
+    /// Param sampled: graph resources that earlier passes of this frame write and the list's images sample (a viewport's target imported into the graph); the pass reads them as
+    ///   sampled textures, so the graph orders it after their writers and leaves them in the right state. Default: none (images that live outside the graph).
     /// Fails: the pass logs and draws nothing if the pipeline for `format` cannot be made.
     /// Aborts: `graph` or `list` is null, `format` is undefined, a size is 0, or the object holds no GPU objects.
     /// Ownership: the pass keeps pointers to this object and to `list` until the graph is executed.
-    void AddToGraph(RenderGraph* graph, const ui::DrawList* list, GraphResource target, rhi::Format format, u32 width, u32 height);
+    void AddToGraph(RenderGraph* graph, const ui::DrawList* list, GraphResource target, rhi::Format format, u32 width, u32 height,
+                    Span<const GraphResource> sampled = Span<const GraphResource>());
 
     /// Returns the counters.
     ///

@@ -27,6 +27,7 @@ enum class EventType : u8 {
     FocusLost,    ///< The widget lost the keyboard focus; sent by the surface, never bubbles.
     WindowFocusGained, ///< Posted to the surface: the window it shows in got the focus (the focus owner gets `FocusGained` again).
     WindowFocusLost,   ///< Posted to the surface: the window lost the focus; capture is released, popups close, the modifier mirror resets and the focus owner gets `FocusLost`.
+    RelativeMotion,    ///< While the pointer is locked: it moved by (`rel_x`, `rel_y`) device units; goes to the widget that asked for the lock (Day 201), never bubbles.
 };
 
 /// One event.
@@ -47,6 +48,8 @@ struct Event {
     Point position;                   ///< Pointer events: where, in logical units (surface or local space, see above).
     f32 wheel_x = 0;                  ///< `Wheel`: horizontal notches, positive to the right.
     f32 wheel_y = 0;                  ///< `Wheel`: vertical notches, positive downwards.
+    f32 rel_x = 0;                    ///< `RelativeMotion`: horizontal movement in device units (not scaled by the surface scale), positive to the right.
+    f32 rel_y = 0;                    ///< `RelativeMotion`: vertical movement in device units, positive downwards.
     f64 time = 0;                     ///< The surface clock, in seconds, when the event was delivered.
 };
 

@@ -68,6 +68,15 @@ public:
     }
     bool ClipboardHasFormat(os::ClipboardKind, os::ClipboardFormat, StringView) const override { return clipboard_has_text; }
 
+    bool SupportsPointerLock() const override { return pointer_lock_supported; }
+    bool SetPointerLock(bool locked) override {
+        if (!pointer_lock_supported) return false;
+        ++pointer_lock_calls;
+        pointer_locked = locked;
+        return true;
+    }
+    bool PointerLocked() const override { return pointer_locked; }
+
     bool SupportsDragAndDrop() const override { return true; }
     void SetDropAccept(const os::DropAccept& accept) override { accept_formats = accept.formats; }
     void SetDropAction(os::DragAction action) override { last_drop_action = action; }
@@ -127,6 +136,9 @@ public:
     u8 accept_formats = 0;
     u8 drag_allowed = 0;
     bool primary_supported = false;
+    bool pointer_lock_supported = true;
+    bool pointer_locked = false;
+    u32 pointer_lock_calls = 0;
     bool clipboard_has_text = false;
     bool refuse_requests = false;
     bool accept_drag = true;

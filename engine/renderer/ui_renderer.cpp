@@ -197,7 +197,7 @@ void UiRenderer::SetImage(ui::ImageId id, const ImageSource* source) {
 
 void UiRenderer::ClearImage(ui::ImageId id) { SetImage(id, nullptr); }
 
-void UiRenderer::AddToGraph(RenderGraph* graph, const ui::DrawList* list, GraphResource target, rhi::Format format, u32 width, u32 height) {
+void UiRenderer::AddToGraph(RenderGraph* graph, const ui::DrawList* list, GraphResource target, rhi::Format format, u32 width, u32 height, Span<const GraphResource> sampled) {
     ENGINE_ASSERT(graph != nullptr && list != nullptr && format != rhi::Format::Undefined && width > 0 && height > 0 && device_ != nullptr,
                   "UiRenderer::AddToGraph: bad arguments or the object holds no GPU objects");
     if (list->commands.Empty()) {
@@ -215,7 +215,9 @@ void UiRenderer::AddToGraph(RenderGraph* graph, const ui::DrawList* list, GraphR
     pass_width_ = width;
     pass_height_ = height;
     ++stats_.passes;
-    graph->AddPass("ui", &UiRenderer::RecordPass, this).ReadWrite(target, GraphUsage::ColorAttachment);
+    PassBuilder pass = graph->AddPass("ui", &UiRenderer::RecordPass, this);
+    pass.ReadWrite(target, GraphUsage::ColorAttachment);
+    for (usize i = 0; i < sampled.Size(); ++i) pass.Read(sampled[i], GraphUsage::Sampled);
 }
 
 void UiRenderer::RecordPass(const PassExecuteContext& context, void* user) {

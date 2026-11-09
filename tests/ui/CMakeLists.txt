@@ -21,6 +21,7 @@ set(UI_TEST_SOURCES
   dialog_test.cpp
   drag_drop_test.cpp
   clipboard_test.cpp
+  viewport_test.cpp
 )
 
 find_package(Threads REQUIRED)

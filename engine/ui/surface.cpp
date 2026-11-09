@@ -96,6 +96,7 @@ void Surface::NoteDirty(u32 flags) {
 void Surface::WidgetDestroyed(Widget* widget) {
     if (focus_ == widget) focus_ = nullptr;
     if (capture_ == widget) capture_ = nullptr;
+    if (lock_owner_ == widget) ReleasePointerLock(widget);
     if (hover_ == widget) hover_ = nullptr;
     if (drag_.source == widget) drag_.source = nullptr;
     if (drag_.visual == widget) drag_.visual = nullptr;
@@ -222,7 +223,26 @@ void Surface::SetCapture(Widget* widget) {
     capture_ = widget;
 }
 
+void Surface::SetPointerLockHost(PointerLockHost* host) {
+    if (host == lock_host_) return;
+    if (lock_owner_ != nullptr) ReleasePointerLock(lock_owner_); // the old host frees its pointer
+    lock_host_ = host;
+}
+
+bool Surface::RequestPointerLock(Widget* owner) {
+    if (owner == nullptr || lock_host_ == nullptr || lock_owner_ != nullptr || !lock_host_->LockSupported() || !lock_host_->SetLocked(true)) return false;
+    lock_owner_ = owner;
+    return true;
+}
+
+void Surface::ReleasePointerLock(Widget* owner) {
+    if (owner == nullptr || lock_owner_ != owner) return;
+    lock_owner_ = nullptr;
+    if (lock_host_ != nullptr) lock_host_->SetLocked(false);
+}
+
 void Surface::ReleasePointer() {
+    if (lock_owner_ != nullptr) ReleasePointerLock(lock_owner_); // losing the pointer (focus lost, a modal dialog opened) frees a lock
     if (drag_.active && !drag_.external && !drag_.handed_off) EndDrag(false); // losing the pointer (focus lost, a modal dialog opened) ends a drag held here
     buttons_down_ = 0;
     if (capture_ != nullptr) {
@@ -363,7 +383,9 @@ void Surface::Dispatch(Event e) {
         if (--depth_ == 0) FlushRemovals();
         return;
     }
-    if (e.type == EventType::WindowFocusGained || e.type == EventType::WindowFocusLost) {
+    if (e.type == EventType::RelativeMotion) {
+        if (lock_owner_ != nullptr) Deliver(lock_owner_, e, false);
+    } else if (e.type == EventType::WindowFocusGained || e.type == EventType::WindowFocusLost) {
         SetWindowFocus(e.type == EventType::WindowFocusGained);
     } else if (e.type == EventType::PointerLeave) {
         pointer_inside_ = false;
@@ -745,6 +767,12 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
     if (--depth_ == 0) FlushRemovals();
     TrackPopups();
     UpdateTooltip();
+    for (const Widget* w = lock_owner_; w != nullptr; w = w->Parent()) {
+        if (!w->Shown()) {
+            ReleasePointerLock(lock_owner_); // the widget that holds the pointer lock was hidden or collapsed: the pointer is freed
+            break;
+        }
+    }
 
     if (layout_dirty_) {
         // At most two passes: the second one is for a widget whose size depends on the width it was given (it invalidates layout when that changes).

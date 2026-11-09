@@ -2644,19 +2644,22 @@ ui::EventType::FocusGained	enumerator	ui	ui-eventtype-focusgained	ui.md	engine/u
 ui::EventType::FocusLost	enumerator	ui	ui-eventtype-focuslost	ui.md	engine/ui/event.h:27
 ui::EventType::WindowFocusGained	enumerator	ui	ui-eventtype-windowfocusgained	ui.md	engine/ui/event.h:28
 ui::EventType::WindowFocusLost	enumerator	ui	ui-eventtype-windowfocuslost	ui.md	engine/ui/event.h:29
-ui::Event	struct	ui	ui-event	ui.md	engine/ui/event.h:38
-ui::Event::type	variable	ui	ui-event-type	ui.md	engine/ui/event.h:39
-ui::Event::handled	variable	ui	ui-event-handled	ui.md	engine/ui/event.h:40
-ui::Event::repeat	variable	ui	ui-event-repeat	ui.md	engine/ui/event.h:41
-ui::Event::text_length	variable	ui	ui-event-text-length	ui.md	engine/ui/event.h:42
-ui::Event::key	variable	ui	ui-event-key	ui.md	engine/ui/event.h:43
-ui::Event::text	variable	ui	ui-event-text	ui.md	engine/ui/event.h:44
-ui::Event::modifiers	variable	ui	ui-event-modifiers	ui.md	engine/ui/event.h:45
-ui::Event::button	variable	ui	ui-event-button	ui.md	engine/ui/event.h:46
-ui::Event::position	variable	ui	ui-event-position	ui.md	engine/ui/event.h:47
-ui::Event::wheel_x	variable	ui	ui-event-wheel-x	ui.md	engine/ui/event.h:48
-ui::Event::wheel_y	variable	ui	ui-event-wheel-y	ui.md	engine/ui/event.h:49
-ui::Event::time	variable	ui	ui-event-time	ui.md	engine/ui/event.h:50
+ui::EventType::RelativeMotion	enumerator	ui	ui-eventtype-relativemotion	ui.md	engine/ui/event.h:30
+ui::Event	struct	ui	ui-event	ui.md	engine/ui/event.h:39
+ui::Event::type	variable	ui	ui-event-type	ui.md	engine/ui/event.h:40
+ui::Event::handled	variable	ui	ui-event-handled	ui.md	engine/ui/event.h:41
+ui::Event::repeat	variable	ui	ui-event-repeat	ui.md	engine/ui/event.h:42
+ui::Event::text_length	variable	ui	ui-event-text-length	ui.md	engine/ui/event.h:43
+ui::Event::key	variable	ui	ui-event-key	ui.md	engine/ui/event.h:44
+ui::Event::text	variable	ui	ui-event-text	ui.md	engine/ui/event.h:45
+ui::Event::modifiers	variable	ui	ui-event-modifiers	ui.md	engine/ui/event.h:46
+ui::Event::button	variable	ui	ui-event-button	ui.md	engine/ui/event.h:47
+ui::Event::position	variable	ui	ui-event-position	ui.md	engine/ui/event.h:48
+ui::Event::wheel_x	variable	ui	ui-event-wheel-x	ui.md	engine/ui/event.h:49
+ui::Event::wheel_y	variable	ui	ui-event-wheel-y	ui.md	engine/ui/event.h:50
+ui::Event::rel_x	variable	ui	ui-event-rel-x	ui.md	engine/ui/event.h:51
+ui::Event::rel_y	variable	ui	ui-event-rel-y	ui.md	engine/ui/event.h:52
+ui::Event::time	variable	ui	ui-event-time	ui.md	engine/ui/event.h:53
 ui::Point	struct	ui	ui-point	ui.md	engine/ui/geometry.h:13
 ui::Point::x	variable	ui	ui-point-x	ui.md	engine/ui/geometry.h:14
 ui::Point::y	variable	ui	ui-point-y	ui.md	engine/ui/geometry.h:15
@@ -2773,6 +2776,10 @@ ui::LayoutProps::column_span	variable	ui	ui-layoutprops-column-span	ui.md	engine
 ui::LayoutProps::row_span	variable	ui	ui-layoutprops-row-span	ui.md	engine/ui/layout_types.h:79
 ui::LayoutProps::anchor	variable	ui	ui-layoutprops-anchor	ui.md	engine/ui/layout_types.h:80
 ui::LayoutProps::fill_parent	variable	ui	ui-layoutprops-fill-parent	ui.md	engine/ui/layout_types.h:81
+ui::PointerLockHost	class	ui	ui-pointerlockhost	ui.md	engine/ui/pointer_lock.h:16
+ui::PointerLockHost::~PointerLockHost()	function	ui	ui-pointerlockhost-tilde-pointerlockhost	ui.md	engine/ui/pointer_lock.h:18
+ui::PointerLockHost::LockSupported() const	function	ui	ui-pointerlockhost-locksupported-const	ui.md	engine/ui/pointer_lock.h:22
+ui::PointerLockHost::SetLocked(bool)	function	ui	ui-pointerlockhost-setlocked-bool	ui.md	engine/ui/pointer_lock.h:26
 ui::Placement	enum	ui	ui-placement	ui.md	engine/ui/popup.h:14
 ui::Placement::Below	enumerator	ui	ui-placement-below	ui.md	engine/ui/popup.h:15
 ui::Placement::Above	enumerator	ui	ui-placement-above	ui.md	engine/ui/popup.h:16
@@ -2789,93 +2796,98 @@ ui::KeyChord::modifiers	variable	ui	ui-keychord-modifiers	ui.md	engine/ui/popup.
 ui::KeyChord::operator==(const KeyChord&) const	function	ui	ui-keychord-operator-eq-eq-const-keychord-amp-const	ui.md	engine/ui/popup.h:42
 ui::PlacePopup(Size,const Rect&,Placement,const Rect&)	function	ui	ui-placepopup-size-const-rect-amp-placement-const-rect-amp	ui.md	engine/ui/popup.h:56
 ui::ChordText(const KeyChord&)	function	ui	ui-chordtext-const-keychord-amp	ui.md	engine/ui/popup.h:64
-ui::FontProvider	class	ui	ui-fontprovider	ui.md	engine/ui/surface.h:27
-ui::FontProvider::~FontProvider()	function	ui	ui-fontprovider-tilde-fontprovider	ui.md	engine/ui/surface.h:29
-ui::FontProvider::Resolve(u32)	function	ui	ui-fontprovider-resolve-u32	ui.md	engine/ui/surface.h:34
-ui::Surface	class	ui	ui-surface	ui.md	engine/ui/surface.h:47
-ui::Surface::Surface(f32,f32,f32)	function	ui	ui-surface-surface-f32-f32-f32	ui.md	engine/ui/surface.h:51
-ui::Surface::~Surface()	function	ui	ui-surface-tilde-surface	ui.md	engine/ui/surface.h:53
-ui::Surface::Surface(const Surface&)	function	ui	ui-surface-surface-const-surface-amp	ui.md	engine/ui/surface.h:54
-ui::Surface::operator=(const Surface&)	function	ui	ui-surface-operator-eq-const-surface-amp	ui.md	engine/ui/surface.h:55
-ui::Surface::Root() const	function	ui	ui-surface-root-const	ui.md	engine/ui/surface.h:60
-ui::Surface::PopupLayer() const	function	ui	ui-surface-popuplayer-const	ui.md	engine/ui/surface.h:64
-ui::Surface::kDragHoverSeconds	variable	ui	ui-surface-kdraghoverseconds	ui.md	engine/ui/surface.h:66
-ui::Surface::BeginDrag(DragPayload,UniquePtr<Widget>,Point)	function	ui	ui-surface-begindrag-dragpayload-uniqueptr-lt-widget-gt-point	ui.md	engine/ui/surface.h:77
-ui::Surface::Dragging() const	function	ui	ui-surface-dragging-const	ui.md	engine/ui/surface.h:81
-ui::Surface::DragIsExternal() const	function	ui	ui-surface-dragisexternal-const	ui.md	engine/ui/surface.h:85
-ui::Surface::DragHandedOff() const	function	ui	ui-surface-draghandedoff-const	ui.md	engine/ui/surface.h:89
-ui::Surface::ActiveDrag() const	function	ui	ui-surface-activedrag-const	ui.md	engine/ui/surface.h:94
-ui::Surface::DragSource() const	function	ui	ui-surface-dragsource-const	ui.md	engine/ui/surface.h:99
-ui::Surface::DragTarget() const	function	ui	ui-surface-dragtarget-const	ui.md	engine/ui/surface.h:104
-ui::Surface::CurrentDragAction() const	function	ui	ui-surface-currentdragaction-const	ui.md	engine/ui/surface.h:108
-ui::Surface::DragSlop() const	function	ui	ui-surface-dragslop-const	ui.md	engine/ui/surface.h:110
-ui::Surface::PastDragSlop(Point,Point) const	function	ui	ui-surface-pastdragslop-point-point-const	ui.md	engine/ui/surface.h:113
-ui::Surface::CancelDrag()	function	ui	ui-surface-canceldrag	ui.md	engine/ui/surface.h:115
-ui::Surface::HandOffDrag()	function	ui	ui-surface-handoffdrag	ui.md	engine/ui/surface.h:118
-ui::Surface::EndHandedOffDrag(DragAction)	function	ui	ui-surface-endhandedoffdrag-dragaction	ui.md	engine/ui/surface.h:121
-ui::Surface::ExternalDragEnter(DragPayload,Point,u8)	function	ui	ui-surface-externaldragenter-dragpayload-point-u8	ui.md	engine/ui/surface.h:124
-ui::Surface::ExternalDragOver(Point,u8)	function	ui	ui-surface-externaldragover-point-u8	ui.md	engine/ui/surface.h:126
-ui::Surface::ExternalDragLeave()	function	ui	ui-surface-externaldragleave	ui.md	engine/ui/surface.h:128
-ui::Surface::ExternalDrop(DragPayload,Point,DragAction)	function	ui	ui-surface-externaldrop-dragpayload-point-dragaction	ui.md	engine/ui/surface.h:133
-ui::Surface::ExternalDropFailed(StringView)	function	ui	ui-surface-externaldropfailed-stringview	ui.md	engine/ui/surface.h:135
-ui::Surface::OnFilesDropped()	function	ui	ui-surface-onfilesdropped	ui.md	engine/ui/surface.h:137
-ui::Surface::OnDropFailed()	function	ui	ui-surface-ondropfailed	ui.md	engine/ui/surface.h:139
-ui::Surface::WidgetAt(Point)	function	ui	ui-surface-widgetat-point	ui.md	engine/ui/surface.h:144
-ui::Surface::TooltipLayer() const	function	ui	ui-surface-tooltiplayer-const	ui.md	engine/ui/surface.h:149
-ui::Surface::Width() const	function	ui	ui-surface-width-const	ui.md	engine/ui/surface.h:151
-ui::Surface::Height() const	function	ui	ui-surface-height-const	ui.md	engine/ui/surface.h:153
-ui::Surface::Scale() const	function	ui	ui-surface-scale-const	ui.md	engine/ui/surface.h:155
-ui::Surface::Resize(f32,f32,f32)	function	ui	ui-surface-resize-f32-f32-f32	ui.md	engine/ui/surface.h:158
-ui::Surface::SetClipboard(Clipboard*)	function	ui	ui-surface-setclipboard-clipboard-star	ui.md	engine/ui/surface.h:162
-ui::Surface::GetClipboard()	function	ui	ui-surface-getclipboard	ui.md	engine/ui/surface.h:164
-ui::Surface::OpenPopup(UniquePtr<Widget>,const Rect&,const PopupOptions&)	function	ui	ui-surface-openpopup-uniqueptr-lt-widget-gt-const-rect-amp-const-popupoptions-amp	ui.md	engine/ui/surface.h:180
-ui::Surface::ShowContextMenu(UniquePtr<Widget>,Point)	function	ui	ui-surface-showcontextmenu-uniqueptr-lt-widget-gt-point	ui.md	engine/ui/surface.h:186
-ui::Surface::ClosePopup(Widget*)	function	ui	ui-surface-closepopup-widget-star	ui.md	engine/ui/surface.h:191
-ui::Surface::CloseAllPopups()	function	ui	ui-surface-closeallpopups	ui.md	engine/ui/surface.h:194
-ui::Surface::PopupCount() const	function	ui	ui-surface-popupcount-const	ui.md	engine/ui/surface.h:197
-ui::Surface::IsPopupOpen(const Widget*) const	function	ui	ui-surface-ispopupopen-const-widget-star-const	ui.md	engine/ui/surface.h:202
-ui::Surface::TopPopup() const	function	ui	ui-surface-toppopup-const	ui.md	engine/ui/surface.h:206
-ui::Surface::RegisterAccelerator(const KeyChord&,void(*)(void*),void*)	function	ui	ui-surface-registeraccelerator-const-keychord-amp-void-star-void-star-void-star	ui.md	engine/ui/surface.h:216
-ui::Surface::UnregisterAccelerator(u32)	function	ui	ui-surface-unregisteraccelerator-u32	ui.md	engine/ui/surface.h:219
-ui::Surface::SetAcceleratorEnabled(u32,bool)	function	ui	ui-surface-setacceleratorenabled-u32-bool	ui.md	engine/ui/surface.h:222
-ui::Surface::AcceleratorEnabled(u32) const	function	ui	ui-surface-acceleratorenabled-u32-const	ui.md	engine/ui/surface.h:225
-ui::Surface::AcceleratorChord(u32) const	function	ui	ui-surface-acceleratorchord-u32-const	ui.md	engine/ui/surface.h:228
-ui::Surface::SetMenuKeyTarget(Widget*)	function	ui	ui-surface-setmenukeytarget-widget-star	ui.md	engine/ui/surface.h:231
-ui::Surface::ShowModal(UniquePtr<Widget>)	function	ui	ui-surface-showmodal-uniqueptr-lt-widget-gt	ui.md	engine/ui/surface.h:245
-ui::Surface::CloseModal(Widget*)	function	ui	ui-surface-closemodal-widget-star	ui.md	engine/ui/surface.h:251
-ui::Surface::ModalCount() const	function	ui	ui-surface-modalcount-const	ui.md	engine/ui/surface.h:254
-ui::Surface::TopModal() const	function	ui	ui-surface-topmodal-const	ui.md	engine/ui/surface.h:258
-ui::Surface::IsModalOpen(const Widget*) const	function	ui	ui-surface-ismodalopen-const-widget-star-const	ui.md	engine/ui/surface.h:263
-ui::Surface::ModalLayer() const	function	ui	ui-surface-modallayer-const	ui.md	engine/ui/surface.h:267
-ui::Surface::kTooltipDelay	variable	ui	ui-surface-ktooltipdelay	ui.md	engine/ui/surface.h:272
-ui::Surface::TooltipShown() const	function	ui	ui-surface-tooltipshown-const	ui.md	engine/ui/surface.h:275
-ui::Surface::HideTooltip()	function	ui	ui-surface-hidetooltip	ui.md	engine/ui/surface.h:278
-ui::Surface::Time() const	function	ui	ui-surface-time-const	ui.md	engine/ui/surface.h:281
-ui::Surface::SetTime(f64)	function	ui	ui-surface-settime-f64	ui.md	engine/ui/surface.h:283
-ui::Surface::SetTheme(const Theme*)	function	ui	ui-surface-settheme-const-theme-star	ui.md	engine/ui/surface.h:286
-ui::Surface::Themes()	function	ui	ui-surface-themes	ui.md	engine/ui/surface.h:288
-ui::Surface::SetFontProvider(FontProvider*)	function	ui	ui-surface-setfontprovider-fontprovider-star	ui.md	engine/ui/surface.h:292
-ui::Surface::GetFontProvider() const	function	ui	ui-surface-getfontprovider-const	ui.md	engine/ui/surface.h:297
-ui::Surface::Post(const Event&)	function	ui	ui-surface-post-const-event-amp	ui.md	engine/ui/surface.h:300
-ui::Surface::Dispatch(Event)	function	ui	ui-surface-dispatch-event	ui.md	engine/ui/surface.h:302
-ui::Surface::SetFocus(Widget*)	function	ui	ui-surface-setfocus-widget-star	ui.md	engine/ui/surface.h:307
-ui::Surface::SaveFocus()	function	ui	ui-surface-savefocus	ui.md	engine/ui/surface.h:310
-ui::Surface::RestoreSavedFocus()	function	ui	ui-surface-restoresavedfocus	ui.md	engine/ui/surface.h:313
-ui::Surface::EditTarget() const	function	ui	ui-surface-edittarget-const	ui.md	engine/ui/surface.h:318
-ui::Surface::Focus() const	function	ui	ui-surface-focus-const	ui.md	engine/ui/surface.h:327
-ui::Surface::SetCapture(Widget*)	function	ui	ui-surface-setcapture-widget-star	ui.md	engine/ui/surface.h:331
-ui::Surface::Capture() const	function	ui	ui-surface-capture-const	ui.md	engine/ui/surface.h:336
-ui::Surface::FocusNext(bool)	function	ui	ui-surface-focusnext-bool	ui.md	engine/ui/surface.h:341
-ui::Surface::WindowFocused() const	function	ui	ui-surface-windowfocused-const	ui.md	engine/ui/surface.h:344
-ui::Surface::Modifiers() const	function	ui	ui-surface-modifiers-const	ui.md	engine/ui/surface.h:347
-ui::Surface::RequestedCursor() const	function	ui	ui-surface-requestedcursor-const	ui.md	engine/ui/surface.h:350
-ui::Surface::Hover() const	function	ui	ui-surface-hover-const	ui.md	engine/ui/surface.h:355
-ui::Surface::Frame(f32,DrawList*,text::GlyphAtlas*)	function	ui	ui-surface-frame-f32-drawlist-star-text-glyphatlas-star	ui.md	engine/ui/surface.h:364
-ui::Surface::NeedsRedraw() const	function	ui	ui-surface-needsredraw-const	ui.md	engine/ui/surface.h:367
-ui::Surface::LayoutPasses() const	function	ui	ui-surface-layoutpasses-const	ui.md	engine/ui/surface.h:369
-ui::Surface::LayoutOverruns() const	function	ui	ui-surface-layoutoverruns-const	ui.md	engine/ui/surface.h:371
-ui::Surface::LayoutGeneration() const	function	ui	ui-surface-layoutgeneration-const	ui.md	engine/ui/surface.h:373
-ui::Surface::QueuedEvents() const	function	ui	ui-surface-queuedevents-const	ui.md	engine/ui/surface.h:375
+ui::FontProvider	class	ui	ui-fontprovider	ui.md	engine/ui/surface.h:28
+ui::FontProvider::~FontProvider()	function	ui	ui-fontprovider-tilde-fontprovider	ui.md	engine/ui/surface.h:30
+ui::FontProvider::Resolve(u32)	function	ui	ui-fontprovider-resolve-u32	ui.md	engine/ui/surface.h:35
+ui::Surface	class	ui	ui-surface	ui.md	engine/ui/surface.h:48
+ui::Surface::Surface(f32,f32,f32)	function	ui	ui-surface-surface-f32-f32-f32	ui.md	engine/ui/surface.h:52
+ui::Surface::~Surface()	function	ui	ui-surface-tilde-surface	ui.md	engine/ui/surface.h:54
+ui::Surface::Surface(const Surface&)	function	ui	ui-surface-surface-const-surface-amp	ui.md	engine/ui/surface.h:55
+ui::Surface::operator=(const Surface&)	function	ui	ui-surface-operator-eq-const-surface-amp	ui.md	engine/ui/surface.h:56
+ui::Surface::Root() const	function	ui	ui-surface-root-const	ui.md	engine/ui/surface.h:61
+ui::Surface::PopupLayer() const	function	ui	ui-surface-popuplayer-const	ui.md	engine/ui/surface.h:65
+ui::Surface::kDragHoverSeconds	variable	ui	ui-surface-kdraghoverseconds	ui.md	engine/ui/surface.h:67
+ui::Surface::BeginDrag(DragPayload,UniquePtr<Widget>,Point)	function	ui	ui-surface-begindrag-dragpayload-uniqueptr-lt-widget-gt-point	ui.md	engine/ui/surface.h:78
+ui::Surface::Dragging() const	function	ui	ui-surface-dragging-const	ui.md	engine/ui/surface.h:82
+ui::Surface::DragIsExternal() const	function	ui	ui-surface-dragisexternal-const	ui.md	engine/ui/surface.h:86
+ui::Surface::DragHandedOff() const	function	ui	ui-surface-draghandedoff-const	ui.md	engine/ui/surface.h:90
+ui::Surface::ActiveDrag() const	function	ui	ui-surface-activedrag-const	ui.md	engine/ui/surface.h:95
+ui::Surface::DragSource() const	function	ui	ui-surface-dragsource-const	ui.md	engine/ui/surface.h:100
+ui::Surface::DragTarget() const	function	ui	ui-surface-dragtarget-const	ui.md	engine/ui/surface.h:105
+ui::Surface::CurrentDragAction() const	function	ui	ui-surface-currentdragaction-const	ui.md	engine/ui/surface.h:109
+ui::Surface::DragSlop() const	function	ui	ui-surface-dragslop-const	ui.md	engine/ui/surface.h:111
+ui::Surface::PastDragSlop(Point,Point) const	function	ui	ui-surface-pastdragslop-point-point-const	ui.md	engine/ui/surface.h:114
+ui::Surface::CancelDrag()	function	ui	ui-surface-canceldrag	ui.md	engine/ui/surface.h:116
+ui::Surface::HandOffDrag()	function	ui	ui-surface-handoffdrag	ui.md	engine/ui/surface.h:119
+ui::Surface::EndHandedOffDrag(DragAction)	function	ui	ui-surface-endhandedoffdrag-dragaction	ui.md	engine/ui/surface.h:122
+ui::Surface::ExternalDragEnter(DragPayload,Point,u8)	function	ui	ui-surface-externaldragenter-dragpayload-point-u8	ui.md	engine/ui/surface.h:125
+ui::Surface::ExternalDragOver(Point,u8)	function	ui	ui-surface-externaldragover-point-u8	ui.md	engine/ui/surface.h:127
+ui::Surface::ExternalDragLeave()	function	ui	ui-surface-externaldragleave	ui.md	engine/ui/surface.h:129
+ui::Surface::ExternalDrop(DragPayload,Point,DragAction)	function	ui	ui-surface-externaldrop-dragpayload-point-dragaction	ui.md	engine/ui/surface.h:134
+ui::Surface::ExternalDropFailed(StringView)	function	ui	ui-surface-externaldropfailed-stringview	ui.md	engine/ui/surface.h:136
+ui::Surface::OnFilesDropped()	function	ui	ui-surface-onfilesdropped	ui.md	engine/ui/surface.h:138
+ui::Surface::OnDropFailed()	function	ui	ui-surface-ondropfailed	ui.md	engine/ui/surface.h:140
+ui::Surface::WidgetAt(Point)	function	ui	ui-surface-widgetat-point	ui.md	engine/ui/surface.h:145
+ui::Surface::TooltipLayer() const	function	ui	ui-surface-tooltiplayer-const	ui.md	engine/ui/surface.h:150
+ui::Surface::Width() const	function	ui	ui-surface-width-const	ui.md	engine/ui/surface.h:152
+ui::Surface::Height() const	function	ui	ui-surface-height-const	ui.md	engine/ui/surface.h:154
+ui::Surface::Scale() const	function	ui	ui-surface-scale-const	ui.md	engine/ui/surface.h:156
+ui::Surface::Resize(f32,f32,f32)	function	ui	ui-surface-resize-f32-f32-f32	ui.md	engine/ui/surface.h:159
+ui::Surface::SetClipboard(Clipboard*)	function	ui	ui-surface-setclipboard-clipboard-star	ui.md	engine/ui/surface.h:163
+ui::Surface::GetClipboard()	function	ui	ui-surface-getclipboard	ui.md	engine/ui/surface.h:165
+ui::Surface::SetPointerLockHost(PointerLockHost*)	function	ui	ui-surface-setpointerlockhost-pointerlockhost-star	ui.md	engine/ui/surface.h:169
+ui::Surface::RequestPointerLock(Widget*)	function	ui	ui-surface-requestpointerlock-widget-star	ui.md	engine/ui/surface.h:175
+ui::Surface::ReleasePointerLock(Widget*)	function	ui	ui-surface-releasepointerlock-widget-star	ui.md	engine/ui/surface.h:178
+ui::Surface::PointerLockOwner() const	function	ui	ui-surface-pointerlockowner-const	ui.md	engine/ui/surface.h:183
+ui::Surface::PointerLockSupported() const	function	ui	ui-surface-pointerlocksupported-const	ui.md	engine/ui/surface.h:187
+ui::Surface::OpenPopup(UniquePtr<Widget>,const Rect&,const PopupOptions&)	function	ui	ui-surface-openpopup-uniqueptr-lt-widget-gt-const-rect-amp-const-popupoptions-amp	ui.md	engine/ui/surface.h:203
+ui::Surface::ShowContextMenu(UniquePtr<Widget>,Point)	function	ui	ui-surface-showcontextmenu-uniqueptr-lt-widget-gt-point	ui.md	engine/ui/surface.h:209
+ui::Surface::ClosePopup(Widget*)	function	ui	ui-surface-closepopup-widget-star	ui.md	engine/ui/surface.h:214
+ui::Surface::CloseAllPopups()	function	ui	ui-surface-closeallpopups	ui.md	engine/ui/surface.h:217
+ui::Surface::PopupCount() const	function	ui	ui-surface-popupcount-const	ui.md	engine/ui/surface.h:220
+ui::Surface::IsPopupOpen(const Widget*) const	function	ui	ui-surface-ispopupopen-const-widget-star-const	ui.md	engine/ui/surface.h:225
+ui::Surface::TopPopup() const	function	ui	ui-surface-toppopup-const	ui.md	engine/ui/surface.h:229
+ui::Surface::RegisterAccelerator(const KeyChord&,void(*)(void*),void*)	function	ui	ui-surface-registeraccelerator-const-keychord-amp-void-star-void-star-void-star	ui.md	engine/ui/surface.h:239
+ui::Surface::UnregisterAccelerator(u32)	function	ui	ui-surface-unregisteraccelerator-u32	ui.md	engine/ui/surface.h:242
+ui::Surface::SetAcceleratorEnabled(u32,bool)	function	ui	ui-surface-setacceleratorenabled-u32-bool	ui.md	engine/ui/surface.h:245
+ui::Surface::AcceleratorEnabled(u32) const	function	ui	ui-surface-acceleratorenabled-u32-const	ui.md	engine/ui/surface.h:248
+ui::Surface::AcceleratorChord(u32) const	function	ui	ui-surface-acceleratorchord-u32-const	ui.md	engine/ui/surface.h:251
+ui::Surface::SetMenuKeyTarget(Widget*)	function	ui	ui-surface-setmenukeytarget-widget-star	ui.md	engine/ui/surface.h:254
+ui::Surface::ShowModal(UniquePtr<Widget>)	function	ui	ui-surface-showmodal-uniqueptr-lt-widget-gt	ui.md	engine/ui/surface.h:268
+ui::Surface::CloseModal(Widget*)	function	ui	ui-surface-closemodal-widget-star	ui.md	engine/ui/surface.h:274
+ui::Surface::ModalCount() const	function	ui	ui-surface-modalcount-const	ui.md	engine/ui/surface.h:277
+ui::Surface::TopModal() const	function	ui	ui-surface-topmodal-const	ui.md	engine/ui/surface.h:281
+ui::Surface::IsModalOpen(const Widget*) const	function	ui	ui-surface-ismodalopen-const-widget-star-const	ui.md	engine/ui/surface.h:286
+ui::Surface::ModalLayer() const	function	ui	ui-surface-modallayer-const	ui.md	engine/ui/surface.h:290
+ui::Surface::kTooltipDelay	variable	ui	ui-surface-ktooltipdelay	ui.md	engine/ui/surface.h:295
+ui::Surface::TooltipShown() const	function	ui	ui-surface-tooltipshown-const	ui.md	engine/ui/surface.h:298
+ui::Surface::HideTooltip()	function	ui	ui-surface-hidetooltip	ui.md	engine/ui/surface.h:301
+ui::Surface::Time() const	function	ui	ui-surface-time-const	ui.md	engine/ui/surface.h:304
+ui::Surface::SetTime(f64)	function	ui	ui-surface-settime-f64	ui.md	engine/ui/surface.h:306
+ui::Surface::SetTheme(const Theme*)	function	ui	ui-surface-settheme-const-theme-star	ui.md	engine/ui/surface.h:309
+ui::Surface::Themes()	function	ui	ui-surface-themes	ui.md	engine/ui/surface.h:311
+ui::Surface::SetFontProvider(FontProvider*)	function	ui	ui-surface-setfontprovider-fontprovider-star	ui.md	engine/ui/surface.h:315
+ui::Surface::GetFontProvider() const	function	ui	ui-surface-getfontprovider-const	ui.md	engine/ui/surface.h:320
+ui::Surface::Post(const Event&)	function	ui	ui-surface-post-const-event-amp	ui.md	engine/ui/surface.h:323
+ui::Surface::Dispatch(Event)	function	ui	ui-surface-dispatch-event	ui.md	engine/ui/surface.h:325
+ui::Surface::SetFocus(Widget*)	function	ui	ui-surface-setfocus-widget-star	ui.md	engine/ui/surface.h:330
+ui::Surface::SaveFocus()	function	ui	ui-surface-savefocus	ui.md	engine/ui/surface.h:333
+ui::Surface::RestoreSavedFocus()	function	ui	ui-surface-restoresavedfocus	ui.md	engine/ui/surface.h:336
+ui::Surface::EditTarget() const	function	ui	ui-surface-edittarget-const	ui.md	engine/ui/surface.h:341
+ui::Surface::Focus() const	function	ui	ui-surface-focus-const	ui.md	engine/ui/surface.h:350
+ui::Surface::SetCapture(Widget*)	function	ui	ui-surface-setcapture-widget-star	ui.md	engine/ui/surface.h:354
+ui::Surface::Capture() const	function	ui	ui-surface-capture-const	ui.md	engine/ui/surface.h:359
+ui::Surface::FocusNext(bool)	function	ui	ui-surface-focusnext-bool	ui.md	engine/ui/surface.h:364
+ui::Surface::WindowFocused() const	function	ui	ui-surface-windowfocused-const	ui.md	engine/ui/surface.h:367
+ui::Surface::Modifiers() const	function	ui	ui-surface-modifiers-const	ui.md	engine/ui/surface.h:370
+ui::Surface::RequestedCursor() const	function	ui	ui-surface-requestedcursor-const	ui.md	engine/ui/surface.h:373
+ui::Surface::Hover() const	function	ui	ui-surface-hover-const	ui.md	engine/ui/surface.h:378
+ui::Surface::Frame(f32,DrawList*,text::GlyphAtlas*)	function	ui	ui-surface-frame-f32-drawlist-star-text-glyphatlas-star	ui.md	engine/ui/surface.h:387
+ui::Surface::NeedsRedraw() const	function	ui	ui-surface-needsredraw-const	ui.md	engine/ui/surface.h:390
+ui::Surface::LayoutPasses() const	function	ui	ui-surface-layoutpasses-const	ui.md	engine/ui/surface.h:392
+ui::Surface::LayoutOverruns() const	function	ui	ui-surface-layoutoverruns-const	ui.md	engine/ui/surface.h:394
+ui::Surface::LayoutGeneration() const	function	ui	ui-surface-layoutgeneration-const	ui.md	engine/ui/surface.h:396
+ui::Surface::QueuedEvents() const	function	ui	ui-surface-queuedevents-const	ui.md	engine/ui/surface.h:398
 ui::Harness	class	ui	ui-harness	ui.md	engine/ui/testing/harness.h:21
 ui::Harness::Harness(f32,f32,f32,StringView)	function	ui	ui-harness-harness-f32-f32-f32-stringview	ui.md	engine/ui/testing/harness.h:28
 ui::Harness::Valid() const	function	ui	ui-harness-valid-const	ui.md	engine/ui/testing/harness.h:33
@@ -3101,6 +3113,65 @@ ui::ThemeSet::Font(FontId,f32,Span<const Theme* const>) const	function	ui	ui-the
 ui::ThemeSet::Stats() const	function	ui	ui-themeset-stats-const	ui.md	engine/ui/theme.h:295
 ui::kUiLayoutVersion	variable	ui	ui-kuilayoutversion	ui.md	engine/ui/version.h:10
 ui::LayoutVersion()	function	ui	ui-layoutversion	ui.md	engine/ui/version.h:15
+ui::ViewportInputType	enum	ui	ui-viewportinputtype	ui.md	engine/ui/viewport.h:15
+ui::ViewportInputType::PointerMove	enumerator	ui	ui-viewportinputtype-pointermove	ui.md	engine/ui/viewport.h:16
+ui::ViewportInputType::PointerDown	enumerator	ui	ui-viewportinputtype-pointerdown	ui.md	engine/ui/viewport.h:17
+ui::ViewportInputType::PointerUp	enumerator	ui	ui-viewportinputtype-pointerup	ui.md	engine/ui/viewport.h:18
+ui::ViewportInputType::Wheel	enumerator	ui	ui-viewportinputtype-wheel	ui.md	engine/ui/viewport.h:19
+ui::ViewportInputType::Enter	enumerator	ui	ui-viewportinputtype-enter	ui.md	engine/ui/viewport.h:20
+ui::ViewportInputType::Leave	enumerator	ui	ui-viewportinputtype-leave	ui.md	engine/ui/viewport.h:21
+ui::ViewportInputType::Look	enumerator	ui	ui-viewportinputtype-look	ui.md	engine/ui/viewport.h:22
+ui::ViewportInputType::LookBegin	enumerator	ui	ui-viewportinputtype-lookbegin	ui.md	engine/ui/viewport.h:23
+ui::ViewportInputType::LookEnd	enumerator	ui	ui-viewportinputtype-lookend	ui.md	engine/ui/viewport.h:24
+ui::ViewportInputType::KeyDown	enumerator	ui	ui-viewportinputtype-keydown	ui.md	engine/ui/viewport.h:25
+ui::ViewportInputType::KeyUp	enumerator	ui	ui-viewportinputtype-keyup	ui.md	engine/ui/viewport.h:26
+ui::ViewportInputType::FocusGained	enumerator	ui	ui-viewportinputtype-focusgained	ui.md	engine/ui/viewport.h:27
+ui::ViewportInputType::FocusLost	enumerator	ui	ui-viewportinputtype-focuslost	ui.md	engine/ui/viewport.h:28
+ui::ViewportInput	struct	ui	ui-viewportinput	ui.md	engine/ui/viewport.h:36
+ui::ViewportInput::type	variable	ui	ui-viewportinput-type	ui.md	engine/ui/viewport.h:37
+ui::ViewportInput::handled	variable	ui	ui-viewportinput-handled	ui.md	engine/ui/viewport.h:38
+ui::ViewportInput::locked	variable	ui	ui-viewportinput-locked	ui.md	engine/ui/viewport.h:39
+ui::ViewportInput::repeat	variable	ui	ui-viewportinput-repeat	ui.md	engine/ui/viewport.h:40
+ui::ViewportInput::key	variable	ui	ui-viewportinput-key	ui.md	engine/ui/viewport.h:41
+ui::ViewportInput::button	variable	ui	ui-viewportinput-button	ui.md	engine/ui/viewport.h:42
+ui::ViewportInput::modifiers	variable	ui	ui-viewportinput-modifiers	ui.md	engine/ui/viewport.h:43
+ui::ViewportInput::x	variable	ui	ui-viewportinput-x	ui.md	engine/ui/viewport.h:44
+ui::ViewportInput::y	variable	ui	ui-viewportinput-y	ui.md	engine/ui/viewport.h:45
+ui::ViewportInput::delta_x	variable	ui	ui-viewportinput-delta-x	ui.md	engine/ui/viewport.h:46
+ui::ViewportInput::delta_y	variable	ui	ui-viewportinput-delta-y	ui.md	engine/ui/viewport.h:47
+ui::ViewportInput::wheel_x	variable	ui	ui-viewportinput-wheel-x	ui.md	engine/ui/viewport.h:48
+ui::ViewportInput::wheel_y	variable	ui	ui-viewportinput-wheel-y	ui.md	engine/ui/viewport.h:49
+ui::ViewportInput::scale	variable	ui	ui-viewportinput-scale	ui.md	engine/ui/viewport.h:50
+ui::ViewportFrame	struct	ui	ui-viewportframe	ui.md	engine/ui/viewport.h:56
+ui::ViewportFrame::width	variable	ui	ui-viewportframe-width	ui.md	engine/ui/viewport.h:57
+ui::ViewportFrame::height	variable	ui	ui-viewportframe-height	ui.md	engine/ui/viewport.h:58
+ui::ViewportFrame::scale	variable	ui	ui-viewportframe-scale	ui.md	engine/ui/viewport.h:59
+ui::ViewportFrame::delta	variable	ui	ui-viewportframe-delta	ui.md	engine/ui/viewport.h:60
+ui::ViewportFrame::time	variable	ui	ui-viewportframe-time	ui.md	engine/ui/viewport.h:61
+ui::AspectOf(u32,u32)	function	ui	ui-aspectof-u32-u32	ui.md	engine/ui/viewport.h:70
+ui::ViewportBinding	class	ui	ui-viewportbinding	ui.md	engine/ui/viewport.h:76
+ui::ViewportBinding::~ViewportBinding()	function	ui	ui-viewportbinding-tilde-viewportbinding	ui.md	engine/ui/viewport.h:78
+ui::ViewportBinding::OnResize(u32,u32)	function	ui	ui-viewportbinding-onresize-u32-u32	ui.md	engine/ui/viewport.h:81
+ui::ViewportBinding::Render(const ViewportFrame&)	function	ui	ui-viewportbinding-render-const-viewportframe-amp	ui.md	engine/ui/viewport.h:83
+ui::ViewportBinding::Image() const	function	ui	ui-viewportbinding-image-const	ui.md	engine/ui/viewport.h:87
+ui::ViewportBinding::OnInput(ViewportInput&)	function	ui	ui-viewportbinding-oninput-viewportinput-amp	ui.md	engine/ui/viewport.h:89
+ui::Viewport	class	ui	ui-viewport	ui.md	engine/ui/viewport.h:107
+ui::Viewport::Viewport(StringView)	function	ui	ui-viewport-viewport-stringview	ui.md	engine/ui/viewport.h:110
+ui::Viewport::SetBinding(ViewportBinding*)	function	ui	ui-viewport-setbinding-viewportbinding-star	ui.md	engine/ui/viewport.h:113
+ui::Viewport::Binding() const	function	ui	ui-viewport-binding-const	ui.md	engine/ui/viewport.h:118
+ui::Viewport::SetLookButton(u32)	function	ui	ui-viewport-setlookbutton-u32	ui.md	engine/ui/viewport.h:120
+ui::Viewport::LookButton() const	function	ui	ui-viewport-lookbutton-const	ui.md	engine/ui/viewport.h:124
+ui::Viewport::Looking() const	function	ui	ui-viewport-looking-const	ui.md	engine/ui/viewport.h:128
+ui::Viewport::LookLocked() const	function	ui	ui-viewport-looklocked-const	ui.md	engine/ui/viewport.h:132
+ui::Viewport::PixelWidth() const	function	ui	ui-viewport-pixelwidth-const	ui.md	engine/ui/viewport.h:136
+ui::Viewport::PixelHeight() const	function	ui	ui-viewport-pixelheight-const	ui.md	engine/ui/viewport.h:140
+ui::Viewport::RenderCount() const	function	ui	ui-viewport-rendercount-const	ui.md	engine/ui/viewport.h:144
+ui::Viewport::ResizeCount() const	function	ui	ui-viewport-resizecount-const	ui.md	engine/ui/viewport.h:148
+ui::Viewport::Measure(const Constraints&)	function	ui	ui-viewport-measure-const-constraints-amp	ui.md	engine/ui/viewport.h:150
+ui::Viewport::Draw(Canvas&)	function	ui	ui-viewport-draw-canvas-amp	ui.md	engine/ui/viewport.h:152
+ui::Viewport::OnEvent(Event&)	function	ui	ui-viewport-onevent-event-amp	ui.md	engine/ui/viewport.h:154
+ui::Viewport::Update(f32)	function	ui	ui-viewport-update-f32	ui.md	engine/ui/viewport.h:156
+ui::Viewport::WantsUpdate() const	function	ui	ui-viewport-wantsupdate-const	ui.md	engine/ui/viewport.h:160
 ui::kLayoutDirty	variable	ui	ui-klayoutdirty	ui.md	engine/ui/widget.h:23
 ui::kDrawDirty	variable	ui	ui-kdrawdirty	ui.md	engine/ui/widget.h:25
 ui::Widget	class	ui	ui-widget	ui.md	engine/ui/widget.h:38
@@ -3708,13 +3779,17 @@ ui::OsClipboard::RequestPrimaryPaste(PasteFunction,void*)	function	ui_window	ui-
 ui::OsClipboard::HandleData(u32)	function	ui_window	ui-osclipboard-handledata-u32	ui_window.md	engine/ui_window/os_clipboard.h:56
 ui::OsClipboard::PendingCount() const	function	ui_window	ui-osclipboard-pendingcount-const	ui_window.md	engine/ui_window/os_clipboard.h:60
 ui::OsClipboard::OnFailed()	function	ui_window	ui-osclipboard-onfailed	ui_window.md	engine/ui_window/os_clipboard.h:62
-ui::WindowAdapter	class	ui_window	ui-windowadapter	ui_window.md	engine/ui_window/window_adapter.h:22
-ui::WindowAdapter::PumpInto(os::Window&,Surface&)	function	ui_window	ui-windowadapter-pumpinto-os-window-amp-surface-amp	ui_window.md	engine/ui_window/window_adapter.h:26
-ui::WindowAdapter::UpdateCursor(os::Window&,const Surface&)	function	ui_window	ui-windowadapter-updatecursor-os-window-amp-const-surface-amp	ui_window.md	engine/ui_window/window_adapter.h:31
-ui::WindowAdapter::CursorChanges() const	function	ui_window	ui-windowadapter-cursorchanges-const	ui_window.md	engine/ui_window/window_adapter.h:34
-ui::WindowAdapter::SetClipboard(OsClipboard*)	function	ui_window	ui-windowadapter-setclipboard-osclipboard-star	ui_window.md	engine/ui_window/window_adapter.h:38
-ui::WindowAdapter::ClipboardChanges() const	function	ui_window	ui-windowadapter-clipboardchanges-const	ui_window.md	engine/ui_window/window_adapter.h:40
-ui::WindowAdapter::EnableDrops(os::Window&,StringView)	function	ui_window	ui-windowadapter-enabledrops-os-window-amp-stringview	ui_window.md	engine/ui_window/window_adapter.h:44
+ui::WindowPointerLock	class	ui_window	ui-windowpointerlock	ui_window.md	engine/ui_window/window_adapter.h:17
+ui::WindowPointerLock::WindowPointerLock(os::Window*)	function	ui_window	ui-windowpointerlock-windowpointerlock-os-window-star	ui_window.md	engine/ui_window/window_adapter.h:22
+ui::WindowPointerLock::LockSupported() const	function	ui_window	ui-windowpointerlock-locksupported-const	ui_window.md	engine/ui_window/window_adapter.h:23
+ui::WindowPointerLock::SetLocked(bool)	function	ui_window	ui-windowpointerlock-setlocked-bool	ui_window.md	engine/ui_window/window_adapter.h:24
+ui::WindowAdapter	class	ui_window	ui-windowadapter	ui_window.md	engine/ui_window/window_adapter.h:39
+ui::WindowAdapter::PumpInto(os::Window&,Surface&)	function	ui_window	ui-windowadapter-pumpinto-os-window-amp-surface-amp	ui_window.md	engine/ui_window/window_adapter.h:43
+ui::WindowAdapter::UpdateCursor(os::Window&,const Surface&)	function	ui_window	ui-windowadapter-updatecursor-os-window-amp-const-surface-amp	ui_window.md	engine/ui_window/window_adapter.h:48
+ui::WindowAdapter::CursorChanges() const	function	ui_window	ui-windowadapter-cursorchanges-const	ui_window.md	engine/ui_window/window_adapter.h:51
+ui::WindowAdapter::SetClipboard(OsClipboard*)	function	ui_window	ui-windowadapter-setclipboard-osclipboard-star	ui_window.md	engine/ui_window/window_adapter.h:55
+ui::WindowAdapter::ClipboardChanges() const	function	ui_window	ui-windowadapter-clipboardchanges-const	ui_window.md	engine/ui_window/window_adapter.h:57
+ui::WindowAdapter::EnableDrops(os::Window&,StringView)	function	ui_window	ui-windowadapter-enabledrops-os-window-amp-stringview	ui_window.md	engine/ui_window/window_adapter.h:61
 jobs::IoRequest	alias	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:52
 jobs::IoThread	class	jobs	jobs-iothread	jobs.md	engine/jobs/async_io.h:64
 jobs::IoThread::IoThread()	function	jobs	jobs-iothread-iothread	jobs.md	engine/jobs/async_io.h:67
@@ -5747,36 +5822,61 @@ renderer::TransientPool::ReleaseBuffer(rhi::BufferHandle,rhi::ResourceState)	fun
 renderer::TransientPool::SetTextureState(rhi::TextureHandle,rhi::ResourceState)	function	renderer	renderer-transientpool-settexturestate-rhi-texturehandle-rhi-resourcestate	renderer.md	engine/renderer/transient_pool.h:170
 renderer::TransientPool::SetBufferState(rhi::BufferHandle,rhi::ResourceState)	function	renderer	renderer-transientpool-setbufferstate-rhi-bufferhandle-rhi-resourcestate	renderer.md	engine/renderer/transient_pool.h:176
 renderer::TransientPool::Stats() const	function	renderer	renderer-transientpool-stats-const	renderer.md	engine/renderer/transient_pool.h:180
-renderer::ImageSource	class	renderer	renderer-imagesource	renderer.md	engine/renderer/ui_renderer.h:24
-renderer::ImageSource::~ImageSource()	function	renderer	renderer-imagesource-tilde-imagesource	renderer.md	engine/renderer/ui_renderer.h:26
-renderer::ImageSource::Handle() const	function	renderer	renderer-imagesource-handle-const	renderer.md	engine/renderer/ui_renderer.h:30
-renderer::GpuTextureImage	class	renderer	renderer-gputextureimage	renderer.md	engine/renderer/ui_renderer.h:37
-renderer::GpuTextureImage::GpuTextureImage(const GpuTexture*)	function	renderer	renderer-gputextureimage-gputextureimage-const-gputexture-star	renderer.md	engine/renderer/ui_renderer.h:41
-renderer::GpuTextureImage::Handle() const	function	renderer	renderer-gputextureimage-handle-const	renderer.md	engine/renderer/ui_renderer.h:42
-renderer::UiRendererDesc	struct	renderer	renderer-uirendererdesc	renderer.md	engine/renderer/ui_renderer.h:51
-renderer::UiRendererDesc::color_format	variable	renderer	renderer-uirendererdesc-color-format	renderer.md	engine/renderer/ui_renderer.h:54
-renderer::UiRendererDesc::max_vertices	variable	renderer	renderer-uirendererdesc-max-vertices	renderer.md	engine/renderer/ui_renderer.h:56
-renderer::UiRendererDesc::max_indices	variable	renderer	renderer-uirendererdesc-max-indices	renderer.md	engine/renderer/ui_renderer.h:58
-renderer::UiStats	struct	renderer	renderer-uistats	renderer.md	engine/renderer/ui_renderer.h:64
-renderer::UiStats::passes	variable	renderer	renderer-uistats-passes	renderer.md	engine/renderer/ui_renderer.h:66
-renderer::UiStats::draws	variable	renderer	renderer-uistats-draws	renderer.md	engine/renderer/ui_renderer.h:68
-renderer::UiStats::vertices	variable	renderer	renderer-uistats-vertices	renderer.md	engine/renderer/ui_renderer.h:70
-renderer::UiStats::dropped_commands	variable	renderer	renderer-uistats-dropped-commands	renderer.md	engine/renderer/ui_renderer.h:72
-renderer::UiRenderer	class	renderer	renderer-uirenderer	renderer.md	engine/renderer/ui_renderer.h:91
-renderer::UiRenderer::UiRenderer()	function	renderer	renderer-uirenderer-uirenderer	renderer.md	engine/renderer/ui_renderer.h:93
-renderer::UiRenderer::~UiRenderer()	function	renderer	renderer-uirenderer-tilde-uirenderer	renderer.md	engine/renderer/ui_renderer.h:95
-renderer::UiRenderer::UiRenderer(const UiRenderer&)	function	renderer	renderer-uirenderer-uirenderer-const-uirenderer-amp	renderer.md	engine/renderer/ui_renderer.h:96
-renderer::UiRenderer::operator=(const UiRenderer&)	function	renderer	renderer-uirenderer-operator-eq-const-uirenderer-amp	renderer.md	engine/renderer/ui_renderer.h:97
-renderer::UiRenderer::Create(rhi::Device*,GlyphAtlasTexture*,const UiRendererDesc&,DeviceResources*)	function	renderer	renderer-uirenderer-create-rhi-device-star-glyphatlastexture-star-const-uirendererdesc-amp-deviceresources-star	renderer.md	engine/renderer/ui_renderer.h:109
-renderer::UiRenderer::Destroy()	function	renderer	renderer-uirenderer-destroy	renderer.md	engine/renderer/ui_renderer.h:112
-renderer::UiRenderer::SetImage(ui::ImageId,const ImageSource*)	function	renderer	renderer-uirenderer-setimage-ui-imageid-const-imagesource-star	renderer.md	engine/renderer/ui_renderer.h:119
-renderer::UiRenderer::ClearImage(ui::ImageId)	function	renderer	renderer-uirenderer-clearimage-ui-imageid	renderer.md	engine/renderer/ui_renderer.h:123
-renderer::UiRenderer::AddToGraph(RenderGraph*,const ui::DrawList*,GraphResource,rhi::Format,u32,u32)	function	renderer	renderer-uirenderer-addtograph-rendergraph-star-const-ui-drawlist-star-graphresource-rhi-format-u32-u32	renderer.md	engine/renderer/ui_renderer.h:139
-renderer::UiRenderer::Stats() const	function	renderer	renderer-uirenderer-stats-const	renderer.md	engine/renderer/ui_renderer.h:144
-renderer::UiRenderer::Release()	function	renderer	renderer-uirenderer-release	renderer.md	engine/renderer/ui_renderer.h:146
-renderer::UiRenderer::Recreate(rhi::Device*)	function	renderer	renderer-uirenderer-recreate-rhi-device-star	renderer.md	engine/renderer/ui_renderer.h:147
-renderer::UiRenderer::Live() const	function	renderer	renderer-uirenderer-live-const	renderer.md	engine/renderer/ui_renderer.h:148
-renderer::UiRenderer::RecreatableName() const	function	renderer	renderer-uirenderer-recreatablename-const	renderer.md	engine/renderer/ui_renderer.h:149
+renderer::ImageSource	class	renderer	renderer-imagesource	renderer.md	engine/renderer/ui_renderer.h:25
+renderer::ImageSource::~ImageSource()	function	renderer	renderer-imagesource-tilde-imagesource	renderer.md	engine/renderer/ui_renderer.h:27
+renderer::ImageSource::Handle() const	function	renderer	renderer-imagesource-handle-const	renderer.md	engine/renderer/ui_renderer.h:31
+renderer::GpuTextureImage	class	renderer	renderer-gputextureimage	renderer.md	engine/renderer/ui_renderer.h:38
+renderer::GpuTextureImage::GpuTextureImage(const GpuTexture*)	function	renderer	renderer-gputextureimage-gputextureimage-const-gputexture-star	renderer.md	engine/renderer/ui_renderer.h:42
+renderer::GpuTextureImage::Handle() const	function	renderer	renderer-gputextureimage-handle-const	renderer.md	engine/renderer/ui_renderer.h:43
+renderer::UiRendererDesc	struct	renderer	renderer-uirendererdesc	renderer.md	engine/renderer/ui_renderer.h:52
+renderer::UiRendererDesc::color_format	variable	renderer	renderer-uirendererdesc-color-format	renderer.md	engine/renderer/ui_renderer.h:55
+renderer::UiRendererDesc::max_vertices	variable	renderer	renderer-uirendererdesc-max-vertices	renderer.md	engine/renderer/ui_renderer.h:57
+renderer::UiRendererDesc::max_indices	variable	renderer	renderer-uirendererdesc-max-indices	renderer.md	engine/renderer/ui_renderer.h:59
+renderer::UiStats	struct	renderer	renderer-uistats	renderer.md	engine/renderer/ui_renderer.h:65
+renderer::UiStats::passes	variable	renderer	renderer-uistats-passes	renderer.md	engine/renderer/ui_renderer.h:67
+renderer::UiStats::draws	variable	renderer	renderer-uistats-draws	renderer.md	engine/renderer/ui_renderer.h:69
+renderer::UiStats::vertices	variable	renderer	renderer-uistats-vertices	renderer.md	engine/renderer/ui_renderer.h:71
+renderer::UiStats::dropped_commands	variable	renderer	renderer-uistats-dropped-commands	renderer.md	engine/renderer/ui_renderer.h:73
+renderer::UiRenderer	class	renderer	renderer-uirenderer	renderer.md	engine/renderer/ui_renderer.h:92
+renderer::UiRenderer::UiRenderer()	function	renderer	renderer-uirenderer-uirenderer	renderer.md	engine/renderer/ui_renderer.h:94
+renderer::UiRenderer::~UiRenderer()	function	renderer	renderer-uirenderer-tilde-uirenderer	renderer.md	engine/renderer/ui_renderer.h:96
+renderer::UiRenderer::UiRenderer(const UiRenderer&)	function	renderer	renderer-uirenderer-uirenderer-const-uirenderer-amp	renderer.md	engine/renderer/ui_renderer.h:97
+renderer::UiRenderer::operator=(const UiRenderer&)	function	renderer	renderer-uirenderer-operator-eq-const-uirenderer-amp	renderer.md	engine/renderer/ui_renderer.h:98
+renderer::UiRenderer::Create(rhi::Device*,GlyphAtlasTexture*,const UiRendererDesc&,DeviceResources*)	function	renderer	renderer-uirenderer-create-rhi-device-star-glyphatlastexture-star-const-uirendererdesc-amp-deviceresources-star	renderer.md	engine/renderer/ui_renderer.h:110
+renderer::UiRenderer::Destroy()	function	renderer	renderer-uirenderer-destroy	renderer.md	engine/renderer/ui_renderer.h:113
+renderer::UiRenderer::SetImage(ui::ImageId,const ImageSource*)	function	renderer	renderer-uirenderer-setimage-ui-imageid-const-imagesource-star	renderer.md	engine/renderer/ui_renderer.h:120
+renderer::UiRenderer::ClearImage(ui::ImageId)	function	renderer	renderer-uirenderer-clearimage-ui-imageid	renderer.md	engine/renderer/ui_renderer.h:124
+renderer::UiRenderer::AddToGraph(RenderGraph*,const ui::DrawList*,GraphResource,rhi::Format,u32,u32,Span<const GraphResource>)	function	renderer	renderer-uirenderer-addtograph-rendergraph-star-const-ui-drawlist-star-graphresource-rhi-format-u32-u32-span-lt-const-graphresource-gt	renderer.md	engine/renderer/ui_renderer.h:142
+renderer::UiRenderer::Stats() const	function	renderer	renderer-uirenderer-stats-const	renderer.md	engine/renderer/ui_renderer.h:148
+renderer::UiRenderer::Release()	function	renderer	renderer-uirenderer-release	renderer.md	engine/renderer/ui_renderer.h:150
+renderer::UiRenderer::Recreate(rhi::Device*)	function	renderer	renderer-uirenderer-recreate-rhi-device-star	renderer.md	engine/renderer/ui_renderer.h:151
+renderer::UiRenderer::Live() const	function	renderer	renderer-uirenderer-live-const	renderer.md	engine/renderer/ui_renderer.h:152
+renderer::UiRenderer::RecreatableName() const	function	renderer	renderer-uirenderer-recreatablename-const	renderer.md	engine/renderer/ui_renderer.h:153
+renderer::ViewportTargetDesc	struct	renderer	renderer-viewporttargetdesc	renderer.md	engine/renderer/viewport_target.h:17
+renderer::ViewportTargetDesc::color_format	variable	renderer	renderer-viewporttargetdesc-color-format	renderer.md	engine/renderer/viewport_target.h:19
+renderer::ViewportTargetDesc::with_depth	variable	renderer	renderer-viewporttargetdesc-with-depth	renderer.md	engine/renderer/viewport_target.h:21
+renderer::ViewportTargetDesc::depth_format	variable	renderer	renderer-viewporttargetdesc-depth-format	renderer.md	engine/renderer/viewport_target.h:23
+renderer::ViewportTarget	class	renderer	renderer-viewporttarget	renderer.md	engine/renderer/viewport_target.h:40
+renderer::ViewportTarget::ViewportTarget()	function	renderer	renderer-viewporttarget-viewporttarget	renderer.md	engine/renderer/viewport_target.h:42
+renderer::ViewportTarget::~ViewportTarget()	function	renderer	renderer-viewporttarget-tilde-viewporttarget	renderer.md	engine/renderer/viewport_target.h:44
+renderer::ViewportTarget::ViewportTarget(const ViewportTarget&)	function	renderer	renderer-viewporttarget-viewporttarget-const-viewporttarget-amp	renderer.md	engine/renderer/viewport_target.h:45
+renderer::ViewportTarget::operator=(const ViewportTarget&)	function	renderer	renderer-viewporttarget-operator-eq-const-viewporttarget-amp	renderer.md	engine/renderer/viewport_target.h:46
+renderer::ViewportTarget::Create(rhi::Device*,const ViewportTargetDesc&,u32,u32,DeviceResources*,const char*)	function	renderer	renderer-viewporttarget-create-rhi-device-star-const-viewporttargetdesc-amp-u32-u32-deviceresources-star-const-char-star	renderer.md	engine/renderer/viewport_target.h:60
+renderer::ViewportTarget::Destroy()	function	renderer	renderer-viewporttarget-destroy	renderer.md	engine/renderer/viewport_target.h:63
+renderer::ViewportTarget::Resize(u32,u32)	function	renderer	renderer-viewporttarget-resize-u32-u32	renderer.md	engine/renderer/viewport_target.h:70
+renderer::ViewportTarget::Handle() const	function	renderer	renderer-viewporttarget-handle-const	renderer.md	engine/renderer/viewport_target.h:75
+renderer::ViewportTarget::DepthHandle() const	function	renderer	renderer-viewporttarget-depthhandle-const	renderer.md	engine/renderer/viewport_target.h:79
+renderer::ViewportTarget::Width() const	function	renderer	renderer-viewporttarget-width-const	renderer.md	engine/renderer/viewport_target.h:83
+renderer::ViewportTarget::Height() const	function	renderer	renderer-viewporttarget-height-const	renderer.md	engine/renderer/viewport_target.h:87
+renderer::ViewportTarget::ColorFormat() const	function	renderer	renderer-viewporttarget-colorformat-const	renderer.md	engine/renderer/viewport_target.h:91
+renderer::ViewportTarget::ResizeCount() const	function	renderer	renderer-viewporttarget-resizecount-const	renderer.md	engine/renderer/viewport_target.h:95
+renderer::ViewportTarget::ImportColor(RenderGraph*)	function	renderer	renderer-viewporttarget-importcolor-rendergraph-star	renderer.md	engine/renderer/viewport_target.h:102
+renderer::ViewportTarget::ImportDepth(RenderGraph*)	function	renderer	renderer-viewporttarget-importdepth-rendergraph-star	renderer.md	engine/renderer/viewport_target.h:107
+renderer::ViewportTarget::AsFrameTarget()	function	renderer	renderer-viewporttarget-asframetarget	renderer.md	engine/renderer/viewport_target.h:112
+renderer::ViewportTarget::Release()	function	renderer	renderer-viewporttarget-release	renderer.md	engine/renderer/viewport_target.h:114
+renderer::ViewportTarget::Recreate(rhi::Device*)	function	renderer	renderer-viewporttarget-recreate-rhi-device-star	renderer.md	engine/renderer/viewport_target.h:115
+renderer::ViewportTarget::Live() const	function	renderer	renderer-viewporttarget-live-const	renderer.md	engine/renderer/viewport_target.h:116
+renderer::ViewportTarget::RecreatableName() const	function	renderer	renderer-viewporttarget-recreatablename-const	renderer.md	engine/renderer/viewport_target.h:117
 rhi::vulkan::StateScope	struct	rhi-vulkan	rhi-vulkan-statescope	rhi-vulkan.md	engine/rhi/vulkan/vk_barrier.h:13
 rhi::vulkan::StateScope::stage	variable	rhi-vulkan	rhi-vulkan-statescope-stage	rhi-vulkan.md	engine/rhi/vulkan/vk_barrier.h:15
 rhi::vulkan::StateScope::access	variable	rhi-vulkan	rhi-vulkan-statescope-access	rhi-vulkan.md	engine/rhi/vulkan/vk_barrier.h:17

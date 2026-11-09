@@ -10,6 +10,7 @@
 #include "ui/drag_drop.h"
 #include "ui/draw_list.h"
 #include "ui/event.h"
+#include "ui/pointer_lock.h"
 #include "ui/popup.h"
 #include "ui/theme.h"
 #include "ui/widget.h"
@@ -162,6 +163,28 @@ public:
     void SetClipboard(Clipboard* clipboard) { clipboard_ = clipboard != nullptr ? clipboard : &local_clipboard_; }
     /// Returns the clipboard in use.
     Clipboard& GetClipboard() { return *clipboard_; }
+
+    /// Uses `host` for pointer lock requests (borrowed; null means no host, and every request is refused).
+    /// Ownership: the host must outlive its use by the surface.
+    void SetPointerLockHost(PointerLockHost* host);
+    /// Asks for the pointer to be locked on behalf of `owner`, which then gets `RelativeMotion` events. Does nothing and returns false when there is no host, the host cannot lock
+    /// the pointer, it refuses, or another widget already holds the lock.
+    /// Param owner: the widget; borrowed, it releases the lock itself or is cleared when destroyed.
+    /// Returns: whether `owner` now holds the lock request.
+    /// Ownership: borrows `owner`.
+    bool RequestPointerLock(Widget* owner);
+    /// Gives the lock up if `owner` holds it.
+    /// Ownership: borrows `owner`.
+    void ReleasePointerLock(Widget* owner);
+    /// Returns the widget that holds the lock request, or null.
+    ///
+    /// Ownership: borrowed; the owner keeps it and it stays valid while the owner lives.
+    /// Fails: returns null when there is none.
+    Widget* PointerLockOwner() const { return lock_owner_; }
+    /// Returns whether a lock host exists and can lock the pointer.
+    ///
+    /// Fails: never.
+    bool PointerLockSupported() const { return lock_host_ != nullptr && lock_host_->LockSupported(); }
 
     // ---- Popups ----
 
@@ -422,6 +445,8 @@ private:
     FontProvider* fonts_ = nullptr;
     Widget* focus_ = nullptr;
     Widget* capture_ = nullptr;
+    PointerLockHost* lock_host_ = nullptr;
+    Widget* lock_owner_ = nullptr;
     Widget* hover_ = nullptr;
     Widget* menu_saved_focus_ = nullptr; // see SaveFocus
     Widget* saved_focus_ = nullptr; // the focus owner when the first popup opened, given back when the last one closes

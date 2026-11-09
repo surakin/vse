@@ -10,6 +10,23 @@
 
 namespace engine_placeholder::ui {
 
+/// The pointer lock of a window, offered to a surface (`Surface::SetPointerLockHost`) so a viewport can do mouse look.
+///
+/// Thread-safety: owner-thread-only.
+/// Ownership: borrows the window, which must outlive this object.
+class WindowPointerLock final : public PointerLockHost {
+public:
+    /// Makes a lock host over `window`.
+    /// Param window: the window; borrowed.
+    /// Ownership: borrows `window`.
+    explicit WindowPointerLock(os::Window* window) : window_(window) {}
+    bool LockSupported() const override { return window_->SupportsPointerLock(); }
+    bool SetLocked(bool locked) override { return window_->SetPointerLock(locked); }
+
+private:
+    os::Window* window_;
+};
+
 /// Feeds a window's input events to a surface and gives the surface's cursor to the window.
 ///
 /// A frame of a windowed program reads: `window.PumpEvents()`, `adapter.PumpInto(window, surface)`, `surface.Frame(...)`, `adapter.UpdateCursor(window, surface)`. The window's coordinates are

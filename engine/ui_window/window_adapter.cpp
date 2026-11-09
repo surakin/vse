@@ -46,6 +46,11 @@ usize WindowAdapter::PumpInto(os::Window& window, Surface& surface) {
                 e.wheel_x = static_cast<f32>(in.x);
                 e.wheel_y = static_cast<f32>(in.y);
                 break;
+            case os::InputEventType::RelativeMotion:
+                e.type = EventType::RelativeMotion;
+                e.rel_x = static_cast<f32>(in.x);
+                e.rel_y = static_cast<f32>(in.y);
+                break;
             case os::InputEventType::PointerLeave:
                 e.type = EventType::PointerLeave;
                 TryHandOff(window, surface);

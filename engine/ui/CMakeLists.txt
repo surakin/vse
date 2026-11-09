@@ -31,6 +31,7 @@ set(UI_SOURCES
   text_words.cpp
   widgets/value_widgets.cpp
   widgets/list_box.cpp
+  viewport.cpp
   testing/software_raster.cpp
   testing/harness.cpp
   testing/recording_canvas.cpp

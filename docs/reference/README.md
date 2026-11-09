@@ -18,10 +18,10 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Platform: Windowing and Input](platform-window-input.md) | 21 | 638 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 208 |
 | [Text](text.md) | 6 | 221 |
-| [The UI Toolkit](ui.md) | 40 | 1220 |
-| [The UI Window Adapter](ui_window.md) | 2 | 20 |
+| [The UI Toolkit](ui.md) | 42 | 1291 |
+| [The UI Window Adapter](ui_window.md) | 2 | 24 |
 | [The Job System](jobs.md) | 11 | 190 |
 | [The Render Hardware Interface](rhi.md) | 21 | 792 |
-| [The renderer](renderer.md) | 23 | 1080 |
+| [The renderer](renderer.md) | 24 | 1105 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 440 |
 | [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 12 | 319 |
