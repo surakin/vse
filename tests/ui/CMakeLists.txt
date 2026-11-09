@@ -10,6 +10,7 @@ set(UI_TEST_SOURCES
   layout_test.cpp
   input_routing_test.cpp
   ui_window_test.cpp
+  basic_widgets_test.cpp
 )
 
 find_package(Threads REQUIRED)

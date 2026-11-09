@@ -26,7 +26,7 @@ bool Contains(const Rect& r, Point p) { return p.x >= r.x && p.y >= r.y && p.x <
 
 } // namespace
 
-Widget::Widget(StringView name) : name_(HeapAllocator::Default(), name) { id_ = MixId(0, HashName(name)); }
+Widget::Widget(StringView name) : name_(HeapAllocator::Default(), name), description_(HeapAllocator::Default(), StringView()), tooltip_(HeapAllocator::Default(), StringView()) { id_ = MixId(0, HashName(name)); }
 
 void Widget::NotifyDestroyed() {
     if (surface_ != nullptr) surface_->WidgetDestroyed(this);

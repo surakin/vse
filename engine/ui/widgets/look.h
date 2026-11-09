@@ -1,0 +1,31 @@
+#pragma once
+
+#include "ui/canvas.h"
+#include "ui/theme.h"
+
+//! Shared drawing of the widgets of Phase 15 Day 195: a resolved style turned into a box, in logical units.
+
+namespace engine_placeholder::ui {
+
+/// Returns whether a packed `0xAABBGGRR` color is not fully transparent.
+///
+/// Fails: never.
+inline bool IsVisibleColor(u32 abgr) { return (abgr >> 24) != 0; }
+
+/// Returns the corner radius of `style` in logical units.
+inline f32 StyleRadius(const ResolvedStyle& style, f32 scale) { return style.radius / scale; }
+
+/// Draws the background and the border of `style` in `rect`; a transparent background and a zero border width draw nothing.
+inline void DrawStyleBox(Canvas& canvas, const Rect& rect, const ResolvedStyle& style, f32 scale) {
+    const CornerRadii radii(StyleRadius(style, scale));
+    if (IsVisibleColor(style.background)) {
+        if (radii.AllZero()) {
+            canvas.DrawRect(rect, style.background);
+        } else {
+            canvas.DrawRoundedRect(rect, radii, style.background);
+        }
+    }
+    if (style.border_width > 0) canvas.DrawBorder(rect, radii, style.border_width / scale, style.border_color);
+}
+
+} // namespace engine_placeholder::ui

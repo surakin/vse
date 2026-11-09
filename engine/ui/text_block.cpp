@@ -6,19 +6,15 @@
 
 namespace engine_placeholder::ui {
 
-TextBlock::TextBlock(StringView name, StringView text) : Widget(name), text_(HeapAllocator::Default(), text) {}
+TextBlock::TextBlock(StringView name, StringView text) : Widget(name) { run_.SetText(text); }
 
 void TextBlock::SetText(StringView text) {
-    if (text_.View() == text) return;
-    text_ = String<HeapAllocator>(HeapAllocator::Default(), text);
-    cached_ = false;
-    MarkDirty(kLayoutDirty);
+    if (run_.SetText(text)) MarkDirty(kLayoutDirty);
 }
 
 void TextBlock::SetFont(FontRef font) {
     font_ = font;
     font_set_ = true;
-    cached_ = false;
     MarkDirty(kLayoutDirty);
 }
 
@@ -31,7 +27,25 @@ void TextBlock::SetColor(u32 abgr) {
 void TextBlock::SetWrap(bool wrap) {
     if (wrap_ == wrap) return;
     wrap_ = wrap;
-    cached_ = false;
+    MarkDirty(kLayoutDirty);
+}
+
+void TextBlock::SetAlign(text::Align align) {
+    if (align_ == align) return;
+    align_ = align;
+    run_.SetAlign(align);
+    MarkDirty(kLayoutDirty);
+}
+
+void TextBlock::SetEllipsis(bool ellipsis) {
+    if (ellipsis_ == ellipsis) return;
+    ellipsis_ = ellipsis;
+    MarkDirty(kDrawDirty);
+}
+
+void TextBlock::SetLook(WidgetKind kind, VariantId variant) {
+    kind_ = kind;
+    variant_ = variant;
     MarkDirty(kLayoutDirty);
 }
 
@@ -39,40 +53,52 @@ void TextBlock::SetWrap(bool wrap) {
 bool TextBlock::EnsureLayout(f32 wrap_width) {
     Surface* surface = GetSurface();
     if (surface == nullptr || surface->GetFontProvider() == nullptr) return false;
-    const FontRef font = font_set_ ? font_ : surface->Themes().Font(FontId::Body, 1.0f);
+    const f32 scale = surface->Scale();
+    FontRef font;
+    if (font_set_) {
+        font = font_;
+    } else if (kind_ != 0) {
+        font = surface->Themes().Resolve(kind_, variant_, State(), scale).font;
+        font.size /= scale;
+    } else {
+        font = surface->Themes().Font(FontId::Body, 1.0f);
+    }
     text::Font* face = surface->GetFontProvider()->Resolve(font.family);
     if (face == nullptr) return false;
-    const f32 scale = surface->Scale();
     f32 size_px = std::floor(font.size * scale + 0.5f);
     if (size_px < 1) size_px = 1;
     f32 wrap_px = (wrap_ && wrap_width < kUnbounded) ? std::floor(wrap_width * scale) : 0.0f;
     if (wrap_ && wrap_width < kUnbounded && wrap_px < 1) wrap_px = 1; // 0 would mean "no wrapping" to the text layout
-    if (cached_ && cached_wrap_px_ == wrap_px && cached_pixel_size_ == static_cast<u32>(size_px) && cached_family_ == font.family && cached_font_ == face && scale_ == scale) return true;
-    style_.font = face;
-    style_.pixel_size = static_cast<u32>(size_px);
-    text::LayoutOptions options;
-    options.max_width = wrap_px;
-    if (!text::Layout(text_.View(), style_, options, &layout_).Ok()) return false;
-    cached_ = true;
-    cached_wrap_px_ = wrap_px;
-    cached_pixel_size_ = style_.pixel_size;
-    cached_family_ = font.family;
-    cached_font_ = face;
-    scale_ = scale;
-    ++layout_count_;
-    return true;
+    return run_.Ensure(face, font.family, size_px, wrap_px, scale);
 }
 
 Size TextBlock::Measure(const Constraints& constraints) {
     if (!EnsureLayout(constraints.max_w)) return Size();
-    return Size{layout_.width / scale_, layout_.height / scale_};
+    return Size{run_.Width(), run_.Height()};
 }
 
 void TextBlock::Draw(Canvas& canvas) {
     if (!EnsureLayout(Bounds().w)) return;
     Surface* surface = GetSurface();
-    const u32 color = color_set_ ? color_ : surface->Themes().Color(ColorId::Text);
-    canvas.DrawText(layout_, style_, Point{Bounds().x, Bounds().y}, color);
+    u32 color;
+    if (color_set_) {
+        color = color_;
+    } else if (kind_ != 0) {
+        color = surface->Themes().Resolve(kind_, variant_, State(), surface->Scale()).text_color;
+    } else {
+        color = surface->Themes().Color(ColorId::Text);
+    }
+    const f32 scale = surface->Scale();
+    const bool cut = ellipsis_ && !wrap_;
+    const text::TextLayout& layout = cut ? run_.Fit(Bounds().w * scale) : run_.Full();
+    f32 x = Bounds().x;
+    if (!wrap_) {
+        f32 spare = Bounds().w - layout.width / scale;
+        if (spare < 0) spare = 0;
+        if (align_ == text::Align::Center) x += spare / 2;
+        if (align_ == text::Align::Right) x += spare;
+    }
+    canvas.DrawText(layout, run_.Style(), Point{x, Bounds().y}, color);
 }
 
 } // namespace engine_placeholder::ui

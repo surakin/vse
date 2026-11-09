@@ -9,6 +9,9 @@ set(UI_SOURCES
   surface.cpp
   layout.cpp
   text_block.cpp
+  text_run.cpp
+  widgets/display.cpp
+  widgets/buttons.cpp
   testing/software_raster.cpp
   testing/harness.cpp
   testing/recording_canvas.cpp

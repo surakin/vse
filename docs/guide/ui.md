@@ -149,4 +149,21 @@ while (!window.ShouldClose()) {
 }
 ```
 
-More sections arrive with the days that build them (widgets, popups, drag and drop, viewport, surfaces).
+## Widgets: labels, images, bars, panels and buttons
+
+All of these draw from the theme (`ThemeSet::Resolve` for their kind, variant and state; named colors and metrics for the rest). A gate (`ui_widget_style_check`) fails on a hex color or a number of 3 or more in `engine/ui/widgets/*.cpp`, so a widget cannot carry its own look; a constant that is a multiple of a theme metric (the progress bar's length in icons) is named in its header. A state change (hover, pressed, focus, checked, disabled) repaints the widget and never lays out.
+
+- **`Label`** (`ui/widgets/label.h`): text from the `label` style; `SetVariant("heading")`, `SetWrap`, `SetAlign`, `SetEllipsis` (a single line wider than the bounds is cut at a cluster boundary and ends with "…"). A disabled label uses the disabled color.
+- **`Image`**: an `ImageId` with its natural size, `ImageFit` `Stretch`, `Contain`, `Cover` or `None`, and a tint; anything outside the bounds is cut by narrowing the texture coordinates.
+- **`ProgressBar`**: value 0 to 1, or indeterminate (a segment sliding with the surface clock; only an indeterminate bar asks for `Update`, so a still bar costs nothing). **`Separator`**: a line in the border color. **`Panel`**: a `StackLayout` drawing the `panel` style.
+- **`Button`**: text and/or an icon; clicks when the left button is released inside it after being pressed inside (a drag out cancels), or on Space or Enter while focused; `OnClick()` is a `Callback<Button*>`; `SetDefault` marks the default button of a dialog. **`ToggleButton`**, **`CheckBox`** (optional tri-state), **`RadioButton`** inside a **`RadioGroup`** (one selected, arrow keys move the selection and the focus, only the selected one is a Tab stop).
+- **`Callback<Args...>`** (`ui/callback.h`): function pointer plus user pointer, several listeners, `Connect` returns a token for `Disconnect`; a listener may disconnect another while it runs.
+- Every widget has a `Name()`, an optional `Description()` and a `Tooltip()` text (the tooltip popup is Day 198).
+
+```cpp
+ui::Button* ok = AddButton(root, "ok", "OK");           // however your code makes widgets
+ok->SetVariant("primary");
+ok->OnClick().Connect([](void* user, ui::Button*) { static_cast<Dialog*>(user)->Accept(); }, this);
+```
+
+More sections arrive with the days that build them (text input, popups, drag and drop, viewport, surfaces).

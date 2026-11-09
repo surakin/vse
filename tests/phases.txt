@@ -228,6 +228,7 @@ tests/foundation_sanitized/                     0
 
 # --- Phase 12: module layering ---
 test:module_deps_check*                         12
+test:ui_widget_style_check*                     15
 
 # --- Phase 13: Windows port (testopt: these tests exist only in the Windows build) ---
 tests/rhi/backend_registry_test.cpp             13

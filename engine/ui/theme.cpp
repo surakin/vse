@@ -199,6 +199,10 @@ Theme BuildTheme(const Palette& p) {
     check.At(StateKind::Disabled).text_color = p.text_disabled;
     b.SetStyle(widget_kind::kCheckbox, 0, check);
 
+    Style radio = check; // a radio button is a check box drawn round
+    radio.At(StateKind::Normal).radius = 8.0f;
+    b.SetStyle(widget_kind::kRadio, 0, radio);
+
     Style scrollbar;
     scrollbar.At(StateKind::Normal).background = p.border;
     scrollbar.At(StateKind::Normal).radius = 5.0f;

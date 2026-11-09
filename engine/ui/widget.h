@@ -10,6 +10,7 @@
 #include "ui/event.h"
 #include "ui/geometry.h"
 #include "ui/layout_types.h"
+#include "ui/theme.h"
 
 //! The retained widget tree (Phase 15, Day 192): a [[ui::Widget]] owns its children, belongs to one [[ui::Surface]] and draws through the abstract [[ui::Canvas]].
 
@@ -128,6 +129,20 @@ public:
     u32 State() const;
     /// Sets or clears the `kStateChecked` bit (the surface sets the others); marks the draw dirty.
     void SetChecked(bool checked);
+    /// Returns whether the `kStateChecked` bit is set.
+    ///
+    /// Fails: never.
+    bool Checked() const { return (state_ & kStateChecked) != 0; }
+    /// Returns the description: a sentence for tests and a settings screen about what an interactive widget does (empty by default; the name is the short label).
+    StringView Description() const { return description_.View(); }
+    /// Sets the description.
+    void SetDescription(StringView description) { description_ = String<HeapAllocator>(HeapAllocator::Default(), description); }
+    /// Returns the role tag (0 for none): lets a container find the widgets it manages without run-time type information (a radio group finds its radio buttons).
+    u32 Role() const { return role_; }
+    /// Returns the tooltip text a tooltip popup (Day 198) shows after the pointer rests on the widget; empty for none.
+    StringView Tooltip() const { return tooltip_.View(); }
+    /// Sets the tooltip text.
+    void SetTooltip(StringView tooltip) { tooltip_ = String<HeapAllocator>(HeapAllocator::Default(), tooltip); }
 
     /// Marks the widget and its ancestors dirty with `flags` (`kLayoutDirty`, `kDrawDirty`; layout implies draw) and tells the surface.
     void MarkDirty(u32 flags);
@@ -223,6 +238,10 @@ public:
     /// Draws this widget and its subtree: the widget, then the children in order inside the clip when `ClipsChildren()`. Does nothing when hidden.
     void DrawTree(Canvas& canvas);
 
+protected:
+    /// Sets the role tag; for the classes that define a role.
+    void SetRole(u32 role) { role_ = role; }
+
 private:
     friend class Surface;
     void NotifyDestroyed();
@@ -231,6 +250,8 @@ private:
     void ClearDirtyTree(u32 flags);
 
     String<HeapAllocator> name_;
+    String<HeapAllocator> description_;
+    String<HeapAllocator> tooltip_;
     u64 id_ = 0;
     Widget* parent_ = nullptr;
     Surface* surface_ = nullptr;
@@ -244,6 +265,7 @@ private:
     Size measure_result_;
     os::CursorShape cursor_ = os::CursorShape::Arrow;
     i32 tab_index_ = 0;
+    u32 role_ = 0;
     bool has_cursor_ = false;
     bool focusable_ = false;
     bool accepts_text_ = false;
