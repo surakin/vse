@@ -104,6 +104,21 @@ using RecentLogLineFn = void (*)(const char* line, usize length, void* context);
 /// Thread-safety: thread-safe and async-signal-safe: lock-free, concurrent with any number of [[Log]] calls.
 void ReadRecentLogLines(RecentLogLineFn callback, void* context, usize max_lines = 0);
 
+/// Returns how many lines have been logged so far (the number [[ReadLogLinesSince]] returns once it has read them all), so a reader can start from now.
+///
+/// Thread-safety: thread-safe and async-signal-safe.
+u64 LogLinesWritten();
+
+/// Calls `callback` for the lines logged since `next`, oldest first, and returns the number to pass next time. A first call with 0 delivers what the ring still holds; lines the
+/// ring has already overwritten (more than [[kLogRingSlots]] since the last call) are not delivered, and the caller can see the gap from the returned numbers.
+///
+/// Param next: the value an earlier call returned, or 0.
+/// Param callback: called once per whole line.
+/// Param context: passed through to `callback`; borrowed for the call.
+/// Returns: the number to pass as `next` to the following call: the count of lines logged so far, or less when a line was still being written by another thread (it is delivered by the next call).
+/// Thread-safety: thread-safe and async-signal-safe, like [[ReadRecentLogLines]].
+u64 ReadLogLinesSince(u64 next, RecentLogLineFn callback, void* context);
+
 /// Empties the ring of recent log lines. For tests.
 /// Thread-safety: not-thread-safe. Call only while no thread logs.
 void ResetLogRingForTesting();

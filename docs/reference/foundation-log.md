@@ -814,6 +814,38 @@ Every line [`Log`](#log-logchannel-amp-logverbosity-stringview) emits is also ke
 | Parameter `max_lines` | deliver at most this many of the newest lines (0 means no limit beyond the ring size). |
 | Thread-safety | thread-safe and async-signal-safe: lock-free, concurrent with any number of [`Log`](#log-logchannel-amp-logverbosity-stringview) calls. |
 
+## `LogLinesWritten()` {#loglineswritten}
+
+`function LogLinesWritten` — defined in `engine/foundation/log/log.h`
+
+```cpp
+u64 LogLinesWritten();
+```
+
+Returns how many lines have been logged so far (the number [`ReadLogLinesSince`](#readloglinessince-u64-recentloglinefn-void-star) returns once it has read them all), so a reader can start from now.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe and async-signal-safe. |
+
+## `ReadLogLinesSince(u64,RecentLogLineFn,void*)` {#readloglinessince-u64-recentloglinefn-void-star}
+
+`function ReadLogLinesSince` — defined in `engine/foundation/log/log.h`
+
+```cpp
+u64 ReadLogLinesSince(u64 next, RecentLogLineFn callback, void* context);
+```
+
+Calls `callback` for the lines logged since `next`, oldest first, and returns the number to pass next time. A first call with 0 delivers what the ring still holds; lines the ring has already overwritten (more than [`kLogRingSlots`](#klogringslots) since the last call) are not delivered, and the caller can see the gap from the returned numbers.
+
+| Field | Value |
+|---|---|
+| Parameter `next` | the value an earlier call returned, or 0. |
+| Parameter `callback` | called once per whole line. |
+| Parameter `context` | passed through to `callback`; borrowed for the call. |
+| Returns | the number to pass as `next` to the following call: the count of lines logged so far, or less when a line was still being written by another thread (it is delivered by the next call). |
+| Thread-safety | thread-safe and async-signal-safe, like [`ReadRecentLogLines`](#readrecentloglines-recentloglinefn-void-star-usize). |
+
 ## `ResetLogRingForTesting()` {#resetlogringfortesting}
 
 `function ResetLogRingForTesting` — defined in `engine/foundation/log/log.h`

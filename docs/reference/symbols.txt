@@ -728,13 +728,15 @@ kLogRingSlots	variable	foundation/log	klogringslots	foundation-log.md	engine/fou
 kLogRingLineBytes	variable	foundation/log	klogringlinebytes	foundation-log.md	engine/foundation/log/log.h:90
 RecentLogLineFn	alias	foundation/log	recentloglinefn	foundation-log.md	engine/foundation/log/log.h:93
 ReadRecentLogLines(RecentLogLineFn,void*,usize)	function	foundation/log	readrecentloglines-recentloglinefn-void-star-usize	foundation-log.md	engine/foundation/log/log.h:105
-ResetLogRingForTesting()	function	foundation/log	resetlogringfortesting	foundation-log.md	engine/foundation/log/log.h:109
-SetLogErrorTraces(bool)	function	foundation/log	setlogerrortraces-bool	foundation-log.md	engine/foundation/log/log.h:115
-LogErrorTraces()	function	foundation/log	logerrortraces	foundation-log.md	engine/foundation/log/log.h:120
-LogCore	variable	foundation/log	logcore	foundation-log.md	engine/foundation/log/log.h:123
-LogRender	variable	foundation/log	logrender	foundation-log.md	engine/foundation/log/log.h:125
-LogPlatform	variable	foundation/log	logplatform	foundation-log.md	engine/foundation/log/log.h:127
-Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:138
+LogLinesWritten()	function	foundation/log	loglineswritten	foundation-log.md	engine/foundation/log/log.h:110
+ReadLogLinesSince(u64,RecentLogLineFn,void*)	function	foundation/log	readloglinessince-u64-recentloglinefn-void-star	foundation-log.md	engine/foundation/log/log.h:120
+ResetLogRingForTesting()	function	foundation/log	resetlogringfortesting	foundation-log.md	engine/foundation/log/log.h:124
+SetLogErrorTraces(bool)	function	foundation/log	setlogerrortraces-bool	foundation-log.md	engine/foundation/log/log.h:130
+LogErrorTraces()	function	foundation/log	logerrortraces	foundation-log.md	engine/foundation/log/log.h:135
+LogCore	variable	foundation/log	logcore	foundation-log.md	engine/foundation/log/log.h:138
+LogRender	variable	foundation/log	logrender	foundation-log.md	engine/foundation/log/log.h:140
+LogPlatform	variable	foundation/log	logplatform	foundation-log.md	engine/foundation/log/log.h:142
+Log(LogChannel&,LogVerbosity,StringView)	function	foundation/log	log-logchannel-amp-logverbosity-stringview	foundation-log.md	engine/foundation/log/log.h:153
 ENGINE_INT128_NAMESPACE::detail128::NativeU	variable	foundation/types	engine-int128-namespace-detail128-nativeu	foundation-types.md	engine/foundation/int128.h:41
 ENGINE_INT128_NAMESPACE::detail128::NativeI	variable	foundation/types	engine-int128-namespace-detail128-nativei	foundation-types.md	engine/foundation/int128.h:43
 ENGINE_INT128_NAMESPACE::detail128::Parts	struct	foundation/types	engine-int128-namespace-detail128-parts	foundation-types.md	engine/foundation/int128.h:46
@@ -2527,6 +2529,60 @@ ui::LocalClipboard::SetPrimaryText(StringView)	function	ui	ui-localclipboard-set
 ui::LocalClipboard::RequestPrimaryPaste(PasteFunction,void*)	function	ui	ui-localclipboard-requestprimarypaste-pastefunction-void-star	ui.md	engine/ui/clipboard.h:96
 ui::LocalClipboard::PrimaryText() const	function	ui	ui-localclipboard-primarytext-const	ui.md	engine/ui/clipboard.h:100
 ui::LocalClipboard::Text() const	function	ui	ui-localclipboard-text-const	ui.md	engine/ui/clipboard.h:104
+ui::LogCapture	class	ui	ui-logcapture	ui.md	engine/ui/debug_overlay.h:26
+ui::LogCapture::kMaxLines	variable	ui	ui-logcapture-kmaxlines	ui.md	engine/ui/debug_overlay.h:29
+ui::LogCapture::LogCapture()	function	ui	ui-logcapture-logcapture	ui.md	engine/ui/debug_overlay.h:32
+ui::LogCapture::Poll()	function	ui	ui-logcapture-poll	ui.md	engine/ui/debug_overlay.h:35
+ui::LogCapture::Clear()	function	ui	ui-logcapture-clear	ui.md	engine/ui/debug_overlay.h:37
+ui::LogCapture::Append(StringView)	function	ui	ui-logcapture-append-stringview	ui.md	engine/ui/debug_overlay.h:39
+ui::LogCapture::SetFilter(StringView)	function	ui	ui-logcapture-setfilter-stringview	ui.md	engine/ui/debug_overlay.h:41
+ui::LogCapture::Filter() const	function	ui	ui-logcapture-filter-const	ui.md	engine/ui/debug_overlay.h:45
+ui::LogCapture::Count() const	function	ui	ui-logcapture-count-const	ui.md	engine/ui/debug_overlay.h:49
+ui::LogCapture::VisibleCount() const	function	ui	ui-logcapture-visiblecount-const	ui.md	engine/ui/debug_overlay.h:53
+ui::LogCapture::VisibleLine(usize) const	function	ui	ui-logcapture-visibleline-usize-const	ui.md	engine/ui/debug_overlay.h:57
+ui::LogCapture::Dropped() const	function	ui	ui-logcapture-dropped-const	ui.md	engine/ui/debug_overlay.h:61
+ui::DebugStats	struct	ui	ui-debugstats	ui.md	engine/ui/debug_overlay.h:79
+ui::DebugStats::frame_ms	variable	ui	ui-debugstats-frame-ms	ui.md	engine/ui/debug_overlay.h:80
+ui::DebugStats::gpu_ms	variable	ui	ui-debugstats-gpu-ms	ui.md	engine/ui/debug_overlay.h:81
+ui::DebugStats::draw_calls	variable	ui	ui-debugstats-draw-calls	ui.md	engine/ui/debug_overlay.h:82
+ui::DebugStats::jobs_pending	variable	ui	ui-debugstats-jobs-pending	ui.md	engine/ui/debug_overlay.h:83
+ui::DebugStats::job_workers	variable	ui	ui-debugstats-job-workers	ui.md	engine/ui/debug_overlay.h:84
+ui::DebugStats::gpu_bytes	variable	ui	ui-debugstats-gpu-bytes	ui.md	engine/ui/debug_overlay.h:85
+ui::FrameGraph	class	ui	ui-framegraph	ui.md	engine/ui/debug_overlay.h:92
+ui::FrameGraph::kSamples	variable	ui	ui-framegraph-ksamples	ui.md	engine/ui/debug_overlay.h:95
+ui::FrameGraph::kFullScaleMs	variable	ui	ui-framegraph-kfullscalems	ui.md	engine/ui/debug_overlay.h:97
+ui::FrameGraph::kHeight	variable	ui	ui-framegraph-kheight	ui.md	engine/ui/debug_overlay.h:99
+ui::FrameGraph::FrameGraph(StringView)	function	ui	ui-framegraph-framegraph-stringview	ui.md	engine/ui/debug_overlay.h:102
+ui::FrameGraph::Push(f32)	function	ui	ui-framegraph-push-f32	ui.md	engine/ui/debug_overlay.h:104
+ui::FrameGraph::Count() const	function	ui	ui-framegraph-count-const	ui.md	engine/ui/debug_overlay.h:108
+ui::FrameGraph::Max() const	function	ui	ui-framegraph-max-const	ui.md	engine/ui/debug_overlay.h:112
+ui::FrameGraph::Average() const	function	ui	ui-framegraph-average-const	ui.md	engine/ui/debug_overlay.h:116
+ui::FrameGraph::Measure(const Constraints&)	function	ui	ui-framegraph-measure-const-constraints-amp	ui.md	engine/ui/debug_overlay.h:118
+ui::FrameGraph::Draw(Canvas&)	function	ui	ui-framegraph-draw-canvas-amp	ui.md	engine/ui/debug_overlay.h:120
+ui::DebugOverlay	class	ui	ui-debugoverlay	ui.md	engine/ui/debug_overlay.h:136
+ui::DebugOverlay::CommandFn	alias	ui	ui-debugoverlay-commandfn	ui.md	engine/ui/debug_overlay.h:139
+ui::DebugOverlay::kWidth	variable	ui	ui-debugoverlay-kwidth	ui.md	engine/ui/debug_overlay.h:142
+ui::DebugOverlay::kPanelHeight	variable	ui	ui-debugoverlay-kpanelheight	ui.md	engine/ui/debug_overlay.h:144
+ui::DebugOverlay::kMargin	variable	ui	ui-debugoverlay-kmargin	ui.md	engine/ui/debug_overlay.h:146
+ui::DebugOverlay::kMaxCommands	variable	ui	ui-debugoverlay-kmaxcommands	ui.md	engine/ui/debug_overlay.h:148
+ui::DebugOverlay::DebugOverlay(StringView)	function	ui	ui-debugoverlay-debugoverlay-stringview	ui.md	engine/ui/debug_overlay.h:151
+ui::DebugOverlay::~DebugOverlay()	function	ui	ui-debugoverlay-tilde-debugoverlay	ui.md	engine/ui/debug_overlay.h:153
+ui::DebugOverlay::Attach(Surface*,UniquePtr<DebugOverlay>,const KeyChord&)	function	ui	ui-debugoverlay-attach-surface-star-uniqueptr-lt-debugoverlay-gt-const-keychord-amp	ui.md	engine/ui/debug_overlay.h:160
+ui::DebugOverlay::Show(bool)	function	ui	ui-debugoverlay-show-bool	ui.md	engine/ui/debug_overlay.h:162
+ui::DebugOverlay::IsShown() const	function	ui	ui-debugoverlay-isshown-const	ui.md	engine/ui/debug_overlay.h:166
+ui::DebugOverlay::SetStats(const DebugStats&)	function	ui	ui-debugoverlay-setstats-const-debugstats-amp	ui.md	engine/ui/debug_overlay.h:168
+ui::DebugOverlay::AddCommand(StringView,StringView,CommandFn,void*)	function	ui	ui-debugoverlay-addcommand-stringview-stringview-commandfn-void-star	ui.md	engine/ui/debug_overlay.h:176
+ui::DebugOverlay::Run(StringView)	function	ui	ui-debugoverlay-run-stringview	ui.md	engine/ui/debug_overlay.h:179
+ui::DebugOverlay::Capture()	function	ui	ui-debugoverlay-capture	ui.md	engine/ui/debug_overlay.h:183
+ui::DebugOverlay::Graph() const	function	ui	ui-debugoverlay-graph-const	ui.md	engine/ui/debug_overlay.h:188
+ui::DebugOverlay::Console() const	function	ui	ui-debugoverlay-console-const	ui.md	engine/ui/debug_overlay.h:193
+ui::DebugOverlay::CommandLine() const	function	ui	ui-debugoverlay-commandline-const	ui.md	engine/ui/debug_overlay.h:198
+ui::DebugOverlay::Counters() const	function	ui	ui-debugoverlay-counters-const	ui.md	engine/ui/debug_overlay.h:203
+ui::DebugOverlay::Refreshes() const	function	ui	ui-debugoverlay-refreshes-const	ui.md	engine/ui/debug_overlay.h:207
+ui::DebugOverlay::Update(f32)	function	ui	ui-debugoverlay-update-f32	ui.md	engine/ui/debug_overlay.h:209
+ui::DebugOverlay::WantsUpdate() const	function	ui	ui-debugoverlay-wantsupdate-const	ui.md	engine/ui/debug_overlay.h:213
+ui::DebugOverlay::Arrange(const Rect&)	function	ui	ui-debugoverlay-arrange-const-rect-amp	ui.md	engine/ui/debug_overlay.h:215
+ui::DebugOverlay::Draw(Canvas&)	function	ui	ui-debugoverlay-draw-canvas-amp	ui.md	engine/ui/debug_overlay.h:217
 ui::DragAction	alias	ui	ui-dragaction	ui.md	engine/ui/drag_drop.h:14
 ui::DragEntryKind	enum	ui	ui-dragentrykind	ui.md	engine/ui/drag_drop.h:17
 ui::DragEntryKind::Text	enumerator	ui	ui-dragentrykind-text	ui.md	engine/ui/drag_drop.h:18
@@ -2796,6 +2852,33 @@ ui::KeyChord::modifiers	variable	ui	ui-keychord-modifiers	ui.md	engine/ui/popup.
 ui::KeyChord::operator==(const KeyChord&) const	function	ui	ui-keychord-operator-eq-eq-const-keychord-amp-const	ui.md	engine/ui/popup.h:42
 ui::PlacePopup(Size,const Rect&,Placement,const Rect&)	function	ui	ui-placepopup-size-const-rect-amp-placement-const-rect-amp	ui.md	engine/ui/popup.h:56
 ui::ChordText(const KeyChord&)	function	ui	ui-chordtext-const-keychord-amp	ui.md	engine/ui/popup.h:64
+ui::SettingsView	class	ui	ui-settingsview	ui.md	engine/ui/settings_view.h:37
+ui::SettingsView::kDefaultGroup	variable	ui	ui-settingsview-kdefaultgroup	ui.md	engine/ui/settings_view.h:40
+ui::SettingsView::kAdvancedText	variable	ui	ui-settingsview-kadvancedtext	ui.md	engine/ui/settings_view.h:42
+ui::SettingsView::kRestartText	variable	ui	ui-settingsview-krestarttext	ui.md	engine/ui/settings_view.h:44
+ui::SettingsView::kLabelWidth	variable	ui	ui-settingsview-klabelwidth	ui.md	engine/ui/settings_view.h:46
+ui::SettingsView::kGap	variable	ui	ui-settingsview-kgap	ui.md	engine/ui/settings_view.h:48
+ui::SettingsView::kSliderWidth	variable	ui	ui-settingsview-ksliderwidth	ui.md	engine/ui/settings_view.h:50
+ui::SettingsView::kFloatDecimals	variable	ui	ui-settingsview-kfloatdecimals	ui.md	engine/ui/settings_view.h:52
+ui::SettingsView::SettingsView(settings::Settings*,StringView,StringView)	function	ui	ui-settingsview-settingsview-settings-settings-star-stringview-stringview	ui.md	engine/ui/settings_view.h:59
+ui::SettingsView::~SettingsView()	function	ui	ui-settingsview-tilde-settingsview	ui.md	engine/ui/settings_view.h:61
+ui::SettingsView::SettingsView(const SettingsView&)	function	ui	ui-settingsview-settingsview-const-settingsview-amp	ui.md	engine/ui/settings_view.h:62
+ui::SettingsView::operator=(const SettingsView&)	function	ui	ui-settingsview-operator-eq-const-settingsview-amp	ui.md	engine/ui/settings_view.h:63
+ui::SettingsView::SetApply(settings::ApplyFn,void*)	function	ui	ui-settingsview-setapply-settings-applyfn-void-star	ui.md	engine/ui/settings_view.h:68
+ui::SettingsView::Rebuild()	function	ui	ui-settingsview-rebuild	ui.md	engine/ui/settings_view.h:70
+ui::SettingsView::Refresh()	function	ui	ui-settingsview-refresh	ui.md	engine/ui/settings_view.h:72
+ui::SettingsView::Message() const	function	ui	ui-settingsview-message-const	ui.md	engine/ui/settings_view.h:76
+ui::SettingsView::RestartPending() const	function	ui	ui-settingsview-restartpending-const	ui.md	engine/ui/settings_view.h:80
+ui::SettingsView::RowCount() const	function	ui	ui-settingsview-rowcount-const	ui.md	engine/ui/settings_view.h:84
+ui::SettingsView::RowOf(settings::SettingId) const	function	ui	ui-settingsview-rowof-settings-settingid-const	ui.md	engine/ui/settings_view.h:89
+ui::SettingsView::ControlOf(settings::SettingId) const	function	ui	ui-settingsview-controlof-settings-settingid-const	ui.md	engine/ui/settings_view.h:94
+ui::SettingsView::SpinOf(settings::SettingId) const	function	ui	ui-settingsview-spinof-settings-settingid-const	ui.md	engine/ui/settings_view.h:99
+ui::SettingsView::RestartNoteOf(settings::SettingId) const	function	ui	ui-settingsview-restartnoteof-settings-settingid-const	ui.md	engine/ui/settings_view.h:104
+ui::SettingsView::AdvancedBox() const	function	ui	ui-settingsview-advancedbox-const	ui.md	engine/ui/settings_view.h:109
+ui::SettingsView::Refreshes() const	function	ui	ui-settingsview-refreshes-const	ui.md	engine/ui/settings_view.h:113
+ui::SettingsView::OnRestartNeeded()	function	ui	ui-settingsview-onrestartneeded	ui.md	engine/ui/settings_view.h:115
+ui::SettingsView::Update(f32)	function	ui	ui-settingsview-update-f32	ui.md	engine/ui/settings_view.h:117
+ui::SettingsView::WantsUpdate() const	function	ui	ui-settingsview-wantsupdate-const	ui.md	engine/ui/settings_view.h:121
 ui::FontProvider	class	ui	ui-fontprovider	ui.md	engine/ui/surface.h:28
 ui::FontProvider::~FontProvider()	function	ui	ui-fontprovider-tilde-fontprovider	ui.md	engine/ui/surface.h:30
 ui::FontProvider::Resolve(u32)	function	ui	ui-fontprovider-resolve-u32	ui.md	engine/ui/surface.h:35

@@ -34,6 +34,8 @@ set(UI_SOURCES
   viewport.cpp
   update_policy.cpp
   surface_input.cpp
+  settings_view.cpp
+  debug_overlay.cpp
   testing/software_raster.cpp
   testing/harness.cpp
   testing/recording_canvas.cpp

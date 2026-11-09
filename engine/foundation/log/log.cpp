@@ -178,21 +178,24 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message) {
 }
 
 // SIGNAL-SAFE-BEGIN
-void ReadRecentLogLines(RecentLogLineFn callback, void* context, usize max_lines) {
+namespace {
+
+// Delivers lines [first, head) that are still whole in the ring, oldest first. Returns the number of the first line it stopped at because a writer had claimed it and was
+// still copying it (only that line, or the newest one, can be in that state without being lost), or `head` when it read to the end; a caller that resumes from the
+// returned number then loses no line to a race with a writer. Without `stop_at_pending` it passes such a line by (the crash report wants the rest).
+u64 ReadRingRange(u64 first, u64 head, RecentLogLineFn callback, void* context, bool stop_at_pending) {
     // The loads of the text below are acquire: if one of them sees a word a newer writer stored (a release store, made after
     // that writer marked the slot odd), the second look at the sequence is then guaranteed to see the mark and drop the line.
     // An acquire load keeps everything after it, including the second look, from happening before it, so the loads cannot
     // drift past that look.
-    const u64 head = g_log_ring_head.load(std::memory_order_acquire);
-    u64 first = head > kLogRingSlots ? head - kLogRingSlots : 0;
-    if (max_lines != 0 && head - first > max_lines) {
-        first = head - max_lines;
-    }
     for (u64 line = first; line < head; ++line) {
         RingSlot& slot = g_log_ring[line % kLogRingSlots];
         const u64 before = slot.sequence.load(std::memory_order_acquire);
         if (before != 2 * line + 2) {
-            continue; // being written, or already overwritten by a newer line
+            if (stop_at_pending && (before == 2 * line + 1 || line + 1 == head)) {
+                return line; // a writer is copying it, or has just taken its number: it is whole a moment later
+            }
+            continue; // already overwritten by a newer line, or left out of the ring (the slot was busy)
         }
         char text[kLogRingLineBytes + 1];
         u64 words[kRingWords];
@@ -207,6 +210,29 @@ void ReadRecentLogLines(RecentLogLineFn callback, void* context, usize max_lines
         text[length] = '\0';
         callback(text, length, context);
     }
+    return head;
+}
+
+} // namespace
+
+void ReadRecentLogLines(RecentLogLineFn callback, void* context, usize max_lines) {
+    const u64 head = g_log_ring_head.load(std::memory_order_acquire);
+    u64 first = head > kLogRingSlots ? head - kLogRingSlots : 0;
+    if (max_lines != 0 && head - first > max_lines) {
+        first = head - max_lines;
+    }
+    ReadRingRange(first, head, callback, context, false);
+}
+
+u64 LogLinesWritten() { return g_log_ring_head.load(std::memory_order_acquire); }
+
+u64 ReadLogLinesSince(u64 next, RecentLogLineFn callback, void* context) {
+    const u64 head = g_log_ring_head.load(std::memory_order_acquire);
+    u64 first = head > kLogRingSlots ? head - kLogRingSlots : 0;
+    if (next > first) {
+        first = next < head ? next : head;
+    }
+    return ReadRingRange(first, head, callback, context, true);
 }
 
 // SIGNAL-SAFE-END

@@ -11,14 +11,14 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Strings](foundation-strings.md) | 6 | 98 |
 | [Foundation: Paths and Files](foundation-io.md) | 5 | 265 |
 | [Foundation: Math](foundation-math.md) | 5 | 101 |
-| [Foundation: Logging and Assertions](foundation-log.md) | 3 | 79 |
+| [Foundation: Logging and Assertions](foundation-log.md) | 3 | 81 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 17 | 524 |
 | [Platform: OS Services](platform-os.md) | 4 | 50 |
 | [Platform: Windowing and Input](platform-window-input.md) | 21 | 638 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 208 |
 | [Text](text.md) | 6 | 221 |
-| [The UI Toolkit](ui.md) | 44 | 1334 |
+| [The UI Toolkit](ui.md) | 46 | 1415 |
 | [The UI Window Adapter](ui_window.md) | 2 | 24 |
 | [The Job System](jobs.md) | 11 | 190 |
 | [The Render Hardware Interface](rhi.md) | 21 | 792 |

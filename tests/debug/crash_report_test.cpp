@@ -501,3 +501,28 @@ TEST_CASE("A provider that faults loses the rest of the report but not the part 
     CHECK(r.StdoutContains("--- state ---"));
     CHECK_FALSE(r.StdoutContains("=== END OF REPORT ==="));
 }
+
+TEST_CASE("ReadLogLinesSince delivers only the lines logged after the number it returned", "[crashreport][log][debug]") {
+    QuietLog quiet;
+    ResetLogRingForTesting();
+    TextList first;
+    u64 next = ReadLogLinesSince(0, &CollectLine, &first);
+    CHECK(first.Empty());
+    CHECK(next == 0);
+    for (int i = 0; i < 5; ++i) LogNumbered("since-", i);
+    TextList second;
+    next = ReadLogLinesSince(next, &CollectLine, &second);
+    REQUIRE(second.Size() == 5);
+    CHECK(Has(second[0], "since-0\n"));
+    CHECK(next == 5);
+    TextList none;
+    CHECK(ReadLogLinesSince(next, &CollectLine, &none) == 5);
+    CHECK(none.Empty());
+    // More than the ring holds since the last call: the newest slots are delivered, and the returned number still counts every line.
+    for (int i = 0; i < 1000; ++i) LogNumbered("flood-", i);
+    TextList flood;
+    next = ReadLogLinesSince(next, &CollectLine, &flood);
+    CHECK(flood.Size() == kLogRingSlots);
+    CHECK(next == 1005);
+    CHECK(Has(flood.Back(), "flood-999\n"));
+}

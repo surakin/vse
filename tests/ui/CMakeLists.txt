@@ -23,6 +23,8 @@ set(UI_TEST_SOURCES
   clipboard_test.cpp
   viewport_test.cpp
   surface_input_test.cpp
+  settings_view_test.cpp
+  debug_overlay_test.cpp
 )
 
 find_package(Threads REQUIRED)
@@ -32,7 +34,7 @@ function(engine_add_ui_tests target ui_lib suffix label)
   add_executable(${target} ${UI_TEST_SOURCES})
   string(REGEX REPLACE "^ui" "ui_window" window_lib ${ui_lib})
   target_link_libraries(${target} PRIVATE ${ui_lib} ${window_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/io ${CMAKE_SOURCE_DIR}/tests/support)
   target_compile_definitions(${target} PRIVATE UI_TEST_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf")
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
