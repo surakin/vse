@@ -14,6 +14,7 @@ set(RHI_TEST_SOURCES
   swapchain_reconfigure_test.cpp
   reset_golden_gpu_test.cpp
   text_golden_gpu_test.cpp
+  ui_golden_gpu_test.cpp
   adapter_switch_gpu_test.cpp
   lifecycle_conformance_test.cpp
   vulkan_loader_test.cpp

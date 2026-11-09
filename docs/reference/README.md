@@ -21,6 +21,6 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [The UI Toolkit](ui.md) | 6 | 157 |
 | [The Job System](jobs.md) | 11 | 190 |
 | [The Render Hardware Interface](rhi.md) | 21 | 792 |
-| [The renderer](renderer.md) | 22 | 1050 |
+| [The renderer](renderer.md) | 23 | 1080 |
 | [The Vulkan backend (loader, function tables, result helpers)](rhi-vulkan.md) | 17 | 440 |
 | [The Direct3D 12 backend (Windows)](rhi-dx12.md) | 12 | 319 |

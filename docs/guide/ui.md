@@ -35,4 +35,25 @@ canvas.DrawBorder({10, 10, 120, 32}, ui::CornerRadii(6), 1, 0xFFFFFFFFu);
 list.SortLayers();                          // then the renderer draws list.commands in order
 ```
 
-More sections arrive with the days that build them (draw list, renderer, theme, tree, layout, input, widgets, popups, drag and drop, viewport, surfaces).
+## Drawing on the GPU: the UI renderer
+
+**`renderer::UiRenderer`** (`engine/renderer/ui_renderer.h`) turns a finished `ui::DrawList` into one render-graph pass over a colour target. It is a `Recreatable` at the materials tier, so a device reset rebuilds its buffers, pipeline and
+the 1x1 white texture that textureless commands bind; it keeps nothing but CPU-side state.
+
+- **One pass per frame:** `AddToGraph(graph, &list, target, format, width, height)` declares the pass (`ReadWrite` on the target, `LoadOp::Load`, so it draws over what is there) and declares nothing for an empty list. The pipeline follows
+  the target's format: an sRGB target gets the colour decoded in the vertex shader, a UNORM one does not, and a format change rebuilds the pipeline.
+- **Blending is premultiplied** (`One`, `OneMinusSrcAlpha`); the fragment shader outputs `rgb * a`.
+- **Text** reads the glyph pages of a `GlyphAtlasTexture` (the same atlas that `ui::DrawListCanvas` filled), so the pixels match the text renderer's.
+- **Images** are drawn through an `ImageSource`: register it with `SetImage(id, &source)`; the renderer asks for the texture handle every frame and never keeps it. A command whose image has no source or no texture is skipped and counted in
+  `Stats().dropped_commands`.
+- **Budget:** `UiRendererDesc::max_vertices` / `max_indices` size the per-frame-slot buffers; commands past them are dropped and counted, with a warning in the log.
+- **Shaders** are `shaders/ui.vert.slang` and `ui.frag.slang`, minted to SPIR-V; the DXIL for Direct3D 12 arrives with Day 205 (`KNOWN-ISSUES.md`).
+
+```cpp
+renderer::UiRenderer ui_renderer;
+ui_renderer.Create(device, &glyph_pages, renderer::UiRendererDesc{}, &device_resources);
+// each frame, after the canvas drew and list.SortLayers() ran:
+ui_renderer.AddToGraph(&graph, &list, backbuffer, format, width, height);
+```
+
+More sections arrive with the days that build them (theme, tree, layout, input, widgets, popups, drag and drop, viewport, surfaces).

@@ -4664,6 +4664,36 @@ renderer::TransientPool::ReleaseBuffer(rhi::BufferHandle,rhi::ResourceState)	fun
 renderer::TransientPool::SetTextureState(rhi::TextureHandle,rhi::ResourceState)	function	renderer	renderer-transientpool-settexturestate-rhi-texturehandle-rhi-resourcestate	renderer.md	engine/renderer/transient_pool.h:170
 renderer::TransientPool::SetBufferState(rhi::BufferHandle,rhi::ResourceState)	function	renderer	renderer-transientpool-setbufferstate-rhi-bufferhandle-rhi-resourcestate	renderer.md	engine/renderer/transient_pool.h:176
 renderer::TransientPool::Stats() const	function	renderer	renderer-transientpool-stats-const	renderer.md	engine/renderer/transient_pool.h:180
+renderer::ImageSource	class	renderer	renderer-imagesource	renderer.md	engine/renderer/ui_renderer.h:24
+renderer::ImageSource::~ImageSource()	function	renderer	renderer-imagesource-tilde-imagesource	renderer.md	engine/renderer/ui_renderer.h:26
+renderer::ImageSource::Handle() const	function	renderer	renderer-imagesource-handle-const	renderer.md	engine/renderer/ui_renderer.h:30
+renderer::GpuTextureImage	class	renderer	renderer-gputextureimage	renderer.md	engine/renderer/ui_renderer.h:37
+renderer::GpuTextureImage::GpuTextureImage(const GpuTexture*)	function	renderer	renderer-gputextureimage-gputextureimage-const-gputexture-star	renderer.md	engine/renderer/ui_renderer.h:41
+renderer::GpuTextureImage::Handle() const	function	renderer	renderer-gputextureimage-handle-const	renderer.md	engine/renderer/ui_renderer.h:42
+renderer::UiRendererDesc	struct	renderer	renderer-uirendererdesc	renderer.md	engine/renderer/ui_renderer.h:51
+renderer::UiRendererDesc::color_format	variable	renderer	renderer-uirendererdesc-color-format	renderer.md	engine/renderer/ui_renderer.h:54
+renderer::UiRendererDesc::max_vertices	variable	renderer	renderer-uirendererdesc-max-vertices	renderer.md	engine/renderer/ui_renderer.h:56
+renderer::UiRendererDesc::max_indices	variable	renderer	renderer-uirendererdesc-max-indices	renderer.md	engine/renderer/ui_renderer.h:58
+renderer::UiStats	struct	renderer	renderer-uistats	renderer.md	engine/renderer/ui_renderer.h:64
+renderer::UiStats::passes	variable	renderer	renderer-uistats-passes	renderer.md	engine/renderer/ui_renderer.h:66
+renderer::UiStats::draws	variable	renderer	renderer-uistats-draws	renderer.md	engine/renderer/ui_renderer.h:68
+renderer::UiStats::vertices	variable	renderer	renderer-uistats-vertices	renderer.md	engine/renderer/ui_renderer.h:70
+renderer::UiStats::dropped_commands	variable	renderer	renderer-uistats-dropped-commands	renderer.md	engine/renderer/ui_renderer.h:72
+renderer::UiRenderer	class	renderer	renderer-uirenderer	renderer.md	engine/renderer/ui_renderer.h:91
+renderer::UiRenderer::UiRenderer()	function	renderer	renderer-uirenderer-uirenderer	renderer.md	engine/renderer/ui_renderer.h:93
+renderer::UiRenderer::~UiRenderer()	function	renderer	renderer-uirenderer-tilde-uirenderer	renderer.md	engine/renderer/ui_renderer.h:95
+renderer::UiRenderer::UiRenderer(const UiRenderer&)	function	renderer	renderer-uirenderer-uirenderer-const-uirenderer-amp	renderer.md	engine/renderer/ui_renderer.h:96
+renderer::UiRenderer::operator=(const UiRenderer&)	function	renderer	renderer-uirenderer-operator-eq-const-uirenderer-amp	renderer.md	engine/renderer/ui_renderer.h:97
+renderer::UiRenderer::Create(rhi::Device*,GlyphAtlasTexture*,const UiRendererDesc&,DeviceResources*)	function	renderer	renderer-uirenderer-create-rhi-device-star-glyphatlastexture-star-const-uirendererdesc-amp-deviceresources-star	renderer.md	engine/renderer/ui_renderer.h:109
+renderer::UiRenderer::Destroy()	function	renderer	renderer-uirenderer-destroy	renderer.md	engine/renderer/ui_renderer.h:112
+renderer::UiRenderer::SetImage(ui::ImageId,const ImageSource*)	function	renderer	renderer-uirenderer-setimage-ui-imageid-const-imagesource-star	renderer.md	engine/renderer/ui_renderer.h:119
+renderer::UiRenderer::ClearImage(ui::ImageId)	function	renderer	renderer-uirenderer-clearimage-ui-imageid	renderer.md	engine/renderer/ui_renderer.h:123
+renderer::UiRenderer::AddToGraph(RenderGraph*,const ui::DrawList*,GraphResource,rhi::Format,u32,u32)	function	renderer	renderer-uirenderer-addtograph-rendergraph-star-const-ui-drawlist-star-graphresource-rhi-format-u32-u32	renderer.md	engine/renderer/ui_renderer.h:139
+renderer::UiRenderer::Stats() const	function	renderer	renderer-uirenderer-stats-const	renderer.md	engine/renderer/ui_renderer.h:144
+renderer::UiRenderer::Release()	function	renderer	renderer-uirenderer-release	renderer.md	engine/renderer/ui_renderer.h:146
+renderer::UiRenderer::Recreate(rhi::Device*)	function	renderer	renderer-uirenderer-recreate-rhi-device-star	renderer.md	engine/renderer/ui_renderer.h:147
+renderer::UiRenderer::Live() const	function	renderer	renderer-uirenderer-live-const	renderer.md	engine/renderer/ui_renderer.h:148
+renderer::UiRenderer::RecreatableName() const	function	renderer	renderer-uirenderer-recreatablename-const	renderer.md	engine/renderer/ui_renderer.h:149
 rhi::vulkan::StateScope	struct	rhi-vulkan	rhi-vulkan-statescope	rhi-vulkan.md	engine/rhi/vulkan/vk_barrier.h:13
 rhi::vulkan::StateScope::stage	variable	rhi-vulkan	rhi-vulkan-statescope-stage	rhi-vulkan.md	engine/rhi/vulkan/vk_barrier.h:15
 rhi::vulkan::StateScope::access	variable	rhi-vulkan	rhi-vulkan-statescope-access	rhi-vulkan.md	engine/rhi/vulkan/vk_barrier.h:17

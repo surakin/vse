@@ -35,6 +35,8 @@ set(ENGINE_SHADERS
   mipgen.comp
   text.vert
   text.frag
+  ui.vert
+  ui.frag
 )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/names.cmake)
