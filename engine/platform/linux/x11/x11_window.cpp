@@ -11,6 +11,7 @@
 
 #include "log/log.h"
 #include "mem/arena_allocator.h"
+#include "os/os.h"
 #include "platform/linux/key_translate.h"
 
 namespace engine_placeholder::os::x11 {
@@ -77,6 +78,48 @@ void HandleButton(const XButtonEvent& e, bool pressed, InputState& input) {
         input.mouse_buttons |= bit;
     } else {
         input.mouse_buttons &= ~bit;
+    }
+}
+
+
+// Appends the text a key press produced (UTF-8, or Latin-1 when there is no input context) as one Text event per Unicode scalar; control characters are keys, not text,
+// and a press with Ctrl or Alt held is a shortcut.
+void AppendText(const char* bytes, int length, bool latin1, u32 modifiers, u64 now_ns, InputEventQueue& queue) {
+    if ((modifiers & (kModCtrl | kModAlt)) != 0) {
+        return;
+    }
+    int i = 0;
+    while (i < length) {
+        const u8 b = static_cast<u8>(bytes[i]);
+        InputEvent e;
+        e.type = InputEventType::Text;
+        e.modifiers = modifiers;
+        e.time_ns = now_ns;
+        if (latin1) {
+            ++i;
+            if (b < 0x20 || (b >= 0x7f && b < 0xa0)) continue;
+            if (b < 0x80) {
+                e.text[0] = static_cast<char>(b);
+                e.text_length = 1;
+            } else {
+                e.text[0] = static_cast<char>(0xC0 | (b >> 6));
+                e.text[1] = static_cast<char>(0x80 | (b & 0x3F));
+                e.text_length = 2;
+            }
+        } else {
+            const int n = b < 0x80 ? 1 : (b >> 5) == 0x6 ? 2 : (b >> 4) == 0xE ? 3 : (b >> 3) == 0x1E ? 4 : 1;
+            if (i + n > length || (n == 1 && b >= 0x80)) {
+                break; // a truncated or invalid sequence from the input method: drop the rest
+            }
+            if (b < 0x20 || b == 0x7f) {
+                i += n;
+                continue;
+            }
+            for (int k = 0; k < n; ++k) e.text[k] = bytes[i + k];
+            e.text_length = static_cast<u8>(n);
+            i += n;
+        }
+        queue.Push(e);
     }
 }
 
@@ -171,7 +214,9 @@ X11Window::X11Window(X11Window&& other) noexcept
       height_(other.height_),
       should_close_(other.should_close_),
       unmapped_(other.unmapped_),
-      resize_serial_(other.resize_serial_) {
+      resize_serial_(other.resize_serial_),
+      events_(other.events_),
+      focused_(other.focused_) {
     std::memcpy(held_, other.held_, sizeof(held_));
     other.display_ = nullptr;
     other.window_ = 0;
@@ -184,6 +229,8 @@ X11Window::X11Window(X11Window&& other) noexcept
     other.should_close_ = false;
     other.unmapped_ = false;
     other.resize_serial_ = 0;
+    other.events_.Clear();
+    other.focused_ = false;
 }
 
 X11Window& X11Window::operator=(X11Window&& other) noexcept {
@@ -200,6 +247,10 @@ X11Window& X11Window::operator=(X11Window&& other) noexcept {
         should_close_ = other.should_close_;
         unmapped_ = other.unmapped_;
         resize_serial_ = other.resize_serial_;
+        events_ = other.events_;
+        focused_ = other.focused_;
+        other.events_.Clear();
+        other.focused_ = false;
         std::memcpy(held_, other.held_, sizeof(held_));
         other.display_ = nullptr;
         other.window_ = 0;
@@ -308,6 +359,11 @@ void X11Window::PumpEvents(InputState* input) {
                 height_ = h;
                 resize_serial_ = detail::NextResizeSerial();
                 LogResize(w, h);
+                InputEvent resize;
+                resize.type = InputEventType::Resize;
+                resize.width = w;
+                resize.height = h;
+                QueueEvent(resize);
             }
             break;
         }
@@ -338,12 +394,53 @@ void X11Window::PumpEvents(InputState* input) {
             HandleKey(&event.xkey, false, input);
             break;
         case ButtonPress:
-        case ButtonRelease:
+        case ButtonRelease: {
+            const XButtonEvent& be = event.xbutton;
+            const bool pressed = event.type == ButtonPress;
+            if (be.button >= Button4 && be.button <= 7) {
+                if (pressed) {
+                    InputEvent wheel;
+                    wheel.type = InputEventType::Wheel;
+                    wheel.modifiers = ModifiersFromState(be.state);
+                    if (be.button == Button4) wheel.y = -1.0;
+                    if (be.button == Button5) wheel.y = 1.0;
+                    if (be.button == 6) wheel.x = -1.0;
+                    if (be.button == 7) wheel.x = 1.0;
+                    QueueEvent(wheel);
+                }
+            } else {
+                u32 bit = 0;
+                switch (be.button) {
+                case Button1: bit = kMouseLeft; break;
+                case Button2: bit = kMouseMiddle; break;
+                case Button3: bit = kMouseRight; break;
+                case 8: bit = kMouseBack; break;
+                case 9: bit = kMouseForward; break;
+                default: break;
+                }
+                if (bit != 0) {
+                    InputEvent button;
+                    button.type = InputEventType::PointerButton;
+                    button.button = bit;
+                    button.down = pressed;
+                    button.x = be.x;
+                    button.y = be.y;
+                    button.modifiers = ModifiersFromState(be.state);
+                    QueueEvent(button);
+                }
+            }
             if (input != nullptr) {
-                HandleButton(event.xbutton, event.type == ButtonPress, *input);
+                HandleButton(be, pressed, *input);
             }
             break;
-        case MotionNotify:
+        }
+        case MotionNotify: {
+            InputEvent move;
+            move.type = InputEventType::PointerMove;
+            move.x = event.xmotion.x;
+            move.y = event.xmotion.y;
+            move.modifiers = ModifiersFromState(event.xmotion.state);
+            QueueEvent(move);
             if (input != nullptr) {
                 input->mouse_x = event.xmotion.x;
                 input->mouse_y = event.xmotion.y;
@@ -351,18 +448,41 @@ void X11Window::PumpEvents(InputState* input) {
                 input->keyboard.modifiers = ModifiersFromState(event.xmotion.state);
             }
             break;
-        case EnterNotify:
+        }
+        case EnterNotify: {
+            InputEvent enter;
+            enter.type = InputEventType::PointerEnter;
+            enter.x = event.xcrossing.x;
+            enter.y = event.xcrossing.y;
+            enter.modifiers = ModifiersFromState(event.xcrossing.state);
+            QueueEvent(enter);
             if (input != nullptr) {
                 input->pointer_inside = true;
                 input->mouse_x = event.xcrossing.x;
                 input->mouse_y = event.xcrossing.y;
             }
             break;
-        case LeaveNotify:
+        }
+        case LeaveNotify: {
+            InputEvent leave;
+            leave.type = InputEventType::PointerLeave;
+            leave.modifiers = ModifiersFromState(event.xcrossing.state);
+            QueueEvent(leave);
             if (input != nullptr) {
                 // Held buttons survive leaving (X grabs deliver the
                 // release), matching the Wayland backend.
                 input->pointer_inside = false;
+            }
+            break;
+        }
+        case FocusIn:
+            // Real focus only: not the grab-induced changes, not focus moving inside the window, not the pointer-root pseudo focus.
+            if (event.xfocus.mode != NotifyGrab && event.xfocus.mode != NotifyUngrab && event.xfocus.detail != NotifyInferior &&
+                event.xfocus.detail != NotifyPointer && event.xfocus.detail != NotifyPointerRoot && event.xfocus.detail != NotifyDetailNone && !focused_) {
+                focused_ = true;
+                InputEvent gained;
+                gained.type = InputEventType::FocusGained;
+                QueueEvent(gained);
             }
             break;
         case FocusOut:
@@ -375,6 +495,12 @@ void X11Window::PumpEvents(InputState* input) {
             if (event.xfocus.mode != NotifyGrab && event.xfocus.mode != NotifyWhileGrabbed &&
                 event.xfocus.detail != NotifyInferior) {
                 ReleaseAllKeys(input);
+                if (focused_) {
+                    focused_ = false;
+                    InputEvent lost;
+                    lost.type = InputEventType::FocusLost;
+                    QueueEvent(lost);
+                }
             }
             break;
         default:
@@ -383,7 +509,21 @@ void X11Window::PumpEvents(InputState* input) {
     }
 }
 
+void X11Window::QueueEvent(InputEvent event) {
+    event.time_ns = MonotonicTimeNanos();
+    events_.Push(event);
+}
+
 void X11Window::ReleaseAllKeys(InputState* input) {
+    // Keys still held when focus goes are released in the stream too, so a consumer never sees a key stay down.
+    for (usize code = 0; code < 256; ++code) {
+        if (held_[code] != Key::Unknown) {
+            InputEvent up;
+            up.type = InputEventType::KeyUp;
+            up.key = held_[code];
+            QueueEvent(up);
+        }
+    }
     for (Key& k : held_) {
         k = Key::Unknown;
     }
@@ -396,13 +536,26 @@ void X11Window::ReleaseAllKeys(InputState* input) {
 }
 
 void X11Window::HandleKey(const void* xkey_event, bool pressed, InputState* input) {
-    if (input == nullptr) {
-        return;
-    }
     // Copy: the XKeyEvent API takes a mutable pointer.
     XKeyEvent xkey = *static_cast<const XKeyEvent*>(xkey_event);
-    input->keyboard.modifiers = ModifiersFromState(xkey.state);
+    const u32 modifiers = ModifiersFromState(xkey.state);
+    if (input != nullptr) {
+        input->keyboard.modifiers = modifiers;
+    }
     unsigned int code = xkey.keycode;
+
+    // An input method commits composed text as a KeyPress with keycode 0 (or through a press whose lookup returns characters but no key): the text is the event.
+    if (pressed && code == 0) {
+        if (input_context_ != nullptr) {
+            char text[64];
+            Status status = 0;
+            const int n = Xutf8LookupString(reinterpret_cast<XIC>(input_context_), &xkey, text, sizeof(text), nullptr, &status);
+            if ((status == XLookupChars || status == XLookupBoth) && n > 0) {
+                AppendText(text, n, false, modifiers, MonotonicTimeNanos(), events_);
+            }
+        }
+        return;
+    }
     if (code >= 256) {
         return;
     }
@@ -414,33 +567,63 @@ void X11Window::HandleKey(const void* xkey_event, bool pressed, InputState* inpu
             KeySym sym = XLookupKeysym(&xkey, 0);
             key = KeyFromKeysym(static_cast<u32>(sym));
         }
-        input->keyboard.SetDown(key, false);
+        if (key != Key::Unknown) {
+            InputEvent up;
+            up.type = InputEventType::KeyUp;
+            up.key = key;
+            up.modifiers = modifiers;
+            QueueEvent(up);
+        }
+        if (input != nullptr) {
+            input->keyboard.SetDown(key, false);
+        }
         held_[code] = Key::Unknown;
         return;
     }
 
     // Full keysym translation through the input context when there is
     // one (honors layout group, modifiers and compose), else the plain
-    // XLookupString path. The UTF-8 text itself is not consumed yet —
-    // text input events are a later input-layer feature — but it is the
-    // reason the IC exists and is validated by the lookup status.
+    // XLookupString path. The same lookup gives the press's text.
     KeySym sym = NoSymbol;
     char text[32];
+    int text_length = 0;
+    bool latin1 = false;
     if (input_context_ != nullptr) {
         Status status = 0;
-        Xutf8LookupString(reinterpret_cast<XIC>(input_context_), &xkey, text, sizeof(text), &sym, &status);
+        text_length = Xutf8LookupString(reinterpret_cast<XIC>(input_context_), &xkey, text, sizeof(text), &sym, &status);
+        if (status != XLookupChars && status != XLookupBoth) {
+            text_length = 0;
+        }
         if (status != XLookupKeySym && status != XLookupBoth) {
             sym = NoSymbol;
         }
     } else {
-        XLookupString(&xkey, text, sizeof(text), &sym, nullptr);
+        text_length = XLookupString(&xkey, text, sizeof(text), &sym, nullptr);
+        latin1 = true;
     }
     if (sym == NoSymbol) {
         sym = XLookupKeysym(&xkey, 0);
     }
     Key key = KeyFromKeysym(static_cast<u32>(sym));
+    // With detectable auto-repeat (set at creation) a repeat is a press of a key that is already down.
+    const bool repeat = held_[code] != Key::Unknown;
     held_[code] = key;
-    input->keyboard.SetDown(key, true);
+    if (input != nullptr) {
+        input->keyboard.SetDown(key, true);
+    }
+    const u64 now = MonotonicTimeNanos();
+    if (key != Key::Unknown) { // an unnamed key (a Cyrillic letter) types its text but is neither down nor up: nothing could release it
+        InputEvent down;
+        down.type = InputEventType::KeyDown;
+        down.key = key;
+        down.repeat = repeat;
+        down.modifiers = modifiers;
+        down.time_ns = now;
+        events_.Push(down);
+    }
+    if (text_length > 0) {
+        AppendText(text, text_length, latin1, modifiers, now, events_);
+    }
 }
 
 } // namespace engine_placeholder::os::x11

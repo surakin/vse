@@ -58,7 +58,26 @@ _TODO_
 
 ### Reading input (keys, text, mouse, modifiers)
 
-_TODO_
+`InputState` answers "what is down now". It cannot say that a key was pressed and released between two polls, it carries no text, and on Wayland it has no
+key repeat. A program that needs those (the UI toolkit does) drains the **input event stream** after each `PumpEvents`:
+
+    window.PumpEvents();
+    os::InputEvent event;
+    while (window.PollEvent(&event)) {
+        // event.type: KeyDown (event.repeat for an auto-repeat), KeyUp, Text, PointerMove, PointerButton, Wheel,
+        // PointerEnter, PointerLeave, FocusGained, FocusLost, Resize
+    }
+
+- **Order.** Events come out in the order the server delivered them. A `Text` event follows the `KeyDown` that produced it, and a repeat sends both again.
+- **Text** is one Unicode scalar as UTF-8 (`InputEvent::text`, `text_length`). A dead key writes nothing until the next key completes the sequence (German
+  acute then `e` is one `Text` of "é"), AltGr+`e` on a German layout is "€", and a press with Ctrl or Alt held, or Enter, Tab, Backspace, Escape or Delete, writes
+  none (those are keys, not text). There is no input-method composition; text is what the layout and the locale's compose table give.
+- **Repeat.** X11 turns on detectable auto-repeat, so a held key is one `KeyDown` and then repeats with `repeat` set. Wayland sends no repeats, so the backend
+  makes them from the compositor's rate and delay inside `PumpEvents` (at most four per pump after a stall). Only the last pressed key repeats; a modifier never does.
+- **Focus.** When the window loses focus every key still held gets a `KeyUp`, then `FocusLost` arrives, so a program following the stream never keeps a key down.
+- **Wheel** is in notches, positive right and down, like `InputState::scroll_dx/dy` (which counts ten units to a notch).
+- **Overflow.** The queue holds 1,024 events. When the program does not drain it, the newest events are dropped and counted (`Window::DroppedEvents`); the older ones stay in order.
+- `InputState` is unchanged and agrees with the stream; a program may use either, or both.
 
 ### Resize, close, focus
 
@@ -206,5 +225,8 @@ program). Started from Explorer it has no console: the writes fail and the log f
 
 ### Known limitations
 
-_TODO_
+- The event stream is implemented on Linux (Wayland and X11); the Windows backend gets it on Phase 15 Day 205, macOS in Phase 22 (`engine/platform/BACKEND.md`).
+- No input-method (IME) composition: a Chinese, Japanese or Korean input method is not supported; dead keys and compose sequences are.
+- The Wayland half is checked against a real compositor only, which cannot be made to send key, pointer and focus events; the key logic is tested through
+  `KeyboardEvents` with a fake clock and real keymaps, and the pointer, focus and wheel handlers by the end-to-end runs of the UI demo (Day 204).
 

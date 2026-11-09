@@ -3,6 +3,8 @@
 #include <wayland-client.h>
 
 #include "platform/input.h"
+#include "platform/input_event.h"
+#include "platform/linux/keyboard_events.h"
 #include "platform/linux/wayland/wayland_connection.h"
 #include "platform/linux/xkb_keyboard.h"
 #include "types.h"
@@ -49,6 +51,14 @@ public:
     /// only one listener, so `Init` cannot be repeated on the same seat; reconnect for a fresh one.
     void Shutdown();
 
+    /// The input events queued by the listeners; the window pops them and pushes its own (resize) here.
+    InputEventQueue& Events() { return events_; }
+    /// Read-only view of the queue.
+    const InputEventQueue& Events() const { return events_; }
+
+    /// Queues the key repeats that are due (`wl_keyboard` repeat is the client's job); call once per pump, after dispatching.
+    void Tick();
+
     /// Returns whether the handler is attached to a seat.
     bool Valid() const { return seat_ != nullptr; }
     /// Returns whether the seat offered a keyboard.
@@ -78,6 +88,7 @@ private:
     static void HandlePointerButton(void* data, wl_pointer* pointer, u32 serial, u32 time,
                                     u32 button, u32 state);
     static void HandlePointerAxis(void* data, wl_pointer* pointer, u32 time, u32 axis, wl_fixed_t value);
+    void PushPointerEvent(InputEventType type, f64 x, f64 y);
 
     static const wl_pointer_listener kPointerListener;
     static const wl_seat_listener kSeatListener;
@@ -94,6 +105,8 @@ private:
     wl_pointer* pointer_ = nullptr;
     InputState* input_state_ = nullptr;
     XkbKeyboard xkb_;
+    KeyboardEvents keyboard_events_;
+    InputEventQueue events_;
     // The engine Key each held evdev code was *pressed* as. A release
     // clears that Key rather than re-translating, since layout/modifier
     // state can change between press and release (e.g. releasing Shift

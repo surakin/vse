@@ -266,3 +266,9 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
   directory links fall back to junctions where a test only needs one), and the long-path behavior with `LongPathsEnabled = 1` (the setting is off;
   the tests pass with it off).
 - Phase 13 Day 174 (2026-11-08, Linux): `renderer_demo --rhi dx12` and `rhi_demo --rhi dx12` on Linux exit 1 with "the dx12 backend is not registered in this program (link rhi_backends and call rhi::RegisterCompiledBackends ...)". The program does link `rhi_backends`; the backend is not built on Linux. The refusal is correct, its reason is misleading.
+
+## Phase 15 (Day 185)
+
+- The Wayland pointer, wheel, focus and key handlers (`wayland_input.cpp`) have no automated test: no test-compositor seam exists, and the real compositor cannot be made to send input. Only open + Resize is checked. Key logic is tested through `KeyboardEvents`; X11 is tested with injected events.
+- The input event stream is Linux only until Day 205 (Windows) and Phase 22 (macOS); the Windows build of the shared changes (`input_event.h`, `window.h`) is open until the Windows PC runs it.
+- No IME composition; dead keys and compose depend on the locale's Compose file (without one they are not combined).

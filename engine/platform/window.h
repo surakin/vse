@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform/input.h"
+#include "platform/input_event.h"
 #include "string/string.h"
 #include "types.h"
 
@@ -54,6 +55,18 @@ public:
 
     /// Drains all pending platform events without blocking and updates the bound `InputState`.
     virtual void PumpEvents() = 0;
+
+    /// Removes the oldest queued input event, if any.
+    ///
+    /// `PumpEvents` queues the events (key down, up and repeat, text, pointer, wheel, focus, resize) in the order the server delivered them, up to
+    /// [[os::InputEventQueue::kCapacity]]; call this in a loop after it until it returns false. `InputState` is updated as before and is not affected.
+    /// The default queues nothing, for a backend without an event stream.
+    /// Param out: receives the event.
+    /// Returns: true if `out` holds an event.
+    virtual bool PollEvent([[maybe_unused]] InputEvent* out) { return false; }
+
+    /// Returns how many events were dropped because the queue was full (a program that does not poll loses the newest events, visibly), since the window opened.
+    virtual u64 DroppedEvents() const { return 0; }
 
     /// Returns true once the user or window manager has asked the window to close.
     virtual bool ShouldClose() const = 0;

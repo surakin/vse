@@ -4,6 +4,7 @@
 #include <poll.h>
 
 #include "log/log.h"
+#include "os/os.h"
 
 namespace engine_placeholder::os::wayland {
 
@@ -103,6 +104,16 @@ void WaylandPlatformWindow::PumpEvents() {
         return;
     }
     window_.CommitPendingResize();
+    input_.Tick();
+    if (window_.ResizeSerial() != last_resize_serial_) {
+        last_resize_serial_ = window_.ResizeSerial();
+        InputEvent resize;
+        resize.type = InputEventType::Resize;
+        resize.width = window_.Width();
+        resize.height = window_.Height();
+        resize.time_ns = os::MonotonicTimeNanos();
+        input_.Events().Push(resize);
+    }
 }
 
 } // namespace engine_placeholder::os::wayland

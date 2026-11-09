@@ -38,6 +38,7 @@ module platform/os "Platform: OS Services"
 module platform/window-input "Platform: Windowing and Input"
   header engine/platform/window.h
   header engine/platform/input.h
+  header engine/platform/input_event.h
   header engine/platform/window_host.h
   header engine/platform/entry_point.h
   header engine/platform/linux/**/*.h

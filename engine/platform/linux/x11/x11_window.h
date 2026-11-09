@@ -65,6 +65,10 @@ public:
     ///
     /// Param input: state to fill, or null to ignore input; not owned and must outlive its use here.
     void SetInputState(InputState* input) { input_ = input; }
+    /// Removes the oldest queued input event; see [[os::Window::PollEvent]]. Events are queued by every `PumpEvents`, whether or not an `InputState` is set.
+    bool PollEvent(InputEvent* out) override { return events_.Pop(out); }
+    /// Returns the number of events dropped because the queue was full.
+    u64 DroppedEvents() const override { return events_.Dropped(); }
     /// Returns whether the window manager asked the window to close.
     bool ShouldClose() const override { return should_close_; }
     /// Returns the current client width in pixels.
@@ -109,6 +113,7 @@ public:
 private:
     void ReleaseAll();
     void HandleKey(const void* xkey_event, bool pressed, InputState* input);
+    void QueueEvent(InputEvent event);
     void ReleaseAllKeys(InputState* input);
 
     _XDisplay* display_ = nullptr;
@@ -127,6 +132,9 @@ private:
     // that Key even if modifiers changed in between (same rationale as
     // WaylandInput::held_). X keycodes are 8-bit.
     Key held_[256] = {};
+    InputEventQueue events_;
+    // Whether the window has keyboard focus as far as FocusIn/FocusOut told (grab-induced focus changes do not count).
+    bool focused_ = false;
 };
 
 } // namespace engine_placeholder::os::x11

@@ -47,6 +47,11 @@ public:
     /// protocol error, marks the connection lost; later calls then do nothing.
     void PumpEvents() override;
 
+    /// Removes the oldest queued input event; see [[os::Window::PollEvent]].
+    bool PollEvent(InputEvent* out) override { return input_.Events().Pop(out); }
+    /// Returns the number of events dropped because the queue was full.
+    u64 DroppedEvents() const override { return input_.Events().Dropped(); }
+
     /// Returns whether the user closed the window or the compositor connection was lost.
     ///
     /// Also true once the compositor has exited, crashed or raised a protocol error:
@@ -97,6 +102,7 @@ private:
     WaylandConnection connection_;
     WaylandWindow window_;
     WaylandInput input_;
+    u64 last_resize_serial_ = 0;
     bool connection_lost_ = false;
 
     void MarkConnectionLost(const char* why);

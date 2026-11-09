@@ -52,7 +52,7 @@ void HandleGlobal(void* data, wl_registry* registry, u32 name, const char* inter
         xdg_wm_base_add_listener(state->shell, &kXdgWmBaseListener, nullptr);
         LogBoundGlobal(interface, version);
     } else if (iface == StringView(wl_seat_interface.name)) {
-        state->seat = static_cast<wl_seat*>(wl_registry_bind(registry, name, &wl_seat_interface, 1));
+        state->seat = static_cast<wl_seat*>(wl_registry_bind(registry, name, &wl_seat_interface, version < 5 ? version : 5));  // v4: keyboard repeat_info; v5: pointer frames
         LogBoundGlobal(interface, version);
     } else if (iface == StringView(wl_shm_interface.name)) {
         state->shm = static_cast<wl_shm*>(wl_registry_bind(registry, name, &wl_shm_interface, 1));

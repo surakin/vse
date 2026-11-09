@@ -1,4 +1,7 @@
 #include <utility>
+#include <vector>
+
+#include "platform/input_event.h" // before the X11 headers: they define `None`
 #include "unity/x11_enable.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -193,6 +196,16 @@ public:
         e.state = state;
         e.same_screen = True;
         Send(window, reinterpret_cast<XEvent&>(e), press ? ButtonPressMask : ButtonReleaseMask);
+    }
+
+    void SendFocusIn(unsigned long window) {
+        XFocusChangeEvent e = {};
+        e.type = FocusIn;
+        e.display = display_;
+        e.window = window;
+        e.mode = NotifyNormal;
+        e.detail = NotifyNonlinear;
+        Send(window, reinterpret_cast<XEvent&>(e), FocusChangeMask);
     }
 
     void SendFocusOut(unsigned long window, int mode, int detail) {
@@ -568,6 +581,141 @@ TEST_CASE("X11Window reports itself minimized while its window is unmapped", "[x
     XFlush(window.NativeDisplay());
     PumpUntil(window, [] { return false; });
     REQUIRE_FALSE(window.IsMinimized());
+}
+
+// ---- Day 185: the input event stream -------------------------------------------------------------------
+
+namespace {
+
+using engine_placeholder::os::InputEvent;
+using engine_placeholder::os::InputEventQueue;
+using engine_placeholder::os::InputEventType;
+
+std::vector<InputEvent> PollAll(X11Window& window) {
+    std::vector<InputEvent> out;
+    InputEvent e;
+    while (window.PollEvent(&e)) out.push_back(e);
+    return out;
+}
+
+} // namespace
+
+TEST_CASE("X11Window queues key, text, pointer and wheel events in order", "[x11][input][events][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    X11Window window = CreateSettled("events test", 320, 240);
+    REQUIRE(window.Valid());
+    PollAll(window);
+    Injector inj;
+    REQUIRE(inj.Valid());
+    InputState input;
+    const unsigned long w = window.NativeWindow();
+
+    const unsigned int a = XKeysymToKeycode(inj.Dpy(), XK_a);
+    REQUIRE(a != 0);
+    inj.Key(w, a, 0, true);
+    inj.Key(w, a, 0, false);
+    inj.Motion(w, 33, 44);
+    inj.Button(w, 1, 10, 20, 0, true);
+    inj.Button(w, 1, 10, 20, 0, false);
+    inj.Button(w, 5, 10, 20, 0, true); // wheel down
+    inj.Button(w, 5, 10, 20, 0, false);
+    inj.Button(w, 4, 10, 20, 0, true); // wheel up
+    inj.Button(w, 7, 10, 20, 0, true); // wheel right
+    PumpFor(window, &input);
+    const auto ev = PollAll(window);
+
+    REQUIRE(ev.size() >= 9);
+    CHECK(ev[0].type == InputEventType::KeyDown);
+    CHECK(ev[0].key == Key::A);
+    CHECK(ev[1].type == InputEventType::Text);
+    CHECK(ev[1].text_length == 1);
+    CHECK(ev[1].text[0] == 'a');
+    CHECK(ev[2].type == InputEventType::KeyUp);
+    CHECK(ev[3].type == InputEventType::PointerMove);
+    CHECK(ev[3].x == 33.0);
+    CHECK(ev[3].y == 44.0);
+    CHECK(ev[4].type == InputEventType::PointerButton);
+    CHECK(ev[4].down);
+    CHECK(ev[4].button == engine_placeholder::os::kMouseLeft);
+    CHECK(ev[5].type == InputEventType::PointerButton);
+    CHECK_FALSE(ev[5].down);
+    // The wheel presses are wheel events, never buttons; down is positive, as in InputState.
+    CHECK(ev[6].type == InputEventType::Wheel);
+    CHECK(ev[6].y == 1.0);
+    CHECK(ev[7].type == InputEventType::Wheel);
+    CHECK(ev[7].y == -1.0);
+    CHECK(ev[8].type == InputEventType::Wheel);
+    CHECK(ev[8].x == 1.0);
+    // The polled state agrees with the stream (InputState counts ten units per notch; the net wheel is right by one).
+    CHECK(input.scroll_dy == 0.0);
+    CHECK(input.scroll_dx == 10.0);
+    CHECK(input.mouse_x == 10.0); // the last pointer position the server reported: the button events at (10, 20)
+    CHECK(PollAll(window).empty()); // nothing is delivered twice
+}
+
+TEST_CASE("X11Window queues KeyUp for held keys before FocusLost, and FocusGained on focus in", "[x11][input][events][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    X11Window window = CreateSettled("focus events test", 320, 240);
+    REQUIRE(window.Valid());
+    Injector inj;
+    REQUIRE(inj.Valid());
+    InputState input;
+    const unsigned long w = window.NativeWindow();
+
+    inj.SendFocusIn(w);
+    PumpFor(window, &input);
+    PollAll(window);
+    inj.Key(w, XKeysymToKeycode(inj.Dpy(), XK_a), 0, true);
+    PumpFor(window, &input);
+    PollAll(window);
+    inj.SendFocusOut(w, NotifyNormal, NotifyNonlinear);
+    PumpFor(window, &input);
+    auto ev = PollAll(window);
+    REQUIRE(ev.size() >= 2);
+    CHECK(ev[ev.size() - 2].type == InputEventType::KeyUp);
+    CHECK(ev.back().type == InputEventType::FocusLost);
+    CHECK_FALSE(input.keyboard.IsDown(Key::A));
+    inj.SendFocusIn(w);
+    PumpFor(window, &input);
+    ev = PollAll(window);
+    REQUIRE_FALSE(ev.empty());
+    CHECK(ev.back().type == InputEventType::FocusGained);
+}
+
+TEST_CASE("X11Window queues a Resize event with the new size", "[x11][input][events][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    X11Window window = CreateSettled("resize events test", 300, 200);
+    REQUIRE(window.Valid());
+    PollAll(window);
+    Display* other = XOpenDisplay(nullptr);
+    REQUIRE(other != nullptr);
+    XResizeWindow(other, window.NativeWindow(), 411, 273);
+    XSync(other, False);
+    XCloseDisplay(other);
+    InputState input;
+    PumpFor(window, &input, 40);
+    bool found = false;
+    for (const InputEvent& e : PollAll(window)) {
+        if (e.type == InputEventType::Resize && e.width == 411 && e.height == 273) found = true;
+    }
+    CHECK(found);
+}
+
+TEST_CASE("X11Window drops and counts events when the program never polls", "[x11][input][events][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    X11Window window = CreateSettled("overflow events test", 320, 240);
+    REQUIRE(window.Valid());
+    PollAll(window);
+    Injector inj;
+    REQUIRE(inj.Valid());
+    InputState input;
+    for (int i = 0; i < 1100; ++i) {
+        inj.Motion(window.NativeWindow(), i % 300, 5);
+        if (i % 100 == 99) PumpFor(window, &input, 2);
+    }
+    PumpFor(window, &input, 10);
+    CHECK(window.DroppedEvents() > 0);
+    CHECK(PollAll(window).size() == InputEventQueue::kCapacity);
 }
 
 #include "unity/x11_disable.h"

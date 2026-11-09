@@ -47,6 +47,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     wayland_window_test.cpp
     keyboard_input_test.cpp
     x11_window_test.cpp
+    window_events_test.cpp
   )
 endif()
 
@@ -71,3 +72,10 @@ if(TARGET foundation_tests)
   engine_discover_tests(foundation_tests TEST_SPEC "~[window]~[x11]~[wayland]")
   engine_discover_tests(foundation_tests TEST_SPEC "[window],[x11],[wayland]" PROPERTIES LABELS display RESOURCE_LOCK display)
 endif()
+
+# The window-layer checklist gate (engine/platform/BACKEND.md lists every platform directory); a CMake script, so it runs on every platform.
+add_test(NAME window_backend_lists COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/check_window_backend_lists.cmake)
+add_test(NAME window_backend_lists_planted COMMAND ${CMAKE_COMMAND} -DROOT=${CMAKE_SOURCE_DIR}
+         -DBACKEND_FILE=${CMAKE_CURRENT_SOURCE_DIR}/planted/planted_window_backend.md -P ${CMAKE_CURRENT_SOURCE_DIR}/check_window_backend_lists.cmake)
+set_tests_properties(window_backend_lists_planted PROPERTIES WILL_FAIL TRUE)
+engine_label_tests(window_backend_lists window_backend_lists_planted)

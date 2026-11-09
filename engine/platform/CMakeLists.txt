@@ -9,6 +9,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND PLATFORM_SOURCES
     linux/key_translate.cpp  # X11 keysyms to Key, shared by both Linux backends
     linux/xkb_keyboard.cpp
+    linux/keyboard_events.cpp  # evdev key transitions to KeyDown/KeyUp/Text and client-side repeat (Wayland)
     linux/wayland/wayland_input.cpp
     linux/x11/x11_window.cpp
     linux/wayland/wayland_platform_window.cpp

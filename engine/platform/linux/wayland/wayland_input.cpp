@@ -1,11 +1,29 @@
 #include "platform/linux/wayland/wayland_input.h"
 
+#include <cstdlib>
+#include <initializer_list>
 #include <sys/mman.h>
 #include <unistd.h>
 
 #include "log/log.h"
+#include "os/os.h"
 
 namespace engine_placeholder::os::wayland {
+
+namespace {
+
+// The locale whose Compose file decides dead keys and compose sequences: the first of LC_ALL, LC_CTYPE, LANG that is set, as the C library would choose; "C" otherwise.
+const char* ComposeLocale() {
+    for (const char* name : {"LC_ALL", "LC_CTYPE", "LANG"}) {
+        const char* value = std::getenv(name);
+        if (value != nullptr && value[0] != '\0') return value;
+    }
+    return "C";
+}
+
+u64 NowNs() { return os::MonotonicTimeNanos(); }
+
+} // namespace
 
 const wl_seat_listener WaylandInput::kSeatListener = {
     .capabilities = WaylandInput::HandleSeatCapabilities,
@@ -40,6 +58,7 @@ bool WaylandInput::Init(WaylandConnection& connection, InputState* input_state) 
     }
     seat_ = connection.Seat();
     input_state_ = input_state;
+    keyboard_events_.Init(&xkb_, &events_);
     wl_seat_add_listener(seat_, &kSeatListener, this);
     // First roundtrip delivers wl_seat.capabilities (which creates the
     // wl_keyboard/wl_pointer); the second delivers the keymap/modifiers
@@ -128,8 +147,10 @@ void WaylandInput::HandleKeyboardKeymap(void* data, wl_keyboard* keyboard, u32 f
     }
     if (self->xkb_.InitFromKeymapText(static_cast<const char*>(mapped), size)) {
         Log(LogPlatform, LogVerbosity::Info, "Wayland: keymap loaded");
+        self->xkb_.InitCompose(ComposeLocale());
         // A new keymap invalidates any held-key translations.
         self->ReleaseAllKeys();
+        self->keyboard_events_.Forget();
     }
     ::munmap(mapped, size);
 }
@@ -141,10 +162,12 @@ void WaylandInput::HandleKeyboardEnter(void* data, wl_keyboard* keyboard, u32 se
     (void)surface;
     auto* self = static_cast<WaylandInput*>(data);
     // `keys` lists the evdev codes already held when focus arrived.
+    self->keyboard_events_.FocusGained(NowNs());
     auto* begin = static_cast<u32*>(keys->data);
     auto* end = begin + keys->size / sizeof(u32);
     for (u32* it = begin; it < end; ++it) {
         self->ApplyKey(*it, true);
+        self->keyboard_events_.KeyAlreadyDown(*it, NowNs());
     }
 }
 
@@ -153,7 +176,9 @@ void WaylandInput::HandleKeyboardLeave(void* data, wl_keyboard* keyboard, u32 se
     (void)serial;
     (void)surface;
     // Without focus we won't see the releases; don't leave keys stuck.
-    static_cast<WaylandInput*>(data)->ReleaseAllKeys();
+    auto* self = static_cast<WaylandInput*>(data);
+    self->keyboard_events_.FocusLost(NowNs());
+    self->ReleaseAllKeys();
 }
 
 void WaylandInput::HandleKeyboardKey(void* data, wl_keyboard* keyboard, u32 serial, u32 time, u32 key,
@@ -161,7 +186,10 @@ void WaylandInput::HandleKeyboardKey(void* data, wl_keyboard* keyboard, u32 seri
     (void)keyboard;
     (void)serial;
     (void)time;
-    static_cast<WaylandInput*>(data)->ApplyKey(key, state == WL_KEYBOARD_KEY_STATE_PRESSED);
+    auto* self = static_cast<WaylandInput*>(data);
+    const bool pressed = state == WL_KEYBOARD_KEY_STATE_PRESSED;
+    self->ApplyKey(key, pressed);
+    self->keyboard_events_.Key(key, pressed, NowNs());
 }
 
 void WaylandInput::HandleKeyboardModifiers(void* data, wl_keyboard* keyboard, u32 serial,
@@ -175,11 +203,9 @@ void WaylandInput::HandleKeyboardModifiers(void* data, wl_keyboard* keyboard, u3
 }
 
 void WaylandInput::HandleKeyboardRepeatInfo(void* data, wl_keyboard* keyboard, i32 rate, i32 delay) {
-    // Only sent to v4+ keyboards; key repeat is the input layer's job.
-    (void)data;
+    // Only sent to v4+ keyboards; the compositor does not repeat for clients, so KeyboardEvents does.
     (void)keyboard;
-    (void)rate;
-    (void)delay;
+    static_cast<WaylandInput*>(data)->keyboard_events_.SetRepeatInfo(rate, delay);
 }
 
 void WaylandInput::HandlePointerEnter(void* data, wl_pointer* pointer, u32 serial, wl_surface* surface,
@@ -191,6 +217,7 @@ void WaylandInput::HandlePointerEnter(void* data, wl_pointer* pointer, u32 seria
     state->pointer_inside = true;
     state->mouse_x = wl_fixed_to_double(x);
     state->mouse_y = wl_fixed_to_double(y);
+    static_cast<WaylandInput*>(data)->PushPointerEvent(InputEventType::PointerEnter, state->mouse_x, state->mouse_y);
 }
 
 void WaylandInput::HandlePointerLeave(void* data, wl_pointer* pointer, u32 serial, wl_surface* surface) {
@@ -199,7 +226,9 @@ void WaylandInput::HandlePointerLeave(void* data, wl_pointer* pointer, u32 seria
     (void)surface;
     // Buttons are left alone: under the implicit grab a held button's
     // release is still delivered after the pointer leaves the surface.
-    static_cast<WaylandInput*>(data)->input_state_->pointer_inside = false;
+    auto* self = static_cast<WaylandInput*>(data);
+    self->input_state_->pointer_inside = false;
+    self->PushPointerEvent(InputEventType::PointerLeave, 0.0, 0.0);
 }
 
 void WaylandInput::HandlePointerMotion(void* data, wl_pointer* pointer, u32 time, wl_fixed_t x,
@@ -209,6 +238,7 @@ void WaylandInput::HandlePointerMotion(void* data, wl_pointer* pointer, u32 time
     InputState* state = static_cast<WaylandInput*>(data)->input_state_;
     state->mouse_x = wl_fixed_to_double(x);
     state->mouse_y = wl_fixed_to_double(y);
+    static_cast<WaylandInput*>(data)->PushPointerEvent(InputEventType::PointerMove, state->mouse_x, state->mouse_y);
 }
 
 void WaylandInput::HandlePointerButton(void* data, wl_pointer* pointer, u32 serial, u32 time,
@@ -232,7 +262,17 @@ void WaylandInput::HandlePointerButton(void* data, wl_pointer* pointer, u32 seri
     case kBtnExtra: bit = kMouseForward; break;
     default: return;
     }
-    InputState* input = static_cast<WaylandInput*>(data)->input_state_;
+    auto* self = static_cast<WaylandInput*>(data);
+    InputState* input = self->input_state_;
+    InputEvent event;
+    event.type = InputEventType::PointerButton;
+    event.button = bit;
+    event.down = state == WL_POINTER_BUTTON_STATE_PRESSED;
+    event.x = input->mouse_x;
+    event.y = input->mouse_y;
+    event.modifiers = self->xkb_.Modifiers();
+    event.time_ns = NowNs();
+    self->events_.Push(event);
     if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
         input->mouse_buttons |= bit;
     } else {
@@ -246,11 +286,37 @@ void WaylandInput::HandlePointerAxis(void* data, wl_pointer* pointer, u32 time, 
     (void)time;
     InputState* state = static_cast<WaylandInput*>(data)->input_state_;
     double amount = wl_fixed_to_double(value);
+    // About 10 units per wheel notch (the same convention as InputState); the event reports notches.
+    constexpr f64 kUnitsPerNotch = 10.0;
+    InputEvent event;
+    event.type = InputEventType::Wheel;
     if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL) {
         state->scroll_dy += amount;
+        event.y = amount / kUnitsPerNotch;
     } else if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
         state->scroll_dx += amount;
+        event.x = amount / kUnitsPerNotch;
+    } else {
+        return;
     }
+    auto* self = static_cast<WaylandInput*>(data);
+    event.modifiers = self->xkb_.Modifiers();
+    event.time_ns = NowNs();
+    self->events_.Push(event);
+}
+
+void WaylandInput::PushPointerEvent(InputEventType type, f64 x, f64 y) {
+    InputEvent event;
+    event.type = type;
+    event.x = x;
+    event.y = y;
+    event.modifiers = xkb_.Modifiers();
+    event.time_ns = NowNs();
+    events_.Push(event);
+}
+
+void WaylandInput::Tick() {
+    keyboard_events_.Tick(NowNs());
 }
 
 void WaylandInput::ApplyKey(u32 evdev_code, bool pressed) {
