@@ -2,6 +2,7 @@
 
 #include "containers/array.h"
 #include "platform/input.h"
+#include "platform/input_event.h"
 #include "platform/window.h"
 #include "platform/windows/win32_keys.h"
 #include "string_view.h"
@@ -88,6 +89,14 @@ public:
     bool SetFullscreen(bool fullscreen) override;
     /// Returns whether the window is fullscreen: asked for, and its client area covers its monitor.
     bool IsFullscreen() const override { return hwnd_ != nullptr && fullscreen_; }
+    /// Removes the oldest queued input event (Phase 15 Day 205): keys, text from `WM_CHAR`, the pointer, buttons, the wheel, focus and resize,
+    /// in the order the window procedure saw them (`platform/BACKEND.md`).
+    ///
+    /// Param out: receives the event.
+    /// Returns: true if an event was removed.
+    bool PollEvent(InputEvent* out) override { return events_.Pop(out); }
+    /// Returns how many events were dropped because the queue was full.
+    u64 DroppedEvents() const override { return events_.Dropped(); }
     /// Calls `callback` about every 10 ms while Windows runs a move, resize or menu loop of its own (the user dragging the frame).
     ///
     /// Param callback: the function, or null to stop; it must not close or destroy the window. A call to `PumpEvents` of any window from
@@ -115,10 +124,15 @@ private:
 
     void ApplyClientSize(u32 width, u32 height);
     void UpdateFullscreenState();
+    void QueueEvent(InputEvent event); // stamps the time and queues
 
     HWND__* hwnd_ = nullptr;
     HINSTANCE__* instance_ = nullptr;
-    InputState* input_ = nullptr;
+    InputState* input_ = nullptr;   // the caller's, or own_input_ when it gave none (the events need the key and modifier tracking either way)
+    InputState own_input_;
+    InputEventQueue events_;
+    u16 high_surrogate_ = 0;        // the first half of a character outside the BMP, from the WM_CHAR before
+    bool focused_ = false;
     u32 width_ = 0;
     u32 height_ = 0;
     u32 dpi_ = 96;

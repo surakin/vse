@@ -7,6 +7,7 @@
 #include "containers/array.h"
 #include "log/log.h"
 #include "mem/arena_allocator.h"
+#include "os/os.h"
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
 #include "string/string.h"
@@ -57,6 +58,8 @@ struct Win32Window::Proc {
     static void MouseMove(Win32Window& self, HWND hwnd, LPARAM lparam);
     static void MouseButton(Win32Window& self, HWND hwnd, u32 bit, bool pressed, LPARAM lparam);
     static void ReleaseInput(Win32Window& self, HWND hwnd);
+    static void Character(Win32Window& self, WPARAM unit);
+    static void Wheel(Win32Window& self, UINT message, WPARAM wparam);
 };
 
 namespace {
@@ -138,27 +141,110 @@ void Win32Window::Proc::KeyMessage(Win32Window& self, HWND hwnd, UINT message, W
     }
     KeyboardState& keyboard = self.input_->keyboard;
     const u32 index = Win32KeyIndex(scan, extended);
+    // The events carry the modifiers held before the key, as X11 reports them (its state field) and the Linux backends queue them.
+    InputEvent event;
+    event.modifiers = keyboard.modifiers;
     if (pressed) {
-        const bool repeat = ((lparam >> 30) & 1) != 0;
-        if (!repeat || self.held_[index] == Key::Unknown) {
-            const Key key = KeyFromWin32(Win32KeyMessage{vk, scan, extended, LayoutCharacter(self, vk, scan)});
+        // Windows auto-repeats with more WM_KEYDOWN messages, bit 30 set ("was down"): a repeat is a press of a key already held here.
+        const bool was_down = ((lparam >> 30) & 1) != 0 && self.held_[index] != Key::Unknown;
+        Key key = self.held_[index];
+        if (!was_down) {
+            key = KeyFromWin32(Win32KeyMessage{vk, scan, extended, LayoutCharacter(self, vk, scan)});
             self.held_[index] = key;
             keyboard.SetDown(key, true);
+        }
+        if (key != Key::Unknown) { // an unnamed key types its text (WM_CHAR) but has no down or up: nothing could release it
+            event.type = InputEventType::KeyDown;
+            event.key = key;
+            event.repeat = was_down;
+            self.QueueEvent(event);
         }
     } else {
         Key key = self.held_[index];
         if (key == Key::Unknown) key = KeyFromWin32(Win32KeyMessage{vk, scan, extended, LayoutCharacter(self, vk, scan)}); // pressed before focus
         keyboard.SetDown(key, false);
         self.held_[index] = Key::Unknown;
+        event.type = InputEventType::KeyUp;
+        if (key != Key::Unknown) {
+            event.key = key;
+            self.QueueEvent(event);
+        }
         if (vk == VK_SHIFT) {
             // With both Shift keys held, Windows sends no key-up for the first one released, only for the last: a Shift release ends both.
+            for (const u32 shift_scan : {0x2Au, 0x36u}) {
+                const u32 other = Win32KeyIndex(shift_scan, false);
+                if (self.held_[other] != Key::Unknown && self.held_[other] != key) {
+                    event.key = self.held_[other];
+                    self.QueueEvent(event);
+                }
+                self.held_[other] = Key::Unknown;
+            }
             keyboard.SetDown(Key::LeftShift, false);
             keyboard.SetDown(Key::RightShift, false);
-            self.held_[Win32KeyIndex(0x2A, false)] = Key::Unknown;
-            self.held_[Win32KeyIndex(0x36, false)] = Key::Unknown;
         }
     }
     UpdateModifiers(self);
+}
+
+// WM_CHAR: one UTF-16 code unit of the text a key produced, after TranslateMessage turned the key into characters with the layout (dead keys
+// are composed there: the dead key gives WM_DEADCHAR, ignored, and the next key the composed character). A character outside the BMP comes as
+// two messages, the high surrogate first; they become one Text event. Control characters (Enter, Tab, Backspace, Escape, Ctrl+letter) and a
+// press with Ctrl or Alt held are keys, not text, as on Linux; AltGr is neither (its Ctrl is not counted, see UpdateModifiers).
+void Win32Window::Proc::Character(Win32Window& self, WPARAM unit_param) {
+    const u32 unit = static_cast<u32>(unit_param) & 0xFFFFu;
+    u32 scalar = unit;
+    if (unit >= 0xD800 && unit < 0xDC00) {
+        self.high_surrogate_ = static_cast<u16>(unit);
+        return;
+    }
+    if (unit >= 0xDC00 && unit < 0xE000) {
+        if (self.high_surrogate_ == 0) return; // a low surrogate alone: not a character
+        scalar = 0x10000u + ((static_cast<u32>(self.high_surrogate_) - 0xD800u) << 10) + (unit - 0xDC00u);
+    }
+    self.high_surrogate_ = 0;
+    const u32 modifiers = self.input_->keyboard.modifiers;
+    if (scalar < 0x20 || scalar == 0x7F || (scalar >= 0x80 && scalar < 0xA0) || (modifiers & (kModCtrl | kModAlt)) != 0) return;
+    InputEvent event;
+    event.type = InputEventType::Text;
+    event.modifiers = modifiers;
+    if (scalar < 0x80) {
+        event.text[0] = static_cast<char>(scalar);
+        event.text_length = 1;
+    } else if (scalar < 0x800) {
+        event.text[0] = static_cast<char>(0xC0 | (scalar >> 6));
+        event.text[1] = static_cast<char>(0x80 | (scalar & 0x3F));
+        event.text_length = 2;
+    } else if (scalar < 0x10000) {
+        event.text[0] = static_cast<char>(0xE0 | (scalar >> 12));
+        event.text[1] = static_cast<char>(0x80 | ((scalar >> 6) & 0x3F));
+        event.text[2] = static_cast<char>(0x80 | (scalar & 0x3F));
+        event.text_length = 3;
+    } else {
+        event.text[0] = static_cast<char>(0xF0 | (scalar >> 18));
+        event.text[1] = static_cast<char>(0x80 | ((scalar >> 12) & 0x3F));
+        event.text[2] = static_cast<char>(0x80 | ((scalar >> 6) & 0x3F));
+        event.text[3] = static_cast<char>(0x80 | (scalar & 0x3F));
+        event.text_length = 4;
+    }
+    self.QueueEvent(event);
+}
+
+// WM_MOUSEWHEEL and WM_MOUSEHWHEEL: Windows counts positive away from the user (up) and to the right; the engine's scroll is positive down and
+// right. A high-resolution wheel sends fractions of WHEEL_DELTA, which add up. InputState keeps the Linux backends' units (10 per notch), the
+// event reports notches.
+void Win32Window::Proc::Wheel(Win32Window& self, UINT message, WPARAM wparam) {
+    const f64 notches = static_cast<f64>(static_cast<i16>(HIWORD(wparam))) / WHEEL_DELTA;
+    InputEvent event;
+    event.type = InputEventType::Wheel;
+    event.modifiers = self.input_->keyboard.modifiers;
+    if (message == WM_MOUSEWHEEL) {
+        self.input_->scroll_dy -= notches * kWin32ScrollUnitsPerNotch;
+        event.y = -notches;
+    } else {
+        self.input_->scroll_dx += notches * kWin32ScrollUnitsPerNotch;
+        event.x = notches;
+    }
+    self.QueueEvent(event);
 }
 
 void Win32Window::Proc::MouseMove(Win32Window& self, HWND hwnd, LPARAM lparam) {
@@ -170,7 +256,24 @@ void Win32Window::Proc::MouseMove(Win32Window& self, HWND hwnd, LPARAM lparam) {
     input.mouse_y = y;
     RECT client{};
     GetClientRect(hwnd, &client);
+    const bool was_inside = input.pointer_inside;
     input.pointer_inside = x >= 0 && y >= 0 && x < client.right && y < client.bottom;
+    InputEvent event;
+    event.modifiers = input.keyboard.modifiers;
+    event.x = x;
+    event.y = y;
+    if (input.pointer_inside && !was_inside) {
+        event.type = InputEventType::PointerEnter; // Windows has no enter message: the first move inside is the enter
+        self.QueueEvent(event);
+    }
+    event.type = InputEventType::PointerMove;
+    self.QueueEvent(event);
+    if (!input.pointer_inside && was_inside) {
+        event.type = InputEventType::PointerLeave; // moved out while a button holds the capture
+        event.x = 0;
+        event.y = 0;
+        self.QueueEvent(event);
+    }
     if (input.pointer_inside && !self.tracking_leave_) {
         TRACKMOUSEEVENT track{};
         track.cbSize = sizeof(track);
@@ -186,6 +289,7 @@ void Win32Window::Proc::MouseButton(Win32Window& self, HWND hwnd, u32 bit, bool 
     InputState& input = *self.input_;
     input.mouse_x = SignedLow(lparam);
     input.mouse_y = SignedHigh(lparam);
+    if (pressed == ((input.mouse_buttons & bit) != 0)) return; // no change (a second press of a held button): no event, as on Linux
     if (pressed) {
         if (input.mouse_buttons == 0) SetCapture(hwnd);
         input.mouse_buttons |= bit;
@@ -193,13 +297,29 @@ void Win32Window::Proc::MouseButton(Win32Window& self, HWND hwnd, u32 bit, bool 
         input.mouse_buttons &= ~bit;
         if (input.mouse_buttons == 0 && GetCapture() == hwnd) ReleaseCapture();
     }
+    InputEvent event;
+    event.type = InputEventType::PointerButton;
+    event.modifiers = input.keyboard.modifiers;
+    event.button = bit;
+    event.down = pressed;
+    self.QueueEvent(event);
 }
 
 // Focus lost: the releases of what is held will go to another window, so everything held is released now (keys, buttons, modifiers).
 // Windows sends WM_KILLFOCUS only when the keyboard focus really leaves (another window, Alt+Tab, a click elsewhere), not for the window's
 // own menus, which is the line the X11 backend draws with its grab modes.
 void Win32Window::Proc::ReleaseInput(Win32Window& self, HWND hwnd) {
-    for (Key& key : self.held_) key = Key::Unknown;
+    // The stream gets a KeyUp for every key still held, then FocusLost, so a program tracking keys from it never sees one stuck.
+    for (Key& key : self.held_) {
+        if (key != Key::Unknown) {
+            InputEvent up;
+            up.type = InputEventType::KeyUp;
+            up.key = key;
+            self.QueueEvent(up);
+        }
+        key = Key::Unknown;
+    }
+    self.high_surrogate_ = 0;
     self.altgr_ctrl_held_ = false;
     if (self.input_ != nullptr) {
         self.input_->keyboard.ReleaseAll();
@@ -263,9 +383,17 @@ LRESULT Win32Window::Proc::Handle(Win32Window& self, HWND hwnd, UINT message, WP
         const bool left_minimized = self.minimized_;
         self.minimized_ = false;
         if (left_minimized || width != self.width_ || height != self.height_) {
+            const bool size_changed = width != self.width_ || height != self.height_;
             self.width_ = width;
             self.height_ = height;
             self.resize_serial_ = detail::NextResizeSerial();
+            if (size_changed) {
+                InputEvent resize;
+                resize.type = InputEventType::Resize;
+                resize.width = width;
+                resize.height = height;
+                self.QueueEvent(resize);
+            }
         }
         self.UpdateFullscreenState();
         return 0;
@@ -307,9 +435,26 @@ LRESULT Win32Window::Proc::Handle(Win32Window& self, HWND hwnd, UINT message, WP
         // system menu (lParam is the space), and the other commands (close, minimize, move) go on.
         if ((wparam & 0xFFF0) == SC_KEYMENU && lparam == 0) return 0;
         break;
+    case WM_SETFOCUS:
+        if (!self.focused_) {
+            self.focused_ = true;
+            InputEvent gained;
+            gained.type = InputEventType::FocusGained;
+            self.QueueEvent(gained);
+        }
+        break;
     case WM_KILLFOCUS:
         Proc::ReleaseInput(self, hwnd);
+        if (self.focused_) {
+            self.focused_ = false;
+            InputEvent lost;
+            lost.type = InputEventType::FocusLost;
+            self.QueueEvent(lost);
+        }
         break;
+    case WM_CHAR:
+        Proc::Character(self, wparam);
+        return 0;
     case WM_CAPTURECHANGED:
         // Another window took the mouse while a button was held: its release will not come here.
         if (reinterpret_cast<HWND>(lparam) != hwnd && self.input_ != nullptr) self.input_->mouse_buttons = 0;
@@ -319,7 +464,13 @@ LRESULT Win32Window::Proc::Handle(Win32Window& self, HWND hwnd, UINT message, WP
         return 0;
     case WM_MOUSELEAVE:
         self.tracking_leave_ = false;
-        if (self.input_ != nullptr) self.input_->pointer_inside = false; // held buttons stay held, as on Linux
+        if (self.input_ != nullptr && self.input_->pointer_inside) {
+            self.input_->pointer_inside = false; // held buttons stay held, as on Linux
+            InputEvent leave;
+            leave.type = InputEventType::PointerLeave;
+            leave.modifiers = self.input_->keyboard.modifiers;
+            self.QueueEvent(leave);
+        }
         return 0;
     case WM_LBUTTONDOWN:
     case WM_LBUTTONUP:
@@ -341,16 +492,7 @@ LRESULT Win32Window::Proc::Handle(Win32Window& self, HWND hwnd, UINT message, WP
     }
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
-        if (self.input_ != nullptr) {
-            // Positive is the wheel turned away from the user (up) or tilted right; InputState's positive scroll is down and right.
-            // A high-resolution wheel sends fractions of WHEEL_DELTA, which add up.
-            const f64 notches = static_cast<f64>(static_cast<i16>(HIWORD(wparam))) / WHEEL_DELTA;
-            if (message == WM_MOUSEWHEEL) {
-                self.input_->scroll_dy -= notches * kWin32ScrollUnitsPerNotch;
-            } else {
-                self.input_->scroll_dx += notches * kWin32ScrollUnitsPerNotch;
-            }
-        }
+        if (self.input_ != nullptr) Proc::Wheel(self, message, wparam);
         return 0;
     case WM_TIMER:
         if (wparam != kWin32ModalTimer) break;
@@ -367,6 +509,11 @@ LRESULT Win32Window::Proc::Handle(Win32Window& self, HWND hwnd, UINT message, WP
 }
 
 Win32Window::~Win32Window() { Close(); }
+
+void Win32Window::QueueEvent(InputEvent event) {
+    event.time_ns = MonotonicTimeNanos();
+    events_.Push(event);
+}
 
 u32 Win32Window::ScaleForDpi(u32 logical, u32 dpi) {
     const u64 d = dpi != 0 ? dpi : USER_DEFAULT_SCREEN_DPI;
@@ -400,7 +547,8 @@ bool Win32Window::Open(StringView title, u32 width, u32 height, InputState* inpu
     const u32 system_dpi = GetDpiForSystem();
     RECT outer{0, 0, static_cast<LONG>(ScaleForDpi(width, system_dpi)), static_cast<LONG>(ScaleForDpi(height, system_dpi))};
     AdjustWindowRectExForDpi(&outer, kWin32Style, FALSE, kWin32ExStyle, system_dpi);
-    input_ = input;
+    own_input_ = InputState{};
+    input_ = input != nullptr ? input : &own_input_; // the events need the key and modifier tracking either way
     should_close_ = false;
     minimized_ = false;
     fullscreen_wanted_ = false;
@@ -423,6 +571,15 @@ bool Win32Window::Open(StringView title, u32 width, u32 height, InputState* inpu
     width_ = static_cast<u32>(client.right - client.left);
     height_ = static_cast<u32>(client.bottom - client.top);
     resize_serial_ = detail::NextResizeSerial();
+    // The stream starts with the size the window settled on (the sizes Windows went through while it was made are not news).
+    events_.Clear();
+    high_surrogate_ = 0;
+    focused_ = false;
+    InputEvent resize;
+    resize.type = InputEventType::Resize;
+    resize.width = width_;
+    resize.height = height_;
+    QueueEvent(resize);
     ShowWindow(hwnd, SW_SHOWDEFAULT); // the launcher's choice (a shortcut set to "minimized"), else shown normally
     return true;
 }

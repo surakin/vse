@@ -403,7 +403,9 @@ TEST_CASE("Windows: the focus moving to another window of the program releases w
     CHECK_FALSE(a.input.keyboard.IsDown(Key::F3));
 }
 
-TEST_CASE("Windows: a window opened without an InputState ignores input", "[window][win32][input]") {
+// Without an InputState the window keeps its own (the event stream needs the key and button tracking, Phase 15 Day 205), so a press still
+// takes the capture, and losing the focus still gives it back.
+TEST_CASE("Windows: a window opened without an InputState takes input and releases it on a focus loss", "[window][win32][input]") {
     SKIP_IF_NO_DISPLAY_SESSION();
     Win32Window window;
     REQUIRE(window.Open("no input", 320, 240, nullptr));
@@ -411,9 +413,10 @@ TEST_CASE("Windows: a window opened without an InputState ignores input", "[wind
     PostMessageW(window.NativeHandle(), WM_MOUSEMOVE, 0, Point(3, 4));
     PostMessageW(window.NativeHandle(), WM_LBUTTONDOWN, MK_LBUTTON, Point(3, 4));
     PostMessageW(window.NativeHandle(), WM_MOUSEWHEEL, MAKEWPARAM(0, static_cast<u16>(WHEEL_DELTA)), Point(3, 4));
-    SendMessageW(window.NativeHandle(), WM_KILLFOCUS, 0, 0);
     window.PumpEvents();
     CHECK(window.Valid());
+    CHECK(GetCapture() == window.NativeHandle());
+    SendMessageW(window.NativeHandle(), WM_KILLFOCUS, 0, 0);
     CHECK(GetCapture() != window.NativeHandle());
 }
 
