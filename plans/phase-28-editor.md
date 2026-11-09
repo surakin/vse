@@ -1,6 +1,6 @@
-# Phase 27 — Editor Tooling
+# Phase 28 — Editor Tooling
 
-**Depends on:** Phase 15 (UI system), Phase 17 (ECS), Phase 20 (Asset pipeline), Phase 21
+**Depends on:** Phase 15 (UI system), Phase 18 (ECS), Phase 21 (Asset pipeline), Phase 22
 (Scripting: Lua/LuaJIT) — the editor is built using the engine's own
 renderer/ECS and Phase 15's UI system, not a separate GUI toolkit.
 **Goal:** an in-engine editor for building content without hand-writing
@@ -17,12 +17,12 @@ exist and can build/modify a level that the runtime can load.
 - Scene view built on Phase 15's **viewport widget**, with gizmos
   (translate/rotate/scale) drawn as viewport overlays.
 - Entity inspector reflecting ECS component data.
-- Asset browser over the Phase 20 asset pipeline's minted output.
-- Save/load round-trip through the Phase 20 level format.
+- Asset browser over the Phase 21 asset pipeline's minted output.
+- Save/load round-trip through the Phase 21 level format.
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 21 is complete.
+- Full day-by-day breakdown deferred until Phase 22 is complete.
 - **UI and text (resolved).** Phase 14 owns glyph rasterization/layout and
   Phase 15 owns the widget toolkit and viewport widget; this phase
   consumes both. Whether the editor needs any *additional* general

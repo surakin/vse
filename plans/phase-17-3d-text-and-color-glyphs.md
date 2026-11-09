@@ -1,4 +1,4 @@
-# Phase 16 — 3D Text, Large 2D Text & Colored Glyphs
+# Phase 17 — 3D Text, Large 2D Text & Colored Glyphs
 
 **Depends on:** Phase 14 (Font & Text: FreeType, text layout, the 2D text path) and Phase 5 (Renderer core: `MeshData`/`GpuMesh`, the material
 system, vertex colors and triangle strips from Phase 5 Day 78). Phase 15 (UI) does not need it and does not wait for it.

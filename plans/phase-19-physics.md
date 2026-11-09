@@ -1,6 +1,6 @@
-# Phase 18 — Physics
+# Phase 19 — Physics
 
-**Depends on:** Phase 17 (ECS).
+**Depends on:** Phase 18 (ECS).
 **Goal:** rigid body simulation integrated as ECS components/systems.
 **Definition of done:** gravity, collision detection, and collision
 resolution work correctly for boxes, spheres, and capsules.
@@ -18,6 +18,6 @@ resolution work correctly for boxes, spheres, and capsules.
 
 ## Notes / open questions
 
-- Full day-by-day breakdown deferred until Phase 17 is complete.
+- Full day-by-day breakdown deferred until Phase 18 is complete.
 - Fixed vs. variable timestep for simulation stability — decide with real
   frame-time data from Phase 5/15, not speculatively.

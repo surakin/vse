@@ -9,13 +9,13 @@ Document, measure, run everything on both machines, review the whole phase, clos
 
 - [x] **Guide `docs/guide/text.md`:** the model (fonts, glyphs without shaping, atlas, layout, cursor), a complete "hello world" sample (tagged, compiles and runs), sizes and HiDPI, hinting choice and how to
       change it, the limits (no complex-script shaping, no right-to-left, no vertical text, kerning from the kern table only, no atlas eviction), how reset and loss are handled, the seams left for
-      Phase 16; listed in `docs/guide/README.md`; `renderer.md` and `building-and-testing.md` updated where they mention text or the new tests.
+      Phase 17; listed in `docs/guide/README.md`; `renderer.md` and `building-and-testing.md` updated where they mention text or the new tests.
 - [x] **Reference:** `docgen lint` zero, reference regenerated and committed (identical on both machines), `docs/reference/modules.txt` covers `text` and the renderer's text headers.
 - [x] **Benchmark** `game/renderer_bench` section `text`: layout time per 1,000 characters, glyph cache hit and miss costs, atlas upload bytes per new glyph, draw cost per 1,000 glyphs; recorded in the guide
       and this file (no thresholds in tests).
 - [x] **Project documents:** `PLAN.md` (assumption #17's FreeType details, the roadmap row, a progress-log entry), `CLAUDE.md` if a rule changed (the FreeType boundary, the text module), `BUILD.md`,
       `ARCHITECTURE.md` (the measured graph), `STATUS.md`.
-- [x] **Known-issues sweep:** every Phase 14 deferral filed (no shaping, no right-to-left, no atlas eviction, a maximum rasterized size (larger text is scaled up until Phase 16 draws it as meshes), no word movement, kerning limits, LCD rendering not done, CJK coverage limited by the shipped font);
+- [x] **Known-issues sweep:** every Phase 14 deferral filed (no shaping, no right-to-left, no atlas eviction, a maximum rasterized size (larger text is scaled up until Phase 17 draws it as meshes), no word movement, kerning limits, LCD rendering not done, CJK coverage limited by the shipped font);
       entries this phase fixed removed.
 - [ ] **Closing full runs (CLAUDE.md, required for a phase's last day):** Linux `scripts/test-phase.sh --all --flavor all`, `ctest -L docs`, the demos 1000 frames with validation on Wayland and X11;
       Windows `scripts/test-phase.sh --all --flavor all` (plain and asan), `ctest -L docs`, the demos 1000 frames on DX12 and Vulkan; record both final `ran X of Y tests (phases ...)` lines here; nothing left out.

@@ -281,8 +281,8 @@ program). Started from Explorer it has no console: the writes fail and the log f
 
 ### Known limitations
 
-- The event stream is implemented on Linux (Wayland and X11); the Windows backend gets it on Phase 15 Day 205, macOS in Phase 22 (`engine/platform/BACKEND.md`).
-- The cursor shapes, images and the lock are implemented on Linux; Windows gets them on Phase 15 Day 205, macOS in Phase 22 (`engine/platform/BACKEND.md`).
+- The event stream is implemented on Linux (Wayland and X11); the Windows backend gets it on Phase 15 Day 205, macOS in Phase 23 (`engine/platform/BACKEND.md`).
+- The cursor shapes, images and the lock are implemented on Linux; Windows gets them on Phase 15 Day 205, macOS in Phase 23 (`engine/platform/BACKEND.md`).
 - No input-method (IME) composition: a Chinese, Japanese or Korean input method is not supported; dead keys and compose sequences are.
 - The Wayland half is checked against a real compositor only, which cannot be made to send key, pointer and focus events; the key logic is tested through
   `KeyboardEvents` with a fake clock and real keymaps, and the pointer, focus and wheel handlers by the end-to-end runs of the UI demo (Day 204).

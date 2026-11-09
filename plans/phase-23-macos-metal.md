@@ -1,14 +1,14 @@
-# Phase 22 — macOS Port + Metal Backend
+# Phase 23 — macOS Port + Metal Backend
 
 **Depends on:** Phase 5 (Renderer core) and Phases 6-8 (test scoping, debugging facilities, RHI reset); benefits from Phase 13 having
 already worked through the "porting an already-working stack" process once.
 Before it starts, every day of this phase needs its own file under
-`plans/phase-22-macos-metal/`.
+`plans/phase-23-macos-metal/`.
 **Goal:** Phases 1-5 running on macOS, with Metal as the RHI backend.
 **Definition of done:** the Phase 4 golden images and the Phase 5 scene
 tests pass on macOS through the Metal RHI backend with the Metal API
 validation layer silent; the job system and foundation tests pass on macOS.
-iOS is Phase 23 and reuses this phase's Metal backend.
+iOS is Phase 24 and reuses this phase's Metal backend.
 **Hardware:** the developer's 2019 MacBook Pro, an **Intel** Mac with an
 Intel or AMD GPU (x86-64 macOS). That exercises the discrete-GPU path
 (`Managed` storage, explicit CPU/GPU synchronization) and the Metal
@@ -29,7 +29,7 @@ Metal feature level.
 ## Notes / open questions
 
 - Full day-by-day breakdown deferred until Phase 13 is complete.
-- The iOS platform layer (UIKit, touch) and the LuaJIT interpreter-only build for iOS moved to Phase 23.
+- The iOS platform layer (UIKit, touch) and the LuaJIT interpreter-only build for iOS moved to Phase 24.
 - Objective-C/Swift runtime interop from a C++-rooted, no-CRT codebase
   needs a concrete decision on calling convention/bridging approach —
   scope this with real Metal headers in hand, not speculatively.
@@ -45,7 +45,7 @@ before this phase's day files are written.
   split encoders around render passes, copies and dispatches; barriers become no-ops, `memoryBarrier` or an encoder split
   depending on resource tracking mode; threadgroup size comes from shader reflection at pipeline creation; `Managed`
   storage on discrete Macs maps `FlushMappedBuffer` to `didModifyRange`; `ClampToBorder` is unavailable on iOS (the
-  backend rejects it with a log; that matters for Phase 23, not here); `nextDrawable()` is `Acquire`; the clip-space Y flip lives in the shader translation
+  backend rejects it with a log; that matters for Phase 24, not here); `nextDrawable()` is `Acquire`; the clip-space Y flip lives in the shader translation
   path.
 
 ## What Phase 5 gives this phase (Phase 5 Day 84)
@@ -58,7 +58,7 @@ From the renderer (see `docs/superpowers/specs/2026-11-04-renderer-portability-r
   `[[instance_id]]` plus `[[base_instance]]`.
 - Graph barriers become no-ops on tracked resources; the golden images are the oracle.
 - The deferred G-buffer is memory-bound on Apple-silicon tilers; merging the geometry and lighting passes into one render pass with
-  memoryless attachments is a Phase 23 graph feature, not needed on macOS GPUs here.
+  memoryless attachments is a Phase 24 graph feature, not needed on macOS GPUs here.
 
 - **Debugging facilities backend (from Phase 7; Day 101 made it ready; the remaining work is `engine/foundation/os/macos/debug/BACKEND.md`):** libbacktrace and sentry-native's Breakpad backend both support macOS (audit in the design spec, section 10). To write: the CMake source list (replace the stop message; libbacktrace uses `macho.c`), `SENTRY_BACKEND=breakpad` with `SENTRY_TRANSPORT=none`, the `LC_UUID` build id and `sysctl` system information in `InitCrashContext`, `GetCrashDumpDirectory` (`~/Library/Application Support`), the death-test spawn (shared `posix_spawn`; no `PR_SET_PDEATHSIG`, so the child watches a pipe), `FaultSupported`/`InjectFault` (integer divide does not trap on arm64), `IsDebuggerAttached` (`P_TRACED`), `CurrentThreadId`, `DemangleSymbol`, the module list (`_dyld_*`), `RegisterThreadForCrashHandling` (name only: Mach exceptions need no alternate stack), `EnablePostMortemDumps` (`/cores`, normally disabled: Limited), and the report written from the library's `on_crash` hook (which receives the user context on macOS). dSYM files must sit next to the binary for libbacktrace; `dsymutil` and `strip` replace `objcopy` in the scripts, and the symbol store holds dSYMs by UUID. Reused unchanged: the facade, assert family, report writer, ring buffer, crash state, `tests/debug` with `BACKEND-CONFORMANCE.md`, `docs/guide/porting-debugging.md`. Done when the conformance groups pass or skip with a reason, and `debug_backend_lists` and `debug_cross_syntax_macos` still pass.
 

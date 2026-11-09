@@ -475,7 +475,7 @@ child and closes every descriptor it opened.
 | Platform | How the child is started | Notes |
 |---|---|---|
 | Linux | `posix_spawn` of `/proc/self/exe` | implemented (Phase 7) |
-| macOS | `posix_spawn` | Phase 22; the POSIX code is shared with Linux |
+| macOS | `posix_spawn` | Phase 23; the POSIX code is shared with Linux |
 | Windows | `CreateProcess` | Phase 13; exit statuses such as `0xC0000005` map to a [[debug::CrashReason]] |
 | iOS, consoles | not possible | [[debug::DeathTestsSupported]] is false and death tests skip with a printed reason |
 

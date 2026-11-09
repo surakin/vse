@@ -102,6 +102,12 @@ The numbers are the items of the original table; the plan is `plans/phase-12-mod
 | sentry-native (Breakpad) | `debug/crash_handler_sentry.cpp` | `library_boundary.txt` |
 | nlohmann/json | `tools/shader_mint/reflect_json.cpp` and its test | `std_container_check` allow list, `PLAN.md` #19 |
 
+### Planned modules (Phase 16, standard-library wrappers; not built yet)
+
+`foundation/lang` and `foundation/sync` (layer 0, no dependencies; traits, `Move`, `Limits`, scalar math; `Atomic<T>`, `Mutex`, `Thread`), `foundation/cstr` (layer 2, next to `mem`; C strings, formatting, number parsing, below `log`),
+and the wrapper functions that join `foundation/mem` (memory operations), `foundation/os` (console output, process, environment, signals, time) and `engine/jobs` (`CoroutineHandle`). Each row is added to section 1 and to
+`tools/module_deps_check/modules.txt` on the day that builds it (Days 208-215); `docs/superpowers/specs/2026-11-09-std-wrappers-design.md` has the layer reasoning.
+
 ## 6. Keeping this file true
 
 A change that adds a module, moves one between layers or adds an allowed edge updates this file in the same commit. The gate **`module_deps_check`**

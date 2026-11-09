@@ -54,7 +54,7 @@ Deviations from the plan above:
   `malloc`/`calloc`/`realloc` with `--wrap`; it counts `malloc`-family calls only, not `mmap`.
 - No `g_trace_error_count`: libbacktrace's error callback is a no-op (a problem shows up as `module+offset` or `??`).
 - The plan's "no heap and no lock" is "never calls `malloc`; takes libbacktrace's internal lock; maps memory with `mmap`".
-- The Windows/macOS branches of the libbacktrace wrapper stop with a message naming Phases 13 and 22. The docs sample link
+- The Windows/macOS branches of the libbacktrace wrapper stop with a message naming Phases 13 and 23. The docs sample link
   line (`tools/docgen/CMakeLists.txt`) and its `docs` target now include `backtrace`.
 - No `-fno-omit-frame-pointer` change was needed (the unwinder is the compiler's). ASan with `detect_stack_use_after_return`
   on or off, and TSan, give the same traces: the unwinder walks the real stack, where return addresses stay.

@@ -1,4 +1,4 @@
-# Phase 24 — Console Ports (Xbox, PS5)
+# Phase 25 — Console Ports (Xbox, PS5)
 
 **Depends on:** Phase 13 (Windows + DX12, closest analog to Xbox) and
 Phase 4 (Vulkan RHI, closest analog to PS5's GNM/GNMX-adjacent needs —

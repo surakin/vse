@@ -74,13 +74,13 @@ modal-loop callback keeps the program drawing; it refuses to start unless a mous
 
 ### `macos`
 
-Not implemented yet (Phase 22; drag and drop is `NSDraggingDestination` and `NSDraggingSource` on the view; the clipboard is `NSPasteboard` (`NSPasteboardTypeString`, file URLs; `changeCount` polled for `ClipboardChanged`); cursors `NSCursor`, the lock `CGAssociateMouseAndMouseCursorPosition`): `NSEvent` key events with `interpretKeyEvents:` for text, dead keys and input methods, `scrollingDeltaX/Y`, `keyDown` repeat from
+Not implemented yet (Phase 23; drag and drop is `NSDraggingDestination` and `NSDraggingSource` on the view; the clipboard is `NSPasteboard` (`NSPasteboardTypeString`, file URLs; `changeCount` polled for `ClipboardChanged`); cursors `NSCursor`, the lock `CGAssociateMouseAndMouseCursorPosition`): `NSEvent` key events with `interpretKeyEvents:` for text, dead keys and input methods, `scrollingDeltaX/Y`, `keyDown` repeat from
 `isARepeat`, `windowDidBecomeKey`/`windowDidResignKey`, `windowDidResize`. The `PollEvent` default (no events) keeps the layer compiling meanwhile.
 
 ### `android`
 
-Not implemented yet (Phase 23): `AInputEvent` key and motion events, text from the soft keyboard (an IME is unavoidable there), touch as the pointer.
+Not implemented yet (Phase 24): `AInputEvent` key and motion events, text from the soft keyboard (an IME is unavoidable there), touch as the pointer.
 
 ### `ios`
 
-Not implemented yet (Phase 23): `UIKeyCommand`/`pressesBegan` for hardware keys, `UITextInput` for the soft keyboard, touches as the pointer.
+Not implemented yet (Phase 24): `UIKeyCommand`/`pressesBegan` for hardware keys, `UITextInput` for the soft keyboard, touches as the pointer.

@@ -22,7 +22,7 @@ Move the windows and input code to `engine/platform/`, where `PLAN.md` always pu
       `tools/docgen` and `tools/shader_mint` no longer pull in display libraries (check with `ldd`).
 - [x] **Everything that names the old paths:** `tests/phases.txt` and `tests/module_map.txt` patterns (the window tests keep phase 1), the gates' allow lists
       (`platform_neutral_check`, `file_access_check`, `config_access_check`, `signal_safety_check`, `std_container_check`), `docs/reference/modules.txt` (the
-      `platform/window-input` module), `docs/guide/platform-windowing-and-input.md`, the Phase 13 and 22 plan files' paths, `ARCHITECTURE.md` section 1.
+      `platform/window-input` module), `docs/guide/platform-windowing-and-input.md`, the Phase 13 and 23 plan files' paths, `ARCHITECTURE.md` section 1.
 - [x] **Allow list:** entries for items 5, 9 and 10 deleted; `module_deps_check` reports no cycle anywhere and only the two RHI entries (Phase 13 Day 162).
 - [x] **Tests:** the whole window and input suite unchanged in behavior on Wayland and X11 (`display` group); both demos run 1000 frames with `--validation` on
       both backends; `engine_main` (or its replacement) still opens a window.
