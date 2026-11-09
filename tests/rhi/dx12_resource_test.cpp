@@ -1,7 +1,6 @@
 // The Direct3D 12 backend's resources (Phase 13 Day 165): the format table, buffers on every heap, texture uploads and readbacks through
 // 256-byte row pitches at odd sizes, block-compressed levels, typeless depth with typed views, and the resource accounting. Windows only.
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -12,6 +11,7 @@
 #include "rhi/dx12/dx12_format.h"
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -47,7 +47,7 @@ void Fill(Vector<u8>& bytes, usize size, u32 seed) {
     }
 }
 
-bool Same(const Vector<u8>& a, const Vector<u8>& b) { return a.Size() == b.Size() && std::memcmp(a.Data(), b.Data(), a.Size()) == 0; }
+bool Same(const Vector<u8>& a, const Vector<u8>& b) { return a.Size() == b.Size() && MemCompare(a.Data(), b.Data(), a.Size()) == 0; }
 
 u32 Mip(u32 base, u32 mip) {
     const u32 e = base >> mip;
@@ -82,7 +82,7 @@ void RoundTrip(Dx12Device& device, Format format, u32 width, u32 height, u32 mip
                 // Depth must be a float the copy keeps exactly: 0..1.
                 for (usize i = 0; i + 4 <= sent.Size(); i += 4) {
                     const f32 v = static_cast<f32>(sent[i]) / 255.0f;
-                    std::memcpy(&sent[i], &v, 4);
+                    MemCopy(&sent[i], &v, 4);
                 }
             }
             const UploadTicket ticket = device.UploadTexture(tex, mip, layer, sent.Data(), 0);
@@ -147,7 +147,7 @@ TEST_CASE("DX12 buffers on every heap round-trip their data, including uploads l
         REQUIRE(device->UploadBuffer(big, 12345, patch, 5).ok);
         u8 back[5] = {};
         REQUIRE(device->ReadbackBuffer(big, 12345, back, 5));
-        CHECK(std::memcmp(patch, back, 5) == 0);
+        CHECK(MemCompare(patch, back, 5) == 0);
         device->DestroyBuffer(big);
     }
     {
@@ -323,9 +323,9 @@ TEST_CASE("Creating 1000 small buffers as committed resources: DX12 against Vulk
     DevicePtr vulkan = CreateDevice(vk);
     char line[160];
     if (vulkan) {
-        std::snprintf(line, sizeof(line), "1000 x 256-byte buffers: DX12 %.2f ms (committed), Vulkan %.2f ms", dx12_ms, measure(*vulkan));
+        FormatTo(line, sizeof(line), "1000 x 256-byte buffers: DX12 %.2f ms (committed), Vulkan %.2f ms", dx12_ms, measure(*vulkan));
     } else {
-        std::snprintf(line, sizeof(line), "1000 x 256-byte buffers: DX12 %.2f ms (committed); no Vulkan device to compare", dx12_ms);
+        FormatTo(line, sizeof(line), "1000 x 256-byte buffers: DX12 %.2f ms (committed); no Vulkan device to compare", dx12_ms);
     }
     WARN(line);
 }

@@ -1,6 +1,6 @@
 #include "renderer/device_resources.h"
 
-#include <cstdio>
+#include "cstr/format.h"
 
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
@@ -94,7 +94,7 @@ bool DeviceResources::RecreateFrom(u32 first_tier) {
         }
         pick->live = true;
         if (!pick->owner->Recreate(device_)) {
-            std::snprintf(failed_name_, sizeof(failed_name_), "%s", pick->owner->RecreatableName());
+            FormatTo(failed_name_, sizeof(failed_name_), "%s", pick->owner->RecreatableName());
             RenderLog(LogVerbosity::Error, "DeviceResources: '%s' could not be recreated", failed_name_);
             pick->live = false;
             ok = false;

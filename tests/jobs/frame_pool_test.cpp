@@ -1,7 +1,5 @@
 #include "sync/atomic.h"
 #include "types.h"
-#include <cstdio>
-#include <cstring>
 #include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -10,6 +8,7 @@
 
 #include "jobs/frame_pool.h"
 #include "os/os.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using engine_placeholder::jobs::FramePool;
@@ -176,19 +175,19 @@ TEST_CASE("FramePool survives 8-thread cross-thread alloc/free churn with no ove
     // Each block: [0..8) = tag, [8..16) = size, [size-8..size) = tag.
     auto stamp = [](void* p, usize size, u64 tag) {
         auto* b = static_cast<u8*>(p);
-        std::memcpy(b, &tag, 8);
-        std::memcpy(b + 8, &size, 8);
-        std::memcpy(b + size - 8, &tag, 8);
+        MemCopy(b, &tag, 8);
+        MemCopy(b + 8, &size, 8);
+        MemCopy(b + size - 8, &tag, 8);
         for (usize i = 16; i + 8 < size; ++i) b[i] = static_cast<u8>(tag + i);
     };
     auto verify = [](const void* p) {
         const auto* b = static_cast<const u8*>(p);
         u64 tag, tail;
         usize size;
-        std::memcpy(&tag, b, 8);
-        std::memcpy(&size, b + 8, 8);
+        MemCopy(&tag, b, 8);
+        MemCopy(&size, b + 8, 8);
         if (size < 24 || size > 4096) return false;
-        std::memcpy(&tail, b + size - 8, 8);
+        MemCopy(&tail, b + size - 8, 8);
         if (tag != tail) return false;
         for (usize i = 16; i + 8 < size; ++i) {
             if (b[i] != static_cast<u8>(tag + i)) return false;

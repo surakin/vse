@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "text/layout.h"
 #include "types.h"
@@ -117,7 +117,7 @@ public:
     /// Fails: never.
     f32 SnapLength(f32 logical) const {
         if (!(logical > 0)) return 0;
-        const f32 px = std::floor(logical * Scale() + 0.5f);
+        const f32 px = Floor(logical * Scale() + 0.5f);
         return px < 1.0f ? 1.0f : px;
     }
     /// Returns `rect` in physical pixels with its edges rounded to whole pixels (see the contract above); an empty rectangle stays empty.
@@ -126,10 +126,10 @@ public:
     Rect SnapRect(const Rect& rect) const {
         if (rect.Empty()) return Rect();
         const f32 s = Scale();
-        const f32 x0 = std::floor(rect.x * s + 0.5f);
-        const f32 y0 = std::floor(rect.y * s + 0.5f);
-        f32 x1 = std::floor((rect.x + rect.w) * s + 0.5f);
-        f32 y1 = std::floor((rect.y + rect.h) * s + 0.5f);
+        const f32 x0 = Floor(rect.x * s + 0.5f);
+        const f32 y0 = Floor(rect.y * s + 0.5f);
+        f32 x1 = Floor((rect.x + rect.w) * s + 0.5f);
+        f32 y1 = Floor((rect.y + rect.h) * s + 0.5f);
         if (x1 < x0 + 1.0f) x1 = x0 + 1.0f;
         if (y1 < y0 + 1.0f) y1 = y0 + 1.0f;
         Rect out;

@@ -12,6 +12,8 @@
 #include "rhi/device_host.h"
 #include "rhi/null/null_device.h"
 #include "rhi/rhi_log.h"
+#include "cstr/cstr.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -146,7 +148,7 @@ TEST_CASE("A failing recreate stops the sequence, releases everything and names 
     bad.fail_recreate = true;
     rig.log.clear();
     CHECK_FALSE(rig.Reset());
-    CHECK(std::strcmp(rig.registry.FailedOwner(), "bad") == 0);
+    CHECK(CStrCompare(rig.registry.FailedOwner(), "bad") == 0);
     CHECK(rig.host.GetDevice() == nullptr);
     CHECK_FALSE(low.live); // low was built, then released again: a half-built set is never used
     CHECK(high.recreates == 0); // never reached
@@ -181,7 +183,7 @@ TEST_CASE("A mesh survives a device change with identical content and the same s
     MeshData data;
     REQUIRE(MakeSphereMesh(1.0f, 12, 6, &data) == nullptr);
     std::vector<unsigned char> vertices(static_cast<usize>(data.VertexBytes()));
-    std::memcpy(vertices.data(), data.Vertices(), vertices.size());
+    MemCopy(vertices.data(), data.Vertices(), vertices.size());
 
     SECTION("borrowed source") {
         GpuMesh mesh;
@@ -235,7 +237,7 @@ TEST_CASE("A mesh survives a device change with identical content and the same s
         REQUIRE(MakeCubeMesh(1.0f, &small) == nullptr);
         mesh.MakeRecreatable(&rig.registry, GpuMesh::Source{&small, nullptr, nullptr}, "bare"); // wrong geometry
         CHECK_FALSE(rig.Reset());
-        CHECK(std::strcmp(rig.registry.FailedOwner(), "bare") == 0);
+        CHECK(CStrCompare(rig.registry.FailedOwner(), "bare") == 0);
     }
 }
 
@@ -328,7 +330,7 @@ TEST_CASE("A device with smaller limits fails the recreate with a reason instead
     small.caps.max_texture_dimension_2d = 32;
     rhi::NullDevicePtr second = rhi::CreateNullDevice(small);
     CHECK_FALSE(registry.OnDeviceCreated(second.Get(), second->Epoch()));
-    CHECK(std::strcmp(registry.FailedOwner(), "big") == 0);
+    CHECK(CStrCompare(registry.FailedOwner(), "big") == 0);
     CHECK_FALSE(texture.Valid());
     CHECK(second->Resources().UserObjects() == 0);
 
@@ -367,7 +369,7 @@ TEST_CASE("Texture content is identical after a reset on a real device", "[devic
     Vector<u8> got;
     got.Resize(expected.Size());
     REQUIRE(host.GetDevice()->ReadbackTexture(texture.Handle(), 0, 0, got.Data(), got.Size(), rhi::ResourceState::ShaderRead));
-    CHECK(std::memcmp(got.Data(), expected.Data(), expected.Size()) == 0);
+    CHECK(MemCompare(got.Data(), expected.Data(), expected.Size()) == 0);
     texture.Destroy();
     host.Destroy();
 }
@@ -415,7 +417,7 @@ TEST_CASE("A moved sampler or texture rebuilds with a valid description", "[devi
     REQUIRE(rig.Reset()); // under ASan this reads the names the descriptions point at
     CHECK(moved.Valid());
     CHECK(moved_texture.Valid());
-    CHECK(std::strcmp(moved_texture.Desc().debug_name, "moving texture") == 0);
+    CHECK(CStrCompare(moved_texture.Desc().debug_name, "moving texture") == 0);
 }
 
 TEST_CASE("An owner may unregister itself or another from inside Release or Recreate", "[device_resources]") {

@@ -7,10 +7,11 @@
 #include "resource_guard.h"
 #include "support/death_test_skip.h"
 
-#include <cstdlib>
-#include <cstring>
+#include "os/console.h"
+#include "cstr/cstr.h"
 #include "sync/thread.h"
 #include "build_defs.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -30,7 +31,7 @@ ENGINE_DEATH_TEST_FN(dt_cause_fault) {
 
 ENGINE_DEATH_TEST_FN(dt_flood_stderr) {
     char block[4096];
-    std::memset(block, 'x', sizeof(block));
+    MemSet(block, 'x', sizeof(block));
     for (int i = 0; i < 256; ++i) { // 1 MB, far more than a pipe holds
         os::Write(2, block, sizeof(block));
     }
@@ -48,12 +49,12 @@ ENGINE_DEATH_TEST_FN(dt_close_stderr_then_crash) {
 }
 
 ENGINE_DEATH_TEST_FN(dt_echo) {
-    const char* extra = std::getenv("DT_EXTRA");
-    const char* nested = std::getenv("ENGINE_DEATH_TEST_NOCORE");
+    const char* extra = os::GetEnvironment("DT_EXTRA");
+    const char* nested = os::GetEnvironment("ENGINE_DEATH_TEST_NOCORE");
     char line[256];
     usize n = 0;
     auto put = [&](const char* text) {
-        const usize len = std::strlen(text);
+        const usize len = CStrLength(text);
         for (usize i = 0; i < len && n + 1 < sizeof(line); ++i) {
             line[n++] = text[i];
         }
@@ -71,11 +72,11 @@ ENGINE_DEATH_TEST_FN(dt_echo) {
 
 // Prints the sanitizer options the child ended up with.
 ENGINE_DEATH_TEST_FN(dt_echo_asan_options) {
-    const char* value = std::getenv("ASAN_OPTIONS");
+    const char* value = os::GetEnvironment("ASAN_OPTIONS");
     char line[512];
     usize n = 0;
     for (const char* text : {"asan_options=", value != nullptr ? value : "(unset)", "\n"}) {
-        const usize len = std::strlen(text);
+        const usize len = CStrLength(text);
         for (usize i = 0; i < len && n + 1 < sizeof(line); ++i) {
             line[n++] = text[i];
         }
@@ -88,7 +89,7 @@ ENGINE_DEATH_TEST_FN(dt_echo_asan_options) {
 ENGINE_DEATH_TEST_FN(dt_flood_forever) {
     auto flood = [] {
         static char block[65536];
-        std::memset(block, 'y', sizeof(block));
+        MemSet(block, 'y', sizeof(block));
         for (;;) {
             os::Write(2, block, sizeof(block));
         }

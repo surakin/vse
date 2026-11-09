@@ -1,7 +1,5 @@
 #include "ui/widgets/tooltip.h"
 
-#include <cmath>
-
 #include "ui/surface.h"
 #include "ui/widgets/look.h"
 

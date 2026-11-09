@@ -1,6 +1,6 @@
 #include "ui/widgets/buttons.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "ui/surface.h"
 #include "ui/widgets/look.h"
@@ -60,7 +60,7 @@ Size Button::Measure(const Constraints&) {
     const f32 gap = (lead.w > 0 && text_w > 0) ? surface->Themes().Metric(MetricId::Spacing, 1.0f) : 0.0f;
     Size size;
     size.w = style.padding_x / scale * 2 + lead.w + gap + text_w;
-    size.h = style.padding_y / scale * 2 + std::fmax(lead.h, text_h);
+    size.h = style.padding_y / scale * 2 + FMax(lead.h, text_h);
     return size;
 }
 
@@ -173,7 +173,7 @@ Size CheckBox::LeadingSize(f32) {
 void CheckBox::DrawLeading(Canvas& canvas, const Rect& rect, const ResolvedStyle& style, f32 scale) {
     DrawStyleBox(canvas, rect, style, scale);
     const u32 mark = GetSurface()->Themes().Color(ColorId::WindowBackground);
-    const f32 width = std::fmax(style.border_width / scale * 2, 1.0f);
+    const f32 width = FMax(style.border_width / scale * 2, 1.0f);
     if (state_ == CheckState::Checked) {
         const Point a{rect.x + rect.w * 0.25f, rect.y + rect.h * 0.5f};
         const Point m{rect.x + rect.w * 0.45f, rect.y + rect.h * 0.7f};

@@ -1,15 +1,13 @@
 #include "io/file.h"
 
-#include <cstdio>
 #include "sync/atomic.h"
-#include <cstring>
-#include <chrono>
 #include "sync/mutex.h"
 #include "sync/thread.h"
 
 #include "log/diagnostics_hooks.h"
 #include "io/file_system.h"
 #include "log/assert.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::io {
 
@@ -276,7 +274,7 @@ Status RegisterFileScheme(StringView scheme, FileFactory factory) {
         return Status::Of(Error::OutOfMemory);
     }
     SchemeEntry& e = g_schemes[g_scheme_count++];
-    std::memcpy(e.name, scheme.Data(), scheme.Length());
+    MemCopy(e.name, scheme.Data(), scheme.Length());
     e.name[scheme.Length()] = '\0';
     e.length = scheme.Length();
     e.factory = factory;
@@ -386,7 +384,7 @@ Status ReadAll(File& file, Vector<u8>* out, u64 max_bytes) {
     const Status s = ReadChunks(file, max_bytes, [&](const u8* data, usize n) {
         const usize old = result.Size();
         if (!result.TryResizeUninitialized(old + n)) return false;
-        std::memcpy(result.Data() + old, data, n);
+        MemCopy(result.Data() + old, data, n);
         return true;
     });
     if (s.Failed()) return s;
@@ -423,7 +421,7 @@ Status ReadAll(File& file, ArenaAllocator& arena, u8** data, usize* size, u64 ma
     if (Status s = ReadAll(file, &bytes, max_bytes); s.Failed()) return s;
     u8* block = static_cast<u8*>(arena.Alloc(bytes.Size() == 0 ? 1 : bytes.Size(), 1));
     if (block == nullptr) return Status::Of(Error::OutOfMemory);
-    if (bytes.Size() != 0) std::memcpy(block, bytes.Data(), bytes.Size());
+    if (bytes.Size() != 0) MemCopy(block, bytes.Data(), bytes.Size());
     *data = block;
     *size = bytes.Size();
     return Status::Success();

@@ -13,7 +13,7 @@ From the bottom up. "Platform code" means a per-OS backend directory (`linux/`, 
 
 | Layer | Module (directory) | What it is |
 |---|---|---|
-| 0. Base | `foundation/lang` (Phase 16), `foundation/sync` (Phase 16), `foundation` root headers: `types.h`, `int128.h`, `build_defs.h`, `debug/compiler.h` | Fixed-width types, 128-bit integers, platform/compiler/processor/sanitizer macros, compiler constructs. Depends on nothing. |
+| 0. Base | `foundation/lang` (Phase 16), `foundation/sync` (Phase 16), `foundation/cstr` (Phase 16), `foundation` root headers: `types.h`, `int128.h`, `build_defs.h`, `debug/compiler.h` | Fixed-width types, 128-bit integers, platform/compiler/processor/sanitizer macros, compiler constructs. Depends on nothing. |
 | 1. OS primitives | `foundation/os/os.h` (+ `os/<platform>/os.cpp`) | Descriptors, memory reservation, clocks, sleep, dynamic libraries, the environment. Base only. |
 | 2. Memory | `foundation/mem` | Heap, arena, pool and stack allocators. Base, OS primitives. |
 | 3. Assert and log core | `foundation/log` | `ENGINE_ASSERT` family, log channels and sinks to descriptors. Layers 0-2. The assert *failure report* (stack trace, crash context) belongs to debugging (layer 7), reached through a hook (section 3, item 1). |
@@ -104,7 +104,7 @@ The numbers are the items of the original table; the plan is `plans/phase-12-mod
 
 ### Planned modules (Phase 16, standard-library wrappers; not built yet)
 
-`foundation/lang` and `foundation/sync` (layer 0, no dependencies; traits, `Move`, `Limits`, scalar math; `Atomic<T>`, `Mutex`, `Thread`), `foundation/cstr` (layer 2, next to `mem`; C strings, formatting, number parsing, below `log`),
+`foundation/lang` and `foundation/sync` (layer 0, no dependencies; traits, `Move`, `Limits`, scalar math; `Atomic<T>`, `Mutex`, `Thread`), `foundation/cstr` (also layer 0 in `tools/module_deps_check/modules.txt`, because `types.h` and `lang` need `mem_ops.h`; C strings, formatting, number parsing, raw memory),
 and the wrapper functions that join `foundation/mem` (memory operations), `foundation/os` (console output, process, environment, signals, time) and `engine/jobs` (`CoroutineHandle`). Each row is added to section 1 and to
 `tools/module_deps_check/modules.txt` on the day that builds it (Days 208-215); `docs/superpowers/specs/2026-11-09-std-wrappers-design.md` has the layer reasoning.
 

@@ -1,6 +1,6 @@
 #include "platform/linux/wayland/wayland_platform_window.h"
 
-#include <cerrno>
+#include "os/last_error.h"
 #include <poll.h>
 
 #include "log/log.h"
@@ -78,7 +78,7 @@ void WaylandPlatformWindow::PumpEvents() {
             return;
         }
     }
-    if (wl_display_flush(display) < 0 && errno != EAGAIN) {
+    if (wl_display_flush(display) < 0 && os::LastError() != EAGAIN) {
         wl_display_cancel_read(display);
         MarkConnectionLost("Wayland: flush failed (compositor connection lost)");
         return;

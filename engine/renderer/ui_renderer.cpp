@@ -1,7 +1,5 @@
+#include "lang/new.h"
 #include "renderer/ui_renderer.h"
-
-#include <cstddef>
-#include <cstring>
 
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
@@ -9,6 +7,7 @@
 #include "ui.frag.dxil.inc" // and its .spv.inc
 #include "ui.vert.refl.inc"
 #include "ui.vert.dxil.inc" // and its .spv.inc
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::renderer {
 
@@ -20,10 +19,10 @@ struct UiParams {
     f32 srgb_target;
     f32 pad;
 };
-static_assert(sizeof(UiParams) == shaders::kUiVertParamsSize && offsetof(UiParams, pixel_to_clip) == shaders::kUiVertParamsPixelToClipOffset &&
-                  offsetof(UiParams, srgb_target) == shaders::kUiVertParamsSrgbTargetOffset && offsetof(UiParams, pad) == shaders::kUiVertParamsPadOffset,
+static_assert(sizeof(UiParams) == shaders::kUiVertParamsSize && ENGINE_OFFSET_OF(UiParams, pixel_to_clip) == shaders::kUiVertParamsPixelToClipOffset &&
+                  ENGINE_OFFSET_OF(UiParams, srgb_target) == shaders::kUiVertParamsSrgbTargetOffset && ENGINE_OFFSET_OF(UiParams, pad) == shaders::kUiVertParamsPadOffset,
               "UiParams must match the std140 block in shaders/ui.vert.slang");
-static_assert(sizeof(ui::Vertex) == 40 && offsetof(ui::Vertex, color) == 16 && offsetof(ui::Vertex, half_w) == 20 && offsetof(ui::Vertex, flags) == 36,
+static_assert(sizeof(ui::Vertex) == 40 && ENGINE_OFFSET_OF(ui::Vertex, color) == 16 && ENGINE_OFFSET_OF(ui::Vertex, half_w) == 20 && ENGINE_OFFSET_OF(ui::Vertex, flags) == 36,
               "the vertex attributes below follow ui::Vertex");
 
 bool MakeWhite(rhi::Device* device, GpuTexture* texture, DeviceResources* resources) {
@@ -103,11 +102,11 @@ bool UiRenderer::MakeGpuObjects(rhi::Device* device) {
 
 bool UiRenderer::MakePipeline() {
     rhi::VertexBindingDesc binding = {sizeof(ui::Vertex), false};
-    rhi::VertexAttributeDesc attributes[5] = {{0, 0, rhi::VertexFormat::Float2, offsetof(ui::Vertex, x)},
-                                              {1, 0, rhi::VertexFormat::Float2, offsetof(ui::Vertex, u)},
-                                              {2, 0, rhi::VertexFormat::UNorm8x4, offsetof(ui::Vertex, color)},
-                                              {3, 0, rhi::VertexFormat::Float4, offsetof(ui::Vertex, half_w)},
-                                              {4, 0, rhi::VertexFormat::UInt1, offsetof(ui::Vertex, flags)}};
+    rhi::VertexAttributeDesc attributes[5] = {{0, 0, rhi::VertexFormat::Float2, ENGINE_OFFSET_OF(ui::Vertex, x)},
+                                              {1, 0, rhi::VertexFormat::Float2, ENGINE_OFFSET_OF(ui::Vertex, u)},
+                                              {2, 0, rhi::VertexFormat::UNorm8x4, ENGINE_OFFSET_OF(ui::Vertex, color)},
+                                              {3, 0, rhi::VertexFormat::Float4, ENGINE_OFFSET_OF(ui::Vertex, half_w)},
+                                              {4, 0, rhi::VertexFormat::UInt1, ENGINE_OFFSET_OF(ui::Vertex, flags)}};
     rhi::GraphicsPipelineDesc gp;
     gp.vertex_shader = vertex_shader_;
     gp.fragment_shader = fragment_shader_;
@@ -249,8 +248,8 @@ void UiRenderer::Record(rhi::CommandList* list) {
     const u32 slot = static_cast<u32>(device_->FrameNumber() % rhi::UniformRing::kSlots);
     const u64 vertex_offset = vertex_slot_bytes_ * slot;
     const u64 index_offset = index_slot_bytes_ * slot;
-    if (vertex_count > 0) std::memcpy(mapped_vertices_ + vertex_offset, dl.vertices.Data(), vertex_count * sizeof(ui::Vertex));
-    if (index_count > 0) std::memcpy(mapped_indices_ + index_offset, dl.indices.Data(), index_count * sizeof(u32));
+    if (vertex_count > 0) MemCopy(mapped_vertices_ + vertex_offset, dl.vertices.Data(), vertex_count * sizeof(ui::Vertex));
+    if (index_count > 0) MemCopy(mapped_indices_ + index_offset, dl.indices.Data(), index_count * sizeof(u32));
     device_->FlushMappedBuffer(vertex_buffer_, vertex_offset, vertex_count * sizeof(ui::Vertex));
     device_->FlushMappedBuffer(index_buffer_, index_offset, index_count * sizeof(u32));
     stats_.vertices += vertex_count;

@@ -1,14 +1,15 @@
 #include "renderer/render_settings.h"
 
-#include <cerrno>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "os/last_error.h"
+#include "lang/scalar.h"
+#include "cstr/format.h"
+#include "cstr/number.h"
+#include "cstr/cstr.h"
 
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 #include "rhi/rhi.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::renderer {
 
@@ -29,7 +30,7 @@ bool ValidName(const char* name) {
 }
 
 bool ValidText(const char* text) {
-    if (text[0] == ' ' || (text[0] != '\0' && text[std::strlen(text) - 1] == ' ')) {
+    if (text[0] == ' ' || (text[0] != '\0' && text[CStrLength(text) - 1] == ' ')) {
         return false; // the file format trims blanks, so they would not survive a round trip
     }
     usize length = 0;
@@ -66,7 +67,7 @@ bool SameValue(const RenderSettings& a, const RenderSettings& b, SettingId id, c
         case SettingType::Enum: return a.GetEnum(id) == b.GetEnum(id);
         case SettingType::Int: return a.GetInt(id) == b.GetInt(id);
         case SettingType::Float: return a.GetFloat(id) == b.GetFloat(id);
-        case SettingType::Text: return std::strcmp(a.GetText(id), b.GetText(id)) == 0;
+        case SettingType::Text: return CStrCompare(a.GetText(id), b.GetText(id)) == 0;
     }
     return false;
 }
@@ -165,7 +166,7 @@ SettingId SettingsRegistry::Register(const SettingDesc& desc) {
                 }
                 break;
             case SettingType::Float:
-                if (!std::isfinite(desc.min_float) || !std::isfinite(desc.max_float) || !std::isfinite(desc.default_float) ||
+                if (!IsFinite(desc.min_float) || !IsFinite(desc.max_float) || !IsFinite(desc.default_float) ||
                     desc.min_float > desc.max_float || desc.default_float < desc.min_float || desc.default_float > desc.max_float) {
                     problem = "the float range is not finite, is empty or excludes the default";
                 }
@@ -196,7 +197,7 @@ SettingId SettingsRegistry::FindByName(const char* name) const {
         return SettingId{};
     }
     for (u32 i = 0; i < count_; ++i) {
-        if (std::strcmp(descs_[i].name, name) == 0) {
+        if (CStrCompare(descs_[i].name, name) == 0) {
             return SettingId{static_cast<u16>(i + 1)};
         }
     }
@@ -277,7 +278,7 @@ RenderSettings::Value RenderSettings::Get(SettingId id, const SettingDesc* desc)
     switch (desc->type) {
         case SettingType::Float: v.real = desc->default_float; break;
         case SettingType::Text:
-            if (desc->default_text != nullptr) std::strncpy(v.text, desc->default_text, kSettingTextBytes - 1);
+            if (desc->default_text != nullptr) CStrCopyN(v.text, desc->default_text, kSettingTextBytes - 1);
             break;
         default: v.integer = desc->default_int; break;
     }
@@ -367,7 +368,7 @@ SetStatus RenderSettings::SetFloat(SettingId id, f32 value) {
     if (registry_->Find(id) == nullptr) return SetStatus::UnknownId;
     const SettingDesc* d = TypedDesc(*registry_, id, SettingType::Float);
     if (d == nullptr) return SetStatus::WrongType;
-    if (!std::isfinite(value)) return SetStatus::OutOfRange;
+    if (!IsFinite(value)) return SetStatus::OutOfRange;
     SetStatus status = SetStatus::Ok;
     if (value < d->min_float || value > d->max_float) {
         if (d->range_policy == RangePolicy::Reject) return SetStatus::OutOfRange;
@@ -386,7 +387,7 @@ SetStatus RenderSettings::SetText(SettingId id, const char* value) {
     if (value == nullptr) value = "";
     if (!ValidText(value)) return SetStatus::BadText;
     Value v;
-    std::strncpy(v.text, value, kSettingTextBytes - 1);
+    CStrCopyN(v.text, value, kSettingTextBytes - 1);
     Store(id, v);
     return SetStatus::Ok;
 }
@@ -397,25 +398,25 @@ SetStatus RenderSettings::SetFromString(SettingId id, const char* text) {
     if (text == nullptr) text = "";
     switch (d->type) {
         case SettingType::Bool:
-            if (std::strcmp(text, "true") == 0) return SetBool(id, true);
-            if (std::strcmp(text, "false") == 0) return SetBool(id, false);
+            if (CStrCompare(text, "true") == 0) return SetBool(id, true);
+            if (CStrCompare(text, "false") == 0) return SetBool(id, false);
             return SetStatus::OutOfRange;
         case SettingType::Enum:
             for (u32 i = 0; i < d->enum_count; ++i) {
-                if (std::strcmp(d->enum_names[i], text) == 0) return SetEnum(id, i);
+                if (CStrCompare(d->enum_names[i], text) == 0) return SetEnum(id, i);
             }
             return SetStatus::OutOfRange;
         case SettingType::Int: {
-            errno = 0;
+            os::SetLastError(0);
             char* end = nullptr;
-            const long long parsed = std::strtoll(text, &end, 10);
-            if (text[0] == '\0' || *end != '\0' || errno == ERANGE) return SetStatus::OutOfRange;
+            const long long parsed = CStrToLongLong(text, &end, 10);
+            if (text[0] == '\0' || *end != '\0' || os::LastError() == ERANGE) return SetStatus::OutOfRange;
             return SetInt(id, parsed);
         }
         case SettingType::Float: {
-            errno = 0;
+            os::SetLastError(0);
             char* end = nullptr;
-            const float parsed = std::strtof(text, &end);
+            const float parsed = CStrToFloat(text, &end);
             if (text[0] == '\0' || *end != '\0') return SetStatus::OutOfRange;
             return SetFloat(id, parsed);
         }
@@ -433,11 +434,11 @@ usize RenderSettings::ValueToString(SettingId id, char* out, usize capacity) con
     const Value v = Get(id, d);
     int n = 0;
     switch (d->type) {
-        case SettingType::Bool: n = std::snprintf(out, capacity, "%s", v.integer != 0 ? "true" : "false"); break;
-        case SettingType::Enum: n = std::snprintf(out, capacity, "%s", d->enum_names[v.integer]); break;
-        case SettingType::Int: n = std::snprintf(out, capacity, "%lld", static_cast<long long>(v.integer)); break;
-        case SettingType::Float: n = std::snprintf(out, capacity, "%.9g", static_cast<double>(v.real)); break;
-        case SettingType::Text: n = std::snprintf(out, capacity, "%s", v.text); break;
+        case SettingType::Bool: n = FormatTo(out, capacity, "%s", v.integer != 0 ? "true" : "false"); break;
+        case SettingType::Enum: n = FormatTo(out, capacity, "%s", d->enum_names[v.integer]); break;
+        case SettingType::Int: n = FormatTo(out, capacity, "%lld", static_cast<long long>(v.integer)); break;
+        case SettingType::Float: n = FormatTo(out, capacity, "%.9g", static_cast<double>(v.real)); break;
+        case SettingType::Text: n = FormatTo(out, capacity, "%s", v.text); break;
     }
     return n < 0 ? 0 : static_cast<usize>(n);
 }
@@ -472,11 +473,11 @@ bool Capabilities::Has(const char* name) const {
     if (name == nullptr) {
         return true;
     }
-    if (std::strcmp(name, "multi_adapter") == 0) {
+    if (CStrCompare(name, "multi_adapter") == 0) {
         return adapter_count_ > 1; // derived, so a later smaller count removes it
     }
     for (u32 i = 0; i < count_; ++i) {
-        if (std::strcmp(names_[i], name) == 0) {
+        if (CStrCompare(names_[i], name) == 0) {
             return true;
         }
     }
@@ -528,12 +529,12 @@ usize SerializeSettings(const RenderSettings& settings, char* out, usize capacit
     usize total = 0;
     auto append = [&](const char* fmt, const char* a, const char* b) {
         const usize room = out != nullptr && total < capacity ? capacity - total : 0;
-        const int n = std::snprintf(out != nullptr ? out + total : nullptr, room, fmt, a, b);
+        const int n = FormatTo(out != nullptr ? out + total : nullptr, room, fmt, a, b);
         if (n > 0) total += static_cast<usize>(n);
     };
     append("# engine render settings%s%s\n", "", "");
     char version[16];
-    std::snprintf(version, sizeof(version), "%u", kSettingsFormatVersion);
+    FormatTo(version, sizeof(version), "%u", kSettingsFormatVersion);
     append("version = %s%s\n", version, "");
     const SettingsRegistry& registry = settings.Registry();
     for (u32 i = 1; i <= registry.Count(); ++i) {
@@ -553,7 +554,7 @@ namespace {
 void AddProblem(SettingsProblem* list, u32* count, u32 line, const char* key, const char* reason) {
     if (*count < kMaxParseProblems) {
         list[*count].line = line;
-        std::snprintf(list[*count].message, sizeof(list[*count].message), "%s: %s", key, reason);
+        FormatTo(list[*count].message, sizeof(list[*count].message), "%s: %s", key, reason);
     }
     ++*count;
 }
@@ -596,18 +597,18 @@ bool ParseSettings(const char* text, usize length, RenderSettings* settings, Set
         if (b == e || text[b] == '#') return;
         char buf[128];
         const usize n = e - b < sizeof(buf) - 1 ? e - b : sizeof(buf) - 1;
-        std::memcpy(buf, text + b, n);
+        MemCopy(buf, text + b, n);
         buf[n] = '\0';
-        char* eq = std::strchr(buf, '=');
+        char* eq = CStrFindChar(buf, '=');
         if (eq == nullptr) return;
         char* key_end = eq;
         while (key_end > buf && IsSpace(key_end[-1])) --key_end;
         *key_end = '\0';
-        if (std::strcmp(buf, "version") != 0) return;
+        if (CStrCompare(buf, "version") != 0) return;
         char* value = eq + 1;
         while (IsSpace(*value)) ++value;
         char* end = nullptr;
-        const unsigned long v = std::strtoul(value, &end, 10);
+        const unsigned long v = CStrToULong(value, &end, 10);
         if (version_seen) {
             AddProblem(r.errors, &r.error_count, line, "version", "declared twice");
         } else if (value[0] == '\0' || *end != '\0') {
@@ -627,9 +628,9 @@ bool ParseSettings(const char* text, usize length, RenderSettings* settings, Set
             AddProblem(r.errors, &r.error_count, line, "line", "too long");
             return;
         }
-        std::memcpy(buf, text + b, e - b);
+        MemCopy(buf, text + b, e - b);
         buf[e - b] = '\0';
-        char* eq = std::strchr(buf, '=');
+        char* eq = CStrFindChar(buf, '=');
         if (eq == nullptr) {
             AddProblem(r.errors, &r.error_count, line, "line", "expected key = value");
             return;
@@ -639,7 +640,7 @@ bool ParseSettings(const char* text, usize length, RenderSettings* settings, Set
         *key_end = '\0';
         char* value = eq + 1;
         while (IsSpace(*value)) ++value;
-        if (std::strcmp(buf, "version") == 0) return; // handled in the first pass
+        if (CStrCompare(buf, "version") == 0) return; // handled in the first pass
         const char* key = buf;
         if (migrate != nullptr) {
             const char* renamed = migrate(r.version, key);

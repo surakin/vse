@@ -1,6 +1,5 @@
 // VulkanDevice: textures, samplers, format support, texture upload and readback.
 
-#include <cstring>
 
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_barrier.h"
@@ -10,6 +9,7 @@
 #include "rhi/vulkan/vulkan_device.h"
 #include "sync/atomic.h"
 #include "sync/mutex.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
@@ -451,7 +451,7 @@ UploadTicket VulkanDevice::UploadTexture(TextureHandle dst, u32 mip, u32 layer, 
             if (!StageChunkLocked(rows * pitch, 64, &ring_offset)) {
                 return fail();
             }
-            std::memcpy(static_cast<char*>(staging_.memory.mapped) + ring_offset, static_cast<const char*>(data) + src_offset,
+            MemCopy(static_cast<char*>(staging_.memory.mapped) + ring_offset, static_cast<const char*>(data) + src_offset,
                         static_cast<usize>(src_bytes));
             FlushRange(staging_.memory, ring_offset, rows * pitch);
 
@@ -558,7 +558,7 @@ bool VulkanDevice::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* 
         return false;
     }
     InvalidateRange(temp.memory, 0, bytes);
-    std::memcpy(dst, temp.memory.mapped, static_cast<usize>(bytes));
+    MemCopy(dst, temp.memory.mapped, static_cast<usize>(bytes));
     DestroyRawBuffer(&temp);
     return true;
 }

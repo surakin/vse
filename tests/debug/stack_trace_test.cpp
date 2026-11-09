@@ -10,9 +10,11 @@
 #include "test_text.h"
 
 #include "sync/atomic.h"
-#include <cstring>
+#include "cstr/cstr.h"
 #include "sync/thread.h"
 #include "build_defs.h"
+#include "cstr/mem_ops.h"
+#include "os/console.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -69,7 +71,7 @@ ENGINE_NOINLINE void InlinedHost(StackTrace* trace) {
 // Finds the first entry whose function name contains `needle`; -1 if none.
 int FindEntry(const FrameInfo* entries, usize count, const char* needle) {
     for (usize i = 0; i < count; ++i) {
-        if (std::strstr(entries[i].function, needle) != nullptr) {
+        if (CStrFind(entries[i].function, needle) != nullptr) {
             return static_cast<int>(i);
         }
     }
@@ -122,7 +124,7 @@ TEST_CASE("With debug information the chain's frames carry file and the line of 
     if (entries[c].file[0] == '\0') {
         SKIP("this binary has no debug information (built without -g)");
     }
-    CHECK(std::strstr(entries[c].file, "stack_trace_test.cpp") != nullptr);
+    CHECK(CStrFind(entries[c].file, "stack_trace_test.cpp") != nullptr);
     CHECK(entries[c].line == g_line_c);
     CHECK(entries[b].line == g_line_b);
     CHECK(entries[a].line == g_line_a);
@@ -150,7 +152,7 @@ TEST_CASE("A function inlined into another gets its own entry marked inlined, at
     CHECK_FALSE(entries[host].inlined);
     char text[8192];
     FormatStackTrace(trace, text, sizeof(text));
-    CHECK(std::strstr(text, "[inlined]") != nullptr);
+    CHECK(CStrFind(text, "[inlined]") != nullptr);
 }
 
 TEST_CASE("skip_frames leaves out the innermost frames", "[stacktrace][debug]") {
@@ -165,7 +167,7 @@ TEST_CASE("skip_frames leaves out the innermost frames", "[stacktrace][debug]") 
     FrameInfo entries[kMaxStackFrames * 2];
     const usize n = ResolveStackTrace(skipped, entries, sizeof(entries) / sizeof(entries[0]));
     REQUIRE(n > 0);
-    CHECK(std::strstr(entries[0].function, "ChainA") != nullptr);
+    CHECK(CStrFind(entries[0].function, "ChainA") != nullptr);
     // Skipping more than there is gives nothing.
     StackTrace none;
     CHECK_FALSE(CaptureStackTrace(none, 100000));
@@ -220,7 +222,7 @@ TEST_CASE("A stack deeper than the capacity is cut and flagged", "[stacktrace][d
     CHECK(trace.truncated);
     char text[16384];
     FormatStackTrace(trace, text, sizeof(text));
-    CHECK(std::strstr(text, "  ... more frames\n") != nullptr);
+    CHECK(CStrFind(text, "  ... more frames\n") != nullptr);
 }
 
 TEST_CASE("Formatting never writes past the buffer and always terminates it", "[stacktrace][debug]") {
@@ -230,7 +232,7 @@ TEST_CASE("Formatting never writes past the buffer and always terminates it", "[
     for (usize capacity : {usize{0}, usize{1}, usize{2}, usize{80}, usize{4096}}) {
         // A canary after the buffer shows a write past the end (and ASan flags it).
         char storage[4096 + 8];
-        std::memset(storage, 'Z', sizeof(storage));
+        MemSet(storage, 'Z', sizeof(storage));
         const usize written = FormatStackTrace(trace, storage, capacity);
         INFO("capacity " << capacity);
         CHECK(written <= (capacity == 0 ? 0 : capacity - 1));
@@ -250,7 +252,7 @@ TEST_CASE("The trace text has a fixed layout and names the chain", "[stacktrace]
     char text[8192];
     const usize written = FormatStackTrace(trace, text, sizeof(text));
     REQUIRE(written > 0);
-    CHECK(std::strncmp(text, "#0  0x", 6) == 0);
+    CHECK(CStrCompareN(text, "#0  0x", 6) == 0);
     // Sixteen hex digits, two spaces, then the function.
     for (int i = 0; i < 16; ++i) {
         const char c = text[6 + i];
@@ -258,8 +260,8 @@ TEST_CASE("The trace text has a fixed layout and names the chain", "[stacktrace]
     }
     CHECK(text[22] == ' ');
     CHECK(text[23] == ' ');
-    CHECK(std::strstr(text, "ChainC") != nullptr);
-    CHECK(std::strstr(text, "ChainA") != nullptr);
+    CHECK(CStrFind(text, "ChainC") != nullptr);
+    CHECK(CStrFind(text, "ChainA") != nullptr);
     CHECK(text[written - 1] == '\n');
     // Without demangling the name is the mangled one; with it the namespace is readable.
     FormatOptions options;
@@ -268,11 +270,11 @@ TEST_CASE("The trace text has a fixed layout and names the chain", "[stacktrace]
     FormatStackTrace(trace, readable, sizeof(readable), options);
 #if ENGINE_PLATFORM_WINDOWS
     // The PDB stores the name readable already (no parameter list): demangling changes nothing (os/windows/debug/BACKEND.md).
-    CHECK(std::strstr(text, "stack_trace_test::ChainC") != nullptr);
-    CHECK(std::strstr(readable, "stack_trace_test::ChainC") != nullptr);
+    CHECK(CStrFind(text, "stack_trace_test::ChainC") != nullptr);
+    CHECK(CStrFind(readable, "stack_trace_test::ChainC") != nullptr);
 #else
-    CHECK(std::strstr(text, "_ZN16stack_trace_test6ChainC") != nullptr);
-    CHECK(std::strstr(readable, "stack_trace_test::ChainC(") != nullptr);
+    CHECK(CStrFind(text, "_ZN16stack_trace_test6ChainC") != nullptr);
+    CHECK(CStrFind(readable, "stack_trace_test::ChainC(") != nullptr);
 #endif
 }
 
@@ -280,7 +282,7 @@ TEST_CASE("The trace text has a fixed layout and names the chain", "[stacktrace]
 TEST_CASE("DemangleSymbol turns mangled names readable and refuses the rest", "[stacktrace][debug]") {
     char out[128];
     CHECK(DemangleSymbol("_ZN3foo3barEv", out, sizeof(out)));
-    CHECK(std::strcmp(out, "foo::bar()") == 0);
+    CHECK(CStrCompare(out, "foo::bar()") == 0);
     CHECK_FALSE(DemangleSymbol("main", out, sizeof(out)));
     CHECK(out[0] == '\0');
     CHECK_FALSE(DemangleSymbol(nullptr, out, sizeof(out)));
@@ -316,8 +318,8 @@ TEST_CASE("An address with no symbol is named by module and offset, and one in n
     char text[1024];
     FormatStackTrace(trace, text, sizeof(text));
     // "#0  0x...  <module path>+0x<offset>" then "#1  0x0000000000001000  ??"
-    CHECK(std::strstr(text, "+0x") != nullptr);
-    CHECK(std::strstr(text, "#1  0x0000000000001000  ??\n") != nullptr);
+    CHECK(CStrFind(text, "+0x") != nullptr);
+    CHECK(CStrFind(text, "#1  0x0000000000001000  ??\n") != nullptr);
     FrameInfo entries[4];
     CHECK(ResolveStackTrace(trace, entries, 4) == 2);
     CHECK(entries[0].has_module);
@@ -363,7 +365,7 @@ TEST_CASE("A library loaded after startup is symbolized once the modules are rel
     plugin_entry = FindEntry(entries, n, "DebugTestPluginCall");
     REQUIRE(plugin_entry >= 0);
     CHECK(entries[plugin_entry].has_module);
-    CHECK(std::strstr(entries[plugin_entry].module, "debug_test_plugin") != nullptr); // libdebug_test_plugin.so, debug_test_plugin.dll
+    CHECK(CStrFind(entries[plugin_entry].module, "debug_test_plugin") != nullptr); // libdebug_test_plugin.so, debug_test_plugin.dll
     os::UnloadLibrary(library);
 }
 #endif
@@ -419,7 +421,7 @@ TEST_CASE("Eight threads starting the facilities at once all get a working trace
 
 TEST_CASE("In a stripped binary the frames fall back to module and offset", "[stacktrace][stripped][debug]") {
     // Run by the ctest entry that executes the stripped copy of this executable with ENGINE_EXPECT_STRIPPED_BINARY=1.
-    const char* expected = std::getenv("ENGINE_EXPECT_STRIPPED_BINARY");
+    const char* expected = os::GetEnvironment("ENGINE_EXPECT_STRIPPED_BINARY");
     if (expected == nullptr || expected[0] != '1') {
         SKIP("only meaningful in the stripped copy of this executable");
     }
@@ -437,6 +439,6 @@ TEST_CASE("In a stripped binary the frames fall back to module and offset", "[st
     CHECK(entries[0].module_offset > 0);
     char text[8192];
     FormatStackTrace(trace, text, sizeof(text));
-    CHECK(std::strstr(text, "+0x") != nullptr);
-    CHECK(std::strstr(text, "ChainC") == nullptr);
+    CHECK(CStrFind(text, "+0x") != nullptr);
+    CHECK(CStrFind(text, "ChainC") == nullptr);
 }

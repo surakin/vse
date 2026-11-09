@@ -1,8 +1,8 @@
 #include "minidump.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
 #include "types.h"
+#include "cstr/mem_ops.h"
 
 namespace crash_extract {
 
@@ -23,13 +23,13 @@ bool Fits(engine_placeholder::usize size, u64 offset, u64 length) {
 
 u32 Read32(const char* p) {
     u32 v = 0;
-    std::memcpy(&v, p, sizeof(v)); // little-endian files on little-endian hosts (every target)
+    engine_placeholder::MemCopy(&v, p, sizeof(v)); // little-endian files on little-endian hosts (every target)
     return v;
 }
 
 u64 Read64(const char* p) {
     u64 v = 0;
-    std::memcpy(&v, p, sizeof(v));
+    engine_placeholder::MemCopy(&v, p, sizeof(v));
     return v;
 }
 
@@ -53,7 +53,7 @@ void PutCodePoint(char* out, engine_placeholder::usize capacity, engine_placehol
         bytes[k++] = static_cast<char>(0x80 | (cp & 0x3F));
     }
     if (n + k + 1 > capacity) return;
-    std::memcpy(out + n, bytes, k);
+    engine_placeholder::MemCopy(out + n, bytes, k);
     n += k;
 }
 
@@ -96,18 +96,18 @@ void ReadCodeView(const char* record, engine_placeholder::usize length, char* bu
         const u32 data1 = Read32(record + 4);
         const u32 data2 = static_cast<u8>(record[8]) | (u32{static_cast<u8>(record[9])} << 8);
         const u32 data3 = static_cast<u8>(record[10]) | (u32{static_cast<u8>(record[11])} << 8);
-        engine_placeholder::usize n = static_cast<engine_placeholder::usize>(std::snprintf(build_id, id_capacity, "%08x%04x%04x", data1, data2, data3));
+        engine_placeholder::usize n = static_cast<engine_placeholder::usize>(engine_placeholder::FormatTo(build_id, id_capacity, "%08x%04x%04x", data1, data2, data3));
         for (int i = 0; i < 8 && n + 3 <= id_capacity; ++i) {
-            n += static_cast<engine_placeholder::usize>(std::snprintf(build_id + n, id_capacity - n, "%02x", static_cast<u8>(record[12 + i])));
+            n += static_cast<engine_placeholder::usize>(engine_placeholder::FormatTo(build_id + n, id_capacity - n, "%02x", static_cast<u8>(record[12 + i])));
         }
-        std::snprintf(build_id + n, id_capacity - n, "%x", Read32(record + 20));
+        engine_placeholder::FormatTo(build_id + n, id_capacity - n, "%x", Read32(record + 20));
         engine_placeholder::usize k = 0;
         for (engine_placeholder::usize i = 24; i < length && record[i] != '\0' && k + 1 < file_capacity; ++i) debug_file[k++] = record[i];
         debug_file[k] = '\0';
     } else if (signature == kBpel) {
         engine_placeholder::usize n = 0;
         for (engine_placeholder::usize i = 4; i < length && n + 3 <= id_capacity; ++i) {
-            n += static_cast<engine_placeholder::usize>(std::snprintf(build_id + n, id_capacity - n, "%02x", static_cast<u8>(record[i])));
+            n += static_cast<engine_placeholder::usize>(engine_placeholder::FormatTo(build_id + n, id_capacity - n, "%02x", static_cast<u8>(record[i])));
         }
     }
 }
@@ -181,7 +181,7 @@ bool ReadImageInfo(const char* data, engine_placeholder::usize size, ImageInfo* 
     *out = ImageInfo();
     if (data == nullptr || !Fits(size, 0, 64) || data[0] != 'M' || data[1] != 'Z') return false;
     const u32 pe = Read32(data + 0x3c);
-    if (!Fits(size, pe, 24) || std::memcmp(data + pe, "PE\0\0", 4) != 0) return false;
+    if (!Fits(size, pe, 24) || engine_placeholder::MemCompare(data + pe, "PE\0\0", 4) != 0) return false;
     const char* coff = data + pe + 4;
     const u32 sections = static_cast<u8>(coff[2]) | (u32{static_cast<u8>(coff[3])} << 8);
     out->timestamp = Read32(coff + 4);

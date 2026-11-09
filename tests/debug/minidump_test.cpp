@@ -8,7 +8,7 @@
 #include "minidump.h"
 #include "resolve.h"
 
-#include <cstring>
+#include "cstr/cstr.h"
 #include "build_defs.h"
 
 using namespace engine_placeholder;
@@ -117,12 +117,12 @@ TEST_CASE("A minidump's exception and modules are read with the build id the cra
     REQUIRE(count == 1);
     CHECK(modules[0].base == 0x7ff600000000ull);
     CHECK(modules[0].size == 0x10000u);
-    CHECK(std::strcmp(modules[0].name, "C:\\dir\\game.exe") == 0);
-    CHECK(std::strcmp(modules[0].build_id, "0123456789abcdef1032547698badcfe3") == 0); // Data1..3 as numbers, Data4's bytes, the age
-    CHECK(std::strcmp(modules[0].debug_file, "D:\\build\\game.pdb") == 0);
+    CHECK(CStrCompare(modules[0].name, "C:\\dir\\game.exe") == 0);
+    CHECK(CStrCompare(modules[0].build_id, "0123456789abcdef1032547698badcfe3") == 0); // Data1..3 as numbers, Data4's bytes, the age
+    CHECK(CStrCompare(modules[0].debug_file, "D:\\build\\game.pdb") == 0);
     char path[512];
     REQUIRE(crash_extract::StorePdbPath("S", modules[0], path, sizeof(path)));
-    CHECK(std::strcmp(path, "S\\game.pdb\\0123456789ABCDEF1032547698BADCFE3\\game.pdb") == 0);
+    CHECK(CStrCompare(path, "S\\game.pdb\\0123456789ABCDEF1032547698BADCFE3\\game.pdb") == 0);
 }
 
 TEST_CASE("A minidump cut at every length, or with any byte changed, never reads outside it", "[crash-extract][debug]") {
@@ -141,7 +141,7 @@ TEST_CASE("A minidump cut at every length, or with any byte changed, never reads
         for (usize i = 0; i < dump.Size(); ++i) changed.Push(dump[i]);
         changed[at] = static_cast<u8>(changed[at] ^ 0xff);
         if (crash_extract::ReadDumpModules(AsChars(changed), changed.Size(), modules, 2, &count) == crash_extract::DumpResult::Ok && count > 0) {
-            CHECK(std::strlen(modules[0].name) < sizeof(modules[0].name)); // terminated, inside its buffer
+            CHECK(CStrLength(modules[0].name) < sizeof(modules[0].name)); // terminated, inside its buffer
         }
         (void)crash_extract::ReadDumpException(AsChars(changed), changed.Size(), &exception);
     }
@@ -158,12 +158,12 @@ TEST_CASE("A name from a dump becomes a store path only if it is one plain file 
     CHECK_FALSE(crash_extract::SafeFileName("C:x.pdb"));
     CHECK_FALSE(crash_extract::SafeFileName("x\x01.pdb"));
     crash_extract::DumpModule module;
-    std::strcpy(module.debug_file, "C:\\x\\..\\..");
-    std::strcpy(module.build_id, "abc1");
+    CStrCopy(module.debug_file, "C:\\x\\..\\..");
+    CStrCopy(module.build_id, "abc1");
     char path[256];
     CHECK_FALSE(crash_extract::StorePdbPath("S", module, path, sizeof(path))); // the last component is ".."
-    std::strcpy(module.debug_file, "game.pdb");
-    std::strcpy(module.build_id, "ab\\..1");
+    CStrCopy(module.debug_file, "game.pdb");
+    CStrCopy(module.build_id, "ab\\..1");
     CHECK_FALSE(crash_extract::StorePdbPath("S", module, path, sizeof(path))); // a build id is hex only
 }
 
@@ -174,7 +174,7 @@ TEST_CASE("Report frame lines are parsed into the module and the offset, other l
     const char line[] = "#12  0x00007ff6b6a1328c  C:\\Git\\x+y\\debug_tests.exe+0xc328c";
     REQUIRE(crash_extract::ParseFrame(line, sizeof(line) - 1, &number, module, sizeof(module), &offset));
     CHECK(number == 12);
-    CHECK(std::strcmp(module, "C:\\Git\\x+y\\debug_tests.exe") == 0);
+    CHECK(CStrCompare(module, "C:\\Git\\x+y\\debug_tests.exe") == 0);
     CHECK(offset == 0xc328cu);
     const char named[] = "#0  0x00007ff6b6a1328c  engine::Foo(int)  file.cpp:42";
     CHECK_FALSE(crash_extract::ParseFrame(named, sizeof(named) - 1, &number, module, sizeof(module), &offset));
@@ -183,7 +183,7 @@ TEST_CASE("Report frame lines are parsed into the module and the offset, other l
     const char long_offset[] = "#1  0x1  m.exe+0x11112222333344445";
     CHECK_FALSE(crash_extract::ParseFrame(long_offset, sizeof(long_offset) - 1, &number, module, sizeof(module), &offset));
     crash_extract::DumpModule modules[1];
-    std::strcpy(modules[0].name, "c:\\other\\DEBUG_TESTS.EXE");
+    CStrCopy(modules[0].name, "c:\\other\\DEBUG_TESTS.EXE");
     CHECK(crash_extract::FindModule("C:\\Git\\debug_tests.exe", modules, 1) == &modules[0]);
     CHECK(crash_extract::FindModule("C:\\Git\\other.exe", modules, 1) == nullptr);
 }
@@ -205,11 +205,11 @@ TEST_CASE("Windows: the test program's own image names its PDB and the build id 
     REQUIRE(io::ReadFile(file, &bytes).Ok());
     crash_extract::ImageInfo info;
     REQUIRE(crash_extract::ReadImageInfo(AsChars(bytes), bytes.Size(), &info));
-    CHECK(std::strlen(info.build_id) >= 33);
-    CHECK(std::strstr(info.debug_file, ".pdb") != nullptr);
+    CHECK(CStrLength(info.build_id) >= 33);
+    CHECK(CStrFind(info.debug_file, ".pdb") != nullptr);
     CHECK(info.size_of_image > 0);
     debug::InitCrashContext(0, nullptr);
-    CHECK(std::strcmp(info.build_id, debug::GetCrashContext().build_id) == 0);
+    CHECK(CStrCompare(info.build_id, debug::GetCrashContext().build_id) == 0);
     // Every cut of the image's first 4 KiB is refused or read without going outside it.
     for (usize length = 0; length < 4096 && length < bytes.Size(); length += 7) (void)crash_extract::ReadImageInfo(AsChars(bytes), length, &info);
 }

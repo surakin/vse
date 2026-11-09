@@ -3,7 +3,7 @@
 // On a real device (Vulkan): "Hello, world!" is drawn over a background by one graph pass and only inside its bounds; a second call overlays the first in
 // call order; a frame without text declares no pass; the pipeline follows a change of the target's format; text above the atlas maximum is scaled from the
 // maximum raster and is as wide as its layout says. Without a GPU: nothing is allocated per glyph in a steady frame.
-#include <cmath>
+#include "lang/scalar.h"
 #include <cstdlib>
 #include <cstring>
 
@@ -108,7 +108,7 @@ struct Frame {
     }
 };
 
-int Dist(int a, int b) { return std::abs(a - b); }
+int Dist(int a, int b) { return Abs(a - b); }
 
 } // namespace
 
@@ -145,8 +145,8 @@ TEST_CASE("Hello, world! is drawn by one graph pass, inside its bounds, over the
         CHECK(text.Stats().glyphs_drawn == 12); // thirteen characters, one a space
 
         // Outside the text's bounds (the layout box plus a margin for bearings) every pixel is still the background; inside, the text is there.
-        const int x0 = 10 - 4, x1 = 10 + static_cast<int>(std::ceil(probe.width)) + 4;
-        const int y0 = 12 - 4, y1 = 12 + static_cast<int>(std::ceil(probe.height)) + 4;
+        const int x0 = 10 - 4, x1 = 10 + static_cast<int>(Ceil(probe.width)) + 4;
+        const int y0 = 12 - 4, y1 = 12 + static_cast<int>(Ceil(probe.height)) + 4;
         u32 inked = 0;
         u32 disturbed_outside = 0;
         for (u32 y = 0; y < frame.height; ++y) {

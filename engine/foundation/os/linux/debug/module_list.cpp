@@ -3,7 +3,7 @@
 #include "os/os.h"
 
 #include "sync/atomic.h"
-#include <cstring>
+#include "cstr/cstr.h"
 #include <link.h>
 #include "sync/mutex.h"
 #include <unistd.h>
@@ -60,7 +60,7 @@ int CollectModule(struct dl_phdr_info* info, size_t, void* data) {
         const ssize_t n = ::readlink("/proc/self/exe", m.path, kMaxModulePathBytes - 1);
         m.path[n > 0 ? n : 0] = '\0';
     } else {
-        std::strncpy(m.path, name, kMaxModulePathBytes - 1);
+        CStrCopyN(m.path, name, kMaxModulePathBytes - 1);
         m.path[kMaxModulePathBytes - 1] = '\0';
     }
     ++table->count;

@@ -1,7 +1,7 @@
 #include "renderer/shader_permutation.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 
 namespace engine_placeholder::renderer {
 
@@ -21,7 +21,7 @@ const char* ValidateShaderPermutations(const ShaderPermutations& t) {
             return "permutations: an option name is null or empty";
         }
         for (u32 j = 0; j < i; ++j) {
-            if (std::strcmp(t.options[i], t.options[j]) == 0) {
+            if (CStrCompare(t.options[i], t.options[j]) == 0) {
                 return "permutations: two options have the same name";
             }
         }
@@ -57,7 +57,7 @@ bool MakePermutationKey(const ShaderPermutations& table, const char* const* name
     for (u32 n = 0; n < count; ++n) {
         bool found = false;
         for (u32 i = 0; i < table.option_count && i < kMaxPermutationOptions; ++i) {
-            if (std::strcmp(table.options[i], names[n]) == 0) {
+            if (CStrCompare(table.options[i], names[n]) == 0) {
                 out->bits |= 1u << i;
                 found = true;
                 break;
@@ -65,7 +65,7 @@ bool MakePermutationKey(const ShaderPermutations& table, const char* const* name
         }
         if (!found) {
             if (error != nullptr) {
-                std::snprintf(error->message, kReflectionErrorLength, "shader '%s' has no option '%s'", table.shader, names[n]);
+                FormatTo(error->message, kReflectionErrorLength, "shader '%s' has no option '%s'", table.shader, names[n]);
             }
             return false;
         }
@@ -112,7 +112,7 @@ const PermutationModule* FindPermutation(const ShaderPermutations& table, Permut
                 return &table.modules[table.entries[i].module];
             }
             if (error != nullptr) {
-                std::snprintf(error->message, kReflectionErrorLength, "shader '%s': the permutation table is corrupt (a key names module %u of %u)",
+                FormatTo(error->message, kReflectionErrorLength, "shader '%s': the permutation table is corrupt (a key names module %u of %u)",
                               table.shader, table.entries[i].module, table.module_count);
             }
             return nullptr;
@@ -121,7 +121,7 @@ const PermutationModule* FindPermutation(const ShaderPermutations& table, Permut
     if (error != nullptr) {
         char described[160];
         DescribePermutationKey(table, key, described, sizeof(described));
-        std::snprintf(error->message, kReflectionErrorLength, "shader '%.40s' has no permutation %.64s (add the key to its .perm manifest)",
+        FormatTo(error->message, kReflectionErrorLength, "shader '%.40s' has no permutation %.64s (add the key to its .perm manifest)",
                       table.shader, described);
     }
     return nullptr;

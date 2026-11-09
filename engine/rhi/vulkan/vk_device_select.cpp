@@ -2,8 +2,8 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 
 #include "rhi/adapter.h"
 #include "rhi/rhi_log.h"
@@ -83,7 +83,7 @@ void MakeAdapterId(const PhysicalDeviceInfo& info, char* out, usize capacity) {
         uuid[i * 2 + 1] = kHex[info.uuid[i] & 15];
     }
     uuid[32] = '\0';
-    std::snprintf(out, capacity, "vk-%04x-%04x-%s", info.vendor_id & 0xFFFFu, info.device_id & 0xFFFFu, uuid);
+    FormatTo(out, capacity, "vk-%04x-%04x-%s", info.vendor_id & 0xFFFFu, info.device_id & 0xFFFFu, uuid);
 }
 
 AdapterInfo MakeAdapterInfo(const PhysicalDeviceInfo& info, bool presentable) {
@@ -95,9 +95,9 @@ AdapterInfo MakeAdapterInfo(const PhysicalDeviceInfo& info, bool presentable) {
                         (static_cast<u32>(info.luid[3]) << 24);
         const u32 high = static_cast<u32>(info.luid[4]) | (static_cast<u32>(info.luid[5]) << 8) | (static_cast<u32>(info.luid[6]) << 16) |
                          (static_cast<u32>(info.luid[7]) << 24);
-        std::snprintf(out.luid, sizeof(out.luid), "%08x%08x", high, low);
+        FormatTo(out.luid, sizeof(out.luid), "%08x%08x", high, low);
     }
-    std::strncpy(out.name, info.name, sizeof(out.name) - 1);
+    CStrCopyN(out.name, info.name, sizeof(out.name) - 1);
     switch (info.kind) {
     case GpuKind::Discrete: out.kind = AdapterKind::Discrete; break;
     case GpuKind::Integrated: out.kind = AdapterKind::Integrated; break;
@@ -106,7 +106,7 @@ AdapterInfo MakeAdapterInfo(const PhysicalDeviceInfo& info, bool presentable) {
     case GpuKind::Other: out.kind = AdapterKind::Other; break;
     }
     out.dedicated_memory_bytes = info.dedicated_memory_bytes;
-    std::strncpy(out.driver, info.driver, sizeof(out.driver) - 1);
+    CStrCopyN(out.driver, info.driver, sizeof(out.driver) - 1);
     out.unsuitable_reason = RejectionReason(info, presentable);
     out.suitable = out.unsuitable_reason == nullptr;
     out.can_present = presentable && PlanQueues(info, true).graphics_family >= 0 && info.swapchain_extension;

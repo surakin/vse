@@ -1,12 +1,13 @@
 #include "platform/linux/wayland/wayland_window.h"
 
 #include <sys/mman.h>
-#include <cstring>
+
 #include <unistd.h>
 
 #include "log/log.h"
 #include "mem/arena_allocator.h"
 #include "platform/window.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::os::wayland {
 
@@ -95,7 +96,7 @@ bool MakeFilledBuffer(wl_shm* shm, u32 width, u32 height, wl_buffer*& out_buffer
         usize filled = 1;
         while (filled < pixel_count) {
             usize chunk = filled < pixel_count - filled ? filled : pixel_count - filled;
-            std::memcpy(pixels + filled, pixels, chunk * sizeof(u32));
+            MemCopy(pixels + filled, pixels, chunk * sizeof(u32));
             filled += chunk;
         }
     }

@@ -1,8 +1,6 @@
 #include "sync/atomic.h"
 #include <chrono>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "cstr/format.h"
 #include "sync/thread.h"
 #include "build_defs.h"
 
@@ -175,7 +173,7 @@ TEST_CASE("64 concurrent reads of different files all complete correctly", "[job
     Vector<usize> sizes;
     for (int i = 0; i < kFiles; ++i) {
         char name[32];
-        std::snprintf(name, sizeof(name), "f%02d.bin", i);
+        FormatTo(name, sizeof(name), "f%02d.bin", i);
         sizes.Push(1000 + static_cast<usize>(i) * 4099);
         paths.Push(FileIn(dir, name));
         WriteFile(paths[static_cast<usize>(i)], sizes[static_cast<usize>(i)]);

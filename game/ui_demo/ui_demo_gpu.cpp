@@ -1,7 +1,5 @@
 #include "ui_demo_gpu.h"
 
-#include <cmath>
-
 #include "io/path.h"
 #include "renderer/camera.h"
 #include "renderer/gbuffer.h"

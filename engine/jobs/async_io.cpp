@@ -1,7 +1,5 @@
 #include "jobs/async_io.h"
 
-#include <cstdio>
-#include <cstring>
 
 #include "log/diagnostics_hooks.h"
 #include "jobs/jobs_log.h"
@@ -13,6 +11,7 @@
 #include "lang/utility.h"
 #include "sync/mutex.h"
 #include "sync/thread.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::jobs {
 
@@ -116,7 +115,7 @@ struct ReadState : IoRequest {
                     if (data == nullptr) {
                         status = io::Status::Of(io::Error::OutOfMemory);
                     } else {
-                        if (bytes.Size() != 0) std::memcpy(data, bytes.Data(), bytes.Size());
+                        if (bytes.Size() != 0) MemCopy(data, bytes.Data(), bytes.Size());
                         size = bytes.Size();
                     }
                 }
@@ -144,7 +143,7 @@ ReadFileAwaitable ReadFileAsync(Scheduler& scheduler, StringView path, usize max
         st->path_too_long = true;
         st->path[0] = '\0';
     } else {
-        std::memcpy(st->path, path.Data(), path.Length());
+        MemCopy(st->path, path.Data(), path.Length());
         st->path[path.Length()] = '\0';
         st->path_len = path.Length();
     }

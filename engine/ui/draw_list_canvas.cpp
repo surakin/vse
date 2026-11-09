@@ -1,6 +1,6 @@
 #include "ui/draw_list_canvas.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "algorithm.h"
 #include "log/assert.h"
@@ -44,10 +44,10 @@ void DrawListCanvas::Begin(f32 scale, u32 width, u32 height) {
 
 PixelRect DrawListCanvas::BoundsOf(f32 x0, f32 y0, f32 x1, f32 y1) const {
     PixelRect r;
-    r.x = ToPixelInt(std::floor(x0));
-    r.y = ToPixelInt(std::floor(y0));
-    r.w = ToPixelInt(std::ceil(x1)) - r.x;
-    r.h = ToPixelInt(std::ceil(y1)) - r.y;
+    r.x = ToPixelInt(Floor(x0));
+    r.y = ToPixelInt(Floor(y0));
+    r.w = ToPixelInt(Ceil(x1)) - r.x;
+    r.h = ToPixelInt(Ceil(y1)) - r.y;
     return r;
 }
 
@@ -183,7 +183,7 @@ void DrawListCanvas::DrawLine(Point a, Point b, f32 width, u32 color) {
     const f32 ay = a.y * scale_;
     const f32 dx = b.x * scale_ - ax;
     const f32 dy = b.y * scale_ - ay;
-    const f32 length = std::sqrt(dx * dx + dy * dy);
+    const f32 length = Sqrt(dx * dx + dy * dy);
     const f32 w = SnapLength(width);
     if (!(length > 0) || !(w > 0)) {
         ++list_->stats.culled;

@@ -2,13 +2,14 @@
 #include "io/directory.h"
 #include "io/detail/directory_identity.h"
 
-#include <cerrno>
-#include <cstring>
+#include "os/last_error.h"
+#include "cstr/cstr.h"
 
 #include <dirent.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::io {
 
@@ -39,10 +40,10 @@ Status DirectoryEntry::Info(FileInfo* out) const {
     if (owner == nullptr) return Status::Of(Error::Invalid);
     char name_z[kMaxPathBytes + 1];
     if (name.Length() > kMaxPathBytes) return Status::Of(Error::TooLong);
-    std::memcpy(name_z, name.Data(), name.Length());
+    MemCopy(name_z, name.Data(), name.Length());
     name_z[name.Length()] = '\0';
     struct stat st;
-    if (::fstatat(::dirfd(AsDir(owner)), name_z, &st, AT_SYMLINK_NOFOLLOW) != 0) return Status::FromOs(errno);
+    if (::fstatat(::dirfd(AsDir(owner)), name_z, &st, AT_SYMLINK_NOFOLLOW) != 0) return Status::FromOs(os::LastError());
     FileInfo info;
     info.type = TypeFromMode(st.st_mode);
     info.size = static_cast<u64>(st.st_size);
@@ -64,10 +65,10 @@ Status Directory::Open(const Path& path, Directory* out) {
     char native[kMaxPathBytes + 1];
     if (!path.ToNative(native, sizeof(native))) return Status::Of(Error::TooLong);
     const int fd = ::open(native, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
-    if (fd < 0) return Status::FromOs(errno);
+    if (fd < 0) return Status::FromOs(os::LastError());
     DIR* dir = ::fdopendir(fd);
     if (dir == nullptr) {
-        const Status s = Status::FromOs(errno);
+        const Status s = Status::FromOs(os::LastError());
         ::close(fd);
         return s;
     }
@@ -81,20 +82,20 @@ Status Directory::Next(DirectoryEntry* entry, bool* found) {
     *found = false;
     if (handle_ == nullptr) return Status::Of(Error::Invalid);
     for (;;) {
-        errno = 0;
+        os::SetLastError(0);
         const struct dirent* e = ::readdir(AsDir(handle_));
         if (e == nullptr) {
-            return errno == 0 ? Status::Success() : Status::FromOs(errno);
+            return os::LastError() == 0 ? Status::Success() : Status::FromOs(os::LastError());
         }
-        if (std::strcmp(e->d_name, ".") == 0 || std::strcmp(e->d_name, "..") == 0) continue;
+        if (CStrCompare(e->d_name, ".") == 0 || CStrCompare(e->d_name, "..") == 0) continue;
         entry->name = StringView(e->d_name);
         entry->owner = handle_;
         entry->type = TypeFromDirent(e->d_type);
         if (entry->type == FileType::None) { // DT_UNKNOWN: ask
             struct stat st;
             if (::fstatat(::dirfd(AsDir(handle_)), e->d_name, &st, AT_SYMLINK_NOFOLLOW) != 0) {
-                if (errno == ENOENT) continue; // removed meanwhile
-                return Status::FromOs(errno);
+                if (os::LastError() == ENOENT) continue; // removed meanwhile
+                return Status::FromOs(os::LastError());
             }
             entry->type = TypeFromMode(st.st_mode);
         }
@@ -109,7 +110,7 @@ Status GetIdentity(const Path& path, Identity* out) {
     char native[kMaxPathBytes + 1];
     if (!path.ToNative(native, sizeof(native))) return Status::Of(Error::TooLong);
     struct stat st;
-    if (::stat(native, &st) != 0) return Status::FromOs(errno);
+    if (::stat(native, &st) != 0) return Status::FromOs(os::LastError());
     out->device = static_cast<u64>(st.st_dev);
     out->inode = static_cast<u64>(st.st_ino);
     return Status::Success();

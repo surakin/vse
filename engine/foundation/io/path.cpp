@@ -1,8 +1,8 @@
 #include "io/path.h"
 
-#include <cstring>
 
 #include "log/assert.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::io {
 
@@ -126,7 +126,7 @@ struct Out {
             return;
         }
         if (!v.Empty()) {
-            std::memcpy(buf + len, v.Data(), v.Length());
+            MemCopy(buf + len, v.Data(), v.Length());
             len += v.Length();
         }
     }
@@ -266,7 +266,7 @@ bool Path::TrySet(StringView canonical_text) {
         return false;
     }
     if (!canonical_text.Empty()) {
-        std::memcpy(text_.Data(), canonical_text.Data(), canonical_text.Length());
+        MemCopy(text_.Data(), canonical_text.Data(), canonical_text.Length());
     }
     return true;
 }
@@ -311,7 +311,7 @@ bool Path::ToNative(char* buffer, usize capacity) const {
         return false;
     }
     if (n != 0) {
-        std::memcpy(buffer, text_.Data(), n);
+        MemCopy(buffer, text_.Data(), n);
     }
     buffer[n] = '\0';
     if (style_ == PathStyle::Windows) {

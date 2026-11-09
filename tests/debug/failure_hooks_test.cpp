@@ -7,7 +7,8 @@
 #include "log/diagnostics_hooks.h"
 #include "os/os.h"
 
-#include <cstring>
+#include "cstr/cstr.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 
@@ -19,14 +20,14 @@ usize g_output_length = 0;
 long Capture(int, const void* data, usize length) {
     const usize room = sizeof(g_output) - 1 - g_output_length;
     const usize take = length < room ? length : room;
-    std::memcpy(g_output + g_output_length, data, take);
+    MemCopy(g_output + g_output_length, data, take);
     g_output_length += take;
     g_output[g_output_length] = '\0';
     return static_cast<long>(length);
 }
 
 bool Has(const char* text) {
-    return std::strstr(g_output, text) != nullptr;
+    return CStrFind(g_output, text) != nullptr;
 }
 
 } // namespace

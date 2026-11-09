@@ -2,10 +2,10 @@
 // drawn by the deferred renderer (G-buffer, light volumes, ACES tonemap) into a window (Wayland, X11 or Win32), or offscreen.
 // Tab switches between the orbit and fly cameras. See README.md for the options and controls.
 
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "lang/scalar.h"
+
+#include "os/console.h"
+#include "cstr/cstr.h"
 
 #include "settings_main.h"
 #include "renderer/shared_settings.h"
@@ -30,6 +30,9 @@
 #include "rhi/device_host.h"
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
+#include "cstr/format.h"
+#include "cstr/mem_ops.h"
+#include "cstr/number.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -105,8 +108,8 @@ public:
             yaw_ += dyaw;
             pitch_ = Clamp(pitch_ + dpitch, -1.4f, 1.4f);
             const f32 speed = (keys.IsDown(os::Key::LeftShift) ? 30.0f : 10.0f) * dt;
-            const Vec3 forward(std::sin(yaw_) * std::cos(pitch_), std::sin(pitch_), -std::cos(yaw_) * std::cos(pitch_));
-            const Vec3 right(std::cos(yaw_), 0, std::sin(yaw_));
+            const Vec3 forward(Sin(yaw_) * Cos(pitch_), Sin(pitch_), -Cos(yaw_) * Cos(pitch_));
+            const Vec3 right(Cos(yaw_), 0, Sin(yaw_));
             Vec3 move(0, 0, 0);
             if (keys.IsDown(os::Key::W)) move = move + forward;
             if (keys.IsDown(os::Key::S)) move = move - forward;
@@ -126,10 +129,10 @@ public:
     Camera Get(f32 aspect) const {
         Camera cam;
         if (fly_) {
-            const Vec3 forward(std::sin(yaw_) * std::cos(pitch_), std::sin(pitch_), -std::cos(yaw_) * std::cos(pitch_));
+            const Vec3 forward(Sin(yaw_) * Cos(pitch_), Sin(pitch_), -Cos(yaw_) * Cos(pitch_));
             cam = MakeLookAtCamera(fly_position_, fly_position_ + forward, Vec3(0, 1, 0));
         } else {
-            const Vec3 eye(distance_ * std::cos(orbit_pitch_) * std::sin(orbit_yaw_), distance_ * std::sin(orbit_pitch_), distance_ * std::cos(orbit_pitch_) * std::cos(orbit_yaw_));
+            const Vec3 eye(distance_ * Cos(orbit_pitch_) * Sin(orbit_yaw_), distance_ * Sin(orbit_pitch_), distance_ * Cos(orbit_pitch_) * Cos(orbit_yaw_));
             cam = MakeLookAtCamera(eye, Vec3(0, 0.5f, 0), Vec3(0, 1, 0));
         }
         cam.aspect = aspect;
@@ -206,20 +209,20 @@ int ListGpus() {
     char why[256] = {};
     const BackendDescriptor* backend = ResolveBackend(info.backend, why, sizeof(why));
     if (backend == nullptr) {
-        std::fprintf(stderr, "renderer_demo: cannot list the GPUs: %s\n", why);
+        os::PrintError("renderer_demo: cannot list the GPUs: %s\n", why);
         return kExitFailure;
     }
     AdapterList list;
     if (!EnumerateAdapters(info, &list)) {
-        std::fprintf(stderr, "renderer_demo: cannot list the %s GPUs\n", backend->name);
+        os::PrintError("renderer_demo: cannot list the %s GPUs\n", backend->name);
         return kExitFailure;
     }
-    std::printf("backend %s\n", backend->name);
+    os::Print("backend %s\n", backend->name);
     static const char* const kKinds[] = {"other", "software", "virtual", "integrated", "discrete"};
-    std::printf("%u GPU(s):\n", list.count);
+    os::Print("%u GPU(s):\n", list.count);
     for (u32 i = 0; i < list.count; ++i) {
         const AdapterInfo& a = list.items[i];
-        std::printf("  %u  %s  %s  (%s, %llu MiB, driver %s)%s%s\n", i, a.id, a.name, kKinds[static_cast<usize>(a.kind)],
+        os::Print("  %u  %s  %s  (%s, %llu MiB, driver %s)%s%s\n", i, a.id, a.name, kKinds[static_cast<usize>(a.kind)],
                     static_cast<unsigned long long>(a.dedicated_memory_bytes >> 20), a.driver, a.suitable ? "" : "  unsuitable: ",
                     a.suitable ? "" : (a.unsuitable_reason != nullptr ? a.unsuitable_reason : "?"));
     }
@@ -239,12 +242,12 @@ bool NextAdapterId(const Device& device, char* out, usize capacity) {
     if (!device.ListAdapters(&list) || list.count == 0) return false;
     u32 at = 0;
     for (u32 i = 0; i < list.count; ++i) {
-        if (std::strcmp(list.items[i].id, current_id) == 0) at = i;
+        if (CStrCompare(list.items[i].id, current_id) == 0) at = i;
     }
     for (u32 step = 1; step <= list.count; ++step) {
         const AdapterInfo& a = list.items[(at + step) % list.count];
         if (a.suitable) {
-            std::snprintf(out, capacity, "%s", a.id);
+            FormatTo(out, capacity, "%s", a.id);
             return true;
         }
     }
@@ -297,7 +300,7 @@ int RunScreenshot(const Options& options, const RenderSettings& settings) {
         const SceneOptions so = SceneOptionsFor(options);
         const FrameSetup fs = SetupFor(options, so, device.Get(), nullptr);
         if (target.IsValid() && frame.Create(fs) && scene.Create(device.Get(), frame.Materials(), frame.Templates(), so)) {
-            if (options.text != nullptr) frame.SetOverlay(true, StringView(options.text, std::strlen(options.text)), StringView("screenshot"));
+            if (options.text != nullptr) frame.SetOverlay(true, StringView(options.text, CStrLength(options.text)), StringView("screenshot"));
             scene.Animate(0.5f);
             Camera camera = scene.OverviewCamera(static_cast<f32>(kShotWidth) / static_cast<f32>(kShotHeight));
             FitCameraDepthRange(scene.Scene(), &camera, 0.1f);
@@ -352,7 +355,7 @@ struct Script {
     int next = 0;
     long wait_until = 0;
     void Parse(const char* source) {
-        std::snprintf(text, sizeof(text), "%s", source);
+        FormatTo(text, sizeof(text), "%s", source);
         for (char* p = text; *p != '\0' && count < 512;) {
             while (*p == ' ') ++p;
             if (*p == '\0') break;
@@ -430,7 +433,7 @@ int RunWindow(const Options& options, RenderSettings settings) {
             char status_line[384] = {};
             auto set_overlay = [&] {
                 const char* greeting = options.text != nullptr ? options.text : "Hello, world!";
-                frame.SetOverlay(overlay_on, StringView(greeting, std::strlen(greeting)), StringView(status_line, std::strlen(status_line)));
+                frame.SetOverlay(overlay_on, StringView(greeting, CStrLength(greeting)), StringView(status_line, CStrLength(status_line)));
             };
             set_overlay();
             bool measure_next_frame = false;
@@ -523,7 +526,7 @@ int RunWindow(const Options& options, RenderSettings settings) {
                             frame.GBufferStatistics().drawn_objects, frame.GBufferStatistics().draws, frame.Lights().point_count, frame.Lights().point_culled,
                             frame.Lights().dropped, frame.PointDraws());
                     if (renderer.GetDevice() != nullptr) {
-                        std::snprintf(status_line, sizeof(status_line), "%.2f ms/frame | %s | %s", (now - window_start) * 1000.0 / static_cast<double>(window_frames),
+                        FormatTo(status_line, sizeof(status_line), "%.2f ms/frame | %s | %s", (now - window_start) * 1000.0 / static_cast<double>(window_frames),
                                       renderer.GetDevice()->Adapter().name, renderer.GetDevice()->BackendName());
                         set_overlay();
                     }
@@ -545,15 +548,15 @@ int RunWindow(const Options& options, RenderSettings settings) {
                 // Script words that are due.
                 while (script.next < script.count && frames >= script.wait_until) {
                     const char* word = script.words[script.next++];
-                    if (std::strncmp(word, "frame:", 6) == 0) {
-                        script.wait_until = std::atol(word + 6);
-                    } else if (std::strncmp(word, "set:", 4) == 0) {
+                    if (CStrCompareN(word, "frame:", 6) == 0) {
+                        script.wait_until = CStrToLong(word + 6);
+                    } else if (CStrCompareN(word, "set:", 4) == 0) {
                         RenderSettings wanted = renderer.Settings();
-                        const char* eq = std::strchr(word + 4, '=');
+                        const char* eq = CStrFindChar(word + 4, '=');
                         char key[64];
                         bool applied = false;
                         if (eq != nullptr && static_cast<usize>(eq - (word + 4)) < sizeof(key)) {
-                            std::memcpy(key, word + 4, static_cast<usize>(eq - (word + 4)));
+                            MemCopy(key, word + 4, static_cast<usize>(eq - (word + 4)));
                             key[eq - (word + 4)] = '\0';
                             const SettingId id = wanted.Registry().FindByName(key);
                             if (id.IsValid()) {
@@ -565,7 +568,7 @@ int RunWindow(const Options& options, RenderSettings settings) {
                             }
                         }
                         if (!applied) RhiLogV(LogVerbosity::Error, "renderer_demo: script: bad setting '%s' (use set:key=value)", word + 4);
-                    } else if (std::strcmp(word, "reset") == 0) {
+                    } else if (CStrCompare(word, "reset") == 0) {
                         const double t = NowSeconds();
                         const ApplyResult r = renderer.ForceDeviceReset();
                         LogApply("reset", r);
@@ -573,7 +576,7 @@ int RunWindow(const Options& options, RenderSettings settings) {
                             measure_next_frame = true;
                             measure_start = t;
                         }
-                    } else if (std::strcmp(word, "gpu:next") == 0) {
+                    } else if (CStrCompare(word, "gpu:next") == 0) {
                         char id[64];
                         if (renderer.GetDevice() == nullptr) {
                             RhiLogV(LogVerbosity::Warn, "renderer_demo: script: gpu:next skipped (no device right now)");
@@ -582,20 +585,20 @@ int RunWindow(const Options& options, RenderSettings settings) {
                             wanted.SetText(renderer::settings::kAdapter, id);
                             apply("gpu:next", wanted);
                         }
-                    } else if (std::strcmp(word, "loss") == 0) {
+                    } else if (CStrCompare(word, "loss") == 0) {
                         if (renderer.GetDevice() != nullptr) renderer.GetDevice()->InjectDeviceLoss();
                         else RhiLogV(LogVerbosity::Warn, "renderer_demo: script: loss skipped (no device right now)");
-                    } else if (std::strncmp(word, "crash:", 6) == 0) {
+                    } else if (CStrCompareN(word, "crash:", 6) == 0) {
                         // A crash in the middle of a run that already reset the device: the report must show the epoch and the reset count.
                         const char* kind = word + 6;
-                        engine_placeholder::debug::RunCrashTest(std::strcmp(kind, "segv") == 0     ? engine_placeholder::debug::CrashTestKind::Segv
-                                                                : std::strcmp(kind, "assert") == 0 ? engine_placeholder::debug::CrashTestKind::Assert
+                        engine_placeholder::debug::RunCrashTest(CStrCompare(kind, "segv") == 0     ? engine_placeholder::debug::CrashTestKind::Segv
+                                                                : CStrCompare(kind, "assert") == 0 ? engine_placeholder::debug::CrashTestKind::Assert
                                                                                                    : engine_placeholder::debug::CrashTestKind::Abort);
-                    } else if (std::strcmp(word, "overlay") == 0) { // the F11 key, for scripts: toggles the text overlay
+                    } else if (CStrCompare(word, "overlay") == 0) { // the F11 key, for scripts: toggles the text overlay
                         overlay_on = !overlay_on;
                         set_overlay();
                         RhiLogV(LogVerbosity::Info, "renderer_demo: the text overlay is %s", overlay_on ? "on" : "off");
-                    } else if (std::strcmp(word, "quit") == 0) {
+                    } else if (CStrCompare(word, "quit") == 0) {
                         quit = true;
                     } else {
                         RhiLogV(LogVerbosity::Error, "renderer_demo: script: unknown word '%s'", word);
@@ -669,7 +672,7 @@ int RunWindow(const Options& options, RenderSettings settings) {
 
 bool ParseCount(const char* text, long* out, long max = 0x7fffffffL) {
     char* end = nullptr;
-    const long value = std::strtol(text, &end, 10);
+    const long value = CStrToLong(text, &end, 10);
     if (end == text || *end != '\0' || value < 0 || value > max) return false;
     *out = value;
     return true;
@@ -679,7 +682,7 @@ bool ParseCount(const char* text, long* out, long max = 0x7fffffffL) {
 int ParseLayer(const char* name) {
     static const char* const kNames[] = {"albedo", "normal", "material", "depth", "worldpos"};
     for (int i = 0; i < 5; ++i) {
-        if (std::strcmp(name, kNames[i]) == 0) return i;
+        if (CStrCompare(name, kNames[i]) == 0) return i;
     }
     return -1;
 }
@@ -706,7 +709,8 @@ const char kUsageFormat[] =
                  "  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it\n";
 
 int Usage(const char* program, int code) {
-    std::fprintf(code == kExitOk ? stdout : stderr, kUsageFormat, program);
+    if (code == kExitOk) os::Print(kUsageFormat, program);
+    else os::PrintError(kUsageFormat, program);
     return code;
 }
 
@@ -721,51 +725,51 @@ int EngineMain(int argc, char** argv) {
     LogRhi.SetVerbosity(LogVerbosity::Info); // the frame-time line is Info
     demo::DemoSettings demo_settings;
     char usage_text[4096];
-    std::snprintf(usage_text, sizeof(usage_text), kUsageFormat, argv[0]);
+    FormatTo(usage_text, sizeof(usage_text), kUsageFormat, argv[0]);
     if (!demo_settings.Begin("renderer_demo", usage_text, argc, argv)) return kExitUsage;
     g_demo_settings = &demo_settings;
     argc = demo_settings.RestCount(); // what the settings system did not take: --set, --settings, --gpu, --backend, ... are handled there
     argv = demo_settings.RestArgs();
     Options options;
-    const char* frames_env = std::getenv("RENDERER_DEMO_FRAMES");
-    options.frames = frames_env != nullptr ? std::atol(frames_env) : 0;
+    const char* frames_env = os::GetEnvironment("RENDERER_DEMO_FRAMES");
+    options.frames = frames_env != nullptr ? CStrToLong(frames_env) : 0;
     for (int i = 1; i < argc; ++i) {
         if (engine_placeholder::debug::IsProgramDebugArgument(argv[i])) {
             continue; // --crash-handler=... and --crash-test=... are handled by StartProgramDebugging
         }
         const bool has_value = i + 1 < argc;
-        if (std::strcmp(argv[i], "--frames") == 0 && has_value) {
+        if (CStrCompare(argv[i], "--frames") == 0 && has_value) {
             if (!ParseCount(argv[++i], &options.frames)) return Usage(argv[0], kExitUsage);
-        } else if (std::strcmp(argv[i], "--screenshot") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--screenshot") == 0 && has_value) {
             options.screenshot = argv[++i];
-        } else if (std::strcmp(argv[i], "--backend") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--backend") == 0 && has_value) {
             options.backend = argv[++i];
-        } else if (std::strcmp(argv[i], "--no-vsync") == 0) {
+        } else if (CStrCompare(argv[i], "--no-vsync") == 0) {
             options.no_vsync = true;
-        } else if (std::strcmp(argv[i], "--validation") == 0) {
+        } else if (CStrCompare(argv[i], "--validation") == 0) {
             options.validation = true;
-        } else if (std::strcmp(argv[i], "--objects") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--objects") == 0 && has_value) {
             if (!ParseCount(argv[++i], &options.objects, 20000) || options.objects < 64) return Usage(argv[0], kExitUsage);
-        } else if (std::strcmp(argv[i], "--lights") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--lights") == 0 && has_value) {
             if (!ParseCount(argv[++i], &options.lights, 16000)) return Usage(argv[0], kExitUsage);
-        } else if (std::strcmp(argv[i], "--gbuffer") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--gbuffer") == 0 && has_value) {
             options.gbuffer_layer = ParseLayer(argv[++i]);
             if (options.gbuffer_layer < 0) return Usage(argv[0], kExitUsage);
-        } else if (std::strcmp(argv[i], "--inject-device-loss") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--inject-device-loss") == 0 && has_value) {
             if (!ParseCount(argv[++i], &options.inject_device_loss)) return Usage(argv[0], kExitUsage);
-        } else if (std::strcmp(argv[i], "--inject-oom") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--inject-oom") == 0 && has_value) {
             if (!ParseCount(argv[++i], &options.inject_oom)) return Usage(argv[0], kExitUsage);
-        } else if (std::strcmp(argv[i], "--gpu") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--gpu") == 0 && has_value) {
             options.gpu = argv[++i];
-        } else if (std::strcmp(argv[i], "--prewarm") == 0) {
+        } else if (CStrCompare(argv[i], "--prewarm") == 0) {
             options.prewarm = true;
-        } else if (std::strcmp(argv[i], "--list-gpus") == 0) {
+        } else if (CStrCompare(argv[i], "--list-gpus") == 0) {
             options.list_gpus = true;
-        } else if (std::strcmp(argv[i], "--script") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--script") == 0 && has_value) {
             options.script = argv[++i];
-        } else if (std::strcmp(argv[i], "--text") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--text") == 0 && has_value) {
             options.text = argv[++i];
-        } else if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
+        } else if (CStrCompare(argv[i], "--help") == 0 || CStrCompare(argv[i], "-h") == 0) {
             return Usage(argv[0], kExitOk);
         } else {
             return Usage(argv[0], kExitUsage);

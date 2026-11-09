@@ -2,9 +2,8 @@
 // pipeline whose layouts come from its reflection, the refusals, the cache's round trip and its damaged files, and cold against warm
 // creation. Windows only.
 #include <chrono>
-#include <cstdio>
-#include <cstring>
-#include <cwchar>
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -62,6 +61,7 @@
 #include "rhi/dx12/dx12_device.h"
 #include "rhi/dx12/dx12_pipeline_cache.h"
 #include "rhi/rhi.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -219,7 +219,7 @@ u32 MakeEveryPipeline(Dx12Device& device, Vector<PipelineHandle>* pipelines, Vec
         gp.vertex_bindings = rhi::Span<VertexBindingDesc>(bindings, binding_count);
         gp.vertex_attributes = rhi::Span<VertexAttributeDesc>(attributes, attribute_count);
         // The G-buffer's three targets for gbuffer.frag (D3D12 warns about a target with more channels than the shader writes), else one.
-        if (std::strncmp(pair.fs.name, "gbuffer.frag", 12) == 0) {
+        if (CStrCompareN(pair.fs.name, "gbuffer.frag", 12) == 0) {
             gp.color_targets[0].format = renderer::kGBufferAlbedoFormat;
             gp.color_targets[1].format = renderer::kGBufferNormalFormat;
             gp.color_targets[2].format = renderer::kGBufferMaterialFormat;
@@ -332,16 +332,16 @@ using namespace dx12_pipeline_test;
 TEST_CASE("The DX12 pipeline cache file is named per adapter and driver, and a bad file is refused before D3D12 reads it", "[rhi][dx12]") {
     char path[256];
     REQUIRE(BuildPipelineLibraryPath("C:/cache", "dx12-1002-1114-50071d05-c2", "32.0.21030.2001", path, sizeof(path)));
-    CHECK(std::strcmp(path, "C:/cache/pipelines_dx12-1002-1114-50071d05-c2_32_0_21030_2001.bin") == 0);
+    CHECK(CStrCompare(path, "C:/cache/pipelines_dx12-1002-1114-50071d05-c2_32_0_21030_2001.bin") == 0);
     REQUIRE(BuildPipelineLibraryPath("C:/cache/", "a", "", path, sizeof(path)));
-    CHECK(std::strcmp(path, "C:/cache/pipelines_a_nodriver.bin") == 0);
+    CHECK(CStrCompare(path, "C:/cache/pipelines_a_nodriver.bin") == 0);
     char tiny[8];
     CHECK_FALSE(BuildPipelineLibraryPath("C:/cache", "a", "1", tiny, sizeof(tiny)));
     CHECK(tiny[0] == '\0');
 
     wchar_t name[18];
     PipelineLibraryName(0x0123456789abcdefull, name);
-    CHECK(std::wcscmp(name, L"p0123456789abcdef") == 0);
+    CHECK(WStrCompare(name, L"p0123456789abcdef") == 0);
 
     const u64 identity = PipelineLibraryIdentity("dx12-1002-1114-50071d05-c2", "32.0.21030.2001");
     CHECK(identity != PipelineLibraryIdentity("dx12-1002-1114-50071d05-c2", "32.0.21030.2002"));
@@ -349,7 +349,7 @@ TEST_CASE("The DX12 pipeline cache file is named per adapter and driver, and a b
     const char payload[] = "a serialized pipeline library";
     Vector<byte> file;
     file.Resize(kPipelineLibraryHeaderBytes + sizeof(payload));
-    std::memcpy(file.Data() + kPipelineLibraryHeaderBytes, payload, sizeof(payload));
+    MemCopy(file.Data() + kPipelineLibraryHeaderBytes, payload, sizeof(payload));
     WritePipelineLibraryHeader(file.Data(), identity, 0, payload, sizeof(payload));
     PipelineLibraryParts parts;
     CHECK(CheckPipelineLibraryFile(file.Data(), file.Size(), identity, &parts) == nullptr);
@@ -368,8 +368,8 @@ TEST_CASE("The DX12 pipeline cache file is named per adapter and driver, and a b
     Vector<byte> keyed;
     keyed.Resize(kPipelineLibraryHeaderBytes + 16 + sizeof(payload));
     const u64 keys[2] = {0x1111222233334444ull, 0x5555666677778888ull};
-    std::memcpy(keyed.Data() + kPipelineLibraryHeaderBytes, keys, 16); // little-endian on every target
-    std::memcpy(keyed.Data() + kPipelineLibraryHeaderBytes + 16, payload, sizeof(payload));
+    MemCopy(keyed.Data() + kPipelineLibraryHeaderBytes, keys, 16); // little-endian on every target
+    MemCopy(keyed.Data() + kPipelineLibraryHeaderBytes + 16, payload, sizeof(payload));
     WritePipelineLibraryHeader(keyed.Data(), identity, 2, keyed.Data() + kPipelineLibraryHeaderBytes, 16 + sizeof(payload));
     REQUIRE(CheckPipelineLibraryFile(keyed.Data(), keyed.Size(), identity, &parts) == nullptr);
     CHECK(parts.key_count == 2);
@@ -491,7 +491,7 @@ TEST_CASE("The DX12 pipeline cache round-trips, and a truncated, damaged or fore
         Dx12DevicePtr device = MakePipelineDevice(native.CStr());
         REQUIRE(device);
         REQUIRE(device->PipelineCache().enabled);
-        std::snprintf(path, sizeof(path), "%s", device->PipelineCachePath());
+        FormatTo(path, sizeof(path), "%s", device->PipelineCachePath());
         Everything all;
         count = all.Make(*device);
         const Dx12Device::PipelineCacheStats cold = device->PipelineCache();
@@ -530,7 +530,7 @@ TEST_CASE("The DX12 pipeline cache round-trips, and a truncated, damaged or fore
         INFO(d.what);
         Vector<byte> bad;
         bad.Resize(d.size);
-        std::memcpy(bad.Data(), saved.Data(), d.size);
+        MemCopy(bad.Data(), saved.Data(), d.size);
         if (d.flip_at != ~usize{0}) bad[d.flip_at] ^= 0x5a;
         REQUIRE(WriteAll(path, bad.Data(), bad.Size()));
         Dx12DevicePtr device = MakePipelineDevice(native.CStr());

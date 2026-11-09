@@ -1,13 +1,12 @@
 #include "jobs/frame_pool.h"
 
-#include <new>
-
-#include <cstdlib>
+#include "lang/new.h"
 
 #include "log/assert.h"
 #include "os/os.h"
 #include "sync/atomic.h"
 #include "sync/mutex.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::jobs {
 
@@ -134,7 +133,7 @@ usize FramePool::CentralAvailableForTesting(usize class_index) {
 }
 
 void* FramePool::AllocateFallback(usize size) {
-    void* block = std::malloc(size + kHeaderBytes);
+    void* block = MemAllocate(size + kHeaderBytes);
     ENGINE_ASSERT(block != nullptr, "FramePool: libc malloc fallback failed");
     auto* header = static_cast<Header*>(block);
     header->class_index = kFallbackClass;
@@ -200,7 +199,7 @@ void FramePool::Deallocate(void* ptr) {
     header->magic = 0; // catches double free of the same block
     if (cls == kFallbackClass) {
         fallback_frees_.FetchAdd(1, MemoryOrder::Relaxed);
-        std::free(block);
+        MemFree(block);
         return;
     }
     ENGINE_ASSERT(cls < kClassCount, "FramePool::Deallocate: corrupt header");

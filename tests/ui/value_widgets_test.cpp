@@ -1,4 +1,4 @@
-#include <cmath>
+#include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -210,12 +210,12 @@ TEST_CASE("Slider: vertical puts the minimum at the bottom, no step moves by a h
     h.PointerDown(20, 10 + 8);
     CHECK(s->Value() == 1);
     h.PointerMove(20, 10 + 8 + 92);
-    CHECK(std::fabs(s->Value() - 0.5) < 0.01);
+    CHECK(Abs(s->Value() - 0.5) < 0.01);
     h.PointerUp(20, 10 + 8 + 92);
     h.GetSurface().SetFocus(s);
     const f64 before = s->Value();
     h.Key(Key::Up);
-    CHECK(std::fabs(s->Value() - (before + 0.01)) < 1e-9);
+    CHECK(Abs(s->Value() - (before + 0.01)) < 1e-9);
 }
 
 TEST_CASE("SpinBox: buttons, wheel, keys, range, decimals and policy", "[ui][value]") {

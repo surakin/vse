@@ -1,11 +1,10 @@
 #include "renderer/frame_data.h"
 
-#include <cmath>
-#include <cstdlib>
-#include <cstring>
+#include "lang/scalar.h"
 
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::renderer {
 
@@ -135,7 +134,7 @@ void FrameResources::BeginFrame(u64 frame_index) {
 
 void FrameResources::WriteFrameData(const FrameData& data) {
     ENGINE_ASSERT(begun_, "FrameResources::WriteFrameData: BeginFrame was not called");
-    std::memcpy(frame_mapped_ + frame_stride_ * slot_, &data, sizeof(FrameData));
+    MemCopy(frame_mapped_ + frame_stride_ * slot_, &data, sizeof(FrameData));
 }
 
 u32 FrameResources::WriteObjects(const RenderScene& scene, const u32* slots, u32 count) {
@@ -147,7 +146,7 @@ u32 FrameResources::WriteObjects(const RenderScene& scene, const u32* slots, u32
         ObjectData data;
         data.world = object.transform;
         data.normal = NormalMatrix(object.transform);
-        std::memcpy(base + static_cast<usize>(i) * sizeof(ObjectData), &data, sizeof(ObjectData));
+        MemCopy(base + static_cast<usize>(i) * sizeof(ObjectData), &data, sizeof(ObjectData));
     }
     objects_written_ = count;
     return count;
@@ -180,7 +179,7 @@ LightSummary FrameResources::WriteLights(const RenderScene& scene, const FrameDa
         }
         LightData d;
         Vec3 dir = light.direction;
-        const f32 len = std::sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+        const f32 len = Sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
         // The shader assumes a unit vector; a zero direction stays zero and lights nothing.
         dir = len > 1e-6f ? Vec3(dir.x / len, dir.y / len, dir.z / len) : Vec3(0, 0, 0);
         d.direction = Vec4(dir, 0.0f);
@@ -208,7 +207,7 @@ LightSummary FrameResources::WriteLights(const RenderScene& scene, const FrameDa
         point_scratch_.Push(PointEntry{to.x * to.x + to.y * to.y + to.z * to.z, slot});
     }
     if (point_scratch_.Size() > 1) {
-        std::qsort(point_scratch_.Data(), point_scratch_.Size(), sizeof(PointEntry), &FrameResources::ComparePoints);
+        SortRaw(point_scratch_.Data(), point_scratch_.Size(), sizeof(PointEntry), &FrameResources::ComparePoints);
     }
     for (usize i = 0; i < point_scratch_.Size(); ++i) {
         if (n == max_lights_) {
@@ -228,7 +227,7 @@ LightSummary FrameResources::WriteLights(const RenderScene& scene, const FrameDa
         RenderLog(LogVerbosity::Error, "FrameResources: %u lights do not fit in the %u the light buffer holds and were left out (logged once)", summary.dropped,
                   max_lights_);
     }
-    std::memcpy(light_mapped_ + light_stride_ * slot_, out, static_cast<usize>(n) * sizeof(LightData));
+    MemCopy(light_mapped_ + light_stride_ * slot_, out, static_cast<usize>(n) * sizeof(LightData));
     lights_written_ = n;
     return summary;
 }

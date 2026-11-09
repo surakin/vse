@@ -1,9 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
-#include <cstdlib>
 
 #include "os/os.h"
 #include "test_env.h"
 #include "types.h"
+#include "cstr/mem_ops.h"
 
 using engine_placeholder::u64;
 using engine_placeholder::os::MonotonicTimeNanos;
@@ -57,7 +57,7 @@ TEST_CASE("os::EnvironmentEntry lists the process environment as NAME=value", "[
     CHECK(exact[length] == '\0');
 
     char shorter[64];
-    std::memset(shorter, 'x', sizeof(shorter));
+    engine_placeholder::MemSet(shorter, 'x', sizeof(shorter));
     REQUIRE(engine_placeholder::os::EnvironmentEntry(found_index, shorter, expected.Length(), &length));
     CHECK(length == expected.Length()); // the full length is reported so the caller can retry
     CHECK(shorter[expected.Length() - 1] == '\0'); // cut short, still terminated

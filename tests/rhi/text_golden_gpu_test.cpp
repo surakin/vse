@@ -3,7 +3,6 @@
 // The scene is "Hello, world!" at 16 and 48 px, a wrapped paragraph and a line of kerned pairs, white on dark blue. The glyph bitmaps are rasterized on the CPU and
 // the quads sit on whole pixels, so the picture is the same on any GPU within rounding; the tolerance is two levels. Only Vulkan writes the golden
 // (ENGINE_RHI_UPDATE_GOLDEN=1); Direct3D 12 is checked against it once the text shaders have DXIL (KNOWN-ISSUES.md).
-#include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -16,6 +15,7 @@
 #include "text/font.h"
 #include "text/glyph_atlas.h"
 #include "text/layout.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -125,7 +125,7 @@ TEST_CASE("The demo frame's text overlay survives a device reset, a pipeline reb
         };
         // The overlay region: the top 80 rows hold the greeting and the status line.
         auto top_differs = [](const gpu_test::Image& a, const gpu_test::Image& b) {
-            return std::memcmp(a.rgba.data(), b.rgba.data(), static_cast<usize>(a.width) * 80 * 4) != 0;
+            return MemCompare(a.rgba.data(), b.rgba.data(), static_cast<usize>(a.width) * 80 * 4) != 0;
         };
         gpu_test::Image before;
         shoot(&before);

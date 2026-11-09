@@ -3,7 +3,7 @@
 //   jobs_tests "[latency]"
 #include "sync/atomic.h"
 #include <chrono>
-#include <cstdio>
+#include "os/console.h"
 #include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -49,7 +49,7 @@ TEST_CASE("Wake latency of an idle worker: median and 99th percentile of 10000 w
     const double median_us = static_cast<double>(waits[kSamples / 2]) / 1000.0;
     const double p99_us = static_cast<double>(waits[kSamples * 99 / 100]) / 1000.0;
     const double max_us = static_cast<double>(waits[kSamples - 1]) / 1000.0;
-    std::printf("wake latency over %zu wake-ups: median %.1f us, p99 %.1f us, max %.1f us\n", static_cast<size_t>(kSamples), median_us,
+    os::Print("wake latency over %zu wake-ups: median %.1f us, p99 %.1f us, max %.1f us\n", static_cast<size_t>(kSamples), median_us,
                 p99_us, max_us);
     CHECK(median_us > 0.0);
 }

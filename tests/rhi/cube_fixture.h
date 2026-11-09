@@ -1,9 +1,8 @@
 #pragma once
 
-#include <cmath>
-#include <cstdio>
+#include "lang/scalar.h"
+#include "cstr/format.h"
 #include <cstdlib>
-#include <cstring>
 #include "lang/initializer_list.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -16,6 +15,7 @@
 #include "render_target.h"
 #include "rhi/rhi.h"
 #include "rhi/uniform_ring.h"
+#include "os/console.h"
 
 // The scene of the cube golden tests: a device on one backend, an offscreen target with depth, a uniform ring and a camera (Phase 13
 // Day 170: any backend, through the RHI interface).
@@ -134,7 +134,7 @@ struct CubeScene {
 
 inline bool PixelIs(const Image& image, u32 x, u32 y, int r, int g, int b) {
     const u8* p = image.Pixel(x, y);
-    return std::abs(p[0] - r) <= 2 && std::abs(p[1] - g) <= 2 && std::abs(p[2] - b) <= 2;
+    return Abs(p[0] - r) <= 2 && Abs(p[1] - g) <= 2 && Abs(p[2] - b) <= 2;
 }
 
 // Compares a rendered image with a committed golden (or rewrites the golden under ENGINE_RHI_UPDATE_GOLDEN=1), naming the backend.
@@ -152,24 +152,24 @@ inline int CheckGolden(const Image& image, const char* golden_file, const char* 
     Image golden;
     REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath(golden_file).c_str(), &golden));
     char diff_name[96];
-    std::snprintf(diff_name, sizeof(diff_name), "%s_%s", name, gpu_test::BackendTag(backend));
+    FormatTo(diff_name, sizeof(diff_name), "%s_%s", name, gpu_test::BackendTag(backend));
     const gpu_test::CompareResult result = gpu_test::Compare(golden, image, options, diff_name);
     INFO(gpu_test::BackendTag(backend) << ": " << result.message);
     CHECK(result.same);
     // ENGINE_RHI_GOLDEN_REPORT=1: say how far the image is from the golden and from the other backend's image of the same test (both
     // run in one process), which separates a driver's differences from a backend's.
-    const char* report = std::getenv("ENGINE_RHI_GOLDEN_REPORT");
+    const char* report = os::GetEnvironment("ENGINE_RHI_GOLDEN_REPORT");
     if (report != nullptr && report[0] == '1') {
         char own[96], other[96];
-        std::snprintf(own, sizeof(own), "golden_%s_%s.ppm", name, gpu_test::BackendTag(backend));
-        std::snprintf(other, sizeof(other), "golden_%s_%s.ppm", name, backend == Backend::Vulkan ? "dx12" : "vulkan");
+        FormatTo(own, sizeof(own), "golden_%s_%s.ppm", name, gpu_test::BackendTag(backend));
+        FormatTo(other, sizeof(other), "golden_%s_%s.ppm", name, backend == Backend::Vulkan ? "dx12" : "vulkan");
         gpu_test::WritePpm(gpu_test::TempPath(own).c_str(), image);
         int between = -1;
         Image theirs;
         if (gpu_test::ReadPpm(gpu_test::TempPath(other).c_str(), &theirs) && theirs.width == image.width && theirs.height == image.height) {
             between = 0;
             for (usize i = 0; i < image.rgba.size(); ++i) {
-                const int d = std::abs(static_cast<int>(image.rgba[i]) - static_cast<int>(theirs.rgba[i]));
+                const int d = Abs(static_cast<int>(image.rgba[i]) - static_cast<int>(theirs.rgba[i]));
                 between = d > between ? d : between;
             }
         }

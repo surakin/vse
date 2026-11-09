@@ -1,11 +1,10 @@
+#include "cstr/mem_ops.h"
 #include "renderer/gbuffer.h"
 
-#include <cmath>
-#include <cstdarg>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <new>
+#include "lang/scalar.h"
+#include "cstr/varargs.h"
+
+#include "lang/new.h"
 
 #include "fullscreen.vert.dxil.inc"
 #include "gbuffer.frag.perm.inc"
@@ -13,6 +12,7 @@
 #include "gbuffer_debug.frag.dxil.inc"
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
+#include "cstr/format.h"
 
 namespace engine_placeholder::renderer {
 
@@ -63,7 +63,7 @@ bool CheckGBufferFormats(const rhi::Device* device, char* error, usize error_cap
     const PipelineTarget target = GBufferPipelineTarget();
     if (device->Caps().max_color_attachments < target.color_count) {
         if (error != nullptr && error_capacity > 0) {
-            std::snprintf(error, error_capacity, "G-buffer: the device allows %u color attachments and the geometry pass writes %u",
+            FormatTo(error, error_capacity, "G-buffer: the device allows %u color attachments and the geometry pass writes %u",
                           device->Caps().max_color_attachments, target.color_count);
         }
         return false;
@@ -71,7 +71,7 @@ bool CheckGBufferFormats(const rhi::Device* device, char* error, usize error_cap
     for (const Need& need : needs) {
         if (!device->FormatSupport(need.format, need.usage)) {
             if (error != nullptr && error_capacity > 0) {
-                std::snprintf(error, error_capacity, "G-buffer: the device does not support format %s as %s", FormatLabel(need.format), need.usage_name);
+                FormatTo(error, error_capacity, "G-buffer: the device does not support format %s as %s", FormatLabel(need.format), need.usage_name);
             }
             return false;
         }
@@ -91,12 +91,12 @@ PipelineTarget GBufferPipelineTarget() {
 }
 
 Vec2 OctEncode(const Vec3& n) {
-    const f32 sum = std::fabs(n.x) + std::fabs(n.y) + std::fabs(n.z);
+    const f32 sum = Abs(n.x) + Abs(n.y) + Abs(n.z);
     f32 px = n.x / sum;
     f32 py = n.y / sum;
     if (n.z < 0.0f) {
-        const f32 nx = (1.0f - std::fabs(py)) * SignNotZero(px);
-        const f32 ny = (1.0f - std::fabs(px)) * SignNotZero(py);
+        const f32 nx = (1.0f - Abs(py)) * SignNotZero(px);
+        const f32 ny = (1.0f - Abs(px)) * SignNotZero(py);
         px = nx;
         py = ny;
     }
@@ -106,18 +106,18 @@ Vec2 OctEncode(const Vec3& n) {
 Vec3 OctDecode(const Vec2& f) {
     f32 x = f.x;
     f32 y = f.y;
-    const f32 z = 1.0f - std::fabs(x) - std::fabs(y);
+    const f32 z = 1.0f - Abs(x) - Abs(y);
     if (z < 0.0f) {
-        const f32 nx = (1.0f - std::fabs(y)) * SignNotZero(x);
-        const f32 ny = (1.0f - std::fabs(x)) * SignNotZero(y);
+        const f32 nx = (1.0f - Abs(y)) * SignNotZero(x);
+        const f32 ny = (1.0f - Abs(x)) * SignNotZero(y);
         x = nx;
         y = ny;
     }
-    const f32 len = std::sqrt(x * x + y * y + z * z);
+    const f32 len = Sqrt(x * x + y * y + z * z);
     return Vec3(x / len, y / len, z / len);
 }
 
-f32 SrgbToLinear(f32 c) { return c <= 0.04045f ? c / 12.92f : std::pow((c + 0.055f) / 1.055f, 2.4f); }
+f32 SrgbToLinear(f32 c) { return c <= 0.04045f ? c / 12.92f : Pow((c + 0.055f) / 1.055f, 2.4f); }
 
 f32 LinearizeDepth(f32 depth, f32 near_plane, f32 far_plane) { return near_plane * far_plane / (far_plane - depth * (far_plane - near_plane)); }
 
@@ -240,10 +240,10 @@ GBufferPass::~GBufferPass() = default;
 void GBufferPass::Reject(const char* fmt, ...) {
     ++stats_.rejected;
     if (error_[0] != '\0') return; // the first message is kept; the rest are counted
-    va_list args;
-    va_start(args, fmt);
-    std::vsnprintf(error_, sizeof(error_), fmt, args);
-    va_end(args);
+    VarArgs args;
+    ENGINE_VA_START(args, fmt);
+    VFormatTo(error_, sizeof(error_), fmt, args);
+    ENGINE_VA_END(args);
 }
 
 bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
@@ -252,7 +252,7 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
     draw_count_ = 0;
     added_ = false;
     if (!storage_ok_) {
-        std::snprintf(error_, sizeof(error_), "G-buffer: the pass could not allocate its draw list");
+        FormatTo(error_, sizeof(error_), "G-buffer: the pass could not allocate its draw list");
         return false;
     }
     const u32 cap = frame_->MaxObjects();
@@ -263,11 +263,11 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
     object_index_stream_ = materials_->ObjectIndexStream(); // valid only where shaders read the index from it (Direct3D 12)
     if (object_index_stream_.IsValid() && cap > kMaxObjectIndices) {
         // Draw i reads entry i of the stream: a frame with more objects than it holds would read past it (Vulkan has no such limit).
-        std::snprintf(error_, sizeof(error_), "G-buffer: %u objects per frame is more than the object index stream holds (%u)", cap, kMaxObjectIndices);
+        FormatTo(error_, sizeof(error_), "G-buffer: %u objects per frame is more than the object index stream holds (%u)", cap, kMaxObjectIndices);
         return false;
     }
     if (!frame_group_.IsValid() || !object_group_.IsValid()) {
-        std::snprintf(error_, sizeof(error_), "G-buffer: the frame or object bind group could not be created");
+        FormatTo(error_, sizeof(error_), "G-buffer: the frame or object bind group could not be created");
         return false;
     }
 
@@ -276,7 +276,7 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
     u32* visible_slots = slots_.Data();
     if (scene_slots > cap) {
         if (cull_slots_.Size() < scene_slots && !cull_slots_.TryResize(scene_slots)) {
-            std::snprintf(error_, sizeof(error_), "G-buffer: out of memory for the cull list");
+            FormatTo(error_, sizeof(error_), "G-buffer: out of memory for the cull list");
             return false;
         }
         visible_slots = cull_slots_.Data();
@@ -338,7 +338,7 @@ bool GBufferPass::Prepare(const RenderScene& scene, const Frustum& frustum) {
         if (x->slot != y->slot) return x->slot < y->slot ? -1 : 1;
         return 0;
     };
-    std::qsort(entries, entry_count, sizeof(SortEntry), compare);
+    SortRaw(entries, entry_count, sizeof(SortEntry), compare);
     for (u32 i = 0; i < entry_count; ++i) slots_[i] = entries[i].slot;
     frame_->WriteObjects(scene, slots_.Data(), entry_count);
 

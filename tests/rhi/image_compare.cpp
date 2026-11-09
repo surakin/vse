@@ -3,7 +3,7 @@
 #include "io/file.h"
 #include "io/file_system.h"
 
-#include <cstdio>
+#include "cstr/format.h"
 #include <cstdlib>
 #include <cstring>
 #include "build_defs.h"
@@ -12,6 +12,9 @@
 #include <process.h> // _getpid
 #else
 #include <unistd.h> // getpid
+#include "cstr/mem_ops.h"
+#include "os/console.h"
+#include "lang/scalar.h"
 #endif
 
 #ifndef ENGINE_RHI_GOLDEN_DIR
@@ -25,7 +28,7 @@ namespace {
 int MaxChannelDifference(const unsigned char* a, const unsigned char* b) {
     int worst = 0;
     for (int c = 0; c < 4; ++c) {
-        const int d = std::abs(static_cast<int>(a[c]) - static_cast<int>(b[c]));
+        const int d = engine_placeholder::Abs(static_cast<int>(a[c]) - static_cast<int>(b[c]));
         worst = d > worst ? d : worst;
     }
     return worst;
@@ -53,7 +56,7 @@ CompareResult Compare(const Image& golden, const Image& actual, const CompareOpt
     }
     if (golden.width != actual.width || golden.height != actual.height) {
         char text[128];
-        std::snprintf(text, sizeof(text), "size differs: golden %ux%u, actual %ux%u", golden.width, golden.height, actual.width, actual.height);
+        engine_placeholder::FormatTo(text, sizeof(text), "size differs: golden %ux%u, actual %ux%u", golden.width, golden.height, actual.width, actual.height);
         r.message = text;
         return r;
     }
@@ -91,7 +94,7 @@ CompareResult Compare(const Image& golden, const Image& actual, const CompareOpt
         const std::string path = DiffPath(name);
         const bool wrote = WritePpm(path.c_str(), diff);
         char text[256];
-        std::snprintf(text, sizeof(text), "%u interior pixels differ by more than %d, %u of %u edge pixels by more than %d, worst %d%s%s",
+        engine_placeholder::FormatTo(text, sizeof(text), "%u interior pixels differ by more than %d, %u of %u edge pixels by more than %d, worst %d%s%s",
                       r.interior_misses, options.tolerance, r.edge_misses, r.edge_pixels, options.edge_tolerance, r.max_difference,
                       wrote ? "; diff image: " : "", wrote ? path.c_str() : "");
         r.message = text;
@@ -105,7 +108,7 @@ bool WritePpm(const char* path, const Image& image) {
     io::Path file;
     if (!io::Path::Parse(engine_placeholder::StringView(path), io::NativePathStyle(), &file)) return false;
     char header[64];
-    const int header_length = std::snprintf(header, sizeof(header), "P6\n%u %u\n255\n", image.width, image.height);
+    const int header_length = engine_placeholder::FormatTo(header, sizeof(header), "P6\n%u %u\n255\n", image.width, image.height);
     std::string bytes(header, static_cast<size_t>(header_length));
     bytes.reserve(bytes.size() + static_cast<size_t>(image.width) * image.height * 3);
     for (size_t i = 0; i < static_cast<size_t>(image.width) * image.height; ++i) {
@@ -159,13 +162,13 @@ bool ReadPpm(const char* path, Image* image) {
     image->height = h;
     image->rgba.assign(static_cast<size_t>(w) * h * 4, 255);
     for (size_t i = 0; i < static_cast<size_t>(w) * h; ++i) {
-        std::memcpy(&image->rgba[i * 4], data + pos + i * 3, 3);
+        engine_placeholder::MemCopy(&image->rgba[i * 4], data + pos + i * 3, 3);
     }
     return true;
 }
 
 bool UpdatingGoldens() {
-    const char* v = std::getenv("ENGINE_RHI_UPDATE_GOLDEN");
+    const char* v = engine_placeholder::os::GetEnvironment("ENGINE_RHI_UPDATE_GOLDEN");
     return v != nullptr && v[0] == '1';
 }
 

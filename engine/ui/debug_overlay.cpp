@@ -1,8 +1,7 @@
 #include "ui/debug_overlay.h"
 
-#include <cmath>
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 
 #include "log/log.h"
 #include "ui/surface.h"
@@ -242,10 +241,10 @@ void DebugOverlay::SetStats(const DebugStats& stats) {
     graph_->Push(stats.frame_ms);
     const f32 fps = stats.frame_ms > 0 ? 1000.0f / stats.frame_ms : 0.0f;
     char text[160];
-    std::snprintf(text, sizeof(text), "%.1f fps  %.2f ms  gpu %.2f ms  draws %u  jobs %u/%u  gpu mem %llu MB", static_cast<double>(fps),
+    FormatTo(text, sizeof(text), "%.1f fps  %.2f ms  gpu %.2f ms  draws %u  jobs %u/%u  gpu mem %llu MB", static_cast<double>(fps),
                   static_cast<double>(stats.frame_ms), static_cast<double>(stats.gpu_ms), stats.draw_calls, stats.jobs_pending, stats.job_workers,
                   static_cast<unsigned long long>(stats.gpu_bytes >> 20));
-    counters_->SetText(StringView(text, std::strlen(text)));
+    counters_->SetText(StringView(text, CStrLength(text)));
 }
 
 bool DebugOverlay::AddCommand(StringView name, StringView help, CommandFn function, void* user) {
@@ -263,7 +262,7 @@ bool DebugOverlay::Run(StringView line) {
     line = TrimmedText(line);
     if (line.Length() == 0) return false;
     char echo[1024];
-    const int n = std::snprintf(echo, sizeof(echo), "> %.*s", static_cast<int>(line.Length()), line.Data());
+    const int n = FormatTo(echo, sizeof(echo), "> %.*s", static_cast<int>(line.Length()), line.Data());
     capture_.Append(StringView(echo, n > 0 ? (static_cast<usize>(n) < sizeof(echo) ? static_cast<usize>(n) : sizeof(echo) - 1) : 0));
     const usize space = line.Find(StringView(" "));
     const StringView name = line.Substring(0, space);
@@ -277,7 +276,7 @@ bool DebugOverlay::Run(StringView line) {
         capture_.Append(StringView("clear: empty the console"));
         for (usize i = 0; i < commands_.Size(); ++i) {
             char buf[256];
-            const int len = std::snprintf(buf, sizeof(buf), "%s: %s", commands_[i].name.CStr(), commands_[i].help.CStr());
+            const int len = FormatTo(buf, sizeof(buf), "%s: %s", commands_[i].name.CStr(), commands_[i].help.CStr());
             capture_.Append(StringView(buf, len > 0 ? (static_cast<usize>(len) < sizeof(buf) ? static_cast<usize>(len) : sizeof(buf) - 1) : 0));
         }
         ran = true;

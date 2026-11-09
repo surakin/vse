@@ -7,9 +7,9 @@
 #include "log/assert.h"
 #include "log/log.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "cstr/format.h"
+#include "os/console.h"
+#include "cstr/cstr.h"
 
 namespace engine_placeholder::debug {
 
@@ -27,7 +27,7 @@ constexpr bool kBuildDefault = true;
 #endif
 
 bool StartsWith(const char* text, const char* prefix) {
-    return std::strncmp(text, prefix, std::strlen(prefix)) == 0;
+    return CStrCompareN(text, prefix, CStrLength(prefix)) == 0;
 }
 
 // -1 for text that is neither on nor off.
@@ -35,20 +35,20 @@ int ParseSwitch(const char* text) {
     if (text == nullptr) {
         return -1;
     }
-    if (std::strcmp(text, "1") == 0 || std::strcmp(text, "on") == 0 || std::strcmp(text, "true") == 0) {
+    if (CStrCompare(text, "1") == 0 || CStrCompare(text, "on") == 0 || CStrCompare(text, "true") == 0) {
         return 1;
     }
-    if (std::strcmp(text, "0") == 0 || std::strcmp(text, "off") == 0 || std::strcmp(text, "false") == 0) {
+    if (CStrCompare(text, "0") == 0 || CStrCompare(text, "off") == 0 || CStrCompare(text, "false") == 0) {
         return 0;
     }
     return -1;
 }
 
 CrashTestKind ParseCrashTest(const char* text) {
-    if (std::strcmp(text, "segv") == 0) return CrashTestKind::Segv;
-    if (std::strcmp(text, "abort") == 0) return CrashTestKind::Abort;
-    if (std::strcmp(text, "assert") == 0) return CrashTestKind::Assert;
-    if (std::strcmp(text, "ensure") == 0) return CrashTestKind::Ensure;
+    if (CStrCompare(text, "segv") == 0) return CrashTestKind::Segv;
+    if (CStrCompare(text, "abort") == 0) return CrashTestKind::Abort;
+    if (CStrCompare(text, "assert") == 0) return CrashTestKind::Assert;
+    if (CStrCompare(text, "ensure") == 0) return CrashTestKind::Ensure;
     return CrashTestKind::None;
 }
 
@@ -80,14 +80,14 @@ ProgramDebugRequest ParseProgramDebugRequest(int argc, const char* const* argv, 
             continue;
         }
         if (StartsWith(argv[i], "--crash-handler=")) {
-            const int value = ParseSwitch(argv[i] + std::strlen("--crash-handler="));
+            const int value = ParseSwitch(argv[i] + CStrLength("--crash-handler="));
             if (value >= 0) {
                 request.crash_handler = value != 0;
             } else {
                 request.ignored_argument = argv[i];
             }
         } else if (StartsWith(argv[i], "--crash-test=")) {
-            request.crash_test = ParseCrashTest(argv[i] + std::strlen("--crash-test="));
+            request.crash_test = ParseCrashTest(argv[i] + CStrLength("--crash-test="));
             if (request.crash_test == CrashTestKind::None) {
                 request.ignored_argument = argv[i];
             }
@@ -101,18 +101,18 @@ ProgramDebugSetup StartProgramDebugging(int argc, const char* const* argv) {
     InitCrashContext(argc, argv);
 
     ProgramDebugSetup setup;
-    const ProgramDebugRequest request = ParseProgramDebugRequest(argc, argv, std::getenv("ENGINE_CRASH_HANDLER"), kBuildDefault);
+    const ProgramDebugRequest request = ParseProgramDebugRequest(argc, argv, os::GetEnvironment("ENGINE_CRASH_HANDLER"), kBuildDefault);
     setup.crash_test = request.crash_test;
 
     const CrashContext& context = GetCrashContext();
     char line[512];  // the build id and the two context strings are each up to 95 characters
-    std::snprintf(line, sizeof(line), "build %s %s %s %s", context.build_id[0] != '\0' ? context.build_id : "(no build id)",
+    FormatTo(line, sizeof(line), "build %s %s %s %s", context.build_id[0] != '\0' ? context.build_id : "(no build id)",
                   context.os_name, context.architecture, BuildConfiguration());
     Log(LogBuild, LogVerbosity::Info, StringView(line));
 
     if (request.ignored_argument != nullptr) {
         char text[256];
-        std::snprintf(text, sizeof(text), "ignored %s: use --crash-handler=on|off and --crash-test=segv|abort|assert|ensure", request.ignored_argument);
+        FormatTo(text, sizeof(text), "ignored %s: use --crash-handler=on|off and --crash-test=segv|abort|assert|ensure", request.ignored_argument);
         Log(LogCore, LogVerbosity::Warn, StringView(text));
     }
     if (request.crash_handler) {

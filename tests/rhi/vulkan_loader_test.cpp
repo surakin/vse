@@ -1,5 +1,4 @@
-#include <cstdlib>
-#include <cstring>
+#include "cstr/cstr.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -70,9 +69,9 @@ TEST_CASE("Vulkan loader reports BadLoader for a library without vkGetInstancePr
 }
 
 TEST_CASE("LoaderStatusName names every status", "[rhi][vulkan]") {
-    CHECK(std::strcmp(LoaderStatusName(LoaderStatus::Ok), "Ok") == 0);
-    CHECK(std::strcmp(LoaderStatusName(LoaderStatus::NoLoader), "NoLoader") == 0);
-    CHECK(std::strcmp(LoaderStatusName(LoaderStatus::BadLoader), "BadLoader") == 0);
+    CHECK(CStrCompare(LoaderStatusName(LoaderStatus::Ok), "Ok") == 0);
+    CHECK(CStrCompare(LoaderStatusName(LoaderStatus::NoLoader), "NoLoader") == 0);
+    CHECK(CStrCompare(LoaderStatusName(LoaderStatus::BadLoader), "BadLoader") == 0);
 }
 
 TEST_CASE("Vulkan loader resolves the global and instance tables", "[rhi][vulkan][gpu]") {
@@ -186,7 +185,7 @@ int g_missing_count = 0;
 void DummyFn() {}
 PFN_vkVoidFunction VKAPI_PTR FakeGetInstanceProcAddr(VkInstance, const char* name) {
     for (int i = 0; i < g_missing_count; ++i) {
-        if (std::strcmp(name, g_missing[i]) == 0) {
+        if (CStrCompare(name, g_missing[i]) == 0) {
             return nullptr;
         }
     }
@@ -233,19 +232,19 @@ TEST_CASE("CheckInstanceVersion requires 1.3", "[rhi][vulkan]") {
 }
 
 TEST_CASE("VkResultName covers the results the backend uses", "[rhi][vulkan]") {
-    CHECK(std::strcmp(VkResultName(VK_SUCCESS), "VK_SUCCESS") == 0);
-    CHECK(std::strcmp(VkResultName(VK_TIMEOUT), "VK_TIMEOUT") == 0);
-    CHECK(std::strcmp(VkResultName(VK_NOT_READY), "VK_NOT_READY") == 0);
-    CHECK(std::strcmp(VkResultName(VK_INCOMPLETE), "VK_INCOMPLETE") == 0);
-    CHECK(std::strcmp(VkResultName(VK_SUBOPTIMAL_KHR), "VK_SUBOPTIMAL_KHR") == 0);
-    CHECK(std::strcmp(VkResultName(VK_ERROR_OUT_OF_DATE_KHR), "VK_ERROR_OUT_OF_DATE_KHR") == 0);
-    CHECK(std::strcmp(VkResultName(VK_ERROR_DEVICE_LOST), "VK_ERROR_DEVICE_LOST") == 0);
-    CHECK(std::strcmp(VkResultName(VK_ERROR_SURFACE_LOST_KHR), "VK_ERROR_SURFACE_LOST_KHR") == 0);
-    CHECK(std::strcmp(VkResultName(VK_ERROR_OUT_OF_DEVICE_MEMORY), "VK_ERROR_OUT_OF_DEVICE_MEMORY") == 0);
-    CHECK(std::strcmp(VkResultName(VK_ERROR_OUT_OF_HOST_MEMORY), "VK_ERROR_OUT_OF_HOST_MEMORY") == 0);
-    CHECK(std::strcmp(VkResultName(VK_ERROR_INITIALIZATION_FAILED), "VK_ERROR_INITIALIZATION_FAILED") == 0);
-    CHECK(std::strcmp(VkResultName(VK_ERROR_FEATURE_NOT_PRESENT), "VK_ERROR_FEATURE_NOT_PRESENT") == 0);
-    CHECK(std::strcmp(VkResultName(static_cast<VkResult>(-424242)), "VK_RESULT_UNKNOWN") == 0);
+    CHECK(CStrCompare(VkResultName(VK_SUCCESS), "VK_SUCCESS") == 0);
+    CHECK(CStrCompare(VkResultName(VK_TIMEOUT), "VK_TIMEOUT") == 0);
+    CHECK(CStrCompare(VkResultName(VK_NOT_READY), "VK_NOT_READY") == 0);
+    CHECK(CStrCompare(VkResultName(VK_INCOMPLETE), "VK_INCOMPLETE") == 0);
+    CHECK(CStrCompare(VkResultName(VK_SUBOPTIMAL_KHR), "VK_SUBOPTIMAL_KHR") == 0);
+    CHECK(CStrCompare(VkResultName(VK_ERROR_OUT_OF_DATE_KHR), "VK_ERROR_OUT_OF_DATE_KHR") == 0);
+    CHECK(CStrCompare(VkResultName(VK_ERROR_DEVICE_LOST), "VK_ERROR_DEVICE_LOST") == 0);
+    CHECK(CStrCompare(VkResultName(VK_ERROR_SURFACE_LOST_KHR), "VK_ERROR_SURFACE_LOST_KHR") == 0);
+    CHECK(CStrCompare(VkResultName(VK_ERROR_OUT_OF_DEVICE_MEMORY), "VK_ERROR_OUT_OF_DEVICE_MEMORY") == 0);
+    CHECK(CStrCompare(VkResultName(VK_ERROR_OUT_OF_HOST_MEMORY), "VK_ERROR_OUT_OF_HOST_MEMORY") == 0);
+    CHECK(CStrCompare(VkResultName(VK_ERROR_INITIALIZATION_FAILED), "VK_ERROR_INITIALIZATION_FAILED") == 0);
+    CHECK(CStrCompare(VkResultName(VK_ERROR_FEATURE_NOT_PRESENT), "VK_ERROR_FEATURE_NOT_PRESENT") == 0);
+    CHECK(CStrCompare(VkResultName(static_cast<VkResult>(-424242)), "VK_RESULT_UNKNOWN") == 0);
 }
 
 TEST_CASE("ClassifyVkResult separates success, recoverable, device-lost and fatal", "[rhi][vulkan]") {
@@ -292,7 +291,7 @@ TEST_CASE("Function tables: optional entries may be null, mandatory ones may not
     SECTION("device tables go through vkGetDeviceProcAddr") {
         VkInstanceFns instance;
         instance.GetDeviceProcAddr = [](VkDevice, const char* name) -> PFN_vkVoidFunction {
-            return std::strcmp(name, "vkCmdBeginRendering") == 0 ? nullptr : &DummyFn;
+            return CStrCompare(name, "vkCmdBeginRendering") == 0 ? nullptr : &DummyFn;
         };
         VkDeviceFns device;
         CHECK_FALSE(LoadDeviceFns(instance, nullptr, &device));

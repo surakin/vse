@@ -6,8 +6,7 @@
 #include "os/os.h"
 #include "support/death_test_skip.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -18,7 +17,7 @@ ENGINE_DEATH_TEST_FN(dt_post_mortem_enable) {
     options.size_limit_bytes = 64ull * 1024 * 1024;
     const PostMortemReport report = EnablePostMortemDumps(options);
     char line[1024];
-    const int n = std::snprintf(line, sizeof(line), "RESULT=%d PREVIOUS=%llu CURRENT=%llu\nDESTINATION=%s\nNOTE=%s\n",
+    const int n = FormatTo(line, sizeof(line), "RESULT=%d PREVIOUS=%llu CURRENT=%llu\nDESTINATION=%s\nNOTE=%s\n",
                                 static_cast<int>(report.result), static_cast<unsigned long long>(report.previous_limit_bytes),
                                 static_cast<unsigned long long>(report.current_limit_bytes), report.destination, report.note);
     os::Write(1, line, static_cast<usize>(n));

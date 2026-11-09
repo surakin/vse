@@ -1,6 +1,6 @@
 // The Linux backend of io::File: a plain file descriptor. One of the places allowed to call the POSIX file API directly.
-#include <cerrno>
-#include <cstdio>
+#include "os/last_error.h"
+#include "cstr/format.h"
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -24,7 +24,7 @@ public:
         const Status s = Close();
         if (s.Failed()) {
             char text[96];
-            const int n = std::snprintf(text, sizeof(text), "closing a file failed: %s (os code %d)", ErrorName(s.error), static_cast<int>(s.os_code));
+            const int n = FormatTo(text, sizeof(text), "closing a file failed: %s (os code %d)", ErrorName(s.error), static_cast<int>(s.os_code));
             Log(LogIo, LogVerbosity::Error, StringView(text, n > 0 ? static_cast<usize>(n) : 0));
         }
     }
@@ -40,7 +40,7 @@ public:
         if (fd_ < 0) return Status::Of(Error::Invalid);
         if (!size_known_) return Status::Of(Error::Unsupported);
         struct stat st;
-        if (::fstat(fd_, &st) != 0) return Status::FromOs(errno);
+        if (::fstat(fd_, &st) != 0) return Status::FromOs(os::LastError());
         *out = static_cast<u64>(st.st_size);
         return Status::Success();
     }
@@ -56,7 +56,7 @@ public:
                 *bytes_read = static_cast<usize>(n);
                 return Status::Success();
             }
-            if (errno != EINTR) return Status::FromOs(errno);
+            if (os::LastError() != EINTR) return Status::FromOs(os::LastError());
         }
     }
 
@@ -69,8 +69,8 @@ public:
             const usize chunk = length - done < kMaxTransfer ? length - done : kMaxTransfer;
             const ssize_t n = seekable_ ? ::pwrite(fd_, src + done, chunk, static_cast<off_t>(offset + done)) : ::write(fd_, src + done, chunk);
             if (n < 0) {
-                if (errno == EINTR) continue;
-                return Status::FromOs(errno);
+                if (os::LastError() == EINTR) continue;
+                return Status::FromOs(os::LastError());
             }
             if (n == 0) return Status::Of(Error::Io); // no progress: do not spin
             done += static_cast<usize>(n);
@@ -87,8 +87,8 @@ public:
             const usize chunk = length - done < kMaxTransfer ? length - done : kMaxTransfer;
             const ssize_t n = ::write(fd_, src + done, chunk);
             if (n < 0) {
-                if (errno == EINTR) continue;
-                return Status::FromOs(errno);
+                if (os::LastError() == EINTR) continue;
+                return Status::FromOs(os::LastError());
             }
             if (n == 0) return Status::Of(Error::Io); // no progress: do not spin
             done += static_cast<usize>(n);
@@ -100,19 +100,19 @@ public:
 
     Status Sync() override {
         if (fd_ < 0) return Status::Of(Error::Invalid);
-        return ::fsync(fd_) == 0 ? Status::Success() : Status::FromOs(errno);
+        return ::fsync(fd_) == 0 ? Status::Success() : Status::FromOs(os::LastError());
     }
 
     Status Truncate(u64 size) override {
         if (fd_ < 0 || !writable_) return Status::Of(Error::Invalid);
-        return ::ftruncate(fd_, static_cast<off_t>(size)) == 0 ? Status::Success() : Status::FromOs(errno);
+        return ::ftruncate(fd_, static_cast<off_t>(size)) == 0 ? Status::Success() : Status::FromOs(os::LastError());
     }
 
     Status Close() override {
         if (fd_ < 0) return Status::Success();
         const int fd = fd_;
         fd_ = -1; // closed even when close() reports an error: the descriptor is gone either way
-        return ::close(fd) == 0 ? Status::Success() : Status::FromOs(errno);
+        return ::close(fd) == 0 ? Status::Success() : Status::FromOs(os::LastError());
     }
 
 private:
@@ -141,10 +141,10 @@ Status File::Open(const Path& path, OpenMode mode, u32 flags, FilePtr* out) {
     if ((flags & kOpenCreateNew) != 0) oflags |= O_CREAT | O_EXCL;
     if ((flags & kOpenTruncate) != 0 && mode != OpenMode::Read) oflags |= O_TRUNC;
     const int fd = ::open(native, oflags, 0644);
-    if (fd < 0) return Status::FromOs(errno);
+    if (fd < 0) return Status::FromOs(os::LastError());
     struct stat st;
     if (::fstat(fd, &st) != 0) {
-        const Status s = Status::FromOs(errno);
+        const Status s = Status::FromOs(os::LastError());
         ::close(fd);
         return s;
     }

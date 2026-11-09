@@ -1,4 +1,4 @@
-#include <cstdlib>
+#include "os/console.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
@@ -30,7 +30,7 @@ DeviceCreateInfo Info(const FaultInjection& faults) {
 vulkan::VulkanDevice* Vk(Device* device) { return static_cast<vulkan::VulkanDevice*>(device); }
 
 bool HaveEnv(const char* name) {
-    const char* v = std::getenv(name);
+    const char* v = os::GetEnvironment(name);
     return v != nullptr && v[0] != '\0';
 }
 

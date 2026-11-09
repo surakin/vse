@@ -1,6 +1,6 @@
 #include "rhi/vulkan/vulkan_backend.h"
 
-#include <cstdio>
+#include "cstr/format.h"
 
 #include "rhi/backend_registry.h"
 #include "rhi/rhi.h"
@@ -21,7 +21,7 @@ bool VulkanAvailable(char* reason, usize reason_size) {
     if (status == vulkan::LoaderStatus::Ok) {
         return true;
     }
-    std::snprintf(reason, reason_size, "the Vulkan loader could not be used (%s)", vulkan::LoaderStatusName(status));
+    FormatTo(reason, reason_size, "the Vulkan loader could not be used (%s)", vulkan::LoaderStatusName(status));
     return false;
 }
 

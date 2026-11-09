@@ -1,8 +1,5 @@
+#include "lang/new.h"
 #include "renderer/text_renderer.h"
-
-#include <cmath>
-#include <cstddef>
-#include <cstring>
 
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
@@ -10,6 +7,7 @@
 #include "text.frag.dxil.inc" // and its .spv.inc
 #include "text.vert.refl.inc"
 #include "text.vert.dxil.inc" // and its .spv.inc
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::renderer {
 
@@ -22,8 +20,8 @@ struct TextParams {
     f32 pad;
 };
 // The expected values come from the shader's reflection, so changing the block in text.vert.slang without changing this struct fails the build.
-static_assert(sizeof(TextParams) == shaders::kTextVertParamsSize && offsetof(TextParams, pixel_to_clip) == shaders::kTextVertParamsPixelToClipOffset &&
-                  offsetof(TextParams, srgb_target) == shaders::kTextVertParamsSrgbTargetOffset && offsetof(TextParams, pad) == shaders::kTextVertParamsPadOffset,
+static_assert(sizeof(TextParams) == shaders::kTextVertParamsSize && ENGINE_OFFSET_OF(TextParams, pixel_to_clip) == shaders::kTextVertParamsPixelToClipOffset &&
+                  ENGINE_OFFSET_OF(TextParams, srgb_target) == shaders::kTextVertParamsSrgbTargetOffset && ENGINE_OFFSET_OF(TextParams, pad) == shaders::kTextVertParamsPadOffset,
               "TextParams must match the std140 block in shaders/text.vert.slang");
 
 constexpr u32 kVerticesPerGlyph = 6;
@@ -93,9 +91,9 @@ bool TextRenderer::MakeGpuObjects(rhi::Device* device) {
 
 bool TextRenderer::MakePipeline() {
     rhi::VertexBindingDesc binding = {sizeof(Vertex), false};
-    rhi::VertexAttributeDesc attributes[3] = {{0, 0, rhi::VertexFormat::Float2, offsetof(Vertex, x)},
-                                              {1, 0, rhi::VertexFormat::Float2, offsetof(Vertex, u)},
-                                              {2, 0, rhi::VertexFormat::UNorm8x4, offsetof(Vertex, color)}};
+    rhi::VertexAttributeDesc attributes[3] = {{0, 0, rhi::VertexFormat::Float2, ENGINE_OFFSET_OF(Vertex, x)},
+                                              {1, 0, rhi::VertexFormat::Float2, ENGINE_OFFSET_OF(Vertex, u)},
+                                              {2, 0, rhi::VertexFormat::UNorm8x4, ENGINE_OFFSET_OF(Vertex, color)}};
     rhi::GraphicsPipelineDesc gp;
     gp.vertex_shader = vertex_shader_;
     gp.fragment_shader = fragment_shader_;
@@ -311,7 +309,7 @@ bool TextRenderer::Record(rhi::CommandList* list, u32 target_width, u32 target_h
         first.Push(static_cast<u32>(written));
         const Vector<Vertex>& batch = batches_[page];
         if (batch.Size() > 0) {
-            std::memcpy(mapped_ + slot_offset + written * sizeof(Vertex), batch.Data(), batch.Size() * sizeof(Vertex));
+            MemCopy(mapped_ + slot_offset + written * sizeof(Vertex), batch.Data(), batch.Size() * sizeof(Vertex));
             written += batch.Size();
         }
     }

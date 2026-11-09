@@ -42,15 +42,65 @@ Limits::Epsilon() noexcept	function	foundation/lang	limits-epsilon-noexcept	foun
 Limits::Infinity() noexcept	function	foundation/lang	limits-infinity-noexcept	foundation-lang.md	engine/foundation/lang/limits.h:37
 Limits::QuietNaN() noexcept	function	foundation/lang	limits-quietnan-noexcept	foundation-lang.md	engine/foundation/lang/limits.h:39
 Limits::DenormMin() noexcept	function	foundation/lang	limits-denormmin-noexcept	foundation-lang.md	engine/foundation/lang/limits.h:41
-AlignVal	alias	foundation/lang	alignval	foundation-lang.md	engine/foundation/lang/new.h:11
-NoThrowTag	alias	foundation/lang	nothrowtag	foundation-lang.md	engine/foundation/lang/new.h:13
-kNoThrow	variable	foundation/lang	knothrow	foundation-lang.md	engine/foundation/lang/new.h:15
-BadAlloc	alias	foundation/lang	badalloc	foundation-lang.md	engine/foundation/lang/new.h:18
-ConstructAt(void*,Args&&...)	function	foundation/lang	constructat-void-star-args-amp-amp	foundation-lang.md	engine/foundation/lang/new.h:23
-Launder(T*) noexcept	function	foundation/lang	launder-t-star-noexcept	foundation-lang.md	engine/foundation/lang/new.h:29
-AlignedNew(usize,usize) noexcept	function	foundation/lang	alignednew-usize-usize-noexcept	foundation-lang.md	engine/foundation/lang/new.h:35
-AlignedDelete(void*,usize) noexcept	function	foundation/lang	aligneddelete-void-star-usize-noexcept	foundation-lang.md	engine/foundation/lang/new.h:40
+AlignVal	alias	foundation/lang	alignval	foundation-lang.md	engine/foundation/lang/new.h:12
+NoThrowTag	alias	foundation/lang	nothrowtag	foundation-lang.md	engine/foundation/lang/new.h:14
+kNoThrow	variable	foundation/lang	knothrow	foundation-lang.md	engine/foundation/lang/new.h:16
+BadAlloc	alias	foundation/lang	badalloc	foundation-lang.md	engine/foundation/lang/new.h:19
+kMaxAlign	variable	foundation/lang	kmaxalign	foundation-lang.md	engine/foundation/lang/new.h:22
+ConstructAt(void*,Args&&...)	function	foundation/lang	constructat-void-star-args-amp-amp	foundation-lang.md	engine/foundation/lang/new.h:27
+Launder(T*) noexcept	function	foundation/lang	launder-t-star-noexcept	foundation-lang.md	engine/foundation/lang/new.h:33
+AlignedNew(usize,usize) noexcept	function	foundation/lang	alignednew-usize-usize-noexcept	foundation-lang.md	engine/foundation/lang/new.h:39
+AlignedDelete(void*,usize) noexcept	function	foundation/lang	aligneddelete-void-star-usize-noexcept	foundation-lang.md	engine/foundation/lang/new.h:44
+ENGINE_OFFSET_OF	macro	foundation/lang	engine-offset-of	foundation-lang.md	engine/foundation/lang/new.h:51
 Ordering	alias	foundation/lang	ordering	foundation-lang.md	engine/foundation/lang/ordering.h:9
+Sqrt(f32) noexcept	function	foundation/lang	sqrt-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:15
+Sqrt(f64) noexcept	function	foundation/lang	sqrt-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:17
+Sqrt(T) noexcept	function	foundation/lang	sqrt-t-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:19
+Sin(f32) noexcept	function	foundation/lang	sin-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:23
+Sin(f64) noexcept	function	foundation/lang	sin-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:25
+Cos(f32) noexcept	function	foundation/lang	cos-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:27
+Cos(f64) noexcept	function	foundation/lang	cos-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:29
+Tan(f32) noexcept	function	foundation/lang	tan-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:31
+Tan(f64) noexcept	function	foundation/lang	tan-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:33
+Acos(f32) noexcept	function	foundation/lang	acos-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:35
+Acos(f64) noexcept	function	foundation/lang	acos-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:37
+Asin(f32) noexcept	function	foundation/lang	asin-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:39
+Asin(f64) noexcept	function	foundation/lang	asin-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:41
+Atan2(f32,f32) noexcept	function	foundation/lang	atan2-f32-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:43
+Atan2(f64,f64) noexcept	function	foundation/lang	atan2-f64-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:45
+Pow(f32,f32) noexcept	function	foundation/lang	pow-f32-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:48
+Pow(f64,f64) noexcept	function	foundation/lang	pow-f64-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:50
+Exp(f32) noexcept	function	foundation/lang	exp-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:52
+Exp(f64) noexcept	function	foundation/lang	exp-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:54
+Ln(f32) noexcept	function	foundation/lang	ln-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:56
+Ln(f64) noexcept	function	foundation/lang	ln-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:58
+Floor(f32) noexcept	function	foundation/lang	floor-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:61
+Floor(f64) noexcept	function	foundation/lang	floor-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:63
+Ceil(f32) noexcept	function	foundation/lang	ceil-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:65
+Ceil(f64) noexcept	function	foundation/lang	ceil-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:67
+Round(f32) noexcept	function	foundation/lang	round-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:69
+Round(f64) noexcept	function	foundation/lang	round-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:71
+LRound(f32) noexcept	function	foundation/lang	lround-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:73
+LRound(f64) noexcept	function	foundation/lang	lround-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:75
+Fmod(f32,f32) noexcept	function	foundation/lang	fmod-f32-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:77
+Fmod(f64,f64) noexcept	function	foundation/lang	fmod-f64-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:79
+LdExp(f32,int) noexcept	function	foundation/lang	ldexp-f32-int-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:81
+LdExp(f64,int) noexcept	function	foundation/lang	ldexp-f64-int-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:83
+Abs(f32) noexcept	function	foundation/lang	abs-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:86
+Abs(f64) noexcept	function	foundation/lang	abs-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:88
+Abs(T) noexcept	function	foundation/lang	abs-t-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:90
+FMin(f32,f32) noexcept	function	foundation/lang	fmin-f32-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:94
+FMin(f64,f64) noexcept	function	foundation/lang	fmin-f64-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:96
+FMax(f32,f32) noexcept	function	foundation/lang	fmax-f32-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:98
+FMax(f64,f64) noexcept	function	foundation/lang	fmax-f64-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:100
+IsFinite(f32) noexcept	function	foundation/lang	isfinite-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:103
+IsFinite(f64) noexcept	function	foundation/lang	isfinite-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:105
+IsNaN(f32) noexcept	function	foundation/lang	isnan-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:107
+IsNaN(f64) noexcept	function	foundation/lang	isnan-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:109
+IsInf(f32) noexcept	function	foundation/lang	isinf-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:111
+IsInf(f64) noexcept	function	foundation/lang	isinf-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:113
+SignBit(f32) noexcept	function	foundation/lang	signbit-f32-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:115
+SignBit(f64) noexcept	function	foundation/lang	signbit-f64-noexcept	foundation-lang.md	engine/foundation/lang/scalar.h:117
 IntegralConstant	alias	foundation/lang	integralconstant	foundation-lang.md	engine/foundation/lang/traits.h:10
 TrueType	alias	foundation/lang	truetype	foundation-lang.md	engine/foundation/lang/traits.h:13
 FalseType	alias	foundation/lang	falsetype	foundation-lang.md	engine/foundation/lang/traits.h:15
@@ -74,28 +124,87 @@ IsCopyConstructible	variable	foundation/lang	iscopyconstructible	foundation-lang
 IsNothrowMoveConstructible	variable	foundation/lang	isnothrowmoveconstructible	foundation-lang.md	engine/foundation/lang/traits.h:69
 IsBaseOf	variable	foundation/lang	isbaseof	foundation-lang.md	engine/foundation/lang/traits.h:72
 IsEmpty	variable	foundation/lang	isempty	foundation-lang.md	engine/foundation/lang/traits.h:75
-EnableIf	alias	foundation/lang	enableif	foundation-lang.md	engine/foundation/lang/traits.h:79
-Conditional	alias	foundation/lang	conditional	foundation-lang.md	engine/foundation/lang/traits.h:82
-RemoveReference	alias	foundation/lang	removereference	foundation-lang.md	engine/foundation/lang/traits.h:85
-RemoveConst	alias	foundation/lang	removeconst	foundation-lang.md	engine/foundation/lang/traits.h:88
-RemoveCV	alias	foundation/lang	removecv	foundation-lang.md	engine/foundation/lang/traits.h:91
-RemoveCVRef	alias	foundation/lang	removecvref	foundation-lang.md	engine/foundation/lang/traits.h:94
-RemovePointer	alias	foundation/lang	removepointer	foundation-lang.md	engine/foundation/lang/traits.h:97
-Decay	alias	foundation/lang	decay	foundation-lang.md	engine/foundation/lang/traits.h:100
-UnderlyingType	alias	foundation/lang	underlyingtype	foundation-lang.md	engine/foundation/lang/traits.h:103
-MakeSigned	alias	foundation/lang	makesigned	foundation-lang.md	engine/foundation/lang/traits.h:106
-MakeUnsigned	alias	foundation/lang	makeunsigned	foundation-lang.md	engine/foundation/lang/traits.h:109
-AddLvalueReference	alias	foundation/lang	addlvaluereference	foundation-lang.md	engine/foundation/lang/traits.h:112
-AddPointer	alias	foundation/lang	addpointer	foundation-lang.md	engine/foundation/lang/traits.h:115
-InvokeResult	alias	foundation/lang	invokeresult	foundation-lang.md	engine/foundation/lang/traits.h:118
-IsInvocable	variable	foundation/lang	isinvocable	foundation-lang.md	engine/foundation/lang/traits.h:121
-IsConstantEvaluated() noexcept	function	foundation/lang	isconstantevaluated-noexcept	foundation-lang.md	engine/foundation/lang/traits.h:125
-Move(T&&) noexcept	function	foundation/lang	move-t-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:12
-Forward(U&&) noexcept	function	foundation/lang	forward-u-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:20
-Exchange(T&,U&&)	function	foundation/lang	exchange-t-amp-u-amp-amp	foundation-lang.md	engine/foundation/lang/utility.h:28
-Swap(T&,T&)	function	foundation/lang	swap-t-amp-t-amp	foundation-lang.md	engine/foundation/lang/utility.h:38
-AsConst(T&) noexcept	function	foundation/lang	asconst-t-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:46
-Declval() noexcept	function	foundation/lang	declval-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:52
+HasVirtualDestructor	variable	foundation/lang	hasvirtualdestructor	foundation-lang.md	engine/foundation/lang/traits.h:78
+TypeIdentity	alias	foundation/lang	typeidentity	foundation-lang.md	engine/foundation/lang/traits.h:81
+EnableIf	alias	foundation/lang	enableif	foundation-lang.md	engine/foundation/lang/traits.h:85
+Conditional	alias	foundation/lang	conditional	foundation-lang.md	engine/foundation/lang/traits.h:88
+RemoveReference	alias	foundation/lang	removereference	foundation-lang.md	engine/foundation/lang/traits.h:91
+RemoveConst	alias	foundation/lang	removeconst	foundation-lang.md	engine/foundation/lang/traits.h:94
+RemoveCV	alias	foundation/lang	removecv	foundation-lang.md	engine/foundation/lang/traits.h:97
+RemoveCVRef	alias	foundation/lang	removecvref	foundation-lang.md	engine/foundation/lang/traits.h:100
+RemovePointer	alias	foundation/lang	removepointer	foundation-lang.md	engine/foundation/lang/traits.h:103
+Decay	alias	foundation/lang	decay	foundation-lang.md	engine/foundation/lang/traits.h:106
+UnderlyingType	alias	foundation/lang	underlyingtype	foundation-lang.md	engine/foundation/lang/traits.h:109
+MakeSigned	alias	foundation/lang	makesigned	foundation-lang.md	engine/foundation/lang/traits.h:112
+MakeUnsigned	alias	foundation/lang	makeunsigned	foundation-lang.md	engine/foundation/lang/traits.h:115
+AddLvalueReference	alias	foundation/lang	addlvaluereference	foundation-lang.md	engine/foundation/lang/traits.h:118
+AddPointer	alias	foundation/lang	addpointer	foundation-lang.md	engine/foundation/lang/traits.h:121
+InvokeResult	alias	foundation/lang	invokeresult	foundation-lang.md	engine/foundation/lang/traits.h:124
+IsInvocable	variable	foundation/lang	isinvocable	foundation-lang.md	engine/foundation/lang/traits.h:127
+IsConstantEvaluated() noexcept	function	foundation/lang	isconstantevaluated-noexcept	foundation-lang.md	engine/foundation/lang/traits.h:131
+Move(T&&) noexcept	function	foundation/lang	move-t-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:13
+Forward(U&&) noexcept	function	foundation/lang	forward-u-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:21
+Exchange(T&,U&&) noexcept	function	foundation/lang	exchange-t-amp-u-amp-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:29
+Swap(T&,T&) noexcept	function	foundation/lang	swap-t-amp-t-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:39
+AsConst(T&) noexcept	function	foundation/lang	asconst-t-amp-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:47
+Declval() noexcept	function	foundation/lang	declval-noexcept	foundation-lang.md	engine/foundation/lang/utility.h:53
+CStrLength(const char*) noexcept	function	foundation/cstr	cstrlength-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:17
+CStrCompare(const char*,const char*) noexcept	function	foundation/cstr	cstrcompare-const-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:25
+CStrCompareN(const char*,const char*,usize) noexcept	function	foundation/cstr	cstrcomparen-const-char-star-const-char-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:32
+CStrFind(const char*,const char*) noexcept	function	foundation/cstr	cstrfind-const-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:40
+CStrFind(char*,const char*) noexcept	function	foundation/cstr	cstrfind-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:44
+CStrFindChar(const char*,int) noexcept	function	foundation/cstr	cstrfindchar-const-char-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:52
+CStrFindChar(char*,int) noexcept	function	foundation/cstr	cstrfindchar-char-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:56
+CStrFindLastChar(const char*,int) noexcept	function	foundation/cstr	cstrfindlastchar-const-char-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:64
+CStrFindAny(const char*,const char*) noexcept	function	foundation/cstr	cstrfindany-const-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:71
+CStrCopy(char*,const char*) noexcept	function	foundation/cstr	cstrcopy-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:79
+CStrCopyN(char*,const char*,usize) noexcept	function	foundation/cstr	cstrcopyn-char-star-const-char-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:86
+CStrAppend(char*,const char*) noexcept	function	foundation/cstr	cstrappend-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:93
+CStrCopyTo(char*,usize,const char*) noexcept	function	foundation/cstr	cstrcopyto-char-star-usize-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:102
+WStrLength(const wchar_t*) noexcept	function	foundation/cstr	wstrlength-const-wchar-t-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:113
+WStrCompare(const wchar_t*,const wchar_t*) noexcept	function	foundation/cstr	wstrcompare-const-wchar-t-star-const-wchar-t-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:117
+WStrCompareN(const wchar_t*,const wchar_t*,usize) noexcept	function	foundation/cstr	wstrcomparen-const-wchar-t-star-const-wchar-t-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:121
+WStrFind(const wchar_t*,const wchar_t*) noexcept	function	foundation/cstr	wstrfind-const-wchar-t-star-const-wchar-t-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:125
+WStrFindLastChar(const wchar_t*,wchar_t) noexcept	function	foundation/cstr	wstrfindlastchar-const-wchar-t-star-wchar-t-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:129
+WStrAppend(wchar_t*,const wchar_t*) noexcept	function	foundation/cstr	wstrappend-wchar-t-star-const-wchar-t-star-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:133
+WMemCopy(wchar_t*,const wchar_t*,usize) noexcept	function	foundation/cstr	wmemcopy-wchar-t-star-const-wchar-t-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:137
+WMemMove(wchar_t*,const wchar_t*,usize) noexcept	function	foundation/cstr	wmemmove-wchar-t-star-const-wchar-t-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/cstr.h:141
+FormatTo(char*,usize,const char*,...)	function	foundation/cstr	formatto-char-star-usize-const-char-star	foundation-cstr.md	engine/foundation/cstr/format.h:19
+VFormatTo(char*,usize,const char*,VarArgs)	function	foundation/cstr	vformatto-char-star-usize-const-char-star-varargs	foundation-cstr.md	engine/foundation/cstr/format.h:24
+WFormatTo(wchar_t*,usize,const wchar_t*,Args...)	function	foundation/cstr	wformatto-wchar-t-star-usize-const-wchar-t-star-args	foundation-cstr.md	engine/foundation/cstr/format.h:40
+ScanFrom(const char*,const char*,Args...)	function	foundation/cstr	scanfrom-const-char-star-const-char-star-args	foundation-cstr.md	engine/foundation/cstr/format.h:49
+MemCopy(void*,const void*,usize) noexcept	function	foundation/cstr	memcopy-void-star-const-void-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:17
+MemMove(void*,const void*,usize) noexcept	function	foundation/cstr	memmove-void-star-const-void-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:26
+MemSet(void*,int,usize) noexcept	function	foundation/cstr	memset-void-star-int-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:35
+MemCompare(const void*,const void*,usize) noexcept	function	foundation/cstr	memcompare-const-void-star-const-void-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:44
+MemFind(const void*,int,usize) noexcept	function	foundation/cstr	memfind-const-void-star-int-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:53
+MemAllocate(usize) noexcept	function	foundation/cstr	memallocate-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:62
+MemAllocateZeroed(usize,usize) noexcept	function	foundation/cstr	memallocatezeroed-usize-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:69
+MemReallocate(void*,usize) noexcept	function	foundation/cstr	memreallocate-void-star-usize-noexcept	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:77
+MemFree(void*) noexcept	function	foundation/cstr	memfree-void-star-noexcept	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:84
+SortRaw(void*,usize,usize,int(*)(const void*,const void*))	function	foundation/cstr	sortraw-void-star-usize-usize-int-star-const-void-star-const-void-star	foundation-cstr.md	engine/foundation/cstr/mem_ops.h:92
+CStrToInt(const char*) noexcept	function	foundation/cstr	cstrtoint-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:13
+CStrToLong(const char*) noexcept	function	foundation/cstr	cstrtolong-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:15
+CStrToLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtolong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:17
+CStrToLongLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtolonglong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:19
+CStrToULong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtoulong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:21
+CStrToULongLong(const char*,char**,int) noexcept	function	foundation/cstr	cstrtoulonglong-const-char-star-char-star-star-int-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:23
+CStrToDouble(const char*) noexcept	function	foundation/cstr	cstrtodouble-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:25
+CStrToDouble(const char*,char**) noexcept	function	foundation/cstr	cstrtodouble-const-char-star-char-star-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:27
+CStrToFloat(const char*,char**) noexcept	function	foundation/cstr	cstrtofloat-const-char-star-char-star-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:29
+FormatShortestResult	struct	foundation/cstr	formatshortestresult	foundation-cstr.md	engine/foundation/cstr/number.h:32
+FormatShortestResult::end	variable	foundation/cstr	formatshortestresult-end	foundation-cstr.md	engine/foundation/cstr/number.h:34
+FormatShortestResult::ok	variable	foundation/cstr	formatshortestresult-ok	foundation-cstr.md	engine/foundation/cstr/number.h:36
+FormatShortest(char*,char*,f64) noexcept	function	foundation/cstr	formatshortest-char-star-char-star-f64-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:42
+ParseDoubleResult	struct	foundation/cstr	parsedoubleresult	foundation-cstr.md	engine/foundation/cstr/number.h:48
+ParseDoubleResult::value	variable	foundation/cstr	parsedoubleresult-value	foundation-cstr.md	engine/foundation/cstr/number.h:50
+ParseDoubleResult::end	variable	foundation/cstr	parsedoubleresult-end	foundation-cstr.md	engine/foundation/cstr/number.h:52
+ParseDoubleResult::ok	variable	foundation/cstr	parsedoubleresult-ok	foundation-cstr.md	engine/foundation/cstr/number.h:54
+ParseDoubleExact(const char*,const char*) noexcept	function	foundation/cstr	parsedoubleexact-const-char-star-const-char-star-noexcept	foundation-cstr.md	engine/foundation/cstr/number.h:61
+VarArgs	alias	foundation/cstr	varargs	foundation-cstr.md	engine/foundation/cstr/varargs.h:10
+ENGINE_VA_START	macro	foundation/cstr	engine-va-start	foundation-cstr.md	engine/foundation/cstr/varargs.h:15
+ENGINE_VA_END	macro	foundation/cstr	engine-va-end	foundation-cstr.md	engine/foundation/cstr/varargs.h:17
+ENGINE_VA_COPY	macro	foundation/cstr	engine-va-copy	foundation-cstr.md	engine/foundation/cstr/varargs.h:19
 MemoryOrder	enum	foundation/sync	memoryorder	foundation-sync.md	engine/foundation/sync/atomic.h:18
 MemoryOrder::Relaxed	enumerator	foundation/sync	memoryorder-relaxed	foundation-sync.md	engine/foundation/sync/atomic.h:20
 MemoryOrder::Consume	enumerator	foundation/sync	memoryorder-consume	foundation-sync.md	engine/foundation/sync/atomic.h:22
@@ -105,103 +214,106 @@ MemoryOrder::AcqRel	enumerator	foundation/sync	memoryorder-acqrel	foundation-syn
 MemoryOrder::SeqCst	enumerator	foundation/sync	memoryorder-seqcst	foundation-sync.md	engine/foundation/sync/atomic.h:30
 detail_sync::ToStd(MemoryOrder) noexcept	function	foundation/sync	detail-sync-tostd-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:36
 detail_sync::FailureOrder(MemoryOrder) noexcept	function	foundation/sync	detail-sync-failureorder-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:49
-Atomic	class	foundation/sync	atomic	foundation-sync.md	engine/foundation/sync/atomic.h:66
-Atomic::kAlwaysLockFree	variable	foundation/sync	atomic-kalwayslockfree	foundation-sync.md	engine/foundation/sync/atomic.h:70
-Atomic::Atomic() noexcept	function	foundation/sync	atomic-atomic-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:73
-Atomic::Atomic(T) noexcept	function	foundation/sync	atomic-atomic-t-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:75
-Atomic::Atomic(const Atomic&)	function	foundation/sync	atomic-atomic-const-atomic-amp	foundation-sync.md	engine/foundation/sync/atomic.h:76
-Atomic::operator=(const Atomic&)	function	foundation/sync	atomic-operator-eq-const-atomic-amp	foundation-sync.md	engine/foundation/sync/atomic.h:77
-Atomic::Load(MemoryOrder) const noexcept	function	foundation/sync	atomic-load-memoryorder-const-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:80
-Atomic::Store(T,MemoryOrder) noexcept	function	foundation/sync	atomic-store-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:82
-Atomic::Exchange(T,MemoryOrder) noexcept	function	foundation/sync	atomic-exchange-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:84
-Atomic::CompareExchangeWeak(T&,T,MemoryOrder,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangeweak-t-amp-t-memoryorder-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:91
-Atomic::CompareExchangeWeak(T&,T,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangeweak-t-amp-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:95
-Atomic::CompareExchangeStrong(T&,T,MemoryOrder,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangestrong-t-amp-t-memoryorder-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:99
-Atomic::CompareExchangeStrong(T&,T,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangestrong-t-amp-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:103
-Atomic::FetchAdd(D,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchadd-d-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:108
-Atomic::FetchSub(D,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchsub-d-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:113
-Atomic::FetchAnd(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchand-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:118
-Atomic::FetchOr(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchor-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:120
-Atomic::FetchXor(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchxor-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:122
-Atomic::operator T() const noexcept	function	foundation/sync	atomic-operator-t-const-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:125
-Atomic::operator=(T) noexcept	function	foundation/sync	atomic-operator-eq-t-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:127
-Atomic::operator++() noexcept	function	foundation/sync	atomic-operator-plus-plus-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:132
-Atomic::operator++(int) noexcept	function	foundation/sync	atomic-operator-plus-plus-int-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:134
-Atomic::operator--() noexcept	function	foundation/sync	atomic-operator-minus-minus-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:136
-Atomic::operator--(int) noexcept	function	foundation/sync	atomic-operator-minus-minus-int-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:138
-AtomicThreadFence(MemoryOrder) noexcept	function	foundation/sync	atomicthreadfence-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:146
-AtomicSignalFence(MemoryOrder) noexcept	function	foundation/sync	atomicsignalfence-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:151
-Mutex	class	foundation/sync	mutex	foundation-sync.md	engine/foundation/sync/mutex.h:17
-Mutex::Native	alias	foundation/sync	mutex-native	foundation-sync.md	engine/foundation/sync/mutex.h:20
-Mutex::Mutex() noexcept	function	foundation/sync	mutex-mutex-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:22
-Mutex::Mutex(const Mutex&)	function	foundation/sync	mutex-mutex-const-mutex-amp	foundation-sync.md	engine/foundation/sync/mutex.h:23
-Mutex::operator=(const Mutex&)	function	foundation/sync	mutex-operator-eq-const-mutex-amp	foundation-sync.md	engine/foundation/sync/mutex.h:24
-Mutex::Lock()	function	foundation/sync	mutex-lock	foundation-sync.md	engine/foundation/sync/mutex.h:27
-Mutex::TryLock()	function	foundation/sync	mutex-trylock	foundation-sync.md	engine/foundation/sync/mutex.h:29
-Mutex::Unlock()	function	foundation/sync	mutex-unlock	foundation-sync.md	engine/foundation/sync/mutex.h:31
-Mutex::NativeMutex()	function	foundation/sync	mutex-nativemutex	foundation-sync.md	engine/foundation/sync/mutex.h:33
-RecursiveMutex	class	foundation/sync	recursivemutex	foundation-sync.md	engine/foundation/sync/mutex.h:42
-RecursiveMutex::Native	alias	foundation/sync	recursivemutex-native	foundation-sync.md	engine/foundation/sync/mutex.h:45
-RecursiveMutex::RecursiveMutex()	function	foundation/sync	recursivemutex-recursivemutex	foundation-sync.md	engine/foundation/sync/mutex.h:47
-RecursiveMutex::RecursiveMutex(const RecursiveMutex&)	function	foundation/sync	recursivemutex-recursivemutex-const-recursivemutex-amp	foundation-sync.md	engine/foundation/sync/mutex.h:48
-RecursiveMutex::operator=(const RecursiveMutex&)	function	foundation/sync	recursivemutex-operator-eq-const-recursivemutex-amp	foundation-sync.md	engine/foundation/sync/mutex.h:49
-RecursiveMutex::Lock()	function	foundation/sync	recursivemutex-lock	foundation-sync.md	engine/foundation/sync/mutex.h:52
-RecursiveMutex::TryLock()	function	foundation/sync	recursivemutex-trylock	foundation-sync.md	engine/foundation/sync/mutex.h:54
-RecursiveMutex::Unlock()	function	foundation/sync	recursivemutex-unlock	foundation-sync.md	engine/foundation/sync/mutex.h:56
-RecursiveMutex::NativeMutex()	function	foundation/sync	recursivemutex-nativemutex	foundation-sync.md	engine/foundation/sync/mutex.h:58
-LockGuard	class	foundation/sync	lockguard	foundation-sync.md	engine/foundation/sync/mutex.h:67
-LockGuard::LockGuard(M&)	function	foundation/sync	lockguard-lockguard-m-amp	foundation-sync.md	engine/foundation/sync/mutex.h:71
-LockGuard::LockGuard(const LockGuard&)	function	foundation/sync	lockguard-lockguard-const-lockguard-amp	foundation-sync.md	engine/foundation/sync/mutex.h:72
-LockGuard::operator=(const LockGuard&)	function	foundation/sync	lockguard-operator-eq-const-lockguard-amp	foundation-sync.md	engine/foundation/sync/mutex.h:73
-UniqueLock	class	foundation/sync	uniquelock	foundation-sync.md	engine/foundation/sync/mutex.h:82
-UniqueLock::UniqueLock() noexcept	function	foundation/sync	uniquelock-uniquelock-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:86
-UniqueLock::UniqueLock(M&)	function	foundation/sync	uniquelock-uniquelock-m-amp	foundation-sync.md	engine/foundation/sync/mutex.h:88
-UniqueLock::UniqueLock(M&,bool)	function	foundation/sync	uniquelock-uniquelock-m-amp-bool	foundation-sync.md	engine/foundation/sync/mutex.h:90
-UniqueLock::UniqueLock(UniqueLock&&) noexcept	function	foundation/sync	uniquelock-uniquelock-uniquelock-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:93
-UniqueLock::operator=(UniqueLock&&) noexcept	function	foundation/sync	uniquelock-operator-eq-uniquelock-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:94
-UniqueLock::Lock()	function	foundation/sync	uniquelock-lock	foundation-sync.md	engine/foundation/sync/mutex.h:97
-UniqueLock::TryLock()	function	foundation/sync	uniquelock-trylock	foundation-sync.md	engine/foundation/sync/mutex.h:99
-UniqueLock::Unlock()	function	foundation/sync	uniquelock-unlock	foundation-sync.md	engine/foundation/sync/mutex.h:101
-UniqueLock::OwnsLock() const noexcept	function	foundation/sync	uniquelock-ownslock-const-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:103
-UniqueLock::NativeLock()	function	foundation/sync	uniquelock-nativelock	foundation-sync.md	engine/foundation/sync/mutex.h:105
-ConditionVariable	class	foundation/sync	conditionvariable	foundation-sync.md	engine/foundation/sync/mutex.h:116
-ConditionVariable::ConditionVariable()	function	foundation/sync	conditionvariable-conditionvariable	foundation-sync.md	engine/foundation/sync/mutex.h:118
-ConditionVariable::ConditionVariable(const ConditionVariable&)	function	foundation/sync	conditionvariable-conditionvariable-const-conditionvariable-amp	foundation-sync.md	engine/foundation/sync/mutex.h:119
-ConditionVariable::operator=(const ConditionVariable&)	function	foundation/sync	conditionvariable-operator-eq-const-conditionvariable-amp	foundation-sync.md	engine/foundation/sync/mutex.h:120
-ConditionVariable::Wait(UniqueLock<Mutex>&)	function	foundation/sync	conditionvariable-wait-uniquelock-lt-mutex-gt-amp	foundation-sync.md	engine/foundation/sync/mutex.h:123
-ConditionVariable::Wait(UniqueLock<Mutex>&,Predicate)	function	foundation/sync	conditionvariable-wait-uniquelock-lt-mutex-gt-amp-predicate	foundation-sync.md	engine/foundation/sync/mutex.h:125
-ConditionVariable::WaitForMilliseconds(UniqueLock<Mutex>&,u64,Predicate)	function	foundation/sync	conditionvariable-waitformilliseconds-uniquelock-lt-mutex-gt-amp-u64-predicate	foundation-sync.md	engine/foundation/sync/mutex.h:130
-ConditionVariable::WaitForMilliseconds(UniqueLock<Mutex>&,u64)	function	foundation/sync	conditionvariable-waitformilliseconds-uniquelock-lt-mutex-gt-amp-u64	foundation-sync.md	engine/foundation/sync/mutex.h:135
-ConditionVariable::NotifyOne() noexcept	function	foundation/sync	conditionvariable-notifyone-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:139
-ConditionVariable::NotifyAll() noexcept	function	foundation/sync	conditionvariable-notifyall-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:141
-OnceFlag	class	foundation/sync	onceflag	foundation-sync.md	engine/foundation/sync/mutex.h:148
-OnceFlag::OnceFlag() noexcept	function	foundation/sync	onceflag-onceflag-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:150
-OnceFlag::OnceFlag(const OnceFlag&)	function	foundation/sync	onceflag-onceflag-const-onceflag-amp	foundation-sync.md	engine/foundation/sync/mutex.h:151
-OnceFlag::operator=(const OnceFlag&)	function	foundation/sync	onceflag-operator-eq-const-onceflag-amp	foundation-sync.md	engine/foundation/sync/mutex.h:152
-OnceFlag::NativeFlag()	function	foundation/sync	onceflag-nativeflag	foundation-sync.md	engine/foundation/sync/mutex.h:154
-CallOnce(OnceFlag&,F&&,Args&&...)	function	foundation/sync	callonce-onceflag-amp-f-amp-amp-args-amp-amp	foundation-sync.md	engine/foundation/sync/mutex.h:161
-ThreadId	class	foundation/sync	threadid	foundation-sync.md	engine/foundation/sync/thread.h:15
-ThreadId::ThreadId() noexcept	function	foundation/sync	threadid-threadid-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:18
-ThreadId::ThreadId(std::thread::id) noexcept	function	foundation/sync	threadid-threadid-std-thread-id-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:20
-ThreadId::Hash() const noexcept	function	foundation/sync	threadid-hash-const-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:24
-ThreadId::Native() const noexcept	function	foundation/sync	threadid-native-const-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:26
-Thread	class	foundation/sync	thread	foundation-sync.md	engine/foundation/sync/thread.h:38
-Thread::Thread() noexcept	function	foundation/sync	thread-thread-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:41
-Thread::Thread(F&&,Args&&...)	function	foundation/sync	thread-thread-f-amp-amp-args-amp-amp	foundation-sync.md	engine/foundation/sync/thread.h:43
-Thread::Thread(Thread&&) noexcept	function	foundation/sync	thread-thread-thread-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:45
-Thread::operator=(Thread&&) noexcept	function	foundation/sync	thread-operator-eq-thread-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:46
-Thread::Thread(const Thread&)	function	foundation/sync	thread-thread-const-thread-amp	foundation-sync.md	engine/foundation/sync/thread.h:47
-Thread::operator=(const Thread&)	function	foundation/sync	thread-operator-eq-const-thread-amp	foundation-sync.md	engine/foundation/sync/thread.h:48
-Thread::Joinable() const noexcept	function	foundation/sync	thread-joinable-const-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:51
-Thread::Join()	function	foundation/sync	thread-join	foundation-sync.md	engine/foundation/sync/thread.h:53
-Thread::Detach()	function	foundation/sync	thread-detach	foundation-sync.md	engine/foundation/sync/thread.h:55
-Thread::Id() const noexcept	function	foundation/sync	thread-id-const-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:57
-Thread::Swap(Thread&) noexcept	function	foundation/sync	thread-swap-thread-amp-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:59
-Thread::HardwareConcurrency() noexcept	function	foundation/sync	thread-hardwareconcurrency-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:62
-ThisThread::Id() noexcept	function	foundation/sync	thisthread-id-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:72
-ThisThread::Yield() noexcept	function	foundation/sync	thisthread-yield-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:74
-ThisThread::SleepForMilliseconds(u64)	function	foundation/sync	thisthread-sleepformilliseconds-u64	foundation-sync.md	engine/foundation/sync/thread.h:76
-ThisThread::SleepForMicroseconds(u64)	function	foundation/sync	thisthread-sleepformicroseconds-u64	foundation-sync.md	engine/foundation/sync/thread.h:78
+detail_sync::ClampDuration(u64,u64) noexcept	function	foundation/sync	detail-sync-clampduration-u64-u64-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:59
+detail_sync::kMaxWaitMilliseconds	variable	foundation/sync	detail-sync-kmaxwaitmilliseconds	foundation-sync.md	engine/foundation/sync/atomic.h:63
+detail_sync::kMaxWaitMicroseconds	variable	foundation/sync	detail-sync-kmaxwaitmicroseconds	foundation-sync.md	engine/foundation/sync/atomic.h:65
+Atomic	class	foundation/sync	atomic	foundation-sync.md	engine/foundation/sync/atomic.h:76
+Atomic::kAlwaysLockFree	variable	foundation/sync	atomic-kalwayslockfree	foundation-sync.md	engine/foundation/sync/atomic.h:80
+Atomic::Atomic() noexcept	function	foundation/sync	atomic-atomic-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:83
+Atomic::Atomic(T) noexcept	function	foundation/sync	atomic-atomic-t-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:85
+Atomic::Atomic(const Atomic&)	function	foundation/sync	atomic-atomic-const-atomic-amp	foundation-sync.md	engine/foundation/sync/atomic.h:86
+Atomic::operator=(const Atomic&)	function	foundation/sync	atomic-operator-eq-const-atomic-amp	foundation-sync.md	engine/foundation/sync/atomic.h:87
+Atomic::Load(MemoryOrder) const noexcept	function	foundation/sync	atomic-load-memoryorder-const-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:90
+Atomic::Store(T,MemoryOrder) noexcept	function	foundation/sync	atomic-store-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:92
+Atomic::Exchange(T,MemoryOrder) noexcept	function	foundation/sync	atomic-exchange-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:94
+Atomic::CompareExchangeWeak(T&,T,MemoryOrder,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangeweak-t-amp-t-memoryorder-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:101
+Atomic::CompareExchangeWeak(T&,T,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangeweak-t-amp-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:105
+Atomic::CompareExchangeStrong(T&,T,MemoryOrder,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangestrong-t-amp-t-memoryorder-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:109
+Atomic::CompareExchangeStrong(T&,T,MemoryOrder) noexcept	function	foundation/sync	atomic-compareexchangestrong-t-amp-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:113
+Atomic::FetchAdd(D,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchadd-d-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:118
+Atomic::FetchSub(D,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchsub-d-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:123
+Atomic::FetchAnd(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchand-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:128
+Atomic::FetchOr(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchor-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:130
+Atomic::FetchXor(T,MemoryOrder) noexcept	function	foundation/sync	atomic-fetchxor-t-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:132
+Atomic::operator T() const noexcept	function	foundation/sync	atomic-operator-t-const-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:135
+Atomic::operator=(T) noexcept	function	foundation/sync	atomic-operator-eq-t-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:137
+Atomic::operator++() noexcept	function	foundation/sync	atomic-operator-plus-plus-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:142
+Atomic::operator++(int) noexcept	function	foundation/sync	atomic-operator-plus-plus-int-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:144
+Atomic::operator--() noexcept	function	foundation/sync	atomic-operator-minus-minus-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:146
+Atomic::operator--(int) noexcept	function	foundation/sync	atomic-operator-minus-minus-int-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:148
+AtomicThreadFence(MemoryOrder) noexcept	function	foundation/sync	atomicthreadfence-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:156
+AtomicSignalFence(MemoryOrder) noexcept	function	foundation/sync	atomicsignalfence-memoryorder-noexcept	foundation-sync.md	engine/foundation/sync/atomic.h:161
+Mutex	class	foundation/sync	mutex	foundation-sync.md	engine/foundation/sync/mutex.h:18
+Mutex::Native	alias	foundation/sync	mutex-native	foundation-sync.md	engine/foundation/sync/mutex.h:21
+Mutex::Mutex() noexcept	function	foundation/sync	mutex-mutex-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:23
+Mutex::Mutex(const Mutex&)	function	foundation/sync	mutex-mutex-const-mutex-amp	foundation-sync.md	engine/foundation/sync/mutex.h:24
+Mutex::operator=(const Mutex&)	function	foundation/sync	mutex-operator-eq-const-mutex-amp	foundation-sync.md	engine/foundation/sync/mutex.h:25
+Mutex::Lock()	function	foundation/sync	mutex-lock	foundation-sync.md	engine/foundation/sync/mutex.h:28
+Mutex::TryLock()	function	foundation/sync	mutex-trylock	foundation-sync.md	engine/foundation/sync/mutex.h:30
+Mutex::Unlock()	function	foundation/sync	mutex-unlock	foundation-sync.md	engine/foundation/sync/mutex.h:32
+Mutex::NativeMutex()	function	foundation/sync	mutex-nativemutex	foundation-sync.md	engine/foundation/sync/mutex.h:34
+RecursiveMutex	class	foundation/sync	recursivemutex	foundation-sync.md	engine/foundation/sync/mutex.h:43
+RecursiveMutex::Native	alias	foundation/sync	recursivemutex-native	foundation-sync.md	engine/foundation/sync/mutex.h:46
+RecursiveMutex::RecursiveMutex()	function	foundation/sync	recursivemutex-recursivemutex	foundation-sync.md	engine/foundation/sync/mutex.h:48
+RecursiveMutex::RecursiveMutex(const RecursiveMutex&)	function	foundation/sync	recursivemutex-recursivemutex-const-recursivemutex-amp	foundation-sync.md	engine/foundation/sync/mutex.h:49
+RecursiveMutex::operator=(const RecursiveMutex&)	function	foundation/sync	recursivemutex-operator-eq-const-recursivemutex-amp	foundation-sync.md	engine/foundation/sync/mutex.h:50
+RecursiveMutex::Lock()	function	foundation/sync	recursivemutex-lock	foundation-sync.md	engine/foundation/sync/mutex.h:53
+RecursiveMutex::TryLock()	function	foundation/sync	recursivemutex-trylock	foundation-sync.md	engine/foundation/sync/mutex.h:55
+RecursiveMutex::Unlock()	function	foundation/sync	recursivemutex-unlock	foundation-sync.md	engine/foundation/sync/mutex.h:57
+RecursiveMutex::NativeMutex()	function	foundation/sync	recursivemutex-nativemutex	foundation-sync.md	engine/foundation/sync/mutex.h:59
+LockGuard	class	foundation/sync	lockguard	foundation-sync.md	engine/foundation/sync/mutex.h:68
+LockGuard::LockGuard(M&)	function	foundation/sync	lockguard-lockguard-m-amp	foundation-sync.md	engine/foundation/sync/mutex.h:72
+LockGuard::LockGuard(const LockGuard&)	function	foundation/sync	lockguard-lockguard-const-lockguard-amp	foundation-sync.md	engine/foundation/sync/mutex.h:73
+LockGuard::operator=(const LockGuard&)	function	foundation/sync	lockguard-operator-eq-const-lockguard-amp	foundation-sync.md	engine/foundation/sync/mutex.h:74
+UniqueLock	class	foundation/sync	uniquelock	foundation-sync.md	engine/foundation/sync/mutex.h:83
+UniqueLock::UniqueLock() noexcept	function	foundation/sync	uniquelock-uniquelock-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:87
+UniqueLock::UniqueLock(M&)	function	foundation/sync	uniquelock-uniquelock-m-amp	foundation-sync.md	engine/foundation/sync/mutex.h:89
+UniqueLock::UniqueLock(M&,bool)	function	foundation/sync	uniquelock-uniquelock-m-amp-bool	foundation-sync.md	engine/foundation/sync/mutex.h:91
+UniqueLock::UniqueLock(UniqueLock&&) noexcept	function	foundation/sync	uniquelock-uniquelock-uniquelock-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:94
+UniqueLock::operator=(UniqueLock&&) noexcept	function	foundation/sync	uniquelock-operator-eq-uniquelock-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:95
+UniqueLock::Lock()	function	foundation/sync	uniquelock-lock	foundation-sync.md	engine/foundation/sync/mutex.h:98
+UniqueLock::TryLock()	function	foundation/sync	uniquelock-trylock	foundation-sync.md	engine/foundation/sync/mutex.h:100
+UniqueLock::Unlock()	function	foundation/sync	uniquelock-unlock	foundation-sync.md	engine/foundation/sync/mutex.h:102
+UniqueLock::OwnsLock() const noexcept	function	foundation/sync	uniquelock-ownslock-const-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:104
+UniqueLock::NativeLock()	function	foundation/sync	uniquelock-nativelock	foundation-sync.md	engine/foundation/sync/mutex.h:106
+ConditionVariable	class	foundation/sync	conditionvariable	foundation-sync.md	engine/foundation/sync/mutex.h:117
+ConditionVariable::ConditionVariable()	function	foundation/sync	conditionvariable-conditionvariable	foundation-sync.md	engine/foundation/sync/mutex.h:119
+ConditionVariable::ConditionVariable(const ConditionVariable&)	function	foundation/sync	conditionvariable-conditionvariable-const-conditionvariable-amp	foundation-sync.md	engine/foundation/sync/mutex.h:120
+ConditionVariable::operator=(const ConditionVariable&)	function	foundation/sync	conditionvariable-operator-eq-const-conditionvariable-amp	foundation-sync.md	engine/foundation/sync/mutex.h:121
+ConditionVariable::Wait(UniqueLock<Mutex>&)	function	foundation/sync	conditionvariable-wait-uniquelock-lt-mutex-gt-amp	foundation-sync.md	engine/foundation/sync/mutex.h:124
+ConditionVariable::Wait(UniqueLock<Mutex>&,Predicate)	function	foundation/sync	conditionvariable-wait-uniquelock-lt-mutex-gt-amp-predicate	foundation-sync.md	engine/foundation/sync/mutex.h:126
+ConditionVariable::WaitForMilliseconds(UniqueLock<Mutex>&,u64,Predicate)	function	foundation/sync	conditionvariable-waitformilliseconds-uniquelock-lt-mutex-gt-amp-u64-predicate	foundation-sync.md	engine/foundation/sync/mutex.h:131
+ConditionVariable::WaitForMilliseconds(UniqueLock<Mutex>&,u64)	function	foundation/sync	conditionvariable-waitformilliseconds-uniquelock-lt-mutex-gt-amp-u64	foundation-sync.md	engine/foundation/sync/mutex.h:136
+ConditionVariable::NotifyOne() noexcept	function	foundation/sync	conditionvariable-notifyone-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:140
+ConditionVariable::NotifyAll() noexcept	function	foundation/sync	conditionvariable-notifyall-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:142
+OnceFlag	class	foundation/sync	onceflag	foundation-sync.md	engine/foundation/sync/mutex.h:149
+OnceFlag::OnceFlag() noexcept	function	foundation/sync	onceflag-onceflag-noexcept	foundation-sync.md	engine/foundation/sync/mutex.h:151
+OnceFlag::OnceFlag(const OnceFlag&)	function	foundation/sync	onceflag-onceflag-const-onceflag-amp	foundation-sync.md	engine/foundation/sync/mutex.h:152
+OnceFlag::operator=(const OnceFlag&)	function	foundation/sync	onceflag-operator-eq-const-onceflag-amp	foundation-sync.md	engine/foundation/sync/mutex.h:153
+OnceFlag::NativeFlag()	function	foundation/sync	onceflag-nativeflag	foundation-sync.md	engine/foundation/sync/mutex.h:155
+CallOnce(OnceFlag&,F&&,Args&&...)	function	foundation/sync	callonce-onceflag-amp-f-amp-amp-args-amp-amp	foundation-sync.md	engine/foundation/sync/mutex.h:162
+ThreadId	class	foundation/sync	threadid	foundation-sync.md	engine/foundation/sync/thread.h:17
+ThreadId::ThreadId() noexcept	function	foundation/sync	threadid-threadid-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:20
+ThreadId::ThreadId(std::thread::id) noexcept	function	foundation/sync	threadid-threadid-std-thread-id-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:22
+ThreadId::Hash() const noexcept	function	foundation/sync	threadid-hash-const-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:26
+ThreadId::Native() const noexcept	function	foundation/sync	threadid-native-const-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:28
+Thread	class	foundation/sync	thread	foundation-sync.md	engine/foundation/sync/thread.h:40
+Thread::Thread() noexcept	function	foundation/sync	thread-thread-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:43
+Thread::Thread(F&&,Args&&...)	function	foundation/sync	thread-thread-f-amp-amp-args-amp-amp	foundation-sync.md	engine/foundation/sync/thread.h:45
+Thread::Thread(Thread&&) noexcept	function	foundation/sync	thread-thread-thread-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:47
+Thread::operator=(Thread&&) noexcept	function	foundation/sync	thread-operator-eq-thread-amp-amp-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:48
+Thread::Thread(const Thread&)	function	foundation/sync	thread-thread-const-thread-amp	foundation-sync.md	engine/foundation/sync/thread.h:49
+Thread::operator=(const Thread&)	function	foundation/sync	thread-operator-eq-const-thread-amp	foundation-sync.md	engine/foundation/sync/thread.h:50
+Thread::Joinable() const noexcept	function	foundation/sync	thread-joinable-const-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:53
+Thread::Join()	function	foundation/sync	thread-join	foundation-sync.md	engine/foundation/sync/thread.h:55
+Thread::Detach()	function	foundation/sync	thread-detach	foundation-sync.md	engine/foundation/sync/thread.h:57
+Thread::Id() const noexcept	function	foundation/sync	thread-id-const-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:59
+Thread::Swap(Thread&) noexcept	function	foundation/sync	thread-swap-thread-amp-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:61
+Thread::HardwareConcurrency() noexcept	function	foundation/sync	thread-hardwareconcurrency-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:64
+ThisThread::Id() noexcept	function	foundation/sync	thisthread-id-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:74
+ThisThread::Yield() noexcept	function	foundation/sync	thisthread-yield-noexcept	foundation-sync.md	engine/foundation/sync/thread.h:76
+ThisThread::SleepForMilliseconds(u64)	function	foundation/sync	thisthread-sleepformilliseconds-u64	foundation-sync.md	engine/foundation/sync/thread.h:78
+ThisThread::SleepForMicroseconds(u64)	function	foundation/sync	thisthread-sleepformicroseconds-u64	foundation-sync.md	engine/foundation/sync/thread.h:80
 Min(const T&,const T&)	function	foundation/containers	min-const-t-amp-const-t-amp	foundation-containers.md	engine/foundation/algorithm.h:16
 Max(const T&,const T&)	function	foundation/containers	max-const-t-amp-const-t-amp	foundation-containers.md	engine/foundation/algorithm.h:22
 Clamp(T,T,T)	function	foundation/containers	clamp-t-t-t	foundation-containers.md	engine/foundation/algorithm.h:30
@@ -286,34 +398,34 @@ SharedPtr::operator bool() const	function	foundation/containers	sharedptr-operat
 SharedPtr::UseCount() const	function	foundation/containers	sharedptr-usecount-const	foundation-containers.md	engine/foundation/containers/shared_ptr.h:146
 LocalSharedPtr	alias	foundation/containers	localsharedptr	foundation-containers.md	engine/foundation/containers/shared_ptr.h:171
 MakeShared(Args&&...)	function	foundation/containers	makeshared-args-amp-amp	foundation-containers.md	engine/foundation/containers/shared_ptr.h:197
-Span	class	foundation/containers	span	foundation-containers.md	engine/foundation/containers/span.h:26
-Span::Span()	function	foundation/containers	span-span	foundation-containers.md	engine/foundation/containers/span.h:30
-Span::Span(T*,usize)	function	foundation/containers	span-span-t-star-usize	foundation-containers.md	engine/foundation/containers/span.h:36
-Span::Span(U(&)[N])	function	foundation/containers	span-span-u-amp-n	foundation-containers.md	engine/foundation/containers/span.h:40
-Span::Span(const Span<U>&)	function	foundation/containers	span-span-const-span-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:44
-Span::Span(Vector<U,A>&)	function	foundation/containers	span-span-vector-lt-u-a-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:48
-Span::Span(const Vector<U,A>&)	function	foundation/containers	span-span-const-vector-lt-u-a-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:52
-Span::Span(Array<U,N>&)	function	foundation/containers	span-span-array-lt-u-n-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:56
-Span::Span(const Array<U,N>&)	function	foundation/containers	span-span-const-array-lt-u-n-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:60
-Span::Data() const	function	foundation/containers	span-data-const	foundation-containers.md	engine/foundation/containers/span.h:65
-Span::Size() const	function	foundation/containers	span-size-const	foundation-containers.md	engine/foundation/containers/span.h:67
-Span::SizeBytes() const	function	foundation/containers	span-sizebytes-const	foundation-containers.md	engine/foundation/containers/span.h:69
-Span::Empty() const	function	foundation/containers	span-empty-const	foundation-containers.md	engine/foundation/containers/span.h:71
-Span::operator[](usize) const	function	foundation/containers	span-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/span.h:77
-Span::begin() const	function	foundation/containers	span-begin-const	foundation-containers.md	engine/foundation/containers/span.h:83
-Span::end() const	function	foundation/containers	span-end-const	foundation-containers.md	engine/foundation/containers/span.h:85
-Span::First(usize) const	function	foundation/containers	span-first-usize-const	foundation-containers.md	engine/foundation/containers/span.h:91
-Span::Last(usize) const	function	foundation/containers	span-last-usize-const	foundation-containers.md	engine/foundation/containers/span.h:99
-Span::Subspan(usize,usize) const	function	foundation/containers	span-subspan-usize-usize-const	foundation-containers.md	engine/foundation/containers/span.h:108
-Span::Subspan(usize) const	function	foundation/containers	span-subspan-usize-const	foundation-containers.md	engine/foundation/containers/span.h:116
-ByteSpan	alias	foundation/containers	bytespan	foundation-containers.md	engine/foundation/containers/span.h:127
-MutableByteSpan	alias	foundation/containers	mutablebytespan	foundation-containers.md	engine/foundation/containers/span.h:129
-AsBytes(const T&)	function	foundation/containers	asbytes-const-t-amp	foundation-containers.md	engine/foundation/containers/span.h:134
-AsBytes(Span<T>)	function	foundation/containers	asbytes-span-lt-t-gt	foundation-containers.md	engine/foundation/containers/span.h:141
-AsByteSpan(StringView)	function	foundation/containers	asbytespan-stringview	foundation-containers.md	engine/foundation/containers/span.h:148
-ToStringView(ByteSpan)	function	foundation/containers	tostringview-bytespan	foundation-containers.md	engine/foundation/containers/span.h:151
-Append(Vector<T,A>&,std::type_identity_t<Span<const T>>)	function	foundation/containers	append-vector-lt-t-a-gt-amp-std-type-identity-t-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:158
-Assign(Vector<T,A>&,std::type_identity_t<Span<const T>>)	function	foundation/containers	assign-vector-lt-t-a-gt-amp-std-type-identity-t-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:183
+Span	class	foundation/containers	span	foundation-containers.md	engine/foundation/containers/span.h:25
+Span::Span()	function	foundation/containers	span-span	foundation-containers.md	engine/foundation/containers/span.h:29
+Span::Span(T*,usize)	function	foundation/containers	span-span-t-star-usize	foundation-containers.md	engine/foundation/containers/span.h:35
+Span::Span(U(&)[N])	function	foundation/containers	span-span-u-amp-n	foundation-containers.md	engine/foundation/containers/span.h:39
+Span::Span(const Span<U>&)	function	foundation/containers	span-span-const-span-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:43
+Span::Span(Vector<U,A>&)	function	foundation/containers	span-span-vector-lt-u-a-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:47
+Span::Span(const Vector<U,A>&)	function	foundation/containers	span-span-const-vector-lt-u-a-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:51
+Span::Span(Array<U,N>&)	function	foundation/containers	span-span-array-lt-u-n-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:55
+Span::Span(const Array<U,N>&)	function	foundation/containers	span-span-const-array-lt-u-n-gt-amp	foundation-containers.md	engine/foundation/containers/span.h:59
+Span::Data() const	function	foundation/containers	span-data-const	foundation-containers.md	engine/foundation/containers/span.h:64
+Span::Size() const	function	foundation/containers	span-size-const	foundation-containers.md	engine/foundation/containers/span.h:66
+Span::SizeBytes() const	function	foundation/containers	span-sizebytes-const	foundation-containers.md	engine/foundation/containers/span.h:68
+Span::Empty() const	function	foundation/containers	span-empty-const	foundation-containers.md	engine/foundation/containers/span.h:70
+Span::operator[](usize) const	function	foundation/containers	span-operator-index-usize-const	foundation-containers.md	engine/foundation/containers/span.h:76
+Span::begin() const	function	foundation/containers	span-begin-const	foundation-containers.md	engine/foundation/containers/span.h:82
+Span::end() const	function	foundation/containers	span-end-const	foundation-containers.md	engine/foundation/containers/span.h:84
+Span::First(usize) const	function	foundation/containers	span-first-usize-const	foundation-containers.md	engine/foundation/containers/span.h:90
+Span::Last(usize) const	function	foundation/containers	span-last-usize-const	foundation-containers.md	engine/foundation/containers/span.h:98
+Span::Subspan(usize,usize) const	function	foundation/containers	span-subspan-usize-usize-const	foundation-containers.md	engine/foundation/containers/span.h:107
+Span::Subspan(usize) const	function	foundation/containers	span-subspan-usize-const	foundation-containers.md	engine/foundation/containers/span.h:115
+ByteSpan	alias	foundation/containers	bytespan	foundation-containers.md	engine/foundation/containers/span.h:126
+MutableByteSpan	alias	foundation/containers	mutablebytespan	foundation-containers.md	engine/foundation/containers/span.h:128
+AsBytes(const T&)	function	foundation/containers	asbytes-const-t-amp	foundation-containers.md	engine/foundation/containers/span.h:133
+AsBytes(Span<T>)	function	foundation/containers	asbytes-span-lt-t-gt	foundation-containers.md	engine/foundation/containers/span.h:140
+AsByteSpan(StringView)	function	foundation/containers	asbytespan-stringview	foundation-containers.md	engine/foundation/containers/span.h:147
+ToStringView(ByteSpan)	function	foundation/containers	tostringview-bytespan	foundation-containers.md	engine/foundation/containers/span.h:150
+Append(Vector<T,A>&,TypeIdentity<Span<const T>>)	function	foundation/containers	append-vector-lt-t-a-gt-amp-typeidentity-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:157
+Assign(Vector<T,A>&,TypeIdentity<Span<const T>>)	function	foundation/containers	assign-vector-lt-t-a-gt-amp-typeidentity-lt-span-lt-const-t-gt-gt	foundation-containers.md	engine/foundation/containers/span.h:182
 DefaultDelete	struct	foundation/containers	defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:22
 DefaultDelete::DefaultDelete()	function	foundation/containers	defaultdelete-defaultdelete	foundation-containers.md	engine/foundation/containers/unique_ptr.h:25
 DefaultDelete::DefaultDelete(const DefaultDelete<U>&)	function	foundation/containers	defaultdelete-defaultdelete-const-defaultdelete-lt-u-gt-amp	foundation-containers.md	engine/foundation/containers/unique_ptr.h:27
@@ -401,33 +513,33 @@ CombiningClass(u32)	function	foundation/strings	combiningclass-u32	foundation-st
 IsCompositionExcluded(u32)	function	foundation/strings	iscompositionexcluded-u32	foundation-strings.md	engine/foundation/string/normalize.h:39
 NormalizeNFD(Allocator&,StringView)	function	foundation/strings	normalizenfd-allocator-amp-stringview	foundation-strings.md	engine/foundation/string/normalize.h:81
 NormalizeNFC(Allocator&,StringView)	function	foundation/strings	normalizenfc-allocator-amp-stringview	foundation-strings.md	engine/foundation/string/normalize.h:111
-String	class	foundation/strings	string	foundation-strings.md	engine/foundation/string/string.h:28
-String::String(Allocator&)	function	foundation/strings	string-string-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:35
-String::String(Allocator&,StringView)	function	foundation/strings	string-string-allocator-amp-stringview	foundation-strings.md	engine/foundation/string/string.h:44
-String::String(const String&)	function	foundation/strings	string-string-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:52
-String::operator=(const String&)	function	foundation/strings	string-operator-eq-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:53
-String::String(String&&) noexcept	function	foundation/strings	string-string-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:55
-String::operator=(String&&) noexcept	function	foundation/strings	string-operator-eq-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:56
-String::Append(StringView)	function	foundation/strings	string-append-stringview	foundation-strings.md	engine/foundation/string/string.h:63
-String::Append(char)	function	foundation/strings	string-append-char	foundation-strings.md	engine/foundation/string/string.h:77
-String::AppendRawBytes(const char*,usize)	function	foundation/strings	string-appendrawbytes-const-char-star-usize	foundation-strings.md	engine/foundation/string/string.h:91
-String::CStr() const	function	foundation/strings	string-cstr-const	foundation-strings.md	engine/foundation/string/string.h:103
-String::Length() const	function	foundation/strings	string-length-const	foundation-strings.md	engine/foundation/string/string.h:105
-String::View() const	function	foundation/strings	string-view-const	foundation-strings.md	engine/foundation/string/string.h:108
-String::operator StringView() const	function	foundation/strings	string-operator-stringview-const	foundation-strings.md	engine/foundation/string/string.h:110
-String::operator==(StringView) const	function	foundation/strings	string-operator-eq-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:115
-String::operator!=(StringView) const	function	foundation/strings	string-operator-not-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:117
-StringBuilder	class	foundation/strings	stringbuilder	foundation-strings.md	engine/foundation/string/string.h:132
-StringBuilder::StringBuilder(Allocator&)	function	foundation/strings	stringbuilder-stringbuilder-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:139
-StringBuilder::Append(StringView)	function	foundation/strings	stringbuilder-append-stringview	foundation-strings.md	engine/foundation/string/string.h:146
-StringBuilder::Append(char)	function	foundation/strings	stringbuilder-append-char	foundation-strings.md	engine/foundation/string/string.h:156
-StringBuilder::AppendCodepoint(u32)	function	foundation/strings	stringbuilder-appendcodepoint-u32	foundation-strings.md	engine/foundation/string/string.h:167
-StringBuilder::AppendInt(i64)	function	foundation/strings	stringbuilder-appendint-i64	foundation-strings.md	engine/foundation/string/string.h:181
-StringBuilder::AppendUInt(u64)	function	foundation/strings	stringbuilder-appenduint-u64	foundation-strings.md	engine/foundation/string/string.h:200
-StringBuilder::AppendHex(u64,int)	function	foundation/strings	stringbuilder-appendhex-u64-int	foundation-strings.md	engine/foundation/string/string.h:217
-StringBuilder::AppendFloat(f64,int)	function	foundation/strings	stringbuilder-appendfloat-f64-int	foundation-strings.md	engine/foundation/string/string.h:248
-StringBuilder::View() const	function	foundation/strings	stringbuilder-view-const	foundation-strings.md	engine/foundation/string/string.h:271
-StringBuilder::CStr() const	function	foundation/strings	stringbuilder-cstr-const	foundation-strings.md	engine/foundation/string/string.h:273
+String	class	foundation/strings	string	foundation-strings.md	engine/foundation/string/string.h:26
+String::String(Allocator&)	function	foundation/strings	string-string-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:33
+String::String(Allocator&,StringView)	function	foundation/strings	string-string-allocator-amp-stringview	foundation-strings.md	engine/foundation/string/string.h:42
+String::String(const String&)	function	foundation/strings	string-string-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:50
+String::operator=(const String&)	function	foundation/strings	string-operator-eq-const-string-amp	foundation-strings.md	engine/foundation/string/string.h:51
+String::String(String&&) noexcept	function	foundation/strings	string-string-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:53
+String::operator=(String&&) noexcept	function	foundation/strings	string-operator-eq-string-amp-amp-noexcept	foundation-strings.md	engine/foundation/string/string.h:54
+String::Append(StringView)	function	foundation/strings	string-append-stringview	foundation-strings.md	engine/foundation/string/string.h:61
+String::Append(char)	function	foundation/strings	string-append-char	foundation-strings.md	engine/foundation/string/string.h:75
+String::AppendRawBytes(const char*,usize)	function	foundation/strings	string-appendrawbytes-const-char-star-usize	foundation-strings.md	engine/foundation/string/string.h:89
+String::CStr() const	function	foundation/strings	string-cstr-const	foundation-strings.md	engine/foundation/string/string.h:101
+String::Length() const	function	foundation/strings	string-length-const	foundation-strings.md	engine/foundation/string/string.h:103
+String::View() const	function	foundation/strings	string-view-const	foundation-strings.md	engine/foundation/string/string.h:106
+String::operator StringView() const	function	foundation/strings	string-operator-stringview-const	foundation-strings.md	engine/foundation/string/string.h:108
+String::operator==(StringView) const	function	foundation/strings	string-operator-eq-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:113
+String::operator!=(StringView) const	function	foundation/strings	string-operator-not-eq-stringview-const	foundation-strings.md	engine/foundation/string/string.h:115
+StringBuilder	class	foundation/strings	stringbuilder	foundation-strings.md	engine/foundation/string/string.h:130
+StringBuilder::StringBuilder(Allocator&)	function	foundation/strings	stringbuilder-stringbuilder-allocator-amp	foundation-strings.md	engine/foundation/string/string.h:137
+StringBuilder::Append(StringView)	function	foundation/strings	stringbuilder-append-stringview	foundation-strings.md	engine/foundation/string/string.h:144
+StringBuilder::Append(char)	function	foundation/strings	stringbuilder-append-char	foundation-strings.md	engine/foundation/string/string.h:154
+StringBuilder::AppendCodepoint(u32)	function	foundation/strings	stringbuilder-appendcodepoint-u32	foundation-strings.md	engine/foundation/string/string.h:165
+StringBuilder::AppendInt(i64)	function	foundation/strings	stringbuilder-appendint-i64	foundation-strings.md	engine/foundation/string/string.h:179
+StringBuilder::AppendUInt(u64)	function	foundation/strings	stringbuilder-appenduint-u64	foundation-strings.md	engine/foundation/string/string.h:198
+StringBuilder::AppendHex(u64,int)	function	foundation/strings	stringbuilder-appendhex-u64-int	foundation-strings.md	engine/foundation/string/string.h:215
+StringBuilder::AppendFloat(f64,int)	function	foundation/strings	stringbuilder-appendfloat-f64-int	foundation-strings.md	engine/foundation/string/string.h:246
+StringBuilder::View() const	function	foundation/strings	stringbuilder-view-const	foundation-strings.md	engine/foundation/string/string.h:269
+StringBuilder::CStr() const	function	foundation/strings	stringbuilder-cstr-const	foundation-strings.md	engine/foundation/string/string.h:271
 CodepointCount(StringView)	function	foundation/strings	codepointcount-stringview	foundation-strings.md	engine/foundation/string/utf8.h:17
 IsValidUtf8(StringView)	function	foundation/strings	isvalidutf8-stringview	foundation-strings.md	engine/foundation/string/utf8.h:33
 Utf8CodepointIterator	class	foundation/strings	utf8codepointiterator	foundation-strings.md	engine/foundation/string/utf8.h:53
@@ -730,11 +842,7 @@ io::PathBuilder::Append(StringView)	function	foundation/io	io-pathbuilder-append
 io::PathBuilder::CStr() const	function	foundation/io	io-pathbuilder-cstr-const	foundation-io.md	engine/foundation/io/path.h:226
 io::PathBuilder::View() const	function	foundation/io	io-pathbuilder-view-const	foundation-io.md	engine/foundation/io/path.h:228
 io::PathBuilder::Style() const	function	foundation/io	io-pathbuilder-style-const	foundation-io.md	engine/foundation/io/path.h:230
-Sqrt(f32)	function	foundation/math	sqrt-f32	foundation-math.md	engine/foundation/math/math_util.h:11
-Sin(f32)	function	foundation/math	sin-f32	foundation-math.md	engine/foundation/math/math_util.h:13
-Cos(f32)	function	foundation/math	cos-f32	foundation-math.md	engine/foundation/math/math_util.h:15
-Acos(f32)	function	foundation/math	acos-f32	foundation-math.md	engine/foundation/math/math_util.h:17
-kPi	variable	foundation/math	kpi	foundation-math.md	engine/foundation/math/math_util.h:20
+kPi	variable	foundation/math	kpi	foundation-math.md	engine/foundation/math/math_util.h:10
 Mat3	struct	foundation/math	mat3	foundation-math.md	engine/foundation/math/matrix.h:19
 Mat3::col	variable	foundation/math	mat3-col	foundation-math.md	engine/foundation/math/matrix.h:21
 Mat3::Identity()	function	foundation/math	mat3-identity	foundation-math.md	engine/foundation/math/matrix.h:24
@@ -1552,8 +1660,22 @@ os::CommandLine::FlagCount() const	function	platform/os	os-commandline-flagcount
 os::CommandLine::FlagName(usize) const	function	platform/os	os-commandline-flagname-usize-const	platform-os.md	engine/foundation/os/command_line.h:129
 os::CommandLine::FlagHasValue(usize) const	function	platform/os	os-commandline-flaghasvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:137
 os::CommandLine::FlagValue(usize) const	function	platform/os	os-commandline-flagvalue-usize-const	platform-os.md	engine/foundation/os/command_line.h:146
+os::Print(const char*,...)	function	platform/os	os-print-const-char-star	platform-os.md	engine/foundation/os/console.h:19
+os::PrintError(const char*,...)	function	platform/os	os-printerror-const-char-star	platform-os.md	engine/foundation/os/console.h:32
+os::PrintText(const char*)	function	platform/os	os-printtext-const-char-star	platform-os.md	engine/foundation/os/console.h:44
+os::PrintErrorText(const char*)	function	platform/os	os-printerrortext-const-char-star	platform-os.md	engine/foundation/os/console.h:48
+os::PrintLine(const char*)	function	platform/os	os-printline-const-char-star	platform-os.md	engine/foundation/os/console.h:52
+os::PrintBytes(const void*,usize)	function	platform/os	os-printbytes-const-void-star-usize	platform-os.md	engine/foundation/os/console.h:56
+os::PrintErrorBytes(const void*,usize)	function	platform/os	os-printerrorbytes-const-void-star-usize	platform-os.md	engine/foundation/os/console.h:60
+os::Flush()	function	platform/os	os-flush	platform-os.md	engine/foundation/os/console.h:64
+os::FlushError()	function	platform/os	os-flusherror	platform-os.md	engine/foundation/os/console.h:68
+os::Abort() noexcept	function	platform/os	os-abort-noexcept	platform-os.md	engine/foundation/os/console.h:73
+os::ExitNow(int) noexcept	function	platform/os	os-exitnow-int-noexcept	platform-os.md	engine/foundation/os/console.h:77
+os::GetEnvironment(const char*) noexcept	function	platform/os	os-getenvironment-const-char-star-noexcept	platform-os.md	engine/foundation/os/console.h:85
 os::VulkanLoaderName()	function	platform/os	os-vulkanloadername	platform-os.md	engine/foundation/os/gpu_driver_probe.h:14
 os::ProbeVulkanCreateInstance()	function	platform/os	os-probevulkancreateinstance	platform-os.md	engine/foundation/os/gpu_driver_probe.h:22
+os::LastError() noexcept	function	platform/os	os-lasterror-noexcept	platform-os.md	engine/foundation/os/last_error.h:12
+os::SetLastError(int) noexcept	function	platform/os	os-setlasterror-int-noexcept	platform-os.md	engine/foundation/os/last_error.h:17
 os::kMaxPathBytes	variable	platform/os	os-kmaxpathbytes	platform-os.md	engine/foundation/os/os.h:25
 os::Exit(int)	function	platform/os	os-exit-int	platform-os.md	engine/foundation/os/os.h:29
 os::Write(int,const void*,usize)	function	platform/os	os-write-int-const-void-star-usize	platform-os.md	engine/foundation/os/os.h:36
@@ -1585,6 +1707,8 @@ os::SessionStateName(SessionState)	function	platform/os	os-sessionstatename-sess
 os::SessionStateFromFlags(bool,bool,bool,bool)	function	platform/os	os-sessionstatefromflags-bool-bool-bool-bool	platform-os.md	engine/foundation/os/session.h:28
 os::SessionCanShowWindows(SessionState)	function	platform/os	os-sessioncanshowwindows-sessionstate	platform-os.md	engine/foundation/os/session.h:31
 os::QuerySessionState()	function	platform/os	os-querysessionstate	platform-os.md	engine/foundation/os/session.h:41
+os::SignalHandler	alias	platform/os	os-signalhandler	platform-os.md	engine/foundation/os/signal.h:10
+os::SetSignalHandler(int,SignalHandler) noexcept	function	platform/os	os-setsignalhandler-int-signalhandler-noexcept	platform-os.md	engine/foundation/os/signal.h:15
 os::ClipboardKind	enum	platform/window-input	os-clipboardkind	platform-window-input.md	engine/platform/clipboard.h:17
 os::ClipboardKind::Clipboard	enumerator	platform/window-input	os-clipboardkind-clipboard	platform-window-input.md	engine/platform/clipboard.h:18
 os::ClipboardKind::Primary	enumerator	platform/window-input	os-clipboardkind-primary	platform-window-input.md	engine/platform/clipboard.h:19
@@ -4883,28 +5007,28 @@ rhi::ShaderHandle	alias	rhi	rhi-shaderhandle	rhi.md	engine/rhi/handle.h:78
 rhi::PipelineHandle	alias	rhi	rhi-pipelinehandle	rhi.md	engine/rhi/handle.h:80
 rhi::BindGroupLayoutHandle	alias	rhi	rhi-bindgrouplayouthandle	rhi.md	engine/rhi/handle.h:82
 rhi::BindGroupHandle	alias	rhi	rhi-bindgrouphandle	rhi.md	engine/rhi/handle.h:84
-rhi::HandlePool	class	rhi	rhi-handlepool	rhi.md	engine/rhi/handle_pool.h:29
-rhi::HandlePool::HandleType	alias	rhi	rhi-handlepool-handletype	rhi.md	engine/rhi/handle_pool.h:33
-rhi::HandlePool::kChunkSlots	variable	rhi	rhi-handlepool-kchunkslots	rhi.md	engine/rhi/handle_pool.h:36
-rhi::HandlePool::kMaxChunks	variable	rhi	rhi-handlepool-kmaxchunks	rhi.md	engine/rhi/handle_pool.h:38
-rhi::HandlePool::kMaxCapacity	variable	rhi	rhi-handlepool-kmaxcapacity	rhi.md	engine/rhi/handle_pool.h:40
-rhi::HandlePool::HandlePool()	function	rhi	rhi-handlepool-handlepool	rhi.md	engine/rhi/handle_pool.h:43
-rhi::HandlePool::HandlePool(const HandlePool&)	function	rhi	rhi-handlepool-handlepool-const-handlepool-amp	rhi.md	engine/rhi/handle_pool.h:45
-rhi::HandlePool::operator=(const HandlePool&)	function	rhi	rhi-handlepool-operator-eq-const-handlepool-amp	rhi.md	engine/rhi/handle_pool.h:46
-rhi::HandlePool::~HandlePool()	function	rhi	rhi-handlepool-tilde-handlepool	rhi.md	engine/rhi/handle_pool.h:49
-rhi::HandlePool::SeedGeneration(u32)	function	rhi	rhi-handlepool-seedgeneration-u32	rhi.md	engine/rhi/handle_pool.h:67
-rhi::HandlePool::Allocate(T&&)	function	rhi	rhi-handlepool-allocate-t-amp-amp	rhi.md	engine/rhi/handle_pool.h:78
-rhi::HandlePool::Get(HandleType)	function	rhi	rhi-handlepool-get-handletype	rhi.md	engine/rhi/handle_pool.h:97
-rhi::HandlePool::Get(HandleType) const	function	rhi	rhi-handlepool-get-handletype-const	rhi.md	engine/rhi/handle_pool.h:107
-rhi::HandlePool::Free(HandleType)	function	rhi	rhi-handlepool-free-handletype	rhi.md	engine/rhi/handle_pool.h:119
-rhi::HandlePool::Retire(HandleType,u64)	function	rhi	rhi-handlepool-retire-handletype-u64	rhi.md	engine/rhi/handle_pool.h:138
-rhi::HandlePool::CollectRetired(u64,F&&)	function	rhi	rhi-handlepool-collectretired-u64-f-amp-amp	rhi.md	engine/rhi/handle_pool.h:168
-rhi::HandlePool::CollectAllRetired(F&&)	function	rhi	rhi-handlepool-collectallretired-f-amp-amp	rhi.md	engine/rhi/handle_pool.h:197
-rhi::HandlePool::ForEachLive(F&&)	function	rhi	rhi-handlepool-foreachlive-f-amp-amp	rhi.md	engine/rhi/handle_pool.h:205
-rhi::HandlePool::ForEachLive(F&&) const	function	rhi	rhi-handlepool-foreachlive-f-amp-amp-const	rhi.md	engine/rhi/handle_pool.h:220
-rhi::HandlePool::LiveCount() const	function	rhi	rhi-handlepool-livecount-const	rhi.md	engine/rhi/handle_pool.h:233
-rhi::HandlePool::RetiredCount() const	function	rhi	rhi-handlepool-retiredcount-const	rhi.md	engine/rhi/handle_pool.h:235
-rhi::HandlePool::Capacity() const	function	rhi	rhi-handlepool-capacity-const	rhi.md	engine/rhi/handle_pool.h:237
+rhi::HandlePool	class	rhi	rhi-handlepool	rhi.md	engine/rhi/handle_pool.h:28
+rhi::HandlePool::HandleType	alias	rhi	rhi-handlepool-handletype	rhi.md	engine/rhi/handle_pool.h:32
+rhi::HandlePool::kChunkSlots	variable	rhi	rhi-handlepool-kchunkslots	rhi.md	engine/rhi/handle_pool.h:35
+rhi::HandlePool::kMaxChunks	variable	rhi	rhi-handlepool-kmaxchunks	rhi.md	engine/rhi/handle_pool.h:37
+rhi::HandlePool::kMaxCapacity	variable	rhi	rhi-handlepool-kmaxcapacity	rhi.md	engine/rhi/handle_pool.h:39
+rhi::HandlePool::HandlePool()	function	rhi	rhi-handlepool-handlepool	rhi.md	engine/rhi/handle_pool.h:42
+rhi::HandlePool::HandlePool(const HandlePool&)	function	rhi	rhi-handlepool-handlepool-const-handlepool-amp	rhi.md	engine/rhi/handle_pool.h:44
+rhi::HandlePool::operator=(const HandlePool&)	function	rhi	rhi-handlepool-operator-eq-const-handlepool-amp	rhi.md	engine/rhi/handle_pool.h:45
+rhi::HandlePool::~HandlePool()	function	rhi	rhi-handlepool-tilde-handlepool	rhi.md	engine/rhi/handle_pool.h:48
+rhi::HandlePool::SeedGeneration(u32)	function	rhi	rhi-handlepool-seedgeneration-u32	rhi.md	engine/rhi/handle_pool.h:66
+rhi::HandlePool::Allocate(T&&)	function	rhi	rhi-handlepool-allocate-t-amp-amp	rhi.md	engine/rhi/handle_pool.h:77
+rhi::HandlePool::Get(HandleType)	function	rhi	rhi-handlepool-get-handletype	rhi.md	engine/rhi/handle_pool.h:96
+rhi::HandlePool::Get(HandleType) const	function	rhi	rhi-handlepool-get-handletype-const	rhi.md	engine/rhi/handle_pool.h:106
+rhi::HandlePool::Free(HandleType)	function	rhi	rhi-handlepool-free-handletype	rhi.md	engine/rhi/handle_pool.h:118
+rhi::HandlePool::Retire(HandleType,u64)	function	rhi	rhi-handlepool-retire-handletype-u64	rhi.md	engine/rhi/handle_pool.h:137
+rhi::HandlePool::CollectRetired(u64,F&&)	function	rhi	rhi-handlepool-collectretired-u64-f-amp-amp	rhi.md	engine/rhi/handle_pool.h:167
+rhi::HandlePool::CollectAllRetired(F&&)	function	rhi	rhi-handlepool-collectallretired-f-amp-amp	rhi.md	engine/rhi/handle_pool.h:196
+rhi::HandlePool::ForEachLive(F&&)	function	rhi	rhi-handlepool-foreachlive-f-amp-amp	rhi.md	engine/rhi/handle_pool.h:204
+rhi::HandlePool::ForEachLive(F&&) const	function	rhi	rhi-handlepool-foreachlive-f-amp-amp-const	rhi.md	engine/rhi/handle_pool.h:219
+rhi::HandlePool::LiveCount() const	function	rhi	rhi-handlepool-livecount-const	rhi.md	engine/rhi/handle_pool.h:232
+rhi::HandlePool::RetiredCount() const	function	rhi	rhi-handlepool-retiredcount-const	rhi.md	engine/rhi/handle_pool.h:234
+rhi::HandlePool::Capacity() const	function	rhi	rhi-handlepool-capacity-const	rhi.md	engine/rhi/handle_pool.h:236
 rhi::kMaxBindingsPerLayout	variable	rhi	rhi-kmaxbindingsperlayout	rhi.md	engine/rhi/limits.h:13
 rhi::kMaxBindingArraySize	variable	rhi	rhi-kmaxbindingarraysize	rhi.md	engine/rhi/limits.h:15
 rhi::kMaxBindGroups	variable	rhi	rhi-kmaxbindgroups	rhi.md	engine/rhi/limits.h:17

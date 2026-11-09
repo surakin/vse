@@ -1,7 +1,6 @@
 #include "settings/layers.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
 
 #include "log/assert.h"
 
@@ -21,7 +20,7 @@ void Report(Vector<LayerProblem>* problems, StringView layer, StringView key, co
     LayerProblem p;
     CopyTo(p.layer, sizeof(p.layer), layer);
     CopyTo(p.key, sizeof(p.key), key);
-    std::snprintf(p.message, sizeof(p.message), format, a, b);
+    FormatTo(p.message, sizeof(p.message), format, a, b);
     problems->Push(p);
 }
 
@@ -109,7 +108,7 @@ bool LayerStack::ResolveFrom(const Registry& registry, SettingId id, usize below
         const ValueError converted = FromStored(desc, stored, &value);
         if (converted != ValueError::None && converted != ValueError::Clamped) {
             char what[200];
-            std::snprintf(what, sizeof(what), "bad value (%s) in %s; the next lower layer is used", ValueErrorName(converted), origin[0] != '\0' ? origin : "the layer");
+            FormatTo(what, sizeof(what), "bad value (%s) in %s; the next lower layer is used", ValueErrorName(converted), origin[0] != '\0' ? origin : "the layer");
             Report(problems, layer.name.View(), key, "%s", what);
             continue;
         }

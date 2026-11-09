@@ -1,16 +1,16 @@
 // The Linux backend of io/file_system.h. This is one of the places allowed to call the POSIX file API directly.
 #include "io/file_system.h"
 
-#include <cerrno>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "os/last_error.h"
+#include "os/console.h"
+#include "cstr/cstr.h"
 
 #include <dirent.h>
 #include <fcntl.h>
 #include <pwd.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::io {
 
@@ -18,7 +18,7 @@ namespace {
 
 using NativePath = char[kMaxPathBytes + 1];
 
-Status Errno() { return Status::FromOs(errno); }
+Status Errno() { return Status::FromOs(os::LastError()); }
 
 Status ToNative(const Path& path, NativePath& buffer) {
     return path.ToNative(buffer, sizeof(NativePath)) ? Status::Success() : Status::Of(Error::TooLong);
@@ -73,20 +73,20 @@ Status RemoveTree(int parent_fd, const char* name, int depth) {
         }
         Status first;
         for (;;) {
-            errno = 0;
+            os::SetLastError(0);
             const struct dirent* entry = ::readdir(dir);
             if (entry == nullptr) {
-                if (errno != 0 && first.Ok()) first = Errno();
+                if (os::LastError() != 0 && first.Ok()) first = Errno();
                 break;
             }
-            if (std::strcmp(entry->d_name, ".") == 0 || std::strcmp(entry->d_name, "..") == 0) continue;
+            if (CStrCompare(entry->d_name, ".") == 0 || CStrCompare(entry->d_name, "..") == 0) continue;
             const Status s = RemoveTree(fd, entry->d_name, depth + 1);
             if (s.Failed() && first.Ok()) first = s;
         }
         ::closedir(dir); // closes fd
         if (first.Failed()) return first;
         if (::unlinkat(parent_fd, name, AT_REMOVEDIR) == 0) return Status::Success();
-        if (errno != ENOTEMPTY) return Errno();
+        if (os::LastError() != ENOTEMPTY) return Errno();
     }
     return Status::Of(Error::NotEmpty);
 }
@@ -98,7 +98,7 @@ bool ValidAppName(StringView name) {
 
 // An absolute environment value, or empty.
 StringView AbsoluteEnv(const char* name) {
-    const char* v = std::getenv(name);
+    const char* v = os::GetEnvironment(name);
     return (v != nullptr && v[0] == '/') ? StringView(v) : StringView();
 }
 
@@ -138,8 +138,8 @@ Status MakeTemp(const Path& directory, StringView prefix, bool as_directory, Pat
     // `<prefix>.XXXXXX`
     char leaf[kMaxPathBytes];
     if (prefix.Length() + 8 > sizeof(leaf)) return Status::Of(Error::TooLong);
-    std::memcpy(leaf, prefix.Data(), prefix.Length());
-    std::memcpy(leaf + prefix.Length(), ".XXXXXX", 8);
+    MemCopy(leaf, prefix.Data(), prefix.Length());
+    MemCopy(leaf + prefix.Length(), ".XXXXXX", 8);
     if (!directory.TryJoin(Path(StringView(leaf, prefix.Length() + 7), PathStyle::Posix), &tmpl)) return Status::Of(Error::TooLong);
     NativePath p;
     if (Status s = ToNative(tmpl, p); s.Failed()) return s;
@@ -246,7 +246,7 @@ Status Copy(const Path& from, const Path& to, bool overwrite) {
     for (;;) {
         const ssize_t n = ::read(in, buffer, sizeof(buffer));
         if (n < 0) {
-            if (errno == EINTR) continue;
+            if (os::LastError() == EINTR) continue;
             result = Errno();
             break;
         }
@@ -254,7 +254,7 @@ Status Copy(const Path& from, const Path& to, bool overwrite) {
         for (ssize_t done = 0; done < n;) {
             const ssize_t w = ::write(out, buffer + done, static_cast<usize>(n - done));
             if (w < 0) {
-                if (errno == EINTR) continue;
+                if (os::LastError() == EINTR) continue;
                 result = Errno();
                 break;
             }
@@ -334,7 +334,7 @@ Status CreatePrivateDirectory(const Path& path) {
     if (!parent.IsEmpty() && parent != path) {
         if (Status s = CreateDirectoriesWithMode(parent, 0700); s.Failed()) return s;
     }
-    if (::mkdir(p, 0700) != 0 && errno != EEXIST) return Errno();
+    if (::mkdir(p, 0700) != 0 && os::LastError() != EEXIST) return Errno();
     // Open the final component without following a link and check the descriptor, so nothing can be swapped in between.
     const int fd = ::open(p, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
     if (fd < 0) {
@@ -428,17 +428,17 @@ Status CrashDumpDirectory(Path* out) {
     // A crash handler must not guess a location: without $XDG_STATE_HOME or $HOME there is no directory (no password-database fallback).
     if (AbsoluteEnv("XDG_STATE_HOME").Empty() && AbsoluteEnv("HOME").Empty()) return Status::Of(Error::NotFound);
     char app[256];
-    const char* configured = std::getenv("ENGINE_APP_NAME");
+    const char* configured = os::GetEnvironment("ENGINE_APP_NAME");
     if (configured != nullptr && configured[0] != '\0') {
-        const usize length = std::strlen(configured);
+        const usize length = CStrLength(configured);
         if (length > 200) return Status::Of(Error::Invalid);
-        std::memcpy(app, configured, length + 1);
+        MemCopy(app, configured, length + 1);
     } else {
         Path exe(PathStyle::Posix);
         if (Status s = ExecutablePath(&exe); s.Failed()) return s;
         const StringView name = exe.FileName();
         if (name.Empty() || name.Length() > 200) return Status::Of(Error::NotFound);
-        std::memcpy(app, name.Data(), name.Length());
+        MemCopy(app, name.Data(), name.Length());
         app[name.Length()] = '\0';
     }
     Path state(PathStyle::Posix);

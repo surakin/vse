@@ -1,8 +1,7 @@
 #pragma once
 // Shared by the G-buffer and lighting real-device tests: a device-side rig (materials, frame resources, transient pool,
 // G-buffer templates), the layer readback of one G-buffer frame, and small helpers (half floats, projection of a point).
-#include <cmath>
-#include <cstring>
+#include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -19,6 +18,7 @@
 #include "renderer/render_scene.h"
 #include "renderer/transient_pool.h"
 #include "rhi/rhi.h"
+#include "cstr/mem_ops.h"
 
 namespace gbuffer_rig {
 
@@ -35,13 +35,13 @@ inline f32 HalfToFloat(u16 h) {
     const u32 exp = (h >> 10) & 0x1fu;
     const u32 man = h & 0x3ffu;
     f32 v;
-    if (exp == 0) v = std::ldexp(static_cast<f32>(man), -24);
+    if (exp == 0) v = LdExp(static_cast<f32>(man), -24);
     else if (exp == 31) v = man ? NAN : INFINITY;
-    else v = std::ldexp(static_cast<f32>(man | 0x400u), static_cast<int>(exp) - 25);
+    else v = LdExp(static_cast<f32>(man | 0x400u), static_cast<int>(exp) - 25);
     return sign ? -v : v;
 }
 
-inline f32 LinearToSrgb(f32 c) { return c <= 0.0031308f ? c * 12.92f : 1.055f * std::pow(c, 1.0f / 2.4f) - 0.055f; }
+inline f32 LinearToSrgb(f32 c) { return c <= 0.0031308f ? c * 12.92f : 1.055f * Pow(c, 1.0f / 2.4f) - 0.055f; }
 
 // The four layers read back to the host.
 struct Layers {
@@ -224,12 +224,12 @@ inline Camera TopDownCamera() {
 // A validated device on `backend` (gpu_test::CreateTestDevice: skips when there is none).
 inline rhi::DevicePtr MakeDevice(rhi::Backend backend) { return gpu_test::CreateTestDevice(backend); }
 
-inline bool Near(int got, int want, int tol) { return std::abs(got - want) <= tol; }
+inline bool Near(int got, int want, int tol) { return Abs(got - want) <= tol; }
 
 // Whether two read-back layers are byte for byte the same.
 template <typename T>
 inline bool Same(const Vector<T>& a, const Vector<T>& b) {
-    return a.Size() == b.Size() && (a.Size() == 0 || std::memcmp(a.Data(), b.Data(), a.Size() * sizeof(T)) == 0);
+    return a.Size() == b.Size() && (a.Size() == 0 || MemCompare(a.Data(), b.Data(), a.Size() * sizeof(T)) == 0);
 }
 
 

@@ -1,8 +1,8 @@
 // Phase 5 Day 71: shader reflection. Every committed shaders/*.refl.inc must parse, say what the shader's source says,
 // round-trip byte for byte, build the layouts the hand-written code used to build, and reject every kind of damage
 // without reading outside its input (this binary also runs under ASan).
-#include <cstdlib>
-#include <cstring>
+#include "os/console.h"
+#include "cstr/cstr.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -28,6 +28,7 @@
 #include "textured.vert.refl.inc"
 #include "triangle.frag.refl.inc"
 #include "triangle.vert.refl.inc"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -71,10 +72,10 @@ std::vector<u8> Copy(const u8* data, usize size) { return std::vector<u8>(data, 
 TEST_CASE("Every committed reflection blob parses and round-trips", "[renderer][reflection]") {
     for (const Blob& blob : kAllBlobs) {
         ShaderReflection r = Load(blob);
-        CHECK(std::strcmp(r.entry, "main") == 0);
+        CHECK(CStrCompare(r.entry, "main") == 0);
         std::vector<u8> again(blob.size);
         CHECK(SerializeShaderReflection(r, again.data(), again.size()) == blob.size);
-        CHECK(std::memcmp(again.data(), blob.data, blob.size) == 0);
+        CHECK(MemCompare(again.data(), blob.data, blob.size) == 0);
         CHECK(SerializeShaderReflection(r, nullptr, 0) == blob.size);
     }
 }
@@ -90,13 +91,13 @@ TEST_CASE("Reflection says what the shader sources say", "[renderer][reflection]
         CHECK(r.bindings[0].stages == ShaderStage::Vertex);
         REQUIRE(r.bindings[0].block != kNoBlock);
         const ReflectedBlock& block = r.blocks[r.bindings[0].block];
-        CHECK(std::strcmp(block.name, "Params") == 0);
+        CHECK(CStrCompare(block.name, "Params") == 0);
         CHECK(block.size == 176);
         REQUIRE(block.member_count == 5);
         const char* names[5] = {"mvp", "normal_matrix", "to_light", "light_color", "ambient"};
         const u32 offsets[5] = {0, 64, 128, 144, 160};
         for (u32 i = 0; i < 5; ++i) {
-            CHECK(std::strcmp(block.members[i].name, names[i]) == 0);
+            CHECK(CStrCompare(block.members[i].name, names[i]) == 0);
             CHECK(block.members[i].offset == offsets[i]);
             CHECK(block.members[i].scalar == ScalarType::Float32);
         }
@@ -129,10 +130,10 @@ TEST_CASE("Reflection says what the shader sources say", "[renderer][reflection]
         REQUIRE(r.binding_count == 3);
         CHECK(r.has_push_constants);
         const ReflectedBlock& push = r.blocks[r.push_constant_block];
-        CHECK(std::strcmp(push.name, "Push") == 0);
+        CHECK(CStrCompare(push.name, "Push") == 0);
         CHECK(push.size == 16);
         REQUIRE(push.member_count == 1);
-        CHECK(std::strcmp(push.members[0].name, "bias") == 0);
+        CHECK(CStrCompare(push.members[0].name, "bias") == 0);
     }
     SECTION("compute shaders: local size, storage buffers, storage image") {
         ShaderReflection fill = LOAD(kFillComp);
@@ -178,10 +179,10 @@ TEST_CASE("A structured buffer's reflected stride is the C++ element's size, and
         for (u32 i = 0; i < r->binding_count; ++i) {
             const ReflectedBinding& b = r->bindings[i];
             INFO(b.name);
-            if (std::strcmp(b.name, "objects") == 0) {
+            if (CStrCompare(b.name, "objects") == 0) {
                 CHECK(b.stride == sizeof(ObjectData));
                 ++found;
-            } else if (std::strcmp(b.name, "lights") == 0) {
+            } else if (CStrCompare(b.name, "lights") == 0) {
                 CHECK(b.stride == sizeof(LightData));
                 ++found;
             } else {
@@ -205,10 +206,10 @@ TEST_CASE("A C++ struct whose size disagrees with the reflected block fails the 
     ReflectionError error;
     CHECK(CheckBlockSize(lit, "Params", 176, &error));
     CHECK_FALSE(CheckBlockSize(lit, "Params", 160, &error));
-    CHECK(std::strstr(error.message, "176") != nullptr);
-    CHECK(std::strstr(error.message, "160") != nullptr);
+    CHECK(CStrFind(error.message, "176") != nullptr);
+    CHECK(CStrFind(error.message, "160") != nullptr);
     CHECK_FALSE(CheckBlockSize(lit, "Missing", 176, &error));
-    CHECK(std::strstr(error.message, "Missing") != nullptr);
+    CHECK(CStrFind(error.message, "Missing") != nullptr);
     // The constants the generated include files carry agree with the parsed blocks.
     CHECK(shaders::kLitVertParamsSize == lit.blocks[0].size);
     CHECK(shaders::kLitVertParamsAmbientOffset == lit.blocks[0].members[4].offset);
@@ -253,13 +254,13 @@ TEST_CASE("Layouts are built from reflection", "[renderer][reflection]") {
         other.bindings[0].type = BindingType::StorageBuffer;
         other.bindings[0].block = kNoBlock;
         other.bindings[0].stride = 16; // a storage buffer has one (Phase 13 Day 166)
-        std::memcpy(other.bindings[0].name, "gizmo", 6);
+        MemCopy(other.bindings[0].name, "gizmo", 6);
         const ShaderReflection* pair[2] = {&vs, &other};
         BindGroupLayoutData layout;
         CHECK_FALSE(BuildBindGroupLayout(pair, 2, 0, &layout, &error));
-        CHECK(std::strstr(error.message, "params") != nullptr);
-        CHECK(std::strstr(error.message, "gizmo") != nullptr);
-        CHECK(std::strstr(error.message, "binding 0") != nullptr);
+        CHECK(CStrFind(error.message, "params") != nullptr);
+        CHECK(CStrFind(error.message, "gizmo") != nullptr);
+        CHECK(CStrFind(error.message, "binding 0") != nullptr);
     }
     SECTION("storage buffers of one binding with different strides conflict, and the message names both") {
         // Review finding (Day 166): the conflict message left the stride out.
@@ -274,8 +275,8 @@ TEST_CASE("Layouts are built from reflection", "[renderer][reflection]") {
         const ShaderReflection* pair[2] = {&b, &a};
         BindGroupLayoutData layout;
         CHECK_FALSE(BuildBindGroupLayout(pair, 2, 0, &layout, &error));
-        CHECK(std::strstr(error.message, "stride 32") != nullptr);
-        CHECK(std::strstr(error.message, "stride 16") != nullptr);
+        CHECK(CStrFind(error.message, "stride 32") != nullptr);
+        CHECK(CStrFind(error.message, "stride 16") != nullptr);
     }
     SECTION("conflicting array sizes are reported too") {
         ShaderReflection other = fs;
@@ -283,7 +284,7 @@ TEST_CASE("Layouts are built from reflection", "[renderer][reflection]") {
         const ShaderReflection* pair[2] = {&fs, &other};
         BindGroupLayoutData layout;
         CHECK_FALSE(BuildBindGroupLayout(pair, 2, 0, &layout, &error));
-        CHECK(std::strstr(error.message, "count 4") != nullptr);
+        CHECK(CStrFind(error.message, "count 4") != nullptr);
     }
     SECTION("no shaders is an error") {
         BindGroupLayoutData layout;
@@ -310,7 +311,7 @@ TEST_CASE("The cube vertex layout is built from the vertex shader", "[renderer][
 
     ShaderReflection fragment = LOAD(kLitFrag);
     CHECK_FALSE(BuildVertexLayout(fragment, 0, &layout, &error));
-    CHECK(std::strstr(error.message, "fragment") != nullptr);
+    CHECK(CStrFind(error.message, "fragment") != nullptr);
 
     ShaderReflection tri = LOAD(kTriangleVert);
     REQUIRE(BuildVertexLayout(tri, 1, &layout, &error));
@@ -341,7 +342,7 @@ TEST_CASE("Built layouts are accepted by a real device", "[renderer][reflection]
     info.pipeline_cache = false;
     rhi::DevicePtr device = rhi::CreateDevice(info);
     if (device == nullptr) {
-        const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
+        const char* required = os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
         if (required != nullptr && required[0] == '1') {
             FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no Vulkan device could be created");
         }
@@ -362,7 +363,7 @@ TEST_CASE("Built layouts are accepted by a real device", "[renderer][reflection]
 
 TEST_CASE("Malformed blobs are rejected with a message", "[renderer][reflection]") {
     const Blob& lit = kAllBlobs[11];
-    REQUIRE(std::strcmp(lit.name, "lit.vert") == 0);
+    REQUIRE(CStrCompare(lit.name, "lit.vert") == 0);
     ShaderReflection scratch;
 
     SECTION("bad magic") {
@@ -370,42 +371,42 @@ TEST_CASE("Malformed blobs are rejected with a message", "[renderer][reflection]
         bytes[0] ^= 0xff;
         const char* problem = ParseShaderReflection(bytes.data(), bytes.size(), &scratch);
         REQUIRE(problem != nullptr);
-        CHECK(std::strstr(problem, "magic") != nullptr);
+        CHECK(CStrFind(problem, "magic") != nullptr);
     }
     SECTION("bad version") {
         std::vector<u8> bytes = Copy(lit.data, lit.size);
         bytes[4] = static_cast<u8>(kReflectionVersion + 1);
         const char* problem = ParseShaderReflection(bytes.data(), bytes.size(), &scratch);
         REQUIRE(problem != nullptr);
-        CHECK(std::strstr(problem, "version") != nullptr);
+        CHECK(CStrFind(problem, "version") != nullptr);
     }
     SECTION("unknown stage") {
         std::vector<u8> bytes = Copy(lit.data, lit.size);
         bytes[8] = 0x40;
         const char* problem = ParseShaderReflection(bytes.data(), bytes.size(), &scratch);
         REQUIRE(problem != nullptr);
-        CHECK(std::strstr(problem, "stage") != nullptr);
+        CHECK(CStrFind(problem, "stage") != nullptr);
     }
     SECTION("unknown binding type") {
         const Blob& bt = kAllBlobs[3];
-        REQUIRE(std::strcmp(bt.name, "bindings_test.frag") == 0);
+        REQUIRE(CStrCompare(bt.name, "bindings_test.frag") == 0);
         ShaderReflection r = Load(bt);
         // magic, version, stage (12 bytes), entry (1 + len), local size (12), binding count (4), then the first binding:
         // name (1 + len), set (4), binding (4), type.
-        const usize type_offset = 12 + 1 + std::strlen(r.entry) + 12 + 4 + 1 + std::strlen(r.bindings[0].name) + 4 + 4;
+        const usize type_offset = 12 + 1 + CStrLength(r.entry) + 12 + 4 + 1 + CStrLength(r.bindings[0].name) + 4 + 4;
         std::vector<u8> bytes = Copy(bt.data, bt.size);
         REQUIRE(bytes[type_offset] == static_cast<u8>(r.bindings[0].type));
         bytes[type_offset] = static_cast<u8>(BindingType::Count);
         const char* problem = ParseShaderReflection(bytes.data(), bytes.size(), &scratch);
         REQUIRE(problem != nullptr);
-        CHECK(std::strstr(problem, "binding type") != nullptr);
+        CHECK(CStrFind(problem, "binding type") != nullptr);
     }
     SECTION("trailing bytes") {
         std::vector<u8> bytes = Copy(lit.data, lit.size);
         bytes.push_back(0);
         const char* problem = ParseShaderReflection(bytes.data(), bytes.size(), &scratch);
         REQUIRE(problem != nullptr);
-        CHECK(std::strstr(problem, "trailing") != nullptr);
+        CHECK(CStrFind(problem, "trailing") != nullptr);
     }
     SECTION("empty and null input") {
         CHECK(ParseShaderReflection(nullptr, 0, &scratch) != nullptr);
@@ -470,7 +471,7 @@ TEST_CASE("Serialization refuses an invalid or oversized reflection", "[renderer
     CHECK(ValidateShaderReflection(r) != nullptr);
     r = LOAD(kLitVert);
     r.entry[kMaxReflectionName - 1] = 'x';
-    std::memset(r.entry, 'x', kMaxReflectionName);
+    MemSet(r.entry, 'x', kMaxReflectionName);
     CHECK(ValidateShaderReflection(r) != nullptr);
 }
 
@@ -485,7 +486,7 @@ TEST_CASE("Names must be non-empty identifiers", "[renderer][reflection]") {
 
 TEST_CASE("Duplicate block and member names are rejected", "[renderer][reflection]") {
     ShaderReflection r = LOAD(kLitVert);
-    std::memcpy(r.blocks[0].members[1].name, r.blocks[0].members[0].name, kMaxReflectionName);
+    MemCopy(r.blocks[0].members[1].name, r.blocks[0].members[0].name, kMaxReflectionName);
     CHECK(ValidateShaderReflection(r) != nullptr);
     CHECK(SerializeShaderReflection(r, nullptr, 0) == 0);
 

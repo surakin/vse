@@ -1,6 +1,6 @@
 // Phase 5 Day 80: the CPU twins of the lighting shaders, the light buffer, and the passes' construction on the null device.
 // The real-device tests (tests/rhi/vulkan_lighting_test.cpp) compare the shaders against these functions.
-#include <cmath>
+#include "lang/scalar.h"
 #include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
@@ -16,7 +16,7 @@ using namespace engine_placeholder::renderer;
 
 namespace {
 
-bool Near(f32 a, f32 b, f32 tol = 1e-5f) { return std::fabs(a - b) <= tol; }
+bool Near(f32 a, f32 b, f32 tol = 1e-5f) { return Abs(a - b) <= tol; }
 
 } // namespace
 
@@ -36,7 +36,7 @@ TEST_CASE("A dielectric facing the light gets its albedo times the radiance plus
     CHECK(away.x == 0.0f);
     CHECK(away.y == 0.0f);
     // Grazing light follows N.L: the same surface with the light at 60 degrees gets about half.
-    const Vec3 sixty = ShadeLight(s, up, Vec3(std::sin(1.0471976f), std::cos(1.0471976f), 0), Vec3(2, 2, 2));
+    const Vec3 sixty = ShadeLight(s, up, Vec3(Sin(1.0471976f), Cos(1.0471976f), 0), Vec3(2, 2, 2));
     CHECK(sixty.x > 0.45f);
     CHECK(sixty.x < 0.56f);
 }
@@ -110,9 +110,9 @@ TEST_CASE("World positions rebuilt from depth match the geometry in both pixel a
         const Vec3 got = ReconstructWorldPosition(ix, iy, depth, w, h, fd.inverse_view_projection);
         // At this distance a pixel spans about 0.16 world units; the error is bounded by half a pixel plus the depth slope.
         INFO("truth " << truth.x << " " << truth.y << " " << truth.z << " got " << got.x << " " << got.y << " " << got.z);
-        CHECK(std::fabs(got.x - truth.x) < 0.25f);
-        CHECK(std::fabs(got.y - truth.y) < 0.35f);
-        CHECK(std::fabs(got.z - truth.z) < 0.25f);
+        CHECK(Abs(got.x - truth.x) < 0.25f);
+        CHECK(Abs(got.y - truth.y) < 0.35f);
+        CHECK(Abs(got.z - truth.z) < 0.25f);
     }
     // A mirrored row would put the point on the other side of the view axis: the top row looks toward -Z for this camera.
     const Vec3 top = ReconstructWorldPosition(48, 0, 0.9f, w, h, fd.inverse_view_projection);
@@ -213,9 +213,9 @@ TEST_CASE("Opposite view and light vectors do not produce NaN", "[renderer][ligh
     s.roughness = 0.3f;
     // V = -L: a surface lit from behind the viewer, with the normal facing away from the viewer; V + L is the zero vector.
     const Vec3 c = ShadeLight(s, Vec3(0, -1, 0), Vec3(0, 1, 0), Vec3(1, 1, 1));
-    CHECK(std::isfinite(c.x));
-    CHECK(std::isfinite(c.y));
-    CHECK(std::isfinite(c.z));
+    CHECK(IsFinite(c.x));
+    CHECK(IsFinite(c.y));
+    CHECK(IsFinite(c.z));
 }
 
 TEST_CASE("Point light attenuation is 1 at the light, falls off, and is exactly zero at and beyond the radius", "[renderer][lighting][point]") {
@@ -247,11 +247,11 @@ TEST_CASE("The light volume sphere contains the light's sphere and is wound coun
         const Vec3 b = LightVolumeVertex(t * 3 + 1);
         const Vec3 c = LightVolumeVertex(t * 3 + 2);
         const Vec3 n = (b - a).Cross(c - a);
-        const f32 len = std::sqrt(n.Dot(n));
+        const f32 len = Sqrt(n.Dot(n));
         if (len < 1e-7f) continue; // the poles have degenerate triangles
         // Counter-clockwise from outside: the normal points away from the center.
         CHECK(n.Dot(a) > 0.0f);
-        min_face_distance = std::fmin(min_face_distance, n.Dot(a) / len);
+        min_face_distance = FMin(min_face_distance, n.Dot(a) / len);
     }
     // Every face plane is at least one radius from the center, so the unit sphere is inside the polyhedron.
     CHECK(min_face_distance >= 1.0f - 1e-4f);
@@ -266,7 +266,7 @@ TEST_CASE("The screen rectangle of a light bounds its projected sphere", "[rende
     CHECK(r.x > 0);
     CHECK(r.y > 0);
     CHECK(r.x + static_cast<i32>(r.width) < 64);
-    CHECK(std::abs((r.x + static_cast<i32>(r.width) / 2) - 32) <= 1);
+    CHECK(Abs((r.x + static_cast<i32>(r.width) / 2) - 32) <= 1);
     // The sphere's extreme points project inside the rectangle.
     for (const Vec3& p : {Vec3(2, 0, -10), Vec3(-2, 0, -10), Vec3(0, 2, -10), Vec3(0, -2, -10)}) {
         const Vec4 c = view.view_projection * Vec4(p.x, p.y, p.z, 1.0f);
@@ -331,7 +331,7 @@ TEST_CASE("Equal distances are ordered by slot, and the order does not depend on
         for (int i = 0; i < 4; ++i) {
             const f32 angle = static_cast<f32>(i) * 0.05f;
             // All at distance 10 from the origin; kept in front of the camera.
-            scene.AddLight(PointAt(Vec3(10.0f * std::sin(angle), 0, -10.0f * std::cos(angle)), 1.0f, static_cast<f32>(i + 1)));
+            scene.AddLight(PointAt(Vec3(10.0f * Sin(angle), 0, -10.0f * Cos(angle)), 1.0f, static_cast<f32>(i + 1)));
         }
         device->BeginFrame();
         frame.BeginFrame(0);

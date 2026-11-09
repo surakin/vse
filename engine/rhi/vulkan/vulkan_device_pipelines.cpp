@@ -1,8 +1,5 @@
 // Bind group layouts, graphics pipelines and the on-disk pipeline cache of the Vulkan device.
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 
 #include "io/file.h"
 #include "io/file_system.h"
@@ -15,6 +12,7 @@
 #include "rhi/vulkan/vulkan_device.h"
 #include "sync/atomic.h"
 #include "sync/mutex.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
@@ -41,7 +39,7 @@ void VulkanDevice::InitializePipelineCache(const DeviceCreateInfo& info) {
     PipelineCacheIdentity identity;
     identity.vendor_id = properties_.vendorID;
     identity.device_id = properties_.deviceID;
-    std::memcpy(identity.uuid, properties_.pipelineCacheUUID, 16);
+    MemCopy(identity.uuid, properties_.pipelineCacheUUID, 16);
 
     Vector<byte> blob;
     if (info.pipeline_cache) {

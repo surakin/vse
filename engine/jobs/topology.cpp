@@ -1,9 +1,10 @@
 #include "jobs/topology.h"
 
-#include <cstdlib>
+#include "os/console.h"
 
 #include "jobs/detail/thread_platform.h"
 #include "jobs/jobs_log.h"
+#include "cstr/number.h"
 
 namespace engine_placeholder::jobs {
 
@@ -26,7 +27,7 @@ usize ParseParticipantOverride(const char* text, usize fallback, bool* warned) {
         return fallback;
     }
     char* end = nullptr;
-    long long v = std::strtoll(text, &end, 10);
+    long long v = CStrToLongLong(text, &end, 10);
     bool valid = end != text && *end == '\0' && v >= 1;
     if (!valid) {
         if (warned != nullptr) {
@@ -46,7 +47,7 @@ usize ParseParticipantOverride(const char* text, usize fallback, bool* warned) {
 usize DefaultParticipantCount() {
     u32 cpus[kMaxParticipants];
     usize allowed = GetAllowedCpus(cpus, kMaxParticipants);
-    const char* env = std::getenv("ENGINE_JOB_THREADS");
+    const char* env = os::GetEnvironment("ENGINE_JOB_THREADS");
     bool warned = false;
     usize n = ParseParticipantOverride(env, allowed, &warned);
     if (warned) {

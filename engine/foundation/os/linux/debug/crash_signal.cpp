@@ -6,11 +6,11 @@
 #include "os/os.h"
 
 #include "sync/atomic.h"
-#include <csignal>
-#include <cstring>
+#include "os/signal.h"
 #include <sys/mman.h>
 #include <unistd.h>
 #include "build_defs.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::debug {
 
@@ -66,7 +66,7 @@ void Chain(int signal_number, siginfo_t* info, void* user_context) {
         // SIG_DFL or SIG_IGN before us: put the default back so that returning (the faulting instruction runs again) ends
         // the process. (An ignored hardware fault would otherwise run the same instruction forever.)
         struct sigaction dfl;
-        std::memset(&dfl, 0, sizeof(dfl));
+        MemSet(&dfl, 0, sizeof(dfl));
         dfl.sa_handler = SIG_DFL;
         ::sigaction(signal_number, &dfl, nullptr);
         if (signal_number == SIGABRT || signal_number == SIGTRAP || !from_hardware) {
@@ -87,7 +87,7 @@ void Recorder(int signal_number, siginfo_t* info, void* user_context) {
             static const char kText[] = "double fault: the crash library's handler faulted; giving up\n";
             os::Write(2, kText, sizeof(kText) - 1);
             struct sigaction dfl;
-            std::memset(&dfl, 0, sizeof(dfl));
+            MemSet(&dfl, 0, sizeof(dfl));
             dfl.sa_handler = SIG_DFL;
             ::sigaction(signal_number, &dfl, nullptr);
             return;
@@ -141,7 +141,7 @@ struct AlternateStack {
             stack_t current;
             if (::sigaltstack(nullptr, &current) == 0 && current.ss_sp == memory) { // still ours, not replaced by someone else
                 stack_t disable;
-                std::memset(&disable, 0, sizeof(disable));
+                MemSet(&disable, 0, sizeof(disable));
                 disable.ss_flags = SS_DISABLE;
                 ::sigaltstack(&disable, nullptr);
             }
@@ -163,7 +163,7 @@ bool InstallCrashEventHook(CrashEventFn fn) {
             continue;
         }
         struct sigaction action;
-        std::memset(&action, 0, sizeof(action));
+        MemSet(&action, 0, sizeof(action));
         action.sa_sigaction = &Recorder;
         // SA_NODEFER: a fault inside the recorder must reach it again (to print "double fault") instead of killing the process
         // outright, which is what a fault of a blocked signal does.
@@ -196,7 +196,7 @@ void RemoveCrashEventHook() {
         // Otherwise a handler was installed over ours; it stays, and ours (still in its chain) passes through. What it would call
         // next is the library's handler, which the caller is about to close: make that the default action instead.
         if (g_installed_signal[signal_number]) {
-            std::memset(&g_previous[signal_number], 0, sizeof(g_previous[signal_number]));
+            MemSet(&g_previous[signal_number], 0, sizeof(g_previous[signal_number]));
         }
     }
 }
@@ -223,7 +223,7 @@ bool RegisterThreadForCrashHandling(const char* name) {
         return false;
     }
     stack_t alternate;
-    std::memset(&alternate, 0, sizeof(alternate));
+    MemSet(&alternate, 0, sizeof(alternate));
     alternate.ss_sp = memory;
     alternate.ss_size = kAlternateStackBytes;
     if (::sigaltstack(&alternate, nullptr) != 0) {

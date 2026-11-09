@@ -15,6 +15,7 @@
 #include "rhi/null/null_device.h"
 #include "ui/draw_list.h"
 #include "ui/draw_list_canvas.h"
+#include "lang/scalar.h"
 
 using namespace engine_placeholder;
 
@@ -90,7 +91,7 @@ void VtRunFrame(rhi::Device* device, renderer::TransientPool* pool, renderer::Ui
 
 bool VtIs(const gpu_test::Image& image, u32 x, u32 y, int r, int g, int b, int tolerance = 2) {
     const u8* p = image.Pixel(x, y);
-    return std::abs(p[0] - r) <= tolerance && std::abs(p[1] - g) <= tolerance && std::abs(p[2] - b) <= tolerance;
+    return Abs(p[0] - r) <= tolerance && Abs(p[1] - g) <= tolerance && Abs(p[2] - b) <= tolerance;
 }
 
 ui::Rect VtRect(f32 x, f32 y, f32 w, f32 h) {
@@ -320,7 +321,7 @@ TEST_CASE("viewport target: the lit cube drawn into it shows in the panel and re
                 for (u32 x = 0; x < rig.target.width; ++x) {
                     const u8* a = reference.Pixel(x, y);
                     const u8* b = shown.Pixel(x + 16, y + 16);
-                    if (std::abs(a[0] - b[0]) > 3 || std::abs(a[1] - b[1]) > 3 || std::abs(a[2] - b[2]) > 3) ++differing;
+                    if (Abs(a[0] - b[0]) > 3 || Abs(a[1] - b[1]) > 3 || Abs(a[2] - b[2]) > 3) ++differing;
                     if (a[0] + a[1] + a[2] > 30) ++lit;
                 }
             }

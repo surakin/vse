@@ -2,7 +2,7 @@
 
 #include "log/assert.h"
 
-#include <cstdlib>
+#include "os/console.h"
 #include <sys/mman.h>
 #include <unistd.h>
 #include "build_defs.h"
@@ -61,7 +61,7 @@ void InjectFault(FaultKind kind) {
         *g_fault_null_pointer = 1;
         break;
     case FaultKind::Abort:
-        std::abort();
+        os::Abort();
     case FaultKind::IllegalInstruction:
         // An undefined instruction, not __builtin_trap(): on AArch64 that is `brk`, which raises SIGTRAP, not SIGILL.
 #if ENGINE_ARCH_X64 || ENGINE_ARCH_X86
@@ -87,7 +87,7 @@ void InjectFault(FaultKind kind) {
         break;
     }
     // The fault did not end the process (it should have): make sure this function never returns.
-    std::abort();
+    os::Abort();
 }
 
 } // namespace engine_placeholder::debug

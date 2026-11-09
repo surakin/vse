@@ -29,8 +29,7 @@
 // dev-time tool (PLAN.md assumptions #18 and #19): the generated files are committed, so building the engine never
 // needs it, slangc or the JSON library.
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include "containers/span.h"
 #include "io/file.h"
@@ -41,6 +40,7 @@
 #include "renderer/shader_reflection.h"
 #include "types.h"
 #include "debug/failure_hooks.h"
+#include "os/console.h"
 
 using namespace engine_placeholder;
 using shader_mint::Appendf;
@@ -51,14 +51,13 @@ using shader_mint::Text;
 namespace {
 
 int Usage() {
-    std::fputs("usage: shader_mint --name IDENT --source FILE --compiler TEXT --spv FILE --reflection FILE "
+    engine_placeholder::os::PrintErrorText("usage: shader_mint --name IDENT --source FILE --compiler TEXT --spv FILE --reflection FILE "
                "--spv-out FILE --refl-out FILE\n"
                "                   [--dxil FILE --dxil-reflection FILE --dxil-out FILE --dxil-compiler TEXT]\n"
                "       shader_mint --permute --name IDENT --source LABEL --source-path FILE --manifest FILE --compiler TEXT\n"
                "                   --slangc PATH [--slang-arg ARG]... [--spirv-val PATH] --work-dir DIR\n"
                "                   --spv-out FILE --refl-out FILE --perm-out FILE\n"
-               "                   [--dxil-arg ARG... --dxil-out FILE --dxil-compiler TEXT]\n",
-               stderr);
+               "                   [--dxil-arg ARG... --dxil-out FILE --dxil-compiler TEXT]\n");
     return 2;
 }
 
@@ -155,15 +154,15 @@ bool MintModule(const char* spv_path, const char* json_path, const char* source,
     Vector<byte> spv_bytes;
     Vector<byte> json_bytes;
     if (!ReadAll(spv_path, &spv_bytes)) {
-        std::fprintf(stderr, "shader_mint: cannot read %s\n", spv_path);
+        os::PrintError("shader_mint: cannot read %s\n", spv_path);
         return false;
     }
     if (!ReadAll(json_path, &json_bytes)) {
-        std::fprintf(stderr, "shader_mint: cannot read %s\n", json_path);
+        os::PrintError("shader_mint: cannot read %s\n", json_path);
         return false;
     }
     if (spv_bytes.Empty() || spv_bytes.Size() % 4 != 0) {
-        std::fprintf(stderr, "shader_mint: %s is not a whole number of 32-bit words (%zu bytes)\n", spv_path, spv_bytes.Size());
+        os::PrintError("shader_mint: %s is not a whole number of 32-bit words (%zu bytes)\n", spv_path, spv_bytes.Size());
         return false;
     }
     const usize words = spv_bytes.Size() / 4;
@@ -174,29 +173,29 @@ bool MintModule(const char* spv_path, const char* json_path, const char* source,
                         (static_cast<u32>(raw[i * 4 + 2]) << 16) | (static_cast<u32>(raw[i * 4 + 3]) << 24);
     }
     if (out->words[0] != 0x07230203u) {
-        std::fprintf(stderr, "shader_mint: %s does not start with the SPIR-V magic number\n", spv_path);
+        os::PrintError("shader_mint: %s does not start with the SPIR-V magic number\n", spv_path);
         return false;
     }
 
     // Reflection: JSON -> struct, checked against the SPIR-V, serialized, and parsed back as a final self-check.
     Text error = MakeText();
     if (!shader_mint::ReflectionFromJson(ToStringView(json_bytes), &out->reflection, &error)) {
-        std::fprintf(stderr, "shader_mint: %s: %s\n", source, error.CStr());
+        os::PrintError("shader_mint: %s: %s\n", source, error.CStr());
         return false;
     }
     if (!shader_mint::CrossCheckSpirv(out->reflection, out->words.Data(), words, &error)) {
-        std::fprintf(stderr, "shader_mint: %s: %s\n", source, error.CStr());
+        os::PrintError("shader_mint: %s: %s\n", source, error.CStr());
         return false;
     }
     const usize blob_size = renderer::SerializeShaderReflection(out->reflection, nullptr, 0);
     out->blob.Resize(blob_size);
     if (blob_size == 0 || renderer::SerializeShaderReflection(out->reflection, out->blob.Data(), blob_size) != blob_size) {
-        std::fprintf(stderr, "shader_mint: %s: the reflection could not be serialized\n", source);
+        os::PrintError("shader_mint: %s: the reflection could not be serialized\n", source);
         return false;
     }
     renderer::ShaderReflection round_trip;
     if (const char* problem = renderer::ParseShaderReflection(out->blob.Data(), blob_size, &round_trip)) {
-        std::fprintf(stderr, "shader_mint: %s: the serialized reflection does not parse back: %s\n", source, problem);
+        os::PrintError("shader_mint: %s: the serialized reflection does not parse back: %s\n", source, problem);
         return false;
     }
     return true;
@@ -221,18 +220,18 @@ bool ReadDxil(const char* dxil_path, const char* json_path, const renderer::Shad
     Vector<byte> bytes;
     Vector<byte> json_bytes;
     if (!ReadAll(dxil_path, &bytes) || !ReadAll(json_path, &json_bytes)) {
-        std::fprintf(stderr, "shader_mint: cannot read %s or %s\n", dxil_path, json_path);
+        os::PrintError("shader_mint: cannot read %s or %s\n", dxil_path, json_path);
         return false;
     }
     // A DXBC container: "DXBC", a 16-byte digest the validator writes (all zero when unsigned), a version, the total size.
     if (bytes.Size() < 32 || bytes[0] != 'D' || bytes[1] != 'X' || bytes[2] != 'B' || bytes[3] != 'C') {
-        std::fprintf(stderr, "shader_mint: %s: %s is not a DXIL container\n", source, dxil_path);
+        os::PrintError("shader_mint: %s: %s is not a DXIL container\n", source, dxil_path);
         return false;
     }
     const u32 recorded = static_cast<u32>(bytes[24]) | (static_cast<u32>(bytes[25]) << 8) | (static_cast<u32>(bytes[26]) << 16) |
                          (static_cast<u32>(bytes[27]) << 24);
     if (recorded != bytes.Size()) {
-        std::fprintf(stderr, "shader_mint: %s: %s records %u bytes but has %zu\n", source, dxil_path, recorded, bytes.Size());
+        os::PrintError("shader_mint: %s: %s records %u bytes but has %zu\n", source, dxil_path, recorded, bytes.Size());
         return false;
     }
     bool signed_container = false;
@@ -240,12 +239,12 @@ bool ReadDxil(const char* dxil_path, const char* json_path, const renderer::Shad
         signed_container = signed_container || bytes[i] != 0;
     }
     if (!signed_container) {
-        std::fprintf(stderr, "shader_mint: %s: the DXIL is not signed by the validator (slangc needs dxil.dll beside dxcompiler.dll)\n", source);
+        os::PrintError("shader_mint: %s: the DXIL is not signed by the validator (slangc needs dxil.dll beside dxcompiler.dll)\n", source);
         return false;
     }
     Text error = MakeText();
     if (!shader_mint::CheckD3D12Registers(reflection, ToStringView(json_bytes), &error)) {
-        std::fprintf(stderr, "shader_mint: %s: %s\n", source, error.CStr());
+        os::PrintError("shader_mint: %s: %s\n", source, error.CStr());
         return false;
     }
     out->Resize(bytes.Size());
@@ -307,7 +306,7 @@ bool ReflText(StringView base, const char* source, const char* compiler, const M
     auto emit = [&](const Text& constant, u32 value) {
         for (usize i = 0; i < constants.Size(); ++i) {
             if (constants[i].View() == constant.View()) {
-                std::fprintf(stderr, "shader_mint: %s: the generated constant name %s would be defined twice; rename a block or member\n",
+                os::PrintError("shader_mint: %s: the generated constant name %s would be defined twice; rename a block or member\n",
                              source, constant.CStr());
                 return false;
             }
@@ -358,45 +357,45 @@ int main(int argc, char** argv) {
     bool permute = false;
     for (int i = 1; i < argc; ++i) {
         const bool has_value = i + 1 < argc;
-        if (std::strcmp(argv[i], "--permute") == 0) {
+        if (CStrCompare(argv[i], "--permute") == 0) {
             permute = true;
-        } else if (std::strcmp(argv[i], "--name") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--name") == 0 && has_value) {
             name = argv[++i];
-        } else if (std::strcmp(argv[i], "--source") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--source") == 0 && has_value) {
             source = argv[++i];
-        } else if (std::strcmp(argv[i], "--source-path") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--source-path") == 0 && has_value) {
             source_path = argv[++i];
-        } else if (std::strcmp(argv[i], "--compiler") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--compiler") == 0 && has_value) {
             compiler = argv[++i];
-        } else if (std::strcmp(argv[i], "--spv") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--spv") == 0 && has_value) {
             spv_path = argv[++i];
-        } else if (std::strcmp(argv[i], "--reflection") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--reflection") == 0 && has_value) {
             json_path = argv[++i];
-        } else if (std::strcmp(argv[i], "--spv-out") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--spv-out") == 0 && has_value) {
             spv_out = argv[++i];
-        } else if (std::strcmp(argv[i], "--refl-out") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--refl-out") == 0 && has_value) {
             refl_out = argv[++i];
-        } else if (std::strcmp(argv[i], "--perm-out") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--perm-out") == 0 && has_value) {
             perm_out = argv[++i];
-        } else if (std::strcmp(argv[i], "--manifest") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--manifest") == 0 && has_value) {
             manifest_path = argv[++i];
-        } else if (std::strcmp(argv[i], "--slangc") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--slangc") == 0 && has_value) {
             slangc = argv[++i];
-        } else if (std::strcmp(argv[i], "--slang-arg") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--slang-arg") == 0 && has_value) {
             slang_args.Push(MakeText(StringView(argv[++i])));
-        } else if (std::strcmp(argv[i], "--spirv-val") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--spirv-val") == 0 && has_value) {
             spirv_val = argv[++i];
-        } else if (std::strcmp(argv[i], "--work-dir") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--work-dir") == 0 && has_value) {
             work_dir = argv[++i];
-        } else if (std::strcmp(argv[i], "--dxil") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--dxil") == 0 && has_value) {
             dxil_path = argv[++i];
-        } else if (std::strcmp(argv[i], "--dxil-reflection") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--dxil-reflection") == 0 && has_value) {
             dxil_json_path = argv[++i];
-        } else if (std::strcmp(argv[i], "--dxil-out") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--dxil-out") == 0 && has_value) {
             dxil_out = argv[++i];
-        } else if (std::strcmp(argv[i], "--dxil-compiler") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--dxil-compiler") == 0 && has_value) {
             dxil_compiler = argv[++i];
-        } else if (std::strcmp(argv[i], "--dxil-arg") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--dxil-arg") == 0 && has_value) {
             dxil_args.Push(MakeText(StringView(argv[++i])));
         } else {
             return Usage();
@@ -437,15 +436,15 @@ int main(int argc, char** argv) {
         Vector<byte> manifest_bytes;
         Text error = MakeText();
         if (!ReadAll(source_path, &source_bytes) || !ReadAll(manifest_path, &manifest_bytes)) {
-            std::fprintf(stderr, "shader_mint: cannot read %s or %s\n", source_path, manifest_path);
+            os::PrintError("shader_mint: cannot read %s or %s\n", source_path, manifest_path);
             return 1;
         }
         if (!shader_mint::ParseOptionDeclaration(ToStringView(source_bytes), &options, &error)) {
-            std::fprintf(stderr, "shader_mint: %s: %s\n", source, error.CStr());
+            os::PrintError("shader_mint: %s: %s\n", source, error.CStr());
             return 1;
         }
         if (!shader_mint::ParseManifest(ToStringView(manifest_bytes), options, &keys, &error)) {
-            std::fprintf(stderr, "shader_mint: %s: %s\n", manifest_path, error.CStr());
+            os::PrintError("shader_mint: %s: %s\n", manifest_path, error.CStr());
             return 1;
         }
         for (usize k = 0; k < keys.Size(); ++k) {
@@ -471,7 +470,7 @@ int main(int argc, char** argv) {
             command.Push(MakeText("-reflection-json"));
             command.Push(MakeText(json_file.View()));
             if (!RunProcess(command)) {
-                std::fprintf(stderr, "shader_mint: %s: slangc failed for key %s\n", source, shader_mint::DescribeKey(options, key).CStr());
+                os::PrintError("shader_mint: %s: slangc failed for key %s\n", source, shader_mint::DescribeKey(options, key).CStr());
                 return 1;
             }
             if (spirv_val != nullptr) {
@@ -481,13 +480,13 @@ int main(int argc, char** argv) {
                 validate.Push(MakeText("vulkan1.3"));
                 validate.Push(MakeText(spv_file.View()));
                 if (!RunProcess(validate)) {
-                    std::fprintf(stderr, "shader_mint: %s: spirv-val rejected key %s\n", source, shader_mint::DescribeKey(options, key).CStr());
+                    os::PrintError("shader_mint: %s: spirv-val rejected key %s\n", source, shader_mint::DescribeKey(options, key).CStr());
                     return 1;
                 }
             }
             Minted m;
             if (!MintModule(spv_file.CStr(), json_file.CStr(), source, &m)) {
-                std::fprintf(stderr, "shader_mint: (while minting key %s)\n", shader_mint::DescribeKey(options, key).CStr());
+                os::PrintError("shader_mint: (while minting key %s)\n", shader_mint::DescribeKey(options, key).CStr());
                 return 1;
             }
             if (want_dxil) {
@@ -509,11 +508,11 @@ int main(int argc, char** argv) {
                 dxil_command.Push(MakeText("-reflection-json"));
                 dxil_command.Push(MakeText(dxil_json.View()));
                 if (!RunProcess(dxil_command)) {
-                    std::fprintf(stderr, "shader_mint: %s: slangc failed to build DXIL for key %s\n", source, shader_mint::DescribeKey(options, key).CStr());
+                    os::PrintError("shader_mint: %s: slangc failed to build DXIL for key %s\n", source, shader_mint::DescribeKey(options, key).CStr());
                     return 1;
                 }
                 if (!ReadDxil(dxil_file.CStr(), dxil_json.CStr(), m.reflection, source, &m.dxil)) {
-                    std::fprintf(stderr, "shader_mint: (while minting the DXIL of key %s)\n", shader_mint::DescribeKey(options, key).CStr());
+                    os::PrintError("shader_mint: (while minting the DXIL of key %s)\n", shader_mint::DescribeKey(options, key).CStr());
                     return 1;
                 }
             }
@@ -539,7 +538,7 @@ int main(int argc, char** argv) {
         const Text dxil_text = want_dxil ? DxilText(base.View(), shader_file.View(), source, dxil_compiler, module_words, module_dxil) : MakeText();
         const OutputFile files[] = {{spv_out, &spv_text}, {refl_out, &refl_text}, {dxil_out, &dxil_text}};
         if (!WriteFiles(files, want_dxil ? 3 : 2)) {
-            std::fprintf(stderr, "shader_mint: failed writing %s, %s or the DXIL\n", spv_out, refl_out);
+            os::PrintError("shader_mint: failed writing %s, %s or the DXIL\n", spv_out, refl_out);
             return 1;
         }
         return 0;
@@ -573,7 +572,7 @@ int main(int argc, char** argv) {
     }
     const OutputFile files[] = {{spv_out, &spv_text}, {refl_out, &refl_text}, {perm_out, &perm_text}, {dxil_out, &dxil_text}};
     if (!WriteFiles(files, want_dxil ? 4 : 3)) {
-        std::fprintf(stderr, "shader_mint: failed writing %s, %s, %s or the DXIL\n", spv_out, refl_out, perm_out);
+        os::PrintError("shader_mint: failed writing %s, %s, %s or the DXIL\n", spv_out, refl_out, perm_out);
         return 1;
     }
     return 0;

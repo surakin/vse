@@ -1,4 +1,4 @@
-#include <cstring>
+#include "cstr/cstr.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -220,7 +220,7 @@ TEST_CASE("Vulkan creates shader modules from the committed triangle shaders", "
     REQUIRE(device->LookupShader(v, &shader_info));
     CHECK(shader_info.module != nullptr);
     CHECK(shader_info.stage == ShaderStage::Vertex);
-    CHECK(std::strcmp(shader_info.entry, "main") == 0);
+    CHECK(CStrCompare(shader_info.entry, "main") == 0);
 
     // Garbage and a wrong stage are refused before the driver sees them, so the validation layer stays quiet.
     fx.ExpectErrors(0);

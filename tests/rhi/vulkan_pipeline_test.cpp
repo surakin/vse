@@ -1,6 +1,5 @@
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 #include <vector>
 #include "build_defs.h"
 
@@ -22,6 +21,7 @@
 #include "rhi/vulkan/vulkan_device.h"
 #include "triangle.frag.spv.inc"
 #include "triangle.vert.spv.inc"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -35,7 +35,7 @@ struct VulkanPipelineTestQuietLog {
     ~VulkanPipelineTestQuietLog() { LogRhi.SetEnabled(saved); }
 };
 
-bool Contains(const char* text, const char* needle) { return text != nullptr && std::strstr(text, needle) != nullptr; }
+bool Contains(const char* text, const char* needle) { return text != nullptr && CStrFind(text, needle) != nullptr; }
 
 PipelineCacheIdentity Identity() {
     PipelineCacheIdentity id;
@@ -129,18 +129,18 @@ TEST_CASE("CheckPipelineCacheHeader accepts only a blob for this device and driv
 TEST_CASE("The pipeline cache path and directory follow the documented order", "[rhi][vulkan][pipeline][policy]") {
     char path[256];
     REQUIRE(BuildPipelineCachePath("/tmp/c", Identity(), path, sizeof(path)));
-    CHECK(std::strcmp(path, "/tmp/c/pipeline_cache_10de_2504_a0a1a2a3a4a5a6a7a8a9aaabacadaeaf.bin") == 0);
+    CHECK(CStrCompare(path, "/tmp/c/pipeline_cache_10de_2504_a0a1a2a3a4a5a6a7a8a9aaabacadaeaf.bin") == 0);
     REQUIRE(BuildPipelineCachePath("/tmp/c/", Identity(), path, sizeof(path)));
-    CHECK(std::strstr(path, "/tmp/c/pipeline_cache_") == path); // no doubled slash
+    CHECK(CStrFind(path, "/tmp/c/pipeline_cache_") == path); // no doubled slash
     char tiny[16];
     CHECK_FALSE(BuildPipelineCachePath("/tmp/c", Identity(), tiny, sizeof(tiny)));
     CHECK(tiny[0] == '\0');
 
     char dir[128];
     CHECK(ChoosePipelineCacheDir("/explicit", "/env", dir, sizeof(dir)) == PipelineCacheDirChoice::Chosen);
-    CHECK(std::strcmp(dir, "/explicit") == 0);
+    CHECK(CStrCompare(dir, "/explicit") == 0);
     CHECK(ChoosePipelineCacheDir(nullptr, "/env", dir, sizeof(dir)) == PipelineCacheDirChoice::Chosen);
-    CHECK(std::strcmp(dir, "/env") == 0);
+    CHECK(CStrCompare(dir, "/env") == 0);
     CHECK(ChoosePipelineCacheDir("", "", dir, sizeof(dir)) == PipelineCacheDirChoice::NotConfigured);
     CHECK(dir[0] == '\0'); // neither set: the caller falls back to the user's cache directory
     CHECK(ChoosePipelineCacheDir(nullptr, nullptr, dir, sizeof(dir)) == PipelineCacheDirChoice::NotConfigured);
@@ -149,11 +149,11 @@ TEST_CASE("The pipeline cache path and directory follow the documented order", "
 
     char app[32];
     REQUIRE(SanitizePipelineCacheAppName("my/app", app, sizeof(app)));
-    CHECK(std::strcmp(app, "my_app") == 0);
+    CHECK(CStrCompare(app, "my_app") == 0);
     REQUIRE(SanitizePipelineCacheAppName(nullptr, app, sizeof(app)));
-    CHECK(std::strcmp(app, "engine") == 0);
+    CHECK(CStrCompare(app, "engine") == 0);
     REQUIRE(SanitizePipelineCacheAppName("", app, sizeof(app)));
-    CHECK(std::strcmp(app, "engine") == 0);
+    CHECK(CStrCompare(app, "engine") == 0);
     CHECK_FALSE(SanitizePipelineCacheAppName("an application name that is much too long for the buffer", app, 8));
     CHECK(app[0] == '\0');
 }
@@ -438,7 +438,7 @@ TEST_CASE("The triangle pipeline draws a triangle into an offscreen target", "[r
     REQUIRE(vb.IsValid());
     void* mapped = t.device->MapBuffer(vb);
     REQUIRE(mapped != nullptr);
-    std::memcpy(mapped, vertices, sizeof(vertices));
+    MemCopy(mapped, vertices, sizeof(vertices));
     t.device->UnmapBuffer(vb);
 
     const PipelineHandle pipeline = t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm));
@@ -522,7 +522,7 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
     io_test::TempDir temp_dir;
     char dir[512];
     REQUIRE(temp_dir.Native().Length() < sizeof(dir));
-    std::snprintf(dir, sizeof(dir), "%s", temp_dir.Native().CStr()); // the TempDir removes everything, whatever a section left behind
+    FormatTo(dir, sizeof(dir), "%s", temp_dir.Native().CStr()); // the TempDir removes everything, whatever a section left behind
     char file[512] = {};
 
     {
@@ -531,9 +531,9 @@ TEST_CASE("The pipeline cache is written at shutdown, reused, and ignored when d
         CHECK(s.enabled);
         CHECK(s.loaded_bytes == 0); // nothing there yet
         CHECK_FALSE(s.rejected);
-        std::strncpy(file, t.device->PipelineCachePath(), sizeof(file) - 1);
+        CStrCopyN(file, t.device->PipelineCachePath(), sizeof(file) - 1);
         REQUIRE(file[0] != '\0');
-        CHECK(std::strstr(file, dir) == file);
+        CHECK(CStrFind(file, dir) == file);
         const PipelineHandle p = t.device->CreateGraphicsPipeline(t.Desc(Format::RGBA8_UNorm));
         CHECK(p.IsValid());
         t.device->DestroyPipeline(p);

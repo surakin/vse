@@ -3,10 +3,10 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "log/log.h"
-#include <cstring>
 #include "os/os.h"
 #include "string/string.h"
 #include "types.h"
+#include "cstr/mem_ops.h"
 
 using engine_placeholder::Log;
 using engine_placeholder::LogChannel;
@@ -34,7 +34,7 @@ long CapturingWriteSink(int fd, const void* buf, usize len) {
     if (g_capture_len + copy_len > sizeof(g_capture_buffer)) {
         copy_len = sizeof(g_capture_buffer) - g_capture_len;
     }
-    memcpy(g_capture_buffer + g_capture_len, buf, copy_len);
+    engine_placeholder::MemCopy(g_capture_buffer + g_capture_len, buf, copy_len);
     g_capture_len += copy_len;
     return static_cast<long>(len);
 }

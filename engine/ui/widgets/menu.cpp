@@ -1,6 +1,6 @@
 #include "ui/widgets/menu.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "log/assert.h"
 #include "text/cursor.h"
@@ -180,15 +180,15 @@ void MenuView::Rebuild() {
             row.label.SetText(StringView(label.Data(), label.Size()));
             f32 line = 0;
             if (row.label.EnsureForStyle(surface, style, 0)) {
-                max_label = std::fmax(max_label, row.label.Width());
+                max_label = FMax(max_label, row.label.Width());
                 line = row.label.Height();
             }
             if (item.accelerator != 0) {
                 const String<HeapAllocator> chord = ChordText(surface->AcceleratorChord(item.accelerator));
                 row.accel.SetText(chord.View());
                 if (row.accel.EnsureForStyle(surface, style, 0)) {
-                    max_accel = std::fmax(max_accel, row.accel.Width());
-                    line = std::fmax(line, row.accel.Height());
+                    max_accel = FMax(max_accel, row.accel.Width());
+                    line = FMax(line, row.accel.Height());
                 }
             }
             row.height = line + pad_y * 2;

@@ -1,0 +1,25 @@
+// Stand-in for the standard header (see cstddef): declarations of the wide C string functions cstr/cstr.h uses.
+#pragma once
+#include <stddef.h>
+extern "C" {
+size_t wcslen(const wchar_t*);
+int wcscmp(const wchar_t*, const wchar_t*);
+int wcsncmp(const wchar_t*, const wchar_t*, size_t);
+const wchar_t* wcsstr(const wchar_t*, const wchar_t*);
+const wchar_t* wcsrchr(const wchar_t*, wchar_t);
+wchar_t* wcscat(wchar_t*, const wchar_t*);
+wchar_t* wmemcpy(wchar_t*, const wchar_t*, size_t);
+wchar_t* wmemmove(wchar_t*, const wchar_t*, size_t);
+int swprintf(wchar_t*, size_t, const wchar_t*, ...);
+}
+namespace std {
+using ::wcscat;
+using ::wcscmp;
+using ::wcslen;
+using ::wcsncmp;
+using ::wcsrchr;
+using ::wcsstr;
+using ::wmemcpy;
+using ::wmemmove;
+using ::swprintf;
+}

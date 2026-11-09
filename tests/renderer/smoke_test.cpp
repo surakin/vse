@@ -1,10 +1,11 @@
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include <catch2/catch_test_macros.hpp>
 
 #include "os/os.h"
 #include "renderer/renderer_info.h"
 #include "renderer/renderer_log.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 
@@ -15,7 +16,7 @@ usize g_capture_len = 0;
 
 long CapturingWriteSink(int, const void* buf, usize len) {
     usize copy = g_capture_len + len > sizeof(g_capture) ? sizeof(g_capture) - g_capture_len : len;
-    std::memcpy(g_capture + g_capture_len, buf, copy);
+    MemCopy(g_capture + g_capture_len, buf, copy);
     g_capture_len += copy;
     return static_cast<long>(len);
 }
@@ -41,7 +42,7 @@ struct ChannelGuard {
 
 TEST_CASE("The renderer identifies itself", "[renderer][smoke]") {
     CHECK(renderer::RendererName() != nullptr);
-    CHECK(std::strlen(renderer::RendererName()) > 0);
+    CHECK(CStrLength(renderer::RendererName()) > 0);
 }
 
 TEST_CASE("RenderLog formats on the render channel and honors the verbosity filter", "[renderer][smoke]") {
@@ -62,7 +63,7 @@ TEST_CASE("RenderLog truncates an over-long message instead of overflowing", "[r
     LogRender.SetVerbosity(LogVerbosity::Warn);
 
     char big[2000];
-    std::memset(big, 'x', sizeof(big) - 1);
+    MemSet(big, 'x', sizeof(big) - 1);
     big[sizeof(big) - 1] = 0;
     RenderLog(LogVerbosity::Warn, "%s", big);
 

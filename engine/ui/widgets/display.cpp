@@ -1,6 +1,6 @@
 #include "ui/widgets/display.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "ui/surface.h"
 #include "ui/widgets/label.h"
@@ -38,8 +38,8 @@ void Image::Draw(Canvas& canvas) {
     if (!(b.w > 0) || !(b.h > 0)) return;
     Rect dest = b;
     if (fit_ != ImageFit::Stretch) {
-        const f32 fit_scale = std::fmin(b.w / natural_.w, b.h / natural_.h);
-        const f32 fill_scale = std::fmax(b.w / natural_.w, b.h / natural_.h);
+        const f32 fit_scale = FMin(b.w / natural_.w, b.h / natural_.h);
+        const f32 fill_scale = FMax(b.w / natural_.w, b.h / natural_.h);
         const f32 s = fit_ == ImageFit::Contain ? fit_scale : (fit_ == ImageFit::Cover ? fill_scale : 1.0f);
         dest.w = natural_.w * s;
         dest.h = natural_.h * s;
@@ -47,10 +47,10 @@ void Image::Draw(Canvas& canvas) {
         dest.y = b.y + (b.h - dest.h) / 2;
     }
     // The part of the picture inside the bounds, as texture coordinates.
-    const f32 left = std::fmax(dest.x, b.x);
-    const f32 top = std::fmax(dest.y, b.y);
-    const f32 right = std::fmin(dest.Right(), b.Right());
-    const f32 bottom = std::fmin(dest.Bottom(), b.Bottom());
+    const f32 left = FMax(dest.x, b.x);
+    const f32 top = FMax(dest.y, b.y);
+    const f32 right = FMin(dest.Right(), b.Right());
+    const f32 bottom = FMin(dest.Bottom(), b.Bottom());
     if (!(right > left) || !(bottom > top)) return;
     Rect uv;
     uv.x = (left - dest.x) / dest.w;
@@ -106,7 +106,7 @@ void ProgressBar::Draw(Canvas& canvas) {
     canvas.PushClip(inner);
     Rect bar = inner;
     if (indeterminate_) {
-        const f32 phase = std::fmod(static_cast<f32>(surface->Time()) / kProgressPeriod, 1.0f);
+        const f32 phase = Fmod(static_cast<f32>(surface->Time()) / kProgressPeriod, 1.0f);
         bar.w = inner.w * kSegment;
         bar.x = inner.x + (inner.w + bar.w) * phase - bar.w;
     } else {
@@ -133,7 +133,7 @@ Size Separator::Measure(const Constraints&) {
 void Separator::Draw(Canvas& canvas) {
     Surface* surface = GetSurface();
     const f32 scale = surface->Scale();
-    const f32 thickness = std::fmax(surface->Themes().Metric(MetricId::BorderWidth, scale), 1.0f) / scale;
+    const f32 thickness = FMax(surface->Themes().Metric(MetricId::BorderWidth, scale), 1.0f) / scale;
     Rect line = Bounds();
     if (vertical_) {
         line.x += (line.w - thickness) / 2;

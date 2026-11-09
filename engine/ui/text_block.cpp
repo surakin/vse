@@ -1,6 +1,6 @@
 #include "ui/text_block.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "ui/surface.h"
 
@@ -65,9 +65,9 @@ bool TextBlock::EnsureLayout(f32 wrap_width) {
     }
     text::Font* face = surface->GetFontProvider()->Resolve(font.family);
     if (face == nullptr) return false;
-    f32 size_px = std::floor(font.size * scale + 0.5f);
+    f32 size_px = Floor(font.size * scale + 0.5f);
     if (size_px < 1) size_px = 1;
-    f32 wrap_px = (wrap_ && wrap_width < kUnbounded) ? std::floor(wrap_width * scale) : 0.0f;
+    f32 wrap_px = (wrap_ && wrap_width < kUnbounded) ? Floor(wrap_width * scale) : 0.0f;
     if (wrap_ && wrap_width < kUnbounded && wrap_px < 1) wrap_px = 1; // 0 would mean "no wrapping" to the text layout
     return run_.Ensure(face, font.family, size_px, wrap_px, scale);
 }

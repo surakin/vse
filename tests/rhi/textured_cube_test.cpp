@@ -1,6 +1,4 @@
-#include <cmath>
-#include <cstdio>
-#include <cstring>
+#include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -11,6 +9,7 @@
 #include "test_text.h"
 #include "rhi/null/null_device.h"
 #include "textures.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -156,7 +155,7 @@ TEST_CASE("The textured cube renders from a fixed angle and matches its golden i
         // face tint are applied by hand: sRGB(230) = 0.791, sRGB(60) = 0.045.
         auto decode = [](int c) {
             const f32 v = static_cast<f32>(c) / 255.0f;
-            return v <= 0.04045f ? v / 12.92f : std::pow((v + 0.055f) / 1.055f, 2.4f);
+            return v <= 0.04045f ? v / 12.92f : Pow((v + 0.055f) / 1.055f, 2.4f);
         };
         auto expect = [&](f32 u, f32 v, const demo::Rgba& c) {
             u32 x = 0, y = 0;
@@ -165,7 +164,7 @@ TEST_CASE("The textured cube renders from a fixed angle and matches its golden i
             INFO("texture at " << u << "," << v << " -> pixel " << x << "," << y);
             const f32 want[3] = {decode(c.r) * 0.5f, decode(c.g) * 0.5f, decode(c.b) * 1.0f};
             for (int k = 0; k < 3; ++k) {
-                CHECK(std::abs(p[k] - static_cast<int>(want[k] * 255.0f + 0.5f)) <= 8);
+                CHECK(Abs(p[k] - static_cast<int>(want[k] * 255.0f + 0.5f)) <= 8);
             }
         };
         expect(1.0f / 16.0f, 1.0f / 16.0f, {230, 60, 60, 255});
@@ -203,7 +202,7 @@ TEST_CASE("Procedural textures have the documented content", "[rhi][textured][im
 TEST_CASE("sRGB mips are averaged as linear light and one-level images need no mip pass", "[rhi][textured][image]") {
     // Black and white average to 50% linear light, which is 188 once sRGB-encoded (not 128).
     const demo::RtexImage srgb = demo::BuildRtex(demo::Checkerboard(4, 1, {0, 0, 0, 255}, {255, 255, 255, 255}), Format::RGBA8_SRGB);
-    CHECK(std::abs(static_cast<int>(srgb.data[4 * 4 * 4]) - 188) <= 1);
+    CHECK(Abs(static_cast<int>(srgb.data[4 * 4 * 4]) - 188) <= 1);
     CHECK(srgb.data[4 * 4 * 4 + 3] == 255); // alpha is averaged as it is
     const demo::RtexImage linear = demo::BuildRtex(demo::Checkerboard(4, 1, {0, 0, 0, 255}, {255, 255, 255, 255}), Format::RGBA8_UNorm);
     CHECK(linear.data[4 * 4 * 4] == 128);
@@ -234,7 +233,7 @@ TEST_CASE("An rtex file round-trips and damaged ones are refused", "[rhi][textur
     CHECK(back.mip_count == 5);
     CHECK(back.format == Format::RGBA8_UNorm);
     REQUIRE(back.data.Size() == built.data.Size());
-    CHECK(std::memcmp(back.data.Data(), built.data.Data(), back.data.Size()) == 0);
+    CHECK(MemCompare(back.data.Data(), built.data.Data(), back.data.Size()) == 0);
 
     auto write = [](const char* p, const u8* bytes, usize n) {
         REQUIRE(io::WriteFile(io::Path(StringView(p)), bytes, n).Ok());
@@ -248,7 +247,7 @@ TEST_CASE("An rtex file round-trips and damaged ones are refused", "[rhi][textur
     Vector<u8> bad;
     auto reset_bad = [&]() {
         bad.Resize(good.Size());
-        std::memcpy(bad.Data(), good.Data(), good.Size());
+        MemCopy(bad.Data(), good.Data(), good.Size());
     };
     reset_bad();
     bad[0] = 'X';

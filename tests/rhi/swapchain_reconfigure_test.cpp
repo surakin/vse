@@ -7,7 +7,7 @@
 #include "display_session.h"
 
 #include "gpu_fixture.h"
-#include <cstdlib>
+#include "os/console.h"
 
 #include "log/assert.h"
 #include "platform/input.h"
@@ -364,7 +364,7 @@ void RunWindowReconfigure(os::WindowBackend backend) {
 
 TEST_CASE("A Wayland swapchain reconfigures and its surface is replaced", "[rhi][vulkan][gpu][window][wayland][swapchain]") {
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (std::getenv("WAYLAND_DISPLAY") == nullptr) {
+    if (os::GetEnvironment("WAYLAND_DISPLAY") == nullptr) {
         SKIP("no Wayland session");
     }
     RunWindowReconfigure(os::WindowBackend::Wayland);
@@ -372,7 +372,7 @@ TEST_CASE("A Wayland swapchain reconfigures and its surface is replaced", "[rhi]
 
 TEST_CASE("An X11 swapchain reconfigures and its surface is replaced", "[rhi][vulkan][gpu][window][x11][swapchain]") {
     SKIP_IF_NO_DISPLAY_SESSION();
-    if (std::getenv("DISPLAY") == nullptr) {
+    if (os::GetEnvironment("DISPLAY") == nullptr) {
         SKIP("no X11 display");
     }
     RunWindowReconfigure(os::WindowBackend::X11);

@@ -1,6 +1,6 @@
 #include "ui/testing/harness.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "io/path.h"
 #include "log/assert.h"
@@ -101,8 +101,8 @@ Rect Harness::RectOf(StringView name) {
 }
 
 void Harness::Render(RasterImage* out, u32 clear_abgr) {
-    const u32 w = static_cast<u32>(std::ceil(surface_.Width() * surface_.Scale()));
-    const u32 h = static_cast<u32>(std::ceil(surface_.Height() * surface_.Scale()));
+    const u32 w = static_cast<u32>(Ceil(surface_.Width() * surface_.Scale()));
+    const u32 h = static_cast<u32>(Ceil(surface_.Height() * surface_.Scale()));
     RasterizeDrawList(list_, &atlas_, w, h, clear_abgr, out);
 }
 

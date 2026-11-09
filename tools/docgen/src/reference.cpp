@@ -1,10 +1,10 @@
 #include "reference.h"
 
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include "source_file.h"
+#include "cstr/mem_ops.h"
 
 namespace docgen {
 namespace {
@@ -23,13 +23,13 @@ bool HasMarkerLine(StringView body) {
     if (i + 1 >= body.Length() || body[i + 1] != '\n') return false;
     const StringView marker(kGeneratedMarker);
     const usize at = i + 2;
-    if (body.Length() < at + marker.Length() || std::memcmp(body.Data() + at, marker.Data(), marker.Length()) != 0) return false;
+    if (body.Length() < at + marker.Length() || engine_placeholder::MemCompare(body.Data() + at, marker.Data(), marker.Length()) != 0) return false;
     return at + marker.Length() == body.Length() || body[at + marker.Length()] == '\n';
 }
 
 bool EndsWith(StringView s, const char* suffix) {
-    usize n = std::strlen(suffix);
-    return s.Length() >= n && std::memcmp(s.Data() + s.Length() - n, suffix, n) == 0;
+    usize n = engine_placeholder::CStrLength(suffix);
+    return s.Length() >= n && engine_placeholder::MemCompare(s.Data() + s.Length() - n, suffix, n) == 0;
 }
 
 bool IsGenerated(const ReferenceBuild& build, StringView name) {

@@ -1,4 +1,4 @@
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -17,7 +17,7 @@ namespace {
 // A suitable device: Vulkan 1.3 with the required features and one graphics+compute(+present) family.
 PhysicalDeviceInfo Good(const char* name, GpuKind kind) {
     PhysicalDeviceInfo info;
-    std::strncpy(info.name, name, sizeof(info.name) - 1);
+    CStrCopyN(info.name, name, sizeof(info.name) - 1);
     info.kind = kind;
     info.api_version = VK_API_VERSION_1_3;
     info.dynamic_rendering = true;
@@ -39,33 +39,33 @@ TEST_CASE("RejectionReason names the first missing requirement", "[rhi][vulkan][
 
     PhysicalDeviceInfo old = d;
     old.api_version = VK_API_VERSION_1_2;
-    CHECK(std::strstr(RejectionReason(old, false), "1.3") != nullptr);
+    CHECK(CStrFind(RejectionReason(old, false), "1.3") != nullptr);
 
     PhysicalDeviceInfo no_dr = d;
     no_dr.dynamic_rendering = false;
-    CHECK(std::strstr(RejectionReason(no_dr, false), "dynamic rendering") != nullptr);
+    CHECK(CStrFind(RejectionReason(no_dr, false), "dynamic rendering") != nullptr);
 
     PhysicalDeviceInfo no_sync2 = d;
     no_sync2.synchronization2 = false;
-    CHECK(std::strstr(RejectionReason(no_sync2, false), "synchronization2") != nullptr);
+    CHECK(CStrFind(RejectionReason(no_sync2, false), "synchronization2") != nullptr);
 
     PhysicalDeviceInfo no_timeline = d;
     no_timeline.timeline_semaphore = false;
-    CHECK(std::strstr(RejectionReason(no_timeline, false), "timeline") != nullptr);
+    CHECK(CStrFind(RejectionReason(no_timeline, false), "timeline") != nullptr);
 
     PhysicalDeviceInfo no_queue = d;
     no_queue.families[0].compute = false;
-    CHECK(std::strstr(RejectionReason(no_queue, false), "graphics+compute") != nullptr);
+    CHECK(CStrFind(RejectionReason(no_queue, false), "graphics+compute") != nullptr);
 
     PhysicalDeviceInfo no_swapchain = d;
     no_swapchain.swapchain_extension = false;
     CHECK(RejectionReason(no_swapchain, false) == nullptr); // headless does not need it
-    CHECK(std::strstr(RejectionReason(no_swapchain, true), "swapchain") != nullptr);
+    CHECK(CStrFind(RejectionReason(no_swapchain, true), "swapchain") != nullptr);
 
     PhysicalDeviceInfo no_present = d;
     no_present.families[0].present = false;
     CHECK(RejectionReason(no_present, false) == nullptr);
-    CHECK(std::strstr(RejectionReason(no_present, true), "present") != nullptr);
+    CHECK(CStrFind(RejectionReason(no_present, true), "present") != nullptr);
 }
 
 TEST_CASE("SelectPhysicalDevice ranks discrete over integrated over virtual over software", "[rhi][vulkan][select]") {
@@ -177,7 +177,7 @@ TEST_CASE("CreateDevice(Null) returns the null device", "[rhi][device]") {
     info.backend = Backend::Null;
     DevicePtr device = CreateDevice(info);
     REQUIRE(device != nullptr);
-    CHECK(std::strcmp(device->BackendName(), "null") == 0);
+    CHECK(CStrCompare(device->BackendName(), "null") == 0);
     device.Reset();
 }
 
@@ -197,7 +197,7 @@ TEST_CASE("A headless Vulkan device is created through the factory with plausibl
         }
         SKIP("no suitable Vulkan device");
     }
-    CHECK(std::strcmp(device->BackendName(), "vulkan") == 0);
+    CHECK(CStrCompare(device->BackendName(), "vulkan") == 0);
     CHECK_FALSE(device->DeviceLost());
 
     const DeviceCaps& caps = device->Caps();

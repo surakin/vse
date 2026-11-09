@@ -4,6 +4,7 @@
 #include "ui/draw_list.h"
 #include "ui/draw_list_canvas.h"
 #include "ui/testing/recording_canvas.h"
+#include "lang/scalar.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::ui;
@@ -46,8 +47,8 @@ TEST_CASE("Canvas: rectangles round their edges so neighbours share them", "[ui]
         const Rect a = c.SnapRect({0, 0, 10.4f, 5});
         const Rect b = c.SnapRect({10.4f, 0, 10, 5});
         CHECK(a.Right() == b.x); // no gap and no overlap
-        CHECK(a.x == std::floor(a.x));
-        CHECK(a.w == std::floor(a.w));
+        CHECK(a.x == Floor(a.x));
+        CHECK(a.w == Floor(a.w));
     }
     RecordingCanvas c(1.0f);
     CHECK(c.SnapRect({0, 0, 0.2f, 0.2f}).w == 1.0f); // thin but present

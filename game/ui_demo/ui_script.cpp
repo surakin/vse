@@ -1,8 +1,8 @@
 #include "ui_script.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "cstr/format.h"
+#include "cstr/number.h"
+#include "cstr/cstr.h"
 
 #include "platform/drag_drop.h"
 #include "platform/input.h"
@@ -17,7 +17,7 @@ namespace {
 String<HeapAllocator> OwnedWord(StringView text) { return String<HeapAllocator>(HeapAllocator::Default(), text); }
 
 bool StartsWithWord(StringView word, const char* prefix) {
-    const usize n = std::strlen(prefix);
+    const usize n = CStrLength(prefix);
     if (word.Length() < n) return false;
     for (usize i = 0; i < n; ++i) {
         if (word[i] != prefix[i]) return false;
@@ -26,10 +26,10 @@ bool StartsWithWord(StringView word, const char* prefix) {
 }
 
 // The text after `prefix`.
-StringView After(StringView word, const char* prefix) { return word.Substring(std::strlen(prefix)); }
+StringView After(StringView word, const char* prefix) { return word.Substring(CStrLength(prefix)); }
 
 bool SameName(StringView a, const char* b) {
-    const usize n = std::strlen(b);
+    const usize n = CStrLength(b);
     if (a.Length() != n) return false;
     for (usize i = 0; i < n; ++i) {
         char x = a[i];
@@ -54,7 +54,7 @@ bool ParseKey(StringView name, Key* key) {
     if (name.Length() >= 2 && (name[0] == 'F' || name[0] == 'f')) {
         char digits[8] = {};
         for (usize i = 1; i < name.Length() && i < 4; ++i) digits[i - 1] = name[i];
-        const int n = std::atoi(digits);
+        const int n = CStrToInt(digits);
         if (n >= 1 && n <= 12) {
             *key = static_cast<Key>(static_cast<u8>(Key::F1) + (n - 1));
             return true;
@@ -109,12 +109,12 @@ bool UiScript::Run(UiDemoApp* app, Surface* surface, ScriptHost* host, long fram
     while (next_ < words_.Size() && frame >= wait_until_) {
         const String<HeapAllocator>& word = words_[next_++];
         if (StartsWithWord(word.View(), "frame:")) {
-            wait_until_ = std::atol(word.CStr() + 6);
+            wait_until_ = CStrToLong(word.CStr() + 6);
             continue;
         }
         if (!RunWord(word.View(), app, surface, host)) {
             char text[256];
-            const int n = std::snprintf(text, sizeof(text), "script: cannot do '%s'", word.CStr());
+            const int n = FormatTo(text, sizeof(text), "script: cannot do '%s'", word.CStr());
             error_ = OwnedWord(StringView(text, FittedLength(n, sizeof(text))));
             return false;
         }
@@ -195,8 +195,8 @@ bool UiScript::RunWord(StringView word, UiDemoApp* app, Surface* surface, Script
         const StringView size = After(word, "resize:");
         const usize x = size.Find(StringView("x"));
         if (x >= size.Length() || host == nullptr) return false;
-        const long w = std::atol(String<HeapAllocator>(HeapAllocator::Default(), size.Substring(0, x)).CStr());
-        const long h = std::atol(String<HeapAllocator>(HeapAllocator::Default(), size.Substring(x + 1)).CStr());
+        const long w = CStrToLong(String<HeapAllocator>(HeapAllocator::Default(), size.Substring(0, x)).CStr());
+        const long h = CStrToLong(String<HeapAllocator>(HeapAllocator::Default(), size.Substring(x + 1)).CStr());
         if (w <= 0 || h <= 0) return false;
         host->Resize(static_cast<u32>(w), static_cast<u32>(h));
         return true;
@@ -223,9 +223,9 @@ bool UiScript::RunWord(StringView word, UiDemoApp* app, Surface* surface, Script
         if (w == nullptr) return false;
         const String<HeapAllocator> delta = OwnedWord(rest.Substring(colon + 1));
         char* end = nullptr;
-        const f32 dx = static_cast<f32>(std::strtod(delta.CStr(), &end));
+        const f32 dx = static_cast<f32>(CStrToDouble(delta.CStr(), &end));
         if (end == nullptr || *end != ',') return false;
-        const f32 dy = static_cast<f32>(std::strtod(end + 1, nullptr));
+        const f32 dy = static_cast<f32>(CStrToDouble(end + 1, nullptr));
         const ui::Point from = CenterOf(w);
         PostPointer(surface, EventType::PointerMove, from, 0);
         PostPointer(surface, EventType::PointerDown, from, os::kMouseLeft);
@@ -246,7 +246,7 @@ bool UiScript::RunWord(StringView word, UiDemoApp* app, Surface* surface, Script
         Event e;
         e.type = EventType::Wheel;
         e.position = CenterOf(w);
-        e.wheel_y = static_cast<f32>(std::atof(OwnedWord(rest.Substring(colon + 1)).CStr()));
+        e.wheel_y = static_cast<f32>(CStrToDouble(OwnedWord(rest.Substring(colon + 1)).CStr()));
         surface->Post(e);
         return true;
     }

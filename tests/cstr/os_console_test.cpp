@@ -59,10 +59,10 @@ TEST_CASE("os::PrintError and friends write to standard error", "[cstr][os]") {
     CHECK(std::strcmp(text, "err|t|bb") == 0);
 }
 
-TEST_CASE("os::GetEnvironmentVariable matches getenv", "[cstr][os]") {
+TEST_CASE("os::GetEnvironment matches getenv", "[cstr][os]") {
     setenv("ENGINE_CONSOLE_TEST_VALUE", "present", 1);
-    CHECK(std::strcmp(os::GetEnvironmentVariable("ENGINE_CONSOLE_TEST_VALUE"), "present") == 0);
+    CHECK(std::strcmp(os::GetEnvironment("ENGINE_CONSOLE_TEST_VALUE"), "present") == 0);
     unsetenv("ENGINE_CONSOLE_TEST_VALUE");
-    CHECK(os::GetEnvironmentVariable("ENGINE_CONSOLE_TEST_VALUE") == nullptr);
-    CHECK(os::GetEnvironmentVariable("PATH") == std::getenv("PATH"));
+    CHECK(os::GetEnvironment("ENGINE_CONSOLE_TEST_VALUE") == nullptr);
+    CHECK(os::GetEnvironment("PATH") == std::getenv("PATH"));
 }

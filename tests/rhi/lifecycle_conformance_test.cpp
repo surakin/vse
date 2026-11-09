@@ -1,6 +1,6 @@
 // Phase 8 Day 114: the lifecycle conformance suite. Every backend must pass it; a new backend (DX12, Metal) runs it by adding one
 // factory to the list at the bottom. See engine/rhi/BACKEND-LIFECYCLE.md.
-#include <cstring>
+#include "cstr/cstr.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -46,7 +46,7 @@ void RunLifecycleConformance(const Backend_& backend) {
     AdapterList again;
     REQUIRE(EnumerateAdapters(backend.info, &again));
     REQUIRE(again.count == list.count);
-    for (u32 i = 0; i < list.count; ++i) CHECK(std::strcmp(list.items[i].id, again.items[i].id) == 0);
+    for (u32 i = 0; i < list.count; ++i) CHECK(CStrCompare(list.items[i].id, again.items[i].id) == 0);
 
     DevicePtr a = CreateDevice(backend.info);
     REQUIRE(a != nullptr);
@@ -55,7 +55,7 @@ void RunLifecycleConformance(const Backend_& backend) {
     CHECK(a->Epoch() != 0);
     CHECK(a->Epoch() != b->Epoch());
     bool adapter_listed = false;
-    for (u32 i = 0; i < list.count; ++i) adapter_listed = adapter_listed || std::strcmp(a->Adapter().id, list.items[i].id) == 0;
+    for (u32 i = 0; i < list.count; ++i) adapter_listed = adapter_listed || CStrCompare(a->Adapter().id, list.items[i].id) == 0;
     CHECK(adapter_listed);
 
     // Handles of one device are not the handles of the next: the top bits of the generation differ.

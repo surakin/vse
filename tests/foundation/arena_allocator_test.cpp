@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "mem/arena_allocator.h"
-#include <cstring>
 #include "types.h"
+#include "cstr/mem_ops.h"
 
 using engine_placeholder::ArenaAllocator;
 using engine_placeholder::u8;
@@ -32,7 +32,7 @@ TEST_CASE("ArenaAllocator: 1000 varying-size allocations are non-overlapping and
         ptrs[i] = p;
         sizes[i] = size;
         // Unique checksum pattern per allocation.
-        memset(p, static_cast<int>(i % 256), size);
+        engine_placeholder::MemSet(p, static_cast<int>(i % 256), size);
     }
     REQUIRE(all_allocs_ok);
 

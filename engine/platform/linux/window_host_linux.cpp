@@ -1,6 +1,6 @@
 #include "platform/window_host.h"
 
-#include <cstdlib>
+#include "os/console.h"
 
 #include "debug/crash_state.h"
 #include "log/log.h"
@@ -22,7 +22,7 @@ PlatformWindowHost::~PlatformWindowHost() = default;
 namespace {
 
 bool EnvSet(const char* name) {
-    const char* v = std::getenv(name);
+    const char* v = os::GetEnvironment(name);
     return v != nullptr && v[0] != '\0';
 }
 
@@ -78,7 +78,7 @@ bool PlatformWindowHost::Open(WindowBackend requested, StringView title, u32 wid
 
 bool PlatformWindowHost::OpenFromEnvironment(StringView title, u32 width, u32 height, InputState* input) {
     WindowBackend requested = WindowBackend::Auto;
-    const char* value = std::getenv("ENGINE_WINDOW_BACKEND");
+    const char* value = os::GetEnvironment("ENGINE_WINDOW_BACKEND");
     if (value != nullptr && value[0] != '\0') {
         requested = ParseWindowBackend(StringView(value));
         if (requested == WindowBackend::Invalid) {

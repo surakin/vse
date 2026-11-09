@@ -1,10 +1,11 @@
 #include "renderer/shared_settings.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 
 #include "log/assert.h"
 #include "renderer/renderer.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::renderer {
 
@@ -20,7 +21,7 @@ struct KeyTable {
     KeyTable() {
         const SettingsRegistry& r = SettingsRegistry::Builtin();
         count = r.Count();
-        for (u32 i = 0; i < count; ++i) std::snprintf(keys[i], kKeyBytes, "renderer.%s", r.Find(SettingId{static_cast<u16>(i + 1)})->name);
+        for (u32 i = 0; i < count; ++i) FormatTo(keys[i], kKeyBytes, "renderer.%s", r.Find(SettingId{static_cast<u16>(i + 1)})->name);
     }
 };
 
@@ -33,7 +34,7 @@ const char* SharedKey(u32 index) {
 // Copies a shared text into a renderer text buffer (the shared declaration limits it to the buffer's size, so nothing is cut).
 void CopyText(StringView t, char* out, usize capacity) {
     const usize n = t.Length() < capacity - 1 ? t.Length() : capacity - 1;
-    std::memcpy(out, t.Data(), n);
+    MemCopy(out, t.Data(), n);
     out[n] = '\0';
 }
 
@@ -100,7 +101,7 @@ void RegisterSharedSettings(sset::Registry* registry) {
             {"render_scale", "the internal resolution as a fraction of the window", nullptr, nullptr},
         };
         for (const auto& info : kInfo) {
-            if (std::strcmp(info.name, d.name) == 0) {
+            if (CStrCompare(info.name, d.name) == 0) {
                 s.description = info.description;
                 s.env = info.env;
                 s.flag = info.flag;

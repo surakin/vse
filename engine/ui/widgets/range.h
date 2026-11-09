@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "types.h"
 
@@ -43,8 +43,8 @@ struct ValueRange {
         const f64 st = EffectiveStep();
         if (!(st > 0)) return value < lo ? lo : (value > hi ? hi : value);
         if (value <= lo) return lo;
-        const f64 last = std::floor((hi - lo) / st + 1e-9);
-        f64 k = std::floor((value - lo) / st + 0.5);
+        const f64 last = Floor((hi - lo) / st + 1e-9);
+        f64 k = Floor((value - lo) / st + 0.5);
         if (k > last) k = last;
         if (k < 0) k = 0;
         return lo + k * st;

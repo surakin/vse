@@ -15,6 +15,8 @@
 #include "renderer/shader_reflection.h"
 #include "rhi/rhi.h"
 #include "lang/initializer_list.h"
+#include "cstr/cstr.h"
+#include "os/console.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -43,10 +45,10 @@ const PermutationModule* Find(InitializerList<const char*> names) {
 TEST_CASE("The committed permutation table is valid and names its options", "[renderer][permutation]") {
     const ShaderPermutations& t = Table();
     CHECK(ValidateShaderPermutations(t) == nullptr);
-    CHECK(std::strcmp(t.shader, "permute_test.frag") == 0);
+    CHECK(CStrCompare(t.shader, "permute_test.frag") == 0);
     REQUIRE(t.option_count == 4);
-    CHECK(std::strcmp(t.options[0], "INVERT") == 0);
-    CHECK(std::strcmp(t.options[3], "DEBUG") == 0);
+    CHECK(CStrCompare(t.options[0], "INVERT") == 0);
+    CHECK(CStrCompare(t.options[3], "DEBUG") == 0);
     CHECK(t.entry_count == 7);
     CHECK(t.module_count == 6);
     CHECK(t.entry_count <= kMaxPermutationKeys);
@@ -68,11 +70,11 @@ TEST_CASE("Keys are built from option names and found by lookup", "[renderer][pe
     for (const char* key_names : {"", "INVERT", "HALF", "INVERT HALF", "TINT", "DEBUG"}) {
         Vector<const char*> names;
         char buffer[64];
-        std::strncpy(buffer, key_names, sizeof(buffer) - 1);
+        CStrCopyN(buffer, key_names, sizeof(buffer) - 1);
         buffer[sizeof(buffer) - 1] = '\0';
         for (char* word = std::strtok(buffer, " "); word != nullptr; word = std::strtok(nullptr, " ")) {
             for (u32 i = 0; i < Table().option_count; ++i) {
-                if (std::strcmp(word, Table().options[i]) == 0) {
+                if (CStrCompare(word, Table().options[i]) == 0) {
                     names.Push(Table().options[i]);
                 }
             }
@@ -111,9 +113,9 @@ TEST_CASE("A key that was not built is an error naming the shader and the key", 
     ReflectionError error;
     const PermutationKey key = KeyOf({"INVERT", "TINT"}); // valid options, but not in the manifest
     CHECK(FindPermutation(Table(), key, &error) == nullptr);
-    CHECK(std::strstr(error.message, "permute_test.frag") != nullptr);
-    CHECK(std::strstr(error.message, "{INVERT, TINT}") != nullptr);
-    CHECK(std::strstr(error.message, "manifest") != nullptr);
+    CHECK(CStrFind(error.message, "permute_test.frag") != nullptr);
+    CHECK(CStrFind(error.message, "{INVERT, TINT}") != nullptr);
+    CHECK(CStrFind(error.message, "manifest") != nullptr);
 
     // A caller that does not want the message may pass no error object.
     CHECK(FindPermutation(Table(), key, nullptr) == nullptr);
@@ -122,15 +124,15 @@ TEST_CASE("A key that was not built is an error naming the shader and the key", 
     PermutationKey made;
     const char* names[] = {"INVERT", "SEPIA"};
     CHECK_FALSE(MakePermutationKey(Table(), names, 2, &made, &error));
-    CHECK(std::strstr(error.message, "SEPIA") != nullptr);
-    CHECK(std::strstr(error.message, "permute_test.frag") != nullptr);
+    CHECK(CStrFind(error.message, "SEPIA") != nullptr);
+    CHECK(CStrFind(error.message, "permute_test.frag") != nullptr);
 }
 
 TEST_CASE("Lookup is bounded by the table, not by the key", "[renderer][permutation]") {
     ReflectionError error;
     // Bits beyond the declared options, and the highest bits of the key word, are simply not found.
     CHECK(FindPermutation(Table(), PermutationKey{0x8000u}, &error) == nullptr);
-    CHECK(std::strstr(error.message, "?") != nullptr); // an undeclared option is shown as ?
+    CHECK(CStrFind(error.message, "?") != nullptr); // an undeclared option is shown as ?
     CHECK(FindPermutation(Table(), PermutationKey{0xffffffffu}, &error) == nullptr);
     CHECK(FindPermutation(Table(), PermutationKey{0x10u}, &error) == nullptr);
 
@@ -158,7 +160,7 @@ TEST_CASE("Lookup is bounded by the table, not by the key", "[renderer][permutat
     // Describing a key never overruns a small buffer.
     char tiny[8];
     DescribePermutationKey(Table(), KeyOf({"INVERT", "HALF", "TINT", "DEBUG"}), tiny, sizeof(tiny));
-    CHECK(std::strlen(tiny) < sizeof(tiny));
+    CHECK(CStrLength(tiny) < sizeof(tiny));
     char one[1] = {'x'};
     DescribePermutationKey(Table(), PermutationKey{1}, one, 1);
     CHECK(one[0] == '\0');
@@ -175,8 +177,8 @@ TEST_CASE("A corrupt table is reported as corrupt, not as a missing key", "[rend
     ReflectionError error;
     CHECK(ValidateShaderPermutations(t) != nullptr);
     CHECK(FindPermutation(t, PermutationKey{1}, &error) == nullptr);
-    CHECK(std::strstr(error.message, "corrupt") != nullptr);
-    CHECK(std::strstr(error.message, "manifest") == nullptr); // do not send the reader to the manifest
+    CHECK(CStrFind(error.message, "corrupt") != nullptr);
+    CHECK(CStrFind(error.message, "manifest") == nullptr); // do not send the reader to the manifest
 
     // Null arrays are never dereferenced.
     t.entries = nullptr;
@@ -348,7 +350,7 @@ TEST_CASE("The module a key selects draws the colour its options describe", "[re
         info.pipeline_cache = false;
         rhi::DevicePtr device = rhi::CreateDevice(info);
         if (device == nullptr) {
-            const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
+            const char* required = os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
             if (required != nullptr && required[0] == '1') {
                 FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
             }

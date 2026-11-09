@@ -1,4 +1,3 @@
-#include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -37,6 +36,7 @@ TEST_CASE("The demo builds its tree and the viewport gets a size", "[ui][ui_demo
 // ---- the script and the behaviour of the tree ----
 
 #include "ui_script.h"
+#include "cstr/mem_ops.h"
 
 namespace {
 
@@ -383,7 +383,7 @@ TEST_CASE("A script word that cannot be done is reported whole, however long it 
     DemoRig rig;
     ui_demo::UiScript script;
     char word[400];
-    std::memset(word, 'x', sizeof(word) - 1);
+    MemSet(word, 'x', sizeof(word) - 1);
     word[sizeof(word) - 1] = '\0';
     script.Parse(StringView(word));
     DemoHost host;

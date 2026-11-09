@@ -8,7 +8,7 @@
 #include "types.h"
 
 //! Console output and process control (Phase 16): the engine's spelling of `printf`, `fprintf(stderr, ...)`, `puts`, `fflush`,
-//! `abort`, `exit`, `_Exit` and `getenv`. Output goes through the C library's buffered streams, so it interleaves with other users of
+//! `abort`, `_Exit` and `getenv` (`os::Exit`, which runs the exit handlers, is in `os/os.h`). Output goes through the C library's buffered streams, so it interleaves with other users of
 //! `stdout` and `stderr` as before. Writing to a descriptor without buffering is [[os::Write]]; files are the `io` module's.
 namespace engine_placeholder::os {
 
@@ -71,10 +71,6 @@ inline void FlushError() { std::fflush(stderr); }
 ///
 /// Thread-safety: thread-safe. Async-signal-safe.
 [[noreturn]] inline void Abort() noexcept { std::abort(); }
-/// Ends the process after running exit handlers and flushing streams (`exit`).
-///
-/// Thread-safety: thread-safe.
-[[noreturn]] inline void Exit(int code) { std::exit(code); }
 /// Ends the process at once with `code`, without running exit handlers or flushing streams (`_Exit`).
 ///
 /// Thread-safety: thread-safe. Async-signal-safe.
@@ -86,6 +82,6 @@ inline void FlushError() { std::fflush(stderr); }
 /// Settings read the environment through the settings system; this is for the bootstrap variables listed in
 /// `tools/config_access_check/allowlist.txt`.
 /// Thread-safety: thread-compatible. Another thread changing the environment meanwhile is a race, as for `getenv`.
-inline const char* GetEnvironmentVariable(const char* name) noexcept { return std::getenv(name); }
+inline const char* GetEnvironment(const char* name) noexcept { return std::getenv(name); }
 
 } // namespace engine_placeholder::os

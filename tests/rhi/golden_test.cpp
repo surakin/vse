@@ -1,4 +1,4 @@
-#include <cmath>
+#include "lang/scalar.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -248,9 +248,9 @@ TEST_CASE("The triangle renders offscreen and matches its golden image", "[rhi][
         // Independent of the golden: the background is the clear color, and interior pixels have the color the vertex colors
         // interpolate to at the pixel center. A wrong golden cannot hide a broken pipeline from these.
         const u8* corner = rendered.Pixel(1, 1);
-        CHECK(std::abs(corner[0] - 51) <= 1); // 0.2 * 255
-        CHECK(std::abs(corner[1] - 51) <= 1);
-        CHECK(std::abs(corner[2] - 51) <= 1);
+        CHECK(Abs(corner[0] - 51) <= 1); // 0.2 * 255
+        CHECK(Abs(corner[1] - 51) <= 1);
+        CHECK(Abs(corner[2] - 51) <= 1);
         const u32 probes[][2] = {{32, 14}, {32, 40}, {50, 54}, {14, 54}, {32, 30}, {40, 48}, {24, 48}};
         for (const auto& probe : probes) {
             float want[3];
@@ -258,11 +258,11 @@ TEST_CASE("The triangle renders offscreen and matches its golden image", "[rhi][
             const u8* got = rendered.Pixel(probe[0], probe[1]);
             for (int c = 0; c < 3; ++c) {
                 INFO("pixel " << probe[0] << "," << probe[1] << " channel " << c);
-                CHECK(std::abs(got[c] - static_cast<int>(want[c] * 255.0f + 0.5f)) <= 3);
+                CHECK(Abs(got[c] - static_cast<int>(want[c] * 255.0f + 0.5f)) <= 3);
             }
         }
         // The pixel just outside the triangle's left edge at mid-height is background, not triangle.
-        CHECK(std::abs(rendered.Pixel(6, 40)[0] - 51) <= 1);
+        CHECK(Abs(rendered.Pixel(6, 40)[0] - 51) <= 1);
         cube_test::CheckGolden(rendered, "triangle.ppm", "triangle", backend);
     }
 }

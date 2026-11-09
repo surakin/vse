@@ -43,6 +43,9 @@ module platform/os "Platform: OS Services"
   header engine/foundation/os/command_line.h
   header engine/foundation/os/gpu_driver_probe.h
   header engine/foundation/os/session.h
+  header engine/foundation/os/console.h
+  header engine/foundation/os/last_error.h
+  header engine/foundation/os/signal.h
 
 module platform/window-input "Platform: Windowing and Input"
   header engine/platform/window.h

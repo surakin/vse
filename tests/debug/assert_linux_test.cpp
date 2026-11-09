@@ -13,7 +13,7 @@
 
 #include <csignal>
 #include <link.h>
-#include <cstring>
+#include "cstr/cstr.h"
 #include <sys/ptrace.h>
 #include <unistd.h>
 
@@ -70,9 +70,9 @@ TEST_CASE("ENGINE_DEBUG_BREAK raises a trap at its own line and execution contin
     const ChildResult r = RunInChild("dt_linux_debug_break");
     REQUIRE(r.exited);
     CHECK(r.exit_code == 0);
-    const char* before = std::strstr(r.stdout_text, "BEFORE");
-    const char* trap = std::strstr(r.stdout_text, "TRAP");
-    const char* after = std::strstr(r.stdout_text, "AFTER");
+    const char* before = CStrFind(r.stdout_text, "BEFORE");
+    const char* trap = CStrFind(r.stdout_text, "TRAP");
+    const char* after = CStrFind(r.stdout_text, "AFTER");
     REQUIRE(before != nullptr);
     REQUIRE(trap != nullptr);
     REQUIRE(after != nullptr);
@@ -85,15 +85,15 @@ TEST_CASE("A handler that answers Break stops at the failing line of an assert a
     const ChildResult r = RunInChild("dt_linux_assert_breaks_then_resumes");
     REQUIRE(r.exited);
     CHECK(r.exit_code == 0);
-    const char* first_trap = std::strstr(r.stdout_text, "TRAP");
+    const char* first_trap = CStrFind(r.stdout_text, "TRAP");
     REQUIRE(first_trap != nullptr);
-    const char* resumed_assert = std::strstr(r.stdout_text, "RESUMED-AFTER-ASSERT");
+    const char* resumed_assert = CStrFind(r.stdout_text, "RESUMED-AFTER-ASSERT");
     REQUIRE(resumed_assert != nullptr);
     CHECK(first_trap < resumed_assert);
-    const char* second_trap = std::strstr(first_trap + 1, "TRAP");
+    const char* second_trap = CStrFind(first_trap + 1, "TRAP");
     REQUIRE(second_trap != nullptr);
     CHECK(second_trap > resumed_assert);
-    CHECK(std::strstr(r.stdout_text, "RESUMED-AFTER-ENSURE") != nullptr);
+    CHECK(CStrFind(r.stdout_text, "RESUMED-AFTER-ENSURE") != nullptr);
 }
 
 TEST_CASE("A debugger that resumes after ENGINE_UNREACHABLE breaks is followed by the abort", "[assert][death][debug][linux]") {
@@ -107,7 +107,7 @@ TEST_CASE("A debugger that resumes after ENGINE_UNREACHABLE breaks is followed b
 
 TEST_CASE("The tracer line of /proc/self/status decides whether a debugger is attached", "[debug][linux]") {
     using engine_placeholder::debug::detail::StatusShowsTracer;
-    auto shows = [](const char* text) { return StatusShowsTracer(text, std::strlen(text)); };
+    auto shows = [](const char* text) { return StatusShowsTracer(text, CStrLength(text)); };
     CHECK_FALSE(shows("Name:\tx\nTracerPid:\t0\nUid:\t1000\n"));
     CHECK(shows("Name:\tx\nTracerPid:\t4242\nUid:\t1000\n"));
     CHECK(shows("TracerPid:   7\n"));

@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <cmath>
+#include "lang/scalar.h"
 #include <cstring>
 
 #include "catch_engine_types.h"
@@ -67,7 +67,7 @@ TEST_CASE("A float always reads back as a float, and -0 keeps its sign", "[setti
     CHECK(StringView(text) == "-0.0");
     Value v;
     REQUIRE(ParseValue(f, "-0", &v) == ValueError::None);
-    CHECK(std::signbit(v.AsFloat()));
+    CHECK(SignBit(v.AsFloat()));
     REQUIRE(FormatValue(f, Value::FromFloat(1e-30), text, sizeof(text)) > 0);
     CHECK(StringView(text) == "1e-30");
 }

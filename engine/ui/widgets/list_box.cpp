@@ -1,6 +1,6 @@
 #include "ui/widgets/list_box.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "ui/surface.h"
 #include "ui/widgets/look.h"
@@ -80,7 +80,7 @@ f32 ListBox::MaxOffset() const {
 
 void ListBox::SetOffset(f32 offset) {
     const f32 max = MaxOffset();
-    offset = std::fmin(std::fmax(offset, 0.0f), max);
+    offset = FMin(FMax(offset, 0.0f), max);
     if (offset == offset_) return;
     offset_ = offset;
     bar_->SetValue(offset_);
@@ -98,7 +98,7 @@ void ListBox::VisibleRange(usize* first, usize* end) const {
     *end = 0;
     if (!(row_height_ > 0) || count_ == 0) return;
     *first = static_cast<usize>(offset_ / row_height_);
-    usize last = static_cast<usize>(std::ceil((offset_ + ViewHeight()) / row_height_));
+    usize last = static_cast<usize>(Ceil((offset_ + ViewHeight()) / row_height_));
     if (last > count_) last = count_;
     *end = last > *first ? last : *first;
 }

@@ -1,6 +1,6 @@
 #include "ui/surface.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "algorithm.h"
 #include "log/assert.h"
@@ -832,7 +832,7 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
         canvas_->Rebind(list, atlas);
     }
     DrawListCanvas& canvas = *canvas_;
-    canvas.Begin(scale_, static_cast<u32>(std::ceil(width_ * scale_)), static_cast<u32>(std::ceil(height_ * scale_)));
+    canvas.Begin(scale_, static_cast<u32>(Ceil(width_ * scale_)), static_cast<u32>(Ceil(height_ * scale_)));
     root_->DrawTree(canvas);
     modals_->DrawTree(canvas);
     popups_->DrawTree(canvas);

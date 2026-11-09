@@ -5,10 +5,10 @@
 #include "log/assert.h"
 #include "os/os.h"
 
-#include <cerrno>
-#include <csignal>
-#include <cstdlib>
-#include <cstring>
+#include "os/last_error.h"
+#include "os/signal.h"
+#include "os/console.h"
+#include "cstr/cstr.h"
 #include <fcntl.h>
 #include <poll.h>
 #include <spawn.h>
@@ -16,6 +16,8 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include "cstr/mem_ops.h"
+#include "cstr/number.h"
 
 extern char** environ;
 
@@ -60,7 +62,7 @@ public:
         const char* const parts[4] = {a, b, c, d};
         usize total = 1;
         for (const char* part : parts) {
-            total += std::strlen(part);
+            total += CStrLength(part);
         }
         if (used_ + total > kEnvStorageBytes) {
             return false;
@@ -68,8 +70,8 @@ public:
         char* out = storage_ + used_;
         usize at = 0;
         for (const char* part : parts) {
-            const usize n = std::strlen(part);
-            std::memcpy(out + at, part, n);
+            const usize n = CStrLength(part);
+            MemCopy(out + at, part, n);
             at += n;
         }
         out[at] = '\0';
@@ -93,14 +95,14 @@ private:
 };
 
 bool KeyMatches(const char* entry, const char* key) {
-    const usize n = std::strlen(key);
-    return std::strncmp(entry, key, n) == 0 && entry[n] == '=';
+    const usize n = CStrLength(key);
+    return CStrCompareN(entry, key, n) == 0 && entry[n] == '=';
 }
 
 bool KeyOfExtraMatches(const char* entry, const char* extra) {
-    const char* eq = std::strchr(extra, '=');
-    const usize n = eq == nullptr ? std::strlen(extra) : static_cast<usize>(eq - extra);
-    return std::strncmp(entry, extra, n) == 0 && entry[n] == '=';
+    const char* eq = CStrFindChar(extra, '=');
+    const usize n = eq == nullptr ? CStrLength(extra) : static_cast<usize>(eq - extra);
+    return CStrCompareN(entry, extra, n) == 0 && entry[n] == '=';
 }
 
 // Everything a spawn opens, released in the destructor on every path.
@@ -136,7 +138,7 @@ struct SpawnResources {
 void Append(char* buffer, usize& length, bool& truncated, const char* data, usize count) {
     const usize room = kChildCaptureBytes - length;
     const usize take = count < room ? count : room;
-    std::memcpy(buffer + length, data, take);
+    MemCopy(buffer + length, data, take);
     length += take;
     if (take < count) {
         truncated = true;
@@ -158,10 +160,10 @@ void DrainPipe(int& fd, char* buffer, usize& length, bool& truncated) {
             budget = static_cast<usize>(n) < budget ? budget - static_cast<usize>(n) : 0;
             continue;
         }
-        if (n < 0 && errno == EINTR) {
+        if (n < 0 && os::LastError() == EINTR) {
             continue;
         }
-        if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+        if (n < 0 && (os::LastError() == EAGAIN || os::LastError() == EWOULDBLOCK)) {
             return;
         }
         fd = -1; // end of file or a real error: stop polling this pipe (the owner closes it)
@@ -290,18 +292,18 @@ bool BuildEnvironment(EnvironmentBlock& env, const char* name, const char* argum
             const char* existing = nullptr;
             for (usize i = 0; i < options.extra_env_count; ++i) {
                 if (KeyMatches(options.extra_env[i], key)) {
-                    existing = options.extra_env[i] + std::strlen(key) + 1;
+                    existing = options.extra_env[i] + CStrLength(key) + 1;
                 }
             }
             if (existing == nullptr) {
-                existing = std::getenv(key);
+                existing = os::GetEnvironment(key);
             }
-            const bool is_asan = std::strcmp(key, "ASAN_OPTIONS") == 0;
+            const bool is_asan = CStrCompare(key, "ASAN_OPTIONS") == 0;
             const char* flags = is_asan ? kAsanFaultFlags : kOtherFaultFlags;
             const bool has_existing = existing != nullptr && existing[0] != '\0';
             char prefix[64];
-            const usize key_length = std::strlen(key);
-            std::memcpy(prefix, key, key_length);
+            const usize key_length = CStrLength(key);
+            MemCopy(prefix, key, key_length);
             prefix[key_length] = '=';
             prefix[key_length + 1] = '\0';
             if (!env.Add(prefix, has_existing ? existing : "", has_existing ? ":" : "", flags)) {
@@ -321,26 +323,26 @@ bool PlatformCanSpawn() {
 }
 
 bool PlatformChildRequest(const char** name, const char** argument) {
-    const char* requested = std::getenv(kChildNameVariable);
+    const char* requested = os::GetEnvironment(kChildNameVariable);
     if (requested == nullptr) {
         return false;
     }
-    const char* arg = std::getenv(kChildArgumentVariable);
+    const char* arg = os::GetEnvironment(kChildArgumentVariable);
     *name = requested;
     *argument = arg != nullptr ? arg : "";
     return true;
 }
 
 void PlatformPrepareChild() {
-    if (std::getenv(kNoCoreVariable) != nullptr) {
+    if (os::GetEnvironment(kNoCoreVariable) != nullptr) {
         const struct rlimit none = {0, 0};
         ::setrlimit(RLIMIT_CORE, &none);
     }
     // Die with the parent: if the test program is killed (Ctrl-C, a ctest timeout) while a child runs, the child is in its
     // own process group and would otherwise outlive it. The parent might already be gone, so check after arming.
     ::prctl(PR_SET_PDEATHSIG, SIGKILL);
-    const char* parent = std::getenv(kParentVariable);
-    if (parent != nullptr && static_cast<long>(::getppid()) != std::atol(parent)) {
+    const char* parent = os::GetEnvironment(kParentVariable);
+    if (parent != nullptr && static_cast<long>(::getppid()) != CStrToLong(parent)) {
         ::_exit(kUnknownDeathTestExitCode);
     }
 }
@@ -419,7 +421,7 @@ ChildResult PlatformRunChild(const char* name, const char* argument, const Child
         if (waited == pid) {
             reaped = true;
             observed = true;
-        } else if (waited < 0 && errno != EINTR) {
+        } else if (waited < 0 && os::LastError() != EINTR) {
             reaped = true; // the child is gone and not ours to reap (SIGCHLD ignored, or another thread reaped it): its fate is unknown
         } else if (os::MonotonicTimeNanos() >= deadline) {
             result.timed_out = true;
@@ -428,7 +430,7 @@ ChildResult PlatformRunChild(const char* name, const char* argument, const Child
             pid_t waited_after_kill = -1;
             do {
                 waited_after_kill = ::waitpid(pid, &status, 0);
-            } while (waited_after_kill < 0 && errno == EINTR);
+            } while (waited_after_kill < 0 && os::LastError() == EINTR);
             observed = waited_after_kill == pid;
             reaped = true;
             // The child may have finished by itself just before the kill landed: then it did not time out.

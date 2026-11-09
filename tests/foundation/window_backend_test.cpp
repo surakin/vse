@@ -1,6 +1,6 @@
 // The window backend choice: the name parser and both platforms' plans run everywhere; the window host is tested on the platform it is
 // built for (Linux: Wayland and X11, Windows: Win32, Phase 13 Day 158).
-#include <cstdlib>
+#include "os/console.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
@@ -37,7 +37,7 @@ namespace {
 class ScopedEnv {
 public:
     ScopedEnv(const char* name, const char* value) : name_(name) {
-        const char* old = std::getenv(name);
+        const char* old = os::GetEnvironment(name);
         had_ = old != nullptr;
         if (had_) {
             old_ = old;
@@ -63,7 +63,7 @@ private:
 };
 
 bool HaveEnv(const char* name) {
-    const char* v = std::getenv(name);
+    const char* v = os::GetEnvironment(name);
     return v != nullptr && v[0] != '\0';
 }
 

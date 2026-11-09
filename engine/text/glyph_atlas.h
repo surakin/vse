@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "containers/vector.h"
 #include "text/font.h"
@@ -154,10 +154,10 @@ struct GlyphQuad {
 /// Fails: never.
 inline GlyphQuad PlaceGlyph(f32 pen_x, f32 pen_y, f32 glyph_x, f32 glyph_y, const GlyphEntry& entry, f32 scale) {
     GlyphQuad q;
-    q.left = std::floor(pen_x + glyph_x + static_cast<f32>(entry.left) * scale + 0.5f);
-    q.top = std::floor(pen_y + glyph_y - static_cast<f32>(entry.top) * scale + 0.5f);
-    q.right = q.left + std::floor(static_cast<f32>(entry.rect.w) * scale + 0.5f);
-    q.bottom = q.top + std::floor(static_cast<f32>(entry.rect.h) * scale + 0.5f);
+    q.left = Floor(pen_x + glyph_x + static_cast<f32>(entry.left) * scale + 0.5f);
+    q.top = Floor(pen_y + glyph_y - static_cast<f32>(entry.top) * scale + 0.5f);
+    q.right = q.left + Floor(static_cast<f32>(entry.rect.w) * scale + 0.5f);
+    q.bottom = q.top + Floor(static_cast<f32>(entry.rect.h) * scale + 0.5f);
     return q;
 }
 

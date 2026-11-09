@@ -16,6 +16,3 @@ tests/renderer/|Older test directory: 151 offending lines not yet ported (167 be
 tests/rhi/|Older test directory: 221 offending lines (286 before Phase 13 Days 170-172, which converted the golden and renderer GPU tests they made backend-generic), including image_compare.*, which the rhi golden tests share; they convert together.
 tests/lang/lang_test.cpp|Oracle test of the lang module (Phase 16): compares each wrapper with the standard facility it forwards to.
 tests/sync/sync_test.cpp|Oracle test of the sync module (Phase 16): compares each wrapper with the standard type and times both side by side.
-tests/cstr/cstr_test.cpp|Oracle test of the cstr module (Phase 16): compares each wrapper with the C library function it forwards to.
-tests/cstr/math_test.cpp|Oracle test of lang/scalar.h (Phase 16): compares each function with its <cmath> original.
-tests/cstr/os_console_test.cpp|Test of the os console wrappers (Phase 16): redirects descriptors and compares with the C library's streams.

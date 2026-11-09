@@ -14,8 +14,8 @@
 #include "test_text.h"
 
 #include "sync/atomic.h"
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 #include "sync/mutex.h"
 #include "sync/thread.h"
 #include "build_defs.h"
@@ -53,7 +53,7 @@ TextList RecentLines(usize max_lines = 0) {
 
 void LogNumbered(const char* prefix, int n) {
     char text[64];
-    std::snprintf(text, sizeof(text), "%s%d", prefix, n);
+    FormatTo(text, sizeof(text), "%s%d", prefix, n);
     Log(LogReportTest, LogVerbosity::Info, StringView(text));
 }
 
@@ -92,17 +92,17 @@ CrashReportSink SinkFor(Collected* c) {
 }
 
 void GpuProvider(void*, char* out, usize capacity) {
-    std::snprintf(out, capacity, "Test GPU 9000, driver 1.2.3");
+    FormatTo(out, capacity, "Test GPU 9000, driver 1.2.3");
 }
 
 void FrameProvider(void* context, char* out, usize capacity) {
-    std::snprintf(out, capacity, "frame %d", *static_cast<int*>(context));
+    FormatTo(out, capacity, "frame %d", *static_cast<int*>(context));
 }
 
 // Misbehaves in the harmless direction: asks for far more than it may write, using a bounded copy as the rules require.
 void VerboseProvider(void*, char* out, usize capacity) {
     const Text big = engine_test::Repeated(1000, 'x');
-    std::snprintf(out, capacity, "%s", big.CStr());
+    FormatTo(out, capacity, "%s", big.CStr());
 }
 
 } // namespace
@@ -122,7 +122,7 @@ TEST_CASE("The crash context describes the program and the machine", "[crashrepo
     CHECK(c.start_time_unix > 1700000000ull); // after November 2023
     // The build id is lowercase hex when the binary has one: whole bytes on Linux (the GNU build id); on Windows the PDB's GUID (32 digits)
     // and then its age without leading zeros, the form symbol stores use, so any length from 33 on.
-    const usize id_length = std::strlen(c.build_id);
+    const usize id_length = CStrLength(c.build_id);
 #if ENGINE_PLATFORM_WINDOWS
     CHECK((id_length == 0 || id_length >= 33));
 #else
@@ -131,7 +131,7 @@ TEST_CASE("The crash context describes the program and the machine", "[crashrepo
     for (usize i = 0; i < id_length; ++i) {
         CHECK(((c.build_id[i] >= '0' && c.build_id[i] <= '9') || (c.build_id[i] >= 'a' && c.build_id[i] <= 'f')));
     }
-    if (std::strstr(c.command_line, "--fake-flag") == nullptr) {
+    if (CStrFind(c.command_line, "--fake-flag") == nullptr) {
         // Another test initialized the context first, without a command line.
         CHECK(c.command_line[0] == '\0');
     } else {
@@ -170,7 +170,7 @@ void ReentrantProvider(void*, char* out, usize capacity) {
     // As if a check inside a provider failed and the assert handler wrote the context again.
     Collected inner;
     WriteCrashContext(SinkFor(&inner));
-    std::snprintf(out, capacity, "inner report had %s", Has(inner.text, "--- state ---") ? "state header" : "nothing");
+    FormatTo(out, capacity, "inner report had %s", Has(inner.text, "--- state ---") ? "state header" : "nothing");
 }
 } // namespace
 
@@ -253,7 +253,7 @@ TEST_CASE("Eight threads logging while another reads: every line delivered is wh
                 const usize t = FindAfter(line, "INFO: T");
                 int thread_id = -1;
                 int n = -1;
-                if (t == kNotFound || std::sscanf(line.CStr() + t, "INFO: T%d-%d", &thread_id, &n) != 2 || thread_id < 0 || thread_id > 7 ||
+                if (t == kNotFound || ScanFrom(line.CStr() + t, "INFO: T%d-%d", &thread_id, &n) != 2 || thread_id < 0 || thread_id > 7 ||
                     line.Length() == 0 || line.CStr()[line.Length() - 1] != '\n') {
                     bad.FetchAdd(1);
                     LockGuard<Mutex> lock(bad_mutex);
@@ -284,7 +284,7 @@ TEST_CASE("Eight threads logging while another reads: every line delivered is wh
         writers[static_cast<usize>(t)] = Thread([t] {
             for (int n = 0; n < 2000; ++n) {
                 char text[32];
-                std::snprintf(text, sizeof(text), "T%d-%d", t, n);
+                FormatTo(text, sizeof(text), "T%d-%d", t, n);
                 Log(LogReportTest, LogVerbosity::Info, StringView(text));
             }
         });
@@ -308,7 +308,7 @@ TEST_CASE("Eight threads logging while another reads: every line delivered is wh
         REQUIRE(at != kNotFound);
         int t = -1;
         int n = -1;
-        CHECK(std::sscanf(lines[i].CStr() + at, "INFO: T%d-%d", &t, &n) == 2);
+        CHECK(ScanFrom(lines[i].CStr() + at, "INFO: T%d-%d", &t, &n) == 2);
     }
 }
 

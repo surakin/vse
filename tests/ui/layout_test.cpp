@@ -1,4 +1,4 @@
-#include <cmath>
+#include "lang/scalar.h"
 #include <cstdio>
 
 #include <catch2/catch_test_macros.hpp>
@@ -8,6 +8,7 @@
 #include "ui/surface.h"
 #include "ui/testing/harness.h"
 #include "ui/text_block.h"
+#include "os/console.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::ui;
@@ -70,12 +71,12 @@ T* Fill(Surface* s, Args&&... args) {
     return c;
 }
 
-bool Near(f32 a, f32 b) { return std::fabs(a - b) < 1e-3f; }
+bool Near(f32 a, f32 b) { return Abs(a - b) < 1e-3f; }
 
 bool Is(const Widget* w, f32 x, f32 y, f32 width, f32 height) {
     const Rect& r = w->Bounds();
     const bool ok = Near(r.x, x) && Near(r.y, y) && Near(r.w, width) && Near(r.h, height);
-    if (!ok) std::printf("  %s is (%g, %g, %g, %g), expected (%g, %g, %g, %g)\n", w->Name().Length() > 0 ? String<HeapAllocator>(HeapAllocator::Default(), w->Name()).CStr() : "?", r.x, r.y, r.w, r.h, x, y, width, height);
+    if (!ok) os::Print("  %s is (%g, %g, %g, %g), expected (%g, %g, %g, %g)\n", w->Name().Length() > 0 ? String<HeapAllocator>(HeapAllocator::Default(), w->Name()).CStr() : "?", r.x, r.y, r.w, r.h, x, y, width, height);
     return ok;
 }
 
@@ -293,7 +294,7 @@ TEST_CASE("Layout: a label's height follows the width it is wrapped at, and its 
     h.Advance(0);
     CHECK(wrapped->Bounds().w == 100);
     CHECK(wrapped->Bounds().h > wide.h);          // wrapped to more lines than at 300
-    CHECK(std::fmod(wrapped->Bounds().h, plain_h) == 0); // a whole number of lines
+    CHECK(Fmod(wrapped->Bounds().h, plain_h) == 0); // a whole number of lines
     CHECK(plain->Bounds().h == plain_h);         // not wrapped: one line however narrow
     // The layout is cached: another frame with nothing changed lays out nothing.
     const u64 count = wrapped->LayoutCount();
@@ -420,7 +421,7 @@ void Grow(Widget* parent, Lcg* rng, int depth) {
     }
 }
 
-bool Finite(f32 v) { return std::isfinite(v); }
+bool Finite(f32 v) { return IsFinite(v); }
 
 // Every widget has a finite, non-negative size; for the containers whose children must stay inside (not the anchors) each child is inside its parent.
 bool CheckTree(Widget* w, bool* inside_ok) {

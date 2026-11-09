@@ -1,10 +1,9 @@
 #include "renderer/render_graph.h"
 
 #include "sync/atomic.h"
-#include <cstdarg>
-#include <cstdio>
-#include <cstring>
-#include <new>
+#include "cstr/varargs.h"
+#include "cstr/format.h"
+#include "lang/new.h"
 
 #include "debug/compiler.h"
 #include "jobs/parallel_for.h"
@@ -75,11 +74,11 @@ struct RenderGraphWriter {
 
     void Add(const char* fmt, ...) ENGINE_PRINTF_FORMAT(2, 3) {
         const bool room = out != nullptr && capacity > 0 && length < capacity;
-        va_list ap;
-        va_start(ap, fmt);
+        VarArgs ap;
+        ENGINE_VA_START(ap, fmt);
         // vsnprintf returns the full length even when it truncates, which is what the caller sizes a buffer from.
-        const int n = std::vsnprintf(room ? out + length : nullptr, room ? capacity - length : 0, fmt, ap);
-        va_end(ap);
+        const int n = VFormatTo(room ? out + length : nullptr, room ? capacity - length : 0, fmt, ap);
+        ENGINE_VA_END(ap);
         if (n > 0) length += static_cast<usize>(n);
     }
     void Finish() {
@@ -248,10 +247,10 @@ void RenderGraph::AddError(const char* fmt, ...) {
         ++dropped_errors_;
         return;
     }
-    va_list ap;
-    va_start(ap, fmt);
-    std::vsnprintf(errors_[error_count_], kGraphErrorLength, fmt, ap);
-    va_end(ap);
+    VarArgs ap;
+    ENGINE_VA_START(ap, fmt);
+    VFormatTo(errors_[error_count_], kGraphErrorLength, fmt, ap);
+    ENGINE_VA_END(ap);
     ++error_count_;
 }
 
@@ -669,18 +668,18 @@ bool RenderGraph::Compile() {
         }
         // path[seen_at[cur]..len) walked predecessors, so read it backwards for the forward cycle.
         char text[kGraphErrorLength];
-        usize n = static_cast<usize>(std::snprintf(text, sizeof(text), "dependency cycle: "));
+        usize n = static_cast<usize>(FormatTo(text, sizeof(text), "dependency cycle: "));
         const u32 first = seen_at[cur];
         u32 shown = 0;
         for (u32 i = len; i > first && n + 1 < sizeof(text); --i) {
             if (shown == 8) {
-                n += static_cast<usize>(std::snprintf(text + n, sizeof(text) - n, "... -> "));
+                n += static_cast<usize>(FormatTo(text + n, sizeof(text) - n, "... -> "));
                 break;
             }
-            n += static_cast<usize>(std::snprintf(text + n, sizeof(text) - n, "%s -> ", passes_[path[i - 1]].name));
+            n += static_cast<usize>(FormatTo(text + n, sizeof(text) - n, "%s -> ", passes_[path[i - 1]].name));
             ++shown;
         }
-        if (n + 1 < sizeof(text)) std::snprintf(text + n, sizeof(text) - n, "%s", passes_[path[len - 1]].name);
+        if (n + 1 < sizeof(text)) FormatTo(text + n, sizeof(text) - n, "%s", passes_[path[len - 1]].name);
         AddError("%s", text);
         return false;
     }
@@ -881,10 +880,10 @@ rhi::BufferHandle RenderGraph::ResolvedBuffer(GraphResource resource) const {
 }
 
 void RenderGraph::SetExecuteError(const char* fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    std::vsnprintf(exec_error_, sizeof(exec_error_), fmt, ap);
-    va_end(ap);
+    VarArgs ap;
+    ENGINE_VA_START(ap, fmt);
+    VFormatTo(exec_error_, sizeof(exec_error_), fmt, ap);
+    ENGINE_VA_END(ap);
 }
 
 void RenderGraph::ReleaseResource(TransientPool* pool, u32 r, rhi::ResourceState state) {

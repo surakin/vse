@@ -1,8 +1,7 @@
 // The Direct3D 12 backend's command lists (Phase 13 Day 168): every RHI state transition, the triangle against its golden image, compute
 // through every binding type, copies at odd sizes, GenerateMips against a CPU reference, recording on several threads, many bind groups per
 // frame across the shader-visible ring's wrap, and a list that fails cleanly. Windows only.
-#include <cmath>
-#include <cstring>
+#include "lang/scalar.h"
 #include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -20,6 +19,7 @@
 #include "rhi/dx12/dx12_device.h"
 #include "rhi/dx12/dx12_format.h"
 #include "rhi/rhi.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -118,8 +118,8 @@ constexpr f32 kColor[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 
 // The two-dimensional mip reference: a bilinear sample (clamped) of the level above at each texel centre, as shaders/mipgen.comp does,
 // in linear space (sRGB decoded first, encoded after).
-f32 Decode(f32 c) { return c <= 0.04045f ? c / 12.92f : std::pow((c + 0.055f) / 1.055f, 2.4f); }
-f32 Encode(f32 c) { return c <= 0.0031308f ? c * 12.92f : 1.055f * std::pow(c, 1.0f / 2.4f) - 0.055f; }
+f32 Decode(f32 c) { return c <= 0.04045f ? c / 12.92f : Pow((c + 0.055f) / 1.055f, 2.4f); }
+f32 Encode(f32 c) { return c <= 0.0031308f ? c * 12.92f : 1.055f * Pow(c, 1.0f / 2.4f) - 0.055f; }
 
 void Downsample(const Vector<f32>& src, u32 sw, u32 sh, u32 dw, u32 dh, Vector<f32>* dst) {
     dst->Resize(static_cast<usize>(dw) * dh * 4);
@@ -127,7 +127,7 @@ void Downsample(const Vector<f32>& src, u32 sw, u32 sh, u32 dw, u32 dh, Vector<f
         for (u32 x = 0; x < dw; ++x) {
             const f32 u = (static_cast<f32>(x) + 0.5f) / static_cast<f32>(dw) * static_cast<f32>(sw) - 0.5f;
             const f32 v = (static_cast<f32>(y) + 0.5f) / static_cast<f32>(dh) * static_cast<f32>(sh) - 0.5f;
-            const i32 x0 = static_cast<i32>(std::floor(u)), y0 = static_cast<i32>(std::floor(v));
+            const i32 x0 = static_cast<i32>(Floor(u)), y0 = static_cast<i32>(Floor(v));
             const f32 fx = u - static_cast<f32>(x0), fy = v - static_cast<f32>(y0);
             auto at = [&](i32 px, i32 py, u32 c) {
                 px = px < 0 ? 0 : (px >= static_cast<i32>(sw) ? static_cast<i32>(sw) - 1 : px);
@@ -265,8 +265,8 @@ TEST_CASE("The triangle renders offscreen on DX12 and matches its golden image",
     image.width = image.height = kSize;
     image.rgba.resize(kSize * kSize * 4);
     REQUIRE(device->ReadbackTexture(target, 0, 0, image.rgba.data(), image.rgba.size(), ResourceState::CopySrc));
-    CHECK(std::abs(image.Pixel(1, 1)[0] - 51) <= 1); // the clear color
-    CHECK(std::abs(image.Pixel(6, 40)[0] - 51) <= 1); // just left of the triangle: background
+    CHECK(Abs(image.Pixel(1, 1)[0] - 51) <= 1); // the clear color
+    CHECK(Abs(image.Pixel(6, 40)[0] - 51) <= 1); // just left of the triangle: background
     gpu_test::Image golden;
     REQUIRE(gpu_test::ReadPpm(gpu_test::GoldenPath("triangle.ppm").c_str(), &golden));
     const gpu_test::CompareResult result = gpu_test::Compare(golden, image, gpu_test::CompareOptions{}, "dx12_triangle");
@@ -417,9 +417,9 @@ TEST_CASE("Every binding type reaches a DX12 shader: storage buffers and push co
     }));
     u8 result[8 * 8 * 4];
     REQUIRE(device->ReadbackTexture(out, 0, 0, result, sizeof(result), ResourceState::CopySrc));
-    CHECK(std::abs(result[(3 * 8 + 3) * 4 + 0] - 100) <= 2); // 200 * 0.5
-    CHECK(std::abs(result[(3 * 8 + 3) * 4 + 1] - 50) <= 2);  // 100 * 0.5
-    CHECK(std::abs(result[(3 * 8 + 3) * 4 + 2] - 64) <= 2);  // 0 + 0.25
+    CHECK(Abs(result[(3 * 8 + 3) * 4 + 0] - 100) <= 2); // 200 * 0.5
+    CHECK(Abs(result[(3 * 8 + 3) * 4 + 1] - 50) <= 2);  // 100 * 0.5
+    CHECK(Abs(result[(3 * 8 + 3) * 4 + 2] - 64) <= 2);  // 0 + 0.25
 
     for (BindGroupHandle g : {fill_group, saxpy_group, tex_group, frag_group}) device->DestroyBindGroup(g);
     for (PipelineHandle p : {fill, saxpy, gradient, draw}) device->DestroyPipeline(p);
@@ -468,7 +468,7 @@ TEST_CASE("DX12 copies between buffers and odd-sized texture levels round-trip",
     REQUIRE(mapped != nullptr);
     u32 bad = 0;
     for (u32 row = 0; row < kLh; ++row) {
-        bad += std::memcmp(mapped + row * kPitch, sent.Data() + 512 + row * kPitch, kLw * 4) != 0;
+        bad += MemCompare(mapped + row * kPitch, sent.Data() + 512 + row * kPitch, kLw * 4) != 0;
     }
     device->UnmapBuffer(back);
     CHECK(bad == 0);
@@ -523,7 +523,7 @@ TEST_CASE("DX12 GenerateMips matches a CPU reference for linear and sRGB texture
                 for (usize i = 0; i < got.Size(); ++i) {
                     const f32 r = srgb && i % 4 != 3 ? Encode(next[i]) : next[i];
                     const int want = static_cast<int>(r * 255.0f + 0.5f);
-                    const int diff = std::abs(static_cast<int>(got[i]) - want);
+                    const int diff = Abs(static_cast<int>(got[i]) - want);
                     worst = diff > worst ? diff : worst;
                 }
                 INFO("layer " << l << " level " << level << " (" << nw << "x" << nh << ")");
@@ -576,7 +576,7 @@ TEST_CASE("DX12 command lists record on several threads at once and run in one s
     for (u32 i = 0; i < kThreads; ++i) {
         u8 px[8 * 8 * 4];
         REQUIRE(device->ReadbackTexture(targets[i], 0, 0, px, sizeof(px), ResourceState::CopySrc));
-        CHECK(std::abs(px[0] - static_cast<int>((i + 1) * 255 / 8.0f + 0.5f)) <= 1);
+        CHECK(Abs(px[0] - static_cast<int>((i + 1) * 255 / 8.0f + 0.5f)) <= 1);
         device->DestroyTexture(targets[i]);
     }
     device->Quiesce();

@@ -5,7 +5,7 @@
 // "Writing a store backend".)
 
 #include <chrono>
-#include <cstdio>
+#include "cstr/format.h"
 #include "sync/mutex.h"
 #include "sync/thread.h"
 
@@ -298,7 +298,7 @@ public:
 
     u32 Capabilities() const override { return kCapWritable | kCapPerKeyWrites | kCapTypedValues | kCapNotifies; }
     void Describe(char* out, usize capacity) const override {
-        if (capacity != 0) std::snprintf(out, capacity, "registry-shaped model");
+        if (capacity != 0) FormatTo(out, capacity, "registry-shaped model");
     }
     Status Load() override { return Status(); }
     Status Get(StringView key, StoredValue* out) override {

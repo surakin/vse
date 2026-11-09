@@ -17,7 +17,7 @@
 #include <csignal>
 #include <cstdio>
 #include <cctype>
-#include <cstdlib>
+#include "os/console.h"
 #include <cstring>
 #include <dirent.h>
 #include <fcntl.h>
@@ -28,6 +28,10 @@
 #include <unistd.h>
 #include <vector>
 #include "build_defs.h"
+#include "cstr/cstr.h"
+#include "cstr/format.h"
+#include "cstr/mem_ops.h"
+#include "cstr/number.h"
 
 #if ENGINE_SANITIZER_THREAD
 #define E2E_UNDER_TSAN 1
@@ -43,8 +47,8 @@ LogChannel LogEndToEnd("LogEndToEnd", LogVerbosity::Info);
 class TempDir {
 public:
     TempDir() {
-        const char* tmp = std::getenv("TMPDIR");
-        std::snprintf(path_, sizeof(path_), "%s/engine-e2e-XXXXXX", tmp != nullptr ? tmp : "/tmp");
+        const char* tmp = os::GetEnvironment("TMPDIR");
+        FormatTo(path_, sizeof(path_), "%s/engine-e2e-XXXXXX", tmp != nullptr ? tmp : "/tmp");
         if (mkdtemp(path_) == nullptr) {
             path_[0] = '\0';
         }
@@ -68,9 +72,9 @@ void FindFiles(const std::string& directory, const char* suffix, std::vector<std
     if (dir == nullptr) {
         return;
     }
-    const usize suffix_length = std::strlen(suffix);
+    const usize suffix_length = CStrLength(suffix);
     while (const dirent* entry = readdir(dir)) {
-        if (std::strcmp(entry->d_name, ".") == 0 || std::strcmp(entry->d_name, "..") == 0) {
+        if (CStrCompare(entry->d_name, ".") == 0 || CStrCompare(entry->d_name, "..") == 0) {
             continue;
         }
         const std::string path = directory + "/" + entry->d_name;
@@ -147,7 +151,7 @@ void CheckReportAndDump(const ChildResult& r, const char* directory, const char*
     const std::string content = ReadWholeFile(envelopes[0]);
     crash_extract::Minidump dump;
     REQUIRE(crash_extract::FindMinidump(content.data(), content.size(), &dump) == crash_extract::EnvelopeResult::Ok);
-    CHECK(std::memcmp(dump.data, "MDMP", 4) == 0);
+    CHECK(MemCompare(dump.data, "MDMP", 4) == 0);
     // The report travels in the envelope too (attached), and sits beside the dump.
     CHECK(content.find("=== CRASH REPORT ===") != std::string::npos);
     const std::string file = ReadWholeFile(std::string(directory) + "/crash-report.txt");
@@ -302,7 +306,7 @@ Atomic<bool> g_slow_provider_started{false};
 void SlowProvider(void*, char* out, usize capacity) {
     g_slow_provider_started = true;
     os::SleepNanos(400ull * 1000 * 1000); // long enough for the other thread to fault in the middle of the report
-    std::snprintf(out, capacity, "slow but done");
+    FormatTo(out, capacity, "slow but done");
 }
 } // namespace
 
@@ -406,7 +410,7 @@ void AppHandlerThatChains(int signal_number, siginfo_t* info, void* context) {
 
 void InstallAppHandler(void (*fn)(int, siginfo_t*, void*), struct sigaction* previous) {
     struct sigaction action;
-    std::memset(&action, 0, sizeof(action));
+    MemSet(&action, 0, sizeof(action));
     action.sa_sigaction = fn;
     action.sa_flags = SA_SIGINFO | SA_NODEFER;
     sigemptyset(&action.sa_mask);
@@ -476,7 +480,7 @@ ENGINE_DEATH_TEST_FN(dt_e2e_for_debugger) {
     InstallInto(argument);
     InitCrashContext(0, nullptr);
     char line[128];
-    const int n = std::snprintf(line, sizeof(line), "BUILD_ID=%s\n", GetCrashContext().build_id);
+    const int n = FormatTo(line, sizeof(line), "BUILD_ID=%s\n", GetCrashContext().build_id);
     os::Write(1, line, static_cast<usize>(n));
     WorkerFault(FaultKind::NullWrite, false);
 }
@@ -612,7 +616,7 @@ ENGINE_DEATH_TEST_FN(dt_e2e_alternate_stack_size) {
     stack_t current;
     sigaltstack(nullptr, &current);
     char line[64];
-    const int n = std::snprintf(line, sizeof(line), "ALTSTACK=%zu\n", static_cast<size_t>(current.ss_size));
+    const int n = FormatTo(line, sizeof(line), "ALTSTACK=%zu\n", static_cast<size_t>(current.ss_size));
     os::Write(1, line, static_cast<usize>(n));
 }
 
@@ -624,7 +628,7 @@ TEST_CASE("Installing the crash handler leaves the installing thread a signal st
     const usize at = out.find("ALTSTACK=");
     REQUIRE(at != std::string::npos);
     // The library's own stack is 16 KiB, which the report (an 8 KiB trace buffer and more) does not fit on.
-    CHECK(std::strtoull(out.c_str() + at + 9, nullptr, 10) >= 64 * 1024);
+    CHECK(CStrToULongLong(out.c_str() + at + 9, nullptr, 10) >= 64 * 1024);
 }
 
 TEST_CASE("Writing to a pipe whose reader has stopped gives up after the timeout instead of hanging", "[crash][crashreport][debug][linux]") {
@@ -634,7 +638,7 @@ TEST_CASE("Writing to a pipe whose reader has stopped gives up after the timeout
     const int flags = fcntl(fds[1], F_GETFL);
     fcntl(fds[1], F_SETFL, flags | O_NONBLOCK);
     char block[4096];
-    std::memset(block, 'x', sizeof(block));
+    MemSet(block, 'x', sizeof(block));
     usize filled = 0;
     for (;;) {
         const ssize_t n = write(fds[1], block, sizeof(block));

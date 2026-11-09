@@ -1,12 +1,11 @@
 #pragma once
 
 #include "sync/atomic.h"
-#include <cstdlib>
-#include <cstring>
+#include "os/console.h"
+#include "cstr/cstr.h"
 #include "build_defs.h"
 
 #if ENGINE_PLATFORM_WINDOWS
-#include <cwchar>
 
 #include "os/windows/utf16.h"
 #include "os/windows/win32.h"
@@ -25,6 +24,7 @@
 #include "io/directory.h"
 #include "io/file_system.h"
 #include "test_text.h"
+#include "cstr/format.h"
 
 // Helpers of the file layer's tests. They plant and read files with the operating system directly (POSIX, or Win32 on Windows), so they
 // do not depend on the code under test.
@@ -48,11 +48,11 @@ struct WinPath {
     /// usable past MAX_PATH.
     static WinPath Extended(const io::Path& path) {
         WinPath p(path);
-        const usize n = std::wcslen(p.text);
+        const usize n = WStrLength(p.text);
         const bool prefixed = n >= 4 && p.text[0] == L'\\' && p.text[1] == L'\\' && (p.text[2] == L'?' || p.text[2] == L'.');
         if (!prefixed && n >= 2 && p.text[1] == L':' && n + 4 < sizeof(p.text) / sizeof(p.text[0])) {
-            std::wmemmove(p.text + 4, p.text, n + 1);
-            std::wmemcpy(p.text, L"\\\\?\\", 4);
+            WMemMove(p.text + 4, p.text, n + 1);
+            WMemCopy(p.text, L"\\\\?\\", 4);
         }
         return p;
     }
@@ -64,7 +64,7 @@ inline bool WriteText(const io::Path& path, const char* text) {
     const HANDLE h = CreateFileW(p.text, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, CREATE_ALWAYS,
                                  FILE_ATTRIBUTE_NORMAL, nullptr);
     if (h == INVALID_HANDLE_VALUE) return false;
-    const DWORD n = static_cast<DWORD>(std::strlen(text));
+    const DWORD n = static_cast<DWORD>(CStrLength(text));
     DWORD put = 0;
     const bool ok = WriteFile(h, text, n, &put, nullptr) && put == n;
     CloseHandle(h);
@@ -128,20 +128,20 @@ inline void ForEachEntry(const wchar_t* dir, Visit&& visit) {
     buffers.Resize(2 * kCapacity);
     wchar_t* pattern = buffers.Data();
     wchar_t* child = buffers.Data() + kCapacity;
-    const usize n = std::wcslen(dir);
+    const usize n = WStrLength(dir);
     if (n + 3 >= kCapacity) return;
-    std::wmemcpy(pattern, dir, n);
-    std::wmemcpy(pattern + n, L"\\*", 3);
+    WMemCopy(pattern, dir, n);
+    WMemCopy(pattern + n, L"\\*", 3);
     WIN32_FIND_DATAW data;
     const HANDLE find = FindFirstFileExW(pattern, FindExInfoBasic, &data, FindExSearchNameMatch, nullptr, 0);
     if (find == INVALID_HANDLE_VALUE) return;
     do {
-        if (std::wcscmp(data.cFileName, L".") == 0 || std::wcscmp(data.cFileName, L"..") == 0) continue;
-        const usize m = std::wcslen(data.cFileName);
+        if (WStrCompare(data.cFileName, L".") == 0 || WStrCompare(data.cFileName, L"..") == 0) continue;
+        const usize m = WStrLength(data.cFileName);
         if (n + 1 + m + 1 > kCapacity) continue;
-        std::wmemcpy(child, dir, n);
+        WMemCopy(child, dir, n);
         child[n] = L'\\';
-        std::wmemcpy(child + n + 1, data.cFileName, m + 1);
+        WMemCopy(child + n + 1, data.cFileName, m + 1);
         visit(static_cast<const wchar_t*>(child), data.dwFileAttributes);
     } while (FindNextFileW(find, &data));
     FindClose(find);
@@ -218,7 +218,7 @@ inline bool SymlinksAvailable() {
         const DWORD n = GetTempPathW(MAX_PATH + 1, base);
         if (n == 0 || n > MAX_PATH - 40) return false;
         wchar_t probe[MAX_PATH + 1];
-        swprintf(probe, MAX_PATH + 1, L"%lsre_io_symlink_probe.%lu", base, GetCurrentProcessId());
+        WFormatTo(probe, MAX_PATH + 1, L"%lsre_io_symlink_probe.%lu", base, GetCurrentProcessId());
         const bool ok = CreateSymbolicLinkW(probe, L"target", SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE) != FALSE;
         if (ok) DeleteFileW(probe);
         return ok;
@@ -287,7 +287,7 @@ inline bool WriteText(const io::Path& path, const char* text) {
     if (!path.ToNative(p, sizeof(p))) return false;
     const int fd = ::open(p, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd < 0) return false;
-    const size_t n = std::strlen(text);
+    const size_t n = CStrLength(text);
     const bool ok = ::write(fd, text, n) == static_cast<ssize_t>(n);
     ::close(fd);
     return ok;
@@ -313,7 +313,7 @@ inline void MakeWritable(const engine_test::Text& path, int depth = 0) {
     if (!S_ISDIR(st.st_mode)) return;
     if (DIR* d = ::opendir(path.CStr())) {
         while (const dirent* e = ::readdir(d)) {
-            if (std::strcmp(e->d_name, ".") != 0 && std::strcmp(e->d_name, "..") != 0) {
+            if (CStrCompare(e->d_name, ".") != 0 && CStrCompare(e->d_name, "..") != 0) {
                 MakeWritable(engine_test::Concat(path.View(), "/", StringView(e->d_name)), depth + 1);
             }
         }
@@ -369,7 +369,7 @@ public:
         io::Path tmp;
         io::TempDirectory(&tmp);
         if (io::CreateTempDirectory(tmp, "re_io_test", &path_).Failed()) {
-            std::abort();
+            os::Abort();
         }
         static Atomic<bool> swept{false}; // the first directory of the process cleans up after earlier, interrupted runs
         if (!swept.Exchange(true)) SweepStaleTempDirs(tmp, path_);

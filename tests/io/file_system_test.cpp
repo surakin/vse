@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <cerrno>
-#include <cstdlib>
+#include "os/console.h"
 #include <cstring>
 #include "build_defs.h"
 #if !ENGINE_PLATFORM_WINDOWS
@@ -28,7 +28,7 @@ struct EnvGuard { // restores an environment variable at scope exit
     engine_test::Text old;
     bool had;
     explicit EnvGuard(const char* n) : name(engine_test::MakeText(StringView(n))), old(engine_test::MakeText()) {
-        const char* v = std::getenv(n);
+        const char* v = os::GetEnvironment(n);
         had = v != nullptr;
         if (had) old = engine_test::MakeText(StringView(v));
     }

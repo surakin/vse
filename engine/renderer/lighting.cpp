@@ -1,7 +1,6 @@
 #include "renderer/lighting.h"
 
-#include <cmath>
-#include <cstring>
+#include "lang/scalar.h"
 
 #include "fullscreen.vert.dxil.inc"
 #include "lighting.frag.dxil.inc"
@@ -23,7 +22,7 @@ f32 Saturate(f32 v) { return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v); }
 f32 Dot(const Vec3& a, const Vec3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
 Vec3 Normalized(const Vec3& v) {
-    const f32 len = std::sqrt(Dot(v, v));
+    const f32 len = Sqrt(Dot(v, v));
     return Vec3(v.x / len, v.y / len, v.z / len);
 }
 
@@ -32,18 +31,18 @@ Vec3 Normalized(const Vec3& v) {
 Vec3 ShadeLight(const SurfacePoint& s, const Vec3& view, const Vec3& light, const Vec3& radiance) {
     const f32 nl = Saturate(Dot(s.normal, light));
     if (nl <= 0.0f) return Vec3(0, 0, 0);
-    const f32 nv = std::fmax(Dot(s.normal, view), 1e-4f);
+    const f32 nv = FMax(Dot(s.normal, view), 1e-4f);
     const Vec3 vl = view + light;
     const Vec3 h = Dot(vl, vl) > 1e-10f ? Normalized(vl) : s.normal;
     const f32 nh = Saturate(Dot(s.normal, h));
     const f32 vh = Saturate(Dot(view, h));
-    const f32 r = std::fmax(s.roughness, 0.045f);
+    const f32 r = FMax(s.roughness, 0.045f);
     const f32 a = r * r;
     const f32 a2 = a * a;
     const f32 d_term = nh * nh * (a2 - 1.0f) + 1.0f;
     const f32 d = a2 / (kPi * d_term * d_term);
-    const f32 vis = 0.5f / (nl * std::sqrt(nv * nv * (1.0f - a2) + a2) + nv * std::sqrt(nl * nl * (1.0f - a2) + a2));
-    const f32 fresnel = std::pow(1.0f - vh, 5.0f);
+    const f32 vis = 0.5f / (nl * Sqrt(nv * nv * (1.0f - a2) + a2) + nv * Sqrt(nl * nl * (1.0f - a2) + a2));
+    const f32 fresnel = Pow(1.0f - vh, 5.0f);
     const f32 f0[3] = {0.04f + (s.albedo.x - 0.04f) * s.metallic, 0.04f + (s.albedo.y - 0.04f) * s.metallic, 0.04f + (s.albedo.z - 0.04f) * s.metallic};
     const f32 albedo[3] = {s.albedo.x, s.albedo.y, s.albedo.z};
     const f32 rad[3] = {radiance.x, radiance.y, radiance.z};
@@ -78,7 +77,7 @@ f32 PointLightAttenuation(f32 distance, f32 radius) {
 }
 
 f32 LightVolumeScale() {
-    return 1.0f / (std::cos(kPi / static_cast<f32>(kLightVolumeSegments)) * std::cos(kPi / static_cast<f32>(kLightVolumeRings)));
+    return 1.0f / (Cos(kPi / static_cast<f32>(kLightVolumeSegments)) * Cos(kPi / static_cast<f32>(kLightVolumeRings)));
 }
 
 Vec3 LightVolumeVertex(u32 index) {
@@ -91,7 +90,7 @@ Vec3 LightVolumeVertex(u32 index) {
     const f32 theta = kPi * static_cast<f32>(ring) / static_cast<f32>(kLightVolumeRings);
     const f32 phi = 2.0f * kPi * static_cast<f32>(slice) / static_cast<f32>(kLightVolumeSegments);
     const f32 scale = LightVolumeScale();
-    return Vec3(std::sin(theta) * std::cos(phi) * scale, std::cos(theta) * scale, std::sin(theta) * std::sin(phi) * scale);
+    return Vec3(Sin(theta) * Cos(phi) * scale, Cos(theta) * scale, Sin(theta) * Sin(phi) * scale);
 }
 
 bool LightScreenRect(const FrameData& view, const Vec3& center, f32 radius, u32 width, u32 height, rhi::ScissorRect* out) {
@@ -107,10 +106,10 @@ bool LightScreenRect(const FrameData& view, const Vec3& center, f32 radius, u32 
         }
         const f32 nx = c.x / c.w;
         const f32 ny = c.y / c.w;
-        min_x = std::fmin(min_x, nx);
-        max_x = std::fmax(max_x, nx);
-        min_y = std::fmin(min_y, ny);
-        max_y = std::fmax(max_y, ny);
+        min_x = FMin(min_x, nx);
+        max_x = FMax(max_x, nx);
+        min_y = FMin(min_y, ny);
+        max_y = FMax(max_y, ny);
     }
     if (!all_in_front) {
         *out = rhi::ScissorRect{0, 0, width, height};
@@ -119,10 +118,10 @@ bool LightScreenRect(const FrameData& view, const Vec3& center, f32 radius, u32 
     // NDC y already carries the projection's flip, so row 0 is the top of the framebuffer, as in the lighting shader.
     const f32 fw = static_cast<f32>(width);
     const f32 fh = static_cast<f32>(height);
-    const f32 x0 = std::fmax(std::floor((min_x * 0.5f + 0.5f) * fw), 0.0f);
-    const f32 x1 = std::fmin(std::ceil((max_x * 0.5f + 0.5f) * fw), fw);
-    const f32 y0 = std::fmax(std::floor((min_y * 0.5f + 0.5f) * fh), 0.0f);
-    const f32 y1 = std::fmin(std::ceil((max_y * 0.5f + 0.5f) * fh), fh);
+    const f32 x0 = FMax(Floor((min_x * 0.5f + 0.5f) * fw), 0.0f);
+    const f32 x1 = FMin(Ceil((max_x * 0.5f + 0.5f) * fw), fw);
+    const f32 y0 = FMax(Floor((min_y * 0.5f + 0.5f) * fh), 0.0f);
+    const f32 y1 = FMin(Ceil((max_y * 0.5f + 0.5f) * fh), fh);
     if (!(x1 > x0) || !(y1 > y0)) {
         return false;
     }

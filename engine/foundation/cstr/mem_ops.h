@@ -85,4 +85,12 @@ inline void MemFree(void* block) noexcept {
     std::free(block);
 }
 
+/// Sorts `count` elements of `element_size` bytes at `base` with `compare` (negative, zero, positive), not stably (`qsort`). Prefer
+/// `Sort` for typed ranges; this is for the C-style tables the callers keep as raw memory.
+///
+/// Thread-safety: thread-compatible. Not safe on the same array from two threads.
+inline void SortRaw(void* base, usize count, usize element_size, int (*compare)(const void*, const void*)) {
+    std::qsort(base, count, element_size, compare);
+}
+
 } // namespace engine_placeholder

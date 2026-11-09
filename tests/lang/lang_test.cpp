@@ -160,3 +160,16 @@ TEST_CASE("new helpers: placement, launder and the aligned non-throwing allocati
     STATIC_REQUIRE(IsSame<AlignVal, std::align_val_t>);
     STATIC_REQUIRE(IsSame<NoThrowTag, std::nothrow_t>);
 }
+
+struct PolymorphicBase {
+    virtual ~PolymorphicBase() = default;
+};
+struct PlainType {};
+
+TEST_CASE("HasVirtualDestructor, TypeIdentity and kMaxAlign", "[lang]") {
+    static_assert(HasVirtualDestructor<PolymorphicBase>);
+    static_assert(!HasVirtualDestructor<PlainType>);
+    static_assert(IsSame<TypeIdentity<int>, int>);
+    static_assert(kMaxAlign >= alignof(double) && kMaxAlign >= alignof(void*));
+    CHECK((kMaxAlign & (kMaxAlign - 1)) == 0);
+}

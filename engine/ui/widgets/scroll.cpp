@@ -1,6 +1,6 @@
 #include "ui/widgets/scroll.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "ui/surface.h"
 #include "ui/widgets/look.h"
@@ -48,7 +48,7 @@ ScrollBar::Geometry ScrollBar::Measure2() const {
     const f32 min_thumb = surface != nullptr ? const_cast<Surface*>(surface)->Themes().Metric(MetricId::MinHitSize, 1.0f) : 0.0f;
     f32 thumb = g.length;
     if (content_ > view_ && content_ > 0) thumb = g.length * static_cast<f32>(view_ / content_);
-    const f32 floor_len = std::fmin(min_thumb, g.length);
+    const f32 floor_len = FMin(min_thumb, g.length);
     if (thumb < floor_len) thumb = floor_len;
     if (thumb > g.length) thumb = g.length;
     g.thumb = thumb;
@@ -204,10 +204,10 @@ f32 ScrollView::Step() const {
 }
 
 void ScrollView::SetOffset(Point offset) {
-    const f32 max_x = std::fmax(content_size_.w - viewport_.w, 0.0f);
-    const f32 max_y = std::fmax(content_size_.h - viewport_.h, 0.0f);
-    offset.x = std::fmin(std::fmax(offset.x, 0.0f), max_x);
-    offset.y = std::fmin(std::fmax(offset.y, 0.0f), max_y);
+    const f32 max_x = FMax(content_size_.w - viewport_.w, 0.0f);
+    const f32 max_y = FMax(content_size_.h - viewport_.h, 0.0f);
+    offset.x = FMin(FMax(offset.x, 0.0f), max_x);
+    offset.y = FMin(FMax(offset.y, 0.0f), max_y);
     if (offset.x == offset_.x && offset.y == offset_.y) return;
     offset_ = offset;
     MarkDirty(kLayoutDirty);
@@ -224,16 +224,16 @@ void ScrollView::Arrange(const Rect& rect) {
     Rect view = rect;
     Size content = Size();
     auto compute = [&]() {
-        view.w = std::fmax(rect.w - (v_shown ? thickness : 0.0f), 0.0f);
-        view.h = std::fmax(rect.h - (h_shown ? thickness : 0.0f), 0.0f);
+        view.w = FMax(rect.w - (v_shown ? thickness : 0.0f), 0.0f);
+        view.h = FMax(rect.h - (h_shown ? thickness : 0.0f), 0.0f);
         content = Size{view.w, view.h};
         if (content_ == nullptr || content_->Collapsed()) return;
         Constraints c;
         if (h_policy_ == ScrollPolicy::Never) c.max_w = view.w;
         if (v_policy_ == ScrollPolicy::Never) c.max_h = view.h;
         const Size pref = content_->MeasureTotal(c);
-        if (h_policy_ != ScrollPolicy::Never) content.w = std::fmax(pref.w, view.w);
-        if (v_policy_ != ScrollPolicy::Never) content.h = std::fmax(pref.h, view.h);
+        if (h_policy_ != ScrollPolicy::Never) content.w = FMax(pref.w, view.w);
+        if (v_policy_ != ScrollPolicy::Never) content.h = FMax(pref.h, view.h);
     };
     for (int pass = 0; pass < 2; ++pass) {
         compute();
@@ -248,8 +248,8 @@ void ScrollView::Arrange(const Rect& rect) {
     view.y = rect.y;
     viewport_ = view;
     content_size_ = content;
-    offset_.x = std::fmin(std::fmax(offset_.x, 0.0f), std::fmax(content.w - view.w, 0.0f));
-    offset_.y = std::fmin(std::fmax(offset_.y, 0.0f), std::fmax(content.h - view.h, 0.0f));
+    offset_.x = FMin(FMax(offset_.x, 0.0f), FMax(content.w - view.w, 0.0f));
+    offset_.y = FMin(FMax(offset_.y, 0.0f), FMax(content.h - view.h, 0.0f));
     if (content_ != nullptr && !content_->Collapsed()) {
         Rect at;
         at.x = rect.x - offset_.x;
@@ -308,12 +308,12 @@ bool ScrollView::ScrollTo(const Rect& rect) {
     if (rect.x < viewport_.x) {
         next.x -= viewport_.x - rect.x;
     } else if (rect.Right() > viewport_.Right()) {
-        next.x += std::fmin(rect.Right() - viewport_.Right(), rect.x - viewport_.x);
+        next.x += FMin(rect.Right() - viewport_.Right(), rect.x - viewport_.x);
     }
     if (rect.y < viewport_.y) {
         next.y -= viewport_.y - rect.y;
     } else if (rect.Bottom() > viewport_.Bottom()) {
-        next.y += std::fmin(rect.Bottom() - viewport_.Bottom(), rect.y - viewport_.y);
+        next.y += FMin(rect.Bottom() - viewport_.Bottom(), rect.y - viewport_.y);
     }
     const Point before = offset_;
     SetOffset(next);

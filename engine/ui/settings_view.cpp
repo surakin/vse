@@ -1,7 +1,7 @@
 #include "ui/settings_view.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 #include "sync/atomic.h"
 
 namespace engine_placeholder::ui {
@@ -16,7 +16,7 @@ bool StartsWith(StringView text, StringView prefix) {
     return true;
 }
 
-StringView View(const char* text) { return text != nullptr ? StringView(text, std::strlen(text)) : StringView(); }
+StringView View(const char* text) { return text != nullptr ? StringView(text, CStrLength(text)) : StringView(); }
 
 String<HeapAllocator> Owned(StringView text) { return String<HeapAllocator>(HeapAllocator::Default(), text); }
 
@@ -296,7 +296,7 @@ void SettingsView::ShowRow(usize index, const settings::SettingsSnapshot& snapsh
     if (row.spin != nullptr) row.spin->SetEnabled(!pinned);
     if (pinned) {
         char tip[320];
-        std::snprintf(tip, sizeof(tip), "Set by %s %s", where.layer_name, where.origin);
+        FormatTo(tip, sizeof(tip), "Set by %s %s", where.layer_name, where.origin);
         control->SetTooltip(View(tip));
     } else {
         control->SetTooltip(StringView());
@@ -313,7 +313,7 @@ void SettingsView::Commit(usize index, const settings::Value& value) {
     if (!result.Ok()) {
         char line[320];
         const char* why = result.error == settings::SetError::BadValue ? settings::ValueErrorName(result.value) : SetErrorText(result.error);
-        std::snprintf(line, sizeof(line), "%s: %s", desc->label != nullptr ? desc->label : desc->key, why);
+        FormatTo(line, sizeof(line), "%s: %s", desc->label != nullptr ? desc->label : desc->key, why);
         message_ = Owned(View(line));
     } else {
         message_ = Owned(StringView());

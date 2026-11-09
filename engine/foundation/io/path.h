@@ -1,11 +1,11 @@
 #pragma once
 
-#include <cstring>
 
 #include "containers/vector.h"
 #include "string/string.h"
 #include "types.h"
 #include "build_defs.h"
+#include "cstr/mem_ops.h"
 
 //! Lexical path manipulation: [[io::Path]], [[io::PathBuilder]] and [[io::PathStyle]].
 //!
@@ -253,7 +253,7 @@ bool PathBuilder<Capacity>::SetImpl(StringView text) {
     if (n == static_cast<usize>(-1)) {
         return false;
     }
-    std::memcpy(buffer_, tmp, n);
+    MemCopy(buffer_, tmp, n);
     buffer_[n] = '\0';
     length_ = n;
     return true;
@@ -271,7 +271,7 @@ bool PathBuilder<Capacity>::AppendImpl(StringView right) {
     if (n == static_cast<usize>(-1)) {
         return false;
     }
-    std::memcpy(buffer_, tmp, n);
+    MemCopy(buffer_, tmp, n);
     buffer_[n] = '\0';
     length_ = n;
     return true;

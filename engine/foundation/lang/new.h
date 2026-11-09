@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <new>
 
 #include "types.h"
@@ -16,6 +17,9 @@ inline constexpr const NoThrowTag& kNoThrow = std::nothrow;
 /// The exception type the throwing `operator new` reports with (`std::bad_alloc`); the engine builds without exceptions, only tests that replace the global
 /// allocation functions name it.
 using BadAlloc = std::bad_alloc;
+
+/// The strictest alignment any fundamental type needs, which `operator new` guarantees (`alignof(std::max_align_t)`).
+inline constexpr usize kMaxAlign = alignof(std::max_align_t);
 
 /// Constructs a `T` in the storage at `where` with `args` (placement new); the storage must be suitably aligned and big enough.
 ///
@@ -42,3 +46,6 @@ inline void AlignedDelete(void* ptr, usize align) noexcept {
 }
 
 } // namespace engine_placeholder
+
+/// The byte offset of the member `member` in the standard-layout type `type` (`offsetof`). A macro because it takes a member name.
+#define ENGINE_OFFSET_OF(type, member) offsetof(type, member)

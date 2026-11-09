@@ -1,6 +1,6 @@
 // The pipeline cache file rules every backend shares (rhi/pipeline_cache_file.h, Phase 13 Day 167): reading a file whole, refusing what
 // is not a usable file, and writing atomically into a directory that may not exist yet.
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -10,6 +10,7 @@
 #include "io/file_system.h"
 #include "rhi/pipeline_cache_file.h"
 #include "rhi/rhi.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -28,7 +29,7 @@ TEST_CASE("A pipeline cache file is written atomically into a new directory and 
     Vector<byte> read;
     REQUIRE(ReadPipelineCacheFile(Native(file).CStr(), &read));
     REQUIRE(read.Size() == sizeof(bytes));
-    CHECK(std::memcmp(read.Data(), bytes, sizeof(bytes)) == 0);
+    CHECK(MemCompare(read.Data(), bytes, sizeof(bytes)) == 0);
 }
 
 TEST_CASE("A failed pipeline cache read leaves the output empty, whatever it held", "[rhi][pipeline_cache]") {
@@ -55,7 +56,7 @@ TEST_CASE("The pipeline cache directory comes from the device, then the environm
     info.pipeline_cache_dir = "explicit-dir";
     char dir[400];
     REQUIRE(ResolvePipelineCacheDir(info, dir, sizeof(dir)));
-    CHECK(std::strcmp(dir, "explicit-dir") == 0);
+    CHECK(CStrCompare(dir, "explicit-dir") == 0);
     char tiny[4];
     CHECK_FALSE(ResolvePipelineCacheDir(info, tiny, sizeof(tiny))); // too long: no cache, never another directory
     CHECK(tiny[0] == '\0');

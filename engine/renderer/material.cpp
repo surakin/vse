@@ -1,7 +1,7 @@
 #include "renderer/material.h"
 
-#include <cstring>
-#include <new>
+#include "cstr/cstr.h"
+#include "lang/new.h"
 
 #include "containers/unique_ptr.h"
 
@@ -9,6 +9,8 @@
 #include "renderer/frame_data.h"
 #include "renderer/renderer_log.h"
 #include "renderer/texture.h"
+#include "cstr/format.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::renderer {
 
@@ -29,7 +31,7 @@ void CopyName(char (&dst)[kNameBytes], const char* src) {
     dst[i] = 0;
 }
 
-bool StartsWith(const char* s, const char* prefix) { return std::strncmp(s, prefix, std::strlen(prefix)) == 0; }
+bool StartsWith(const char* s, const char* prefix) { return CStrCompareN(s, prefix, CStrLength(prefix)) == 0; }
 
 DefaultTexture DefaultFor(const char* name) {
     if (StartsWith(name, "normal")) return DefaultTexture::FlatNormal;
@@ -42,7 +44,7 @@ bool SameBlock(const ReflectedBlock& a, const ReflectedBlock& b) {
     for (u32 i = 0; i < a.member_count; ++i) {
         const ReflectedMember& x = a.members[i];
         const ReflectedMember& y = b.members[i];
-        if (std::strcmp(x.name, y.name) != 0 || x.offset != y.offset || x.size != y.size || x.kind != y.kind || x.scalar != y.scalar ||
+        if (CStrCompare(x.name, y.name) != 0 || x.offset != y.offset || x.size != y.size || x.kind != y.kind || x.scalar != y.scalar ||
             x.rows != y.rows || x.columns != y.columns || x.array_count != y.array_count) {
             return false;
         }
@@ -51,7 +53,7 @@ bool SameBlock(const ReflectedBlock& a, const ReflectedBlock& b) {
 }
 
 void SetMessage(ReflectionError* e, const char* fmt, const char* a, const char* b = "") {
-    if (e != nullptr) std::snprintf(e->message, sizeof(e->message), fmt, a, b);
+    if (e != nullptr) FormatTo(e->message, sizeof(e->message), fmt, a, b);
 }
 
 // The renderer's descriptor-set convention: set 0 one uniform buffer at binding 0, set 2 one storage buffer at binding 0,
@@ -655,7 +657,7 @@ MaterialSystem::Variant* MaterialSystem::BuildVariant(TemplateSlot& t, Permutati
                 s.binding = b.binding;
                 s.fallback = DefaultFor(b.name);
                 for (u32 d = 0; d < t.default_count; ++d) {
-                    if (std::strcmp(t.defaults[d].name, b.name) == 0) s.fallback = t.defaults[d].texture;
+                    if (CStrCompare(t.defaults[d].name, b.name) == 0) s.fallback = t.defaults[d].texture;
                 }
             } else if (b.type == rhi::BindingType::Sampler) {
                 bool seen = false;
@@ -912,7 +914,7 @@ bool MaterialSystem::SetValue(MaterialId id, const char* name, MemberKind kind, 
     }
     const ReflectedMember* member = nullptr;
     for (u32 i = 0; i < v.block.member_count; ++i) {
-        if (std::strcmp(v.block.members[i].name, name) == 0) {
+        if (CStrCompare(v.block.members[i].name, name) == 0) {
             member = &v.block.members[i];
             break;
         }
@@ -927,8 +929,8 @@ bool MaterialSystem::SetValue(MaterialId id, const char* name, MemberKind kind, 
                   member->size, static_cast<u32>(member->kind), static_cast<u32>(member->rows), static_cast<u32>(member->columns));
         return false;
     }
-    if (std::memcmp(m.shadow.Data() + member->offset, data, size) != 0) {
-        std::memcpy(m.shadow.Data() + member->offset, data, size);
+    if (MemCompare(m.shadow.Data() + member->offset, data, size) != 0) {
+        MemCopy(m.shadow.Data() + member->offset, data, size);
         m.dirty_slots = (1u << kSlots) - 1;
     }
     return true;
@@ -970,7 +972,7 @@ bool MaterialSystem::SetTexture(MaterialId id, const char* name, rhi::TextureHan
     MaterialSlot& m = Get(id);
     const Variant& v = templates_[m.template_index].variants[m.variant_index];
     for (u32 i = 0; i < v.texture_count; ++i) {
-        if (std::strcmp(v.textures[i].name, name) == 0) {
+        if (CStrCompare(v.textures[i].name, name) == 0) {
             m.texture_owners[i] = nullptr;
             if (!(m.textures[i] == texture)) {
                 m.textures[i] = texture;
@@ -987,7 +989,7 @@ bool MaterialSystem::SetSampler(MaterialId id, const char* name, rhi::SamplerHan
     MaterialSlot& m = Get(id);
     const Variant& v = templates_[m.template_index].variants[m.variant_index];
     for (u32 i = 0; i < v.sampler_count; ++i) {
-        if (std::strcmp(v.samplers[i].name, name) == 0) {
+        if (CStrCompare(v.samplers[i].name, name) == 0) {
             m.sampler_owners[i] = nullptr;
             if (!(m.samplers[i] == sampler)) {
                 m.samplers[i] = sampler;
@@ -1004,7 +1006,7 @@ bool MaterialSystem::SetTexture(MaterialId id, const char* name, const GpuTextur
     MaterialSlot& m = Get(id);
     const Variant& v = templates_[m.template_index].variants[m.variant_index];
     for (u32 i = 0; i < v.texture_count; ++i) {
-        if (std::strcmp(v.textures[i].name, name) == 0) {
+        if (CStrCompare(v.textures[i].name, name) == 0) {
             m.texture_owners[i] = texture;
             const rhi::TextureHandle handle = texture != nullptr ? texture->Handle() : rhi::TextureHandle{};
             if (!(m.textures[i] == handle)) {
@@ -1022,7 +1024,7 @@ bool MaterialSystem::SetSampler(MaterialId id, const char* name, const GpuSample
     MaterialSlot& m = Get(id);
     const Variant& v = templates_[m.template_index].variants[m.variant_index];
     for (u32 i = 0; i < v.sampler_count; ++i) {
-        if (std::strcmp(v.samplers[i].name, name) == 0) {
+        if (CStrCompare(v.samplers[i].name, name) == 0) {
             m.sampler_owners[i] = sampler;
             const rhi::SamplerHandle handle = sampler != nullptr ? sampler->Handle() : rhi::SamplerHandle{};
             if (!(m.samplers[i] == handle)) {
@@ -1074,7 +1076,7 @@ void MaterialSystem::FlushMaterials() {
             }
         }
         if ((m.dirty_slots & (1u << slot_)) != 0) {
-            std::memcpy(m.mapped + m.stride * slot_, m.shadow.Data(), m.shadow_size);
+            MemCopy(m.mapped + m.stride * slot_, m.shadow.Data(), m.shadow_size);
             device_->FlushMappedBuffer(m.params, m.stride * slot_, m.shadow_size);
             m.dirty_slots &= ~(1u << slot_);
             ++stats_.parameter_flushes;
@@ -1092,7 +1094,7 @@ rhi::TextureHandle MaterialSystem::EffectiveTexture(MaterialId id, const char* n
     const MaterialSlot& m = Get(id);
     const Variant& v = templates_[m.template_index].variants[m.variant_index];
     for (u32 i = 0; i < v.texture_count; ++i) {
-        if (std::strcmp(v.textures[i].name, name) == 0) {
+        if (CStrCompare(v.textures[i].name, name) == 0) {
             const rhi::TextureHandle bound = m.texture_owners[i] != nullptr ? m.texture_owners[i]->Handle() : m.textures[i];
             return bound.IsValid() ? bound : defaults_[static_cast<u32>(v.textures[i].fallback)];
         }

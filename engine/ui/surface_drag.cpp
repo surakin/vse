@@ -1,4 +1,4 @@
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "ui/surface.h"
 #include "log/assert.h"
@@ -37,7 +37,7 @@ f32 Surface::DragSlop() const { return const_cast<Surface*>(this)->themes_.Metri
 
 bool Surface::PastDragSlop(Point from, Point to) const {
     const f32 slop = DragSlop();
-    return std::fabs(to.x - from.x) > slop || std::fabs(to.y - from.y) > slop;
+    return Abs(to.x - from.x) > slop || Abs(to.y - from.y) > slop;
 }
 
 void Surface::UpdateDragRequested() {

@@ -1,9 +1,7 @@
 #include "module_map.h"
 #include "source_file.h"
 
-
-#include <cstring>
-#include <new>
+#include "lang/new.h"
 
 namespace docgen {
 namespace {

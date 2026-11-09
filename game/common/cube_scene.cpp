@@ -1,8 +1,5 @@
+#include "lang/new.h"
 #include "cube_scene.h"
-
-#include <cmath>
-#include <cstddef>
-#include <cstring>
 
 #include "cube.frag.dxil.inc"
 #include "cube.vert.refl.inc"
@@ -15,6 +12,7 @@
 #include "textured.vert.dxil.inc"
 #include "log/assert.h"
 #include "rhi/rhi_log.h"
+#include "cstr/mem_ops.h"
 
 namespace demo {
 
@@ -174,7 +172,7 @@ bool CubeRenderer::Draw(CommandList* list, UniformRing* ring, const Mat4& mvp, u
     if (!u.Valid()) {
         return false;
     }
-    std::memcpy(u.data, &mvp, sizeof(Mat4));
+    MemCopy(u.data, &mvp, sizeof(Mat4));
     return DrawWith(list, u, width, height);
 }
 
@@ -190,11 +188,11 @@ struct LitUniforms {
 };
 // The expected values are generated from the shaders' reflection (shaders/*.refl.inc), not typed here, so changing a
 // block in a .slang file without changing this struct fails the build.
-static_assert(sizeof(LitUniforms) == shaders::kLitVertParamsSize && offsetof(LitUniforms, mvp) == shaders::kLitVertParamsMvpOffset &&
-                  offsetof(LitUniforms, normal_matrix) == shaders::kLitVertParamsNormalMatrixOffset &&
-                  offsetof(LitUniforms, to_light) == shaders::kLitVertParamsToLightOffset &&
-                  offsetof(LitUniforms, light_color) == shaders::kLitVertParamsLightColorOffset &&
-                  offsetof(LitUniforms, ambient) == shaders::kLitVertParamsAmbientOffset,
+static_assert(sizeof(LitUniforms) == shaders::kLitVertParamsSize && ENGINE_OFFSET_OF(LitUniforms, mvp) == shaders::kLitVertParamsMvpOffset &&
+                  ENGINE_OFFSET_OF(LitUniforms, normal_matrix) == shaders::kLitVertParamsNormalMatrixOffset &&
+                  ENGINE_OFFSET_OF(LitUniforms, to_light) == shaders::kLitVertParamsToLightOffset &&
+                  ENGINE_OFFSET_OF(LitUniforms, light_color) == shaders::kLitVertParamsLightColorOffset &&
+                  ENGINE_OFFSET_OF(LitUniforms, ambient) == shaders::kLitVertParamsAmbientOffset,
               "LitUniforms must match the std140 block in shaders/lit.vert.slang");
 static_assert(shaders::kLitFragParamsSize == shaders::kLitVertParamsSize, "lit.vert and lit.frag share one block");
 static_assert(sizeof(Mat4) == shaders::kCubeVertParamsSize && shaders::kCubeVertParamsMvpOffset == 0,
@@ -217,7 +215,7 @@ bool CubeRenderer::DrawLit(CommandList* list, UniformRing* ring, const Mat4& vie
     block.to_light = Vec4(l.x, l.y, l.z, 0.0f);
     block.light_color = Vec4(lighting.color.x * lighting.intensity, lighting.color.y * lighting.intensity, lighting.color.z * lighting.intensity, 0.0f);
     block.ambient = Vec4(lighting.ambient.x, lighting.ambient.y, lighting.ambient.z, 0.0f);
-    std::memcpy(u.data, &block, sizeof(block));
+    MemCopy(u.data, &block, sizeof(block));
     return DrawWith(list, u, width, height);
 }
 

@@ -1,4 +1,4 @@
-#include <cmath>
+#include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -66,18 +66,18 @@ TEST_CASE("RayToSurfacePoint gives the point of the quad a ray crosses", "[ui][s
     const SurfaceQuad quad = SiQuad(-1, 1, 0, 2, 2); // 2 x 2, centred on the origin, facing +z
     SurfaceHit hit = RayToSurfacePoint(SiRay(0, 0, 5, 0, 0, -1), quad);
     REQUIRE(hit.hit);
-    CHECK(std::fabs(hit.u - 0.5f) < 1e-5f);
-    CHECK(std::fabs(hit.v - 0.5f) < 1e-5f);
-    CHECK(std::fabs(hit.t - 5.0f) < 1e-5f);
+    CHECK(Abs(hit.u - 0.5f) < 1e-5f);
+    CHECK(Abs(hit.v - 0.5f) < 1e-5f);
+    CHECK(Abs(hit.t - 5.0f) < 1e-5f);
     hit = RayToSurfacePoint(SiRay(-0.5f, 0.5f, 3, 0, 0, -2), quad); // the direction need not be a unit vector
     REQUIRE(hit.hit);
-    CHECK(std::fabs(hit.u - 0.25f) < 1e-5f);
-    CHECK(std::fabs(hit.v - 0.25f) < 1e-5f);
-    CHECK(std::fabs(hit.t - 1.5f) < 1e-5f);
+    CHECK(Abs(hit.u - 0.25f) < 1e-5f);
+    CHECK(Abs(hit.v - 0.25f) < 1e-5f);
+    CHECK(Abs(hit.t - 1.5f) < 1e-5f);
     hit = RayToSurfacePoint(SiRay(1, -1, 5, 0, 0, -1), quad); // the bottom-right corner
     REQUIRE(hit.hit);
-    CHECK(std::fabs(hit.u - 1.0f) < 1e-5f);
-    CHECK(std::fabs(hit.v - 1.0f) < 1e-5f);
+    CHECK(Abs(hit.u - 1.0f) < 1e-5f);
+    CHECK(Abs(hit.v - 1.0f) < 1e-5f);
 }
 
 TEST_CASE("RayToSurfacePoint at an angle, with a skewed quad, and the misses", "[ui][surface-input]") {
@@ -85,9 +85,9 @@ TEST_CASE("RayToSurfacePoint at an angle, with a skewed quad, and the misses", "
     // A ray from the side that crosses the quad's centre.
     SurfaceHit hit = RayToSurfacePoint(SiRay(4, 0, 4, -1, 0, -1), quad);
     REQUIRE(hit.hit);
-    CHECK(std::fabs(hit.u - 0.5f) < 1e-4f); // the line reaches z = 0 at x = 0: the centre
-    CHECK(std::fabs(hit.v - 0.5f) < 1e-4f);
-    CHECK(std::fabs(hit.t - 4.0f) < 1e-4f);
+    CHECK(Abs(hit.u - 0.5f) < 1e-4f); // the line reaches z = 0 at x = 0: the centre
+    CHECK(Abs(hit.v - 0.5f) < 1e-4f);
+    CHECK(Abs(hit.t - 4.0f) < 1e-4f);
     // Misses: outside the edges, behind the ray, parallel, a zero direction.
     CHECK_FALSE(RayToSurfacePoint(SiRay(2, 0, 5, 0, 0, -1), quad).hit);
     CHECK_FALSE(RayToSurfacePoint(SiRay(0, 0, 5, 0, 0, 1), quad).hit);
@@ -98,8 +98,8 @@ TEST_CASE("RayToSurfacePoint at an angle, with a skewed quad, and the misses", "
     skew.edge_v[0] = 1.0f;
     hit = RayToSurfacePoint(SiRay(0.5f, 0, 5, 0, 0, -1), skew); // the point at u = 0.5, v = 0.5: x = -1 + 1 + 0.5 = 0.5, y = 0
     REQUIRE(hit.hit);
-    CHECK(std::fabs(hit.u - 0.5f) < 1e-4f);
-    CHECK(std::fabs(hit.v - 0.5f) < 1e-4f);
+    CHECK(Abs(hit.u - 0.5f) < 1e-4f);
+    CHECK(Abs(hit.v - 0.5f) < 1e-4f);
     // A degenerate quad hits nothing.
     SurfaceQuad flat = quad;
     flat.edge_v[0] = flat.edge_u[0];
@@ -112,7 +112,7 @@ TEST_CASE("RayToSurfacePoint reports a ray from behind as a back face, not a hit
     const SurfaceHit back = RayToSurfacePoint(SiRay(0, 0, -5, 0, 0, 1), quad);
     CHECK_FALSE(back.hit);
     CHECK(back.back_face);
-    CHECK(std::fabs(back.t - 5.0f) < 1e-5f);
+    CHECK(Abs(back.t - 5.0f) < 1e-5f);
     const SurfaceHit away = RayToSurfacePoint(SiRay(0, 0, -5, 0, 0, -1), quad); // behind and pointing away
     CHECK_FALSE(away.hit);
     CHECK_FALSE(away.back_face);
@@ -321,5 +321,5 @@ TEST_CASE("skipped time is handed to the next frame that runs", "[ui][surface-in
     rig.input.SetInteractive(true);
     rig.input.PointerMove(30, 30);
     updater.Frame(0.5f, &list, &rig.h.Atlas());
-    CHECK(std::fabs(rig.h.GetSurface().Time() - before - 5.5) < 1e-4);
+    CHECK(Abs(rig.h.GetSurface().Time() - before - 5.5) < 1e-4);
 }

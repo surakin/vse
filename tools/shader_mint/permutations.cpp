@@ -1,7 +1,7 @@
 #include "permutations.h"
 
-#include <cstdarg>
-#include <cstdio>
+#include "cstr/varargs.h"
+#include "cstr/format.h"
 
 #include "algorithm.h"
 #include "renderer/shader_permutation.h"
@@ -88,32 +88,32 @@ usize OptionIndex(const Vector<Text>& options, StringView word) {
 
 } // namespace
 
-void VAppendf(Text* out, const char* format, va_list args) {
-    va_list again;
-    va_copy(again, args);
-    const int needed = std::vsnprintf(nullptr, 0, format, args);
+void VAppendf(Text* out, const char* format, VarArgs args) {
+    VarArgs again;
+    ENGINE_VA_COPY(again, args);
+    const int needed = VFormatTo(nullptr, 0, format, args);
     if (needed > 0) {
         Vector<char> buffer;
         buffer.Resize(static_cast<usize>(needed) + 1);
-        std::vsnprintf(buffer.Data(), buffer.Size(), format, again);
+        VFormatTo(buffer.Data(), buffer.Size(), format, again);
         out->AppendRawBytes(buffer.Data(), static_cast<usize>(needed));
     }
-    va_end(again);
+    ENGINE_VA_END(again);
 }
 
 void Appendf(Text* out, const char* format, ...) {
-    va_list args;
-    va_start(args, format);
+    VarArgs args;
+    ENGINE_VA_START(args, format);
     VAppendf(out, format, args);
-    va_end(args);
+    ENGINE_VA_END(args);
 }
 
 void SetTextf(Text* out, const char* format, ...) {
     *out = MakeText();
-    va_list args;
-    va_start(args, format);
+    VarArgs args;
+    ENGINE_VA_START(args, format);
     VAppendf(out, format, args);
-    va_end(args);
+    ENGINE_VA_END(args);
 }
 
 bool BuiltModule::operator==(const BuiltModule& other) const {

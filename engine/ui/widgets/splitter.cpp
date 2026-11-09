@@ -1,6 +1,6 @@
 #include "ui/widgets/splitter.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "log/assert.h"
 #include "ui/surface.h"
@@ -130,8 +130,8 @@ Size Splitter::Measure(const Constraints& constraints) {
     for (usize i = 0; i < panes_.Size(); ++i) {
         if (panes_[i].collapsed) continue;
         const Size s = panes_[i].widget->MeasureTotal(constraints);
-        along += std::fmax(Horizontal() ? s.w : s.h, panes_[i].min);
-        across = std::fmax(across, Horizontal() ? s.h : s.w);
+        along += FMax(Horizontal() ? s.w : s.h, panes_[i].min);
+        across = FMax(across, Horizontal() ? s.h : s.w);
     }
     return Horizontal() ? Size{along, across} : Size{across, along};
 }
@@ -190,7 +190,7 @@ void Splitter::DragTo(f32 boundary) {
     const f32 start = StartOf(a);
     const f32 total = pa.size + pb.size;
     f32 want = boundary - start; // the size pane `a` would have
-    want = std::fmin(std::fmax(want, 0.0f), total);
+    want = FMin(FMax(want, 0.0f), total);
     const bool collapse_a = pa.collapsible && want < pa.min * kCollapseFraction;
     const bool collapse_b = pb.collapsible && (total - want) < pb.min * kCollapseFraction;
     if (collapse_a && !collapse_b) {
@@ -204,9 +204,9 @@ void Splitter::DragTo(f32 boundary) {
     } else {
         pa.collapsed = false;
         pb.collapsed = false;
-        const f32 lo = std::fmin(pa.min, total);
-        const f32 hi = std::fmax(total - pb.min, lo);
-        pa.size = std::fmin(std::fmax(want, lo), hi);
+        const f32 lo = FMin(pa.min, total);
+        const f32 hi = FMax(total - pb.min, lo);
+        pa.size = FMin(FMax(want, lo), hi);
         pb.size = total - pa.size;
     }
     // Panes that were collapsed and are open again get their size from the pair; every open pane's fraction follows its size.
@@ -249,7 +249,7 @@ void Splitter::OnEvent(Event& event) {
             const usize h = HandleAt(event.position);
             if (h == kNone) break;
             event.handled = true;
-            const bool near = std::fabs(event.position.x - last_press_.x) <= kClickSlop && std::fabs(event.position.y - last_press_.y) <= kClickSlop;
+            const bool near = Abs(event.position.x - last_press_.x) <= kClickSlop && Abs(event.position.y - last_press_.y) <= kClickSlop;
             if (event.time - last_press_time_ <= kDoubleClickSeconds && near) {
                 last_press_time_ = -1e9;
                 Reset();

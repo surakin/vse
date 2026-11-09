@@ -1,4 +1,5 @@
 #include "platform/linux/x11/x11_window.h"
+#include "cstr/mem_ops.h"
 
 #include "unity/x11_enable.h"
 #include <X11/Xlib.h>
@@ -13,7 +14,6 @@
 
 #undef CursorShape // <X11/X.h> defines it as a number; the engine has os::CursorShape
 
-#include <cstring>
 
 #include "log/log.h"
 #include "mem/arena_allocator.h"
@@ -232,7 +232,7 @@ X11Window::X11Window(X11Window&& other) noexcept
       cursor_(other.cursor_),
       clipboard_(static_cast<X11ClipboardState&&>(other.clipboard_)),
       dnd_(static_cast<X11DndState&&>(other.dnd_)) {
-    std::memcpy(held_, other.held_, sizeof(held_));
+    MemCopy(held_, other.held_, sizeof(held_));
     other.display_ = nullptr;
     other.window_ = 0;
     other.wm_delete_window_ = 0;
@@ -277,7 +277,7 @@ X11Window& X11Window::operator=(X11Window&& other) noexcept {
         clipboard_.requests.Init(&events_);
         clipboard_.queue = &events_;
         dnd_.queue = &events_;
-        std::memcpy(held_, other.held_, sizeof(held_));
+        MemCopy(held_, other.held_, sizeof(held_));
         other.display_ = nullptr;
         other.window_ = 0;
         other.wm_delete_window_ = 0;

@@ -1,4 +1,5 @@
 #include "lint.h"
+#include "cstr/mem_ops.h"
 
 namespace docgen {
 
@@ -26,7 +27,7 @@ StringView ReturnType(const Decl& d, ArenaAllocator& arena) {
     usize at = sig.Length();
     bool found = false;
     for (usize i = 0; i + d.name.Length() < sig.Length(); ++i) {
-        if (std::memcmp(sig.Data() + i, d.name.Data(), d.name.Length()) != 0) continue;
+        if (engine_placeholder::MemCompare(sig.Data() + i, d.name.Data(), d.name.Length()) != 0) continue;
         if (i > 0 && IsIdent(sig[i - 1])) continue;
         if (sig[i + d.name.Length()] != '(') continue;
         at = i;
@@ -68,7 +69,7 @@ bool EndsWithWord(StringView s, const char* w) {
     usize n = 0;
     while (w[n] != '\0') ++n;
     if (s.Length() < n) return false;
-    if (std::memcmp(s.Data() + s.Length() - n, w, n) != 0) return false;
+    if (engine_placeholder::MemCompare(s.Data() + s.Length() - n, w, n) != 0) return false;
     return s.Length() == n || !IsIdent(s[s.Length() - n - 1]);
 }
 
@@ -82,10 +83,10 @@ bool TakesRawPointer(const Decl& d) {
     int depth = 0;
     usize start = 0;
     auto check = [&](StringView p) {
-        if (p.Length() > 7 && std::memcmp(p.Data() + p.Length() - 7, "* const", 7) == 0) p = StringView(p.Data(), p.Length() - 6); // `T* const` is still a raw pointer
+        if (p.Length() > 7 && engine_placeholder::MemCompare(p.Data() + p.Length() - 7, "* const", 7) == 0) p = StringView(p.Data(), p.Length() - 6); // `T* const` is still a raw pointer
         if (p.Empty() || p[p.Length() - 1] != '*') return false;
         if (Contains(p, "(")) return false; // function pointer: a callback, not an owned object
-        return !(p.Length() >= 6 && std::memcmp(p.Data(), "const ", 6) == 0);
+        return !(p.Length() >= 6 && engine_placeholder::MemCompare(p.Data(), "const ", 6) == 0);
     };
     for (; i <= t.Length(); ++i) {
         const char c = i < t.Length() ? t[i] : ',';

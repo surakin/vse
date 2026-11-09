@@ -1,13 +1,12 @@
 #pragma once
 
-#include <cstddef>
-#include <cstdlib>
 #include "lang/new.h"
 #include "lang/utility.h"
 
 #include "log/assert.h"
 #include "rhi/handle.h"
 #include "types.h"
+#include "cstr/mem_ops.h"
 
 //! Slot storage for device-owned resources, addressed by generation-checked handles, with deferred destruction.
 
@@ -54,7 +53,7 @@ public:
                     ValuePtr(s)->~T();
                 }
             }
-            std::free(chunks_[c]);
+            MemFree(chunks_[c]);
         }
     }
 
@@ -248,7 +247,7 @@ private:
         SlotState state = SlotState::Free;
     };
 
-    static_assert(alignof(T) <= alignof(std::max_align_t), "HandlePool: over-aligned values are not supported");
+    static_assert(alignof(T) <= kMaxAlign, "HandlePool: over-aligned values are not supported");
 
     static u32 NextGeneration(u32 g) {
         ++g;
@@ -282,7 +281,7 @@ private:
         if (chunk_count_ >= kMaxChunks) {
             return false;
         }
-        Slot* chunk = static_cast<Slot*>(std::malloc(sizeof(Slot) * kChunkSlots));
+        Slot* chunk = static_cast<Slot*>(MemAllocate(sizeof(Slot) * kChunkSlots));
         if (chunk == nullptr) {
             return false;
         }

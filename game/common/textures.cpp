@@ -1,10 +1,10 @@
 #include "textures.h"
 
-#include <cmath>
-#include <cstdio>
-#include <cstring>
+#include "lang/scalar.h"
+#include "cstr/format.h"
 
 #include "rhi/rhi_log.h"
+#include "cstr/mem_ops.h"
 
 namespace demo {
 
@@ -32,10 +32,10 @@ bool FourByte(Format f) { return f == Format::RGBA8_UNorm || f == Format::RGBA8_
 
 f32 SrgbToLinear(byte c) {
     const f32 v = static_cast<f32>(c) / 255.0f;
-    return v <= 0.04045f ? v / 12.92f : std::pow((v + 0.055f) / 1.055f, 2.4f);
+    return v <= 0.04045f ? v / 12.92f : Pow((v + 0.055f) / 1.055f, 2.4f);
 }
 byte LinearToSrgb(f32 l) {
-    const f32 v = l <= 0.0031308f ? l * 12.92f : 1.055f * std::pow(l, 1.0f / 2.4f) - 0.055f;
+    const f32 v = l <= 0.0031308f ? l * 12.92f : 1.055f * Pow(l, 1.0f / 2.4f) - 0.055f;
     const f32 c = v * 255.0f + 0.5f;
     return static_cast<byte>(c < 0.0f ? 0.0f : (c > 255.0f ? 255.0f : c));
 }
@@ -73,7 +73,7 @@ Pixels Solid(u32 width, u32 height, Rgba color) {
     p.height = height;
     p.rgba.Resize(static_cast<usize>(width) * height * 4);
     for (usize i = 0; i < static_cast<usize>(width) * height; ++i) {
-        std::memcpy(&p.rgba[i * 4], &color, 4);
+        MemCopy(&p.rgba[i * 4], &color, 4);
     }
     return p;
 }
@@ -182,16 +182,16 @@ RtexImage BuildRtex(const Pixels& pixels, Format format) {
 
 io::Status WritePpm(const io::Path& path, u32 width, u32 height, const byte* rgba) {
     char header[64];
-    const int header_length = std::snprintf(header, sizeof(header), "P6\n%u %u\n255\n", width, height);
+    const int header_length = FormatTo(header, sizeof(header), "P6\n%u %u\n255\n", width, height);
     if (header_length <= 0) {
         return io::Status::Of(io::Error::Invalid);
     }
     const usize pixels = static_cast<usize>(width) * height;
     Vector<byte> bytes;
     bytes.Resize(static_cast<usize>(header_length) + pixels * 3);
-    std::memcpy(bytes.Data(), header, static_cast<usize>(header_length));
+    MemCopy(bytes.Data(), header, static_cast<usize>(header_length));
     for (usize i = 0; i < pixels; ++i) {
-        std::memcpy(bytes.Data() + header_length + i * 3, rgba + i * 4, 3);
+        MemCopy(bytes.Data() + header_length + i * 3, rgba + i * 4, 3);
     }
     return io::WriteFile(path, bytes.Data(), bytes.Size());
 }
@@ -202,13 +202,13 @@ io::Status WriteRtex(const io::Path& path, const RtexImage& image) {
     }
     Vector<byte> bytes;
     bytes.Resize(kHeaderBytes + image.data.Size());
-    std::memcpy(bytes.Data(), kMagic, 4);
+    MemCopy(bytes.Data(), kMagic, 4);
     PutU32(bytes.Data() + 4, kVersion);
     PutU32(bytes.Data() + 8, image.width);
     PutU32(bytes.Data() + 12, image.height);
     PutU32(bytes.Data() + 16, static_cast<u32>(image.format));
     PutU32(bytes.Data() + 20, image.mip_count);
-    std::memcpy(bytes.Data() + kHeaderBytes, image.data.Data(), image.data.Size());
+    MemCopy(bytes.Data() + kHeaderBytes, image.data.Data(), image.data.Size());
     return io::WriteFileAtomic(path, bytes.Data(), bytes.Size(), 0644); // committed assets are ordinary files
 }
 
@@ -221,7 +221,7 @@ io::Status ReadRtex(const io::Path& path, RtexImage* image) {
     if (io::Status s = io::ReadExact(*file, header, kHeaderBytes, 0); s.Failed()) {
         return s.Is(io::Error::EndOfFile) ? io::Status::Of(io::Error::Invalid) : s;
     }
-    if (std::memcmp(header, kMagic, 4) != 0 || GetU32(header + 4) != kVersion) {
+    if (MemCompare(header, kMagic, 4) != 0 || GetU32(header + 4) != kVersion) {
         return io::Status::Of(io::Error::Invalid);
     }
     RtexImage r;

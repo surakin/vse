@@ -1,4 +1,3 @@
-#include <cstdlib>
 
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
@@ -9,6 +8,7 @@
 #include "string/string.h"
 #include "types.h"
 #include "lang/utility.h"
+#include "cstr/mem_ops.h"
 
 using engine_placeholder::Log;
 using engine_placeholder::LogPlatform;
@@ -30,7 +30,7 @@ long WaylandConnectionTestCapturingWriteSink(int fd, const void* buf, usize len)
     if (g_WaylandConnectionTest_capture_len + copy_len > sizeof(g_WaylandConnectionTest_capture_buffer)) {
         copy_len = sizeof(g_WaylandConnectionTest_capture_buffer) - g_WaylandConnectionTest_capture_len;
     }
-    memcpy(g_WaylandConnectionTest_capture_buffer + g_WaylandConnectionTest_capture_len, buf, copy_len);
+    engine_placeholder::MemCopy(g_WaylandConnectionTest_capture_buffer + g_WaylandConnectionTest_capture_len, buf, copy_len);
     g_WaylandConnectionTest_capture_len += copy_len;
     return static_cast<long>(len);
 }

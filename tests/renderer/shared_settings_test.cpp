@@ -2,8 +2,7 @@
 // schema-1 file of Phase 8.
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstdlib>
-#include <cstring>
+#include "cstr/number.h"
 
 #include "catch_engine_types.h"
 #include "io/file.h"
@@ -137,7 +136,7 @@ TEST_CASE("The 14 rendering settings are declared under renderer. with the same 
         if (old.type == rs::SettingType::Text) {
             CHECK(StringView(new_text) == engine_test::Concat("\"", StringView(old_text), "\"").View());
         } else if (old.type == rs::SettingType::Float) {
-            CHECK(std::strtod(new_text, nullptr) == std::strtod(old_text, nullptr));
+            CHECK(CStrToDouble(new_text, nullptr) == CStrToDouble(old_text, nullptr));
         } else {
             CHECK(StringView(new_text) == StringView(old_text));
         }

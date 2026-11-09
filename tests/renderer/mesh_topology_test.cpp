@@ -7,9 +7,11 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "lang/new.h"
 #include "renderer/frame_data.h"
 #include "renderer/render_scene.h"
 #include "rhi/null/null_device.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -72,7 +74,7 @@ TEST_CASE("The color vertex layout extends the standard one with a UNorm8x4 colo
     CHECK(colored.attributes[4].offset == 48);
     CHECK(colored.stride == 52);
     CHECK(sizeof(ColorVertex) == 52);
-    CHECK(offsetof(ColorVertex, color) == 48);
+    CHECK(ENGINE_OFFSET_OF(ColorVertex, color) == 48);
 }
 
 TEST_CASE("A colored mesh keeps the geometry and gives each vertex its color", "[renderer][mesh][topology]") {
@@ -94,7 +96,7 @@ TEST_CASE("A colored mesh keeps the geometry and gives each vertex its color", "
     const ColorVertex* cv = static_cast<const ColorVertex*>(colored.Vertices());
     const StandardVertex* sv = static_cast<const StandardVertex*>(plane.Vertices());
     for (u32 i = 0; i < plane.VertexCount(); ++i) {
-        CHECK(std::memcmp(&cv[i].base, &sv[i], sizeof(StandardVertex)) == 0);
+        CHECK(MemCompare(&cv[i].base, &sv[i], sizeof(StandardVertex)) == 0);
         CHECK(cv[i].color[0] == static_cast<u8>(i));
         CHECK(cv[i].color[1] == static_cast<u8>(255 - i));
         CHECK(cv[i].color[2] == 7);
@@ -176,7 +178,7 @@ TEST_CASE("The strip grid has the list grid's triangles with fewer indices", "[r
         CHECK(strip.Topology() == rhi::PrimitiveTopology::TriangleStrip);
         CHECK(strip.HasPrimitiveRestart() == (cells + 1 > 1));
         CHECK(strip.VertexCount() == list.VertexCount());
-        CHECK(std::memcmp(strip.Vertices(), list.Vertices(), list.VertexBytes()) == 0);
+        CHECK(MemCompare(strip.Vertices(), list.Vertices(), list.VertexBytes()) == 0);
         MeshData back;
         REQUIRE(StripToList(strip, &back) == nullptr);
         CHECK(SameTriangles(list, back));

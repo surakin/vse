@@ -10,12 +10,13 @@
 #include "support/death_test_skip.h"
 
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <string>
 #include <sys/resource.h>
 #include <unistd.h>
 #include "build_defs.h"
+#include "cstr/cstr.h"
+#include "cstr/format.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -79,7 +80,7 @@ TEST_CASE("An empty or missing core pattern is reported as unknown", "[postmorte
 TEST_CASE("A description longer than the buffer is cut, not overrun", "[postmortem][debug][linux]") {
     char small[16];
     DescribeCorePattern("core.%e.%p.%t.%h.%s", small, sizeof(small));
-    CHECK(std::strlen(small) == sizeof(small) - 1);
+    CHECK(CStrLength(small) == sizeof(small) - 1);
 }
 
 ENGINE_DEATH_TEST_FN(dt_post_mortem_hard_zero) {
@@ -87,7 +88,7 @@ ENGINE_DEATH_TEST_FN(dt_post_mortem_hard_zero) {
     ::setrlimit(RLIMIT_CORE, &none);
     const PostMortemReport report = EnablePostMortemDumps(PostMortemOptions());
     char line[600];
-    const int n = std::snprintf(line, sizeof(line), "RESULT=%d\nNOTE=%s\n", static_cast<int>(report.result), report.note);
+    const int n = FormatTo(line, sizeof(line), "RESULT=%d\nNOTE=%s\n", static_cast<int>(report.result), report.note);
     os::Write(1, line, static_cast<usize>(n));
 }
 
@@ -104,7 +105,7 @@ ENGINE_DEATH_TEST_FN(dt_post_mortem_crash) {
     options.size_limit_bytes = 512ull * 1024 * 1024;
     EnablePostMortemDumps(options);
     char line[64];
-    const int n = std::snprintf(line, sizeof(line), "PID=%d\n", static_cast<int>(::getpid()));
+    const int n = FormatTo(line, sizeof(line), "PID=%d\n", static_cast<int>(::getpid()));
     os::Write(1, line, static_cast<usize>(n));
     InjectFault(FaultKind::NullWrite);
 }

@@ -1,6 +1,6 @@
 // Phase 8 Day 111: a lost device recovers through the settings path, with a retry limit, a fallback adapter and reporting.
 #include "sync/atomic.h"
-#include <cstring>
+#include "cstr/cstr.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -14,6 +14,7 @@
 #include "rhi/null/null_device.h"
 #include "rhi/rhi_log.h"
 #include "build_defs.h"
+#include "cstr/format.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -108,7 +109,7 @@ struct LossRig {
             [](void* user, const char* stage) {
                 auto* self = static_cast<LossRig*>(user);
                 ++self->begins;
-                std::snprintf(self->last_stage, sizeof(self->last_stage), "%s", stage);
+                FormatTo(self->last_stage, sizeof(self->last_stage), "%s", stage);
             },
             [](void* user, bool ok) {
                 auto* self = static_cast<LossRig*>(user);
@@ -265,7 +266,7 @@ TEST_CASE("When the saved adapter keeps failing the recovery uses the best one",
     CHECK(rig.Render() == FrameStatus::DeviceLost);   // attempt 1: the saved adapter, fails
     CHECK(rig.Render() == FrameStatus::Skipped);
     CHECK(rig.Render() == FrameStatus::Ok);            // attempt 2: the best adapter
-    CHECK(std::strcmp(rig.host.GetDevice()->Adapter().id, "null-discrete") == 0);
+    CHECK(CStrCompare(rig.host.GetDevice()->Adapter().id, "null-discrete") == 0);
     CHECK(rig.renderer->Settings().GetText(kAdapter)[0] == '\0');
     CHECK(rig.renderer->Stats().recoveries == 1);
 }
@@ -303,7 +304,7 @@ TEST_CASE("A settings change asked for during the lost frame is applied after th
     rig.asked.SetText(kAdapter, "null-integrated");
     CHECK(rig.Render() == FrameStatus::DeviceLost);   // the change was queued in this frame, then the device was lost
     CHECK(rig.Render() == FrameStatus::Ok);            // recovered; the queued change is applied at this boundary
-    CHECK(std::strcmp(rig.host.GetDevice()->Adapter().id, "null-integrated") == 0);
+    CHECK(CStrCompare(rig.host.GetDevice()->Adapter().id, "null-integrated") == 0);
     CHECK(rig.renderer->Settings().GetEnum(kGBufferDebugLayer) == 3);
 }
 
@@ -339,7 +340,7 @@ TEST_CASE("A real device recovers from a loss at the start and at the submit of 
             }
             rhi::DeviceCreateInfo faulty = info;
             faulty.faults.strikes_left = &strikes;
-            if (std::strcmp(where, "frame") == 0) faulty.faults.lose_device_at_frame = 2;
+            if (CStrCompare(where, "frame") == 0) faulty.faults.lose_device_at_frame = 2;
             else faulty.faults.lose_device_at_submit = 2;
             RenderSettings initial;
             initial.SetEnum(kBackend, gpu_test::BackendSettingIndex(backend));
@@ -523,7 +524,7 @@ TEST_CASE("A request queued while recovering does not bring back the abandoned a
     CHECK(rig.renderer->ApplySettings(stale).queued);
     CHECK(rig.Render() == FrameStatus::Skipped);
     CHECK(rig.Render() == FrameStatus::Ok);            // attempt 2 on the best adapter, then the queued change
-    CHECK(std::strcmp(rig.host.GetDevice()->Adapter().id, "null-discrete") == 0);
+    CHECK(CStrCompare(rig.host.GetDevice()->Adapter().id, "null-discrete") == 0);
     CHECK(rig.renderer->Settings().GetText(kAdapter)[0] == '\0');
     CHECK(rig.renderer->Settings().GetEnum(kGBufferDebugLayer) == 2);
     CHECK(rig.renderer->LastApply().performed == CostClass::Dynamic); // no reset back to the failing adapter

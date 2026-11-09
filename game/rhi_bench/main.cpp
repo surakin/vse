@@ -5,9 +5,9 @@
 //             [--skip-uploads] [--skip-pipelines]
 //             [--rhi null|vulkan|dx12|auto]  the graphics backend (default auto: Direct3D 12 on Windows, Vulkan elsewhere)
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "os/console.h"
+#include "cstr/number.h"
+#include "cstr/cstr.h"
 
 #include "io/file.h"
 #include "rhi_option.h"
@@ -19,6 +19,7 @@
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 #include "rhi/uniform_ring.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -90,7 +91,7 @@ void BenchDraws(Device* device, u32 draws, long frames) {
     options.depth_format = device->Caps().depth_format;
     UniformRing ring(device, static_cast<u64>(draws + 16) * 256);
     if (!MakeTarget(device, &t) || !cube.Create(device, options) || !ring.Valid()) {
-        std::printf("draws %u: setup failed\n", draws);
+        os::Print("draws %u: setup failed\n", draws);
         device->WaitIdle();
         cube.Destroy();
         if (t.color.IsValid()) {
@@ -114,7 +115,7 @@ void BenchDraws(Device* device, u32 draws, long frames) {
     }
     device->WaitIdle();
     const double wall = Now() - start;
-    std::printf("draws        %6u cubes: record %7.3f ms/frame (%6.2f us/draw), submit %6.3f ms, wall %7.3f ms/frame (%.0f draws/s)\n", draws,
+    os::Print("draws        %6u cubes: record %7.3f ms/frame (%6.2f us/draw), submit %6.3f ms, wall %7.3f ms/frame (%.0f draws/s)\n", draws,
                 record_total * 1e3 / static_cast<double>(frames), record_total * 1e6 / static_cast<double>(frames) / draws,
                 submit_total * 1e3 / static_cast<double>(frames), wall * 1e3 / static_cast<double>(frames),
                 static_cast<double>(draws) * static_cast<double>(frames) / wall);
@@ -137,7 +138,7 @@ void BenchBarriers(Device* device) {
     td.usage = TextureUsage::Sampled | TextureUsage::CopyDst | TextureUsage::CopySrc;
     const TextureHandle texture = device->CreateTexture(td);
     if (!buffer.IsValid() || !texture.IsValid()) {
-        std::printf("barriers: setup failed\n");
+        os::Print("barriers: setup failed\n");
         if (buffer.IsValid()) {
             device->DestroyBuffer(buffer);
         }
@@ -171,7 +172,7 @@ void BenchBarriers(Device* device) {
         CommandList* lists[] = {list};
         device->Submit(lists, 1);
         device->EndFrame();
-        std::printf("barrier      %s: %.3f us per call (%u recorded)\n", is_texture ? "texture" : "buffer ", elapsed * 1e6 / kBarriers, kBarriers);
+        os::Print("barrier      %s: %.3f us per call (%u recorded)\n", is_texture ? "texture" : "buffer ", elapsed * 1e6 / kBarriers, kBarriers);
         device->WaitIdle();
     }
     device->DestroyBuffer(buffer);
@@ -192,9 +193,9 @@ void BenchUploads(Device* device) {
         const BufferHandle buffer = device->CreateBuffer(bd);
         Vector<byte> data;
         data.Resize(c.bytes);
-        std::memset(data.Data(), 0x5a, data.Size());
+        MemSet(data.Data(), 0x5a, data.Size());
         if (!buffer.IsValid()) {
-            std::printf("upload %llu MiB: buffer creation failed\n", static_cast<unsigned long long>(c.bytes >> 20));
+            os::Print("upload %llu MiB: buffer creation failed\n", static_cast<unsigned long long>(c.bytes >> 20));
             continue;
         }
         device->UploadBuffer(buffer, 0, data.Data(), c.bytes); // warm up the staging ring
@@ -210,13 +211,13 @@ void BenchUploads(Device* device) {
         device->WaitFence(last, ~0ull);
         const double elapsed = Now() - start;
         if (!ok) {
-            std::printf("upload       %3llu MiB: an upload failed; no figure\n", static_cast<unsigned long long>(c.bytes >> 20));
+            os::Print("upload       %3llu MiB: an upload failed; no figure\n", static_cast<unsigned long long>(c.bytes >> 20));
             device->WaitIdle();
             device->DestroyBuffer(buffer);
             continue;
         }
         const double mib = static_cast<double>(c.bytes >> 20) * c.count;
-        std::printf("upload       %3llu MiB x %3d through the staging ring: %8.1f MiB/s (%.2f ms each)\n", static_cast<unsigned long long>(c.bytes >> 20),
+        os::Print("upload       %3llu MiB x %3d through the staging ring: %8.1f MiB/s (%.2f ms each)\n", static_cast<unsigned long long>(c.bytes >> 20),
                     c.count, mib / elapsed, elapsed * 1e3 / c.count);
         device->WaitIdle();
         device->DestroyBuffer(buffer);
@@ -254,15 +255,15 @@ void BenchPipelines() {
     char dir[io::kMaxPathBytes + 1];
     if (io::TempDirectory(&temp).Failed() || io::CreateTempDirectory(temp, "rhi-bench-cache", &scratch).Failed() ||
         !scratch.ToNative(dir, sizeof(dir))) {
-        std::printf("pipelines: no temp directory\n");
+        os::Print("pipelines: no temp directory\n");
         return;
     }
     const double off = TimePipeline(false, dir);
     const double cold = TimePipeline(true, dir);
     const double warm = TimePipeline(true, dir);
-    std::printf("pipeline     cube create: no cache %.3f ms, cold cache %.3f ms, warm cache %.3f ms\n", off * 1e3, cold * 1e3, warm * 1e3);
+    os::Print("pipeline     cube create: no cache %.3f ms, cold cache %.3f ms, warm cache %.3f ms\n", off * 1e3, cold * 1e3, warm * 1e3);
     if (io::RemoveAll(scratch).Failed()) {
-        std::printf("(could not remove %s)\n", dir);
+        os::Print("(could not remove %s)\n", dir);
     }
 }
 
@@ -280,18 +281,18 @@ int main(int argc, char** argv) {
         if (engine_placeholder::debug::IsProgramDebugArgument(argv[i])) {
             continue; // --crash-handler=... and --crash-test=... are handled by StartProgramDebugging
         }
-        if (std::strcmp(argv[i], "--draws") == 0 && i + 1 < argc) {
-            draws = std::atol(argv[++i]);
-        } else if (std::strcmp(argv[i], "--frames") == 0 && i + 1 < argc) {
-            frames = std::atol(argv[++i]);
-        } else if (std::strcmp(argv[i], "--skip-uploads") == 0) {
+        if (CStrCompare(argv[i], "--draws") == 0 && i + 1 < argc) {
+            draws = CStrToLong(argv[++i]);
+        } else if (CStrCompare(argv[i], "--frames") == 0 && i + 1 < argc) {
+            frames = CStrToLong(argv[++i]);
+        } else if (CStrCompare(argv[i], "--skip-uploads") == 0) {
             uploads = false;
-        } else if (std::strcmp(argv[i], "--skip-pipelines") == 0) {
+        } else if (CStrCompare(argv[i], "--skip-pipelines") == 0) {
             pipelines = false;
-        } else if (std::strcmp(argv[i], "--rhi") == 0 && i + 1 < argc && demo::ParseRhiBackend(argv[i + 1], &g_backend)) {
+        } else if (CStrCompare(argv[i], "--rhi") == 0 && i + 1 < argc && demo::ParseRhiBackend(argv[i + 1], &g_backend)) {
             ++i;
         } else {
-            std::fprintf(stderr, "usage: %s [--draws N] [--frames N] [--skip-uploads] [--skip-pipelines] [--rhi null|vulkan|dx12|auto]\n", argv[0]);
+            os::PrintError("usage: %s [--draws N] [--frames N] [--skip-uploads] [--skip-pipelines] [--rhi null|vulkan|dx12|auto]\n", argv[0]);
             return 2;
         }
     }
@@ -299,7 +300,7 @@ int main(int argc, char** argv) {
         frames = 1;
     }
     if (draws < 0 || draws > 1000000) {
-        std::fprintf(stderr, "rhi_bench: --draws must be between 1 and 1000000\n");
+        os::PrintError("rhi_bench: --draws must be between 1 and 1000000\n");
         return 2;
     }
     DeviceCreateInfo info;
@@ -307,10 +308,10 @@ int main(int argc, char** argv) {
     info.validation = ValidationSetting::Off; // a baseline measures the engine, not the layer
     DevicePtr device = CreateDevice(info);
     if (device == nullptr) {
-        std::fprintf(stderr, "rhi_bench: no device for --rhi %s (see the log above)\n", demo::RhiBackendName(g_backend));
+        os::PrintError("rhi_bench: no device for --rhi %s (see the log above)\n", demo::RhiBackendName(g_backend));
         return 1;
     }
-    std::printf("backend %s, %ux%u target, %ld frames per draw measurement\n", device->BackendName(), kSize, kSize, frames);
+    os::Print("backend %s, %ux%u target, %ld frames per draw measurement\n", device->BackendName(), kSize, kSize, frames);
     if (draws > 0) {
         BenchDraws(device.Get(), static_cast<u32>(draws), frames);
     } else {

@@ -13,9 +13,7 @@
 
 #include "sync/atomic.h"
 #include <csignal>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "cstr/format.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -57,7 +55,7 @@ void TraceInHandler(int) {
     const usize length = FormatStackTrace(trace, g_handler_text, sizeof(g_handler_text));
     const unsigned long after = g_allocations.Load(MemoryOrder::Relaxed);
     char line[96];
-    const int n = std::snprintf(line, sizeof(line), "ALLOCS=%lu FRAMES=%u ENTRIES=%zu TEXT=%zu\n", after - before, trace.count,
+    const int n = FormatTo(line, sizeof(line), "ALLOCS=%lu FRAMES=%u ENTRIES=%zu TEXT=%zu\n", after - before, trace.count,
                                 static_cast<size_t>(entries), static_cast<size_t>(length));
     os::Write(1, line, static_cast<usize>(n));
     os::Write(1, g_handler_text, length);
@@ -95,7 +93,7 @@ void CountingWrite(void* context, const char* data, usize length) {
 }
 
 void AllocProvider(void*, char* out, usize capacity) {
-    std::snprintf(out, capacity, "alloc-test-state");
+    FormatTo(out, capacity, "alloc-test-state");
 }
 
 } // namespace
@@ -119,7 +117,7 @@ ENGINE_DEATH_TEST_FN(dt_alloc_crash_report) {
     WriteCrashReport(sink, info);
     const unsigned long after = g_allocations.Load(MemoryOrder::Relaxed);
     char line[64];
-    const int n = std::snprintf(line, sizeof(line), "REPORT_ALLOCS=%lu BYTES=%zu\n", after - before, static_cast<size_t>(written));
+    const int n = FormatTo(line, sizeof(line), "REPORT_ALLOCS=%lu BYTES=%zu\n", after - before, static_cast<size_t>(written));
     os::Write(1, line, static_cast<usize>(n));
 }
 

@@ -3,7 +3,7 @@
 
 #include "debug/death_test.h"
 
-#include <cstdio>
+#include "os/console.h"
 
 #include "os/windows/win32.h"
 #include "types.h"
@@ -44,7 +44,7 @@ bool AnyChildRunning(bool verbose = false) {
         CloseHandle(process);
         const bool ours = times && CompareFileTime(&created, &self_created) >= 0;
         if (verbose) {
-            std::fprintf(stderr, "ChildResourceGuard: listed child %lu '%ls' running %d created after this process %d\n", entry.th32ProcessID,
+            engine_placeholder::os::PrintError("ChildResourceGuard: listed child %lu '%ls' running %d created after this process %d\n", entry.th32ProcessID,
                          entry.szExeFile, running ? 1 : 0, ours ? 1 : 0);
         }
         if (ours && running) found = true;
@@ -81,7 +81,7 @@ bool ChildResourceGuard::Clean() const {
         if (!AnyChildRunning() && CountOpenHandles() == descriptors_before_) return true;
         Sleep(10);
     }
-    std::fprintf(stderr, "ChildResourceGuard: handles before %lu, now %lu, child running %d\n", descriptors_before_, CountOpenHandles(),
+    engine_placeholder::os::PrintError("ChildResourceGuard: handles before %lu, now %lu, child running %d\n", descriptors_before_, CountOpenHandles(),
                  AnyChildRunning(true) ? 1 : 0);
     return false;
 }

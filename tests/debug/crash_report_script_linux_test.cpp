@@ -7,7 +7,6 @@
 #include "support/death_test_skip.h"
 
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <dirent.h>
 #include <ftw.h>
@@ -16,6 +15,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
+#include "cstr/format.h"
 
 using namespace engine_placeholder;
 
@@ -45,7 +45,7 @@ ScriptRun RunScriptCommand(const std::string& command) {
 class ScriptTempDir {
 public:
     ScriptTempDir() {
-        std::snprintf(path_, sizeof(path_), "/tmp/engine-script-XXXXXX");
+        FormatTo(path_, sizeof(path_), "/tmp/engine-script-XXXXXX");
         if (mkdtemp(path_) == nullptr) {
             path_[0] = '\0';
         }

@@ -1,6 +1,6 @@
 #include "ui/widgets/window_frame.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "ui/surface.h"
 #include "ui/widgets/look.h"
@@ -41,7 +41,7 @@ f32 WindowFrame::TitleHeight() {
     const f32 scale = surface->Scale();
     const ResolvedStyle style = surface->Themes().Resolve(widget_kind::kTitleBar, VariantId(0), 0, scale);
     f32 h = surface->Themes().Metric(MetricId::IconSize, 1.0f);
-    if (title_.EnsureForStyle(surface, style, 0)) h = std::fmax(h, title_.Height());
+    if (title_.EnsureForStyle(surface, style, 0)) h = FMax(h, title_.Height());
     return h + style.padding_y / scale * 2;
 }
 
@@ -58,9 +58,9 @@ Size WindowFrame::Measure(const Constraints& constraints) {
     title_h_ = TitleHeight();
     Constraints inner = constraints;
     const f32 widest = icon * kMaxWidthIcons;
-    inner.max_w = std::fmin(constraints.max_w, widest) - pad_x * 2;
+    inner.max_w = FMin(constraints.max_w, widest) - pad_x * 2;
     if (inner.max_w < 0) inner.max_w = 0;
-    inner.max_h = std::fmax(constraints.max_h - title_h_ - pad_y * 2, 0.0f);
+    inner.max_h = FMax(constraints.max_h - title_h_ - pad_y * 2, 0.0f);
     Size content;
     if (content_ != nullptr) content = content_->MeasureTotal(inner);
     Size footer;
@@ -69,7 +69,7 @@ Size WindowFrame::Measure(const Constraints& constraints) {
     f32 title_w = bar.padding_x / scale * 2 + (title_.Text().Length() > 0 ? title_.Width() : 0.0f);
     if (closable_) title_w += gap + icon;
     Size size;
-    size.w = std::fmax(std::fmax(content.w, footer.w) + pad_x * 2, title_w);
+    size.w = FMax(FMax(content.w, footer.w) + pad_x * 2, title_w);
     size.h = title_h_ + pad_y * 2 + content.h + (footer_ != nullptr ? gap + footer.h : 0.0f);
     return size;
 }
@@ -84,7 +84,7 @@ void WindowFrame::Arrange(const Rect& rect) {
     const f32 pad_y = frame.padding_y / scale;
     const f32 gap = surface->Themes().Metric(MetricId::Spacing, 1.0f);
     title_h_ = TitleHeight();
-    const f32 inner_w = std::fmax(rect.w - pad_x * 2, 0.0f);
+    const f32 inner_w = FMax(rect.w - pad_x * 2, 0.0f);
     if (footer_ != nullptr) {
         Constraints c;
         c.max_w = inner_w;
@@ -95,7 +95,7 @@ void WindowFrame::Arrange(const Rect& rect) {
     }
     const f32 top = rect.y + title_h_ + pad_y;
     const f32 bottom = rect.Bottom() - pad_y - (footer_ != nullptr ? footer_h_ + gap : 0.0f);
-    if (content_ != nullptr) content_->Arrange(Rect{rect.x + pad_x, top, inner_w, std::fmax(bottom - top, 0.0f)});
+    if (content_ != nullptr) content_->Arrange(Rect{rect.x + pad_x, top, inner_w, FMax(bottom - top, 0.0f)});
     if (footer_ != nullptr) footer_->Arrange(Rect{rect.x + pad_x, rect.Bottom() - pad_y - footer_h_, inner_w, footer_h_});
 }
 
@@ -172,20 +172,20 @@ void WindowFrame::OnEvent(Event& event) {
                 const Rect limit = Parent() != nullptr ? Parent()->Bounds() : Rect{0, 0, kUnbounded, kUnbounded};
                 Rect r = b;
                 if (drag_edges_ == 0) {
-                    r.x = std::fmin(std::fmax(at.x - grab_.x, limit.x), std::fmax(limit.Right() - r.w, limit.x));
-                    r.y = std::fmin(std::fmax(at.y - grab_.y, limit.y), std::fmax(limit.Bottom() - r.h, limit.y));
+                    r.x = FMin(FMax(at.x - grab_.x, limit.x), FMax(limit.Right() - r.w, limit.x));
+                    r.y = FMin(FMax(at.y - grab_.y, limit.y), FMax(limit.Bottom() - r.h, limit.y));
                 } else {
                     const Size floor = Floor();
-                    const f32 px = std::fmin(std::fmax(at.x, limit.x), limit.Right());
-                    const f32 py = std::fmin(std::fmax(at.y, limit.y), limit.Bottom());
+                    const f32 px = FMin(FMax(at.x, limit.x), limit.Right());
+                    const f32 py = FMin(FMax(at.y, limit.y), limit.Bottom());
                     f32 left = b.x;
                     f32 right = b.Right();
                     f32 top = b.y;
                     f32 bottom = b.Bottom();
-                    if ((drag_edges_ & kLeft) != 0) left = std::fmin(px, right - floor.w);
-                    if ((drag_edges_ & kRight) != 0) right = std::fmax(px, left + floor.w);
-                    if ((drag_edges_ & kTop) != 0) top = std::fmin(py, bottom - floor.h);
-                    if ((drag_edges_ & kBottom) != 0) bottom = std::fmax(py, top + floor.h);
+                    if ((drag_edges_ & kLeft) != 0) left = FMin(px, right - floor.w);
+                    if ((drag_edges_ & kRight) != 0) right = FMax(px, left + floor.w);
+                    if ((drag_edges_ & kTop) != 0) top = FMin(py, bottom - floor.h);
+                    if ((drag_edges_ & kBottom) != 0) bottom = FMax(py, top + floor.h);
                     r = Rect{left, top, right - left, bottom - top};
                 }
                 Arrange(r);

@@ -2,7 +2,7 @@
 
 #include "sync/atomic.h"
 #include <chrono>
-#include <cstdlib>
+#include "os/console.h"
 #include "sync/thread.h"
 
 #include "file_conformance.h"
@@ -18,6 +18,7 @@
 #include "build_defs.h"
 #include "types.h"
 #include "sync/mutex.h"
+#include "cstr/mem_ops.h"
 
 #if ENGINE_SANITIZED
 #define IO_TEST_SANITIZED 1
@@ -31,14 +32,14 @@ Atomic<bool> g_counting{false};
 } // namespace
 void* operator new(usize n) {
     if (g_counting.Load(MemoryOrder::Relaxed)) g_allocs.FetchAdd(1, MemoryOrder::Relaxed);
-    if (void* p = std::malloc(n == 0 ? 1 : n)) return p;
-    std::abort();
+    if (void* p = MemAllocate(n == 0 ? 1 : n)) return p;
+    os::Abort();
 }
 void* operator new[](usize n) { return operator new(n); }
-void operator delete(void* p) noexcept { std::free(p); }
-void operator delete[](void* p) noexcept { std::free(p); }
-void operator delete(void* p, usize) noexcept { std::free(p); }
-void operator delete[](void* p, usize) noexcept { std::free(p); }
+void operator delete(void* p) noexcept { MemFree(p); }
+void operator delete[](void* p) noexcept { MemFree(p); }
+void operator delete(void* p, usize) noexcept { MemFree(p); }
+void operator delete[](void* p, usize) noexcept { MemFree(p); }
 #endif
 
 using namespace engine_placeholder;

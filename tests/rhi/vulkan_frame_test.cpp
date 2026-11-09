@@ -1,4 +1,4 @@
-#include <cstdlib>
+#include "os/console.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -18,7 +18,7 @@ using namespace engine_placeholder::rhi::vulkan;
 namespace {
 
 bool VulkanFrameTestHaveEnv(const char* name) {
-    const char* v = std::getenv(name);
+    const char* v = os::GetEnvironment(name);
     return v != nullptr && v[0] != '\0';
 }
 

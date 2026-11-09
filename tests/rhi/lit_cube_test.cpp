@@ -1,4 +1,4 @@
-#include <cmath>
+#include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -68,7 +68,7 @@ TEST_CASE("NormalMatrix keeps normals perpendicular under non-uniform scale", "[
     const Mat4 n = NormalMatrix(model);
     const Vec4 normal = n * Vec4(1, 1, 0, 0);
     const Vec4 tangent = model * Vec4(1, -1, 0, 0); // (1,-1,0) is perpendicular to (1,1,0) before scaling
-    CHECK(std::abs(normal.x * tangent.x + normal.y * tangent.y + normal.z * tangent.z) < 1e-5f);
+    CHECK(Abs(normal.x * tangent.x + normal.y * tangent.y + normal.z * tangent.z) < 1e-5f);
     // A mirroring model (negative determinant) must not turn normals inside out: the +X normal still points to +X after
     // mirroring Y, and a normal on the mirrored axis keeps its sense.
     const Mat4 mirror = Mat4::FromBasis(Vec3(1, 0, 0), Vec3(0, -1, 0), Vec3(0, 0, 1), Vec3(0, 0, 0));
@@ -80,9 +80,9 @@ TEST_CASE("NormalMatrix keeps normals perpendicular under non-uniform scale", "[
     const Mat4 rotation = ModelMatrix(Vec3(1, 2, 3), 1.0f, 0.7f);
     const Mat4 rn = NormalMatrix(rotation);
     for (int c = 0; c < 3; ++c) {
-        CHECK(std::abs(rn.col[c].x - rotation.col[c].x) < 1e-5f);
-        CHECK(std::abs(rn.col[c].y - rotation.col[c].y) < 1e-5f);
-        CHECK(std::abs(rn.col[c].z - rotation.col[c].z) < 1e-5f);
+        CHECK(Abs(rn.col[c].x - rotation.col[c].x) < 1e-5f);
+        CHECK(Abs(rn.col[c].y - rotation.col[c].y) < 1e-5f);
+        CHECK(Abs(rn.col[c].z - rotation.col[c].z) < 1e-5f);
     }
 }
 
@@ -109,9 +109,9 @@ TEST_CASE("Visible faces are lit by the Lambert ratio of their normals to the li
             scene.FaceCenter(faces[i].center, &x, &y);
             const u8* p = image.Pixel(x, y);
             INFO("face " << i << " expects " << want << ", got " << int(p[0]) << "," << int(p[1]) << "," << int(p[2]));
-            CHECK(std::abs(p[0] - want) <= 2);
-            CHECK(std::abs(p[1] - want) <= 2);
-            CHECK(std::abs(p[2] - want) <= 2);
+            CHECK(Abs(p[0] - want) <= 2);
+            CHECK(Abs(p[1] - want) <= 2);
+            CHECK(Abs(p[2] - want) <= 2);
             levels[i] = p[0];
         }
         // The top face (normal +Y) points closest to this light, the +Z face is next, the +X face is dimmest.
@@ -119,7 +119,7 @@ TEST_CASE("Visible faces are lit by the Lambert ratio of their normals to the li
         CHECK(levels[0] > levels[1]);
         // The Lambert ratio between two faces: (level - ambient) is proportional to N.L.
         const f32 ratio = static_cast<f32>(levels[2] - Level(0.1f)) / static_cast<f32>(levels[0] - Level(0.1f));
-        CHECK(std::abs(ratio - faces[2].normal.Dot(l) / faces[0].normal.Dot(l)) < 0.1f);
+        CHECK(Abs(ratio - faces[2].normal.Dot(l) / faces[0].normal.Dot(l)) < 0.1f);
     }
 }
 
@@ -180,12 +180,12 @@ TEST_CASE("The lit cube renders from a fixed angle and matches its golden image"
         const f32 light = 0.1f + 0.9f * l.z;
         auto decode = [](int c) {
             const f32 v = static_cast<f32>(c) / 255.0f;
-            return v <= 0.04045f ? v / 12.92f : std::pow((v + 0.055f) / 1.055f, 2.4f);
+            return v <= 0.04045f ? v / 12.92f : Pow((v + 0.055f) / 1.055f, 2.4f);
         };
         const u8* p = image.Pixel(x, y);
-        CHECK(std::abs(p[0] - Level(decode(235) * light)) <= 6);
-        CHECK(std::abs(p[1] - Level(decode(200) * light)) <= 6);
-        CHECK(std::abs(p[2] - Level(decode(90) * light)) <= 6);
+        CHECK(Abs(p[0] - Level(decode(235) * light)) <= 6);
+        CHECK(Abs(p[1] - Level(decode(200) * light)) <= 6);
+        CHECK(Abs(p[2] - Level(decode(90) * light)) <= 6);
 
         // Shading and texture filtering round differently between GPU vendors (the goldens come from NVIDIA; AMD
         // differs by 3-10 levels on a handful of pixels), so a small fraction of interior pixels may miss `tolerance`.

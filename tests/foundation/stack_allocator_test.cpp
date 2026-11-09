@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstring>
 #include "mem/stack_allocator.h"
 #include "types.h"
+#include "cstr/mem_ops.h"
 
 using engine_placeholder::StackAllocator;
 using engine_placeholder::u8;
@@ -24,7 +24,7 @@ TEST_CASE("StackAllocator: Push/PopToMarker rewinds and preserves earlier conten
             break;
         }
         first[i] = p;
-        memset(p, static_cast<int>(i + 1), kObjSize);
+        engine_placeholder::MemSet(p, static_cast<int>(i + 1), kObjSize);
     }
     REQUIRE(first_push_ok);
 
@@ -41,7 +41,7 @@ TEST_CASE("StackAllocator: Push/PopToMarker rewinds and preserves earlier conten
         if (i == 0) {
             second_first = p;
         }
-        memset(p, static_cast<int>(100 + i), kObjSize);
+        engine_placeholder::MemSet(p, static_cast<int>(100 + i), kObjSize);
     }
     REQUIRE(second_push_ok);
 

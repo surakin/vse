@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include "log/assert.h"
 #include "log/diagnostics_hooks.h"
@@ -8,6 +8,7 @@
 #include "os/os.h"
 #include "string/string.h"
 #include "types.h"
+#include "cstr/mem_ops.h"
 
 // Phase 12 Day 142: the assert report and the thread registration reach the debugging module through hooks, and are complete
 // without them.
@@ -34,7 +35,7 @@ usize g_captured_length = 0;
 long CaptureSink(int, const void* buffer, usize length) {
     const usize room = sizeof(g_captured) - g_captured_length;
     const usize take = length < room ? length : room;
-    std::memcpy(g_captured + g_captured_length, buffer, take);
+    engine_placeholder::MemCopy(g_captured + g_captured_length, buffer, take);
     g_captured_length += take;
     return static_cast<long>(length);
 }
@@ -52,7 +53,7 @@ usize FakeTrace(char* buffer, usize capacity, u32 skip) {
     static const char kText[] = "  #0 fake_frame\n";
     const usize length = sizeof(kText) - 1;
     if (length > capacity) return 0;
-    std::memcpy(buffer, kText, length);
+    engine_placeholder::MemCopy(buffer, kText, length);
     return length;
 }
 
@@ -143,7 +144,7 @@ int g_started = 0;
 char g_started_name[16];
 void RecordStart(const char* name) {
     ++g_started;
-    std::strncpy(g_started_name, name != nullptr ? name : "", sizeof(g_started_name) - 1);
+    engine_placeholder::CStrCopyN(g_started_name, name != nullptr ? name : "", sizeof(g_started_name) - 1);
 }
 } // namespace
 

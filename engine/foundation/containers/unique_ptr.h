@@ -27,7 +27,7 @@ struct DefaultDelete {
     template <typename U>
         requires IsConvertible<U*, T*>
     constexpr DefaultDelete(const DefaultDelete<U>&) {
-        static_assert(IsSame<T, U> || std::has_virtual_destructor_v<T>, "DefaultDelete<Base>: deleting a derived object needs a virtual destructor on Base");
+        static_assert(IsSame<T, U> || HasVirtualDestructor<T>, "DefaultDelete<Base>: deleting a derived object needs a virtual destructor on Base");
         static_assert(alignof(U) <= 16, "DefaultDelete<Base>: a derived type aligned beyond 16 bytes would be released with the wrong alignment");
     }
 

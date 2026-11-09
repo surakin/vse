@@ -1,7 +1,7 @@
 #include "rhi/vulkan/vulkan_device.h"
 
-#include <cstdlib>
-#include <cstring>
+#include "os/console.h"
+#include "cstr/cstr.h"
 
 #include "debug/crash_state.h"
 #include "log/assert.h"
@@ -12,6 +12,8 @@
 #include "rhi/vulkan/vk_swapchain.h"
 #include "sync/atomic.h"
 #include "sync/mutex.h"
+#include "cstr/format.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
@@ -33,16 +35,16 @@ void DescribeDevice(const VkInstanceFns& fns, VkPhysicalDevice device, VkSurface
 
     VkPhysicalDeviceProperties props{};
     fns.GetPhysicalDeviceProperties(device, &props);
-    std::strncpy(out->name, props.deviceName, sizeof(out->name) - 1);
+    CStrCopyN(out->name, props.deviceName, sizeof(out->name) - 1);
     out->kind = ToGpuKind(props.deviceType);
     out->api_version = props.apiVersion;
     out->vendor_id = props.vendorID;
     out->device_id = props.deviceID;
     if (props.vendorID == 0x10DE) { // NVIDIA packs 10.8.8.6 bits
-        std::snprintf(out->driver, sizeof(out->driver), "%u.%u.%u.%u", props.driverVersion >> 22, (props.driverVersion >> 14) & 0xFF,
+        FormatTo(out->driver, sizeof(out->driver), "%u.%u.%u.%u", props.driverVersion >> 22, (props.driverVersion >> 14) & 0xFF,
                       (props.driverVersion >> 6) & 0xFF, props.driverVersion & 0x3F);
     } else {
-        std::snprintf(out->driver, sizeof(out->driver), "%u.%u.%u", VK_VERSION_MAJOR(props.driverVersion),
+        FormatTo(out->driver, sizeof(out->driver), "%u.%u.%u", VK_VERSION_MAJOR(props.driverVersion),
                       VK_VERSION_MINOR(props.driverVersion), VK_VERSION_PATCH(props.driverVersion));
     }
     if (props.apiVersion >= VK_API_VERSION_1_1) {
@@ -52,8 +54,8 @@ void DescribeDevice(const VkInstanceFns& fns, VkPhysicalDevice device, VkSurface
         props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
         props2.pNext = &id_props;
         fns.GetPhysicalDeviceProperties2(device, &props2);
-        std::memcpy(out->uuid, id_props.deviceUUID, sizeof(out->uuid));
-        std::memcpy(out->luid, id_props.deviceLUID, sizeof(out->luid));
+        MemCopy(out->uuid, id_props.deviceUUID, sizeof(out->uuid));
+        MemCopy(out->luid, id_props.deviceLUID, sizeof(out->luid));
         out->luid_valid = id_props.deviceLUIDValid == VK_TRUE;
     }
     {
@@ -111,10 +113,10 @@ void DescribeDevice(const VkInstanceFns& fns, VkPhysicalDevice device, VkSurface
         VkResult listed = fns.EnumerateDeviceExtensionProperties(device, nullptr, &ext_count, exts.Data());
         if (listed == VK_SUCCESS || listed == VK_INCOMPLETE) {
             for (u32 i = 0; i < ext_count; ++i) {
-                if (std::strcmp(exts[i].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
+                if (CStrCompare(exts[i].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0) {
                     out->swapchain_extension = true;
                 }
-                if (std::strcmp(exts[i].extensionName, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME) == 0) {
+                if (CStrCompare(exts[i].extensionName, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME) == 0) {
                     out->memory_budget_extension = true;
                 }
             }
@@ -206,7 +208,7 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
 
     const bool explicit_adapter = info.adapter != nullptr && info.adapter[0] != '\0';
     int chosen = explicit_adapter ? SelectPhysicalDeviceFor(infos, physical_count, presentable, info.adapter, "DeviceCreateInfo::adapter")
-                                  : SelectPhysicalDevice(infos, physical_count, presentable, std::getenv("ENGINE_RHI_GPU"));
+                                  : SelectPhysicalDevice(infos, physical_count, presentable, os::GetEnvironment("ENGINE_RHI_GPU"));
     if (chosen < 0) {
         return false;
     }
@@ -234,7 +236,7 @@ bool VulkanDevice::Initialize(const DeviceCreateInfo& info) {
     {
         // The crash report names the adapter and driver (a vendor fix is often the answer to a GPU crash).
         char gpu[debug::kCrashStateEntryTextBytes];
-        std::snprintf(gpu, sizeof(gpu), "%.48s, driver %u.%u.%u, api %u.%u.%u", properties_.deviceName,
+        FormatTo(gpu, sizeof(gpu), "%.48s, driver %u.%u.%u, api %u.%u.%u", properties_.deviceName,
                       VK_VERSION_MAJOR(properties_.driverVersion), VK_VERSION_MINOR(properties_.driverVersion),
                       VK_VERSION_PATCH(properties_.driverVersion), VK_VERSION_MAJOR(properties_.apiVersion),
                       VK_VERSION_MINOR(properties_.apiVersion), VK_VERSION_PATCH(properties_.apiVersion));

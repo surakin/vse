@@ -1,7 +1,7 @@
 #include "demo_frame.h"
 
-#include <cmath>
-#include <cstring>
+#include "lang/scalar.h"
+#include "cstr/cstr.h"
 
 #include "io/path.h"
 #include "rhi/rhi_log.h"
@@ -80,7 +80,7 @@ bool DemoFrame::Create(const FrameSetup& setup) {
         // The overlay is optional: a missing font or a device without the text shaders leaves the frame without it, with the reason logged.
         text::FontOptions fo;
         if (font_library_.IsInitialized() || font_library_.Initialize().Ok()) {
-            const text::Status opened = text::Font::OpenFile(font_library_, io::Path(StringView(setup.font_path, std::strlen(setup.font_path))), fo, &font_);
+            const text::Status opened = text::Font::OpenFile(font_library_, io::Path(StringView(setup.font_path, CStrLength(setup.font_path))), fo, &font_);
             if (opened.Ok() && !text_.Create(setup.device, &atlas_, renderer::TextRendererDesc{rhi::Format::RGBA8_SRGB, 4096}, setup.resources)) {
                 font_.Close();
             } else if (!opened.Ok()) {
@@ -152,7 +152,7 @@ bool DemoFrame::Build(const FrameContext& context, void* user) {
         // After the passes that wrote the target (the tonemap or the debug view), over their picture.
         // Sizes and margins in logical pixels, times the display scale (TextStyle sizes are device pixels).
         const f32 scale = self->overlay_scale_;
-        auto px = [scale](f32 logical) { return static_cast<u32>(std::lround(logical * scale)); };
+        auto px = [scale](f32 logical) { return static_cast<u32>(LRound(logical * scale)); };
         text::TextStyle big;
         big.font = &self->font_;
         big.pixel_size = px(32);

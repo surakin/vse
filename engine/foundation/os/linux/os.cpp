@@ -1,10 +1,9 @@
 #include "../os.h"
 
-#include <cerrno>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
+#include "os/last_error.h"
+#include "cstr/format.h"
+#include "cstr/cstr.h"
+#include <time.h>
 #include <dirent.h>
 #include <dlfcn.h>
 #include <fcntl.h>
@@ -12,6 +11,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include "cstr/mem_ops.h"
 
 extern "C" char** environ;
 
@@ -55,7 +55,7 @@ long WriteAllWithTimeout(int fd, const void* buf, usize len, u64 timeout_nanos) 
         const int wait_ms = deadline > now ? static_cast<int>((deadline - now + 999999ull) / 1000000ull) : 0;
         struct pollfd waiting = {fd, POLLOUT, 0};
         const int ready = ::poll(&waiting, 1, wait_ms);
-        if (ready < 0 && errno == EINTR) {
+        if (ready < 0 && os::LastError() == EINTR) {
             continue;
         }
         if (ready <= 0 || (waiting.revents & (POLLERR | POLLHUP | POLLNVAL)) != 0) {
@@ -65,7 +65,7 @@ long WriteAllWithTimeout(int fd, const void* buf, usize len, u64 timeout_nanos) 
         const long n = ::write(fd, bytes + done, chunk);
         if (n > 0) {
             done += static_cast<usize>(n);
-        } else if (!(n < 0 && (errno == EINTR || errno == EAGAIN))) {
+        } else if (!(n < 0 && (os::LastError() == EINTR || os::LastError() == EAGAIN))) {
             break;
         }
     }
@@ -112,7 +112,7 @@ i64 ResidentMemoryKiB() {
     text[n] = '\0';
     long pages = 0;
     long resident = 0;
-    if (std::sscanf(text, "%ld %ld", &pages, &resident) != 2) return 0;
+    if (ScanFrom(text, "%ld %ld", &pages, &resident) != 2) return 0;
     const long page_bytes = ::sysconf(_SC_PAGESIZE);
     return page_bytes > 0 ? static_cast<i64>(resident) * (page_bytes / 1024) : 0;
 }
@@ -139,7 +139,7 @@ void SleepNanos(u64 nanos) {
     req.tv_sec = static_cast<time_t>(nanos / 1'000'000'000ULL);
     req.tv_nsec = static_cast<long>(nanos % 1'000'000'000ULL);
     struct timespec rem;
-    while (::nanosleep(&req, &rem) == -1 && errno == EINTR) {
+    while (::nanosleep(&req, &rem) == -1 && os::LastError() == EINTR) {
         req = rem;
     }
 }
@@ -182,11 +182,11 @@ bool EnvironmentEntry(usize index, char* buffer, usize capacity, usize* length) 
     }
     const char* entry = environ[index];
     if (entry == nullptr) return false;
-    const usize full = std::strlen(entry);
+    const usize full = CStrLength(entry);
     *length = full;
     if (capacity > 0) {
         const usize copy = full < capacity - 1 ? full : capacity - 1;
-        std::memcpy(buffer, entry, copy);
+        MemCopy(buffer, entry, copy);
         buffer[copy] = '\0';
     }
     return true;

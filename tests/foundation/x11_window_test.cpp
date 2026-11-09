@@ -149,7 +149,7 @@ TEST_CASE("X11Window move transfers ownership without double-close", "[x11][os]"
 
 #include <X11/keysym.h>
 
-#include <cstdlib>
+#include "os/console.h"
 #include <string_view>
 
 #include "platform/input.h"
@@ -410,7 +410,7 @@ TEST_CASE("X11Window input events are ignored (no crash) when no InputState is s
 TEST_CASE("X11Window yields layout-correct Keys for physical keycodes (needs ENGINE_X11_TEST_LAYOUT)",
           "[x11][input][os][layout]") {
     SKIP_IF_NO_DISPLAY_SESSION();
-    const char* layout = std::getenv("ENGINE_X11_TEST_LAYOUT");
+    const char* layout = os::GetEnvironment("ENGINE_X11_TEST_LAYOUT");
     if (layout == nullptr) {
         SKIP("ENGINE_X11_TEST_LAYOUT not set");
     }

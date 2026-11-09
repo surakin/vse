@@ -1,6 +1,6 @@
 #include "ui/widgets/value_widgets.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "ui/surface.h"
 #include "ui/widgets/look.h"
@@ -56,7 +56,7 @@ f64 Slider::ValueAt(f32 along) const {
     const f32 room = TrackLength() - ThumbLength();
     if (!(room > 0)) return range_.min;
     f32 t = (along - ThumbLength() / 2) / room;
-    t = std::fmin(std::fmax(t, 0.0f), 1.0f);
+    t = FMin(FMax(t, 0.0f), 1.0f);
     if (vertical_) t = 1.0f - t;
     return range_.min + (range_.max - range_.min) * static_cast<f64>(t);
 }
@@ -94,7 +94,7 @@ void Slider::Draw(Canvas& canvas) {
     const f32 scale = surface->Scale();
     const ResolvedStyle track = surface->Themes().Resolve(widget_kind::kSlider, VariantId(0), State(), scale);
     const Rect& b = Bounds();
-    const f32 thick = std::fmax(surface->Themes().Metric(MetricId::BorderWidth, 1.0f) * kTrackBorders, 1.0f);
+    const f32 thick = FMax(surface->Themes().Metric(MetricId::BorderWidth, 1.0f) * kTrackBorders, 1.0f);
     Rect bar = b;
     if (vertical_) {
         bar.x += (b.w - thick) / 2;
@@ -366,8 +366,8 @@ Size SpinBox::Measure(const Constraints&) {
     for (int i = 0; i < 2; ++i) {
         probe.SetText(i == 0 ? lo.View() : hi.View());
         if (probe.EnsureForStyle(surface, style, 0)) {
-            text_w = std::fmax(text_w, probe.Width());
-            text_h = std::fmax(text_h, probe.Height());
+            text_w = FMax(text_w, probe.Width());
+            text_h = FMax(text_h, probe.Height());
         }
     }
     Size size;
@@ -379,7 +379,7 @@ Size SpinBox::Measure(const Constraints&) {
 void SpinBox::Arrange(const Rect& rect) {
     SetBounds(rect);
     Rect inner = rect;
-    inner.w = std::fmax(rect.w - ButtonWidth(), 0.0f);
+    inner.w = FMax(rect.w - ButtonWidth(), 0.0f);
     field_->Arrange(inner);
 }
 

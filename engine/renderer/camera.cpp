@@ -1,6 +1,6 @@
 #include "renderer/camera.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "log/assert.h"
 #include "math/quaternion.h"
@@ -19,7 +19,7 @@ void CheckProjection(f32 fov_y, f32 aspect, f32 near_plane, f32 far_plane) {
 
 Mat4 PerspectiveVulkan(f32 fov_y, f32 aspect, f32 near_plane, f32 far_plane) {
     CheckProjection(fov_y, aspect, near_plane, far_plane);
-    const f32 f = 1.0f / std::tan(fov_y * 0.5f);
+    const f32 f = 1.0f / Tan(fov_y * 0.5f);
     const f32 range = near_plane - far_plane;
     return Mat4::FromColumns(Vec4(f / aspect, 0, 0, 0), Vec4(0, -f, 0, 0), Vec4(0, 0, far_plane / range, -1),
                              Vec4(0, 0, near_plane * far_plane / range, 0));
@@ -29,7 +29,7 @@ Mat4 InversePerspectiveVulkan(f32 fov_y, f32 aspect, f32 near_plane, f32 far_pla
     CheckProjection(fov_y, aspect, near_plane, far_plane);
     // With B = far / (near - far) and C = near * far / (near - far), the projection maps view (x, y, z, 1) to
     // clip (f/a x, -f y, B z + C, -z), so view x = a/f cx, y = -cy/f, z = -cw, w = (cz + B cw) / C.
-    const f32 f = 1.0f / std::tan(fov_y * 0.5f);
+    const f32 f = 1.0f / Tan(fov_y * 0.5f);
     const f32 range = near_plane - far_plane;
     const f32 b = far_plane / range;
     const f32 c = near_plane * far_plane / range;

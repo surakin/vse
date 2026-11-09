@@ -5,11 +5,12 @@
 #include "io/file.h"
 #include "os/os.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 #include <fcntl.h>
 #include <sys/prctl.h>
 #include <sys/resource.h>
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::debug {
 
@@ -19,9 +20,9 @@ void CopyInto(char* out, usize capacity, const char* text) {
     if (capacity == 0) {
         return;
     }
-    const usize length = std::strlen(text);
+    const usize length = CStrLength(text);
     const usize n = length < capacity - 1 ? length : capacity - 1;
-    std::memcpy(out, text, n);
+    MemCopy(out, text, n);
     out[n] = '\0';
 }
 
@@ -41,17 +42,17 @@ void DescribeCorePattern(const char* pattern, char* out, usize capacity) {
         return;
     }
     if (CorePatternIsPipe(pattern)) {
-        if (std::strstr(pattern, "systemd-coredump") != nullptr) {
+        if (CStrFind(pattern, "systemd-coredump") != nullptr) {
             CopyInto(out, capacity, "stored by systemd-coredump; list the cores with `coredumpctl list`, open one with `coredumpctl gdb`");
         } else {
             char text[kPostMortemTextBytes];
-            std::snprintf(text, sizeof(text), "piped to a program: %s", pattern + 1);
+            FormatTo(text, sizeof(text), "piped to a program: %s", pattern + 1);
             CopyInto(out, capacity, text);
         }
         return;
     }
     char text[kPostMortemTextBytes];
-    std::snprintf(text, sizeof(text), "written to a file named by the pattern '%s' (a relative name is relative to the working directory of the crash)", pattern);
+    FormatTo(text, sizeof(text), "written to a file named by the pattern '%s' (a relative name is relative to the working directory of the crash)", pattern);
     CopyInto(out, capacity, text);
 }
 
@@ -96,7 +97,7 @@ PostMortemReport EnablePostMortemDumps(const PostMortemOptions& options) {
         usize n = 0;
         if (pattern_file->Read(pattern, sizeof(pattern) - 1, 0, &n).Ok() && n > 0) {
             pattern[n] = '\0';
-            if (char* newline = std::strchr(pattern, '\n')) {
+            if (char* newline = CStrFindChar(pattern, '\n')) {
                 *newline = '\0';
             }
         }

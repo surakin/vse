@@ -1,7 +1,8 @@
 #include "envelope.h"
 
-#include <cstring>
+#include "cstr/cstr.h"
 #include "types.h"
+#include "cstr/mem_ops.h"
 
 namespace crash_extract {
 
@@ -121,7 +122,7 @@ bool ParseItemHeader(const char* line, engine_placeholder::usize length, ItemHea
         }
         ++i;
         SkipSpace(line, length, i);
-        if (key_length == 6 && std::memcmp(key, "length", 6) == 0) {
+        if (key_length == 6 && engine_placeholder::MemCompare(key, "length", 6) == 0) {
             // A non-negative integer that fits; anything else makes the item unusable.
             engine_placeholder::usize value = 0;
             engine_placeholder::usize digits = 0;
@@ -139,14 +140,14 @@ bool ParseItemHeader(const char* line, engine_placeholder::usize length, ItemHea
             }
             header.has_length = true;
             header.payload_length = value;
-        } else if (key_length == 15 && std::memcmp(key, "attachment_type", 15) == 0) {
+        } else if (key_length == 15 && engine_placeholder::MemCompare(key, "attachment_type", 15) == 0) {
             const char* text = nullptr;
             engine_placeholder::usize text_length = 0;
             if (!ReadString(line, length, i, text, text_length)) {
                 return false;
             }
-            header.is_minidump = text_length == 14 && std::memcmp(text, "event.minidump", 14) == 0;
-        } else if (key_length == 8 && std::memcmp(key, "filename", 8) == 0) {
+            header.is_minidump = text_length == 14 && engine_placeholder::MemCompare(text, "event.minidump", 14) == 0;
+        } else if (key_length == 8 && engine_placeholder::MemCompare(key, "filename", 8) == 0) {
             if (!ReadString(line, length, i, header.filename, header.filename_length)) {
                 return false;
             }
@@ -233,11 +234,11 @@ EnvelopeResult FindMinidump(const char* data, engine_placeholder::usize size, Mi
 }
 
 EnvelopeResult FindAttachment(const char* data, engine_placeholder::usize size, const char* filename, Attachment* out) {
-    const engine_placeholder::usize name_length = filename != nullptr ? std::strlen(filename) : 0;
+    const engine_placeholder::usize name_length = filename != nullptr ? engine_placeholder::CStrLength(filename) : 0;
     return FindItem(
         data, size,
         [&](const ItemHeader& h) {
-            return !h.is_minidump && h.filename != nullptr && h.filename_length == name_length && std::memcmp(h.filename, filename, name_length) == 0;
+            return !h.is_minidump && h.filename != nullptr && h.filename_length == name_length && engine_placeholder::MemCompare(h.filename, filename, name_length) == 0;
         },
         &out->data, &out->size);
 }

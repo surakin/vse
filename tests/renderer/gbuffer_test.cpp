@@ -1,7 +1,7 @@
 // Phase 5 Day 79: the G-buffer pass without a GPU. The octahedral normal and sRGB conversions have CPU twins that the
 // real-device tests compare against the shaders; the pass is checked for its sorting, instancing and named errors on the
 // null device.
-#include <cmath>
+#include "lang/scalar.h"
 #include <cstring>
 #include <string>
 #include <vector>
@@ -15,6 +15,7 @@
 #include "renderer/mesh.h"
 #include "renderer/render_scene.h"
 #include "rhi/null/null_device.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -79,13 +80,13 @@ TEST_CASE("Octahedral encoding round-trips unit vectors and stays in [-1, 1]", "
         for (int j = -10; j <= 10; ++j) {
             for (int k = -10; k <= 10; ++k) {
                 if (i == 0 && j == 0 && k == 0) continue;
-                const f32 len = std::sqrt(static_cast<f32>(i * i + j * j + k * k));
+                const f32 len = Sqrt(static_cast<f32>(i * i + j * j + k * k));
                 const Vec3 n(i / len, j / len, k / len);
                 const Vec2 e = OctEncode(n);
-                REQUIRE(std::fabs(e.x) <= 1.0f);
-                REQUIRE(std::fabs(e.y) <= 1.0f);
+                REQUIRE(Abs(e.x) <= 1.0f);
+                REQUIRE(Abs(e.y) <= 1.0f);
                 const Vec3 d = OctDecode(e);
-                const f32 err = std::fabs(d.x - n.x) + std::fabs(d.y - n.y) + std::fabs(d.z - n.z);
+                const f32 err = Abs(d.x - n.x) + Abs(d.y - n.y) + Abs(d.z - n.z);
                 REQUIRE(err < 1e-4f);
                 ++count;
             }
@@ -96,17 +97,17 @@ TEST_CASE("Octahedral encoding round-trips unit vectors and stays in [-1, 1]", "
 
 TEST_CASE("The sRGB conversion matches the standard curve and depth linearizes to the plane distances", "[renderer][gbuffer]") {
     CHECK(SrgbToLinear(0.0f) == 0.0f);
-    CHECK(std::fabs(SrgbToLinear(1.0f) - 1.0f) < 1e-6f);
-    CHECK(std::fabs(SrgbToLinear(0.5f) - 0.21404f) < 1e-4f);
-    CHECK(std::fabs(SrgbToLinear(0.02f) - 0.02f / 12.92f) < 1e-7f); // the linear segment
-    CHECK(std::fabs(LinearizeDepth(0.0f, 0.5f, 100.0f) - 0.5f) < 1e-6f);
-    CHECK(std::fabs(LinearizeDepth(1.0f, 0.5f, 100.0f) - 100.0f) < 1e-3f);
+    CHECK(Abs(SrgbToLinear(1.0f) - 1.0f) < 1e-6f);
+    CHECK(Abs(SrgbToLinear(0.5f) - 0.21404f) < 1e-4f);
+    CHECK(Abs(SrgbToLinear(0.02f) - 0.02f / 12.92f) < 1e-7f); // the linear segment
+    CHECK(Abs(LinearizeDepth(0.0f, 0.5f, 100.0f) - 0.5f) < 1e-6f);
+    CHECK(Abs(LinearizeDepth(1.0f, 0.5f, 100.0f) - 100.0f) < 1e-3f);
     // Through the projection: a point at view distance z has depth (f / (f - n)) * (1 - n / z).
     Camera cam;
     cam.near_plane = 0.5f;
     cam.far_plane = 100.0f;
     const Vec4 c = cam.Projection() * Vec4(0, 0, -7.0f, 1.0f);
-    CHECK(std::fabs(LinearizeDepth(c.z / c.w, cam.near_plane, cam.far_plane) - 7.0f) < 1e-3f);
+    CHECK(Abs(LinearizeDepth(c.z / c.w, cam.near_plane, cam.far_plane) - 7.0f) < 1e-3f);
 }
 
 TEST_CASE("The device check names the first unsupported G-buffer format", "[renderer][gbuffer]") {
@@ -154,8 +155,8 @@ TEST_CASE("The camera depth range encloses the scene", "[renderer][gbuffer]") {
     od.transform = ModelMatrix(Vec3(0, 0, -30), 2.0f, 0.0f);
     scene.AddObject(od);
     FitCameraDepthRange(scene, &cam, 0.1f);
-    CHECK(std::fabs(cam.near_plane - 9.0f) < 0.05f);  // 10 - 1
-    CHECK(std::fabs(cam.far_plane - 32.0f) < 0.1f);   // 30 + 2
+    CHECK(Abs(cam.near_plane - 9.0f) < 0.05f);  // 10 - 1
+    CHECK(Abs(cam.far_plane - 32.0f) < 0.1f);   // 30 + 2
     // The near plane never drops below the minimum, even when the camera is inside a sphere.
     cam.position = Vec3(0, 0, -10);
     FitCameraDepthRange(scene, &cam, 0.25f);
@@ -387,7 +388,7 @@ TEST_CASE("Only a UNorm8x4 attribute at location 4 counts as a vertex color", "[
     const StandardVertex* in = static_cast<const StandardVertex*>(plane.Vertices());
     for (u32 i = 0; i < plane.VertexCount(); ++i) {
         vertices[i].base = in[i];
-        std::memset(vertices[i].extra, 0, sizeof(vertices[i].extra));
+        MemSet(vertices[i].extra, 0, sizeof(vertices[i].extra));
     }
     std::vector<u32> indices(plane.IndexCount());
     for (u32 i = 0; i < plane.IndexCount(); ++i) indices[i] = plane.IndexAt(i);

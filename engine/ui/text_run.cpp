@@ -1,6 +1,6 @@
 #include "ui/text_run.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "ui/surface.h"
 
@@ -47,7 +47,7 @@ bool TextRun::Ensure(text::Font* face, u32 family, f32 size_px, f32 wrap_px, f32
 
 bool TextRun::EnsureForStyle(Surface* surface, const ResolvedStyle& style, f32 wrap_px) {
     if (surface == nullptr || surface->GetFontProvider() == nullptr) return false;
-    f32 size_px = std::floor(style.font.size + 0.5f);
+    f32 size_px = Floor(style.font.size + 0.5f);
     if (size_px < 1) size_px = 1;
     return Ensure(surface->GetFontProvider()->Resolve(style.font.family), style.font.family, size_px, wrap_px, surface->Scale());
 }

@@ -4,8 +4,8 @@
 #include "os/os.h"
 
 #include "sync/atomic.h"
-#include <cstdlib>
-#include <cstring>
+#include "os/console.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder {
 
@@ -73,7 +73,7 @@ void RingAppend(const char* text, usize length) {
         const usize offset = w * sizeof(u64);
         if (offset < length) {
             const usize n = length - offset < sizeof(u64) ? length - offset : sizeof(u64);
-            std::memcpy(&word, text + offset, n);
+            MemCopy(&word, text + offset, n);
         }
         slot.words[w].Store(word, MemoryOrder::Release);
     }
@@ -103,7 +103,7 @@ usize AppendStrToBuffer(char* buf, usize capacity, usize offset, StringView sv) 
     if (n > remaining) {
         n = remaining;
     }
-    memcpy(buf + offset, sv.Data(), n);
+    MemCopy(buf + offset, sv.Data(), n);
     return offset + n;
 }
 
@@ -165,7 +165,7 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message) {
         // Where the error came from, under the line, in the same write so another thread's output cannot come between them
         // (names stay mangled: demangling allocates).
         char text[sizeof(buf) + 4096];
-        std::memcpy(text, buf, offset);
+        MemCopy(text, buf, offset);
         usize length = offset;
         const FailureReportHooks* hooks = GetFailureReportHooks();
         if (hooks != nullptr && hooks->append_stack_trace != nullptr) {
@@ -210,7 +210,7 @@ u64 ReadRingRange(u64 first, u64 head, RecentLogLineFn callback, void* context, 
         if (slot.sequence.FetchAdd(0, MemoryOrder::Release) != before || length > kLogRingLineBytes) {
             continue; // changed while we copied: torn, drop it
         }
-        std::memcpy(text, words, kLogRingLineBytes);
+        MemCopy(text, words, kLogRingLineBytes);
         text[length] = '\0';
         callback(text, length, context);
     }
@@ -305,7 +305,7 @@ AssertAction DefaultAssertHandler(const AssertInfo& info) {
     // simply starts with the wrapper's frames. Names stay mangled: demangling allocates, and an assertion can fail inside
     // the allocator.
     char report[sizeof(buf) + 8192];
-    std::memcpy(report, buf, offset);
+    MemCopy(report, buf, offset);
     usize report_length = offset;
     // Without the hooks (nothing installed them yet) the report is the message line alone.
     const FailureReportHooks* hooks = GetFailureReportHooks();
@@ -356,7 +356,7 @@ AssertHandler SetAssertHandler(AssertHandler handler) {
 
 [[noreturn]] void AssertFail(const char* file, int line, const char* message) {
     detail::AssertFailed(AssertKind::Assert, file, line, "", "", message);
-    std::abort(); // the handler chose to continue (or break and was resumed); this function does not return
+    os::Abort(); // the handler chose to continue (or break and was resumed); this function does not return
 }
 
 namespace detail {
@@ -370,13 +370,13 @@ AssertAction AssertFailed(AssertKind kind, const char* file, int line, const cha
         action = AssertAction::Abort;
     }
     if (action == AssertAction::Abort) {
-        std::abort();
+        os::Abort();
     }
     return action;
 }
 
 void UnreachableAbort() {
-    std::abort();
+    os::Abort();
 }
 
 AssertAction EnsureFailed(EnsureSite& site, const char* function) {

@@ -3,7 +3,7 @@
 // The text vocabulary of shader_mint outside its JSON boundary: the engine's `String`, `StringView` and `Vector`.
 // (reflect_json.cpp is the one file that uses std::string and std::vector, because nlohmann/json is built on them.)
 
-#include <cstdarg>
+#include "cstr/varargs.h"
 
 #include "containers/vector.h"
 #include "debug/compiler.h"

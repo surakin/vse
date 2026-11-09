@@ -1,5 +1,5 @@
 // Phase 5 Day 73: cameras, bounds, frustum culling and the procedural meshes. Pure CPU maths, no device.
-#include <cmath>
+#include "lang/scalar.h"
 #include <map>
 #include <tuple>
 #include <utility>
@@ -24,7 +24,7 @@ Vec4 Project(const Mat4& m, const Vec3& p) {
 }
 
 bool Near(const Vec3& a, const Vec3& b, f32 eps = 1e-4f) {
-    return std::fabs(a.x - b.x) < eps && std::fabs(a.y - b.y) < eps && std::fabs(a.z - b.z) < eps;
+    return Abs(a.x - b.x) < eps && Abs(a.y - b.y) < eps && Abs(a.z - b.z) < eps;
 }
 
 } // namespace
@@ -210,15 +210,15 @@ TEST_CASE("Cube and sphere are watertight and every normal and tangent has unit 
         for (u32 i = 0; i < m->VertexCount(); ++i) {
             CHECK(Vec3(v[i].normal[0], v[i].normal[1], v[i].normal[2]).Length() == Approx(1.0f).margin(1e-4));
             CHECK(Vec3(v[i].tangent[0], v[i].tangent[1], v[i].tangent[2]).Length() == Approx(1.0f).margin(1e-4));
-            CHECK(std::fabs(v[i].tangent[3]) == Approx(1.0f));
+            CHECK(Abs(v[i].tangent[3]) == Approx(1.0f));
         }
         // Weld vertices by position; in a closed surface every undirected edge is used by exactly two triangles, once in
         // each direction.
         std::map<std::tuple<int, int, int>, u32> weld;
         auto id = [&](u32 index) {
             const f32* p = m->PositionAt(index);
-            auto key = std::make_tuple(static_cast<int>(std::lround(p[0] * 1000)), static_cast<int>(std::lround(p[1] * 1000)),
-                                       static_cast<int>(std::lround(p[2] * 1000)));
+            auto key = std::make_tuple(static_cast<int>(LRound(p[0] * 1000)), static_cast<int>(LRound(p[1] * 1000)),
+                                       static_cast<int>(LRound(p[2] * 1000)));
             return weld.emplace(key, static_cast<u32>(weld.size())).first->second;
         };
         std::map<std::pair<u32, u32>, int> directed;

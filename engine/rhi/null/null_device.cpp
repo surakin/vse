@@ -2,10 +2,9 @@
 #include "rhi/rhi.h"
 
 #include "sync/atomic.h"
-#include <cstdarg>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "cstr/varargs.h"
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 #include "sync/mutex.h"
 
 #include "containers/unique_ptr.h"
@@ -14,9 +13,9 @@
 #include "log/assert.h"
 #include "rhi/spirv.h"
 #include "rhi/handle_pool.h"
-#include "containers/vector.h"
 #include "rhi/rhi_log.h"
 #include "lang/utility.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::rhi {
 
@@ -64,7 +63,7 @@ struct BufferRes {
     BufferRes(BufferRes&& o) noexcept : desc(o.desc), data(o.data), state(o.state), mapped(o.mapped) {
         o.data = nullptr;
     }
-    ~BufferRes() { std::free(data); }
+    ~BufferRes() { MemFree(data); }
 };
 
 struct TextureRes {
@@ -134,12 +133,12 @@ public:
     Vec() = default;
     Vec(const Vec&) = delete;
     Vec& operator=(const Vec&) = delete;
-    ~Vec() { std::free(data_); }
+    ~Vec() { MemFree(data_); }
     void Clear() { size_ = 0; }
     void Push(const T& v) {
         if (size_ == cap_) {
             usize ncap = cap_ == 0 ? 32 : cap_ * 2;
-            void* p = std::realloc(data_, ncap * sizeof(T));
+            void* p = MemReallocate(data_, ncap * sizeof(T));
             ENGINE_ASSERT(p != nullptr, "NullDevice: out of host memory recording a command");
             data_ = static_cast<T*>(p);
             cap_ = ncap;
@@ -266,15 +265,15 @@ struct NullDeviceState {
 
 void NullDeviceState::Error(const char* fmt, ...) {
     char buf[256];
-    va_list ap;
-    va_start(ap, fmt);
-    std::vsnprintf(buf, sizeof(buf), fmt, ap);
-    va_end(ap);
+    VarArgs ap;
+    ENGINE_VA_START(ap, fmt);
+    VFormatTo(buf, sizeof(buf), fmt, ap);
+    ENGINE_VA_END(ap);
     errors.FetchAdd(1, MemoryOrder::Relaxed);
     {
         LockGuard<Mutex> lock(err_mu);
         usize n = strnlen(buf, sizeof(buf) - 1);
-        std::memcpy(last_error, buf, n);
+        MemCopy(last_error, buf, n);
         last_error[n] = '\0';
     }
     RhiLog(LogVerbosity::Error, "NullDevice: %s", buf);
@@ -1083,7 +1082,7 @@ BufferHandle NullDevice::CreateBuffer(const BufferDesc& desc) {
     BufferRes res;
     res.desc = desc;
     res.desc.debug_name = nullptr;
-    res.data = static_cast<u8*>(std::calloc(static_cast<usize>(desc.size), 1));
+    res.data = static_cast<u8*>(MemAllocateZeroed(static_cast<usize>(desc.size), 1));
     if (res.data == nullptr) {
         s.Error("CreateBuffer: out of host memory");
         return BufferHandle{};
@@ -1499,7 +1498,7 @@ UploadTicket NullDevice::UploadBuffer(BufferHandle dst, u64 offset, const void* 
     if (s.lost) {
         return UploadTicket{0, false};
     }
-    std::memcpy(b->data + offset, data, static_cast<usize>(size));
+    MemCopy(b->data + offset, data, static_cast<usize>(size));
     b->state = ResourceState::CopyDst;
     return {};
 }
@@ -1762,7 +1761,7 @@ bool NullDevice::ReadbackTexture(TextureHandle src, u32 mip, u32 layer, void* ds
     if (s.lost) {
         return false;
     }
-    std::memset(dst, 0, static_cast<usize>(bytes)); // the null device keeps no texel data
+    MemSet(dst, 0, static_cast<usize>(bytes)); // the null device keeps no texel data
     return true;
 }
 
@@ -1785,7 +1784,7 @@ bool NullDevice::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 siz
     if (s.lost) {
         return false;
     }
-    std::memcpy(dst, b->data + offset, static_cast<usize>(size));
+    MemCopy(dst, b->data + offset, static_cast<usize>(size));
     return true;
 }
 
@@ -1929,7 +1928,7 @@ FenceValue NullDevice::Submit(CommandList* const* lists, usize count) {
                     s.Error("Submit: CopyBuffer uses a destroyed buffer");
                     break;
                 }
-                std::memmove(dst->data + op.dst_offset, src->data + op.src_offset, static_cast<usize>(op.size));
+                MemMove(dst->data + op.dst_offset, src->data + op.src_offset, static_cast<usize>(op.size));
                 break;
             }
             }
@@ -2026,11 +2025,11 @@ usize NullDevice::LastError(char* out, usize capacity) const {
         return 0;
     }
     LockGuard<Mutex> lock(state_->err_mu);
-    usize len = std::strlen(state_->last_error);
+    usize len = CStrLength(state_->last_error);
     if (len >= capacity) {
         len = capacity - 1;
     }
-    std::memcpy(out, state_->last_error, len);
+    MemCopy(out, state_->last_error, len);
     out[len] = '\0';
     return len;
 }
@@ -2066,7 +2065,7 @@ bool NullDevice::PeekBuffer(BufferHandle buffer, u64 offset, void* out, u64 size
     if (b == nullptr || size > b->desc.size || offset > b->desc.size - size) {
         return false;
     }
-    std::memcpy(out, b->data + offset, static_cast<usize>(size));
+    MemCopy(out, b->data + offset, static_cast<usize>(size));
     return true;
 }
 

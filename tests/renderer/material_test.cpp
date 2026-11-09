@@ -1,8 +1,8 @@
 // Phase 5 Day 74: the material system. Templates and materials are validated against the shaders' reflection; pipelines
 // are cached; bind groups are rebuilt only for the material whose texture changed. A GPU test draws two objects through
 // two materials and reads the pixels back, which also proves the per-object data is indexed by first_instance.
-#include <cstdlib>
-#include <cstring>
+#include "lang/new.h"
+#include "os/console.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -23,6 +23,7 @@
 #include "renderer/render_scene.h"
 #include "rhi/null/null_device.h"
 #include "lang/initializer_list.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -133,17 +134,17 @@ TEST_CASE("Parameter writes land at the shader's std140 offsets", "[renderer][ma
     CHECK(region.size == sizeof(MaterialParams));
     MaterialParams got;
     REQUIRE(f.device->PeekBuffer(region.buffer, region.offset, &got, sizeof(got)));
-    CHECK(offsetof(MaterialParams, emissive) == 16);
-    CHECK(offsetof(MaterialParams, roughness) == 28);
-    CHECK(offsetof(MaterialParams, flags) == 32);
-    CHECK(offsetof(MaterialParams, uv_transform) == 48);
+    CHECK(ENGINE_OFFSET_OF(MaterialParams, emissive) == 16);
+    CHECK(ENGINE_OFFSET_OF(MaterialParams, roughness) == 28);
+    CHECK(ENGINE_OFFSET_OF(MaterialParams, flags) == 32);
+    CHECK(ENGINE_OFFSET_OF(MaterialParams, uv_transform) == 48);
     CHECK(got.base_color[0] == 0.1f);
     CHECK(got.base_color[3] == 0.4f);
     CHECK(got.emissive[0] == 1.0f);
     CHECK(got.emissive[2] == 3.0f);
     CHECK(got.roughness == 0.75f);
     CHECK(got.flags == 7);
-    CHECK(std::memcmp(&got.uv_transform, &skew, sizeof(Mat4)) == 0); // column-major in memory, as the shader reads it
+    CHECK(MemCompare(&got.uv_transform, &skew, sizeof(Mat4)) == 0); // column-major in memory, as the shader reads it
 
     // The reflected block agrees with the C++ mirror.
     ShaderReflection fs;
@@ -479,7 +480,7 @@ TEST_CASE("Two objects drawn through two materials show their own transform and 
         info.pipeline_cache = false;
         rhi::DevicePtr device = rhi::CreateDevice(info);
         if (device == nullptr) {
-            const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
+            const char* required = os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
             if (required != nullptr && required[0] == '1') FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
             SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
         }

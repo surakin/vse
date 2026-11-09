@@ -6,12 +6,12 @@
 //! A handle is one pointer. `Get()` is one relaxed atomic load and a decode, so it is safe and cheap in a hot path from any thread;
 //! it sees a published value on the next call after `Registry::Publish` returns. A handle made for the wrong type aborts at creation.
 
-#include <cstring>
 #include "lang/traits.h"
 
 #include "log/assert.h"
 #include "settings/registry.h"
 #include "sync/atomic.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::settings {
 
@@ -34,11 +34,11 @@ T Decode(u64 bits) {
         return bits != 0;
     } else if constexpr (IsSame<T, i64>) {
         i64 v;
-        std::memcpy(&v, &bits, sizeof(v));
+        MemCopy(&v, &bits, sizeof(v));
         return v;
     } else if constexpr (IsSame<T, f32> || IsSame<T, f64>) {
         f64 v;
-        std::memcpy(&v, &bits, sizeof(v));
+        MemCopy(&v, &bits, sizeof(v));
         return static_cast<T>(v);
     } else {
         return static_cast<T>(bits);

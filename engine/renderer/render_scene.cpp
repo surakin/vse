@@ -1,7 +1,7 @@
 #include "renderer/render_scene.h"
 
-#include <cmath>
-#include <new>
+#include "lang/scalar.h"
+#include "lang/new.h"
 
 #include "log/assert.h"
 
@@ -10,11 +10,11 @@ namespace engine_placeholder::renderer {
 namespace {
 
 void CheckLight(const Light& light) {
-    ENGINE_ASSERT(std::isfinite(light.intensity) && light.intensity >= 0.0f, "light: intensity must be finite and not negative");
-    ENGINE_ASSERT(std::isfinite(light.color.x) && std::isfinite(light.color.y) && std::isfinite(light.color.z), "light: the color must be finite");
-    ENGINE_ASSERT(std::isfinite(light.position.x) && std::isfinite(light.position.y) && std::isfinite(light.position.z), "light: the position must be finite");
-    ENGINE_ASSERT(std::isfinite(light.direction.x) && std::isfinite(light.direction.y) && std::isfinite(light.direction.z), "light: the direction must be finite");
-    ENGINE_ASSERT(light.type != LightType::Point || (std::isfinite(light.radius) && light.radius > 0.0f), "light: a point light needs a positive radius");
+    ENGINE_ASSERT(IsFinite(light.intensity) && light.intensity >= 0.0f, "light: intensity must be finite and not negative");
+    ENGINE_ASSERT(IsFinite(light.color.x) && IsFinite(light.color.y) && IsFinite(light.color.z), "light: the color must be finite");
+    ENGINE_ASSERT(IsFinite(light.position.x) && IsFinite(light.position.y) && IsFinite(light.position.z), "light: the position must be finite");
+    ENGINE_ASSERT(IsFinite(light.direction.x) && IsFinite(light.direction.y) && IsFinite(light.direction.z), "light: the direction must be finite");
+    ENGINE_ASSERT(light.type != LightType::Point || (IsFinite(light.radius) && light.radius > 0.0f), "light: a point light needs a positive radius");
 }
 
 // Next generation for a slot, skipping 0 (which means "invalid").

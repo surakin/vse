@@ -3,7 +3,7 @@
 // rendered; the albedo, normal, material and depth layers are copied to host buffers by the graph and checked against
 // values computed on the CPU. Further cases cover the vertex-color, normal-map and alpha-test permutations, draw-order
 // independence, and the debug view.
-#include <cmath>
+#include "lang/scalar.h"
 #include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
@@ -90,33 +90,33 @@ TEST_CASE("The G-buffer holds albedo, normal, material and depth of a known scen
             CHECK(Near(L.Albedo(ground.x, ground.y, 1), static_cast<int>(LinearToSrgb(0.6f) * 255.0f + 0.5f), 2));
             CHECK(Near(L.Albedo(ground.x, ground.y, 3), 255, 1));
             const Vec3 gn = L.Normal(ground.x, ground.y);
-            CHECK(std::fabs(gn.y - 1.0f) < 0.01f);
+            CHECK(Abs(gn.y - 1.0f) < 0.01f);
             CHECK(Near(L.Material(ground.x, ground.y, 0), 204, 2));
             CHECK(Near(L.Material(ground.x, ground.y, 1), 0, 1));
-            CHECK(std::fabs(L.Depth(ground.x, ground.y) - ground.depth) < 1e-4f);
+            CHECK(Abs(L.Depth(ground.x, ground.y) - ground.depth) < 1e-4f);
 
             // The cube's top face (y = 2): nearer than the ground under it, so it wins the depth test whatever the draw order.
             const Pixel top = Project(cam, Vec3(-3, 2, 0));
             CHECK(Near(L.Albedo(top.x, top.y, 0), static_cast<int>(LinearToSrgb(0.8f) * 255.0f + 0.5f), 2));
             CHECK(Near(L.Albedo(top.x, top.y, 1), static_cast<int>(LinearToSrgb(0.1f) * 255.0f + 0.5f), 2));
             const Vec3 tn = L.Normal(top.x, top.y);
-            CHECK(std::fabs(tn.y - 1.0f) < 0.01f);
+            CHECK(Abs(tn.y - 1.0f) < 0.01f);
             CHECK(Near(L.Material(top.x, top.y, 0), 102, 2));
             CHECK(Near(L.Material(top.x, top.y, 1), 255, 1));
-            CHECK(std::fabs(L.Depth(top.x, top.y) - top.depth) < 1e-4f);
+            CHECK(Abs(L.Depth(top.x, top.y) - top.depth) < 1e-4f);
             CHECK(L.Depth(top.x, top.y) < Project(cam, Vec3(-3, 0, 0)).depth);
 
             // The instanced second cube.
             const Pixel top2 = Project(cam, Vec3(-3, 2, 4));
             CHECK(Near(L.Albedo(top2.x, top2.y, 0), static_cast<int>(LinearToSrgb(0.8f) * 255.0f + 0.5f), 2));
-            CHECK(std::fabs(L.Depth(top2.x, top2.y) - top2.depth) < 1e-4f);
+            CHECK(Abs(L.Depth(top2.x, top2.y) - top2.depth) < 1e-4f);
 
             // The sphere: a point 0.6 off its pole has the normal (0.6, 0.8, 0); the emissive scale lands in the material layer.
-            const Pixel sp = Project(cam, Vec3(3.6f, 1.0f + std::sqrt(1.0f - 0.36f), 0));
+            const Pixel sp = Project(cam, Vec3(3.6f, 1.0f + Sqrt(1.0f - 0.36f), 0));
             const Vec3 sn = L.Normal(sp.x, sp.y);
-            CHECK(std::fabs(sn.x - 0.6f) < 0.08f);
-            CHECK(std::fabs(sn.y - 0.8f) < 0.08f);
-            CHECK(std::fabs(sn.z) < 0.08f);
+            CHECK(Abs(sn.x - 0.6f) < 0.08f);
+            CHECK(Abs(sn.y - 0.8f) < 0.08f);
+            CHECK(Abs(sn.z) < 0.08f);
             CHECK(Near(L.Material(sp.x, sp.y, 2), 64, 2));
 
             // Nothing was drawn where no object is: this corner lies on the ground, so use the cleared depth of a point outside
@@ -315,9 +315,9 @@ TEST_CASE("The normal map and alpha test permutations change the layers they sho
             const Vec3 n = L.Normal(c.x, c.y);
             INFO("normal " << n.x << " " << n.y << " " << n.z);
             // The plane's tangent is +X with w = 1 and its normal +Y, so the bitangent is -Z: (0.6, 0.8, 0).
-            CHECK(std::fabs(n.x - 0.6f) < 0.03f);
-            CHECK(std::fabs(n.y - 0.8f) < 0.03f);
-            CHECK(std::fabs(n.z) < 0.03f);
+            CHECK(Abs(n.x - 0.6f) < 0.03f);
+            CHECK(Abs(n.y - 0.8f) < 0.03f);
+            CHECK(Abs(n.z) < 0.03f);
 
             // Alpha test: alpha 0.3 under a cutoff of 0.5 leaves the pixel cleared; alpha 0.8 draws it.
             GBufferOptions at;

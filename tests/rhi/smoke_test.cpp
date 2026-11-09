@@ -1,9 +1,9 @@
-#include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
 
 #include "os/os.h"
 #include "rhi/rhi_log.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 
@@ -14,7 +14,7 @@ usize g_capture_len = 0;
 
 long CapturingWriteSink(int, const void* buf, usize len) {
     usize copy = g_capture_len + len > sizeof(g_capture) ? sizeof(g_capture) - g_capture_len : len;
-    std::memcpy(g_capture + g_capture_len, buf, copy);
+    MemCopy(g_capture + g_capture_len, buf, copy);
     g_capture_len += copy;
     return static_cast<long>(len);
 }
@@ -63,7 +63,7 @@ TEST_CASE("RhiLog truncates an over-long message instead of overflowing", "[rhi]
     rhi::LogRhi.SetVerbosity(LogVerbosity::Warn);
 
     char big[2000];
-    std::memset(big, 'x', sizeof(big) - 1);
+    MemSet(big, 'x', sizeof(big) - 1);
     big[sizeof(big) - 1] = 0;
     RhiLog(LogVerbosity::Warn, "%s", big);
 

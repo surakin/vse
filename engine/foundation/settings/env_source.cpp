@@ -1,7 +1,6 @@
 #include "settings/env_source.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
 
 #include "os/os.h"
 
@@ -94,13 +93,13 @@ EnvironmentSource::EnvironmentSource(const Registry& registry, const Environment
         }
         if (value == nullptr || value->Length() == 0) continue;
         char origin[kMaxEnvNameBytes + 2];
-        std::snprintf(origin, sizeof(origin), "$%.*s", static_cast<int>(variable.Length()), variable.Data());
+        FormatTo(origin, sizeof(origin), "$%.*s", static_cast<int>(variable.Length()), variable.Data());
         Put(registry.KeyOf(id), value->View(), origin);
     }
 }
 
 void EnvironmentSource::Describe(char* out, usize capacity) const {
-    if (capacity != 0) std::snprintf(out, capacity, "environment");
+    if (capacity != 0) FormatTo(out, capacity, "environment");
 }
 
 Status TextEntryStore::Get(StringView key, StoredValue* out) {
@@ -128,7 +127,7 @@ void TextEntryStore::Origin(StringView key, char* out, usize capacity) const {
     out[0] = '\0';
     for (usize i = 0; i < entries_.Size(); ++i) {
         if (entries_[i].key.View() == key) {
-            std::snprintf(out, capacity, "%s", entries_[i].origin.CStr());
+            FormatTo(out, capacity, "%s", entries_[i].origin.CStr());
             return;
         }
     }

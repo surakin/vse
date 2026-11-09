@@ -2,10 +2,10 @@
 // textured, depth-tested cube lit by a light that orbits it. Arrow keys or dragging with the left mouse button orbit the camera,
 // the wheel zooms. Closes when the window does; logs the average frame time once a second. See README.md for the options.
 
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "lang/scalar.h"
+
+#include "os/console.h"
+#include "cstr/cstr.h"
 
 #include "io/file.h"
 #include "io/file_system.h"
@@ -22,6 +22,8 @@
 #include "rhi/uniform_ring.h"
 #include "settings_main.h"
 #include "textures.h"
+#include "cstr/format.h"
+#include "cstr/number.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -55,9 +57,9 @@ double NowSeconds() { return static_cast<double>(os::MonotonicTimeNanos()) * 1e-
 
 // The clear color at time `t`: three out-of-phase sine waves, darkened so the cube stands out.
 void BackgroundAt(double t, f32 out[4]) {
-    out[0] = static_cast<f32>(0.5 + 0.5 * std::sin(t * 1.0)) * 0.3f;
-    out[1] = static_cast<f32>(0.5 + 0.5 * std::sin(t * 1.3 + 2.0)) * 0.3f;
-    out[2] = static_cast<f32>(0.5 + 0.5 * std::sin(t * 0.7 + 4.0)) * 0.3f;
+    out[0] = static_cast<f32>(0.5 + 0.5 * Sin(t * 1.0)) * 0.3f;
+    out[1] = static_cast<f32>(0.5 + 0.5 * Sin(t * 1.3 + 2.0)) * 0.3f;
+    out[2] = static_cast<f32>(0.5 + 0.5 * Sin(t * 0.7 + 4.0)) * 0.3f;
     out[3] = 1.0f;
 }
 
@@ -77,7 +79,7 @@ struct OrbitCamera {
         distance = distance < 1.6f ? 1.6f : (distance > 8.0f ? 8.0f : distance);
     }
     Mat4 View() const {
-        const Vec3 eye(distance * std::cos(pitch) * std::sin(yaw), distance * std::sin(pitch), distance * std::cos(pitch) * std::cos(yaw));
+        const Vec3 eye(distance * Cos(pitch) * Sin(yaw), distance * Sin(pitch), distance * Cos(pitch) * Cos(yaw));
         return demo::LookAt(eye, Vec3(0, 0, 0), Vec3(0, 1, 0));
     }
 };
@@ -85,7 +87,7 @@ struct OrbitCamera {
 // The light circles the cube once every 8 seconds, above the equator.
 demo::Lighting LightAt(double t) {
     demo::Lighting lighting;
-    lighting.to_light = Vec3(static_cast<f32>(std::cos(t * 0.8)), 0.6f, static_cast<f32>(std::sin(t * 0.8)));
+    lighting.to_light = Vec3(static_cast<f32>(Cos(t * 0.8)), 0.6f, static_cast<f32>(Sin(t * 0.8)));
     lighting.intensity = 0.9f;
     lighting.ambient = Vec3(0.12f, 0.12f, 0.14f);
     return lighting;
@@ -231,20 +233,20 @@ int ListGpus() {
     char why[256] = {};
     const BackendDescriptor* backend = ResolveBackend(info.backend, why, sizeof(why));
     if (backend == nullptr) {
-        std::fprintf(stderr, "rhi_demo: cannot list the GPUs: %s\n", why);
+        os::PrintError("rhi_demo: cannot list the GPUs: %s\n", why);
         return kExitFailure;
     }
     AdapterList list;
     if (!EnumerateAdapters(info, &list)) {
-        std::fprintf(stderr, "rhi_demo: cannot list the %s GPUs\n", backend->name);
+        os::PrintError("rhi_demo: cannot list the %s GPUs\n", backend->name);
         return kExitFailure;
     }
-    std::printf("backend %s\n", backend->name);
+    os::Print("backend %s\n", backend->name);
     static const char* const kKinds[] = {"other", "software", "virtual", "integrated", "discrete"};
-    std::printf("%u GPU(s):\n", list.count);
+    os::Print("%u GPU(s):\n", list.count);
     for (u32 i = 0; i < list.count; ++i) {
         const AdapterInfo& a = list.items[i];
-        std::printf("  %u  %s  %s  (%s, %llu MiB, driver %s)%s%s\n", i, a.id, a.name, kKinds[static_cast<usize>(a.kind)],
+        os::Print("  %u  %s  %s  (%s, %llu MiB, driver %s)%s%s\n", i, a.id, a.name, kKinds[static_cast<usize>(a.kind)],
                     static_cast<unsigned long long>(a.dedicated_memory_bytes >> 20), a.driver, a.suitable ? "" : "  unsuitable: ",
                     a.suitable ? "" : (a.unsuitable_reason != nullptr ? a.unsuitable_reason : "?"));
     }
@@ -508,7 +510,7 @@ int RunWindow(const Options& options) {
 // Parses a whole non-negative number that fits in u32 (so a mistyped fault is a usage error, not "inject nothing").
 bool ParseCount(const char* text, long* out) {
     char* end = nullptr;
-    const long value = std::strtol(text, &end, 10);
+    const long value = CStrToLong(text, &end, 10);
     if (end == text || *end != '\0' || value < 0 || value > 0x7fffffffL) {
         return false;
     }
@@ -530,7 +532,8 @@ const char kUsageFormat[] =
                  "  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it\n";
 
 int Usage(const char* program, int code) {
-    std::fprintf(code == kExitOk ? stdout : stderr, kUsageFormat, program);
+    if (code == kExitOk) os::Print(kUsageFormat, program);
+    else os::PrintError(kUsageFormat, program);
     return code;
 }
 
@@ -545,42 +548,42 @@ int EngineMain(int argc, char** argv) {
     LogRhi.SetVerbosity(LogVerbosity::Info); // the frame-time line is Info
     demo::DemoSettings demo_settings;
     char usage_text[2048];
-    std::snprintf(usage_text, sizeof(usage_text), kUsageFormat, argv[0]);
+    FormatTo(usage_text, sizeof(usage_text), kUsageFormat, argv[0]);
     if (!demo_settings.Begin("rhi_demo", usage_text, argc, argv)) return kExitUsage;
     g_demo_settings = &demo_settings;
     argc = demo_settings.RestCount(); // what the settings system did not take: --set, --settings, --gpu, --backend, ... are handled there
     argv = demo_settings.RestArgs();
     Options options;
-    const char* frames_env = std::getenv("RHI_DEMO_FRAMES");
-    options.frames = frames_env != nullptr ? std::atol(frames_env) : 0;
+    const char* frames_env = os::GetEnvironment("RHI_DEMO_FRAMES");
+    options.frames = frames_env != nullptr ? CStrToLong(frames_env) : 0;
     for (int i = 1; i < argc; ++i) {
         if (engine_placeholder::debug::IsProgramDebugArgument(argv[i])) {
             continue; // --crash-handler=... and --crash-test=... are handled by StartProgramDebugging
         }
         const bool has_value = i + 1 < argc;
-        if (std::strcmp(argv[i], "--frames") == 0 && has_value) {
-            options.frames = std::atol(argv[++i]);
-        } else if (std::strcmp(argv[i], "--screenshot") == 0 && has_value) {
+        if (CStrCompare(argv[i], "--frames") == 0 && has_value) {
+            options.frames = CStrToLong(argv[++i]);
+        } else if (CStrCompare(argv[i], "--screenshot") == 0 && has_value) {
             options.screenshot = argv[++i];
-        } else if (std::strcmp(argv[i], "--backend") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--backend") == 0 && has_value) {
             options.backend = argv[++i];
-        } else if (std::strcmp(argv[i], "--gpu") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--gpu") == 0 && has_value) {
             options.gpu = argv[++i];
-        } else if (std::strcmp(argv[i], "--list-gpus") == 0) {
+        } else if (CStrCompare(argv[i], "--list-gpus") == 0) {
             options.list_gpus = true;
-        } else if (std::strcmp(argv[i], "--no-vsync") == 0) {
+        } else if (CStrCompare(argv[i], "--no-vsync") == 0) {
             options.no_vsync = true;
-        } else if (std::strcmp(argv[i], "--validation") == 0) {
+        } else if (CStrCompare(argv[i], "--validation") == 0) {
             options.validation = true;
-        } else if (std::strcmp(argv[i], "--inject-device-loss") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--inject-device-loss") == 0 && has_value) {
             if (!ParseCount(argv[++i], &options.inject_device_loss)) {
                 return Usage(argv[0], kExitUsage);
             }
-        } else if (std::strcmp(argv[i], "--inject-oom") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--inject-oom") == 0 && has_value) {
             if (!ParseCount(argv[++i], &options.inject_oom)) {
                 return Usage(argv[0], kExitUsage);
             }
-        } else if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
+        } else if (CStrCompare(argv[i], "--help") == 0 || CStrCompare(argv[i], "-h") == 0) {
             return Usage(argv[0], kExitOk);
         } else {
             return Usage(argv[0], kExitUsage);

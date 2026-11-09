@@ -2,9 +2,9 @@
 #include "rhi/vulkan/vk_instance.h"
 
 #include "sync/atomic.h"
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
+
+#include "os/console.h"
+#include "cstr/cstr.h"
 #include "sync/mutex.h"
 
 #include "log/assert.h"
@@ -30,10 +30,10 @@ int ParseSwitch(const char* value) {
     if (value == nullptr) {
         return -1;
     }
-    if (std::strcmp(value, "1") == 0) {
+    if (CStrCompare(value, "1") == 0) {
         return 1;
     }
-    if (std::strcmp(value, "0") == 0) {
+    if (CStrCompare(value, "0") == 0) {
         return 0;
     }
     return -1;
@@ -79,7 +79,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessengerCallback(VkDebugUtilsMessageSeverit
     }
     if (level == LogVerbosity::Error && fatal) {
         RhiLog(LogVerbosity::Error, "ENGINE_RHI_VALIDATION_FATAL=1: aborting on the first validation error");
-        std::abort();
+        os::Abort();
     }
     return VK_FALSE; // never abort the Vulkan call itself
 }
@@ -102,7 +102,7 @@ struct ExtensionList {
     }
     bool Has(const char* name) const {
         for (u32 i = 0; i < count; ++i) {
-            if (std::strcmp(items[i].extensionName, name) == 0) {
+            if (CStrCompare(items[i].extensionName, name) == 0) {
                 return true;
             }
         }
@@ -123,7 +123,7 @@ bool HasLayer(const VkGlobalFns& fns, const char* name) {
     bool found = false;
     if (r == VK_SUCCESS || r == VK_INCOMPLETE) {
         for (u32 i = 0; i < count && !found; ++i) {
-            found = std::strcmp(layers[i].layerName, name) == 0;
+            found = CStrCompare(layers[i].layerName, name) == 0;
         }
     }
     return found;
@@ -229,9 +229,9 @@ VulkanInstance VulkanInstance::Create(const VulkanLoader& loader, const VulkanIn
 #else
     constexpr bool kDebugBuild = true;
 #endif
-    ValidationPolicy policy = ResolveValidationPolicy(desc, std::getenv("ENGINE_RHI_VALIDATION"),
-                                                      std::getenv("ENGINE_RHI_VALIDATION_SYNC"),
-                                                      std::getenv("ENGINE_RHI_VALIDATION_BEST_PRACTICES"), kDebugBuild);
+    ValidationPolicy policy = ResolveValidationPolicy(desc, os::GetEnvironment("ENGINE_RHI_VALIDATION"),
+                                                      os::GetEnvironment("ENGINE_RHI_VALIDATION_SYNC"),
+                                                      os::GetEnvironment("ENGINE_RHI_VALIDATION_BEST_PRACTICES"), kDebugBuild);
 
     ExtensionList instance_exts;
     if (!instance_exts.Load(global, nullptr)) {
@@ -321,8 +321,8 @@ VulkanInstance VulkanInstance::Create(const VulkanLoader& loader, const VulkanIn
 
     // The messenger create-info is chained into vkCreateInstance too, so messages raised while the instance is
     // being created or destroyed are counted and logged; the persistent messenger is created right after.
-    const char* fatal_env = std::getenv("ENGINE_RHI_VALIDATION_FATAL");
-    const bool fatal = fatal_env != nullptr && std::strcmp(fatal_env, "1") == 0;
+    const char* fatal_env = os::GetEnvironment("ENGINE_RHI_VALIDATION_FATAL");
+    const bool fatal = fatal_env != nullptr && CStrCompare(fatal_env, "1") == 0;
     VkDebugUtilsMessengerCreateInfoEXT mci{};
     mci.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     mci.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;

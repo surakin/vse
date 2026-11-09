@@ -1,14 +1,13 @@
 #pragma once
 
-#include <cstring>
-#include <type_traits>
+#include "lang/traits.h"
 
 #include "containers/array.h"
 #include "containers/vector.h"
 #include "log/assert.h"
 #include "string_view.h"
 #include "types.h"
-#include "lang/traits.h"
+#include "cstr/mem_ops.h"
 
 //! Non-owning views of contiguous elements: [[Span]], [[ByteSpan]] and [[MutableByteSpan]].
 //!
@@ -156,7 +155,7 @@ inline StringView ToStringView(ByteSpan bytes) { return StringView(reinterpret_c
 /// Param items: elements to copy; they must not be elements of `target`.
 /// Aborts: `items` overlaps `target`, or growth is needed and the allocator is out of memory.
 template <typename T, typename A>
-void Append(Vector<T, A>& target, std::type_identity_t<Span<const T>> items) {
+void Append(Vector<T, A>& target, TypeIdentity<Span<const T>> items) {
     const T* begin = target.Data();
     ENGINE_ASSERT(target.Size() == 0 || items.Size() == 0 || items.Data() + items.Size() <= begin || items.Data() >= begin + target.Size(),
                   "Append: the source overlaps the vector");
@@ -169,7 +168,7 @@ void Append(Vector<T, A>& target, std::type_identity_t<Span<const T>> items) {
         if (items.Size() != 0) {
             const usize old_size = target.Size();
             target.Resize(old_size + items.Size());
-            std::memcpy(target.Data() + old_size, items.Data(), items.SizeBytes());
+            MemCopy(target.Data() + old_size, items.Data(), items.SizeBytes());
         }
     } else {
         for (usize i = 0; i < items.Size(); ++i) target.Push(items[i]);
@@ -181,7 +180,7 @@ void Append(Vector<T, A>& target, std::type_identity_t<Span<const T>> items) {
 /// Param items: elements to copy; they must not be elements of `target`.
 /// Aborts: `items` overlaps `target`, or growth is needed and the allocator is out of memory.
 template <typename T, typename A>
-void Assign(Vector<T, A>& target, std::type_identity_t<Span<const T>> items) {
+void Assign(Vector<T, A>& target, TypeIdentity<Span<const T>> items) {
     const T* begin = target.Data();
     ENGINE_ASSERT(target.Size() == 0 || items.Size() == 0 || items.Data() + items.Size() <= begin || items.Data() >= begin + target.Size(),
                   "Assign: the source overlaps the vector");

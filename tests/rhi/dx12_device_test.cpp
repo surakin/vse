@@ -1,9 +1,9 @@
 // The Direct3D 12 backend's device (Phase 13 Day 164): COM ownership, adapters, devices on every adapter with the debug layer silent
 // and nothing left alive, capabilities, and bounded fence waits. Windows only.
-#include <cstdio>
-#include <cstdlib>
+#include "cstr/format.h"
+#include "os/console.h"
 #include "sync/atomic.h"
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -91,7 +91,7 @@ TEST_CASE("ComRef owns one reference: moves transfer it, Share adds one, Reset a
 
 TEST_CASE("The adapter rules: kind, ids in hex and the suitability reasons", "[rhi][dx12]") {
     AdapterFacts f;
-    std::strcpy(f.name, "AMD Radeon(TM) 860M Graphics");
+    CStrCopy(f.name, "AMD Radeon(TM) 860M Graphics");
     f.vendor_id = 0x1002;
     f.device_id = 0x150e;
     f.subsystem_id = 0x8c9b103c;
@@ -165,8 +165,8 @@ TEST_CASE("DX12 lists the hardware adapters and WARP, with ids that are the same
         INFO(first.items[i].name);
         CHECK(StringView(first.items[i].id) == StringView(second.items[i].id));
         CHECK(StringView(first.items[i].luid) == StringView(second.items[i].luid));
-        CHECK(std::strncmp(first.items[i].id, "dx12-", 5) == 0);
-        CHECK(std::strlen(first.items[i].luid) == 16);
+        CHECK(CStrCompareN(first.items[i].id, "dx12-", 5) == 0);
+        CHECK(CStrLength(first.items[i].luid) == 16);
         warp = warp || (first.items[i].kind == AdapterKind::Software && first.items[i].suitable);
         hardware = hardware || (first.items[i].kind != AdapterKind::Software && first.items[i].suitable);
     }
@@ -284,9 +284,9 @@ TEST_CASE("With validation on, a D3D12 error reaches the RHI log and is counted"
 
 TEST_CASE("ENGINE_RHI_GPU picks the DX12 adapter, and the descriptor's adapter beats it, as on Vulkan", "[rhi][dx12][gpu]") {
     // Phase 13 Day 170: the DX12 backend ignored the variable, so the golden run meant for WARP ran on the hardware adapter.
-    const char* before = std::getenv("ENGINE_RHI_GPU");
+    const char* before = os::GetEnvironment("ENGINE_RHI_GPU");
     char saved[256] = {};
-    if (before != nullptr) std::snprintf(saved, sizeof(saved), "%s", before);
+    if (before != nullptr) FormatTo(saved, sizeof(saved), "%s", before);
     test_support::SetEnv("ENGINE_RHI_GPU", "Basic Render");
     DeviceCreateInfo info;
     info.backend = Backend::Dx12;

@@ -1,6 +1,6 @@
 #include "renderer/viewport_target.h"
 
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
@@ -57,7 +57,7 @@ bool ViewportTarget::Create(rhi::Device* device, const ViewportTargetDesc& desc,
     ENGINE_ASSERT(device != nullptr && !color_.IsValid() && device_ == nullptr, "ViewportTarget::Create: no device, or the object already exists");
     desc_ = desc;
     if (debug_name != nullptr) {
-        std::strncpy(name_, debug_name, sizeof(name_) - 1);
+        CStrCopyN(name_, debug_name, sizeof(name_) - 1);
         name_[sizeof(name_) - 1] = '\0';
     }
     rhi::TextureHandle color;

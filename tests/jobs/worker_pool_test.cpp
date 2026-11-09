@@ -1,7 +1,6 @@
 #include "sync/atomic.h"
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "cstr/format.h"
+#include "os/console.h"
 #include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -37,7 +36,7 @@ bool ThreadPinnedTo(i32 tid, i32 cpu) {
 #else
     // The Cpus_allowed_list line of /proc/self/task/<tid>/status: exactly one CPU, so the list is that single number.
     char path[64];
-    std::snprintf(path, sizeof(path), "/proc/self/task/%d/status", tid);
+    FormatTo(path, sizeof(path), "/proc/self/task/%d/status", tid);
     io::Path status_path;
     Vector<u8> bytes;
     if (!io::Path::Parse(StringView(path), io::PathStyle::Posix, &status_path) || io::ReadFile(status_path, &bytes, 1 << 16).Failed()) return false;
@@ -51,7 +50,7 @@ bool ThreadPinnedTo(i32 tid, i32 cpu) {
         line = line.Substring(key.Length());
         while (!line.Empty() && (line[0] == ' ' || line[0] == '\t')) line = line.Substring(1);
         char expected[16];
-        const int n = std::snprintf(expected, sizeof(expected), "%d", cpu);
+        const int n = FormatTo(expected, sizeof(expected), "%d", cpu);
         return line == StringView(expected, static_cast<usize>(n));
     }
     return false;
@@ -62,7 +61,7 @@ struct EnvGuard {
     engine_test::Text saved = engine_test::MakeText();
     bool had;
     explicit EnvGuard(const char* value) {
-        const char* old = std::getenv("ENGINE_JOB_THREADS");
+        const char* old = os::GetEnvironment("ENGINE_JOB_THREADS");
         had = old != nullptr;
         if (had) saved = engine_test::MakeText(StringView(old));
         if (value != nullptr) test_support::SetEnv("ENGINE_JOB_THREADS", value);

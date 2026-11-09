@@ -1,8 +1,7 @@
 // Phase 5 Day 82: the renderer demo's scene rendered offscreen and compared with a golden image, and depth correctness: the
 // picture must not depend on the order objects were added, and intersecting surfaces must resolve where the geometry says.
 // Validation and synchronization validation are on and must stay silent.
-#include <cmath>
-#include <cstring>
+#include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -145,7 +144,7 @@ TEST_CASE("The picture does not depend on the order objects were added", "[rhi][
                 CHECK(shuffled.stats.visible == natural.stats.visible);
                 size_t differing = 0;
                 for (size_t i = 0; i < natural.image.rgba.size(); i += 4) {
-                    if (std::memcmp(&natural.image.rgba[i], &shuffled.image.rgba[i], 3) != 0) ++differing;
+                    if (MemCompare(&natural.image.rgba[i], &shuffled.image.rgba[i], 3) != 0) ++differing;
                 }
                 INFO("seed " << seed << ": " << differing << " of " << kShotW * kShotH << " pixels differ");
                 CHECK(differing == 0);
@@ -221,12 +220,12 @@ TEST_CASE("Two crossing planes resolve visibility along their line of intersecti
                         const Pixel px = Project(cam, p.point);
                         const Vec3 n = L.Normal(px.x, px.y);
                         INFO("probe " << p.point.x << " " << p.point.y << " " << p.point.z << " normal " << n.x << " " << n.y << " " << n.z);
-                        CHECK(std::fabs(n.x - p.normal.x) < 0.02f);
-                        CHECK(std::fabs(n.y - p.normal.y) < 0.02f);
-                        CHECK(std::fabs(n.z - p.normal.z) < 0.02f);
+                        CHECK(Abs(n.x - p.normal.x) < 0.02f);
+                        CHECK(Abs(n.y - p.normal.y) < 0.02f);
+                        CHECK(Abs(n.z - p.normal.z) < 0.02f);
                         // The stored depth is the depth of that surface point to within a pixel's worth of slope.
                         const Pixel on_surface = Project(cam, p.surface_point);
-                        CHECK(std::fabs(L.Depth(px.x, px.y) - on_surface.depth) < 2e-3f);
+                        CHECK(Abs(L.Depth(px.x, px.y) - on_surface.depth) < 2e-3f);
                         ++probes;
                     }
                     // Occlusion: the floor point behind the wall (x < 0) shows the wall; the wall point under the floor (y < 0) shows
@@ -255,6 +254,7 @@ TEST_CASE("Two crossing planes resolve visibility along their line of intersecti
 
 #include "demo_assets.h"
 #include "rhi/null/null_device.h"
+#include "cstr/mem_ops.h"
 
 namespace {
 // Recorded from the generator (a deterministic LCG): a change here means the scene changed, which also changes the golden image.
@@ -274,7 +274,7 @@ TEST_CASE("The bump normal map holds unit normals that tilt with the distance fr
         for (u32 x = 0; x < p.width; x += 5) {
             f32 n[3];
             normal(x, y, n);
-            CHECK(std::fabs(std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]) - 1.0f) < 0.02f);
+            CHECK(Abs(Sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]) - 1.0f) < 0.02f);
             CHECK(n[2] >= -0.01f);
         }
     }
@@ -282,11 +282,11 @@ TEST_CASE("The bump normal map holds unit normals that tilt with the distance fr
     // the normal's x is u / 0.9 = 0.503 and its z is sqrt(1 - x^2) (y is zero on the middle row).
     f32 n[3];
     normal(46, 32, &n[0]);
-    CHECK(std::fabs(n[0] - 0.5035f) < 0.015f);
-    CHECK(std::fabs(n[2] - std::sqrt(1.0f - 0.5035f * 0.5035f)) < 0.015f);
+    CHECK(Abs(n[0] - 0.5035f) < 0.015f);
+    CHECK(Abs(n[2] - Sqrt(1.0f - 0.5035f * 0.5035f)) < 0.015f);
     // Between bumps (the corner of a cell, outside the radius) the normal is flat.
     normal(0, 0, &n[0]);
-    CHECK(std::fabs(n[0]) < 0.02f);
+    CHECK(Abs(n[0]) < 0.02f);
     CHECK(n[2] > 0.98f);
 }
 
@@ -310,13 +310,13 @@ TEST_CASE("The demo scene is the same on every compiler: fixed positions for giv
         const Light& light = scene.Scene().LightAt(2);
         INFO("shape " << shape.transform.col[3].x << " " << shape.transform.col[3].y << " " << shape.transform.col[3].z);
         INFO("light " << light.position.x << " " << light.position.y << " " << light.position.z << " radius " << light.radius);
-        CHECK(std::fabs(shape.transform.col[3].x - kExpectedShapeX) < 1e-3f);
-        CHECK(std::fabs(shape.transform.col[3].y - kExpectedShapeY) < 1e-3f);
-        CHECK(std::fabs(shape.transform.col[3].z - kExpectedShapeZ) < 1e-3f);
-        CHECK(std::fabs(light.position.x - kExpectedLightX) < 1e-3f);
-        CHECK(std::fabs(light.position.y - kExpectedLightY) < 1e-3f);
-        CHECK(std::fabs(light.position.z - kExpectedLightZ) < 1e-3f);
-        CHECK(std::fabs(light.radius - kExpectedLightRadius) < 1e-3f);
+        CHECK(Abs(shape.transform.col[3].x - kExpectedShapeX) < 1e-3f);
+        CHECK(Abs(shape.transform.col[3].y - kExpectedShapeY) < 1e-3f);
+        CHECK(Abs(shape.transform.col[3].z - kExpectedShapeZ) < 1e-3f);
+        CHECK(Abs(light.position.x - kExpectedLightX) < 1e-3f);
+        CHECK(Abs(light.position.y - kExpectedLightY) < 1e-3f);
+        CHECK(Abs(light.position.z - kExpectedLightZ) < 1e-3f);
+        CHECK(Abs(light.radius - kExpectedLightRadius) < 1e-3f);
         // The same seed twice gives the same scene; another seed does not.
         renderer_demo::DemoScene again;
         REQUIRE(again.Create(device.Get(), frame.Materials(), frame.Templates(), so));

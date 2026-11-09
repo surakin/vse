@@ -1,9 +1,10 @@
 #include "resolve.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 #include "build_defs.h"
 #include "types.h"
+#include "cstr/mem_ops.h"
 
 
 namespace crash_extract {
@@ -56,7 +57,7 @@ bool ParseFrame(const char* line, engine_placeholder::usize length, unsigned* nu
     }
     const engine_placeholder::usize module_length = plus - i;
     if (module_length + 1 > module_capacity) return false;
-    std::memcpy(module, line + i, module_length);
+    engine_placeholder::MemCopy(module, line + i, module_length);
     module[module_length] = '\0';
     *number = n;
     *offset = value;
@@ -72,7 +73,7 @@ const DumpModule* FindModule(const char* module_text, const DumpModule* modules,
 }
 
 bool SafeFileName(const char* name) {
-    if (name == nullptr || name[0] == '\0' || std::strcmp(name, ".") == 0 || std::strcmp(name, "..") == 0) return false;
+    if (name == nullptr || name[0] == '\0' || engine_placeholder::CStrCompare(name, ".") == 0 || engine_placeholder::CStrCompare(name, "..") == 0) return false;
     for (const char* p = name; *p != '\0'; ++p) {
         const engine_placeholder::u8 c = static_cast<engine_placeholder::u8>(*p);
         if (c < 0x20 || c == '/' || c == '\\' || c == ':' || c == '*' || c == '?' || c == '"' || c == '<' || c == '>' || c == '|') return false;
@@ -90,7 +91,7 @@ bool StorePdbPath(const char* store, const DumpModule& module, char* out, engine
         id[n++] = Upper(*p);
     }
     id[n] = '\0';
-    const int written = std::snprintf(out, capacity, "%s\\%s\\%s\\%s", store, pdb, id, pdb);
+    const int written = engine_placeholder::FormatTo(out, capacity, "%s\\%s\\%s\\%s", store, pdb, id, pdb);
     return written > 0 && static_cast<engine_placeholder::usize>(written) < capacity;
 }
 

@@ -1,6 +1,6 @@
 #include "ui/surface_input.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 namespace engine_placeholder::ui {
 
@@ -22,7 +22,7 @@ SurfaceHit RayToSurfacePoint(const Ray3& ray, const SurfaceQuad& quad) {
     f32 normal[3];
     Cross(quad.edge_v, quad.edge_u, normal);
     const f32 facing = Dot(ray.direction, normal);
-    if (!(std::fabs(facing) > 1e-12f)) return result; // parallel, a zero direction or a degenerate quad
+    if (!(Abs(facing) > 1e-12f)) return result; // parallel, a zero direction or a degenerate quad
     f32 to_corner[3] = {quad.corner[0] - ray.origin[0], quad.corner[1] - ray.origin[1], quad.corner[2] - ray.origin[2]};
     const f32 t = Dot(to_corner, normal) / facing;
     if (!(t >= 0)) return result; // the quad is behind the ray
@@ -35,7 +35,7 @@ SurfaceHit RayToSurfacePoint(const Ray3& ray, const SurfaceQuad& quad) {
     const f32 wu = Dot(w, quad.edge_u);
     const f32 wv = Dot(w, quad.edge_v);
     const f32 det = uu * vv - uv * uv;
-    if (!(std::fabs(det) > 1e-20f)) return result;
+    if (!(Abs(det) > 1e-20f)) return result;
     const f32 u = (wu * vv - wv * uv) / det;
     const f32 v = (wv * uu - wu * uv) / det;
     if (!(u >= 0 && u <= 1 && v >= 0 && v <= 1)) return result;

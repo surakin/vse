@@ -74,6 +74,12 @@ inline constexpr bool IsBaseOf = std::is_base_of_v<Base, Derived>;
 /// True when `T` is an empty class.
 template <class T>
 inline constexpr bool IsEmpty = std::is_empty_v<T>;
+/// True when `T` has a virtual destructor.
+template <class T>
+inline constexpr bool HasVirtualDestructor = std::has_virtual_destructor_v<T>;
+/// `T` itself, in a position the compiler must not deduce from.
+template <class T>
+using TypeIdentity = std::type_identity_t<T>;
 
 /// `T` if `Condition`, otherwise ill-formed (`std::enable_if_t`).
 template <bool Condition, class T = void>

@@ -1,5 +1,4 @@
-#include <cmath>
-#include <cstring>
+#include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -10,6 +9,7 @@
 #include "render_target.h"
 #include "rhi/rhi.h"
 #include "rhi/uniform_ring.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -24,19 +24,19 @@ TEST_CASE("Perspective and look-at follow the documented conventions", "[rhi][cu
     // A point on the near plane maps to depth 0, on the far plane to depth 1.
     Vec4 near_clip = projection * Vec4(0, 0, -1, 1);
     Vec4 far_clip = projection * Vec4(0, 0, -5, 1);
-    CHECK(std::abs(near_clip.z / near_clip.w) < 1e-5f);
-    CHECK(std::abs(far_clip.z / far_clip.w - 1.0f) < 1e-5f);
+    CHECK(Abs(near_clip.z / near_clip.w) < 1e-5f);
+    CHECK(Abs(far_clip.z / far_clip.w - 1.0f) < 1e-5f);
     // Up in view space is negative clip Y (Vulkan's Y points down); right is positive X, scaled by the aspect.
     Vec4 up = projection * Vec4(0, 1, -2, 1);
     Vec4 right = projection * Vec4(2, 0, -2, 1);
     CHECK(up.y / up.w < 0.0f);
-    CHECK(std::abs(right.x / right.w - 0.5f) < 1e-5f); // x / (aspect * depth) = 2 / (2 * 2)
+    CHECK(Abs(right.x / right.w - 0.5f) < 1e-5f); // x / (aspect * depth) = 2 / (2 * 2)
     // The camera looks down -Z of view space: the target lies on the negative Z axis at its distance.
     const Mat4 view = LookAt(Vec3(1, 2, 3), Vec3(1, 2, -1), Vec3(0, 1, 0));
     const Vec4 target = view * Vec4(1, 2, -1, 1);
-    CHECK(std::abs(target.x) < 1e-5f);
-    CHECK(std::abs(target.y) < 1e-5f);
-    CHECK(std::abs(target.z + 4.0f) < 1e-5f);
+    CHECK(Abs(target.x) < 1e-5f);
+    CHECK(Abs(target.y) < 1e-5f);
+    CHECK(Abs(target.z + 4.0f) < 1e-5f);
     // The mesh: 24 vertices, 36 indices in range, every face CCW seen from outside (normal . (b-a)x(c-a) > 0).
     const CubeVertex* v = CubeVertices();
     const u16* idx = CubeIndices();
@@ -125,7 +125,7 @@ TEST_CASE("Indexed and non-indexed draws of the same cube give identical images"
         const Image a = scene.Render({{&indexed, model}});
         const Image b = scene.Render({{&expanded, model}});
         REQUIRE(a.rgba.size() == b.rgba.size());
-        CHECK(std::memcmp(a.rgba.data(), b.rgba.data(), a.rgba.size()) == 0);
+        CHECK(MemCompare(a.rgba.data(), b.rgba.data(), a.rgba.size()) == 0);
         scene.device->WaitIdle();
     }
 }

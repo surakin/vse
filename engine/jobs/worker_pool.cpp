@@ -1,6 +1,6 @@
 #include "jobs/worker_pool.h"
 
-#include <cstdio>
+#include "cstr/format.h"
 
 #include "jobs/detail/thread_platform.h"
 
@@ -87,7 +87,7 @@ void WorkerPool::ThreadMain(WorkerPool* pool, usize index) {
     {
         // A crash report names this thread, and a stack overflow on it can still be handled.
         char name[24];
-        std::snprintf(name, sizeof(name), "worker-%zu", static_cast<size_t>(index));
+        FormatTo(name, sizeof(name), "worker-%zu", static_cast<size_t>(index));
         NotifyThreadStart(name);
         detail::NameCurrentThread(name);
     }

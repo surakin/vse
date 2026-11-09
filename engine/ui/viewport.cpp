@@ -1,6 +1,6 @@
 #include "ui/viewport.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "log/log.h"
 #include "ui/surface.h"
@@ -11,7 +11,7 @@ namespace {
 
 /// Rounds a size in logical units times the scale to whole physical pixels, at least 0.
 u32 ToPixels(f32 logical, f32 scale) {
-    const f32 pixels = std::round(logical * scale);
+    const f32 pixels = Round(logical * scale);
     return pixels > 0 ? static_cast<u32>(pixels) : 0u;
 }
 

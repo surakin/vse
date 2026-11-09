@@ -1,7 +1,6 @@
 #include "settings/memory_store.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
 #include "sync/mutex.h"
 
 namespace engine_placeholder::settings {
@@ -16,7 +15,7 @@ bool UnderPrefix(const Key& key, StringView prefix) {
 
 void CopyDescription(const char* text, char* out, usize capacity) {
     if (capacity == 0) return;
-    std::snprintf(out, capacity, "%s", text);
+    FormatTo(out, capacity, "%s", text);
 }
 
 } // namespace

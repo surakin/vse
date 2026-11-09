@@ -12,6 +12,8 @@
 #include <cstring>
 #include <string>
 #include "sync/thread.h"
+#include "cstr/cstr.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -94,7 +96,7 @@ long FamilyCapturingSink(int, const void* buf, usize len) {
     ++g_family_sink_calls;
     const usize room = sizeof(g_family_text) - g_family_text_length;
     const usize take = len < room ? len : room;
-    std::memcpy(g_family_text + g_family_text_length, buf, take);
+    MemCopy(g_family_text + g_family_text_length, buf, take);
     g_family_text_length += take;
     return static_cast<long>(len);
 }
@@ -160,12 +162,12 @@ TEST_CASE("A failed ENGINE_ASSERT goes to the handler with the full record and t
     ENGINE_ASSERT(1 + 1 == 3, "arithmetic broke");
     CHECK(g_family.calls == 1);
     CHECK(g_family.kind == AssertKind::Assert);
-    CHECK(std::strstr(g_family.file, "assert_family_test.cpp") != nullptr);
+    CHECK(CStrFind(g_family.file, "assert_family_test.cpp") != nullptr);
     CHECK(g_family.line == expected_line);
     CHECK(g_family.function != nullptr);
     CHECK(g_family.function[0] != '\0');
-    CHECK(std::strcmp(g_family.condition, "1 + 1 == 3") == 0);
-    CHECK(std::strcmp(g_family.message, "arithmetic broke") == 0);
+    CHECK(CStrCompare(g_family.condition, "1 + 1 == 3") == 0);
+    CHECK(CStrCompare(g_family.message, "arithmetic broke") == 0);
 }
 
 TEST_CASE("A passing ENGINE_ASSERT does not call the handler and evaluates its condition once", "[assert][debug]") {
@@ -193,7 +195,7 @@ TEST_CASE("A handler installed on one thread is used by a failure on another", "
 
 TEST_CASE("The default handler truncates a long message at 512 bytes, ends the line, and chooses the action by kind", "[assert][debug]") {
     char message[2000];
-    std::memset(message, 'm', sizeof(message) - 1);
+    MemSet(message, 'm', sizeof(message) - 1);
     message[sizeof(message) - 1] = '\0';
     g_family_text_length = 0;
     g_family_sink_calls = 0;
@@ -204,7 +206,7 @@ TEST_CASE("The default handler truncates a long message at 512 bytes, ends the l
     const usize first_length = FamilyFirstLineLength();
     const usize first_total = g_family_text_length;
     const char first_last_byte = first_length > 0 ? g_family_text[first_length - 1] : '\0';
-    const bool first_starts_right = std::strncmp(g_family_text, "ASSERT FAILED: a/file.cpp:7 Func: x > 0: mmm", 43) == 0;
+    const bool first_starts_right = CStrCompareN(g_family_text, "ASSERT FAILED: a/file.cpp:7 Func: x > 0: mmm", 43) == 0;
     g_family_text_length = 0;
     g_family_sink_calls = 0;
     const AssertInfo ensure_info{AssertKind::Ensure, "a/file.cpp", 8, "Func", "y > 0", "short"};
@@ -222,8 +224,8 @@ TEST_CASE("The default handler truncates a long message at 512 bytes, ends the l
     CHECK(ensure_action == AssertAction::Continue); // ensure never aborts by default
     // The capture was reset before the second call, so its line starts at the beginning.
     const char* expected = "ENSURE FAILED: a/file.cpp:8 Func: y > 0: short\n";
-    CHECK(FamilyFirstLineLength() == std::strlen(expected));
-    CHECK(std::strncmp(g_family_text, expected, std::strlen(expected)) == 0);
+    CHECK(FamilyFirstLineLength() == CStrLength(expected));
+    CHECK(CStrCompareN(g_family_text, expected, CStrLength(expected)) == 0);
 }
 
 TEST_CASE("The default handler prints each kind with its own label and leaves out empty parts", "[assert][debug]") {
@@ -244,8 +246,8 @@ TEST_CASE("The default handler prints each kind with its own label and leaves ou
         DefaultAssertHandler(AssertInfo{c.kind, "f.cpp", 1, "g", c.condition, "m"});
         SetWriteSinkForTesting(&os::Write);
         INFO(c.expected);
-        CHECK(FamilyFirstLineLength() == std::strlen(c.expected));
-        CHECK(std::strncmp(g_family_text, c.expected, std::strlen(c.expected)) == 0);
+        CHECK(FamilyFirstLineLength() == CStrLength(c.expected));
+        CHECK(CStrCompareN(g_family_text, c.expected, CStrLength(c.expected)) == 0);
     }
 }
 
@@ -266,8 +268,8 @@ TEST_CASE("ENGINE_ENSURE reports the first failure at a site and only counts the
     }
     CHECK(g_family.calls == 1);
     CHECK(g_family.kind == AssertKind::Ensure);
-    CHECK(std::strcmp(g_family.message, "site A condition") == 0);
-    CHECK(std::strcmp(g_family.condition, "value") == 0);
+    CHECK(CStrCompare(g_family.message, "site A condition") == 0);
+    CHECK(CStrCompare(g_family.condition, "value") == 0);
     FamilySiteList sites;
     ForEachFailedEnsure(&FamilyCollectSites, &sites);
     REQUIRE(sites.count == 1);
@@ -362,7 +364,7 @@ TEST_CASE("ENGINE_NOT_IMPLEMENTED reports every time in every configuration", "[
     ENGINE_NOT_IMPLEMENTED();
     CHECK(g_family.calls == 1);
     CHECK(g_family.kind == AssertKind::NotImplemented);
-    CHECK(std::strcmp(g_family.message, "not implemented") == 0);
+    CHECK(CStrCompare(g_family.message, "not implemented") == 0);
     CHECK(g_family.condition[0] == '\0');
 }
 
@@ -379,9 +381,9 @@ TEST_CASE("A failed ENGINE_ASSERT with the default handler prints one line and d
     CHECK(r.StdoutContains("1 + 1 == 3"));
     CHECK(r.StdoutContains("arithmetic broke"));
     // The stack trace follows the message, and its first frame is the function that failed the assert.
-    const char* first_frame = std::strstr(r.stdout_text, "#0  0x");
+    const char* first_frame = CStrFind(r.stdout_text, "#0  0x");
     REQUIRE(first_frame != nullptr);
-    const char* end_of_line = std::strchr(first_frame, '\n');
+    const char* end_of_line = CStrFindChar(first_frame, '\n');
     REQUIRE(end_of_line != nullptr);
     CHECK(std::string(first_frame, end_of_line).find("dt_family_assert_false") != std::string::npos);
     CHECK(guard.Clean());
@@ -421,14 +423,14 @@ TEST_CASE("A failed ENGINE_ENSURE prints once and the program goes on", "[ensure
     CHECK(r.StdoutContains("ENSURE FAILED: "));
     CHECK(r.StdoutContains("AFTER-ENSURE"));
     // Three failures, one line, one trace.
-    const char* first = std::strstr(r.stdout_text, "ENSURE FAILED: ");
+    const char* first = CStrFind(r.stdout_text, "ENSURE FAILED: ");
     REQUIRE(first != nullptr);
-    CHECK(std::strstr(first + 1, "ENSURE FAILED: ") == nullptr);
-    const char* frame = std::strstr(r.stdout_text, "#0  0x");
+    CHECK(CStrFind(first + 1, "ENSURE FAILED: ") == nullptr);
+    const char* frame = CStrFind(r.stdout_text, "#0  0x");
     REQUIRE(frame != nullptr);
-    CHECK(std::strstr(frame + 1, "#0  0x") == nullptr);
+    CHECK(CStrFind(frame + 1, "#0  0x") == nullptr);
     // The trace starts at the function that holds the ensure, not at the machinery behind the macro.
-    const char* end_of_line = std::strchr(frame, '\n');
+    const char* end_of_line = CStrFindChar(frame, '\n');
     REQUIRE(end_of_line != nullptr);
     CHECK(std::string(frame, end_of_line).find("FamilyEnsureSiteA") != std::string::npos);
 }
@@ -457,6 +459,6 @@ TEST_CASE("The default handler survives null strings in the failure record", "[a
     SetWriteSinkForTesting(&os::Write);
     CHECK(action == AssertAction::Abort);
     CHECK(g_family_text_length > 0);
-    CHECK(std::strncmp(g_family_text, "ASSERT FAILED: ", 15) == 0);
+    CHECK(CStrCompareN(g_family_text, "ASSERT FAILED: ", 15) == 0);
     CHECK(g_family_text[g_family_text_length - 1] == '\n');
 }

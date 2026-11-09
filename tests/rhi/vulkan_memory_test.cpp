@@ -1,5 +1,4 @@
 #include <cstdint>
-#include <cstring>
 #include <map>
 #include <vector>
 
@@ -9,6 +8,7 @@
 #include "rhi/rhi.h"
 #include "rhi/vulkan/vk_memory.h"
 #include "rhi/vulkan/vulkan_device.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -512,7 +512,7 @@ TEST_CASE("Real driver: allocations of each location kind", "[rhi][memory][gpu]"
     MemoryAllocation up = memory.Allocate(request, nullptr);
     REQUIRE(up.Valid());
     REQUIRE(up.mapped != nullptr);
-    std::memset(up.mapped, 0xAB, 4096); // the mapping is writable
+    MemSet(up.mapped, 0xAB, 4096); // the mapping is writable
 
     request.location = MemoryLocation::GpuToCpu;
     MemoryAllocation down = memory.Allocate(request, nullptr);

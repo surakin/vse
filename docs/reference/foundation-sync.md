@@ -51,6 +51,36 @@ constexpr MemoryOrder FailureOrder(MemoryOrder success) noexcept;
 
 The strongest failure order that is valid for a given success order (a failure cannot release).
 
+## `ClampDuration(u64,u64)` {#detail-sync-clampduration-u64-u64-noexcept}
+
+`function detail_sync::ClampDuration` — defined in `engine/foundation/sync/atomic.h`
+
+```cpp
+constexpr i64 ClampDuration(u64 count, u64 max_count) noexcept;
+```
+
+A duration count limited to what the standard clocks can add to "now" without overflowing their nanosecond count: `max_count` is about 100 years in the caller's unit, so a "wait forever" such as ~0 becomes a very long wait instead of wrapping into the past.
+
+## `kMaxWaitMilliseconds` {#detail-sync-kmaxwaitmilliseconds}
+
+`variable detail_sync::kMaxWaitMilliseconds` — defined in `engine/foundation/sync/atomic.h`
+
+```cpp
+inline constexpr u64 kMaxWaitMilliseconds;
+```
+
+About 100 years in milliseconds.
+
+## `kMaxWaitMicroseconds` {#detail-sync-kmaxwaitmicroseconds}
+
+`variable detail_sync::kMaxWaitMicroseconds` — defined in `engine/foundation/sync/atomic.h`
+
+```cpp
+inline constexpr u64 kMaxWaitMicroseconds;
+```
+
+About 100 years in microseconds.
+
 ## `Atomic` {#atomic}
 
 `class Atomic` — defined in `engine/foundation/sync/atomic.h`
@@ -931,7 +961,7 @@ A thread object that runs nothing.
 `constructor Thread::Thread` — defined in `engine/foundation/sync/thread.h`
 
 ```cpp
-template <class F, class... Args>
+template <class F, class... Args, EnableIf<!IsSame<RemoveCVRef<F>, Thread>, int> = 0>
 explicit Thread(F&& function, Args&&... args);
 ```
 

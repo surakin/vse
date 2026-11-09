@@ -1,12 +1,13 @@
 // Phase 8 Day 104: the settings registry, RenderSettings, DiffSettings, ResolveSettings and the text format.
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstdio>
+#include "cstr/format.h"
 #include <cstring>
 #include "lang/limits.h"
 #include <string>
 
 #include "renderer/render_settings.h"
+#include "cstr/cstr.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -47,7 +48,7 @@ TEST_CASE("built-in settings have the ids, classes and defaults of the plan", "[
     for (const Row& row : rows) {
         const SettingDesc* d = r.Find(row.id);
         REQUIRE(d != nullptr);
-        CHECK(std::strcmp(d->name, row.name) == 0);
+        CHECK(CStrCompare(d->name, row.name) == 0);
         CHECK(d->cost == row.cost);
         CHECK(r.FindByName(row.name) == row.id);
     }
@@ -55,11 +56,11 @@ TEST_CASE("built-in settings have the ids, classes and defaults of the plan", "[
     CHECK(s.GetEnum(settings::kBackend) == 3); // auto
     CHECK(s.GetInt(settings::kFramesInFlight) == 2);
     CHECK(s.GetFloat(settings::kRenderScale) == 1.0f);
-    CHECK(std::strcmp(s.GetText(settings::kAdapter), "") == 0);
+    CHECK(CStrCompare(s.GetText(settings::kAdapter), "") == 0);
     CHECK_FALSE(s.GetBool(settings::kFullscreen));
     CHECK(r.Find(settings::kRenderScale)->mechanism_only);
     CHECK_FALSE(r.Find(settings::kBackend)->mechanism_only);
-    CHECK(std::strcmp(CostClassName(CostClass::PipelineRebuild), "pipeline-rebuild") == 0);
+    CHECK(CStrCompare(CostClassName(CostClass::PipelineRebuild), "pipeline-rebuild") == 0);
 }
 
 TEST_CASE("registration rejects bad declarations", "[render_settings]") {
@@ -108,7 +109,7 @@ TEST_CASE("the registry reports full", "[render_settings]") {
     SettingsRegistry r;
     char names[kMaxSettings + 1][8];
     for (u32 i = 0; i < kMaxSettings; ++i) {
-        std::snprintf(names[i], sizeof(names[i]), "s%u", i);
+        FormatTo(names[i], sizeof(names[i]), "s%u", i);
         SettingDesc d;
         d.name = names[i];
         REQUIRE(r.Register(d).IsValid());
@@ -139,7 +140,7 @@ TEST_CASE("typed setters validate type, range and text", "[render_settings]") {
     CHECK(s.SetFloat(settings::kRenderScale, Limits<f32>::Infinity()) == SetStatus::OutOfRange);
     CHECK(s.GetFloat(settings::kRenderScale) == 2.0f);
     CHECK(s.SetText(settings::kAdapter, "10de:2504") == SetStatus::Ok);
-    CHECK(std::strcmp(s.GetText(settings::kAdapter), "10de:2504") == 0);
+    CHECK(CStrCompare(s.GetText(settings::kAdapter), "10de:2504") == 0);
     CHECK(s.SetText(settings::kAdapter, "tab\there") == SetStatus::BadText);
     CHECK(s.SetText(settings::kAdapter, "line\nbreak") == SetStatus::BadText);
     const std::string too_long(kSettingTextBytes, 'x');
@@ -147,10 +148,10 @@ TEST_CASE("typed setters validate type, range and text", "[render_settings]") {
     const std::string longest(kSettingTextBytes - 1, 'x');
     CHECK(s.SetText(settings::kAdapter, longest.c_str()) == SetStatus::Ok);
     CHECK(s.SetText(settings::kAdapter, nullptr) == SetStatus::Ok);
-    CHECK(std::strcmp(s.GetText(settings::kAdapter), "") == 0);
+    CHECK(CStrCompare(s.GetText(settings::kAdapter), "") == 0);
     // Wrong-type reads return the neutral value.
     CHECK(s.GetInt(settings::kPresentMode) == 0);
-    CHECK(std::strcmp(s.GetText(settings::kWidth), "") == 0);
+    CHECK(CStrCompare(s.GetText(settings::kWidth), "") == 0);
 }
 
 TEST_CASE("a reject-policy range refuses instead of clamping", "[render_settings]") {
@@ -283,7 +284,7 @@ TEST_CASE("a setting registered by someone else takes part in the diff", "[rende
     REQUIRE(SerializeSettings(to, text, sizeof(text)) < sizeof(text));
     RenderSettings parsed(r);
     SettingsParseReport report;
-    REQUIRE(ParseSettings(text, std::strlen(text), &parsed, &report));
+    REQUIRE(ParseSettings(text, CStrLength(text), &parsed, &report));
     CHECK(parsed == to);
 }
 
@@ -317,7 +318,7 @@ TEST_CASE("unsupported requests are reported, not applied", "[render_settings]")
     CHECK(c.cost == CostClass::Swapchain);
     REQUIRE(c.unsupported_count == 2);
     CHECK(c.unsupported[0].id == settings::kFullscreen);
-    CHECK(std::strcmp(c.unsupported[0].capability, "fullscreen") == 0);
+    CHECK(CStrCompare(c.unsupported[0].capability, "fullscreen") == 0);
     CHECK(c.unsupported[1].id == settings::kHdr);
 
     // Only unsupported changes: no action at all.
@@ -346,7 +347,7 @@ TEST_CASE("capabilities hold names and are bounded", "[render_settings]") {
     char names[kMaxCapabilities + 1][8];
     bool full = false;
     for (u32 i = 0; i < kMaxCapabilities + 1; ++i) {
-        std::snprintf(names[i], sizeof(names[i]), "c%u", i);
+        FormatTo(names[i], sizeof(names[i]), "c%u", i);
         if (!c.Add(names[i])) full = true;
     }
     CHECK(full);
@@ -364,11 +365,11 @@ TEST_CASE("the text format is stable and round trips", "[render_settings]") {
     const usize n = SerializeSettings(s, first, sizeof(first));
     REQUIRE(n < sizeof(first));
     CHECK(SerializeSettings(s, second, sizeof(second)) == n);
-    CHECK(std::strcmp(first, second) == 0); // same input, same bytes
+    CHECK(CStrCompare(first, second) == 0); // same input, same bytes
     CHECK(SerializeSettings(s, nullptr, 0) == n);
-    CHECK(std::strstr(first, "version = 1\n") != nullptr);
-    CHECK(std::strstr(first, "adapter = 10de:2504:abcd\n") != nullptr);
-    CHECK(std::strstr(first, "backend = null\n") != nullptr);
+    CHECK(CStrFind(first, "version = 1\n") != nullptr);
+    CHECK(CStrFind(first, "adapter = 10de:2504:abcd\n") != nullptr);
+    CHECK(CStrFind(first, "backend = null\n") != nullptr);
 
     RenderSettings parsed;
     SettingsParseReport report;
@@ -382,12 +383,12 @@ TEST_CASE("the text format is stable and round trips", "[render_settings]") {
     // And again byte-for-byte.
     char third[2048];
     SerializeSettings(parsed, third, sizeof(third));
-    CHECK(std::strcmp(first, third) == 0);
+    CHECK(CStrCompare(first, third) == 0);
 
     // A short buffer truncates and terminates, reporting the full length.
     char tiny[16];
     CHECK(SerializeSettings(s, tiny, sizeof(tiny)) == n);
-    CHECK(std::strlen(tiny) == sizeof(tiny) - 1);
+    CHECK(CStrLength(tiny) == sizeof(tiny) - 1);
 }
 
 TEST_CASE("parsing reports unknown keys, bad values and line numbers", "[render_settings]") {
@@ -404,10 +405,10 @@ TEST_CASE("parsing reports unknown keys, bad values and line numbers", "[render_
     RenderSettings s;
     s.SetInt(settings::kHeight, 99);
     SettingsParseReport report;
-    CHECK_FALSE(ParseSettings(text, std::strlen(text), &s, &report));
+    CHECK_FALSE(ParseSettings(text, CStrLength(text), &s, &report));
     CHECK(report.warning_count == 1);
     CHECK(report.warnings[0].line == 5);
-    CHECK(std::strstr(report.warnings[0].message, "colour") != nullptr);
+    CHECK(CStrFind(report.warnings[0].message, "colour") != nullptr);
     CHECK(report.error_count == 4);
     CHECK(report.errors[0].line == 6); // height = lots
     CHECK(report.errors[1].line == 7); // present_mode
@@ -424,7 +425,7 @@ TEST_CASE("a clean parse applies only the keys present and keeps the generation"
     s.SetGeneration(9);
     const char* text = "version = 1\nheight = 480\nrender_scale = 99\n";
     SettingsParseReport report;
-    REQUIRE(ParseSettings(text, std::strlen(text), &s, &report));
+    REQUIRE(ParseSettings(text, CStrLength(text), &s, &report));
     CHECK(s.GetInt(settings::kWidth) == 100);
     CHECK(s.GetInt(settings::kHeight) == 480);
     CHECK(s.GetFloat(settings::kRenderScale) == 2.0f); // clamped
@@ -436,30 +437,30 @@ TEST_CASE("versions: newer is refused, older is migrated, none is accepted", "[r
     RenderSettings s;
     SettingsParseReport report;
     const char* newer = "version = 2\nwidth = 5\n";
-    CHECK_FALSE(ParseSettings(newer, std::strlen(newer), &s, &report));
+    CHECK_FALSE(ParseSettings(newer, CStrLength(newer), &s, &report));
     CHECK(report.error_count == 1);
     CHECK(s.GetInt(settings::kWidth) == 0);
 
     const char* none = "width = 5\n";
-    CHECK(ParseSettings(none, std::strlen(none), &s, &report));
+    CHECK(ParseSettings(none, CStrLength(none), &s, &report));
     CHECK(report.version == 0);
     CHECK(s.GetInt(settings::kWidth) == 5);
 
     const char* twice = "version = 1\nversion = 1\n";
-    CHECK_FALSE(ParseSettings(twice, std::strlen(twice), &s, &report));
+    CHECK_FALSE(ParseSettings(twice, CStrLength(twice), &s, &report));
     const char* junk = "version = x\n";
-    CHECK_FALSE(ParseSettings(junk, std::strlen(junk), &s, &report));
+    CHECK_FALSE(ParseSettings(junk, CStrLength(junk), &s, &report));
 
     // A key written by an older version is renamed by the hook.
     auto migrate = [](u32 file_version, const char* key) -> const char* {
-        return file_version == 0 && std::strcmp(key, "vsync_mode") == 0 ? "present_mode" : nullptr;
+        return file_version == 0 && CStrCompare(key, "vsync_mode") == 0 ? "present_mode" : nullptr;
     };
     const char* old = "vsync_mode = immediate\n";
     RenderSettings m;
-    CHECK(ParseSettings(old, std::strlen(old), &m, &report, migrate));
+    CHECK(ParseSettings(old, CStrLength(old), &m, &report, migrate));
     CHECK(m.GetEnum(settings::kPresentMode) == 2);
     RenderSettings unmigrated;
-    CHECK(ParseSettings(old, std::strlen(old), &unmigrated, &report)); // without the hook the key is unknown: a warning
+    CHECK(ParseSettings(old, CStrLength(old), &unmigrated, &report)); // without the hook the key is unknown: a warning
     CHECK(report.warning_count == 1);
     CHECK(unmigrated.GetEnum(settings::kPresentMode) == 0);
 }
@@ -474,7 +475,7 @@ TEST_CASE("parsing tolerates empty and null input and over-long lines", "[render
     CHECK_FALSE(ParseSettings(long_line.c_str(), long_line.size(), &s, &report));
     CHECK(report.error_count == 1);
     const char* last = "width = 33"; // final line without a newline
-    CHECK(ParseSettings(last, std::strlen(last), &s, &report));
+    CHECK(ParseSettings(last, CStrLength(last), &s, &report));
     CHECK(s.GetInt(settings::kWidth) == 33);
 }
 
@@ -536,7 +537,7 @@ TEST_CASE("random pairs: the diff class is the maximum over single changes", "[r
         char text[2048];
         SerializeSettings(a, text, sizeof(text));
         RenderSettings back;
-        REQUIRE(ParseSettings(text, std::strlen(text), &back, nullptr));
+        REQUIRE(ParseSettings(text, CStrLength(text), &back, nullptr));
         CHECK(back == a);
     }
 }
@@ -585,7 +586,7 @@ TEST_CASE("text with edge blanks and enum names the format cannot carry are refu
     char text[2048];
     SerializeSettings(s, text, sizeof(text));
     RenderSettings back;
-    REQUIRE(ParseSettings(text, std::strlen(text), &back, nullptr));
+    REQUIRE(ParseSettings(text, CStrLength(text), &back, nullptr));
     CHECK(back == s);
 
     const char* const with_blank[] = {"high quality"};

@@ -2,7 +2,7 @@
 
 #include "debug/crash_report.h"
 
-#include <cstring>
+#include "cstr/cstr.h"
 #include "sync/mutex.h"
 #include "sync/atomic.h"
 
@@ -60,7 +60,7 @@ Entry* FindOrCreate(const char* name, bool counter) {
     }
     LockGuard<Mutex> lock(g_mutex);
     for (usize i = 0; i < g_entry_count; ++i) {
-        if (std::strcmp(g_entries[i].name, name) == 0) {
+        if (CStrCompare(g_entries[i].name, name) == 0) {
             return g_entries[i].is_counter == counter ? &g_entries[i] : nullptr;
         }
     }
@@ -68,7 +68,7 @@ Entry* FindOrCreate(const char* name, bool counter) {
         return nullptr;
     }
     Entry& entry = g_entries[g_entry_count];
-    std::strncpy(entry.name, name, sizeof(entry.name) - 1); // copied: the caller's string need not outlive the call
+    CStrCopyN(entry.name, name, sizeof(entry.name) - 1); // copied: the caller's string need not outlive the call
     entry.name[sizeof(entry.name) - 1] = '\0';
     entry.is_counter = counter;
     if (!RegisterCrashStateProvider(entry.name, &ProvideEntry, &entry)) {

@@ -1,6 +1,5 @@
 // VulkanDevice: buffers, the timeline, the staging ring and the upload/readback paths, and deferred destruction.
 
-#include <cstring>
 
 #include "log/assert.h"
 #include "rhi/rhi_log.h"
@@ -8,6 +7,7 @@
 #include "rhi/vulkan/vulkan_device.h"
 #include "sync/atomic.h"
 #include "sync/mutex.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::rhi::vulkan {
 
@@ -442,7 +442,7 @@ UploadTicket VulkanDevice::UploadBuffer(BufferHandle dst, u64 offset, const void
     }
     // A CPU-visible destination is written directly through its mapping; no GPU copy, nothing to wait for.
     if (snapshot.desc.location == MemoryLocation::CpuToGpu) {
-        std::memcpy(static_cast<char*>(snapshot.raw.memory.mapped) + offset, data, static_cast<usize>(size));
+        MemCopy(static_cast<char*>(snapshot.raw.memory.mapped) + offset, data, static_cast<usize>(size));
         FlushRange(snapshot.raw.memory, offset, size);
         return {};
     }
@@ -467,7 +467,7 @@ UploadTicket VulkanDevice::UploadBuffer(BufferHandle dst, u64 offset, const void
             }
             staging_ring_->Reclaim(CompletedTimeline());
         }
-        std::memcpy(static_cast<char*>(staging_.memory.mapped) + ring_offset, static_cast<const char*>(data) + done,
+        MemCopy(static_cast<char*>(staging_.memory.mapped) + ring_offset, static_cast<const char*>(data) + done,
                     static_cast<usize>(chunk));
         FlushRange(staging_.memory, ring_offset, chunk);
 
@@ -535,7 +535,7 @@ bool VulkanDevice::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 s
             return false;
         }
         InvalidateRange(snapshot.raw.memory, offset, size);
-        std::memcpy(dst, static_cast<const char*>(snapshot.raw.memory.mapped) + offset, static_cast<usize>(size));
+        MemCopy(dst, static_cast<const char*>(snapshot.raw.memory.mapped) + offset, static_cast<usize>(size));
         return true;
     }
 
@@ -583,7 +583,7 @@ bool VulkanDevice::ReadbackBuffer(BufferHandle src, u64 offset, void* dst, u64 s
             return false;
         }
         InvalidateRange(temp.memory, 0, chunk);
-        std::memcpy(static_cast<char*>(dst) + done, temp.memory.mapped, static_cast<usize>(chunk));
+        MemCopy(static_cast<char*>(dst) + done, temp.memory.mapped, static_cast<usize>(chunk));
         DestroyRawBuffer(&temp);
         done += chunk;
     }

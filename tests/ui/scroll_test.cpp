@@ -17,6 +17,8 @@
 #include "ui/widgets/list_box.h"
 #include "ui/widgets/scroll.h"
 #include "types.h"
+#include "cstr/mem_ops.h"
+#include "os/console.h"
 
 // --- an allocation counter (this test executable only), to prove that scrolling a long list allocates nothing once warm ---------------
 #if !ENGINE_SANITIZED // the sanitizer runtimes define their own operator new
@@ -34,38 +36,38 @@ void* UiCountedAlloc(usize n, usize align) {
 #else
     if (align != 0) return std::aligned_alloc(align, (n + align - 1) / align * align);
 #endif
-    return std::malloc(n);
+    return MemAllocate(n);
 }
 void UiAlignedFree(void* p) noexcept {
 #if ENGINE_PLATFORM_WINDOWS
     _aligned_free(p);
 #else
-    std::free(p);
+    MemFree(p);
 #endif
 }
 } // namespace
 void* operator new(usize n) {
     if (void* p = UiCountedAlloc(n, 0)) return p;
-    std::abort();
+    os::Abort();
 }
 void* operator new(usize n, AlignVal a) {
     if (void* p = UiCountedAlloc(n, static_cast<usize>(a))) return p;
-    std::abort();
+    os::Abort();
 }
 void* operator new[](usize n) { return operator new(n); }
 void* operator new[](usize n, AlignVal a) { return operator new(n, a); }
 void* operator new(usize n, const NoThrowTag&) noexcept { return UiCountedAlloc(n, 0); }
 void* operator new(usize n, AlignVal a, const NoThrowTag&) noexcept { return UiCountedAlloc(n, static_cast<usize>(a)); }
-void operator delete(void* p) noexcept { std::free(p); }
-void operator delete[](void* p) noexcept { std::free(p); }
-void operator delete(void* p, usize) noexcept { std::free(p); }
-void operator delete[](void* p, usize) noexcept { std::free(p); }
+void operator delete(void* p) noexcept { MemFree(p); }
+void operator delete[](void* p) noexcept { MemFree(p); }
+void operator delete(void* p, usize) noexcept { MemFree(p); }
+void operator delete[](void* p, usize) noexcept { MemFree(p); }
 void operator delete(void* p, AlignVal) noexcept { UiAlignedFree(p); }
 void operator delete(void* p, usize, AlignVal) noexcept { UiAlignedFree(p); }
 void operator delete[](void* p, AlignVal) noexcept { UiAlignedFree(p); }
 void operator delete[](void* p, usize, AlignVal) noexcept { UiAlignedFree(p); }
 void operator delete(void* p, AlignVal, const NoThrowTag&) noexcept { UiAlignedFree(p); }
-void operator delete(void* p, const NoThrowTag&) noexcept { std::free(p); }
+void operator delete(void* p, const NoThrowTag&) noexcept { MemFree(p); }
 #endif
 
 using namespace engine_placeholder;

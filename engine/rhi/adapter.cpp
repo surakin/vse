@@ -1,6 +1,6 @@
 #include "rhi/adapter.h"
 
-#include <cstring>
+#include "cstr/cstr.h"
 #include "sync/mutex.h"
 
 namespace engine_placeholder::rhi {
@@ -64,7 +64,7 @@ bool g_null_adapters_set = false;
 AdapterList g_null_adapters;
 
 void SetText(char* dst, usize capacity, const char* text) {
-    std::strncpy(dst, text, capacity - 1);
+    CStrCopyN(dst, text, capacity - 1);
     dst[capacity - 1] = '\0';
 }
 
@@ -78,7 +78,7 @@ int MatchAdapter(const AdapterInfo* items, usize count, const char* request) {
         count = kMaxAdapters;
     }
     for (usize i = 0; i < count; ++i) {
-        if (std::strcmp(items[i].id, request) == 0) {
+        if (CStrCompare(items[i].id, request) == 0) {
             return static_cast<int>(i);
         }
     }

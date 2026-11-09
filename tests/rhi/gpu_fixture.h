@@ -1,8 +1,7 @@
 #pragma once
 
-#include <cstdio>
+#include "os/console.h"
 #include <exception>
-#include <cstdlib>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -20,7 +19,7 @@
 namespace gpu_test {
 
 inline bool GpuRequired() {
-    const char* v = std::getenv("ENGINE_RHI_REQUIRE_GPU");
+    const char* v = engine_placeholder::os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
     return v != nullptr && v[0] == '1';
 }
 

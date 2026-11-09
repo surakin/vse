@@ -1,6 +1,6 @@
 #include "ui/testing/software_raster.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "log/assert.h"
 
@@ -20,12 +20,12 @@ f32 SmoothStep(f32 e0, f32 e1, f32 x) {
 }
 
 f32 BoxDistance(f32 px, f32 py, f32 hw, f32 hh, f32 radius) {
-    const f32 r = std::fmin(radius, std::fmin(hw, hh));
-    const f32 qx = std::fabs(px) - hw + r;
-    const f32 qy = std::fabs(py) - hh + r;
+    const f32 r = FMin(radius, FMin(hw, hh));
+    const f32 qx = Abs(px) - hw + r;
+    const f32 qy = Abs(py) - hh + r;
     const f32 ox = qx > 0 ? qx : 0;
     const f32 oy = qy > 0 ? qy : 0;
-    return std::sqrt(ox * ox + oy * oy) + std::fmin(std::fmax(qx, qy), 0.0f) - r;
+    return Sqrt(ox * ox + oy * oy) + FMin(FMax(qx, qy), 0.0f) - r;
 }
 
 // The edge function of the triangle edge a->b at p; the sign says on which side p lies.
@@ -93,8 +93,8 @@ void RasterizeDrawList(const DrawList& list, const text::GlyphAtlas* atlas, u32 
                 if (v[k]->y < miny) miny = v[k]->y;
                 if (v[k]->y > maxy) maxy = v[k]->y;
             }
-            i64 x0 = static_cast<i64>(std::floor(minx)), x1 = static_cast<i64>(std::ceil(maxx));
-            i64 y0 = static_cast<i64>(std::floor(miny)), y1 = static_cast<i64>(std::ceil(maxy));
+            i64 x0 = static_cast<i64>(Floor(minx)), x1 = static_cast<i64>(Ceil(maxx));
+            i64 y0 = static_cast<i64>(Floor(miny)), y1 = static_cast<i64>(Ceil(maxy));
             if (x0 < cx0) x0 = cx0;
             if (y0 < cy0) y0 = cy0;
             if (x1 > cx1) x1 = cx1;
@@ -130,8 +130,8 @@ void RasterizeDrawList(const DrawList& list, const text::GlyphAtlas* atlas, u32 
                         const f32 border = lerp(v[0]->border, v[1]->border, v[2]->border);
                         const f32 d = BoxDistance(u, vv, hw, hh, rad);
                         if ((flags & kFlagShadow) != 0) {
-                            const f32 blur = std::fmax(border, 1.0f);
-                            alpha *= 1.0f - SmoothStep(0.0f, blur, std::fmax(d, 0.0f));
+                            const f32 blur = FMax(border, 1.0f);
+                            alpha *= 1.0f - SmoothStep(0.0f, blur, FMax(d, 0.0f));
                         } else {
                             const f32 outer = Saturate(0.5f - d);
                             if ((flags & kFlagRing) != 0) {
@@ -143,8 +143,8 @@ void RasterizeDrawList(const DrawList& list, const text::GlyphAtlas* atlas, u32 
                         }
                     } else if (mode == kModeGlyph) {
                         if (page == nullptr) continue;
-                        i64 tx = static_cast<i64>(std::floor(u * static_cast<f32>(page_size)));
-                        i64 ty = static_cast<i64>(std::floor(vv * static_cast<f32>(page_size)));
+                        i64 tx = static_cast<i64>(Floor(u * static_cast<f32>(page_size)));
+                        i64 ty = static_cast<i64>(Floor(vv * static_cast<f32>(page_size)));
                         if (tx < 0) tx = 0;
                         if (ty < 0) ty = 0;
                         if (tx >= page_size) tx = page_size - 1;

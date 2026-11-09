@@ -1,6 +1,6 @@
 #include "platform/linux/clipboard_pipe.h"
 
-#include <cerrno>
+#include "os/last_error.h"
 #include <fcntl.h>
 #include <pthread.h>
 #include <signal.h>
@@ -96,9 +96,9 @@ PipeWriter::State PipeWriter::Pump(u64 now_ns) {
         if (n > 0) {
             offset_ += static_cast<usize>(n);
             last_progress_ns_ = now_ns;
-        } else if (n < 0 && errno == EINTR) {
+        } else if (n < 0 && os::LastError() == EINTR) {
             continue;
-        } else if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+        } else if (n < 0 && (os::LastError() == EAGAIN || os::LastError() == EWOULDBLOCK)) {
             if (now_ns - last_progress_ns_ >= timeout_ns_) {
                 state_ = State::TimedOut;
                 Close();
@@ -174,9 +174,9 @@ PipeReader::State PipeReader::Pump(u64 now_ns) {
             state_ = State::Done;
             Close();
             return state_;
-        } else if (errno == EINTR) {
+        } else if (os::LastError() == EINTR) {
             continue;
-        } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        } else if (os::LastError() == EAGAIN || os::LastError() == EWOULDBLOCK) {
             if (now_ns - last_progress_ns_ >= timeout_ns_) {
                 state_ = State::TimedOut;
                 Close();

@@ -1,8 +1,8 @@
 #include "text/glyph_atlas.h"
 
-#include <cstring>
 
 #include "log/assert.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::text {
 
@@ -139,7 +139,7 @@ Status GlyphAtlas::GetOrAdd(Font& font, GlyphId glyph, GlyphEntry* out) {
         }
         Page& target = pages_[page];
         for (u32 row = 0; row < bitmap.height; ++row) {
-            std::memcpy(target.pixels.Data() + usize{rect.y + row} * page_size_ + rect.x, bitmap.pixels.Data() + usize{row} * bitmap.width, bitmap.width);
+            MemCopy(target.pixels.Data() + usize{rect.y + row} * page_size_ + rect.x, bitmap.pixels.Data() + usize{row} * bitmap.width, bitmap.width);
         }
         MarkDirty(target, rect);
         entry.has_pixels = true;

@@ -1,7 +1,7 @@
 #include "rhi/vulkan/vk_functions.h"
 
-#include <cstddef>
-#include <cstring>
+#include "lang/new.h"
+#include "cstr/mem_ops.h"
 
 #include "rhi/rhi_log.h"
 
@@ -18,20 +18,20 @@ struct FnEntry {
 };
 
 constexpr FnEntry kGlobalEntries[] = {
-#define VK_GLOBAL_FN(n) {"vk" #n, offsetof(VkGlobalFns, n), true},
-#define VK_GLOBAL_FN_OPT(n) {"vk" #n, offsetof(VkGlobalFns, n), false},
+#define VK_GLOBAL_FN(n) {"vk" #n, ENGINE_OFFSET_OF(VkGlobalFns, n), true},
+#define VK_GLOBAL_FN_OPT(n) {"vk" #n, ENGINE_OFFSET_OF(VkGlobalFns, n), false},
 #include "rhi/vulkan/vk_functions.inc"
 };
 
 constexpr FnEntry kInstanceEntries[] = {
-#define VK_INSTANCE_FN(n) {"vk" #n, offsetof(VkInstanceFns, n), true},
-#define VK_INSTANCE_FN_OPT(n) {"vk" #n, offsetof(VkInstanceFns, n), false},
+#define VK_INSTANCE_FN(n) {"vk" #n, ENGINE_OFFSET_OF(VkInstanceFns, n), true},
+#define VK_INSTANCE_FN_OPT(n) {"vk" #n, ENGINE_OFFSET_OF(VkInstanceFns, n), false},
 #include "rhi/vulkan/vk_functions.inc"
 };
 
 constexpr FnEntry kDeviceEntries[] = {
-#define VK_DEVICE_FN(n) {"vk" #n, offsetof(VkDeviceFns, n), true},
-#define VK_DEVICE_FN_OPT(n) {"vk" #n, offsetof(VkDeviceFns, n), false},
+#define VK_DEVICE_FN(n) {"vk" #n, ENGINE_OFFSET_OF(VkDeviceFns, n), true},
+#define VK_DEVICE_FN_OPT(n) {"vk" #n, ENGINE_OFFSET_OF(VkDeviceFns, n), false},
 #include "rhi/vulkan/vk_functions.inc"
 };
 
@@ -45,10 +45,10 @@ bool LoadTable(const FnEntry (&entries)[N], void* table, usize table_size, const
             ok = false;
             continue; // keep scanning so every missing mandatory function is logged in one pass
         }
-        std::memcpy(static_cast<char*>(table) + entry.offset, &fn, sizeof(fn));
+        MemCopy(static_cast<char*>(table) + entry.offset, &fn, sizeof(fn));
     }
     if (!ok) {
-        std::memset(table, 0, table_size); // a half-loaded table is never handed out: callers get all-null
+        MemSet(table, 0, table_size); // a half-loaded table is never handed out: callers get all-null
     }
     return ok;
 }

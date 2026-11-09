@@ -1,6 +1,6 @@
 #include "ui/widgets/text_field.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "string/grapheme.h"
 #include "text/cursor.h"
@@ -164,7 +164,7 @@ void TextField::ResetBlink() {
 bool TextField::CaretOn() const {
     const Surface* surface = GetSurface();
     if (surface == nullptr) return false;
-    const f64 phase = std::fmod(surface->Time() - blink_epoch_, kBlinkSeconds * 2);
+    const f64 phase = Fmod(surface->Time() - blink_epoch_, kBlinkSeconds * 2);
     return phase < kBlinkSeconds;
 }
 
@@ -206,7 +206,7 @@ void TextField::EnsureCaretVisible() {
         return;
     }
     const f32 caret_x = text::PositionOfOffset(Shown().Full(), ToShown(caret_)).x / scale;
-    const f32 margin = std::fmin(kScrollMargin, inner / 2);
+    const f32 margin = FMin(kScrollMargin, inner / 2);
     if (caret_x - scroll_x_ < margin) scroll_x_ = caret_x - margin;
     if (caret_x - scroll_x_ > inner - margin) scroll_x_ = caret_x - inner + margin;
     const f32 max_scroll = text_w + kCaretWidth - inner;
@@ -556,7 +556,7 @@ void TextField::OnDragEnded(DragAction action) {
 void TextField::Press(Event& event) {
     RequestFocus();
     RequestCapture();
-    const bool near = std::fabs(event.position.x - last_press_.x) <= kClickSlop && std::fabs(event.position.y - last_press_.y) <= kClickSlop;
+    const bool near = Abs(event.position.x - last_press_.x) <= kClickSlop && Abs(event.position.y - last_press_.y) <= kClickSlop;
     if (event.time - last_press_time_ <= kMultiClickSeconds && near) {
         ++press_count_;
     } else {

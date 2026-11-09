@@ -1,6 +1,6 @@
 #include "renderer/frustum.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "log/assert.h"
 
@@ -8,7 +8,6 @@ namespace engine_placeholder::renderer {
 
 namespace {
 
-f32 Abs(f32 v) { return std::fabs(v); }
 
 // Row `i` of a column-major matrix.
 Vec4 Row(const Mat4& m, u32 i) { return Vec4(m.col[0][i], m.col[1][i], m.col[2][i], m.col[3][i]); }
@@ -16,7 +15,7 @@ Vec4 Row(const Mat4& m, u32 i) { return Vec4(m.col[0][i], m.col[1][i], m.col[2][
 Plane MakePlane(const Vec4& v) {
     const Vec3 n(v.x, v.y, v.z);
     const f32 len = n.Length();
-    ENGINE_ASSERT(len > 0.0f && std::isfinite(len), "Frustum: the view-projection is degenerate (zero or not finite)");
+    ENGINE_ASSERT(len > 0.0f && IsFinite(len), "Frustum: the view-projection is degenerate (zero or not finite)");
     Plane p;
     p.normal = n * (1.0f / len);
     p.d = v.w / len;

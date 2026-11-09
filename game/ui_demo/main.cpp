@@ -1,10 +1,11 @@
 // ui_demo: the Phase 15 showcase. A resizable window of the engine's own widgets (menu bar, toolbar, panels, a 1,000-item list, a splitter) around a viewport that shows the Phase 5 lit scene,
 // in a window (Wayland, X11 or Win32) or offscreen (--screenshot). See README.md for the options and the script words.
 
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "os/console.h"
+#include "lang/scalar.h"
+
+#include "cstr/number.h"
+#include "cstr/cstr.h"
 
 #include "containers/vector.h"
 #include "debug/program_setup.h"
@@ -34,6 +35,8 @@
 #include "ui_script.h"
 #include "ui_window/os_clipboard.h"
 #include "ui_window/window_adapter.h"
+#include "cstr/format.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -87,12 +90,12 @@ bool NextAdapterId(const Device& device, char* out, usize capacity) {
     if (!device.ListAdapters(&list) || list.count == 0) return false;
     u32 at = 0;
     for (u32 i = 0; i < list.count; ++i) {
-        if (std::strcmp(list.items[i].id, current_id) == 0) at = i;
+        if (CStrCompare(list.items[i].id, current_id) == 0) at = i;
     }
     for (u32 step = 1; step <= list.count; ++step) {
         const AdapterInfo& a = list.items[(at + step) % list.count];
         if (a.suitable) {
-            std::snprintf(out, capacity, "%s", a.id);
+            FormatTo(out, capacity, "%s", a.id);
             return true;
         }
     }
@@ -109,7 +112,7 @@ public:
     }
     void Screenshot(StringView path) override {
         shot_.Resize(path.Length() + 1);
-        std::memcpy(shot_.Data(), path.Data(), path.Length());
+        MemCopy(shot_.Data(), path.Data(), path.Length());
         shot_[path.Length()] = '\0';
     }
     bool Other(StringView word) override {
@@ -117,15 +120,15 @@ public:
         if (renderer == nullptr) return false;
         char text[256];
         const usize n = word.Length() < sizeof(text) - 1 ? word.Length() : sizeof(text) - 1;
-        std::memcpy(text, word.Data(), n);
+        MemCopy(text, word.Data(), n);
         text[n] = '\0';
-        if (std::strncmp(text, "set:", 4) == 0) {
+        if (CStrCompareN(text, "set:", 4) == 0) {
             RenderSettings wanted = renderer->Settings();
-            const char* eq = std::strchr(text + 4, '=');
+            const char* eq = CStrFindChar(text + 4, '=');
             if (eq == nullptr) return false;
             char key[64];
             if (static_cast<usize>(eq - (text + 4)) >= sizeof(key)) return false;
-            std::memcpy(key, text + 4, static_cast<usize>(eq - (text + 4)));
+            MemCopy(key, text + 4, static_cast<usize>(eq - (text + 4)));
             key[eq - (text + 4)] = '\0';
             const SettingId id = wanted.Registry().FindByName(key);
             if (!id.IsValid()) return false;
@@ -134,15 +137,15 @@ public:
             ApplyWanted(text, wanted, renderer);
             return true;
         }
-        if (std::strcmp(text, "reset") == 0) {
+        if (CStrCompare(text, "reset") == 0) {
             LogApply("reset", renderer->ForceDeviceReset());
             return true;
         }
-        if (std::strcmp(text, "loss") == 0) {
+        if (CStrCompare(text, "loss") == 0) {
             if (renderer->GetDevice() != nullptr) renderer->GetDevice()->InjectDeviceLoss();
             return true;
         }
-        if (std::strcmp(text, "gpu:next") == 0) {
+        if (CStrCompare(text, "gpu:next") == 0) {
             char id[64];
             if (renderer->GetDevice() == nullptr || !NextAdapterId(*renderer->GetDevice(), id, sizeof(id))) return true;
             RenderSettings wanted = renderer->Settings();
@@ -186,8 +189,8 @@ public:
     bool Change(StringView key, StringView value) override {
         char k[48];
         char v[48];
-        std::snprintf(k, sizeof(k), "%.*s", static_cast<int>(key.Length()), key.Data());
-        std::snprintf(v, sizeof(v), "%.*s", static_cast<int>(value.Length()), value.Data());
+        FormatTo(k, sizeof(k), "%.*s", static_cast<int>(key.Length()), key.Data());
+        FormatTo(v, sizeof(v), "%.*s", static_cast<int>(value.Length()), value.Data());
         RenderSettings wanted = renderer_->Settings();
         const SettingId id = wanted.Registry().FindByName(k);
         if (!id.IsValid()) return false;
@@ -197,7 +200,7 @@ public:
     }
     StringView CostOf(StringView key) override {
         char k[48];
-        std::snprintf(k, sizeof(k), "%.*s", static_cast<int>(key.Length()), key.Data());
+        FormatTo(k, sizeof(k), "%.*s", static_cast<int>(key.Length()), key.Data());
         RenderSettings current = renderer_->Settings();
         const SettingId id = current.Registry().FindByName(k);
         const SettingDesc* desc = id.IsValid() ? current.Registry().Find(id) : nullptr;
@@ -255,8 +258,8 @@ int RunScreenshot(const Options& options, const RenderSettings& settings) {
     }
     DeviceResources registry;
     const f32 shot_scale = options.scale > 0.0f ? options.scale : 1.0f;
-    u32 pixel_w = static_cast<u32>(std::lround(kShotWidth * shot_scale));
-    u32 pixel_h = static_cast<u32>(std::lround(kShotHeight * shot_scale));
+    u32 pixel_w = static_cast<u32>(LRound(kShotWidth * shot_scale));
+    u32 pixel_h = static_cast<u32>(LRound(kShotHeight * shot_scale));
     TextureHandle target;
     auto make_target = [&] {
         if (target.IsValid()) {
@@ -314,8 +317,8 @@ int RunScreenshot(const Options& options, const RenderSettings& settings) {
                 ok = RunScript(&script, &app, &surface, &run, i);
                 if (run.wanted_w_ != 0) { // resize:WxH
                     surface.Resize(static_cast<f32>(run.wanted_w_), static_cast<f32>(run.wanted_h_), shot_scale);
-                    pixel_w = static_cast<u32>(std::lround(static_cast<f32>(run.wanted_w_) * shot_scale));
-                    pixel_h = static_cast<u32>(std::lround(static_cast<f32>(run.wanted_h_) * shot_scale));
+                    pixel_w = static_cast<u32>(LRound(static_cast<f32>(run.wanted_w_) * shot_scale));
+                    pixel_h = static_cast<u32>(LRound(static_cast<f32>(run.wanted_h_) * shot_scale));
                     run.wanted_w_ = run.wanted_h_ = 0;
                     ok = ok && make_target();
                     ft.texture = target;
@@ -330,7 +333,7 @@ int RunScreenshot(const Options& options, const RenderSettings& settings) {
                 ft.initial = ResourceState::CopySrc;
                 if (ok && run.shot_.Size() != 0) {
                     ok = write_picture(run.shot_.Data());
-                    if (options.screenshot != nullptr && std::strcmp(run.shot_.Data(), options.screenshot) == 0) wrote_last = true;
+                    if (options.screenshot != nullptr && CStrCompare(run.shot_.Data(), options.screenshot) == 0) wrote_last = true;
                     run.shot_.Clear();
                 }
             }
@@ -512,13 +515,14 @@ const char kUsageFormat[] =
     "  --gpu G           the GPU to use: an id, an index, or part of the name\n";
 
 int Usage(const char* program, int code) {
-    std::fprintf(code == kExitOk ? stdout : stderr, kUsageFormat, program);
+    if (code == kExitOk) os::Print(kUsageFormat, program);
+    else os::PrintError(kUsageFormat, program);
     return code;
 }
 
 bool ParseCount(const char* text, long* out) {
     char* end = nullptr;
-    const long v = std::strtol(text, &end, 10);
+    const long v = CStrToLong(text, &end, 10);
     if (end == text || *end != '\0' || v < 0 || v > 0x7fffffffL) return false;
     *out = v;
     return true;
@@ -533,7 +537,7 @@ int EngineMain(int argc, char** argv) {
     LogRhi.SetVerbosity(LogVerbosity::Info);
     demo::DemoSettings demo_settings;
     char usage_text[4096];
-    std::snprintf(usage_text, sizeof(usage_text), kUsageFormat, argv[0]);
+    FormatTo(usage_text, sizeof(usage_text), kUsageFormat, argv[0]);
     if (!demo_settings.Begin("ui_demo", usage_text, argc, argv)) return kExitUsage;
     g_demo_settings = &demo_settings;
     argc = demo_settings.RestCount();
@@ -542,24 +546,24 @@ int EngineMain(int argc, char** argv) {
     for (int i = 1; i < argc; ++i) {
         if (engine_placeholder::debug::IsProgramDebugArgument(argv[i])) continue;
         const bool has_value = i + 1 < argc;
-        if (std::strcmp(argv[i], "--frames") == 0 && has_value) {
+        if (CStrCompare(argv[i], "--frames") == 0 && has_value) {
             if (!ParseCount(argv[++i], &options.frames)) return Usage(argv[0], kExitUsage);
-        } else if (std::strcmp(argv[i], "--screenshot") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--screenshot") == 0 && has_value) {
             options.screenshot = argv[++i];
-        } else if (std::strcmp(argv[i], "--backend") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--backend") == 0 && has_value) {
             options.backend = argv[++i];
-        } else if (std::strcmp(argv[i], "--no-vsync") == 0) {
+        } else if (CStrCompare(argv[i], "--no-vsync") == 0) {
             options.no_vsync = true;
-        } else if (std::strcmp(argv[i], "--validation") == 0) {
+        } else if (CStrCompare(argv[i], "--validation") == 0) {
             options.validation = true;
-        } else if (std::strcmp(argv[i], "--gpu") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--gpu") == 0 && has_value) {
             options.gpu = argv[++i];
-        } else if (std::strcmp(argv[i], "--script") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--script") == 0 && has_value) {
             options.script = argv[++i];
-        } else if (std::strcmp(argv[i], "--scale") == 0 && has_value) {
-            options.scale = static_cast<f32>(std::atof(argv[++i]));
+        } else if (CStrCompare(argv[i], "--scale") == 0 && has_value) {
+            options.scale = static_cast<f32>(CStrToDouble(argv[++i]));
             if (options.scale != 1.0f && options.scale != 1.25f && options.scale != 2.0f) return Usage(argv[0], kExitUsage);
-        } else if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
+        } else if (CStrCompare(argv[i], "--help") == 0 || CStrCompare(argv[i], "-h") == 0) {
             return Usage(argv[0], kExitOk);
         } else {
             return Usage(argv[0], kExitUsage);

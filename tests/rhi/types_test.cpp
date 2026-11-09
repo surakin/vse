@@ -1,6 +1,6 @@
 #include "lang/limits.h"
 #include "lang/traits.h"
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -17,7 +17,7 @@ namespace {
 
 // True when `reason` is non-null and starts with `prefix` (the descriptor name plus the start of the message).
 bool Rejects(const char* reason, const char* prefix) {
-    return reason != nullptr && std::strncmp(reason, prefix, std::strlen(prefix)) == 0;
+    return reason != nullptr && CStrCompareN(reason, prefix, CStrLength(prefix)) == 0;
 }
 
 } // namespace
@@ -112,7 +112,7 @@ TEST_CASE("Format names are unique and non-empty", "[rhi][format]") {
         REQUIRE(a != nullptr);
         CHECK(a[0] != '\0');
         for (usize j = 0; j < i; ++j) {
-            CHECK(std::strcmp(a, FormatInfo(static_cast<Format>(j)).name) != 0);
+            CHECK(CStrCompare(a, FormatInfo(static_cast<Format>(j)).name) != 0);
         }
     }
 }

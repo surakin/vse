@@ -1,4 +1,4 @@
-#include <cstdlib>
+#include "os/console.h"
 #include <cstring>
 #include <string>
 
@@ -12,6 +12,7 @@
 #include "rhi/rhi.h"
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_device_select.h"
+#include "cstr/cstr.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -39,7 +40,7 @@ DeviceCreateInfo NullInfo() {
 
 PhysicalDeviceInfo GoodGpu(const char* name, GpuKind kind, u32 vendor, u32 device, u8 uuid_seed) {
     PhysicalDeviceInfo info;
-    std::strncpy(info.name, name, sizeof(info.name) - 1);
+    CStrCopyN(info.name, name, sizeof(info.name) - 1);
     info.kind = kind;
     info.api_version = (1u << 22) | (3u << 12);
     info.dynamic_rendering = info.synchronization2 = info.timeline_semaphore = info.swapchain_extension = true;
@@ -60,12 +61,12 @@ TEST_CASE("The null backend lists two fake adapters", "[rhi][adapter]") {
     AdapterList list;
     REQUIRE(EnumerateAdapters(NullInfo(), &list));
     REQUIRE(list.count == 2);
-    CHECK(std::strcmp(list.items[0].id, "null-discrete") == 0);
+    CHECK(CStrCompare(list.items[0].id, "null-discrete") == 0);
     CHECK(list.items[0].kind == AdapterKind::Discrete);
     CHECK(list.items[0].dedicated_memory_bytes > 0);
     CHECK(list.items[0].suitable);
     CHECK(list.items[0].unsuitable_reason == nullptr);
-    CHECK(std::strcmp(list.items[1].id, "null-integrated") == 0);
+    CHECK(CStrCompare(list.items[1].id, "null-integrated") == 0);
     CHECK(list.items[1].kind == AdapterKind::Integrated);
 }
 
@@ -80,7 +81,7 @@ TEST_CASE("A live device lists its adapters without a second enumeration", "[rhi
     REQUIRE(EnumerateAdapters(NullInfo(), &enumerated));
     REQUIRE(live.count == enumerated.count);
     for (u32 i = 0; i < live.count; ++i) {
-        CHECK(std::strcmp(live.items[i].id, enumerated.items[i].id) == 0);
+        CHECK(CStrCompare(live.items[i].id, enumerated.items[i].id) == 0);
         CHECK(live.items[i].suitable == enumerated.items[i].suitable);
     }
 }
@@ -92,7 +93,7 @@ TEST_CASE("Adapter ids are identical across enumerations", "[rhi][adapter]") {
     REQUIRE(EnumerateAdapters(NullInfo(), &b));
     REQUIRE(a.count == b.count);
     for (u32 i = 0; i < a.count; ++i) {
-        CHECK(std::strcmp(a.items[i].id, b.items[i].id) == 0);
+        CHECK(CStrCompare(a.items[i].id, b.items[i].id) == 0);
     }
 }
 
@@ -114,8 +115,8 @@ TEST_CASE("MatchAdapter finds an adapter by id, index or name", "[rhi][adapter]"
 TEST_CASE("MatchAdapter accepts a LUID, in either case, and only as all 16 digits", "[rhi][adapter]") {
     AdapterList list;
     REQUIRE(EnumerateAdapters(NullInfo(), &list));
-    CHECK(std::strcmp(list.items[0].luid, "00000000000a0001") == 0);
-    CHECK(std::strcmp(list.items[1].luid, "00000000000a0002") == 0);
+    CHECK(CStrCompare(list.items[0].luid, "00000000000a0001") == 0);
+    CHECK(CStrCompare(list.items[1].luid, "00000000000a0002") == 0);
     CHECK(MatchAdapter(list.items, list.count, "00000000000a0002") == 1);
     CHECK(MatchAdapter(list.items, list.count, "00000000000A0001") == 0);
     CHECK(MatchAdapter(list.items, list.count, "00000000000a000") == -1);  // 15 digits: not a LUID, not a name
@@ -140,7 +141,7 @@ TEST_CASE("MatchAdapter accepts a LUID, in either case, and only as all 16 digit
     info.adapter = "00000000000a0002";
     DevicePtr device = CreateDevice(info);
     REQUIRE(device);
-    CHECK(std::strcmp(device->Adapter().id, "null-integrated") == 0);
+    CHECK(CStrCompare(device->Adapter().id, "null-integrated") == 0);
 }
 
 TEST_CASE("The null backend fails when no adapter is suitable", "[rhi][adapter]") {
@@ -157,7 +158,7 @@ TEST_CASE("An id wins over an index that spells the same digits", "[rhi][adapter
     NullAdaptersGuard guard;
     AdapterList list;
     DefaultNullAdapters(&list);
-    std::strcpy(list.items[0].id, "1"); // an id that looks like the index of the second adapter
+    CStrCopy(list.items[0].id, "1"); // an id that looks like the index of the second adapter
     SetNullAdapters(&list);
     AdapterList got;
     REQUIRE(EnumerateAdapters(NullInfo(), &got));
@@ -169,26 +170,26 @@ TEST_CASE("CreateDevice honors DeviceCreateInfo::adapter on the null backend", "
     SECTION("no request picks the first suitable adapter") {
         DevicePtr device = CreateDevice(info);
         REQUIRE(device != nullptr);
-        CHECK(std::strcmp(device->Adapter().id, "null-discrete") == 0);
+        CHECK(CStrCompare(device->Adapter().id, "null-discrete") == 0);
     }
     SECTION("by id") {
         info.adapter = "null-integrated";
         DevicePtr device = CreateDevice(info);
         REQUIRE(device != nullptr);
-        CHECK(std::strcmp(device->Adapter().id, "null-integrated") == 0);
+        CHECK(CStrCompare(device->Adapter().id, "null-integrated") == 0);
         CHECK(device->Adapter().kind == AdapterKind::Integrated);
     }
     SECTION("by name substring") {
         info.adapter = "integrated";
         DevicePtr device = CreateDevice(info);
         REQUIRE(device != nullptr);
-        CHECK(std::strcmp(device->Adapter().id, "null-integrated") == 0);
+        CHECK(CStrCompare(device->Adapter().id, "null-integrated") == 0);
     }
     SECTION("by index") {
         info.adapter = "1";
         DevicePtr device = CreateDevice(info);
         REQUIRE(device != nullptr);
-        CHECK(std::strcmp(device->Adapter().id, "null-integrated") == 0);
+        CHECK(CStrCompare(device->Adapter().id, "null-integrated") == 0);
     }
     SECTION("an unknown adapter fails and does not fall back") {
         AdapterQuietLog quiet;
@@ -213,7 +214,7 @@ TEST_CASE("The null backend rejects an unsuitable adapter by name", "[rhi][adapt
     info.adapter = nullptr; // "best" skips the unsuitable one
     DevicePtr device = CreateDevice(info);
     REQUIRE(device != nullptr);
-    CHECK(std::strcmp(device->Adapter().id, "null-integrated") == 0);
+    CHECK(CStrCompare(device->Adapter().id, "null-integrated") == 0);
 }
 
 TEST_CASE("Vulkan adapter ids come from vendor, device and UUID, not from the order", "[rhi][adapter][vulkan][select]") {
@@ -221,15 +222,15 @@ TEST_CASE("Vulkan adapter ids come from vendor, device and UUID, not from the or
     PhysicalDeviceInfo b = GoodGpu("GPU B", GpuKind::Integrated, 0x8086, 0x9a49, 40);
     const AdapterInfo ia = vulkan::MakeAdapterInfo(a, false);
     const AdapterInfo ib = vulkan::MakeAdapterInfo(b, false);
-    CHECK(std::strncmp(ia.id, "vk-10de-2504-", 13) == 0);
-    CHECK(std::strncmp(ib.id, "vk-8086-9a49-", 13) == 0);
-    CHECK(std::strcmp(ia.id, ib.id) != 0);
-    CHECK(std::strlen(ia.id) == 13 + 32);
+    CHECK(CStrCompareN(ia.id, "vk-10de-2504-", 13) == 0);
+    CHECK(CStrCompareN(ib.id, "vk-8086-9a49-", 13) == 0);
+    CHECK(CStrCompare(ia.id, ib.id) != 0);
+    CHECK(CStrLength(ia.id) == 13 + 32);
     // The same GPU described again gives the same id; a different UUID (two identical cards) gives a different one.
-    CHECK(std::strcmp(vulkan::MakeAdapterInfo(a, false).id, ia.id) == 0);
+    CHECK(CStrCompare(vulkan::MakeAdapterInfo(a, false).id, ia.id) == 0);
     PhysicalDeviceInfo twin = a;
     twin.uuid[15] ^= 0xFF;
-    CHECK(std::strcmp(vulkan::MakeAdapterInfo(twin, false).id, ia.id) != 0);
+    CHECK(CStrCompare(vulkan::MakeAdapterInfo(twin, false).id, ia.id) != 0);
 
     // Selection by id is independent of the position: a GPU added in front does not change what the id selects.
     PhysicalDeviceInfo before[2] = {a, b};
@@ -246,7 +247,7 @@ TEST_CASE("A Vulkan adapter with a valid deviceLUID reports it as high part then
     for (usize i = 0; i < 8; ++i) b.luid[i] = luid[i];
     b.luid_valid = true;
     const AdapterInfo ib = vulkan::MakeAdapterInfo(b, false);
-    CHECK(std::strcmp(ib.luid, "0000000212345678") == 0);
+    CHECK(CStrCompare(ib.luid, "0000000212345678") == 0);
     PhysicalDeviceInfo both[2] = {a, b};
     CHECK(vulkan::SelectPhysicalDeviceFor(both, 2, false, "0000000212345678", "test") == 1);
 }
@@ -267,7 +268,7 @@ TEST_CASE("Unsuitable Vulkan adapters carry a reason, and presentability follows
     info = vulkan::MakeAdapterInfo(old, false);
     CHECK_FALSE(info.suitable);
     REQUIRE(info.unsuitable_reason != nullptr);
-    CHECK(std::strstr(info.unsuitable_reason, "1.3") != nullptr);
+    CHECK(CStrFind(info.unsuitable_reason, "1.3") != nullptr);
 
     PhysicalDeviceInfo no_present = gpu;
     no_present.families[0].present = false;
@@ -275,7 +276,7 @@ TEST_CASE("Unsuitable Vulkan adapters carry a reason, and presentability follows
     CHECK_FALSE(info.suitable);
     CHECK_FALSE(info.can_present);
     REQUIRE(info.unsuitable_reason != nullptr);
-    CHECK(std::strstr(info.unsuitable_reason, "present") != nullptr);
+    CHECK(CStrFind(info.unsuitable_reason, "present") != nullptr);
     CHECK(vulkan::MakeAdapterInfo(no_present, false).suitable);
 
     PhysicalDeviceInfo cpu = GoodGpu("llvmpipe", GpuKind::Cpu, 0x10005, 0, 0);
@@ -308,7 +309,7 @@ TEST_CASE("Real adapters are listed and a device is created on each presentable 
     u32 tried = 0;
     for (u32 i = 0; i < list.count; ++i) {
         INFO("adapter " << list.items[i].name << " (" << list.items[i].id << ")");
-        CHECK(std::strcmp(list.items[i].id, again.items[i].id) == 0);
+        CHECK(CStrCompare(list.items[i].id, again.items[i].id) == 0);
         CHECK(list.items[i].id[0] != '\0');
         if (!list.items[i].suitable) {
             REQUIRE(list.items[i].unsuitable_reason != nullptr);
@@ -317,7 +318,7 @@ TEST_CASE("Real adapters are listed and a device is created on each presentable 
         DeviceCreateInfo create = info;
         create.adapter = list.items[i].id;
         // The explicit request wins over the environment.
-        const char* saved = std::getenv("ENGINE_RHI_GPU");
+        const char* saved = os::GetEnvironment("ENGINE_RHI_GPU");
         const std::string saved_copy = saved != nullptr ? saved : "";
         test_support::SetEnv("ENGINE_RHI_GPU", "no-such-gpu-name");
         DevicePtr device = CreateDevice(create);
@@ -327,7 +328,7 @@ TEST_CASE("Real adapters are listed and a device is created on each presentable 
             test_support::UnsetEnv("ENGINE_RHI_GPU");
         }
         REQUIRE(device != nullptr);
-        CHECK(std::strcmp(device->Adapter().id, list.items[i].id) == 0);
+        CHECK(CStrCompare(device->Adapter().id, list.items[i].id) == 0);
 
         gpu_test::RenderTarget target(device.Get(), 16, 16);
         REQUIRE(target.Valid());

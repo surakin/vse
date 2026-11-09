@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include <cstring>
+#include "cstr/cstr.h"
 #include "lang/limits.h"
 
 #include "font_support.h"
@@ -18,7 +18,7 @@ TextLayout CLay(Opened& o, const char* text, f32 max_width = 0, u32 size = 24) {
     LayoutOptions options;
     options.max_width = max_width;
     TextLayout layout;
-    REQUIRE(Layout(StringView(text, std::strlen(text)), style, options, &layout).Ok());
+    REQUIRE(Layout(StringView(text, CStrLength(text)), style, options, &layout).Ok());
     return layout;
 }
 

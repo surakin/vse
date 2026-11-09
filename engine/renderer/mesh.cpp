@@ -1,15 +1,15 @@
 #include "renderer/mesh.h"
 
 #include "sync/atomic.h"
-#include <cmath>
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
-#include <new>
+#include "lang/scalar.h"
+
+#include "cstr/format.h"
+#include "lang/new.h"
 
 #include "log/assert.h"
 #include "math/math_util.h"
 #include "renderer/renderer_log.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::renderer {
 
@@ -126,10 +126,10 @@ const char* MeshData::Set(const VertexLayoutData& layout, u32 position_offset, c
         u32 index;
         if (index_type == rhi::IndexType::UInt16) {
             u16 v;
-            std::memcpy(&v, static_cast<const byte*>(indices) + static_cast<usize>(i) * 2, 2);
+            MemCopy(&v, static_cast<const byte*>(indices) + static_cast<usize>(i) * 2, 2);
             index = v;
         } else {
-            std::memcpy(&index, static_cast<const byte*>(indices) + static_cast<usize>(i) * 4, 4);
+            MemCopy(&index, static_cast<const byte*>(indices) + static_cast<usize>(i) * 4, 4);
         }
         if (strip && index == (index_type == rhi::IndexType::UInt16 ? 0xFFFFu : 0xFFFFFFFFu)) {
             has_restart = true;
@@ -141,8 +141,8 @@ const char* MeshData::Set(const VertexLayoutData& layout, u32 position_offset, c
     }
     for (u32 v = 0; v < vertex_count; ++v) {
         f32 p[3];
-        std::memcpy(p, static_cast<const byte*>(vertices) + static_cast<usize>(v) * layout.stride + position_offset, sizeof(p));
-        if (!std::isfinite(p[0]) || !std::isfinite(p[1]) || !std::isfinite(p[2])) {
+        MemCopy(p, static_cast<const byte*>(vertices) + static_cast<usize>(v) * layout.stride + position_offset, sizeof(p));
+        if (!IsFinite(p[0]) || !IsFinite(p[1]) || !IsFinite(p[2])) {
             return "mesh: a vertex position is not finite";
         }
     }
@@ -152,8 +152,8 @@ const char* MeshData::Set(const VertexLayoutData& layout, u32 position_offset, c
     if (!v.TryResizeUninitialized(vertex_bytes) || !ix.TryResizeUninitialized(index_bytes)) {
         return "mesh: out of memory";
     }
-    std::memcpy(v.Data(), vertices, vertex_bytes);
-    std::memcpy(ix.Data(), indices, index_bytes);
+    MemCopy(v.Data(), vertices, vertex_bytes);
+    MemCopy(ix.Data(), indices, index_bytes);
     vertices_ = static_cast<Vector<byte>&&>(v);
     indices_ = static_cast<Vector<byte>&&>(ix);
     vertex_count_ = vertex_count;
@@ -171,11 +171,11 @@ u32 MeshData::IndexAt(u32 i) const {
     ENGINE_ASSERT(i < index_count_, "MeshData::IndexAt: index out of range");
     if (index_type_ == rhi::IndexType::UInt16) {
         u16 v;
-        std::memcpy(&v, indices_.Data() + static_cast<usize>(i) * 2, 2);
+        MemCopy(&v, indices_.Data() + static_cast<usize>(i) * 2, 2);
         return v;
     }
     u32 v;
-    std::memcpy(&v, indices_.Data() + static_cast<usize>(i) * 4, 4);
+    MemCopy(&v, indices_.Data() + static_cast<usize>(i) * 4, 4);
     return v;
 }
 
@@ -236,7 +236,7 @@ void SetVertex(StandardVertex* v, const Vec3& position, const Vec3& normal, cons
     v->uv[1] = w;
 }
 
-bool Positive(f32 v) { return std::isfinite(v) && v > 0.0f; }
+bool Positive(f32 v) { return IsFinite(v) && v > 0.0f; }
 
 } // namespace
 
@@ -495,7 +495,7 @@ const char* ListToStrip(const MeshData& list, StripJoin join, MeshData* out) {
             edges[t * 3 + e] = {(static_cast<u64>(v[e]) << 32) | v[(e + 1) % 3], t, v[(e + 2) % 3]};
         }
     }
-    std::qsort(edges, static_cast<usize>(triangles) * 3, sizeof(DirectedEdge), &CompareEdges);
+    SortRaw(edges, static_cast<usize>(triangles) * 3, sizeof(DirectedEdge), &CompareEdges);
 
     auto find = [&](u32 from, u32 to) -> const DirectedEdge* {
         const u64 key = (static_cast<u64>(from) << 32) | to;
@@ -576,7 +576,7 @@ void GpuMesh::MoveFrom(GpuMesh& other) {
     if (source_.borrowed == &other.owned_) {
         source_.borrowed = &owned_;
     }
-    std::memcpy(name_, other.name_, sizeof(name_));
+    MemCopy(name_, other.name_, sizeof(name_));
     recreatable_ = other.recreatable_;
     registration_.Adopt(&other.registration_, this);
     device_ = other.device_;
@@ -662,7 +662,7 @@ bool GpuMesh::MakeRecreatable(DeviceResources* resources, const Source& source, 
     ENGINE_ASSERT(Valid(), "GpuMesh::MakeRecreatable: the mesh is empty");
     ENGINE_ASSERT(source.borrowed != nullptr || source.load != nullptr, "GpuMesh::MakeRecreatable: no source");
     source_ = source;
-    std::snprintf(name_, sizeof(name_), "%s", debug_name != nullptr ? debug_name : "mesh");
+    FormatTo(name_, sizeof(name_), "%s", debug_name != nullptr ? debug_name : "mesh");
     recreatable_ = true;
     if (!registration_.Attach(resources, this, tiers::kMeshes)) {
         recreatable_ = false;

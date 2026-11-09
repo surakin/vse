@@ -1,5 +1,5 @@
 #include "sync/atomic.h"
-#include <cstdlib>
+#include "os/console.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -85,7 +85,7 @@ TEST_CASE("parallel_for honors ENGINE_JOB_THREADS=3 via the default scheduler co
         engine_test::Text saved = engine_test::MakeText();
         bool had;
         EnvRestore() {
-            const char* old = std::getenv("ENGINE_JOB_THREADS");
+            const char* old = os::GetEnvironment("ENGINE_JOB_THREADS");
             had = old != nullptr;
             if (had) saved = engine_test::MakeText(StringView(old));
         }

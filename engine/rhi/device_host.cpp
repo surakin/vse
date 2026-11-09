@@ -1,7 +1,6 @@
 #include "rhi/device_host.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
 
 #include "debug/crash_state.h"
 #include "log/assert.h"
@@ -20,13 +19,13 @@ DeviceHost::~DeviceHost() {
 }
 
 void DeviceHost::SetError(const char* text) {
-    std::snprintf(error_, sizeof(error_), "%s", text);
+    FormatTo(error_, sizeof(error_), "%s", text);
     RhiLog(LogVerbosity::Error, "DeviceHost: %s", error_);
 }
 
 void DeviceHost::PublishCrashState() {
     char text[64];
-    std::snprintf(text, sizeof(text), "epoch %u, %u reset(s)", Epoch(), reset_count_);
+    FormatTo(text, sizeof(text), "epoch %u, %u reset(s)", Epoch(), reset_count_);
     debug::SetCrashStateText("rhi_device", device_ ? text : "none");
 }
 
@@ -122,7 +121,7 @@ bool DeviceHost::CreateInternal(const DeviceCreateInfo& info, const SwapchainDes
         pick->created = true;
         if (!pick->observer->OnDeviceCreated(device_.Get(), device_->Epoch())) {
             char text[128];
-            std::snprintf(text, sizeof(text), "'%s' could not rebuild its device objects", pick->observer->ObserverName());
+            FormatTo(text, sizeof(text), "'%s' could not rebuild its device objects", pick->observer->ObserverName());
             SetError(text);
             // The failing observer released whatever it made; mark it created so it is released once more (harmless).
             ReleaseObservers();

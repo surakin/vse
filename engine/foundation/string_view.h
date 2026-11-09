@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include "types.h"
 
@@ -28,7 +28,7 @@ public:
     /// Creates a view of a NUL-terminated string, excluding the terminator.
     ///
     /// Param c_str: NUL-terminated string; must not be null.
-    StringView(const char* c_str) : data_(c_str), length_(strlen(c_str)) {}
+    StringView(const char* c_str) : data_(c_str), length_(CStrLength(c_str)) {}
 
     /// Returns the pointer to the first char (not necessarily NUL-terminated).
     const char* Data() const { return data_; }

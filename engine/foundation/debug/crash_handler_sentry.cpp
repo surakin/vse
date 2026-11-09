@@ -19,9 +19,8 @@
 #include "unity/windows_disable.h"
 
 #include "sync/atomic.h"
-#include <cstdarg>
-#include <cstdio>
-#include <cstring>
+#include "cstr/varargs.h"
+#include "cstr/format.h"
 #include "sync/mutex.h"
 #include "build_defs.h"
 
@@ -47,7 +46,7 @@ void SaveEnvelope(sentry_envelope_t* envelope, void*) {
     char name[37];
     sentry_uuid_as_string(&id, name);
     char path[os::kMaxPathBytes];
-    const int length = std::snprintf(path, sizeof(path), "%s/%s.envelope", g_saved_directory, name);
+    const int length = FormatTo(path, sizeof(path), "%s/%s.envelope", g_saved_directory, name);
     if (length > 0 && static_cast<usize>(length) < sizeof(path)) {
         if (sentry_envelope_write_to_file(envelope, path) != 0) {
             Log(LogCrash, LogVerbosity::Warn, "a crash dump from an earlier run could not be saved");
@@ -57,9 +56,9 @@ void SaveEnvelope(sentry_envelope_t* envelope, void*) {
 }
 
 // sentry-native prints its own messages (to stderr by default). They go to the engine log instead, at a matching level.
-void RouteSentryLog(sentry_level_t level, const char* message, va_list args, void*) {
+void RouteSentryLog(sentry_level_t level, const char* message, VarArgs args, void*) {
     char text[512];
-    std::vsnprintf(text, sizeof(text), message, args);
+    VFormatTo(text, sizeof(text), message, args);
     // With no server address, which is the point, the library complains about it on every start. Not a problem here.
     if (StringView(text).Contains(StringView("DSN"))) {
         return;
@@ -208,12 +207,12 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
     }
     // The report text goes next to the dump, and into the envelope with it.
     if (options.report_file != nullptr && options.report_file[0] != '\0') {
-        const int n = std::snprintf(g_report_path, sizeof(g_report_path), "%s", options.report_file);
+        const int n = FormatTo(g_report_path, sizeof(g_report_path), "%s", options.report_file);
         if (n < 0 || static_cast<usize>(n) >= sizeof(g_report_path)) {
             g_report_path[0] = '\0';
         }
     } else {
-        const int n = std::snprintf(g_report_path, sizeof(g_report_path), "%s/crash-report.txt", directory);
+        const int n = FormatTo(g_report_path, sizeof(g_report_path), "%s/crash-report.txt", directory);
         if (n < 0 || static_cast<usize>(n) >= sizeof(g_report_path)) {
             g_report_path[0] = '\0';
         }
@@ -266,7 +265,7 @@ CrashHandlerResult InstallCrashHandler(const CrashHandlerOptions& options) {
             SetCoreDumpDescription(post_mortem.destination);
         } else {
             char text[kPostMortemTextBytes];
-            std::snprintf(text, sizeof(text), "none will be written: %.200s", post_mortem.note[0] != '\0' ? post_mortem.note : "not supported here");
+            FormatTo(text, sizeof(text), "none will be written: %.200s", post_mortem.note[0] != '\0' ? post_mortem.note : "not supported here");
             SetCoreDumpDescription(text);
             Log(LogCrash, LogVerbosity::Warn, StringView(post_mortem.note));
         }

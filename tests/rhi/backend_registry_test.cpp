@@ -1,8 +1,8 @@
 // The RHI backend registry (Phase 13 Day 162): backends register explicitly, CreateDevice and EnumerateAdapters dispatch through
 // the registry, Auto picks the available backend of highest rank, and a backend the program never registered fails loudly.
 // Each test that empties the registry leaves it to tests/support/register_backends.cpp to fill again before the next test.
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -51,7 +51,7 @@ bool EnumerateFakeB(const DeviceCreateInfo& info, AdapterList* out) {
 
 bool FakeBAvailable(char* reason, usize reason_size) {
     if (!g_b_available) {
-        std::snprintf(reason, reason_size, "the fake driver is switched off");
+        FormatTo(reason, reason_size, "the fake driver is switched off");
     }
     return g_b_available;
 }
@@ -161,10 +161,10 @@ TEST_CASE("A backend that is registered but unavailable is refused with its own 
     g_b_available = false;
     char reason[256] = {};
     CHECK(ResolveBackend(Backend::Dx12, reason, sizeof(reason)) == nullptr);
-    CHECK(std::strstr(reason, "fake-b backend is not available here") != nullptr);
-    CHECK(std::strstr(reason, "the fake driver is switched off") != nullptr);
+    CHECK(CStrFind(reason, "fake-b backend is not available here") != nullptr);
+    CHECK(CStrFind(reason, "the fake driver is switched off") != nullptr);
     CHECK(PickAutoBackend(reason, sizeof(reason)) == nullptr);
-    CHECK(std::strstr(reason, "the fake driver is switched off") != nullptr);
+    CHECK(CStrFind(reason, "the fake driver is switched off") != nullptr);
     char why[160] = {};
     CHECK_FALSE(BackendAvailable(*FindBackend(Backend::Dx12), why, sizeof(why)));
     CHECK(StringView(why) == "the fake driver is switched off");
@@ -182,12 +182,12 @@ TEST_CASE("A backend this program never registered fails loudly, never as a miss
     Reset reset;
     char reason[256] = {};
     CHECK(ResolveBackend(Backend::Vulkan, reason, sizeof(reason)) == nullptr);
-    CHECK(std::strstr(reason, "the vulkan backend is not registered in this program") != nullptr);
-    CHECK(std::strstr(reason, "rhi::RegisterCompiledBackends") != nullptr);
+    CHECK(CStrFind(reason, "the vulkan backend is not registered in this program") != nullptr);
+    CHECK(CStrFind(reason, "rhi::RegisterCompiledBackends") != nullptr);
     CHECK(ResolveBackend(Backend::Null, reason, sizeof(reason)) == nullptr);
-    CHECK(std::strstr(reason, "the null backend is not registered") != nullptr);
+    CHECK(CStrFind(reason, "the null backend is not registered") != nullptr);
     CHECK(PickAutoBackend(reason, sizeof(reason)) == nullptr);
-    CHECK(std::strstr(reason, "no backend that auto may pick is registered") != nullptr);
+    CHECK(CStrFind(reason, "no backend that auto may pick is registered") != nullptr);
 
     const bool was = LogRhi.Enabled();
     LogRhi.SetEnabled(false);

@@ -3,7 +3,7 @@
 #include "log/log.h"
 #include "os/os.h"
 
-#include <cstdio>
+#include "cstr/format.h"
 
 namespace engine_placeholder::os {
 
@@ -11,11 +11,11 @@ PFN_vkVoidFunction ProbeVulkanCreateInstance() {
     char line[96];
     DynamicLibraryHandle vulkan = LoadLibrary(StringView(VulkanLoaderName()));
     if (vulkan == nullptr) {
-        std::snprintf(line, sizeof(line), "GPU driver probe: failed to load %s", VulkanLoaderName());
+        FormatTo(line, sizeof(line), "GPU driver probe: failed to load %s", VulkanLoaderName());
         Log(LogPlatform, LogVerbosity::Error, StringView(line));
         return nullptr;
     }
-    std::snprintf(line, sizeof(line), "GPU driver probe: loaded %s", VulkanLoaderName());
+    FormatTo(line, sizeof(line), "GPU driver probe: loaded %s", VulkanLoaderName());
     Log(LogPlatform, LogVerbosity::Info, StringView(line));
 
     void* symbol = GetSymbol(vulkan, "vkGetInstanceProcAddr");

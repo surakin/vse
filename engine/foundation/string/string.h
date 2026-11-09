@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstring>
-
 #include "containers/vector.h"
 #include "string_view.h"
 #include "types.h"

@@ -1,4 +1,3 @@
-#include <cstring>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -7,6 +6,7 @@
 #include "rhi/null/null_device.h"
 #include "rhi/rhi.h"
 #include "rhi/vulkan/vulkan_device.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -57,7 +57,7 @@ std::vector<unsigned char> VulkanTextureTestPattern(usize size, unsigned seed) {
 std::vector<unsigned char> Padded(const std::vector<unsigned char>& tight, usize rows, usize row_bytes, usize pitch) {
     std::vector<unsigned char> out(rows * pitch, 0xEE);
     for (usize r = 0; r < rows; ++r) {
-        std::memcpy(&out[r * pitch], &tight[r * row_bytes], row_bytes);
+        MemCopy(&out[r * pitch], &tight[r * row_bytes], row_bytes);
     }
     return out;
 }

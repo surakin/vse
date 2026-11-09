@@ -12,10 +12,12 @@
 #include <csignal>
 #include <fcntl.h>
 #include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "os/console.h"
+#include "cstr/cstr.h"
 #include <sys/types.h>
 #include <unistd.h>
+#include "cstr/format.h"
+#include "cstr/number.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -38,7 +40,7 @@ ENGINE_DEATH_TEST_FN(dt_linux_hang_with_grandchild) {
         }
     }
     char line[48];
-    const int n = std::snprintf(line, sizeof(line), "GRANDCHILD=%d\n", static_cast<int>(grandchild));
+    const int n = FormatTo(line, sizeof(line), "GRANDCHILD=%d\n", static_cast<int>(grandchild));
     os::Write(1, line, static_cast<usize>(n));
     for (;;) {
         usleep(10 * 1000);
@@ -48,7 +50,7 @@ ENGINE_DEATH_TEST_FN(dt_linux_hang_with_grandchild) {
 // Writes its own pid to the file named by the argument, then hangs.
 ENGINE_DEATH_TEST_FN(dt_linux_hang_report_pid) {
     char line[32];
-    const int n = std::snprintf(line, sizeof(line), "%d\n", static_cast<int>(getpid()));
+    const int n = FormatTo(line, sizeof(line), "%d\n", static_cast<int>(getpid()));
     const int fd = os::Open(argument, O_WRONLY | O_CREAT | O_TRUNC, 0600);
     os::Write(fd, line, static_cast<usize>(n));
     os::Close(fd);
@@ -88,9 +90,9 @@ TEST_CASE("A timeout kills the child's whole process group", "[death][debug][lin
     const ChildResult r = RunInChild("dt_linux_hang_with_grandchild", "", options);
     REQUIRE(r.timed_out);
     // The child's standard output starts with the test framework's own text; the pid follows the marker.
-    const char* marker = std::strstr(r.stdout_text, "GRANDCHILD=");
+    const char* marker = CStrFind(r.stdout_text, "GRANDCHILD=");
     REQUIRE(marker != nullptr);
-    const pid_t grandchild = static_cast<pid_t>(std::atoi(marker + std::strlen("GRANDCHILD=")));
+    const pid_t grandchild = static_cast<pid_t>(CStrToInt(marker + CStrLength("GRANDCHILD=")));
     REQUIRE(grandchild > 1);
     // The grandchild was killed with the group; give the kernel a moment to finish tearing it down.
     bool gone = false;
@@ -128,9 +130,9 @@ TEST_CASE("A child's own child dies with it when its parent is killed", "[death]
     ENGINE_REQUIRE_DEATH_TEST_SUPPORT();
     // The grandchild is in its own process group, so killing the child's group does not reach it: only the
     // parent-death signal the helper arms in every child does.
-    const char* tmp = std::getenv("TMPDIR");
+    const char* tmp = os::GetEnvironment("TMPDIR");
     char path[256];
-    std::snprintf(path, sizeof(path), "%s/engine-death-test-%d.pid", tmp != nullptr ? tmp : "/tmp", static_cast<int>(getpid()));
+    FormatTo(path, sizeof(path), "%s/engine-death-test-%d.pid", tmp != nullptr ? tmp : "/tmp", static_cast<int>(getpid()));
     unlink(path);
     ChildOptions options;
     options.timeout_ms = 800;

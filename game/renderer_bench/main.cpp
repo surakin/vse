@@ -10,9 +10,8 @@
 // objects; the device is idled after every frame, outside the timer, so the number is CPU work and not waiting for the GPU.
 
 #include "sync/atomic.h"
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "os/console.h"
+#include "cstr/cstr.h"
 
 #include "algorithm.h"
 #include "debug/program_setup.h"
@@ -41,6 +40,8 @@
 #include "ui/widgets/buttons.h"
 #include "ui/widgets/list_box.h"
 #include "types.h"
+#include "cstr/mem_ops.h"
+#include "cstr/number.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -83,7 +84,7 @@ struct Options {
 // ---- graph: build + compile time against the pass count ----
 
 void BenchGraph() {
-    std::printf("# graph: build + compile of a chain of N passes, each reading the previous pass's transient texture\n");
+    os::Print("# graph: build + compile of a chain of N passes, each reading the previous pass's transient texture\n");
     const u32 counts[] = {10, 100, 1000};
     for (u32 passes : counts) {
         ArenaAllocator arena(64u << 20);
@@ -111,14 +112,14 @@ void BenchGraph() {
             }
             const double t1 = Now();
             if (!graph.Compile()) {
-                std::printf("graph: compile failed: %s\n", graph.Error(0));
+                os::Print("graph: compile failed: %s\n", graph.Error(0));
                 return;
             }
             const double t2 = Now();
             build.Add(t1 - t0);
             compile.Add(t2 - t1);
         }
-        std::printf("graph  passes %5u  build %8.1f us  compile %8.1f us  (%.2f us/pass total)\n", passes, build.Median() * 1e6, compile.Median() * 1e6,
+        os::Print("graph  passes %5u  build %8.1f us  compile %8.1f us  (%.2f us/pass total)\n", passes, build.Median() * 1e6, compile.Median() * 1e6,
                     (build.Median() + compile.Median()) * 1e6 / passes);
     }
 }
@@ -154,7 +155,7 @@ Run RunScene(const Options& o, u32 objects, u32 lights, bool use_jobs) {
     rhi::DevicePtr gpu = MakeDevice(o, &null_holder);
     rhi::Device* device = o.null_device ? static_cast<rhi::Device*>(null_holder.Get()) : gpu.Get();
     if (device == nullptr) {
-        std::printf("no device\n");
+        os::Print("no device\n");
         return run;
     }
     jobs::Scheduler::Config config;
@@ -211,7 +212,7 @@ Run RunScene(const Options& o, u32 objects, u32 lights, bool use_jobs) {
             run.created = true;
             run.ok = all_ok;
         } else {
-            std::printf("could not create the scene for %u objects\n", objects);
+            os::Print("could not create the scene for %u objects\n", objects);
         }
         device->WaitIdle();
         scene.Destroy();
@@ -223,16 +224,16 @@ Run RunScene(const Options& o, u32 objects, u32 lights, bool use_jobs) {
 }
 
 void BenchFrame(const Options& o) {
-    std::printf("# frame: CPU time of a whole frame at %ux%u, 300 point lights, device idled outside the timer\n", kWidth, kHeight);
+    os::Print("# frame: CPU time of a whole frame at %ux%u, 300 point lights, device idled outside the timer\n", kWidth, kHeight);
     const u32 counts[] = {1000, 10000, 50000};
     for (u32 objects : counts) {
         if (o.objects != 0 && o.objects != objects) continue;
         for (int j = 0; j < (o.single_only ? 1 : 2); ++j) {
             const Run r = RunScene(o, objects, 300, j == 1);
-            std::printf("frame  objects %6u  %-7s  median %8.3f ms  min %8.3f ms  per object %6.3f us  %s\n", objects, j == 0 ? "single" : "jobs",
+            os::Print("frame  objects %6u  %-7s  median %8.3f ms  min %8.3f ms  per object %6.3f us  %s\n", objects, j == 0 ? "single" : "jobs",
                         r.cpu_median_ms, r.cpu_min_ms, r.cpu_median_ms * 1e3 / objects, r.ok ? "ok" : "NOT OK");
             if (j == 0) {
-                std::printf("       visible %u  drawn %u  draw calls %u  pipeline binds %u  material binds %u  objects per draw %.2f\n", r.gbuffer.visible,
+                os::Print("       visible %u  drawn %u  draw calls %u  pipeline binds %u  material binds %u  objects per draw %.2f\n", r.gbuffer.visible,
                             r.gbuffer.drawn_objects, r.gbuffer.draws, r.gbuffer.pipeline_binds, r.gbuffer.material_binds,
                             r.gbuffer.draws != 0 ? static_cast<double>(r.gbuffer.drawn_objects) / r.gbuffer.draws : 0.0);
             }
@@ -241,17 +242,17 @@ void BenchFrame(const Options& o) {
 }
 
 void BenchLights(const Options& o) {
-    std::printf("# lights: CPU time of a frame of 1000 objects as the point light count grows\n");
+    os::Print("# lights: CPU time of a frame of 1000 objects as the point light count grows\n");
     const u32 counts[] = {0, 100, 1000, 4000, 16000};
     double base = 0;
     for (u32 lights : counts) {
         const Run r = RunScene(o, 1000, lights, false);
         if (!r.created || !r.ok) {
-            std::printf("lights %6u  NOT OK, stopping\n", lights);
+            os::Print("lights %6u  NOT OK, stopping\n", lights);
             return;
         }
         if (lights == 0) base = r.cpu_median_ms;
-        std::printf("lights %6u  median %8.3f ms  volume draws %5u  per light (over 0 lights) %7.3f us\n", lights, r.cpu_median_ms, r.volume_draws,
+        os::Print("lights %6u  median %8.3f ms  volume draws %5u  per light (over 0 lights) %7.3f us\n", lights, r.cpu_median_ms, r.volume_draws,
                     lights != 0 ? (r.cpu_median_ms - base) * 1e3 / lights : 0.0);
     }
 }
@@ -261,24 +262,24 @@ void BenchPool(const Options& o) {
     p.frames = 100;
     const Run r = RunScene(p, 1000, 300, false);
     if (!r.created || !r.ok) {
-        std::printf("pool   NOT OK\n");
+        os::Print("pool   NOT OK\n");
         return;
     }
     const u32 uses = r.pool.textures_created + r.pool.texture_reuses;
-    std::printf("# pool: after %llu frames of the deferred pipeline\n", static_cast<unsigned long long>(r.frames));
-    std::printf("pool   textures created %u  reused %u  hit rate %.1f%%  destroyed %u  live %u\n", r.pool.textures_created, r.pool.texture_reuses,
+    os::Print("# pool: after %llu frames of the deferred pipeline\n", static_cast<unsigned long long>(r.frames));
+    os::Print("pool   textures created %u  reused %u  hit rate %.1f%%  destroyed %u  live %u\n", r.pool.textures_created, r.pool.texture_reuses,
                 uses != 0 ? 100.0 * r.pool.texture_reuses / uses : 0.0, r.pool.textures_destroyed, r.pool.textures_live);
 }
 
 // ---- text: layout, atlas and quad building (CPU only; the null device stands in for the renderer) ----
 
 void BenchText() {
-    std::printf("# text: Liberation Sans, CPU work, no GPU (layout, atlas lookups, quad building)\n");
+    os::Print("# text: Liberation Sans, CPU work, no GPU (layout, atlas lookups, quad building)\n");
     text::FontLibrary library;
     text::Font font;
     const char* file = RENDERER_DEMO_FONT_FILE;
-    if (!library.Initialize().Ok() || !text::Font::OpenFile(library, io::Path(StringView(file, std::strlen(file))), text::FontOptions{}, &font).Ok()) {
-        std::printf("text   NOT OK: the font did not open\n");
+    if (!library.Initialize().Ok() || !text::Font::OpenFile(library, io::Path(StringView(file, CStrLength(file))), text::FontOptions{}, &font).Ok()) {
+        os::Print("text   NOT OK: the font did not open\n");
         return;
     }
     // 1000 characters of mixed text (letters, spaces, digits, punctuation, a few accents), about 6 characters per word.
@@ -305,7 +306,7 @@ void BenchText() {
             plain.Add(t1 - t0);
             wrap.Add(t2 - t1);
         }
-        std::printf("text   layout %2u px  1000 chars: one line %8.1f us, wrapped at 600 px %8.1f us  (%zu glyphs)\n", size, plain.Median() * 1e6, wrap.Median() * 1e6,
+        os::Print("text   layout %2u px  1000 chars: one line %8.1f us, wrapped at 600 px %8.1f us  (%zu glyphs)\n", size, plain.Median() * 1e6, wrap.Median() * 1e6,
                     static_cast<size_t>(layout.glyphs.Size()));
     }
 
@@ -331,7 +332,7 @@ void BenchText() {
             }
         }
         const double h1 = Now();
-        std::printf("text   atlas 32 px  miss %6.2f us/glyph (%u glyphs)  hit %6.3f us/glyph  dirty rectangle of the %u glyphs %llu bytes (%llu per glyph); a page upload is %u bytes\n",
+        os::Print("text   atlas 32 px  miss %6.2f us/glyph (%u glyphs)  hit %6.3f us/glyph  dirty rectangle of the %u glyphs %llu bytes (%llu per glyph); a page upload is %u bytes\n",
                     (m1 - m0) * 1e6 / added, added, (h1 - h0) * 1e6 / hits, added, static_cast<unsigned long long>(dirty_bytes),
                     static_cast<unsigned long long>(dirty_bytes / (added != 0 ? added : 1)), 1024u * 1024u);
     }
@@ -342,7 +343,7 @@ void BenchText() {
         text::GlyphAtlas atlas;
         renderer::TextRenderer renderer_text;
         if (!renderer_text.Create(device.Get(), &atlas, renderer::TextRendererDesc{}, nullptr)) {
-            std::printf("text   NOT OK: the text renderer was not created\n");
+            os::Print("text   NOT OK: the text renderer was not created\n");
             return;
         }
         text::TextStyle style;
@@ -362,7 +363,7 @@ void BenchText() {
             renderer_text.Draw(text_view, style, text::LayoutOptions{}, 0, 0);
             draw.Add(Now() - t2);
         }
-        std::printf("text   quads 32 px  %zu glyphs: Add of a laid-out text %8.1f us (%.3f us/1000 glyphs), Draw (layout + Add) %8.1f us\n", static_cast<size_t>(layout.glyphs.Size()),
+        os::Print("text   quads 32 px  %zu glyphs: Add of a laid-out text %8.1f us (%.3f us/1000 glyphs), Draw (layout + Add) %8.1f us\n", static_cast<size_t>(layout.glyphs.Size()),
                     add.Median() * 1e6, add.Median() * 1e6 * 1000.0 / static_cast<double>(layout.glyphs.Size()), draw.Median() * 1e6);
         renderer_text.Destroy();
     }
@@ -398,7 +399,7 @@ void BenchUiTree(u32 count) {
     const u32 rows = (count + 9) / 10;
     ui::Harness h(1280, static_cast<f32>(rows) * 28.0f + 8.0f, 1.0f, StringView(RENDERER_DEMO_FONT_FILE));
     if (!h.Valid()) {
-        std::printf("ui     NOT OK: the font did not open\n");
+        os::Print("ui     NOT OK: the font did not open\n");
         return;
     }
     const double b0 = Now();
@@ -434,7 +435,7 @@ void BenchUiTree(u32 count) {
         paint.Add(Now() - t2);
     }
     const ui::DrawList& list = h.List();
-    std::printf("ui     %5u widgets: build tree %8.2f ms, first frame %8.2f ms, relayout + repaint %8.2f ms, repaint only %8.2f ms  (%zu vertices, %zu indices)\n", count,
+    os::Print("ui     %5u widgets: build tree %8.2f ms, first frame %8.2f ms, relayout + repaint %8.2f ms, repaint only %8.2f ms  (%zu vertices, %zu indices)\n", count,
                 (b1 - b0) * 1e3, (b2 - b1) * 1e3, layout.Median() * 1e3, paint.Median() * 1e3, static_cast<size_t>(list.vertices.Size()), static_cast<size_t>(list.indices.Size()));
 
     // Steady state: an idle frame (nothing dirty) and a repaint frame, after the warm-up above.
@@ -449,11 +450,11 @@ void BenchUiTree(u32 count) {
     }
     const long repaint = g_new_count.Load();
     g_counting.Store(false);
-    std::printf("ui     %5u widgets: allocations over 20 idle frames %ld, over 20 repaint frames %ld\n", count, idle, repaint);
+    os::Print("ui     %5u widgets: allocations over 20 idle frames %ld, over 20 repaint frames %ld\n", count, idle, repaint);
 }
 
 void BenchUi() {
-    std::printf("# ui: Liberation Sans, CPU work on the offscreen harness and the null device (no GPU)\n");
+    os::Print("# ui: Liberation Sans, CPU work on the offscreen harness and the null device (no GPU)\n");
     for (u32 count : {1000u, 5000u}) BenchUiTree(count);
 
     // A list box with 100,000 items, scrolled a little every frame.
@@ -488,7 +489,7 @@ void BenchUi() {
             frame.Add(Now() - t0);
         }
         g_counting.Store(false);
-        std::printf("ui     list box, 100000 items, scrolling inside the laid-out rows: %8.1f us per frame, %ld allocations over 200 frames  (%zu vertices)\n", frame.Median() * 1e6,
+        os::Print("ui     list box, 100000 items, scrolling inside the laid-out rows: %8.1f us per frame, %ld allocations over 200 frames  (%zu vertices)\n", frame.Median() * 1e6,
                     g_new_count.Load(), static_cast<size_t>(h.List().vertices.Size()));
         // Scrolling by whole rows brings new rows into view (their text is laid out the first time).
         Samples scroll;
@@ -498,7 +499,7 @@ void BenchUi() {
             h.Advance(0.016f);
             scroll.Add(Now() - t0);
         }
-        std::printf("ui     list box, 100000 items, three new rows per frame: %8.1f us per frame\n", scroll.Median() * 1e6);
+        os::Print("ui     list box, 100000 items, three new rows per frame: %8.1f us per frame\n", scroll.Median() * 1e6);
     }
 
     // The UI renderer's pass on the null device: AddToGraph + graph execute (recording only).
@@ -523,7 +524,7 @@ void BenchUi() {
         GlyphAtlasTexture pages;
         UiRenderer ui_renderer;
         if (!pages.Create(device.Get(), &h.Atlas(), nullptr) || !ui_renderer.Create(device.Get(), &pages, UiRendererDesc{}, nullptr)) {
-            std::printf("ui     NOT OK: the UI renderer was not created\n");
+            os::Print("ui     NOT OK: the UI renderer was not created\n");
             return;
         }
         TransientPool pool(device.Get(), TransientPoolDesc{});
@@ -552,7 +553,7 @@ void BenchUi() {
             device->WaitIdle();
             pool.EndFrame();
         }
-        std::printf("ui     renderer: graph build + execute of one UI pass over %zu vertices (1000 buttons): %8.1f us\n", static_cast<size_t>(h.List().vertices.Size()),
+        os::Print("ui     renderer: graph build + execute of one UI pass over %zu vertices (1000 buttons): %8.1f us\n", static_cast<size_t>(h.List().vertices.Size()),
                     record.Median() * 1e6);
         device->DestroyTexture(target);
         ui_renderer.Release();
@@ -562,16 +563,16 @@ void BenchUi() {
 // Parses a whole non-negative number; false for anything else.
 bool ParseCount(const char* text, u32* out, u32 max) {
     char* end = nullptr;
-    const unsigned long v = std::strtoul(text, &end, 10);
+    const unsigned long v = CStrToULong(text, &end, 10);
     if (end == text || *end != '\0' || text[0] == '-' || v > max) return false;
     *out = static_cast<u32>(v);
     return true;
 }
 
-bool Section(const Options& o, const char* name) { return std::strcmp(o.section, "all") == 0 || std::strcmp(o.section, name) == 0; }
+bool Section(const Options& o, const char* name) { return CStrCompare(o.section, "all") == 0 || CStrCompare(o.section, name) == 0; }
 
 int Usage(const char* program) {
-    std::fprintf(stderr, "usage: %s [--section graph|frame|lights|pool|text|ui|all] [--rhi null|vulkan|dx12|auto] [--frames 1-500] [--threads 0-64] [--objects 1000|10000|50000] [--single]\n",
+    os::PrintError("usage: %s [--section graph|frame|lights|pool|text|ui|all] [--rhi null|vulkan|dx12|auto] [--frames 1-500] [--threads 0-64] [--objects 1000|10000|50000] [--single]\n",
                  program);
     return 2;
 }
@@ -588,19 +589,19 @@ int main(int argc, char** argv) {
             continue; // --crash-handler=... and --crash-test=... are handled by StartProgramDebugging
         }
         const bool has_value = i + 1 < argc;
-        if (std::strcmp(argv[i], "--section") == 0 && has_value) {
+        if (CStrCompare(argv[i], "--section") == 0 && has_value) {
             o.section = argv[++i];
             if (!Section(o, "graph") && !Section(o, "frame") && !Section(o, "lights") && !Section(o, "pool") && !Section(o, "text") && !Section(o, "ui")) return Usage(argv[0]);
-        } else if ((std::strcmp(argv[i], "--rhi") == 0 || std::strcmp(argv[i], "--device") == 0) && has_value) {
+        } else if ((CStrCompare(argv[i], "--rhi") == 0 || CStrCompare(argv[i], "--device") == 0) && has_value) {
             if (!demo::ParseRhiBackend(argv[++i], &o.backend)) return Usage(argv[0]);
             o.null_device = o.backend == rhi::Backend::Null;
-        } else if (std::strcmp(argv[i], "--frames") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--frames") == 0 && has_value) {
             if (!ParseCount(argv[++i], &o.frames, 500) || o.frames == 0) return Usage(argv[0]);
-        } else if (std::strcmp(argv[i], "--objects") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--objects") == 0 && has_value) {
             if (!ParseCount(argv[++i], &o.objects, 50000) || (o.objects != 1000 && o.objects != 10000 && o.objects != 50000)) return Usage(argv[0]);
-        } else if (std::strcmp(argv[i], "--single") == 0) {
+        } else if (CStrCompare(argv[i], "--single") == 0) {
             o.single_only = true;
-        } else if (std::strcmp(argv[i], "--threads") == 0 && has_value) {
+        } else if (CStrCompare(argv[i], "--threads") == 0 && has_value) {
             if (!ParseCount(argv[++i], &o.threads, 64)) return Usage(argv[0]);
         } else {
             return Usage(argv[0]);
@@ -610,10 +611,10 @@ int main(int argc, char** argv) {
         char why[256] = {};
         const rhi::BackendDescriptor* backend = rhi::ResolveBackend(o.backend, why, sizeof(why));
         if (backend == nullptr) {
-            std::fprintf(stderr, "renderer_bench: %s\n", why);
+            os::PrintError("renderer_bench: %s\n", why);
             return 1;
         }
-        std::printf("# backend %s\n", backend->name);
+        os::Print("# backend %s\n", backend->name);
     }
     if (Section(o, "graph")) BenchGraph();
     if (Section(o, "frame")) BenchFrame(o);
@@ -626,12 +627,12 @@ int main(int argc, char** argv) {
 
 void* operator new(usize n) {
     if (g_counting.Load(MemoryOrder::Relaxed)) g_new_count.FetchAdd(1, MemoryOrder::Relaxed);
-    void* p = std::malloc(n != 0 ? n : 1);
-    if (p == nullptr) std::abort();
+    void* p = MemAllocate(n != 0 ? n : 1);
+    if (p == nullptr) os::Abort();
     return p;
 }
 void* operator new[](usize n) { return operator new(n); }
-void operator delete(void* p) noexcept { std::free(p); }
-void operator delete(void* p, usize) noexcept { std::free(p); }
-void operator delete[](void* p) noexcept { std::free(p); }
-void operator delete[](void* p, usize) noexcept { std::free(p); }
+void operator delete(void* p) noexcept { MemFree(p); }
+void operator delete(void* p, usize) noexcept { MemFree(p); }
+void operator delete[](void* p) noexcept { MemFree(p); }
+void operator delete[](void* p, usize) noexcept { MemFree(p); }

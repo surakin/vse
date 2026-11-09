@@ -1,7 +1,6 @@
 #include "settings/config_text.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
 
 #include "string/utf8.h"
 
@@ -20,7 +19,7 @@ void AddProblem(ConfigProblem* list, u32* count, u32 line, u32 column, const cha
         ConfigProblem& p = list[*count];
         p.line = line;
         p.column = column;
-        std::snprintf(p.message, sizeof(p.message), "%s", message);
+        FormatTo(p.message, sizeof(p.message), "%s", message);
     }
     ++*count;
 }
@@ -281,7 +280,7 @@ void ConfigDocument::Parse(StringView text, ConfigReport* report) {
                     const i64 earlier = seen.Find(key);
                     if (earlier >= 0) {
                         char message[kMaxProblemMessageBytes + 1];
-                        std::snprintf(message, sizeof(message), "repeated key; the last one (this line) wins; first on line %u", static_cast<unsigned>(seen.Line(earlier)));
+                        FormatTo(message, sizeof(message), "repeated key; the last one (this line) wins; first on line %u", static_cast<unsigned>(seen.Line(earlier)));
                         AddProblem(rep->warnings, &rep->warning_count, line_number, static_cast<u32>(i + 1), message);
                         seen.Line(earlier) = line_number;
                     } else {

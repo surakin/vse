@@ -3,9 +3,9 @@
 // Text helpers for tests written against the engine's own types (Phase 10): an owned heap text, a mutable character
 // buffer, and a few builders, so a test never needs std::string or std::vector.
 
-#include <cstdarg>
+#include "cstr/varargs.h"
 #include "lang/initializer_list.h"
-#include <cstdio>
+#include "cstr/format.h"
 
 #include "containers/vector.h"
 #include "debug/compiler.h"
@@ -35,20 +35,20 @@ inline Text Repeated(usize count, char c) {
 /// printf-style construction.
 inline Text Format(const char* format, ...) ENGINE_PRINTF_FORMAT(1, 2);
 inline Text Format(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    va_list again;
-    va_copy(again, args);
-    const int needed = std::vsnprintf(nullptr, 0, format, args);
-    va_end(args);
+    engine_placeholder::VarArgs args;
+    ENGINE_VA_START(args, format);
+    engine_placeholder::VarArgs again;
+    ENGINE_VA_COPY(again, args);
+    const int needed = engine_placeholder::VFormatTo(nullptr, 0, format, args);
+    ENGINE_VA_END(args);
     Text out = MakeText();
     if (needed > 0) {
         Vector<char> buffer;
         buffer.Resize(static_cast<usize>(needed) + 1);
-        std::vsnprintf(buffer.Data(), buffer.Size(), format, again);
+        engine_placeholder::VFormatTo(buffer.Data(), buffer.Size(), format, again);
         out.AppendRawBytes(buffer.Data(), static_cast<usize>(needed));
     }
-    va_end(again);
+    ENGINE_VA_END(again);
     return out;
 }
 

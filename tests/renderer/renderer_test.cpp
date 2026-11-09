@@ -4,7 +4,6 @@
 #include "sync/atomic.h"
 #include <chrono>
 #include <cstdlib>
-#include <cstring>
 #include "sync/thread.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -18,6 +17,9 @@
 #include "jobs/scheduler.h"
 #include "renderer/renderer.h"
 #include "rhi/null/null_device.h"
+#include "cstr/mem_ops.h"
+#include "os/console.h"
+#include "lang/scalar.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -447,7 +449,7 @@ rhi::DevicePtr MakeGpuDevice(rhi::Backend backend, u32 fail_allocations_from = 0
 
 bool GpuAvailable(rhi::Device* device, rhi::Backend backend) {
     if (device != nullptr) return true;
-    const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
+    const char* required = os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
     if (required != nullptr && required[0] == '1') FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
     return false;
 }
@@ -504,12 +506,12 @@ TEST_CASE("Parallel recording gives the same pixels as serial recording", "[rend
         REQUIRE(serial.status == FrameStatus::Ok);
         REQUIRE(parallel.status == FrameStatus::Ok);
         CHECK((serial.pixels.Size() == parallel.pixels.Size() &&
-               std::memcmp(serial.pixels.Data(), parallel.pixels.Data(), serial.pixels.Size()) == 0));
+               MemCompare(serial.pixels.Data(), parallel.pixels.Data(), serial.pixels.Size()) == 0));
         // out = (a + a) + (c + c) = (0.2 + 0.6, 0.4 + 0.2, 0.1 + 0.4, 0 + 0) -> (204, 153, 128, 0) in 8 bits.
         const u8* px = &serial.pixels[(kSize / 2 * kSize + kSize / 2) * 4];
-        CHECK(std::abs(static_cast<int>(px[0]) - 204) <= 2);
-        CHECK(std::abs(static_cast<int>(px[1]) - 153) <= 2);
-        CHECK(std::abs(static_cast<int>(px[2]) - 128) <= 2);
+        CHECK(Abs(static_cast<int>(px[0]) - 204) <= 2);
+        CHECK(Abs(static_cast<int>(px[1]) - 153) <= 2);
+        CHECK(Abs(static_cast<int>(px[2]) - 128) <= 2);
         device.Reset();
     }
 }

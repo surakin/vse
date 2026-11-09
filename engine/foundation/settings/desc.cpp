@@ -1,12 +1,12 @@
 #include "settings/desc.h"
 #include "string/utf8.h"
 
-#include <charconv>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "cstr/number.h"
+#include "cstr/cstr.h"
 
 #include "log/assert.h"
+#include "cstr/format.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::settings {
 
@@ -80,7 +80,7 @@ bool Same(StringView a, const char* b) { return a == StringView(b); }
 char Lower(char c) { return c >= 'A' && c <= 'Z' ? static_cast<char>(c - 'A' + 'a') : c; }
 
 bool SameIgnoringCase(StringView a, const char* b) {
-    const usize n = std::strlen(b);
+    const usize n = CStrLength(b);
     if (a.Length() != n) return false;
     for (usize i = 0; i < n; ++i) {
         if (Lower(a[i]) != b[i]) return false;
@@ -150,9 +150,9 @@ ValueError ParseFloat(const SettingDesc& desc, StringView text, Value* out) {
     const char* begin = text.Data();
     const char* const end = text.Data() + text.Length();
     if (*begin == '+') ++begin;
-    f64 value = 0;
-    const std::from_chars_result parsed = std::from_chars(begin, end, value);
-    if (parsed.ec != std::errc() || parsed.ptr != end || begin == end || !(value == value) || value - value != 0.0) return ValueError::BadNumber;
+    const ParseDoubleResult parsed = ParseDoubleExact(begin, end);
+    f64 value = parsed.value;
+    if (!parsed.ok || parsed.end != end || begin == end || !(value == value) || value - value != 0.0) return ValueError::BadNumber;
     ValueError result = ValueError::None;
     if (value < desc.min_float || value > desc.max_float) {
         if (desc.policy == RangePolicy::Reject) return ValueError::OutOfRange;
@@ -308,15 +308,15 @@ usize FormatValue(const SettingDesc& desc, const Value& value, char* out, usize 
     char buffer[kMaxValueTextBytes];
     usize n = 0;
     switch (desc.type) {
-    case Type::Bool: n = static_cast<usize>(std::snprintf(buffer, sizeof(buffer), "%s", value.AsBool() ? "true" : "false")); break;
-    case Type::Int: n = static_cast<usize>(std::snprintf(buffer, sizeof(buffer), "%lld", static_cast<long long>(value.AsInt()))); break;
+    case Type::Bool: n = static_cast<usize>(FormatTo(buffer, sizeof(buffer), "%s", value.AsBool() ? "true" : "false")); break;
+    case Type::Int: n = static_cast<usize>(FormatTo(buffer, sizeof(buffer), "%lld", static_cast<long long>(value.AsInt()))); break;
     case Type::Float: {
         // The shortest text that reads back as the same number, locale-independent: plain decimals for ordinary
         // sizes (`100`, `1280`, `0.25`), an exponent only when that is shorter (`1e-30`).
-        const std::to_chars_result written = std::to_chars(buffer, buffer + sizeof(buffer) - 4, value.AsFloat());
-        n = static_cast<usize>(written.ptr - buffer);
+        const FormatShortestResult written = FormatShortest(buffer, buffer + sizeof(buffer) - 4, value.AsFloat());
+        n = static_cast<usize>(written.end - buffer);
         buffer[n] = '\0';
-        if (std::strpbrk(buffer, ".eE") == nullptr) { // "1" must not read back as an integer
+        if (CStrFindAny(buffer, ".eE") == nullptr) { // "1" must not read back as an integer
             buffer[n++] = '.';
             buffer[n++] = '0';
             buffer[n] = '\0';
@@ -326,7 +326,7 @@ usize FormatValue(const SettingDesc& desc, const Value& value, char* out, usize 
     case Type::Enum: {
         const u32 index = value.AsEnum();
         ENGINE_ASSERT(index < desc.enum_count, "settings::FormatValue: the enum index is outside the names");
-        n = static_cast<usize>(std::snprintf(buffer, sizeof(buffer), "%s", desc.enum_names[index]));
+        n = static_cast<usize>(FormatTo(buffer, sizeof(buffer), "%s", desc.enum_names[index]));
         break;
     }
     case Type::Text: {
@@ -337,7 +337,7 @@ usize FormatValue(const SettingDesc& desc, const Value& value, char* out, usize 
             if (c == '"' || c == '\\') { buffer[n++] = '\\'; buffer[n++] = c; }
             else if (c == '\n') { buffer[n++] = '\\'; buffer[n++] = 'n'; }
             else if (c == '\t') { buffer[n++] = '\\'; buffer[n++] = 't'; }
-            else if (static_cast<u8>(c) < 0x20 || c == 0x7f) n += static_cast<usize>(std::snprintf(buffer + n, 5, "\\x%02x", static_cast<unsigned>(static_cast<u8>(c))));
+            else if (static_cast<u8>(c) < 0x20 || c == 0x7f) n += static_cast<usize>(FormatTo(buffer + n, 5, "\\x%02x", static_cast<unsigned>(static_cast<u8>(c))));
             else buffer[n++] = c;
         }
         buffer[n++] = '"';
@@ -349,7 +349,7 @@ usize FormatValue(const SettingDesc& desc, const Value& value, char* out, usize 
         if (capacity != 0) out[0] = '\0';
         return 0;
     }
-    std::memcpy(out, buffer, n + 1);
+    MemCopy(out, buffer, n + 1);
     return n;
 }
 

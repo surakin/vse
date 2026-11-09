@@ -1,4 +1,3 @@
-#include <cstring>
 #include <memory>
 #include "sync/thread.h"
 #include <vector>
@@ -12,6 +11,7 @@
 #include "rhi/rhi.h"
 #include "rhi/vulkan/vk_barrier.h"
 #include "rhi/vulkan/vulkan_device.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -441,7 +441,7 @@ TEST_CASE("Null device: command lists recorded on job threads submit in order (r
     for (usize i = 0; i < kLists; ++i) {
         unsigned char back[kSize];
         REQUIRE(device->PeekBuffer(dst[i], 0, back, kSize));
-        CHECK(std::memcmp(back, data[i].data(), kSize) == 0);
+        CHECK(MemCompare(back, data[i].data(), kSize) == 0);
     }
     device.Reset();
 }

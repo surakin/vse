@@ -1,4 +1,4 @@
-#include <cmath>
+#include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -57,7 +57,7 @@ const CanvasCall* FirstOf(const Vector<CanvasCall>& calls, CanvasCallKind kind) 
 
 bool BwPixelNear(const RasterImage& img, u32 x, u32 y, u32 abgr) {
     const u8* p = img.Pixel(x, y);
-    auto close = [](u8 a, u32 b) { return std::abs(static_cast<int>(a) - static_cast<int>(b)) <= 1; };
+    auto close = [](u8 a, u32 b) { return Abs(static_cast<int>(a) - static_cast<int>(b)) <= 1; };
     return close(p[0], abgr & 0xFF) && close(p[1], (abgr >> 8) & 0xFF) && close(p[2], (abgr >> 16) & 0xFF);
 }
 

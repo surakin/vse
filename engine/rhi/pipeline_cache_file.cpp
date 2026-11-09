@@ -2,25 +2,26 @@
 
 #include "rhi/pipeline_cache_file.h"
 
-#include <cstdlib>
-#include <cstring>
+#include "os/console.h"
+#include "cstr/cstr.h"
 
 #include "io/file.h"
 #include "io/file_system.h"
 #include "io/path.h"
 #include "rhi/rhi.h"
 #include "string_view.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::rhi {
 
 namespace {
 
 bool Append(char* out, usize capacity, usize* pos, const char* text) {
-    const usize n = std::strlen(text);
+    const usize n = CStrLength(text);
     if (*pos + n + 1 > capacity) {
         return false;
     }
-    std::memcpy(out + *pos, text, n);
+    MemCopy(out + *pos, text, n);
     *pos += n;
     return true;
 }
@@ -66,7 +67,7 @@ bool SanitizePipelineCacheAppName(const char* app, char* out, usize capacity) {
 }
 
 bool ResolvePipelineCacheDir(const DeviceCreateInfo& info, char* out, usize capacity) {
-    const PipelineCacheDirChoice choice = ChoosePipelineCacheDir(info.pipeline_cache_dir, std::getenv("ENGINE_RHI_CACHE_DIR"), out, capacity);
+    const PipelineCacheDirChoice choice = ChoosePipelineCacheDir(info.pipeline_cache_dir, os::GetEnvironment("ENGINE_RHI_CACHE_DIR"), out, capacity);
     if (choice != PipelineCacheDirChoice::NotConfigured) {
         return choice == PipelineCacheDirChoice::Chosen;
     }

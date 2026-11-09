@@ -1297,13 +1297,13 @@ inline StringView ToStringView(ByteSpan bytes);
 
 Views bytes as text (no validation).
 
-## `Append(Vector<T,A>&,std::type_identity_t<Span<const T>>)` {#append-vector-lt-t-a-gt-amp-std-type-identity-t-lt-span-lt-const-t-gt-gt}
+## `Append(Vector<T,A>&,TypeIdentity<Span<const T>>)` {#append-vector-lt-t-a-gt-amp-typeidentity-lt-span-lt-const-t-gt-gt}
 
 `function Append` — defined in `engine/foundation/containers/span.h`
 
 ```cpp
 template <typename T, typename A>
-void Append(Vector<T, A>& target, std::type_identity_t<Span<const T>> items);
+void Append(Vector<T, A>& target, TypeIdentity<Span<const T>> items);
 ```
 
 Appends copies of `items` to the end of `target`; the vector grows geometrically, so repeated calls are amortized. A string literal converts to a span that includes its terminating NUL.
@@ -1313,13 +1313,13 @@ Appends copies of `items` to the end of `target`; the vector grows geometrically
 | Parameter `items` | elements to copy; they must not be elements of `target`. |
 | Aborts | `items` overlaps `target`, or growth is needed and the allocator is out of memory. |
 
-## `Assign(Vector<T,A>&,std::type_identity_t<Span<const T>>)` {#assign-vector-lt-t-a-gt-amp-std-type-identity-t-lt-span-lt-const-t-gt-gt}
+## `Assign(Vector<T,A>&,TypeIdentity<Span<const T>>)` {#assign-vector-lt-t-a-gt-amp-typeidentity-lt-span-lt-const-t-gt-gt}
 
 `function Assign` — defined in `engine/foundation/containers/span.h`
 
 ```cpp
 template <typename T, typename A>
-void Assign(Vector<T, A>& target, std::type_identity_t<Span<const T>> items);
+void Assign(Vector<T, A>& target, TypeIdentity<Span<const T>> items);
 ```
 
 Replaces the contents of `target` with copies of `items`.

@@ -2,7 +2,7 @@
 // timeout or an interrupt kills the compiler's or the program's whole tree. Moved out of samples.cpp on Phase 13 Day 161.
 #include "child_process.h"
 
-#include <cerrno>
+#include "os/last_error.h"
 #include <fcntl.h>
 #include <signal.h>
 #include <spawn.h>
@@ -44,7 +44,7 @@ ChildPoll PollChild(ChildProcess& child, ChildEnd* end) {
     int status = 0;
     const pid_t pid = static_cast<pid_t>(child.id);
     pid_t r = waitpid(pid, &status, WNOHANG);
-    while (r < 0 && errno == EINTR) r = waitpid(pid, &status, WNOHANG);
+    while (r < 0 && engine_placeholder::os::LastError() == EINTR) r = waitpid(pid, &status, WNOHANG);
     if (r < 0) {
         // The child cannot be waited for (reaped elsewhere, SIGCHLD ignored): never read that as success.
         kill(-pid, SIGKILL);
@@ -69,7 +69,7 @@ void KillChild(ChildProcess& child) {
     const pid_t pid = static_cast<pid_t>(child.id);
     kill(-pid, SIGKILL);
     int status = 0;
-    while (waitpid(pid, &status, 0) < 0 && errno == EINTR) {
+    while (waitpid(pid, &status, 0) < 0 && engine_placeholder::os::LastError() == EINTR) {
     }
     child.id = -1;
 }

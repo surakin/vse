@@ -1,11 +1,12 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include "containers/hash_map.h"
 #include "mem/heap_allocator.h"
 #include "int128.h"
 #include "build_defs.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 
@@ -182,16 +183,16 @@ TEST_CASE("u128: bit queries, byte swap and hashing", "[types][int128]") {
 TEST_CASE("u128: text in bases 2, 10 and 16", "[types][int128]") {
     char buf[u128::kMaxTextBytes];
     REQUIRE(u128().ToText(buf, sizeof(buf)) == 1);
-    CHECK(std::strcmp(buf, "0") == 0);
+    CHECK(CStrCompare(buf, "0") == 0);
     REQUIRE(u128::Max().ToText(buf, sizeof(buf)) == 39);
-    CHECK(std::strcmp(buf, "340282366920938463463374607431768211455") == 0);
+    CHECK(CStrCompare(buf, "340282366920938463463374607431768211455") == 0);
     REQUIRE(u128::Max().ToText(buf, sizeof(buf), 16) == 32);
-    CHECK(std::strcmp(buf, "ffffffffffffffffffffffffffffffff") == 0);
+    CHECK(CStrCompare(buf, "ffffffffffffffffffffffffffffffff") == 0);
     REQUIRE(u128::Max().ToText(buf, sizeof(buf), 2) == 128);
     CHECK(buf[0] == '1');
-    CHECK(std::strlen(buf) == 128);
+    CHECK(CStrLength(buf) == 128);
     CHECK((u128(1u) << 64).ToText(buf, sizeof(buf)) == 20);
-    CHECK(std::strcmp(buf, "18446744073709551616") == 0);
+    CHECK(CStrCompare(buf, "18446744073709551616") == 0);
 
     // A buffer too small, and a bad base, give an empty string.
     char small[4] = {'x', 'x', 'x', 'x'};
@@ -264,11 +265,11 @@ TEST_CASE("i128: edge values, wrapping, signed division and arithmetic shifts", 
 TEST_CASE("i128: text", "[types][int128]") {
     char buf[i128::kMaxTextBytes];
     REQUIRE(i128::Min().ToText(buf, sizeof(buf)) == 40);
-    CHECK(std::strcmp(buf, "-170141183460469231731687303715884105728") == 0);
+    CHECK(CStrCompare(buf, "-170141183460469231731687303715884105728") == 0);
     REQUIRE(i128::Max().ToText(buf, sizeof(buf)) == 39);
-    CHECK(std::strcmp(buf, "170141183460469231731687303715884105727") == 0);
+    CHECK(CStrCompare(buf, "170141183460469231731687303715884105727") == 0);
     REQUIRE(i128(-255).ToText(buf, sizeof(buf), 16) == 3);
-    CHECK(std::strcmp(buf, "-ff") == 0);
+    CHECK(CStrCompare(buf, "-ff") == 0);
     REQUIRE(i128().ToText(buf, sizeof(buf)) == 1);
     for (i128 v : {i128(), i128(1), i128(-1), i128::Min(), i128::Max(), i128(-1234567890123456789ll)}) {
         const usize n = v.ToText(buf, sizeof(buf));
@@ -300,7 +301,7 @@ TEST_CASE("The 128-bit types have a fixed size, alignment and layout", "[types][
     STATIC_REQUIRE(sizeof(i128) == 16);
     const u128 v = u128::FromParts(0x0102030405060708ull, 0x090a0b0c0d0e0f10ull);
     u64 words[2];
-    std::memcpy(words, &v, 16);
+    MemCopy(words, &v, 16);
     CHECK(words[0] == 0x090a0b0c0d0e0f10ull); // low half first
     CHECK(words[1] == 0x0102030405060708ull);
     // Constant evaluation of the parts that are constexpr.

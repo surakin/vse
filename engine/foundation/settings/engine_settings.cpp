@@ -1,6 +1,6 @@
 #include "settings/engine_settings.h"
 
-#include <cstdio>
+#include "cstr/format.h"
 
 #include "log/log.h"
 
@@ -86,10 +86,10 @@ void RegisterLogSettings(Registry* registry) {
             if (keys.count >= 64) continue;
             char lower[48];
             LowerCase(c->Name(), lower, sizeof(lower));
-            std::snprintf(keys.keys[i][0], sizeof(keys.keys[i][0]), "log.%s.verbosity", lower);
-            std::snprintf(keys.keys[i][1], sizeof(keys.keys[i][1]), "log.%s.enabled", lower);
+            FormatTo(keys.keys[i][0], sizeof(keys.keys[i][0]), "log.%s.verbosity", lower);
+            FormatTo(keys.keys[i][1], sizeof(keys.keys[i][1]), "log.%s.enabled", lower);
             if (Key::Parse(StringView(keys.keys[i][0]), nullptr) != KeyError::None || Key::Parse(StringView(keys.keys[i][1]), nullptr) != KeyError::None) continue;
-            std::snprintf(keys.channel_names[i], sizeof(keys.channel_names[i]), "%s", c->Name());
+            FormatTo(keys.channel_names[i], sizeof(keys.channel_names[i]), "%s", c->Name());
             ++keys.count;
         }
         if (registry->Find(StringView(keys.keys[i][0])).IsValid()) continue;

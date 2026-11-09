@@ -9,10 +9,10 @@
 #include <backtrace.h>
 
 #include "sync/atomic.h"
-#include <cstdlib>
-#include <cstring>
+#include "cstr/cstr.h"
 #include <cxxabi.h>
 #include "sync/mutex.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::debug {
 
@@ -234,15 +234,15 @@ bool DemangleSymbol(const char* mangled, char* out, usize capacity) {
     int status = 0;
     char* readable = abi::__cxa_demangle(mangled, nullptr, nullptr, &status);
     if (readable == nullptr || status != 0) {
-        std::free(readable);
+        MemFree(readable);
         return false;
     }
-    const usize length = std::strlen(readable);
+    const usize length = CStrLength(readable);
     const bool fits = length < capacity;
     if (fits) {
-        std::memcpy(out, readable, length + 1);
+        MemCopy(out, readable, length + 1);
     }
-    std::free(readable);
+    MemFree(readable);
     return fits;
 }
 

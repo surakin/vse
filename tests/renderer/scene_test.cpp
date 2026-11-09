@@ -1,9 +1,8 @@
 // Phase 5 Day 73: the render scene (object and light lists, culling) and the per-frame/per-object buffers, on the null
 // device, plus a GPU leak test that creates and destroys many meshes.
 #include <chrono>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "lang/new.h"
+#include "os/console.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -13,6 +12,7 @@
 #include "renderer/frame_data.h"
 #include "renderer/render_scene.h"
 #include "rhi/null/null_device.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -45,7 +45,7 @@ TEST_CASE("GpuMesh uploads vertices and indices and releases them", "[renderer][
         CHECK(f.device->Statistics().buffers == 2);
         std::vector<unsigned char> back(data.VertexBytes());
         REQUIRE(f.device->PeekBuffer(mesh.VertexBuffer(), 0, back.data(), back.size()));
-        CHECK(std::memcmp(back.data(), data.Vertices(), back.size()) == 0);
+        CHECK(MemCompare(back.data(), data.Vertices(), back.size()) == 0);
 
         GpuMesh moved = static_cast<GpuMesh&&>(mesh);
         CHECK_FALSE(mesh.Valid());
@@ -162,7 +162,7 @@ TEST_CASE("Frame data layout matches the shader's std140 view", "[renderer][fram
     CHECK(fd.time.x == 2.5f);
     CHECK(fd.time.y == 0.016f);
     CHECK(fd.time.z == 7.0f);
-    CHECK(offsetof(FrameData, camera_position) == 256);
+    CHECK(ENGINE_OFFSET_OF(FrameData, camera_position) == 256);
 }
 
 TEST_CASE("FrameResources writes per-object data into the current frame's region", "[renderer][framedata]") {
@@ -228,7 +228,7 @@ TEST_CASE("Culling and packing 100k objects (timing only)", "[renderer][scene][p
     auto t0 = std::chrono::steady_clock::now();
     u32 n = scene.Cull(fr, out.data(), static_cast<u32>(out.size()));
     auto t1 = std::chrono::steady_clock::now();
-    std::printf("cull of 100000 objects: %u visible, %.3f ms\n", n, std::chrono::duration<double, std::milli>(t1 - t0).count());
+    os::Print("cull of 100000 objects: %u visible, %.3f ms\n", n, std::chrono::duration<double, std::milli>(t1 - t0).count());
     CHECK(n > 0);
     CHECK(n < 100000);
 }
@@ -241,7 +241,7 @@ TEST_CASE("Creating and destroying 1000 meshes on a GPU leaks nothing", "[render
         info.pipeline_cache = false;
         rhi::DevicePtr device = rhi::CreateDevice(info);
         if (device == nullptr) {
-            const char* required = std::getenv("ENGINE_RHI_REQUIRE_GPU");
+            const char* required = os::GetEnvironment("ENGINE_RHI_REQUIRE_GPU");
             if (required != nullptr && required[0] == '1') FAIL("ENGINE_RHI_REQUIRE_GPU=1 but no " << gpu_test::BackendTag(backend) << " device could be created");
             SKIP("no " << gpu_test::BackendTag(backend) << " device on this machine");
         }

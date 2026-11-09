@@ -1,9 +1,9 @@
 #include "renderer/bounds.h"
 
-#include <cstring>
 
 #include "log/assert.h"
 #include "math/math_util.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::renderer {
 
@@ -13,7 +13,7 @@ Aabb ComputeAabb(const void* points, u32 count, u32 stride_bytes) {
     Aabb box;
     for (u32 i = 0; i < count; ++i) {
         f32 p[3];
-        std::memcpy(p, bytes + static_cast<usize>(i) * stride_bytes, sizeof(p));
+        MemCopy(p, bytes + static_cast<usize>(i) * stride_bytes, sizeof(p));
         if (i == 0) {
             box.min = box.max = Vec3(p[0], p[1], p[2]);
             continue;
@@ -34,7 +34,7 @@ Bounds ComputeBounds(const void* points, u32 count, u32 stride_bytes) {
     const auto* bytes = static_cast<const byte*>(points);
     for (u32 i = 0; i < count; ++i) {
         f32 p[3];
-        std::memcpy(p, bytes + static_cast<usize>(i) * stride_bytes, sizeof(p));
+        MemCopy(p, bytes + static_cast<usize>(i) * stride_bytes, sizeof(p));
         const f32 d2 = (Vec3(p[0], p[1], p[2]) - bounds.sphere.center).LengthSquared();
         if (d2 > farthest) farthest = d2;
     }

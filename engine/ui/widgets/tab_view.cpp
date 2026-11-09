@@ -1,6 +1,6 @@
 #include "ui/widgets/tab_view.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "log/assert.h"
 #include "ui/surface.h"
@@ -124,7 +124,7 @@ void TabView::Layout() {
         f32 w = 0;
         if (t.title.Text().Length() > 0 && t.title.EnsureForStyle(surface, style, 0)) {
             w = t.title.Width();
-            h = std::fmax(h, t.title.Height());
+            h = FMax(h, t.title.Height());
         }
         if (t.image != 0) w += icon + (w > 0 ? gap : 0.0f);
         if (t.closable) w += gap + CloseSize();
@@ -139,10 +139,10 @@ void TabView::Layout() {
 f32 TabView::Span() const {
     // The room for the headers: all of the width, less the two arrows when they do not fit.
     const f32 w = Bounds().w;
-    return total_w_ > w ? std::fmax(w - header_h_ * 2, 0.0f) : w;
+    return total_w_ > w ? FMax(w - header_h_ * 2, 0.0f) : w;
 }
 
-f32 TabView::MaxScroll() const { return std::fmax(total_w_ - Span(), 0.0f); }
+f32 TabView::MaxScroll() const { return FMax(total_w_ - Span(), 0.0f); }
 
 bool TabView::HeaderOverflows() {
     Layout();
@@ -150,7 +150,7 @@ bool TabView::HeaderOverflows() {
 }
 
 void TabView::SetScroll(f32 scroll) {
-    const f32 clamped = std::fmin(std::fmax(scroll, 0.0f), MaxScroll());
+    const f32 clamped = FMin(FMax(scroll, 0.0f), MaxScroll());
     if (clamped == scroll_) return;
     scroll_ = clamped;
     MarkDirty(kDrawDirty);
@@ -177,7 +177,7 @@ Rect TabView::TabRect(usize index) {
 Rect TabView::ContentRect() {
     Layout();
     const Rect& b = Bounds();
-    return Rect{b.x, b.y + header_h_, b.w, std::fmax(b.h - header_h_, 0.0f)};
+    return Rect{b.x, b.y + header_h_, b.w, FMax(b.h - header_h_, 0.0f)};
 }
 
 Size TabView::Measure(const Constraints& constraints) {
@@ -186,8 +186,8 @@ Size TabView::Measure(const Constraints& constraints) {
     for (usize i = 0; i < tabs_.Size(); ++i) {
         if (tabs_[i].page == nullptr) continue;
         const Size s = tabs_[i].page->MeasureTotal(constraints);
-        size.w = std::fmax(size.w, s.w);
-        size.h = std::fmax(size.h, s.h);
+        size.w = FMax(size.w, s.w);
+        size.h = FMax(size.h, s.h);
     }
     size.h += header_h_;
     return size;

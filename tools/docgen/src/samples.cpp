@@ -1,9 +1,8 @@
 #include "samples.h"
 
-#include <csignal>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "os/signal.h"
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 
 #include "child_process.h"
 #include "io/file.h"
@@ -59,8 +58,8 @@ StringView Num(ArenaAllocator& arena, u32 n) {
 #if ENGINE_PLATFORM_WINDOWS
 StringView Hex(ArenaAllocator& arena, u32 n) {
     char text[16];
-    std::snprintf(text, sizeof(text), "0x%08X", n);
-    return ArenaCat(arena, StringView(text, std::strlen(text)), StringView());
+    engine_placeholder::FormatTo(text, sizeof(text), "0x%08X", n);
+    return ArenaCat(arena, StringView(text, engine_placeholder::CStrLength(text)), StringView());
 }
 #endif
 
@@ -169,8 +168,8 @@ public:
         if (!MakeScratch()) return false;
         // Children run in their own process groups (Windows: job objects), so Ctrl-C would not reach them: stop them ourselves.
         g_stop = 0;
-        void (*const old_int)(int) = std::signal(SIGINT, &OnSignal);
-        void (*const old_term)(int) = std::signal(SIGTERM, &OnSignal);
+        void (*const old_int)(int) = engine_placeholder::os::SetSignalHandler(SIGINT, &OnSignal);
+        void (*const old_term)(int) = engine_placeholder::os::SetSignalHandler(SIGTERM, &OnSignal);
         for (usize i = 0; i < samples.Size(); ++i) {
             Task* t = static_cast<Task*>(arena_.Alloc(sizeof(Task), alignof(Task)));
             new (t) Task();
@@ -193,8 +192,8 @@ public:
             const Task& t = *tasks_[i];
             if (!t.failure.Empty()) out_.Push(FileDiag{t.sample->path, Diagnostic{Severity::Error, t.sample->line, t.failure}});
         }
-        std::signal(SIGINT, old_int == SIG_ERR ? SIG_DFL : old_int);
-        std::signal(SIGTERM, old_term == SIG_ERR ? SIG_DFL : old_term);
+        engine_placeholder::os::SetSignalHandler(SIGINT, old_int == SIG_ERR ? SIG_DFL : old_int);
+        engine_placeholder::os::SetSignalHandler(SIGTERM, old_term == SIG_ERR ? SIG_DFL : old_term);
         Cleanup();
         return true;
     }

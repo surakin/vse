@@ -1,11 +1,11 @@
 #pragma once
 
-#include <cstring>
 
 #include "containers/vector.h"
 #include "mem/arena_allocator.h"
 #include "string/string.h"
 #include "types.h"
+#include "cstr/mem_ops.h"
 
 // docgen diagnostics (tools/docgen/DESIGN.md section 7):
 //   path:line: error|warning|note: message
@@ -19,7 +19,7 @@ using engine_placeholder::usize;
 
 // memcpy that tolerates (null, 0), which an empty StringView may be.
 inline void CopyBytes(char* dst, const char* src, usize n) {
-    if (n != 0) std::memcpy(dst, src, n);
+    if (n != 0) engine_placeholder::MemCopy(dst, src, n);
 }
 
 // Concatenates up to four strings into one NUL-terminated copy in `arena`.

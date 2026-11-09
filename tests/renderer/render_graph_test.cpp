@@ -17,6 +17,8 @@
 
 #include "renderer/render_graph.h"
 #include "types.h"
+#include "cstr/mem_ops.h"
+#include "os/console.h"
 
 // Counts every heap allocation in this executable so a test can prove a region allocates none. The ThreadSanitizer runtime
 // defines its own operator new (a second definition fails to link), so that flavor skips the counting test.
@@ -48,13 +50,13 @@ static void* CountedAlloc(usize size, usize align) {
 #else
     if (align > alignof(std::max_align_t)) return std::aligned_alloc(align, (size + align - 1) / align * align);
 #endif
-    return std::malloc(size);
+    return MemAllocate(size);
 }
 static void AlignedFree(void* p) noexcept {
 #if ENGINE_PLATFORM_WINDOWS
     _aligned_free(p);
 #else
-    std::free(p);
+    MemFree(p);
 #endif
 }
 void* operator new(usize n) {
@@ -77,12 +79,12 @@ void* operator new[](usize n, AlignVal a) {
 }
 void* operator new(usize n, AlignVal a, const NoThrowTag&) noexcept { return CountedAlloc(n, static_cast<usize>(a)); }
 void* operator new[](usize n, AlignVal a, const NoThrowTag&) noexcept { return CountedAlloc(n, static_cast<usize>(a)); }
-void operator delete(void* p) noexcept { std::free(p); }
-void operator delete[](void* p) noexcept { std::free(p); }
-void operator delete(void* p, usize) noexcept { std::free(p); }
-void operator delete[](void* p, usize) noexcept { std::free(p); }
-void operator delete(void* p, const NoThrowTag&) noexcept { std::free(p); }
-void operator delete[](void* p, const NoThrowTag&) noexcept { std::free(p); }
+void operator delete(void* p) noexcept { MemFree(p); }
+void operator delete[](void* p) noexcept { MemFree(p); }
+void operator delete(void* p, usize) noexcept { MemFree(p); }
+void operator delete[](void* p, usize) noexcept { MemFree(p); }
+void operator delete(void* p, const NoThrowTag&) noexcept { MemFree(p); }
+void operator delete[](void* p, const NoThrowTag&) noexcept { MemFree(p); }
 void operator delete(void* p, AlignVal) noexcept { AlignedFree(p); }
 void operator delete[](void* p, AlignVal) noexcept { AlignedFree(p); }
 void operator delete(void* p, AlignVal, const NoThrowTag&) noexcept { AlignedFree(p); }
@@ -542,7 +544,7 @@ TEST_CASE("A 1000-pass random DAG matches an independent reference", "[renderer]
     REQUIRE(graph.Compile());
     const auto t1 = std::chrono::steady_clock::now();
     const double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
-    std::printf("compile of a %u-pass graph: %.3f ms, %u scheduled\n", kPasses, ms, graph.ScheduleCount());
+    os::Print("compile of a %u-pass graph: %.3f ms, %u scheduled\n", kPasses, ms, graph.ScheduleCount());
 #ifndef RENDER_GRAPH_TEST_SANITIZED
     CHECK(ms < 100.0); // about 0.2 ms here; sanitizer builds are too slow for a wall-clock bound, the figure is printed
 #endif

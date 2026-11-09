@@ -1,4 +1,4 @@
-#include <cstdlib>
+#include "os/console.h"
 #include <string>
 #include <vector>
 
@@ -23,7 +23,7 @@ namespace {
 VkSurfaceFormatKHR Fmt(VkFormat f, VkColorSpaceKHR cs = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) { return VkSurfaceFormatKHR{f, cs}; }
 
 bool VulkanSwapchainTestHaveEnv(const char* name) {
-    const char* v = std::getenv(name);
+    const char* v = os::GetEnvironment(name);
     return v != nullptr && v[0] != '\0';
 }
 

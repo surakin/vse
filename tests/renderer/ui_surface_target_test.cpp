@@ -14,6 +14,7 @@
 #include "rhi/device_host.h"
 #include "ui/draw_list.h"
 #include "ui/draw_list_canvas.h"
+#include "lang/scalar.h"
 
 using namespace engine_placeholder;
 
@@ -119,7 +120,7 @@ struct SfWorld {
 
 bool SfIs(const gpu_test::Image& image, u32 x, u32 y, int r, int g, int b, int tolerance = 2) {
     const u8* p = image.Pixel(x, y);
-    return std::abs(p[0] - r) <= tolerance && std::abs(p[1] - g) <= tolerance && std::abs(p[2] - b) <= tolerance;
+    return Abs(p[0] - r) <= tolerance && Abs(p[1] - g) <= tolerance && Abs(p[2] - b) <= tolerance;
 }
 
 rhi::TextureHandle SfPanel(rhi::Device* device, rhi::Format format) {

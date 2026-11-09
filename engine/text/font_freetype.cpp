@@ -1,7 +1,6 @@
 // The one file that names FreeType (platform_neutral_check, tools/platform_neutral_check/library_boundary.txt).
 #include "sync/atomic.h"
-#include <cstring>
-#include <new>
+#include "lang/new.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -13,6 +12,7 @@
 #include "mem/heap_allocator.h"
 #include "text/font.h"
 #include "text/library.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::text {
 
@@ -80,7 +80,7 @@ void* FtRealloc(FT_Memory memory, long cur_size, long new_size, void* block) {
     if (fresh == nullptr) return nullptr; // FreeType keeps the old block when a reallocation fails
     if (block != nullptr) {
         const usize keep = static_cast<usize>(cur_size < new_size ? cur_size : new_size);
-        std::memcpy(fresh, block, keep);
+        MemCopy(fresh, block, keep);
         FreeBlock(c, block);
     }
     return fresh;
@@ -275,7 +275,7 @@ Status Font::Open(FontLibrary& library, ByteSpan data, const FontOptions& option
             out->Close();
             return MakeStatus(Error::OutOfMemory, "out of memory copying the font data");
         }
-        std::memcpy(copy.Data(), data.Data(), data.Size());
+        MemCopy(copy.Data(), data.Data(), data.Size());
     }
     return OpenOwned(library, static_cast<Vector<byte>&&>(copy), options, out);
 }
@@ -412,7 +412,7 @@ Status Font::Render(GlyphId glyph, GlyphBitmap* out) const {
     const usize count = usize{bitmap.width} * usize{bitmap.rows};
     if (!out->pixels.TryResizeUninitialized(count)) return MakeStatus(Error::OutOfMemory, "out of memory rasterizing the glyph");
     for (u32 row = 0; row < bitmap.rows; ++row) {
-        std::memcpy(out->pixels.Data() + usize{row} * bitmap.width, bitmap.buffer + usize{row} * static_cast<usize>(bitmap.pitch), bitmap.width);
+        MemCopy(out->pixels.Data() + usize{row} * bitmap.width, bitmap.buffer + usize{row} * static_cast<usize>(bitmap.pitch), bitmap.width);
     }
     out->width = bitmap.width;
     out->height = bitmap.rows;

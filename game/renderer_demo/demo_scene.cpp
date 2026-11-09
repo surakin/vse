@@ -3,12 +3,12 @@
 #include "io/file.h"
 #include "io/file_system.h"
 
-#include <cmath>
-#include <cstdio>
-#include <cstring>
+#include "lang/scalar.h"
 
 #include "demo_assets.h"
 #include "rhi/rhi_log.h"
+#include "cstr/format.h"
+#include "cstr/mem_ops.h"
 
 namespace renderer_demo {
 
@@ -49,8 +49,8 @@ enum MaterialSlot : u32 {
 };
 
 Mat4 Transform(const Vec3& position, f32 yaw, f32 scale) {
-    const f32 c = std::cos(yaw) * scale;
-    const f32 s = std::sin(yaw) * scale;
+    const f32 c = Cos(yaw) * scale;
+    const f32 s = Sin(yaw) * scale;
     return Mat4::FromBasis(Vec3(c, 0, -s), Vec3(0, scale, 0), Vec3(s, 0, c), position);
 }
 
@@ -75,7 +75,7 @@ bool LoadTextureImage(void* user, TextureImage* out) {
             out->desc.format = image.format;
             out->desc.usage = rhi::TextureUsage::Sampled;
             out->pixels.Resize(image.data.Size());
-            std::memcpy(out->pixels.Data(), image.data.Data(), image.data.Size());
+            MemCopy(out->pixels.Data(), image.data.Data(), image.data.Size());
             return true;
         }
         rhi::RhiLogV(LogVerbosity::Warn, "renderer_demo: %.*s could not be loaded (%s); using the procedural texture", static_cast<int>(file.View().Length()),
@@ -88,7 +88,7 @@ bool LoadTextureImage(void* user, TextureImage* out) {
     out->desc.format = texture.format;
     out->desc.usage = rhi::TextureUsage::Sampled;
     out->pixels.Resize(pixels.rgba.Size());
-    std::memcpy(out->pixels.Data(), pixels.rgba.Data(), pixels.rgba.Size());
+    MemCopy(out->pixels.Data(), pixels.rgba.Data(), pixels.rgba.Size());
     out->generate_mips = true;
     return true;
 }
@@ -208,7 +208,7 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
     const DemoTexture* texture_table = DemoTextures(&texture_count);
     for (u32 i = 0; i < texture_count && i < 3; ++i) {
         if (options.asset_dir != nullptr) {
-            std::snprintf(asset_dir_, sizeof(asset_dir_), "%s", options.asset_dir);
+            FormatTo(asset_dir_, sizeof(asset_dir_), "%s", options.asset_dir);
         }
         load_info_[i].asset_dir = options.asset_dir != nullptr ? asset_dir_ : nullptr;
         load_info_[i].texture = &texture_table[i];
@@ -263,7 +263,7 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
         }
     }
     const u32 shapes = options.objects - kGroundTiles;
-    const u32 columns = static_cast<u32>(std::ceil(std::sqrt(static_cast<f32>(shapes) * 1.6f)));
+    const u32 columns = static_cast<u32>(Ceil(Sqrt(static_cast<f32>(shapes) * 1.6f)));
     const u32 rows = (shapes + columns - 1) / columns;
     const f32 width = static_cast<f32>(columns - 1) * kSpacing;
     const f32 depth = static_cast<f32>(rows - 1) * kSpacing;
@@ -284,7 +284,7 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
         const Vec3 position(static_cast<f32>(cx) * kSpacing - width * 0.5f + jitter_x, rest, static_cast<f32>(cz) * kSpacing - depth * 0.5f + jitter_z);
         placements.Push(Placement{mesh, slot, Transform(position, yaw, scale)});
     }
-    radius_ = std::sqrt(width * width + depth * depth) * 0.5f + 2.0f;
+    radius_ = Sqrt(width * width + depth * depth) * 0.5f + 2.0f;
 
     // Add the objects, in their natural order or in a shuffled one (a Fisher-Yates shuffle with its own generator).
     Vector<u32> order;
@@ -356,8 +356,8 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
         l.radius = lr.Range(3.0f, 5.5f);
         l.intensity = lr.Range(2.0f, 6.0f);
         const f32 hue = lr.Unit();
-        l.color = Vec3(0.35f + 0.65f * std::fabs(std::sin(hue * 6.2831853f)), 0.35f + 0.65f * std::fabs(std::sin(hue * 6.2831853f + 2.0f)),
-                       0.35f + 0.65f * std::fabs(std::sin(hue * 6.2831853f + 4.0f)));
+        l.color = Vec3(0.35f + 0.65f * Abs(Sin(hue * 6.2831853f)), 0.35f + 0.65f * Abs(Sin(hue * 6.2831853f + 2.0f)),
+                       0.35f + 0.65f * Abs(Sin(hue * 6.2831853f + 4.0f)));
         const LightId id = scene_->AddLight(l);
         if (!id.IsValid()) {
             rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: the scene cannot hold %u lights", options.lights);
@@ -376,7 +376,7 @@ void DemoScene::Animate(f32 seconds) {
     for (usize i = 0; i < light_ids_.Size(); ++i) {
         Light l = *scene_->FindLight(light_ids_[i]);
         const f32 a = seconds * 0.5f + light_phase_[i];
-        l.position = Vec3(light_base_[i].x + 1.2f * std::cos(a), light_base_[i].y + 0.3f * std::sin(a * 1.7f), light_base_[i].z + 1.2f * std::sin(a));
+        l.position = Vec3(light_base_[i].x + 1.2f * Cos(a), light_base_[i].y + 0.3f * Sin(a * 1.7f), light_base_[i].z + 1.2f * Sin(a));
         scene_->SetLight(light_ids_[i], l);
     }
 }

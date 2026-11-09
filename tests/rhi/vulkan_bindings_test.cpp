@@ -1,4 +1,3 @@
-#include <cstring>
 #include <memory>
 #include "sync/thread.h"
 #include <vector>
@@ -13,6 +12,7 @@
 #include "rhi/rhi_log.h"
 #include "rhi/uniform_ring.h"
 #include "rhi/vulkan/vulkan_device.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -64,7 +64,7 @@ TEST_CASE("UniformRing offsets respect the alignment and never overlap", "[rhi][
         CHECK(a.size == size);
         CHECK(a.buffer == ring.Buffer());
         spans.push_back({a.offset, a.offset + size});
-        std::memset(a.data, static_cast<int>(i), size); // the whole range is writable
+        MemSet(a.data, static_cast<int>(i), size); // the whole range is writable
     }
     REQUIRE(spans.size() > 20);
     for (usize i = 0; i < spans.size(); ++i) {
@@ -260,7 +260,7 @@ TEST_CASE("A uniform, texture and sampler bind group and a push constant reach t
     REQUIRE(ubo.IsValid());
     const float scale[4] = {0.5f, 1.0f, 1.0f, 1.0f};
     void* mapped = device->MapBuffer(ubo);
-    std::memcpy(mapped, scale, sizeof(scale));
+    MemCopy(mapped, scale, sizeof(scale));
     device->UnmapBuffer(ubo);
 
     BindingDesc entries[3] = {{0, BindingType::UniformBuffer, ShaderStage::Fragment, 1},

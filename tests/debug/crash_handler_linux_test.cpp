@@ -13,7 +13,7 @@
 
 #include <cerrno>
 #include <cstdio>
-#include <cstdlib>
+#include "os/console.h"
 #include <cstring>
 #include <csignal>
 #include <dirent.h>
@@ -23,6 +23,9 @@
 #include <unistd.h>
 #include <vector>
 #include "types.h"
+#include "cstr/cstr.h"
+#include "cstr/format.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -33,8 +36,8 @@ namespace {
 class CrashTempDir {
 public:
     CrashTempDir() {
-        const char* tmp = std::getenv("TMPDIR");
-        std::snprintf(path_, sizeof(path_), "%s/engine-crash-XXXXXX", tmp != nullptr ? tmp : "/tmp");
+        const char* tmp = os::GetEnvironment("TMPDIR");
+        FormatTo(path_, sizeof(path_), "%s/engine-crash-XXXXXX", tmp != nullptr ? tmp : "/tmp");
         if (mkdtemp(path_) == nullptr) {
             path_[0] = '\0';
         }
@@ -59,7 +62,7 @@ void CollectEnvelopes(const std::string& directory, std::vector<std::string>* fo
         return;
     }
     while (const dirent* entry = readdir(dir)) {
-        if (std::strcmp(entry->d_name, ".") == 0 || std::strcmp(entry->d_name, "..") == 0) {
+        if (CStrCompare(entry->d_name, ".") == 0 || CStrCompare(entry->d_name, "..") == 0) {
             continue;
         }
         const std::string path = directory + "/" + entry->d_name;
@@ -91,7 +94,7 @@ std::string ReadFile(const std::string& path) {
 
 void PutLine(const char* label, int value) {
     char line[64];
-    const int n = std::snprintf(line, sizeof(line), "%s=%d\n", label, value);
+    const int n = FormatTo(line, sizeof(line), "%s=%d\n", label, value);
     os::Write(1, line, static_cast<usize>(n));
 }
 
@@ -114,7 +117,7 @@ ENGINE_DEATH_TEST_FN(dt_crash_default_release_then_fault) {
     InstallCrashHandler(options); // no release given: the build id is used
     InitCrashContext(0, nullptr);
     char line[96];
-    const int n = std::snprintf(line, sizeof(line), "BUILD_ID=%s\n", GetCrashContext().build_id);
+    const int n = FormatTo(line, sizeof(line), "BUILD_ID=%s\n", GetCrashContext().build_id);
     os::Write(1, line, static_cast<usize>(n));
     InjectFault(FaultKind::NullWrite);
 }
@@ -205,7 +208,7 @@ TEST_CASE("A crash with the handler installed leaves one envelope holding a mini
     crash_extract::Minidump dump;
     REQUIRE(crash_extract::FindMinidump(content.data(), content.size(), &dump) == crash_extract::EnvelopeResult::Ok);
     CHECK(dump.size > 1000);
-    CHECK(std::memcmp(dump.data, "MDMP", 4) == 0);
+    CHECK(MemCompare(dump.data, "MDMP", 4) == 0);
     // The release string given at install time travels with the dump.
     CHECK(content.find("crash-test@1") != std::string::npos);
 }
@@ -462,6 +465,6 @@ TEST_CASE("A crash dump is still there after the program is started again", "[cr
     const std::string kept = ReadFile(after[0]);
     crash_extract::Minidump dump;
     REQUIRE(crash_extract::FindMinidump(kept.data(), kept.size(), &dump) == crash_extract::EnvelopeResult::Ok);
-    CHECK(std::memcmp(dump.data, "MDMP", 4) == 0);
+    CHECK(MemCompare(dump.data, "MDMP", 4) == 0);
     CHECK(dump.size > 1000);
 }

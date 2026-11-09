@@ -1,6 +1,6 @@
 // Phase 15 Day 190: the UI pass. A ui::DrawList becomes one render-graph pass on a real device (Vulkan): rectangles, rounded rects with borders, images, clips,
 // layers and text land where the list says; the pass follows the target's format; a device reset and a missing image are survived.
-#include <cmath>
+#include "lang/scalar.h"
 #include <cstdlib>
 #include <cstring>
 
@@ -107,7 +107,7 @@ const f32 kBlack[4] = {0, 0, 0, 1};
 
 bool IsPixel(const gpu_test::Image& image, u32 x, u32 y, int r, int g, int b, int tolerance = 1) {
     const u8* p = image.Pixel(x, y);
-    return std::abs(p[0] - r) <= tolerance && std::abs(p[1] - g) <= tolerance && std::abs(p[2] - b) <= tolerance;
+    return Abs(p[0] - r) <= tolerance && Abs(p[1] - g) <= tolerance && Abs(p[2] - b) <= tolerance;
 }
 
 constexpr u32 kRed = 0xFF0000FFu;   // red in the lowest byte
@@ -372,7 +372,7 @@ TEST_CASE("UI pass: text through the atlas matches the text renderer's pixels", 
                 const u8* a = reference.Pixel(x, y);
                 const u8* b = image.Pixel(x, y);
                 if (a[0] > 0) ++inked;
-                if (std::abs(a[0] - b[0]) > 1 || std::abs(a[1] - b[1]) > 1 || std::abs(a[2] - b[2]) > 1) ++different;
+                if (Abs(a[0] - b[0]) > 1 || Abs(a[1] - b[1]) > 1 || Abs(a[2] - b[2]) > 1) ++different;
             }
         }
         CHECK(inked > 100);

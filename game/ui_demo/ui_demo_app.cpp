@@ -1,7 +1,7 @@
 #include "ui_demo_app.h"
 
-#include <cmath>
-#include <cstdio>
+#include "lang/scalar.h"
+#include "cstr/format.h"
 
 #include "platform/input.h"
 #include "ui/widgets/display.h"
@@ -22,7 +22,7 @@ bool OrbitCamera::Apply(ViewportInput& input) {
             if (pitch_ < -kMaxPitch) pitch_ = -kMaxPitch;
             return true;
         case ViewportInputType::Wheel:
-            distance_ *= std::pow(kZoomPerNotch, input.wheel_y);
+            distance_ *= Pow(kZoomPerNotch, input.wheel_y);
             if (distance_ < kMinDistance) distance_ = kMinDistance;
             if (distance_ > kMaxDistance) distance_ = kMaxDistance;
             input.handled = true;
@@ -33,11 +33,11 @@ bool OrbitCamera::Apply(ViewportInput& input) {
 }
 
 void OrbitCamera::Eye(f32 scene_scale, f32 out[3]) const {
-    const f32 cp = std::cos(pitch_);
+    const f32 cp = Cos(pitch_);
     const f32 d = distance_ * scene_scale;
-    out[0] = cp * std::sin(yaw_) * d;
-    out[1] = std::sin(pitch_) * d;
-    out[2] = cp * std::cos(yaw_) * d;
+    out[0] = cp * Sin(yaw_) * d;
+    out[1] = Sin(pitch_) * d;
+    out[2] = cp * Cos(yaw_) * d;
 }
 
 bool OrbitCamera::MakeRay(f32 x, f32 y, u32 width, u32 height, f32 scene_scale, ui::Ray3* out) const {
@@ -47,7 +47,7 @@ bool OrbitCamera::MakeRay(f32 x, f32 y, u32 width, u32 height, f32 scene_scale, 
     Eye(scene_scale, eye);
     Target(target);
     auto normalize = [](f32 v[3]) {
-        const f32 length = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+        const f32 length = Sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
         for (int i = 0; i < 3; ++i) v[i] /= length;
     };
     f32 forward[3] = {target[0] - eye[0], target[1] - eye[1], target[2] - eye[2]};
@@ -56,7 +56,7 @@ bool OrbitCamera::MakeRay(f32 x, f32 y, u32 width, u32 height, f32 scene_scale, 
     f32 right[3] = {-forward[2], 0, forward[0]};
     normalize(right);
     const f32 up[3] = {right[1] * forward[2] - right[2] * forward[1], right[2] * forward[0] - right[0] * forward[2], right[0] * forward[1] - right[1] * forward[0]};
-    const f32 half = std::tan(kFovY * 0.5f);
+    const f32 half = Tan(kFovY * 0.5f);
     const f32 aspect = static_cast<f32>(width) / static_cast<f32>(height);
     const f32 nx = (2.0f * x / static_cast<f32>(width) - 1.0f) * half * aspect;
     const f32 ny = (1.0f - 2.0f * y / static_cast<f32>(height)) * half;
@@ -84,7 +84,7 @@ String<HeapAllocator> OwnedText(StringView text) { return String<HeapAllocator>(
 ItemModel::ItemModel(usize count) {
     for (usize i = 0; i < count; ++i) {
         char text[32];
-        const int n = std::snprintf(text, sizeof(text), "Item %zu", i + 1);
+        const int n = FormatTo(text, sizeof(text), "Item %zu", i + 1);
         items_.Push(OwnedText(StringView(text, FittedLength(n, sizeof(text)))));
     }
 }
@@ -160,20 +160,20 @@ void UiDemoApp::ToggleToolbarCommand() {
 void UiDemoApp::Clicked(void* user, Button* button) {
     UiDemoApp* app = static_cast<UiDemoApp*>(user);
     char text[96];
-    const int n = std::snprintf(text, sizeof(text), "Clicked %.*s", static_cast<int>(button->Name().Length()), button->Name().Data());
+    const int n = FormatTo(text, sizeof(text), "Clicked %.*s", static_cast<int>(button->Name().Length()), button->Name().Data());
     app->SetStatus(StringView(text, FittedLength(n, sizeof(text))));
 }
 
 void UiDemoApp::SliderChanged(void* user, Slider* slider) {
     char text[64];
-    const int n = std::snprintf(text, sizeof(text), "Speed %.0f", slider->Value());
+    const int n = FormatTo(text, sizeof(text), "Speed %.0f", slider->Value());
     static_cast<UiDemoApp*>(user)->SetStatus(StringView(text, FittedLength(n, sizeof(text))));
 }
 
 void UiDemoApp::ComboChanged(void* user, ComboBox* combo) {
     char text[64];
     const String<HeapAllocator> shown = combo->Text();
-    const int n = std::snprintf(text, sizeof(text), "Shape %s", shown.CStr());
+    const int n = FormatTo(text, sizeof(text), "Shape %s", shown.CStr());
     static_cast<UiDemoApp*>(user)->SetStatus(StringView(text, FittedLength(n, sizeof(text))));
 }
 
@@ -401,7 +401,7 @@ void UiDemoApp::RenderingChanged(void* user, ComboBox* combo) {
     }
     char text[160];
     const StringView cost = app->render_host_->CostOf(key);
-    const int n = std::snprintf(text, sizeof(text), "%.*s = %s: %s (%.*s)", static_cast<int>(key.Length()), key.Data(), value.CStr(), ok ? "applied" : "refused", static_cast<int>(cost.Length()), cost.Data());
+    const int n = FormatTo(text, sizeof(text), "%.*s = %s: %s (%.*s)", static_cast<int>(key.Length()), key.Data(), value.CStr(), ok ? "applied" : "refused", static_cast<int>(cost.Length()), cost.Data());
     app->SetStatus(StringView(text, FittedLength(n, sizeof(text))));
 }
 
@@ -430,14 +430,14 @@ void UiDemoApp::ShowRenderingSettings() {
         UniquePtr<Label> title = MakeUnique<Label>(StringView(), StringView(row.title));
         line->AddChild(UniquePtr<Widget>(title.Release()));
         char combo_name[64];
-        std::snprintf(combo_name, sizeof(combo_name), "combo_%s", row.key);
+        FormatTo(combo_name, sizeof(combo_name), "combo_%s", row.key);
         UniquePtr<ComboBox> combo = MakeUnique<ComboBox>(StringView(combo_name));
         combo->SetModel(row.model);
         combo->Select(row.selected);
         combo->OnSelectionChanged().Connect(&UiDemoApp::RenderingChanged, this);
         line->AddChild(UniquePtr<Widget>(combo.Release()));
         char cost_name[64];
-        std::snprintf(cost_name, sizeof(cost_name), "cost_%s", row.key);
+        FormatTo(cost_name, sizeof(cost_name), "cost_%s", row.key);
         const StringView cost = render_host_ != nullptr ? render_host_->CostOf(StringView(row.key)) : StringView("no renderer");
         UniquePtr<Label> cost_label = MakeUnique<Label>(StringView(cost_name), cost);
         line->AddChild(UniquePtr<Widget>(cost_label.Release()));
@@ -589,7 +589,7 @@ void WorldScreen::Clicked(void* user, Button*) {
     WorldScreen* self = static_cast<WorldScreen*>(user);
     ++self->clicks_;
     char text[32];
-    const int n = std::snprintf(text, sizeof(text), "%u clicks", self->clicks_);
+    const int n = FormatTo(text, sizeof(text), "%u clicks", self->clicks_);
     self->label_->SetText(StringView(text, FittedLength(n, sizeof(text))));
 }
 

@@ -1,10 +1,10 @@
 #include "renderer/texture.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
 
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::renderer {
 
@@ -23,7 +23,7 @@ u64 LevelBytes(const rhi::TextureDesc& d, u32 level) {
 }
 
 void CopyName(char* dst, usize cap, const char* name, const char* fallback) {
-    std::snprintf(dst, cap, "%s", name != nullptr ? name : fallback);
+    FormatTo(dst, cap, "%s", name != nullptr ? name : fallback);
 }
 
 } // namespace
@@ -45,7 +45,7 @@ void GpuTexture::MoveFrom(GpuTexture& other) {
     loader_ = other.loader_;
     loader_user_ = other.loader_user_;
     has_source_ = other.has_source_;
-    std::memcpy(name_, other.name_, sizeof(name_));
+    MemCopy(name_, other.name_, sizeof(name_));
     registration_.Adopt(&other.registration_, this);
     device_ = other.device_;
     desc_ = other.desc_;
@@ -223,7 +223,7 @@ void GpuSampler::MoveFrom(GpuSampler& other) {
     desc_ = other.desc_;
     desc_.debug_name = name_;
     has_source_ = other.has_source_;
-    std::memcpy(name_, other.name_, sizeof(name_));
+    MemCopy(name_, other.name_, sizeof(name_));
     registration_.Adopt(&other.registration_, this);
     device_ = other.device_;
     handle_ = other.handle_;

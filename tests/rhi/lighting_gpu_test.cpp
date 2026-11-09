@@ -2,7 +2,7 @@
 // A G-buffer frame is lit by LightingPass and tonemapped by TonemapPass; the HDR accumulation target and the display
 // target are read back and compared with the CPU twins of the shader code at probe pixels.
 #include <chrono>
-#include <cmath>
+#include "lang/scalar.h"
 #include <cstdio>
 #include "lang/initializer_list.h"
 
@@ -11,6 +11,7 @@
 #include "containers/span.h"
 #include "gbuffer_rig.h"
 #include "renderer/lighting.h"
+#include "os/console.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -127,7 +128,7 @@ LitFrame RenderLit(Rig& rig, const RenderScene& scene, const Camera& camera, f32
 // The color the CPU model gives for a flat surface at a world position.
 Vec3 Expected(const SurfacePoint& s, const Vec3& eye, const Vec3& world, engine_placeholder::Span<const Light> lights) {
     const Vec3 to_eye = eye - world;
-    const f32 len = std::sqrt(to_eye.x * to_eye.x + to_eye.y * to_eye.y + to_eye.z * to_eye.z);
+    const f32 len = Sqrt(to_eye.x * to_eye.x + to_eye.y * to_eye.y + to_eye.z * to_eye.z);
     const Vec3 v(to_eye.x / len, to_eye.y / len, to_eye.z / len);
     Vec3 ambient(0, 0, 0);
     for (const Light& l : lights) {
@@ -138,7 +139,7 @@ Vec3 Expected(const SurfacePoint& s, const Vec3& eye, const Vec3& world, engine_
         if (l.type == LightType::Directional) color = color + ShadeLight(s, v, l.direction, l.color * l.intensity);
         if (l.type == LightType::Point) {
             const Vec3 to = l.position - world;
-            const f32 d = std::sqrt(to.x * to.x + to.y * to.y + to.z * to.z);
+            const f32 d = Sqrt(to.x * to.x + to.y * to.y + to.z * to.z);
             if (d > 0.0f) color = color + ShadeLight(s, v, Vec3(to.x / d, to.y / d, to.z / d), l.color * (l.intensity * PointLightAttenuation(d, l.radius)));
         }
     }
@@ -151,7 +152,7 @@ Vec3 Expected(const SurfacePoint& s, const Vec3& eye, const Vec3& world, Initial
     return Expected(s, eye, world, engine_placeholder::Span<const Light>(list));
 }
 
-bool Close(f32 got, f32 want, f32 relative = 0.02f) { return std::fabs(got - want) <= 0.004f + relative * std::fabs(want); }
+bool Close(f32 got, f32 want, f32 relative = 0.02f) { return Abs(got - want) <= 0.004f + relative * Abs(want); }
 
 int Srgb8(f32 linear) { return static_cast<int>(LinearToSrgb(linear < 0.0f ? 0.0f : (linear > 1.0f ? 1.0f : linear)) * 255.0f + 0.5f); }
 
@@ -186,7 +187,7 @@ TEST_CASE("A lit plane matches the CPU lighting model, and background pixels sta
             sun.direction = Vec3(0.3f, 0.8f, 0.5f);
             {
                 const Vec3& v = sun.direction;
-                const f32 len = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+                const f32 len = Sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
                 sun.direction = Vec3(v.x / len, v.y / len, v.z / len);
             }
             sun.color = Vec3(1.0f, 0.9f, 0.8f);
@@ -196,7 +197,7 @@ TEST_CASE("A lit plane matches the CPU lighting model, and background pixels sta
             fill.direction = Vec3(-0.6f, 0.2f, -0.77f);
             {
                 const Vec3& v = fill.direction;
-                const f32 len = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+                const f32 len = Sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
                 fill.direction = Vec3(v.x / len, v.y / len, v.z / len);
             }
             fill.color = Vec3(0.3f, 0.4f, 1.0f);
@@ -215,9 +216,9 @@ TEST_CASE("A lit plane matches the CPU lighting model, and background pixels sta
             INFO(L.error.CStr());
             REQUIRE(L.ok);
             CHECK(L.summary.directional_count == 2);
-            CHECK(std::fabs(L.summary.ambient.x - 0.1f) < 1e-6f);
-            CHECK(std::fabs(L.summary.ambient.y - 0.125f) < 1e-6f);
-            CHECK(std::fabs(L.summary.ambient.z - 0.15f) < 1e-6f);
+            CHECK(Abs(L.summary.ambient.x - 0.1f) < 1e-6f);
+            CHECK(Abs(L.summary.ambient.y - 0.125f) < 1e-6f);
+            CHECK(Abs(L.summary.ambient.z - 0.15f) < 1e-6f);
 
             SurfacePoint surface;
             surface.albedo = Vec3(0.6f, 0.5f, 0.4f);
@@ -299,7 +300,7 @@ TEST_CASE("Sweeping the light direction follows max(dot(N, L), 0) and the GGX lo
                 f32 previous = -1.0f;
                 for (int degrees : {0, 30, 60, 85, 95, 120}) {
                     const f32 theta = static_cast<f32>(degrees) * 3.14159265f / 180.0f;
-                    sun.direction = Vec3(std::sin(theta), std::cos(theta), 0.0f);
+                    sun.direction = Vec3(Sin(theta), Cos(theta), 0.0f);
                     scene.SetLight(id, sun);
                     // The scene may hold a direction that is not a unit vector; the light buffer holds it normalized, so the
                     // image must equal the unit-vector model below.
@@ -319,7 +320,7 @@ TEST_CASE("Sweeping the light direction follows max(dot(N, L), 0) and the GGX lo
                     if (degrees >= 95) CHECK(L.Accum(c.x, c.y, 0) == 0.0f); // facing away: nothing, with no ambient
                     if (which == 0) {
                         // Rough dielectric: the Lambert term dominates. diffuse = albedo * radiance * N.L, specular adds a little.
-                        const f32 lambert = 0.5f * 1.5f * std::fmax(std::cos(theta), 0.0f);
+                        const f32 lambert = 0.5f * 1.5f * FMax(Cos(theta), 0.0f);
                         CHECK(L.Accum(c.x, c.y, 0) >= lambert - 0.004f);
                         CHECK(L.Accum(c.x, c.y, 0) <= lambert * 1.3f + 0.004f);
                         if (degrees <= 85) {
@@ -375,9 +376,9 @@ TEST_CASE("The reconstructed world position matches the geometry, including the 
             for (const Vec3& truth : {Vec3(3, 0, 3), Vec3(-4, 0, -3), Vec3(1, 0, -2), Vec3(-3, 2, 0), Vec3(-3.5f, 2, 0.5f)}) {
                 const Pixel p = Project(cam, truth);
                 INFO("truth " << truth.x << " " << truth.y << " " << truth.z << " got " << decode(p, 0) << " " << decode(p, 1) << " " << decode(p, 2));
-                CHECK(std::fabs(decode(p, 0) - truth.x) < 0.3f);
-                CHECK(std::fabs(decode(p, 1) - truth.y) < 0.2f);
-                CHECK(std::fabs(decode(p, 2) - truth.z) < 0.3f);
+                CHECK(Abs(decode(p, 0) - truth.x) < 0.3f);
+                CHECK(Abs(decode(p, 1) - truth.y) < 0.2f);
+                CHECK(Abs(decode(p, 2) - truth.z) < 0.3f);
             }
             device->WaitIdle();
         }
@@ -411,7 +412,7 @@ TEST_CASE("A cube lit through the deferred path is close to the Phase 4 forward 
             Light sun;
             sun.type = LightType::Directional;
             const Vec3 raw(0.3f, 0.9f, 0.5f);
-            const f32 len = std::sqrt(raw.x * raw.x + raw.y * raw.y + raw.z * raw.z);
+            const f32 len = Sqrt(raw.x * raw.x + raw.y * raw.y + raw.z * raw.z);
             sun.direction = Vec3(raw.x / len, raw.y / len, raw.z / len);
             sun.intensity = 0.8f;
             scene.AddLight(sun);
@@ -434,7 +435,7 @@ TEST_CASE("A cube lit through the deferred path is close to the Phase 4 forward 
                 const f32 forward = 0.1f + 0.8f * (lambert > 0.0f ? lambert : 0.0f);
                 const Pixel p = Project(cam, f.center);
                 INFO("face normal " << f.normal.x << " " << f.normal.y << " " << f.normal.z << " forward " << forward << " deferred " << L.Accum(p.x, p.y, 0));
-                for (u32 c = 0; c < 3; ++c) CHECK(std::fabs(L.Accum(p.x, p.y, c) - forward) < 0.035f);
+                for (u32 c = 0; c < 3; ++c) CHECK(Abs(L.Accum(p.x, p.y, c) - forward) < 0.035f);
                 CHECK(L.Accum(p.x, p.y, 0) >= forward - 0.002f); // the GGX lobe only adds
             }
             device->WaitIdle();
@@ -514,7 +515,7 @@ TEST_CASE("A point light on a plane matches the analytic falloff, and is exactly
                 const Vec3 world = pr.WorldAt(cam, probe, &p);
                 const Vec3 want = Expected(pr.surface, cam.position, world, {light});
                 const Vec3 to = light.position - world;
-                const f32 dist = std::sqrt(to.x * to.x + to.y * to.y + to.z * to.z);
+                const f32 dist = Sqrt(to.x * to.x + to.y * to.y + to.z * to.z);
                 INFO("probe " << probe.x << " " << probe.z << " distance " << dist << " want " << want.x << " got " << L.Accum(p.x, p.y, 0));
                 for (u32 c = 0; c < 3; ++c) CHECK(Close(L.Accum(p.x, p.y, c), c == 0 ? want.x : (c == 1 ? want.y : want.z)));
                 if (dist < light.radius - 0.2f) {
@@ -613,8 +614,8 @@ TEST_CASE("Overlapping point lights sum linearly, and a culled light issues no d
             Vector<Light> lights;
             for (int i = 0; i < 12; ++i) {
                 const f32 a = static_cast<f32>(i) * 0.9f;
-                lights.Push(Point(Vec3(2.0f * std::cos(a), 1.0f + 0.2f * static_cast<f32>(i % 3), 2.0f * std::sin(a)), 5.0f, 1.5f,
-                                       Vec3(0.5f + 0.5f * std::cos(a), 0.7f, 0.5f + 0.5f * std::sin(a))));
+                lights.Push(Point(Vec3(2.0f * Cos(a), 1.0f + 0.2f * static_cast<f32>(i % 3), 2.0f * Sin(a)), 5.0f, 1.5f,
+                                       Vec3(0.5f + 0.5f * Cos(a), 0.7f, 0.5f + 0.5f * Sin(a))));
             }
             for (usize i = 0; i < lights.Size(); ++i) pr.scene.AddLight(lights[i]);
             // Lights the view cannot see: behind the camera, far to the side and beyond the far plane. They must cost no draw.
@@ -755,7 +756,7 @@ TEST_CASE("Point light scale: 1, 100 and 1000 lights at 1080p (measured, not ass
                 const ScaleResult r = MeasureLights(rig, scene, cam, 10);
                 CHECK(r.draws == count); // none culled: all lights are over the visible plane
                 CHECK(r.dropped == 0);
-                std::printf("MEASURE point lights %4u at 1920x1080: %8.3f ms/frame (wall, submit to idle), %u light volume draws, %u culled\n", count, r.ms_per_frame, r.draws,
+                os::Print("MEASURE point lights %4u at 1920x1080: %8.3f ms/frame (wall, submit to idle), %u light volume draws, %u culled\n", count, r.ms_per_frame, r.draws,
                             r.culled);
             }
             device->WaitIdle();

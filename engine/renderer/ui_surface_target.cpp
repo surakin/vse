@@ -1,6 +1,6 @@
 #include "renderer/ui_surface_target.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "log/assert.h"
 
@@ -16,7 +16,7 @@ constexpr f32 kSrgbScale = 1.055f;
 constexpr f32 kSrgbGamma = 2.4f;
 
 // The value a clear must be given so that an sRGB target holds the byte the theme names: the clear value is linear and the hardware encodes it.
-f32 ToLinear(f32 encoded) { return encoded <= kSrgbLinearCut ? encoded / kSrgbLinearDivisor : std::pow((encoded + kSrgbOffset) / kSrgbScale, kSrgbGamma); }
+f32 ToLinear(f32 encoded) { return encoded <= kSrgbLinearCut ? encoded / kSrgbLinearDivisor : Pow((encoded + kSrgbOffset) / kSrgbScale, kSrgbGamma); }
 
 } // namespace
 

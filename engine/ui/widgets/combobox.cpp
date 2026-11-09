@@ -1,6 +1,6 @@
 #include "ui/widgets/combobox.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "ui/surface.h"
 #include "ui/widgets/look.h"
@@ -157,7 +157,7 @@ Size ComboBox::Measure(const Constraints&) {
 void ComboBox::Arrange(const Rect& rect) {
     SetBounds(rect);
     Rect inner = rect;
-    inner.w = std::fmax(rect.w - ButtonWidth(), 0.0f);
+    inner.w = FMax(rect.w - ButtonWidth(), 0.0f);
     field_->Arrange(inner);
 }
 
@@ -172,7 +172,7 @@ void ComboBox::Draw(Canvas& canvas) {
     const f32 button_w = ButtonWidth();
     if (!editable_ && run_.Text().Length() > 0 && run_.EnsureForStyle(surface, style, 0)) {
         const f32 pad = style.padding_x / scale;
-        const text::TextLayout& layout = run_.Fit(std::fmax(b.w - button_w - pad * 2, 0.0f) * scale);
+        const text::TextLayout& layout = run_.Fit(FMax(b.w - button_w - pad * 2, 0.0f) * scale);
         canvas.DrawText(layout, run_.Style(), Point{b.x + pad, b.y + (b.h - layout.height / scale) / 2}, style.text_color);
     }
     const f32 x = b.Right() - button_w;

@@ -1,6 +1,7 @@
 #include "scanner.h"
 
-#include <cstring>
+#include "cstr/cstr.h"
+#include "cstr/mem_ops.h"
 
 namespace docgen {
 
@@ -85,7 +86,7 @@ private:
         Diagnostic d;
         d.severity = sev;
         d.line = line;
-        d.message = StringView(message, std::strlen(message));
+        d.message = StringView(message, engine_placeholder::CStrLength(message));
         out_.diagnostics.Push(d);
     }
 
@@ -333,7 +334,7 @@ private:
         while (e < n_ && IsIdentChar(src_[e])) ++e;
         const usize len = e - b;
         // String/char literal prefixes: u8 u U L R u8R uR UR LR.
-        auto is = [&](const char* s) { return std::strlen(s) == len && std::memcmp(src_ + b, s, len) == 0; };
+        auto is = [&](const char* s) { return engine_placeholder::CStrLength(s) == len && engine_placeholder::MemCompare(src_ + b, s, len) == 0; };
         const bool str_prefix = is("u8") || is("u") || is("U") || is("L");
         const bool raw_prefix = is("R") || is("u8R") || is("uR") || is("UR") || is("LR");
         if (e < n_ && src_[e] == '"' && (str_prefix || raw_prefix)) {
@@ -460,7 +461,7 @@ private:
                 return;
             }
             if (src_[p] == ')' && p + 1 + delim_len < n_ &&
-                std::memcmp(src_ + p + 1, src_ + delim_begin, delim_len) == 0 && src_[p + 1 + delim_len] == '"') {
+                engine_placeholder::MemCompare(src_ + p + 1, src_ + delim_begin, delim_len) == 0 && src_[p + 1 + delim_len] == '"') {
                 p += delim_len + 2;
                 break;
             }
@@ -581,7 +582,7 @@ private:
         const usize name_b = p;
         while (p < n_ && IsIdentChar(src_[p])) ++p;
         const usize name_len = p - name_b;
-        auto is = [&](const char* s) { return std::strlen(s) == name_len && std::memcmp(src_ + name_b, s, name_len) == 0; };
+        auto is = [&](const char* s) { return engine_placeholder::CStrLength(s) == name_len && engine_placeholder::MemCompare(src_ + name_b, s, name_len) == 0; };
 
         u32 extra_lines = 0;
         usize code_end = p, line_comment = n_, last_ls = line_start_;
@@ -642,7 +643,7 @@ private:
                 const usize nb = p;
                 while (p < n_ && IsIdentChar(src_[p])) ++p;
                 const usize nl = p - nb;
-                auto is = [&](const char* s) { return std::strlen(s) == nl && std::memcmp(src_ + nb, s, nl) == 0; };
+                auto is = [&](const char* s) { return engine_placeholder::CStrLength(s) == nl && engine_placeholder::MemCompare(src_ + nb, s, nl) == 0; };
                 u32 extra = 0;
                 usize code_end = p, lc = n_, ls = line_start_;
                 const usize end = DirectiveBody(p, dir_line, extra, code_end, lc, ls);

@@ -7,13 +7,15 @@
 #include "support/death_test_skip.h"
 
 #include <cstdio>
-#include <cstdlib>
+#include "cstr/number.h"
 #include <cstring>
 #include <ftw.h>
 #include <string>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <vector>
+#include "cstr/cstr.h"
+#include "cstr/format.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -23,7 +25,7 @@ namespace {
 class ProgramStateDir {
 public:
     ProgramStateDir() {
-        std::snprintf(path_, sizeof(path_), "/tmp/engine-program-XXXXXX");
+        FormatTo(path_, sizeof(path_), "/tmp/engine-program-XXXXXX");
         if (mkdtemp(path_) == nullptr) {
             path_[0] = '\0';
         }
@@ -63,7 +65,7 @@ ProgramRun RunProgramCommand(const std::string& command) {
     pclose(pipe);
     const usize at = run.output.rfind("EXIT=");
     if (at != std::string::npos) {
-        run.exit_code = std::atoi(run.output.c_str() + at + 5);
+        run.exit_code = CStrToInt(run.output.c_str() + at + 5);
     }
     return run;
 }
@@ -87,7 +89,7 @@ std::string Command(const ProgramStateDir& state, const ShippedProgram& program,
 
 usize CountEnvelopes(const std::string& directory) {
     const ProgramRun run = RunProgramCommand("find '" + directory + "' -name '*.envelope' | wc -l");
-    return static_cast<usize>(std::atoi(run.output.c_str()));
+    return static_cast<usize>(CStrToInt(run.output.c_str()));
 }
 
 #endif // the shipped programs
@@ -207,9 +209,9 @@ TEST_CASE("A value that is neither on nor off is ignored, and the crash test is 
     CHECK(ParseProgramDebugRequest(2, kinds, nullptr, false).crash_test == CrashTestKind::Segv);
     const char* unknown[] = {"p", "--crash-test=banana"};
     CHECK(ParseProgramDebugRequest(2, unknown, nullptr, false).crash_test == CrashTestKind::None);
-    CHECK(std::strcmp(request.ignored_argument, "--crash-handler=maybe") == 0); // remembered so the program can warn
+    CHECK(CStrCompare(request.ignored_argument, "--crash-handler=maybe") == 0); // remembered so the program can warn
     const char* typo[] = {"p", "--crash-test=sgev"};
-    CHECK(std::strcmp(ParseProgramDebugRequest(2, typo, nullptr, false).ignored_argument, "--crash-test=sgev") == 0);
+    CHECK(CStrCompare(ParseProgramDebugRequest(2, typo, nullptr, false).ignored_argument, "--crash-test=sgev") == 0);
     const char* fine[] = {"p", "--crash-test=segv", "--crash-handler=on"};
     CHECK(ParseProgramDebugRequest(3, fine, nullptr, false).ignored_argument == nullptr);
     CHECK(IsProgramDebugArgument("--crash-test=segv"));

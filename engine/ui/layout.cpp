@@ -1,7 +1,5 @@
 #include "ui/layout.h"
 
-#include <cmath>
-
 #include "log/assert.h"
 
 namespace engine_placeholder::ui {

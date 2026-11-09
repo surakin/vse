@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdarg>
-#include <cstdio>
+#include "cstr/varargs.h"
+#include "cstr/format.h"
 
 #include "debug/compiler.h"
 #include "log/log.h"
@@ -28,10 +28,10 @@ inline void RhiLogV(LogVerbosity level, const char* fmt, ...) {
         return;
     }
     char buf[512];
-    va_list ap;
-    va_start(ap, fmt);
-    int n = std::vsnprintf(buf, sizeof(buf), fmt, ap);
-    va_end(ap);
+    VarArgs ap;
+    ENGINE_VA_START(ap, fmt);
+    int n = VFormatTo(buf, sizeof(buf), fmt, ap);
+    ENGINE_VA_END(ap);
     if (n < 0) {
         return;
     }

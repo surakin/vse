@@ -1,5 +1,5 @@
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 #include "sync/mutex.h"
 
 #include "log/assert.h"
@@ -24,7 +24,7 @@ Registry& TheRegistry() {
 
 void SetReason(char* reason, usize reason_size, const char* format, const char* a, const char* b) {
     if (reason != nullptr && reason_size != 0) {
-        std::snprintf(reason, reason_size, format, a, b);
+        FormatTo(reason, reason_size, format, a, b);
     }
 }
 
@@ -39,7 +39,7 @@ const char* RequestedName(Backend backend) {
 }
 
 bool Same(const BackendDescriptor& a, const BackendDescriptor& b) {
-    return a.backend == b.backend && std::strcmp(a.name, b.name) == 0 && a.create == b.create &&
+    return a.backend == b.backend && CStrCompare(a.name, b.name) == 0 && a.create == b.create &&
            a.enumerate_adapters == b.enumerate_adapters && a.available == b.available && a.shader_format == b.shader_format &&
            a.auto_rank == b.auto_rank;
 }
@@ -59,7 +59,7 @@ bool RegisterBackend(const BackendDescriptor& descriptor) {
         if (Same(e, descriptor)) {
             return true;
         }
-        if (e.backend == descriptor.backend || std::strcmp(e.name, descriptor.name) == 0) {
+        if (e.backend == descriptor.backend || CStrCompare(e.name, descriptor.name) == 0) {
             RhiLog(LogVerbosity::Error, "RegisterBackend: '%s' clashes with the registered backend '%s'", descriptor.name, e.name);
             return false;
         }
@@ -144,7 +144,7 @@ const BackendDescriptor* PickAutoBackend(char* reason, usize reason_size) {
         }
         char why[160] = {};
         if (!BackendAvailable(items[i], why, sizeof(why))) {
-            std::snprintf(last_reason, sizeof(last_reason), "%s is not available: %s", items[i].name, why);
+            FormatTo(last_reason, sizeof(last_reason), "%s is not available: %s", items[i].name, why);
             continue;
         }
         best = addresses[i];

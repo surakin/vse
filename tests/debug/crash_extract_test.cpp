@@ -4,9 +4,9 @@
 #include "envelope.h"
 
 #include "types.h"
-#include <cstdio>
 #include <cstring>
 #include <string>
+#include "cstr/mem_ops.h"
 
 using engine_placeholder::Vector;
 
@@ -55,7 +55,7 @@ TEST_CASE("The minidump item of an envelope is found and points at its bytes", "
     Minidump dump;
     REQUIRE(Find(text, &dump) == EnvelopeResult::Ok);
     CHECK(dump.size == ExtractDumpBytes().size());
-    CHECK(std::memcmp(dump.data, "MDMP", 4) == 0);
+    CHECK(engine_placeholder::MemCompare(dump.data, "MDMP", 4) == 0);
     CHECK(std::string(dump.data, dump.size) == ExtractDumpBytes());
     // The result points inside the input.
     CHECK(dump.data >= text.data());
@@ -126,7 +126,7 @@ TEST_CASE("Cutting a real envelope at every length never reads outside it and on
         storage.Reserve(length == 0 ? 1 : length);
         storage.Resize(length);
         char* exact = storage.Data();
-        if (length != 0) std::memcpy(exact, cut.data(), length);
+        if (length != 0) engine_placeholder::MemCopy(exact, cut.data(), length);
         Minidump dump;
         const EnvelopeResult result = FindMinidump(exact, length, &dump);
         if (result == EnvelopeResult::Ok) {
@@ -148,7 +148,7 @@ TEST_CASE("Flipping any byte of a real envelope never reads outside it", "[crash
             storage.Reserve(full.size());
             storage.Resize(full.size());
             char* exact = storage.Data();
-            std::memcpy(exact, full.data(), full.size());
+            engine_placeholder::MemCopy(exact, full.data(), full.size());
             exact[i] = static_cast<char>(static_cast<unsigned char>(exact[i]) ^ flip);
             Minidump dump;
             const EnvelopeResult result = FindMinidump(exact, full.size(), &dump);

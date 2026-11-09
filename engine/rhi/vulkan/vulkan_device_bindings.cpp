@@ -1,7 +1,5 @@
 // Descriptor pools and bind groups of the Vulkan device.
 
-#include <cstring>
-
 #include "log/assert.h"
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vk_pipeline_policy.h"

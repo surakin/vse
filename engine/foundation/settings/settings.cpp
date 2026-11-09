@@ -1,8 +1,7 @@
 #include "settings/settings.h"
 
-#include <chrono>
-#include <cstdio>
-#include <cstring>
+#include "os/os.h"
+#include "cstr/format.h"
 
 #include "debug/crash_state.h"
 #include "io/file_system.h"
@@ -10,6 +9,7 @@
 #include "settings/file_store.h"
 #include "settings/policy_layers.h"
 #include "sync/mutex.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::settings {
 
@@ -24,7 +24,7 @@ String<HeapAllocator> JoinText(StringView a, StringView b, StringView c) {
     return out;
 }
 
-double NowSeconds() { return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
+double NowSeconds() { return static_cast<double>(os::MonotonicTimeNanos()) * 1e-9; }
 
 bool Under(StringView key, StringView prefix) {
     return prefix.Length() == 0 || key == prefix || (key.Length() > prefix.Length() && key.StartsWith(prefix) && key[prefix.Length()] == '.');
@@ -215,9 +215,9 @@ LoadReport Settings::LoadFromLayers() {
             char message[200];
             Key suggestion;
             if (SuggestKey(*registry_, name, &suggestion)) {
-                std::snprintf(message, sizeof(message), "unknown key '%.*s'; did you mean '%.*s'?", static_cast<int>(name.Length()), name.Data(), static_cast<int>(suggestion.View().Length()), suggestion.View().Data());
+                FormatTo(message, sizeof(message), "unknown key '%.*s'; did you mean '%.*s'?", static_cast<int>(name.Length()), name.Data(), static_cast<int>(suggestion.View().Length()), suggestion.View().Data());
             } else {
-                std::snprintf(message, sizeof(message), "unknown key '%.*s' (kept as it is)", static_cast<int>(name.Length()), name.Data());
+                FormatTo(message, sizeof(message), "unknown key '%.*s' (kept as it is)", static_cast<int>(name.Length()), name.Data());
             }
             note(stack_.Name(layer), message);
         }
@@ -584,22 +584,22 @@ void Settings::UpdateCrashState() {
         ++non_default;
         if (e >= kEntries) continue;
         char text[kMaxValueTextBytes];
-        if ((d.flags & kSecret) != 0) std::snprintf(text, sizeof(text), "<secret>");
+        if ((d.flags & kSecret) != 0) FormatTo(text, sizeof(text), "<secret>");
         else if (FormatValue(d, v, text, sizeof(text)) == 0) continue;
         char item[debug::kCrashStateEntryTextBytes];
-        const int n = std::snprintf(item, sizeof(item), "%.*s=%s ", static_cast<int>(registry_->KeyOf(id).View().Length()), registry_->KeyOf(id).View().Data(), text);
+        const int n = FormatTo(item, sizeof(item), "%.*s=%s ", static_cast<int>(registry_->KeyOf(id).View().Length()), registry_->KeyOf(id).View().Data(), text);
         if (n <= 0) continue;
         const usize len = static_cast<usize>(n) < sizeof(item) - 1 ? static_cast<usize>(n) : sizeof(item) - 1;
         if (used + len >= sizeof(entries[0])) {
             if (++e >= kEntries) continue;
             used = 0;
         }
-        std::memcpy(entries[e] + used, item, len);
+        MemCopy(entries[e] + used, item, len);
         used += len;
         entries[e][used] = '\0';
     }
     char head[debug::kCrashStateEntryTextBytes];
-    std::snprintf(head, sizeof(head), "%u non-default", static_cast<unsigned>(non_default));
+    FormatTo(head, sizeof(head), "%u non-default", static_cast<unsigned>(non_default));
     debug::SetCrashStateText("settings", head);
     int now_used = 0;
     for (int i = 0; i < kEntries; ++i) {
@@ -608,7 +608,7 @@ void Settings::UpdateCrashState() {
     const int top = now_used > crash_entries_used_ ? now_used : crash_entries_used_;
     for (int i = 0; i < top; ++i) {
         char name[24];
-        std::snprintf(name, sizeof(name), "settings %d", i + 1);
+        FormatTo(name, sizeof(name), "settings %d", i + 1);
         debug::SetCrashStateText(name, entries[i][0] != '\0' ? entries[i] : nullptr);
     }
     crash_entries_used_ = now_used;

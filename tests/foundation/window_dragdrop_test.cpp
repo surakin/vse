@@ -13,6 +13,7 @@
 #include "platform/drag_drop.h"
 #include "platform/linux/wayland/wayland_clipboard.h"
 #include "platform/linux/x11/x11_window.h"
+#include "cstr/format.h"
 
 // Day 188: the drag and drop value rules, and XDND between an X11Window and a scripted peer on a second connection.
 namespace window_dragdrop_test {
@@ -441,7 +442,7 @@ TEST_CASE("XDND: an offer of 1000 types is cut at the first 64", "[dragdrop][x11
         Vector<unsigned long> types;
         for (int i = 0; i < 1000; ++i) {
             char name[32];
-            std::snprintf(name, sizeof(name), "application/x-junk-%d", i);
+            FormatTo(name, sizeof(name), "application/x-junk-%d", i);
             types.Push(XInternAtom(peer.display, name, 0));
         }
         types[variant == 0 ? 10 : 900] = peer.a_utf8;
@@ -469,7 +470,7 @@ TEST_CASE("XDND: a dropped file list is checked and cut at 10,000 entries", "[dr
     Vector<byte> list = Bytes("http://example.com/x\r\nfile:///a/../etc/passwd\r\nrelative\r\n");
     for (int i = 0; i < 12000; ++i) {
         char line[48];
-        std::snprintf(line, sizeof(line), "file:///tmp/f%d\r\n", i);
+        FormatTo(line, sizeof(line), "file:///tmp/f%d\r\n", i);
         for (const char* c = line; *c != '\0'; ++c) list.Push(static_cast<byte>(*c));
     }
     peer.OwnSelection();

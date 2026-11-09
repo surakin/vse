@@ -1,10 +1,10 @@
 #include "jobs/file_async.h"
 
-#include <cstring>
 
 #include "jobs/scheduler.h"
 #include "jobs/worker_pool.h"
 #include "log/assert.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::jobs {
 
@@ -60,7 +60,7 @@ void FileReadAllAwaitable::OnChunk(void* user, const io::AsyncResult& result) {
         } else if (!self->bytes_.TryResizeUninitialized(old + result.bytes)) {
             self->status_ = io::Status::Of(io::Error::OutOfMemory);
         } else {
-            std::memcpy(self->bytes_.Data() + old, self->chunk_.Data(), result.bytes);
+            MemCopy(self->bytes_.Data() + old, self->chunk_.Data(), result.bytes);
             self->Issue(); // the previous request has completed, so its storage is free to reuse
             return;
         }

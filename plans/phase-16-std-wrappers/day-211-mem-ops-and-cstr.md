@@ -7,12 +7,16 @@ Wrap the C library's memory and string functions below the log layer: raw memory
 
 ## Tasks
 
-- [ ] `mem/mem_ops.h`: `MemCopy`, `MemMove`, `MemSet`, `MemCompare`, `MemFind` (`memchr`), `Allocate`/`Free`/`Reallocate` for the C heap (the heap allocator's backing), `AlignedAllocate`/`AlignedFree`; null with zero size allowed, null with non-zero size asserts (documented `Aborts:`).
-- [ ] `cstr/cstr.h`: `CStrLength`, `CStrCompare`, `CStrCompareN`, `CStrFind` (`strstr`), `CStrFindChar`, `CStrCopy`/`CStrAppend` (bounded, always terminated, returning truncation), wide forms (`WStrLength`, `WStrCompare`, `WMemCopy`); `cstr/ctype.h`: `IsDigit`, `IsAlpha`, `IsSpace`, `ToLower`, `ToUpper` for ASCII.
-- [ ] `cstr/format.h`: `FormatTo(char* buffer, usize capacity, const char* fmt, ...)`, `VFormatTo(..., va_list)`, wide `WFormatTo`; returns the length the text would have (as `snprintf`); attribute-checked format strings (`ENGINE_PRINTF_LIKE`); `cstr/parse.h`: `ParseI64`, `ParseU64`, `ParseF64` returning a status (the callers of `atol`/`strtoul` get an error instead of 0).
-- [ ] Console formatting stays out: printing is `os::Print` (Day 214).
-- [ ] Tests in `tests/cstr/` and `tests/mem/` (phase 16): every function against the C library as oracle over generated inputs (empty, 1 byte, page-crossing, overlapping for `MemMove`, embedded NUL), formatting against `snprintf` for each conversion the tree uses (list from the Day 207 inventory), truncation at every capacity 0..N, number parsing edge cases (overflow, sign, leading space, no digits).
-- [ ] Docs: `///` on all headers, `docs/guide/foundation-cstr.md`, modules.txt, `ARCHITECTURE.md`, `module_deps_check` map (cstr: layers 0-1).
-- [ ] **Day review (CLAUDE.md, required):** scoped tests (`scripts/test-phase.sh --affected`, plain, then asan and tsan where the day touched concurrency or memory code), then `/code-review high` on the day's diff; verify, fix or decline each finding with a reason and record the count and outcome under "Post-implementation code review"; `STATUS.md` and `KNOWN-ISSUES.md` updated; commit and push.
+- [x] `mem/mem_ops.h`: `MemCopy`, `MemMove`, `MemSet`, `MemCompare`, `MemFind` (`memchr`), `Allocate`/`Free`/`Reallocate` for the C heap (the heap allocator's backing), `AlignedAllocate`/`AlignedFree`; null with zero size allowed, null with non-zero size asserts (documented `Aborts:`).
+- [x] `cstr/cstr.h`: `CStrLength`, `CStrCompare`, `CStrCompareN`, `CStrFind` (`strstr`), `CStrFindChar`, `CStrCopy`/`CStrAppend` (bounded, always terminated, returning truncation), wide forms (`WStrLength`, `WStrCompare`, `WMemCopy`); `cstr/ctype.h`: `IsDigit`, `IsAlpha`, `IsSpace`, `ToLower`, `ToUpper` for ASCII.
+- [x] `cstr/format.h`: `FormatTo(char* buffer, usize capacity, const char* fmt, ...)`, `VFormatTo(..., va_list)`, wide `WFormatTo`; returns the length the text would have (as `snprintf`); attribute-checked format strings (`ENGINE_PRINTF_LIKE`); `cstr/parse.h`: `ParseI64`, `ParseU64`, `ParseF64` returning a status (the callers of `atol`/`strtoul` get an error instead of 0).
+- [x] Console formatting stays out: printing is `os::Print` (Day 214).
+- [x] Tests in `tests/cstr/` and `tests/mem/` (phase 16): every function against the C library as oracle over generated inputs (empty, 1 byte, page-crossing, overlapping for `MemMove`, embedded NUL), formatting against `snprintf` for each conversion the tree uses (list from the Day 207 inventory), truncation at every capacity 0..N, number parsing edge cases (overflow, sign, leading space, no digits).
+- [x] Docs: `///` on all headers, `docs/guide/foundation-cstr.md`, modules.txt, `ARCHITECTURE.md`, `module_deps_check` map (cstr: layers 0-1).
+- [x] **Day review (CLAUDE.md, required):** scoped tests (`scripts/test-phase.sh --affected`, plain, then asan and tsan where the day touched concurrency or memory code), then `/code-review high` on the day's diff; verify, fix or decline each finding with a reason and record the count and outcome under "Post-implementation code review"; `STATUS.md` and `KNOWN-ISSUES.md` updated; commit and push.
 
 **Done:** both modules build, are tested against the C library, documented, and `module_deps_check` and `docgen lint` pass.
+
+## Result
+
+- `cstr` landed in the **base** layer (`engine/foundation/cstr/`: `cstr.h`, `format.h`, `number.h`, `varargs.h`, `mem_ops.h`); `mem_ops.h` is there and not in `mem/` because `mem` is layer 2 and `types.h`, the containers and `lang` need it (a `mem` module would make a cycle). Oracle tests against the C library are `tests/cstr/cstr_test.cpp`. `ctype` was not needed (one `<cctype>` use, removed with its file). Guide: `docs/guide/foundation-cstr.md`.

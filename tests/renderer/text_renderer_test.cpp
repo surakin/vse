@@ -4,9 +4,9 @@
 // made again from it after a release. On a real device: the quad of a glyph shows the atlas bitmap texel for texel (an asymmetric
 // "F", so a flipped or shifted quad fails), premultiplied blending over a colored background, the sRGB round trip, and a device reset
 // that rebuilds the atlas pages, the pipeline and the sampler so the same frame renders the same pixels.
-#include <cmath>
+#include "lang/scalar.h"
 #include <cstdlib>
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -32,7 +32,7 @@ text::TextLayout LayText(Opened& o, const char* text, u32 size) {
     style.font = &o.font;
     style.pixel_size = size;
     text::TextLayout layout;
-    REQUIRE(text::Layout(StringView(text, std::strlen(text)), style, text::LayoutOptions{}, &layout).Ok());
+    REQUIRE(text::Layout(StringView(text, CStrLength(text)), style, text::LayoutOptions{}, &layout).Ok());
     return layout;
 }
 
@@ -103,7 +103,7 @@ gpu_test::Image RenderFrame(rhi::Device* device, renderer::TextRenderer* text, c
     return target.Read();
 }
 
-int Diff(int a, int b) { return std::abs(a - b); }
+int Diff(int a, int b) { return Abs(a - b); }
 
 // Where the quad of `glyph` lands for a layout drawn at (x, y): the same arithmetic the renderer uses, spelled out for the test.
 struct Quad {
@@ -114,8 +114,8 @@ Quad QuadOf(text::GlyphAtlas& atlas, Opened& o, u32 size, const text::Positioned
     REQUIRE(o.font.SetPixelSize(size).Ok());
     Quad q;
     REQUIRE(atlas.GetOrAdd(o.font, g.glyph, &q.entry).Ok());
-    q.left = static_cast<int>(std::floor(x + g.x + static_cast<f32>(q.entry.left) + 0.5f));
-    q.top = static_cast<int>(std::floor(y + g.y - static_cast<f32>(q.entry.top) + 0.5f));
+    q.left = static_cast<int>(Floor(x + g.x + static_cast<f32>(q.entry.left) + 0.5f));
+    q.top = static_cast<int>(Floor(y + g.y - static_cast<f32>(q.entry.top) + 0.5f));
     return q;
 }
 
@@ -347,7 +347,7 @@ TEST_CASE("Text blends with premultiplied alpha over a colored background", "[re
             for (u32 dx = 0; dx < q.entry.rect.w; ++dx) {
                 const u8* p = half.Pixel(static_cast<u32>(q.left) + dx, static_cast<u32>(q.top) + dy);
                 const f32 a = static_cast<f32>(Coverage(atlas, q, dx, dy)) / 255.0f * (128.0f / 255.0f);
-                worst = std::max({worst, Diff(p[0], static_cast<int>(std::lround(255.0f * a))), Diff(p[2], static_cast<int>(std::lround(255.0f * (1.0f - a))))});
+                worst = std::max({worst, Diff(p[0], static_cast<int>(LRound(255.0f * a))), Diff(p[2], static_cast<int>(LRound(255.0f * (1.0f - a))))});
             }
         }
         CHECK(worst <= 3);

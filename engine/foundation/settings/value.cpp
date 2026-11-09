@@ -1,8 +1,8 @@
 #include "settings/value.h"
 
-#include <cstring>
 
 #include "log/assert.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::settings {
 
@@ -87,7 +87,7 @@ bool Value::operator==(const Value& other) const {
     case Type::Bool:
     case Type::Int:
     case Type::Enum: return int_ == other.int_;
-    case Type::Float: return std::memcmp(&float_, &other.float_, sizeof(float_)) == 0; // bitwise: -0.0 differs from 0.0
+    case Type::Float: return MemCompare(&float_, &other.float_, sizeof(float_)) == 0; // bitwise: -0.0 differs from 0.0
     case Type::Text: return StringView(text_, text_length_) == StringView(other.text_, other.text_length_);
     }
     return false;

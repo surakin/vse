@@ -1,8 +1,7 @@
 // Phase 2 Day 35: stress & throughput suite for the whole job system.
 #include "sync/atomic.h"
 #include <chrono>
-#include <cstdio>
-#include <cstdlib>
+#include "os/console.h"
 #include <memory>
 #include <vector>
 
@@ -13,6 +12,8 @@
 #include "jobs/scheduler.h"
 #include "jobs/topology.h"
 #include "build_defs.h"
+#include "cstr/format.h"
+#include "cstr/number.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::jobs;
@@ -59,12 +60,12 @@ struct PoolWatch {
     FramePool::Stats before = FramePool::Global().GetStats();
     void Report(const char* what) const {
         FramePool::Stats now = FramePool::Global().GetStats();
-        std::printf("[frame sizes] %s:", what);
+        os::Print("[frame sizes] %s:", what);
         for (usize c = 0; c < FramePool::kClassCount; ++c) {
-            std::printf("  <=%zuB: %llu", static_cast<size_t>(FramePool::kBlockSizes[c] - FramePool::kHeaderBytes),
+            os::Print("  <=%zuB: %llu", static_cast<size_t>(FramePool::kBlockSizes[c] - FramePool::kHeaderBytes),
                         static_cast<unsigned long long>(now.pooled_allocs[c] - before.pooled_allocs[c]));
         }
-        std::printf("  fallback: %llu\n", static_cast<unsigned long long>(now.fallback_allocs - before.fallback_allocs));
+        os::Print("  fallback: %llu\n", static_cast<unsigned long long>(now.fallback_allocs - before.fallback_allocs));
     }
     u64 FallbackDelta() const { return FramePool::Global().GetStats().fallback_allocs - before.fallback_allocs; }
 };
@@ -193,9 +194,9 @@ void HelpOrAbort(Scheduler& s, bool (*done)(void*), void* user, int seconds, con
         },
         &w);
     if (w.timed_out) {
-        std::printf("WATCHDOG: %s did not complete within %ds (deadlock or lost wakeup)\n", what, seconds);
-        std::fflush(stdout);
-        std::abort();
+        os::Print("WATCHDOG: %s did not complete within %ds (deadlock or lost wakeup)\n", what, seconds);
+        os::Flush();
+        os::Abort();
     }
 }
 
@@ -215,14 +216,14 @@ void RunGraph(Scheduler& s, Graph* g, u64 seed) {
     Counter root(s);
     Spawn(root, NodeJob(g, 0));
     char what[96];
-    std::snprintf(what, sizeof(what), "graph seed %llu (replay: ENGINE_STRESS_SEED=%llu)",
+    FormatTo(what, sizeof(what), "graph seed %llu (replay: ENGINE_STRESS_SEED=%llu)",
                   static_cast<unsigned long long>(seed), static_cast<unsigned long long>(seed));
     HelpCounter(s, root, 60, what);
 }
 
 u64 SeedBase() {
-    const char* e = std::getenv("ENGINE_STRESS_SEED");
-    return e ? std::strtoull(e, nullptr, 10) : 1;
+    const char* e = os::GetEnvironment("ENGINE_STRESS_SEED");
+    return e ? CStrToULongLong(e, nullptr, 10) : 1;
 }
 
 // ---- skewed load -------------------------------------------------------------
@@ -369,7 +370,7 @@ TEST_CASE("Randomized dependency graphs: exactly-once, ordered joins, no deadloc
         }
         s->Shutdown();
     }
-    std::printf("[stress] %llu graph jobs over %d seeds x 2 configs\n", static_cast<unsigned long long>(total_jobs), kGraphSeeds);
+    os::Print("[stress] %llu graph jobs over %d seeds x 2 configs\n", static_cast<unsigned long long>(total_jobs), kGraphSeeds);
     REQUIRE(FramePool::Global().GetStats().Live() == live_before);
     watch.Report("dependency graphs");
     REQUIRE(watch.FallbackDelta() == 0);
@@ -429,9 +430,9 @@ TEST_CASE("Throughput scales with participant count", "[jobs][stress][throughput
                 if (r.seconds < best[ci]) best[ci] = r.seconds;
             }
         }
-        std::printf("\n[throughput] round %d: %d CPU-bound jobs (~60us each), best of 5\n  N   seconds   speedup\n", round + 1, kJobs);
+        os::Print("\n[throughput] round %d: %d CPU-bound jobs (~60us each), best of 5\n  N   seconds   speedup\n", round + 1, kJobs);
         for (usize ci = 0; ci < configs.size(); ++ci) {
-            std::printf("  %-3zu %-9.4f %.2fx\n", static_cast<size_t>(configs[ci]), best[ci], best[0] / best[ci]);
+            os::Print("  %-3zu %-9.4f %.2fx\n", static_cast<size_t>(configs[ci]), best[ci], best[0] / best[ci]);
         }
         ok = true;
         for (usize ci = 0; ci < configs.size(); ++ci) {

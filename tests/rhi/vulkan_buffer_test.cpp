@@ -1,4 +1,3 @@
-#include <cstring>
 #include "sync/thread.h"
 #include <vector>
 
@@ -9,6 +8,7 @@
 #include "rhi/rhi.h"
 #include "rhi/staging_ring.h"
 #include "rhi/vulkan/vulkan_device.h"
+#include "cstr/mem_ops.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -169,7 +169,7 @@ TEST_CASE("Vulkan buffers: create, map, write and destroy, validation-clean", "[
     REQUIRE(buffer.IsValid());
     auto* p = static_cast<unsigned char*>(device->MapBuffer(buffer));
     REQUIRE(p != nullptr);
-    std::memset(p, 0x5A, 4096);
+    MemSet(p, 0x5A, 4096);
     device->UnmapBuffer(buffer);
 
     BufferDesc bad;
@@ -228,7 +228,7 @@ TEST_CASE("Vulkan partial uploads leave the rest of the buffer alone", "[rhi][vu
     device->UploadBuffer(buffer, 0, base.data(), base.size());
     std::vector<unsigned char> patch = Pattern(100, 2);
     device->UploadBuffer(buffer, 500, patch.data(), patch.size());
-    std::memcpy(base.data() + 500, patch.data(), patch.size());
+    MemCopy(base.data() + 500, patch.data(), patch.size());
     std::vector<unsigned char> back(1024);
     REQUIRE(device->ReadbackBuffer(buffer, 0, back.data(), back.size()));
     CHECK(back == base); // the second upload is ordered after the first
@@ -250,7 +250,7 @@ TEST_CASE("Vulkan CPU-visible buffers upload and read back through their mapping
     CHECK(direct.fence == 0); // no GPU copy needed
     CHECK(direct.ok);
     auto* p = static_cast<unsigned char*>(device->MapBuffer(buffer));
-    CHECK(std::memcmp(p, data.data(), 256) == 0);
+    CHECK(MemCompare(p, data.data(), 256) == 0);
     device->UnmapBuffer(buffer);
     std::vector<unsigned char> back(256);
     REQUIRE(device->ReadbackBuffer(buffer, 0, back.data(), back.size()));

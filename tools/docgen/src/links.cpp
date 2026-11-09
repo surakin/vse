@@ -1,8 +1,6 @@
 #include "links.h"
 
-
-#include <cstring>
-#include <new>
+#include "lang/new.h"
 
 #include "module_map.h"
 #include "source_file.h"

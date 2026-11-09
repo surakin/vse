@@ -2,9 +2,9 @@
 
 #include "debug/stack_trace.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include "os/console.h"
+#include "cstr/number.h"
+#include "cstr/cstr.h"
 #include "sync/thread.h"
 
 #include "os/windows/win32.h"
@@ -12,6 +12,8 @@
 #include "unity/windows_enable.h"
 #include <tlhelp32.h>
 #include "unity/windows_disable.h"
+#include "cstr/format.h"
+#include "cstr/mem_ops.h"
 
 namespace hang_watchdog {
 
@@ -66,9 +68,9 @@ void DumpThreads() {
         CloseHandle(thread);
         // Raw addresses only, written with WriteFile: naming them takes locks the suspended thread may hold. The parent names them
         // (NameFrames): it runs the same image at the same base, since Windows relocates an image once per boot.
-        WriteError(line, std::snprintf(line, sizeof(line), "HANG-WATCHDOG thread %lu:\n", static_cast<unsigned long>(entry.th32ThreadID)));
+        WriteError(line, FormatTo(line, sizeof(line), "HANG-WATCHDOG thread %lu:\n", static_cast<unsigned long>(entry.th32ThreadID)));
         for (u32 i = 0; i < trace.count; ++i) {
-            WriteError(line, std::snprintf(line, sizeof(line), "HANG-FRAME 0x%016llx\n", static_cast<unsigned long long>(trace.frames[i])));
+            WriteError(line, FormatTo(line, sizeof(line), "HANG-FRAME 0x%016llx\n", static_cast<unsigned long long>(trace.frames[i])));
         }
     }
     CloseHandle(snapshot);
@@ -88,17 +90,17 @@ void NameFrames(const char* text, unsigned long long length) {
     static char out[8192];
     const char* end = text + length;
     for (const char* p = text; p + 13 < end; ++p) {
-        if (std::strncmp(p, "HANG-WATCHDOG", 13) == 0) {
-            const char* eol = static_cast<const char*>(std::memchr(p, '\n', static_cast<usize>(end - p)));
-            std::fprintf(stderr, "%.*s\n", static_cast<int>((eol != nullptr ? eol : end) - p), p);
+        if (CStrCompareN(p, "HANG-WATCHDOG", 13) == 0) {
+            const char* eol = static_cast<const char*>(MemFind(p, '\n', static_cast<usize>(end - p)));
+            os::PrintError("%.*s\n", static_cast<int>((eol != nullptr ? eol : end) - p), p);
             continue;
         }
-        if (std::strncmp(p, "HANG-FRAME 0x", 13) != 0) continue;
+        if (CStrCompareN(p, "HANG-FRAME 0x", 13) != 0) continue;
         StackTrace one;
-        one.frames[0] = std::strtoull(p + 13, nullptr, 16);
+        one.frames[0] = CStrToULongLong(p + 13, nullptr, 16);
         one.count = 1;
         FormatStackTrace(one, out, sizeof(out));
-        std::fputs(out, stderr);
+        os::PrintErrorText(out);
     }
 }
 

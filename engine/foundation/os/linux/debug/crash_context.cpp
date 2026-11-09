@@ -3,14 +3,14 @@
 
 #include "os/os.h"
 
-#include <cstdio>
-#include <cstring>
-#include <ctime>
+#include "cstr/cstr.h"
+#include <time.h>
 #include <fcntl.h>
 #include <link.h>
 #include <sys/syscall.h>
 #include <sys/utsname.h>
 #include <unistd.h>
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::debug {
 
@@ -53,7 +53,7 @@ int FindBuildId(struct dl_phdr_info* info, size_t, void* data) {
                 break; // truncated or corrupt note
             }
             const byte* desc = name + name_size;
-            if (note->n_type == kGnuBuildIdNote && note->n_namesz == 4 && name_size >= 4 && std::memcmp(name, "GNU", 4) == 0) {
+            if (note->n_type == kGnuBuildIdNote && note->n_namesz == 4 && name_size >= 4 && MemCompare(name, "GNU", 4) == 0) {
                 usize digits = 0;
                 for (u32 b = 0; b < note->n_descsz && digits + 2 < kMaxBuildIdText; ++b) {
                     out[digits++] = "0123456789abcdef"[desc[b] >> 4];
@@ -91,21 +91,21 @@ bool ReadProcValue(const char* path, const char* key, char* out, usize capacity)
     }
     os::Close(fd);
     text[used] = '\0';
-    const usize key_length = std::strlen(key);
+    const usize key_length = CStrLength(key);
     for (const char* line = text; *line != '\0';) {
-        const char* next = std::strchr(line, '\n');
+        const char* next = CStrFindChar(line, '\n');
         const char* after_key = line + key_length;
-        while (std::strncmp(line, key, key_length) == 0 && (*after_key == ' ' || *after_key == '\t')) {
+        while (CStrCompareN(line, key, key_length) == 0 && (*after_key == ' ' || *after_key == '\t')) {
             ++after_key; // /proc/cpuinfo writes "model name<TAB>: value"
         }
-        if (std::strncmp(line, key, key_length) == 0 && *after_key == ':') {
+        if (CStrCompareN(line, key, key_length) == 0 && *after_key == ':') {
             const char* value = after_key + 1;
             while (*value == ' ' || *value == '\t') {
                 ++value;
             }
-            const usize length = next != nullptr ? static_cast<usize>(next - value) : std::strlen(value);
+            const usize length = next != nullptr ? static_cast<usize>(next - value) : CStrLength(value);
             usize n = length < capacity - 1 ? length : capacity - 1;
-            std::memcpy(out, value, n);
+            MemCopy(out, value, n);
             out[n] = '\0';
             return true;
         }

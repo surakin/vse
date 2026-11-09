@@ -8,6 +8,7 @@
 #include "algorithm.h"
 #include "io/file.h"
 #include "test_text.h"
+#include "cstr/mem_ops.h"
 
 namespace io_test {
 
@@ -165,7 +166,7 @@ private:
                 break;
             }
             const usize n_bytes = Min(Min(r->length, options_.chunk), data_.Size() - static_cast<usize>(r->offset));
-            std::memcpy(r->buffer, data_.Data() + r->offset, n_bytes);
+            MemCopy(r->buffer, data_.Data() + r->offset, n_bytes);
             result.bytes = n_bytes;
             size_known_.Store(true);
             break;
@@ -173,7 +174,7 @@ private:
         case io::AsyncKind::Write: {
             const usize end = static_cast<usize>(r->offset) + r->length;
             if (data_.Size() < end) data_.Resize(end);
-            if (r->length != 0) std::memcpy(data_.Data() + r->offset, r->data, r->length);
+            if (r->length != 0) MemCopy(data_.Data() + r->offset, r->data, r->length);
             result.bytes = r->length;
             break;
         }
@@ -185,7 +186,7 @@ private:
     static Vector<char> Copy(StringView content) {
         Vector<char> out;
         out.Resize(content.Length());
-        if (content.Length() != 0) std::memcpy(out.Data(), content.Data(), content.Length());
+        if (content.Length() != 0) MemCopy(out.Data(), content.Data(), content.Length());
         return out;
     }
 

@@ -1,6 +1,6 @@
 #include "renderer/transient_pool.h"
 
-#include <new>
+#include "lang/new.h"
 
 #include "log/assert.h"
 #include "renderer/renderer_log.h"

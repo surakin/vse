@@ -1,10 +1,11 @@
 #include "renderer/shader_reflection.h"
 
-#include <cstdarg>
-#include <cstdio>
-#include <cstring>
+#include "cstr/varargs.h"
+#include "cstr/format.h"
+#include "cstr/cstr.h"
 
 #include "debug/compiler.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::renderer {
 
@@ -60,10 +61,10 @@ void SetError(ReflectionError* error, const char* format, ...) {
     if (error == nullptr) {
         return;
     }
-    va_list args;
-    va_start(args, format);
-    std::vsnprintf(error->message, kReflectionErrorLength, format, args);
-    va_end(args);
+    VarArgs args;
+    ENGINE_VA_START(args, format);
+    VFormatTo(error->message, kReflectionErrorLength, format, args);
+    ENGINE_VA_END(args);
 }
 
 // --- Blob writer and reader ----------------------------------------------------------------------------------------
@@ -80,7 +81,7 @@ public:
         }
     }
     void String(const char* text) {
-        const usize length = std::strlen(text);
+        const usize length = CStrLength(text);
         U8(static_cast<u32>(length));
         for (usize i = 0; i < length; ++i) {
             Put(static_cast<u8>(text[i]));
@@ -138,7 +139,7 @@ public:
                 return false;
             }
         }
-        std::memcpy(out, data_ + pos_, length);
+        MemCopy(out, data_ + pos_, length);
         out[length] = '\0';
         pos_ += length;
         return true;
@@ -242,7 +243,7 @@ const char* ValidateShaderReflection(const ShaderReflection& r) {
             return "reflection: a block name is not terminated or it has too many members";
         }
         for (u32 j = 0; j < i; ++j) {
-            if (std::strncmp(r.blocks[j].name, block.name, kMaxReflectionName) == 0) {
+            if (CStrCompareN(r.blocks[j].name, block.name, kMaxReflectionName) == 0) {
                 return "reflection: two blocks have the same name";
             }
         }
@@ -252,7 +253,7 @@ const char* ValidateShaderReflection(const ShaderReflection& r) {
                 return "reflection: a member name is not terminated";
             }
             for (u32 j = 0; j < m; ++j) {
-                if (std::strncmp(block.members[j].name, member.name, kMaxReflectionName) == 0) {
+                if (CStrCompareN(block.members[j].name, member.name, kMaxReflectionName) == 0) {
                     return "reflection: two members of a block have the same name";
                 }
             }
@@ -462,7 +463,7 @@ const char* ParseShaderReflection(const u8* data, usize size, ShaderReflection* 
 
 const ReflectedBlock* FindBlock(const ShaderReflection& reflection, const char* name) {
     for (u32 i = 0; i < reflection.block_count && i < kMaxReflectedBlocks; ++i) {
-        if (std::strncmp(reflection.blocks[i].name, name, kMaxReflectionName) == 0) {
+        if (CStrCompareN(reflection.blocks[i].name, name, kMaxReflectionName) == 0) {
             return &reflection.blocks[i];
         }
     }

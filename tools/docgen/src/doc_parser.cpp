@@ -1,7 +1,7 @@
 #include "doc_parser.h"
 
-#include <cstring>
-#include <new>
+#include "cstr/cstr.h"
+#include "lang/new.h"
 
 namespace docgen {
 namespace {
@@ -41,7 +41,7 @@ StringView Trim(StringView s) {
 }
 
 bool StartsWith(StringView s, const char* p) {
-    usize n = std::strlen(p);
+    usize n = engine_placeholder::CStrLength(p);
     if (s.Length() < n) return false;
     for (usize i = 0; i < n; ++i) {
         if (s[i] != p[i]) return false;
@@ -141,7 +141,7 @@ private:
     void Diag(Severity sev, u32 line, const char* msg) { Diag(sev, line, StringView(msg)); }
 
     StringView Msg(const char* prefix, StringView detail) {
-        const usize pl = std::strlen(prefix);
+        const usize pl = engine_placeholder::CStrLength(prefix);
         const usize len = pl + 2 + detail.Length() + 1;
         char* buf = static_cast<char*>(arena_.Alloc(len + 1, 1));
         ENGINE_ASSERT(buf != nullptr, "docgen: arena exhausted");
@@ -502,7 +502,7 @@ void Validate(const Decl& d, const ParsedDoc& doc, Vector<Diagnostic, ArenaAlloc
         const Label& l = doc.labels[i];
         if (l.kind == LabelKind::Param && !IsParam(d, l.name)) {
             const char* prefix = "Param name does not match a parameter:";
-            const usize pl = std::strlen(prefix);
+            const usize pl = engine_placeholder::CStrLength(prefix);
             char* buf = static_cast<char*>(arena.Alloc(pl + l.name.Length() + 4, 1));
             ENGINE_ASSERT(buf != nullptr, "docgen: arena exhausted");
             CopyBytes(buf, prefix, pl);

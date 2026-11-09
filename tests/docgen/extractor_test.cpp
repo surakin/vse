@@ -2,7 +2,6 @@
 #include <sys/stat.h>
 
 #include <algorithm>
-#include <cstdio>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -12,6 +11,7 @@
 #include "fs_fixture.h"
 #include "extractor.h"
 #include "scanner.h"
+#include "cstr/cstr.h"
 
 using namespace docgen;
 
@@ -61,7 +61,7 @@ void ExtractorTestListFiles(const std::string& dir, const char* suffix, std::vec
     for (const std::string& n : docgen_test::ListNamesSorted(dir)) {
         std::string p = dir + "/" + n;
         if (docgen_test::IsDirectoryAt(p)) ExtractorTestListFiles(p, suffix, out);
-        else if (p.size() >= std::strlen(suffix) && p.compare(p.size() - std::strlen(suffix), std::strlen(suffix), suffix) == 0)
+        else if (p.size() >= engine_placeholder::CStrLength(suffix) && p.compare(p.size() - engine_placeholder::CStrLength(suffix), engine_placeholder::CStrLength(suffix), suffix) == 0)
             out.push_back(p);
     }
 }

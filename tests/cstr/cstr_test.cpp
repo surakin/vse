@@ -204,3 +204,35 @@ TEST_CASE("Number conversion matches the C library", "[cstr]") {
     char tiny[2];
     CHECK(!FormatShortest(tiny, tiny + 1, 12345.678).ok);
 }
+
+TEST_CASE("ParseDoubleExact reads plain decimals only", "[cstr]") {
+    const char* ok = "12.5e1x";
+    ParseDoubleResult r = ParseDoubleExact(ok, ok + 7);
+    CHECK(r.ok);
+    CHECK(r.value == 125.0);
+    CHECK(r.end == ok + 6);
+    for (const char* bad : {"+1", " 1", "", "abc"}) {
+        const ParseDoubleResult b = ParseDoubleExact(bad, bad + CStrLength(bad));
+        CHECK(!b.ok);
+    }
+    const char* const hex_text = "0x10";
+    const ParseDoubleResult hex = ParseDoubleExact(hex_text, hex_text + 4);
+    CHECK(hex.ok);
+    CHECK(hex.value == 0.0); // reads the "0"; the caller sees that the end is not the end of the text
+}
+
+namespace {
+int CompareInts(const void* a, const void* b) {
+    const int x = *static_cast<const int*>(a);
+    const int y = *static_cast<const int*>(b);
+    return x < y ? -1 : (x > y ? 1 : 0);
+}
+} // namespace
+
+TEST_CASE("SortRaw orders raw elements", "[cstr]") {
+    int values[] = {5, 3, 9, -1, 3, 0};
+    SortRaw(values, 6, sizeof(int), &CompareInts);
+    for (int i = 1; i < 6; ++i) CHECK(values[i - 1] <= values[i]);
+    CHECK(values[0] == -1);
+    CHECK(values[5] == 9);
+}

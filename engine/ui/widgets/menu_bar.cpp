@@ -1,6 +1,6 @@
 #include "ui/widgets/menu_bar.h"
 
-#include <cmath>
+#include "lang/scalar.h"
 
 #include "text/cursor.h"
 #include "ui/surface.h"
@@ -39,7 +39,7 @@ Size MenuBar::Layout() {
         f32 w = 0;
         if (t.run.EnsureForStyle(surface, style, 0)) {
             w = t.run.Width();
-            h = std::fmax(h, t.run.Height());
+            h = FMax(h, t.run.Height());
         }
         t.x = x;
         t.width = w + pad_x * 2;

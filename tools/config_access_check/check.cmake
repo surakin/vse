@@ -63,7 +63,7 @@ endif()
 set(allow_used "")
 
 # getenv and, on Windows (Phase 13 Day 150), its Win32 and C runtime forms and the command-line readers.
-set(env_re "(^|[^A-Za-z0-9_.>])(std::)?(getenv|secure_getenv|GetEnvironmentVariableW|GetEnvironmentVariableA|_wgetenv|_dupenv_s|_wdupenv_s|getenv_s|_wgetenv_s|GetCommandLineW|GetCommandLineA|CommandLineToArgvW)[ \t]*\\(")
+set(env_re "(^|[^A-Za-z0-9_.>])(std::)?(getenv|secure_getenv|GetEnvironment|GetEnvironmentVariableW|GetEnvironmentVariableA|_wgetenv|_dupenv_s|_wdupenv_s|getenv_s|_wgetenv_s|GetCommandLineW|GetCommandLineA|CommandLineToArgvW)[ \t]*\\(")
 set(flag_re "\"--[a-z][a-z0-9-]*")
 # The Windows registry (Phase 13 Day 157): reading or writing a value there is configuration too; the settings system's registry store
 # (engine/foundation/settings/windows/) is the one place for it.

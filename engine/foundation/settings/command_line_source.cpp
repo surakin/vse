@@ -1,7 +1,6 @@
 #include "settings/env_source.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
 
 namespace engine_placeholder::settings {
 
@@ -113,7 +112,7 @@ CommandLineSource::CommandLineSource(const Registry& registry, int argc, const c
 }
 
 void CommandLineSource::Describe(char* out, usize capacity) const {
-    if (capacity != 0) std::snprintf(out, capacity, "command line");
+    if (capacity != 0) FormatTo(out, capacity, "command line");
 }
 
 bool CommandLineSource::AddFromProgram(const Key& key, StringView text, StringView origin) {

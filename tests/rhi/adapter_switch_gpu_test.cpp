@@ -2,7 +2,7 @@
 // device, the picture matches the blessed golden on each adapter, and the counts and owners stay where they were. (The backend is chosen
 // at start: Day 173 removed the run-time Vulkan/DX12 switch this file also tested.)
 
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -106,7 +106,7 @@ TEST_CASE("The GPU of a running renderer switches between the hardware adapter a
     REQUIRE(result.ok);
     CHECK(result.performed == CostClass::DeviceReset);
     CHECK(rig.host.GetDevice()->Adapter().kind == rhi::AdapterKind::Software);
-    CHECK(std::strstr(rig.host.GetDevice()->Adapter().name, "Basic Render") != nullptr);
+    CHECK(CStrFind(rig.host.GetDevice()->Adapter().name, "Basic Render") != nullptr);
     gpu_test::Image warp;
     ShootAndCompare(&rig, &warp, "gpu_switch_warp");
     rig.host.GetDevice()->Quiesce();
@@ -120,7 +120,7 @@ TEST_CASE("The GPU of a running renderer switches between the hardware adapter a
     result = rig.R().ApplySettings(wanted);
     INFO(result.reason);
     REQUIRE(result.ok);
-    CHECK(std::strcmp(rig.host.GetDevice()->Adapter().id, hardware.id) == 0);
+    CHECK(CStrCompare(rig.host.GetDevice()->Adapter().id, hardware.id) == 0);
     gpu_test::Image again;
     ShootAndCompare(&rig, &again, "gpu_switch_hardware_again");
     CHECK(again.rgba == first.rgba); // the same adapter and driver: the same bytes

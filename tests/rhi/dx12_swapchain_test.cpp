@@ -2,7 +2,7 @@
 // requests, a replaced surface), the tearing flag and Immediate, the frame-latency wait, the sRGB view of a linear buffer, a window with no
 // area, and a device lost at present. Windows only; skipped when the session cannot show windows.
 #include <chrono>
-#include <cmath>
+#include "lang/scalar.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -196,9 +196,9 @@ TEST_CASE("A DX12 swapchain's sRGB image is a view of a linear buffer, with tear
     pixels.Resize(static_cast<usize>(w) * h * 4);
     REQUIRE(device->ReadbackTexture(image, 0, 0, pixels.Data(), pixels.Size(), ResourceState::CopySrc));
     for (int c = 0; c < 4; ++c) px[c] = pixels[c];
-    CHECK(std::abs(px[0] - 188) <= 1);
-    CHECK(std::abs(px[1] - 188) <= 1);
-    CHECK(std::abs(px[2] - 188) <= 1);
+    CHECK(Abs(px[0] - 188) <= 1);
+    CHECK(Abs(px[1] - 188) <= 1);
+    CHECK(Abs(px[2] - 188) <= 1);
     device->BeginFrame();
     list = device->CreateCommandList();
     list->Begin();

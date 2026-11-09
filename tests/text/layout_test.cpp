@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include "font_support.h"
 #include "text/layout.h"
@@ -19,7 +19,7 @@ TextLayout Lay(Opened& o, const char* text, u32 size = 24, f32 max_width = 0, Al
     options.align = align;
     options.tab_width_in_spaces = tab;
     TextLayout layout;
-    const Status status = Layout(StringView(text, std::strlen(text)), style, options, &layout);
+    const Status status = Layout(StringView(text, CStrLength(text)), style, options, &layout);
     REQUIRE(status.Ok());
     return layout;
 }

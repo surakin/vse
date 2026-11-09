@@ -3,7 +3,7 @@
 // The benchmarks' launch-only `--rhi NAME` option (the demos have it as the `renderer.backend` setting's flag): the graphics backend a
 // name chooses.
 
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include "rhi/rhi.h"
 
@@ -17,7 +17,7 @@ inline bool ParseRhiBackend(const char* name, ::engine_placeholder::rhi::Backend
         Backend backend;
     } kNames[] = {{"null", Backend::Null}, {"vulkan", Backend::Vulkan}, {"dx12", Backend::Dx12}, {"auto", Backend::Auto}};
     for (const auto& n : kNames) {
-        if (std::strcmp(name, n.name) == 0) {
+        if (engine_placeholder::CStrCompare(name, n.name) == 0) {
             *out = n.backend;
             return true;
         }

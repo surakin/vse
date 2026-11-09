@@ -12,7 +12,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIRS = ["engine", "game", "tools", "tests"]
 EXT = (".h", ".hpp", ".cpp", ".inl")
 WINDOWS_RE = re.compile(r"(/windows/|/dx12/|win32_|_windows_test|windows_|/tests/windows)")
-SKIP_PREFIX = ("engine/foundation/types.h", "engine/foundation/lang/", "engine/foundation/sync/", "engine/foundation/cstr/", "tests/lang/", "tests/sync/", "tests/cstr/",
+SKIP_PREFIX = ("engine/foundation/os/console.h", "engine/foundation/types.h", "engine/foundation/lang/", "engine/foundation/sync/", "engine/foundation/cstr/", "tests/lang/", "tests/sync/", "tests/cstr/",
                "tests/mem/", "tests/docgen/fixtures/", "third_party/", "tools/std_container_check/fixtures", "tools/raw_new_check/fixtures", "tools/signal_safety_check/fixtures", "tools/module_deps_check/fixtures", "tools/file_access_check/fixtures", "tools/config_access_check/fixtures", "tools/platform_neutral_check/fixtures", "tools/std_usage_report", "tests/shader_mint/", "tools/shader_mint/reflect_json")
 # Files whose standard-library use is the wrapper module's own implementation (the wrapper headers), per pass.
 OWN = {}
@@ -138,7 +138,7 @@ def passes():
     O.append((r"\bstd::abort\(", "os::Abort(", "os/console.h"))
     O.append((r"\bstd::exit\(", "os::Exit(", "os/console.h"))
     O.append((r"\bstd::_Exit\(", "os::ExitNow(", "os/console.h"))
-    O.append((r"\bstd::getenv\(", "os::GetEnvironmentVariable(", "os/console.h"))
+    O.append((r"\bstd::getenv\(", "os::GetEnvironment(", "os/console.h"))
     P["os"] = dict(rules=O, std_includes={"cstdio": "os/console.h", "cstdlib": "os/console.h"}, family=P["cstr"]["family"])
     # ---- math ---------------------------------------------------------------------------------------------------------------------
     M = []

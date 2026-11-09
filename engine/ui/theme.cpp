@@ -1,12 +1,12 @@
 #include "ui/theme.h"
 
-#include <cmath>
-#include <cstdio>
-#include <cstring>
+#include "lang/scalar.h"
+#include "cstr/format.h"
 #include "sync/mutex.h"
 
 #include "log/assert.h"
 #include "log/log.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::ui {
 
@@ -34,10 +34,10 @@ public:
         if (name.Length() == 0 || name.Length() > kMaxName) return 0;
         LockGuard<Mutex> lock(mutex_);
         for (usize i = 0; i < names_.Size(); ++i) {
-            if (names_[i].length == name.Length() && std::memcmp(names_[i].text, name.Data(), name.Length()) == 0) return static_cast<u32>(i + 1);
+            if (names_[i].length == name.Length() && MemCompare(names_[i].text, name.Data(), name.Length()) == 0) return static_cast<u32>(i + 1);
         }
         Name n;
-        std::memcpy(n.text, name.Data(), name.Length());
+        MemCopy(n.text, name.Data(), name.Length());
         n.text[name.Length()] = '\0';
         n.length = static_cast<u8>(name.Length());
         names_.Push(n);
@@ -95,7 +95,7 @@ void OverlayState(StateStyle* dst, const StateStyle& src) {
 }
 
 f32 RoundPixels(f32 logical, f32 scale) {
-    const f32 v = std::round(logical * scale);
+    const f32 v = Round(logical * scale);
     return v < 0 ? 0 : v;
 }
 
@@ -344,7 +344,7 @@ const Theme& DefaultDarkTheme() {
 f32 ContrastRatio(u32 a, u32 b) {
     auto channel = [](u32 v) {
         const f32 c = static_cast<f32>(v) / 255.0f;
-        return c <= 0.03928f ? c / 12.92f : std::pow((c + 0.055f) / 1.055f, 2.4f);
+        return c <= 0.03928f ? c / 12.92f : Pow((c + 0.055f) / 1.055f, 2.4f);
     };
     auto luminance = [&](u32 abgr) { return 0.2126f * channel(abgr & 0xFF) + 0.7152f * channel((abgr >> 8) & 0xFF) + 0.0722f * channel((abgr >> 16) & 0xFF); };
     const f32 la = luminance(a);
@@ -456,7 +456,7 @@ void ThemeSet::NoteMissing(WidgetKind kind, VariantId variant, StringView name) 
     logged_missing_.Push(key);
     const String<HeapAllocator> kind_name = WidgetKindName(kind);
     char line[160];
-    std::snprintf(line, sizeof(line), "ui theme: no style '%.*s' for widget kind '%s'; the default style of the kind is used", static_cast<int>(name.Length()), name.Data(),
+    FormatTo(line, sizeof(line), "ui theme: no style '%.*s' for widget kind '%s'; the default style of the kind is used", static_cast<int>(name.Length()), name.Data(),
                   kind_name.CStr());
     Log(LogCore, LogVerbosity::Warn, StringView(line));
 }

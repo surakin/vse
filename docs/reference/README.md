@@ -7,16 +7,17 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | Module | Headers | Symbols |
 |---|---|---|
 | [Foundation: Memory](foundation-memory.md) | 4 | 28 |
-| [Foundation: Language support](foundation-lang.md) | 6 | 69 |
-| [Foundation: Synchronization](foundation-sync.md) | 3 | 106 |
+| [Foundation: Language support](foundation-lang.md) | 7 | 121 |
+| [Foundation: C library](foundation-cstr.md) | 5 | 57 |
+| [Foundation: Synchronization](foundation-sync.md) | 3 | 109 |
 | [Foundation: Containers](foundation-containers.md) | 7 | 165 |
 | [Foundation: Strings](foundation-strings.md) | 6 | 98 |
 | [Foundation: Paths and Files](foundation-io.md) | 5 | 265 |
-| [Foundation: Math](foundation-math.md) | 5 | 101 |
+| [Foundation: Math](foundation-math.md) | 5 | 97 |
 | [Foundation: Logging and Assertions](foundation-log.md) | 3 | 81 |
 | [Foundation: Fundamental Types](foundation-types.md) | 2 | 99 |
 | [Foundation: Settings](foundation-settings.md) | 17 | 524 |
-| [Platform: OS Services](platform-os.md) | 4 | 50 |
+| [Platform: OS Services](platform-os.md) | 7 | 66 |
 | [Platform: Windowing and Input](platform-window-input.md) | 22 | 669 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 208 |
 | [Text](text.md) | 6 | 221 |

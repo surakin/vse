@@ -8,6 +8,7 @@
 
 #include "gpu_fixture.h"
 #include "rhi/vulkan/vk_instance.h"
+#include "cstr/cstr.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi::vulkan;
@@ -95,7 +96,7 @@ void SeenCapture(void* user, LogVerbosity severity, const char*, const char* tex
     Seen* seen = static_cast<Seen*>(user);
     if (severity == LogVerbosity::Error) {
         ++seen->errors;
-        std::strncpy(seen->id, text, sizeof(seen->id) - 1);
+        CStrCopyN(seen->id, text, sizeof(seen->id) - 1);
     }
 }
 } // namespace
@@ -130,7 +131,7 @@ TEST_CASE("SetValidationCapture can be replaced and removed", "[rhi][vulkan][gpu
     const VulkanInstance& instance = fx.Instance();
     instance.Fns().EnumeratePhysicalDevices(instance.Handle(), nullptr, nullptr);
     CHECK(seen.errors == 1);
-    CHECK(std::strstr(seen.id, "VUID-vkEnumeratePhysicalDevices") != nullptr);
+    CHECK(CStrFind(seen.id, "VUID-vkEnumeratePhysicalDevices") != nullptr);
     CHECK(fx.Messages().empty()); // the fixture's hook was replaced, so it saw nothing
     SetValidationCapture(nullptr, nullptr);
 }

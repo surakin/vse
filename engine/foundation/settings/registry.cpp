@@ -1,11 +1,12 @@
 #include "settings/registry.h"
 
-#include <cstring>
+#include "cstr/cstr.h"
 
 #include "log/assert.h"
 #include "settings/setting.h"
 #include "sync/atomic.h"
 #include "sync/mutex.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::settings {
 
@@ -17,12 +18,12 @@ u64 Encode(const Value& value) {
     case Type::Bool: bits = value.AsBool() ? 1 : 0; break;
     case Type::Int: {
         const i64 v = value.AsInt();
-        std::memcpy(&bits, &v, sizeof(bits));
+        MemCopy(&bits, &v, sizeof(bits));
         break;
     }
     case Type::Float: {
         const f64 v = value.AsFloat();
-        std::memcpy(&bits, &v, sizeof(bits));
+        MemCopy(&bits, &v, sizeof(bits));
         break;
     }
     case Type::Enum: bits = value.AsEnum(); break;
@@ -67,7 +68,7 @@ namespace {
 bool FinitePair(f64 a, f64 b) { return a == a && b == b && a - a == 0.0 && b - b == 0.0; }
 
 bool GoodEnumName(const char* name) {
-    if (name == nullptr || name[0] == '\0' || std::strlen(name) > kMaxEnumNameBytes) return false;
+    if (name == nullptr || name[0] == '\0' || CStrLength(name) > kMaxEnumNameBytes) return false;
     for (const char* p = name; *p != '\0'; ++p) { // printable ASCII, no blank, and none of the characters the file format uses
         const u8 c = static_cast<u8>(*p);
         if (c <= 0x20 || c >= 0x7f || c == '=' || c == '#' || c == ';' || c == '"' || c == '[' || c == ']' || c == '\\') return false;
@@ -129,7 +130,7 @@ SettingId Registry::Register(const SettingDesc& desc, RegisterError* error) {
         for (u32 i = 0; i < desc.enum_count; ++i) {
             if (!GoodEnumName(desc.enum_names[i])) return fail(RegisterError::BadEnum);
             for (u32 j = 0; j < i; ++j) {
-                if (std::strcmp(desc.enum_names[i], desc.enum_names[j]) == 0) return fail(RegisterError::BadEnum);
+                if (CStrCompare(desc.enum_names[i], desc.enum_names[j]) == 0) return fail(RegisterError::BadEnum);
             }
         }
         if (def.AsEnum() >= desc.enum_count) return fail(RegisterError::BadDefault);
@@ -253,7 +254,7 @@ usize Registry::CurrentText(SettingId id, char* out, usize capacity) const {
     LockGuard<Mutex> lock(text_mutex_);
     const StringView t = slots_[id.value - 1u]->text.AsText();
     if (t.Length() + 1 <= capacity) {
-        std::memcpy(out, t.Data(), t.Length());
+        MemCopy(out, t.Data(), t.Length());
         out[t.Length()] = '\0';
     }
     return t.Length();

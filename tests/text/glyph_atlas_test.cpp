@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include <cstdio>
+#include "cstr/format.h"
 
 #include "font_support.h"
 #include "text/glyph_atlas.h"
@@ -310,7 +310,7 @@ Vector<byte> HelloPgm(Font& font, u32 size, u32* width_out, u32* height_out) {
     Vector<byte> pgm;
     const char header[] = "P5\n%u %u\n255\n";
     char line[64];
-    const int n = std::snprintf(line, sizeof(line), header, width, height);
+    const int n = FormatTo(line, sizeof(line), header, width, height);
     for (int i = 0; i < n; ++i) pgm.Push(static_cast<byte>(line[i]));
     for (usize i = 0; i < image.Size(); ++i) pgm.Push(image[i]);
     *width_out = width;

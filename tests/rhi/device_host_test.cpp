@@ -12,6 +12,7 @@
 #include "rhi/null/null_device.h"
 #include "rhi/rhi_log.h"
 #include "rhi/vulkan/vulkan_device.h"
+#include "cstr/cstr.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::rhi;
@@ -286,20 +287,20 @@ TEST_CASE("A failing create leaves the host empty and says why", "[rhi][host]") 
     CHECK_FALSE(host.Recreate(bad, SwapchainDesc{}));
     CHECK(host.GetDevice() == nullptr);
     CHECK(host.Epoch() == 0);
-    CHECK(std::strlen(host.LastError()) > 0);
+    CHECK(CStrLength(host.LastError()) > 0);
     CHECK(host.ResetCount() == 0);
 
     // Rolling back is a Create with the old description.
     REQUIRE(host.Create(good, SwapchainDesc{}));
     CHECK(host.GetDevice() != nullptr);
-    CHECK(std::strlen(host.LastError()) == 0);
+    CHECK(CStrLength(host.LastError()) == 0);
 
     // An observer that cannot rebuild fails the whole call and everything is released again.
     observer.fail_create = true;
     log.clear();
     CHECK_FALSE(host.Recreate(good, SwapchainDesc{}));
     CHECK(host.GetDevice() == nullptr);
-    CHECK(std::strstr(host.LastError(), "obs") != nullptr);
+    CHECK(CStrFind(host.LastError(), "obs") != nullptr);
     observer.fail_create = false;
     REQUIRE(host.Create(good, SwapchainDesc{}));
     CHECK(host.GetDevice()->Resources().UserObjects() == 1);

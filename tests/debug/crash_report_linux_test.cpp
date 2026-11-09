@@ -6,7 +6,7 @@
 #include "test_text.h"
 
 #include <cstdio>
-#include <cstring>
+#include "cstr/cstr.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -18,7 +18,7 @@ TEST_CASE("The CPU brand is read from /proc/cpuinfo", "[crashreport][debug][linu
     char line[512];
     bool has_model_name = false;
     while (std::fgets(line, sizeof(line), f) != nullptr) {
-        if (std::strncmp(line, "model name", 10) == 0) {
+        if (CStrCompareN(line, "model name", 10) == 0) {
             has_model_name = true;
         }
     }

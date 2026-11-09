@@ -1,6 +1,6 @@
 #include "settings/migration.h"
 
-#include <cstdio>
+#include "cstr/format.h"
 
 #include "log/assert.h"
 
@@ -20,7 +20,7 @@ Text MigMake(StringView v) { return Text(HeapAllocator::Default(), v); }
 
 Text Format2(const char* format, StringView a, StringView b = StringView()) {
     char buffer[300];
-    std::snprintf(buffer, sizeof(buffer), format, static_cast<int>(a.Length()), a.Data(), static_cast<int>(b.Length()), b.Data());
+    FormatTo(buffer, sizeof(buffer), format, static_cast<int>(a.Length()), a.Data(), static_cast<int>(b.Length()), b.Data());
     return MigMake(StringView(buffer));
 }
 
@@ -78,7 +78,7 @@ void StampVersions(const Registry& registry, ConfigStore& store, bool overwrite)
     StoredValue sv;
     if (overwrite || store.Get("version", &sv).Is(StoreError::NotFound)) {
         char text[16];
-        std::snprintf(text, sizeof(text), "%u", static_cast<unsigned>(kFormatVersion));
+        FormatTo(text, sizeof(text), "%u", static_cast<unsigned>(kFormatVersion));
         SetText(store, "version", text);
     }
     for (u32 i = 0; i < registry.SchemaCount(); ++i) {
@@ -87,7 +87,7 @@ void StampVersions(const Registry& registry, ConfigStore& store, bool overwrite)
         const Text key = SchemaKey(section);
         if (overwrite || store.Get(key.View(), &sv).Is(StoreError::NotFound)) {
             char text[16];
-            std::snprintf(text, sizeof(text), "%u", static_cast<unsigned>(version));
+            FormatTo(text, sizeof(text), "%u", static_cast<unsigned>(version));
             SetText(store, key.View(), text);
         }
     }
@@ -182,7 +182,7 @@ void MigrationSet::Migrate(const Registry& registry, ConfigStore& store, Migrati
             continue;
         }
         char text[16];
-        std::snprintf(text, sizeof(text), "%u", static_cast<unsigned>(program));
+        FormatTo(text, sizeof(text), "%u", static_cast<unsigned>(program));
         SetText(store, SchemaKey(section).View(), text);
         ++rep->sections_upgraded;
     }

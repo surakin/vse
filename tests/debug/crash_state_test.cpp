@@ -11,6 +11,7 @@
 #include <cstring>
 #include <string>
 #include "sync/atomic.h"
+#include "cstr/cstr.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::debug;
@@ -72,7 +73,7 @@ TEST_CASE("A long text is cut, and a name cannot be both text and counter", "[cr
     const std::string section = StateSection();
     const usize at = section.find("test-long: ");
     REQUIRE(at != std::string::npos);
-    CHECK(section.find('\n', at) - at - std::strlen("test-long: ") == kCrashStateEntryTextBytes - 1);
+    CHECK(section.find('\n', at) - at - CStrLength("test-long: ") == kCrashStateEntryTextBytes - 1);
     CHECK(CrashStateCounter("test-long") == nullptr);
     CHECK_FALSE(SetCrashStateText(nullptr, "x"));
     CHECK(CrashStateCounter(nullptr) == nullptr);
@@ -101,7 +102,7 @@ TEST_CASE("With error traces on, an Error line is followed by a trace and other 
 TEST_CASE("Registering a thread before the crash handler is installed sets its name and reports that nothing more was done", "[crash][debug]") {
     REQUIRE_FALSE(CrashHandlerInstalled());
     CHECK_FALSE(RegisterThreadForCrashHandling("early-thread"));
-    CHECK(std::strcmp(CrashThreadName(), "early-thread") == 0);
+    CHECK(CStrCompare(CrashThreadName(), "early-thread") == 0);
     SetCrashThreadName("");
 }
 
@@ -109,9 +110,9 @@ TEST_CASE("The name of a crash state entry is copied, so the caller's string may
     ResetCrashStateForTesting();
     {
         char name[16];
-        std::strcpy(name, "test-copied");
+        CStrCopy(name, "test-copied");
         REQUIRE(SetCrashStateText(name, "kept"));
-        std::strcpy(name, "garbage!!!!");
+        CStrCopy(name, "garbage!!!!");
     }
     const std::string section = StateSection();
     CHECK(section.find("test-copied: kept\n") != std::string::npos);

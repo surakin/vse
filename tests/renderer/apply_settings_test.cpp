@@ -1,5 +1,5 @@
 // Phase 8 Day 110: Renderer::ApplySettings on the null backend: the cheapest sufficient action, the frame boundary, rollback.
-#include <cstring>
+#include "cstr/cstr.h"
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -222,7 +222,7 @@ TEST_CASE("A DeviceReset change replaces the device and every owner rebuilds", "
     REQUIRE(result.ok);
     CHECK(result.performed == CostClass::DeviceReset);
     CHECK(rig.Epoch() != epoch);
-    CHECK(std::strcmp(rig.host.GetDevice()->Adapter().id, "null-integrated") == 0);
+    CHECK(CStrCompare(rig.host.GetDevice()->Adapter().id, "null-integrated") == 0);
     CHECK(rig.renderer->GetDevice() == rig.host.GetDevice());
     CHECK(rig.renderer->GetSwapchain() == rig.host.GetSwapchain());
     CHECK(rig.texture_owner.recreates == 1);
@@ -235,7 +235,7 @@ TEST_CASE("A DeviceReset change replaces the device and every owner rebuilds", "
     RenderSettings again = rig.renderer->Settings();
     again.SetBool(kSyncValidation, true);
     REQUIRE(rig.renderer->ApplySettings(again).ok);
-    CHECK(std::strcmp(rig.host.GetDevice()->Adapter().id, "null-integrated") == 0);
+    CHECK(CStrCompare(rig.host.GetDevice()->Adapter().id, "null-integrated") == 0);
 }
 
 TEST_CASE("A change asked for inside a frame waits for the next frame, and a newer request replaces it", "[apply_settings]") {
@@ -252,7 +252,7 @@ TEST_CASE("A change asked for inside a frame waits for the next frame, and a new
     rig.ask_during_frame = false;
     REQUIRE(rig.Render() == FrameStatus::Ok); // the queued change is applied at the start of this frame
     CHECK(rig.Epoch() != epoch);
-    CHECK(std::strcmp(rig.host.GetDevice()->Adapter().id, "null-integrated") == 0);
+    CHECK(CStrCompare(rig.host.GetDevice()->Adapter().id, "null-integrated") == 0);
     CHECK(rig.renderer->LastApply().performed == CostClass::DeviceReset);
 
     // Two requests inside two frames: the second replaces the first.
@@ -277,7 +277,7 @@ TEST_CASE("A failed device creation restores the previous settings", "[apply_set
     CHECK_FALSE(result.ok);
     CHECK(result.rolled_back);
     CHECK_FALSE(result.device_lost);
-    CHECK(std::strlen(result.reason) > 0);
+    CHECK(CStrLength(result.reason) > 0);
     CHECK(rig.renderer->Settings().GetText(kAdapter)[0] == '\0'); // unchanged
     CHECK(rig.renderer->Stats().rollbacks == 1);
     CHECK(rig.ends == 1);
@@ -297,7 +297,7 @@ TEST_CASE("An owner that fails to rebuild undoes the change", "[apply_settings]"
     const ApplyResult result = rig.renderer->ApplySettings(wanted);
     CHECK_FALSE(result.ok);
     CHECK(result.rolled_back);
-    CHECK(std::strcmp(rig.host.GetDevice()->Adapter().id, "null-discrete") == 0); // the previous adapter is back
+    CHECK(CStrCompare(rig.host.GetDevice()->Adapter().id, "null-discrete") == 0); // the previous adapter is back
     CHECK(rig.renderer->Settings().GetText(kAdapter)[0] == '\0');
     CHECK(rig.Render() == FrameStatus::Ok);
 }
@@ -365,7 +365,7 @@ TEST_CASE("Without a device host only None and Dynamic changes can be applied", 
     swapchain.SetEnum(kPresentMode, 1);
     const ApplyResult result = rig.renderer->ApplySettings(swapchain);
     CHECK_FALSE(result.ok);
-    CHECK(std::strstr(result.reason, "DeviceHost") != nullptr);
+    CHECK(CStrFind(result.reason, "DeviceHost") != nullptr);
     CHECK(rig.renderer->Settings().GetEnum(kPresentMode) == 0);
 }
 
@@ -521,7 +521,7 @@ TEST_CASE("With recovery on, a change that cannot be undone is recovered from", 
     CHECK(rig.renderer->Stats().recoveries == 1);
     CHECK(rig.begins == rig.ends);                   // the begin and end callbacks stay balanced (change, then recovery)
     CHECK(rig.begins == 2);
-    CHECK(std::strcmp(rig.host.GetDevice()->Adapter().id, "null-discrete") == 0);
+    CHECK(CStrCompare(rig.host.GetDevice()->Adapter().id, "null-discrete") == 0);
     CHECK(rig.Render() == FrameStatus::Ok);
 }
 

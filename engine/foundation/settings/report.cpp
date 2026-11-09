@@ -1,7 +1,7 @@
 #include "settings/report.h"
 
-#include <cstdarg>
-#include <cstdio>
+#include "cstr/varargs.h"
+#include "cstr/format.h"
 
 #include "debug/compiler.h"
 #include "settings/file_store.h"
@@ -14,26 +14,26 @@ using Text = String<HeapAllocator>;
 
 void Line(Text* out, const char* format, ...) ENGINE_PRINTF_FORMAT(2, 3);
 void Line(Text* out, const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    va_list again;
-    va_copy(again, args);
-    const int needed = std::vsnprintf(nullptr, 0, format, args);
-    va_end(args);
+    VarArgs args;
+    ENGINE_VA_START(args, format);
+    VarArgs again;
+    ENGINE_VA_COPY(again, args);
+    const int needed = VFormatTo(nullptr, 0, format, args);
+    ENGINE_VA_END(args);
     if (needed > 0) {
         Vector<char> buffer;
         buffer.Resize(static_cast<usize>(needed) + 1);
-        std::vsnprintf(buffer.Data(), buffer.Size(), format, again);
+        VFormatTo(buffer.Data(), buffer.Size(), format, again);
         out->AppendRawBytes(buffer.Data(), static_cast<usize>(needed));
     }
-    va_end(again);
+    ENGINE_VA_END(again);
 }
 
 void ValueText(const SettingDesc& desc, const Value& value, char* out, usize capacity) {
     if ((desc.flags & kSecret) != 0) {
-        std::snprintf(out, capacity, "<secret>");
+        FormatTo(out, capacity, "<secret>");
     } else if (FormatValue(desc, value, out, capacity) == 0) {
-        std::snprintf(out, capacity, "?");
+        FormatTo(out, capacity, "?");
     }
 }
 
@@ -51,8 +51,8 @@ void FormatSettingsListing(Settings& settings, Text* out) {
         ValueText(d, d.default_value, def, sizeof(def));
         char source[256]; // a layer name (up to 127), " (", an origin (up to 95) and ")"
         // A secret's source is the layer only: the origin of a --set entry would repeat the value.
-        if (r.origin[0] != '\0' && (d.flags & kSecret) == 0) std::snprintf(source, sizeof(source), "%s (%s)", r.layer_name, r.origin);
-        else std::snprintf(source, sizeof(source), "%s", r.layer_name);
+        if (r.origin[0] != '\0' && (d.flags & kSecret) == 0) FormatTo(source, sizeof(source), "%s (%s)", r.layer_name, r.origin);
+        else FormatTo(source, sizeof(source), "%s", r.layer_name);
         Line(out, "%-36s %-14s default %-12s from %-34s %s\n", registry.KeyOf(id).View().Data(), value, def, source, d.description != nullptr ? d.description : "");
     }
 }
@@ -68,8 +68,8 @@ void FormatSettingsHelp(const Registry& registry, Text* out) {
         const SettingDesc& d = *registry.Desc(id);
         if (d.flag == nullptr || (d.flags & kHidden) != 0) continue;
         char head[96];
-        if (d.type == Type::Bool) std::snprintf(head, sizeof(head), "--%s, --no-%s", d.flag, d.flag);
-        else std::snprintf(head, sizeof(head), "--%s %s", d.flag, d.type == Type::Enum ? "NAME" : d.type == Type::Int ? "N" : d.type == Type::Float ? "X" : "TEXT");
+        if (d.type == Type::Bool) FormatTo(head, sizeof(head), "--%s, --no-%s", d.flag, d.flag);
+        else FormatTo(head, sizeof(head), "--%s %s", d.flag, d.type == Type::Enum ? "NAME" : d.type == Type::Int ? "N" : d.type == Type::Float ? "X" : "TEXT");
         Line(out, "  %-23s %s: %s\n", head, registry.KeyOf(id).View().Data(), d.description != nullptr ? d.description : "");
     }
     Line(out, "Environment: ENGINE_SETTING_<KEY> sets any setting (the key in capitals, dots written as __, e.g. ENGINE_SETTING_RENDERER__PRESENT_MODE); also:\n");

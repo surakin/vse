@@ -1,7 +1,7 @@
 #include "platform/linux/wayland/wayland_input.h"
 
-#include <cstdlib>
-#include <initializer_list>
+#include "os/console.h"
+#include "lang/initializer_list.h"
 #include <sys/mman.h>
 #include <unistd.h>
 
@@ -15,7 +15,7 @@ namespace {
 // The locale whose Compose file decides dead keys and compose sequences: the first of LC_ALL, LC_CTYPE, LANG that is set, as the C library would choose; "C" otherwise.
 const char* ComposeLocale() {
     for (const char* name : {"LC_ALL", "LC_CTYPE", "LANG"}) {
-        const char* value = std::getenv(name);
+        const char* value = os::GetEnvironment(name);
         if (value != nullptr && value[0] != '\0') return value;
     }
     return "C";

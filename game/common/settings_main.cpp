@@ -1,12 +1,13 @@
 #include "settings_main.h"
 
-#include <cstdio>
+#include "os/console.h"
 
 #include "io/path.h"
 #include "rhi/backend_registry.h"
 #include "renderer/shared_settings.h"
 #include "settings/engine_settings.h"
 #include "settings/report.h"
+#include "cstr/format.h"
 
 namespace demo {
 
@@ -37,11 +38,11 @@ bool DemoSettings::Begin(const char* app_name, const char* usage, int argc, char
     sset::AttachLogSettings(settings_.Get());
     for (usize i = 0; i < report.problems.Size(); ++i) {
         const sset::LayerProblem& p = report.problems[i];
-        std::fprintf(stderr, "%s: settings: %s%s%s: %s\n", app_name, p.layer, p.key[0] != '\0' ? ": " : "", p.key, p.message);
+        engine_placeholder::os::PrintError("%s: settings: %s%s%s: %s\n", app_name, p.layer, p.key[0] != '\0' ? ": " : "", p.key, p.message);
     }
     for (usize i = 0; i < report.notes.Size(); ++i) {
         const sset::LayerProblem& n = report.notes[i];
-        std::fprintf(stderr, "%s: settings: %s: %s\n", app_name, n.layer, n.message);
+        engine_placeholder::os::PrintError("%s: settings: %s: %s\n", app_name, n.layer, n.message);
     }
     const sset::CommandLineResult& cli = settings_->CommandLine();
     rest_storage_.Push(String<HeapAllocator>(HeapAllocator::Default(), StringView(argv[0])));
@@ -90,41 +91,41 @@ DemoSettings::Effective DemoSettings::ReadEffective() {
     e.immediate = snapshot.Get(id("renderer.present_mode")).AsEnum() == 2;
     e.validation = snapshot.Get(id("renderer.validation")).AsEnum() == 2;
     static const char* const kBackends[] = {"auto", "wayland", "x11", "win32"};
-    std::snprintf(e.window_backend, sizeof(e.window_backend), "%s", kBackends[snapshot.Get(id("platform.window_backend")).AsEnum() % 4]);
+    engine_placeholder::FormatTo(e.window_backend, sizeof(e.window_backend), "%s", kBackends[snapshot.Get(id("platform.window_backend")).AsEnum() % 4]);
     return e;
 }
 
 int DemoSettings::Finish() {
     const sset::CommandLineResult& cli = settings_->CommandLine();
     if (cli.help) {
-        std::fputs(usage_.CStr(), stdout);
+        engine_placeholder::os::PrintText(usage_.CStr());
         String<HeapAllocator> help(HeapAllocator::Default());
         sset::FormatSettingsHelp(registry_, &help);
-        std::fputs(help.CStr(), stdout);
+        engine_placeholder::os::PrintText(help.CStr());
         return 0;
     }
     if (cli.list_settings) {
         String<HeapAllocator> listing(HeapAllocator::Default());
         sset::FormatSettingsListing(*settings_, &listing);
-        std::fputs(listing.CStr(), stdout);
+        engine_placeholder::os::PrintText(listing.CStr());
         return 0;
     }
     if (cli.save_settings) {
         io::Path path;
         if (cli.save_path.Length() != 0) {
             if (!io::Path::Parse(cli.save_path.View(), io::NativePathStyle(), &path)) {
-                std::fprintf(stderr, "%s: --save-settings: the path is not valid\n", program_.CStr());
+                engine_placeholder::os::PrintError("%s: --save-settings: the path is not valid\n", program_.CStr());
                 return 1;
             }
             const sset::Status s = sset::SaveSettingsTo(*settings_, path);
             if (s.Failed()) {
-                std::fprintf(stderr, "%s: --save-settings: could not write %s (%s)\n", program_.CStr(), cli.save_path.CStr(), sset::StoreErrorName(s.error));
+                engine_placeholder::os::PrintError("%s: --save-settings: could not write %s (%s)\n", program_.CStr(), cli.save_path.CStr(), sset::StoreErrorName(s.error));
                 return 1;
             }
         } else {
             const sset::Status s = settings_->Save(sset::SaveOptions{true, false, false});
             if (s.Failed()) {
-                std::fprintf(stderr, "%s: --save-settings: could not write the user's settings file (%s)\n", program_.CStr(), sset::StoreErrorName(s.error));
+                engine_placeholder::os::PrintError("%s: --save-settings: could not write the user's settings file (%s)\n", program_.CStr(), sset::StoreErrorName(s.error));
                 return 1;
             }
         }

@@ -1,10 +1,10 @@
 #include "settings/file_store.h"
 
-#include <cstdio>
-#include <cstring>
+#include "cstr/format.h"
 
 #include "io/file.h"
 #include "io/file_system.h"
+#include "cstr/mem_ops.h"
 
 namespace engine_placeholder::settings {
 
@@ -30,13 +30,13 @@ u32 FileConfigStore::Capabilities() const { return options_.read_only ? kCapPres
 void FileConfigStore::Origin(StringView key, char* out, usize capacity) const {
     if (capacity == 0) return;
     const u32 line = doc_.LineOf(key);
-    if (line != 0) std::snprintf(out, capacity, "line %u", static_cast<unsigned>(line));
+    if (line != 0) FormatTo(out, capacity, "line %u", static_cast<unsigned>(line));
     else out[0] = '\0';
 }
 
 void FileConfigStore::Describe(char* out, usize capacity) const {
     if (capacity == 0) return;
-    std::snprintf(out, capacity, "%.*s", static_cast<int>(path_.View().Length()), path_.View().Data());
+    FormatTo(out, capacity, "%.*s", static_cast<int>(path_.View().Length()), path_.View().Data());
 }
 
 Status FileConfigStore::Load() {
@@ -59,7 +59,7 @@ Status FileConfigStore::Load() {
     load_error_ = StoreError::None;
     staged_ = 0;
     on_disk_.Resize(bytes.Size());
-    if (bytes.Size() != 0) std::memcpy(on_disk_.Data(), bytes.Data(), bytes.Size());
+    if (bytes.Size() != 0) MemCopy(on_disk_.Data(), bytes.Data(), bytes.Size());
     exists_ = true;
     backup_written_ = false;
     doc_.Parse(StringView(on_disk_.Data(), on_disk_.Size()), &report_);
@@ -151,7 +151,7 @@ Status FileConfigStore::Commit(const CommitOptions& options) {
     }
     if (dropping) doc_.RemoveUnreadable();
     on_disk_.Resize(text.Size());
-    if (text.Size() != 0) std::memcpy(on_disk_.Data(), text.Data(), text.Size());
+    if (text.Size() != 0) MemCopy(on_disk_.Data(), text.Data(), text.Size());
     exists_ = true;
     report_ = ConfigReport(); // what was damaged has been replaced
     staged_ = 0;

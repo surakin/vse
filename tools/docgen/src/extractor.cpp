@@ -1,7 +1,7 @@
 #include "extractor.h"
 
-#include <cstring>
-#include <new>
+#include "cstr/cstr.h"
+#include "lang/new.h"
 
 namespace docgen {
 namespace {
@@ -121,7 +121,7 @@ private:
     }
 
     StringView Cat(StringView a, const char* mid, StringView b) {
-        const usize mid_len = std::strlen(mid);
+        const usize mid_len = engine_placeholder::CStrLength(mid);
         const usize len = a.Length() + mid_len + b.Length();
         char* buf = static_cast<char*>(arena_.Alloc(len + 1, 1));
         ENGINE_ASSERT(buf != nullptr, "docgen: arena exhausted");

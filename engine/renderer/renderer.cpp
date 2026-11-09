@@ -1,14 +1,15 @@
 #include "renderer/renderer.h"
 
 #include "sync/atomic.h"
-#include <cstdarg>
-#include <cstdio>
+#include "cstr/varargs.h"
+#include "cstr/format.h"
 
 #include "debug/crash_state.h"
 #include "log/assert.h"
 #include "os/os.h"
 #include "renderer/renderer_log.h"
 #include "rhi/backend_registry.h"
+#include "cstr/cstr.h"
 
 namespace engine_placeholder::renderer {
 
@@ -68,7 +69,7 @@ namespace {
 
 f64 NowMs() { return static_cast<f64>(os::MonotonicTimeNanos()) / 1.0e6; }
 
-void SetReason(ApplyResult* r, const char* text) { std::snprintf(r->reason, sizeof(r->reason), "%s", text); }
+void SetReason(ApplyResult* r, const char* text) { FormatTo(r->reason, sizeof(r->reason), "%s", text); }
 
 } // namespace
 
@@ -77,7 +78,7 @@ void MakeDeviceCreateInfo(const RenderSettings& settings, const rhi::DeviceCreat
     out->backend = static_cast<rhi::Backend>(settings.GetEnum(settings::kBackend)); // kBackendNames follows rhi::Backend
     const char* adapter = settings.GetText(settings::kAdapter);
     if (adapter != nullptr && adapter[0] != '\0') {
-        std::snprintf(adapter_buffer, 64, "%s", adapter);
+        FormatTo(adapter_buffer, 64, "%s", adapter);
         out->adapter = adapter_buffer;
     } else {
         adapter_buffer[0] = '\0';
@@ -152,7 +153,7 @@ bool Renderer::RollbackDevice(ApplyResult* result) {
         SetReason(result, host->LastError()[0] != '\0' ? host->LastError() : "the previous device could not be created again");
         return false;
     }
-    std::snprintf(active_adapter_, sizeof(active_adapter_), "%s", adapter);
+    FormatTo(active_adapter_, sizeof(active_adapter_), "%s", adapter);
     active_info_ = info;
     active_info_.adapter = active_adapter_[0] != '\0' ? active_adapter_ : nullptr;
     desc_.device = host->GetDevice();
@@ -267,7 +268,7 @@ ApplyResult Renderer::ApplyNow(const RenderSettings& requested, bool force_devic
             result.device_ms = NowMs() - t;
             result.reset = host->LastTimings();
             if (ok) {
-                std::snprintf(active_adapter_, sizeof(active_adapter_), "%s", adapter);
+                FormatTo(active_adapter_, sizeof(active_adapter_), "%s", adapter);
                 active_info_ = info;
                 active_info_.adapter = active_adapter_[0] != '\0' ? active_adapter_ : nullptr;
                 desc_.device = host->GetDevice();
@@ -332,10 +333,10 @@ ApplyResult Renderer::ApplyNow(const RenderSettings& requested, bool force_devic
 }
 
 void Renderer::SetError(const char* fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    std::vsnprintf(error_, sizeof(error_), fmt, ap);
-    va_end(ap);
+    VarArgs ap;
+    ENGINE_VA_START(ap, fmt);
+    VFormatTo(error_, sizeof(error_), fmt, ap);
+    ENGINE_VA_END(ap);
 }
 
 // Ends a frame that did not render. With an acquired swapchain image the image still has to be presented, or the next
@@ -431,7 +432,7 @@ bool Renderer::RecoveryAttempt() {
     rhi::DeviceHost* host = desc_.host;
     ++recovery_attempt_;
     char note[64];
-    std::snprintf(note, sizeof(note), "recovering (attempt %u)", recovery_attempt_);
+    FormatTo(note, sizeof(note), "recovering (attempt %u)", recovery_attempt_);
     debug::SetCrashStateText("rhi_recovery", note);
     RenderLog(LogVerbosity::Warn, "Renderer: recovery attempt %u of %u (adapter '%s')", recovery_attempt_, desc_.recovery.max_attempts,
               settings_.GetText(settings::kAdapter));
@@ -457,7 +458,7 @@ bool Renderer::RecoveryAttempt() {
         BuildCreateInfo(attempt_settings, adapter, &info);
         ok = host->Recreate(info, BuildSwapchainDesc(attempt_settings));
         if (ok) {
-            std::snprintf(active_adapter_, sizeof(active_adapter_), "%s", adapter);
+            FormatTo(active_adapter_, sizeof(active_adapter_), "%s", adapter);
             active_info_ = info;
             active_info_.adapter = active_adapter_[0] != '\0' ? active_adapter_ : nullptr;
         }
@@ -470,7 +471,7 @@ bool Renderer::RecoveryAttempt() {
     if (ok) {
         if (fell_back) {
             // A request queued meanwhile was built from the old adapter: it must not bring the abandoned adapter back.
-            if (has_pending_ && std::strcmp(pending_.GetText(settings::kAdapter), settings_.GetText(settings::kAdapter)) == 0) {
+            if (has_pending_ && CStrCompare(pending_.GetText(settings::kAdapter), settings_.GetText(settings::kAdapter)) == 0) {
                 pending_.SetText(settings::kAdapter, "");
             }
             RenderSettings kept = attempt_settings;
