@@ -6,9 +6,9 @@
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 #include "rhi/uniform_ring.h" // kSlots: the frames a device keeps in flight
-#include "ui.frag.spv.inc"
+#include "ui.frag.dxil.inc" // and its .spv.inc
 #include "ui.vert.refl.inc"
-#include "ui.vert.spv.inc"
+#include "ui.vert.dxil.inc" // and its .spv.inc
 
 namespace engine_placeholder::renderer {
 
@@ -27,8 +27,6 @@ static_assert(sizeof(ui::Vertex) == 40 && offsetof(ui::Vertex, color) == 16 && o
               "the vertex attributes below follow ui::Vertex");
 
 // Only SPIR-V is minted for the UI shaders so far (Direct3D 12 waits for Day 205); a D3D12 device finds no blob and says so.
-const rhi::ShaderBlobSet kUiVertSet = {"ui.vert", rhi::SpirvBlob(shaders::kUiVertSpv, shaders::kUiVertSpvWordCount), {}};
-const rhi::ShaderBlobSet kUiFragSet = {"ui.frag", rhi::SpirvBlob(shaders::kUiFragSpv, shaders::kUiFragSpvWordCount), {}};
 
 bool MakeWhite(rhi::Device* device, GpuTexture* texture, DeviceResources* resources) {
     TextureImage image;
@@ -65,8 +63,8 @@ bool UiRenderer::Create(rhi::Device* device, GlyphAtlasTexture* pages, const UiR
 
 bool UiRenderer::MakeGpuObjects(rhi::Device* device) {
     device_ = device;
-    vertex_shader_ = rhi::CreateShaderFromSet(*device, kUiVertSet, rhi::ShaderStage::Vertex);
-    fragment_shader_ = rhi::CreateShaderFromSet(*device, kUiFragSet, rhi::ShaderStage::Fragment);
+    vertex_shader_ = rhi::CreateShaderFromSet(*device, shaders::kUiVertShader, rhi::ShaderStage::Vertex);
+    fragment_shader_ = rhi::CreateShaderFromSet(*device, shaders::kUiFragShader, rhi::ShaderStage::Fragment);
     bool ok = vertex_shader_.IsValid() && fragment_shader_.IsValid();
     if (ok) {
         rhi::BindingDesc bindings[2] = {{0, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1},

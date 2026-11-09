@@ -135,7 +135,6 @@ rhi::TextureHandle SfPanel(rhi::Device* device, rhi::Format format) {
 
 TEST_CASE("surface target: a surface painted into its texture shows inside the window frame, and keeps its picture without a repaint", "[renderer][ui][surface][gpu]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue; // the UI shaders have SPIR-V only until the Windows PC mints DXIL (Day 205)
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         renderer::UiRendererDesc ud;
@@ -192,7 +191,6 @@ TEST_CASE("surface target: a surface painted into its texture shows inside the w
 
 TEST_CASE("surface target: an sRGB surface shows the theme's bytes and a transparent one lets the panel through", "[renderer][ui][surface][gpu]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         renderer::UiRendererDesc srgb;
@@ -254,7 +252,6 @@ TEST_CASE("surface target: an sRGB surface shows the theme's bytes and a transpa
 
 TEST_CASE("surface target: a resize and a device reset leave it unpainted until the app paints again", "[renderer][ui][surface][gpu][recreatable]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         renderer::DeviceResources registry; // destroyed last
         rhi::DeviceHost host;

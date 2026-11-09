@@ -152,7 +152,6 @@ TEST_CASE("viewport target: sizes, resize, release and recreate on the null devi
 
 TEST_CASE("viewport target: the world drawn into it shows inside the panel rectangle only", "[renderer][viewport][gpu]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue; // the UI shaders have SPIR-V only until the Windows PC mints DXIL (Day 205)
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         renderer::UiRendererDesc ud;
@@ -188,7 +187,6 @@ TEST_CASE("viewport target: the world drawn into it shows inside the panel recta
 
 TEST_CASE("viewport target: a resize keeps the picture, frees the old textures and the next frame fills the new one", "[renderer][viewport][gpu]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         renderer::UiRenderer ui_renderer;
@@ -221,7 +219,6 @@ TEST_CASE("viewport target: a resize keeps the picture, frees the old textures a
 
 TEST_CASE("viewport target: two viewports draw different worlds in one UI pass", "[renderer][viewport][gpu]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         renderer::UiRenderer ui_renderer;
@@ -256,7 +253,6 @@ TEST_CASE("viewport target: two viewports draw different worlds in one UI pass",
 
 TEST_CASE("viewport target: the lit cube drawn into it shows in the panel and returns after a device reset", "[renderer][viewport][gpu][recreatable]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         reset_rig::Rig rig;
         if (!rig.Create(backend)) SKIP("no device");

@@ -283,7 +283,7 @@ TEST_CASE("dropped text is made valid UTF-8, and a drag that leaves is dropped",
     rig.Event(os::InputEventType::DragEnter, x, y, os::kDropText, os::kAllDragActions);
     rig.Event(os::InputEventType::Drop, x, y, os::kDropText, os::kAllDragActions, static_cast<u8>(os::DragAction::Copy));
     rig.Pump();
-    const char bad[] = {'a', char(0xFF), 'b'};
+    const char bad[] = {'a', '\xFF', 'b'}; // an invalid UTF-8 byte (a literal: a cast of 0xFF to char truncates, C4310 on MSVC)
     rig.window.Finish(rig.window.requests[0].id, os::ClipboardStatus::Ok, StringView(bad, 3));
     rig.Pump();
     CHECK(rig.b->Text().Length() == 5); // a, U+FFFD (three bytes), b

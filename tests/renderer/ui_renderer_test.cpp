@@ -143,7 +143,6 @@ TEST_CASE("UI pass: a frame with an empty list declares no pass", "[renderer][ui
 
 TEST_CASE("UI pass: a filled rectangle is exact inside and the target is untouched outside", "[renderer][ui][gpu][pass]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue; // the UI shaders have SPIR-V only for now (KNOWN-ISSUES.md)
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         renderer::UiRenderer ui_renderer;
@@ -174,7 +173,6 @@ TEST_CASE("UI pass: a filled rectangle is exact inside and the target is untouch
 
 TEST_CASE("UI pass: a rounded rect with a border has smooth corners, a ring and an anti-aliased edge", "[renderer][ui][gpu][pass]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         renderer::UiRenderer ui_renderer;
@@ -210,7 +208,6 @@ TEST_CASE("UI pass: a rounded rect with a border has smooth corners, a ring and 
 
 TEST_CASE("UI pass: a clip hides everything outside it, and layers draw in order", "[renderer][ui][gpu][pass]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         renderer::UiRenderer ui_renderer;
@@ -242,7 +239,6 @@ TEST_CASE("UI pass: a clip hides everything outside it, and layers draw in order
 
 TEST_CASE("UI pass: sRGB and UNORM targets show the colour that was written", "[renderer][ui][gpu][pass]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         renderer::UiRenderer ui_renderer;
@@ -269,7 +265,6 @@ TEST_CASE("UI pass: sRGB and UNORM targets show the colour that was written", "[
 
 TEST_CASE("UI pass: an application image is drawn through its owner, tinted, and skipped when the owner has no texture", "[renderer][ui][gpu][pass]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         renderer::UiRenderer ui_renderer;
@@ -315,7 +310,6 @@ TEST_CASE("UI pass: an application image is drawn through its owner, tinted, and
 
 TEST_CASE("UI pass: text through the atlas matches the text renderer's pixels", "[renderer][ui][text][gpu][pass]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         Opened o;
@@ -390,7 +384,6 @@ TEST_CASE("UI pass: text through the atlas matches the text renderer's pixels", 
 
 TEST_CASE("UI pass: commands past the vertex budget are dropped and counted", "[renderer][ui][gpu][pass]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         renderer::UiRenderer ui_renderer;
@@ -421,7 +414,6 @@ TEST_CASE("UI pass: commands past the vertex budget are dropped and counted", "[
 
 TEST_CASE("UI pass: the scene looks the same after a device reset and every object is rebuilt", "[renderer][ui][gpu][recreatable]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         renderer::DeviceResources registry; // destroyed last
         reset_rig::Target target;

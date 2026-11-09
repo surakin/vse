@@ -78,7 +78,6 @@ gpu_test::Image DrawScene(rhi::Device* device, TextRenderer* text, FontOpened* f
 
 TEST_CASE("The text overlay matches its golden image", "[rhi][gpu][golden][text]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue; // no DXIL for the text shaders yet
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         FontOpened f;
@@ -109,7 +108,6 @@ TEST_CASE("The text overlay matches its golden image", "[rhi][gpu][golden][text]
 
 TEST_CASE("The demo frame's text overlay survives a device reset, a pipeline rebuild and a lost device", "[rhi][gpu][reset][text]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         reset_rig::Rig rig;
         rig.font_path = ENGINE_TEXT_FONT_FILE;

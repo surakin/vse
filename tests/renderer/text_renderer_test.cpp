@@ -246,8 +246,6 @@ TEST_CASE("The text renderer queues glyphs, skips spaces and counts what the bud
 
 TEST_CASE("A glyph's quad shows the atlas bitmap texel for texel", "[renderer][text][gpu]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        // The text shaders have SPIR-V only until the Windows PC mints DXIL (KNOWN-ISSUES.md); Direct3D 12 refuses them by name.
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         Opened o;
@@ -318,7 +316,6 @@ TEST_CASE("A glyph's quad shows the atlas bitmap texel for texel", "[renderer][t
 
 TEST_CASE("Text blends with premultiplied alpha over a colored background", "[renderer][text][gpu]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         Opened o;
@@ -361,7 +358,6 @@ TEST_CASE("Text blends with premultiplied alpha over a colored background", "[re
 
 TEST_CASE("An sRGB target shows the color the application wrote", "[renderer][text][gpu]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         Opened o;
@@ -398,7 +394,6 @@ TEST_CASE("An sRGB target shows the color the application wrote", "[renderer][te
 
 TEST_CASE("A device reset rebuilds the atlas pages, the pipeline and the sampler", "[renderer][text][gpu][reset]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         Opened o;
         text::GlyphAtlas atlas;

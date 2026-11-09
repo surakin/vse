@@ -161,7 +161,7 @@ TEST_CASE("a payload holds typed entries and refuses what is too big or malforme
     only_pointer.AddPointer(StringView("tag"), &thing);
     CHECK_FALSE(only_pointer.OsRepresentable()); // a pointer never leaves the process
     DragPayload bad;
-    const char invalid[] = {'a', char(0xFF), 'b'};
+    const char invalid[] = {'a', '\xFF', 'b'}; // an invalid UTF-8 byte (a literal: a cast of 0xFF to char truncates, C4310 on MSVC)
     bad.AddText(StringView(invalid, 3));
     CHECK(bad.Entry(0).bytes.Size() == 5); // the bad byte became U+FFFD (three bytes)
     DragPayload full;

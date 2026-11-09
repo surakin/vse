@@ -30,6 +30,10 @@
 #include "point_light.vert.dxil.inc"
 #include "point_light.frag.dxil.inc"
 #include "tonemap.frag.dxil.inc"
+#include "text.vert.dxil.inc"
+#include "text.frag.dxil.inc"
+#include "ui.vert.dxil.inc"
+#include "ui.frag.dxil.inc"
 #include "rhi/desc.h"
 #include "string_view.h"
 
@@ -102,6 +106,10 @@ const MintedModule kModules[] = {
     {"point_light.vert", rhi::ShaderStage::Vertex, shaders::kPointLightVertSpv, shaders::kPointLightVertSpvWordCount, shaders::kPointLightVertDxil, shaders::kPointLightVertDxilByteCount, shaders::kPointLightVertDxilSpirvFnv},
     {"point_light.frag", rhi::ShaderStage::Fragment, shaders::kPointLightFragSpv, shaders::kPointLightFragSpvWordCount, shaders::kPointLightFragDxil, shaders::kPointLightFragDxilByteCount, shaders::kPointLightFragDxilSpirvFnv},
     {"tonemap.frag", rhi::ShaderStage::Fragment, shaders::kTonemapFragSpv, shaders::kTonemapFragSpvWordCount, shaders::kTonemapFragDxil, shaders::kTonemapFragDxilByteCount, shaders::kTonemapFragDxilSpirvFnv},
+    {"text.vert", rhi::ShaderStage::Vertex, shaders::kTextVertSpv, shaders::kTextVertSpvWordCount, shaders::kTextVertDxil, shaders::kTextVertDxilByteCount, shaders::kTextVertDxilSpirvFnv},
+    {"text.frag", rhi::ShaderStage::Fragment, shaders::kTextFragSpv, shaders::kTextFragSpvWordCount, shaders::kTextFragDxil, shaders::kTextFragDxilByteCount, shaders::kTextFragDxilSpirvFnv},
+    {"ui.vert", rhi::ShaderStage::Vertex, shaders::kUiVertSpv, shaders::kUiVertSpvWordCount, shaders::kUiVertDxil, shaders::kUiVertDxilByteCount, shaders::kUiVertDxilSpirvFnv},
+    {"ui.frag", rhi::ShaderStage::Fragment, shaders::kUiFragSpv, shaders::kUiFragSpvWordCount, shaders::kUiFragDxil, shaders::kUiFragDxilByteCount, shaders::kUiFragDxilSpirvFnv},
 };
 
 } // namespace

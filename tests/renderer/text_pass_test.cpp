@@ -114,7 +114,6 @@ int Dist(int a, int b) { return std::abs(a - b); }
 
 TEST_CASE("Hello, world! is drawn by one graph pass, inside its bounds, over the background", "[renderer][text][gpu][pass]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue; // the text shaders have SPIR-V only for now (KNOWN-ISSUES.md)
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         Opened o;
@@ -185,7 +184,6 @@ TEST_CASE("Hello, world! is drawn by one graph pass, inside its bounds, over the
 
 TEST_CASE("The pipeline follows a change of the target's format", "[renderer][text][gpu][pass]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         Opened o;
@@ -234,7 +232,6 @@ TEST_CASE("The pipeline follows a change of the target's format", "[renderer][te
 
 TEST_CASE("Text above the atlas maximum is scaled from the maximum raster and is as wide as its layout says", "[renderer][text][gpu][pass]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         Opened o;

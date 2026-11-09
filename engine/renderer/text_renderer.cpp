@@ -7,9 +7,9 @@
 #include "log/assert.h"
 #include "renderer/renderer_log.h"
 #include "rhi/uniform_ring.h" // kSlots: the frames a device keeps in flight
-#include "text.frag.spv.inc"
+#include "text.frag.dxil.inc" // and its .spv.inc
 #include "text.vert.refl.inc"
-#include "text.vert.spv.inc"
+#include "text.vert.dxil.inc" // and its .spv.inc
 
 namespace engine_placeholder::renderer {
 
@@ -29,8 +29,6 @@ static_assert(sizeof(TextParams) == shaders::kTextVertParamsSize && offsetof(Tex
 constexpr u32 kVerticesPerGlyph = 6;
 
 // Only SPIR-V is minted for the text shaders so far (no dxc on the machine that wrote them); a Direct3D 12 device finds no blob and says so.
-const rhi::ShaderBlobSet kTextVertSet = {"text.vert", rhi::SpirvBlob(shaders::kTextVertSpv, shaders::kTextVertSpvWordCount), {}};
-const rhi::ShaderBlobSet kTextFragSet = {"text.frag", rhi::SpirvBlob(shaders::kTextFragSpv, shaders::kTextFragSpvWordCount), {}};
 
 } // namespace
 
@@ -59,8 +57,8 @@ bool TextRenderer::Create(rhi::Device* device, text::GlyphAtlas* atlas, const Te
 
 bool TextRenderer::MakeGpuObjects(rhi::Device* device) {
     device_ = device;
-    vertex_shader_ = rhi::CreateShaderFromSet(*device, kTextVertSet, rhi::ShaderStage::Vertex);
-    fragment_shader_ = rhi::CreateShaderFromSet(*device, kTextFragSet, rhi::ShaderStage::Fragment);
+    vertex_shader_ = rhi::CreateShaderFromSet(*device, shaders::kTextVertShader, rhi::ShaderStage::Vertex);
+    fragment_shader_ = rhi::CreateShaderFromSet(*device, shaders::kTextFragShader, rhi::ShaderStage::Fragment);
     bool ok = vertex_shader_.IsValid() && fragment_shader_.IsValid();
     if (ok) {
         rhi::BindingDesc bindings[2] = {{0, rhi::BindingType::SampledTexture, rhi::ShaderStage::Fragment, 1},

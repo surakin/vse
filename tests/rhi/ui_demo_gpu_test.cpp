@@ -152,7 +152,6 @@ const GoldenCase kCases[] = {
 
 TEST_CASE("The ui_demo matches its golden images", "[rhi][gpu][golden][ui_demo]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue; // no DXIL for the UI shaders yet
         for (const GoldenCase& c : kCases) {
             gpu_test::BackendValidation validation(backend);
             UiRig ui(c.scale, c.width, c.height);
@@ -179,7 +178,6 @@ TEST_CASE("The ui_demo matches its golden images", "[rhi][gpu][golden][ui_demo]"
 
 TEST_CASE("The ui_demo's picture survives every kind of change and a lost device", "[rhi][gpu][reset][ui_demo]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue;
         gpu_test::BackendValidation validation(backend);
         UiRig ui(1.0f);
         if (!ui.Create(backend)) {

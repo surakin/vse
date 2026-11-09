@@ -1,5 +1,5 @@
 // Phase 15 Day 190: the golden image of the UI pass. The scene is a shadow, a rounded button with a ring, a disc and a word, drawn from a ui::DrawList through the
-// render graph. Only Vulkan writes the golden (ENGINE_RHI_UPDATE_GOLDEN=1); Direct3D 12 is checked against it once the UI shaders have DXIL (KNOWN-ISSUES.md).
+// render graph. Only Vulkan writes the golden (ENGINE_RHI_UPDATE_GOLDEN=1); Direct3D 12 is checked against it (DXIL since Phase 15 Day 205).
 #include <catch2/catch_test_macros.hpp>
 
 #include "backend_fixture.h"
@@ -34,7 +34,6 @@ void ClearPass(const renderer::PassExecuteContext& ctx, void* user) {
 
 TEST_CASE("The UI pass matches its golden image", "[rhi][gpu][golden][ui]") {
     FOR_EACH_GPU_BACKEND(backend) {
-        if (backend != rhi::Backend::Vulkan) continue; // no DXIL for the UI shaders yet
         gpu_test::BackendValidation validation(backend);
         rhi::DevicePtr device = gpu_test::CreateTestDevice(backend);
         text::FontLibrary library;
