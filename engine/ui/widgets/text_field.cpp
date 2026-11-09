@@ -78,6 +78,10 @@ u32 TextField::Snap(u32 offset) {
     return PreviousCluster(NextCluster(offset));
 }
 
+u32 TextField::WordLeftTarget() { return password_ ? 0 : Snap(WordStart(Text(), caret_)); }
+
+u32 TextField::WordRightTarget() { return password_ ? Length() : Snap(WordEnd(Text(), caret_)); }
+
 u32 TextField::ToShown(u32 offset) const {
     if (!password_) return offset;
     return static_cast<u32>(GraphemeClusterCount(Text().Substring(0, offset))) * kBulletBytes;
@@ -403,9 +407,9 @@ void TextField::DeleteSelectionOrStep(bool forward, bool by_word) {
     }
     u32 to = caret_;
     if (forward) {
-        to = by_word ? Snap(WordEnd(Text(), caret_)) : NextCluster(caret_);
+        to = by_word ? WordRightTarget() : NextCluster(caret_);
     } else {
-        to = by_word ? Snap(WordStart(Text(), caret_)) : PreviousCluster(caret_);
+        to = by_word ? WordLeftTarget() : PreviousCluster(caret_);
     }
     if (to == caret_) return;
     Replace(caret_, to, StringView(), by_word ? EditKind::Other : (forward ? EditKind::Delete : EditKind::Backspace));
@@ -455,7 +459,11 @@ void TextField::Press(Event& event) {
     if (press_count_ == 2) {
         u32 lo = 0;
         u32 hi = 0;
-        WordRangeAt(Text(), at, &lo, &hi);
+        if (password_) {
+            hi = Length(); // a password is one word: where its spaces are must not show
+        } else {
+            WordRangeAt(Text(), at, &lo, &hi);
+        }
         SetSelection(lo, hi);
     } else if (press_count_ >= 2) {
         SelectAll();
@@ -503,7 +511,7 @@ void TextField::OnEvent(Event& event) {
                     if (HasSelection() && !shift && !ctrl) {
                         MoveCaret(lo, false);
                     } else {
-                        MoveCaret(ctrl ? Snap(WordStart(Text(), caret_)) : PreviousCluster(caret_), shift);
+                        MoveCaret(ctrl ? WordLeftTarget() : PreviousCluster(caret_), shift);
                     }
                     break;
                 }
@@ -512,7 +520,7 @@ void TextField::OnEvent(Event& event) {
                     if (HasSelection() && !shift && !ctrl) {
                         MoveCaret(hi, false);
                     } else {
-                        MoveCaret(ctrl ? Snap(WordEnd(Text(), caret_)) : NextCluster(caret_), shift);
+                        MoveCaret(ctrl ? WordRightTarget() : NextCluster(caret_), shift);
                     }
                     break;
                 }

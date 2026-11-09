@@ -497,6 +497,26 @@ TEST_CASE("TextField: maximum length, validator, read-only, password and placeho
         CHECK(r.field->Text() == StringView("pwe\xCC\x81"));
         // The caret x follows the bullets: three bullets, the caret at 2 is left of the end.
         CHECK(r.XOf(2) < r.XOf(5));
+        // Word movement does not reveal where the spaces are.
+        r.field->SetPassword(true);
+        r.field->SetText(StringView("ab cd"));
+        r.Key(Key::Home);
+        r.Key(Key::Right, os::kModCtrl);
+        CHECK(r.field->Caret() == 5);
+        r.Key(Key::Left, os::kModCtrl);
+        CHECK(r.field->Caret() == 0);
+        r.field->SetSelection(1, 1);
+        r.Key(Key::Backspace, os::kModCtrl);
+        CHECK(r.field->Text() == StringView("b cd"));
+        r.field->SetText(StringView("ab cd"));
+        r.h.GetSurface().SetTime(500);
+        const f32 x = r.XOf(1);
+        r.Press(x);
+        r.Release(x);
+        r.h.GetSurface().SetTime(500.1);
+        r.Press(x);
+        r.Release(x);
+        CHECK(r.field->SelectedText() == StringView("ab cd"));
         r.field->SetPassword(false);
         CHECK(!r.field->Password());
     }

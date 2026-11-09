@@ -27,8 +27,8 @@ using TextValidator = bool (*)(void* user, const TextField* field, StringView pr
 /// Shift+click extends, a drag selects (the pointer is captured), a double click selects a word, a triple click all.
 ///
 /// Edits go through one path that applies, in order, the read-only flag, the maximum length (in clusters; a longer insertion is cut), and the validator; an edit that changes
-/// nothing is not recorded. Consecutive typing, and consecutive Backspace or Delete presses, are one undo step. A password field draws bullets, refuses copy and cut, and still
-/// moves and edits by cluster.
+/// nothing is not recorded. Consecutive typing, and consecutive Backspace or Delete presses, are one undo step. A password field draws bullets, refuses copy and cut, moves and edits by
+/// cluster, and treats its whole text as one word (word movement, word deletion and a double click go to the ends), so the spaces do not show.
 ///
 /// Thread-safety: owner-thread-only.
 /// Ownership: owns its text, its undo history and its layouts; borrows the validator's user pointer and the surface's clipboard.
@@ -171,6 +171,8 @@ private:
     u32 NextCluster(u32 offset);
     u32 PreviousCluster(u32 offset);
     u32 Snap(u32 offset);
+    u32 WordLeftTarget();
+    u32 WordRightTarget();
     u32 ToShown(u32 offset) const;
     u32 FromShown(u32 shown) const;
     TextRun& Shown() { return password_ ? mask_ : run_; }

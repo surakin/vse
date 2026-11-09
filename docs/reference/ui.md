@@ -8174,7 +8174,7 @@ Offsets are byte offsets into the UTF-8 text and are always on grapheme boundari
 
 The keys are Left, Right, Home, End (Shift extends the selection, Ctrl moves by word), Backspace, Delete (Ctrl: by word), Ctrl+A, Ctrl+C / Ctrl+Insert, Ctrl+X / Shift+Delete, Ctrl+V / Shift+Insert, Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y, Enter (`OnSubmit`), Escape (`OnCancel`). Tab, Up and Down are left to the surface and the parents. The mouse: a click places the caret, Shift+click extends, a drag selects (the pointer is captured), a double click selects a word, a triple click all.
 
-Edits go through one path that applies, in order, the read-only flag, the maximum length (in clusters; a longer insertion is cut), and the validator; an edit that changes nothing is not recorded. Consecutive typing, and consecutive Backspace or Delete presses, are one undo step. A password field draws bullets, refuses copy and cut, and still moves and edits by cluster.
+Edits go through one path that applies, in order, the read-only flag, the maximum length (in clusters; a longer insertion is cut), and the validator; an edit that changes nothing is not recorded. Consecutive typing, and consecutive Backspace or Delete presses, are one undo step. A password field draws bullets, refuses copy and cut, moves and edits by cluster, and treats its whole text as one word (word movement, word deletion and a double click go to the ends), so the spaces do not show.
 
 | Field | Value |
 |---|---|
