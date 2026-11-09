@@ -377,6 +377,12 @@ public:
     /// Fails: returns null when there is none.
     Widget* Hover() const { return hover_; }
 
+    /// Returns whether a frame run now would do anything (`NeedsRedraw` only says the picture differs from the last draw list): the tree is dirty, events are queued, a drag is going, a hovered widget is waiting to show its tooltip, or a shown widget
+    /// asks for `Update` every frame (an animation, a caret blink, a viewport). An idle surface returns false, so an on-demand surface costs nothing while it is.
+    ///
+    /// Fails: never.
+    bool NeedsFrame() const;
+
     /// Runs one frame: advances the clock by `dt`, applies the queued events, updates, lays out if needed and rebuilds `list` when it must.
     ///
     /// Param dt: seconds since the last frame, 0 or more.

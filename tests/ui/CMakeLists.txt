@@ -22,6 +22,7 @@ set(UI_TEST_SOURCES
   drag_drop_test.cpp
   clipboard_test.cpp
   viewport_test.cpp
+  surface_input_test.cpp
 )
 
 find_package(Threads REQUIRED)

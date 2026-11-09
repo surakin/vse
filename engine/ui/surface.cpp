@@ -744,6 +744,27 @@ void Surface::UpdateTooltip() {
     ShowTooltip(hover_);
 }
 
+namespace {
+
+bool AnyWantsUpdate(const Widget* widget) {
+    if (!widget->Shown()) return false;
+    if (widget->WantsUpdate()) return true;
+    for (usize i = 0; i < widget->ChildCount(); ++i) {
+        if (AnyWantsUpdate(widget->ChildAt(i))) return true;
+    }
+    return false;
+}
+
+} // namespace
+
+bool Surface::NeedsFrame() const {
+    if (layout_dirty_ || draw_dirty_ || !queue_.Empty() || drag_.active) return true;
+    if (hover_ != nullptr && hover_->Tooltip().Length() > 0 && tooltip_ == nullptr && !tooltip_blocked_ && window_focused_ && pointer_inside_ && buttons_down_ == 0 && popup_infos_.Empty()) {
+        return true; // a tooltip is waiting for its delay
+    }
+    return AnyWantsUpdate(root_.Get()) || AnyWantsUpdate(modals_.Get()) || AnyWantsUpdate(popups_.Get()) || AnyWantsUpdate(tips_.Get());
+}
+
 void Surface::UpdateWidgets(Widget* widget, f32 dt) {
     if (!widget->Shown()) return;
     if (widget->WantsUpdate()) widget->Update(dt);

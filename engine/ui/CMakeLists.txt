@@ -32,6 +32,8 @@ set(UI_SOURCES
   widgets/value_widgets.cpp
   widgets/list_box.cpp
   viewport.cpp
+  update_policy.cpp
+  surface_input.cpp
   testing/software_raster.cpp
   testing/harness.cpp
   testing/recording_canvas.cpp

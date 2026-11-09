@@ -30,6 +30,7 @@ set(RENDERER_PASS_SOURCES
   text_renderer.cpp
   ui_renderer.cpp
   viewport_target.cpp
+  ui_surface_target.cpp
 )
 
 # Headers are included as "renderer/<name>.h", rooted at engine/.
