@@ -2,7 +2,7 @@
 # They need no GPU: each program exits before it opens a window or a device. See common/settings_cli_check.cmake.
 function(demo_settings_tests demo)
   set(cli ${CMAKE_SOURCE_DIR}/game/common/settings_cli_check.cmake)
-  set(common -DEXE=$<TARGET_FILE:${demo}> -DWORK=${CMAKE_CURRENT_BINARY_DIR}/cli_${demo})
+  set(common -DEXE=$<TARGET_FILE:${demo}> -DWORK=${ENGINE_TEST_TMP_DIR}/cli/${demo})
   set(golden ${CMAKE_SOURCE_DIR}/game/${demo})
   add_test(NAME ${demo}_settings_list COMMAND ${CMAKE_COMMAND} ${common} -DMODE=golden "-DARGS=--list-settings" -DGOLDEN=${golden}/listsettings.golden -P ${cli})
   add_test(NAME ${demo}_settings_help COMMAND ${CMAKE_COMMAND} ${common} -DMODE=golden "-DARGS=--help" -DGOLDEN=${golden}/help.golden -P ${cli})
@@ -33,7 +33,7 @@ endfunction()
 
 # The demos' tests run with a user profile of their own in the build tree: the user's settings file is read from it and the crash handler's
 # directory is made in it, never in the developer's (Day 161). The settings checks above use a private one per test as well.
-set(_profile "${CMAKE_CURRENT_BINARY_DIR}/test-profile")
+set(_profile "${ENGINE_TEST_TMP_DIR}/profile")
 if(WIN32)
   set(DEMO_PROFILE_ENV "APPDATA=${_profile}/roaming;LOCALAPPDATA=${_profile}/local")
   file(MAKE_DIRECTORY "${_profile}/roaming" "${_profile}/local")

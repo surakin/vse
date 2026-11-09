@@ -10,13 +10,13 @@ target_link_libraries(rhi_demo PRIVATE renderer rhi_backends rhi foundation)
 
 # Failure injection and missing-Vulkan behaviour of the demo (Phase 4 Day 66). The shell is the process boundary, so
 # a crash (signal) shows up as a wrong exit code. Tests that need a GPU skip (77) without one.
-set(RHI_DEMO_SHOT ${CMAKE_CURRENT_BINARY_DIR}/fault.ppm)
+set(RHI_DEMO_SHOT ${ENGINE_TEST_TMP_DIR}/screenshots/rhi_demo_fault.ppm)
 function(rhi_demo_expect name code out skip_re)
   add_test(NAME ${name}
     COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:rhi_demo>;${ARGN}" -DEXPECT_CODE=${code} "-DEXPECT_OUT=${out}"
       "-DSKIP_IF_OUT=${skip_re}" -P ${CMAKE_CURRENT_SOURCE_DIR}/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo" SKIP_RETURN_CODE 77
-    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache;${DEMO_PROFILE_ENV}")
+    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/rhi_demo;${DEMO_PROFILE_ENV}")
 endfunction()
 set(RHI_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
 rhi_demo_expect(rhi_demo_device_loss_screenshot 3 "the GPU device was lost" "${RHI_NO_GPU}"

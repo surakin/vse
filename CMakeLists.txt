@@ -85,6 +85,10 @@ if(ENGINE_FORCE_SLOW_CHECKS)
 endif()
 
 enable_testing()
+# Where tests keep the files they make while they run (a private settings profile, pipeline caches, the command-line checks' folders, scratch
+# projects): one folder of the build tree, safe to delete at any time.
+set(ENGINE_TEST_TMP_DIR "${CMAKE_BINARY_DIR}/test-tmp")
+file(MAKE_DIRECTORY "${ENGINE_TEST_TMP_DIR}/pipeline-cache" "${ENGINE_TEST_TMP_DIR}/screenshots")
 add_subdirectory(third_party/catch2)
 add_subdirectory(third_party/freetype)  # Phase 14 Day 175: FreeType, vendored (PLAN.md assumption #17)
 # Catch2's REQUIRE/CHECK throw: exceptions on for Catch2 and, through PUBLIC, every test executable that links it.

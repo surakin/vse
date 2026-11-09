@@ -127,7 +127,7 @@ foreach(_tc msvc clang-cl)
   string(REPLACE "-" "_" _name "${_tc}")
   add_test(NAME windows_toolchain_discovery_${_name}
            COMMAND ${CMAKE_COMMAND} -DTOOLCHAIN=${CMAKE_SOURCE_DIR}/cmake/toolchains/windows-${_tc}.cmake
-                   -DWORK=${CMAKE_CURRENT_BINARY_DIR}/discovery-${_tc} -DPROJECT_SOURCE=${CMAKE_CURRENT_SOURCE_DIR}/discovery
+                   -DWORK=${ENGINE_TEST_TMP_DIR}/windows_discovery-${_tc} -DPROJECT_SOURCE=${CMAKE_CURRENT_SOURCE_DIR}/discovery
                    -DNINJA=${CMAKE_MAKE_PROGRAM} -P ${CMAKE_CURRENT_SOURCE_DIR}/discovery/check.cmake)
   set_tests_properties(windows_toolchain_discovery_${_name} PROPERTIES PASS_REGULAR_EXPRESSION "discovery ok: hello from")
 endforeach()

@@ -164,6 +164,14 @@ Run one flavor with `--flavor asan|tsan|plain`; plain means neither sanitizer la
 
 Window tests also carry the label `display` (they share the one desktop and run one at a time).
 
+### Where tests keep their files
+
+What a test makes while it runs goes under one folder of the build tree, `test-tmp/` (`ENGINE_TEST_TMP_DIR` in the root `CMakeLists.txt`), safe to
+delete at any time: `profile/` (the demo tests' `APPDATA` and `LOCALAPPDATA`, or `XDG_CONFIG_HOME` and `XDG_STATE_HOME` on Linux, so your own settings are never read or written),
+`pipeline-cache/<test>/` (each GPU test's `ENGINE_RHI_CACHE_DIR`), `screenshots/` (what the demos' `--screenshot` tests write), `cli/<demo>_<hash>/` (the demos' command-line checks; the suffix is the first 8 hex
+digits of an MD5 of what the check runs, so parallel checks never share a folder and a rerun reuses its own), `crash_extract/`,
+`renderer_demo_assets_check/` and, on Windows, `windows_discovery-<compiler>/`. A new test that needs a working folder puts it there.
+
 ### Window tests and the session
 
 A window never appears while the screen is locked, idle or switched to another user, so a window test run then fails for a reason that is not a defect. A test that opens a real window starts with

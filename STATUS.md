@@ -27,6 +27,7 @@ What to install first, per platform: `BUILD.md`.
 - **Everything, every flavor** (a phase's closing run): `scripts/test-phase.sh --all --flavor all`, or plain `ctest` from `build/`.
 - Every test has one `phaseN` label (`ctest -L '^phase5$'`); `tests/phases.txt` is the only place a phase is decided, and
   `CURRENT_PHASE` changes in the commit that closes the previous phase or starts this one. Docs checks: `ctest -L docs` (not scoped).
+- Tests keep their working files (demo profile, pipeline caches, command-line check folders, screenshots) under `<build>/test-tmp/`, safe to delete (`docs/guide/building-and-testing.md`, "Where tests keep their files").
 - Tests that crash processes on purpose (label `crash`, the `tests/debug` suite) run only with `--all` or `--crashes`; the summary line says `crash tests: excluded`. A reduced run is quoted with its `ran X of Y tests` line, never as "all tests pass". Guide: `docs/guide/building-and-testing.md`.
 - **Debugging facilities (Phase 7):** the suite is `tests/debug` (`ctest -L phase7`; the crash tests run child processes, a few need
   `lldb`, `gdb` or `objcopy` and skip with a printed reason without them). Gates: `signal_safety_check`, `platform_neutral_check`,

@@ -14,25 +14,25 @@ target_link_libraries(ui_demo PRIVATE ui_demo_lib ui_window rhi_backends)
 
 # Failure behaviour and the scripted paths, as for renderer_demo (its expect_run.cmake is reused). Tests that need a GPU skip (77) without one.
 function(ui_demo_expect name code out skip_re)
-  string(REPLACE "UI_DEMO_SHOT" "${CMAKE_CURRENT_BINARY_DIR}/${name}.ppm" args "${ARGN}")
+  string(REPLACE "UI_DEMO_SHOT" "${ENGINE_TEST_TMP_DIR}/screenshots/${name}.ppm" args "${ARGN}")
   add_test(NAME ${name}
     COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:ui_demo>;${args}" -DEXPECT_CODE=${code} "-DEXPECT_OUT=${out}"
       "-DSKIP_IF_OUT=${skip_re}" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo" SKIP_RETURN_CODE 77
-    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${name};${DEMO_PROFILE_ENV}")
+    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/${name};${DEMO_PROFILE_ENV}")
   engine_label_tests(${name})
 endfunction()
 set(UI_DEMO_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
 ui_demo_expect(ui_demo_screenshot 0 "wrote .*ui_demo_screenshot.ppm \\(960x600\\)" "${UI_DEMO_NO_GPU}" --screenshot UI_DEMO_SHOT --validation --rhi vulkan)
 # Every kind of script word, offscreen, with the validation layer on and silent: input, menus, themes, drops, the clipboard, a resize and two pictures.
 ui_demo_expect(ui_demo_screenshot_script 0 "wrote .*ui_demo_screenshot_script_a.ppm .*wrote .*ui_demo_screenshot_script.ppm \\(640x480\\)" "${UI_DEMO_NO_GPU}"
-  --screenshot UI_DEMO_SHOT --validation --scale 2 --frames 40 --script "frame:2 click:btn_new frame:4 type:abc key:Tab key:ctrl+a frame:6 theme:dark frame:8 openmenu:View frame:10 key:Escape drop:text:dropped frame:12 paste:pasted frame:13 rendering frame:14 key:Escape drag:list_items:0,60 wheel:viewport:3 frame:18 shot:${CMAKE_CURRENT_BINARY_DIR}/ui_demo_screenshot_script_a.ppm resize:320x240 frame:24 menu:Help/About frame:30")
+  --screenshot UI_DEMO_SHOT --validation --scale 2 --frames 40 --script "frame:2 click:btn_new frame:4 type:abc key:Tab key:ctrl+a frame:6 theme:dark frame:8 openmenu:View frame:10 key:Escape drop:text:dropped frame:12 paste:pasted frame:13 rendering frame:14 key:Escape drag:list_items:0,60 wheel:viewport:3 frame:18 shot:${ENGINE_TEST_TMP_DIR}/screenshots/ui_demo_screenshot_script_a.ppm resize:320x240 frame:24 menu:Help/About frame:30")
 # A bad script word fails cleanly (exit 1), a bad scale is a usage error (exit 2), a missing Vulkan loader is reported.
 ui_demo_expect(ui_demo_bad_script 1 "unknown script word|cannot do" "${UI_DEMO_NO_GPU}" --screenshot UI_DEMO_SHOT --script "frame:1 sparkle:now")
 ui_demo_expect(ui_demo_bad_scale 2 "usage" "" --scale 3)
 add_test(NAME ui_demo_no_vulkan
   COMMAND ${CMAKE_COMMAND} -E env ENGINE_VULKAN_LIBRARY=/nonexistent
-    ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:ui_demo>;--screenshot;${CMAKE_CURRENT_BINARY_DIR}/ui_demo_no_vulkan.ppm;--rhi;vulkan" -DEXPECT_CODE=1 "-DEXPECT_OUT=no vulkan device"
+    ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:ui_demo>;--screenshot;${ENGINE_TEST_TMP_DIR}/screenshots/ui_demo_no_vulkan.ppm;--rhi;vulkan" -DEXPECT_CODE=1 "-DEXPECT_OUT=no vulkan device"
     -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
 set_tests_properties(ui_demo_no_vulkan PROPERTIES LABELS demo ENVIRONMENT "${DEMO_PROFILE_ENV}")
 engine_label_tests(ui_demo_no_vulkan)
@@ -46,7 +46,7 @@ function(ui_demo_scripted name backend rhi)
       "-DSKIP_IF_OUT=${UI_DEMO_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
       "-DFORBID_OUT=a Vulkan validation error was reported|(ERROR|WARN): D3D12 debug layer" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo;display" RESOURCE_LOCK display SKIP_RETURN_CODE 77
-    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${name};${DEMO_PROFILE_ENV}")
+    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/${name};${DEMO_PROFILE_ENV}")
   engine_label_tests(${name})
 endfunction()
 if(WIN32)

@@ -108,10 +108,10 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib rhi_backends_lib suf
   # Tests that open a window share the desktop's input focus, so they hold the `display` resource and run one at a time
   # (see tests/foundation/CMakeLists.txt); the rest run in parallel. `spec` is ANDed onto each half.
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "~[window]~[x11]~[wayland]${spec}"
-    PROPERTIES LABELS "${label}" ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${label}")
+    PROPERTIES LABELS "${label}" ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/rhi_tests-${label}")
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "[window]${spec},[x11]${spec},[wayland]${spec}"
     PROPERTIES LABELS "${label};display" RESOURCE_LOCK display
-    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${label}")
+    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/rhi_tests-${label}")
 endfunction()
 
 engine_add_rhi_tests(rhi_tests rhi rhi_vulkan rhi_backends "" "rhi" "")

@@ -21,12 +21,12 @@ target_link_libraries(renderer_demo_mint PRIVATE renderer_demo_lib)
 # (77) without one.
 # Each test gets its own output file and pipeline-cache directory, so they can run in parallel.
 function(renderer_demo_expect name code out skip_re)
-  string(REPLACE "RENDERER_DEMO_SHOT" "${CMAKE_CURRENT_BINARY_DIR}/${name}.ppm" args "${ARGN}")
+  string(REPLACE "RENDERER_DEMO_SHOT" "${ENGINE_TEST_TMP_DIR}/screenshots/${name}.ppm" args "${ARGN}")
   add_test(NAME ${name}
     COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;${args}" -DEXPECT_CODE=${code} "-DEXPECT_OUT=${out}"
       "-DSKIP_IF_OUT=${skip_re}" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo" SKIP_RETURN_CODE 77
-    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${name};${DEMO_PROFILE_ENV}")
+    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/${name};${DEMO_PROFILE_ENV}")
 endfunction()
 set(RENDERER_NO_GPU "cannot open loader library|no physical devices|no suitable GPU")
 # A normal offscreen run writes the picture and says how much it drew.
@@ -76,7 +76,7 @@ function(renderer_demo_scripted name backend rhi)
       "-DSKIP_IF_OUT=${RENDERER_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
       "-DFORBID_OUT=a Vulkan validation error was reported|(ERROR|WARN): D3D12 debug layer" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo;display" RESOURCE_LOCK display SKIP_RETURN_CODE 77
-    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${name};${DEMO_PROFILE_ENV}")
+    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/${name};${DEMO_PROFILE_ENV}")
 endfunction()
 if(WIN32)
   renderer_demo_scripted(renderer_demo_script_win32 win32 vulkan)
@@ -98,7 +98,7 @@ function(renderer_demo_overlay_scripted name backend)
       "-DSKIP_IF_OUT=${RENDERER_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
       "-DFORBID_OUT=a Vulkan validation error was reported" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo;display" RESOURCE_LOCK display SKIP_RETURN_CODE 77
-    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${name};${DEMO_PROFILE_ENV}")
+    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/${name};${DEMO_PROFILE_ENV}")
 endfunction()
 if(WIN32)
   renderer_demo_overlay_scripted(renderer_demo_overlay_win32 win32)
@@ -118,18 +118,18 @@ add_test(NAME renderer_demo_crash_after_reset
     "-DEXPECT_CODE=${_abort_code}" "-DEXPECT_OUT=rhi_device: epoch [0-9]+, 1 reset\\(s\\)" "-DSKIP_IF_OUT=${RENDERER_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
     -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
 set_tests_properties(renderer_demo_crash_after_reset PROPERTIES LABELS "gpu;demo;display;crash" RESOURCE_LOCK display SKIP_RETURN_CODE 77
-  ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-crash_after_reset;${DEMO_PROFILE_ENV}")
+  ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/renderer_demo_crash_after_reset;${DEMO_PROFILE_ENV}")
 
 add_test(NAME renderer_demo_no_vulkan
   COMMAND ${CMAKE_COMMAND} -E env ENGINE_VULKAN_LIBRARY=/nonexistent
-    ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--screenshot;${CMAKE_CURRENT_BINARY_DIR}/renderer_demo_no_vulkan.ppm;--rhi;vulkan" -DEXPECT_CODE=1 "-DEXPECT_OUT=no vulkan device"
+    ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--screenshot;${ENGINE_TEST_TMP_DIR}/screenshots/renderer_demo_no_vulkan.ppm;--rhi;vulkan" -DEXPECT_CODE=1 "-DEXPECT_OUT=no vulkan device"
     -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
 set_tests_properties(renderer_demo_no_vulkan PROPERTIES LABELS demo ENVIRONMENT "${DEMO_PROFILE_ENV}")
 
 # The committed textures are what the generator writes, byte for byte, and writing is deterministic.
 add_test(NAME renderer_demo_assets_current
   COMMAND ${CMAKE_COMMAND} -DMINT=$<TARGET_FILE:renderer_demo_mint> -DASSETS=${CMAKE_CURRENT_SOURCE_DIR}/assets
-    -DWORK=${CMAKE_CURRENT_BINARY_DIR}/assets-check -P ${CMAKE_CURRENT_SOURCE_DIR}/check_assets.cmake)
+    -DWORK=${ENGINE_TEST_TMP_DIR}/renderer_demo_assets_check -P ${CMAKE_CURRENT_SOURCE_DIR}/check_assets.cmake)
 set_tests_properties(renderer_demo_assets_current PROPERTIES LABELS demo)
 if(WIN32)
   engine_label_tests(renderer_demo_script_win32 renderer_demo_script_win32_dx12)

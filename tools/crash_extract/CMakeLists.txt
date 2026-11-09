@@ -17,7 +17,7 @@ add_test(NAME crash_extract_tool
   COMMAND ${CMAKE_COMMAND}
     -DTOOL=$<TARGET_FILE:crash_extract>
     -DFIXTURES=${CMAKE_CURRENT_SOURCE_DIR}/fixtures
-    -DWORK=${CMAKE_CURRENT_BINARY_DIR}/work
+    -DWORK=${ENGINE_TEST_TMP_DIR}/crash_extract
     -P ${CMAKE_CURRENT_SOURCE_DIR}/tool_test.cmake)
 set_tests_properties(crash_extract_tool PROPERTIES LABELS debug)
 engine_label_tests(crash_extract_tool)

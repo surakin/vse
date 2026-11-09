@@ -64,7 +64,8 @@ ctest --test-dir build-msvc -L docs
 
 The GPU tests run once per backend (`FOR_EACH_GPU_BACKEND` in `tests/rhi/backend_fixture.h`): Vulkan and Direct3D 12 here. Set
 `ENGINE_RHI_CACHE_DIR` to a scratch directory when you run `rhi_tests.exe` or `renderer_tests.exe` by hand, so the pipeline cache does not land in
-your profile. The demo tests use a profile of their own in the build tree (`APPDATA` and `LOCALAPPDATA` point there). A test binary that hits an
+your profile. The demo tests use a profile of their own in the build tree (`APPDATA` and `LOCALAPPDATA` point to `test-tmp/profile`; every test's working files are
+under `test-tmp/`, see `docs/guide/building-and-testing.md`, "Where tests keep their files"). A test binary that hits an
 assertion shows the C runtime's "abort() has been called" box and waits (`KNOWN-ISSUES.md`); under ctest that costs the test's timeout.
 
 ## Running the demos

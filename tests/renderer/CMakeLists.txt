@@ -65,7 +65,7 @@ function(engine_add_renderer_tests target suffix label spec)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/tests/io ${CMAKE_SOURCE_DIR}/tests/support ${CMAKE_SOURCE_DIR}/tests/rhi ${CMAKE_SOURCE_DIR}/tests/text)
   target_compile_definitions(${target} PRIVATE TEXT_TEST_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf" ENGINE_RHI_LSAN_SUPP="${CMAKE_SOURCE_DIR}/tests/rhi/lsan.supp" SETTINGS_FIXTURE_DIR="${CMAKE_SOURCE_DIR}/tests/settings/fixtures")
   engine_discover_tests(${target} TEST_SUFFIX "${suffix}" TEST_SPEC "${spec}"
-    PROPERTIES LABELS "${label}" ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${label}")
+    PROPERTIES LABELS "${label}" ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${ENGINE_TEST_TMP_DIR}/pipeline-cache/renderer_tests-${label}")
 endfunction()
 
 engine_add_renderer_tests(renderer_tests "" "renderer" "")
