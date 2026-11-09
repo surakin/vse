@@ -185,7 +185,11 @@ set(SENTRY_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(SENTRY_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(SENTRY_BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
 set(SENTRY_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+# sentry-native sets C99 when no standard is given; glibc's memchr/strchr macros use _Generic, so every call warned (-Wc11-extensions, 16 of
+# them on Clang). C11 for this library only: the variable is restored after the subdirectory so no other C target changes.
+set(CMAKE_C_STANDARD 11)
 add_subdirectory(third_party/sentry_native)
+unset(CMAKE_C_STANDARD)
 include(cmake/EngineTestPhases.cmake)
 include(cmake/EngineDeathTests.cmake)
 
