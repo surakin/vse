@@ -226,8 +226,11 @@ void HandleEnter(Display* display, unsigned long window, X11ClipboardState& csta
         unsigned long after = 0;
         unsigned char* data = nullptr;
         if (XGetWindowProperty(display, t.source, dnd.atom_type_list, 0, kMaxDragTypes, False, XA_ATOM, &type, &format, &count, &after, &data) == Success && data != nullptr) {
-            const unsigned long* atoms = reinterpret_cast<const unsigned long*>(data);
-            for (unsigned long i = 0; i < count && t.types.Size() < kMaxDragTypes; ++i) t.types.Push(atoms[i]);
+            // Only a 32-bit ATOM list is read as longs; another format from a hostile source would be read past its end.
+            if (type == XA_ATOM && format == 32) {
+                const unsigned long* atoms = reinterpret_cast<const unsigned long*>(data);
+                for (unsigned long i = 0; i < count && t.types.Size() < kMaxDragTypes; ++i) t.types.Push(atoms[i]);
+            }
             XFree(data);
         }
     } else {

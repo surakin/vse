@@ -46,4 +46,6 @@ Dropping files and text from other programs onto a window, and dragging text and
 5. `wl_data_offer_finish` was sent when the compositor had chosen no action, a protocol error that drops the connection; only sent when `offer.action` is set (untestable without a compositor; reasoned from the protocol text).
 6. `(void)` on unused parameters replaced with unnamed parameters.
 
+6b. A second review pass found `XdndTypeList` read as longs without checking `format == 32` (out-of-bounds read from a hostile source); fixed, regression "an XdndTypeList of the wrong format is ignored".
+
 **Declined (1):** `XdndDrop` carries `CurrentTime` instead of the time of the last pointer event; our `XdndSelection` ownership is taken with `CurrentTime` too, so both agree, and targets in the wild (GTK, Qt) accept it. Revisit if a target is seen to refuse.

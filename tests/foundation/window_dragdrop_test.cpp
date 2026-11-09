@@ -564,6 +564,25 @@ TEST_CASE("XDND: a new drag while the last never left reports the leave", "[drag
     window.FinishDrop(DragAction::Nothing);
 }
 
+TEST_CASE("XDND: an XdndTypeList of the wrong format is ignored", "[dragdrop][x11][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    X11Window window = X11Window::Create("drop target", 300, 200);
+    REQUIRE(window.Valid());
+    Peer peer;
+    REQUIRE(peer.Open(0, 0));
+    DropAccept accept;
+    accept.formats = kDropText;
+    window.SetDropAccept(accept);
+    const unsigned long target = window.NativeWindow();
+    unsigned char bytes[64] = {};
+    XChangeProperty(peer.display, peer.window, peer.a_type_list, kXaAtom, 8, kPropModeReplace, bytes, 64);
+    peer.Message(target, peer.a_enter, static_cast<long>(peer.window), (5L << 24) | 1, 0, 0, 0);
+    peer.SendPosition(target, 5, 5, peer.a_copy);
+    REQUIRE(PumpAll(window, peer, [&] { return peer.status_count >= 1; }));
+    CHECK_FALSE(peer.last_status_accept);
+    CHECK(window.Valid());
+}
+
 // ---- X11: an X11Window drags onto a scripted target --------------------------------------------------------------------
 
 TEST_CASE("XDND: a drag started by a window reaches an XdndAware peer and ends with its action", "[dragdrop][x11][os]") {
