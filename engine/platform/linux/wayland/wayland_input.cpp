@@ -64,6 +64,7 @@ bool WaylandInput::Init(WaylandConnection& connection, InputState* input_state) 
     input_state_ = input_state;
     keyboard_events_.Init(&xkb_, &events_);
     cursor_.Init(&connection, &events_);
+    clipboard_.Init(connection, &events_); // no data device manager: the clipboard stays unsupported
     wl_seat_add_listener(seat_, &kSeatListener, this);
     // First roundtrip delivers wl_seat.capabilities (which creates the
     // wl_keyboard/wl_pointer); the second delivers the keymap/modifiers
@@ -84,6 +85,7 @@ void WaylandInput::Shutdown() {
         wl_keyboard_destroy(keyboard_);
         keyboard_ = nullptr;
     }
+    clipboard_.Shutdown();
     cursor_.Shutdown(); // before the pointer: the shape device and relative pointer belong to it
     if (pointer_ != nullptr) {
         wl_pointer_destroy(pointer_);
@@ -166,9 +168,9 @@ void WaylandInput::HandleKeyboardKeymap(void* data, wl_keyboard* keyboard, u32 f
 void WaylandInput::HandleKeyboardEnter(void* data, wl_keyboard* keyboard, u32 serial, wl_surface* surface,
                                        wl_array* keys) {
     (void)keyboard;
-    (void)serial;
     (void)surface;
     auto* self = static_cast<WaylandInput*>(data);
+    self->clipboard_.RecordSerial(serial);
     // `keys` lists the evdev codes already held when focus arrived.
     self->cursor_.OnFocus(true);
     self->keyboard_events_.FocusGained(NowNs());
@@ -194,9 +196,9 @@ void WaylandInput::HandleKeyboardLeave(void* data, wl_keyboard* keyboard, u32 se
 void WaylandInput::HandleKeyboardKey(void* data, wl_keyboard* keyboard, u32 serial, u32 time, u32 key,
                                      u32 state) {
     (void)keyboard;
-    (void)serial;
     (void)time;
     auto* self = static_cast<WaylandInput*>(data);
+    self->clipboard_.RecordSerial(serial);
     const bool pressed = state == WL_KEYBOARD_KEY_STATE_PRESSED;
     self->ApplyKey(key, pressed);
     self->keyboard_events_.Key(key, pressed, NowNs());
@@ -255,8 +257,8 @@ void WaylandInput::HandlePointerMotion(void* data, wl_pointer* pointer, u32 time
 void WaylandInput::HandlePointerButton(void* data, wl_pointer* pointer, u32 serial, u32 time,
                                        u32 button, u32 state) {
     (void)pointer;
-    (void)serial;
     (void)time;
+    static_cast<WaylandInput*>(data)->clipboard_.RecordSerial(serial);
     // Linux evdev BTN_* codes (input-event-codes.h).
     constexpr u32 kBtnLeft = 0x110;
     constexpr u32 kBtnRight = 0x111;
@@ -326,7 +328,7 @@ bool WaylandInput::ListenersComplete() {
     const wl_keyboard_listener& k = kKeyboardListener;
     const wl_seat_listener& s = kSeatListener;
     return p.enter && p.leave && p.motion && p.button && p.axis && p.frame && p.axis_source && p.axis_stop && p.axis_discrete && k.keymap && k.enter && k.leave &&
-           k.key && k.modifiers && k.repeat_info && s.capabilities && s.name && WaylandCursor::ListenersComplete();
+           k.key && k.modifiers && k.repeat_info && s.capabilities && s.name && WaylandCursor::ListenersComplete() && WaylandClipboard::ListenersComplete();
 }
 
 void WaylandInput::PushPointerEvent(InputEventType type, f64 x, f64 y) {
@@ -341,6 +343,7 @@ void WaylandInput::PushPointerEvent(InputEventType type, f64 x, f64 y) {
 
 void WaylandInput::Tick() {
     keyboard_events_.Tick(NowNs());
+    clipboard_.Tick(NowNs());
 }
 
 void WaylandInput::ApplyKey(u32 evdev_code, bool pressed) {

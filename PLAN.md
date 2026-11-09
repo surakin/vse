@@ -174,6 +174,8 @@ interpretations keep it buildable — flag any that don't match intent:
    it on every X11 system, used for the cursor theme and ARGB cursors (`libXcursor`) and for XInput 2 raw motion while the pointer is locked
    (`libXi`); the Wayland side uses only protocol bindings generated from `wayland-protocols` (cursor shape, pointer constraints, relative
    pointer), committed like xdg-shell, and does not use `libwayland-cursor`.
+   **Day 187 adds `libXfixes`** (same family; selection-owner notifications, so a clipboard change by another program is seen) and the Wayland
+   `primary-selection-unstable-v1` bindings, generated and committed the same way; the clipboard itself uses `wl_data_device` and the X11 selections.
 4. **Images/assets start custom; shaders use an existing offline
    compiler (see #18).** A general PNG/JPEG importer is its own large
    project, so early phases use custom binary asset formats from our own

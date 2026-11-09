@@ -40,6 +40,8 @@ struct RegistryState {
     wp_cursor_shape_manager_v1* cursor_shape_manager = nullptr; // optional
     zwp_pointer_constraints_v1* pointer_constraints = nullptr; // optional
     zwp_relative_pointer_manager_v1* relative_pointer_manager = nullptr; // optional
+    wl_data_device_manager* data_device_manager = nullptr; // optional (no clipboard without it)
+    zwp_primary_selection_device_manager_v1* primary_selection_manager = nullptr; // optional
 };
 
 void HandleGlobal(void* data, wl_registry* registry, u32 name, const char* interface, u32 version) {
@@ -73,6 +75,14 @@ void HandleGlobal(void* data, wl_registry* registry, u32 name, const char* inter
     } else if (iface == StringView(zwp_relative_pointer_manager_v1_interface.name)) {
         state->relative_pointer_manager =
             static_cast<zwp_relative_pointer_manager_v1*>(wl_registry_bind(registry, name, &zwp_relative_pointer_manager_v1_interface, 1));
+        LogBoundGlobal(interface, version);
+    } else if (iface == StringView(wl_data_device_manager_interface.name)) {
+        state->data_device_manager = static_cast<wl_data_device_manager*>(
+            wl_registry_bind(registry, name, &wl_data_device_manager_interface, version < 3 ? version : 3));
+        LogBoundGlobal(interface, version);
+    } else if (iface == StringView(zwp_primary_selection_device_manager_v1_interface.name)) {
+        state->primary_selection_manager = static_cast<zwp_primary_selection_device_manager_v1*>(
+            wl_registry_bind(registry, name, &zwp_primary_selection_device_manager_v1_interface, 1));
         LogBoundGlobal(interface, version);
     }
     // Anything else advertised by the compositor isn't a global this
@@ -139,6 +149,12 @@ WaylandConnection WaylandConnection::Connect() {
         if (state.relative_pointer_manager != nullptr) {
             zwp_relative_pointer_manager_v1_destroy(state.relative_pointer_manager);
         }
+        if (state.data_device_manager != nullptr) {
+            wl_data_device_manager_destroy(state.data_device_manager);
+        }
+        if (state.primary_selection_manager != nullptr) {
+            zwp_primary_selection_device_manager_v1_destroy(state.primary_selection_manager);
+        }
         wl_registry_destroy(registry);
         wl_display_disconnect(display);
         return WaylandConnection();
@@ -155,6 +171,8 @@ WaylandConnection WaylandConnection::Connect() {
     conn.cursor_shape_manager_ = state.cursor_shape_manager;
     conn.pointer_constraints_ = state.pointer_constraints;
     conn.relative_pointer_manager_ = state.relative_pointer_manager;
+    conn.data_device_manager_ = state.data_device_manager;
+    conn.primary_selection_manager_ = state.primary_selection_manager;
     return conn;
 }
 
@@ -172,7 +190,9 @@ WaylandConnection::WaylandConnection(WaylandConnection&& other) noexcept
       decoration_manager_(other.decoration_manager_),
       cursor_shape_manager_(other.cursor_shape_manager_),
       pointer_constraints_(other.pointer_constraints_),
-      relative_pointer_manager_(other.relative_pointer_manager_) {
+      relative_pointer_manager_(other.relative_pointer_manager_),
+      data_device_manager_(other.data_device_manager_),
+      primary_selection_manager_(other.primary_selection_manager_) {
     other.display_ = nullptr;
     other.registry_ = nullptr;
     other.compositor_ = nullptr;
@@ -183,6 +203,8 @@ WaylandConnection::WaylandConnection(WaylandConnection&& other) noexcept
     other.cursor_shape_manager_ = nullptr;
     other.pointer_constraints_ = nullptr;
     other.relative_pointer_manager_ = nullptr;
+    other.data_device_manager_ = nullptr;
+    other.primary_selection_manager_ = nullptr;
 }
 
 WaylandConnection& WaylandConnection::operator=(WaylandConnection&& other) noexcept {
@@ -198,6 +220,8 @@ WaylandConnection& WaylandConnection::operator=(WaylandConnection&& other) noexc
         cursor_shape_manager_ = other.cursor_shape_manager_;
         pointer_constraints_ = other.pointer_constraints_;
         relative_pointer_manager_ = other.relative_pointer_manager_;
+        data_device_manager_ = other.data_device_manager_;
+        primary_selection_manager_ = other.primary_selection_manager_;
         other.display_ = nullptr;
         other.registry_ = nullptr;
         other.compositor_ = nullptr;
@@ -208,6 +232,8 @@ WaylandConnection& WaylandConnection::operator=(WaylandConnection&& other) noexc
         other.cursor_shape_manager_ = nullptr;
         other.pointer_constraints_ = nullptr;
         other.relative_pointer_manager_ = nullptr;
+        other.data_device_manager_ = nullptr;
+        other.primary_selection_manager_ = nullptr;
     }
     return *this;
 }
@@ -244,6 +270,14 @@ void WaylandConnection::ReleaseAll() {
     if (relative_pointer_manager_ != nullptr) {
         zwp_relative_pointer_manager_v1_destroy(relative_pointer_manager_);
         relative_pointer_manager_ = nullptr;
+    }
+    if (data_device_manager_ != nullptr) {
+        wl_data_device_manager_destroy(data_device_manager_);
+        data_device_manager_ = nullptr;
+    }
+    if (primary_selection_manager_ != nullptr) {
+        zwp_primary_selection_device_manager_v1_destroy(primary_selection_manager_);
+        primary_selection_manager_ = nullptr;
     }
     if (registry_ != nullptr) {
         wl_registry_destroy(registry_);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform/input.h"
+#include "platform/linux/x11/x11_clipboard.h"
 #include "platform/linux/x11/x11_cursor.h"
 #include "platform/window.h"
 #include "string/string.h"
@@ -121,6 +122,17 @@ public:
     /// Returns how many server cursors the window owns, so a test can check that replacing and clearing cursor images frees them.
     u32 CursorObjectCount() const { return cursor_.live; }
 
+    /// Returns true on a valid window: both selections work (the clipboard and the primary selection).
+    bool SupportsClipboard(ClipboardKind kind) const override { return display_ != nullptr && static_cast<usize>(kind) < static_cast<usize>(ClipboardKind::Count); }
+    /// Takes the selection; see [[os::Window::SetClipboard]]. The contents are served from `PumpEvents`, in INCR pieces when large.
+    bool SetClipboard(ClipboardKind kind, const ClipboardOffer& offer) override;
+    /// Asks the owner of the selection; see [[os::Window::RequestClipboard]].
+    u32 RequestClipboard(ClipboardKind kind, ClipboardFormat format, StringView custom_name) override;
+    /// Hands over a finished result once.
+    bool TakeClipboardResult(u32 request_id, ClipboardResult* out) override { return clipboard_.requests.Take(request_id, out); }
+    /// Returns whether the selection offers the format (from our own data, or from the targets of the other owner read at the last `ClipboardChanged`).
+    bool ClipboardHasFormat(ClipboardKind kind, ClipboardFormat format, StringView custom_name) const override { return ClipboardHas(display_, clipboard_, kind, format, custom_name); }
+
     /// Returns the underlying Xlib `Display*`, or null if invalid.
     ///
     /// Ownership: borrowed; owned by this window and closed with it.
@@ -156,6 +168,7 @@ private:
     // Whether the window has keyboard focus as far as FocusIn/FocusOut told (grab-induced focus changes do not count).
     bool focused_ = false;
     X11CursorState cursor_;
+    X11ClipboardState clipboard_;
 };
 
 } // namespace engine_placeholder::os::x11

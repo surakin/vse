@@ -2,6 +2,10 @@
 //   L  toggle the pointer lock (the cursor hides and RelativeMotion events appear)
 //   C  cycle the standard cursor shapes
 //   I  toggle a generated custom cursor image (a 32x32 ring with the hotspot in the middle)
+//   Y  copy a test string ("caf\xC3\xA9 \xF0\x9F\x8E\x89 from input_probe") to the clipboard; paste it into another program to check
+//   P  paste: request the clipboard text and print it when it arrives (copy something in another program first)
+//   O  like P for the primary selection (the middle-click one)
+//   F  show which formats the clipboard offers
 //   Esc quit
 // Options: --backend=wayland|x11|auto, --run-seconds=N (default 60).
 #include "log/log.h"
@@ -34,6 +38,8 @@ const char* TypeName(os::InputEventType type) {
     case os::InputEventType::FocusLost: return "FocusLost";
     case os::InputEventType::Resize: return "Resize";
     case os::InputEventType::RelativeMotion: return "RelativeMotion";
+    case os::InputEventType::ClipboardData: return "ClipboardData";
+    case os::InputEventType::ClipboardChanged: return "ClipboardChanged";
     default: return "None";
     }
 }
@@ -47,6 +53,8 @@ void Print(const os::InputEvent& e) {
     case os::InputEventType::KeyUp: line.Append(" key=").AppendUInt(static_cast<u32>(e.key)).Append(e.repeat ? " repeat" : ""); break;
     case os::InputEventType::Text: line.Append(" \"").Append(StringView(e.text, e.text_length)).Append('"'); break;
     case os::InputEventType::PointerButton: line.Append(" button=0x").AppendHex(e.button).Append(e.down ? " down" : " up"); break;
+    case os::InputEventType::ClipboardData: line.Append(" id=").AppendUInt(e.request_id).Append(" status=").AppendUInt(e.clipboard_status); break;
+    case os::InputEventType::ClipboardChanged: line.Append(" kind=").AppendUInt(e.clipboard_kind); break;
     case os::InputEventType::Resize: line.Append(' ').AppendUInt(e.width).Append('x').AppendUInt(e.height); break;
     case os::InputEventType::None:
     case os::InputEventType::PointerLeave:
@@ -121,7 +129,7 @@ int EngineMain(int, char**) {
         ArenaAllocator scratch(256);
         StringBuilder<ArenaAllocator> line(scratch);
         line.Append("backend ").Append(window->BackendName()).Append(": shapes=").AppendUInt(window->SupportsCursorShape()).Append(" image=").AppendUInt(window->SupportsCursorImage());
-        line.Append(" lock=").AppendUInt(window->SupportsPointerLock()).Append("  keys: L lock, C shape, I image, Esc quit\n");
+        line.Append(" lock=").AppendUInt(window->SupportsPointerLock()).Append("  keys: L lock, C shape, I image, Y copy, P paste, O paste primary, F formats, Esc quit\n");
         os::Write(1, line.CStr(), line.View().Length());
     }
 
@@ -134,6 +142,9 @@ int EngineMain(int, char**) {
     image.hotspot_x = 16;
     image.hotspot_y = 16;
 
+    // The text of the last ClipboardData result is printed by the key handler below once the event arrives.
+    u32 paste_id = 0;
+    os::ClipboardKind paste_kind = os::ClipboardKind::Clipboard;
     bool locked = false;
     bool image_on = false;
     u32 shape = 0;
@@ -144,6 +155,18 @@ int EngineMain(int, char**) {
         os::InputEvent e;
         while (window->PollEvent(&e)) {
             Print(e);
+            if (e.type == os::InputEventType::ClipboardData && e.request_id == paste_id) {
+                os::ClipboardResult result;
+                if (window->TakeClipboardResult(e.request_id, &result) && result.status == os::ClipboardStatus::Ok) {
+                    Say("pasted text:");
+                    os::Write(1, result.bytes.Data(), result.bytes.Size());
+                    os::Write(1, "\n", 1);
+                    if (result.replaced_sequences != 0) Say("(invalid UTF-8 was replaced)");
+                } else {
+                    Say("paste failed: nothing there, no text format, or nobody answered");
+                }
+                paste_id = 0;
+            }
             if (e.type != os::InputEventType::KeyDown || e.repeat) continue;
             if (e.key == os::Key::Escape) return 0;
             if (e.key == os::Key::L) {
@@ -158,6 +181,26 @@ int EngineMain(int, char**) {
                 StringBuilder<ArenaAllocator> line(scratch);
                 line.Append("cursor shape ").AppendUInt(shape).Append(ok ? " set" : " refused").Append('\n');
                 os::Write(1, line.CStr(), line.View().Length());
+            } else if (e.key == os::Key::Y) {
+                static const char kText[] = "caf\xC3\xA9 \xF0\x9F\x8E\x89 from input_probe";
+                os::ClipboardOffer offer;
+                offer.data = reinterpret_cast<const byte*>(kText);
+                offer.size = sizeof(kText) - 1;
+                const bool ok = window->SetClipboard(os::ClipboardKind::Clipboard, offer);
+                window->SetClipboard(os::ClipboardKind::Primary, offer);
+                Say(ok ? "copied: paste it into another program" : "copy refused (Wayland needs a recent key press in this window)");
+            } else if (e.key == os::Key::P || e.key == os::Key::O) {
+                paste_kind = e.key == os::Key::P ? os::ClipboardKind::Clipboard : os::ClipboardKind::Primary;
+                paste_id = window->RequestClipboard(paste_kind, os::ClipboardFormat::Text, StringView());
+                Say(paste_id != 0 ? "paste requested" : "paste not possible");
+            } else if (e.key == os::Key::F) {
+                for (os::ClipboardKind kind : {os::ClipboardKind::Clipboard, os::ClipboardKind::Primary}) {
+                    ArenaAllocator scratch(256);
+                    StringBuilder<ArenaAllocator> line(scratch);
+                    line.Append(kind == os::ClipboardKind::Clipboard ? "clipboard" : "primary").Append(": text=").AppendUInt(window->ClipboardHasFormat(kind, os::ClipboardFormat::Text, StringView()));
+                    line.Append(" files=").AppendUInt(window->ClipboardHasFormat(kind, os::ClipboardFormat::FileList, StringView())).Append('\n');
+                    os::Write(1, line.CStr(), line.View().Length());
+                }
             } else if (e.key == os::Key::I) {
                 image_on = !image_on;
                 if (image_on) {

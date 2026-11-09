@@ -9,6 +9,7 @@
 #include <X11/Xcursor/Xcursor.h>
 #include <X11/cursorfont.h>
 #include <X11/extensions/XInput2.h>
+#include <X11/extensions/Xfixes.h>
 
 #undef CursorShape // <X11/X.h> defines it as a number; the engine has os::CursorShape
 
@@ -18,6 +19,7 @@
 #include "mem/arena_allocator.h"
 #include "os/os.h"
 #include "platform/linux/key_translate.h"
+#include "platform/linux/x11/x11_clipboard_impl.inc"
 #include "platform/linux/x11/x11_cursor_impl.inc" // x11_cursor.h's functions: see the note at the top of that file
 
 namespace engine_placeholder::os::x11 {
@@ -149,7 +151,7 @@ X11Window X11Window::Create(StringView title, u32 width, u32 height) {
     XSetWindowAttributes attrs = {};
     attrs.background_pixel = kPlaceholderFillColor;
     attrs.event_mask = ExposureMask | StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask |
-                       ButtonReleaseMask | PointerMotionMask | EnterWindowMask | LeaveWindowMask | FocusChangeMask;
+                       ButtonReleaseMask | PointerMotionMask | EnterWindowMask | LeaveWindowMask | FocusChangeMask | PropertyChangeMask;
     ::Window window = XCreateWindow(display, root, 0, 0, width, height, 0, CopyFromParent, InputOutput,
                                     CopyFromParent, CWBackPixel | CWEventMask, &attrs);
     if (window == 0) {
@@ -203,6 +205,7 @@ X11Window X11Window::Create(StringView title, u32 width, u32 height) {
     result.height_ = height;
     result.resize_serial_ = detail::NextResizeSerial();
     CursorInit(display, result.cursor_);
+    ClipboardInit(display, window, result.clipboard_, &result.events_);
     return result;
 }
 
@@ -224,7 +227,8 @@ X11Window::X11Window(X11Window&& other) noexcept
       resize_serial_(other.resize_serial_),
       events_(other.events_),
       focused_(other.focused_),
-      cursor_(other.cursor_) {
+      cursor_(other.cursor_),
+      clipboard_(static_cast<X11ClipboardState&&>(other.clipboard_)) {
     std::memcpy(held_, other.held_, sizeof(held_));
     other.display_ = nullptr;
     other.window_ = 0;
@@ -240,6 +244,8 @@ X11Window::X11Window(X11Window&& other) noexcept
     other.events_.Clear();
     other.focused_ = false;
     other.cursor_ = X11CursorState();
+    clipboard_.requests.Init(&events_); // the queue moved with the window
+    clipboard_.queue = &events_;
 }
 
 X11Window& X11Window::operator=(X11Window&& other) noexcept {
@@ -259,9 +265,12 @@ X11Window& X11Window::operator=(X11Window&& other) noexcept {
         events_ = other.events_;
         focused_ = other.focused_;
         cursor_ = other.cursor_;
+        clipboard_ = static_cast<X11ClipboardState&&>(other.clipboard_);
         other.events_.Clear();
         other.focused_ = false;
         other.cursor_ = X11CursorState();
+        clipboard_.requests.Init(&events_);
+        clipboard_.queue = &events_;
         std::memcpy(held_, other.held_, sizeof(held_));
         other.display_ = nullptr;
         other.window_ = 0;
@@ -281,8 +290,10 @@ X11Window& X11Window::operator=(X11Window&& other) noexcept {
 void X11Window::ReleaseAll() {
     if (display_ != nullptr) {
         CursorRelease(display_, window_, cursor_); // the grab and the cursors go before the display closes
+        ClipboardRelease(display_, clipboard_, MonotonicTimeNanos()); // selections are given up: the contents die with the window
     }
     cursor_ = X11CursorState();
+    clipboard_ = X11ClipboardState();
     if (input_context_ != nullptr) {
         XDestroyIC(reinterpret_cast<XIC>(input_context_));
         input_context_ = nullptr;
@@ -524,9 +535,19 @@ void X11Window::PumpEvents(InputState* input) {
             }
             break;
         default:
+            ClipboardHandleEvent(display_, window_, clipboard_, &event, MonotonicTimeNanos());
             break;
         }
     }
+    ClipboardTick(display_, clipboard_, MonotonicTimeNanos());
+}
+
+bool X11Window::SetClipboard(ClipboardKind kind, const ClipboardOffer& offer) {
+    return ClipboardSet(display_, window_, clipboard_, kind, offer, MonotonicTimeNanos());
+}
+
+u32 X11Window::RequestClipboard(ClipboardKind kind, ClipboardFormat format, StringView custom_name) {
+    return ClipboardRequest(display_, window_, clipboard_, kind, format, custom_name, MonotonicTimeNanos());
 }
 
 bool X11Window::SetPointerLock(bool locked) {

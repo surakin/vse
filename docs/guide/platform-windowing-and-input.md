@@ -93,6 +93,24 @@ Three things change what the pointer looks like and does; each has a `Supports..
 - **The lock** holds only while the window has focus: it is released on focus loss and asked for again on focus gain while the program still wants it, and a request made while unfocused waits for focus. While it holds, `PollEvent` returns `RelativeMotion` events (`x`, `y` are the device deltas, unaccelerated where the system says so) and never otherwise. Pair it with `SetCursor(Hidden)` for a camera. Destroying the window releases it.
 - Wayland needs `wp_cursor_shape_v1` for the shapes and `zwp_pointer_constraints_v1` with `zwp_relative_pointer_v1` for the lock; X11 needs nothing special (the lock is a pointer grab with XInput 2 raw motion). The `input_probe` program (`L` lock, `C` shapes, `I` image) shows all of it by eye.
 
+### The clipboard
+
+The system clipboard and, on Linux, the primary (middle-click) selection:
+
+    os::ClipboardOffer offer;                                           // what to put there: a format and bytes (copied by the window)
+    offer.data = reinterpret_cast<const byte*>(text); offer.size = length;
+    window.SetClipboard(os::ClipboardKind::Clipboard, offer);           // Text by default; FileList and Custom (with custom_name) too
+    const u32 id = window.RequestClipboard(os::ClipboardKind::Clipboard, os::ClipboardFormat::Text, StringView());
+    // later, when PollEvent returns a ClipboardData event with request_id == id:
+    os::ClipboardResult result;
+    if (window.TakeClipboardResult(id, &result) && result.status == os::ClipboardStatus::Ok) { /* result.bytes is valid UTF-8 */ }
+
+- **Asking is asynchronous**: another program must answer, so `RequestClipboard` returns an id (0 if it cannot start) and the answer is a `ClipboardData` event; `TakeClipboardResult` hands the result over once. A request ends exactly once, with `Ok`, `Missing` (empty, or the owner lacks the format), `Timeout` (no progress for 2 s: the owner is gone or stuck), `TooLarge` (above 16 MiB) or `Failed`. At most eight requests are open at once and eight unread results are kept (the oldest is dropped).
+- **`ClipboardHasFormat`** says whether the selection offers a format, for a Paste command that should be greyed out. **`ClipboardChanged`** arrives when another program takes the selection.
+- **Text is checked**: invalid UTF-8 from another program is replaced with U+FFFD and `replaced_sequences` counts them. **File lists are checked**: only `file://` URIs (no host or `localhost`) become absolute local paths, percent-decoded; `..`, relative paths, other hosts, `http:` and control bytes are dropped and counted in `rejected_entries`. No network location is ever followed.
+- **Wayland** accepts a selection only with the serial of a recent key or button press in your window, so `SetClipboard` fails until the user has pressed a key or button there; call it from the handler of the copy command. **X11** has no such rule. Both keep the data in the window, so the selection ends with the window (no clipboard manager keeps it).
+- The `input_probe` keys `Y` (copy a test string), `P` (paste), `O` (paste primary) and `F` (formats) check it against other programs by eye.
+
 ### Resize, close, focus
 
 _TODO_

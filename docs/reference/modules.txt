@@ -40,10 +40,13 @@ module platform/window-input "Platform: Windowing and Input"
   header engine/platform/input.h
   header engine/platform/input_event.h
   header engine/platform/cursor.h
+  header engine/platform/clipboard.h
   header engine/platform/window_host.h
   header engine/platform/entry_point.h
   header engine/platform/linux/**/*.h
   header engine/platform/windows/*.h
+  exclude engine/platform/linux/clipboard_pipe.h   # backend-internal helper (non-blocking pipes), not API
+  exclude engine/platform/linux/x11/x11_clipboard.h   # backend-internal state of the X11 clipboard, not API
   exclude engine/platform/linux/wayland/generated/*.h   # wayland-scanner output, not our API
 
 module foundation/debug "Foundation: Debugging"

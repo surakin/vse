@@ -54,6 +54,7 @@ Generated the same way, from `wayland-protocols` 1.50 with `wayland-scanner` 1.2
 | `tablet-v2-*` | `stable/tablet/tablet-v2.xml` | Only the interface table `cursor-shape-v1` refers to (`zwp_tablet_tool_v2`); tablets are not used. |
 | `pointer-constraints-unstable-v1-*` | `unstable/pointer-constraints/pointer-constraints-unstable-v1.xml` | The pointer lock (`zwp_pointer_constraints_v1`). |
 | `relative-pointer-unstable-v1-*` | `unstable/relative-pointer/relative-pointer-unstable-v1.xml` | Relative motion while locked (`zwp_relative_pointer_manager_v1`). |
+| `primary-selection-unstable-v1-*` | `unstable/primary-selection/primary-selection-unstable-v1.xml` | The primary (middle-click) selection (`zwp_primary_selection_device_manager_v1`), Day 187. Generated the same way, unmodified. |
 
 ```sh
 P=/usr/share/wayland-protocols

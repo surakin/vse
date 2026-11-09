@@ -68,6 +68,16 @@ public:
     bool SetPointerLock(bool locked) override { return Valid() && input_.Cursor().SetLock(locked); }
     /// Returns whether the compositor has granted the lock.
     bool PointerLocked() const override { return input_.Cursor().Locked(); }
+    /// Returns whether the compositor offers the data device (and, for the primary selection, the primary selection protocol).
+    bool SupportsClipboard(ClipboardKind kind) const override { return input_.Clipboard().Supports(kind); }
+    /// Takes the selection; fails before the first key or button event (Wayland demands that serial).
+    bool SetClipboard(ClipboardKind kind, const ClipboardOffer& offer) override { return Valid() && input_.Clipboard().Set(kind, offer); }
+    /// Starts a read of the selection.
+    u32 RequestClipboard(ClipboardKind kind, ClipboardFormat format, StringView custom_name) override { return Valid() ? input_.Clipboard().Request(kind, format, custom_name) : 0; }
+    /// Hands over a finished result once.
+    bool TakeClipboardResult(u32 request_id, ClipboardResult* out) override { return input_.Clipboard().Take(request_id, out); }
+    /// Returns whether the selection offers the format.
+    bool ClipboardHasFormat(ClipboardKind kind, ClipboardFormat format, StringView custom_name) const override { return input_.Clipboard().Has(kind, format, custom_name); }
 
     /// Returns whether the user closed the window or the compositor connection was lost.
     ///

@@ -891,3 +891,29 @@ TEST_CASE("X11Window reports RelativeMotion only while the pointer is locked", "
 }
 
 #include "unity/x11_disable.h"
+
+// Day 187: a program that asks for the clipboard and exits before the answer must not take the owner down with it (Xlib's default error handler ends the
+// process on the BadWindow of the answer's destination).
+TEST_CASE("X11Window survives a clipboard requestor that vanished before the answer", "[x11][clipboard][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    X11Window owner = X11Window::Create("clipboard owner", 200, 100);
+    REQUIRE(owner.Valid());
+    const char text[] = "still here";
+    engine_placeholder::os::ClipboardOffer offer;
+    offer.data = reinterpret_cast<const engine_placeholder::byte*>(text);
+    offer.size = sizeof(text) - 1;
+    REQUIRE(owner.SetClipboard(engine_placeholder::os::ClipboardKind::Clipboard, offer));
+    for (int round = 0; round < 3; ++round) {
+        Display* peer = XOpenDisplay(nullptr);
+        REQUIRE(peer != nullptr);
+        const Window window = XCreateSimpleWindow(peer, DefaultRootWindow(peer), 0, 0, 10, 10, 0, 0, 0);
+        XConvertSelection(peer, XInternAtom(peer, "CLIPBOARD", 0), XInternAtom(peer, "UTF8_STRING", 0), XInternAtom(peer, "PEER_PROP", 0), window, 0 /* CurrentTime */);
+        XFlush(peer);
+        XCloseDisplay(peer); // the request is on its way; its sender is gone
+        for (int i = 0; i < 20; ++i) {
+            owner.PumpEvents(nullptr);
+            engine_placeholder::os::SleepNanos(5'000'000);
+        }
+        REQUIRE(owner.Valid());
+    }
+}

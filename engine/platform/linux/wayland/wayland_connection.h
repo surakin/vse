@@ -3,6 +3,7 @@
 #include <wayland-client.h>
 
 #include "platform/linux/wayland/generated/cursor-shape-v1-client-protocol.h"
+#include "platform/linux/wayland/generated/primary-selection-unstable-v1-client-protocol.h"
 #include "platform/linux/wayland/generated/pointer-constraints-unstable-v1-client-protocol.h"
 #include "platform/linux/wayland/generated/relative-pointer-unstable-v1-client-protocol.h"
 #include "platform/linux/wayland/generated/xdg-decoration-client-protocol.h"
@@ -25,7 +26,7 @@ public:
     /// Connects to the compositor named by `$WAYLAND_DISPLAY` (default `wayland-0`) and binds the required globals.
     ///
     /// Binds `wl_compositor`, `xdg_wm_base`, `wl_seat` and `wl_shm` with a registry
-    /// roundtrip, plus `zxdg_decoration_manager_v1`, `wp_cursor_shape_manager_v1`, `zwp_pointer_constraints_v1` and `zwp_relative_pointer_manager_v1` when offered.
+    /// roundtrip, plus `zxdg_decoration_manager_v1`, `wp_cursor_shape_manager_v1`, `zwp_pointer_constraints_v1` and `zwp_relative_pointer_manager_v1`, `wl_data_device_manager` and `zwp_primary_selection_device_manager_v1` when offered.
     /// Returns: the connection; check [[os::wayland::WaylandConnection::Valid]].
     /// Fails: returns an invalid connection (logged via `LogPlatform`) if no compositor is running or a required global is missing.
     static WaylandConnection Connect();
@@ -70,6 +71,11 @@ public:
     /// Returns the bound `zwp_relative_pointer_manager_v1`, or null when the compositor does not offer it (the pointer lock is then unavailable).
     zwp_relative_pointer_manager_v1* RelativePointerManager() const { return relative_pointer_manager_; }
 
+    /// Returns the bound `wl_data_device_manager` (version 3), or null when the compositor does not offer it (then there is no clipboard).
+    wl_data_device_manager* DataDeviceManager() const { return data_device_manager_; }
+    /// Returns the bound `zwp_primary_selection_device_manager_v1`, or null when the compositor does not offer it (the primary selection is then unavailable).
+    zwp_primary_selection_device_manager_v1* PrimarySelectionManager() const { return primary_selection_manager_; }
+
 private:
     void ReleaseAll();
 
@@ -83,6 +89,8 @@ private:
     wp_cursor_shape_manager_v1* cursor_shape_manager_ = nullptr;
     zwp_pointer_constraints_v1* pointer_constraints_ = nullptr;
     zwp_relative_pointer_manager_v1* relative_pointer_manager_ = nullptr;
+    wl_data_device_manager* data_device_manager_ = nullptr;
+    zwp_primary_selection_device_manager_v1* primary_selection_manager_ = nullptr;
 };
 
 } // namespace engine_placeholder::os::wayland

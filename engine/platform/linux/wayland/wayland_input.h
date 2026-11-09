@@ -5,6 +5,7 @@
 #include "platform/input.h"
 #include "platform/input_event.h"
 #include "platform/linux/keyboard_events.h"
+#include "platform/linux/wayland/wayland_clipboard.h"
 #include "platform/linux/wayland/wayland_cursor.h"
 #include "platform/linux/wayland/wayland_connection.h"
 #include "platform/linux/xkb_keyboard.h"
@@ -61,6 +62,11 @@ public:
     WaylandCursor& Cursor() { return cursor_; }
     /// Read-only view of the cursor state.
     const WaylandCursor& Cursor() const { return cursor_; }
+
+    /// The clipboard of the seat; the serial of each key, button and enter event reaches it.
+    WaylandClipboard& Clipboard() { return clipboard_; }
+    /// Read-only view of the clipboard.
+    const WaylandClipboard& Clipboard() const { return clipboard_; }
 
     /// Queues the key repeats that are due (`wl_keyboard` repeat is the client's job); call once per pump, after dispatching.
     void Tick();
@@ -123,6 +129,7 @@ private:
     XkbKeyboard xkb_;
     KeyboardEvents keyboard_events_;
     WaylandCursor cursor_;
+    WaylandClipboard clipboard_;
     InputEventQueue events_;
     // The engine Key each held evdev code was *pressed* as. A release
     // clears that Key rather than re-translating, since layout/modifier

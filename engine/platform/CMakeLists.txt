@@ -3,12 +3,14 @@
 # Headers are included as "platform/<name>.h", rooted at engine/ (the foundation's own headers come from engine/foundation).
 set(PLATFORM_SOURCES
   window.cpp
+  clipboard.cpp
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND PLATFORM_SOURCES
     linux/key_translate.cpp  # X11 keysyms to Key, shared by both Linux backends
     linux/xkb_keyboard.cpp
+    linux/clipboard_pipe.cpp  # non-blocking clipboard transfer through a pipe (Wayland data device)
     linux/keyboard_events.cpp  # evdev key transitions to KeyDown/KeyUp/Text and client-side repeat (Wayland)
     linux/wayland/wayland_input.cpp
     linux/x11/x11_window.cpp
@@ -24,6 +26,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     linux/wayland/generated/pointer-constraints-unstable-v1-protocol.c
     linux/wayland/generated/relative-pointer-unstable-v1-protocol.c
     linux/wayland/wayland_cursor.cpp
+    linux/wayland/generated/primary-selection-unstable-v1-protocol.c
+    linux/wayland/wayland_clipboard.cpp
   )
 
   # libwayland-client, the reference Wayland client library (PLAN.md assumption #3: an OS/vendor-boundary exception, not a
@@ -40,7 +44,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # with it on every X11 system (PLAN.md assumption #3).
   pkg_check_modules(XcursorClient REQUIRED IMPORTED_TARGET xcursor)
   pkg_check_modules(XiClient REQUIRED IMPORTED_TARGET xi)
-  set(PLATFORM_DISPLAY_LIBS PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client PkgConfig::XcursorClient PkgConfig::XiClient)
+  # libXfixes (selection-owner notifications, so a clipboard change by another program is seen), the same family.
+  pkg_check_modules(XfixesClient REQUIRED IMPORTED_TARGET xfixes)
+  set(PLATFORM_DISPLAY_LIBS PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client PkgConfig::XcursorClient PkgConfig::XiClient PkgConfig::XfixesClient)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   # Phase 13 Day 158: the Win32 window and the windowed programs' entry point (input on Day 159). user32 holds the window functions,
   # shell32 CommandLineToArgvW.

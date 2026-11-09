@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform/input.h"
+#include "platform/clipboard.h"
 #include "platform/cursor.h"
 #include "platform/input_event.h"
 #include "string/string.h"
@@ -138,6 +139,39 @@ public:
 
     /// Returns whether the pointer is locked right now (the request was granted and focus is held).
     virtual bool PointerLocked() const { return false; }
+
+    /// Returns whether the clipboard of this kind works on this window (the default is false; Windows and macOS have no primary selection).
+    virtual bool SupportsClipboard([[maybe_unused]] ClipboardKind kind) const { return false; }
+
+    /// Takes ownership of a selection and offers `offer` to other programs; what was offered before is replaced.
+    ///
+    /// The window copies the bytes and serves other programs' requests for them from later `PumpEvents` calls, in pieces if they are large, so keep pumping. The contents vanish
+    /// with the window (no clipboard manager keeps them). Text is made valid UTF-8 first. On Wayland the compositor accepts the offer only after a recent key press or click in the window.
+    /// Param kind: which selection.
+    /// Param offer: the format and bytes; at most [[os::kMaxClipboardBytes]].
+    /// Returns: true if the selection was taken.
+    /// Fails: returns false, changing nothing, if the window is invalid, the kind is unsupported, the offer is empty or too large, or a custom format has no name.
+    virtual bool SetClipboard([[maybe_unused]] ClipboardKind kind, [[maybe_unused]] const ClipboardOffer& offer) { return false; }
+
+    /// Asks the owner of a selection for its contents.
+    ///
+    /// The answer is asynchronous: a later `PumpEvents` queues a [[os::InputEventType::ClipboardData]] event with the returned id, and [[os::Window::TakeClipboardResult]] returns the bytes. A request nobody
+    /// answers ends with `Timeout` after two seconds. Text from other programs is made valid UTF-8; file lists keep only absolute local `file://` entries.
+    /// Param kind: which selection.
+    /// Param format: what to ask for.
+    /// Param custom_name: `Custom`: the MIME type or atom name.
+    /// Returns: the request id (never 0).
+    /// Fails: returns 0 if the window is invalid, the kind is unsupported or too many requests are open.
+    virtual u32 RequestClipboard([[maybe_unused]] ClipboardKind kind, [[maybe_unused]] ClipboardFormat format, [[maybe_unused]] StringView custom_name) { return 0; }
+
+    /// Hands over the result of a finished request, once.
+    /// Param request_id: the id from [[os::Window::RequestClipboard]].
+    /// Param out: receives the result.
+    /// Returns: false if there is no unread result for that id (not finished yet, already taken, or dropped because more than a few were left unread).
+    virtual bool TakeClipboardResult([[maybe_unused]] u32 request_id, [[maybe_unused]] ClipboardResult* out) { return false; }
+
+    /// Returns whether the selection currently offers a format, as far as the last `ClipboardChanged` told (for enabling a Paste command).
+    virtual bool ClipboardHasFormat([[maybe_unused]] ClipboardKind kind, [[maybe_unused]] ClipboardFormat format, [[maybe_unused]] StringView custom_name) const { return false; }
 
     /// Returns whether this window can be made fullscreen (the platform and, where it can be known, the compositor allow it).
     ///

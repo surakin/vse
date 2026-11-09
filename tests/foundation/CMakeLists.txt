@@ -49,6 +49,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     x11_window_test.cpp
     window_events_test.cpp
     window_cursor_test.cpp
+    window_clipboard_test.cpp
   )
 endif()
 

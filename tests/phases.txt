@@ -83,6 +83,7 @@ tests/foundation/window_backend_test.cpp        1
 tests/foundation/x11_window_test.cpp            1
 tests/foundation/window_events_test.cpp         15
 tests/foundation/window_cursor_test.cpp         15
+tests/foundation/window_clipboard_test.cpp      15
 test:window_backend_lists*                      15
 
 # --- Phase 2: jobs ---
