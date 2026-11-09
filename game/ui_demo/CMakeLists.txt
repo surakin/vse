@@ -39,21 +39,22 @@ engine_label_tests(ui_demo_no_vulkan)
 
 # The live paths in a real window on each display backend, with validation on: clicks, a menu, the theme, a drop, a settings change of every cost class that
 # applies to a window, a forced device reset and a lost device with its recovery. These open a window, so they hold the `display` resource and skip without a session.
-function(ui_demo_scripted name backend)
+function(ui_demo_scripted name backend rhi)
   add_test(NAME ${name}
-    COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:ui_demo>;--backend;${backend};--rhi;vulkan;--validation;--frames;150;--script;frame:5 click:btn_new frame:8 menu:View/Theme/Dark frame:12 drop:text:hello frame:15 set:render_scale=0.5 frame:20 set:present_mode=immediate frame:30 reset frame:40 set:shader_quality=low rendering frame:55 theme:light frame:60 loss frame:120 quit"
+    COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:ui_demo>;--backend;${backend};--rhi;${rhi};--validation;--frames;150;--script;frame:5 click:btn_new frame:8 menu:View/Theme/Dark frame:12 drop:text:hello frame:15 set:render_scale=0.5 frame:20 set:present_mode=immediate frame:30 reset frame:40 set:shader_quality=low rendering frame:55 theme:light frame:60 loss frame:120 quit"
       -DEXPECT_CODE=0 "-DEXPECT_OUT=swapchain done in.*device-reset done in.*pipeline-rebuild done in.*recovered after 1 attempt"
       "-DSKIP_IF_OUT=${UI_DEMO_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
-      "-DFORBID_OUT=a Vulkan validation error was reported" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
+      "-DFORBID_OUT=a Vulkan validation error was reported|(ERROR|WARN): D3D12 debug layer" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
   set_tests_properties(${name} PROPERTIES LABELS "gpu;demo;display" RESOURCE_LOCK display SKIP_RETURN_CODE 77
     ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${name};${DEMO_PROFILE_ENV}")
   engine_label_tests(${name})
 endfunction()
 if(WIN32)
-  ui_demo_scripted(ui_demo_script_win32 win32)
+  ui_demo_scripted(ui_demo_script_win32 win32 vulkan)
+  ui_demo_scripted(ui_demo_script_win32_dx12 win32 dx12) # Phase 15 Day 205: the same run on Direct3D 12
 else()
-  ui_demo_scripted(ui_demo_script_wayland wayland)
-  ui_demo_scripted(ui_demo_script_x11 x11)
+  ui_demo_scripted(ui_demo_script_wayland wayland vulkan)
+  ui_demo_scripted(ui_demo_script_x11 x11 vulkan)
 endif()
 
 demo_settings_tests(ui_demo)

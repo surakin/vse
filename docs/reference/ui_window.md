@@ -239,7 +239,7 @@ class WindowAdapter { ... }
 
 Feeds a window's input events to a surface and gives the surface's cursor to the window.
 
-A frame of a windowed program reads: `window.PumpEvents()`, `adapter.PumpInto(window, surface)`, `surface.Frame(...)`, `adapter.UpdateCursor(window, surface)`. The window's coordinates are physical pixels; the adapter divides pointer positions by the surface scale to get logical units. A `Resize` of the window becomes `Surface::Resize` at the same scale (several in one pump cost one layout). A wheel event is placed at the last pointer position. The window's pointer enter becomes a move, its leave a surface-level pointer leave, its focus gain and loss the surface's window focus. Clipboard and drag events are dropped for now (they arrive with the widgets that use them).
+A frame of a windowed program reads: `window.PumpEvents()`, `adapter.PumpInto(window, surface)`, `surface.Frame(...)`, `adapter.UpdateCursor(window, surface)`. The window's coordinates are physical pixels; the adapter divides pointer positions by the surface scale to get logical units. A `Resize` of the window becomes `Surface::Resize` at the same scale (several in one pump cost one layout), or at the window's scale with `SetFollowWindowScale`. A wheel event is placed at the last pointer position. The window's pointer enter becomes a move, its leave a surface-level pointer leave, its focus gain and loss the surface's window focus. Clipboard and drag events are dropped for now (they arrive with the widgets that use them).
 
 | Field | Value |
 |---|---|
@@ -274,6 +274,20 @@ Asks the surface for the cursor shape ([`ui::Surface::RequestedCursor`](ui.md#ui
 |---|---|
 | Returns | whether the window was called. |
 | Fails | a window that refuses the shape (it returns false) is asked again next time. |
+
+### `SetFollowWindowScale(bool)` {#ui-windowadapter-setfollowwindowscale-bool}
+
+`method ui::WindowAdapter::SetFollowWindowScale` — defined in `engine/ui_window/window_adapter.h`
+
+```cpp
+void SetFollowWindowScale(bool follow);
+```
+
+Makes `PumpInto` keep the surface's scale equal to the window's [`os::Window::ContentScale`](platform-window-input.md#os-window-contentscale-const) (the default is off: the surface keeps the scale it was made with). When the window's scale changes (a Win32 window moved to a monitor of another DPI), the next `PumpInto` resizes the surface to the window's size at the new scale before it reads the events, so the widgets keep their size on the screen.
+
+| Field | Value |
+|---|---|
+| Parameter `follow` | whether to follow the window's scale. |
 
 ### `CursorChanges()` {#ui-windowadapter-cursorchanges-const}
 

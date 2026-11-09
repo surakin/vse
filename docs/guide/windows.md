@@ -101,6 +101,14 @@ scripts/open-dump.ps1 <envelope> symbols                                        
 `crash-report.ps1` names every frame with its function, file and line from the store (DbgHelp, no network); it refuses a program whose build id
 differs from the dump's. See `docs/guide/foundation-debugging.md` and `docs/guide/porting-debugging.md`.
 
+## Input, the cursor, the clipboard and drag and drop
+
+Since Phase 15 Day 205 the Win32 window gives the same input event stream as the Linux backends (`engine/platform/BACKEND.md`, the `windows` section): keys
+with repeat, text from `WM_CHAR` (dead keys and AltGr are the system's; no IME composition), the pointer, the wheel in notches, focus and resize. The cursor shapes
+are the system's; a custom image keeps its pixel size. The pointer lock is `ClipCursor` plus raw mouse input. The clipboard is `CF_UNICODETEXT`, `CF_HDROP` and
+registered custom formats, with no primary selection, and file lists keep only local drive paths (`os::win32::AcceptLocalPath`). Drag and drop is OLE; a drag
+out of the window is modal (`BeginDrag` returns when it ends), so keep a modal-loop callback set if the program must keep drawing meanwhile.
+
 ## Where things live
 
 | What | Where |

@@ -104,6 +104,10 @@ public:
             offered_drag.Push(static_cast<Offered&&>(o));
         }
         drag_allowed = source.allowed_actions;
+        if (modal_drag && accept_drag) { // as Win32 does: the drag runs inside BeginDrag, after the source's started callback
+            if (source.started != nullptr) source.started(source.started_user);
+            if (during_drag != nullptr) during_drag(during_drag_user);
+        }
         return accept_drag;
     }
 
@@ -142,6 +146,9 @@ public:
     bool clipboard_has_text = false;
     bool refuse_requests = false;
     bool accept_drag = true;
+    bool modal_drag = false;                  // run the drag inside BeginDrag, as Win32 does
+    void (*during_drag)(void*) = nullptr;     // called inside a modal BeginDrag, the program's modal-loop callback
+    void* during_drag_user = nullptr;
     os::DragAction last_drop_action = os::DragAction::Nothing;
     os::DragAction finished_with = os::DragAction::Nothing;
 

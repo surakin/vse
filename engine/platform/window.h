@@ -80,6 +80,12 @@ public:
     /// Returns the current window height in pixels.
     virtual u32 Height() const = 0;
 
+    /// Returns the scale the system asks the window's content to be drawn at: physical pixels per logical unit (1 is 100%, the default).
+    ///
+    /// Win32 gives the window's DPI over 96, and the value changes when the window moves to a monitor of another DPI (a `Resize` follows).
+    /// Wayland and X11 give 1: the Wayland compositor scales the window itself, and X11 has no per-window scale.
+    virtual f32 ContentScale() const { return 1.0f; }
+
     /// Returns the stable lowercase backend id (`"wayland"`, `"x11"`, `"win32"`), for logs and tests.
     /// Ownership: the string is static and is never freed by the caller.
     virtual const char* BackendName() const = 0;

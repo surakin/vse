@@ -52,9 +52,25 @@ text from `Xutf8LookupString` (committed input-method text arrives as `Text` as 
 
 ### `windows`
 
-Not implemented yet for the event stream, the cursor, the lock, the clipboard and drag and drop (drag and drop is OLE: `IDropTarget` registered with `RegisterDragDrop`, `IDropSource` and `IDataObject` with `DoDragDrop`, `CF_UNICODETEXT` and `CF_HDROP`) (Phase 15 Day 205; the clipboard is `OpenClipboard` with `CF_UNICODETEXT` and `CF_HDROP`, changes from `WM_CLIPBOARDUPDATE`; cursor shapes `SetCursor` with the system cursors, custom images `CreateIconIndirect`, the lock `ClipCursor` plus `WM_INPUT` raw mouse input): `win32_window.cpp` fills `InputState` today; Day 205 adds `WM_KEYDOWN`/`WM_KEYUP` (repeat from
-the repeat flag in `lParam`), `WM_CHAR` (UTF-16 surrogate pairs joined into one scalar), `WM_MOUSEMOVE`, the button messages, `WM_MOUSEWHEEL`/`WM_MOUSEHWHEEL`
-(`WHEEL_DELTA` units to notches), `WM_SETFOCUS`/`WM_KILLFOCUS` and `WM_SIZE`.
+Implemented (Phase 15 Day 205) in `windows/win32_window.cpp`, `win32_clipboard.cpp` and `win32_dragdrop.cpp`. **Events:** `WM_KEYDOWN`/`WM_KEYUP` (and the
+`SYS` forms) give `KeyDown` (repeat from bit 30 of `lParam` while the key is held) and `KeyUp` with the modifiers held before the key; AltGr's synthetic left Ctrl is
+dropped, and one Shift release ends both Shift keys with a `KeyUp` each. **Text** comes from `WM_CHAR` after `TranslateMessage` (the layout, dead keys and AltGr are
+the system's; `WM_DEADCHAR` is ignored); a surrogate pair becomes one scalar, control characters and Ctrl or Alt held give none, and there is no IME composition (the
+committed characters arrive as `WM_CHAR`). The first `WM_MOUSEMOVE` inside is the `PointerEnter`, `WM_MOUSELEAVE` (`TrackMouseEvent`) the `PointerLeave`; buttons
+capture the mouse; `WM_MOUSEWHEEL`/`WM_MOUSEHWHEEL` are `WHEEL_DELTA` units turned into notches (and 10 per notch in `InputState`). `WM_SETFOCUS`/`WM_KILLFOCUS`
+are the focus events, `WM_SIZE` the `Resize` (the stream starts with the settled size). Events queued while Windows runs a modal loop (the user dragging the frame) stay
+queued. **Cursor:** the shapes are the system cursors, applied on `WM_SETCURSOR` over the client area (the frame keeps the system's resize cursors); an image is a
+32-bit DIB made into a cursor with `CreateIconIndirect`, straight alpha, at its pixel size (Windows does not scale cursors by DPI, so `scale` is not applied).
+**Lock:** `ClipCursor` to a point at the client area's centre (kept there across moves and resizes), the cursor hidden, raw mouse input
+(`RegisterRawInputDevices`, `WM_INPUT`) for `RelativeMotion`; released on unlock, focus loss and close. **Clipboard:** `CF_UNICODETEXT`, `CF_HDROP` and
+`RegisterClipboardFormat` names; the Win32 calls are synchronous, so a request is answered at once and announced by its event; `WM_CLIPBOARDUPDATE`
+(`AddClipboardFormatListener`) gives `ClipboardChanged` for another program's change; no primary selection; unlike X11 and Wayland the system keeps the data after
+the window closes. File lists are native paths, not `file://` URIs, so they pass `os::win32::AcceptLocalPath` instead of `ParseUriList`: only drive-absolute paths,
+no UNC or device path, no `.` or `..`, no control character or stream. **Drag and drop:** OLE on the window's thread (`OleInitialize`; a thread already in the
+multithreaded apartment has none and `SupportsDragAndDrop` is false). Receiving: an `IDropTarget`; OLE's data object is valid only during `Drop`, so every accepted
+format is read then and `RequestDropData` answers from that copy; the answer is the program's `SetDropAction`, else Copy, with Windows' keys (Shift moves, Ctrl and
+Shift link). Sending: `DoDragDrop` is modal, so `BeginDrag` calls `DragSource::started` before the drag runs, returns when it is over (after queueing `DragEnded`), and the
+modal-loop callback keeps the program drawing; it refuses to start unless a mouse button is down; the drag image is not drawn (`IDragSourceHelper` is not used).
 
 ### `macos`
 

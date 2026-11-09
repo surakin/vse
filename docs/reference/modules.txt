@@ -48,6 +48,7 @@ module platform/window-input "Platform: Windowing and Input"
   header engine/platform/windows/*.h
   exclude engine/platform/linux/clipboard_pipe.h   # backend-internal helper (non-blocking pipes), not API
   exclude engine/platform/linux/x11/x11_dnd.h   # backend-internal state of XDND, not API
+  exclude engine/platform/windows/win32_dragdrop.h   # backend-internal OLE objects of drag and drop, not API
   exclude engine/platform/linux/x11/x11_clipboard.h   # backend-internal state of the X11 clipboard, not API
   exclude engine/platform/linux/wayland/generated/*.h   # wayland-scanner output, not our API
 

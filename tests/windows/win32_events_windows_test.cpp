@@ -167,6 +167,41 @@ TEST_CASE("Windows events: WM_CHAR becomes Text, a surrogate pair is one scalar,
     CHECK(TextOf(after[0]) == StringView("y"));
 }
 
+TEST_CASE("Windows events: Ctrl and Alt together are Windows' AltGr and type text; Alt alone types none", "[window][win32][events]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    EventWindow w;
+    REQUIRE(w.Open());
+    w.Drain();
+    // Ctrl+Alt+Q on a German layout: WM_CHAR '@' with the left Ctrl and the left Alt held.
+    EvPostKey(w.Hwnd(), true, VK_CONTROL, 0x1D);
+    EvPostKey(w.Hwnd(), true, VK_MENU, 0x38);
+    PostMessageW(w.Hwnd(), WM_CHAR, '@', 1);
+    EvPostKey(w.Hwnd(), false, VK_CONTROL, 0x1D);
+    PostMessageW(w.Hwnd(), WM_CHAR, 'z', 1); // Alt alone: a shortcut, not text
+    EvPostKey(w.Hwnd(), false, VK_MENU, 0x38);
+    const Vector<InputEvent> e = w.Only({InputEventType::Text});
+    REQUIRE(e.Size() == 1);
+    CHECK(TextOf(e[0]) == StringView("@"));
+    CHECK((e[0].modifiers & (os::kModCtrl | os::kModAlt)) == (os::kModCtrl | os::kModAlt));
+}
+
+TEST_CASE("Windows window: the content scale is the DPI over 96 and follows a DPI change", "[window][win32][events]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    EventWindow w;
+    CHECK(w.window.ContentScale() == 1.0f); // not open
+    REQUIRE(w.Open());
+    REQUIRE(w.window.Dpi() != 0);
+    CHECK(w.window.ContentScale() == static_cast<f32>(w.window.Dpi()) / 96.0f);
+    // Windows moving the window to a 200% monitor: WM_DPICHANGED with the new DPI and the suggested outer rectangle.
+    RECT outer{};
+    GetWindowRect(w.Hwnd(), &outer);
+    SendMessageW(w.Hwnd(), WM_DPICHANGED, MAKEWPARAM(192, 192), reinterpret_cast<LPARAM>(&outer));
+    CHECK(w.window.Dpi() == 192);
+    CHECK(w.window.ContentScale() == 2.0f);
+    w.window.Close();
+    CHECK(w.window.ContentScale() == 1.0f);
+}
+
 TEST_CASE("Windows events: the pointer enters, moves, presses, scrolls and leaves in order", "[window][win32][events]") {
     SKIP_IF_NO_DISPLAY_SESSION();
     EventWindow w;
@@ -214,8 +249,11 @@ TEST_CASE("Windows events: the pointer enters, moves, presses, scrolls and leave
     ++i;
     CHECK(e[i].button == os::kMouseForward);
     CHECK_FALSE(e[i].down);
-    // The last event is the leave (WM_MOUSELEAVE, or Windows' own when it saw the real cursor elsewhere after the tracking began).
-    CHECK(e[e.Size() - 1].type == InputEventType::PointerLeave);
+    // A leave follows (the posted WM_MOUSELEAVE, or Windows' own when it saw the real cursor elsewhere). The real mouse moving over the window
+    // while the test runs adds moves of its own, so the leave is looked for after the buttons rather than taken as the very last event.
+    bool left = false;
+    for (usize k = i + 1; k < e.Size(); ++k) left = left || e[k].type == InputEventType::PointerLeave;
+    CHECK(left);
     CHECK(w.input.scroll_dy == -10.0); // InputState keeps the Linux units
     CHECK(w.input.scroll_dx == -5.0);
 }

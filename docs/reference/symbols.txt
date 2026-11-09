@@ -1526,12 +1526,14 @@ os::DragSource::offers	variable	platform/window-input	os-dragsource-offers	platf
 os::DragSource::offer_count	variable	platform/window-input	os-dragsource-offer-count	platform-window-input.md	engine/platform/drag_drop.h:56
 os::DragSource::allowed_actions	variable	platform/window-input	os-dragsource-allowed-actions	platform-window-input.md	engine/platform/drag_drop.h:57
 os::DragSource::image	variable	platform/window-input	os-dragsource-image	platform-window-input.md	engine/platform/drag_drop.h:58
-os::kMaxDragOffers	variable	platform/window-input	os-kmaxdragoffers	platform-window-input.md	engine/platform/drag_drop.h:62
-os::kMaxDragTypes	variable	platform/window-input	os-kmaxdragtypes	platform-window-input.md	engine/platform/drag_drop.h:64
-os::kMaxDropFileEntries	variable	platform/window-input	os-kmaxdropfileentries	platform-window-input.md	engine/platform/drag_drop.h:66
-os::kDropSessionTimeoutNs	variable	platform/window-input	os-kdropsessiontimeoutns	platform-window-input.md	engine/platform/drag_drop.h:68
-os::kDragTargetTimeoutNs	variable	platform/window-input	os-kdragtargettimeoutns	platform-window-input.md	engine/platform/drag_drop.h:70
-os::LimitPathList(Vector<byte>&,usize)	function	platform/window-input	os-limitpathlist-vector-lt-byte-gt-amp-usize	platform-window-input.md	engine/platform/drag_drop.h:76
+os::DragSource::started	variable	platform/window-input	os-dragsource-started	platform-window-input.md	engine/platform/drag_drop.h:61
+os::DragSource::started_user	variable	platform/window-input	os-dragsource-started-user	platform-window-input.md	engine/platform/drag_drop.h:62
+os::kMaxDragOffers	variable	platform/window-input	os-kmaxdragoffers	platform-window-input.md	engine/platform/drag_drop.h:66
+os::kMaxDragTypes	variable	platform/window-input	os-kmaxdragtypes	platform-window-input.md	engine/platform/drag_drop.h:68
+os::kMaxDropFileEntries	variable	platform/window-input	os-kmaxdropfileentries	platform-window-input.md	engine/platform/drag_drop.h:70
+os::kDropSessionTimeoutNs	variable	platform/window-input	os-kdropsessiontimeoutns	platform-window-input.md	engine/platform/drag_drop.h:72
+os::kDragTargetTimeoutNs	variable	platform/window-input	os-kdragtargettimeoutns	platform-window-input.md	engine/platform/drag_drop.h:74
+os::LimitPathList(Vector<byte>&,usize)	function	platform/window-input	os-limitpathlist-vector-lt-byte-gt-amp-usize	platform-window-input.md	engine/platform/drag_drop.h:80
 os::WindowedProgramEntry	alias	platform/window-input	os-windowedprogramentry	platform-window-input.md	engine/platform/entry_point.h:22
 ENGINE_WINDOWED_PROGRAM	macro	platform/window-input	engine-windowed-program	platform-window-input.md	engine/platform/entry_point.h:44
 os::Key	enum	platform/window-input	os-key	platform-window-input.md	engine/platform/input.h:17
@@ -1966,49 +1968,50 @@ os::Window::DroppedEvents() const	function	platform/window-input	os-window-dropp
 os::Window::ShouldClose() const	function	platform/window-input	os-window-shouldclose-const	platform-window-input.md	engine/platform/window.h:75
 os::Window::Width() const	function	platform/window-input	os-window-width-const	platform-window-input.md	engine/platform/window.h:78
 os::Window::Height() const	function	platform/window-input	os-window-height-const	platform-window-input.md	engine/platform/window.h:81
-os::Window::BackendName() const	function	platform/window-input	os-window-backendname-const	platform-window-input.md	engine/platform/window.h:85
-os::Window::GetNativeInfo() const	function	platform/window-input	os-window-getnativeinfo-const	platform-window-input.md	engine/platform/window.h:91
-os::Window::IsMinimized() const	function	platform/window-input	os-window-isminimized-const	platform-window-input.md	engine/platform/window.h:99
-os::Window::ResizeSerial() const	function	platform/window-input	os-window-resizeserial-const	platform-window-input.md	engine/platform/window.h:106
-os::Window::SupportsCursorShape() const	function	platform/window-input	os-window-supportscursorshape-const	platform-window-input.md	engine/platform/window.h:109
-os::Window::SetCursor(CursorShape)	function	platform/window-input	os-window-setcursor-cursorshape	platform-window-input.md	engine/platform/window.h:115
-os::Window::SupportsCursorImage() const	function	platform/window-input	os-window-supportscursorimage-const	platform-window-input.md	engine/platform/window.h:118
-os::Window::SetCursorImage(const CursorImage&)	function	platform/window-input	os-window-setcursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/window.h:124
-os::Window::ClearCursorImage()	function	platform/window-input	os-window-clearcursorimage	platform-window-input.md	engine/platform/window.h:127
-os::Window::SupportsPointerLock() const	function	platform/window-input	os-window-supportspointerlock-const	platform-window-input.md	engine/platform/window.h:130
-os::Window::SetPointerLock(bool)	function	platform/window-input	os-window-setpointerlock-bool	platform-window-input.md	engine/platform/window.h:139
-os::Window::PointerLocked() const	function	platform/window-input	os-window-pointerlocked-const	platform-window-input.md	engine/platform/window.h:142
-os::Window::SupportsClipboard(ClipboardKind) const	function	platform/window-input	os-window-supportsclipboard-clipboardkind-const	platform-window-input.md	engine/platform/window.h:145
-os::Window::SetClipboard(ClipboardKind,const ClipboardOffer&)	function	platform/window-input	os-window-setclipboard-clipboardkind-const-clipboardoffer-amp	platform-window-input.md	engine/platform/window.h:155
-os::Window::RequestClipboard(ClipboardKind,ClipboardFormat,StringView)	function	platform/window-input	os-window-requestclipboard-clipboardkind-clipboardformat-stringview	platform-window-input.md	engine/platform/window.h:166
-os::Window::TakeClipboardResult(u32,ClipboardResult*)	function	platform/window-input	os-window-takeclipboardresult-u32-clipboardresult-star	platform-window-input.md	engine/platform/window.h:172
-os::Window::ClipboardHasFormat(ClipboardKind,ClipboardFormat,StringView) const	function	platform/window-input	os-window-clipboardhasformat-clipboardkind-clipboardformat-stringview-const	platform-window-input.md	engine/platform/window.h:175
-os::Window::SupportsDragAndDrop() const	function	platform/window-input	os-window-supportsdraganddrop-const	platform-window-input.md	engine/platform/window.h:178
-os::Window::SetDropAccept(const DropAccept&)	function	platform/window-input	os-window-setdropaccept-const-dropaccept-amp	platform-window-input.md	engine/platform/window.h:183
-os::Window::SetDropAction(DragAction)	function	platform/window-input	os-window-setdropaction-dragaction	platform-window-input.md	engine/platform/window.h:189
-os::Window::RequestDropData(ClipboardFormat,StringView)	function	platform/window-input	os-window-requestdropdata-clipboardformat-stringview	platform-window-input.md	engine/platform/window.h:199
-os::Window::FinishDrop(DragAction)	function	platform/window-input	os-window-finishdrop-dragaction	platform-window-input.md	engine/platform/window.h:203
-os::Window::BeginDrag(const DragSource&)	function	platform/window-input	os-window-begindrag-const-dragsource-amp	platform-window-input.md	engine/platform/window.h:212
-os::Window::CancelDrag()	function	platform/window-input	os-window-canceldrag	platform-window-input.md	engine/platform/window.h:215
-os::Window::Dragging() const	function	platform/window-input	os-window-dragging-const	platform-window-input.md	engine/platform/window.h:218
-os::Window::SupportsFullscreen() const	function	platform/window-input	os-window-supportsfullscreen-const	platform-window-input.md	engine/platform/window.h:224
-os::Window::SetFullscreen(bool)	function	platform/window-input	os-window-setfullscreen-bool	platform-window-input.md	engine/platform/window.h:234
-os::Window::IsFullscreen() const	function	platform/window-input	os-window-isfullscreen-const	platform-window-input.md	engine/platform/window.h:240
-os::Window::ModalLoopCallback	alias	platform/window-input	os-window-modalloopcallback	platform-window-input.md	engine/platform/window.h:243
-os::Window::SetModalLoopCallback(ModalLoopCallback,void*)	function	platform/window-input	os-window-setmodalloopcallback-modalloopcallback-void-star	platform-window-input.md	engine/platform/window.h:251
-os::WindowBackend	enum	platform/window-input	os-windowbackend	platform-window-input.md	engine/platform/window.h:263
-os::WindowBackend::Auto	enumerator	platform/window-input	os-windowbackend-auto	platform-window-input.md	engine/platform/window.h:264
-os::WindowBackend::Wayland	enumerator	platform/window-input	os-windowbackend-wayland	platform-window-input.md	engine/platform/window.h:265
-os::WindowBackend::X11	enumerator	platform/window-input	os-windowbackend-x11	platform-window-input.md	engine/platform/window.h:266
-os::WindowBackend::Win32	enumerator	platform/window-input	os-windowbackend-win32	platform-window-input.md	engine/platform/window.h:267
-os::WindowBackend::Invalid	enumerator	platform/window-input	os-windowbackend-invalid	platform-window-input.md	engine/platform/window.h:268
-os::ParseWindowBackend(StringView)	function	platform/window-input	os-parsewindowbackend-stringview	platform-window-input.md	engine/platform/window.h:276
-os::BackendPlan	struct	platform/window-input	os-backendplan	platform-window-input.md	engine/platform/window.h:281
-os::BackendPlan::candidates	variable	platform/window-input	os-backendplan-candidates	platform-window-input.md	engine/platform/window.h:283
-os::BackendPlan::count	variable	platform/window-input	os-backendplan-count	platform-window-input.md	engine/platform/window.h:285
-os::BackendPlan::refusal	variable	platform/window-input	os-backendplan-refusal	platform-window-input.md	engine/platform/window.h:288
-os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	os-planwindowbackends-windowbackend-bool-bool	platform-window-input.md	engine/platform/window.h:300
-os::PlanWin32WindowBackends(WindowBackend)	function	platform/window-input	os-planwin32windowbackends-windowbackend	platform-window-input.md	engine/platform/window.h:306
+os::Window::ContentScale() const	function	platform/window-input	os-window-contentscale-const	platform-window-input.md	engine/platform/window.h:87
+os::Window::BackendName() const	function	platform/window-input	os-window-backendname-const	platform-window-input.md	engine/platform/window.h:91
+os::Window::GetNativeInfo() const	function	platform/window-input	os-window-getnativeinfo-const	platform-window-input.md	engine/platform/window.h:97
+os::Window::IsMinimized() const	function	platform/window-input	os-window-isminimized-const	platform-window-input.md	engine/platform/window.h:105
+os::Window::ResizeSerial() const	function	platform/window-input	os-window-resizeserial-const	platform-window-input.md	engine/platform/window.h:112
+os::Window::SupportsCursorShape() const	function	platform/window-input	os-window-supportscursorshape-const	platform-window-input.md	engine/platform/window.h:115
+os::Window::SetCursor(CursorShape)	function	platform/window-input	os-window-setcursor-cursorshape	platform-window-input.md	engine/platform/window.h:121
+os::Window::SupportsCursorImage() const	function	platform/window-input	os-window-supportscursorimage-const	platform-window-input.md	engine/platform/window.h:124
+os::Window::SetCursorImage(const CursorImage&)	function	platform/window-input	os-window-setcursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/window.h:130
+os::Window::ClearCursorImage()	function	platform/window-input	os-window-clearcursorimage	platform-window-input.md	engine/platform/window.h:133
+os::Window::SupportsPointerLock() const	function	platform/window-input	os-window-supportspointerlock-const	platform-window-input.md	engine/platform/window.h:136
+os::Window::SetPointerLock(bool)	function	platform/window-input	os-window-setpointerlock-bool	platform-window-input.md	engine/platform/window.h:145
+os::Window::PointerLocked() const	function	platform/window-input	os-window-pointerlocked-const	platform-window-input.md	engine/platform/window.h:148
+os::Window::SupportsClipboard(ClipboardKind) const	function	platform/window-input	os-window-supportsclipboard-clipboardkind-const	platform-window-input.md	engine/platform/window.h:151
+os::Window::SetClipboard(ClipboardKind,const ClipboardOffer&)	function	platform/window-input	os-window-setclipboard-clipboardkind-const-clipboardoffer-amp	platform-window-input.md	engine/platform/window.h:161
+os::Window::RequestClipboard(ClipboardKind,ClipboardFormat,StringView)	function	platform/window-input	os-window-requestclipboard-clipboardkind-clipboardformat-stringview	platform-window-input.md	engine/platform/window.h:172
+os::Window::TakeClipboardResult(u32,ClipboardResult*)	function	platform/window-input	os-window-takeclipboardresult-u32-clipboardresult-star	platform-window-input.md	engine/platform/window.h:178
+os::Window::ClipboardHasFormat(ClipboardKind,ClipboardFormat,StringView) const	function	platform/window-input	os-window-clipboardhasformat-clipboardkind-clipboardformat-stringview-const	platform-window-input.md	engine/platform/window.h:181
+os::Window::SupportsDragAndDrop() const	function	platform/window-input	os-window-supportsdraganddrop-const	platform-window-input.md	engine/platform/window.h:184
+os::Window::SetDropAccept(const DropAccept&)	function	platform/window-input	os-window-setdropaccept-const-dropaccept-amp	platform-window-input.md	engine/platform/window.h:189
+os::Window::SetDropAction(DragAction)	function	platform/window-input	os-window-setdropaction-dragaction	platform-window-input.md	engine/platform/window.h:195
+os::Window::RequestDropData(ClipboardFormat,StringView)	function	platform/window-input	os-window-requestdropdata-clipboardformat-stringview	platform-window-input.md	engine/platform/window.h:205
+os::Window::FinishDrop(DragAction)	function	platform/window-input	os-window-finishdrop-dragaction	platform-window-input.md	engine/platform/window.h:209
+os::Window::BeginDrag(const DragSource&)	function	platform/window-input	os-window-begindrag-const-dragsource-amp	platform-window-input.md	engine/platform/window.h:218
+os::Window::CancelDrag()	function	platform/window-input	os-window-canceldrag	platform-window-input.md	engine/platform/window.h:221
+os::Window::Dragging() const	function	platform/window-input	os-window-dragging-const	platform-window-input.md	engine/platform/window.h:224
+os::Window::SupportsFullscreen() const	function	platform/window-input	os-window-supportsfullscreen-const	platform-window-input.md	engine/platform/window.h:230
+os::Window::SetFullscreen(bool)	function	platform/window-input	os-window-setfullscreen-bool	platform-window-input.md	engine/platform/window.h:240
+os::Window::IsFullscreen() const	function	platform/window-input	os-window-isfullscreen-const	platform-window-input.md	engine/platform/window.h:246
+os::Window::ModalLoopCallback	alias	platform/window-input	os-window-modalloopcallback	platform-window-input.md	engine/platform/window.h:249
+os::Window::SetModalLoopCallback(ModalLoopCallback,void*)	function	platform/window-input	os-window-setmodalloopcallback-modalloopcallback-void-star	platform-window-input.md	engine/platform/window.h:257
+os::WindowBackend	enum	platform/window-input	os-windowbackend	platform-window-input.md	engine/platform/window.h:269
+os::WindowBackend::Auto	enumerator	platform/window-input	os-windowbackend-auto	platform-window-input.md	engine/platform/window.h:270
+os::WindowBackend::Wayland	enumerator	platform/window-input	os-windowbackend-wayland	platform-window-input.md	engine/platform/window.h:271
+os::WindowBackend::X11	enumerator	platform/window-input	os-windowbackend-x11	platform-window-input.md	engine/platform/window.h:272
+os::WindowBackend::Win32	enumerator	platform/window-input	os-windowbackend-win32	platform-window-input.md	engine/platform/window.h:273
+os::WindowBackend::Invalid	enumerator	platform/window-input	os-windowbackend-invalid	platform-window-input.md	engine/platform/window.h:274
+os::ParseWindowBackend(StringView)	function	platform/window-input	os-parsewindowbackend-stringview	platform-window-input.md	engine/platform/window.h:282
+os::BackendPlan	struct	platform/window-input	os-backendplan	platform-window-input.md	engine/platform/window.h:287
+os::BackendPlan::candidates	variable	platform/window-input	os-backendplan-candidates	platform-window-input.md	engine/platform/window.h:289
+os::BackendPlan::count	variable	platform/window-input	os-backendplan-count	platform-window-input.md	engine/platform/window.h:291
+os::BackendPlan::refusal	variable	platform/window-input	os-backendplan-refusal	platform-window-input.md	engine/platform/window.h:294
+os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	os-planwindowbackends-windowbackend-bool-bool	platform-window-input.md	engine/platform/window.h:306
+os::PlanWin32WindowBackends(WindowBackend)	function	platform/window-input	os-planwin32windowbackends-windowbackend	platform-window-input.md	engine/platform/window.h:312
 os::PlatformWindowHost	class	platform/window-input	os-platformwindowhost	platform-window-input.md	engine/platform/window_host.h:22
 os::PlatformWindowHost::PlatformWindowHost()	function	platform/window-input	os-platformwindowhost-platformwindowhost	platform-window-input.md	engine/platform/window_host.h:25
 os::PlatformWindowHost::~PlatformWindowHost()	function	platform/window-input	os-platformwindowhost-tilde-platformwindowhost	platform-window-input.md	engine/platform/window_host.h:27
@@ -2025,29 +2028,56 @@ os::win32::Win32KeyMessage::character	variable	platform/window-input	os-win32-wi
 os::win32::KeyFromWin32(const Win32KeyMessage&)	function	platform/window-input	os-win32-keyfromwin32-const-win32keymessage-amp	platform-window-input.md	engine/platform/windows/win32_keys.h:34
 os::win32::kWin32KeyIndexCount	variable	platform/window-input	os-win32-kwin32keyindexcount	platform-window-input.md	engine/platform/windows/win32_keys.h:37
 os::win32::Win32KeyIndex(u32,bool)	function	platform/window-input	os-win32-win32keyindex-u32-bool	platform-window-input.md	engine/platform/windows/win32_keys.h:43
-os::win32::Win32Window	class	platform/window-input	os-win32-win32window	platform-window-input.md	engine/platform/windows/win32_window.h:33
-os::win32::Win32Window::Win32Window()	function	platform/window-input	os-win32-win32window-win32window	platform-window-input.md	engine/platform/windows/win32_window.h:36
-os::win32::Win32Window::~Win32Window()	function	platform/window-input	os-win32-win32window-tilde-win32window	platform-window-input.md	engine/platform/windows/win32_window.h:38
-os::win32::Win32Window::Win32Window(const Win32Window&)	function	platform/window-input	os-win32-win32window-win32window-const-win32window-amp	platform-window-input.md	engine/platform/windows/win32_window.h:39
-os::win32::Win32Window::operator=(const Win32Window&)	function	platform/window-input	os-win32-win32window-operator-eq-const-win32window-amp	platform-window-input.md	engine/platform/windows/win32_window.h:40
-os::win32::Win32Window::Open(StringView,u32,u32,InputState*)	function	platform/window-input	os-win32-win32window-open-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/windows/win32_window.h:53
-os::win32::Win32Window::Close()	function	platform/window-input	os-win32-win32window-close	platform-window-input.md	engine/platform/windows/win32_window.h:56
-os::win32::Win32Window::Valid() const	function	platform/window-input	os-win32-win32window-valid-const	platform-window-input.md	engine/platform/windows/win32_window.h:59
-os::win32::Win32Window::PumpEvents()	function	platform/window-input	os-win32-win32window-pumpevents	platform-window-input.md	engine/platform/windows/win32_window.h:63
-os::win32::Win32Window::ShouldClose() const	function	platform/window-input	os-win32-win32window-shouldclose-const	platform-window-input.md	engine/platform/windows/win32_window.h:66
-os::win32::Win32Window::Width() const	function	platform/window-input	os-win32-win32window-width-const	platform-window-input.md	engine/platform/windows/win32_window.h:68
-os::win32::Win32Window::Height() const	function	platform/window-input	os-win32-win32window-height-const	platform-window-input.md	engine/platform/windows/win32_window.h:70
-os::win32::Win32Window::BackendName() const	function	platform/window-input	os-win32-win32window-backendname-const	platform-window-input.md	engine/platform/windows/win32_window.h:72
-os::win32::Win32Window::GetNativeInfo() const	function	platform/window-input	os-win32-win32window-getnativeinfo-const	platform-window-input.md	engine/platform/windows/win32_window.h:74
-os::win32::Win32Window::IsMinimized() const	function	platform/window-input	os-win32-win32window-isminimized-const	platform-window-input.md	engine/platform/windows/win32_window.h:76
-os::win32::Win32Window::ResizeSerial() const	function	platform/window-input	os-win32-win32window-resizeserial-const	platform-window-input.md	engine/platform/windows/win32_window.h:78
-os::win32::Win32Window::SupportsFullscreen() const	function	platform/window-input	os-win32-win32window-supportsfullscreen-const	platform-window-input.md	engine/platform/windows/win32_window.h:80
-os::win32::Win32Window::SetFullscreen(bool)	function	platform/window-input	os-win32-win32window-setfullscreen-bool	platform-window-input.md	engine/platform/windows/win32_window.h:88
-os::win32::Win32Window::IsFullscreen() const	function	platform/window-input	os-win32-win32window-isfullscreen-const	platform-window-input.md	engine/platform/windows/win32_window.h:90
-os::win32::Win32Window::SetModalLoopCallback(ModalLoopCallback,void*)	function	platform/window-input	os-win32-win32window-setmodalloopcallback-modalloopcallback-void-star	platform-window-input.md	engine/platform/windows/win32_window.h:96
-os::win32::Win32Window::Dpi() const	function	platform/window-input	os-win32-win32window-dpi-const	platform-window-input.md	engine/platform/windows/win32_window.h:99
-os::win32::Win32Window::ScaleForDpi(u32,u32)	function	platform/window-input	os-win32-win32window-scalefordpi-u32-u32	platform-window-input.md	engine/platform/windows/win32_window.h:107
-os::win32::Win32Window::NativeHandle() const	function	platform/window-input	os-win32-win32window-nativehandle-const	platform-window-input.md	engine/platform/windows/win32_window.h:111
+os::win32::AcceptLocalPath(StringView)	function	platform/window-input	os-win32-acceptlocalpath-stringview	platform-window-input.md	engine/platform/windows/win32_window.h:43
+os::win32::Win32Window	class	platform/window-input	os-win32-win32window	platform-window-input.md	engine/platform/windows/win32_window.h:53
+os::win32::Win32Window::Win32Window()	function	platform/window-input	os-win32-win32window-win32window	platform-window-input.md	engine/platform/windows/win32_window.h:57
+os::win32::Win32Window::~Win32Window()	function	platform/window-input	os-win32-win32window-tilde-win32window	platform-window-input.md	engine/platform/windows/win32_window.h:59
+os::win32::Win32Window::Win32Window(const Win32Window&)	function	platform/window-input	os-win32-win32window-win32window-const-win32window-amp	platform-window-input.md	engine/platform/windows/win32_window.h:60
+os::win32::Win32Window::operator=(const Win32Window&)	function	platform/window-input	os-win32-win32window-operator-eq-const-win32window-amp	platform-window-input.md	engine/platform/windows/win32_window.h:61
+os::win32::Win32Window::Open(StringView,u32,u32,InputState*)	function	platform/window-input	os-win32-win32window-open-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/windows/win32_window.h:74
+os::win32::Win32Window::Close()	function	platform/window-input	os-win32-win32window-close	platform-window-input.md	engine/platform/windows/win32_window.h:77
+os::win32::Win32Window::Valid() const	function	platform/window-input	os-win32-win32window-valid-const	platform-window-input.md	engine/platform/windows/win32_window.h:80
+os::win32::Win32Window::PumpEvents()	function	platform/window-input	os-win32-win32window-pumpevents	platform-window-input.md	engine/platform/windows/win32_window.h:84
+os::win32::Win32Window::ShouldClose() const	function	platform/window-input	os-win32-win32window-shouldclose-const	platform-window-input.md	engine/platform/windows/win32_window.h:87
+os::win32::Win32Window::Width() const	function	platform/window-input	os-win32-win32window-width-const	platform-window-input.md	engine/platform/windows/win32_window.h:89
+os::win32::Win32Window::Height() const	function	platform/window-input	os-win32-win32window-height-const	platform-window-input.md	engine/platform/windows/win32_window.h:91
+os::win32::Win32Window::ContentScale() const	function	platform/window-input	os-win32-win32window-contentscale-const	platform-window-input.md	engine/platform/windows/win32_window.h:93
+os::win32::Win32Window::BackendName() const	function	platform/window-input	os-win32-win32window-backendname-const	platform-window-input.md	engine/platform/windows/win32_window.h:95
+os::win32::Win32Window::GetNativeInfo() const	function	platform/window-input	os-win32-win32window-getnativeinfo-const	platform-window-input.md	engine/platform/windows/win32_window.h:97
+os::win32::Win32Window::IsMinimized() const	function	platform/window-input	os-win32-win32window-isminimized-const	platform-window-input.md	engine/platform/windows/win32_window.h:99
+os::win32::Win32Window::ResizeSerial() const	function	platform/window-input	os-win32-win32window-resizeserial-const	platform-window-input.md	engine/platform/windows/win32_window.h:101
+os::win32::Win32Window::SupportsFullscreen() const	function	platform/window-input	os-win32-win32window-supportsfullscreen-const	platform-window-input.md	engine/platform/windows/win32_window.h:103
+os::win32::Win32Window::SetFullscreen(bool)	function	platform/window-input	os-win32-win32window-setfullscreen-bool	platform-window-input.md	engine/platform/windows/win32_window.h:111
+os::win32::Win32Window::IsFullscreen() const	function	platform/window-input	os-win32-win32window-isfullscreen-const	platform-window-input.md	engine/platform/windows/win32_window.h:113
+os::win32::Win32Window::PollEvent(InputEvent*)	function	platform/window-input	os-win32-win32window-pollevent-inputevent-star	platform-window-input.md	engine/platform/windows/win32_window.h:119
+os::win32::Win32Window::DroppedEvents() const	function	platform/window-input	os-win32-win32window-droppedevents-const	platform-window-input.md	engine/platform/windows/win32_window.h:121
+os::win32::Win32Window::SupportsCursorShape() const	function	platform/window-input	os-win32-win32window-supportscursorshape-const	platform-window-input.md	engine/platform/windows/win32_window.h:123
+os::win32::Win32Window::SetCursor(CursorShape)	function	platform/window-input	os-win32-win32window-setcursor-cursorshape	platform-window-input.md	engine/platform/windows/win32_window.h:129
+os::win32::Win32Window::SupportsCursorImage() const	function	platform/window-input	os-win32-win32window-supportscursorimage-const	platform-window-input.md	engine/platform/windows/win32_window.h:131
+os::win32::Win32Window::SetCursorImage(const CursorImage&)	function	platform/window-input	os-win32-win32window-setcursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/windows/win32_window.h:138
+os::win32::Win32Window::ClearCursorImage()	function	platform/window-input	os-win32-win32window-clearcursorimage	platform-window-input.md	engine/platform/windows/win32_window.h:140
+os::win32::Win32Window::SupportsPointerLock() const	function	platform/window-input	os-win32-win32window-supportspointerlock-const	platform-window-input.md	engine/platform/windows/win32_window.h:142
+os::win32::Win32Window::SetPointerLock(bool)	function	platform/window-input	os-win32-win32window-setpointerlock-bool	platform-window-input.md	engine/platform/windows/win32_window.h:149
+os::win32::Win32Window::PointerLocked() const	function	platform/window-input	os-win32-win32window-pointerlocked-const	platform-window-input.md	engine/platform/windows/win32_window.h:151
+os::win32::Win32Window::CursorObjects() const	function	platform/window-input	os-win32-win32window-cursorobjects-const	platform-window-input.md	engine/platform/windows/win32_window.h:153
+os::win32::Win32Window::SupportsClipboard(ClipboardKind) const	function	platform/window-input	os-win32-win32window-supportsclipboard-clipboardkind-const	platform-window-input.md	engine/platform/windows/win32_window.h:155
+os::win32::Win32Window::SetClipboard(ClipboardKind,const ClipboardOffer&)	function	platform/window-input	os-win32-win32window-setclipboard-clipboardkind-const-clipboardoffer-amp	platform-window-input.md	engine/platform/windows/win32_window.h:165
+os::win32::Win32Window::RequestClipboard(ClipboardKind,ClipboardFormat,StringView)	function	platform/window-input	os-win32-win32window-requestclipboard-clipboardkind-clipboardformat-stringview	platform-window-input.md	engine/platform/windows/win32_window.h:174
+os::win32::Win32Window::TakeClipboardResult(u32,ClipboardResult*)	function	platform/window-input	os-win32-win32window-takeclipboardresult-u32-clipboardresult-star	platform-window-input.md	engine/platform/windows/win32_window.h:176
+os::win32::Win32Window::ClipboardHasFormat(ClipboardKind,ClipboardFormat,StringView) const	function	platform/window-input	os-win32-win32window-clipboardhasformat-clipboardkind-clipboardformat-stringview-const	platform-window-input.md	engine/platform/windows/win32_window.h:178
+os::win32::Win32Window::SupportsDragAndDrop() const	function	platform/window-input	os-win32-win32window-supportsdraganddrop-const	platform-window-input.md	engine/platform/windows/win32_window.h:180
+os::win32::Win32Window::SetDropAccept(const DropAccept&)	function	platform/window-input	os-win32-win32window-setdropaccept-const-dropaccept-amp	platform-window-input.md	engine/platform/windows/win32_window.h:182
+os::win32::Win32Window::SetDropAction(DragAction)	function	platform/window-input	os-win32-win32window-setdropaction-dragaction	platform-window-input.md	engine/platform/windows/win32_window.h:184
+os::win32::Win32Window::RequestDropData(ClipboardFormat,StringView)	function	platform/window-input	os-win32-win32window-requestdropdata-clipboardformat-stringview	platform-window-input.md	engine/platform/windows/win32_window.h:192
+os::win32::Win32Window::FinishDrop(DragAction)	function	platform/window-input	os-win32-win32window-finishdrop-dragaction	platform-window-input.md	engine/platform/windows/win32_window.h:194
+os::win32::Win32Window::BeginDrag(const DragSource&)	function	platform/window-input	os-win32-win32window-begindrag-const-dragsource-amp	platform-window-input.md	engine/platform/windows/win32_window.h:202
+os::win32::Win32Window::CancelDrag()	function	platform/window-input	os-win32-win32window-canceldrag	platform-window-input.md	engine/platform/windows/win32_window.h:204
+os::win32::Win32Window::Dragging() const	function	platform/window-input	os-win32-win32window-dragging-const	platform-window-input.md	engine/platform/windows/win32_window.h:206
+os::win32::Win32Window::DropTargetForTest() const	function	platform/window-input	os-win32-win32window-droptargetfortest-const	platform-window-input.md	engine/platform/windows/win32_window.h:211
+os::win32::Win32Window::SetModalLoopCallback(ModalLoopCallback,void*)	function	platform/window-input	os-win32-win32window-setmodalloopcallback-modalloopcallback-void-star	platform-window-input.md	engine/platform/windows/win32_window.h:217
+os::win32::Win32Window::Dpi() const	function	platform/window-input	os-win32-win32window-dpi-const	platform-window-input.md	engine/platform/windows/win32_window.h:220
+os::win32::Win32Window::ScaleForDpi(u32,u32)	function	platform/window-input	os-win32-win32window-scalefordpi-u32-u32	platform-window-input.md	engine/platform/windows/win32_window.h:228
+os::win32::Win32Window::NativeHandle() const	function	platform/window-input	os-win32-win32window-nativehandle-const	platform-window-input.md	engine/platform/windows/win32_window.h:232
 ENGINE_DEBUG_BREAK	macro	foundation/debug	engine-debug-break	foundation-debug.md	engine/foundation/debug/compiler.h:16
 ENGINE_TRAP	macro	foundation/debug	engine-trap	foundation-debug.md	engine/foundation/debug/compiler.h:34
 ENGINE_PRINTF_FORMAT	macro	foundation/debug	engine-printf-format	foundation-debug.md	engine/foundation/debug/compiler.h:45
@@ -3917,10 +3947,11 @@ ui::WindowPointerLock::SetLocked(bool)	function	ui_window	ui-windowpointerlock-s
 ui::WindowAdapter	class	ui_window	ui-windowadapter	ui_window.md	engine/ui_window/window_adapter.h:39
 ui::WindowAdapter::PumpInto(os::Window&,Surface&)	function	ui_window	ui-windowadapter-pumpinto-os-window-amp-surface-amp	ui_window.md	engine/ui_window/window_adapter.h:43
 ui::WindowAdapter::UpdateCursor(os::Window&,const Surface&)	function	ui_window	ui-windowadapter-updatecursor-os-window-amp-const-surface-amp	ui_window.md	engine/ui_window/window_adapter.h:48
-ui::WindowAdapter::CursorChanges() const	function	ui_window	ui-windowadapter-cursorchanges-const	ui_window.md	engine/ui_window/window_adapter.h:51
-ui::WindowAdapter::SetClipboard(OsClipboard*)	function	ui_window	ui-windowadapter-setclipboard-osclipboard-star	ui_window.md	engine/ui_window/window_adapter.h:55
-ui::WindowAdapter::ClipboardChanges() const	function	ui_window	ui-windowadapter-clipboardchanges-const	ui_window.md	engine/ui_window/window_adapter.h:57
-ui::WindowAdapter::EnableDrops(os::Window&,StringView)	function	ui_window	ui-windowadapter-enabledrops-os-window-amp-stringview	ui_window.md	engine/ui_window/window_adapter.h:61
+ui::WindowAdapter::SetFollowWindowScale(bool)	function	ui_window	ui-windowadapter-setfollowwindowscale-bool	ui_window.md	engine/ui_window/window_adapter.h:54
+ui::WindowAdapter::CursorChanges() const	function	ui_window	ui-windowadapter-cursorchanges-const	ui_window.md	engine/ui_window/window_adapter.h:57
+ui::WindowAdapter::SetClipboard(OsClipboard*)	function	ui_window	ui-windowadapter-setclipboard-osclipboard-star	ui_window.md	engine/ui_window/window_adapter.h:61
+ui::WindowAdapter::ClipboardChanges() const	function	ui_window	ui-windowadapter-clipboardchanges-const	ui_window.md	engine/ui_window/window_adapter.h:63
+ui::WindowAdapter::EnableDrops(os::Window&,StringView)	function	ui_window	ui-windowadapter-enabledrops-os-window-amp-stringview	ui_window.md	engine/ui_window/window_adapter.h:67
 jobs::IoRequest	alias	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:52
 jobs::IoThread	class	jobs	jobs-iothread	jobs.md	engine/jobs/async_io.h:64
 jobs::IoThread::IoThread()	function	jobs	jobs-iothread-iothread	jobs.md	engine/jobs/async_io.h:67

@@ -59,7 +59,7 @@ struct Options {
     bool validation = false;
     const char* gpu = nullptr;
     const char* script = nullptr;
-    f32 scale = 1.0f;
+    f32 scale = 0.0f; // 0: the window's scale (1 for --screenshot)
 };
 
 double NowSeconds() { return static_cast<double>(os::MonotonicTimeNanos()) * 1e-9; }
@@ -253,8 +253,9 @@ int RunScreenshot(const Options& options, const RenderSettings& settings) {
         return kExitFailure;
     }
     DeviceResources registry;
-    u32 pixel_w = static_cast<u32>(std::lround(kShotWidth * options.scale));
-    u32 pixel_h = static_cast<u32>(std::lround(kShotHeight * options.scale));
+    const f32 shot_scale = options.scale > 0.0f ? options.scale : 1.0f;
+    u32 pixel_w = static_cast<u32>(std::lround(kShotWidth * shot_scale));
+    u32 pixel_h = static_cast<u32>(std::lround(kShotHeight * shot_scale));
     TextureHandle target;
     auto make_target = [&] {
         if (target.IsValid()) {
@@ -274,7 +275,7 @@ int RunScreenshot(const Options& options, const RenderSettings& settings) {
         renderer_demo::DemoFrame frame;
         renderer_demo::DemoScene scene;
         ui_demo::UiDemoGpu gpu;
-        ui::Surface surface(kShotWidth, kShotHeight, options.scale);
+        ui::Surface surface(kShotWidth, kShotHeight, shot_scale);
         renderer_demo::FrameSetup fs = SetupFor(device.Get(), nullptr);
         fs.resources = &registry;
         renderer_demo::SceneOptions so = SceneOptionsFor();
@@ -311,9 +312,9 @@ int RunScreenshot(const Options& options, const RenderSettings& settings) {
             for (long i = 0; i < total && ok && status == FrameStatus::Ok && !app.QuitRequested(); ++i) {
                 ok = RunScript(&script, &app, &surface, &run, i);
                 if (run.wanted_w_ != 0) { // resize:WxH
-                    surface.Resize(static_cast<f32>(run.wanted_w_), static_cast<f32>(run.wanted_h_), options.scale);
-                    pixel_w = static_cast<u32>(std::lround(static_cast<f32>(run.wanted_w_) * options.scale));
-                    pixel_h = static_cast<u32>(std::lround(static_cast<f32>(run.wanted_h_) * options.scale));
+                    surface.Resize(static_cast<f32>(run.wanted_w_), static_cast<f32>(run.wanted_h_), shot_scale);
+                    pixel_w = static_cast<u32>(std::lround(static_cast<f32>(run.wanted_w_) * shot_scale));
+                    pixel_h = static_cast<u32>(std::lround(static_cast<f32>(run.wanted_h_) * shot_scale));
                     run.wanted_w_ = run.wanted_h_ = 0;
                     ok = ok && make_target();
                     ft.texture = target;
@@ -385,7 +386,8 @@ int RunWindow(const Options& options, RenderSettings settings) {
         renderer_demo::DemoFrame frame;
         renderer_demo::DemoScene scene;
         ui_demo::UiDemoGpu gpu;
-        ui::Surface surface(static_cast<f32>(window->Width()) / options.scale, static_cast<f32>(window->Height()) / options.scale, options.scale);
+        const f32 scale = options.scale > 0.0f ? options.scale : window->ContentScale();
+        ui::Surface surface(static_cast<f32>(window->Width()) / scale, static_cast<f32>(window->Height()) / scale, scale);
         renderer_demo::FrameSetup fs = SetupFor(host.GetDevice(), host.GetSwapchain());
         fs.resources = &registry;
         fs.host = &host;
@@ -421,6 +423,7 @@ int RunWindow(const Options& options, RenderSettings settings) {
             SettingsGlue settings_glue(&renderer);
             app.SetRenderSettingsHost(&settings_glue);
             ui::WindowAdapter adapter;
+            adapter.SetFollowWindowScale(options.scale == 0.0f);
             ui::OsClipboard clipboard(window);
             ui::WindowPointerLock pointer_lock(window);
             surface.SetClipboard(&clipboard);
@@ -499,7 +502,7 @@ const char kUsageFormat[] =
     "  --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM, 960x600 logical units)\n"
     "  --script W        run steps without a person: frame:N click:name type:text key:Name resize:WxH theme:dark|light menu:File/About drag:name:dx,dy\n"
     "                    drop:text:T drop:file:P paste:T shot:path set:key=value reset loss gpu:next quit (space separated; see README.md)\n"
-    "  --scale S         the pixels per logical unit: 1, 1.25 or 2 (default 1)\n"
+    "  --scale S         the pixels per logical unit: 1, 1.25 or 2 (default: the display's, 1 with --screenshot)\n"
     "  --no-vsync        present without waiting for the display\n"
     "  --validation      enable the validation layer with synchronization validation\n"
     "  --gpu G           the GPU to use: an id, an index, or part of the name\n";

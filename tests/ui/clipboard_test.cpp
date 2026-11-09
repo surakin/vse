@@ -374,6 +374,38 @@ TEST_CASE("a cancelled OS drag leaves the source as it was; a refusing window ke
     CHECK(rig.a->Text() == StringView("hello world"));
 }
 
+TEST_CASE("a modal OS drag (Win32) is handed off when it starts, not when BeginDrag returns", "[ui][drag][os]") {
+    OsRig rig;
+    rig.a->SetText(StringView("hello world"));
+    rig.a->SetSelection(0, 5);
+    rig.h.PointerDown(rig.a->Bounds().x + 14, rig.a->Bounds().y + 14);
+    rig.h.PointerMove(rig.a->Bounds().x + 30, rig.a->Bounds().y + 14);
+    REQUIRE(rig.h.GetSurface().Dragging());
+    struct Seen {
+        Surface* surface = nullptr;
+        bool handed_off = false;
+        bool target_left = false;
+    } seen;
+    seen.surface = &rig.h.GetSurface();
+    rig.window.modal_drag = true;
+    rig.window.during_drag = [](void* u) {
+        Seen* s = static_cast<Seen*>(u);
+        s->handed_off = s->surface->DragHandedOff();
+        s->target_left = s->surface->DragTarget() == nullptr;
+    };
+    rig.window.during_drag_user = &seen;
+    rig.Event(os::InputEventType::PointerLeave, 0, 0);
+    rig.Pump();
+    CHECK(rig.window.drags_begun == 1);
+    CHECK(seen.handed_off); // while the program draws during the drag, the drag is no longer the surface's own
+    CHECK(seen.target_left);
+    CHECK(rig.h.GetSurface().DragHandedOff());
+    rig.Event(os::InputEventType::DragEnded, 0, 0, 0, 0, static_cast<u8>(os::DragAction::Copy));
+    rig.Pump();
+    CHECK_FALSE(rig.h.GetSurface().Dragging());
+    CHECK(rig.a->Text() == StringView("hello world")); // a copy leaves the source as it was
+}
+
 TEST_CASE("a drag of pointers only never leaves the process", "[ui][drag][os]") {
     OsRig rig;
     struct Items : ListModel {

@@ -20,7 +20,7 @@ namespace engine_placeholder::os::win32 {
 namespace {
 
 constexpr const wchar_t* kWin32ClassName = L"EngineWindow";
-constexpr UINT_PTR kWin32ModalTimer = 1; // the timer that calls the modal-loop callback
+constexpr UINT_PTR kWin32ModalTimer = kWin32ModalTimerId; // the timer that calls the modal-loop callback
 constexpr DWORD kWin32Style = WS_OVERLAPPEDWINDOW;
 constexpr DWORD kWin32ExStyle = WS_EX_APPWINDOW;
 
@@ -192,7 +192,8 @@ void Win32Window::Proc::KeyMessage(Win32Window& self, HWND hwnd, UINT message, W
 // WM_CHAR: one UTF-16 code unit of the text a key produced, after TranslateMessage turned the key into characters with the layout (dead keys
 // are composed there: the dead key gives WM_DEADCHAR, ignored, and the next key the composed character). A character outside the BMP comes as
 // two messages, the high surrogate first; they become one Text event. Control characters (Enter, Tab, Backspace, Escape, Ctrl+letter) and a
-// press with Ctrl or Alt held are keys, not text, as on Linux; AltGr is neither (its Ctrl is not counted, see UpdateModifiers).
+// press with Ctrl or Alt held are keys, not text, as on Linux; AltGr is neither (its Ctrl is not counted, see UpdateModifiers). Ctrl and Alt
+// held together are Windows' stand-in for AltGr (Ctrl+Alt+Q types '@' on a German layout): a character they give is text.
 void Win32Window::Proc::Character(Win32Window& self, WPARAM unit_param) {
     const u32 unit = static_cast<u32>(unit_param) & 0xFFFFu;
     u32 scalar = unit;
@@ -206,7 +207,9 @@ void Win32Window::Proc::Character(Win32Window& self, WPARAM unit_param) {
     }
     self.high_surrogate_ = 0;
     const u32 modifiers = self.input_->keyboard.modifiers;
-    if (scalar < 0x20 || scalar == 0x7F || (scalar >= 0x80 && scalar < 0xA0) || (modifiers & (kModCtrl | kModAlt)) != 0) return;
+    const u32 ctrl_alt = modifiers & (kModCtrl | kModAlt);
+    const bool shortcut = ctrl_alt != 0 && ctrl_alt != (kModCtrl | kModAlt);
+    if (scalar < 0x20 || scalar == 0x7F || (scalar >= 0x80 && scalar < 0xA0) || shortcut) return;
     InputEvent event;
     event.type = InputEventType::Text;
     event.modifiers = modifiers;
@@ -542,6 +545,8 @@ LRESULT Win32Window::Proc::Handle(Win32Window& self, HWND hwnd, UINT message, WP
     }
     return DefWindowProcW(hwnd, message, wparam, lparam);
 }
+
+Win32Window::Win32Window() = default;
 
 Win32Window::~Win32Window() { Close(); }
 

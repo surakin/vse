@@ -56,6 +56,10 @@ struct DragSource {
     usize offer_count = 0;                  ///< Their count.
     u8 allowed_actions = kAllDragActions;   ///< A set of [[os::DragAction]] bits the source can serve.
     DragImage image;                        ///< Optional.
+    /// Called once when the OS drag starts, before `BeginDrag` returns; may be null. Win32's drag is modal (`BeginDrag` returns when it is over),
+    /// so it calls this before the drag runs: a program hands its own drag to the OS here rather than after the return.
+    void (*started)(void* user) = nullptr;
+    void* started_user = nullptr; ///< Passed to `started`.
 };
 
 /// The most formats one drag offers.

@@ -12,6 +12,7 @@
 
 #include "log/log.h"
 #include "os/os.h"
+#include "os/windows/win32.h"
 #include "platform/windows/win32_transfer.h"
 #include "platform/windows/win32_window.h"
 
@@ -72,9 +73,15 @@ bool Win32DataObject::Set(const ClipboardOffer* offers, usize count) {
                 Clear();
                 return false;
             }
+            const void* locked = GlobalLock(block);
+            if (locked == nullptr) {
+                GlobalFree(block);
+                Clear();
+                return false;
+            }
             out.format = CF_HDROP;
             out.bytes.Resize(GlobalSize(block));
-            std::memcpy(out.bytes.Data(), GlobalLock(block), out.bytes.Size());
+            std::memcpy(out.bytes.Data(), locked, out.bytes.Size());
             GlobalUnlock(block);
             GlobalFree(block);
         } else {
@@ -325,6 +332,7 @@ HRESULT Win32DndAccess::Drop(Win32Window& w, IDataObject* data, DWORD keys, POIN
         return S_OK;
     }
     d.session = false;
+    d.allowed = static_cast<u8>(*effect & kAllDragActions); // the source's allowed effects as of the drop
     const DragAction action = Choose(w, keys);
     if (action == DragAction::Nothing) { // refused here: the source gets no drop, the program a leave
         InputEvent e;
@@ -438,11 +446,12 @@ bool Win32Window::BeginDrag(const DragSource& source) {
     if (!dnd_->outgoing.Set(source.offers, source.offer_count)) return false;
     dnd_->dragging = true;
     dnd_->source.cancel = false;
+    if (source.started != nullptr) source.started(source.started_user); // the drag is the OS's from here on, though BeginDrag has not returned
     in_modal_loop_ = true; // the modal-loop callback keeps the program drawing while OLE runs the drag
-    if (modal_callback_ != nullptr) SetTimer(hwnd_, 1, USER_TIMER_MINIMUM, nullptr);
+    if (modal_callback_ != nullptr) SetTimer(hwnd_, kWin32ModalTimerId, USER_TIMER_MINIMUM, nullptr);
     DWORD effect = DROPEFFECT_NONE;
     const HRESULT result = DoDragDrop(&dnd_->outgoing, &dnd_->source, static_cast<DWORD>(source.allowed_actions & kAllDragActions), &effect);
-    KillTimer(hwnd_, 1);
+    KillTimer(hwnd_, kWin32ModalTimerId);
     in_modal_loop_ = false;
     dnd_->dragging = false;
     dnd_->outgoing.Clear();

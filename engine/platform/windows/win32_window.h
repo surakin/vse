@@ -52,8 +52,9 @@ bool AcceptLocalPath(StringView utf8_path);
 ///   unregistered (the system removes it at exit), so no window can outlive its class.
 class Win32Window final : public Window {
 public:
-    /// An invalid window that owns nothing; call [[os::win32::Win32Window::Open]].
-    Win32Window() = default;
+    /// An invalid window that owns nothing; call [[os::win32::Win32Window::Open]]. (Defined in the .cpp, where the drag and drop state's type is
+    /// complete.)
+    Win32Window();
     /// Destroys the window, if one is open.
     ~Win32Window() override;
     Win32Window(const Win32Window&) = delete;
@@ -88,6 +89,8 @@ public:
     u32 Width() const override { return width_; }
     /// Returns the client height in physical pixels (kept while minimized).
     u32 Height() const override { return height_; }
+    /// Returns the window's DPI over 96 (2 at 200%); 1 if not open.
+    f32 ContentScale() const override { return hwnd_ != nullptr ? static_cast<f32>(dpi_) / 96.0f : 1.0f; }
     /// Returns the backend id, `"win32"`.
     const char* BackendName() const override { return "win32"; }
     /// Returns kind `Win32`, the `HINSTANCE` of the module that registered the window class and the `HWND`; `Invalid` if the window is not open.

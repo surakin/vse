@@ -232,6 +232,29 @@ TEST_CASE("Windows drag and drop: a leave and a refusal at the drop give DragLea
     CHECK(w.window.RequestDropData(ClipboardFormat::Text, StringView()) == 0);
 }
 
+TEST_CASE("Windows drag and drop: the drop is answered with the effects the source allows at the drop", "[window][win32][dragdrop]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    DndWindow w;
+    REQUIRE(w.Open());
+    os::DropAccept accept;
+    accept.formats = os::kDropText;
+    w.window.SetDropAccept(accept);
+    w.Drain();
+    Win32DataObject data;
+    const os::ClipboardOffer offers[] = {DndTextOffer("x")};
+    REQUIRE(data.Set(offers, 1));
+    DWORD effect = kAllEffects;
+    w.target->DragEnter(&data, MK_LBUTTON, w.At(5, 5), &effect);
+    w.window.SetDropAction(DragAction::Move);
+    effect = DROPEFFECT_COPY; // the source allows only a copy by the time of the drop: the program's Move cannot be granted
+    w.target->Drop(&data, 0, w.At(6, 6), &effect);
+    CHECK(effect == DROPEFFECT_NONE);
+    const Vector<InputEvent> e = w.Drain();
+    REQUIRE(e.Size() == 2);
+    CHECK(e[1].type == InputEventType::DragLeave);
+    CHECK(w.window.RequestDropData(ClipboardFormat::Text, StringView()) == 0);
+}
+
 TEST_CASE("Windows drag and drop: a dropped CF_HDROP keeps only local drive paths, and a custom format arrives", "[window][win32][dragdrop]") {
     SKIP_IF_NO_DISPLAY_SESSION();
     DndWindow w;

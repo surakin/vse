@@ -23,6 +23,9 @@ namespace engine_placeholder::os::win32 {
 
 class Win32Window;
 
+/// The id of the window timer that calls the modal-loop callback, during the system's move and size loop and during a drag (`DoDragDrop`).
+inline constexpr UINT_PTR kWin32ModalTimerId = 1;
+
 /// The data a drag offers, as an `IDataObject`: copies of up to [[os::kMaxDragOffers]] offers (text as `CF_UNICODETEXT`, a file list as
 /// `CF_HDROP`, custom bytes under their registered name).
 class Win32DataObject final : public IDataObject {

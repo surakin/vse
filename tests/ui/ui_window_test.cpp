@@ -21,8 +21,9 @@ public:
         return true;
     }
     bool ShouldClose() const override { return false; }
-    u32 Width() const override { return 0; }
-    u32 Height() const override { return 0; }
+    u32 Width() const override { return width; }
+    u32 Height() const override { return height; }
+    f32 ContentScale() const override { return content_scale; }
     const char* BackendName() const override { return "fake"; }
     os::NativeWindowInfo GetNativeInfo() const override { return os::NativeWindowInfo(); }
     bool IsMinimized() const override { return false; }
@@ -35,6 +36,9 @@ public:
     Vector<os::InputEvent> events;
     Vector<os::CursorShape> cursor_calls;
     bool accept_cursor = true;
+    u32 width = 0;
+    u32 height = 0;
+    f32 content_scale = 1.0f;
 
 private:
     usize next_ = 0;
@@ -156,6 +160,54 @@ TEST_CASE("window adapter: resize is forwarded in logical units and costs one la
     CHECK(s.Scale() == 2);
     s.Frame(0);
     CHECK(s.LayoutPasses() == before + 1);
+}
+
+TEST_CASE("window adapter: the surface follows the window's content scale only when asked", "[window]") {
+    FakeWindow w;
+    w.width = 1280;
+    w.height = 720;
+    w.content_scale = 2.0f;
+    Surface s(1280, 720, 1);
+    WindowAdapter a;
+    a.PumpInto(w, s);
+    CHECK(s.Scale() == 1); // off by default: an explicit scale is kept
+    CHECK(s.Width() == 1280);
+
+    a.SetFollowWindowScale(true);
+    w.events.Push(WinPointer(os::InputEventType::PointerMove, 200, 100));
+    Rect r;
+    r.w = 640;
+    r.h = 360;
+    WinBox* box = static_cast<WinBox*>(s.Root()->AddChild(MakeUnique<WinBox>(StringView("box"), r)));
+    a.PumpInto(w, s);
+    CHECK(s.Scale() == 2);
+    CHECK(s.Width() == 640);
+    CHECK(s.Height() == 360);
+    s.Frame(0);
+    REQUIRE(box->got.Size() >= 1);
+    CHECK(box->got[box->got.Size() - 1].position.x == 100); // the pointer of the same pump uses the new scale
+    CHECK(box->got[box->got.Size() - 1].position.y == 50);
+
+    // Moved to a 150% monitor: the window's size and scale change together, the widgets keep their logical size.
+    w.width = 1920;
+    w.height = 1080;
+    w.content_scale = 1.5f;
+    os::InputEvent resize;
+    resize.type = os::InputEventType::Resize;
+    resize.width = 1920;
+    resize.height = 1080;
+    w.events.Push(resize);
+    a.PumpInto(w, s);
+    CHECK(s.Scale() == 1.5f);
+    CHECK(s.Width() == 1280);
+    CHECK(s.Height() == 720);
+
+    // A minimized window (no size) changes nothing.
+    w.width = 0;
+    w.height = 0;
+    w.content_scale = 1.0f;
+    a.PumpInto(w, s);
+    CHECK(s.Scale() == 1.5f);
 }
 
 TEST_CASE("window adapter: focus and pointer leave reach the surface", "[window]") {

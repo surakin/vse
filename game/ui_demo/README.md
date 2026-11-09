@@ -34,7 +34,7 @@ cmake --build build --target ui_demo
 | `--frames N` | stop after N frames |
 | `--screenshot FILE` | render offscreen with no window and write the last frame to FILE as a binary PPM (960x600 logical units times `--scale`) |
 | `--script WORDS` | run steps without a person (below) |
-| `--scale S` | pixels per logical unit: 1, 1.25 or 2 |
+| `--scale S` | pixels per logical unit: 1, 1.25 or 2; without it the window follows the display's scale (Win32: its DPI; Wayland and X11: 1), and `--screenshot` uses 1 |
 | `--no-vsync`, `--validation`, `--gpu G`, `--rhi NAME` | as for `renderer_demo` |
 | `--help` | print the options |
 

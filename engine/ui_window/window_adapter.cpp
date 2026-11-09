@@ -6,6 +6,12 @@ namespace engine_placeholder::ui {
 
 usize WindowAdapter::PumpInto(os::Window& window, Surface& surface) {
     usize posted = 0;
+    if (follow_window_scale_) {
+        const f32 wanted = window.ContentScale();
+        if (wanted > 0.0f && wanted != surface.Scale() && window.Width() > 0 && window.Height() > 0) {
+            surface.Resize(static_cast<f32>(window.Width()) / wanted, static_cast<f32>(window.Height()) / wanted, wanted);
+        }
+    }
     const f32 scale = surface.Scale();
     const f64 inverse = 1.0 / static_cast<f64>(scale);
     os::InputEvent in;
@@ -148,6 +154,10 @@ void WindowAdapter::TryHandOff(os::Window& window, Surface& surface) {
     source.offers = offers;
     source.offer_count = count;
     source.allowed_actions = payload->Allowed();
+    // A modal drag (Win32) runs inside BeginDrag, with the program drawing from the modal-loop callback: the surface must stop running the
+    // drag as its own when the OS drag starts, not when it is over. HandOffDrag a second time does nothing.
+    source.started = [](void* user) { static_cast<Surface*>(user)->HandOffDrag(); };
+    source.started_user = &surface;
     if (window.BeginDrag(source)) surface.HandOffDrag();
 }
 

@@ -4,7 +4,7 @@ usage: PROGRAM [--backend wayland|x11|win32] [--frames N] [--screenshot out.ppm]
   --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM, 960x600 logical units)
   --script W        run steps without a person: frame:N click:name type:text key:Name resize:WxH theme:dark|light menu:File/About drag:name:dx,dy
                     drop:text:T drop:file:P paste:T shot:path set:key=value reset loss gpu:next quit (space separated; see README.md)
-  --scale S         the pixels per logical unit: 1, 1.25 or 2 (default 1)
+  --scale S         the pixels per logical unit: 1, 1.25 or 2 (default: the display's, 1 with --screenshot)
   --no-vsync        present without waiting for the display
   --validation      enable the validation layer with synchronization validation
   --gpu G           the GPU to use: an id, an index, or part of the name
