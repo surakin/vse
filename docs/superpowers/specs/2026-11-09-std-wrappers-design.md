@@ -63,3 +63,26 @@ Rules:
 ## 5. Left to the builder
 
 The exact function lists (Day 207 produces the inventory; a function used once may stay out), file layout inside each module, and the gate's token matching. Anything that changes what is built (a module name, a layer) goes back to the user.
+
+## 6. Day 207 inventory (tool-made, `scripts/std-usage-report.py`, 2026-11-09)
+
+451 files use the standard library (comments and strings ignored; `third_party/` excluded). Per top directory: foundation 68, jobs 16, platform 12, renderer 24, rhi 45, text 3, ui 29, game 16, tools 47 (the checkers and docgen/shader_mint/crash_extract), tests ~230.
+`std::string`/`std::vector` appear in 45-52 files, all in `tests/` and 5 `tools/` files. Headers by number of files (`#include <x>`): cstring 217, cstdio 148, cstdlib 101, atomic 83, cmath 72, vector 53, thread 49, string 33, mutex 31, new 25, chrono 18, utility 16, cerrno 15, cstdarg 13, cwchar 13, cstddef 12, type_traits 11, algorithm 10, csignal 9, condition_variable 7, coroutine 6, cstdint 6, initializer_list 5, limits 5, memory 4, ctime 3, map 3, exception 2, and one each of cctype, charconv, climits, compare, fstream, string_view, tuple.
+
+Decisions from the full `std::` name list (the 120 names the tool found):
+- Wrap in `lang`: `move`, `forward`, `declval`, `is_same_v`, `is_convertible_v`, `is_integral_v`, `is_trivially_copyable_v`, `true_type`/`false_type`/`void_t`, `numeric_limits`, `initializer_list`, `strong_ordering`, `align_val_t`, `nothrow_t`, `bad_alloc` (the allocation-failure type; only if the new-handler needs it), `size_t`/`uint*_t` (types.h already owns `usize`, `u8`..`u64`; the 3 remaining `uintN_t` and the 158 `size_t` become `usize`).
+- Wrap in `sync`: `atomic`, `memory_order_*`, `mutex`, `recursive_mutex`, `lock_guard`, `unique_lock`, `condition_variable`, `thread`, `this_thread`.
+- Wrap in `mem`: `memcpy`, `memmove`, `memset`, `memcmp`, `memchr`, `malloc`, `calloc`, `realloc`, `free`.
+- Wrap in `cstr`: `strlen`, `strcmp`, `strncmp`, `strcpy`, `strncpy`, `strcat`, `strchr`, `strrchr`, `strstr`, `strpbrk`, wide forms (`wcslen`, `wcscmp`, `wcsncmp`, `wcsrchr`, `wmemcpy`, `wmemmove`), `snprintf`, `vsnprintf`, `swprintf`, `sscanf` (replaced by the parse functions), `atoi`, `atol`, `strtoul`, `strtof`, `to_chars`, `toupper`.
+- Wrap in `os`: `printf`, `fprintf`, `fputs`, `fflush`, `fwrite` (console; the 4 `FILE`/`fopen`/`fclose`/`fread` uses are the allow-listed file-layer backend and tests that plant file shapes: they move to `io` or stay on the gate list with a reason), `getenv`, `abort`, `_Exit`, `system` (one use, a tool: replaced by a process wrapper or listed), `signal`, `chrono` (`milli`, `count`), `errno`.
+- Wrap in `lang/scalar.h`: `fabs`, `abs`, `fmin`, `fmax`, `sin`, `cos`, `sqrt`, `floor`, `ceil`, `pow`, `lround`, `isfinite`.
+- Wrap in `jobs`: `coroutine_handle`, `suspend_always`, `suspend_never`, `coroutine_traits`.
+- Convert, not wrap (Phase 10 containers, tests/tools only): `string`, `vector`, `map`, `unique_ptr`, `make_unique`, `pair`, `tuple`, `sort`, `find`, `to_string`.
+- Layer answer for scalar math: used by the logger, memory and os code (`fabs`, `floor` in `log` and `os` formatting), so `lang/scalar.h` at layer 0, as designed.
+- `<fstream>`, `<charconv>`, `<string_view>`: one file each; converted (`io`, `cstr::Format...`, `StringView`) on the day of its directory.
+
+Unqualified C calls found (no `std::`): memcpy 3, memset 3, free 2, malloc 2, getenv 2, snprintf, strlen, swprintf one each; ported with their directory (the checks in the gate catch them).
+
+Baselines (Debug build, Linux machine, 2026-11-09). There is no dedicated job-system or log benchmark executable; the standing numbers are: the jobs throughput test `jobs_tests "[throughput]"` takes 1.32-1.60 s over five runs (noise band about 20%); the log ring costs 33-48 ns per record (STATUS, Phase 7 Day 96). Day 209 adds a micro-benchmark (`tests/sync` tagged `[benchmark]`: uncontended and contended `Atomic` increment, `Mutex` lock/unlock, `ConditionVariable` ping-pong) that runs the `std` type and the wrapper side by side in the same binary, which is the zero-cost proof (ratio within noise) in place of a cross-commit comparison.
+
+Windows-only files holding standard-library uses (input to Day 219): the report's `--files` list filtered to `*/windows/*`, `*/dx12/*`, `win32_*`: see `scripts/std-usage-report.py --files`; 11 files in `tests/windows` plus the Windows backends in `engine/foundation/os/windows`, `engine/platform/windows`, `engine/rhi/dx12`.
