@@ -5,6 +5,7 @@
 #include <mutex>
 
 #include "containers/array.h"
+#include "containers/vector.h"
 #include "log/log.h"
 #include "mem/arena_allocator.h"
 #include "os/os.h"
@@ -396,6 +397,7 @@ LRESULT Win32Window::Proc::Handle(Win32Window& self, HWND hwnd, UINT message, WP
             }
         }
         self.UpdateFullscreenState();
+        if (self.lock_.Active()) self.ClipToCentre();
         return 0;
     }
     case WM_DPICHANGED: {
@@ -442,9 +444,11 @@ LRESULT Win32Window::Proc::Handle(Win32Window& self, HWND hwnd, UINT message, WP
             gained.type = InputEventType::FocusGained;
             self.QueueEvent(gained);
         }
+        self.ApplyLock(self.lock_.SetFocused(true)); // a lock still wanted is asked for again
         break;
     case WM_KILLFOCUS:
         Proc::ReleaseInput(self, hwnd);
+        self.ApplyLock(self.lock_.SetFocused(false));
         if (self.focused_) {
             self.focused_ = false;
             InputEvent lost;
@@ -452,6 +456,32 @@ LRESULT Win32Window::Proc::Handle(Win32Window& self, HWND hwnd, UINT message, WP
             self.QueueEvent(lost);
         }
         break;
+    case WM_SETCURSOR:
+        if (LOWORD(lparam) == HTCLIENT) { // over the frame and the borders the system shows its own resize cursors
+            self.ApplyCursor();
+            return TRUE;
+        }
+        break;
+    case WM_MOVE:
+        if (self.lock_.Active()) self.ClipToCentre();
+        break;
+    case WM_INPUT: {
+        // Raw mouse motion, registered only while the lock is held: device units, before the pointer's acceleration.
+        RAWINPUT raw{};
+        UINT size = sizeof(raw);
+        if (self.lock_.Active() &&
+            GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam), RID_INPUT, &raw, &size, sizeof(RAWINPUTHEADER)) != static_cast<UINT>(-1) &&
+            raw.header.dwType == RIM_TYPEMOUSE && (raw.data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE) == 0 &&
+            (raw.data.mouse.lLastX != 0 || raw.data.mouse.lLastY != 0)) {
+            InputEvent motion;
+            motion.type = InputEventType::RelativeMotion;
+            motion.modifiers = self.input_->keyboard.modifiers;
+            motion.x = raw.data.mouse.lLastX;
+            motion.y = raw.data.mouse.lLastY;
+            self.QueueEvent(motion);
+        }
+        break; // the default procedure frees the input's buffer
+    }
     case WM_CHAR:
         Proc::Character(self, wparam);
         return 0;
@@ -594,6 +624,24 @@ void Win32Window::ApplyClientSize(u32 width, u32 height) {
 void Win32Window::Close() {
     if (hwnd_ == nullptr) return;
     KillTimer(hwnd_, kWin32ModalTimer);
+    // Destroying the window releases the lock (the wish is kept, as PointerLockState says) and frees the custom cursor.
+    if (lock_.Active() || lock_.Pending()) {
+        ClipCursor(nullptr);
+        if (raw_input_) {
+            RAWINPUTDEVICE device{0x01, 0x02, RIDEV_REMOVE, nullptr};
+            RegisterRawInputDevices(&device, 1, sizeof(device));
+            raw_input_ = false;
+        }
+    }
+    lock_.Cleared();
+    lock_.SetFocused(false);
+    if (image_cursor_ != nullptr) {
+        ::SetCursor(LoadCursorW(nullptr, MAKEINTRESOURCEW(32512))); // not showing the cursor that is destroyed next
+        DestroyCursor(image_cursor_);
+        image_cursor_ = nullptr;
+        image_hash_ = 0;
+    }
+    cursor_shape_ = CursorShape::Arrow;
     // The window forgets this object first, so nothing DestroyWindow sends (WM_DESTROY, WM_NCDESTROY), and no message still queued for the
     // window, can reach it; the window then has no object and gets the default procedure.
     SetWindowLongPtrW(hwnd_, GWLP_USERDATA, 0);
@@ -676,6 +724,168 @@ void Win32Window::UpdateFullscreenState() {
     ClientToScreen(hwnd_, &origin);
     const RECT on_screen{origin.x, origin.y, origin.x + client.right, origin.y + client.bottom};
     fullscreen_ = SameWin32Rect(on_screen, monitor.rcMonitor);
+}
+
+// ---- the cursor and the pointer lock (Phase 15 Day 205) ----
+
+namespace {
+
+// The system cursor of each shape (IDC_* resource numbers; the macros are the A/W-switched forms); Hidden has none.
+const wchar_t* SystemCursorOf(CursorShape shape) {
+    switch (shape) {
+    case CursorShape::Arrow: return MAKEINTRESOURCEW(32512);              // IDC_ARROW
+    case CursorShape::IBeam: return MAKEINTRESOURCEW(32513);              // IDC_IBEAM
+    case CursorShape::Hand: return MAKEINTRESOURCEW(32649);               // IDC_HAND
+    case CursorShape::ResizeHorizontal: return MAKEINTRESOURCEW(32644);   // IDC_SIZEWE
+    case CursorShape::ResizeVertical: return MAKEINTRESOURCEW(32645);     // IDC_SIZENS
+    case CursorShape::ResizeDiagonalNWSE: return MAKEINTRESOURCEW(32642); // IDC_SIZENWSE
+    case CursorShape::ResizeDiagonalNESW: return MAKEINTRESOURCEW(32643); // IDC_SIZENESW
+    case CursorShape::ResizeAll: return MAKEINTRESOURCEW(32646);          // IDC_SIZEALL
+    case CursorShape::NotAllowed: return MAKEINTRESOURCEW(32648);         // IDC_NO
+    case CursorShape::Hidden:
+    case CursorShape::Count: break;
+    }
+    return nullptr;
+}
+
+// One premultiplied channel made straight (Windows draws a cursor's alpha as straight alpha).
+byte Win32Straight(u32 channel, u32 alpha) {
+    if (alpha == 0) return 0;
+    const u32 c = channel * 255u / alpha;
+    return static_cast<byte>(c > 255u ? 255u : c);
+}
+
+// Makes a cursor from premultiplied RGBA: a 32-bit top-down DIB with straight alpha and an empty mask.
+HCURSOR MakeImageCursor(const CursorImage& image) {
+    BITMAPV5HEADER header{};
+    header.bV5Size = sizeof(header);
+    header.bV5Width = static_cast<LONG>(image.width);
+    header.bV5Height = -static_cast<LONG>(image.height); // top-down
+    header.bV5Planes = 1;
+    header.bV5BitCount = 32;
+    header.bV5Compression = BI_BITFIELDS;
+    header.bV5RedMask = 0x00FF0000;
+    header.bV5GreenMask = 0x0000FF00;
+    header.bV5BlueMask = 0x000000FF;
+    header.bV5AlphaMask = 0xFF000000;
+    void* bits = nullptr;
+    HDC screen = GetDC(nullptr);
+    HBITMAP color = CreateDIBSection(screen, reinterpret_cast<const BITMAPINFO*>(&header), DIB_RGB_COLORS, &bits, nullptr, 0);
+    ReleaseDC(nullptr, screen);
+    if (color == nullptr || bits == nullptr) {
+        if (color != nullptr) DeleteObject(color);
+        return nullptr;
+    }
+    byte* out = static_cast<byte*>(bits);
+    const usize pixels = static_cast<usize>(image.width) * image.height;
+    for (usize i = 0; i < pixels; ++i) {
+        const byte* in = image.rgba + i * 4;
+        const u32 a = in[3];
+        out[i * 4 + 0] = Win32Straight(in[2], a); // blue
+        out[i * 4 + 1] = Win32Straight(in[1], a);
+        out[i * 4 + 2] = Win32Straight(in[0], a); // red
+        out[i * 4 + 3] = static_cast<byte>(a);
+    }
+    // The mask is ignored for a 32-bit image with alpha, but CreateIconIndirect needs one: all zero.
+    Vector<byte> mask_bits;
+    const usize stride = ((static_cast<usize>(image.width) + 15) / 16) * 2; // monochrome rows are WORD aligned
+    mask_bits.Resize(stride * image.height);
+    for (usize i = 0; i < mask_bits.Size(); ++i) mask_bits[i] = 0;
+    HBITMAP mask = CreateBitmap(static_cast<int>(image.width), static_cast<int>(image.height), 1, 1, mask_bits.Data());
+    ICONINFO info{};
+    info.fIcon = FALSE; // a cursor, with a hotspot
+    info.xHotspot = static_cast<DWORD>(image.hotspot_x);
+    info.yHotspot = static_cast<DWORD>(image.hotspot_y);
+    info.hbmMask = mask;
+    info.hbmColor = color;
+    HCURSOR cursor = mask != nullptr ? CreateIconIndirect(&info) : nullptr;
+    if (mask != nullptr) DeleteObject(mask);
+    DeleteObject(color); // CreateIconIndirect copies both bitmaps
+    return cursor;
+}
+
+} // namespace
+
+void Win32Window::ApplyCursor() {
+    if (lock_.Active() || (image_cursor_ == nullptr && cursor_shape_ == CursorShape::Hidden)) {
+        ::SetCursor(nullptr);
+    } else if (image_cursor_ != nullptr) {
+        ::SetCursor(image_cursor_);
+    } else {
+        ::SetCursor(LoadCursorW(nullptr, SystemCursorOf(cursor_shape_)));
+    }
+}
+
+bool Win32Window::SetCursor(CursorShape shape) {
+    if (hwnd_ == nullptr || static_cast<u32>(shape) >= static_cast<u32>(CursorShape::Count)) return false;
+    cursor_shape_ = shape;
+    if (input_->pointer_inside) ApplyCursor(); // else WM_SETCURSOR applies it when the pointer comes in
+    return true;
+}
+
+bool Win32Window::SetCursorImage(const CursorImage& image) {
+    if (hwnd_ == nullptr || ValidateCursorImage(image) != CursorImageError::Ok) return false;
+    const u64 hash = HashCursorImage(image);
+    if (image_cursor_ != nullptr && hash == image_hash_) return true; // the image showing: not made again
+    HCURSOR made = MakeImageCursor(image);
+    if (made == nullptr) {
+        LogWin32Failure("CreateIconIndirect (cursor image)");
+        return false;
+    }
+    HCURSOR old = image_cursor_;
+    image_cursor_ = made;
+    image_hash_ = hash;
+    if (input_->pointer_inside) ApplyCursor();
+    if (old != nullptr) DestroyCursor(old); // after the new one shows: never destroy the cursor in use
+    return true;
+}
+
+void Win32Window::ClearCursorImage() {
+    if (image_cursor_ == nullptr) return;
+    HCURSOR old = image_cursor_;
+    image_cursor_ = nullptr;
+    image_hash_ = 0;
+    if (input_->pointer_inside) ApplyCursor();
+    DestroyCursor(old);
+}
+
+bool Win32Window::SetPointerLock(bool locked) {
+    if (hwnd_ == nullptr) return false;
+    ApplyLock(lock_.SetWanted(locked));
+    return true;
+}
+
+void Win32Window::ClipToCentre() {
+    RECT client{};
+    GetClientRect(hwnd_, &client);
+    POINT centre{(client.right - client.left) / 2, (client.bottom - client.top) / 2};
+    ClientToScreen(hwnd_, &centre);
+    const RECT clip{centre.x, centre.y, centre.x + 1, centre.y + 1};
+    ClipCursor(&clip);
+}
+
+void Win32Window::ApplyLock(PointerLockState::Action action) {
+    if (hwnd_ == nullptr) return;
+    if (action == PointerLockState::Action::Acquire) {
+        RAWINPUTDEVICE device{0x01, 0x02, 0, hwnd_}; // generic desktop, mouse
+        if (!RegisterRawInputDevices(&device, 1, sizeof(device))) {
+            LogWin32Failure("RegisterRawInputDevices (pointer lock)");
+            lock_.Failed();
+            return;
+        }
+        raw_input_ = true;
+        ClipToCentre();
+        lock_.Granted();
+        ApplyCursor(); // hidden while locked
+    } else if (action == PointerLockState::Action::Release) {
+        ClipCursor(nullptr);
+        if (raw_input_) {
+            RAWINPUTDEVICE device{0x01, 0x02, RIDEV_REMOVE, nullptr};
+            RegisterRawInputDevices(&device, 1, sizeof(device));
+            raw_input_ = false;
+        }
+        if (input_->pointer_inside) ApplyCursor();
+    }
 }
 
 void Win32Window::SetModalLoopCallback(ModalLoopCallback callback, void* user) {

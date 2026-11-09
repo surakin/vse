@@ -1,6 +1,7 @@
 #pragma once
 
 #include "containers/array.h"
+#include "platform/cursor.h"
 #include "platform/input.h"
 #include "platform/input_event.h"
 #include "platform/window.h"
@@ -20,6 +21,8 @@
 // `HINSTANCE__*` with `STRICT`, the default).
 struct HWND__;
 struct HINSTANCE__;
+struct HICON__; // HCURSOR is HICON
+
 
 namespace engine_placeholder::os::win32 {
 
@@ -97,6 +100,38 @@ public:
     bool PollEvent(InputEvent* out) override { return events_.Pop(out); }
     /// Returns how many events were dropped because the queue was full.
     u64 DroppedEvents() const override { return events_.Dropped(); }
+    /// Returns true for an open window: the ten shapes are the system cursors (`LoadCursor`).
+    bool SupportsCursorShape() const override { return hwnd_ != nullptr; }
+    /// Shows a standard shape while the pointer is over the client area (applied on `WM_SETCURSOR`, and at once when the pointer is inside).
+    ///
+    /// Param shape: the shape; `Hidden` shows none.
+    /// Returns: true if the shape is set.
+    /// Fails: returns false, changing nothing, if the window is not open or `shape` is out of range.
+    bool SetCursor(CursorShape shape) override;
+    /// Returns true for an open window.
+    bool SupportsCursorImage() const override { return hwnd_ != nullptr; }
+    /// Shows a custom image, made with `CreateIconIndirect` from a 32-bit top-down DIB (the premultiplied pixels made straight, as Windows
+    /// draws cursor alpha). The image keeps its pixel size: Windows does not scale a cursor by the window's DPI, so `scale` is not applied.
+    ///
+    /// Param image: a valid image ([[os::ValidateCursorImage]]); an image equal to the one showing is not made again.
+    /// Returns: true if the image shows (or will, once the pointer is over the window).
+    /// Fails: returns false, changing nothing, if the window is not open, the image is invalid or the system cannot make the cursor.
+    bool SetCursorImage(const CursorImage& image) override;
+    /// Removes the custom image and destroys its cursor; the last shape shows again.
+    void ClearCursorImage() override;
+    /// Returns true for an open window: the lock is `ClipCursor` to the client area's centre, a hidden cursor and raw mouse input.
+    bool SupportsPointerLock() const override { return hwnd_ != nullptr; }
+    /// Asks for the pointer lock on or off; the rules are [[os::PointerLockState]] (held only while focused). While locked, `WM_INPUT` relative
+    /// mouse motion arrives as `RelativeMotion` events.
+    ///
+    /// Param locked: true to lock.
+    /// Returns: true if the request was accepted.
+    /// Fails: returns false if the window is not open.
+    bool SetPointerLock(bool locked) override;
+    /// Returns whether the lock is in effect now.
+    bool PointerLocked() const override { return lock_.Active(); }
+    /// Returns how many cursor objects this window made and has not destroyed yet (0 or 1), so a test can see that replacing images does not leak.
+    u32 CursorObjects() const { return image_cursor_ != nullptr ? 1u : 0u; }
     /// Calls `callback` about every 10 ms while Windows runs a move, resize or menu loop of its own (the user dragging the frame).
     ///
     /// Param callback: the function, or null to stop; it must not close or destroy the window. A call to `PumpEvents` of any window from
@@ -125,6 +160,9 @@ private:
     void ApplyClientSize(u32 width, u32 height);
     void UpdateFullscreenState();
     void QueueEvent(InputEvent event); // stamps the time and queues
+    void ApplyCursor();                 // shows the cursor the state asks for (the system's SetCursor)
+    void ApplyLock(PointerLockState::Action action);
+    void ClipToCentre();                // keeps the locked pointer at the client area's centre
 
     HWND__* hwnd_ = nullptr;
     HINSTANCE__* instance_ = nullptr;
@@ -133,6 +171,12 @@ private:
     InputEventQueue events_;
     u16 high_surrogate_ = 0;        // the first half of a character outside the BMP, from the WM_CHAR before
     bool focused_ = false;
+    // The cursor and the lock (Day 205).
+    CursorShape cursor_shape_ = CursorShape::Arrow;
+    HICON__* image_cursor_ = nullptr; // the custom image's cursor, owned
+    u64 image_hash_ = 0;
+    PointerLockState lock_;
+    bool raw_input_ = false; // raw mouse input is registered for this window
     u32 width_ = 0;
     u32 height_ = 0;
     u32 dpi_ = 96;

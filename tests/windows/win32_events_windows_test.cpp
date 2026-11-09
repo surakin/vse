@@ -286,3 +286,141 @@ TEST_CASE("Windows events: an undrained queue keeps the oldest events in order a
     CHECK(seen <= os::InputEventQueue::kCapacity);
     CHECK(in_order == seen);
 }
+
+// ---- the cursor and the pointer lock -------------------------------------------------------------------------------------------------
+
+namespace {
+
+// Asks the window which cursor it shows over its client area, as Windows does when the pointer moves there.
+HCURSOR EvCursorShown(HWND hwnd) {
+    SendMessageW(hwnd, WM_SETCURSOR, reinterpret_cast<WPARAM>(hwnd), MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
+    return GetCursor();
+}
+
+// A 2x2 premultiplied RGBA image of one colour and alpha.
+struct EvImage {
+    byte rgba[16];
+    os::CursorImage Make(byte r, byte g, byte b, byte a) {
+        for (int i = 0; i < 4; ++i) {
+            rgba[i * 4 + 0] = r;
+            rgba[i * 4 + 1] = g;
+            rgba[i * 4 + 2] = b;
+            rgba[i * 4 + 3] = a;
+        }
+        os::CursorImage image;
+        image.rgba = rgba;
+        image.width = 2;
+        image.height = 2;
+        image.hotspot_x = 1;
+        image.hotspot_y = 1;
+        return image;
+    }
+};
+
+// The lock clips the real desktop cursor: whatever a test does, the clip goes when the guard does.
+struct EvClipGuard {
+    ~EvClipGuard() { ClipCursor(nullptr); }
+};
+
+bool EvClipIsPoint() {
+    RECT clip{};
+    GetClipCursor(&clip);
+    return clip.right - clip.left == 1 && clip.bottom - clip.top == 1;
+}
+
+} // namespace
+
+TEST_CASE("Windows cursor: every shape is the system's cursor, Hidden is none, and an out-of-range shape is refused", "[window][win32][cursor]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    EventWindow w;
+    REQUIRE(w.Open());
+    CHECK(w.window.SupportsCursorShape());
+    const struct {
+        os::CursorShape shape;
+        u32 id;
+    } kShapes[] = {{os::CursorShape::Arrow, 32512},       {os::CursorShape::IBeam, 32513},          {os::CursorShape::Hand, 32649},
+                   {os::CursorShape::ResizeHorizontal, 32644}, {os::CursorShape::ResizeVertical, 32645}, {os::CursorShape::ResizeDiagonalNWSE, 32642},
+                   {os::CursorShape::ResizeDiagonalNESW, 32643}, {os::CursorShape::ResizeAll, 32646},    {os::CursorShape::NotAllowed, 32648}};
+    for (const auto& s : kShapes) {
+        INFO("shape " << static_cast<int>(s.shape));
+        REQUIRE(w.window.SetCursor(s.shape));
+        CHECK(EvCursorShown(w.Hwnd()) == LoadCursorW(nullptr, MAKEINTRESOURCEW(s.id)));
+    }
+    REQUIRE(w.window.SetCursor(os::CursorShape::Hidden));
+    CHECK(EvCursorShown(w.Hwnd()) == nullptr);
+    CHECK_FALSE(w.window.SetCursor(os::CursorShape::Count));
+    CHECK(EvCursorShown(w.Hwnd()) == nullptr); // unchanged
+    // Over the frame the system's own cursors show: the window leaves WM_SETCURSOR to the default procedure there, which shows the resize arrow.
+    SendMessageW(w.Hwnd(), WM_SETCURSOR, reinterpret_cast<WPARAM>(w.Hwnd()), MAKELPARAM(HTLEFT, WM_MOUSEMOVE));
+    CHECK(GetCursor() == LoadCursorW(nullptr, MAKEINTRESOURCEW(32644))); // IDC_SIZEWE
+}
+
+TEST_CASE("Windows cursor: a custom image shows, an equal one is not made again, a new one replaces it, and nothing leaks", "[window][win32][cursor]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    EventWindow w;
+    REQUIRE(w.Open());
+    CHECK(w.window.SupportsCursorImage());
+    EvImage a;
+    EvImage b;
+    REQUIRE(w.window.SetCursorImage(a.Make(128, 0, 0, 128)));
+    CHECK(w.window.CursorObjects() == 1);
+    const HCURSOR first = EvCursorShown(w.Hwnd());
+    CHECK(first != nullptr);
+    CHECK(first != LoadCursorW(nullptr, MAKEINTRESOURCEW(32512)));
+    REQUIRE(w.window.SetCursorImage(a.Make(128, 0, 0, 128))); // equal: the same cursor
+    CHECK(EvCursorShown(w.Hwnd()) == first);
+    REQUIRE(w.window.SetCursorImage(b.Make(0, 0, 255, 255)));
+    CHECK(w.window.CursorObjects() == 1);
+    CHECK(EvCursorShown(w.Hwnd()) != first);
+    // The image outranks the shape; clearing it brings the shape back.
+    REQUIRE(w.window.SetCursor(os::CursorShape::Hand));
+    CHECK(EvCursorShown(w.Hwnd()) != LoadCursorW(nullptr, MAKEINTRESOURCEW(32649)));
+    w.window.ClearCursorImage();
+    CHECK(w.window.CursorObjects() == 0);
+    CHECK(EvCursorShown(w.Hwnd()) == LoadCursorW(nullptr, MAKEINTRESOURCEW(32649)));
+    // Invalid images are refused and change nothing.
+    os::CursorImage bad = a.Make(1, 1, 1, 1);
+    bad.hotspot_x = 5;
+    CHECK_FALSE(w.window.SetCursorImage(bad));
+    bad = a.Make(1, 1, 1, 1);
+    bad.rgba = nullptr;
+    CHECK_FALSE(w.window.SetCursorImage(bad));
+    CHECK(w.window.CursorObjects() == 0);
+    // Closing with an image showing destroys it.
+    REQUIRE(w.window.SetCursorImage(a.Make(0, 255, 0, 255)));
+    w.window.Close();
+    CHECK(w.window.CursorObjects() == 0);
+}
+
+TEST_CASE("Windows lock: held only while focused, asked again on focus, released by unlock and by closing", "[window][win32][cursor][lock]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    EvClipGuard guard;
+    EventWindow w;
+    REQUIRE(w.Open());
+    CHECK(w.window.SupportsPointerLock());
+    SendMessageW(w.Hwnd(), WM_KILLFOCUS, 0, 0); // start unfocused, whatever the desktop did
+    REQUIRE(w.window.SetPointerLock(true));
+    CHECK_FALSE(w.window.PointerLocked()); // waits for focus
+    CHECK_FALSE(EvClipIsPoint());
+    SendMessageW(w.Hwnd(), WM_SETFOCUS, 0, 0);
+    CHECK(w.window.PointerLocked());
+    CHECK(EvClipIsPoint());
+    CHECK(EvCursorShown(w.Hwnd()) == nullptr); // hidden while locked
+    SendMessageW(w.Hwnd(), WM_KILLFOCUS, 0, 0);
+    CHECK_FALSE(w.window.PointerLocked());
+    CHECK_FALSE(EvClipIsPoint());
+    SendMessageW(w.Hwnd(), WM_SETFOCUS, 0, 0); // still wanted: asked for again
+    CHECK(w.window.PointerLocked());
+    REQUIRE(w.window.SetPointerLock(true)); // a second request is a no-op
+    CHECK(w.window.PointerLocked());
+    REQUIRE(w.window.SetPointerLock(false));
+    CHECK_FALSE(w.window.PointerLocked());
+    CHECK_FALSE(EvClipIsPoint());
+    CHECK(EvCursorShown(w.Hwnd()) == LoadCursorW(nullptr, MAKEINTRESOURCEW(32512)));
+    REQUIRE(w.window.SetPointerLock(true));
+    CHECK(w.window.PointerLocked());
+    w.window.Close();
+    CHECK_FALSE(w.window.PointerLocked());
+    CHECK_FALSE(EvClipIsPoint());
+    CHECK_FALSE(w.window.SetPointerLock(true)); // a closed window refuses
+}
