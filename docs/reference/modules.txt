@@ -69,6 +69,7 @@ module text "Text"
 
 module ui "The UI Toolkit"
   header engine/ui/*.h
+  header engine/ui/testing/*.h
   strict thread-safety
   strict ownership
   strict failure

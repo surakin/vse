@@ -3,6 +3,8 @@
 # TSan from one source list, each linked against the matching text variant, like text. Headers are included as "ui/<name>.h", rooted at engine/.
 set(UI_SOURCES
   version.cpp
+  draw_list_canvas.cpp
+  testing/recording_canvas.cpp
 )
 set(UI_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

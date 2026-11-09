@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 #include "containers/vector.h"
 #include "text/font.h"
 #include "text/shelf_packer.h"
@@ -127,5 +129,36 @@ private:
     usize slot_count_ = 0;
     AtlasStats stats_;
 };
+
+/// The pixel rectangle one glyph is drawn into.
+///
+/// Thread-safety: thread-compatible plain data.
+/// Ownership: owns nothing.
+struct GlyphQuad {
+    f32 left = 0;   ///< Left edge, a whole pixel.
+    f32 top = 0;    ///< Top edge, a whole pixel.
+    f32 right = 0;  ///< Right edge, a whole pixel.
+    f32 bottom = 0; ///< Bottom edge, a whole pixel.
+};
+
+/// Places one laid-out glyph on whole pixels, so its atlas bitmap is shown texel for texel: the one rule every glyph drawer (the text renderer, the UI canvas) follows.
+///
+/// Param pen_x: pixel the layout's left edge (x = 0) lands on.
+/// Param pen_y: pixel the layout's top edge lands on.
+/// Param glyph_x: the glyph's pen x within the layout ([[text::PositionedGlyph::x]]).
+/// Param glyph_y: the glyph's baseline y within the layout ([[text::PositionedGlyph::y]]).
+/// Param entry: the glyph's atlas entry.
+/// Param scale: 1, or the requested size over [[text::kMaxAtlasPixelSize]] for text above the atlas maximum.
+/// Returns: the quad.
+///
+/// Fails: never.
+inline GlyphQuad PlaceGlyph(f32 pen_x, f32 pen_y, f32 glyph_x, f32 glyph_y, const GlyphEntry& entry, f32 scale) {
+    GlyphQuad q;
+    q.left = std::floor(pen_x + glyph_x + static_cast<f32>(entry.left) * scale + 0.5f);
+    q.top = std::floor(pen_y + glyph_y - static_cast<f32>(entry.top) * scale + 0.5f);
+    q.right = q.left + std::floor(static_cast<f32>(entry.rect.w) * scale + 0.5f);
+    q.bottom = q.top + std::floor(static_cast<f32>(entry.rect.h) * scale + 0.5f);
+    return q;
+}
 
 } // namespace engine_placeholder::text

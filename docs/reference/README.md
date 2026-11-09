@@ -17,8 +17,8 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Platform: OS Services](platform-os.md) | 4 | 50 |
 | [Platform: Windowing and Input](platform-window-input.md) | 21 | 638 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 208 |
-| [Text](text.md) | 6 | 215 |
-| [The UI Toolkit](ui.md) | 1 | 2 |
+| [Text](text.md) | 6 | 221 |
+| [The UI Toolkit](ui.md) | 6 | 157 |
 | [The Job System](jobs.md) | 11 | 190 |
 | [The Render Hardware Interface](rhi.md) | 21 | 792 |
 | [The renderer](renderer.md) | 22 | 1050 |

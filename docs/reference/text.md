@@ -1578,6 +1578,82 @@ Returns the counters.
 |---|---|
 | Fails | never. |
 
+## `GlyphQuad` {#text-glyphquad}
+
+`struct text::GlyphQuad` — defined in `engine/text/glyph_atlas.h`
+
+```cpp
+struct GlyphQuad { ... }
+```
+
+The pixel rectangle one glyph is drawn into.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+| Ownership | owns nothing. |
+
+### `left` {#text-glyphquad-left}
+
+`variable text::GlyphQuad::left` — defined in `engine/text/glyph_atlas.h`
+
+```cpp
+f32 left;
+```
+
+Left edge, a whole pixel.
+
+### `top` {#text-glyphquad-top}
+
+`variable text::GlyphQuad::top` — defined in `engine/text/glyph_atlas.h`
+
+```cpp
+f32 top;
+```
+
+Top edge, a whole pixel.
+
+### `right` {#text-glyphquad-right}
+
+`variable text::GlyphQuad::right` — defined in `engine/text/glyph_atlas.h`
+
+```cpp
+f32 right;
+```
+
+Right edge, a whole pixel.
+
+### `bottom` {#text-glyphquad-bottom}
+
+`variable text::GlyphQuad::bottom` — defined in `engine/text/glyph_atlas.h`
+
+```cpp
+f32 bottom;
+```
+
+Bottom edge, a whole pixel.
+
+## `PlaceGlyph(f32,f32,f32,f32,const GlyphEntry&,f32)` {#text-placeglyph-f32-f32-f32-f32-const-glyphentry-amp-f32}
+
+`function text::PlaceGlyph` — defined in `engine/text/glyph_atlas.h`
+
+```cpp
+inline GlyphQuad PlaceGlyph(f32 pen_x, f32 pen_y, f32 glyph_x, f32 glyph_y, const GlyphEntry& entry, f32 scale);
+```
+
+Places one laid-out glyph on whole pixels, so its atlas bitmap is shown texel for texel: the one rule every glyph drawer (the text renderer, the UI canvas) follows.
+
+| Field | Value |
+|---|---|
+| Parameter `pen_x` | pixel the layout's left edge (x = 0) lands on. |
+| Parameter `pen_y` | pixel the layout's top edge lands on. |
+| Parameter `glyph_x` | the glyph's pen x within the layout ([`text::PositionedGlyph::x`](#text-positionedglyph-x)). |
+| Parameter `glyph_y` | the glyph's baseline y within the layout ([`text::PositionedGlyph::y`](#text-positionedglyph-y)). |
+| Parameter `entry` | the glyph's atlas entry. |
+| Parameter `scale` | 1, or the requested size over [`text::kMaxAtlasPixelSize`](#text-kmaxatlaspixelsize) for text above the atlas maximum. |
+| Returns | the quad. |
+| Fails | never. |
+
 ## `TextStyle` {#text-textstyle}
 
 `struct text::TextStyle` — defined in `engine/text/layout.h`

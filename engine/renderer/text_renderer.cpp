@@ -214,10 +214,11 @@ bool TextRenderer::Add(const text::TextLayout& layout, const text::TextStyle& st
             batches_.Push(Vector<Vertex>());
         }
         // Whole-pixel corners: the bitmap was rasterized at an integer origin, so this shows it texel for texel.
-        const f32 left = std::floor(x + g.x + static_cast<f32>(entry.left) * scale + 0.5f);
-        const f32 top = std::floor(y + g.y - static_cast<f32>(entry.top) * scale + 0.5f);
-        const f32 right = left + std::floor(static_cast<f32>(entry.rect.w) * scale + 0.5f);
-        const f32 bottom = top + std::floor(static_cast<f32>(entry.rect.h) * scale + 0.5f);
+        const text::GlyphQuad q = text::PlaceGlyph(x, y, g.x, g.y, entry, scale);
+        const f32 left = q.left;
+        const f32 top = q.top;
+        const f32 right = q.right;
+        const f32 bottom = q.bottom;
         const Vertex tl = {left, top, entry.u0, entry.v0, style.color};
         const Vertex tr = {right, top, entry.u1, entry.v0, style.color};
         const Vertex bl = {left, bottom, entry.u0, entry.v1, style.color};

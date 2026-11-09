@@ -2366,34 +2366,40 @@ text::Font::Metrics(GlyphId) const	function	text	text-font-metrics-glyphid-const
 text::Font::Kerning(GlyphId,GlyphId) const	function	text	text-font-kerning-glyphid-glyphid-const	text.md	engine/text/font.h:268
 text::Font::Render(GlyphId,GlyphBitmap*) const	function	text	text-font-render-glyphid-glyphbitmap-star-const	text.md	engine/text/font.h:274
 text::Font::LoadOutline(GlyphId,Outline*) const	function	text	text-font-loadoutline-glyphid-outline-star-const	text.md	engine/text/font.h:279
-text::GlyphEntry	struct	text	text-glyphentry	text.md	engine/text/glyph_atlas.h:18
-text::GlyphEntry::valid	variable	text	text-glyphentry-valid	text.md	engine/text/glyph_atlas.h:19
-text::GlyphEntry::has_pixels	variable	text	text-glyphentry-has-pixels	text.md	engine/text/glyph_atlas.h:20
-text::GlyphEntry::page	variable	text	text-glyphentry-page	text.md	engine/text/glyph_atlas.h:21
-text::GlyphEntry::rect	variable	text	text-glyphentry-rect	text.md	engine/text/glyph_atlas.h:22
-text::GlyphEntry::u0	variable	text	text-glyphentry-u0	text.md	engine/text/glyph_atlas.h:23
-text::GlyphEntry::v0	variable	text	text-glyphentry-v0	text.md	engine/text/glyph_atlas.h:24
-text::GlyphEntry::u1	variable	text	text-glyphentry-u1	text.md	engine/text/glyph_atlas.h:25
-text::GlyphEntry::v1	variable	text	text-glyphentry-v1	text.md	engine/text/glyph_atlas.h:26
-text::GlyphEntry::left	variable	text	text-glyphentry-left	text.md	engine/text/glyph_atlas.h:27
-text::GlyphEntry::top	variable	text	text-glyphentry-top	text.md	engine/text/glyph_atlas.h:28
-text::GlyphEntry::advance	variable	text	text-glyphentry-advance	text.md	engine/text/glyph_atlas.h:29
-text::AtlasStats	struct	text	text-atlasstats	text.md	engine/text/glyph_atlas.h:36
-text::AtlasStats::glyphs	variable	text	text-atlasstats-glyphs	text.md	engine/text/glyph_atlas.h:37
-text::AtlasStats::pages	variable	text	text-atlasstats-pages	text.md	engine/text/glyph_atlas.h:38
-text::AtlasStats::hits	variable	text	text-atlasstats-hits	text.md	engine/text/glyph_atlas.h:39
-text::AtlasStats::misses	variable	text	text-atlasstats-misses	text.md	engine/text/glyph_atlas.h:40
-text::AtlasStats::bytes	variable	text	text-atlasstats-bytes	text.md	engine/text/glyph_atlas.h:41
-text::AtlasStats::too_large	variable	text	text-atlasstats-too-large	text.md	engine/text/glyph_atlas.h:42
-text::AtlasStats::failures	variable	text	text-atlasstats-failures	text.md	engine/text/glyph_atlas.h:43
-text::GlyphAtlas	class	text	text-glyphatlas	text.md	engine/text/glyph_atlas.h:53
-text::GlyphAtlas::GlyphAtlas(u32,u32)	function	text	text-glyphatlas-glyphatlas-u32-u32	text.md	engine/text/glyph_atlas.h:59
-text::GlyphAtlas::GetOrAdd(Font&,GlyphId,GlyphEntry*)	function	text	text-glyphatlas-getoradd-font-amp-glyphid-glyphentry-star	text.md	engine/text/glyph_atlas.h:69
-text::GlyphAtlas::PageCount() const	function	text	text-glyphatlas-pagecount-const	text.md	engine/text/glyph_atlas.h:74
-text::GlyphAtlas::PageSize() const	function	text	text-glyphatlas-pagesize-const	text.md	engine/text/glyph_atlas.h:78
-text::GlyphAtlas::PagePixels(u32) const	function	text	text-glyphatlas-pagepixels-u32-const	text.md	engine/text/glyph_atlas.h:83
-text::GlyphAtlas::TakeDirty(u32,Rect*)	function	text	text-glyphatlas-takedirty-u32-rect-star	text.md	engine/text/glyph_atlas.h:91
-text::GlyphAtlas::Stats() const	function	text	text-glyphatlas-stats-const	text.md	engine/text/glyph_atlas.h:95
+text::GlyphEntry	struct	text	text-glyphentry	text.md	engine/text/glyph_atlas.h:20
+text::GlyphEntry::valid	variable	text	text-glyphentry-valid	text.md	engine/text/glyph_atlas.h:21
+text::GlyphEntry::has_pixels	variable	text	text-glyphentry-has-pixels	text.md	engine/text/glyph_atlas.h:22
+text::GlyphEntry::page	variable	text	text-glyphentry-page	text.md	engine/text/glyph_atlas.h:23
+text::GlyphEntry::rect	variable	text	text-glyphentry-rect	text.md	engine/text/glyph_atlas.h:24
+text::GlyphEntry::u0	variable	text	text-glyphentry-u0	text.md	engine/text/glyph_atlas.h:25
+text::GlyphEntry::v0	variable	text	text-glyphentry-v0	text.md	engine/text/glyph_atlas.h:26
+text::GlyphEntry::u1	variable	text	text-glyphentry-u1	text.md	engine/text/glyph_atlas.h:27
+text::GlyphEntry::v1	variable	text	text-glyphentry-v1	text.md	engine/text/glyph_atlas.h:28
+text::GlyphEntry::left	variable	text	text-glyphentry-left	text.md	engine/text/glyph_atlas.h:29
+text::GlyphEntry::top	variable	text	text-glyphentry-top	text.md	engine/text/glyph_atlas.h:30
+text::GlyphEntry::advance	variable	text	text-glyphentry-advance	text.md	engine/text/glyph_atlas.h:31
+text::AtlasStats	struct	text	text-atlasstats	text.md	engine/text/glyph_atlas.h:38
+text::AtlasStats::glyphs	variable	text	text-atlasstats-glyphs	text.md	engine/text/glyph_atlas.h:39
+text::AtlasStats::pages	variable	text	text-atlasstats-pages	text.md	engine/text/glyph_atlas.h:40
+text::AtlasStats::hits	variable	text	text-atlasstats-hits	text.md	engine/text/glyph_atlas.h:41
+text::AtlasStats::misses	variable	text	text-atlasstats-misses	text.md	engine/text/glyph_atlas.h:42
+text::AtlasStats::bytes	variable	text	text-atlasstats-bytes	text.md	engine/text/glyph_atlas.h:43
+text::AtlasStats::too_large	variable	text	text-atlasstats-too-large	text.md	engine/text/glyph_atlas.h:44
+text::AtlasStats::failures	variable	text	text-atlasstats-failures	text.md	engine/text/glyph_atlas.h:45
+text::GlyphAtlas	class	text	text-glyphatlas	text.md	engine/text/glyph_atlas.h:55
+text::GlyphAtlas::GlyphAtlas(u32,u32)	function	text	text-glyphatlas-glyphatlas-u32-u32	text.md	engine/text/glyph_atlas.h:61
+text::GlyphAtlas::GetOrAdd(Font&,GlyphId,GlyphEntry*)	function	text	text-glyphatlas-getoradd-font-amp-glyphid-glyphentry-star	text.md	engine/text/glyph_atlas.h:71
+text::GlyphAtlas::PageCount() const	function	text	text-glyphatlas-pagecount-const	text.md	engine/text/glyph_atlas.h:76
+text::GlyphAtlas::PageSize() const	function	text	text-glyphatlas-pagesize-const	text.md	engine/text/glyph_atlas.h:80
+text::GlyphAtlas::PagePixels(u32) const	function	text	text-glyphatlas-pagepixels-u32-const	text.md	engine/text/glyph_atlas.h:85
+text::GlyphAtlas::TakeDirty(u32,Rect*)	function	text	text-glyphatlas-takedirty-u32-rect-star	text.md	engine/text/glyph_atlas.h:93
+text::GlyphAtlas::Stats() const	function	text	text-glyphatlas-stats-const	text.md	engine/text/glyph_atlas.h:97
+text::GlyphQuad	struct	text	text-glyphquad	text.md	engine/text/glyph_atlas.h:137
+text::GlyphQuad::left	variable	text	text-glyphquad-left	text.md	engine/text/glyph_atlas.h:138
+text::GlyphQuad::top	variable	text	text-glyphquad-top	text.md	engine/text/glyph_atlas.h:139
+text::GlyphQuad::right	variable	text	text-glyphquad-right	text.md	engine/text/glyph_atlas.h:140
+text::GlyphQuad::bottom	variable	text	text-glyphquad-bottom	text.md	engine/text/glyph_atlas.h:141
+text::PlaceGlyph(f32,f32,f32,f32,const GlyphEntry&,f32)	function	text	text-placeglyph-f32-f32-f32-f32-const-glyphentry-amp-f32	text.md	engine/text/glyph_atlas.h:155
 text::TextStyle	struct	text	text-textstyle	text.md	engine/text/layout.h:18
 text::TextStyle::font	variable	text	text-textstyle-font	text.md	engine/text/layout.h:19
 text::TextStyle::pixel_size	variable	text	text-textstyle-pixel-size	text.md	engine/text/layout.h:20
@@ -2469,6 +2475,161 @@ text::ShelfPacker::Place(u32,u32,Rect*)	function	text	text-shelfpacker-place-u32
 text::ShelfPacker::UsedArea() const	function	text	text-shelfpacker-usedarea-const	text.md	engine/text/shelf_packer.h:49
 text::ShelfPacker::Width() const	function	text	text-shelfpacker-width-const	text.md	engine/text/shelf_packer.h:53
 text::ShelfPacker::Height() const	function	text	text-shelfpacker-height-const	text.md	engine/text/shelf_packer.h:57
+ui::ImageId	alias	ui	ui-imageid	ui.md	engine/ui/canvas.h:29
+ui::Canvas	class	ui	ui-canvas	ui.md	engine/ui/canvas.h:38
+ui::Canvas::Canvas()	function	ui	ui-canvas-canvas	ui.md	engine/ui/canvas.h:40
+ui::Canvas::~Canvas()	function	ui	ui-canvas-tilde-canvas	ui.md	engine/ui/canvas.h:41
+ui::Canvas::Canvas(const Canvas&)	function	ui	ui-canvas-canvas-const-canvas-amp	ui.md	engine/ui/canvas.h:42
+ui::Canvas::operator=(const Canvas&)	function	ui	ui-canvas-operator-eq-const-canvas-amp	ui.md	engine/ui/canvas.h:43
+ui::Canvas::Scale() const	function	ui	ui-canvas-scale-const	ui.md	engine/ui/canvas.h:48
+ui::Canvas::DrawRect(const Rect&,u32)	function	ui	ui-canvas-drawrect-const-rect-amp-u32	ui.md	engine/ui/canvas.h:53
+ui::Canvas::DrawRoundedRect(const Rect&,const CornerRadii&,u32)	function	ui	ui-canvas-drawroundedrect-const-rect-amp-const-cornerradii-amp-u32	ui.md	engine/ui/canvas.h:58
+ui::Canvas::DrawBorder(const Rect&,const CornerRadii&,f32,u32)	function	ui	ui-canvas-drawborder-const-rect-amp-const-cornerradii-amp-f32-u32	ui.md	engine/ui/canvas.h:64
+ui::Canvas::DrawLine(Point,Point,f32,u32)	function	ui	ui-canvas-drawline-point-point-f32-u32	ui.md	engine/ui/canvas.h:70
+ui::Canvas::DrawTriangle(Point,Point,Point,u32)	function	ui	ui-canvas-drawtriangle-point-point-point-u32	ui.md	engine/ui/canvas.h:76
+ui::Canvas::DrawImage(const Rect&,ImageId,const Rect&,u32)	function	ui	ui-canvas-drawimage-const-rect-amp-imageid-const-rect-amp-u32	ui.md	engine/ui/canvas.h:82
+ui::Canvas::DrawText(const text::TextLayout&,const text::TextStyle&,Point,u32)	function	ui	ui-canvas-drawtext-const-text-textlayout-amp-const-text-textstyle-amp-point-u32	ui.md	engine/ui/canvas.h:89
+ui::Canvas::DrawShadow(const Rect&,f32,f32,u32)	function	ui	ui-canvas-drawshadow-const-rect-amp-f32-f32-u32	ui.md	engine/ui/canvas.h:95
+ui::Canvas::PushClip(const Rect&)	function	ui	ui-canvas-pushclip-const-rect-amp	ui.md	engine/ui/canvas.h:99
+ui::Canvas::PopClip()	function	ui	ui-canvas-popclip	ui.md	engine/ui/canvas.h:102
+ui::Canvas::BeginLayer(i32)	function	ui	ui-canvas-beginlayer-i32	ui.md	engine/ui/canvas.h:106
+ui::Canvas::EndLayer()	function	ui	ui-canvas-endlayer	ui.md	engine/ui/canvas.h:109
+ui::Canvas::ToPixels(f32) const	function	ui	ui-canvas-topixels-f32-const	ui.md	engine/ui/canvas.h:114
+ui::Canvas::SnapLength(f32) const	function	ui	ui-canvas-snaplength-f32-const	ui.md	engine/ui/canvas.h:118
+ui::Canvas::SnapRect(const Rect&) const	function	ui	ui-canvas-snaprect-const-rect-amp-const	ui.md	engine/ui/canvas.h:126
+ui::kModeSolid	variable	ui	ui-kmodesolid	ui.md	engine/ui/draw_list.h:16
+ui::kModeRect	variable	ui	ui-kmoderect	ui.md	engine/ui/draw_list.h:17
+ui::kModeGlyph	variable	ui	ui-kmodeglyph	ui.md	engine/ui/draw_list.h:18
+ui::kModeImage	variable	ui	ui-kmodeimage	ui.md	engine/ui/draw_list.h:19
+ui::kModeMask	variable	ui	ui-kmodemask	ui.md	engine/ui/draw_list.h:20
+ui::kFlagRing	variable	ui	ui-kflagring	ui.md	engine/ui/draw_list.h:21
+ui::kFlagShadow	variable	ui	ui-kflagshadow	ui.md	engine/ui/draw_list.h:22
+ui::Vertex	struct	ui	ui-vertex	ui.md	engine/ui/draw_list.h:28
+ui::Vertex::x	variable	ui	ui-vertex-x	ui.md	engine/ui/draw_list.h:29
+ui::Vertex::y	variable	ui	ui-vertex-y	ui.md	engine/ui/draw_list.h:30
+ui::Vertex::u	variable	ui	ui-vertex-u	ui.md	engine/ui/draw_list.h:31
+ui::Vertex::v	variable	ui	ui-vertex-v	ui.md	engine/ui/draw_list.h:32
+ui::Vertex::color	variable	ui	ui-vertex-color	ui.md	engine/ui/draw_list.h:33
+ui::Vertex::half_w	variable	ui	ui-vertex-half-w	ui.md	engine/ui/draw_list.h:34
+ui::Vertex::half_h	variable	ui	ui-vertex-half-h	ui.md	engine/ui/draw_list.h:35
+ui::Vertex::radius	variable	ui	ui-vertex-radius	ui.md	engine/ui/draw_list.h:36
+ui::Vertex::border	variable	ui	ui-vertex-border	ui.md	engine/ui/draw_list.h:37
+ui::Vertex::flags	variable	ui	ui-vertex-flags	ui.md	engine/ui/draw_list.h:38
+ui::TextureKind	enum	ui	ui-texturekind	ui.md	engine/ui/draw_list.h:43
+ui::TextureKind::None	enumerator	ui	ui-texturekind-none	ui.md	engine/ui/draw_list.h:44
+ui::TextureKind::Atlas	enumerator	ui	ui-texturekind-atlas	ui.md	engine/ui/draw_list.h:45
+ui::TextureKind::Image	enumerator	ui	ui-texturekind-image	ui.md	engine/ui/draw_list.h:46
+ui::TextureRef	struct	ui	ui-textureref	ui.md	engine/ui/draw_list.h:53
+ui::TextureRef::kind	variable	ui	ui-textureref-kind	ui.md	engine/ui/draw_list.h:54
+ui::TextureRef::id	variable	ui	ui-textureref-id	ui.md	engine/ui/draw_list.h:55
+ui::TextureRef::operator==(const TextureRef&) const	function	ui	ui-textureref-operator-eq-eq-const-textureref-amp-const	ui.md	engine/ui/draw_list.h:58
+ui::BlendMode	enum	ui	ui-blendmode	ui.md	engine/ui/draw_list.h:62
+ui::BlendMode::Alpha	enumerator	ui	ui-blendmode-alpha	ui.md	engine/ui/draw_list.h:63
+ui::DrawCommand	struct	ui	ui-drawcommand	ui.md	engine/ui/draw_list.h:70
+ui::DrawCommand::first_index	variable	ui	ui-drawcommand-first-index	ui.md	engine/ui/draw_list.h:71
+ui::DrawCommand::index_count	variable	ui	ui-drawcommand-index-count	ui.md	engine/ui/draw_list.h:72
+ui::DrawCommand::clip	variable	ui	ui-drawcommand-clip	ui.md	engine/ui/draw_list.h:73
+ui::DrawCommand::texture	variable	ui	ui-drawcommand-texture	ui.md	engine/ui/draw_list.h:74
+ui::DrawCommand::layer	variable	ui	ui-drawcommand-layer	ui.md	engine/ui/draw_list.h:75
+ui::DrawCommand::blend	variable	ui	ui-drawcommand-blend	ui.md	engine/ui/draw_list.h:76
+ui::DrawListStats	struct	ui	ui-drawliststats	ui.md	engine/ui/draw_list.h:83
+ui::DrawListStats::culled	variable	ui	ui-drawliststats-culled	ui.md	engine/ui/draw_list.h:84
+ui::DrawListStats::overflowed	variable	ui	ui-drawliststats-overflowed	ui.md	engine/ui/draw_list.h:85
+ui::DrawListStats::glyphs_dropped	variable	ui	ui-drawliststats-glyphs-dropped	ui.md	engine/ui/draw_list.h:86
+ui::DrawListStats::scaled_large_glyphs	variable	ui	ui-drawliststats-scaled-large-glyphs	ui.md	engine/ui/draw_list.h:87
+ui::DrawList	struct	ui	ui-drawlist	ui.md	engine/ui/draw_list.h:96
+ui::DrawList::vertices	variable	ui	ui-drawlist-vertices	ui.md	engine/ui/draw_list.h:97
+ui::DrawList::indices	variable	ui	ui-drawlist-indices	ui.md	engine/ui/draw_list.h:98
+ui::DrawList::commands	variable	ui	ui-drawlist-commands	ui.md	engine/ui/draw_list.h:99
+ui::DrawList::stats	variable	ui	ui-drawlist-stats	ui.md	engine/ui/draw_list.h:100
+ui::DrawList::max_vertices	variable	ui	ui-drawlist-max-vertices	ui.md	engine/ui/draw_list.h:101
+ui::DrawList::Clear()	function	ui	ui-drawlist-clear	ui.md	engine/ui/draw_list.h:106
+ui::DrawList::SortLayers()	function	ui	ui-drawlist-sortlayers	ui.md	engine/ui/draw_list.h:117
+ui::DrawListCanvas	class	ui	ui-drawlistcanvas	ui.md	engine/ui/draw_list_canvas.h:21
+ui::DrawListCanvas::DrawListCanvas(DrawList*,text::GlyphAtlas*)	function	ui	ui-drawlistcanvas-drawlistcanvas-drawlist-star-text-glyphatlas-star	ui.md	engine/ui/draw_list_canvas.h:28
+ui::DrawListCanvas::Begin(f32,u32,u32)	function	ui	ui-drawlistcanvas-begin-f32-u32-u32	ui.md	engine/ui/draw_list_canvas.h:35
+ui::DrawListCanvas::Scale() const	function	ui	ui-drawlistcanvas-scale-const	ui.md	engine/ui/draw_list_canvas.h:38
+ui::DrawListCanvas::DrawRect(const Rect&,u32)	function	ui	ui-drawlistcanvas-drawrect-const-rect-amp-u32	ui.md	engine/ui/draw_list_canvas.h:39
+ui::DrawListCanvas::DrawRoundedRect(const Rect&,const CornerRadii&,u32)	function	ui	ui-drawlistcanvas-drawroundedrect-const-rect-amp-const-cornerradii-amp-u32	ui.md	engine/ui/draw_list_canvas.h:40
+ui::DrawListCanvas::DrawBorder(const Rect&,const CornerRadii&,f32,u32)	function	ui	ui-drawlistcanvas-drawborder-const-rect-amp-const-cornerradii-amp-f32-u32	ui.md	engine/ui/draw_list_canvas.h:41
+ui::DrawListCanvas::DrawLine(Point,Point,f32,u32)	function	ui	ui-drawlistcanvas-drawline-point-point-f32-u32	ui.md	engine/ui/draw_list_canvas.h:42
+ui::DrawListCanvas::DrawTriangle(Point,Point,Point,u32)	function	ui	ui-drawlistcanvas-drawtriangle-point-point-point-u32	ui.md	engine/ui/draw_list_canvas.h:43
+ui::DrawListCanvas::DrawImage(const Rect&,ImageId,const Rect&,u32)	function	ui	ui-drawlistcanvas-drawimage-const-rect-amp-imageid-const-rect-amp-u32	ui.md	engine/ui/draw_list_canvas.h:44
+ui::DrawListCanvas::DrawText(const text::TextLayout&,const text::TextStyle&,Point,u32)	function	ui	ui-drawlistcanvas-drawtext-const-text-textlayout-amp-const-text-textstyle-amp-point-u32	ui.md	engine/ui/draw_list_canvas.h:45
+ui::DrawListCanvas::DrawShadow(const Rect&,f32,f32,u32)	function	ui	ui-drawlistcanvas-drawshadow-const-rect-amp-f32-f32-u32	ui.md	engine/ui/draw_list_canvas.h:46
+ui::DrawListCanvas::PushClip(const Rect&)	function	ui	ui-drawlistcanvas-pushclip-const-rect-amp	ui.md	engine/ui/draw_list_canvas.h:47
+ui::DrawListCanvas::PopClip()	function	ui	ui-drawlistcanvas-popclip	ui.md	engine/ui/draw_list_canvas.h:48
+ui::DrawListCanvas::BeginLayer(i32)	function	ui	ui-drawlistcanvas-beginlayer-i32	ui.md	engine/ui/draw_list_canvas.h:49
+ui::DrawListCanvas::EndLayer()	function	ui	ui-drawlistcanvas-endlayer	ui.md	engine/ui/draw_list_canvas.h:50
+ui::DrawListCanvas::CurrentClip() const	function	ui	ui-drawlistcanvas-currentclip-const	ui.md	engine/ui/draw_list_canvas.h:55
+ui::Point	struct	ui	ui-point	ui.md	engine/ui/geometry.h:13
+ui::Point::x	variable	ui	ui-point-x	ui.md	engine/ui/geometry.h:14
+ui::Point::y	variable	ui	ui-point-y	ui.md	engine/ui/geometry.h:15
+ui::Rect	struct	ui	ui-rect	ui.md	engine/ui/geometry.h:22
+ui::Rect::x	variable	ui	ui-rect-x	ui.md	engine/ui/geometry.h:23
+ui::Rect::y	variable	ui	ui-rect-y	ui.md	engine/ui/geometry.h:24
+ui::Rect::w	variable	ui	ui-rect-w	ui.md	engine/ui/geometry.h:25
+ui::Rect::h	variable	ui	ui-rect-h	ui.md	engine/ui/geometry.h:26
+ui::Rect::Empty() const	function	ui	ui-rect-empty-const	ui.md	engine/ui/geometry.h:31
+ui::Rect::Right() const	function	ui	ui-rect-right-const	ui.md	engine/ui/geometry.h:35
+ui::Rect::Bottom() const	function	ui	ui-rect-bottom-const	ui.md	engine/ui/geometry.h:39
+ui::CornerRadii	struct	ui	ui-cornerradii	ui.md	engine/ui/geometry.h:46
+ui::CornerRadii::top_left	variable	ui	ui-cornerradii-top-left	ui.md	engine/ui/geometry.h:47
+ui::CornerRadii::top_right	variable	ui	ui-cornerradii-top-right	ui.md	engine/ui/geometry.h:48
+ui::CornerRadii::bottom_right	variable	ui	ui-cornerradii-bottom-right	ui.md	engine/ui/geometry.h:49
+ui::CornerRadii::bottom_left	variable	ui	ui-cornerradii-bottom-left	ui.md	engine/ui/geometry.h:50
+ui::CornerRadii::CornerRadii()	function	ui	ui-cornerradii-cornerradii	ui.md	engine/ui/geometry.h:53
+ui::CornerRadii::CornerRadii(f32)	function	ui	ui-cornerradii-cornerradii-f32	ui.md	engine/ui/geometry.h:56
+ui::CornerRadii::CornerRadii(f32,f32,f32,f32)	function	ui	ui-cornerradii-cornerradii-f32-f32-f32-f32	ui.md	engine/ui/geometry.h:62
+ui::CornerRadii::AllZero() const	function	ui	ui-cornerradii-allzero-const	ui.md	engine/ui/geometry.h:66
+ui::PixelRect	struct	ui	ui-pixelrect	ui.md	engine/ui/geometry.h:73
+ui::PixelRect::x	variable	ui	ui-pixelrect-x	ui.md	engine/ui/geometry.h:74
+ui::PixelRect::y	variable	ui	ui-pixelrect-y	ui.md	engine/ui/geometry.h:75
+ui::PixelRect::w	variable	ui	ui-pixelrect-w	ui.md	engine/ui/geometry.h:76
+ui::PixelRect::h	variable	ui	ui-pixelrect-h	ui.md	engine/ui/geometry.h:77
+ui::PixelRect::Empty() const	function	ui	ui-pixelrect-empty-const	ui.md	engine/ui/geometry.h:82
+ui::PixelRect::Intersect(const PixelRect&) const	function	ui	ui-pixelrect-intersect-const-pixelrect-amp-const	ui.md	engine/ui/geometry.h:86
+ui::PixelRect::operator==(const PixelRect&) const	function	ui	ui-pixelrect-operator-eq-eq-const-pixelrect-amp-const	ui.md	engine/ui/geometry.h:101
+ui::CanvasCallKind	enum	ui	ui-canvascallkind	ui.md	engine/ui/testing/recording_canvas.h:12
+ui::CanvasCallKind::Rect	enumerator	ui	ui-canvascallkind-rect	ui.md	engine/ui/testing/recording_canvas.h:13
+ui::CanvasCallKind::RoundedRect	enumerator	ui	ui-canvascallkind-roundedrect	ui.md	engine/ui/testing/recording_canvas.h:14
+ui::CanvasCallKind::Border	enumerator	ui	ui-canvascallkind-border	ui.md	engine/ui/testing/recording_canvas.h:15
+ui::CanvasCallKind::Line	enumerator	ui	ui-canvascallkind-line	ui.md	engine/ui/testing/recording_canvas.h:16
+ui::CanvasCallKind::Triangle	enumerator	ui	ui-canvascallkind-triangle	ui.md	engine/ui/testing/recording_canvas.h:17
+ui::CanvasCallKind::Image	enumerator	ui	ui-canvascallkind-image	ui.md	engine/ui/testing/recording_canvas.h:18
+ui::CanvasCallKind::Text	enumerator	ui	ui-canvascallkind-text	ui.md	engine/ui/testing/recording_canvas.h:19
+ui::CanvasCallKind::Shadow	enumerator	ui	ui-canvascallkind-shadow	ui.md	engine/ui/testing/recording_canvas.h:20
+ui::CanvasCall	struct	ui	ui-canvascall	ui.md	engine/ui/testing/recording_canvas.h:27
+ui::CanvasCall::kind	variable	ui	ui-canvascall-kind	ui.md	engine/ui/testing/recording_canvas.h:28
+ui::CanvasCall::rect	variable	ui	ui-canvascall-rect	ui.md	engine/ui/testing/recording_canvas.h:29
+ui::CanvasCall::radii	variable	ui	ui-canvascall-radii	ui.md	engine/ui/testing/recording_canvas.h:30
+ui::CanvasCall::p0	variable	ui	ui-canvascall-p0	ui.md	engine/ui/testing/recording_canvas.h:31
+ui::CanvasCall::p1	variable	ui	ui-canvascall-p1	ui.md	engine/ui/testing/recording_canvas.h:32
+ui::CanvasCall::p2	variable	ui	ui-canvascall-p2	ui.md	engine/ui/testing/recording_canvas.h:33
+ui::CanvasCall::width	variable	ui	ui-canvascall-width	ui.md	engine/ui/testing/recording_canvas.h:34
+ui::CanvasCall::color	variable	ui	ui-canvascall-color	ui.md	engine/ui/testing/recording_canvas.h:35
+ui::CanvasCall::image	variable	ui	ui-canvascall-image	ui.md	engine/ui/testing/recording_canvas.h:36
+ui::CanvasCall::uv	variable	ui	ui-canvascall-uv	ui.md	engine/ui/testing/recording_canvas.h:37
+ui::CanvasCall::glyph_count	variable	ui	ui-canvascall-glyph-count	ui.md	engine/ui/testing/recording_canvas.h:38
+ui::CanvasCall::clip_depth	variable	ui	ui-canvascall-clip-depth	ui.md	engine/ui/testing/recording_canvas.h:39
+ui::CanvasCall::layer	variable	ui	ui-canvascall-layer	ui.md	engine/ui/testing/recording_canvas.h:40
+ui::RecordingCanvas	class	ui	ui-recordingcanvas	ui.md	engine/ui/testing/recording_canvas.h:47
+ui::RecordingCanvas::RecordingCanvas(f32)	function	ui	ui-recordingcanvas-recordingcanvas-f32	ui.md	engine/ui/testing/recording_canvas.h:51
+ui::RecordingCanvas::Calls() const	function	ui	ui-recordingcanvas-calls-const	ui.md	engine/ui/testing/recording_canvas.h:56
+ui::RecordingCanvas::Clear()	function	ui	ui-recordingcanvas-clear	ui.md	engine/ui/testing/recording_canvas.h:60
+ui::RecordingCanvas::Scale() const	function	ui	ui-recordingcanvas-scale-const	ui.md	engine/ui/testing/recording_canvas.h:67
+ui::RecordingCanvas::DrawRect(const Rect&,u32)	function	ui	ui-recordingcanvas-drawrect-const-rect-amp-u32	ui.md	engine/ui/testing/recording_canvas.h:68
+ui::RecordingCanvas::DrawRoundedRect(const Rect&,const CornerRadii&,u32)	function	ui	ui-recordingcanvas-drawroundedrect-const-rect-amp-const-cornerradii-amp-u32	ui.md	engine/ui/testing/recording_canvas.h:69
+ui::RecordingCanvas::DrawBorder(const Rect&,const CornerRadii&,f32,u32)	function	ui	ui-recordingcanvas-drawborder-const-rect-amp-const-cornerradii-amp-f32-u32	ui.md	engine/ui/testing/recording_canvas.h:70
+ui::RecordingCanvas::DrawLine(Point,Point,f32,u32)	function	ui	ui-recordingcanvas-drawline-point-point-f32-u32	ui.md	engine/ui/testing/recording_canvas.h:71
+ui::RecordingCanvas::DrawTriangle(Point,Point,Point,u32)	function	ui	ui-recordingcanvas-drawtriangle-point-point-point-u32	ui.md	engine/ui/testing/recording_canvas.h:72
+ui::RecordingCanvas::DrawImage(const Rect&,ImageId,const Rect&,u32)	function	ui	ui-recordingcanvas-drawimage-const-rect-amp-imageid-const-rect-amp-u32	ui.md	engine/ui/testing/recording_canvas.h:73
+ui::RecordingCanvas::DrawText(const text::TextLayout&,const text::TextStyle&,Point,u32)	function	ui	ui-recordingcanvas-drawtext-const-text-textlayout-amp-const-text-textstyle-amp-point-u32	ui.md	engine/ui/testing/recording_canvas.h:74
+ui::RecordingCanvas::DrawShadow(const Rect&,f32,f32,u32)	function	ui	ui-recordingcanvas-drawshadow-const-rect-amp-f32-f32-u32	ui.md	engine/ui/testing/recording_canvas.h:75
+ui::RecordingCanvas::PushClip(const Rect&)	function	ui	ui-recordingcanvas-pushclip-const-rect-amp	ui.md	engine/ui/testing/recording_canvas.h:76
+ui::RecordingCanvas::PopClip()	function	ui	ui-recordingcanvas-popclip	ui.md	engine/ui/testing/recording_canvas.h:77
+ui::RecordingCanvas::BeginLayer(i32)	function	ui	ui-recordingcanvas-beginlayer-i32	ui.md	engine/ui/testing/recording_canvas.h:78
+ui::RecordingCanvas::EndLayer()	function	ui	ui-recordingcanvas-endlayer	ui.md	engine/ui/testing/recording_canvas.h:79
 ui::kUiLayoutVersion	variable	ui	ui-kuilayoutversion	ui.md	engine/ui/version.h:10
 ui::LayoutVersion()	function	ui	ui-layoutversion	ui.md	engine/ui/version.h:15
 jobs::IoRequest	alias	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:52
