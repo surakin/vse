@@ -202,4 +202,36 @@ name->SetMaxLength(32);
 name->OnSubmit().Connect([](void* user, ui::TextField* f) { static_cast<Form*>(user)->Accept(f->Text()); }, form);
 ```
 
-More sections arrive with the days that build them (popups, drag and drop, viewport, surfaces).
+## Popups, menus, combo boxes and tooltips
+
+**The popup layer.** `Surface::OpenPopup(widget, anchor, options)` adds a widget to the popup layer, sizes it by its own `Measure` (with the surface as the limit) and places it with `PlacePopup` (`ui/popup.h`): on the preferred side of the anchor (`Placement::Below`, `Above`, `Right`, `Left`) when it fits, on the opposite side when only that fits, then shifted along the anchor's edge and clamped so that it starts inside the surface. Popups form a stack:
+
+- a press outside all of them closes them all, and is consumed (`consume_outside_click`, the default) or delivered as usual; a press on the popup's `owner` closes it and is always consumed, so a click on a combo box toggles its list;
+- Escape that the focus owner did not take closes the top popup; losing the window focus closes every popup; closing a popup closes the ones above it;
+- a popup takes the keyboard focus (`take_focus`), and the surface gives it back to the previous owner when the popup closes (to the popup below when one is under it);
+- a popup whose `owner` is destroyed closes. Closing inside an event handler is deferred to the end of the delivery, like removal.
+
+`Surface::ShowContextMenu(widget, position)` opens a popup at the pointer, moved to stay inside; `Widget::SetContextHandler(function, user)` calls a function on a right press (the nearest widget under the pointer that has one) so that it can open one.
+
+**Accelerators.** `RegisterAccelerator(chord, function, user)` returns an id (0 when the chord is taken); `SetAcceleratorEnabled` turns it off, `UnregisterAccelerator` removes it. The order of a key press is: the focus owner and its parents, then Tab and Escape (popups), then the accelerators, then the menu bar's keys (F10, Alt+letter). So a text field gets Ctrl+Z before a global Ctrl+Z, and a widget that handles a key shadows an accelerator on it. `ChordText` gives "Ctrl+Shift+S" for a menu to show.
+
+**Menus.** A `Menu` (`ui/widgets/menu.h`) is a model: items (`AddItem`, `AddCheck`, `AddRadio` with the run of neighbouring radio items exclusive, `AddSubmenu`, `AddSeparator`), each with an action `void(*)(void* user, usize index)`, an enabled flag and optionally the id of a surface accelerator whose chord shows at the right and whose off state dims the item. `&` before a letter marks the mnemonic (`&&` is a literal ampersand; `SplitMnemonic`). A `MenuView` shows a menu as a popup: Up and Down move over the enabled items and wrap, Home and End jump, Enter and Space choose, a mnemonic letter chooses, Right opens and enters a submenu, Left leaves it; the pointer highlights, a click chooses, and resting on a submenu item opens it after `kSubmenuDelay`. Choosing a leaf runs its action and closes every popup. The menu must outlive its views.
+
+**The menu bar.** `MenuBar` is a row of titles. A click opens a menu below its title; with a menu open the pointer switches menus, and Left/Right in a menu that has no submenu to enter or leave switch to the neighbour. Install it with `Surface::SetMenuKeyTarget(bar)` and F10 or a lone Alt (pressed and released with no other key between) takes the focus and underlines the mnemonics, the arrows move, Down/Enter/Space open, a letter opens, Escape or F10 leaves; Alt+letter opens the menu from anywhere. The bar remembers who had the keyboard focus (`Surface::SaveFocus`) and gives it back when it is left or its menu closes (`RestoreSavedFocus`).
+
+**Combo box.** `ComboBox` (`ui/widgets/combobox.h`) shows one item of a `ListModel` and drops a virtualized `ListBox` (at most `kDropRows` rows, at least as wide as the box). Closed: Up/Down/Home/End and type-ahead select (running `OnSelectionChanged`), the wheel when `SetWheelSelects(true)`; F4, Alt+Down, Space, Enter and a click open the list. Open: the list has the keyboard, Enter or a click on an item chooses it, Escape or a click elsewhere keeps the old selection. `SetEditable(true)` adds a `TextField`: typing text equal to an item selects it, any other text selects none, choosing an item replaces the text.
+
+**Tooltips.** Any widget's `SetTooltip(text)` shows a bubble near the pointer once the pointer has rested on it for `Surface::kTooltipDelay` seconds of the surface clock (the delay counts from the last movement). A press, a key, a wheel turn, opening a popup or the pointer leaving hides it, and it stays hidden until the pointer moves; no tooltip shows while a popup is open. One bubble at a time, kept inside the surface.
+
+```cpp
+ui::Menu file;
+file.AddItem("&New", &OnNew, app);
+file.AddCheck("Show &grid", true, &OnGrid, app);
+file.AddSeparator();
+file.AddItem("E&xit", &OnExit, app);
+ui::MenuBar* bar = AddMenuBar(root, "bar");          // however your code makes widgets
+bar->AddMenu("&File", &file);
+surface.SetMenuKeyTarget(bar);
+```
+
+More sections arrive with the days that build them (drag and drop, viewport, surfaces).

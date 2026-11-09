@@ -8,6 +8,7 @@
 #include "ui/clipboard.h"
 #include "ui/draw_list.h"
 #include "ui/event.h"
+#include "ui/popup.h"
 #include "ui/theme.h"
 #include "ui/widget.h"
 
@@ -59,6 +60,10 @@ public:
     /// Ownership: borrowed; the owner keeps it and it stays valid while the owner lives.
     /// Fails: returns null when there is none.
     Widget* PopupLayer() const { return popups_.Get(); }
+    /// Returns the tooltip layer: a widget above the popup layer that holds the tooltip bubble while one shows (it is never hit).
+    /// Ownership: borrowed; the surface keeps it.
+    /// Fails: returns null when there is none.
+    Widget* TooltipLayer() const { return tips_.Get(); }
     /// Returns the width in logical units.
     f32 Width() const { return width_; }
     /// Returns the height in logical units.
@@ -74,6 +79,84 @@ public:
     void SetClipboard(Clipboard* clipboard) { clipboard_ = clipboard != nullptr ? clipboard : &local_clipboard_; }
     /// Returns the clipboard in use.
     Clipboard& GetClipboard() { return *clipboard_; }
+
+    // ---- Popups ----
+
+    /// Opens `widget` in the popup layer next to `anchor` (surface coordinates), sized by its own measure and placed by [[ui::PlacePopup]] inside the surface.
+    ///
+    /// Popups form a stack: a press outside all of them closes them all (and is consumed or passed on as `options` say), Escape that the focus owner did not handle closes the top
+    /// one, and losing the window focus closes every one. Closing a popup closes the ones above it. The popup takes the keyboard focus when `options.take_focus` is set and it is
+    /// focusable, and the previous owner gets it back when the last popup closes. Opening a popup hides the tooltip.
+    ///
+    /// Param widget: the popup's content; the popup layer owns it until it closes.
+    /// Param anchor: where the popup attaches, in surface coordinates.
+    /// Param options: how it places, takes the focus and closes.
+    /// Returns: the widget, for `ClosePopup` and `IsPopupOpen`.
+    /// Ownership: ownership passes to the surface; `options.owner` is borrowed.
+    /// Aborts: `widget` is null.
+    Widget* OpenPopup(UniquePtr<Widget> widget, const Rect& anchor, const PopupOptions& options);
+    /// Opens `menu` as a context menu with its top-left corner at `position` (moved to stay inside the surface), closing on an outside click.
+    /// Param menu: the menu widget; ownership passes to the surface.
+    /// Param position: where the pointer is, in surface coordinates.
+    /// Returns: the widget.
+    /// Ownership: ownership of `menu` passes to the surface.
+    Widget* ShowContextMenu(UniquePtr<Widget> menu, Point position);
+    /// Closes `popup` and every popup opened after it (the deferral rule applies: during event delivery the widgets go when the delivery ends). Does nothing for a widget that is not a popup.
+    /// Param popup: a widget `OpenPopup` returned.
+    /// Ownership: borrowed for the call.
+    /// Fails: never.
+    void ClosePopup(Widget* popup);
+    /// Closes every popup.
+    /// Fails: never.
+    void CloseAllPopups();
+    /// Returns how many popups are open.
+    /// Fails: never.
+    usize PopupCount() const { return popup_infos_.Size(); }
+    /// Returns whether `popup` is an open popup.
+    /// Param popup: a widget; may be null or dead (it is only compared).
+    /// Ownership: borrowed for the call.
+    /// Fails: never.
+    bool IsPopupOpen(const Widget* popup) const;
+    /// Returns the newest popup, or null.
+    /// Ownership: borrowed; the surface owns it.
+    /// Fails: returns null when none is open.
+    Widget* TopPopup() const { return popup_infos_.Empty() ? nullptr : popup_infos_[popup_infos_.Size() - 1].popup; }
+
+    // ---- Accelerators ----
+
+    /// Registers a chord with the function to call when it is pressed and the focus owner (and the Tab, Escape and popup handling) did not take the key.
+    /// Param chord: the key and modifiers.
+    /// Param function: what to call.
+    /// Param user: passed to it; borrowed.
+    /// Returns: an id for the other accelerator calls, or 0 when the chord is already registered.
+    /// Ownership: `user` is borrowed until the accelerator is removed.
+    u32 RegisterAccelerator(const KeyChord& chord, void (*function)(void* user), void* user);
+    /// Removes an accelerator; an unknown id is ignored.
+    /// Fails: never.
+    void UnregisterAccelerator(u32 id);
+    /// Turns an accelerator on or off (an off one is skipped, so the key goes on unhandled); an unknown id is ignored.
+    /// Fails: never.
+    void SetAcceleratorEnabled(u32 id, bool enabled);
+    /// Returns whether the accelerator exists and is on.
+    /// Fails: never.
+    bool AcceleratorEnabled(u32 id) const;
+    /// Returns the chord of an accelerator (an empty one for an unknown id).
+    /// Fails: never.
+    KeyChord AcceleratorChord(u32 id) const;
+    /// Sets the widget that gets the key presses nobody else took (F10, Alt+letter, a lone Alt released): the menu bar. Borrowed; null clears.
+    /// Ownership: borrowed; cleared when the widget dies.
+    void SetMenuKeyTarget(Widget* widget) { menu_key_target_ = widget; }
+
+    // ---- Tooltips ----
+
+    /// Seconds a widget with a tooltip text must stay under a still pointer before its tooltip shows.
+    static constexpr f64 kTooltipDelay = 0.5;
+    /// Returns whether a tooltip is showing.
+    /// Fails: never.
+    bool TooltipShown() const { return tooltip_ != nullptr; }
+    /// Hides the tooltip, if one shows, and keeps it hidden until the pointer moves (what a press, a key or a wheel turn does).
+    /// Fails: never.
+    void HideTooltip();
 
     /// Returns the clock in seconds.
     f64 Time() const { return time_; }
@@ -103,6 +186,12 @@ public:
     ///
     /// Ownership: borrowed; the caller keeps ownership and it must outlive its use here.
     void SetFocus(Widget* widget);
+    /// Remembers the current focus owner for `RestoreSavedFocus` (the menu bar takes the focus and gives it back); replaces an earlier one. The reference is cleared when the widget dies.
+    /// Fails: never.
+    void SaveFocus() { menu_saved_focus_ = focus_; }
+    /// Gives the focus to the owner `SaveFocus` remembered (to nobody when there is none, or it died), and forgets it.
+    /// Fails: never.
+    void RestoreSavedFocus();
     /// Returns the focus owner, or null.
     ///
     /// Ownership: borrowed; the owner keeps it and it stays valid while the owner lives.
@@ -165,6 +254,25 @@ private:
     bool Deliver(Widget* target, Event event, bool bubble);
     void RefreshHover();
     void TrackPopups();
+    struct PopupInfo {
+        Widget* popup = nullptr;
+        Widget* owner = nullptr;
+        bool consume = true;
+        bool take_focus = true;
+        bool orphaned = false; // the owner died: closed at the next boundary
+    };
+    struct Accelerator {
+        u32 id = 0;
+        KeyChord chord;
+        void (*function)(void*) = nullptr;
+        void* user = nullptr;
+        bool enabled = true;
+    };
+    bool InsidePopups(const Widget* widget) const;
+    bool PressOutsidePopups(const Event& e, Widget* hit);
+    bool RunKeyFallbacks(const Event& e);
+    void UpdateTooltip();
+    void ShowTooltip(Widget* target);
     void SetWindowFocus(bool focused);
     void ReleasePointer();
     void SetHover(Widget* widget, const Event& cause);
@@ -182,6 +290,7 @@ private:
     Widget* focus_ = nullptr;
     Widget* capture_ = nullptr;
     Widget* hover_ = nullptr;
+    Widget* menu_saved_focus_ = nullptr; // see SaveFocus
     Widget* saved_focus_ = nullptr; // the focus owner when the first popup opened, given back when the last one closes
     usize popup_count_ = 0;
     Point pointer_position_;
@@ -200,9 +309,20 @@ private:
     LocalClipboard local_clipboard_;
     Clipboard* clipboard_ = &local_clipboard_;
     UniquePtr<DrawListCanvas> canvas_; // kept between frames so that its clip and layer stacks keep their storage
+    Vector<PopupInfo> popup_infos_;
+    Vector<Accelerator> accelerators_;
+    u32 next_accelerator_ = 0;
+    Widget* menu_key_target_ = nullptr;
+    bool alt_alone_ = false;
+    Widget* tooltip_ = nullptr;
+    Widget* tooltip_target_ = nullptr;
+    bool tooltip_blocked_ = false; // a press, key or wheel hid the tooltip: none shows until the pointer moves
+    void RemoveTooltip();
+    f64 hover_since_ = 0;
     Vector<Widget*> removals_;
     UniquePtr<Widget> root_;
     UniquePtr<Widget> popups_;
+    UniquePtr<Widget> tips_;
 };
 
 } // namespace engine_placeholder::ui

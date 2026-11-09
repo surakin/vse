@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui/canvas.h"
+#include "ui/event.h"
 #include "ui/theme.h"
 
 //! Shared drawing of the widgets of Phase 15 Day 195: a resolved style turned into a box, in logical units.
@@ -17,6 +18,20 @@ inline bool IsVisibleColor(u32 abgr) { return (abgr >> 24) != 0; }
 ///
 /// Fails: never.
 inline bool IsAsciiDigit(char c) { return c >= '0' && c <= '9'; }
+
+/// Returns `c` in lower case when it is an ASCII capital.
+///
+/// Fails: never.
+inline char AsciiLower(char c) { return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c; }
+
+/// Returns the lower-case letter a key stands for, or 0 when it is not a letter key.
+///
+/// Fails: never.
+inline char KeyLetter(Key key) {
+    const u32 k = static_cast<u32>(key);
+    const u32 a = static_cast<u32>(Key::A);
+    return (k >= a && k <= static_cast<u32>(Key::Z)) ? static_cast<char>('a' + (k - a)) : static_cast<char>(0);
+}
 
 /// Returns `abgr` with its alpha replaced by `alpha` (0 to 255).
 inline u32 WithAlpha(u32 abgr, u32 alpha) { return (abgr & 0x00FFFFFFu) | (alpha << 24); }

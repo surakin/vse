@@ -7,12 +7,6 @@
 
 namespace engine_placeholder::ui {
 
-namespace {
-
-char Lower(char c) { return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c; }
-
-} // namespace
-
 ListBox::ListBox(StringView name) : Widget(name) {
     SetFocusable(true);
     SetAcceptsText(true);
@@ -107,6 +101,11 @@ void ListBox::VisibleRange(usize* first, usize* end) const {
     usize last = static_cast<usize>(std::ceil((offset_ + ViewHeight()) / row_height_));
     if (last > count_) last = count_;
     *end = last > *first ? last : *first;
+}
+
+void ListBox::SetVisibleRows(usize rows) {
+    visible_rows_ = rows == 0 ? 1 : rows;
+    MarkDirty(kLayoutDirty);
 }
 
 void ListBox::ScrollToIndex(usize index) {
@@ -215,7 +214,7 @@ void ListBox::TypeAhead(Event& event) {
     event.handled = true;
     const f64 now = GetSurface()->Time();
     if (now - typed_at_ > kTypeAheadSeconds) typed_.Clear();
-    typed_.Push(Lower(event.text[0]));
+    typed_.Push(AsciiLower(event.text[0]));
     typed_at_ = now;
     bool same = true;
     for (usize i = 1; i < typed_.Size(); ++i) same = same && typed_[i] == typed_[0];
@@ -227,7 +226,7 @@ void ListBox::TypeAhead(Event& event) {
         const StringView text = model_->ItemText(i);
         if (text.Length() < length) continue;
         bool match = true;
-        for (usize c = 0; c < length && match; ++c) match = Lower(text[c]) == typed_[c];
+        for (usize c = 0; c < length && match; ++c) match = AsciiLower(text[c]) == typed_[c];
         if (match) {
             MoveCurrent(i, false);
             return;
@@ -238,7 +237,7 @@ void ListBox::TypeAhead(Event& event) {
 Size ListBox::Measure(const Constraints&) {
     if (!MeasureRow()) return Size();
     Surface* surface = GetSurface();
-    return Size{surface->Themes().Metric(MetricId::IconSize, 1.0f) * kWidthInIcons, row_height_ * kPreferredRows};
+    return Size{surface->Themes().Metric(MetricId::IconSize, 1.0f) * kWidthInIcons, row_height_ * (visible_rows_ != 0 ? static_cast<f32>(visible_rows_) : kPreferredRows)};
 }
 
 void ListBox::Arrange(const Rect& rect) {
@@ -314,7 +313,14 @@ void ListBox::OnEvent(Event& event) {
         case EventType::PointerDown:
             if (event.button != os::kMouseLeft) break;
             event.handled = true;
-            if (const usize i = IndexAt(event.position.y); i != kNone) Click(i, event.modifiers);
+            pressed_ = IndexAt(event.position.y);
+            if (pressed_ != kNone) Click(pressed_, event.modifiers);
+            break;
+        case EventType::PointerUp:
+            if (event.button != os::kMouseLeft) break;
+            event.handled = true;
+            if (activate_on_click_ && pressed_ != kNone && pressed_ == IndexAt(event.position.y)) on_activate_.Invoke(this);
+            pressed_ = kNone;
             break;
         case EventType::PointerMove: {
             const usize i = IndexAt(event.position.y);

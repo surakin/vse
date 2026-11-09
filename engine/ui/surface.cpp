@@ -5,6 +5,7 @@
 #include "algorithm.h"
 #include "log/assert.h"
 #include "ui/draw_list_canvas.h"
+#include "ui/widgets/tooltip.h"
 
 namespace engine_placeholder::ui {
 
@@ -20,18 +21,24 @@ Surface::Surface(f32 width, f32 height, f32 scale) : width_(width), height_(heig
     popups_ = MakeUnique<Widget>(StringView("popups"));
     popups_->SetPassThrough(true);
     popups_->SetClipsChildren(false);
+    tips_ = MakeUnique<Widget>(StringView("tooltips"));
+    tips_->SetPassThrough(true);
+    tips_->SetClipsChildren(false);
     root_->AttachSurface(this);
     popups_->AttachSurface(this);
+    tips_->AttachSurface(this);
     Rect all;
     all.w = width;
     all.h = height;
     root_->SetBounds(all);
     popups_->SetBounds(all);
+    tips_->SetBounds(all);
 }
 
 Surface::~Surface() {
     root_.Reset();
     popups_.Reset();
+    tips_.Reset();
 }
 
 void Surface::Resize(f32 width, f32 height, f32 scale) {
@@ -45,6 +52,7 @@ void Surface::Resize(f32 width, f32 height, f32 scale) {
     all.h = height;
     root_->SetBounds(all);
     popups_->SetBounds(all);
+    tips_->SetBounds(all);
     NoteDirty(kLayoutDirty | kDrawDirty);
 }
 
@@ -72,6 +80,21 @@ void Surface::WidgetDestroyed(Widget* widget) {
     if (capture_ == widget) capture_ = nullptr;
     if (hover_ == widget) hover_ = nullptr;
     if (saved_focus_ == widget) saved_focus_ = nullptr;
+    if (menu_saved_focus_ == widget) menu_saved_focus_ = nullptr;
+    if (menu_key_target_ == widget) menu_key_target_ = nullptr;
+    if (tooltip_ == widget) tooltip_ = nullptr;
+    if (tooltip_target_ == widget) {
+        tooltip_target_ = nullptr;
+        if (tooltip_ != nullptr) RemoveTooltip();
+    }
+    for (usize i = popup_infos_.Size(); i > 0; --i) {
+        if (popup_infos_[i - 1].popup == widget) {
+            popup_infos_.Remove(i - 1);
+        } else if (popup_infos_[i - 1].owner == widget) {
+            popup_infos_[i - 1].owner = nullptr;
+            popup_infos_[i - 1].orphaned = true; // closed at the next boundary: this may be inside the removal of a popup
+        }
+    }
     for (usize i = removals_.Size(); i > 0; --i) {
         if (removals_[i - 1] == widget) removals_.Remove(i - 1);
     }
@@ -121,6 +144,8 @@ void Surface::SetHover(Widget* widget, const Event& cause) {
     if (widget == hover_) return;
     Widget* old = hover_;
     hover_ = widget;
+    hover_since_ = time_;
+    RemoveTooltip();
     Event e = cause;
     if (old != nullptr) {
         old->state_ &= ~kStateHover;
@@ -184,7 +209,9 @@ void Surface::SetWindowFocus(bool focused) {
         modifiers_ = 0;
         pointer_inside_ = false;
         SetHover(nullptr, e);
+        popup_infos_.Clear();
         for (usize i = popups_->ChildCount(); i > 0; --i) popups_->RemoveChild(popups_->ChildAt(i - 1));
+        HideTooltip();
     }
     if (focus_ != nullptr) {
         if (focused) {
@@ -254,6 +281,14 @@ void Surface::RefreshHover() {
 }
 
 void Surface::TrackPopups() {
+    for (;;) { // a popup whose owner died goes, with the ones above it
+        usize orphan = popup_infos_.Size();
+        for (usize i = 0; i < popup_infos_.Size() && orphan == popup_infos_.Size(); ++i) {
+            if (popup_infos_[i].orphaned) orphan = i;
+        }
+        if (orphan == popup_infos_.Size()) break;
+        ClosePopup(popup_infos_[orphan].popup);
+    }
     const usize n = popups_->ChildCount();
     if (n == popup_count_) return;
     const usize before = popup_count_;
@@ -263,6 +298,11 @@ void Surface::TrackPopups() {
     } else if (n == 0) {
         Widget* back = saved_focus_;
         saved_focus_ = nullptr;
+        // The menu bar only held the focus to run its menu: the focus goes to whoever had it before (see SaveFocus).
+        if (back != nullptr && back == menu_key_target_ && menu_saved_focus_ != nullptr) {
+            back = menu_saved_focus_;
+            menu_saved_focus_ = nullptr;
+        }
         // Give the focus back unless the program has moved it to something that is still alive outside the popups.
         if (back != nullptr && focus_ == nullptr && back->Shown() && back->EffectivelyEnabled()) SetFocus(back);
     }
@@ -285,12 +325,16 @@ void Surface::Dispatch(Event e) {
         switch (e.type) {
             case EventType::PointerMove: {
                 SetHover(hit, e);
+                hover_since_ = time_; // the delay counts from the last movement
+                tooltip_blocked_ = false;
                 Widget* target = capture_ != nullptr ? capture_ : hit;
                 if (target != nullptr) Deliver(target, e, true);
                 break;
             }
             case EventType::PointerDown: {
                 SetHover(hit, e);
+                HideTooltip();
+                if (capture_ == nullptr && PressOutsidePopups(e, hit)) break; // closed the popups, and the press goes no further
                 if (capture_ == nullptr) {
                     // Click to focus: the nearest focusable widget under the pointer takes the keyboard focus, and a click on nothing focusable clears it.
                     Widget* focus_target = hit;
@@ -304,6 +348,14 @@ void Surface::Dispatch(Event e) {
                 }
                 buttons_down_ |= e.button;
                 if (capture_ != nullptr) Deliver(capture_, e, true);
+                if (e.button == os::kMouseRight) {
+                    for (Widget* w = hit; w != nullptr; w = w->parent_) {
+                        if (w->context_function_ != nullptr && w->EffectivelyEnabled()) {
+                            w->context_function_(w->context_user_, w, e.position);
+                            break;
+                        }
+                    }
+                }
                 break;
             }
             case EventType::PointerUp: {
@@ -319,6 +371,7 @@ void Surface::Dispatch(Event e) {
                 break;
             }
             default: {
+                HideTooltip();
                 // The wheel goes to the hovered widget (the capturer during a drag) and bubbles to the first ancestor that handles it; a popup is hit first, so nothing behind it sees it.
                 Widget* target = capture_ != nullptr ? capture_ : hit;
                 if (target != nullptr) Deliver(target, e, true);
@@ -327,15 +380,213 @@ void Surface::Dispatch(Event e) {
         }
     } else if (e.type == EventType::KeyDown || e.type == EventType::KeyUp || e.type == EventType::Text) {
         modifiers_ = e.modifiers;
-        if (window_focused_ && focus_ != nullptr && (e.type != EventType::Text || focus_->AcceptsText())) {
-            const bool handled = Deliver(focus_, e, true);
-            if (!handled && e.type == EventType::KeyDown && e.key == Key::Tab && (e.modifiers & (os::kModCtrl | os::kModAlt)) == 0) FocusNext((e.modifiers & os::kModShift) != 0);
-        } else if (window_focused_ && focus_ == nullptr && e.type == EventType::KeyDown && e.key == Key::Tab && (e.modifiers & (os::kModCtrl | os::kModAlt)) == 0) {
-            FocusNext((e.modifiers & os::kModShift) != 0);
+        HideTooltip();
+        const bool is_alt = e.key == Key::LeftAlt || e.key == Key::RightAlt;
+        if (e.type == EventType::KeyDown) alt_alone_ = is_alt && !e.repeat;
+        bool handled = false;
+        if (window_focused_ && focus_ != nullptr && (e.type != EventType::Text || focus_->AcceptsText())) handled = Deliver(focus_, e, true);
+        if (window_focused_ && !handled && e.type == EventType::KeyDown) RunKeyFallbacks(e);
+        if (window_focused_ && !handled && e.type == EventType::KeyUp && is_alt && alt_alone_ && menu_key_target_ != nullptr) {
+            alt_alone_ = false;
+            Deliver(menu_key_target_, e, false); // a lone Alt, pressed and released: the menu bar takes the focus
         }
     }
     if (--depth_ == 0) FlushRemovals();
     TrackPopups();
+}
+
+bool Surface::InsidePopups(const Widget* widget) const {
+    for (const Widget* w = widget; w != nullptr; w = w->parent_) {
+        if (w->parent_ == popups_.Get()) return true;
+    }
+    return false;
+}
+
+bool Surface::PressOutsidePopups(const Event& e, Widget* hit) {
+    if (popup_infos_.Empty() || InsidePopups(hit)) return false;
+    (void)e;
+    const PopupInfo top = popup_infos_[popup_infos_.Size() - 1];
+    bool on_owner = false;
+    for (usize i = 0; i < popup_infos_.Size() && !on_owner; ++i) {
+        for (Widget* w = hit; w != nullptr && popup_infos_[i].owner != nullptr; w = w->parent_) {
+            if (w == popup_infos_[i].owner) on_owner = true;
+        }
+    }
+    CloseAllPopups();
+    return on_owner || top.consume;
+}
+
+bool Surface::RunKeyFallbacks(const Event& e) {
+    if (e.key == Key::Tab && (e.modifiers & (os::kModCtrl | os::kModAlt)) == 0) {
+        FocusNext((e.modifiers & os::kModShift) != 0);
+        return true;
+    }
+    if (e.key == Key::Escape && !popup_infos_.Empty()) {
+        ClosePopup(popup_infos_[popup_infos_.Size() - 1].popup);
+        return true;
+    }
+    const u32 mask = e.modifiers & (os::kModCtrl | os::kModShift | os::kModAlt);
+    for (usize i = 0; i < accelerators_.Size(); ++i) {
+        const Accelerator& a = accelerators_[i];
+        if (a.enabled && a.chord.key == e.key && a.chord.modifiers == mask) {
+            a.function(a.user);
+            return true;
+        }
+    }
+    if (menu_key_target_ != nullptr && (e.key == Key::F10 || (mask == os::kModAlt && e.key != Key::LeftAlt && e.key != Key::RightAlt))) return Deliver(menu_key_target_, e, false);
+    return false;
+}
+
+Widget* Surface::OpenPopup(UniquePtr<Widget> widget, const Rect& anchor, const PopupOptions& options) {
+    ENGINE_ASSERT(widget.Get() != nullptr, "Surface::OpenPopup: the widget is null");
+    HideTooltip();
+    Widget* raw = widget.Get();
+    popups_->AddChild(static_cast<UniquePtr<Widget>&&>(widget));
+    TrackPopups(); // remembers the focus owner before the popup takes the focus
+    Constraints limits;
+    limits.max_w = width_;
+    limits.max_h = height_;
+    Rect all;
+    all.w = width_;
+    all.h = height_;
+    raw->Arrange(PlacePopup(raw->MeasureTotal(limits), anchor, options.placement, all));
+    PopupInfo info;
+    info.popup = raw;
+    info.owner = options.owner;
+    info.consume = options.consume_outside_click;
+    info.take_focus = options.take_focus;
+    popup_infos_.Push(info);
+    if (options.take_focus && raw->Focusable()) SetFocus(raw);
+    return raw;
+}
+
+Widget* Surface::ShowContextMenu(UniquePtr<Widget> menu, Point position) {
+    Rect at;
+    at.x = position.x;
+    at.y = position.y;
+    PopupOptions options;
+    options.placement = Placement::Below;
+    return OpenPopup(static_cast<UniquePtr<Widget>&&>(menu), at, options);
+}
+
+bool Surface::IsPopupOpen(const Widget* popup) const {
+    if (popup == nullptr) return false;
+    for (usize i = 0; i < popup_infos_.Size(); ++i) {
+        if (popup_infos_[i].popup == popup) return true;
+    }
+    return false;
+}
+
+void Surface::ClosePopup(Widget* popup) {
+    usize index = popup_infos_.Size();
+    for (usize i = 0; i < popup_infos_.Size(); ++i) {
+        if (popup_infos_[i].popup == popup) index = i;
+    }
+    if (index == popup_infos_.Size()) return;
+    bool focus_inside = false;
+    for (const Widget* w = focus_; w != nullptr; w = w->parent_) {
+        for (usize i = index; i < popup_infos_.Size(); ++i) focus_inside = focus_inside || w == popup_infos_[i].popup;
+    }
+    Vector<Widget*> closing;
+    for (usize i = index; i < popup_infos_.Size(); ++i) closing.Push(popup_infos_[i].popup);
+    popup_infos_.RemoveRange(index, popup_infos_.Size() - index);
+    for (usize i = closing.Size(); i > 0; --i) popups_->RemoveChild(closing[i - 1]);
+    // The popup below, if any, gets the focus the closed one had.
+    if (focus_inside && !popup_infos_.Empty()) {
+        Widget* below = popup_infos_[popup_infos_.Size() - 1].popup;
+        if (popup_infos_[popup_infos_.Size() - 1].take_focus && below->Focusable()) SetFocus(below);
+    }
+}
+
+void Surface::CloseAllPopups() {
+    if (!popup_infos_.Empty()) ClosePopup(popup_infos_[0].popup);
+}
+
+u32 Surface::RegisterAccelerator(const KeyChord& chord, void (*function)(void* user), void* user) {
+    for (usize i = 0; i < accelerators_.Size(); ++i) {
+        if (accelerators_[i].chord == chord) return 0;
+    }
+    Accelerator a;
+    a.id = ++next_accelerator_;
+    a.chord = chord;
+    a.function = function;
+    a.user = user;
+    accelerators_.Push(a);
+    return a.id;
+}
+
+void Surface::UnregisterAccelerator(u32 id) {
+    for (usize i = 0; i < accelerators_.Size(); ++i) {
+        if (accelerators_[i].id == id) {
+            accelerators_.Remove(i);
+            return;
+        }
+    }
+}
+
+void Surface::SetAcceleratorEnabled(u32 id, bool enabled) {
+    for (usize i = 0; i < accelerators_.Size(); ++i) {
+        if (accelerators_[i].id == id) accelerators_[i].enabled = enabled;
+    }
+}
+
+bool Surface::AcceleratorEnabled(u32 id) const {
+    for (usize i = 0; i < accelerators_.Size(); ++i) {
+        if (accelerators_[i].id == id) return accelerators_[i].enabled;
+    }
+    return false;
+}
+
+KeyChord Surface::AcceleratorChord(u32 id) const {
+    for (usize i = 0; i < accelerators_.Size(); ++i) {
+        if (accelerators_[i].id == id) return accelerators_[i].chord;
+    }
+    return KeyChord();
+}
+
+void Surface::RestoreSavedFocus() {
+    Widget* back = menu_saved_focus_;
+    menu_saved_focus_ = nullptr;
+    SetFocus(back != nullptr && back->Shown() && back->EffectivelyEnabled() ? back : nullptr);
+}
+
+void Surface::HideTooltip() {
+    tooltip_blocked_ = true;
+    RemoveTooltip();
+}
+
+void Surface::RemoveTooltip() {
+    if (tooltip_ == nullptr) return;
+    Widget* t = tooltip_;
+    tooltip_ = nullptr;
+    tooltip_target_ = nullptr;
+    tips_->RemoveChild(t);
+}
+
+void Surface::ShowTooltip(Widget* target) {
+    UniquePtr<TooltipBubble> bubble = MakeUnique<TooltipBubble>();
+    bubble->SetText(target->Tooltip());
+    Widget* raw = bubble.Get();
+    tips_->AddChild(UniquePtr<Widget>(bubble.Release()));
+    Constraints limits;
+    limits.max_w = width_;
+    limits.max_h = height_;
+    Rect at;
+    at.x = pointer_position_.x;
+    at.y = pointer_position_.y;
+    at.h = themes_.Metric(MetricId::IconSize, 1.0f);
+    Rect all;
+    all.w = width_;
+    all.h = height_;
+    raw->Arrange(PlacePopup(raw->MeasureTotal(limits), at, Placement::Below, all));
+    tooltip_ = raw;
+    tooltip_target_ = target;
+}
+
+void Surface::UpdateTooltip() {
+    if (tooltip_ != nullptr || tooltip_blocked_ || hover_ == nullptr || !window_focused_ || !pointer_inside_ || buttons_down_ != 0 || !popup_infos_.Empty()) return;
+    if (hover_->Tooltip().Length() == 0 || time_ - hover_since_ < kTooltipDelay) return;
+    ShowTooltip(hover_);
 }
 
 void Surface::UpdateWidgets(Widget* widget, f32 dt) {
@@ -358,6 +609,7 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
     UpdateWidgets(popups_.Get(), dt);
     if (--depth_ == 0) FlushRemovals();
     TrackPopups();
+    UpdateTooltip();
 
     if (layout_dirty_) {
         // At most two passes: the second one is for a widget whose size depends on the width it was given (it invalidates layout when that changes).
@@ -368,9 +620,11 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
             layout_dirty_ = false;
             root_->ClearDirtyTree(kLayoutDirty);
             popups_->ClearDirtyTree(kLayoutDirty);
+            tips_->ClearDirtyTree(kLayoutDirty);
             ++layout_generation_;
             root_->Arrange(all);
             popups_->Arrange(all);
+            tips_->Arrange(all);
             if (!layout_dirty_) break;
         }
         if (layout_dirty_) {
@@ -378,6 +632,7 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
             layout_dirty_ = false;
             root_->ClearDirtyTree(kLayoutDirty);
             popups_->ClearDirtyTree(kLayoutDirty);
+            tips_->ClearDirtyTree(kLayoutDirty);
         }
         ++layout_passes_;
         draw_dirty_ = true;
@@ -394,9 +649,11 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
     canvas.Begin(scale_, static_cast<u32>(std::ceil(width_ * scale_)), static_cast<u32>(std::ceil(height_ * scale_)));
     root_->DrawTree(canvas);
     popups_->DrawTree(canvas);
+    tips_->DrawTree(canvas);
     list->SortLayers();
     root_->ClearDirtyTree(kDrawDirty);
     popups_->ClearDirtyTree(kDrawDirty);
+    tips_->ClearDirtyTree(kDrawDirty);
     draw_dirty_ = false;
     return true;
 }

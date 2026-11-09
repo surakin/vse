@@ -15,6 +15,11 @@ set(UI_SOURCES
   widgets/scroll.cpp
   widgets/text_field.cpp
   clipboard.cpp
+  popup.cpp
+  widgets/tooltip.cpp
+  widgets/menu.cpp
+  widgets/menu_bar.cpp
+  widgets/combobox.cpp
   text_words.cpp
   widgets/value_widgets.cpp
   widgets/list_box.cpp

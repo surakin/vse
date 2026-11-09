@@ -94,6 +94,11 @@ public:
     void VisibleRange(usize* first, usize* end) const;
     /// Returns how many rows were laid out (not found in the cache) since the box was made, so a test can see that scrolling only lays out new rows.
     u64 RowLayouts() const { return row_layouts_; }
+    /// Makes a click (the pointer going up on the row it went down on) run `OnActivate`, as a drop-down list needs (default off).
+    void SetActivateOnClick(bool activate) { activate_on_click_ = activate; }
+    /// Sets how many rows the preferred height holds (default `kPreferredRows`); marks layout dirty.
+    /// Param rows: at least 1.
+    void SetVisibleRows(usize rows);
     /// Returns the listeners called when the selection changes (with the box).
     Callback<ListBox*>& OnSelectionChanged() { return on_selection_; }
     /// Returns the listeners called when Enter goes down on the current item (with the box).
@@ -129,6 +134,9 @@ private:
     static void BarMoved(void* user, ScrollBar* bar);
 
     ListModel* model_ = nullptr;
+    bool activate_on_click_ = false;
+    usize visible_rows_ = 0;
+    usize pressed_ = kNone;
     SelectionMode mode_ = SelectionMode::Single;
     Vector<u8> selected_;
     usize selected_count_ = 0;

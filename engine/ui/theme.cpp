@@ -221,6 +221,14 @@ Theme BuildTheme(const Palette& p) {
     menu.At(StateKind::Disabled).text_color = p.text_disabled;
     b.SetStyle(widget_kind::kMenu, 0, menu);
 
+    Style tooltip;
+    tooltip.At(StateKind::Normal).background = p.text;
+    tooltip.At(StateKind::Normal).text_color = p.window;
+    tooltip.At(StateKind::Normal).radius = 3.0f;
+    tooltip.At(StateKind::Normal).padding_x = 6.0f;
+    tooltip.At(StateKind::Normal).padding_y = 4.0f;
+    b.SetStyle(widget_kind::kTooltip, 0, tooltip);
+
     Style scrollbar;
     scrollbar.At(StateKind::Normal).background = p.border;
     scrollbar.At(StateKind::Normal).radius = 5.0f;

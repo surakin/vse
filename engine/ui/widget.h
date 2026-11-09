@@ -236,6 +236,16 @@ public:
     virtual void OnDescendantFocused(Widget*) {}
     /// Advances time by `dt` seconds; called each frame for the widgets whose `WantsUpdate` is true.
     virtual void Update(f32) {}
+    /// What `SetContextHandler` takes: called with the user pointer, the widget and the pointer position in surface coordinates.
+    using ContextFunction = void (*)(void* user, Widget* widget, Point position);
+    /// Sets the function called when the right button goes down on this widget (or on a descendant that has none of its own), after the press was delivered as usual. Null removes it.
+    /// Param function: what to call, typically to open a context menu with [[ui::Surface::ShowContextMenu]].
+    /// Param user: passed to it; borrowed.
+    /// Ownership: `user` is borrowed until the handler is replaced or the widget dies.
+    void SetContextHandler(ContextFunction function, void* user) {
+        context_function_ = function;
+        context_user_ = user;
+    }
     /// Returns whether `Update` should be called each frame (a caret blink, a tooltip delay); default false.
     ///
     /// Fails: never.
@@ -250,6 +260,8 @@ protected:
 
 private:
     friend class Surface;
+    ContextFunction context_function_ = nullptr;
+    void* context_user_ = nullptr;
     void NotifyDestroyed();
     void AttachSurface(Surface* surface);
     void RecomputeIds(u64 parent_id, usize index);

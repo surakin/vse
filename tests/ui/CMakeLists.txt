@@ -14,6 +14,9 @@ set(UI_TEST_SOURCES
   value_widgets_test.cpp
   scroll_test.cpp
   text_field_test.cpp
+  popup_test.cpp
+  menu_test.cpp
+  combobox_test.cpp
 )
 
 find_package(Threads REQUIRED)
