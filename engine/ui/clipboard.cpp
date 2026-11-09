@@ -16,4 +16,15 @@ Clipboard::Ticket LocalClipboard::RequestPaste(PasteFunction function, void* use
 
 void LocalClipboard::CancelPaste(Ticket) {}
 
+void LocalClipboard::SetPrimaryText(StringView text) {
+    if (!primary_supported_) return;
+    primary_.Clear();
+    for (usize i = 0; i < text.Length(); ++i) primary_.Push(text[i]);
+}
+
+Clipboard::Ticket LocalClipboard::RequestPrimaryPaste(PasteFunction function, void* user) {
+    if (primary_supported_ && function != nullptr && !primary_.Empty()) function(user, PrimaryText());
+    return 0;
+}
+
 } // namespace engine_placeholder::ui

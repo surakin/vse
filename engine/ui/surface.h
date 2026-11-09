@@ -5,7 +5,9 @@
 #include "text/font.h"
 #include "text/glyph_atlas.h"
 #include "types.h"
+#include "ui/callback.h"
 #include "ui/clipboard.h"
+#include "ui/drag_drop.h"
 #include "ui/draw_list.h"
 #include "ui/event.h"
 #include "ui/popup.h"
@@ -60,6 +62,87 @@ public:
     /// Ownership: borrowed; the owner keeps it and it stays valid while the owner lives.
     /// Fails: returns null when there is none.
     Widget* PopupLayer() const { return popups_.Get(); }
+    /// How long a drag rests over a widget before `Widget::OnDragHoverDelay` runs, in seconds.
+    static constexpr f64 kDragHoverSeconds = 0.6;
+
+    /// Starts a drag from the widget that holds the pointer capture (the one whose press is in progress): the surface takes the pointer, hover goes to drop targets only, the source's press
+    /// ends, and `visual` (if any) follows the pointer in the top layer. The drag ends with the release of the last button (a drop on the target under the pointer, else a cancel), with Escape, or
+    /// with `CancelDrag`; the source then gets `OnDragEnded`.
+    /// Param payload: what is dragged; moved. Needs at least one entry and one allowed action.
+    /// Param visual: an optional widget tree shown at the pointer (made pass-through); its size is measured once.
+    /// Param visual_offset: where its top-left corner lies relative to the pointer.
+    /// Returns: whether the drag started.
+    /// Ownership: the surface owns `visual` until the drag ends.
+    /// Fails: returns false, changing nothing, when a drag is going on, no button is down or the payload is empty or allows nothing.
+    bool BeginDrag(DragPayload payload, UniquePtr<Widget> visual = UniquePtr<Widget>(), Point visual_offset = Point());
+    /// Returns whether a drag is going on (started here, handed to the OS, or coming from another program).
+    ///
+    /// Fails: never.
+    bool Dragging() const { return drag_.active; }
+    /// Returns whether the drag in progress came from another program.
+    ///
+    /// Fails: never.
+    bool DragIsExternal() const { return drag_.active && drag_.external; }
+    /// Returns whether the drag in progress was started here and now runs in the OS (the pointer left the window).
+    ///
+    /// Fails: never.
+    bool DragHandedOff() const { return drag_.active && drag_.handed_off; }
+    /// Returns the payload of the drag in progress, or null.
+    ///
+    /// Ownership: borrowed; valid until the drag ends.
+    /// Fails: returns null when there is none.
+    const DragPayload* ActiveDrag() const { return drag_.active ? &drag_.payload : nullptr; }
+    /// Returns the widget that started the drag in progress, or null (none, or it died).
+    ///
+    /// Ownership: borrowed.
+    /// Fails: returns null when there is none.
+    Widget* DragSource() const { return drag_.source; }
+    /// Returns the widget a drop would go to now, or null.
+    ///
+    /// Ownership: borrowed.
+    /// Fails: returns null when there is none.
+    Widget* DragTarget() const { return drag_.target; }
+    /// Returns the action a drop would take now (`Nothing` over no target).
+    ///
+    /// Fails: never.
+    DragAction CurrentDragAction() const { return drag_.active ? drag_.action : DragAction::Nothing; }
+    /// Returns the theme's drag slop (`MetricId::DragSlop`) in logical units.
+    f32 DragSlop() const;
+    /// Returns whether `to` is farther than the drag slop from `from` on either axis.
+    /// Fails: never.
+    bool PastDragSlop(Point from, Point to) const;
+    /// Ends the drag in progress as cancelled (the target gets `OnDragLeave`, the source `OnDragEnded(Nothing)`); does nothing when none.
+    void CancelDrag();
+    /// Passes the drag started here to the OS: the target is left and the visual removed, the source stays until `EndHandedOffDrag`. Called by the window adapter when the pointer leaves the window.
+    /// Fails: does nothing unless a drag started here is going on.
+    void HandOffDrag();
+    /// Ends a handed-off drag: the source gets `OnDragEnded(taken)`.
+    /// Param taken: what the OS drop did (`Nothing` when cancelled).
+    void EndHandedOffDrag(DragAction taken);
+    /// A drag from another program entered: its kinds are on offer (`payload` holds pending entries) at `position`. Ignored while a drag started here is going on.
+    /// Param allowed: the actions the source allows.
+    void ExternalDragEnter(DragPayload payload, Point position, u8 allowed);
+    /// The external drag moved to `position`.
+    void ExternalDragOver(Point position, u8 allowed);
+    /// The external drag left without dropping.
+    void ExternalDragLeave();
+    /// The external drag was dropped with its data read.
+    /// Param complete: the payload with every entry read; moved.
+    /// Param action: the action the source chose.
+    /// Returns: what the drop did (`Nothing` when no target took it).
+    DragAction ExternalDrop(DragPayload complete, Point position, DragAction action);
+    /// The data of the external drop could not be read: the drag ends and the failure listeners run with `message`.
+    void ExternalDropFailed(StringView message);
+    /// Returns the listeners called with newline-separated absolute paths when a file list is dropped on nothing that accepts it (the root's file drop). While there is one, a file list is accepted anywhere.
+    Callback<Surface*, StringView>& OnFilesDropped() { return on_files_dropped_; }
+    /// Returns the listeners called with a message when a drop failed to read its data.
+    Callback<Surface*, StringView>& OnDropFailed() { return on_drop_failed_; }
+    /// Returns the widget under `point` as a drag would see it (modals, popups), or null.
+    ///
+    /// Ownership: borrowed.
+    /// Fails: returns null when there is none.
+    Widget* WidgetAt(Point point) { return HitTestAll(point); }
+
     /// Returns the tooltip layer: a widget above the popup layer that holds the tooltip bubble while one shows (it is never hit).
     /// Ownership: borrowed; the surface keeps it.
     /// Fails: returns null when there is none.
@@ -228,6 +311,15 @@ public:
     /// Gives the focus to the owner `SaveFocus` remembered (to nobody when there is none, or it died), and forgets it.
     /// Fails: never.
     void RestoreSavedFocus();
+    /// Returns the widget Edit commands (Cut, Copy, Paste, Select All) act on: the focus owner, or, while a menu has the focus (a popup is open, or the menu bar holds it), the owner it borrowed the focus from.
+    ///
+    /// Ownership: borrowed.
+    /// Fails: returns null when there is none.
+    Widget* EditTarget() const {
+        if (!popup_infos_.Empty() && saved_focus_ != nullptr) return saved_focus_;
+        if (menu_saved_focus_ != nullptr && focus_ == menu_key_target_) return menu_saved_focus_;
+        return focus_;
+    }
     /// Returns the focus owner, or null.
     ///
     /// Ownership: borrowed; the owner keeps it and it stays valid while the owner lives.
@@ -353,6 +445,35 @@ private:
     Vector<PopupInfo> popup_infos_;
     Vector<ModalInfo> modal_infos_;
     void CloseModalAt(usize index);
+    struct DragState {
+        bool active = false;
+        bool external = false;
+        bool handed_off = false;
+        bool files_target = false;
+        bool hover_fired = false;
+        DragPayload payload;
+        Widget* source = nullptr;
+        Widget* visual = nullptr;
+        Widget* target = nullptr;
+        Widget* hover_widget = nullptr;
+        Size visual_size;
+        Point visual_offset;
+        Point position;
+        Point hover_position;
+        f64 hover_since = 0;
+        DragAction action = DragAction::Nothing;
+        DragAction os_action = DragAction::Nothing;
+    };
+    void UpdateDragRequested();
+    void UpdateDragTarget();
+    void MoveDragVisual();
+    void DragPointer(const Event& e);
+    DragAction EndDrag(bool drop);
+    void UpdateDrag(f32 dt);
+    void ClearDragTargetState();
+    DragState drag_;
+    Callback<Surface*, StringView> on_files_dropped_;
+    Callback<Surface*, StringView> on_drop_failed_;
     Widget* KeyTarget() const;
     Vector<Accelerator> accelerators_;
     u32 next_accelerator_ = 0;

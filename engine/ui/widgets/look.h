@@ -36,6 +36,29 @@ inline char KeyLetter(Key key) {
 /// Returns `abgr` with its alpha replaced by `alpha` (0 to 255).
 inline u32 WithAlpha(u32 abgr, u32 alpha) { return (abgr & 0x00FFFFFFu) | (alpha << 24); }
 
+/// The width of the band along an edge in which a drag auto-scrolls, in logical units.
+constexpr f32 kDragScrollBand = 24.0f;
+/// The auto-scroll speed at the very edge, in logical units per second (it falls to 0 at the inner side of the band).
+constexpr f32 kDragScrollSpeed = 600.0f;
+/// The thickness of an insertion line, in logical units.
+constexpr f32 kDropMarkerThickness = 2.0f;
+
+/// Returns how far a drag at `along` (0 to `length`) scrolls in `dt` seconds: negative near the start, positive near the end, 0 elsewhere; it grows with the depth into the band.
+///
+/// Fails: never.
+inline f32 DragScrollDelta(f32 along, f32 length, f32 dt) {
+    if (length <= kDragScrollBand * 2) return 0.0f; // a view too small for two bands does not scroll under a drag
+    if (along < kDragScrollBand) {
+        const f32 depth = along <= 0 ? 1.0f : (kDragScrollBand - along) / kDragScrollBand;
+        return -depth * kDragScrollSpeed * dt;
+    }
+    if (along > length - kDragScrollBand) {
+        const f32 depth = along >= length ? 1.0f : (along - (length - kDragScrollBand)) / kDragScrollBand;
+        return depth * kDragScrollSpeed * dt;
+    }
+    return 0.0f;
+}
+
 /// Returns the style's corner radius in logical units.
 ///
 /// Fails: never.

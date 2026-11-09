@@ -305,7 +305,103 @@ void ListBox::Draw(Canvas& canvas) {
         }
         if (i == current_ && (State() & kStateFocused) != 0) canvas.DrawBorder(r, CornerRadii(), 1.0f, surface->Themes().Color(ColorId::Accent));
     }
+    if (drop_index_ != kNone) {
+        const ResolvedStyle marker = surface->Themes().Resolve(widget_kind::kDropMarker, VariantId(0), 0, scale);
+        Rect line;
+        line.x = b.x;
+        line.w = b.w - bar_w;
+        line.h = kDropMarkerThickness;
+        line.y = b.y + static_cast<f32>(drop_index_) * row_height_ - offset_ - kDropMarkerThickness / 2;
+        canvas.DrawRect(line, marker.background);
+    }
     canvas.PopClip();
+}
+
+usize ListBox::InsertionIndex(f32 local_y) const {
+    if (row_height_ <= 0 || count_ == 0) return 0;
+    const f32 rows = (local_y + offset_) / row_height_;
+    if (rows <= 0) return 0;
+    const usize index = static_cast<usize>(rows + 0.5f); // the nearer boundary between two rows
+    return index > count_ ? count_ : index;
+}
+
+void ListBox::StartDrag(Point position) {
+    Surface* surface = GetSurface();
+    DragPayload payload;
+    if (reorderable_ && model_ != nullptr) payload.AddPointer(StringView(kDragTag), this);
+    if (drag_out_ && model_ != nullptr) {
+        String<HeapAllocator> text{HeapAllocator::Default()};
+        for (usize i = 0; i < count_; ++i) {
+            if (!IsSelected(i)) continue;
+            if (text.Length() > 0) text.Append('\n');
+            text.Append(model_->ItemText(i));
+        }
+        payload.AddText(text.View());
+    }
+    payload.SetAllowed(drag_out_ ? os::kAllDragActions : os::DragActionBit(DragAction::Move));
+    (void)position;
+    press_pending_ = false;
+    surface->BeginDrag(static_cast<DragPayload&&>(payload));
+}
+
+DragAction ListBox::CanAccept(const DragPayload& payload, Point) {
+    if (!reorderable_ || model_ == nullptr || payload.PointerOf(StringView(kDragTag)) != this || !payload.Allows(DragAction::Move)) return DragAction::Nothing;
+    return DragAction::Move;
+}
+
+void ListBox::OnDragOver(const DragPayload&, Point position, DragAction) {
+    const usize index = InsertionIndex(position.y);
+    if (index != drop_index_) {
+        drop_index_ = index;
+        MarkDirty(kDrawDirty);
+    }
+}
+
+void ListBox::OnDragLeave() {
+    drop_index_ = kNone;
+    MarkDirty(kDrawDirty);
+}
+
+void ListBox::OnDragEnded(DragAction) {
+    pressed_ = kNone;
+    press_pending_ = false;
+    drop_index_ = kNone;
+    MarkDirty(kDrawDirty);
+}
+
+bool ListBox::DragAutoScroll(Point position, f32 dt) {
+    const f32 delta = DragScrollDelta(position.y, ViewHeight(), dt);
+    if (delta == 0.0f) return false;
+    const f32 before = offset_;
+    SetOffset(offset_ + delta);
+    return offset_ != before;
+}
+
+void ListBox::OnDrop(const DragPayload&, Point position, DragAction) {
+    const usize to = drop_index_ != kNone ? drop_index_ : InsertionIndex(position.y);
+    drop_index_ = kNone;
+    MarkDirty(kDrawDirty);
+    if (model_ == nullptr || selected_count_ == 0) return;
+    Vector<usize> indices;
+    usize before = 0;
+    for (usize i = 0; i < count_; ++i) {
+        if (!IsSelected(i)) continue;
+        indices.Push(i);
+        if (i < to) ++before;
+    }
+    bool contiguous = true;
+    for (usize k = 1; k < indices.Size(); ++k) contiguous = contiguous && indices[k] == indices[k - 1] + 1;
+    if (contiguous && to >= indices[0] && to <= indices[indices.Size() - 1] + 1) return; // dropped on itself: nothing moves
+    if (!model_->MoveItems(indices.Data(), indices.Size(), to)) return;
+    ++revision_; // the rows' texts are read again
+    const usize start = to - before;
+    for (usize i = 0; i < selected_.Size(); ++i) selected_[i] = 0;
+    for (usize k = 0; k < indices.Size(); ++k) selected_[start + k] = 1;
+    selected_count_ = indices.Size();
+    current_ = start;
+    anchor_ = start;
+    Notify();
+    MarkDirty(kDrawDirty);
 }
 
 void ListBox::OnEvent(Event& event) {
@@ -314,15 +410,32 @@ void ListBox::OnEvent(Event& event) {
             if (event.button != os::kMouseLeft) break;
             event.handled = true;
             pressed_ = IndexAt(event.position.y);
-            if (pressed_ != kNone) Click(pressed_, event.modifiers);
+            press_position_ = event.position;
+            press_pending_ = false;
+            if (pressed_ != kNone) {
+                const bool plain = (event.modifiers & (os::kModCtrl | os::kModShift)) == 0;
+                if ((reorderable_ || drag_out_) && plain && IsSelected(pressed_)) {
+                    press_pending_ = true; // a press on the selection keeps it: it may be the start of a drag
+                    current_ = pressed_;
+                } else {
+                    Click(pressed_, event.modifiers);
+                }
+            }
             break;
         case EventType::PointerUp:
             if (event.button != os::kMouseLeft) break;
             event.handled = true;
+            if (press_pending_ && pressed_ != kNone && pressed_ == IndexAt(event.position.y)) Click(pressed_, event.modifiers); // a click on the selection: it becomes the one item
+            press_pending_ = false;
             if (activate_on_click_ && pressed_ != kNone && pressed_ == IndexAt(event.position.y)) on_activate_.Invoke(this);
             pressed_ = kNone;
             break;
         case EventType::PointerMove: {
+            Surface* surface = GetSurface();
+            if (pressed_ != kNone && (reorderable_ || drag_out_) && surface != nullptr && surface->Capture() == this && surface->PastDragSlop(press_position_, event.position)) {
+                StartDrag(event.position);
+                break;
+            }
             const usize i = IndexAt(event.position.y);
             if (i != hover_) {
                 hover_ = i;

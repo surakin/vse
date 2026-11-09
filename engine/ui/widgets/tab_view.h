@@ -92,6 +92,30 @@ public:
     Rect TabRect(usize index);
     /// Returns the rectangle the selected page gets, in surface coordinates.
     Rect ContentRect();
+    /// The tag of the pointer entry a drag started by a tab header carries.
+    static constexpr char kDragTag[] = "ui.tabview.tab";
+    /// Lets the user reorder the tabs by dragging a header (default off).
+    void SetReorderable(bool reorderable) { reorderable_ = reorderable; }
+    /// Returns the insertion index the drag shows now (`kNone` when none), for a test.
+    usize DropIndex() const { return drop_index_; }
+    /// Returns the listeners called after the user moved a tab by dragging (with the view, the old and the new index).
+    Callback<TabView*, usize, usize>& OnTabMoved() { return on_moved_; }
+    /// Accepts the drag of one of this view's headers (a move) when the view is reorderable.
+    DragAction CanAccept(const DragPayload& payload, Point position) override;
+    /// Shows the insertion line.
+    void OnDragOver(const DragPayload& payload, Point position, DragAction action) override;
+    /// Hides the insertion line.
+    void OnDragLeave() override;
+    /// Moves the dragged tab to the insertion index.
+    void OnDrop(const DragPayload& payload, Point position, DragAction action) override;
+    /// Ends the press that started the drag.
+    void OnDragEnded(DragAction action) override;
+    /// Scrolls the headers while the pointer rests near an end of them.
+    /// Fails: never.
+    bool DragAutoScroll(Point position, f32 dt) override;
+    /// Selects the tab under the pointer after a drag has rested over it (as a click would, so `OnSelectionChanged` runs).
+    /// Fails: never.
+    bool OnDragHoverDelay(Point position) override;
     /// Returns the listeners called when the user changes the selection (with the view).
     Callback<TabView*>& OnSelectionChanged() { return on_selection_; }
     /// Returns the listeners called when the user clicks a close button (with the view and the tab's index).
@@ -131,6 +155,13 @@ private:
     void UserSelect(usize index);
     f32 CloseSize() const;
 
+    usize InsertionIndex(f32 local_x);
+
+    bool reorderable_ = false;
+    usize press_tab_ = kNone;
+    Point press_position_;
+    usize drop_index_ = kNone;
+    Callback<TabView*, usize, usize> on_moved_;
     Vector<Tab> tabs_;
     usize selected_ = kNone;
     usize hover_ = kNone;

@@ -99,6 +99,22 @@ private:
     Vector<MenuItem> items_;
 };
 
+/// Adds the Edit commands Cut, Copy, Paste and Select All (with a separator before Select All) to `menu`; choosing one runs it on `surface->EditTarget()`.
+/// Param menu: the menu to add to.
+/// Param surface: the surface whose focus owner is edited; borrowed, it must outlive the menu.
+/// Returns: the index of the Cut item (Copy, Paste follow, then the separator and Select All).
+/// Ownership: borrows `surface`.
+usize AddEditItems(Menu& menu, Surface* surface);
+/// The offsets of the four items `AddEditItems` adds from the Cut item (a separator lies between Paste and Select All), and their count.
+constexpr usize kEditItemOffsets[] = {0, 1, 2, 4};
+/// The number of Edit items.
+constexpr usize kEditItemCount = sizeof(kEditItemOffsets) / sizeof(kEditItemOffsets[0]);
+
+/// Enables or disables the four items `AddEditItems` added, from what the edit target can do now (`Widget::CanEdit`); call it when the menu is about to show. A target that cannot edit
+/// disables all four.
+/// Param first: the index `AddEditItems` returned.
+void RefreshEditItems(Menu& menu, usize first, const Surface& surface);
+
 /// Splits `text` at its mnemonic marker: copies it without the `&` markers into `label` and returns the mnemonic letter in lower case (0 for none).
 /// Param text: the text as given to the menu.
 /// Param label: receives the text to display; cleared first.

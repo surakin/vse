@@ -213,10 +213,17 @@ Widget* Widget::HitTest(Point point) {
 void Widget::DrawTree(Canvas& canvas) {
     if (!Shown()) return;
     Draw(canvas);
-    if (children_.Empty()) return;
-    if (clip_children_) canvas.PushClip(bounds_);
-    for (usize i = 0; i < children_.Size(); ++i) children_[i]->DrawTree(canvas);
-    if (clip_children_) canvas.PopClip();
+    if (!children_.Empty()) {
+        if (clip_children_) canvas.PushClip(bounds_);
+        for (usize i = 0; i < children_.Size(); ++i) children_[i]->DrawTree(canvas);
+        if (clip_children_) canvas.PopClip();
+    }
+    if ((state_ & kStateDragOver) != 0 && surface_ != nullptr) { // a drag it would accept is over it: the highlight lies over the whole widget
+        const f32 scale = surface_->Scale();
+        const ResolvedStyle style = surface_->Themes().Resolve(widget_kind::kDropTarget, VariantId(0), 0, scale);
+        canvas.DrawRect(bounds_, style.background);
+        if (style.border_width > 0) canvas.DrawBorder(bounds_, CornerRadii(0), style.border_width / scale, style.border_color);
+    }
 }
 
 } // namespace engine_placeholder::ui

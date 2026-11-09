@@ -7,6 +7,8 @@ set(UI_SOURCES
   theme.cpp
   widget.cpp
   surface.cpp
+  surface_drag.cpp
+  drag_drop.cpp
   layout.cpp
   text_block.cpp
   text_run.cpp

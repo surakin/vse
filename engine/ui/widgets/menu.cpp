@@ -80,6 +80,33 @@ void Menu::SetItemAccelerator(usize index, u32 id) {
 
 Menu* Menu::Submenu(usize index) const { return index < items_.Size() ? items_[index].submenu.Get() : nullptr; }
 
+namespace {
+void RunEditOn(void* user, Widget::EditCommand command) {
+    Surface* surface = static_cast<Surface*>(user);
+    Widget* target = surface->EditTarget();
+    if (target != nullptr) target->RunEdit(command);
+}
+void EditCut(void* user, usize) { RunEditOn(user, Widget::EditCommand::Cut); }
+void EditCopy(void* user, usize) { RunEditOn(user, Widget::EditCommand::Copy); }
+void EditPaste(void* user, usize) { RunEditOn(user, Widget::EditCommand::Paste); }
+void EditSelectAll(void* user, usize) { RunEditOn(user, Widget::EditCommand::SelectAll); }
+} // namespace
+
+usize AddEditItems(Menu& menu, Surface* surface) {
+    const usize first = menu.AddItem(StringView("Cu&t"), &EditCut, surface);
+    menu.AddItem(StringView("&Copy"), &EditCopy, surface);
+    menu.AddItem(StringView("&Paste"), &EditPaste, surface);
+    menu.AddSeparator();
+    menu.AddItem(StringView("Select &All"), &EditSelectAll, surface);
+    return first;
+}
+
+void RefreshEditItems(Menu& menu, usize first, const Surface& surface) {
+    const Widget* target = surface.EditTarget();
+    const Widget::EditCommand commands[kEditItemCount] = {Widget::EditCommand::Cut, Widget::EditCommand::Copy, Widget::EditCommand::Paste, Widget::EditCommand::SelectAll};
+    for (usize i = 0; i < kEditItemCount; ++i) menu.SetItemEnabled(first + kEditItemOffsets[i], target != nullptr && target->CanEdit(commands[i]));
+}
+
 bool Menu::Choose(usize index) {
     if (index >= items_.Size()) return false;
     MenuItem& item = items_[index];

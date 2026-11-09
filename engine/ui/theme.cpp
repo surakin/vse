@@ -26,7 +26,7 @@ public:
     // `builtin`: seed the ids of `widget_kind` (1 to 10, in this order).
     explicit NameTable(bool builtin) {
         if (builtin) {
-            const char* const names[] = {"label", "button", "checkbox", "radio", "slider", "textfield", "scrollbar", "panel", "menu", "tooltip", "tab", "splitter", "window", "titlebar", "modaldim"};
+            const char* const names[] = {"label", "button", "checkbox", "radio", "slider", "textfield", "scrollbar", "panel", "menu", "tooltip", "tab", "splitter", "window", "titlebar", "modaldim", "droptarget", "dropmarker"};
             for (const char* name : names) Register(StringView(name));
         }
     }
@@ -118,7 +118,7 @@ Theme BuildTheme(const Palette& p) {
     b.SetColor(ColorId::Text, p.text).SetColor(ColorId::TextDisabled, p.text_disabled).SetColor(ColorId::WindowBackground, p.window).SetColor(ColorId::Panel, p.panel);
     b.SetColor(ColorId::Accent, p.accent).SetColor(ColorId::Danger, p.danger).SetColor(ColorId::Border, p.border);
     b.SetMetric(MetricId::Padding, 8).SetMetric(MetricId::Spacing, 6).SetMetric(MetricId::BorderWidth, 1).SetMetric(MetricId::CornerRadius, 4);
-    b.SetMetric(MetricId::ScrollbarThickness, 10).SetMetric(MetricId::MinHitSize, 24).SetMetric(MetricId::IconSize, 16);
+    b.SetMetric(MetricId::ScrollbarThickness, 10).SetMetric(MetricId::MinHitSize, 24).SetMetric(MetricId::IconSize, 16).SetMetric(MetricId::DragSlop, 4);
     FontRef body;
     body.family = 0;
     body.size = 14;
@@ -267,6 +267,16 @@ Theme BuildTheme(const Palette& p) {
     Style dim;
     dim.At(StateKind::Normal).background = 0x80000000u; // half-transparent black, 0xAABBGGRR
     b.SetStyle(widget_kind::kModalDim, 0, dim);
+
+    Style drop_target;
+    drop_target.At(StateKind::Normal).background = ((p.accent & 0x00FFFFFFu) | 0x28000000u);
+    drop_target.At(StateKind::Normal).border_color = p.accent;
+    drop_target.At(StateKind::Normal).border_width = 1.0f;
+    b.SetStyle(widget_kind::kDropTarget, 0, drop_target);
+
+    Style drop_marker;
+    drop_marker.At(StateKind::Normal).background = p.accent;
+    b.SetStyle(widget_kind::kDropMarker, 0, drop_marker);
 
     Style scrollbar;
     scrollbar.At(StateKind::Normal).background = p.border;

@@ -271,6 +271,11 @@ void TabView::Draw(Canvas& canvas) {
             if ((State() & kStateFocused) != 0) canvas.DrawBorder(r, CornerRadii(), 1.0f, accent);
         }
     }
+    if (drop_index_ != kNone) {
+        const ResolvedStyle marker = surface->Themes().Resolve(widget_kind::kDropMarker, VariantId(0), 0, scale);
+        const f32 at = drop_index_ < tabs_.Size() ? tabs_[drop_index_].x : total_w_;
+        canvas.DrawRect(Rect{b.x + at - scroll_ - kDropMarkerThickness / 2, b.y, kDropMarkerThickness, header_h_}, marker.background);
+    }
     canvas.PopClip();
     if (total_w_ > b.w) {
         const u32 ink = surface->Themes().Color(ColorId::Text);
@@ -284,10 +289,95 @@ void TabView::Draw(Canvas& canvas) {
     }
 }
 
+usize TabView::InsertionIndex(f32 local_x) {
+    Layout();
+    const f32 x = local_x + scroll_;
+    for (usize i = 0; i < tabs_.Size(); ++i) {
+        if (x < tabs_[i].x + tabs_[i].width / 2) return i; // before the first tab whose middle lies beyond the pointer
+    }
+    return tabs_.Size();
+}
+
+DragAction TabView::CanAccept(const DragPayload& payload, Point) {
+    if (!reorderable_ || payload.PointerOf(StringView(kDragTag)) != this || !payload.Allows(DragAction::Move)) return DragAction::Nothing;
+    return DragAction::Move;
+}
+
+void TabView::OnDragOver(const DragPayload&, Point position, DragAction) {
+    const usize index = InsertionIndex(position.x);
+    if (index != drop_index_) {
+        drop_index_ = index;
+        MarkDirty(kDrawDirty);
+    }
+}
+
+void TabView::OnDragLeave() {
+    drop_index_ = kNone;
+    MarkDirty(kDrawDirty);
+}
+
+void TabView::OnDragEnded(DragAction) {
+    press_tab_ = kNone;
+    drop_index_ = kNone;
+    MarkDirty(kDrawDirty);
+}
+
+bool TabView::DragAutoScroll(Point position, f32 dt) {
+    if (position.y < 0 || position.y >= header_h_ || total_w_ <= Bounds().w) return false;
+    const f32 delta = DragScrollDelta(position.x, Span(), dt);
+    if (delta == 0.0f) return false;
+    const f32 before = scroll_;
+    SetScroll(scroll_ + delta);
+    return scroll_ != before;
+}
+
+bool TabView::OnDragHoverDelay(Point position) {
+    const HitInfo hit = HitAt(position);
+    if (hit.kind != Hit::Tab && hit.kind != Hit::Close) return false;
+    if (hit.tab != selected_) UserSelect(hit.tab);
+    return true;
+}
+
+void TabView::OnDrop(const DragPayload&, Point position, DragAction) {
+    const usize from = press_tab_;
+    usize to = drop_index_ != kNone ? drop_index_ : InsertionIndex(position.x);
+    drop_index_ = kNone;
+    press_tab_ = kNone;
+    MarkDirty(kDrawDirty);
+    if (from == kNone || from >= tabs_.Size()) return;
+    if (to > from) --to; // the slot the tab leaves is counted
+    if (to == from) return;
+    Vector<usize> order;
+    for (usize i = 0; i < tabs_.Size(); ++i) {
+        if (i != from) order.Push(i);
+    }
+    order.Insert(to, from);
+    const Widget* selected_page = selected_ == kNone ? nullptr : tabs_[selected_].page;
+    const usize selected_old = selected_;
+    Vector<Tab> next;
+    for (usize k = 0; k < order.Size(); ++k) next.Push(static_cast<Tab&&>(tabs_[order[k]]));
+    tabs_ = static_cast<Vector<Tab>&&>(next);
+    for (usize k = 0; k < order.Size(); ++k) {
+        if (order[k] == selected_old) selected_ = k;
+    }
+    (void)selected_page;
+    hover_ = kNone;
+    MarkDirty(kLayoutDirty | kDrawDirty);
+    on_moved_.Invoke(this, from, to);
+}
+
 void TabView::OnEvent(Event& event) {
     Layout();
     switch (event.type) {
         case EventType::PointerMove: {
+            if (press_tab_ != kNone && reorderable_ && GetSurface()->Capture() == this && GetSurface()->PastDragSlop(press_position_, event.position)) {
+                DragPayload payload;
+                payload.AddPointer(StringView(kDragTag), this);
+                payload.SetAllowed(os::DragActionBit(DragAction::Move));
+                GetSurface()->BeginDrag(static_cast<DragPayload&&>(payload));
+                event.handled = true;
+                break;
+            }
             const HitInfo hit = HitAt(event.position);
             const usize tab = (hit.kind == Hit::Tab || hit.kind == Hit::Close) ? hit.tab : kNone;
             const bool close = hit.kind == Hit::Close;
@@ -323,10 +413,15 @@ void TabView::OnEvent(Event& event) {
                     break;
                 default:
                     UserSelect(hit.tab);
+                    press_tab_ = hit.tab;
+                    press_position_ = event.position;
                     break;
             }
             break;
         }
+        case EventType::PointerUp:
+            press_tab_ = kNone;
+            break;
         case EventType::Wheel:
             if (event.position.y >= 0 && event.position.y < header_h_ && total_w_ > Bounds().w) {
                 event.handled = true;

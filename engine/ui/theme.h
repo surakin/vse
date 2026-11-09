@@ -36,6 +36,8 @@ constexpr WidgetKind kSplitter = 12; ///< A splitter handle.
 constexpr WidgetKind kWindow = 13;   ///< The frame of a window or dialog.
 constexpr WidgetKind kTitleBar = 14; ///< The title bar of a window or dialog.
 constexpr WidgetKind kModalDim = 15; ///< The shade drawn over everything beneath a modal dialog.
+constexpr WidgetKind kDropTarget = 16; ///< The highlight drawn over a widget that a drag is over and would accept.
+constexpr WidgetKind kDropMarker = 17; ///< The insertion line drawn where a dragged item would land.
 } // namespace widget_kind
 
 /// Returns the id of the widget kind called `name`, registering it on first use. Ids are stable for the life of the process and the same for the same name.
@@ -93,6 +95,7 @@ enum class MetricId : u8 {
     ScrollbarThickness, ///< Scroll bar thickness.
     MinHitSize,         ///< Smallest comfortable hit target.
     IconSize,           ///< Icon edge length.
+    DragSlop,           ///< How far the pointer must move after a press before a drag starts.
     Count               ///< Number of metrics; not a metric.
 };
 /// The named fonts of a theme.
@@ -134,6 +137,7 @@ constexpr u32 kStatePressed = 2;  ///< The widget is being pressed.
 constexpr u32 kStateFocused = 4;  ///< The widget has the keyboard focus.
 constexpr u32 kStateDisabled = 8; ///< The widget does not react.
 constexpr u32 kStateChecked = 16; ///< The widget is checked, selected or on.
+constexpr u32 kStateDragOver = 32; ///< A drag it would accept is over the widget (kept by the surface; the widget draws the `droptarget` style, it is not passed to `Resolve`).
 
 /// The look of one widget in one state; every field may be unset.
 ///

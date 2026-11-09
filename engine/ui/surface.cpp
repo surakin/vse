@@ -97,6 +97,13 @@ void Surface::WidgetDestroyed(Widget* widget) {
     if (focus_ == widget) focus_ = nullptr;
     if (capture_ == widget) capture_ = nullptr;
     if (hover_ == widget) hover_ = nullptr;
+    if (drag_.source == widget) drag_.source = nullptr;
+    if (drag_.visual == widget) drag_.visual = nullptr;
+    if (drag_.hover_widget == widget) drag_.hover_widget = nullptr;
+    if (drag_.target == widget) {
+        drag_.target = nullptr;
+        drag_.action = DragAction::Nothing;
+    }
     if (saved_focus_ == widget) saved_focus_ = nullptr;
     if (menu_saved_focus_ == widget) menu_saved_focus_ = nullptr;
     for (usize i = 0; i < modal_infos_.Size(); ++i) {
@@ -216,6 +223,7 @@ void Surface::SetCapture(Widget* widget) {
 }
 
 void Surface::ReleasePointer() {
+    if (drag_.active && !drag_.external && !drag_.handed_off) EndDrag(false); // losing the pointer (focus lost, a modal dialog opened) ends a drag held here
     buttons_down_ = 0;
     if (capture_ != nullptr) {
         capture_->state_ &= ~kStatePressed;
@@ -287,6 +295,7 @@ bool Surface::FocusNext(bool backwards) {
 }
 
 os::CursorShape Surface::RequestedCursor() const {
+    if (drag_.active && !drag_.external) return CursorForDragAction(drag_.action);
     for (const Widget* w = capture_ != nullptr ? capture_ : hover_; w != nullptr; w = w->Parent()) {
         if (w->HasCursor()) return w->Cursor();
     }
@@ -344,6 +353,16 @@ void Surface::Dispatch(Event e) {
     e.time = time_;
     ++depth_;
     TrackPopups();
+    if (drag_.active && !drag_.external && !drag_.handed_off && e.type == EventType::KeyDown && e.key == Key::Escape) {
+        EndDrag(false); // Escape cancels a drag and goes no further
+        if (--depth_ == 0) FlushRemovals();
+        return;
+    }
+    if (drag_.active && !drag_.external && !drag_.handed_off && (IsPointer(e.type) || e.type == EventType::PointerLeave)) {
+        DragPointer(e);
+        if (--depth_ == 0) FlushRemovals();
+        return;
+    }
     if (e.type == EventType::WindowFocusGained || e.type == EventType::WindowFocusLost) {
         SetWindowFocus(e.type == EventType::WindowFocusGained);
     } else if (e.type == EventType::PointerLeave) {
@@ -720,6 +739,7 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
     for (usize i = 0; i < processing_.Size(); ++i) Dispatch(processing_[i]);
     processing_.Clear();
     UpdateWidgets(root_.Get(), dt);
+    UpdateDrag(dt);
     UpdateWidgets(modals_.Get(), dt);
     UpdateWidgets(popups_.Get(), dt);
     if (--depth_ == 0) FlushRemovals();

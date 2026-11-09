@@ -19,6 +19,8 @@ set(UI_TEST_SOURCES
   combobox_test.cpp
   tab_splitter_test.cpp
   dialog_test.cpp
+  drag_drop_test.cpp
+  clipboard_test.cpp
 )
 
 find_package(Threads REQUIRED)

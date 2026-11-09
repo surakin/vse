@@ -1,5 +1,5 @@
 # Phase 15 Day 194: the window adapter, the one library that links both ui and platform (ui itself names no window). One library per sanitizer flavor, like ui.
-set(UI_WINDOW_SOURCES window_adapter.cpp)
+set(UI_WINDOW_SOURCES window_adapter.cpp os_clipboard.cpp)
 set(UI_WINDOW_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")

@@ -7,6 +7,7 @@
 #include "platform/cursor.h"
 #include "types.h"
 #include "ui/canvas.h"
+#include "ui/drag_drop.h"
 #include "ui/event.h"
 #include "ui/geometry.h"
 #include "ui/layout_types.h"
@@ -234,6 +235,40 @@ public:
     ///
     /// Ownership: borrows the widget for the call.
     virtual void OnDescendantFocused(Widget*) {}
+    /// Drop target: decides whether a drag at `position` (local) would be accepted here, and what it would do. The surface asks the widget under the pointer, then its ancestors, and the first
+    /// that answers other than `Nothing` is the target. The default refuses. A payload from another program has `pending` entries without data. The answer must be one of `payload.Allowed()`.
+    /// Returns: the action the drop would take (usually `payload.Requested()`), or `Nothing`.
+    virtual DragAction CanAccept(const DragPayload&, Point) { return DragAction::Nothing; }
+    /// Drop target: a drag it accepts came over it; the surface has set `kStateDragOver`. The default does nothing.
+    virtual void OnDragEnter(const DragPayload&, Point) {}
+    /// Drop target: the drag moved over it (also called after a scroll); the default does nothing.
+    virtual void OnDragOver(const DragPayload&, Point, DragAction) {}
+    /// Drop target: the drag left it, or ended without a drop; the default does nothing.
+    virtual void OnDragLeave() {}
+    /// Drop target: the drag was dropped on it at `position` (local) with `action`; the payload is complete. The default does nothing.
+    virtual void OnDrop(const DragPayload&, Point, DragAction) {}
+    /// Drag source: the drag this widget started ended. `Nothing` means cancelled or refused; `Move` asks the source to remove what it gave. The default does nothing.
+    virtual void OnDragEnded(DragAction) {}
+    /// Called each frame while a drag is over this widget or a descendant, with the pointer at `position` (local); a scrolling widget scrolls when the pointer rests near its edge, by an
+    /// amount that grows with the depth into the edge and with `dt`. Returns whether it scrolled. The default does nothing.
+    /// Fails: never.
+    virtual bool DragAutoScroll(Point, f32) { return false; }
+    /// Called once when a drag has rested over this widget (or a descendant that did not take it) for the hover delay; a tab view selects the tab, a menu opens its submenu. Returns whether it
+    /// handled it. The default does nothing.
+    /// Fails: never.
+    virtual bool OnDragHoverDelay(Point) { return false; }
+    /// Edit commands the surface and the Edit menu route to the focus owner.
+    enum class EditCommand : u8 {
+        Cut,       ///< Copy the selection and remove it.
+        Copy,      ///< Copy the selection.
+        Paste,     ///< Insert the clipboard's text.
+        SelectAll, ///< Select everything.
+    };
+    /// Returns whether the widget can run `command` now (a menu enables its items from it). The default is false.
+    /// Fails: never.
+    virtual bool CanEdit(EditCommand) const { return false; }
+    /// Runs `command`; does nothing when `CanEdit` is false. The default does nothing.
+    virtual void RunEdit(EditCommand) {}
     /// Advances time by `dt` seconds; called each frame for the widgets whose `WantsUpdate` is true.
     virtual void Update(f32) {}
     /// What `SetContextHandler` takes: called with the user pointer, the widget and the pointer position in surface coordinates.

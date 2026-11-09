@@ -142,6 +142,23 @@ public:
     Callback<TextField*>& OnCancel() { return on_cancel_; }
     /// Returns the listeners called when the field loses the keyboard focus.
     Callback<TextField*>& OnFocusLost() { return on_focus_lost_; }
+    /// The tag of the pointer entry a drag started by a text field carries (so the field knows a drop is its own).
+    static constexpr char kDragTag[] = "ui.textfield.selection";
+    /// Accepts a drag with text (Copy; Move too when it came from this field), unless the field is read-only or a password field, or the pointer is inside the dragged selection.
+    DragAction CanAccept(const DragPayload& payload, Point position) override;
+    /// Shows where the text would land.
+    void OnDragOver(const DragPayload& payload, Point position, DragAction action) override;
+    /// Hides the drop caret.
+    void OnDragLeave() override;
+    /// Inserts the dropped text (its first line) at the drop position and selects it; a move within the field removes the original first.
+    void OnDrop(const DragPayload& payload, Point position, DragAction action) override;
+    /// A move to another widget removes the dragged text from this field.
+    void OnDragEnded(DragAction action) override;
+    /// Returns whether Cut, Copy, Paste or Select All can run now.
+    /// Fails: never.
+    bool CanEdit(EditCommand command) const override;
+    /// Runs Cut, Copy, Paste or Select All.
+    void RunEdit(EditCommand command) override;
     /// Returns a width of `kWidthInIcons` icons and a height of one line plus the padding.
     Size Measure(const Constraints& constraints) override;
     /// Draws the box, the selection, the text (or the placeholder) and the caret.
@@ -185,6 +202,8 @@ private:
     void DeleteSelectionOrStep(bool forward, bool by_word);
     void Copy(bool cut);
     void Paste();
+    void PastePrimary();
+    void PublishPrimary();
     static void PasteReady(void* user, StringView text);
     void InsertPasted(StringView text);
     void Press(Event& event);
@@ -214,6 +233,14 @@ private:
     f64 last_press_time_ = -1e9;
     Point last_press_ = Point();
     u32 press_count_ = 0;
+    static constexpr u32 kNoCaret = 0xFFFFFFFFu;
+    bool drag_pending_ = false; // a press inside the selection waits to become a drag or a click
+    bool moved_in_place_ = false;
+    Point drag_press_;
+    u32 drag_lo_ = 0;
+    u32 drag_hi_ = 0;
+    Vector<char> drag_text_; // the text the drag took, to check before a move removes it
+    u32 drop_caret_ = kNoCaret;
     Clipboard::Ticket paste_ticket_ = 0;
     Clipboard* paste_clipboard_ = nullptr;
     Callback<TextField*> on_changed_;

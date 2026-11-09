@@ -181,6 +181,9 @@ public:
     ///
     /// Ownership: borrows the widget for the call.
     void OnDescendantFocused(Widget* widget) override;
+    /// Scrolls while a drag rests near an edge of the viewport (see [[ui::Widget::DragAutoScroll]]).
+    /// Fails: never.
+    bool DragAutoScroll(Point position, f32 dt) override;
 
 private:
     static void BarMoved(void* user, ScrollBar* bar);

@@ -4,6 +4,7 @@
 #include "platform/window.h"
 #include "types.h"
 #include "ui/surface.h"
+#include "ui_window/os_clipboard.h"
 
 //! The window adapter (Phase 15, Day 194): the one place where an [[os::Window]] meets a [[ui::Surface]]. `ui` itself names no window.
 
@@ -32,8 +33,39 @@ public:
     /// Returns how many times `UpdateCursor` called `SetCursor`.
     u64 CursorChanges() const { return cursor_changes_; }
 
+    /// Lets the adapter pass the window's `ClipboardData` events to `clipboard` (null stops). The surface is given the clipboard separately with `Surface::SetClipboard`.
+    /// Ownership: borrows `clipboard`, which must outlive its use here.
+    void SetClipboard(OsClipboard* clipboard) { clipboard_ = clipboard; }
+    /// Returns how many `ClipboardChanged` events were seen (a Paste command re-reads `Clipboard::HasText` after one).
+    u64 ClipboardChanges() const { return clipboard_changes_; }
+    /// Tells the window to accept drags of text, file lists and (when `custom_name` is not empty) that custom format, so `PumpInto` turns them into external drags on the surface. Call it once
+    /// after the window exists; without it other programs' drags are refused.
+    /// Param custom_name: the MIME type of an application format, or empty for none; copied.
+    void EnableDrops(os::Window& window, StringView custom_name = StringView());
+
+    // Drag and drop in `PumpInto`: a drag from another program becomes an external drag on the surface (its kinds first, the data read once it is dropped; the target sees the drop only with
+    // complete data, and a failed read ends the drag and runs `Surface::OnDropFailed`); a drag started on the surface that leaves the window (or whose pointer leaves it) becomes an OS drag
+    // when it has any text, file or custom entry (a payload of pointers only never leaves), and the window's `DragEnded` ends it.
+
 private:
+    struct DropRequest {
+        u32 id = 0;
+        os::ClipboardFormat format = os::ClipboardFormat::Text;
+    };
+    void TryHandOff(os::Window& window, Surface& surface);
+    void StartDrop(os::Window& window, Surface& surface, const os::InputEvent& in, Point position);
+    void FinishDropData(os::Window& window, Surface& surface, u32 request_id);
+    void FailDrop(os::Window& window, Surface& surface);
+
     Point pointer_;
+    OsClipboard* clipboard_ = nullptr;
+    u64 clipboard_changes_ = 0;
+    Vector<char> custom_name_;
+    bool dropping_ = false;
+    Point drop_position_;
+    os::DragAction drop_action_ = os::DragAction::Nothing;
+    Vector<DropRequest> drop_requests_;
+    DragPayload drop_payload_;
     os::CursorShape last_cursor_ = os::CursorShape::Arrow;
     u64 cursor_changes_ = 0;
 };

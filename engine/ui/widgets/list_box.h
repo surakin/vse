@@ -22,6 +22,15 @@ public:
     /// Returns the text of item `index`. The view must stay valid until the next call of this function or of `ItemCount`.
     /// Aborts: `index` is not below `ItemCount()`.
     virtual StringView ItemText(usize index) = 0;
+    /// Moves items for a drag that reorders the list (`ListBox::SetReorderable`): the items at `indices` (ascending, distinct) go together, in their order, to the place before item `to` of the
+    /// list as it was (`to` equal to `ItemCount()` means the end). The default refuses.
+    /// Returns: whether the items were moved; on true the list box refreshes its rows and selects the moved items.
+    virtual bool MoveItems(const usize* indices, usize count, usize to) {
+        (void)indices;
+        (void)count;
+        (void)to;
+        return false;
+    }
 };
 
 /// How many items a [[ui::ListBox]] can select.
@@ -99,6 +108,27 @@ public:
     /// Sets how many rows the preferred height holds (default `kPreferredRows`); marks layout dirty.
     /// Param rows: at least 1.
     void SetVisibleRows(usize rows);
+    /// The tag of the pointer entry a drag started by a list box carries.
+    static constexpr char kDragTag[] = "ui.listbox.items";
+    /// Lets the user reorder the items by dragging the selected ones within this box (default off); needs a model that implements `ListModel::MoveItems`.
+    void SetReorderable(bool reorderable) { reorderable_ = reorderable; }
+    /// Lets the user drag the selected items out as text (their texts, one per line), to a text field or another program (default off).
+    void SetDragOut(bool drag_out) { drag_out_ = drag_out; }
+    /// Returns the insertion index the drag shows now (`kNone` when none), for a test.
+    usize DropIndex() const { return drop_index_; }
+    /// Accepts a drag this box started when it is reorderable (a move).
+    DragAction CanAccept(const DragPayload& payload, Point position) override;
+    /// Shows the insertion line.
+    void OnDragOver(const DragPayload& payload, Point position, DragAction action) override;
+    /// Hides the insertion line.
+    void OnDragLeave() override;
+    /// Moves the dragged items to the insertion index.
+    void OnDrop(const DragPayload& payload, Point position, DragAction action) override;
+    /// Ends the press that started the drag.
+    void OnDragEnded(DragAction action) override;
+    /// Scrolls while the pointer rests near the top or bottom edge.
+    /// Fails: never.
+    bool DragAutoScroll(Point position, f32 dt) override;
     /// Returns the listeners called when the selection changes (with the box).
     Callback<ListBox*>& OnSelectionChanged() { return on_selection_; }
     /// Returns the listeners called when Enter goes down on the current item (with the box).
@@ -133,7 +163,15 @@ private:
     bool MeasureRow();
     static void BarMoved(void* user, ScrollBar* bar);
 
+    usize InsertionIndex(f32 local_y) const;
+    void StartDrag(Point position);
+
     ListModel* model_ = nullptr;
+    bool reorderable_ = false;
+    bool drag_out_ = false;
+    bool press_pending_ = false; // the press landed on a selected item: the selection waits for the release, so the whole selection can be dragged
+    Point press_position_;
+    usize drop_index_ = kNone;
     bool activate_on_click_ = false;
     usize visible_rows_ = 0;
     usize pressed_ = kNone;

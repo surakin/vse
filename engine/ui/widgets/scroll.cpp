@@ -294,6 +294,15 @@ void ScrollView::OnEvent(Event& event) {
     if (offset_.x != before.x || offset_.y != before.y) event.handled = true; // at the end of the content the wheel goes on to an outer view
 }
 
+bool ScrollView::DragAutoScroll(Point position, f32 dt) {
+    const Point next(offset_.x + DragScrollDelta(position.x - (viewport_.x - Bounds().x), viewport_.w, dt),
+                     offset_.y + DragScrollDelta(position.y - (viewport_.y - Bounds().y), viewport_.h, dt));
+    if (next.x == offset_.x && next.y == offset_.y) return false;
+    const Point before = offset_;
+    SetOffset(next);
+    return offset_.x != before.x || offset_.y != before.y;
+}
+
 bool ScrollView::ScrollTo(const Rect& rect) {
     Point next = offset_;
     if (rect.x < viewport_.x) {

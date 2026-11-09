@@ -5,7 +5,7 @@
 #include "types.h"
 
 //! The clipboard as the toolkit sees it (Phase 15, Day 197): set text, ask for text and be called back. The in-process implementation serves offscreen surfaces and tests; the
-//! OS-backed one (asynchronous, with the primary selection) is wired behind the same interface on Day 200, so a widget written against this does not change.
+//! OS-backed one (`ui::OsClipboard` in `ui_window`: asynchronous, with the primary selection) sits behind the same interface (Day 200), so a widget written against this does not change.
 
 namespace engine_placeholder::ui {
 
@@ -44,6 +44,22 @@ public:
     /// Param ticket: the value `RequestPaste` returned.
     /// Fails: never.
     virtual void CancelPaste(Ticket ticket) = 0;
+
+    /// Returns whether the primary selection exists here (select-to-copy and middle-click paste); the default is false.
+    /// Fails: never.
+    virtual bool SupportsPrimary() const { return false; }
+    /// Replaces the primary selection's text (what selecting text does); the default does nothing.
+    /// Param text: UTF-8 text; copied.
+    /// Fails: never.
+    virtual void SetPrimaryText(StringView text) { (void)text; }
+    /// Like `RequestPaste` for the primary selection (what a middle click does); the default calls nothing and returns 0.
+    /// Ownership: `user` is borrowed until the function runs or the ticket is cancelled.
+    /// Fails: never.
+    virtual Ticket RequestPrimaryPaste(PasteFunction function, void* user) {
+        (void)function;
+        (void)user;
+        return 0;
+    }
 };
 
 /// A clipboard that lives in the process: `RequestPaste` calls back before it returns.
@@ -67,6 +83,21 @@ public:
     Ticket RequestPaste(PasteFunction function, void* user) override;
     /// Does nothing (nothing is ever pending).
     void CancelPaste(Ticket ticket) override;
+    /// Turns the primary selection on or off (default off), so a test can run the primary-selection rules on this clipboard.
+    void SetPrimarySupported(bool supported) { primary_supported_ = supported; }
+    /// Returns whether the primary selection is on.
+    /// Fails: never.
+    bool SupportsPrimary() const override { return primary_supported_; }
+    /// Replaces the primary text when it is on.
+    void SetPrimaryText(StringView text) override;
+    /// Calls `function` with the primary text now, if it is on and not empty; returns 0.
+    ///
+    /// Ownership: `user` is borrowed for the call.
+    Ticket RequestPrimaryPaste(PasteFunction function, void* user) override;
+    /// Returns the primary text.
+    ///
+    /// Fails: never.
+    StringView PrimaryText() const { return StringView(primary_.Data(), primary_.Size()); }
     /// Returns the text held.
     ///
     /// Fails: never.
@@ -74,6 +105,8 @@ public:
 
 private:
     Vector<char> text_;
+    Vector<char> primary_;
+    bool primary_supported_ = false;
 };
 
 } // namespace engine_placeholder::ui
