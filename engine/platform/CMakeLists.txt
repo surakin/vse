@@ -52,11 +52,12 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   # shell32 CommandLineToArgvW.
   list(APPEND PLATFORM_SOURCES
     windows/win32_window.cpp
+    windows/win32_clipboard.cpp
     windows/win32_keys.cpp
     windows/window_host_windows.cpp
     windows/entry_point_windows.cpp
   )
-  set(PLATFORM_DISPLAY_LIBS user32 shell32)
+  set(PLATFORM_DISPLAY_LIBS user32 shell32 gdi32) # gdi32: the custom cursor's DIB (Day 205)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   message(FATAL_ERROR "macOS is implemented in Phase 22 (the window backend: platform/macos/FULLSCREEN.md)")
 else()

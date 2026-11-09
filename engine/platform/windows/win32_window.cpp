@@ -456,6 +456,9 @@ LRESULT Win32Window::Proc::Handle(Win32Window& self, HWND hwnd, UINT message, WP
             self.QueueEvent(lost);
         }
         break;
+    case WM_CLIPBOARDUPDATE:
+        self.ClipboardUpdated();
+        return 0;
     case WM_SETCURSOR:
         if (LOWORD(lparam) == HTCLIENT) { // over the frame and the borders the system shows its own resize cursors
             self.ApplyCursor();
@@ -601,6 +604,10 @@ bool Win32Window::Open(StringView title, u32 width, u32 height, InputState* inpu
     width_ = static_cast<u32>(client.right - client.left);
     height_ = static_cast<u32>(client.bottom - client.top);
     resize_serial_ = detail::NextResizeSerial();
+    // The clipboard: requests announce themselves in this window's stream; another program's change queues ClipboardChanged.
+    clipboard_requests_.Init(&events_);
+    clipboard_listener_ = AddClipboardFormatListener(hwnd) != FALSE;
+    own_clipboard_sequence_ = 0;
     // The stream starts with the size the window settled on (the sizes Windows went through while it was made are not news).
     events_.Clear();
     high_surrogate_ = 0;
@@ -624,6 +631,11 @@ void Win32Window::ApplyClientSize(u32 width, u32 height) {
 void Win32Window::Close() {
     if (hwnd_ == nullptr) return;
     KillTimer(hwnd_, kWin32ModalTimer);
+    if (clipboard_listener_) {
+        RemoveClipboardFormatListener(hwnd_);
+        clipboard_listener_ = false;
+    }
+    clipboard_requests_.FailAll(ClipboardStatus::Failed, MonotonicTimeNanos()); // none is open (Win32 answers at once); kept for the contract
     // Destroying the window releases the lock (the wish is kept, as PointerLockState says) and frees the custom cursor.
     if (lock_.Active() || lock_.Pending()) {
         ClipCursor(nullptr);

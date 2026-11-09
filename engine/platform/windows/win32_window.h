@@ -1,6 +1,7 @@
 #pragma once
 
 #include "containers/array.h"
+#include "platform/clipboard.h"
 #include "platform/cursor.h"
 #include "platform/input.h"
 #include "platform/input_event.h"
@@ -25,6 +26,16 @@ struct HICON__; // HCURSOR is HICON
 
 
 namespace engine_placeholder::os::win32 {
+
+/// Returns whether a path from another program (a `CF_HDROP` file list, the clipboard or a drop) is one the engine accepts: an absolute local
+/// path on a drive (`C:\...`), with no `.` or `..` segment and no control character. A UNC path (`\\server\share`), a device or `\\?\` path,
+/// a relative path and anything else are refused, so no file list makes the program open a network share: the Windows form of the rules
+/// [[os::ParseUriList]] applies to `file://` lists on Linux.
+///
+/// Param utf8_path: the path, UTF-8, with `\` or `/` separators.
+/// Returns: true if it may be handed to the program.
+/// Thread-safety: thread-safe. A pure function.
+bool AcceptLocalPath(StringView utf8_path);
 
 /// A top-level Win32 window, as an [[os::Window]].
 ///
@@ -132,6 +143,31 @@ public:
     bool PointerLocked() const override { return lock_.Active(); }
     /// Returns how many cursor objects this window made and has not destroyed yet (0 or 1), so a test can see that replacing images does not leak.
     u32 CursorObjects() const { return image_cursor_ != nullptr ? 1u : 0u; }
+    /// Returns true for the ordinary clipboard of an open window; Windows has no primary selection.
+    bool SupportsClipboard(ClipboardKind kind) const override { return hwnd_ != nullptr && kind == ClipboardKind::Clipboard; }
+    /// Puts `offer` on the clipboard: `CF_UNICODETEXT` for text (made valid UTF-8 first, then UTF-16), `CF_HDROP` for a file list, a format
+    /// registered under `custom_name` (`RegisterClipboardFormat`) for custom bytes. Unlike X11 and Wayland, the system keeps a copy: the
+    /// contents stay on the clipboard after the window closes.
+    ///
+    /// Param kind: `Clipboard` (the only kind).
+    /// Param offer: the format and bytes; at most [[os::kMaxClipboardBytes]].
+    /// Returns: true if the clipboard was set.
+    /// Fails: returns false, changing nothing, if the window is not open, the kind is unsupported, the offer is empty or too large, a custom
+    ///   format has no name, a file list holds a path [[os::win32::AcceptLocalPath]] refuses, or another program holds the clipboard open.
+    bool SetClipboard(ClipboardKind kind, const ClipboardOffer& offer) override;
+    /// Reads the clipboard at once (Win32 is synchronous) and queues the `ClipboardData` event for the next [[os::Window::PollEvent]], so the
+    /// program sees the same asynchronous shape as on Linux.
+    ///
+    /// Param kind: `Clipboard`.
+    /// Param format: what to read; a file list keeps only the paths [[os::win32::AcceptLocalPath]] accepts and counts the rest.
+    /// Param custom_name: `Custom`: the registered format's name.
+    /// Returns: the request id (never 0).
+    /// Fails: returns 0 if the window is not open, the kind is unsupported or too many results are open.
+    u32 RequestClipboard(ClipboardKind kind, ClipboardFormat format, StringView custom_name) override;
+    /// Hands over a finished request's result, once.
+    bool TakeClipboardResult(u32 request_id, ClipboardResult* out) override { return clipboard_requests_.Take(request_id, out); }
+    /// Returns whether the clipboard offers the format now (`IsClipboardFormatAvailable`).
+    bool ClipboardHasFormat(ClipboardKind kind, ClipboardFormat format, StringView custom_name) const override;
     /// Calls `callback` about every 10 ms while Windows runs a move, resize or menu loop of its own (the user dragging the frame).
     ///
     /// Param callback: the function, or null to stop; it must not close or destroy the window. A call to `PumpEvents` of any window from
@@ -163,6 +199,7 @@ private:
     void ApplyCursor();                 // shows the cursor the state asks for (the system's SetCursor)
     void ApplyLock(PointerLockState::Action action);
     void ClipToCentre();                // keeps the locked pointer at the client area's centre
+    void ClipboardUpdated();            // WM_CLIPBOARDUPDATE: another program's change queues ClipboardChanged
 
     HWND__* hwnd_ = nullptr;
     HINSTANCE__* instance_ = nullptr;
@@ -177,6 +214,10 @@ private:
     u64 image_hash_ = 0;
     PointerLockState lock_;
     bool raw_input_ = false; // raw mouse input is registered for this window
+    // The clipboard (Day 205).
+    ClipboardRequests clipboard_requests_;
+    u32 own_clipboard_sequence_ = 0; // GetClipboardSequenceNumber after this window's own SetClipboard: its update is not a change by another
+    bool clipboard_listener_ = false;
     u32 width_ = 0;
     u32 height_ = 0;
     u32 dpi_ = 96;
