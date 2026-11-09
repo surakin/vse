@@ -8,6 +8,8 @@ set(UI_TEST_SOURCES
   widget_tree_test.cpp
   surface_test.cpp
   layout_test.cpp
+  input_routing_test.cpp
+  ui_window_test.cpp
 )
 
 find_package(Threads REQUIRED)
@@ -15,7 +17,8 @@ include(Catch)
 
 function(engine_add_ui_tests target ui_lib suffix label)
   add_executable(${target} ${UI_TEST_SOURCES})
-  target_link_libraries(${target} PRIVATE ${ui_lib} Catch2::Catch2WithMain Threads::Threads)
+  string(REGEX REPLACE "^ui" "ui_window" window_lib ${ui_lib})
+  target_link_libraries(${target} PRIVATE ${ui_lib} ${window_lib} Catch2::Catch2WithMain Threads::Threads)
   target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   target_compile_definitions(${target} PRIVATE UI_TEST_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf")
   if(label STREQUAL "asan")

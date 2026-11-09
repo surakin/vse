@@ -25,6 +25,8 @@ enum class EventType : u8 {
     Text,         ///< One Unicode scalar typed, as UTF-8 in `text`; goes to the focus owner.
     FocusGained,  ///< The widget got the keyboard focus; sent by the surface, never bubbles.
     FocusLost,    ///< The widget lost the keyboard focus; sent by the surface, never bubbles.
+    WindowFocusGained, ///< Posted to the surface: the window it shows in got the focus (the focus owner gets `FocusGained` again).
+    WindowFocusLost,   ///< Posted to the surface: the window lost the focus; capture is released, popups close, the modifier mirror resets and the focus owner gets `FocusLost`.
 };
 
 /// One event.

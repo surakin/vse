@@ -1102,6 +1102,8 @@ The kind of a [`ui::Event`](#ui-event).
 | <a id="ui-eventtype-text"></a>`Text` |  | One Unicode scalar typed, as UTF-8 in `text`; goes to the focus owner. |
 | <a id="ui-eventtype-focusgained"></a>`FocusGained` |  | The widget got the keyboard focus; sent by the surface, never bubbles. |
 | <a id="ui-eventtype-focuslost"></a>`FocusLost` |  | The widget lost the keyboard focus; sent by the surface, never bubbles. |
+| <a id="ui-eventtype-windowfocusgained"></a>`WindowFocusGained` |  | Posted to the surface: the window it shows in got the focus (the focus owner gets `FocusGained` again). |
+| <a id="ui-eventtype-windowfocuslost"></a>`WindowFocusLost` |  | Posted to the surface: the window lost the focus; capture is released, popups close, the modifier mirror resets and the focus owner gets `FocusLost`. |
 
 ## `Event` {#ui-event}
 
@@ -2808,6 +2810,62 @@ Returns the capture owner, or null.
 |---|---|
 | Fails | returns null when there is none. |
 | Ownership | borrowed; the owner keeps it and it stays valid while the owner lives. |
+
+### `FocusNext(bool)` {#ui-surface-focusnext-bool}
+
+`method ui::Surface::FocusNext` — defined in `engine/ui/surface.h`
+
+```cpp
+bool FocusNext(bool backwards);
+```
+
+Moves the focus to the next (or previous) widget in Tab order and wraps at the ends; returns whether a widget took it. The order is: the widgets with a positive `TabIndex` ascending, then the ones with 0 in tree order; negative ones, disabled, hidden and collapsed widgets are skipped. While a popup is open only the popup layer is walked. With no focus, forward starts at the first and backward at the last. Tab and Shift+Tab call it when the focus owner does not handle the key.
+
+| Field | Value |
+|---|---|
+| Fails | returns false, changing nothing, when no widget can take the focus. |
+
+### `WindowFocused()` {#ui-surface-windowfocused-const}
+
+`method ui::Surface::WindowFocused` — defined in `engine/ui/surface.h`
+
+```cpp
+bool WindowFocused() const;
+```
+
+Returns whether the window the surface shows in has the focus (true until a `WindowFocusLost` event; an offscreen surface stays focused).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `Modifiers()` {#ui-surface-modifiers-const}
+
+`method ui::Surface::Modifiers` — defined in `engine/ui/surface.h`
+
+```cpp
+u32 Modifiers() const;
+```
+
+Returns the modifier mask of the last pointer, key or text event; 0 after `WindowFocusLost`, so a Ctrl released while the window was away cannot stay down.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `RequestedCursor()` {#ui-surface-requestedcursor-const}
+
+`method ui::Surface::RequestedCursor` — defined in `engine/ui/surface.h`
+
+```cpp
+os::CursorShape RequestedCursor() const;
+```
+
+Returns the cursor shape to show now: the capture owner's, else the hovered widget's, else the nearest ancestor's that names one; Arrow when none.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `Hover()` {#ui-surface-hover-const}
 
@@ -5280,6 +5338,156 @@ Returns whether the widget is drawn and hit: visible and not collapsed.
 | Field | Value |
 |---|---|
 | Fails | never. |
+
+### `Focusable()` {#ui-widget-focusable-const}
+
+`method ui::Widget::Focusable` — defined in `engine/ui/widget.h`
+
+```cpp
+bool Focusable() const;
+```
+
+Returns whether a click or Tab may give this widget the keyboard focus (default false).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `SetFocusable(bool)` {#ui-widget-setfocusable-bool}
+
+`method ui::Widget::SetFocusable` — defined in `engine/ui/widget.h`
+
+```cpp
+void SetFocusable(bool focusable);
+```
+
+Sets whether the widget can take the keyboard focus.
+
+### `AcceptsText()` {#ui-widget-acceptstext-const}
+
+`method ui::Widget::AcceptsText` — defined in `engine/ui/widget.h`
+
+```cpp
+bool AcceptsText() const;
+```
+
+Returns whether `Text` events are delivered to this widget when it has the focus (default false; a text field sets it).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `SetAcceptsText(bool)` {#ui-widget-setacceptstext-bool}
+
+`method ui::Widget::SetAcceptsText` — defined in `engine/ui/widget.h`
+
+```cpp
+void SetAcceptsText(bool accepts);
+```
+
+Sets whether the widget takes text input.
+
+### `TabIndex()` {#ui-widget-tabindex-const}
+
+`method ui::Widget::TabIndex` — defined in `engine/ui/widget.h`
+
+```cpp
+i32 TabIndex() const;
+```
+
+Returns the Tab order key: 0 follows the tree order, a positive value goes first in ascending order, a negative value is skipped by Tab (a click still focuses it).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `SetTabIndex(i32)` {#ui-widget-settabindex-i32}
+
+`method ui::Widget::SetTabIndex` — defined in `engine/ui/widget.h`
+
+```cpp
+void SetTabIndex(i32 index);
+```
+
+Sets the Tab order key.
+
+### `HasCursor()` {#ui-widget-hascursor-const}
+
+`method ui::Widget::HasCursor` — defined in `engine/ui/widget.h`
+
+```cpp
+bool HasCursor() const;
+```
+
+Returns whether the widget names a cursor shape for when the pointer is over it (or it holds the capture).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `Cursor()` {#ui-widget-cursor-const}
+
+`method ui::Widget::Cursor` — defined in `engine/ui/widget.h`
+
+```cpp
+os::CursorShape Cursor() const;
+```
+
+Returns the cursor shape set with `SetCursor` (Arrow when none).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `SetCursor(os::CursorShape)` {#ui-widget-setcursor-os-cursorshape}
+
+`method ui::Widget::SetCursor` — defined in `engine/ui/widget.h`
+
+```cpp
+void SetCursor(os::CursorShape shape);
+```
+
+Names the cursor shape over this widget; a widget without one uses its parent's.
+
+### `ClearCursor()` {#ui-widget-clearcursor}
+
+`method ui::Widget::ClearCursor` — defined in `engine/ui/widget.h`
+
+```cpp
+void ClearCursor();
+```
+
+Removes the cursor shape set with `SetCursor`.
+
+### `RequestCapture()` {#ui-widget-requestcapture}
+
+`method ui::Widget::RequestCapture` — defined in `engine/ui/widget.h`
+
+```cpp
+void RequestCapture();
+```
+
+Makes this widget receive every pointer event until `ReleaseCapture` or the buttons are up; for a widget that starts a drag. Does nothing outside a surface.
+
+### `ReleaseCapture()` {#ui-widget-releasecapture}
+
+`method ui::Widget::ReleaseCapture` — defined in `engine/ui/widget.h`
+
+```cpp
+void ReleaseCapture();
+```
+
+Gives the capture up if this widget holds it.
+
+### `RequestFocus()` {#ui-widget-requestfocus}
+
+`method ui::Widget::RequestFocus` — defined in `engine/ui/widget.h`
+
+```cpp
+void RequestFocus();
+```
+
+Takes the keyboard focus. Does nothing outside a surface or when the widget is not focusable, shown and enabled.
 
 ### `OnEvent(Event&)` {#ui-widget-onevent-event-amp}
 

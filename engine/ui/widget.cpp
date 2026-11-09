@@ -152,6 +152,18 @@ void Widget::SetClipsChildren(bool clip) {
     MarkDirty(kDrawDirty);
 }
 
+void Widget::RequestCapture() {
+    if (surface_ != nullptr) surface_->SetCapture(this);
+}
+
+void Widget::ReleaseCapture() {
+    if (surface_ != nullptr && surface_->Capture() == this) surface_->SetCapture(nullptr);
+}
+
+void Widget::RequestFocus() {
+    if (surface_ != nullptr && focusable_ && Shown() && EffectivelyEnabled()) surface_->SetFocus(this);
+}
+
 u32 Widget::State() const { return state_ | (EffectivelyEnabled() ? 0u : kStateDisabled); }
 
 void Widget::SetChecked(bool checked) {

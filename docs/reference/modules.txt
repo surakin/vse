@@ -74,6 +74,12 @@ module ui "The UI Toolkit"
   strict ownership
   strict failure
 
+module ui_window "The UI Window Adapter"
+  header engine/ui_window/*.h
+  strict thread-safety
+  strict ownership
+  strict failure
+
 module jobs "The Job System"
   header engine/jobs/*.h
   strict thread-safety

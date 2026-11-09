@@ -122,6 +122,8 @@ forbid rhi/null rhi/backends
 forbid rhi/vulkan rhi/backends
 # 12 renderer
 module engine/renderer/ renderer 12
+# 12 ui_window (Phase 15 Day 194): the window adapter, the one module that names both ui and the platform window
+module engine/ui_window/ ui_window 12
 forbid renderer rhi/vulkan
 forbid renderer rhi/null
 forbid renderer rhi/dx12
@@ -195,6 +197,7 @@ target text text
 target platform platform
 target platform_input platform
 target ui ui
+target ui_window ui_window
 target rhi rhi
 target rhi_vulkan rhi/vulkan
 target rhi_dx12 rhi/dx12

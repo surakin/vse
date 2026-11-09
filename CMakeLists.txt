@@ -141,6 +141,7 @@ if(ENGINE_PLATFORM STREQUAL "windows")
   add_subdirectory(engine/text)  # Phase 14 Day 175
   add_subdirectory(tests/text)
   add_subdirectory(engine/ui)  # Phase 15 Day 184
+  add_subdirectory(engine/ui_window)  # Phase 15 Day 194
   add_subdirectory(tests/ui)
   add_subdirectory(tests/io)  # the file layer, Days 151-152 (its asynchronous tests need jobs)
   add_subdirectory(tests/jobs)
@@ -199,6 +200,7 @@ add_subdirectory(engine/platform)
 add_subdirectory(engine/jobs)
 add_subdirectory(engine/text)  # Phase 14 Day 175
 add_subdirectory(engine/ui)  # Phase 15 Day 184
+add_subdirectory(engine/ui_window)  # Phase 15 Day 194
 add_subdirectory(engine/rhi)
 add_subdirectory(engine/renderer)
 add_subdirectory(tools/docgen)

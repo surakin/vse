@@ -129,4 +129,24 @@ box->AddChild(MakeSearchField())->SetProps(grow);                    // takes th
 box->AddChild(MakeButton("Go"));                                     // its preferred width
 ```
 
-More sections arrive with the days that build them ( layout, input, widgets, popups, drag and drop, viewport, surfaces).
+## Input: focus, capture, Tab and the window
+
+- **Pointer:** the hover is the topmost widget under the pointer, the popup layer first. Enter and leave follow it, also when the widget under a still pointer changes because of layout, visibility or a popup (the surface looks again after each frame that changed anything). A press captures the pointer to the widget it hit until every button is up, so a drag outside the surface keeps reporting to it and the release is delivered to it; `RequestCapture()` and `ReleaseCapture()` let a widget start or end a capture itself.
+- **Wheel:** to the hovered widget (the capturer during a drag), bubbling to the first ancestor that sets `handled`; a widget behind a popup never sees it. Which axis a widget consumes is its own decision: it reads `wheel_x` or `wheel_y` and handles only the one it scrolls.
+- **Keyboard focus:** one owner per surface. A click gives it to the nearest `Focusable()` enabled widget under the pointer (a click on nothing focusable clears it). Keys go to the owner and bubble to its ancestors. `Tab` and `Shift+Tab`, if nobody handled them, call `FocusNext`: positive `TabIndex` ascending, then `0` in tree order, negative skipped, disabled and hidden skipped, wrapping at both ends; with a popup open only the popup layer is walked. When the last popup closes the focus returns to the widget that had it when the first one opened.
+- **Text and modifiers:** `Text` events go only to a focus owner with `AcceptsText()`. `Surface::Modifiers()` mirrors the last event's modifiers and becomes 0 when the window loses the focus.
+- **Cursor:** a widget names a shape with `SetCursor`; `Surface::RequestedCursor()` is the capturer's, else the hovered widget's, else the nearest ancestor's, else Arrow.
+- **Window focus:** posting `WindowFocusLost` releases the capture, closes the popups, clears the hover and the modifiers and sends `FocusLost` to the focus owner (which keeps the focus for when the window returns, `WindowFocusGained`). Keys do not reach a surface whose window has no focus; an offscreen surface is focused by default.
+- **The window adapter** (`ui_window/window_adapter.h`, library `ui_window`, the only code that names both `ui` and `os::Window`) drains `Window::PollEvent` into the surface, dividing pointer positions by the surface scale, forwards resizes (several in one pump cost one layout) and, after the frame, sets the window's cursor only when the shape changed:
+
+```cpp
+ui::WindowAdapter adapter;
+while (!window.ShouldClose()) {
+    window.PumpEvents();
+    adapter.PumpInto(window, surface);
+    surface.Frame(dt, &list, &atlas);
+    adapter.UpdateCursor(window, surface);
+}
+```
+
+More sections arrive with the days that build them (widgets, popups, drag and drop, viewport, surfaces).

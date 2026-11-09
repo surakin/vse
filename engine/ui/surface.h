@@ -108,6 +108,20 @@ public:
     /// Ownership: borrowed; the owner keeps it and it stays valid while the owner lives.
     /// Fails: returns null when there is none.
     Widget* Capture() const { return capture_; }
+    /// Moves the focus to the next (or previous) widget in Tab order and wraps at the ends; returns whether a widget took it. The order is: the widgets with a positive `TabIndex`
+    /// ascending, then the ones with 0 in tree order; negative ones, disabled, hidden and collapsed widgets are skipped. While a popup is open only the popup layer is walked.
+    /// With no focus, forward starts at the first and backward at the last. Tab and Shift+Tab call it when the focus owner does not handle the key.
+    /// Fails: returns false, changing nothing, when no widget can take the focus.
+    bool FocusNext(bool backwards);
+    /// Returns whether the window the surface shows in has the focus (true until a `WindowFocusLost` event; an offscreen surface stays focused).
+    /// Fails: never.
+    bool WindowFocused() const { return window_focused_; }
+    /// Returns the modifier mask of the last pointer, key or text event; 0 after `WindowFocusLost`, so a Ctrl released while the window was away cannot stay down.
+    /// Fails: never.
+    u32 Modifiers() const { return modifiers_; }
+    /// Returns the cursor shape to show now: the capture owner's, else the hovered widget's, else the nearest ancestor's that names one; Arrow when none.
+    /// Fails: never.
+    os::CursorShape RequestedCursor() const;
     /// Returns the widget the pointer is over, or null.
     ///
     /// Ownership: borrowed; the owner keeps it and it stays valid while the owner lives.
@@ -139,7 +153,11 @@ private:
     void NoteDirty(u32 flags);
     void WidgetDestroyed(Widget* widget);
     void QueueRemoval(Widget* widget);
-    void Deliver(Widget* target, Event event, bool bubble);
+    bool Deliver(Widget* target, Event event, bool bubble);
+    void RefreshHover();
+    void TrackPopups();
+    void SetWindowFocus(bool focused);
+    void ReleasePointer();
     void SetHover(Widget* widget, const Event& cause);
     Widget* HitTestAll(Point point);
     void FlushRemovals();
@@ -155,6 +173,12 @@ private:
     Widget* focus_ = nullptr;
     Widget* capture_ = nullptr;
     Widget* hover_ = nullptr;
+    Widget* saved_focus_ = nullptr; // the focus owner when the first popup opened, given back when the last one closes
+    usize popup_count_ = 0;
+    Point pointer_position_;
+    bool pointer_inside_ = false;
+    bool window_focused_ = true;
+    u32 modifiers_ = 0;
     u32 buttons_down_ = 0;
     bool layout_dirty_ = true;
     bool draw_dirty_ = true;

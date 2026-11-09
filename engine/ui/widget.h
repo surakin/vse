@@ -4,6 +4,7 @@
 #include "containers/vector.h"
 #include "mem/heap_allocator.h"
 #include "string/string.h"
+#include "platform/cursor.h"
 #include "types.h"
 #include "ui/canvas.h"
 #include "ui/event.h"
@@ -170,6 +171,46 @@ public:
     ///
     /// Fails: never.
     bool Shown() const { return visible_ && !collapsed_; }
+    /// Returns whether a click or Tab may give this widget the keyboard focus (default false).
+    ///
+    /// Fails: never.
+    bool Focusable() const { return focusable_; }
+    /// Sets whether the widget can take the keyboard focus.
+    void SetFocusable(bool focusable) { focusable_ = focusable; }
+    /// Returns whether `Text` events are delivered to this widget when it has the focus (default false; a text field sets it).
+    ///
+    /// Fails: never.
+    bool AcceptsText() const { return accepts_text_; }
+    /// Sets whether the widget takes text input.
+    void SetAcceptsText(bool accepts) { accepts_text_ = accepts; }
+    /// Returns the Tab order key: 0 follows the tree order, a positive value goes first in ascending order, a negative value is skipped by Tab (a click still focuses it).
+    ///
+    /// Fails: never.
+    i32 TabIndex() const { return tab_index_; }
+    /// Sets the Tab order key.
+    void SetTabIndex(i32 index) { tab_index_ = index; }
+    /// Returns whether the widget names a cursor shape for when the pointer is over it (or it holds the capture).
+    ///
+    /// Fails: never.
+    bool HasCursor() const { return has_cursor_; }
+    /// Returns the cursor shape set with `SetCursor` (Arrow when none).
+    ///
+    /// Fails: never.
+    os::CursorShape Cursor() const { return cursor_; }
+    /// Names the cursor shape over this widget; a widget without one uses its parent's.
+    void SetCursor(os::CursorShape shape) {
+        cursor_ = shape;
+        has_cursor_ = true;
+    }
+    /// Removes the cursor shape set with `SetCursor`.
+    void ClearCursor() { has_cursor_ = false; }
+    /// Makes this widget receive every pointer event until `ReleaseCapture` or the buttons are up; for a widget that starts a drag. Does nothing outside a surface.
+    void RequestCapture();
+    /// Gives the capture up if this widget holds it.
+    void ReleaseCapture();
+    /// Takes the keyboard focus. Does nothing outside a surface or when the widget is not focusable, shown and enabled.
+    void RequestFocus();
+
     /// Handles an event delivered to this widget with its position in local space; set `event.handled` to stop it from bubbling. The default ignores it.
     virtual void OnEvent(Event&) {}
     /// Advances time by `dt` seconds; called each frame for the widgets whose `WantsUpdate` is true.
@@ -201,6 +242,11 @@ private:
     u64 measure_generation_ = 0;
     Constraints measure_constraints_;
     Size measure_result_;
+    os::CursorShape cursor_ = os::CursorShape::Arrow;
+    i32 tab_index_ = 0;
+    bool has_cursor_ = false;
+    bool focusable_ = false;
+    bool accepts_text_ = false;
     bool collapsed_ = false;
     bool visible_ = true;
     bool enabled_ = true;

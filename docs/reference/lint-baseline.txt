@@ -14,6 +14,7 @@ module	platform/window-input	278	278
 module	foundation/debug	208	208
 module	text	210	210
 module	ui	2	2
+module	ui_window	0	0
 module	jobs	165	165
 module	rhi	780	780
 module	renderer	1005	1005

@@ -149,6 +149,7 @@ TEST_CASE("Surface: keys and text go to the focus owner, and focus changes are e
     Harness h(100, 100, 1, StringView(UI_TEST_FONT_FILE));
     Box* a = AddBox(h.GetSurface().Root(), "a", {0, 0, 50, 50});
     Box* b = AddBox(h.GetSurface().Root(), "b", {50, 0, 50, 50});
+    a->SetAcceptsText(true); // text goes only to a focus owner that takes it (Day 194)
     h.Key(Key::A);
     h.TypeText("x");
     CHECK(a->log.Size() == 0); // nobody has focus: nothing is delivered

@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "algorithm.h"
 #include "log/assert.h"
 #include "ui/draw_list_canvas.h"
 
@@ -70,6 +71,7 @@ void Surface::WidgetDestroyed(Widget* widget) {
     if (focus_ == widget) focus_ = nullptr;
     if (capture_ == widget) capture_ = nullptr;
     if (hover_ == widget) hover_ = nullptr;
+    if (saved_focus_ == widget) saved_focus_ = nullptr;
     for (usize i = removals_.Size(); i > 0; --i) {
         if (removals_[i - 1] == widget) removals_.Remove(i - 1);
     }
@@ -98,7 +100,7 @@ Widget* Surface::HitTestAll(Point point) {
 
 void Surface::Post(const Event& event) { queue_.Push(event); }
 
-void Surface::Deliver(Widget* target, Event event, bool bubble) {
+bool Surface::Deliver(Widget* target, Event event, bool bubble) {
     event.time = time_;
     const Point surface_position = event.position;
     for (Widget* w = target; w != nullptr; w = w->parent_) {
@@ -109,9 +111,10 @@ void Surface::Deliver(Widget* target, Event event, bool bubble) {
         local.position.x = surface_position.x - w->Bounds().x;
         local.position.y = surface_position.y - w->Bounds().y;
         w->OnEvent(local);
-        if (!bubble || local.handled) break;
-        event.handled = false;
+        if (local.handled) return true;
+        if (!bubble) break;
     }
+    return false;
 }
 
 void Surface::SetHover(Widget* widget, const Event& cause) {
@@ -146,7 +149,7 @@ void Surface::SetFocus(Widget* widget) {
         Deliver(old, e, false);
     }
     if (widget != nullptr && focus_ == widget) {
-        widget->state_ |= kStateFocused;
+        if (window_focused_) widget->state_ |= kStateFocused; // a window without the focus shows no focus ring; it returns with WindowFocusGained
         widget->MarkDirty(kDrawDirty);
         e.type = EventType::FocusGained;
         Deliver(widget, e, false);
@@ -154,14 +157,129 @@ void Surface::SetFocus(Widget* widget) {
     if (--depth_ == 0) FlushRemovals();
 }
 
-void Surface::SetCapture(Widget* widget) { capture_ = widget; }
+void Surface::SetCapture(Widget* widget) {
+    if (capture_ != nullptr && capture_ != widget && (capture_->state_ & kStatePressed) != 0) {
+        capture_->state_ &= ~kStatePressed;
+        capture_->MarkDirty(kDrawDirty);
+    }
+    capture_ = widget;
+}
+
+void Surface::ReleasePointer() {
+    buttons_down_ = 0;
+    if (capture_ != nullptr) {
+        capture_->state_ &= ~kStatePressed;
+        capture_->MarkDirty(kDrawDirty);
+        capture_ = nullptr;
+    }
+}
+
+void Surface::SetWindowFocus(bool focused) {
+    if (focused == window_focused_) return;
+    window_focused_ = focused;
+    Event e;
+    if (!focused) {
+        ReleasePointer();
+        modifiers_ = 0;
+        pointer_inside_ = false;
+        SetHover(nullptr, e);
+        for (usize i = popups_->ChildCount(); i > 0; --i) popups_->RemoveChild(popups_->ChildAt(i - 1));
+    }
+    if (focus_ != nullptr) {
+        if (focused) {
+            focus_->state_ |= kStateFocused;
+        } else {
+            focus_->state_ &= ~kStateFocused;
+        }
+        focus_->MarkDirty(kDrawDirty);
+        e.type = focused ? EventType::FocusGained : EventType::FocusLost;
+        Deliver(focus_, e, false);
+    }
+}
+
+namespace {
+
+// Appends the widgets under `widget` that Tab may stop at, in tree order.
+void CollectTabStops(Widget* widget, Vector<Widget*>& out) {
+    if (!widget->Shown()) return;
+    if (widget->Focusable() && widget->TabIndex() >= 0 && widget->EffectivelyEnabled()) out.Push(widget);
+    for (usize i = 0; i < widget->ChildCount(); ++i) CollectTabStops(widget->ChildAt(i), out);
+}
+
+} // namespace
+
+bool Surface::FocusNext(bool backwards) {
+    Vector<Widget*> stops;
+    CollectTabStops(popups_->ChildCount() > 0 ? popups_.Get() : root_.Get(), stops);
+    if (stops.Empty()) return false;
+    // Positive indices first (ascending), then the zeros; the sort is stable, so the tree order breaks ties.
+    StableSort(Span<Widget*>(stops.Data(), stops.Size()), [](Widget* a, Widget* b) {
+        const i32 ka = a->TabIndex() > 0 ? a->TabIndex() : 0x7fffffff;
+        const i32 kb = b->TabIndex() > 0 ? b->TabIndex() : 0x7fffffff;
+        return ka < kb;
+    });
+    usize at = stops.Size();
+    for (usize i = 0; i < stops.Size(); ++i) {
+        if (stops[i] == focus_) at = i;
+    }
+    usize next;
+    if (at == stops.Size()) {
+        next = backwards ? stops.Size() - 1 : 0;
+    } else if (backwards) {
+        next = at == 0 ? stops.Size() - 1 : at - 1;
+    } else {
+        next = at + 1 == stops.Size() ? 0 : at + 1;
+    }
+    SetFocus(stops[next]);
+    return focus_ == stops[next];
+}
+
+os::CursorShape Surface::RequestedCursor() const {
+    for (const Widget* w = capture_ != nullptr ? capture_ : hover_; w != nullptr; w = w->Parent()) {
+        if (w->HasCursor()) return w->Cursor();
+    }
+    return os::CursorShape::Arrow;
+}
+
+void Surface::RefreshHover() {
+    if (!pointer_inside_) return;
+    Event e;
+    e.type = EventType::PointerMove;
+    e.position = pointer_position_;
+    e.time = time_;
+    ++depth_;
+    SetHover(HitTestAll(pointer_position_), e);
+    if (--depth_ == 0) FlushRemovals();
+}
+
+void Surface::TrackPopups() {
+    const usize n = popups_->ChildCount();
+    if (n == popup_count_) return;
+    const usize before = popup_count_;
+    popup_count_ = n;
+    if (before == 0) {
+        saved_focus_ = focus_;
+    } else if (n == 0) {
+        Widget* back = saved_focus_;
+        saved_focus_ = nullptr;
+        // Give the focus back unless the program has moved it to something that is still alive outside the popups.
+        if (back != nullptr && focus_ == nullptr && back->Shown() && back->EffectivelyEnabled()) SetFocus(back);
+    }
+}
 
 void Surface::Dispatch(Event e) {
     e.time = time_;
     ++depth_;
-    if (e.type == EventType::PointerLeave) {
+    TrackPopups();
+    if (e.type == EventType::WindowFocusGained || e.type == EventType::WindowFocusLost) {
+        SetWindowFocus(e.type == EventType::WindowFocusGained);
+    } else if (e.type == EventType::PointerLeave) {
+        pointer_inside_ = false;
         SetHover(nullptr, e); // posted to the surface: the pointer left it altogether
     } else if (IsPointer(e.type)) {
+        modifiers_ = e.modifiers;
+        pointer_position_ = e.position;
+        pointer_inside_ = true;
         Widget* hit = HitTestAll(e.position);
         switch (e.type) {
             case EventType::PointerMove: {
@@ -172,10 +290,16 @@ void Surface::Dispatch(Event e) {
             }
             case EventType::PointerDown: {
                 SetHover(hit, e);
-                if (capture_ == nullptr && hit != nullptr) {
-                    capture_ = hit;
-                    hit->state_ |= kStatePressed;
-                    hit->MarkDirty(kDrawDirty);
+                if (capture_ == nullptr) {
+                    // Click to focus: the nearest focusable widget under the pointer takes the keyboard focus, and a click on nothing focusable clears it.
+                    Widget* focus_target = hit;
+                    while (focus_target != nullptr && !(focus_target->Focusable() && focus_target->EffectivelyEnabled())) focus_target = focus_target->Parent();
+                    SetFocus(focus_target);
+                    if (hit != nullptr) {
+                        capture_ = hit;
+                        hit->state_ |= kStatePressed;
+                        hit->MarkDirty(kDrawDirty);
+                    }
                 }
                 buttons_down_ |= e.button;
                 if (capture_ != nullptr) Deliver(capture_, e, true);
@@ -194,15 +318,23 @@ void Surface::Dispatch(Event e) {
                 break;
             }
             default: {
+                // The wheel goes to the hovered widget (the capturer during a drag) and bubbles to the first ancestor that handles it; a popup is hit first, so nothing behind it sees it.
                 Widget* target = capture_ != nullptr ? capture_ : hit;
                 if (target != nullptr) Deliver(target, e, true);
                 break;
             }
         }
     } else if (e.type == EventType::KeyDown || e.type == EventType::KeyUp || e.type == EventType::Text) {
-        if (focus_ != nullptr) Deliver(focus_, e, true);
+        modifiers_ = e.modifiers;
+        if (window_focused_ && focus_ != nullptr && (e.type != EventType::Text || focus_->AcceptsText())) {
+            const bool handled = Deliver(focus_, e, true);
+            if (!handled && e.type == EventType::KeyDown && e.key == Key::Tab && (e.modifiers & (os::kModCtrl | os::kModAlt)) == 0) FocusNext((e.modifiers & os::kModShift) != 0);
+        } else if (window_focused_ && focus_ == nullptr && e.type == EventType::KeyDown && e.key == Key::Tab && (e.modifiers & (os::kModCtrl | os::kModAlt)) == 0) {
+            FocusNext((e.modifiers & os::kModShift) != 0);
+        }
     }
     if (--depth_ == 0) FlushRemovals();
+    TrackPopups();
 }
 
 void Surface::UpdateWidgets(Widget* widget, f32 dt) {
@@ -221,6 +353,7 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
     UpdateWidgets(root_.Get(), dt);
     UpdateWidgets(popups_.Get(), dt);
     if (--depth_ == 0) FlushRemovals();
+    TrackPopups();
 
     if (layout_dirty_) {
         // At most two passes: the second one is for a widget whose size depends on the width it was given (it invalidates layout when that changes).
@@ -245,6 +378,7 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
         ++layout_passes_;
         draw_dirty_ = true;
     }
+    if (draw_dirty_) RefreshHover(); // the widget under a stationary pointer may have changed (layout, visibility, a popup)
     if (list == nullptr || !(draw_dirty_ || list->commands.Empty())) return false;
     list->Clear();
     DrawListCanvas canvas(list, atlas);
