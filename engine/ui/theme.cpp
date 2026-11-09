@@ -203,6 +203,24 @@ Theme BuildTheme(const Palette& p) {
     radio.At(StateKind::Normal).radius = 8.0f;
     b.SetStyle(widget_kind::kRadio, 0, radio);
 
+    Style slider; // the track; the thumb is drawn in the scroll bar's colors
+    slider.At(StateKind::Normal).background = p.border;
+    slider.At(StateKind::Normal).radius = 3.0f;
+    slider.At(StateKind::Focused).border_color = p.accent;
+    slider.At(StateKind::Focused).border_width = 1.0f;
+    slider.At(StateKind::Disabled).background = p.window;
+    b.SetStyle(widget_kind::kSlider, 0, slider);
+
+    Style menu; // a row of a list or a menu: transparent, hover shade, selected in the accent
+    menu.At(StateKind::Normal).text_color = p.text;
+    menu.At(StateKind::Normal).padding_x = 6.0f;
+    menu.At(StateKind::Normal).padding_y = 3.0f;
+    menu.At(StateKind::Hover).background = p.hover;
+    menu.At(StateKind::Checked).background = p.accent;
+    menu.At(StateKind::Checked).text_color = p.accent_text;
+    menu.At(StateKind::Disabled).text_color = p.text_disabled;
+    b.SetStyle(widget_kind::kMenu, 0, menu);
+
     Style scrollbar;
     scrollbar.At(StateKind::Normal).background = p.border;
     scrollbar.At(StateKind::Normal).radius = 5.0f;

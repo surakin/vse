@@ -166,4 +166,21 @@ ok->SetVariant("primary");
 ok->OnClick().Connect([](void* user, ui::Button*) { static_cast<Dialog*>(user)->Accept(); }, this);
 ```
 
+## Value widgets and scrolling: slider, spin box, scroll bar, scroll view, list box
+
+- **`ValueRange`** (`ui/widgets/range.h`): `min`, `max`, `step`, `integer` and a `RangePolicy`. `Snap` puts a value on the grid as `min + k * step` with `k` rounded once (never by adding the step repeatedly, so 1,000 steps of 0.1 land exactly on the grid points); a maximum that is not on the grid is not reached, the last grid point below it is. NaN becomes `min`. `RangePolicy::Clamp` pulls an out-of-range value to the nearest end, `Reject` keeps the old value.
+- **`Slider`**: horizontal (minimum left) or vertical (minimum at the bottom). A press on the track jumps to that point, or pages toward it with `SetTrackPages`; a press on the thumb keeps the grab offset; the pointer is captured while dragging. `OnChanged()` runs on every change, `OnCommit()` when a drag ends or a key changes the value. Keys: arrows, PageUp/PageDown (a tenth of the range), Home/End. The wheel is off until `SetWheel(true)`. `SetTicks(n)` draws marks.
+- **`SpinBox`**: a number with up/down buttons, the wheel and the keys; `SetDecimals` formats the text. Typing arrives with the text field (Day 197).
+- **`ScrollBar`**: the thumb is `track * view / content`, not smaller than the minimum hit size, and flush with the end at the maximum value; a content smaller than the view fills the track and the value stays 0. A track press pages by one view, a thumb drag is captured, arrows (`SetArrows`) move by `SetLineStep`. `SetAutoHide` draws the bar only while it is hovered, dragged or just changed.
+- **`ScrollView`**: one content widget larger than the view, a vertical and a horizontal bar by policy (`Auto`, `Always`, `Never`), the offset clamped to the content. The wheel scrolls by a line step and is handled only when it moved, so an inner view at its end passes the wheel to the outer one. `ScrollTo(rect)` takes a rectangle in the coordinates the view's bounds are in and moves the least; a widget that takes the focus inside the content is scrolled into view. There is no scroll inertia.
+- **`ListBox`**: items come from a `ListModel` (`ItemCount`, `ItemText`). Single or multiple selection (Ctrl toggles, Shift selects a range from the anchor, Shift+arrows extend, Ctrl+A selects all), arrow, page, Home/End keys, Enter activates, and typing a letter jumps to the next item starting with it (more letters within a second extend the prefix, the same letter again cycles). Only the rows in view are laid out and drawn, from a ring of cached text runs, so 100,000 items cost what 100 do. `ModelChanged()` after the model changes clears the selection and clamps the scroll.
+
+Steady state: a frame that scrolls within rows already laid out allocates nothing (the surface keeps its canvas and event buffers between frames). A row that comes into view for the first time is laid out by the text module, which allocates.
+
+```cpp
+ui::ListBox* list = AddListBox(root, "files");   // however your code makes widgets
+list->SetModel(&my_model);                        // a ui::ListModel the caller keeps alive
+list->OnActivate().Connect([](void* user, ui::ListBox* l) { Open(static_cast<App*>(user), l->Current()); }, app);
+```
+
 More sections arrive with the days that build them (text input, popups, drag and drop, viewport, surfaces).

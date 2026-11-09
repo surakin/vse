@@ -1,7 +1,6 @@
 #pragma once
 
-#include "mem/heap_allocator.h"
-#include "string/string.h"
+#include "containers/vector.h"
 #include "text/layout.h"
 #include "types.h"
 #include "ui/theme.h"
@@ -22,12 +21,12 @@ class Surface;
 class TextRun {
 public:
     /// Makes a run with no text.
-    TextRun() : text_(HeapAllocator::Default(), StringView()) {}
+    TextRun() = default;
     /// Sets the text; a different text invalidates the layouts. Returns whether it changed.
     /// Fails: never.
     bool SetText(StringView text);
     /// Returns the text.
-    StringView Text() const { return text_.View(); }
+    StringView Text() const { return StringView(text_.Data(), text_.Size()); }
     /// Sets the alignment of the lines inside the wrap width; a change invalidates the layouts. Returns whether it changed.
     /// Fails: never.
     bool SetAlign(text::Align align);
@@ -61,7 +60,7 @@ public:
     u64 LayoutCount() const { return layout_count_; }
 
 private:
-    String<HeapAllocator> text_;
+    Vector<char> text_; // not NUL-terminated; assigning keeps the capacity, so a row that is re-used for other text allocates nothing once warm
     text::Align align_ = text::Align::Left;
     text::TextStyle style_;
     text::TextLayout full_;

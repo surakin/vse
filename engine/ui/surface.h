@@ -14,6 +14,8 @@
 
 namespace engine_placeholder::ui {
 
+class DrawListCanvas;
+
 /// Turns a font family key of a theme into a font.
 ///
 /// Thread-safety: owner-thread-only.
@@ -187,6 +189,8 @@ private:
     u64 layout_generation_ = 1;
     u32 depth_ = 0;
     Vector<Event> queue_;
+    Vector<Event> processing_;
+    UniquePtr<DrawListCanvas> canvas_; // kept between frames so that its clip and layer stacks keep their storage
     Vector<Widget*> removals_;
     UniquePtr<Widget> root_;
     UniquePtr<Widget> popups_;

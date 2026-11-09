@@ -7,8 +7,9 @@
 namespace engine_placeholder::ui {
 
 bool TextRun::SetText(StringView text) {
-    if (text_.View() == text) return false;
-    text_ = String<HeapAllocator>(HeapAllocator::Default(), text);
+    if (Text() == text) return false;
+    text_.Clear();
+    for (usize i = 0; i < text.Length(); ++i) text_.Push(text[i]);
     full_valid_ = false;
     cut_valid_ = false;
     return true;
@@ -33,7 +34,7 @@ bool TextRun::Ensure(text::Font* face, u32 family, f32 size_px, f32 wrap_px, f32
     options.align = align_;
     full_valid_ = false;
     cut_valid_ = false;
-    if (!text::Layout(text_.View(), style_, options, &full_).Ok()) return false;
+    if (!text::Layout(Text(), style_, options, &full_).Ok()) return false;
     full_valid_ = true;
     wrap_px_ = wrap_px;
     pixel_size_ = pixel_size;
@@ -68,9 +69,10 @@ const text::TextLayout& TextRun::Fit(f32 limit_px) {
         if (c.x + c.width > room) break;
         cut = c.byte_end;
     }
-    String<HeapAllocator> shown(HeapAllocator::Default(), StringView(text_.CStr(), cut));
-    shown.Append(StringView(kEllipsis, 3));
-    cut_valid_ = text::Layout(shown.View(), style_, options, &cut_).Ok();
+    Vector<char> shown;
+    for (u32 i = 0; i < cut; ++i) shown.Push(text_[i]);
+    for (usize i = 0; i < 3; ++i) shown.Push(kEllipsis[i]);
+    cut_valid_ = text::Layout(StringView(shown.Data(), shown.Size()), style_, options, &cut_).Ok();
     cut_limit_ = limit_px;
     return cut_valid_ ? cut_ : full_;
 }

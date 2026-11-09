@@ -12,6 +12,9 @@ set(UI_SOURCES
   text_run.cpp
   widgets/display.cpp
   widgets/buttons.cpp
+  widgets/scroll.cpp
+  widgets/value_widgets.cpp
+  widgets/list_box.cpp
   testing/software_raster.cpp
   testing/harness.cpp
   testing/recording_canvas.cpp

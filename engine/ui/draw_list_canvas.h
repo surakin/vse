@@ -27,6 +27,13 @@ public:
     /// Ownership: the list and the atlas are borrowed.
     DrawListCanvas(DrawList* list, text::GlyphAtlas* atlas);
 
+    /// Points the canvas at another list and atlas, keeping its stacks' storage (so a surface that draws every frame allocates nothing in steady state).
+    /// Param list: the draw list to build; borrowed.
+    /// Param atlas: the glyph atlas for text; borrowed; null makes every glyph count as dropped.
+    /// Aborts: `list` is null.
+    /// Ownership: the list and the atlas are borrowed.
+    void Rebind(DrawList* list, text::GlyphAtlas* atlas);
+
     /// Starts a frame: sets the scale and the surface size and resets the clip and layer stacks (the draw list is the caller's to `Clear`).
     /// Param scale: physical pixels per logical unit; must be above 0.
     /// Param width: the surface width in physical pixels.

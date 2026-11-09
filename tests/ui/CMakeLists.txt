@@ -11,6 +11,8 @@ set(UI_TEST_SOURCES
   input_routing_test.cpp
   ui_window_test.cpp
   basic_widgets_test.cpp
+  value_widgets_test.cpp
+  scroll_test.cpp
 )
 
 find_package(Threads REQUIRED)

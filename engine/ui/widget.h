@@ -73,6 +73,8 @@ public:
     /// Aborts: `child` is not a child of this widget.
     /// Ownership: borrowed; the caller keeps ownership and it must outlive its use here.
     void RemoveChild(Widget* child);
+    /// Moves this widget to the end of its parent's children, so it is drawn last and hit first. Does nothing for a root.
+    void BringToFront();
     /// Removes and destroys this widget from its parent (deferred during dispatch); does nothing for a root.
     void RemoveFromParent();
     /// Returns the number of children.
@@ -228,6 +230,10 @@ public:
 
     /// Handles an event delivered to this widget with its position in local space; set `event.handled` to stop it from bubbling. The default ignores it.
     virtual void OnEvent(Event&) {}
+    /// Called by the surface on every ancestor of a widget that just got the keyboard focus (the ancestor nearest to it first); a scroll view brings the widget into view. The default does nothing.
+    ///
+    /// Ownership: borrows the widget for the call.
+    virtual void OnDescendantFocused(Widget*) {}
     /// Advances time by `dt` seconds; called each frame for the widgets whose `WantsUpdate` is true.
     virtual void Update(f32) {}
     /// Returns whether `Update` should be called each frame (a caret blink, a tooltip delay); default false.

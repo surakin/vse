@@ -25,6 +25,12 @@ DrawListCanvas::DrawListCanvas(DrawList* list, text::GlyphAtlas* atlas) : list_(
     clips_.Push(surface_);
 }
 
+void DrawListCanvas::Rebind(DrawList* list, text::GlyphAtlas* atlas) {
+    ENGINE_ASSERT(list != nullptr, "DrawListCanvas::Rebind: the draw list is null");
+    list_ = list;
+    atlas_ = atlas;
+}
+
 void DrawListCanvas::Begin(f32 scale, u32 width, u32 height) {
     ENGINE_ASSERT(scale > 0, "DrawListCanvas::Begin: the scale must be above 0");
     scale_ = scale;

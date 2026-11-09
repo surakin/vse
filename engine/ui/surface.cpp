@@ -153,6 +153,7 @@ void Surface::SetFocus(Widget* widget) {
         widget->MarkDirty(kDrawDirty);
         e.type = EventType::FocusGained;
         Deliver(widget, e, false);
+        for (Widget* a = widget->parent_; a != nullptr && focus_ == widget; a = a->parent_) a->OnDescendantFocused(widget);
     }
     if (--depth_ == 0) FlushRemovals();
 }
@@ -347,9 +348,12 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
     ENGINE_ASSERT(dt >= 0, "Surface::Frame: dt must not be negative");
     time_ += dt;
     ++depth_;
-    Vector<Event> events = static_cast<Vector<Event>&&>(queue_);
-    queue_ = Vector<Event>();
-    for (usize i = 0; i < events.Size(); ++i) Dispatch(events[i]);
+    // Two buffers swap places, so a frame allocates nothing once both have grown: events posted while these are dispatched go to the other buffer and wait for the next frame.
+    Vector<Event> swap = static_cast<Vector<Event>&&>(queue_);
+    queue_ = static_cast<Vector<Event>&&>(processing_);
+    processing_ = static_cast<Vector<Event>&&>(swap);
+    for (usize i = 0; i < processing_.Size(); ++i) Dispatch(processing_[i]);
+    processing_.Clear();
     UpdateWidgets(root_.Get(), dt);
     UpdateWidgets(popups_.Get(), dt);
     if (--depth_ == 0) FlushRemovals();
@@ -381,7 +385,12 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
     if (draw_dirty_) RefreshHover(); // the widget under a stationary pointer may have changed (layout, visibility, a popup)
     if (list == nullptr || !(draw_dirty_ || list->commands.Empty())) return false;
     list->Clear();
-    DrawListCanvas canvas(list, atlas);
+    if (canvas_.Get() == nullptr) {
+        canvas_ = MakeUnique<DrawListCanvas>(list, atlas);
+    } else {
+        canvas_->Rebind(list, atlas);
+    }
+    DrawListCanvas& canvas = *canvas_;
     canvas.Begin(scale_, static_cast<u32>(std::ceil(width_ * scale_)), static_cast<u32>(std::ceil(height_ * scale_)));
     root_->DrawTree(canvas);
     popups_->DrawTree(canvas);

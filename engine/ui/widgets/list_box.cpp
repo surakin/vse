@@ -1,0 +1,391 @@
+#include "ui/widgets/list_box.h"
+
+#include <cmath>
+
+#include "ui/surface.h"
+#include "ui/widgets/look.h"
+
+namespace engine_placeholder::ui {
+
+namespace {
+
+char Lower(char c) { return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c; }
+
+} // namespace
+
+ListBox::ListBox(StringView name) : Widget(name) {
+    SetFocusable(true);
+    SetAcceptsText(true);
+    bar_ = static_cast<ScrollBar*>(AddChild(MakeUnique<ScrollBar>(StringView("bar"), true)));
+    bar_->OnChanged().Connect(&ListBox::BarMoved, this);
+    bar_->SetCollapsed(true);
+}
+
+void ListBox::BarMoved(void* user, ScrollBar* bar) {
+    ListBox* box = static_cast<ListBox*>(user);
+    box->SetOffset(static_cast<f32>(bar->Value()));
+}
+
+void ListBox::SetModel(ListModel* model) {
+    model_ = model;
+    offset_ = 0;
+    count_ = static_cast<usize>(-1); // force the sync to see a change
+    SyncModel();
+    MarkDirty(kLayoutDirty);
+}
+
+void ListBox::SyncModel() {
+    const usize n = model_ != nullptr ? model_->ItemCount() : 0;
+    if (n == count_) return;
+    count_ = n;
+    selected_.Clear();
+    selected_.Resize(n);
+    selected_count_ = 0;
+    current_ = kNone;
+    anchor_ = kNone;
+    hover_ = kNone;
+    ++revision_;
+    const f32 max = MaxOffset();
+    if (offset_ > max) offset_ = max;
+    MarkDirty(kLayoutDirty);
+}
+
+void ListBox::ModelChanged() {
+    count_ = static_cast<usize>(-1); // the items may have been replaced by as many others: the selection is cleared whatever the count
+    SyncModel();
+    MarkDirty(kLayoutDirty | kDrawDirty);
+}
+
+void ListBox::SetMode(SelectionMode mode) {
+    mode_ = mode;
+    if (mode_ == SelectionMode::Single && selected_count_ > 1) {
+        ClearSelection();
+        Notify();
+    }
+}
+
+bool ListBox::IsSelected(usize index) const { return index < selected_.Size() && selected_[index] != 0; }
+
+bool ListBox::MeasureRow() {
+    Surface* surface = GetSurface();
+    if (surface == nullptr) return false;
+    const f32 scale = surface->Scale();
+    const ResolvedStyle style = surface->Themes().Resolve(widget_kind::kMenu, VariantId(0), 0, scale);
+    probe_.SetText(StringView("Ag"));
+    if (!probe_.EnsureForStyle(surface, style, 0)) return false;
+    row_height_ = probe_.Height() + style.padding_y / scale * 2;
+    return true;
+}
+
+f32 ListBox::ViewHeight() const { return Bounds().h; }
+
+f32 ListBox::MaxOffset() const {
+    const f32 content = static_cast<f32>(count_) * row_height_;
+    return content > ViewHeight() ? content - ViewHeight() : 0.0f;
+}
+
+void ListBox::SetOffset(f32 offset) {
+    const f32 max = MaxOffset();
+    offset = std::fmin(std::fmax(offset, 0.0f), max);
+    if (offset == offset_) return;
+    offset_ = offset;
+    bar_->SetValue(offset_);
+    MarkDirty(kDrawDirty);
+}
+
+usize ListBox::IndexAt(f32 local_y) const {
+    if (!(row_height_ > 0) || local_y < 0) return kNone;
+    const usize index = static_cast<usize>((local_y + offset_) / row_height_);
+    return index < count_ ? index : kNone;
+}
+
+void ListBox::VisibleRange(usize* first, usize* end) const {
+    *first = 0;
+    *end = 0;
+    if (!(row_height_ > 0) || count_ == 0) return;
+    *first = static_cast<usize>(offset_ / row_height_);
+    usize last = static_cast<usize>(std::ceil((offset_ + ViewHeight()) / row_height_));
+    if (last > count_) last = count_;
+    *end = last > *first ? last : *first;
+}
+
+void ListBox::ScrollToIndex(usize index) {
+    if (index >= count_ || !(row_height_ > 0)) return;
+    const f32 top = static_cast<f32>(index) * row_height_;
+    if (top < offset_) {
+        SetOffset(top);
+    } else if (top + row_height_ > offset_ + ViewHeight()) {
+        SetOffset(top + row_height_ - ViewHeight());
+    }
+}
+
+bool ListBox::SetSelectedFlag(usize index, bool selected) {
+    if (index >= selected_.Size()) return false;
+    const bool was = selected_[index] != 0;
+    if (was == selected) return false;
+    selected_[index] = selected ? 1 : 0;
+    if (selected) {
+        ++selected_count_;
+    } else {
+        --selected_count_;
+    }
+    return true;
+}
+
+bool ListBox::ClearSelection() {
+    if (selected_count_ == 0) return false;
+    for (usize i = 0; i < selected_.Size(); ++i) selected_[i] = 0;
+    selected_count_ = 0;
+    return true;
+}
+
+bool ListBox::SelectOnly(usize index) {
+    if (selected_count_ == 1 && IsSelected(index)) return false;
+    ClearSelection();
+    SetSelectedFlag(index, true);
+    return true;
+}
+
+bool ListBox::SelectRange(usize a, usize b) {
+    const usize lo = a < b ? a : b;
+    const usize hi = a < b ? b : a;
+    bool changed = ClearSelection();
+    for (usize i = lo; i <= hi && i < count_; ++i) changed = SetSelectedFlag(i, true) || changed;
+    return changed;
+}
+
+void ListBox::Notify() {
+    MarkDirty(kDrawDirty);
+    on_selection_.Invoke(this);
+}
+
+void ListBox::Select(usize index) {
+    bool changed = false;
+    if (index >= count_) {
+        changed = ClearSelection();
+        current_ = kNone;
+        anchor_ = kNone;
+    } else {
+        changed = SelectOnly(index);
+        current_ = index;
+        anchor_ = index;
+        ScrollToIndex(index);
+    }
+    MarkDirty(kDrawDirty);
+    if (changed) Notify();
+}
+
+void ListBox::MoveCurrent(usize to, bool extend) {
+    if (count_ == 0) return;
+    if (to >= count_) to = count_ - 1;
+    bool changed;
+    if (extend && mode_ == SelectionMode::Multiple) {
+        if (anchor_ == kNone) anchor_ = current_ == kNone ? to : current_;
+        changed = SelectRange(anchor_, to);
+    } else {
+        changed = SelectOnly(to);
+        anchor_ = to;
+    }
+    current_ = to;
+    ScrollToIndex(to);
+    MarkDirty(kDrawDirty);
+    if (changed) Notify();
+}
+
+void ListBox::Click(usize index, u32 modifiers) {
+    bool changed = false;
+    if (mode_ == SelectionMode::Multiple && (modifiers & os::kModCtrl) != 0) {
+        changed = SetSelectedFlag(index, !IsSelected(index));
+        anchor_ = index;
+    } else if (mode_ == SelectionMode::Multiple && (modifiers & os::kModShift) != 0) {
+        if (anchor_ == kNone) anchor_ = index;
+        changed = SelectRange(anchor_, index);
+    } else {
+        changed = SelectOnly(index);
+        anchor_ = index;
+    }
+    current_ = index;
+    ScrollToIndex(index);
+    MarkDirty(kDrawDirty);
+    if (changed) Notify();
+}
+
+void ListBox::TypeAhead(Event& event) {
+    if (event.text_length != 1 || static_cast<u8>(event.text[0]) < static_cast<u8>(' ') || count_ == 0) return;
+    event.handled = true;
+    const f64 now = GetSurface()->Time();
+    if (now - typed_at_ > kTypeAheadSeconds) typed_.Clear();
+    typed_.Push(Lower(event.text[0]));
+    typed_at_ = now;
+    bool same = true;
+    for (usize i = 1; i < typed_.Size(); ++i) same = same && typed_[i] == typed_[0];
+    const usize length = same ? 1 : typed_.Size(); // a letter repeated cycles through the items that start with it
+    usize start = current_ == kNone ? 0 : current_;
+    if (same && current_ != kNone) start = current_ + 1;
+    for (usize k = 0; k < count_; ++k) {
+        const usize i = (start + k) % count_;
+        const StringView text = model_->ItemText(i);
+        if (text.Length() < length) continue;
+        bool match = true;
+        for (usize c = 0; c < length && match; ++c) match = Lower(text[c]) == typed_[c];
+        if (match) {
+            MoveCurrent(i, false);
+            return;
+        }
+    }
+}
+
+Size ListBox::Measure(const Constraints&) {
+    if (!MeasureRow()) return Size();
+    Surface* surface = GetSurface();
+    return Size{surface->Themes().Metric(MetricId::IconSize, 1.0f) * kWidthInIcons, row_height_ * kPreferredRows};
+}
+
+void ListBox::Arrange(const Rect& rect) {
+    SetBounds(rect);
+    MeasureRow();
+    SyncModel();
+    Surface* surface = GetSurface();
+    const f32 thickness = surface != nullptr ? surface->Themes().Metric(MetricId::ScrollbarThickness, 1.0f) : 0.0f;
+    const f32 content = static_cast<f32>(count_) * row_height_;
+    const bool shown = content > rect.h;
+    bar_->SetCollapsed(!shown);
+    const f32 max = MaxOffset();
+    if (offset_ > max) offset_ = max;
+    if (shown) {
+        Rect r;
+        r.x = rect.Right() - thickness;
+        r.y = rect.y;
+        r.w = thickness;
+        r.h = rect.h;
+        bar_->Arrange(r);
+        bar_->SetLineStep(row_height_);
+        bar_->SetRange(content, rect.h);
+        bar_->SetValue(offset_);
+    }
+}
+
+void ListBox::Draw(Canvas& canvas) {
+    Surface* surface = GetSurface();
+    const f32 scale = surface->Scale();
+    const ResolvedStyle box = surface->Themes().Resolve(widget_kind::kTextField, VariantId(0), State(), scale);
+    const Rect& b = Bounds();
+    DrawStyleBox(canvas, b, box, scale);
+    if (model_ == nullptr || !MeasureRow()) return;
+    usize first = 0;
+    usize end = 0;
+    VisibleRange(&first, &end);
+    if (end == first) return;
+    const usize needed = end - first + 1;
+    if (slots_.Size() < needed) slots_.Resize(needed);
+    const f32 bar_w = bar_->Collapsed() ? 0.0f : bar_->Bounds().w;
+    canvas.PushClip(b);
+    for (usize i = first; i < end; ++i) {
+        Slot& slot = slots_[i % slots_.Size()];
+        if (slot.index != i || slot.revision != revision_) {
+            slot.run.SetText(model_->ItemText(i));
+            slot.index = i;
+            slot.revision = revision_;
+            ++row_layouts_;
+        }
+        u32 state = 0;
+        if (IsSelected(i)) state |= kStateChecked;
+        if (i == hover_) state |= kStateHover;
+        if ((State() & kStateDisabled) != 0) state |= kStateDisabled;
+        const ResolvedStyle row = surface->Themes().Resolve(widget_kind::kMenu, VariantId(0), state, scale);
+        Rect r;
+        r.x = b.x;
+        r.y = b.y + static_cast<f32>(i) * row_height_ - offset_;
+        r.w = b.w - bar_w;
+        r.h = row_height_;
+        if (IsVisibleColor(row.background)) canvas.DrawRect(r, row.background);
+        if (slot.run.EnsureForStyle(surface, row, 0)) {
+            const f32 pad = row.padding_x / scale;
+            const text::TextLayout& layout = slot.run.Fit((r.w - pad * 2) * scale);
+            canvas.DrawText(layout, slot.run.Style(), Point{r.x + pad, r.y + (r.h - layout.height / scale) / 2}, row.text_color);
+        }
+        if (i == current_ && (State() & kStateFocused) != 0) canvas.DrawBorder(r, CornerRadii(), 1.0f, surface->Themes().Color(ColorId::Accent));
+    }
+    canvas.PopClip();
+}
+
+void ListBox::OnEvent(Event& event) {
+    switch (event.type) {
+        case EventType::PointerDown:
+            if (event.button != os::kMouseLeft) break;
+            event.handled = true;
+            if (const usize i = IndexAt(event.position.y); i != kNone) Click(i, event.modifiers);
+            break;
+        case EventType::PointerMove: {
+            const usize i = IndexAt(event.position.y);
+            if (i != hover_) {
+                hover_ = i;
+                MarkDirty(kDrawDirty);
+            }
+            break;
+        }
+        case EventType::PointerLeave:
+            if (hover_ != kNone) {
+                hover_ = kNone;
+                MarkDirty(kDrawDirty);
+            }
+            break;
+        case EventType::Wheel: {
+            const f32 before = offset_;
+            SetOffset(offset_ + event.wheel_y * kWheelRows * row_height_);
+            if (offset_ != before) event.handled = true;
+            break;
+        }
+        case EventType::Text:
+            TypeAhead(event);
+            break;
+        case EventType::KeyDown: {
+            const bool extend = (event.modifiers & os::kModShift) != 0;
+            const usize page = row_height_ > 0 ? static_cast<usize>(ViewHeight() / row_height_) : 1;
+            const usize step = page > 1 ? page - 1 : 1;
+            const usize at = current_ == kNone ? 0 : current_;
+            event.handled = true;
+            switch (event.key) {
+                case Key::Down:
+                    MoveCurrent(current_ == kNone ? 0 : at + 1, extend);
+                    break;
+                case Key::Up:
+                    MoveCurrent(at > 0 ? at - 1 : 0, extend);
+                    break;
+                case Key::PageDown:
+                    MoveCurrent(at + step, extend);
+                    break;
+                case Key::PageUp:
+                    MoveCurrent(at > step ? at - step : 0, extend);
+                    break;
+                case Key::Home:
+                    MoveCurrent(0, extend);
+                    break;
+                case Key::End:
+                    MoveCurrent(count_ > 0 ? count_ - 1 : 0, extend);
+                    break;
+                case Key::Space:
+                    if (current_ != kNone) MoveCurrent(current_, false);
+                    break;
+                case Key::Enter:
+                    if (current_ != kNone) on_activate_.Invoke(this);
+                    break;
+                case Key::A:
+                    if (mode_ == SelectionMode::Multiple && (event.modifiers & os::kModCtrl) != 0 && count_ > 0) {
+                        if (SelectRange(0, count_ - 1)) Notify();
+                    } else {
+                        event.handled = false;
+                    }
+                    break;
+                default:
+                    event.handled = false;
+                    break;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+} // namespace engine_placeholder::ui

@@ -67,6 +67,20 @@ void Widget::RemoveChild(Widget* child) {
     children_.Remove(index);
 }
 
+void Widget::BringToFront() {
+    if (parent_ == nullptr) return;
+    Vector<UniquePtr<Widget>>& siblings = parent_->children_;
+    usize index = siblings.Size();
+    for (usize i = 0; i < siblings.Size(); ++i) {
+        if (siblings[i].Get() == this) index = i;
+    }
+    if (index + 1 >= siblings.Size()) return;
+    UniquePtr<Widget> me = static_cast<UniquePtr<Widget>&&>(siblings[index]);
+    for (usize i = index; i + 1 < siblings.Size(); ++i) siblings[i] = static_cast<UniquePtr<Widget>&&>(siblings[i + 1]);
+    siblings[siblings.Size() - 1] = static_cast<UniquePtr<Widget>&&>(me);
+    parent_->MarkDirty(kLayoutDirty | kDrawDirty);
+}
+
 void Widget::RemoveFromParent() {
     if (parent_ != nullptr) parent_->RemoveChild(this);
 }
