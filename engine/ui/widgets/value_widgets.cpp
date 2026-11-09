@@ -228,12 +228,21 @@ SpinBox::SpinBox(StringView name) : Widget(name) {
     range_.min = 0;
     range_.max = kDefaultMax;
     range_.step = 1;
-    SetFocusable(true);
+    field_ = static_cast<TextField*>(AddChild(MakeUnique<TextField>(StringView("text"))));
+    field_->SetFrame(false);
+    field_->SetValidator(&SpinBox::Accepts, this);
+    field_->OnSubmit().Connect(&SpinBox::Submitted, this);
+    field_->OnCancel().Connect(&SpinBox::Cancelled, this);
+    field_->OnFocusLost().Connect(&SpinBox::FocusLeft, this);
+    SyncText();
 }
+
+void SpinBox::SyncText() { field_->SetText(ValueText().View()); }
 
 void SpinBox::SetRange(const ValueRange& range) {
     range_ = range;
     value_ = range_.Snap(value_);
+    SyncText();
     MarkDirty(kLayoutDirty);
 }
 
@@ -241,11 +250,13 @@ void SpinBox::SetValue(f64 value) {
     const f64 next = range_.Apply(value, value_);
     if (next == value_) return;
     value_ = next;
+    SyncText();
     MarkDirty(kLayoutDirty);
 }
 
 void SpinBox::SetDecimals(int decimals) {
     decimals_ = decimals < 0 ? 0 : (decimals > kMaxDecimals ? kMaxDecimals : decimals);
+    SyncText();
     MarkDirty(kLayoutDirty);
 }
 
@@ -268,11 +279,76 @@ f32 SpinBox::ButtonWidth() const {
 
 void SpinBox::UserSet(f64 value) {
     const f64 next = range_.Apply(value, value_);
-    if (next == value_) return;
+    if (next == value_) {
+        SyncText(); // typed text that the range refused goes back
+        return;
+    }
     value_ = next;
+    SyncText();
     MarkDirty(kLayoutDirty);
     on_changed_.Invoke(this);
 }
+
+bool SpinBox::Accepts(void* user, const TextField*, StringView proposed) {
+    const SpinBox* box = static_cast<const SpinBox*>(user);
+    usize i = 0;
+    if (i < proposed.Length() && (proposed[i] == '+' || (proposed[i] == '-' && box->range_.min < 0))) ++i;
+    int digits_after = -1; // -1: no decimal point yet
+    for (; i < proposed.Length(); ++i) {
+        const char c = proposed[i];
+        if (IsAsciiDigit(c)) {
+            if (digits_after >= 0) ++digits_after;
+        } else if (c == '.' && digits_after < 0 && box->decimals_ > 0) {
+            digits_after = 0;
+        } else {
+            return false;
+        }
+    }
+    return digits_after <= box->decimals_;
+}
+
+bool SpinBox::Parse(StringView text, f64* out) const {
+    usize i = 0;
+    bool negative = false;
+    if (i < text.Length() && (text[i] == '+' || text[i] == '-')) {
+        negative = text[i] == '-';
+        ++i;
+    }
+    f64 mantissa = 0;
+    f64 scale = 1;
+    bool any = false;
+    bool after_point = false;
+    for (; i < text.Length(); ++i) {
+        const char c = text[i];
+        if (c == '.' && !after_point) {
+            after_point = true;
+        } else if (IsAsciiDigit(c)) {
+            any = true;
+            mantissa = mantissa * kDecimalBase + static_cast<f64>(c - '0');
+            if (after_point) scale *= kDecimalBase;
+        } else {
+            return false;
+        }
+    }
+    if (!any) return false;
+    *out = (negative ? -mantissa : mantissa) / scale;
+    return true;
+}
+
+void SpinBox::Commit() {
+    f64 parsed = 0;
+    if (Parse(field_->Text(), &parsed)) {
+        UserSet(parsed);
+    } else {
+        SyncText();
+    }
+}
+
+void SpinBox::Submitted(void* user, TextField*) { static_cast<SpinBox*>(user)->Commit(); }
+
+void SpinBox::Cancelled(void* user, TextField*) { static_cast<SpinBox*>(user)->SyncText(); }
+
+void SpinBox::FocusLeft(void* user, TextField*) { static_cast<SpinBox*>(user)->Commit(); }
 
 Size SpinBox::Measure(const Constraints&) {
     Surface* surface = GetSurface();
@@ -300,26 +376,29 @@ Size SpinBox::Measure(const Constraints&) {
     return size;
 }
 
+void SpinBox::Arrange(const Rect& rect) {
+    SetBounds(rect);
+    Rect inner = rect;
+    inner.w = std::fmax(rect.w - ButtonWidth(), 0.0f);
+    field_->Arrange(inner);
+}
+
 void SpinBox::Draw(Canvas& canvas) {
     Surface* surface = GetSurface();
     const f32 scale = surface->Scale();
-    const ResolvedStyle style = surface->Themes().Resolve(widget_kind::kTextField, VariantId(0), State(), scale);
+    u32 state = State();
+    if (surface->Focus() == field_ && surface->WindowFocused()) state |= kStateFocused;
+    const ResolvedStyle style = surface->Themes().Resolve(widget_kind::kTextField, VariantId(0), state, scale);
     const Rect& b = Bounds();
     DrawStyleBox(canvas, b, style, scale);
     const f32 button_w = ButtonWidth();
-    run_.SetText(ValueText().View());
-    if (run_.EnsureForStyle(surface, style, 0)) {
-        const f32 room = b.w - button_w - style.padding_x / scale * 2;
-        const text::TextLayout& layout = run_.Fit(room * scale);
-        canvas.DrawText(layout, run_.Style(), Point{b.x + style.padding_x / scale, b.y + (b.h - layout.height / scale) / 2}, style.text_color);
-    }
     // The buttons: a divider and two triangles.
     const f32 x = b.Right() - button_w;
     const u32 ink = (State() & kStateDisabled) != 0 ? surface->Themes().Color(ColorId::TextDisabled) : surface->Themes().Color(ColorId::Text);
     canvas.DrawRect(Rect{x, b.y, 1, b.h}, surface->Themes().Color(ColorId::Border));
     const f32 mid_x = x + button_w / 2;
     const f32 half = b.h / 2;
-    const f32 reach = button_w * 0.2f;
+    const f32 reach = button_w * kArrowReach;
     const f32 up_y = b.y + half / 2;
     const f32 down_y = b.y + half + half / 2;
     canvas.DrawTriangle(Point{mid_x, up_y - reach / 2}, Point{mid_x + reach, up_y + reach / 2}, Point{mid_x - reach, up_y + reach / 2}, ink);
@@ -331,7 +410,10 @@ void SpinBox::OnEvent(Event& event) {
         case EventType::PointerDown:
             if (event.button != os::kMouseLeft) break;
             event.handled = true;
-            if (event.position.x >= Bounds().w - ButtonWidth()) UserSet(value_ + (event.position.y < Bounds().h / 2 ? Step() : -Step()));
+            if (event.position.x >= Bounds().w - ButtonWidth()) {
+                field_->RequestFocus();
+                UserSet(value_ + (event.position.y < Bounds().h / 2 ? Step() : -Step()));
+            }
             break;
         case EventType::Wheel:
             event.handled = true;
@@ -353,14 +435,6 @@ void SpinBox::OnEvent(Event& event) {
                     break;
                 case Key::PageDown:
                     UserSet(value_ - Step() * kPageSteps);
-                    event.handled = true;
-                    break;
-                case Key::Home:
-                    UserSet(range_.min);
-                    event.handled = true;
-                    break;
-                case Key::End:
-                    UserSet(range_.max);
                     event.handled = true;
                     break;
                 default:

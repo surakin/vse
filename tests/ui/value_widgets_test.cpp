@@ -235,16 +235,19 @@ TEST_CASE("SpinBox: buttons, wheel, keys, range, decimals and policy", "[ui][val
     CHECK(changes == 3 - 1);
     h.Wheel(30, 20, 0, -1);
     CHECK(box->Value() == 1);
-    h.GetSurface().SetFocus(box);
-    h.Key(Key::PageUp);
+    h.GetSurface().SetFocus(box->Field());
+    h.Key(Key::PageUp); // not handled by the field: bubbles to the box
     CHECK(box->Value() == 11);
-    h.Key(Key::End);
-    CHECK(box->Value() == 100);
+    box->SetValue(100);
     h.Key(Key::Up);
     CHECK(box->Value() == 100);
-    h.Key(Key::Home);
-    CHECK(box->Value() == 0);
+    h.Key(Key::PageDown);
+    h.Key(Key::PageDown);
+    h.Key(Key::PageDown);
+    CHECK(box->Value() == 70);
+    box->SetValue(0);
     CHECK(box->ValueText().View() == StringView("0"));
+    CHECK(box->Field()->Text() == StringView("0"));
 
     ValueRange range;
     range.min = 0;
@@ -266,7 +269,7 @@ TEST_CASE("SpinBox: buttons, wheel, keys, range, decimals and policy", "[ui][val
     CHECK(box->Value() == 2.0);
     // Draws its text and buttons without a layout pass.
     RecordingCanvas c;
-    box->Draw(c);
+    box->DrawTree(c);
     usize triangles = 0;
     bool text = false;
     for (usize i = 0; i < c.Calls().Size(); ++i) {

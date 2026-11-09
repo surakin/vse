@@ -5,6 +5,7 @@
 #include "text/font.h"
 #include "text/glyph_atlas.h"
 #include "types.h"
+#include "ui/clipboard.h"
 #include "ui/draw_list.h"
 #include "ui/event.h"
 #include "ui/theme.h"
@@ -67,6 +68,12 @@ public:
     /// Changes the size and scale (the root and the popup layer follow); marks layout dirty. The same size and scale again does nothing; several calls between two frames cost one layout.
     /// Aborts: `scale` is not above 0.
     void Resize(f32 width, f32 height, f32 scale);
+
+    /// Uses `clipboard` for copy and paste (borrowed; null goes back to the surface's own in-process clipboard).
+    /// Ownership: the clipboard must outlive its use by the surface.
+    void SetClipboard(Clipboard* clipboard) { clipboard_ = clipboard != nullptr ? clipboard : &local_clipboard_; }
+    /// Returns the clipboard in use.
+    Clipboard& GetClipboard() { return *clipboard_; }
 
     /// Returns the clock in seconds.
     f64 Time() const { return time_; }
@@ -190,6 +197,8 @@ private:
     u32 depth_ = 0;
     Vector<Event> queue_;
     Vector<Event> processing_;
+    LocalClipboard local_clipboard_;
+    Clipboard* clipboard_ = &local_clipboard_;
     UniquePtr<DrawListCanvas> canvas_; // kept between frames so that its clip and layer stacks keep their storage
     Vector<Widget*> removals_;
     UniquePtr<Widget> root_;

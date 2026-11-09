@@ -183,4 +183,23 @@ list->SetModel(&my_model);                        // a ui::ListModel the caller 
 list->OnActivate().Connect([](void* user, ui::ListBox* l) { Open(static_cast<App*>(user), l->Current()); }, app);
 ```
 
-More sections arrive with the days that build them (text input, popups, drag and drop, viewport, surfaces).
+## The text field
+
+`TextField` (`ui/widgets/text_field.h`) edits one line of UTF-8 text. Offsets are byte offsets on grapheme boundaries (`text::NextBoundary`, `PreviousBoundary`, `OffsetAtPoint`, `PositionOfOffset` and `SelectionRects` over the field's layout), so a combining mark, a flag, a ZWJ sequence or a Hangul syllable moves, selects and deletes as one unit.
+
+- **Keys:** Left/Right, Home/End (Shift extends the selection, Ctrl moves by word: `WordStart`/`WordEnd` in `ui/text_words.h`, whose classes are code point ranges, not a full Unicode table), Backspace/Delete (Ctrl: by word), Ctrl+A, Ctrl+C/X/V with Ctrl+Insert, Shift+Delete and Shift+Insert, Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y, Enter (`OnSubmit`), Escape (`OnCancel`). Only `Text` events insert; Tab, Up, Down and unknown keys are left to the surface and the parents. There is no input method and no complex-script shaping.
+- **Mouse:** a click places the caret, a drag selects (the pointer is captured), Shift+click extends, a double click selects a word, a triple click all; the I-beam shows on hover. A drag past the edge scrolls as the caret moves (there is no auto-scroll while the pointer is still).
+- **Display:** the text scrolls sideways to keep the caret in view with a margin; the selection comes from `SelectionRects`; the caret blinks from the surface clock and restarts on every input; an unfocused field draws no caret; the placeholder shows while the field is empty and unfocused.
+- **Rules:** `SetMaxLength` counts clusters (a longer insertion is cut), `SetValidator` sees the whole proposed text and can refuse it, `SetReadOnly` keeps caret, selection and copy, `SetPassword` draws a bullet per cluster and refuses copy and cut. One path applies them to every edit.
+- **Undo:** a bounded history (`kMaxUndo`); typing is one step per run of letters or of spaces, a run of Backspace or of Delete is one step, moving the caret ends a run; a new edit drops the redo history.
+- **Clipboard:** `ui::Clipboard` (`ui/clipboard.h`) has `SetText`, `HasText`, `RequestPaste(function, user)` and `CancelPaste`. Paste is asynchronous in shape: the function runs before `RequestPaste` returns (the in-process `LocalClipboard`, which every surface starts with) or later (the OS clipboard of Day 200); the field cancels a pending request when it is destroyed. `Surface::SetClipboard` swaps the implementation. A pasted text is cut at its first line break.
+- **`SpinBox`** embeds a field with a numeric validator: digits, a sign when the range has negatives, a point when it has decimals. Enter and losing the focus commit (a text that is not a number goes back to the value, a value the range refuses too), Escape reverts, the buttons and the wheel change the value and the text together.
+
+```cpp
+ui::TextField* name = AddTextField(root, "name");   // however your code makes widgets
+name->SetPlaceholder("Your name");
+name->SetMaxLength(32);
+name->OnSubmit().Connect([](void* user, ui::TextField* f) { static_cast<Form*>(user)->Accept(f->Text()); }, form);
+```
+
+More sections arrive with the days that build them (popups, drag and drop, viewport, surfaces).

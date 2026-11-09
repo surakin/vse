@@ -13,6 +13,9 @@ set(UI_SOURCES
   widgets/display.cpp
   widgets/buttons.cpp
   widgets/scroll.cpp
+  widgets/text_field.cpp
+  clipboard.cpp
+  text_words.cpp
   widgets/value_widgets.cpp
   widgets/list_box.cpp
   testing/software_raster.cpp

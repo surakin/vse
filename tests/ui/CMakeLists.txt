@@ -13,6 +13,7 @@ set(UI_TEST_SOURCES
   basic_widgets_test.cpp
   value_widgets_test.cpp
   scroll_test.cpp
+  text_field_test.cpp
 )
 
 find_package(Threads REQUIRED)

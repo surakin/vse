@@ -13,6 +13,17 @@ namespace engine_placeholder::ui {
 inline bool IsVisibleColor(u32 abgr) { return (abgr >> 24) != 0; }
 
 /// Returns the corner radius of `style` in logical units.
+/// Returns whether `c` is an ASCII digit.
+///
+/// Fails: never.
+inline bool IsAsciiDigit(char c) { return c >= '0' && c <= '9'; }
+
+/// Returns `abgr` with its alpha replaced by `alpha` (0 to 255).
+inline u32 WithAlpha(u32 abgr, u32 alpha) { return (abgr & 0x00FFFFFFu) | (alpha << 24); }
+
+/// Returns the style's corner radius in logical units.
+///
+/// Fails: never.
 inline f32 StyleRadius(const ResolvedStyle& style, f32 scale) { return style.radius / scale; }
 
 /// Draws the background and the border of `style` in `rect`; a transparent background and a zero border width draw nothing.

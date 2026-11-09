@@ -4,6 +4,7 @@
 #include "ui/text_run.h"
 #include "ui/widget.h"
 #include "ui/widgets/range.h"
+#include "ui/widgets/text_field.h"
 
 //! The widgets that hold a number (Phase 15, Day 196): the slider and the spin box.
 
@@ -89,12 +90,13 @@ private:
 
 /// A number with up and down buttons.
 ///
-/// The value text is drawn in the `textfield` style; the right part of the box holds the buttons (up above, down below). A press on a button, an arrow key or a wheel notch changes the value
-/// by the step, PageUp and PageDown by ten steps, Home and End go to the ends; every change goes through the range, so the value is always in range and on the grid. Typing a number is
-/// the text field's job (Day 197), which this widget embeds then; today the text is the formatted value.
+/// The box is drawn in the `textfield` style; the left part holds an embedded [[ui::TextField]] and the right part the buttons (up above, down below). A press on a button, an arrow key or
+/// a wheel notch changes the value by the step, PageUp and PageDown by ten steps; every change goes through the range, so the value is always in range and on the grid. The field takes
+/// digits, a sign (when the range has negative values) and a decimal point (when `SetDecimals` is above 0) and nothing else; Enter, and losing the focus, commit the text (a text that
+/// is not a number, or that the range rejects, goes back to the value), and Escape reverts it. Home and End move the caret in the field.
 ///
 /// Thread-safety: owner-thread-only.
-/// Ownership: owns its text.
+/// Ownership: owns its text field.
 class SpinBox : public Widget {
 public:
     /// The width of the button column as a multiple of the theme's icon size.
@@ -103,6 +105,10 @@ public:
     static constexpr f64 kPageSteps = 10.0;
     /// The default maximum.
     static constexpr f64 kDefaultMax = 100.0;
+    /// The base of the digits the field is read in.
+    static constexpr f64 kDecimalBase = 10.0;
+    /// The arrows' half width as a fraction of the button column.
+    static constexpr f32 kArrowReach = 0.2f;
     /// The most digits after the decimal point.
     static constexpr int kMaxDecimals = 9;
 
@@ -124,22 +130,37 @@ public:
     Callback<SpinBox*>& OnChanged() { return on_changed_; }
     /// Returns the value as the box shows it.
     String<HeapAllocator> ValueText() const;
+    /// Returns the embedded text field (to focus it, or to read what is typed).
+    ///
+    /// Fails: never.
+    /// Ownership: borrowed; the box owns it.
+    TextField* Field() const { return field_; }
+    /// Reads the field's text as the value: applies it through the range (and runs `OnChanged` when the value changed) when it is a number, else puts the value's text back.
+    void Commit();
     /// Returns the size of the widest value plus the buttons.
     Size Measure(const Constraints& constraints) override;
-    /// Draws the box, the text and the buttons.
+    /// Places the text field left of the button column.
+    void Arrange(const Rect& rect) override;
+    /// Draws the box and the buttons (the field draws the text).
     void Draw(Canvas& canvas) override;
     /// Handles the buttons, the wheel and the keys.
     void OnEvent(Event& event) override;
 
 private:
     void UserSet(f64 value);
+    void SyncText();
+    bool Parse(StringView text, f64* out) const;
     f64 Step() const;
     f32 ButtonWidth() const;
+    static bool Accepts(void* user, const TextField* field, StringView proposed);
+    static void Submitted(void* user, TextField* field);
+    static void Cancelled(void* user, TextField* field);
+    static void FocusLeft(void* user, TextField* field);
 
     ValueRange range_;
     f64 value_ = 0;
     int decimals_ = 0;
-    TextRun run_;
+    TextField* field_ = nullptr;
     Callback<SpinBox*> on_changed_;
 };
 
