@@ -112,3 +112,7 @@ The day the Windows machine catches up: Phase 14's open Windows items and all of
 no position, so the adapter placed every click at (0, 0), where the File menu is; the Linux backends always set it. Fixed in `MouseButton`;
 `input_event.h` now says that `PointerButton` carries `x` and `y`; the event-stream test checks the press and release positions (it fails without the
 fix). `windows_platform_tests` and `ui_tests` pass apart from the filed Day 159 mouse test; docs 7 of 7; four trees clean.
+
+**Also found by the user:** `renderer_demo`'s text overlay drew at 32 and 14 pixels on the 200% display, so it was half size. `DemoFrame::SetOverlayScale`
+multiplies the overlay's sizes and margins; the window loop sets it from `os::Window::ContentScale` every frame (screenshots stay at 1, so the goldens are
+unchanged). The 38 `renderer_demo` and text overlay ctests pass; 300 frames on DX12 with validation, clean; four trees clean.

@@ -100,6 +100,8 @@ public:
     bool SetOverlay(bool on, StringView greeting, StringView status);
     bool OverlayAvailable() const { return font_.IsOpen(); }
     bool OverlayOn() const { return overlay_on_; }
+    // The overlay's display scale: its sizes and margins are multiplied by it (a window's `ContentScale`, 2 on a 200% display; 1 for screenshots).
+    void SetOverlayScale(f32 scale) { overlay_scale_ = scale > 0.0f ? scale : 1.0f; }
     // What the overlay drew: its renderer's counters.
     renderer::TextStats OverlayStats() const { return text_.Stats(); }
 
@@ -133,6 +135,7 @@ private:
     text::GlyphAtlas atlas_;
     renderer::TextRenderer text_;
     bool overlay_on_ = false;
+    f32 overlay_scale_ = 1.0f;
     Vector<char> greeting_;
     Vector<char> status_;
     bool gbuffer_ok_ = true;

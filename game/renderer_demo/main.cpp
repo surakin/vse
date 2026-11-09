@@ -485,6 +485,7 @@ int RunWindow(const Options& options, RenderSettings settings) {
                 Camera camera = controller.Get(aspect);
                 FitCameraDepthRange(scene.Scene(), &camera, 0.1f);
                 frame.SetTime(seconds, dt);
+                frame.SetOverlayScale(window->ContentScale()); // the display's scale, which changes when the window moves to another monitor
                 const FrameStatus status = frame.Render(&scene.Scene(), &camera, nullptr);
                 if (status == FrameStatus::DeviceLost) {
                     if (renderer.IsBroken() || options.inject_device_loss != 0) {

@@ -1,5 +1,6 @@
 #include "demo_frame.h"
 
+#include <cmath>
 #include <cstring>
 
 #include "io/path.h"
@@ -149,16 +150,19 @@ bool DemoFrame::Build(const FrameContext& context, void* user) {
     }
     if (self->overlay_on_ && self->font_.IsOpen() && self->text_.Live()) {
         // After the passes that wrote the target (the tonemap or the debug view), over their picture.
+        // Sizes and margins in logical pixels, times the display scale (TextStyle sizes are device pixels).
+        const f32 scale = self->overlay_scale_;
+        auto px = [scale](f32 logical) { return static_cast<u32>(std::lround(logical * scale)); };
         text::TextStyle big;
         big.font = &self->font_;
-        big.pixel_size = 32;
+        big.pixel_size = px(32);
         big.color = 0xFFFFFFFFu;
         text::TextStyle small = big;
-        small.pixel_size = 14;
+        small.pixel_size = px(14);
         small.color = 0xFFC8C8C8u;
         self->text_.BeginFrame();
-        self->text_.Draw(StringView(self->greeting_.Data(), self->greeting_.Size()), big, text::LayoutOptions{}, 16, 12);
-        self->text_.Draw(StringView(self->status_.Data(), self->status_.Size()), small, text::LayoutOptions{}, 16, 52);
+        self->text_.Draw(StringView(self->greeting_.Data(), self->greeting_.Size()), big, text::LayoutOptions{}, static_cast<f32>(px(16)), static_cast<f32>(px(12)));
+        self->text_.Draw(StringView(self->status_.Data(), self->status_.Size()), small, text::LayoutOptions{}, static_cast<f32>(px(16)), static_cast<f32>(px(52)));
         self->text_.AddToGraph(context.graph, context.target, context.format, context.width, context.height);
     }
     if (self->compose_.after_scene != nullptr) {
