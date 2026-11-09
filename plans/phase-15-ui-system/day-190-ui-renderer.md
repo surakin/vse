@@ -1,7 +1,7 @@
 # Phase 15 / Day 190 — The UI Renderer: Shaders, Pipeline and Graph Pass
 
 **Phase:** [Phase 15 — UI System](../phase-15-ui-system.md)
-**Depends on:** Day 189; Phase 14 Days 180-181 (`GlyphAtlasTexture`, `TextRenderer`); Phase 8 (reset).
+**Depends on:** Day 189 (the `DrawListCanvas` fills the list this renderer draws); Phase 14 Days 180-181 (`GlyphAtlasTexture`, `TextRenderer`); Phase 8 (reset).
 
 The renderer side: `renderer::UiRenderer` turns a `ui::DrawList` into one render-graph pass, reset- and loss-safe like `TextRenderer`.
 

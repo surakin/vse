@@ -35,7 +35,7 @@ their Windows halves open in `KNOWN-ISSUES.md` until then (CLAUDE.md, "Windows i
 3. [Day 186 — Platform: relative pointer, pointer lock, cursor shape (Wayland, X11)](phase-15-ui-system/day-186-platform-pointer-lock-and-cursor.md)
 4. [Day 187 — Platform: the OS clipboard (Wayland, X11)](phase-15-ui-system/day-187-platform-clipboard.md)
 5. [Day 188 — Platform: OS drag and drop (Wayland, X11)](phase-15-ui-system/day-188-platform-drag-and-drop.md)
-6. [Day 189 — The 2D draw list (CPU)](phase-15-ui-system/day-189-draw-list.md)
+6. [Day 189 — The canvas and the 2D draw list (CPU)](phase-15-ui-system/day-189-draw-list.md)
 7. [Day 190 — The UI renderer: shaders, pipeline, graph pass](phase-15-ui-system/day-190-ui-renderer.md)
 8. [Day 191 — Themes](phase-15-ui-system/day-191-theme.md)
 9. [Day 192 — Widget tree, surface, offscreen test harness](phase-15-ui-system/day-192-widget-tree-and-surface.md)
