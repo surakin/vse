@@ -4,6 +4,7 @@ set(UI_TEST_SOURCES
   version_test.cpp
   canvas_test.cpp
   draw_list_test.cpp
+  theme_test.cpp
 )
 
 find_package(Threads REQUIRED)

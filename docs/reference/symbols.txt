@@ -2630,6 +2630,122 @@ ui::RecordingCanvas::PushClip(const Rect&)	function	ui	ui-recordingcanvas-pushcl
 ui::RecordingCanvas::PopClip()	function	ui	ui-recordingcanvas-popclip	ui.md	engine/ui/testing/recording_canvas.h:77
 ui::RecordingCanvas::BeginLayer(i32)	function	ui	ui-recordingcanvas-beginlayer-i32	ui.md	engine/ui/testing/recording_canvas.h:78
 ui::RecordingCanvas::EndLayer()	function	ui	ui-recordingcanvas-endlayer	ui.md	engine/ui/testing/recording_canvas.h:79
+ui::WidgetKind	alias	ui	ui-widgetkind	ui.md	engine/ui/theme.h:18
+ui::VariantId	alias	ui	ui-variantid	ui.md	engine/ui/theme.h:20
+ui::widget_kind::kLabel	variable	ui	ui-widget-kind-klabel	ui.md	engine/ui/theme.h:24
+ui::widget_kind::kButton	variable	ui	ui-widget-kind-kbutton	ui.md	engine/ui/theme.h:25
+ui::widget_kind::kCheckbox	variable	ui	ui-widget-kind-kcheckbox	ui.md	engine/ui/theme.h:26
+ui::widget_kind::kRadio	variable	ui	ui-widget-kind-kradio	ui.md	engine/ui/theme.h:27
+ui::widget_kind::kSlider	variable	ui	ui-widget-kind-kslider	ui.md	engine/ui/theme.h:28
+ui::widget_kind::kTextField	variable	ui	ui-widget-kind-ktextfield	ui.md	engine/ui/theme.h:29
+ui::widget_kind::kScrollbar	variable	ui	ui-widget-kind-kscrollbar	ui.md	engine/ui/theme.h:30
+ui::widget_kind::kPanel	variable	ui	ui-widget-kind-kpanel	ui.md	engine/ui/theme.h:31
+ui::widget_kind::kMenu	variable	ui	ui-widget-kind-kmenu	ui.md	engine/ui/theme.h:32
+ui::widget_kind::kTooltip	variable	ui	ui-widget-kind-ktooltip	ui.md	engine/ui/theme.h:33
+ui::RegisterWidgetKind(StringView)	function	ui	ui-registerwidgetkind-stringview	ui.md	engine/ui/theme.h:43
+ui::WidgetKindName(WidgetKind)	function	ui	ui-widgetkindname-widgetkind	ui.md	engine/ui/theme.h:47
+ui::RegisterVariant(StringView)	function	ui	ui-registervariant-stringview	ui.md	engine/ui/theme.h:52
+ui::VariantName(VariantId)	function	ui	ui-variantname-variantid	ui.md	engine/ui/theme.h:56
+ui::Opt	struct	ui	ui-opt	ui.md	engine/ui/theme.h:61
+ui::Opt::value	variable	ui	ui-opt-value	ui.md	engine/ui/theme.h:63
+ui::Opt::set	variable	ui	ui-opt-set	ui.md	engine/ui/theme.h:64
+ui::Opt::Opt()	function	ui	ui-opt-opt	ui.md	engine/ui/theme.h:66
+ui::Opt::Opt(T)	function	ui	ui-opt-opt-t	ui.md	engine/ui/theme.h:68
+ui::ColorId	enum	ui	ui-colorid	ui.md	engine/ui/theme.h:72
+ui::ColorId::Text	enumerator	ui	ui-colorid-text	ui.md	engine/ui/theme.h:73
+ui::ColorId::TextDisabled	enumerator	ui	ui-colorid-textdisabled	ui.md	engine/ui/theme.h:74
+ui::ColorId::WindowBackground	enumerator	ui	ui-colorid-windowbackground	ui.md	engine/ui/theme.h:75
+ui::ColorId::Panel	enumerator	ui	ui-colorid-panel	ui.md	engine/ui/theme.h:76
+ui::ColorId::Accent	enumerator	ui	ui-colorid-accent	ui.md	engine/ui/theme.h:77
+ui::ColorId::Danger	enumerator	ui	ui-colorid-danger	ui.md	engine/ui/theme.h:78
+ui::ColorId::Border	enumerator	ui	ui-colorid-border	ui.md	engine/ui/theme.h:79
+ui::ColorId::Count	enumerator	ui	ui-colorid-count	ui.md	engine/ui/theme.h:80
+ui::MetricId	enum	ui	ui-metricid	ui.md	engine/ui/theme.h:83
+ui::MetricId::Padding	enumerator	ui	ui-metricid-padding	ui.md	engine/ui/theme.h:84
+ui::MetricId::Spacing	enumerator	ui	ui-metricid-spacing	ui.md	engine/ui/theme.h:85
+ui::MetricId::BorderWidth	enumerator	ui	ui-metricid-borderwidth	ui.md	engine/ui/theme.h:86
+ui::MetricId::CornerRadius	enumerator	ui	ui-metricid-cornerradius	ui.md	engine/ui/theme.h:87
+ui::MetricId::ScrollbarThickness	enumerator	ui	ui-metricid-scrollbarthickness	ui.md	engine/ui/theme.h:88
+ui::MetricId::MinHitSize	enumerator	ui	ui-metricid-minhitsize	ui.md	engine/ui/theme.h:89
+ui::MetricId::IconSize	enumerator	ui	ui-metricid-iconsize	ui.md	engine/ui/theme.h:90
+ui::MetricId::Count	enumerator	ui	ui-metricid-count	ui.md	engine/ui/theme.h:91
+ui::FontId	enum	ui	ui-fontid	ui.md	engine/ui/theme.h:94
+ui::FontId::Body	enumerator	ui	ui-fontid-body	ui.md	engine/ui/theme.h:95
+ui::FontId::Heading	enumerator	ui	ui-fontid-heading	ui.md	engine/ui/theme.h:96
+ui::FontId::Mono	enumerator	ui	ui-fontid-mono	ui.md	engine/ui/theme.h:97
+ui::FontId::Count	enumerator	ui	ui-fontid-count	ui.md	engine/ui/theme.h:98
+ui::FontRef	struct	ui	ui-fontref	ui.md	engine/ui/theme.h:106
+ui::FontRef::family	variable	ui	ui-fontref-family	ui.md	engine/ui/theme.h:107
+ui::FontRef::size	variable	ui	ui-fontref-size	ui.md	engine/ui/theme.h:108
+ui::FontRef::operator==(const FontRef&) const	function	ui	ui-fontref-operator-eq-eq-const-fontref-amp-const	ui.md	engine/ui/theme.h:110
+ui::StateKind	enum	ui	ui-statekind	ui.md	engine/ui/theme.h:114
+ui::StateKind::Normal	enumerator	ui	ui-statekind-normal	ui.md	engine/ui/theme.h:115
+ui::StateKind::Hover	enumerator	ui	ui-statekind-hover	ui.md	engine/ui/theme.h:116
+ui::StateKind::Pressed	enumerator	ui	ui-statekind-pressed	ui.md	engine/ui/theme.h:117
+ui::StateKind::Focused	enumerator	ui	ui-statekind-focused	ui.md	engine/ui/theme.h:118
+ui::StateKind::Disabled	enumerator	ui	ui-statekind-disabled	ui.md	engine/ui/theme.h:119
+ui::StateKind::Checked	enumerator	ui	ui-statekind-checked	ui.md	engine/ui/theme.h:120
+ui::StateKind::Count	enumerator	ui	ui-statekind-count	ui.md	engine/ui/theme.h:121
+ui::kStateHover	variable	ui	ui-kstatehover	ui.md	engine/ui/theme.h:127
+ui::kStatePressed	variable	ui	ui-kstatepressed	ui.md	engine/ui/theme.h:128
+ui::kStateFocused	variable	ui	ui-kstatefocused	ui.md	engine/ui/theme.h:129
+ui::kStateDisabled	variable	ui	ui-kstatedisabled	ui.md	engine/ui/theme.h:130
+ui::kStateChecked	variable	ui	ui-kstatechecked	ui.md	engine/ui/theme.h:131
+ui::StateStyle	struct	ui	ui-statestyle	ui.md	engine/ui/theme.h:136
+ui::StateStyle::background	variable	ui	ui-statestyle-background	ui.md	engine/ui/theme.h:137
+ui::StateStyle::border_color	variable	ui	ui-statestyle-border-color	ui.md	engine/ui/theme.h:138
+ui::StateStyle::text_color	variable	ui	ui-statestyle-text-color	ui.md	engine/ui/theme.h:139
+ui::StateStyle::border_width	variable	ui	ui-statestyle-border-width	ui.md	engine/ui/theme.h:140
+ui::StateStyle::radius	variable	ui	ui-statestyle-radius	ui.md	engine/ui/theme.h:141
+ui::StateStyle::padding_x	variable	ui	ui-statestyle-padding-x	ui.md	engine/ui/theme.h:142
+ui::StateStyle::padding_y	variable	ui	ui-statestyle-padding-y	ui.md	engine/ui/theme.h:143
+ui::Style	struct	ui	ui-style	ui.md	engine/ui/theme.h:149
+ui::Style::states	variable	ui	ui-style-states	ui.md	engine/ui/theme.h:150
+ui::Style::font	variable	ui	ui-style-font	ui.md	engine/ui/theme.h:151
+ui::Style::At(StateKind)	function	ui	ui-style-at-statekind	ui.md	engine/ui/theme.h:153
+ui::Style::At(StateKind) const	function	ui	ui-style-at-statekind-const	ui.md	engine/ui/theme.h:155
+ui::StyleEntry	struct	ui	ui-styleentry	ui.md	engine/ui/theme.h:161
+ui::StyleEntry::kind	variable	ui	ui-styleentry-kind	ui.md	engine/ui/theme.h:162
+ui::StyleEntry::variant	variable	ui	ui-styleentry-variant	ui.md	engine/ui/theme.h:163
+ui::StyleEntry::style	variable	ui	ui-styleentry-style	ui.md	engine/ui/theme.h:164
+ui::Theme	struct	ui	ui-theme	ui.md	engine/ui/theme.h:171
+ui::Theme::colors	variable	ui	ui-theme-colors	ui.md	engine/ui/theme.h:172
+ui::Theme::metrics	variable	ui	ui-theme-metrics	ui.md	engine/ui/theme.h:173
+ui::Theme::fonts	variable	ui	ui-theme-fonts	ui.md	engine/ui/theme.h:174
+ui::Theme::styles	variable	ui	ui-theme-styles	ui.md	engine/ui/theme.h:175
+ui::Theme::FindStyle(WidgetKind,VariantId) const	function	ui	ui-theme-findstyle-widgetkind-variantid-const	ui.md	engine/ui/theme.h:181
+ui::ThemeBuilder	class	ui	ui-themebuilder	ui.md	engine/ui/theme.h:188
+ui::ThemeBuilder::SetColor(ColorId,u32)	function	ui	ui-themebuilder-setcolor-colorid-u32	ui.md	engine/ui/theme.h:191
+ui::ThemeBuilder::SetMetric(MetricId,f32)	function	ui	ui-themebuilder-setmetric-metricid-f32	ui.md	engine/ui/theme.h:193
+ui::ThemeBuilder::SetFont(FontId,FontRef)	function	ui	ui-themebuilder-setfont-fontid-fontref	ui.md	engine/ui/theme.h:195
+ui::ThemeBuilder::SetStyle(WidgetKind,VariantId,const Style&)	function	ui	ui-themebuilder-setstyle-widgetkind-variantid-const-style-amp	ui.md	engine/ui/theme.h:197
+ui::ThemeBuilder::Build()	function	ui	ui-themebuilder-build	ui.md	engine/ui/theme.h:199
+ui::DefaultLightTheme()	function	ui	ui-defaultlighttheme	ui.md	engine/ui/theme.h:208
+ui::DefaultDarkTheme()	function	ui	ui-defaultdarktheme	ui.md	engine/ui/theme.h:212
+ui::ContrastRatio(u32,u32)	function	ui	ui-contrastratio-u32-u32	ui.md	engine/ui/theme.h:217
+ui::ResolvedStyle	struct	ui	ui-resolvedstyle	ui.md	engine/ui/theme.h:222
+ui::ResolvedStyle::background	variable	ui	ui-resolvedstyle-background	ui.md	engine/ui/theme.h:223
+ui::ResolvedStyle::border_color	variable	ui	ui-resolvedstyle-border-color	ui.md	engine/ui/theme.h:224
+ui::ResolvedStyle::text_color	variable	ui	ui-resolvedstyle-text-color	ui.md	engine/ui/theme.h:225
+ui::ResolvedStyle::border_width	variable	ui	ui-resolvedstyle-border-width	ui.md	engine/ui/theme.h:226
+ui::ResolvedStyle::radius	variable	ui	ui-resolvedstyle-radius	ui.md	engine/ui/theme.h:227
+ui::ResolvedStyle::padding_x	variable	ui	ui-resolvedstyle-padding-x	ui.md	engine/ui/theme.h:228
+ui::ResolvedStyle::padding_y	variable	ui	ui-resolvedstyle-padding-y	ui.md	engine/ui/theme.h:229
+ui::ResolvedStyle::font	variable	ui	ui-resolvedstyle-font	ui.md	engine/ui/theme.h:230
+ui::ThemeStats	struct	ui	ui-themestats	ui.md	engine/ui/theme.h:236
+ui::ThemeStats::resolves	variable	ui	ui-themestats-resolves	ui.md	engine/ui/theme.h:237
+ui::ThemeStats::cache_hits	variable	ui	ui-themestats-cache-hits	ui.md	engine/ui/theme.h:238
+ui::ThemeStats::missing_styles	variable	ui	ui-themestats-missing-styles	ui.md	engine/ui/theme.h:239
+ui::ThemeSet	class	ui	ui-themeset	ui.md	engine/ui/theme.h:251
+ui::ThemeSet::SetTheme(const Theme*)	function	ui	ui-themeset-settheme-const-theme-star	ui.md	engine/ui/theme.h:257
+ui::ThemeSet::GetTheme() const	function	ui	ui-themeset-gettheme-const	ui.md	engine/ui/theme.h:262
+ui::ThemeSet::Revision() const	function	ui	ui-themeset-revision-const	ui.md	engine/ui/theme.h:264
+ui::ThemeSet::Resolve(WidgetKind,VariantId,u32,f32,Span<const Theme* const>)	function	ui	ui-themeset-resolve-widgetkind-variantid-u32-f32-span-lt-const-theme-star-const-gt	ui.md	engine/ui/theme.h:274
+ui::ThemeSet::Resolve(WidgetKind,StringView,u32,f32,Span<const Theme* const>)	function	ui	ui-themeset-resolve-widgetkind-stringview-u32-f32-span-lt-const-theme-star-const-gt	ui.md	engine/ui/theme.h:276
+ui::ThemeSet::Color(ColorId,Span<const Theme* const>) const	function	ui	ui-themeset-color-colorid-span-lt-const-theme-star-const-gt-const	ui.md	engine/ui/theme.h:279
+ui::ThemeSet::Metric(MetricId,f32,Span<const Theme* const>) const	function	ui	ui-themeset-metric-metricid-f32-span-lt-const-theme-star-const-gt-const	ui.md	engine/ui/theme.h:281
+ui::ThemeSet::Font(FontId,f32,Span<const Theme* const>) const	function	ui	ui-themeset-font-fontid-f32-span-lt-const-theme-star-const-gt-const	ui.md	engine/ui/theme.h:283
+ui::ThemeSet::Stats() const	function	ui	ui-themeset-stats-const	ui.md	engine/ui/theme.h:286
 ui::kUiLayoutVersion	variable	ui	ui-kuilayoutversion	ui.md	engine/ui/version.h:10
 ui::LayoutVersion()	function	ui	ui-layoutversion	ui.md	engine/ui/version.h:15
 jobs::IoRequest	alias	jobs	jobs-iorequest	jobs.md	engine/jobs/async_io.h:52

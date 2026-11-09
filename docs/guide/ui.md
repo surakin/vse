@@ -56,4 +56,25 @@ ui_renderer.Create(device, &glyph_pages, renderer::UiRendererDesc{}, &device_res
 ui_renderer.AddToGraph(&graph, &list, backbuffer, format, width, height);
 ```
 
-More sections arrive with the days that build them (theme, tree, layout, input, widgets, popups, drag and drop, viewport, surfaces).
+## Themes
+
+Widgets do not hold colors or pixel sizes; they ask a **`ui::ThemeSet`** (`ui/theme.h`) for their look. A **`ui::Theme`** is plain data: named colors (`0xAABBGGRR`), metrics and fonts (logical units), and style entries per **widget kind** and **variant**
+(`button`, `button/primary`) with a table over the states (normal, hover, pressed, focused, disabled, checked). Every value may be unset so that a theme can be a small override.
+
+- **Resolution order**, least specific first: the built-in light theme, the surface's theme (`ThemeSet::SetTheme`), then the override themes of the widget's ancestors and of the widget. A theme's default style of the kind is laid over the result before
+  its variant's; a state lays only what it sets over the normal style (`Disabled` strongest, then `Pressed`, `Hover`, `Focused`, `Checked`). An unknown variant resolves to the kind's default style, counts in `Stats().missing_styles` and logs once.
+- **Scale:** `Resolve(kind, variant, state, scale)` multiplies sizes by the surface scale and rounds borders and paddings to whole pixels (a 1-unit border is 1 pixel at 1x and 1.25x, 2 at 2x; a border never vanishes); the radius is scaled, not rounded.
+- **Swapping:** `SetTheme` bumps `Revision()`, drops the cache and returns whether any metric or font changed (then the caller marks layout dirty). A widget re-resolves when the revision it saw differs. A style resolved without overrides is
+  cached by (kind, variant, state, scale); with overrides it is computed each time.
+- **Kinds are an open registry:** `RegisterWidgetKind("gauge")` returns a stable id, and a game's widget reads the same theme data. `DefaultLightTheme()` and `DefaultDarkTheme()` are ordinary `Theme` values (the tests hold their text and button colors to
+  a contrast ratio of 4.5:1); build your own with `ThemeBuilder`.
+
+```cpp
+ui::ThemeSet themes;
+themes.SetTheme(&ui::DefaultDarkTheme());
+ui::ResolvedStyle s = themes.Resolve(ui::widget_kind::kButton, ui::RegisterVariant("primary"), ui::kStateHover, surface_scale);
+canvas.DrawRoundedRect(rect, ui::CornerRadii(s.radius), s.background);
+canvas.DrawBorder(rect, ui::CornerRadii(s.radius), s.border_width, s.border_color);
+```
+
+More sections arrive with the days that build them (tree, layout, input, widgets, popups, drag and drop, viewport, surfaces).
