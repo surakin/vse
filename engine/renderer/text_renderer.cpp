@@ -263,8 +263,8 @@ void TextRenderer::AddToGraph(RenderGraph* graph, GraphResource target, rhi::For
     if (queued_ == 0) {
         return; // nothing to draw: no pass, no barrier
     }
-    if (format != desc_.color_format) {
-        // The target's format changed (a settings change): the pipeline follows it, built here and not inside the recording callback.
+    if (format != desc_.color_format || !pipeline_.IsValid()) {
+        // The target's format changed (a settings change), or an earlier rebuild failed: the pipeline follows the format, built here and not inside the recording callback.
         if (pipeline_.IsValid()) device_->DestroyPipeline(pipeline_);
         pipeline_ = {};
         desc_.color_format = format;

@@ -1,6 +1,6 @@
 # Fonts and text
 
-Status: draft (Phase 14, Days 175-181 so far; the demo follows).
+Status: complete (Phase 14, Days 175-183). The demo (`renderer_demo --text`, F11) shows the overlay; the benchmark numbers are at the end.
 
 The text layer lives in `engine/text/` (namespace `engine_placeholder::text`). Design and reasons: `docs/superpowers/specs/2026-11-08-text-design.md`.
 FreeType 2.15.0 (vendored, `third_party/freetype/`) reads and rasterizes the fonts; it is named in one file, `engine/text/font_freetype.cpp`, and every
@@ -29,6 +29,50 @@ text::GlyphId h = font.FindGlyph(U'H');
 text::GlyphMetrics m = font.Metrics(h);          // advance, bearing, box, in pixels
 f32 pull = font.Kerning(font.FindGlyph(U'A'), font.FindGlyph(U'V'));
 ```
+
+## Hello, world
+
+The whole CPU path, from a file to positioned glyphs and a rasterized bitmap (the sample runs with the shipped font):
+
+```cpp compile run standalone
+#include <cstdio>
+#include <cstring>
+
+#include "io/path.h"
+#include "string_view.h"
+#include "text/font.h"
+#include "text/layout.h"
+
+using namespace engine_placeholder;
+
+int main() {
+    text::FontLibrary library;
+    if (!library.Initialize().Ok()) return 1;
+    text::Font font;
+    const char* file = DOCS_FONT_FILE;
+    if (!text::Font::OpenFile(library, io::Path(StringView(file, std::strlen(file))), text::FontOptions{}, &font).Ok()) return 1;
+
+    text::TextStyle style;
+    style.font = &font;
+    style.pixel_size = 32;
+    text::TextLayout layout;
+    if (!text::Layout("Hello, world!", style, text::LayoutOptions{}, &layout).Ok()) return 1;
+    std::printf("%zu glyphs on %zu line\n", static_cast<size_t>(layout.glyphs.Size()), static_cast<size_t>(layout.lines.Size()));
+
+    text::GlyphBitmap bitmap;
+    if (!font.Render(layout.glyphs[0].glyph, &bitmap).Ok()) return 1; // the "H": coverage 0..255, one byte per pixel
+    std::printf("the first glyph is %s\n", bitmap.width > 0 && bitmap.height > 0 ? "inked" : "empty");
+    return 0;
+}
+```
+
+```output
+13 glyphs on 1 line
+the first glyph is inked
+```
+
+On screen the same layout goes through `renderer::TextRenderer` ("Drawing text", below). Sizes are **device pixels**: on a 2x display the caller asks for 2 times the size it
+thinks in, and positions in pixels too.
 
 ## Rasterizing and the glyph atlas
 
@@ -117,3 +161,18 @@ size). `None`, `Normal` and `Bytecode` are the others. The choice is made per fo
 - `LoadOutline` returns the unscaled contours with on/off-curve flags (quadratic for TrueType, cubic for CFF): the seam Phase 16's outline meshes use.
 - FreeType's auto-hinter does not survive a failed allocation during the first glyph load (a FreeType 2.15.0 defect, `KNOWN-ISSUES.md`); opening a font and
   loading outlines do survive it, and the library's allocation counters stay exact.
+
+## Cost
+
+`renderer_bench --section text` (Day 183; this machine, the default unoptimized configuration with debug info, so read the numbers as an upper bound; nothing asserts them):
+
+| Measurement | Result |
+|---|---|
+| Layout of 1,000 characters (962 glyphs, one line) | 275-278 us at 16, 32 and 64 px; wrapping at 600 px adds about 1-4 us |
+| Atlas miss (rasterize at 32 px and pack) | 18 us per glyph (94 ASCII glyphs) |
+| Atlas hit | 0.06 us per glyph |
+| Dirty rectangle after 94 new glyphs at 32 px | 85,848 bytes (913 bytes per glyph), but the RHI sends the whole page: 1,048,576 bytes |
+| `TextRenderer::Add` of a laid-out text | 71 us for 962 glyphs (about 74 us per 1,000 glyphs) |
+| `TextRenderer::Draw` (layout plus `Add`) | 347 us for the same text |
+
+A steady frame therefore spends about 0.35 ms of CPU per thousand glyphs in an unoptimized build, and a frame that adds new glyphs pays about 18 us each plus one page upload.

@@ -19,6 +19,8 @@ overlay pass after the tonemap, on Vulkan (Linux, Windows) and Direct3D 12 (Wind
 glyphs are rasterized up to a documented maximum pixel size (larger text still draws, scaled from the maximum raster, until Phase 16 draws it as outline meshes); the cursor moves, and a point maps to a byte offset and back, by grapheme cluster (combining marks and ZWJ sequences are one unit); the glyph atlas and
 the text pipeline survive an RHI reset (CLAUDE.md "RHI can be reset at run time").
 
+**Status: complete on Linux (2026-11-09), Days 175-183.** The Windows PC still has to build and run everything and mint DXIL for the text shaders (`KNOWN-ISSUES.md`).
+
 ## Days (Days 175-183; the day files carry the sub-tasks)
 
 1. [Day 175 — Design spec, FreeType vendored, the font, the module](phase-14-font-text-rendering/day-175-design-spec-and-freetype.md)

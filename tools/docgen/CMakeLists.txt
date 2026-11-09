@@ -109,11 +109,18 @@ else()
   set(DOCGEN_EXTRA_INCLUDES "")
   set(DOCGEN_SAMPLE_LIBRARIES backtrace breakpad_client unwind)
 endif()
+# The guide's text samples open the shipped font; samples run in a scratch directory, so they get its absolute path as a macro.
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  set(DOCGEN_FONT_FLAG "/DDOCS_FONT_FILE=\"${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf\"")
+else()
+  set(DOCGEN_FONT_FLAG "-DDOCS_FONT_FILE=\"${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf\"")
+endif()
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/docs-samples)
 set(DOCGEN_SAMPLES_ARGS
   --root ${CMAKE_SOURCE_DIR}
   --compiler ${CMAKE_CXX_COMPILER}
   ${DOCGEN_FLAGS_ARGS}
+  --flag ${DOCGEN_FONT_FLAG}
   -I ${CMAKE_SOURCE_DIR}/engine/foundation
   -I ${CMAKE_SOURCE_DIR}/engine
   -I ${CMAKE_SOURCE_DIR}/shaders
@@ -139,4 +146,5 @@ add_custom_target(docs
   COMMAND $<TARGET_FILE:docgen> lint ${DOCGEN_LINT_ARGS}
   DEPENDS docgen renderer_passes renderer text freetype rhi_backends rhi_vulkan rhi jobs foundation sentry ${DOCGEN_SAMPLE_LIBRARIES}
   COMMENT "Regenerating docs/reference and running the documentation checks"
+  VERBATIM
   USES_TERMINAL)
