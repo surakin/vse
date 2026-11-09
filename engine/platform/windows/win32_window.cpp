@@ -308,6 +308,8 @@ void Win32Window::Proc::MouseButton(Win32Window& self, HWND hwnd, u32 bit, bool 
     event.modifiers = input.keyboard.modifiers;
     event.button = bit;
     event.down = pressed;
+    event.x = input.mouse_x; // where the press happened, as the Linux backends report it
+    event.y = input.mouse_y;
     self.QueueEvent(event);
 }
 

@@ -107,3 +107,8 @@ The day the Windows machine catches up: Phase 14's open Windows items and all of
 7. **Declined:** the OLE objects count references but free nothing and die with the window, so a drop target in another program that kept the data object
    after `DoDragDrop` returned would call into freed memory after the window closed. Self-deleting COM objects need a raw `new`, which `raw_new_check`
    forbids; a reference left at close is logged and none was seen. Filed in `KNOWN-ISSUES.md`.
+
+**Found by the user after the day's commit** (testing `ui_demo` in a window): every click opened the File menu. The Win32 `PointerButton` events carried
+no position, so the adapter placed every click at (0, 0), where the File menu is; the Linux backends always set it. Fixed in `MouseButton`;
+`input_event.h` now says that `PointerButton` carries `x` and `y`; the event-stream test checks the press and release positions (it fails without the
+fix). `windows_platform_tests` and `ui_tests` pass apart from the filed Day 159 mouse test; docs 7 of 7; four trees clean.

@@ -58,8 +58,8 @@ struct InputEvent {
     u32 button = 0;                             ///< `PointerButton`: a [[os::MouseButtonBit]] value.
     u32 width = 0;                              ///< `Resize`: the new width in pixels.
     u32 height = 0;                             ///< `Resize`: the new height in pixels.
-    f64 x = 0.0;                                ///< `PointerMove`, `PointerEnter`, drag events: x in window pixels; `Wheel`: horizontal notches; `RelativeMotion`: dx.
-    f64 y = 0.0;                                ///< `PointerMove`, `PointerEnter`, drag events: y in window pixels; `Wheel`: vertical notches; `RelativeMotion`: dy.
+    f64 x = 0.0;                                ///< `PointerMove`, `PointerEnter`, `PointerButton`, drag events: x in window pixels; `Wheel`: horizontal notches; `RelativeMotion`: dx.
+    f64 y = 0.0;                                ///< `PointerMove`, `PointerEnter`, `PointerButton`, drag events: y in window pixels; `Wheel`: vertical notches; `RelativeMotion`: dy.
     u32 request_id = 0;                         ///< `ClipboardData`, `DropData`: the id the request returned.
     u64 time_ns = 0;                            ///< Monotonic time (`os::MonotonicTimeNanos`) when the backend queued the event.
 };

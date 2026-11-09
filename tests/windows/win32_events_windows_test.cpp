@@ -231,6 +231,8 @@ TEST_CASE("Windows events: the pointer enters, moves, presses, scrolls and leave
     CHECK(e[i].type == InputEventType::PointerButton);
     CHECK(e[i].button == os::kMouseLeft);
     CHECK(e[i].down);
+    CHECK(e[i].x == 10.0); // a button event says where it happened (the UI clicks there)
+    CHECK(e[i].y == 20.0);
     ++i;
     CHECK(e[i].type == InputEventType::Wheel);
     CHECK(e[i].y == -1.0); // away from the user is up: negative
@@ -242,6 +244,8 @@ TEST_CASE("Windows events: the pointer enters, moves, presses, scrolls and leave
     CHECK(e[i].type == InputEventType::PointerButton);
     CHECK(e[i].button == os::kMouseLeft);
     CHECK_FALSE(e[i].down);
+    CHECK(e[i].x == 12.0);
+    CHECK(e[i].y == 22.0);
     ++i;
     CHECK(e[i].type == InputEventType::PointerButton);
     CHECK(e[i].button == os::kMouseForward);

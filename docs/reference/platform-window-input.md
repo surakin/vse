@@ -1664,7 +1664,7 @@ u32 height;
 f64 x;
 ```
 
-`PointerMove`, `PointerEnter`, drag events: x in window pixels; `Wheel`: horizontal notches; `RelativeMotion`: dx.
+`PointerMove`, `PointerEnter`, `PointerButton`, drag events: x in window pixels; `Wheel`: horizontal notches; `RelativeMotion`: dx.
 
 ### `y` {#os-inputevent-y}
 
@@ -1674,7 +1674,7 @@ f64 x;
 f64 y;
 ```
 
-`PointerMove`, `PointerEnter`, drag events: y in window pixels; `Wheel`: vertical notches; `RelativeMotion`: dy.
+`PointerMove`, `PointerEnter`, `PointerButton`, drag events: y in window pixels; `Wheel`: vertical notches; `RelativeMotion`: dy.
 
 ### `request_id` {#os-inputevent-request-id}
 
