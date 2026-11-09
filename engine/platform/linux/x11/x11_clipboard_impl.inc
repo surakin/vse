@@ -268,7 +268,8 @@ void FinishIncoming(Display* display, X11ClipboardState& state, X11Incoming& in,
 }
 
 // Reads (and deletes) the property; appends its bytes. Returns false on error. `type` receives the property type.
-bool ReadProperty(Display* display, unsigned long window, unsigned long property, Vector<byte>& out, unsigned long* type, int* format_out) {
+bool ReadProperty(Display* display, unsigned long window, unsigned long property, Vector<byte>& out, unsigned long* type, int* format_out, bool* too_large) {
+    *too_large = false;
     long offset = 0;
     for (;;) {
         Atom actual_type = 0;
@@ -287,7 +288,8 @@ bool ReadProperty(Display* display, unsigned long window, unsigned long property
             const usize bytes = count * unit;
             if (out.Size() + bytes > kMaxClipboardBytes + 1) {
                 XFree(data);
-                return true; // too large: the caller sees the size
+                *too_large = true; // the caller ends the request with TooLarge; this read already deleted the property
+                return true;
             }
             for (usize i = 0; i < bytes; ++i) out.Push(data[i]);
             offset += static_cast<long>((count * static_cast<unsigned long>(actual_format) / 8 + 3) / 4); // the offset counts 32-bit units of the property itself
@@ -327,8 +329,13 @@ void HandleSelectionNotify(Display* display, unsigned long window, X11ClipboardS
     Vector<byte> bytes;
     unsigned long type = 0;
     int format = 0;
-    if (!ReadProperty(display, window, event.property, bytes, &type, &format)) {
+    bool too_large = false;
+    if (!ReadProperty(display, window, event.property, bytes, &type, &format, &too_large)) {
         FinishIncoming(display, state, *in, ClipboardStatus::Failed, now_ns);
+        return;
+    }
+    if (too_large) {
+        FinishIncoming(display, state, *in, ClipboardStatus::TooLarge, now_ns);
         return;
     }
     if (type == state.atom_incr) {
@@ -347,13 +354,19 @@ void HandleSelectionNotify(Display* display, unsigned long window, X11ClipboardS
 }
 
 void HandleIncrChunk(Display* display, unsigned long window, X11ClipboardState& state, const XPropertyEvent& event, u64 now_ns) {
+    if (event.window != window) return; // property changes on a requestor's window (selected for INCR sending) are not pieces of our transfers
     for (X11Incoming& in : state.incoming) {
         if (!in.active || !in.incr || in.property != event.atom) continue;
         Vector<byte> chunk;
         unsigned long type = 0;
         int format = 0;
-        if (!ReadProperty(display, window, event.atom, chunk, &type, &format)) {
+        bool too_large = false;
+        if (!ReadProperty(display, window, event.atom, chunk, &type, &format, &too_large)) {
             FinishIncoming(display, state, in, ClipboardStatus::Failed, now_ns);
+            return;
+        }
+        if (too_large) {
+            FinishIncoming(display, state, in, ClipboardStatus::TooLarge, now_ns);
             return;
         }
         if (chunk.Empty()) {
