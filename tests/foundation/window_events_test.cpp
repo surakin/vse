@@ -9,6 +9,7 @@
 #include "platform/input_event.h"
 #include "platform/linux/keyboard_events.h"
 #include "platform/linux/xkb_keyboard.h"
+#include "platform/linux/wayland/wayland_input.h"
 #include "platform/linux/wayland/wayland_platform_window.h"
 #include "platform/window.h"
 #include "os/os.h"
@@ -126,6 +127,11 @@ TEST_CASE("InputEventQueue is first in, first out and drops the newest when full
     q.Push(extra);
     q.Clear();
     REQUIRE(q.Size() == 0);
+}
+
+TEST_CASE("Every Wayland listener slot has a function (libwayland aborts on a null one)", "[input][events][os]") {
+    // Regression: binding the seat at version 5 made the compositor send pointer frame and axis events that had no listener, which aborted every windowed demo.
+    CHECK(wayland::WaylandInput::ListenersComplete());
 }
 
 TEST_CASE("A window that is not open has no events", "[input][events][os]") {

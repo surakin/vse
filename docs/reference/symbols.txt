@@ -1601,8 +1601,9 @@ os::wayland::WaylandInput::Events() const	function	platform/window-input	os-wayl
 os::wayland::WaylandInput::Tick()	function	platform/window-input	os-wayland-waylandinput-tick	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:60
 os::wayland::WaylandInput::Valid() const	function	platform/window-input	os-wayland-waylandinput-valid-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:63
 os::wayland::WaylandInput::HasKeyboard() const	function	platform/window-input	os-wayland-waylandinput-haskeyboard-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:65
-os::wayland::WaylandInput::HasPointer() const	function	platform/window-input	os-wayland-waylandinput-haspointer-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:67
-os::wayland::WaylandInput::HasKeymap() const	function	platform/window-input	os-wayland-waylandinput-haskeymap-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:69
+os::wayland::WaylandInput::ListenersComplete()	function	platform/window-input	os-wayland-waylandinput-listenerscomplete	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:70
+os::wayland::WaylandInput::HasPointer() const	function	platform/window-input	os-wayland-waylandinput-haspointer-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:72
+os::wayland::WaylandInput::HasKeymap() const	function	platform/window-input	os-wayland-waylandinput-haskeymap-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:74
 os::wayland::WaylandPlatformWindow	class	platform/window-input	os-wayland-waylandplatformwindow	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:19
 os::wayland::WaylandPlatformWindow::WaylandPlatformWindow()	function	platform/window-input	os-wayland-waylandplatformwindow-waylandplatformwindow	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:22
 os::wayland::WaylandPlatformWindow::Open(StringView,u32,u32,InputState*)	function	platform/window-input	os-wayland-waylandplatformwindow-open-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:31

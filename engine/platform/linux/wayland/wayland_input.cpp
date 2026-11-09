@@ -39,6 +39,10 @@ const wl_pointer_listener WaylandInput::kPointerListener = [] {
     listener.motion = WaylandInput::HandlePointerMotion;
     listener.button = WaylandInput::HandlePointerButton;
     listener.axis = WaylandInput::HandlePointerAxis;
+    listener.frame = WaylandInput::HandlePointerFrame;
+    listener.axis_source = WaylandInput::HandlePointerAxisSource;
+    listener.axis_stop = WaylandInput::HandlePointerAxisStop;
+    listener.axis_discrete = WaylandInput::HandlePointerAxisDiscrete;
     return listener;
 }();
 
@@ -303,6 +307,19 @@ void WaylandInput::HandlePointerAxis(void* data, wl_pointer* pointer, u32 time, 
     event.modifiers = self->xkb_.Modifiers();
     event.time_ns = NowNs();
     self->events_.Push(event);
+}
+
+void WaylandInput::HandlePointerFrame(void*, wl_pointer*) {}
+void WaylandInput::HandlePointerAxisSource(void*, wl_pointer*, u32) {}
+void WaylandInput::HandlePointerAxisStop(void*, wl_pointer*, u32, u32) {}
+void WaylandInput::HandlePointerAxisDiscrete(void*, wl_pointer*, u32, i32) {}
+
+bool WaylandInput::ListenersComplete() {
+    const wl_pointer_listener& p = kPointerListener;
+    const wl_keyboard_listener& k = kKeyboardListener;
+    const wl_seat_listener& s = kSeatListener;
+    return p.enter && p.leave && p.motion && p.button && p.axis && p.frame && p.axis_source && p.axis_stop && p.axis_discrete && k.keymap && k.enter && k.leave &&
+           k.key && k.modifiers && k.repeat_info && s.capabilities && s.name;
 }
 
 void WaylandInput::PushPointerEvent(InputEventType type, f64 x, f64 y) {

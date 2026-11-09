@@ -63,6 +63,11 @@ public:
     bool Valid() const { return seat_ != nullptr; }
     /// Returns whether the seat offered a keyboard.
     bool HasKeyboard() const { return keyboard_ != nullptr; }
+    /// Returns whether every event of the `wl_pointer` and `wl_keyboard` versions the seat is bound at has a listener function.
+    ///
+    /// libwayland aborts the process when a compositor sends an event whose listener slot is null, so a listener table that falls behind the bound seat
+    /// version is a crash; a test checks this.
+    static bool ListenersComplete();
     /// Returns whether the seat offered a pointer.
     bool HasPointer() const { return pointer_ != nullptr; }
     /// Returns whether a keymap has been received and compiled.
@@ -88,6 +93,11 @@ private:
     static void HandlePointerButton(void* data, wl_pointer* pointer, u32 serial, u32 time,
                                     u32 button, u32 state);
     static void HandlePointerAxis(void* data, wl_pointer* pointer, u32 time, u32 axis, wl_fixed_t value);
+    // wl_pointer v5 events we do not use. libwayland aborts the process on an event whose listener slot is null, so each needs a function.
+    static void HandlePointerFrame(void* data, wl_pointer* pointer);
+    static void HandlePointerAxisSource(void* data, wl_pointer* pointer, u32 axis_source);
+    static void HandlePointerAxisStop(void* data, wl_pointer* pointer, u32 time, u32 axis);
+    static void HandlePointerAxisDiscrete(void* data, wl_pointer* pointer, u32 axis, i32 discrete);
     void PushPointerEvent(InputEventType type, f64 x, f64 y);
 
     static const wl_pointer_listener kPointerListener;

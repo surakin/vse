@@ -1147,6 +1147,18 @@ bool HasKeyboard() const;
 
 Returns whether the seat offered a keyboard.
 
+### `ListenersComplete()` {#os-wayland-waylandinput-listenerscomplete}
+
+`method os::wayland::WaylandInput::ListenersComplete` — defined in `engine/platform/linux/wayland/wayland_input.h`
+
+```cpp
+static bool ListenersComplete();
+```
+
+Returns whether every event of the `wl_pointer` and `wl_keyboard` versions the seat is bound at has a listener function.
+
+libwayland aborts the process when a compositor sends an event whose listener slot is null, so a listener table that falls behind the bound seat version is a crash; a test checks this.
+
 ### `HasPointer()` {#os-wayland-waylandinput-haspointer-const}
 
 `method os::wayland::WaylandInput::HasPointer` — defined in `engine/platform/linux/wayland/wayland_input.h`
