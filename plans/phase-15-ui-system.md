@@ -59,7 +59,7 @@ their Windows halves open in `KNOWN-ISSUES.md` until then (CLAUDE.md, "Windows i
 - **Images** are `ui::ImageId` values the renderer maps to textures by owner (never a cached handle), so the reset rule of CLAUDE.md holds for the viewport and surface textures.
 - **Rounded rectangles and borders** are one SDF quad with analytic anti-aliasing (one pipeline); Day 184 spikes it against tessellation.
 - **Input** has two layers: the polled `InputState` stays; a bounded event queue (`Window::PollEvent`) is added (Day 185) and is what the UI reads. Wayland needs client-side key repeat.
-- **Pointer lock** is `zwp_pointer_constraints_v1` + `zwp_relative_pointer_v1` on Wayland and grab + XInput2 raw motion on X11 (Day 186); cursor shapes use `wp_cursor_shape_v1` / core X cursors. If a
+- **Pointer lock** is `zwp_pointer_constraints_v1` + `zwp_relative_pointer_v1` on Wayland and grab + XInput2 raw motion on X11 (Day 186); cursor shapes use `wp_cursor_shape_v1` / core X cursors, and a window can also take a custom RGBA cursor image (`wl_shm` cursor surface, Xcursor, `CreateIconIndirect`); no software-drawn cursor. If a
   library or protocol is not acceptable under the plan's library line, the fallback is recorded in `KNOWN-ISSUES.md` rather than silently dropped.
 - **Clipboard** is process-local this phase with a documented seam for the OS clipboard; drag-and-drop, IME, accessibility, docking and file dialogs are non-goals (listed in the Day 203 sweep).
 - **Windows.** The Win32 backend of the new platform operations and DXIL for the new shaders are one Windows-PC day (202), so Linux days are not blocked and the "two machines" rule is met at the phase close.
