@@ -25,31 +25,34 @@ texture are demonstrated: the same widget tree draws with two different
 themes switched at run time, and a UI tree rendered into an offscreen
 texture is shown on a quad in a 3D scene (an in-world screen).
 
-**Status: planned (2026-11-10), Days 184-203; not started.** Day numbers continue from Phase 14 (which ends at Day 183). The Windows PC does Day 202; Days 184-201 are done on the Linux machine and leave
+**Status: planned (2026-11-10), Days 184-206; not started.** Day numbers continue from Phase 14 (which ends at Day 183). The Windows PC does Day 205; Days 184-204 are done on the Linux machine and leave
 their Windows halves open in `KNOWN-ISSUES.md` until then (CLAUDE.md, "Windows is a supported platform").
 
-## Days (Days 184-203; the day files carry the sub-tasks)
+## Days (Days 184-206; the day files carry the sub-tasks)
 
 1. [Day 184 — Design spec, spikes, the `ui` module skeleton](phase-15-ui-system/day-184-design-spec-and-ui-module.md)
 2. [Day 185 — Platform: the input event stream (Wayland, X11)](phase-15-ui-system/day-185-platform-input-event-stream.md)
 3. [Day 186 — Platform: relative pointer, pointer lock, cursor shape (Wayland, X11)](phase-15-ui-system/day-186-platform-pointer-lock-and-cursor.md)
-4. [Day 187 — The 2D draw list (CPU)](phase-15-ui-system/day-187-draw-list.md)
-5. [Day 188 — The UI renderer: shaders, pipeline, graph pass](phase-15-ui-system/day-188-ui-renderer.md)
-6. [Day 189 — Themes](phase-15-ui-system/day-189-theme.md)
-7. [Day 190 — Widget tree, surface, offscreen test harness](phase-15-ui-system/day-190-widget-tree-and-surface.md)
-8. [Day 191 — Layout and container widgets](phase-15-ui-system/day-191-layout.md)
-9. [Day 192 — Input routing, focus, capture, the window adapter](phase-15-ui-system/day-192-input-routing.md)
-10. [Day 193 — Display and button widgets](phase-15-ui-system/day-193-display-and-button-widgets.md)
-11. [Day 194 — Slider, scrollbar, scroll view, list box](phase-15-ui-system/day-194-value-widgets-and-scrolling.md)
-12. [Day 195 — The single-line text field and the spin box](phase-15-ui-system/day-195-text-field.md)
-13. [Day 196 — Popups, menus, combobox, tooltips, accelerators](phase-15-ui-system/day-196-popups-and-menus.md)
-14. [Day 197 — Tab view, splitter, dialogs, modality](phase-15-ui-system/day-197-containers-and-dialogs.md)
-15. [Day 198 — The viewport widget](phase-15-ui-system/day-198-viewport-widget.md)
-16. [Day 199 — UI surfaces and render-to-texture](phase-15-ui-system/day-199-ui-surfaces-and-render-to-texture.md)
-17. [Day 200 — Settings binding and the debug overlay](phase-15-ui-system/day-200-settings-screen-and-debug-overlay.md)
-18. [Day 201 — The `ui_demo` application, themes, reset, goldens](phase-15-ui-system/day-201-ui-demo.md)
-19. [Day 202 — Windows PC: Win32 events and lock, DXIL, everything built and run](phase-15-ui-system/day-202-windows-pc.md)
-20. [Day 203 — Guide, benchmark, closing runs, phase review](phase-15-ui-system/day-203-docs-and-closing-run.md)
+4. [Day 187 — Platform: the OS clipboard (Wayland, X11)](phase-15-ui-system/day-187-platform-clipboard.md)
+5. [Day 188 — Platform: OS drag and drop (Wayland, X11)](phase-15-ui-system/day-188-platform-drag-and-drop.md)
+6. [Day 189 — The 2D draw list (CPU)](phase-15-ui-system/day-189-draw-list.md)
+7. [Day 190 — The UI renderer: shaders, pipeline, graph pass](phase-15-ui-system/day-190-ui-renderer.md)
+8. [Day 191 — Themes](phase-15-ui-system/day-191-theme.md)
+9. [Day 192 — Widget tree, surface, offscreen test harness](phase-15-ui-system/day-192-widget-tree-and-surface.md)
+10. [Day 193 — Layout and container widgets](phase-15-ui-system/day-193-layout.md)
+11. [Day 194 — Input routing, focus, capture, the window adapter](phase-15-ui-system/day-194-input-routing.md)
+12. [Day 195 — Display and button widgets](phase-15-ui-system/day-195-display-and-button-widgets.md)
+13. [Day 196 — Slider, scrollbar, scroll view, list box](phase-15-ui-system/day-196-value-widgets-and-scrolling.md)
+14. [Day 197 — The single-line text field and the spin box](phase-15-ui-system/day-197-text-field.md)
+15. [Day 198 — Popups, menus, combobox, tooltips, accelerators](phase-15-ui-system/day-198-popups-and-menus.md)
+16. [Day 199 — Tab view, splitter, dialogs, modality](phase-15-ui-system/day-199-containers-and-dialogs.md)
+17. [Day 200 — Drag and drop in the toolkit](phase-15-ui-system/day-200-drag-and-drop-in-the-toolkit.md)
+18. [Day 201 — The viewport widget](phase-15-ui-system/day-201-viewport-widget.md)
+19. [Day 202 — UI surfaces and render-to-texture](phase-15-ui-system/day-202-ui-surfaces-and-render-to-texture.md)
+20. [Day 203 — Settings binding and the debug overlay](phase-15-ui-system/day-203-settings-screen-and-debug-overlay.md)
+21. [Day 204 — The `ui_demo` application, themes, reset, goldens](phase-15-ui-system/day-204-ui-demo.md)
+22. [Day 205 — Windows PC: Win32 events and lock, DXIL, everything built and run](phase-15-ui-system/day-205-windows-pc.md)
+23. [Day 206 — Guide, benchmark, closing runs, phase review](phase-15-ui-system/day-206-docs-and-closing-run.md)
 
 ## Decisions made when planning (starting positions; Day 184 confirms or changes them with spikes)
 
@@ -61,10 +64,10 @@ their Windows halves open in `KNOWN-ISSUES.md` until then (CLAUDE.md, "Windows i
 - **Input** has two layers: the polled `InputState` stays; a bounded event queue (`Window::PollEvent`) is added (Day 185) and is what the UI reads. Wayland needs client-side key repeat.
 - **Pointer lock** is `zwp_pointer_constraints_v1` + `zwp_relative_pointer_v1` on Wayland and grab + XInput2 raw motion on X11 (Day 186); cursor shapes use `wp_cursor_shape_v1` / core X cursors, and a window can also take a custom RGBA cursor image (`wl_shm` cursor surface, Xcursor, `CreateIconIndirect`); no software-drawn cursor. If a
   library or protocol is not acceptable under the plan's library line, the fallback is recorded in `KNOWN-ISSUES.md` rather than silently dropped.
-- **Clipboard** is process-local this phase with a documented seam for the OS clipboard; drag-and-drop, IME, accessibility, docking and file dialogs are non-goals (listed in the Day 203 sweep).
+- **Clipboard and drag and drop are in this phase** (decided 2026-11-10): the OS clipboard (text, file lists, custom formats, primary selection where it exists) and OS drag and drop in and out, on Wayland (data device) and X11 (selections with INCR, XDND), Win32 on Day 205; always asynchronous with timeouts and with validated, size-capped data. The toolkit side (drag sources, drop targets, list reorder, text drops, OS-backed paste) is Day 200; an in-process clipboard remains for offscreen surfaces and tests. IME, accessibility, docking and file dialogs are non-goals (listed in the Day 206 sweep).
 - **Windows.** The Win32 backend of the new platform operations and DXIL for the new shaders are one Windows-PC day (202), so Linux days are not blocked and the "two machines" rule is met at the phase close.
-- **Theme rule.** Widgets draw only from the theme; a test fails on a color or pixel-metric literal in widget sources (Day 193).
-- **Size.** 20 days, the largest phase so far, because it contains platform work on three backends, a renderer, a toolkit with about twenty widgets, and two integration targets (viewport, in-world surfaces).
+- **Theme rule.** Widgets draw only from the theme; a test fails on a color or pixel-metric literal in widget sources (Day 195).
+- **Size.** 23 days, the largest phase so far, because it contains platform work on three backends, a renderer, a toolkit with about twenty widgets, and two integration targets (viewport, in-world surfaces).
 
 ## Key deliverables
 
@@ -209,8 +212,9 @@ a monitor, a wrist display).
   `os::Window` seam so other platforms follow the same shape (PLAN.md
   assumption #11).
 - **Clipboard and drag-and-drop** (Wayland data-device protocol, X11
-  selections) are deliberately deferred; text fields get copy/paste in a
-  later pass. Revisit when the editor needs asset drag-and-drop.
+  selections and XDND, Win32 OLE) were deferred in the original sketch and
+  are in this phase since 2026-11-10: platform Days 187-188, toolkit Day
+  200, Win32 Day 205.
 - **IME / complex-script text input** is out of scope (matches Phase 14:
   no shaping). Latin-family text and grapheme-correct cursor movement
   only.
