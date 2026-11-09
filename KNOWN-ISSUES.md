@@ -272,3 +272,7 @@ Automated checks pass; nobody has looked at the real thing yet (from `STATUS.md`
 - The Wayland pointer, wheel, focus and key handlers (`wayland_input.cpp`) have no automated test: no test-compositor seam exists, and the real compositor cannot be made to send input. Only open + Resize is checked. Key logic is tested through `KeyboardEvents`; X11 is tested with injected events.
 - The input event stream is Linux only until Day 205 (Windows) and Phase 22 (macOS); the Windows build of the shared changes (`input_event.h`, `window.h`) is open until the Windows PC runs it.
 - No IME composition; dead keys and compose depend on the locale's Compose file (without one they are not combined).
+- (Day 186) Not seen by eye: custom cursor image, cursor shapes and the pointer lock with `input_probe` on Wayland and X11; the session was locked when the day was done. X11 raw motion and the Wayland lock grant/unlock/relative motion handlers have no automated test (nothing can inject them).
+- (Day 186) Wayland: a compositor without `wp_cursor_shape_v1` gets no standard shapes (`libwayland-cursor` fallback not used); one without the pointer constraint protocols gets no lock. X11 shows cursor images at pixel size (no scaling).
+- (Day 186) The cursor, lock and event-stream code is open on Windows until Day 205 and on macOS until Phase 22.
+
