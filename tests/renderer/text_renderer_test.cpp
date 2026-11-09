@@ -17,10 +17,8 @@
 #include "renderer/device_resources.h"
 #include "renderer/glyph_atlas_texture.h"
 #include "renderer/text_renderer.h"
-#include "containers/unique_ptr.h"
 #include "rhi/device_host.h"
 #include "rhi/null/null_device.h"
-#include "rhi/uniform_ring.h"
 #include "text/glyph_atlas.h"
 #include "text/layout.h"
 
@@ -82,9 +80,8 @@ struct Target {
 
 // One frame: clear the target, run `add` (which calls TextRenderer::Add), draw, wait, and read the target back.
 template <typename AddFn>
-gpu_test::Image RenderFrame(rhi::Device* device, renderer::TextRenderer* text, rhi::UniformRing* ring, const Target& target, const f32 (&clear)[4], AddFn add) {
+gpu_test::Image RenderFrame(rhi::Device* device, renderer::TextRenderer* text, const Target& target, const f32 (&clear)[4], AddFn add) {
     device->BeginFrame();
-    ring->BeginFrame();
     text->BeginFrame();
     add();
     rhi::CommandList* list = device->CreateCommandList();
@@ -95,10 +92,9 @@ gpu_test::Image RenderFrame(rhi::Device* device, renderer::TextRenderer* text, r
     pass.color[0].texture = target.texture;
     for (int i = 0; i < 4; ++i) pass.color[0].clear_color[i] = clear[i];
     list->BeginRendering(pass);
-    REQUIRE(text->Record(list, ring, target.width, target.height));
+    REQUIRE(text->Record(list, target.width, target.height));
     list->EndRendering();
     list->End();
-    ring->Flush();
     rhi::CommandList* lists[] = {list};
     const bool submitted = device->Submit(lists, 1) != 0;
     device->EndFrame();
@@ -222,13 +218,11 @@ TEST_CASE("The text renderer queues glyphs, skips spaces and counts what the bud
 
     // Record runs inside a rendering pass on the null device (which checks the calls' order); it must not fail.
     {
-        rhi::UniformRing ring(device.Get(), 1024);
-        REQUIRE(ring.Valid());
+
         Target target;
         REQUIRE(target.Make(device.Get(), 64, 32, rhi::Format::RGBA8_UNorm));
         CHECK(text.Add(layout, StyleOf(o, 16, 0xFFFFFFFFu), 0, 0));
         device->BeginFrame();
-        ring.BeginFrame();
         rhi::CommandList* list = device->CreateCommandList();
         list->Begin();
         list->Barrier(target.texture, rhi::ResourceState::Undefined, rhi::ResourceState::ColorAttachment);
@@ -236,7 +230,7 @@ TEST_CASE("The text renderer queues glyphs, skips spaces and counts what the bud
         pass.color_count = 1;
         pass.color[0].texture = target.texture;
         list->BeginRendering(pass);
-        CHECK(text.Record(list, &ring, 64, 32));
+        CHECK(text.Record(list, 64, 32));
         list->EndRendering();
         list->End();
         rhi::CommandList* lists[] = {list};
@@ -262,8 +256,7 @@ TEST_CASE("A glyph's quad shows the atlas bitmap texel for texel", "[renderer][t
         renderer::TextRendererDesc desc;
         desc.color_format = rhi::Format::RGBA8_UNorm;
         REQUIRE(text.Create(device.Get(), &atlas, desc, nullptr));
-        rhi::UniformRing ring(device.Get(), 4096);
-        REQUIRE(ring.Valid());
+
         Target target;
         REQUIRE(target.Make(device.Get(), 80, 64, rhi::Format::RGBA8_UNorm));
 
@@ -272,7 +265,7 @@ TEST_CASE("A glyph's quad shows the atlas bitmap texel for texel", "[renderer][t
         const f32 x = 11.0f;
         const f32 y = 5.0f;
         const f32 clear[4] = {0, 0, 0, 1};
-        const gpu_test::Image image = RenderFrame(device.Get(), &text, &ring, target, clear, [&] { REQUIRE(text.Add(layout, StyleOf(o, size, 0xFFFFFFFFu), x, y)); });
+        const gpu_test::Image image = RenderFrame(device.Get(), &text, target, clear, [&] { REQUIRE(text.Add(layout, StyleOf(o, size, 0xFFFFFFFFu), x, y)); });
 
         const Quad q = QuadOf(atlas, o, size, layout.glyphs[0], x, y);
         REQUIRE(q.entry.has_pixels);
@@ -332,14 +325,13 @@ TEST_CASE("Text blends with premultiplied alpha over a colored background", "[re
         text::GlyphAtlas atlas;
         renderer::TextRenderer text;
         REQUIRE(text.Create(device.Get(), &atlas, renderer::TextRendererDesc{}, nullptr));
-        rhi::UniformRing ring(device.Get(), 4096);
         Target target;
         REQUIRE(target.Make(device.Get(), 64, 64, rhi::Format::RGBA8_UNorm));
         const u32 size = 48;
         text::TextLayout layout = LayText(o, "H", size);
         const f32 clear[4] = {0, 0, 1, 1}; // blue
         // Red, fully opaque: red in the lowest byte.
-        const gpu_test::Image opaque = RenderFrame(device.Get(), &text, &ring, target, clear, [&] { text.Add(layout, StyleOf(o, size, 0xFF0000FFu), 8, 4); });
+        const gpu_test::Image opaque = RenderFrame(device.Get(), &text, target, clear, [&] { text.Add(layout, StyleOf(o, size, 0xFF0000FFu), 8, 4); });
         const Quad q = QuadOf(atlas, o, size, layout.glyphs[0], 8, 4);
         int worst = 0;
         for (u32 dy = 0; dy < q.entry.rect.h; ++dy) {
@@ -352,7 +344,7 @@ TEST_CASE("Text blends with premultiplied alpha over a colored background", "[re
         CHECK(worst <= 2);
 
         // Half transparent red: coverage times 0.5.
-        const gpu_test::Image half = RenderFrame(device.Get(), &text, &ring, target, clear, [&] { text.Add(layout, StyleOf(o, size, 0x800000FFu), 8, 4); });
+        const gpu_test::Image half = RenderFrame(device.Get(), &text, target, clear, [&] { text.Add(layout, StyleOf(o, size, 0x800000FFu), 8, 4); });
         worst = 0;
         for (u32 dy = 0; dy < q.entry.rect.h; ++dy) {
             for (u32 dx = 0; dx < q.entry.rect.w; ++dx) {
@@ -378,7 +370,6 @@ TEST_CASE("An sRGB target shows the color the application wrote", "[renderer][te
         renderer::TextRendererDesc desc;
         desc.color_format = rhi::Format::RGBA8_SRGB;
         REQUIRE(text.Create(device.Get(), &atlas, desc, nullptr));
-        rhi::UniformRing ring(device.Get(), 4096);
         Target target;
         REQUIRE(target.Make(device.Get(), 64, 64, rhi::Format::RGBA8_SRGB));
         const u32 size = 48;
@@ -386,7 +377,7 @@ TEST_CASE("An sRGB target shows the color the application wrote", "[renderer][te
         const f32 clear[4] = {0, 0, 0, 1};
         // A mid gray, written as sRGB bytes. In the middle of a full-coverage pixel the stored byte must be the same gray again (decode in the
         // shader, encode on write), where a missing decode would store a much brighter value.
-        const gpu_test::Image image = RenderFrame(device.Get(), &text, &ring, target, clear, [&] { text.Add(layout, StyleOf(o, size, 0xFF808080u), 8, 4); });
+        const gpu_test::Image image = RenderFrame(device.Get(), &text, target, clear, [&] { text.Add(layout, StyleOf(o, size, 0xFF808080u), 8, 4); });
         const Quad q = QuadOf(atlas, o, size, layout.glyphs[0], 8, 4);
         u32 full = 0;
         for (u32 dy = 0; dy < q.entry.rect.h; ++dy) {
@@ -424,26 +415,23 @@ TEST_CASE("A device reset rebuilds the atlas pages, the pipeline and the sampler
         }
         renderer::TextRenderer text;
         REQUIRE(text.Create(host.GetDevice(), &atlas, renderer::TextRendererDesc{}, &registry));
-        UniquePtr<rhi::UniformRing> ring = MakeUnique<rhi::UniformRing>(host.GetDevice(), 4096);
-        Target target; // not registered: made again by hand after the reset
+                Target target; // not registered: made again by hand after the reset
         REQUIRE(target.Make(host.GetDevice(), 96, 48, rhi::Format::RGBA8_UNorm));
 
         const u32 size = 24;
         text::TextLayout layout = LayText(o, "Reset FAQ", size);
         const f32 clear[4] = {0.1f, 0.1f, 0.1f, 1};
         auto draw = [&] { REQUIRE(text.Add(layout, StyleOf(o, size, 0xFFE0E0E0u), 4, 4)); };
-        const gpu_test::Image before = RenderFrame(host.GetDevice(), &text, ring.Get(), target, clear, draw);
+        const gpu_test::Image before = RenderFrame(host.GetDevice(), &text, target, clear, draw);
         const rhi::ResourceCounts counts = host.GetDevice()->Resources();
 
-        // Replace the device: the ring and the target belong to the old one and go with it; the text renderer is rebuilt by the registry.
+        // Replace the device: the target belongs to the old one and go with it; the text renderer is rebuilt by the registry.
         host.GetDevice()->WaitIdle();
-        ring.Reset();
         target.Destroy();
         REQUIRE(host.Recreate(info, rhi::SwapchainDesc{}));
         REQUIRE(text.Live());
-        ring = MakeUnique<rhi::UniformRing>(host.GetDevice(), 4096);
         REQUIRE(target.Make(host.GetDevice(), 96, 48, rhi::Format::RGBA8_UNorm));
-        const gpu_test::Image after = RenderFrame(host.GetDevice(), &text, ring.Get(), target, clear, draw);
+        const gpu_test::Image after = RenderFrame(host.GetDevice(), &text, target, clear, draw);
         const rhi::ResourceCounts now = host.GetDevice()->Resources();
 
         CHECK(before.rgba == after.rgba); // the same frame, pixel for pixel
@@ -451,12 +439,10 @@ TEST_CASE("A device reset rebuilds the atlas pages, the pipeline and the sampler
         // A lost device recovers through the same path: inject the loss, replace the device, draw again.
         host.GetDevice()->WaitIdle();
         host.GetDevice()->InjectDeviceLoss();
-        ring.Reset();
         target.Destroy();
         REQUIRE(host.Recreate(info, rhi::SwapchainDesc{}));
-        ring = MakeUnique<rhi::UniformRing>(host.GetDevice(), 4096);
         REQUIRE(target.Make(host.GetDevice(), 96, 48, rhi::Format::RGBA8_UNorm));
-        const gpu_test::Image recovered = RenderFrame(host.GetDevice(), &text, ring.Get(), target, clear, draw);
+        const gpu_test::Image recovered = RenderFrame(host.GetDevice(), &text, target, clear, draw);
         CHECK(before.rgba == recovered.rgba);
         CHECK(now.buffers == counts.buffers);
         CHECK(now.textures == counts.textures);
@@ -466,7 +452,6 @@ TEST_CASE("A device reset rebuilds the atlas pages, the pipeline and the sampler
         CHECK(now.pipelines == counts.pipelines);
 
         host.GetDevice()->WaitIdle();
-        ring.Reset();
         target.Destroy();
         text.Destroy();
         host.Destroy();

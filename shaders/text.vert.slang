@@ -14,7 +14,7 @@
 //   vertex input  location 2: float4 color (UNORM8x4)
 //   vertex output location 0: float2 uv
 //   vertex output location 1: float4 color (rgb linear when the target is sRGB, alpha as written)
-//   set 0, binding 0: uniform buffer { float2 pixel_to_clip, float srgb_target, float pad }  (std140, vertex stage)
+//   push constants (16 bytes, vertex stage): float2 pixel_to_clip, float srgb_target, float pad
 
 #include "target_common.slang"
 
@@ -24,7 +24,7 @@ struct Params {
     float pad;
 };
 
-[[vk::binding(0, 0)]] ConstantBuffer<Params> params : register(b0, space0);
+[[vk::push_constant]] ConstantBuffer<Params> params : register(b0, space15);
 
 struct VertexInput {
     [[vk::location(0)]] float2 position : TEXCOORD0;

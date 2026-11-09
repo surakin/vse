@@ -4059,26 +4059,34 @@ renderer::RenderSettingsToChanges(const RenderSettings&,const::engine_placeholde
 renderer::ApplySharedChange(void*,const::engine_placeholder::settings::ChangeEvent&)	function	renderer	renderer-applysharedchange-void-star-const-engine-placeholder-settings-changeevent-amp	renderer.md	engine/renderer/shared_settings.h:63
 renderer::SyncSharedFromRenderer(Renderer*,::engine_placeholder::settings::Settings*)	function	renderer	renderer-syncsharedfromrenderer-renderer-star-engine-placeholder-settings-settings-star	renderer.md	engine/renderer/shared_settings.h:72
 renderer::RendererCapability(void*,const char*)	function	renderer	renderer-renderercapability-void-star-const-char-star	renderer.md	engine/renderer/shared_settings.h:80
-renderer::TextRendererDesc	struct	renderer	renderer-textrendererdesc	renderer.md	engine/renderer/text_renderer.h:20
-renderer::TextRendererDesc::color_format	variable	renderer	renderer-textrendererdesc-color-format	renderer.md	engine/renderer/text_renderer.h:23
-renderer::TextRendererDesc::max_glyphs	variable	renderer	renderer-textrendererdesc-max-glyphs	renderer.md	engine/renderer/text_renderer.h:25
-renderer::TextRenderer	class	renderer	renderer-textrenderer	renderer.md	engine/renderer/text_renderer.h:40
-renderer::TextRenderer::TextRenderer()	function	renderer	renderer-textrenderer-textrenderer	renderer.md	engine/renderer/text_renderer.h:42
-renderer::TextRenderer::~TextRenderer()	function	renderer	renderer-textrenderer-tilde-textrenderer	renderer.md	engine/renderer/text_renderer.h:44
-renderer::TextRenderer::TextRenderer(const TextRenderer&)	function	renderer	renderer-textrenderer-textrenderer-const-textrenderer-amp	renderer.md	engine/renderer/text_renderer.h:45
-renderer::TextRenderer::operator=(const TextRenderer&)	function	renderer	renderer-textrenderer-operator-eq-const-textrenderer-amp	renderer.md	engine/renderer/text_renderer.h:46
-renderer::TextRenderer::Create(rhi::Device*,text::GlyphAtlas*,const TextRendererDesc&,DeviceResources*)	function	renderer	renderer-textrenderer-create-rhi-device-star-text-glyphatlas-star-const-textrendererdesc-amp-deviceresources-star	renderer.md	engine/renderer/text_renderer.h:59
-renderer::TextRenderer::Destroy()	function	renderer	renderer-textrenderer-destroy	renderer.md	engine/renderer/text_renderer.h:62
-renderer::TextRenderer::BeginFrame()	function	renderer	renderer-textrenderer-beginframe	renderer.md	engine/renderer/text_renderer.h:65
-renderer::TextRenderer::Add(const text::TextLayout&,const text::TextStyle&,f32,f32)	function	renderer	renderer-textrenderer-add-const-text-textlayout-amp-const-text-textstyle-amp-f32-f32	renderer.md	engine/renderer/text_renderer.h:80
-renderer::TextRenderer::Record(rhi::CommandList*,rhi::UniformRing*,u32,u32)	function	renderer	renderer-textrenderer-record-rhi-commandlist-star-rhi-uniformring-star-u32-u32	renderer.md	engine/renderer/text_renderer.h:94
-renderer::TextRenderer::QueuedGlyphs() const	function	renderer	renderer-textrenderer-queuedglyphs-const	renderer.md	engine/renderer/text_renderer.h:98
-renderer::TextRenderer::DroppedGlyphs() const	function	renderer	renderer-textrenderer-droppedglyphs-const	renderer.md	engine/renderer/text_renderer.h:101
-renderer::TextRenderer::Pages() const	function	renderer	renderer-textrenderer-pages-const	renderer.md	engine/renderer/text_renderer.h:104
-renderer::TextRenderer::Release()	function	renderer	renderer-textrenderer-release	renderer.md	engine/renderer/text_renderer.h:106
-renderer::TextRenderer::Recreate(rhi::Device*)	function	renderer	renderer-textrenderer-recreate-rhi-device-star	renderer.md	engine/renderer/text_renderer.h:107
-renderer::TextRenderer::Live() const	function	renderer	renderer-textrenderer-live-const	renderer.md	engine/renderer/text_renderer.h:108
-renderer::TextRenderer::RecreatableName() const	function	renderer	renderer-textrenderer-recreatablename-const	renderer.md	engine/renderer/text_renderer.h:109
+renderer::TextRendererDesc	struct	renderer	renderer-textrendererdesc	renderer.md	engine/renderer/text_renderer.h:21
+renderer::TextRendererDesc::color_format	variable	renderer	renderer-textrendererdesc-color-format	renderer.md	engine/renderer/text_renderer.h:24
+renderer::TextRendererDesc::max_glyphs	variable	renderer	renderer-textrendererdesc-max-glyphs	renderer.md	engine/renderer/text_renderer.h:26
+renderer::TextStats	struct	renderer	renderer-textstats	renderer.md	engine/renderer/text_renderer.h:32
+renderer::TextStats::glyphs_drawn	variable	renderer	renderer-textstats-glyphs-drawn	renderer.md	engine/renderer/text_renderer.h:34
+renderer::TextStats::glyphs_dropped	variable	renderer	renderer-textstats-glyphs-dropped	renderer.md	engine/renderer/text_renderer.h:36
+renderer::TextStats::scaled_large_glyphs	variable	renderer	renderer-textstats-scaled-large-glyphs	renderer.md	engine/renderer/text_renderer.h:38
+renderer::TextStats::passes	variable	renderer	renderer-textstats-passes	renderer.md	engine/renderer/text_renderer.h:40
+renderer::TextRenderer	class	renderer	renderer-textrenderer	renderer.md	engine/renderer/text_renderer.h:55
+renderer::TextRenderer::TextRenderer()	function	renderer	renderer-textrenderer-textrenderer	renderer.md	engine/renderer/text_renderer.h:57
+renderer::TextRenderer::~TextRenderer()	function	renderer	renderer-textrenderer-tilde-textrenderer	renderer.md	engine/renderer/text_renderer.h:59
+renderer::TextRenderer::TextRenderer(const TextRenderer&)	function	renderer	renderer-textrenderer-textrenderer-const-textrenderer-amp	renderer.md	engine/renderer/text_renderer.h:60
+renderer::TextRenderer::operator=(const TextRenderer&)	function	renderer	renderer-textrenderer-operator-eq-const-textrenderer-amp	renderer.md	engine/renderer/text_renderer.h:61
+renderer::TextRenderer::Create(rhi::Device*,text::GlyphAtlas*,const TextRendererDesc&,DeviceResources*)	function	renderer	renderer-textrenderer-create-rhi-device-star-text-glyphatlas-star-const-textrendererdesc-amp-deviceresources-star	renderer.md	engine/renderer/text_renderer.h:74
+renderer::TextRenderer::Destroy()	function	renderer	renderer-textrenderer-destroy	renderer.md	engine/renderer/text_renderer.h:77
+renderer::TextRenderer::BeginFrame()	function	renderer	renderer-textrenderer-beginframe	renderer.md	engine/renderer/text_renderer.h:80
+renderer::TextRenderer::Add(const text::TextLayout&,const text::TextStyle&,f32,f32)	function	renderer	renderer-textrenderer-add-const-text-textlayout-amp-const-text-textstyle-amp-f32-f32	renderer.md	engine/renderer/text_renderer.h:95
+renderer::TextRenderer::Record(rhi::CommandList*,u32,u32)	function	renderer	renderer-textrenderer-record-rhi-commandlist-star-u32-u32	renderer.md	engine/renderer/text_renderer.h:108
+renderer::TextRenderer::Draw(StringView,const text::TextStyle&,const text::LayoutOptions&,f32,f32)	function	renderer	renderer-textrenderer-draw-stringview-const-text-textstyle-amp-const-text-layoutoptions-amp-f32-f32	renderer.md	engine/renderer/text_renderer.h:123
+renderer::TextRenderer::AddToGraph(RenderGraph*,GraphResource,rhi::Format,u32,u32)	function	renderer	renderer-textrenderer-addtograph-rendergraph-star-graphresource-rhi-format-u32-u32	renderer.md	engine/renderer/text_renderer.h:138
+renderer::TextRenderer::Stats() const	function	renderer	renderer-textrenderer-stats-const	renderer.md	engine/renderer/text_renderer.h:142
+renderer::TextRenderer::QueuedGlyphs() const	function	renderer	renderer-textrenderer-queuedglyphs-const	renderer.md	engine/renderer/text_renderer.h:146
+renderer::TextRenderer::DroppedGlyphs() const	function	renderer	renderer-textrenderer-droppedglyphs-const	renderer.md	engine/renderer/text_renderer.h:149
+renderer::TextRenderer::Pages() const	function	renderer	renderer-textrenderer-pages-const	renderer.md	engine/renderer/text_renderer.h:152
+renderer::TextRenderer::Release()	function	renderer	renderer-textrenderer-release	renderer.md	engine/renderer/text_renderer.h:154
+renderer::TextRenderer::Recreate(rhi::Device*)	function	renderer	renderer-textrenderer-recreate-rhi-device-star	renderer.md	engine/renderer/text_renderer.h:155
+renderer::TextRenderer::Live() const	function	renderer	renderer-textrenderer-live-const	renderer.md	engine/renderer/text_renderer.h:156
+renderer::TextRenderer::RecreatableName() const	function	renderer	renderer-textrenderer-recreatablename-const	renderer.md	engine/renderer/text_renderer.h:157
 renderer::TextureImage	struct	renderer	renderer-textureimage	renderer.md	engine/renderer/texture.h:16
 renderer::TextureImage::desc	variable	renderer	renderer-textureimage-desc	renderer.md	engine/renderer/texture.h:18
 renderer::TextureImage::pixels	variable	renderer	renderer-textureimage-pixels	renderer.md	engine/renderer/texture.h:20

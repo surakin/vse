@@ -11612,6 +11612,60 @@ u32 max_glyphs;
 
 The most glyphs one frame draws; further glyphs are dropped and counted. The per-frame vertex memory is 120 bytes per glyph for each frame in flight.
 
+## `TextStats` {#renderer-textstats}
+
+`struct renderer::TextStats` — defined in `engine/renderer/text_renderer.h`
+
+```cpp
+struct TextStats { ... }
+```
+
+Counters of a [`renderer::TextRenderer`](#renderer-textrenderer), for tests and the benchmark.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-compatible plain data. |
+
+### `glyphs_drawn` {#renderer-textstats-glyphs-drawn}
+
+`variable renderer::TextStats::glyphs_drawn` — defined in `engine/renderer/text_renderer.h`
+
+```cpp
+u64 glyphs_drawn;
+```
+
+Glyph quads drawn by `Record` since creation.
+
+### `glyphs_dropped` {#renderer-textstats-glyphs-dropped}
+
+`variable renderer::TextStats::glyphs_dropped` — defined in `engine/renderer/text_renderer.h`
+
+```cpp
+u64 glyphs_dropped;
+```
+
+Glyphs dropped (frame budget or atlas) since creation.
+
+### `scaled_large_glyphs` {#renderer-textstats-scaled-large-glyphs}
+
+`variable renderer::TextStats::scaled_large_glyphs` — defined in `engine/renderer/text_renderer.h`
+
+```cpp
+u64 scaled_large_glyphs;
+```
+
+Glyphs whose style size is above [`text::kMaxAtlasPixelSize`](text.md#text-kmaxatlaspixelsize): rasterized at the maximum and scaled up.
+
+### `passes` {#renderer-textstats-passes}
+
+`variable renderer::TextStats::passes` — defined in `engine/renderer/text_renderer.h`
+
+```cpp
+u64 passes;
+```
+
+Times the render-graph pass was declared (frames that drew text).
+
 ## `TextRenderer` {#renderer-textrenderer}
 
 `class renderer::TextRenderer` — defined in `engine/renderer/text_renderer.h`
@@ -11622,7 +11676,7 @@ class TextRenderer final : public Recreatable { ... }
 
 Draws text from a [`text::GlyphAtlas`](text.md#text-glyphatlas): add laid-out text each frame, then record it.
 
-Usage per frame: [`renderer::TextRenderer::BeginFrame`](#renderer-textrenderer-beginframe), any number of [`renderer::TextRenderer::Add`](#renderer-textrenderer-add-const-text-textlayout-amp-const-text-textstyle-amp-f32-f32), then (between `BeginRendering` and `EndRendering` of a pass that writes the target) [`renderer::TextRenderer::Record`](#renderer-textrenderer-record-rhi-commandlist-star-rhi-uniformring-star-u32-u32). Positions are pixels of the target with the origin at its top-left corner, X right and Y down, as the layout gives them. Glyph quads land on whole pixels, so the atlas bitmaps are shown texel for texel. The result is premultiplied alpha, blended over what is there.
+Usage per frame: [`renderer::TextRenderer::BeginFrame`](#renderer-textrenderer-beginframe), any number of [`renderer::TextRenderer::Add`](#renderer-textrenderer-add-const-text-textlayout-amp-const-text-textstyle-amp-f32-f32), then (between `BeginRendering` and `EndRendering` of a pass that writes the target) [`renderer::TextRenderer::Record`](#renderer-textrenderer-record-rhi-commandlist-star-u32-u32). Positions are pixels of the target with the origin at its top-left corner, X right and Y down, as the layout gives them. Glyph quads land on whole pixels, so the atlas bitmaps are shown texel for texel. The result is premultiplied alpha, blended over what is there.
 
 It owns a [`renderer::GlyphAtlasTexture`](#renderer-glyphatlastexture) (the GPU pages), a pipeline, a sampler and per-frame vertex memory, and registers with a [`renderer::DeviceResources`](#renderer-deviceresources); after a reset `Recreate` makes them again and the CPU-side quads of the frame in progress are kept. Only SPIR-V is minted for the text shaders so far, so a Direct3D 12 device refuses `Create` with a logged error (`KNOWN-ISSUES.md`).
 
@@ -11735,12 +11789,12 @@ Each glyph is looked up in the atlas (and rasterized into it on first use) at th
 | Aborts | the style has no open font. |
 | Ownership | nothing of `layout` or `style` is retained. |
 
-### `Record(rhi::CommandList*,rhi::UniformRing*,u32,u32)` {#renderer-textrenderer-record-rhi-commandlist-star-rhi-uniformring-star-u32-u32}
+### `Record(rhi::CommandList*,u32,u32)` {#renderer-textrenderer-record-rhi-commandlist-star-u32-u32}
 
 `method renderer::TextRenderer::Record` — defined in `engine/renderer/text_renderer.h`
 
 ```cpp
-bool Record(rhi::CommandList* list, rhi::UniformRing* ring, u32 target_width, u32 target_height);
+bool Record(rhi::CommandList* list, u32 target_width, u32 target_height);
 ```
 
 Sends changed atlas pages, writes this frame's quads and records the draws.
@@ -11750,13 +11804,73 @@ Call it inside a rendering pass whose only color attachment has the format given
 | Field | Value |
 |---|---|
 | Parameter `list` | the command list that is recording the pass. |
-| Parameter `ring` | the frame's uniform ring; one 16-byte block is taken from it. |
 | Parameter `target_width` | the pass's width in pixels. |
 | Parameter `target_height` | the pass's height in pixels. |
 | Returns | true when everything was recorded. |
-| Fails | returns false, logging the reason, if an atlas page cannot be sent (nothing is drawn), the uniform ring is full or a bind group cannot be made; whatever was recorded stays valid. |
+| Fails | returns false, logging the reason, if an atlas page cannot be sent (nothing is drawn) or a bind group cannot be made; whatever was recorded stays valid. |
 | Aborts | the object does not hold its GPU objects, the call is outside a frame, or it is the second call in one frame (the frame's vertex region is written once). |
-| Ownership | borrows the list and the ring for the call. |
+| Ownership | borrows the list for the call. |
+
+### `Draw(StringView,const text::TextStyle&,const text::LayoutOptions&,f32,f32)` {#renderer-textrenderer-draw-stringview-const-text-textstyle-amp-const-text-layoutoptions-amp-f32-f32}
+
+`method renderer::TextRenderer::Draw` — defined in `engine/renderer/text_renderer.h`
+
+```cpp
+bool Draw(StringView utf8, const text::TextStyle& style, const text::LayoutOptions& options, f32 x, f32 y);
+```
+
+Lays out `utf8` and adds it: the convenience call a program makes each frame.
+
+The layout is kept in the renderer and reused, so a steady frame allocates nothing per glyph.
+
+| Field | Value |
+|---|---|
+| Parameter `utf8` | the text. |
+| Parameter `style` | font, size and color. |
+| Parameter `options` | wrapping, line height, tabs, alignment. |
+| Parameter `x` | target pixel of the layout's left edge. |
+| Parameter `y` | target pixel of the layout's top edge. |
+| Returns | true when the text was laid out and every glyph was added. |
+| Fails | returns false, as [`text::Layout`](text.md#text-layout-stringview-const-textstyle-amp-const-layoutoptions-amp-textlayout-star) and [`renderer::TextRenderer::Add`](#renderer-textrenderer-add-const-text-textlayout-amp-const-text-textstyle-amp-f32-f32) fail. |
+| Aborts | the style has no open font. |
+| Ownership | nothing is retained. |
+
+### `AddToGraph(RenderGraph*,GraphResource,rhi::Format,u32,u32)` {#renderer-textrenderer-addtograph-rendergraph-star-graphresource-rhi-format-u32-u32}
+
+`method renderer::TextRenderer::AddToGraph` — defined in `engine/renderer/text_renderer.h`
+
+```cpp
+void AddToGraph(RenderGraph* graph, GraphResource target, rhi::Format format, u32 width, u32 height);
+```
+
+Declares the text pass in a frame's graph, after the passes that wrote `target`.
+
+Declares nothing (no pass, no barrier, no cost) when no glyph was added this frame. Otherwise the pass blends the quads into `target` without clearing it. A format different from the current one rebuilds the pipeline here, on the frame's thread.
+
+| Field | Value |
+|---|---|
+| Parameter `graph` | the frame's graph. |
+| Parameter `target` | the display target, already written by an earlier pass (the tonemap); accessed as a color attachment, read and written. |
+| Parameter `format` | the target's format. |
+| Parameter `width` | the target's width in pixels. |
+| Parameter `height` | the target's height in pixels. |
+| Fails | the pass logs and draws nothing if the pipeline for `format` cannot be made. |
+| Aborts | `graph` is null, `format` is undefined, a size is 0, or the object holds no GPU objects. |
+| Ownership | the pass keeps a pointer to this object until the graph is executed. |
+
+### `Stats()` {#renderer-textrenderer-stats-const}
+
+`method renderer::TextRenderer::Stats` — defined in `engine/renderer/text_renderer.h`
+
+```cpp
+TextStats Stats() const;
+```
+
+Returns the counters.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `QueuedGlyphs()` {#renderer-textrenderer-queuedglyphs-const}
 

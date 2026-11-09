@@ -1,6 +1,6 @@
 # Fonts and text
 
-Status: draft (Phase 14, Days 175-180 so far; the render-graph pass and the demo follow).
+Status: draft (Phase 14, Days 175-181 so far; the demo follows).
 
 The text layer lives in `engine/text/` (namespace `engine_placeholder::text`). Design and reasons: `docs/superpowers/specs/2026-11-08-text-design.md`.
 FreeType 2.15.0 (vendored, `third_party/freetype/`) reads and rasterizes the fonts; it is named in one file, `engine/text/font_freetype.cpp`, and every
@@ -80,11 +80,18 @@ rebuilds all of it from the CPU atlas (the pages are the source of truth; no gly
 renderer::TextRenderer text;
 text.Create(device, &atlas, renderer::TextRendererDesc{rhi::Format::RGBA8_SRGB, 8192}, &registry);
 
-// every frame, with a command list that is inside a rendering pass on a target of that format:
+// every frame, before the graph is built:
 text.BeginFrame();
-text.Add(layout, style, /*x=*/16.0f, /*y=*/16.0f);   // style.color is packed RGBA (red in the lowest byte)
-text.Record(list, &uniform_ring, target_width, target_height);
+text.Draw("Hello, world!", style, layout_options, /*x=*/16.0f, /*y=*/16.0f);   // style.color is packed RGBA (red in the lowest byte)
+// ... after the passes that wrote the display target (the tonemap):
+text.AddToGraph(&graph, display_target, display_format, width, height);
 ```
+
+`AddToGraph` declares a pass named `text` that reads and writes the target as a color attachment (it blends over what the earlier passes drew and never clears), so the graph
+orders it after them. A frame in which nothing was drawn declares no pass at all: no barrier, no cost. A target in another format than the renderer was made for (a settings
+change) rebuilds the pipeline inside `AddToGraph`. `Draw` lays the text out into a layout the renderer keeps and reuses, so a steady frame allocates nothing per glyph (a
+frame has a few fixed temporaries inside `Layout`; the test compares a short and a five times longer text). Programs that lay out themselves call `Add(layout, style, x, y)`
+and, outside the graph, `Record(list, width, height)` inside their own rendering pass.
 
 - Coordinates are pixels of the target, origin at its top-left corner, X right, Y down, as the layout gives them. Each glyph quad is placed on whole pixels, so the atlas bitmap is shown
   texel for texel (the test compares every pixel with the atlas page).
@@ -93,6 +100,8 @@ text.Record(list, &uniform_ring, target_width, target_height);
   UNORM target they are used as they are.
 - `Add` looks each glyph up in the atlas (rasterizing it on first use), so the first frame that uses a glyph pays for it; `Record` sends the atlas pages that changed since the last frame. A
   changed page is sent **whole** (the RHI uploads a full mip level at a time), one megabyte for a 1024-pixel page.
+- Text above `kMaxAtlasPixelSize` (128 px) is laid out at the requested size but rasterized at 128 px and drawn with scaled quads (blurry, correctly placed); `Stats().scaled_large_glyphs`
+  counts such glyphs and the first use of each size is logged. Phase 16 draws large text as outline meshes.
 - One frame draws at most `max_glyphs` glyphs (8192 by default); the rest are dropped, counted in `DroppedGlyphs()` and logged once per frame, and a full atlas drops glyphs the same way.
 - Only SPIR-V is minted for the text shaders so far, so `Create` on a Direct3D 12 device fails with a logged error until the Windows PC mints DXIL (`KNOWN-ISSUES.md`).
 

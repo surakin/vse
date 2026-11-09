@@ -3,10 +3,11 @@
 #include "containers/vector.h"
 #include "renderer/device_resources.h"
 #include "renderer/glyph_atlas_texture.h"
+#include "renderer/render_graph.h"
 #include "renderer/texture.h"
 #include "rhi/rhi.h"
-#include "rhi/uniform_ring.h"
 #include "text/glyph_atlas.h"
+#include "string_view.h"
 #include "text/layout.h"
 #include "types.h"
 
@@ -23,6 +24,20 @@ struct TextRendererDesc {
     rhi::Format color_format = rhi::Format::RGBA8_UNorm;
     /// The most glyphs one frame draws; further glyphs are dropped and counted. The per-frame vertex memory is 120 bytes per glyph for each frame in flight.
     u32 max_glyphs = 8192;
+};
+
+/// Counters of a [[renderer::TextRenderer]], for tests and the benchmark.
+///
+/// Thread-safety: thread-compatible plain data.
+struct TextStats {
+    /// Glyph quads drawn by `Record` since creation.
+    u64 glyphs_drawn = 0;
+    /// Glyphs dropped (frame budget or atlas) since creation.
+    u64 glyphs_dropped = 0;
+    /// Glyphs whose style size is above [[text::kMaxAtlasPixelSize]]: rasterized at the maximum and scaled up.
+    u64 scaled_large_glyphs = 0;
+    /// Times the render-graph pass was declared (frames that drew text).
+    u64 passes = 0;
 };
 
 /// Draws text from a [[text::GlyphAtlas]]: add laid-out text each frame, then record it.
@@ -84,14 +99,47 @@ public:
     /// Call it inside a rendering pass whose only color attachment has the format given at creation. Does nothing when no glyph was added.
     ///
     /// Param list: the command list that is recording the pass.
-    /// Param ring: the frame's uniform ring; one 16-byte block is taken from it.
     /// Param target_width: the pass's width in pixels.
     /// Param target_height: the pass's height in pixels.
     /// Returns: true when everything was recorded.
-    /// Fails: returns false, logging the reason, if an atlas page cannot be sent (nothing is drawn), the uniform ring is full or a bind group cannot be made; whatever was recorded stays valid.
+    /// Fails: returns false, logging the reason, if an atlas page cannot be sent (nothing is drawn) or a bind group cannot be made; whatever was recorded stays valid.
     /// Aborts: the object does not hold its GPU objects, the call is outside a frame, or it is the second call in one frame (the frame's vertex region is written once).
-    /// Ownership: borrows the list and the ring for the call.
-    bool Record(rhi::CommandList* list, rhi::UniformRing* ring, u32 target_width, u32 target_height);
+    /// Ownership: borrows the list for the call.
+    bool Record(rhi::CommandList* list, u32 target_width, u32 target_height);
+
+    /// Lays out `utf8` and adds it: the convenience call a program makes each frame.
+    ///
+    /// The layout is kept in the renderer and reused, so a steady frame allocates nothing per glyph.
+    ///
+    /// Param utf8: the text.
+    /// Param style: font, size and color.
+    /// Param options: wrapping, line height, tabs, alignment.
+    /// Param x: target pixel of the layout's left edge.
+    /// Param y: target pixel of the layout's top edge.
+    /// Returns: true when the text was laid out and every glyph was added.
+    /// Fails: returns false, as [[text::Layout]] and [[renderer::TextRenderer::Add]] fail.
+    /// Aborts: the style has no open font.
+    /// Ownership: nothing is retained.
+    bool Draw(StringView utf8, const text::TextStyle& style, const text::LayoutOptions& options, f32 x, f32 y);
+
+    /// Declares the text pass in a frame's graph, after the passes that wrote `target`.
+    ///
+    /// Declares nothing (no pass, no barrier, no cost) when no glyph was added this frame. Otherwise the pass blends the quads into `target` without clearing it.
+    /// A format different from the current one rebuilds the pipeline here, on the frame's thread.
+    ///
+    /// Param graph: the frame's graph.
+    /// Param target: the display target, already written by an earlier pass (the tonemap); accessed as a color attachment, read and written.
+    /// Param format: the target's format.
+    /// Param width: the target's width in pixels.
+    /// Param height: the target's height in pixels.
+    /// Fails: the pass logs and draws nothing if the pipeline for `format` cannot be made.
+    /// Aborts: `graph` is null, `format` is undefined, a size is 0, or the object holds no GPU objects.
+    /// Ownership: the pass keeps a pointer to this object until the graph is executed.
+    void AddToGraph(RenderGraph* graph, GraphResource target, rhi::Format format, u32 width, u32 height);
+
+    /// Returns the counters.
+    /// Fails: never.
+    TextStats Stats() const;
 
     /// Returns the glyph quads waiting for `Record`.
     /// Fails: never.
@@ -117,6 +165,8 @@ private:
         u32 color;
     };
     bool MakeGpuObjects(rhi::Device* device);
+    bool MakePipeline();
+    static void RecordPass(const PassExecuteContext& context, void* user);
 
     rhi::Device* device_ = nullptr;
     text::GlyphAtlas* atlas_ = nullptr;
@@ -134,6 +184,14 @@ private:
     Vector<Vector<Vertex>> batches_; // one list of quads (6 vertices each) per atlas page
     u32 queued_ = 0;
     u64 dropped_ = 0;
+    u64 drawn_ = 0;
+    u64 scaled_large_ = 0;
+    u64 passes_ = 0;
+    Vector<u32> logged_large_sizes_; // the sizes above the atlas maximum already reported in the log
+    text::TextLayout scratch_layout_;
+    GraphResource pass_target_;
+    u32 pass_width_ = 0;
+    u32 pass_height_ = 0;
     bool warned_this_frame_ = false;
     u64 recorded_frame_ = 0; // frame number + 1 of the last Record that drew
     ScopedRegistration registration_;

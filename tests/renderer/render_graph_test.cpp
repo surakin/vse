@@ -28,6 +28,14 @@
 
 static std::atomic<unsigned long> g_heap_allocations{0};
 
+// Read by text_pass_test.cpp, which proves the text path allocates nothing per glyph once it is warm. False where the sanitizer's runtime owns operator new.
+#ifdef RENDER_GRAPH_TEST_NO_NEW_COUNTER
+bool RenderTestCountsAllocations() { return false; }
+#else
+bool RenderTestCountsAllocations() { return true; }
+#endif
+unsigned long RenderTestHeapAllocations() { return g_heap_allocations.load(); }
+
 #ifndef RENDER_GRAPH_TEST_NO_NEW_COUNTER
 // Every form is replaced so allocation and release always pair up (sanitizers check that). `align` is 0 for the plain forms. On
 // Windows, memory from _aligned_malloc goes back through _aligned_free, so the aligned forms always take that path there.
