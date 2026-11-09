@@ -58,12 +58,15 @@ Widget* TabView::Page(usize index) const { return index < tabs_.Size() ? tabs_[i
 void TabView::ShowPage(usize index) {
     // Builds a lazy page the first time, collapses the old page and shows the new one.
     if (index >= tabs_.Size()) return;
-    Tab& tab = tabs_[index];
-    if (tab.page == nullptr && tab.factory != nullptr) {
-        UniquePtr<Widget> page = tab.factory(tab.user);
-        tab.factory = nullptr; // once
-        if (page.Get() != nullptr) tab.page = AddChild(static_cast<UniquePtr<Widget>&&>(page));
+    if (tabs_[index].page == nullptr && tabs_[index].factory != nullptr) {
+        // The factory may add tabs, which moves the array: no reference to a tab is held across the call.
+        const auto factory = tabs_[index].factory;
+        void* const user = tabs_[index].user;
+        tabs_[index].factory = nullptr; // once
+        UniquePtr<Widget> page = factory(user);
+        if (page.Get() != nullptr && index < tabs_.Size()) tabs_[index].page = AddChild(static_cast<UniquePtr<Widget>&&>(page));
     }
+    Tab& tab = tabs_[index];
     if (selected_ != kNone && selected_ < tabs_.Size() && tabs_[selected_].page != nullptr) tabs_[selected_].page->SetCollapsed(true);
     selected_ = index;
     if (tab.page != nullptr) tab.page->SetCollapsed(false);
@@ -352,7 +355,6 @@ void TabView::OnDrop(const DragPayload&, Point position, DragAction) {
         if (i != from) order.Push(i);
     }
     order.Insert(to, from);
-    const Widget* selected_page = selected_ == kNone ? nullptr : tabs_[selected_].page;
     const usize selected_old = selected_;
     Vector<Tab> next;
     for (usize k = 0; k < order.Size(); ++k) next.Push(static_cast<Tab&&>(tabs_[order[k]]));
@@ -360,7 +362,6 @@ void TabView::OnDrop(const DragPayload&, Point position, DragAction) {
     for (usize k = 0; k < order.Size(); ++k) {
         if (order[k] == selected_old) selected_ = k;
     }
-    (void)selected_page;
     hover_ = kNone;
     MarkDirty(kLayoutDirty | kDrawDirty);
     on_moved_.Invoke(this, from, to);

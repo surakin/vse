@@ -25,8 +25,7 @@ texture are demonstrated: the same widget tree draws with two different
 themes switched at run time, and a UI tree rendered into an offscreen
 texture is shown on a quad in a 3D scene (an in-world screen).
 
-**Status: planned (2026-11-10), Days 184-206; not started.** Day numbers continue from Phase 14 (which ends at Day 183). The Windows PC does Day 205; Days 184-204 are done on the Linux machine and leave
-their Windows halves open in `KNOWN-ISSUES.md` until then (CLAUDE.md, "Windows is a supported platform").
+**Status: complete on Linux (2026-11-09), Days 184-206; the Windows closing run after Day 206 is open (`KNOWN-ISSUES.md`).** Days 184-204 and 206 were done on the Linux machine, Day 205 on the Windows PC. The Linux closing run: `ran 4952 of 4952 tests (phases: all; flavors: all; display: included; crash tests: included) in 147 s`.
 
 ## Days (Days 184-206; the day files carry the sub-tasks)
 

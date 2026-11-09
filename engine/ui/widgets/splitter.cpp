@@ -218,6 +218,7 @@ void Splitter::OnEvent(Event& event) {
     const f32 along = Horizontal() ? event.position.x : event.position.y;
     switch (event.type) {
         case EventType::PointerMove: {
+            if (drag_ != kNone && (State() & kStatePressed) == 0) drag_ = kNone; // the capture ended without a release
             if (drag_ != kNone) {
                 DragTo(along - grab_);
                 on_changed_.Invoke(this);

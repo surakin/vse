@@ -401,6 +401,8 @@ void X11Window::PumpEvents(InputState* input) {
                 if (event.type == KeyPress && XLookupKeysym(&event.xkey, 0) == XK_Escape) {
                     DndCancel(display_, window_, clipboard_, dnd_, MonotonicTimeNanos());
                 }
+                // The release of a key that went down before the drag is still input: dropped, the key (Shift of a move drag, say) would stay down for the program.
+                if (event.type == KeyRelease && event.xkey.keycode < 256 && held_[event.xkey.keycode] != Key::Unknown) HandleKey(&event.xkey, false, input);
                 continue;
             }
         }

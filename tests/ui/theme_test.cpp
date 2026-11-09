@@ -214,3 +214,25 @@ TEST_CASE("Theme: named colors, metrics and fonts follow the chain", "[ui][theme
     CHECK(got.size == 20.0f);
     CHECK(set.Font(FontId::Body, 1.0f).family == 0);
 }
+
+TEST_CASE("Switching to a theme that differs only in a style's padding reports a layout change", "[ui][theme]") {
+    ThemeSet set;
+    Style roomy;
+    roomy.At(StateKind::Normal).padding_x = 40.0f;
+    ThemeBuilder a;
+    a.SetStyle(widget_kind::kButton, 0, roomy);
+    Theme with_padding = a.Build();
+    Style tight;
+    tight.At(StateKind::Normal).padding_x = 2.0f;
+    ThemeBuilder b;
+    b.SetStyle(widget_kind::kButton, 0, tight);
+    Theme other = b.Build();
+    set.SetTheme(&with_padding);
+    CHECK(set.SetTheme(&other)); // metrics and fonts are the same: before the fix this said nothing changed and the buttons kept their old size
+    Theme same = [&] {
+        ThemeBuilder c;
+        c.SetStyle(widget_kind::kButton, 0, tight);
+        return c.Build();
+    }();
+    CHECK_FALSE(set.SetTheme(&same)); // the same look in another object: nothing to lay out again
+}

@@ -320,6 +320,10 @@ person is needed. `tests/rhi/render_target.h` is the offscreen target (RGBA8 col
 - **Validation.** GPU tests fail on any validation error. With `ENGINE_RHI_VALIDATION_FATAL=1` the whole suite is clean
   except the validation-capture tests in `vulkan_instance_test.cpp`, which provoke errors on purpose and so abort.
 
+### Testing a UI
+
+A widget test needs no window and no GPU: `ui::Harness` (`engine/ui/testing/harness.h`) is an offscreen surface with a font, an atlas, input helpers and a software rasteriser; the sample in `docs/guide/ui.md` ("The widget tree, the surface and the test harness") is the pattern, and `tests/ui/` has one file per widget family. A test of the toolkit on a real device is a golden picture (`tests/rhi/ui_golden_gpu_test.cpp`, `ui_demo_gpu_test.cpp`; the pictures are `tests/rhi/golden/ui_*.ppm`, Vulkan on Linux, both backends on Windows) and, for anything that owns device objects, the reset check of "Testing a reset". `ui_demo` runs scripted (`--script`, `--screenshot`) under the ctests `ui_demo_*`, including `ui_demo_script_wayland|x11` on a live display. The CPU cost of the toolkit is `renderer_bench --section ui`, which asserts nothing.
+
 ### Stress tests and replaying a failing seed (`ENGINE_STRESS_SEED`)
 
 _TODO_

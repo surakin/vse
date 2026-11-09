@@ -407,7 +407,7 @@ void Surface::Dispatch(Event e) {
             case EventType::PointerDown: {
                 SetHover(hit, e);
                 HideTooltip();
-                if (capture_ == nullptr && PressOutsidePopups(e, hit)) break; // closed the popups, and the press goes no further
+                if (capture_ == nullptr && PressOutsidePopups(hit)) break; // closed the popups, and the press goes no further
                 if (capture_ == nullptr) {
                     // Click to focus: the nearest focusable widget under the pointer takes the keyboard focus, and a click on nothing focusable clears it.
                     Widget* focus_target = hit;
@@ -476,9 +476,8 @@ bool Surface::InsidePopups(const Widget* widget) const {
     return false;
 }
 
-bool Surface::PressOutsidePopups(const Event& e, Widget* hit) {
+bool Surface::PressOutsidePopups(Widget* hit) {
     if (popup_infos_.Empty() || InsidePopups(hit)) return false;
-    (void)e;
     const PopupInfo top = popup_infos_[popup_infos_.Size() - 1];
     bool on_owner = false;
     for (usize i = 0; i < popup_infos_.Size() && !on_owner; ++i) {

@@ -242,7 +242,7 @@ void WaylandClipboard::HandleDeviceDrop(void* data, wl_data_device*) {
         return;
     }
     self->dnd_dropped_ = true;
-    self->dnd_deadline_ns_ = self->now_ns_ + kDropSessionTimeoutNs;
+    self->dnd_deadline_ns_ = (self->now_ns_ = os::MonotonicTimeNanos()) + kDropSessionTimeoutNs;
     DragAction action = slot.action == 2 ? DragAction::Move : slot.action == 1 ? DragAction::Copy : self->dnd_answer_;
     self->DragEvent(InputEventType::Drop, self->dnd_x_, self->dnd_y_, formats, static_cast<u8>(((slot.source_actions & 1) ? 1 : 0) | ((slot.source_actions & 2) ? 2 : 0)), action);
 }
@@ -373,7 +373,7 @@ void WaylandClipboard::SendFrom(Source& source, const char* mime, int fd) {
         return;
     }
     slot->active = true;
-    slot->pipe.Start(fd, payload.Data(), payload.Size(), now_ns_, kClipboardTimeoutNs);
+    slot->pipe.Start(fd, payload.Data(), payload.Size(), (now_ns_ = os::MonotonicTimeNanos()), kClipboardTimeoutNs);
 }
 
 bool WaylandClipboard::Set(ClipboardKind kind, const ClipboardOffer& offer) {
@@ -473,7 +473,7 @@ u32 WaylandClipboard::Request(ClipboardKind kind, ClipboardFormat format, String
         }
     }
     if (slot == nullptr) return 0;
-    const u32 id = requests_.Begin(kind, format, now_ns_);
+    const u32 id = requests_.Begin(kind, format, (now_ns_ = os::MonotonicTimeNanos()));
     if (id == 0) return 0;
     Source& source = sources_[KindIdx(kind)];
     if (source.proxy != nullptr) {
@@ -685,7 +685,7 @@ u32 WaylandClipboard::StartRead(ClipboardKind kind, void* offer_proxy, const cha
     if (slot == nullptr) return 0;
     int fds[2];
     if (::pipe2(fds, O_CLOEXEC) != 0) return 0;
-    const u32 id = requests_.Begin(kind, format, now_ns_, event_type);
+    const u32 id = requests_.Begin(kind, format, (now_ns_ = os::MonotonicTimeNanos()), event_type);
     if (id == 0) {
         ::close(fds[0]);
         ::close(fds[1]);
@@ -712,7 +712,7 @@ u32 WaylandClipboard::RequestDropData(ClipboardFormat format, StringView custom_
 }
 
 bool WaylandClipboard::BeginDrag(const DragSource& source) {
-    if (device_ == nullptr || manager_ == nullptr || surface_ == nullptr || last_serial_ == 0 || drag_active_) return false;
+    if (device_ == nullptr || manager_ == nullptr || surface_ == nullptr || button_serial_ == 0 || drag_active_) return false;
     if (source.offers == nullptr || source.offer_count == 0 || source.offer_count > kMaxDragOffers) return false;
     for (usize i = 0; i < source.offer_count; ++i) {
         const ClipboardOffer& o = source.offers[i];
@@ -760,7 +760,7 @@ bool WaylandClipboard::BeginDrag(const DragSource& source) {
     drag_active_ = true;
     drag_performed_ = false;
     drag_wl_action_ = 0;
-    wl_data_device_start_drag(device_, proxy, surface_, drag_icon_, last_serial_);
+    wl_data_device_start_drag(device_, proxy, surface_, drag_icon_, button_serial_);
     wl_display_flush(display_);
     return true;
 }

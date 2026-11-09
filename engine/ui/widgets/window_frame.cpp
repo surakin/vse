@@ -163,6 +163,10 @@ void WindowFrame::OnEvent(Event& event) {
     const Point at{event.position.x + b.x, event.position.y + b.y}; // surface coordinates, while the frame has not moved
     switch (event.type) {
         case EventType::PointerMove: {
+            if ((dragging_ || close_pressed_) && (State() & kStatePressed) == 0) {
+                dragging_ = false; // the capture ended without a release (focus lost, a modal opened)
+                close_pressed_ = false;
+            }
             if (dragging_) {
                 event.handled = true;
                 const Rect limit = Parent() != nullptr ? Parent()->Bounds() : Rect{0, 0, kUnbounded, kUnbounded};

@@ -170,6 +170,8 @@ private:
     Vector<Row> rows_;
     Vector<UniquePtr<Link>> links_;
     Vector<UniquePtr<EnumModel>> models_;
+    Vector<UniquePtr<Link>> retired_links_;        // of controls a Rebuild during a dispatch left alive until the dispatch ended
+    Vector<UniquePtr<EnumModel>> retired_models_;
     Callback<SettingsView*> on_restart_;
 };
 

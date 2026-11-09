@@ -73,7 +73,7 @@ Rect ScrollBar::ThumbRect() const {
 
 bool ScrollBar::WantsUpdate() const {
     const Surface* surface = GetSurface();
-    return auto_hide_ && surface != nullptr && content_ > view_ && surface->Time() - changed_at_ < kFadeSeconds;
+    return auto_hide_ && surface != nullptr && content_ > view_ && surface->Time() - changed_at_ < kFadeSeconds + 0.25f; // a little longer than the fade, so that the frame that hides the bar is painted
 }
 
 bool ScrollBar::Visible2() const {

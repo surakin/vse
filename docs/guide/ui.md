@@ -1,6 +1,6 @@
 # The UI toolkit
 
-Status: draft (Phase 15, Days 184 and 189). The module and its canvas and draw list exist; widgets arrive from Day 192. Design and reasons: `docs/superpowers/specs/2026-11-10-ui-design.md`.
+Status: complete for Phase 15 (Days 184-206). The model, the draw list and renderer, themes, layout, input, every widget family, popups and modality, drag and drop, the clipboard, the viewport, surfaces in the world, the settings screen, the debug overlay, the demo, the limits and the benchmark are all below. Design and reasons: `docs/superpowers/specs/2026-11-10-ui-design.md`.
 
 ## The model
 
@@ -102,6 +102,45 @@ h.GetSurface().Root()->AddChild(MakeMyButton("ok", {10, 10, 80, 24}));
 h.Click(20, 20);                                    // pointer move, press, release; frames run
 ui::RasterImage image;
 h.Render(&image);                                   // 400x200 pixels, compare what you expect
+```
+
+A complete "hello UI": a button on an offscreen surface, a click, and the pixels.
+
+```cpp compile run standalone
+#include <cstdio>
+#include <cstring>
+
+#include "ui/testing/harness.h"
+#include "ui/widgets/buttons.h"
+
+using namespace engine_placeholder;
+
+static void OnClicked(void* user, ui::Button*) { ++*static_cast<int*>(user); }
+
+int main() {
+    const char* file = DOCS_FONT_FILE;
+    ui::Harness h(200, 100, 1.0f, StringView(file, std::strlen(file)));
+    if (!h.Valid()) return 1;
+    int clicks = 0;
+    UniquePtr<ui::Button> button = MakeUnique<ui::Button>(StringView("hello"), StringView("Hello"));
+    button->OnClick().Connect(&OnClicked, &clicks);
+    ui::Rect bounds;
+    bounds.x = 20;
+    bounds.y = 20;
+    bounds.w = 100;
+    bounds.h = 32;
+    button->SetBounds(bounds);
+    h.GetSurface().Root()->AddChild(UniquePtr<ui::Widget>(button.Release()));
+    h.Advance(0);
+    h.Click(60, 36);
+    ui::RasterImage image;
+    h.Render(&image);
+    std::printf("clicks: %d, vertices: %s\n", clicks, h.List().vertices.Size() > 0 ? "yes" : "no");
+    return clicks == 1 ? 0 : 1;
+}
+```
+```output
+clicks: 1, vertices: yes
 ```
 
 ## Layout
@@ -322,3 +361,26 @@ A change is written with `Settings::Apply`, passing the apply function given to 
 **The in-world screen.** A second `ui::Surface` (`WorldScreen`: a counter button and a label, its own dark theme, 320 by 200 units at scale 2) is painted into a `UiSurfaceTarget` and shown on a lit quad standing in the scene (`SceneOptions::screen`: a material whose `albedo_tex` the program binds every frame, because the handle changes after a reset). The paint pass and a pass that reads the texture are declared before the scene's passes, so the graph leaves the texture ready to sample. A click in the viewport goes through `OrbitCamera::MakeRay` and `RayToSurfacePoint`; a hit becomes `PointerButtonUv` on the screen's `SurfaceInput`, a miss `Lost()`.
 
 **Run and test.** Options: `--backend`, `--frames`, `--screenshot`, `--script`, `--scale 1|1.25|2`, `--gpu`, `--rhi`, `--validation`; the script words (`click:`, `type:`, `key:`, `menu:`, `drag:`, `drop:`, `paste:`, `theme:`, `resize:`, `set:`, `reset`, `loss`, `shot:`, ...) are in `ui_script.h`, and drops and pastes are played by a fake OS peer on the surface. `rhi_tests "[ui_demo]"` holds six golden pictures (`tests/rhi/golden/ui_demo_*.ppm`: 1x, 2x, dark, a menu open, the About box, the in-world screen after a ray-cast click) and the check that the picture is byte-identical after a dynamic change, a pipeline rebuild, a device reset, a forced reset and a lost device. **View > Rendering settings...** is the live settings example: present mode, render scale and shader quality through `RenderSettingsHost`, which the program implements with the settings system and `Renderer::ApplySettings`, with the cost class of each beside its control.
+
+## Reset and loss
+
+The toolkit holds no GPU object. What owns them is `renderer::UiRenderer` (buffers, pipeline, the white texture), `GlyphAtlasTexture` (one texture per atlas page), `ViewportTarget` and `UiSurfaceTarget` (the colour and depth textures), and each is a `Recreatable` that keeps its CPU-side source (the draw list, the atlas bitmaps, the size) and registers with `DeviceResources`. A device reset (any `ApplySettings` that costs `DeviceReset`, a GPU switch, a lost device) therefore rebuilds all of them, and the next frame draws the same picture: `ui_demo`'s tests compare the screenshot byte for byte after a dynamic change, a pipeline rebuild, a reset, a forced reset and a lost device. Rules for a program: hold the owner and read its handle when recording, never keep a handle across a frame (an in-world screen rebinds its texture to the material every frame for that reason); a surface that was painted into a texture is empty after a reset, and `NeedsPaint()` says so until the next `AddToGraph`. A window resize needs no reset: the adapter changes the surface size, the viewport target `Resize`s, and the UI pass takes the swapchain's size every frame.
+
+## Cost
+
+`game/renderer_bench --section ui` measures the CPU side without a GPU (Release, AMD Ryzen 9 7950X3D, Linux, Liberation Sans; recorded Day 206; the numbers are not asserted by any test). Rows of ten buttons in a vertical box, the surface as tall as the tree so nothing is culled:
+
+| | 1,000 widgets | 5,000 widgets |
+|---|---|---|
+| build the tree | 0.5 ms | 1.6-2.1 ms |
+| first frame (measure, arrange, draw, glyphs rasterised into the atlas) | 7.6 ms | 32-34 ms |
+| relayout and repaint | 0.49 ms | 2.4 ms |
+| repaint only | 0.42 ms | 2.1 ms |
+| draw list | 32,000 vertices, 48,000 indices | 160,000 vertices, 240,000 indices |
+| allocations over 20 idle frames / 20 repaint frames | 0 / 0 | 0 / 0 |
+
+A list box over 100,000 items costs 3.7 us per frame while it scrolls inside its laid-out rows (0 allocations over 200 frames) and 28 us per frame when it brings three new rows into view each frame (a row laid out for the first time allocates inside `text::Layout`; the test in `tests/ui/scroll_test.cpp` keeps to the first case). `UiRenderer`'s graph pass over the 1,000-button list takes 25-28 us to build and record on the null device, which has no driver cost: it measures our side only. A full 1,000-widget redraw is far under a 60 Hz frame; a screen that changes less is cheaper still, because the surface rebuilds the list only when something looks different.
+
+## Limits
+
+What the toolkit does not do, on purpose, for Phase 15: no docking and no tree view (Phase 27 if the editor needs them), no input method editor and no complex-script shaping (text is laid out by code point and grapheme cluster), no accessibility tree, no file dialogs, no clipboard history and no clipboard-manager persistence (the text a program copied is gone when the program exits on Wayland and X11 unless a manager takes it), no scroll inertia, no drag images without a compositor that draws them, and no run-time backend switch. The list in `KNOWN-ISSUES.md` names each with the day that found it.

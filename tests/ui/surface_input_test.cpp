@@ -197,6 +197,23 @@ TEST_CASE("keys and text reach the focus owner of a surface", "[ui][surface-inpu
     CHECK(field->Text() == StringView("h"));
 }
 
+TEST_CASE("text with a stray continuation byte loses that byte only", "[ui][surface-input]") {
+    SiRig rig;
+    UniquePtr<TextField> f = MakeUnique<TextField>(StringView("field"));
+    TextField* field = f.Get();
+    field->SetBounds(Rect{20, 60, 120, 24});
+    rig.h.GetSurface().Root()->AddChild(UniquePtr<Widget>(f.Release()));
+    rig.h.Advance(0);
+    rig.input.SetInteractive(true);
+    rig.input.Focus(true);
+    rig.input.PointerButton(30, 70, os::kMouseLeft, true);
+    rig.input.PointerButton(30, 70, os::kMouseLeft, false);
+    // 0x80 alone, then "abc", then a lead byte with a missing continuation, then "d": the four ASCII characters used to be swallowed by a 4-byte guess.
+    rig.input.Text(StringView("\x80" "abc" "\xE2\x82" "d", 7));
+    rig.h.Advance(0.016f);
+    CHECK(field->Text() == StringView("abcd"));
+}
+
 TEST_CASE("two surfaces keep their own theme, scale and state", "[ui][surface-input]") {
     SiRig light(1.0f);
     SiRig dark(2.0f);

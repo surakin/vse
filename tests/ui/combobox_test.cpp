@@ -239,3 +239,18 @@ TEST_CASE("removing the box closes its list", "[ui][combobox]") {
     rig.h.Advance(0);
     CHECK(rig.h.GetSurface().PopupCount() == 0);
 }
+
+TEST_CASE("The drop-down opens scrolled to the selected item, though it was selected before it was laid out", "[ui][combobox]") {
+    Numbers numbers;
+    ComboRig rig(&numbers);
+    rig.combo->Select(50000);
+    rig.h.Key(Key::F4);
+    REQUIRE(rig.combo->IsOpen());
+    rig.h.Advance(0);
+    ListBox* list = rig.combo->DropDown();
+    REQUIRE(list != nullptr);
+    CHECK(list->Offset() > 0); // without the fix the list opened at the top and the choice was 50000 rows away
+    const f32 row = list->RowHeight();
+    CHECK(list->Offset() <= row * 50000);
+    CHECK(list->Offset() + row * 20 >= row * 50000);
+}

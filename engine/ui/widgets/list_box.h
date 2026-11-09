@@ -25,11 +25,7 @@ public:
     /// Moves items for a drag that reorders the list (`ListBox::SetReorderable`): the items at `indices` (ascending, distinct) go together, in their order, to the place before item `to` of the
     /// list as it was (`to` equal to `ItemCount()` means the end). The default refuses.
     /// Returns: whether the items were moved; on true the list box refreshes its rows and selects the moved items.
-    virtual bool MoveItems(const usize* indices, usize count, usize to) {
-        (void)indices;
-        (void)count;
-        (void)to;
-        return false;
+    virtual bool MoveItems(const usize*, usize, usize) { return false;
     }
 };
 
@@ -169,6 +165,7 @@ private:
     ListModel* model_ = nullptr;
     bool reorderable_ = false;
     bool drag_out_ = false;
+    usize scroll_pending_ = kNone; // an index to scroll to once the row height is known
     bool press_pending_ = false; // the press landed on a selected item: the selection waits for the release, so the whole selection can be dragged
     Point press_position_;
     usize drop_index_ = kNone;

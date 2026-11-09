@@ -181,8 +181,10 @@ void Log(LogChannel& channel, LogVerbosity level, StringView message) {
 namespace {
 
 // Delivers lines [first, head) that are still whole in the ring, oldest first. Returns the number of the first line it stopped at because a writer had claimed it and was
-// still copying it (only that line, or the newest one, can be in that state without being lost), or `head` when it read to the end; a caller that resumes from the
+// still copying it (only that line, or one of the newest few whose writer has not claimed its slot yet, can be in that state without being lost), or `head` when it read to the end; a caller that resumes from the
 // returned number then loses no line to a race with a writer. Without `stop_at_pending` it passes such a line by (the crash report wants the rest).
+constexpr u64 kPendingWindow = 8; // how many of the newest lines a reader waits for when their slots are not yet written
+
 u64 ReadRingRange(u64 first, u64 head, RecentLogLineFn callback, void* context, bool stop_at_pending) {
     // The loads of the text below are acquire: if one of them sees a word a newer writer stored (a release store, made after
     // that writer marked the slot odd), the second look at the sequence is then guaranteed to see the mark and drop the line.
@@ -192,7 +194,9 @@ u64 ReadRingRange(u64 first, u64 head, RecentLogLineFn callback, void* context, 
         RingSlot& slot = g_log_ring[line % kLogRingSlots];
         const u64 before = slot.sequence.load(std::memory_order_acquire);
         if (before != 2 * line + 2) {
-            if (stop_at_pending && (before == 2 * line + 1 || line + 1 == head)) {
+            // A writer that took its number and was descheduled before it claimed the slot leaves the slot holding an older line while newer lines complete after it, so
+            // "pending" is not only the newest line: any recent line whose slot still holds an older one may be on its way. A line older than the window is taken as left out.
+            if (stop_at_pending && (before == 2 * line + 1 || (before < 2 * line + 2 && line + kPendingWindow >= head))) {
                 return line; // a writer is copying it, or has just taken its number: it is whole a moment later
             }
             continue; // already overwritten by a newer line, or left out of the ring (the slot was busy)

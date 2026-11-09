@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include "font_support.h"
@@ -355,4 +357,37 @@ TEST_CASE("The rendering settings dialog shows each setting's cost class and app
     CHECK(renderer.last_key.View() == StringView("shader_quality"));
     CHECK(renderer.last_value.View() == StringView("medium")); // it starts at "high"
     CHECK(rig.app.Status().Length() > 0);
+}
+
+TEST_CASE("The rendering settings dialog opens again showing the choice made in it", "[ui][ui_demo]") {
+    DemoRig rig;
+    FakeRenderer renderer;
+    rig.app.SetRenderSettingsHost(&renderer);
+    REQUIRE(rig.app.ChooseMenuItem(StringView("View"), StringView("Rendering settings...")));
+    rig.h.Advance(0.016f);
+    ComboBox* combo = static_cast<ComboBox*>(rig.app.Find(StringView("combo_shader_quality")));
+    REQUIRE(combo != nullptr);
+    rig.h.GetSurface().SetFocus(combo);
+    rig.h.Key(Key::Up); // high -> medium
+    REQUIRE(renderer.changes == 1);
+    rig.h.Key(Key::Escape);
+    rig.h.Advance(0.016f);
+    REQUIRE(rig.app.ChooseMenuItem(StringView("View"), StringView("Rendering settings...")));
+    rig.h.Advance(0.016f);
+    combo = static_cast<ComboBox*>(rig.app.Find(StringView("combo_shader_quality")));
+    REQUIRE(combo != nullptr);
+    CHECK(combo->Text().View() == StringView("medium")); // it used to show "high" again, the first value of every open
+}
+
+TEST_CASE("A script word that cannot be done is reported whole, however long it is", "[ui][ui_demo]") {
+    DemoRig rig;
+    ui_demo::UiScript script;
+    char word[400];
+    std::memset(word, 'x', sizeof(word) - 1);
+    word[sizeof(word) - 1] = '\0';
+    script.Parse(StringView(word));
+    DemoHost host;
+    CHECK_FALSE(script.Run(&rig.app, &rig.h.GetSurface(), &host, 0));
+    CHECK(script.LastError().Length() < 256); // the message is cut to its buffer; it used to read past the end of it
+    CHECK(script.LastError().Length() > 200);
 }

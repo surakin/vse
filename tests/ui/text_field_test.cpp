@@ -892,3 +892,15 @@ TEST_CASE("SpinBox: typing a number, Enter commits, bad text reverts", "[ui][tex
     CHECK(box->Value() == -1.0);
     CHECK(field->Text() == StringView("-1.00"));
 }
+
+TEST_CASE("A paste that holds nothing printable leaves the selection alone", "[ui][textfield]") {
+    Rig r;
+    r.field->SetText(StringView("keep me"));
+    r.field->SetSelection(0, 4);
+    r.h.GetSurface().GetClipboard().SetText(StringView("\t\x1b"));
+    r.Key(Key::V, os::kModCtrl);
+    CHECK(r.field->Text() == StringView("keep me")); // the selection was deleted before the fix
+    r.h.GetSurface().GetClipboard().SetText(StringView("a\tb\nignored"));
+    r.Key(Key::V, os::kModCtrl);
+    CHECK(r.field->Text() == StringView("ab me")); // the tab is dropped, the second line is not pasted
+}

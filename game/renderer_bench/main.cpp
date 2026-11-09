@@ -1,7 +1,7 @@
 // renderer_bench: records the Phase 5 performance baseline. Prints one line per measurement; nothing here is asserted in CI. See
 // docs/guide/renderer.md ("Performance notes") for what the numbers mean.
 //
-//   renderer_bench [--section graph|frame|lights|pool|text|all] [--rhi null|vulkan|dx12|auto] [--frames N] [--threads N]
+//   renderer_bench [--section graph|frame|lights|pool|text|ui|all] [--rhi null|vulkan|dx12|auto] [--frames N] [--threads N]
 //             [--objects 1000|10000|50000] [--single]
 //
 // `--rhi` is the graphics backend (default auto: Direct3D 12 on Windows, Vulkan elsewhere); `--device` is its older spelling.
@@ -9,9 +9,11 @@
 // `frame` times a whole frame's CPU work (scene preparation, graph build and compile, recording, submission) at 1k, 10k and 50k
 // objects; the device is idled after every frame, outside the timer, so the number is CPU work and not waiting for the GPU.
 
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <new>
 
 #include "algorithm.h"
 #include "debug/program_setup.h"
@@ -31,6 +33,14 @@
 #include "text/font.h"
 #include "text/glyph_atlas.h"
 #include "text/layout.h"
+#include "renderer/glyph_atlas_texture.h"
+#include "renderer/transient_pool.h"
+#include "renderer/ui_renderer.h"
+#include "ui/draw_list.h"
+#include "ui/layout.h"
+#include "ui/testing/harness.h"
+#include "ui/widgets/buttons.h"
+#include "ui/widgets/list_box.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::renderer;
@@ -358,6 +368,197 @@ void BenchText() {
     }
 }
 
+
+// Counts every operator new while `g_counting` is set (the ui section's steady-state allocation check). The bench is never built with a sanitizer.
+std::atomic<long> g_new_count{0};
+std::atomic<bool> g_counting{false};
+
+class NumberItems : public ui::ListModel {
+public:
+    usize ItemCount() const override { return 100000; }
+    StringView ItemText(usize i) override {
+        usize n = 0;
+        char digits[24];
+        do {
+            digits[n++] = static_cast<char>('0' + i % 10);
+            i /= 10;
+        } while (i > 0);
+        usize len = 0;
+        for (const char* p = "Item "; *p != '\0'; ++p) text_[len++] = *p;
+        while (n > 0) text_[len++] = digits[--n];
+        return StringView(text_, len);
+    }
+
+private:
+    char text_[48];
+};
+
+// The tree for `count` widgets: rows of ten buttons in a vertical box. The surface is as tall as the tree, so nothing is clipped away.
+void BenchUiTree(u32 count) {
+    const u32 rows = (count + 9) / 10;
+    ui::Harness h(1280, static_cast<f32>(rows) * 28.0f + 8.0f, 1.0f, StringView(RENDERER_DEMO_FONT_FILE));
+    if (!h.Valid()) {
+        std::printf("ui     NOT OK: the font did not open\n");
+        return;
+    }
+    const double b0 = Now();
+    UniquePtr<ui::BoxLayout> column = MakeUnique<ui::BoxLayout>(ui::Orientation::Vertical, StringView("column"));
+    column->SetSpacing(4);
+    for (u32 r = 0; r < rows; ++r) {
+        UniquePtr<ui::BoxLayout> row = MakeUnique<ui::BoxLayout>(ui::Orientation::Horizontal, StringView("row"));
+        row->SetSpacing(4);
+        for (u32 c = 0; c < 10 && r * 10 + c < count; ++c) row->AddChild(UniquePtr<ui::Widget>(MakeUnique<ui::Button>(StringView("b"), StringView("Button")).Release()));
+        column->AddChild(UniquePtr<ui::Widget>(row.Release()));
+    }
+    ui::Widget* column_raw = column.Get();
+    ui::Rect full;
+    full.x = 0;
+    full.y = 0;
+    full.w = 1280;
+    full.h = static_cast<f32>(rows) * 28.0f + 8.0f;
+    column->SetBounds(full);
+    h.GetSurface().Root()->AddChild(UniquePtr<ui::Widget>(column.Release()));
+    const double b1 = Now();
+    h.Advance(0);
+    const double b2 = Now();
+    Samples layout, paint;
+    for (int rep = 0; rep < 20; ++rep) {
+        column_raw->MarkDirty(ui::kLayoutDirty | ui::kDrawDirty);
+        const double t0 = Now();
+        h.Advance(0.016f);
+        const double t1 = Now();
+        layout.Add(t1 - t0);
+        column_raw->MarkDirty(ui::kDrawDirty);
+        const double t2 = Now();
+        h.Advance(0.016f);
+        paint.Add(Now() - t2);
+    }
+    const ui::DrawList& list = h.List();
+    std::printf("ui     %5u widgets: build tree %8.2f ms, first frame %8.2f ms, relayout + repaint %8.2f ms, repaint only %8.2f ms  (%zu vertices, %zu indices)\n", count,
+                (b1 - b0) * 1e3, (b2 - b1) * 1e3, layout.Median() * 1e3, paint.Median() * 1e3, static_cast<size_t>(list.vertices.Size()), static_cast<size_t>(list.indices.Size()));
+
+    // Steady state: an idle frame (nothing dirty) and a repaint frame, after the warm-up above.
+    g_new_count.store(0);
+    g_counting.store(true);
+    for (int rep = 0; rep < 20; ++rep) h.Advance(0.016f);
+    const long idle = g_new_count.load();
+    g_new_count.store(0);
+    for (int rep = 0; rep < 20; ++rep) {
+        column_raw->MarkDirty(ui::kDrawDirty);
+        h.Advance(0.016f);
+    }
+    const long repaint = g_new_count.load();
+    g_counting.store(false);
+    std::printf("ui     %5u widgets: allocations over 20 idle frames %ld, over 20 repaint frames %ld\n", count, idle, repaint);
+}
+
+void BenchUi() {
+    std::printf("# ui: Liberation Sans, CPU work on the offscreen harness and the null device (no GPU)\n");
+    for (u32 count : {1000u, 5000u}) BenchUiTree(count);
+
+    // A list box with 100,000 items, scrolled a little every frame.
+    {
+        ui::Harness h(300, 300, 1.0f, StringView(RENDERER_DEMO_FONT_FILE));
+        if (!h.Valid()) return;
+        NumberItems items;
+        UniquePtr<ui::ListBox> box = MakeUnique<ui::ListBox>(StringView("list"));
+        ui::ListBox* list = box.Get();
+        ui::Rect bounds;
+        bounds.x = 0;
+        bounds.y = 0;
+        bounds.w = 200;
+        bounds.h = 150;
+        list->SetBounds(bounds);
+        h.GetSurface().Root()->AddChild(UniquePtr<ui::Widget>(box.Release()));
+        list->SetModel(&items);
+        h.Advance(0);
+        const f32 row = list->RowHeight();
+        list->SetOffset(row * 50000);
+        for (int i = 0; i < 100; ++i) {
+            list->SetOffset(row * 50000 + row * static_cast<f32>(i % 10) / 20.0f);
+            h.Advance(0.016f);
+        }
+        Samples frame;
+        g_new_count.store(0);
+        g_counting.store(true);
+        for (int i = 0; i < 200; ++i) {
+            list->SetOffset(row * 50000 + row * static_cast<f32>(i % 10) / 20.0f);
+            const double t0 = Now();
+            h.Advance(0.016f);
+            frame.Add(Now() - t0);
+        }
+        g_counting.store(false);
+        std::printf("ui     list box, 100000 items, scrolling inside the laid-out rows: %8.1f us per frame, %ld allocations over 200 frames  (%zu vertices)\n", frame.Median() * 1e6,
+                    g_new_count.load(), static_cast<size_t>(h.List().vertices.Size()));
+        // Scrolling by whole rows brings new rows into view (their text is laid out the first time).
+        Samples scroll;
+        for (int i = 0; i < 200; ++i) {
+            list->SetOffset(row * static_cast<f32>(60000 + i * 3));
+            const double t0 = Now();
+            h.Advance(0.016f);
+            scroll.Add(Now() - t0);
+        }
+        std::printf("ui     list box, 100000 items, three new rows per frame: %8.1f us per frame\n", scroll.Median() * 1e6);
+    }
+
+    // The UI renderer's pass on the null device: AddToGraph + graph execute (recording only).
+    {
+        rhi::NullDevicePtr device = rhi::CreateNullDevice();
+        ui::Harness h(1280, 28.0f * 100.0f + 8.0f, 1.0f, StringView(RENDERER_DEMO_FONT_FILE));
+        if (!h.Valid()) return;
+        UniquePtr<ui::BoxLayout> column = MakeUnique<ui::BoxLayout>(ui::Orientation::Vertical, StringView("column"));
+        for (u32 r = 0; r < 100; ++r) {
+            UniquePtr<ui::BoxLayout> row = MakeUnique<ui::BoxLayout>(ui::Orientation::Horizontal, StringView("row"));
+            for (u32 c = 0; c < 10; ++c) row->AddChild(UniquePtr<ui::Widget>(MakeUnique<ui::Button>(StringView("b"), StringView("Button")).Release()));
+            column->AddChild(UniquePtr<ui::Widget>(row.Release()));
+        }
+        ui::Rect full;
+        full.x = 0;
+        full.y = 0;
+        full.w = 1280;
+        full.h = 28.0f * 100.0f + 8.0f;
+        column->SetBounds(full);
+        h.GetSurface().Root()->AddChild(UniquePtr<ui::Widget>(column.Release()));
+        h.Advance(0);
+        GlyphAtlasTexture pages;
+        UiRenderer ui_renderer;
+        if (!pages.Create(device.Get(), &h.Atlas(), nullptr) || !ui_renderer.Create(device.Get(), &pages, UiRendererDesc{}, nullptr)) {
+            std::printf("ui     NOT OK: the UI renderer was not created\n");
+            return;
+        }
+        TransientPool pool(device.Get(), TransientPoolDesc{});
+        rhi::TextureDesc td;
+        td.width = 1280;
+        td.height = 720;
+        td.format = rhi::Format::RGBA8_UNorm;
+        td.usage = rhi::TextureUsage::ColorAttachment;
+        const rhi::TextureHandle target = device->CreateTexture(td);
+        Samples record;
+        u64 frame_number = 0;
+        for (int rep = 0; rep < 50; ++rep) {
+            ArenaAllocator arena(4u << 20);
+            RenderGraph graph(&arena, RenderGraphDesc{});
+            pool.BeginFrame(frame_number++);
+            const GraphResource image = graph.ImportTexture("target", target, rhi::ResourceState::Undefined, rhi::ResourceState::ColorAttachment, false);
+            ui_renderer.AddToGraph(&graph, &h.List(), image, rhi::Format::RGBA8_UNorm, 1280, 720);
+            device->BeginFrame();
+            rhi::CommandList* cl = device->CreateCommandList();
+            cl->Begin();
+            const double t0 = Now();
+            (void)graph.Execute(&pool, cl);
+            record.Add(Now() - t0);
+            cl->End();
+            device->EndFrame();
+            device->WaitIdle();
+            pool.EndFrame();
+        }
+        std::printf("ui     renderer: graph build + execute of one UI pass over %zu vertices (1000 buttons): %8.1f us\n", static_cast<size_t>(h.List().vertices.Size()),
+                    record.Median() * 1e6);
+        device->DestroyTexture(target);
+        ui_renderer.Release();
+    }
+}
+
 // Parses a whole non-negative number; false for anything else.
 bool ParseCount(const char* text, u32* out, u32 max) {
     char* end = nullptr;
@@ -370,7 +571,7 @@ bool ParseCount(const char* text, u32* out, u32 max) {
 bool Section(const Options& o, const char* name) { return std::strcmp(o.section, "all") == 0 || std::strcmp(o.section, name) == 0; }
 
 int Usage(const char* program) {
-    std::fprintf(stderr, "usage: %s [--section graph|frame|lights|pool|text|all] [--rhi null|vulkan|dx12|auto] [--frames 1-500] [--threads 0-64] [--objects 1000|10000|50000] [--single]\n",
+    std::fprintf(stderr, "usage: %s [--section graph|frame|lights|pool|text|ui|all] [--rhi null|vulkan|dx12|auto] [--frames 1-500] [--threads 0-64] [--objects 1000|10000|50000] [--single]\n",
                  program);
     return 2;
 }
@@ -389,7 +590,7 @@ int main(int argc, char** argv) {
         const bool has_value = i + 1 < argc;
         if (std::strcmp(argv[i], "--section") == 0 && has_value) {
             o.section = argv[++i];
-            if (!Section(o, "graph") && !Section(o, "frame") && !Section(o, "lights") && !Section(o, "pool") && !Section(o, "text")) return Usage(argv[0]);
+            if (!Section(o, "graph") && !Section(o, "frame") && !Section(o, "lights") && !Section(o, "pool") && !Section(o, "text") && !Section(o, "ui")) return Usage(argv[0]);
         } else if ((std::strcmp(argv[i], "--rhi") == 0 || std::strcmp(argv[i], "--device") == 0) && has_value) {
             if (!demo::ParseRhiBackend(argv[++i], &o.backend)) return Usage(argv[0]);
             o.null_device = o.backend == rhi::Backend::Null;
@@ -419,5 +620,18 @@ int main(int argc, char** argv) {
     if (Section(o, "lights")) BenchLights(o);
     if (Section(o, "pool")) BenchPool(o);
     if (Section(o, "text")) BenchText();
+    if (Section(o, "ui")) BenchUi();
     return 0;
 }
+
+void* operator new(std::size_t n) {
+    if (g_counting.load(std::memory_order_relaxed)) g_new_count.fetch_add(1, std::memory_order_relaxed);
+    void* p = std::malloc(n != 0 ? n : 1);
+    if (p == nullptr) std::abort();
+    return p;
+}
+void* operator new[](std::size_t n) { return operator new(n); }
+void operator delete(void* p) noexcept { std::free(p); }
+void operator delete(void* p, std::size_t) noexcept { std::free(p); }
+void operator delete[](void* p) noexcept { std::free(p); }
+void operator delete[](void* p, std::size_t) noexcept { std::free(p); }

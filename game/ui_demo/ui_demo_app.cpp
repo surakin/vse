@@ -85,7 +85,7 @@ ItemModel::ItemModel(usize count) {
     for (usize i = 0; i < count; ++i) {
         char text[32];
         const int n = std::snprintf(text, sizeof(text), "Item %zu", i + 1);
-        items_.Push(OwnedText(StringView(text, static_cast<usize>(n))));
+        items_.Push(OwnedText(StringView(text, FittedLength(n, sizeof(text)))));
     }
 }
 
@@ -161,20 +161,20 @@ void UiDemoApp::Clicked(void* user, Button* button) {
     UiDemoApp* app = static_cast<UiDemoApp*>(user);
     char text[96];
     const int n = std::snprintf(text, sizeof(text), "Clicked %.*s", static_cast<int>(button->Name().Length()), button->Name().Data());
-    app->SetStatus(StringView(text, static_cast<usize>(n)));
+    app->SetStatus(StringView(text, FittedLength(n, sizeof(text))));
 }
 
 void UiDemoApp::SliderChanged(void* user, Slider* slider) {
     char text[64];
     const int n = std::snprintf(text, sizeof(text), "Speed %.0f", slider->Value());
-    static_cast<UiDemoApp*>(user)->SetStatus(StringView(text, static_cast<usize>(n)));
+    static_cast<UiDemoApp*>(user)->SetStatus(StringView(text, FittedLength(n, sizeof(text))));
 }
 
 void UiDemoApp::ComboChanged(void* user, ComboBox* combo) {
     char text[64];
     const String<HeapAllocator> shown = combo->Text();
     const int n = std::snprintf(text, sizeof(text), "Shape %s", shown.CStr());
-    static_cast<UiDemoApp*>(user)->SetStatus(StringView(text, static_cast<usize>(n)));
+    static_cast<UiDemoApp*>(user)->SetStatus(StringView(text, FittedLength(n, sizeof(text))));
 }
 
 void UiDemoApp::BuildMenus() {
@@ -394,10 +394,15 @@ void UiDemoApp::RenderingChanged(void* user, ComboBox* combo) {
     const StringView name = combo->Name();
     const StringView key(name.Data() + 6, name.Length() - 6);
     const bool ok = app->render_host_->Change(key, value.View());
+    // What the dialog shows when it is opened again: the choice made here (a refused one too: the combo box shows what the user picked, the status line says it was refused).
+    const char* const keys[] = {"present_mode", "render_scale", "shader_quality"};
+    for (usize i = 0; i < 3; ++i) {
+        if (key == StringView(keys[i]) && combo->Selected() != ComboBox::kNone) app->rendering_selected_[i] = combo->Selected();
+    }
     char text[160];
     const StringView cost = app->render_host_->CostOf(key);
     const int n = std::snprintf(text, sizeof(text), "%.*s = %s: %s (%.*s)", static_cast<int>(key.Length()), key.Data(), value.CStr(), ok ? "applied" : "refused", static_cast<int>(cost.Length()), cost.Data());
-    app->SetStatus(StringView(text, static_cast<usize>(n)));
+    app->SetStatus(StringView(text, FittedLength(n, sizeof(text))));
 }
 
 void UiDemoApp::ShowRenderingSettings() {
@@ -413,7 +418,9 @@ void UiDemoApp::ShowRenderingSettings() {
         ChoiceModel* model;
         usize selected;
     };
-    const Row rows[] = {{"Present mode", "present_mode", &present_model, 0}, {"Render scale", "render_scale", &scale_model, 2}, {"Shader quality", "shader_quality", &quality_model, 2}};
+    const Row rows[] = {{"Present mode", "present_mode", &present_model, rendering_selected_[0]},
+                        {"Render scale", "render_scale", &scale_model, rendering_selected_[1]},
+                        {"Shader quality", "shader_quality", &quality_model, rendering_selected_[2]}};
     UniquePtr<Dialog> dialog = MakeUnique<Dialog>(StringView("rendering_dialog"), StringView("Rendering settings"));
     UniquePtr<BoxLayout> column = MakeUnique<BoxLayout>(Orientation::Vertical, StringView("rendering_column"));
     column->SetSpacing(8.0f);
@@ -583,7 +590,7 @@ void WorldScreen::Clicked(void* user, Button*) {
     ++self->clicks_;
     char text[32];
     const int n = std::snprintf(text, sizeof(text), "%u clicks", self->clicks_);
-    self->label_->SetText(StringView(text, static_cast<usize>(n)));
+    self->label_->SetText(StringView(text, FittedLength(n, sizeof(text))));
 }
 
 } // namespace ui_demo

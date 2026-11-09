@@ -13,7 +13,6 @@ namespace engine_placeholder::ui {
 /// Fails: never.
 inline bool IsVisibleColor(u32 abgr) { return (abgr >> 24) != 0; }
 
-/// Returns the corner radius of `style` in logical units.
 /// Returns whether `c` is an ASCII digit.
 ///
 /// Fails: never.

@@ -28,8 +28,6 @@ static_assert(sizeof(TextParams) == shaders::kTextVertParamsSize && offsetof(Tex
 
 constexpr u32 kVerticesPerGlyph = 6;
 
-// Only SPIR-V is minted for the text shaders so far (no dxc on the machine that wrote them); a Direct3D 12 device finds no blob and says so.
-
 } // namespace
 
 bool TextRenderer::Create(rhi::Device* device, text::GlyphAtlas* atlas, const TextRendererDesc& desc, DeviceResources* resources) {

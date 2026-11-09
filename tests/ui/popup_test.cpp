@@ -386,3 +386,15 @@ TEST_CASE("the tooltip stays inside the surface", "[ui][tooltip]") {
     }
     CHECK(found);
 }
+
+TEST_CASE("PlacePopup keeps a popup that fits neither side inside the bounds", "[ui][popup]") {
+    const Rect bounds = PRect(0, 0, 400, 600);
+    // 400 high, anchor at y 280..300: 300 below and 280 above are both too little.
+    Rect r = PlacePopup(Size{100, 400}, PRect(10, 280, 50, 20), Placement::Below, bounds);
+    CHECK(r.y >= 0);
+    CHECK(r.y + r.h <= 600); // the far edge was at 700 before: its last items could not be reached
+    // The same across.
+    r = PlacePopup(Size{300, 100}, PRect(150, 10, 100, 20), Placement::Right, bounds);
+    CHECK(r.x >= 0);
+    CHECK(r.x + r.w <= 400);
+}

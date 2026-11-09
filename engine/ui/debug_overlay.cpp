@@ -264,7 +264,7 @@ bool DebugOverlay::Run(StringView line) {
     if (line.Length() == 0) return false;
     char echo[1024];
     const int n = std::snprintf(echo, sizeof(echo), "> %.*s", static_cast<int>(line.Length()), line.Data());
-    capture_.Append(StringView(echo, n > 0 ? static_cast<usize>(n) : 0));
+    capture_.Append(StringView(echo, n > 0 ? (static_cast<usize>(n) < sizeof(echo) ? static_cast<usize>(n) : sizeof(echo) - 1) : 0));
     const usize space = line.Find(StringView(" "));
     const StringView name = line.Substring(0, space);
     const StringView argument = space < line.Length() ? TrimmedText(line.Substring(space)) : StringView();
@@ -278,7 +278,7 @@ bool DebugOverlay::Run(StringView line) {
         for (usize i = 0; i < commands_.Size(); ++i) {
             char buf[256];
             const int len = std::snprintf(buf, sizeof(buf), "%s: %s", commands_[i].name.CStr(), commands_[i].help.CStr());
-            capture_.Append(StringView(buf, len > 0 ? static_cast<usize>(len) : 0));
+            capture_.Append(StringView(buf, len > 0 ? (static_cast<usize>(len) < sizeof(buf) ? static_cast<usize>(len) : sizeof(buf) - 1) : 0));
         }
         ran = true;
     } else {

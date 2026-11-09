@@ -153,20 +153,22 @@ public:
         return false;
     }
     // Through the settings system, as the renderer demo does.
-    static void ApplyWanted(const char* what, const RenderSettings& wanted, Renderer* renderer) {
+    // Returns whether the change was accepted and applied: a change the settings system refuses leaves the renderer's last-apply record as it was, which says nothing about this one.
+    static bool ApplyWanted(const char* what, const RenderSettings& wanted, Renderer* renderer) {
         Vector<engine_placeholder::settings::ChangeRequest> requests;
         renderer::RenderSettingsToChanges(wanted, g_demo_settings->GetRegistry(), &requests);
         g_demo_settings->Get().SetCapabilityCheck(&renderer::RendererCapability, renderer);
         const engine_placeholder::settings::SetResult set = g_demo_settings->Get().Apply(requests.Data(), requests.Size(), &renderer::ApplySharedChange, renderer);
         if (!set.Ok()) {
             RhiLogV(LogVerbosity::Warn, "ui_demo: %s: the change was refused (error %d)", what, static_cast<int>(set.error));
-            return;
+            return false;
         }
         if (set.changed == 0) {
             LogApply(what, renderer->ApplySettings(wanted));
         } else {
             LogApply(what, renderer->LastApply());
         }
+        return renderer->LastApply().ok;
     }
 
     const Options& options_;
@@ -191,8 +193,7 @@ public:
         if (!id.IsValid()) return false;
         const SetStatus status = wanted.SetFromString(id, v);
         if (status != SetStatus::Ok && status != SetStatus::Clamped) return false;
-        Run::ApplyWanted(k, wanted, renderer_);
-        return renderer_->LastApply().ok;
+        return Run::ApplyWanted(k, wanted, renderer_);
     }
     StringView CostOf(StringView key) override {
         char k[48];
@@ -334,6 +335,9 @@ int RunScreenshot(const Options& options, const RenderSettings& settings) {
                 }
             }
             device->WaitIdle();
+            if (options.script != nullptr && !script.Done() && !app.QuitRequested() && ok) {
+                RhiLogV(LogVerbosity::Warn, "ui_demo: the script has words left after %ld frames (raise --frames or lower its frame: words)", total);
+            }
             if (status == FrameStatus::DeviceLost || device->DeviceLost()) {
                 RhiLogV(LogVerbosity::Error, "ui_demo: the GPU device was lost; stopping");
                 exit_code = kExitDeviceLost;

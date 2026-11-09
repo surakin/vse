@@ -11520,7 +11520,7 @@ Returns the text of item `index`. The view must stay valid until the next call o
 `method ui::ListModel::MoveItems` — defined in `engine/ui/widgets/list_box.h`
 
 ```cpp
-virtual bool MoveItems(const usize* indices, usize count, usize to);
+virtual bool MoveItems(const usize*, usize, usize);
 ```
 
 Moves items for a drag that reorders the list (`ListBox::SetReorderable`): the items at `indices` (ascending, distinct) go together, in their order, to the place before item `to` of the list as it was (`to` equal to `ItemCount()` means the end). The default refuses.
@@ -11989,7 +11989,7 @@ Returns whether a packed `0xAABBGGRR` color is not fully transparent.
 inline bool IsAsciiDigit(char c);
 ```
 
-Returns the corner radius of `style` in logical units. Returns whether `c` is an ASCII digit.
+Returns whether `c` is an ASCII digit.
 
 | Field | Value |
 |---|---|

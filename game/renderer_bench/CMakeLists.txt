@@ -5,4 +5,4 @@ engine_split_debug_info(renderer_bench)
 target_compile_options(renderer_bench PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
 target_compile_definitions(renderer_bench PRIVATE RENDERER_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/renderer_demo/assets"
     RENDERER_DEMO_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf")
-target_link_libraries(renderer_bench PRIVATE renderer_demo_lib text jobs rhi_backends)
+target_link_libraries(renderer_bench PRIVATE renderer_demo_lib text jobs rhi_backends ui)

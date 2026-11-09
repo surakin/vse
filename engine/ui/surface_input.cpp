@@ -119,8 +119,18 @@ void SurfaceInput::Text(StringView utf8) {
     usize i = 0;
     while (i < utf8.Length()) {
         const u8 lead = static_cast<u8>(utf8[i]);
-        usize len = lead < 0x80 ? 1 : (lead >> 5) == 6 ? 2 : (lead >> 4) == 14 ? 3 : 4;
-        if (i + len > utf8.Length()) len = utf8.Length() - i;
+        usize len = lead < 0x80 ? 1 : (lead >> 5) == 6 ? 2 : (lead >> 4) == 14 ? 3 : (lead >> 3) == 30 ? 4 : 0;
+        if (len == 0) { // a stray continuation byte or an invalid lead: dropped, and the next characters are read from the next byte
+            ++i;
+            continue;
+        }
+        if (i + len > utf8.Length()) break; // cut short
+        bool whole = true;
+        for (usize k = 1; k < len; ++k) whole = whole && (static_cast<u8>(utf8[i + k]) & 0xC0) == 0x80;
+        if (!whole) { // the lead without its continuation bytes: dropped on its own
+            ++i;
+            continue;
+        }
         Event e;
         e.type = EventType::Text;
         e.text_length = static_cast<u8>(len);

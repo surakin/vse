@@ -115,7 +115,7 @@ bool UiScript::Run(UiDemoApp* app, Surface* surface, ScriptHost* host, long fram
         if (!RunWord(word.View(), app, surface, host)) {
             char text[256];
             const int n = std::snprintf(text, sizeof(text), "script: cannot do '%s'", word.CStr());
-            error_ = OwnedWord(StringView(text, static_cast<usize>(n)));
+            error_ = OwnedWord(StringView(text, FittedLength(n, sizeof(text))));
             return false;
         }
     }

@@ -351,7 +351,9 @@ HRESULT Win32DndAccess::Drop(Win32Window& w, IDataObject* data, DWORD keys, POIN
         f.present = true;
         FORMATETC want = HglobalFormat(natives[i]);
         STGMEDIUM medium{};
-        if (data->GetData(&want, &medium) != S_OK || medium.tymed != TYMED_HGLOBAL) {
+        const HRESULT got = data->GetData(&want, &medium);
+        if (got != S_OK || medium.tymed != TYMED_HGLOBAL) {
+            if (got == S_OK) ReleaseStgMedium(&medium); // the source answered with another medium: it is ours to release
             f.status = ClipboardStatus::Failed;
             continue;
         }

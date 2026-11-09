@@ -83,9 +83,18 @@ SettingsView::Link* SettingsView::MakeLink(usize row) {
 }
 
 void SettingsView::Rebuild() {
-    while (ChildCount() > 0) RemoveChild(ChildAt(ChildCount() - 1));
+    // While the surface dispatches (Rebuild from a button's handler), RemoveChild only queues the removal: the old controls live until the dispatch ends and may still be clicked
+    // before then. Their links are cut (a callback finds a null view and does nothing) and kept, with the models the combo boxes read, until the next Rebuild.
+    Vector<Widget*> old_children;
+    for (usize i = 0; i < ChildCount(); ++i) old_children.Push(ChildAt(i));
+    for (usize i = old_children.Size(); i > 0; --i) RemoveChild(old_children[i - 1]);
     rows_.Clear();
+    for (usize i = 0; i < links_.Size(); ++i) {
+        links_[i]->view = nullptr;
+        retired_links_.Push(static_cast<UniquePtr<Link>&&>(links_[i]));
+    }
     links_.Clear();
+    for (usize i = 0; i < models_.Size(); ++i) retired_models_.Push(static_cast<UniquePtr<EnumModel>&&>(models_[i]));
     models_.Clear();
     advanced_box_ = nullptr;
     message_label_ = nullptr;
@@ -318,11 +327,13 @@ void SettingsView::Commit(usize index, const settings::Value& value) {
 
 void SettingsView::BoolChanged(void* user, CheckBox* box) {
     Link* link = static_cast<Link*>(user);
+    if (link->view == nullptr) return; // the control outlived a Rebuild
     link->view->Commit(link->row, settings::Value::FromBool(box->GetCheckState() == CheckState::Checked));
 }
 
 void SettingsView::SliderMoved(void* user, Slider* slider) {
     Link* link = static_cast<Link*>(user);
+    if (link->view == nullptr) return; // the control outlived a Rebuild
     if (link->view->syncing_) return;
     link->view->syncing_ = true;
     link->view->rows_[link->row].spin->SetValue(slider->Value()); // follows the thumb; nothing is applied until it is released
@@ -339,28 +350,33 @@ settings::Value NumberValue(settings::Type type, f64 number) {
 
 void SettingsView::SliderCommitted(void* user, Slider* slider) {
     Link* link = static_cast<Link*>(user);
+    if (link->view == nullptr) return; // the control outlived a Rebuild
     link->view->Commit(link->row, NumberValue(link->view->rows_[link->row].type, slider->Value()));
 }
 
 void SettingsView::SpinChanged(void* user, SpinBox* spin) {
     Link* link = static_cast<Link*>(user);
+    if (link->view == nullptr) return; // the control outlived a Rebuild
     if (link->view->syncing_) return;
     link->view->Commit(link->row, NumberValue(link->view->rows_[link->row].type, spin->Value()));
 }
 
 void SettingsView::ComboChanged(void* user, ComboBox* combo) {
     Link* link = static_cast<Link*>(user);
+    if (link->view == nullptr) return; // the control outlived a Rebuild
     if (combo->Selected() == ComboBox::kNone) return;
     link->view->Commit(link->row, settings::Value::FromEnum(static_cast<u32>(combo->Selected())));
 }
 
 void SettingsView::TextSubmitted(void* user, TextField* field) {
     Link* link = static_cast<Link*>(user);
+    if (link->view == nullptr) return; // the control outlived a Rebuild
     link->view->Commit(link->row, settings::Value::FromText(field->Text()));
 }
 
 void SettingsView::TextLeft(void* user, TextField* field) {
     Link* link = static_cast<Link*>(user);
+    if (link->view == nullptr) return; // the control outlived a Rebuild
     if (field->Text() != link->view->settings_->Snapshot()->Get(link->view->rows_[link->row].id).AsText()) TextSubmitted(user, field);
 }
 

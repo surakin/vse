@@ -211,7 +211,7 @@ TEST_CASE("surface target: an sRGB surface shows the theme's bytes and a transpa
         renderer::UiSurfaceTarget overlay;
         renderer::UiSurfaceTargetDesc ld;
         ld.format = rhi::Format::RGBA8_UNorm;
-        ld.background = 0x00000000u; // transparent
+        ld.background = 0x00FFFFFFu; // transparent white: the image shader reads the texture as straight alpha, so it must add nothing to what is under it
         REQUIRE(overlay.Create(device.Get(), ld, 24, 24, nullptr, "overlay"));
         SfList brown_surface;
         brown_surface.Fill(32, 32, SfRect(0, 0, 0, 0), kSfRed); // an empty rectangle: only the background shows

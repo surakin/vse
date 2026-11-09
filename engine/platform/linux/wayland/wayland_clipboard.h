@@ -41,6 +41,8 @@ public:
 
     /// Remembers the serial of an input event, the proof of user action a compositor wants before it accepts a selection.
     void RecordSerial(u32 serial) { last_serial_ = serial; }
+    /// Records the serial of a pointer button press: `wl_data_device.start_drag` needs the press that holds the implicit grab, not the latest key or enter serial.
+    void RecordButtonSerial(u32 serial) { button_serial_ = serial; }
 
     /// Returns whether the selection `kind` works (the primary selection needs the compositor to offer the protocol).
     bool Supports(ClipboardKind kind) const;
@@ -164,6 +166,7 @@ private:
     zwp_primary_selection_device_manager_v1* primary_manager_ = nullptr;
     InputEventQueue* queue_ = nullptr;
     u32 last_serial_ = 0;
+    u32 button_serial_ = 0; // of the last pointer button press
     OfferSlot offers_[kOfferSlots];
     i32 current_[K] = {-1, -1};
     Source sources_[K];

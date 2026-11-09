@@ -437,8 +437,15 @@ void TextField::PasteReady(void* user, StringView text) {
 void TextField::InsertPasted(StringView text) {
     usize end = 0;
     while (end < text.Length() && text[end] != '\n' && text[end] != '\r') ++end;
-    if (end == 0 && text.Length() > 0) return;
-    Replace(caret_, anchor_, text.Substring(0, end), EditKind::Other);
+    if (end == 0) return; // nothing to insert must not delete the selection
+    // Typed text never holds control characters; pasted text does not either (a tab or an escape would sit in the single line).
+    String<HeapAllocator> clean{HeapAllocator::Default()};
+    for (usize i = 0; i < end; ++i) {
+        const u8 c = static_cast<u8>(text[i]);
+        if (c >= 0x20 && c != 0x7F) clean.Append(text[i]);
+    }
+    if (clean.Length() == 0) return;
+    Replace(caret_, anchor_, clean.View(), EditKind::Other);
 }
 
 void TextField::Paste() {

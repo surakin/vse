@@ -354,6 +354,45 @@ f32 ContrastRatio(u32 a, u32 b) {
     return (hi + 0.05f) / (lo + 0.05f);
 }
 
+namespace {
+
+// The padding or font a surface theme gives a style as the chain resolves it: its own value when it sets one, else the built-in default's.
+template <typename T>
+bool SameEffective(const Opt<T>& a, const Opt<T>& a_default, const Opt<T>& b, const Opt<T>& b_default) {
+    const Opt<T>& x = a.set ? a : a_default;
+    const Opt<T>& y = b.set ? b : b_default;
+    return x.set == y.set && (!x.set || x.value == y.value);
+}
+
+// Whether two themes size the widgets of (kind, variant) differently: the font and the padding of any state.
+bool LayoutStyleDiffers(const Theme& before, const Theme& after, WidgetKind kind, VariantId variant) {
+    const Style empty;
+    const Style* base = DefaultLightTheme().FindStyle(kind, variant);
+    if (base == nullptr) base = &empty;
+    const Style* a = before.FindStyle(kind, variant);
+    const Style* b = after.FindStyle(kind, variant);
+    if (a == nullptr) a = &empty;
+    if (b == nullptr) b = &empty;
+    if (!SameEffective(a->font, base->font, b->font, base->font)) return true;
+    for (usize k = 0; k < static_cast<usize>(StateKind::Count); ++k) {
+        if (!SameEffective(a->states[k].padding_x, base->states[k].padding_x, b->states[k].padding_x, base->states[k].padding_x)) return true;
+        if (!SameEffective(a->states[k].padding_y, base->states[k].padding_y, b->states[k].padding_y, base->states[k].padding_y)) return true;
+    }
+    return false;
+}
+
+bool ThemesDifferInLayoutStyles(const Theme& before, const Theme& after) {
+    for (usize i = 0; i < after.styles.Size(); ++i) {
+        if (LayoutStyleDiffers(before, after, after.styles[i].kind, after.styles[i].variant)) return true;
+    }
+    for (usize i = 0; i < before.styles.Size(); ++i) {
+        if (LayoutStyleDiffers(before, after, before.styles[i].kind, before.styles[i].variant)) return true;
+    }
+    return false;
+}
+
+} // namespace
+
 bool ThemeSet::SetTheme(const Theme* theme) {
     const Theme& before = theme_ != nullptr ? *theme_ : DefaultLightTheme();
     const Theme& after = theme != nullptr ? *theme : DefaultLightTheme();
@@ -369,6 +408,7 @@ bool ThemeSet::SetTheme(const Theme* theme) {
         const FontRef b = after.fonts[i].set ? after.fonts[i].value : DefaultLightTheme().fonts[i].value;
         if (!(a == b)) changed = true;
     }
+    if (!changed && ThemesDifferInLayoutStyles(before, after)) changed = true; // a style's padding or font sizes the widgets of its kind
     theme_ = theme;
     ++revision_;
     cache_.Clear();

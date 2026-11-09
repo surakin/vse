@@ -10,6 +10,7 @@
 #include "ui/settings_view.h"
 #include "ui/surface.h"
 #include "ui/testing/harness.h"
+#include "ui/widgets/buttons.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::ui;
@@ -231,4 +232,31 @@ TEST_CASE("A text edit in progress survives a refresh and is committed when the 
     CHECK(field->Text() == StringView("draft"));
     rig.Focus(rig.view->ControlOf(rig.app.vsync));
     CHECK(rig.settings.Provenance(rig.app.name).value.AsText() == StringView("draft"));
+}
+
+namespace {
+void SvRebuildFromClick(void* user, Button*) { static_cast<SettingsView*>(user)->Rebuild(); }
+} // namespace
+
+TEST_CASE("Rebuild from a handler during a dispatch ends, and the old controls do nothing", "[ui][settings]") {
+    SvRig rig;
+    REQUIRE(rig.h.Valid());
+    UniquePtr<Button> button = MakeUnique<Button>(StringView("rebuild"), StringView("Rebuild"));
+    Button* raw = button.Get();
+    button->OnClick().Connect(&SvRebuildFromClick, rig.view);
+    Rect where;
+    where.x = 330;
+    where.y = 0;
+    where.w = 90;
+    where.h = 24;
+    button->SetBounds(where);
+    rig.h.GetSurface().Root()->AddChild(UniquePtr<Widget>(button.Release()));
+    rig.h.Advance(0);
+    const usize rows = rig.view->RowCount();
+    // Without the fix this click never returned: the loop that emptied the view waited for children whose removal was queued.
+    rig.h.Click(where.x + where.w / 2, where.y + where.h / 2);
+    CHECK(raw->Name() == StringView("rebuild"));
+    CHECK(rig.view->RowCount() == rows);
+    rig.ClickControl(rig.app.vsync);
+    CHECK(rig.applied == 1);
 }

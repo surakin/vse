@@ -26,8 +26,6 @@ static_assert(sizeof(UiParams) == shaders::kUiVertParamsSize && offsetof(UiParam
 static_assert(sizeof(ui::Vertex) == 40 && offsetof(ui::Vertex, color) == 16 && offsetof(ui::Vertex, half_w) == 20 && offsetof(ui::Vertex, flags) == 36,
               "the vertex attributes below follow ui::Vertex");
 
-// Only SPIR-V is minted for the UI shaders so far (Direct3D 12 waits for Day 205); a D3D12 device finds no blob and says so.
-
 bool MakeWhite(rhi::Device* device, GpuTexture* texture, DeviceResources* resources) {
     TextureImage image;
     image.desc.width = 1;

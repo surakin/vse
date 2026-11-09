@@ -2045,6 +2045,16 @@ void RecordSerial(u32 serial);
 
 Remembers the serial of an input event, the proof of user action a compositor wants before it accepts a selection.
 
+### `RecordButtonSerial(u32)` {#os-wayland-waylandclipboard-recordbuttonserial-u32}
+
+`method os::wayland::WaylandClipboard::RecordButtonSerial` — defined in `engine/platform/linux/wayland/wayland_clipboard.h`
+
+```cpp
+void RecordButtonSerial(u32 serial);
+```
+
+Records the serial of a pointer button press: `wl_data_device.start_drag` needs the press that holds the implicit grab, not the latest key or enter serial.
+
 ### `Supports(ClipboardKind)` {#os-wayland-waylandclipboard-supports-clipboardkind-const}
 
 `method os::wayland::WaylandClipboard::Supports` — defined in `engine/platform/linux/wayland/wayland_clipboard.h`

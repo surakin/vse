@@ -431,7 +431,7 @@ private:
         bool enabled = true;
     };
     bool InsidePopups(const Widget* widget) const;
-    bool PressOutsidePopups(const Event& e, Widget* hit);
+    bool PressOutsidePopups(Widget* hit);
     bool RunKeyFallbacks(const Event& e);
     void UpdateTooltip();
     void ShowTooltip(Widget* target);

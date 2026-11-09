@@ -259,6 +259,7 @@ void WaylandInput::HandlePointerButton(void* data, wl_pointer* pointer, u32 seri
     (void)pointer;
     (void)time;
     static_cast<WaylandInput*>(data)->clipboard_.RecordSerial(serial);
+    if (state == WL_POINTER_BUTTON_STATE_PRESSED) static_cast<WaylandInput*>(data)->clipboard_.RecordButtonSerial(serial);
     // Linux evdev BTN_* codes (input-event-codes.h).
     constexpr u32 kBtnLeft = 0x110;
     constexpr u32 kBtnRight = 0x111;

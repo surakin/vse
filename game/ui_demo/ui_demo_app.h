@@ -24,6 +24,12 @@
 
 namespace ui_demo {
 
+/// The length of what `snprintf` wrote into a buffer of `capacity` bytes: it returns the length it would have written, which can pass the buffer.
+inline engine_placeholder::usize FittedLength(int written, engine_placeholder::usize capacity) {
+    if (written <= 0) return 0;
+    return static_cast<engine_placeholder::usize>(written) < capacity ? static_cast<engine_placeholder::usize>(written) : capacity - 1;
+}
+
 using namespace engine_placeholder;
 
 /// An orbit camera around the origin that the viewport's input turns: dragging with the look button changes the angles, the wheel the distance.
@@ -199,6 +205,7 @@ public:
     void SetRenderSettingsHost(RenderSettingsHost* host) { render_host_ = host; }
     /// Opens the rendering settings dialog: present mode, render scale and shader quality, each with the cost class of changing it beside the control.
     void ShowRenderingSettings();
+
     /// The in-world screen.
     WorldScreen& World() { return world_; }
     /// The factor of the scene's size the orbit distance is multiplied by (set from the scene by the program; 1 by default).
@@ -244,6 +251,7 @@ private:
     ItemModel items_;
     ShapeModel shapes_;
     RenderSettingsHost* render_host_ = nullptr;
+    usize rendering_selected_[3] = {0, 2, 2}; // the rendering dialog's choices, kept for the next time it opens (present mode, render scale, shader quality)
     OrbitCamera camera_;
     UniquePtr<ui::Menu> file_menu_;
     UniquePtr<ui::Menu> edit_menu_;

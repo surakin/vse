@@ -415,10 +415,12 @@ void SpinBox::OnEvent(Event& event) {
                 UserSet(value_ + (event.position.y < Bounds().h / 2 ? Step() : -Step()));
             }
             break;
-        case EventType::Wheel:
-            event.handled = true;
+        case EventType::Wheel: {
+            const f64 before = value_;
             UserSet(value_ - static_cast<f64>(event.wheel_y) * Step());
+            event.handled = value_ != before; // at the end of its range the wheel goes on to the scroll view under the spin box
             break;
+        }
         case EventType::KeyDown:
             switch (event.key) {
                 case Key::Up:

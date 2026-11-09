@@ -38,6 +38,9 @@ Rect PlacePopup(Size size, const Rect& anchor, Placement placement, const Rect& 
         r.x = use_right ? right : left;
         r.y = Clamp(anchor.y, bounds.y, bounds.Bottom() - size.h);
     }
+    // Neither side had room: slide it over the anchor so that its far edge is inside the bounds (its last items stay reachable).
+    if (r.x + r.w > bounds.Right()) r.x = bounds.Right() - r.w;
+    if (r.y + r.h > bounds.Bottom()) r.y = bounds.Bottom() - r.h;
     // Larger than the bounds: start inside them.
     if (r.x < bounds.x) r.x = bounds.x;
     if (r.y < bounds.y) r.y = bounds.y;

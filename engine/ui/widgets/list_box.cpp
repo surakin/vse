@@ -109,7 +109,11 @@ void ListBox::SetVisibleRows(usize rows) {
 }
 
 void ListBox::ScrollToIndex(usize index) {
-    if (index >= count_ || !(row_height_ > 0)) return;
+    if (index >= count_) return;
+    if (!(row_height_ > 0)) {
+        scroll_pending_ = index; // before the first layout the row height is unknown (a drop-down selects its item before it is shown): scrolled in Arrange
+        return;
+    }
     const f32 top = static_cast<f32>(index) * row_height_;
     if (top < offset_) {
         SetOffset(top);
@@ -262,6 +266,11 @@ void ListBox::Arrange(const Rect& rect) {
         bar_->SetRange(content, rect.h);
         bar_->SetValue(offset_);
     }
+    if (scroll_pending_ != kNone) {
+        const usize index = scroll_pending_;
+        scroll_pending_ = kNone;
+        ScrollToIndex(index);
+    }
 }
 
 void ListBox::Draw(Canvas& canvas) {
@@ -325,7 +334,7 @@ usize ListBox::InsertionIndex(f32 local_y) const {
     return index > count_ ? count_ : index;
 }
 
-void ListBox::StartDrag(Point position) {
+void ListBox::StartDrag(Point) {
     Surface* surface = GetSurface();
     DragPayload payload;
     if (reorderable_ && model_ != nullptr) payload.AddPointer(StringView(kDragTag), this);
@@ -339,7 +348,6 @@ void ListBox::StartDrag(Point position) {
         payload.AddText(text.View());
     }
     payload.SetAllowed(drag_out_ ? os::kAllDragActions : os::DragActionBit(DragAction::Move));
-    (void)position;
     press_pending_ = false;
     surface->BeginDrag(static_cast<DragPayload&&>(payload));
 }
