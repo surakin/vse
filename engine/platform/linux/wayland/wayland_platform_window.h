@@ -52,6 +52,23 @@ public:
     /// Returns the number of events dropped because the queue was full.
     u64 DroppedEvents() const override { return input_.Events().Dropped(); }
 
+    /// Returns true when the compositor offers `wp_cursor_shape_v1` and the seat has a pointer.
+    bool SupportsCursorShape() const override { return input_.Cursor().SupportsShape(); }
+    /// Shows a standard cursor shape (set with the serial of the last pointer enter, and again on every enter); see [[os::Window::SetCursor]].
+    bool SetCursor(CursorShape shape) override { return Valid() && input_.Cursor().SetShape(shape); }
+    /// Returns true when the seat has a pointer: the image is a `wl_shm` buffer on a cursor surface.
+    bool SupportsCursorImage() const override { return input_.Cursor().SupportsImage(); }
+    /// Shows a custom cursor image, scaled by its `scale`; see [[os::Window::SetCursorImage]].
+    bool SetCursorImage(const CursorImage& image) override { return Valid() && input_.Cursor().SetImage(image); }
+    /// Removes the custom cursor image.
+    void ClearCursorImage() override { input_.Cursor().ClearImage(); }
+    /// Returns true when the compositor offers `zwp_pointer_constraints_v1` and `zwp_relative_pointer_manager_v1`.
+    bool SupportsPointerLock() const override { return input_.Cursor().SupportsLock(); }
+    /// Locks or unlocks the pointer; see [[os::Window::SetPointerLock]].
+    bool SetPointerLock(bool locked) override { return Valid() && input_.Cursor().SetLock(locked); }
+    /// Returns whether the compositor has granted the lock.
+    bool PointerLocked() const override { return input_.Cursor().Locked(); }
+
     /// Returns whether the user closed the window or the compositor connection was lost.
     ///
     /// Also true once the compositor has exited, crashed or raised a protocol error:

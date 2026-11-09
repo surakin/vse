@@ -6,6 +6,11 @@
 #include <X11/XKBlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
+#include <X11/Xcursor/Xcursor.h>
+#include <X11/cursorfont.h>
+#include <X11/extensions/XInput2.h>
+
+#undef CursorShape // <X11/X.h> defines it as a number; the engine has os::CursorShape
 
 #include <cstring>
 
@@ -13,6 +18,7 @@
 #include "mem/arena_allocator.h"
 #include "os/os.h"
 #include "platform/linux/key_translate.h"
+#include "platform/linux/x11/x11_cursor_impl.inc" // x11_cursor.h's functions: see the note at the top of that file
 
 namespace engine_placeholder::os::x11 {
 
@@ -196,6 +202,7 @@ X11Window X11Window::Create(StringView title, u32 width, u32 height) {
     result.width_ = width;
     result.height_ = height;
     result.resize_serial_ = detail::NextResizeSerial();
+    CursorInit(display, result.cursor_);
     return result;
 }
 
@@ -216,7 +223,8 @@ X11Window::X11Window(X11Window&& other) noexcept
       unmapped_(other.unmapped_),
       resize_serial_(other.resize_serial_),
       events_(other.events_),
-      focused_(other.focused_) {
+      focused_(other.focused_),
+      cursor_(other.cursor_) {
     std::memcpy(held_, other.held_, sizeof(held_));
     other.display_ = nullptr;
     other.window_ = 0;
@@ -231,6 +239,7 @@ X11Window::X11Window(X11Window&& other) noexcept
     other.resize_serial_ = 0;
     other.events_.Clear();
     other.focused_ = false;
+    other.cursor_ = X11CursorState();
 }
 
 X11Window& X11Window::operator=(X11Window&& other) noexcept {
@@ -249,8 +258,10 @@ X11Window& X11Window::operator=(X11Window&& other) noexcept {
         resize_serial_ = other.resize_serial_;
         events_ = other.events_;
         focused_ = other.focused_;
+        cursor_ = other.cursor_;
         other.events_.Clear();
         other.focused_ = false;
+        other.cursor_ = X11CursorState();
         std::memcpy(held_, other.held_, sizeof(held_));
         other.display_ = nullptr;
         other.window_ = 0;
@@ -268,6 +279,10 @@ X11Window& X11Window::operator=(X11Window&& other) noexcept {
 }
 
 void X11Window::ReleaseAll() {
+    if (display_ != nullptr) {
+        CursorRelease(display_, window_, cursor_); // the grab and the cursors go before the display closes
+    }
+    cursor_ = X11CursorState();
     if (input_context_ != nullptr) {
         XDestroyIC(reinterpret_cast<XIC>(input_context_));
         input_context_ = nullptr;
@@ -475,11 +490,15 @@ void X11Window::PumpEvents(InputState* input) {
             }
             break;
         }
+        case GenericEvent:
+            CursorHandleGeneric(display_, cursor_, &event, events_); // XInput 2 raw motion while the pointer is locked
+            break;
         case FocusIn:
             // Real focus only: not the grab-induced changes, not focus moving inside the window, not the pointer-root pseudo focus.
             if (event.xfocus.mode != NotifyGrab && event.xfocus.mode != NotifyUngrab && event.xfocus.detail != NotifyInferior &&
                 event.xfocus.detail != NotifyPointer && event.xfocus.detail != NotifyPointerRoot && event.xfocus.detail != NotifyDetailNone && !focused_) {
                 focused_ = true;
+                CursorSetFocus(display_, window_, cursor_, true);
                 InputEvent gained;
                 gained.type = InputEventType::FocusGained;
                 QueueEvent(gained);
@@ -497,6 +516,7 @@ void X11Window::PumpEvents(InputState* input) {
                 ReleaseAllKeys(input);
                 if (focused_) {
                     focused_ = false;
+                    CursorSetFocus(display_, window_, cursor_, false);
                     InputEvent lost;
                     lost.type = InputEventType::FocusLost;
                     QueueEvent(lost);
@@ -507,6 +527,14 @@ void X11Window::PumpEvents(InputState* input) {
             break;
         }
     }
+}
+
+bool X11Window::SetPointerLock(bool locked) {
+    if (display_ == nullptr) {
+        return false;
+    }
+    CursorSetLock(display_, window_, cursor_, locked);
+    return true;
 }
 
 void X11Window::QueueEvent(InputEvent event) {

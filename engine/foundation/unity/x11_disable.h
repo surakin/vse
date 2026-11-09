@@ -2,6 +2,7 @@
 // X11 headers defined so the rest of the unity batch sees plain C++. Place after the last use of an X11 macro
 // (normally the last line of the file). Intentionally has no include guard.
 #pragma pop_macro("None")
+#pragma pop_macro("CursorShape")
 #pragma pop_macro("Success")
 #pragma pop_macro("Bool")
 #pragma pop_macro("Status")

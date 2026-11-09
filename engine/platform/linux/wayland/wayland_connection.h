@@ -2,6 +2,9 @@
 
 #include <wayland-client.h>
 
+#include "platform/linux/wayland/generated/cursor-shape-v1-client-protocol.h"
+#include "platform/linux/wayland/generated/pointer-constraints-unstable-v1-client-protocol.h"
+#include "platform/linux/wayland/generated/relative-pointer-unstable-v1-client-protocol.h"
 #include "platform/linux/wayland/generated/xdg-decoration-client-protocol.h"
 #include "platform/linux/wayland/generated/xdg-shell-client-protocol.h"
 
@@ -22,7 +25,7 @@ public:
     /// Connects to the compositor named by `$WAYLAND_DISPLAY` (default `wayland-0`) and binds the required globals.
     ///
     /// Binds `wl_compositor`, `xdg_wm_base`, `wl_seat` and `wl_shm` with a registry
-    /// roundtrip, plus `zxdg_decoration_manager_v1` when offered.
+    /// roundtrip, plus `zxdg_decoration_manager_v1`, `wp_cursor_shape_manager_v1`, `zwp_pointer_constraints_v1` and `zwp_relative_pointer_manager_v1` when offered.
     /// Returns: the connection; check [[os::wayland::WaylandConnection::Valid]].
     /// Fails: returns an invalid connection (logged via `LogPlatform`) if no compositor is running or a required global is missing.
     static WaylandConnection Connect();
@@ -60,6 +63,13 @@ public:
     /// wlroots offer it and draw the titlebar only if the client asks for server-side mode.
     zxdg_decoration_manager_v1* DecorationManager() const { return decoration_manager_; }
 
+    /// Returns the bound `wp_cursor_shape_manager_v1`, or null when the compositor does not offer it (standard cursor shapes are then unavailable).
+    wp_cursor_shape_manager_v1* CursorShapeManager() const { return cursor_shape_manager_; }
+    /// Returns the bound `zwp_pointer_constraints_v1`, or null when the compositor does not offer it (the pointer lock is then unavailable).
+    zwp_pointer_constraints_v1* PointerConstraints() const { return pointer_constraints_; }
+    /// Returns the bound `zwp_relative_pointer_manager_v1`, or null when the compositor does not offer it (the pointer lock is then unavailable).
+    zwp_relative_pointer_manager_v1* RelativePointerManager() const { return relative_pointer_manager_; }
+
 private:
     void ReleaseAll();
 
@@ -70,6 +80,9 @@ private:
     wl_seat* seat_ = nullptr;
     wl_shm* shm_ = nullptr;
     zxdg_decoration_manager_v1* decoration_manager_ = nullptr;
+    wp_cursor_shape_manager_v1* cursor_shape_manager_ = nullptr;
+    zwp_pointer_constraints_v1* pointer_constraints_ = nullptr;
+    zwp_relative_pointer_manager_v1* relative_pointer_manager_ = nullptr;
 };
 
 } // namespace engine_placeholder::os::wayland

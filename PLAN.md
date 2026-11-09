@@ -170,6 +170,10 @@ interpretations keep it buildable — flag any that don't match intent:
    `VK_KHR_xcb_surface`) take `libwayland-client`/`libxcb` object types
    directly, which is now simply "the type we already have," not a
    narrow driver-contract exception.
+   **Phase 15 Day 186 adds `libXcursor` and `libXi`** to the X11 backend: both are X.org client libraries of `libX11`'s own family, installed with
+   it on every X11 system, used for the cursor theme and ARGB cursors (`libXcursor`) and for XInput 2 raw motion while the pointer is locked
+   (`libXi`); the Wayland side uses only protocol bindings generated from `wayland-protocols` (cursor shape, pointer constraints, relative
+   pointer), committed like xdg-shell, and does not use `libwayland-cursor`.
 4. **Images/assets start custom; shaders use an existing offline
    compiler (see #18).** A general PNG/JPEG importer is its own large
    project, so early phases use custom binary asset formats from our own

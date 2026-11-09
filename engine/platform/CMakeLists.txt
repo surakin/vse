@@ -19,6 +19,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     linux/wayland/wayland_window.cpp
     linux/wayland/generated/xdg-shell-protocol.c
     linux/wayland/generated/xdg-decoration-protocol.c
+    linux/wayland/generated/cursor-shape-v1-protocol.c
+    linux/wayland/generated/tablet-v2-protocol.c
+    linux/wayland/generated/pointer-constraints-unstable-v1-protocol.c
+    linux/wayland/generated/relative-pointer-unstable-v1-protocol.c
+    linux/wayland/wayland_cursor.cpp
   )
 
   # libwayland-client, the reference Wayland client library (PLAN.md assumption #3: an OS/vendor-boundary exception, not a
@@ -31,7 +36,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   pkg_check_modules(XkbCommon REQUIRED IMPORTED_TARGET xkbcommon)
   # libX11, the reference X client library, for the X11 fallback backend (PLAN.md assumption #3, same category as libwayland-client).
   pkg_check_modules(X11Client REQUIRED IMPORTED_TARGET x11)
-  set(PLATFORM_DISPLAY_LIBS PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client)
+  # libXcursor (cursor themes and ARGB cursors) and libXi (XInput 2 raw motion for the pointer lock) are X.org client libraries of libX11's own family, shipped
+  # with it on every X11 system (PLAN.md assumption #3).
+  pkg_check_modules(XcursorClient REQUIRED IMPORTED_TARGET xcursor)
+  pkg_check_modules(XiClient REQUIRED IMPORTED_TARGET xi)
+  set(PLATFORM_DISPLAY_LIBS PkgConfig::WaylandClient PkgConfig::XkbCommon PkgConfig::X11Client PkgConfig::XcursorClient PkgConfig::XiClient)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   # Phase 13 Day 158: the Win32 window and the windowed programs' entry point (input on Day 159). user32 holds the window functions,
   # shell32 CommandLineToArgvW.

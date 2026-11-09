@@ -25,6 +25,7 @@ enum class InputEventType : u8 {
     FocusGained,   ///< The window got keyboard focus.
     FocusLost,     ///< The window lost keyboard focus; held keys were released by `KeyUp` events just before.
     Resize,        ///< The window size changed to (`width`, `height`) pixels.
+    RelativeMotion, ///< While the pointer is locked: it moved by (`x`, `y`) device units, unaccelerated where the server says so. Never sent unlocked.
 };
 
 /// One input event.
@@ -42,8 +43,8 @@ struct InputEvent {
     u32 button = 0;                             ///< `PointerButton`: a [[os::MouseButtonBit]] value.
     u32 width = 0;                              ///< `Resize`: the new width in pixels.
     u32 height = 0;                             ///< `Resize`: the new height in pixels.
-    f64 x = 0.0;                                ///< `PointerMove`, `PointerEnter`: x in window pixels; `Wheel`: horizontal notches.
-    f64 y = 0.0;                                ///< `PointerMove`, `PointerEnter`: y in window pixels; `Wheel`: vertical notches.
+    f64 x = 0.0;                                ///< `PointerMove`, `PointerEnter`: x in window pixels; `Wheel`: horizontal notches; `RelativeMotion`: dx.
+    f64 y = 0.0;                                ///< `PointerMove`, `PointerEnter`: y in window pixels; `Wheel`: vertical notches; `RelativeMotion`: dy.
     u64 time_ns = 0;                            ///< Monotonic time (`os::MonotonicTimeNanos`) when the backend queued the event.
     char text[4] = {0, 0, 0, 0};                ///< `Text`: the scalar as UTF-8, not NUL-terminated.
 };

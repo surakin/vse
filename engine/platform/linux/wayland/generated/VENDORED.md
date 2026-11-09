@@ -43,3 +43,23 @@ protocol; without it the window is completely undecorated.
 wayland-scanner client-header /usr/share/wayland-protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml xdg-decoration-client-protocol.h
 wayland-scanner private-code  /usr/share/wayland-protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml xdg-decoration-protocol.c
 ```
+
+## Cursor and pointer-lock protocols (Phase 15 Day 186)
+
+Generated the same way, from `wayland-protocols` 1.50 with `wayland-scanner` 1.26.0, no hand edits:
+
+| Files | Protocol XML | Used for |
+|---|---|---|
+| `cursor-shape-v1-*` | `staging/cursor-shape/cursor-shape-v1.xml` | Standard cursor shapes (`wp_cursor_shape_manager_v1`). |
+| `tablet-v2-*` | `stable/tablet/tablet-v2.xml` | Only the interface table `cursor-shape-v1` refers to (`zwp_tablet_tool_v2`); tablets are not used. |
+| `pointer-constraints-unstable-v1-*` | `unstable/pointer-constraints/pointer-constraints-unstable-v1.xml` | The pointer lock (`zwp_pointer_constraints_v1`). |
+| `relative-pointer-unstable-v1-*` | `unstable/relative-pointer/relative-pointer-unstable-v1.xml` | Relative motion while locked (`zwp_relative_pointer_manager_v1`). |
+
+```sh
+P=/usr/share/wayland-protocols
+for f in staging/cursor-shape/cursor-shape-v1 stable/tablet/tablet-v2 unstable/pointer-constraints/pointer-constraints-unstable-v1 unstable/relative-pointer/relative-pointer-unstable-v1; do
+  n=$(basename $f)
+  wayland-scanner client-header $P/$f.xml $n-client-protocol.h
+  wayland-scanner private-code  $P/$f.xml $n-protocol.c
+done
+```

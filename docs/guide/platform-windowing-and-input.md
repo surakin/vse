@@ -79,6 +79,20 @@ key repeat. A program that needs those (the UI toolkit does) drains the **input 
 - **Overflow.** The queue holds 1,024 events. When the program does not drain it, the newest events are dropped and counted (`Window::DroppedEvents`); the older ones stay in order.
 - `InputState` is unchanged and agrees with the stream; a program may use either, or both.
 
+### The mouse cursor and the pointer lock
+
+Three things change what the pointer looks like and does; each has a `Supports...` query because a backend or compositor may lack it:
+
+    window.SetCursor(os::CursorShape::IBeam);          // the standard shapes: Arrow, IBeam, Hand, the resize arrows, ResizeAll, NotAllowed, Hidden
+    os::CursorImage image;                             // a custom cursor: premultiplied RGBA8, up to 128x128, hotspot inside, scale 1 to 4
+    window.SetCursorImage(image);                      // replaces the shape until ClearCursorImage()
+    window.SetPointerLock(true);                       // a camera control: the pointer stops, RelativeMotion events arrive
+
+- **Shapes** are set once and stay while the pointer is over the window (Wayland re-applies them on every enter). `Hidden` shows no cursor.
+- **Images** are copied by the window; setting an equal image again costs nothing, a different one frees the old one, and an invalid one (above 128x128, the hotspot outside, no pixels, a bad scale) is refused and changes nothing. On Wayland the image is drawn at `width / scale` logical units; X11 has no cursor scaling and shows the pixels as they are.
+- **The lock** holds only while the window has focus: it is released on focus loss and asked for again on focus gain while the program still wants it, and a request made while unfocused waits for focus. While it holds, `PollEvent` returns `RelativeMotion` events (`x`, `y` are the device deltas, unaccelerated where the system says so) and never otherwise. Pair it with `SetCursor(Hidden)` for a camera. Destroying the window releases it.
+- Wayland needs `wp_cursor_shape_v1` for the shapes and `zwp_pointer_constraints_v1` with `zwp_relative_pointer_v1` for the lock; X11 needs nothing special (the lock is a pointer grab with XInput 2 raw motion). The `input_probe` program (`L` lock, `C` shapes, `I` image) shows all of it by eye.
+
 ### Resize, close, focus
 
 _TODO_
@@ -226,6 +240,7 @@ program). Started from Explorer it has no console: the writes fail and the log f
 ### Known limitations
 
 - The event stream is implemented on Linux (Wayland and X11); the Windows backend gets it on Phase 15 Day 205, macOS in Phase 22 (`engine/platform/BACKEND.md`).
+- The cursor shapes, images and the lock are implemented on Linux; Windows gets them on Phase 15 Day 205, macOS in Phase 22 (`engine/platform/BACKEND.md`).
 - No input-method (IME) composition: a Chinese, Japanese or Korean input method is not supported; dead keys and compose sequences are.
 - The Wayland half is checked against a real compositor only, which cannot be made to send key, pointer and focus events; the key logic is tested through
   `KeyboardEvents` with a fake clock and real keymaps, and the pointer, focus and wheel handlers by the end-to-end runs of the UI demo (Day 204).

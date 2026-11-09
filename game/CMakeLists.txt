@@ -43,6 +43,7 @@ else()
 endif()
 
 add_subdirectory(hello_window)
+add_subdirectory(input_probe)
 add_subdirectory(rhi_demo)
 add_subdirectory(rhi_bench)
 add_subdirectory(renderer_demo)

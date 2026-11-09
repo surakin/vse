@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform/input.h"
+#include "platform/linux/x11/x11_cursor.h"
 #include "platform/window.h"
 #include "string/string.h"
 #include "types.h"
@@ -101,6 +102,25 @@ public:
     /// Returns whether `_NET_WM_STATE` currently lists fullscreen (read from the window manager's property).
     bool IsFullscreen() const override;
 
+    /// Returns true on a valid window: shapes come from the cursor theme or the core cursor font.
+    bool SupportsCursorShape() const override { return display_ != nullptr; }
+    /// Shows a standard cursor shape; see [[os::Window::SetCursor]].
+    bool SetCursor(CursorShape shape) override { return CursorSetShape(display_, window_, cursor_, shape); }
+    /// Returns true on a valid window: the image becomes an Xcursor.
+    bool SupportsCursorImage() const override { return display_ != nullptr; }
+    /// Shows a custom cursor image at its pixel size (X11 has no cursor scaling); see [[os::Window::SetCursorImage]].
+    bool SetCursorImage(const CursorImage& image) override { return CursorSetImage(display_, window_, cursor_, image); }
+    /// Removes the custom cursor image.
+    void ClearCursorImage() override { CursorClearImage(display_, window_, cursor_); }
+    /// Returns true on a valid window: the lock is a pointer grab with XInput 2 raw motion (without XInput 2 the grab works and no relative motion arrives).
+    bool SupportsPointerLock() const override { return display_ != nullptr; }
+    /// Locks or unlocks the pointer; see [[os::Window::SetPointerLock]]. The grab is taken at once if the window has focus, else when focus arrives.
+    bool SetPointerLock(bool locked) override;
+    /// Returns whether this window holds the pointer grab.
+    bool PointerLocked() const override { return cursor_.lock.Active(); }
+    /// Returns how many server cursors the window owns, so a test can check that replacing and clearing cursor images frees them.
+    u32 CursorObjectCount() const { return cursor_.live; }
+
     /// Returns the underlying Xlib `Display*`, or null if invalid.
     ///
     /// Ownership: borrowed; owned by this window and closed with it.
@@ -135,6 +155,7 @@ private:
     InputEventQueue events_;
     // Whether the window has keyboard focus as far as FocusIn/FocusOut told (grab-induced focus changes do not count).
     bool focused_ = false;
+    X11CursorState cursor_;
 };
 
 } // namespace engine_placeholder::os::x11

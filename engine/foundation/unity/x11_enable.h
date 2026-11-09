@@ -6,6 +6,7 @@
 // so a macro defined here would leak into the files merged after this one. This header remembers the (undefined)
 // state of each such name; x11_disable.h restores it. Intentionally has no include guard.
 #pragma push_macro("None")
+#pragma push_macro("CursorShape")
 #pragma push_macro("Success")
 #pragma push_macro("Bool")
 #pragma push_macro("Status")

@@ -28,6 +28,7 @@ Arch Linux's, the distribution the development machine uses.
 | `libwayland-client` (headers) | any current | Required | Wayland backend. | `wayland` |
 | `libxkbcommon` (headers) | any current | Required | Keyboard maps for Wayland. | `libxkbcommon` |
 | `libX11` (headers) | any current | Required | X11 fallback backend. | `libx11` |
+| `libXcursor`, `libXi` (headers) | 1.2.3, 1.8.4 | Required | X11 backend: cursor themes and custom cursor images; XInput 2 raw motion for the pointer lock. | `libxcursor`, `libxi` |
 | Vulkan loader (`libvulkan.so.1`) and a Vulkan 1.3 GPU driver | | Required to run | Loaded at run time; the build does not link it. | `vulkan-icd-loader`, plus the driver |
 | `bash` | any | Required | `scripts/test-phase.sh` and the scoped-test tooling. | `bash` |
 | Vulkan validation layers | | For checks | `--validation` and the validation-silent checks. | `vulkan-validation-layers` |

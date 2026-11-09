@@ -5,6 +5,7 @@
 #include "unity/x11_enable.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#undef CursorShape // <X11/X.h> defines it as a number; the engine has os::CursorShape
 
 #include <catch2/catch_test_macros.hpp>
 #include "display_session.h"
@@ -716,6 +717,177 @@ TEST_CASE("X11Window drops and counts events when the program never polls", "[x1
     PumpFor(window, &input, 10);
     CHECK(window.DroppedEvents() > 0);
     CHECK(PollAll(window).size() == InputEventQueue::kCapacity);
+}
+
+// ---- Day 186: cursor shapes, custom cursor images and the pointer lock ---------------------------------
+
+namespace {
+
+std::vector<engine_placeholder::byte> CursorPixels(unsigned int w, unsigned int h) {
+    std::vector<engine_placeholder::byte> px(static_cast<size_t>(w) * h * 4);
+    for (size_t i = 0; i < px.size(); i += 4) {
+        px[i] = 0x40; px[i + 1] = 0x20; px[i + 2] = 0x10; px[i + 3] = 0x80; // premultiplied
+    }
+    return px;
+}
+
+engine_placeholder::os::CursorImage CursorImageOf(const std::vector<engine_placeholder::byte>& px, unsigned int w, unsigned int h) {
+    engine_placeholder::os::CursorImage image;
+    image.rgba = px.data();
+    image.width = w;
+    image.height = h;
+    return image;
+}
+
+// True if another client can take the pointer grab (so this window does not hold it); releases the grab at once.
+bool OtherClientCanGrab(Injector& other, unsigned long window) {
+    const int result = XGrabPointer(other.Dpy(), window, False, ButtonPressMask, GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
+    if (result == GrabSuccess) {
+        XUngrabPointer(other.Dpy(), CurrentTime);
+        XSync(other.Dpy(), False);
+        return true;
+    }
+    return false;
+}
+
+} // namespace
+
+TEST_CASE("X11Window sets every cursor shape, repeatedly, without leaking", "[x11][cursor][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    X11Window window = CreateSettled("cursor shapes", 200, 150);
+    REQUIRE(window.Valid());
+    REQUIRE(window.SupportsCursorShape());
+    using engine_placeholder::os::CursorShape;
+    for (int pass = 0; pass < 2; ++pass) {
+        for (int i = 0; i < static_cast<int>(CursorShape::Count); ++i) {
+            INFO("shape " << i);
+            CHECK(window.SetCursor(static_cast<CursorShape>(i)));
+        }
+    }
+    const unsigned int made = window.CursorObjectCount();
+    CHECK(made <= static_cast<unsigned int>(CursorShape::Count)); // one cursor per shape at most: the second pass made none
+    CHECK_FALSE(window.SetCursor(CursorShape::Count));
+    CHECK(window.SetCursor(CursorShape::Arrow));
+    CHECK(window.CursorObjectCount() == made);
+}
+
+TEST_CASE("X11Window sets, replaces and clears a custom cursor image", "[x11][cursor][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    X11Window window = CreateSettled("cursor image", 200, 150);
+    REQUIRE(window.Valid());
+    REQUIRE(window.SupportsCursorImage());
+    const unsigned int base = window.CursorObjectCount();
+    const unsigned int sizes[] = {1, 32, 128};
+    unsigned int expected = base;
+    bool first = true;
+    for (unsigned int size : sizes) {
+        const auto px = CursorPixels(size, size);
+        INFO("size " << size);
+        CHECK(window.SetCursorImage(CursorImageOf(px, size, size)));
+        if (first) { ++expected; first = false; } // the first image adds one cursor; each later one replaces it
+        CHECK(window.CursorObjectCount() >= expected);
+        CHECK(window.CursorObjectCount() <= expected + 1); // the blank cursor may be made once
+    }
+    const unsigned int with_image = window.CursorObjectCount();
+    const auto px = CursorPixels(128, 128);
+    CHECK(window.SetCursorImage(CursorImageOf(px, 128, 128))); // the same image again makes no new cursor
+    CHECK(window.CursorObjectCount() == with_image);
+    CHECK(window.SetCursor(engine_placeholder::os::CursorShape::Hand)); // a shape change keeps the image
+    window.ClearCursorImage();
+    CHECK(window.CursorObjectCount() <= with_image); // the image's cursor is freed; the Hand cursor the image was hiding is made now, so no more than before
+    window.ClearCursorImage(); // clearing twice is fine
+    InputState input;
+    Injector inj;
+    REQUIRE(inj.Valid());
+    inj.SendFocusIn(window.NativeWindow()); // a focus change after the image changes nothing bad
+    PumpFor(window, &input);
+}
+
+TEST_CASE("X11Window refuses invalid cursor images and keeps the old one", "[x11][cursor][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    X11Window window = CreateSettled("cursor image refused", 200, 150);
+    REQUIRE(window.Valid());
+    const auto good = CursorPixels(16, 16);
+    REQUIRE(window.SetCursorImage(CursorImageOf(good, 16, 16)));
+    const unsigned int count = window.CursorObjectCount();
+    const auto big = CursorPixels(129, 8);
+    CHECK_FALSE(window.SetCursorImage(CursorImageOf(big, 129, 8)));
+    auto outside = CursorImageOf(good, 16, 16);
+    outside.hotspot_x = 16;
+    CHECK_FALSE(window.SetCursorImage(outside));
+    engine_placeholder::os::CursorImage none;
+    none.width = 4;
+    none.height = 4;
+    CHECK_FALSE(window.SetCursorImage(none));
+    CHECK(window.CursorObjectCount() == count);
+}
+
+TEST_CASE("X11Window takes the pointer grab on request, releases it, and releases it when destroyed", "[x11][cursor][lock][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    Injector other;
+    REQUIRE(other.Valid());
+    unsigned long native = 0;
+    {
+        X11Window window = CreateSettled("pointer lock", 200, 150);
+        REQUIRE(window.Valid());
+        REQUIRE(window.SupportsPointerLock());
+        native = window.NativeWindow();
+        InputState input;
+        Injector inj;
+        REQUIRE(inj.Valid());
+
+        // Without focus the request is remembered, not applied.
+        inj.SendFocusOut(native, NotifyNormal, NotifyNonlinear);
+        PumpFor(window, &input);
+        CHECK(window.SetPointerLock(true));
+        CHECK_FALSE(window.PointerLocked());
+        CHECK(OtherClientCanGrab(other, native));
+
+        inj.SendFocusIn(native);
+        PumpFor(window, &input);
+        if (!window.PointerLocked()) {
+            SKIP("the X server refused the pointer grab (a compositor may not grant grabs to a window it did not focus)");
+        }
+        CHECK_FALSE(OtherClientCanGrab(other, native)); // this window holds the grab
+        CHECK(window.SetPointerLock(true));               // a second request is a no-op
+        CHECK(window.PointerLocked());
+
+        // Losing focus releases; regaining it takes the grab again while still wanted.
+        inj.SendFocusOut(native, NotifyNormal, NotifyNonlinear);
+        PumpFor(window, &input);
+        CHECK_FALSE(window.PointerLocked());
+        CHECK(OtherClientCanGrab(other, native));
+        inj.SendFocusIn(native);
+        PumpFor(window, &input);
+        CHECK(window.PointerLocked());
+
+        CHECK(window.SetPointerLock(false));
+        CHECK_FALSE(window.PointerLocked());
+        CHECK(OtherClientCanGrab(other, native));
+
+        CHECK(window.SetPointerLock(true)); // and leave it locked: destroying the window must release it
+        CHECK(window.PointerLocked());
+    }
+    XSync(other.Dpy(), False);
+    const int result = XGrabPointer(other.Dpy(), DefaultRootWindow(other.Dpy()), False, ButtonPressMask, GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
+    CHECK(result == GrabSuccess);
+    XUngrabPointer(other.Dpy(), CurrentTime);
+    XSync(other.Dpy(), False);
+}
+
+TEST_CASE("X11Window reports RelativeMotion only while the pointer is locked", "[x11][cursor][lock][os]") {
+    SKIP_IF_NO_DISPLAY_SESSION();
+    X11Window window = CreateSettled("relative motion", 200, 150);
+    REQUIRE(window.Valid());
+    PollAll(window);
+    InputState input;
+    Injector inj;
+    REQUIRE(inj.Valid());
+    inj.Motion(window.NativeWindow(), 50, 50);
+    PumpFor(window, &input);
+    for (const InputEvent& e : PollAll(window)) {
+        CHECK(e.type != InputEventType::RelativeMotion); // unlocked: never sent
+    }
 }
 
 #include "unity/x11_disable.h"

@@ -216,7 +216,7 @@ table in `PLAN.md`.
   etc. Core OS/distro-provided system libraries are allowed, alongside the
   compiler and the OS/vendor boundary: raw syscalls, libc, the reference
   Wayland client library (`libwayland-client`) and X11 client library
-  (`libX11`/`libxcb`), Win32, Cocoa, and GPU driver entry points
+  (`libX11`/`libxcb`, with `libXcursor` and `libXi` of the same family), Win32, Cocoa, and GPU driver entry points
   (Vulkan/DX12/Metal). The dividing line is "ships with the OS/distro
   itself" vs. "third-party convenience/abstraction library built on top of
   one" — see `PLAN.md`'s "Assumptions & scope notes" for the precise

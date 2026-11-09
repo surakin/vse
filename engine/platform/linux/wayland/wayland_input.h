@@ -5,6 +5,7 @@
 #include "platform/input.h"
 #include "platform/input_event.h"
 #include "platform/linux/keyboard_events.h"
+#include "platform/linux/wayland/wayland_cursor.h"
 #include "platform/linux/wayland/wayland_connection.h"
 #include "platform/linux/xkb_keyboard.h"
 #include "types.h"
@@ -55,6 +56,11 @@ public:
     InputEventQueue& Events() { return events_; }
     /// Read-only view of the queue.
     const InputEventQueue& Events() const { return events_; }
+
+    /// The cursor and pointer lock of the seat's pointer.
+    WaylandCursor& Cursor() { return cursor_; }
+    /// Read-only view of the cursor state.
+    const WaylandCursor& Cursor() const { return cursor_; }
 
     /// Queues the key repeats that are due (`wl_keyboard` repeat is the client's job); call once per pump, after dispatching.
     void Tick();
@@ -116,6 +122,7 @@ private:
     InputState* input_state_ = nullptr;
     XkbKeyboard xkb_;
     KeyboardEvents keyboard_events_;
+    WaylandCursor cursor_;
     InputEventQueue events_;
     // The engine Key each held evdev code was *pressed* as. A release
     // clears that Key rather than re-translating, since layout/modifier

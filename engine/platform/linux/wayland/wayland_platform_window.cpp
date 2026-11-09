@@ -49,6 +49,7 @@ bool WaylandPlatformWindow::Open(StringView title, u32 width, u32 height, InputS
         Close();
         return false;
     }
+    input_.Cursor().SetSurface(window_.Surface());
     return true;
 }
 

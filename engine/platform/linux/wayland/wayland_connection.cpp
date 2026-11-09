@@ -37,6 +37,9 @@ struct RegistryState {
     wl_seat* seat = nullptr;
     wl_shm* shm = nullptr;
     zxdg_decoration_manager_v1* decoration_manager = nullptr; // optional
+    wp_cursor_shape_manager_v1* cursor_shape_manager = nullptr; // optional
+    zwp_pointer_constraints_v1* pointer_constraints = nullptr; // optional
+    zwp_relative_pointer_manager_v1* relative_pointer_manager = nullptr; // optional
 };
 
 void HandleGlobal(void* data, wl_registry* registry, u32 name, const char* interface, u32 version) {
@@ -60,6 +63,16 @@ void HandleGlobal(void* data, wl_registry* registry, u32 name, const char* inter
     } else if (iface == StringView(zxdg_decoration_manager_v1_interface.name)) {
         state->decoration_manager = static_cast<zxdg_decoration_manager_v1*>(
             wl_registry_bind(registry, name, &zxdg_decoration_manager_v1_interface, 1));
+        LogBoundGlobal(interface, version);
+    } else if (iface == StringView(wp_cursor_shape_manager_v1_interface.name)) {
+        state->cursor_shape_manager = static_cast<wp_cursor_shape_manager_v1*>(wl_registry_bind(registry, name, &wp_cursor_shape_manager_v1_interface, 1));
+        LogBoundGlobal(interface, version);
+    } else if (iface == StringView(zwp_pointer_constraints_v1_interface.name)) {
+        state->pointer_constraints = static_cast<zwp_pointer_constraints_v1*>(wl_registry_bind(registry, name, &zwp_pointer_constraints_v1_interface, 1));
+        LogBoundGlobal(interface, version);
+    } else if (iface == StringView(zwp_relative_pointer_manager_v1_interface.name)) {
+        state->relative_pointer_manager =
+            static_cast<zwp_relative_pointer_manager_v1*>(wl_registry_bind(registry, name, &zwp_relative_pointer_manager_v1_interface, 1));
         LogBoundGlobal(interface, version);
     }
     // Anything else advertised by the compositor isn't a global this
@@ -117,6 +130,15 @@ WaylandConnection WaylandConnection::Connect() {
         if (state.decoration_manager != nullptr) {
             zxdg_decoration_manager_v1_destroy(state.decoration_manager);
         }
+        if (state.cursor_shape_manager != nullptr) {
+            wp_cursor_shape_manager_v1_destroy(state.cursor_shape_manager);
+        }
+        if (state.pointer_constraints != nullptr) {
+            zwp_pointer_constraints_v1_destroy(state.pointer_constraints);
+        }
+        if (state.relative_pointer_manager != nullptr) {
+            zwp_relative_pointer_manager_v1_destroy(state.relative_pointer_manager);
+        }
         wl_registry_destroy(registry);
         wl_display_disconnect(display);
         return WaylandConnection();
@@ -130,6 +152,9 @@ WaylandConnection WaylandConnection::Connect() {
     conn.seat_ = state.seat;
     conn.shm_ = state.shm;
     conn.decoration_manager_ = state.decoration_manager;
+    conn.cursor_shape_manager_ = state.cursor_shape_manager;
+    conn.pointer_constraints_ = state.pointer_constraints;
+    conn.relative_pointer_manager_ = state.relative_pointer_manager;
     return conn;
 }
 
@@ -144,7 +169,10 @@ WaylandConnection::WaylandConnection(WaylandConnection&& other) noexcept
       xdg_wm_base_(other.xdg_wm_base_),
       seat_(other.seat_),
       shm_(other.shm_),
-      decoration_manager_(other.decoration_manager_) {
+      decoration_manager_(other.decoration_manager_),
+      cursor_shape_manager_(other.cursor_shape_manager_),
+      pointer_constraints_(other.pointer_constraints_),
+      relative_pointer_manager_(other.relative_pointer_manager_) {
     other.display_ = nullptr;
     other.registry_ = nullptr;
     other.compositor_ = nullptr;
@@ -152,6 +180,9 @@ WaylandConnection::WaylandConnection(WaylandConnection&& other) noexcept
     other.seat_ = nullptr;
     other.shm_ = nullptr;
     other.decoration_manager_ = nullptr;
+    other.cursor_shape_manager_ = nullptr;
+    other.pointer_constraints_ = nullptr;
+    other.relative_pointer_manager_ = nullptr;
 }
 
 WaylandConnection& WaylandConnection::operator=(WaylandConnection&& other) noexcept {
@@ -164,6 +195,9 @@ WaylandConnection& WaylandConnection::operator=(WaylandConnection&& other) noexc
         seat_ = other.seat_;
         shm_ = other.shm_;
         decoration_manager_ = other.decoration_manager_;
+        cursor_shape_manager_ = other.cursor_shape_manager_;
+        pointer_constraints_ = other.pointer_constraints_;
+        relative_pointer_manager_ = other.relative_pointer_manager_;
         other.display_ = nullptr;
         other.registry_ = nullptr;
         other.compositor_ = nullptr;
@@ -171,6 +205,9 @@ WaylandConnection& WaylandConnection::operator=(WaylandConnection&& other) noexc
         other.seat_ = nullptr;
         other.shm_ = nullptr;
         other.decoration_manager_ = nullptr;
+        other.cursor_shape_manager_ = nullptr;
+        other.pointer_constraints_ = nullptr;
+        other.relative_pointer_manager_ = nullptr;
     }
     return *this;
 }
@@ -195,6 +232,18 @@ void WaylandConnection::ReleaseAll() {
     if (decoration_manager_ != nullptr) {
         zxdg_decoration_manager_v1_destroy(decoration_manager_);
         decoration_manager_ = nullptr;
+    }
+    if (cursor_shape_manager_ != nullptr) {
+        wp_cursor_shape_manager_v1_destroy(cursor_shape_manager_);
+        cursor_shape_manager_ = nullptr;
+    }
+    if (pointer_constraints_ != nullptr) {
+        zwp_pointer_constraints_v1_destroy(pointer_constraints_);
+        pointer_constraints_ = nullptr;
+    }
+    if (relative_pointer_manager_ != nullptr) {
+        zwp_relative_pointer_manager_v1_destroy(relative_pointer_manager_);
+        relative_pointer_manager_ = nullptr;
     }
     if (registry_ != nullptr) {
         wl_registry_destroy(registry_);

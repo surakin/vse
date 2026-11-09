@@ -129,6 +129,7 @@ forbid renderer rhi/metal
 forbid renderer rhi/backends
 # 13 programs: demos, benchmarks, tools
 module game/hello_window/ game/hello_window 13
+module game/input_probe/ game/input_probe 13
 module game/common/ game/common 13
 module game/renderer_bench/ game/renderer_bench 13
 module game/renderer_demo/ game/renderer_demo 13
@@ -188,6 +189,7 @@ target foundation_debug foundation_debug
 target foundation_settings foundation_settings
 target foundation foundation
 target hello_window game/hello_window
+target input_probe game/input_probe
 target jobs jobs
 target text text
 target platform platform

@@ -48,6 +48,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     keyboard_input_test.cpp
     x11_window_test.cpp
     window_events_test.cpp
+    window_cursor_test.cpp
   )
 endif()
 

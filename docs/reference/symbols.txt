@@ -1408,6 +1408,51 @@ os::SessionStateName(SessionState)	function	platform/os	os-sessionstatename-sess
 os::SessionStateFromFlags(bool,bool,bool,bool)	function	platform/os	os-sessionstatefromflags-bool-bool-bool-bool	platform-os.md	engine/foundation/os/session.h:28
 os::SessionCanShowWindows(SessionState)	function	platform/os	os-sessioncanshowwindows-sessionstate	platform-os.md	engine/foundation/os/session.h:31
 os::QuerySessionState()	function	platform/os	os-querysessionstate	platform-os.md	engine/foundation/os/session.h:41
+os::CursorShape	enum	platform/window-input	os-cursorshape	platform-window-input.md	engine/platform/cursor.h:12
+os::CursorShape::Arrow	enumerator	platform/window-input	os-cursorshape-arrow	platform-window-input.md	engine/platform/cursor.h:13
+os::CursorShape::IBeam	enumerator	platform/window-input	os-cursorshape-ibeam	platform-window-input.md	engine/platform/cursor.h:14
+os::CursorShape::Hand	enumerator	platform/window-input	os-cursorshape-hand	platform-window-input.md	engine/platform/cursor.h:15
+os::CursorShape::ResizeHorizontal	enumerator	platform/window-input	os-cursorshape-resizehorizontal	platform-window-input.md	engine/platform/cursor.h:16
+os::CursorShape::ResizeVertical	enumerator	platform/window-input	os-cursorshape-resizevertical	platform-window-input.md	engine/platform/cursor.h:17
+os::CursorShape::ResizeDiagonalNWSE	enumerator	platform/window-input	os-cursorshape-resizediagonalnwse	platform-window-input.md	engine/platform/cursor.h:18
+os::CursorShape::ResizeDiagonalNESW	enumerator	platform/window-input	os-cursorshape-resizediagonalnesw	platform-window-input.md	engine/platform/cursor.h:19
+os::CursorShape::ResizeAll	enumerator	platform/window-input	os-cursorshape-resizeall	platform-window-input.md	engine/platform/cursor.h:20
+os::CursorShape::NotAllowed	enumerator	platform/window-input	os-cursorshape-notallowed	platform-window-input.md	engine/platform/cursor.h:21
+os::CursorShape::Hidden	enumerator	platform/window-input	os-cursorshape-hidden	platform-window-input.md	engine/platform/cursor.h:22
+os::CursorShape::Count	enumerator	platform/window-input	os-cursorshape-count	platform-window-input.md	engine/platform/cursor.h:23
+os::kMaxCursorImageSize	variable	platform/window-input	os-kmaxcursorimagesize	platform-window-input.md	engine/platform/cursor.h:27
+os::kMaxCursorImageScale	variable	platform/window-input	os-kmaxcursorimagescale	platform-window-input.md	engine/platform/cursor.h:30
+os::CursorImage	struct	platform/window-input	os-cursorimage	platform-window-input.md	engine/platform/cursor.h:40
+os::CursorImage::rgba	variable	platform/window-input	os-cursorimage-rgba	platform-window-input.md	engine/platform/cursor.h:41
+os::CursorImage::width	variable	platform/window-input	os-cursorimage-width	platform-window-input.md	engine/platform/cursor.h:42
+os::CursorImage::height	variable	platform/window-input	os-cursorimage-height	platform-window-input.md	engine/platform/cursor.h:43
+os::CursorImage::hotspot_x	variable	platform/window-input	os-cursorimage-hotspot-x	platform-window-input.md	engine/platform/cursor.h:44
+os::CursorImage::hotspot_y	variable	platform/window-input	os-cursorimage-hotspot-y	platform-window-input.md	engine/platform/cursor.h:45
+os::CursorImage::scale	variable	platform/window-input	os-cursorimage-scale	platform-window-input.md	engine/platform/cursor.h:46
+os::CursorImageError	enum	platform/window-input	os-cursorimageerror	platform-window-input.md	engine/platform/cursor.h:50
+os::CursorImageError::Ok	enumerator	platform/window-input	os-cursorimageerror-ok	platform-window-input.md	engine/platform/cursor.h:51
+os::CursorImageError::NoPixels	enumerator	platform/window-input	os-cursorimageerror-nopixels	platform-window-input.md	engine/platform/cursor.h:52
+os::CursorImageError::Empty	enumerator	platform/window-input	os-cursorimageerror-empty	platform-window-input.md	engine/platform/cursor.h:53
+os::CursorImageError::TooLarge	enumerator	platform/window-input	os-cursorimageerror-toolarge	platform-window-input.md	engine/platform/cursor.h:54
+os::CursorImageError::HotspotOutside	enumerator	platform/window-input	os-cursorimageerror-hotspotoutside	platform-window-input.md	engine/platform/cursor.h:55
+os::CursorImageError::BadScale	enumerator	platform/window-input	os-cursorimageerror-badscale	platform-window-input.md	engine/platform/cursor.h:56
+os::ValidateCursorImage(const CursorImage&)	function	platform/window-input	os-validatecursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/cursor.h:62
+os::HashCursorImage(const CursorImage&)	function	platform/window-input	os-hashcursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/cursor.h:76
+os::PointerLockState	class	platform/window-input	os-pointerlockstate	platform-window-input.md	engine/platform/cursor.h:104
+os::PointerLockState::Action	enum	platform/window-input	os-pointerlockstate-action	platform-window-input.md	engine/platform/cursor.h:107
+os::PointerLockState::Action::Nothing	enumerator	platform/window-input	os-pointerlockstate-action-nothing	platform-window-input.md	engine/platform/cursor.h:108
+os::PointerLockState::Action::Acquire	enumerator	platform/window-input	os-pointerlockstate-action-acquire	platform-window-input.md	engine/platform/cursor.h:109
+os::PointerLockState::Action::Release	enumerator	platform/window-input	os-pointerlockstate-action-release	platform-window-input.md	engine/platform/cursor.h:110
+os::PointerLockState::SetWanted(bool)	function	platform/window-input	os-pointerlockstate-setwanted-bool	platform-window-input.md	engine/platform/cursor.h:114
+os::PointerLockState::SetFocused(bool)	function	platform/window-input	os-pointerlockstate-setfocused-bool	platform-window-input.md	engine/platform/cursor.h:120
+os::PointerLockState::Granted()	function	platform/window-input	os-pointerlockstate-granted	platform-window-input.md	engine/platform/cursor.h:127
+os::PointerLockState::Failed()	function	platform/window-input	os-pointerlockstate-failed	platform-window-input.md	engine/platform/cursor.h:135
+os::PointerLockState::Lost()	function	platform/window-input	os-pointerlockstate-lost	platform-window-input.md	engine/platform/cursor.h:138
+os::PointerLockState::Cleared()	function	platform/window-input	os-pointerlockstate-cleared	platform-window-input.md	engine/platform/cursor.h:145
+os::PointerLockState::Active() const	function	platform/window-input	os-pointerlockstate-active-const	platform-window-input.md	engine/platform/cursor.h:151
+os::PointerLockState::Pending() const	function	platform/window-input	os-pointerlockstate-pending-const	platform-window-input.md	engine/platform/cursor.h:153
+os::PointerLockState::Wanted() const	function	platform/window-input	os-pointerlockstate-wanted-const	platform-window-input.md	engine/platform/cursor.h:155
+os::PointerLockState::Focused() const	function	platform/window-input	os-pointerlockstate-focused-const	platform-window-input.md	engine/platform/cursor.h:157
 os::WindowedProgramEntry	alias	platform/window-input	os-windowedprogramentry	platform-window-input.md	engine/platform/entry_point.h:22
 ENGINE_WINDOWED_PROGRAM	macro	platform/window-input	engine-windowed-program	platform-window-input.md	engine/platform/entry_point.h:44
 os::Key	enum	platform/window-input	os-key	platform-window-input.md	engine/platform/input.h:17
@@ -1538,27 +1583,28 @@ os::InputEventType::PointerLeave	enumerator	platform/window-input	os-inputeventt
 os::InputEventType::FocusGained	enumerator	platform/window-input	os-inputeventtype-focusgained	platform-window-input.md	engine/platform/input_event.h:25
 os::InputEventType::FocusLost	enumerator	platform/window-input	os-inputeventtype-focuslost	platform-window-input.md	engine/platform/input_event.h:26
 os::InputEventType::Resize	enumerator	platform/window-input	os-inputeventtype-resize	platform-window-input.md	engine/platform/input_event.h:27
-os::InputEvent	struct	platform/window-input	os-inputevent	platform-window-input.md	engine/platform/input_event.h:35
-os::InputEvent::type	variable	platform/window-input	os-inputevent-type	platform-window-input.md	engine/platform/input_event.h:36
-os::InputEvent::repeat	variable	platform/window-input	os-inputevent-repeat	platform-window-input.md	engine/platform/input_event.h:37
-os::InputEvent::down	variable	platform/window-input	os-inputevent-down	platform-window-input.md	engine/platform/input_event.h:38
-os::InputEvent::text_length	variable	platform/window-input	os-inputevent-text-length	platform-window-input.md	engine/platform/input_event.h:39
-os::InputEvent::key	variable	platform/window-input	os-inputevent-key	platform-window-input.md	engine/platform/input_event.h:40
-os::InputEvent::modifiers	variable	platform/window-input	os-inputevent-modifiers	platform-window-input.md	engine/platform/input_event.h:41
-os::InputEvent::button	variable	platform/window-input	os-inputevent-button	platform-window-input.md	engine/platform/input_event.h:42
-os::InputEvent::width	variable	platform/window-input	os-inputevent-width	platform-window-input.md	engine/platform/input_event.h:43
-os::InputEvent::height	variable	platform/window-input	os-inputevent-height	platform-window-input.md	engine/platform/input_event.h:44
-os::InputEvent::x	variable	platform/window-input	os-inputevent-x	platform-window-input.md	engine/platform/input_event.h:45
-os::InputEvent::y	variable	platform/window-input	os-inputevent-y	platform-window-input.md	engine/platform/input_event.h:46
-os::InputEvent::time_ns	variable	platform/window-input	os-inputevent-time-ns	platform-window-input.md	engine/platform/input_event.h:47
-os::InputEvent::text	variable	platform/window-input	os-inputevent-text	platform-window-input.md	engine/platform/input_event.h:48
-os::InputEventQueue	class	platform/window-input	os-inputeventqueue	platform-window-input.md	engine/platform/input_event.h:60
-os::InputEventQueue::kCapacity	variable	platform/window-input	os-inputeventqueue-kcapacity	platform-window-input.md	engine/platform/input_event.h:63
-os::InputEventQueue::Push(const InputEvent&)	function	platform/window-input	os-inputeventqueue-push-const-inputevent-amp	platform-window-input.md	engine/platform/input_event.h:69
-os::InputEventQueue::Pop(InputEvent*)	function	platform/window-input	os-inputeventqueue-pop-inputevent-star	platform-window-input.md	engine/platform/input_event.h:82
-os::InputEventQueue::Size() const	function	platform/window-input	os-inputeventqueue-size-const	platform-window-input.md	engine/platform/input_event.h:93
-os::InputEventQueue::Dropped() const	function	platform/window-input	os-inputeventqueue-dropped-const	platform-window-input.md	engine/platform/input_event.h:96
-os::InputEventQueue::Clear()	function	platform/window-input	os-inputeventqueue-clear	platform-window-input.md	engine/platform/input_event.h:99
+os::InputEventType::RelativeMotion	enumerator	platform/window-input	os-inputeventtype-relativemotion	platform-window-input.md	engine/platform/input_event.h:28
+os::InputEvent	struct	platform/window-input	os-inputevent	platform-window-input.md	engine/platform/input_event.h:36
+os::InputEvent::type	variable	platform/window-input	os-inputevent-type	platform-window-input.md	engine/platform/input_event.h:37
+os::InputEvent::repeat	variable	platform/window-input	os-inputevent-repeat	platform-window-input.md	engine/platform/input_event.h:38
+os::InputEvent::down	variable	platform/window-input	os-inputevent-down	platform-window-input.md	engine/platform/input_event.h:39
+os::InputEvent::text_length	variable	platform/window-input	os-inputevent-text-length	platform-window-input.md	engine/platform/input_event.h:40
+os::InputEvent::key	variable	platform/window-input	os-inputevent-key	platform-window-input.md	engine/platform/input_event.h:41
+os::InputEvent::modifiers	variable	platform/window-input	os-inputevent-modifiers	platform-window-input.md	engine/platform/input_event.h:42
+os::InputEvent::button	variable	platform/window-input	os-inputevent-button	platform-window-input.md	engine/platform/input_event.h:43
+os::InputEvent::width	variable	platform/window-input	os-inputevent-width	platform-window-input.md	engine/platform/input_event.h:44
+os::InputEvent::height	variable	platform/window-input	os-inputevent-height	platform-window-input.md	engine/platform/input_event.h:45
+os::InputEvent::x	variable	platform/window-input	os-inputevent-x	platform-window-input.md	engine/platform/input_event.h:46
+os::InputEvent::y	variable	platform/window-input	os-inputevent-y	platform-window-input.md	engine/platform/input_event.h:47
+os::InputEvent::time_ns	variable	platform/window-input	os-inputevent-time-ns	platform-window-input.md	engine/platform/input_event.h:48
+os::InputEvent::text	variable	platform/window-input	os-inputevent-text	platform-window-input.md	engine/platform/input_event.h:49
+os::InputEventQueue	class	platform/window-input	os-inputeventqueue	platform-window-input.md	engine/platform/input_event.h:61
+os::InputEventQueue::kCapacity	variable	platform/window-input	os-inputeventqueue-kcapacity	platform-window-input.md	engine/platform/input_event.h:64
+os::InputEventQueue::Push(const InputEvent&)	function	platform/window-input	os-inputeventqueue-push-const-inputevent-amp	platform-window-input.md	engine/platform/input_event.h:70
+os::InputEventQueue::Pop(InputEvent*)	function	platform/window-input	os-inputeventqueue-pop-inputevent-star	platform-window-input.md	engine/platform/input_event.h:83
+os::InputEventQueue::Size() const	function	platform/window-input	os-inputeventqueue-size-const	platform-window-input.md	engine/platform/input_event.h:94
+os::InputEventQueue::Dropped() const	function	platform/window-input	os-inputeventqueue-dropped-const	platform-window-input.md	engine/platform/input_event.h:97
+os::InputEventQueue::Clear()	function	platform/window-input	os-inputeventqueue-clear	platform-window-input.md	engine/platform/input_event.h:100
 os::KeyFromKeysym(u32)	function	platform/window-input	os-keyfromkeysym-u32	platform-window-input.md	engine/platform/linux/key_translate.h:17
 os::KeyboardEvents	class	platform/window-input	os-keyboardevents	platform-window-input.md	engine/platform/linux/keyboard_events.h:18
 os::KeyboardEvents::kMaxRepeatsPerTick	variable	platform/window-input	os-keyboardevents-kmaxrepeatspertick	platform-window-input.md	engine/platform/linux/keyboard_events.h:21
@@ -1572,38 +1618,61 @@ os::KeyboardEvents::FocusLost(u64)	function	platform/window-input	os-keyboardeve
 os::KeyboardEvents::Forget()	function	platform/window-input	os-keyboardevents-forget	platform-window-input.md	engine/platform/linux/keyboard_events.h:61
 os::KeyboardEvents::Tick(u64)	function	platform/window-input	os-keyboardevents-tick-u64	platform-window-input.md	engine/platform/linux/keyboard_events.h:64
 os::KeyboardEvents::Repeating() const	function	platform/window-input	os-keyboardevents-repeating-const	platform-window-input.md	engine/platform/linux/keyboard_events.h:67
-os::wayland::WaylandConnection	class	platform/window-input	os-wayland-waylandconnection	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:20
-os::wayland::WaylandConnection::Connect()	function	platform/window-input	os-wayland-waylandconnection-connect	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:28
-os::wayland::WaylandConnection::WaylandConnection()	function	platform/window-input	os-wayland-waylandconnection-waylandconnection	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:31
-os::wayland::WaylandConnection::~WaylandConnection()	function	platform/window-input	os-wayland-waylandconnection-tilde-waylandconnection	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:34
-os::wayland::WaylandConnection::WaylandConnection(const WaylandConnection&)	function	platform/window-input	os-wayland-waylandconnection-waylandconnection-const-waylandconnection-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:36
-os::wayland::WaylandConnection::operator=(const WaylandConnection&)	function	platform/window-input	os-wayland-waylandconnection-operator-eq-const-waylandconnection-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:37
-os::wayland::WaylandConnection::WaylandConnection(WaylandConnection&&) noexcept	function	platform/window-input	os-wayland-waylandconnection-waylandconnection-waylandconnection-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:39
-os::wayland::WaylandConnection::operator=(WaylandConnection&&) noexcept	function	platform/window-input	os-wayland-waylandconnection-operator-eq-waylandconnection-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:42
-os::wayland::WaylandConnection::Valid() const	function	platform/window-input	os-wayland-waylandconnection-valid-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:45
-os::wayland::WaylandConnection::Display() const	function	platform/window-input	os-wayland-waylandconnection-display-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:48
-os::wayland::WaylandConnection::Compositor() const	function	platform/window-input	os-wayland-waylandconnection-compositor-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:50
-os::wayland::WaylandConnection::XdgWmBase() const	function	platform/window-input	os-wayland-waylandconnection-xdgwmbase-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:52
-os::wayland::WaylandConnection::Seat() const	function	platform/window-input	os-wayland-waylandconnection-seat-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:54
-os::wayland::WaylandConnection::Shm() const	function	platform/window-input	os-wayland-waylandconnection-shm-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:56
-os::wayland::WaylandConnection::DecorationManager() const	function	platform/window-input	os-wayland-waylandconnection-decorationmanager-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:61
-os::wayland::WaylandInput	class	platform/window-input	os-wayland-waylandinput	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:25
-os::wayland::WaylandInput::WaylandInput()	function	platform/window-input	os-wayland-waylandinput-waylandinput	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:28
-os::wayland::WaylandInput::~WaylandInput()	function	platform/window-input	os-wayland-waylandinput-tilde-waylandinput	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:31
-os::wayland::WaylandInput::WaylandInput(const WaylandInput&)	function	platform/window-input	os-wayland-waylandinput-waylandinput-const-waylandinput-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:33
-os::wayland::WaylandInput::operator=(const WaylandInput&)	function	platform/window-input	os-wayland-waylandinput-operator-eq-const-waylandinput-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:34
-os::wayland::WaylandInput::WaylandInput(WaylandInput&&)	function	platform/window-input	os-wayland-waylandinput-waylandinput-waylandinput-amp-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:35
-os::wayland::WaylandInput::operator=(WaylandInput&&)	function	platform/window-input	os-wayland-waylandinput-operator-eq-waylandinput-amp-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:36
-os::wayland::WaylandInput::Init(WaylandConnection&,InputState*)	function	platform/window-input	os-wayland-waylandinput-init-waylandconnection-amp-inputstate-star	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:46
-os::wayland::WaylandInput::Shutdown()	function	platform/window-input	os-wayland-waylandinput-shutdown	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:52
-os::wayland::WaylandInput::Events()	function	platform/window-input	os-wayland-waylandinput-events	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:55
-os::wayland::WaylandInput::Events() const	function	platform/window-input	os-wayland-waylandinput-events-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:57
-os::wayland::WaylandInput::Tick()	function	platform/window-input	os-wayland-waylandinput-tick	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:60
-os::wayland::WaylandInput::Valid() const	function	platform/window-input	os-wayland-waylandinput-valid-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:63
-os::wayland::WaylandInput::HasKeyboard() const	function	platform/window-input	os-wayland-waylandinput-haskeyboard-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:65
-os::wayland::WaylandInput::ListenersComplete()	function	platform/window-input	os-wayland-waylandinput-listenerscomplete	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:70
-os::wayland::WaylandInput::HasPointer() const	function	platform/window-input	os-wayland-waylandinput-haspointer-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:72
-os::wayland::WaylandInput::HasKeymap() const	function	platform/window-input	os-wayland-waylandinput-haskeymap-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:74
+os::wayland::WaylandConnection	class	platform/window-input	os-wayland-waylandconnection	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:23
+os::wayland::WaylandConnection::Connect()	function	platform/window-input	os-wayland-waylandconnection-connect	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:31
+os::wayland::WaylandConnection::WaylandConnection()	function	platform/window-input	os-wayland-waylandconnection-waylandconnection	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:34
+os::wayland::WaylandConnection::~WaylandConnection()	function	platform/window-input	os-wayland-waylandconnection-tilde-waylandconnection	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:37
+os::wayland::WaylandConnection::WaylandConnection(const WaylandConnection&)	function	platform/window-input	os-wayland-waylandconnection-waylandconnection-const-waylandconnection-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:39
+os::wayland::WaylandConnection::operator=(const WaylandConnection&)	function	platform/window-input	os-wayland-waylandconnection-operator-eq-const-waylandconnection-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:40
+os::wayland::WaylandConnection::WaylandConnection(WaylandConnection&&) noexcept	function	platform/window-input	os-wayland-waylandconnection-waylandconnection-waylandconnection-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:42
+os::wayland::WaylandConnection::operator=(WaylandConnection&&) noexcept	function	platform/window-input	os-wayland-waylandconnection-operator-eq-waylandconnection-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:45
+os::wayland::WaylandConnection::Valid() const	function	platform/window-input	os-wayland-waylandconnection-valid-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:48
+os::wayland::WaylandConnection::Display() const	function	platform/window-input	os-wayland-waylandconnection-display-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:51
+os::wayland::WaylandConnection::Compositor() const	function	platform/window-input	os-wayland-waylandconnection-compositor-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:53
+os::wayland::WaylandConnection::XdgWmBase() const	function	platform/window-input	os-wayland-waylandconnection-xdgwmbase-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:55
+os::wayland::WaylandConnection::Seat() const	function	platform/window-input	os-wayland-waylandconnection-seat-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:57
+os::wayland::WaylandConnection::Shm() const	function	platform/window-input	os-wayland-waylandconnection-shm-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:59
+os::wayland::WaylandConnection::DecorationManager() const	function	platform/window-input	os-wayland-waylandconnection-decorationmanager-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:64
+os::wayland::WaylandConnection::CursorShapeManager() const	function	platform/window-input	os-wayland-waylandconnection-cursorshapemanager-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:67
+os::wayland::WaylandConnection::PointerConstraints() const	function	platform/window-input	os-wayland-waylandconnection-pointerconstraints-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:69
+os::wayland::WaylandConnection::RelativePointerManager() const	function	platform/window-input	os-wayland-waylandconnection-relativepointermanager-const	platform-window-input.md	engine/platform/linux/wayland/wayland_connection.h:71
+os::wayland::WaylandCursor	class	platform/window-input	os-wayland-waylandcursor	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:22
+os::wayland::WaylandCursor::Init(WaylandConnection*,InputEventQueue*)	function	platform/window-input	os-wayland-waylandcursor-init-waylandconnection-star-inputeventqueue-star	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:25
+os::wayland::WaylandCursor::SetSurface(wl_surface*)	function	platform/window-input	os-wayland-waylandcursor-setsurface-wl-surface-star	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:28
+os::wayland::WaylandCursor::AttachPointer(wl_pointer*)	function	platform/window-input	os-wayland-waylandcursor-attachpointer-wl-pointer-star	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:31
+os::wayland::WaylandCursor::DetachPointer()	function	platform/window-input	os-wayland-waylandcursor-detachpointer	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:34
+os::wayland::WaylandCursor::OnPointerEnter(u32)	function	platform/window-input	os-wayland-waylandcursor-onpointerenter-u32	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:37
+os::wayland::WaylandCursor::OnFocus(bool)	function	platform/window-input	os-wayland-waylandcursor-onfocus-bool	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:40
+os::wayland::WaylandCursor::SupportsShape() const	function	platform/window-input	os-wayland-waylandcursor-supportsshape-const	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:43
+os::wayland::WaylandCursor::SetShape(CursorShape)	function	platform/window-input	os-wayland-waylandcursor-setshape-cursorshape	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:45
+os::wayland::WaylandCursor::SupportsImage() const	function	platform/window-input	os-wayland-waylandcursor-supportsimage-const	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:48
+os::wayland::WaylandCursor::SetImage(const CursorImage&)	function	platform/window-input	os-wayland-waylandcursor-setimage-const-cursorimage-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:50
+os::wayland::WaylandCursor::ClearImage()	function	platform/window-input	os-wayland-waylandcursor-clearimage	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:52
+os::wayland::WaylandCursor::SupportsLock() const	function	platform/window-input	os-wayland-waylandcursor-supportslock-const	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:55
+os::wayland::WaylandCursor::SetLock(bool)	function	platform/window-input	os-wayland-waylandcursor-setlock-bool	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:57
+os::wayland::WaylandCursor::Locked() const	function	platform/window-input	os-wayland-waylandcursor-locked-const	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:59
+os::wayland::WaylandCursor::BufferCount() const	function	platform/window-input	os-wayland-waylandcursor-buffercount-const	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:62
+os::wayland::WaylandCursor::Shutdown()	function	platform/window-input	os-wayland-waylandcursor-shutdown	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:65
+os::wayland::WaylandCursor::ListenersComplete()	function	platform/window-input	os-wayland-waylandcursor-listenerscomplete	platform-window-input.md	engine/platform/linux/wayland/wayland_cursor.h:68
+os::wayland::WaylandInput	class	platform/window-input	os-wayland-waylandinput	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:26
+os::wayland::WaylandInput::WaylandInput()	function	platform/window-input	os-wayland-waylandinput-waylandinput	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:29
+os::wayland::WaylandInput::~WaylandInput()	function	platform/window-input	os-wayland-waylandinput-tilde-waylandinput	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:32
+os::wayland::WaylandInput::WaylandInput(const WaylandInput&)	function	platform/window-input	os-wayland-waylandinput-waylandinput-const-waylandinput-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:34
+os::wayland::WaylandInput::operator=(const WaylandInput&)	function	platform/window-input	os-wayland-waylandinput-operator-eq-const-waylandinput-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:35
+os::wayland::WaylandInput::WaylandInput(WaylandInput&&)	function	platform/window-input	os-wayland-waylandinput-waylandinput-waylandinput-amp-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:36
+os::wayland::WaylandInput::operator=(WaylandInput&&)	function	platform/window-input	os-wayland-waylandinput-operator-eq-waylandinput-amp-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:37
+os::wayland::WaylandInput::Init(WaylandConnection&,InputState*)	function	platform/window-input	os-wayland-waylandinput-init-waylandconnection-amp-inputstate-star	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:47
+os::wayland::WaylandInput::Shutdown()	function	platform/window-input	os-wayland-waylandinput-shutdown	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:53
+os::wayland::WaylandInput::Events()	function	platform/window-input	os-wayland-waylandinput-events	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:56
+os::wayland::WaylandInput::Events() const	function	platform/window-input	os-wayland-waylandinput-events-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:58
+os::wayland::WaylandInput::Cursor()	function	platform/window-input	os-wayland-waylandinput-cursor	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:61
+os::wayland::WaylandInput::Cursor() const	function	platform/window-input	os-wayland-waylandinput-cursor-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:63
+os::wayland::WaylandInput::Tick()	function	platform/window-input	os-wayland-waylandinput-tick	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:66
+os::wayland::WaylandInput::Valid() const	function	platform/window-input	os-wayland-waylandinput-valid-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:69
+os::wayland::WaylandInput::HasKeyboard() const	function	platform/window-input	os-wayland-waylandinput-haskeyboard-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:71
+os::wayland::WaylandInput::ListenersComplete()	function	platform/window-input	os-wayland-waylandinput-listenerscomplete	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:76
+os::wayland::WaylandInput::HasPointer() const	function	platform/window-input	os-wayland-waylandinput-haspointer-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:78
+os::wayland::WaylandInput::HasKeymap() const	function	platform/window-input	os-wayland-waylandinput-haskeymap-const	platform-window-input.md	engine/platform/linux/wayland/wayland_input.h:80
 os::wayland::WaylandPlatformWindow	class	platform/window-input	os-wayland-waylandplatformwindow	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:19
 os::wayland::WaylandPlatformWindow::WaylandPlatformWindow()	function	platform/window-input	os-wayland-waylandplatformwindow-waylandplatformwindow	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:22
 os::wayland::WaylandPlatformWindow::Open(StringView,u32,u32,InputState*)	function	platform/window-input	os-wayland-waylandplatformwindow-open-stringview-u32-u32-inputstate-star	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:31
@@ -1613,19 +1682,27 @@ os::wayland::WaylandPlatformWindow::Valid() const	function	platform/window-input
 os::wayland::WaylandPlatformWindow::PumpEvents()	function	platform/window-input	os-wayland-waylandplatformwindow-pumpevents	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:48
 os::wayland::WaylandPlatformWindow::PollEvent(InputEvent*)	function	platform/window-input	os-wayland-waylandplatformwindow-pollevent-inputevent-star	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:51
 os::wayland::WaylandPlatformWindow::DroppedEvents() const	function	platform/window-input	os-wayland-waylandplatformwindow-droppedevents-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:53
-os::wayland::WaylandPlatformWindow::ShouldClose() const	function	platform/window-input	os-wayland-waylandplatformwindow-shouldclose-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:59
-os::wayland::WaylandPlatformWindow::ConnectionLost() const	function	platform/window-input	os-wayland-waylandplatformwindow-connectionlost-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:61
-os::wayland::WaylandPlatformWindow::NativeDisplay() const	function	platform/window-input	os-wayland-waylandplatformwindow-nativedisplay-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:65
-os::wayland::WaylandPlatformWindow::Width() const	function	platform/window-input	os-wayland-waylandplatformwindow-width-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:67
-os::wayland::WaylandPlatformWindow::Height() const	function	platform/window-input	os-wayland-waylandplatformwindow-height-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:69
-os::wayland::WaylandPlatformWindow::BackendName() const	function	platform/window-input	os-wayland-waylandplatformwindow-backendname-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:71
-os::wayland::WaylandPlatformWindow::GetNativeInfo() const	function	platform/window-input	os-wayland-waylandplatformwindow-getnativeinfo-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:73
-os::wayland::WaylandPlatformWindow::IsMinimized() const	function	platform/window-input	os-wayland-waylandplatformwindow-isminimized-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:84
-os::wayland::WaylandPlatformWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandplatformwindow-resizeserial-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:86
-os::wayland::WaylandPlatformWindow::SupportsFullscreen() const	function	platform/window-input	os-wayland-waylandplatformwindow-supportsfullscreen-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:88
-os::wayland::WaylandPlatformWindow::SetFullscreen(bool)	function	platform/window-input	os-wayland-waylandplatformwindow-setfullscreen-bool	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:92
-os::wayland::WaylandPlatformWindow::IsFullscreen() const	function	platform/window-input	os-wayland-waylandplatformwindow-isfullscreen-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:96
-os::wayland::WaylandPlatformWindow::Input() const	function	platform/window-input	os-wayland-waylandplatformwindow-input-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:99
+os::wayland::WaylandPlatformWindow::SupportsCursorShape() const	function	platform/window-input	os-wayland-waylandplatformwindow-supportscursorshape-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:56
+os::wayland::WaylandPlatformWindow::SetCursor(CursorShape)	function	platform/window-input	os-wayland-waylandplatformwindow-setcursor-cursorshape	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:58
+os::wayland::WaylandPlatformWindow::SupportsCursorImage() const	function	platform/window-input	os-wayland-waylandplatformwindow-supportscursorimage-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:60
+os::wayland::WaylandPlatformWindow::SetCursorImage(const CursorImage&)	function	platform/window-input	os-wayland-waylandplatformwindow-setcursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:62
+os::wayland::WaylandPlatformWindow::ClearCursorImage()	function	platform/window-input	os-wayland-waylandplatformwindow-clearcursorimage	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:64
+os::wayland::WaylandPlatformWindow::SupportsPointerLock() const	function	platform/window-input	os-wayland-waylandplatformwindow-supportspointerlock-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:66
+os::wayland::WaylandPlatformWindow::SetPointerLock(bool)	function	platform/window-input	os-wayland-waylandplatformwindow-setpointerlock-bool	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:68
+os::wayland::WaylandPlatformWindow::PointerLocked() const	function	platform/window-input	os-wayland-waylandplatformwindow-pointerlocked-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:70
+os::wayland::WaylandPlatformWindow::ShouldClose() const	function	platform/window-input	os-wayland-waylandplatformwindow-shouldclose-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:76
+os::wayland::WaylandPlatformWindow::ConnectionLost() const	function	platform/window-input	os-wayland-waylandplatformwindow-connectionlost-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:78
+os::wayland::WaylandPlatformWindow::NativeDisplay() const	function	platform/window-input	os-wayland-waylandplatformwindow-nativedisplay-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:82
+os::wayland::WaylandPlatformWindow::Width() const	function	platform/window-input	os-wayland-waylandplatformwindow-width-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:84
+os::wayland::WaylandPlatformWindow::Height() const	function	platform/window-input	os-wayland-waylandplatformwindow-height-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:86
+os::wayland::WaylandPlatformWindow::BackendName() const	function	platform/window-input	os-wayland-waylandplatformwindow-backendname-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:88
+os::wayland::WaylandPlatformWindow::GetNativeInfo() const	function	platform/window-input	os-wayland-waylandplatformwindow-getnativeinfo-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:90
+os::wayland::WaylandPlatformWindow::IsMinimized() const	function	platform/window-input	os-wayland-waylandplatformwindow-isminimized-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:101
+os::wayland::WaylandPlatformWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandplatformwindow-resizeserial-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:103
+os::wayland::WaylandPlatformWindow::SupportsFullscreen() const	function	platform/window-input	os-wayland-waylandplatformwindow-supportsfullscreen-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:105
+os::wayland::WaylandPlatformWindow::SetFullscreen(bool)	function	platform/window-input	os-wayland-waylandplatformwindow-setfullscreen-bool	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:109
+os::wayland::WaylandPlatformWindow::IsFullscreen() const	function	platform/window-input	os-wayland-waylandplatformwindow-isfullscreen-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:113
+os::wayland::WaylandPlatformWindow::Input() const	function	platform/window-input	os-wayland-waylandplatformwindow-input-const	platform-window-input.md	engine/platform/linux/wayland/wayland_platform_window.h:116
 os::wayland::WaylandWindow	class	platform/window-input	os-wayland-waylandwindow	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:24
 os::wayland::WaylandWindow::Create(WaylandConnection&,StringView,StringView,u32,u32)	function	platform/window-input	os-wayland-waylandwindow-create-waylandconnection-amp-stringview-stringview-u32-u32	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:40
 os::wayland::WaylandWindow::WaylandWindow()	function	platform/window-input	os-wayland-waylandwindow-waylandwindow	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:44
@@ -1647,32 +1724,61 @@ os::wayland::WaylandWindow::Height() const	function	platform/window-input	os-way
 os::wayland::WaylandWindow::ResizeSerial() const	function	platform/window-input	os-wayland-waylandwindow-resizeserial-const	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:101
 os::wayland::WaylandWindow::SetFullscreen(bool)	function	platform/window-input	os-wayland-waylandwindow-setfullscreen-bool	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:107
 os::wayland::WaylandWindow::IsFullscreen() const	function	platform/window-input	os-wayland-waylandwindow-isfullscreen-const	platform-window-input.md	engine/platform/linux/wayland/wayland_window.h:109
-os::x11::X11Window	class	platform/window-input	os-x11-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:28
-os::x11::X11Window::Create(StringView,u32,u32)	function	platform/window-input	os-x11-x11window-create-stringview-u32-u32	platform-window-input.md	engine/platform/linux/x11/x11_window.h:36
-os::x11::X11Window::X11Window()	function	platform/window-input	os-x11-x11window-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:39
-os::x11::X11Window::~X11Window()	function	platform/window-input	os-x11-x11window-tilde-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:42
-os::x11::X11Window::X11Window(const X11Window&)	function	platform/window-input	os-x11-x11window-x11window-const-x11window-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:44
-os::x11::X11Window::operator=(const X11Window&)	function	platform/window-input	os-x11-x11window-operator-eq-const-x11window-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:45
-os::x11::X11Window::X11Window(X11Window&&) noexcept	function	platform/window-input	os-x11-x11window-x11window-x11window-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/x11/x11_window.h:47
-os::x11::X11Window::operator=(X11Window&&) noexcept	function	platform/window-input	os-x11-x11window-operator-eq-x11window-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/x11/x11_window.h:50
-os::x11::X11Window::Valid() const	function	platform/window-input	os-x11-x11window-valid-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:53
-os::x11::X11Window::PumpEvents(InputState*)	function	platform/window-input	os-x11-x11window-pumpevents-inputstate-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:60
-os::x11::X11Window::PumpEvents()	function	platform/window-input	os-x11-x11window-pumpevents	platform-window-input.md	engine/platform/linux/x11/x11_window.h:63
-os::x11::X11Window::SetInputState(InputState*)	function	platform/window-input	os-x11-x11window-setinputstate-inputstate-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:67
-os::x11::X11Window::PollEvent(InputEvent*)	function	platform/window-input	os-x11-x11window-pollevent-inputevent-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:69
-os::x11::X11Window::DroppedEvents() const	function	platform/window-input	os-x11-x11window-droppedevents-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:71
-os::x11::X11Window::ShouldClose() const	function	platform/window-input	os-x11-x11window-shouldclose-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:73
-os::x11::X11Window::Width() const	function	platform/window-input	os-x11-x11window-width-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:75
-os::x11::X11Window::Height() const	function	platform/window-input	os-x11-x11window-height-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:77
-os::x11::X11Window::BackendName() const	function	platform/window-input	os-x11-x11window-backendname-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:79
-os::x11::X11Window::GetNativeInfo() const	function	platform/window-input	os-x11-x11window-getnativeinfo-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:81
-os::x11::X11Window::IsMinimized() const	function	platform/window-input	os-x11-x11window-isminimized-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:91
-os::x11::X11Window::ResizeSerial() const	function	platform/window-input	os-x11-x11window-resizeserial-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:93
-os::x11::X11Window::SupportsFullscreen() const	function	platform/window-input	os-x11-x11window-supportsfullscreen-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:96
-os::x11::X11Window::SetFullscreen(bool)	function	platform/window-input	os-x11-x11window-setfullscreen-bool	platform-window-input.md	engine/platform/linux/x11/x11_window.h:100
-os::x11::X11Window::IsFullscreen() const	function	platform/window-input	os-x11-x11window-isfullscreen-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:102
-os::x11::X11Window::NativeDisplay() const	function	platform/window-input	os-x11-x11window-nativedisplay-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:107
-os::x11::X11Window::NativeWindow() const	function	platform/window-input	os-x11-x11window-nativewindow-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:111
+os::x11::X11CursorState	struct	platform/window-input	os-x11-x11cursorstate	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:17
+os::x11::X11CursorState::shape_cursor	variable	platform/window-input	os-x11-x11cursorstate-shape-cursor	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:18
+os::x11::X11CursorState::image_cursor	variable	platform/window-input	os-x11-x11cursorstate-image-cursor	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:19
+os::x11::X11CursorState::blank_cursor	variable	platform/window-input	os-x11-x11cursorstate-blank-cursor	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:20
+os::x11::X11CursorState::image_hash	variable	platform/window-input	os-x11-x11cursorstate-image-hash	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:21
+os::x11::X11CursorState::shape	variable	platform/window-input	os-x11-x11cursorstate-shape	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:22
+os::x11::X11CursorState::image_active	variable	platform/window-input	os-x11-x11cursorstate-image-active	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:23
+os::x11::X11CursorState::grab_held	variable	platform/window-input	os-x11-x11cursorstate-grab-held	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:24
+os::x11::X11CursorState::xi_ready	variable	platform/window-input	os-x11-x11cursorstate-xi-ready	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:25
+os::x11::X11CursorState::xi_opcode	variable	platform/window-input	os-x11-x11cursorstate-xi-opcode	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:26
+os::x11::X11CursorState::live	variable	platform/window-input	os-x11-x11cursorstate-live	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:27
+os::x11::X11CursorState::lock	variable	platform/window-input	os-x11-x11cursorstate-lock	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:28
+os::x11::CursorInit(_XDisplay*,X11CursorState&)	function	platform/window-input	os-x11-cursorinit-xdisplay-star-x11cursorstate-amp	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:32
+os::x11::CursorSetShape(_XDisplay*,unsigned long,X11CursorState&,CursorShape)	function	platform/window-input	os-x11-cursorsetshape-xdisplay-star-unsigned-long-x11cursorstate-amp-cursorshape	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:36
+os::x11::CursorSetImage(_XDisplay*,unsigned long,X11CursorState&,const CursorImage&)	function	platform/window-input	os-x11-cursorsetimage-xdisplay-star-unsigned-long-x11cursorstate-amp-const-cursorimage-amp	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:40
+os::x11::CursorClearImage(_XDisplay*,unsigned long,X11CursorState&)	function	platform/window-input	os-x11-cursorclearimage-xdisplay-star-unsigned-long-x11cursorstate-amp	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:43
+os::x11::CursorSetLock(_XDisplay*,unsigned long,X11CursorState&,bool)	function	platform/window-input	os-x11-cursorsetlock-xdisplay-star-unsigned-long-x11cursorstate-amp-bool	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:46
+os::x11::CursorSetFocus(_XDisplay*,unsigned long,X11CursorState&,bool)	function	platform/window-input	os-x11-cursorsetfocus-xdisplay-star-unsigned-long-x11cursorstate-amp-bool	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:49
+os::x11::CursorHandleGeneric(_XDisplay*,X11CursorState&,void*,InputEventQueue&)	function	platform/window-input	os-x11-cursorhandlegeneric-xdisplay-star-x11cursorstate-amp-void-star-inputeventqueue-amp	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:52
+os::x11::CursorRelease(_XDisplay*,unsigned long,X11CursorState&)	function	platform/window-input	os-x11-cursorrelease-xdisplay-star-unsigned-long-x11cursorstate-amp	platform-window-input.md	engine/platform/linux/x11/x11_cursor.h:55
+os::x11::X11Window	class	platform/window-input	os-x11-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:29
+os::x11::X11Window::Create(StringView,u32,u32)	function	platform/window-input	os-x11-x11window-create-stringview-u32-u32	platform-window-input.md	engine/platform/linux/x11/x11_window.h:37
+os::x11::X11Window::X11Window()	function	platform/window-input	os-x11-x11window-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:40
+os::x11::X11Window::~X11Window()	function	platform/window-input	os-x11-x11window-tilde-x11window	platform-window-input.md	engine/platform/linux/x11/x11_window.h:43
+os::x11::X11Window::X11Window(const X11Window&)	function	platform/window-input	os-x11-x11window-x11window-const-x11window-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:45
+os::x11::X11Window::operator=(const X11Window&)	function	platform/window-input	os-x11-x11window-operator-eq-const-x11window-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:46
+os::x11::X11Window::X11Window(X11Window&&) noexcept	function	platform/window-input	os-x11-x11window-x11window-x11window-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/x11/x11_window.h:48
+os::x11::X11Window::operator=(X11Window&&) noexcept	function	platform/window-input	os-x11-x11window-operator-eq-x11window-amp-amp-noexcept	platform-window-input.md	engine/platform/linux/x11/x11_window.h:51
+os::x11::X11Window::Valid() const	function	platform/window-input	os-x11-x11window-valid-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:54
+os::x11::X11Window::PumpEvents(InputState*)	function	platform/window-input	os-x11-x11window-pumpevents-inputstate-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:61
+os::x11::X11Window::PumpEvents()	function	platform/window-input	os-x11-x11window-pumpevents	platform-window-input.md	engine/platform/linux/x11/x11_window.h:64
+os::x11::X11Window::SetInputState(InputState*)	function	platform/window-input	os-x11-x11window-setinputstate-inputstate-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:68
+os::x11::X11Window::PollEvent(InputEvent*)	function	platform/window-input	os-x11-x11window-pollevent-inputevent-star	platform-window-input.md	engine/platform/linux/x11/x11_window.h:70
+os::x11::X11Window::DroppedEvents() const	function	platform/window-input	os-x11-x11window-droppedevents-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:72
+os::x11::X11Window::ShouldClose() const	function	platform/window-input	os-x11-x11window-shouldclose-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:74
+os::x11::X11Window::Width() const	function	platform/window-input	os-x11-x11window-width-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:76
+os::x11::X11Window::Height() const	function	platform/window-input	os-x11-x11window-height-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:78
+os::x11::X11Window::BackendName() const	function	platform/window-input	os-x11-x11window-backendname-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:80
+os::x11::X11Window::GetNativeInfo() const	function	platform/window-input	os-x11-x11window-getnativeinfo-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:82
+os::x11::X11Window::IsMinimized() const	function	platform/window-input	os-x11-x11window-isminimized-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:92
+os::x11::X11Window::ResizeSerial() const	function	platform/window-input	os-x11-x11window-resizeserial-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:94
+os::x11::X11Window::SupportsFullscreen() const	function	platform/window-input	os-x11-x11window-supportsfullscreen-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:97
+os::x11::X11Window::SetFullscreen(bool)	function	platform/window-input	os-x11-x11window-setfullscreen-bool	platform-window-input.md	engine/platform/linux/x11/x11_window.h:101
+os::x11::X11Window::IsFullscreen() const	function	platform/window-input	os-x11-x11window-isfullscreen-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:103
+os::x11::X11Window::SupportsCursorShape() const	function	platform/window-input	os-x11-x11window-supportscursorshape-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:106
+os::x11::X11Window::SetCursor(CursorShape)	function	platform/window-input	os-x11-x11window-setcursor-cursorshape	platform-window-input.md	engine/platform/linux/x11/x11_window.h:108
+os::x11::X11Window::SupportsCursorImage() const	function	platform/window-input	os-x11-x11window-supportscursorimage-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:110
+os::x11::X11Window::SetCursorImage(const CursorImage&)	function	platform/window-input	os-x11-x11window-setcursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/linux/x11/x11_window.h:112
+os::x11::X11Window::ClearCursorImage()	function	platform/window-input	os-x11-x11window-clearcursorimage	platform-window-input.md	engine/platform/linux/x11/x11_window.h:114
+os::x11::X11Window::SupportsPointerLock() const	function	platform/window-input	os-x11-x11window-supportspointerlock-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:116
+os::x11::X11Window::SetPointerLock(bool)	function	platform/window-input	os-x11-x11window-setpointerlock-bool	platform-window-input.md	engine/platform/linux/x11/x11_window.h:118
+os::x11::X11Window::PointerLocked() const	function	platform/window-input	os-x11-x11window-pointerlocked-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:120
+os::x11::X11Window::CursorObjectCount() const	function	platform/window-input	os-x11-x11window-cursorobjectcount-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:122
+os::x11::X11Window::NativeDisplay() const	function	platform/window-input	os-x11-x11window-nativedisplay-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:127
+os::x11::X11Window::NativeWindow() const	function	platform/window-input	os-x11-x11window-nativewindow-const	platform-window-input.md	engine/platform/linux/x11/x11_window.h:131
 os::XkbKeyboard	class	platform/window-input	os-xkbkeyboard	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:23
 os::XkbKeyboard::XkbKeyboard()	function	platform/window-input	os-xkbkeyboard-xkbkeyboard	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:25
 os::XkbKeyboard::~XkbKeyboard()	function	platform/window-input	os-xkbkeyboard-tilde-xkbkeyboard	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:28
@@ -1689,49 +1795,57 @@ os::XkbKeyboard::TextForEvdevCode(u32,char*,usize)	function	platform/window-inpu
 os::XkbKeyboard::KeyRepeats(u32) const	function	platform/window-input	os-xkbkeyboard-keyrepeats-u32-const	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:89
 os::XkbKeyboard::ResetCompose()	function	platform/window-input	os-xkbkeyboard-resetcompose	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:92
 os::XkbKeyboard::Modifiers() const	function	platform/window-input	os-xkbkeyboard-modifiers-const	platform-window-input.md	engine/platform/linux/xkb_keyboard.h:97
-os::NativeWindowKind	enum	platform/window-input	os-nativewindowkind	platform-window-input.md	engine/platform/window.h:15
-os::NativeWindowKind::Invalid	enumerator	platform/window-input	os-nativewindowkind-invalid	platform-window-input.md	engine/platform/window.h:16
-os::NativeWindowKind::Wayland	enumerator	platform/window-input	os-nativewindowkind-wayland	platform-window-input.md	engine/platform/window.h:17
-os::NativeWindowKind::Xlib	enumerator	platform/window-input	os-nativewindowkind-xlib	platform-window-input.md	engine/platform/window.h:18
-os::NativeWindowKind::Win32	enumerator	platform/window-input	os-nativewindowkind-win32	platform-window-input.md	engine/platform/window.h:19
-os::NativeWindowKind::Cocoa	enumerator	platform/window-input	os-nativewindowkind-cocoa	platform-window-input.md	engine/platform/window.h:20
-os::NativeWindowKind::Android	enumerator	platform/window-input	os-nativewindowkind-android	platform-window-input.md	engine/platform/window.h:21
-os::NativeWindowInfo	struct	platform/window-input	os-nativewindowinfo	platform-window-input.md	engine/platform/window.h:32
-os::NativeWindowInfo::kind	variable	platform/window-input	os-nativewindowinfo-kind	platform-window-input.md	engine/platform/window.h:34
-os::NativeWindowInfo::display	variable	platform/window-input	os-nativewindowinfo-display	platform-window-input.md	engine/platform/window.h:36
-os::NativeWindowInfo::surface	variable	platform/window-input	os-nativewindowinfo-surface	platform-window-input.md	engine/platform/window.h:38
-os::NativeWindowInfo::window_id	variable	platform/window-input	os-nativewindowinfo-window-id	platform-window-input.md	engine/platform/window.h:40
-os::Window	class	platform/window-input	os-window	platform-window-input.md	engine/platform/window.h:49
-os::Window::~Window()	function	platform/window-input	os-window-tilde-window	platform-window-input.md	engine/platform/window.h:51
-os::Window::Valid() const	function	platform/window-input	os-window-valid-const	platform-window-input.md	engine/platform/window.h:54
-os::Window::PumpEvents()	function	platform/window-input	os-window-pumpevents	platform-window-input.md	engine/platform/window.h:57
-os::Window::PollEvent(InputEvent*)	function	platform/window-input	os-window-pollevent-inputevent-star	platform-window-input.md	engine/platform/window.h:66
-os::Window::DroppedEvents() const	function	platform/window-input	os-window-droppedevents-const	platform-window-input.md	engine/platform/window.h:69
-os::Window::ShouldClose() const	function	platform/window-input	os-window-shouldclose-const	platform-window-input.md	engine/platform/window.h:72
-os::Window::Width() const	function	platform/window-input	os-window-width-const	platform-window-input.md	engine/platform/window.h:75
-os::Window::Height() const	function	platform/window-input	os-window-height-const	platform-window-input.md	engine/platform/window.h:78
-os::Window::BackendName() const	function	platform/window-input	os-window-backendname-const	platform-window-input.md	engine/platform/window.h:82
-os::Window::GetNativeInfo() const	function	platform/window-input	os-window-getnativeinfo-const	platform-window-input.md	engine/platform/window.h:88
-os::Window::IsMinimized() const	function	platform/window-input	os-window-isminimized-const	platform-window-input.md	engine/platform/window.h:96
-os::Window::ResizeSerial() const	function	platform/window-input	os-window-resizeserial-const	platform-window-input.md	engine/platform/window.h:103
-os::Window::SupportsFullscreen() const	function	platform/window-input	os-window-supportsfullscreen-const	platform-window-input.md	engine/platform/window.h:109
-os::Window::SetFullscreen(bool)	function	platform/window-input	os-window-setfullscreen-bool	platform-window-input.md	engine/platform/window.h:119
-os::Window::IsFullscreen() const	function	platform/window-input	os-window-isfullscreen-const	platform-window-input.md	engine/platform/window.h:125
-os::Window::ModalLoopCallback	alias	platform/window-input	os-window-modalloopcallback	platform-window-input.md	engine/platform/window.h:128
-os::Window::SetModalLoopCallback(ModalLoopCallback,void*)	function	platform/window-input	os-window-setmodalloopcallback-modalloopcallback-void-star	platform-window-input.md	engine/platform/window.h:136
-os::WindowBackend	enum	platform/window-input	os-windowbackend	platform-window-input.md	engine/platform/window.h:148
-os::WindowBackend::Auto	enumerator	platform/window-input	os-windowbackend-auto	platform-window-input.md	engine/platform/window.h:149
-os::WindowBackend::Wayland	enumerator	platform/window-input	os-windowbackend-wayland	platform-window-input.md	engine/platform/window.h:150
-os::WindowBackend::X11	enumerator	platform/window-input	os-windowbackend-x11	platform-window-input.md	engine/platform/window.h:151
-os::WindowBackend::Win32	enumerator	platform/window-input	os-windowbackend-win32	platform-window-input.md	engine/platform/window.h:152
-os::WindowBackend::Invalid	enumerator	platform/window-input	os-windowbackend-invalid	platform-window-input.md	engine/platform/window.h:153
-os::ParseWindowBackend(StringView)	function	platform/window-input	os-parsewindowbackend-stringview	platform-window-input.md	engine/platform/window.h:161
-os::BackendPlan	struct	platform/window-input	os-backendplan	platform-window-input.md	engine/platform/window.h:166
-os::BackendPlan::candidates	variable	platform/window-input	os-backendplan-candidates	platform-window-input.md	engine/platform/window.h:168
-os::BackendPlan::count	variable	platform/window-input	os-backendplan-count	platform-window-input.md	engine/platform/window.h:170
-os::BackendPlan::refusal	variable	platform/window-input	os-backendplan-refusal	platform-window-input.md	engine/platform/window.h:173
-os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	os-planwindowbackends-windowbackend-bool-bool	platform-window-input.md	engine/platform/window.h:185
-os::PlanWin32WindowBackends(WindowBackend)	function	platform/window-input	os-planwin32windowbackends-windowbackend	platform-window-input.md	engine/platform/window.h:191
+os::NativeWindowKind	enum	platform/window-input	os-nativewindowkind	platform-window-input.md	engine/platform/window.h:16
+os::NativeWindowKind::Invalid	enumerator	platform/window-input	os-nativewindowkind-invalid	platform-window-input.md	engine/platform/window.h:17
+os::NativeWindowKind::Wayland	enumerator	platform/window-input	os-nativewindowkind-wayland	platform-window-input.md	engine/platform/window.h:18
+os::NativeWindowKind::Xlib	enumerator	platform/window-input	os-nativewindowkind-xlib	platform-window-input.md	engine/platform/window.h:19
+os::NativeWindowKind::Win32	enumerator	platform/window-input	os-nativewindowkind-win32	platform-window-input.md	engine/platform/window.h:20
+os::NativeWindowKind::Cocoa	enumerator	platform/window-input	os-nativewindowkind-cocoa	platform-window-input.md	engine/platform/window.h:21
+os::NativeWindowKind::Android	enumerator	platform/window-input	os-nativewindowkind-android	platform-window-input.md	engine/platform/window.h:22
+os::NativeWindowInfo	struct	platform/window-input	os-nativewindowinfo	platform-window-input.md	engine/platform/window.h:33
+os::NativeWindowInfo::kind	variable	platform/window-input	os-nativewindowinfo-kind	platform-window-input.md	engine/platform/window.h:35
+os::NativeWindowInfo::display	variable	platform/window-input	os-nativewindowinfo-display	platform-window-input.md	engine/platform/window.h:37
+os::NativeWindowInfo::surface	variable	platform/window-input	os-nativewindowinfo-surface	platform-window-input.md	engine/platform/window.h:39
+os::NativeWindowInfo::window_id	variable	platform/window-input	os-nativewindowinfo-window-id	platform-window-input.md	engine/platform/window.h:41
+os::Window	class	platform/window-input	os-window	platform-window-input.md	engine/platform/window.h:50
+os::Window::~Window()	function	platform/window-input	os-window-tilde-window	platform-window-input.md	engine/platform/window.h:52
+os::Window::Valid() const	function	platform/window-input	os-window-valid-const	platform-window-input.md	engine/platform/window.h:55
+os::Window::PumpEvents()	function	platform/window-input	os-window-pumpevents	platform-window-input.md	engine/platform/window.h:58
+os::Window::PollEvent(InputEvent*)	function	platform/window-input	os-window-pollevent-inputevent-star	platform-window-input.md	engine/platform/window.h:67
+os::Window::DroppedEvents() const	function	platform/window-input	os-window-droppedevents-const	platform-window-input.md	engine/platform/window.h:70
+os::Window::ShouldClose() const	function	platform/window-input	os-window-shouldclose-const	platform-window-input.md	engine/platform/window.h:73
+os::Window::Width() const	function	platform/window-input	os-window-width-const	platform-window-input.md	engine/platform/window.h:76
+os::Window::Height() const	function	platform/window-input	os-window-height-const	platform-window-input.md	engine/platform/window.h:79
+os::Window::BackendName() const	function	platform/window-input	os-window-backendname-const	platform-window-input.md	engine/platform/window.h:83
+os::Window::GetNativeInfo() const	function	platform/window-input	os-window-getnativeinfo-const	platform-window-input.md	engine/platform/window.h:89
+os::Window::IsMinimized() const	function	platform/window-input	os-window-isminimized-const	platform-window-input.md	engine/platform/window.h:97
+os::Window::ResizeSerial() const	function	platform/window-input	os-window-resizeserial-const	platform-window-input.md	engine/platform/window.h:104
+os::Window::SupportsCursorShape() const	function	platform/window-input	os-window-supportscursorshape-const	platform-window-input.md	engine/platform/window.h:107
+os::Window::SetCursor(CursorShape)	function	platform/window-input	os-window-setcursor-cursorshape	platform-window-input.md	engine/platform/window.h:113
+os::Window::SupportsCursorImage() const	function	platform/window-input	os-window-supportscursorimage-const	platform-window-input.md	engine/platform/window.h:116
+os::Window::SetCursorImage(const CursorImage&)	function	platform/window-input	os-window-setcursorimage-const-cursorimage-amp	platform-window-input.md	engine/platform/window.h:122
+os::Window::ClearCursorImage()	function	platform/window-input	os-window-clearcursorimage	platform-window-input.md	engine/platform/window.h:125
+os::Window::SupportsPointerLock() const	function	platform/window-input	os-window-supportspointerlock-const	platform-window-input.md	engine/platform/window.h:128
+os::Window::SetPointerLock(bool)	function	platform/window-input	os-window-setpointerlock-bool	platform-window-input.md	engine/platform/window.h:137
+os::Window::PointerLocked() const	function	platform/window-input	os-window-pointerlocked-const	platform-window-input.md	engine/platform/window.h:140
+os::Window::SupportsFullscreen() const	function	platform/window-input	os-window-supportsfullscreen-const	platform-window-input.md	engine/platform/window.h:146
+os::Window::SetFullscreen(bool)	function	platform/window-input	os-window-setfullscreen-bool	platform-window-input.md	engine/platform/window.h:156
+os::Window::IsFullscreen() const	function	platform/window-input	os-window-isfullscreen-const	platform-window-input.md	engine/platform/window.h:162
+os::Window::ModalLoopCallback	alias	platform/window-input	os-window-modalloopcallback	platform-window-input.md	engine/platform/window.h:165
+os::Window::SetModalLoopCallback(ModalLoopCallback,void*)	function	platform/window-input	os-window-setmodalloopcallback-modalloopcallback-void-star	platform-window-input.md	engine/platform/window.h:173
+os::WindowBackend	enum	platform/window-input	os-windowbackend	platform-window-input.md	engine/platform/window.h:185
+os::WindowBackend::Auto	enumerator	platform/window-input	os-windowbackend-auto	platform-window-input.md	engine/platform/window.h:186
+os::WindowBackend::Wayland	enumerator	platform/window-input	os-windowbackend-wayland	platform-window-input.md	engine/platform/window.h:187
+os::WindowBackend::X11	enumerator	platform/window-input	os-windowbackend-x11	platform-window-input.md	engine/platform/window.h:188
+os::WindowBackend::Win32	enumerator	platform/window-input	os-windowbackend-win32	platform-window-input.md	engine/platform/window.h:189
+os::WindowBackend::Invalid	enumerator	platform/window-input	os-windowbackend-invalid	platform-window-input.md	engine/platform/window.h:190
+os::ParseWindowBackend(StringView)	function	platform/window-input	os-parsewindowbackend-stringview	platform-window-input.md	engine/platform/window.h:198
+os::BackendPlan	struct	platform/window-input	os-backendplan	platform-window-input.md	engine/platform/window.h:203
+os::BackendPlan::candidates	variable	platform/window-input	os-backendplan-candidates	platform-window-input.md	engine/platform/window.h:205
+os::BackendPlan::count	variable	platform/window-input	os-backendplan-count	platform-window-input.md	engine/platform/window.h:207
+os::BackendPlan::refusal	variable	platform/window-input	os-backendplan-refusal	platform-window-input.md	engine/platform/window.h:210
+os::PlanWindowBackends(WindowBackend,bool,bool)	function	platform/window-input	os-planwindowbackends-windowbackend-bool-bool	platform-window-input.md	engine/platform/window.h:222
+os::PlanWin32WindowBackends(WindowBackend)	function	platform/window-input	os-planwin32windowbackends-windowbackend	platform-window-input.md	engine/platform/window.h:228
 os::PlatformWindowHost	class	platform/window-input	os-platformwindowhost	platform-window-input.md	engine/platform/window_host.h:22
 os::PlatformWindowHost::PlatformWindowHost()	function	platform/window-input	os-platformwindowhost-platformwindowhost	platform-window-input.md	engine/platform/window_host.h:25
 os::PlatformWindowHost::~PlatformWindowHost()	function	platform/window-input	os-platformwindowhost-tilde-platformwindowhost	platform-window-input.md	engine/platform/window_host.h:27

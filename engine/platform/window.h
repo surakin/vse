@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform/input.h"
+#include "platform/cursor.h"
 #include "platform/input_event.h"
 #include "string/string.h"
 #include "types.h"
@@ -101,6 +102,42 @@ public:
     /// process-wide counter, so an open window never reports 0, and a value never repeats across size changes,
     /// windows, or closing and reopening. An invalid or closed window reports 0.
     virtual u64 ResizeSerial() const = 0;
+
+    /// Returns whether [[os::Window::SetCursor]] can show the standard shapes on this window (the default is false).
+    virtual bool SupportsCursorShape() const { return false; }
+
+    /// Shows a standard cursor shape while the pointer is over the window. A custom image set by [[os::Window::SetCursorImage]] hides the shape until it is cleared.
+    /// Param shape: the shape; [[os::CursorShape::Hidden]] shows no cursor.
+    /// Returns: true if the shape is in effect or will be as soon as the pointer is over the window; setting the shape already shown is a no-op that returns true.
+    /// Fails: returns false, changing nothing, if the window is invalid, `shape` is out of range or cursor shapes are unsupported (`Hidden` may still work where the other shapes do not).
+    virtual bool SetCursor([[maybe_unused]] CursorShape shape) { return false; }
+
+    /// Returns whether [[os::Window::SetCursorImage]] works on this window (the default is false).
+    virtual bool SupportsCursorImage() const { return false; }
+
+    /// Shows a custom cursor image; it replaces the shape until [[os::Window::ClearCursorImage]]. The window copies the pixels.
+    /// Param image: a valid image: see [[os::ValidateCursorImage]].
+    /// Returns: true if the image is in effect or will be as soon as the pointer is over the window.
+    /// Fails: returns false, changing nothing, if the image is invalid (too large, hotspot outside, bad scale), the window is invalid or images are unsupported.
+    virtual bool SetCursorImage([[maybe_unused]] const CursorImage& image) { return false; }
+
+    /// Removes the custom cursor image; the last shape set by [[os::Window::SetCursor]] (the arrow at first) shows again. A no-op without an image.
+    virtual void ClearCursorImage() {}
+
+    /// Returns whether [[os::Window::SetPointerLock]] works on this window (the default is false). On Wayland it depends on the compositor offering the protocols.
+    virtual bool SupportsPointerLock() const { return false; }
+
+    /// Asks to lock the pointer: it stops moving, and the program gets [[os::InputEventType::RelativeMotion]] events instead (a camera control).
+    ///
+    /// The lock holds only while the window has focus: it is released on focus loss and asked for again on focus gain while the program still wants it, and a request made
+    /// while unfocused takes effect when focus arrives. A second request for the same state is a no-op. Destroying the window releases the lock.
+    /// Param locked: true to lock, false to release.
+    /// Returns: true if the request was accepted (the lock may take effect a moment later: see [[os::Window::PointerLocked]]).
+    /// Fails: returns false, changing nothing, if the window is invalid or the lock is unsupported.
+    virtual bool SetPointerLock([[maybe_unused]] bool locked) { return false; }
+
+    /// Returns whether the pointer is locked right now (the request was granted and focus is held).
+    virtual bool PointerLocked() const { return false; }
 
     /// Returns whether this window can be made fullscreen (the platform and, where it can be known, the compositor allow it).
     ///

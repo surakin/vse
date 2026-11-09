@@ -63,6 +63,7 @@ bool WaylandInput::Init(WaylandConnection& connection, InputState* input_state) 
     seat_ = connection.Seat();
     input_state_ = input_state;
     keyboard_events_.Init(&xkb_, &events_);
+    cursor_.Init(&connection, &events_);
     wl_seat_add_listener(seat_, &kSeatListener, this);
     // First roundtrip delivers wl_seat.capabilities (which creates the
     // wl_keyboard/wl_pointer); the second delivers the keymap/modifiers
@@ -83,6 +84,7 @@ void WaylandInput::Shutdown() {
         wl_keyboard_destroy(keyboard_);
         keyboard_ = nullptr;
     }
+    cursor_.Shutdown(); // before the pointer: the shape device and relative pointer belong to it
     if (pointer_ != nullptr) {
         wl_pointer_destroy(pointer_);
         pointer_ = nullptr;
@@ -125,8 +127,10 @@ void WaylandInput::HandleSeatCapabilities(void* data, wl_seat* seat, u32 capabil
         self->pointer_ = wl_seat_get_pointer(seat);
         if (self->pointer_ != nullptr) {
             wl_pointer_add_listener(self->pointer_, &kPointerListener, self);
+            self->cursor_.AttachPointer(self->pointer_);
         }
     } else if (!has_pointer && self->pointer_ != nullptr) {
+        self->cursor_.DetachPointer();
         wl_pointer_destroy(self->pointer_);
         self->pointer_ = nullptr;
         self->input_state_->pointer_inside = false;
@@ -166,6 +170,7 @@ void WaylandInput::HandleKeyboardEnter(void* data, wl_keyboard* keyboard, u32 se
     (void)surface;
     auto* self = static_cast<WaylandInput*>(data);
     // `keys` lists the evdev codes already held when focus arrived.
+    self->cursor_.OnFocus(true);
     self->keyboard_events_.FocusGained(NowNs());
     auto* begin = static_cast<u32*>(keys->data);
     auto* end = begin + keys->size / sizeof(u32);
@@ -181,6 +186,7 @@ void WaylandInput::HandleKeyboardLeave(void* data, wl_keyboard* keyboard, u32 se
     (void)surface;
     // Without focus we won't see the releases; don't leave keys stuck.
     auto* self = static_cast<WaylandInput*>(data);
+    self->cursor_.OnFocus(false);
     self->keyboard_events_.FocusLost(NowNs());
     self->ReleaseAllKeys();
 }
@@ -219,6 +225,7 @@ void WaylandInput::HandlePointerEnter(void* data, wl_pointer* pointer, u32 seria
     (void)surface;
     InputState* state = static_cast<WaylandInput*>(data)->input_state_;
     state->pointer_inside = true;
+    static_cast<WaylandInput*>(data)->cursor_.OnPointerEnter(serial);
     state->mouse_x = wl_fixed_to_double(x);
     state->mouse_y = wl_fixed_to_double(y);
     static_cast<WaylandInput*>(data)->PushPointerEvent(InputEventType::PointerEnter, state->mouse_x, state->mouse_y);
@@ -319,7 +326,7 @@ bool WaylandInput::ListenersComplete() {
     const wl_keyboard_listener& k = kKeyboardListener;
     const wl_seat_listener& s = kSeatListener;
     return p.enter && p.leave && p.motion && p.button && p.axis && p.frame && p.axis_source && p.axis_stop && p.axis_discrete && k.keymap && k.enter && k.leave &&
-           k.key && k.modifiers && k.repeat_info && s.capabilities && s.name;
+           k.key && k.modifiers && k.repeat_info && s.capabilities && s.name && WaylandCursor::ListenersComplete();
 }
 
 void WaylandInput::PushPointerEvent(InputEventType type, f64 x, f64 y) {
