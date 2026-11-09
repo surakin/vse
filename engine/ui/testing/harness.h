@@ -39,13 +39,13 @@ public:
     ///
     /// Ownership: borrowed; the owner keeps it and it stays valid while the owner lives.
     /// Fails: returns null when there is none.
-    const text::Font* GetFont() const { return font_ok_ ? &font_ : nullptr; }
+    text::Font* GetFont() { return font_ok_ ? &font_ : nullptr; }
     /// Returns the draw list of the last frame that rebuilt it.
     const DrawList& List() const { return list_; }
     /// Serves the harness font for every family.
     /// Fails: returns null when the font did not open.
     /// Ownership: borrowed; the owner keeps it and it stays valid while the owner lives.
-    const text::Font* Resolve(u32 family) override;
+    text::Font* Resolve(u32 family) override;
 
     /// Runs a frame of `dt` seconds, rebuilding the draw list when needed; returns whether it was rebuilt.
     /// Fails: never.

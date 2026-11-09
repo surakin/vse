@@ -92,6 +92,35 @@ Widget* Widget::FindByName(StringView name) {
     return nullptr;
 }
 
+Size Widget::MeasureTotal(const Constraints& constraints) {
+    if (surface_ != nullptr && measure_generation_ == surface_->LayoutGeneration() && measure_constraints_ == constraints) return measure_result_;
+    Size s = Measure(constraints);
+    if (props_.width >= 0) s.w = props_.width;
+    if (props_.height >= 0) s.h = props_.height;
+    if (s.w < props_.min.w) s.w = props_.min.w;
+    if (s.h < props_.min.h) s.h = props_.min.h;
+    if (s.w > props_.max.w) s.w = props_.max.w;
+    if (s.h > props_.max.h) s.h = props_.max.h;
+    s = constraints.Clamp(s);
+    if (surface_ != nullptr) {
+        measure_generation_ = surface_->LayoutGeneration();
+        measure_constraints_ = constraints;
+        measure_result_ = s;
+    }
+    return s;
+}
+
+void Widget::SetProps(const LayoutProps& props) {
+    props_ = props;
+    MarkDirty(kLayoutDirty);
+}
+
+void Widget::SetCollapsed(bool collapsed) {
+    if (collapsed_ == collapsed) return;
+    collapsed_ = collapsed;
+    MarkDirty(kLayoutDirty | kDrawDirty);
+}
+
 void Widget::SetBounds(const Rect& bounds) {
     if (bounds.x == bounds_.x && bounds.y == bounds_.y && bounds.w == bounds_.w && bounds.h == bounds_.h) return;
     bounds_ = bounds;
@@ -146,7 +175,7 @@ void Widget::ClearDirtyTree(u32 flags) {
 }
 
 Widget* Widget::HitTest(Point point) {
-    if (!visible_) return nullptr;
+    if (!Shown()) return nullptr;
     if (clip_children_ && !Contains(bounds_, point)) return nullptr; // the widget and its children are cut by the bounds
     for (usize i = children_.Size(); i > 0; --i) {
         if (Widget* hit = children_[i - 1]->HitTest(point)) return hit;
@@ -156,7 +185,7 @@ Widget* Widget::HitTest(Point point) {
 }
 
 void Widget::DrawTree(Canvas& canvas) {
-    if (!visible_) return;
+    if (!Shown()) return;
     Draw(canvas);
     if (children_.Empty()) return;
     if (clip_children_) canvas.PushClip(bounds_);

@@ -66,6 +66,46 @@ struct CornerRadii {
     bool AllZero() const { return !(top_left > 0) && !(top_right > 0) && !(bottom_right > 0) && !(bottom_left > 0); }
 };
 
+/// A width and a height in logical units.
+///
+/// Thread-safety: thread-compatible plain data.
+/// Ownership: owns nothing.
+struct Size {
+    f32 w = 0; ///< Width.
+    f32 h = 0; ///< Height.
+};
+
+/// Distances from the four edges of a rectangle inwards (padding, margins).
+///
+/// Thread-safety: thread-compatible plain data.
+/// Ownership: owns nothing.
+struct Insets {
+    f32 left = 0;   ///< Left distance.
+    f32 top = 0;    ///< Top distance.
+    f32 right = 0;  ///< Right distance.
+    f32 bottom = 0; ///< Bottom distance.
+
+    /// Makes zero insets.
+    Insets() = default;
+    /// Makes the same distance on all four sides.
+    /// Param all: the distance.
+    Insets(f32 all) : left(all), top(all), right(all), bottom(all) {}
+    /// Makes insets from the four distances.
+    /// Param l: left.
+    /// Param t: top.
+    /// Param r: right.
+    /// Param b: bottom.
+    Insets(f32 l, f32 t, f32 r, f32 b) : left(l), top(t), right(r), bottom(b) {}
+    /// Returns `left + right`.
+    ///
+    /// Fails: never.
+    f32 Horizontal() const { return left + right; }
+    /// Returns `top + bottom`.
+    ///
+    /// Fails: never.
+    f32 Vertical() const { return top + bottom; }
+};
+
 /// A rectangle of whole physical pixels: a clip rectangle or a surface size.
 ///
 /// Thread-safety: thread-compatible plain data.

@@ -7,6 +7,7 @@ set(UI_TEST_SOURCES
   theme_test.cpp
   widget_tree_test.cpp
   surface_test.cpp
+  layout_test.cpp
 )
 
 find_package(Threads REQUIRED)

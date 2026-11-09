@@ -21,11 +21,11 @@ namespace engine_placeholder::ui {
 class FontProvider {
 public:
     virtual ~FontProvider() = default;
-    /// Returns the font for `family` (a [[ui::FontRef::family]]), or null when there is none.
+    /// Returns the font for `family` (a [[ui::FontRef::family]]), or null when there is none; text layout sets its pixel size, so it is not const.
     ///
     /// Ownership: borrowed; valid while the provider lives.
     /// Fails: returns null for an unknown family.
-    virtual const text::Font* Resolve(u32 family) = 0;
+    virtual text::Font* Resolve(u32 family) = 0;
 };
 
 /// A tree of widgets and everything the widgets share.
@@ -62,7 +62,7 @@ public:
     f32 Height() const { return height_; }
     /// Returns the scale: physical pixels per logical unit.
     f32 Scale() const { return scale_; }
-    /// Changes the size and scale (the root and the popup layer follow); marks layout dirty. Do it once per frame at most.
+    /// Changes the size and scale (the root and the popup layer follow); marks layout dirty. The same size and scale again does nothing; several calls between two frames cost one layout.
     /// Aborts: `scale` is not above 0.
     void Resize(f32 width, f32 height, f32 scale);
 
@@ -125,8 +125,12 @@ public:
     /// Returns whether something looks different since the last rebuilt draw list (what an on-demand offscreen surface reads).
     /// Fails: never.
     bool NeedsRedraw() const { return draw_dirty_; }
-    /// Returns how many times layout has run.
+    /// Returns how many frames ran layout.
     u64 LayoutPasses() const { return layout_passes_; }
+    /// Returns how many times layout was still invalidated after its second pass in a frame (a widget that keeps invalidating itself); the surface gives up and draws.
+    u64 LayoutOverruns() const { return layout_overruns_; }
+    /// Returns a counter that changes whenever layout is invalidated or run; cached measurements are valid for one value of it.
+    u64 LayoutGeneration() const { return layout_generation_; }
     /// Returns how many events are queued.
     usize QueuedEvents() const { return queue_.Size(); }
 
@@ -139,7 +143,6 @@ private:
     void SetHover(Widget* widget, const Event& cause);
     Widget* HitTestAll(Point point);
     void FlushRemovals();
-    void RunLayout(Widget* widget);
     void UpdateWidgets(Widget* widget, f32 dt);
     bool Dispatching() const { return depth_ > 0; }
 
@@ -156,6 +159,8 @@ private:
     bool layout_dirty_ = true;
     bool draw_dirty_ = true;
     u64 layout_passes_ = 0;
+    u64 layout_overruns_ = 0;
+    u64 layout_generation_ = 1;
     u32 depth_ = 0;
     Vector<Event> queue_;
     Vector<Widget*> removals_;

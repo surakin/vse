@@ -7,6 +7,8 @@ set(UI_SOURCES
   theme.cpp
   widget.cpp
   surface.cpp
+  layout.cpp
+  text_block.cpp
   testing/software_raster.cpp
   testing/harness.cpp
   testing/recording_canvas.cpp

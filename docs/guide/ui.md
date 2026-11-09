@@ -104,4 +104,29 @@ ui::RasterImage image;
 h.Render(&image);                                   // 400x200 pixels, compare what you expect
 ```
 
-More sections arrive with the days that build them (layout, layout, input, widgets, popups, drag and drop, viewport, surfaces).
+## Layout
+
+Layout is two steps per widget, in logical units. **`Measure(constraints)`** says what size the widget wants from its content (a text block's text, a container's children); a container asks a child with **`MeasureTotal`**, which applies the child's
+own `LayoutProps` (`width`/`height` preferences, `min`/`max`) and caches the answer for the layout pass. **`Arrange(rect)`** places the widget and its children. The surface runs it parent before children when layout is dirty, in at most **two passes**
+per frame (the second is for a widget whose size depends on the width it was given and invalidates layout again); a widget that never settles is counted in `LayoutOverruns()` and the surface draws anyway. `Resize` to the size it already has does nothing,
+and any number of resizes between two frames cost one layout. A plain `Widget` keeps its children where they are (or gives the whole content box to a child with `fill_parent`); the containers below place them.
+
+- **`BoxLayout`** (horizontal or vertical): spacing and padding; each child gets its preferred size along the axis, then the free space goes to the children with a `weight` (a child that reaches its `max` is frozen and the rest share what is left);
+  with too little room every child gives up a share of what it has above its `min`; across the axis a child follows its **alignment** (`Start`, `Center`, `End` use the preferred size, `Stretch`, the default, fills the cell within `min`/`max`).
+  For a fixed size use `min == max` or a non-stretch alignment. **`Spacer`** is an empty widget with a weight.
+- **`StackLayout`:** every child over the whole content box, aligned by its own properties. **`AnchorLayout`:** edges as fractions of the box plus offsets (`LayoutProps::anchor`; equal min and max on an axis means the preferred size).
+- **`GridLayout`:** columns and rows of `TrackSize::Fixed(size)`, `Auto()` (the largest single-cell child) or `Weight(w)` (the preferred size plus a share of the free space); a child names `column`, `row` and spans, which do not size auto tracks.
+- **Collapsed or hidden:** `SetCollapsed(true)` takes no space and is not drawn or hit; `SetVisible(false)` keeps the space.
+- **`TextBlock`** reports the size of its text, laid out in physical pixels and converted back; with wrapping the width it is measured at is the wrap width, so a container measures it at the width it will give it. Its layout is cached, so an unchanged block does
+  not lay out again.
+- Rectangles stay fractional; the canvas snaps edges to whole pixels when drawing, so neighbours share an edge at 1.25x with no seam.
+
+```cpp
+auto* box = new_widget<ui::BoxLayout>(ui::Orientation::Horizontal);   // however your code makes widgets
+box->SetSpacing(8);
+ui::LayoutProps grow; grow.weight = 1;
+box->AddChild(MakeSearchField())->SetProps(grow);                    // takes the free width
+box->AddChild(MakeButton("Go"));                                     // its preferred width
+```
+
+More sections arrive with the days that build them ( layout, input, widgets, popups, drag and drop, viewport, surfaces).

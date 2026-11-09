@@ -8,6 +8,7 @@
 #include "ui/canvas.h"
 #include "ui/event.h"
 #include "ui/geometry.h"
+#include "ui/layout_types.h"
 
 //! The retained widget tree (Phase 15, Day 192): a [[ui::Widget]] owns its children, belongs to one [[ui::Surface]] and draws through the abstract [[ui::Canvas]].
 
@@ -37,7 +38,7 @@ public:
     /// Param name: the name used by `FindByName` and for the id; may be empty.
     explicit Widget(StringView name = StringView());
     /// Destroys the children, after clearing the surface's references to this widget.
-    // Inline on purpose: with no out-of-line virtual the class has no key function, so a test (built with RTTI) that derives from it emits its own typeinfo; the library is built without.
+    // Inline on purpose (like every virtual of this class): with no out-of-line virtual the class has no key function, so a test (built with RTTI) that derives from it emits its own typeinfo; the library is built without.
     virtual ~Widget() { NotifyDestroyed(); }
     Widget(const Widget&) = delete;
     Widget& operator=(const Widget&) = delete;
@@ -140,8 +141,35 @@ public:
 
     /// Draws this widget (not its children); the default draws nothing.
     virtual void Draw(Canvas&) {}
-    /// Places the children; called by the surface, parent before children, when layout is dirty. The default does nothing (Day 193 adds the layout containers).
-    virtual void Arrange() {}
+    /// Returns the size this widget wants from its content, within `constraints`: a label's text, an image's natural size, a container's children. The default is 0 x 0. Call
+    /// [[ui::Widget::MeasureTotal]], not this, to ask a child: it adds the widget's own size overrides and limits and caches the answer for the layout pass.
+    virtual Size Measure(const Constraints&) { return Size(); }
+    /// Places the widget in `rect` (surface coordinates) and its children inside it; called by the surface when layout is dirty, parent before children.
+    /// The default sets the bounds and arranges each shown child in its own current bounds, or in the whole content box if it has `fill_parent`.
+    virtual void Arrange(const Rect& rect) {
+        SetBounds(rect);
+        for (usize i = 0; i < children_.Size(); ++i) {
+            Widget* child = children_[i].Get();
+            if (!child->collapsed_) child->Arrange(child->props_.fill_parent ? rect : child->bounds_);
+        }
+    }
+    /// Asks for the size of this widget in `constraints`: `Measure` with the `width` and `height` of the layout properties applied, limited to their `min` and `max`, then to
+    /// `constraints`. Cached until the next layout change.
+    Size MeasureTotal(const Constraints& constraints);
+    /// Returns the layout properties.
+    const LayoutProps& Props() const { return props_; }
+    /// Sets the layout properties; marks layout dirty.
+    void SetProps(const LayoutProps& props);
+    /// Returns whether the widget takes no space and is not drawn or hit (see `SetCollapsed`).
+    ///
+    /// Fails: never.
+    bool Collapsed() const { return collapsed_; }
+    /// Collapses the widget: it takes no space in a container and is not drawn or hit; `SetVisible(false)` instead hides it but keeps its space. Marks layout dirty.
+    void SetCollapsed(bool collapsed);
+    /// Returns whether the widget is drawn and hit: visible and not collapsed.
+    ///
+    /// Fails: never.
+    bool Shown() const { return visible_ && !collapsed_; }
     /// Handles an event delivered to this widget with its position in local space; set `event.handled` to stop it from bubbling. The default ignores it.
     virtual void OnEvent(Event&) {}
     /// Advances time by `dt` seconds; called each frame for the widgets whose `WantsUpdate` is true.
@@ -169,6 +197,11 @@ private:
     Rect bounds_;
     u32 dirty_ = 0;
     u32 state_ = 0; // hover, pressed, focused, checked
+    LayoutProps props_;
+    u64 measure_generation_ = 0;
+    Constraints measure_constraints_;
+    Size measure_result_;
+    bool collapsed_ = false;
     bool visible_ = true;
     bool enabled_ = true;
     bool pass_through_ = false;

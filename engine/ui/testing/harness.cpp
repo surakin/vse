@@ -14,7 +14,7 @@ Harness::Harness(f32 width, f32 height, f32 scale, StringView font_file) : surfa
     surface_.SetFontProvider(this);
 }
 
-const text::Font* Harness::Resolve(u32) { return font_ok_ ? &font_ : nullptr; }
+text::Font* Harness::Resolve(u32) { return font_ok_ ? &font_ : nullptr; }
 
 bool Harness::Advance(f32 dt) { return surface_.Frame(dt, &list_, &atlas_); }
 

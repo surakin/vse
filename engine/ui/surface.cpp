@@ -35,6 +35,7 @@ Surface::~Surface() {
 
 void Surface::Resize(f32 width, f32 height, f32 scale) {
     ENGINE_ASSERT(scale > 0, "Surface::Resize: the scale must be above 0");
+    if (width == width_ && height == height_ && scale == scale_) return;
     width_ = width;
     height_ = height;
     scale_ = scale;
@@ -58,7 +59,10 @@ void Surface::SetFontProvider(FontProvider* provider) {
 }
 
 void Surface::NoteDirty(u32 flags) {
-    if ((flags & kLayoutDirty) != 0) layout_dirty_ = true;
+    if ((flags & kLayoutDirty) != 0) {
+        layout_dirty_ = true;
+        ++layout_generation_;
+    }
     draw_dirty_ = true;
 }
 
@@ -202,14 +206,9 @@ void Surface::Dispatch(Event e) {
 }
 
 void Surface::UpdateWidgets(Widget* widget, f32 dt) {
-    if (!widget->Visible()) return;
+    if (!widget->Shown()) return;
     if (widget->WantsUpdate()) widget->Update(dt);
     for (usize i = 0; i < widget->ChildCount(); ++i) UpdateWidgets(widget->ChildAt(i), dt);
-}
-
-void Surface::RunLayout(Widget* widget) {
-    widget->Arrange();
-    for (usize i = 0; i < widget->ChildCount(); ++i) RunLayout(widget->ChildAt(i));
 }
 
 bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
@@ -224,11 +223,25 @@ bool Surface::Frame(f32 dt, DrawList* list, text::GlyphAtlas* atlas) {
     if (--depth_ == 0) FlushRemovals();
 
     if (layout_dirty_) {
-        RunLayout(root_.Get());
-        RunLayout(popups_.Get());
-        root_->ClearDirtyTree(kLayoutDirty);
-        popups_->ClearDirtyTree(kLayoutDirty);
-        layout_dirty_ = false;
+        // At most two passes: the second one is for a widget whose size depends on the width it was given (it invalidates layout when that changes).
+        Rect all;
+        all.w = width_;
+        all.h = height_;
+        for (int pass = 0; pass < 2; ++pass) {
+            layout_dirty_ = false;
+            root_->ClearDirtyTree(kLayoutDirty);
+            popups_->ClearDirtyTree(kLayoutDirty);
+            ++layout_generation_;
+            root_->Arrange(all);
+            popups_->Arrange(all);
+            if (!layout_dirty_) break;
+        }
+        if (layout_dirty_) {
+            ++layout_overruns_;
+            layout_dirty_ = false;
+            root_->ClearDirtyTree(kLayoutDirty);
+            popups_->ClearDirtyTree(kLayoutDirty);
+        }
         ++layout_passes_;
         draw_dirty_ = true;
     }
