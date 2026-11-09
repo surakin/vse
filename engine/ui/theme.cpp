@@ -424,6 +424,7 @@ void ThemeSet::NoteMissing(WidgetKind kind, VariantId variant, StringView name) 
 ResolvedStyle ThemeSet::Resolve(WidgetKind kind, VariantId variant, u32 state, f32 scale, Span<const Theme* const> overrides) {
     ENGINE_ASSERT(scale > 0, "ThemeSet::Resolve: the scale must be above 0");
     ++stats_.resolves;
+    overrides = Chain(overrides);
     const bool cacheable = overrides.Size() == 0;
     if (cacheable) {
         for (usize i = 0; i < cache_.Size(); ++i) {
@@ -458,7 +459,7 @@ ResolvedStyle ThemeSet::Resolve(WidgetKind kind, StringView variant, u32 state, 
 
 u32 ThemeSet::Color(ColorId id, Span<const Theme* const> overrides) const {
     u32 value = 0;
-    ForChain(theme_, overrides, [&](const Theme& t) {
+    ForChain(theme_, Chain(overrides), [&](const Theme& t) {
         const Opt<u32>& c = t.colors[static_cast<usize>(id)];
         if (c.set) value = c.value;
     });
@@ -467,7 +468,7 @@ u32 ThemeSet::Color(ColorId id, Span<const Theme* const> overrides) const {
 
 f32 ThemeSet::Metric(MetricId id, f32 scale, Span<const Theme* const> overrides) const {
     f32 value = 0;
-    ForChain(theme_, overrides, [&](const Theme& t) {
+    ForChain(theme_, Chain(overrides), [&](const Theme& t) {
         const Opt<f32>& m = t.metrics[static_cast<usize>(id)];
         if (m.set) value = m.value;
     });
@@ -476,7 +477,7 @@ f32 ThemeSet::Metric(MetricId id, f32 scale, Span<const Theme* const> overrides)
 
 FontRef ThemeSet::Font(FontId id, f32 scale, Span<const Theme* const> overrides) const {
     FontRef value;
-    ForChain(theme_, overrides, [&](const Theme& t) {
+    ForChain(theme_, Chain(overrides), [&](const Theme& t) {
         const Opt<FontRef>& f = t.fonts[static_cast<usize>(id)];
         if (f.set) value = f.value;
     });

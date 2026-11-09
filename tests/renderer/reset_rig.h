@@ -54,6 +54,7 @@ struct Rig {
     rhi::DeviceCreateInfo info;
     renderer::RenderSettings initial;
     renderer::ScopedRegistration target_registration;
+    bool screen = false;             // set before Create to add the scene's standing screen (SceneOptions::screen)
     const char* font_path = nullptr; // set before Create to give the frame the text overlay (DemoFrame::SetOverlay)
 
     bool Create(rhi::Backend backend, u32 objects = 64, u32 lights = 8, bool prewarm = false, jobs::Scheduler* scheduler = nullptr,
@@ -86,6 +87,7 @@ struct Rig {
         so.lights = lights;
         so.asset_dir = asset_dir;
         so.resources = &registry;
+        so.screen = screen;
         if (!scene.Create(host.GetDevice(), frame.Materials(), frame.Templates(), so)) return false;
         scene.Animate(0.5f);
         frame.SetTime(0.5f, 0.016f);

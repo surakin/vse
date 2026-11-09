@@ -8360,6 +8360,44 @@ FontRef Font(FontId id, f32 scale, Span<const Theme* const> overrides = {}) cons
 
 Returns a named font with its size multiplied by `scale`.
 
+### `PushOverride(const Theme*)` {#ui-themeset-pushoverride-const-theme-star}
+
+`method ui::ThemeSet::PushOverride` — defined in `engine/ui/theme.h`
+
+```cpp
+void PushOverride(const Theme* theme);
+```
+
+Starts a subtree override: until the matching `PopOverride`, every call that is given no `overrides` uses `theme` after the overrides already pushed (an inner subtree's theme wins). A widget with `Widget::SetThemeOverride` is wrapped in a push and a pop while it is measured and drawn, so its whole subtree is styled by it. A style resolved under an override is not cached.
+
+| Field | Value |
+|---|---|
+| Parameter `theme` | the theme, not null; borrowed until the pop. |
+
+### `PopOverride()` {#ui-themeset-popoverride}
+
+`method ui::ThemeSet::PopOverride` — defined in `engine/ui/theme.h`
+
+```cpp
+void PopOverride();
+```
+
+Ends the innermost `PushOverride`.
+
+### `ActiveOverrides()` {#ui-themeset-activeoverrides-const}
+
+`method ui::ThemeSet::ActiveOverrides` — defined in `engine/ui/theme.h`
+
+```cpp
+usize ActiveOverrides() const;
+```
+
+Returns how many overrides are pushed now.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ### `Stats()` {#ui-themeset-stats-const}
 
 `method ui::ThemeSet::Stats` — defined in `engine/ui/theme.h`
@@ -9472,6 +9510,35 @@ void SetClipsChildren(bool clip);
 ```
 
 Sets whether the children are clipped; marks the draw dirty.
+
+### `SetThemeOverride(const Theme*)` {#ui-widget-setthemeoverride-const-theme-star}
+
+`method ui::Widget::SetThemeOverride` — defined in `engine/ui/widget.h`
+
+```cpp
+void SetThemeOverride(const Theme* theme);
+```
+
+Styles this widget and everything under it from `theme` laid over the surface's theme (a value `theme` leaves unset falls through), for example a status bar that stays dark in a light window. An ancestor's override applies under this one's. Marks layout dirty. Null removes the override.
+
+| Field | Value |
+|---|---|
+| Ownership | borrows `theme`, which must outlive its use here and must not change while the surface draws (set it again after editing). |
+
+### `ThemeOverride()` {#ui-widget-themeoverride-const}
+
+`method ui::Widget::ThemeOverride` — defined in `engine/ui/widget.h`
+
+```cpp
+const Theme* ThemeOverride() const;
+```
+
+Returns the override set by `SetThemeOverride`, or null.
+
+| Field | Value |
+|---|---|
+| Fails | returns null when there is none. |
+| Ownership | borrowed; the application owns it. |
 
 ### `State()` {#ui-widget-state-const}
 

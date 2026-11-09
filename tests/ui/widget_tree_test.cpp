@@ -1,7 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "font_support.h"
 #include "ui/surface.h"
+#include "ui/testing/harness.h"
 #include "ui/widget.h"
+#include "ui/widgets/display.h"
 
 using namespace engine_placeholder;
 using namespace engine_placeholder::ui;
@@ -242,4 +245,33 @@ TEST_CASE("Widget tree: the effective enabled state and the state bits", "[ui][t
     CHECK((b->State() & kStateChecked) != 0);
     b->SetChecked(false);
     CHECK((b->State() & kStateChecked) == 0);
+}
+
+
+TEST_CASE("A subtree theme override styles that subtree only, and removing it restyles", "[ui][theme]") {
+    Harness h(200, 100, 1, StringView(UI_TEST_FONT_FILE));
+    REQUIRE(h.Valid());
+    h.GetSurface().SetTheme(&DefaultLightTheme());
+    UniquePtr<Panel> a = MakeUnique<Panel>(StringView("light_panel"));
+    UniquePtr<Panel> b = MakeUnique<Panel>(StringView("dark_panel"));
+    Panel* light = a.Get();
+    Panel* dark = b.Get();
+    light->SetBounds(Rect{0, 0, 100, 100});
+    dark->SetBounds(Rect{100, 0, 100, 100});
+    h.GetSurface().Root()->AddChild(UniquePtr<Widget>(a.Release()));
+    h.GetSurface().Root()->AddChild(UniquePtr<Widget>(b.Release()));
+    dark->SetThemeOverride(&DefaultDarkTheme());
+    CHECK(dark->ThemeOverride() == &DefaultDarkTheme());
+    h.Advance(0);
+    RasterImage image;
+    h.Render(&image);
+    const u8* left = image.Pixel(50, 50);
+    const u8* right = image.Pixel(150, 50);
+    CHECK(left[0] + left[1] + left[2] > right[0] + right[1] + right[2] + 100); // the light panel is much brighter
+    CHECK(h.GetSurface().Themes().ActiveOverrides() == 0);                    // every push was popped
+    dark->SetThemeOverride(nullptr);
+    h.Advance(0);
+    h.Render(&image);
+    const u8* again = image.Pixel(150, 50);
+    CHECK(again[0] == left[0]);
 }

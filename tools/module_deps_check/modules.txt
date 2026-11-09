@@ -31,6 +31,7 @@ include-dir engine
 include-dir .
 include-dir game/common
 include-dir game/renderer_demo
+include-dir game/ui_demo
 include-dir shaders
 include-dir tools/docgen/src
 include-dir tools/shader_mint
@@ -137,6 +138,7 @@ module game/renderer_bench/ game/renderer_bench 13
 module game/renderer_demo/ game/renderer_demo 13
 module game/rhi_bench/ game/rhi_bench 13
 module game/rhi_demo/ game/rhi_demo 13
+module game/ui_demo/ game/ui_demo 13
 module tools/crash_extract/ tools/crash_extract 13
 module tools/docgen/ tools/docgen 13
 module tools/shader_mint/ tools/shader_mint 13
@@ -210,6 +212,8 @@ target renderer_demo_lib game/renderer_demo
 target renderer_demo game/renderer_demo
 target renderer_demo_mint game/renderer_demo
 target renderer_bench game/renderer_bench
+target ui_demo_lib game/ui_demo
+target ui_demo game/ui_demo
 target crash_extract tools/crash_extract
 target shader_mint_lib tools/shader_mint
 target shader_mint tools/shader_mint

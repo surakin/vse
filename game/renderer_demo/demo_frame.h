@@ -55,6 +55,16 @@ struct FrameSetup {
     const char* font_path = nullptr;
 };
 
+// Lets a program put the 3D scene in a texture of its own and draw more over the frame's target (the UI demo: the scene goes to a viewport's
+// texture, then the UI pass draws the window).
+struct FrameCompose {
+    // Called while the graph is built, before the scene's passes: returns the target, size and format the scene is drawn to (false abandons the frame).
+    bool (*scene_target)(const renderer::FrameContext& context, void* user, renderer::GraphResource* target, u32* width, u32* height, rhi::Format* format) = nullptr;
+    // Called after all of the frame's own passes: declares more passes over `context.target`.
+    void (*after_scene)(const renderer::FrameContext& context, void* user) = nullptr;
+    void* user = nullptr;
+};
+
 class DemoFrame {
 public:
     DemoFrame();
@@ -75,6 +85,8 @@ public:
     renderer::MaterialSystem* Materials() { return materials_.Get(); }
     const renderer::GBufferTemplates& Templates() const { return templates_; }
 
+    // Sets the compose hooks (see FrameCompose); call before the first Render.
+    void SetCompose(const FrameCompose& compose) { compose_ = compose; }
     // Sets the clock the next frame's FrameData carries.
     void SetTime(f32 seconds, f32 delta_seconds) {
         time_ = seconds;
@@ -126,6 +138,7 @@ private:
     bool gbuffer_ok_ = true;
     int gbuffer_layer_ = -1;
     f32 exposure_ = 1.0f;
+    FrameCompose compose_;
     f32 time_ = 0.0f;
     f32 delta_ = 0.0f;
 };

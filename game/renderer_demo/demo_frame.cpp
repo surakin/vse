@@ -120,7 +120,15 @@ bool DemoFrame::Build(const FrameContext& context, void* user) {
     self->materials_->BeginFrame(context.frame_index);
     self->materials_->FlushMaterials();
     self->frame_->BeginFrame(context.frame_index);
-    const FrameData data = MakeFrameData(*context.camera, context.width, context.height, self->time_, self->delta_, context.frame_index);
+    // The scene goes to the compose hook's target (a viewport's texture) when there is one, else to the frame's target.
+    GraphResource scene_target = context.target;
+    u32 scene_width = context.width;
+    u32 scene_height = context.height;
+    rhi::Format scene_format = context.format;
+    if (self->compose_.scene_target != nullptr && !self->compose_.scene_target(context, self->compose_.user, &scene_target, &scene_width, &scene_height, &scene_format)) {
+        return false;
+    }
+    const FrameData data = MakeFrameData(*context.camera, scene_width, scene_height, self->time_, self->delta_, context.frame_index);
     self->frame_->WriteFrameData(data);
     self->gbuffer_ok_ = self->gbuffer_->Prepare(*context.scene, Frustum::FromViewProjection(context.camera->ViewProjection()));
     if (!self->gbuffer_ok_) {
@@ -130,14 +138,14 @@ bool DemoFrame::Build(const FrameContext& context, void* user) {
     self->light_summary_ = self->lighting_->Prepare(*context.scene, data);
     self->frame_->Flush();
 
-    const GBufferTargets targets = self->gbuffer_->AddToGraph(context.graph, context.width, context.height);
+    const GBufferTargets targets = self->gbuffer_->AddToGraph(context.graph, scene_width, scene_height);
     if (self->gbuffer_layer_ >= 0) {
         self->debug_view_->SetInverseViewProjection(data.inverse_view_projection);
-        self->debug_view_->AddToGraph(context.graph, targets, static_cast<GBufferLayer>(self->gbuffer_layer_), context.target, context.format,
+        self->debug_view_->AddToGraph(context.graph, targets, static_cast<GBufferLayer>(self->gbuffer_layer_), scene_target, scene_format,
                                       context.camera->near_plane, context.camera->far_plane);
     } else {
-        const GraphResource accum = self->lighting_->AddToGraph(context.graph, targets, context.width, context.height);
-        self->tonemap_->AddToGraph(context.graph, accum, context.target, context.format, self->exposure_);
+        const GraphResource accum = self->lighting_->AddToGraph(context.graph, targets, scene_width, scene_height);
+        self->tonemap_->AddToGraph(context.graph, accum, scene_target, scene_format, self->exposure_);
     }
     if (self->overlay_on_ && self->font_.IsOpen() && self->text_.Live()) {
         // After the passes that wrote the target (the tonemap or the debug view), over their picture.
@@ -152,6 +160,9 @@ bool DemoFrame::Build(const FrameContext& context, void* user) {
         self->text_.Draw(StringView(self->greeting_.Data(), self->greeting_.Size()), big, text::LayoutOptions{}, 16, 12);
         self->text_.Draw(StringView(self->status_.Data(), self->status_.Size()), small, text::LayoutOptions{}, 16, 52);
         self->text_.AddToGraph(context.graph, context.target, context.format, context.width, context.height);
+    }
+    if (self->compose_.after_scene != nullptr) {
+        self->compose_.after_scene(context, self->compose_.user);
     }
     return true;
 }

@@ -3222,7 +3222,10 @@ ui::ThemeSet::Resolve(WidgetKind,StringView,u32,f32,Span<const Theme* const>)	fu
 ui::ThemeSet::Color(ColorId,Span<const Theme* const>) const	function	ui	ui-themeset-color-colorid-span-lt-const-theme-star-const-gt-const	ui.md	engine/ui/theme.h:288
 ui::ThemeSet::Metric(MetricId,f32,Span<const Theme* const>) const	function	ui	ui-themeset-metric-metricid-f32-span-lt-const-theme-star-const-gt-const	ui.md	engine/ui/theme.h:290
 ui::ThemeSet::Font(FontId,f32,Span<const Theme* const>) const	function	ui	ui-themeset-font-fontid-f32-span-lt-const-theme-star-const-gt-const	ui.md	engine/ui/theme.h:292
-ui::ThemeSet::Stats() const	function	ui	ui-themeset-stats-const	ui.md	engine/ui/theme.h:295
+ui::ThemeSet::PushOverride(const Theme*)	function	ui	ui-themeset-pushoverride-const-theme-star	ui.md	engine/ui/theme.h:298
+ui::ThemeSet::PopOverride()	function	ui	ui-themeset-popoverride	ui.md	engine/ui/theme.h:300
+ui::ThemeSet::ActiveOverrides() const	function	ui	ui-themeset-activeoverrides-const	ui.md	engine/ui/theme.h:306
+ui::ThemeSet::Stats() const	function	ui	ui-themeset-stats-const	ui.md	engine/ui/theme.h:309
 ui::UpdatePolicy	enum	ui	ui-updatepolicy	ui.md	engine/ui/update_policy.h:13
 ui::UpdatePolicy::EveryFrame	enumerator	ui	ui-updatepolicy-everyframe	ui.md	engine/ui/update_policy.h:14
 ui::UpdatePolicy::OnDemand	enumerator	ui	ui-updatepolicy-ondemand	ui.md	engine/ui/update_policy.h:15
@@ -3328,61 +3331,63 @@ ui::Widget::PassThrough() const	function	ui	ui-widget-passthrough-const	ui.md	en
 ui::Widget::SetPassThrough(bool)	function	ui	ui-widget-setpassthrough-bool	ui.md	engine/ui/widget.h:123
 ui::Widget::ClipsChildren() const	function	ui	ui-widget-clipschildren-const	ui.md	engine/ui/widget.h:127
 ui::Widget::SetClipsChildren(bool)	function	ui	ui-widget-setclipschildren-bool	ui.md	engine/ui/widget.h:129
-ui::Widget::State() const	function	ui	ui-widget-state-const	ui.md	engine/ui/widget.h:132
-ui::Widget::SetChecked(bool)	function	ui	ui-widget-setchecked-bool	ui.md	engine/ui/widget.h:134
-ui::Widget::Checked() const	function	ui	ui-widget-checked-const	ui.md	engine/ui/widget.h:138
-ui::Widget::Description() const	function	ui	ui-widget-description-const	ui.md	engine/ui/widget.h:140
-ui::Widget::SetDescription(StringView)	function	ui	ui-widget-setdescription-stringview	ui.md	engine/ui/widget.h:142
-ui::Widget::Role() const	function	ui	ui-widget-role-const	ui.md	engine/ui/widget.h:144
-ui::Widget::Tooltip() const	function	ui	ui-widget-tooltip-const	ui.md	engine/ui/widget.h:146
-ui::Widget::SetTooltip(StringView)	function	ui	ui-widget-settooltip-stringview	ui.md	engine/ui/widget.h:148
-ui::Widget::MarkDirty(u32)	function	ui	ui-widget-markdirty-u32	ui.md	engine/ui/widget.h:151
-ui::Widget::Dirty() const	function	ui	ui-widget-dirty-const	ui.md	engine/ui/widget.h:153
-ui::Widget::HitTest(Point)	function	ui	ui-widget-hittest-point	ui.md	engine/ui/widget.h:159
-ui::Widget::Draw(Canvas&)	function	ui	ui-widget-draw-canvas-amp	ui.md	engine/ui/widget.h:162
-ui::Widget::Measure(const Constraints&)	function	ui	ui-widget-measure-const-constraints-amp	ui.md	engine/ui/widget.h:165
-ui::Widget::Arrange(const Rect&)	function	ui	ui-widget-arrange-const-rect-amp	ui.md	engine/ui/widget.h:168
-ui::Widget::MeasureTotal(const Constraints&)	function	ui	ui-widget-measuretotal-const-constraints-amp	ui.md	engine/ui/widget.h:177
-ui::Widget::Props() const	function	ui	ui-widget-props-const	ui.md	engine/ui/widget.h:179
-ui::Widget::SetProps(const LayoutProps&)	function	ui	ui-widget-setprops-const-layoutprops-amp	ui.md	engine/ui/widget.h:181
-ui::Widget::Collapsed() const	function	ui	ui-widget-collapsed-const	ui.md	engine/ui/widget.h:185
-ui::Widget::SetCollapsed(bool)	function	ui	ui-widget-setcollapsed-bool	ui.md	engine/ui/widget.h:187
-ui::Widget::Shown() const	function	ui	ui-widget-shown-const	ui.md	engine/ui/widget.h:191
-ui::Widget::Focusable() const	function	ui	ui-widget-focusable-const	ui.md	engine/ui/widget.h:195
-ui::Widget::SetFocusable(bool)	function	ui	ui-widget-setfocusable-bool	ui.md	engine/ui/widget.h:197
-ui::Widget::AcceptsText() const	function	ui	ui-widget-acceptstext-const	ui.md	engine/ui/widget.h:201
-ui::Widget::SetAcceptsText(bool)	function	ui	ui-widget-setacceptstext-bool	ui.md	engine/ui/widget.h:203
-ui::Widget::TabIndex() const	function	ui	ui-widget-tabindex-const	ui.md	engine/ui/widget.h:207
-ui::Widget::SetTabIndex(i32)	function	ui	ui-widget-settabindex-i32	ui.md	engine/ui/widget.h:209
-ui::Widget::HasCursor() const	function	ui	ui-widget-hascursor-const	ui.md	engine/ui/widget.h:213
-ui::Widget::Cursor() const	function	ui	ui-widget-cursor-const	ui.md	engine/ui/widget.h:217
-ui::Widget::SetCursor(os::CursorShape)	function	ui	ui-widget-setcursor-os-cursorshape	ui.md	engine/ui/widget.h:219
-ui::Widget::ClearCursor()	function	ui	ui-widget-clearcursor	ui.md	engine/ui/widget.h:224
-ui::Widget::RequestCapture()	function	ui	ui-widget-requestcapture	ui.md	engine/ui/widget.h:226
-ui::Widget::ReleaseCapture()	function	ui	ui-widget-releasecapture	ui.md	engine/ui/widget.h:228
-ui::Widget::RequestFocus()	function	ui	ui-widget-requestfocus	ui.md	engine/ui/widget.h:230
-ui::Widget::OnEvent(Event&)	function	ui	ui-widget-onevent-event-amp	ui.md	engine/ui/widget.h:233
-ui::Widget::OnDescendantFocused(Widget*)	function	ui	ui-widget-ondescendantfocused-widget-star	ui.md	engine/ui/widget.h:237
-ui::Widget::CanAccept(const DragPayload&,Point)	function	ui	ui-widget-canaccept-const-dragpayload-amp-point	ui.md	engine/ui/widget.h:241
-ui::Widget::OnDragEnter(const DragPayload&,Point)	function	ui	ui-widget-ondragenter-const-dragpayload-amp-point	ui.md	engine/ui/widget.h:243
-ui::Widget::OnDragOver(const DragPayload&,Point,DragAction)	function	ui	ui-widget-ondragover-const-dragpayload-amp-point-dragaction	ui.md	engine/ui/widget.h:245
-ui::Widget::OnDragLeave()	function	ui	ui-widget-ondragleave	ui.md	engine/ui/widget.h:247
-ui::Widget::OnDrop(const DragPayload&,Point,DragAction)	function	ui	ui-widget-ondrop-const-dragpayload-amp-point-dragaction	ui.md	engine/ui/widget.h:249
-ui::Widget::OnDragEnded(DragAction)	function	ui	ui-widget-ondragended-dragaction	ui.md	engine/ui/widget.h:251
-ui::Widget::DragAutoScroll(Point,f32)	function	ui	ui-widget-dragautoscroll-point-f32	ui.md	engine/ui/widget.h:255
-ui::Widget::OnDragHoverDelay(Point)	function	ui	ui-widget-ondraghoverdelay-point	ui.md	engine/ui/widget.h:259
-ui::Widget::EditCommand	enum	ui	ui-widget-editcommand	ui.md	engine/ui/widget.h:261
-ui::Widget::EditCommand::Cut	enumerator	ui	ui-widget-editcommand-cut	ui.md	engine/ui/widget.h:262
-ui::Widget::EditCommand::Copy	enumerator	ui	ui-widget-editcommand-copy	ui.md	engine/ui/widget.h:263
-ui::Widget::EditCommand::Paste	enumerator	ui	ui-widget-editcommand-paste	ui.md	engine/ui/widget.h:264
-ui::Widget::EditCommand::SelectAll	enumerator	ui	ui-widget-editcommand-selectall	ui.md	engine/ui/widget.h:265
-ui::Widget::CanEdit(EditCommand) const	function	ui	ui-widget-canedit-editcommand-const	ui.md	engine/ui/widget.h:269
-ui::Widget::RunEdit(EditCommand)	function	ui	ui-widget-runedit-editcommand	ui.md	engine/ui/widget.h:271
-ui::Widget::Update(f32)	function	ui	ui-widget-update-f32	ui.md	engine/ui/widget.h:273
-ui::Widget::ContextFunction	alias	ui	ui-widget-contextfunction	ui.md	engine/ui/widget.h:275
-ui::Widget::SetContextHandler(ContextFunction,void*)	function	ui	ui-widget-setcontexthandler-contextfunction-void-star	ui.md	engine/ui/widget.h:280
-ui::Widget::WantsUpdate() const	function	ui	ui-widget-wantsupdate-const	ui.md	engine/ui/widget.h:287
-ui::Widget::DrawTree(Canvas&)	function	ui	ui-widget-drawtree-canvas-amp	ui.md	engine/ui/widget.h:290
+ui::Widget::SetThemeOverride(const Theme*)	function	ui	ui-widget-setthemeoverride-const-theme-star	ui.md	engine/ui/widget.h:135
+ui::Widget::ThemeOverride() const	function	ui	ui-widget-themeoverride-const	ui.md	engine/ui/widget.h:140
+ui::Widget::State() const	function	ui	ui-widget-state-const	ui.md	engine/ui/widget.h:142
+ui::Widget::SetChecked(bool)	function	ui	ui-widget-setchecked-bool	ui.md	engine/ui/widget.h:144
+ui::Widget::Checked() const	function	ui	ui-widget-checked-const	ui.md	engine/ui/widget.h:148
+ui::Widget::Description() const	function	ui	ui-widget-description-const	ui.md	engine/ui/widget.h:150
+ui::Widget::SetDescription(StringView)	function	ui	ui-widget-setdescription-stringview	ui.md	engine/ui/widget.h:152
+ui::Widget::Role() const	function	ui	ui-widget-role-const	ui.md	engine/ui/widget.h:154
+ui::Widget::Tooltip() const	function	ui	ui-widget-tooltip-const	ui.md	engine/ui/widget.h:156
+ui::Widget::SetTooltip(StringView)	function	ui	ui-widget-settooltip-stringview	ui.md	engine/ui/widget.h:158
+ui::Widget::MarkDirty(u32)	function	ui	ui-widget-markdirty-u32	ui.md	engine/ui/widget.h:161
+ui::Widget::Dirty() const	function	ui	ui-widget-dirty-const	ui.md	engine/ui/widget.h:163
+ui::Widget::HitTest(Point)	function	ui	ui-widget-hittest-point	ui.md	engine/ui/widget.h:169
+ui::Widget::Draw(Canvas&)	function	ui	ui-widget-draw-canvas-amp	ui.md	engine/ui/widget.h:172
+ui::Widget::Measure(const Constraints&)	function	ui	ui-widget-measure-const-constraints-amp	ui.md	engine/ui/widget.h:175
+ui::Widget::Arrange(const Rect&)	function	ui	ui-widget-arrange-const-rect-amp	ui.md	engine/ui/widget.h:178
+ui::Widget::MeasureTotal(const Constraints&)	function	ui	ui-widget-measuretotal-const-constraints-amp	ui.md	engine/ui/widget.h:187
+ui::Widget::Props() const	function	ui	ui-widget-props-const	ui.md	engine/ui/widget.h:189
+ui::Widget::SetProps(const LayoutProps&)	function	ui	ui-widget-setprops-const-layoutprops-amp	ui.md	engine/ui/widget.h:191
+ui::Widget::Collapsed() const	function	ui	ui-widget-collapsed-const	ui.md	engine/ui/widget.h:195
+ui::Widget::SetCollapsed(bool)	function	ui	ui-widget-setcollapsed-bool	ui.md	engine/ui/widget.h:197
+ui::Widget::Shown() const	function	ui	ui-widget-shown-const	ui.md	engine/ui/widget.h:201
+ui::Widget::Focusable() const	function	ui	ui-widget-focusable-const	ui.md	engine/ui/widget.h:205
+ui::Widget::SetFocusable(bool)	function	ui	ui-widget-setfocusable-bool	ui.md	engine/ui/widget.h:207
+ui::Widget::AcceptsText() const	function	ui	ui-widget-acceptstext-const	ui.md	engine/ui/widget.h:211
+ui::Widget::SetAcceptsText(bool)	function	ui	ui-widget-setacceptstext-bool	ui.md	engine/ui/widget.h:213
+ui::Widget::TabIndex() const	function	ui	ui-widget-tabindex-const	ui.md	engine/ui/widget.h:217
+ui::Widget::SetTabIndex(i32)	function	ui	ui-widget-settabindex-i32	ui.md	engine/ui/widget.h:219
+ui::Widget::HasCursor() const	function	ui	ui-widget-hascursor-const	ui.md	engine/ui/widget.h:223
+ui::Widget::Cursor() const	function	ui	ui-widget-cursor-const	ui.md	engine/ui/widget.h:227
+ui::Widget::SetCursor(os::CursorShape)	function	ui	ui-widget-setcursor-os-cursorshape	ui.md	engine/ui/widget.h:229
+ui::Widget::ClearCursor()	function	ui	ui-widget-clearcursor	ui.md	engine/ui/widget.h:234
+ui::Widget::RequestCapture()	function	ui	ui-widget-requestcapture	ui.md	engine/ui/widget.h:236
+ui::Widget::ReleaseCapture()	function	ui	ui-widget-releasecapture	ui.md	engine/ui/widget.h:238
+ui::Widget::RequestFocus()	function	ui	ui-widget-requestfocus	ui.md	engine/ui/widget.h:240
+ui::Widget::OnEvent(Event&)	function	ui	ui-widget-onevent-event-amp	ui.md	engine/ui/widget.h:243
+ui::Widget::OnDescendantFocused(Widget*)	function	ui	ui-widget-ondescendantfocused-widget-star	ui.md	engine/ui/widget.h:247
+ui::Widget::CanAccept(const DragPayload&,Point)	function	ui	ui-widget-canaccept-const-dragpayload-amp-point	ui.md	engine/ui/widget.h:251
+ui::Widget::OnDragEnter(const DragPayload&,Point)	function	ui	ui-widget-ondragenter-const-dragpayload-amp-point	ui.md	engine/ui/widget.h:253
+ui::Widget::OnDragOver(const DragPayload&,Point,DragAction)	function	ui	ui-widget-ondragover-const-dragpayload-amp-point-dragaction	ui.md	engine/ui/widget.h:255
+ui::Widget::OnDragLeave()	function	ui	ui-widget-ondragleave	ui.md	engine/ui/widget.h:257
+ui::Widget::OnDrop(const DragPayload&,Point,DragAction)	function	ui	ui-widget-ondrop-const-dragpayload-amp-point-dragaction	ui.md	engine/ui/widget.h:259
+ui::Widget::OnDragEnded(DragAction)	function	ui	ui-widget-ondragended-dragaction	ui.md	engine/ui/widget.h:261
+ui::Widget::DragAutoScroll(Point,f32)	function	ui	ui-widget-dragautoscroll-point-f32	ui.md	engine/ui/widget.h:265
+ui::Widget::OnDragHoverDelay(Point)	function	ui	ui-widget-ondraghoverdelay-point	ui.md	engine/ui/widget.h:269
+ui::Widget::EditCommand	enum	ui	ui-widget-editcommand	ui.md	engine/ui/widget.h:271
+ui::Widget::EditCommand::Cut	enumerator	ui	ui-widget-editcommand-cut	ui.md	engine/ui/widget.h:272
+ui::Widget::EditCommand::Copy	enumerator	ui	ui-widget-editcommand-copy	ui.md	engine/ui/widget.h:273
+ui::Widget::EditCommand::Paste	enumerator	ui	ui-widget-editcommand-paste	ui.md	engine/ui/widget.h:274
+ui::Widget::EditCommand::SelectAll	enumerator	ui	ui-widget-editcommand-selectall	ui.md	engine/ui/widget.h:275
+ui::Widget::CanEdit(EditCommand) const	function	ui	ui-widget-canedit-editcommand-const	ui.md	engine/ui/widget.h:279
+ui::Widget::RunEdit(EditCommand)	function	ui	ui-widget-runedit-editcommand	ui.md	engine/ui/widget.h:281
+ui::Widget::Update(f32)	function	ui	ui-widget-update-f32	ui.md	engine/ui/widget.h:283
+ui::Widget::ContextFunction	alias	ui	ui-widget-contextfunction	ui.md	engine/ui/widget.h:285
+ui::Widget::SetContextHandler(ContextFunction,void*)	function	ui	ui-widget-setcontexthandler-contextfunction-void-star	ui.md	engine/ui/widget.h:290
+ui::Widget::WantsUpdate() const	function	ui	ui-widget-wantsupdate-const	ui.md	engine/ui/widget.h:297
+ui::Widget::DrawTree(Canvas&)	function	ui	ui-widget-drawtree-canvas-amp	ui.md	engine/ui/widget.h:300
 ui::Button	class	ui	ui-button	ui.md	engine/ui/widgets/buttons.h:24
 ui::Button::Button(StringView,StringView)	function	ui	ui-button-button-stringview-stringview	ui.md	engine/ui/widgets/buttons.h:29
 ui::Button::SetText(StringView)	function	ui	ui-button-settext-stringview	ui.md	engine/ui/widgets/buttons.h:31

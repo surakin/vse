@@ -34,6 +34,12 @@ struct SceneOptions {
     const char* asset_dir = nullptr;
     // The registry the scene's meshes and textures register with so they survive a device reset; null for a scene that does not.
     renderer::DeviceResources* resources = nullptr;
+    // True adds one more object, a flat screen standing in the scene (a material whose texture the program binds each frame with `MaterialSystem::SetTexture(ScreenMaterial(), "albedo_tex", handle)`),
+    // facing +z, `screen_width` by `screen_height` world units, its middle at `screen_center`.
+    bool screen = false;
+    Vec3 screen_center = Vec3(0, 2.1f, -3.6f);
+    f32 screen_width = 4.8f;
+    f32 screen_height = 3.0f;
 };
 
 struct DemoTexture;
@@ -66,6 +72,8 @@ public:
     // Moves the point lights to where they are at `seconds`.
     void Animate(f32 seconds);
 
+    // The material of the screen object (`SceneOptions::screen`), or an invalid id.
+    renderer::MaterialId ScreenMaterial() const { return screen_material_; }
     const renderer::RenderScene& Scene() const { return *scene_; }
     u32 ObjectCount() const { return scene_ ? scene_->ObjectCount() : 0; }
     u32 LightCount() const { return scene_ ? scene_->LightCount() : 0; }
@@ -93,6 +101,7 @@ private:
     Vector<f32> light_phase_;
     u32 light_capacity_ = 0;
     f32 radius_ = 1.0f;
+    renderer::MaterialId screen_material_;
 };
 
 } // namespace renderer_demo

@@ -106,8 +106,35 @@ Widget* Widget::FindByName(StringView name) {
     return nullptr;
 }
 
+namespace {
+
+// Pushes a widget's theme override for the length of a measure or draw of its subtree.
+class OverrideScope {
+public:
+    OverrideScope(Surface* surface, const Theme* theme) : surface_(theme != nullptr ? surface : nullptr) {
+        if (surface_ != nullptr) surface_->Themes().PushOverride(theme);
+    }
+    ~OverrideScope() {
+        if (surface_ != nullptr) surface_->Themes().PopOverride();
+    }
+    OverrideScope(const OverrideScope&) = delete;
+    OverrideScope& operator=(const OverrideScope&) = delete;
+
+private:
+    Surface* surface_;
+};
+
+} // namespace
+
+void Widget::SetThemeOverride(const Theme* theme) {
+    if (theme_override_ == theme) return;
+    theme_override_ = theme;
+    MarkDirty(kLayoutDirty);
+}
+
 Size Widget::MeasureTotal(const Constraints& constraints) {
     if (surface_ != nullptr && measure_generation_ == surface_->LayoutGeneration() && measure_constraints_ == constraints) return measure_result_;
+    const OverrideScope scope(surface_, theme_override_);
     Size s = Measure(constraints);
     if (props_.width >= 0) s.w = props_.width;
     if (props_.height >= 0) s.h = props_.height;
@@ -212,6 +239,7 @@ Widget* Widget::HitTest(Point point) {
 
 void Widget::DrawTree(Canvas& canvas) {
     if (!Shown()) return;
+    const OverrideScope scope(surface_, theme_override_);
     Draw(canvas);
     if (!children_.Empty()) {
         if (clip_children_) canvas.PushClip(bounds_);

@@ -43,7 +43,9 @@ enum MaterialSlot : u32 {
     kCopper,
     kEmissive,
     kVertexColor,
-    kMaterialCount,
+    kMaterialCount, // the materials the shapes are spread over
+    kScreen = kMaterialCount, // only with SceneOptions::screen; not one of the shapes' materials
+    kMaterialSlots,
 };
 
 Mat4 Transform(const Vec3& position, f32 yaw, f32 scale) {
@@ -116,6 +118,7 @@ void DemoScene::Destroy() {
     light_ids_.Reset();
     light_base_.Reset();
     light_phase_.Reset();
+    screen_material_ = MaterialId();
     device_ = nullptr;
     materials_ = nullptr;
 }
@@ -215,7 +218,7 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
             return false;
         }
     }
-    MaterialId ids[kMaterialCount];
+    MaterialId ids[kMaterialSlots];
     auto make = [&](MaterialSlot slot, const char* name, GBufferOptions go, Vec4 color, f32 roughness, f32 metallic, f32 emissive) {
         ids[slot] = CreateGBufferMaterial(materials, templates, go, name);
         if (!ids[slot].IsValid()) return false;
@@ -235,6 +238,10 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
               make(kBumps, "bumps", bumped, Vec4(0.9f, 0.45f, 0.2f, 1), 0.5f, 0.0f, 0.0f) &&
               make(kGold, "gold", plain, Vec4(1.0f, 0.77f, 0.34f, 1), 0.2f, 1.0f, 0.0f) && make(kCopper, "copper", plain, Vec4(0.95f, 0.5f, 0.35f, 1), 0.6f, 1.0f, 0.0f) &&
               make(kEmissive, "emissive", plain, Vec4(0.1f, 0.8f, 0.7f, 1), 0.8f, 0.0f, 0.9f) && make(kVertexColor, "vertex color", vertex_colored, Vec4(1, 1, 1, 1), 0.5f, 0.0f, 0.0f);
+    if (ok && options.screen) {
+        ok = make(kScreen, "screen", plain, Vec4(1, 1, 1, 1), 1.0f, 0.0f, 1.0f);
+        screen_material_ = ids[kScreen];
+    }
     if (ok) {
         ok = materials->SetTexture(ids[kGround], "albedo_tex", &textures_[0]) && materials->SetTexture(ids[kChecker], "albedo_tex", &textures_[0]) &&
              materials->SetTexture(ids[kStripes], "albedo_tex", &textures_[1]) && materials->SetTexture(ids[kBumps], "normal_tex", &textures_[2]); // owners, so a device reset keeps them
@@ -294,7 +301,7 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
     }
     light_capacity_ = options.lights + 2;
     RenderSceneDesc sd;
-    sd.max_objects = options.objects;
+    sd.max_objects = options.objects + (options.screen ? 1u : 0u);
     sd.max_lights = light_capacity_ < kMaxLights ? light_capacity_ : kMaxLights;
     scene_ = MakeUnique<RenderScene>(sd);
     const GpuMesh* meshes[4] = {&sphere_, &cube_, &colored_sphere_, &tile_};
@@ -304,6 +311,20 @@ bool DemoScene::Create(rhi::Device* device, MaterialSystem* materials, const GBu
         od.mesh = meshes[p.mesh];
         od.material = ids[p.material].index;
         od.transform = p.transform;
+        if (!scene_->AddObject(od).IsValid()) {
+            rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: the scene is full");
+            Destroy();
+            return false;
+        }
+    }
+
+    if (options.screen) { // the plane's x, normal and z become the screen's right, towards +z and down
+        RenderObjectDesc od;
+        od.mesh = &tile_;
+        od.material = screen_material_.index;
+        const f32 sx = options.screen_width / kTileSize;
+        const f32 sz = options.screen_height / kTileSize;
+        od.transform = Mat4::FromBasis(Vec3(sx, 0, 0), Vec3(0, 0, 1), Vec3(0, -sz, 0), options.screen_center);
         if (!scene_->AddObject(od).IsValid()) {
             rhi::RhiLogV(LogVerbosity::Error, "renderer_demo: the scene is full");
             Destroy();

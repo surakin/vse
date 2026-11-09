@@ -48,6 +48,7 @@ add_subdirectory(rhi_demo)
 add_subdirectory(rhi_bench)
 add_subdirectory(renderer_demo)
 add_subdirectory(renderer_bench)
+add_subdirectory(ui_demo)
 
 # The README's "Settings options" block must be the settings part of --help (so the documentation cannot drift from the registry).
 function(demo_readme_test demo)
@@ -58,3 +59,4 @@ function(demo_readme_test demo)
 endfunction()
 demo_readme_test(rhi_demo)
 demo_readme_test(renderer_demo)
+demo_readme_test(ui_demo)

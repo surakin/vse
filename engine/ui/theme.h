@@ -291,6 +291,20 @@ public:
     /// Returns a named font with its size multiplied by `scale`.
     FontRef Font(FontId id, f32 scale, Span<const Theme* const> overrides = {}) const;
 
+    /// Starts a subtree override: until the matching `PopOverride`, every call that is given no `overrides` uses `theme` after the overrides already pushed (an inner subtree's theme wins). A widget with
+    /// `Widget::SetThemeOverride` is wrapped in a push and a pop while it is measured and drawn, so its whole subtree is styled by it. A style resolved under an override is not cached.
+    ///
+    /// Param theme: the theme, not null; borrowed until the pop.
+    void PushOverride(const Theme* theme) { active_.Push(theme); }
+    /// Ends the innermost `PushOverride`.
+    void PopOverride() {
+        if (!active_.Empty()) active_.Pop();
+    }
+    /// Returns how many overrides are pushed now.
+    ///
+    /// Fails: never.
+    usize ActiveOverrides() const { return active_.Size(); }
+
     /// Returns the counters.
     const ThemeStats& Stats() const { return stats_; }
 
@@ -306,8 +320,13 @@ private:
     ResolvedStyle Compute(WidgetKind kind, VariantId variant, u32 state, f32 scale, Span<const Theme* const> overrides, bool* variant_found) const;
     void NoteMissing(WidgetKind kind, VariantId variant, StringView name);
 
+    Span<const Theme* const> Chain(Span<const Theme* const> overrides) const {
+        return overrides.Size() == 0 ? Span<const Theme* const>(active_.Data(), active_.Size()) : overrides;
+    }
+
     const Theme* theme_ = nullptr;
     u64 revision_ = 0;
+    Vector<const Theme*> active_;
     Vector<CacheEntry> cache_;
     Vector<u64> logged_missing_;
     ThemeStats stats_;

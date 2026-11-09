@@ -1,0 +1,23 @@
+usage: PROGRAM [--backend wayland|x11|win32] [--frames N] [--screenshot out.ppm] [--script WORDS] [--scale 1|1.25|2] [--no-vsync] [--validation] [--gpu ID|INDEX|NAME]
+  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)
+  --frames N        stop after N frames
+  --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM, 960x600 logical units)
+  --script W        run steps without a person: frame:N click:name type:text key:Name resize:WxH theme:dark|light menu:File/About drag:name:dx,dy
+                    drop:text:T drop:file:P paste:T shot:path set:key=value reset loss gpu:next quit (space separated; see README.md)
+  --scale S         the pixels per logical unit: 1, 1.25 or 2 (default 1)
+  --no-vsync        present without waiting for the display
+  --validation      enable the validation layer with synchronization validation
+  --gpu G           the GPU to use: an id, an index, or part of the name
+Settings:
+  --set KEY=VALUE         set a setting (repeatable; the value may be quoted); --list-settings shows the keys
+  --settings FILE         read settings from FILE (above the project file, below the environment)
+  --save-settings[=FILE]  write the settings that differ from their defaults to FILE (default: the user's settings file) and exit
+  --list-settings         print every setting: its value, default, where it came from and what it is for, and exit
+  --backend NAME          platform.window_backend: the display backend: wayland or x11 on Linux, win32 on Windows (auto picks Wayland, then X11, on Linux)
+  --gpu TEXT              renderer.adapter: the GPU: an id from --list-gpus, an index, or part of the name (empty: the best one)
+  --rhi NAME              renderer.backend: the graphics backend: auto (the preferred one this program has and this machine runs), null (no GPU), vulkan or dx12
+Environment: ENGINE_SETTING_<KEY> sets any setting (the key in capitals, dots written as __, e.g. ENGINE_SETTING_RENDERER__PRESENT_MODE); also:
+  ENGINE_WINDOW_BACKEND                 platform.window_backend
+  ENGINE_RHI_GPU                        renderer.adapter
+  ENGINE_RHI_VALIDATION_SYNC            renderer.sync_validation
+  ENGINE_RHI_CACHE_DIR                  rhi.pipeline_cache_dir

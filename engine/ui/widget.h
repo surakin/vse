@@ -128,6 +128,16 @@ public:
     /// Sets whether the children are clipped; marks the draw dirty.
     void SetClipsChildren(bool clip);
 
+    /// Styles this widget and everything under it from `theme` laid over the surface's theme (a value `theme` leaves unset falls through), for example a status bar that stays dark in a light window. An
+    /// ancestor's override applies under this one's. Marks layout dirty. Null removes the override.
+    ///
+    /// Ownership: borrows `theme`, which must outlive its use here and must not change while the surface draws (set it again after editing).
+    void SetThemeOverride(const Theme* theme);
+    /// Returns the override set by `SetThemeOverride`, or null.
+    ///
+    /// Ownership: borrowed; the application owns it.
+    /// Fails: returns null when there is none.
+    const Theme* ThemeOverride() const { return theme_override_; }
     /// Returns the state bits (`kStateHover`, `kStatePressed`, `kStateFocused`, `kStateChecked` of `ui/theme.h`, and `kStateDisabled` when not effectively enabled).
     u32 State() const;
     /// Sets or clears the `kStateChecked` bit (the surface sets the others); marks the draw dirty.
@@ -323,6 +333,7 @@ private:
     bool focusable_ = false;
     bool accepts_text_ = false;
     bool collapsed_ = false;
+    const Theme* theme_override_ = nullptr;
     bool visible_ = true;
     bool enabled_ = true;
     bool pass_through_ = false;

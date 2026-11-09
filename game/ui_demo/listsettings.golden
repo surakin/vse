@@ -1,0 +1,33 @@
+log.io.enabled                       true           default true         from defaults                           whether the channel logs at all
+log.io.verbosity                     warn           default warn         from defaults                           how much the channel logs: error, warn, info, debug or trace
+log.logbuild.enabled                 true           default true         from defaults                           whether the channel logs at all
+log.logbuild.verbosity               info           default info         from defaults                           how much the channel logs: error, warn, info, debug or trace
+log.logcore.enabled                  true           default true         from defaults                           whether the channel logs at all
+log.logcore.verbosity                warn           default warn         from defaults                           how much the channel logs: error, warn, info, debug or trace
+log.logcrash.enabled                 true           default true         from defaults                           whether the channel logs at all
+log.logcrash.verbosity               warn           default warn         from defaults                           how much the channel logs: error, warn, info, debug or trace
+log.logjobs.enabled                  true           default true         from defaults                           whether the channel logs at all
+log.logjobs.verbosity                warn           default warn         from defaults                           how much the channel logs: error, warn, info, debug or trace
+log.logplatform.enabled              true           default true         from defaults                           whether the channel logs at all
+log.logplatform.verbosity            warn           default warn         from defaults                           how much the channel logs: error, warn, info, debug or trace
+log.logrender.enabled                true           default true         from defaults                           whether the channel logs at all
+log.logrender.verbosity              warn           default warn         from defaults                           how much the channel logs: error, warn, info, debug or trace
+log.logrhi.enabled                   true           default true         from defaults                           whether the channel logs at all
+log.logrhi.verbosity                 info           default info         from defaults                           how much the channel logs: error, warn, info, debug or trace
+platform.window_backend              auto           default auto         from defaults                           the display backend: wayland or x11 on Linux, win32 on Windows (auto picks Wayland, then X11, on Linux)
+renderer.adapter                     ""             default ""           from defaults                           the GPU: an id from --list-gpus, an index, or part of the name (empty: the best one)
+renderer.backend                     auto           default auto         from defaults                           the graphics backend: auto (the preferred one this program has and this machine runs), null (no GPU), vulkan or dx12
+renderer.frames_in_flight            2              default 2            from defaults                           frames the CPU may record ahead of the GPU (1 to 3)
+renderer.fullscreen                  false          default false        from defaults                           fullscreen (needs the fullscreen capability)
+renderer.gbuffer_debug_layer         none           default none         from defaults                           show a G-buffer layer instead of the lit picture
+renderer.hdr                         off            default off          from defaults                           HDR output: off, scrgb or hdr10 (needs the hdr capability)
+renderer.height                      0              default 0            from defaults                           the window height in pixels (0: the default size)
+renderer.present_mode                fifo           default fifo         from defaults                           how frames reach the display: fifo (vsync), mailbox or immediate
+renderer.render_scale                1.0            default 1.0          from defaults                           the internal resolution as a fraction of the window
+renderer.shader_quality              high           default high         from defaults                           shader quality: low, medium or high
+renderer.swapchain_format            auto           default auto         from defaults                           the swapchain format: auto, srgb8, rgba16f or rgb10a2
+renderer.sync_validation             false          default false        from defaults                           also run synchronization validation
+renderer.validation                  auto           default auto         from defaults                           the validation layer: auto, off or on
+renderer.width                       0              default 0            from defaults                           the window width in pixels (0: the default size)
+rhi.pipeline_cache                   true           default true         from defaults                           keep the Vulkan pipeline cache on disk
+rhi.pipeline_cache_dir               ""             default ""           from defaults                           the directory of the pipeline cache file (empty: the user cache directory)

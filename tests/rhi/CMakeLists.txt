@@ -40,6 +40,10 @@ set(RHI_TEST_SOURCES
   gbuffer_gpu_test.cpp
   lighting_gpu_test.cpp
   renderer_demo_gpu_test.cpp
+  ui_demo_gpu_test.cpp
+  ${CMAKE_SOURCE_DIR}/game/ui_demo/ui_demo_app.cpp
+  ${CMAKE_SOURCE_DIR}/game/ui_demo/ui_demo_gpu.cpp
+  ${CMAKE_SOURCE_DIR}/game/ui_demo/ui_script.cpp
   ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_scene.cpp
   ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_frame.cpp
   ${CMAKE_SOURCE_DIR}/game/renderer_demo/demo_assets.cpp
@@ -92,8 +96,9 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib rhi_backends_lib suf
   # cube_scene.cpp (compiled into this executable) uses the renderer's camera helpers; same sanitizer flavor as rhi_lib.
   string(REGEX REPLACE "^rhi" "renderer" renderer_lib "${rhi_lib}")
   string(REGEX REPLACE "^rhi" "renderer_passes" passes_lib "${rhi_lib}")
-  target_link_libraries(${target} PRIVATE ${passes_lib} ${renderer_lib} ${rhi_lib} ${rhi_vulkan_lib} ${rhi_backends_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/tests/renderer ${CMAKE_SOURCE_DIR}/tests/io ${CMAKE_SOURCE_DIR}/tests/support)
+  string(REGEX REPLACE "^rhi" "ui" ui_lib "${rhi_lib}")
+  target_link_libraries(${target} PRIVATE ${ui_lib} ${passes_lib} ${renderer_lib} ${rhi_lib} ${rhi_vulkan_lib} ${rhi_backends_lib} Catch2::Catch2WithMain Threads::Threads)
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/shaders ${CMAKE_SOURCE_DIR}/game/common ${CMAKE_SOURCE_DIR}/game/renderer_demo ${CMAKE_SOURCE_DIR}/game/ui_demo ${CMAKE_SOURCE_DIR}/tests/renderer ${CMAKE_SOURCE_DIR}/tests/io ${CMAKE_SOURCE_DIR}/tests/support)
   target_compile_definitions(${target} PRIVATE ENGINE_RHI_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
     ENGINE_RHI_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/rhi_demo/assets"
     ENGINE_RENDERER_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/renderer_demo/assets"
