@@ -9,6 +9,11 @@
 #include "renderer/lighting.h"
 #include "renderer/material.h"
 #include "renderer/renderer.h"
+#include "renderer/text_renderer.h"
+#include "containers/vector.h"
+#include "string_view.h"
+#include "text/font.h"
+#include "text/glyph_atlas.h"
 #include "rhi/rhi.h"
 #include "types.h"
 
@@ -46,6 +51,8 @@ struct FrameSetup {
     os::Window* window = nullptr;
     // What to do when the device is lost.
     renderer::RecoveryPolicy recovery;
+    // The font file the text overlay draws with, or null for a frame without the overlay (`SetOverlay` then does nothing).
+    const char* font_path = nullptr;
 };
 
 class DemoFrame {
@@ -76,6 +83,14 @@ public:
     // Renders one frame of `scene` seen by `camera`. See renderer::Renderer::RenderFrame.
     renderer::FrameStatus Render(const renderer::RenderScene* scene, const renderer::Camera* camera, const renderer::FrameTarget* offscreen);
 
+    // The text overlay (Phase 14): `greeting` at 32 px and `status` at 14 px below it, drawn after the tonemap while `on` is true. Needs `FrameSetup::font_path`.
+    // Returns false when the frame has no overlay (no font was given or it could not be opened).
+    bool SetOverlay(bool on, StringView greeting, StringView status);
+    bool OverlayAvailable() const { return font_.IsOpen(); }
+    bool OverlayOn() const { return overlay_on_; }
+    // What the overlay drew: its renderer's counters.
+    renderer::TextStats OverlayStats() const { return text_.Stats(); }
+
     const char* LastError() const { return renderer_ ? renderer_->LastError() : "not created"; }
     renderer::RendererStats Stats() const { return renderer_ ? renderer_->Stats() : renderer::RendererStats{}; }
     // The transient pool's counters.
@@ -101,6 +116,13 @@ private:
     renderer::GBufferTemplates templates_;
     renderer::GBufferStats gbuffer_stats_;
     renderer::LightSummary light_summary_;
+    text::FontLibrary font_library_;
+    text::Font font_;
+    text::GlyphAtlas atlas_;
+    renderer::TextRenderer text_;
+    bool overlay_on_ = false;
+    Vector<char> greeting_;
+    Vector<char> status_;
     bool gbuffer_ok_ = true;
     int gbuffer_layer_ = -1;
     f32 exposure_ = 1.0f;

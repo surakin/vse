@@ -54,6 +54,7 @@ struct Rig {
     rhi::DeviceCreateInfo info;
     renderer::RenderSettings initial;
     renderer::ScopedRegistration target_registration;
+    const char* font_path = nullptr; // set before Create to give the frame the text overlay (DemoFrame::SetOverlay)
 
     bool Create(rhi::Backend backend, u32 objects = 64, u32 lights = 8, bool prewarm = false, jobs::Scheduler* scheduler = nullptr,
                 const char* asset_dir = nullptr, bool validation = false) {
@@ -78,6 +79,7 @@ struct Rig {
         fs.host = &host;
         fs.create_info = info;
         fs.initial_settings = &initial;
+        fs.font_path = font_path;
         if (!frame.Create(fs)) return false;
         renderer_demo::SceneOptions so;
         so.objects = objects;

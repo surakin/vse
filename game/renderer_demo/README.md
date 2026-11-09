@@ -44,6 +44,7 @@ terminal its output goes to that terminal. Its settings file is `%APPDATA%\rende
 | `--gpu G` | the GPU to use: an id from `--list-gpus`, an index, or part of its name. A GPU that does not exist or cannot present fails (exit 1); it never falls back to another one |
 | `--list-gpus` | print the backend and its GPUs (id, name, kind, memory, driver, and why one is unsuitable) and exit |
 | `--rhi NAME` | the graphics backend: `auto` (default), `vulkan`, `dx12` or `null`; the `renderer.backend` setting |
+| `--text` | draw the text overlay (a greeting and a status line) over the picture; in screenshot mode it is off unless given (F11 toggles it in the window) |
 | `--prewarm` | after a device reset rebuild every pipeline at once instead of when it is first used |
 | `--script WORDS` | run the live paths without a keyboard (below) |
 | `--validation` | enable the backend's validation layer with synchronization validation (Direct3D 12: GPU-based validation) |
@@ -78,6 +79,7 @@ startup, and every change is logged with its cost class and the time it took):
 | F6 | swapchain format (auto, srgb8, rgba16f) | swapchain |
 | F7 | shader quality (low, medium, high; no consumer yet, so it only rebuilds the pipelines) | pipeline rebuild |
 | F9 | force a device reset with the settings unchanged | device reset |
+| F11 | text overlay on/off (not a setting: it only adds the text pass) | none |
 | F10 | tell the device it is lost (it recovers; see the renderer guide, "Device loss and recovery") | recovery |
 
 While a change runs the window keeps its last picture; the log says what is happening and, afterwards, how long the first good frame
@@ -85,7 +87,7 @@ took. There is no progress display: a device reset takes about 40 ms here (see t
 `plans/phase-08-rhi-reset/day-113-demo-seams-and-measurements.md`).
 
 `--script` takes space-separated steps: `frame:N` (run until N frames were drawn), `set:key=value` (a setting by its name, for example
-`set:present_mode=immediate`), `reset`, `gpu:next`, `loss` (lose the device), `quit`. The keys are off while a script runs. Example:
+`set:present_mode=immediate`), `reset`, `gpu:next`, `loss` (lose the device), `overlay` (toggle the text overlay), `quit`. The keys are off while a script runs. Example:
 
 ```
 renderer_demo --validation --frames 120 --script "frame:10 set:present_mode=immediate frame:20 reset frame:30 set:shader_quality=low frame:40 loss frame:100 quit"

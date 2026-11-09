@@ -1,5 +1,8 @@
 #include "demo_frame.h"
 
+#include <cstring>
+
+#include "io/path.h"
 #include "rhi/rhi_log.h"
 
 namespace renderer_demo {
@@ -13,6 +16,9 @@ void DemoFrame::Destroy() {
     if (device_ != nullptr) device_->WaitIdle(); // frames may still be in flight
     // Reverse order of creation: the renderer (and its pooled textures) first, then the passes, then what they borrow.
     renderer_.Reset();
+    text_.Destroy();
+    font_.Close();
+    overlay_on_ = false;
     debug_view_.Reset();
     tonemap_.Reset();
     lighting_.Reset();
@@ -69,6 +75,30 @@ bool DemoFrame::Create(const FrameSetup& setup) {
     rd.build = &DemoFrame::Build;
     rd.build_user = this;
     renderer_ = MakeUnique<Renderer>(rd);
+    if (setup.font_path != nullptr) {
+        // The overlay is optional: a missing font or a device without the text shaders leaves the frame without it, with the reason logged.
+        text::FontOptions fo;
+        if (font_library_.IsInitialized() || font_library_.Initialize().Ok()) {
+            const text::Status opened = text::Font::OpenFile(font_library_, io::Path(StringView(setup.font_path, std::strlen(setup.font_path))), fo, &font_);
+            if (opened.Ok() && !text_.Create(setup.device, &atlas_, renderer::TextRendererDesc{rhi::Format::RGBA8_SRGB, 4096}, setup.resources)) {
+                font_.Close();
+            } else if (!opened.Ok()) {
+                rhi::RhiLogV(LogVerbosity::Warn, "renderer_demo: the overlay font '%s' did not open: %s", setup.font_path, opened.message);
+            }
+        }
+    }
+    return true;
+}
+
+bool DemoFrame::SetOverlay(bool on, StringView greeting, StringView status) {
+    if (!font_.IsOpen()) {
+        return false;
+    }
+    overlay_on_ = on;
+    greeting_.Clear();
+    for (usize i = 0; i < greeting.Length(); ++i) greeting_.Push(greeting[i]);
+    status_.Clear();
+    for (usize i = 0; i < status.Length(); ++i) status_.Push(status[i]);
     return true;
 }
 
@@ -108,6 +138,20 @@ bool DemoFrame::Build(const FrameContext& context, void* user) {
     } else {
         const GraphResource accum = self->lighting_->AddToGraph(context.graph, targets, context.width, context.height);
         self->tonemap_->AddToGraph(context.graph, accum, context.target, context.format, self->exposure_);
+    }
+    if (self->overlay_on_ && self->font_.IsOpen() && self->text_.Live()) {
+        // After the passes that wrote the target (the tonemap or the debug view), over their picture.
+        text::TextStyle big;
+        big.font = &self->font_;
+        big.pixel_size = 32;
+        big.color = 0xFFFFFFFFu;
+        text::TextStyle small = big;
+        small.pixel_size = 14;
+        small.color = 0xFFC8C8C8u;
+        self->text_.BeginFrame();
+        self->text_.Draw(StringView(self->greeting_.Data(), self->greeting_.Size()), big, text::LayoutOptions{}, 16, 12);
+        self->text_.Draw(StringView(self->status_.Data(), self->status_.Size()), small, text::LayoutOptions{}, 16, 52);
+        self->text_.AddToGraph(context.graph, context.target, context.format, context.width, context.height);
     }
     return true;
 }

@@ -1,7 +1,7 @@
 usage: PROGRAM [--backend wayland|x11|win32] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]
        [--objects N] [--lights N] [--gbuffer albedo|normal|material|depth|worldpos]
        [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus] [--prewarm]
-       [--script WORDS]
+       [--script WORDS] [--text STRING]
   --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)
   --frames N        stop after N frames (also RENDERER_DEMO_FRAMES=N)
   --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM, 640x360)
@@ -13,6 +13,7 @@ usage: PROGRAM [--backend wayland|x11|win32] [--frames N] [--screenshot out.ppm]
   --gpu G           the GPU to use: an id from --list-gpus, an index, or part of the name
   --list-gpus       print the GPUs and exit
   --prewarm         after a device reset rebuild every pipeline at once instead of when it is first used
+  --text S          the overlay greeting (default "Hello, world!"; F11 toggles the overlay); with --screenshot it draws the overlay in the picture
   --script W        run steps without a keyboard: frame:N set:key=value reset gpu:next loss crash:segv|abort|assert quit (space separated)
   --inject-device-loss F  fault injection: lose the GPU device at frame F (exit code 3)
   --inject-oom N    fault injection: fail device-memory allocation number N and every one after it

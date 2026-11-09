@@ -175,6 +175,8 @@ tests/foundation/window_fullscreen_test.cpp     8
 tests/rhi/swapchain_reconfigure_test.cpp        8
 tests/rhi/reset_golden_gpu_test.cpp             8
 test:renderer_demo_script_*                     8
+test:renderer_demo_overlay_*                    14
+test:renderer_demo_screenshot_text              14
 test:renderer_demo_crash_after_reset            8
 test:rhi_lifecycle_lists                        8
 test:rhi_cross_syntax_*                         8
@@ -244,3 +246,4 @@ testopt:windows_*                               13
 tests/text/                                     14
 tests/renderer/text_renderer_test.cpp           14   # the GPU atlas pages and the text pipeline (Day 180)
 tests/renderer/text_pass_test.cpp               14   # the text pass in a graph and the draw API (Day 181)
+tests/rhi/text_golden_gpu_test.cpp              14   # the text golden image and the overlay through reset and loss (Day 182)

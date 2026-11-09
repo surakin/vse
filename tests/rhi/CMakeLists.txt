@@ -13,6 +13,7 @@ set(RHI_TEST_SOURCES
   device_host_test.cpp
   swapchain_reconfigure_test.cpp
   reset_golden_gpu_test.cpp
+  text_golden_gpu_test.cpp
   adapter_switch_gpu_test.cpp
   lifecycle_conformance_test.cpp
   vulkan_loader_test.cpp
@@ -95,6 +96,7 @@ function(engine_add_rhi_tests target rhi_lib rhi_vulkan_lib rhi_backends_lib suf
   target_compile_definitions(${target} PRIVATE ENGINE_RHI_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden"
     ENGINE_RHI_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/rhi_demo/assets"
     ENGINE_RENDERER_DEMO_ASSET_DIR="${CMAKE_SOURCE_DIR}/game/renderer_demo/assets"
+    ENGINE_TEXT_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf"
     ENGINE_RHI_LSAN_SUPP="${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp")
   # Tests that do not pass a cache directory must not write to the user's ~/.cache.
   # Tests that open a window share the desktop's input focus, so they hold the `display` resource and run one at a time

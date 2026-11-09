@@ -8,7 +8,8 @@ target_link_libraries(renderer_demo_lib PUBLIC renderer_passes renderer rhi foun
 add_executable(renderer_demo main.cpp ../common/settings_main.cpp)
 engine_split_debug_info(renderer_demo)
 target_compile_options(renderer_demo PRIVATE ${ENGINE_PRODUCTION_COMPILE_OPTIONS})
-target_compile_definitions(renderer_demo PRIVATE RENDERER_DEMO_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
+target_compile_definitions(renderer_demo PRIVATE RENDERER_DEMO_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets"
+  RENDERER_DEMO_FONT_FILE="${CMAKE_SOURCE_DIR}/assets/fonts/LiberationSans-Regular.ttf")
 target_link_libraries(renderer_demo PRIVATE renderer_demo_lib rhi_backends)
 
 # Writes the texture files under assets/ (see README.md); a test compares them with the committed ones.
@@ -88,6 +89,28 @@ else()
   set(_crash_backend wayland)
   set(_abort_code "Subprocess aborted")
 endif()
+
+# The text overlay (Phase 14 Day 182): the F11 toggle as a script word, in a real window with validation on; and a screenshot with the overlay in it.
+function(renderer_demo_overlay_scripted name backend)
+  add_test(NAME ${name}
+    COMMAND ${CMAKE_COMMAND} "-DCMD=$<TARGET_FILE:renderer_demo>;--backend;${backend};--rhi;vulkan;--validation;--frames;60;--script;frame:5 overlay frame:15 overlay frame:20 reset frame:30 quit"
+      -DEXPECT_CODE=0 "-DEXPECT_OUT=text overlay is off.*text overlay is on.*device-reset done in"
+      "-DSKIP_IF_OUT=${RENDERER_NO_GPU}" "-DSKIP_NO_DISPLAY_OUT=could not open a window"
+      "-DFORBID_OUT=a Vulkan validation error was reported" -P ${CMAKE_SOURCE_DIR}/game/rhi_demo/expect_run.cmake)
+  set_tests_properties(${name} PROPERTIES LABELS "gpu;demo;display" RESOURCE_LOCK display SKIP_RETURN_CODE 77
+    ENVIRONMENT "ENGINE_RHI_CACHE_DIR=${CMAKE_CURRENT_BINARY_DIR}/pipeline-cache-${name};${DEMO_PROFILE_ENV}")
+endfunction()
+if(WIN32)
+  renderer_demo_overlay_scripted(renderer_demo_overlay_win32 win32)
+  engine_label_tests(renderer_demo_overlay_win32)
+else()
+  renderer_demo_overlay_scripted(renderer_demo_overlay_wayland wayland)
+  renderer_demo_overlay_scripted(renderer_demo_overlay_x11 x11)
+  engine_label_tests(renderer_demo_overlay_wayland renderer_demo_overlay_x11)
+endif()
+renderer_demo_expect(renderer_demo_screenshot_text 0 "wrote .*renderer_demo_screenshot_text.ppm" "${RENDERER_NO_GPU}"
+  --screenshot RENDERER_DEMO_SHOT --validation --rhi vulkan --text "Hello, world!")
+engine_label_tests(renderer_demo_screenshot_text)
 
 # A crash after a device reset: the report (Phase 7) shows the device epoch and the reset count in its state section.
 add_test(NAME renderer_demo_crash_after_reset

@@ -66,6 +66,7 @@ struct Options {
     bool list_gpus = false;               // --list-gpus
     bool prewarm = false;                 // --prewarm: rebuild every pipeline inside a reset instead of on first use
     const char* script = nullptr;         // --script: the live paths without a keyboard
+    const char* text = nullptr;           // --text: the overlay's greeting (default "Hello, world!"); in --screenshot it also switches the overlay on
 };
 
 double NowSeconds() { return static_cast<double>(os::MonotonicTimeNanos()) * 1e-9; }
@@ -183,6 +184,7 @@ FrameSetup SetupFor(const Options& options, const SceneOptions& so, Device* devi
     fs.max_objects = so.objects + 16;
     fs.max_lights = so.lights + 2;
     fs.gbuffer_layer = options.gbuffer_layer;
+    fs.font_path = RENDERER_DEMO_FONT_FILE;
     return fs;
 }
 
@@ -295,6 +297,7 @@ int RunScreenshot(const Options& options, const RenderSettings& settings) {
         const SceneOptions so = SceneOptionsFor(options);
         const FrameSetup fs = SetupFor(options, so, device.Get(), nullptr);
         if (target.IsValid() && frame.Create(fs) && scene.Create(device.Get(), frame.Materials(), frame.Templates(), so)) {
+            if (options.text != nullptr) frame.SetOverlay(true, StringView(options.text, std::strlen(options.text)), StringView("screenshot"));
             scene.Animate(0.5f);
             Camera camera = scene.OverviewCamera(static_cast<f32>(kShotWidth) / static_cast<f32>(kShotHeight));
             FitCameraDepthRange(scene.Scene(), &camera, 0.1f);
@@ -421,8 +424,15 @@ int RunWindow(const Options& options, RenderSettings settings) {
             Script script;
             if (options.script != nullptr) script.Parse(options.script);
             RhiLogV(LogVerbosity::Info,
-                    "renderer_demo keys: F1 vsync, F2 validation, F3 next GPU, F4 render scale, F5 fullscreen, F6 swapchain format, F7 shader quality, F9 force reset, F10 lose the device");
+                    "renderer_demo keys: F1 vsync, F2 validation, F3 next GPU, F4 render scale, F5 fullscreen, F6 swapchain format, F7 shader quality, F9 force reset, F10 lose the device, F11 text overlay");
             bool previous_keys[11] = {};
+            bool overlay_on = true;
+            char status_line[384] = {};
+            auto set_overlay = [&] {
+                const char* greeting = options.text != nullptr ? options.text : "Hello, world!";
+                frame.SetOverlay(overlay_on, StringView(greeting, std::strlen(greeting)), StringView(status_line, std::strlen(status_line)));
+            };
+            set_overlay();
             bool measure_next_frame = false;
             double measure_start = 0.0;
 
@@ -511,6 +521,11 @@ int RunWindow(const Options& options, RenderSettings settings) {
                             static_cast<unsigned long long>(window_frames), (now - window_start) * 1000.0 / static_cast<double>(window_frames),
                             frame.GBufferStatistics().drawn_objects, frame.GBufferStatistics().draws, frame.Lights().point_count, frame.Lights().point_culled,
                             frame.Lights().dropped, frame.PointDraws());
+                    if (renderer.GetDevice() != nullptr) {
+                        std::snprintf(status_line, sizeof(status_line), "%.2f ms/frame | %s | %s", (now - window_start) * 1000.0 / static_cast<double>(window_frames),
+                                      renderer.GetDevice()->Adapter().name, renderer.GetDevice()->BackendName());
+                        set_overlay();
+                    }
                     window_start = now;
                     window_frames = 0;
                 }
@@ -575,6 +590,10 @@ int RunWindow(const Options& options, RenderSettings settings) {
                         engine_placeholder::debug::RunCrashTest(std::strcmp(kind, "segv") == 0     ? engine_placeholder::debug::CrashTestKind::Segv
                                                                 : std::strcmp(kind, "assert") == 0 ? engine_placeholder::debug::CrashTestKind::Assert
                                                                                                    : engine_placeholder::debug::CrashTestKind::Abort);
+                    } else if (std::strcmp(word, "overlay") == 0) { // the F11 key, for scripts: toggles the text overlay
+                        overlay_on = !overlay_on;
+                        set_overlay();
+                        RhiLogV(LogVerbosity::Info, "renderer_demo: the text overlay is %s", overlay_on ? "on" : "off");
                     } else if (std::strcmp(word, "quit") == 0) {
                         quit = true;
                     } else {
@@ -582,9 +601,9 @@ int RunWindow(const Options& options, RenderSettings settings) {
                     }
                 }
                 // The live keys: one action per press.
-                const os::Key function_keys[] = {os::Key::F1, os::Key::F2, os::Key::F3, os::Key::F4, os::Key::F5, os::Key::F6, os::Key::F7, os::Key::F8, os::Key::F9, os::Key::F10};
+                const os::Key function_keys[] = {os::Key::F1, os::Key::F2, os::Key::F3, os::Key::F4, os::Key::F5, os::Key::F6, os::Key::F7, os::Key::F8, os::Key::F9, os::Key::F10, os::Key::F11};
                 if (options.script == nullptr) {
-                    for (int k = 0; k < 10; ++k) {
+                    for (int k = 0; k < 11; ++k) {
                         const bool down = input.keyboard.IsDown(function_keys[k]);
                         if (down && !previous_keys[k]) {
                             RenderSettings wanted = renderer.Settings();
@@ -611,6 +630,11 @@ int RunWindow(const Options& options, RenderSettings settings) {
                                     renderer.GetDevice()->InjectDeviceLoss();
                                     RhiLogV(LogVerbosity::Info, "renderer_demo: F10: the device was told it is lost");
                                 }
+                                break;
+                            case 10:
+                                overlay_on = !overlay_on;
+                                set_overlay();
+                                RhiLogV(LogVerbosity::Info, "renderer_demo: the text overlay is %s", overlay_on ? "on" : "off");
                                 break;
                             default: break;
                             }
@@ -663,7 +687,7 @@ const char kUsageFormat[] =
                  "usage: %s [--backend wayland|x11|win32] [--frames N] [--screenshot out.ppm] [--no-vsync] [--validation]\n"
                  "       [--objects N] [--lights N] [--gbuffer albedo|normal|material|depth|worldpos]\n"
                  "       [--inject-device-loss FRAME] [--inject-oom N] [--gpu ID|INDEX|NAME] [--list-gpus] [--prewarm]\n"
-                 "       [--script WORDS]\n"
+                 "       [--script WORDS] [--text STRING]\n"
                  "  --backend B       display backend (default: automatic; same as ENGINE_WINDOW_BACKEND)\n"
                  "  --frames N        stop after N frames (also RENDERER_DEMO_FRAMES=N)\n"
                  "  --screenshot P    render offscreen, no window, and write the last frame to P (a binary PPM, 640x360)\n"
@@ -675,6 +699,7 @@ const char kUsageFormat[] =
                  "  --gpu G           the GPU to use: an id from --list-gpus, an index, or part of the name\n"
                  "  --list-gpus       print the GPUs and exit\n"
                  "  --prewarm         after a device reset rebuild every pipeline at once instead of when it is first used\n"
+                 "  --text S          the overlay greeting (default \"Hello, world!\"; F11 toggles the overlay); with --screenshot it draws the overlay in the picture\n"
                  "  --script W        run steps without a keyboard: frame:N set:key=value reset gpu:next loss crash:segv|abort|assert quit (space separated)\n"
                  "  --inject-device-loss F  fault injection: lose the GPU device at frame F (exit code 3)\n"
                  "  --inject-oom N    fault injection: fail device-memory allocation number N and every one after it\n";
@@ -737,6 +762,8 @@ int EngineMain(int argc, char** argv) {
             options.list_gpus = true;
         } else if (std::strcmp(argv[i], "--script") == 0 && has_value) {
             options.script = argv[++i];
+        } else if (std::strcmp(argv[i], "--text") == 0 && has_value) {
+            options.text = argv[++i];
         } else if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
             return Usage(argv[0], kExitOk);
         } else {
