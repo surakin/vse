@@ -6,6 +6,9 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "build_defs.h"
+#if ENGINE_PLATFORM_WINDOWS
+#include <malloc.h> // _aligned_malloc, _aligned_free
+#endif
 #include "font_support.h"
 #include "ui/layout.h"
 #include "ui/surface.h"
@@ -19,36 +22,48 @@
 namespace {
 std::atomic<long> g_ui_allocs{0};
 std::atomic<bool> g_ui_counting{false};
+// Every form is replaced so allocation and release always pair up. `align` is 0 for the plain forms. Windows' C library has no
+// aligned_alloc: memory from _aligned_malloc goes back through _aligned_free, so the aligned forms take that path there (as in
+// tests/renderer/render_graph_test.cpp).
+void* UiCountedAlloc(std::size_t n, std::size_t align) {
+    if (g_ui_counting.load(std::memory_order_relaxed)) g_ui_allocs.fetch_add(1, std::memory_order_relaxed);
+    if (n == 0) n = 1;
+#if ENGINE_PLATFORM_WINDOWS
+    if (align != 0) return _aligned_malloc(n, align);
+#else
+    if (align != 0) return std::aligned_alloc(align, (n + align - 1) / align * align);
+#endif
+    return std::malloc(n);
+}
+void UiAlignedFree(void* p) noexcept {
+#if ENGINE_PLATFORM_WINDOWS
+    _aligned_free(p);
+#else
+    std::free(p);
+#endif
+}
 } // namespace
 void* operator new(std::size_t n) {
-    if (g_ui_counting.load(std::memory_order_relaxed)) g_ui_allocs.fetch_add(1, std::memory_order_relaxed);
-    if (void* p = std::malloc(n == 0 ? 1 : n)) return p;
+    if (void* p = UiCountedAlloc(n, 0)) return p;
     std::abort();
 }
 void* operator new(std::size_t n, std::align_val_t a) {
-    if (g_ui_counting.load(std::memory_order_relaxed)) g_ui_allocs.fetch_add(1, std::memory_order_relaxed);
-    if (void* p = std::aligned_alloc(static_cast<std::size_t>(a), (n + static_cast<std::size_t>(a) - 1) / static_cast<std::size_t>(a) * static_cast<std::size_t>(a))) return p;
+    if (void* p = UiCountedAlloc(n, static_cast<std::size_t>(a))) return p;
     std::abort();
 }
 void* operator new[](std::size_t n) { return operator new(n); }
 void* operator new[](std::size_t n, std::align_val_t a) { return operator new(n, a); }
-void* operator new(std::size_t n, const std::nothrow_t&) noexcept {
-    if (g_ui_counting.load(std::memory_order_relaxed)) g_ui_allocs.fetch_add(1, std::memory_order_relaxed);
-    return std::malloc(n == 0 ? 1 : n);
-}
-void* operator new(std::size_t n, std::align_val_t a, const std::nothrow_t&) noexcept {
-    if (g_ui_counting.load(std::memory_order_relaxed)) g_ui_allocs.fetch_add(1, std::memory_order_relaxed);
-    return std::aligned_alloc(static_cast<std::size_t>(a), (n + static_cast<std::size_t>(a) - 1) / static_cast<std::size_t>(a) * static_cast<std::size_t>(a));
-}
+void* operator new(std::size_t n, const std::nothrow_t&) noexcept { return UiCountedAlloc(n, 0); }
+void* operator new(std::size_t n, std::align_val_t a, const std::nothrow_t&) noexcept { return UiCountedAlloc(n, static_cast<std::size_t>(a)); }
 void operator delete(void* p) noexcept { std::free(p); }
 void operator delete[](void* p) noexcept { std::free(p); }
 void operator delete(void* p, std::size_t) noexcept { std::free(p); }
 void operator delete[](void* p, std::size_t) noexcept { std::free(p); }
-void operator delete(void* p, std::align_val_t) noexcept { std::free(p); }
-void operator delete(void* p, std::size_t, std::align_val_t) noexcept { std::free(p); }
-void operator delete[](void* p, std::align_val_t) noexcept { std::free(p); }
-void operator delete[](void* p, std::size_t, std::align_val_t) noexcept { std::free(p); }
-void operator delete(void* p, std::align_val_t, const std::nothrow_t&) noexcept { std::free(p); }
+void operator delete(void* p, std::align_val_t) noexcept { UiAlignedFree(p); }
+void operator delete(void* p, std::size_t, std::align_val_t) noexcept { UiAlignedFree(p); }
+void operator delete[](void* p, std::align_val_t) noexcept { UiAlignedFree(p); }
+void operator delete[](void* p, std::size_t, std::align_val_t) noexcept { UiAlignedFree(p); }
+void operator delete(void* p, std::align_val_t, const std::nothrow_t&) noexcept { UiAlignedFree(p); }
 void operator delete(void* p, const std::nothrow_t&) noexcept { std::free(p); }
 #endif
 
@@ -248,7 +263,7 @@ TEST_CASE("ScrollBar: the auto-hide variant is drawn only when needed", "[ui][sc
 TEST_CASE("ScrollView: bars by policy, clamping, wheel, bubbling and ScrollTo", "[ui][scroll]") {
     Harness h(300, 300, 1, StringView(UI_TEST_FONT_FILE));
     ScrollView* view = ScAdd(h.GetSurface().Root(), MakeUnique<ScrollView>(StringView("view")), ScRect(0, 0, 100, 100));
-    ScContent* content = static_cast<ScContent*>(view->SetContent(MakeUnique<ScContent>(StringView("content"), 80, 500)));
+    ScContent* content = static_cast<ScContent*>(view->SetContent(MakeUnique<ScContent>(StringView("content"), 80.0f, 500.0f)));
     h.Advance(0);
     const f32 bar_w = h.GetSurface().Themes().Metric(MetricId::ScrollbarThickness, 1.0f);
 
@@ -311,7 +326,7 @@ TEST_CASE("ScrollView: bars by policy, clamping, wheel, bubbling and ScrollTo", 
         CHECK(!view->VerticalBar()->Collapsed());
         CHECK(view->Viewport().h == 100 - bar_w);
         view->SetPolicy(ScrollPolicy::Auto, ScrollPolicy::Auto);
-        view->SetContent(MakeUnique<ScContent>(StringView("wide"), 400, 50));
+        view->SetContent(MakeUnique<ScContent>(StringView("wide"), 400.0f, 50.0f));
         h.Advance(0);
         CHECK(view->VerticalBar()->Collapsed());
         CHECK(!view->HorizontalBar()->Collapsed());
@@ -319,7 +334,7 @@ TEST_CASE("ScrollView: bars by policy, clamping, wheel, bubbling and ScrollTo", 
         CHECK(view->ContentSize().h == 100 - bar_w); // a small content fills the view
     }
     SECTION("a small content fills the view and does not scroll") {
-        view->SetContent(MakeUnique<ScContent>(StringView("small"), 10, 10));
+        view->SetContent(MakeUnique<ScContent>(StringView("small"), 10.0f, 10.0f));
         h.Advance(0);
         CHECK(view->VerticalBar()->Collapsed());
         CHECK(view->ContentSize().w == 100);
@@ -331,14 +346,14 @@ TEST_CASE("ScrollView: bars by policy, clamping, wheel, bubbling and ScrollTo", 
 TEST_CASE("ScrollView: an inner view that is at its end lets the wheel go to the outer one; focus scrolls into view", "[ui][scroll]") {
     Harness h(300, 300, 1, StringView(UI_TEST_FONT_FILE));
     ScrollView* outer = ScAdd(h.GetSurface().Root(), MakeUnique<ScrollView>(StringView("outer")), ScRect(0, 0, 150, 150));
-    Widget* column = outer->SetContent(MakeUnique<ScContent>(StringView("column"), 100, 600));
+    Widget* column = outer->SetContent(MakeUnique<ScContent>(StringView("column"), 100.0f, 600.0f));
     ScrollView* inner = static_cast<ScrollView*>(column->AddChild(MakeUnique<ScrollView>(StringView("inner"))));
     inner->SetBounds(ScRect(0, 0, 100, 100));
     LayoutProps fixed;
     fixed.width = 100;
     fixed.height = 100;
     inner->SetProps(fixed);
-    inner->SetContent(MakeUnique<ScContent>(StringView("innerContent"), 80, 300));
+    inner->SetContent(MakeUnique<ScContent>(StringView("innerContent"), 80.0f, 300.0f));
     h.Advance(0);
 
     h.Wheel(20, 20, 0, 1);
@@ -356,7 +371,7 @@ TEST_CASE("ScrollView: an inner view that is at its end lets the wheel go to the
 
     // Focusing a widget far down the content scrolls it into view.
     outer->SetOffset(Point());
-    Widget* field = column->AddChild(MakeUnique<ScContent>(StringView("field"), 50, 20));
+    Widget* field = column->AddChild(MakeUnique<ScContent>(StringView("field"), 50.0f, 20.0f));
     LayoutProps at;
     at.width = 50;
     at.height = 20;
@@ -375,17 +390,17 @@ TEST_CASE("ScrollView: focus scrolls nested views, the inner one first, and the 
     Harness h(300, 400, 1, StringView(UI_TEST_FONT_FILE));
     ScrollView* outer = ScAdd(h.GetSurface().Root(), MakeUnique<ScrollView>(StringView("outer")), ScRect(0, 0, 150, 150));
     BoxLayout* column = static_cast<BoxLayout*>(outer->SetContent(MakeUnique<BoxLayout>(Orientation::Vertical, StringView("column"))));
-    column->AddChild(MakeUnique<ScContent>(StringView("above"), 100, 300));
+    column->AddChild(MakeUnique<ScContent>(StringView("above"), 100.0f, 300.0f));
     ScrollView* inner = static_cast<ScrollView*>(column->AddChild(MakeUnique<ScrollView>(StringView("inner"))));
     LayoutProps fixed;
     fixed.width = 100;
     fixed.height = 100;
     inner->SetProps(fixed);
     BoxLayout* list = static_cast<BoxLayout*>(inner->SetContent(MakeUnique<BoxLayout>(Orientation::Vertical, StringView("list"))));
-    list->AddChild(MakeUnique<ScContent>(StringView("top"), 50, 250));
-    Widget* target = list->AddChild(MakeUnique<ScContent>(StringView("target"), 50, 20));
+    list->AddChild(MakeUnique<ScContent>(StringView("top"), 50.0f, 250.0f));
+    Widget* target = list->AddChild(MakeUnique<ScContent>(StringView("target"), 50.0f, 20.0f));
     target->SetFocusable(true);
-    column->AddChild(MakeUnique<ScContent>(StringView("below"), 100, 300));
+    column->AddChild(MakeUnique<ScContent>(StringView("below"), 100.0f, 300.0f));
     h.Advance(0);
     h.GetSurface().SetFocus(target);
     h.Advance(0);

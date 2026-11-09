@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstdio>
+#include <limits>
 
 #include "font_support.h"
 #include "text/glyph_atlas.h"
@@ -375,8 +376,8 @@ TEST_CASE("DrawList: text outside the clip makes no vertex", "[ui][drawlist][tex
 
 TEST_CASE("DrawList: huge, infinite and NaN coordinates cannot break the integer conversions", "[ui][drawlist][limits]") {
     Fixture f;
-    const f32 inf = 1.0e30f * 1.0e30f;
-    const f32 nan = inf - inf;
+    const f32 inf = std::numeric_limits<f32>::infinity(); // constant arithmetic that overflows is an error on MSVC (C4056)
+    const f32 nan = std::numeric_limits<f32>::quiet_NaN();
     f.canvas.PushClip({-1.0e12f, -1.0e12f, 2.0e12f, 2.0e12f}); // a scrolled-away content rectangle
     CHECK(f.canvas.CurrentClip() == PixelRect{0, 0, 800, 600});
     f.canvas.DrawRect({10, 10, 1.0e12f, 20}, kWhite); // drawn, clipped by the scissor

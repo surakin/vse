@@ -218,7 +218,7 @@ TEST_CASE("losing the window focus closes every popup", "[ui][popup]") {
 
 TEST_CASE("a context menu is clamped inside the surface", "[ui][popup]") {
     PopupRig rig;
-    UniquePtr<PopupPane> p = MakeUnique<PopupPane>(100, 80);
+    UniquePtr<PopupPane> p = MakeUnique<PopupPane>(100.0f, 80.0f);
     Widget* w = rig.h.GetSurface().ShowContextMenu(UniquePtr<Widget>(p.Release()), Point{395, 295});
     rig.h.Advance(0);
     REQUIRE(w != nullptr);

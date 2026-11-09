@@ -7,7 +7,7 @@ The day the Windows machine catches up: Phase 14's open Windows items and all of
 
 ## Tasks
 
-- [ ] **Build and run first:** `cmake --preset windows-msvc` and `windows-clang-cl`, both unity modes; fix what the Windows compilers report in `engine/text`, `engine/ui`, `renderer` and the demos (warnings are errors); `scripts/test-phase.sh --affected` plain and asan; record the lines. Everything this phase added is checked here before anything else is started.
+- [x] **Build and run first** (done early, after Day 198, at the user's request; see Notes): `cmake --preset windows-msvc` and `windows-clang-cl`, both unity modes; fix what the Windows compilers report in `engine/text`, `engine/ui`, `renderer` and the demos (warnings are errors); `scripts/test-phase.sh --affected` plain and asan; record the lines. Everything this phase added is checked here before anything else is started.
 - [ ] **Phase 14 leftovers (KNOWN-ISSUES):** run the `shaders` target on Windows to mint `text.vert/frag.dxil.inc` and the new `ui.vert/frag.dxil.inc`; include them in `text_renderer.cpp` and `ui_renderer.cpp` (the `kTextVertShader` style sets with both blobs); add them to `tests/renderer/shader_dxil_test.cpp`; drop the Vulkan-only guards in the text and UI GPU tests; FreeType's Windows build (`third_party/freetype/CMakeLists.txt`: the quoted `FT_CONFIG_OPTIONS_H`, `/W0`, the module list) verified; the text demo overlay run on DX12 and Vulkan.
 - [ ] **Win32 event stream (`win32_window.cpp`):** `WM_KEYDOWN/KEYUP/SYSKEYDOWN` -> `KeyDown/KeyUp` with the repeat bit from `lParam`; **text** from `WM_CHAR` (UTF-16 surrogate pairs combined into one UTF-8 scalar; `WM_UNICHAR` ignored; dead keys handled by the system); `WM_MOUSEMOVE` (with `TrackMouseEvent` for leave), buttons, `WM_MOUSEWHEEL/HWHEEL` scaled to notches (the Linux backends' 10-units-per-notch convention in `input.h` is kept for `InputState`), focus from `WM_SETFOCUS/KILLFOCUS`, resize from `WM_SIZE`; the queue and overflow counter from Day 185; the modal-loop callback (`SetModalLoopCallback`) keeps events queued while the user drags the frame.
 - [ ] **Win32 clipboard and drag and drop:** `OpenClipboard`/`SetClipboardData` with `CF_UNICODETEXT` (UTF-16 <-> UTF-8, CRLF kept as the system has it) and `CF_HDROP` file lists, a custom format through `RegisterClipboardFormat`, change notification by `WM_CLIPBOARDUPDATE` (`AddClipboardFormatListener`), the same asynchronous request/timeout interface as Day 187 (the Win32 calls are synchronous, the answer is queued as an event); OLE drag and drop: `OleInitialize` on the window thread, a `IDropTarget` mapping to `DragEnter/Over/Leave/Drop`, `DoDragDrop` with an `IDropSource` and an `IDataObject` for outgoing drags (text, `CF_HDROP`, custom), drag image through `IDragSourceHelper`; `SupportsClipboard`/`SupportsDragAndDrop` true, primary selection unsupported; the Day 187/188 fake-peer tests run unchanged and real-window tests exchange data with a second window in the test process.
@@ -26,7 +26,22 @@ The day the Windows machine catches up: Phase 14's open Windows items and all of
 
 ## Notes
 
-(filled in as the day goes)
+- **Build and run first, done early** (after Day 198 was pushed from the Linux machine, at the user's request; Days 199-204 had not been done yet,
+  so their code is not in this check). The four Windows trees (`build-msvc`, `build-clang-cl`, `build-windows-msvc-nounity`,
+  `build-windows-clang-cl-nounity`) build clean after four test fixes, all from MSVC: `tests/text/cursor_test.cpp` and `tests/ui/draw_list_test.cpp`
+  made infinity by multiplying float constants (C4056, an error under `/WX`: now `std::numeric_limits<f32>::infinity()` and `quiet_NaN()`);
+  `tests/ui/scroll_test.cpp`'s allocation counter used `std::aligned_alloc`, which the UCRT lacks (now `_aligned_malloc` with `_aligned_free` on
+  Windows, as `tests/renderer/render_graph_test.cpp` does); `scroll_test.cpp` and `popup_test.cpp` passed `int` sizes to `f32` constructors through
+  `MakeUnique` (C4244: now float literals). clang-cl found nothing more. One build flake: `LNK1163` on a damaged object in the MSVC non-unity
+  tree, gone after rebuilding the object (filed).
+- **Runs on Windows:** `scripts/test-phase.sh --affected`: `ran 1539 of 3000 tests (phases: all; flavors: plain; display: included; crash tests: excluded) in 413 s`, one failure, `shaders_check`: the text and UI shaders had no
+  DXIL. `--affected --flavor asan`: `ran 1196 of 3000 tests (phases: all; flavors: asan; display: included; crash tests: excluded) in 151 s`, all passed. The gates (`module_deps_check`, `platform_neutral_check`,
+  `ui_widget_style_check`, `window_backend_lists`) pass on Windows. The text overlay, its golden, `renderer_demo_overlay_win32`,
+  `renderer_demo_screenshot_text` and the UI text pass ran and passed there with Vulkan.
+- **DXIL minted:** the `shaders` target on Windows wrote `text.vert/frag.dxil.inc` and `ui.vert/frag.dxil.inc` (slangc v2026.18.2, dxcompiler
+  1.9.2602.17) and rewrote nothing else (every other minted output is byte-identical); `shaders_check` and `shaders_portability` pass. **Not done
+  yet** (the rest of the Phase 14 leftovers task): `text_renderer.cpp` and `ui_renderer.cpp` do not use the new DXIL, so the text and UI paths still
+  fail on Direct3D 12 and their GPU tests run Vulkan only.
 
 ## Post-implementation code review
 
