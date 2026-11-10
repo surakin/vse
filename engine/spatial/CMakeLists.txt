@@ -3,6 +3,7 @@
 # Built plain, ASan and TSan from one source list, each against the matching foundation variant, like ecs.
 set(SPATIAL_SOURCES
   static_bvh.cpp  # Day 239
+  dynamic_bvh.cpp  # Day 240
 )
 set(SPATIAL_INCLUDE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

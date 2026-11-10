@@ -3,6 +3,8 @@
 set(SPATIAL_TEST_SOURCES
   geometry_test.cpp
   static_bvh_test.cpp  # Day 239
+  dynamic_bvh_test.cpp  # Day 240
+  ../ecs/alloc_counter.cpp  # the heap-allocation counter of tests/ecs (replaces operator new in this executable)
 )
 
 find_package(Threads REQUIRED)
@@ -11,7 +13,7 @@ include(Catch)
 function(engine_add_spatial_tests target spatial_lib suffix label)
   add_executable(${target} ${SPATIAL_TEST_SOURCES})
   target_link_libraries(${target} PRIVATE ${spatial_lib} Catch2::Catch2WithMain Threads::Threads)
-  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/tests/ecs)
   if(label STREQUAL "asan")
     engine_asan_runtime(${target})
   endif()

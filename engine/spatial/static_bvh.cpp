@@ -1,46 +1,14 @@
 #include "spatial/static_bvh.h"
 
-#include "containers/array.h"
 #include "lang/scalar.h"
 #include "log/assert.h"
+#include "spatial/internal/binned_sah.h"
 
 namespace engine_placeholder::spatial {
 
 namespace {
 
-// The deepest level the build makes (the root is level 1); with the traversal stack of 64 entries (at most one pending sibling per level plus the root)
-// every tree fits.
-constexpr u32 kMaxBuildDepth = 60;
-
-// The number of further splits a node of `count` items needs to reach leaves when it is halved each time.
-u32 SplitsNeeded(u32 count) {
-    u32 splits = 0;
-    u32 leaves = (count + kStaticBvhLeafSize - 1) / kStaticBvhLeafSize;
-    while (leaves > 1) {
-        leaves = (leaves + 1) / 2;
-        ++splits;
-    }
-    return splits;
-}
-
-// Grows `box` to contain `other` (both non-empty, or `box` the infinite Aabb::Empty(), which min and max handle exactly): Union without its checks.
-void Grow(Aabb& box, const Aabb& other) {
-    box.min.x = other.min.x < box.min.x ? other.min.x : box.min.x;
-    box.min.y = other.min.y < box.min.y ? other.min.y : box.min.y;
-    box.min.z = other.min.z < box.min.z ? other.min.z : box.min.z;
-    box.max.x = other.max.x > box.max.x ? other.max.x : box.max.x;
-    box.max.y = other.max.y > box.max.y ? other.max.y : box.max.y;
-    box.max.z = other.max.z > box.max.z ? other.max.z : box.max.z;
-}
-
-void Grow(Aabb& box, const Vec3& p) { Grow(box, Aabb::FromMinMax(p, p)); }
-
-u32 BinOf(f32 centroid, f32 low, f32 scale) {
-    const f32 position = (centroid - low) * scale;
-    if (!(position > 0.0f)) return 0; // also a NaN
-    const u32 bin = static_cast<u32>(position);
-    return bin < kStaticBvhBins ? bin : kStaticBvhBins - 1;
-}
+static_assert(kStaticBvhBins == internal::kSahBins, "the static BVH's bin count is the shared split's");
 
 } // namespace
 
@@ -66,7 +34,7 @@ void StaticBvh::Build(Span<const Item> items) {
         ENGINE_ASSERT(IsFinite(box.min.x) && IsFinite(box.min.y) && IsFinite(box.min.z) && IsFinite(box.max.x) && IsFinite(box.max.y) && IsFinite(box.max.z),
                       "StaticBvh::Build: an item's box is not finite (a NaN or an infinite corner)");
         order_[i] = static_cast<u32>(i);
-        centroids_[i] = items[i].box.Center();
+        centroids_[i] = box.Center();
     }
     nodes_.Reserve(2 * n / kStaticBvhLeafSize + 1);
     items_.Reserve(n);
@@ -86,8 +54,8 @@ u32 StaticBvh::BuildNode(u32 begin, u32 end, u32 level) {
     Aabb box = Aabb::Empty();
     Aabb centroid_box = Aabb::Empty();
     for (u32 i = begin; i < end; ++i) {
-        Grow(box, source_[order_[i]].box);
-        Grow(centroid_box, centroids_[order_[i]]);
+        internal::GrowBox(box, source_[order_[i]].box);
+        internal::GrowBox(centroid_box, centroids_[order_[i]]);
     }
     const u32 count = end - begin;
     if (count <= kStaticBvhLeafSize) {
@@ -99,70 +67,10 @@ u32 StaticBvh::BuildNode(u32 begin, u32 end, u32 level) {
         nodes_[index] = leaf;
         return index;
     }
-
-    // The longest centroid axis (the lowest axis on a tie).
-    const Vec3 extent = centroid_box.Extents();
-    u32 axis = 0;
-    if (extent.y > extent[axis]) axis = 1;
-    if (extent.z > extent[axis]) axis = 2;
-
-    u32 mid = begin + count / 2; // the middle split: for coincident centroids, and to keep the depth bounded
-    if (extent[axis] > 0.0f && level + SplitsNeeded(count) < kMaxBuildDepth) {
-        const f32 low = centroid_box.min[axis];
-        const f32 scale = static_cast<f32>(kStaticBvhBins) / extent[axis];
-        Array<Aabb, kStaticBvhBins> bin_box;
-        Array<u32, kStaticBvhBins> bin_count;
-        for (u32 b = 0; b < kStaticBvhBins; ++b) {
-            bin_box[b] = Aabb::Empty();
-            bin_count[b] = 0;
-        }
-        for (u32 i = begin; i < end; ++i) {
-            const u32 b = BinOf(centroids_[order_[i]][axis], low, scale);
-            bins_[i] = static_cast<u8>(b); // kept for the partition below
-            Grow(bin_box[b], source_[order_[i]].box);
-            ++bin_count[b];
-        }
-        // The cost of each plane k (bins 0..k on the left): items times area on both sides; the lowest cost wins, the lowest plane on a tie.
-        Array<f32, kStaticBvhBins> right_area;
-        Array<u32, kStaticBvhBins> right_count;
-        Aabb acc = Aabb::Empty();
-        u32 acc_count = 0;
-        for (u32 b = kStaticBvhBins - 1; b > 0; --b) {
-            if (bin_count[b] != 0) Grow(acc, bin_box[b]);
-            acc_count += bin_count[b];
-            right_area[b] = SurfaceArea(acc);
-            right_count[b] = acc_count;
-        }
-        u32 best_plane = kStaticBvhBins;
-        f32 best_cost = 0.0f;
-        acc = Aabb::Empty();
-        acc_count = 0;
-        for (u32 k = 0; k + 1 < kStaticBvhBins; ++k) {
-            if (bin_count[k] != 0) Grow(acc, bin_box[k]);
-            acc_count += bin_count[k];
-            const u32 rc = right_count[k + 1];
-            if (acc_count == 0 || rc == 0) continue;
-            const f32 cost = static_cast<f32>(acc_count) * SurfaceArea(acc) + static_cast<f32>(rc) * right_area[k + 1];
-            if (best_plane == kStaticBvhBins || cost < best_cost) {
-                best_plane = k;
-                best_cost = cost;
-            }
-        }
-        if (best_plane != kStaticBvhBins) {
-            // A stable partition: the left items keep their order, then the right ones keep theirs.
-            u32 left = 0;
-            for (u32 i = begin; i < end; ++i) {
-                if (bins_[i] <= best_plane) scratch_[begin + left++] = order_[i];
-            }
-            u32 right = left;
-            for (u32 i = begin; i < end; ++i) {
-                if (bins_[i] > best_plane) scratch_[begin + right++] = order_[i];
-            }
-            for (u32 i = begin; i < end; ++i) order_[i] = scratch_[i];
-            mid = begin + left;
-        }
-    }
-
+    // The middle split when the tree would otherwise grow deeper than its traversal stack.
+    const bool middle = level + internal::SplitsNeeded(count, kStaticBvhLeafSize) >= internal::kMaxBuildDepth;
+    const u32 mid = internal::SplitBinnedSah(order_.Data(), begin, end, centroid_box, middle, scratch_.Data(), bins_.Data(),
+                                             [this](u32 i) -> const Aabb& { return source_[i].box; }, [this](u32 i) -> const Vec3& { return centroids_[i]; });
     const u32 left_child = BuildNode(begin, mid, level + 1);
     const u32 right_child = BuildNode(mid, end, level + 1);
     ENGINE_ASSERT(left_child == index + 1, "StaticBvh: the left child must follow its parent");

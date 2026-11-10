@@ -3278,6 +3278,51 @@ ecs::World::ArchetypeAt(u32) const	function	ecs	ecs-world-archetypeat-u32-const	
 ecs::World::Entities() const	function	ecs	ecs-world-entities-const	ecs.md	engine/ecs/world.h:379
 ecs::World::Stats() const	function	ecs	ecs-world-stats-const	ecs.md	engine/ecs/world.h:382
 ecs::World::Validate() const	function	ecs	ecs-world-validate-const	ecs.md	engine/ecs/world.h:388
+spatial::ProxyId	alias	spatial	spatial-proxyid	spatial.md	engine/spatial/dynamic_bvh.h:18
+spatial::kInvalidProxy	variable	spatial	spatial-kinvalidproxy	spatial.md	engine/spatial/dynamic_bvh.h:21
+spatial::kMaxDynamicProxies	variable	spatial	spatial-kmaxdynamicproxies	spatial.md	engine/spatial/dynamic_bvh.h:24
+spatial::DynamicBvhConfig	struct	spatial	spatial-dynamicbvhconfig	spatial.md	engine/spatial/dynamic_bvh.h:29
+spatial::DynamicBvhConfig::fat_margin	variable	spatial	spatial-dynamicbvhconfig-fat-margin	spatial.md	engine/spatial/dynamic_bvh.h:32
+spatial::DynamicBvhConfig::predictive	variable	spatial	spatial-dynamicbvhconfig-predictive	spatial.md	engine/spatial/dynamic_bvh.h:35
+spatial::DynamicBvhConfig::rebuild_threshold	variable	spatial	spatial-dynamicbvhconfig-rebuild-threshold	spatial.md	engine/spatial/dynamic_bvh.h:37
+spatial::DynamicBvhStats	struct	spatial	spatial-dynamicbvhstats	spatial.md	engine/spatial/dynamic_bvh.h:43
+spatial::DynamicBvhStats::proxies	variable	spatial	spatial-dynamicbvhstats-proxies	spatial.md	engine/spatial/dynamic_bvh.h:44
+spatial::DynamicBvhStats::nodes	variable	spatial	spatial-dynamicbvhstats-nodes	spatial.md	engine/spatial/dynamic_bvh.h:45
+spatial::DynamicBvhStats::node_capacity	variable	spatial	spatial-dynamicbvhstats-node-capacity	spatial.md	engine/spatial/dynamic_bvh.h:46
+spatial::DynamicBvhStats::height	variable	spatial	spatial-dynamicbvhstats-height	spatial.md	engine/spatial/dynamic_bvh.h:47
+spatial::DynamicBvhStats::memory_bytes	variable	spatial	spatial-dynamicbvhstats-memory-bytes	spatial.md	engine/spatial/dynamic_bvh.h:48
+spatial::DynamicBvhStats::sah_cost	variable	spatial	spatial-dynamicbvhstats-sah-cost	spatial.md	engine/spatial/dynamic_bvh.h:49
+spatial::DynamicBvhStats::built_sah_cost	variable	spatial	spatial-dynamicbvhstats-built-sah-cost	spatial.md	engine/spatial/dynamic_bvh.h:50
+spatial::DynamicBvhStats::moves	variable	spatial	spatial-dynamicbvhstats-moves	spatial.md	engine/spatial/dynamic_bvh.h:51
+spatial::DynamicBvhStats::moves_inside_fat	variable	spatial	spatial-dynamicbvhstats-moves-inside-fat	spatial.md	engine/spatial/dynamic_bvh.h:52
+spatial::DynamicBvhStats::reinserts	variable	spatial	spatial-dynamicbvhstats-reinserts	spatial.md	engine/spatial/dynamic_bvh.h:53
+spatial::DynamicBvhStats::rotations	variable	spatial	spatial-dynamicbvhstats-rotations	spatial.md	engine/spatial/dynamic_bvh.h:54
+spatial::DynamicBvhStats::full_rebuilds	variable	spatial	spatial-dynamicbvhstats-full-rebuilds	spatial.md	engine/spatial/dynamic_bvh.h:55
+spatial::DynamicBvhStats::partial_rebuilds	variable	spatial	spatial-dynamicbvhstats-partial-rebuilds	spatial.md	engine/spatial/dynamic_bvh.h:56
+spatial::DynamicBvhStats::stale_refused	variable	spatial	spatial-dynamicbvhstats-stale-refused	spatial.md	engine/spatial/dynamic_bvh.h:57
+spatial::DynamicBvhStats::refused_full	variable	spatial	spatial-dynamicbvhstats-refused-full	spatial.md	engine/spatial/dynamic_bvh.h:58
+spatial::DynamicBvh	class	spatial	spatial-dynamicbvh	spatial.md	engine/spatial/dynamic_bvh.h:72
+spatial::DynamicBvh::DynamicBvh(const DynamicBvhConfig&)	function	spatial	spatial-dynamicbvh-dynamicbvh-const-dynamicbvhconfig-amp	spatial.md	engine/spatial/dynamic_bvh.h:77
+spatial::DynamicBvh::DynamicBvh(const DynamicBvh&)	function	spatial	spatial-dynamicbvh-dynamicbvh-const-dynamicbvh-amp	spatial.md	engine/spatial/dynamic_bvh.h:78
+spatial::DynamicBvh::operator=(const DynamicBvh&)	function	spatial	spatial-dynamicbvh-operator-eq-const-dynamicbvh-amp	spatial.md	engine/spatial/dynamic_bvh.h:79
+spatial::DynamicBvh::Insert(const Aabb&,SpatialKey,u32)	function	spatial	spatial-dynamicbvh-insert-const-aabb-amp-spatialkey-u32	spatial.md	engine/spatial/dynamic_bvh.h:88
+spatial::DynamicBvh::Remove(ProxyId)	function	spatial	spatial-dynamicbvh-remove-proxyid	spatial.md	engine/spatial/dynamic_bvh.h:95
+spatial::DynamicBvh::Move(ProxyId,const Aabb&)	function	spatial	spatial-dynamicbvh-move-proxyid-const-aabb-amp	spatial.md	engine/spatial/dynamic_bvh.h:103
+spatial::DynamicBvh::Build(Span<const Item>,Span<ProxyId>)	function	spatial	spatial-dynamicbvh-build-span-lt-const-item-gt-span-lt-proxyid-gt	spatial.md	engine/spatial/dynamic_bvh.h:110
+spatial::DynamicBvh::Rebuild()	function	spatial	spatial-dynamicbvh-rebuild	spatial.md	engine/spatial/dynamic_bvh.h:113
+spatial::DynamicBvh::Optimize(u32)	function	spatial	spatial-dynamicbvh-optimize-u32	spatial.md	engine/spatial/dynamic_bvh.h:120
+spatial::DynamicBvh::Clear()	function	spatial	spatial-dynamicbvh-clear	spatial.md	engine/spatial/dynamic_bvh.h:123
+spatial::DynamicBvh::IsLive(ProxyId) const	function	spatial	spatial-dynamicbvh-islive-proxyid-const	spatial.md	engine/spatial/dynamic_bvh.h:128
+spatial::DynamicBvh::ItemOf(ProxyId) const	function	spatial	spatial-dynamicbvh-itemof-proxyid-const	spatial.md	engine/spatial/dynamic_bvh.h:133
+spatial::DynamicBvh::FatBox(ProxyId) const	function	spatial	spatial-dynamicbvh-fatbox-proxyid-const	spatial.md	engine/spatial/dynamic_bvh.h:138
+spatial::DynamicBvh::ProxyCount() const	function	spatial	spatial-dynamicbvh-proxycount-const	spatial.md	engine/spatial/dynamic_bvh.h:141
+spatial::DynamicBvh::Height() const	function	spatial	spatial-dynamicbvh-height-const	spatial.md	engine/spatial/dynamic_bvh.h:143
+spatial::DynamicBvh::Bounds() const	function	spatial	spatial-dynamicbvh-bounds-const	spatial.md	engine/spatial/dynamic_bvh.h:145
+spatial::DynamicBvh::SahCost() const	function	spatial	spatial-dynamicbvh-sahcost-const	spatial.md	engine/spatial/dynamic_bvh.h:147
+spatial::DynamicBvh::Stats() const	function	spatial	spatial-dynamicbvh-stats-const	spatial.md	engine/spatial/dynamic_bvh.h:149
+spatial::DynamicBvh::Validate() const	function	spatial	spatial-dynamicbvh-validate-const	spatial.md	engine/spatial/dynamic_bvh.h:156
+spatial::DynamicBvh::Traverse(NodeTest&&,ItemVisit&&) const	function	spatial	spatial-dynamicbvh-traverse-nodetest-amp-amp-itemvisit-amp-amp-const	spatial.md	engine/spatial/dynamic_bvh.h:165
+spatial::DynamicBvh::TraverseRay(const Ray&,f32,ItemVisit&&) const	function	spatial	spatial-dynamicbvh-traverseray-const-ray-amp-f32-itemvisit-amp-amp-const	spatial.md	engine/spatial/dynamic_bvh.h:176
 spatial::kMaxSpatialSets	variable	spatial	spatial-kmaxspatialsets	spatial.md	engine/spatial/spatial.h:14
 spatial::SpatialKey	alias	spatial	spatial-spatialkey	spatial.md	engine/spatial/spatial.h:17
 spatial::Item	struct	spatial	spatial-item	spatial.md	engine/spatial/static_bvh.h:18

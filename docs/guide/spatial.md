@@ -1,7 +1,7 @@
 # Spatial partitioning: what is near what
 
-Status: in progress (Phase 18). Built: the shared shapes (Day 238), the static bounding-volume hierarchy (Day 239). Next: the dynamic hierarchy, the query
-vocabulary, the hash grid, spatial sets, the pair tracker, the ECS tier and the renderer's culling (Days 240-249).
+Status: in progress (Phase 18). Built: the shared shapes (Day 238), the static and dynamic bounding-volume hierarchies (Days 239-240). Next: the query
+vocabulary, the hash grid, spatial sets, the pair tracker, the ECS tier and the renderer's culling (Days 241-249).
 
 **Audience:** engine programmers who write a system that asks "what is near this box, ray or frustum" (physics, culling, audio, gameplay). Read
 [Math](foundation-math.md) first.
@@ -155,6 +155,82 @@ How it is built and what that buys:
 The two traversals are the building blocks the query functions of Day 241 are made of: `Traverse` takes a node test (reject, descend, or accept the whole
 subtree) and an item visitor; `TraverseRay` visits the leaves a ray reaches, nearest first, and lets the visitor shorten the ray. Both return
 `TraversalStats` (nodes tested, items visited).
+
+## The dynamic BVH
+
+`spatial::DynamicBvh` (`spatial/dynamic_bvh.h`) is for things that move. `Insert` returns a `spatial::ProxyId` (a slot and a generation: a handle kept
+after `Remove` is refused, not mistaken for a later item); `Move` gives the item a new box; `Remove` takes it out. The queries are the same two traversals
+as the static tree's, and the item visitor also receives the handle.
+
+```cpp compile run standalone
+#include "os/console.h"
+#include "spatial/dynamic_bvh.h"
+
+using namespace engine_placeholder;
+using namespace engine_placeholder::spatial;
+
+int main() {
+    DynamicBvh tree;
+    const ProxyId player = tree.Insert(Aabb::FromMinMax(Vec3(0, 0, 0), Vec3(1, 2, 1)), 1, 0);
+    const ProxyId crate = tree.Insert(Aabb::FromMinMax(Vec3(5, 0, 0), Vec3(6, 1, 1)), 2, 0);
+
+    // A step of 0.1 stays inside the fat box (a quarter of the largest extent on every side): nothing in the tree changes.
+    const bool changed = tree.Move(player, Aabb::FromMinMax(Vec3(0.1f, 0, 0), Vec3(1.1f, 2, 1)));
+    os::Print("small step changed the tree: %s\n", changed ? "yes" : "no");
+    // A jump leaves it: the leaf is taken out and put back.
+    os::Print("jump changed the tree: %s\n", tree.Move(player, Aabb::FromMinMax(Vec3(4.5f, 0, 0), Vec3(5.5f, 2, 1))) ? "yes" : "no");
+
+    const Aabb near_crate = Aabb::FromMinMax(Vec3(4, 0, 0), Vec3(7, 1, 1));
+    tree.Traverse([&](const Aabb& node) { return Overlaps(node, near_crate) ? NodeVisit::Descend : NodeVisit::Reject; },
+                  [&](ProxyId, const Item& item) {
+                      if (Overlaps(item.box, near_crate)) os::Print("near the crate: key %llu\n", static_cast<unsigned long long>(item.key));
+                      return true;
+                  });
+
+    tree.Remove(crate);
+    os::Print("removed handle still live: %s\n", tree.IsLive(crate) ? "yes" : "no");
+    return 0;
+}
+```
+
+```output
+small step changed the tree: no
+jump changed the tree: yes
+near the crate: key 2
+near the crate: key 1
+removed handle still live: no
+```
+
+How it stays fast while things move:
+
+- **Fat boxes.** A leaf stores the item's box grown by `fat_margin` (a fraction of the item's largest extent, 0.25 by default, `spatial.fat_margin`) and,
+  along the last movement, `predictive` times that displacement (2 by default). A move that stays inside the stored box costs a comparison; only a move
+  out of it re-inserts the leaf. The tight box is kept beside the fat one: the item visitor gets the tight box, so a query can be exact. A stored box
+  that has become far larger than needed (an item that moved fast and stopped) is shrunk by a re-insert. An item of zero size gets no margin, so each of
+  its moves re-inserts it.
+- **Good insertion.** A new leaf goes beside the node that adds the least total surface area (a branch-and-bound search), and rotations on the way up
+  keep the tree balanced (the height stays near 1.44 log2 of the count).
+- **Quality upkeep.** A tree built only by insertions answers queries 1.8 to 3.3 times slower than a top-down build of the same boxes (the spec's
+  experiment (a)). `Build(items, handles)` makes a fresh tree top-down (use it on a scene load); `Optimize(budget)` rebuilds one subtree of about
+  `budget` leaves per call, a different one each time, and the whole tree once its SAH cost has grown past `rebuild_threshold` (1.3) times the cost
+  after the last full build. Call it once a frame: with 1,000 items all moving for 1,000 frames and `Optimize(64)` each frame, the tree stayed within
+  1.13 times the SAH cost of a fresh build.
+- **No allocation in the steady state.** Nodes live in one pool with a free list; once it has grown to its working size, moves and queries allocate
+  nothing (tested with an allocation counter). 100,000 items take 128 bytes each, nodes, fat and tight boxes included. `Optimize` on a quiet frame
+  (nothing inserted, removed or re-inserted since its last call) returns at once. `Validate()` checks every invariant, for tests.
+
+**Choosing the predictive margin (Day 240, Release, the Windows PC).** 10,000 agents of 1 x 2 x 1 for 60 frames, each step 0.1:
+
+| Motion | `predictive` | Re-inserted per move | Cost per move | Nodes tested per 10-unit query |
+|---|---|---|---|---|
+| straight lines | 0 | 15.8 % | 339 ns | 32.9 |
+| straight lines | 2 | 11.3 % | 255 ns | 32.9 |
+| straight lines | 4 | 9.6 % | 221 ns | 33.1 |
+| a new direction every frame | 0 | 2.6 % | 64 ns | 32.4 |
+| a new direction every frame | 2 | 2.3 % | 71 ns | 32.5 |
+
+Prediction pays where motion keeps its direction and costs almost nothing where it does not, so the default is 2; set it to 0 for items that never move
+far in one direction (jittering particles), 4 for fast straight movers.
 
 ## See also
 
