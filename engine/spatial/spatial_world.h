@@ -41,6 +41,10 @@ struct SpatialWorldStats {
     u64 refused_bounds = 0;   ///< Looks at an entity whose bounds or transform give a non-finite or empty box, or whose layer is 32 or more (a joiner is retried every frame; a member keeps its items).
     u64 refused_full = 0;     ///< Adds a set refused because it is full (retried at the entity's next edit or arrival).
     u64 unknown_set_bits = 0; ///< Set bits of a membership that name no set (counted once per join or membership change; ignored for good: a set created later does not pick up entities that already named its bit until their membership changes).
+    u64 bounds_written = 0;   ///< `WorldBounds` values that changed.
+    u64 items_moved = 0;      ///< `SpatialSet::Move` calls made for moved entities (a static item's move is refused by the set and counted in its `static_moves_refused`).
+    u64 items_reinserted = 0; ///< Of those, the moves that changed the structure (the box left its margin or its cell).
+    u64 static_rebuilds = 0;  ///< Static trees rebuilt because their items changed.
     u64 refused_sets = 0;     ///< `CreateSet` calls refused because all `kMaxSpatialSets` sets exist.
 };
 
@@ -87,6 +91,12 @@ public:
     /// components, or when the world is being torn down.
     void Clear();
 
+    /// Whether the sync computes `WorldBounds` as jobs (when its system has the frame thread to itself). On by default; off runs it on the calling thread.
+    /// Fails: never.
+    bool Parallel() const { return parallel_; }
+    /// Sets whether the sync computes `WorldBounds` as jobs.
+    void SetParallel(bool parallel) { parallel_ = parallel; }
+
     /// What the sync has done.
     const SpatialWorldStats& Stats() const { return stats_; }
     /// What the sync has done, for the sync to update.
@@ -96,6 +106,7 @@ private:
     Array<UniquePtr<SpatialSet>, kMaxSpatialSets> sets_;
     Array<Array<char, kMaxSetNameLength + 1>, kMaxSpatialSets> names_;
     u32 count_ = 0;
+    bool parallel_ = true;
     SpatialWorldStats stats_;
 };
 

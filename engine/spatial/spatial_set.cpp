@@ -107,7 +107,8 @@ bool SpatialSet::Remove(SetHandle handle) {
     const u32 slot = static_cast<u32>(found);
     Slot& s = slots_[slot];
     if (s.Static()) {
-        if (!s.InTree()) RemovePending(slot); // an entry in the tree is skipped from now on (the slot is no longer live and in the tree)
+        if (s.InTree()) ++stale_tree_;
+        else RemovePending(slot); // an entry in the tree is skipped from now on (the slot is no longer live and in the tree)
     } else {
         RemoveDynamic(slot);
     }
@@ -143,7 +144,8 @@ bool SpatialSet::MakeDynamic(SetHandle handle) {
     }
     const u32 slot = static_cast<u32>(found);
     if (!slots_[slot].Static()) return true;
-    if (!slots_[slot].InTree()) RemovePending(slot);
+    if (slots_[slot].InTree()) ++stale_tree_;
+    else RemovePending(slot);
     slots_[slot].state &= ~(kStaticBit | kInTreeBit); // a tree entry is skipped from now on
     if (!InsertDynamic(slot)) {
         // The dynamic structure is full: the item stays static, back in the pending list.
@@ -170,6 +172,7 @@ bool SpatialSet::MakeStatic(SetHandle handle) {
 
 void SpatialSet::RebuildStatic() {
     ++static_rebuilds_;
+    stale_tree_ = 0;
     build_items_.Clear();
     for (usize s = 0; s < slots_.Size(); ++s) {
         Slot& slot = slots_[s];
@@ -195,6 +198,7 @@ void SpatialSet::Clear() {
     dynamic_.Clear();
     grid_.Clear();
     pending_.Clear();
+    stale_tree_ = 0;
     free_slot_ = kNull;
     for (usize i = slots_.Size(); i > 0; --i) {
         Slot& s = slots_[i - 1];

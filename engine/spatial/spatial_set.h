@@ -130,6 +130,10 @@ public:
     /// Removes every item; every handle becomes stale.
     void Clear();
 
+    /// Returns whether a `RebuildStatic` would change what the static tree holds: static items wait in the pending list, or tree entries are stale. Constant time.
+    ///
+    /// Fails: never.
+    bool NeedsRebuild() const { return !pending_.Empty() || stale_tree_ != 0; }
     /// Returns whether `handle` names a live item.
     ///
     /// Fails: never; a stale or invalid handle gives false.
@@ -216,6 +220,7 @@ private:
     u64 static_rebuilds_ = 0;
     u64 static_moves_refused_ = 0;
     u64 stale_ = 0;
+    u32 stale_tree_ = 0; // tree entries whose item was removed or made dynamic since the last rebuild
 };
 
 template <class NodeTest, class ItemVisit>

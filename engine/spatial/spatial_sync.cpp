@@ -5,6 +5,7 @@
 #include "ecs/query.h"
 #include "ecs/transform.h"
 #include "lang/scalar.h"
+#include "sync/atomic.h"
 
 namespace engine_placeholder::spatial {
 
@@ -18,6 +19,7 @@ using ecs::Read;
 using ecs::With;
 using ecs::Without;
 using ecs::Write;
+using ecs::LazyWrite;
 
 bool FiniteSyncBox(const Aabb& box) {
     return IsFinite(box.min.x) && IsFinite(box.min.y) && IsFinite(box.min.z) && IsFinite(box.max.x) && IsFinite(box.max.y) && IsFinite(box.max.z) && !box.IsEmpty();
@@ -34,6 +36,14 @@ struct Queries {
     UniquePtr<Edited> edited;
     UniquePtr<Arrived> arrived;
 };
+
+using BoundsByTransform = Query<Changed<ecs::WorldTransform>, Read<SpatialBounds>, Read<ecs::WorldTransform>, LazyWrite<WorldBounds>>;
+using BoundsByLocal = Query<Changed<SpatialBounds>, Read<SpatialBounds>, Read<ecs::WorldTransform>, LazyWrite<WorldBounds>>;
+using MovedBounds = Query<Changed<WorldBounds>, Read<WorldBounds>, Read<SpatialProxy>>;
+
+bool SameBox(const Aabb& a, const Aabb& b) {
+    return a.min.x == b.min.x && a.min.y == b.min.y && a.min.z == b.min.z && a.max.x == b.max.x && a.max.y == b.max.y && a.max.z == b.max.z;
+}
 
 using NoBounds = Query<Write<SpatialProxy>, Without<SpatialBounds>>;
 using NoTransform = Query<Write<SpatialProxy>, Without<ecs::WorldTransform>>;
@@ -69,6 +79,9 @@ private:
                                                                          Read<SpatialBounds>, Read<ecs::WorldTransform>, Without<SpatialStatic>>());
         no_.arrived = MakeUnique<Queries<Without<SpatialStatic>>::Arrived>(context.Query<Added<SpatialProxy>, Read<SpatialMembership>, Write<SpatialProxy>,
                                                                            Read<SpatialBounds>, Read<ecs::WorldTransform>, Without<SpatialStatic>>());
+        by_transform_ = MakeUnique<BoundsByTransform>(context.Query<Changed<ecs::WorldTransform>, Read<SpatialBounds>, Read<ecs::WorldTransform>, LazyWrite<WorldBounds>>());
+        by_local_ = MakeUnique<BoundsByLocal>(context.Query<Changed<SpatialBounds>, Read<SpatialBounds>, Read<ecs::WorldTransform>, LazyWrite<WorldBounds>>());
+        moved_ = MakeUnique<MovedBounds>(context.Query<Changed<WorldBounds>, Read<WorldBounds>, Read<SpatialProxy>>());
         no_bounds_ = MakeUnique<NoBounds>(context.Query<Write<SpatialProxy>, Without<SpatialBounds>>());
         no_transform_ = MakeUnique<NoTransform>(context.Query<Write<SpatialProxy>, Without<ecs::WorldTransform>>());
         no_membership_ = MakeUnique<NoMembership>(context.Query<Write<SpatialProxy>, Without<SpatialMembership>>());
@@ -136,6 +149,10 @@ private:
                 SpatialSet* set = spatial.Set(id);
                 if (is_static ? set->MakeStatic(proxy.handle[id]) : set->MakeDynamic(proxy.handle[id])) {
                     ++stats.moved_between;
+                    // A static item ignores moves, so its box may be stale: bring it to the entity's box.
+                    if (!is_static && !SameBox(set->ItemOf(proxy.handle[id]).box, box)) {
+                        set->Move(proxy.handle[id], box);
+                    }
                 } else {
                     complete = false;
                 }
@@ -211,6 +228,65 @@ private:
         });
     }
 
+    // Recomputes WorldBounds for the chunks whose transform or local box changed, writing (and stamping) only where the box differs; a chunk loop that runs as jobs
+    // when the system has the frame thread to itself.
+    template <class Q>
+    void ComputeBounds(ecs::SystemContext& context, SpatialWorld& spatial, Q& q, Atomic<u64>& written, Atomic<u64>& refused) {
+        auto chunk = [&written, &refused](ecs::ChunkView& view, ecs::CommandBuffer&) {
+            Span<const SpatialBounds> locals = view.Read<SpatialBounds>();
+            Span<const ecs::WorldTransform> worlds = view.Read<ecs::WorldTransform>();
+            Span<WorldBounds> boxes = view.Write<WorldBounds>();
+            u64 wrote = 0;
+            u64 bad = 0;
+            for (usize i = 0; i < locals.Size(); ++i) {
+                const Aabb box = TransformAabb(locals[i].local, worlds[i].matrix);
+                if (!FiniteSyncBox(box)) {
+                    ++bad; // the item keeps its old box
+                } else if (!SameBox(box, boxes[i].box)) {
+                    boxes[i].box = box;
+                    ++wrote;
+                }
+            }
+            if (bad != 0) {
+                refused.FetchAdd(bad, MemoryOrder::Relaxed);
+            }
+            if (wrote != 0) {
+                view.MarkWritten<WorldBounds>();
+                written.FetchAdd(wrote, MemoryOrder::Relaxed);
+            }
+        };
+        if (spatial.Parallel()) {
+            context.ForEachChunkParallel(q, chunk);
+        } else {
+            ecs::CommandBuffer unused;
+            q.ForEachChunk([&](ecs::ChunkView& view) { chunk(view, unused); });
+        }
+    }
+
+    // Moves the items whose WorldBounds changed, on one thread in chunk order (the structures are not written concurrently, which keeps them deterministic).
+    void ApplyMoves(SpatialWorld& spatial) {
+        SpatialWorldStats& stats = spatial.MutableStats();
+        moved_->ForEach([&](const WorldBounds& bounds, const SpatialProxy& proxy) {
+            if (proxy.leaving) {
+                return;
+            }
+            for (SetId id = 0; id < spatial.SetCount(); ++id) {
+                const SetHandle handle = proxy.handle[id];
+                if (handle == kInvalidSetHandle) {
+                    continue;
+                }
+                SpatialSet* set = spatial.Set(id);
+                if (!set->IsLive(handle) || SameBox(set->ItemOf(handle).box, bounds.box)) {
+                    continue;
+                }
+                ++stats.items_moved;
+                if (set->Move(handle, bounds.box)) {
+                    ++stats.items_reinserted;
+                }
+            }
+        });
+    }
+
     void Sync(ecs::SystemContext& context, SpatialWorld& spatial) {
         SpatialWorldStats& stats = spatial.MutableStats();
         // 0. Items made last frame for entities that were destroyed before their proxy was applied.
@@ -242,9 +318,27 @@ private:
         SyncEdits(spatial, yes_);
         SyncEdits(spatial, no_);
 
-        // 4. New entities.
+        // 4. Moved entities: the boxes (parallel), then the items (one thread).
+        Atomic<u64> written{0};
+        Atomic<u64> refused{0};
+        ComputeBounds(context, spatial, *by_transform_, written, refused);
+        ComputeBounds(context, spatial, *by_local_, written, refused);
+        stats.bounds_written += written.Load(MemoryOrder::Relaxed);
+        stats.refused_bounds += refused.Load(MemoryOrder::Relaxed);
+        ApplyMoves(spatial);
+
+        // 5. New entities.
         JoinNew(context, spatial, yes_);
         JoinNew(context, spatial, no_);
+
+        // 6. A static tree is rebuilt only when its items changed (queries are exact meanwhile: they scan the pending list and skip stale entries).
+        for (SetId id = 0; id < spatial.SetCount(); ++id) {
+            SpatialSet* set = spatial.Set(id);
+            if (set->NeedsRebuild()) {
+                set->RebuildStatic();
+                ++stats.static_rebuilds;
+            }
+        }
 
         yes_.join->Finish();
         yes_.edited->Finish();
@@ -252,6 +346,9 @@ private:
         no_.join->Finish();
         no_.edited->Finish();
         no_.arrived->Finish();
+        by_transform_->Finish();
+        by_local_->Finish();
+        moved_->Finish();
         no_bounds_->Finish();
         no_transform_->Finish();
         no_membership_->Finish();
@@ -264,6 +361,9 @@ private:
 
     Queries<With<SpatialStatic>> yes_;
     Queries<Without<SpatialStatic>> no_;
+    UniquePtr<BoundsByTransform> by_transform_;
+    UniquePtr<BoundsByLocal> by_local_;
+    UniquePtr<MovedBounds> moved_;
     UniquePtr<NoBounds> no_bounds_;
     UniquePtr<NoTransform> no_transform_;
     UniquePtr<NoMembership> no_membership_;

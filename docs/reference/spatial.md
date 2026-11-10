@@ -2390,6 +2390,20 @@ void Clear();
 
 Removes every item; every handle becomes stale.
 
+### `NeedsRebuild()` {#spatial-spatialset-needsrebuild-const}
+
+`method spatial::SpatialSet::NeedsRebuild` — defined in `engine/spatial/spatial_set.h`
+
+```cpp
+bool NeedsRebuild() const;
+```
+
+Returns whether a `RebuildStatic` would change what the static tree holds: static items wait in the pending list, or tree entries are stale. Constant time.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ### `IsLive(SetHandle)` {#spatial-spatialset-islive-sethandle-const}
 
 `method spatial::SpatialSet::IsLive` — defined in `engine/spatial/spatial_set.h`
@@ -2719,6 +2733,46 @@ u64 unknown_set_bits;
 
 Set bits of a membership that name no set (counted once per join or membership change; ignored for good: a set created later does not pick up entities that already named its bit until their membership changes).
 
+### `bounds_written` {#spatial-spatialworldstats-bounds-written}
+
+`variable spatial::SpatialWorldStats::bounds_written` — defined in `engine/spatial/spatial_world.h`
+
+```cpp
+u64 bounds_written;
+```
+
+`WorldBounds` values that changed.
+
+### `items_moved` {#spatial-spatialworldstats-items-moved}
+
+`variable spatial::SpatialWorldStats::items_moved` — defined in `engine/spatial/spatial_world.h`
+
+```cpp
+u64 items_moved;
+```
+
+`SpatialSet::Move` calls made for moved entities (a static item's move is refused by the set and counted in its `static_moves_refused`).
+
+### `items_reinserted` {#spatial-spatialworldstats-items-reinserted}
+
+`variable spatial::SpatialWorldStats::items_reinserted` — defined in `engine/spatial/spatial_world.h`
+
+```cpp
+u64 items_reinserted;
+```
+
+Of those, the moves that changed the structure (the box left its margin or its cell).
+
+### `static_rebuilds` {#spatial-spatialworldstats-static-rebuilds}
+
+`variable spatial::SpatialWorldStats::static_rebuilds` — defined in `engine/spatial/spatial_world.h`
+
+```cpp
+u64 static_rebuilds;
+```
+
+Static trees rebuilt because their items changed.
+
 ### `refused_sets` {#spatial-spatialworldstats-refused-sets}
 
 `variable spatial::SpatialWorldStats::refused_sets` — defined in `engine/spatial/spatial_world.h`
@@ -2871,6 +2925,30 @@ void Clear();
 ```
 
 Empties every set (the sets and their names stay). The entities keep their proxies, so call it only together with removing the `SpatialProxy` components, or when the world is being torn down.
+
+### `Parallel()` {#spatial-spatialworld-parallel-const}
+
+`method spatial::SpatialWorld::Parallel` — defined in `engine/spatial/spatial_world.h`
+
+```cpp
+bool Parallel() const;
+```
+
+Whether the sync computes `WorldBounds` as jobs (when its system has the frame thread to itself). On by default; off runs it on the calling thread.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `SetParallel(bool)` {#spatial-spatialworld-setparallel-bool}
+
+`method spatial::SpatialWorld::SetParallel` — defined in `engine/spatial/spatial_world.h`
+
+```cpp
+void SetParallel(bool parallel);
+```
+
+Sets whether the sync computes `WorldBounds` as jobs.
 
 ### `Stats()` {#spatial-spatialworld-stats-const}
 

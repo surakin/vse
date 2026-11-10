@@ -1,8 +1,8 @@
 # Spatial partitioning: what is near what
 
 Status: in progress (Phase 18). Built: the shared shapes (Day 238), the static and dynamic bounding-volume hierarchies (Days 239-240), the query vocabulary
-(Day 241), the hash grid and the spatial set (Day 242), the pair tracker (Day 243), the components, the `SpatialWorld` resource and the entity lifecycle (Day 244). Next: moves and the parallel sync, entity-facing
-queries and the renderer's culling (Days 245-249).
+(Day 241), the hash grid and the spatial set (Day 242), the pair tracker (Day 243), the components, the `SpatialWorld` resource and the entity lifecycle (Day 244), moves and the parallel sync (Day 245). Next: entity-facing
+queries and the renderer's culling (Days 246-249).
 
 **Audience:** engine programmers who write a system that asks "what is near this box, ray or frustum" (physics, culling, audio, gameplay). Read
 [Math](foundation-math.md) first.
@@ -500,6 +500,25 @@ render set: 1 item
   set is counted in `unknown_set_bits`; a ninth set is refused (`refused_sets`).
 - **Frame order.** Register the sync after the transform propagation (a later stage, or later in the same one). A query that runs before the sync in a frame
   sees the previous frame's sets.
+
+## The sync system and the frame order
+
+The sync keeps the sets true with the cost of what changed, not of what exists.
+
+- **Order in a frame.** Propagate the transforms, then run the sync (a later stage, or later in the same one), then any system that queries the sets. A query that runs
+  before the sync in a frame sees the previous frame's sets (documented, not an error).
+- **Moves.** The sync recomputes `WorldBounds` (`TransformAabb` of `SpatialBounds::local` by the `WorldTransform`) for the chunks whose transform or local box changed,
+  and writes a value only when it differs, so `Changed<WorldBounds>` filters in other systems stay exact. It then calls `SpatialSet::Move` for the entities whose box
+  differs from their item, in chunk order on one thread: the structures are never written concurrently, so the result does not depend on how jobs were scheduled.
+  A static entity does not move; if one does, the set counts a refused move (`SpatialSetStats::static_moves_refused`) and keeps the old box.
+- **Parallel.** The box computation is a chunk loop that runs as jobs when the sync system is alone in its wave and the schedule has a job scheduler;
+  `SpatialWorld::SetParallel(false)` runs it on the calling thread. Both give the same sets (tested, also under ThreadSanitizer).
+- **Static trees.** A set's static tree is rebuilt only in a frame in which its static items changed (an add, a removal, a tag change): a static world costs the
+  `Changed` queries and no structure calls (tested: 100 frames, the counters do not move). Queries stay exact between a change and the rebuild.
+- **Cost.** Change detection is per chunk (see [ECS](ecs.md)), so a frame in which a few entities of every chunk moved still looks at every row once: 100,000
+  entities with 1 percent moving cost about 7.6 ms a frame in a Release build with two sets (transforms included), 10 percent 73 ms, 100 percent 740 ms; most
+  of the time is the dynamic tree reinserting boxes that left their margin (about 3.6 to 7 microseconds per moved item and set with a walk of 1.5 units for boxes
+  of 1 unit). A crowd of same-size agents belongs in a set made with `DynamicKind::Grid`, whose updates are about four times cheaper (Day 248 measures both).
 
 ## See also
 

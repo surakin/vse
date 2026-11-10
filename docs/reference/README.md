@@ -22,7 +22,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Foundation: Debugging](foundation-debug.md) | 15 | 208 |
 | [Text](text.md) | 6 | 221 |
 | [ECS](ecs.md) | 12 | 398 |
-| [Spatial Partitioning](spatial.md) | 10 | 271 |
+| [Spatial Partitioning](spatial.md) | 10 | 278 |
 | [Scene bridge](scene.md) | 2 | 44 |
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
