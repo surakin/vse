@@ -5,6 +5,8 @@ set(ECS_TEST_SOURCES
   component_test.cpp
   archetype_test.cpp
   world_test.cpp
+  query_test.cpp
+  alloc_counter.cpp
 )
 
 find_package(Threads REQUIRED)
@@ -43,5 +45,21 @@ foreach(_case RANGE 0 7)
     message(FATAL_ERROR "tests/ecs: the compile-fail control (case 0) does not compile, so the negative cases prove nothing")
   elseif(NOT _case EQUAL 0 AND _ecs_case_${_case}_ok)
     message(FATAL_ERROR "tests/ecs: component_requirements.cpp case ${_case} compiled, but the requirement must refuse it")
+  endif()
+endforeach()
+
+# The query term rules are compile-time errors as well: case 0 of compile_fail/query_terms.cpp compiles, the others must not.
+foreach(_case RANGE 0 9)
+  try_compile(_ecs_query_case_${_case}_ok
+    ${CMAKE_CURRENT_BINARY_DIR}/compile_fail_query_${_case}
+    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/compile_fail/query_terms.cpp
+    CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${CMAKE_SOURCE_DIR}/engine;${CMAKE_SOURCE_DIR}/engine/foundation"
+    COMPILE_DEFINITIONS -DCASE=${_case}
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON)
+  if(_case EQUAL 0 AND NOT _ecs_query_case_0_ok)
+    message(FATAL_ERROR "tests/ecs: the query compile-fail control (case 0) does not compile, so the negative cases prove nothing")
+  elseif(NOT _case EQUAL 0 AND _ecs_query_case_${_case}_ok)
+    message(FATAL_ERROR "tests/ecs: query_terms.cpp case ${_case} compiled, but the term rules must refuse it")
   endif()
 endforeach()

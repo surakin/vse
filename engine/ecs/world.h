@@ -19,6 +19,9 @@
 
 namespace engine_placeholder::ecs {
 
+template <class... Terms>
+class Query;
+
 /// The outcome of a structural call on one entity.
 enum class Status : u8 {
     /// The change was made.
@@ -135,11 +138,13 @@ public:
 
     /// The entity's `T`, or null when the entity is dead or lacks `T` (also null for a tag: ask `Has`).
     /// Fails: returns null as described.
+    /// Aborts: an active query (`BeginIteration(writes)`) writes `T`; read components the query only reads, or use the query's own arguments.
     /// Ownership: the pointer views the entity's row; valid until the next structural call.
     template <class T>
     T* Get(Entity entity);
     /// The entity's `T` (const), or null as above.
     /// Fails: returns null as described.
+    /// Aborts: as for the non-const form.
     /// Ownership: the pointer views the entity's row; valid until the next structural call.
     template <class T>
     const T* Get(Entity entity) const;
@@ -152,9 +157,37 @@ public:
         ENGINE_ASSERT(iterating_ != 0, "World::EndIteration without BeginIteration");
         --iterating_;
     }
+    /// Marks the start of an iteration that writes the components in `writes`: like the no-argument form, and in addition `World::Get` of
+    /// one of those components aborts until the matching `EndIteration` (the iteration holds them for writing). Queries use this.
+    ///
+    /// Param writes: the component ids the iteration writes.
+    /// Returns: the write set of the enclosing iteration, to pass back to `EndIteration(const ComponentSet&)`.
+    ComponentSet BeginIteration(const ComponentSet& writes) {
+        ++iterating_;
+        const ComponentSet previous = iteration_writes_;
+        for (ComponentId id = writes.NextFrom(0); id != kInvalidComponent; id = writes.NextFrom(static_cast<u32>(id) + 1u)) {
+            iteration_writes_.Add(id);
+        }
+        return previous;
+    }
+    /// Marks the end of an iteration begun with `BeginIteration(const ComponentSet&)`.
+    ///
+    /// Param previous: the value `BeginIteration` returned.
+    /// Aborts: no iteration is active.
+    void EndIteration(const ComponentSet& previous) {
+        EndIteration();
+        iteration_writes_ = previous;
+    }
     /// Returns whether an iteration is active.
     /// Fails: never.
     bool IsIterating() const { return iterating_ != 0; }
+
+    /// Makes a [[ecs::Query]] over this world with the given terms (`Read<T>`, `Write<T>`, `Optional<T>`, `OptionalWrite<T>`, `With<T>`, `Without<T>`).
+    ///
+    /// Include `ecs/query.h` to call it. The query keeps a pointer to this world, which must outlive it.
+    /// A term list that is empty, longer than 16, names a component twice or reads a tag as data does not compile: see [[ecs::Query]].
+    template <class... Terms>
+    ecs::Query<Terms...> Query();
 
     /// The number of archetypes.
     u32 ArchetypeCount() const { return static_cast<u32>(archetypes_.Size()); }
@@ -197,6 +230,7 @@ private:
     HashMap<ComponentSet, u32, HeapAllocator> by_set_;
     HashMap<u64, u32, HeapAllocator> edges_;
     u32 iterating_ = 0;
+    ComponentSet iteration_writes_;
     u64 migrations_ = 0;
     u64 graph_hits_ = 0;
     u64 refused_ = 0;
@@ -353,8 +387,10 @@ T* World::Get(Entity entity) {
     if (where == nullptr) {
         return nullptr;
     }
+    const ComponentId id = ComponentOf<T>();
+    ENGINE_ASSERT(!iteration_writes_.Has(id), "World::Get of a component that an active query writes");
     Archetype& a = *archetypes_[where->archetype];
-    return static_cast<T*>(a.CellPtr(a.ChunkAt(where->chunk), ComponentOf<T>(), where->row));
+    return static_cast<T*>(a.CellPtr(a.ChunkAt(where->chunk), id, where->row));
 }
 
 template <class T>

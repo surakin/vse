@@ -1,9 +1,9 @@
 # ECS: entities, components and systems
 
-Status: draft (Phase 17, Days 223-226: entities, components, storage, the world; the rest of the page arrives with the days that build it).
+Status: draft (Phase 17, Days 223-227: entities, components, storage, the world, queries; the rest of the page arrives with the days that build it).
 
 **Audience:** every game and engine programmer. Read [Containers](foundation-containers.md) and [Memory](foundation-memory.md) first. This page covers only
-what is built so far (entities, components, storage and the world); queries, systems and command buffers are not documented here yet.
+what is built so far (entities, components, storage, the world and queries); systems and command buffers are not documented here yet.
 
 The ECS (`engine/ecs`, namespace `ecs`) is the engine's data-oriented core: **entities** are ids, **components** are plain data stored in
 cache-friendly chunks, and **systems** are functions over all entities that have a given set of components. Design, measurements and the
@@ -23,6 +23,7 @@ with a Position" reads memory in order. The *archetype* is that group: all entit
 | to give an entity a new component | `world.Add<T>(e, value)` | returns `ecs::Status`; moves the entity's row |
 | to read or change a component | `world.Get<T>(e)` | pointer valid until the next structural change; null for a tag |
 | to mark an entity without data | an empty struct (a tag) | takes no space but takes part in queries |
+| to visit every entity that has certain components | `world.Query<Write<A>, Read<B>, Without<C>>()`, then `ForEach` | see "Queries"; include `ecs/query.h` |
 | to check the world's consistency | `world.Validate()` | for tests and debug builds |
 
 ## Entities
@@ -187,11 +188,81 @@ alive no, destroy again: DeadEntity
 - **Validation.** `Validate()` checks the invariants (locations point at their rows, no dead or duplicated entity in a row, counts add up, chunks
   full except the last) and is meant for tests and debug builds.
 
+## Queries
+
+A **query** answers "give me every entity that has these components". You describe the components with **terms**, and the query calls your function once
+per matching entity with exactly the data you asked for. Include `ecs/query.h` and make one from the world:
+
+```cpp compile run standalone
+#include "ecs/query.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+struct Position { float x, y; };
+struct Velocity { float x, y; };
+struct Frozen {};
+
+int main() {
+    ecs::World world;
+    world.Create(Position{0, 0}, Velocity{1, 2});
+    world.Create(Position{10, 0}, Velocity{1, 1}, Frozen{});  // frozen: the query below skips it
+    world.Create(Position{20, 0});                            // no Velocity: skipped
+
+    auto movers = world.Query<ecs::Write<Position>, ecs::Read<Velocity>, ecs::Without<Frozen>>();
+    movers.ForEach([](Position& p, const Velocity& v) {
+        p.x += v.x;
+        p.y += v.y;
+    });
+
+    auto positions = world.Query<ecs::Read<Position>>();
+    positions.ForEach([](ecs::Entity, const Position& p) { os::Print("(%.0f, %.0f)\n", static_cast<double>(p.x), static_cast<double>(p.y)); });
+    os::Print("%u of %u entities with a position moved\n", movers.Count(), positions.Count());
+    return 0;
+}
+```
+
+```output
+(1, 2)
+(10, 0)
+(20, 0)
+1 of 3 entities with a position moved
+```
+
+### The terms
+
+| Term | The entity must | The function gets |
+|---|---|---|
+| `Read<T>` | have `T` | `const T&` |
+| `Write<T>` | have `T`; the query holds `T` for writing | `T&` |
+| `Optional<T>` | may have `T` | `const T*`, null when it lacks `T` |
+| `OptionalWrite<T>` | may have `T` | `T*`, null when it lacks `T` |
+| `With<T>` | have `T` | nothing (a filter; works for tags) |
+| `Without<T>` | not have `T` | nothing (a filter; works for tags) |
+
+A query has one to 16 terms and names each component once, so `Read<T>` with `Write<T>`, or `With<T>` with `Without<T>`, is a **compile error**, as is
+`Read`, `Write` or `Optional` of a tag (a tag has no data: use `With`). The function takes the data terms in order, and may take an `ecs::Entity` first.
+
+### How it works
+
+- **The match is cached.** A query remembers the archetypes that match and how many archetypes the world had when it last looked. Each use checks only the
+  archetypes created since, so a query kept across frames costs almost nothing to refresh. Keep queries; do not rebuild them every frame.
+- **Empty archetypes are skipped, not removed.** `MatchedArchetypes()` counts them; `Count()` and `IsEmpty()` count entities.
+- **The order is stable:** archetypes in creation order, then chunks, then rows. Two worlds built the same way are visited in the same order.
+- **No allocation** while iterating: the cost is the loop and one lookup of each column per chunk.
+- **`ForEachChunk`** gives the function a `ChunkView` instead of one entity at a time: `Count()`, `Entities()`, `Write<T>()` and `Read<T>()` as spans. Use it
+  for loops the compiler can vectorize, or to split a chunk's work. For an optional column the span is empty when the archetype lacks it.
+- **Stopping early.** If your function returns `bool`, returning `false` ends the iteration.
+- **The iteration guard.** While a query runs, a structural call (`Create`, `Destroy`, `Add`, `Remove`) fails an assertion, and `world.Get<T>` of a component the
+  query *writes* fails one too. `world.Get<T>` of a component the query only reads is fine, and so is `Set` of an existing component.
+
 ## Common mistakes
 
 - **Keeping a pointer from `Get<T>` across an `Add`, `Remove`, `Create` or `Destroy`.** The row may have moved; fetch the pointer again.
 - **Ignoring the returned `ecs::Status`.** `DeadEntity`, `AlreadyHas` and `Refused` are normal answers, not crashes.
-- **Changing components while iterating.** A structural call during iteration fails an `ENGINE_ASSERT`; the command buffer that defers it is not built yet.
+- **Changing components while iterating.** A structural call during iteration fails an `ENGINE_ASSERT`; the command buffer that defers it is not built yet (Day 228).
+- **Writing a component through `Get` inside a query that writes it.** Use the argument the query gives you.
+- **Building a query every frame.** A query keeps its match; make it once and keep it.
 - **Storing a `ComponentId` on disk.** Ids depend on the order of first use; store the type's name.
 - **Using an `Entity` as if it owned the entity.** It is only an id; destroying it is the world's job.
 

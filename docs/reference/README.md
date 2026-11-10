@@ -21,7 +21,7 @@ Generated from the `///` comments on the public headers; see [Documentation Conv
 | [Platform: Windowing and Input](platform-window-input.md) | 22 | 669 |
 | [Foundation: Debugging](foundation-debug.md) | 15 | 208 |
 | [Text](text.md) | 6 | 221 |
-| [ECS](ecs.md) | 7 | 181 |
+| [ECS](ecs.md) | 8 | 203 |
 | [The UI Toolkit](ui.md) | 46 | 1420 |
 | [The UI Window Adapter](ui_window.md) | 2 | 25 |
 | [The Job System](jobs.md) | 12 | 193 |
