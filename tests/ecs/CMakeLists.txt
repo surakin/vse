@@ -7,6 +7,7 @@ set(ECS_TEST_SOURCES
   world_test.cpp
   query_test.cpp
   command_test.cpp
+  change_test.cpp
   alloc_counter.cpp
 )
 

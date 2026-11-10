@@ -20,7 +20,7 @@ inline constexpr u32 kMaxArchetypeComponents = 32;
 /// The header at the start of every chunk; the columns follow it.
 ///
 /// `written` and `added` hold the world tick of the last write and of the last addition for each component column (indexed by column
-/// number minus one), the change-detection data of Day 229. A chunk is `kChunkBytes` long and 64-byte aligned.
+/// number minus one), the change-detection data (see "Change detection" in the ECS guide). A chunk is `kChunkBytes` long and 64-byte aligned.
 ///
 /// Thread-safety: thread-compatible; a chunk is touched by one job at a time.
 /// Ownership: the chunk is owned by an archetype and drawn from a [[ecs::ChunkPool]].
@@ -34,9 +34,9 @@ struct alignas(64) Chunk {
     /// Unused.
     u32 reserved = 0;
     /// The tick of the last write, per component column.
-    Array<u32, kMaxArchetypeComponents> written;
+    Array<u64, kMaxArchetypeComponents> written;
     /// The tick of the last addition, per component column.
-    Array<u32, kMaxArchetypeComponents> added;
+    Array<u64, kMaxArchetypeComponents> added;
 
     /// The first byte after the header.
     /// Fails: never.

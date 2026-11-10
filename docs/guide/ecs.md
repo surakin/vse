@@ -1,9 +1,9 @@
 # ECS: entities, components and systems
 
-Status: draft (Phase 17, Days 223-228: entities, components, storage, the world, queries, command buffers, resources; the rest of the page arrives with the days that build it).
+Status: draft (Phase 17, Days 223-229: entities, components, storage, the world, queries, command buffers, resources, change detection; the rest of the page arrives with the days that build it).
 
 **Audience:** every game and engine programmer. Read [Containers](foundation-containers.md) and [Memory](foundation-memory.md) first. This page covers only
-what is built so far (entities, components, storage, the world, queries, command buffers and resources); systems are not documented here yet.
+what is built so far (entities, components, storage, the world, queries, command buffers, resources and change detection); systems are not documented here yet.
 
 The ECS (`engine/ecs`, namespace `ecs`) is the engine's data-oriented core: **entities** are ids, **components** are plain data stored in
 cache-friendly chunks, and **systems** are functions over all entities that have a given set of components. Design, measurements and the
@@ -25,6 +25,7 @@ with a Position" reads memory in order. The *archetype* is that group: all entit
 | to mark an entity without data | an empty struct (a tag) | takes no space but takes part in queries |
 | to visit every entity that has certain components | `world.Query<Write<A>, Read<B>, Without<C>>()`, then `ForEach` | see "Queries"; include `ecs/query.h` |
 | to change entities while a query runs | `CommandBuffer`, then `world.Apply(buffer)` | see "Command buffers"; include `ecs/command_buffer.h` |
+| to visit only what changed | `Changed<T>` / `Added<T>` terms, then `query.Finish()` | see "Change detection" |
 | one value shared by all systems (time, settings) | `world.SetResource(value)`, `world.Resource<T>()` | see "Resources" |
 | to check the world's consistency | `world.Validate()` | for tests and debug builds |
 
@@ -345,12 +346,73 @@ has Time: yes, has int: no
 assertion; `TryResource<T>()` returns null instead. The world destroys its resources newest first when it goes away, so a resource may refer to one made
 before it.
 
+## Change detection
+
+Many systems only need the data that changed since they last ran: the renderer sync re-uploads moved transforms, the hierarchy updates children of moved
+parents. Add a **`Changed<T>`** or **`Added<T>`** term and the query skips chunks that did not change.
+
+```cpp compile run standalone
+#include "ecs/query.h"
+#include "os/console.h"
+
+using namespace engine_placeholder;
+
+struct Position { float x, y; };
+
+int main() {
+    ecs::World world;
+    ecs::Entity first = world.Create(Position{0, 0});
+    world.Create(Position{5, 5});
+
+    auto moved = world.Query<ecs::Changed<Position>, ecs::Read<Position>>();
+    unsigned seen = 0;
+    moved.ForEach([&](const Position&) { ++seen; });
+    os::Print("first pass: %u\n", seen);            // a creation counts as a change
+
+    moved.Finish();                                  // "I have handled everything so far"
+    seen = 0;
+    moved.ForEach([&](const Position&) { ++seen; });
+    os::Print("second pass: %u\n", seen);           // nothing new
+
+    world.Set<Position>(first, Position{1, 1});      // a write after Finish
+    seen = 0;
+    moved.ForEach([&](const Position&) { ++seen; });
+    os::Print("after a write: %u\n", seen);
+    return 0;
+}
+```
+
+```output
+first pass: 2
+second pass: 0
+after a write: 2
+```
+
+The last line is the point to understand: the precision is **one chunk**. Writing one entity marks its whole chunk, so both entities (they share a chunk) are
+visited. A query is told about chunks, not rows; if you need exactness, store a flag or compare values in the function.
+
+- **What counts as a write.** A `Write` or `OptionalWrite` term marks the chunk's column when the chunk is visited (whether or not the function changes
+  anything), `Set` of an existing component, the non-const `world.Get<T>` (the pointer may be written through), and a row arriving in a chunk (a created
+  entity, or one migrated in by `Add`/`Remove`) mark the column. A `Read` pass and the const `Get` mark nothing.
+- **`Added<T>`** passes chunks that *received a row with `T`*: new entities, entities that gained `T`, and entities that migrated into the archetype. It
+  does not pass on a plain write.
+- **Ticks.** The world has a 64-bit tick (`world.Tick()`, starting at 1). A column remembers the tick of its last write and last addition; a query remembers
+  `Since()`, and a filter passes a chunk stamped later than that. `query.Finish()` sets `Since()` to the current tick and then advances the world's tick,
+  so a write made afterwards (even by a system that runs later in the same frame) is newer and is seen by the next pass, while the query's own writes are not. Call it right after the pass, when no other job is writing.
+  `SetSince` sets it by hand (tests). The 64-bit tick does not wrap in practice.
+- **Terms.** `Changed<T>` and `Added<T>` require `T`, hand the function nothing, may sit beside `Read<T>`/`Write<T>` of the same component, and combine with
+  every other term. All filters of a query must pass. `Count()` ignores them (it counts matching entities).
+- **Cost.** Marking is one 8-byte store per written column per chunk visited (a chunk of 4,000 rows costs one store, not 4,000), and a filter is one load and
+  compare per chunk. The measured overhead on the 1M-entity benchmark is recorded on Day 235.
+
 ## Common mistakes
 
 - **Keeping a pointer from `Get<T>` across an `Add`, `Remove`, `Create` or `Destroy`.** The row may have moved; fetch the pointer again.
 - **Ignoring the returned `ecs::Status`.** `DeadEntity`, `AlreadyHas` and `Refused` are normal answers, not crashes.
 - **Changing components while iterating.** A structural call during iteration fails an `ENGINE_ASSERT`; record it in a `CommandBuffer` and apply it after the loop.
 - **Using a placeholder with another buffer or after `Clear`.** It resolves to nothing; resolve it right after `Apply`.
+- **Expecting `Changed<T>` to name the changed entities.** It names chunks; every entity of a visited chunk is passed, changed or not.
+- **Forgetting `Finish()`.** Without it `Since()` stays put and every pass sees all the changes since the start.
 - **Writing a component through `Get` inside a query that writes it.** Use the argument the query gives you.
 - **Building a query every frame.** A query keeps its match; make it once and keep it.
 - **Storing a `ComponentId` on disk.** Ids depend on the order of first use; store the type's name.

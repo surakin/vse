@@ -454,6 +454,79 @@ The column of component type `T` in `chunk` as a span of the chunk's rows.
 | Aborts | the archetype has no column for `T` (it lacks it, or it is a tag). |
 | Ownership | the span views the chunk; valid until the next add or remove. |
 
+### `MarkArrived(Chunk*,u64)` {#ecs-archetype-markarrived-chunk-star-u64-const}
+
+`method ecs::Archetype::MarkArrived` — defined in `engine/ecs/archetype.h`
+
+```cpp
+void MarkArrived(Chunk* chunk, u64 tick) const;
+```
+
+Stamps every component column of `chunk` as written and added at `tick`: a row arrived (created, or migrated in).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+| Ownership | writes the chunk's header; the chunk belongs to the archetype. |
+
+### `MarkAllWritten(Chunk*,u64)` {#ecs-archetype-markallwritten-chunk-star-u64-const}
+
+`method ecs::Archetype::MarkAllWritten` — defined in `engine/ecs/archetype.h`
+
+```cpp
+void MarkAllWritten(Chunk* chunk, u64 tick) const;
+```
+
+Stamps every component column of `chunk` as written at `tick`: a row moved inside the chunk.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+| Ownership | writes the chunk's header; the chunk belongs to the archetype. |
+
+### `MarkWritten(Chunk*,ComponentId,u64)` {#ecs-archetype-markwritten-chunk-star-componentid-u64-const}
+
+`method ecs::Archetype::MarkWritten` — defined in `engine/ecs/archetype.h`
+
+```cpp
+void MarkWritten(Chunk* chunk, ComponentId id, u64 tick) const;
+```
+
+Stamps the column of `id` in `chunk` as written at `tick`; does nothing for a tag or an absent component.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+| Ownership | writes the chunk's header; the chunk belongs to the archetype. |
+
+### `WrittenTick(const Chunk*,ComponentId)` {#ecs-archetype-writtentick-const-chunk-star-componentid-const}
+
+`method ecs::Archetype::WrittenTick` — defined in `engine/ecs/archetype.h`
+
+```cpp
+u64 WrittenTick(const Chunk* chunk, ComponentId id) const;
+```
+
+The tick of the last write of the column of `id` in `chunk`, or 0 when there is no column.
+
+| Field | Value |
+|---|---|
+| Fails | returns 0 when there is no column. |
+
+### `AddedTick(const Chunk*,ComponentId)` {#ecs-archetype-addedtick-const-chunk-star-componentid-const}
+
+`method ecs::Archetype::AddedTick` — defined in `engine/ecs/archetype.h`
+
+```cpp
+u64 AddedTick(const Chunk* chunk, ComponentId id) const;
+```
+
+The tick of the last addition to the column of `id` in `chunk`, or 0 when there is no column.
+
+| Field | Value |
+|---|---|
+| Fails | returns 0 when there is no column. |
+
 ## `kChunkBytes` {#ecs-kchunkbytes}
 
 `variable ecs::kChunkBytes` — defined in `engine/ecs/chunk.h`
@@ -484,7 +557,7 @@ struct alignas(64) Chunk { ... }
 
 The header at the start of every chunk; the columns follow it.
 
-`written` and `added` hold the world tick of the last write and of the last addition for each component column (indexed by column number minus one), the change-detection data of Day 229. A chunk is `kChunkBytes` long and 64-byte aligned.
+`written` and `added` hold the world tick of the last write and of the last addition for each component column (indexed by column number minus one), the change-detection data (see "Change detection" in the ECS guide). A chunk is `kChunkBytes` long and 64-byte aligned.
 
 | Field | Value |
 |---|---|
@@ -536,7 +609,7 @@ Unused.
 `variable ecs::Chunk::written` — defined in `engine/ecs/chunk.h`
 
 ```cpp
-Array<u32, kMaxArchetypeComponents> written;
+Array<u64, kMaxArchetypeComponents> written;
 ```
 
 The tick of the last write, per component column.
@@ -546,7 +619,7 @@ The tick of the last write, per component column.
 `variable ecs::Chunk::added` — defined in `engine/ecs/chunk.h`
 
 ```cpp
-Array<u32, kMaxArchetypeComponents> added;
+Array<u64, kMaxArchetypeComponents> added;
 ```
 
 The tick of the last addition, per component column.
@@ -2120,6 +2193,36 @@ A query term: the entities must not have `T` (a filter, no argument). `T` may be
 |---|---|
 | Thread-safety | thread-safe empty type; it only names a component. |
 
+## `Changed` {#ecs-changed}
+
+`struct ecs::Changed` — defined in `engine/ecs/query.h`
+
+```cpp
+template <class T>
+struct Changed { ... }
+```
+
+A query filter: the entities must have `T`, and only chunks whose `T` column was written (by a `Write` query, `Set`, `Add` or a migration) after the query's `since` tick are visited. The query function gets nothing for it; combine it with `Read<T>`/`Write<T>` for the data. `T` may not be a tag. The precision is a chunk: one write marks every row of its chunk.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe empty type; it only names a component. |
+
+## `Added` {#ecs-added}
+
+`struct ecs::Added` — defined in `engine/ecs/query.h`
+
+```cpp
+template <class T>
+struct Added { ... }
+```
+
+A query filter: the entities must have `T`, and only chunks that received a row with `T` (a created entity, or one that gained `T` or migrated in) after the query's `since` tick are visited. No function argument. `T` may not be a tag. The precision is a chunk.
+
+| Field | Value |
+|---|---|
+| Thread-safety | thread-safe empty type; it only names a component. |
+
 ## `ChunkView` {#ecs-chunkview}
 
 `class ecs::ChunkView` — defined in `engine/ecs/query.h`
@@ -2220,7 +2323,7 @@ class Query { ... }
 
 A cached, typed selection of the entities that have the components the terms ask for, and none that a `Without` excludes.
 
-Made by `world.Query<Terms...>()`, for example `world.Query<Write<Position>, Read<Velocity>, Without<Frozen>>()`. The terms are [`ecs::Read`](#ecs-read), [`ecs::Write`](#ecs-write), [`ecs::Optional`](#ecs-optional), [`ecs::OptionalWrite`](#ecs-optionalwrite), [`ecs::With`](#ecs-with) and [`ecs::Without`](#ecs-without): one to 16 of them, each component named once. A list that breaks this, or a `Read`/`Write`/`Optional` of a tag, does not compile.
+Made by `world.Query<Terms...>()`, for example `world.Query<Write<Position>, Read<Velocity>, Without<Frozen>>()`. The terms are [`ecs::Read`](#ecs-read), [`ecs::Write`](#ecs-write), [`ecs::Optional`](#ecs-optional), [`ecs::OptionalWrite`](#ecs-optionalwrite), [`ecs::With`](#ecs-with) and [`ecs::Without`](#ecs-without): one to 16 of them, each component named once (a `Changed<T>` or `Added<T>` may sit beside a data term of `T`). A list that breaks this, or a `Read`/`Write`/`Optional` of a tag, does not compile.
 
 The query remembers the archetypes that match and how many archetypes the world had when it last looked; each use looks only at the archetypes made since, so keeping a query across frames is cheap. An archetype that has no entities stays in the list and is skipped while iterating.
 
@@ -2281,6 +2384,50 @@ The view gives the entity ids and the columns as spans, the form to vectorize or
 | Parameter `fn` | the function to call per chunk. |
 | Aborts | as for [`ecs::Query::ForEach`](#ecs-query-foreach-fn-amp-amp). |
 
+### `Since()` {#ecs-query-since-const}
+
+`method ecs::Query::Since` — defined in `engine/ecs/query.h`
+
+```cpp
+u64 Since() const;
+```
+
+The tick after which a chunk must have changed to pass `Changed` and `Added` filters (0 at first: everything stamped passes).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `SetSince(u64)` {#ecs-query-setsince-u64}
+
+`method ecs::Query::SetSince` — defined in `engine/ecs/query.h`
+
+```cpp
+void SetSince(u64 tick);
+```
+
+Sets the `since` tick explicitly (tests, or a system that keeps its own).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `Finish()` {#ecs-query-finish}
+
+`method ecs::Query::Finish` — defined in `engine/ecs/query.h`
+
+```cpp
+void Finish();
+```
+
+Marks the changes seen so far as handled: later passes see only what is stamped after this call.
+
+Sets `since` to the world's tick and then advances the world's tick, so a write made after this call (by a system that runs later in the same frame) is newer than `since` and is seen by the next pass; the query's own writes are not. Call it right after the pass, at a point where no other writer runs (a write made by another job between the pass and this call, in the same tick, would be missed).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
 ### `Count()` {#ecs-query-count}
 
 `method ecs::Query::Count` — defined in `engine/ecs/query.h`
@@ -2289,7 +2436,7 @@ The view gives the entity ids and the columns as spans, the form to vectorize or
 u32 Count();
 ```
 
-Returns how many entities match right now.
+Returns how many entities match right now (the `Changed` and `Added` filters are not applied: this counts by archetype).
 
 | Field | Value |
 |---|---|
@@ -2730,7 +2877,7 @@ template <class T>
 T* Get(Entity entity);
 ```
 
-The entity's `T`, or null when the entity is dead or lacks `T` (also null for a tag: ask `Has`).
+The entity's `T`, or null when the entity is dead or lacks `T` (also null for a tag: ask `Has`). The non-const form stamps the chunk's `T` column as written at the current tick, since the caller may write through the pointer.
 
 | Field | Value |
 |---|---|
@@ -2754,6 +2901,48 @@ The entity's `T` (const), or null as above.
 | Fails | returns null as described. |
 | Aborts | as for the non-const form. |
 | Ownership | the pointer views the entity's row; valid until the next structural call. |
+
+### `Tick()` {#ecs-world-tick-const}
+
+`method ecs::World::Tick` — defined in `engine/ecs/world.h`
+
+```cpp
+u64 Tick() const;
+```
+
+The current change-detection tick (starts at 1). Writes, additions and arrivals are stamped with it.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `Advance()` {#ecs-world-advance}
+
+`method ecs::World::Advance` — defined in `engine/ecs/world.h`
+
+```cpp
+void Advance();
+```
+
+Moves to the next tick; changes stamped from now on are newer than any query's `since` taken before. The scheduler calls it between frames, and [`ecs::Query::Finish`](#ecs-query-finish) calls it so that a write made after a query ran is not lost.
+
+| Field | Value |
+|---|---|
+| Fails | never. |
+
+### `SetTick(u64)` {#ecs-world-settick-u64}
+
+`method ecs::World::SetTick` — defined in `engine/ecs/world.h`
+
+```cpp
+void SetTick(u64 tick);
+```
+
+Sets the tick (tests of tick arithmetic near the largest value).
+
+| Field | Value |
+|---|---|
+| Fails | never. |
 
 ### `BeginIteration()` {#ecs-world-beginiteration}
 

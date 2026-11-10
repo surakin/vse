@@ -101,6 +101,7 @@ Entity World::CreateIn(u32 archetype, RowRef* row) {
         ++refused_;
         return Entity{};
     }
+    archetypes_[archetype]->MarkArrived(row->chunk, tick_);
     EntityLocation* where = table_.Location(entity);
     where->chunk = row->chunk_index;
     where->row = row->row;
@@ -128,8 +129,12 @@ Status World::Destroy(Entity entity) {
         return Status::DeadEntity;
     }
     const EntityLocation at = *where;
-    const Entity moved = archetypes_[at.archetype]->RemoveRow(at.chunk, at.row);
+    Archetype& home = *archetypes_[at.archetype];
+    const Entity moved = home.RemoveRow(at.chunk, at.row);
     FixMoved(moved, at.chunk, at.row);
+    if (moved.IsValid()) {
+        home.MarkAllWritten(home.ChunkAt(at.chunk), tick_); // the last row now sits in the gap
+    }
     table_.Free(entity);
     return Status::Ok;
 }
@@ -144,6 +149,7 @@ bool World::Migrate(Entity entity, u32 target, RowRef* new_row) {
     if (!dest.AddRow(entity, new_row)) {
         return false;
     }
+    dest.MarkArrived(new_row->chunk, tick_);
     Chunk* source_chunk = source.ChunkAt(from.chunk);
     const ArchetypeLayout& layout = source.Layout();
     for (u32 c = 1; c < layout.column_count; ++c) {
@@ -164,6 +170,9 @@ bool World::Migrate(Entity entity, u32 target, RowRef* new_row) {
     }
     const Entity moved = source.RemoveRow(from.chunk, from.row, RowContents::Vacated);
     FixMoved(moved, from.chunk, from.row);
+    if (moved.IsValid()) {
+        source.MarkAllWritten(source.ChunkAt(from.chunk), tick_);
+    }
     // The table slot may have been touched by FixMoved only for another entity; re-fetch ours.
     where = table_.Location(entity);
     where->archetype = target;

@@ -48,6 +48,20 @@ struct With {};
 template <class T>
 struct Without {};
 
+/// A query filter: the entities must have `T`, and only chunks whose `T` column was written (by a `Write` query, `Set`, `Add` or a migration) after the
+/// query's `since` tick are visited. The query function gets nothing for it; combine it with `Read<T>`/`Write<T>` for the data. `T` may not be a tag.
+/// The precision is a chunk: one write marks every row of its chunk.
+///
+/// Thread-safety: thread-safe empty type; it only names a component.
+template <class T>
+struct Changed {};
+/// A query filter: the entities must have `T`, and only chunks that received a row with `T` (a created entity, or one that gained `T` or migrated in)
+/// after the query's `since` tick are visited. No function argument. `T` may not be a tag. The precision is a chunk.
+///
+/// Thread-safety: thread-safe empty type; it only names a component.
+template <class T>
+struct Added {};
+
 namespace detail {
 
 template <class... Ts>
@@ -66,6 +80,7 @@ struct TermTraits<Read<T>> {
     static constexpr bool kExcluded = false;
     static constexpr bool kWrites = false;
     static constexpr bool kOptional = false;
+    static constexpr u32 kChange = 0;
     static Arg Fetch(void* column, u32 row) { return static_cast<const T*>(column)[row]; }
 };
 template <class T>
@@ -77,6 +92,7 @@ struct TermTraits<Write<T>> {
     static constexpr bool kExcluded = false;
     static constexpr bool kWrites = true;
     static constexpr bool kOptional = false;
+    static constexpr u32 kChange = 0;
     static Arg Fetch(void* column, u32 row) { return static_cast<T*>(column)[row]; }
 };
 template <class T>
@@ -88,6 +104,7 @@ struct TermTraits<Optional<T>> {
     static constexpr bool kExcluded = false;
     static constexpr bool kWrites = false;
     static constexpr bool kOptional = true;
+    static constexpr u32 kChange = 0;
     static Arg Fetch(void* column, u32 row) { return column == nullptr ? nullptr : static_cast<const T*>(column) + row; }
 };
 template <class T>
@@ -99,6 +116,7 @@ struct TermTraits<OptionalWrite<T>> {
     static constexpr bool kExcluded = false;
     static constexpr bool kWrites = true;
     static constexpr bool kOptional = true;
+    static constexpr u32 kChange = 0;
     static Arg Fetch(void* column, u32 row) { return column == nullptr ? nullptr : static_cast<T*>(column) + row; }
 };
 template <class T>
@@ -109,6 +127,7 @@ struct TermTraits<With<T>> {
     static constexpr bool kExcluded = false;
     static constexpr bool kWrites = false;
     static constexpr bool kOptional = false;
+    static constexpr u32 kChange = 0;
 };
 template <class T>
 struct TermTraits<Without<T>> {
@@ -118,7 +137,33 @@ struct TermTraits<Without<T>> {
     static constexpr bool kExcluded = true;
     static constexpr bool kWrites = false;
     static constexpr bool kOptional = false;
+    static constexpr u32 kChange = 0;
 };
+
+template <class T>
+struct TermTraits<Changed<T>> {
+    using Component = T;
+    static constexpr bool kHasArg = false;
+    static constexpr bool kRequired = true;
+    static constexpr bool kExcluded = false;
+    static constexpr bool kWrites = false;
+    static constexpr bool kOptional = false;
+    static constexpr u32 kChange = 1;
+};
+template <class T>
+struct TermTraits<Added<T>> {
+    using Component = T;
+    static constexpr bool kHasArg = false;
+    static constexpr bool kRequired = true;
+    static constexpr bool kExcluded = false;
+    static constexpr bool kWrites = false;
+    static constexpr bool kOptional = false;
+    static constexpr u32 kChange = 2;
+};
+
+/// What a term must not repeat: its component, except for the change filters, which may sit beside a data term of the same component.
+template <class Term>
+using DistinctKey = Conditional<TermTraits<Term>::kChange != 0, Term, typename TermTraits<Term>::Component>;
 
 template <class... Ts>
 struct AllDistinct : TrueType {};
@@ -127,7 +172,7 @@ struct AllDistinct<T, Rest...> : IntegralConstant<bool, (!IsSame<T, Rest> && ...
 
 /// A term that carries data (not a filter) may not name a tag: a tag has no column.
 template <class Term>
-inline constexpr bool kTermIsUsable = !TermTraits<Term>::kHasArg || !IsEmpty<typename TermTraits<Term>::Component>;
+inline constexpr bool kTermIsUsable = (!TermTraits<Term>::kHasArg && TermTraits<Term>::kChange == 0) || !IsEmpty<typename TermTraits<Term>::Component>;
 
 template <class List>
 struct ListSize;
@@ -206,7 +251,7 @@ private:
 ///
 /// Made by `world.Query<Terms...>()`, for example `world.Query<Write<Position>, Read<Velocity>, Without<Frozen>>()`. The terms are
 /// [[ecs::Read]], [[ecs::Write]], [[ecs::Optional]], [[ecs::OptionalWrite]], [[ecs::With]] and [[ecs::Without]]: one to 16 of them, each
-/// component named once. A list that breaks this, or a `Read`/`Write`/`Optional` of a tag, does not compile.
+/// component named once (a `Changed<T>` or `Added<T>` may sit beside a data term of `T`). A list that breaks this, or a `Read`/`Write`/`Optional` of a tag, does not compile.
 ///
 /// The query remembers the archetypes that match and how many archetypes the world had when it last looked; each use looks only at the
 /// archetypes made since, so keeping a query across frames is cheap. An archetype that has no entities stays in the list and is skipped
@@ -220,9 +265,9 @@ template <class... Terms>
 class Query {
     static_assert(sizeof...(Terms) >= 1, "a query needs at least one term");
     static_assert(sizeof...(Terms) <= 16, "a query has at most 16 terms");
-    static_assert(detail::AllDistinct<typename detail::TermTraits<Terms>::Component...>::value,
+    static_assert(detail::AllDistinct<detail::DistinctKey<Terms>...>::value,
                   "a query names each component once (Read and Write, or With and Without, of one type contradict)");
-    static_assert((detail::kTermIsUsable<Terms> && ...), "Read, Write and Optional of a tag: a tag has no data, use With<T>");
+    static_assert((detail::kTermIsUsable<Terms> && ...), "Read, Write, Optional, Changed and Added of a tag: a tag has no data, use With<T>");
 
     using DataTerms = typename detail::FilterData<detail::TypeList<>, Terms...>::Type;
     static constexpr usize kDataCount = detail::ListSize<DataTerms>::value;
@@ -263,9 +308,10 @@ public:
             Archetype& a = world_->ArchetypeAt(matched_[m]);
             for (u32 c = 0; c < a.ChunkCount() && a.EntityCount() != 0; ++c) {
                 Chunk* chunk = a.ChunkAt(c);
-                if (chunk->count == 0) {
+                if (chunk->count == 0 || !PassesChange(a, chunk)) {
                     continue;
                 }
+                MarkWrites(a, chunk);
                 ChunkView view(&a, chunk, &readable_, &writes_, &optional_);
                 if (!Proceed([&]() -> decltype(auto) { return fn(view); })) {
                     return;
@@ -274,7 +320,24 @@ public:
         }
     }
 
-    /// Returns how many entities match right now.
+    /// The tick after which a chunk must have changed to pass `Changed` and `Added` filters (0 at first: everything stamped passes).
+    /// Fails: never.
+    u64 Since() const { return since_; }
+    /// Sets the `since` tick explicitly (tests, or a system that keeps its own).
+    /// Fails: never.
+    void SetSince(u64 tick) { since_ = tick; }
+    /// Marks the changes seen so far as handled: later passes see only what is stamped after this call.
+    ///
+    /// Sets `since` to the world's tick and then advances the world's tick, so a write made after this call (by a system that runs later in the same
+    /// frame) is newer than `since` and is seen by the next pass; the query's own writes are not. Call it right after the pass, at a point where no other
+    /// writer runs (a write made by another job between the pass and this call, in the same tick, would be missed).
+    /// Fails: never.
+    void Finish() {
+        since_ = world_->Tick();
+        world_->Advance();
+    }
+
+    /// Returns how many entities match right now (the `Changed` and `Added` filters are not applied: this counts by archetype).
     /// Fails: never.
     u32 Count() {
         Refresh();
@@ -340,6 +403,13 @@ private:
         }
         if constexpr (Traits::kWrites) {
             writes_.Add(id);
+            write_ids_[write_count_++] = id;
+        }
+        if constexpr (Traits::kChange == 1) {
+            changed_ids_[changed_count_++] = id;
+        }
+        if constexpr (Traits::kChange == 2) {
+            added_ids_[added_count_++] = id;
         }
         if constexpr (Traits::kOptional) {
             optional_.Add(id);
@@ -349,6 +419,28 @@ private:
     template <class... Data, usize... I>
     void BuildData(detail::TypeList<Data...>, detail::IndexList<I...>) {
         ((ids_[I] = ComponentOf<typename detail::TermTraits<Data>::Component>()), ...);
+    }
+
+    // Whether the chunk passes the Changed and Added filters (all of them).
+    bool PassesChange(const Archetype& a, const Chunk* chunk) const {
+        for (u32 i = 0; i < changed_count_; ++i) {
+            if (a.WrittenTick(chunk, changed_ids_[i]) <= since_) {
+                return false;
+            }
+        }
+        for (u32 i = 0; i < added_count_; ++i) {
+            if (a.AddedTick(chunk, added_ids_[i]) <= since_) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Stamps the columns the query writes in a chunk it is about to visit (the whole chunk, whatever the function does with it).
+    void MarkWrites(const Archetype& a, Chunk* chunk) const {
+        for (u32 i = 0; i < write_count_; ++i) {
+            a.MarkWritten(chunk, write_ids_[i], world_->Tick());
+        }
     }
 
     // Looks at the archetypes made since the last call.
@@ -379,9 +471,10 @@ private:
             for (u32 c = 0; c < a.ChunkCount() && a.EntityCount() != 0; ++c) {
                 Chunk* chunk = a.ChunkAt(c);
                 const u32 rows = chunk->count;
-                if (rows == 0) {
+                if (rows == 0 || !PassesChange(a, chunk)) {
                     continue;
                 }
+                MarkWrites(a, chunk);
                 ((columns[I] = a.ColumnPtr(chunk, ids_[I])), ...);
                 const Span<Entity> entities = a.Entities(chunk);
                 for (u32 row = 0; row < rows; ++row) {
@@ -406,6 +499,13 @@ private:
     ComponentSet writes_;
     ComponentSet optional_;
     ComponentId ids_[kDataCount == 0 ? 1 : kDataCount] = {};
+    ComponentId write_ids_[16] = {};
+    ComponentId changed_ids_[16] = {};
+    ComponentId added_ids_[16] = {};
+    u32 write_count_ = 0;
+    u32 changed_count_ = 0;
+    u32 added_count_ = 0;
+    u64 since_ = 0;
     bool impossible_ = false;
     u32 seen_ = 0;
     Vector<u32> matched_;

@@ -153,6 +153,25 @@ public:
         return Span<T>(data, chunk->count);
     }
 
+    /// Stamps every component column of `chunk` as written and added at `tick`: a row arrived (created, or migrated in).
+    /// Fails: never.
+    /// Ownership: writes the chunk's header; the chunk belongs to the archetype.
+    void MarkArrived(Chunk* chunk, u64 tick) const;
+    /// Stamps every component column of `chunk` as written at `tick`: a row moved inside the chunk.
+    /// Fails: never.
+    /// Ownership: writes the chunk's header; the chunk belongs to the archetype.
+    void MarkAllWritten(Chunk* chunk, u64 tick) const;
+    /// Stamps the column of `id` in `chunk` as written at `tick`; does nothing for a tag or an absent component.
+    /// Fails: never.
+    /// Ownership: writes the chunk's header; the chunk belongs to the archetype.
+    void MarkWritten(Chunk* chunk, ComponentId id, u64 tick) const;
+    /// The tick of the last write of the column of `id` in `chunk`, or 0 when there is no column.
+    /// Fails: returns 0 when there is no column.
+    u64 WrittenTick(const Chunk* chunk, ComponentId id) const;
+    /// The tick of the last addition to the column of `id` in `chunk`, or 0 when there is no column.
+    /// Fails: returns 0 when there is no column.
+    u64 AddedTick(const Chunk* chunk, ComponentId id) const;
+
 private:
     void DestroyCells(Chunk* chunk, u32 row);
     void MoveRow(Chunk* from, u32 from_row, Chunk* to, u32 to_row);

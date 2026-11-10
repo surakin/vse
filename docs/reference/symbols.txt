@@ -2857,6 +2857,11 @@ ecs::Archetype::Entities(Chunk*) const	function	ecs	ecs-archetype-entities-chunk
 ecs::Archetype::ColumnPtr(Chunk*,ComponentId) const	function	ecs	ecs-archetype-columnptr-chunk-star-componentid-const	ecs.md	engine/ecs/archetype.h:139
 ecs::Archetype::CellPtr(Chunk*,ComponentId,u32) const	function	ecs	ecs-archetype-cellptr-chunk-star-componentid-u32-const	ecs.md	engine/ecs/archetype.h:144
 ecs::Archetype::Column(Chunk*) const	function	ecs	ecs-archetype-column-chunk-star-const	ecs.md	engine/ecs/archetype.h:149
+ecs::Archetype::MarkArrived(Chunk*,u64) const	function	ecs	ecs-archetype-markarrived-chunk-star-u64-const	ecs.md	engine/ecs/archetype.h:159
+ecs::Archetype::MarkAllWritten(Chunk*,u64) const	function	ecs	ecs-archetype-markallwritten-chunk-star-u64-const	ecs.md	engine/ecs/archetype.h:163
+ecs::Archetype::MarkWritten(Chunk*,ComponentId,u64) const	function	ecs	ecs-archetype-markwritten-chunk-star-componentid-u64-const	ecs.md	engine/ecs/archetype.h:167
+ecs::Archetype::WrittenTick(const Chunk*,ComponentId) const	function	ecs	ecs-archetype-writtentick-const-chunk-star-componentid-const	ecs.md	engine/ecs/archetype.h:170
+ecs::Archetype::AddedTick(const Chunk*,ComponentId) const	function	ecs	ecs-archetype-addedtick-const-chunk-star-componentid-const	ecs.md	engine/ecs/archetype.h:173
 ecs::kChunkBytes	variable	ecs	ecs-kchunkbytes	ecs.md	engine/ecs/chunk.h:15
 ecs::kMaxArchetypeComponents	variable	ecs	ecs-kmaxarchetypecomponents	ecs.md	engine/ecs/chunk.h:18
 ecs::Chunk	struct	ecs	ecs-chunk	ecs.md	engine/ecs/chunk.h:27
@@ -2992,19 +2997,24 @@ ecs::Optional	struct	ecs	ecs-optional	ecs.md	engine/ecs/query.h:33
 ecs::OptionalWrite	struct	ecs	ecs-optionalwrite	ecs.md	engine/ecs/query.h:38
 ecs::With	struct	ecs	ecs-with	ecs.md	engine/ecs/query.h:43
 ecs::Without	struct	ecs	ecs-without	ecs.md	engine/ecs/query.h:48
-ecs::ChunkView	class	ecs	ecs-chunkview	ecs.md	engine/ecs/query.h:155
-ecs::ChunkView::ChunkView(const Archetype*,Chunk*,const ComponentSet*,const ComponentSet*,const ComponentSet*)	function	ecs	ecs-chunkview-chunkview-const-archetype-star-chunk-star-const-componentset-star-const-componentset-star-const-componentset-star	ecs.md	engine/ecs/query.h:160
-ecs::ChunkView::Count() const	function	ecs	ecs-chunkview-count-const	ecs.md	engine/ecs/query.h:165
-ecs::ChunkView::Entities() const	function	ecs	ecs-chunkview-entities-const	ecs.md	engine/ecs/query.h:168
-ecs::ChunkView::Read() const	function	ecs	ecs-chunkview-read-const	ecs.md	engine/ecs/query.h:174
-ecs::ChunkView::Write() const	function	ecs	ecs-chunkview-write-const	ecs.md	engine/ecs/query.h:187
-ecs::Query	class	ecs	ecs-query	ecs.md	engine/ecs/query.h:219
-ecs::Query::Query(World&)	function	ecs	ecs-query-query-world-amp	ecs.md	engine/ecs/query.h:234
-ecs::Query::ForEach(Fn&&)	function	ecs	ecs-query-foreach-fn-amp-amp	ecs.md	engine/ecs/query.h:246
-ecs::Query::ForEachChunk(Fn&&)	function	ecs	ecs-query-foreachchunk-fn-amp-amp	ecs.md	engine/ecs/query.h:258
-ecs::Query::Count()	function	ecs	ecs-query-count	ecs.md	engine/ecs/query.h:279
-ecs::Query::IsEmpty()	function	ecs	ecs-query-isempty	ecs.md	engine/ecs/query.h:289
-ecs::Query::MatchedArchetypes()	function	ecs	ecs-query-matchedarchetypes	ecs.md	engine/ecs/query.h:293
+ecs::Changed	struct	ecs	ecs-changed	ecs.md	engine/ecs/query.h:56
+ecs::Added	struct	ecs	ecs-added	ecs.md	engine/ecs/query.h:62
+ecs::ChunkView	class	ecs	ecs-chunkview	ecs.md	engine/ecs/query.h:200
+ecs::ChunkView::ChunkView(const Archetype*,Chunk*,const ComponentSet*,const ComponentSet*,const ComponentSet*)	function	ecs	ecs-chunkview-chunkview-const-archetype-star-chunk-star-const-componentset-star-const-componentset-star-const-componentset-star	ecs.md	engine/ecs/query.h:205
+ecs::ChunkView::Count() const	function	ecs	ecs-chunkview-count-const	ecs.md	engine/ecs/query.h:210
+ecs::ChunkView::Entities() const	function	ecs	ecs-chunkview-entities-const	ecs.md	engine/ecs/query.h:213
+ecs::ChunkView::Read() const	function	ecs	ecs-chunkview-read-const	ecs.md	engine/ecs/query.h:219
+ecs::ChunkView::Write() const	function	ecs	ecs-chunkview-write-const	ecs.md	engine/ecs/query.h:232
+ecs::Query	class	ecs	ecs-query	ecs.md	engine/ecs/query.h:264
+ecs::Query::Query(World&)	function	ecs	ecs-query-query-world-amp	ecs.md	engine/ecs/query.h:279
+ecs::Query::ForEach(Fn&&)	function	ecs	ecs-query-foreach-fn-amp-amp	ecs.md	engine/ecs/query.h:291
+ecs::Query::ForEachChunk(Fn&&)	function	ecs	ecs-query-foreachchunk-fn-amp-amp	ecs.md	engine/ecs/query.h:303
+ecs::Query::Since() const	function	ecs	ecs-query-since-const	ecs.md	engine/ecs/query.h:325
+ecs::Query::SetSince(u64)	function	ecs	ecs-query-setsince-u64	ecs.md	engine/ecs/query.h:328
+ecs::Query::Finish()	function	ecs	ecs-query-finish	ecs.md	engine/ecs/query.h:335
+ecs::Query::Count()	function	ecs	ecs-query-count	ecs.md	engine/ecs/query.h:342
+ecs::Query::IsEmpty()	function	ecs	ecs-query-isempty	ecs.md	engine/ecs/query.h:352
+ecs::Query::MatchedArchetypes()	function	ecs	ecs-query-matchedarchetypes	ecs.md	engine/ecs/query.h:356
 ecs::Status	enum	ecs	ecs-status	ecs.md	engine/ecs/world.h:38
 ecs::Status::Ok	enumerator	ecs	ecs-status-ok	ecs.md	engine/ecs/world.h:40
 ecs::Status::DeadEntity	enumerator	ecs	ecs-status-deadentity	ecs.md	engine/ecs/world.h:42
@@ -3041,28 +3051,31 @@ ecs::World::Add(Entity,T)	function	ecs	ecs-world-add-entity-t	ecs.md	engine/ecs/
 ecs::World::Remove(Entity)	function	ecs	ecs-world-remove-entity	ecs.md	engine/ecs/world.h:158
 ecs::World::Set(Entity,T)	function	ecs	ecs-world-set-entity-t	ecs.md	engine/ecs/world.h:164
 ecs::World::Has(Entity) const	function	ecs	ecs-world-has-entity-const	ecs.md	engine/ecs/world.h:169
-ecs::World::Get(Entity)	function	ecs	ecs-world-get-entity	ecs.md	engine/ecs/world.h:176
-ecs::World::Get(Entity) const	function	ecs	ecs-world-get-entity-const	ecs.md	engine/ecs/world.h:182
-ecs::World::BeginIteration()	function	ecs	ecs-world-beginiteration	ecs.md	engine/ecs/world.h:186
-ecs::World::EndIteration()	function	ecs	ecs-world-enditeration	ecs.md	engine/ecs/world.h:189
-ecs::World::BeginIteration(const ComponentSet&)	function	ecs	ecs-world-beginiteration-const-componentset-amp	ecs.md	engine/ecs/world.h:198
-ecs::World::EndIteration(const ComponentSet&)	function	ecs	ecs-world-enditeration-const-componentset-amp	ecs.md	engine/ecs/world.h:210
-ecs::World::IsIterating() const	function	ecs	ecs-world-isiterating-const	ecs.md	engine/ecs/world.h:216
-ecs::World::Query()	function	ecs	ecs-world-query	ecs.md	engine/ecs/world.h:222
-ecs::World::Apply(CommandBuffer&)	function	ecs	ecs-world-apply-commandbuffer-amp	ecs.md	engine/ecs/world.h:234
-ecs::World::SetResource(T)	function	ecs	ecs-world-setresource-t	ecs.md	engine/ecs/world.h:244
-ecs::World::Resource()	function	ecs	ecs-world-resource	ecs.md	engine/ecs/world.h:248
-ecs::World::Resource() const	function	ecs	ecs-world-resource-const	ecs.md	engine/ecs/world.h:252
-ecs::World::TryResource()	function	ecs	ecs-world-tryresource	ecs.md	engine/ecs/world.h:257
-ecs::World::TryResource() const	function	ecs	ecs-world-tryresource-const	ecs.md	engine/ecs/world.h:262
-ecs::World::HasResource() const	function	ecs	ecs-world-hasresource-const	ecs.md	engine/ecs/world.h:266
-ecs::World::RemoveResource()	function	ecs	ecs-world-removeresource	ecs.md	engine/ecs/world.h:271
-ecs::World::ArchetypeCount() const	function	ecs	ecs-world-archetypecount-const	ecs.md	engine/ecs/world.h:275
-ecs::World::ArchetypeAt(u32)	function	ecs	ecs-world-archetypeat-u32	ecs.md	engine/ecs/world.h:278
-ecs::World::ArchetypeAt(u32) const	function	ecs	ecs-world-archetypeat-u32-const	ecs.md	engine/ecs/world.h:281
-ecs::World::Entities() const	function	ecs	ecs-world-entities-const	ecs.md	engine/ecs/world.h:283
-ecs::World::Stats() const	function	ecs	ecs-world-stats-const	ecs.md	engine/ecs/world.h:286
-ecs::World::Validate() const	function	ecs	ecs-world-validate-const	ecs.md	engine/ecs/world.h:292
+ecs::World::Get(Entity)	function	ecs	ecs-world-get-entity	ecs.md	engine/ecs/world.h:177
+ecs::World::Get(Entity) const	function	ecs	ecs-world-get-entity-const	ecs.md	engine/ecs/world.h:183
+ecs::World::Tick() const	function	ecs	ecs-world-tick-const	ecs.md	engine/ecs/world.h:188
+ecs::World::Advance()	function	ecs	ecs-world-advance	ecs.md	engine/ecs/world.h:192
+ecs::World::SetTick(u64)	function	ecs	ecs-world-settick-u64	ecs.md	engine/ecs/world.h:195
+ecs::World::BeginIteration()	function	ecs	ecs-world-beginiteration	ecs.md	engine/ecs/world.h:198
+ecs::World::EndIteration()	function	ecs	ecs-world-enditeration	ecs.md	engine/ecs/world.h:201
+ecs::World::BeginIteration(const ComponentSet&)	function	ecs	ecs-world-beginiteration-const-componentset-amp	ecs.md	engine/ecs/world.h:210
+ecs::World::EndIteration(const ComponentSet&)	function	ecs	ecs-world-enditeration-const-componentset-amp	ecs.md	engine/ecs/world.h:222
+ecs::World::IsIterating() const	function	ecs	ecs-world-isiterating-const	ecs.md	engine/ecs/world.h:228
+ecs::World::Query()	function	ecs	ecs-world-query	ecs.md	engine/ecs/world.h:234
+ecs::World::Apply(CommandBuffer&)	function	ecs	ecs-world-apply-commandbuffer-amp	ecs.md	engine/ecs/world.h:246
+ecs::World::SetResource(T)	function	ecs	ecs-world-setresource-t	ecs.md	engine/ecs/world.h:256
+ecs::World::Resource()	function	ecs	ecs-world-resource	ecs.md	engine/ecs/world.h:260
+ecs::World::Resource() const	function	ecs	ecs-world-resource-const	ecs.md	engine/ecs/world.h:264
+ecs::World::TryResource()	function	ecs	ecs-world-tryresource	ecs.md	engine/ecs/world.h:269
+ecs::World::TryResource() const	function	ecs	ecs-world-tryresource-const	ecs.md	engine/ecs/world.h:274
+ecs::World::HasResource() const	function	ecs	ecs-world-hasresource-const	ecs.md	engine/ecs/world.h:278
+ecs::World::RemoveResource()	function	ecs	ecs-world-removeresource	ecs.md	engine/ecs/world.h:283
+ecs::World::ArchetypeCount() const	function	ecs	ecs-world-archetypecount-const	ecs.md	engine/ecs/world.h:287
+ecs::World::ArchetypeAt(u32)	function	ecs	ecs-world-archetypeat-u32	ecs.md	engine/ecs/world.h:290
+ecs::World::ArchetypeAt(u32) const	function	ecs	ecs-world-archetypeat-u32-const	ecs.md	engine/ecs/world.h:293
+ecs::World::Entities() const	function	ecs	ecs-world-entities-const	ecs.md	engine/ecs/world.h:295
+ecs::World::Stats() const	function	ecs	ecs-world-stats-const	ecs.md	engine/ecs/world.h:298
+ecs::World::Validate() const	function	ecs	ecs-world-validate-const	ecs.md	engine/ecs/world.h:304
 ui::ConnectionId	alias	ui	ui-connectionid	ui.md	engine/ui/callback.h:11
 ui::Callback	class	ui	ui-callback	ui.md	engine/ui/callback.h:20
 ui::Callback::Function	alias	ui	ui-callback-function	ui.md	engine/ui/callback.h:24

@@ -169,7 +169,8 @@ public:
     template <class T>
     bool Has(Entity entity) const;
 
-    /// The entity's `T`, or null when the entity is dead or lacks `T` (also null for a tag: ask `Has`).
+    /// The entity's `T`, or null when the entity is dead or lacks `T` (also null for a tag: ask `Has`). The non-const form stamps the chunk's `T` column as
+    /// written at the current tick, since the caller may write through the pointer.
     /// Fails: returns null as described.
     /// Aborts: an active query (`BeginIteration(writes)`) writes `T`; read components the query only reads, or use the query's own arguments.
     /// Ownership: the pointer views the entity's row; valid until the next structural call.
@@ -181,6 +182,17 @@ public:
     /// Ownership: the pointer views the entity's row; valid until the next structural call.
     template <class T>
     const T* Get(Entity entity) const;
+
+    /// The current change-detection tick (starts at 1). Writes, additions and arrivals are stamped with it.
+    /// Fails: never.
+    u64 Tick() const { return tick_; }
+    /// Moves to the next tick; changes stamped from now on are newer than any query's `since` taken before. The scheduler calls it between
+    /// frames, and [[ecs::Query::Finish]] calls it so that a write made after a query ran is not lost.
+    /// Fails: never.
+    void Advance() { ++tick_; }
+    /// Sets the tick (tests of tick arithmetic near the largest value).
+    /// Fails: never.
+    void SetTick(u64 tick) { tick_ = tick; }
 
     /// Marks the start of an iteration: structural calls are refused until the matching `EndIteration`. Nestable.
     void BeginIteration() { ++iterating_; }
@@ -324,7 +336,10 @@ private:
     Vector<UniquePtr<Archetype>> archetypes_;
     HashMap<ComponentSet, u32, HeapAllocator> by_set_;
     HashMap<u64, u32, HeapAllocator> edges_;
+    template <class T>
+    T* GetCell(Entity entity, bool mark);
     u32 iterating_ = 0;
+    u64 tick_ = 1;
     ComponentSet iteration_writes_;
     Vector<ResourceSlot> resources_;
     u64 next_resource_serial_ = 1;
@@ -466,6 +481,7 @@ Status World::Set(Entity entity, T value) {
         if (cell != nullptr) {
             static_cast<T*>(cell)->~T();
             ConstructAt<T>(cell, Move(value));
+            a.MarkWritten(a.ChunkAt(where->chunk), id, tick_);
         }
         return Status::Ok;
     }
@@ -480,6 +496,16 @@ bool World::Has(Entity entity) const {
 
 template <class T>
 T* World::Get(Entity entity) {
+    return GetCell<T>(entity, true);
+}
+
+template <class T>
+const T* World::Get(Entity entity) const {
+    return const_cast<World*>(this)->GetCell<T>(entity, false);
+}
+
+template <class T>
+T* World::GetCell(Entity entity, bool mark) {
     const EntityLocation* where = table_.Location(entity);
     if (where == nullptr) {
         return nullptr;
@@ -487,12 +513,11 @@ T* World::Get(Entity entity) {
     const ComponentId id = ComponentOf<T>();
     ENGINE_ASSERT(!iteration_writes_.Has(id), "World::Get of a component that an active query writes");
     Archetype& a = *archetypes_[where->archetype];
-    return static_cast<T*>(a.CellPtr(a.ChunkAt(where->chunk), id, where->row));
-}
-
-template <class T>
-const T* World::Get(Entity entity) const {
-    return const_cast<World*>(this)->Get<T>(entity);
+    Chunk* chunk = a.ChunkAt(where->chunk);
+    if (mark) {
+        a.MarkWritten(chunk, id, tick_);
+    }
+    return static_cast<T*>(a.CellPtr(chunk, id, where->row));
 }
 
 template <class T>

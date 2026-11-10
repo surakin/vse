@@ -167,4 +167,34 @@ void* Archetype::CellPtr(Chunk* chunk, ComponentId id, u32 row) const {
     return chunk->Data() + layout_.offset[c] + static_cast<usize>(layout_.size[c]) * row;
 }
 
+void Archetype::MarkArrived(Chunk* chunk, u64 tick) const {
+    for (u32 c = 1; c < layout_.column_count; ++c) {
+        chunk->written[c - 1] = tick;
+        chunk->added[c - 1] = tick;
+    }
+}
+
+void Archetype::MarkAllWritten(Chunk* chunk, u64 tick) const {
+    for (u32 c = 1; c < layout_.column_count; ++c) {
+        chunk->written[c - 1] = tick;
+    }
+}
+
+void Archetype::MarkWritten(Chunk* chunk, ComponentId id, u64 tick) const {
+    const u32 column = id < kMaxComponentTypes ? layout_.column_of[id] : kNoColumn;
+    if (column != kNoColumn) {
+        chunk->written[column - 1] = tick;
+    }
+}
+
+u64 Archetype::WrittenTick(const Chunk* chunk, ComponentId id) const {
+    const u32 column = id < kMaxComponentTypes ? layout_.column_of[id] : kNoColumn;
+    return column == kNoColumn ? 0 : chunk->written[column - 1];
+}
+
+u64 Archetype::AddedTick(const Chunk* chunk, ComponentId id) const {
+    const u32 column = id < kMaxComponentTypes ? layout_.column_of[id] : kNoColumn;
+    return column == kNoColumn ? 0 : chunk->added[column - 1];
+}
+
 } // namespace engine_placeholder::ecs
